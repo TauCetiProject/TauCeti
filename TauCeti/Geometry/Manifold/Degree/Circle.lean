@@ -8,17 +8,16 @@ module
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.Geometry.Manifold.DeRham.Circle
 public import TauCeti.Geometry.Manifold.Degree.Continuous
-public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.Loop
--- Private: smooth integer powers on Lie groups, global degree integration, top-form orientation
--- criteria, and connectedness of spheres are used only inside proofs.
-import TauCeti.Analysis.Complex.Circle
+-- Private: free-loop classification, smooth integer powers on Lie groups, global degree
+-- integration, connectedness of spheres, and the homotopy/path bridge are used only inside proofs.
+import TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Degree.Global
-import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.Geometry.Sphere.Connected
+import TauCeti.Topology.Homotopy.Homotopic.With
 
 /-!
 # The mapping degree on the circle and reconciliation with `Circle.degree`
@@ -30,75 +29,69 @@ selects the same orientation as the outward-normal orientation
 `Complex.orientation.sphereOrientation` of `S¹ ⊆ ℂ`
 (`TauCeti.circleOrientation_eq_sphereOrientation`).
 
-For a differentiable circle-valued map `f : M → Circle`, the pulled-back angular form `f^* dθ` is
-the imaginary part of the logarithmic derivative `dlog f`
-(`TauCeti.mpullback_circleAngularForm_apply_eq_im_mlogDeriv`). Because `dlog` turns pointwise
-products into sums, pullback of `dθ` is additive under pointwise multiplication
-(`TauCeti.mpullback_mul_circleAngularForm`), negates under inversion
-(`TauCeti.mpullback_inv_circleAngularForm`), and scales by `k` under the `k`-th integer power
-(`TauCeti.mpullback_zpow_circleAngularForm`). In particular, on `Circle` itself,
+Combining the pullback calculus of `dθ` in `TauCeti.Geometry.Manifold.DeRham.Circle` with the
+top-form degree formula `∫_M f^* dθ = deg(f) · 2π`
+(`TauCeti.integralTopForm_mpullback_circleAngularForm`, for any compact Hausdorff boundaryless
+oriented smooth `1`-manifold `M`) and the top-form orientation criteria gives the smooth and
+continuous degree calculus for `Circle`-valued maps and self-maps of `S¹`:
 
-`((· ^ k)^* dθ) = k • dθ` (`TauCeti.mpullback_zpow_id_circleAngularForm`).
-
-Combining this identity with the top-form degree formula `∫_{S¹} f^* dθ = deg(f) · 2π`
-(`TauCeti.integralTopForm_circleOrientation_mpullback_circleAngularForm`) and the top-form
-orientation criteria gives the complete smooth and continuous degree calculus on `S¹`:
-
-* `z ↦ z ^ k` (`k : ℤ`) preserves orientation when `0 < k`, reverses orientation when `k < 0`, has
-  every point of `S¹` as a regular value when `k ≠ 0`, and has smooth and continuous mapping degree
-  `k` (`TauCeti.degree_zpow_circle`, `TauCeti.continuousDegree_zpow_id_circle`);
+* pointwise `1`, multiplication, inversion, division, negation, and natural/integer powers of smooth
+  maps `M → Circle` and continuous maps `C(M, Circle)` act on the mapping degree as `0`, addition,
+  negation, subtraction, the identity, and scalar multiplication (`TauCeti.degree_one_circle`,
+  `TauCeti.degree_mul_circle`, `TauCeti.degree_inv_circle`, `TauCeti.degree_div_circle`,
+  `TauCeti.degree_neg_circle`, `TauCeti.degree_pow_circle`, `TauCeti.degree_zpow_circle`, and their
+  `TauCeti.continuousDegree_*_circle` counterparts);
+* on `Circle` itself, `z ↦ z ^ k` (`k : ℤ`) preserves orientation when `0 < k`, reverses orientation
+  when `k < 0`, has every point of `S¹` as a regular value when `k ≠ 0`, and has smooth and
+  continuous mapping degree `k` (`TauCeti.degree_zpow_id_circle`,
+  `TauCeti.continuousDegree_zpow_id_circle`);
 * inversion `z ↦ z⁻¹` on `Circle` and complex conjugation `TauCeti.conjSphere` on
-  `sphere (0 : ℂ) 1` have smooth and continuous mapping degree `-1`
-  (`TauCeti.degree_inv_circle`, `TauCeti.degree_conjSphere`, `TauCeti.continuousDegree_conjSphere`);
-* pointwise multiplication, inversion, division, and powers of maps into `Circle` act on the
-  mapping degree as addition, negation, subtraction, and scalar multiplication
-  (`TauCeti.degree_mul_circle`, `TauCeti.continuousDegree_mul_circle`,
-  `TauCeti.continuousDegree_zpow_circle`).
+  `sphere (0 : ℂ) 1` have degree `-1`, while negation `z ↦ -z` and rotations `z₀ * ·`, `· * z₀`
+  have degree `1` (`TauCeti.degree_inv_id_circle`, `TauCeti.continuousDegree_inv_id_circle`,
+  `TauCeti.degree_neg_id_circle`, `TauCeti.continuousDegree_neg_id_circle`,
+  `TauCeti.continuousDegree_conjSphere`).
 
-Finally, lifting `f.toBasedLoop` along the universal covering `Circle.exp : ℝ → Circle` writes any
-continuous map `f : C(Circle, Circle)` as `f z = exp (i Ψ z) · z ^ k` for a continuous real-valued
-phase `Ψ : C(Circle, ℝ)` and `k = Circle.degree f.toBasedLoop`
-(`ContinuousMap.exists_exp_mul_zpow_eq`). Scaling `Ψ` linearly to `0` homotopes `f` to `z ↦ z ^ k`
-(`ContinuousMap.homotopic_zpow`), reconciling the differential-geometric mapping degree with the
-covering-space winding number `Circle.degree`:
+Finally, combining path-component invariance (`TauCeti.continuousDegree_eq_of_joined`) with the
+covering-space classification of free loops on `S¹` (`Circle.joined_iff_degree_toBasedLoop_eq` in
+`TauCeti.AlgebraicTopology.UniversalCover.Circle.FreeLoop`) reconciles the differential-geometric
+mapping degree with the winding number `Circle.degree`:
 
-* `TauCeti.continuousDegree_circle_eq_circleDegree`:
+* `TauCeti.continuousDegree_eq_circleDegree_toBasedLoop`:
   `continuousDegree o o f = Circle.degree f.toBasedLoop` for every orientation `o` of `S¹`;
 * `TauCeti.continuousDegree_toCircle`: `continuousDegree o o γ.toCircle = Circle.degree γ` for
   every loop `γ` in `S¹`;
-* `TauCeti.degree_circle_eq_circleDegree`: `degree o o f` agrees with `Circle.degree` on smooth
-  maps `S¹ → S¹`;
-* `TauCeti.homotopic_circle_iff_continuousDegree_eq` and
-  `ContinuousMap.homotopic_iff_degree_toBasedLoop_eq`: two maps in `C(Circle, Circle)` are
-  homotopic if and only if they have the same mapping degree.
+* `TauCeti.degree_eq_circleDegree_toBasedLoop`: `degree o o f` agrees with `Circle.degree` on
+  smooth maps `S¹ → S¹`;
+* `TauCeti.homotopic_circle_iff_continuousDegree_eq`: two maps in `C(Circle, Circle)` are homotopic
+  if and only if they have the same mapping degree (Hopf's degree theorem in dimension `1`).
 
 ## Main results
 
 * `TauCeti.circleOrientation_eq_sphereOrientation`: `circleOrientation` equals
   `Complex.orientation.sphereOrientation`.
-* `TauCeti.mpullback_circleAngularForm_apply_eq_im_mlogDeriv`,
-  `TauCeti.mpullback_mul_circleAngularForm`, `TauCeti.mpullback_inv_circleAngularForm`,
-  `TauCeti.mpullback_zpow_circleAngularForm`, `TauCeti.mpullback_zpow_id_circleAngularForm`:
-  pullback calculus of `dθ` under group operations and integer powers.
-* `TauCeti.integralTopForm_circleOrientation_mpullback_circleAngularForm`:
-  `∫_{S¹} f^* dθ = deg(f) · 2π`.
+* `TauCeti.degree_eq_degree_circleOrientation`,
+  `TauCeti.continuousDegree_eq_continuousDegree_circleOrientation`: self-map degrees on `Circle` are
+  independent of the choice of orientation.
+* `TauCeti.integralTopForm_mpullback_circleAngularForm`: `∫_M f^* dθ = deg(f) · 2π`.
+* `TauCeti.degree_one_circle`, `TauCeti.degree_mul_circle`, `TauCeti.degree_inv_circle`,
+  `TauCeti.degree_div_circle`, `TauCeti.degree_neg_circle`, `TauCeti.degree_pow_circle`,
+  `TauCeti.degree_zpow_circle`: smooth degree calculus for maps `M → Circle`.
+* `TauCeti.degree_zpow_id_circle`, `TauCeti.degree_pow_id_circle`, `TauCeti.degree_inv_id_circle`,
+  `TauCeti.degree_neg_id_circle`, `TauCeti.degree_mul_left_circle`,
+  `TauCeti.degree_mul_right_circle`: smooth degrees of standard self-maps of `Circle`.
 * `TauCeti.isOrientationPreservingAt_zpow_circle`, `TauCeti.isOrientationReversingAt_zpow_circle`,
   `TauCeti.isRegularValue_zpow_circle`, `TauCeti.degreeAtRegularValue_zpow_circle`: local and
   regular-value calculus of `z ↦ z ^ k`.
-* `TauCeti.degree_zpow_circle`, `TauCeti.degree_pow_circle`, `TauCeti.degree_inv_circle`,
-  `TauCeti.degree_conjSphere`, `TauCeti.degree_mul_circle`, `TauCeti.degree_fun_zpow_circle`:
-  smooth mapping degrees on `S¹`.
 * `TauCeti.continuousDegree_one_circle`, `TauCeti.continuousDegree_mul_circle`,
   `TauCeti.continuousDegree_inv_circle`, `TauCeti.continuousDegree_div_circle`,
-  `TauCeti.continuousDegree_pow_circle`, `TauCeti.continuousDegree_zpow_circle`,
-  `TauCeti.continuousDegree_zpow_id_circle`, `TauCeti.continuousDegree_conjSphere`: continuous
-  mapping degrees on `S¹`.
-* `ContinuousMap.exists_exp_mul_zpow_eq`, `ContinuousMap.homotopic_zpow`: phase factorization and
-  homotopy to `z ↦ z ^ k`.
-* `TauCeti.continuousDegree_circle_eq_circleDegree`, `TauCeti.continuousDegree_toCircle`,
-  `TauCeti.degree_circle_eq_circleDegree`, `TauCeti.homotopic_circle_iff_continuousDegree_eq`,
-  `ContinuousMap.homotopic_iff_degree_toBasedLoop_eq`: reconciliation with `Circle.degree` and
-  homotopy classification of maps `S¹ → S¹`.
+  `TauCeti.continuousDegree_neg_circle`, `TauCeti.continuousDegree_pow_circle`,
+  `TauCeti.continuousDegree_zpow_circle`: continuous degree calculus for maps `C(M, Circle)`.
+* `TauCeti.continuousDegree_zpow_id_circle`, `TauCeti.continuousDegree_pow_id_circle`,
+  `TauCeti.continuousDegree_inv_id_circle`, `TauCeti.continuousDegree_neg_id_circle`,
+  `TauCeti.continuousDegree_conjSphere`: continuous degrees of standard self-maps of `Circle`.
+* `TauCeti.continuousDegree_eq_circleDegree_toBasedLoop`, `TauCeti.continuousDegree_toCircle`,
+  `TauCeti.degree_eq_circleDegree_toBasedLoop`, `TauCeti.homotopic_circle_iff_continuousDegree_eq`:
+  reconciliation with `Circle.degree` and homotopy classification of maps `S¹ → S¹`.
 
 ## References
 
@@ -119,16 +112,7 @@ namespace TauCeti
 
 attribute [local instance] finrank_real_complex_fact'
 
-/-! ### Orientation of the circle and pullbacks of the angular form -/
-
-/-- Evaluation of the angular form `dθ` on `Circle` in terms of the ambient derivative in `ℂ`. -/
-@[simp]
-theorem circleAngularForm_apply (z : Circle) (v : Fin 1 → TangentSpace (𝓡 1) z) :
-    circleAngularForm z v =
-      (z : ℂ).re * (mvfderiv (𝓡 1) (fun w : Circle ↦ (w : ℂ)) z (v 0)).im -
-        (z : ℂ).im * (mvfderiv (𝓡 1) (fun w : Circle ↦ (w : ℂ)) z (v 0)).re := by
-  rw [circleAngularForm_def, mpullback_apply]
-  exact planeAngularForm_apply _ _
+/-! ### Orientation of the circle -/
 
 /-- The counterclockwise orientation `TauCeti.circleOrientation` defined by the angular form `dθ`
 coincides with the outward-normal orientation `Complex.orientation.sphereOrientation` of the unit
@@ -145,168 +129,9 @@ theorem circleOrientation_eq_sphereOrientation :
     exact hb_pos
   exact hb_cir.symm.trans hb_sph
 
-section PullbackAngularForm
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- For a map `f : M → Circle` differentiable at `x`, the pulled-back angular form `f^* dθ` at `x`
-is the imaginary part of the logarithmic derivative `dlog f`. -/
-theorem mpullback_circleAngularForm_apply_eq_im_mlogDeriv {f : M → Circle} {x : M}
-    (hf : MDifferentiableAt I (𝓡 1) f x) (v : Fin 1 → TangentSpace I x) :
-    mpullback I (𝓡 1) f circleAngularForm x v =
-      (mlogDeriv I (fun y ↦ (f y : ℂ)) x v).im := by
-  have hcoe : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun w : Circle ↦ (w : ℂ)) (f x) :=
-    (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
-  have hd : mvfderiv (𝓡 1) (fun w : Circle ↦ (w : ℂ)) (f x) (mfderiv I (𝓡 1) f x (v 0)) =
-      mvfderiv I (fun y ↦ (f y : ℂ)) x (v 0) :=
-    (mvfderiv_comp_apply x hcoe hf (v 0)).symm
-  rw [mpullback_apply, circleAngularForm_apply, hd, mlogDeriv_apply, ← Circle.coe_inv,
-    Circle.coe_inv_eq_conj, Complex.mul_im, Complex.conj_re, Complex.conj_im]
-  ring
-
-/-- Pulling back the angular form along a constant map into `Circle` gives `0`. -/
-@[simp]
-theorem mpullback_const_circleAngularForm (z₀ : Circle) :
-    mpullback I (𝓡 1) (fun _ : M ↦ z₀) circleAngularForm = 0 := by
-  ext x v
-  rw [mpullback_circleAngularForm_apply_eq_im_mlogDeriv mdifferentiableAt_const]
-  simp [mlogDeriv_const]
-
-/-- **Pullback of `dθ` turns products into sums.** If `f, g : M → Circle` are differentiable at `x`,
-then `(f * g)^* dθ = f^* dθ + g^* dθ` at `x`. -/
-theorem mpullback_mul_circleAngularForm_apply {f g : M → Circle} {x : M}
-    (hf : MDifferentiableAt I (𝓡 1) f x) (hg : MDifferentiableAt I (𝓡 1) g x) :
-    mpullback I (𝓡 1) (fun y ↦ f y * g y) circleAngularForm x =
-      mpullback I (𝓡 1) f circleAngularForm x + mpullback I (𝓡 1) g circleAngularForm x := by
-  have hfg : MDifferentiableAt I (𝓡 1) (fun y ↦ f y * g y) x :=
-    ((contMDiff_mul (𝓡 1) 1).mdifferentiableAt one_ne_zero).comp x (hf.prodMk hg)
-  have hcoe (w : Circle) : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) w :=
-    (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
-  have huf : MDifferentiableAt I 𝓘(ℝ, ℂ) (fun y ↦ (f y : ℂ)) x := (hcoe (f x)).comp x hf
-  have hug : MDifferentiableAt I 𝓘(ℝ, ℂ) (fun y ↦ (g y : ℂ)) x := (hcoe (g x)).comp x hg
-  ext v
-  rw [mpullback_circleAngularForm_apply_eq_im_mlogDeriv hfg, ContinuousAlternatingMap.add_apply,
-    mpullback_circleAngularForm_apply_eq_im_mlogDeriv hf,
-    mpullback_circleAngularForm_apply_eq_im_mlogDeriv hg]
-  have hmul := mlogDeriv_mul huf hug (Circle.coe_ne_zero (f x)) (Circle.coe_ne_zero (g x))
-  simpa only [Pi.mul_def, Circle.coe_mul, ContinuousAlternatingMap.add_apply,
-    Complex.add_im] using congrArg (fun η ↦ (η v).im) hmul
-
-/-- For differentiable maps `f, g : M → Circle`, `(f * g)^* dθ = f^* dθ + g^* dθ`. -/
-theorem mpullback_mul_circleAngularForm {f g : M → Circle} (hf : MDifferentiable I (𝓡 1) f)
-    (hg : MDifferentiable I (𝓡 1) g) :
-    mpullback I (𝓡 1) (fun y ↦ f y * g y) circleAngularForm =
-      mpullback I (𝓡 1) f circleAngularForm + mpullback I (𝓡 1) g circleAngularForm :=
-  funext fun x ↦ mpullback_mul_circleAngularForm_apply (hf x) (hg x)
-
-/-- If `f : M → Circle` is differentiable at `x`, then `(f⁻¹)^* dθ = - f^* dθ` at `x`. -/
-theorem mpullback_inv_circleAngularForm_apply {f : M → Circle} {x : M}
-    (hf : MDifferentiableAt I (𝓡 1) f x) :
-    mpullback I (𝓡 1) (fun y ↦ (f y)⁻¹) circleAngularForm x =
-      -mpullback I (𝓡 1) f circleAngularForm x := by
-  have hinv : MDifferentiableAt I (𝓡 1) (fun y ↦ (f y)⁻¹) x :=
-    ((contMDiff_inv (𝓡 1) 1).mdifferentiableAt one_ne_zero).comp x hf
-  have h := mpullback_mul_circleAngularForm_apply hf hinv
-  simp only [mul_inv_cancel, mpullback_const_circleAngularForm, Pi.zero_apply] at h
-  exact eq_neg_of_add_eq_zero_right h.symm
-
-/-- For a differentiable map `f : M → Circle`, `(f⁻¹)^* dθ = - f^* dθ`. -/
-theorem mpullback_inv_circleAngularForm {f : M → Circle} (hf : MDifferentiable I (𝓡 1) f) :
-    mpullback I (𝓡 1) (fun y ↦ (f y)⁻¹) circleAngularForm =
-      -mpullback I (𝓡 1) f circleAngularForm :=
-  funext fun x ↦ mpullback_inv_circleAngularForm_apply (hf x)
-
-/-- If `f : M → Circle` is differentiable at `x`, then `(f ^ n)^* dθ = n • f^* dθ` at `x` for every
-`n : ℕ`. -/
-theorem mpullback_pow_circleAngularForm_apply {f : M → Circle} {x : M}
-    (hf : MDifferentiableAt I (𝓡 1) f x) (n : ℕ) :
-    mpullback I (𝓡 1) (fun y ↦ f y ^ n) circleAngularForm x =
-      (n : ℝ) • mpullback I (𝓡 1) f circleAngularForm x := by
-  induction n with
-  | zero =>
-    simp [mpullback_const_circleAngularForm]
-  | succ n ih =>
-    have hpow : MDifferentiableAt I (𝓡 1) (fun y ↦ f y ^ n) x :=
-      (((contMDiff_pow n : ContMDiff (𝓡 1) (𝓡 1) 1 _)).mdifferentiableAt one_ne_zero).comp x hf
-    simp only [pow_succ]
-    rw [mpullback_mul_circleAngularForm_apply hpow hf, ih, Nat.cast_add, Nat.cast_one, add_smul,
-      one_smul]
-
-/-- For a differentiable map `f : M → Circle` and `n : ℕ`, `(f ^ n)^* dθ = n • f^* dθ`. -/
-theorem mpullback_pow_circleAngularForm {f : M → Circle} (hf : MDifferentiable I (𝓡 1) f)
-    (n : ℕ) :
-    mpullback I (𝓡 1) (fun y ↦ f y ^ n) circleAngularForm =
-      (n : ℝ) • mpullback I (𝓡 1) f circleAngularForm :=
-  funext fun x ↦ mpullback_pow_circleAngularForm_apply (hf x) n
-
-/-- If `f : M → Circle` is differentiable at `x`, then `(f ^ k)^* dθ = k • f^* dθ` at `x` for every
-`k : ℤ`. -/
-theorem mpullback_zpow_circleAngularForm_apply {f : M → Circle} {x : M}
-    (hf : MDifferentiableAt I (𝓡 1) f x) (k : ℤ) :
-    mpullback I (𝓡 1) (fun y ↦ f y ^ k) circleAngularForm x =
-      (k : ℝ) • mpullback I (𝓡 1) f circleAngularForm x := by
-  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg k
-  · simpa only [zpow_natCast, Int.cast_natCast] using mpullback_pow_circleAngularForm_apply hf n
-  · have hpow : MDifferentiableAt I (𝓡 1) (fun y ↦ f y ^ n) x :=
-      (((contMDiff_pow n : ContMDiff (𝓡 1) (𝓡 1) 1 _)).mdifferentiableAt one_ne_zero).comp x hf
-    simp only [zpow_neg, zpow_natCast, Int.cast_neg, Int.cast_natCast]
-    rw [mpullback_inv_circleAngularForm_apply hpow, mpullback_pow_circleAngularForm_apply hf n]
-    ext v
-    simp
-
-/-- For a differentiable map `f : M → Circle` and `k : ℤ`, `(f ^ k)^* dθ = k • f^* dθ`. -/
-theorem mpullback_zpow_circleAngularForm {f : M → Circle} (hf : MDifferentiable I (𝓡 1) f)
-    (k : ℤ) :
-    mpullback I (𝓡 1) (fun y ↦ f y ^ k) circleAngularForm =
-      (k : ℝ) • mpullback I (𝓡 1) f circleAngularForm :=
-  funext fun x ↦ mpullback_zpow_circleAngularForm_apply (hf x) k
-
-end PullbackAngularForm
-
-/-- Left multiplication on `Circle` preserves the angular form `dθ`. -/
-@[simp]
-theorem mpullback_mul_left_circleAngularForm (z₀ : Circle) :
-    mpullback (𝓡 1) (𝓡 1) (z₀ * ·) circleAngularForm = circleAngularForm := by
-  simpa only [id_eq, mpullback_const_circleAngularForm, zero_add, mpullback_id] using
-    mpullback_mul_circleAngularForm (I := 𝓡 1) (mdifferentiable_const (c := z₀)) mdifferentiable_id
-
-/-- Right multiplication on `Circle` preserves the angular form `dθ`. -/
-@[simp]
-theorem mpullback_mul_right_circleAngularForm (z₀ : Circle) :
-    mpullback (𝓡 1) (𝓡 1) (· * z₀) circleAngularForm = circleAngularForm := by
-  simpa only [id_eq, mpullback_const_circleAngularForm, add_zero, mpullback_id] using
-    mpullback_mul_circleAngularForm (I := 𝓡 1) mdifferentiable_id (mdifferentiable_const (c := z₀))
-
-/-- Inversion on `Circle` negates the angular form `dθ`. -/
-@[simp]
-theorem mpullback_inv_id_circleAngularForm :
-    mpullback (𝓡 1) (𝓡 1) (·⁻¹ : Circle → Circle) circleAngularForm = -circleAngularForm := by
-  simpa only [id_eq, mpullback_id] using mpullback_inv_circleAngularForm (I := 𝓡 1)
-    mdifferentiable_id
-
-/-- The natural power map `z ↦ z ^ n` on `Circle` pulls `dθ` back to `n • dθ`. -/
-@[simp]
-theorem mpullback_pow_id_circleAngularForm (n : ℕ) :
-    mpullback (𝓡 1) (𝓡 1) (fun z : Circle ↦ z ^ n) circleAngularForm =
-      (n : ℝ) • circleAngularForm := by
-  simpa only [id_eq, mpullback_id] using mpullback_pow_circleAngularForm (I := 𝓡 1)
-    mdifferentiable_id n
-
-/-- **Pullback of `dθ` by `z ↦ z ^ k`.** For every integer `k : ℤ`, the power map `z ↦ z ^ k` on
-`Circle` pulls the angular form `dθ` back to `k • dθ`. -/
-@[simp]
-theorem mpullback_zpow_id_circleAngularForm (k : ℤ) :
-    mpullback (𝓡 1) (𝓡 1) (fun z : Circle ↦ z ^ k) circleAngularForm =
-      (k : ℝ) • circleAngularForm := by
-  simpa only [id_eq, mpullback_id] using mpullback_zpow_circleAngularForm (I := 𝓡 1)
-    mdifferentiable_id k
-
-/-! ### Integral formula, local orientation signs, and smooth degrees on `Circle` -/
-
 /-- For a self-map `f : Circle → Circle`, `degree o o f` is the same for both orientations `o` of
 `Circle`. -/
-theorem degree_circle_eq_circleOrientation (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
+theorem degree_eq_degree_circleOrientation (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
     (f : Circle → Circle) :
     degree o o f = degree circleOrientation circleOrientation f := by
   rcases o.eq_or_eq_neg circleOrientation with rfl | rfl
@@ -315,119 +140,166 @@ theorem degree_circle_eq_circleOrientation (o : Manifold.Orientation (𝓡 1) Ci
 
 /-- For a continuous self-map `f : C(Circle, Circle)`, `continuousDegree o o f` is the same for
 both orientations `o` of `Circle`. -/
-theorem continuousDegree_circle_eq_circleOrientation
+theorem continuousDegree_eq_continuousDegree_circleOrientation
     (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f : C(Circle, Circle)) :
     continuousDegree o o f = continuousDegree circleOrientation circleOrientation f := by
   rcases o.eq_or_eq_neg circleOrientation with rfl | rfl
   · rfl
   · rw [continuousDegree_neg_left, continuousDegree_neg_right, neg_neg]
 
-/-- **Integral formula for the mapping degree on `S¹`.** For every smooth map `f : Circle → Circle`
-and every orientation `o` of `Circle`, the counterclockwise integral of `f^* dθ` is `deg(f) · 2π`.
--/
-theorem integralTopForm_circleOrientation_mpullback_circleAngularForm
-    (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f : Circle → Circle}
-    (hf : ContMDiff (𝓡 1) (𝓡 1) ∞ f) :
-    integralTopForm circleOrientation (mpullback (𝓡 1) (𝓡 1) f circleAngularForm) =
-      degree o o f * (2 * Real.pi) := by
-  rw [degree_circle_eq_circleOrientation o f,
-    integralTopForm_mpullback_eq_degree_mul circleOrientation circleOrientation hf
+/-! ### Smooth degree calculus for maps into `Circle` -/
+
+section CircleValuedSmooth
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M] [CompactSpace M]
+
+/-- **Integral formula for the mapping degree into `S¹`.** For every smooth map `f : M → Circle`
+from a compact Hausdorff boundaryless oriented `1`-manifold `M`, the integral of `f^* dθ` over `M`
+is `deg(f) · 2π` (with respect to `circleOrientation` on the target). -/
+theorem integralTopForm_mpullback_circleAngularForm (o : Manifold.Orientation I M (Fin 1))
+    {f : M → Circle} (hf : ContMDiff I (𝓡 1) ∞ f) :
+    integralTopForm o (mpullback I (𝓡 1) f circleAngularForm) =
+      degree o circleOrientation f * (2 * Real.pi) := by
+  rw [integralTopForm_mpullback_eq_degree_mul o circleOrientation hf
       isSmoothForm_circleAngularForm (isClosed_tsupport _).isCompact,
     integralTopForm_circleOrientation_circleAngularForm]
 
-/-- **Pointwise multiplication of smooth maps `S¹ → S¹` adds their degrees.** -/
-theorem degree_mul_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f g : Circle → Circle}
-    (hf : ContMDiff (𝓡 1) (𝓡 1) ∞ f) (hg : ContMDiff (𝓡 1) (𝓡 1) ∞ g) :
-    degree o o (fun z ↦ f z * g z) = degree o o f + degree o o g := by
-  have hfg := integralTopForm_circleOrientation_mpullback_circleAngularForm o
-    (f := fun z ↦ f z * g z) (hf.mul hg)
-  have hf_int := integralTopForm_circleOrientation_mpullback_circleAngularForm o hf
-  have hg_int := integralTopForm_circleOrientation_mpullback_circleAngularForm o hg
-  have hadd : integralTopForm circleOrientation
-        (mpullback (𝓡 1) (𝓡 1) (fun z ↦ f z * g z) circleAngularForm) =
-      integralTopForm circleOrientation (mpullback (𝓡 1) (𝓡 1) f circleAngularForm) +
-        integralTopForm circleOrientation (mpullback (𝓡 1) (𝓡 1) g circleAngularForm) := by
+omit [BoundarylessManifold I M] [T2Space M] [CompactSpace M] in
+/-- The constant map `1 : M → Circle` has smooth mapping degree `0`. -/
+@[simp]
+theorem degree_one_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) :
+    degree o o' (1 : M → Circle) = 0 :=
+  degree_const (by simp : 0 < Module.finrank ℝ (EuclideanSpace ℝ (Fin 1))) (1 : Circle)
+
+/-- **Pointwise multiplication of smooth maps `M → Circle` adds their degrees.** -/
+@[to_fun degree_fun_mul_circle]
+theorem degree_mul_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f g : M → Circle}
+    (hf : ContMDiff I (𝓡 1) ∞ f) (hg : ContMDiff I (𝓡 1) ∞ g) :
+    degree o o' (f * g) = degree o o' f + degree o o' g := by
+  suffices hstd : degree o circleOrientation (f * g) =
+      degree o circleOrientation f + degree o circleOrientation g by
+    rcases o'.eq_or_eq_neg circleOrientation with rfl | rfl
+    · exact hstd
+    · simp only [degree_neg_right, hstd, neg_add]
+  have hfg := integralTopForm_mpullback_circleAngularForm o (f := f * g) (hf.mul hg)
+  have hf_int := integralTopForm_mpullback_circleAngularForm o hf
+  have hg_int := integralTopForm_mpullback_circleAngularForm o hg
+  have hadd : integralTopForm o (mpullback I (𝓡 1) (f * g) circleAngularForm) =
+      integralTopForm o (mpullback I (𝓡 1) f circleAngularForm) +
+        integralTopForm o (mpullback I (𝓡 1) g circleAngularForm) := by
     rw [mpullback_mul_circleAngularForm (hf.mdifferentiable (by simp))
       (hg.mdifferentiable (by simp))]
-    exact integralTopForm_add_of_compactSpace circleOrientation
+    exact integralTopForm_add_of_compactSpace o
       ((isSmoothForm_circleAngularForm.mpullback hf).of_le zero_le)
       ((isSmoothForm_circleAngularForm.mpullback hg).of_le zero_le)
   rw [hfg, hf_int, hg_int, ← add_mul, ← Int.cast_add] at hadd
   exact_mod_cast mul_right_cancel₀ Real.two_pi_pos.ne' hadd
 
+/-- Pointwise inversion of a smooth map `f : M → Circle` negates its degree. -/
+@[to_fun degree_fun_inv_circle]
+theorem degree_inv_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f : M → Circle}
+    (hf : ContMDiff I (𝓡 1) ∞ f) :
+    degree o o' f⁻¹ = -degree o o' f := by
+  have hinv : ContMDiff I (𝓡 1) ∞ f⁻¹ := hf.inv
+  have h := degree_mul_circle o o' hf hinv
+  rw [mul_inv_cancel, degree_one_circle] at h
+  omega
+
+/-- Pointwise division of smooth maps `M → Circle` subtracts their degrees. -/
+@[to_fun degree_fun_div_circle]
+theorem degree_div_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f g : M → Circle}
+    (hf : ContMDiff I (𝓡 1) ∞ f) (hg : ContMDiff I (𝓡 1) ∞ g) :
+    degree o o' (f / g) = degree o o' f - degree o o' g := by
+  have hinv : ContMDiff I (𝓡 1) ∞ g⁻¹ := hg.inv
+  rw [div_eq_mul_inv, degree_mul_circle o o' hf hinv, degree_inv_circle o o' hg, sub_eq_add_neg]
+
+/-- Pointwise negation of a smooth map `f : M → Circle` preserves its degree. -/
+@[to_fun degree_fun_neg_circle]
+theorem degree_neg_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f : M → Circle}
+    (hf : ContMDiff I (𝓡 1) ∞ f) :
+    degree o o' (-f) = degree o o' f := by
+  have hneg : -f = (fun _ : M ↦ (-1 : Circle)) * f := funext fun y ↦ (neg_one_mul (f y)).symm
+  rw [hneg, degree_mul_circle o o' contMDiff_const hf,
+    degree_const (by simp : 0 < Module.finrank ℝ (EuclideanSpace ℝ (Fin 1))), zero_add]
+
+/-- Raising a smooth map `f : M → Circle` pointwise to the `n`-th natural power multiplies its
+degree by `n`. -/
+@[to_fun degree_fun_pow_circle]
+theorem degree_pow_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f : M → Circle}
+    (hf : ContMDiff I (𝓡 1) ∞ f) (n : ℕ) :
+    degree o o' (f ^ n) = n * degree o o' f := by
+  induction n with
+  | zero =>
+    simp [pow_zero]
+  | succ n ih =>
+    have hpow : ContMDiff I (𝓡 1) ∞ (f ^ n) := hf.pow n
+    rw [pow_succ, degree_mul_circle o o' hpow hf, ih, Nat.cast_add, Nat.cast_one, add_mul, one_mul]
+
+/-- Raising a smooth map `f : M → Circle` pointwise to the `k`-th integer power multiplies its
+degree by `k`. -/
+@[to_fun degree_fun_zpow_circle]
+theorem degree_zpow_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {f : M → Circle}
+    (hf : ContMDiff I (𝓡 1) ∞ f) (k : ℤ) :
+    degree o o' (f ^ k) = k * degree o o' f := by
+  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg k
+  · simpa only [zpow_natCast] using degree_pow_circle o o' hf n
+  · have hpow : ContMDiff I (𝓡 1) ∞ (f ^ n) := hf.pow n
+    rw [zpow_neg, zpow_natCast, degree_inv_circle o o' hpow, degree_pow_circle o o' hf n, neg_mul]
+
+end CircleValuedSmooth
+
+/-! ### Standard self-maps of `Circle`: smooth degrees and local orientation signs -/
+
 /-- **Degree of integer power maps on `S¹`.** For every orientation `o` of `Circle` and every
 `k : ℤ`, the map `z ↦ z ^ k` has smooth mapping degree `k`. -/
 @[simp]
-theorem degree_zpow_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (k : ℤ) :
+theorem degree_zpow_id_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (k : ℤ) :
     degree o o (fun z : Circle ↦ z ^ k) = k := by
-  have h := integralTopForm_circleOrientation_mpullback_circleAngularForm o (contMDiff_zpow k)
-  simp only [mpullback_zpow_id_circleAngularForm, integralTopForm_smul,
-    integralTopForm_circleOrientation_circleAngularForm] at h
-  exact_mod_cast mul_right_cancel₀ Real.two_pi_pos.ne' h.symm
+  simpa only [id_eq, degree_id, mul_one] using degree_fun_zpow_circle o o contMDiff_id k
 
 /-- **Degree of natural power maps on `S¹`.** For every orientation `o` of `Circle` and every
 `n : ℕ`, the map `z ↦ z ^ n` has smooth mapping degree `n`. -/
 @[simp]
-theorem degree_pow_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (n : ℕ) :
+theorem degree_pow_id_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (n : ℕ) :
     degree o o (fun z : Circle ↦ z ^ n) = n := by
-  simpa only [zpow_natCast] using degree_zpow_circle o (n : ℤ)
+  simpa only [zpow_natCast] using degree_zpow_id_circle o (n : ℤ)
 
 /-- **Degree of inversion on `S¹`.** Inversion `z ↦ z⁻¹` (which equals complex conjugation
 `z ↦ conj z` on `Circle`) has smooth mapping degree `-1`. -/
 @[simp]
-theorem degree_inv_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) :
+theorem degree_inv_id_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) :
     degree o o (·⁻¹ : Circle → Circle) = -1 := by
-  simpa only [zpow_neg, zpow_one] using degree_zpow_circle o (-1)
+  simpa only [zpow_neg, zpow_one] using degree_zpow_id_circle o (-1)
 
-/-- Raising a smooth map `f : Circle → Circle` pointwise to the `k`-th integer power multiplies its
-degree by `k`. -/
-theorem degree_fun_zpow_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    {f : Circle → Circle} (hf : ContMDiff (𝓡 1) (𝓡 1) ∞ f) (k : ℤ) :
-    degree o o (fun z ↦ f z ^ k) = k * degree o o f := by
-  simpa only [Function.comp_def, degree_zpow_circle] using
-    degree_comp o o o hf (contMDiff_zpow k)
-
-/-- Raising a smooth map `f : Circle → Circle` pointwise to the `n`-th natural power multiplies its
-degree by `n`. -/
-theorem degree_fun_pow_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    {f : Circle → Circle} (hf : ContMDiff (𝓡 1) (𝓡 1) ∞ f) (n : ℕ) :
-    degree o o (fun z ↦ f z ^ n) = n * degree o o f := by
-  simpa only [zpow_natCast] using degree_fun_zpow_circle o hf (n : ℤ)
-
-/-- Pointwise inversion of a smooth map `f : Circle → Circle` negates its degree. -/
-theorem degree_fun_inv_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    {f : Circle → Circle} (hf : ContMDiff (𝓡 1) (𝓡 1) ∞ f) :
-    degree o o (fun z ↦ (f z)⁻¹) = -degree o o f := by
-  simpa only [zpow_neg, zpow_one, neg_one_mul] using degree_fun_zpow_circle o hf (-1)
+/-- **Degree of negation on `S¹`.** Negation `z ↦ -z` on `Circle` (rotation by `π`) has smooth
+mapping degree `1`. -/
+@[simp]
+theorem degree_neg_id_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) :
+    degree o o (fun z : Circle ↦ -z) = 1 := by
+  simpa only [id_eq, degree_id] using degree_fun_neg_circle o o contMDiff_id
 
 /-- Left rotation `z ↦ z₀ * z` on `Circle` has smooth mapping degree `1`. -/
 @[simp]
 theorem degree_mul_left_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (z₀ : Circle) :
     degree o o (z₀ * ·) = 1 := by
-  have h := degree_mul_circle o (contMDiff_const (c := z₀)) contMDiff_id
+  have h := degree_fun_mul_circle o o (contMDiff_const (c := z₀)) contMDiff_id
   simpa [degree_const (by simp : 0 < Module.finrank ℝ (EuclideanSpace ℝ (Fin 1)))] using h
 
 /-- Right rotation `z ↦ z * z₀` on `Circle` has smooth mapping degree `1`. -/
 @[simp]
 theorem degree_mul_right_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (z₀ : Circle) :
     degree o o (· * z₀) = 1 := by
-  have h := degree_mul_circle o contMDiff_id (contMDiff_const (c := z₀))
+  have h := degree_fun_mul_circle o o contMDiff_id (contMDiff_const (c := z₀))
   simpa [degree_const (by simp : 0 < Module.finrank ℝ (EuclideanSpace ℝ (Fin 1)))] using h
-
-/-- `circleOrientation` equals the `ofTopForm` orientation attached to `circleAngularForm`. -/
-private theorem circleOrientation_eq_ofTopForm :
-    circleOrientation =
-      Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin circleAngularForm
-        (isSmoothForm_circleAngularForm.of_le zero_le) circleAngularForm_ne_zero := by
-  ext z
-  let b : Basis (Fin 1) ℝ (TangentSpace (𝓡 1) z) := circleTangentBasis z
-  have hb : b.orientation = circleOrientation.orientationAt z := by
-    rw [circleOrientation_eq_sphereOrientation]
-    exact orientation_circleTangentBasis z
-  have hpos : 0 < circleAngularForm z b :=
-    (orientation_eq_orientationAt_circleOrientation_iff b).1 hb
-  exact hb.symm.trans
-    ((Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff _ _ _ b).2 hpos)
 
 /-- For `0 < k`, the integer power map `z ↦ z ^ k` preserves every orientation `o` of `Circle` at
 every point `z`. -/
@@ -436,7 +308,7 @@ theorem isOrientationPreservingAt_zpow_circle (o : Manifold.Orientation (𝓡 1)
     Manifold.Orientation.IsOrientationPreservingAt o o (fun w : Circle ↦ w ^ k) z := by
   have hcir : Manifold.Orientation.IsOrientationPreservingAt circleOrientation circleOrientation
       (fun w : Circle ↦ w ^ k) z := by
-    rw [circleOrientation_eq_ofTopForm]
+    rw [circleOrientation_def]
     exact Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
       (Int.cast_pos.2 hk) (congrFun (mpullback_zpow_id_circleAngularForm k) z)
   rcases o.eq_or_eq_neg circleOrientation with rfl | rfl
@@ -451,7 +323,7 @@ theorem isOrientationReversingAt_zpow_circle (o : Manifold.Orientation (𝓡 1) 
     Manifold.Orientation.IsOrientationReversingAt o o (fun w : Circle ↦ w ^ k) z := by
   have hcir : Manifold.Orientation.IsOrientationReversingAt circleOrientation circleOrientation
       (fun w : Circle ↦ w ^ k) z := by
-    rw [circleOrientation_eq_ofTopForm]
+    rw [circleOrientation_def]
     exact Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
       (Int.cast_lt_zero.2 hk) (congrFun (mpullback_zpow_id_circleAngularForm k) z)
   rcases o.eq_or_eq_neg circleOrientation with rfl | rfl
@@ -491,7 +363,7 @@ theorem degreeAtRegularValue_zpow_circle (o : Manifold.Orientation (𝓡 1) Circ
     {k : ℤ} (hk : k ≠ 0) (y : Circle) :
     degreeAtRegularValue o o (fun z : Circle ↦ z ^ k) y = k := by
   rw [← degree_eq_degreeAtRegularValue o o (contMDiff_zpow k) (isRegularValue_zpow_circle hk y),
-    degree_zpow_circle]
+    degree_zpow_id_circle]
 
 /-- Inversion `z ↦ z⁻¹` on `Circle` has signed fibre count `-1` at every point. -/
 @[simp]
@@ -501,45 +373,92 @@ theorem degreeAtRegularValue_inv_circle (o : Manifold.Orientation (𝓡 1) Circl
   simpa only [zpow_neg, zpow_one] using
     degreeAtRegularValue_zpow_circle o (by decide : (-1 : ℤ) ≠ 0) y
 
-/-- Complex conjugation `conjSphere` on `sphere (0 : ℂ) 1` has orientation sign `-1` at every
-point, for either orientation `o` of the circle. -/
-@[simp]
-theorem orientationSign_conjSphere
-    (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) (z : sphere (0 : ℂ) 1) :
-    Manifold.Orientation.orientationSign o o conjSphere z = -1 := by
-  have := connectedSpace_sphere (E := ℂ) 1
-  have hstd : Manifold.Orientation.orientationSign Complex.orientation.sphereOrientation
-      Complex.orientation.sphereOrientation conjSphere z = -1 :=
-    Manifold.Orientation.orientationSign_of_isOrientationReversingAt
-      (isOrientationReversingAt_conjSphere z)
-  rcases o.eq_or_eq_neg Complex.orientation.sphereOrientation with rfl | rfl
-  · exact hstd
-  · rw [Manifold.Orientation.orientationSign_neg_left,
-      Manifold.Orientation.orientationSign_neg_right, neg_neg, hstd]
+/-! ### Continuous degree calculus for maps into `Circle` -/
 
-/-- Complex conjugation `conjSphere` on `sphere (0 : ℂ) 1` has degree `-1` at every value. -/
-@[simp]
-theorem degreeAtRegularValue_conjSphere
-    (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) (y : sphere (0 : ℂ) 1) :
-    degreeAtRegularValue o o conjSphere y = -1 := by
-  rw [degreeAtRegularValue_eq_sum (s := {conjSphere y}) fun x ↦ by
-    rw [Finset.mem_singleton]
-    exact ⟨fun h ↦ by rw [h, conjSphere_conjSphere],
-      fun h ↦ by rw [← h, conjSphere_conjSphere]⟩,
-    Finset.sum_singleton, orientationSign_conjSphere]
+section CircleValuedContinuous
 
-/-- **Degree of complex conjugation on `S¹`.** On `sphere (0 : ℂ) 1`, complex conjugation
-`z ↦ conj z` has smooth mapping degree `-1` for every orientation `o`. -/
-@[simp]
-theorem degree_conjSphere (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) :
-    degree o o conjSphere = -1 := by
-  have hreg (y : sphere (0 : ℂ) 1) : IsRegularValue (𝓡 1) (𝓡 1) conjSphere y :=
-    isRegularValue_iff.2 fun z _ ↦ (isRegularPoint_iff_isInvertible_mfderiv rfl).2 <|
-      not_not.1 <| Manifold.Orientation.orientationSign_eq_zero_iff (o := o) (o' := o).not.1 <|
-        (orientationSign_conjSphere o z).trans_ne (by decide)
-  rw [degree_eq_degreeAtRegularValue_choose ⟨⟨1, by simp⟩, hreg _⟩, degreeAtRegularValue_conjSphere]
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M] [CompactSpace M]
 
-/-! ### Continuous degree on `Circle` and reconciliation with `Circle.degree` -/
+/-- The constant map `1 : C(M, Circle)` has continuous degree `0`. -/
+@[simp]
+theorem continuousDegree_one_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) :
+    continuousDegree o o' (1 : C(M, Circle)) = 0 := by
+  rw [← ContinuousMap.const_one]
+  exact continuousDegree_const o o' 1
+
+/-- **Pointwise multiplication in `C(M, Circle)` adds continuous degrees.** -/
+@[simp]
+theorem continuousDegree_mul_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f g : C(M, Circle)) :
+    continuousDegree o o' (f * g) = continuousDegree o o' f + continuousDegree o o' g := by
+  obtain ⟨f₀, hf₀, hff₀, hdf⟩ :=
+    exists_contMDiff_homotopic_and_continuousDegree_eq_degree o o' f
+  obtain ⟨g₀, hg₀, hgg₀, hdg⟩ :=
+    exists_contMDiff_homotopic_and_continuousDegree_eq_degree o o' g
+  have hmul : (f * g).Homotopic (f₀ * g₀) := by
+    obtain ⟨Hf⟩ := hff₀
+    obtain ⟨Hg⟩ := hgg₀
+    exact ⟨{
+      toFun p := Hf p * Hg p
+      continuous_toFun := Hf.continuous.mul Hg.continuous
+      map_zero_left z := by simp
+      map_one_left z := by simp }⟩
+  rw [hdf, hdg, continuousDegree_eq_degree_of_homotopic o o' (hf₀.mul hg₀) hmul]
+  exact degree_mul_circle o o' hf₀ hg₀
+
+/-- **Pointwise inversion in `C(M, Circle)` negates the continuous degree.** -/
+@[simp]
+theorem continuousDegree_inv_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f : C(M, Circle)) :
+    continuousDegree o o' f⁻¹ = -continuousDegree o o' f := by
+  have h := continuousDegree_mul_circle o o' f f⁻¹
+  rw [mul_inv_cancel, continuousDegree_one_circle] at h
+  omega
+
+/-- Pointwise division in `C(M, Circle)` subtracts continuous degrees. -/
+@[simp]
+theorem continuousDegree_div_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f g : C(M, Circle)) :
+    continuousDegree o o' (f / g) = continuousDegree o o' f - continuousDegree o o' g := by
+  rw [div_eq_mul_inv, continuousDegree_mul_circle, continuousDegree_inv_circle, sub_eq_add_neg]
+
+/-- Pointwise negation in `C(M, Circle)` preserves the continuous degree. -/
+@[simp]
+theorem continuousDegree_neg_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f : C(M, Circle)) :
+    continuousDegree o o' (-f) = continuousDegree o o' f := by
+  have hneg : -f = ContinuousMap.const M (-1 : Circle) * f :=
+    ContinuousMap.ext fun y ↦ (neg_one_mul (f y)).symm
+  rw [hneg, continuousDegree_mul_circle, continuousDegree_const, zero_add]
+
+/-- Raising `f : C(M, Circle)` to the `n`-th natural power multiplies its continuous degree by `n`.
+-/
+@[simp]
+theorem continuousDegree_pow_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f : C(M, Circle)) (n : ℕ) :
+    continuousDegree o o' (f ^ n) = n * continuousDegree o o' f := by
+  induction n with
+  | zero =>
+    simp [pow_zero]
+  | succ n ih =>
+    rw [pow_succ, continuousDegree_mul_circle, ih, Nat.cast_add, Nat.cast_one, add_mul, one_mul]
+
+/-- Raising `f : C(M, Circle)` to the `k`-th integer power multiplies its continuous degree by `k`.
+-/
+@[simp]
+theorem continuousDegree_zpow_circle (o : Manifold.Orientation I M (Fin 1))
+    (o' : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f : C(M, Circle)) (k : ℤ) :
+    continuousDegree o o' (f ^ k) = k * continuousDegree o o' f := by
+  obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg k
+  · simpa only [zpow_natCast] using continuousDegree_pow_circle o o' f n
+  · rw [zpow_neg, zpow_natCast, continuousDegree_inv_circle, continuousDegree_pow_circle, neg_mul]
+
+end CircleValuedContinuous
+
+/-! ### Standard continuous self-maps of `Circle` and reconciliation with `Circle.degree` -/
 
 /-- **Continuous degree of integer power maps on `S¹`.** -/
 @[simp]
@@ -547,7 +466,7 @@ theorem continuousDegree_zpow_id_circle (o : Manifold.Orientation (𝓡 1) Circl
     {hc : Continuous fun z : Circle ↦ z ^ k} :
     continuousDegree o o ⟨(· ^ k), hc⟩ = k :=
   (continuousDegree_eq_degree o o (f := ⟨(· ^ k), hc⟩) (contMDiff_zpow k)).trans
-    (degree_zpow_circle o k)
+    (degree_zpow_id_circle o k)
 
 /-- **Continuous degree of natural power maps on `S¹`.** -/
 @[simp]
@@ -555,6 +474,22 @@ theorem continuousDegree_pow_id_circle (o : Manifold.Orientation (𝓡 1) Circle
     {hc : Continuous fun z : Circle ↦ z ^ n} :
     continuousDegree o o ⟨(· ^ n), hc⟩ = n := by
   simpa only [zpow_natCast] using continuousDegree_zpow_id_circle o (n : ℤ) (hc := hc)
+
+/-- **Continuous degree of inversion on `S¹`.** -/
+@[simp]
+theorem continuousDegree_inv_id_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
+    {hc : Continuous (·⁻¹ : Circle → Circle)} :
+    continuousDegree o o ⟨(·⁻¹), hc⟩ = -1 :=
+  (continuousDegree_eq_degree o o (f := ⟨(·⁻¹), hc⟩) (contMDiff_inv (𝓡 1) ∞)).trans
+    (degree_inv_id_circle o)
+
+/-- **Continuous degree of negation on `S¹`.** -/
+@[simp]
+theorem continuousDegree_neg_id_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
+    {hc : Continuous fun z : Circle ↦ -z} :
+    continuousDegree o o ⟨(-·), hc⟩ = 1 :=
+  (continuousDegree_eq_degree o o (f := ⟨(-·), hc⟩) contMDiff_neg_sphere).trans
+    (degree_neg_id_circle o)
 
 /-- **Continuous degree of complex conjugation on `S¹`.** -/
 @[simp]
@@ -565,117 +500,15 @@ theorem continuousDegree_conjSphere
   exact (continuousDegree_eq_degree o o (f := ⟨conjSphere, hc⟩) contMDiff_conjSphere).trans
     (degree_conjSphere o)
 
-/-- The constant map `1 : C(Circle, Circle)` has continuous degree `0`. -/
-@[simp]
-theorem continuousDegree_one_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) :
-    continuousDegree o o 1 = 0 := by
-  rw [← ContinuousMap.const_one]
-  exact continuousDegree_const (by simp : 0 < Module.finrank ℝ (EuclideanSpace ℝ (Fin 1))) o o 1
-
-/-- **Pointwise multiplication in `C(Circle, Circle)` adds continuous degrees.** -/
-@[simp]
-theorem continuousDegree_mul_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    (f g : C(Circle, Circle)) :
-    continuousDegree o o (f * g) = continuousDegree o o f + continuousDegree o o g := by
-  obtain ⟨f₀, hf₀, hff₀, hdf⟩ := exists_contMDiff_homotopic_and_continuousDegree_eq o o f
-  obtain ⟨g₀, hg₀, hgg₀, hdg⟩ := exists_contMDiff_homotopic_and_continuousDegree_eq o o g
-  have hmul : (f * g).Homotopic (f₀ * g₀) := by
-    obtain ⟨Hf⟩ := hff₀
-    obtain ⟨Hg⟩ := hgg₀
-    exact ⟨{
-      toFun p := Hf p * Hg p
-      continuous_toFun := Hf.continuous.mul Hg.continuous
-      map_zero_left z := by simp
-      map_one_left z := by simp }⟩
-  rw [hdf, hdg, continuousDegree_eq_of_homotopic_contMDiff o o (hf₀.mul hg₀) hmul]
-  exact degree_mul_circle o hf₀ hg₀
-
-/-- **Pointwise inversion in `C(Circle, Circle)` negates the continuous degree.** -/
-@[simp]
-theorem continuousDegree_inv_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    (f : C(Circle, Circle)) :
-    continuousDegree o o f⁻¹ = -continuousDegree o o f := by
-  have h := continuousDegree_mul_circle o f f⁻¹
-  rw [mul_inv_cancel, continuousDegree_one_circle] at h
-  omega
-
-/-- Pointwise division in `C(Circle, Circle)` subtracts continuous degrees. -/
-@[simp]
-theorem continuousDegree_div_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    (f g : C(Circle, Circle)) :
-    continuousDegree o o (f / g) = continuousDegree o o f - continuousDegree o o g := by
-  rw [div_eq_mul_inv, continuousDegree_mul_circle, continuousDegree_inv_circle, sub_eq_add_neg]
-
-/-- Raising `f : C(Circle, Circle)` to the `k`-th integer power multiplies its continuous degree by
-`k`. -/
-@[simp]
-theorem continuousDegree_zpow_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    (f : C(Circle, Circle)) (k : ℤ) :
-    continuousDegree o o (f ^ k) = k * continuousDegree o o f := by
-  have hcomp : (⟨(· ^ k), continuous_zpow k⟩ : C(Circle, Circle)).comp f = f ^ k :=
-    ContinuousMap.ext fun _ ↦ rfl
-  rw [← hcomp, continuousDegree_comp o o o, continuousDegree_zpow_id_circle]
-
-/-- Raising `f : C(Circle, Circle)` to the `n`-th natural power multiplies its continuous degree by
-`n`. -/
-@[simp]
-theorem continuousDegree_pow_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    (f : C(Circle, Circle)) (n : ℕ) :
-    continuousDegree o o (f ^ n) = n * continuousDegree o o f := by
-  simpa only [zpow_natCast] using continuousDegree_zpow_circle o f (n : ℤ)
-
-end TauCeti
-
-namespace ContinuousMap
-
-/-- **Logarithmic phase factorization on `S¹`.** Every continuous map `f : C(Circle, Circle)` can
-be written as `f z = Circle.exp (Ψ z) * z ^ (Circle.degree f.toBasedLoop)` for a continuous
-real-valued phase function `Ψ : C(Circle, ℝ)`. -/
-theorem exists_exp_mul_zpow_eq (f : C(Circle, Circle)) :
-    ∃ Ψ : C(Circle, ℝ),
-      ∀ z : Circle, f z = Circle.exp (Ψ z) * z ^ Circle.degree f.toBasedLoop := by
-  set k : ℤ := Circle.degree f.toBasedLoop
-  obtain ⟨θ, hθ⟩ := Circle.exists_lift f.toBasedLoop
-  have hsub : θ 1 - θ 0 = k * (2 * Real.pi) :=
-    Circle.sub_eq_degree_mul f.toBasedLoop θ.continuous hθ
-  -- Subtracting the linear winding `k * (2π t)` closes `θ` into a loop `ψ` in `ℝ` at `θ 0`,
-  -- which descends to `Ψ = ψ.toCircle : C(Circle, ℝ)`.
-  let ψ : Path (θ 0) (θ 0) :=
-    { toFun t := θ t - k * (2 * Real.pi * t)
-      continuous_toFun := by fun_prop
-      source' := by simp
-      target' := by simp; linarith }
-  refine ⟨ψ.toCircle, fun z ↦ ?_⟩
-  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective z
-  have hθt : θ t = ψ.toCircle (TauCeti.unitToCircle t) + k * (2 * Real.pi * t) := by
-    rw [ψ.toCircle_unitToCircle]
-    simp [ψ]
-  rw [← f.toBasedLoop_apply, ← hθ t, hθt, Circle.exp_add, Circle.exp_intCast_mul,
-    TauCeti.unitToCircle_apply]
-
-/-- **Every continuous map `f : C(Circle, Circle)` is homotopic to `z ↦ z ^ k`**, where
-`k = Circle.degree f.toBasedLoop` is the winding number of `f`. -/
-theorem homotopic_zpow (f : C(Circle, Circle)) :
-    f.Homotopic ⟨(· ^ Circle.degree f.toBasedLoop), continuous_zpow _⟩ := by
-  obtain ⟨Ψ, hΨ⟩ := f.exists_exp_mul_zpow_eq
-  exact ⟨{
-    toFun p := Circle.exp ((1 - (p.1 : ℝ)) * Ψ p.2) * p.2 ^ Circle.degree f.toBasedLoop
-    continuous_toFun := by fun_prop
-    map_zero_left z := by simp [← hΨ z]
-    map_one_left z := by simp }⟩
-
-end ContinuousMap
-
-namespace TauCeti
-
 /-- **Reconciliation of the continuous mapping degree on `S¹` with `Circle.degree`.** For every
 orientation `o` of `Circle` and every continuous map `f : C(Circle, Circle)`, the smooth-manifold
 continuous mapping degree `TauCeti.continuousDegree o o f` equals the covering-space winding number
 `Circle.degree f.toBasedLoop`. -/
-theorem continuousDegree_circle_eq_circleDegree (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
-    (f : C(Circle, Circle)) :
+theorem continuousDegree_eq_circleDegree_toBasedLoop
+    (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) (f : C(Circle, Circle)) :
     continuousDegree o o f = Circle.degree f.toBasedLoop :=
-  (continuousDegree_eq_of_homotopic o o f.homotopic_zpow).trans
+  (continuousDegree_eq_of_joined o o <|
+    Circle.joined_iff_degree_toBasedLoop_eq.2 (Circle.degree_toBasedLoop_zpow _).symm).trans
     (continuousDegree_zpow_id_circle o _)
 
 /-- **Reconciliation on based loops.** Reading a loop `γ : Path x x` in `Circle` as a map
@@ -684,38 +517,23 @@ theorem continuousDegree_circle_eq_circleDegree (o : Manifold.Orientation (𝓡 
 theorem continuousDegree_toCircle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1)) {x : Circle}
     (γ : Path x x) :
     continuousDegree o o γ.toCircle = Circle.degree γ := by
-  rw [continuousDegree_circle_eq_circleDegree]
-  exact Circle.degree_congr _ _ fun t ↦ by
-    rw [ContinuousMap.toBasedLoop_apply, γ.toCircle_unitToCircle]
+  rw [continuousDegree_eq_circleDegree_toBasedLoop, Circle.degree_toBasedLoop_toCircle]
 
 /-- **Reconciliation of the smooth mapping degree on `S¹` with `Circle.degree`.** For every smooth
 map `f : Circle → Circle` and every orientation `o` of `Circle`, `TauCeti.degree o o f` equals
 `Circle.degree` of its loop `t ↦ f(e^{2π i t})`. -/
-theorem degree_circle_eq_circleDegree (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
+theorem degree_eq_circleDegree_toBasedLoop (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
     {f : Circle → Circle} (hf : ContMDiff (𝓡 1) (𝓡 1) ∞ f) :
     degree o o f = Circle.degree (⟨f, hf.continuous⟩ : C(Circle, Circle)).toBasedLoop :=
   (continuousDegree_eq_degree o o (f := ⟨f, hf.continuous⟩) hf).symm.trans
-    (continuousDegree_circle_eq_circleDegree o _)
+    (continuousDegree_eq_circleDegree_toBasedLoop o _)
 
 /-- **Hopf's degree theorem in dimension `1`.** Two continuous maps `f, g : C(Circle, Circle)` are
 homotopic if and only if they have the same mapping degree. -/
 theorem homotopic_circle_iff_continuousDegree_eq (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
     {f g : C(Circle, Circle)} :
     f.Homotopic g ↔ continuousDegree o o f = continuousDegree o o g := by
-  refine ⟨continuousDegree_eq_of_homotopic o o, fun h ↦ ?_⟩
-  rw [continuousDegree_circle_eq_circleDegree, continuousDegree_circle_eq_circleDegree] at h
-  exact f.homotopic_zpow.trans (h ▸ g.homotopic_zpow.symm)
+  rw [ContinuousMap.homotopic_iff_joined, Circle.joined_iff_degree_toBasedLoop_eq,
+    continuousDegree_eq_circleDegree_toBasedLoop, continuousDegree_eq_circleDegree_toBasedLoop]
 
 end TauCeti
-
-namespace ContinuousMap
-
-/-- Two continuous maps `f, g : C(Circle, Circle)` are homotopic if and only if their loops
-`f.toBasedLoop` and `g.toBasedLoop` have the same `Circle.degree`. -/
-theorem homotopic_iff_degree_toBasedLoop_eq {f g : C(Circle, Circle)} :
-    f.Homotopic g ↔ Circle.degree f.toBasedLoop = Circle.degree g.toBasedLoop := by
-  rw [TauCeti.homotopic_circle_iff_continuousDegree_eq TauCeti.circleOrientation,
-    TauCeti.continuousDegree_circle_eq_circleDegree,
-    TauCeti.continuousDegree_circle_eq_circleDegree]
-
-end ContinuousMap

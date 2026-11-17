@@ -42,8 +42,6 @@ maps induce the same map on top compactly supported cohomology of the compact ma
 multiplicative, `deg (g ∘ f) = deg g · deg f`, for maps between compact connected manifolds
 (`TauCeti.degree_comp`).
 
-As in the local computation, `M` and `N` are modelled on the same vector space `E`.
-
 The proof is Lee's. Near `y` the formula holds by the stack-of-records computation
 `TauCeti.exists_mem_nhds_integralTopForm_mpullback_eq_degreeAtRegularValue_mul`; choose a closed
 top form `θ` of integral one supported there. On the connected manifold `N` integration is an
@@ -84,10 +82,12 @@ open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' H H' M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M] [CompactSpace M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J ∞ N] [BoundarylessManifold J N] [T2Space N] [SigmaCompactSpace N]
   [ConnectedSpace N] {k : ℕ}
 
@@ -108,8 +108,8 @@ theorem integral_map_eq_degreeAtRegularValue_mul (o : Manifold.Orientation I M (
   -- On the connected manifold `N`, the class of `θ` spans `H^k_c(N)`.
   have hc : c = integral o' c • mk J k θ :=
     injective_integral o' (by simp [hθ])
-  have hb : Module.Basis (Fin k) ℝ E :=
-    Module.finBasisOfFinrankEq ℝ E (by simpa using o'.card_eq.symm)
+  have hb : Module.Basis (Fin k) ℝ E' :=
+    Module.finBasisOfFinrankEq ℝ E' (by simpa using o'.card_eq.symm)
   have hθi : IntegrableTopForm θ.1.1 :=
     θ.1.isSmoothForm.integrableTopForm
       ((mem_compactlySupportedForms J).mp ((mem_compactlySupportedClosedForms J).mp θ.2).1) hb
@@ -125,7 +125,7 @@ end compactlySupportedDeRhamCohomology
 theorem integralTopForm_mpullback_eq_degreeAtRegularValue_mul
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) {f : M → N}
     (hf : ContMDiff I J ∞ f) {y : N} (hy : IsRegularValue I J f y) {φ : RoughForm J N ℝ k}
-    (hφ : IsSmoothForm J ∞ φ) (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ)) :
+    (hφ : IsSmoothForm J ∞ φ) (hc : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ)) :
     integralTopForm o (mpullback I J f φ) =
       degreeAtRegularValue o o' f y * integralTopForm o' φ := by
   let ψ := compactlySupportedForms.toClosedOfFinrankLe J (by simpa using o'.card_eq.ge)
@@ -168,7 +168,8 @@ theorem compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul
     (hf : ContMDiff I J ∞ f) (c : compactlySupportedDeRhamCohomology J N k) :
     integral o (map f hf hf.continuous.isProperMap k c) = degree o o' f * integral o' c := by
   -- Sard's theorem provides a regular value.
-  obtain ⟨y, hy⟩ := (dense_isRegularValue rfl (hf.mdifferentiable (by simp))).nonempty
+  obtain ⟨y, hy⟩ := (dense_isRegularValue (o.card_eq.symm.trans o'.card_eq)
+    (hf.mdifferentiable (by simp))).nonempty
   rw [degree_eq_degreeAtRegularValue o o' hf hy]
   exact integral_map_eq_degreeAtRegularValue_mul o o' hf hy c
 
@@ -177,10 +178,11 @@ theorem compactlySupportedDeRhamCohomology.integral_map_eq_degree_mul
 theorem integralTopForm_mpullback_eq_degree_mul (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f : M → N} (hf : ContMDiff I J ∞ f)
     {φ : RoughForm J N ℝ k} (hφ : IsSmoothForm J ∞ φ)
-    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ)) :
+    (hc : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] ℝ) φ)) :
     integralTopForm o (mpullback I J f φ) = degree o o' f * integralTopForm o' φ := by
   -- Sard's theorem provides a regular value.
-  obtain ⟨y, hy⟩ := (dense_isRegularValue rfl (hf.mdifferentiable (by simp))).nonempty
+  obtain ⟨y, hy⟩ := (dense_isRegularValue (o.card_eq.symm.trans o'.card_eq)
+    (hf.mdifferentiable (by simp))).nonempty
   rw [degree_eq_degreeAtRegularValue o o' hf hy]
   exact integralTopForm_mpullback_eq_degreeAtRegularValue_mul o o' hf hy hφ hc
 
@@ -215,7 +217,8 @@ omit [SigmaCompactSpace N] in
 /-- **Multiplicativity of the degree.** For smooth maps `f : M → N` and `g : N → P` between
 compact connected oriented boundaryless manifolds of the same dimension,
 `deg (g ∘ f) = deg g · deg f`. -/
-theorem degree_comp {H'' P : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ E H''}
+theorem degree_comp {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [FiniteDimensional ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''}
     [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P] [BoundarylessManifold K P]
     [T2Space P] [SigmaCompactSpace P] [ConnectedSpace P] [CompactSpace N]
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k))

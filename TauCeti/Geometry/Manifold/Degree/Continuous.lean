@@ -8,11 +8,13 @@ module
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Manifold.Degree.Basic
--- Private: global degree invariance, Whitney smooth approximation, and `[0, 1]` manifold charts
--- are used only inside definitions and proofs.
+-- Private: global degree invariance, Whitney smooth approximation, `[0, 1]` manifold charts,
+-- and homotopy/path-connectedness bridges are used only inside definitions and proofs.
 import TauCeti.Geometry.Manifold.Degree.Global
 import TauCeti.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.SmoothApprox
+import TauCeti.Topology.Homotopy.Homotopic.With
+import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # The mapping degree of a continuous map
@@ -32,7 +34,7 @@ continuous homotopy between smooth maps `M → N` can be smoothed to a smooth ho
 * two continuously homotopic smooth maps `M → N` have the same `TauCeti.degree`
   (`TauCeti.degree_eq_of_homotopic`);
 * `TauCeti.continuousDegree o o' f` equals `TauCeti.degree o o' g` for *every* smooth map `g`
-  homotopic to `f` (`TauCeti.continuousDegree_eq_of_homotopic_contMDiff`), so it agrees with
+  homotopic to `f` (`TauCeti.continuousDegree_eq_degree_of_homotopic`), so it agrees with
   `TauCeti.degree` on smooth maps (`TauCeti.continuousDegree_eq_degree`) and is invariant under
   continuous homotopies (`TauCeti.continuousDegree_eq_of_homotopic`);
 * the continuous degree is `1` on the identity (`TauCeti.continuousDegree_id`), `0` on constant
@@ -53,7 +55,7 @@ continuous homotopy between smooth maps `M → N` can be smoothed to a smooth ho
 ## Main results
 
 * `TauCeti.degree_eq_of_homotopic`: continuously homotopic smooth maps have the same smooth degree.
-* `TauCeti.continuousDegree_eq_of_homotopic_contMDiff`: `continuousDegree o o' f = degree o o' g`
+* `TauCeti.continuousDegree_eq_degree_of_homotopic`: `continuousDegree o o' f = degree o o' g`
   for every smooth map `g` homotopic to `f`.
 * `TauCeti.continuousDegree_eq_degree`, `TauCeti.continuousDegree_eq_degreeAtRegularValue`:
   compatibility with `TauCeti.degree` and `TauCeti.degreeAtRegularValue` on smooth maps.
@@ -102,7 +104,7 @@ to a Hausdorff boundaryless manifold `N`, with respect to orientations `o` of `M
 the smooth mapping degree `TauCeti.degree o o' g` of a smooth map `g` homotopic to `f`, chosen by
 Whitney approximation. When `M` is boundaryless and `N` is σ-compact and connected of the same
 dimension `Fin k`, this does not depend on the smooth representative
-(`TauCeti.continuousDegree_eq_of_homotopic_contMDiff`). -/
+(`TauCeti.continuousDegree_eq_degree_of_homotopic`). -/
 def continuousDegree (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
     (f : C(M, N)) : ℤ :=
   degree o o'
@@ -111,8 +113,8 @@ def continuousDegree (o : Manifold.Orientation I M ι) (o' : Manifold.Orientatio
 
 /-- Every continuous map `f : C(M, N)` is homotopic to a smooth map whose smooth degree equals
 `continuousDegree o o' f`. -/
-theorem exists_contMDiff_homotopic_and_continuousDegree_eq (o : Manifold.Orientation I M ι)
-    (o' : Manifold.Orientation J N ι) (f : C(M, N)) :
+theorem exists_contMDiff_homotopic_and_continuousDegree_eq_degree
+    (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι) (f : C(M, N)) :
     ∃ g : C(M, N), ContMDiff I J ∞ g ∧ f.Homotopic g ∧
       continuousDegree o o' f = degree o o' g := by
   let h := f.exists_contMDiff_homotopic_of_isCompact_closure_range (I := I) (J := J) ⊤
@@ -137,10 +139,12 @@ end Definition
 
 section Global
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' H H' M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M] [CompactSpace M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [J.Boundaryless]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
   [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N] [T2Space N] [SigmaCompactSpace N]
   [ConnectedSpace N] {k : ℕ}
 
@@ -161,18 +165,19 @@ theorem degree_eq_of_homotopic (o : Manifold.Orientation I M (Fin k))
 
 /-- **Characterization by smooth approximations.** For every smooth map `g : M → N` continuously
 homotopic to `f`, `continuousDegree o o' f` equals `degree o o' g`. -/
-theorem continuousDegree_eq_of_homotopic_contMDiff (o : Manifold.Orientation I M (Fin k))
+theorem continuousDegree_eq_degree_of_homotopic (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f : C(M, N)} {g : M → N} (hg : ContMDiff I J ∞ g)
     (h : f.Homotopic ⟨g, hg.continuous⟩) :
     continuousDegree o o' f = degree o o' g := by
-  obtain ⟨f₀, hf₀, hff₀, hdeg⟩ := exists_contMDiff_homotopic_and_continuousDegree_eq o o' f
+  obtain ⟨f₀, hf₀, hff₀, hdeg⟩ :=
+    exists_contMDiff_homotopic_and_continuousDegree_eq_degree o o' f
   exact hdeg.trans (degree_eq_of_homotopic o o' hf₀ hg (hff₀.symm.trans h))
 
 /-- On a smooth bundled map `f : C(M, N)`, `continuousDegree` agrees with `degree`. -/
 theorem continuousDegree_eq_degree (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f : C(M, N)} (hf : ContMDiff I J ∞ f) :
     continuousDegree o o' f = degree o o' f :=
-  continuousDegree_eq_of_homotopic_contMDiff o o' hf (.refl f)
+  continuousDegree_eq_degree_of_homotopic o o' hf (.refl f)
 
 /-- For a smooth map `f : C(M, N)` and any regular value `y` of `f`, `continuousDegree o o' f` is
 the signed count of the fibre over `y`. -/
@@ -187,8 +192,9 @@ have the same mapping degree. -/
 theorem continuousDegree_eq_of_homotopic (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f g : C(M, N)} (h : f.Homotopic g) :
     continuousDegree o o' f = continuousDegree o o' g := by
-  obtain ⟨g₀, hg₀, hgg₀, hdeg⟩ := exists_contMDiff_homotopic_and_continuousDegree_eq o o' g
-  exact (continuousDegree_eq_of_homotopic_contMDiff o o' hg₀ (h.trans hgg₀)).trans hdeg.symm
+  obtain ⟨g₀, hg₀, hgg₀, hdeg⟩ :=
+    exists_contMDiff_homotopic_and_continuousDegree_eq_degree o o' g
+  exact (continuousDegree_eq_degree_of_homotopic o o' hg₀ (h.trans hgg₀)).trans hdeg.symm
 
 /-- A homotopy `H : f.Homotopy g` witnesses that `f` and `g` have the same continuous degree. -/
 theorem continuousDegree_eq_of_homotopy (o : Manifold.Orientation I M (Fin k))
@@ -199,29 +205,30 @@ theorem continuousDegree_eq_of_homotopy (o : Manifold.Orientation I M (Fin k))
 /-- Maps in the same path component of `C(M, N)` have the same continuous degree. -/
 theorem continuousDegree_eq_of_joined (o : Manifold.Orientation I M (Fin k))
     (o' : Manifold.Orientation J N (Fin k)) {f g : C(M, N)} (h : Joined f g) :
-    continuousDegree o o' f = continuousDegree o o' g := by
-  obtain ⟨γ⟩ := h
-  refine continuousDegree_eq_of_homotopic o o' ⟨{
-    toFun p := γ p.1 p.2
-    continuous_toFun := continuous_eval.comp (γ.continuous.prodMap continuous_id)
-    map_zero_left x := by simp
-    map_one_left x := by simp }⟩
+    continuousDegree o o' f = continuousDegree o o' g :=
+  continuousDegree_eq_of_homotopic o o' (ContinuousMap.homotopic_iff_joined.2 h)
 
+omit [BoundarylessManifold I M]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] [J.Boundaryless] [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J ∞ N] [T2Space N] [SigmaCompactSpace N] [ConnectedSpace N] in
 /-- The identity map of a compact connected oriented boundaryless manifold has continuous degree
 `1`. -/
 @[simp]
-theorem continuousDegree_id {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    [IsManifold I ∞ M] [I.Boundaryless] [T2Space M] [CompactSpace M] [ConnectedSpace M]
+theorem continuousDegree_id [I.Boundaryless] [ConnectedSpace M]
     (o : Manifold.Orientation I M (Fin k)) :
     continuousDegree o o (ContinuousMap.id M) = 1 :=
   (continuousDegree_eq_degree o o contMDiff_id).trans (degree_id o)
 
 /-- A constant map into a connected manifold of positive dimension has continuous degree `0`. -/
 @[simp]
-theorem continuousDegree_const (hpos : 0 < Module.finrank ℝ E)
+theorem continuousDegree_const [NeZero k]
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) (y₀ : N) :
-    continuousDegree o o' (ContinuousMap.const M y₀) = 0 :=
-  (continuousDegree_eq_degree o o' contMDiff_const).trans (degree_const hpos y₀)
+    continuousDegree o o' (ContinuousMap.const M y₀) = 0 := by
+  have hpos : 0 < Module.finrank ℝ E' := by
+    rw [← o'.card_eq, Fintype.card_fin]
+    exact NeZero.pos k
+  exact (continuousDegree_eq_degree o o' contMDiff_const).trans (degree_const hpos y₀)
 
 /-- A continuous map `f : C(M, N)` missing a point `y ∈ N` has continuous degree `0`. -/
 theorem continuousDegree_eq_zero_of_notMem_range (o : Manifold.Orientation I M (Fin k))
@@ -237,7 +244,7 @@ theorem continuousDegree_eq_zero_of_notMem_range (o : Manifold.Orientation I M (
   have hhom : f.Homotopic (ι.comp g') := by
     have hfι : ι.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
     exact hfι ▸ ContinuousMap.Homotopic.comp (.refl ι) hfg'
-  rw [continuousDegree_eq_of_homotopic_contMDiff o o' hιg' hhom]
+  rw [continuousDegree_eq_degree_of_homotopic o o' hιg' hhom]
   by_contra hne
   obtain ⟨x, hx⟩ := surjective_of_degree_ne_zero o o' hιg' hne y
   exact (g' x).2 hx
@@ -263,43 +270,45 @@ omit [SigmaCompactSpace N] in
 /-- **Multiplicativity of the continuous degree.** For continuous maps `f : C(M, N)` and
 `g : C(N, P)` between compact connected oriented boundaryless manifolds of the same dimension,
 `deg(g ∘ f) = deg g · deg f`. -/
-theorem continuousDegree_comp {H'' P : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ E H''}
+theorem continuousDegree_comp {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [FiniteDimensional ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''}
     [K.Boundaryless] [TopologicalSpace P] [ChartedSpace H'' P] [IsManifold K ∞ P]
     [T2Space P] [SigmaCompactSpace P] [ConnectedSpace P] [CompactSpace N]
     (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k))
     (o'' : Manifold.Orientation K P (Fin k)) (f : C(M, N)) (g : C(N, P)) :
     continuousDegree o o'' (g.comp f) = continuousDegree o' o'' g * continuousDegree o o' f := by
-  obtain ⟨f₀, hf₀, hff₀, hdf⟩ := exists_contMDiff_homotopic_and_continuousDegree_eq o o' f
-  obtain ⟨g₀, hg₀, hgg₀, hdg⟩ := exists_contMDiff_homotopic_and_continuousDegree_eq o' o'' g
-  rw [hdf, hdg, continuousDegree_eq_of_homotopic_contMDiff o o'' (hg₀.comp hf₀) (hgg₀.comp hff₀)]
+  obtain ⟨f₀, hf₀, hff₀, hdf⟩ :=
+    exists_contMDiff_homotopic_and_continuousDegree_eq_degree o o' f
+  obtain ⟨g₀, hg₀, hgg₀, hdg⟩ :=
+    exists_contMDiff_homotopic_and_continuousDegree_eq_degree o' o'' g
+  rw [hdf, hdg, continuousDegree_eq_degree_of_homotopic o o'' (hg₀.comp hf₀) (hgg₀.comp hff₀)]
   exact degree_comp o o' o'' hf₀ hg₀
 
 omit [BoundarylessManifold I M] [SigmaCompactSpace N] in
 /-- If `g.comp f` is homotopic to the identity of `M`, then the product of the continuous degrees
 of `g` and `f` is `1`. -/
-theorem continuousDegree_mul_eq_one_of_homotopic_id [I.Boundaryless] [ConnectedSpace M]
-    [CompactSpace N] (o : Manifold.Orientation I M (Fin k))
-    (o' : Manifold.Orientation J N (Fin k)) {f : C(M, N)} {g : C(N, M)}
-    (h : (g.comp f).Homotopic (ContinuousMap.id M)) :
+theorem continuousDegree_mul_eq_one_of_homotopic_id [I.Boundaryless] [CompactSpace N]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k))
+    {f : C(M, N)} {g : C(N, M)} (h : (g.comp f).Homotopic (ContinuousMap.id M)) :
     continuousDegree o' o g * continuousDegree o o' f = 1 := by
+  have := h.connectedSpace_of_comp_homotopic_id
   rw [← continuousDegree_comp o o' o f g, continuousDegree_eq_of_homotopic o o h,
     continuousDegree_id]
 
 omit [BoundarylessManifold I M] [SigmaCompactSpace N] in
 /-- A homotopy equivalence between compact connected oriented boundaryless manifolds of the same
 dimension has invertible continuous degree (`±1`). -/
-theorem isUnit_continuousDegree_of_homotopyEquiv [I.Boundaryless] [ConnectedSpace M]
-    [CompactSpace N] (o : Manifold.Orientation I M (Fin k))
-    (o' : Manifold.Orientation J N (Fin k)) (e : M ≃ₕ N) :
+theorem isUnit_continuousDegree_of_homotopyEquiv [I.Boundaryless] [CompactSpace N]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) (e : M ≃ₕ N) :
     IsUnit (continuousDegree o o' e.toFun) :=
   IsUnit.of_mul_eq_one_right _ (continuousDegree_mul_eq_one_of_homotopic_id o o' e.left_inv)
 
 omit [BoundarylessManifold I M] [SigmaCompactSpace N] in
 /-- A homotopy equivalence between compact connected oriented boundaryless manifolds of the same
 dimension has continuous degree of absolute value `1`. -/
-theorem natAbs_continuousDegree_of_homotopyEquiv [I.Boundaryless] [ConnectedSpace M]
-    [CompactSpace N] (o : Manifold.Orientation I M (Fin k))
-    (o' : Manifold.Orientation J N (Fin k)) (e : M ≃ₕ N) :
+@[simp]
+theorem natAbs_continuousDegree_of_homotopyEquiv [I.Boundaryless] [CompactSpace N]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) (e : M ≃ₕ N) :
     (continuousDegree o o' e.toFun).natAbs = 1 :=
   Int.isUnit_iff_natAbs_eq.1 (isUnit_continuousDegree_of_homotopyEquiv o o' e)
 
@@ -307,11 +316,11 @@ omit [BoundarylessManifold I M] [SigmaCompactSpace N] in
 /-- A homeomorphism between compact connected oriented boundaryless manifolds of the same dimension
 has continuous degree of absolute value `1`. -/
 @[simp]
-theorem natAbs_continuousDegree_of_homeomorph [I.Boundaryless] [ConnectedSpace M]
-    [CompactSpace N] (o : Manifold.Orientation I M (Fin k))
-    (o' : Manifold.Orientation J N (Fin k)) (e : M ≃ₜ N) :
-    (continuousDegree o o' (e : C(M, N))).natAbs = 1 :=
-  natAbs_continuousDegree_of_homotopyEquiv o o' e.toHomotopyEquiv
+theorem natAbs_continuousDegree_of_homeomorph [I.Boundaryless]
+    (o : Manifold.Orientation I M (Fin k)) (o' : Manifold.Orientation J N (Fin k)) (e : M ≃ₜ N) :
+    (continuousDegree o o' (e : C(M, N))).natAbs = 1 := by
+  have := e.compactSpace
+  exact natAbs_continuousDegree_of_homotopyEquiv o o' e.toHomotopyEquiv
 
 end Global
 
