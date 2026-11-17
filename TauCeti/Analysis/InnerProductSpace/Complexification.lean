@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Gap
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Module.Complexification
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The Hilbert-space complexification of a real inner product space
@@ -45,6 +46,8 @@ self-adjoint operator, to operators on real Hilbert spaces.
   `WithLp.complexificationOfRealₗᵢ`: the real-linear isometric inclusion
   `X →ₗᵢ[ℝ] WithLp 2 (Complexification X)`, and
   `WithLp.instComplexificationCompleteSpace` as a consequence.
+* `WithLp.finrank_complexification`: the complexification of a finite-dimensional space has
+  complex dimension the real dimension of `X`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
@@ -165,6 +168,16 @@ def complexificationOfRealₗᵢ : X →ₗᵢ[ℝ] WithLp 2 (Complexification X
 @[simp]
 theorem complexificationOfRealₗᵢ_apply (x : X) :
     complexificationOfRealₗᵢ X x = toLp 2 (Complexification.ofReal x) := (rfl)
+
+/-- The complex dimension of the complexification of `X` is the real dimension of `X`. -/
+@[simp]
+theorem finrank_complexification [FiniteDimensional ℝ X] :
+    Module.finrank ℂ (WithLp 2 (Complexification X)) = Module.finrank ℝ X := by
+  have h := Module.finrank_mul_finrank ℝ ℂ (WithLp 2 (Complexification X))
+  rw [(complexificationEquivProd X).toLinearEquiv.finrank_eq,
+    (WithLp.linearEquiv 2 ℝ (X × X)).finrank_eq, Module.finrank_prod,
+    Complex.finrank_real_complex] at h
+  omega
 
 end Norm
 
