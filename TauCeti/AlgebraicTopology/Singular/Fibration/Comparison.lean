@@ -133,7 +133,7 @@ consecutive stages of the skeletal filtration.** Let `p` and `p'` be Serre fibra
 `C ⊆ B` a relative CW complex with skeleta `Xⁿ`, and `f` a map over `B` inducing isomorphisms on
 `Hq(-; R)` of the fibres over the centres of the `n`-cells, for `q + n = m`. Then `f` induces an
 isomorphism `Hₘ(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ≅ Hₘ(p'⁻¹(Xⁿ), p'⁻¹(Xⁿ⁻¹); R)`. -/
-private lemma isIso_singularHomologyMap_preimagePairMap (sq : CommSq f p p' (𝟙 B)) (n m : ℕ)
+lemma isIso_singularHomologyMap_preimagePairMap (sq : CommSq f p p' (𝟙 B)) (n m : ℕ)
     (hfib : ∀ j : cell C n, ∀ q, q + n = m → IsIso (((AlgebraicTopology.singularHomologyFunctor
       (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (sq.fiberMap (map n j 0)))) :
     IsIso (TopPair.singularHomologyMap (TopCat.Hom.preimagePairMap f (sq.w.trans
@@ -369,20 +369,14 @@ theorem isIso_singularHomologyMap_of_commSq {B' : _root_.TopCat.{u}} {p' : E' �
       (H.mapIso (Iso.refl _)) (H.mapIso (p'.fiberPullbackFstIso g b)) hc.w.symm)).2
       (hfib b q hq)
 
-/-- **A Serre fibration whose fibres have the homology of a point is a homology isomorphism.** Let
-`p : E ⟶ B` be a Serre fibration such that, for every `b : B`, the map from the fibre `p⁻¹(b)` to a
-point induces isomorphisms on `Hq(-; R)` for `q ≤ k`. Then `p` induces an isomorphism
-`Hₖ(E; R) ≅ Hₖ(B; R)`. -/
-theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations p) (R : Type u)
-    [Ring R] (k : ℕ)
-    (hfib : ∀ b, ∀ q ≤ k, IsIso (((AlgebraicTopology.singularHomologyFunctor
-      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
-        (_root_.TopCat.isTerminalPUnit.from (p.fiber b)))) :
-    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
-      (ModuleCat.of R R)).map p) := by
-  let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
-  refine isIso_singularHomologyMap_of_commSq hp (MorphismProperty.id_mem _ B) R sq
-    ContinuousMap.IsWeakHomotopyEquivalence.id k (fun b q hq ↦ ?_)
+/-- The map from a fibre of `p` to the fibre of the identity of `B`, which is a point, is an
+isomorphism on `Hq(-; R)` exactly when the map from the fibre to a point is. -/
+theorem isIso_singularHomologyMap_fiberMap_id_iff (sq : CommSq p p (𝟙 B) (𝟙 B)) (R : Type u)
+    [Ring R] (q : ℕ) (b : B) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (sq.fiberMap b)) ↔
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b))) := by
   let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
   -- The fibre of the identity over `b` is a point.
   let F := TopCat.Hom.fiber (𝟙 B) ((𝟙 B) b)
@@ -396,7 +390,22 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations 
   have hfac : sq.fiberMap b ≫ t = _root_.TopCat.isTerminalPUnit.from (p.fiber b) :=
     _root_.TopCat.isTerminalPUnit.hom_ext _ _
   rw [← isIso_comp_right_iff _ (H.map t), ← H.map_comp, hfac]
-  exact hfib b q hq
+
+/-- **A Serre fibration whose fibres have the homology of a point is a homology isomorphism.** Let
+`p : E ⟶ B` be a Serre fibration such that, for every `b : B`, the map from the fibre `p⁻¹(b)` to a
+point induces isomorphisms on `Hq(-; R)` for `q ≤ k`. Then `p` induces an isomorphism
+`Hₖ(E; R) ≅ Hₖ(B; R)`. -/
+theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations p) (R : Type u)
+    [Ring R] (k : ℕ)
+    (hfib : ∀ b, ∀ q ≤ k, IsIso (((AlgebraicTopology.singularHomologyFunctor
+      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
+        (_root_.TopCat.isTerminalPUnit.from (p.fiber b)))) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
+      (ModuleCat.of R R)).map p) := by
+  let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
+  exact isIso_singularHomologyMap_of_commSq hp (MorphismProperty.id_mem _ B) R sq
+    ContinuousMap.IsWeakHomotopyEquivalence.id k fun b q hq ↦
+      (isIso_singularHomologyMap_fiberMap_id_iff sq R q b).2 (hfib b q hq)
 
 /-- **A Serre fibration with acyclic fibres is a homology isomorphism.** Let `p : E ⟶ B` be a Serre
 fibration whose fibres are path-connected and have no `R`-homology in the positive degrees
