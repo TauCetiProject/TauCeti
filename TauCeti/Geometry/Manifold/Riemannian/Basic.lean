@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
+public import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -294,6 +295,15 @@ are the model space, so the vectors are compared there. -/
 theorem norm_tangentSpace_congr {q p : M} (h : q = p) {w : TangentSpace I q}
     {v : TangentSpace I p} (hw : (w : E) = v) : ‖w‖ = ‖v‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, inner_tangentSpace_congr h hw hw]
+
+/-- Normalization of equal model vectors at equal base points gives equal model vectors.
+The metric used to normalize each vector is the metric at its base point. -/
+theorem normalize_tangentSpace_congr {p q : M} (hp : p = q)
+    {v : TangentSpace I p} {w : TangentSpace I q} (hv : (v : E) = w) :
+    (NormedSpace.normalize (V := TangentSpace I p) v : E) =
+      NormedSpace.normalize (V := TangentSpace I q) w := by
+  subst hp hv
+  rfl
 
 /-- **Ball stability at a fixed point.** If `f` fixes `p` and its differential at `p` preserves
 the metric there, that differential maps every ball around the origin of `T_p M` into itself. -/
