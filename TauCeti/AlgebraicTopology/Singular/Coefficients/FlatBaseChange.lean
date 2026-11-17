@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Descent
+public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
 public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Module.Torsion.Localization
@@ -57,12 +58,6 @@ namespace TauCeti
 
 variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
 
-/-- Extension of scalars along `algebraMap R S` carries the ring `R` to the ring `S`. -/
-private def extendScalarsObjSelfIso :
-    (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)).obj (ModuleCat.of R R) ≅
-      ModuleCat.of S S :=
-  ModuleCat.extendScalarsAlgebraMapIso _ ≪≫ (AlgebraTensorModule.rid R S S).toModuleIso
-
 /-- **Flat base change in singular homology.** For a flat `R`-algebra `S`, singular homology with
 coefficients in `S` is the extension of scalars of singular homology with coefficients in `R`:
 `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)`, as `S`-modules. -/
@@ -77,7 +72,9 @@ def singularHomologyTensorIso [Module.Flat R S] (X : TopCat.{u}) (n : ℕ) :
   (ModuleCat.extendScalarsAlgebraMapIso _).symm ≪≫
     (Functor.singularHomologyFunctorObjCompIso
       (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) (ModuleCat.of R R) n).app X ≪≫
-    ((singularHomologyFunctor (ModuleCat.{u} S) n).mapIso (extendScalarsObjSelfIso R S)).app X
+    -- Extension of scalars, a monoidal functor, carries the unit `R` to the unit `S`.
+    ((singularHomologyFunctor (ModuleCat.{u} S) n).mapIso
+      (Functor.Monoidal.εIso (ModuleCat.extendScalars.{u, u, u} (algebraMap R S))).symm).app X
 
 /-- For a flat `R`-algebra `S`, the homology with coefficients in `S` vanishes exactly when the
 extension of scalars of the homology with coefficients in `R` does. -/
@@ -106,22 +103,21 @@ theorem isTorsion'_singularChains_int_homology_iff (S : Submonoid ℤ) (k : Type
     Module.IsTorsion' (((singularChains ℤ).obj X).homology n) S ↔
       Subsingleton (((singularChains k).obj X).homology n) := by
   rw [← isTorsion'_singularChains_homology_iff ℤ k S X n]
-  -- The scalar action of `ℤ` from `ModuleCat ℤ` is the canonical action of the abelian group.
-  exact ⟨fun h x ↦ (@h x).imp fun _ ha ↦ (int_smul_eq_zsmul _ _ _).trans ha,
-    fun h x ↦ (@h x).imp fun _ ha ↦ (int_smul_eq_zsmul _ _ _).symm.trans ha⟩
+  -- An element of `S` acts through its value in `ℤ`, and the scalar action of `ℤ` from
+  -- `ModuleCat ℤ` is the canonical action of the abelian group.
+  refine ⟨fun h x ↦ (@h x).imp fun _ ha ↦ ?_, fun h x ↦ (@h x).imp fun _ ha ↦ ?_⟩
+  · simp only [Submonoid.smul_def] at ha ⊢
+    exact (int_smul_eq_zsmul _ _ _).trans ha
+  · simp only [Submonoid.smul_def] at ha ⊢
+    exact (int_smul_eq_zsmul _ _ _).symm.trans ha
 
 /-- **Rational homology detects torsion in integral homology.** The integral singular homology
 `Hₙ(X; ℤ)` of a space in the lowest universe is a torsion group exactly when its rational homology
 `Hₙ(X; ℚ)` vanishes. -/
 theorem isAddTorsion_singularChains_homology_iff (X : TopCat.{0}) (n : ℕ) :
     IsAddTorsion (((singularChains ℤ).obj X).homology n) ↔
-      Subsingleton (((singularChains ℚ).obj X).homology n) := by
-  have := IsLocalization.flat ℚ (nonZeroDivisors ℤ)
-  rw [isAddTorsion_iff_subsingleton_rat_tensorProduct,
-    subsingleton_singularChains_homology_iff_tensorProduct ℤ ℚ]
-  -- The two sides use the canonical `ℤ`-module structure of an abelian group and the one of
-  -- `ModuleCat ℤ`, which agree since `ℤ`-module structures are unique.
-  convert Iff.rfl
-  exact Subsingleton.elim _ _
+      Subsingleton (((singularChains ℚ).obj X).homology n) :=
+  isAddTorsion_iff_isTorsion_int.trans
+    (isTorsion'_singularChains_int_homology_iff (nonZeroDivisors ℤ) ℚ X n)
 
 end TauCeti

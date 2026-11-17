@@ -28,10 +28,12 @@ homotopy group at a time, along the Whitehead tower.
   (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two`).
 * **One step up the tower.** If moreover `Z` is Hausdorff and has the mod-two homology of a point,
   then so does its `n`-connected cover `Z⟨n⟩`
-  (`TauCeti.subsingleton_singularHomology_nConnectedCover`).
+  (`TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`).
   The projection `Z⟨n⟩ → Z` is a fibration whose fibres are `K(πₙ(Z), n - 1)` spaces
   (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). Since `πₙ(Z)` is uniquely
-  two-divisible, such a fibration is a mod-two homology isomorphism
+  two-divisible, these have the mod-two homology of a point
+  (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`), so
+  such a fibration is a mod-two homology isomorphism
   (`TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`).
 * **The induction.** The cover `Z⟨n⟩` is `n`-connected and has the homotopy groups of `Z` above
   `n`, so the first step applies to it in degree `n + 1`. Each stage is replaced by its CW
@@ -44,9 +46,6 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
 
 ## Main results
 
-* `TauCeti.subsingleton_singularHomology_nConnectedCover`: the `n`-connected cover of an
-  `(n - 1)`-connected Hausdorff space with the mod-two homology of a point has the mod-two
-  homology of a point.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology`: the homotopy
   groups of a simply connected space with the mod-two homology of a point are uniquely
   two-divisible.
@@ -81,23 +80,6 @@ private theorem isUniquelyTwoDivisible_homotopyGroup_of_connected
   rcases eq_or_ne k 0 with rfl | hk0
   · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
   · exact hZ k hk0 hk
-
-/-- **The `n`-connected cover of a mod-two acyclic space is mod-two acyclic.** Let `X` be a
-Hausdorff, path-connected space whose homotopy groups `πₖ` vanish for `1 ≤ k < n`, `n ≥ 2`, and
-which has the mod-two homology of a point. Then its `n`-connected cover `X⟨n⟩` has the mod-two
-homology of a point. -/
-theorem subsingleton_singularHomology_nConnectedCover (X : TopCat.{0}) [T2Space X]
-    [PathConnectedSpace X] (x : X) (m : ℕ)
-    (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x))
-    (hX₂ : ∀ i, Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1))) (i : ℕ) :
-    Subsingleton (((singularChains (ZMod 2)).obj (nConnectedCover (m + 2) X x)).homology
-      (i + 1)) :=
-  -- `πₘ₊₂(X)` is uniquely two-divisible, by the Hurewicz theorem, so the fibres of the
-  -- projection, which are `K(πₘ₊₂(X), m + 1)` spaces, have the mod-two homology of a point.
-  subsingleton_singularHomology_nConnectedCover_of_fiber (ZMod 2) X x m hX hX₂
-    (fun hY ↦ IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible
-      (isUniquelyTwoDivisible_homotopyGroup_of_connected x m hX hX₂)
-      (hY.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm)) i
 
 /-- **Mod-two vanishing** (Serre). The homotopy groups `πᵢ(Y)`, `i ≥ 2`, of a simply connected
 space `Y` with the mod-two homology of a point are uniquely two-divisible: multiplication by two

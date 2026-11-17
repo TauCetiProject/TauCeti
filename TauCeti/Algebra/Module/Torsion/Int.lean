@@ -115,12 +115,18 @@ theorem span_range_mk_ofMul_eq_top_iff {G ι : Type*} [CommGroup G] (ε : ι →
     map_sup, map_top, hclosure, htors, ← Submodule.toAddSubgroup_inj, Submodule.sup_toAddSubgroup,
     Submodule.top_toAddSubgroup]
 
+/-- One implication of `AddEquiv.isTorsion'_iff`. An element of `S` acts through its value in
+`ℤ`, and additive maps commute with the action of `ℤ`. -/
+private theorem isTorsion'_of_addEquiv {G H : Type*} [AddCommGroup G] [AddCommGroup H]
+    (e : G ≃+ H) {S : Submonoid ℤ} (h : Module.IsTorsion' G S) : Module.IsTorsion' H S :=
+  fun x ↦ (@h (e.symm x)).imp fun a ha ↦ by
+    rw [Submonoid.smul_def] at ha ⊢
+    simpa using congrArg e ha
+
 /-- For a submonoid `S` of `ℤ`, being `S`-torsion, every element killed by an element of `S`, is
 invariant under additive equivalences of abelian groups. -/
 theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGroup H]
     (e : G ≃+ H) {S : Submonoid ℤ} : Module.IsTorsion' G S ↔ Module.IsTorsion' H S :=
-  ⟨fun h x ↦ (@h (e.symm x)).imp fun _ ha ↦
-      e.symm.injective (by rw [map_zero, ← ha]; exact map_zsmul _ _ _),
-    fun h x ↦ (@h (e x)).imp fun _ ha ↦ e.injective (by rw [map_zero, ← ha]; exact map_zsmul _ _ _)⟩
+  ⟨isTorsion'_of_addEquiv e, isTorsion'_of_addEquiv e.symm⟩
 
 end TauCeti

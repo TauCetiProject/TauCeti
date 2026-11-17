@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Torsion
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.PathFibration
+import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
 
 /-!
 # Eilenberg--Mac Lane spaces of torsion groups

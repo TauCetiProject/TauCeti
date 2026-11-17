@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
-import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
+import TauCeti.AlgebraicTopology.EilenbergMacLane.PathFibration
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
@@ -80,7 +80,7 @@ theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{0}) 
     Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology (i + 1)) := by
   -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it is `k`-acyclic and the
   -- projection is a `k`-homology isomorphism.
-  have := IsEilenbergMacLaneSpace.isIso_singularHomologyMap_of_fiber k
+  have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
     (serreFibrations_nConnectedCoverProj (m + 2) X x)
     (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK (i + 1)
   exact (subsingleton_singularChains_homology_iff_of_isIso _
