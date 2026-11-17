@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.GroupTheory.Amenable.Basic
+public import TauCeti.Topology.Algebra.Group.UCB.WeakDual
+
+import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # The weak-* compact space of means
@@ -14,9 +17,14 @@ public import TauCeti.GroupTheory.Amenable.Basic
 Every mean `m` on `TauCeti.UCB G` is a continuous linear functional of norm one, so the means sit
 inside the closed unit ball of the dual of `UCB G`. Positivity and normalization are conditions on
 finitely many values at a time, hence closed for the weak-* topology, and by the Banach–Alaoglu
-theorem the means form a weak-* compact set. We give `TauCeti.Mean G` the weak-* topology, induced
-from `WeakDual ℝ (UCB G)`, so that it becomes a compact Hausdorff space in which a net of means
-converges exactly when it converges at every function.
+theorem the means form a weak-* compact convex set. We give `TauCeti.Mean G` the weak-* topology,
+induced from `WeakDual ℝ (UCB G)`, so that it becomes a compact Hausdorff space in which a net of
+means converges exactly when it converges at every function.
+
+`Mean.toWeakDual` intertwines the contragredient left action of `G` on `Mean G` with the weak-*
+continuous linear action `TauCeti.UCB.leftTranslationWeakDual` on `WeakDual ℝ (UCB G)`. Because
+every mean is `1`-Lipschitz and each orbit `g ↦ L_{g⁻¹} f` is norm-continuous, `(g, m) ↦ g • m` is
+jointly continuous on `G × Mean G`.
 
 Each invariance equation `m (L_g f) = m f` also defines a closed set of means, so the left-invariant
 means form a compact set. Compactness yields the two standard criteria for amenability:
@@ -34,15 +42,20 @@ Følner sets.
 
 * `TauCeti.Mean.toWeakDual`: a mean as an element of the weak-* dual of `UCB G`.
 * `TauCeti.Mean.instTopologicalSpace`: the weak-* topology on means.
+* `TauCeti.Mean.instContinuousSMul`: joint continuity of the contragredient `G`-action on `Mean G`.
 
 ## Main results
 
 * `TauCeti.Mean.mem_range_toWeakDual_iff`: the weak-* functionals coming from means are the positive
   ones taking the value `1` at `1`.
-* `TauCeti.Mean.isCompact_range_toWeakDual`: the means form a weak-* compact subset of the dual
-  unit ball; hence `Mean G` is a compact Hausdorff space.
+* `TauCeti.Mean.isCompact_range_toWeakDual`, `TauCeti.Mean.convex_range_toWeakDual`: the means form
+  a weak-* compact convex subset of the dual unit ball; hence `Mean G` is a compact Hausdorff space.
 * `TauCeti.Mean.tendsto_iff_forall_apply_tendsto`: weak-* convergence of means is convergence at
   every function.
+* `TauCeti.Mean.toWeakDual_smul`,
+  `TauCeti.Mean.continuous_leftTranslationWeakDual_range_toWeakDual`: `Mean.toWeakDual` intertwines
+  the `G`-action on `Mean G` with `UCB.leftTranslationWeakDual`, which restricts to a jointly
+  continuous action on `Set.range Mean.toWeakDual`.
 * `TauCeti.Mean.isCompact_setOf_isLeftInvariant`: the left-invariant means form a compact set.
 * `TauCeti.amenable_iff_forall_finset_exists`: the finite-intersection criterion for amenability.
 * `TauCeti.Mean.IsLeftInvariant.of_mapClusterPt`, `TauCeti.Amenable.of_tendsto`: the cluster-point
@@ -122,6 +135,19 @@ theorem isCompact_range_toWeakDual :
   (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset isClosed_range_toWeakDual
     range_toWeakDual_subset_closedBall
 
+/-- The means on `UCB G` form a convex subset of `WeakDual ℝ (UCB G)`. -/
+theorem convex_range_toWeakDual :
+    Convex ℝ (Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G))) := by
+  have h : Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) =
+      StrongDual.toWeakDual '' Set.range (toContinuousLinearMap : Mean G → UCB G →L[ℝ] ℝ) := by
+    ext φ
+    simp only [Set.mem_range, Set.mem_image, exists_exists_eq_and]
+    refine exists_congr fun m => ⟨fun hm => WeakDual.toStrongDual.injective ?_,
+      fun hm => WeakDual.toStrongDual.injective ?_⟩ <;>
+      rw [← hm, toStrongDual_toWeakDual, StrongDual.toStrongDual_toWeakDual]
+  rw [h]
+  exact convex_range_toContinuousLinearMap.linear_image StrongDual.toWeakDual.toLinearMap
+
 /-! ### The weak-* topology on means -/
 
 /-- The weak-* topology on means, induced from the weak-* dual of `UCB G`. A net of means
@@ -157,6 +183,79 @@ theorem tendsto_iff_forall_apply_tendsto {ι : Type*} {l : Filter ι} {ms : ι �
     tendsto_iff_forall_eval_tendsto_topDualPairing]
   -- `topDualPairing ℝ (UCB G) φ f` is `φ f` by definition of the canonical pairing.
   exact forall_congr' fun f => by simp only [← toWeakDual_apply]; rfl
+
+/-! ### The weak-* continuous group action on means -/
+
+/-- The left action of `G` on `Mean G` is jointly continuous for the weak-* topology on `Mean G`. -/
+instance instContinuousSMul : ContinuousSMul G (Mean G) where
+  continuous_smul := by
+    -- Every mean is `1`-Lipschitz and `g ↦ L_{g⁻¹} f` is norm-continuous for each `f : UCB G`.
+    refine continuous_iff_continuousAt.2 fun ⟨g₀, m₀⟩ => ?_
+    rw [ContinuousAt, tendsto_iff_forall_apply_tendsto]
+    intro f
+    rw [tendsto_iff_norm_sub_tendsto_zero]
+    have hbound (p : G × Mean G) :
+        ‖(p.1 • p.2) f - (g₀ • m₀) f‖ ≤
+          ‖UCB.leftTranslation p.1⁻¹ f - UCB.leftTranslation g₀⁻¹ f‖ +
+            ‖p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)‖ := by
+      simp only [Real.norm_eq_abs, smul_apply]
+      calc |p.2 (UCB.leftTranslation p.1⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)|
+          = |(p.2 (UCB.leftTranslation p.1⁻¹ f) - p.2 (UCB.leftTranslation g₀⁻¹ f)) +
+              (p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f))| := by ring_nf
+        _ ≤ |p.2 (UCB.leftTranslation p.1⁻¹ f) - p.2 (UCB.leftTranslation g₀⁻¹ f)| +
+              |p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)| :=
+            abs_add_le _ _
+        _ ≤ ‖UCB.leftTranslation p.1⁻¹ f - UCB.leftTranslation g₀⁻¹ f‖ +
+              |p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)| := by
+            gcongr
+            exact p.2.abs_apply_sub_apply_le _ _
+    have h₁ : Tendsto
+        (fun p : G × Mean G => ‖UCB.leftTranslation p.1⁻¹ f - UCB.leftTranslation g₀⁻¹ f‖)
+        (𝓝 (g₀, m₀)) (𝓝 0) := by
+      have hc : Continuous fun p : G × Mean G => UCB.leftTranslation p.1⁻¹ f :=
+        (UCB.continuous_leftTranslation_apply f).comp (continuous_inv.comp continuous_fst)
+      exact tendsto_iff_norm_sub_tendsto_zero.1 hc.continuousAt
+    have h₂ : Tendsto
+        (fun p : G × Mean G => ‖p.2 (UCB.leftTranslation g₀⁻¹ f) - m₀ (UCB.leftTranslation g₀⁻¹ f)‖)
+        (𝓝 (g₀, m₀)) (𝓝 0) := by
+      have hc : Continuous fun p : G × Mean G => p.2 (UCB.leftTranslation g₀⁻¹ f) :=
+        (continuous_eval_const _).comp continuous_snd
+      exact tendsto_iff_norm_sub_tendsto_zero.1 hc.continuousAt
+    exact squeeze_zero (fun _ => norm_nonneg _) hbound (by simpa using h₁.add h₂)
+
+/-- `Mean.toWeakDual` intertwines the left `G`-action on `Mean G` with
+`UCB.leftTranslationWeakDual`. -/
+@[simp]
+theorem toWeakDual_smul (g : G) (m : Mean G) :
+    (g • m).toWeakDual = UCB.leftTranslationWeakDual g m.toWeakDual :=
+  DFunLike.ext _ _ fun f => by rw [toWeakDual_apply, smul_apply,
+    UCB.leftTranslationWeakDual_apply, toWeakDual_apply]
+
+/-- The range of `Mean.toWeakDual` in `WeakDual ℝ (UCB G)` is invariant under
+`UCB.leftTranslationWeakDual`. -/
+theorem mapsTo_leftTranslationWeakDual_range_toWeakDual (g : G) :
+    Set.MapsTo (UCB.leftTranslationWeakDual g)
+      (Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)))
+      (Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G))) := by
+  rintro _ ⟨m, rfl⟩
+  exact ⟨g • m, toWeakDual_smul g m⟩
+
+/-- `UCB.leftTranslationWeakDual` restricts to a jointly continuous map on
+`G × Set.range Mean.toWeakDual`. -/
+theorem continuous_leftTranslationWeakDual_range_toWeakDual :
+    Continuous fun p : G × Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) =>
+      UCB.leftTranslationWeakDual p.1 (p.2 : WeakDual ℝ (UCB G)) := by
+  let e : Mean G ≃ₜ Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) :=
+    isEmbedding_toWeakDual.toHomeomorph
+  have heq : (fun p : G × Set.range (toWeakDual : Mean G → WeakDual ℝ (UCB G)) =>
+      UCB.leftTranslationWeakDual p.1 (p.2 : WeakDual ℝ (UCB G))) =
+      fun p => (p.1 • e.symm p.2).toWeakDual := by
+    ext p
+    have hp : (e.symm p.2).toWeakDual = (p.2 : WeakDual ℝ (UCB G)) :=
+      congrArg Subtype.val (e.apply_symm_apply p.2)
+    rw [toWeakDual_smul, hp]
+  rw [heq]
+  exact continuous_toWeakDual.comp (continuous_fst.smul (e.symm.continuous.comp continuous_snd))
 
 /-! ### Invariant means -/
 
