@@ -85,6 +85,14 @@ def unitPeriodMatrixSubgroup (a b : ℤ) (N : ℕ) :
 theorem unitPeriodMatrixSubgroup_def (a b : ℤ) (N : ℕ) :
     unitPeriodMatrixSubgroup a b N = (unitPeriodMatrixHom a b N).range := (rfl)
 
+/-- A period matrix lies in `unitPeriodMatrixSubgroup a b N` if and only if it is the reduction
+of an integral unit of `QuadraticAlgebra ℤ a b`. -/
+@[simp]
+theorem mem_unitPeriodMatrixSubgroup_iff {a b : ℤ} {N : ℕ}
+    {M : periodMatrixGroup (a : ZMod N) (b : ZMod N)} :
+    M ∈ unitPeriodMatrixSubgroup a b N ↔ ∃ u, unitPeriodMatrixHom a b N u = M :=
+  Iff.rfl
+
 /-- The units of `ℤ[ω]/(N)` are canonically isomorphic to the level-`N` multiplication-matrix
 group `periodMatrixGroup (a : ZMod N) (b : ZMod N)`. -/
 def unitsQuotientSpanNatCastPeriodEquiv (a b : ℤ) (N : ℕ) :
@@ -135,7 +143,7 @@ theorem map_range_units_eq_unitPeriodMatrixSubgroup {R : Type*} [CommRing R] {a 
   ext M
   simp only [Subgroup.mem_map, MonoidHom.mem_range, exists_exists_eq_and,
     MulEquiv.coe_toMonoidHom, unitsQuotientSpanNatCastPeriodEquivOfRingEquiv_map_mk,
-    unitPeriodMatrixSubgroup_def]
+    mem_unitPeriodMatrixSubgroup_iff]
   exact ⟨fun ⟨u, hu⟩ ↦ ⟨Units.map e.toRingHom.toMonoidHom u, hu⟩,
     fun ⟨v, hv⟩ ↦ ⟨Units.map e.symm.toRingHom.toMonoidHom v,
       hv ▸ congrArg (unitPeriodMatrixHom a b N) (Units.ext (by simp))⟩⟩

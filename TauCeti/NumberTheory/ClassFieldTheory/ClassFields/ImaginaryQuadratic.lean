@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.Tower
-public import TauCeti.NumberTheory.NumberField.Quadratic.CongruenceUnits
+public import TauCeti.NumberTheory.NumberField.Quadratic.ResidueUnits
 public import TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient
 import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
+import TauCeti.NumberTheory.NumberField.Quadratic.CongruenceUnits
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
 
 /-!
@@ -19,8 +20,9 @@ Let `K` be an imaginary quadratic field (`[IsTotallyComplex K]`, `finrank ℚ K 
 `D = NumberField.discr K`, and let `Modulus.spanNat K N` denote the purely finite modulus `(N)` for
 `N ≠ 0`. Combining the relative ray-class reciprocity of
 `TauCeti.NumberTheory.ClassFieldTheory.ClassFields.Tower`, the matrix-quotient presentation of
-`TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient`, and the unit-congruence and residue-unit
-formulas of `TauCeti.NumberTheory.NumberField.Quadratic.CongruenceUnits` yields the full
+`TauCeti.NumberTheory.QuadraticOrder.MatrixQuotient`, the unit-congruence kernel of
+`TauCeti.NumberTheory.NumberField.Quadratic.CongruenceUnits`, and the residue-unit counts of
+`TauCeti.NumberTheory.NumberField.Quadratic.ResidueUnits` yields the full
 multiplication-matrix and degree dictionary over `hilbertClassField K`:
 
 1. **Multiplication-matrix presentation of `Gal(K_(N) / H_K)` and norm products.** Any ring
