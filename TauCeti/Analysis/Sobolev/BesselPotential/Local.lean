@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -24,6 +26,12 @@ cut-off distribution `φ T` with `φ` a test function supported in `U` lies in `
 
 For `p = 2` the notion agrees with the Fourier description `Distribution.IsLocallySobolevAt` used
 for the `H^s` wave front set (`Distribution.isLocallyMemSobolevAt_two_iff`).
+
+Smooth multiples preserve the notion (`Distribution.IsLocallyMemSobolevAt.smulLeftCLM`), and for
+`1 < p < ∞` each derivative costs one order (`Distribution.IsLocallyMemSobolevAt.lineDerivOp`,
+`Distribution.IsLocallyMemSobolevAt.iteratedLineDerivOp`). Hence a differential operator of order
+at most `k` maps `H^{s,p}_loc` to `H^{s - k,p}_loc`
+(`Distribution.IsLocallyMemSobolevAt.sum_smul_smulLeftCLM_iteratedLineDerivOp`).
 
 The main result is that every distribution has finite order on this scale: for `1 < p < ∞`, every
 cut-off distribution `φ T` lies in some `H^{s,p}`
@@ -189,6 +197,57 @@ theorem IsLocallyMemSobolevAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemSobol
     (hT : T.IsLocallyMemSobolevAt s p x) : (S - T).IsLocallyMemSobolevAt s p x := by
   rw [sub_eq_add_neg]
   exact hS.add (isLocallyMemSobolevAt_neg_iff.2 hT)
+
+section Operations
+
+open scoped ContDiff
+
+/-- A smooth multiple `g T` of a distribution `H^{s,p}` near `x` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.smulLeftCLM (h : T.IsLocallyMemSobolevAt s p x) {g : E → ℝ}
+    (hg : ContDiff ℝ ∞ g) : (Distribution.smulLeftCLM hg T).IsLocallyMemSobolevAt s p x :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun φ hφ ↦ by
+    rw [cutoffTempered_smulLeftCLM]
+    exact hT _ ((TestFunction.tsupport_smulLeftCLM_subset hg φ).trans
+      (inter_subset_right.trans hφ))⟩
+
+/-- For `1 < p < ∞`, a derivative `∂_v T` of a distribution `H^{s,p}` near `x` is `H^{s - 1,p}`
+near `x`, by the Leibniz rule `φ ∂_v T = ∂_v (φ T) - (∂_v φ) T`. -/
+theorem IsLocallyMemSobolevAt.lineDerivOp (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (h : T.IsLocallyMemSobolevAt s p x) (v : E) : (∂_{v} T).IsLocallyMemSobolevAt (s - 1) p x :=
+  let ⟨U, hU, hUΩ, hT⟩ := h
+  ⟨U, hU, hUΩ, fun φ hφ ↦ by
+    rw [eq_sub_of_add_eq' (lineDerivOp_cutoffTempered T φ v).symm]
+    exact ((hT φ hφ).lineDerivOp_of_one_lt hp hp_top).sub
+      ((hT _ ((TestFunction.tsupport_lineDerivOp_subset φ v).trans hφ)).mono_of_one_lt hp
+        hp_top (by linarith))⟩
+
+/-- For `1 < p < ∞`, an iterated derivative `∂^m T` of order `n` of a distribution `H^{s,p}` near
+`x` is `H^{s - n,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.iteratedLineDerivOp (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (h : T.IsLocallyMemSobolevAt s p x) {n : ℕ} (m : Fin n → E) :
+    (∂^{m} T).IsLocallyMemSobolevAt (s - n) p x := by
+  induction n with
+  | zero => simpa using h
+  | succ n ih =>
+    rw [iteratedLineDerivOp_succ_left, Nat.cast_succ, ← sub_sub]
+    exact (ih _).lineDerivOp hp hp_top _
+
+/-- **Differential operators map `H^{s,p}_loc` to `H^{s - k,p}_loc`.** Let `1 < p < ∞`. If `T` is
+`H^{s,p}` near `x`, then `P T = ∑ i ∈ t, c i • g i ∂^(m i) T`, with smooth real coefficients and
+orders `n i ≤ k`, is `H^{s - k,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.sum_smul_smulLeftCLM_iteratedLineDerivOp (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) (h : T.IsLocallyMemSobolevAt s p x) {ι : Type*} (t : Finset ι)
+    (c : ι → ℂ) {g : ι → E → ℝ} (hg : ∀ i, ContDiff ℝ ∞ (g i)) {n : ι → ℕ}
+    (m : ∀ i, Fin (n i) → E) {k : ℕ} (hk : ∀ i ∈ t, n i ≤ k) :
+    (∑ i ∈ t, c i • Distribution.smulLeftCLM (hg i) (∂^{m i} T)).IsLocallyMemSobolevAt (s - k) p
+      x :=
+  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsLocallyMemSobolevAt (s - k) p x)
+    (fun _ _ ↦ IsLocallyMemSobolevAt.add) (isLocallyMemSobolevAt_zero_iff.2 h.mem)
+    fun i hi ↦ (((h.iteratedLineDerivOp hp hp_top (m i)).of_le
+      (by gcongr; exact hk i hi)).smulLeftCLM (hg i)).smul (c i)
+
+end Operations
 
 /-- For `p = 2`, being `H^{s,2}` near `x` is the Fourier description
 `Distribution.IsLocallySobolevAt` of being `H^s` near `x`. -/
