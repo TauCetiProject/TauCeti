@@ -11,67 +11,87 @@ public import TauCeti.Probability.Exchangeability.MarkovExchangeable.Conditionin
 /-!
 # The Diaconis--Freedman representation with a random initial state
 
-The Diaconis--Freedman representation for a recurrent Markov exchangeable process is first
-available when its initial state is fixed
+The Diaconis--Freedman theorem concerns a Markov exchangeable process that almost surely returns to
+its initial state infinitely often. Its representation as a mixture of Markov chains is first
+available when the initial state is fixed
 (`TauCeti.Probability.MarkovExchangeable.mixedMarkovChain_of_ae_initial_eq`). Conditioning on an
-initial state of positive probability preserves recurrence and Markov exchangeability and gives
-that fixed-start hypothesis, so the process is a mixture of Markov chains under each such
-conditional law. The state space is countable, so these conditional mixtures glue along the
-partition by the initial state (`TauCeti.Probability.mixedMarkovChain_of_forall_cond`) into a
-single mixture of Markov chains under the original law.
+initial state of positive probability preserves Markov exchangeability, turns the returns to the
+initial state into returns to that fixed state, and gives the fixed start, so the process is a
+mixture of Markov chains under each such conditional law. The state space is countable, so these
+conditional mixtures glue along the partition by the initial state
+(`TauCeti.Probability.mixedMarkovChain_of_forall_cond`) into a single mixture of Markov chains
+under the original law.
 
 Together with the easy direction `TauCeti.Probability.MixedMarkovChain.markovExchangeable`, this is
-the theorem of Diaconis and Freedman: a recurrent process is Markov exchangeable if and only if it
-is a mixture of Markov chains.
+the theorem of Diaconis and Freedman: a process that returns to its initial state infinitely often
+is Markov exchangeable if and only if it is a mixture of Markov chains.
+
+The return hypothesis is the case `k = 0` of `TauCeti.Probability.Recurrent`, which asks every
+visited state to be visited infinitely often; for a Markov exchangeable process started at a fixed
+state the two agree (`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`).
 
 ## Main results
 
 * `TauCeti.Probability.MarkovExchangeable.mixedMarkovChain_cond_initial`: the conditional
   representation at a positive-probability initial state.
 * `TauCeti.Probability.MarkovExchangeable.mixedMarkovChain`: **the Diaconis--Freedman
-  representation theorem**, a recurrent Markov exchangeable process is a mixture of Markov chains.
-* `TauCeti.Probability.markovExchangeable_iff_mixedMarkovChain`: for a recurrent process, Markov
-  exchangeability and being a mixture of Markov chains are equivalent.
+  representation theorem**, a Markov exchangeable process that returns to its initial state
+  infinitely often is a mixture of Markov chains.
+* `TauCeti.Probability.markovExchangeable_iff_mixedMarkovChain`: for a process that returns to its
+  initial state infinitely often, Markov exchangeability and being a mixture of Markov chains are
+  equivalent.
 
 ## References
 
 * P. Diaconis and D. Freedman, "de Finetti's theorem for Markov chains", *Annals of Probability*
   8 (1980), 115--130.
+* N. Halberstam and T. Hutchcroft, "Proof of the Diaconis--Freedman conjecture on
+  partially-exchangeable processes", arXiv:2405.20276 (2024), §1, which restates the
+  Diaconis--Freedman theorem with recurrence meaning return to the starting state infinitely often.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open Filter MeasureTheory ProbabilityTheory
 
 namespace TauCeti.Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   {μ : Measure Ω} {X : ℕ → Ω → α} {a : α}
 
-/-- **The conditional Diaconis--Freedman representation at an initial state.** Each
-positive-probability initial state of a recurrent Markov exchangeable process yields a mixture of
-Markov chains under the conditional law. -/
+/-- **The conditional Diaconis--Freedman representation at an initial state.** If a Markov
+exchangeable process almost surely returns to its initial state infinitely often, then each
+positive-probability initial state yields a mixture of Markov chains under the conditional law. -/
 theorem MarkovExchangeable.mixedMarkovChain_cond_initial [IsFiniteMeasure μ]
-    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) (ha : μ {ω | X 0 ω = a} ≠ 0) :
+    (h : MarkovExchangeable μ X) (hret : ∀ᵐ ω ∂μ, ∃ᶠ n in atTop, X n ω = X 0 ω)
+    (ha : μ {ω | X 0 ω = a} ≠ 0) :
     MixedMarkovChain (μ[|{ω | X 0 ω = a}]) X := by
   have := h.measurableSingletonClass
   have hs : NullMeasurableSet {ω | X 0 ω = a} μ :=
     (h.aemeasurable 0).nullMeasurableSet_preimage (measurableSet_singleton a)
   let _ : IsProbabilityMeasure (μ[|{ω | X 0 ω = a}]) :=
     cond_isProbabilityMeasure ha
-  have hrec' : Recurrent (μ[|{ω | X 0 ω = a}]) X := by
-    rw [recurrent_def] at hrec ⊢
-    exact hrec.filter_mono cond_absolutelyContinuous.ae_le
-  exact h.cond_initial.mixedMarkovChain_of_ae_initial_eq hrec' (ae_cond_mem₀ hs)
+  have h0 : ∀ᵐ ω ∂μ[|{ω | X 0 ω = a}], X 0 ω = a := ae_cond_mem₀ hs
+  -- Under the conditional law the process starts at `a`, so its returns are returns to `a`.
+  have hret' : ∀ᵐ ω ∂μ[|{ω | X 0 ω = a}], {n | X n ω = a}.Infinite := by
+    filter_upwards [cond_absolutelyContinuous.ae_le hret, h0] with ω hω hω0
+    rw [← hω0]
+    exact Nat.frequently_atTop_iff_infinite.1 hω
+  exact h.cond_initial.mixedMarkovChain_of_ae_initial_eq hret' h0
 
-/-- **The Diaconis--Freedman representation theorem.** A recurrent Markov exchangeable process is a
-mixture of Markov chains. The initial state may be random: the representations conditional on the
-individual initial states are glued into a single pair of mixing witnesses. The measure is finite
-and nonzero, as in the gluing theorem `TauCeti.Probability.mixedMarkovChain_of_forall_cond`. -/
+/-- **The Diaconis--Freedman representation theorem.** A Markov exchangeable process that almost
+surely returns to its initial state infinitely often is a mixture of Markov chains. The initial
+state may be random: the representations conditional on the individual initial states are glued
+into a single pair of mixing witnesses. The measure is finite and nonzero, as in the gluing theorem
+`TauCeti.Probability.mixedMarkovChain_of_forall_cond`.
+
+The return hypothesis is the case `k = 0` of `TauCeti.Probability.Recurrent`, so every recurrent
+Markov exchangeable process is covered. -/
 theorem MarkovExchangeable.mixedMarkovChain [IsFiniteMeasure μ] [NeZero μ]
-    (h : MarkovExchangeable μ X) (hrec : Recurrent μ X) : MixedMarkovChain μ X := by
+    (h : MarkovExchangeable μ X) (hret : ∀ᵐ ω ∂μ, ∃ᶠ n in atTop, X n ω = X 0 ω) :
+    MixedMarkovChain μ X := by
   have := h.countable
   have := h.measurableSingletonClass
   have hX0 := h.aemeasurable 0
@@ -85,14 +105,14 @@ theorem MarkovExchangeable.mixedMarkovChain [IsFiniteMeasure μ] [NeZero μ]
     unfold ProbabilityTheory.cond
     rw [measure_congr hfib, Measure.restrict_congr_set hfib]
   rw [hcond]
-  exact h.mixedMarkovChain_cond_initial hrec (by rwa [← measure_congr hfib])
+  exact h.mixedMarkovChain_cond_initial hret (by rwa [← measure_congr hfib])
 
-/-- **The Diaconis--Freedman theorem.** A recurrent process is Markov exchangeable if and only if it
-is a mixture of Markov chains. -/
+/-- **The Diaconis--Freedman theorem.** A process that almost surely returns to its initial state
+infinitely often is Markov exchangeable if and only if it is a mixture of Markov chains. -/
 theorem markovExchangeable_iff_mixedMarkovChain [IsFiniteMeasure μ] [NeZero μ]
-    (hrec : Recurrent μ X) :
+    (hret : ∀ᵐ ω ∂μ, ∃ᶠ n in atTop, X n ω = X 0 ω) :
     MarkovExchangeable μ X ↔ MixedMarkovChain μ X :=
-  ⟨fun h => h.mixedMarkovChain hrec, MixedMarkovChain.markovExchangeable⟩
+  ⟨fun h => h.mixedMarkovChain hret, MixedMarkovChain.markovExchangeable⟩
 
 end TauCeti.Probability
 

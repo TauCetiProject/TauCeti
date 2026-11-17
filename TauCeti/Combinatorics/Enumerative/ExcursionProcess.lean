@@ -55,6 +55,9 @@ excursions is nothing but a prescribed finite path.
   infinitely often is rebuilt from its own excursions.
 * `TauCeti.excursion_pathOfExcursions`: conversely, a sequence spelled out by excursions avoiding
   the base state has exactly those excursions.
+* `TauCeti.infinite_setOf_eq_of_forall_infinite_setOf_excursion_eq`: a sequence that starts at a
+  state, returns to it infinitely often and repeats each of its excursions infinitely often takes
+  each of its values infinitely often.
 
 ## References
 
@@ -461,6 +464,37 @@ theorem excursion_pathOfExcursions {b : ℕ → List α} (j : ℕ) (havoid : ∀
   have h := List.getElem_of_eq
     (excursionPrefix_pathOfExcursions (j + 1) fun k hk => havoid k (Nat.lt_succ_iff.1 hk)) hidx
   simpa [getElem_excursionPrefix (Nat.lt_succ_self j)] using h
+
+/-! ## Recurring excursions -/
+
+/-- **A sequence whose excursions all recur takes each of its values infinitely often.** If `x`
+starts at `a`, returns to `a` infinitely often, and each of its excursions from `a` is repeated by
+infinitely many of its excursions, then `x` takes each of its values infinitely often. -/
+theorem infinite_setOf_eq_of_forall_infinite_setOf_excursion_eq (h : {n | x n = a}.Infinite)
+    (h0 : x 0 = a) (hexc : ∀ j, {i | excursion x a i = excursion x a j}.Infinite) (k : ℕ) :
+    {n | x n = x k}.Infinite := by
+  by_cases hk : x k = a
+  · rwa [hk]
+  -- Time `k` lies in the excursion following the last visit to `a` before `k`.
+  have hpos : 0 < visitCount x a k :=
+    visitCount_pos_iff.2 ⟨0, Nat.pos_of_ne_zero fun hk0 => hk (hk0 ▸ h0), h0⟩
+  obtain ⟨t, ht, htc⟩ := exists_visitCount_of_infinite h (visitCount x a k)
+  have hmem : x k ∈ excursion x a (visitCount x a k - 1) := by
+    refine mem_excursion_iff.2 ⟨k, visitTime_lt_of_lt_visitCount (by omega), ?_, rfl⟩
+    rw [Nat.sub_add_cancel hpos, ← htc, visitTime_visitCount ht]
+    by_contra hle
+    rcases (not_lt.1 hle).lt_or_eq with hlt | rfl
+    · have hmono := visitCount_monotone x a (Nat.succ_le_of_lt hlt)
+      rw [visitCount_succ_of_eq ht, htc] at hmono
+      omega
+    · exact hk ht
+  -- Each repetition of that excursion visits `x k` again, after its own starting visit.
+  refine Set.infinite_of_forall_exists_gt fun N => ?_
+  obtain ⟨i, hi, hNi⟩ := (hexc (visitCount x a k - 1)).exists_gt N
+  rw [Set.mem_ofPred_eq] at hi
+  rw [← hi] at hmem
+  obtain ⟨n, hin, -, hxn⟩ := mem_excursion_iff.1 hmem
+  exact ⟨n, hxn, hNi.trans_le (((visitTime_strictMono_of_infinite h).id_le i).trans hin.le)⟩
 
 end TauCeti
 
