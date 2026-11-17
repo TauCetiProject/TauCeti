@@ -40,6 +40,9 @@ isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous` says that postcomposition with a
 continuous linear map commutes with precomposition.
 
+`BoundedContinuousFunction.ofContinuousOn` is the bounded continuous function on a set given by
+a function continuous and bounded on that set.
+
 `BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
 real function is a uniform limit of finite-valued bounded functions.
 
@@ -198,6 +201,24 @@ theorem compContinuousₗᵢ_symm_apply (s : S) (a b : C(α, α)) (hab : ∀ x, 
     ((compContinuousₗᵢ (𝕜 := 𝕜) s a b hab hba ha hb).symm f : α →ᵇ β) =
       (f : α →ᵇ β).compContinuous b :=
   (rfl)
+
+/-- The bounded continuous function on a set `s` given by a function continuous on `s` and bounded
+in norm by `C` on `s`. -/
+noncomputable def ofContinuousOn {X : Type*} [TopologicalSpace X] {s : Set X} (f : X → β)
+    (hf : ContinuousOn f s) (C : ℝ) (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : s →ᵇ β :=
+  ofNormedAddCommGroup (s.domRestrict f) (continuousOn_iff_continuous_domRestrict.mp hf) C
+    fun x ↦ hC x x.2
+
+@[simp]
+theorem coe_ofContinuousOn {X : Type*} [TopologicalSpace X] {s : Set X} (f : X → β)
+    (hf : ContinuousOn f s) (C : ℝ) (hC : ∀ x ∈ s, ‖f x‖ ≤ C) :
+    ⇑(ofContinuousOn f hf C hC) = s.domRestrict f :=
+  coe_ofNormedAddCommGroup _ _ _ _
+
+theorem ofContinuousOn_apply {X : Type*} [TopologicalSpace X] {s : Set X} (f : X → β)
+    (hf : ContinuousOn f s) (C : ℝ) (hC : ∀ x ∈ s, ‖f x‖ ≤ C) (x : s) :
+    ofContinuousOn f hf C hC x = f x := by
+  simp
 
 /-- On a discrete space, every bounded real function is a uniform limit of finite-valued
 bounded functions: `δ * ⌊f / δ⌋` is within `δ` of `f`. -/

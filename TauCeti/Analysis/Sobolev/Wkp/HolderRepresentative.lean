@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
