@@ -284,6 +284,15 @@ theorem IsInduction.dSmooth_ofInjective_symm {f : Y → X} (hf : IsInduction f) 
   ext z
   exact Equiv.apply_ofInjective_symm hf.injective (p z)
 
+/-- A smooth map that admits a smooth left inverse is an induction. -/
+theorem _root_.Function.LeftInverse.isInduction {f : Y → X} {g : X → Y} (h : LeftInverse g f)
+    (hf : _root_.Diffeology.DSmooth f) (hg : _root_.Diffeology.DSmooth g) : IsInduction f where
+  injective := h.injective
+  isPlot_iff {_ p} := ⟨fun hp ↦ hp.dSmooth_comp hf, fun hp ↦ by
+    convert hp.dSmooth_comp hg using 1
+    ext z
+    exact (h (p z)).symm⟩
+
 end Induction
 
 end TauCeti.Diffeology
