@@ -60,7 +60,8 @@ theorem mem_positiveSubgroup_iff_exists_prod
     have hf (γ : Fin G2.numRoots) (hγ : γ ∈ l) : Fin.castAdd 6 (f γ) = γ := by
       have h := (mem_posRoots_rational_g2_iff ht γ).mp ((hcover γ).mp hγ)
       simp only [f, dite_eq_left h]
-      rfl
+      -- G2.numRoots unfolds to 6 + 6; the cast preserves the underlying value.
+      exact Fin.ext rfl
     have hnodup : (l.map f).Nodup := hl.map_on fun γ hγ δ hδ heq =>
       (hf γ hγ).symm.trans ((congrArg (Fin.castAdd 6) heq).trans (hf δ hδ))
     have hall (i : Fin 6) : i ∈ l.map f := by
@@ -70,21 +71,23 @@ theorem mem_positiveSubgroup_iff_exists_prod
     rw [mem_biSup_posRoots_g2_iff_exists_list_prod_map D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator A
       (l.map f) hnodup hall g]
+    have hprod (u : Fin 6 → A) (w : Fin G2.numRoots → A)
+        (hw : ∀ γ ∈ l, u (f γ) = w γ) :
+        ((l.map f).map fun i => chevalleyRootSubgroup D.representation D.lattice
+          D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+            (Fin.castAdd 6 i) A (Multiplicative.ofAdd (u i))).prod =
+        (l.map fun γ => chevalleyRootSubgroup D.representation D.lattice
+          D.representation_mem_lattice D.isNilpotent_representation_rootGenerator γ A
+            (Multiplicative.ofAdd (w γ))).prod := by
+      simp only [List.map_map, Function.comp_def]
+      congr 1
+      exact List.map_congr_left fun γ hγ => by rw [hf γ hγ, hw γ hγ]
     constructor
     · rintro ⟨u, hu⟩
-      refine ⟨fun γ => u (f γ), ?_⟩
-      simpa only [List.map_map, Function.comp_def,
-        List.map_congr_left fun γ hγ => congrArg
-          (fun δ => chevalleyRootSubgroup D.representation D.lattice
-            D.representation_mem_lattice D.isNilpotent_representation_rootGenerator δ A
-              (Multiplicative.ofAdd (u (f γ)))) (hf γ hγ)] using hu
+      exact ⟨fun γ => u (f γ), (hprod u _ (fun _ _ => rfl)).symm.trans hu⟩
     · rintro ⟨u, hu⟩
-      refine ⟨fun i => u (Fin.castAdd 6 i), ?_⟩
-      simpa only [List.map_map, Function.comp_def,
-        List.map_congr_left fun γ hγ => congrArg
-          (fun δ => chevalleyRootSubgroup D.representation D.lattice
-            D.representation_mem_lattice D.isNilpotent_representation_rootGenerator δ A
-              (Multiplicative.ofAdd (u δ))) (hf γ hγ)] using hu
+      exact ⟨fun i => u (Fin.castAdd 6 i),
+        (hprod _ u (fun γ hγ => congrArg u (hf γ hγ))).trans hu⟩
   · have := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) htG2
     exact mem_iSup_posRoots_chevalleyRootSubgroup_iff_exists_list_prod
       D.representation D.lattice D.representation_mem_lattice
