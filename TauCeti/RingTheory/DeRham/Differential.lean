@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DeRham.Presentation
-import TauCeti.LinearAlgebra.Alternating.ConsUpdate
+import TauCeti.LinearAlgebra.Alternating.ConsCons
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 

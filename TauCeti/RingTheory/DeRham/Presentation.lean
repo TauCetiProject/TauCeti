@@ -126,6 +126,23 @@ noncomputable def relationSet : Set (Symbols A B n) :=
     (∃ (c : B) (v : Fin n → B) (i : Fin n) (a : A), s = sym A c (update v i (algebraMap A B a))) ∨
     (∃ (c : B) (v : Fin n → B) (i j : Fin n), v i = v j ∧ i ≠ j ∧ s = sym A c v)}
 
+/-- Membership in `relationSet A B n`: a symbol combination belongs to one of the six relation
+families. -/
+@[simp]
+theorem mem_relationSet_iff {s : Symbols A B n} :
+    s ∈ relationSet A B n ↔
+      (∃ (c e : B) (v : Fin n → B), s = sym A (c + e) v - sym A c v - sym A e v) ∨
+      (∃ (a : A) (c : B) (v : Fin n → B), s = sym A (a • c) v - a • sym A c v) ∨
+      (∃ (c : B) (v : Fin n → B) (i : Fin n) (x y : B),
+        s = sym A c (update v i (x + y)) - sym A c (update v i x) - sym A c (update v i y)) ∨
+      (∃ (c : B) (v : Fin n → B) (i : Fin n) (x y : B),
+        s = sym A c (update v i (x * y)) - sym A (c * x) (update v i y) -
+          sym A (c * y) (update v i x)) ∨
+      (∃ (c : B) (v : Fin n → B) (i : Fin n) (a : A),
+        s = sym A c (update v i (algebraMap A B a))) ∨
+      (∃ (c : B) (v : Fin n → B) (i j : Fin n), v i = v j ∧ i ≠ j ∧ s = sym A c v) :=
+  Iff.rfl
+
 /-- The submodule `Rₙ` of relations among differential symbols: the `A`-span of
 `relationSet A B n`. -/
 noncomputable def symbolRelations : Submodule A (Symbols A B n) :=
@@ -202,6 +219,23 @@ theorem symbolRelations_le {p : Submodule A (Symbols A B n)}
 /-- A symbol with zero coefficient is a relation. -/
 theorem symbolRelations_coeff_zero (v : Fin n → B) : sym A 0 v ∈ symbolRelations A B n := by
   simpa using neg_mem (symbolRelations_coeff_add (A := A) (0 : B) 0 v)
+
+/-- Slot additivity in the first slot. -/
+private lemma symbolRelations_cons_add (c x y : B) (w : Fin n → B) :
+    sym A c (Fin.cons (x + y) w) - sym A c (Fin.cons x w) - sym A c (Fin.cons y w) ∈
+      symbolRelations A B (n + 1) := by
+  simpa only [Fin.update_cons_zero] using symbolRelations_slot_add c (Fin.cons 0 w) 0 x y
+
+/-- The slot Leibniz rule in the first slot. -/
+private lemma symbolRelations_cons_mul (c x y : B) (w : Fin n → B) :
+    sym A c (Fin.cons (x * y) w) - sym A (c * x) (Fin.cons y w) - sym A (c * y) (Fin.cons x w) ∈
+      symbolRelations A B (n + 1) := by
+  simpa only [Fin.update_cons_zero] using symbolRelations_slot_mul c (Fin.cons 0 w) 0 x y
+
+/-- A first slot filled with an element of `A` gives a relation. -/
+private lemma symbolRelations_cons_algebraMap (c : B) (a : A) (w : Fin n → B) :
+    sym A c (Fin.cons (algebraMap A B a) w) ∈ symbolRelations A B (n + 1) := by
+  simpa only [Fin.update_cons_zero] using symbolRelations_slot_algebraMap c (Fin.cons 0 w) 0 a
 
 /-- The evaluation of symbols kills every relation. -/
 theorem symbolRelations_le_ker : symbolRelations A B n ≤ LinearMap.ker (symbolMap A B n) := by
@@ -280,10 +314,20 @@ private lemma mkC_eq_zero_iff (s : Symbols A B n) :
     mkC A B n s = 0 ↔ s ∈ symbolRelations A B n :=
   Submodule.Quotient.mk_eq_zero _
 
+/-- Two symbol combinations have the same class when their difference is a relation. -/
+private lemma mkC_eq_of_sub_mem {s t : Symbols A B n} (h : s - t ∈ symbolRelations A B n) :
+    mkC A B n s = mkC A B n t :=
+  (Submodule.Quotient.eq _).2 h
+
+/-- The class of `s` is the sum of the classes of `t` and `u` when `s - t - u` is a relation. -/
+private lemma mkC_eq_add_of_sub_sub_mem {s t u : Symbols A B n}
+    (h : s - t - u ∈ symbolRelations A B n) : mkC A B n s = mkC A B n t + mkC A B n u := by
+  rw [← map_add]
+  exact mkC_eq_of_sub_mem (by rwa [← sub_sub])
+
 private lemma mkC_sym_coeff_add (c e : B) (v : Fin n → B) :
-    mkC A B n (sym A (c + e) v) = mkC A B n (sym A c v) + mkC A B n (sym A e v) := by
-  rw [← sub_eq_zero, ← map_add, ← map_sub, mkC_eq_zero_iff, ← sub_sub]
-  exact symbolRelations_coeff_add c e v
+    mkC A B n (sym A (c + e) v) = mkC A B n (sym A c v) + mkC A B n (sym A e v) :=
+  mkC_eq_add_of_sub_sub_mem (symbolRelations_coeff_add c e v)
 
 private lemma mkC_sym_coeff_zero (v : Fin n → B) : mkC A B n (sym A (0 : B) v) = 0 :=
   (mkC_eq_zero_iff _).2 (symbolRelations_coeff_zero v)
@@ -334,8 +378,8 @@ private lemma coeffAction_algebraMap (a : A) :
     coeffAction A B n (algebraMap A B a) = a • 1 :=
   coeffQuot_hom_ext fun c v => by
     simp only [coeffAction_mkC, coeffMul_sym, LinearMap.smul_apply, one_apply_eq_self]
-    rw [← Algebra.smul_def, ← map_smul, ← sub_eq_zero, ← map_sub, mkC_eq_zero_iff]
-    exact symbolRelations_coeff_smul a c v
+    rw [← Algebra.smul_def, ← map_smul]
+    exact mkC_eq_of_sub_mem (symbolRelations_coeff_smul a c v)
 
 private lemma coeffQuot_isScalarTower : IsScalarTower A B (CoeffQuot A B n) :=
   IsScalarTower.of_algebraMap_smul fun a x => by
@@ -400,10 +444,8 @@ private lemma wedgeD_mkC_sym (b c : B) (v : Fin n → B) :
 
 private lemma mkC_sym_cons_add (c x y : B) (w : Fin n → B) :
     mkC A B (n + 1) (sym A c (Fin.cons (x + y) w)) =
-      mkC A B (n + 1) (sym A c (Fin.cons x w)) + mkC A B (n + 1) (sym A c (Fin.cons y w)) := by
-  rw [← sub_eq_zero, ← map_add, ← map_sub, mkC_eq_zero_iff, ← sub_sub]
-  simpa only [Fin.update_cons_zero] using
-    symbolRelations_slot_add (A := A) c (Fin.cons 0 w) 0 x y
+      mkC A B (n + 1) (sym A c (Fin.cons x w)) + mkC A B (n + 1) (sym A c (Fin.cons y w)) :=
+  mkC_eq_add_of_sub_sub_mem (symbolRelations_cons_add c x y w)
 
 private lemma wedgeD_add (x y : B) :
     wedgeD (A := A) (n := n) (x + y) = wedgeD x + wedgeD y :=
@@ -414,16 +456,13 @@ private lemma wedgeD_mul (x y : B) :
     wedgeD (A := A) (n := n) (x * y) = x • wedgeD y + y • wedgeD x :=
   coeffQuot_hom_ext_B fun c v => by
     simp only [LinearMap.add_apply, LinearMap.smul_apply, wedgeD_mkC_sym, smul_mkC_sym]
-    rw [← sub_eq_zero, ← map_add, ← map_sub, mkC_eq_zero_iff, ← sub_sub, mul_comm x c,
-      mul_comm y c]
-    simpa only [Fin.update_cons_zero] using
-      symbolRelations_slot_mul (A := A) c (Fin.cons 0 v) 0 x y
+    rw [mul_comm x c, mul_comm y c]
+    exact mkC_eq_add_of_sub_sub_mem (symbolRelations_cons_mul c x y v)
 
 private lemma wedgeD_algebraMap (a : A) : wedgeD (A := A) (n := n) (algebraMap A B a) = 0 :=
   coeffQuot_hom_ext_B fun c v => by
     rw [wedgeD_mkC_sym, LinearMap.zero_apply, mkC_eq_zero_iff]
-    simpa only [Fin.update_cons_zero] using
-      symbolRelations_slot_algebraMap (A := A) c (Fin.cons 0 v) 0 a
+    exact symbolRelations_cons_algebraMap c a v
 
 private lemma wedgeD_wedgeD_self (x : B) (m : CoeffQuot A B n) : wedgeD x (wedgeD x m) = 0 := by
   refine LinearMap.congr_fun (f := (wedgeD (A := A) x).comp (wedgeD x)) (g := 0)
@@ -542,9 +581,9 @@ private lemma wedgeAction_ιMulti (v : Fin n → B) :
     rw [ExteriorAlgebra.ιMulti_zero_apply, map_one, one_apply_eq_self,
       Subsingleton.elim v ![], unitSymbol]
   | succ n ih =>
-    rw [ExteriorAlgebra.ιMulti_succ_apply, map_mul, mul_apply_eq_comp, Matrix.vecTail,
-      Function.comp_def, ih, wedgeAction_ι, wedgeOmega_D, wedgeTot_lof, wedgeD_mkC_sym,
-      ← Fin.tail_def, Fin.cons_self_tail]
+    obtain ⟨x, w, rfl⟩ : ∃ x w, v = Fin.cons x w := ⟨v 0, Fin.tail v, (Fin.cons_self_tail v).symm⟩
+    simp [ExteriorAlgebra.ιMulti_succ_apply, Matrix.vecTail, comp_def, ih, wedgeAction_ι,
+      wedgeOmega_D, wedgeTot_lof, wedgeD_mkC_sym]
 
 variable (A B n) in
 /-- The left inverse of `symbolMap` modulo `Rₙ`, as a `B`-linear map `Ωⁿ → Sₙ ⧸ Rₙ`. -/
