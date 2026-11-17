@@ -46,7 +46,7 @@ Two consequences are recorded.
 
 These are the finite-dimensional forms of the statements that the spectral flow of `A` is the
 index of the trajectory operator `d/ds + A` and minus that of `d/ds - A`; see
-`TauCeti.WeakDerivStep.index_trajectoryOperator_eq_spectralFlow`.
+`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`.
 
 ## Main results
 
