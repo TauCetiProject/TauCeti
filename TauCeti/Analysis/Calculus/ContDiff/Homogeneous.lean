@@ -22,8 +22,8 @@ More generally, punctured derivative bounds of degree `p-j` give the same extens
 normed sources, without compactness or finite-dimensionality assumptions.
 
 Away from zero, on a real inner product space, the homogeneous extension
-`ξ ↦ ‖ξ‖ ^ m • g (‖ξ‖⁻¹ • ξ)` of a map `g` smooth off zero is smooth, with smooth dependence on an
-extra parameter (`ContDiffOn.norm_rpow_smul_comp_normalize`).
+`ξ ↦ ‖ξ‖ ^ m • g (‖ξ‖⁻¹ • ξ)` of a map `g` that is `C^n` off zero is `C^n`, with `C^n` dependence
+on an extra parameter (`ContDiffOn.norm_rpow_smul_comp_normalize`).
 -/
 
 public section
@@ -211,15 +211,16 @@ theorem contDiff_of_iteratedFDeriv_norm_rpow_bound {f : E → F} {k : ℕ} {p : 
 end TauCeti
 
 /-- The homogeneous extension `(y, ξ) ↦ ‖ξ‖ ^ m • g (y, ‖ξ‖⁻¹ • ξ)` of degree `m` from the unit
-sphere of an inner product space is smooth off `ξ = 0` when `g` is. -/
+sphere of an inner product space is `C^n` off `ξ = 0` when `g` is. -/
 theorem ContDiffOn.norm_rpow_smul_comp_normalize {Y E F : Type*} [NormedAddCommGroup Y]
     [NormedSpace ℝ Y] [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {g : Y × E → F} (hg : ContDiffOn ℝ ∞ g {q | q.2 ≠ 0}) (m : ℝ) :
-    ContDiffOn ℝ ∞ (fun q : Y × E ↦ ‖q.2‖ ^ m • g (q.1, ‖q.2‖⁻¹ • q.2)) {q | q.2 ≠ 0} := by
+    [NormedSpace ℝ F] {n : WithTop ℕ∞} {g : Y × E → F} (hg : ContDiffOn ℝ n g {q | q.2 ≠ 0})
+    (m : ℝ) :
+    ContDiffOn ℝ n (fun q : Y × E ↦ ‖q.2‖ ^ m • g (q.1, ‖q.2‖⁻¹ • q.2)) {q | q.2 ≠ 0} := by
   intro q hq
   have hq' : q.2 ≠ 0 := hq
   have hn : ‖q.2‖ ≠ 0 := norm_ne_zero_iff.mpr hq'
-  have hnorm : ContDiffAt ℝ ∞ (fun q : Y × E ↦ ‖q.2‖) q :=
+  have hnorm : ContDiffAt ℝ n (fun q : Y × E ↦ ‖q.2‖) q :=
     (contDiffAt_norm ℝ hq').comp q contDiffAt_snd
   -- The radial projection stays off `ξ = 0`, where `g` is smooth.
   have hmem : (q.1, ‖q.2‖⁻¹ • q.2) ∈ {q : Y × E | q.2 ≠ 0} := smul_ne_zero (inv_ne_zero hn) hq'
