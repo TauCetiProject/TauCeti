@@ -53,9 +53,9 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 * `TauCeti.W1p0.norm_value_extendByZeroL`, `TauCeti.W1p0.norm_gradient_extendByZeroL`: the
   extension preserves the norms of both components.
 * `TauCeti.W1p0.restrictL_extendByZeroL`: restricting the extension back to `Ω` recovers `u`.
-* `TauCeti.W1p0.value_restrictL_extendByZeroL_top_ae`,
-  `TauCeti.W1p0.gradient_restrictL_extendByZeroL_top_ae`: restricting the whole-space extension
-  to another open set `V` gives `1_Ω u` and `1_Ω ∇u` on `V`.
+* `TauCeti.W1p0.value_restrictL_extendByZeroL_ae`,
+  `TauCeti.W1p0.gradient_restrictL_extendByZeroL_ae`: restricting the extension to `Ω'` to another
+  open set `V ⊆ Ω'` gives `1_Ω u` and `1_Ω ∇u` on `V`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -321,33 +321,32 @@ theorem W1p0.restrictL_extendByZeroL (hsub : Omega ≤ Omega') (u : W1p0 mu Omeg
     rw [W1p0.value_extendByZeroL]
     exact coeFn_extendByZeroLpₗᵢ_restrict ℝ _ _ _)))
 
-/-- **Restricting a whole-space zero extension to an open set.** For `u ∈ W^{1,p}_0(Ω)` and any
-open `V`, the restriction to `V` of the zero extension of `u` to the whole space has, almost
-everywhere on `V`, the zero extension `1_Ω u` of the value of `u` as its value. -/
-theorem W1p0.value_restrictL_extendByZeroL_top_ae (V : Opens E) (u : W1p0 mu Omega p) :
-    ∀ᵐ x ∂mu.restrict V, W1p.value (W1p.restrictL (le_top : V ≤ ⊤)
-      (W1p0.extendByZeroL (le_top : Omega ≤ ⊤) u : W1p mu ⊤ p)) x =
+/-- **Restricting a zero extension to another open set.** For `u ∈ W^{1,p}_0(Ω)`, `Ω ⊆ Ω'` and an
+open `V ⊆ Ω'`, the restriction to `V` of the zero extension of `u` to `Ω'` has, almost everywhere
+on `V`, the zero extension `1_Ω u` of the value of `u` as its value. -/
+theorem W1p0.value_restrictL_extendByZeroL_ae {V : Opens E} (hsub : Omega ≤ Omega')
+    (hV : V ≤ Omega') (u : W1p0 mu Omega p) :
+    ∀ᵐ x ∂mu.restrict V, W1p.value (W1p.restrictL hV
+      (W1p0.extendByZeroL hsub u : W1p mu Omega' p)) x =
         (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p)) x := by
-  have hext := coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet
-    (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (u : W1p mu Omega p))
-  simp only [Opens.coe_top, Measure.restrict_univ] at hext
-  filter_upwards [W1p.value_restrictL_ae le_top (W1p0.extendByZeroL le_top u : W1p mu ⊤ p),
-    ae_restrict_of_ae hext] with x h1 h2
+  filter_upwards [W1p.value_restrictL_ae hV (W1p0.extendByZeroL hsub u : W1p mu Omega' p),
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr hV)
+      (coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+        (W1p.value (u : W1p mu Omega p)))] with x h1 h2
   rw [h1, W1p0.value_extendByZeroL, h2]
 
-/-- **Restricting a whole-space zero extension to an open set.** For `u ∈ W^{1,p}_0(Ω)` and any
-open `V`, the restriction to `V` of the zero extension of `u` to the whole space has, almost
-everywhere on `V`, the zero extension `1_Ω ∇u` of the weak gradient of `u` as its weak
-gradient. -/
-theorem W1p0.gradient_restrictL_extendByZeroL_top_ae (V : Opens E) (u : W1p0 mu Omega p) :
-    ∀ᵐ x ∂mu.restrict V, W1p.gradient (W1p.restrictL (le_top : V ≤ ⊤)
-      (W1p0.extendByZeroL (le_top : Omega ≤ ⊤) u : W1p mu ⊤ p)) x =
+/-- **Restricting a zero extension to another open set.** For `u ∈ W^{1,p}_0(Ω)`, `Ω ⊆ Ω'` and an
+open `V ⊆ Ω'`, the restriction to `V` of the zero extension of `u` to `Ω'` has, almost everywhere
+on `V`, the zero extension `1_Ω ∇u` of the weak gradient of `u` as its weak gradient. -/
+theorem W1p0.gradient_restrictL_extendByZeroL_ae {V : Opens E} (hsub : Omega ≤ Omega')
+    (hV : V ≤ Omega') (u : W1p0 mu Omega p) :
+    ∀ᵐ x ∂mu.restrict V, W1p.gradient (W1p.restrictL hV
+      (W1p0.extendByZeroL hsub u : W1p mu Omega' p)) x =
         (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p)) x := by
-  have hext := coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet
-    (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.gradient (u : W1p mu Omega p))
-  simp only [Opens.coe_top, Measure.restrict_univ] at hext
-  filter_upwards [W1p.gradient_restrictL_ae le_top (W1p0.extendByZeroL le_top u : W1p mu ⊤ p),
-    ae_restrict_of_ae hext] with x h1 h2
+  filter_upwards [W1p.gradient_restrictL_ae hV (W1p0.extendByZeroL hsub u : W1p mu Omega' p),
+    ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.mpr hV)
+      (coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+        (W1p.gradient (u : W1p mu Omega p)))] with x h1 h2
   rw [h1, W1p0.gradient_extendByZeroL, h2]
 
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`

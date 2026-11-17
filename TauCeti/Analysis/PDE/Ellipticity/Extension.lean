@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Ellipticity.Basic
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 public import TauCeti.Analysis.Normed.Operator.Holder
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
+public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 
 /-!
@@ -38,6 +40,9 @@ neighbourhood of `C` in `Ω`, on which `a` is Lipschitz.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lipschitzWith_eqOn`: near a compact subset of `Ω`, a
   locally Lipschitz uniformly elliptic field agrees with a Lipschitz uniformly elliptic field on
   the whole space.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn`: a measurable field uniformly
+  elliptic on `Ω`, extended by `λ I` off `Ω`, is measurable and uniformly elliptic on the whole
+  space.
 
 ## References
 
@@ -49,7 +54,7 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace
+open MeasureTheory Set TopologicalSpace
 open scoped NNReal
 
 namespace TauCeti
@@ -186,6 +191,35 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn [DecidableEq ι] {lam Lam 
   have hWL' : (W : Set (EuclideanSpace ℝ ι)) ⊆ L := fun x hx => interior_subset (hWL hx)
   exact ⟨a', K', W, hSW, fun x hx => hLΩ (hWL' hx), ha', hK',
     fun x hx => haa' ⟨hWL' hx, hx⟩⟩
+
+/-- **Extending a measurable uniformly elliptic field by `λ I`.** A field `a`, measurable and
+uniformly elliptic on `Ω` with constants `λ, Λ`, agrees on `Ω` with a field that is measurable and
+uniformly elliptic with the same constants on the whole space, namely `a` extended by `λ I` off
+`Ω`. -/
+theorem UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn [DecidableEq ι]
+    {mu : Measure (EuclideanSpace ℝ ι)} {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) :
+    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
+      UniformlyEllipticOn (univ : Set (EuclideanSpace ℝ ι)) a' lam Lam ∧
+        AEStronglyMeasurable a' mu ∧ EqOn a' a (Omega : Set (EuclideanSpace ℝ ι)) := by
+  classical
+  have hI := uniformlyEllipticOn_const_smul_one (n := ι) (univ : Set (EuclideanSpace ℝ ι))
+    h.pos le_rfl h.le
+  refine ⟨(Omega : Set (EuclideanSpace ℝ ι)).piecewise a fun _ => lam • (1 : Matrix ι ι ℝ),
+    UniformlyEllipticOn.of_bounds h.pos h.le (fun x _ ξ => ?_) (fun x _ η ξ => ?_),
+    ha.piecewise Omega.isOpen.measurableSet.nullMeasurableSet aestronglyMeasurable_const,
+    piecewise_eqOn _ _ _⟩
+  · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
+    · rw [piecewise_eq_of_mem _ _ _ hx]
+      exact h.lower_bound hx ξ
+    · rw [piecewise_eq_of_notMem _ _ _ hx]
+      exact hI.lower_bound (mem_univ x) ξ
+  · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
+    · rw [piecewise_eq_of_mem _ _ _ hx]
+      exact h.upper_bound hx η ξ
+    · rw [piecewise_eq_of_notMem _ _ _ hx]
+      exact hI.upper_bound (mem_univ x) η ξ
 
 end PDE
 

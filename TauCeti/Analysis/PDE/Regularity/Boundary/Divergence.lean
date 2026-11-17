@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.DirichletProblem
-public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.Boundary.Oscillation
+import TauCeti.Analysis.PDE.Ellipticity.Extension
+import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 import Mathlib.Analysis.SpecialFunctions.Log.Base
@@ -47,7 +47,8 @@ along: the zero extension of `u⁺` is in general not a subsolution of
 The datum is therefore split off on the ball first.
 
 * **Splitting.** On `D = B(x₀, 2R)`, extend `a` by `λ I` off `Ω` to a field `a'` uniformly elliptic
-  on `D`, and let `w ∈ H¹₀(D)` solve `-∂ᵢ(a'ⁱʲ ∂ⱼw) = ∂ᵢ(1_Ω F)ⁱ`. Stampacchia's estimate
+  on `D`, and let `w ∈ H¹₀(D)` solve `-∂ᵢ(a'ⁱʲ ∂ⱼw) = ∂ᵢ(1_Ω F)ⁱ`
+  (`TauCeti.PDE.exists_forall_energyFormH1_eq_ae_abs_le_divergence`). Stampacchia's estimate
   `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence` bounds
   `|w| ≤ K₀ = O(R^(1 - n/q) ‖F‖_{L^q(Ω ∩ D)} / λ)`.
 * **A subsolution on the ball.** With `ū` the zero extension of `u⁺` to `D`, the function
@@ -101,6 +102,22 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ} {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 
+/-- Integrating against the gradient of a zero extension: for `m ∈ H¹₀(U)` and a density `φ` with
+`φ x 0 = 0`, the integral over an open `V` of `φ x` applied to the gradient of the zero extension of
+`m` is the integral of `φ x (∇m x)` over `V ∩ U`. -/
+private theorem setIntegral_gradient_restrictL_extendByZeroL {U V : Opens (EuclideanSpace ℝ ι)}
+    (m : W1p0 mu U 2) (φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → ℝ) (hφ : ∀ x, φ x 0 = 0) :
+    ∫ x in V, φ x (W1p.gradient (W1p.restrictL (le_top : V ≤ ⊤)
+        (W1p0.extendByZeroL (le_top : U ≤ ⊤) m : W1p mu ⊤ 2)) x) ∂mu =
+      ∫ x in (V : Set (EuclideanSpace ℝ ι)) ∩ U, φ x (W1p.gradient (m : W1p mu U 2) x) ∂mu := by
+  rw [← setIntegral_indicator U.isOpen.measurableSet]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p0.gradient_restrictL_extendByZeroL_ae (V := V) le_top le_top m] with x h1
+  rw [h1]
+  by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
+  · rw [indicator_of_mem hxU, indicator_of_mem hxU]
+  · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, hφ]
+
 /-- Moving a truncation from the ball `D` to `Ω`: let `ū` be the zero extension of `u⁺` to `D`,
 let `a'` agree with `a` on `Ω`, and let `m ∈ H¹₀(D)` have vanishing gradient where `u ≤ 0` in
 `Ω`. Then the energy of `ū` against `m` on `D` is the energy of `u` against the zero extension of
@@ -119,38 +136,21 @@ private theorem energyFormH1_restrictL_extendByZeroL_posPart_eq
         (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) := by
   have hO := Omega.isOpen.measurableSet
   have hD := D.isOpen.measurableSet
-  let g : EuclideanSpace ℝ ι → ℝ := fun x =>
-    matrixBilinearForm (a x) (W1p.gradient (m : W1p mu D 2) x) (W1p.gradient u x)
-  rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral]
-  have h₁ : ∫ x in D, matrixBilinearForm (a' x) (W1p.gradient (m : W1p mu D 2) x)
-      (W1p.gradient (W1p.restrictL (le_top : D ≤ ⊤)
-        (W1p0.extendByZeroL (le_top : Omega ≤ ⊤)
-          (⟨W1p.posPart (p := 2) (by norm_num) u, hb⟩ : W1p0 mu Omega 2) : W1p mu ⊤ 2)) x) ∂mu =
-      ∫ x in D, (Omega : Set (EuclideanSpace ℝ ι)).indicator g x ∂mu := by
-    refine integral_congr_ae ?_
-    filter_upwards [W1p0.gradient_restrictL_extendByZeroL_top_ae D
-        (⟨W1p.posPart (p := 2) (by norm_num) u, hb⟩ : W1p0 mu Omega 2),
-      hgrad, ae_restrict_of_ae ((ae_restrict_iff' hO).1
-        (W1p.gradient_posPart_ae (by norm_num) u))] with x h1 h2 h4
-    rw [h1]
-    by_cases hxO : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxO, indicator_of_mem hxO, haa' hxO, h4 hxO]
-      by_cases hu : 0 < W1p.value u x
-      · rw [indicator_of_mem (s := {y | 0 < W1p.value u y}) hu]
-      · rw [indicator_of_notMem (s := {y | 0 < W1p.value u y}) hu, map_zero]
-        simp only [g, h2 hxO (not_lt.1 hu), map_zero, zero_apply]
-    · rw [indicator_of_notMem hxO, indicator_of_notMem hxO, map_zero]
-  have h₂ : ∫ x in Omega, matrixBilinearForm (a x) (W1p.gradient (W1p.restrictL
-      (le_top : Omega ≤ ⊤) (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x)
-        (W1p.gradient u x) ∂mu =
-      ∫ x in Omega, (D : Set (EuclideanSpace ℝ ι)).indicator g x ∂mu := by
-    refine integral_congr_ae ?_
-    filter_upwards [W1p0.gradient_restrictL_extendByZeroL_top_ae Omega m] with x h1
-    rw [h1]
-    by_cases hxD : x ∈ (D : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxD, indicator_of_mem hxD]
-    · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, map_zero, zero_apply]
-  rw [h₁, h₂, setIntegral_indicator hO, setIntegral_indicator hD, inter_comm]
+  have h₁ := setIntegral_gradient_restrictL_extendByZeroL (V := D)
+    (⟨W1p.posPart (p := 2) (by norm_num) u, hb⟩ : W1p0 mu Omega 2)
+    (fun x g => matrixBilinearForm (a' x) (W1p.gradient (m : W1p mu D 2) x) g) fun _ => map_zero _
+  have h₂ := setIntegral_gradient_restrictL_extendByZeroL (V := Omega) m
+    (fun x g => matrixBilinearForm (a x) g (W1p.gradient u x)) fun _ => by simp
+  rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral, h₁, h₂,
+    inter_comm]
+  refine setIntegral_congr_ae (hO.inter hD) ?_
+  filter_upwards [(ae_restrict_iff' hD).1 hgrad,
+    (ae_restrict_iff' hO).1 (W1p.gradient_posPart_ae (by norm_num) u)] with x h2 h4 hx
+  rw [haa' hx.1, h4 hx.1]
+  by_cases hu : 0 < W1p.value u x
+  · rw [indicator_of_mem (s := {y | 0 < W1p.value u y}) hu]
+  · rw [indicator_of_notMem (s := {y | 0 < W1p.value u y}) hu, map_zero,
+      h2 hx.2 hx.1 (not_lt.1 hu), map_zero, zero_apply]
 
 /-- Moving the divergence datum from `Ω` to the ball `D`: for `m ∈ H¹₀(D)` with zero extension
 `m₀` to `Ω`, `∫_Ω ⟪F, ∇m₀⟫ = ∫_D ⟪1_Ω F, ∇m⟫`, both being the integral over `Ω ∩ D`. -/
@@ -161,24 +161,15 @@ private theorem setIntegral_inner_gradient_restrictL_extendByZeroL
         (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x⟫ ∂mu =
       ∫ x in D, ⟪(Omega : Set (EuclideanSpace ℝ ι)).indicator F x,
         W1p.gradient (m : W1p mu D 2) x⟫ ∂mu := by
-  set f : EuclideanSpace ℝ ι → ℝ := fun x => ⟪F x, W1p.gradient (m : W1p mu D 2) x⟫
-  have h₁ : ∫ x in Omega, ⟪F x, W1p.gradient (W1p.restrictL (le_top : Omega ≤ ⊤)
-      (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x⟫ ∂mu =
-      ∫ x in Omega, (D : Set (EuclideanSpace ℝ ι)).indicator f x ∂mu := by
-    refine integral_congr_ae ?_
-    filter_upwards [W1p0.gradient_restrictL_extendByZeroL_top_ae Omega m] with x h1
-    rw [h1]
-    by_cases hxD : x ∈ (D : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxD, indicator_of_mem hxD]
-    · rw [indicator_of_notMem hxD, indicator_of_notMem hxD, inner_zero_right]
   have h₂ : (fun x => ⟪(Omega : Set (EuclideanSpace ℝ ι)).indicator F x,
-      W1p.gradient (m : W1p mu D 2) x⟫) = (Omega : Set (EuclideanSpace ℝ ι)).indicator f := by
+      W1p.gradient (m : W1p mu D 2) x⟫) = (Omega : Set (EuclideanSpace ℝ ι)).indicator
+        fun x => ⟪F x, W1p.gradient (m : W1p mu D 2) x⟫ := by
     funext x
     by_cases hxO : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
     · rw [indicator_of_mem hxO, indicator_of_mem hxO]
     · rw [indicator_of_notMem hxO, indicator_of_notMem hxO, inner_zero_left]
-  rw [h₁, h₂, setIntegral_indicator D.isOpen.measurableSet,
-    setIntegral_indicator Omega.isOpen.measurableSet, inter_comm]
+  rw [setIntegral_gradient_restrictL_extendByZeroL m (fun x g => ⟪F x, g⟫)
+    fun _ => inner_zero_right _, h₂, setIntegral_indicator Omega.isOpen.measurableSet, inter_comm]
 
 /-- The value of `ū - (w + K)` on `D`, where `ū` is the zero extension of `u⁺`. -/
 private theorem value_restrictL_extendByZeroL_posPart_sub_ae
@@ -197,7 +188,7 @@ private theorem value_restrictL_extendByZeroL_posPart_sub_ae
       (W1p0.extendByZeroL (le_top : Omega ≤ ⊤)
         (⟨W1p.posPart (p := 2) (by norm_num) u, hb⟩ : W1p0 mu Omega 2) : W1p mu ⊤ 2))
       (w + W1p.const K), W1p.value_add_const_ae w K,
-    W1p0.value_restrictL_extendByZeroL_top_ae D
+    W1p0.value_restrictL_extendByZeroL_ae (V := D) le_top le_top
       (⟨W1p.posPart (p := 2) (by norm_num) u, hb⟩ : W1p0 mu Omega 2),
     ae_restrict_of_ae ((ae_restrict_iff' hO).1 (Lp.coeFn_posPart (W1p.value u)))]
     with x h1 h2 h3 h4
@@ -222,7 +213,7 @@ private theorem mem_w1p0Submodule_restrictL_extendByZeroL_of_le
       (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x) ∧
     W1p.restrictL (le_top : Omega ≤ ⊤) (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2) ∈
       w1p0Submodule mu Omega 2 := by
-  have hval := W1p0.value_restrictL_extendByZeroL_top_ae Omega m
+  have hval := W1p0.value_restrictL_extendByZeroL_ae (V := Omega) le_top le_top m
   have hnn : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.restrictL (le_top : Omega ≤ ⊤)
       (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) x := by
     filter_upwards [hval, ae_restrict_of_ae hm0] with x h1 h2
@@ -240,25 +231,6 @@ private theorem mem_w1p0Submodule_restrictL_extendByZeroL_of_le
     exact h2 hxD hxO
   · rw [indicator_of_notMem hxD]
     exact le_max_right _ _
-
-/-- The energy of `X - (Y + K)` is that of `X` minus that of `Y`: the constant `K` has no
-gradient. -/
-private theorem energyFormH1_sub_add_const_left {D : Opens (EuclideanSpace ℝ ι)}
-    [IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι)))]
-    {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    (h' : UniformlyEllipticOn (D : Set (EuclideanSpace ℝ ι)) a' lam Lam)
-    (ha' : AEStronglyMeasurable a' (mu.restrict D)) (X Y m : W1p mu D 2) (K : ℝ) :
-    energyFormH1 a' 0 0 (X - (Y + W1p.const K)) m =
-      energyFormH1 a' 0 0 X m - energyFormH1 a' 0 0 Y m := by
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    h'.upper_nonneg ha' aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => h'.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
-  have hconst : energyFormH1 a' 0 0 (W1p.const K : W1p mu D 2) m = 0 := by
-    rw [energyFormH1_zero_zero_eq_setIntegral, W1p.gradient_const]
-    refine integral_eq_zero_of_ae ?_
-    filter_upwards [Lp.coeFn_zero (EuclideanSpace ℝ ι) 2 (mu.restrict D)] with x hx
-    rw [hx, Pi.zero_apply, map_zero, Pi.zero_apply]
-  rw [energyFormH1_sub_left hcoeff, energyFormH1_add_left hcoeff, hconst, add_zero]
 
 /-- The energy step of the splitting: test the weak formulation of `u` on `Ω` against the zero
 extension of a truncation `m ∈ H¹₀(D)`, and that of `w` on `D` against `m`. If the energy of
@@ -296,9 +268,12 @@ private theorem energyFormH1_sub_add_const_nonpos_of_eq
       ∫ x in D, ⟪(Omega : Set (EuclideanSpace ℝ ι)).indicator F x,
         W1p.gradient (m : W1p mu D 2) x⟫ ∂mu :=
     setIntegral_inner_gradient_restrictL_extendByZeroL (mu := mu) (Omega := Omega) (D := D) F m
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
+    h'.upper_nonneg ha' aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi => h'.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
   have hsplit : energyFormH1 a' 0 0 (ub - ((w : W1p mu D 2) + W1p.const K)) (m : W1p mu D 2) =
-      energyFormH1 a' 0 0 ub m - energyFormH1 a' 0 0 (w : W1p mu D 2) m :=
-    energyFormH1_sub_add_const_left h' ha' ub (w : W1p mu D 2) m K
+      energyFormH1 a' 0 0 ub m - energyFormH1 a' 0 0 (w : W1p mu D 2) m := by
+    rw [energyFormH1_sub_left hcoeff, energyFormH1_add_const_left]
   linarith [hw m]
 
 /-- **Splitting off the divergence datum on a ball keeps a subsolution.** Let `u ∈ H¹(Ω)` be a
@@ -339,7 +314,7 @@ private theorem energyFormH1_posPart_restrictL_extendByZeroL_sub_nonpos
     filter_upwards [hv] with x hx using mul_nonneg hε.le hx
   have hmval := W1p.value_posPart_sub_posPart_sub_smul_ae (by norm_num)
     (ub - ((w : W1p mu D 2) + W1p.const K)) (v : W1p mu D 2) ε
-  have hmgrad := W1p.gradient_posPart_sub_posPart_sub_smul_ae (by norm_num)
+  have hmgrad := W1p.gradient_posPart_sub_posPart_sub_smul_eq_zero_ae (by norm_num)
     (ub - ((w : W1p mu D 2) + W1p.const K)) (v : W1p mu D 2) hεv
   generalize W1p.posPart (by norm_num) (ub - ((w : W1p mu D 2) + W1p.const K)) -
       W1p.posPart (by norm_num) (W1p.posPart (by norm_num) (ub - ((w : W1p mu D 2) +
@@ -373,40 +348,6 @@ private theorem energyFormH1_posPart_restrictL_extendByZeroL_sub_nonpos
     linarith
   exact energyFormH1_sub_add_const_nonpos_of_eq h' ha' hu hw ub K ⟨m, hmD⟩ (hE ⟨m, hmD⟩ hgrad)
     hmΩnn hmΩ
-
-/-- The Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼw) = ∂ᵢFⁱ` on an open set `D` of finite measure, with
-`F ∈ L^q(D)`, `q > 2`, `q > n`, has a weak solution `w ∈ H¹₀(D)` bounded by Stampacchia's estimate
-`|w| ≤ C ‖F‖_{L^q(D)} / λ · μ(D)^(1/n - 1/q)`, with `C` depending only on `n`, `q` and `μ`. -/
-private theorem exists_forall_energyFormH1_eq_ae_abs_le [Nonempty ι] {q : ℝ≥0}
-    (hq : 2 < (q : ℝ)) (hqn : (Fintype.card ι : ℝ) < q) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {D : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-      {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}, mu D ≠ ∞ →
-      UniformlyEllipticOn (D : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict D) → MemLp F q (mu.restrict D) →
-      ∃ w : W1p0 mu D 2, (∀ v : W1p0 mu D 2,
-        energyFormH1 a 0 0 (w : W1p mu D 2) (v : W1p mu D 2) =
-          -∫ x in D, ⟪F x, W1p.gradient (v : W1p mu D 2) x⟫ ∂mu) ∧
-        ∀ᵐ x ∂mu.restrict D, |W1p.value (w : W1p mu D 2) x| ≤
-          C * (eLpNorm F q (mu.restrict D)).toReal / lam *
-            mu.real D ^ ((Fintype.card ι : ℝ)⁻¹ - (q : ℝ)⁻¹) := by
-  obtain ⟨C, hC, hstamp⟩ := exists_ae_abs_value_le_mul_div_mul_rpow_divergence (mu := mu) hq hqn
-  refine ⟨C, hC, fun {D a F} hD h ha hF => ?_⟩
-  have : IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι))) :=
-    isFiniteMeasure_restrict.2 hD
-  have hF2 : MemLp F 2 (mu.restrict D) :=
-    hF.mono_exponent (by exact_mod_cast (show ((2 : ℝ≥0) : ℝ) ≤ q by exact_mod_cast hq.le))
-  have hℓ : ∀ v : W1p0 mu D 2, divergenceForcing (hF2.toLp F) v =
-      -∫ x in D, ⟪F x, W1p.gradient (v : W1p mu D 2) x⟫ ∂mu := fun v => by
-    rw [divergenceForcing_apply_eq_neg_setIntegral, neg_inj]
-    refine integral_congr_ae ?_
-    filter_upwards [hF2.coeFn_toLp] with x hx
-    rw [hx]
-  obtain ⟨w, hw, -⟩ := h.existsUnique_forall_energyFormH1_eq_of_measure_ne_top (c := 0)
-    (gamma := 0) ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hD
-    (divergenceForcing (hF2.toLp F))
-  exact ⟨w, fun v => (hw v).trans (hℓ v), hstamp (c := 0) (gamma := 0) hD h ha
-    aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hF
-    (fun v => (hw v).trans (hℓ v))⟩
 
 /-- **Splitting off the divergence datum at a boundary point.** For `q > 2`, `q > n` there is
 `K > 0`, depending only on `q`, the dimension and `mu`, such that the following holds. Let `u`
@@ -443,8 +384,7 @@ private theorem exists_posPart_subsolution_ball_divergence [Nonempty ι] {q : �
               W1p.value U x + K * R ^ (1 - (Fintype.card ι : ℝ) / q) *
                 (eLpNorm F q (mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩
                   ball x₀ (2 * R)))).toReal / lam := by
-  obtain ⟨C, hC, hsplit⟩ := exists_forall_energyFormH1_eq_ae_abs_le (mu := mu) (lam := lam)
-    (Lam := Lam) hq hqn
+  obtain ⟨C, hC, hsplit⟩ := exists_forall_energyFormH1_eq_ae_abs_le_divergence (mu := mu) hq hqn
   set n : ℝ := (Fintype.card ι : ℝ)
   set e : ℝ := n⁻¹ - (q : ℝ)⁻¹
   refine ⟨2 * C * mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ e * 2 ^ (1 - n / q),

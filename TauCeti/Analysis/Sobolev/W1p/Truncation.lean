@@ -27,7 +27,7 @@ Dirichlet boundary data, as needed in weak comparison arguments.
 * `TauCeti.W1p.posPart_sub_mem_w1p0Submodule`: lowering `u ∈ W^{1,p}_0(Ω)` by a nonnegative
   `v ∈ W^{1,p}(Ω)` keeps `(u - v)⁺` in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.value_posPart_sub_posPart_sub_smul_ae`,
-  `TauCeti.W1p.gradient_posPart_sub_posPart_sub_smul_ae`: the truncation
+  `TauCeti.W1p.gradient_posPart_sub_posPart_sub_smul_eq_zero_ae`: the truncation
   `min(u⁺, c v) = u⁺ - (u⁺ - c v)⁺` and the vanishing of its gradient where `u ≤ 0`.
 * `TauCeti.W1p.mem_w1p0Submodule_of_nonneg_of_le`: a function between `0` and an element of
   `W^{1,p}_0(Ω)` lies in `W^{1,p}_0(Ω)`.
@@ -271,16 +271,13 @@ theorem W1p.value_posPart_sub_posPart_sub_smul_ae (hp : p ≠ ∞) (u v : W1p mu
 
 /-- **The truncation `min(u⁺, c v)` is constant where `u ≤ 0`.** If `c v ≥ 0`, the weak gradient
 of `u⁺ - (u⁺ - c v)⁺` vanishes almost everywhere on `{u ≤ 0}`. -/
-theorem W1p.gradient_posPart_sub_posPart_sub_smul_ae (hp : p ≠ ∞) (u v : W1p mu Omega p)
-    {c : ℝ} (hcv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c * W1p.value v x) :
+theorem W1p.gradient_posPart_sub_posPart_sub_smul_eq_zero_ae (hp : p ≠ ∞)
+    (u v : W1p mu Omega p) {c : ℝ} (hcv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ c * W1p.value v x) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ 0 → W1p.gradient (W1p.posPart hp u -
       W1p.posPart hp (W1p.posPart hp u - c • v)) x = 0 := by
-  have hgsub (w₁ w₂ : W1p mu Omega p) : ⇑(W1p.gradient (w₁ - w₂)) =ᵐ[mu.restrict Omega]
-      ⇑(W1p.gradient w₁) - ⇑(W1p.gradient w₂) := by
-    rw [W1p.gradient_sub]
-    exact Lp.coeFn_sub _ _
-  filter_upwards [hgsub (W1p.posPart hp u) (W1p.posPart hp (W1p.posPart hp u - c • v)),
-    W1p.gradient_posPart_ae hp u, W1p.gradient_posPart_ae hp (W1p.posPart hp u - c • v),
+  filter_upwards [W1p.gradient_sub_ae (W1p.posPart hp u)
+      (W1p.posPart hp (W1p.posPart hp u - c • v)), W1p.gradient_posPart_ae hp u,
+    W1p.gradient_posPart_ae hp (W1p.posPart hp u - c • v),
     W1p.value_sub_ae (W1p.posPart hp u) (c • v), Lp.coeFn_posPart (W1p.value u),
     W1p.value_smul_ae c v, hcv] with x h1 h2 h3 h4 h5 h6 h7 hu
   have hup : W1p.value (W1p.posPart hp u) x = 0 := by

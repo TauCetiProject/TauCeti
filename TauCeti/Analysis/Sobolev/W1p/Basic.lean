@@ -525,6 +525,13 @@ theorem W1p.value_sub_ae (u v : W1p mu Omega p) :
     ⇑(W1p.value (u - v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) - ⇑(W1p.value v) := by
   simpa only [← W1p.valueL_apply, map_sub] using Lp.coeFn_sub (W1p.value u) (W1p.value v)
 
+/-- The weak gradient of a difference of two Sobolev functions is almost everywhere the difference
+of their weak gradients. -/
+theorem W1p.gradient_sub_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.gradient (u - v)) =ᵐ[mu.restrict Omega] ⇑(W1p.gradient u) - ⇑(W1p.gradient v) := by
+  simpa only [← W1p.gradientL_apply, map_sub] using
+    Lp.coeFn_sub (W1p.gradient u) (W1p.gradient v)
+
 /-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
 of its value. -/
 theorem W1p.value_smul_ae (c : ℝ) (u : W1p mu Omega p) :

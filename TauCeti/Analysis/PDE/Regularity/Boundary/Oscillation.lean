@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
+import TauCeti.Analysis.PDE.Ellipticity.Extension
 
 /-!
 # De Giorgi's oscillation decay at the boundary
@@ -55,8 +56,6 @@ is the boundary step of the global Hölder estimate for the Dirichlet problem.
   `v ∈ H¹(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL_posPart_nonpos`: the zero extension of `u⁺` is a weak
   subsolution on every larger open set.
-* `TauCeti.PDE.UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn`: extending a measurable
-  uniformly elliptic field by `λ I` off `Ω`.
 * `TauCeti.PDE.exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff`: the
   reduction of the supremum at the boundary.
 * `TauCeti.PDE.exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff`: its
@@ -113,13 +112,8 @@ private theorem mul_indicator_le_matrixBilinearForm_gradient
   have hsmul : ⇑(W1p.gradient (ε • v)) =ᵐ[mu.restrict Omega] ε • ⇑(W1p.gradient v) := by
     rw [← W1p.gradientL_apply, map_smul, W1p.gradientL_apply]
     exact Lp.coeFn_smul _ _
-  have hgsub (w₁ w₂ : W1p mu Omega 2) :
-      ⇑(W1p.gradient (w₁ - w₂)) =ᵐ[mu.restrict Omega]
-        ⇑(W1p.gradient w₁) - ⇑(W1p.gradient w₂) := by
-    rw [W1p.gradient_sub]
-    exact Lp.coeFn_sub _ _
-  filter_upwards [hgsub up (W1p.posPart (by norm_num) (up - ε • v)),
-    hgsub up (ε • v), hsmul, W1p.gradient_posPart_ae (by norm_num) u,
+  filter_upwards [W1p.gradient_sub_ae up (W1p.posPart (by norm_num) (up - ε • v)),
+    W1p.gradient_sub_ae up (ε • v), hsmul, W1p.gradient_posPart_ae (by norm_num) u,
     W1p.gradient_posPart_ae (by norm_num) (up - ε • v), Lp.coeFn_posPart (W1p.value u),
     W1p.value_sub_ae up (ε • v), W1p.value_smul_ae ε v, self_mem_ae_restrict
       Omega.isOpen.measurableSet] with x h1 h2 h3 h4 h5 h6 h7 h8 hxO
@@ -283,35 +277,6 @@ theorem energyFormH1_extendByZeroL_posPart_nonpos {Omega' : Opens (EuclideanSpac
   refine le_of_eq_of_le ?_ (energyFormH1_posPart_left_nonpos h ha hboundary hu hres)
   rw [energyFormH1_def, energyFormH1_def]
   exact setIntegral_congr_fun Omega.isOpen.measurableSet fun x hx => by rw [haa' hx]
-
-omit [mu.IsAddHaarMeasure] in
-/-- **Extending a measurable uniformly elliptic field by `λ I`.** A field `a`, measurable and
-uniformly elliptic on `Ω` with constants `λ, Λ`, agrees on `Ω` with a field that is measurable and
-uniformly elliptic with the same constants on the whole space, namely `a` extended by `λ I` off
-`Ω`. -/
-theorem UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) :
-    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
-      UniformlyEllipticOn (univ : Set (EuclideanSpace ℝ ι)) a' lam Lam ∧
-        AEStronglyMeasurable a' mu ∧ EqOn a' a (Omega : Set (EuclideanSpace ℝ ι)) := by
-  classical
-  have hI := uniformlyEllipticOn_const_smul_one (n := ι) (univ : Set (EuclideanSpace ℝ ι))
-    h.pos le_rfl h.le
-  refine ⟨(Omega : Set (EuclideanSpace ℝ ι)).piecewise a fun _ => lam • (1 : Matrix ι ι ℝ),
-    UniformlyEllipticOn.of_bounds h.pos h.le (fun x _ ξ => ?_) (fun x _ η ξ => ?_),
-    ha.piecewise Omega.isOpen.measurableSet.nullMeasurableSet aestronglyMeasurable_const,
-    piecewise_eqOn _ _ _⟩
-  · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-    · rw [piecewise_eq_of_mem _ _ _ hx]
-      exact h.lower_bound hx ξ
-    · rw [piecewise_eq_of_notMem _ _ _ hx]
-      exact hI.lower_bound (mem_univ x) ξ
-  · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-    · rw [piecewise_eq_of_mem _ _ _ hx]
-      exact h.upper_bound hx η ξ
-    · rw [piecewise_eq_of_notMem _ _ _ hx]
-      exact hI.upper_bound (mem_univ x) η ξ
 
 /-- The whole-space problem behind the boundary estimate: extending `a` by `λ I` off `Ω` gives a
 uniformly elliptic field on the whole space, for which the zero extension `ū` of `u⁺` is a weak
