@@ -11,15 +11,13 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import TauCeti.Analysis.Sobolev.Local.Coordinates
-import TauCeti.Analysis.Sobolev.Local.Locality
-import TauCeti.Analysis.Sobolev.Local.NormInv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Hyperplane
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
+import TauCeti.MeasureTheory.Function.MemLpLoc.NormInv
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -74,7 +72,7 @@ order-one planar class `TauCeti.MemWkpLoc p Ω 1 u` (`TauCeti.memWkpLoc_one_iff_
   and reflected by every continuous linear equivalence `e : E₁ ≃L[ℝ] E`
   (`ContinuousLinearEquiv.memW1pLoc_comp_iff`), regardless of Jacobian determinant or choice of
   equivalent norm (`TauCeti.memW1pLoc_comp_toLp_iff`); the corresponding `MemLpLoc` invariance
-  results live in `TauCeti.Analysis.Sobolev.Local.Basic`.
+  results live in `TauCeti.MeasureTheory.Function.MemLpLoc.Basic`.
 * **Sharpness checks.** The identity is in `MemW1pLoc p Ω` (`TauCeti.memW1pLoc_id`) without
   belonging to global `Lᵖ` for `p ≠ 0` on a nontrivial space (`TauCeti.not_memLp_id` in
   `TauCeti.MeasureTheory.Integral.NormRpow`); `x ↦ ‖x‖` lies in `MemW1pLoc p Ω` for all `p` with

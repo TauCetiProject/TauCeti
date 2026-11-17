@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import TauCeti.Analysis.Sobolev.Local.Reflection
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 
 /-!
 # Morrey's embedding on half-discs

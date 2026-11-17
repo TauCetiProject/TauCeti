@@ -6,16 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 
 /-!
 # Coordinates of local Sobolev maps
 
 A map into a finite-dimensional real normed space is locally Sobolev of order `k` if and
-only if all its coordinates in a finite basis are. The same criterion holds for local `Lᵖ`
-membership. These criteria allow scalar local estimates to be applied to vector-valued maps
-without choosing compatible representatives of their iterated weak derivatives.
+only if all its coordinates in a finite basis are (the local `Lᵖ` criterion
+`Module.Basis.memLpLoc_iff` lives in `TauCeti.MeasureTheory.Function.MemLpLoc.Basic`). These
+criteria allow scalar local estimates to be applied to vector-valued maps without choosing
+compatible representatives of their iterated weak derivatives.
 
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
@@ -46,24 +49,6 @@ variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {p : ENNReal} {U : Set ℂ} {k : ℕ} {f : ℂ → F}
 
 variable {ι : Type*} [Finite ι]
-
-/-- Local `Lᵖ` membership on any measured topological space can be tested in any finite basis of
-the codomain. No completeness of the codomain is needed. -/
-theorem memLpLoc_iff {X : Type*} [TopologicalSpace X] [MeasureSpace X]
-    {U : Set X} {f : X → F} (b : Module.Basis ι ℝ F) :
-    MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun x => b.repr (f x) i) := by
-  classical
-  let : Fintype ι := Fintype.ofFinite ι
-  let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
-  constructor
-  · intro h i
-    exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
-  · intro h
-    have hs : MemLpLoc p U (fun x => ∑ i, b.repr (f x) i • b i) := by
-      apply MemLpLoc.sum
-      intro i _
-      exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
-    simpa only [b.sum_repr] using hs
 
 /-- Local Sobolev membership of every order can be tested in any finite basis.
 Scalar coordinate witnesses may be chosen independently; finite sums reconstruct the map

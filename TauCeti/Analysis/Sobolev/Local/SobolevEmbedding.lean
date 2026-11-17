@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Analysis.Sobolev.Morrey.Exponent
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 
 /-!
 # The Sobolev embedding for local Sobolev maps and Morrey for `kp > 2`

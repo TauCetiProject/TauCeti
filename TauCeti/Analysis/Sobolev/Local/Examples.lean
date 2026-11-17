@@ -24,10 +24,10 @@ import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.Holomorphic
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
-import TauCeti.Analysis.Sobolev.Local.NormInv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
+import TauCeti.MeasureTheory.Function.MemLpLoc.NormInv
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 

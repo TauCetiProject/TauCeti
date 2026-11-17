@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 
 /-!
 # Higher-order Morrey embedding for local Sobolev maps on planar domains

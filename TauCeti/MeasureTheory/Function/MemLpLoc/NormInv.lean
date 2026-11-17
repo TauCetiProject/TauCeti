@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Local.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -15,8 +16,8 @@ On a nontrivial finite-dimensional real normed space `E` carrying a Borel additi
 the singular radial kernel `x ↦ ‖x‖⁻¹` belongs to `TauCeti.MemLpLoc p U` on a neighbourhood `U`
 of the origin if and only if `p < Module.finrank ℝ E` (`TauCeti.memLpLoc_norm_inv_iff_lt_finrank`).
 
-This characterization is kept apart from `TauCeti/Analysis/Sobolev/Local/Basic.lean` because its
-proof uses the radial integral bounds in `TauCeti.MeasureTheory.Integral.NormRpow`.
+This characterization is kept apart from `TauCeti/MeasureTheory/Function/MemLpLoc/Basic.lean`
+because its proof uses the radial integral bounds in `TauCeti.MeasureTheory.Integral.NormRpow`.
 -/
 
 public section

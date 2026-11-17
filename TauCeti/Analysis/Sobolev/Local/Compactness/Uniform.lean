@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Cauchy
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 import TauCeti.Topology.Algebra.IsUniformGroup.Basic
 
 /-!
