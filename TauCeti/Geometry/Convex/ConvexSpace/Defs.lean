@@ -62,6 +62,8 @@ theorem weights_one_add_weights_two_le_one [AddRightMono R] (x : StdSimplex R (F
 
 end AddCommMonoid
 
+section Semiring
+
 variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y : Type*}
 
 /-- Mapping a standard simplex adds the weights over each fibre of the map. -/
@@ -213,6 +215,11 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
     rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
+end Semiring
+
+section PrefixSum
+
+variable {R : Type*} [Preorder R] [AddCommMonoid R] [IsOrderedAddMonoid R] [One R]
 
 /-- The prefix sums of the weights of a point of a standard simplex on `Fin n` are
 nonnegative. -/
@@ -226,7 +233,10 @@ theorem prefixSum_weights_le_one {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) 
     TauCeti.prefixSum N x.weights ≤ 1 := by
   have : TauCeti.prefixSum N x.weights ≤ TauCeti.prefixSum (max N n) x.weights :=
     TauCeti.monotone_prefixSum x.nonneg (le_max_left N n)
-  rwa [TauCeti.prefixSum_of_le (le_max_right _ _), total_of_fintype] at this
+  rw [TauCeti.prefixSum_of_le (le_max_right _ _)] at this
+  exact this.trans_eq (by simpa [Finsupp.sum_fintype] using x.total)
+
+end PrefixSum
 
 section MapRange
 

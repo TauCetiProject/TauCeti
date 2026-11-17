@@ -301,7 +301,8 @@ private theorem isDistinguished_support_chainSimplexTimed {n : ℕ} {S : Set V} 
   simp [chainSimplexTimed_def, Function.comp_def, hslope]
 
 /-- **Closed-simplex injectivity of `chainSimplexPath`.** When velocities at distinct indices never
-lie in the same ray (for example along distinct vectors of any Weyl orbit, including `0`),
+lie in the same ray (for example distinct images `f (w • λ)` of a Weyl orbit lying in pairwise
+distinct rays; note that `0` cannot appear when `2 ≤ n` since `SameRay 𝕜 0 v` always holds),
 `chainSimplexPath v` is injective on the entire closed standard simplex `StdSimplex 𝕜 (Fin n)`. -/
 theorem chainSimplexPath_injective {n : ℕ} {v : Fin n → V}
     (hv : Pairwise fun i j ↦ ¬ SameRay 𝕜 (v i) (v j)) :
@@ -400,13 +401,7 @@ theorem durationSimplex_single
 @[simp]
 theorem durationSimplex_straight :
     (straight lam : LSPath P b lam).durationSimplex = Convexity.StdSimplex.single 0 := by
-  ext j
-  have hj : j = 0 := Fin.ext
-    (by have := j.isLt; have := length_straight (P := P) (b := b) (lam := lam); simp; omega)
-  have hsucc : (0 : Fin ((straight (P := P) (b := b) lam).length + 1)).succ =
-      Fin.last ((straight (P := P) (b := b) lam).length + 1) :=
-    Fin.ext (by simp)
-  simp [hj, duration_def, hsucc]
+  rw [← single_one, durationSimplex_single]
 
 /-- The cumulative prefix sums of `π.durationSimplex` recover `π.time`. -/
 @[simp]
@@ -587,7 +582,8 @@ theorem ofChainSimplex_durationSimplex (π : LSPath P b lam)
     (hw : IsLSChainBreak π.dir π.durationSimplex) :
     ofChainSimplex π.dir hne π.durationSimplex hw = π := by
   apply LSPath.ext
-  · rfl
+  · -- Direction lists agree by definition of `ofChainSimplex` (`length` and `dir` are unchanged).
+    rfl
   · exact congrArg List.ofFn (funext π.prefixSum_durationSimplex)
 
 /-- `ofChainSimplex` determines the underlying rational simplex point `w`. -/
@@ -754,7 +750,7 @@ theorem single_mem_lsChainSimplexSet {l : ℕ}
       fun {a b} ↦ by simp [Subsingleton.elim a b]⟩
   refine ⟨single (dir j), e.toOrderEmbedding.trans c, by funext k; simp [c], ?_⟩
   rw [durationSimplex_single, Convexity.StdSimplex.mapRange_single, Convexity.StdSimplex.map_single]
-  rfl
+  simp [c]
 
 /-- Every point of `lsChainSimplexSet` realizes a Lakshmibai–Seshadri path of shape `λ`. -/
 theorem chainSimplexPath_mem_range_toPLPath_of_mem_lsChainSimplexSet {V : Type*}
@@ -776,11 +772,11 @@ theorem chainSimplexPath_mem_range_toPLPath_of_mem_lsChainSimplexSet {V : Type*}
     PLPath.chainSimplexPath_map_orderHom (fun j ↦ f ((dir j).1 • lam)) φ.toOrderHom _
   rw [hmap, hcomp, π.chainSimplexPath_durationSimplex 𝕜 f]
 
-/-- **Characterization of LS paths inside a closed fixed-chain simplex.** For a dominant shape `λ`
-whose realized orbit has no two distinct weights in the same ray, and an injective direction
-sequence `dir` (such as any strictly decreasing Bruhat chain in `W / W_λ`), a point `x` of the
-closed simplex `StdSimplex 𝕜 (Fin (l + 1))` presents an LS path of shape `λ` if and only if
-`x ∈ lsChainSimplexSet 𝕜 dir`. -/
+/-- **Characterization of LS paths inside a closed fixed-chain simplex.** For a dominant shape `λ`,
+an additive map `f` injective on the Weyl orbit of `λ` whose realized orbit has no two distinct
+weights in the same ray, and an injective direction sequence `dir` (such as any strictly decreasing
+Bruhat chain in `W / W_λ`), a point `x` of the closed simplex `StdSimplex 𝕜 (Fin (l + 1))` presents
+an LS path of shape `λ` if and only if `x ∈ lsChainSimplexSet 𝕜 dir`. -/
 theorem chainSimplexPath_mem_range_toPLPath_iff {V : Type*} [AddCommGroup V] [Module 𝕜 V]
     {f : M →+ V} (hlam : lam ∈ dominantChamber P b)
     (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
@@ -797,8 +793,7 @@ theorem chainSimplexPath_mem_range_toPLPath_iff {V : Type*} [AddCommGroup V] [Mo
   rintro ⟨π, hπ⟩
   let v : Fin (l + 1) → V := fun j ↦ f ((dir j).1 • lam)
   have hv : Function.Injective v := fun j₁ j₂ h ↦
-    hdir (Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam (dir j₁).2 (dir j₂).2
-      (hf ⟨_, rfl⟩ ⟨_, rfl⟩ h)))
+    hdir (eq_of_isMinimalCosetRep_of_apply_smul_eq hlam hf h)
   set ψ : Fin x.weights.support.card ↪o Fin (l + 1) := x.weights.support.orderEmbOfFin rfl
   obtain ⟨x', hx'map, hx'wt, hdist, -⟩ :=
     PLPath.isDistinguished_support_chainSimplexTimed
@@ -826,8 +821,7 @@ theorem chainSimplexPath_mem_range_toPLPath_iff {V : Type*} [AddCommGroup V] [Mo
     have hsnd := congrArg Prod.snd (hentry i)
     rw [hd] at hsnd
     have hne : (π.duration i : 𝕜) ≠ 0 := Rat.cast_ne_zero.mpr (π.duration_pos i).ne'
-    exact Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam (dir (φ i)).2 (π.dir i).2
-      (hf ⟨_, rfl⟩ ⟨_, rfl⟩ (smul_right_injective V hne hsnd)))
+    exact eq_of_isMinimalCosetRep_of_smul_apply_smul_eq hlam hf hne hsnd
   · rw [← hx'map, hφcoe, Convexity.StdSimplex.map_comp]
     congr 1
     ext k

@@ -36,7 +36,8 @@ polyhedron:
 Evaluating any point of `(bruhatChainComplex P b lam).Realization` on its strictly decreasing
 carrier chain yields a global piecewise-linear path map `TauCeti.LSPath.bruhatRealizationPath` into
 `PLPath ℝ V`, compatible with every weakly decreasing chain presentation and injective whenever `λ`
-is dominant and distinct orbit weights lie in distinct rays.
+is dominant, `f` is injective on the Weyl orbit of `λ`, and distinct realized orbit weights lie in
+distinct rays.
 
 The Lakshmibai–Seshadri paths of shape `λ` embed injectively into this polyhedron via
 `TauCeti.LSPath.toBruhatRealization`, cutting out `lsChainSimplexSet ℝ dir` on each injective Bruhat
@@ -63,9 +64,11 @@ four-tetrahedron `S₃` Bruhat-chain complex), see
 
 * `TauCeti.LSPath.chainSimplexToRealization_map_orderHom`,
   `TauCeti.LSPath.chainSimplexToRealization_map_succAbove`,
-  `TauCeti.LSPath.chainSimplexToRealization_map_predAbove`, and
-  `TauCeti.LSPath.range_chainSimplexToRealization_inter`: face inclusions, equal-adjacent-direction
-  merges, and common-face intersections in `(bruhatChainComplex P b lam).Realization`.
+  `TauCeti.LSPath.chainSimplexToRealization_map_predAbove`,
+  `TauCeti.LSPath.range_chainSimplexToRealization_inter`, and
+  `TauCeti.LSPath.exists_chainSimplexToRealization_eq`: face inclusions, equal-adjacent-direction
+  merges, common-face intersections, and open-simplex realization of every point in
+  `(bruhatChainComplex P b lam).Realization`.
 * `TauCeti.LSPath.bruhatRealizationPath_chainSimplexToRealization`,
   `TauCeti.LSPath.bruhatRealizationPath_vertex`, and
   `TauCeti.LSPath.bruhatRealizationPath_injective`: compatibility with fixed-chain simplex paths,
@@ -76,7 +79,7 @@ four-tetrahedron `S₃` Bruhat-chain complex), see
   injectivity, and closed-simplex characterization of the LS subset inside the Bruhat-chain
   polyhedron.
 * `TauCeti.LSPath.finite_range_toBruhatRealization`,
-  `TauCeti.LSPath.uncountable_bruhatChainRealization_iff`, and
+  `TauCeti.LSPath.uncountable_realization_bruhatChainComplex_iff`, and
   `TauCeti.LSPath.range_toBruhatRealization_ssubset_univ_iff`: finiteness for dominant `λ`,
   uncountability criterion, and unconditional strict-containment criterion for the LS subset.
 
@@ -128,14 +131,23 @@ theorem mem_bruhatChainComplex_iff
   rw [bruhatChainComplex, AbstractSimplicialComplex.mem_orderComplex_iff']
   simp only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le]
 
+private theorem antitone_of_bruhatLE_succ {l : ℕ}
+    {dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (hdir : ∀ j : Fin l, (weylCoxeterSystem P b).BruhatLE (dir j.succ).1 (dir j.castSucc).1) :
+    letI : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
+    Antitone dir := by
+  let : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
+  exact Fin.antitone_iff_succ_le.mpr fun j ↦ by
+    simpa only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using hdir j
+
 private theorem image_dir_mem_bruhatChainComplex {l : ℕ}
     (dir : Fin (l + 1) →
       {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
     (hdir : ∀ j : Fin l, (weylCoxeterSystem P b).BruhatLE (dir j.succ).1 (dir j.castSucc).1) :
     Finset.univ.image dir ∈ bruhatChainComplex P b lam := by
   let : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
-  have hant : Antitone dir := Fin.antitone_iff_succ_le.mpr fun j ↦ by
-    simpa only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using hdir j
+  have hant : Antitone dir := antitone_of_bruhatLE_succ hdir
   rw [mem_bruhatChainComplex_iff]
   refine ⟨Finset.univ_nonempty.image dir, fun u hu v hv ↦ ?_⟩
   obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hu
@@ -181,7 +193,7 @@ theorem chainSimplexToRealization_val {l : ℕ}
   simp only [chainSimplexToRealization, ContinuousMap.coe_mk,
     _root_.AbstractSimplicialComplex.faceInclusion_val, Finset.standardSimplexHomeomorph_symm_val,
     Convexity.StdSimplex.weights_map, ← Finsupp.mapDomain_comp]
-  rfl
+  exact Finsupp.mapDomain_congr fun _ _ ↦ rfl
 
 /-- At the `j`-th vertex of the standard simplex, `chainSimplexToRealization` lands at the
 realization vertex `dir j`. -/
@@ -205,10 +217,8 @@ theorem bruhatLE_comp_orderHom {m l : ℕ}
     (φ : Fin (m + 1) →o Fin (l + 1)) (j : Fin m) :
     (weylCoxeterSystem P b).BruhatLE ((dir ∘ φ) j.succ).1 ((dir ∘ φ) j.castSucc).1 := by
   let : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
-  have hant : Antitone dir := Fin.antitone_iff_succ_le.mpr fun i ↦ by
-    simpa only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using hdir i
   simpa only [Function.comp_apply, ← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using
-    hant (φ.monotone j.castSucc_le_succ)
+    antitone_of_bruhatLE_succ hdir (φ.monotone j.castSucc_le_succ)
 
 /-- Pulling back a weakly decreasing Bruhat sequence along `Fin.succAbove` preserves the Bruhat
 monotonicity condition. -/
@@ -335,23 +345,19 @@ private noncomputable def supportStandardSimplex
     simpa only [_root_.AbstractSimplicialComplex.carrier_val] using
       _root_.AbstractSimplicialComplex.mem_convexHull_carrier _ x⟩
 
-@[instance_reducible]
-private noncomputable def chainLinearOrder
-    {σ : Finset {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
-    (hσ : σ ∈ bruhatChainComplex P b lam) : LinearOrder ↥σ :=
-  letI := (weylCoxeterSystem P b).bruhatPartialOrder
-  have hchain : IsChain (· ≤ ·) (↑σ : Set _) :=
-    (AbstractSimplicialComplex.mem_orderComplex_iff.mp hσ).2
-  IsChain.linearOrder fun _ hx _ hy hne ↦
-    (hchain hx hy hne).imp (lt_of_le_of_ne · hne) (lt_of_le_of_ne · hne.symm)
-
 private noncomputable def chainVertexEquiv
     {σ : Finset {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
     (hσ : σ ∈ bruhatChainComplex P b lam) : Fin σ.card ≃ ↥σ :=
   letI := (weylCoxeterSystem P b).bruhatPartialOrder
-  letI := chainLinearOrder hσ
-  (Fintype.orderIsoFinOfCardEq (OrderDual ↥σ) (k := σ.card) (by simp)).toEquiv.trans
-    OrderDual.ofDual
+  Fin.revPerm.trans (AbstractSimplicialComplex.orderIsoFinOfMemOrderComplex hσ).toEquiv
+
+private theorem chainVertexEquiv_apply
+    {σ : Finset {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (hσ : σ ∈ bruhatChainComplex P b lam) (k : Fin σ.card) :
+    chainVertexEquiv hσ k =
+      letI := (weylCoxeterSystem P b).bruhatPartialOrder
+      AbstractSimplicialComplex.orderIsoFinOfMemOrderComplex hσ k.rev :=
+  (rfl)
 
 private theorem bruhatLE_chainVertexEquiv_iff
     {σ : Finset {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
@@ -359,13 +365,8 @@ private theorem bruhatLE_chainVertexEquiv_iff
     (weylCoxeterSystem P b).BruhatLE
       (chainVertexEquiv hσ j).1.1 (chainVertexEquiv hσ i).1.1 ↔ i ≤ j := by
   let : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
-  let : LinearOrder ↥σ := chainLinearOrder hσ
-  let e : Fin σ.card ≃o OrderDual ↥σ :=
-    Fintype.orderIsoFinOfCardEq (OrderDual ↥σ) (k := σ.card) (by simp)
-  have hj : (chainVertexEquiv hσ j).1.1 = (OrderDual.ofDual (e j)).1.1 := rfl
-  have hi : (chainVertexEquiv hσ i).1.1 = (OrderDual.ofDual (e i)).1.1 := rfl
-  rw [hj, hi, ← CoxeterSystem.bruhatPartialOrder_le, Subtype.coe_le_coe, Subtype.coe_le_coe]
-  exact OrderDual.ofDual_le_ofDual.trans e.le_iff_le
+  rw [chainVertexEquiv_apply, chainVertexEquiv_apply, ← CoxeterSystem.bruhatPartialOrder_le,
+    Subtype.coe_le_coe, Subtype.coe_le_coe, OrderIso.le_iff_le, Fin.rev_le_rev]
 
 private noncomputable def bruhatFacePath (f : M →+ V)
     (σ : Finset {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
@@ -437,8 +438,12 @@ theorem bruhatRealizationPath_chainSimplexToRealization (f : M →+ V) {l : ℕ}
       ← Finsupp.mapDomain_comp, ← Finsupp.mapDomain_comp]
     have hcomp₁ :
         (Subtype.val : ↥τ → _) ∘ (fun a : ↥x.1.support ↦ (⟨a.1, hστ a.2⟩ : ↥τ)) =
-          (Subtype.val : ↥x.1.support → _) := rfl
-    have hcomp₂ : (Subtype.val : ↥τ → _) ∘ g = dir := rfl
+          (Subtype.val : ↥x.1.support → _) := by
+      funext a
+      simp
+    have hcomp₂ : (Subtype.val : ↥τ → _) ∘ g = dir := by
+      funext j
+      simp [g]
     rw [hcomp₁, hcomp₂, ← Finset.standardSimplexHomeomorph_symm_val, Homeomorph.symm_apply_apply]
     exact chainSimplexToRealization_val dir hdir w
   rw [bruhatRealizationPath, ← bruhatFacePath_mono f _ hτ hστ, hpush]
@@ -448,7 +453,7 @@ theorem bruhatRealizationPath_chainSimplexToRealization (f : M →+ V) {l : ℕ}
         simpa [g] using hdir j)⟩
   have hcomp : ((w.map g).map (chainVertexEquiv hτ).symm) = w.map ψ := by
     rw [← Convexity.StdSimplex.map_comp]
-    rfl
+    exact congrArg (w.map ·) (OrderHom.coe_mk _ _).symm
   simp only [bruhatFacePath]
   rw [hcomp, PLPath.chainSimplexPath_map_orderHom _ ψ w]
   congr 1
@@ -487,6 +492,57 @@ private theorem weights_bruhatSupportSimplex_apply
     Convexity.StdSimplex.weights_map_apply_of_injective (bruhatSupportVertex x).symm.injective]
   simp [supportStandardSimplex]
 
+/-- Every point of `(bruhatChainComplex P b lam).Realization` lies in the open interior of a
+fixed-chain simplex `chainSimplexToRealization dir hdir` along a strictly decreasing (injective)
+Bruhat chain `dir`. Together with `bruhatRealizationPath_chainSimplexToRealization`, this gives a
+public evaluation route for `bruhatRealizationPath` at arbitrary points. -/
+theorem exists_chainSimplexToRealization_eq (x : (bruhatChainComplex P b lam).Realization) :
+    ∃ (l : ℕ)
+      (dir : Fin (l + 1) →
+        {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w})
+      (hdir : ∀ j : Fin l, (weylCoxeterSystem P b).BruhatLE (dir j.succ).1 (dir j.castSucc).1),
+      Function.Injective dir ∧
+      ∃ w : Convexity.StdSimplex ℝ (Fin (l + 1)),
+        (∀ j, 0 < w.weights j) ∧ chainSimplexToRealization dir hdir w = x := by
+  have hmem := _root_.AbstractSimplicialComplex.support_mem (bruhatChainComplex P b lam) x
+  have hne : 0 < x.1.support.card :=
+    Finset.card_pos.mpr (mem_bruhatChainComplex_iff.mp hmem).1
+  let l := x.1.support.card - 1
+  have hl : l + 1 = x.1.support.card := Nat.sub_add_cancel hne
+  let e : Fin (l + 1) ≃o Fin x.1.support.card := Fin.castOrderIso hl
+  let dir : Fin (l + 1) →
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w} :=
+    fun j ↦ (bruhatSupportVertex x (e j)).1
+  have hdir : ∀ j : Fin l,
+      (weylCoxeterSystem P b).BruhatLE (dir j.succ).1 (dir j.castSucc).1 := fun j ↦
+    (bruhatLE_chainVertexEquiv_iff hmem).mpr (e.monotone j.castSucc_le_succ)
+  have hinj : Function.Injective dir := fun i j hij ↦
+    e.injective ((bruhatSupportVertex x).injective (Subtype.ext hij))
+  let w : Convexity.StdSimplex ℝ (Fin (l + 1)) := (bruhatSupportSimplex x).map e.symm
+  refine ⟨l, dir, hdir, hinj, w, fun j ↦ ?_, Subtype.ext ?_⟩
+  · have hwt : w.weights j = (bruhatSupportSimplex x).weights (e j) := by
+      have hj : j = e.symm (e j) := (e.symm_apply_apply j).symm
+      nth_rw 1 [hj]
+      exact Convexity.StdSimplex.weights_map_apply_of_injective e.symm.injective _ _
+    rw [hwt, weights_bruhatSupportSimplex_apply]
+    exact _root_.AbstractSimplicialComplex.Realization.pos_of_mem_support _ x
+      (bruhatSupportVertex x (e j)).2
+  · rw [chainSimplexToRealization_val]
+    simp only [w, bruhatSupportSimplex, Convexity.StdSimplex.weights_map,
+      ← Finsupp.mapDomain_comp]
+    have hcomp : dir ∘ ⇑e.symm ∘ ⇑(bruhatSupportVertex x).symm = Subtype.val := by
+      funext u
+      simp [dir, e]
+    rw [hcomp, ← Finset.standardSimplexHomeomorph_symm_val, Homeomorph.symm_apply_apply]
+    simp only [supportStandardSimplex]
+
+private theorem bruhatRealizationPath_eq_chainSimplexPath_support (f : M →+ V)
+    (x : (bruhatChainComplex P b lam).Realization) :
+    bruhatRealizationPath f x =
+      PLPath.chainSimplexPath (fun k ↦ f ((bruhatSupportVertex x k).1.1 • lam))
+        (bruhatSupportSimplex x) := by
+  simp only [bruhatRealizationPath, bruhatFacePath, bruhatSupportVertex, bruhatSupportSimplex]
+
 private theorem isDistinguished_bruhatSupportTimed {f : M →+ V}
     (hlam : lam ∈ dominantChamber P b)
     (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
@@ -498,11 +554,9 @@ private theorem isDistinguished_bruhatSupportTimed {f : M →+ V}
   refine PLPath.isDistinguished_chainSimplexTimed
     (S := Set.range fun w : P.weylGroup ↦ f (w • lam))
     (fun k ↦ ⟨(bruhatSupportVertex x k).1.1, rfl⟩) (fun k hk h ↦ ?_) (fun k ↦ ?_)
-  · have heq := eq_of_isMinimalCosetRep_of_smul_eq hlam
-      (bruhatSupportVertex x k).1.2 (bruhatSupportVertex x ⟨k.val + 1, hk⟩).1.2
-      (hf ⟨_, rfl⟩ ⟨_, rfl⟩ h)
+  · have heq := eq_of_isMinimalCosetRep_of_apply_smul_eq hlam hf h
     exact (Fin.ne_of_lt (Nat.lt_succ_self k.val) : k ≠ ⟨k.val + 1, hk⟩)
-      ((bruhatSupportVertex x).injective (Subtype.ext (Subtype.ext heq)))
+      ((bruhatSupportVertex x).injective (Subtype.ext heq))
   · rw [weights_bruhatSupportSimplex_apply]
     exact _root_.AbstractSimplicialComplex.Realization.pos_of_mem_support _ x
       (bruhatSupportVertex x k).2
@@ -540,8 +594,9 @@ private theorem eq_of_bruhatSupportVertex_eq
     rw [Finsupp.notMem_support_iff.mp hu, Finsupp.notMem_support_iff.mp hu₂]
 
 /-- **Global injectivity of path evaluation on the Bruhat-chain polyhedron.** For a dominant
-weight `λ` whose realized Weyl orbit has no two distinct weights in the same ray, distinct points
-of `(bruhatChainComplex P b lam).Realization` evaluate to distinct piecewise-linear paths. -/
+weight `λ` and an additive map `f` injective on the Weyl orbit of `λ` whose realized orbit has no
+two distinct weights in the same ray, distinct points of `(bruhatChainComplex P b lam).Realization`
+evaluate to distinct piecewise-linear paths. -/
 theorem bruhatRealizationPath_injective {f : M →+ V} (hlam : lam ∈ dominantChamber P b)
     (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
     (hS : (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay ℝ u v) :
@@ -552,11 +607,12 @@ theorem bruhatRealizationPath_injective {f : M →+ V} (hlam : lam ∈ dominantC
       PLPath.chainSimplexTimed
           (fun k ↦ f ((bruhatSupportVertex x₁ k).1.1 • lam)) (bruhatSupportSimplex x₁) =
         PLPath.chainSimplexTimed
-          (fun k ↦ f ((bruhatSupportVertex x₂ k).1.1 • lam)) (bruhatSupportSimplex x₂) :=
-    (isDistinguished_bruhatSupportTimed hlam hf x₁).unique
-      (isDistinguished_bruhatSupportTimed hlam hf x₂) hS
-      (by simpa [PLPath.ofSegments_map_snd_chainSimplexTimed, bruhatRealizationPath, bruhatFacePath,
-        bruhatSupportSimplex, bruhatSupportVertex] using hp)
+          (fun k ↦ f ((bruhatSupportVertex x₂ k).1.1 • lam)) (bruhatSupportSimplex x₂) := by
+    refine (isDistinguished_bruhatSupportTimed hlam hf x₁).unique
+      (isDistinguished_bruhatSupportTimed hlam hf x₂) hS ?_
+    rw [PLPath.ofSegments_map_snd_chainSimplexTimed, PLPath.ofSegments_map_snd_chainSimplexTimed,
+      ← bruhatRealizationPath_eq_chainSimplexPath_support,
+      ← bruhatRealizationPath_eq_chainSimplexPath_support, hp]
   have hcard : x₁.1.support.card = x₂.1.support.card := by
     simpa [PLPath.chainSimplexTimed_def] using congrArg List.length htimed
   rw [PLPath.chainSimplexTimed_def, PLPath.chainSimplexTimed_def,
@@ -573,9 +629,7 @@ theorem bruhatRealizationPath_injective {f : M →+ V} (hlam : lam ∈ dominantC
   rw [hfst] at hsnd
   have hpos := _root_.AbstractSimplicialComplex.Realization.pos_of_mem_support _ x₂
     (bruhatSupportVertex x₂ (k.cast hcard)).2
-  exact ⟨hfst, Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam
-    (bruhatSupportVertex x₁ k).1.2 (bruhatSupportVertex x₂ (k.cast hcard)).1.2
-    (hf ⟨_, rfl⟩ ⟨_, rfl⟩ (smul_right_injective V hpos.ne' hsnd)))⟩
+  exact ⟨hfst, eq_of_isMinimalCosetRep_of_smul_apply_smul_eq hlam hf hpos.ne' hsnd⟩
 
 end GlobalPath
 
@@ -639,16 +693,6 @@ theorem bruhatRealizationPath_toBruhatRealization {V : Type*} [AddCommGroup V] [
   rw [toBruhatRealization, bruhatRealizationPath_chainSimplexToRealization,
     π.chainSimplexPath_durationSimplex ℝ f]
 
-private theorem strictAnti_dir (π : LSPath P b lam) :
-    letI : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
-    StrictAnti π.dir := by
-  let : PartialOrder P.weylGroup := (weylCoxeterSystem P b).bruhatPartialOrder
-  exact Fin.strictAnti_iff_succ_lt.mpr fun j ↦
-    lt_of_le_of_ne
-      (by simpa only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using
-        π.bruhatLE_dir_succ j)
-      (π.dir_succ_ne j)
-
 private theorem dir_eq_of_toBruhatRealization_eq {π₁ π₂ : LSPath P b lam}
     (h : π₁.toBruhatRealization = π₂.toBruhatRealization) :
     ∃ hlen : π₁.length = π₂.length,
@@ -667,7 +711,7 @@ private theorem dir_eq_of_toBruhatRealization_eq {π₁ π₂ : LSPath P b lam}
   have hg_range : Set.range π₁.dir = Set.range g := by
     rw [hrange, Set.range_comp, e.surjective.range_eq, Set.image_univ]
   exact ⟨hlen,
-    ((strictAnti_dir π₁).range_inj_of_wellFoundedGT ((strictAnti_dir π₂).comp_strictMono
+    (π₁.strictAnti_dir.range_inj_of_wellFoundedGT (π₂.strictAnti_dir.comp_strictMono
       e.strictMono)).mp hg_range⟩
 
 /-- `LSPath.toBruhatRealization` is injective for every weight `λ`. -/
@@ -683,30 +727,21 @@ theorem toBruhatRealization_injective :
     have hgj : π₁.dir j = π₂.dir (j.cast (congrArg (· + 1) hlen)) := congrFun hdir_eq j
     rw [hgj, Finsupp.mapDomain_apply_of_injective π₂.dir_injective] at hval
     simpa using hval
+  have hsimp : π₁.durationSimplex.map (finCongr (congrArg (· + 1) hlen)) =
+      π₂.durationSimplex := by
+    ext j
+    obtain ⟨i, rfl⟩ := (finCongr (congrArg (· + 1) hlen)).surjective j
+    rw [Convexity.StdSimplex.weights_map_apply_of_injective (finCongr _).injective]
+    simpa [finCongr_apply] using hdur i
   apply LSPath.ext
   · rw [List.ofFn_congr (congrArg (· + 1) hlen).symm]
     exact congrArg List.ofFn hdir_eq
   · rw [List.ofFn_congr (congrArg (· + 2) hlen).symm]
     apply congrArg List.ofFn
-    have hfun :
-        (⇑π₁.durationSimplex.weights : Fin (π₁.length + 1) → ℚ) =
-          fun j ↦ π₂.duration (j.cast (congrArg (· + 1) hlen)) :=
-      funext fun j ↦ by simpa using hdur j
-    have hfun₂ : (⇑π₂.durationSimplex.weights : Fin (π₂.length + 1) → ℚ) = π₂.duration :=
-      funext fun j ↦ by simp
-    have hval (m : ℕ) (hm : m ≤ π₁.length + 1) :
-        prefixSum m (fun j : Fin (π₁.length + 1) ↦
-            π₂.duration (j.cast (congrArg (· + 1) hlen))) =
-          prefixSum m π₂.duration := by
-      induction m with
-      | zero => simp
-      | succ m ih =>
-        rw [prefixSum_succ hm, prefixSum_succ (by omega), ih (by omega)]
-        rfl
     funext k
-    rw [← π₁.prefixSum_durationSimplex, ← π₂.prefixSum_durationSimplex,
-      Convexity.StdSimplex.prefixSum_def, Convexity.StdSimplex.prefixSum_def, hfun, hfun₂]
-    exact hval k.val (Nat.le_of_lt_succ k.isLt)
+    rw [← π₁.prefixSum_durationSimplex, ← π₂.prefixSum_durationSimplex, ← hsimp,
+      Convexity.StdSimplex.prefixSum_map_finCongr]
+    simp
 
 /-- Two Lakshmibai–Seshadri paths embed to the same point of the Bruhat-chain polyhedron if and
 only if they are equal. -/
@@ -738,11 +773,10 @@ theorem chainSimplexToRealization_mem_range_toBruhatRealization_iff {l : ℕ}
       exact (range_chainSimplexToRealization dir hdir).subset ⟨x, rfl⟩
     let g : Fin (π.length + 1) → Fin (l + 1) := fun i ↦ (hsub ⟨i, rfl⟩).choose
     have hg (i : Fin (π.length + 1)) : dir (g i) = π.dir i := (hsub ⟨i, rfl⟩).choose_spec
-    have hant : Antitone dir := Fin.antitone_iff_succ_le.mpr fun j ↦ by
-      simpa only [← Subtype.coe_le_coe, CoxeterSystem.bruhatPartialOrder_le] using hdir j
+    have hant : Antitone dir := antitone_of_bruhatLE_succ hdir
     have hg_mono : StrictMono g := fun i₁ i₂ hi ↦ by
       by_contra! hle
-      exact (strictAnti_dir π hi).not_ge (by rw [← hg i₁, ← hg i₂]; exact hant hle)
+      exact (π.strictAnti_dir hi).not_ge (by rw [← hg i₁, ← hg i₂]; exact hant hle)
     let φ : Fin (π.length + 1) ↪o Fin (l + 1) := OrderEmbedding.ofStrictMono g hg_mono
     have hcomp : dir ∘ φ = π.dir := funext hg
     refine ⟨π, φ, hcomp, chainSimplexToRealization_injective hdir hinj (Subtype.ext ?_)⟩
@@ -786,7 +820,7 @@ private theorem eq_toBruhatRealization_straight_of_forall_coroot'_eq_zero
 
 /-- The Bruhat-chain polyhedron `(bruhatChainComplex P b lam).Realization` is uncountable if and
 only if `⟨λ, αᵢ^∨⟩ ≠ 0` for some simple root `αᵢ`. -/
-theorem uncountable_bruhatChainRealization_iff :
+theorem uncountable_realization_bruhatChainComplex_iff :
     Uncountable (bruhatChainComplex P b lam).Realization ↔
       ∃ i : b.support, P.coroot' i lam ≠ 0 := by
   constructor
@@ -831,7 +865,7 @@ theorem range_toBruhatRealization_ssubset_univ_iff :
     exact hne (Set.eq_univ_iff_forall.mpr fun x ↦
       ⟨straight lam, (eq_toBruhatRealization_straight_of_forall_coroot'_eq_zero hall x).symm⟩)
   · intro hex heq
-    have := uncountable_bruhatChainRealization_iff.mpr hex
+    have := uncountable_realization_bruhatChainComplex_iff.mpr hex
     exact not_surjective_countable_uncountable toBruhatRealization (Set.range_eq_univ.mp heq)
 
 end LSSubset

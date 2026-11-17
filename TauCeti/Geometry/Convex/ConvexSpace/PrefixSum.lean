@@ -32,8 +32,10 @@ sum `t_{p+1}`.
 
 * `Convexity.StdSimplex.strictMono_prefixSum_iff`: the prefix sums strictly increase exactly when
   every barycentric weight is strictly positive.
-* `Convexity.StdSimplex.prefixSum_map_succAbove`, `Convexity.StdSimplex.prefixSum_map_predAbove`:
-  how facet inclusions and adjacent-vertex merges act on cumulative prefix sums.
+* `Convexity.StdSimplex.prefixSum_map_of_lt_iff`, `Convexity.StdSimplex.prefixSum_map_finCongr`,
+  `Convexity.StdSimplex.prefixSum_map_succAbove`, `Convexity.StdSimplex.prefixSum_map_predAbove`:
+  how general maps, reindexing, facet inclusions, and adjacent-vertex merges act on cumulative
+  prefix sums.
 -/
 
 public section
@@ -100,20 +102,9 @@ theorem prefixSum_inj {R : Type*} [LE R] [AddCommGroup R] [One R] {n : ℕ}
   prefixSum_injective.eq_iff
 
 /-- The cumulative prefix sums of a simplex point are monotone. -/
-theorem monotone_prefixSum {R : Type*} [PartialOrder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
+theorem monotone_prefixSum {R : Type*} [Preorder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
     [One R] {n : ℕ} (w : StdSimplex R (Fin n)) : Monotone w.prefixSum :=
   fun _ _ h ↦ TauCeti.monotone_prefixSum w.nonneg h
-
-/-- Every cumulative prefix sum of a simplex point is nonnegative. -/
-theorem prefixSum_nonneg {R : Type*} [PartialOrder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
-    [One R] {n : ℕ} (w : StdSimplex R (Fin n)) (k : Fin (n + 1)) : 0 ≤ w.prefixSum k := by
-  rw [prefixSum_def, TauCeti.prefixSum_def]
-  exact Finset.sum_nonneg fun j _ ↦ w.nonneg j
-
-/-- Every cumulative prefix sum of a simplex point is at most `1`. -/
-theorem prefixSum_le_one {R : Type*} [PartialOrder R] [AddCommMonoid R] [IsOrderedAddMonoid R]
-    [One R] {n : ℕ} (w : StdSimplex R (Fin n)) (k : Fin (n + 1)) : w.prefixSum k ≤ 1 :=
-  (w.monotone_prefixSum (Fin.le_last k)).trans_eq w.prefixSum_last
 
 /-- The cumulative prefix sums strictly increase exactly when every barycentric weight is strictly
 positive, that is, when the point lies in the open interior of the simplex. -/
@@ -151,35 +142,69 @@ theorem prefixSum_mapRange {R S : Type*} [PartialOrder R] [Semiring R] [PartialO
   funext i
   simp
 
+/-- The cumulative prefix sum of `w.map g` at `k` equals that of `w` at `k'` whenever `g` maps
+precisely the indices below `k'` to indices below `k`. -/
+theorem prefixSum_map_of_lt_iff {R : Type*} [PartialOrder R] [Semiring R]
+    [IsStrictOrderedRing R] {m n : ℕ} {g : Fin m → Fin n} (w : StdSimplex R (Fin m))
+    (k : Fin (n + 1)) (k' : Fin (m + 1))
+    (h : ∀ j : Fin m, (g j).val < k.val ↔ j.val < k'.val) :
+    (w.map g).prefixSum k = w.prefixSum k' := by
+  rw [prefixSum_def, prefixSum_def, TauCeti.prefixSum_def, TauCeti.prefixSum_def,
+    sum_filter_weights_map]
+  refine Finset.sum_congr ?_ fun _ _ ↦ rfl
+  ext j
+  simpa only [Finset.mem_filter, Finset.mem_univ, true_and] using h j
+
+/-- Reindexing a standard simplex along `finCongr h` shifts cumulative prefix sums by
+`Fin.cast`. -/
+@[simp]
+theorem prefixSum_map_finCongr {R : Type*} [PartialOrder R] [Semiring R]
+    [IsStrictOrderedRing R] {m n : ℕ} (h : m = n) (w : StdSimplex R (Fin m))
+    (k : Fin (n + 1)) :
+    (w.map (finCongr h)).prefixSum k = w.prefixSum (k.cast (congrArg (· + 1) h.symm)) := by
+  subst h
+  simp
+
 /-- Including the facet opposite `p` along `p.succAbove` repeats the `p`-th cumulative prefix sum
 via `p.predAbove`. -/
 @[simp]
 theorem prefixSum_map_succAbove {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
     {n : ℕ} (p : Fin (n + 1)) (w : StdSimplex R (Fin n)) (k : Fin (n + 2)) :
-    (w.map p.succAbove).prefixSum k = w.prefixSum (p.predAbove k) := by
-  rw [prefixSum_def, prefixSum_def, TauCeti.prefixSum_def, TauCeti.prefixSum_def,
-    sum_filter_weights_map]
-  refine Finset.sum_congr ?_ fun _ _ ↦ rfl
-  ext j
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.succAbove, Fin.predAbove,
-    Fin.lt_def, Fin.val_castSucc, apply_dite Fin.val, Fin.val_pred, Fin.coe_castPred,
-    dite_eq_ite, apply_ite Fin.val, Fin.val_succ]
-  split_ifs <;> omega
+    (w.map p.succAbove).prefixSum k = w.prefixSum (p.predAbove k) :=
+  prefixSum_map_of_lt_iff w k (p.predAbove k) fun j ↦ by
+    rcases lt_or_ge j.castSucc p with hj | hj <;> rcases le_or_gt k p.castSucc with hk | hk
+    · rw [Fin.succAbove_of_castSucc_lt _ _ hj, Fin.predAbove_of_le_castSucc _ _ hk]
+      simp
+    · rw [Fin.succAbove_of_castSucc_lt _ _ hj, Fin.predAbove_of_castSucc_lt _ _ hk]
+      simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_pred] at hj hk ⊢
+      omega
+    · rw [Fin.succAbove_of_le_castSucc _ _ hj, Fin.predAbove_of_le_castSucc _ _ hk]
+      simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ, Fin.coe_castPred] at hj hk ⊢
+      omega
+    · rw [Fin.succAbove_of_le_castSucc _ _ hj, Fin.predAbove_of_castSucc_lt _ _ hk]
+      simp only [Fin.le_def, Fin.lt_def, Fin.val_castSucc, Fin.val_succ, Fin.val_pred] at hj hk ⊢
+      omega
 
 /-- Merging two adjacent vertices `p.castSucc` and `p.succ` along `p.predAbove` deletes the
 internal prefix sum `p.castSucc.succ`. -/
 @[simp]
 theorem prefixSum_map_predAbove {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
     {n : ℕ} (p : Fin n) (w : StdSimplex R (Fin (n + 1))) (k : Fin (n + 1)) :
-    (w.map p.predAbove).prefixSum k = w.prefixSum (p.castSucc.succ.succAbove k) := by
-  rw [prefixSum_def, prefixSum_def, TauCeti.prefixSum_def, TauCeti.prefixSum_def,
-    sum_filter_weights_map]
-  refine Finset.sum_congr ?_ fun _ _ ↦ rfl
-  ext j
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Fin.succAbove, Fin.predAbove,
-    Fin.lt_def, Fin.val_castSucc, apply_dite Fin.val, Fin.val_pred, Fin.coe_castPred,
-    dite_eq_ite, apply_ite Fin.val, Fin.val_succ]
-  split_ifs <;> omega
+    (w.map p.predAbove).prefixSum k = w.prefixSum (p.castSucc.succ.succAbove k) :=
+  prefixSum_map_of_lt_iff w k (p.castSucc.succ.succAbove k) fun j ↦ by
+    rcases le_or_gt j p.castSucc with hj | hj <;>
+      rcases lt_or_ge k.castSucc p.castSucc.succ with hk | hk
+    · rw [Fin.predAbove_of_le_castSucc _ _ hj, Fin.succAbove_of_castSucc_lt _ _ hk]
+      simp
+    · rw [Fin.predAbove_of_le_castSucc _ _ hj, Fin.succAbove_of_le_castSucc _ _ hk]
+      simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ, Fin.coe_castPred] at hj hk ⊢
+      omega
+    · rw [Fin.predAbove_of_castSucc_lt _ _ hj, Fin.succAbove_of_castSucc_lt _ _ hk]
+      simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ, Fin.val_pred] at hj hk ⊢
+      omega
+    · rw [Fin.predAbove_of_castSucc_lt _ _ hj, Fin.succAbove_of_le_castSucc _ _ hk]
+      simp only [Fin.lt_def, Fin.le_def, Fin.val_castSucc, Fin.val_succ, Fin.val_pred] at hj hk ⊢
+      omega
 
 private theorem prefixSum_sub_eq {R : Type*} [AddCommGroup R] {n : ℕ} (t : Fin (n + 1) → R)
     (h0 : t 0 = 0) (i : ℕ) (hi : i ≤ n) :
