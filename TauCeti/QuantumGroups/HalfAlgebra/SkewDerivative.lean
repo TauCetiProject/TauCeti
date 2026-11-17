@@ -95,6 +95,7 @@ theorem freeHalfScale_comp_freeHalfScale (c d : I → R) :
     (freeHalfScale c).comp (freeHalfScale d) = freeHalfScale (c * d) := by
   ext; simp [smul_smul, mul_comm]
 
+@[simp]
 theorem freeHalfScale_freeHalfScale (c d : I → R) (x : FreeAlgebra R I) :
     freeHalfScale c (freeHalfScale d x) = freeHalfScale (c * d) x :=
   DFunLike.congr_fun (freeHalfScale_comp_freeHalfScale c d) x
@@ -207,6 +208,11 @@ theorem freeRemoveRight_eq_star (i : I) (x : FreeAlgebra R I) :
 /-- Word reversal exchanges the two skew derivatives. -/
 theorem freeRemove_star (i : I) (x : FreeAlgebra R I) :
     freeRemove χ i (star x) = star (freeRemoveRight χ i x) := by
+  rw [freeRemoveRight_eq_star, star_star]
+
+/-- The mirror of `freeRemove_star`: `Rᵢ (star x) = star (Lᵢ x)`. -/
+theorem freeRemoveRight_star (i : I) (x : FreeAlgebra R I) :
+    freeRemoveRight χ i (star x) = star (freeRemove χ i x) := by
   rw [freeRemoveRight_eq_star, star_star]
 
 @[simp]

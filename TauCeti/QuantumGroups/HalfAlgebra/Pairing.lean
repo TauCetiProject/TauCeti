@@ -108,6 +108,7 @@ private theorem freePairing_mul_left (x y z : FreeAlgebra R I) :
 theorem freePairing_one_left (z : FreeAlgebra R I) : freePairing χ 1 z = algebraMapInv z := by
   simp [freePairing_apply]
 
+@[simp]
 theorem freePairing_algebraMap_left (r : R) (z : FreeAlgebra R I) :
     freePairing χ (algebraMap R (FreeAlgebra R I) r) z = r * algebraMapInv z := by
   simp [Algebra.algebraMap_eq_smul_one]
