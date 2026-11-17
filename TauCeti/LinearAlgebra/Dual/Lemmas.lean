@@ -98,12 +98,8 @@ variable (R ι : Type*) [CommSemiring R]
 theorem linearIndependent_proj :
     LinearIndependent R (fun i : ι ↦ (LinearMap.proj i : Dual R (ι → R))) := by
   classical
-  intro f g hfg
-  ext i
-  have h := LinearMap.congr_fun hfg (Pi.single i (1 : R))
-  simpa only [Finsupp.linearCombination_apply, Finsupp.sum, LinearMap.sum_apply,
-    LinearMap.smul_apply, LinearMap.proj_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one,
-    mul_zero, Finset.sum_ite_eq', Finsupp.if_mem_support] using h
+  refine linearIndependent_iff'ₛ.mpr fun s l₁ l₂ h j hj ↦ ?_
+  simpa [hj, Pi.single_apply] using LinearMap.congr_fun h (Pi.single j (1 : R))
 
 /-- The coordinate projections on `ι → R` span the dual space when `ι` is finite. -/
 theorem span_range_proj_eq_top [Finite ι] :

@@ -789,8 +789,8 @@ private theorem exists_strict_supporting_slope_of_mem_twistedFiltration
       · refine ⟨weightSlope L c ((twistedFiltration L c)[i]'(by omega))
           ((twistedFiltration L c)[i + 1]'hk) - 1, fun U hne ↦
           weight_sub_mul_finrank_lt_succ_of_finrank_lt hL hc iL (sub_one_lt _) ?_⟩
-        have hTr : (twistedFiltration L c)[i + 1]'hk = ⊤ :=
-          getElem_twistedFiltrationAux_of_eq_length_sub_one L c ⊤ hlast
+        have hTr : (twistedFiltration L c)[i + 1]'hk = ⊤ := by
+          simp only [hlast, getElem_length_sub_one_twistedFiltration]
         exact lt_of_le_of_ne (by rw [hTr, finrank_top]; exact Submodule.finrank_le U) hne
       · let iR : Fin ((twistedFiltration L c).length - 1) := ⟨i + 1, by omega⟩
         have hμ := strictAnti_weightSlope_twistedFiltration L c
