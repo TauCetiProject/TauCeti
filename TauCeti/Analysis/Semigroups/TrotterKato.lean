@@ -21,8 +21,9 @@ point `λ > ω` of the half-line,
 
 implies convergence of the semigroups, `Sᵢ(t) x → T(t) x`, uniformly for `t` in bounded intervals
 `[0, τ]` (`StronglyContinuousSemigroup.tendstoUniformlyOn_realOperator_apply_of_tendsto_resolvent`).
-Conversely, convergence of the semigroups at each time gives convergence of the resolvents at
-every `λ > ω`, by dominated convergence in the Laplace integral
+Conversely, along a countably generated filter (for instance a sequence), convergence of the
+semigroups at each time gives convergence of the resolvents at every `λ > ω`, by dominated
+convergence in the Laplace integral
 (`StronglyContinuousSemigroup.tendsto_resolvent_apply_of_tendsto_apply`).
 
 The theorem turns a statement about generators, which are unbounded operators and are often only
@@ -53,7 +54,7 @@ semigroups extends it to every `x`.
 * `StronglyContinuousSemigroup.tendsto_apply_of_tendsto_resolvent`: its pointwise form at a fixed
   time.
 * `StronglyContinuousSemigroup.tendsto_resolvent_apply_of_tendsto_apply`: the converse, semigroup
-  convergence implies resolvent convergence.
+  convergence along a countably generated filter implies resolvent convergence.
 
 ## References
 
@@ -295,9 +296,11 @@ theorem tendsto_apply_of_tendsto_resolvent {ι : Type*} {l : Filter ι}
     (tendstoUniformlyOn_realOperator_apply_of_tendsto_resolvent hS hT hlambda hR x t).tendsto_at
       (right_mem_Icc.mpr t.coe_nonneg)
 
-/-- **The converse of the Trotter–Kato theorem.** If semigroups `Sᵢ` with a common growth bound
-`(ω, M)` converge strongly at every time to a semigroup `T`, then the resolvents of their generators
-converge strongly at every `λ > ω`. -/
+/-- **The converse of the Trotter–Kato theorem.** If semigroups `Sᵢ`, indexed along a countably
+generated filter (for instance a sequence), with a common growth bound `(ω, M)` converge strongly
+at every time to a semigroup `T`, then the resolvents of their generators converge strongly at
+every `λ > ω`. The countable generation is used for dominated convergence in the Laplace
+integral. -/
 theorem tendsto_resolvent_apply_of_tendsto_apply {ι : Type*} {l : Filter ι}
     [l.IsCountablyGenerated]
     {S : ι → StronglyContinuousSemigroup X} {T : StronglyContinuousSemigroup X} {ω M : ℝ}
