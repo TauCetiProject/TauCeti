@@ -11,8 +11,8 @@ public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 # Almost-split sequences and equivalences
 
 Equivalences preserve and reflect almost-split morphisms and almost-split sequences.
-Reflection holds for any fully faithful functor, for instance the inclusion of a full subcategory
-(`CategoryTheory.Functor.isRightAlmostSplit_of_map`,
+For almost-split morphisms, reflection holds for any fully faithful functor, for instance the
+inclusion of a full subcategory (`CategoryTheory.Functor.isRightAlmostSplit_of_map`,
 `CategoryTheory.Functor.isLeftAlmostSplit_of_map`). The essential surjectivity is needed for
 preservation: the factorization property must hold for every object of the target category. This
 allows almost-split sequences to be transported between module categories and equivalent categories

@@ -58,8 +58,8 @@ The argument has three steps, all in `FGModuleCat A`.
   stays inside `S`. Repeating this gives arbitrarily long chains of non-isomorphisms in `S` with
   nonzero composites, which the Harada–Sai lemma forbids. So every morphism between `S` and a
   finitely generated indecomposable module outside `S`, in either direction, vanishes
-  (`TauCeti.eq_zero_of_length_le_of_prop_of_not_prop` and
-  `TauCeti.eq_zero_of_length_le_of_not_prop_of_prop`).
+  (`CategoryTheory.ObjectProperty.eq_zero_of_length_le_of_prop_of_not_prop` and
+  `CategoryTheory.ObjectProperty.eq_zero_of_length_le_of_not_prop_of_prop`).
 * The indecomposable summands of the regular module split into those in `S` and the others, with
   no nonzero morphisms between the two groups. The projection onto the first group is then right
   multiplication by a central idempotent of `A`, so for connected `A` one group is empty
@@ -73,10 +73,10 @@ The argument has three steps, all in `FGModuleCat A`.
 
 ## Main results
 
-* `TauCeti.eq_zero_of_length_le_of_prop_of_not_prop` and
-  `TauCeti.eq_zero_of_length_le_of_not_prop_of_prop`: the morphisms between a class of finitely
-  generated indecomposable modules of bounded length closed under irreducible maps and a finitely
-  generated indecomposable module outside it vanish.
+* `CategoryTheory.ObjectProperty.eq_zero_of_length_le_of_prop_of_not_prop` and
+  `CategoryTheory.ObjectProperty.eq_zero_of_length_le_of_not_prop_of_prop`: the morphisms
+  between a class of finitely generated indecomposable modules of bounded length closed under
+  irreducible maps and a finitely generated indecomposable module outside it vanish.
 * `TauCeti.forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAlmostSplit`:
   **Auslander's theorem** over an Artinian ring with source and sink maps.
 * `TauCeti.forall_prop_and_isRepresentationFinite_of_length_le`: **Auslander's theorem** for a
@@ -95,7 +95,7 @@ open CategoryTheory CategoryTheory.Limits TauCeti
 
 universe u v w
 
-namespace TauCeti
+namespace CategoryTheory.ObjectProperty
 
 section Vanishing
 
@@ -184,6 +184,10 @@ theorem eq_zero_of_length_le_of_not_prop_of_prop
 
 end Vanishing
 
+end CategoryTheory.ObjectProperty
+
+namespace TauCeti
+
 section Artinian
 
 variable {A : Type v} [Ring A] [IsArtinianRing A] [Small.{w} A]
@@ -209,11 +213,11 @@ theorem forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAl
     (∀ X : FGModuleCat.{w} A, Indecomposable X.obj → S X) ∧ IsRepresentationFinite.{w} A := by
   have hfwd {X Y : FGModuleCat.{w} A} (hX : S X) (hY : Indecomposable Y.obj) (hSY : ¬ S Y)
       (f : X ⟶ Y) : f = 0 :=
-    eq_zero_of_length_le_of_prop_of_not_prop S hS b hb hsrc
+    S.eq_zero_of_length_le_of_prop_of_not_prop hS b hb hsrc
       (fun f hf hY hX ↦ (hirr f hf (hS _ hX) hY).mp hX) hX hY hSY f
   have hbwd {X Y : FGModuleCat.{w} A} (hX : S X) (hY : Indecomposable Y.obj) (hSY : ¬ S Y)
       (f : Y ⟶ X) : f = 0 :=
-    eq_zero_of_length_le_of_not_prop_of_prop S hS b hb hsink
+    S.eq_zero_of_length_le_of_not_prop_of_prop hS b hb hsink
       (fun f hf hX hY ↦ (hirr f hf hX (hS _ hY)).mpr hY) hY hSY hX f
   -- The indecomposable summands of the regular module, as objects of `FGModuleCat A`.
   let eG := (Shrink.linearEquiv.{w} A A).symm
@@ -249,7 +253,7 @@ theorem forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAl
       obtain ⟨n, F, i, hF, hi, -, hirrF⟩ :=
         FGModuleCat.exists_isLeftAlmostSplit_biproduct (hS X hX) (hsrc X hX)
       exact ⟨n, F, i, fun j ↦ (hirr _ (hirrF j) (hS X hX) (hF j)).mp hX, hi⟩)
-    (2 ^ b - 1) (ofSequence_map_eq_zero_of_prop S hS b hb) (Set.finite_range P')
+    (2 ^ b - 1) (S.ofSequence_map_eq_zero_of_prop hS b hb) (Set.finite_range P')
     (by rintro _ ⟨j, rfl⟩; exact hPS j)
   refine ⟨hall, isRepresentationFinite_of_forall_exists_iso (hT.image (·.obj)) fun M hM hiM ↦ ?_⟩
   let Y : FGModuleCat.{w} A := ⟨M, (ModuleCat.isFG_iff _).mpr hM⟩
