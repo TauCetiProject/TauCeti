@@ -123,9 +123,9 @@ induces an isomorphism `π_N(S, x) ≃* π_N(X, x)`. -/
 noncomputable def subtypeValMulEquivOfPathComponentSubset [DecidableEq N] [Nonempty N]
     {S : Set X} {x : S} {x' : X} (hS : pathComponent (x : X) ⊆ S) (hx : (x : X) = x') :
     HomotopyGroup N S x ≃* HomotopyGroup N X x' :=
-  MulEquiv.ofBijective (mapHom ⟨Subtype.val, continuous_subtype_val⟩ hx) <| by
-    rw [mapHom, MonoidHom.coe_mk, OneHom.coe_mk]
-    exact bijective_map_subtypeVal_of_pathComponent_subset hS hx
+  MulEquiv.ofBijective (mapHom ⟨Subtype.val, continuous_subtype_val⟩ hx) <|
+    funext (mapHom_apply (N := N) (⟨Subtype.val, continuous_subtype_val⟩ : C(S, X)) hx) ▸
+      bijective_map_subtypeVal_of_pathComponent_subset hS hx
 
 /-- `HomotopyGroup.subtypeValMulEquivOfPathComponentSubset` is the map induced by the inclusion. -/
 @[simp]

@@ -7,8 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.ModTwoVanishing
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
-import TauCeti.AlgebraicTopology.PathComponent
-import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 /-!
 # Mod-two vanishing for the contractible loops of a space
@@ -19,15 +17,10 @@ the mod-two homology of a point are uniquely two-divisible
 applies it to the component `Ω₀X` of the constant loop in the loop space of a pointed space
 `(X, x)`, the space of contractible loops at `x`.
 
-The path component of a point `y` of a space `Y` has the homotopy groups of `Y` at `y` in positive
-degrees, and it is simply connected as soon as the fundamental group of `Y` at `y` is trivial
-(`TauCeti.simplyConnectedSpace_pathComponent_iff`). So if that path component has the mod-two
-homology of a point, every higher homotopy group `πₙ₊₂(Y, y)` is uniquely two-divisible
-(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`);
-no hypothesis is made on the other path components of `Y`.
-
-For `Y` the loop space of `X`, the loop-space shift `πₖ₊₁(ΩX) ≅ πₖ₊₂(X)` turns this into a
-statement about `X`. Suppose `π₂(X, x) = 0`, so that `Ω₀X` is simply connected. If
+The path-component form of the theorem applies to the component of the constant loop
+(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`),
+and the loop-space shift `πₖ₊₁(ΩX) ≅ πₖ₊₂(X)` turns its conclusion into a statement about `X`.
+Suppose `π₂(X, x) = 0`, so that `Ω₀X` is simply connected. If
 `Hᵢ(Ω₀X; 𝔽₂) = 0` for `i > 0`, then every homotopy group `πₙ₊₃(X, x)` is uniquely two-divisible,
 hence `πₙ₊₃(X, x) ⊗ ℤ/2 = 0`. Contrapositively, a space with `π₂(X) = 0` and
 `π_ℓ(X) ⊗ ℤ/2 ≠ 0` for some `ℓ ≥ 3` has contractible loops with nonzero reduced mod-two homology.
@@ -43,9 +36,6 @@ whose constant loop is the loop `1` of length zero.
 
 ## Main results
 
-* `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`:
-  if the fundamental group of `Y` at `y` is trivial and the path component of `y` has the mod-two
-  homology of a point, the higher homotopy groups of `Y` at `y` are uniquely two-divisible.
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_loopSpace`,
   `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_mooreLoopSpace`:
   if `π₂(X, x) = 0` and the contractible loops at `x` have the mod-two homology of a point, the
@@ -68,19 +58,6 @@ open CategoryTheory AlgebraicTopology
 open scoped Topology Topology.Homotopy
 
 namespace TauCeti
-
-/-- **Mod-two vanishing for a path component.** If the fundamental group of `Y` at `y` is trivial
-and the path component of `y` has the mod-two homology of a point, then every homotopy group
-`πₙ₊₂(Y, y)` is uniquely two-divisible. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent
-    {Y : Type} [TopologicalSpace Y] (y : Y) [Subsingleton (FundamentalGroup Y y)]
-    (hY : ∀ i, Subsingleton
-      (((singularChains (ZMod 2)).obj (TopCat.of (pathComponent y))).homology (i + 1)))
-    (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
-  have := (simplyConnectedSpace_pathComponent_iff y).2 ‹_›
-  (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology hY
-    (pathComponentSelf y) n).of_addEquiv
-      (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).toAdditive
 
 variable {X : Type} [TopologicalSpace X] (x : X)
 
