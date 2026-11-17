@@ -364,8 +364,9 @@ open Topology in
 /-- A power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, homogeneous of degree `2μ`, times a smooth
 function vanishing near `0` is smooth, for `c ≠ 0` and every real `μ`. -/
 theorem contDiff_norm_smul_sq_rpow_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {c : ℝ} (hc : c ≠ 0) {g : E → F} (hg : ContDiff ℝ ∞ g) (hg0 : g =ᶠ[𝓝 0] 0) (μ : ℝ) :
-    ContDiff ℝ ∞ fun ξ ↦ (‖c • ξ‖ ^ 2) ^ μ • g ξ := by
+    {c : ℝ} (hc : c ≠ 0) {n : WithTop ℕ∞} {g : E → F} (hg : ContDiff ℝ n g)
+    (hg0 : g =ᶠ[𝓝 0] 0) (μ : ℝ) :
+    ContDiff ℝ n fun ξ ↦ (‖c • ξ‖ ^ 2) ^ μ • g ξ := by
   refine contDiff_iff_contDiffAt.2 fun ξ ↦ ?_
   rcases eq_or_ne ξ 0 with rfl | hξ
   · refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_

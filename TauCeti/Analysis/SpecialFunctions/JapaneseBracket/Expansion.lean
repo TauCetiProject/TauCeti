@@ -83,8 +83,8 @@ private theorem bracketRemainder_eq_sub_sum (c : ℝ) (ψ : E → ℝ) (r : ℝ)
   congr 1
   exact Finset.sum_congr rfl fun k _ ↦ by ring
 
-private theorem contDiff_bracketRemainder (hc : c ≠ 0) (hψ : ContDiff ℝ ∞ ψ)
-    (hψ0 : ψ =ᶠ[𝓝 0] 0) (r : ℝ) (K : ℕ) : ContDiff ℝ ∞ (bracketRemainder c ψ r K) := by
+private theorem contDiff_bracketRemainder (hc : c ≠ 0) {n : WithTop ℕ∞} (hψ : ContDiff ℝ n ψ)
+    (hψ0 : ψ =ᶠ[𝓝 0] 0) (r : ℝ) (K : ℕ) : ContDiff ℝ n (bracketRemainder c ψ r K) := by
   rw [bracketRemainder_eq_sub_sum]
   exact ((contDiff_one_add_norm_sq_rpow r).comp (contDiff_const_smul c)).sub
     (ContDiff.sum fun k _ ↦ contDiff_const.mul <| by
@@ -231,9 +231,9 @@ private theorem exists_abs_bracketRemainder_le [ProperSpace E] (hc : c ≠ 0)
 
 /-- The remainder of the binomial expansion of `(1 + ‖c ξ‖ ^ 2) ^ r` after `K` terms cut off by
 a smooth `ψ` vanishing near `0` is smooth. -/
-theorem contDiff_one_add_norm_smul_sq_rpow_sub_sum (hc : c ≠ 0) (hψ : ContDiff ℝ ∞ ψ)
-    (hψ0 : ψ =ᶠ[𝓝 0] 0) (r : ℝ) (K : ℕ) :
-    ContDiff ℝ ∞ fun ξ : E ↦ (1 + ‖c • ξ‖ ^ 2) ^ r -
+theorem contDiff_one_add_norm_smul_sq_rpow_sub_sum (hc : c ≠ 0) {n : WithTop ℕ∞}
+    (hψ : ContDiff ℝ n ψ) (hψ0 : ψ =ᶠ[𝓝 0] 0) (r : ℝ) (K : ℕ) :
+    ContDiff ℝ n fun ξ : E ↦ (1 + ‖c • ξ‖ ^ 2) ^ r -
       ψ ξ * ∑ k ∈ Finset.range K, Ring.choose r k * (‖c • ξ‖ ^ 2) ^ (r - k) := by
   rw [← bracketRemainder_def]
   exact contDiff_bracketRemainder hc hψ hψ0 r K
