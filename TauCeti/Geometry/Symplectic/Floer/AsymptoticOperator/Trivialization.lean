@@ -8,10 +8,7 @@ module
 public import TauCeti.Analysis.ODE.FrameTrivialization
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 public import TauCeti.Geometry.Symplectic.FrameTrivialization
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
-import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-import TauCeti.Geometry.Symplectic.Transport
 
 /-!
 # Frame trivialization of the Hamiltonian Floer asymptotic and cylinder operators
@@ -21,14 +18,12 @@ The Sobolev operators `TauCeti.CircleSobolev.loopOperator` and
 Hilbert model `(F, I, Im ⟪·, ·⟫)`, whereas linearized Hamiltonian Floer operators along an orbit in
 `(V, ω)` carry time-dependent `J_t` and `S_t = dX_{H_t}(x(t))`. Pulling back along a frame
 `Φ : ℝ → F →L[ℝ] V` via `S_Φ(t) = Φ(t)⁻¹ (S(t) Φ(t) - Φ'(t))` (`TauCeti.trivializedCoeff`) reduces
-them to `F`, feeding `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`:
-intertwining `Floer.asymptoticOperator` and `Floer.stationaryCylinderOperator`, preserving
-infinitesimal symplecticity on `AddCircle 1`, and transporting `1`-periodic loop invertibility to
-fixed-point nondegeneracy of the time-one flow. Adapts
-`TauCeti.orbitTorusVerticalOperator_frame_apply`
-(`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`) and
-`TauCeti.SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt`
-(`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator.lean`).
+them to `F`, feeding `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`
+alongside `SymplecticForm.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff`
+(`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator.lean`): intertwining
+`Floer.asymptoticOperator` and `Floer.stationaryCylinderOperator` and preserving infinitesimal
+symplecticity on `AddCircle 1`. Adapts `TauCeti.orbitTorusVerticalOperator_frame_apply`
+(`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`).
 
 ## References
 
@@ -41,8 +36,7 @@ public section
 
 noncomputable section
 
-open ContinuousLinearMap Filter Function Topology
-open scoped Manifold NNReal
+open ContinuousLinearMap
 
 namespace TauCeti
 
@@ -104,63 +98,6 @@ theorem im_inner_apply_add_eq_zero_of_trivializedCoeff (ω : SymplecticForm V) {
     (ω.apply_fderiv_hamiltonianVectorField_add (hH t)) v w
 
 end SymplecticOrbit
-
-section LoopInvertibility
-
-variable {F V : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-local instance : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
-
-/-- Along a `1`-periodic orbit `x` of a `1`-periodic, jointly `C²` Hamiltonian `H` with globally
-Lipschitz suspended vector field, in a differentiable `1`-periodic invertible frame `Φ` trivializing
-`dX_{H_t}(x(t))` as `S`, `CircleSobolev.loopOperator 1 S` is invertible iff `x(0)` is a
-nondegenerate fixed point of the time-one flow. -/
-theorem isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff
-    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
-    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H)) (hH : ContDiff ℝ 2 (uncurry H))
-    (hHp : Periodic H 1) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
-    {Φ : ℝ → F →L[ℝ] V} (hΦd : Differentiable ℝ Φ) (hΦp : Periodic Φ 1)
-    (hΦ : ∀ t, (Φ t).IsInvertible) {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)} (hS : ∀ t : ℝ, S t =
-      trivializedCoeff Φ (fun r ↦ fderiv ℝ (ω.hamiltonianVectorField (H r)) (x r)) t) :
-    (CircleSobolev.loopOperator 1 S).IsInvertible ↔
-      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) := by
-  obtain ⟨e₀, _⟩ := hΦ 0
-  let J₀ : AlmostComplexStructure V :=
-    (AlmostComplexStructure.ofComplexModule F).transport e₀.toLinearEquiv
-  rw [CircleSobolev.isInvertible_loopOperator_iff,
-    ω.isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero hX hH hHp hx hxp
-      fun _ ↦ J₀]
-  refine ⟨fun hloop ξ hξd hξp hA ↦ ?_, fun hnd ζ hζ ↦ ?_⟩
-  · have hΦinv : Differentiable ℝ fun t ↦ (Φ t).inverse := fun t ↦
-      (((hΦ t).contDiffAt_map_inverse (n := 1)).differentiableAt one_ne_zero).comp t (hΦd t)
-    set ζ₀ : ℝ → F := fun t ↦ (Φ t).inverse (ξ t)
-    have hζ₀d : Differentiable ℝ ζ₀ := hΦinv.clm_apply hξd
-    have hζ₀p : Periodic ζ₀ 1 := fun t ↦ by simp only [ζ₀, hΦp t, hξp t]
-    let ζ : C(AddCircle (1 : ℝ), F) :=
-      ⟨hζ₀p.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hζ₀d.continuous⟩
-    have hζeq (t : ℝ) : ζ t = (Φ t).inverse (ξ t) := by simp [ζ, ζ₀]
-    have hfun : (fun r ↦ Φ r (ζ₀ r)) = ξ := funext fun r ↦ (hΦ r).self_apply_inverse (ξ r)
-    have h0 := hloop ζ fun t ↦ by
-      rw [funext hζeq, hS t]
-      refine (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd t) (hΦ t) (hζ₀d t)).1 ?_
-      simpa only [hfun, ζ₀, (hΦ t).self_apply_inverse] using
-        (Floer.asymptoticOperator_eq_zero_iff (hξd t)).1 (hA t)
-    funext t
-    rw [Pi.zero_apply, ← (hΦ t).self_apply_inverse (ξ t), ← hζeq t, h0, ContinuousMap.zero_apply,
-      map_zero]
-  · have hζd : Differentiable ℝ fun y : ℝ ↦ ζ y := fun y ↦ (hζ y).differentiableAt
-    have hξd : Differentiable ℝ fun t ↦ Φ t (ζ t) := hΦd.clm_apply hζd
-    have hξp : Periodic (fun t ↦ Φ t (ζ t)) 1 := fun t ↦ by simp [hΦp t]
-    have h0 := hnd (fun t ↦ Φ t (ζ t)) hξd hξp fun t ↦
-      (Floer.asymptoticOperator_eq_zero_iff (hξd t)).2 <|
-        (hasDerivAt_clm_apply_iff_hasDerivAt_trivializedCoeff (hΦd t) (hΦ t) (hζd t)).2
-          (by simpa only [hS t] using hζ t)
-    ext θ; obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective θ
-    exact (hΦ t).injective (by simpa using congrFun h0 t)
-
-end LoopInvertibility
 
 end SymplecticForm
 

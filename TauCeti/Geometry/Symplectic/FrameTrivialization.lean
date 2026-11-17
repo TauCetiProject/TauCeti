@@ -14,10 +14,10 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 # Preservation of infinitesimal symplecticity under frame trivialization
 
 Pulling a linearized symplectic ODE on `(V, ω)` back along a moving symplectic frame
-`Φ : ℝ → F →L[ℝ] V` into `(F, Im ⟪·, ·⟫)` adds `-Φ(t)⁻¹ Φ'(t)` to `TauCeti.trivializedCoeff Φ S t`
-yet preserves infinitesimal symplecticity (`SymplecticForm.im_inner_trivializedCoeff_add_eq_zero`),
-supplying the `H⁰`-symmetry needed in
-`TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Trivialization.lean` and
+`Φ : ℝ → F →L[ℝ] V` into `(F, Im ⟪·, ·⟫)` adds `-Φ(t)⁻¹ Φ'(t)` to the conjugated coefficient
+`Φ(t)⁻¹ S(t) Φ(t)`, yielding `TauCeti.trivializedCoeff Φ S t`, yet preserves infinitesimal
+symplecticity (`SymplecticForm.im_inner_trivializedCoeff_add_eq_zero`), supplying the `H⁰`-symmetry
+needed in `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Trivialization.lean` and
 `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`. Adapts
 `TauCeti.isSymmetric_frameConnection`
 (`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`).
