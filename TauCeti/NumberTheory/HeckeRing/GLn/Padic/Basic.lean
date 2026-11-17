@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transpose
 public import TauCeti.NumberTheory.HeckeRing.Commutativity
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Localization
 
+import TauCeti.Data.Int.Shift
 import TauCeti.GroupTheory.Commensurable
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.NumberTheory.Padics.Basic
@@ -494,17 +495,11 @@ theorem eq_of_padicIntPowDiagGL_mem_doubleCoset {e₁ e₂ : Fin n → ℤ}
     (h : padicIntPowDiagGL n p e₂ ∈
       doubleCoset (padicIntPowDiagGL n p e₁) (GLnZp n p) (GLnZp n p)) :
     e₁ = e₂ := by
-  let M : ℕ := Finset.univ.sup fun i ↦ max (-e₁ i).toNat (-e₂ i).toNat
-  let f₁ : Fin n → ℕ := fun i ↦ (e₁ i + M).toNat
-  let f₂ : Fin n → ℕ := fun i ↦ (e₂ i + M).toNat
-  have hf₁_eq : ∀ i, (f₁ i : ℤ) = e₁ i + M := fun i ↦ by
-    have : (-e₁ i).toNat ≤ M := le_trans (le_max_left _ _)
-      (Finset.le_sup (f := fun i ↦ max (-e₁ i).toNat (-e₂ i).toNat) (Finset.mem_univ i))
-    exact Int.toNat_of_nonneg (by omega)
-  have hf₂_eq : ∀ i, (f₂ i : ℤ) = e₂ i + M := fun i ↦ by
-    have : (-e₂ i).toNat ≤ M := le_trans (le_max_right _ _)
-      (Finset.le_sup (f := fun i ↦ max (-e₁ i).toNat (-e₂ i).toNat) (Finset.mem_univ i))
-    exact Int.toNat_of_nonneg (by omega)
+  obtain ⟨M, f, hf⟩ := TauCeti.exists_natCast_eq_add_natCast (Sum.elim e₁ e₂)
+  let f₁ : Fin n → ℕ := f ∘ Sum.inl
+  let f₂ : Fin n → ℕ := f ∘ Sum.inr
+  have hf₁_eq : ∀ i, (f₁ i : ℤ) = e₁ i + M := fun i ↦ hf (Sum.inl i)
+  have hf₂_eq : ∀ i, (f₂ i : ℤ) = e₂ i + M := fun i ↦ hf (Sum.inr i)
   have hf₁_mono : Monotone f₁ := fun i j hij ↦ by
     rw [← Int.ofNat_le, hf₁_eq, hf₁_eq]; linarith [he₁ hij]
   have hf₂_mono : Monotone f₂ := fun i j hij ↦ by
@@ -513,11 +508,11 @@ theorem eq_of_padicIntPowDiagGL_mem_doubleCoset {e₁ e₂ : Fin n → ℤ}
   have hshift : padicNatPowDiagGL n p f₂ ∈
       doubleCoset (padicNatPowDiagGL n p f₁) (GLnZp n p) (GLnZp n p) := by
     refine DoubleCoset.mem_doubleCoset.mpr ⟨u₁, hu₁, u₂, hu₂, ?_⟩
-    rw [← padicIntPowDiagGL_natCast, ← padicIntPowDiagGL_natCast,
-      show (fun i ↦ (f₂ i : ℤ)) = (fun _ ↦ (M : ℤ)) + e₂ from funext fun i ↦ by
-        rw [hf₂_eq, Pi.add_apply, add_comm],
-      show (fun i ↦ (f₁ i : ℤ)) = (fun _ ↦ (M : ℤ)) + e₁ from funext fun i ↦ by
-        rw [hf₁_eq, Pi.add_apply, add_comm],
+    have hf₁_fun : (fun i ↦ (f₁ i : ℤ)) = (fun _ ↦ (M : ℤ)) + e₁ :=
+      funext fun i ↦ by rw [hf₁_eq, Pi.add_apply, add_comm]
+    have hf₂_fun : (fun i ↦ (f₂ i : ℤ)) = (fun _ ↦ (M : ℤ)) + e₂ :=
+      funext fun i ↦ by rw [hf₂_eq, Pi.add_apply, add_comm]
+    rw [← padicIntPowDiagGL_natCast, ← padicIntPowDiagGL_natCast, hf₂_fun, hf₁_fun,
       padicIntPowDiagGL_add, padicIntPowDiagGL_add, hmul]
     simp only [← mul_assoc, padicIntPowDiagGL_const_comm n p M u₁]
   have hfeq := eq_of_padicNatPowDiagGL_mem_doubleCoset n p hf₁_mono hf₂_mono hshift
@@ -618,7 +613,8 @@ theorem padicIntPowDiagGL_mem_commensurator_GLnZp (e : Fin n → ℤ) :
   set g := padicIntPowDiagGL n p e
   have hK_le_gH : K ≤ MulAut.conj g • H := congruence_ker_le_conj_padicIntPowDiagGL n p hM
   have hK_le_ginvH : K ≤ MulAut.conj g⁻¹ • H := by
-    rw [show g⁻¹ = padicIntPowDiagGL n p (-e) by simp [g]]
+    have hginv : g⁻¹ = padicIntPowDiagGL n p (-e) := (padicIntPowDiagGL_neg n p e).symm
+    rw [hginv]
     exact congruence_ker_le_conj_padicIntPowDiagGL n p hM'
   have hgH : (MulAut.conj g • H).relIndex H ≠ 0 :=
     ne_zero_of_dvd_ne_zero hK_rel (Subgroup.relIndex_dvd_of_le_left H hK_le_gH)

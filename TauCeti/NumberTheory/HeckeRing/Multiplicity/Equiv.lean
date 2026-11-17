@@ -40,23 +40,6 @@ namespace DoubleCoset
 
 variable {G K : Type*} [Group G] [Group K]
 
-/-- The chosen representative after transport along an injective group homomorphism differs from
-the transported representative by an element of the stabilizer. -/
-lemma decompQuotientEquivMapOfInjective_out (φ : G →* K) (hφ : Function.Injective φ)
-    (H₁ H₂ : Subgroup G) (g : G) (i : DecompQuotient H₁ H₂ g) :
-    (φ g)⁻¹ * (((decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i).out : K)⁻¹ *
-      φ (i.out : G)) * φ g ∈ H₂.map φ := by
-  have hmk :
-      ((decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i).out :
-          DecompQuotient (H₁.map φ) (H₂.map φ) (φ g)) =
-        (Subgroup.equivMapOfInjective H₁ φ hφ i.out :
-          DecompQuotient (H₁.map φ) (H₂.map φ) (φ g)) := by
-    calc _ = decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g i := QuotientGroup.out_eq' _
-      _ = decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g (i.out : DecompQuotient H₁ H₂ g) :=
-        congrArg (decompQuotientEquivMapOfInjective φ hφ H₁ H₂ g) (QuotientGroup.out_eq' i).symm
-      _ = _ := decompQuotientEquivMapOfInjective_mk φ hφ H₁ H₂ g i.out
-  exact conj_mem_of_mk_eq (φ g) hmk
-
 /-- **Shimura's multiplicity is invariant under an injective group homomorphism**, with no
 finiteness assumptions. -/
 theorem multiplicity_map_of_injective (φ : G →* K) (hφ : Function.Injective φ)

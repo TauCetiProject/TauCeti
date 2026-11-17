@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.Padic.IntegralComparison
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Localization
 
+import TauCeti.Data.Int.Shift
 import TauCeti.NumberTheory.HeckeRing.Normalizer
 import TauCeti.RingTheory.Localization.Away.Basic
 
@@ -350,9 +351,8 @@ theorem exists_intPowDiagGL_mem_doubleCoset {g : GL (Fin n) ℚ} (hg : g ∈ pLo
     natDiagGL_const_comm n (p ^ k) x
   have hshift : natDiagGL n (fun _ ↦ p ^ k) * intPowDiagGL n p (fun i ↦ (f i : ℤ) - k) =
       natDiagGL n (primePowDiag n p f) := by
-    rw [natDiagGL_const_comm, intPowDiagGL_mul_natDiagGL_const,
-      show (fun i ↦ (f i : ℤ) - k + k) = fun i ↦ (f i : ℤ) from funext fun _ ↦ sub_add_cancel _ _,
-      intPowDiagGL_natCast]
+    have hfun : (fun i ↦ (f i : ℤ) - k + k) = fun i ↦ (f i : ℤ) := funext fun _ ↦ sub_add_cancel _ _
+    rw [natDiagGL_const_comm, intPowDiagGL_mul_natDiagGL_const, hfun, intPowDiagGL_natCast]
   calc natDiagGL n (fun _ ↦ p ^ k) * g
       = x * natDiagGL n (primePowDiag n p f) * y := hxy
     _ = x * (natDiagGL n (fun _ ↦ p ^ k) * intPowDiagGL n p (fun i ↦ (f i : ℤ) - k)) * y := by
@@ -599,11 +599,8 @@ theorem exists_mul_padicScalarUnit_pow_eq (z : PadicRationalHeckeRing n p) :
     obtain ⟨⟨e, he⟩, rfl⟩ := (padicIntPowDiagCosetEquiv n p).surjective D
     rw [padicIntPowDiagCosetEquiv_apply]
     dsimp only
-    let k : ℕ := Finset.univ.sup fun i ↦ (-e i).toNat
-    let f : Fin n → ℕ := fun i ↦ (e i + k).toNat
-    have hf : (fun i ↦ (f i : ℤ)) = fun i ↦ e i + (k : ℤ) := funext fun i ↦ by
-      have : (-e i).toNat ≤ k := Finset.le_sup (f := fun j ↦ (-e j).toNat) (Finset.mem_univ i)
-      exact Int.toNat_of_nonneg (by omega)
+    obtain ⟨k, f, hf_pt⟩ := TauCeti.exists_natCast_eq_add_natCast e
+    have hf : (fun i ↦ (f i : ℤ)) = fun i ↦ e i + (k : ℤ) := funext hf_pt
     refine ⟨k, HeckeCosetModule.single ℤ (padicNatPowDiagCoset n p f) c, ?_⟩
     rw [← HeckeCosetModule.smul_single_one ℤ _ c, ← padicIntPowDiagElem_def,
       HeckeCosetModule.mul_def, HeckeCosetModule.smul_mul ℤ, ← HeckeCosetModule.mul_def,

@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.HeckeRing.Map.InjectiveHom
 public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
 public import TauCeti.NumberTheory.HeckeRing.Map.Submonoid
 
+import TauCeti.Data.Int.Shift
 import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.NumberTheory.Padics.FiniteSublattice
 import TauCeti.NumberTheory.Padics.RatCast
@@ -274,14 +275,10 @@ theorem SLnZ_le_pLocalPosGL : SLnZ n ≤ pLocalPosGL n p :=
 theorem intPowDiagGL_mem_pLocalPosGL (e : Fin n → ℤ) :
     intPowDiagGL n p e ∈ pLocalPosGL n p := by
   refine ⟨intPowDiagGL_mem_glpos n p e, ?_⟩
-  let k : ℕ := Finset.univ.sup fun i ↦ (-e i).toNat
-  let f : Fin n → ℕ := fun i ↦ (e i + k).toNat
-  have hf : ∀ i, (f i : ℤ) = e i + k := fun i ↦ by
-    have : (-e i).toNat ≤ k := Finset.le_sup (f := fun j ↦ (-e j).toNat) (Finset.mem_univ i)
-    exact Int.toNat_of_nonneg (by omega)
+  obtain ⟨k, f, hf⟩ := TauCeti.exists_natCast_eq_add_natCast e
+  have hf_fun : (fun i ↦ e i + (k : ℤ)) = fun i ↦ (f i : ℤ) := funext fun i ↦ (hf i).symm
   refine ⟨k, ?_⟩
-  rw [natDiagGL_const_comm n (p ^ k), intPowDiagGL_mul_natDiagGL_const,
-    show (fun i ↦ e i + (k : ℤ)) = fun i ↦ (f i : ℤ) from funext fun i ↦ (hf i).symm,
+  rw [natDiagGL_const_comm n (p ^ k), intPowDiagGL_mul_natDiagGL_const, hf_fun,
     intPowDiagGL_natCast]
   exact natDiagGL_primePowDiag_mem_pPrimaryPosDetInt n p f
 
