@@ -33,6 +33,10 @@ to the quotient by ordinary unframed Markov equivalence. The unknot value is one
 
 * `LinearMap.heckeTrace_strandIncl` and
   `TauCeti.MarkovBraid.heckeTrace_one_strand`: the split-unknot factor and unknot value.
+* `TauCeti.MarkovBraid.heckeTrace_two_strand_one`,
+  `TauCeti.MarkovBraid.heckeTrace_sigma_two`, and
+  `TauCeti.MarkovBraid.heckeTrace_sigma_two_inv`: explicit values on the two-strand unlink and
+  both single-crossing closures.
 * `LinearMap.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
   relation between a generator and its inverse.
 
@@ -135,6 +139,47 @@ theorem heckeTrace_stabilizeInv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
         (C ^ n * ↑(l ^ Multiplicative.toAdd (ArtinGroup.exponentSum _ b)) *
           τ (braidHom R q (n + 1) b)) := by ring
     _ = _ := by rw [hneg, one_mul]
+
+/-- The two-strand unlink closure `⟨1, 1⟩` has normalized Hecke trace `C`. -/
+theorem heckeTrace_two_strand_one (h₁ : τ 1 = 1) (C : R) (l : Rˣ) :
+    heckeTrace ⟨1, 1⟩ τ C l = C := by
+  simpa using heckeTrace_one (n := 1) h₁ C l
+
+/-- Before imposing `C * l * z = 1`, the single positive crossing on two strands has normalized
+Hecke trace `C * l * z`. -/
+theorem heckeTrace_sigma_two_eq (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
+    heckeTrace ⟨1, sigma (n := 2) 0⟩ τ C l = C * (l : R) * z := by
+  have hT : τ (T q 0) = z := by
+    simpa [hτ.map_one] using hτ.map_mul_T (one_mem (stage R q 1))
+  have hexp : ArtinGroup.exponentSum (CoxeterMatrix.A 1) (sigma (n := 2) 0) =
+      Multiplicative.ofAdd 1 := exponentSum_sigma (0 : Fin (2 - 1))
+  simp [heckeTrace_def, hexp, val_unitT, hT]
+
+/-- When `C * l * z = 1`, the single positive crossing on two strands closes to `1`. -/
+theorem heckeTrace_sigma_two (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (hpos : C * (l : R) * z = 1) :
+    heckeTrace ⟨1, sigma (n := 2) 0⟩ τ C l = 1 := by
+  rw [heckeTrace_sigma_two_eq hτ, hpos]
+
+/-- Before imposing `C * l⁻¹ * (z - (q - q⁻¹)) = 1`, the single negative crossing on two strands
+has normalized Hecke trace `C * l⁻¹ * (z - (q - q⁻¹))`. -/
+theorem heckeTrace_sigma_two_inv_eq (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
+    heckeTrace ⟨1, (sigma (n := 2) 0)⁻¹⟩ τ C l =
+      C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) := by
+  have hT : τ ↑(unitT q 0)⁻¹ = z - ((q : R) - ↑q⁻¹) := by
+    simpa only [one_mul, hτ.map_one, mul_one] using
+      hτ.map_mul_val_inv_unitT (one_mem (stage R q 1))
+  have hexp : ArtinGroup.exponentSum (CoxeterMatrix.A 1) (sigma (n := 2) 0) =
+      Multiplicative.ofAdd 1 := exponentSum_sigma (0 : Fin (2 - 1))
+  simp only [heckeTrace_def, pow_one, map_inv, hexp, toAdd_inv, toAdd_ofAdd, zpow_neg_one,
+    braidHom_sigma, Fin.val_zero, hT]
+
+/-- When `C * l⁻¹ * (z - (q - q⁻¹)) = 1`, the single negative crossing on two strands closes to
+`1`. -/
+theorem heckeTrace_sigma_two_inv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) :
+    heckeTrace ⟨1, (sigma (n := 2) 0)⁻¹⟩ τ C l = 1 := by
+  rw [heckeTrace_sigma_two_inv_eq hτ, hneg]
 
 /-- **The skein relation attached to a linear relation between a generator and its inverse.** If
 `x • T i + y • (T i)⁻¹ + s • 1 = 0` in the Hecke algebra, then for a crossing `σ i` in any braid
