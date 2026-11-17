@@ -45,20 +45,22 @@ acyclic, so this compares the torsions of `K` and `L` through the torsion of the
 in general not `±1`.
 
 A complex `C` that is not acyclic has torsion `0`, but a choice of bases `h i` of its homology
-groups gives the nonzero torsion `τ(C, c, h)`
-(`HomologicalComplex.reidemeisterTorsionWithHomology`). This is the torsion of an acyclic mapping
-cone. Let `G` be a complex with zero differential and bases `g i` of `G.X i`, and let
-`ζ : G ⟶ C` be a chain map carrying each `g i k` to a cycle representing `h i k`; for instance `G`
-may be the complex of homology groups of `C`, with `g = h`. Every cycle of `C` is then a boundary
-plus a value of `ζ`, and a value of `ζ` is a boundary only if it is zero, so the mapping cone of
-`ζ` is acyclic. This holds over any ring and needs no bases: the mapping cone of a chain map from
-a complex with zero differential is acyclic as soon as the chain map induces bijections from the
-terms of that complex onto the homology groups of its target
-(`HomologicalComplex.acyclic_homotopyCofiber_of_bijective`). The boundaries of the cone of `ζ` in
-degree `j` are the cycles `Zⱼ` of `C`, based by a basis of the boundaries `Bⱼ` followed by the
-representatives `ζ (g j)`, and these lift to the lifts of the basis of `Bⱼ` followed by the basis
-`g j`. So the brackets of the cone are exactly the brackets `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of `C` with
-its homology bases, and `τ(cone ζ) = τ(C, c, h)`, with no sign
+groups gives the torsion `τ(C, c, h)` (`HomologicalComplex.reidemeisterTorsionWithHomology`),
+nonzero for a bounded complex. This is the torsion of an acyclic mapping cone. Let `G` be a
+complex with zero differential and bases `g i` of `G.X i`, and let `ζ : G ⟶ C` be a chain map
+carrying each `g i k` to a cycle representing `h i k`; for instance `G` may be the complex of
+homology groups of `C`, with `g = h`. Every cycle of `C` is then a boundary plus a value of `ζ`,
+and a value of `ζ` is a boundary only if it is zero, so the mapping cone of `ζ` is acyclic. This
+holds over any ring and needs no bases: the mapping cone of a chain map from a complex with zero
+differential is acyclic as soon as the chain map induces bijections from the terms of that complex
+onto the homology groups of its target (`HomologicalComplex.acyclic_homotopyCofiber_of_bijective`,
+from `TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber`); here the bijections hold because `ζ`
+carries the bases `g i` to cycles representing the bases `h i`
+(`HomologicalComplex.bijective_moduleCatHomologyClass_of_basis`). The boundaries of the cone of
+`ζ` in degree `j` are the cycles `Zⱼ` of `C`, based by a basis of the boundaries `Bⱼ` followed by
+the representatives `ζ (g j)`, and these lift to the lifts of the basis of `Bⱼ` followed by the
+basis `g j`. So the brackets of the cone are exactly the brackets `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of `C`
+with its homology bases, and `τ(cone ζ) = τ(C, c, h)`, with no sign
 (`HomologicalComplex.reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology`).
 The torsion of a complex with based homology is thereby the torsion of a based acyclic complex,
 to which the formulas for acyclic complexes apply.
@@ -70,10 +72,9 @@ to which the formulas for acyclic complexes apply.
 * `HomologicalComplex.reidemeisterTorsion_homotopyCofiber`: the torsion of a mapping cone.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_quasiIso`: the change of the torsion under a
   quasi-isomorphism of based complexes.
-* `HomologicalComplex.acyclic_homotopyCofiber_of_bijective`: the mapping cone of a chain map from
-  a complex with zero differential inducing bijections onto the homology groups is acyclic.
-* `HomologicalComplex.reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology`: its
-  torsion is the torsion of the complex with these homology bases.
+* `HomologicalComplex.reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology`: the
+  torsion of the acyclic mapping cone of a chain map carrying bases to cycles representing homology
+  bases is the torsion of the complex with these homology bases.
 
 ## References
 
@@ -302,70 +303,6 @@ theorem reidemeisterTorsion_eq_mul_of_quasiIso {K L : ChainComplex (ModuleCat F)
 
 end MappingCone
 
-section AcyclicCone
-
-open homotopyCofiber
-
-variable {R : Type*} [Ring R] {C G : ChainComplex (ModuleCat R) ℤ} (ζ : G ⟶ C)
-  (hG : ∀ i j, G.d i j = 0)
-  (hζ : ∀ i, Function.Bijective (C.moduleCatHomologyClass (ChainComplex.next ℤ i) (ζ.f i).hom
-    fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i _ x (by simp [hG])))
-
-include hζ in
-/-- If `ζ x` is a boundary then `x = 0`. -/
-private theorem eq_zero_of_d_apply_eq {p i : ℤ} (hp : (ComplexShape.down ℤ).prev i = p)
-    (x : G.X i) (l : C.X p) (hl : (C.d p i).hom l = (ζ.f i).hom x) : x = 0 :=
-  (hζ i).1 (((C.moduleCatHomologyClass_eq_zero_iff (ChainComplex.next ℤ i) (ζ.f i).hom _ hp
-    x).2 ⟨l, hl⟩).trans (map_zero _).symm)
-
-include hζ in
-/-- The boundaries of the mapping cone in degree `j` are the cycles of `C` in degree `j`, included
-into the cone. -/
-private theorem range_inrX_comp_subtype {j : ℤ} :
-    LinearMap.range ((inrX ζ j).hom ∘ₗ (LinearMap.ker (C.d j (j - 1)).hom).subtype) =
-      LinearMap.range ((homotopyCofiber ζ).d (j + 1) j).hom := by
-  have hrel : (ComplexShape.down ℤ).Rel (j + 1) j := by simp
-  apply le_antisymm
-  · -- Every cycle `z` of `C` is `ζ x` minus a boundary `d l`.
-    rintro _ ⟨z, rfl⟩
-    obtain ⟨x, hx⟩ := (hζ j).2 (C.homologyπ j
-      (C.moduleCatCyclesMk z (j - 1) (ChainComplex.next ℤ j) (LinearMap.mem_ker.1 z.2)))
-    rw [moduleCatHomologyClass_apply, C.moduleCat_homologyπ_eq_iff (ChainComplex.prev ℤ j),
-      iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk] at hx
-    obtain ⟨l, hl⟩ := hx
-    exact ⟨(inlX ζ j (j + 1) hrel).hom x - (inrX ζ (j + 1)).hom l, by
-      simp [inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _), hl]⟩
-  · rintro _ ⟨w, rfl⟩
-    obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
-    refine ⟨⟨(C.d (j + 1) j).hom l + (ζ.f j).hom x, ?_⟩, ?_⟩
-    · rw [LinearMap.mem_ker, map_add, C.d_comp_d_apply,
-        ζ.d_apply_eq_zero_of_d_apply_eq_zero j _ x (by simp [hG]), add_zero]
-    · simp [XEquiv_symm_apply, inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _)]
-
-include hζ in
-/-- The mapping cone of a chain map `ζ` from a complex with zero differential is acyclic when `ζ`
-induces bijections from the terms of this complex onto the homology groups of its target. -/
-theorem acyclic_homotopyCofiber_of_bijective : (homotopyCofiber ζ).Acyclic := by
-  intro i
-  rw [exactAt_iff_range_eq_ker _ (ChainComplex.prev ℤ i) (ChainComplex.next ℤ i)]
-  refine le_antisymm (range_d_le_ker_d _ i _ _) ?_
-  rw [← range_inrX_comp_subtype ζ hG hζ]
-  intro w hw
-  rw [LinearMap.mem_ker] at hw
-  have hrel : (ComplexShape.down ℤ).Rel i (i - 1) := by simp
-  obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
-  simp only [homotopyCofiber_d, XEquiv_symm_apply, map_add, inrX_d_apply ζ i (i - 1),
-    inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _)] at hw
-  rw [← map_add, ← map_zero (inrX ζ (i - 1)).hom] at hw
-  have hlx := inrX_hom_injective ζ (i - 1) hw
-  obtain rfl : x = 0 := eq_zero_of_d_apply_eq ζ hG hζ (by simp) x (-l)
-    (by rw [map_neg, neg_eq_iff_add_eq_zero]; exact hlx)
-  rw [map_zero, add_zero] at hlx
-  -- The cycle `l` of `C`, included into the cone, is a boundary of the cone.
-  exact ⟨⟨l, hlx⟩, by simp [XEquiv_symm_apply]⟩
-
-end AcyclicCone
-
 section HomologySection
 
 open homotopyCofiber
@@ -375,28 +312,6 @@ variable {C G : ChainComplex (ModuleCat F) ℤ} (ζ : G ⟶ C) (hG : ∀ i j, G.
   (h : ∀ i, Basis (Fin (m i)) F (C.homology i))
   (y : ∀ i, Fin (m i) → C.cycles i) (hy : ∀ i k, C.homologyπ i (y i k) = h i k)
   (hζ : ∀ i k, C.iCycles i (y i k) = ζ.f i (g i k))
-
-include hG hy hζ in
-/-- The homology class of `ζ x` is the element of `Hᵢ(C)` with the coordinates of `x`. -/
-private theorem moduleCatHomologyClass_f {i q : ℤ} (hq : (ComplexShape.down ℤ).next i = q) :
-    C.moduleCatHomologyClass hq (ζ.f i).hom
-        (fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i q x (by simp [hG])) =
-      ((g i).equiv (h i) (Equiv.refl _)).toLinearMap :=
-  (g i).ext fun k ↦ by
-    rw [moduleCatHomologyClass_apply, LinearEquiv.coe_coe, Basis.equiv_apply, Equiv.refl_apply,
-      ← hy]
-    congr 1
-    apply C.moduleCat_iCycles_injective i
-    rw [iCycles_moduleCatCyclesMk, hζ]
-
-include hG hy hζ in
-/-- The homology class map of `ζ` in each degree is bijective, since it carries the basis `g i` to
-the basis `h i`. -/
-private theorem bijective_moduleCatHomologyClass (i : ℤ) :
-    Function.Bijective (C.moduleCatHomologyClass (ChainComplex.next ℤ i) (ζ.f i).hom
-      fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i _ x (by simp [hG])) := by
-  rw [moduleCatHomologyClass_f ζ hG g h y hy hζ]
-  exact ((g i).equiv (h i) (Equiv.refl _)).bijective
 
 /-- The basis of the boundaries of the mapping cone in degree `j`: a basis of the boundaries `Bⱼ`
 of `C` followed by the cycles representing the homology basis `h j`, included into the cone. -/
@@ -408,7 +323,8 @@ private def coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F 
       ((LinearEquiv.ofInjective ((inrX ζ j).hom ∘ₗ (LinearMap.ker (C.d j (j - 1)).hom).subtype)
         ((inrX_hom_injective ζ j).comp Subtype.val_injective)).trans
         (LinearEquiv.ofEq _ _ (range_inrX_comp_subtype ζ hG
-          (bijective_moduleCatHomologyClass ζ hG g h y hy hζ))))).reindex
+          fun i ↦ bijective_moduleCatHomologyClass_of_basis C _ _ _ (g i) (h i) (y i) (hy i)
+            (hζ i))))).reindex
     finSumFinEquiv
 
 private theorem coe_coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (j : ℤ)
@@ -487,7 +403,8 @@ include hG hy hζ in
 /-- **The torsion with homology bases is the torsion of a mapping cone.** Let `ζ : G ⟶ C` be a
 chain map from a complex `G` with zero differential, with bases `g i` of `G.X i`, which carries
 each basis vector `g i k` to a cycle representing the vector `h i k` of a basis of `Hᵢ(C)`. Then
-the mapping cone of `ζ` is acyclic (`acyclic_homotopyCofiber_of_bijective`), and its torsion, for
+the mapping cone of `ζ` is acyclic (`acyclic_homotopyCofiber_of_bijective`, applied to
+`bijective_moduleCatHomologyClass_of_basis`), and its torsion, for
 the basis `homotopyCofiber.basis` made of the basis of `C.X i` followed by that of `G.X (i - 1)`,
 is the torsion `τ(C, c, h)` of `C` with the homology bases `h`. -/
 theorem reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology {n : ℤ → ℕ}
@@ -511,7 +428,7 @@ theorem reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology {
       omega
     · exact Or.inl h0
   have hacyc := acyclic_homotopyCofiber_of_bijective ζ hG
-    (bijective_moduleCatHomologyClass ζ hG g h y hy hζ)
+    fun i ↦ bijective_moduleCatHomologyClass_of_basis C _ _ _ (g i) (h i) (y i) (hy i) (hζ i)
   rw [reidemeisterTorsionWithHomology_eq_finprod hn (fun j ↦ chosenBoundaryBasis C c (j + 1) j) y
       hy (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j),
     reidemeisterTorsion_eq_finprod hn' hacyc (coneBoundaryBasis ζ hG g h y hy hζ c)

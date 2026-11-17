@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.Basis
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.Algebra.BigOperators.Finprod
@@ -20,10 +21,11 @@ Let `C` be a `ℤ`-graded chain complex of vector spaces over a field `F`, with 
 
 are short exact for every complex, so a basis `bⱼ₊₁` of `Bⱼ₊₁` and cycles `zⱼ₊₁` representing the
 basis `hⱼ₊₁` of `Hⱼ₊₁` give an ordered basis `(bⱼ₊₁, zⱼ₊₁)` of `Zⱼ₊₁`
-(`HomologicalComplex.kerBasisOfHomology`), and together with lifts `sⱼ` through `d` of a basis `bⱼ`
-of `Bⱼ` they give an ordered basis `(bⱼ₊₁, zⱼ₊₁, sⱼ)` of `Cⱼ₊₁`. Its determinant with respect to
-`cⱼ₊₁` is the *bracket* `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` (`HomologicalComplex.torsionBracketWithHomology`),
-and the torsion of `C` with respect to the bases `c` and `h` is the alternating product
+(`HomologicalComplex.kerBasisOfHomology`, from `TauCeti.Algebra.Homology.ModuleCat.Basis`), and
+together with lifts `sⱼ` through `d` of a basis `bⱼ` of `Bⱼ` they give an ordered basis
+`(bⱼ₊₁, zⱼ₊₁, sⱼ)` of `Cⱼ₊₁`. Its determinant with respect to `cⱼ₊₁` is the *bracket*
+`[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` (`HomologicalComplex.torsionBracketWithHomology`), and the torsion of `C`
+with respect to the bases `c` and `h` is the alternating product
 
 `τ(C, c, h) = ∏ⱼ [bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁] ^ ((-1) ^ j)`
 
@@ -48,9 +50,6 @@ denotes the determinant of the basis `x` with respect to the basis `y`.
 
 ## Main declarations
 
-* `HomologicalComplex.kerBasisOfHomology`: for a homological complex of modules over any ring, the
-  basis of the cycles made of a basis of the boundaries followed by cycles representing a basis of
-  the homology.
 * `HomologicalComplex.torsionBracketWithHomology`: the bracket `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of a degree.
 * `HomologicalComplex.torsionBracketWithHomology_eq_det_append`: the bracket is the determinant of
   the boundary basis followed by the homology representatives and the lifts.
@@ -80,37 +79,6 @@ noncomputable section
 open CategoryTheory Module
 
 namespace HomologicalComplex
-
-section KerBasis
-
-variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
-  {C : HomologicalComplex (ModuleCat R) c} {l i k : ι} (hl : c.prev i = l) (hk : c.next i = k)
-  {κ σ : Type*} (b : Basis κ R (LinearMap.range (C.d l i).hom)) (h : Basis σ R (C.homology i))
-  (y : σ → C.cycles i) (hy : ∀ t, C.homologyπ i (y t) = h t)
-
-/-- For a homological complex `C` of modules, the basis `(b, y)` of the cycles `Zᵢ`, the kernel of
-the differential `C.d i k` out of degree `i`, made of a basis `b` of the boundaries `Bᵢ`, the image
-of the differential `C.d l i` into degree `i`, followed by cycles `y` representing a basis `h` of
-the homology `Hᵢ`. -/
-def kerBasisOfHomology : Basis (κ ⊕ σ) R (LinearMap.ker (C.d i k).hom) :=
-  Basis.ofExactLift (Submodule.inclusion_injective _)
-    (C.exact_inclusion_moduleCatKerHomologyClass hk hl) b h (C.moduleCatCyclesToKer i k ∘ y)
-    fun t ↦ by rw [Function.comp_apply, moduleCatKerHomologyClass_moduleCatCyclesToKer, hy]
-
-/-- On the left summand, `kerBasisOfHomology` is the basis of the boundaries. -/
-@[simp]
-theorem coe_kerBasisOfHomology_inl (t : κ) :
-    (kerBasisOfHomology hl hk b h y hy (.inl t) : C.X i) = b t := by
-  simp [kerBasisOfHomology]
-
-/-- On the right summand, `kerBasisOfHomology` is the family of cycles representing the homology
-basis. -/
-@[simp]
-theorem coe_kerBasisOfHomology_inr (t : σ) :
-    (kerBasisOfHomology hl hk b h y hy (.inr t) : C.X i) = C.iCycles i (y t) := by
-  simp [kerBasisOfHomology]
-
-end KerBasis
 
 variable {F : Type*} [Field F] {C : ChainComplex (ModuleCat F) ℤ}
 
@@ -190,8 +158,7 @@ theorem torsionBracketWithHomology_eq_mul
     torsionBracketWithHomology c b₁' h' y' hy' b₀' s' hs' =
       torsionBracketWithHomology c b₁ h y hy b₀ s hs * (b₁.det b₁' * h.det h' * b₀.det b₀') := by
   simp only [torsionBracketWithHomology, bracketBasis]
-  rw [Basis.det_ofExactLift, kerBasisOfHomology, kerBasisOfHomology,
-    Basis.ofExactLift_det_ofExactLift]
+  rw [Basis.det_ofExactLift, kerBasisOfHomology_det_kerBasisOfHomology]
 
 /-- Replacing the basis `c (j + 1)` of `Cⱼ₊₁` by `c' (j + 1)` multiplies a bracket by the
 determinant of `c (j + 1)` with respect to `c' (j + 1)`. -/

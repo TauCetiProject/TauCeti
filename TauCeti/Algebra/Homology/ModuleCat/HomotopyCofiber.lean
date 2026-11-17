@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomotopyCofiber
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Determinant
@@ -38,6 +39,13 @@ vectors of `K.X (i - 1)` is the product of the determinants of the two blocks
 The mapping cone of `K ⟶ 0` is `K` shifted by one degree: its terms are identified with those of
 `K` by `HomologicalComplex.homotopyCofiber.zeroEquiv`, under which its differentials become the
 negatives of those of `K` (`HomologicalComplex.homotopyCofiber.zeroEquiv_d`).
+
+Let `ζ : G ⟶ C` be a chain map of `ℤ`-indexed chain complexes of modules, where `G` has zero
+differential, inducing bijections from the terms of `G` onto the homology groups of `C`. Then every
+cycle of `C` is a boundary plus a value of `ζ`, and a value of `ζ` is a boundary only if it is
+zero. So the boundaries of the mapping cone of `ζ` in degree `j` are the cycles of `C` in degree
+`j`, included into the cone (`HomologicalComplex.homotopyCofiber.range_inrX_comp_subtype`), and the
+mapping cone is acyclic (`HomologicalComplex.acyclic_homotopyCofiber_of_bijective`).
 -/
 
 public section
@@ -232,3 +240,75 @@ theorem basis_det_eq_mul (i : ℤ) (w : Fin (nL i + nK (i - 1)) → (homotopyCof
 end Det
 
 end HomologicalComplex.homotopyCofiber
+
+namespace HomologicalComplex
+
+section AcyclicCone
+
+open homotopyCofiber
+
+variable {R : Type*} [Ring R] {C G : ChainComplex (ModuleCat R) ℤ} (ζ : G ⟶ C)
+  (hG : ∀ i j, G.d i j = 0)
+
+/-- If `ζ x` is a boundary then `x = 0`. -/
+private theorem eq_zero_of_d_apply_eq
+    (hζ : ∀ i, Function.Bijective (C.moduleCatHomologyClass (ChainComplex.next ℤ i) (ζ.f i).hom
+      fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i _ x (by simp [hG])))
+    {p i : ℤ} (hp : (ComplexShape.down ℤ).prev i = p)
+    (x : G.X i) (l : C.X p) (hl : (C.d p i).hom l = (ζ.f i).hom x) : x = 0 :=
+  (hζ i).1 (((C.moduleCatHomologyClass_eq_zero_iff (ChainComplex.next ℤ i) (ζ.f i).hom _ hp
+    x).2 ⟨l, hl⟩).trans (map_zero _).symm)
+
+/-- If `ζ` is a chain map from a complex with zero differential inducing bijections onto the
+homology groups of `C`, then the boundaries of its mapping cone in degree `j` are the cycles of `C`
+in degree `j`, included into the cone. -/
+theorem homotopyCofiber.range_inrX_comp_subtype
+    (hζ : ∀ i, Function.Bijective (C.moduleCatHomologyClass (ChainComplex.next ℤ i) (ζ.f i).hom
+      fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i _ x (by simp [hG]))) {j : ℤ} :
+    LinearMap.range ((inrX ζ j).hom ∘ₗ (LinearMap.ker (C.d j (j - 1)).hom).subtype) =
+      LinearMap.range ((homotopyCofiber ζ).d (j + 1) j).hom := by
+  have hrel : (ComplexShape.down ℤ).Rel (j + 1) j := by simp
+  apply le_antisymm
+  · -- Every cycle `z` of `C` is `ζ x` minus a boundary `d l`.
+    rintro _ ⟨z, rfl⟩
+    obtain ⟨x, hx⟩ := (hζ j).2 (C.homologyπ j
+      (C.moduleCatCyclesMk z (j - 1) (ChainComplex.next ℤ j) (LinearMap.mem_ker.1 z.2)))
+    rw [moduleCatHomologyClass_apply, C.moduleCat_homologyπ_eq_iff (ChainComplex.prev ℤ j),
+      iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk] at hx
+    obtain ⟨l, hl⟩ := hx
+    exact ⟨(inlX ζ j (j + 1) hrel).hom x - (inrX ζ (j + 1)).hom l, by
+      simp [inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _), hl]⟩
+  · rintro _ ⟨w, rfl⟩
+    obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
+    refine ⟨⟨(C.d (j + 1) j).hom l + (ζ.f j).hom x, ?_⟩, ?_⟩
+    · rw [LinearMap.mem_ker, map_add, C.d_comp_d_apply,
+        ζ.d_apply_eq_zero_of_d_apply_eq_zero j _ x (by simp [hG]), add_zero]
+    · simp [XEquiv_symm_apply, inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _)]
+
+/-- The mapping cone of a chain map `ζ` from a complex with zero differential is acyclic when `ζ`
+induces bijections from the terms of this complex onto the homology groups of its target. -/
+theorem acyclic_homotopyCofiber_of_bijective
+    (hζ : ∀ i, Function.Bijective (C.moduleCatHomologyClass (ChainComplex.next ℤ i) (ζ.f i).hom
+      fun x ↦ ζ.d_apply_eq_zero_of_d_apply_eq_zero i _ x (by simp [hG]))) :
+    (homotopyCofiber ζ).Acyclic := by
+  intro i
+  rw [exactAt_iff_range_eq_ker _ (ChainComplex.prev ℤ i) (ChainComplex.next ℤ i)]
+  refine le_antisymm (range_d_le_ker_d _ i _ _) ?_
+  rw [← range_inrX_comp_subtype ζ hG hζ]
+  intro w hw
+  rw [LinearMap.mem_ker] at hw
+  have hrel : (ComplexShape.down ℤ).Rel i (i - 1) := by simp
+  obtain ⟨⟨l, x⟩, rfl⟩ := (XEquiv ζ hrel).symm.surjective w
+  simp only [homotopyCofiber_d, XEquiv_symm_apply, map_add, inrX_d_apply ζ i (i - 1),
+    inlX_d_apply_of_d_eq_zero ζ hrel (hG _ _)] at hw
+  rw [← map_add, ← map_zero (inrX ζ (i - 1)).hom] at hw
+  have hlx := inrX_hom_injective ζ (i - 1) hw
+  obtain rfl : x = 0 := eq_zero_of_d_apply_eq ζ hG hζ (by simp) x (-l)
+    (by rw [map_neg, neg_eq_iff_add_eq_zero]; exact hlx)
+  rw [map_zero, add_zero] at hlx
+  -- The cycle `l` of `C`, included into the cone, is a boundary of the cone.
+  exact ⟨⟨l, hlx⟩, by simp [XEquiv_symm_apply]⟩
+
+end AcyclicCone
+
+end HomologicalComplex
