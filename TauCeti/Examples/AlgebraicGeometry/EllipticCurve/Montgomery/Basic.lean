@@ -207,11 +207,14 @@ theorem four_nsmul_generatorSeven :
   simpa [show (2 : ZMod 7) ≠ 0 by decide] using h₂
 
 /-- The generator `(3, 3)` of `y² = x³ + x` over `𝔽₇` has additive order `8`. -/
-theorem addOrderOf_generatorSeven : addOrderOf generatorSeven = 8 :=
-  addOrderOf_eq_prime_pow (p := 2) (n := 2)
-    (by rw [show (2 ^ 2 : ℕ) = 4 from rfl, four_nsmul_generatorSeven]
-        exact twoTorsionPoint_ne_zero 0 one_ne_zero)
-    (by rw [show 2 ^ (2 + 1) = 8 from rfl, ← card_point_seven]; exact card_nsmul_eq_zero')
+theorem addOrderOf_generatorSeven : addOrderOf generatorSeven = 8 := by
+  refine addOrderOf_eq_prime_pow (p := 2) (n := 2) ?_ ?_
+  · norm_num only
+    rw [four_nsmul_generatorSeven]
+    exact twoTorsionPoint_ne_zero 0 one_ne_zero
+  · norm_num only
+    rw [← card_point_seven]
+    exact card_nsmul_eq_zero'
 
 -- The multiples of `(3, 3)` exhaust the native group over `𝔽₇`.
 example : AddSubgroup.zmultiples generatorSeven = ⊤ := by
