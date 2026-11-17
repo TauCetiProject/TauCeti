@@ -153,9 +153,8 @@ theorem preglueComposition_realChart_plumbingMap (hq : q ≠ inf) (hR : 0 ≤ R)
       Complex.equivRealProdCLM_apply] <;> ring
   rw [preglueComposition_def, preglueEnd_of_add_one_le hR (by
       rw [hζ, endSign_eq_one hq, one_mul, Complex.add_re, Complex.ofReal_re]; linarith),
-    hζ, endSign_eq_one hq, one_mul, one_mul, hpt,
-    comp_apply, endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-    cylindricalEndLift_endCoord inf (by simpa using hw), ContinuousLinearEquiv.apply_symm_apply]
+    hζ, endSign_eq_one hq, one_mul, one_mul, hpt, comp_apply,
+    endChart_equivRealProdCLM_endCoord (by simpa using hw)]
 
 /-- **The pre-glued composition pulls back to `u'` along the plumbing map.** For an input `q` and
 `R ≥ 0`, near a point `w ≠ 0` whose longitudinal coordinate on the end at `∞` is greater than
