@@ -421,8 +421,8 @@ theorem exp_maslovIndex_mul_det_mul_exp_spectralAngleSum {U V : unitaryGroup n �
     rw [maslovIndex, hδ, ← hsU, ← hsV]
     field_simp
   -- Both sides are `det U` times one exponential, whose exponents agree by `hμ`.
-  rw [← hexp, mul_left_comm, ← exp_add, mul_comm _ (U : Matrix n n ℂ).det, mul_assoc, ← exp_add,
-    hμ]
+  rw [← hexp, hμ]
+  simp only [mul_assoc, mul_left_comm _ (U : Matrix n n ℂ).det, ← exp_add]
   congr 2
   push_cast
   ring

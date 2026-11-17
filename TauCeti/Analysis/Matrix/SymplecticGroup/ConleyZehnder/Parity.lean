@@ -176,8 +176,8 @@ private theorem exp_conleyZehnderIndex_mul_frameValue {A B : GLSymplectic n ℝ}
     exp (↑(Real.pi * conleyZehnderIndex γ) * Complex.I) * frameValue B = frameValue A := by
   rw [frameValue, frameValue,
     ← exp_maslovIndex_mul_det_mul_exp_spectralAngleSum (γ.map continuous_graphUnitaryFrame),
-    ← mul_assoc, ← exp_add, conleyZehnderIndex_def, mul_neg, ofReal_neg, neg_mul, neg_add_cancel,
-    exp_zero, one_mul]
+    ← mul_assoc, ← exp_add, conleyZehnderIndex_def]
+  simp
 
 /-- The endpoint value `det U e^{-πi s(U Uᵀ)}` of a unitary graph frame does not vanish. -/
 private theorem frameValue_ne_zero (A : GLSymplectic n ℝ) : frameValue A ≠ 0 :=
@@ -254,8 +254,8 @@ theorem exists_int_conleyZehnderIndex_eq_of_one {B : GLSymplectic n ℝ} (γ : P
       rcases SignType.sign (1 - ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det
         with _ | _ | _ <;> simp)
   refine ⟨k, hk, ?_⟩
-  rw [Int.negOnePow_sub, Units.val_mul, hsign, ← mul_assoc, ← Units.val_mul, ← sq,
-    Int.units_sq, Units.val_one, one_mul]
+  rw [Int.negOnePow_sub, Units.val_mul, hsign, ← mul_assoc, ← Units.val_mul]
+  simp
 
 end GLSymplectic
 

@@ -62,10 +62,7 @@ theorem exists_int_eq_of_exp_pi_mul_I_eq {x : ℝ} {u : ℤ} (h : cexp (↑(π *
   refine ⟨k, hx, ?_⟩
   have h2 : cexp (↑(π * x) * I) = (k.negOnePow : ℤ) := by
     rw [hx, show (↑(π * (k : ℝ)) : ℂ) * I = k * (π * I) by push_cast; ring, exp_int_mul,
-      exp_pi_mul_I]
-    rcases Int.even_or_odd k with hk | hk
-    · simp [Int.negOnePow_even _ hk, hk.neg_one_zpow]
-    · simp [Int.negOnePow_odd _ hk, hk.neg_one_zpow]
+      exp_pi_mul_I, Int.cast_negOnePow ℂ k]
   exact_mod_cast h2.symm.trans h
 
 /-- `e(z + k) = e(z)` for `e(z) = exp (2 π i z)` and an integer `k`. -/
