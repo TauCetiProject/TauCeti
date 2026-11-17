@@ -201,31 +201,37 @@ theorem upperIncompleteGammaContFracSolution_add_two (a : ℂ) {z : ℂ} (hz : z
     linear_combination hibp
   · obtain ⟨k, rfl | rfl⟩ : ∃ k, n = 2 * k + 1 ∨ n = 2 * k + 2 := ⟨(n - 1) / 2, by omega⟩
     · -- Odd step `n = 2k + 1`: contiguous difference in the middle parameter.
+      have hidx₁ : 2 * k + 1 + 2 = 2 * (k + 1) + 1 := by omega
+      have hidx₂ : 2 * k + 1 + 1 = 2 * k + 2 := by omega
+      have hpar₁ : a - 1 - (k : ℂ) - 1 = a - 2 - k := by ring
+      have hpar₂ : a - 1 - ((k + 1 : ℕ) : ℂ) = a - 2 - k := by push_cast; ring
       have hdiff := kummerLaplace_sub_kummerLaplace_sub_one k (a - 1 - k) hz
-      rw [sub_right_comm (a - 1) (k : ℂ) 1, sub_sub a 1 1, one_add_one_eq_two] at hdiff
-      rw [add_right_comm (2 * k) 1 2, ← mul_add_one 2 k,
-        upperIncompleteGammaContFracSolution_two_mul_add_one, mul_add_one 2 k,
+      rw [hpar₁] at hdiff
+      rw [hidx₁, hidx₂]
+      simp only [upperIncompleteGammaContFracSolution_two_mul_add_one,
         upperIncompleteGammaContFracSolution_two_mul_add_two,
-        upperIncompleteGammaContFracPartNum_two_mul_add_two,
-        upperIncompleteGammaContFracSolution_two_mul_add_one,
-        Nat.cast_add, Nat.cast_one, add_comm (k : ℂ) 1, ← sub_sub, sub_sub a 1 1,
-        one_add_one_eq_two, ascPochhammer_succ_eval, pow_succ]
+        upperIncompleteGammaContFracPartNum_two_mul_add_two, hpar₂, ascPochhammer_succ_eval]
       linear_combination (ascPochhammer ℂ k).eval (1 - a) * (1 - a + (k : ℂ)) *
-        (z⁻¹ ^ k * z⁻¹) * hdiff
+        z⁻¹ ^ (k + 1) * hdiff
     · -- Even step `n = 2k + 2`: integration by parts at `c = k + 1`.
+      have hidx₁ : 2 * k + 2 + 2 = 2 * (k + 1) + 2 := by omega
+      have hidx₂ : 2 * k + 2 + 1 = 2 * (k + 1) + 1 := by omega
+      have hpart : upperIncompleteGammaContFracPartNum a z (2 * (k + 1) + 1) =
+          ((k : ℂ) + 1) * z⁻¹ := by
+        have hidx₃ : 2 * (k + 1) + 1 = 2 * k + 3 := by omega
+        rw [hidx₃, upperIncompleteGammaContFracPartNum_two_mul_add_three]
+      have hpar₁ : a - 2 - ((k + 1 : ℕ) : ℂ) = a - 2 - k - 1 := by push_cast; ring
+      have hpar₂ : a - 1 - ((k + 1 : ℕ) : ℂ) = a - 2 - k := by push_cast; ring
+      have hpoch : (ascPochhammer ℂ (k + 1 + 1)).eval (1 - a) =
+          (ascPochhammer ℂ (k + 1)).eval (1 - a) * (1 - a + (k : ℂ) + 1) := by
+        rw [ascPochhammer_succ_eval]
+        push_cast
+        ring
       have hibp := congr_arg (z⁻¹ * ·) (mul_kummerLaplace_add_one k (a - 2 - k) hz)
       simp only [← mul_assoc, inv_mul_cancel₀ hz0, one_mul, mul_add] at hibp
-      rw [sub_right_comm (a - 2) (k : ℂ) 1, sub_sub a 2 1] at hibp
-      norm_num at hibp
-      rw [← mul_add_one 2 k, upperIncompleteGammaContFracSolution_two_mul_add_two,
-        upperIncompleteGammaContFracSolution_two_mul_add_one,
-        mul_add_one 2 k, add_assoc (2 * k) 2 1,
-        upperIncompleteGammaContFracPartNum_two_mul_add_three,
-        upperIncompleteGammaContFracSolution_two_mul_add_two,
-        Nat.cast_add, Nat.cast_one, add_comm (k : ℂ) 1, ← sub_sub (a - 2), ← sub_sub (a - 1),
-        sub_sub a 2 1, sub_sub a 1 1, one_add_one_eq_two, ascPochhammer_succ_eval,
-        pow_succ _ (k + 1)]
-      norm_num
+      rw [hidx₁, hidx₂]
+      simp only [upperIncompleteGammaContFracSolution_two_mul_add_two,
+        upperIncompleteGammaContFracSolution_two_mul_add_one, hpart, hpar₁, hpar₂, hpoch]
       linear_combination (ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) * hibp
 
 /-- When `z ∈ slitPlane` and `a` is not a positive integer, the Kummer-Laplace recurrence
