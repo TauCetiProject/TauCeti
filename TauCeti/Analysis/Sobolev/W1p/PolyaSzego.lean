@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement
 import TauCeti.Analysis.BoundedVariation.UniformIntegrable
 import TauCeti.Analysis.BoundedVariation.WeakDerivative
+import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
-import TauCeti.Analysis.Convolution.Holder
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.MeasureTheory.Function.DeLaValleePoussin
@@ -30,7 +30,8 @@ derivative measure. Exclusion of singular concentration in `W^{1,1}` requires pr
 integrability of gradients across smooth approximations.
 
 For `u : W1p mu ⊤ 1`, convolving `(W1p.value u)⁺` with any smooth compactly supported probability
-kernel `rho` produces a globally Lipschitz function (`TauCeti.holderWith_integral_kernel_smul_sub`)
+kernel `rho` produces a globally Lipschitz function
+(`HasCompactSupport.lipschitzWith_convolution_left_of_integrable`)
 whose gradient satisfies `∫ Φ(‖D(rho ⋆ u⁺)‖) ∂mu ≤ ∫ Φ(‖∇u⁺‖) ∂mu` by convolution Jensen
 (`TauCeti.HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le`), hence
 `∫ Φ(‖D((rho ⋆ u⁺)*)‖) ∂mu ≤ ∫ Φ(‖∇u⁺‖) ∂mu` by the Lipschitz convex-integrand Pólya–Szegő
@@ -90,11 +91,8 @@ private theorem lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le
     simpa using L1.integrable_coeFn (W1p.value u)
   have hg_int : Integrable (W1p.gradient u : E → E) mu := by
     simpa using L1.integrable_coeFn (W1p.gradient u)
-  obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport hrho_cpt hrho (by simp)
-  have hK : LipschitzWith ((∫ z, ‖W1p.value u z‖ ∂mu).toNNReal * L)
-      (rho ⋆[lsmul ℝ ℝ, mu] ⇑(W1p.value u)) := by
-    rw [convolution_symm (lsmul ℝ ℝ) (by ext; simp)]
-    exact holderWith_one.mp (holderWith_integral_kernel_smul_sub hu_int zero_lt_one hL.holderWith)
+  have hK := hrho_cpt.lipschitzWith_convolution_left_of_integrable (lsmul ℝ ℝ)
+    (hrho.of_le (by simp)) hu_int
   calc ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ (fun z ↦ (schwarzRearrangement mu
           (fun y ↦ ENNReal.ofReal ((rho ⋆[lsmul ℝ ℝ, mu] ⇑(W1p.value u)) y))
           z).toReal) x‖) ∂mu
@@ -109,6 +107,18 @@ private theorem lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le
           hΦ hΦm hrho hrho_cpt hrho0 hrho1
     _ = ∫⁻ x, ENNReal.ofReal (Φ ‖W1p.gradient u x‖) ∂mu :=
         lintegral_congr fun x ↦ by rw [innerSL_apply_norm]
+
+/-- `L¹` gradient bound (`Φ = id`) for the real Schwarz rearrangement of a mollification of
+`u : W1p mu ⊤ 1`. -/
+private theorem lintegral_enorm_fderiv_schwarzRearrangement_convolution_le
+    (u : W1p mu ⊤ 1) {rho : E → ℝ} (hrho : ContDiff ℝ ∞ rho) (hrho_cpt : HasCompactSupport rho)
+    (hrho0 : 0 ≤ᵐ[mu] rho) (hrho1 : ∫ x, rho x ∂mu = 1) :
+    ∫⁻ x, ‖fderiv ℝ (fun z ↦ (schwarzRearrangement mu
+        (fun y ↦ ENNReal.ofReal ((rho ⋆[lsmul ℝ ℝ, mu] ⇑(W1p.value u)) y))
+        z).toReal) x‖ₑ ∂mu ≤
+      ∫⁻ x, ‖W1p.gradient u x‖ₑ ∂mu := by
+  simpa [ofReal_norm] using lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le u
+    hrho hrho_cpt hrho0 hrho1 (convexOn_id (convex_Ici 0)) monotoneOn_id rfl
 
 omit [FiniteDimensional ℝ E] in
 /-- De la Vallée Poussin superlinear convex function for `W1p.gradient u`, converted to an extended
@@ -167,9 +177,9 @@ private theorem uniformIntegrable_fderiv_schwarzRearrangement_convolution
         (phi i).integral_normed hΦc hΦm hΦ0, ?_⟩
   refine (iSup_le fun i ↦ ?_).trans_lt hg_int.2
   rw [eLpNorm_one_eq_lintegral_eNorm (measurable_fderiv ℝ _).aestronglyMeasurable]
-  simpa [ofReal_norm] using lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le w
+  exact lintegral_enorm_fderiv_schwarzRearrangement_convolution_le w
     (phi i).contDiff_normed (phi i).hasCompactSupport_normed (ae_of_all _ (phi i).nonneg_normed)
-    (phi i).integral_normed (convexOn_id (convex_Ici 0)) monotoneOn_id rfl
+    (phi i).integral_normed
 
 /-- The Schwarz rearrangement of `ENNReal.ofReal ∘ W1p.value (W1p.posPart hp u)` equals that of
 `ENNReal.ofReal ∘ W1p.value u`. -/
@@ -197,36 +207,29 @@ private theorem exists_hasWeakFDerivOn_of_w1p (u : W1p mu ⊤ 1) :
     ⟨1 / ((n : ℝ) + 2), 1 / ((n : ℝ) + 1), by positivity, by gcongr; linarith⟩
   have hw_int : Integrable (W1p.value w : E → ℝ) mu := by
     simpa using L1.integrable_coeFn (W1p.value w)
-  have hlip (n : ℕ) : ∃ K : ℝ≥0, LipschitzWith K ((phi n).normed mu ⋆[lsmul ℝ ℝ, mu]
-      ⇑(W1p.value w)) := by
-    obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport
-      ((phi n).hasCompactSupport_normed (μ := mu))
-      ((phi n).contDiff_normed (μ := mu) (n := 1)) one_ne_zero
-    refine ⟨(∫ z, ‖W1p.value w z‖ ∂mu).toNNReal * L, ?_⟩
-    rw [convolution_symm (lsmul ℝ ℝ) (by ext; simp)]
-    exact holderWith_one.mp (holderWith_integral_kernel_smul_sub hw_int zero_lt_one hL.holderWith)
+  have hlip (n : ℕ) :=
+    ((phi n).hasCompactSupport_normed (μ := mu)).lipschitzWith_convolution_left_of_integrable
+      (lsmul ℝ ℝ) ((phi n).contDiff_normed (μ := mu) (n := 1)) hw_int
   let v_n : ℕ → E → ℝ := fun n x ↦ (schwarzRearrangement mu
     (fun y ↦ ENNReal.ofReal (((phi n).normed mu ⋆[lsmul ℝ ℝ, mu] ⇑(W1p.value w)) y))
     x).toReal
   let v₀ : E → ℝ := fun x ↦
     (schwarzRearrangement mu (fun y ↦ ENNReal.ofReal (W1p.value w y)) x).toReal
-  have hv_weak (n : ℕ) : HasWeakFDerivOn mu ⊤ (v_n n) (fderiv ℝ (v_n n)) := by
-    obtain ⟨K, hK⟩ := hlip n
-    exact ((lipschitzWith_toReal_schwarzRearrangement mu hK).locallyLipschitz.locallyLipschitzOn
+  have hv_weak (n : ℕ) : HasWeakFDerivOn mu ⊤ (v_n n) (fderiv ℝ (v_n n)) :=
+    ((lipschitzWith_toReal_schwarzRearrangement mu (hlip n)).locallyLipschitz.locallyLipschitzOn
       (s := (⊤ : Opens E))).hasWeakFDerivOn_fderiv
-  have hL1_bound (n : ℕ) : ∫⁻ x, ‖fderiv ℝ (v_n n) x‖ₑ ∂mu ≤ ∫⁻ x, ‖W1p.gradient w x‖ₑ ∂mu := by
-    simpa [ofReal_norm] using lintegral_ofReal_fderiv_schwarzRearrangement_convolution_le w
+  have hL1_bound (n : ℕ) : ∫⁻ x, ‖fderiv ℝ (v_n n) x‖ₑ ∂mu ≤ ∫⁻ x, ‖W1p.gradient w x‖ₑ ∂mu :=
+    lintegral_enorm_fderiv_schwarzRearrangement_convolution_le w
       (phi n).contDiff_normed (phi n).hasCompactSupport_normed (ae_of_all _ (phi n).nonneg_normed)
-      (phi n).integral_normed (convexOn_id (convex_Ici 0)) monotoneOn_id rfl
+      (phi n).integral_normed
   have hconv (K : Set E) (_ : IsCompact K) (_ : K ⊆ (⊤ : Opens E)) :
       Tendsto (fun n ↦ ∫⁻ x in K, ‖v_n n x - v₀ x‖ₑ ∂mu) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (tendsto_lintegral_enorm_normed_convolution_sub (phi := phi)
         tendsto_one_div_add_atTop_nhds_zero_nat hw_int)
       (fun _ ↦ bot_le) fun n ↦ (setLIntegral_le_lintegral _ _).trans ?_
-    obtain ⟨_, hK⟩ := hlip n
     simpa using lintegral_enorm_toReal_schwarzRearrangement_sub_rpow_le mu
-      hK.continuous.aemeasurable hw_int.aemeasurable le_rfl
+      (hlip n).continuous.aemeasurable hw_int.aemeasurable le_rfl
   obtain ⟨g, hg_weak, hg_int, hg_le⟩ :=
     (hw_int.toReal_schwarzRearrangement.locallyIntegrable.locallyIntegrableOn ⊤)
       |>.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegrable hv_weak

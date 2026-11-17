@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.SchwarzRearrangement
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Schwarz rearrangement of Lipschitz functions
@@ -161,11 +162,7 @@ theorem schwarzRearrangement_ofReal_ne_top {h : E → ℝ} (hh : LipschitzWith K
       ((schwarzRearrangement_le_essSup μ _ x).trans ?_)
     exact essSup_le_of_ae_le (ENNReal.ofReal (h x))
       (.of_forall fun y ↦ by rw [Subsingleton.elim y x])
-  · have hh' (u v : E) : ENNReal.ofReal (h u) ≤ ENNReal.ofReal (h v) + K * edist u v :=
-      (ENNReal.le_add_edist _ (ENNReal.ofReal (h v))).trans (add_le_add_right
-        (by simpa only [ENNReal.ofReal, ENNReal.edist_coe, one_mul, Function.comp_apply] using
-          (Real.lipschitzWith_toNNReal.comp hh) u v) _)
-    refine schwarzRearrangement_ne_top μ hh'
+  · refine schwarzRearrangement_ne_top μ hh.ofReal_le_add_mul_edist
       (t := ENNReal.ofReal (max t 0)) ENNReal.ofReal_ne_top (ne_top_of_le_ne_top hμt ?_) x
     exact measure_mono fun y hy ↦ (le_max_left t 0).trans_lt
       ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg (le_max_right t 0)).1 hy)
@@ -176,11 +173,8 @@ the real value (`ENNReal.toReal`) of the Schwarz rearrangement of its positive p
 theorem lipschitzWith_toReal_schwarzRearrangement {h : E → ℝ} (hh : LipschitzWith K h) :
     LipschitzWith K fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) x).toReal := by
   set g := schwarzRearrangement μ fun y ↦ ENNReal.ofReal (h y)
-  have hh' (x y : E) : ENNReal.ofReal (h x) ≤ ENNReal.ofReal (h y) + K * edist x y :=
-    (ENNReal.le_add_edist _ (ENNReal.ofReal (h y))).trans (add_le_add_right
-      (by simpa only [ENNReal.ofReal, ENNReal.edist_coe, one_mul, Function.comp_apply] using
-        (Real.lipschitzWith_toNNReal.comp hh) x y) _)
-  have hg : ∀ x y, g x ≤ g y + K * edist x y := schwarzRearrangement_le_add_mul_edist μ hh'
+  have hg : ∀ x y, g x ≤ g y + K * edist x y :=
+    schwarzRearrangement_le_add_mul_edist μ hh.ofReal_le_add_mul_edist
   refine LipschitzWith.of_le_add_mul K fun x y ↦ ?_
   have hxy : K * edist x y ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top (edist_ne_top x y)
   rcases eq_or_ne (g y) ∞ with hgy | hgy

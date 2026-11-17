@@ -11,7 +11,6 @@ public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement
-import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.BoundedVariation.LevelSet
@@ -20,8 +19,9 @@ import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Clamp
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.FDeriv.Norm
-import TauCeti.Analysis.Convex.Perspective
+import TauCeti.Analysis.Convex.Monotone
 import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.MeasureTheory.Function.Coarea.Integral
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
 import TauCeti.MeasureTheory.Function.Monotone
 import TauCeti.MeasureTheory.Function.SchwarzRearrangement.CriticalValues
@@ -211,56 +211,6 @@ private theorem fiber_le_of_level_bounds {v h : E → ℝ} (hvm : Measurable v)
 
 variable [FiniteDimensional ℝ E]
 
-/-- For a nonnegative function `w : E → ℝ` and `Φ : ℝ → ℝ` monotone on `[0, ∞)` with `Φ 0 = 0`, the
-gradient integral `∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖)` equals the coarea level integral over
-`t > 0` of `Φ ‖fderiv ℝ w‖ / ‖fderiv ℝ w‖` on `{fderiv ℝ w ≠ 0} ∩ w ⁻¹' {t}`. -/
-private theorem lintegral_ofReal_fderiv_eq_coarea {w : E → ℝ} (hw0 : ∀ x, 0 ≤ w x)
-    {Φ : ℝ → ℝ} (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0) :
-    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖) =
-      ∫⁻ t in Ioi (0 : ℝ), ∫⁻ x in {x | fderiv ℝ w x ≠ 0} ∩ w ⁻¹' {t},
-        ENNReal.ofReal (Φ ‖fderiv ℝ w x‖ / ‖fderiv ℝ w x‖) ∂μHE[finrank ℝ E - 1] := by
-  set R := {x | fderiv ℝ w x ≠ 0}
-  have hRm : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ w)
-  have hqm : Measurable fun x : E ↦ ENNReal.ofReal (Φ ‖fderiv ℝ w x‖ / ‖fderiv ℝ w x‖) :=
-    ENNReal.measurable_ofReal.comp
-      ((hΦm.measurable_comp (measurable_fderiv ℝ w).norm fun _ ↦ norm_nonneg _).div
-        (measurable_fderiv ℝ w).norm)
-  have hsurj (x : E) (hx : x ∈ R) : Function.Surjective (fderiv ℝ w x) :=
-    surjective_of_ne_zero_of_finrank_eq_one (finrank_self ℝ)
-      ((ContinuousLinearMap.coe_injective.ne_iff' ContinuousLinearMap.toLinearMap_zero).2 hx)
-  have hR_eq : ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖) =
-      ∫⁻ x in R, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖) := by
-    rw [← lintegral_add_compl _ hRm]
-    have hc0 : ∫⁻ x in Rᶜ, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖) = 0 := by
-      refine (setLIntegral_congr_fun hRm.compl fun x hx ↦ ?_).trans lintegral_zero
-      have h0 : fderiv ℝ w x = 0 := by simpa [R] using hx
-      simp [h0, hΦ0]
-    rw [hc0, add_zero]
-  have hco := MeasureTheory.lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
-    hRm.nullMeasurableSet (fun _ hx ↦ TauCeti.differentiableAt_of_fderiv_ne_zero hx) hsurj hqm
-  rw [finrank_self] at hco
-  have hlhs : ∫⁻ x in R, ENNReal.ofReal (fderiv ℝ w x).adjoint.normDet *
-        ENNReal.ofReal (Φ ‖fderiv ℝ w x‖ / ‖fderiv ℝ w x‖) =
-      ∫⁻ x in R, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖) := by
-    refine setLIntegral_congr_fun hRm fun x hx ↦ ?_
-    rw [ContinuousLinearMap.normDet_adjoint_eq_norm, ← ENNReal.ofReal_mul (norm_nonneg _),
-      mul_div_cancel₀ _ (norm_ne_zero_iff.2 hx)]
-  rw [hR_eq, ← hlhs, hco, ← lintegral_indicator measurableSet_Ioi]
-  refine lintegral_congr fun t ↦ ?_
-  by_cases ht : 0 < t
-  · exact (indicator_of_mem (mem_Ioi.2 ht) (fun s ↦
-      ∫⁻ x in R ∩ w ⁻¹' {s}, ENNReal.ofReal (Φ ‖fderiv ℝ w x‖ / ‖fderiv ℝ w x‖)
-        ∂μHE[finrank ℝ E - 1])).symm
-  · rw [indicator_of_notMem (mem_Ioi.not.2 ht)]
-    have hempty : R ∩ w ⁻¹' {t} = ∅ := by
-      ext x
-      simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false]
-      rintro ⟨hxR, hwx⟩
-      have hwx0 : w x = 0 := le_antisymm (hwx.trans_le (not_lt.1 ht)) (hw0 x)
-      have hmin : IsLocalMin w x := Eventually.of_forall fun y ↦ hwx0.symm ▸ hw0 y
-      exact hxR hmin.fderiv_eq_zero
-    simp [hempty]
-
 /-- Almost-every-level finiteness and critical-value exclusion needed in the Lipschitz Pólya–Szegő
 coarea comparison. -/
 private theorem ae_level_conditions_of_lipschitzWith {K : ℝ≥0} {h : E → ℝ} (hh : LipschitzWith K h)
@@ -331,9 +281,12 @@ private theorem lintegral_ofReal_map_norm_fderiv_le_core [Nontrivial E] {K : ℝ
       (TauCeti.schwarzRearrangement volume (fun y ↦ ENNReal.ofReal (h y)) z).toReal) :=
     TauCeti.lipschitzWith_toReal_schwarzRearrangement volume hh
   have hne := TauCeti.schwarzRearrangement_ofReal_ne_top volume hh (hfin 1 one_pos)
-  rw [lintegral_ofReal_fderiv_eq_coarea h0 hΦm hΦ0] at hInt_ne
-  rw [lintegral_ofReal_fderiv_eq_coarea (fun _ ↦ ENNReal.toReal_nonneg) hΦm hΦ0,
-    lintegral_ofReal_fderiv_eq_coarea h0 hΦm hΦ0]
+  have hco (w : E → ℝ) (hw : ∀ x, 0 ≤ w x) :=
+    MeasureTheory.lintegral_ofReal_eq_setLIntegral_Ioi_fiber (w := w) hw
+      (hΦm.measurable_comp (measurable_fderiv ℝ w).norm fun _ ↦ norm_nonneg _)
+      (ae_of_all _ fun _ h0 ↦ by simp [h0, hΦ0])
+  rw [hco h h0] at hInt_ne
+  rw [hco _ (fun _ ↦ ENNReal.toReal_nonneg), hco h h0]
   have hRh : MeasurableSet {x | fderiv ℝ h x ≠ 0} :=
     (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
   refine setLIntegral_mono_ae' measurableSet_Ioi ?_
@@ -465,7 +418,8 @@ private theorem lintegral_ofReal_map_norm_fderiv_le_of_monotoneOn [Nontrivial E]
     refine (lintegral_ofReal_map_norm_fderiv_le_core hhc_lip (fun _ ↦ le_max_right _ _)
       hhc_fin hΦ hΦm hΦ0).trans (lintegral_mono fun x ↦ ENNReal.ofReal_le_ofReal
       (hΦm (norm_nonneg _) (norm_nonneg _) ?_))
-    rw [show hc_fun = fun y ↦ max (h y - c) 0 from rfl, TauCeti.fderiv_max_const_eq_indicator]
+    simp only [hc_fun]
+    rw [TauCeti.fderiv_max_const_eq_indicator]
     refine (norm_indicator_le_norm_self _ x).trans_eq ?_
     rw [fderiv_sub_const]
 
@@ -485,7 +439,8 @@ private theorem lintegral_ofReal_map_norm_fderiv_toReal_schwarzRearrangement_vol
     simp [Ψ, ENNReal.ofReal_max]
   have hΨ0 : Ψ 0 = 0 := max_eq_right hΦ0
   have hΨ_conv : ConvexOn ℝ (Ici 0) Ψ := hΦ.sup (convexOn_const 0 (convex_Ici 0))
-  have hΨ_mono : MonotoneOn Ψ (Ici 0) := hΦ.monotoneOn_max_const hΦ0
+  have hΨ_mono : MonotoneOn Ψ (Ici 0) := by
+    simpa only [inter_self] using hΦ.monotoneOn_max_const (mem_Ici.2 le_rfl) hΦ0
   simp_rw [hΨ_ofReal]
   exact lintegral_ofReal_map_norm_fderiv_le_of_monotoneOn hh hΨ_conv hΨ_mono hΨ0
 

@@ -18,8 +18,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.MeasureTheory.Integral.LayerCake
 -- Proof-only: the measure of the set where the centered Haar ball is small.
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
--- Proof-only: `Real.toNNReal` is `1`-Lipschitz and `NNReal` embeds isometrically into `ℝ`.
-import Mathlib.Topology.MetricSpace.Lipschitz
+-- Proof-only: `ENNReal.toReal` and `ENNReal.ofReal` are `edist`-non-expansive.
+import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Schwarz rearrangement
@@ -673,19 +673,16 @@ theorem lintegral_enorm_toReal_schwarzRearrangement_sub_rpow_le {f g : E → ℝ
         (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal‖ₑ ^ p ∂μ ≤
       ∫⁻ x, ‖f x - g x‖ₑ ^ p ∂μ := by
   have hp0 : 0 ≤ p := zero_le_one.trans hp
-  have htoReal (a b : ℝ≥0∞) : ‖a.toReal - b.toReal‖ₑ ≤ edist a b := by
-    cases a <;> cases b <;> simp [← eDist_eq_eNorm_sub, NNReal.isometry_coe.edist_eq]
-  have hofReal (a b : ℝ) : edist (ENNReal.ofReal a) (ENNReal.ofReal b) ≤ ‖a - b‖ₑ := by
-    simpa [ENNReal.ofReal, eDist_eq_eNorm_sub] using Real.lipschitzWith_toNNReal a b
-  calc ∫⁻ x, ‖(schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal -
-          (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal‖ₑ ^ p ∂μ
+  simp_rw [← eDist_eq_eNorm_sub]
+  calc ∫⁻ x, edist (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal
+          (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal ^ p ∂μ
       ≤ ∫⁻ x, edist (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x)
           (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x) ^ p ∂μ :=
-        lintegral_mono fun _ ↦ ENNReal.rpow_le_rpow (htoReal _ _) hp0
+        lintegral_mono fun _ ↦ ENNReal.rpow_le_rpow (ENNReal.edist_toReal_le _ _) hp0
     _ ≤ ∫⁻ x, edist (ENNReal.ofReal (f x)) (ENNReal.ofReal (g x)) ^ p ∂μ :=
         lintegral_edist_rpow_schwarzRearrangement_le μ hf.ennreal_ofReal hg.ennreal_ofReal hp
-    _ ≤ ∫⁻ x, ‖f x - g x‖ₑ ^ p ∂μ :=
-        lintegral_mono fun _ ↦ ENNReal.rpow_le_rpow (hofReal _ _) hp0
+    _ ≤ ∫⁻ x, edist (f x) (g x) ^ p ∂μ :=
+        lintegral_mono fun _ ↦ ENNReal.rpow_le_rpow (ENNReal.edist_ofReal_le _ _) hp0
 
 /-- **`Lᵖ` contraction of the real positive-part Schwarz rearrangement.** For every `1 ≤ p ≤ ∞`,
 the `Lᵖ` seminorm of the difference between the real positive-part Schwarz rearrangements of `f`
@@ -695,10 +692,6 @@ theorem eLpNorm_toReal_schwarzRearrangement_sub_le {f g : E → ℝ}
     eLpNorm (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal -
         (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal) p μ ≤
       eLpNorm (fun x ↦ f x - g x) p μ := by
-  have htoReal (a b : ℝ≥0∞) : ‖a.toReal - b.toReal‖ₑ ≤ edist a b := by
-    cases a <;> cases b <;> simp [← eDist_eq_eNorm_sub, NNReal.isometry_coe.edist_eq]
-  have hofReal (a b : ℝ) : edist (ENNReal.ofReal a) (ENNReal.ofReal b) ≤ ‖a - b‖ₑ := by
-    simpa [ENNReal.ofReal, eDist_eq_eNorm_sub] using Real.lipschitzWith_toNNReal a b
   have hmeas_lhs : AEStronglyMeasurable
       (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x).toReal -
         (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal) μ :=
@@ -713,11 +706,13 @@ theorem eLpNorm_toReal_schwarzRearrangement_sub_le {f g : E → ℝ}
           (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x).toReal) p μ
       ≤ eLpNorm (fun x ↦ edist (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (f y)) x)
           (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (g y)) x)) p μ :=
-        eLpNorm_mono_eNorm hmeas_lhs fun _ ↦ by simpa using htoReal _ _
+        eLpNorm_mono_eNorm hmeas_lhs fun _ ↦ by
+          simpa only [← eDist_eq_eNorm_sub, eNorm_eq_self] using ENNReal.edist_toReal_le _ _
     _ ≤ eLpNorm (fun x ↦ edist (ENNReal.ofReal (f x)) (ENNReal.ofReal (g x))) p μ :=
         eLpNorm_edist_schwarzRearrangement_le μ hf.ennreal_ofReal hg.ennreal_ofReal hp
     _ ≤ eLpNorm (fun x ↦ f x - g x) p μ :=
-        eLpNorm_mono_eNorm hmeas_mid fun _ ↦ by simpa using hofReal _ _
+        eLpNorm_mono_eNorm hmeas_mid fun _ ↦ by
+          simpa only [eDist_eq_eNorm_sub, eNorm_eq_self] using ENNReal.edist_ofReal_le _ _
 
 end AddHaar
 
