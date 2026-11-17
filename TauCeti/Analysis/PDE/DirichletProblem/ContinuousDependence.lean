@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Continuous dependence of the Dirichlet problem on its coefficients
@@ -47,6 +48,9 @@ boundary values converge in `H¹(Ω)`. Testing with `w = u' i - u` gives
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 6.2.2.
 * P. G. Ciarlet, *The Finite Element Method for Elliptic Problems*, Theorem 4.1.1 (the first
   Strang lemma, the same perturbation argument for approximate forms).
+* M. Chipot, *Elliptic Equations: An Introductory Course*, Birkhäuser, 2009, Section 11.2
+  (quasilinear equations), whose continuity step for the frozen-coefficient map is the almost
+  everywhere convergence argument of `TauCeti.PDE.tendsto_of_forall_energyFormH1_eq_of_tendsto_ae`.
 -/
 
 public section
@@ -117,7 +121,8 @@ theorem norm_sub_le_of_forall_energyFormH1_eq
   · rw [← hzero]
     exact div_nonneg (by positivity) hC.le
   · rw [le_div_iff₀ hC]
-    nlinarith [hkey, hpos]
+    -- Cancel one factor `‖w‖ > 0` from `hkey`.
+    exact le_of_mul_le_mul_right (by linarith [hkey]) hpos
 
 /-- **Dependence of the weak solution on the coefficients.** Let `u` and `u'` be weak solutions
 in `H¹₀(Ω)` of the Dirichlet problems for the two coefficient triples `(a, b, c)` and
@@ -193,24 +198,8 @@ theorem tendsto_of_isWeakSolutionDirichlet {α : Type*} {l : Filter α}
   have htri := norm_le_norm_add_norm_sub u (u' i)
   have hδ : 0 ≤ Lam i + beta i + gamma i := by linarith [hLam i, hbeta i, hgamma i]
   rw [norm_sub_rev, le_div_iff₀ hC]
-  nlinarith [mul_le_mul_of_nonneg_right hi (norm_nonneg (u - u' i)),
+  linarith [mul_le_mul_of_nonneg_right hi (norm_nonneg (u - u' i)),
     mul_le_mul_of_nonneg_left htri hδ]
-
-/-- Young's inequality for a matrix bilinear form: for `C > 0`,
-`ηᵀ A ξ ≤ C ‖η‖² / 2 + ‖A‖² ‖ξ‖² / (2 C)`, where `‖A‖` is the operator norm of the attached
-bilinear form. -/
-private theorem matrixBilinearForm_apply_le_young (A : Matrix ι ι ℝ) (hC : 0 < C)
-    (η ξ : EuclideanSpace ℝ ι) :
-    matrixBilinearForm A η ξ ≤
-      C / 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 / (2 * C) := by
-  have h := (le_abs_self _).trans ((matrixBilinearForm A).le_opNorm₂ η ξ)
-  have key : 2 * C * matrixBilinearForm A η ξ ≤
-      C ^ 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 := by
-    nlinarith [sq_nonneg (C * ‖η‖ - ‖matrixBilinearForm A‖ * ‖ξ‖)]
-  rw [show C / 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 / (2 * C) =
-      (C ^ 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2) / (2 * C) by
-    field_simp, le_div_iff₀ (by positivity)]
-  linarith
 
 /-- The perturbation estimate behind
 `TauCeti.PDE.tendsto_of_forall_energyFormH1_eq_of_tendsto_ae`. If `u` solves the problem for
@@ -331,7 +320,8 @@ along a countably generated filter and the differences `a - a' i` are bounded by
 Compared with `TauCeti.PDE.tendsto_of_isWeakSolutionDirichlet`, the coefficients need not
 converge uniformly; this is what continuity of the frozen-coefficient map of a quasilinear
 equation `-div (A(x, u) ∇u) = ℓ` needs, since a convergent sequence of functions `u` converges
-almost everywhere only along a subsequence, and not uniformly in general. -/
+almost everywhere only along a subsequence, and not uniformly in general. The argument is the
+continuity step of M. Chipot, *Elliptic Equations: An Introductory Course*, Section 11.2. -/
 theorem tendsto_of_forall_energyFormH1_eq_of_tendsto_ae {α : Type*} {l : Filter α}
     [l.IsCountablyGenerated] {a' : α → EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -353,8 +343,6 @@ theorem tendsto_of_forall_energyFormH1_eq_of_tendsto_ae {α : Type*} {l : Filter
   · exact tendsto_bot
   -- The limit coefficient is measurable as an almost everywhere limit of measurable ones; matrices
   -- carry the product topology, which is metrizable.
-  let : PseudoMetrizableSpace (Matrix ι ι ℝ) :=
-    inferInstanceAs (PseudoMetrizableSpace (ι → ι → ℝ))
   have ha := aestronglyMeasurable_of_tendsto_ae l ha' hlim
   obtain ⟨hint, hlim'⟩ :=
     tendsto_integral_norm_matrixBilinearForm_sub_sq_mul ha ha' hbound hlim u

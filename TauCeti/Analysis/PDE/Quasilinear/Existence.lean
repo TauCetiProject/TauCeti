@@ -47,7 +47,10 @@ coefficient `x ↦ A(x, v(x))` is measurable
 (`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuousAt`) and uniformly elliptic
 with the constants `λ, Λ`. By Lax–Milgram it has exactly one weak solution `S v`, and the energy
 estimate bounds `‖S v - g‖` by a constant `K` that does not depend on `v`.
-Let `T v ∈ L²(Ω)` be the value of `S v`.
+Let `T v ∈ L²(Ω)` be the value of `S v`. The map `S` is `TauCeti.PDE.frozenSolution`, and its
+bound, the continuity of `T` and the compactness of its range are public
+(`TauCeti.PDE.norm_frozenSolution_sub_le`, `TauCeti.PDE.continuous_value_frozenSolution`,
+`TauCeti.PDE.isCompact_closure_range_value_frozenSolution`).
 
 * `T` is continuous. If `vₖ → v` in `L²(Ω)`, every subsequence has a further subsequence along
   which `vₖ → v` almost everywhere, so `A(x, vₖ(x)) → A(x, v(x))` almost everywhere. The frozen
@@ -64,9 +67,14 @@ all of `L²(Ω)`, gives a fixed point `v = T v`, and `u = S v` is a weak solutio
 
 ## References
 
+* M. Chipot, *Elliptic Equations: An Introductory Course*, Birkhäuser, 2009, Section 11.2
+  (quasilinear equations). This is the `L²` argument followed here: freeze the coefficient,
+  solve the linear problem, prove continuity of `T` through almost everywhere convergent
+  subsequences and dominated convergence, compactness by Rellich, and conclude by Schauder.
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
   Theorem 11.1 (Schauder's fixed-point theorem), Theorem 8.3 (the linear Dirichlet problem) and
-  Theorem 7.22 (the Rellich–Kondrachov theorem).
+  Theorem 7.22 (the Rellich–Kondrachov theorem). Their quasilinear application, Section 11.3,
+  takes a different route, through Hölder spaces.
 -/
 
 public section
@@ -84,17 +92,6 @@ variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {lam Lam : ℝ} {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
 
-/-- Freezing a uniformly elliptic quasilinear coefficient at a function keeps it uniformly
-elliptic with the same constants. -/
-private theorem uniformlyEllipticOn_comp
-    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
-      (fun x => A x s) lam Lam)
-    (v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) :
-    UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) (fun x => A x (v x))
-      lam Lam :=
-  uniformlyEllipticOn_iff.2 ⟨(hA 0).pos, (uniformlyEllipticOn_iff.1 (hA 0)).2.1,
-    fun x hx => (uniformlyEllipticOn_iff.1 (hA (v x))).2.2 hx⟩
-
 /-- The coefficient frozen at a measurable function is measurable. -/
 private theorem aestronglyMeasurable_comp
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
@@ -111,9 +108,9 @@ private theorem memLp_energyIntegrand_comp
     (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
     MemLp (fun x => energyIntegrand (A x (v x)) 0 0) ⊤ (volume.restrict Omega) :=
-  memLp_energyIntegrand_of_bounds (uniformlyEllipticOn_comp hA v).upper_nonneg
+  memLp_energyIntegrand_of_bounds (UniformlyEllipticOn.apply_of_forall hA v).upper_nonneg
     (aestronglyMeasurable_comp hAm hAc hv) aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _ hx η ξ => (uniformlyEllipticOn_comp hA v).upper_bound hx η ξ) (beta := 0)
+    (fun _ hx η ξ => (UniformlyEllipticOn.apply_of_forall hA v).upper_bound hx η ξ) (beta := 0)
     (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
 
 /-- The energy form of a frozen coefficient is coercive on `H¹₀(Ω)` with the constant
@@ -128,7 +125,8 @@ private theorem mul_norm_sq_le_energyFormH1_comp
     (w : W1p0 volume Omega 2) :
     lam / (2 * ((2 * R) ^ 2 + 1)) * ‖w‖ ^ 2 ≤
       energyFormH1 (fun x => A x (v x)) 0 0 (w : W1p volume Omega 2) w := by
-  have h := (uniformlyEllipticOn_comp hA v).mul_norm_sq_le_energyFormH1_self_of_subset_ball
+  have h := UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_ball
+    (UniformlyEllipticOn.apply_of_forall hA v)
     (aestronglyMeasurable_comp hAm hAc hv) (b := 0) (c := 0) aestronglyMeasurable_const
     aestronglyMeasurable_const (beta := 0) (gamma := 0) (fun _ _ => by simp) (fun _ _ => by simp)
     (fun _ _ => by simp) hball w.2
@@ -136,15 +134,39 @@ private theorem mul_norm_sq_le_energyFormH1_comp
   rwa [show (lam ^ 2 - 0 ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) =
     lam / (2 * ((2 * R) ^ 2 + 1)) by field_simp; ring] at h
 
-/-- The weak solution of the linear Dirichlet problem `-div (A(x, v) ∇u) = ℓ`, `u - g ∈ H¹₀(Ω)`,
-with the coefficient frozen at `v`, chosen by Hilbert's `ε`. It is the solution whenever one
-exists (`frozenSolution_spec`). -/
-private noncomputable def frozenSolution
+/-- The frozen-coefficient solution map `S` of the quasilinear Dirichlet problem: for
+`v : ℝⁿ⁺¹ → ℝ`, the weak solution `u = S v` of the linear Dirichlet problem
+`-div (A(x, v) ∇u) = ℓ`, `u - g ∈ H¹₀(Ω)`, whose coefficient is `A` frozen at `v`.
+
+Under the hypotheses of
+`TauCeti.PDE.exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq` and for
+measurable `v`, this problem has exactly one solution, and `frozenSolution A g ℓ v` is it
+(`TauCeti.PDE.frozenSolution_sub_mem_w1p0Submodule`,
+`TauCeti.PDE.forall_energyFormH1_frozenSolution_eq`,
+`TauCeti.PDE.eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq`). -/
+noncomputable def frozenSolution
     (A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)
     (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
     (v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) : W1p volume Omega 2 :=
   Classical.epsilon fun u => u - g ∈ w1p0Submodule volume Omega 2 ∧
     ∀ φ : W1p0 volume Omega 2, energyFormH1 (fun x => A x (v x)) 0 0 u φ = ℓ φ
+
+/-- Lax–Milgram for the frozen problem: it has exactly one weak solution. -/
+private theorem existsUnique_frozen
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
+    ∃! u : W1p volume Omega 2, u - g ∈ w1p0Submodule volume Omega 2 ∧
+      ∀ φ : W1p0 volume Omega 2, energyFormH1 (fun x => A x (v x)) 0 0 u φ = ℓ φ :=
+  UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
+    (UniformlyEllipticOn.apply_of_forall hA v) (aestronglyMeasurable_comp hAm hAc hv)
+    (b := 0) (c := 0) aestronglyMeasurable_const aestronglyMeasurable_const (beta := 0)
+    (gamma := 0) (fun _ _ => by simp) (fun _ _ => by simp) (fun _ _ => by simp) hball
+    (by rw [zero_mul]; exact (hA 0).pos) ℓ g
 
 private theorem frozenSolution_spec
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
@@ -157,12 +179,48 @@ private theorem frozenSolution_spec
     frozenSolution A g ℓ v - g ∈ w1p0Submodule volume Omega 2 ∧
       ∀ φ : W1p0 volume Omega 2,
         energyFormH1 (fun x => A x (v x)) 0 0 (frozenSolution A g ℓ v) φ = ℓ φ :=
-  Classical.epsilon_spec
-    (UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
-      (uniformlyEllipticOn_comp hA v) (aestronglyMeasurable_comp hAm hAc hv)
-      (b := 0) (c := 0) aestronglyMeasurable_const aestronglyMeasurable_const (beta := 0)
-      (gamma := 0) (fun _ _ => by simp) (fun _ _ => by simp) (fun _ _ => by simp) hball
-      (by rw [zero_mul]; exact (hA 0).pos) ℓ g).exists
+  Classical.epsilon_spec (existsUnique_frozen hA hAm hAc hball g ℓ hv).exists
+
+/-- The frozen solution has the boundary values `g`: `S v - g ∈ H¹₀(Ω)`. -/
+theorem frozenSolution_sub_mem_w1p0Submodule
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
+    frozenSolution A g ℓ v - g ∈ w1p0Submodule volume Omega 2 :=
+  (frozenSolution_spec hA hAm hAc hball g ℓ hv).1
+
+/-- The frozen solution solves `-div (A(x, v) ∇u) = ℓ` weakly. -/
+theorem forall_energyFormH1_frozenSolution_eq
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1p0 volume Omega 2))
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega))
+    (φ : W1p0 volume Omega 2) :
+    energyFormH1 (fun x => A x (v x)) 0 0 (frozenSolution A g ℓ v) φ = ℓ φ :=
+  (frozenSolution_spec hA hAm hAc hball g ℓ hv).2 φ
+
+/-- Uniqueness for the frozen problem: every `u` with `u - g ∈ H¹₀(Ω)` solving
+`-div (A(x, v) ∇u) = ℓ` weakly is the frozen solution `S v`. -/
+theorem eq_frozenSolution_of_sub_mem_w1p0Submodule_of_forall_energyFormH1_eq
+    (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+      (fun x => A x s) lam Lam)
+    (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
+    (hAc : ∀ᵐ x ∂volume.restrict Omega, Continuous (A x))
+    (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball z R)
+    {g u : W1p volume Omega 2} {ℓ : StrongDual ℝ (W1p0 volume Omega 2)}
+    {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega))
+    (hug : u - g ∈ w1p0Submodule volume Omega 2)
+    (hu : ∀ φ : W1p0 volume Omega 2, energyFormH1 (fun x => A x (v x)) 0 0 u φ = ℓ φ) :
+    u = frozenSolution A g ℓ v :=
+  (existsUnique_frozen hA hAm hAc hball g ℓ hv).unique ⟨hug, hu⟩
+    (frozenSolution_spec hA hAm hAc hball g ℓ hv)
 
 /-- The energy bound for the linear problem with a frozen coefficient: if `u - g ∈ H¹₀(Ω)` and
 `-div (A(x, v) ∇u) = ℓ` weakly, then `‖u - g‖ ≤ 2 ((2R)² + 1) (‖ℓ‖ + Λ ‖g‖) / λ`, whatever `v`. -/
@@ -184,14 +242,15 @@ private theorem norm_sub_le_of_forall_energyFormH1_comp_eq
   have hnorm : ‖energyFormH1L hcoeff‖ ≤ Lam := by
     simpa using norm_energyFormH1L_le_of_bounds hcoeff (hA 0).upper_nonneg
       ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx η ξ =>
-        (uniformlyEllipticOn_comp hA v).upper_bound hx η ξ)
+        (UniformlyEllipticOn.apply_of_forall hA v).upper_bound hx η ξ)
       le_rfl le_rfl (beta := 0) (gamma := 0) (by simp) (by simp)
   calc ‖u - g‖ ≤ (‖ℓ‖ + ‖energyFormH1L hcoeff‖ * ‖g‖) / (lam / (2 * ((2 * R) ^ 2 + 1))) := h
     _ ≤ (‖ℓ‖ + Lam * ‖g‖) / (lam / (2 * ((2 * R) ^ 2 + 1))) := by gcongr
     _ = 2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam := by field_simp
 
-/-- The bound on the frozen solutions, uniform in the function the coefficient is frozen at. -/
-private theorem norm_frozenSolution_sub_le
+/-- The bound `‖S v - g‖ ≤ 2 ((2R)² + 1) (‖ℓ‖ + Λ ‖g‖) / λ` on the frozen solutions, uniform in
+the function `v` the coefficient is frozen at. -/
+theorem norm_frozenSolution_sub_le
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
@@ -214,8 +273,8 @@ private theorem abs_dotProduct_sub_mulVec_le
   linarith [abs_sub (η ⬝ᵥ (A x s *ᵥ ξ)) (η ⬝ᵥ (A x t *ᵥ ξ)), (hA s).upper_bound hx η ξ,
     (hA t).upper_bound hx η ξ]
 
-/-- The map `v ↦ T v`, the value of the frozen solution, is continuous on `L²(Ω)`. -/
-private theorem continuous_value_frozenSolution
+/-- The map `T : v ↦ S v`, the value of the frozen solution, is continuous on `L²(Ω)`. -/
+theorem continuous_value_frozenSolution
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
@@ -250,9 +309,9 @@ private theorem continuous_value_frozenSolution
   filter_upwards [hms, hAc] with x hx hcx
   exact (hcx.tendsto _).comp hx
 
-/-- The map `v ↦ T v`, the value of the frozen solution, has relatively compact range in
+/-- The map `T : v ↦ S v`, the value of the frozen solution, has relatively compact range in
 `L²(Ω)`. -/
-private theorem isCompact_closure_range_value_frozenSolution
+theorem isCompact_closure_range_value_frozenSolution
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
       (fun x => A x s) lam Lam)
     (hAm : ∀ s, AEStronglyMeasurable (fun x => A x s) (volume.restrict Omega))
