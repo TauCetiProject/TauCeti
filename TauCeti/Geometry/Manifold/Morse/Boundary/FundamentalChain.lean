@@ -327,8 +327,11 @@ private theorem flow_eq_of_coord_eq_smul_single {q : M} {φ : MorseChart E f q}
   obtain ⟨hs, hcoord⟩ := add_mem_linearForwardTimes hφ h₁
     (neg_nonneg.2 (Real.log_nonpos hpos.le hle))
   rw [add_zero] at hs hcoord
+  -- The flow for the time `-log (b₂ / b₁)` rescales the coordinate `b₁` to `b₂`.
+  have hscale : b₁ * Real.exp (-(-Real.log (b₂ / b₁))) = b₂ := by
+    simp [Real.exp_log hpos, mul_div_cancel₀ _ hb₁0]
   rw [Flow.map_zero_apply, hb₁, φ.linearFlow_smul, φ.linearFlow_single_of_weight_eq_one hj,
-    neg_neg, Real.exp_log hpos, smul_smul, mul_div_cancel₀ _ hb₁0, ← hb₂] at hcoord
+    smul_smul, hscale, ← hb₂] at hcoord
   have h₂src : z₂ ∈ φ.toChart.source := by
     simpa using ((mem_linearForwardTimes hX φ).1 h₂).1
   exact φ.toChart.injOn ((mem_linearForwardTimes hX φ).1 hs).1 h₂src
@@ -594,7 +597,7 @@ critical points `a 0`, `a 1` of index `n`. Weighted by the fundamental signs of 
 two trajectories carry opposite signs. -/
 private theorem fundamentalSign_mul_trajectorySign_eq_neg {q : criticalPoints 𝓘(ℝ, E) f}
     (hq : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E) {a : Fin 2 → criticalPoints 𝓘(ℝ, E) f}
-    (ha : ∀ i, manifoldMorseIndex 𝓘(ℝ, E) f (a i) = finrank ℝ E) {w : Fin 2 → M}
+    {w : Fin 2 → M}
     (hw : ∀ i, w i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q)
     (hw1 : w 1 ∉ hX.flow.orbit (w 0))
     (hpq : ∀ i, manifoldMorseIndex 𝓘(ℝ, E) f (a i) = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
@@ -602,6 +605,7 @@ private theorem fundamentalSign_mul_trajectorySign_eq_neg {q : criticalPoints �
         (𝔬.orientation (a 1)) (𝔬.orientation q) (hpq 1) (w 1) =
       -(hX.fundamentalSign 𝔬 oM (a 0) * hX.trajectorySign (𝔬.chart (a 0)) (𝔬.chart q)
         (𝔬.orientation (a 0)) (𝔬.orientation q) (hpq 0) (w 0)) := by
+  have ha (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ, E) f (a i) = finrank ℝ E := (hpq i).trans hq
   set φ := 𝔬.chart q
   have hφ := 𝔬.coord_mfderiv_chart q
   obtain ⟨j, hj, hneg⟩ := φ.exists_weight_eq_one_of_add_one_eq_finrank hq
@@ -675,7 +679,7 @@ theorem finsum_fundamentalSign_mul_signedMorseBoundaryCoeff (q : criticalPoints 
   set s : Fin 2 → ℤ := fun i ↦ hX.fundamentalSign 𝔬 oM (ac i) * hX.trajectorySign
     (𝔬.chart (ac i)) (𝔬.chart q) (𝔬.orientation (ac i)) (𝔬.orientation q) (hpq i) (w i)
   have hs : s 1 = -s 0 :=
-    fundamentalSign_mul_trajectorySign_eq_neg h hf 𝔬 oM hq (fun i ↦ (ha i).2) hwmem hw1 hpq
+    fundamentalSign_mul_trajectorySign_eq_neg h hf 𝔬 oM hq hwmem hw1 hpq
   -- The weighted coefficient of `q` in the boundary of `p` is the sum of the signs of the
   -- trajectories starting at `p`.
   have hp (p : criticalPoints 𝓘(ℝ, E) f) :
