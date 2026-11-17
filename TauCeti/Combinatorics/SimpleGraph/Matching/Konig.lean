@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.SimpleGraph.Matching.Basic
 
 import Mathlib.Combinatorics.SimpleGraph.Hall
@@ -18,7 +17,7 @@ import TauCeti.Combinatorics.SimpleGraph.Bipartite
 # Kőnig's theorem, the Kőnig–Ore deficiency formula, and Hall's theorem
 
 This file proves Kőnig's min-max theorem and the Kőnig–Ore deficiency theorem for finite bipartite
-simple graphs, together with the resulting finite Hall marriage equivalences:
+simple graphs, together with the resulting Hall marriage equivalences:
 
 * **Kőnig's theorem** (`SimpleGraph.IsBipartite.matchingNum_eq_vertexCoverNum`): in every finite
   bipartite simple graph `G`, `G.matchingNum = G.vertexCoverNum`, and there exist a matching `M`
@@ -35,12 +34,12 @@ simple graphs, together with the resulting finite Hall marriage equivalences:
   `SimpleGraph.IsBipartiteWith.exists_isMatching_ncard_add_ncard_eq`), yielding the numerical
   deficiency formula `SimpleGraph.IsBipartiteWith.matchingNum_eq_encard_sub_iSup`.
 * **Hall's marriage theorem**: Mathlib's `SimpleGraph.exists_isMatching_of_forall_ncard_le` already
-  gives the sufficient Hall condition (for locally finite bipartite graphs). On a finite bipartite
-  graph, this file supplies the converse and two-way equivalences in `ℕ` and `ℕ∞`
+  gives the sufficient Hall condition for locally finite bipartite graphs. This file supplies the
+  converse and two-way side-saturating equivalences in `ℕ` and `ℕ∞` under `[G.LocallyFinite]`
   (`SimpleGraph.IsBipartiteWith.exists_isMatching_verts_superset_iff_forall_ncard_le`, reusing
   `SimpleGraph.exists_isMatching_of_forall_ncard_le`, and
   `SimpleGraph.IsBipartiteWith.exists_isMatching_verts_superset_iff_forall_encard_le`), together
-  with the equal-side perfect-matching equivalence
+  with the finite equal-side perfect-matching equivalence
   (`SimpleGraph.IsBipartiteWith.exists_isPerfectMatching_iff_ncard_eq_and_forall_ncard_le`).
 
 ## Implementation notes
@@ -64,104 +63,11 @@ places all neighbours of `S` inside `C \ L`, yielding Kőnig–Ore directly with
 
 public section
 
-open Function Set
+open Set
 
 namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
-
-/-! ### Bipartitions, vertex covers, and matched sides -/
-
-section Bipartite
-
-variable {L R : Set V}
-
-/-- The left side of a bipartition is a vertex cover. -/
-theorem IsBipartiteWith.isVertexCover_left (h : G.IsBipartiteWith L R) :
-    G.IsVertexCover L :=
-  fun _ _ hadj ↦ (h.mem_of_adj hadj).imp And.left And.right
-
-/-- The right side of a bipartition is a vertex cover. -/
-theorem IsBipartiteWith.isVertexCover_right (h : G.IsBipartiteWith L R) :
-    G.IsVertexCover R :=
-  h.symm.isVertexCover_left
-
-/-- Removing any set `S` from the left side `L` of a bipartition and adjoining the neighbours of
-`S` yields a vertex cover of `G`. -/
-theorem IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet
-    (h : G.IsBipartiteWith L R) (S : Set V) :
-    G.IsVertexCover ((L \ S) ∪ ⋃ x ∈ S, G.neighborSet x) := by
-  intro u v huv
-  rcases h.mem_of_adj huv with ⟨huL, -⟩ | ⟨-, hvL⟩
-  · by_cases huS : u ∈ S
-    · exact Or.inr (subset_union_right <| mem_biUnion huS huv)
-    · exact Or.inl (subset_union_left ⟨huL, huS⟩)
-  · by_cases hvS : v ∈ S
-    · exact Or.inl (subset_union_right <| mem_biUnion hvS huv.symm)
-    · exact Or.inr (subset_union_left ⟨hvL, hvS⟩)
-
-/-- In a bipartite graph with sides `L` and `R`, sending each matched vertex in `L` to its incident
-matching edge is a bijection `(M.verts ∩ L : Set V) ≃ M.edgeSet`. -/
-private noncomputable def vertsInterLeftEquivEdgeSet {M : G.Subgraph}
-    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
-    ↑(M.verts ∩ L) ≃ M.edgeSet := by
-  refine Equiv.ofBijective (fun x ↦ hM.toEdge ⟨x.1, x.2.1⟩) ⟨fun x₁ x₂ hx ↦ ?_, fun e ↦ ?_⟩
-  · have hm₂ : x₂.1 ∈ (hM.toEdge ⟨x₁.1, x₁.2.1⟩ : Sym2 V) := by
-      simpa [← hx] using hM.mem_coe_toEdge x₂.2.1
-    obtain ⟨w, hw, -⟩ := hM x₁.2.1
-    have heq : (hM.toEdge ⟨x₁.1, x₁.2.1⟩ : Sym2 V) = s(x₁.1, w) :=
-      congrArg Subtype.val (hM.toEdge_eq_of_adj hw)
-    rw [heq, Sym2.mem_iff] at hm₂
-    rcases hm₂ with h₁₂ | h₂w
-    · exact Subtype.ext h₁₂.symm
-    · subst h₂w
-      exact False.elim <| hLR.disjoint.ne_of_mem x₂.2.2
-        (hLR.mem_of_mem_adj x₁.2.2 (M.adj_sub hw)) rfl
-  · have hout : M.Adj e.1.out.1 e.1.out.2 := by
-      have he := e.2
-      rwa [← Sym2.mk_fst_out_snd_out e.1, Subgraph.mem_edgeSet] at he
-    have hfst : hM.toEdge ⟨e.1.out.1, hout.fst_mem⟩ = e :=
-      Subtype.ext <| (congrArg Subtype.val (hM.toEdge_eq_of_adj hout)).trans
-        (Sym2.mk_fst_out_snd_out e.1)
-    rcases hLR.mem_of_adj (M.adj_sub hout) with ⟨h₁, -⟩ | ⟨-, h₂⟩
-    · exact ⟨⟨e.1.out.1, hout.fst_mem, h₁⟩, hfst⟩
-    · exact ⟨⟨e.1.out.2, hout.snd_mem, h₂⟩,
-        (hM.toEdge_eq_toEdge_of_adj hout).symm.trans hfst⟩
-
-/-- In a bipartite graph with sides `L` and `R`, the number of matched vertices in `L` equals the
-number of edges of the matching in `ℕ∞`. -/
-theorem Subgraph.IsMatching.encard_verts_inter_left {M : G.Subgraph}
-    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
-    (M.verts ∩ L).encard = M.edgeSet.encard :=
-  ENat.card_congr (vertsInterLeftEquivEdgeSet hM hLR)
-
-/-- In a bipartite graph with sides `L` and `R`, the number of matched vertices in `L` equals the
-number of edges of the matching in `ℕ`. -/
-theorem Subgraph.IsMatching.ncard_verts_inter_left {M : G.Subgraph}
-    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
-    (M.verts ∩ L).ncard = M.edgeSet.ncard := by
-  simpa only [Nat.card_coe_set_eq] using Nat.card_congr (vertsInterLeftEquivEdgeSet hM hLR)
-
-/-- When the left side `L` is finite, a matching saturates `L` if and only if its edge set has
-extended cardinality `L.encard`. -/
-theorem Subgraph.IsMatching.verts_superset_iff_encard_edgeSet_eq {M : G.Subgraph}
-    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) (hL : L.Finite) :
-    L ⊆ M.verts ↔ M.edgeSet.encard = L.encard := by
-  rw [← hM.encard_verts_inter_left hLR]
-  exact ⟨fun h ↦ by rw [inter_eq_right.2 h], fun h ↦
-    (hL.subset inter_subset_right).eq_of_subset_of_encard_le inter_subset_right h.ge ▸
-      inter_subset_left⟩
-
-/-- When the left side `L` is finite, a matching saturates `L` if and only if its edge set has
-natural cardinality `L.ncard`. -/
-theorem Subgraph.IsMatching.verts_superset_iff_ncard_edgeSet_eq {M : G.Subgraph}
-    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) (hL : L.Finite) :
-    L ⊆ M.verts ↔ M.edgeSet.ncard = L.ncard := by
-  rw [← hM.ncard_verts_inter_left hLR]
-  exact ⟨fun h ↦ by rw [inter_eq_right.2 h],
-    fun h ↦ eq_of_subset_of_ncard_le inter_subset_right h.ge hL ▸ inter_subset_left⟩
-
-end Bipartite
 
 /-! ### Kőnig's theorem -/
 
@@ -331,29 +237,34 @@ theorem IsBipartiteWith.matchingNum_eq_encard_sub_iSup [Finite V] (hLR : G.IsBip
     exact (tsub_le_tsub_left hf₁ L.encard).trans
       ((tsub_le_iff_right.2 hLle).trans hM.encard_edgeSet_le_matchingNum)
 
-/-- **Hall's marriage theorem in `ℕ` on a finite graph.** A finite bipartite graph with sides `L`
-and `R` has a matching saturating `L` if and only if
-`S.ncard ≤ (⋃ x ∈ S, G.neighborSet x).ncard` for every `S ⊆ L`. The reverse implication is the
-finite specialization of `SimpleGraph.exists_isMatching_of_forall_ncard_le`. -/
-theorem IsBipartiteWith.exists_isMatching_verts_superset_iff_forall_ncard_le [Finite V]
+/-- **Hall's marriage theorem in `ℕ`.** A locally finite bipartite graph with sides `L` and `R` has
+a matching saturating `L` if and only if `S.ncard ≤ (⋃ x ∈ S, G.neighborSet x).ncard` for every
+`S ⊆ L`. The reverse implication is `SimpleGraph.exists_isMatching_of_forall_ncard_le`. -/
+theorem IsBipartiteWith.exists_isMatching_verts_superset_iff_forall_ncard_le [G.LocallyFinite]
     (hLR : G.IsBipartiteWith L R) :
     (∃ M : G.Subgraph, L ⊆ M.verts ∧ M.IsMatching) ↔
       ∀ S ⊆ L, S.ncard ≤ (⋃ x ∈ S, G.neighborSet x).ncard := by
-  refine ⟨fun ⟨M, hLM, hM⟩ S hS ↦
-    hM.ncard_le_ncard_biUnion_neighborSet (hS.trans hLM) (Set.toFinite _), fun hHall ↦ ?_⟩
-  let _ : G.LocallyFinite := fun v ↦ (Set.toFinite _).fintype
-  exact exists_isMatching_of_forall_ncard_le hLR hHall
+  refine ⟨fun ⟨M, hLM, hM⟩ S hS ↦ ?_, exists_isMatching_of_forall_ncard_le hLR⟩
+  obtain hSfin | hSinf := S.finite_or_infinite
+  · exact hM.ncard_le_ncard_biUnion_neighborSet (hS.trans hLM)
+      (hSfin.biUnion fun x _ ↦ (G.neighborSet x).toFinite)
+  · simp [hSinf.ncard]
 
-/-- **Hall's marriage theorem in `ℕ∞` on a finite graph.** A finite bipartite graph with sides `L`
-and `R` has a matching saturating `L` if and only if
-`S.encard ≤ (⋃ x ∈ S, G.neighborSet x).encard` for every `S ⊆ L`. -/
-theorem IsBipartiteWith.exists_isMatching_verts_superset_iff_forall_encard_le [Finite V]
+/-- **Hall's marriage theorem in `ℕ∞`.** A locally finite bipartite graph with sides `L` and `R` has
+a matching saturating `L` if and only if `S.encard ≤ (⋃ x ∈ S, G.neighborSet x).encard` for every
+`S ⊆ L`. -/
+theorem IsBipartiteWith.exists_isMatching_verts_superset_iff_forall_encard_le [G.LocallyFinite]
     (hLR : G.IsBipartiteWith L R) :
     (∃ M : G.Subgraph, L ⊆ M.verts ∧ M.IsMatching) ↔
       ∀ S ⊆ L, S.encard ≤ (⋃ x ∈ S, G.neighborSet x).encard := by
-  rw [hLR.exists_isMatching_verts_superset_iff_forall_ncard_le]
-  refine forall₂_congr fun S _ ↦ ?_
-  rw [← (Set.toFinite S).cast_ncard_eq, ← (Set.toFinite _).cast_ncard_eq, Nat.cast_le]
+  refine ⟨fun ⟨M, hLM, hM⟩ _ hS ↦ hM.encard_le_encard_biUnion_neighborSet (hS.trans hLM),
+    fun hHall ↦ exists_isMatching_of_forall_ncard_le hLR fun S hS ↦ ?_⟩
+  obtain hSfin | hSinf := S.finite_or_infinite
+  · have hNfin : (⋃ x ∈ S, G.neighborSet x).Finite :=
+      hSfin.biUnion fun x _ ↦ (G.neighborSet x).toFinite
+    have h := hHall S hS
+    rwa [← hSfin.cast_ncard_eq, ← hNfin.cast_ncard_eq, Nat.cast_le] at h
+  · simp [hSinf.ncard]
 
 /-- **Hall's marriage theorem for perfect matchings.** On a finite graph with covering bipartition
 `L ∪ R = Set.univ`, `G` has a perfect matching if and only if `L.ncard = R.ncard` and every
@@ -362,6 +273,7 @@ theorem IsBipartiteWith.exists_isPerfectMatching_iff_ncard_eq_and_forall_ncard_l
     (hLR : G.IsBipartiteWith L R) (hcov : L ∪ R = Set.univ) :
     (∃ M : G.Subgraph, M.IsPerfectMatching) ↔
       L.ncard = R.ncard ∧ ∀ S ⊆ L, S.ncard ≤ (⋃ x ∈ S, G.neighborSet x).ncard := by
+  let _ : G.LocallyFinite := fun _ ↦ (Set.toFinite _).fintype
   refine ⟨fun ⟨M, hM, hspan⟩ ↦ ?_, fun ⟨hcard, hHall⟩ ↦ ?_⟩
   · have hLM : L ⊆ M.verts := fun x _ ↦ hspan x
     have hRM : R ⊆ M.verts := fun x _ ↦ hspan x

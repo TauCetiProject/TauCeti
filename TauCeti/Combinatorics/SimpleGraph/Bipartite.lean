@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
+public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 public import Mathlib.Logic.Equiv.Bool
 
 /-!
@@ -19,7 +20,11 @@ and `T` are disjoint (`SimpleGraph.card_edgeFinset_top_between`). Complete-graph
 symmetric difference (`SimpleGraph.top_between_symmDiff`). A bipartition `G.IsBipartiteWith s t`
 extends to a covering bipartition on the whole vertex type by adjoining the remaining isolated
 vertices to either side (`SimpleGraph.IsBipartiteWith.compl_right` and
-`SimpleGraph.IsBipartiteWith.compl_left`).
+`SimpleGraph.IsBipartiteWith.compl_left`), and yields vertex covers given by either side or by
+replacing any subset `S` of the left side with its neighbours
+(`SimpleGraph.IsBipartiteWith.isVertexCover_left`,
+`SimpleGraph.IsBipartiteWith.isVertexCover_right`, and
+`SimpleGraph.IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet`).
 
 A walk in a graph coloured by `Bool` has even length exactly when its endpoints have the same
 colour (`SimpleGraph.Coloring.even_length_iff_congr`). On a preconnected graph every two vertices
@@ -39,6 +44,10 @@ independent of the colouring up to exchanging the two classes.
   case of the cut of `s`.
 * `SimpleGraph.IsBipartiteWith.compl_right`, `SimpleGraph.IsBipartiteWith.compl_left`: extending a
   bipartition to cover the whole vertex type.
+* `SimpleGraph.IsBipartiteWith.isVertexCover_left`,
+  `SimpleGraph.IsBipartiteWith.isVertexCover_right`,
+  `SimpleGraph.IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet`: vertex covers
+  associated with a bipartition.
 * `SimpleGraph.Coloring.eq_or_eq_recolorOfEquiv_boolNot`: on a preconnected graph, two
   `Bool`-colourings agree or differ by exchanging the colours.
 -/
@@ -159,6 +168,30 @@ and `t` covering the whole vertex type. -/
 theorem IsBipartiteWith.compl_left {G : SimpleGraph V} {s t : Set V}
     (h : G.IsBipartiteWith s t) : G.IsBipartiteWith tᶜ t :=
   h.symm.compl_right.symm
+
+/-- The left side of a bipartition is a vertex cover. -/
+theorem IsBipartiteWith.isVertexCover_left {G : SimpleGraph V} {L R : Set V}
+    (h : G.IsBipartiteWith L R) : G.IsVertexCover L :=
+  fun _ _ hadj ↦ (h.mem_of_adj hadj).imp And.left And.right
+
+/-- The right side of a bipartition is a vertex cover. -/
+theorem IsBipartiteWith.isVertexCover_right {G : SimpleGraph V} {L R : Set V}
+    (h : G.IsBipartiteWith L R) : G.IsVertexCover R :=
+  h.symm.isVertexCover_left
+
+/-- Removing any set `S` from the left side `L` of a bipartition and adjoining the neighbours of
+`S` yields a vertex cover of `G`. -/
+theorem IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet {G : SimpleGraph V}
+    {L R : Set V} (h : G.IsBipartiteWith L R) (S : Set V) :
+    G.IsVertexCover ((L \ S) ∪ ⋃ x ∈ S, G.neighborSet x) := by
+  intro u v huv
+  rcases h.mem_of_adj huv with ⟨huL, -⟩ | ⟨-, hvL⟩
+  · by_cases huS : u ∈ S
+    · exact Or.inr (Set.subset_union_right <| Set.mem_biUnion huS huv)
+    · exact Or.inl (Set.subset_union_left ⟨huL, huS⟩)
+  · by_cases hvS : v ∈ S
+    · exact Or.inl (Set.subset_union_right <| Set.mem_biUnion hvS huv.symm)
+    · exact Or.inr (Set.subset_union_left ⟨hvL, hvS⟩)
 
 end SimpleGraph
 

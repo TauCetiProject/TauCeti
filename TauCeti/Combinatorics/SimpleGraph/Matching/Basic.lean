@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 
@@ -20,6 +21,11 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
   (`SimpleGraph.Subgraph.IsMatching.encard_verts`, `SimpleGraph.Subgraph.IsMatching.ncard_verts`),
   and at most as many edges as the vertices in any vertex cover `C`
   (`SimpleGraph.Subgraph.IsMatching.encard_edgeSet_le_encard_of_isVertexCover`).
+* In a bipartite graph with sides `L` and `R`, the matched vertices in `L` are in bijection with
+  the edges of `M` (`SimpleGraph.Subgraph.IsMatching.encard_verts_inter_left`,
+  `SimpleGraph.Subgraph.IsMatching.ncard_verts_inter_left`), characterizing when `M` saturates a
+  finite side `L` (`SimpleGraph.Subgraph.IsMatching.verts_superset_iff_encard_edgeSet_eq`,
+  `SimpleGraph.Subgraph.IsMatching.verts_superset_iff_ncard_edgeSet_eq`).
 * The matching number `SimpleGraph.matchingNum G : ℕ∞` is the supremum of `M.edgeSet.encard` over
   all matchings `M : G.Subgraph`. Whenever `G.matchingNum ≠ ⊤` (in particular, when `V` or
   `G.edgeSet` is finite), it is attained by a maximal matching (`SimpleGraph.matchingNum_exists`,
@@ -36,6 +42,9 @@ Mathlib's `SimpleGraph.vertexCoverNum`:
   set is a vertex cover of `G`.
 * `SimpleGraph.Subgraph.IsMatching.encard_edgeSet_le_encard_of_isVertexCover`: weak duality between
   matchings and vertex covers.
+* `SimpleGraph.Subgraph.IsMatching.encard_verts_inter_left`,
+  `SimpleGraph.Subgraph.IsMatching.verts_superset_iff_encard_edgeSet_eq`: matched-side edge
+  counting and saturation in bipartite graphs.
 * `SimpleGraph.matchingNum_exists`: every simple graph with finite matching number has a matching
   attaining `G.matchingNum`.
 * `SimpleGraph.matchingNum_le_vertexCoverNum`,
@@ -198,6 +207,67 @@ theorem IsMatching.ncard_le_ncard_biUnion_neighborSet {S : Set V}
   have hle := hM.encard_le_encard_biUnion_neighborSet hS
   have hSfin : S.Finite := encard_lt_top_iff.1 (hle.trans_lt hN.encard_lt_top)
   rwa [← hSfin.cast_ncard_eq, ← hN.cast_ncard_eq, Nat.cast_le] at hle
+
+/-- In a bipartite graph with sides `L` and `R`, sending each matched vertex in `L` to its incident
+matching edge is a bijection `(M.verts ∩ L : Set V) ≃ M.edgeSet`. -/
+private noncomputable def vertsInterLeftEquivEdgeSet {L R : Set V}
+    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
+    ↑(M.verts ∩ L) ≃ M.edgeSet := by
+  refine Equiv.ofBijective (fun x ↦ hM.toEdge ⟨x.1, x.2.1⟩) ⟨fun x₁ x₂ hx ↦ ?_, fun e ↦ ?_⟩
+  · have hm₂ : x₂.1 ∈ (hM.toEdge ⟨x₁.1, x₁.2.1⟩ : Sym2 V) := by
+      simpa [← hx] using hM.mem_coe_toEdge x₂.2.1
+    obtain ⟨w, hw, -⟩ := hM x₁.2.1
+    have heq : (hM.toEdge ⟨x₁.1, x₁.2.1⟩ : Sym2 V) = s(x₁.1, w) :=
+      congrArg Subtype.val (hM.toEdge_eq_of_adj hw)
+    rw [heq, Sym2.mem_iff] at hm₂
+    rcases hm₂ with h₁₂ | h₂w
+    · exact Subtype.ext h₁₂.symm
+    · subst h₂w
+      exact False.elim <| hLR.disjoint.ne_of_mem x₂.2.2
+        (hLR.mem_of_mem_adj x₁.2.2 (M.adj_sub hw)) rfl
+  · have hout : M.Adj e.1.out.1 e.1.out.2 := by
+      have he := e.2
+      rwa [← Sym2.mk_fst_out_snd_out e.1, Subgraph.mem_edgeSet] at he
+    have hfst : hM.toEdge ⟨e.1.out.1, hout.fst_mem⟩ = e :=
+      Subtype.ext <| (congrArg Subtype.val (hM.toEdge_eq_of_adj hout)).trans
+        (Sym2.mk_fst_out_snd_out e.1)
+    rcases hLR.mem_of_adj (M.adj_sub hout) with ⟨h₁, -⟩ | ⟨-, h₂⟩
+    · exact ⟨⟨e.1.out.1, hout.fst_mem, h₁⟩, hfst⟩
+    · exact ⟨⟨e.1.out.2, hout.snd_mem, h₂⟩,
+        (hM.toEdge_eq_toEdge_of_adj hout).symm.trans hfst⟩
+
+/-- In a bipartite graph with sides `L` and `R`, the number of matched vertices in `L` equals the
+number of edges of the matching in `ℕ∞`. -/
+theorem IsMatching.encard_verts_inter_left {L R : Set V}
+    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
+    (M.verts ∩ L).encard = M.edgeSet.encard :=
+  ENat.card_congr (vertsInterLeftEquivEdgeSet hM hLR)
+
+/-- In a bipartite graph with sides `L` and `R`, the number of matched vertices in `L` equals the
+number of edges of the matching in `ℕ`. -/
+theorem IsMatching.ncard_verts_inter_left {L R : Set V}
+    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) :
+    (M.verts ∩ L).ncard = M.edgeSet.ncard := by
+  simpa only [Nat.card_coe_set_eq] using Nat.card_congr (vertsInterLeftEquivEdgeSet hM hLR)
+
+/-- When the left side `L` is finite, a matching saturates `L` if and only if its edge set has
+extended cardinality `L.encard`. -/
+theorem IsMatching.verts_superset_iff_encard_edgeSet_eq {L R : Set V}
+    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) (hL : L.Finite) :
+    L ⊆ M.verts ↔ M.edgeSet.encard = L.encard := by
+  rw [← hM.encard_verts_inter_left hLR]
+  exact ⟨fun h ↦ by rw [inter_eq_right.2 h], fun h ↦
+    (hL.subset inter_subset_right).eq_of_subset_of_encard_le inter_subset_right h.ge ▸
+      inter_subset_left⟩
+
+/-- When the left side `L` is finite, a matching saturates `L` if and only if its edge set has
+natural cardinality `L.ncard`. -/
+theorem IsMatching.verts_superset_iff_ncard_edgeSet_eq {L R : Set V}
+    (hM : M.IsMatching) (hLR : G.IsBipartiteWith L R) (hL : L.Finite) :
+    L ⊆ M.verts ↔ M.edgeSet.ncard = L.ncard := by
+  rw [← hM.ncard_verts_inter_left hLR]
+  exact ⟨fun h ↦ by rw [inter_eq_right.2 h],
+    fun h ↦ eq_of_subset_of_ncard_le inter_subset_right h.ge hL ▸ inter_subset_left⟩
 
 end Subgraph
 
