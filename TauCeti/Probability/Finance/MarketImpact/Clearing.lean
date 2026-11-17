@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
-import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Topology.MetricSpace.Lipschitz
+import Mathlib.Topology.MetricSpace.Antilipschitz
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.Deriv.Inverse
+import TauCeti.Order.Monotone.InvFunOn
 
 /-!
 # Global market clearing with program-trader demand
@@ -151,22 +152,20 @@ theorem invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
 /-- Under a strictly positive clearing-derivative margin, the equilibrium price is strictly
 increasing on the range of the clearing map. -/
 theorem strictMonoOn_invFunOn_clearingMap (hδ : 0 < δ) :
-    StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (clearingMap H '' Ioi 0) := by
-  rintro _ ⟨x₁, hx₁, rfl⟩ _ ⟨x₂, hx₂, rfl⟩ h
-  rw [invFunOn_clearingMap hH hmargin hδ hx₁, invFunOn_clearingMap hH hmargin hδ hx₂]
-  exact ((strictMonoOn_clearingMap hH hmargin hδ).lt_iff_lt hx₁ hx₂).1 h
+    StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (clearingMap H '' Ioi 0) :=
+  (strictMonoOn_clearingMap hH hmargin hδ).invFunOn
 
 /-- A lower bound `δ > 0` on the clearing derivative makes the equilibrium price Lipschitz with
 constant `δ⁻¹` on the range of the clearing map. -/
 theorem lipschitzOnWith_invFunOn_clearingMap (hδ : 0 < δ) :
     LipschitzOnWith (Real.toNNReal δ⁻¹) (invFunOn (clearingMap H) (Ioi 0))
       (clearingMap H '' Ioi 0) := by
-  refine LipschitzOnWith.of_dist_le_mul ?_
-  rintro _ ⟨x₁, hx₁, rfl⟩ _ ⟨x₂, hx₂, rfl⟩
-  rw [invFunOn_clearingMap hH hmargin hδ hx₁, invFunOn_clearingMap hH hmargin hδ hx₂,
-    Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), Real.dist_eq, Real.dist_eq, ← div_eq_inv_mul,
-    le_div_iff₀' hδ]
-  exact mul_abs_sub_le_abs_clearingMap_sub hH hmargin hx₂ hx₁
+  refine lipschitzOnWith_iff_restrict.2 (AntilipschitzWith.to_rightInvOn' ?_
+    (surjOn_image _ _).mapsTo_invFunOn (surjOn_image _ _).rightInvOn_invFunOn)
+  refine AntilipschitzWith.of_le_mul_dist fun x₁ x₂ ↦ ?_
+  rw [Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), Subtype.dist_eq, domRestrict_apply,
+    domRestrict_apply, Real.dist_eq, Real.dist_eq, ← div_eq_inv_mul, le_div_iff₀' hδ]
+  exact mul_abs_sub_le_abs_clearingMap_sub hH hmargin x₂.2 x₁.2
 
 /-- Under a strictly positive clearing-derivative margin, the clearing map tends to infinity with
 the price. -/
@@ -182,25 +181,10 @@ at the clearing value of a positive price `x`, its derivative is the reciprocal 
 derivative `1 - H(x) - x H'(x)`. -/
 theorem hasDerivAt_invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
     HasDerivAt (invFunOn (clearingMap H) (Ioi 0)) (1 - H x - x * deriv H x)⁻¹
-      (clearingMap H x) := by
-  have hmono := strictMonoOn_clearingMap hH hmargin hδ
-  have hx₁ : 0 < x / 2 := half_pos hx
-  have hsub : Icc (x / 2) (2 * x) ⊆ Ioi 0 := fun y hy ↦ hx₁.trans_le hy.1
-  have hnhds : clearingMap H '' Ioi 0 ∈ 𝓝 (clearingMap H x) := by
-    refine mem_of_superset (Icc_mem_nhds (hmono hx₁ hx (half_lt_self hx))
-      (hmono hx (hsub ⟨by linarith, le_rfl⟩) (by linarith))) ?_
-    exact (intermediate_value_Icc (by linarith)
-      ((continuousOn_clearingMap hH.continuousOn).mono hsub)).trans (image_mono hsub)
-  have hderiv : HasDerivAt (clearingMap H) (1 - H x - x * deriv H x)
-      (invFunOn (clearingMap H) (Ioi 0) (clearingMap H x)) := by
-    rw [invFunOn_clearingMap hH hmargin hδ hx]
-    exact hasDerivAt_clearingMap_of_differentiableOn hH hx
-  refine HasDerivAt.of_local_left_inverse ?_ hderiv ?_ ?_
-  · exact (lipschitzOnWith_invFunOn_clearingMap hH hmargin hδ).continuousOn.continuousAt hnhds
-  · exact (hδ.trans_le (hmargin x hx)).ne'
-  · filter_upwards [hnhds]
-    rintro _ ⟨x', hx', rfl⟩
-    rw [invFunOn_clearingMap hH hmargin hδ hx']
+      (clearingMap H x) :=
+  (strictMonoOn_clearingMap hH hmargin hδ).hasDerivAt_invFunOn
+    (continuousOn_clearingMap hH.continuousOn) (Ioi_mem_nhds hx)
+    (hasDerivAt_clearingMap_of_differentiableOn hH hx) (hδ.trans_le (hmargin x hx)).ne'
 
 variable (hzero : Tendsto (clearingMap H) (𝓝[>] 0) (𝓝 0))
 include hzero
