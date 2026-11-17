@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.UniformIntegrable
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.Order.Cadlag
+public import TauCeti.Probability.Process.Filtration.Comp
 import TauCeti.MeasureTheory.Function.ConditionalExpectation.UniformIntegrable
 import TauCeti.MeasureTheory.Function.UniformIntegrable
 import TauCeti.Probability.Martingale.ContinuousStopping
@@ -31,6 +32,10 @@ stopping times on `[0, ∞)`.
 * `TauCeti.BoundedStoppingTime`: stopping times bounded by a horizon `T`, the index set of the
   class DL family, with deterministic times `TauCeti.BoundedStoppingTime.const`, at which a
   process stops at its value there (`TauCeti.BoundedStoppingTime.stoppedValue_const`).
+* `TauCeti.BoundedStoppingTime.ofComp`: a stopping time `σ ≤ N` of a filtration sampled along a
+  monotone grid `g` with `g N ≤ T`, read through `g`, as a stopping time bounded by `T`. Stopping
+  a process there gives the sampled process stopped at `σ`
+  (`TauCeti.BoundedStoppingTime.stoppedValue_ofComp`).
 * `TauCeti.FiniteHorizonStoppingTime`: stopping times bounded by some horizon, the index set of
   the class D family, with the inclusion
   `TauCeti.BoundedStoppingTime.toFiniteHorizonStoppingTime`.
@@ -70,19 +75,58 @@ abbrev BoundedStoppingTime (ℱ : Filtration ι mΩ) (T : ι) :=
 def BoundedStoppingTime.const {T t : ι} (ht : t ≤ T) : BoundedStoppingTime ℱ T :=
   ⟨fun _ ↦ t, isStoppingTime_const ℱ t, fun _ ↦ WithTop.coe_le_coe.2 ht⟩
 
+omit [Nonempty ι] in
+/-- The stopping time underlying a deterministic time `t` is constantly `t`. -/
+@[simp]
+theorem BoundedStoppingTime.val_const {T t : ι} (ht : t ≤ T) :
+    (BoundedStoppingTime.const (ℱ := ℱ) ht).1 = fun _ : Ω ↦ (t : WithTop ι) :=
+  (rfl)
+
 omit [NormedAddCommGroup E] in
 /-- Stopping a process at a deterministic time `t ≤ T` gives its value at `t`. -/
-@[simp]
 theorem BoundedStoppingTime.stoppedValue_const {T t : ι} (ht : t ≤ T) :
-    stoppedValue X (BoundedStoppingTime.const (ℱ := ℱ) ht).1 = X t :=
-  MeasureTheory.stoppedValue_const X t
+    stoppedValue X (BoundedStoppingTime.const (ℱ := ℱ) ht).1 = X t := by
+  rw [val_const, MeasureTheory.stoppedValue_const]
+
+omit [Nonempty ι] in
+/-- A stopping time `σ ≤ N` of the filtration sampled along a monotone grid `g` with `g N ≤ T`,
+read through `g`, as a stopping time bounded by `T`. -/
+def BoundedStoppingTime.ofComp {T : ι} {g : ℕ → ι} (hg : Monotone g) {N : ℕ} (hgN : g N ≤ T)
+    {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ) (hσN : ∀ ω, σ ω ≤ N) :
+    BoundedStoppingTime ℱ T :=
+  ⟨fun ω ↦ (σ ω).map g, hσ.map hg, fun ω ↦ by
+    obtain ⟨k, hk⟩ := WithTop.ne_top_iff_exists.1 (ne_top_of_le_ne_top WithTop.coe_ne_top (hσN ω))
+    have hkN : k ≤ N := by simpa [← hk] using hσN ω
+    simpa [← hk] using (hg hkN).trans hgN⟩
+
+omit [Nonempty ι] in
+/-- The stopping time underlying `BoundedStoppingTime.ofComp` is the grid stopping time read
+through the grid. -/
+@[simp]
+theorem BoundedStoppingTime.val_ofComp {T : ι} {g : ℕ → ι} (hg : Monotone g) {N : ℕ}
+    (hgN : g N ≤ T) {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ)
+    (hσN : ∀ ω, σ ω ≤ N) :
+    (BoundedStoppingTime.ofComp hg hgN hσ hσN).1 = fun ω ↦ (σ ω).map g :=
+  (rfl)
+
+omit [NormedAddCommGroup E] in
+/-- Stopping a process at `BoundedStoppingTime.ofComp` is stopping the process sampled along the
+grid at the grid stopping time. -/
+theorem BoundedStoppingTime.stoppedValue_ofComp {T : ι} {g : ℕ → ι} (hg : Monotone g) {N : ℕ}
+    (hgN : g N ≤ T) {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ)
+    (hσN : ∀ ω, σ ω ≤ N) :
+    stoppedValue X (BoundedStoppingTime.ofComp hg hgN hσ hσN).1 =
+      stoppedValue (fun k ↦ X (g k)) σ := by
+  funext ω
+  rw [val_ofComp]
+  exact (stoppedValue_comp_of_ne_top (ne_top_of_le_ne_top WithTop.coe_ne_top (hσN ω))).symm
 
 /-- Stopping times bounded by some horizon, the index set of the class D family. -/
 abbrev FiniteHorizonStoppingTime (ℱ : Filtration ι mΩ) :=
   {τ : Ω → WithTop ι // IsStoppingTime ℱ τ ∧ ∃ T : ι, ∀ ω, τ ω ≤ T}
 
 /-- A stopping time bounded by `T` is bounded by some horizon. -/
-@[expose] def BoundedStoppingTime.toFiniteHorizonStoppingTime {T : ι}
+def BoundedStoppingTime.toFiniteHorizonStoppingTime {T : ι}
     (τ : BoundedStoppingTime ℱ T) : FiniteHorizonStoppingTime ℱ :=
   ⟨τ.1, τ.2.1, T, τ.2.2⟩
 
@@ -91,7 +135,7 @@ omit [Nonempty ι] in
 @[simp]
 theorem BoundedStoppingTime.val_toFiniteHorizonStoppingTime {T : ι}
     (τ : BoundedStoppingTime ℱ T) : τ.toFiniteHorizonStoppingTime.1 = τ.1 :=
-  rfl
+  (rfl)
 
 /-- A process is of **class D** when its values at bounded stopping times form a uniformly
 integrable family. -/

@@ -47,22 +47,6 @@ namespace TauCeti
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder ι] [Nonempty ι]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → ℝ} {T : ι}
 
-/-- A stopping time `σ ≤ N` of a grid filtration, read through a grid ending below `T`. -/
-private def BoundedStoppingTime.ofComp {g : ℕ → ι} (hg : Monotone g) {N : ℕ} (hgN : g N ≤ T)
-    {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ) (hσN : ∀ ω, σ ω ≤ N) :
-    BoundedStoppingTime ℱ T :=
-  ⟨fun ω ↦ (σ ω).map g, hσ.map hg, fun ω ↦ by
-    obtain ⟨k, hk⟩ := WithTop.ne_top_iff_exists.1 (ne_top_of_le_ne_top WithTop.coe_ne_top (hσN ω))
-    have hkN : k ≤ N := by simpa [← hk] using hσN ω
-    simpa [← hk] using (hg hkN).trans hgN⟩
-
-private theorem stoppedValue_eq_ofComp {g : ℕ → ι} (hg : Monotone g) {N : ℕ} (hgN : g N ≤ T)
-    {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ) (hσN : ∀ ω, σ ω ≤ N) :
-    stoppedValue (fun k ↦ X (g k)) σ =
-      stoppedValue X (BoundedStoppingTime.ofComp hg hgN hσ hσN).1 := by
-  funext ω
-  exact stoppedValue_comp_of_ne_top (ne_top_of_le_ne_top WithTop.coe_ne_top (hσN ω))
-
 /-- On events of small probability, increments of a class DL process between a grid stopping time
 and the end of the grid have small integrals. -/
 private theorem setIntegral_sub_stoppedValue_le
@@ -82,7 +66,7 @@ private theorem setIntegral_sub_stoppedValue_le
   have hτ := norm_integral_le_of_eLpNorm_one_le (hU.memLp τ).aestronglyMeasurable.restrict hε'
     (hδ τ _ hs)
   rw [Real.norm_eq_abs] at hN hτ
-  rw [stoppedValue_eq_ofComp hg hgN hσ hσN, integral_sub (hX (g N)).integrableOn
+  rw [← BoundedStoppingTime.stoppedValue_ofComp hg hgN hσ hσN, integral_sub (hX (g N)).integrableOn
     (memLp_one_iff_integrable.1 (hU.memLp τ)).integrableOn]
   linarith [le_abs_self (∫ ω in {ω | σ ω < N}, X (g N) ω ∂μ),
     neg_abs_le (∫ ω in {ω | σ ω < N}, stoppedValue X τ.1 ω ∂μ)]
