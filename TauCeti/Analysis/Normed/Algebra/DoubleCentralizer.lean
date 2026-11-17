@@ -475,7 +475,7 @@ theorem forall_commute_iff_forall_fst_eq_snd {m : 𝓜(𝕜, A)} :
   refine ⟨fun h a => coe_injective (𝕜 := 𝕜) ?_, fun h n => ext_fst fun a => ?_⟩
   · simpa only [mul_coe_eq_coe_fst, coe_mul_eq_coe_snd] using (h (a : 𝓜(𝕜, A))).eq
   · refine FaithfulSMul.eq_of_smul_eq_smul fun b : A => ?_
-    change m.fst (n.fst a) * b = n.fst (m.fst a) * b
+    simp only [smul_eq_mul, mul_fst, mul_apply_eq_comp]
     rw [h (n.fst a), m.central, ← n.fst_mul, ← m.central, h a, n.fst_mul]
 
 /-- With zero annihilators, `m ∈ Subalgebra.center 𝕜 𝓜(𝕜, A)` iff `m.fst = m.snd` on `A`. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralCocycle.Algebra
-public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
+public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.CStarAlgebra.Representation.Nondegenerate
 public import Mathlib.Topology.Algebra.LinearMapCompletion
@@ -149,80 +149,55 @@ omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The vector integrand `g ↦ π(f g) (U_g v)` is continuous. -/
 @[fun_prop] theorem continuous_integrand (f : C_c(G, A)) (v : H) :
     Continuous fun g => P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v) :=
-  ((map_continuous P.coefficient).comp f.continuous).clm_apply (P.continuous_orbit v)
+  continuous_vectorIntegrand P.coefficient (fun g => (P.unitaryMap g : H →L[ℂ] H))
+    P.continuous_orbit f v
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- The vector integrand vanishes outside the support of `f`. -/
 theorem hasCompactSupport_integrand (f : C_c(G, A)) (v : H) :
     HasCompactSupport fun g => P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v) :=
-  f.hasCompactSupport.mono fun _ hg hz => hg (by simp [hz])
+  hasCompactSupport_vectorIntegrand P.coefficient (fun g => (P.unitaryMap g : H →L[ℂ] H)) f v
 
 /-- Compact support makes every vector integrand integrable against `μ`. -/
 theorem integrable_integrand (f : C_c(G, A)) (v : H) :
     Integrable (fun g => P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v)) μ :=
-  (P.continuous_integrand f v).integrable_of_hasCompactSupport (P.hasCompactSupport_integrand f v)
-
-private theorem norm_integral_le (f : C_c(G, A)) (v : H) :
-    ‖∫ g, P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v) ∂μ‖ ≤ (∫ g, ‖f g‖ ∂μ) * ‖v‖ := by
-  rw [← integral_mul_const]
-  refine norm_integral_le_of_norm_le (f.integrable.norm.mul_const _) (.of_forall fun g => ?_)
-  refine ((P.coefficient (f g)).le_opNorm _).trans ?_
-  rw [Unitary.norm_map]
-  exact mul_le_mul_of_nonneg_right (NonUnitalStarAlgHom.norm_apply_le _ _) (norm_nonneg _)
+  integrable_vectorIntegrand P.coefficient (fun g => (P.unitaryMap g : H →L[ℂ] H))
+    P.continuous_orbit μ f v
 
 /-- The vector-valued integrated form on `C_c(G, A)`, sending `f` to the bounded operator
 `v ↦ ∫ g, π(f g) (U_g v) ∂μ`. -/
-def integratedOperator : C_c(G, A) →ₗ[ℂ] (H →L[ℂ] H) where
-  toFun f := LinearMap.mkContinuous
-    { toFun v := ∫ g, P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v) ∂μ
-      map_add' v w := by
-        simp_rw [map_add]
-        exact integral_add (P.integrable_integrand μ f v) (P.integrable_integrand μ f w)
-      map_smul' c _ := by simp_rw [map_smul]; exact integral_smul c _ }
-    (∫ g, ‖f g‖ ∂μ) (P.norm_integral_le μ f)
-  map_add' f h := by
-    ext v; simp only [LinearMap.mkContinuous_apply, CompactlySupportedContinuousMap.add_apply,
-      map_add, add_apply]
-    exact integral_add (P.integrable_integrand μ f v) (P.integrable_integrand μ h v)
-  map_smul' c _ := by
-    ext; simp only [LinearMap.mkContinuous_apply, CompactlySupportedContinuousMap.smul_apply,
-      map_smul, smul_apply, RingHom.id_apply]
-    exact integral_smul c _
+def integratedOperator : C_c(G, A) →ₗ[ℂ] (H →L[ℂ] H) :=
+  vectorIntegratedOperator P.coefficient (fun g => (P.unitaryMap g : H →L[ℂ] H))
+    P.continuous_orbit (fun g v => (Unitary.norm_map (P.unitaryMap g) v).le) μ
 
 /-- Defining vector formula for `P.integratedOperator μ f`. -/
 theorem integratedOperator_apply (f : C_c(G, A)) (v : H) :
     P.integratedOperator μ f v = ∫ g, P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v) ∂μ :=
-  (rfl)
+  vectorIntegratedOperator_apply f v
 
 /-- The operator norm of `P.integratedOperator μ f` is bounded by the `L¹` norm of `f`. -/
 theorem norm_integratedOperator_le (f : C_c(G, A)) :
     ‖P.integratedOperator μ f‖ ≤ ∫ g, ‖f g‖ ∂μ :=
-  ContinuousLinearMap.opNorm_le_bound _ (integral_nonneg fun _ => norm_nonneg _)
-    (P.norm_integral_le μ f)
+  norm_vectorIntegratedOperator_le f
 
 /-- Matrix coefficients of `P.integratedOperator μ f` are integrals of vector matrix
 coefficients. -/
 theorem inner_integratedOperator_apply (f : C_c(G, A)) (w v : H) :
     ⟪w, P.integratedOperator μ f v⟫_ℂ =
-      ∫ g, ⟪w, P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v)⟫_ℂ ∂μ := by
-  rw [integratedOperator_apply, integral_inner (P.integrable_integrand μ f v)]
+      ∫ g, ⟪w, P.coefficient (f g) ((P.unitaryMap g : H →L[ℂ] H) v)⟫_ℂ ∂μ :=
+  inner_vectorIntegratedOperator_apply f w v
 
 /-- Left multiplication by a coefficient in `A` goes to left multiplication by `P.coefficient a`. -/
 @[simp] theorem integratedOperator_smul (a : A) (f : C_c(G, A)) :
-    P.integratedOperator μ (a • f) = P.coefficient a * P.integratedOperator μ f := by
-  ext v
-  simpa only [integratedOperator_apply, CompactlySupportedContinuousMap.smul_apply, smul_eq_mul,
-    map_mul, mul_apply_eq_comp] using
-    (P.coefficient a).integral_comp_comm (P.integrable_integrand μ f v)
+    P.integratedOperator μ (a • f) = P.coefficient a * P.integratedOperator μ f :=
+  vectorIntegratedOperator_smul a f
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- Vector evaluation of `P.coefficient` commutes with Bochner integration. -/
 theorem integral_coefficient_apply {X : Type*} [MeasurableSpace X] {ν : Measure X} {F : X → A}
     (hF : Integrable F ν) (w : H) :
     ∫ x, P.coefficient (F x) w ∂ν = P.coefficient (∫ x, F x ∂ν) w :=
-  ((ContinuousLinearMap.apply ℂ H w).comp
-    { toLinearMap := (P.coefficient : A →ₗ[ℂ] (H →L[ℂ] H)),
-      cont := map_continuous _ }).integral_comp_comm hF
+  integral_representation_apply P.coefficient hF w
 
 /-- The integrated form bundled as a contractive continuous linear map on
 `TwistedConvolutionAlgebra ω μ`. -/

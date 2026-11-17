@@ -195,21 +195,21 @@ theorem twistedConvolution_assoc :
           (∫ t, (ω t (t⁻¹ * (r⁻¹ * s)) : 𝓜(ℂ, A)).snd
             (g t * α t (h (t⁻¹ * (r⁻¹ * s)))) ∂μ)) ∂μ := by
         congr 1 with r
-        set G' : G → A := fun t =>
-          (ω t (t⁻¹ * (r⁻¹ * s)) : 𝓜(ℂ, A)).snd (g t * α t (h (t⁻¹ * (r⁻¹ * s))))
-        have hint : Integrable G' μ := ω.integrable_twistedIntegrand g h μ (r⁻¹ * s)
-        have hint' : Integrable (fun t => α r (G' t)) μ := by
+        have hint : Integrable (fun t =>
+            (ω t (t⁻¹ * (r⁻¹ * s)) : 𝓜(ℂ, A)).snd (g t * α t (h (t⁻¹ * (r⁻¹ * s))))) μ :=
+          ω.integrable_twistedIntegrand g h μ (r⁻¹ * s)
+        have hint' : Integrable (fun t =>
+            α r ((ω t (t⁻¹ * (r⁻¹ * s)) : 𝓜(ℂ, A)).snd (g t * α t (h (t⁻¹ * (r⁻¹ * s)))))) μ := by
           simpa using (α.toContinuousLinearMap r).integrable_comp hint
-        have hint'' : Integrable (fun t => f r * α r (G' t)) μ := by
+        have hint'' : Integrable (fun t =>
+            f r * α r ((ω t (t⁻¹ * (r⁻¹ * s)) : 𝓜(ℂ, A)).snd
+              (g t * α t (h (t⁻¹ * (r⁻¹ * s)))))) μ := by
           simpa using (ContinuousLinearMap.mul ℝ A (f r)).integrable_comp hint'
-        have hα : α r (∫ t, G' t ∂μ) = ∫ t, α r (G' t) ∂μ := by
-          simpa using ((α.toContinuousLinearMap r).integral_comp_comm hint).symm
-        change _ = (ω r (r⁻¹ * s) : 𝓜(ℂ, A)).snd (f r * α r (∫ t, G' t ∂μ))
-        rw [hα, ← integral_const_mul_of_integrable hint',
+        rw [← α.integral_comp_comm, ← integral_const_mul_of_integrable hint',
           ← ((ω r (r⁻¹ * s) : 𝓜(ℂ, A)).snd).integral_comp_comm hint'',
           ← integral_mul_left_eq_self (F · r) r]
         congr 1 with t
-        simp only [F, G', inv_mul_cancel_left, mul_inv_rev, mul_assoc, CStarAction.mul_apply]
+        simp only [F, inv_mul_cancel_left, mul_inv_rev, mul_assoc, CStarAction.mul_apply]
         exact snd_cocycle_assoc ω r t s (f r) (g t) (α t (h (t⁻¹ * (r⁻¹ * s))))
 
 /-- The `L¹` norm is submultiplicative for `ω`-twisted convolution with respect to a
@@ -308,6 +308,25 @@ def twistedInvolution : C_c(G, A) →ₗ⋆[ℂ] C_c(G, A) where
     tsupport (ω.twistedInvolution f) = (tsupport f)⁻¹ := by
   simp only [tsupport, support_twistedInvolution, ← inv_closure]
 
+omit [IsTopologicalGroup G] [LocallyCompactSpace G] in
+private theorem coe_apply_fst (s : G) (m : 𝓜(ℂ, A)) (a : A) :
+    (α s (m.fst a) : 𝓜(ℂ, A)) = α.multiplier s m * (α s a : 𝓜(ℂ, A)) := by
+  rw [← α.multiplier_coe, ← DoubleCentralizer.mul_coe_eq_coe_fst, map_mul, α.multiplier_coe]
+
+omit [IsTopologicalGroup G] [LocallyCompactSpace G] in
+private theorem coe_apply_star_fst (s : G) (m : 𝓜(ℂ, A)) (a : A) :
+    (α s (star (m.fst a)) : 𝓜(ℂ, A)) =
+      (α s (star a) : 𝓜(ℂ, A)) * α.multiplier s (star m) := by
+  rw [← α.multiplier_coe, DoubleCentralizer.coe_star, ← DoubleCentralizer.mul_coe_eq_coe_fst,
+    star_mul, map_mul, ← DoubleCentralizer.coe_star, α.multiplier_coe]
+
+omit [IsTopologicalGroup G] [LocallyCompactSpace G] in
+private theorem coe_apply_star_snd (s : G) (m : 𝓜(ℂ, A)) (a : A) :
+    (α s (star (m.snd a)) : 𝓜(ℂ, A)) =
+      α.multiplier s (star m) * (α s (star a) : 𝓜(ℂ, A)) := by
+  rw [← α.multiplier_coe, DoubleCentralizer.coe_star, ← DoubleCentralizer.coe_mul_eq_coe_snd,
+    star_mul, map_mul, ← DoubleCentralizer.coe_star, α.multiplier_coe]
+
 /-- Applying `ω.twistedInvolution` twice recovers the original coefficient function. -/
 @[simp] theorem twistedInvolution_twistedInvolution (f : C_c(G, A)) :
     ω.twistedInvolution (ω.twistedInvolution f) = f := by
@@ -317,11 +336,17 @@ def twistedInvolution : C_c(G, A) →ₗ⋆[ℂ] C_c(G, A) where
   simp only [twistedInvolution_apply, inv_inv, star_smul, map_smul, Complex.star_def,
     Complex.conj_ofReal, smul_smul, hc, one_smul]
   apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
-  rw [← DoubleCentralizer.mul_coe_eq_coe_fst, ← α.multiplier_coe, DoubleCentralizer.coe_star,
-    ← DoubleCentralizer.mul_coe_eq_coe_fst, star_mul, star_star, ← DoubleCentralizer.coe_star,
-    map_star, star_star, map_mul, α.multiplier_coe, CStarAction.apply_inv_apply,
-    ω.multiplier_apply_inv_mul_self, ← mul_assoc, (ω.commute_star s s⁻¹ (f s : 𝓜(ℂ, A))).eq,
-    mul_assoc, (Unitary.mem_iff.mp (ω s s⁻¹).prop).1, mul_one]
+  calc ((star (ω s s⁻¹ : 𝓜(ℂ, A))).fst
+          (α s (star ((star (ω s⁻¹ s : 𝓜(ℂ, A))).fst (α s⁻¹ (star (f s)))))) : 𝓜(ℂ, A))
+      = star (ω s s⁻¹ : 𝓜(ℂ, A)) *
+          ((f s : 𝓜(ℂ, A)) * α.multiplier s (ω s⁻¹ s : 𝓜(ℂ, A))) := by
+        rw [← DoubleCentralizer.mul_coe_eq_coe_fst, coe_apply_star_fst, ← map_star, star_star,
+          CStarAction.apply_inv_apply, star_star]
+    _ = star (ω s s⁻¹ : 𝓜(ℂ, A)) * ((f s : 𝓜(ℂ, A)) * (ω s s⁻¹ : 𝓜(ℂ, A))) := by
+        rw [ω.multiplier_apply_inv_mul_self]
+    _ = (f s : 𝓜(ℂ, A)) := by
+        rw [← mul_assoc, (ω.commute_star s s⁻¹ (f s : 𝓜(ℂ, A))).eq, mul_assoc,
+          (Unitary.mem_iff.mp (ω s s⁻¹).prop).1, mul_one]
 
 omit [IsTopologicalGroup G] [LocallyCompactSpace G] in
 private theorem twistedInvolution_integrand_eq (s t : G) (a b : A) :
@@ -347,22 +372,24 @@ private theorem twistedInvolution_integrand_eq (s t : G) (a b : A) :
   have hcomm : Commute (α.multiplier s (star (ω t t⁻¹ : 𝓜(ℂ, A)))) Y := by
     rw [Commute, SemiconjBy, ← (α.multiplier s).apply_symm_apply Y, ← map_mul,
       (ω.commute_star t t⁻¹ _).eq, map_mul]
-  rw [← DoubleCentralizer.mul_coe_eq_coe_fst, ← α.multiplier_coe, DoubleCentralizer.coe_star,
-    ← DoubleCentralizer.coe_mul_eq_coe_snd, DoubleCentralizer.coe_mul, star_mul, star_mul,
-    map_mul, map_mul, ← DoubleCentralizer.coe_star, ← DoubleCentralizer.coe_star,
-    α.multiplier_coe, α.multiplier_coe, ← map_star (α t), ← CStarAction.mul_apply,
-    ← DoubleCentralizer.coe_mul_eq_coe_snd, DoubleCentralizer.coe_mul,
-    ← DoubleCentralizer.mul_coe_eq_coe_fst,
-    ← α.multiplier_coe (s * t) ((star (ω t⁻¹ t : 𝓜(ℂ, A))).fst _),
-    ← DoubleCentralizer.mul_coe_eq_coe_fst, map_mul (α.multiplier (s * t)), α.multiplier_coe,
-    α.mul_apply s t ((α t⁻¹) _), CStarAction.apply_inv_apply, hinv_t]
-  change star (ω s s⁻¹ : 𝓜(ℂ, A)) * (α.multiplier s (star (ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A))) * (Y * X)) =
-    star (ω (s * t) (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)) * Y *
-      (α.multiplier s (star (ω t t⁻¹ : 𝓜(ℂ, A))) * X) * (ω (s * t) t⁻¹ : 𝓜(ℂ, A))
-  rw [← mul_assoc, hphase, mul_assoc _ (ω (s * t) t⁻¹ : 𝓜(ℂ, A)),
-    (ω.commute (s * t) t⁻¹ (Y * X)).eq]
-  simp only [← mul_assoc]
-  rw [mul_assoc (star (ω (s * t) (t⁻¹ * s⁻¹) : 𝓜(ℂ, A))), hcomm.eq, ← mul_assoc]
+  calc ((star (ω s s⁻¹ : 𝓜(ℂ, A))).fst
+          (α s (star ((ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (a * α t b)))) : 𝓜(ℂ, A))
+      = star (ω s s⁻¹ : 𝓜(ℂ, A)) *
+          (α.multiplier s (star (ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A))) * (Y * X)) := by
+        rw [← DoubleCentralizer.mul_coe_eq_coe_fst, coe_apply_star_snd, star_mul, map_mul,
+          DoubleCentralizer.coe_mul, ← map_star (α t), ← CStarAction.mul_apply]
+    _ = star (ω (s * t) (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)) * Y *
+          (α.multiplier s (star (ω t t⁻¹ : 𝓜(ℂ, A))) * X) * (ω (s * t) t⁻¹ : 𝓜(ℂ, A)) := by
+        rw [← mul_assoc, hphase, mul_assoc _ (ω (s * t) t⁻¹ : 𝓜(ℂ, A)),
+          (ω.commute (s * t) t⁻¹ (Y * X)).eq]
+        simp only [← mul_assoc]
+        rw [mul_assoc (star (ω (s * t) (t⁻¹ * s⁻¹) : 𝓜(ℂ, A))), hcomm.eq, ← mul_assoc]
+    _ = ((ω (s * t) t⁻¹ : 𝓜(ℂ, A)).snd
+          ((star (ω (s * t) (t⁻¹ * s⁻¹) : 𝓜(ℂ, A))).fst (α (s * t) (star b)) *
+            α (s * t) ((star (ω t⁻¹ t : 𝓜(ℂ, A))).fst (α t⁻¹ (star a)))) : 𝓜(ℂ, A)) := by
+        rw [← DoubleCentralizer.coe_mul_eq_coe_snd, DoubleCentralizer.coe_mul,
+          ← DoubleCentralizer.mul_coe_eq_coe_fst, coe_apply_fst,
+          α.mul_apply s t (α t⁻¹ (star a)), CStarAction.apply_inv_apply, hinv_t]
 
 /-- The `ω`-twisted involution reverses `ω`-twisted convolution for a left-invariant measure:
 `(f *_ω g)^{*_ω} = g^{*_ω} *_ω f^{*_ω}`. -/
@@ -372,17 +399,19 @@ theorem twistedInvolution_twistedConvolution [MeasurableSpace G] [OpensMeasurabl
     ω.twistedInvolution (ω.twistedConvolution μ f g) =
       ω.twistedConvolution μ (ω.twistedInvolution g) (ω.twistedInvolution f) := by
   ext s
-  set Φ : G → A := fun t => (ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f t * α t (g (t⁻¹ * s⁻¹)))
-  have hint : Integrable Φ μ := ω.integrable_twistedIntegrand f g μ s⁻¹
-  have hstar : star (∫ t, Φ t ∂μ) = ∫ t, star (Φ t) ∂μ := by
+  have hint : Integrable (fun t =>
+      (ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f t * α t (g (t⁻¹ * s⁻¹)))) μ :=
+    ω.integrable_twistedIntegrand f g μ s⁻¹
+  have hstar : star (∫ t, (ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f t * α t (g (t⁻¹ * s⁻¹))) ∂μ) =
+      ∫ t, star ((ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f t * α t (g (t⁻¹ * s⁻¹)))) ∂μ := by
     simpa using ((starL ℂ : A ≃L⋆[ℂ] A).toContinuousLinearMap.integral_comp_commSL
       (by simp) hint).symm
-  have hint_star : Integrable (fun t => star (Φ t)) μ := by
+  have hint_star : Integrable (fun t =>
+      star ((ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f t * α t (g (t⁻¹ * s⁻¹))))) μ := by
     simpa using (starL ℂ : A ≃L⋆[ℂ] A).toContinuousLinearMap.integrable_comp hint
-  have hint_α : Integrable (fun t => α s (star (Φ t))) μ := by
+  have hint_α : Integrable (fun t =>
+      α s (star ((ω t (t⁻¹ * s⁻¹) : 𝓜(ℂ, A)).snd (f t * α t (g (t⁻¹ * s⁻¹)))))) μ := by
     simpa using (α.toContinuousLinearMap s).integrable_comp hint_star
-  have hα : α s (∫ t, star (Φ t) ∂μ) = ∫ t, α s (star (Φ t)) ∂μ := by
-    simpa using ((α.toContinuousLinearMap s).integral_comp_comm hint_star).symm
   have hc (r : G) : ((Measure.modularCharacter r : ℝ) : ℂ) *
       ((Measure.modularCharacter (r⁻¹ * s) : ℝ) : ℂ) = (Measure.modularCharacter s : ℝ) :=
     mod_cast by rw [← map_mul, mul_inv_cancel_left]
@@ -393,10 +422,10 @@ theorem twistedInvolution_twistedConvolution [MeasurableSpace G] [OpensMeasurabl
         α r ((star (ω (r⁻¹ * s) (r⁻¹ * s)⁻¹ : 𝓜(ℂ, A))).fst
           (α (r⁻¹ * s) (star (f (r⁻¹ * s)⁻¹)))))) s]
   congr 1
-  change (star (ω s s⁻¹ : 𝓜(ℂ, A))).fst (α s (star (∫ t, Φ t ∂μ))) = _
-  rw [hstar, hα, ← ((star (ω s s⁻¹ : 𝓜(ℂ, A))).fst).integral_comp_comm hint_α]
+  rw [hstar, ← α.integral_comp_comm,
+    ← ((star (ω s s⁻¹ : 𝓜(ℂ, A))).fst).integral_comp_comm hint_α]
   congr 1 with t
-  simpa only [Φ, Function.comp_apply, mul_inv_rev, inv_mul_cancel_right, inv_inv] using
+  simpa only [mul_inv_rev, inv_mul_cancel_right, inv_inv] using
     twistedInvolution_integrand_eq ω s t (f t) (g (t⁻¹ * s⁻¹))
 
 end Involution
