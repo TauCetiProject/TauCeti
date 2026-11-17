@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Functoriality
 public import Mathlib.RingTheory.Noetherian.Defs
+public import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 
 import TauCeti.RingTheory.AdicCompletion.Exactness
@@ -25,8 +26,10 @@ Noetherian or finite-generation hypotheses. This bridges module-level exactness 
 ## Main definitions and results
 
 * `AdicCompletion.mapAlgebraMapLinearEquiv`: `AdicCompletion I M ≃ₗ[R] AdicCompletion (I S) M`,
-  characterized by `val_mapAlgebraMapLinearEquiv_mk`, `val_mapAlgebraMapLinearEquiv_symm_mk`,
-  `mapAlgebraMapLinearEquiv_of`, and `mapAlgebraMapLinearEquiv_symm_of`.
+  characterized on arbitrary coordinates by `val_mapAlgebraMapLinearEquiv` and
+  `val_mapAlgebraMapLinearEquiv_symm`, on Cauchy sequences by `val_mapAlgebraMapLinearEquiv_mk`
+  and `val_mapAlgebraMapLinearEquiv_symm_mk`, and on `AdicCompletion.of` by
+  `mapAlgebraMapLinearEquiv_of` and `mapAlgebraMapLinearEquiv_symm_of`.
 * `AdicCompletion.mapAlgebraMapLinearEquiv_map_restrictScalars`,
   `AdicCompletion.mapAlgebraMapLinearEquiv_map_algebraLinearMap`, and
   `AdicCompletion.mapAlgebraMapLinearEquiv_map_algHom`: naturality for `S`-linear maps,
@@ -49,81 +52,76 @@ section Module
 variable {R : Type*} [CommRing R] (I : Ideal R) (S M : Type*) [CommRing S] [Algebra R S]
   [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
 
-private noncomputable def quotLevelEquiv (n : ℕ) :
-    (M ⧸ (I ^ n • ⊤ : Submodule R M)) ≃ₗ[R]
-      M ⧸ ((I.map (algebraMap R S)) ^ n • ⊤ : Submodule S M) :=
-  (Submodule.quotEquivOfEq _ _ (by
-    rw [← Ideal.map_pow, Submodule.restrictScalars_map_smul_eq,
-      Submodule.restrictScalars_top])).trans
-    (Submodule.Quotient.restrictScalarsEquiv R _)
-
-@[simp] private theorem quotLevelEquiv_mk (n : ℕ) (m : M) :
-    quotLevelEquiv I S M n (Submodule.Quotient.mk m) = Submodule.Quotient.mk m := by
-  simp [quotLevelEquiv]
-
-@[simp] private theorem quotLevelEquiv_symm_mk (n : ℕ) (m : M) :
-    (quotLevelEquiv I S M n).symm (Submodule.Quotient.mk m) = Submodule.Quotient.mk m := by
-  rw [LinearEquiv.symm_apply_eq, quotLevelEquiv_mk]
-
-private theorem transitionMap_quotLevelEquiv {m n : ℕ} (hmn : m ≤ n)
-    (q : M ⧸ (I ^ n • ⊤ : Submodule R M)) :
-    transitionMap (I.map (algebraMap R S)) M hmn (quotLevelEquiv I S M n q) =
-      quotLevelEquiv I S M m (transitionMap I M hmn q) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q; simp
-
-private theorem transitionMap_quotLevelEquiv_symm {m n : ℕ} (hmn : m ≤ n)
-    (q : M ⧸ ((I.map (algebraMap R S)) ^ n • ⊤ : Submodule S M)) :
-    transitionMap I M hmn ((quotLevelEquiv I S M n).symm q) =
-      (quotLevelEquiv I S M m).symm (transitionMap (I.map (algebraMap R S)) M hmn q) := by
-  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q; simp
-
 /-- Completing an `S`-module `M` as an `R`-module along `I` is canonically `R`-linearly isomorphic
 to completing `M` as an `S`-module along the extended ideal `I.map (algebraMap R S)`. -/
 noncomputable def mapAlgebraMapLinearEquiv :
     AdicCompletion I M ≃ₗ[R] AdicCompletion (I.map (algebraMap R S)) M :=
-  LinearEquiv.ofLinearMap
-    { toFun := fun x ↦ ⟨fun n ↦ quotLevelEquiv I S M n (x.val n),
-        fun hmn ↦ by rw [transitionMap_quotLevelEquiv, x.property hmn]⟩
-      map_add' := fun x y ↦ ext fun n ↦ map_add (quotLevelEquiv I S M n) (x.val n) (y.val n)
-      map_smul' := fun r x ↦ ext fun n ↦ map_smul (quotLevelEquiv I S M n) r (x.val n) }
-    { toFun := fun y ↦ ⟨fun n ↦ (quotLevelEquiv I S M n).symm (y.val n),
-        fun hmn ↦ by rw [transitionMap_quotLevelEquiv_symm, y.property hmn]⟩
-      map_add' := fun x y ↦ ext fun n ↦ map_add (quotLevelEquiv I S M n).symm (x.val n) (y.val n)
-      map_smul' := fun r x ↦ ext fun n ↦ map_smul (quotLevelEquiv I S M n).symm r (x.val n) }
-    (LinearMap.ext fun y ↦ ext fun n ↦ (quotLevelEquiv I S M n).apply_symm_apply (y.val n))
-    (LinearMap.ext fun x ↦ ext fun n ↦ (quotLevelEquiv I S M n).symm_apply_apply (x.val n))
+  let e (n : ℕ) :=
+    Submodule.quotEquivOfEqRestrictScalars (I ^ n • ⊤ : Submodule R M)
+      ((I.map (algebraMap R S)) ^ n • ⊤ : Submodule S M)
+      (by rw [← Ideal.map_pow, Submodule.restrictScalars_map_smul_eq,
+        Submodule.restrictScalars_top])
+  { toFun := fun x ↦ ⟨fun n ↦ e n (x.val n), fun {m n} hmn ↦ by
+      dsimp only
+      obtain ⟨a, ha⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
+      have hx : x.val m = transitionMap I M hmn (x.val n) := (x.property hmn).symm
+      simp [e, hx, ← ha]⟩
+    invFun := fun y ↦ ⟨fun n ↦ (e n).symm (y.val n), fun {m n} hmn ↦ by
+      dsimp only
+      obtain ⟨a, ha⟩ := Submodule.Quotient.mk_surjective _ (y.val n)
+      have hy : y.val m = transitionMap (I.map (algebraMap R S)) M hmn (y.val n) :=
+        (y.property hmn).symm
+      simp [e, hy, ← ha]⟩
+    map_add' := fun x y ↦ ext fun n ↦ map_add (e n) (x.val n) (y.val n)
+    map_smul' := fun r x ↦ ext fun n ↦ map_smul (e n) r (x.val n)
+    left_inv := fun x ↦ ext fun n ↦ (e n).symm_apply_apply (x.val n)
+    right_inv := fun y ↦ ext fun n ↦ (e n).apply_symm_apply (y.val n) }
 
-private theorem val_mapAlgebraMapLinearEquiv (n : ℕ) (x : AdicCompletion I M) :
-    (mapAlgebraMapLinearEquiv I S M x).val n = quotLevelEquiv I S M n (x.val n) := rfl
+/-- The `n`-th coordinate of `mapAlgebraMapLinearEquiv I S M x` transports `x.val n` along
+`Submodule.quotEquivOfEqRestrictScalars`. -/
+@[simp] theorem val_mapAlgebraMapLinearEquiv (x : AdicCompletion I M) (n : ℕ) :
+    (mapAlgebraMapLinearEquiv I S M x).val n =
+      Submodule.quotEquivOfEqRestrictScalars (I ^ n • ⊤ : Submodule R M)
+        ((I.map (algebraMap R S)) ^ n • ⊤ : Submodule S M)
+        (by rw [← Ideal.map_pow, Submodule.restrictScalars_map_smul_eq,
+          Submodule.restrictScalars_top]) (x.val n) :=
+  (rfl)
 
-private theorem val_mapAlgebraMapLinearEquiv_symm (n : ℕ)
-    (y : AdicCompletion (I.map (algebraMap R S)) M) :
-    ((mapAlgebraMapLinearEquiv I S M).symm y).val n = (quotLevelEquiv I S M n).symm (y.val n) := rfl
+/-- The `n`-th coordinate of `(mapAlgebraMapLinearEquiv I S M).symm y` transports `y.val n`
+backward along `Submodule.quotEquivOfEqRestrictScalars`. -/
+@[simp] theorem val_mapAlgebraMapLinearEquiv_symm
+    (y : AdicCompletion (I.map (algebraMap R S)) M) (n : ℕ) :
+    ((mapAlgebraMapLinearEquiv I S M).symm y).val n =
+      (Submodule.quotEquivOfEqRestrictScalars (I ^ n • ⊤ : Submodule R M)
+        ((I.map (algebraMap R S)) ^ n • ⊤ : Submodule S M)
+        (by rw [← Ideal.map_pow, Submodule.restrictScalars_map_smul_eq,
+          Submodule.restrictScalars_top])).symm (y.val n) :=
+  (rfl)
 
 /-- On a Cauchy sequence `c`, the `n`-th coordinate of `mapAlgebraMapLinearEquiv I S M (mk I M c)`
 is the class of `c n` modulo `(I.map (algebraMap R S)) ^ n • ⊤`. -/
-@[simp] theorem val_mapAlgebraMapLinearEquiv_mk (c : AdicCauchySequence I M) (n : ℕ) :
+theorem val_mapAlgebraMapLinearEquiv_mk (c : AdicCauchySequence I M) (n : ℕ) :
     (mapAlgebraMapLinearEquiv I S M (mk I M c)).val n = Submodule.Quotient.mk (c n) := by
-  simp [val_mapAlgebraMapLinearEquiv]
+  simp
 
 /-- On a Cauchy sequence `c`, the `n`-th coordinate of
 `(mapAlgebraMapLinearEquiv I S M).symm (mk (I.map (algebraMap R S)) M c)` is `c n` mod `I ^ n • ⊤`.
 -/
-@[simp] theorem val_mapAlgebraMapLinearEquiv_symm_mk
+theorem val_mapAlgebraMapLinearEquiv_symm_mk
     (c : AdicCauchySequence (I.map (algebraMap R S)) M) (n : ℕ) :
     ((mapAlgebraMapLinearEquiv I S M).symm (mk (I.map (algebraMap R S)) M c)).val n =
       Submodule.Quotient.mk (c n) := by
-  simp [val_mapAlgebraMapLinearEquiv_symm]
+  simp
 
 /-- `mapAlgebraMapLinearEquiv` commutes with `AdicCompletion.of`. -/
 @[simp] theorem mapAlgebraMapLinearEquiv_of (m : M) :
     mapAlgebraMapLinearEquiv I S M (of I M m) = of (I.map (algebraMap R S)) M m :=
-  ext fun _ ↦ by simp [val_mapAlgebraMapLinearEquiv]
+  ext fun _ ↦ by simp
 
 /-- The inverse of `mapAlgebraMapLinearEquiv` commutes with `AdicCompletion.of`. -/
 @[simp] theorem mapAlgebraMapLinearEquiv_symm_of (m : M) :
     (mapAlgebraMapLinearEquiv I S M).symm (of (I.map (algebraMap R S)) M m) = of I M m :=
-  ext fun _ ↦ by simp [val_mapAlgebraMapLinearEquiv_symm]
+  ext fun _ ↦ by simp
 
 /-- `mapAlgebraMapLinearEquiv` commutes with completions of `S`-linear maps. -/
 theorem mapAlgebraMapLinearEquiv_map_restrictScalars {N : Type*} [AddCommGroup N] [Module R N]
@@ -131,8 +129,8 @@ theorem mapAlgebraMapLinearEquiv_map_restrictScalars {N : Type*} [AddCommGroup N
     mapAlgebraMapLinearEquiv I S N (map I (f.restrictScalars R) x) =
       map (I.map (algebraMap R S)) f (mapAlgebraMapLinearEquiv I S M x) := by
   refine ext fun n ↦ ?_
-  rw [val_mapAlgebraMapLinearEquiv, map_val_apply, map_val_apply, val_mapAlgebraMapLinearEquiv]
-  obtain ⟨m, hm⟩ := Submodule.Quotient.mk_surjective _ (x.val n); simp [← hm]
+  obtain ⟨m, hm⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
+  simp [← hm]
 
 end Module
 
@@ -140,13 +138,6 @@ section Algebra
 
 variable {R S S' : Type*} [CommRing R] [CommRing S] [CommRing S'] [Algebra R S] [Algebra R S']
   (I : Ideal R)
-
-private theorem factor_quotLevelEquiv_mk (n : ℕ) (s : S)
-    (h : (I.map (algebraMap R S)) ^ n • (⊤ : Submodule S S) ≤ (I.map (algebraMap R S)) ^ n) :
-    Submodule.factor h (quotLevelEquiv I S S n (Submodule.Quotient.mk s)) =
-      Ideal.Quotient.mk ((I.map (algebraMap R S)) ^ n) s := by
-  simpa [Ideal.Quotient.factor_mk] using
-    congrArg (Submodule.factor h) (quotLevelEquiv_mk I S S n s)
 
 /-- On an `R`-algebra `S`, `mapAlgebraMapLinearEquiv` intertwines the module-level completion of
 `Algebra.linearMap R S` with `AdicCompletion.mapₐ (Algebra.ofId R S)`. -/
@@ -159,8 +150,9 @@ private theorem factor_quotLevelEquiv_mk (n : ℕ) (s : S)
     ← factor_eval_eq_evalₐ I x ((Ideal.smul_eq_mul _ _).trans_le Ideal.mul_le_left),
     eval_apply, eval_apply, val_mapAlgebraMapLinearEquiv, map_val_apply]
   obtain ⟨r, hr⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
-  rw [← hr, LinearMap.reduceModIdeal_apply]
-  exact (factor_quotLevelEquiv_mk I n _ _).trans (by simp)
+  rw [← hr, LinearMap.reduceModIdeal_apply, Submodule.quotEquivOfEqRestrictScalars_mk,
+    ← Submodule.mkQ_apply, Submodule.factor_mk, ← Submodule.mkQ_apply, Submodule.factor_mk]
+  simp
 
 /-- An `R`-algebra homomorphism `f : S →ₐ[R] S'` maps `I.map (algebraMap R S)` into
 `I.map (algebraMap R S')`, and `mapAlgebraMapLinearEquiv` intertwines `map I f.toLinearMap` with
@@ -178,9 +170,9 @@ theorem mapAlgebraMapLinearEquiv_map_algHom (f : S →ₐ[R] S')
     eval_apply, eval_apply, val_mapAlgebraMapLinearEquiv, val_mapAlgebraMapLinearEquiv,
     map_val_apply]
   obtain ⟨s, hs⟩ := Submodule.Quotient.mk_surjective _ (x.val n)
-  rw [← hs, LinearMap.reduceModIdeal_apply]
-  exact (factor_quotLevelEquiv_mk I n _ _).trans <| Ideal.quotientMap_mk.symm.trans
-    (congrArg (Ideal.quotientMap _ f.toRingHom _) (factor_quotLevelEquiv_mk I n s _).symm)
+  rw [← hs, LinearMap.reduceModIdeal_apply, Submodule.quotEquivOfEqRestrictScalars_mk,
+    Submodule.quotEquivOfEqRestrictScalars_mk]
+  simp [Ideal.Quotient.factor_mk]
 
 /-- For a module-finite faithful extension `S` of a Noetherian ring `R` and any ideal `I` of `R`,
 `AdicCompletion I R →ₐ[R] AdicCompletion (I.map (algebraMap R S)) S` is injective. -/

@@ -248,25 +248,12 @@ section MaximalIdeal
 variable {A S : Type*} (G : Type*) [CommRing A] [CommRing S] [Algebra A S]
   [Group G] [MulSemiringAction G S] [SMulCommClass G A S] (𝔭 : Ideal A) (𝔪 : Ideal S)
 
-private theorem pairwise_isCoprime_orbit [𝔪.IsMaximal] :
-    Pairwise (IsCoprime on fun Q : MulAction.orbit G 𝔪 ↦ Q.1) := fun Q₁ Q₂ hne ↦ by
-  obtain ⟨g₁, hg₁⟩ := MulAction.mem_orbit_iff.mp Q₁.2
-  obtain ⟨g₂, hg₂⟩ := MulAction.mem_orbit_iff.mp Q₂.2
-  have : Q₁.1.IsMaximal := hg₁ ▸ inferInstance
-  have : Q₂.1.IsMaximal := hg₂ ▸ inferInstance
-  exact Ideal.isCoprime_of_isMaximal (Subtype.coe_ne_coe.mpr hne)
-
 private def orbitInf : Ideal S := ⨅ Q : MulAction.orbit G 𝔪, Q.1
-
-private theorem inv_smul_mem_orbit (g : G) (Q : MulAction.orbit G 𝔪) :
-    g⁻¹ • Q.1 ∈ MulAction.orbit G 𝔪 :=
-  let ⟨h, hh⟩ := MulAction.mem_orbit_iff.mp Q.2
-  MulAction.mem_orbit_iff.mpr ⟨g⁻¹ * h, by rw [mul_smul, hh]⟩
 
 private theorem orbitInf_stable (g : G) {s : S} (hs : s ∈ orbitInf G 𝔪) :
     g • s ∈ orbitInf G 𝔪 :=
   Ideal.mem_iInf.mpr fun Q ↦ Ideal.mem_inv_pointwise_smul_iff.mp
-    ((Ideal.mem_iInf.mp hs) ⟨g⁻¹ • Q.1, inv_smul_mem_orbit G 𝔪 g Q⟩)
+    ((Ideal.mem_iInf.mp hs) ⟨g⁻¹ • Q.1, MulAction.mem_orbit_of_mem_orbit g⁻¹ Q.2⟩)
 
 private theorem under_orbitInf [𝔪.LiesOver 𝔭] : (orbitInf G 𝔪).under A = 𝔭 := by
   ext a
@@ -316,7 +303,7 @@ private theorem orbitPiMapₐ_bijective [Algebra.IsInvariant A S G] :
     Function.Bijective (orbitPiMapₐ G 𝔭 𝔪) := by
   have : Finite (MulAction.orbit G 𝔪) := (Set.finite_range _).to_subtype
   exact (AdicCompletion.pi_mapₐ_id_bijective_of_pairwise_isCoprime
-    (fun Q : MulAction.orbit G 𝔪 ↦ Q.1) (pairwise_isCoprime_orbit G 𝔪)).comp
+    (fun Q : MulAction.orbit G 𝔪 ↦ Q.1) (𝔪.pairwise_isCoprime_orbit_of_isMaximal G).subtype).comp
     (AdicCompletion.mapₐ_id_bijective_of_pow_le
       (fun _ hx ↦ Ideal.mem_comap.mpr (map_le_orbitInf G 𝔭 𝔪 hx))
       (exists_orbitInf_pow_le_map G 𝔭 𝔪))
@@ -351,7 +338,7 @@ private theorem orbitPiMapₐ_mapₐ_toAlgHom (g : G)
       (AdicCompletion.mapₐ (MulSemiringAction.toAlgHom A S g) (𝔭.map_le_comap_toAlgHom g) y) Q =
       AdicCompletion.mapₐ (MulSemiringAction.toAlgHom A S g)
         (fun _ hs ↦ Ideal.mem_comap.mpr (Ideal.mem_inv_pointwise_smul_iff.mp hs))
-        (orbitPiMapₐ G 𝔭 𝔪 y ⟨g⁻¹ • Q.1, inv_smul_mem_orbit G 𝔪 g Q⟩) := by
+        (orbitPiMapₐ G 𝔭 𝔪 y ⟨g⁻¹ • Q.1, MulAction.mem_orbit_of_mem_orbit g⁻¹ Q.2⟩) := by
   rw [orbitPiMapₐ_eq_mapₐ, orbitPiMapₐ_eq_mapₐ, AdicCompletion.mapₐ_mapₐ, AdicCompletion.mapₐ_mapₐ]
   apply AdicCompletion.mapₐ_congr; intro; rfl
 
@@ -382,7 +369,7 @@ theorem mem_range_mapₐ_ofId_iff_of_isMaximal [Algebra.IsInvariant A S G]
     obtain ⟨x, rfl⟩ : y ∈ Set.range (AdicCompletion.mapₐ (Algebra.ofId A S) hle) := by
       refine (mem_range_mapₐ_ofId_iff (G := G) 𝔭 hle 𝔭.map_le_comap_toAlgHom y).mpr
         fun g ↦ (orbitPiMapₐ_bijective G 𝔭 𝔪).injective <| funext fun Q ↦ ?_
-      let Q' : MulAction.orbit G 𝔪 := ⟨g⁻¹ • Q.1, inv_smul_mem_orbit G 𝔪 g Q⟩
+      let Q' : MulAction.orbit G 𝔪 := ⟨g⁻¹ • Q.1, MulAction.mem_orbit_of_mem_orbit g⁻¹ Q.2⟩
       rw [orbitPiMapₐ_mapₐ_toAlgHom G 𝔭 𝔪 g y Q, hy]; dsimp only [f]
       have hk_mem : (γ Q)⁻¹ * (g * γ Q') ∈ MulAction.stabilizer G 𝔪 := by
         rw [MulAction.mem_stabilizer_iff, mul_smul, mul_smul, hγ Q', smul_inv_smul,
