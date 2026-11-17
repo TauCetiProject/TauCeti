@@ -27,12 +27,12 @@ Kozlov's staircase graph of the partition `(t, t - 1, …, 1)` with one isolated
 The relabelling is an explicit graph isomorphism from `SimpleGraph.staircase 1 t`, along which
 Kozlov's cut-minimality, edge count and odd-triangle count are transported:
 
-* `Sym3.stair_cost_lower`: every `Sym(3)` gauge costs at least `t (t + 1)`. The parity retraction
+* `Sym3.cost_stair_ge`: every `Sym(3)` gauge costs at least `t (t + 1)`. The parity retraction
   onto `{1, t01}` (`Equiv.Perm.movedNorm_parityRetract_le`) bounds the cost below by twice the
   `𝔽₂` cost of the sign pattern of the gauge, and cut-minimality of the staircase
   (`SimpleGraph.isCutMinimal_staircase`) bounds that below by the number `t (t + 1) / 2` of
   staircase edges (`SimpleGraph.two_mul_card_edgeFinset_staircase`).
-* `Sym3.stair_defect_mul`: `3 N = (2 t + 1) · t (t + 1)` for the moved-point defect
+* `Sym3.three_mul_defect_stair`: `3 N = (2 t + 1) · t (t + 1)` for the moved-point defect
   `N = defect (stair (2 t + 1))`. Each odd triangle (one with an odd number of staircase edges)
   contributes `2` to `N` and every other triangle `0`, so `N` is twice the odd-triangle count
   `1² + 2² + ⋯ + t²` (`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`).
@@ -197,7 +197,7 @@ private theorem two_mul_card_edgeFinset_stGraph (t : ℕ) :
 
 /-- **Cut-minimality, transported.** Every `Sym(3)` gauge `β` on `Fin (2 t + 1)` has cost at least
 `t (t + 1)` against the staircase cochain `stair (2 t + 1)`. -/
-theorem stair_cost_lower (t : ℕ) (β : Fin (2 * t + 1) → S3) :
+theorem cost_stair_ge (t : ℕ) (β : Fin (2 * t + 1) → S3) :
     t * (t + 1) ≤ cost (stair (2 * t + 1)) β := by
   let S : Set (Fin (2 * t + 1)) := {u | oddPerm (β u) = true}
   have hcm := (SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff (stGraph (2 * t + 1))).mp
@@ -266,8 +266,8 @@ private theorem stair_defect (n : ℕ) : defect (stair n) = 2 * #(stGraph n).odd
 
 /-- **Defect of the staircase.** The moved-point defect of `stair (2 t + 1)` satisfies
 `3 * defect (stair (2 t + 1)) = (2 t + 1) * (t (t + 1))`, where `t (t + 1)` is the gauge lower bound
-of `Sym3.stair_cost_lower`. -/
-theorem stair_defect_mul (t : ℕ) :
+of `Sym3.cost_stair_ge`. -/
+theorem three_mul_defect_stair (t : ℕ) :
     3 * defect (stair (2 * t + 1)) = (2 * t + 1) * (t * (t + 1)) := by
   have h := SimpleGraph.three_mul_card_oddTriangleFinset_staircase 1 t
   rw [(stIso t).card_oddTriangleFinset_eq, (stIso t).card_edgeFinset_eq] at h

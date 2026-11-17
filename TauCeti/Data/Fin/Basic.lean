@@ -917,8 +917,6 @@ theorem le_apply_last_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {
   rw [← hj]
   exact hb j.le_last
 
-end TauCeti
-
 /-- `finProdFinEquiv` is lexicographic: `(i, a)` comes before `(j, b)` exactly when `i < j`, or
 `i = j` and `a < b`. -/
 theorem finProdFinEquiv_lt_finProdFinEquiv_iff {m n : ℕ} (x y : Fin m × Fin n) :
@@ -933,6 +931,8 @@ theorem finProdFinEquiv_lt_finProdFinEquiv_iff {m n : ℕ} (x y : Fin m × Fin n
   · simp only [lt_irrefl, true_and, false_or, Fin.lt_def]; omega
   · have := Nat.mul_le_mul_left n (Fin.lt_def.mp h); rw [Nat.mul_succ] at this
     simp only [not_lt_of_gt h, h.ne', false_and, or_self, iff_false]; omega
+
+end TauCeti
 
 namespace Fin
 
