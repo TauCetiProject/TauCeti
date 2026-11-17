@@ -42,15 +42,14 @@ Riesz–Thorin theorem. Together with Hölder's inequality, the duality bound sh
 integral pairing `g ↦ (f ↦ ∫ g f dμ)` is a linear isometry from `L^q(μ)` to the continuous dual
 of `L^q'(μ)` on a σ-finite measure space.
 
-For functions with values in an inner product space, paired by `∫ ⟪h, g⟫`, the file also proves
-a version for `q < ∞` that does not assume `h ∈ L^q` in advance: the test functions are bounded
-and vanish off a set of finite measure, and the extremal function `|h| ^ (q - 2) h` is truncated
-where `h` is large and outside a spanning set of a σ-finite measure. This is the form needed to
-prove that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality. When the pairings
-can only be computed against integrable simple functions, as for the complex interpolation spaces
-of the Lebesgue couple, the inner product version tests against those instead: first for
-`h ∈ L^q`, then, on a σ-finite measure space, for the truncations of an arbitrary `h` to the
-sets where it is bounded inside a spanning set.
+For functions with values in an inner product space, paired by `∫ ⟪h, g⟫`, the file proves the
+duality bound for `q < ∞` against integrable simple test functions, as needed for the complex
+interpolation spaces of the Lebesgue couple, where the pairings can only be computed on those:
+first for `h ∈ L^q`, then, on a σ-finite measure space, for an arbitrary `h`, by applying the
+first version to the truncations of `h` to the sets where it is bounded inside a spanning set.
+As a corollary, the same bound holds against bounded test functions that vanish off a set of
+finite measure, again without assuming `h ∈ L^q` in advance. This is the form needed to prove
+that an operator defined on `L²` maps `L² ∩ Lᵖ` into `L^q` by duality.
 
 The integral Hölder bounds apply to arbitrary functions, using the convention that `eLpNorm`
 is `∞` outside the almost everywhere strongly measurable functions.
