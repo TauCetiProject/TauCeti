@@ -157,6 +157,21 @@ lemma isQuotientMap_ordinaryPairQuotient (P : TopPair.{u}) :
     simp only [isClosed_sum_iff]
     constructor <;> intro h <;> exact ⟨h.1, h.2⟩
 
+/-- When the subspace is nonempty, the collapse map alone is a quotient map: the added point is
+then the image of any point of the subspace. -/
+lemma isQuotientMap_ordinaryPairQuotientπ (P : TopPair.{u}) [Nonempty P.snd] :
+    IsQuotientMap P.ordinaryPairQuotientπ := by
+  obtain ⟨b⟩ := ‹Nonempty P.snd›
+  refine isQuotientMap_iff_isClosed.2 ⟨fun z => ?_, fun s => ⟨fun hs => ?_, fun hs => ?_⟩⟩
+  · obtain h | rfl := P.exists_ordinaryPairQuotientπ_or_eq_basepoint z
+    · exact h
+    · exact ⟨P.map b, P.ordinaryPairQuotientπ_map b⟩
+  · exact hs.preimage P.ordinaryPairQuotientπ.hom.continuous
+  · refine (P.isQuotientMap_ordinaryPairQuotient.isClosed_preimage).1 ?_
+    refine isClosed_sum_iff.2 ⟨hs, ?_⟩
+    -- The other summand is a point.
+    exact isClosed_discrete _
+
 /-- Maps out of the quotient are determined by the ambient space and the basepoint. -/
 @[ext]
 lemma ordinaryPairQuotient_hom_ext {P : TopPair.{u}} {Y : TopCat.{u}}
