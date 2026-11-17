@@ -23,7 +23,7 @@ determinants of the bases of `Bᵢ` and of `Hᵢ`
 Conversely, a linear map `j` into `C.X i` whose values are cycles has a homology class map
 (`HomologicalComplex.moduleCatHomologyClass`). If `j` carries a basis `g` of its source to cycles
 representing a basis of `Hᵢ`, the class map is bijective
-(`HomologicalComplex.bijective_moduleCatHomologyClass_of_basis`).
+(`HomologicalComplex.moduleCatHomologyClass_bijective_of_basis`).
 
 ## Main declarations
 
@@ -32,7 +32,7 @@ representing a basis of `Hᵢ`, the class map is bijective
 * `HomologicalComplex.kerBasisOfHomology_det_kerBasisOfHomology`: the determinant of one such basis
   of the cycles with respect to another is the product of the determinants of the bases of the
   boundaries and of the homology.
-* `HomologicalComplex.bijective_moduleCatHomologyClass_of_basis`: a homology class map carrying a
+* `HomologicalComplex.moduleCatHomologyClass_bijective_of_basis`: a homology class map carrying a
   basis to cycles representing a basis of the homology is bijective.
 -/
 
@@ -107,7 +107,7 @@ include hy hjy in
 /-- If a linear map `j` into the degree-`n` term of a complex of modules carries a basis `g` of its
 source to cycles `y` representing a basis `h` of the homology `Hₙ`, then its homology class map is
 bijective: it carries the basis `g` to the basis `h`. -/
-theorem bijective_moduleCatHomologyClass_of_basis :
+theorem moduleCatHomologyClass_bijective_of_basis :
     Function.Bijective (K.moduleCatHomologyClass hm j hj) := by
   have : K.moduleCatHomologyClass hm j hj = (g.equiv h (Equiv.refl _)).toLinearMap :=
     g.ext fun t ↦ by

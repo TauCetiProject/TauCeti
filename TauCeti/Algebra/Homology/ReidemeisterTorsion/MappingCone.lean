@@ -56,7 +56,7 @@ differential is acyclic as soon as the chain map induces bijections from the ter
 onto the homology groups of its target (`HomologicalComplex.acyclic_homotopyCofiber_of_bijective`,
 from `TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber`); here the bijections hold because `ζ`
 carries the bases `g i` to cycles representing the bases `h i`
-(`HomologicalComplex.bijective_moduleCatHomologyClass_of_basis`). The boundaries of the cone of
+(`HomologicalComplex.moduleCatHomologyClass_bijective_of_basis`). The boundaries of the cone of
 `ζ` in degree `j` are the cycles `Zⱼ` of `C`, based by a basis of the boundaries `Bⱼ` followed by
 the representatives `ζ (g j)`, and these lift to the lifts of the basis of `Bⱼ` followed by the
 basis `g j`. So the brackets of the cone are exactly the brackets `[bⱼ₊₁ zⱼ₊₁ sⱼ / cⱼ₊₁]` of `C`
@@ -323,7 +323,7 @@ private def coneBoundaryBasis {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F 
       ((LinearEquiv.ofInjective ((inrX ζ j).hom ∘ₗ (LinearMap.ker (C.d j (j - 1)).hom).subtype)
         ((inrX_hom_injective ζ j).comp Subtype.val_injective)).trans
         (LinearEquiv.ofEq _ _ (range_inrX_comp_subtype ζ hG
-          fun i ↦ bijective_moduleCatHomologyClass_of_basis C _ _ _ (g i) (h i) (y i) (hy i)
+          fun i ↦ moduleCatHomologyClass_bijective_of_basis C _ _ _ (g i) (h i) (y i) (hy i)
             (hζ i))))).reindex
     finSumFinEquiv
 
@@ -404,7 +404,7 @@ include hG hy hζ in
 chain map from a complex `G` with zero differential, with bases `g i` of `G.X i`, which carries
 each basis vector `g i k` to a cycle representing the vector `h i k` of a basis of `Hᵢ(C)`. Then
 the mapping cone of `ζ` is acyclic (`acyclic_homotopyCofiber_of_bijective`, applied to
-`bijective_moduleCatHomologyClass_of_basis`), and its torsion, for
+`moduleCatHomologyClass_bijective_of_basis`), and its torsion, for
 the basis `homotopyCofiber.basis` made of the basis of `C.X i` followed by that of `G.X (i - 1)`,
 is the torsion `τ(C, c, h)` of `C` with the homology bases `h`. -/
 theorem reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology {n : ℤ → ℕ}
@@ -428,7 +428,7 @@ theorem reidemeisterTorsion_homotopyCofiber_eq_reidemeisterTorsionWithHomology {
       omega
     · exact Or.inl h0
   have hacyc := acyclic_homotopyCofiber_of_bijective ζ hG
-    fun i ↦ bijective_moduleCatHomologyClass_of_basis C _ _ _ (g i) (h i) (y i) (hy i) (hζ i)
+    fun i ↦ moduleCatHomologyClass_bijective_of_basis C _ _ _ (g i) (h i) (y i) (hy i) (hζ i)
   rw [reidemeisterTorsionWithHomology_eq_finprod hn (fun j ↦ chosenBoundaryBasis C c (j + 1) j) y
       hy (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j),
     reidemeisterTorsion_eq_finprod hn' hacyc (coneBoundaryBasis ζ hG g h y hy hζ c)
