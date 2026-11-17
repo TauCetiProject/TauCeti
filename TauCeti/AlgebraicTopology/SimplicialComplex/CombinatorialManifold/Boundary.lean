@@ -123,16 +123,9 @@ theorem map_manifoldBoundary [DecidableEq ι] [DecidableEq κ] {K : PreAbstractS
     have hw : link K τ = simplex {w} := map_injective hf <| by
       dsimp only
       rw [hmap_link, map_simplex, Finset.image_singleton]
-    let ρ : Finset ι := τ.filter fun x => f x ∈ ω
-    have hρω : ρ.image f = ω := by
-      ext y
-      simp only [ρ, Finset.mem_image, Finset.mem_filter]
-      refine ⟨?_, fun hy => ?_⟩
-      · rintro ⟨x, ⟨_, hfx⟩, rfl⟩; exact hfx
-      · obtain ⟨x, hxτ, rfl⟩ := Finset.mem_image.mp (hωη hy)
-        exact ⟨x, ⟨hxτ, hy⟩, rfl⟩
+    obtain ⟨ρ, hρτ, hρω⟩ := Finset.subset_image_iff.mp hωη
     exact ⟨ρ, mem_manifoldBoundary.mpr
-      ⟨Finset.Nonempty.of_image (hρω.symm ▸ hωne), τ, hτ, Finset.filter_subset _ τ, w, hw⟩, hρω⟩
+      ⟨Finset.Nonempty.of_image (hρω.symm ▸ hωne), τ, hτ, hρτ, w, hw⟩, hρω⟩
 
 /-- Taking links commutes with `manifoldBoundary` on every precomplex. -/
 @[simp]
