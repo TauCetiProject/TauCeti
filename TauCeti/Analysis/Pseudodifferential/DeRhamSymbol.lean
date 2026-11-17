@@ -103,9 +103,9 @@ from the anticommutator identity `ε_ξ ι_ξ + ι_ξ ε_ξ = ‖ξ‖²`. -/
 theorem coefficient_hodgeLaplacian_extDeriv (k : ℕ) (p : X × E) :
     ((extDeriv X E k).hodgeLaplacian (extDeriv X E (k + 1))).coefficient p =
       (‖p.2‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℂ _ := by
-  rw [coefficient_hodgeLaplacian, coefficient_extDeriv, coefficient_extDeriv]
-  refine (ContinuousLinearMap.hodgeLaplacian_smul_smul _ _ Complex.norm_I).trans ?_
-  rw [ContinuousLinearMap.hodgeLaplacian_complexifyL2, hodgeLaplacian_wedgeLeft,
+  rw [coefficient_hodgeLaplacian, coefficient_extDeriv, coefficient_extDeriv,
+    ContinuousLinearMap.hodgeLaplacian_smul_smul, Complex.norm_I, one_pow, RCLike.ofReal_one,
+    one_smul, ContinuousLinearMap.hodgeLaplacian_complexifyL2, hodgeLaplacian_wedgeLeft,
     ContinuousLinearMap.complexifyL2_smul, ContinuousLinearMap.complexifyL2_id]
 
 /-- The Laplacian of the de Rham symbol complex on `(k + 1)`-forms is the symbol `‖ξ‖² Id` of
@@ -121,9 +121,9 @@ from `ι_ξ ε_ξ = ‖ξ‖²`. -/
 theorem coefficient_adjoint_comp_extDeriv_zero (p : X × E) :
     ((extDeriv X E 0).adjoint.comp (extDeriv X E 0)).coefficient p =
       (‖p.2‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℂ _ := by
-  rw [coefficient_comp, coefficient_adjoint, coefficient_extDeriv]
-  refine (ContinuousLinearMap.adjoint_smul_comp_smul Complex.norm_I _).trans ?_
-  rw [ContinuousLinearMap.adjoint_complexifyL2, ← ContinuousLinearMap.complexifyL2_comp,
+  rw [coefficient_comp, coefficient_adjoint, coefficient_extDeriv,
+    ContinuousLinearMap.adjoint_smul_comp_smul, Complex.norm_I, one_pow, RCLike.ofReal_one,
+    one_smul, ContinuousLinearMap.adjoint_complexifyL2, ← ContinuousLinearMap.complexifyL2_comp,
     adjoint_wedgeLeft_comp_wedgeLeft_zero, ContinuousLinearMap.complexifyL2_smul,
     ContinuousLinearMap.complexifyL2_id]
 

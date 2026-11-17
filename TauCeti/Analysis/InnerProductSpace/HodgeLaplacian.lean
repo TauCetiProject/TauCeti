@@ -38,10 +38,10 @@ statement says that a complex is elliptic, that is its symbol sequence is exact 
 covector, exactly when its Laplacians are elliptic.
 
 The Laplacian of the adjoint complex `W → V → U` is the same operator
-(`ContinuousLinearMap.hodgeLaplacian_adjoint_adjoint`), and so is the Laplacian of `c A`, `c B`
-for a unimodular scalar `c` (`ContinuousLinearMap.hodgeLaplacian_smul_smul`), such as the factor
-`i` between geometric and Fourier symbols. For real operators, the Laplacian of the
-complexifications is the complexification of the Laplacian
+(`ContinuousLinearMap.hodgeLaplacian_adjoint_adjoint`). The Laplacian of `c A`, `c B` is
+`‖c‖²` times that of `A`, `B` (`ContinuousLinearMap.hodgeLaplacian_smul_smul`), so it is unchanged
+by a unimodular scalar such as the factor `i` between geometric and Fourier symbols. For real
+operators, the Laplacian of the complexifications is the complexification of the Laplacian
 (`ContinuousLinearMap.hodgeLaplacian_complexifyL2`).
 
 ## References
@@ -81,13 +81,14 @@ theorem hodgeLaplacian_adjoint_adjoint :
     (adjoint B).hodgeLaplacian (adjoint A) = A.hodgeLaplacian B := by
   rw [hodgeLaplacian_def, hodgeLaplacian_def, adjoint_adjoint, adjoint_adjoint, add_comm]
 
-/-- Multiplying both operators by a unimodular scalar, such as the factor `i` relating geometric
-and Fourier symbols, does not change the Laplacian. -/
-theorem hodgeLaplacian_smul_smul {c : 𝕜} (hc : ‖c‖ = 1) :
-    (c • A).hodgeLaplacian (c • B) = A.hodgeLaplacian B := by
+/-- Multiplying both operators by a scalar `c` multiplies the Laplacian by `‖c‖²`; in particular a
+unimodular scalar, such as the factor `i` relating geometric and Fourier symbols, does not change
+it. -/
+theorem hodgeLaplacian_smul_smul (c : 𝕜) :
+    (c • A).hodgeLaplacian (c • B) = ((‖c‖ ^ 2 : ℝ) : 𝕜) • A.hodgeLaplacian B := by
   ext v
   simp only [hodgeLaplacian_apply, adjoint.map_smulₛₗ, smul_apply, map_smul, smul_smul,
-    RCLike.mul_conj, RCLike.conj_mul, hc, one_pow, RCLike.ofReal_one, one_smul]
+    RCLike.mul_conj, RCLike.conj_mul, RCLike.ofReal_pow, smul_add]
 
 /-- The Laplacian is a positive operator. -/
 theorem isPositive_hodgeLaplacian : (A.hodgeLaplacian B).IsPositive :=
