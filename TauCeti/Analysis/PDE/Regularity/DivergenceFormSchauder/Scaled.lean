@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 import TauCeti.Analysis.PDE.Caccioppoli.Divergence
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -781,9 +782,7 @@ private theorem rpow_neg_mul_sqrt_setIntegral_le {Omega : Opens (EuclideanSpace 
       2 ^ (((n : ℝ) + 1) / 2) *
         √(volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) * Mu := by
   have hr2 : (0 : ℝ) < 2 * r := by positivity
-  have := ae_restrict_neBot.2 (measure_ball_pos volume x₀ hr2).ne'
-  obtain ⟨y, hy⟩ := hMu.exists
-  have hMu0 : 0 ≤ Mu := (abs_nonneg _).trans hy
+  have hMu0 : 0 ≤ Mu := nonneg_of_ae_restrict_abs_le (measure_ball_pos volume x₀ hr2).ne' hMu
   have : IsFiniteMeasure (volume.restrict (ball x₀ (2 * r))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hint : ∫ x in ball x₀ (2 * r), W1p.value u x ^ 2 ≤ ∫ _ in ball x₀ (2 * r), Mu ^ 2 :=
