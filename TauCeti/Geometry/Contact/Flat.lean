@@ -102,8 +102,8 @@ theorem contactFlat_apply (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpac
   simp [contactFlat, SmoothBundleForm.eval₂_apply]
 
 /-- The contact flat map evaluates as the bilinear form `dα + α ⊗ α` of linear algebra, the form
-whose left separation `Module.Dual.IsContact.separatingLeft_add_smulRight` characterizes contact
-covectors. -/
+whose left separation characterizes contact covectors in odd finite dimension
+(`Module.Dual.isContact_iff_separatingLeft_add_smulRight`). -/
 theorem contactFlat_apply_eq_bilinFormAt_add_smulRight (α : SmoothForm I M ℝ 1) (x : M)
     (v w : TangentSpace I x) :
     α.contactFlat x v w = ((mextDerivₗ I 1 α).bilinFormAt x +
