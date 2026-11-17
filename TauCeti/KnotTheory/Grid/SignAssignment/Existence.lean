@@ -81,13 +81,10 @@ private theorem polar_gridForm {n : ℕ} (v w : Fin n → ℚ) :
 
 private theorem gridForm_nondegenerate (n : ℕ) : (gridForm n).Nondegenerate := by
   refine QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot
-    (LinearMap.ker_eq_bot'.mpr fun v hv => ?_)
-  ext i
-  have h := congrArg (fun f => f (Pi.single i 1)) hv
-  simp only [QuadraticMap.polarBilin_apply_apply, LinearMap.zero_apply, polar_gridForm,
-    Pi.single_apply, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
-    neg_eq_zero] at h
-  exact h
+    (LinearMap.ker_eq_bot'.mpr fun v hv => funext fun i => ?_)
+  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.zero_apply, Pi.zero_apply,
+    polar_gridForm, Pi.single_apply, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq',
+    Finset.mem_univ, ↓reduceIte, neg_eq_zero] using congrArg (fun f => f (Pi.single i 1)) hv
 
 /-- Coordinate permutation embeds `Equiv.Perm (Fin n)` into the orthogonal group of `gridForm n`. -/
 private noncomputable def permToOrthogonal (n : ℕ) :
@@ -97,19 +94,13 @@ private noncomputable def permToOrthogonal (n : ℕ) :
        map_add' := fun _ _ => rfl
        map_smul' := fun _ _ => rfl
        invFun := fun v i => v (σ i)
-       left_inv := fun v => funext fun i => by simp
-       right_inv := fun v => funext fun i => by simp },
+       left_inv := fun _ => funext fun _ => by simp
+       right_inv := fun _ => funext fun _ => by simp },
       QuadraticMap.mem_orthogonalGroup_iff.mpr fun v => by
         simp only [gridForm_apply]
         exact Equiv.sum_comp σ⁻¹ (fun i => (-1 / 2 : ℚ) * (v i * v i))⟩
-  map_one' := by
-    apply Subtype.ext
-    ext v i
-    rfl
-  map_mul' σ τ := by
-    apply Subtype.ext
-    ext v i
-    simp [mul_inv_rev]
+  map_one' := Subtype.ext <| LinearEquiv.ext fun _ => rfl
+  map_mul' _ _ := Subtype.ext <| LinearEquiv.ext fun _ => funext fun _ => by simp [mul_inv_rev]
 
 private theorem permToOrthogonal_apply {n : ℕ} (σ : Equiv.Perm (Fin n)) (v : Fin n → ℚ)
     (i : Fin n) :
@@ -125,9 +116,7 @@ private theorem rootVec_swap {n : ℕ} (a b : Fin n) : rootVec b a = -rootVec a 
 
 private theorem rootVec_cycle {n : ℕ} (a b c : Fin n) :
     rootVec c a = -(rootVec a b + rootVec b c) := by
-  ext i
-  simp only [rootVec, Pi.sub_apply, Pi.neg_apply, Pi.add_apply]
-  ring
+  ext i; simp only [rootVec, Pi.sub_apply, Pi.neg_apply, Pi.add_apply]; ring
 
 private theorem gridForm_rootVec {n : ℕ} {a b : Fin n} (hab : a ≠ b) :
     gridForm n (rootVec a b) = -1 := by
@@ -135,33 +124,13 @@ private theorem gridForm_rootVec {n : ℕ} {a b : Fin n} (hab : a ≠ b) :
   have hterm : ∀ i : Fin n, (-1 / 2 : ℚ) * (rootVec a b i * rootVec a b i) =
       (if i = a then (-1 / 2 : ℚ) else 0) + (if i = b then (-1 / 2 : ℚ) else 0) := fun i => by
     simp only [rootVec, Pi.sub_apply, Pi.single_apply]
-    by_cases ha : i = a
-    · subst ha
-      simp [hab]
-    · by_cases hb : i = b
-      · subst hb
-        simp [hab.symm]
-      · simp [ha, hb]
+    by_cases ha : i = a <;> by_cases hb : i = b <;> simp_all [hab.symm]
   simp only [hterm, Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
   norm_num
 
 private theorem polar_gridForm_rootVec {n : ℕ} (a b : Fin n) (v : Fin n → ℚ) :
     QuadraticMap.polar (gridForm n) (rootVec a b) v = v b - v a := by
-  rw [polar_gridForm]
-  have hterm : ∀ i : Fin n, rootVec a b i * v i =
-      (if i = a then v a else 0) - (if i = b then v b else 0) := fun i => by
-    simp only [rootVec, Pi.sub_apply, Pi.single_apply]
-    by_cases ha : i = a <;> by_cases hb : i = b
-    · subst ha
-      subst hb
-      simp
-    · subst ha
-      simp [hb]
-    · subst hb
-      simp [ha]
-    · simp [ha, hb]
-  simp only [hterm, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-  ring
+  simp [polar_gridForm, rootVec, Pi.single_apply, ite_mul]; ring
 
 /-- The Pin-group lift `ι(e_a - e_b)` of the transposition `Equiv.swap a b`. -/
 private noncomputable def pinSwap {n : ℕ} (a b : Fin n) (hab : a ≠ b) :
@@ -174,19 +143,12 @@ private theorem pinToOrthogonal_pinSwap {n : ℕ} (a b : Fin n) (hab : a ≠ b) 
     CliffordAlgebra.pinToOrthogonal (gridForm n) (pinSwap a b hab) =
       permToOrthogonal n (Equiv.swap a b) := by
   let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
-  apply Subtype.ext
-  ext v i
+  apply Subtype.ext; ext v i
   rw [pinSwap, CliffordAlgebra.pinToOrthogonal_ι_apply (gridForm_rootVec hab),
     permToOrthogonal_apply, Equiv.swap_inv, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
     polar_gridForm_rootVec]
-  simp only [rootVec, Pi.sub_apply, Pi.single_apply]
-  by_cases ha : i = a
-  · subst ha
-    simp [hab]
-  · by_cases hb : i = b
-    · subst hb
-      simp [hab.symm]
-    · simp [ha, hb, Equiv.swap_apply_of_ne_of_ne ha hb]
+  simp only [rootVec, Pi.sub_apply, Pi.single_apply, Equiv.swap_apply_def]
+  by_cases ha : i = a <;> by_cases hb : i = b <;> simp_all [hab.symm]
 
 private theorem exists_pinToOrthogonal_eq_permToOrthogonal {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
@@ -197,8 +159,7 @@ private theorem exists_pinToOrthogonal_eq_permToOrthogonal {n : ℕ} (σ : Equiv
   | one => exact ⟨1, by simp⟩
   | swap_mul f a b hab ih =>
     obtain ⟨g, hg⟩ := ih
-    refine ⟨pinSwap a b hab * g, ?_⟩
-    rw [map_mul, pinToOrthogonal_pinSwap, hg, ← map_mul]
+    exact ⟨pinSwap a b hab * g, by rw [map_mul, pinToOrthogonal_pinSwap, hg, ← map_mul]⟩
 
 /-! ### Clifford algebra relations among root-vector generators -/
 
@@ -222,27 +183,64 @@ private theorem rootClifford_mul_swap {n : ℕ} {a b : Fin n} (hab : a ≠ b) :
 private theorem rootClifford_mul_comm_neg {n : ℕ} {a b c d : Fin n}
     (hac : a ≠ c) (had : a ≠ d) (hbc : b ≠ c) (hbd : b ≠ d) :
     rootClifford a b * rootClifford c d = -(rootClifford c d * rootClifford a b) := by
-  have hpolar : QuadraticMap.polar (gridForm n) (rootVec a b) (rootVec c d) = 0 := by
-    rw [polar_gridForm_rootVec]
-    simp [rootVec, hac, had, hbc, hbd]
   have hsum := CliffordAlgebra.ι_mul_ι_add_swap (Q := gridForm n) (rootVec a b) (rootVec c d)
-  rw [hpolar, map_zero] at hsum
+  rw [show QuadraticMap.polar (gridForm n) (rootVec a b) (rootVec c d) = 0 by
+    rw [polar_gridForm_rootVec]; simp [rootVec, hac, had, hbc, hbd], map_zero] at hsum
   exact eq_neg_of_add_eq_zero_left hsum
 
 private theorem rootClifford_mul_cycle {n : ℕ} {a b c : Fin n}
     (hab : a ≠ b) (hbc : b ≠ c) (hca : c ≠ a) :
     rootClifford a b * rootClifford b c = rootClifford b c * rootClifford c a := by
-  have hpolar : QuadraticMap.polar (gridForm n) (rootVec a b) (rootVec b c) = 1 := by
-    rw [polar_gridForm_rootVec]
-    simp [rootVec, hab.symm, hbc, hca.symm]
   have hsum := CliffordAlgebra.ι_mul_ι_add_swap (Q := gridForm n) (rootVec a b) (rootVec b c)
-  rw [hpolar, map_one] at hsum
+  rw [show QuadraticMap.polar (gridForm n) (rootVec a b) (rootVec b c) = 1 by
+    rw [polar_gridForm_rootVec]; simp [rootVec, hab.symm, hbc, hca.symm], map_one] at hsum
   have hba : rootClifford b c * rootClifford a b = 1 - rootClifford a b * rootClifford b c :=
     eq_sub_of_add_eq' hsum
-  have hca_eq : rootClifford c a = -(rootClifford a b + rootClifford b c) := by
-    rw [rootClifford, rootVec_cycle, map_neg, map_add]
-  rw [hca_eq, mul_neg, mul_add, hba, rootClifford_mul_self hbc]
+  rw [show rootClifford c a = -(rootClifford a b + rootClifford b c) by
+    rw [rootClifford, rootVec_cycle, map_neg, map_add],
+    mul_neg, mul_add, hba, rootClifford_mul_self hbc]
   abel
+
+private theorem rootClifford_recut_eq_neg_of_hasSameSideOverlap {n : ℕ} {x z : GridState n}
+    (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
+    (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty) (hsame : D.HasSameSideOverlap) :
+    rootClifford (D.recut hone hD₁ hD₂).first.left (D.recut hone hD₁ hD₂).first.right *
+        rootClifford (D.recut hone hD₁ hD₂).second.left (D.recut hone hD₁ hD₂).second.right =
+      -(rootClifford D.first.left D.first.right * rootClifford D.second.left D.second.right) := by
+  rcases (D.hasSameSideOverlap_iff.mp hsame).2 with hleft | hright
+  · have hdata := D.isRecutOfLeftEqLeft_recut hleft hone hD₁ hD₂
+    have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
+    have hac : D.first.left ≠ D.second.right := hleft ▸ D.second.left_ne_right
+    have hbc : D.first.right ≠ D.second.right := fun h =>
+      D.sideColumns_ne_of_hasOneCommonSide hone
+        (by simp [GridRectangleBetween.sideColumns, hleft, h])
+    obtain ⟨hEr₁, hEr₂⟩ := hdata.recut_sides
+    rw [hEr₁, hEr₂, ← hleft]
+    rcases hdata.recut_branch with ⟨-, -, hEl₁, hEl₂⟩ | ⟨-, -, hEl₁, hEl₂⟩
+    · rw [hEl₁, hEl₂]
+      have hcyc := rootClifford_mul_cycle hbc.symm hab.symm hac
+      rwa [rootClifford_swap D.first.right D.second.right,
+        rootClifford_swap D.first.left D.first.right, neg_mul_neg, neg_mul] at hcyc
+    · rw [hEl₁, hEl₂]
+      have hcyc := rootClifford_mul_cycle hab.symm hac hbc.symm
+      rw [rootClifford_swap D.first.left D.first.right, neg_mul] at hcyc
+      exact hcyc.symm
+  · have hdata := D.isRecutOfRightEqRight_recut hright hone hD₁ hD₂
+    have hba : D.first.left ≠ D.first.right := D.first.left_ne_right
+    have hca : D.second.left ≠ D.first.right := hright ▸ D.second.left_ne_right
+    have hcb : D.second.left ≠ D.first.left := fun h =>
+      D.sideColumns_ne_of_hasOneCommonSide hone
+        (by simp [GridRectangleBetween.sideColumns, hright, h])
+    obtain ⟨hEl₁, hEl₂⟩ := hdata.recut_sides
+    rw [hEl₁, hEl₂, ← hright]
+    rcases hdata.recut_branch with ⟨-, -, hEr₁, hEr₂⟩ | ⟨-, -, hEr₁, hEr₂⟩
+    · rw [hEr₁, hEr₂]
+      have hcyc := rootClifford_mul_cycle hcb hba hca.symm
+      rwa [rootClifford_swap D.second.left D.first.right, mul_neg] at hcyc
+    · rw [hEr₁, hEr₂]
+      simpa [rootClifford_swap D.second.left D.first.right,
+        rootClifford_swap D.first.left D.second.left] using
+        (rootClifford_mul_cycle hca.symm hcb hba).trans (rootClifford_mul_cycle hcb hba hca.symm)
 
 /-- Recutting a one-common-side empty decomposition negates the Clifford product of its two root
 vectors. -/
@@ -251,99 +249,32 @@ private theorem rootClifford_recut_eq_neg {n : ℕ} {x z : GridState n}
     (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty) :
     rootClifford (D.recut hone hD₁ hD₂).first.left (D.recut hone hD₁ hD₂).first.right *
         rootClifford (D.recut hone hD₁ hD₂).second.left (D.recut hone hD₁ hD₂).second.right =
-      -(rootClifford D.first.left D.first.right *
-        rootClifford D.second.left D.second.right) := by
-  have hsame_case : ∀ {D : GridRectangleDecomposition x z} (hone : D.HasOneCommonSide)
-      (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty), D.HasSameSideOverlap →
-      rootClifford (D.recut hone hD₁ hD₂).first.left (D.recut hone hD₁ hD₂).first.right *
-          rootClifford (D.recut hone hD₁ hD₂).second.left (D.recut hone hD₁ hD₂).second.right =
-        -(rootClifford D.first.left D.first.right *
-          rootClifford D.second.left D.second.right) := by
-    intro D hone hD₁ hD₂ hsame
-    rcases (D.hasSameSideOverlap_iff.mp hsame).2 with hleft | hright
-    · have hdata := D.isRecutOfLeftEqLeft_recut hleft hone hD₁ hD₂
-      have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
-      have hac : D.first.left ≠ D.second.right := hleft ▸ D.second.left_ne_right
-      have hbc : D.first.right ≠ D.second.right := fun h =>
-        D.sideColumns_ne_of_hasOneCommonSide hone
-          (by simp [GridRectangleBetween.sideColumns, hleft, h])
-      obtain ⟨hEr₁, hEr₂⟩ := hdata.recut_sides
-      rw [hEr₁, hEr₂, ← hleft]
-      rcases hdata.recut_branch with ⟨-, -, hEl₁, hEl₂⟩ | ⟨-, -, hEl₁, hEl₂⟩
-      · rw [hEl₁, hEl₂]
-        have hcyc := rootClifford_mul_cycle hbc.symm hab.symm hac
-        rw [rootClifford_swap D.first.right D.second.right,
-          rootClifford_swap D.first.left D.first.right, neg_mul_neg, neg_mul] at hcyc
-        exact hcyc
-      · rw [hEl₁, hEl₂]
-        have hcyc := rootClifford_mul_cycle hab.symm hac hbc.symm
-        rw [rootClifford_swap D.first.left D.first.right, neg_mul] at hcyc
-        exact hcyc.symm
-    · have hdata := D.isRecutOfRightEqRight_recut hright hone hD₁ hD₂
-      have hba : D.first.left ≠ D.first.right := D.first.left_ne_right
-      have hca : D.second.left ≠ D.first.right := hright ▸ D.second.left_ne_right
-      have hcb : D.second.left ≠ D.first.left := fun h =>
-        D.sideColumns_ne_of_hasOneCommonSide hone
-          (by simp [GridRectangleBetween.sideColumns, hright, h])
-      obtain ⟨hEl₁, hEl₂⟩ := hdata.recut_sides
-      rw [hEl₁, hEl₂, ← hright]
-      rcases hdata.recut_branch with ⟨-, -, hEr₁, hEr₂⟩ | ⟨-, -, hEr₁, hEr₂⟩
-      · rw [hEr₁, hEr₂]
-        have hcyc := rootClifford_mul_cycle hcb hba hca.symm
-        rw [rootClifford_swap D.second.left D.first.right, mul_neg] at hcyc
-        exact hcyc
-      · rw [hEr₁, hEr₂]
-        calc rootClifford D.second.left D.first.right *
-              rootClifford D.first.left D.second.left
-            = (-rootClifford D.second.left D.first.right) *
-                (-rootClifford D.first.left D.second.left) := (neg_mul_neg _ _).symm
-          _ = rootClifford D.first.right D.second.left *
-                rootClifford D.second.left D.first.left := by
-              rw [rootClifford_swap D.second.left D.first.right,
-                rootClifford_swap D.first.left D.second.left]
-          _ = rootClifford D.second.left D.first.left *
-                rootClifford D.first.left D.first.right :=
-              rootClifford_mul_cycle hca.symm hcb hba
-          _ = -(rootClifford D.first.left D.first.right *
-                rootClifford D.second.left D.first.right) := by
-              have hcyc₂ := rootClifford_mul_cycle hcb hba hca.symm
-              rw [rootClifford_swap D.second.left D.first.right, mul_neg] at hcyc₂
-              exact hcyc₂
+      -(rootClifford D.first.left D.first.right * rootClifford D.second.left D.second.right) := by
   rcases D.hasSameSideOverlap_or_hasMixedSideOverlap hone with hsame | hmixed
-  · exact hsame_case hone hD₁ hD₂ hsame
-  · let D' := D.recut hone hD₁ hD₂
-    have hrecut := D.isRecut_recut hone hD₁ hD₂
-    have hone' := D.hasOneCommonSide_recut hone hD₁ hD₂
-    have hsame' : D'.HasSameSideOverlap :=
-      (D.hasSameSideOverlap_recut_iff hone hD₁ hD₂).mpr hmixed
-    have h := hsame_case hone' hrecut.isEmpty_first hrecut.isEmpty_second hsame'
+  · exact rootClifford_recut_eq_neg_of_hasSameSideOverlap D hone hD₁ hD₂ hsame
+  · have hrecut := D.isRecut_recut hone hD₁ hD₂
+    have h := rootClifford_recut_eq_neg_of_hasSameSideOverlap (D.recut hone hD₁ hD₂)
+      (D.hasOneCommonSide_recut hone hD₁ hD₂) hrecut.isEmpty_first hrecut.isEmpty_second
+      ((D.hasSameSideOverlap_recut_iff hone hD₁ hD₂).mpr hmixed)
     rw [D.recut_recut hone hD₁ hD₂] at h
     rw [h, neg_neg]
 
 /-! ### Extracting unique signs from the `{±1}` kernel of `Pin(Q) → O(Q)` -/
 
-private theorem zsmul_pin_injective {n : ℕ} [NeZero n]
-    (g : pinGroup (gridForm n)) {a b : ℤˣ}
+private theorem zsmul_pin_injective {n : ℕ} [NeZero n] (g : pinGroup (gridForm n)) {a b : ℤˣ}
     (h : (a : ℤ) • (g : CliffordAlgebra (gridForm n)) =
       (b : ℤ) • (g : CliffordAlgebra (gridForm n))) : a = b := by
   let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   have : Nonempty (Fin n) := ⟨⟨0, NeZero.pos n⟩⟩
   have h1 : (a : ℤ) • (1 : CliffordAlgebra (gridForm n)) =
       (b : ℤ) • (1 : CliffordAlgebra (gridForm n)) := by
-    have hm := congrArg (· * star (g : CliffordAlgebra (gridForm n))) h
-    simpa only [smul_mul_assoc, pinGroup.mul_star_self_of_mem g.2] using hm
+    simpa only [smul_mul_assoc, pinGroup.mul_star_self_of_mem g.2] using
+      congrArg (· * star (g : CliffordAlgebra (gridForm n))) h
   have hneg : (-1 : CliffordAlgebra (gridForm n)) ≠ 1 := fun heq =>
     CliffordAlgebra.spinGroup.negOne_ne_one (gridForm n) (gridForm_nondegenerate n).ne_zero
       (Subtype.ext (by simpa using heq))
-  rcases Int.units_eq_one_or a with rfl | rfl <;> rcases Int.units_eq_one_or b with rfl | rfl
-  · rfl
-  · exfalso
-    simp only [Units.val_one, one_zsmul, Units.val_neg, neg_smul] at h1
-    exact hneg h1.symm
-  · exfalso
-    simp only [Units.val_one, one_zsmul, Units.val_neg, neg_smul] at h1
-    exact hneg h1
-  · rfl
+  rcases Int.units_eq_one_or a with rfl | rfl <;> rcases Int.units_eq_one_or b with rfl | rfl <;>
+    simp_all [hneg.symm]
 
 private theorem existsUnique_sign_of_pinToOrthogonal_eq {n : ℕ} [NeZero n]
     (g₁ g₂ : pinGroup (gridForm n))
@@ -355,47 +286,27 @@ private theorem existsUnique_sign_of_pinToOrthogonal_eq {n : ℕ} [NeZero n]
   let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   have : Nonempty (Fin n) := ⟨⟨0, NeZero.pos n⟩⟩
   let k : MonoidHom.ker (CliffordAlgebra.pinToOrthogonal (gridForm n)) :=
-    ⟨g₁ * g₂⁻¹, by
-      rw [MonoidHom.mem_ker, map_mul, map_inv, h, mul_inv_cancel]⟩
+    ⟨g₁ * g₂⁻¹, by rw [MonoidHom.mem_ker, map_mul, map_inv, h, mul_inv_cancel]⟩
   let e := CliffordAlgebra.zmodTwoMulEquivKerPinToOrthogonal (gridForm n)
     (gridForm_nondegenerate n)
   have hk_eq : e (e.symm k) = k := e.apply_symm_apply k
-  have hval : (g₁ * g₂⁻¹ : pinGroup (gridForm n)) = 1 ∨
-      ((g₁ * g₂⁻¹ : pinGroup (gridForm n)) : CliffordAlgebra (gridForm n)) = -1 := by
-    obtain ⟨z, hz⟩ : ∃ z : ZMod 2, e.symm k = Multiplicative.ofAdd z :=
-      ⟨Multiplicative.toAdd (e.symm k), rfl⟩
-    have hz_cases : z = 0 ∨ z = 1 := by
-      fin_cases z
-      · exact Or.inl rfl
-      · exact Or.inr rfl
-    rcases hz_cases with rfl | rfl
-    · left
-      rw [hz, ofAdd_zero, map_one] at hk_eq
-      exact congrArg Subtype.val hk_eq.symm
-    · right
-      rw [hz, CliffordAlgebra.zmodTwoMulEquivKerPinToOrthogonal_apply_ofAdd_one] at hk_eq
-      have hv := congrArg (fun x : MonoidHom.ker (CliffordAlgebra.pinToOrthogonal (gridForm n)) =>
-        ((x : pinGroup (gridForm n)) : CliffordAlgebra (gridForm n))) hk_eq.symm
+  suffices ∃ s : ℤˣ, (g₁ : CliffordAlgebra (gridForm n)) =
+      (s : ℤ) • (g₂ : CliffordAlgebra (gridForm n)) by
+    obtain ⟨s, hs⟩ := this
+    exact ⟨s, hs, fun s' hs' => zsmul_pin_injective g₂ (hs'.symm.trans hs)⟩
+  obtain ⟨z, hz⟩ : ∃ z : ZMod 2, e.symm k = Multiplicative.ofAdd z :=
+    ⟨Multiplicative.toAdd (e.symm k), rfl⟩
+  rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) z with rfl | rfl
+  · rw [hz, ofAdd_zero, map_one] at hk_eq
+    exact ⟨1, by simp [eq_of_mul_inv_eq_one (congrArg Subtype.val hk_eq.symm)]⟩
+  · rw [hz, CliffordAlgebra.zmodTwoMulEquivKerPinToOrthogonal_apply_ofAdd_one] at hk_eq
+    have hneg1 : ((g₁ * g₂⁻¹ : pinGroup (gridForm n)) : CliffordAlgebra (gridForm n)) = -1 := by
       simpa only [CliffordAlgebra.coe_spinToPin_apply, CliffordAlgebra.spinGroup.coe_negOne] using
-        hv
-  have hex : ∃ s : ℤˣ, (g₁ : CliffordAlgebra (gridForm n)) =
-      (s : ℤ) • (g₂ : CliffordAlgebra (gridForm n)) := by
-    rcases hval with h1 | hneg1
-    · refine ⟨1, ?_⟩
-      have hg : g₁ = g₂ := eq_of_mul_inv_eq_one h1
-      simp [hg]
-    · refine ⟨-1, ?_⟩
-      have hmul : ((g₁ * g₂⁻¹ : pinGroup (gridForm n)) : CliffordAlgebra (gridForm n)) *
-          (g₂ : CliffordAlgebra (gridForm n)) = -(g₂ : CliffordAlgebra (gridForm n)) := by
-        rw [hneg1, neg_one_mul]
-      have hcancel : ((g₁ * g₂⁻¹ : pinGroup (gridForm n)) : CliffordAlgebra (gridForm n)) *
-          (g₂ : CliffordAlgebra (gridForm n)) = (g₁ : CliffordAlgebra (gridForm n)) :=
-        (Submonoid.coe_mul (pinGroup (gridForm n)) (g₁ * g₂⁻¹) g₂).symm.trans
-          (congrArg Subtype.val (inv_mul_cancel_right g₁ g₂))
-      rw [hcancel] at hmul
-      simpa using hmul
-  obtain ⟨s, hs⟩ := hex
-  exact ⟨s, hs, fun s' hs' => zsmul_pin_injective g₂ (hs'.symm.trans hs)⟩
+        congrArg (fun x : MonoidHom.ker (CliffordAlgebra.pinToOrthogonal (gridForm n)) =>
+          ((x : pinGroup (gridForm n)) : CliffordAlgebra (gridForm n))) hk_eq.symm
+    have hcancel := (Submonoid.coe_mul (pinGroup (gridForm n)) (g₁ * g₂⁻¹) g₂).symm.trans
+      (congrArg Subtype.val (inv_mul_cancel_right g₁ g₂))
+    exact ⟨-1, by simpa [hneg1] using hcancel.symm⟩
 
 /-! ### Construction of a `GridSignAssignment n` -/
 
@@ -403,22 +314,17 @@ private theorem existsUnique_sign_of_pinToOrthogonal_eq {n : ℕ} [NeZero n]
 `GridState n` along `Pin(gridForm n) → O(gridForm n)`. -/
 private theorem nonempty_of_neZero (n : ℕ) [NeZero n] : Nonempty (GridSignAssignment n) := by
   let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
-  choose σ hσ using fun x : GridState n =>
-    exists_pinToOrthogonal_eq_permToOrthogonal x.toPerm
+  choose σ hσ using fun x : GridState n => exists_pinToOrthogonal_eq_permToOrthogonal x.toPerm
   have hrect : ∀ {x y : GridState n} (r : GridRectangleBetween x y),
       ∃! s : ℤˣ, (σ x : CliffordAlgebra (gridForm n)) * rootClifford r.left r.right =
-        (s : ℤ) • (σ y : CliffordAlgebra (gridForm n)) := by
-    intro x y r
+        (s : ℤ) • (σ y : CliffordAlgebra (gridForm n)) := fun {x y} r => by
     have hproj : CliffordAlgebra.pinToOrthogonal (gridForm n)
           (σ x * pinSwap r.left r.right r.left_ne_right) =
         CliffordAlgebra.pinToOrthogonal (gridForm n) (σ y) := by
-      rw [map_mul, hσ x, pinToOrthogonal_pinSwap, ← map_mul, hσ y]
-      have hperm := congrArg GridState.toPerm r.target_eq_swapColumns
-      rw [GridState.swapColumns_toPerm] at hperm
-      rw [hperm]
+      rw [map_mul, hσ x, pinToOrthogonal_pinSwap, ← map_mul, hσ y,
+        ← GridState.swapColumns_toPerm, ← congrArg GridState.toPerm r.target_eq_swapColumns]
     simpa only [Submonoid.coe_mul, pinSwap] using
-      existsUnique_sign_of_pinToOrthogonal_eq (σ x * pinSwap r.left r.right r.left_ne_right)
-        (σ y) hproj
+      existsUnique_sign_of_pinToOrthogonal_eq _ _ hproj
   let signFn : ∀ {x y : GridState n} (r : GridRectangleBetween x y), r.IsEmpty → ℤˣ :=
     fun r _ => (hrect r).choose
   have hsign_spec : ∀ {x y : GridState n} (r : GridRectangleBetween x y) (hr : r.IsEmpty),
@@ -430,71 +336,43 @@ private theorem nonempty_of_neZero (n : ℕ) [NeZero n] : Nonempty (GridSignAssi
       (σ x : CliffordAlgebra (gridForm n)) *
           (rootClifford r₁.left r₁.right * rootClifford r₂.left r₂.right) =
         ((signFn r₁ hr₁ * signFn r₂ hr₂ : ℤˣ) : ℤ) •
-          (σ z : CliffordAlgebra (gridForm n)) := by
-    intro x y z r₁ r₂ hr₁ hr₂
-    rw [← mul_assoc, hsign_spec r₁ hr₁, smul_mul_assoc, hsign_spec r₂ hr₂, smul_smul,
-      Units.val_mul]
+          (σ z : CliffordAlgebra (gridForm n)) := fun r₁ r₂ hr₁ hr₂ => by
+    rw [← mul_assoc, hsign_spec r₁ hr₁, smul_mul_assoc, hsign_spec r₂ hr₂, smul_smul, Units.val_mul]
   refine ⟨{
     sign := signFn
     sign_mul_sign_eq_neg := fun {x z} D E hD₁ hD₂ hE₁ hE₂ hne hdom => by
-      have hzx : z ≠ x := D.target_ne_source_of_val_add_val_eq_of_ne hne hdom
       have hcliff :
-          rootClifford E.first.left E.first.right *
-              rootClifford E.second.left E.second.right =
+          rootClifford E.first.left E.first.right * rootClifford E.second.left E.second.right =
             -(rootClifford D.first.left D.first.right *
               rootClifford D.second.left D.second.right) := by
-        rcases D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx with hdisj | hone
-        · have hE : E = D.commute hdisj :=
-            D.eq_commute_of_val_add_val_eq_of_ne hdisj hE₁ hE₂ hne hdom
-          subst hE
+        rcases D.hasDisjointSides_or_hasOneCommonSide_of_ne
+            (D.target_ne_source_of_val_add_val_eq_of_ne hne hdom) with hdisj | hone
+        · obtain rfl := D.eq_commute_of_val_add_val_eq_of_ne hdisj hE₁ hE₂ hne hdom
+          obtain ⟨hll, hlr, hrl, hrr⟩ := D.hasDisjointSides_iff.mp hdisj
           rw [D.commute_first_left hdisj, D.commute_first_right hdisj,
             D.commute_second_left hdisj, D.commute_second_right hdisj]
-          obtain ⟨hll, hlr, hrl, hrr⟩ := D.hasDisjointSides_iff.mp hdisj
           exact rootClifford_mul_comm_neg hll.symm hrl.symm hlr.symm hrr.symm
-        · have hE : E = D.recut hone hD₁ hD₂ :=
-            D.eq_recut_of_val_add_val_eq_of_ne hone hD₁ hD₂ hE₁ hne hdom
-          subst hE
+        · obtain rfl := D.eq_recut_of_val_add_val_eq_of_ne hone hD₁ hD₂ hE₁ hne hdom
           exact rootClifford_recut_eq_neg D hone hD₁ hD₂
       apply zsmul_pin_injective (σ z)
-      calc ((signFn E.first hE₁ * signFn E.second hE₂ : ℤˣ) : ℤ) •
-              (σ z : CliffordAlgebra (gridForm n))
-          = (σ x : CliffordAlgebra (gridForm n)) *
-              (rootClifford E.first.left E.first.right *
-                rootClifford E.second.left E.second.right) :=
-            (htwo_step E.first E.second hE₁ hE₂).symm
-        _ = -((σ x : CliffordAlgebra (gridForm n)) *
-              (rootClifford D.first.left D.first.right *
-                rootClifford D.second.left D.second.right)) := by
-            rw [hcliff, mul_neg]
-        _ = ((-(signFn D.first hD₁ * signFn D.second hD₂) : ℤˣ) : ℤ) •
-              (σ z : CliffordAlgebra (gridForm n)) := by
-            rw [htwo_step D.first D.second hD₁ hD₂, Units.val_neg, neg_smul]
-    sign_mul_sign_eq_neg_one_of_left_eq_left := fun {x y} r s hr hs hleft => by
+      rw [← htwo_step E.first E.second hE₁ hE₂, hcliff, mul_neg,
+        htwo_step D.first D.second hD₁ hD₂, Units.val_neg, neg_smul]
+    sign_mul_sign_eq_neg_one_of_left_eq_left := fun {x _} r s hr hs hleft => by
       have hright : s.right = r.right := by
         rcases r.left_right_eq_cases s with ⟨_, hr'⟩ | ⟨hl', _⟩
         · exact hr'
         · exact absurd (hleft.symm.trans hl') r.left_ne_right
       apply zsmul_pin_injective (σ x)
-      calc ((signFn r hr * signFn s hs : ℤˣ) : ℤ) • (σ x : CliffordAlgebra (gridForm n))
-          = (σ x : CliffordAlgebra (gridForm n)) *
-              (rootClifford r.left r.right * rootClifford s.left s.right) :=
-            (htwo_step r s hr hs).symm
-        _ = ((-1 : ℤˣ) : ℤ) • (σ x : CliffordAlgebra (gridForm n)) := by
-            rw [hleft, hright, rootClifford_mul_self r.left_ne_right, mul_neg, mul_one,
-              Units.val_neg, Units.val_one, neg_smul, one_zsmul]
-    sign_mul_sign_eq_one_of_left_eq_right := fun {x y} r s hr hs hright => by
+      rw [← htwo_step r s hr hs, hleft, hright, rootClifford_mul_self r.left_ne_right]
+      simp
+    sign_mul_sign_eq_one_of_left_eq_right := fun {x _} r s hr hs hright => by
       have hleft : s.right = r.left := by
         rcases r.left_right_eq_cases s with ⟨hl', _⟩ | ⟨_, hr'⟩
         · exact absurd (hright.symm.trans hl') r.left_ne_right.symm
         · exact hr'
       apply zsmul_pin_injective (σ x)
-      calc ((signFn r hr * signFn s hs : ℤˣ) : ℤ) • (σ x : CliffordAlgebra (gridForm n))
-          = (σ x : CliffordAlgebra (gridForm n)) *
-              (rootClifford r.left r.right * rootClifford s.left s.right) :=
-            (htwo_step r s hr hs).symm
-        _ = ((1 : ℤˣ) : ℤ) • (σ x : CliffordAlgebra (gridForm n)) := by
-            rw [hright, hleft, rootClifford_mul_swap r.left_ne_right, mul_one,
-              Units.val_one, one_zsmul]
+      rw [← htwo_step r s hr hs, hright, hleft, rootClifford_mul_swap r.left_ne_right]
+      simp
   }⟩
 
 /-- **Existence of grid sign assignments** (Manolescu--Ozsváth--Szabó--Thurston; Gallais).
