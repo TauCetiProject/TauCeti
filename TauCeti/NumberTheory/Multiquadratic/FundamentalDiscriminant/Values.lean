@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
-import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
 # Values of fundamental-discriminant characters
@@ -18,11 +17,9 @@ The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker char
 zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
 character.
 
-For an integer `d`, its fundamental discriminant `fundamentalDiscriminant d` differs from `d` by
-the square of `1` or `2`, so at every odd prime `p` the Legendre symbols `legendreSym p
-(fundamentalDiscriminant d)` and `legendreSym p d` coincide, and the two integers have the same
-square status modulo `p`. Consequently, for squarefree `d`, the character of
-`fundamentalDiscriminant d` evaluates at an odd prime `p` to `legendreSym p d`.
+For a squarefree integer `d`, `fundamentalDiscriminant d` and `d` have the same Legendre symbol at
+every odd prime `p` (`legendreSym_fundamentalDiscriminant`), so the character of
+`fundamentalDiscriminant d` evaluates at `p` to `legendreSym p d`.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -41,25 +38,6 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
-
-/-- At an odd prime `p`, the Legendre symbol of `fundamentalDiscriminant d` equals that of `d`,
-since the two differ by the square of `1` or `2`, which is prime to `p`. -/
-@[simp]
-theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
-    legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
-  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
-  rw [← hcd, mul_comm]
-  refine legendreSym_mul_sq fun hdvd ↦ ?_
-  have hp2 : 2 < p := lt_of_le_of_ne (Fact.out : p.Prime).two_le hp.symm
-  have hle : (p : ℤ) ≤ c := Int.le_of_dvd (by rcases hc with rfl | rfl <;> norm_num) hdvd
-  rcases hc with rfl | rfl <;> omega
-
-/-- At an odd prime `p`, `fundamentalDiscriminant d` is a square modulo `p` if and only if `d` is
-a square modulo `p`. -/
-theorem isSquare_fundamentalDiscriminant_iff (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
-    IsSquare ((fundamentalDiscriminant d : ℤ) : ZMod p) ↔ IsSquare (d : ZMod p) := by
-  rw [← not_iff_not, ← legendreSym.eq_neg_one_iff, ← legendreSym.eq_neg_one_iff,
-    legendreSym_fundamentalDiscriminant d hp]
 
 /-- At an odd prime `p`, the character of `fundamentalDiscriminant d` (for squarefree `d`) takes
 the value `legendreSym p d`, including `0` when `p ∣ d`. -/

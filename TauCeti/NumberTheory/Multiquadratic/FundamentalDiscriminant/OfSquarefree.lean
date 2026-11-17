@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
+import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
 # The fundamental discriminant of a squarefree radicand
@@ -46,6 +48,9 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
   `p ∣ fundamentalDiscriminant d ↔ p ∣ d` (the ramified odd primes are the divisors of `d`).
 * `TauCeti.Multiquadratic.two_not_dvd_fundamentalDiscriminant_iff_mod_four_eq_one`:
   `2 ∤ fundamentalDiscriminant d ↔ d ≡ 1 (mod 4)` (`2` is unramified exactly then).
+* `TauCeti.Multiquadratic.legendreSym_fundamentalDiscriminant`,
+  `TauCeti.Multiquadratic.isSquare_fundamentalDiscriminant_iff`: at every odd prime `p`,
+  `fundamentalDiscriminant d` and `d` have the same Legendre symbol and square status modulo `p`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_ne_zero`: it is nonzero for nonzero `d`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_primeDiscriminantRadicand`: a prime discriminant
   is the fundamental discriminant of its own radicand.
@@ -182,6 +187,25 @@ left-hand side is not a simp normal form (it is applied explicitly instead). -/
 theorem two_not_dvd_fundamentalDiscriminant_iff_mod_four_eq_one (d : ℤ) :
     ¬ (2 : ℤ) ∣ fundamentalDiscriminant d ↔ d % 4 = 1 := by
   rw [fundamentalDiscriminant_def]; split_ifs with h <;> omega
+
+/-- At an odd prime `p`, the Legendre symbol of `fundamentalDiscriminant d` equals that of `d`,
+since the two differ by the square of `1` or `2`, which is prime to `p`. -/
+@[simp]
+theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  rw [← hcd, mul_comm]
+  refine legendreSym_mul_sq fun hdvd ↦ ?_
+  have hp2 : 2 < p := lt_of_le_of_ne (Fact.out : p.Prime).two_le hp.symm
+  have hle : (p : ℤ) ≤ c := Int.le_of_dvd (by rcases hc with rfl | rfl <;> norm_num) hdvd
+  rcases hc with rfl | rfl <;> omega
+
+/-- At an odd prime `p`, `fundamentalDiscriminant d` is a square modulo `p` if and only if `d` is
+a square modulo `p`. -/
+theorem isSquare_fundamentalDiscriminant_iff (d : ℤ) {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    IsSquare ((fundamentalDiscriminant d : ℤ) : ZMod p) ↔ IsSquare (d : ZMod p) := by
+  rw [← not_iff_not, ← legendreSym.eq_neg_one_iff, ← legendreSym.eq_neg_one_iff,
+    legendreSym_fundamentalDiscriminant d hp]
 
 /-- **A prime discriminant is the fundamental discriminant of its own radicand.** For an odd prime
 discriminant this is the congruence `p* ≡ 1 (mod 4)`; for `-4`, `8`, `-8` it is the factor `4`
