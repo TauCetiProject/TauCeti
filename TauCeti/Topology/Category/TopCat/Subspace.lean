@@ -45,6 +45,13 @@ lemma ofHom_inclusion_comp_ofHom_inclusion {r s t : Set α} (hrs : r ⊆ s) (hst
       ofHom (ContinuousMap.inclusion (hrs.trans hst)) := by
   rw [← ofHom_comp, ContinuousMap.inclusion_comp_inclusion]
 
+/-- Composing the inclusion `r ⊆ s` with the coercion `s → α` gives the coercion `r → α`. -/
+@[reassoc (attr := simp)]
+lemma ofHom_inclusion_comp_ofHom_subtypeVal {r s : Set α} (hrs : r ⊆ s) :
+    ofHom (ContinuousMap.inclusion hrs) ≫ ofHom (ContinuousMap.subtypeVal s) =
+      ofHom (ContinuousMap.subtypeVal r) := by
+  rw [← ofHom_comp, ContinuousMap.subtypeVal_comp_inclusion]
+
 section Restrict
 
 variable {X Y : TopCat.{u}} (f : X ⟶ Y)
