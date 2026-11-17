@@ -45,15 +45,15 @@ holomorphic on `R` by zero).
 * `TauCeti.WeakParameterSymbol`: the class, with its complex vector space structure.
 * `TauCeti.WeakParameterSymbol.slice`, `TauCeti.WeakParameterSymbol.exists_seminorm_slice_le`:
   the slices `∂_r^j b(·, ·, r)` and their seminorm bounds, uniform in `r`.
-* `TauCeti.WeakParameterSymbol.inclusion`: the order inclusions.
+* `TauCeti.WeakParameterSymbol.inclusion`: the order inclusions, as linear maps.
 * `TauCeti.WeakParameterSymbol.ofSymbol`: a symbol of order `m` independent of the parameter.
 * `TauCeti.WeakParameterSymbol.ofParameter`: for `d ≥ 0`, a function of the parameter alone,
   holomorphic with bounded derivatives on `R`, is a symbol of order `0`.
-* `TauCeti.WeakParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m`
-  has order `m' + m`. Its slices are given by Leibniz's rule in `r`
+* `TauCeti.WeakParameterSymbol.comp`: the pointwise composition `b ∘ a` of symbols `b` of order
+  `m'` and `a` of order `m` has order `m' + m`. Its slices are given by Leibniz's rule in `r`
   (`TauCeti.WeakParameterSymbol.slice_comp`, `TauCeti.WeakParameterSymbol.coefficient_slice_comp`),
   and each term
-  `∂_r^i b' ∘ ∂_r^(j - i) b` has order `m' + d i + m + d (j - i) = m' + m + d j`.
+  `∂_r^i b ∘ ∂_r^(j - i) a` has order `m' + d i + m + d (j - i) = m' + m + d j`.
 
 ## References
 
@@ -137,10 +137,6 @@ def slice (j : ℕ) (r : R) : Symbol n V W (m + d * j) where
 @[simp]
 theorem coefficient_slice (j : ℕ) (r : R) (p : CoordinateSpace n × CoordinateSpace n) :
     (a.slice j r).coefficient p = iteratedDeriv j (a.coefficient p) r := (rfl)
-
-theorem coefficient_slice_zero (r : R) (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.slice 0 r).coefficient p = a.coefficient p r := by
-  simp
 
 /-- **The defining estimates.** Every seminorm of the slices `∂_r^j b(·, ·, r)` is bounded
 uniformly in `r ∈ R`. -/
@@ -352,14 +348,18 @@ end Module
 
 section Inclusion
 
+variable [CompleteSpace W]
+
 /-- A weakly parameter-dependent symbol of frequency order `m` has every frequency order
 `m' ≥ m`. -/
-def inclusion (h : m ≤ m') (a : WeakParameterSymbol n R V W d m) :
-    WeakParameterSymbol n R V W d m' :=
-  ofSlices a.coefficient a.differentiableOn_coefficient a.coefficient_of_notMem
+def inclusion (h : m ≤ m') :
+    WeakParameterSymbol n R V W d m →ₗ[ℂ] WeakParameterSymbol n R V W d m' where
+  toFun a := ofSlices a.coefficient a.differentiableOn_coefficient a.coefficient_of_notMem
     (fun j r ↦ Symbol.inclusion (by linarith) (a.slice j r)) (fun _ _ _ ↦ by simp)
     (fun K α β j ↦ (a.exists_seminorm_slice_le K α β j).imp fun _ hC r ↦
       (Symbol.seminorm_inclusion_le _ K α β _).trans (hC r))
+  map_add' _ _ := (rfl)
+  map_smul' _ _ := (rfl)
 
 @[simp]
 theorem coefficient_inclusion (h : m ≤ m') (a : WeakParameterSymbol n R V W d m) :
@@ -368,8 +368,9 @@ theorem coefficient_inclusion (h : m ≤ m') (a : WeakParameterSymbol n R V W d 
 @[simp]
 theorem slice_inclusion (h : m ≤ m') (a : WeakParameterSymbol n R V W d m) (j : ℕ) (r : R) :
     (inclusion h a).slice j r =
-      Symbol.inclusion (by linarith : m + d * j ≤ m' + d * j) (a.slice j r) :=
-  slice_ofSlices ..
+      Symbol.inclusion (by linarith : m + d * j ≤ m' + d * j) (a.slice j r) := by
+  ext p
+  simp
 
 theorem inclusion_injective (h : m ≤ m') :
     Function.Injective (inclusion (n := n) (R := R) (V := V) (W := W) (d := d) h) :=
@@ -402,11 +403,6 @@ def ofSymbol (b : Symbol n V W m) : WeakParameterSymbol n R V W d m :=
 theorem coefficient_ofSymbol (b : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n)
     {r : ℂ} (hr : r ∈ R) : (ofSymbol (R := R) (d := d) b).coefficient p r = b.coefficient p :=
   coefficient_ofSlicesOn _ _ _ _ _ p hr
-
-theorem coefficient_slice_ofSymbol_zero (b : Symbol n V W m) (r : R)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    ((ofSymbol (R := R) (d := d) b).slice 0 r).coefficient p = b.coefficient p := by
-  simp [ofSymbol, ofSymbolSlice]
 
 @[simp]
 theorem slice_ofSymbol_zero (b : Symbol n V W m) (r : R) :
@@ -455,16 +451,17 @@ section Comp
 
 variable [CompleteSpace W] [CompleteSpace U]
 
-/-- The order of the term `∂_r^i b' ∘ ∂_r^(j - i) b` of Leibniz's rule is `m' + m + d j`. -/
+/-- The order of the term `∂_r^i b ∘ ∂_r^(j - i) a` of Leibniz's rule is `m' + m + d j`. -/
 theorem comp_order_le {j : ℕ} (i : Fin (j + 1)) :
     m' + d * i + (m + d * ↑(j - i : ℕ)) ≤ m' + m + d * j := by
   have hi : (i : ℕ) ≤ j := Nat.lt_succ_iff.1 i.2
   exact le_of_eq (by rw [Nat.cast_sub hi]; ring)
 
-/-- **Composition.** The pointwise composition `(x, ξ, r) ↦ b'(x, ξ, r) ∘ b(x, ξ, r)` of weakly
-parameter-dependent symbols of frequency orders `m'` and `m` has frequency order `m' + m`. By
-Leibniz's rule in `r` (`TauCeti.WeakParameterSymbol.coefficient_slice_comp`) its `j`-th slice is a
-sum of the compositions `∂_r^i b' ∘ ∂_r^(j - i) b` of slices, each of order
+/-- **Composition.** The pointwise composition `(x, ξ, r) ↦ b(x, ξ, r) ∘ a(x, ξ, r)` of weakly
+parameter-dependent symbols `b` of frequency order `m'` and `a` of frequency order `m` has
+frequency order `m' + m`. By Leibniz's rule in `r`
+(`TauCeti.WeakParameterSymbol.coefficient_slice_comp`) its `j`-th slice is a sum of the
+compositions `∂_r^i b ∘ ∂_r^(j - i) a` of slices, each of order
 `m' + d i + m + d (j - i) = m' + m + d j`. -/
 def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
     WeakParameterSymbol n R V U d (m' + m) :=
@@ -498,8 +495,8 @@ theorem coefficient_comp (b : WeakParameterSymbol n R W U d m')
     (a : WeakParameterSymbol n R V W d m) (p : CoordinateSpace n × CoordinateSpace n) (r : ℂ) :
     (b.comp a).coefficient p r = (b.coefficient p r).comp (a.coefficient p r) := (rfl)
 
-/-- **Leibniz's rule for the slices of a composition.** The `j`-th slice of `b' ∘ b` is
-`∑ᵢ (j choose i) ∂_r^i b' ∘ ∂_r^(j - i) b`. -/
+/-- **Leibniz's rule for the slices of a composition.** The `j`-th slice of `b ∘ a` is
+`∑ᵢ (j choose i) ∂_r^i b ∘ ∂_r^(j - i) a`. -/
 theorem coefficient_slice_comp (b : WeakParameterSymbol n R W U d m')
     (a : WeakParameterSymbol n R V W d m) (j : ℕ) (r : R)
     (p : CoordinateSpace n × CoordinateSpace n) :
@@ -508,8 +505,8 @@ theorem coefficient_slice_comp (b : WeakParameterSymbol n R W U d m')
   simp only [coefficient_slice]
   exact iteratedDeriv_clm_comp (b.contDiffAt_coefficient p r) (a.contDiffAt_coefficient p r)
 
-/-- **Leibniz's rule for the slices of a composition**, as symbols: the `j`-th slice of `b' ∘ b`
-is the sum of the compositions `(j choose i) ∂_r^i b' ∘ ∂_r^(j - i) b` of slices, each of order
+/-- **Leibniz's rule for the slices of a composition**, as symbols: the `j`-th slice of `b ∘ a`
+is the sum of the compositions `(j choose i) ∂_r^i b ∘ ∂_r^(j - i) a` of slices, each of order
 `m' + m + d j`. -/
 @[simp]
 theorem slice_comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m)
