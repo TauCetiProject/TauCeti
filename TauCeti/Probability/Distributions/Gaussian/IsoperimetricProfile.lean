@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Quantile
-public import TauCeti.Probability.Distributions.Gaussian.Smooth
 public import Mathlib.Analysis.Convex.Continuous
 public import Mathlib.Analysis.Convex.Deriv
 
@@ -24,17 +23,8 @@ smoothness on `(0, 1)` with `I' = -Φ⁻¹` and `I'' = -1 / I`, and strict conca
 of the Gaussian isoperimetric inequality. The endpoints are set apart because the quantile takes
 the junk value `0` at the levels `0` and `1`, where `φ` would give `φ(0)` instead of `0`.
 
-For a Gaussian law `gaussianReal m v` the file also records that the quantile is smooth on
-`(0, 1)` with derivative `1 / φ_{m,v}(Φ_{m,v}⁻¹)`, and, for nonzero variance, that it is a
-two-sided inverse of the distribution function there.
-
 ## Main declarations
 
-* `TauCeti.Probability.cdf_quantile_gaussianReal`,
-  `TauCeti.Probability.quantile_cdf_gaussianReal` — the two inverse laws;
-* `TauCeti.Probability.hasDerivAt_quantile_gaussianReal`,
-  `TauCeti.Probability.contDiffOn_quantile_gaussianReal` — the derivative and smoothness of the
-  quantile on `(0, 1)`;
 * `TauCeti.Probability.gaussianIsoperimetricProfile` — the function `I`;
 * `TauCeti.Probability.gaussianIsoperimetricProfile_cdf` — `I(Φ(x)) = φ(x)`;
 * `TauCeti.Probability.gaussianIsoperimetricProfile_one_sub` — `I(1 - u) = I(u)`;
@@ -69,69 +59,6 @@ open scoped ContDiff NNReal
 namespace TauCeti.Probability
 
 variable {u : ℝ}
-
-/-! ### The Gaussian quantile -/
-
-section Quantile
-
-variable (m : ℝ) {v : ℝ≥0}
-
-/-- For a Gaussian law with nonzero variance, the distribution function at the quantile of a
-level `0 < u < 1` is `u`. -/
-theorem cdf_quantile_gaussianReal (hv : v ≠ 0) (hu : u ∈ Ioo 0 1) :
-    cdf (gaussianReal m v) ((gaussianReal m v).quantile u) = u :=
-  have := nullSingletonClass_gaussianReal (μ := m) hv
-  Measure.cdf_quantile_of_noAtoms _ hu.1 hu.2
-
-/-- For a Gaussian law with nonzero variance, the quantile at the value of the distribution
-function at `x` is `x`. -/
-theorem quantile_cdf_gaussianReal (hv : v ≠ 0) (x : ℝ) :
-    (gaussianReal m v).quantile (cdf (gaussianReal m v) x) = x :=
-  Measure.quantile_cdf _ ((strictMono_cdf_gaussianReal m hv).strictMonoOn _)
-    ⟨cdf_gaussianReal_pos m hv x, cdf_gaussianReal_lt_one m hv x⟩
-
-/-- At zero variance the quantile is the constant `m` on `(0, 1)`. -/
-private theorem eqOn_quantile_gaussianReal_zero :
-    EqOn (gaussianReal m 0).quantile (fun _ => m) (Ioo 0 1) := fun w hw => by
-  rw [quantile_gaussianReal m 0 hw]
-  simp
-
-/-- The quantile of a Gaussian law has derivative `1 / φ_{m,v}(q(u))` at every level
-`0 < u < 1`, where `φ_{m,v}` is the density and `q` the quantile. At zero variance both sides
-vanish, the quantile being constant and the density zero. -/
-theorem hasDerivAt_quantile_gaussianReal (v : ℝ≥0) (hu : u ∈ Ioo 0 1) :
-    HasDerivAt (gaussianReal m v).quantile
-      (gaussianPDFReal m v ((gaussianReal m v).quantile u))⁻¹ u := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · rw [gaussianPDFReal_zero_var, Pi.zero_apply, inv_zero]
-    exact (hasDerivAt_const u m).congr_of_eventuallyEq <|
-      eventually_of_mem (Ioo_mem_nhds hu.1 hu.2) (eqOn_quantile_gaussianReal_zero m)
-  have hc : ContinuousAt (gaussianReal m v).quantile u :=
-    (Measure.continuousOn_quantile _ ((strictMono_cdf_gaussianReal m hv).strictMonoOn _))
-      |>.continuousAt (Ioo_mem_nhds hu.1 hu.2)
-  refine (hasDerivAt_cdf_gaussianReal m hv _).of_local_left_inverse hc
-    (gaussianPDFReal_pos _ _ _ hv).ne' ?_
-  filter_upwards [Ioo_mem_nhds hu.1 hu.2] with w hw using cdf_quantile_gaussianReal m hv hw
-
-/-- The quantile of a Gaussian law is smooth on `(0, 1)`. -/
-theorem contDiffOn_quantile_gaussianReal (v : ℝ≥0) {n : ℕ∞} :
-    ContDiffOn ℝ n (gaussianReal m v).quantile (Ioo 0 1) := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · exact contDiffOn_const.congr (eqOn_quantile_gaussianReal_zero m)
-  refine (contDiffOn_infty.2 fun k => ?_).of_le (mod_cast le_top)
-  induction k with
-  | zero =>
-    exact contDiffOn_zero.2
-      (Measure.continuousOn_quantile _ ((strictMono_cdf_gaussianReal m hv).strictMonoOn _))
-  | succ k ih =>
-    rw [Nat.cast_succ, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioo]
-    refine ⟨fun w hw => (hasDerivAt_quantile_gaussianReal m v hw).differentiableAt
-      |>.differentiableWithinAt, by simp, ?_⟩
-    refine ContDiffOn.congr ?_ fun w hw => (hasDerivAt_quantile_gaussianReal m v hw).deriv
-    exact ((contDiff_gaussianPDFReal m v).comp_contDiffOn ih).inv fun w _ =>
-      (gaussianPDFReal_pos _ _ _ hv).ne'
-
-end Quantile
 
 /-! ### The Gaussian isoperimetric function -/
 
@@ -182,6 +109,7 @@ private theorem exists_cdf_eq (hu : u ∈ Ioo 0 1) : ∃ x, cdf (gaussianReal 0 
   ⟨_, cdf_quantile_gaussianReal 0 one_ne_zero hu⟩
 
 /-- The Gaussian isoperimetric function is symmetric about `1 / 2`. -/
+@[simp]
 theorem gaussianIsoperimetricProfile_one_sub (u : ℝ) :
     gaussianIsoperimetricProfile (1 - u) = gaussianIsoperimetricProfile u := by
   by_cases hu : u ∈ Ioo 0 1
@@ -198,6 +126,7 @@ theorem gaussianIsoperimetricProfile_nonneg (u : ℝ) : 0 ≤ gaussianIsoperimet
   exacts [gaussianPDFReal_nonneg _ _ _, le_rfl]
 
 /-- The Gaussian isoperimetric function is positive exactly on `(0, 1)`. -/
+@[simp]
 theorem gaussianIsoperimetricProfile_pos_iff :
     0 < gaussianIsoperimetricProfile u ↔ u ∈ Ioo 0 1 := by
   by_cases hu : u ∈ Ioo 0 1
@@ -206,9 +135,10 @@ theorem gaussianIsoperimetricProfile_pos_iff :
   · simp [gaussianIsoperimetricProfile_of_notMem_Ioo hu, hu]
 
 /-- The value of the Gaussian isoperimetric function at `1 / 2` is `φ(0) = (2π)^{-1/2}`. -/
+@[simp]
 theorem gaussianIsoperimetricProfile_half :
-    gaussianIsoperimetricProfile (1 / 2) = gaussianPDFReal 0 1 0 := by
-  rw [← cdf_gaussianReal_self 0 one_ne_zero, gaussianIsoperimetricProfile_cdf]
+    gaussianIsoperimetricProfile 2⁻¹ = gaussianPDFReal 0 1 0 := by
+  rw [← one_div, ← cdf_gaussianReal_self 0 one_ne_zero, gaussianIsoperimetricProfile_cdf]
 
 /-- The Gaussian isoperimetric function is at most `φ(0) = (2π)^{-1/2}`. -/
 theorem gaussianIsoperimetricProfile_le (u : ℝ) :
@@ -269,16 +199,6 @@ theorem hasDerivAt_deriv_gaussianIsoperimetricProfile (hu : u ∈ Ioo 0 1) :
     (hasDerivAt_gaussianIsoperimetricProfile hw).deriv
 
 /-! ### Continuity and concavity -/
-
-/-- The standard Gaussian density tends to `0` at `-∞`. -/
-private theorem tendsto_gaussianPDFReal_zero_one_atBot :
-    Tendsto (gaussianPDFReal 0 1) atBot (𝓝 0) := by
-  have h := (tendsto_mul_gaussianPDFReal_zero_one_cocompact.mono_left atBot_le_cocompact).mul
-    tendsto_inv_atBot_zero
-  rw [mul_zero] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_lt_atBot 0] with x hx
-  rw [mul_comm x, mul_assoc, mul_inv_cancel₀ hx.ne, mul_one]
 
 /-- The Gaussian isoperimetric function tends to `0` at `0` from the right. -/
 private theorem tendsto_gaussianIsoperimetricProfile_nhdsGT_zero :
