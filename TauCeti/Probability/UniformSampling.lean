@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
+import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
@@ -37,9 +38,14 @@ estimate is the classical union bound over unordered coordinate pairs, using
 
 ## Main results
 
-* `uniformOn_not_injective_le` bounds the uniform-measure mass of collisions;
-* `uniformOn_injective_apply_eq` and `uniformOn_not_injective_apply_eq` compute the exact
-  uniform-measure masses;
+* `uniformOn_not_injective_le`, `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`, and
+  their `.real` companions bound the uniform-measure mass of collisions;
+* `uniformOn_injective_apply_eq`, `uniformOn_not_injective_apply_eq`, and their `.real` forms
+  compute the exact uniform-measure masses;
+* `uniformOn_injective_eq_zero_of_isEmpty`,
+  `uniformOn_injective_eq_uniformOn_univ_of_subsingleton`, and
+  `uniformOn_not_injective_eq_zero_of_subsingleton` (with its `.real` companion) treat the
+  infeasible and subsingleton-sample regimes;
 * `uniformOn_inter_le_add_compl` and `uniformOn_le_inter_add_compl` give the general conditioning
   comparison;
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
@@ -96,6 +102,14 @@ theorem uniformOn_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonCl
   simp [uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _), ← Fintype.card_subtype,
     Fintype.card_subtype_injective]
 
+/-- Real-valued form of `uniformOn_injective_apply_eq`. -/
+@[simp]
+theorem uniformOn_real_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonClass κ] :
+    (uniformOn (Set.univ : Set (ι → κ))).real {f | Function.Injective f} =
+      (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι := by
+  simp [measureReal_def]
+
 /-- The exact collision probability for a uniform random map on a nonempty finite function
 space. The descending factorial counts ordered samples without replacement, so this retains
 the overlap between pairwise collision events discarded by the union bound. -/
@@ -108,7 +122,78 @@ theorem uniformOn_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSinglet
   rw [← Set.compl_ofPred, prob_compl_eq_one_sub (Set.toFinite _).measurableSet,
     uniformOn_injective_apply_eq]
 
+/-- Real-valued form of `uniformOn_not_injective_apply_eq`. -/
+@[simp]
+theorem uniformOn_real_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSingletonClass κ]
+    [Nonempty (ι → κ)] :
+    (uniformOn (Set.univ : Set (ι → κ))).real {f | ¬ Function.Injective f} =
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι := by
+  rw [← Set.compl_ofPred, probReal_compl_eq_one_sub (Set.toFinite _).measurableSet,
+    uniformOn_real_injective_apply_eq]
+
+/-- Unconditional upper bound form of `uniformOn_not_injective_apply_eq`: when `ι → κ` is
+nonempty the two sides are equal, and when `ι → κ` is empty the uniform measure is zero while
+`1 - 0 / 0 = 1`. -/
+theorem uniformOn_not_injective_le_one_sub_descFactorial_div_pow [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] :
+    uniformOn (Set.univ : Set (ι → κ)) {f | ¬ Function.Injective f} ≤
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+  rcases isEmpty_or_nonempty (ι → κ) with h | h
+  · simp [Measure.eq_zero_of_isEmpty (uniformOn (Set.univ : Set (ι → κ)))]
+  · exact uniformOn_not_injective_apply_eq.le
+
+/-- Real-valued form of `uniformOn_not_injective_le_one_sub_descFactorial_div_pow`. -/
+theorem uniformOn_real_not_injective_le_one_sub_descFactorial_div_pow [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] :
+    (uniformOn (Set.univ : Set (ι → κ))).real {f | ¬ Function.Injective f} ≤
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι := by
+  rcases isEmpty_or_nonempty (ι → κ) with h | h
+  · rw [Measure.eq_zero_of_isEmpty (uniformOn (Set.univ : Set (ι → κ))), measureReal_zero_apply]
+    exact sub_nonneg.2 (div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow _ _)
+      (by positivity))
+  · exact uniformOn_real_not_injective_apply_eq.le
+
 end
+
+section Degenerate
+
+/-- When no embedding `ι ↪ κ` exists, there are no injective maps and the uniform measure on
+injective selections is zero. -/
+@[simp high]
+theorem uniformOn_injective_eq_zero_of_isEmpty [MeasurableSpace κ] [IsEmpty (ι ↪ κ)] :
+    uniformOn {f : ι → κ | Function.Injective f} = 0 := by
+  have h : {f : ι → κ | Function.Injective f} = ∅ :=
+    Set.eq_empty_of_forall_notMem fun f hf => isEmptyElim (⟨f, hf⟩ : ι ↪ κ)
+  simp [h]
+
+/-- On a subsingleton sample index, every map `ι → κ` is injective, so the uniform measure on
+injective selections coincides with the uniform measure on all selections. -/
+@[simp]
+theorem uniformOn_injective_eq_uniformOn_univ_of_subsingleton [Subsingleton ι] [MeasurableSpace κ] :
+    uniformOn {f : ι → κ | Function.Injective f} = uniformOn (Set.univ : Set (ι → κ)) := by
+  congr 1
+  exact Set.eq_univ_of_forall fun f => Function.injective_of_subsingleton f
+
+/-- On a subsingleton sample index, no selection has a coordinate collision. -/
+@[simp high]
+theorem uniformOn_not_injective_eq_zero_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
+    (s : Set (ι → κ)) :
+    uniformOn s {f : ι → κ | ¬ Function.Injective f} = 0 := by
+  have h : {f : ι → κ | ¬ Function.Injective f} = ∅ :=
+    Set.eq_empty_of_forall_notMem fun f hf => hf (Function.injective_of_subsingleton f)
+  simp [h]
+
+/-- Real-valued form of `uniformOn_not_injective_eq_zero_of_subsingleton`. -/
+@[simp high]
+theorem uniformOn_real_not_injective_eq_zero_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
+    (s : Set (ι → κ)) :
+    (uniformOn s).real {f : ι → κ | ¬ Function.Injective f} = 0 := by
+  simp [measureReal_def]
+
+end Degenerate
 
 section
 
@@ -204,6 +289,18 @@ theorem uniformOn_not_injective_le [MeasurableSpace κ] [MeasurableSingletonClas
         _ = (Fintype.card ι).choose 2 / Fintype.card κ := by
           rw [Finset.sum_const, nsmul_eq_mul, card_coordinatePairs]
           simp [div_eq_mul_inv]
+
+/-- Real-valued form of `uniformOn_not_injective_le`, valid without `[Nonempty κ]`. -/
+theorem uniformOn_real_not_injective_le [MeasurableSpace κ] [MeasurableSingletonClass κ] :
+    (uniformOn (Set.univ : Set (ι → κ))).real {x | ¬Function.Injective x} ≤
+      (Fintype.card ι).choose 2 / (Fintype.card κ : ℝ) := by
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · have : {x : ι → κ | ¬Function.Injective x} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun x hx => hx fun a => isEmptyElim (x a)
+    simp [this, measureReal_def]
+  · have hfin : ((Fintype.card ι).choose 2 : ℝ≥0∞) / Fintype.card κ ≠ ∞ :=
+      ENNReal.div_ne_top (ENNReal.natCast_ne_top _) (by simp [Fintype.card_ne_zero])
+    simpa [measureReal_def] using ENNReal.toReal_mono hfin uniformOn_not_injective_le
 
 end
 

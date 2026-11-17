@@ -33,7 +33,9 @@ respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
 * `samplePopulation_apply`, `samplePopulation_apply_population` — its evaluation by
   conditioning on the selection or on the population;
 * `samplePopulation_eq_bind`, `samplePopulation_eq_bind_population` — its form as a mixture,
-  over the selection law or over the population law, of the samples with that input fixed.
+  over the selection law or over the population law, of the samples with that input fixed;
+* `samplePopulation_le_add_lintegral` — integrating deterministic-population eventwise bounds
+  across a random population law.
 -/
 
 public section
@@ -41,6 +43,7 @@ public section
 noncomputable section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -132,6 +135,13 @@ theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ �
     Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
   rfl
 
+/-- Evaluating a sampled deterministic population on a measurable event is the selection mass
+of its preimage. -/
+theorem samplePopulation_dirac_apply {σ : Measure (ι → κ)} [SFinite σ] {x : κ → α}
+    {A : Set (ι → α)} (hA : MeasurableSet A) :
+    samplePopulation σ (Measure.dirac x) A = σ ((fun k : ι → κ => fun i => x (k i)) ⁻¹' A) := by
+  rw [samplePopulation_dirac, Measure.map_apply (measurable_readPopulation x) hA]
+
 /-- A measurable observation commutes with sampling along any selection law. The population law
 need only be s-finite; no finiteness or normalization is required of the selection law. -/
 theorem samplePopulation_map {β : Type*} [MeasurableSpace β] (σ : Measure (ι → κ))
@@ -215,6 +225,44 @@ theorem samplePopulation_eq_bind_population (σ : Measure (ι → κ)) [SFinite 
     measurable_swap, Measure.prod_eq_of_sfinite, Measure.map_bind
     Measurable.map_prodMk_left.aemeasurable hswap.aemeasurable]
   simp_rw [Measure.map_map hswap measurable_prodMk_left, Function.comp_def, Prod.swap_prod_mk]
+
+/-- Integrating a populationwise upper bound on a measurable event across an s-finite population
+law. No measurability hypothesis is required on the error function `g`. -/
+theorem samplePopulation_le_add_lintegral_of_measurableSet
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂] {ρ : Measure (κ → α)} [SFinite ρ]
+    {g : (κ → α) → ℝ≥0∞} {A : Set (ι → α)} (hA : MeasurableSet A)
+    (h : ∀ᵐ x ∂ρ, samplePopulation σ₁ (Measure.dirac x) A ≤
+      samplePopulation σ₂ (Measure.dirac x) A + g x) :
+    samplePopulation σ₁ ρ A ≤ samplePopulation σ₂ ρ A + ∫⁻ x, g x ∂ρ := by
+  rw [samplePopulation_apply_population hA, samplePopulation_apply_population hA]
+  have hf : Measurable (fun x : κ → α => σ₂ ((fun k i => x (k i)) ⁻¹' A)) :=
+    measurable_measure_prodMk_right (measurable_reindexPopulation hA)
+  calc
+    (∫⁻ x, σ₁ ((fun k i => x (k i)) ⁻¹' A) ∂ρ)
+        ≤ ∫⁻ x, σ₂ ((fun k i => x (k i)) ⁻¹' A) + g x ∂ρ := by
+          refine lintegral_mono_ae (h.mono fun x hx => ?_)
+          rwa [samplePopulation_dirac_apply hA, samplePopulation_dirac_apply hA] at hx
+    _ = (∫⁻ x, σ₂ ((fun k i => x (k i)) ⁻¹' A) ∂ρ) + ∫⁻ x, g x ∂ρ :=
+          lintegral_add_left hf g
+
+/-- Integrating populationwise upper bounds on measurable events across an s-finite population law
+yields an upper bound on every subset `A` (measurable or not). -/
+theorem samplePopulation_le_add_lintegral
+    {σ₁ σ₂ : Measure (ι → κ)} [SFinite σ₁] [SFinite σ₂] {ρ : Measure (κ → α)} [SFinite ρ]
+    {g : (κ → α) → ℝ≥0∞}
+    (h : ∀ B, MeasurableSet B → ∀ᵐ x ∂ρ,
+      samplePopulation σ₁ (Measure.dirac x) B ≤
+        samplePopulation σ₂ (Measure.dirac x) B + g x)
+    (A : Set (ι → α)) :
+    samplePopulation σ₁ ρ A ≤ samplePopulation σ₂ ρ A + ∫⁻ x, g x ∂ρ := by
+  calc
+    samplePopulation σ₁ ρ A
+        ≤ samplePopulation σ₁ ρ (toMeasurable (samplePopulation σ₂ ρ) A) :=
+          measure_mono (subset_toMeasurable _ _)
+    _ ≤ samplePopulation σ₂ ρ (toMeasurable (samplePopulation σ₂ ρ) A) + ∫⁻ x, g x ∂ρ :=
+          samplePopulation_le_add_lintegral_of_measurableSet
+            (measurableSet_toMeasurable _ _) (h _ (measurableSet_toMeasurable _ _))
+    _ = samplePopulation σ₂ ρ A + ∫⁻ x, g x ∂ρ := by rw [measure_toMeasurable]
 
 end SamplePopulation
 
