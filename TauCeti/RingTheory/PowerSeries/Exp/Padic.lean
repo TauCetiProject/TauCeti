@@ -172,24 +172,17 @@ Unlike restrictedness, the boundary is included. The case `x = 0` is included. -
 theorem hasGaussNorm_rescale_exp_iff {x : K} {c : ℝ} (hc : 0 ≤ c) :
     (rescale x (exp K)).HasGaussNorm norm c ↔
       ‖x‖ * c ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by
-  refine ⟨fun ⟨B, hB⟩ ↦ ?_, hasGaussNorm_rescale_exp hc⟩
-  by_contra hlt
+  refine ⟨fun hf ↦ le_of_not_gt fun hlt ↦ ?_, hasGaussNorm_rescale_exp hc⟩
   have hρ : 0 < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) :=
     Real.rpow_pos_of_pos (by exact_mod_cast hp.out.pos) _
-  have hr : 1 < ‖x‖ * c / (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := (one_lt_div hρ).mpr (not_le.mp hlt)
-  have heq (k : ℕ) : ‖coeff (p ^ k) (rescale x (exp K))‖ * c ^ (p ^ k) =
-      (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) * (‖x‖ * c / (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) ^ (p ^ k) := by
-    calc
-      _ = ‖coeff (p ^ k) (exp K)‖ * (‖x‖ * c) ^ (p ^ k) := by
-        simp [coeff_rescale, norm_mul, norm_pow, mul_pow, mul_comm, mul_assoc]
-      _ = ‖coeff (p ^ k) (exp K)‖ * ((p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) ^ (p ^ k) *
-          (‖x‖ * c / (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) ^ (p ^ k) := by
-        rw [div_pow, mul_assoc, mul_div_cancel₀ _ (pow_ne_zero _ hρ.ne')]
-      _ = _ := by rw [norm_coeff_exp_mul_pow_prime_pow]
-  have hlim := (((tendsto_pow_atTop_atTop_of_one_lt hr).comp
-    (tendsto_pow_atTop_atTop_of_one_lt hp.out.one_lt)).const_mul_atTop hρ)
-  obtain ⟨k, hk⟩ := (hlim.eventually_gt_atTop B).exists
-  exact (not_lt_of_ge ((heq k).symm.trans_le (hB ⟨p ^ k, rfl⟩))) hk
+  have hx : 0 < ‖x‖ := pos_of_mul_pos_left (hρ.trans hlt) hc
+  have hr : 0 ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) / ‖x‖ := (div_pos hρ hx).le
+  have hf' := hf.isRestricted_of_abs_lt (by
+    rw [abs_of_nonneg hr]
+    exact (div_lt_iff₀' hx).mpr hlt)
+  have hlt' := (isRestricted_rescale_exp_iff (p := p) hr).mp hf'
+  rw [mul_div_cancel₀ _ hx.ne'] at hlt'
+  exact (lt_irrefl _) hlt'
 
 /-- The Gauss norm of `exp(xX)` is exactly one as long as the coefficient majorant has ratio
 at most one. This bound also applies at the boundary, without asserting restrictedness there. -/
