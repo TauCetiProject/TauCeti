@@ -19,8 +19,8 @@ and `N`, `AlternatingMap.restrictScalars R f` reinterprets `f` as an `R`-alterna
 
 * `AlternatingMap.instIsScalarTower`: pointwise `IsScalarTower` instance on `M [⋀^ι]→ₗ[R] N`.
 * `AlternatingMap.restrictScalars`: scalar restriction `M [⋀^ι]→ₗ[A] N → M [⋀^ι]→ₗ[R] N`.
-* `AlternatingMap.restrictScalarsLM`: `AlternatingMap.restrictScalars` bundled as an `S`-linear
-  map for any scalar ring `S` whose action on `N` commutes with those of `R` and `A`.
+* `AlternatingMap.ofRestrictScalars`: upgrade an `R`-alternating map that is `A`-homogeneous in
+  each coordinate to an `A`-alternating map `M [⋀^ι]→ₗ[A] N`.
 -/
 
 public section
@@ -78,20 +78,55 @@ theorem restrictScalars_smul {S : Type*} [Monoid S] [DistribMulAction S N]
     [SMulCommClass A S N] [SMulCommClass R S N] (c : S) (f : M [⋀^ι]→ₗ[A] N) :
     (c • f).restrictScalars R = c • f.restrictScalars R := ext fun _ ↦ rfl
 
-/-- Scalar restriction bundled as an `S`-linear map. -/
-def restrictScalarsLM (S : Type*) [Semiring S] [Module S N]
-    [SMulCommClass A S N] [SMulCommClass R S N] :
-    (M [⋀^ι]→ₗ[A] N) →ₗ[S] M [⋀^ι]→ₗ[R] N where
-  toFun := restrictScalars R
-  map_add' := restrictScalars_add R
-  map_smul' := restrictScalars_smul R
+end Semiring
+
+section OfRestrictScalars
+
+variable (A : Type*) {R M N ι : Type*} [Semiring R] [Semiring A]
+  [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module A M]
+  [Module R N] [Module A N]
+
+/-- Upgrade an `R`-alternating map `g` to an `A`-alternating map given `A`-homogeneity in each
+coordinate. -/
+def ofRestrictScalars [hdec₀ : DecidableEq ι] (g : M [⋀^ι]→ₗ[R] N)
+    (h : ∀ (v : ι → M) (i : ι) (a : A) (x : M),
+      g (Function.update v i (a • x)) = a • g (Function.update v i x)) :
+    M [⋀^ι]→ₗ[A] N where
+  toFun := g
+  map_update_add' := g.map_update_add'
+  map_update_smul' := fun [hdec : DecidableEq ι] m i a x ↦ by
+    obtain rfl := Subsingleton.elim hdec hdec₀
+    exact h m i a x
+  map_eq_zero_of_eq' := g.map_eq_zero_of_eq'
 
 @[simp]
-theorem restrictScalarsLM_apply (S : Type*) [Semiring S] [Module S N]
-    [SMulCommClass A S N] [SMulCommClass R S N] (f : M [⋀^ι]→ₗ[A] N) :
-    restrictScalarsLM R S f = f.restrictScalars R := (rfl)
+theorem coe_ofRestrictScalars [DecidableEq ι] (g : M [⋀^ι]→ₗ[R] N)
+    (h : ∀ (v : ι → M) (i : ι) (a : A) (x : M),
+      g (Function.update v i (a • x)) = a • g (Function.update v i x)) :
+    ⇑(g.ofRestrictScalars A h) = g := (rfl)
 
-end Semiring
+@[simp]
+theorem ofRestrictScalars_apply [DecidableEq ι] (g : M [⋀^ι]→ₗ[R] N)
+    (h : ∀ (v : ι → M) (i : ι) (a : A) (x : M),
+      g (Function.update v i (a • x)) = a • g (Function.update v i x)) (v : ι → M) :
+    g.ofRestrictScalars A h v = g v := (rfl)
+
+@[simp]
+theorem restrictScalars_ofRestrictScalars [SMul R A] [IsScalarTower R A M] [IsScalarTower R A N]
+    [DecidableEq ι] (g : M [⋀^ι]→ₗ[R] N)
+    (h : ∀ (v : ι → M) (i : ι) (a : A) (x : M),
+      g (Function.update v i (a • x)) = a • g (Function.update v i x)) :
+    (g.ofRestrictScalars A h).restrictScalars R = g := ext fun _ ↦ rfl
+
+@[simp]
+theorem ofRestrictScalars_restrictScalars [SMul R A] [IsScalarTower R A M] [IsScalarTower R A N]
+    [DecidableEq ι] (f : M [⋀^ι]→ₗ[A] N)
+    (h : ∀ (v : ι → M) (i : ι) (a : A) (x : M),
+      f.restrictScalars R (Function.update v i (a • x)) =
+        a • f.restrictScalars R (Function.update v i x)) :
+    (f.restrictScalars R).ofRestrictScalars A h = f := ext fun _ ↦ rfl
+
+end OfRestrictScalars
 
 section Group
 
