@@ -194,10 +194,8 @@ private theorem shuffleToInd_intertwining (hq : q = q⁻¹)
         (shuffleRep k ρ) π =
       Representation.ind (Equiv.Perm.finSumPermHom k l) (blockFactorRep k hq ρ) π ∘ₗ
         shuffleToInd k hq ρ := by
-  let φ := Equiv.Perm.finSumPermHom k l
-  let W₀ := blockFactorRep k hq ρ
   let σ_H := (groupRepresentationEquiv (permCoxeterSystem (k + l)) hq).symm
-    (Representation.ind φ W₀)
+    (Representation.ind (Equiv.Perm.finSumPermHom k l) (blockFactorRep k hq ρ))
   have hcomp : ∀ x : TypeAHeckeAlgebra R q (k + l),
       shuffleToInd k hq ρ ∘ₗ shuffleRep k ρ x = σ_H x ∘ₗ shuffleToInd k hq ρ := by
     refine shuffleLift_comp_shuffleRep ρ ?_ ?_
@@ -205,25 +203,26 @@ private theorem shuffleToInd_intertwining (hq : q = q⁻¹)
       refine LinearMap.ext fun u ↦ ?_
       let i₀ : Fin (k - 1) := ⟨i, by omega⟩
       have hi₀ : (permCoxeterSystem (k + l)).simple i =
-          φ (BraidGroup.transposition i₀, 1) := by
+          Equiv.Perm.finSumPermHom k l (BraidGroup.transposition i₀, 1) := by
         rw [permCoxeterSystem_simple, Equiv.Perm.finSumPermHom_apply,
           Equiv.Perm.finSumPerm_transposition_one]
-      change σ_H (T q i) (IndV.mk φ W₀ 1 (1 ⊗ₜ[R] u)) = (q : R) • IndV.mk φ W₀ 1 (1 ⊗ₜ[R] u)
+      rw [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+        TensorProduct.mk_apply]
       rw [groupRepresentationEquiv_symm_apply_T, hi₀, Representation.ind_apply_map_mk_one,
         ← map_smul]
       congr 1
-      simp [W₀, ← permCoxeterSystem_simple, smul_tmul']
+      simp [blockFactorRep, ← permCoxeterSystem_simple, smul_tmul']
     · intro j
       refine LinearMap.ext fun u ↦ ?_
       have hj : (permCoxeterSystem (k + l)).simple ⟨k + j, by omega⟩ =
-          φ (1, BraidGroup.transposition j) := by
+          Equiv.Perm.finSumPermHom k l (1, BraidGroup.transposition j) := by
         rw [permCoxeterSystem_simple, Equiv.Perm.finSumPermHom_apply,
           Equiv.Perm.finSumPerm_one_transposition]
-      change σ_H (T q ⟨k + j, by omega⟩) (IndV.mk φ W₀ 1 (1 ⊗ₜ[R] u)) =
-        IndV.mk φ W₀ 1 (1 ⊗ₜ[R] ρ (T q j) u)
+      conv_lhs => rw [LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.mk_apply]
+      conv_rhs => rw [LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.mk_apply]
       rw [groupRepresentationEquiv_symm_apply_T, hj, Representation.ind_apply_map_mk_one]
       congr 1
-      simp [W₀, ← permCoxeterSystem_simple]
+      simp [blockFactorRep, ← permCoxeterSystem_simple]
   have hG := (forall_comp_groupRepresentationEquiv_iff (permCoxeterSystem (k + l)) hq
     (shuffleRep k ρ) σ_H (shuffleToInd k hq ρ)).mpr hcomp π
   rwa [Equiv.apply_symm_apply] at hG
