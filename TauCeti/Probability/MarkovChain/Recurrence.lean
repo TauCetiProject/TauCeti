@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.MarkovChain.Visits
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Recurrence and communicating classes

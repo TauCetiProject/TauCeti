@@ -8,7 +8,8 @@ module
 public import TauCeti.Probability.MarkovChain.Period
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.Kernel.Composition.ParallelComp
-public import TauCeti.Probability.MarkovChain.MarkovProperty
+public import TauCeti.Probability.Process.MarkovChain
+import TauCeti.Probability.MarkovChain.MarkovProperty
 
 /-!
 # Independent product chains
@@ -96,13 +97,9 @@ required. -/
 @[simp]
 theorem markovChainLaw_parallelComp_map_fst (ρ : Measure (α × β))
     (κ : Kernel α α) (η : Kernel β β) [IsMarkovKernel κ] [IsMarkovKernel η] :
-    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).1) = markovChainLaw ρ.fst κ := by
-  rw [markovChainLaw_eq_comp, map_comp _ _ (by fun_prop),
-    Kernel.markovChainKernel_map_comp (κ ∥ₖ η) κ measurable_fst
-      (fun p => by simp [Kernel.parallelComp_apply]),
-    markovChainLaw_eq_comp, Measure.fst,
-    Measure.bind_map measurable_fst.aemeasurable (Kernel.aemeasurable _),
-    Kernel.coe_comap, Function.comp_def]
+    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).1) = markovChainLaw ρ.fst κ :=
+  markovChainLaw_map_comp ρ (κ ∥ₖ η) κ measurable_fst fun p => by
+    simp [Kernel.parallelComp_apply]
 
 /-- The second coordinate of a chain driven by `κ ∥ₖ η` from any initial joint measure `ρ` has path
 law `markovChainLaw ρ.snd η`. Neither finiteness nor independence of `ρ` nor countability is
@@ -110,13 +107,9 @@ required. -/
 @[simp]
 theorem markovChainLaw_parallelComp_map_snd (ρ : Measure (α × β))
     (κ : Kernel α α) (η : Kernel β β) [IsMarkovKernel κ] [IsMarkovKernel η] :
-    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).2) = markovChainLaw ρ.snd η := by
-  rw [markovChainLaw_eq_comp, map_comp _ _ (by fun_prop),
-    Kernel.markovChainKernel_map_comp (κ ∥ₖ η) η measurable_snd
-      (fun p => by simp [Kernel.parallelComp_apply]),
-    markovChainLaw_eq_comp, Measure.snd,
-    Measure.bind_map measurable_snd.aemeasurable (Kernel.aemeasurable _),
-    Kernel.coe_comap, Function.comp_def]
+    (markovChainLaw ρ (κ ∥ₖ η)).map (fun ω n => (ω n).2) = markovChainLaw ρ.snd η :=
+  markovChainLaw_map_comp ρ (κ ∥ₖ η) η measurable_snd fun p => by
+    simp [Kernel.parallelComp_apply]
 
 variable [Countable α] [Countable β] [MeasurableSingletonClass α] [MeasurableSingletonClass β]
 
