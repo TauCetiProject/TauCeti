@@ -337,7 +337,8 @@ theorem restrictedMapOfContinuous_comp {T : Type*} [NormedRing T] [IsUltrametric
 /-- Under a multiplicative norm bound, `restrictedMapOfContinuous` agrees with `restrictedMap`. -/
 theorem restrictedMapOfContinuous_eq_restrictedMap {φ : R →+* S} (hφ : Continuous φ) {C : ℝ}
     (hC : ∀ r, ‖φ r‖ ≤ C * ‖r‖) : restrictedMapOfContinuous (σ := σ) hφ = restrictedMap φ hC :=
-  RingHom.ext fun _ ↦ Subtype.ext rfl
+  RingHom.ext fun _ ↦ Subtype.ext <| MvPowerSeries.ext fun _ ↦ by
+    simp [coeff_restrictedMapOfContinuous, coeff_restrictedMap]
 
 /-- **A continuous ring homomorphism induces a continuous map on unit-radius restricted series.** -/
 @[continuity] theorem continuous_restrictedMapOfContinuous {φ : R →+* S} (hφ : Continuous φ) :

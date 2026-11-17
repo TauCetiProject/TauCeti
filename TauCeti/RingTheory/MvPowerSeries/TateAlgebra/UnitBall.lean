@@ -57,8 +57,8 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
   reduction.
 * `TauCeti.MvPowerSeries.ker_restrictedReduction`: the kernel of reduction is the open-ball ideal
   `TauCeti.unitBallIdeal T`.
-* `TauCeti.MvPowerSeries.restrictedReduction_restrictedIntegerEquiv_eq_restrictedIdealReduction`:
-  compatibility with open-ideal reduction over `𝒪[K]`.
+* `TauCeti.MvPowerSeries.restrictedReduction_restrictedIntegerEquiv_eq_isRestrictedSubringReduction`
+  states compatibility with open-ideal reduction over `𝒪[K]`.
 * `TauCeti.MvPowerSeries.restrictedReduction_restrictedMap`: reduction commutes with coefficient
   maps of nonarchimedean fields.
 * `TauCeti.MvPowerSeries.residue_restrictedEval₂`: reduction commutes with evaluation at integral
@@ -199,15 +199,15 @@ section Reduction
 the polynomial over the residue field `𝓀[K]` obtained by reducing each coefficient; only finitely
 many coefficients have nonzero residue. -/
 noncomputable def restrictedReduction : T° →+* MvPolynomial σ 𝓀[K] :=
-  (𝓂[K].restrictedIdealReduction TauCeti.isOpen_maximalIdeal_integer).comp
+  (𝓂[K].isRestrictedSubringReduction TauCeti.isOpen_maximalIdeal_integer).comp
     restrictedIntegerEquiv.symm.toRingHom
 
 /-- Over the integer subring `𝒪[K]` of a nonarchimedean normed field, Gauss unit-ball reduction
 under `restrictedIntegerEquiv` agrees with open-ideal reduction modulo `𝓂[K]`. -/
-theorem restrictedReduction_restrictedIntegerEquiv_eq_restrictedIdealReduction (f : Tint) :
+theorem restrictedReduction_restrictedIntegerEquiv_eq_isRestrictedSubringReduction (f : Tint) :
     restrictedReduction (restrictedIntegerEquiv f) =
-      𝓂[K].restrictedIdealReduction TauCeti.isOpen_maximalIdeal_integer f :=
-  congrArg (𝓂[K].restrictedIdealReduction TauCeti.isOpen_maximalIdeal_integer)
+      𝓂[K].isRestrictedSubringReduction TauCeti.isOpen_maximalIdeal_integer f :=
+  congrArg (𝓂[K].isRestrictedSubringReduction TauCeti.isOpen_maximalIdeal_integer)
     (restrictedIntegerEquiv.symm_apply_apply f)
 
 /-- The coefficients of the reduction are the residues of the coefficients. -/
@@ -215,7 +215,7 @@ theorem restrictedReduction_restrictedIntegerEquiv_eq_restrictedIdealReduction (
 theorem coeff_restrictedReduction (f : T°) (t : σ →₀ ℕ) :
     (restrictedReduction f).coeff t =
       residue 𝒪[K] ⟨coeff t ((f : T) : MvPowerSeries σ K), coeff_mem_integer f t⟩ :=
-  (Ideal.coeff_restrictedIdealReduction 𝓂[K] TauCeti.isOpen_maximalIdeal_integer
+  (Ideal.coeff_isRestrictedSubringReduction 𝓂[K] TauCeti.isOpen_maximalIdeal_integer
     (restrictedIntegerEquiv.symm f) t).trans <|
     (residue_def _).symm.trans <| congrArg (residue 𝒪[K]) (Subtype.ext (by simp))
 

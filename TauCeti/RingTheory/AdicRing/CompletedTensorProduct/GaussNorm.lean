@@ -48,31 +48,35 @@ local notation:max "WComp" k':max R':max => restrictedMvPowerSeriesCompletion k'
 local notation:max "GEquiv" k':max R':max =>
   restrictedMvPowerSeriesCompletionGaussEquiv (n := k') (R := R')
 
-private theorem gaussToHuber_commutes :
-    (GEquiv k R).symm.toRingHom.comp (algebraMap R (Tate k R)) =
-      (algebraMap R (WComp k R)).comp (RingHom.id R) := RingHom.ext fun r ↦ by
-  rw [RingHom.comp_apply, RingHom.comp_apply, RingHom.id_apply, RingEquiv.toRingHom_eq_coe,
-    RingHom.coe_coe, ← coe_restrictedMvPowerSeriesCompletionGaussAlgEquiv_symm]
-  exact (restrictedMvPowerSeriesCompletionGaussAlgEquiv (n := k) (R := R)).symm.commutes r
-
-private theorem huberToGauss_commutes : (GEquiv k R).toRingHom.comp (algebraMap R (WComp k R)) =
-    (algebraMap R (Tate k R)).comp (RingHom.id R) := RingHom.ext fun _ ↦ by simp
-
-private theorem cont_gaussToHuber : Continuous (GEquiv k R).symm.toRingHom :=
-  continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm
-
-private theorem cont_huberToGauss : Continuous (GEquiv k R).toRingHom :=
-  continuous_restrictedMvPowerSeriesCompletionGaussEquiv
-
 private noncomputable def toHuberCompletedTensor :
     CompletedTensorProduct R (Tate k R) S →+* CompletedTensorProduct R (WComp k R) S :=
-  mapRingHom (.id R) (GEquiv k R).symm.toRingHom (.id S) (gaussToHuber_commutes k R) rfl
-    (cont_gaussToHuber k R) continuous_id
+  mapRingHom (.id R) (GEquiv k R).symm.toRingHom (.id S)
+    (restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_algebraMap.trans
+      (RingHom.comp_id _).symm)
+    rfl (by simpa [RingEquiv.coe_toRingHom] using
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm) continuous_id
 
 private noncomputable def ofHuberCompletedTensor :
     CompletedTensorProduct R (WComp k R) S →+* CompletedTensorProduct R (Tate k R) S :=
-  mapRingHom (.id R) (GEquiv k R).toRingHom (.id S) (huberToGauss_commutes k R) rfl
-    (cont_huberToGauss k R) continuous_id
+  mapRingHom (.id R) (GEquiv k R).toRingHom (.id S)
+    (restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap.trans
+      (RingHom.comp_id _).symm)
+    rfl (by simpa [RingEquiv.coe_toRingHom] using
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv) continuous_id
+
+private theorem toHuberCompletedTensor_apply (z : CompletedTensorProduct R (Tate k R) S) :
+    toHuberCompletedTensor k R S z = mapRingHom (.id R) (GEquiv k R).symm.toRingHom (.id S)
+      (restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_algebraMap.trans
+        (RingHom.comp_id _).symm)
+      rfl (by simpa [RingEquiv.coe_toRingHom] using
+        continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm) continuous_id z := rfl
+
+private theorem ofHuberCompletedTensor_apply (x : CompletedTensorProduct R (WComp k R) S) :
+    ofHuberCompletedTensor k R S x = mapRingHom (.id R) (GEquiv k R).toRingHom (.id S)
+      (restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap.trans
+        (RingHom.comp_id _).symm)
+      rfl (by simpa [RingEquiv.coe_toRingHom] using
+        continuous_restrictedMvPowerSeriesCompletionGaussEquiv) continuous_id x := rfl
 
 omit [IsUltrametricDist R] [IsAdicRing R] in
 private theorem mapRingHom_id_of_eq {B : Type*} [CommRing B] [TopologicalSpace B]
@@ -85,18 +89,30 @@ private theorem mapRingHom_id_of_eq {B : Type*} [CommRing B] [TopologicalSpace B
 
 private theorem toHuberCompletedTensor_comp_ofHuberCompletedTensor :
     (toHuberCompletedTensor k R S).comp (ofHuberCompletedTensor k R S) = .id _ :=
-  (mapRingHom_comp (.id R) _ (.id S) (huberToGauss_commutes k R) rfl
-    (cont_huberToGauss k R) continuous_id (.id R) _ (.id S)
-    (gaussToHuber_commutes k R) rfl (cont_gaussToHuber k R)
-    continuous_id (RingHom.ext fun _ ↦ by simp) rfl).trans <|
+  (mapRingHom_comp (.id R) _ (.id S)
+    (restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap.trans (RingHom.comp_id _).symm)
+    rfl (by simpa [RingEquiv.coe_toRingHom] using
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv) continuous_id
+    (.id R) _ (.id S)
+    (restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_algebraMap.trans
+      (RingHom.comp_id _).symm)
+    rfl (by simpa [RingEquiv.coe_toRingHom] using
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm) continuous_id
+    (RingHom.ext fun _ ↦ by simp) rfl).trans <|
     mapRingHom_id_of_eq R S _ (RingHom.ext (GEquiv k R).symm_apply_apply) _ _ _ _
 
 private theorem ofHuberCompletedTensor_comp_toHuberCompletedTensor :
     (ofHuberCompletedTensor k R S).comp (toHuberCompletedTensor k R S) = .id _ :=
-  (mapRingHom_comp (.id R) _ (.id S) (gaussToHuber_commutes k R) rfl
-    (cont_gaussToHuber k R) continuous_id (.id R) _ (.id S)
-    (huberToGauss_commutes k R) rfl (cont_huberToGauss k R)
-    continuous_id (RingHom.ext fun _ ↦ by simp) rfl).trans <|
+  (mapRingHom_comp (.id R) _ (.id S)
+    (restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_algebraMap.trans
+      (RingHom.comp_id _).symm)
+    rfl (by simpa [RingEquiv.coe_toRingHom] using
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm) continuous_id
+    (.id R) _ (.id S)
+    (restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap.trans (RingHom.comp_id _).symm)
+    rfl (by simpa [RingEquiv.coe_toRingHom] using
+      continuous_restrictedMvPowerSeriesCompletionGaussEquiv) continuous_id
+    (RingHom.ext fun _ ↦ by simp) rfl).trans <|
     mapRingHom_id_of_eq R S _ (RingHom.ext (GEquiv k R).apply_symm_apply) _ _ _ _
 
 private noncomputable def completedTensorGaussRingEquiv :
@@ -104,6 +120,10 @@ private noncomputable def completedTensorGaussRingEquiv :
   RingEquiv.ofRingHom (toHuberCompletedTensor k R S) (ofHuberCompletedTensor k R S)
     (toHuberCompletedTensor_comp_ofHuberCompletedTensor k R S)
     (ofHuberCompletedTensor_comp_toHuberCompletedTensor k R S)
+
+private theorem completedTensorGaussRingEquiv_apply (z : CompletedTensorProduct R (Tate k R) S) :
+    completedTensorGaussRingEquiv k R S z = toHuberCompletedTensor k R S z := by
+  simp [completedTensorGaussRingEquiv]
 
 variable [ContinuousSMul R S]
 
@@ -113,10 +133,9 @@ variable [ContinuousSMul R S]
 noncomputable def restrictedGaussEquiv : CompletedTensorProduct R (Tate k R) S ≃ₐ[R] Tate k S :=
   AlgEquiv.ofRingEquiv (f := (completedTensorGaussRingEquiv k R S).trans
       ((restrictedEquiv k R S).trans (GEquiv k S))) fun r ↦ by
-    rw [← (inl R (Tate k R) S).commutes r, RingEquiv.trans_apply, RingEquiv.trans_apply]
-    change GEquiv k S (restrictedEquiv k R S
-      (toHuberCompletedTensor k R S (inl R _ S (algebraMap R (Tate k R) r)))) = _
-    rw [toHuberCompletedTensor, mapRingHom_inl, restrictedEquiv_inl,
+    rw [← (inl R (Tate k R) S).commutes r, RingEquiv.trans_apply, RingEquiv.trans_apply,
+      completedTensorGaussRingEquiv_apply, toHuberCompletedTensor_apply, mapRingHom_inl,
+      restrictedEquiv_inl,
       restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_of_continuous]
     simp [← IsScalarTower.algebraMap_apply R S]
 
@@ -133,27 +152,27 @@ variable {k R S}
 
 /-- Cross-carrier comparison: `restrictedGaussEquiv` equals `restrictedEquiv` conjugated by
 `CompletedTensorProduct.mapRingHom` and `restrictedMvPowerSeriesCompletionGaussEquiv`. -/
-theorem restrictedGaussEquiv_eq_restrictedEquiv
-    (hB : (GEquiv k R).symm.toRingHom.comp (algebraMap R (Tate k R)) =
-      (algebraMap R (WComp k R)).comp (.id R))
-    (hS : (RingHom.id S).comp (algebraMap R S) = (algebraMap R S).comp (.id R))
-    (hfB : Continuous (GEquiv k R).symm.toRingHom) (hfS : Continuous (RingHom.id S))
-    (z : CompletedTensorProduct R (Tate k R) S) :
+theorem restrictedGaussEquiv_eq_restrictedEquiv (z : CompletedTensorProduct R (Tate k R) S) :
     restrictedGaussEquiv k R S z = GEquiv k S (restrictedEquiv k R S
-      (mapRingHom (.id R) (GEquiv k R).symm.toRingHom (.id S) hB hS hfB hfS z)) := by rfl
+      (mapRingHom (.id R) (GEquiv k R).symm.toRingHom (.id S)
+        (restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_algebraMap.trans
+          (RingHom.comp_id _).symm)
+        rfl (by simpa [RingEquiv.coe_toRingHom] using
+          continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm) continuous_id z)) := by
+  rw [restrictedGaussEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply,
+    RingEquiv.trans_apply, completedTensorGaussRingEquiv_apply, toHuberCompletedTensor_apply]
 
 /-- Cross-carrier commutativity from the Huber completed tensor product via `mapRingHom`. -/
-theorem restrictedGaussEquiv_mapRingHom
-    (hB : (GEquiv k R).toRingHom.comp (algebraMap R (WComp k R)) =
-      (algebraMap R (Tate k R)).comp (.id R))
-    (hS : (RingHom.id S).comp (algebraMap R S) = (algebraMap R S).comp (.id R))
-    (hfB : Continuous (GEquiv k R).toRingHom) (hfS : Continuous (RingHom.id S))
-    (x : CompletedTensorProduct R (WComp k R) S) :
-    restrictedGaussEquiv k R S (mapRingHom (.id R) (GEquiv k R).toRingHom (.id S) hB hS hfB hfS x) =
+theorem restrictedGaussEquiv_mapRingHom (x : CompletedTensorProduct R (WComp k R) S) :
+    restrictedGaussEquiv k R S
+        (mapRingHom (.id R) (GEquiv k R).toRingHom (.id S)
+          (restrictedMvPowerSeriesCompletionGaussEquiv_comp_algebraMap.trans
+            (RingHom.comp_id _).symm)
+          rfl (by simpa [RingEquiv.coe_toRingHom] using
+            continuous_restrictedMvPowerSeriesCompletionGaussEquiv) continuous_id x) =
       GEquiv k S (restrictedEquiv k R S x) := by
-  change restrictedGaussEquiv k R S (ofHuberCompletedTensor k R S x) = _
-  rw [restrictedGaussEquiv_eq_restrictedEquiv (S := S) (gaussToHuber_commutes k R) rfl
-    (cont_gaussToHuber k R) continuous_id]
+  rw [← ofHuberCompletedTensor_apply, restrictedGaussEquiv_eq_restrictedEquiv,
+    ← toHuberCompletedTensor_apply]
   exact congrArg (fun y ↦ GEquiv k S (restrictedEquiv k R S y))
     congr($(toHuberCompletedTensor_comp_ofHuberCompletedTensor k R S) x)
 
@@ -161,29 +180,14 @@ theorem restrictedGaussEquiv_mapRingHom
 @[simp] theorem restrictedGaussEquiv_inl (g : Tate k R) :
     restrictedGaussEquiv k R S (inl R _ S g) =
       restrictedMapOfContinuous (continuous_algebraMap R S) g := by
-  rw [restrictedGaussEquiv_eq_restrictedEquiv (S := S) (gaussToHuber_commutes k R) rfl
-      (cont_gaussToHuber k R) continuous_id, mapRingHom_inl, restrictedEquiv_inl,
+  rw [restrictedGaussEquiv_eq_restrictedEquiv, mapRingHom_inl, restrictedEquiv_inl,
     restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_of_continuous]; simp
-
-/-- As a formal power series, `restrictedGaussEquiv (inl g)` maps coefficients via `algebraMap`. -/
-theorem coe_restrictedGaussEquiv_inl (g : Tate k R) :
-    (restrictedGaussEquiv k R S (inl R _ S g) : MvPowerSeries (Fin k) S) =
-      MvPowerSeries.map (algebraMap R S) g := by
-  rw [restrictedGaussEquiv_inl, coe_restrictedMapOfContinuous]
-
-/-- Under a norm bound on `algebraMap R S`, `restrictedGaussEquiv` acts as `restrictedMap`. -/
-theorem restrictedGaussEquiv_inl_of_norm_le {C : ℝ} (hφ : ∀ r, ‖algebraMap R S r‖ ≤ C * ‖r‖)
-    (g : Tate k R) : restrictedGaussEquiv k R S (inl R _ S g) =
-      restrictedMap (algebraMap R S) hφ g := by
-  rw [restrictedGaussEquiv_inl,
-    restrictedMapOfContinuous_eq_restrictedMap (continuous_algebraMap R S) hφ]
 
 /-- On `S`, `restrictedGaussEquiv` is the constant-series embedding `algebraMap`. -/
 @[simp] theorem restrictedGaussEquiv_inr (s : S) :
     restrictedGaussEquiv k R S (inr R (Tate k R) S s) = algebraMap S (Tate k S) s := by
-  rw [restrictedGaussEquiv_eq_restrictedEquiv (S := S) (gaussToHuber_commutes k R) rfl
-      (cont_gaussToHuber k R) continuous_id,
-    mapRingHom_inr, RingHom.id_apply, restrictedEquiv_inr]; simp
+  rw [restrictedGaussEquiv_eq_restrictedEquiv, mapRingHom_inr, RingHom.id_apply,
+    restrictedEquiv_inr]; simp
 
 /-- `restrictedGaussEquiv.symm` sends a constant series `s` to `inr s`. -/
 @[simp] theorem restrictedGaussEquiv_symm_algebraMap (s : S) :
