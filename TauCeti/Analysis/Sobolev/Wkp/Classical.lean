@@ -166,6 +166,19 @@ theorem Wkp.norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k : ℕ)
   filter_upwards [iteratedGradient_ae_eq_of_contDiffOn k u hf hu] with x hx
   rw [hx, norm_iteratedGradientChain]
 
+/-- The `Lᵖ` norm of the value of a Sobolev function is the `Lᵖ` seminorm of the order-zero
+classical derivative of any representative. -/
+theorem Wkp.norm_value_eq_lpNorm_iteratedFDeriv_zero (k : ℕ) (u : Wkp mu Omega p k)
+    {f : E → ℝ} (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
+    ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
+  have hfm : AEStronglyMeasurable f (mu.restrict Omega) :=
+    (Lp.aestronglyMeasurable (value k u)).congr hu
+  rw [Lp.norm_def, lpNorm, eLpNorm_congr_ae hu]
+  refine congrArg ENNReal.toReal (eLpNorm_congr_norm_ae hfm ?_
+    (Filter.Eventually.of_forall fun _ => norm_iteratedFDeriv_zero.symm))
+  rw [iteratedFDeriv_zero_eq_comp]
+  exact (continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable hfm
+
 /-- The full Sobolev norm controls the `Lᵖ` seminorm of each classical derivative through
 order `k` of a representative that is `C^k` on the domain. -/
 theorem Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
@@ -177,14 +190,7 @@ theorem Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p
       intro i hi
       have hi0 : i = 0 := by omega
       subst i
-      have he : eLpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) =
-          eLpNorm (value 0 u) p (mu.restrict Omega) := by
-        refine eLpNorm_congr_norm_ae
-          ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
-            Omega.isOpen.measurableSet) (Lp.aestronglyMeasurable _) ?_
-        filter_upwards [hu] with x hx
-        rw [norm_iteratedFDeriv_zero, hx]
-      simpa only [lpNorm, he, ← Lp.norm_def, value_zero] using le_rfl (a := ‖u‖)
+      rw [← norm_value_eq_lpNorm_iteratedFDeriv_zero 0 u hu, value_zero]
   | succ k ih =>
       intro i hi
       by_cases hik : i ≤ k
@@ -222,19 +228,6 @@ theorem Wkp.memLp_iteratedFDeriv_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p k)
           ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen
             (by simp)).aestronglyMeasurable Omega.isOpen.measurableSet) ?_
         exact .of_forall fun x => norm_iteratedGradientChain f k x
-
-/-- The `Lᵖ` norm of the value of a Sobolev function is the `Lᵖ` seminorm of the order-zero
-classical derivative of any representative. -/
-theorem Wkp.norm_value_eq_lpNorm_iteratedFDeriv_zero (k : ℕ) (u : Wkp mu Omega p k)
-    {f : E → ℝ} (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
-    ‖value k u‖ = lpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) := by
-  have hfm : AEStronglyMeasurable f (mu.restrict Omega) :=
-    (Lp.aestronglyMeasurable (value k u)).congr hu
-  rw [Lp.norm_def, lpNorm, eLpNorm_congr_ae hu]
-  refine congrArg ENNReal.toReal (eLpNorm_congr_norm_ae hfm ?_
-    (Filter.Eventually.of_forall fun _ => norm_iteratedFDeriv_zero.symm))
-  rw [iteratedFDeriv_zero_eq_comp]
-  exact (continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable hfm
 
 /-- **The Sobolev norm of a `Cᵏ` representative.** If `u ∈ W^{k,p}(Ω)` is represented by a
 function `f` that is `Cᵏ` on `Ω`, then `‖u‖` is at most the sum of the `Lᵖ` seminorms of the
