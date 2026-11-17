@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.LaurentExpansion
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 public import TauCeti.RingTheory.LaurentSeries.Substitution.Basic
 
 /-!
@@ -18,7 +18,8 @@ with zero constant coefficient. It is nonzero, including for inseparable isogeni
 
 `Isogeny.formalSeries` is this actual expansion, characterized by
 `Isogeny.coe_formalSeries`. Pullback of every rational function is Laurent substitution
-by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), and identity and
+by this series (`Isogeny.functionFieldLaurentExpansion_fieldPullback`), so an isogeny is
+uniquely determined by its formal series (`Isogeny.formalSeries_injective`), and identity and
 composition induce identity and composition of series. This supplies the local action
 from the actual function-field map, without assuming a formal-group homomorphism or a
 convergence theorem.
@@ -34,6 +35,8 @@ open WeierstrassCurve HahnSeries
 open scoped LaurentSeries PowerSeries WithZero
 
 namespace TauCeti.Isogeny
+
+section
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K}
   (φ : Isogeny W₁.toAffine W₂.toAffine)
@@ -166,5 +169,25 @@ theorem formalSeries_comp {W₃ : WeierstrassCurve K}
   rw [coe_formalSeries, comp_fieldPullback, AlgHom.comp_apply,
     φ.functionFieldLaurentExpansion_fieldPullback,
     ← ψ.coe_formalSeries, LaurentSeries.substAlgHom_coe]
+
+end
+
+/-- **An isogeny is uniquely determined by its formal power series.** -/
+theorem formalSeries_injective {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} :
+    Function.Injective (formalSeries (W₁ := W₁) (W₂ := W₂)) := by
+  intro φ ψ h
+  refine Isogeny.ext (AlgHom.ext fun x ↦ ?_)
+  rw [← fieldPullback_algebraMap, ← fieldPullback_algebraMap]
+  apply W₁.functionFieldLaurentExpansion.injective
+  rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    φ.functionFieldLaurentExpansion_fieldPullback, ψ.functionFieldLaurentExpansion_fieldPullback]
+  simp only [h]
+
+-- Handle composites before `formalSeries_comp` rewrites them to substitutions.
+@[simp↓]
+theorem formalSeries_inj {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K}
+    {φ ψ : Isogeny W₁.toAffine W₂.toAffine} :
+    φ.formalSeries = ψ.formalSeries ↔ φ = ψ :=
+  formalSeries_injective.eq_iff
 
 end TauCeti.Isogeny
