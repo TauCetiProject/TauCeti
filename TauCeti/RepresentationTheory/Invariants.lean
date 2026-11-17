@@ -134,6 +134,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   turn a nonzero invariant vector of an irreducible representation into triviality and into
   dimension one.
 * `Rep.quotientToInvariantsFunctor` is additive.
+* `Rep.invariantsFunctor_map_hom_apply_coe`: the image of an invariant under
+  `(invariantsFunctor k G).map f` is its image under `f`.
 * `Rep.invariantsFunctor_map_surjective`: when `#G` is invertible in `k`, taking invariants
   preserves surjective morphisms of representations; hence instances saying that it preserves
   epimorphisms, homology and finite colimits.
@@ -635,6 +637,13 @@ open CategoryTheory CategoryTheory.Limits
 
 universe u v w
 
+/-- The underlying vector of the image of an invariant under `(invariantsFunctor k G).map f` is
+its image under `f`. -/
+theorem invariantsFunctor_map_hom_apply_coe {k : Type u} {G : Type v} [CommRing k] [Group G]
+    {A B : Rep.{w} k G} (f : A ⟶ B) (x : A.ρ.invariants) :
+    (((invariantsFunctor k G).map f).hom x : B.ρ.invariants).1 = f.hom x :=
+  rfl
+
 section Invertible
 
 variable {k : Type u} {G : Type v} [CommRing k] [Group G] [Fintype G]
@@ -650,9 +659,8 @@ theorem invariantsFunctor_map_surjective {A B : Rep.{w} k G} (f : A ⟶ B)
   rintro ⟨y, hy⟩
   obtain ⟨x, rfl⟩ := hf y
   refine ⟨⟨A.ρ.averageMap x, A.ρ.averageMap_invariant x⟩, Subtype.ext ?_⟩
-  rw [invariantsFunctor_map_hom]
-  exact (LinearMap.codRestrict_apply _ _ _).trans
-    ((Representation.IntertwiningMap.map_averageMap f.hom x).trans (B.ρ.averageMap_id _ hy))
+  rw [invariantsFunctor_map_hom_apply_coe]
+  exact (Representation.IntertwiningMap.map_averageMap f.hom x).trans (B.ρ.averageMap_id _ hy)
 
 /-- When `#G` is invertible in `k`, taking invariants preserves epimorphisms. -/
 instance : (invariantsFunctor.{w} k G).PreservesEpimorphisms where
@@ -691,9 +699,9 @@ theorem preservesEpimorphisms_invariantsFunctor_iff {k : Type u} {G : Type v} [C
       simpa [Representation.coeff_ofMulAction] using (congrArg (·.coeff g) (hx g)).symm
     have hsum : (ε.hom x).down = ∑ g : G, x.coeff g := by
       simp [ε, leftRegularHom, Finsupp.sum_fintype, ← Finset.sum_smul]
-    have h1 : (ε.hom x).down = 1 := by
-      simpa [invariantsFunctor_map_hom, LinearMap.codRestrict] using
-        congrArg (ULift.down ∘ Subtype.val) hx1
+    have h1 : (ε.hom x).down = 1 :=
+      congrArg ULift.down
+        ((invariantsFunctor_map_hom_apply_coe ε ⟨x, hx⟩).symm.trans (congrArg Subtype.val hx1))
     simp only [hsum, hconst, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
       ← Nat.card_eq_fintype_card] at h1
     exact IsUnit.of_mul_eq_one _ h1
@@ -742,8 +750,9 @@ instance : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
         simp only [hom_comp, Representation.IntertwiningMap.comp_apply, ← hom_comm_apply, hX]
       · -- The image of `D.map S.hom v` in the colimit is that of `v`, by naturality of `c`.
         refine Subtype.ext (hv.symm.trans ?_)
-        rw [← c.w S.hom, hom_comp]
-        simp [invariantsFunctor_map_hom, LinearMap.codRestrict]
+        rw [← c.w S.hom, hom_comp, Representation.IntertwiningMap.comp_apply]
+        simp only [Functor.mapCocone_ι_app, TypeCat.ofHom_apply]
+        rw [invariantsFunctor_map_hom_apply_coe]
     · intro i j xi xj h
       obtain ⟨l, f, g, hfg⟩ := (isColimit_eq_iff _ hT).1 (congrArg Subtype.val h)
       exact ⟨l, f, g, Subtype.ext hfg⟩⟩⟩
