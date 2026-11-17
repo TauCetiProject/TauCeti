@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Cone.Basic
+public import TauCeti.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.Convex.Cone.Hereditary
+public import TauCeti.Order.Hereditary
 public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
@@ -18,11 +20,11 @@ import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 /-!
 # Hereditary C⋆-subalgebras, closed left ideals, and hereditary cones
 
-A `⋆`-subalgebra `B` of a C⋆-algebra `A` is *hereditary* (`TauCeti.CStarAlgebra.IsHereditary`) if
-`0 ≤ a ≤ b` and `b ∈ B` imply `a ∈ B`. When `B` is norm-closed, order heredity is equivalent to
-the multiplicative sandwich condition `B * A * B ⊆ B`
+A `⋆`-subalgebra `B` of a C⋆-algebra `A` is *hereditary* (`TauCeti.IsHereditary`, defined in
+`TauCeti.Order.Hereditary`) if `0 ≤ a ≤ b` and `b ∈ B` imply `a ∈ B`. When `B` is norm-closed,
+order heredity is equivalent to the multiplicative sandwich condition `B * A * B ⊆ B`
 (`NonUnitalStarSubalgebra.isHereditary_iff_mul_mem`; the forward implication requires no closedness
-hypothesis, `TauCeti.CStarAlgebra.IsHereditary.mul_mem`).
+hypothesis, `TauCeti.IsHereditary.mul_mem`).
 
 For any self-adjoint (in particular, positive) element `a : A`, the closure of the algebraic corner
 `{a * x * a | x : A}` is the least closed hereditary `⋆`-subalgebra of `A` containing `a`
@@ -41,10 +43,7 @@ ideal `{x : A | star x * x ∈ B}` coincides with the set product `Set.univ * (B
 
 ## Main declarations
 
-* `TauCeti.CStarAlgebra.IsHereditary`: order-heredity predicate `0 ≤ a → a ≤ b → b ∈ s → a ∈ s`
-  on any `SetLike` carrier, with `isHereditary_iff_ordConnected` and
-  `isHereditary_iff_ordConnected_of_nonneg`.
-* `TauCeti.CStarAlgebra.IsHereditary.mul_mem` and
+* `TauCeti.IsHereditary.mul_mem` and
   `NonUnitalStarSubalgebra.isHereditary_iff_mul_mem`: the `B * A * B ⊆ B` sandwich characterization
   of closed hereditary `⋆`-subalgebras.
 * `TauCeti.CStarAlgebra.hereditarySubalgebra`: the closed hereditary `⋆`-subalgebra `closure(aAa)`
@@ -74,55 +73,7 @@ public section
 open Filter Topology
 open scoped CStarAlgebra NNReal Pointwise
 
-namespace TauCeti.CStarAlgebra
-
-section Predicate
-
-/-- A subset-like object `s` of an ordered type with zero is *hereditary* if `0 ≤ a ≤ b` and
-`b ∈ s` imply `a ∈ s`. -/
-def IsHereditary {S α : Type*} [SetLike S α] [Zero α] [LE α] (s : S) : Prop :=
-  ∀ ⦃a b : α⦄, 0 ≤ a → a ≤ b → b ∈ s → a ∈ s
-
-@[grind =]
-theorem isHereditary_def {S α : Type*} [SetLike S α] [Zero α] [LE α] {s : S} :
-    IsHereditary s ↔ ∀ ⦃a b : α⦄, 0 ≤ a → a ≤ b → b ∈ s → a ∈ s :=
-  Iff.rfl
-
-@[grind →]
-theorem IsHereditary.mem_of_le {S α : Type*} [SetLike S α] [Zero α] [LE α] {s : S}
-    (hs : IsHereditary s) {a b : α} (ha : 0 ≤ a) (hab : a ≤ b) (hb : b ∈ s) : a ∈ s :=
-  hs ha hab hb
-
-theorem isHereditary_congr {S₁ S₂ α : Type*} [SetLike S₁ α] [SetLike S₂ α] [Zero α] [LE α]
-    {s₁ : S₁} {s₂ : S₂} (h : (s₁ : Set α) = (s₂ : Set α)) :
-    IsHereditary s₁ ↔ IsHereditary s₂ := by
-  simp only [isHereditary_def, ← SetLike.mem_coe, h]
-
-/-- Every order-connected subset containing `0` is hereditary. -/
-theorem IsHereditary.of_ordConnected {S α : Type*} [SetLike S α] [Zero α] [Preorder α]
-    [ZeroMemClass S α] {s : S} (h : (s : Set α).OrdConnected) : IsHereditary s :=
-  fun _ _ ha hab hb => h.out (zero_mem s) hb ⟨ha, hab⟩
-
-/-- For an additive subgroup of a right-ordered additive group, heredity coincides with order
-connectedness. -/
-theorem isHereditary_iff_ordConnected {S α : Type*} [SetLike S α] [AddGroup α]
-    [Preorder α] [AddRightMono α] [AddSubgroupClass S α] {s : S} :
-    IsHereditary s ↔ (s : Set α).OrdConnected := by
-  refine ⟨fun hs => ⟨fun x hx y hy z hz => ?_⟩, fun h => IsHereditary.of_ordConnected (s := s) h⟩
-  rw [SetLike.mem_coe] at hx hy ⊢
-  have hsub : z - x ∈ s :=
-    hs (sub_nonneg.mpr hz.1) (sub_le_sub_right hz.2 x) (sub_mem hy hx)
-  simpa only [sub_add_cancel] using add_mem hsub hx
-
-/-- For a subset containing `0` and consisting of nonnegative elements, heredity coincides with
-order connectedness. -/
-theorem isHereditary_iff_ordConnected_of_nonneg {S α : Type*} [SetLike S α] [Zero α] [Preorder α]
-    [ZeroMemClass S α] {s : S} (hnonneg : ∀ x ∈ s, 0 ≤ x) :
-    IsHereditary s ↔ (s : Set α).OrdConnected :=
-  ⟨fun hs => ⟨fun _ hx _ hy _ hz => hs ((hnonneg _ hx).trans hz.1) hz.2 hy⟩,
-    fun h => IsHereditary.of_ordConnected (s := s) h⟩
-
-end Predicate
+namespace TauCeti
 
 section Sandwich
 
@@ -137,7 +88,7 @@ private theorem star_mul_mul_mem_of_isHereditary_of_nonneg {B : NonUnitalStarSub
     CStarAlgebra.star_left_conjugate_le_norm_smul b a ha.isSelfAdjoint
   have hmem : (‖a‖ : ℂ) • (star b * b) ∈ B :=
     SMulMemClass.smul_mem (‖a‖ : ℂ) (mul_mem (star_mem hb) hb)
-  exact hB (star_left_conjugate_nonneg ha b) (by simpa only [Complex.coe_smul] using hle)
+  exact hB.mem_of_le (star_left_conjugate_nonneg ha b) (by simpa only [Complex.coe_smul] using hle)
     (by simpa only [Complex.coe_smul] using hmem)
 
 /-- Every hereditary `⋆`-subalgebra `B` of a C⋆-algebra satisfies `B * A * B ⊆ B`, without any
@@ -173,32 +124,11 @@ theorem IsHereditary.mul_mem {B : NonUnitalStarSubalgebra ℂ A} (hB : IsHeredit
 
 end Sandwich
 
-end TauCeti.CStarAlgebra
+end TauCeti
 
 namespace NonUnitalStarSubalgebra
 
-open TauCeti.CStarAlgebra
-
-section Lattice
-
-variable {R A : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
-  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
-
-@[simp]
-theorem isHereditary_top [LE A] : IsHereditary (⊤ : NonUnitalStarSubalgebra R A) :=
-  fun _ _ _ _ _ => trivial
-
-@[simp]
-theorem isHereditary_bot [PartialOrder A] : IsHereditary (⊥ : NonUnitalStarSubalgebra R A) := by
-  intro a b ha hab hb
-  rw [NonUnitalStarAlgebra.mem_bot] at hb ⊢
-  exact le_antisymm (hab.trans_eq hb) ha
-
-theorem isHereditary_inf [LE A] {B₁ B₂ : NonUnitalStarSubalgebra R A}
-    (h₁ : IsHereditary B₁) (h₂ : IsHereditary B₂) : IsHereditary (B₁ ⊓ B₂) :=
-  fun _ _ ha hab hb => ⟨h₁ ha hab hb.1, h₂ ha hab hb.2⟩
-
-end Lattice
+open TauCeti TauCeti.CStarAlgebra
 
 section Hereditary
 
@@ -208,6 +138,7 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 theorem isHereditary_of_mul_mem (B : NonUnitalStarSubalgebra ℂ A) [hB : IsClosed (B : Set A)]
     (hmul : ∀ b₁ ∈ B, ∀ a : A, ∀ b₂ ∈ B, b₁ * a * b₂ ∈ B) :
     IsHereditary B := by
+  rw [isHereditary_def]
   intro a b ha hab hb
   let x : A := CFC.sqrt a
   let y : A := CFC.sqrt b
@@ -408,25 +339,7 @@ end TauCeti.CStarAlgebra
 
 namespace ProperCone
 
-open TauCeti.CStarAlgebra
-
-section OrderedModule
-
-variable {R E : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
-  [AddCommMonoid E] [TopologicalSpace E] [Module R E] [PartialOrder E]
-
-@[simp]
-theorem isHereditary_bot [T1Space E] : IsHereditary (⊥ : ProperCone R E) := by
-  intro a b ha hab hb
-  rw [ProperCone.mem_bot] at hb ⊢
-  exact le_antisymm (hab.trans_eq hb) ha
-
-@[simp]
-theorem isHereditary_positive [IsOrderedAddMonoid E] [PosSMulMono R E] [OrderClosedTopology E] :
-    IsHereditary (ProperCone.positive R E) :=
-  fun _ _ ha _ _ => ha
-
-end OrderedModule
+open TauCeti
 
 section CStarAlgebra
 
@@ -446,7 +359,7 @@ def leftIdeal (P : ProperCone ℝ A) (hP : IsHereditary P) : ClosedSubmodule ℂ
     have hle : star (x + y) * (x + y) ≤ (2 : ℝ) • (star x * x + star y * y) := by
       rw [← hpar]
       exact le_add_of_nonneg_right (star_mul_self_nonneg (x - y))
-    exact hP (star_mul_self_nonneg (x + y)) hle (P.smul_mem (add_mem hx hy) zero_le_two)
+    exact hP.mem_of_le (star_mul_self_nonneg (x + y)) hle (P.smul_mem (add_mem hx hy) zero_le_two)
   smul_mem' c {x} hx := by
     have hsmul : star (c • x) * (c • x) = (‖c‖ ^ 2 : ℝ) • (star x * x) := by
       rw [star_smul, mul_smul_comm, smul_mul_assoc, smul_smul, Complex.star_def,
@@ -475,7 +388,7 @@ theorem mul_mem_leftIdeal (P : ProperCone ℝ A) (hP : IsHereditary P) (a : A) {
       _ ≤ ‖star a * a‖ • (star x * x) :=
         CStarAlgebra.star_left_conjugate_le_norm_smul x (star a * a)
       _ = (‖a‖ ^ 2 : ℝ) • (star x * x) := by rw [CStarRing.norm_star_mul_self, sq]
-  exact hP (star_mul_self_nonneg _) hle (P.smul_mem hx (sq_nonneg ‖a‖))
+  exact hP.mem_of_le (star_mul_self_nonneg _) hle (P.smul_mem hx (sq_nonneg ‖a‖))
 
 /-- In a closed hereditary subcone `P` of `A₊`, `x ∈ P` implies `x * x ∈ P`. -/
 theorem mul_self_mem_of_mem (P : ProperCone ℝ A) (hP₀ : P ≤ ProperCone.positive ℝ A)
@@ -493,7 +406,7 @@ theorem mul_self_mem_of_mem (P : ProperCone ℝ A) (hP₀ : P ≤ ProperCone.pos
       _ = ‖x‖ • x := by rw [hs₀.isSelfAdjoint.star_eq, hss]
   have hsq₀ : 0 ≤ x * x := by
     simpa only [hx₀.isSelfAdjoint.star_eq] using star_mul_self_nonneg x
-  exact hP hsq₀ hle (P.smul_mem hx (norm_nonneg x))
+  exact hP.mem_of_le hsq₀ hle (P.smul_mem hx (norm_nonneg x))
 
 /-- In a closed hereditary cone `P`, if `0 ≤ x` and `x * x ∈ P`, then `x ∈ P`. -/
 theorem mem_of_mul_self_mem (P : ProperCone ℝ A) (hP : IsHereditary P) {x : A}
@@ -519,7 +432,7 @@ theorem mem_of_mul_self_mem (P : ProperCone ℝ A) (hP : IsHereditary P) {x : A}
       rw [hsq_eq]
       exact cfcₙ_mono (fun t _ => hdom t) (hF_cont n).continuousOn
         (hf0 := hF0 n)
-    exact hP (cfcₙ_nonneg fun _ _ => le_max_left _ _) hle
+    exact hP.mem_of_le (cfcₙ_nonneg fun _ _ => le_max_left _ _) hle
       (P.smul_mem hx (inv_nonneg.mpr (by positivity)))
   have h_unif : TendstoUniformlyOn F id atTop (quasispectrum ℝ x) := by
     rw [Metric.tendstoUniformlyOn_iff]
@@ -551,7 +464,7 @@ end ProperCone
 
 namespace ClosedSubmodule
 
-open TauCeti.CStarAlgebra
+open TauCeti
 
 section CStarAlgebra
 
@@ -593,8 +506,8 @@ theorem isHereditary_starSubalgebra (L : ClosedSubmodule ℂ A) (hL : ∀ a : A,
 
 /-- Every closed complex left ideal of a C⋆-algebra is hereditary in the spectral order. -/
 theorem isHereditary_of_mul_mem (L : ClosedSubmodule ℂ A) (hL : ∀ a : A, ∀ x ∈ L, a * x ∈ L) :
-    IsHereditary L := fun _ _ ha hab hb =>
-  (L.mem_starSubalgebra.mp <| (L.isHereditary_starSubalgebra hL) ha hab <|
+    IsHereditary L := isHereditary_def.mpr fun _ _ ha hab hb =>
+  (L.mem_starSubalgebra.mp <| (L.isHereditary_starSubalgebra hL).mem_of_le ha hab <|
     L.mem_starSubalgebra.mpr ⟨hb, by rwa [(ha.trans hab).isSelfAdjoint.star_eq]⟩).1
 
 end CStarAlgebra
@@ -603,7 +516,7 @@ end ClosedSubmodule
 
 namespace NonUnitalStarSubalgebra
 
-open TauCeti.CStarAlgebra
+open TauCeti
 
 section Correspondences
 
@@ -638,12 +551,13 @@ theorem positiveCone_le_positive (B : NonUnitalStarSubalgebra ℂ A) [IsClosed (
 
 theorem isHereditary_positiveCone {B : NonUnitalStarSubalgebra ℂ A} [IsClosed (B : Set A)]
     (hB : IsHereditary B) : IsHereditary B.positiveCone :=
-  fun _ _ ha hab hb => ⟨hB ha hab hb.1, ha⟩
+  isHereditary_def.mpr fun _ _ ha hab hb => ⟨hB.mem_of_le ha hab hb.1, ha⟩
 
 @[simp]
 theorem isHereditary_positiveCone_iff {B : NonUnitalStarSubalgebra ℂ A} [IsClosed (B : Set A)] :
     IsHereditary B.positiveCone ↔ IsHereditary B :=
-  ⟨fun h _ _ ha hab hb => (h ha hab ⟨hb, ha.trans hab⟩).1, B.isHereditary_positiveCone⟩
+  ⟨fun h => isHereditary_def.mpr fun _ _ ha hab hb => (h.mem_of_le ha hab ⟨hb, ha.trans hab⟩).1,
+    B.isHereditary_positiveCone⟩
 
 /-- The closed complex left ideal `{x : A | star x * x ∈ B}` attached to a closed hereditary
 `⋆`-subalgebra `B`. -/
