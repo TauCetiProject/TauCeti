@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Symplectization.Basic
+public import TauCeti.Geometry.Contact.Symplectization.Cotangent
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
 public import TauCeti.Topology.VectorBundle.ZeroSection
 
@@ -49,7 +48,8 @@ The curve `t ↦ eᵗ z` is the integral curve through `z` of the radial field `
 Liouville flow map of `S*M`, and `Φ^* (-λ) = eᵗ α_b` is the cotangent case of the identity for
 Liouville flows of `TauCeti.mpullback_globalFlow_comp_eq_symplectization`. Here it is proved
 directly: the Liouville form is linear on fibres, so it pulls back along `(t, y) ↦ eᵗ ι(y)` to
-`eᵗ ι^* λ` for every smooth family `ι` of covectors, with no flow or completeness argument.
+`eᵗ ι^* λ` for every smooth family `ι` of covectors, with no flow or completeness argument
+(`TauCeti.CotangentBundle.mpullback_expSMul_liouvilleForm`).
 
 ## Main definitions
 
@@ -93,66 +93,6 @@ namespace CotangentBundle
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-! ### Radial rescaling of a family of covectors -/
-
-section ExpSMul
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
-  {ι : N → CotangentBundle I M}
-
-/-- The map `(t, y) ↦ eᵗ ι(y)` rescaling a family `ι` of covectors. -/
-private def expSMul (ι : N → CotangentBundle I M) (p : ℝ × N) : CotangentBundle I M :=
-  ⟨(ι p.2).proj, Real.exp p.1 • (ι p.2).2⟩
-
-omit [IsManifold J ∞ N] in
-private theorem contMDiff_expSMul (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
-    ContMDiff (𝓘(ℝ).prod J) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ (expSMul ι) :=
-  (Real.contDiff_exp.contMDiff.comp contMDiff_fst).smul_totalSpace (hι.comp contMDiff_snd)
-
-/-- The map `(t, y) ↦ eᵗ ι(y)` pulls the Liouville form back to the symplectization form of
-`ι^* λ`. -/
-private theorem mpullback_expSMul_liouvilleForm
-    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
-    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (liouvilleForm I M) =
-      (SmoothForm.mpullback ι hι (liouvilleForm I M)).symplectization := by
-  apply Subtype.ext
-  funext p
-  -- `expSMul ι p` is `eᵗ` times the covector `ι p.2`, over the same base point.
-  rw [mpullback_liouvilleForm_apply_of_eq_smul (contMDiff_expSMul hι) (hι.comp contMDiff_snd)
-    (fun p : ℝ × N ↦ Real.exp p.1) (fun _ ↦ rfl) p, SmoothForm.coe_symplectization,
-    SmoothForm.mpullback_mpullback]
-
-/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `-λ` back to the symplectization form of `ι^* (-λ)`. -/
-private theorem mpullback_expSMul_neg_liouvilleForm
-    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
-    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (-liouvilleForm I M) =
-      (SmoothForm.mpullback ι hι (-liouvilleForm I M)).symplectization := by
-  rw [map_neg, map_neg, mpullback_expSMul_liouvilleForm, SmoothForm.symplectization_neg]
-
-/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `ω = -dλ` back to the exterior derivative of the
-symplectization form of `ι^* (-λ)`. -/
-private theorem mpullback_expSMul_symplecticForm
-    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
-    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (symplecticForm I M) =
-      mextDerivₗ (𝓘(ℝ).prod J) 1
-        (SmoothForm.mpullback ι hι (-liouvilleForm I M)).symplectization := by
-  rw [symplecticForm_eq_neg_mextDerivₗ, ← map_neg, ← SmoothForm.mextDerivₗ_mpullback,
-    mpullback_expSMul_neg_liouvilleForm]
-
-/-- The map `(t, y) ↦ eᵗ ι(y)` pulls `-ω = dλ` back to the exterior derivative of the
-symplectization form of `ι^* λ`. -/
-private theorem mpullback_expSMul_neg_symplecticForm
-    (hι : ContMDiff J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ ι) :
-    SmoothForm.mpullback (expSMul ι) (contMDiff_expSMul hι) (-symplecticForm I M) =
-      mextDerivₗ (𝓘(ℝ).prod J) 1
-        (SmoothForm.mpullback ι hι (liouvilleForm I M)).symplectization := by
-  rw [symplecticForm_eq_neg_mextDerivₗ, neg_neg, ← SmoothForm.mextDerivₗ_mpullback,
-    mpullback_expSMul_liouvilleForm]
-
-end ExpSMul
 
 /-! ### The punctured cotangent bundle -/
 
@@ -198,7 +138,7 @@ private theorem norm_snd_radial (p : ℝ × cosphereBundle I M) :
     ‖(radial p).2‖ = Real.exp p.1 := by
   -- This is `norm_smul`; instance search does not find `NormSMulClass` for covectors of the
   -- Riemannian fibre norm, so it is supplied from the `NormedSpace` instance.
-  rw [radial, expSMul, ((NormedSpace.toNormSMulClass (𝕜 := ℝ)
+  rw [radial, expSMul_apply, ((NormedSpace.toNormSMulClass (𝕜 := ℝ)
       (E := TangentSpace I p.2.1.proj →L[ℝ] ℝ)).norm_smul (Real.exp p.1) p.2.1.2),
     mem_cosphereBundle.1 p.2.2, mul_one, Real.norm_of_nonneg (Real.exp_pos p.1).le]
 
@@ -221,6 +161,9 @@ private theorem unradial_radial (p : ℝ × cosphereBundle I M) :
   ext1
   · simp only [unradial, norm_snd_radial, Real.log_exp]
   · apply Subtype.ext
+    -- `radial (t, z)` is the covector `eᵗ z` over the base point of `z`.
+    change normalize (radial (t, z)) = z.1
+    rw [radial, expSMul_apply]
     exact (normalize_mk_smul z.1 (Real.exp_pos t)).trans (normalize_of_norm_eq_one z.2)
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless]
@@ -228,8 +171,9 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless]
 private theorem radial_unradial (q : punctured I M) : radial (unradial q) = q.1 := by
   have hq : 0 < ‖q.1.2‖ := (norm_pos_iff (a := q.1.2)).2 (mem_punctured.1 q.2)
   -- The radial map rescales the normalized covector `‖q‖⁻¹ • q` by `e^(log ‖q‖) = ‖q‖`.
+  rw [radial, expSMul_apply]
   refine CotangentBundle.ext (proj_normalize q.1) fun v ↦ ?_
-  simp only [radial, expSMul, unradial, snd_normalize, Real.exp_log hq]
+  simp only [unradial, snd_normalize, Real.exp_log hq]
   exact congrArg (· v)
     (NormedSpace.norm_smul_normalize (V := TangentSpace I q.1.proj →L[ℝ] ℝ) q.1.2)
 
@@ -270,7 +214,7 @@ def cosphereSymplectizationDiffeomorph :
 theorem coe_cosphereSymplectizationDiffeomorph_apply (p : ℝ × cosphereBundle I M) :
     (cosphereSymplectizationDiffeomorph I M p : CotangentBundle I M) =
       TotalSpace.mk' (E →L[ℝ] ℝ) p.2.1.proj (Real.exp p.1 • p.2.1.2) :=
-  (rfl)
+  expSMul_apply Subtype.val p
 
 /-- The inverse of the radial diffeomorphism sends a nonzero covector `q` to
 `(log ‖q‖, q / ‖q‖)`. -/
