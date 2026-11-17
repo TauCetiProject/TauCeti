@@ -23,9 +23,10 @@ the Thom space is `D(E)` with a disjoint basepoint
 (`TauCeti.thomSpaceHomeomorphOfSubsingleton`). Over an empty base the Thom space is a single point
 (`TauCeti.subsingleton_thomSpace`).
 
-When the base is a CW complex, the Thom space is a CW complex with one `0`-cell, the basepoint,
-and one `(m + r)`-cell for each `m`-cell of the base, `r` the rank (`TauCeti.thomSpaceCWComplex`,
-in `TauCeti.Topology.CWComplex.Classical.ThomSpace`).
+For a real vector bundle of finite rank `r` over a Hausdorff CW complex, with inner-product fibres
+whose norm is continuous on the total space (`TauCeti.ContinuousFiberNorm`), the Thom space is a CW
+complex with one `0`-cell, the basepoint, and one `(m + r)`-cell for each `m`-cell of the base
+(`TauCeti.thomSpaceCWComplex`, in `TauCeti.Topology.CWComplex.Classical.ThomSpace`).
 
 ## References
 
