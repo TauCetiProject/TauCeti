@@ -108,11 +108,6 @@ namespace StrictConvexBilliardTable
 
 variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 
-/-- The length of the boundary of a billiard table is positive. As an instance, this gives the
-circle `AddCircle L` of boundary parameters its manifold structure. -/
-instance fact_period_pos : Fact (0 < χ.period) :=
-  ⟨χ.period_pos⟩
-
 /-! ### The generating function on the circle -/
 
 /-- The covectors `-((-a) ds)` and `b ds` on the real line agree exactly when `a = b`. -/
@@ -334,9 +329,7 @@ theorem mvfderiv_cyclicAction_circleGeneratingFunction_eq_zero_iff {N : ℕ} [Ne
   exact neg_smulRight_neg_eq_smulRight_iff _ _
 
 /-- **Periodic billiard trajectories exist.** For every `N ≥ 2` the billiard map of a strictly
-convex table has a point of period `N`, whose least period divides `N`. The proof takes a vertex
-of an inscribed `N`-gon of maximal perimeter (`TauCeti.exists_billiard_periodic_reflection`), which
-is critical. -/
+convex table has a point of period `N`, whose least period divides `N`. -/
 theorem exists_isPeriodicPt_billiardMap {N : ℕ} (hN : 2 ≤ N) :
     ∃ x, IsPeriodicPt χ.billiardMap N x := by
   have : NeZero N := ⟨by omega⟩

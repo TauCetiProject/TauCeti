@@ -85,6 +85,11 @@ namespace StrictConvexBilliardTable
 
 variable {o : Orientation ℝ E (Fin 2)} (χ : StrictConvexBilliardTable o)
 
+/-- The length of the boundary of a billiard table is positive. As an instance, this gives the
+circle `AddCircle L` of boundary parameters its manifold structure. -/
+instance fact_period_pos : Fact (0 < χ.period) :=
+  ⟨χ.period_pos⟩
+
 /-! ### Time reversal -/
 
 /-- The state at the next collision point with reversed tangential component leaves along the
