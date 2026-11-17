@@ -187,25 +187,19 @@ instance (r : ℕ) : Nonempty (filtrationPair X x₀ r).snd :=
 
 variable (h : IsClosed ({x₀} : Set X)) (r : ℕ) [UCompactlyGeneratedSpace.{u} (Fin (r + 1) → X)]
 
-/-- Reduce a word of length `r + 1` and collapse `J_r X`. -/
-private def reduceCollapse :
-    TopCat.of (Fin (r + 1) → X) ⟶ (filtrationPair X x₀ r).ordinaryPairQuotient :=
-  TopCat.ofHom ⟨fun v => (filtrationPair X x₀ r).ordinaryPairQuotientπ (filtrationMk x₀ v),
-    (filtrationPair X x₀ r).ordinaryPairQuotientπ.hom.continuous.comp continuous_filtrationMk⟩
-
 /-- The map `Xʳ⁺¹ / fat wedge → J_(r+1) X / J_r X` induced by the reduction of words. -/
 private def filtrationQuotientMap :
     (fatWedgePair X x₀ (r + 1)).ordinaryPairQuotient ⟶
       (filtrationPair X x₀ r).ordinaryPairQuotient :=
-  (fatWedgePair X x₀ (r + 1)).ordinaryPairQuotientDesc (reduceCollapse r)
-    (filtrationPair X x₀ r).ordinaryPairQuotientBasepoint fun b =>
-      ((filtrationPair X x₀ r).ordinaryPairQuotientπ_eq_basepoint_iff _).2
-        ⟨⟨filtrationMk x₀ b.1, mk_mem_filtration_iff_mem_fatWedge.2 b.2⟩, rfl⟩
+  TopPair.ordinaryPairQuotientMap <| TopPair.ofSubsetMap
+    (TopCat.ofHom ⟨filtrationMk x₀, continuous_filtrationMk⟩)
+    fun _ hv => mk_mem_filtration_iff_mem_fatWedge.2 hv
 
 private theorem filtrationQuotientMap_π (v : Fin (r + 1) → X) :
     filtrationQuotientMap r ((fatWedgePair X x₀ (r + 1)).ordinaryPairQuotientπ v) =
       (filtrationPair X x₀ r).ordinaryPairQuotientπ (filtrationMk x₀ v) :=
-  TopPair.ordinaryPairQuotientπ_desc_apply (fatWedgePair X x₀ (r + 1)) (reduceCollapse r) _ _ v
+  (TopPair.ordinaryPairQuotientπ_naturality_apply _ _).trans
+    (congrArg _ (TopPair.ofSubsetMap_fst_apply _ _ _))
 
 include h in
 private theorem isHomeomorph_filtrationQuotientMap :
@@ -271,7 +265,7 @@ theorem filtrationQuotientHomeomorph_symm_π (v : Fin (r + 1) → X) :
 theorem filtrationQuotientHomeomorph_basepoint :
     filtrationQuotientHomeomorph h r (fatWedgePair X x₀ (r + 1)).ordinaryPairQuotientBasepoint =
       (filtrationPair X x₀ r).ordinaryPairQuotientBasepoint :=
-  TopPair.ordinaryPairQuotientDesc_basepoint _ _ _ _
+  TopPair.ordinaryPairQuotientMap_basepoint _
 
 end Topology
 
