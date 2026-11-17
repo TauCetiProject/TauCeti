@@ -61,6 +61,6 @@ lemma isZero_cechHypercohomology_obj_of_isEmpty [IsEmpty X]
     (P : (Opens X)ᵒᵖ ⥤ CochainComplex A ℤ) :
     IsZero ((cechHypercohomology X A n).obj P) :=
   TauCeti.CategoryTheory.isZero_cechHypercohomology_obj _ _ n
-    (fun _ ↦ inferInstanceAs (IsEmpty X)) P
+    (fun U ↦ ⟨U, le_rfl, inferInstanceAs (IsEmpty X)⟩) P
 
 end TauCeti.Topology

@@ -213,13 +213,20 @@ lemma cechHypercohomologyι_app_cechHypercohomologyDesc
     (cechHypercohomologyι E hE n j).app P ≫ cechHypercohomologyDesc E hE n f hf = f j :=
   colimit.ι_desc _ j
 
-/-- A system consisting of empty families has zero hypercohomology in every integer degree. -/
-lemma isZero_cechHypercohomology_obj (hE₀ : ∀ j, IsEmpty (E j).I)
+/-- A system in which every family is refined by an empty family has zero hypercohomology
+in every integer degree. -/
+lemma isZero_cechHypercohomology_obj (hE₀ : ∀ j, ∃ k, j ≤ k ∧ IsEmpty (E k).I)
     (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
     IsZero ((cechHypercohomology A E hE n).obj P) := by
   refine (IsZero.iff_id_eq_zero _).2 (cechHypercohomology_obj_hom_ext fun j ↦ ?_)
-  let := hE₀ j
-  exact ((HomologicalComplex.homologyFunctor A _ n).map_isZero
-    (isZero_cechTotalComplexFunctor_obj (E j).obj P)).eq_of_src _ _
+  obtain ⟨k, hjk, hk⟩ := hE₀ j
+  let := hk
+  have hzero : (cechHypercohomologyι E hE n k).app P = 0 :=
+    ((HomologicalComplex.homologyFunctor A _ n).map_isZero
+      (isZero_cechTotalComplexFunctor_obj (E k).obj P)).eq_of_src _ _
+  have hι := NatTrans.congr_app
+    (cechHypercohomologyDiagram_map_comp_cechHypercohomologyι E hE n (homOfLE hjk)) P
+  rw [NatTrans.comp_app, hzero, comp_zero] at hι
+  rw [← hι, zero_comp, zero_comp]
 
 end TauCeti.CategoryTheory
