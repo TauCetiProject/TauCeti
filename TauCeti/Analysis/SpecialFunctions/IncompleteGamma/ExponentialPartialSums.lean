@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Exp.PartialSums
+public import TauCeti.Analysis.SpecialFunctions.Exp.PartialSums.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 
 /-!
@@ -15,8 +15,7 @@ Through the Erlang identity `P(n + 1, z) = 1 - e^{-z} ∑_{k ≤ n} z^k / k!`
 (`TauCeti.regularizedGamma_natCast`), Buckholtz's uniform expansion of the scaled exponential
 partial sums (`TauCeti.isBigO_sum_range_succ_div_factorial_sub`, DLMF 8.11.18–8.11.19) yields the
 uniform large-parameter asymptotic expansion of `TauCeti.regularizedGamma (n + 1) (n * x)` across
-`x ∈ [0, 1 - δ]` (`δ > 0`) to arbitrary order `m`, complementing the central diagonal expansions at
-`x = 1` (DLMF 8.11.12–8.11.17).
+`x ∈ [0, 1 - δ]` (`δ > 0`) to arbitrary order `m`.
 
 ## Main results
 

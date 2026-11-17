@@ -32,7 +32,8 @@ sequence `A_k` governing the large-order uniform expansion of the generalized ex
 This module defines `TauCeti.expPartialSumPoly` and `TauCeti.expPartialSumCoeff` and establishes
 their degree, positivity, differential recurrence, uniqueness, ordered-field monotonicity, and
 uniform norm bounds on complex wedges and real half-lines. See
-`TauCeti.Analysis.SpecialFunctions.Exp.PartialSums` for the resulting uniform asymptotic expansions.
+`TauCeti.Analysis.SpecialFunctions.Exp.PartialSums.Basic` for the resulting uniform asymptotic
+expansions.
 
 ## Main definitions
 
@@ -128,26 +129,6 @@ theorem expPartialSumPoly_four :
     pow_one, mul_one]
   ring
 
-/-- Evaluating `p_k` at `0` gives `1` for every `k`. -/
-@[simp]
-theorem eval_zero_expPartialSumPoly (k : ℕ) : (expPartialSumPoly k).eval 0 = 1 := by
-  induction k with
-  | zero => simp
-  | succ k ih => simp [expPartialSumPoly_succ, ih]
-
-/-- Evaluating `p_k` at `1` gives the odd double factorial `(2k - 1)‼`. -/
-@[simp]
-theorem eval_one_expPartialSumPoly (k : ℕ) :
-    (expPartialSumPoly k).eval 1 = ((2 * k - 1)‼ : ℤ) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have hsub : 2 * (k + 1) - 1 = 2 * k + 1 := by omega
-    rw [expPartialSumPoly_succ, hsub, Nat.doubleFactorial_add_one (2 * k)]
-    simp only [eval_add, eval_sub, eval_mul, eval_one, eval_C, eval_X, sub_self, mul_zero,
-      zero_mul, add_zero, mul_one, ih, Nat.cast_mul, Nat.cast_add, Nat.cast_ofNat]
-    ring
-
 /-- Over any commutative ring, `aeval 0 (p_k) = 1`. -/
 @[simp]
 theorem aeval_zero_expPartialSumPoly {R : Type*} [CommRing R] (k : ℕ) :
@@ -168,6 +149,17 @@ theorem aeval_one_expPartialSumPoly {R : Type*} [CommRing R] (k : ℕ) :
     simp only [map_add, map_sub, map_mul, map_one, map_ofNat, map_natCast, aeval_X, sub_self,
       mul_zero, zero_mul, add_zero, mul_one, ih, Nat.cast_mul, Nat.cast_add, Nat.cast_ofNat]
     ring
+
+/-- Evaluating `p_k` at `0` gives `1` for every `k`. -/
+@[simp]
+theorem eval_zero_expPartialSumPoly (k : ℕ) : (expPartialSumPoly k).eval 0 = 1 := by
+  simpa only [coe_aeval_eq_eval] using aeval_zero_expPartialSumPoly (R := ℤ) k
+
+/-- Evaluating `p_k` at `1` gives the odd double factorial `(2k - 1)‼`. -/
+@[simp]
+theorem eval_one_expPartialSumPoly (k : ℕ) :
+    (expPartialSumPoly k).eval 1 = ((2 * k - 1)‼ : ℤ) := by
+  simpa only [coe_aeval_eq_eval] using aeval_one_expPartialSumPoly (R := ℤ) k
 
 /-- Every `p_k` has constant coefficient `1`. -/
 @[simp]
@@ -391,11 +383,10 @@ theorem ofReal_expPartialSumCoeff (k : ℕ) (x : ℝ) :
     ((expPartialSumCoeff k x : ℝ) : ℂ) = expPartialSumCoeff k (x : ℂ) := by
   rw [expPartialSumCoeff, expPartialSumCoeff]
   have haeval : ((aeval x (expPartialSumPoly k) : ℝ) : ℂ) =
-      aeval (x : ℂ) (expPartialSumPoly k) := by
-    rw [aeval_eq_sum_range, aeval_eq_sum_range, Complex.ofReal_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    simp [zsmul_eq_mul]
-  simp [haeval]
+      aeval (x : ℂ) (expPartialSumPoly k) :=
+    (aeval_algHom_apply (IsScalarTower.toAlgHom ℤ ℝ ℂ) x (expPartialSumPoly k)).symm
+  push_cast
+  rw [haeval]
 
 /-- Derivative of `d_k` away from `z = 1`:
 `d_k'(z) = (-1)^k p_{k+1}(z) / (1 - z)^{2k + 2}`. -/
@@ -513,13 +504,10 @@ private theorem sum_coeff_expPartialSumPoly_eq_doubleFactorial (k : ℕ) :
 theorem norm_expPartialSumCoeff_le_of_re_nonpos (k : ℕ) {M : ℝ} {w : ℂ} (hw_re : w.re ≤ 0)
     (hw_im : |w.im| ≤ M * (1 - w.re)) :
     ‖expPartialSumCoeff k w‖ ≤ ((2 * k - 1)‼ : ℝ) * (1 + M) ^ (2 * k + 1) := by
-  have : 1 ≤ 1 - w.re := by linarith
-  have hM : 0 ≤ M := by
-    have : 0 ≤ M * (1 - w.re) := (abs_nonneg w.im).trans hw_im
-    nlinarith
+  have hM : 0 ≤ M :=
+    nonneg_of_mul_nonneg_left ((abs_nonneg w.im).trans hw_im) (by linarith)
   have hnorm1 : 1 - w.re ≤ ‖1 - w‖ := by
-    have : (1 - w).re = 1 - w.re := by simp
-    linarith [this ▸ Complex.re_le_norm (1 - w)]
+    simpa only [Complex.sub_re, Complex.one_re] using Complex.re_le_norm (1 - w)
   have hnormw : ‖w‖ ≤ (1 + M) * ‖1 - w‖ := by
     calc
       ‖w‖ ≤ |w.re| + |w.im| := Complex.norm_le_abs_re_add_abs_im w
@@ -555,21 +543,14 @@ theorem norm_expPartialSumCoeff_le_of_re_le (k : ℕ) {δ M : ℝ} (hδ : 0 < δ
     (hw_re : w.re ≤ 1 - δ) (hw_im : |w.im| ≤ M * (1 - w.re)) :
     ‖expPartialSumCoeff k w‖ ≤
       ((2 * k - 1)‼ : ℝ) * (1 + M) ^ (2 * k + 1) * max 1 ((δ ^ (2 * k + 1))⁻¹) := by
+  have hM : 0 ≤ M :=
+    nonneg_of_mul_nonneg_left ((abs_nonneg w.im).trans hw_im) (by linarith)
   rcases le_or_gt w.re 0 with hre0 | hre0
-  · refine (norm_expPartialSumCoeff_le_of_re_nonpos k hre0 hw_im).trans
-      (le_mul_of_one_le_right ?_ (le_max_left 1 _))
-    have hM : 0 ≤ M := by
-      have : 0 ≤ M * (1 - w.re) := (abs_nonneg w.im).trans hw_im
-      have : 1 ≤ 1 - w.re := by linarith
-      nlinarith
-    positivity
-  · have : δ ≤ 1 - w.re := by linarith
-    have hM : 0 ≤ M := by
-      have : 0 ≤ M * (1 - w.re) := (abs_nonneg w.im).trans hw_im
-      nlinarith
-    have hnorm1 : δ ≤ ‖1 - w‖ := by
-      have : (1 - w).re = 1 - w.re := by simp
-      linarith [this ▸ Complex.re_le_norm (1 - w)]
+  · exact (norm_expPartialSumCoeff_le_of_re_nonpos k hre0 hw_im).trans
+      (le_mul_of_one_le_right (by positivity) (le_max_left 1 _))
+  · have hnorm1 : δ ≤ ‖1 - w‖ :=
+      (by linarith : δ ≤ 1 - w.re).trans
+        (by simpa only [Complex.sub_re, Complex.one_re] using Complex.re_le_norm (1 - w))
     have hnormw : ‖w‖ ≤ 1 + M := by
       calc
         ‖w‖ ≤ |w.re| + |w.im| := Complex.norm_le_abs_re_add_abs_im w
