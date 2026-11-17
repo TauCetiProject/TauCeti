@@ -55,9 +55,10 @@ rotation of the end at `∞` under `σ`. The main results are:
   `|w - c| < 3/2` is the pair-of-pants datum translated by `c`.
 * `TauCeti.Floer.contMDiffAt_exchangePerturbation`: the family is jointly smooth in the parameter
   `c`, the domain point of `S` and the target point.
-* `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation`: for `C¹` Hamiltonians on a normed
-  space, every member is `C¹` jointly in the domain point of `S`, in real coordinates, and the
-  target point.
+* `TauCeti.Floer.contDiffAt_exchangePerturbation_apply`: for `C^n` Hamiltonians on a normed
+  space, the family is `C^n` jointly in the parameter, the domain point of `S`, in real
+  coordinates, and the target point; `TauCeti.Floer.contDiffAt_uncurry_exchangePerturbation` is
+  the resulting smoothness of a single member.
 * `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`: for
   Hamiltonians on a manifold with a smooth two-form, such as a closed symplectic manifold, the
   integrated curvature `∫ |R_K|` of every member with `0 ≤ c ≤ 1` is at most `B₀ + B₁ + B_∞`
@@ -394,7 +395,30 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
-/-- **The family is `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
+/-- The chart `(c, z, x) ↦ (c, (z, x))` reading the domain point of `ℂ` in real coordinates is
+`C^n` from the self-model of `ℝ × ((ℝ × ℝ) × V)` to the product of the self-models of `ℝ`, `ℂ`
+and `V`. -/
+theorem contMDiff_prodMap_equivRealProdCLM_symm {n : WithTop ℕ∞} :
+    ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      (Prod.map (id : ℝ → ℝ) (Prod.map Complex.equivRealProdCLM.symm (id : V → V))) :=
+  contDiff_fst.contMDiff.prodMk
+    ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
+      |>.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
+
+/-- **The family is smooth in real coordinates.** For period-one `C^n` Hamiltonians on a normed
+space, the family is `C^n` jointly in the parameter `c`, the domain point of `S = ℂ ∖ {0, 1}`, in
+real coordinates, and the target point. -/
+theorem contDiffAt_exchangePerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n (fun p : ℝ × ((ℝ × ℝ) × V) ↦
+      exchangePerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) (c, (z, x)) := by
+  exact ((contMDiffAt_exchangePerturbation hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) c ⟨_, hz⟩ x).comp
+      (c, (z, x)) contMDiff_prodMap_equivRealProdCLM_symm.contMDiffAt).contDiffAt.clm_apply
+        contDiffAt_const
+
+/-- **The members are `C¹` in real coordinates.** For period-one `C¹` Hamiltonians on a normed
 space, the member `c` of the family is `C¹` jointly in the domain point of
 `S = ℂ ∖ {0, 1}`, in real coordinates, and the target point. -/
 theorem contDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
@@ -402,21 +426,9 @@ theorem contDiffAt_uncurry_exchangePerturbation (hH : ∀ q, Periodic (H q) 1)
     (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
     ContDiffAt ℝ 1
       (uncurry fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      (z, x) := by
-  have hin := contDiffAt_uncurry_pairOfPantsPerturbation
-    (forall_update_inf (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH)
-    (forall_update_inf (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const hHs) hz x v
-  have hpl : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦
-      negativePlanePerturbation (H inf) (Complex.equivRealProdCLM.symm (p.1 - (c, 0))) p.2 v)
       (z, x) :=
-    (SymplecticForm.contDiff_negativePlanePerturbation_apply (hH inf) (hHs inf) v).contDiffAt.comp
-      (f := fun p : (ℝ × ℝ) × V ↦ (p.1 - (c, 0), p.2)) _ (by fun_prop)
-  have he (z : ℝ × ℝ) :
-      Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
-    apply Complex.ext <;> simp
-  simp only [he] at hpl
-  exact (hin.add hpl).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ by
-    simp [exchangePerturbation_def, uncurry])
+  (contDiffAt_exchangePerturbation_apply (n := 1) hH hHs c hz x v).comp (z, x)
+    (contDiffAt_const.prodMk contDiffAt_id)
 
 end TauCeti.Floer
 
