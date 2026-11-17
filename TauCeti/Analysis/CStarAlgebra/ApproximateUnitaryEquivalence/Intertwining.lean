@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Sequential
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Elliott's approximate intertwining
@@ -57,14 +58,6 @@ private theorem norm_sub_le_of_intertwining (f f' : A →⋆ₙₐ[ℂ] B) (g : 
   refine (norm_add_le _ _).trans (add_le_add_left ?_ _)
   simpa only [norm_sub_rev a] using NonUnitalStarAlgHom.norm_apply_le f' (a - g (f a))
 
-/-- A sequence whose steps from some index on are bounded by a summable sequence is Cauchy. -/
-private theorem cauchySeq_of_dist_le_of_summable_of_le {x : ℕ → A} {d : ℕ → ℝ}
-    (hd : Summable d) (n : ℕ) (h : ∀ m, n ≤ m → dist (x m) (x (m + 1)) ≤ d m) :
-    CauchySeq x :=
-  (cauchySeq_shift n).mp <| cauchySeq_of_dist_le_of_summable (fun k ↦ d (k + n))
-    (fun k ↦ by simpa only [Nat.succ_add] using h (k + n) (Nat.le_add_left n k))
-    ((summable_nat_add_iff n).mpr hd)
-
 /-- **Approximate intertwining.** Let `φ n : A → B` and `ψ n : B → A` be `⋆`-homomorphisms
 and `F n ⊆ A`, `G n ⊆ B` increasing sets with dense unions, such that `φ n` maps `F n` into
 `G n` and `ψ n` maps `G n` into `F (n + 1)`. If `ψ n ∘ φ n` is within `ε n` of the identity
@@ -84,7 +77,8 @@ theorem exists_starAlgEquiv_of_intertwining (φ : ℕ → A →⋆ₙₐ[ℂ] B)
   have hφc : ∀ a ∈ ⋃ n, F n, CauchySeq fun m ↦ φ m a := by
     simp only [mem_iUnion]
     rintro a ⟨n, ha⟩
-    refine cauchySeq_of_dist_le_of_summable_of_le (hε.add hε) n fun m hm ↦ ?_
+    refine cauchySeq_of_eventually_dist_le_of_summable (hε.add hε)
+      (eventually_atTop.mpr ⟨n, fun m hm ↦ ?_⟩)
     rw [dist_comm, dist_eq_norm]
     exact (norm_sub_le_of_intertwining (φ m) (φ (m + 1)) (ψ m) a).trans
       (add_le_add (hψφ m a (hF hm ha)) (hφψ m _ (hφ m (hF hm ha))))
@@ -93,8 +87,8 @@ theorem exists_starAlgEquiv_of_intertwining (φ : ℕ → A →⋆ₙₐ[ℂ] B)
   have hψc : ∀ b ∈ ⋃ n, G n, CauchySeq fun m ↦ ψ m b := by
     simp only [mem_iUnion]
     rintro b ⟨n, hb⟩
-    refine cauchySeq_of_dist_le_of_summable_of_le (hε.add ((summable_nat_add_iff 1).mpr hε)) n
-      fun m hm ↦ ?_
+    refine cauchySeq_of_eventually_dist_le_of_summable
+      (hε.add ((summable_nat_add_iff 1).mpr hε)) (eventually_atTop.mpr ⟨n, fun m hm ↦ ?_⟩)
     rw [dist_comm, dist_eq_norm]
     exact (norm_sub_le_of_intertwining (ψ m) (ψ (m + 1)) (φ (m + 1)) b).trans
       (add_le_add (hφψ m b (hG hm hb)) (hψφ (m + 1) _ (hψ m (hG hm hb))))
@@ -159,9 +153,7 @@ theorem exists_starAlgEquiv_of_forall_finset_approx [TopologicalSpace.SeparableS
     intro x hx
     cases n with
     | zero => simp_all [s]
-    | succ n =>
-      simp only [hs, next, Finset.coe_insert, Finset.coe_union, Finset.coe_image] at hx ⊢
-      exact mem_insert_of_mem _ (mem_union_right _ (mem_image_of_mem _ hx))
+    | succ n => simp only [hs, next]; grind
   obtain ⟨θ, hθ, -⟩ := exists_starAlgEquiv_of_intertwining (fun n ↦ Φ (s n).1)
     (fun n ↦ Ψ (V (s n).1 (s n).2.1 n)) (F := fun n ↦ ((s n).2.1 : Set A))
     (G := fun n ↦ ((s n).2.2 : Set B)) (ε := ε)
@@ -171,11 +163,21 @@ theorem exists_starAlgEquiv_of_forall_finset_approx [TopologicalSpace.SeparableS
       (range_subset_iff.mpr fun n ↦ mem_iUnion.mpr ⟨n, ha n⟩))
     ((TopologicalSpace.denseRange_denseSeq B).mono
       (range_subset_iff.mpr fun n ↦ mem_iUnion.mpr ⟨n, hb n⟩))
-    hmaps (fun n y hy ↦ by
-      simp only [hs, next, Finset.coe_insert, Finset.coe_union, Finset.coe_image]
-      exact mem_insert_of_mem _ (mem_union_right _ (mem_image_of_mem _ hy)))
+    hmaps (fun n y hy ↦ by simp only [hs, next]; grind)
     summable_geometric_two (fun n x hx ↦ (hV _ _ n x hx).le) (fun n y hy ↦ (hW _ _ n y hy).le)
   exact ⟨fun n ↦ (s n).1, θ, hθ⟩
+
+/-- If `g ∘ f` is approximately unitarily equivalent to the identity, then so is the composite
+of `g` with any unitary conjugate of `f`: postcomposition with `g`, which preserves the unit,
+preserves the approximate unitary equivalence of `f` with its conjugate. -/
+private theorem approximatelyUnitarilyEquivalent_comp_conj {D E : Type*} [CStarAlgebra D]
+    [CStarAlgebra E] {f : D →⋆ₙₐ[ℂ] E} {g : E →⋆ₙₐ[ℂ] D}
+    (h : ApproximatelyUnitarilyEquivalent (g.comp f) (NonUnitalStarAlgHom.id ℂ D))
+    (w : unitary E) : ApproximatelyUnitarilyEquivalent
+      (g.comp ((Unitary.conjStarAlgAut ℂ E w).toNonUnitalStarAlgHom.comp f))
+      (NonUnitalStarAlgHom.id ℂ D) :=
+  ((ApproximatelyUnitarilyEquivalent.of_unitary w fun _ ↦ rfl).postcomp_of_map_one g
+    h.map_one_of_comp).symm.trans h
 
 /-- **Elliott's approximate intertwining theorem.** Let `A` and `B` be separable unital
 C⋆-algebras and `φ : A → B`, `ψ : B → A` be `⋆`-homomorphisms such that `ψ ∘ φ` is
@@ -196,18 +198,19 @@ theorem elliott_intertwining {A B : Type*} [CStarAlgebra A] [CStarAlgebra B]
     (Unitary.conjStarAlgAut ℂ A v).toNonUnitalStarAlgHom.comp ψ
   have hΦ (w : unitary B) (x : A) : Φ w x = w * φ x * star (w : B) := by simp [Φ]
   have hΨ (v : unitary A) (y : B) : Ψ v y = v * ψ y * star (v : A) := by simp [Ψ]
-  -- Conjugating one map keeps the composite approximately unitarily equivalent to the identity,
-  -- since postcomposition with the other, unital, map preserves the relation.
+  -- Conjugating one map keeps the composite approximately unitarily equivalent to the identity.
   obtain ⟨w, θ, hθ⟩ := exists_starAlgEquiv_of_forall_finset_approx Φ Ψ
     (fun w F δ hδ ↦ by
-      simpa [hΨ] using (approximatelyUnitarilyEquivalent_def _ _).mp
-        (((ApproximatelyUnitarilyEquivalent.of_unitary w fun x ↦ (hΦ w x).symm).postcomp_of_map_one
-          ψ hψφ.map_one_of_comp).symm.trans hψφ) F δ hδ)
+      simpa only [hΦ, hΨ, NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+        Unitary.conjStarAlgAut_apply, NonUnitalStarAlgHom.coe_id, id_eq] using
+        (approximatelyUnitarilyEquivalent_def _ _).mp
+          (approximatelyUnitarilyEquivalent_comp_conj hψφ w) F δ hδ)
     (fun v G δ hδ ↦ by
-      simpa [hΦ] using (approximatelyUnitarilyEquivalent_def _ _).mp
-        (((ApproximatelyUnitarilyEquivalent.of_unitary v fun y ↦ (hΨ v y).symm).postcomp_of_map_one
-          φ hφψ.map_one_of_comp).symm.trans hφψ) G δ hδ)
-  exact ⟨θ, (ApproximatelyUnitarilyEquivalent.of_tendsto (l := atTop) w
-    fun x ↦ by simpa [hΦ] using hθ x).symm⟩
+      simpa only [hΦ, hΨ, NonUnitalStarAlgHom.comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+        Unitary.conjStarAlgAut_apply, NonUnitalStarAlgHom.coe_id, id_eq] using
+        (approximatelyUnitarilyEquivalent_def _ _).mp
+          (approximatelyUnitarilyEquivalent_comp_conj hφψ v) G δ hδ)
+  exact ⟨θ, (ApproximatelyUnitarilyEquivalent.of_tendsto (l := atTop) w fun x ↦ by
+    simpa only [StarAlgEquiv.toNonUnitalStarAlgHom_apply, hΦ] using hθ x).symm⟩
 
 end TauCeti

@@ -11,7 +11,8 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 # Elementary inequalities in seminormed rings
 
 This file records elementary consequences of the submultiplicativity of the norm, and an estimate
-for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative. In particular, a nonzero idempotent
+has norm at least `1` (`IsIdempotentElem.one_le_norm`).
 -/
 
 public section
@@ -149,5 +150,15 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
   simp at hz
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+/-- A nonzero idempotent in a normed ring has norm at least `1`. -/
+theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempotentElem p)
+    (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
+  (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
+    simpa only [hp.eq] using norm_mul_le p p
+
+end IsIdempotentElem
 
 end

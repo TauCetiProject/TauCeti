@@ -47,6 +47,8 @@ analogue of the power-rule integral identity for tails.
   exactly when `∑ i, m i * a i` is.
 * `TauCeti.eventually_mul_le_one_of_summable_sq`: a square-summable family eventually satisfies
   `b i * C ≤ 1`.
+* `TauCeti.cauchySeq_of_eventually_dist_le_of_summable`: a sequence whose steps are eventually
+  bounded by a summable sequence is Cauchy.
 -/
 
 public section
@@ -213,5 +215,14 @@ theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
         rw [inv_mul_le_iff₀ (by positivity)]
         linarith
   nlinarith
+
+/-- A sequence whose steps are eventually bounded by a summable sequence is Cauchy. -/
+theorem cauchySeq_of_eventually_dist_le_of_summable {α : Type*} [PseudoMetricSpace α]
+    {x : ℕ → α} {d : ℕ → ℝ} (hd : Summable d)
+    (h : ∀ᶠ m in atTop, dist (x m) (x (m + 1)) ≤ d m) : CauchySeq x := by
+  obtain ⟨n, hn⟩ := eventually_atTop.mp h
+  exact (cauchySeq_shift n).mp <| cauchySeq_of_dist_le_of_summable (fun k ↦ d (k + n))
+    (fun k ↦ by simpa only [Nat.succ_add] using hn (k + n) (Nat.le_add_left n k))
+    ((summable_nat_add_iff n).mpr hd)
 
 end TauCeti

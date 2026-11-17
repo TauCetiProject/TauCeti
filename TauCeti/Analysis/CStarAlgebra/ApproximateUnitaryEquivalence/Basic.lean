@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+import TauCeti.Algebra.Star.Unitary
+import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
 # Approximate unitary equivalence in a unital target
@@ -120,10 +122,7 @@ theorem postcomp_of_map_one [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivale
     ApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) := by
   intro F ε hε
   obtain ⟨u, hu⟩ := h F ε hε
-  have hρu : ρ u ∈ unitary C := Unitary.mem_iff.mpr
-    ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem u.prop, hρ],
-      by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem u.prop, hρ]⟩
-  refine ⟨⟨ρ u, hρu⟩, fun a ha ↦ ?_⟩
+  refine ⟨⟨ρ u, Unitary.map_mem_of_map_one ρ hρ u.prop⟩, fun a ha ↦ ?_⟩
   simpa only [NonUnitalStarAlgHom.comp_apply, ← map_star, ← map_mul, ← map_sub] using
     (NonUnitalStarAlgHom.norm_apply_le ρ
       ((u : B) * φ a * star (u : B) - ψ a)).trans_lt (hu a ha)
@@ -173,11 +172,7 @@ theorem map_one_eq_one_iff {D : Type*} [CStarAlgebra D] {f g : D →⋆ₙₐ[�
   have hidem : IsIdempotentElem (1 - f 1) :=
     IsIdempotentElem.one_sub (by rw [IsIdempotentElem, ← map_mul, one_mul])
   by_contra hne
-  have hpos : 0 < ‖1 - f 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr (Ne.symm hne))
-  have hle : ‖1 - f 1‖ ≤ ‖1 - f 1‖ * ‖1 - f 1‖ := by
-    conv_lhs => rw [← hidem.eq]
-    exact norm_mul_le _ _
-  nlinarith
+  exact hlt.not_ge (hidem.one_le_norm (sub_ne_zero.mpr (Ne.symm hne)))
 
 /-- If `g ∘ f` is approximately unitarily equivalent to the identity of a unital C⋆-algebra,
 then `g` is unital. -/
