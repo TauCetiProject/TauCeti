@@ -659,6 +659,12 @@ theorem isCartanWeightVector_single (a : Fin (n + 1) ⊕ Fin (n + 1)) :
 noncomputable def lattice : Submodule ℤ ((Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :=
   TauCeti.coordinateLattice (Fin (n + 1) ⊕ Fin (n + 1))
 
+/-- The standard symplectic coordinate lattice is finitely generated and spans the rational
+coordinate space. -/
+instance instIsLatticeLattice : Submodule.IsLattice ℚ (lattice n) := by
+  rw [lattice]
+  exact TauCeti.instIsLatticeCoordinateLattice (Fin (n + 1) ⊕ Fin (n + 1))
+
 /-- A vector is in the standard lattice exactly when all its coordinates are integers. -/
 @[simp] theorem mem_lattice_iff {v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ} :
     v ∈ lattice n ↔ ∀ a, ∃ z : ℤ, (z : ℚ) = v a :=
