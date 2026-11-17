@@ -138,14 +138,6 @@ lemma filtrationFunctorMap_comp (f : K ⟶ L) (g : L ⟶ N)
     NatTrans.comp_app, Category.assoc, filtrationFunctorMap_app_comp,
     filtrationFunctorMap_app_comp_assoc]
 
-/-- A composite of morphisms of filtered complexes, each sending every piece of its source
-filtration into the corresponding piece of its target filtration, does so too. -/
-lemma factors_comp_of_factors {f : K ⟶ L} {g : L ⟶ N}
-    (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (hg : ∀ n, (H n).Factors ((G n).arrow ≫ g))
-    (n : ℤ) : (H n).Factors ((F n).arrow ≫ f ≫ g) := by
-  rw [← Category.assoc, ← Subobject.factorThru_arrow _ _ (hf n), Category.assoc]
-  exact Subobject.factors_of_factors_right _ (hg n)
-
 end FiltrationMap
 
 section FirstPage

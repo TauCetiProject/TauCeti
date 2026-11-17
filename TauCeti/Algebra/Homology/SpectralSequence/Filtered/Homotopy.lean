@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
+import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
 # Filtered homotopies induce equal maps of spectral sequences
@@ -172,12 +173,12 @@ theorem isIso_spectralObjectMap_filtrationFunctorMap {g : L ⟶ K}
     IsIso (spectralObjectMap (filtrationFunctorMap hF hG f hf)) := by
   refine ⟨spectralObjectMap (filtrationFunctorMap hG hF g hg), ?_, ?_⟩
   · rw [← spectralObjectMap_comp, ← filtrationFunctorMap_comp f g hf hg
-        (factors_comp_of_factors hf hg),
+        fun n ↦ Subobject.factors_comp_of_factors (hf n) (hg n),
       spectralObjectMap_filtrationFunctorMap_eq_of_homotopy
         (hg := fun n ↦ by simpa using (F n).factors_self) h₁ hh₁,
       filtrationFunctorMap_id, spectralObjectMap_id]
   · rw [← spectralObjectMap_comp, ← filtrationFunctorMap_comp g f hg hf
-        (factors_comp_of_factors hg hf),
+        fun n ↦ Subobject.factors_comp_of_factors (hg n) (hf n),
       spectralObjectMap_filtrationFunctorMap_eq_of_homotopy
         (hg := fun n ↦ by simpa using (G n).factors_self) h₂ hh₂,
       filtrationFunctorMap_id, spectralObjectMap_id]
