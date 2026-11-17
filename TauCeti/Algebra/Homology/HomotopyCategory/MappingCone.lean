@@ -274,8 +274,8 @@ lemma mapOfHomotopyHomotopy_hom
     (mapOfHomotopyHomotopy H H₂ s hs).hom p q =
       (fst φ₁ : Cochain _ _ 1).v p (p + 1) rfl ≫
         s.v (p + 1) q (by omega) ≫ (inr φ₂).f q := by
-  simp only [mapOfHomotopyHomotopy, descHomotopy, Cochain.equivHomotopy,
-    Equiv.coe_fn_symm_mk, hpq, ↓reduceDIte, descCochain, Cochain.comp_zero, add_zero]
+  rw [mapOfHomotopyHomotopy, descHomotopy_hom _ _ _ _ _ _ _ p q hpq]
+  simp only [descCochain, Cochain.comp_zero, add_zero]
   rw [Cochain.comp_v _ _ _ p (p + 1) q rfl (by omega),
     Cochain.comp_zero_cochain_v, Cochain.ofHom_v]
 
