@@ -33,7 +33,9 @@ Bundled strong monoidal functors `TauCeti.MonoidalFunctor C D`, with the monoida
 transformations as morphisms, embed fully faithfully into `LaxMonoidalFunctor C D`
 (`TauCeti.MonoidalFunctor.fullyFaithfulForget`). Their isomorphisms are the monoidal natural
 isomorphisms, so the core of this category is the groupoid of strong monoidal functors in which
-universal properties of free monoidal categories are stated.
+universal properties of free monoidal categories are stated. The category structure, induced
+from `LaxMonoidalFunctor C D`, and its forgetful-functor API follow Mathlib's bundled lax braided
+functors `CategoryTheory.LaxBraidedFunctor` (`Mathlib/CategoryTheory/Monoidal/Braided/Basic.lean`).
 -/
 
 public section
@@ -180,12 +182,12 @@ theorem hom_ext {F G : MonoidalFunctor C D} {α β : F ⟶ G} (h : α.hom.hom = 
 
 @[simp]
 theorem id_hom (F : MonoidalFunctor C D) :
-    LaxMonoidalFunctor.Hom.hom (InducedCategory.Hom.hom (𝟙 F)) = 𝟙 F.toFunctor :=
+    InducedCategory.Hom.hom (𝟙 F) = 𝟙 F.toLaxMonoidalFunctor :=
   (rfl)
 
 @[reassoc, simp]
 theorem comp_hom {F G H : MonoidalFunctor C D} (α : F ⟶ G) (β : G ⟶ H) :
-    (α ≫ β).hom.hom = α.hom.hom ≫ β.hom.hom :=
+    (α ≫ β).hom = α.hom ≫ β.hom :=
   (rfl)
 
 /-- Constructor for morphisms of strong monoidal functors. -/
