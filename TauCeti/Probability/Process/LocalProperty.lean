@@ -29,7 +29,10 @@ assert that the new representative satisfies the original local property: stoppi
 merely adapted replacement at a general stopping time requires additional measurability.
 
 For any native local property, the stopped stages converge almost surely at each fixed time
-to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
+to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`). When the
+property implies strong adaptation, fixed-time evaluations and increments are therefore a.e.
+strongly measurable (`ProbabilityTheory.Locally.aestronglyMeasurable_eval`,
+`ProbabilityTheory.Locally.aestronglyMeasurable_sub`).
 
 Cutting localizing times off at the initial time outside increasing, exhausting initial events
 preserves localization (`ProbabilityTheory.IsLocalizingSequence.piecewise_bot`). The corresponding
@@ -183,5 +186,22 @@ theorem ae_tendsto_stoppedProcess_localSeq (hX : Locally p ℱ X P) (t : ι) :
   filter_upwards [ht] with n hn
   rw [stoppedProcess_eq_of_le hn.le, Set.indicator_of_mem]
   exact lt_of_le_of_lt (WithTop.coe_le_coe.mpr bot_le) hn
+
+/-- If a process locally has a property implying strong adaptation, its value at each fixed time
+is a.e. strongly measurable, as the a.e. pointwise limit of its native stopped stages. -/
+theorem aestronglyMeasurable_eval [PseudoMetrizableSpace E]
+    (hX : Locally p ℱ X P) (hp : ∀ Y, p Y → StronglyAdapted ℱ Y) (t : ι) :
+    AEStronglyMeasurable (X t) P :=
+  aestronglyMeasurable_of_tendsto_ae atTop
+    (fun n ↦ ((hp _ (hX.stoppedProcess_localSeq n) t).mono (ℱ.le t)).aestronglyMeasurable)
+    (hX.ae_tendsto_stoppedProcess_localSeq t)
+
+/-- If a process locally has a property implying strong adaptation, every increment `X t - X s`
+is a.e. strongly measurable. -/
+theorem aestronglyMeasurable_sub [PseudoMetrizableSpace E] [Sub E] [ContinuousSub E]
+    (hX : Locally p ℱ X P) (hp : ∀ Y, p Y → StronglyAdapted ℱ Y) (s t : ι) :
+    AEStronglyMeasurable (fun ω ↦ X t ω - X s ω) P :=
+  continuous_sub.comp_aestronglyMeasurable
+    ((hX.aestronglyMeasurable_eval hp t).prodMk (hX.aestronglyMeasurable_eval hp s))
 
 end ProbabilityTheory.Locally

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.ConditionalExpectation
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
+import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Basic
 
 /-!
 # Independence from a sub-sigma-algebra via characteristic functions
@@ -32,39 +33,15 @@ open scoped RealInnerProductSpace
 
 namespace ProbabilityTheory
 
-variable {Ω E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-private lemma continuous_exp_inner_I (t : E) :
-    Continuous (fun x : E ↦ exp ((⟪x, t⟫ : ℂ) * I)) :=
-  continuous_exp.comp ((Complex.continuous_ofReal.comp
-    (continuous_id.inner continuous_const)).mul continuous_const)
-
-variable [MeasurableSpace E]
-
-private lemma charFun_smul_measure {μ : Measure E} (c : ENNReal) (t : E) :
-    charFun (c • μ) t = (c.toReal : ℂ) * charFun μ t := by
-  simp [charFun_apply, integral_smul_measure, Complex.real_smul]
-
-variable [BorelSpace E]
-
-private lemma integrable_exp_inner_I {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
-    {X : Ω → E} (hX : AEMeasurable X P) (t : E) :
-    Integrable (fun ω ↦ exp ((⟪X ω, t⟫ : ℂ) * I)) P :=
-  (integrable_const (1 : ℝ)).mono'
-    ((continuous_exp_inner_I t).measurable.comp_aemeasurable hX).aestronglyMeasurable
-    (ae_of_all P fun _ ↦ by rw [Complex.norm_exp_ofReal_mul_I])
-
-private lemma charFun_map_eq_integral {mΩ : MeasurableSpace Ω} {Q : Measure Ω} {X : Ω → E}
-    (hX : AEMeasurable X Q) (t : E) :
-    charFun (Q.map X) t = ∫ ω, exp ((⟪X ω, t⟫ : ℂ) * I) ∂Q := by
-  rw [charFun_apply, integral_map hX (continuous_exp_inner_I t).aestronglyMeasurable]
+variable {Ω E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E]
 
 private lemma setIntegral_exp_inner_I_of_condExp {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
     [IsFiniteMeasure P] (hm : m ≤ mΩ) {X : Ω → E} (hX : AEMeasurable X P) {t : E} {c : ℂ}
     (h : P[fun ω ↦ exp ((⟪X ω, t⟫ : ℂ) * I) | m] =ᵐ[P] fun _ ↦ c) {A : Set Ω}
     (hA : MeasurableSet[m] A) :
     ∫ ω in A, exp ((⟪X ω, t⟫ : ℂ) * I) ∂P = ((P A).toReal : ℂ) * c := by
-  rw [← setIntegral_condExp hm (integrable_exp_inner_I hX t) hA,
+  rw [← setIntegral_condExp hm (hX.integrable_exp_inner_mul_I t) hA,
     setIntegral_congr_ae (hm A hA) (h.mono fun _ hω _ ↦ hω),
     setIntegral_const, Measure.real, Complex.real_smul]
 
@@ -116,7 +93,8 @@ theorem indep_comap_iff_forall_setIntegral_exp_inner_I [IsZeroOrProbabilityMeasu
 
 /-- If the characteristic integral of `X` over every event `A ∈ m` factors as
 `(P A).toReal * φ t` for some deterministic function `φ`, then `X` is independent of `m`.
-Evaluating at `A = univ` identifies `φ` with `charFun (P.map X)`. -/
+When `P` is a probability measure (`P ≠ 0`), evaluating at `A = univ` identifies `φ` with
+`charFun (P.map X)`. -/
 theorem indep_comap_of_setIntegral_exp_inner_I [IsZeroOrProbabilityMeasure P]
     (hm : m ≤ mΩ) {X : Ω → E} (hX : AEMeasurable X P) {φ : E → ℂ}
     (h : ∀ t : E, ∀ A, MeasurableSet[m] A →
@@ -138,7 +116,7 @@ theorem indep_comap_iff_forall_condExp_exp_inner_I [IsZeroOrProbabilityMeasure P
       ∀ t : E, P[fun ω ↦ exp ((⟪X ω, t⟫ : ℂ) * I) | m] =ᵐ[P]
         fun _ ↦ charFun (P.map X) t := by
   rw [indep_comap_iff_forall_setIntegral_exp_inner_I hm hX]
-  refine ⟨fun h t ↦ (ae_eq_condExp_of_forall_setIntegral_eq hm (integrable_exp_inner_I hX t)
+  refine ⟨fun h t ↦ (ae_eq_condExp_of_forall_setIntegral_eq hm (hX.integrable_exp_inner_mul_I t)
       (fun _ _ _ ↦ (integrable_const _).integrableOn) (fun A hA _ ↦ by
         rw [setIntegral_const, Measure.real, Complex.real_smul, h t A hA])
       aestronglyMeasurable_const).symm,

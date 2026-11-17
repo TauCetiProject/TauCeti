@@ -10,6 +10,7 @@ public import TauCeti.Probability.Martingale.CountableStopping
 public import TauCeti.Probability.Martingale.LpLimit
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation.UniformIntegrable
 public import TauCeti.Probability.Process.StoppingApproximation
+import TauCeti.Probability.Process.Stopping
 
 /-!
 # Stopping right-continuous martingales on raw filtrations
@@ -23,7 +24,8 @@ For a martingale with almost surely right-continuous paths, upward dyadic stoppi
 approximations give Lᵖ convergence of the stopped processes at each deterministic observation
 time T, assuming only that M T belongs to Lᵖ, for finite p ≥ 1. This convergence requires
 neither progressivity nor a pathwise integrable bound. The initial-time indicator form of
-martingale stopping retains the convention used by native localization.
+martingale stopping retains the convention used by native localization, and restopping such an
+indicator-stopped martingale at any earlier stopping time preserves the martingale property.
 
 Bounded optional sampling for a strongly progressive, almost surely right-continuous
 martingale identifies its value at a stopping time τ ≤ T with M T conditioned on the
@@ -113,6 +115,31 @@ theorem Martingale.stoppedProcess_indicator_of_ae_isRightContinuous
   refine (hM.stoppedProcess_of_ae_isRightContinuous hprog hcont hτ).indicator
     (fun t ↦ ℱ.mono bot_le _ ?_)
   simpa only [compl_ofPred, not_le, WithTop.coe_zero] using (hτ 0).compl
+
+/-- Restopping an indicator-stopped martingale at an earlier stopping time `τ ≤ σ` preserves the
+martingale property for a strongly progressive, almost-surely right-continuous process. -/
+theorem Martingale.stoppedProcess_indicator_of_le_of_ae_isRightContinuous
+    {σ : Ω → WithTop ℝ≥0}
+    (hM : Martingale (stoppedProcess (fun t ↦ {ω | 0 < σ ω}.indicator (M t)) σ) ℱ μ)
+    (hprog : IsStronglyProgressive ℱ M)
+    (hcont : ∀ᵐ ω ∂μ, IsRightContinuous (fun t ↦ M t ω))
+    (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ) (hle : τ ≤ σ) :
+    Martingale (stoppedProcess (fun t ↦ {ω | 0 < τ ω}.indicator (M t)) τ) ℱ μ := by
+  convert hM.stoppedProcess_indicator_of_ae_isRightContinuous
+    (by simpa only [bot_eq_zero] using hprog.stoppedProcess_indicator_pos hσ)
+    (hcont.mono fun ω hω ↦ by
+      rw [show (stoppedProcess (fun t ↦ {ω | 0 < σ ω}.indicator (M t)) σ · ω) =
+          fun t ↦ if 0 < σ ω then stoppedProcess M σ t ω else 0 by
+        funext t; simp [stoppedProcess_indicator_comm, Set.indicator_apply]]
+      split_ifs
+      · exact fun _ ↦ ContinuousWithinAt.stoppedProcess (hω _)
+      · exact continuous_const.isRightContinuous) hτ using 1
+  simp only [stoppedProcess_indicator_comm', stoppedProcess_stoppedProcess]
+  ext t ω
+  by_cases hω : 0 < τ ω
+  · simp [Set.indicator_of_mem, hω, lt_of_lt_of_le hω (hle ω), stoppedProcess,
+      min_eq_left (hle ω)]
+  · simp [Set.indicator_of_notMem, hω]
 
 /-- For a strongly progressive martingale with almost surely right-continuous paths and a
 bounded stopping time τ ≤ T of arbitrary range, `stoppedValue M τ` equals M T conditioned on
