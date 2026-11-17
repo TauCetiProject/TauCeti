@@ -61,8 +61,8 @@ the link of a simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
   `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
   domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
-* `PreAbstractSimplicialComplex.closedStar_inf_deletion_singleton`: the boundary of a vertex's
-  closed star is its link.
+* `PreAbstractSimplicialComplex.closedStar_inf_deletion_singleton`: deleting a vertex from its
+  closed star (i.e. `closedStar K {w} ⊓ deletion K {w}`) yields its link.
 * `PreAbstractSimplicialComplex.map_link`: injective vertex relabelings commute with links.
 * monotonicity of all three constructions in `K`.
 -/
@@ -359,7 +359,8 @@ theorem finite_faces_closedStar_iff :
     · exact sdiff_eq_empty_or_mem_link_of_mem_closedStar hρ
     · exact sup_inf_sdiff ρ σ
 
-/-- The boundary of the closed star of a singleton vertex is its link. -/
+/-- Deleting a vertex `w` from its closed star (intersecting `closedStar K {w}` with
+`deletion K {w}`) yields its link `link K {w}`. -/
 @[simp]
 theorem closedStar_inf_deletion_singleton (w : ι) :
     closedStar K {w} ⊓ deletion K {w} = link K {w} := by
