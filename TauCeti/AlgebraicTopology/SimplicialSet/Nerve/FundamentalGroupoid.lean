@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.FundamentalGroupoid.ULift
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
+import TauCeti.AlgebraicTopology.SimplicialSet.FundamentalGroupoid.Basic
 
 /-!
 # Fundamental groupoid of the nerve of a category
@@ -56,15 +57,6 @@ def toFundamentalGroupoid (C : Type u) [Category.{v} C] :
     (SSet.FundamentalGroupoid.homMk_id _)
   map_comp f g := ((nonempty_compStruct_iff f g (f ≫ g)).2 rfl).some.homMk_comp.symm
 
-private lemma homMk_eqToHom_of_edge_eq {X : SSet.{u}} {x₁ y₁ x₂ y₂ : X _⦋0⦌}
-    (e₁ : X.Edge x₁ y₁) (e₂ : X.Edge x₂ y₂) (hx : x₁ = x₂) (hy : y₁ = y₂)
-    (he : e₁.edge = e₂.edge) :
-    SSet.FundamentalGroupoid.homMk e₁ ≫ eqToHom (congrArg SSet.FundamentalGroupoid.mk hy) =
-      eqToHom (congrArg SSet.FundamentalGroupoid.mk hx) ≫ SSet.FundamentalGroupoid.homMk e₂ := by
-  subst hx hy
-  obtain rfl : e₁ = e₂ := by cases e₁; cases e₂; congr
-  simp
-
 private lemma nerveMap_app_nerveEquiv_symm {D : Type u} [Category.{v} D] (F : C ⥤ D) (X : C) :
     (nerveMap F).app (op ⦋0⦌) (nerveEquiv.symm X) = nerveEquiv.symm (F.obj X) :=
   nerveMap_app_mk₀ F X
@@ -77,9 +69,8 @@ def toFundamentalGroupoidNatIso {D : Type u} [Category.{v} D] (F : C ⥤ D) :
   NatIso.ofComponents
     (fun X ↦ eqToIso (congrArg (SSet.FundamentalGroupoid.mk (X := nerve D))
       (nerveMap_app_nerveEquiv_symm F X).symm))
-    fun {X Y} f ↦
-      (homMk_eqToHom_of_edge_eq (edgeMk (F.map f)) ((edgeMk f).map (nerveMap F))
-        (nerveMap_app_nerveEquiv_symm F X).symm (nerveMap_app_nerveEquiv_symm F Y).symm
+    fun f ↦
+      (SSet.FundamentalGroupoid.homMk_comp_eqToHom (edgeMk (F.map f)) ((edgeMk f).map (nerveMap F))
         (nerveMap_app_mk₁ F f).symm).trans
         (congrArg (eqToHom _ ≫ ·)
           (SSet.mapFundamentalGroupoid_map_homMk (nerveMap F) (edgeMk f)).symm)
@@ -104,8 +95,7 @@ private lemma asSmallIso_inv_app_ulift_nerveEquiv_symm (C : Type u) [Category.{v
         ((nerve C).uliftFunctorObjEquiv (op ⦋0⦌) (nerveEquiv.symm X)) =
       nerveEquiv.symm ((AsSmall.up : C ⥤ AsSmall.{w} C).obj X) := by
   rw [← objEquiv_symm_eq (nerveEquiv.symm X), asSmallIso_inv_app, Equiv.symm_apply_apply,
-    Equiv.apply_symm_apply, nerveEquiv_symm_eq_mk₀, Functor.mapComposableArrows_obj_mk₀,
-    ← nerveEquiv_symm_eq_mk₀, objEquiv_symm_eq]
+    Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_nerveEquiv_symm, objEquiv_symm_eq]
 
 /-- Compatibility isomorphism comparing `nerve.toFundamentalGroupoid` along `AsSmall.up` with
 `SSet.uliftFundamentalGroupoid` and `SSet.mapFundamentalGroupoid (asSmallIso C).inv`. -/
@@ -116,7 +106,7 @@ def toFundamentalGroupoidAsSmallIso (C : Type u) [Category.{v} C] :
   NatIso.ofComponents
     (fun X ↦ eqToIso (congrArg (SSet.FundamentalGroupoid.mk (X := nerve (AsSmall.{w} C)))
       (asSmallIso_inv_app_ulift_nerveEquiv_symm.{w} C X).symm))
-    fun {X Y} f ↦ by
+    fun f ↦ by
       have hedge : (edgeMk ((AsSmall.up : C ⥤ AsSmall.{w} C).map f)).edge =
           ((edgeMk f).ulift.{w}.map (asSmallIso.{w} C).inv).edge := by
         have he : (edgeMk f).ulift.{w}.edge =
@@ -127,11 +117,9 @@ def toFundamentalGroupoidAsSmallIso (C : Type u) [Category.{v} C] :
         rw [SSet.Edge.map_edge, he, asSmallIso_inv_app, Equiv.symm_apply_apply,
           Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_mk₁, objEquiv_symm_eq,
           edgeMk_edge]
-      exact (homMk_eqToHom_of_edge_eq
+      exact (SSet.FundamentalGroupoid.homMk_comp_eqToHom
         (edgeMk ((AsSmall.up : C ⥤ AsSmall.{w} C).map f))
-        ((edgeMk f).ulift.map (asSmallIso.{w} C).inv)
-        (asSmallIso_inv_app_ulift_nerveEquiv_symm.{w} C X).symm
-        (asSmallIso_inv_app_ulift_nerveEquiv_symm.{w} C Y).symm hedge).trans
+        ((edgeMk f).ulift.map (asSmallIso.{w} C).inv) hedge).trans
         (congrArg (eqToHom _ ≫ ·) <|
           (SSet.mapFundamentalGroupoid_map_homMk (asSmallIso.{w} C).inv
               (edgeMk f).ulift).symm.trans
@@ -144,8 +132,8 @@ def toFundamentalGroupoidAsSmallIso (C : Type u) [Category.{v} C] :
         dsimp only [Functor.comp_obj, toFundamentalGroupoid_obj]
         rw [← objEquiv_symm_eq (nerveEquiv.symm X), SSet.uliftFundamentalGroupoid_obj_mk,
           SSet.mapFundamentalGroupoid_obj_mk, asSmallIso_inv_app, Equiv.symm_apply_apply,
-          Equiv.apply_symm_apply, nerveEquiv_symm_eq_mk₀ X, Functor.mapComposableArrows_obj_mk₀,
-          ← nerveEquiv_symm_eq_mk₀, objEquiv_symm_eq]) := (rfl)
+          Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_nerveEquiv_symm,
+          objEquiv_symm_eq]) := (rfl)
 
 @[simp] lemma toFundamentalGroupoidAsSmallIso_inv_app (C : Type u) [Category.{v} C] (X : C) :
     (toFundamentalGroupoidAsSmallIso.{w} C).inv.app X =
@@ -153,7 +141,7 @@ def toFundamentalGroupoidAsSmallIso (C : Type u) [Category.{v} C] :
         dsimp only [Functor.comp_obj, toFundamentalGroupoid_obj]
         rw [← objEquiv_symm_eq (nerveEquiv.symm X), SSet.uliftFundamentalGroupoid_obj_mk,
           SSet.mapFundamentalGroupoid_obj_mk, asSmallIso_inv_app, Equiv.symm_apply_apply,
-          Equiv.apply_symm_apply, nerveEquiv_symm_eq_mk₀, Functor.mapComposableArrows_obj_mk₀,
-          ← nerveEquiv_symm_eq_mk₀, objEquiv_symm_eq]) := (rfl)
+          Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_nerveEquiv_symm,
+          objEquiv_symm_eq]) := (rfl)
 
 end CategoryTheory.nerve

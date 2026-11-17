@@ -12,9 +12,9 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 import Mathlib.CategoryTheory.Adjunction.FullyFaithful
-import Mathlib.CategoryTheory.Functor.KanExtension.Preserves
 import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 import Mathlib.CategoryTheory.Limits.Preserves.Ulift
+import TauCeti.CategoryTheory.Functor.KanExtension.Dense
 
 /-!
 # Open cells, faithfulness, discrete spaces, and universe lift of geometric realization
@@ -83,18 +83,10 @@ lemma toTopPoint_eq_toTopObjMk (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
     rw [StdSimplex.map_single]; rfl
   rw [hs, ← toTopObjMk_map, toTopObjMk_zero]
 
-private lemma toSSetObjEquiv_apply (Y : TopCat.{u}) (m : SimplexCategoryᵒᵖ)
-    (σ : (TopCat.toSSet.obj Y).obj m) (w : StdSimplex ℝ (Fin (m.unop.len + 1))) :
-    Y.toSSetObjEquiv m σ w =
-      ConcreteCategory.hom (X := SimplexCategory.toTop.{u}.obj m.unop) (Y := Y) σ.down
-        (toTopSimplex.{u}.hom.app m.unop (m.unop.toTopHomeo.{u}.symm w)) :=
-  congrArg (ConcreteCategory.hom (X := SimplexCategory.toTop.{u}.obj m.unop) (Y := Y) σ.down)
-    (ULift.ext (m.unop.toTopHomeo.{u}.apply_symm_apply w).symm)
-
 /-- `toTopObjMk x w` is the image of `w` under the realized simplex `|Δ[n]| ⟶ |X|` of `x`. -/
 lemma toTopObjMk_eq_toTop_map {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
     toTopObjMk x w = toTop.map (yonedaEquiv.symm x) (⦋n⦌.toTopHomeo.symm w) := by
-  rw [toTopObjMk_def, toSSetObjEquiv_apply, sSetTopAdj_unit_app_app_down,
+  rw [toTopObjMk_def, TauCeti.TopCat.toSSetObjEquiv_apply, sSetTopAdj_unit_app_app_down,
     ← ConcreteCategory.comp_apply, ← Category.assoc, Iso.hom_inv_id_app, Category.id_comp]
 
 /-- Evaluating `⦋n⦌.toTopHomeo` on a realized simplex `x` of `Δ[n]` pushes forward barycentric
@@ -467,19 +459,6 @@ end Cells
 
 section ULift
 
-private lemma isLeftKanExtension_id_of_preservesColimits (G : SSet.{u} ⥤ TopCat.{max u v})
-    [PreservesColimitsOfSize.{0, u} G] :
-    G.IsLeftKanExtension (𝟙 (stdSimplex.{u} ⋙ G)) := by
-  have : G.PreservesPointwiseLeftKanExtension stdSimplex.{u} stdSimplex.{u} :=
-    fun _ ↦ inferInstance
-  have : G.PreservesLeftKanExtension stdSimplex.{u} stdSimplex.{u} := inferInstance
-  have := Functor.PreservesLeftKanExtension.preserves (G := G) (𝟭 SSet.{u})
-    (Functor.rightUnitor stdSimplex.{u}).inv
-  exact Functor.isLeftKanExtension_of_iso (Functor.leftUnitor G)
-    (Functor.whiskerRight (Functor.rightUnitor stdSimplex.{u}).inv G ≫
-      (Functor.associator stdSimplex.{u} (𝟭 SSet.{u}) G).hom)
-    (𝟙 (stdSimplex.{u} ⋙ G)) (by ext m; simp)
-
 private def stdSimplexUliftIso :
     stdSimplex.{u} ⋙ uliftFunctor.{v, u} ≅ stdSimplex.{max u v} :=
   NatIso.ofComponents
@@ -496,6 +475,25 @@ private noncomputable def simplexToTopUliftIso :
         ((SimplexCategory.toTop₀.obj m).uliftFunctorObjHomeo.{u}.trans
           (SimplexCategory.toTop.{u}.obj m).uliftFunctorObjHomeo.{v})))
     fun _ ↦ by ext ⟨w⟩; rfl
+
+/-- Evaluating `simplexToTopUliftIso.hom.app m` on the realized standard simplex point of `w`
+recovers the universe lift of the corresponding point in `SimplexCategory.toTop.{u}.obj m`. -/
+private lemma simplexToTopUliftIso_hom_app_toTopSimplex (m : SimplexCategory)
+    (w : StdSimplex ℝ (Fin (m.len + 1))) :
+    simplexToTopUliftIso.{v, u}.hom.app m
+        (toTopSimplex.{max u v}.hom.app m (m.toTopHomeo.{max u v}.symm w)) =
+      (SimplexCategory.toTop.{u}.obj m).uliftFunctorObjHomeo.{v}
+        (toTopSimplex.{u}.hom.app m (m.toTopHomeo.{u}.symm w)) := by
+  apply ((SimplexCategory.toTop.{u}.obj m).uliftFunctorObjHomeo.{v}).symm.injective
+  rw [Homeomorph.symm_apply_apply]
+  apply ((SimplexCategory.toTop₀.obj m).uliftFunctorObjHomeo.{u}).symm.injective
+  -- By definition, `SimplexCategory.toTop.obj m = TopCat.uliftFunctor.obj (toTop₀.obj m)`,
+  -- `TopCat.uliftFunctorObjHomeo = Homeomorph.ulift.symm`, and
+  -- `m.toTopHomeo = (TopCat.homeoOfIso (toTopSimplex.app m)).trans Homeomorph.ulift`.
+  -- Stripping the two `uliftFunctorObjHomeo` layers cancels those in `simplexToTopUliftIso` and
+  -- reduces both sides to `m.toTopHomeo (m.toTopHomeo.symm w)`.
+  exact (m.toTopHomeo.{max u v}.apply_symm_apply w).trans
+    (m.toTopHomeo.{u}.apply_symm_apply w).symm
 
 private noncomputable def toTopUliftRestrictIso :
     stdSimplex.{u} ⋙ uliftFunctor.{v, u} ⋙ toTop.{max u v} ≅
@@ -514,8 +512,10 @@ noncomputable def toTopUliftNatIso :
     inferInstanceAs (PreservesColimitsOfSize.{0, u}
       ((Functor.whiskeringRight SimplexCategoryᵒᵖ (Type u) (Type max u v)).obj
         CategoryTheory.uliftFunctor.{v, u}))
-  haveI := isLeftKanExtension_id_of_preservesColimits (uliftFunctor.{v, u} ⋙ toTop.{max u v})
-  haveI := isLeftKanExtension_id_of_preservesColimits (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u})
+  haveI := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}
+    (uliftFunctor.{v, u} ⋙ toTop.{max u v})
+  haveI := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}
+    (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u})
   Functor.leftKanExtensionUniqueOfIso
     (uliftFunctor.{v, u} ⋙ toTop.{max u v}) (𝟙 _)
     toTopUliftRestrictIso.{v, u}
@@ -543,8 +543,10 @@ private lemma toTopUliftNatIso_hom_app_stdSimplex (m : SimplexCategory) :
     inferInstanceAs (PreservesColimitsOfSize.{0, u}
       ((Functor.whiskeringRight SimplexCategoryᵒᵖ (Type u) (Type max u v)).obj
         CategoryTheory.uliftFunctor.{v, u}))
-  have := isLeftKanExtension_id_of_preservesColimits (uliftFunctor.{v, u} ⋙ toTop.{max u v})
-  have := isLeftKanExtension_id_of_preservesColimits (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u})
+  have := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}
+    (uliftFunctor.{v, u} ⋙ toTop.{max u v})
+  have := Functor.IsDense.isLeftKanExtension_id stdSimplex.{u}
+    (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u})
   have h := Functor.descOfIsLeftKanExtension_fac_app
     (uliftFunctor.{v, u} ⋙ toTop.{max u v}) (𝟙 _)
     (toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}) (toTopUliftRestrictIso.{v, u}.hom ≫ 𝟙 _) m
@@ -577,16 +579,9 @@ lemma toTopUliftIso_hom_toTopObjMk {X : SSet.{u}} {n : ℕ}
       Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Functor.associator_hom_app,
       Category.id_comp, Category.comp_id, ConcreteCategory.comp_apply,
       ← Functor.map_comp_apply, Iso.inv_hom_id_app]
-    rw [CategoryTheory.Functor.map_id, TopCat.id_app]
-    have hsimp : simplexToTopUliftIso.{v, u}.hom.app ⦋n⦌
-          (toTopSimplex.{max u v}.hom.app ⦋n⦌ (⦋n⦌.toTopHomeo.{max u v}.symm w)) =
-        (SimplexCategory.toTop.{u}.obj ⦋n⦌).uliftFunctorObjHomeo.{v}
-          (toTopSimplex.{u}.hom.app ⦋n⦌ (⦋n⦌.toTopHomeo.{u}.symm w)) :=
-      ULift.ext (ULift.ext (by
-        change ⦋n⦌.toTopHomeo.{max u v} (⦋n⦌.toTopHomeo.{max u v}.symm w) =
-          ⦋n⦌.toTopHomeo.{u} (⦋n⦌.toTopHomeo.{u}.symm w)
-        simp))
-    rw [hsimp, TopCat.uliftFunctorObjHomeo_naturality_apply, ← ConcreteCategory.comp_apply,
+    rw [CategoryTheory.Functor.map_id, TopCat.id_app,
+      simplexToTopUliftIso_hom_app_toTopSimplex,
+      TopCat.uliftFunctorObjHomeo_naturality_apply, ← ConcreteCategory.comp_apply,
       Iso.hom_inv_id_app, TopCat.id_app]
     rfl
   rw [toTopObjMk_eq_toTop_map, hfac, toTop.map_comp, ConcreteCategory.comp_apply,

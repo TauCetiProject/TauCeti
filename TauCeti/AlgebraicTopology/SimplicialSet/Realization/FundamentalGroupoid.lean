@@ -139,16 +139,6 @@ lemma toTopFundamentalGroupoid_map_homMk (X : SSet.{u}) {x y : X _⦋0⦌} (e : 
       _root_.FundamentalGroupoid.fromPath (.mk e.toTopPath) :=
   FundamentalGroupoid.desc_map_homMk _ _ (fun h ↦ Quotient.sound h.homotopic_toTopPath) e
 
-private lemma fromPath_naturality_eqToHom {A : Type u} {B : Type v}
-    [TopologicalSpace A] [TopologicalSpace B] (g : C(A, B))
-    {a₀ a₁ : A} {b₀ b₁ : B} (p : _root_.Path a₀ a₁) (p' : _root_.Path b₀ b₁)
-    (hx : b₀ = g a₀) (hy : b₁ = g a₁) (hp : p' = (p.map g.continuous).cast hx hy) :
-    _root_.FundamentalGroupoid.fromPath (.mk p') ≫
-        eqToHom (congrArg _root_.FundamentalGroupoid.mk hy) =
-      eqToHom (congrArg _root_.FundamentalGroupoid.mk hx) ≫
-        _root_.FundamentalGroupoid.fromPath (.mk (p.map g.continuous)) := by
-  subst hp; subst hx; subst hy; simp
-
 private lemma mapFundamentalGroupoid_toTop_obj {X Y : SSet.{u}} (f : X ⟶ Y) (x : X _⦋0⦌) :
     (mapFundamentalGroupoid f ⋙ toTopFundamentalGroupoid Y).obj (.mk x) =
       (toTopFundamentalGroupoid X ⋙ _root_.FundamentalGroupoid.map (toTop.map f).hom).obj (.mk x) :=
@@ -163,9 +153,12 @@ noncomputable def mapFundamentalGroupoidToTopIso {X Y : SSet.{u}} (f : X ⟶ Y) 
     fun {x y} e ↦ by
       dsimp only [Functor.comp_map]
       rw [mapFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
-        toTopFundamentalGroupoid_map_homMk]
-      exact fromPath_naturality_eqToHom (toTop.map f).hom e.toTopPath (e.map f).toTopPath
-        (toTop_map_toTopPoint f x).symm (toTop_map_toTopPoint f y).symm (e.toTopPath_map f)
+        toTopFundamentalGroupoid_map_homMk, e.toTopPath_map f, Path.Homotopic.Quotient.mk_cast]
+      exact (comp_eqToHom_iff (mapFundamentalGroupoid_toTop_obj f y) _ _).2 <|
+        ((Category.assoc _ _ _).trans
+          (_root_.FundamentalGroupoid.conj_eqToHom
+            (p := .mk (e.toTopPath.map (toTop.map f).hom.continuous))
+            (toTop_map_toTopPoint f x).symm (toTop_map_toTopPoint f y).symm)).symm
 
 @[simp] lemma mapFundamentalGroupoidToTopIso_hom_app {X Y : SSet.{u}} (f : X ⟶ Y)
     (x : SSet.FundamentalGroupoid X) :
@@ -194,12 +187,13 @@ noncomputable def uliftFundamentalGroupoidToTopIso (X : SSet.{u}) :
     fun {x y} e ↦ by
       dsimp only [Functor.comp_map]
       rw [uliftFundamentalGroupoid_map_homMk, toTopFundamentalGroupoid_map_homMk,
-        toTopFundamentalGroupoid_map_homMk]
-      exact fromPath_naturality_eqToHom (toTopUliftHomeomorph.{v, u} X : C(_, _))
-        e.toTopPath e.ulift.{v}.toTopPath
-        (toTopUliftHomeomorph_toTopPoint.{v, u} x).symm
-        (toTopUliftHomeomorph_toTopPoint.{v, u} y).symm
-        e.toTopPath_ulift.{v}
+        toTopFundamentalGroupoid_map_homMk, e.toTopPath_ulift.{v}, Path.Homotopic.Quotient.mk_cast]
+      exact (comp_eqToHom_iff (uliftFundamentalGroupoid_toTop_obj.{v} X y) _ _).2 <|
+        ((Category.assoc _ _ _).trans
+          (_root_.FundamentalGroupoid.conj_eqToHom
+            (p := .mk (e.toTopPath.map (toTopUliftHomeomorph.{v, u} X).continuous))
+            (toTopUliftHomeomorph_toTopPoint.{v, u} x).symm
+            (toTopUliftHomeomorph_toTopPoint.{v, u} y).symm)).symm
 
 @[simp] lemma uliftFundamentalGroupoidToTopIso_hom_app (X : SSet.{u})
     (x : SSet.FundamentalGroupoid X) :

@@ -272,6 +272,13 @@ theorem _root_.CategoryTheory.nerveEquiv_symm_eq_mk₀ (X : C) :
 @[simp] theorem _root_.CategoryTheory.nerveEquiv_symm_obj (X : C) (i : Fin 1) :
     (nerveEquiv.symm X).obj i = X := (rfl)
 
+/-- Applying a functor `F` to the `0`-simplex `nerveEquiv.symm X` gives
+`nerveEquiv.symm (F.obj X)`. -/
+@[simp] theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_nerveEquiv_symm
+    {D : Type*} [Category* D] (F : C ⥤ D) (X : C) :
+    (F.mapComposableArrows 0).obj (nerveEquiv.symm X) = nerveEquiv.symm (F.obj X) := by
+  rw [nerveEquiv_symm_eq_mk₀, Functor.mapComposableArrows_obj_mk₀, ← nerveEquiv_symm_eq_mk₀]
+
 @[simp] theorem representableBy_homEquiv_const_zero {n : ℕ} {α : Type u} [Preorder α]
     (e : α ≃o Fin (n + 1)) (i : Fin (n + 1)) :
     (representableBy α e).homEquiv (SimplexCategory.const ⦋0⦌ ⦋n⦌ i) =
