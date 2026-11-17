@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Complex.AtInfinity
@@ -93,6 +94,13 @@ theorem translateField_translateField (a b : ℂ) (x : ℂ → EuclideanSpace �
     translateField a (translateField b x) = translateField (a + b) x := by
   funext z
   simp [add_assoc]
+
+/-- Translations preserve smooth fields. -/
+theorem contDiff_translateField {n : WithTop ℕ∞} (a : ℂ) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (translateField a x) := by
+  have h : translateField a x = fun z ↦ x (z + a) := funext (translateField_apply a x)
+  rw [h]
+  exact hx.comp (contDiff_id.add contDiff_const)
 
 /-- A spatial derivative of a translated component is the translated derivative. No
 differentiability is needed. -/
@@ -194,6 +202,12 @@ theorem translateField_gaugeTransform (a : ℂ) (g : ℂ → Circle)
   simp only [translateField_apply, gaugeTransform_apply, gaugeForm_apply,
     fderiv_comp_add_right (f := fun w ↦ (g w : ℂ)) a]
 
+/-- A framed gauge composed with a translation is a framed gauge. -/
+theorem comp_add_mem_framedGaugeGroup {g : ℂ → Circle} (hg : g ∈ framedGaugeGroup) (a : ℂ) :
+    (fun w ↦ g (w + a)) ∈ framedGaugeGroup :=
+  comp_mem_framedGaugeGroup hg (contDiff_id.add contDiff_const)
+    (Homeomorph.addRight a).map_cocompact.le
+
 @[simp]
 theorem translateField_vacuumField (a : ℂ) : translateField a vacuumField = vacuumField := by
   funext z
@@ -273,6 +287,20 @@ theorem rotateField_translateField (u : Circle) (a : ℂ) (x : ℂ → Euclidean
     rw [mul_add, mul_inv_cancel_left₀ (Circle.coe_ne_zero u)]
   ext z i
   fin_cases i <;> simp [h]
+
+/-- Rotations preserve smooth fields. -/
+theorem contDiff_rotateField {n : WithTop ℕ∞} (u : Circle) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ n x) : ContDiff ℝ n (rotateField u x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun z ↦ x ((u : ℂ) * z) i :=
+    ((contDiff_piLp 2).1 hx i).comp (contDiff_const.mul contDiff_id)
+  refine (contDiff_piLp 2).2 fun i ↦ ?_
+  fin_cases i <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, rotateField_apply_zero,
+      rotateField_apply_one, rotateField_apply_two, rotateField_apply_three]
+  · exact (contDiff_const.mul (hc 0)).add (contDiff_const.mul (hc 1))
+  · exact (contDiff_const.mul (hc 1)).sub (contDiff_const.mul (hc 0))
+  · exact hc 2
+  · exact hc 3
 
 /-- The action of a rotation on the target `ℝ ⊕ ℝ ⊕ ℂ` of the gauge-fixed operator: the
 gauge-fixing and curvature rows are transported, and the complex `∂bar` row is transported
@@ -556,6 +584,11 @@ theorem rotateField_gaugeTransform (u : Circle) (g : ℂ → Circle)
   fin_cases i <;>
     simp [gaugeTransform_apply, gaugeForm_comp_mul, clm_apply_coe, clm_apply_coe_mul_I,
       -gaugeForm_apply] <;> ring
+
+/-- A framed gauge composed with multiplication by a nonzero scalar is a framed gauge. -/
+theorem comp_mul_mem_framedGaugeGroup {g : ℂ → Circle} (hg : g ∈ framedGaugeGroup) {c : ℂ}
+    (hc : c ≠ 0) : (fun w ↦ g (c * w)) ∈ framedGaugeGroup :=
+  comp_mem_framedGaugeGroup hg (contDiff_const.mul contDiff_id) (tendsto_cocompact_mul_left₀ hc)
 
 @[simp]
 theorem rotateField_vacuumField (u : Circle) : rotateField u vacuumField = vacuumField := by
