@@ -17,9 +17,11 @@ local homology group in degree `n`. This file defines that generator condition a
 every point in a finite-dimensional charted space has local orientations. Integral coefficients
 are represented by the universe-lifted module `ULift ℤ`. The construction is the inverse image of
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
-`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, and
-isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations
-(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites.
+`ℤ` differ by sign; reversal and preservation by local homology isomorphisms are also proved, as
+is a criterion for a class to be a local orientation when a homomorphism carries it to a generator
+of infinite order (`TauCeti.IsLocalOrientation.of_addMonoidHom_eq`), and isomorphisms of pairs
+`(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations (`TauCeti.LocalOrientation.map`),
+compatibly with reversal, identities and composites.
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -109,6 +111,25 @@ theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalS
       (e.hom.hom.toAddMonoidHom.map_zsmul c z).symm
     _ = e.hom (e.inv a) := congrArg e.hom hc
     _ = a := e.inv_hom_id_apply a
+
+/-- If a homomorphism `J` out of the local homology at `x` carries `z` to the image of a generator
+`ρ` of infinite order under an isomorphism `e`, and the local homology at `x` has a local
+orientation `l`, then `z` is a local orientation. -/
+theorem IsLocalOrientation.of_addMonoidHom_eq {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+    {l z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hl : IsLocalOrientation x d l) {G G' : Type*} [AddCommGroup G] [AddCommGroup G']
+    (J : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d →+ G)
+    (e : G' ≃+ G) {ρ : G'} (hρ : ∀ a, ∃ c : ℤ, c • ρ = a) (hρ₀ : ∀ c : ℤ, c • ρ = 0 → c = 0)
+    (hJ : J z = e ρ) : IsLocalOrientation x d z := by
+  obtain ⟨k, rfl⟩ := hl z
+  obtain ⟨j, hj⟩ := hρ (e.symm (J l))
+  have hkj : k * j = 1 := by
+    refine sub_eq_zero.1 (hρ₀ _ ?_)
+    rw [sub_smul, one_smul, mul_smul, hj, ← map_zsmul, ← map_zsmul, hJ, e.symm_apply_apply,
+      sub_self]
+  intro a
+  obtain ⟨c, rfl⟩ := hl a
+  exact ⟨c * j, by rw [smul_smul, mul_assoc, mul_comm j k, hkj, mul_one]⟩
 
 /-- An isomorphism of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` carries local orientations at `x` to
 local orientations at `y`, through the isomorphism it induces on integral local homology. -/
