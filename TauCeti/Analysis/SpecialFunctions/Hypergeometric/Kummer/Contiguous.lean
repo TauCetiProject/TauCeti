@@ -91,21 +91,6 @@ theorem deriv_regularizedHGFun_singleton (a b : ℂ) :
     deriv (regularizedHGFun {a} {b}) = fun z => a * regularizedHGFun {a + 1} {b + 1} z :=
   funext fun z => (hasDerivAt_regularizedHGFun_singleton a b z).deriv
 
-/-- Shifting the lower parameter in `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)` splits off the constant term:
-`𝐌(1, b, z) = (Γ b)⁻¹ + z 𝐌(1, b + 1, z)`, for all `b, z : ℂ`. -/
-theorem regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul (b z : ℂ) :
-    regularizedHGFun {1} {b} z = (Gamma b)⁻¹ + z * regularizedHGFun {1} {b + 1} z := by
-  have h0 := (hasSum_nat_add_iff' 1).mpr
-    (hasSum_regularizedHGFun (a := {1}) (b := {b}) (by simp) z)
-  have h1 := (hasSum_regularizedHGFun (a := {1}) (b := {b + 1}) (by simp) z).mul_left z
-  simp only [Finset.range_one, Finset.sum_singleton, regularizedHGFunCoeff_one_singleton,
-    CharP.cast_eq_zero, add_zero, pow_zero, mul_one] at h0
-  rw [← sub_eq_iff_eq_add', h0.unique (h1.congr_fun fun n => ?_)]
-  rw [regularizedHGFunCoeff_one_singleton]
-  have hshift : b + ((n + 1 : ℕ) : ℂ) = b + 1 + n := by push_cast; ring
-  rw [hshift, pow_succ']
-  ring
-
 /-- Contiguous relation incrementing the upper parameter of `𝐌` (DLMF 13.3.4):
 `𝐌(a + 1, b, z) - 𝐌(a, b, z) = z 𝐌(a + 1, b + 1, z)`, for all `a, b, z : ℂ`. -/
 theorem regularizedHGFun_add_one_singleton_sub (a b z : ℂ) :
@@ -134,6 +119,15 @@ theorem regularizedHGFun_add_one_singleton_sub (a b z : ℂ) :
   linear_combination (((n : ℂ) + 1)⁻¹ * (n ! : ℂ)⁻¹ * (Gamma (b + 1 + n))⁻¹ * z * z ^ n) * hp +
     (ascPochhammer ℂ n).eval (a + 1) * (n ! : ℂ)⁻¹ * (Gamma (b + 1 + n))⁻¹ * z * z ^ n *
       mul_inv_cancel₀ hn
+
+/-- Shifting the lower parameter in `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)` splits off the constant term:
+`𝐌(1, b, z) = (Γ b)⁻¹ + z 𝐌(1, b + 1, z)`, for all `b, z : ℂ`. -/
+theorem regularizedHGFun_one_singleton_eq_inv_Gamma_add_mul (b z : ℂ) :
+    regularizedHGFun {1} {b} z = (Gamma b)⁻¹ + z * regularizedHGFun {1} {b + 1} z := by
+  have h := regularizedHGFun_add_one_singleton_sub 0 b z
+  rw [zero_add, regularizedHGFun_of_zero_mem (Multiset.mem_singleton_self 0)] at h
+  simp only [Multiset.map_singleton, Multiset.prod_singleton] at h
+  linear_combination h
 
 /-- Contiguous relation combining `𝐌(a, b, z)` and `𝐌(a, b + 1, z)`:
 `𝐌(a, b, z) - b 𝐌(a, b + 1, z) = a z 𝐌(a + 1, b + 2, z)`, for all `a, b, z : ℂ`. -/

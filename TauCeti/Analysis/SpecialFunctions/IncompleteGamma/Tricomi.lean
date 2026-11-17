@@ -142,23 +142,12 @@ theorem tricomiIncompleteGamma_one_left {z : ℂ} (hz : z ≠ 0) :
 `∂γ*(a, z)/∂z = −a γ*(a + 1, z)`. -/
 theorem hasDerivAt_tricomiIncompleteGamma (a z : ℂ) :
     HasDerivAt (tricomiIncompleteGamma a) (-a * tricomiIncompleteGamma (a + 1) z) z := by
-  have hcard : ({1} : Multiset ℂ).card ≤ ({a + 1} : Multiset ℂ).card := by simp
-  -- the derivative of `𝐌(1, a + 1, ·)` is `𝐌(1, a + 1, ·) − a 𝐌(1, a + 2, ·)`, termwise
-  have hM : deriv (regularizedHGFun {1} {a + 1}) z =
-      regularizedHGFun {1} {a + 1} z - a * regularizedHGFun {1} {a + 1 + 1} z := by
-    refine (hasSum_deriv_regularizedHGFun hcard z).unique ?_
-    refine ((hasSum_regularizedHGFun hcard z).sub
-      ((hasSum_regularizedHGFun (b := {a + 1 + 1}) (by simp) z).mul_left a)).congr_fun fun k => ?_
-    simp only [regularizedHGFunCoeff_one_singleton]
-    rw [one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (a + 1 + k)]
-    push_cast
-    ring_nf
-  have hd := ((analyticAt_regularizedHGFun_of_card_le hcard z).differentiableAt.hasDerivAt)
-  rw [hM] at hd
+  have hd := hasDerivAt_regularizedHGFun_singleton 1 (a + 1) z
+  have hrel := regularizedHGFun_singleton_eq_sub_mul_add_mul 1 (a + 1) z
   convert ((hasDerivAt_neg z).cexp).mul hd using 1
   · exact funext (tricomiIncompleteGamma_def a)
   · rw [tricomiIncompleteGamma_def]
-    ring
+    linear_combination cexp (-z) * hrel
 
 /-- The derivative of Tricomi's function in its argument, as a function:
 `∂γ*(a, ·)/∂z = −a γ*(a + 1, ·)`. -/

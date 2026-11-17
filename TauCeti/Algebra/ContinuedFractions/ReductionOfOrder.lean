@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.ContinuedFractions.Determinant
 public import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Three-term recurrences, Casoratians, and reduction-of-order convergence of continued fractions
@@ -28,7 +29,8 @@ by `f(m) f(m + 1)` telescopes `Bₙ₋₁ / f(n)`. Over a normed field, when `f(
 eventually nonzero, and the reduction-of-order partial sums
 `∑_{m = N}^{n - 1} (-1)^m (a₁ ⋯ aₘ) / (f(m) f(m + 1))` diverge in norm, the ratio `Bₙ / f(n + 1)`
 diverges in norm as well, so the denominators `Bₙ` are eventually nonzero and the convergents
-`Aₙ / Bₙ` tend to `-f(1) / f(0)`.
+`Aₙ / Bₙ` tend to `-f(1) / f(0)`. This reduction-of-order criterion gives the sufficient half
+underlying Pincherle's theorem for explicit recurrence solutions.
 
 ## Main definitions
 
@@ -172,15 +174,7 @@ theorem contFrac_contsAux_det (a b : ℕ → K) (m : ℕ) :
       (-1) ^ m * ∏ j ∈ Icc 1 m, a j := by
   rcases m with _ | k
   · simp [GenContFract.zeroth_contAux_eq_one_zero, GenContFract.first_contAux_eq_h_one]
-  · have hA0 : ((contFrac a b).contsAux (k + 1)).a = (contFrac a b).nums k := by
-      rw [GenContFract.num_eq_conts_a, GenContFract.nth_cont_eq_succ_nth_contAux]
-    have hB0 : ((contFrac a b).contsAux (k + 1)).b = (contFrac a b).dens k := by
-      rw [GenContFract.den_eq_conts_b, GenContFract.nth_cont_eq_succ_nth_contAux]
-    have hA1 : ((contFrac a b).contsAux (k + 1 + 1)).a = (contFrac a b).nums (k + 1) := by
-      rw [GenContFract.num_eq_conts_a, GenContFract.nth_cont_eq_succ_nth_contAux]
-    have hB1 : ((contFrac a b).contsAux (k + 1 + 1)).b = (contFrac a b).dens (k + 1) := by
-      rw [GenContFract.den_eq_conts_b, GenContFract.nth_cont_eq_succ_nth_contAux]
-    have hIcc : Icc 1 (k + 1) = Ico 1 (k + 1 + 1) := by
+  · have hIcc : Icc 1 (k + 1) = Ico 1 (k + 1 + 1) := by
       ext
       simp only [mem_Icc, mem_Ico]
       omega
@@ -189,7 +183,9 @@ theorem contFrac_contsAux_det (a b : ℕ → K) (m : ℕ) :
       have hsub : k + 1 + 1 - 1 = k + 1 := by omega
       rw [hsub] at h
       exact h.trans (prod_congr rfl fun i _ => congr_arg a (Nat.add_comm 1 i))
-    rw [hA0, hB0, hA1, hB1, (contFrac a b).determinant, hIcc, hshift]
+    simp only [← GenContFract.nth_cont_eq_succ_nth_contAux, ← GenContFract.num_eq_conts_a,
+      ← GenContFract.den_eq_conts_b]
+    rw [(contFrac a b).determinant, hIcc, hshift]
     simp [prod_neg]
 
 /-- **Casoratian identity** for two solutions `f` and `u` of
@@ -249,21 +245,9 @@ theorem tendsto_norm_contFrac_dens_div_atTop {a b f : ℕ → K}
       ‖∑ m ∈ Ico N n, (-1) ^ m * (∏ j ∈ Icc 1 m, a j) / (f m * f (m + 1))‖) atTop atTop) :
     Tendsto (fun n => ‖(contFrac a b).dens n / f (n + 1)‖) atTop atTop := by
   let T : ℕ → K := fun m => (-1) ^ m * (∏ j ∈ Icc 1 m, a j) / (f m * f (m + 1))
-  obtain ⟨N₀, hfN₀⟩ := eventually_atTop.1 hne
-  set M := max N N₀
-  have hMN : N ≤ M := le_max_left N N₀
-  have hfM : ∀ n, M ≤ n → f n ≠ 0 := fun n hn => hfN₀ n ((le_max_right N N₀).trans hn)
-  -- Shift the diverging partial sums from starting index `N` to `M`, where `f` never vanishes.
-  have hdivM : Tendsto (fun n => ‖∑ m ∈ Ico M n, T m‖) atTop atTop := by
-    have hshiftN := tendsto_atTop_add_const_right atTop (-‖∑ m ∈ Ico N M, T m‖) hdiv
-    refine tendsto_atTop_mono' atTop ?_ hshiftN
-    filter_upwards [eventually_ge_atTop M] with n hn
-    have hconsec := sum_Ico_consecutive T hMN hn
-    have htri := norm_sub_norm_le (∑ m ∈ Ico N n, T m) (∑ m ∈ Ico N M, T m)
-    have hsub : (∑ m ∈ Ico N n, T m) - ∑ m ∈ Ico N M, T m = ∑ m ∈ Ico M n, T m := by
-      rw [← hconsec, add_sub_cancel_left]
-    rw [hsub] at htri
-    exact htri
+  obtain ⟨M, hfM⟩ := eventually_atTop.1 hne
+  have hdivM : Tendsto (fun n => ‖∑ m ∈ Ico M n, T m‖) atTop atTop :=
+    (tendsto_norm_sum_Ico_atTop_iff N M).1 hdiv
   have hscaled := (Tendsto.const_mul_atTop (norm_pos_iff.2 hf0) hdivM).comp
     (tendsto_add_atTop_nat 1)
   have hshift := tendsto_atTop_add_const_right atTop (-‖((contFrac a b).contsAux M).b / f M‖)
@@ -271,18 +255,12 @@ theorem tendsto_norm_contFrac_dens_div_atTop {a b f : ℕ → K}
   refine tendsto_atTop_mono' atTop ?_ hshift
   filter_upwards [eventually_ge_atTop M] with n hn
   simp only [Function.comp_apply]
-  have hd : (contFrac a b).dens n = ((contFrac a b).contsAux (n + 1)).b := by
-    rw [GenContFract.den_eq_conts_b, GenContFract.nth_cont_eq_succ_nth_contAux]
   have ht := contFrac_contsAux_b_div_sub hf (n := n + 1) (by omega) fun k hk _ => hfM k hk
+  rw [← GenContFract.nth_cont_eq_succ_nth_contAux, ← GenContFract.den_eq_conts_b] at ht
   have htri := norm_sub_norm_le
-    (((contFrac a b).contsAux (n + 1)).b / f (n + 1) - ((contFrac a b).contsAux M).b / f M)
+    ((contFrac a b).dens n / f (n + 1) - ((contFrac a b).contsAux M).b / f M)
     (-(((contFrac a b).contsAux M).b / f M))
-  have hadd : ((contFrac a b).contsAux (n + 1)).b / f (n + 1) -
-      ((contFrac a b).contsAux M).b / f M - (-(((contFrac a b).contsAux M).b / f M)) =
-      (contFrac a b).dens n / f (n + 1) := by
-    rw [hd]
-    ring
-  rw [hadd, norm_neg, ht, norm_mul] at htri
+  rw [sub_neg_eq_add, sub_add_cancel, norm_neg, ht, norm_mul] at htri
   exact htri
 
 /-- **Reduction-of-order convergence of `contFrac a b`**: if `f` solves
@@ -314,11 +292,8 @@ theorem tendsto_convs_contFrac_of_tendsto_norm_sum {a b f : ℕ → K}
   refine hlim.congr' ?_
   filter_upwards [hdens_ne] with n hdn
   have hcomb := eq_contsAux_of_recurrence hf (n + 1)
-  have hnum : ((contFrac a b).contsAux (n + 1)).a = (contFrac a b).nums n := by
-    rw [GenContFract.num_eq_conts_a, GenContFract.nth_cont_eq_succ_nth_contAux]
-  have hden : ((contFrac a b).contsAux (n + 1)).b = (contFrac a b).dens n := by
-    rw [GenContFract.den_eq_conts_b, GenContFract.nth_cont_eq_succ_nth_contAux]
-  rw [hnum, hden] at hcomb
+  simp only [← GenContFract.nth_cont_eq_succ_nth_contAux, ← GenContFract.num_eq_conts_a,
+    ← GenContFract.den_eq_conts_b] at hcomb
   rw [GenContFract.conv_eq_num_div_den]
   field_simp [hdn, hf0]
   linear_combination hcomb
