@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Gradings of homogeneous submodules and of their quotients

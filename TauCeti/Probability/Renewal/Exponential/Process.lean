@@ -67,7 +67,7 @@ theorem identDistrib_renewalCountNat_of_hasLaw_poissonMeasure
       (poissonMeasure (r * (t - s))) Q) :
     IdentDistrib (fun ω t ↦ renewalCountNat T t ω) (fun ω t ↦ N t ω) P Q := by
   have h0 : ∀ᵐ ω ∂P, renewalCountNat T 0 ω = 0 := by
-    have h := hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw 0
+    have h := hasLaw_renewalCountNat_poissonMeasure hindep hlaw 0
     simp only [mul_zero, poissonMeasure_zero] at h
     exact h.ae_eq_of_dirac
   apply (hasIndepIncrements_renewalCountNat_of_expMeasure hT hindep hlaw).identDistrib_nat

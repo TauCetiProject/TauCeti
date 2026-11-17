@@ -927,6 +927,11 @@ theorem boundary_apply (h : Hive n R) (s : Fin 3) (i : Fin n) :
 @[simp] theorem boundaryLinear_coe (S : Type*) [Semiring S] [Module S R] (h : Hive n R) :
     boundaryLinear S n R h = h.boundary := by ext s i; rw [boundaryLinear_apply, boundary_apply]
 
+/-- Bundling a normalized rhombus-concave function preserves its edge differences. -/
+@[simp] theorem boundary_mk (f : Vertex n → R) (hA : f (Vertex.cornerA n) = 0)
+    (hf : ∀ {a b c d : Vertex n}, IsRhombus a b c d → f b + f d ≤ f a + f c) :
+    (Hive.mk f hA hf).boundary = boundaryLinear ℤ n R f := (rfl)
+
 /-- Normalization leaves the clockwise boundary unchanged. -/
 @[simp] theorem boundary_ofRhombusConcave [IsOrderedAddMonoid R]
     (f : Vertex n → R) (hf : IsRhombusConcave f) :
