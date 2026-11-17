@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
 
 /-!
@@ -40,12 +41,6 @@ namespace TauCeti.Polylog
 /-- The principal polylogarithm domain `{z : ℂ | 1 - z ∈ Complex.slitPlane}` is open. -/
 theorem isOpen_one_sub_mem_slitPlane : IsOpen {z : ℂ | 1 - z ∈ Complex.slitPlane} :=
   Complex.isOpen_slitPlane.preimage (by fun_prop)
-
-private theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) : 1 - (t : ℂ) * z ∈ Complex.slitPlane := by
-  have hz' : 1 + -z ∈ Complex.slitPlane := by simpa [sub_eq_add_neg] using hz
-  have hmem := Complex.starConvex_one_slitPlane.add_smul_mem hz' ht.1 ht.2
-  rwa [Complex.real_smul, mul_neg, ← sub_eq_add_neg] at hmem
 
 /-- Complex derivative of `polylog 1` (`-Log(1 - z)`) on `ℂ \ [1, ∞)`. -/
 theorem hasDerivAt_polylog_one {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
@@ -99,7 +94,9 @@ private theorem hasDerivAt_integral_radialIntegrand (k : ℕ) {z₀ : ℂ}
     exact div_le_div_of_nonneg_left (pow_nonneg (abs_nonneg _) k) hδ
       (hδle z hz t (Ioc_subset_Icc_self ht))
   · rw [uIoc_of_le zero_le_one] at ht
-    have hmem := one_sub_ofReal_mul_mem_slitPlane (hrsub hz) (Ioc_subset_Icc_self ht)
+    have hmem : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
+      mul_comm z (t : ℂ) ▸ Complex.one_sub_mul_ofReal_mem_slitPlane (hrsub hz)
+        (Ioc_subset_Icc_self ht)
     have hlog : HasDerivAt (fun w : ℂ => -Complex.log (1 - (t : ℂ) * w))
         ((t : ℂ) / (1 - (t : ℂ) * z)) z := by
       convert ((((hasDerivAt_id z).const_mul (t : ℂ)).const_sub (1 : ℂ)).clog hmem).neg using 1
@@ -135,38 +132,6 @@ theorem analyticOnNhd_polylog (n : ℤ) :
 theorem analyticAt_polylog (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     AnalyticAt ℂ (polylog n) z := analyticOnNhd_polylog n z hz
 
-private theorem hasDerivAt_neg_clog_one_sub_ofReal_mul {z : ℂ} {t : ℝ}
-    (hmem : 1 - (t : ℂ) * z ∈ Complex.slitPlane) :
-    HasDerivAt (fun s : ℝ => -Complex.log (1 - (s : ℂ) * z)) (z / (1 - (t : ℂ) * z)) t := by
-  have hin : HasDerivAt (fun s : ℝ => 1 - (s : ℂ) * z) (-(1 * z)) t :=
-    ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const z).const_sub 1
-  convert (hin.clog_real hmem).neg using 1; ring
-
-private theorem tendsto_log_pow_succ_mul_clog_nhdsGT_zero (m : ℕ) (z : ℂ) :
-    Tendsto (fun t : ℝ => ((-Real.log t : ℝ) : ℂ) ^ (m + 1) * (-Complex.log (1 - (t : ℂ) * z)))
-      (𝓝[>] 0) (𝓝 0) := by
-  have hpow : Tendsto (fun t : ℝ => 3 / 2 * ‖z‖ * |Real.log t * t ^ (1 / (m + 1 : ℝ))| ^ (m + 1))
-      (𝓝[>] 0) (𝓝 0) := by
-    simpa using ((tendsto_log_mul_rpow_nhdsGT_zero
-      (by positivity : (0 : ℝ) < 1 / (m + 1 : ℝ))).abs.pow (m + 1)).const_mul (3 / 2 * ‖z‖)
-  refine squeeze_zero_norm' ?_ hpow
-  filter_upwards [Ioo_mem_nhdsGT (by positivity : (0 : ℝ) < 1 / (2 * (‖z‖ + 1)))] with t ht
-  have htz : t * ‖z‖ ≤ 1 / 2 := (mul_le_mul_of_nonneg_right ht.2.le (norm_nonneg z)).trans <| by
-    rw [div_mul_eq_mul_div, one_mul, div_le_iff₀ (by positivity)]; linarith
-  have hnorm : ‖-((t : ℂ) * z)‖ = t * ‖z‖ := by
-    rw [norm_neg, norm_mul, Complex.norm_real, Real.norm_of_nonneg ht.1.le]
-  have hlog : ‖Complex.log (1 - (t : ℂ) * z)‖ ≤ 3 / 2 * (t * ‖z‖) := by
-    have h := Complex.norm_log_one_add_half_le_self (z := -((t : ℂ) * z)) (by rwa [hnorm])
-    rwa [hnorm, ← sub_eq_add_neg] at h
-  have hrpow : |Real.log t * t ^ (1 / (m + 1 : ℝ))| ^ (m + 1) = |Real.log t| ^ (m + 1) * t := by
-    rw [abs_mul, mul_pow, abs_of_nonneg (Real.rpow_nonneg ht.1.le _),
-      ← Real.rpow_natCast (t ^ (1 / (m + 1 : ℝ))), ← Real.rpow_mul ht.1.le, Nat.cast_add,
-      Nat.cast_one, one_div_mul_cancel (by positivity : (m + 1 : ℝ) ≠ 0), Real.rpow_one]
-  rw [norm_mul, norm_pow, norm_neg, Complex.norm_real, Real.norm_eq_abs, abs_neg, hrpow]
-  calc |Real.log t| ^ (m + 1) * ‖Complex.log (1 - (t : ℂ) * z)‖
-      ≤ |Real.log t| ^ (m + 1) * (3 / 2 * (t * ‖z‖)) := by gcongr
-    _ = 3 / 2 * ‖z‖ * (|Real.log t| ^ (m + 1) * t) := by ring
-
 private theorem mul_deriv_polylog_nat_add_three (m : ℕ) {z : ℂ} (hz : 1 - z ∈ Complex.slitPlane) :
     z * deriv (polylog (m + 3 : ℕ)) z = polylog (m + 2 : ℕ) z := by
   let H : ℝ → ℂ := fun t => ((-Real.log t : ℝ) : ℂ) ^ (m + 1) * (-Complex.log (1 - (t : ℂ) * z))
@@ -176,27 +141,38 @@ private theorem mul_deriv_polylog_nat_add_three (m : ℕ) {z : ℂ} (hz : 1 - z 
   have hderiv : ∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt H (H'1 t + H'2 t) t := fun t ht => by
     have hlog : HasDerivAt (fun s : ℝ => ((-Real.log s : ℝ) : ℂ)) (-(t : ℂ)⁻¹) t := by
       simpa using ((Real.hasDerivAt_log ht.1.ne').neg).ofReal_comp
-    convert (hlog.pow (m + 1)).mul (hasDerivAt_neg_clog_one_sub_ofReal_mul
-      (one_sub_ofReal_mul_mem_slitPlane hz (Ioo_subset_Icc_self ht))) using 1
-    simp only [H'1, H'2, Pi.pow_apply, Nat.add_sub_cancel]; push_cast; ring
+    have hmem : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
+      mul_comm z (t : ℂ) ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz (Ioo_subset_Icc_self ht)
+    have hclog := ((((hasDerivAt_id (t : ℂ)).mul_const z).const_sub 1).clog hmem).neg.comp_ofReal
+    convert (hlog.pow (m + 1)).mul hclog using 1
+    · ext s; rfl
+    · simp only [H'1, H'2, Pi.pow_apply, Pi.neg_apply, id_eq, Nat.add_sub_cancel]; push_cast; ring
   have hint1 : IntervalIntegrable H'1 volume 0 1 :=
     ((intervalIntegrable_radialIntegrand m z).const_mul (m + 1 : ℂ)).neg
   have hint2 : IntervalIntegrable H'2 volume 0 1 :=
     (hasDerivAt_integral_radialIntegrand (m + 1) hz).1.const_mul z
+  have hlim0 : Tendsto H (𝓝[>] 0) (𝓝 0) := by
+    have hlog_o : (fun t : ℝ => ((-Real.log t : ℝ) : ℂ) ^ (m + 1)) =o[𝓝[>] 0] fun t => t⁻¹ :=
+      Asymptotics.isLittleO_norm_left.mp <| by
+        simpa only [norm_pow, Complex.norm_real, Real.norm_eq_abs, abs_neg, Real.rpow_natCast,
+          Real.rpow_neg_one] using
+          isLittleO_abs_log_rpow_rpow_nhdsGT_zero (s := -1) ((m + 1 : ℕ) : ℝ) (by norm_num)
+    have hclog_O : (fun t : ℝ => -Complex.log (1 - (t : ℂ) * z)) =O[𝓝[>] 0] fun t => t := by
+      have hd0 :=
+        ((((hasDerivAt_id (0 : ℂ)).mul_const z).const_sub 1).clog (by simp)).neg.comp_ofReal
+      simpa using hd0.isBigO_sub.mono nhdsWithin_le_nhds
+    exact (Asymptotics.isLittleO_one_iff ℝ).mp <| (hlog_o.mul_isBigO hclog_O).congr' .rfl <|
+      eventually_mem_nhdsWithin.mono fun t ht => inv_mul_cancel₀ ht.out.ne'
   have hcont : ContinuousAt H 1 :=
     ((Complex.continuous_ofReal.continuousAt.comp (Real.continuousAt_log one_ne_zero).neg).pow
-      (m + 1)).mul (hasDerivAt_neg_clog_one_sub_ofReal_mul (by simpa using hz)).continuousAt
+      (m + 1)).mul ((((hasDerivAt_id (1 : ℂ)).mul_const z).const_sub 1).clog
+        (by simpa using hz)).neg.comp_ofReal.continuousAt
   have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_tendsto zero_lt_one hderiv
-    (hint1.add hint2) (tendsto_log_pow_succ_mul_clog_nhdsGT_zero m z)
-    (by simpa [H] using hcont.tendsto.mono_left nhdsWithin_le_nhds)
+    (hint1.add hint2) hlim0 (by simpa [H] using hcont.tendsto.mono_left nhdsWithin_le_nhds)
   rw [intervalIntegral.integral_add hint1 hint2, intervalIntegral.integral_neg,
     intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul, sub_zero,
     neg_add_eq_zero] at hftc
-  have hcomm : z * (((m + 1).factorial : ℂ)⁻¹ *
-      ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ (m + 1) / (1 - (t : ℂ) * z)) =
-      ((m + 1).factorial : ℂ)⁻¹ *
-        (z * ∫ t : ℝ in 0..1, ((-Real.log t : ℝ) : ℂ) ^ (m + 1) / (1 - (t : ℂ) * z)) := by ring
-  rw [(hasDerivAt_polylog_nat_add_two (m + 1) hz).deriv, polylog_nat_add_two, hcomm, ← hftc,
+  rw [(hasDerivAt_polylog_nat_add_two (m + 1) hz).deriv, polylog_nat_add_two, mul_left_comm, ← hftc,
     Nat.factorial_succ, Nat.cast_mul, mul_inv_rev, ← mul_assoc]
   have hm1 : (m + 1 : ℂ) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero m
   simp [Nat.cast_add, Nat.cast_one, hm1]
@@ -221,8 +197,12 @@ theorem mul_deriv_polylog_add_one (n : ℤ) {z : ℂ} (hz : 1 - z ∈ Complex.sl
           HasDerivAt (fun s : ℝ => -Complex.log (1 - (s : ℂ) * z)) (z * (1 - (t : ℂ) * z)⁻¹) t :=
         fun t ht => by
           rw [uIcc_of_le zero_le_one] at ht
-          simpa [div_eq_mul_inv] using
-            hasDerivAt_neg_clog_one_sub_ofReal_mul (one_sub_ofReal_mul_mem_slitPlane hz ht)
+          have hmem : 1 - (t : ℂ) * z ∈ Complex.slitPlane :=
+            mul_comm z (t : ℂ) ▸ Complex.one_sub_mul_ofReal_mem_slitPlane hz ht
+          convert ((((hasDerivAt_id (t : ℂ)).mul_const z).const_sub 1).clog
+            hmem).neg.comp_ofReal using 1
+          · ext s; rfl
+          · simp [div_eq_mul_inv]
       have hint := (hasDerivAt_integral_radialIntegrand 0 hz).1.const_mul z
       simp only [pow_zero, one_div] at hint
       rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint]; simp [polylog_one]

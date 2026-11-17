@@ -13,7 +13,6 @@ import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Topology.ContinuousMap.Compact
-import TauCeti.Topology.Algebra.Module.LocallyContractible
 
 /-!
 # The branch of a continuable germ on the universal cover
@@ -26,9 +25,12 @@ in `U ⊆ ℂ` from `z₀ ∈ U` depends only on its homotopy class in `U`, asse
   invariance in `U` and the universal-cover branch, with intro/elim, basepoint, congruence, `trans`,
   algebra (`add`, `neg`, `sub`, `mul`, `pow`), `eval_apply`, `analyticOnNhd_univ_comp`, global
   comparison, and loop monodromy (`universalCoverBranch_inv_smul_of_loop`).
-* `ContinuesInside.continuous_universalCoverBranch`, `UniversalCover.eqOn_of_continuousOn_proj_eq`,
-  `UniversalCover.exists_continuousOn_proj_eq_of_isSimplyConnected`: continuity, simply-connected
-  open sections, and analyticity and `EqOn` principal-branch agreement of local determinations.
+* `ContinuesInside.continuous_universalCoverBranch`,
+  `ContinuesInside.analyticOnNhd_universalCoverBranch_comp`,
+  `ContinuesInside.eqOn_universalCoverBranch_comp_of_analyticOnNhd`: continuity, analyticity, and
+  `EqOn` principal-branch agreement of local determinations along continuous sections (see
+  `TauCeti.AlgebraicTopology.UniversalCover.Section` for topological section existence and
+  uniqueness).
 
 ## References
 
@@ -411,34 +413,4 @@ theorem eqOn_universalCoverBranch_comp_of_analyticOnNhd {U : Set ℂ} {z₀ : U}
 end Normed
 end ContinuesInside
 
-namespace UniversalCover
-
-/-- **Existence of a continuous section over a simply connected open subset `V ⊆ U`.** -/
-theorem exists_continuousOn_proj_eq_of_isSimplyConnected {U V : Set ℂ} (hUo : IsOpen U)
-    (hVo : IsOpen V) (hVc : IsSimplyConnected V) (hVU : V ⊆ U) (z₀ : U) {w₀ : ℂ} (hw₀ : w₀ ∈ V)
-    (p₀ : UniversalCover z₀) (hp₀ : (p₀.proj : ℂ) = w₀) :
-    ∃ sec : ℂ → UniversalCover z₀,
-      ContinuousOn sec V ∧ (∀ z ∈ V, ((sec z).proj : ℂ) = z) ∧ sec w₀ = p₀ := by
-  have : StronglyLocallyContractibleSpace U := hUo.stronglyLocallyContractibleSpace
-  have : StronglyLocallyContractibleSpace V := hVo.stronglyLocallyContractibleSpace
-  have : SimplyConnectedSpace V := hVc.simplyConnectedSpace; classical
-  let incl : C(V, U) := ⟨Set.inclusion hVU, continuous_inclusion hVU⟩
-  obtain ⟨s, ⟨hs0, hsproj⟩, -⟩ := existsUnique_continuousMap_lifts z₀ incl ⟨w₀, hw₀⟩ p₀
-    (Subtype.ext hp₀)
-  refine ⟨fun z => if hz : z ∈ V then s ⟨z, hz⟩ else p₀,
-    continuousOn_iff_continuous_domRestrict.mpr (s.continuous.congr fun x => by simp [x.2]),
-    fun z hz => by simpa [hz, incl] using congrArg Subtype.val (congrFun hsproj ⟨z, hz⟩),
-    by simp [hw₀, hs0]⟩
-
-/-- **Uniqueness of continuous sections on a preconnected set.** -/
-theorem eqOn_of_continuousOn_proj_eq {U V : Set ℂ} (hUo : IsOpen U) (hVc : IsPreconnected V)
-    {z₀ : U} {sec₁ sec₂ : ℂ → UniversalCover z₀} (hsec₁ : ContinuousOn sec₁ V)
-    (hsec₂ : ContinuousOn sec₂ V)
-    (hproj : EqOn (fun z => ((sec₁ z).proj : ℂ)) (fun z => ((sec₂ z).proj : ℂ)) V)
-    {w₀ : ℂ} (hw₀ : w₀ ∈ V) (heq : sec₁ w₀ = sec₂ w₀) : EqOn sec₁ sec₂ V := by
-  have : StronglyLocallyContractibleSpace U := hUo.stronglyLocallyContractibleSpace
-  exact (isCoveringMap z₀).eqOn_of_comp_eqOn hVc hsec₁ hsec₂
-    (fun _ hz => Subtype.ext (hproj hz)) hw₀ heq
-
-end UniversalCover
 end TauCeti
