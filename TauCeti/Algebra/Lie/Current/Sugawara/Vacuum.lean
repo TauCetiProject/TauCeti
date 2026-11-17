@@ -251,8 +251,8 @@ theorem sugawaraVacuum_eq_sum {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Mo
     simp only [Finset.mem_Ico, Finset.mem_singleton, Nat.cast_zero]
     omega
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [hIco, Finset.sum_singleton, normalOrderedSummand_apply, show (-1 : ℤ) < 0 by decide,
-    ↓reduceIte, show (-2 : ℤ) - -1 = -1 by ring]
+  simp only [hIco, Finset.sum_singleton, normalOrderedSummand_apply, neg_one_lt_zero, ↓reduceIte]
+  norm_num
 
 /-- **The quadratic Segal--Sugawara vector `S₋₂ |0⟩` has conformal weight `2`** for
 `vacuumDegreeOperator`, at every level and central value. -/
@@ -279,7 +279,7 @@ theorem envelopingι_single_smul_sugawaraVacuum_of_nonneg {z w : L}
       (k : K) • (ι[z - (2 * a) • w, k - 2] • vacuum Φ hΦ hΦs a) := by
   have hcomm := toCompletedEnveloping_mul_sugawaraMode_sub_mul
     (hΦ := hΦ) (hΦs := hΦs) (a := a) hw k (-2)
-  rw [sub_eq_iff_eq_add, show (-2 : ℤ) + k = k - 2 by ring] at hcomm
+  rw [sub_eq_iff_eq_add, neg_add_eq_sub] at hcomm
   have hv := congrArg (fun x ↦ ModuleTower.limSmul hV x (vacuum Φ hΦ hΦs a)) hcomm
   have hzk : ι[z, k] • vacuum Φ hΦ hΦs a = 0 :=
     envelopingι_smul_vacuum (single_tmul_mem_orderSubmodule K L hk 1 z)
@@ -316,9 +316,9 @@ theorem envelopingι_single_one_smul_sugawaraVacuum_of_eq_smul_killingForm {c : 
   have hw (y : L) : killingForm K L (c • z) y = Φ z y := by
     simp [h]
   rw [envelopingι_single_smul_sugawaraVacuum_of_nonneg hw zero_le_one, Int.cast_one, one_smul,
-    show (1 : ℤ) - 2 = -1 by ring, smul_smul,
-    show z - (2 * a * c) • z = (1 - 2 * a * c) • z by module,
-    TensorProduct.tmul_smul, map_smul, smul_assoc]
+    smul_smul, TensorProduct.tmul_sub, TensorProduct.tmul_smul, map_sub, map_smul, sub_smul,
+    smul_assoc, sub_smul, one_smul]
+  norm_num
 
 /-- **At the critical level `2 a Φ = κ_L`, every nonnegative current in `L[[t]]` annihilates
 `S₋₂ |0⟩`**, making `S₋₂ |0⟩` a singular vector for `L[[t]]`. -/

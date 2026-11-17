@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 public import TauCeti.Algebra.Lie.Killing.DualCoxeterNumber
 
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # The Segal--Sugawara Virasoro relations and central charge
@@ -58,12 +58,6 @@ normalising `κ₀` by `κ_L = 2 h^∨ κ₀` at the affine level `Φ = -(k • 
 
 ## Main results
 
-* `TauCeti.CurrentAlgebra.limπ_sugawaraMode`, `TauCeti.CurrentAlgebra.limSmul_sugawaraMode`:
-  finite-window formulas for the coordinates and smooth-module action of `Sₙ`.
-* `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv_sugawaraMode`: compatibility with the
-  completed level comparison, including at level zero.
-* `TauCeti.CurrentAlgebra.sugawaraMode_eq_inv_smul_sum_dualBasis`: expansion of `Sₙ` along the dual
-  basis of a rescaled invariant form.
 * `TauCeti.CurrentAlgebra.sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm`:
   commutator `[Sₘ, :x y:_n]` for `Φ = c • κ_L`.
 * `TauCeti.CurrentAlgebra.sugawaraMode_mul_sugawaraMode_sub_mul_of_eq_smul_killingForm`:
@@ -91,77 +85,6 @@ open LieAlgebra TauCeti.UniversalEnvelopingAlgebra
 open LieAlgebra.ofTwoCocycle (centralElement envelopingι)
 
 namespace TauCeti.CurrentAlgebra
-
-/-! ### Coordinates, smooth action, rescaled forms and level comparison -/
-
-section Basic
-
-variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [LieAlgebra.IsKilling K L]
-
-section FixedForm
-
-variable {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm} {a : K}
-
-local notation "UK" => CentralQuotient K (centralElement (twoCocycleOfBilinear K L Φ hΦ hΦs)) a
-
-/-- **The coordinates of the Segal--Sugawara modes are finite sums.** Modulo `I_N`, `Sₙ` is
-represented in any basis `b` by the summands of `:bᵢ b'ᵢ:_n` in the window
-`min (n + 1 - N) 0 ≤ m < N`. -/
-theorem limπ_sugawaraMode {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L)
-    (n : ℤ) (N : ℕ) :
-    (orderQuotientTower Φ hΦ hΦs a).limπ N (sugawaraMode Φ hΦ hΦs a n) =
-      ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) N
-        (∑ i, ∑ m ∈ Finset.Ico (min (n + 1 - N) 0) N,
-          normalOrderedSummand Φ hΦ hΦs a 0 n m (b i) (killingDualBasis b i)) := by
-  rw [sugawaraMode_eq_sum b, map_sum, map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ limπ_normalOrderedMode n (b i) (killingDualBasis b i) N
-
-/-- **The action of a Segal--Sugawara mode on a smooth vector is a finite sum.** On a vector `v`
-killed by `I_N`, `Sₙ` acts in any basis `b` by the summands with `min (n + 1 - N) 0 ≤ m < N`. -/
-theorem limSmul_sugawaraMode {M : ModuleCat UK}
-    (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M)
-    {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) (n : ℤ) {v : M} {N : ℕ}
-    (hv : ∀ c ∈ orderLeftIdeal Φ hΦ hΦs a N, c • v = 0) :
-    ModuleTower.limSmul hM (sugawaraMode Φ hΦ hΦs a n) v =
-      ∑ i, ∑ m ∈ Finset.Ico (min (n + 1 - N) 0) N,
-        normalOrderedSummand Φ hΦ hΦs a 0 n m (b i) (killingDualBasis b i) • v := by
-  rw [ModuleTower.limSmul_eq_smul hM _ hv (limπ_sugawaraMode b n N).symm]
-  simp only [Finset.sum_smul]
-
-/-- **Expansion of the Segal--Sugawara modes along a rescaled bilinear form.** If `κ_L = d • B` for
-a nondegenerate form `B` and `d ≠ 0`, then `Sₙ = d⁻¹ • ∑ᵢ :bᵢ b^i:_n`, where `b^i` is the basis
-dual to `b` under `B`. -/
-theorem sugawaraMode_eq_inv_smul_sum_dualBasis {B : LinearMap.BilinForm K L}
-    (hB : B.Nondegenerate) {d : K} (hd : d ≠ 0) (h : killingForm K L = d • B)
-    {ι : Type*} [DecidableEq ι] [Fintype ι] (b : Module.Basis ι K L) (n : ℤ) :
-    sugawaraMode Φ hΦ hΦs a n =
-      d⁻¹ • ∑ i, normalOrderedMode Φ hΦ hΦs a n (b i) (B.dualBasis hB b i) := by
-  have hcongr (B₁ B₂ : LinearMap.BilinForm K L) (h₁ : B₁.Nondegenerate) (h₂ : B₂.Nondegenerate)
-      (heq : B₁ = B₂) (i : ι) : B₁.dualBasis h₁ b i = B₂.dualBasis h₂ b i := by
-    subst heq
-    rfl
-  rw [sugawaraMode_eq_sum b, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [killingDualBasis, hcongr _ (d • B) _
-    ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hd)).mpr hB) h,
-    b.dualBasis_smul_apply B hB d hd i, map_smul]
-
-end FixedForm
-
-/-- **The completed level comparison preserves the Segal--Sugawara modes.** If `Ψ = k • Φ`, the
-completed level comparison from `Û(ĝ_Ψ)` at central value `1` to `Û(ĝ_Φ)` at central value `k`
-sends `Sₙ` to `Sₙ`, for every `k : K`, including `k = 0`. -/
-@[simp]
-theorem levelCompletedEnvelopingEquiv_sugawaraMode {Φ Ψ : LinearMap.BilinForm K L}
-    (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
-    {k : K} (h : Ψ = k • Φ) (n : ℤ) :
-    levelCompletedEnvelopingEquiv hΦ hΦs hΨ hΨs h (sugawaraMode Ψ hΨ hΨs 1 n) =
-      sugawaraMode Φ hΦ hΦs k n := by
-  rw [sugawaraMode_eq_sum (Module.finBasis K L), sugawaraMode_eq_sum (Module.finBasis K L), map_sum]
-  simp only [levelCompletedEnvelopingEquiv_normalOrderedMode]
-
-end Basic
 
 /-! ### Commutator of Segal--Sugawara modes -/
 
@@ -216,9 +139,10 @@ private theorem sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul (x y : L) 
         algebraMap K UK (if m + n = 0 then ((m ^ 3 - m) / 6 : ℤ) * a * Φ x y else 0) := by
   have hl (l : ℤ) : ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] -
       ι[y, m + n - l] * ι[x, l]) =
-      (m - l) • ι[⁅x, y⁆, m + n] + (-(l * (m - l))) •
+      (m - l) • ι[⁅x, y⁆, m + n] - (l * (m - l)) •
         algebraMap K UK (if m + n = 0 then a * Φ x y else 0) := by
-    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel, smul_add, Int.cast_smul_eq_zsmul]
+    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel, smul_add, Int.cast_smul_eq_zsmul,
+      sub_eq_add_neg ((m - l) • _), ← neg_smul]
     congr 1
     split_ifs with hmn
     · rw [hmn, zero_sub, ← map_zsmul, Algebra.smul_def, ← map_mul]
@@ -227,16 +151,13 @@ private theorem sum_Ico_sub_sum_Ico_sub_smul_envelopingι_mul_sub_mul (x y : L) 
       push_cast
       ring
     · simp
-  simp only [hl, Finset.sum_add_distrib, ← Finset.sum_smul]
-  rw [add_sub_add_comm, ← sub_smul, ← sub_smul,
+  simp only [hl, Finset.sum_sub_distrib, ← Finset.sum_smul]
+  rw [sub_sub_sub_comm, ← sub_smul, ← sub_smul,
     Int.eq_ediv_of_mul_eq_right two_ne_zero
       (Finset.two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub m),
-    Finset.sum_neg_distrib, Finset.sum_neg_distrib,
-    show -(∑ x ∈ Finset.Ico 0 m, x * (m - x)) - -(∑ x ∈ Finset.Ico m 0, x * (m - x)) =
-      -(∑ x ∈ Finset.Ico 0 m, x * (m - x) - ∑ x ∈ Finset.Ico m 0, x * (m - x)) by abel,
     Int.eq_ediv_of_mul_eq_right (by decide : (6 : ℤ) ≠ 0)
       (Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub m),
-    neg_smul, ← sub_eq_add_neg, Int.cast_smul_eq_zsmul]
+    Int.cast_smul_eq_zsmul]
   congr 1
   split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
 
@@ -282,13 +203,6 @@ private theorem summable_smul_completedEnveloping {f : ℤ → CompletedEnvelopi
     (orderQuotientTower Φ hΦ hΦs a).summable_smul hf fun l ↦ algebraMap K UK (r l)
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem hasSum_smul_completedEnveloping {f : ℤ → CompletedEnveloping Φ hΦ hΦs a}
-    {s : CompletedEnveloping Φ hΦ hΦs a} (hf : HasSum f s) (r : K) :
-    HasSum (fun l ↦ r • f l) (r • s) := by
-  simpa only [← Algebra.smul_def] using
-    hf.mul_left (algebraMap K (CompletedEnveloping Φ hΦ hΦs a) r)
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 private theorem hasSum_ite_mem_completedEnveloping (s : Finset ℤ) (g : ℤ → UK) (r : K) :
     HasSum (fun l : ℤ ↦ r • toC (if l ∈ s then g l else 0))
       (r • toC (∑ l ∈ s, g l)) := by
@@ -296,7 +210,7 @@ private theorem hasSum_ite_mem_completedEnveloping (s : Finset ℤ) (g : ℤ →
       (∑ l ∈ s, toC (if l ∈ s then g l else 0)) :=
     hasSum_sum_of_ne_finset_zero fun l hl ↦ by simp [hl]
   rw [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at hs
-  exact hasSum_smul_completedEnveloping hs r
+  exact hs.const_smul r
 
 /-- **The commutator of a Segal--Sugawara mode with a normally ordered mode**, for `Φ = c • κ_L`
 over any field `K`. -/
@@ -327,8 +241,8 @@ theorem sugawaraMode_mul_normalOrderedMode_sub_mul_of_eq_smul_killingForm {c : K
   have hcomb := hA₀.add hB
   simp only [combined_normalOrderedSummand_eq] at hcomb
   let g (l : ℤ) : UK := ((m - l : ℤ) : K) • (ι[x, l] * ι[y, m + n - l] - ι[y, m + n - l] * ι[x, l])
-  have h₂ := ((hasSum_smul_completedEnveloping (hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ)
-    (hΦs := hΦs) (a := a) (m + n) x y) ((1 - 2 * a * c) * (m - n : K))).add
+  have h₂ := (((hasSum_normalOrderedMode (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a)
+      (m + n) x y).const_smul ((1 - 2 * a * c) * (m - n : K))).add
     (hasSum_ite_mem_completedEnveloping (Finset.Ico 0 m) g (1 - 2 * a * c))).sub
     (hasSum_ite_mem_completedEnveloping (Finset.Ico m 0) g (1 - 2 * a * c))
   rw [h₁.unique (hA.add hB), hcomb.unique h₂, add_sub_assoc, ← smul_sub, ← map_sub,
@@ -454,8 +368,9 @@ theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (
   have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
   have h3 : (3 : K) ≠ 0 := NeZero.ne (3 : K)
   have h6 : (6 : K) ≠ 0 := by
-    rw [show (6 : K) = 2 * 3 by norm_num]
-    exact mul_ne_zero h2 h3
+    have h23 : (2 : K) * 3 ≠ 0 := mul_ne_zero h2 h3
+    norm_num at h23
+    exact h23
   have hdiv6 : (((m ^ 3 - m) / 6 : ℤ) : K) = ((m : K) ^ 3 - m) / 6 := by
     refine eq_div_of_mul_eq h6 ?_
     have hZ : ((m ^ 3 - m) / 6 : ℤ) * 6 = m ^ 3 - m := by
@@ -482,8 +397,9 @@ theorem sugawaraVirasoro_mul_sugawaraVirasoro_sub_mul [NeZero (2 : K)] [NeZero (
     split_ifs
     · rw [hdiv6, sugawaraCentralCharge]
       have h12 : (12 : K) ≠ 0 := by
-        rw [show (12 : K) = 2 * 6 by norm_num]
-        exact mul_ne_zero h2 h6
+        have h26 : (2 : K) * 6 ≠ 0 := mul_ne_zero h2 h6
+        norm_num at h26
+        exact h26
       field_simp
       ring
     · simp

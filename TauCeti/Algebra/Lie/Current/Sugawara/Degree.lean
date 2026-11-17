@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Current.CompletedDerivation
 public import TauCeti.Algebra.Lie.Current.Sugawara.Virasoro
 
+import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Algebra.Lie.Derivation.Continuous
 
 /-!
@@ -126,12 +127,7 @@ theorem vectorFieldCompletedEnvelopingDerivation_single_one_normalOrderedMode
     D.toAddMonoidHom
     (continuous_vectorFieldCompletedEnvelopingDerivation Φ hΦ hΦs a (HahnSeries.single 1 1))
   simp only [Function.comp_def, LinearMap.toAddMonoidHom_coe, hterm] at h₁
-  have h₂ : HasSum (fun m ↦ n • toCompletedEnveloping Φ hΦ hΦs a
-      (normalOrderedSummand Φ hΦ hΦs a 0 n m x y))
-      (n • normalOrderedMode Φ hΦ hΦs a n x y) := by
-    simpa only [← Int.cast_smul_eq_zsmul R, Algebra.smul_def] using
-      (hasSum_normalOrderedMode n x y).mul_left (algebraMap R Û n)
-  exact h₁.unique h₂
+  exact h₁.unique ((hasSum_normalOrderedMode n x y).const_smul n)
 
 end NormalOrder
 

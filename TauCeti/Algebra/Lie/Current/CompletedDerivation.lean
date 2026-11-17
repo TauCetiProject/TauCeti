@@ -140,8 +140,8 @@ theorem vectorFieldCompletedEnvelopingDerivation_single_add_one_envelopingι_sin
       (HahnSeries.single k r ⊗ₜ[R] x) = k • (HahnSeries.single (m + k) r ⊗ₜ[R] x) := by
     rw [vectorFieldDerivation_tmul, LaurentSeries.derivative_apply,
       LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one,
-      HahnSeries.single_mul_single, one_mul, show m + 1 + (k - 1) = m + k by ring,
-      TensorProduct.smul_tmul']
+      HahnSeries.single_mul_single, one_mul, add_assoc m 1 (k - 1), ← add_sub_assoc,
+      add_sub_cancel_left, TensorProduct.smul_tmul']
     exact congrArg (· ⊗ₜ[R] x) (map_zsmul (HahnSeries.single.addMonoidHom (m + k)) k r)
   simp only [coe_toCompletedEnveloping, vectorFieldCompletedEnvelopingDerivation_toLimQuotients,
     vectorFieldEnvelopingDerivation_envelopingι, hcur, map_zsmul]
