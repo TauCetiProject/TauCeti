@@ -21,6 +21,7 @@ twice its complex index.
 It also compares the kernels, cokernels and indices of two linear maps `f : M → N` and
 `f' : M' → N'` related by injective maps `i : M' → M` and `j : N' → N` with
 `f (i x) = j (f' x)`, when every `x` with `f x` in the image of `j` lies in the image of `i`
+(and, for the cokernels and indices, `range f ⊔ range j = ⊤`)
 (`LinearMap.kerEquivOfRegularity`, `LinearMap.cokerEquivOfRegularity`,
 `LinearMap.index_eq_of_regularity`). This is the algebra behind the independence of the kernel,
 cokernel and index of an elliptic operator `H^(s+m) → H^s` from the Sobolev order `s`, where `f'`
@@ -128,10 +129,8 @@ square with the regularity property and `i`, `j` injective. -/
 noncomputable def kerEquivOfRegularity (hcomm : ∀ x, f (i x) = j (f' x))
     (hi : Function.Injective i) (hj : Function.Injective j)
     (hreg : ∀ x y, f x = j y → ∃ x', i x' = x) : ker f' ≃ₗ[R] ker f :=
-  LinearEquiv.ofBijective (i.restrict fun _ hx ↦ ker_le_comap_ker_of_apply_eq hcomm hx)
-    ⟨fun _ _ h ↦ Subtype.ext (hi (congrArg Subtype.val h)), fun x ↦ by
-      obtain ⟨x', hx', hxx'⟩ := (map_ker_eq_ker_of_regularity hcomm hj hreg).ge x.2
-      exact ⟨⟨x', hx'⟩, Subtype.ext hxx'⟩⟩
+  (Submodule.equivMapOfInjective i hi (ker f')).trans
+    (LinearEquiv.ofEq _ _ (map_ker_eq_ker_of_regularity hcomm hj hreg))
 
 /-- The equivalence `kerEquivOfRegularity` is given by `i`. -/
 @[simp]
@@ -150,13 +149,7 @@ noncomputable def cokerEquivOfRegularity (hcomm : ∀ x, f (i x) = j (f' x))
     ⟨by
       rw [← ker_eq_bot, Submodule.ker_mapQ, comap_range_eq_range_of_regularity hcomm hj hreg,
         Submodule.mkQ_map_self],
-    fun z ↦ by
-      obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
-      obtain ⟨a, ha, _, ⟨y, rfl⟩, rfl⟩ :=
-        Submodule.mem_sup.1 (hsup ▸ Submodule.mem_top (x := z))
-      refine ⟨Submodule.Quotient.mk y, ?_⟩
-      rw [Submodule.mapQ_apply, Submodule.Quotient.eq]
-      simpa using neg_mem ha⟩
+    range_eq_top.1 (by rw [Submodule.range_mapQ, Submodule.map_mkQ_eq_top, hsup])⟩
 
 /-- The equivalence `cokerEquivOfRegularity` is induced by `j`. -/
 @[simp]
