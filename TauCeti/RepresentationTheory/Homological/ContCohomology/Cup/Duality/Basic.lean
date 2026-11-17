@@ -1403,9 +1403,10 @@ theorem dualityMap1_bijective_of_subsingleton {G : Type uG} [Group G] [Topologic
     [DiscreteTopology M] [DistribMulAction G M] [ContinuousSMul G M] [Finite M] {N : Type uN}
     [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
     [ContinuousSMul G N] : Function.Bijective (dualityMap1 G M N) := by
-  rw [show dualityMap1 G M N = (AddMonoidHom.compHom (AddMonoidHom.id (H2 G N))).comp
-    (dualityMap1 G M N) by ext; rfl]
-  exact compHom_comp_dualityMap1_bijective_of_subsingleton (AddMonoidHom.id (H2 G N))
+  convert compHom_comp_dualityMap1_bijective_of_subsingleton (M := M)
+    (AddMonoidHom.id (H2 G N)) using 1
+  ext a b
+  simp
 
 end SubsingletonGroup
 
