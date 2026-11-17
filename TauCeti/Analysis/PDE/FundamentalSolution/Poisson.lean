@@ -112,7 +112,8 @@ theorem exists_contDiff_laplacian_eq_of_hasCompactSupport [Nontrivial E] {k : �
       (stdOrthonormalBasis ℝ E).repr (fun g' hg' hc' ↦ ?_) hg hc
     refine ⟨-(newtonianKernel _ ⋆ g'),
       (contDiff_newtonianKernel_convolution hg' hc').neg, ?_⟩
-    rw [laplacian_neg, laplacian_newtonianKernel_convolution hE3 (hg'.of_le hk') hc', neg_neg]
+    rw [laplacian_neg, laplacian_newtonianKernel_convolution hE3.ne' (by omega) (hg'.of_le hk') hc',
+      neg_neg]
 
 /-- **Local solvability of Poisson's equation.** In a nontrivial finite-dimensional real inner
 product space, let `f` be of class `C^k`, `2 ≤ k ≤ ∞`, on an open set `Ω`, and let
