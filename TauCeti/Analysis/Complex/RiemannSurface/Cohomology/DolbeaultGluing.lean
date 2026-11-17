@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
+import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
@@ -28,21 +29,26 @@ is one smooth `f` with every `f - g k` holomorphic on `B ∩ V k`. In the chart 
 conjugate Wirtinger derivatives.
 
 Applied on each disc of a cover, this gives Forster, *Lectures on Riemann Surfaces*, 14.7: let
-`V i ⊆ U i` be open, the `V i` covering `X` and each `U i` a chart disc. A holomorphic Čech
-`1`-cocycle `ξ` on the `V i` splits smoothly, `ξ i j = g j - g i` (a partition of unity); the
-lemma above on `U i` gives `f i` with `f i - g k` holomorphic, and then `ζ i j = f j - f i` is a
-holomorphic cocycle on the `U i` with `ζ = ξ + δη` on the `V i`, where `η i = f i - g i`.
-When `closure (V i)` is compact in `U i` and the `ξ k i` are bounded, `η i` is bounded on `V i`:
-this is the estimate that lets the lifting be used on spaces of bounded or square-integrable
-cochains in the proof that `H¹` of the structure sheaf of a compact Riemann surface is finite
-dimensional (Forster §14.9).
+`V i ⊆ U i` be open, the `V i` covering `X` and each `U i` a chart disc. Cocycles are taken in the
+frames of a line bundle, with holomorphic overlap scalars `ψ i j` satisfying `ψ i i = 1` and
+`ψ i j * ψ j k = ψ i k`; the structure sheaf is `ψ = 1`. A holomorphic Čech `1`-cocycle `ξ` on
+the `V i`, `ξ i j + ψ i j • ξ j k = ξ i k`, splits smoothly, `ξ i j = ψ i j • g j - g i` (a
+partition of unity); the lemma above on `U i`, applied to the `ψ i k • g k`, gives `f i` with
+`f i - ψ i k • g k` holomorphic, and then `ζ i j = ψ i j • f j - f i` is a holomorphic cocycle on
+the `U i` with `ζ = ξ + δη` on the `V i`, where `η i = f i - g i`. When `closure (V i)` is compact
+in `U i` and the `ξ i k` are bounded, `η i` is bounded on `V i`, with no bound on `ψ`: this is the
+estimate that lets the lifting be used on spaces of bounded or square-integrable cochains, such as
+the Bergman cochains of `TauCeti.RiemannSurface.ChartBergman`, in the proof that `H¹` of the
+structure sheaf of a compact Riemann surface is finite dimensional (Forster §14.9).
 
 ## Main results
 
 * `TauCeti.exists_contMDiffOn_mdifferentiableOn_sub_of_chart_eball`: the gluing on one chart disc.
-* `TauCeti.exists_mdifferentiableOn_cocycle_eq_add_sub_of_chart_eball`: Forster §14.7, every
-  holomorphic `1`-cocycle on the `V i` extends, up to a holomorphic coboundary, to a holomorphic
-  `1`-cocycle on the chart discs `U i`.
+* `TauCeti.exists_mdifferentiableOn_cocycle_eq_add_smul_sub_of_chart_eball`: Forster §14.7 in the
+  frames of a line bundle, every holomorphic `1`-cocycle on the `V i` extends, up to a holomorphic
+  coboundary, to a holomorphic `1`-cocycle on the chart discs `U i`.
+* `TauCeti.exists_mdifferentiableOn_cocycle_eq_add_sub_of_chart_eball`: its case `ψ = 1`, for the
+  structure sheaf.
 
 Smoothness is for the underlying real manifold, modelled on `𝓘(ℝ, ℂ)` (see
 `IsManifold.restrictScalars_of_ne_zero`); holomorphy is for the model `𝓘(ℂ)`.
@@ -55,7 +61,7 @@ open scoped ContDiff ENNReal Manifold Topology
 
 namespace TauCeti
 
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
 
 /-- **Smooth data with holomorphic differences glue on a chart disc.** Let `e` be a holomorphic
@@ -71,7 +77,6 @@ theorem exists_contMDiffOn_mdifferentiableOn_sub_of_chart_eball {ι : Type*} {V 
     (hR : eball c R ⊆ e.target) (hcov : e.source ∩ e ⁻¹' eball c R ⊆ ⋃ k, V k) :
     ∃ f : X → W, ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ f (e.source ∩ e ⁻¹' eball c R) ∧
       ∀ k, MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W) (f - g k) (e.source ∩ e ⁻¹' eball c R ∩ V k) := by
-  have : IsManifold 𝓘(ℝ, ℂ) ∞ X := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
   -- The chart is also a chart of the underlying real smooth surface.
   have heR : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) ∞ X :=
     IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero ∞ one_ne_zero he
@@ -100,17 +105,100 @@ theorem exists_contMDiffOn_mdifferentiableOn_sub_of_chart_eball {ι : Type*} {V 
     fun y hy ↦ ?_
   simp [e.left_inv hy.1.1]
 
-/-- **Holomorphic cocycles extend to larger chart discs up to a coboundary** (Forster §14.7). Let
-`X` be a Hausdorff σ-compact Riemann surface, `U i = (e i).source ∩ e i ⁻¹' eball (c i) (R i)`
-the preimage of a disc `eball (c i) (R i)`, `R i ≤ ∞`, lying in the target of a holomorphic chart
-`e i`, and `V i ⊆ U i` open sets covering `X`. Every holomorphic Čech `1`-cocycle `ξ` on the
-`V i` is `ζ + δ(-η)` there, for a holomorphic `1`-cocycle `ζ` on the `U i` and holomorphic `η i`
-on `V i`. Moreover `η i` is bounded on `V i`
-when `closure (V i)` is compact and contained in `U i` and all `ξ k i` are bounded on
-`V k ∩ V i` by one constant. -/
-theorem exists_mdifferentiableOn_cocycle_eq_add_sub_of_chart_eball [T2Space X]
-    [SigmaCompactSpace X] {ι : Type*} {e : ι → OpenPartialHomeomorph X ℂ} {c : ι → ℂ}
-    {R : ι → ℝ≥0∞} {U V : ι → Set X} (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+/-- **Holomorphic cocycles extend to larger chart discs up to a coboundary** (Forster §14.7), in
+the frames of a line bundle. Let `X` be a Hausdorff σ-compact Riemann surface,
+`U i = (e i).source ∩ e i ⁻¹' eball (c i) (R i)` the preimage of a disc `eball (c i) (R i)`,
+`R i ≤ ∞`, lying in the target of a holomorphic chart `e i`, and `V i ⊆ U i` open sets covering
+`X`. Let `ψ i j`, holomorphic on `U i ∩ U j`, be overlap scalars with `ψ i i = 1` on `V i` and
+`ψ i j * ψ j k = ψ i k` on `U i ∩ U j ∩ U k`. Every holomorphic Čech `1`-cocycle `ξ` on the `V i`
+for `ψ`, that is `ξ i j + ψ i j • ξ j k = ξ i k`, is `ζ i j - (ψ i j • η j - η i)` there, for a
+holomorphic `1`-cocycle `ζ` on the `U i` for `ψ` and holomorphic `η i` on `V i`. Moreover `η i`
+is bounded on `V i` when `closure (V i)` is compact and contained in `U i` and all `ξ i k` are
+bounded on `V i ∩ V k` by one constant; no bound on `ψ` is needed. -/
+theorem exists_mdifferentiableOn_cocycle_eq_add_smul_sub_of_chart_eball [IsManifold 𝓘(ℂ) 1 X]
+    [T2Space X] [SigmaCompactSpace X] {ι : Type*} {e : ι → OpenPartialHomeomorph X ℂ}
+    {c : ι → ℂ} {R : ι → ℝ≥0∞} {U V : ι → Set X}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hR : ∀ i, eball (c i) (R i) ⊆ (e i).target)
+    (hU : ∀ i, U i = (e i).source ∩ e i ⁻¹' eball (c i) (R i))
+    (hV : ∀ i, IsOpen (V i)) (hVU : ∀ i, V i ⊆ U i) (hVcov : ⋃ i, V i = univ)
+    {ψ : ι → ι → X → ℂ} (hψ : ∀ i j, MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (ψ i j) (U i ∩ U j))
+    (hψ_one : ∀ i, ∀ y ∈ V i, ψ i i y = 1)
+    (hψ_mul : ∀ i j k, ∀ y ∈ U i ∩ U j ∩ U k, ψ i j y * ψ j k y = ψ i k y)
+    {ξ : ι → ι → X → W} (hξ : ∀ i j, MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W) (ξ i j) (V i ∩ V j))
+    (hcocycle : ∀ i j k, ∀ y ∈ V i ∩ V j ∩ V k, ξ i j y + ψ i j y • ξ j k y = ξ i k y) :
+    ∃ ζ : ι → ι → X → W, ∃ η : ι → X → W,
+      (∀ i j, MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W) (ζ i j) (U i ∩ U j)) ∧
+      (∀ i j k, ∀ y ∈ U i ∩ U j ∩ U k, ζ i j y + ψ i j y • ζ j k y = ζ i k y) ∧
+      (∀ i, MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W) (η i) (V i)) ∧
+      (∀ i j, ∀ y ∈ V i ∩ V j, ζ i j y = ξ i j y + ψ i j y • η j y - η i y) ∧
+      ∀ i (C : ℝ), (∀ k, ∀ y ∈ V i ∩ V k, ‖ξ i k y‖ ≤ C) → IsCompact (closure (V i)) →
+        closure (V i) ⊆ U i → ∃ C', ∀ y ∈ V i, ‖η i y‖ ≤ C' := by
+  have : IsManifold 𝓘(ℝ, ℂ) ∞ X := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
+  have hUo (l : ι) : IsOpen (U l) := hU l ▸ (e l).isOpen_inter_preimage isOpen_eball
+  -- A smooth splitting `ξ i j = ψ i j • g j - g i` of the cocycle.
+  have hξs (i j : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (ξ i j) (V i ∩ V j) := by
+    simpa only [modelWithCornersSelf_restrictScalars] using
+      ((hξ i j).contMDiffOn ((hV i).inter (hV j)) (n := ∞)).restrictScalars ℝ
+  obtain ⟨g, hg, hξg, hgC⟩ := exists_contMDiffOn_eq_smul_sub_of_cocycle hV hVcov hξs hcocycle
+  -- On each disc `U i`, one smooth `f i` with every `f i - ψ i k • g k` holomorphic: the
+  -- differences `ψ i k • g k - ψ i l • g l = -ψ i k • ξ k l` are holomorphic.
+  have hψs (i k : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (⊤ : ℕ∞) (ψ i k) (U i ∩ U k) := by
+    simpa only [modelWithCornersSelf_restrictScalars] using
+      ((hψ i k).contMDiffOn ((hUo i).inter (hUo k)) (n := ∞)).restrictScalars ℝ
+  have hsmul : ContDiff ℝ ∞ fun p : ℂ × W ↦ p.1 • p.2 :=
+    (isBoundedBilinearMap_smul (𝕜 := ℝ)).contDiff
+  have hgψ (i k : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ (fun y ↦ ψ i k y • g k y) (U i ∩ V k) :=
+    hsmul.contMDiff.comp_contMDiffOn (((hψs i k).mono fun y (hy : y ∈ U i ∩ V k) ↦
+      ⟨hy.1, hVU k hy.2⟩).prodMk_space ((hg k).mono inter_subset_right))
+  have hggψ (i k l : ι) : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W)
+      ((fun y ↦ ψ i k y • g k y) - fun y ↦ ψ i l y • g l y) (U i ∩ V k ∩ (U i ∩ V l)) := by
+    have hsub : U i ∩ V k ∩ (U i ∩ V l) ⊆ U i ∩ U k := fun y hy ↦ ⟨hy.1.1, hVU k hy.1.2⟩
+    refine (MDifferentiableOn.smul ((hψ i k).mono hsub)
+      ((hξ k l).mono fun y hy ↦ ⟨hy.1.2, hy.2.2⟩)).neg.congr fun y hy ↦ ?_
+    simp only [Pi.sub_apply, Pi.neg_apply, Pi.smul_apply', hξg k l y ⟨hy.1.2, hy.2.2⟩,
+      smul_sub, smul_smul, hψ_mul i k l y ⟨⟨hy.1.1, hVU k hy.1.2⟩, hVU l hy.2.2⟩, neg_sub]
+  have hf (i : ι) := exists_contMDiffOn_mdifferentiableOn_sub_of_chart_eball (he i)
+    (fun k ↦ (hUo i).inter (hV k)) (hgψ i) (hggψ i) (hR i)
+    (fun y hy ↦ mem_iUnion.2 <| (mem_iUnion.1 (hVcov.ge (mem_univ y))).imp
+      fun _ hk ↦ ⟨hU i ▸ hy, hk⟩)
+  choose f hfs hfg using hf
+  simp only [← hU] at hfs hfg
+  refine ⟨fun i j y ↦ ψ i j y • f j y - f i y, fun i ↦ f i - g i, fun i j y hy ↦ ?_,
+    fun i j k y hy ↦ ?_, fun i ↦ ((hfg i i).mono fun y hy ↦ ⟨hVU i hy, hVU i hy, hy⟩).congr
+      fun y hy ↦ by simp [hψ_one i y hy], fun i j y hy ↦ ?_, fun i C hC hVc hVU' ↦ ?_⟩
+  · -- Near `y ∈ V k`, `ψ i j • f j - f i = ψ i j • (f j - ψ j k • g k) - (f i - ψ i k • g k)`.
+    obtain ⟨k, hk⟩ := mem_iUnion.1 (hVcov.ge (mem_univ y))
+    have hs : U i ∩ U j ∩ V k ∈ 𝓝 y := (((hUo i).inter (hUo j)).inter (hV k)).mem_nhds ⟨hy, hk⟩
+    have hd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W)
+        (ψ i j • (f j - fun z ↦ ψ j k z • g k z) - (f i - fun z ↦ ψ i k z • g k z))
+        (U i ∩ U j ∩ V k) :=
+      (MDifferentiableOn.smul ((hψ i j).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ hz.1)
+        ((hfg j k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.2, hz.1.2, hz.2⟩)).sub
+        ((hfg i k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.1, hz.1.1, hz.2⟩)
+    refine ((hd.congr fun z hz ↦ ?_).mdifferentiableAt hs).mdifferentiableWithinAt
+    simp only [Pi.sub_apply, Pi.smul_apply', smul_sub, smul_smul,
+      hψ_mul i j k z ⟨hz.1, hVU k hz.2⟩]
+    abel
+  · simp only [smul_sub, smul_smul, hψ_mul i j k y hy]
+    abel
+  · simp only [Pi.sub_apply, hξg i j y hy, smul_sub]
+    abel
+  · -- `η i = f i - g i`, with `f i` continuous on `U i ⊇ closure (V i)` and `‖g i‖ ≤ C`.
+    obtain ⟨C', hC'⟩ := hVc.exists_bound_of_continuousOn ((hfs i).continuousOn.mono hVU')
+    exact ⟨C' + C, fun y hy ↦ (norm_sub_le (f i y) (g i y)).trans
+      (add_le_add (hC' y (subset_closure hy)) (hgC i C hC y hy))⟩
+
+/-- **Holomorphic cocycles extend to larger chart discs up to a coboundary** (Forster §14.7), for
+the structure sheaf: the case `ψ = 1` of
+`TauCeti.exists_mdifferentiableOn_cocycle_eq_add_smul_sub_of_chart_eball`. Every holomorphic Čech
+`1`-cocycle `ξ` on the `V i` is `ζ + δ(-η)` there, for a holomorphic `1`-cocycle `ζ` on the
+chart discs `U i` and holomorphic `η i` on `V i`, with `η i` bounded on `V i` when
+`closure (V i)` is a compact subset of `U i` and the `ξ i k` are bounded on `V i ∩ V k`. -/
+theorem exists_mdifferentiableOn_cocycle_eq_add_sub_of_chart_eball [IsManifold 𝓘(ℂ) 1 X]
+    [T2Space X] [SigmaCompactSpace X] {ι : Type*} {e : ι → OpenPartialHomeomorph X ℂ}
+    {c : ι → ℂ} {R : ι → ℝ≥0∞} {U V : ι → Set X}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
     (hR : ∀ i, eball (c i) (R i) ⊆ (e i).target)
     (hU : ∀ i, U i = (e i).source ∩ e i ⁻¹' eball (c i) (R i))
     (hV : ∀ i, IsOpen (V i)) (hVU : ∀ i, V i ⊆ U i) (hVcov : ⋃ i, V i = univ)
@@ -121,38 +209,10 @@ theorem exists_mdifferentiableOn_cocycle_eq_add_sub_of_chart_eball [T2Space X]
       (∀ i j k, ∀ y ∈ U i ∩ U j ∩ U k, ζ i j y + ζ j k y = ζ i k y) ∧
       (∀ i, MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W) (η i) (V i)) ∧
       (∀ i j, ∀ y ∈ V i ∩ V j, ζ i j y = ξ i j y + η j y - η i y) ∧
-      ∀ i (C : ℝ), (∀ k, ∀ y ∈ V k ∩ V i, ‖ξ k i y‖ ≤ C) → IsCompact (closure (V i)) →
+      ∀ i (C : ℝ), (∀ k, ∀ y ∈ V i ∩ V k, ‖ξ i k y‖ ≤ C) → IsCompact (closure (V i)) →
         closure (V i) ⊆ U i → ∃ C', ∀ y ∈ V i, ‖η i y‖ ≤ C' := by
-  have : IsManifold 𝓘(ℝ, ℂ) ∞ X := IsManifold.restrictScalars_of_ne_zero ∞ one_ne_zero ‹_›
-  -- A smooth splitting `ξ i j = g j - g i` of the cocycle.
-  have hξs (i j : ι) : ContMDiffOn 𝓘(ℝ, ℂ) 𝓘(ℝ, W) (⊤ : ℕ∞) (ξ i j) (V i ∩ V j) := by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      ((hξ i j).contMDiffOn ((hV i).inter (hV j)) (n := ∞)).restrictScalars ℝ
-  obtain ⟨g, hg, hξg, hgC⟩ := exists_contMDiffOn_eq_sub_of_cocycle hV hVcov hξs hcocycle
-  have hgg (k l : ι) : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W) (g k - g l) (V k ∩ V l) :=
-    ((hξ l k).mono (inter_comm _ _).le).congr fun y hy ↦ by
-      simp [hξg l k y ⟨hy.2, hy.1⟩]
-  -- On each disc `U i`, one smooth `f i` with every `f i - g k` holomorphic.
-  have hf (i : ι) := exists_contMDiffOn_mdifferentiableOn_sub_of_chart_eball (he i) hV hg hgg
-    (hR i) (by simp [hVcov])
-  choose f hfs hfg using hf
-  simp only [← hU] at hfs hfg
-  refine ⟨fun i j ↦ f j - f i, fun i ↦ f i - g i, fun i j y hy ↦ ?_, fun i j k y _ ↦ ?_,
-    fun i ↦ (hfg i i).mono fun y hy ↦ ⟨hVU i hy, hy⟩, fun i j y hy ↦ ?_,
-    fun i C hC hVc hVU' ↦ ?_⟩
-  · -- Near `y ∈ V k`, `f j - f i = (f j - g k) - (f i - g k)`.
-    obtain ⟨k, hk⟩ := mem_iUnion.1 (hVcov.ge (mem_univ y))
-    have hUo (l : ι) : IsOpen (U l) := hU l ▸ (e l).isOpen_inter_preimage isOpen_eball
-    have hs : U i ∩ U j ∩ V k ∈ 𝓝 y := (((hUo i).inter (hUo j)).inter (hV k)).mem_nhds ⟨hy, hk⟩
-    have hd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ, W) (f j - g k - (f i - g k)) (U i ∩ U j ∩ V k) :=
-      ((hfg j k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.2, hz.2⟩).sub
-        ((hfg i k).mono fun z (hz : z ∈ U i ∩ U j ∩ V k) ↦ ⟨hz.1.1, hz.2⟩)
-    exact ((hd.congr fun z _ ↦ by simp).mdifferentiableAt hs).mdifferentiableWithinAt
-  · simp
-  · simp [hξg i j y hy]
-  · -- `η i = f i - g i`, with `f i` continuous on `U i ⊇ closure (V i)` and `‖g i‖ ≤ C`.
-    obtain ⟨C', hC'⟩ := hVc.exists_bound_of_continuousOn ((hfs i).continuousOn.mono hVU')
-    exact ⟨C' + C, fun y hy ↦ (norm_sub_le (f i y) (g i y)).trans
-      (add_le_add (hC' y (subset_closure hy)) (hgC i C hC y hy))⟩
+  simpa only [one_smul] using exists_mdifferentiableOn_cocycle_eq_add_smul_sub_of_chart_eball
+    he hR hU hV hVU hVcov (ψ := fun _ _ _ ↦ 1) (fun _ _ ↦ mdifferentiableOn_const)
+    (fun _ _ _ ↦ rfl) (fun _ _ _ _ _ ↦ one_mul 1) hξ (by simpa only [one_smul] using hcocycle)
 
 end TauCeti
