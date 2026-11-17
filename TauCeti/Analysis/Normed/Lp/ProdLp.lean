@@ -408,6 +408,7 @@ theorem finrank_range_withLpProdMap (f : α →L[𝕜] α') (g : β →L[𝕜] �
   exact Cardinal.toNat_lift_add_lift (Module.rank_lt_aleph0 _ _) (Module.rank_lt_aleph0 _ _)
 
 /-- A block sum has finite rank exactly when both blocks do. -/
+@[simp]
 theorem finiteDimensional_range_withLpProdMap_iff {f : α →L[𝕜] α'} {g : β →L[𝕜] β'} :
     FiniteDimensional 𝕜 (f.withLpProdMap p g).range ↔
       FiniteDimensional 𝕜 f.range ∧ FiniteDimensional 𝕜 g.range := by
@@ -468,6 +469,7 @@ theorem _root_.ContinuousOn.withLpProdMap {X : Type*} [TopologicalSpace X] {f : 
       continuousOn_const)
 
 /-- The spectrum of a block sum of endomorphisms is the union of the spectra of its blocks. -/
+@[simp]
 theorem spectrum_withLpProdMap {R : Type*} [CommSemiring R] [Algebra R 𝕜] [Algebra R (α →L[𝕜] α)]
     [Algebra R (β →L[𝕜] β)] [Algebra R (WithLp p (α × β) →L[𝕜] WithLp p (α × β))]
     [IsScalarTower R 𝕜 (α →L[𝕜] α)] [IsScalarTower R 𝕜 (β →L[𝕜] β)]

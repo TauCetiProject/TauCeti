@@ -102,16 +102,23 @@ theorem isSpectralCutOn_withLpProdMap_iff (hsa₁ : ∀ u ∈ s, IsSelfAdjoint (
       exacts [hn.1 hx, hn.2 hx, hp.1 hx, hp.2 hx]
     rw [cfc_withLpProdMap (A₁ u) (A₂ u) _ (hsa₁ u hu) (hsa₂ u hu) hcont,
       finiteDimensional_range_withLpProdMap_iff]
-  simp only [isSpectralCutOn_iff, spectrum_withLpProdMap, mem_union, not_or]
   constructor
-  · rintro ⟨hc, h⟩
-    have h' (u : ℝ) (hu : u ∈ s) := (key hc u hu (h u hu).1 (h u hu).2.1).1 (h u hu).2.2
-    exact ⟨⟨hc, fun u hu ↦ ⟨(h u hu).1.1, (h u hu).2.1.1, (h' u hu).1⟩⟩,
-      ⟨hc, fun u hu ↦ ⟨(h u hu).1.2, (h u hu).2.1.2, (h' u hu).2⟩⟩⟩
-  · rintro ⟨⟨hc, h₁⟩, -, h₂⟩
-    exact ⟨hc, fun u hu ↦ ⟨⟨(h₁ u hu).1, (h₂ u hu).1⟩, ⟨(h₁ u hu).2.1, (h₂ u hu).2.1⟩,
-      (key hc u hu ⟨(h₁ u hu).1, (h₂ u hu).1⟩ ⟨(h₁ u hu).2.1, (h₂ u hu).2.1⟩).2
-        ⟨(h₁ u hu).2.2, (h₂ u hu).2.2⟩⟩⟩
+  · intro h
+    have hn (u : ℝ) (hu : u ∈ s) : -c ∉ spectrum ℝ (A₁ u) ∧ -c ∉ spectrum ℝ (A₂ u) := by
+      simpa [not_or] using h.neg_notMem_spectrum hu
+    have hp (u : ℝ) (hu : u ∈ s) : c ∉ spectrum ℝ (A₁ u) ∧ c ∉ spectrum ℝ (A₂ u) := by
+      simpa [not_or] using h.notMem_spectrum hu
+    have hfd (u : ℝ) (hu : u ∈ s) :=
+      (key h.pos u hu (hn u hu) (hp u hu)).1 (h.finiteDimensional_range_cfc_indicator_Icc hu)
+    exact ⟨isSpectralCutOn_iff.2 ⟨h.pos, fun u hu ↦ ⟨(hn u hu).1, (hp u hu).1, (hfd u hu).1⟩⟩,
+      isSpectralCutOn_iff.2 ⟨h.pos, fun u hu ↦ ⟨(hn u hu).2, (hp u hu).2, (hfd u hu).2⟩⟩⟩
+  · rintro ⟨h₁, h₂⟩
+    refine isSpectralCutOn_iff.2 ⟨h₁.pos, fun u hu ↦ ?_⟩
+    have hn := And.intro (h₁.neg_notMem_spectrum hu) (h₂.neg_notMem_spectrum hu)
+    have hp := And.intro (h₁.notMem_spectrum hu) (h₂.notMem_spectrum hu)
+    simp only [spectrum_withLpProdMap, mem_union, not_or]
+    exact ⟨hn, hp, (key h₁.pos u hu hn hp).2 ⟨h₁.finiteDimensional_range_cfc_indicator_Icc hu,
+      h₂.finiteDimensional_range_cfc_indicator_Icc hu⟩⟩
 
 /-- **The spectral flow is additive under direct sums.** For continuous paths `A₁` and `A₂` of
 self-adjoint Fredholm operators on `[a, b]`, the spectral flow of the block-diagonal path

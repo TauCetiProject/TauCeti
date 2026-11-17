@@ -58,6 +58,7 @@ theorem adjoint_withLpProdMap :
 
 /-- The star of an orthogonal block sum, its adjoint, is the block sum of the stars of its
 blocks. -/
+@[simp]
 theorem star_withLpProdMap :
     star (T₁.withLpProdMap 2 T₂) = (star T₁).withLpProdMap 2 (star T₂) :=
   adjoint_withLpProdMap T₁ T₂
