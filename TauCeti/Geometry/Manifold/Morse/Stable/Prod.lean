@@ -110,7 +110,9 @@ theorem prodNegativeEquiv_symm_apply (a : {j // φ.weight j < 0} → ℝ)
   simp only [prodNegativeEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
     LinearEquiv.funCongrLeft_symm, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply,
     Equiv.symm_symm]
-  rcases φ.prodNegativeWeightEquiv ψ i with j | j <;> rfl
+  rcases φ.prodNegativeWeightEquiv ψ i with j | j
+  · rw [LinearEquiv.sumArrowLequivProdArrow_symm_apply_inl, Sum.elim_inl]
+  · rw [LinearEquiv.sumArrowLequivProdArrow_symm_apply_inr, Sum.elim_inr]
 
 /-- The coordinates of negative weight of `v` in the product chart, split between the two charts. -/
 theorem prodNegativeEquiv_apply (v : {i // (φ.prod ψ).weight i < 0} → ℝ) :

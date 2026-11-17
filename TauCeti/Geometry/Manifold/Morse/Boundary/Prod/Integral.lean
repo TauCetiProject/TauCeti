@@ -60,6 +60,8 @@ the identity of the constant one:
 * `TauCeti.IsAdaptedPseudoGradient.trajectorySign_prod_right` and
   `TauCeti.IsAdaptedPseudoGradient.trajectorySign_prod_left`: the signs of the trajectories of a
   product.
+* `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_prod_of_morseIndex_eq_add_one`: the
+  boundary coefficients of a product as sums of the signs of its trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_prod_right`,
   `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_prod_left` and
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.signedMorseBoundaryCoeff_prod_eq_zero_of_ne`: the
@@ -424,6 +426,31 @@ variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E') ∞ N] [Finit
   {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z} (hX : IsAdaptedPseudoGradient f X)
   (hY : IsAdaptedPseudoGradient g Y) (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g)
   (𝔬 : MorseOrientation f X) (𝔬' : MorseOrientation g Y)
+
+/-- When the index drops by one from `(p, q)` to `(p', q')`, the coefficient of `(p', q')` in the
+integral Morse boundary of `(p, q)` for the product orientation data is the sum of the signs of
+the trajectories of the product, for the products of the charts and of the orientations. -/
+theorem signedMorseBoundaryCoeff_prod_of_morseIndex_eq_add_one {p p' : criticalPoints 𝓘(ℝ, E) f}
+    {q q' : criticalPoints 𝓘(ℝ, E') g}
+    (hPQ : manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) ((p : M), (q : N)) =
+      manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) ((p' : M), (q' : N)) + 1) :
+    (hX.prod hY).signedMorseBoundaryCoeff (𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable)
+        ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
+          (p, q))
+        ((criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable).symm
+          (p', q')) =
+      ∑ᶠ y ∈ (hX.prod hY).morseTrajectorySlice ((p : M), (q : N)) ((p' : M), (q' : N)),
+        (hX.prod hY).trajectorySign ((𝔬.chart p).prod (𝔬'.chart q))
+          ((𝔬.chart p').prod (𝔬'.chart q'))
+          ((𝔬.chart p).prodOrientation (𝔬'.chart q) (𝔬.orientation p) (𝔬'.orientation q))
+          ((𝔬.chart p').prodOrientation (𝔬'.chart q') (𝔬.orientation p') (𝔬'.orientation q'))
+          hPQ y :=
+  -- The product field has its tangent spaces for the model `𝓘(ℝ, E).prod 𝓘(ℝ, E')`, so `rw`
+  -- cannot rewrite the coefficients and counts of the product; `Eq.trans` chains the formulas.
+  (signedMorseBoundaryCoeff_of_morseIndex_eq_add_one (hX := hX.prod hY)
+    (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) hPQ).trans
+    (signedTrajectoryCount_def ..)
+
 include hf hg
 
 /-- **The boundary coefficients of a product along the second factor.** The coefficient of
@@ -456,11 +483,10 @@ theorem signedMorseBoundaryCoeff_prod_left (hYs : hY.IsMorseSmale) (p : critical
   have hS : (hX.prod hY).morseTrajectorySlice (e.symm (p, q) : M × N) (e.symm (p, q') : M × N) =
       (fun w ↦ ((p : M), w)) '' hY.morseTrajectorySlice q q' :=
     hX.morseTrajectorySlice_prod_left hY p.2 q q'
-  -- The product field has its tangent spaces for the model `𝓘(ℝ, E).prod 𝓘(ℝ, E')`, so `rw`
-  -- cannot rewrite the coefficients and counts of the product; `Eq.trans` chains the formulas.
-  refine (signedMorseBoundaryCoeff_of_morseIndex_eq_add_one (hX := hX.prod hY)
-    (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) hPQ).trans <|
-    (signedTrajectoryCount_def ..).trans <| (finsum_mem_congr hS fun _ _ ↦ rfl).trans <|
+  -- As in `signedMorseBoundaryCoeff_prod_of_morseIndex_eq_add_one`, `Eq.trans` chains the
+  -- formulas for the product.
+  refine (hX.signedMorseBoundaryCoeff_prod_of_morseIndex_eq_add_one hY 𝔬 𝔬' hPQ).trans <|
+    (finsum_mem_congr hS fun _ _ ↦ rfl).trans <|
       (finsum_mem_image (Prod.mk_right_injective _).injOn).trans ?_
   rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hqq', signedTrajectoryCount_def,
     mul_finsum_mem]
@@ -503,9 +529,8 @@ theorem signedMorseBoundaryCoeff_prod_right (hXs : hX.IsMorseSmale)
       (fun y ↦ (y, (q : N))) '' hX.morseTrajectorySlice p p' :=
     hX.morseTrajectorySlice_prod_right hY q.2 p p'
   -- As in `signedMorseBoundaryCoeff_prod_left`, `Eq.trans` chains the formulas for the product.
-  refine (signedMorseBoundaryCoeff_of_morseIndex_eq_add_one (hX := hX.prod hY)
-    (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) hPQ).trans <|
-    (signedTrajectoryCount_def ..).trans <| (finsum_mem_congr hS fun _ _ ↦ rfl).trans <|
+  refine (hX.signedMorseBoundaryCoeff_prod_of_morseIndex_eq_add_one hY 𝔬 𝔬' hPQ).trans <|
+    (finsum_mem_congr hS fun _ _ ↦ rfl).trans <|
       (finsum_mem_image (Prod.mk_left_injective _).injOn).trans ?_
   rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpp', signedTrajectoryCount_def]
   refine finsum_mem_congr rfl fun y hy ↦ ?_
@@ -537,10 +562,8 @@ theorem signedMorseBoundaryCoeff_prod_eq_zero_of_ne (hXs : hX.IsMorseSmale)
     (hf := hX.mdifferentiable) (hg := hY.mdifferentiable) hf hg p' q'
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p + manifoldMorseIndex 𝓘(ℝ, E') g q =
     manifoldMorseIndex 𝓘(ℝ, E) f p' + manifoldMorseIndex 𝓘(ℝ, E') g q' + 1
-  · refine (signedMorseBoundaryCoeff_of_morseIndex_eq_add_one (hX := hX.prod hY)
-      (𝔬 := 𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable)
-      (by rw [hindP, hindQ]; exact hind)).trans <|
-      (signedTrajectoryCount_def ..).trans <| (finsum_mem_congr
+  · refine (signedMorseBoundaryCoeff_prod_of_morseIndex_eq_add_one hX hY 𝔬 𝔬'
+      (hindP.trans <| hind.trans <| congrArg (· + 1) hindQ.symm)).trans <| (finsum_mem_congr
         (hXs.morseTrajectorySlice_prod_eq_empty hYs hf hg (fun h ↦ hpp (Subtype.ext h))
           (fun h ↦ hqq (Subtype.ext h)) hind.le) fun _ _ ↦ rfl).trans ?_
     exact finsum_mem_empty
