@@ -12,6 +12,8 @@ public import TauCeti.Topology.FilledIn
 -- Provides `NormedSpace.toLocallyConvexSpace`, hence `LocallyConnectedSpace E`.
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Analysis.Normed.Module.FilledHull
+import TauCeti.Topology.MetricSpace.ProperSpace
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Filled compact exhaustions of open sets
@@ -57,9 +59,7 @@ leads without meeting `K`. -/
 theorem IsOpen.isFilledIn_closedBall_sdiff_thickening {Ω : Set E} (hΩ : IsOpen Ω) (a : E)
     {r δ : ℝ} (hr : 0 ≤ r) (hδ : 0 < δ) :
     IsFilledIn (closedBall a r \ thickening δ Ωᶜ) Ω := by
-  have hKΩ : closedBall a r \ thickening δ Ωᶜ ⊆ Ω := fun x hx => by
-    by_contra hxΩ
-    exact hx.2 (self_subset_thickening hδ _ hxΩ)
+  have hKΩ : closedBall a r \ thickening δ Ωᶜ ⊆ Ω := sdiff_thickening_compl_subset _ _ hδ
   rw [isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset
     (isClosed_closedBall.sdiff isOpen_thickening) hΩ hKΩ]
   rintro x ⟨hxH, hxK⟩ hDΩ
@@ -85,34 +85,16 @@ compact sets `K n` with `K n ⊆ interior (K (n + 1))`, each of which is filled 
 component of `Ω \ K n` is relatively compact in `Ω`. -/
 theorem IsOpen.exists_isFilledIn_compact_exhaustion {Ω : Set E} (hΩ : IsOpen Ω) :
     ∃ K : ℕ → Set E, (∀ n, IsCompact (K n)) ∧ (∀ n, K n ⊆ interior (K (n + 1))) ∧
-      ⋃ n, K n = Ω ∧ ∀ n, IsFilledIn (K n) Ω := by
-  set K : ℕ → Set E := fun n => closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ
-  have hKcpt : ∀ n, IsCompact (K n) := fun n => (isCompact_closedBall _ _).diff isOpen_thickening
-  have hKΩ : ∀ n, K n ⊆ Ω := fun n x hx => by
-    by_contra hxΩ
-    exact hx.2 (self_subset_thickening (by positivity) _ hxΩ)
-  refine ⟨K, hKcpt, fun n => ?_, ?_, fun n => ?_⟩
-  · -- `K n` lies in the open set `ball 0 (n + 2) \ cthickening (n + 2)⁻¹ Ωᶜ ⊆ K (n + 1)`.
-    have hopen : IsOpen (ball (0 : E) (n + 1 + 1) \ cthickening (n + 1 + 1 : ℝ)⁻¹ Ωᶜ) :=
-      isOpen_ball.sdiff isClosed_cthickening
-    refine Subset.trans ?_ (hopen.subset_interior_iff.mpr ?_)
-    · rintro x ⟨hx₁, hx₂⟩
-      refine ⟨mem_ball_zero_iff.mpr ((mem_closedBall_zero_iff.mp hx₁).trans_lt (by linarith)),
-        fun h => hx₂ (cthickening_subset_thickening' (by positivity) ?_ _ h)⟩
-      gcongr
-      linarith
-    · simp only [K, Nat.cast_add, Nat.cast_one]
-      exact sdiff_subset_sdiff ball_subset_closedBall (thickening_subset_cthickening _ _)
-  · refine Subset.antisymm (iUnion_subset hKΩ) fun x hx => ?_
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hΩ x hx
-    obtain ⟨n, hn⟩ := exists_nat_ge (max ‖x‖ ε⁻¹)
-    have hn₁ : ‖x‖ ≤ n := (le_max_left _ _).trans hn
-    have hn₂ : ε⁻¹ < n + 1 := ((le_max_right _ _).trans hn).trans_lt (by linarith)
-    refine mem_iUnion.mpr ⟨n, mem_closedBall_zero_iff.mpr (by linarith), fun h => ?_⟩
-    obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.mp h
-    refine hy (hball ?_)
-    rw [mem_ball, dist_comm]
-    exact hxy.trans (inv_lt_of_inv_lt₀ hε hn₂)
-  · exact hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) (by positivity)
+      ⋃ n, K n = Ω ∧ ∀ n, IsFilledIn (K n) Ω :=
+  ⟨fun n => closedBall 0 (n + 1) \ thickening (n + 1 : ℝ)⁻¹ Ωᶜ,
+    fun n => isCompact_closedBall_sdiff_thickening 0 (n + 1) (n + 1 : ℝ)⁻¹ Ωᶜ,
+    fun n => by
+      simpa only [Nat.cast_add, Nat.cast_one] using
+        closedBall_sdiff_thickening_subset_interior (0 : E) Ωᶜ
+          (r₁ := (n : ℝ) + 1) (r₂ := (n : ℝ) + 1 + 1)
+          (δ₁ := ((n : ℝ) + 1)⁻¹) (δ₂ := ((n : ℝ) + 1 + 1)⁻¹)
+          (by linarith) (by positivity) (inv_strictAnti₀ (by positivity) (by linarith)),
+    hΩ.iUnion_closedBall_sdiff_thickening_compl 0,
+    fun _ => hΩ.isFilledIn_closedBall_sdiff_thickening 0 (by positivity) (by positivity)⟩
 
 end Exhaustion

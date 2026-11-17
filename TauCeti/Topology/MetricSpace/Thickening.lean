@@ -46,13 +46,27 @@ proper space, a function continuous on `closure s` and at most `m` on `frontier 
 `m + η` near the complement of `s` (`IsOpen.exists_pos_forall_lt_add_of_infDist_lt`).
 Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening (`LipschitzWith.thickening_preimage_subset_preimage_thickening`), and likewise for
-closed thickenings (`LipschitzWith.cthickening_preimage_subset_preimage_cthickening`).
+closed thickenings (`LipschitzWith.cthickening_preimage_subset_preimage_cthickening`). Removing a
+positive-radius open thickening of `tᶜ` from any set `s` keeps the result inside `t`
+(`Metric.sdiff_thickening_compl_subset`).
 -/
 
 public section
 
 open Set Metric Function
 open scoped Topology NNReal ENNReal
+
+namespace Metric
+
+/-- Removing a positive-radius open thickening of `tᶜ` from any set `s` keeps the result inside
+`t`. -/
+theorem sdiff_thickening_compl_subset {X : Type*} [PseudoEMetricSpace X] (s t : Set X) {δ : ℝ}
+    (hδ : 0 < δ) : s \ thickening δ tᶜ ⊆ t := by
+  rintro x ⟨-, hx⟩
+  by_contra hxt
+  exact hx (self_subset_thickening hδ tᶜ hxt)
+
+end Metric
 
 namespace TauCeti
 

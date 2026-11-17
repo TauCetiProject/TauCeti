@@ -32,6 +32,8 @@ uniform positive distance from every point outside its range.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
+* `ContinuousMap.dist_restrict_le_of_subset`: restricting to a smaller compact subset does not
+  increase the supremum distance.
 * `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a functional bounded above on the
   uniformly positive functions is nonpositive on the nonnegative functions.
 -/
@@ -83,6 +85,14 @@ theorem exists_pos_le_norm_sub_of_notMem_range {X E : Type*} [TopologicalSpace X
     [NormedAddCommGroup E] (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
     ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
   simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
+
+/-- Restricting continuous maps to a smaller compact subset gives at most the supremum distance on
+the larger compact subset. -/
+theorem dist_restrict_le_of_subset {X Y : Type*} [TopologicalSpace X] [PseudoMetricSpace Y]
+    (f g : C(X, Y)) {s t : Set X} [CompactSpace s] [CompactSpace t] (hst : s ⊆ t) :
+    dist (f.restrict s) (g.restrict s) ≤ dist (f.restrict t) (g.restrict t) :=
+  (ContinuousMap.dist_le dist_nonneg).mpr fun x ↦
+    ContinuousMap.dist_apply_le_dist (f := f.restrict t) (g := g.restrict t) ⟨x.1, hst x.2⟩
 
 end ContinuousMap
 
