@@ -20,7 +20,8 @@ pointwise image of the whole module. The image-membership result needs only a di
 monoid action. Over a ring of scalars, negating the scalar does not change the pointwise image
 of a submodule, since a submodule is closed under negation. A unit of a ring stabilizes an
 additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
-inverse both preserve it.
+inverse both preserve it. Over a division semiring of scalars, dividing a submodule by a natural
+number scalar that is nonzero enlarges it.
 
 Membership in a pointwise translate under a group action is tested by the inverse action.
 For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
@@ -46,6 +47,8 @@ this file to restate both.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.
 * `Submodule.pow_add_smul_mem`: `M₀` absorbs further powers of a scalar drawn from `S`.
 * `Submodule.neg_smul_eq_smul`: over a ring of scalars, `(-a) • N = a • N`.
+* `Submodule.le_inv_natCast_smul`: over a division semiring `α` of scalars, `N ≤ (m : α)⁻¹ • N`
+  whenever `(m : α) ≠ 0`.
 * `Ideal.span_singleton_eq_op_smul_top`: the left ideal `A e` is `MulOpposite.op e • ⊤`.
 * `Submodule.mem_stabilizer_units_iff`: a unit `u` of a ring stabilizes an additive subgroup `L`
   under the pointwise action exactly when multiplication by `u` and by `u⁻¹` carries `L` into
@@ -146,6 +149,21 @@ theorem mem_stabilizer_units_iff {R : Type*} [Ring R] {L : Submodule ℤ R} {u :
     rwa [smul_inv_smul] at this
 
 end Ring
+
+section DivisionSemiring
+
+variable {α R M : Type*} [DivisionSemiring α] [Semiring R] [AddCommMonoid M] [Module α M]
+  [Module R M] [SMulCommClass α R M]
+
+/-- Dividing a submodule by a natural number scalar that is nonzero in a division semiring `α`
+enlarges it: `N ≤ (m : α)⁻¹ • N`. -/
+theorem le_inv_natCast_smul (N : Submodule R M) {m : ℕ} (hm : (m : α) ≠ 0) :
+    N ≤ (m : α)⁻¹ • N :=
+  fun x hx ↦ (mem_smul_pointwise_iff_exists _ _ _).mpr
+    ⟨(m : α) • x, by rw [Nat.cast_smul_eq_nsmul]; exact nsmul_mem hx m,
+      inv_smul_smul₀ hm x⟩
+
+end DivisionSemiring
 
 end Submodule
 

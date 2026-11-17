@@ -88,18 +88,6 @@ open scoped Pointwise RealInnerProductSpace
 
 namespace ZLattice
 
-section Module
-
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] (L : Submodule ℤ E)
-
-/-- Dividing a `ℤ`-submodule by a nonzero natural number `m` enlarges it: `L ≤ (m : ℝ)⁻¹ • L`. -/
-theorem le_inv_natCast_smul {m : ℕ} (hm : m ≠ 0) : L ≤ (m : ℝ)⁻¹ • L := fun x hx ↦
-  (mem_smul_pointwise_iff_exists _ _ _).mpr
-    ⟨(m : ℝ) • x, by simpa [Nat.cast_smul_eq_nsmul] using L.nsmul_mem hx m,
-      inv_smul_smul₀ (Nat.cast_ne_zero.mpr hm) x⟩
-
-end Module
-
 /-! ### Evenness -/
 
 section Seminormed
@@ -312,7 +300,7 @@ theorem dual_le_inv_natCast_smul_card_discriminantGroup (L : Submodule ℤ E)
 theorem sup_dual_le_inv_natCast_smul_card_discriminantGroup (L : Submodule ℤ E)
     [Finite (DiscriminantGroup L)] :
     L ⊔ dual L ≤ (Nat.card (DiscriminantGroup L) : ℝ)⁻¹ • L :=
-  sup_le (le_inv_natCast_smul L Nat.card_pos.ne')
+  sup_le (L.le_inv_natCast_smul (Nat.cast_ne_zero.mpr Nat.card_pos.ne'))
     (dual_le_inv_natCast_smul_card_discriminantGroup L)
 
 /-- When `L` is discrete and `DiscriminantGroup L` is finite, `L ⊔ dual L` is discrete: it is
@@ -336,7 +324,8 @@ theorem dual_inv_natCast_smul (L : Submodule ℤ E) {m : ℕ} (hm : m ≠ 0) :
 theorem dual_inv_natCast_smul_le_of_dual_le (h : dual L ≤ L) {m : ℕ} (hm : m ≠ 0) :
     dual ((m : ℝ)⁻¹ • L) ≤ (m : ℝ)⁻¹ • L := by
   rw [dual_inv_natCast_smul L hm]
-  exact (smul_mono_right (m : ℝ) h).trans ((natCast_smul_le L m).trans (le_inv_natCast_smul L hm))
+  exact (smul_mono_right (m : ℝ) h).trans
+    ((natCast_smul_le L m).trans (L.le_inv_natCast_smul (Nat.cast_ne_zero.mpr hm)))
 
 /-- When `dual L ≤ L` and `m ≠ 0`, the down-scaled lattice `m⁻¹ • L` has trivial discriminant
 group. -/
