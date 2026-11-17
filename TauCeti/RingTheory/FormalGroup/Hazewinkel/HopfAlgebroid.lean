@@ -15,6 +15,7 @@ import Mathlib.Algebra.CharP.Invertible
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.MvPolynomial.Lift
 import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 
 /-!
@@ -27,18 +28,27 @@ For a prime `p`, let `V = MvPolynomial ℕ+ ℤ` and `Γ_p = MvPolynomial ℕ+ V
 equip `(V, Γ_p)` with a **Hopf algebroid** structure (`TauCeti.Hazewinkel.rightUnit`,
 `TauCeti.Hazewinkel.counit`, `TauCeti.Hazewinkel.tensorLift`, `TauCeti.Hazewinkel.coproduct`,
 `TauCeti.Hazewinkel.conjugation`) receiving a canonical morphism from the Lazard Hopf algebroid
-(`TauCeti.Hazewinkel.ofLazardRing`, `TauCeti.Hazewinkel.ofLazardCoordinateChange`).
+(`TauCeti.Hazewinkel.ofLazardRing`, `TauCeti.Hazewinkel.ofLazardCoordinateChange`);
+`TauCeti.Hazewinkel.tensorLift` instantiates the general polynomial pushout
+`MvPolynomial.pushoutEquiv`.
 
 When primes `q ≠ p` are units in `R`, `(BP_*, BP_*BP)` classifies all strict isomorphisms between
 Hazewinkel laws (`TauCeti.Hazewinkel.strictIsoEquiv`, `TauCeti.Hazewinkel.strictIsoAlgEquiv`,
 `TauCeti.Hazewinkel.strictIsoEquivOfCharP`). Finally, we prove Ravenel's logarithm recursion and
 degree-one formulas and descend modulo `(p, v₁, v₂, …)` to the Milnor Hopf algebra `𝔽_p[t₁, t₂, …]`
 (`TauCeti.Hazewinkel.milnorQuotient`, `TauCeti.Hazewinkel.milnorCoproduct`,
-`TauCeti.Hazewinkel.milnorConjugation`). For odd primes `p`, this is the polynomial part
-`𝔽_p[ξ₁, ξ₂, …]` of Milnor's mod-`p` dual Steenrod algebra (omitting the exterior generators `τᵢ`).
-For `p = 2`, it is isomorphic as an ungraded Hopf algebra to the full mod-`2` dual Steenrod algebra
-`𝔽_2[ξ₁, ξ₂, …]`; in standard topological grading (`|tₙ| = 2(2ⁿ - 1) = 2|ξₙ|`), it identifies with
-the subalgebra `𝔽_2[ξ₁², ξ₂², …]` via `tₙ ↦ ξₙ²`.
+`TauCeti.Hazewinkel.milnorConjugation`), whose coproduct is
+`Δ(t_k) = ∑_{i = 0}^k t_i ⊗ t_{k - i}^(p^i)` (with `t₀ = 1`). Under Milnor's standard coproduct
+`Δ(ξ_k) = ∑_{i = 0}^k ξ_{k - i}^(p^i) ⊗ ξ_i`, the **conjugate** Milnor generators
+`ζₙ = χ(ξₙ)` satisfy `Δ(ζ_k) = ∑_{i = 0}^k ζ_i ⊗ ζ_{k - i}^(p^i)`. Thus, preserving the coproduct:
+* for odd primes `p`, `tₙ ↦ χ(ξₙ)` identifies `𝔽_p[t₁, t₂, …]` with the polynomial sub-Hopf algebra
+  `𝔽_p[ξ₁, ξ₂, …]` of Milnor's mod-`p` dual Steenrod algebra (omitting the exterior generators
+  `τᵢ`);
+* for `p = 2`, `tₙ ↦ χ(ξₙ)` gives an ungraded Hopf-algebra isomorphism onto the full mod-`2` dual
+  Steenrod algebra `𝔽_2[ξ₁, ξ₂, …]`; in standard topological grading (`|tₙ| = 2(2ⁿ - 1) = 2|ξₙ|`),
+  `tₙ ↦ χ(ξₙ)²` identifies it with the sub-Hopf algebra `𝔽_2[ξ₁², ξ₂², …]`.
+Equivalently, mapping `tₙ` to the unconjugated generator `ξₙ` (or `ξₙ²` in topological grading at
+`p = 2`) identifies this Hopf algebra with the **co-opposite** (opposite coproduct) of Milnor's.
 
 ## References
 
@@ -309,57 +319,64 @@ def strictIsoEquivOfCharP [CharP R p] :
 /-! ### The tensor square, integral descent, coproduct, and conjugation -/
 
 /-- **The universal property of `Γ_p ⊗_V Γ_p`**, modeled as `MvPolynomial ℕ+ Γ_p` via left factor
-`C` and right factor `MvPolynomial.map (rightUnit p)`. -/
+`C` and right factor `MvPolynomial.map (rightUnit p)`. Instantiates
+`MvPolynomial.pushoutEquiv`. -/
 def tensorLift :
     {fg : (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) ×
         (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) //
       fg.1.comp (rightUnit p) = fg.2.comp C} ≃
-      (MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R) where
-  toFun fg := eval₂Hom fg.1.1 (fg.1.2 ∘ X)
-  invFun k := ⟨(k.comp C, k.comp (map (rightUnit p))), by
-    rw [RingHom.comp_assoc, RingHom.comp_assoc, map_comp_C]⟩
-  left_inv fg := by
-    have hC : (eval₂Hom fg.1.1 (fg.1.2 ∘ X)).comp C = fg.1.1 := RingHom.ext (eval₂Hom_C _ _)
-    refine Subtype.ext (Prod.ext hC (ringHom_ext' ?_ fun _ ↦ by simp))
-    rw [RingHom.comp_assoc, map_comp_C, ← RingHom.comp_assoc, hC, fg.2]
-  right_inv k := ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun _ ↦ by simp
+      (MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R) :=
+  MvPolynomial.pushoutEquiv (rightUnit p)
 
+/-- The left component of `(tensorLift p).symm k` is its restriction along `C`. -/
 @[simp] theorem tensorLift_symm_apply_fst
     (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R) :
-    ((tensorLift p).symm k).1.1 = k.comp C := (rfl)
+    ((tensorLift p).symm k).1.1 = k.comp C :=
+  MvPolynomial.pushoutEquiv_symm_apply_fst (rightUnit p) k
 
+/-- The right component of `(tensorLift p).symm k` is its restriction along
+`MvPolynomial.map (rightUnit p)`. -/
 @[simp] theorem tensorLift_symm_apply_snd
     (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R) :
-    ((tensorLift p).symm k).1.2 = k.comp (map (rightUnit p)) := (rfl)
+    ((tensorLift p).symm k).1.2 = k.comp (map (rightUnit p)) :=
+  MvPolynomial.pushoutEquiv_symm_apply_snd (rightUnit p) k
 
 section TensorSimp
 
 variable (fg : {fg : (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) ×
     (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) // fg.1.comp (rightUnit p) = fg.2.comp C})
 
+/-- `tensorLift p fg` restricts to `fg.1.1` on the left factor `C`. -/
 @[simp] theorem tensorLift_comp_C : (tensorLift p fg).comp C = fg.1.1 :=
-  congrArg (fun q ↦ q.1.1) ((tensorLift p).left_inv fg)
+  MvPolynomial.pushoutEquiv_comp_C (rightUnit p) fg
 
+/-- `tensorLift p fg` restricts to `fg.1.2` on the right factor
+`MvPolynomial.map (rightUnit p)`. -/
 @[simp] theorem tensorLift_comp_map_rightUnit :
     (tensorLift p fg).comp (map (rightUnit p)) = fg.1.2 :=
-  congrArg (fun q ↦ q.1.2) ((tensorLift p).left_inv fg)
+  MvPolynomial.pushoutEquiv_comp_map (rightUnit p) fg
 
+/-- `tensorLift p fg` agrees with `fg.1.1` on the left factor. -/
 @[simp] theorem tensorLift_C (x : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :
-    tensorLift p fg (C x) = fg.1.1 x := RingHom.congr_fun (tensorLift_comp_C p fg) x
+    tensorLift p fg (C x) = fg.1.1 x :=
+  MvPolynomial.pushoutEquiv_C (rightUnit p) fg x
 
+/-- `tensorLift p fg` agrees with `fg.1.2` on the right factor. -/
 @[simp] theorem tensorLift_map_rightUnit (x : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :
     tensorLift p fg (map (rightUnit p) x) = fg.1.2 x :=
-  RingHom.congr_fun (tensorLift_comp_map_rightUnit p fg) x
+  MvPolynomial.pushoutEquiv_map (rightUnit p) fg x
 
-@[simp] theorem tensorLift_X (i : ℕ+) : tensorLift p fg (X i) = fg.1.2 (X i) := by
-  simpa using tensorLift_map_rightUnit p fg (X i)
+/-- `tensorLift p fg` agrees with `fg.1.2` on the generators of the right factor. -/
+@[simp] theorem tensorLift_X (i : ℕ+) : tensorLift p fg (X i) = fg.1.2 (X i) :=
+  MvPolynomial.pushoutEquiv_X (rightUnit p) fg i
 
 end TensorSimp
 
+/-- A ring homomorphism out of `Γ_p ⊗_V Γ_p` is determined by its restrictions to both factors. -/
 theorem tensor_ringHom_ext {k k' : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+* R}
     (h₁ : k.comp C = k'.comp C) (h₂ : k.comp (map (rightUnit p)) = k'.comp (map (rightUnit p))) :
     k = k' :=
-  (tensorLift p).symm.injective (Subtype.ext (Prod.ext h₁ h₂))
+  MvPolynomial.ringHom_ext_comp_map (rightUnit p) h₁ h₂
 
 private theorem pTypicalParams_mem_range_of_injective
     {A B : Type*} [CommRing A] [CommRing B] {ι : A →+* B} (v : ℕ+ → A) (φ : FormalCoordinate A)
@@ -817,10 +834,12 @@ theorem map_map_eval_zero_coproduct_X_succ (n : ℕ) :
       (F.comp (map (rightUnit p))).comp (rightUnit p)), hB]
   simp [ιQ, map_add, map_sum, map_mul, map_pow, map_C, map_X]
 
-/-- **The quotient map** `ℤ[v₁, v₂, …][t₁, t₂, …] →+* 𝔽_p[t₁, t₂, …]`, killing `(p, v₁, v₂, …)`,
-onto the polynomial part `𝔽_p[ξ₁, ξ₂, …]` of the mod-`p` dual Steenrod algebra (at odd primes `p`;
-at `p = 2`, isomorphic as an ungraded Hopf algebra to `𝔽_2[ξ₁, ξ₂, …]`, or to `𝔽_2[ξ₁², ξ₂², …]`
-in topological grading via `tₙ ↦ ξₙ²`). -/
+/-- **The quotient map** `ℤ[v₁, v₂, …][t₁, t₂, …] →+* 𝔽_p[t₁, t₂, …]`, killing `(p, v₁, v₂, …)`.
+With `milnorCoproduct`, `tₙ` maps to the **conjugate** Milnor generator `χ(ξₙ)` (denoted `ζₙ` in
+Ravenel): at odd primes `p`, onto the polynomial part `𝔽_p[ξ₁, ξ₂, …]` of the mod-`p` dual
+Steenrod algebra; at `p = 2`, giving an ungraded Hopf-algebra isomorphism onto `𝔽_2[ξ₁, ξ₂, …]` via
+`tₙ ↦ χ(ξₙ)`, or onto `𝔽_2[ξ₁², ξ₂², …]` in topological grading via `tₙ ↦ χ(ξₙ)²`. (Equivalently,
+identifying `tₙ` with unconjugated `ξₙ` or `ξₙ²` gives the opposite coproduct.) -/
 def milnorQuotient : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomial ℕ+ (ZMod p) :=
   map ((Int.castRingHom (ZMod p)).comp (eval (0 : ℕ+ → ℤ)))
 
@@ -857,10 +876,13 @@ theorem map_rightUnit_ker_eval_zero_mod :
   have h' := Ideal.map_mono (f := conjugation p) hle
   rwa [Ideal.map_map, Ideal.map_map, conjugation_comp_rightUnit, conjugation_comp_C] at h'
 
-/-- **Milnor's coproduct** on `𝔽_p[t₁, t₂, …]` (the polynomial part of the mod-`p` dual Steenrod
-algebra at odd `p`; at `p = 2`, the ungraded dual Steenrod algebra `𝔽_2[ξ₁, ξ₂, …]`, or the
-subalgebra `𝔽_2[ξ₁², ξ₂², …]` in topological grading):
-`Δ(t_{n + 1}) = t_{n + 1} ⊗ 1 + 1 ⊗ t_{n + 1} + ∑_{i < n} t_{i + 1} ⊗ t_{n - i}^(p^(i + 1))`. -/
+/-- **Milnor's coproduct** on `𝔽_p[t₁, t₂, …]` in the conjugate-generator convention:
+`Δ(t_{n + 1}) = t_{n + 1} ⊗ 1 + 1 ⊗ t_{n + 1} + ∑_{i < n} t_{i + 1} ⊗ t_{n - i}^(p^(i + 1))`.
+Under Milnor's standard coproduct `Δ(ξ_k) = ∑_{i = 0}^k ξ_{k - i}^(p^i) ⊗ ξ_i`, this matches
+the **conjugate** generators `ζₙ = χ(ξₙ)` (`tₙ ↦ χ(ξₙ)` onto the polynomial part `𝔽_p[ξ₁, ξ₂, …]`
+at odd `p` or ungraded `𝔽_2[ξ₁, ξ₂, …]` at `p = 2`, and `tₙ ↦ χ(ξₙ)²` onto `𝔽_2[ξ₁², ξ₂², …]` in
+topological grading at `p = 2`); equivalently, `tₙ ↦ ξₙ` (or `tₙ ↦ ξₙ²`) uses the opposite
+coproduct. -/
 def milnorCoproduct :
     MvPolynomial ℕ+ (ZMod p) →ₐ[ZMod p] MvPolynomial ℕ+ (MvPolynomial ℕ+ (ZMod p)) :=
   MvPolynomial.aeval fun i ↦ C (X i) + X i + ∑ r ∈ Finset.range i.natPred,
