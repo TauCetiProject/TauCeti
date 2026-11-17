@@ -38,6 +38,10 @@ uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
 on `α` or `δ`. For a flow, this gives locally uniform convergence of orbits from convergent
 initial points.
+
+Into a complete uniform space, a family of functions that is uniformly Cauchy along a nontrivial
+filter on every set of an indexed cover admits a single limit function to which it converges
+uniformly on each set of the cover (`TauCeti.exists_tendstoUniformlyOn_of_uniformCauchySeqOn`).
 -/
 
 public section
@@ -118,5 +122,25 @@ theorem tendstoLocallyUniformly_of_forall_continuousAt {δ γ : Type*} [Topologi
   have hlim := (hΦ x).tendsto.comp (hx.prodMk_nhds tendsto_const_nhds)
   have hfam := (hΦ x).tendsto.comp (hx.prodMk_nhds (hp.comp tendsto_fst))
   exact (hlim.prodMk_nhds hfam).mono_right (nhds_le_uniformity _)
+
+/-- If a family of functions `F : ι → α → β` into a complete uniform space is uniformly Cauchy
+along a nontrivial filter `l` on every set `s k` of an indexed family `s : κ → Set α`, then there
+exists a limit function `u : α → β` to which `F` converges uniformly on every `s k`. -/
+theorem exists_tendstoUniformlyOn_of_uniformCauchySeqOn {ι α β : Type*} {κ : Sort*}
+    [UniformSpace β] [CompleteSpace β] {F : ι → α → β} {l : Filter ι} [l.NeBot]
+    {s : κ → Set α} (huc : ∀ k, UniformCauchySeqOn F l (s k)) :
+    ∃ u : α → β, ∀ k, TendstoUniformlyOn F u l (s k) := by
+  classical
+  obtain ⟨i₀⟩ := l.nonempty_of_neBot
+  have hcauchy : ∀ x ∈ ⋃ k, s k, Cauchy (map (fun i ↦ F i x) l) := by
+    rintro x hx
+    obtain ⟨k, hxk⟩ := mem_iUnion.1 hx
+    exact (huc k).cauchy_map hxk
+  choose v hv using fun x : ⋃ k, s k ↦ CompleteSpace.complete (hcauchy x x.2)
+  refine ⟨fun x ↦ if hx : x ∈ ⋃ k, s k then v ⟨x, hx⟩ else F i₀ x,
+    fun k ↦ (huc k).tendstoUniformlyOn_of_tendsto fun x hx ↦ ?_⟩
+  have hxu : x ∈ ⋃ k, s k := mem_iUnion.2 ⟨k, hx⟩
+  simp only [hxu, ↓reduceDIte]
+  exact hv ⟨x, hxu⟩
 
 end TauCeti

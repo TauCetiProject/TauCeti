@@ -13,6 +13,7 @@ import TauCeti.Analysis.GradientFlow.MoreauYosida.ErrorEstimate
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Generation of `EVI_λ` flows by minimizing movements
@@ -256,21 +257,6 @@ private theorem exists_ref_step_seq {X : Type*} [PseudoMetricSpace X] {lam : ℝ
     fun j ↦ (hN _ (Nat.le_add_left N j)).1, fun j ↦ (hN _ (Nat.le_add_left N j)).2.1,
     fun j z ↦ moreauYosida_ne_bot_of_lt (hN _ (Nat.le_add_left N j)).2.2 (edist_ne_top z x₁) h₀⟩
 
-/-- Constructs a pointwise limit curve `u` on `[0, ∞)` with `u 0 = x₀` from a family
-`F : ℕ → ℝ → X` that is uniformly Cauchy on `[0, T]` for every `T ≥ 0` and satisfies
-`F k 0 → x₀`. -/
-private theorem exists_tendsto_Ici_of_uniformCauchySeqOn {X : Type*} [PseudoMetricSpace X]
-    [CompleteSpace X] {F : ℕ → ℝ → X} {x₀ : X}
-    (huc : ∀ {T : ℝ}, 0 ≤ T → UniformCauchySeqOn F atTop (Icc 0 T))
-    (h0 : Tendsto (fun k ↦ F k 0) atTop (𝓝 x₀)) :
-    ∃ u : ℝ → X, u 0 = x₀ ∧ ∀ t ≥ 0, Tendsto (fun k ↦ F k t) atTop (𝓝 (u t)) := by
-  choose u_pos hu_pos using fun (t : {t : ℝ // 0 < t}) ↦
-    cauchySeq_tendsto_of_complete ((huc t.2.le).cauchySeq ⟨t.2.le, le_rfl⟩)
-  refine ⟨fun t ↦ if ht : 0 < t then u_pos ⟨t, ht⟩ else x₀, by simp, fun t ht ↦ ?_⟩
-  rcases ht.eq_or_lt with rfl | ht_pos
-  · simpa using h0
-  · simpa [ht_pos] using hu_pos ⟨t, ht_pos⟩
-
 /-- Constructs a reference minimizing movement family `(τ_ref, U_ref)` starting at `x₀` whose
 piecewise constant interpolants converge pointwise on `[0, ∞)` to an `EVI_lam` solution `u` with
 `u 0 = x₀`. -/
@@ -292,10 +278,17 @@ private theorem exists_ref_minimizingMovement {X : Type*} [PseudoMetricSpace X] 
   have hS_ref (j : ℕ) : φ (U_ref j 0) ≤ ((φ x₀).toReal : EReal) := by
     rw [hU_ref0 j,
       EReal.coe_toReal hx₀ (apply_ne_bot_of_moreauYosida_ne_bot h₀ (edist_ne_top _ _))]
-  obtain ⟨u, hu0, hlim_ref⟩ := exists_tendsto_Ici_of_uniformCauchySeqOn
-    (fun hT ↦ uniformCauchySeqOn_ceil_of_penalizedConvex hτ₀ h₀ hconv hτ_pos hτ_0 hU_ref
-      hU_ref0_lim hS_ref hT)
-    (by simpa only [zero_div, Nat.ceil_zero] using hU_ref0_lim)
+  obtain ⟨u', hu'⟩ := exists_tendstoUniformlyOn_of_uniformCauchySeqOn
+    (s := fun T : {T : ℝ // 0 ≤ T} ↦ Icc 0 T.1) fun T ↦
+      uniformCauchySeqOn_ceil_of_penalizedConvex hτ₀ h₀ hconv hτ_pos hτ_0 hU_ref
+        hU_ref0_lim hS_ref T.2
+  let u : ℝ → X := fun t ↦ if t = 0 then x₀ else u' t
+  have hu0 : u 0 = x₀ := by simp [u]
+  have hlim_ref (t : ℝ) (ht : 0 ≤ t) :
+      Tendsto (fun j ↦ U_ref j ⌈t / (τ_ref j : ℝ)⌉₊) atTop (𝓝 (u t)) := by
+    rcases ht.eq_or_lt with rfl | ht_pos
+    · simpa [u] using hU_ref0_lim
+    · simpa [u, ht_pos.ne'] using (hu' ⟨t, ht⟩).tendsto_at ⟨ht, le_rfl⟩
   have hu_cont : ContinuousOn u (Ici 0) := continuousOn_Ici_of_forall_Icc fun T hT ↦
     uIcc_of_le hT ▸ (absolutelyContinuousOnInterval_of_forall_mem_moreauYosidaResolvent
       (fun _ _ _ _ hv hw ↦ (hv.edist hw).liminf_eq.ge) hτ₀ h₀ hτ_pos hτ_0 hU_ref hU_ref0_lim
@@ -514,14 +507,18 @@ theorem eviDomain_eq_closure_of_penalizedConvex {X : Type*} [PseudoMetricSpace X
       _ < (exp (|lam| * T) + 1) * (ε / (exp (|lam| * T) + 1)) := by
           nlinarith [hN i hi j hj, dist_nonneg (x := x_seq i) (y := x_seq j), exp_pos (|lam| * T)]
       _ = ε := mul_div_cancel₀ _ (by positivity)
-  obtain ⟨u, hu0, hlim⟩ := exists_tendsto_Ici_of_uniformCauchySeqOn
-    (fun _ ↦ huc _) (by simpa only [hu_seq0] using hx_lim)
+  obtain ⟨u', hu'⟩ := exists_tendstoUniformlyOn_of_uniformCauchySeqOn huc
+  let u : ℝ → X := fun t ↦ if t = 0 then x else u' t
+  have hlim (t : ℝ) (ht : 0 ≤ t) : Tendsto (fun k ↦ u_seq k t) atTop (𝓝 (u t)) := by
+    rcases ht.eq_or_lt with rfl | ht_pos
+    · simpa [u, hu_seq0] using hx_lim
+    · simpa [u, ht_pos.ne'] using (hu' t).tendsto_at ⟨ht, le_rfl⟩
   have hu_cont : ContinuousOn u (Ici 0) := continuousOn_Ici_of_forall_Icc fun T _ ↦
     ((huc T).tendstoUniformlyOn_of_tendsto fun t ht ↦ hlim t ht.1).continuousOn
       (Eventually.of_forall fun k ↦ (hu_seq k).continuousOn.mono Icc_subset_Ici_self).frequently
   exact mem_eviDomain.2 ⟨u, (hφ.tendstoGamma_const).isEVISolution_of_tendsto (fun _ ↦ hφ)
     hu_seq hlim hu_cont ⟨x_seq 0, hx_top 0⟩
-    (fun t _ ↦ apply_ne_bot_of_moreauYosida_ne_bot h₀ (edist_ne_top x₁ (u t))), hu0⟩
+    (fun t _ ↦ apply_ne_bot_of_moreauYosida_ne_bot h₀ (edist_ne_top x₁ (u t))), by simp [u]⟩
 
 end Convergence
 

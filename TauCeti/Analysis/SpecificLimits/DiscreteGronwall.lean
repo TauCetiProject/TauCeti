@@ -218,10 +218,13 @@ theorem tendsto_natCast_sub_ceil_mul {ι : Type*} {l : Filter ι} {τ : ι → �
       Nat.ceil_mono (div_le_div_of_nonneg_right hst hτj.le)
     have ht_le : t ≤ (⌈t / τ j⌉₊ : ℝ) * τ j := (div_le_iff₀ hτj).1 (Nat.le_ceil _)
     have hs_lt : (⌈s / τ j⌉₊ : ℝ) * τ j < s + τ j := by
-      have := mul_lt_mul_of_pos_right (Nat.ceil_lt_add_one (div_nonneg hs hτj.le)) hτj
-      linarith [show (s / τ j + 1) * τ j = s + τ j by field_simp]
-    linarith [show ((⌈t / τ j⌉₊ - ⌈s / τ j⌉₊ : ℕ) : ℝ) * τ j =
-      (⌈t / τ j⌉₊ : ℝ) * τ j - (⌈s / τ j⌉₊ : ℝ) * τ j by rw [Nat.cast_sub hle, sub_mul]]
+      have hlt := mul_lt_mul_of_pos_right (Nat.ceil_lt_add_one (div_nonneg hs hτj.le)) hτj
+      have hmul : (s / τ j + 1) * τ j = s + τ j := by field_simp
+      linarith
+    have hsub : ((⌈t / τ j⌉₊ - ⌈s / τ j⌉₊ : ℕ) : ℝ) * τ j =
+        (⌈t / τ j⌉₊ : ℝ) * τ j - (⌈s / τ j⌉₊ : ℝ) * τ j := by
+      rw [Nat.cast_sub hle, sub_mul]
+    linarith
   · have hlt := (natCast_ceil_div_sub_ceil_div_lt hτj.le hst).le
     rwa [div_add_one hτj.ne', le_div_iff₀ hτj] at hlt
 
@@ -249,8 +252,8 @@ theorem tendsto_one_add_mul_pow_exp {ι : Type*} {l : Filter ι} (lam T : ℝ) {
   filter_upwards [hτ0.eventually (eventually_one_add_mul_pos lam)] with j hpos
   rcases eq_or_ne (lam * τ j) 0 with h0 | hne
   · have hmul0 : ((N j : ℝ) * τ j) * lam = 0 := by
-      linarith [show (N j : ℝ) * (lam * τ j) = ((N j : ℝ) * τ j) * lam by ring,
-        congrArg ((N j : ℝ) * ·) h0]
+      have hrearr : ((N j : ℝ) * τ j) * lam = (N j : ℝ) * (lam * τ j) := by ring
+      rw [hrearr, h0, mul_zero]
     simp [g, h0, hmul0]
   · have hmul : ((N j : ℝ) * τ j) * lam * ((lam * τ j)⁻¹ * Real.log (1 + lam * τ j)) =
         (N j : ℝ) * (lam * τ j * (lam * τ j)⁻¹) * Real.log (1 + lam * τ j) := by ring

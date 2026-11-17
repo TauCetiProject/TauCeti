@@ -230,10 +230,11 @@ private theorem le_toReal_of_convexAlong_of_le_dist (hbot : ∀ y, φ y ≠ ⊥)
     have h1' : 0 ≤ (m - μ) / 2 := div_nonneg (sub_nonneg.2 (min_le_left m 0)) zero_le_two
     have h2' : 0 ≤ t * (1 - t) * dist z v ^ 2 :=
       mul_nonneg (mul_nonneg ht.1 (sub_nonneg.2 ht.2)) (sq_nonneg _)
-    linarith [mul_nonneg h1' h2', mul_nonneg (by linarith : 0 ≤ -μ / 2)
-      (by positivity : 0 ≤ t ^ 2 * dist z v ^ 2),
-      show m / 2 * t * (1 - t) * dist z v ^ 2 - μ / 2 * t * dist z v ^ 2 =
-        (m - μ) / 2 * (t * (1 - t) * dist z v ^ 2) + (-μ / 2) * (t ^ 2 * dist z v ^ 2) by ring]
+    have hdiff : m / 2 * t * (1 - t) * dist z v ^ 2 - μ / 2 * t * dist z v ^ 2 =
+        (m - μ) / 2 * (t * (1 - t) * dist z v ^ 2) + (-μ / 2) * (t ^ 2 * dist z v ^ 2) := by
+      ring
+    linarith [hdiff, mul_nonneg h1' h2', mul_nonneg (by linarith : 0 ≤ -μ / 2)
+      (by positivity : 0 ≤ t ^ 2 * dist z v ^ 2)]
   have ht_mul := mul_le_mul_of_nonneg_left (by linarith [hlow, hμm] :
     t * ez - 1 ≤ t * (ev - μ / 2 * dist z v ^ 2)) (by positivity : 0 ≤ 2 * dist z v / r)
   have ht_inv : 2 * dist z v / r * t = 1 := by have := hD.ne'; dsimp [t]; field_simp
@@ -281,14 +282,16 @@ private theorem exists_le_apply_add_dist_sq_div_of_convexAlong (hbot : ∀ y, φ
   have htri : dist z v ≤ a + dist x v := dist_triangle z x v
   have hmin_sq : C - L ^ 2 / (4 * A) ≤ A * dist x v ^ 2 + L * dist x v + C := by
     have hsq := mul_nonneg hA.le (sq_nonneg (dist x v + L / (2 * A)))
-    linarith [hsq, show A * (dist x v + L / (2 * A)) ^ 2 =
-      A * dist x v ^ 2 + L * dist x v + L ^ 2 / (4 * A) by have := hA.ne'; field_simp; ring]
+    have hexp : A * (dist x v + L / (2 * A)) ^ 2 =
+        A * dist x v ^ 2 + L * dist x v + L ^ 2 / (4 * A) := by
+      have := hA.ne'; field_simp; ring
+    linarith [hsq, hexp]
+  have hquad : ez - 2 / r * (a + dist x v) + μ / 2 * (a + dist x v) ^ 2 +
+      dist x v ^ 2 / (2 * τ) = A * dist x v ^ 2 + L * dist x v + C := by
+    dsimp [A, L, C]; have := (NNReal.coe_pos.2 hτ).ne'; field_simp; ring
   exact (min_le_right _ _).trans (by
-    linarith [hev_bd, hmin_sq, mul_le_mul_of_nonneg_left htri (by positivity : 0 ≤ 2 / r),
-      mul_le_mul_of_nonpos_left (pow_le_pow_left₀ dist_nonneg htri 2) (by linarith : μ / 2 ≤ 0),
-      show ez - 2 / r * (a + dist x v) + μ / 2 * (a + dist x v) ^ 2 + dist x v ^ 2 / (2 * τ) =
-        A * dist x v ^ 2 + L * dist x v + C by
-        dsimp [A, L, C]; have := (NNReal.coe_pos.2 hτ).ne'; field_simp; ring])
+    linarith [hev_bd, hmin_sq, hquad, mul_le_mul_of_nonneg_left htri (by positivity : 0 ≤ 2 / r),
+      mul_le_mul_of_nonpos_left (pow_le_pow_left₀ dist_nonneg htri 2) (by linarith : μ / 2 ≤ 0)])
 
 /-- **Coercivity from convexity along curves** (Ambrosio–Gigli–Savaré, Lemma 2.4.8). If `φ` is
 lower semicontinuous, never takes the value `⊥`, and any two points `v₀`, `v₁` of `{z | φ z ≠ ⊤}`

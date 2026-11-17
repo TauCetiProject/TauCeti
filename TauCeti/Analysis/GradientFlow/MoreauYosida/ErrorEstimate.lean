@@ -322,14 +322,14 @@ private theorem bilin_deriv_algebraic_le {a₀₀ a₁₀ a₀₁ a₁₁ eU₀ 
   have hα0 := hα.1; have hα1 := sub_nonneg.2 hα.2
   have hβ0 := hβ.1; have hβ1 := sub_nonneg.2 hβ.2
   have hb0 : 0 ≤ b := by dsimp [b]; positivity
-  have hbτ := mul_le_mul_of_nonneg_left
-    (show β * (α * a₀₀) + (1 - β) * (α * a₀₁) ≤ b by
-      have : 0 ≤ β * ((1 - α) * a₁₀) + (1 - β) * ((1 - α) * a₁₁) := by positivity
-      dsimp [b]; linarith) (by positivity : 0 ≤ 2 * m ^ 2 * τ)
-  have hbη := mul_le_mul_of_nonneg_left
-    (show α * (β * a₀₀) + (1 - α) * (β * a₁₀) ≤ b by
-      have : 0 ≤ (1 - β) * (α * a₀₁ + (1 - α) * a₁₁) := by positivity
-      dsimp [b]; linarith) (by positivity : 0 ≤ 2 * m ^ 2 * η)
+  have hα_le : β * (α * a₀₀) + (1 - β) * (α * a₀₁) ≤ b := by
+    have : 0 ≤ β * ((1 - α) * a₁₀) + (1 - β) * ((1 - α) * a₁₁) := by positivity
+    dsimp [b]; linarith
+  have hbτ := mul_le_mul_of_nonneg_left hα_le (by positivity : 0 ≤ 2 * m ^ 2 * τ)
+  have hβ_le : α * (β * a₀₀) + (1 - α) * (β * a₁₀) ≤ b := by
+    have : 0 ≤ (1 - β) * (α * a₀₁ + (1 - α) * a₁₁) := by positivity
+    dsimp [b]; linarith
+  have hbη := mul_le_mul_of_nonneg_left hβ_le (by positivity : 0 ≤ 2 * m ^ 2 * η)
   have hK := mul_le_mul_of_nonneg_right
     (le_max_right 0 (-2 * m + 2 * m ^ 2 * τ + 2 * m ^ 2 * η)) hb0
   have hdecomp : β * (eV₀ - eU₁ - dU - m * a₁₀) + (1 - β) * (eV₁ - eU₁ - dU - m * a₁₁) +
@@ -459,10 +459,11 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
         ((τ : ℝ) / 2) * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + ((η : ℝ) / 2) * (eV 0 - eV (⌊t / η⌋₊ + 1)))
     (by positivity : 0 ≤ 2 * exp (K * t))
   rw [← mul_assoc, mul_assoc 2, hcan, mul_one] at hmul
-  linarith [hmul, show 2 * exp (K * t) * (dist (U 0) (V 0) ^ 2 / 2 +
+  have hrhs : 2 * exp (K * t) * (dist (U 0) (V 0) ^ 2 / 2 +
       ((τ : ℝ) / 2) * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + ((η : ℝ) / 2) * (eV 0 - eV (⌊t / η⌋₊ + 1))) =
     exp (K * t) * dist (U 0) (V 0) ^ 2 +
-      exp (K * t) * (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + η * (eV 0 - eV (⌊t / η⌋₊ + 1))) by ring]
+      exp (K * t) * (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + η * (eV 0 - eV (⌊t / η⌋₊ + 1))) := by ring
+  linarith [hmul, hrhs]
 
 /-- One-step dissipation bound `d(U n, U (n + 1))² ≤ 2τ (e 0 - e (n + 1))` along a minimizing
 movement sequence with real antitone energies. -/

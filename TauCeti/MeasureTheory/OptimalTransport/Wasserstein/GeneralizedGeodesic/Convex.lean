@@ -48,14 +48,16 @@ generalized geodesics based at `μ`, then the penalized functional of the JKO st
 (`TauCeti.GeneralizedGeodesicallyConvex.add_edist_sq_div`), so the JKO step is unique as soon as
 `1 + m τ > 0`
 (`TauCeti.GeneralizedGeodesicallyConvex.subsingleton_moreauYosidaResolvent`). Since
-`W₂ (ν₀, ν₁) ^ 2` is at most the plan cost, if `φ` is convex along generalized geodesics based at
-every law and `1 + m τ ≥ 0`, it satisfies `TauCeti.PenalizedConvex`
+`W₂ (ν₀, ν₁) ^ 2` is at most the plan cost, if `φ` is `m`-convex along generalized geodesics based
+at every law, then it satisfies `TauCeti.PenalizedConvex` for every `τ > 0` with `1 + m τ ≥ 0`
 (`TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex`,
-`TauCeti.eventually_penalizedConvex_of_generalizedGeodesicallyConvex`), and on complete `P₂(E)`
-every JKO step exists without sublevel compactness
-(`TauCeti.moreauYosidaResolvent_nonempty_of_generalizedGeodesicallyConvex`,
-`TauCeti.exists_forall_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`,
-`TauCeti.existsUnique_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`).
+`TauCeti.eventually_penalizedConvex_of_generalizedGeodesicallyConvex`). When in addition `φ` is
+lower semicontinuous, never takes the value `⊥`, and `τ > 0` satisfies the strict inequality
+`1 + m τ > 0`, every JKO step and infinite JKO sequence exists on complete `P₂(E)` without sublevel
+compactness (`TauCeti.moreauYosidaResolvent_nonempty_of_generalizedGeodesicallyConvex`,
+`TauCeti.exists_forall_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`), and the JKO
+step is unique when `φ` is finite somewhere
+(`TauCeti.existsUnique_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`).
 
 ## Main definitions
 
@@ -81,11 +83,12 @@ every JKO step exists without sublevel compactness
   JKO step when `1 + m τ > 0`.
 * `TauCeti.penalizedConvex_of_generalizedGeodesicallyConvex` and
   `TauCeti.eventually_penalizedConvex_of_generalizedGeodesicallyConvex`: convexity along generalized
-  geodesics based at every law gives `TauCeti.PenalizedConvex` whenever `1 + m τ ≥ 0`.
+  geodesics based at every law gives `TauCeti.PenalizedConvex` whenever `τ > 0` and `1 + m τ ≥ 0`.
 * `TauCeti.moreauYosidaResolvent_nonempty_of_generalizedGeodesicallyConvex`,
   `TauCeti.exists_forall_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`, and
   `TauCeti.existsUnique_mem_moreauYosidaResolvent_of_generalizedGeodesicallyConvex`: existence and
-  uniqueness of JKO steps and sequences on `P₂(E)` when `τ > 0` and `1 + m τ > 0`.
+  uniqueness of JKO steps and sequences on complete `P₂(E)` when `φ` is lower semicontinuous,
+  never `⊥`, `τ > 0`, and `1 + m τ > 0` (with finiteness somewhere for uniqueness).
 
 ## Implementation notes
 
@@ -246,7 +249,8 @@ theorem IsGeneralizedGeodesicPlan.integral_norm_sub_sq_snd_eq_dist_sq
   have htI : t * I ≤ δ / 2 := calc
     t * I ≤ δ / (2 * I) * I := mul_le_mul_of_nonneg_right (min_le_right _ _) hI_pos.le
     _ = δ / 2 := by have := hI_pos.ne'; field_simp
-  linarith [h1t, htI, show (1 - t) * I = I - t * I by ring]
+  have hsub : (1 - t) * I = I - t * I := by ring
+  linarith [h1t, htI, hsub]
 
 variable {m : ℝ} {φ : WassersteinSpace 2 E → EReal} {μ : WassersteinSpace 2 E} {τ : ℝ≥0}
 
