@@ -161,6 +161,16 @@ private theorem disjoint_otherBasins {p q : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(�
     rw [← Flow.eq_of_mem_stableSet (hX.flow_apply_of_mfderiv_eq_zero hp) hzb, hpi] at hb0
     exact one_ne_zero hb0
 
+/-- If a set `W` is a point `x` together with two orbits, and two points of `W` other than `x` lie
+on different orbits, then `W` is `x` together with their orbits. -/
+private theorem eq_insert_orbit_union_orbit {W : Set M} {x y₁ y₂ : M}
+    (hW : ∃ u₁ u₂, W = insert x (hX.flow.orbit u₁ ∪ hX.flow.orbit u₂)) (hy₁ : y₁ ∈ W \ {x})
+    (hy₂ : y₂ ∈ W \ {x}) (hne : y₂ ∉ hX.flow.orbit y₁) :
+    W = insert x (hX.flow.orbit y₁ ∪ hX.flow.orbit y₂) := by
+  obtain ⟨u₁, u₂, rfl⟩ := hW
+  rw [hX.flow.orbit_union_orbit_eq ((mem_insert_iff.1 hy₁.1).resolve_left hy₁.2)
+    ((mem_insert_iff.1 hy₂.1).resolve_left hy₂.2) hne]
+
 variable [ConnectedSpace M]
 
 /-- **A pair of trajectories with common ends fills a connected one-dimensional manifold.** Let `p`
@@ -175,23 +185,20 @@ theorem eq_or_eq_of_mem_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, E) f
     (hy₂ : y₂ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (hne : y₂ ∉ hX.flow.orbit y₁)
     {c : M} (hc : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0) : c = p ∨ c = q := by
   have hpq : p ≠ q := fun h ↦ by rw [h, hqi] at hpi; exact zero_ne_one hpi
-  -- `W^u(p)` and `W^s(q)` are `p` and `q` together with the orbits of `y₁` and `y₂`.
+  -- The points of `W^u(p) ∩ W^s(q)` are neither `p` nor `q`.
+  have hmem {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
+      y ∈ hX.flow.unstableSet p \ {p} ∧ y ∈ hX.flow.stableSet q \ {q} :=
+    ⟨⟨hy.1, fun he ↦ hpq (Flow.eq_of_mem_stableSet (hX.flow_apply_of_mfderiv_eq_zero hp)
+        (by rw [← mem_singleton_iff.1 he]; exact hy.2))⟩,
+      ⟨hy.2, fun he ↦ hpq (Flow.eq_of_mem_unstableSet (hX.flow_apply_of_mfderiv_eq_zero hq)
+        (by rw [← mem_singleton_iff.1 he]; exact hy.1)).symm⟩⟩
+  -- So `W^u(p)` and `W^s(q)` are `p` and `q` together with the orbits of `y₁` and `y₂`.
   have hWu : hX.flow.unstableSet p = insert p (hX.flow.orbit y₁ ∪ hX.flow.orbit y₂) := by
     obtain ⟨u₁, u₂, -, -, -, hW⟩ := hX.exists_unstableSet_eq_insert_union_orbit hf hp hpi
-    have hmem {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
-        y ∈ hX.flow.orbit u₁ ∪ hX.flow.orbit u₂ :=
-      (mem_insert_iff.1 (hW ▸ hy.1)).resolve_left fun he ↦
-        hpq (Flow.eq_of_mem_stableSet (hX.flow_apply_of_mfderiv_eq_zero hp)
-          (by rw [← he]; exact hy.2))
-    rw [hW, hX.flow.orbit_union_orbit_eq (hmem hy₁) (hmem hy₂) hne]
+    exact hX.eq_insert_orbit_union_orbit ⟨u₁, u₂, hW⟩ (hmem hy₁).1 (hmem hy₂).1 hne
   have hWs : hX.flow.stableSet q = insert q (hX.flow.orbit y₁ ∪ hX.flow.orbit y₂) := by
     obtain ⟨u₁, u₂, -, -, -, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hq (by omega)
-    have hmem {y : M} (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) :
-        y ∈ hX.flow.orbit u₁ ∪ hX.flow.orbit u₂ :=
-      (mem_insert_iff.1 (hW ▸ hy.2)).resolve_left fun he ↦
-        hpq (Flow.eq_of_mem_unstableSet (hX.flow_apply_of_mfderiv_eq_zero hq)
-          (by rw [← he]; exact hy.1)).symm
-    rw [hW, hX.flow.orbit_union_orbit_eq (hmem hy₁) (hmem hy₂) hne]
+    exact hX.eq_insert_orbit_union_orbit ⟨u₁, u₂, hW⟩ (hmem hy₁).2 (hmem hy₂).2 hne
   -- So `S = W^u(p) ∪ W^s(q)` is open, and its complement is the open union of the other basins.
   set S := hX.flow.unstableSet p ∪ hX.flow.stableSet q
   have hST : Sᶜ = hX.otherBasins p q :=
