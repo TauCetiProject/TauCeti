@@ -27,7 +27,7 @@ corresponding points of the étale site form a conservative family (Mathlib's
 `AlgebraicGeometry.Scheme.isConservative_pointSmallEtale`). Hence exactness of a sequence of étale
 sheaves of modules can be tested on stalks. For a morphism of schemes `f : X ⟶ Y`, the inverse
 image functor `f.smallEtalePullback (ModuleCat.{u} Λ)` commutes with `etaleStalk` up to natural
-isomorphism (`TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompEtaleStalkIso`) and preserves
+isomorphism (`AlgebraicGeometry.Scheme.Hom.smallEtalePullbackCompEtaleStalkIso`) and preserves
 short exact sequences (`AlgebraicGeometry.Scheme.Hom.shortExact_map_smallEtalePullback`).
 
 A sheaf of `Λ`-modules is *finite lisse* if it is étale locally isomorphic to the constant sheaf
@@ -47,7 +47,7 @@ needed.
   the stalk of the underlying sheaf of sets.
 * `TauCeti.AlgebraicGeometry.Scheme.shortExact_map_etaleStalk`: stalks preserve short exact
   sequences.
-* `TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompEtaleStalkIso`,
+* `AlgebraicGeometry.Scheme.Hom.smallEtalePullbackCompEtaleStalkIso`,
   `AlgebraicGeometry.Scheme.Hom.shortExact_map_smallEtalePullback`: étale inverse image of
   module sheaves commutes with geometric stalks and preserves short exact sequences.
 * `TauCeti.AlgebraicGeometry.Scheme.jointlyReflectIsomorphisms_etaleStalk`,
@@ -168,21 +168,19 @@ theorem isIso_of_forall_isIso_etaleStalk {F G : Sheaf (smallEtaleTopology S) (Mo
 
 end Conservative
 
-section Pullback
+end TauCeti.AlgebraicGeometry.Scheme
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti.AlgebraicGeometry.Scheme
 
 /-- At a geometric point `s : Spec Ω ⟶ X`, the stalk of
 `(f.smallEtalePullback (ModuleCat.{u} Λ)).obj F` as a `Λ`-module identifies naturally with the
 stalk of `F` at `s ≫ f`. -/
 noncomputable abbrev smallEtalePullbackCompEtaleStalkIso {X Y : Scheme.{u}} (f : X ⟶ Y)
-    {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ X) :
+    (Λ : Type u) [Ring Λ] {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ X) :
     f.smallEtalePullback (ModuleCat.{u} Λ) ⋙ etaleStalk Λ s ≅ etaleStalk Λ (s ≫ f) :=
   f.smallEtalePullbackCompSheafFiberIso (ModuleCat.{u} Λ) s
-
-end Pullback
-
-end TauCeti.AlgebraicGeometry.Scheme
-
-namespace AlgebraicGeometry.Scheme.Hom
 
 /-- **Inverse image of étale module sheaves is exact.** Pulling back along any morphism of schemes
 `f : X ⟶ Y` sends short exact sequences of étale sheaves of `Λ`-modules on `Y` to short exact

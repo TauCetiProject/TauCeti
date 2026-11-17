@@ -149,6 +149,7 @@ variable (u : C ⥤ D) (v : D ⥤ E) (A : Type*) [Category* A]
   [(u.sheafPushforwardContinuous A J K).IsRightAdjoint]
   [(v.sheafPushforwardContinuous A K L).IsRightAdjoint]
 
+/-- Continuous functors admitting sheaf pullbacks compose to one admitting a sheaf pullback. -/
 lemma isRightAdjoint_sheafPushforwardContinuous_comp :
     let := isContinuous_comp u v J K L
     ((u ⋙ v).sheafPushforwardContinuous A J L).IsRightAdjoint :=
@@ -198,6 +199,7 @@ lemma sheafPullbackIso_refl : sheafPullbackIso (Iso.refl u) A J K = Iso.refl _ :
     NatTrans.id_app]
   rfl
 
+/-- Left-unit coherence for `sheafPullbackComp (𝟭 C) u`, `sheafPullbackId`, and `leftUnitor`. -/
 lemma sheafPullback_id_comp :
     sheafPullbackComp (𝟭 C) u A J J K =
       Functor.isoWhiskerRight (sheafPullbackId A J) (u.sheafPullback A J K) ≪≫
@@ -208,6 +210,7 @@ lemma sheafPullback_id_comp :
       whiskerLeft_app, rightUnitor_hom_app, Category.comp_id]
     rfl)
 
+/-- Right-unit coherence for `sheafPullbackComp u (𝟭 D)`, `sheafPullbackId`, and `rightUnitor`. -/
 lemma sheafPullback_comp_id :
     sheafPullbackComp u (𝟭 D) A J K K =
       Functor.isoWhiskerLeft (u.sheafPullback A J K) (sheafPullbackId A K) ≪≫
@@ -220,6 +223,7 @@ lemma sheafPullback_comp_id :
 
 end Coherence
 
+/-- Associativity coherence for `sheafPullbackComp` with respect to `Functor.associator`. -/
 lemma sheafPullback_assoc {E' : Type*} [Category* E']
     (u : C ⥤ D) (v : D ⥤ E) (w : E ⥤ E') (A : Type*) [Category* A]
     (J : GrothendieckTopology C) (K : GrothendieckTopology D)
