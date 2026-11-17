@@ -354,7 +354,10 @@ theorem variance_spectralMoment_wignerMatrix_le
   simpa [Nat.cast_add, Nat.cast_one] using
     variance_inv_mul_re_trace_pow_wignerMatrix_le hindep hξzero hξp hηp hξ hη (n + 1)
 
-/-- **Chebyshev tail bound for empirical spectral moments.** -/
+/-- **Chebyshev tail bound for empirical spectral moments.** Under independent coordinates,
+centered off-diagonal entries, and `2 * k`-th absolute moments bounded by `B`, the probability
+that the `k`-th empirical spectral moment of the `(n + 1) × (n + 1)` Wigner matrix deviates from
+its mean by at least `ε > 0` is at most `(2 * k ^ (2 * k) * B / (n + 1) ^ 2) / ε ^ 2`. -/
 theorem measure_spectralMoment_wignerMatrix_sub_mean_ge
     (hindep : iIndepFun (fun idx : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) idx) P)
     (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) {k : ℕ} {B : ℝ}

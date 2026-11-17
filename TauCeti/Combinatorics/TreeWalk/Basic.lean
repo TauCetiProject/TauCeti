@@ -597,7 +597,7 @@ theorem exists_edge_fiber_eq_pair {i : ℕ} (hi : i < 2 * k) (hup : w (i + 1) = 
 
 /-- Every step of a closed tree walk has a unique distinct partner step traversing the same
 unordered edge, in the opposite direction, and the discovery step is the earlier of the two. -/
-theorem exists_ne_and_sym2_eq_iff (i : Fin (2 * k)) :
+theorem exists_partner_step (i : Fin (2 * k)) :
     ∃ j : Fin (2 * k), j ≠ i ∧ w j = w (i + 1) ∧ w (j + 1) = w i ∧
       (∀ t : Fin (2 * k), s(w t, w (t + 1)) = s(w i, w (i + 1)) ↔ t = i ∨ t = j) ∧
       (i < j ↔ w (i + 1) = i + 1) := by

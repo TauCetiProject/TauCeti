@@ -57,7 +57,7 @@ variable {k : ℕ}
 
 private theorem existsUnique_partnerStep (w : ClosedTreeWalk k) (i : Fin (2 * k)) :
     ∃! j : Fin (2 * k), j ∈ univ ∧ (j ≠ i ∧ s(w.1 j, w.1 (j + 1)) = s(w.1 i, w.1 (i + 1))) := by
-  obtain ⟨j, hjne, -, -, hfib, -⟩ := w.2.1.exists_ne_and_sym2_eq_iff i
+  obtain ⟨j, hjne, -, -, hfib, -⟩ := w.2.1.exists_partner_step i
   exact ⟨j, ⟨mem_univ j, hjne, (hfib j).mpr (.inr rfl)⟩,
     fun y ⟨_, hyne, hye⟩ ↦ (hfib y).mp hye |>.resolve_left hyne⟩
 
@@ -76,7 +76,7 @@ private theorem partnerStep_spec (w : ClosedTreeWalk k) (i : Fin (2 * k)) :
       (∀ t : Fin (2 * k), s(w.1 t, w.1 (t + 1)) = s(w.1 i, w.1 (i + 1)) ↔
         t = i ∨ t = partnerStep w i) ∧
       (i < partnerStep w i ↔ w.1 (i + 1) = i + 1) := by
-  obtain ⟨j, hjne, hj1, hj2, hfib, hlt⟩ := w.2.1.exists_ne_and_sym2_eq_iff i
+  obtain ⟨j, hjne, hj1, hj2, hfib, hlt⟩ := w.2.1.exists_partner_step i
   rw [(partnerStep_eq_iff w i j).mpr ⟨hjne, (hfib j).mpr (.inr rfl)⟩]
   exact ⟨hjne, hj1, hj2, hfib, hlt⟩
 
