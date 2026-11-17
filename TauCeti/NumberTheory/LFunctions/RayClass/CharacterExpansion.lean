@@ -74,19 +74,7 @@ open IsDedekindDomain (HeightOneSpectrum)
 
 variable {K : Type*} [Field K] [NumberField K] {𝔪 𝔫 : Modulus K}
 
-/-! ### Character values and pointwise von Mangoldt orthogonality -/
-
-/-- Every value of a ray class character has complex norm `1`. -/
-@[simp]
-theorem norm_rayClassCharacter_apply_eq_one (χ : RayClassCharacter 𝔪) (c : RayClassGroup 𝔪) :
-    ‖((χ c : ℂˣ) : ℂ)‖ = 1 := by
-  refine Complex.norm_eq_one_of_pow_eq_one (n := Nat.card (RayClassGroup 𝔪)) ?_ Nat.card_pos.ne'
-  rw [← Units.val_pow_eq_pow_val, ← map_pow, pow_card_eq_one', map_one, Units.val_one]
-
-/-- Conjugating a ray class character value inverts it. -/
-theorem conj_rayClassCharacter_apply (χ : RayClassCharacter 𝔪) (c : RayClassGroup 𝔪) :
-    starRingEnd ℂ ((χ c : ℂˣ) : ℂ) = (((χ c)⁻¹ : ℂˣ) : ℂ) := by
-  rw [Units.val_inv_eq_inv_val, Complex.inv_eq_conj (norm_rayClassCharacter_apply_eq_one χ c)]
+/-! ### Pointwise von Mangoldt orthogonality -/
 
 /-- **Class expansion of the von Mangoldt transform of a ray class character.** -/
 theorem sum_mul_vonMangoldtTransform_rayClassCoeff [Fintype (RayClassGroup 𝔪)]
@@ -155,7 +143,7 @@ over all ray class characters of `𝔪` gives `#Cl_𝔪 · ψ(x; 𝔪, c)`. -/
 theorem sum_conj_mul_rayClassCharacterPsi (c : RayClassGroup 𝔪) (x : ℝ) :
     ∑ χ : RayClassCharacter 𝔪, starRingEnd ℂ ((χ c : ℂˣ) : ℂ) * rayClassCharacterPsi χ x =
       (Nat.card (RayClassGroup 𝔪) : ℂ) * (rayClassPsi 𝔪 c x : ℂ) := by
-  simp_rw [conj_rayClassCharacter_apply]
+  simp_rw [RayClassCharacter.conj_apply_eq_inv]
   exact sum_inv_mul_rayClassCharacterPsi c x
 
 /-- **Real-part character decomposition of `rayClassPsi`.** -/

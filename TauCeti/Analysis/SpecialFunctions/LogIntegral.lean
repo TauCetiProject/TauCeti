@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # The logarithmic integral
@@ -529,55 +529,6 @@ theorem rpow_div_mul_log_add_integral_eq_logIntegral_rpow {β x : ℝ} (hβ : 0 
   rw [intervalIntegral.integral_sub hi1 hi2, integral_rpow_sub_one_div_log hβ one_lt_two hx] at hFTC
   linarith
 
-/-- A quadratic expression `u * (a * u - c)` with `a > 0` tends to `+∞` as `u → +∞`. -/
-private theorem tendsto_mul_linear_atTop {a : ℝ} (ha : 0 < a) (c : ℝ) :
-    Tendsto (fun u : ℝ ↦ u * (a * u - c)) atTop atTop := by
-  rw [tendsto_atTop_atTop]
-  intro b
-  refine ⟨max 1 ((|b| + |c| + 1) / a), fun u hu ↦ ?_⟩
-  have hu1 : 1 ≤ u := le_of_max_le_left hu
-  have hu2 : (|b| + |c| + 1) / a ≤ u := le_of_max_le_right hu
-  have hua : |b| + |c| + 1 ≤ u * a := (div_le_iff₀ ha).mp hu2
-  nlinarith [le_abs_self b, le_abs_self c, abs_nonneg b, abs_nonneg c]
-
-/-- The de la Vallée Poussin scale `x * exp (-c * √log x)` tends to infinity for every real `c`. -/
-theorem tendsto_mul_exp_neg_mul_sqrt_log_atTop (c : ℝ) :
-    Tendsto (fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x))) atTop atTop := by
-  have hsqrt : Tendsto (fun x : ℝ ↦ √(Real.log x)) atTop atTop :=
-    Real.tendsto_sqrt_atTop.comp Real.tendsto_log_atTop
-  have hquad : Tendsto (fun u : ℝ ↦ u * (1 * u - c)) atTop atTop :=
-    tendsto_mul_linear_atTop zero_lt_one c
-  refine (Real.tendsto_exp_atTop.comp (hquad.comp hsqrt)).congr' ?_
-  filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
-  have hx0 : 0 < x := by linarith
-  have hlog : 0 ≤ Real.log x := Real.log_nonneg hx
-  rw [Function.comp_apply, Function.comp_apply]
-  conv_rhs => enter [1]; rw [← Real.exp_log hx0]
-  rw [← Real.exp_add]
-  congr 1
-  nlinarith [Real.sq_sqrt hlog]
-
-/-- A sublinear power `x ^ β` with `β < 1` is `o(x * exp (-c * √log x))` for every real `c`. -/
-theorem isLittleO_rpow_mul_exp_neg_mul_sqrt_log {β : ℝ} (hβ : β < 1) (c : ℝ) :
-    (fun x : ℝ ↦ x ^ β) =o[atTop] fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x)) := by
-  have hsqrt : Tendsto (fun x : ℝ ↦ √(Real.log x)) atTop atTop :=
-    Real.tendsto_sqrt_atTop.comp Real.tendsto_log_atTop
-  have hquad := tendsto_mul_linear_atTop (sub_pos.mpr hβ) c
-  have hlim : Tendsto (fun x : ℝ ↦ Real.exp (-(√(Real.log x) * ((1 - β) * √(Real.log x) - c))))
-      atTop (𝓝 0) :=
-    Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp (hquad.comp hsqrt))
-  refine (isLittleO_iff_tendsto' ?_).mpr (hlim.congr' ?_)
-  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx h0
-    exact absurd h0 (mul_pos (by linarith) (Real.exp_pos _)).ne'
-  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
-    have hx0 : 0 < x := by linarith
-    have hlog : 0 ≤ Real.log x := Real.log_nonneg hx
-    rw [Real.rpow_def_of_pos hx0]
-    conv_rhs => enter [2, 1]; rw [← Real.exp_log hx0]
-    rw [← Real.exp_add, ← Real.exp_sub]
-    congr 1
-    nlinarith [Real.sq_sqrt hlog]
-
 /-- For `β < 1`, `Li (x ^ β)` is absorbed into `o(x * exp (-c * √log x))` for every real `c`. -/
 theorem isLittleO_logIntegral_rpow_mul_exp_neg_mul_sqrt_log {β : ℝ} (hβ : β < 1) (c : ℝ) :
     (fun x : ℝ ↦ logIntegral (x ^ β)) =o[atTop] fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x)) := by
@@ -596,7 +547,7 @@ theorem isLittleO_logIntegral_rpow_mul_exp_neg_mul_sqrt_log {β : ℝ} (hβ : β
       rw [one_mul, Real.norm_of_nonneg (div_nonneg (Real.rpow_nonneg hx0.le β) (by linarith)),
         Real.norm_of_nonneg (Real.rpow_nonneg hx0.le β)]
       exact div_le_self (Real.rpow_nonneg hx0.le β) hlog1
-    exact (hcomp.trans hdom).trans_isLittleO (isLittleO_rpow_mul_exp_neg_mul_sqrt_log hβ c)
+    exact (hcomp.trans hdom).trans_isLittleO (Real.isLittleO_rpow_mul_exp_neg_mul_sqrt_log hβ c)
 
 /-- Middle-segment bound on `[B, y]` with `y = x * exp (-(2 |c| + 1) * √log x)`. -/
 private theorem abs_integral_div_mul_log_sq_mid_le {f : ℝ → ℝ} {c M B x : ℝ}
@@ -750,7 +701,8 @@ private theorem isLittleO_integral_div_mul_log_sq_of_intervalIntegrable {f : ℝ
   have hcoef : Tendsto (fun x : ℝ ↦ C₀ / (x * Real.exp (-c * √(Real.log x))) +
       (M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x)) +
         4 * M * Real.exp (|c| * A) / Real.log x ^ 2)) atTop (𝓝 0) := by
-    have h1 := tendsto_const_nhds (x := C₀).div_atTop (tendsto_mul_exp_neg_mul_sqrt_log_atTop c)
+    have h1 := tendsto_const_nhds (x := C₀).div_atTop
+      (Real.tendsto_mul_exp_neg_mul_sqrt_log_atTop c)
     have h2 : Tendsto (fun x : ℝ ↦ M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x))) atTop (𝓝 0) := by
       simpa using (Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp hsqrt)).const_mul
         (M / Real.log 2 ^ 2)
@@ -760,7 +712,7 @@ private theorem isLittleO_integral_div_mul_log_sq_of_intervalIntegrable {f : ℝ
   refine (isLittleO_iff_tendsto' ?_).mpr (squeeze_zero_norm' ?_ hcoef)
   · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx h0
     exact absurd h0 (mul_pos (by linarith) (Real.exp_pos _)).ne'
-  · filter_upwards [(tendsto_mul_exp_neg_mul_sqrt_log_atTop A).eventually_ge_atTop B,
+  · filter_upwards [(Real.tendsto_mul_exp_neg_mul_sqrt_log_atTop A).eventually_ge_atTop B,
       hsqrt.eventually_ge_atTop (2 * A), eventually_ge_atTop B] with x hyB hlogA hxB
     have hscale : 0 < x * Real.exp (-c * √(Real.log x)) := mul_pos (by linarith) (Real.exp_pos _)
     have hintBx : IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume B x :=

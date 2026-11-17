@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Psi
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta
 
-import TauCeti.Analysis.SpecialFunctions.LogIntegral
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Chebyshev's `ψ`, `ϑ`, and `π` restricted to a ray class

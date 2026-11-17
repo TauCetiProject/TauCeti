@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 
+import TauCeti.NumberTheory.NumberField.Global.RayClass.Finite
+
 /-!
 # Ray class characters
 
@@ -35,6 +37,9 @@ characters.
 
 * `TauCeti.GlobalNumberFields.RayClassCharacter.ext`: a ray class character is
   determined by its values on integral ideals;
+* `TauCeti.GlobalNumberFields.RayClassCharacter.norm_apply_eq_one` and
+  `TauCeti.GlobalNumberFields.RayClassCharacter.conj_apply_eq_inv`: every value of a ray class
+  character has complex norm `1`, so complex conjugation inverts it;
 * `TauCeti.GlobalNumberFields.RayClassCharacter.induced_injective`: increasing the modulus does
   not identify distinct characters;
 * `TauCeti.GlobalNumberFields.RayClassCharacter.onIdeals_induced`: change of modulus commutes
@@ -86,6 +91,18 @@ theorem ext {χ ψ : RayClassCharacter 𝔪}
   intro c
   obtain ⟨I, rfl⟩ := idealClass_surjective 𝔪 c
   simpa only [onIdeals_apply] using h I
+
+/-- Every value of a ray class character has complex norm `1`. -/
+@[simp]
+theorem norm_apply_eq_one (χ : RayClassCharacter 𝔪) (c : RayClassGroup 𝔪) :
+    ‖((χ c : ℂˣ) : ℂ)‖ = 1 := by
+  refine Complex.norm_eq_one_of_pow_eq_one (n := Nat.card (RayClassGroup 𝔪)) ?_ Nat.card_pos.ne'
+  rw [← Units.val_pow_eq_pow_val, ← map_pow, pow_card_eq_one', map_one, Units.val_one]
+
+/-- Complex conjugation inverts every value of a ray class character. -/
+theorem conj_apply_eq_inv (χ : RayClassCharacter 𝔪) (c : RayClassGroup 𝔪) :
+    starRingEnd ℂ ((χ c : ℂˣ) : ℂ) = (((χ c)⁻¹ : ℂˣ) : ℂ) := by
+  rw [Units.val_inv_eq_inv_val, Complex.inv_eq_conj (χ.norm_apply_eq_one c)]
 
 /-- Pullback of ray class characters from a modulus `𝔪` to a multiple `𝔫` of that modulus. -/
 noncomputable def induced (h : 𝔪 ∣ 𝔫) : RayClassCharacter 𝔪 →* RayClassCharacter 𝔫 :=
