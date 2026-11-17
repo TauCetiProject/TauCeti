@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
@@ -228,7 +227,7 @@ theorem notMem_singularSupport_iff_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω, 
   let χc : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM χ
   have hχc (y : E) : χc y = χ y := by simp [χc]
   have hχcs : tsupport χc ⊆ U := by
-    refine (tsupport_postcompCLM_subset _ χ).trans ?_
+    refine (tsupport_comp_subset (g := ofRealCLM) (by simp) χ).trans ?_
     exact hχs.trans (inter_subset_left.trans interior_subset)
   obtain ⟨f, hf, hT⟩ := exists_contDiff_apply_eq_integral_of_forall_decay (hdecay χc hχcs)
   refine (notMem_singularSupport_iff hx).2 ⟨V, hV, hxV, f, hf.contDiffOn, fun φ hφ ↦ hT φ ?_⟩

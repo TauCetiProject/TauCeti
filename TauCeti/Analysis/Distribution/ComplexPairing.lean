@@ -132,8 +132,9 @@ theorem complexPairing_eq_integral [MeasurableSpace E] [OpensMeasurableSpace E]
     (hf : MeasureTheory.LocallyIntegrableOn f U μ)
     (hT : ∀ φ : 𝓓^{n}(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ x, φ x • f x ∂μ) {φ : 𝓓^{n}(Ω, ℂ)}
     (hφ : tsupport φ ⊆ U) : T.complexPairing φ = ∫ x, φ x * f x ∂μ := by
-  have hpart (L : ℂ →L[ℝ] ℝ) : tsupport (postcompCLM (𝕜 := ℝ) L φ) ⊆ U :=
-    (tsupport_postcompCLM_subset L φ).trans hφ
+  have hpart (L : ℂ →L[ℝ] ℝ) : tsupport (postcompCLM (𝕜 := ℝ) L φ) ⊆ U := by
+    rw [postcompCLM_apply]
+    exact (tsupport_comp_subset (map_zero L) φ).trans hφ
   -- `f` is integrable against a real test function supported in `U`.
   have hint (L : ℂ →L[ℝ] ℝ) :
       MeasureTheory.Integrable (fun x => postcompCLM (𝕜 := ℝ) L φ x • f x) μ :=
@@ -168,7 +169,8 @@ theorem exists_norm_complexPairing_le (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
   -- The real and imaginary parts of `φ` satisfy the same support condition and bounds.
   have hpart (L : ℂ →L[ℝ] ℝ) (hL : ‖L‖ ≤ 1) : ‖T (postcompCLM (𝕜 := ℝ) L φ)‖ ≤ C * M := by
     refine hT _ ?_ M hM fun i hi x => ?_
-    · exact (tsupport_postcompCLM_subset L φ).trans hφ
+    · rw [postcompCLM_apply]
+      exact (tsupport_comp_subset (map_zero L) φ).trans hφ
     · rw [postcompCLM_apply]
       calc ‖iteratedFDeriv ℝ i (L ∘ φ) x‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ i φ x‖ :=
             L.norm_iteratedFDeriv_comp_left (φ.contDiff.contDiffAt) (by exact_mod_cast le_top)

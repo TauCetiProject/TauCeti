@@ -13,7 +13,6 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
-import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.LineDeriv
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Pseudodifferential.EllipticRegularity
@@ -336,7 +335,9 @@ theorem IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
   obtain ⟨χ, -, hχ1, -⟩ := TestFunction.exists_cutoff_tsupport_subset (n := ⊤)
     (isCompact_closedBall x (ε / 2)) isOpen_ball (closedBall_subset_ball (by linarith)) hεΩ
   set ψ' : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) Complex.ofRealCLM ψ
-  have hψ' : tsupport ψ' ⊆ ball x (ε / 2) := (tsupport_postcompCLM_subset _ ψ).trans hψs
+  have hψ' : tsupport ψ' ⊆ ball x (ε / 2) := by
+    rw [postcompCLM_apply]
+    exact (tsupport_comp_subset (map_zero _) _).trans hψs
   have hχ (K : Set (CoordinateSpace n)) (hK : K ⊆ closedBall x (ε / 2)) :
       ∀ y ∈ K, (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM χ) y = 1 := fun y hy ↦ by
     simp [(hχ1.self_of_nhdsSet y (hK hy))]

@@ -15,7 +15,6 @@ import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.InnerProductSpace.Adjoint
@@ -426,7 +425,8 @@ theorem exists_tsupport_subset_localFourier_at_zero_ne_zero {T : 𝓓'(Ω, ℂ)}
   obtain ⟨θ, hθ, hTθ⟩ := (mem_dsupport_iff_forall_exists_ne x).1 hx (interior U)
     (mem_interior_iff_mem_nhds.2 hU) isOpen_interior
   refine ⟨postcompCLM (𝕜 := ℝ) ofRealCLM θ, ?_, by simpa using hTθ⟩
-  exact (tsupport_postcompCLM_subset _ θ).trans (hθ.trans interior_subset)
+  rw [postcompCLM_apply]
+  exact (tsupport_comp_subset (map_zero ofRealCLM) θ).trans (hθ.trans interior_subset)
 
 /-- The zero distribution has empty wave front set. -/
 @[simp]

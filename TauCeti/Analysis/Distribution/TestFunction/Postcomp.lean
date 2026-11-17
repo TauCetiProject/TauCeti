@@ -14,8 +14,6 @@ A continuous linear equivalence of coefficient spaces induces a continuous linea
 of native test-function spaces. These maps preserve the exact support
 and commute with extension to a larger open domain. Continuity uses Mathlib's
 `TestFunction.postcompCLM`, hence the native locally convex inductive-limit topology.
-Postcomposition with any continuous linear map does not enlarge the support
-(`TestFunction.tsupport_postcompCLM_subset`).
 
 For complex test functions, postcomposition with the real and imaginary parts `Complex.reCLM` and
 `Complex.imCLM` gives real test functions. This file records how these parts transform under
@@ -96,12 +94,6 @@ theorem tsupport_postcompCLE (e : F ≃L[𝕜] G) (φ : 𝓓^{n}(Ω, F)) :
     exact TestFunction.postcompCLE_apply e φ x
   rw [hcoe]
   exact tsupport_comp_eq (g := e) (fun {_} ↦ e.map_eq_zero_iff) φ
-
-/-- Postcomposing with a continuous linear map does not enlarge the topological support. -/
-theorem tsupport_postcompCLM_subset (L : F →L[𝕜] G) (φ : 𝓓^{n}(Ω, F)) :
-    tsupport (postcompCLM L φ) ⊆ tsupport φ := by
-  rw [postcompCLM_apply]
-  exact tsupport_comp_subset (map_zero L) φ
 
 /-- Coefficient changes commute with extension and lowering regularity, including the zero-map
 case of `monoCLM` when the domains or orders are incompatible. -/
