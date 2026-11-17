@@ -83,11 +83,15 @@ private theorem det_inv_two_smul_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h
   rw [det_smul]
   exact mul_ne_zero (pow_ne_zero _ (by norm_num)) hdet
 
-/-- The Cayley generator `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` has derivative `S / 2` at
-`t = 0`. -/
+/-- The Cayley generator `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` of `exp (t J S)`. -/
+private noncomputable def cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) (t : ℝ) :
+    Matrix (n ⊕ n) (n ⊕ n) ℝ :=
+  J n ℝ * (1 - exp (t • (J n ℝ * S))) * (1 + exp (t • (J n ℝ * S)))⁻¹
+
+/-- The Cayley generator `cayleyGen S` has derivative `S / 2` at `t = 0`. -/
 private theorem hasDerivAt_cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
-    HasDerivAt (fun t : ℝ ↦ J n ℝ * (1 - exp (t • (J n ℝ * S))) * (1 + exp (t • (J n ℝ * S)))⁻¹)
-      ((2⁻¹ : ℝ) • S) 0 := by
+    HasDerivAt (cayleyGen S) ((2⁻¹ : ℝ) • S) 0 := by
+  unfold cayleyGen
   set X := J n ℝ * S with hX
   have hE : HasDerivAt (fun t : ℝ ↦ exp (t • X)) X 0 := by
     simpa using hasDerivAt_exp_smul_const (𝕂 := ℝ) X 0
@@ -113,12 +117,11 @@ private theorem hasDerivAt_cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
   rw [hz, hi]
   simp [hX, ← Matrix.mul_assoc, J_squared]
 
-/-- The Cayley generator `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` is continuous where
-`1 + exp (t J S)` is invertible. -/
+/-- The Cayley generator `cayleyGen S` is continuous where `1 + exp (t J S)` is invertible. -/
 private theorem continuousOn_cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) {s : Set ℝ}
     (hs : ∀ t ∈ s, IsUnit (1 + exp (t • (J n ℝ * S)))) :
-    ContinuousOn (fun t : ℝ ↦
-      J n ℝ * (1 - exp (t • (J n ℝ * S))) * (1 + exp (t • (J n ℝ * S)))⁻¹) s := by
+    ContinuousOn (cayleyGen S) s := by
+  unfold cayleyGen
   let +nondep : NormedAlgebra ℚ (Matrix (n ⊕ n) (n ⊕ n) ℝ) := .restrictScalars ℚ ℝ _
   have hE : Continuous fun t : ℝ ↦ exp (t • (J n ℝ * S)) :=
     NormedSpace.exp_continuous.comp (continuous_id.smul continuous_const)
@@ -136,16 +139,25 @@ private theorem isUnit_one_add_exp_smul_J_mul {S : Matrix (n ⊕ n) (n ⊕ n) �
   rw [norm_smul_J_mul, abs_of_nonneg ht.1]
   exact mul_le_of_le_one_left (norm_nonneg S) ht.2
 
-/-- For `S` invertible with `‖S‖ < π`, the Cayley generator
-`J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` is invertible for `0 < t ≤ 1`. -/
+/-- For `S` symmetric with `‖S‖ < π`, the Cayley generator `cayleyGen S t` is symmetric for
+`0 ≤ t ≤ 1`. -/
+private theorem isSymm_cayleyGen {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsSymm)
+    (hSπ : ‖S‖ < Real.pi) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : (cayleyGen S t).IsSymm :=
+  SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add
+    (exp_mem_symplecticGroup_of_mem_sp _
+      ((LieAlgebra.Symplectic.sp n ℝ).smul_mem t (LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS)))
+    (isUnit_one_add_exp_smul_J_mul hSπ ht)
+
+/-- For `S` invertible with `‖S‖ < π`, the Cayley generator `cayleyGen S t` is invertible for
+`0 < t ≤ 1`. -/
 private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet : S.det ≠ 0)
     (hSπ : ‖S‖ < Real.pi) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (ht0 : t ≠ 0) :
-    (J n ℝ * (1 - exp (t • (J n ℝ * S))) * (1 + exp (t • (J n ℝ * S)))⁻¹).det ≠ 0 := by
+    (cayleyGen S t).det ≠ 0 := by
   have h1 : IsUnit (exp (t • (J n ℝ * S)) - 1) :=
     isUnit_exp_sub_one ((isUnit_iff_isUnit_det _).2 (by simp [ht0, hdet]))
       (by rw [norm_smul_J_mul, abs_of_nonneg ht.1]
           nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
-  rw [det_mul]
+  rw [cayleyGen, det_mul]
   exact mul_ne_zero ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero
     ((isUnit_iff_isUnit_det _).1 (isUnit_nonsing_inv_iff.2
       (isUnit_one_add_exp_smul_J_mul hSπ ht))).ne_zero
@@ -158,37 +170,29 @@ private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n �
       -(signature S : ℝ) / 2 := by
   set X := J n ℝ * S
   have hXsp : X ∈ LieAlgebra.Symplectic.sp n ℝ := LieAlgebra.Symplectic.J_mul_mem_sp_iff.2 hS
-  obtain ⟨A, hAdef⟩ : ∃ A : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ,
-      A = fun t ↦ J n ℝ * (1 - exp (t • X)) * (1 + exp (t • X))⁻¹ := ⟨_, rfl⟩
   have hunit (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : IsUnit (1 + exp (t • X)) :=
     isUnit_one_add_exp_smul_J_mul hSπ ht
-  have hsymp (t : ℝ) : exp (t • X) ∈ symplecticGroup n ℝ :=
-    exp_mem_symplecticGroup_of_mem_sp _ ((LieAlgebra.Symplectic.sp n ℝ).smul_mem t hXsp)
-  have hA (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : (A t).IsHermitian := by
-    rw [hAdef]
-    exact isHermitian_iff_isSymm.2
-      (SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add (hsymp t) (hunit t ht))
-  have hdetA (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (ht0 : t ≠ 0) : (A t).det ≠ 0 := by
-    rw [hAdef]
-    exact det_cayleyGen_ne_zero hdet hSπ ht ht0
-  have hA0 : A 0 = 0 := by simp [hAdef]
+  have hA (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : (cayleyGen S t).IsHermitian :=
+    isHermitian_iff_isSymm.2 (isSymm_cayleyGen hS hSπ ht)
+  have hdetA (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (ht0 : t ≠ 0) : (cayleyGen S t).det ≠ 0 :=
+    det_cayleyGen_ne_zero hdet hSπ ht ht0
+  have hA0 : cayleyGen S 0 = 0 := by simp [cayleyGen]
   have hγ (t : I) : (souriau (((expPath X hXsp).map continuous_graphUnitaryFrame) t) :
-      Matrix (n ⊕ n) (n ⊕ n) ℂ) = cayley ((A t).map ((↑) : ℝ → ℂ)) := by
+      Matrix (n ⊕ n) (n ⊕ n) ℂ) = cayley ((cayleyGen S t).map ((↑) : ℝ → ℂ)) := by
     have h := souriau_graphUnitaryFrame_eq_cayley (expPath X hXsp t)
       (by rw [coe_expPath_apply]; exact hunit t t.2)
-    simpa only [coe_expPath_apply, hAdef, Path.map_coe, Function.comp_apply] using h
-  -- The only crossing is at `t = 0`, where `A 0 = 0` and `A' 0 = S / 2`.
-  have hcross (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (hdt : (A t).det = 0) : t = 0 := by
+    simpa only [coe_expPath_apply, cayleyGen, Path.map_coe, Function.comp_apply] using h
+  -- The only crossing is at `t = 0`, where `cayleyGen S` vanishes with derivative `S / 2`.
+  have hcross (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (hdt : (cayleyGen S t).det = 0) : t = 0 := by
     by_contra h0
     exact hdetA t ht h0 hdt
   have hmas := Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley
     ((expPath X hXsp).map continuous_graphUnitaryFrame) (A' := fun _ ↦ (2⁻¹ : ℝ) • S)
-    (hAdef ▸ continuousOn_cayleyGen S hunit) hA hγ
+    (continuousOn_cayleyGen S hunit) hA hγ
     (fun t ht hdt i j ↦ by
       obtain rfl := hcross t ht hdt
       let L : Matrix (n ⊕ n) (n ⊕ n) ℝ →L[ℝ] ℝ :=
         LinearMap.toContinuousLinearMap (entryLinearMap ℝ ℝ i j)
-      rw [hAdef]
       exact (L.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_cayleyGen S)).hasDerivWithinAt)
     (fun t ht hdt ↦ by
       obtain rfl := hcross t ht hdt
