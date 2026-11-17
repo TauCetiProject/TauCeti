@@ -57,7 +57,8 @@ Euclidean metric, where `dV = dx` and `div ∂ₓ = 0`, taking `φ = sin` gives 
 * `LinearMap.isFormalTranspose_smoothLaplaceBeltrami`,
   `LinearMap.formalTranspose_smoothLaplaceBeltrami`: the Laplace–Beltrami operator is formally
   self-transpose.
-* `LinearMap.isFormalTranspose_vectorFieldDerivation_withDensity_exp`: the transpose of `X` with
+* `LinearMap.isFormalTranspose_vectorFieldDerivation_withDensity_exp`,
+  `LinearMap.formalTranspose_vectorFieldDerivation_withDensity_exp`: the transpose of `X` with
   respect to `e^φ dV` is `-X - (div X + X φ)`.
 
 ## References
@@ -226,5 +227,22 @@ theorem isFormalTranspose_vectorFieldDerivation_withDensity_exp
     Pi.sub_apply, Pi.neg_apply, Pi.add_apply, Derivation.coeFn_coe, Derivation.leibniz, hXρ,
     smul_eq_mul]
   ring
+
+/-- With respect to the density `e^φ dV`, the formal transpose of differentiation along a smooth
+vector field `X` is `-X - (div X + X φ)`. -/
+theorem formalTranspose_vectorFieldDerivation_withDensity_exp
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (φ : C^∞⟮I, M; ℝ⟯) :
+    (vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯).formalTranspose
+        ((riemannianVolume I M).withDensity fun x ↦ ENNReal.ofReal (Real.exp (φ x))) =
+      -(vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) -
+        mulLeft ℝ (smoothDivergence I M X + vectorFieldDerivation X φ) := by
+  have hcont : Continuous fun x ↦ Real.exp (φ x) := Real.continuous_exp.comp φ.contMDiff.continuous
+  have := IsLocallyFiniteMeasure.withDensity_ofReal (μ := riemannianVolume I M) hcont
+  have : ((riemannianVolume I M).withDensity
+      fun x ↦ ENNReal.ofReal (Real.exp (φ x))).IsOpenPosMeasure :=
+    (withDensity_absolutelyContinuous'
+      (ENNReal.measurable_ofReal.comp hcont.measurable).aemeasurable
+      (.of_forall fun x ↦ by simp [Real.exp_pos])).isOpenPosMeasure
+  exact (isFormalTranspose_vectorFieldDerivation_withDensity_exp X φ).formalTranspose_eq
 
 end LinearMap
