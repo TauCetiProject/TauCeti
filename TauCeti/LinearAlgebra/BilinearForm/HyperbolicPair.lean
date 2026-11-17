@@ -75,6 +75,8 @@ private theorem isTotallyIsotropic_span_one_tmul {x : H} (hx : B x x = 0) :
   QuadraticMap.isTotallyIsotropic_span_singleton_iff.mpr <| by
     simp [BilinMap.toQuadraticMap_apply, hx]
 
+section CharZero
+
 variable [CharZero 𝕜]
 
 /-- For a hyperbolic pair `v, t`, a multiple of `1 ⊗ v` and a multiple of `1 ⊗ t` which are
@@ -159,6 +161,8 @@ theorem nondegenerate_toQuadraticMap_baseChange_of_isOfFinAddOrder_span (ht : B 
       (h _ (hline v)) with h1 | rfl
     · exact absurd h1 one_ne_zero
     · exact zero_smul _ _
+
+end CharZero
 
 variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 

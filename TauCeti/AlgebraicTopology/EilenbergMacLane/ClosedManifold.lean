@@ -19,9 +19,9 @@ since its map to a point is a weak homotopy equivalence. So not every homotopy g
 trivial (`TauCeti.HomologicalOrientation.not_forall_subsingleton_homotopyGroup`).
 
 A simply connected manifold is orientable, and a simply connected aspherical space is weakly
-contractible. Hence a compact simply connected manifold of positive dimension is not aspherical
-(`TauCeti.not_isAspherical_of_simplyConnectedSpace`): some homotopy group `π_(k + 2)` of it is
-nontrivial.
+contractible. Hence a compact simply connected finite-dimensional manifold of positive dimension is
+not aspherical (`TauCeti.not_isAspherical_of_simplyConnectedSpace`): some homotopy group
+`π_(k + 2)` of it is nontrivial.
 
 For a contractible topological group `A`, a compact simply connected manifold `K` with a topological
 group structure, and a discrete subgroup `Γ` of `A × K`, the quotient `(A × K) ⧸ Γ` has the higher
@@ -58,11 +58,11 @@ open scoped Topology Topology.Homotopy
 namespace TauCeti
 
 variable {M E : Type} [TopologicalSpace M] [T2Space M]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [ChartedSpace E M]
 
 namespace HomologicalOrientation
 
-variable {n : ℕ} (o : HomologicalOrientation M E n) (hn : finrank ℝ E = n)
+variable [FiniteDimensional ℝ E] {n : ℕ} (o : HomologicalOrientation M E n) (hn : finrank ℝ E = n)
 
 include o hn in
 /-- **A closed manifold of positive dimension is not weakly contractible.** A compact oriented
@@ -92,13 +92,14 @@ theorem not_forall_subsingleton_homotopyGroup [CompactSpace M] (hn0 : n ≠ 0) (
 end HomologicalOrientation
 
 /-- **A closed simply connected manifold of positive dimension is not aspherical.** A compact
-simply connected manifold `M` of positive dimension is orientable, and if it were aspherical all of
-its homotopy groups would be trivial, which
+simply connected finite-dimensional manifold `M` of positive dimension (`finrank ℝ E ≠ 0`) is
+orientable, and if it were aspherical all of its homotopy groups would be trivial, which
 `TauCeti.HomologicalOrientation.not_forall_subsingleton_homotopyGroup` rules out. So some higher
 homotopy group `π_(k + 2)(M, x)` is nontrivial. -/
 theorem not_isAspherical_of_simplyConnectedSpace [CompactSpace M] [SimplyConnectedSpace M]
     (hE : finrank ℝ E ≠ 0) (x : M) : ¬ IsAspherical M x := by
   intro h
+  have : FiniteDimensional ℝ E := .of_finrank_pos (Nat.pos_of_ne_zero hE)
   obtain ⟨o⟩ := HomologicalOrientation.nonempty_of_simplyConnectedSpace (M := M) (E := E) rfl
   refine o.not_forall_subsingleton_homotopyGroup rfl hE x fun k ↦ ?_
   match k with
