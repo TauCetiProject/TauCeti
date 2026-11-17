@@ -99,16 +99,6 @@ private theorem natDegree_shiftedMonic {d : ℕ} (t₀ : ℝ) (a : Fin d → ℝ
   rw [shiftedMonic, natDegree_comp, TauCeti.Polynomial.natDegree_monicOfCoeff,
     natDegree_X_sub_C, mul_one]
 
-private theorem monicOfCoeff_eq {d : ℕ} (a : Fin d → ℝ) :
-    TauCeti.Polynomial.monicOfCoeff a = X ^ d + ∑ j : Fin d, monomial (j : ℕ) (a j) := by
-  have h := (TauCeti.Polynomial.monicOfCoeff a).as_sum_range' (d + 1)
-    (by simp [TauCeti.Polynomial.natDegree_monicOfCoeff])
-  rw [Finset.sum_range_succ, TauCeti.Polynomial.coeff_monicOfCoeff_self,
-    ← C_mul_X_pow_eq_monomial, C_1, one_mul, add_comm,
-    ← Fin.sum_univ_eq_sum_range (fun j ↦ monomial j ((TauCeti.Polynomial.monicOfCoeff a).coeff j))]
-    at h
-  simpa only [TauCeti.Polynomial.coeff_monicOfCoeff] using h
-
 private theorem analyticOnNhd_coeff_shiftedMonic {n d : ℕ} {B₀ : Set (Fin n → ℝ)} (t₀ : ℝ)
     {c : Fin d → (Fin n → ℝ) → ℝ} (hc : ∀ j, AnalyticOnNhd ℝ (c j) B₀) (m : ℕ) :
     AnalyticOnNhd ℝ (fun x ↦ (shiftedMonic t₀ (c · x)).coeff m) B₀ := by
@@ -116,8 +106,8 @@ private theorem analyticOnNhd_coeff_shiftedMonic {n d : ℕ} {B₀ : Set (Fin n 
       fun x ↦ ((X - C t₀) ^ d).coeff m +
         ∑ j : Fin d, c j x * ((X - C t₀) ^ (j : ℕ)).coeff m := by
     ext x
-    simp only [shiftedMonic, monicOfCoeff_eq, add_comp, pow_comp, X_comp, sum_comp, monomial_comp,
-      coeff_add, finsetSum_coeff, coeff_C_mul]
+    simp only [shiftedMonic, TauCeti.Polynomial.monicOfCoeff_def, add_comp, pow_comp, X_comp,
+      sum_comp, monomial_comp, coeff_add, finsetSum_coeff, coeff_C_mul]
   rw [hfun]
   exact (analyticOnNhd_const (v := _)).add
     (Finset.analyticOnNhd_fun_sum _ fun j _ ↦ (hc j).mul (analyticOnNhd_const (v := _)))

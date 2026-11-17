@@ -14,8 +14,10 @@ A function whose graph over a set `s` is closed and whose values on `s` lie in a
 continuous on `s`. This is the relative form of Mathlib's `continuous_of_isClosed_graph`; it
 identifies a bounded single-valued closure of a graph with a continuous function.
 Conversely, `ContinuousOn.closure_graphOn_inter` recovers a continuous function's graph from
-its restriction to a relatively dense subset. This permits extending a description of a graph
-across an exceptional locus without making any choices of values there.
+its restriction to a relatively dense subset, and `ContinuousOn.closure_graphOn` identifies the
+closure of `t.graphOn f` with `(closure t).graphOn f` when `f` is continuous on `closure t`. This
+permits extending a description of a graph across an exceptional locus without making any choices
+of values there.
 -/
 
 public section
@@ -77,3 +79,14 @@ theorem ContinuousOn.closure_graphOn_inter [T2Space Y] {f : X → Y} {s t : Set 
     refine ⟨?_, hx, mem_univ _⟩
     simpa only [graphOn, id_eq] using
       (continuousWithinAt_id.prodMk ((hf x hx).mono hts)).mem_closure_image (hst hx)
+
+/-- The closure of the graph of a function continuous on `closure t` is its graph over
+`closure t`. -/
+theorem ContinuousOn.closure_graphOn [T2Space Y] {f : X → Y} {t : Set X}
+    (hf : ContinuousOn f (closure t)) :
+    closure (t.graphOn f) = (closure t).graphOn f := by
+  have hsub : closure (t.graphOn f) ⊆ closure t ×ˢ univ :=
+    closure_minimal (fun _ hp ↦ ⟨subset_closure (mem_graphOn.mp hp).1, trivial⟩)
+      (isClosed_closure.prod isClosed_univ)
+  rw [← inter_eq_left.mpr hsub]
+  exact hf.closure_graphOn_inter subset_closure subset_rfl

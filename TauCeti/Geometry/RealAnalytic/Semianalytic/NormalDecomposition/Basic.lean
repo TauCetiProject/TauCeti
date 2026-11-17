@@ -336,10 +336,8 @@ theorem image_continuousLinearEquiv (h : IsNormalDecomposition U 𝒞)
     obtain ⟨d, hd⟩ := h.exists_isAnalyticSubmanifold hS
     exact ⟨d, hd.image_continuousLinearEquiv e⟩
   · rintro _ ⟨S, hS, rfl⟩ y
-    have happ := (h.isPreconnectedApproachAt hS (e.symm y)).image
-      e.continuous.continuousAt e.continuous.continuousOn
-      e.symm.continuous.continuousAt (e.symm_apply_apply _) (fun x _ ↦ e.symm_apply_apply x)
-    rwa [e.apply_symm_apply] at happ
+    exact (isPreconnectedApproachAt_image_homeomorph_iff e.toHomeomorph).2
+      (h.isPreconnectedApproachAt hS _)
   · rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ ⟨_, ⟨x, hxS, rfl⟩, hycl⟩
     rw [hcl] at hycl ⊢
     obtain ⟨x', hx'cl, hxx'⟩ := hycl
@@ -356,7 +354,8 @@ theorem preimage_continuousLinearEquiv {U : Set (Fin n' → ℝ)} {𝒞 : Set (S
     IsNormalDecomposition (e ⁻¹' U) (preimage e '' 𝒞) := by
   have hpre (A : Set (Fin n' → ℝ)) : e ⁻¹' A = e.symm '' A :=
     (e.symm.image_eq_preimage_symm A).symm
-  rw [hpre U, show preimage (e : (Fin n → ℝ) → Fin n' → ℝ) = image e.symm from funext hpre]
+  have hprefun : preimage (e : (Fin n → ℝ) → Fin n' → ℝ) = image e.symm := funext hpre
+  rw [hpre U, hprefun]
   exact h.image_continuousLinearEquiv e.symm
 
 end IsNormalDecomposition
