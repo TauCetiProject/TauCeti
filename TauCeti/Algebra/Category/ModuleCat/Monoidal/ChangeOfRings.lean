@@ -107,6 +107,32 @@ theorem extendScalarsCompTensorLeftIso_inv_app_tmul (M : ModuleCat.{u} P) (X : M
 
 end ProjectionFormula
 
+section Monoidal
+
+variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+
+/-- The monoidal unit `Functor.LaxMonoidal.ε (extendScalars f)` sends `s : S` to `s ⊗ₜ 1`. -/
+@[simp]
+theorem extendScalars_ε_apply (s : S) :
+    Functor.LaxMonoidal.ε (extendScalars.{u, u, u} f) s = s ⊗ₜ[R, f] (1 : R) :=
+  letI := f.toAlgebra
+  (ConcreteCategory.congr_hom (extendScalars_ε f) s).trans
+    (TensorProduct.AlgebraTensorModule.rid_symm_apply R S s)
+
+/-- On pure tensors, the tensorator `Functor.LaxMonoidal.μ (extendScalars f)` sends
+`(s₁ ⊗ₜ m₁) ⊗ₜ (s₂ ⊗ₜ m₂)` to `(s₁ * s₂) ⊗ₜ (m₁ ⊗ₜ m₂)`. -/
+@[simp]
+theorem extendScalars_μ_tmul (M₁ M₂ : ModuleCat.{u} R) (s₁ s₂ : S) (m₁ : M₁) (m₂ : M₂) :
+    Functor.LaxMonoidal.μ (extendScalars.{u, u, u} f) M₁ M₂
+        (TensorProduct.tmul S (M := (extendScalars f).obj M₁) (N := (extendScalars f).obj M₂)
+          (s₁ ⊗ₜ[R, f] m₁) (s₂ ⊗ₜ[R, f] m₂)) =
+      (s₁ * s₂) ⊗ₜ[R, f] (TensorProduct.tmul R (M := M₁) (N := M₂) m₁ m₂ : ↑(M₁ ⊗ M₂)) :=
+  letI := f.toAlgebra
+  (ConcreteCategory.congr_hom (extendScalars_μ f M₁ M₂) _).trans
+    (TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul R S m₁ m₂ s₁ s₂)
+
+end Monoidal
+
 section CommAlg
 
 variable {A : Type u} [CommRing A]
@@ -122,7 +148,6 @@ noncomputable def extendScalarsCommAlgIso (P : Type u) [CommRing P] [Algebra A P
   let φ := algebraMap A P
   let G := extendScalars.{u, u, u} φ
   let R₀ := ModuleCat.of A R
-  let R₀₂ : ModuleCat.{u} A := R₀ ⊗ R₀
   let R' := CommMonModuleEquivalenceCommAlgebra.inverse.obj R
   let B := CommMonModuleEquivalenceCommAlgebra.functor.obj (G.mapCommMon.obj R')
   let eLin : (P ⊗[A] R) ≃ₗ[P] B :=
@@ -130,48 +155,28 @@ noncomputable def extendScalarsCommAlgIso (P : Type u) [CommRing P] [Algebra A P
   let eAlg : (P ⊗[A] R) ≃ₐ[P] B :=
     Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct eLin
       (fun p₁ p₂ r₁ r₂ ↦ by
-        have heLin (p : P) (r : R) : eLin (p ⊗ₜ[A] r) = p ⊗ₜ[A, φ] (r : R₀) :=
+        have he (p : P) (r : R) : eLin (p ⊗ₜ[A] r) = p ⊗ₜ[A, φ] (r : R'.X) :=
           extendScalarsAlgebraMapIso_inv_tmul R₀ p r
-        have hμ (q₁ q₂ : R) :
-            Functor.LaxMonoidal.μ G R'.X R'.X
-                (TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X)
-                  (eLin (1 ⊗ₜ[A] q₁)) (eLin (1 ⊗ₜ[A] q₂))) =
-              (1 : P) ⊗ₜ[A, φ] ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂) := by
-          have hpair :
-              TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X)
-                  (eLin (1 ⊗ₜ[A] q₁)) (eLin (1 ⊗ₜ[A] q₂)) =
-                Functor.OplaxMonoidal.δ G R'.X R'.X
-                  ((1 : P) ⊗ₜ[A, φ] ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂)) :=
-            (congrArg₂ (TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X))
-              (heLin 1 q₁) (heLin 1 q₂)).trans (extendScalars_δ_tmul φ R'.X R'.X q₁ q₂).symm
-          exact (congrArg (Functor.LaxMonoidal.μ G R'.X R'.X) hpair).trans
-            (ConcreteCategory.congr_hom (Functor.Monoidal.δ_μ G R'.X R'.X)
-              ((1 : P) ⊗ₜ[A, φ] ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂)))
-        have h1 (q₁ q₂ : R) :
-            eLin (1 ⊗ₜ[A] q₁) * eLin (1 ⊗ₜ[A] q₂) = eLin (1 ⊗ₜ[A] (q₁ * q₂)) := by
-          rw [CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_mul G R', hμ q₁ q₂,
-            CommMonModuleEquivalenceCommAlgebra.inverse_obj_mul]
-          exact ((ExtendScalars.map_tmul φ (ofHom (LinearMap.mul' A R)) 1
-              ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂)).trans
-            (congrArg ((1 : P) ⊗ₜ[A, φ] ·)
-              (LinearMap.mul'_apply (R := A) (a := q₁) (b := q₂)))).trans
-            (heLin 1 (q₁ * q₂)).symm
-        have hsmul (p : P) (r : R) : eLin (p ⊗ₜ[A] r) = p • eLin (1 ⊗ₜ[A] r) := by
-          rw [← eLin.map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-        rw [hsmul (p₁ * p₂), hsmul p₁, hsmul p₂, ← h1, smul_mul_smul_comm])
+        symm
+        refine (CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_mul G R' _ _).trans ?_
+        refine (congrArg (fun z ↦ G.map (MonObj.mul (X := R'.X))
+            (Functor.LaxMonoidal.μ G R'.X R'.X z))
+          (congrArg₂ (TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X))
+            (he p₁ r₁) (he p₂ r₂))).trans ?_
+        refine (congrArg (G.map (MonObj.mul (X := R'.X)))
+          (extendScalars_μ_tmul φ R'.X R'.X p₁ p₂ r₁ r₂)).trans ?_
+        refine (ExtendScalars.map_tmul φ (MonObj.mul (X := R'.X)) (p₁ * p₂) _).trans ?_
+        rw [CommMonModuleEquivalenceCommAlgebra.inverse_obj_mul]
+        exact (congrArg (fun x : R₀ ↦ (p₁ * p₂) ⊗ₜ[A, φ] x)
+          (LinearMap.mul'_apply (R := A) (a := r₁) (b := r₂))).trans (he (p₁ * p₂) (r₁ * r₂)).symm)
       (by
-        have hε : Functor.LaxMonoidal.ε G (1 : P) = (1 : P) ⊗ₜ[A, φ] (1 : A) :=
-          let _ := φ.toAlgebra
-          (ConcreteCategory.congr_hom (extendScalars_ε φ) (1 : P)).trans
-            (TensorProduct.AlgebraTensorModule.rid_symm_apply A P (1 : P))
-        have hmap : G.map (ofHom (Algebra.linearMap A R)) (Functor.LaxMonoidal.ε G (1 : P)) =
-            (1 : P) ⊗ₜ[A, φ] ((1 : R) : R₀) :=
-          ((congrArg (G.map (ofHom (Algebra.linearMap A R))) hε).trans
-            (ExtendScalars.map_tmul φ (ofHom (Algebra.linearMap A R)) 1 (1 : A))).trans
-            (congrArg ((1 : P) ⊗ₜ[A, φ] ·) (map_one (algebraMap A R)))
-        rw [CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_one G R',
-          CommMonModuleEquivalenceCommAlgebra.inverse_obj_one]
-        exact (extendScalarsAlgebraMapIso_inv_tmul R₀ 1 1).trans hmap.symm)
+        symm
+        refine (CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_one G R').trans ?_
+        refine (congrArg (G.map (MonObj.one (X := R'.X))) (extendScalars_ε_apply φ 1)).trans ?_
+        refine (ExtendScalars.map_tmul φ (MonObj.one (X := R'.X)) 1 (1 : A)).trans ?_
+        rw [CommMonModuleEquivalenceCommAlgebra.inverse_obj_one]
+        exact (congrArg (fun x : R₀ ↦ (1 : P) ⊗ₜ[A, φ] x) (map_one (algebraMap A R))).trans
+          (extendScalarsAlgebraMapIso_inv_tmul R₀ 1 1).symm)
   CommAlgCat.isoMk eAlg
 
 /-- `extendScalarsCommAlgIso` sends `p ⊗ r` to `p ⊗ r`. -/
