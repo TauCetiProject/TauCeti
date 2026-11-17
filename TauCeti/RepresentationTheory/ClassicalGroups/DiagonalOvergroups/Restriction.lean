@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.DiagonalOvergroups.Ba
 public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.CentralCharacter
 public import TauCeti.RepresentationTheory.Tensor.External
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Restriction of external tensor products across diagonal overgroups of `GL`
@@ -20,8 +21,9 @@ intermediate subgroups `scalarDiagonal` and `determinantEqual`:
 2. **`scalarDiagonal ι R`:** When scalar matrices act on `ρ` by scalars (e.g. by Schur's lemma, or
    with central exponent `∑ i, l i` from a weight `l`), the restriction is a character twist of
    `(ρ.tprod σ) ∘ sndProj`, preserving the subrepresentation lattice and all `Hom` multiplicities.
-3. **`determinantEqual ι K`:** Over an algebraically closed field, `(ρ.externalTensor σ)` restricted
-   to `determinantEqual ι K` is irreducible iff `ρ` and `σ` are irreducible
+3. **`determinantEqual ι K`:** Over an algebraically closed field, for finite-dimensional
+   representations `ρ` and `σ`, `(ρ.externalTensor σ)` restricted to `determinantEqual ι K` is
+   irreducible iff `ρ` and `σ` are irreducible
    (`isIrreducible_externalTensor_comp_determinantEqual_iff`).
 
 ## References
@@ -128,8 +130,8 @@ def scalarDiagonalSubrepresentationOrderIso
   invFun S := ⟨S.toSubmodule, fun ⟨p, hp⟩ z hz => by
     obtain ⟨u, hu⟩ := mem_scalarDiagonal_iff.mp hp
     obtain ⟨c, hc⟩ := hρ u
-    change (ρ.externalTensor σ p) z ∈ S.toSubmodule
-    rw [(Prod.ext hu rfl : p = (GeneralLinearGroup.scalar ι u * p.2, p.2)),
+    rw [MonoidHom.comp_apply, Subgroup.coe_subtype, Subtype.coe_mk,
+      (Prod.ext hu rfl : p = (GeneralLinearGroup.scalar ι u * p.2, p.2)),
       externalTensor_scalar_mul_apply ρ σ hc p.2, LinearMap.smul_apply]
     exact S.toSubmodule.smul_mem c (S.apply_mem_toSubmodule p.2 hz)⟩
   left_inv _ := Subrepresentation.toSubmodule_injective rfl
@@ -236,27 +238,15 @@ private def slProdToDeterminantEqual :
   map_one' := Subtype.ext (by simp)
   map_mul' _ _ := Subtype.ext (by simp)
 
-private theorem isIrreducible_of_comp {G₁ G₂ M : Type*} [Monoid G₁] [Monoid G₂]
-    [AddCommGroup M] [Module K M] {τ : Representation K G₂ M} {f : G₁ →* G₂}
-    (h : Representation.IsIrreducible (τ.comp f)) : τ.IsIrreducible := by
-  have : Nontrivial M := h.nontrivial
-  refine ⟨fun S => ?_⟩
-  rcases h.eq_bot_or_eq_top ⟨S.toSubmodule, fun g _ hm => S.apply_mem_toSubmodule (f g) hm⟩ with
-    hT | hT
-  · exact Or.inl (Subrepresentation.toSubmodule_injective
-      (by simpa using congrArg Subrepresentation.toSubmodule hT))
-  · exact Or.inr (Subrepresentation.toSubmodule_injective
-      (by simpa using congrArg Subrepresentation.toSubmodule hT))
-
-/-- **Irreducibility of `ρ.externalTensor σ` on `determinantEqual ι K`** over an algebraically
-closed field. -/
+/-- **Irreducibility of `ρ.externalTensor σ` on `determinantEqual ι K`** for finite-dimensional
+representations `ρ` and `σ` over an algebraically closed field. -/
 @[simp] theorem isIrreducible_externalTensor_comp_determinantEqual_iff [IsAlgClosed K]
     [FiniteDimensional K V] [FiniteDimensional K W]
     (ρ : Representation K (GL ι K) V) (σ : Representation K (GL ι K) W) :
     Representation.IsIrreducible ((ρ.externalTensor σ).comp (determinantEqual ι K).subtype) ↔
       ρ.IsIrreducible ∧ σ.IsIrreducible := by
-  refine ⟨fun h => ⟨(isIrreducible_of_comp h).of_externalTensor_left,
-      (isIrreducible_of_comp h).of_externalTensor_right⟩, fun ⟨hρ, hσ⟩ => ?_⟩
+  refine ⟨fun h => ⟨h.of_comp.of_externalTensor_left, h.of_comp.of_externalTensor_right⟩,
+    fun ⟨hρ, hσ⟩ => ?_⟩
   have hSL : (Representation.externalTensor (ρ.comp SpecialLinearGroup.toGL)
       (σ.comp SpecialLinearGroup.toGL)).IsIrreducible :=
     Representation.isIrreducible_externalTensor _ _
@@ -265,7 +255,7 @@ closed field. -/
   have heq : ((ρ.externalTensor σ).comp (determinantEqual ι K).subtype).comp
       slProdToDeterminantEqual = Representation.externalTensor (ρ.comp SpecialLinearGroup.toGL)
         (σ.comp SpecialLinearGroup.toGL) := by ext p : 1; simp [slProdToDeterminantEqual]
-  exact isIrreducible_of_comp (f := slProdToDeterminantEqual) (heq ▸ hSL)
+  exact Representation.IsIrreducible.of_comp (f := slProdToDeterminantEqual) (heq ▸ hSL)
 
 instance instIsIrreducibleExternalTensorCompDeterminantEqual [IsAlgClosed K]
     [FiniteDimensional K V] [FiniteDimensional K W]

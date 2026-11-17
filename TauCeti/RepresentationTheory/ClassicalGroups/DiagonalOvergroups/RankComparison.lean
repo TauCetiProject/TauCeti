@@ -14,6 +14,7 @@ import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 import TauCeti.Analysis.Matrix.SpecialLinearGroup.Connected
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.Topology.Algebra.Group.Goursat
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 
 /-!
 # Rank phenomena and real counterexample for diagonal overgroups of `GL ι ℂ`
@@ -78,7 +79,7 @@ theorem mem_scalarDiagonal_inf_determinantEqual_iff {p : GL ι R × GL ι R} :
   rw [hu, map_mul, GeneralLinearGroup.det_scalar] at hdet
   exact mul_right_cancel (hdet.trans (one_mul p.2.det).symm)
 
-theorem not_scalarDiagonal_le_determinantEqual [Nontrivial ι] :
+theorem not_scalarDiagonal_le_determinantEqual [Nonempty ι] :
     ¬ (scalarDiagonal ι ℂ ≤ determinantEqual ι ℂ) := fun hle => by
   let u : ℂˣ := Units.mk0 2 two_ne_zero
   have hdet := congrArg (fun x : ℂˣ => ‖(x : ℂ)‖) (mem_determinantEqual_iff.mp
@@ -138,8 +139,9 @@ theorem not_isPreconnected_scalarDiagonal_inf_determinantEqual [Nontrivial ι] :
             exact realDirections_mono inf_le_right hX)
     exact ⟨by simpa using mem_realDirections_iff.mp hz1 1,
       by simpa using mem_realDirections_iff.mp hz2 1⟩
-  rcases connected_complex_overgroup _ (le_inf diagonal_le_scalarDiagonal
-      diagonal_le_determinantEqual) (isClosed_scalarDiagonal.inter isClosed_determinantEqual)
+  rcases eq_diagonal_or_eq_scalarDiagonal_or_eq_determinantEqual_or_eq_top _
+      (le_inf diagonal_le_scalarDiagonal diagonal_le_determinantEqual)
+      (isClosed_scalarDiagonal.inter isClosed_determinantEqual)
       hconn hcomplex with heq | heq | heq | heq
   · have : NeZero (Fintype.card ι) := ⟨Fintype.card_ne_zero⟩
     obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot ℂ (Fintype.card ι)
@@ -170,7 +172,7 @@ theorem exists_mem_scalarDiagonal_mul_mem_determinantEqual (p : GL ι ℂ × GL 
     ((GeneralLinearGroup.scalar ι u)⁻¹ * p.1, p.2), ?_,
     Prod.ext (mul_inv_cancel_left _ p.1).symm (one_mul p.2).symm⟩
   rw [mem_determinantEqual_iff, map_mul, map_inv, GeneralLinearGroup.det_scalar, hu]
-  change (p.1.det / p.2.det)⁻¹ * p.1.det = p.2.det; rw [inv_div, div_mul_cancel]
+  simp only [d, inv_div, div_mul_cancel]
 
 @[simp] theorem scalarDiagonal_sup_determinantEqual :
     scalarDiagonal ι ℂ ⊔ determinantEqual ι ℂ = ⊤ :=
@@ -184,10 +186,10 @@ def determinantModulusOne (ι : Type*) [Fintype ι] [DecidableEq ι] :
   carrier := {p | ‖(determinantRatio ι ℂ p : ℂ)‖ = 1}
   one_mem' := by simp
   mul_mem' {p q} hp hq := by
-    change ‖((determinantRatio ι ℂ (p * q) : ℂˣ) : ℂ)‖ = 1
+    simp only [Set.mem_ofPred_eq] at hp hq ⊢
     rw [map_mul, Units.val_mul, norm_mul, hp, hq, mul_one]
   inv_mem' {p} hp := by
-    change ‖((determinantRatio ι ℂ p⁻¹ : ℂˣ) : ℂ)‖ = 1
+    simp only [Set.mem_ofPred_eq] at hp ⊢
     rw [map_inv, Units.val_inv_eq_inv_val, norm_inv, hp, inv_one]
 
 @[simp] theorem mem_determinantModulusOne_iff {p : GL ι ℂ × GL ι ℂ} :
@@ -207,18 +209,6 @@ theorem isClosed_determinantModulusOne :
       Set.ext fun g => by simp [Subgroup.mem_goursatFst, GeneralLinearGroup.val_det_apply]]
   exact isClosed_eq (continuous_norm.comp Units.continuous_val.matrix_det) continuous_const
 
-private theorem continuous_diagGL_mulSingle (i₀ : ι) :
-    Continuous fun u : ℂˣ => diagGL (Pi.mulSingle i₀ u) :=
-  (Units.continuous_iff.mpr
-    ⟨by
-      simpa only [Function.comp_def, diagGL_coe] using
-        (continuous_pi fun i => Units.continuous_val.comp (continuous_apply i)).matrix_diagonal,
-     by
-      simpa only [Function.comp_def, ← map_inv, diagGL_coe, Pi.inv_apply] using
-        (continuous_pi fun i =>
-          (Units.continuous_coe_inv (M := ℂ)).comp (continuous_apply i)).matrix_diagonal⟩).comp
-    (continuous_mulSingle i₀)
-
 instance instPathConnectedSpaceDeterminantModulusOne :
     PathConnectedSpace (determinantModulusOne ι) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
@@ -236,7 +226,8 @@ instance instPathConnectedSpaceDeterminantModulusOne :
     ⟨diagGL (Pi.mulSingle i₀ (expCircle p.2)) * SpecialLinearGroup.toGL p.1, by
       simp [expCircle, Subgroup.mem_goursatFst, Complex.norm_exp_ofReal_mul_I]⟩
   refine Function.Surjective.pathConnectedSpace (f := param) (fun ⟨g, hg⟩ => ?_)
-    ((((continuous_diagGL_mulSingle i₀).comp (hexp_cont.comp continuous_snd)).mul
+    ((((continuous_diagGL.comp (continuous_mulSingle i₀)).comp
+      (hexp_cont.comp continuous_snd)).mul
       (SpecialLinearGroup.isClosedEmbedding_toGL.continuous.comp continuous_fst)).subtype_mk _)
   have hgnorm : ‖(g : Matrix ι ι ℂ).det‖ = 1 := by
     simpa [Subgroup.mem_goursatFst, GeneralLinearGroup.val_det_apply] using hg
@@ -245,12 +236,14 @@ instance instPathConnectedSpaceDeterminantModulusOne :
     rw [det_diagGL, Fintype.prod_pi_mulSingle']
     simpa [expCircle, GeneralLinearGroup.val_det_apply, hgnorm] using
       Complex.norm_mul_exp_arg_mul_I (g : Matrix ι ι ℂ).det
-  refine ⟨(⟨((diagGL (Pi.mulSingle i₀ (expCircle θ)))⁻¹ * g : GL ι ℂ), by
+  let s : SpecialLinearGroup ι ℂ := ⟨((diagGL (Pi.mulSingle i₀ (expCircle θ)))⁻¹ * g : GL ι ℂ), by
     rw [← GeneralLinearGroup.val_det_apply, map_mul, map_inv, hexp, inv_mul_cancel,
-      Units.val_one]⟩, θ), Subtype.ext ?_⟩
-  change diagGL (Pi.mulSingle i₀ (expCircle θ)) * _ = g
-  rw [show SpecialLinearGroup.toGL _ = (diagGL (Pi.mulSingle i₀ (expCircle θ)))⁻¹ * g from
-    Units.ext (SpecialLinearGroup.coe_GL_coe_matrix _), mul_inv_cancel_left]
+      Units.val_one]⟩
+  refine ⟨(s, θ), Subtype.ext ?_⟩
+  simp only [param]
+  exact Units.ext (by
+    rw [Units.val_mul, SpecialLinearGroup.coe_GL_coe_matrix]
+    simp only [s, ← Units.val_mul, mul_inv_cancel_left])
 
 theorem determinantEqual_lt_determinantModulusOne [Nonempty ι] :
     determinantEqual ι ℂ < determinantModulusOne ι := by

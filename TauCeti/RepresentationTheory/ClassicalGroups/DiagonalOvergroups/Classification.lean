@@ -27,7 +27,7 @@ import TauCeti.Topology.Algebra.Group.Subgroup
 Every closed, preconnected subgroup `H ≤ GL ι ℂ × GL ι ℂ` containing `diagonal ι ℂ` whose real
 exponential directions `realDirections H` are closed under complex scalar multiplication equals one
 of `diagonal ι ℂ`, `scalarDiagonal ι ℂ`, `determinantEqual ι ℂ`, or `⊤`
-(`connected_complex_overgroup`).
+(`eq_diagonal_or_eq_scalarDiagonal_or_eq_determinantEqual_or_eq_top`).
 
 1. Over any field `K` with `(2 : K) ≠ 0`, `L ↦ {Z | (Z, 0) ∈ L}` reduces `K`-Lie subalgebras of
    `Matrix ι ι K × Matrix ι ι K` containing `diagonalLie K ι` to Lie ideals of `gl ι K`, classifying
@@ -75,12 +75,13 @@ def scalarDiagonalLie : LieSubalgebra R (Matrix ι ι R × Matrix ι ι R) where
   lie_mem' := by
     rintro X Y ⟨c₁, hc₁⟩ ⟨c₂, hc₂⟩
     refine ⟨0, ?_⟩
-    change ⁅X.1, Y.1⁆ = (0 : R) • 1 + ⁅X.2, Y.2⁆
+    simp only [LieRing.of_associative_ring_bracket, Prod.fst_sub, Prod.snd_sub, Prod.fst_mul,
+      Prod.snd_mul, zero_smul, zero_add]
     have h1 : c₁ • (c₂ • (1 : Matrix ι ι R)) = c₂ • (c₁ • 1) := by
       rw [smul_smul, smul_smul, mul_comm]
-    rw [zero_smul, zero_add, hc₁, hc₂]
-    simp only [LieRing.of_associative_ring_bracket, add_mul, mul_add, smul_mul_assoc, one_mul,
-      mul_smul_comm, mul_one, smul_add, h1]; abel
+    rw [hc₁, hc₂]
+    simp only [add_mul, mul_add, smul_mul_assoc, one_mul, mul_smul_comm, mul_one, smul_add, h1]
+    abel
 
 /-- The trace-equal Lie subalgebra `{(X, Y) | X.trace = Y.trace}`. -/
 def traceEqualLie : LieSubalgebra R (Matrix ι ι R × Matrix ι ι R) where
@@ -89,8 +90,9 @@ def traceEqualLie : LieSubalgebra R (Matrix ι ι R × Matrix ι ι R) where
   zero_mem' := by simp
   smul_mem' c {_} hX := by simp_all
   lie_mem' {X Y} _ _ := by
-    change (X.1 * Y.1 - Y.1 * X.1).trace = (X.2 * Y.2 - Y.2 * X.2).trace
-    simp [Matrix.trace_mul_comm X.1 Y.1, Matrix.trace_mul_comm X.2 Y.2]
+    simp only [Set.mem_ofPred_eq, LieRing.of_associative_ring_bracket, Prod.fst_sub, Prod.snd_sub,
+      Prod.fst_mul, Prod.snd_mul, Matrix.trace_sub, Matrix.trace_mul_comm X.1 Y.1,
+      Matrix.trace_mul_comm X.2 Y.2, sub_self]
 
 variable {R ι}
 
@@ -265,13 +267,20 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 private theorem prodUnits_expUnit_eq_pairExp (X : Matrix ι ι ℂ × Matrix ι ι ℂ) :
-    ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ) (TauCeti.expUnit X) = pairExp X := by
-  rw [← ContinuousMulEquiv.eq_symm_apply]
-  refine Units.ext (Prod.ext ?_ ?_)
-  · change (TauCeti.expUnit X : Matrix ι ι ℂ × Matrix ι ι ℂ).1 = ((pairExp X).1 : Matrix ι ι ℂ)
-    rw [TauCeti.expUnit_coe, Prod.fst_exp, coe_fst_pairExp]; rfl
-  · change (TauCeti.expUnit X : Matrix ι ι ℂ × Matrix ι ι ℂ).2 = ((pairExp X).2 : Matrix ι ι ℂ)
-    rw [TauCeti.expUnit_coe, Prod.snd_exp, coe_snd_pairExp]; rfl
+    (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)).toMonoidHom (TauCeti.expUnit X) =
+      pairExp X := by
+  refine Prod.ext (Units.ext ?_) (Units.ext ?_)
+  -- The `NormedSpace.exp` instances (`normedAlgebraRatOfReal` vs default) agree definitionally.
+  · simp only [MulEquiv.coe_toMonoidHom, ContinuousMulEquiv.toMulEquiv_eq_coe,
+      ContinuousMulEquiv.toMulEquiv_prodUnits, MulEquiv.prodUnits, MulEquiv.coe_mk,
+      Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, MonoidHom.coe_fst,
+      TauCeti.expUnit_coe, Prod.fst_exp, coe_fst_pairExp]
+    rfl
+  · simp only [MulEquiv.coe_toMonoidHom, ContinuousMulEquiv.toMulEquiv_eq_coe,
+      ContinuousMulEquiv.toMulEquiv_prodUnits, MulEquiv.prodUnits, MulEquiv.coe_mk,
+      Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, MonoidHom.coe_snd,
+      TauCeti.expUnit_coe, Prod.snd_exp, coe_snd_pairExp]
+    rfl
 
 private theorem mem_realDirections_iff_mem_lieSubalgebraOfSubgroup
     {H : Subgroup (GL ι ℂ × GL ι ℂ)} (hc : IsClosed (H : Set (GL ι ℂ × GL ι ℂ)))
@@ -281,23 +290,22 @@ private theorem mem_realDirections_iff_mem_lieSubalgebraOfSubgroup
         TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix ι ι ℂ × Matrix ι ι ℂ))
           (H.comap (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)).toMonoidHom) := by
   rw [TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
-    (hc.preimage (map_continuous (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ))))]
+    (hc.preimage (map_continuous (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)))),
+    mem_realDirections_iff]
   exact forall_congr' fun t => by
-    change pairExp (t • X) ∈ H ↔
-      ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ) (TauCeti.expUnit (t • X)) ∈ H
-    rw [prodUnits_expUnit_eq_pairExp]
+    rw [Subgroup.mem_comap, prodUnits_expUnit_eq_pairExp]
 
 /-- **Real tangent Lie subalgebra** of a closed subgroup `H ≤ GL ι ℂ × GL ι ℂ`. -/
 noncomputable def realTangentLieSubalgebra (H : Subgroup (GL ι ℂ × GL ι ℂ))
     (hc : IsClosed (H : Set (GL ι ℂ × GL ι ℂ))) :
     LieSubalgebra ℝ (Matrix ι ι ℂ × Matrix ι ι ℂ) where
   carrier := realDirections H
-  add_mem' {X Y} hX hY := by
-    change X + Y ∈ realDirections H
-    rw [mem_realDirections_iff_mem_lieSubalgebraOfSubgroup hc, map_add]
-    exact LieSubalgebra.add_mem _
-      ((mem_realDirections_iff_mem_lieSubalgebraOfSubgroup hc X).mp hX)
-      ((mem_realDirections_iff_mem_lieSubalgebraOfSubgroup hc Y).mp hY)
+  add_mem' {X Y} hX hY :=
+    (mem_realDirections_iff_mem_lieSubalgebraOfSubgroup hc (X + Y)).mpr <| by
+      rw [map_add]
+      exact LieSubalgebra.add_mem _
+        ((mem_realDirections_iff_mem_lieSubalgebraOfSubgroup hc X).mp hX)
+        ((mem_realDirections_iff_mem_lieSubalgebraOfSubgroup hc Y).mp hY)
   zero_mem' := by simp [realDirections]
   smul_mem' r {X} hX t := by rw [smul_smul]; exact hX (t * r)
   lie_mem' {X Y} hX hY := by
@@ -436,7 +444,8 @@ private theorem mem_center_of_pairExp_sub_mem_scalarDiagonal {Z : Matrix ι ι �
       Matrix.det_exp, htr]
 
 /-- **Classification of closed connected complex diagonal overgroups of `GL ι ℂ`.** -/
-theorem connected_complex_overgroup (H : Subgroup (GL ι ℂ × GL ι ℂ))
+theorem eq_diagonal_or_eq_scalarDiagonal_or_eq_determinantEqual_or_eq_top
+    (H : Subgroup (GL ι ℂ × GL ι ℂ))
     (hd : diagonal ι ℂ ≤ H) (hc : IsClosed (H : Set (GL ι ℂ × GL ι ℂ)))
     (hconn : IsPreconnected (H : Set (GL ι ℂ × GL ι ℂ)))
     (hcomplex : ∀ X ∈ realDirections H, ∀ z : ℂ, pairExp (z • X) ∈ H) :

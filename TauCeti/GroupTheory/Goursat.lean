@@ -58,12 +58,12 @@ def diagonalExt (N : Subgroup G) [hN : N.Normal] : Subgroup (G × G) where
   carrier := {p | p.1 / p.2 ∈ N}
   one_mem' := by simp
   mul_mem' {a b} ha hb := by
-    change (a.1 * b.1) / (a.2 * b.2) ∈ N
+    simp only [Set.mem_ofPred_eq, Prod.fst_mul, Prod.snd_mul] at ha hb ⊢
     have h : (a.1 * b.1) / (a.2 * b.2) = (a.1 / a.2) * (a.2 * (b.1 / b.2) * a.2⁻¹) := by
       simp only [div_eq_mul_inv]; group
     exact h ▸ N.mul_mem ha (hN.conj_mem _ hb a.2)
   inv_mem' {a} ha := by
-    change a.1⁻¹ / a.2⁻¹ ∈ N
+    simp only [Set.mem_ofPred_eq, Prod.fst_inv, Prod.snd_inv] at ha ⊢
     have h : a.1⁻¹ / a.2⁻¹ = a.2⁻¹ * (a.1 / a.2)⁻¹ * (a.2⁻¹)⁻¹ := by
       simp only [div_eq_mul_inv]; group
     exact h ▸ hN.conj_mem _ (N.inv_mem ha) a.2⁻¹

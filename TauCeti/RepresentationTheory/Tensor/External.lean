@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.RepresentationTheory.Character.Twist
 import Mathlib.RingTheory.Flat.Basic
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 import TauCeti.RepresentationTheory.Irreducible
 import TauCeti.RepresentationTheory.Subrepresentation
@@ -404,20 +405,12 @@ theorem isIrreducible_externalTensor [IsAlgClosed k] [FiniteDimensional k V]
   have hw : w ∈ M.toSubmodule := by simp [hM]
   exact hw v
 
-private theorem nontrivial_left_of_nontrivial_tensor [Nontrivial (V ⊗[k] W)] : Nontrivial V := by
-  by_contra hV
-  rw [not_nontrivial_iff_subsingleton] at hV
-  obtain ⟨z, hz⟩ := exists_ne (0 : V ⊗[k] W)
-  exact hz (_root_.TensorProduct.inductionOn z (fun v _ => by simp [Subsingleton.elim v 0])
-    fun _ _ hx hy => by rw [hx, hy, add_zero])
-
 /-- **If `ρ.externalTensor σ` is irreducible over a field, then `ρ` is irreducible.** -/
 theorem IsIrreducible.of_externalTensor_left {ρ : Representation k G V} {σ : Representation k H W}
     (h : (ρ.externalTensor σ).IsIrreducible) : ρ.IsIrreducible := by
   have : Nontrivial (V ⊗[k] W) := h.nontrivial
-  have : Nontrivial V := nontrivial_left_of_nontrivial_tensor (k := k) (V := V) (W := W)
-  have : Nontrivial (W ⊗[k] V) := (_root_.TensorProduct.comm k V W).symm.toEquiv.nontrivial
-  have : Nontrivial W := nontrivial_left_of_nontrivial_tensor (k := k) (V := W) (W := V)
+  have : Nontrivial V := _root_.TensorProduct.nontrivial_left (R := k) (N := W)
+  have : Nontrivial W := _root_.TensorProduct.nontrivial_right (R := k) (M := V)
   obtain ⟨w₀, hw₀⟩ := exists_ne (0 : W)
   obtain ⟨g, hg⟩ := Module.Projective.exists_dual_ne_zero k hw₀
   refine ⟨fun S => by_contra fun hS => ?_⟩
