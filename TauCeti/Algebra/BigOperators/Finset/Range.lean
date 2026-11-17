@@ -42,6 +42,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 * `Finset.sum_range_sum_range_tsub_eq_sum_ite`: the two orderings of a sum over the triples
   `k + i + j = r`, as in the collection of the terms of a product of two expansions with a third
   index.
+* `Finset.sum_range_succ_sum_range_succ_comm`: exchange the order of a double sum over the
+  triangle `k ≤ s ≤ n`, writing the outer index as `s = k + j`.
 * `sum_range_add_antidiagonal_of_support`: a sum over antidiagonals below `k + l` equals
   the rectangle `range k × range l` when the summand vanishes outside that rectangle.
 * `sum_range_pow_mul_mul_sum_range_pow_mul_of_pow_eq_zero`: the product of two sums truncated
@@ -654,5 +656,19 @@ theorem sum_range_sum_range_tsub_eq_sum_ite {M : Type*} [AddCommMonoid M] (F : �
   refine sum_congr rfl fun i hi ↦ ?_
   simp only [mem_range] at hp hi
   rw [ite_eq_left (by omega), Nat.add_sub_cancel' (by omega)]
+
+/-- **Exchanging the order of a triangular double sum.** Summing over `s ≤ n` and `k ≤ s` gives
+the same as summing over `k ≤ n` and `j ≤ n - k`, with `s = k + j`. -/
+theorem sum_range_succ_sum_range_succ_comm {M : Type*} [AddCommMonoid M] (n : ℕ)
+    (f : ℕ → ℕ → M) :
+    ∑ s ∈ range (n + 1), ∑ k ∈ range (s + 1), f s k =
+      ∑ k ∈ range (n + 1), ∑ j ∈ range (n - k + 1), f (k + j) k := by
+  calc _ = ∑ s ∈ range (n + 1), ∑ k ∈ range (s + 1), f (k + (s - k)) k :=
+        sum_congr rfl fun s _ => sum_congr rfl fun k hk => by
+          rw [Nat.add_sub_cancel' (mem_range_succ_iff.mp hk)]
+    _ = ∑ k ∈ range (n + 1), ∑ j ∈ range (n + 1 - k), f (k + j) k :=
+        sum_range_diag_flip (n + 1) fun k j => f (k + j) k
+    _ = _ := sum_congr rfl fun k hk => by
+        rw [Nat.sub_add_comm (mem_range_succ_iff.mp hk)]
 
 end Finset

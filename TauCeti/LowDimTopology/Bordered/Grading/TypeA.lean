@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Multilinear.Span
 public import TauCeti.LowDimTopology.Bordered.Grading.Basic
-public import TauCeti.LowDimTopology.Bordered.TypeA
+public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 import Mathlib.Tactic.Group
 
 /-!
@@ -15,9 +15,9 @@ import Mathlib.Tactic.Group
 
 The bordered algebras of Lipshitz, Ozsváth and Thurston are graded by a nonabelian group `G` with
 a distinguished central element `λ`, and their modules are graded by `G`-sets. This file grades
-the `A∞` right modules of `TauCeti.LowDimTopology.Bordered.TypeA`, the type `A` modules, and shows
-that their box tensor products with graded type `D` structures are graded by the balanced product
-of the two grading sets, with differential of degree `λ⁻¹`. It extends the gradings of
+the `A∞` right modules of `TauCeti.LowDimTopology.Bordered.TypeA.Basic`, the type `A` modules, and
+shows that their box tensor products with graded type `D` structures are graded by the balanced
+product of the two grading sets, with differential of degree `λ⁻¹`. It extends the gradings of
 `TauCeti.LowDimTopology.Bordered.Grading.Basic`, which treat differential modules, to modules with
 higher operations.
 
