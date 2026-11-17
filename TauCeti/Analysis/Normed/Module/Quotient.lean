@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import Mathlib.Topology.Algebra.SeparationQuotient.Basic
 import TauCeti.Analysis.Normed.Operator.RingOpNorm
 import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
 
@@ -19,6 +20,8 @@ Descending a continuous semilinear map through a submodule contained in its kern
 operator norm. Equivalently, precomposition with the quotient projection preserves operator
 norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
 part of the duality between a quotient and the annihilator of its defining submodule.
+Likewise, descending a bounded semilinear map to `SeparationQuotient E` via
+`SeparationQuotient.liftCLM` preserves its operator norm (`SeparationQuotient.norm_liftCLM`).
 The quotient projection is moreover a metric quotient map: it has norm at most one and lifts
 every vector of norm less than `r` to a vector of norm less than `r`. A closed-subspace quotient
 has a chosen bounded nonlinear right inverse with public bound constant two
@@ -124,6 +127,25 @@ theorem ball_subset_image_mkQL_ball (S : Submodule 𝕜 E) (r : ℝ) :
   exact ⟨m, mem_ball_zero_iff.2 (by linarith), by simp⟩
 
 end Submodule
+
+namespace SeparationQuotient
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- Lifting a bounded semilinear map to the separation quotient of its domain preserves its
+operator norm. -/
+@[simp]
+theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
+    ‖liftCLM f hf‖ = ‖f‖ := by
+  rw [ContinuousLinearMap.norm_def, ContinuousLinearMap.norm_def]
+  congr 1; ext c
+  refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h ↦ surjective_mk.forall.2 fun x ↦ ?_⟩
+  · simpa only [liftCLM_mk, norm_mk] using h (mk x)
+  · simpa only [liftCLM_mk, norm_mk] using h x
+
+end SeparationQuotient
 
 namespace Submodule.Quotient
 
