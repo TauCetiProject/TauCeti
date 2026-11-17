@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Modular
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.Padics.BilinearForm.JordanGaussSum
