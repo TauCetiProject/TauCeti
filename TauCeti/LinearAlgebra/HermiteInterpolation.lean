@@ -85,9 +85,10 @@ variable [Semiring R]
 
 /-- The Hasse jet map at the nodes `a i` with multiplicities `m i`: the `R`-linear map sending a
 polynomial `f` to its Hasse jets `(hasseDeriv k f).eval (a i)` of the orders `k < m i`. A node
-with `m i = 0` contributes no coordinate. -/
+with `m i = 0` contributes no coordinate. At each node these are the Taylor coordinates
+`TauCeti.taylorJet (a i) (m i)`. -/
 noncomputable def hasseJet (a : ι → R) (m : ι → ℕ) : R[X] →ₗ[R] ∀ i, Fin (m i) → R :=
-  LinearMap.pi fun i => LinearMap.pi fun k => leval (a i) ∘ₗ hasseDeriv (k : ℕ)
+  LinearMap.pi fun i => TauCeti.taylorJet (a i) (m i)
 
 @[simp]
 theorem hasseJet_apply (a : ι → R) (m : ι → ℕ) (f : R[X]) (i : ι) (k : Fin (m i)) :

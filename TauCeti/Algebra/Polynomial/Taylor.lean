@@ -155,7 +155,9 @@ namespace TauCeti
 
 open Polynomial Function
 
-variable {R : Type*} [CommRing R]
+section Semiring
+
+variable {R : Type*} [Semiring R]
 
 /-- The Taylor coordinates of order below `n` at `r`: `f ↦ (D^[k] f (r))_{k < n}`. -/
 noncomputable def taylorJet (r : R) (n : ℕ) : R[X] →ₗ[R] Fin n → R :=
@@ -165,6 +167,10 @@ noncomputable def taylorJet (r : R) (n : ℕ) : R[X] →ₗ[R] Fin n → R :=
 theorem taylorJet_apply (r : R) (n : ℕ) (f : R[X]) (k : Fin n) :
     taylorJet r n f k = (hasseDeriv k f).eval r := by
   simp [taylorJet]
+
+end Semiring
+
+variable {R : Type*} [CommRing R]
 
 /-- The Taylor coordinates of order below `n` at `r` vanish iff `(X - C r) ^ n ∣ f`. -/
 theorem taylorJet_eq_zero_iff {r : R} {n : ℕ} {f : R[X]} :
