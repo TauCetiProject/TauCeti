@@ -109,13 +109,13 @@ private theorem tendsto_inner_apply_of_isClosable {A : E →ₗ.[𝕜] F} (hA : 
     (fun b hb ↦ by simpa using hD b hb) k
   simpa using this
 
-/-- For a closable `A`, an `A`-bounded `V` and a sequence `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1`,
-the vectors `V uₙ` tend to zero weakly. -/
-private theorem tendsto_dual_apply_of_isClosable {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
-    (hA : A.IsClosable) {a b : ℝ} (hV : V.IsRelativelyBounded A a b) {u : ℕ → A.domain}
-    (hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0)) (hAu : ∀ n, ‖A (u n)‖ ≤ 1)
-    (f : StrongDual 𝕜 G) : Tendsto (fun n ↦ f (V ⟨u n, hV.domain_le (u n).2⟩)) atTop (𝓝 0) := by
-  -- Represent `x ↦ f (V x)` as a continuous functional of `(x, A x)`, by Hahn–Banach.
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- For an `A`-bounded `V`, every functional of `V x` is a continuous functional of `(x, A x)`,
+by Hahn–Banach on the graph of `A`. -/
+private theorem exists_dual_apply_eq_of_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
+    {a b : ℝ} (hV : V.IsRelativelyBounded A a b) (f : StrongDual 𝕜 G) :
+    ∃ g : StrongDual 𝕜 (E × F), ∀ x : A.domain,
+      f (V ⟨x, hV.domain_le x.2⟩) = g ((x : E), A x) := by
   let L : A.domain →ₗ[𝕜] E × F := A.domain.subtype.prod A.toFun
   have hL : Function.Injective L := fun x y h ↦ Subtype.ext (congrArg Prod.fst h)
   let Φ : A.domain →ₗ[𝕜] 𝕜 :=
@@ -147,11 +147,21 @@ private theorem tendsto_dual_apply_of_isClosable {A : E →ₗ.[𝕜] F} {V : E 
         (mul_le_mul_of_nonneg_left (le_max_right _ _) (abs_nonneg b))
     linarith
   obtain ⟨g, hg, -⟩ := exists_extension_norm_eq (LinearMap.range L) (ψ.mkContinuous _ hbound)
+  refine ⟨g, fun x ↦ ?_⟩
+  rw [← hψ, ← LinearMap.mkContinuous_apply ψ _ hbound, ← hg]
+  simp [L]
+
+/-- For a closable `A`, an `A`-bounded `V` and a sequence `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1`,
+the vectors `V uₙ` tend to zero weakly. -/
+private theorem tendsto_dual_apply_of_isClosable {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
+    (hA : A.IsClosable) {a b : ℝ} (hV : V.IsRelativelyBounded A a b) {u : ℕ → A.domain}
+    (hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0)) (hAu : ∀ n, ‖A (u n)‖ ≤ 1)
+    (f : StrongDual 𝕜 G) : Tendsto (fun n ↦ f (V ⟨u n, hV.domain_le (u n).2⟩)) atTop (𝓝 0) := by
+  obtain ⟨g, hg⟩ := exists_dual_apply_eq_of_isRelativelyBounded hV f
   have hsplit (n : ℕ) : f (V ⟨u n, hV.domain_le (u n).2⟩) =
       g (ContinuousLinearMap.inl 𝕜 E F (u n)) + g (ContinuousLinearMap.inr 𝕜 E F (A (u n))) := by
-    rw [← hψ, ← LinearMap.mkContinuous_apply ψ _ hbound, ← hg, ← _root_.map_add g]
-    congr 1
-    ext <;> simp [L]
+    rw [hg, ← _root_.map_add g]
+    simp
   have h₁ : Tendsto (fun n ↦ g (ContinuousLinearMap.inl 𝕜 E F (u n))) atTop (𝓝 0) := by
     simpa [Function.comp_def, Prod.mk_zero_zero] using
       ((g.comp (ContinuousLinearMap.inl 𝕜 E F)).continuous.tendsto 0).comp hu
