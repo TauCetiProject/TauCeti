@@ -59,8 +59,6 @@ notation on the structure morphism.
   which some point of a scheme lies away from the closed point is not a field;
 * `AlgebraicGeometry.Scheme.Hom.ne_zero_of_base_ne_closedPoint`: under the same hypothesis, a
   generator of the maximal ideal is nonzero;
-* `AlgebraicGeometry.Scheme.Hom.preimage_closedPoint_nonempty` and `TauCeti.nonempty_specialFiber`:
-  when `X` is nonempty and universally closed over `R`, the special fibre is nonempty;
 * `PrimeSpectrum.mem_asIdeal_iff_eq_closedPoint`: in a local ring of dimension at most one, a
   nonzero element of the maximal ideal lies in a prime exactly when that prime is the maximal
   ideal;
@@ -156,27 +154,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ne_zero_of_base_ne_closedPoint {x : 
     (hx : toBase x ≠ closedPoint R) {π : R} (hπ : maximalIdeal R = Ideal.span {π}) : π ≠ 0 :=
   fun h ↦ toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hx
     (by rw [hπ, h, Ideal.span_singleton_eq_bot])
-
-variable {R} in
-/-- The preimage of the closed point under a universally closed morphism from a nonempty scheme
-over a local ring is nonempty: the image of `X` is closed and nonempty, and every point of `Spec R`
-specializes to the closed point. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_closedPoint_nonempty
-    [UniversallyClosed toBase] [Nonempty X] :
-    (toBase ⁻¹' {closedPoint R}).Nonempty := by
-  obtain ⟨x⟩ : Nonempty X := inferInstance
-  have hmem : closedPoint R ∈ closure (Set.range toBase) :=
-    closure_mono (Set.singleton_subset_iff.mpr (Set.mem_range_self x))
-      (specializes_iff_mem_closure.mp (specializes_closedPoint (toBase x)))
-  rw [(toBase.isClosedMap.isClosed_range).closure_eq] at hmem
-  rcases hmem with ⟨y, hy⟩
-  exact ⟨y, hy⟩
-
-/-- The special fibre of a nonempty scheme universally closed over a local ring is nonempty. -/
-theorem nonempty_specialFiber [UniversallyClosed toBase] [Nonempty X] :
-    Nonempty (specialFiber R toBase).left := by
-  rw [← Set.range_nonempty_iff_nonempty (f := specialFiberι R toBase), range_specialFiberι]
-  exact toBase.preimage_closedPoint_nonempty
 
 end LocalRing
 

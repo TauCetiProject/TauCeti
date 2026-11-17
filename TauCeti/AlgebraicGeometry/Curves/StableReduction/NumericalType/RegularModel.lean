@@ -222,7 +222,7 @@ theorem specialFiberNumericalType_congr {π' : R} (hπ' : maximalIdeal R = Ideal
   let T := toBase.specialFiberNumericalType hX hη h₀ h₁ hπ hreg hconn
   let T' := toBase.specialFiberNumericalType hX hη h₀ h₁ hπ' hreg' hconn
   T.reindex_refl.symm.trans (T.reindex_eq (T' := T') (.refl _) (fun i ↦ Subtype.ext
-    (toBase.specialFiberMultiplicity_eq_of_span_eq (hπ'.symm.trans hπ) hreg' i.1))
+    (toBase.specialFiberMultiplicity_eq_of_span_eq (hπ'.symm.trans hπ) i.1))
     (fun _ ↦ rfl) (fun _ _ ↦ rfl) fun _ ↦ rfl)
 
 /-- Every component of `specialFiberNumericalType` has multiplicity one if and only if the
@@ -387,8 +387,7 @@ theorem numericalType_multiplicity {π : R} (hπ : maximalIdeal R = Ideal.span {
     ((M.numericalType h₀ h₁ hconn).multiplicity i : ℕ) =
       M.toBase.specialFiberMultiplicity π i.1 :=
   M.toBase.specialFiberMultiplicity_eq_of_span_eq
-    ((IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq.symm.trans hπ)
-    (mul_right_injective₀ (IsDiscreteValuationRing.exists_irreducible R).choose_spec.ne_zero) i.1
+    ((IsDiscreteValuationRing.exists_irreducible R).choose_spec.maximalIdeal_eq.symm.trans hπ) i.1
 
 /-- The weight of a component in `M.numericalType` is `dim_k H⁰(Cᵢ, 𝒪_{Cᵢ})`. -/
 @[simp] theorem numericalType_weight (i : (M.numericalType h₀ h₁ hconn).Component) :

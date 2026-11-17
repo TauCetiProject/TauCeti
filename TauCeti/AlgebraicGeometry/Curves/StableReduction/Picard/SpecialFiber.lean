@@ -527,7 +527,8 @@ theorem numericalPicLinear_ofMul_eq_zero_iff (a : LineBundleClass X) :
 
 /-! ### Kernel of the vertical Cartier homomorphism -/
 
-/-- The multiplicity vector `i ↦ mᵢ` lies in `ker verticalLineBundleLinear` since `div(π) = 0`. -/
+/-- The multiplicity vector `i ↦ mᵢ` lies in `ker verticalLineBundleLinear` since
+`div(π) = ∑ᵢ mᵢ Cᵢ` is principal and therefore defines the trivial line bundle. -/
 theorem multiplicity_mem_ker_verticalLineBundleLinear : (fun i ↦ ((𝒯).multiplicity i : ℤ)) ∈
       LinearMap.ker (toBase.verticalLineBundleLinear hX hη h₀ h₁ hπ hreg hconn) := by
   rw [LinearMap.mem_ker]; refine Additive.toMul.injective ?_

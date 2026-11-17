@@ -19,8 +19,8 @@ uniformizer, these coefficients are the component multiplicities of the scheme-t
 special fibre.
 
 The support and positivity facts come from `SpecialFiber.Components`; the sum uses the existing
-finite-sum API for Weil divisors. Associated elements and nonzerodivisor generators of the same
-principal ideal define the same multiplicities (`specialFiberMultiplicity_congr_of_associated`,
+finite-sum API for Weil divisors. Associated elements and generators of the same principal ideal
+define the same multiplicities (`specialFiberMultiplicity_congr_of_associated`,
 `specialFiberMultiplicity_eq_of_span_eq`). This is the divisor calculation in the
 [Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y).
 -/
@@ -58,39 +58,38 @@ theorem specialFiberMultiplicity_coe
   exact Int.toNat_of_nonneg (Scheme.ord_germToFunctionField_nonneg _ trivial)
 
 omit [IsLocalRing R] [Ring.DimensionLEOne R] in
+/-- Two generators of the same principal ideal of `R` define the same special-fibre
+multiplicities. -/
+theorem specialFiberMultiplicity_eq_of_span_eq {π π' : R}
+    (hspan : Ideal.span {π} = Ideal.span {π'}) (x : CodimensionOnePoint X) :
+    toBase.specialFiberMultiplicity π x = toBase.specialFiberMultiplicity π' x := by
+  obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton.mp (hspan ▸ Ideal.mem_span_singleton_self π')
+  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton.mp (hspan.symm ▸ Ideal.mem_span_singleton_self π)
+  let φ : R →+* Γ(X, ⊤) := toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom
+  have hφ (r : R) : toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv r) = φ r := rfl
+  apply Nat.cast_injective (R := ℤ)
+  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe, hφ, hφ, map_mul,
+    map_mul]
+  rcases eq_or_ne (φ π) 0 with hπ0 | hπ0
+  · simp [hπ0]
+  · have hφab : φ a * φ b = 1 := mul_left_cancel₀ hπ0 <| by
+      rw [← mul_assoc, ← map_mul, ← map_mul, ← hb, mul_one]
+    have ha_unit : IsUnit (φ a) := IsUnit.of_mul_eq_one (φ b) hφab
+    have hπ0' : X.germToFunctionField ⊤ (φ π) ≠ 0 :=
+      (map_ne_zero_iff _ (X.germToFunctionField_injective ⊤)).mpr hπ0
+    have ha0' : X.germToFunctionField ⊤ (φ a) ≠ 0 :=
+      (ha_unit.map (X.germToFunctionField ⊤).hom).ne_zero
+    rw [X.ord_mul hπ0' ha0', X.ord_of_isUnit ha_unit trivial, add_zero]
+
+omit [IsLocalRing R] [Ring.DimensionLEOne R] in
 /-- Associated elements of the base ring define the same special-fibre multiplicities: multiplying
-`π` by a unit multiplies its pullback by a global unit on `X`, which has order zero at every
-codimension-one point. -/
+`π` by a unit leaves the generated principal ideal unchanged. -/
 theorem specialFiberMultiplicity_congr_of_associated {π π' : R} (h : Associated π π')
     (x : CodimensionOnePoint X) :
     toBase.specialFiberMultiplicity π x = toBase.specialFiberMultiplicity π' x := by
-  apply Nat.cast_injective (R := ℤ)
-  rw [toBase.specialFiberMultiplicity_coe, toBase.specialFiberMultiplicity_coe]
   obtain ⟨u, rfl⟩ := h
-  rw [map_mul, map_mul, map_mul]
-  set f := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π)
-  set g := toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv ↑u)
-  rcases eq_or_ne (X.germToFunctionField ⊤ f) 0 with hf0 | hf0
-  · rw [hf0, zero_mul]
-  have hg_unit : IsUnit g :=
-    u.isUnit.map (toBase.appTop.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom)
-  have hg0 : X.germToFunctionField ⊤ g ≠ 0 := (hg_unit.map (X.germToFunctionField ⊤).hom).ne_zero
-  rw [X.ord_mul hf0 hg0, X.ord_of_isUnit hg_unit trivial, add_zero]
-
-omit [IsLocalRing R] [Ring.DimensionLEOne R] in
-/-- Two generators of the same principal ideal of `R`, at least one of which is a nonzerodivisor,
-define the same special-fibre multiplicities. -/
-theorem specialFiberMultiplicity_eq_of_span_eq {π π' : R}
-    (hspan : Ideal.span {π} = Ideal.span {π'}) (hreg : IsSMulRegular R π)
-    (x : CodimensionOnePoint X) :
-    toBase.specialFiberMultiplicity π x = toBase.specialFiberMultiplicity π' x := by
-  have h1 : π' ∈ Ideal.span {π} := hspan ▸ Ideal.mem_span_singleton_self π'
-  have h2 : π ∈ Ideal.span {π'} := hspan.symm ▸ Ideal.mem_span_singleton_self π
-  obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton.mp h1
-  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton.mp h2
-  have hab : (1 : R) = a * b := hreg (by linear_combination hb)
-  have hu : IsUnit a := IsUnit.of_mul_eq_one b hab.symm
-  exact toBase.specialFiberMultiplicity_congr_of_associated ⟨hu.unit, rfl⟩ x
+  exact toBase.specialFiberMultiplicity_eq_of_span_eq
+    (Ideal.span_singleton_mul_right_unit u.isUnit π).symm x
 
 /-- At a codimension-one point of the special fibre, the pullback of a nonzero element of the
 maximal ideal has positive multiplicity. -/
