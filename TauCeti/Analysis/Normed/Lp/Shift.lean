@@ -490,10 +490,11 @@ noncomputable def cokerRightShiftPowEquiv (m : ℕ) :
   (Submodule.quotEquivOfEq _ _ (range_rightShift_pow 𝕜 E p m)).trans <|
     (LinearMap.pi fun i : Fin m ↦
       (evalCLM 𝕜 (fun _ : ℕ ↦ E) p i).toLinearMap).quotKerEquivOfSurjective
-      (show Function.Surjective _ from fun v ↦ ⟨∑ i : Fin m, lp.single p (i : ℕ) (v i), by
-        ext j
-        rw [LinearMap.pi_apply, ContinuousLinearMap.coe_coe, evalCLM_apply]
-        exact lp.sum_single_apply_of_injOn_of_mem Fin.val_injective.injOn (Finset.mem_univ j)⟩)
+      (Function.HasRightInverse.surjective ⟨fun v ↦ ∑ i : Fin m, lp.single p (i : ℕ) (v i),
+        fun v ↦ by
+          ext j
+          rw [LinearMap.pi_apply, ContinuousLinearMap.coe_coe, evalCLM_apply]
+          exact lp.sum_single_apply_of_injOn_of_mem Fin.val_injective.injOn (Finset.mem_univ j)⟩)
 
 @[simp]
 theorem cokerRightShiftPowEquiv_mk (m : ℕ) (f : ℓ^p(ℕ, E)) (i : Fin m) :
