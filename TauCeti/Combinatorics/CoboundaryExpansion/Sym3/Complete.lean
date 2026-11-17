@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
-public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
+public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
+import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
+import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Tactic.FieldSimp

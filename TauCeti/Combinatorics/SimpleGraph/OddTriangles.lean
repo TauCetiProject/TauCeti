@@ -381,10 +381,11 @@ end CliqueFree
 
 section Triples
 
-variable (G : SimpleGraph V) [DecidableRel G.Adj]
+variable {G : SimpleGraph V} [DecidableRel G.Adj]
 
 /-- Three vertices form an odd triangle exactly when an odd number of the three pairs are adjacent.
 If two of the vertices coincide, both sides are false. -/
+@[simp 1100, grind =]
 theorem triple_mem_oddTriangleFinset_iff {a b c : V} :
     {a, b, c} ∈ G.oddTriangleFinset ↔ Xor (G.Adj a b) (Xor (G.Adj a c) (G.Adj b c)) := by
   rw [mem_oddTriangleFinset, filter_edgeFinset_toFinset_subset, ← mem_oddTripleFinset,
