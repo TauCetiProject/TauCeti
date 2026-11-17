@@ -56,6 +56,11 @@ bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring t
   exactly `F.encard` colours.
 * `Graph.chromaticNumber_lineGraph_ofSimpleGraph`: for a simple graph the least number of colours
   is that of Mathlib's `SimpleGraph.lineGraph`.
+
+## References
+
+* [Mathlib PR #33313](https://github.com/leanprover-community/mathlib4/pull/33313): representation
+  design for simple-graph edge-colourings as colourings of the line graph.
 -/
 
 public section
