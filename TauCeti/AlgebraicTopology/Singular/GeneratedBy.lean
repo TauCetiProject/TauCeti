@@ -88,24 +88,22 @@ instance isIso_toSSet_map_generatedByCounit (X : TopCat.{u}) :
 /-- The natural singular simplicial set comparison induced by the generated-topology counit. -/
 def toSSetGeneratedByIso :
     (TopCat.toGeneratedByTopCat (X := G) ⋙ GeneratedByTopCat.toTopCat) ⋙ toSSet ≅ toSSet :=
-  NatIso.ofComponents
-    (fun X ↦ asIso (toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)))
-    (fun f ↦ by
-      simpa only [asIso_hom, Functor.comp_map, Functor.id_map, ← Functor.map_comp] using
-        congrArg toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).naturality f))
+  generatedByFunctorIso G toSSet
 
 /-- The forward singular-set comparison is induced by the counit. -/
 @[simp]
 theorem toSSetGeneratedByIso_hom_app (X : TopCat.{u}) :
     (toSSetGeneratedByIso G).hom.app X =
-      toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X) :=
-  (rfl)
+      toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X) := by
+  unfold toSSetGeneratedByIso generatedByFunctorIso
+  rfl
 
 /-- The inverse singular-set comparison is the inverse of the counit-induced map. -/
 theorem toSSetGeneratedByIso_inv_app (X : TopCat.{u}) :
     (toSSetGeneratedByIso G).inv.app X =
-      inv (toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)) :=
-  (rfl)
+      inv (toSSet.map ((GeneratedByTopCat.adjCounit (X := G)).app X)) := by
+  simpa only [IsIso.Iso.inv_hom, toSSetGeneratedByIso_hom_app] using
+    NatIso.isIso_inv_app (toSSetGeneratedByIso G).hom X
 
 /-- The counit-induced singular-set map cancels the inverse comparison. -/
 -- Naturality already rewrites this left-hand side, so the cancellation is rewrite-only.
@@ -231,21 +229,6 @@ theorem chainComplexMap_toSSetGeneratedByIso_inv_app_chainComplexMap_adjCounit
   rw [← singularChainComplexFunctorGeneratedByIso_hom_app,
     ← singularChainComplexFunctorGeneratedByIso_inv_app]
   exact (singularChainComplexFunctorGeneratedByIso G R).inv_hom_id_app X
-
-/-- On each singular-chain summand, the inverse comparison is induced by lifting its simplex
-to the generated topology. -/
-@[reassoc]
-theorem ιChainComplex_singularChainComplexFunctorGeneratedByIso_inv_app_f
-    (X : TopCat.{u}) {n : ℕ} (σ : (TopCat.toSSet.obj X).obj (Opposite.op ⦋n⦌)) :
-    dsimp% [AlgebraicTopology.singularChainComplexFunctor]
-      ((TopCat.toSSet.obj X).ιChainComplex σ ≫
-        ((singularChainComplexFunctorGeneratedByIso G R).inv.app X).f n =
-      (TopCat.toSSet.obj ((TopCat.toGeneratedByTopCat (X := G) ⋙
-        GeneratedByTopCat.toTopCat).obj X)).ιChainComplex
-          ((((TopCat.toSSetGeneratedByIso G).inv.app X).app (Opposite.op ⦋n⦌)) σ)) := by
-  rw [singularChainComplexFunctorGeneratedByIso_inv_app]
-  -- Singular chains on `X` are definitionally `(TopCat.toSSet.obj X).chainComplex R`.
-  exact SSet.ι_chainComplexMap_f _ _ _ R σ
 
 -- The coefficient morphism universe is also independent of both space universes.
 example (X : TopCat.{u}) :

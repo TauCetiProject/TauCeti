@@ -56,7 +56,35 @@ theorem adjCounit_app_hom {ι : Type*} (G : ι → Type*) [∀ i, TopologicalSpa
     ((adjCounit (X := G)).app X).hom = Topology.WithGeneratedByTopology.counit G X :=
   (rfl)
 
+/-- Refining the counit gives the counit at the refined space on underlying continuous maps. -/
+@[simp]
+theorem toGeneratedByTopCat_map_adjCounit_hom {ι : Type*} (G : ι → Type*)
+    [∀ i, TopologicalSpace (G i)] (X : TopCat) :
+    dsimp% (((TopCat.toGeneratedByTopCat (X := G)).map ((adjCounit (X := G)).app X)).hom =
+      (adjCounit (X := G)).app ((TopCat.toGeneratedByTopCat (X := G)).obj X).obj) := by
+  ext x
+  rfl
+
 end GeneratedByTopCat
+
+namespace TauCeti
+
+open CategoryTheory
+
+/-- A functor inverting generated-topology counits is naturally unchanged by refinement. -/
+@[expose]
+noncomputable def generatedByFunctorIso {ι : Type*} (G : ι → Type*)
+    [∀ i, TopologicalSpace (G i)] {D : Type*} [Category* D] (F : TopCat ⥤ D)
+    [∀ X, IsIso (F.map ((GeneratedByTopCat.adjCounit (X := G)).app X))] :
+    (TopCat.toGeneratedByTopCat (X := G) ⋙ GeneratedByTopCat.toTopCat) ⋙ F ≅ F := by
+  have (X : TopCat) :
+      IsIso ((Functor.whiskerRight (GeneratedByTopCat.adjCounit (X := G)) F).app X) :=
+    inferInstanceAs (IsIso (F.map ((GeneratedByTopCat.adjCounit (X := G)).app X)))
+  have := NatIso.isIso_of_isIso_app
+    (Functor.whiskerRight (GeneratedByTopCat.adjCounit (X := G)) F)
+  exact asIso (Functor.whiskerRight (GeneratedByTopCat.adjCounit (X := G)) F)
+
+end TauCeti
 
 namespace ContinuousMap
 
