@@ -365,30 +365,6 @@ private theorem castAdd_eq_castLE_g2 (i : Fin 2) :
     (Fin.castAdd 10 i : Fin 12) = Fin.castLE (by omega) i :=
   rfl
 
-private theorem b2SpecialIsogeny_indexEquiv_simpleIndex (ht : (B 2).Valid)
-    (i : Fin (B 2).rank) :
-    b2SpecialIsogeny.indexEquiv ((B 2).simpleIndex ht i) =
-      (B 2).simpleIndex ht (lengthPermRankTwo i) :=
-  (congrArg (⇑b2SpecialIsogeny.indexEquiv) (simpleIndex_B 2 ht i)).trans
-    (((b2SpecialIsogeny_indexEquiv_apply _).trans
-        (b2SpecialIsogenyIndexEquiv_typeBSimpleIndex i)).trans
-      (simpleIndex_B 2 ht (lengthPermRankTwo i)).symm)
-
-private theorem g2SpecialIsogeny_indexEquiv_simpleIndex (ht : G2.Valid) (i : Fin G2.rank) :
-    g2SpecialIsogeny.indexEquiv (G2.simpleIndex ht i) =
-      G2.simpleIndex ht (lengthPermRankTwo i) :=
-  (congrArg (⇑g2SpecialIsogeny.indexEquiv)
-      ((simpleIndex_G2 ht i).trans (castAdd_eq_castLE_g2 i))).trans
-    (((g2SpecialIsogeny_indexEquiv_apply _).trans (g2SpecialIsogenyIndex_castLE i)).trans
-      (((castAdd_eq_castLE_g2 (lengthPermRankTwo i)).symm).trans
-        (simpleIndex_G2 ht (lengthPermRankTwo i)).symm))
-
-private theorem f4SpecialIsogeny_indexEquiv_simpleIndex (ht : F4.Valid) (i : Fin F4.rank) :
-    f4SpecialIsogeny.indexEquiv (F4.simpleIndex ht i) = F4.simpleIndex ht (lengthPermF4 i) :=
-  (congrArg (⇑f4SpecialIsogeny.indexEquiv) (simpleIndex_F4 ht i)).trans
-    (((f4SpecialIsogeny_indexEquiv_apply _).trans (f4SpecialIsogenyIndex_castAdd i)).trans
-      (simpleIndex_F4 ht (lengthPermF4 i)).symm)
-
 private theorem b2SpecialIsogeny_exponent_simpleIndex (ht : (B 2).Valid) (i : Fin (B 2).rank) :
     b2SpecialIsogeny.exponent ((B 2).simpleIndex ht i) = (B 2).rootLength i :=
   (congrArg b2SpecialIsogeny.exponent (simpleIndex_B 2 ht i)).trans
