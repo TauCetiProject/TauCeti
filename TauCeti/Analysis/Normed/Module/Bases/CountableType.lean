@@ -12,6 +12,9 @@ public import TauCeti.Analysis.Normed.Group.Quotient
 public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Analysis.Normed.Module.RieszLemma
 
+import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Span.Basic
+
 /-!
 # `t`-orthogonal bases and subspaces of normed spaces of countable type
 
@@ -43,6 +46,10 @@ has a `t`-orthogonal one. This file constructs these bases by an approximate Gra
 * `TauCeti.separatingDual_of_dense_span` and `Submodule.separatingDual_span_of_countable`: the
   coordinate functionals of a `t`-orthogonal basis separate points on any ultrametric normed space
   of countable type, and in particular on the span of any countable set.
+* `TauCeti.exists_bounded_dual_ne_zero_of_dense_span` and
+  `Submodule.exists_bounded_dual_ne_zero_span_of_countable`: the uniform bounded-functional
+  separation statement valid over any complete normed field `K`, whether trivially or nontrivially
+  normed (using open-ball submodules `{y | ‖y‖ < ‖x‖}` when `K` has the trivial norm).
 
 Neither a discrete valuation nor completeness of `E` is needed: only the finite-dimensional
 subspaces spanned by initial segments have to be closed, which holds over a complete field.
@@ -330,25 +337,57 @@ theorem separatingDual_of_dense_span {v : ℕ → E}
 /-- Continuous linear functionals separate points on the span of any countable set in an
 ultrametric normed space over a complete nontrivially normed field. -/
 theorem _root_.Submodule.separatingDual_span_of_countable {S : Set E} (hS : S.Countable) :
-    SeparatingDual K (span K S) := by
-  obtain ⟨f, hf⟩ : ∃ f : ℕ → E, insert 0 S = range f :=
-    (hS.insert 0).exists_eq_range (insert_nonempty _ _)
-  have hfS (n : ℕ) : f n ∈ span K S := by
-    have : f n ∈ insert (0 : E) S := hf ▸ mem_range_self n
-    rcases mem_insert_iff.mp this with h0 | hn
-    · rw [h0]
-      exact zero_mem _
-    · exact subset_span hn
-  let v : ℕ → span K S := fun n ↦ ⟨f n, hfS n⟩
-  have hv : (span K S).subtype ∘ v = f := by
-    ext n
-    exact (span K S).subtype_apply (v n)
-  have htop : span K (range v) = ⊤ := by
-    apply Submodule.map_injective_of_injective (span K S).injective_subtype
-    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span, ← range_comp, hv, ← hf,
-      span_insert_zero]
-  refine separatingDual_of_dense_span (v := v) ?_
-  rw [htop]
-  exact dense_univ
+    SeparatingDual K (span K S) :=
+  let ⟨_, hv⟩ := hS.exists_span_range_eq_top K
+  separatingDual_of_dense_span (by rw [hv, top_coe]; exact dense_univ)
+
+end TauCeti
+
+namespace TauCeti
+
+/-- **Bounded linear functionals separate points on spaces of countable type (arbitrary complete
+normed field)**: over any complete normed field `K` (whether trivially or nontrivially normed),
+bounded `K`-linear functionals separate nonzero points of any ultrametric normed `K`-space `E`
+admitting a countable densely spanning sequence. -/
+theorem exists_bounded_dual_ne_zero_of_dense_span {K E : Type*} [NormedField K] [CompleteSpace K]
+    [NormedAddCommGroup E] [NormedSpace K E] [IsUltrametricDist E]
+    {v : ℕ → E} (hv : Dense (span K (range v) : Set E)) {x : E} (hx : x ≠ 0) :
+    ∃ (φ : E →ₗ[K] K) (C : ℝ), (∀ y, ‖φ y‖ ≤ C * ‖y‖) ∧ φ x ≠ 0 := by
+  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨⟨_, rfl⟩⟩
+  · -- When `K` is trivially normed, the open ball `{y | ‖y‖ < ‖x‖}` is a `K`-submodule
+    -- avoiding `x`; any algebraic functional on the quotient separates `x` with bound `‖x‖⁻¹`.
+    let B : Submodule K E :=
+      { carrier := {y | ‖y‖ < ‖x‖}
+        zero_mem' := by simpa using norm_pos_iff.mpr hx
+        add_mem' := fun {y z} hy hz ↦
+          (IsUltrametricDist.norm_add_le_max y z).trans_lt (max_lt hy hz)
+        smul_mem' := fun a {y} hy ↦ (norm_smul_le a y).trans_lt <|
+          (mul_le_of_le_one_left (norm_nonneg y)
+            (NormedDivisionRing.norm_le_one_of_discrete a)).trans_lt hy }
+    have hxB : B.mkQ x ≠ 0 := by
+      rw [ne_eq, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+      exact lt_irrefl ‖x‖
+    obtain ⟨ψ, hψ⟩ := Module.Projective.exists_dual_ne_zero K hxB
+    refine ⟨ψ.comp B.mkQ, ‖x‖⁻¹, fun y ↦ ?_, hψ⟩
+    rcases lt_or_ge ‖y‖ ‖x‖ with hy | hy
+    · have h0 : B.mkQ y = 0 := (Submodule.Quotient.mk_eq_zero B).mpr hy
+      simp [h0, mul_nonneg (inv_nonneg.mpr (norm_nonneg x)) (norm_nonneg y)]
+    · calc ‖ψ (B.mkQ y)‖ ≤ 1 := NormedDivisionRing.norm_le_one_of_discrete _
+        _ = ‖x‖⁻¹ * ‖x‖ := (inv_mul_cancel₀ (norm_ne_zero_iff.mpr hx)).symm
+        _ ≤ ‖x‖⁻¹ * ‖y‖ :=
+          mul_le_mul_of_nonneg_left hy (inv_nonneg.mpr (norm_nonneg x))
+  · have : SeparatingDual K E := separatingDual_of_dense_span hv
+    obtain ⟨f, hf⟩ := SeparatingDual.exists_ne_zero (R := K) hx
+    exact ⟨f.toLinearMap, ‖f‖, f.le_opNorm, hf⟩
+
+/-- Bounded `K`-linear functionals separate nonzero points of the `K`-span of any countable set in
+an ultrametric normed space over any complete normed field `K` (trivially or nontrivially
+normed). -/
+theorem _root_.Submodule.exists_bounded_dual_ne_zero_span_of_countable {K E : Type*}
+    [NormedField K] [CompleteSpace K] [NormedAddCommGroup E] [NormedSpace K E]
+    [IsUltrametricDist E] {S : Set E} (hS : S.Countable) {x : span K S} (hx : x ≠ 0) :
+    ∃ (φ : span K S →ₗ[K] K) (C : ℝ), (∀ y, ‖φ y‖ ≤ C * ‖y‖) ∧ φ x ≠ 0 :=
+  let ⟨_, hv⟩ := hS.exists_span_range_eq_top K
+  exists_bounded_dual_ne_zero_of_dense_span (by rw [hv, top_coe]; exact dense_univ) hx
 
 end TauCeti
