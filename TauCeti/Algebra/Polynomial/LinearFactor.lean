@@ -34,6 +34,8 @@ that does not vanish at the root.
 * `Polynomial.modByMonic_X_sub_C_eq_zero`: division by a central linear factor has zero
   remainder at a root.
 * `Polynomial.natDegree_C_sub_X`: the reversed linear factor `C x - X` has degree `1`.
+* `Polynomial.one_sub_C_inv_mul_X_eq_C_mul_X_sub_C`: `1 - a⁻¹ X = (-a⁻¹) * (X - a)` for nonzero
+  `a` in a division ring.
 * `Polynomial.exists_eq_C_mul_X_sub_C_of_natDegree_le_one`: a polynomial of `natDegree ≤ 1` with
   root `x` is `C γ * (X - C x)` for some `γ`.
 * `Polynomial.eval_mul_pos_of_natDegree_le_one_of_no_roots`: constant nonzero sign on a root-free
@@ -81,6 +83,12 @@ theorem modByMonic_X_sub_C_eq_zero {B : Type*} [Ring B] {p : B[X]} {c : B}
 theorem natDegree_C_sub_X {R : Type*} [Ring R] [Nontrivial R] (x : R) :
     (C x - X).natDegree = 1 := by
   rw [natDegree_sub, natDegree_X_sub_C]
+
+/-- Over a division ring, the normalised linear factor `1 - a⁻¹ X` for `a ≠ 0` equals
+`C (-a⁻¹) * (X - C a)`. -/
+theorem one_sub_C_inv_mul_X_eq_C_mul_X_sub_C {R : Type*} [DivisionRing R] {a : R} (ha : a ≠ 0) :
+    (1 - C a⁻¹ * X : R[X]) = C (-a⁻¹) * (X - C a) := by
+  simp [mul_sub, ← C_mul, inv_mul_cancel₀ ha, neg_add_eq_sub]
 
 /-- A polynomial of degree at most one with prescribed root `x` is a left scalar multiple of
 `X - C x`, over any ring. -/

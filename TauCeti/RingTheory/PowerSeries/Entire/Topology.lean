@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.GaussFamily
+import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+import TauCeti.Analysis.Normed.Ring.InfiniteProd
 
 /-!
 # The Gauss topology on entire series
@@ -30,6 +32,12 @@ ultrametric hypothesis on the algebra, is continuous for this topology: its valu
 constant multiple of the Gauss norm at the radius `2 ‖b‖ + 1`
 (`PowerSeries.norm_evalAt_le_mul_gaussNorm`).
 
+Because `PowerSeries.IsEntire.subring R` is a complete nonarchimedean ring whose restrictions to
+each closed disc are ultrametric normed rings, convergent infinite products are preserved by
+restriction, evaluation, constant coefficients, and strict Gauss-norm perturbation bounds near `1`,
+and any family tending to `1` along the cofinite filter is unconditionally multipliable in
+`PowerSeries.IsEntire.subring R` even when its factors are not units.
+
 ## Main results
 
 * `TauCeti.PowerSeries.IsEntire.tendsto_iff`: convergence of entire series is convergence in every
@@ -38,8 +46,16 @@ constant multiple of the Gauss norm at the radius `2 ‖b‖ + 1`
 * `TauCeti.PowerSeries.IsEntire.denseRange_polynomialHom`: polynomials are dense.
 * `TauCeti.PowerSeries.IsEntire.range_restrictFamily`: the image of the restriction embedding.
 * `TauCeti.PowerSeries.IsEntire.continuous_evalAtHom`: evaluation is continuous.
-* Instances: `IsUniformAddGroup`, `IsTopologicalRing`, `T2Space` and, over complete coefficients,
-  `CompleteSpace` on `PowerSeries.IsEntire.subring R`.
+* `HasProd.isEntire_restrict`, `HasProd.evalAt_isEntire`, `HasProd.constantCoeff_isEntire_eq_one`
+  and `HasProd.gaussNorm_isEntire_sub_one_lt`: preservation of convergent infinite products of
+  entire series under restriction, evaluation, constant coefficients and strict Gauss-norm bounds
+  near `1`.
+* `Filter.Tendsto.summable_finset_prod_isEntire_of_cofinite`,
+  `Filter.Tendsto.multipliable_one_add_isEntire_of_cofinite` and
+  `Filter.Tendsto.multipliable_isEntire_of_cofinite`: unconditional convergence of infinite
+  products in `PowerSeries.IsEntire.subring R` over complete coefficients.
+* Instances: `IsUniformAddGroup`, `IsTopologicalRing`, `NonarchimedeanRing`, `T2Space` and, over
+  complete coefficients, `CompleteSpace` on `PowerSeries.IsEntire.subring R`.
 
 ## References
 
@@ -142,6 +158,9 @@ instance : IsUniformAddGroup (IsEntire.subring R) :=
 instance : IsTopologicalRing (IsEntire.subring R) :=
   GaussFamily.isTopologicalRing isUniformInducing_restrictFamily
 
+instance : NonarchimedeanRing (IsEntire.subring R) :=
+  GaussFamily.nonarchimedeanRing isUniformInducing_restrictFamily
+
 /-- Polynomial truncations converge in the Gauss norms at all positive radii simultaneously. -/
 theorem tendsto_polynomialHom_trunc (f : IsEntire.subring R) :
     Tendsto (fun n ↦ IsEntire.polynomialHom ((f : R⟦X⟧).trunc n)) atTop (𝓝 f) :=
@@ -208,3 +227,86 @@ theorem continuous_evalAtHom (b : A) : Continuous (IsEntire.evalAtHom R b) := by
 end Eval
 
 end TauCeti.PowerSeries.IsEntire
+
+section InfiniteProd
+
+open TauCeti.PowerSeries.IsEntire
+
+attribute [local instance] TauCeti.PowerSeries.IsEntire.radius_pos
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+/-- Restriction to the closed disc of a positive radius preserves convergent infinite products of
+entire series. -/
+theorem HasProd.isEntire_restrict {ι : Type*} {f : ι → IsEntire.subring R}
+    {g : IsEntire.subring R} (hf : HasProd f g) (r : Set.Ioi (0 : ℝ)) :
+    HasProd (fun i ↦ restrict r (f i)) (restrict r g) := by
+  simpa only [Function.comp_def] using hf.map (restrict r) (uniformContinuous_restrict r).continuous
+
+/-- Evaluation at a point of a complete normed commutative algebra preserves convergent infinite
+products of entire series. -/
+theorem HasProd.evalAt_isEntire {ι A : Type*} [NormedCommRing A] [Algebra R A] [IsBoundedSMul R A]
+    [CompleteSpace A] {f : ι → IsEntire.subring R} {g : IsEntire.subring R}
+    (hf : HasProd f g) (b : A) :
+    HasProd (fun i ↦ (f i : R⟦X⟧).evalAt b) ((g : R⟦X⟧).evalAt b) := by
+  simpa only [Function.comp_def, IsEntire.evalAtHom_apply] using
+    hf.map (IsEntire.evalAtHom R b) (continuous_evalAtHom b)
+
+/-- If every factor of a convergent infinite product of entire series has constant coefficient `1`,
+then so does the product. -/
+theorem HasProd.constantCoeff_isEntire_eq_one {ι : Type*} {f : ι → IsEntire.subring R}
+    {g : IsEntire.subring R} (hf : HasProd f g)
+    (h : ∀ i, constantCoeff (f i : R⟦X⟧) = 1) :
+    constantCoeff (g : R⟦X⟧) = 1 := by
+  let φ : IsEntire.subring R →+* R := constantCoeff.comp (IsEntire.subring R).subtype
+  have hc : Continuous φ :=
+    (uniformContinuous_coeff (R := R) 0).continuous.congr fun q ↦ by simp [φ]
+  have h1 : HasProd (fun _ : ι ↦ (1 : R)) 1 := hasProd_one
+  exact (hf.map φ hc).unique
+    (by simpa only [Function.comp_def, φ, RingHom.comp_apply, Subring.coe_subtype, h] using h1)
+
+/-- If every factor of a convergent infinite product of entire series lies strictly within `ε ≤ 1`
+of `1` in the Gauss norm at `r > 0`, then so does the infinite product. -/
+theorem HasProd.gaussNorm_isEntire_sub_one_lt {ι : Type*} {f : ι → IsEntire.subring R}
+    {g : IsEntire.subring R} (hf : HasProd f g) {r ε : ℝ} (hr : 0 < r) (hε0 : 0 < ε)
+    (hε : ε ≤ 1) (h : ∀ i, ((f i : R⟦X⟧) - 1).gaussNorm norm r < ε) :
+    ((g : R⟦X⟧) - 1).gaussNorm norm r < ε := by
+  have : Fact (0 < r) := ⟨hr⟩
+  have hlt := (hf.isEntire_restrict ⟨r, hr⟩).norm_sub_one_lt hε0 hε fun i ↦ by
+    rw [TauCeti.PowerSeries.norm_eq_gaussNorm, AddSubgroupClass.coe_sub, coe_restrict,
+      OneMemClass.coe_one]
+    exact h i
+  rwa [TauCeti.PowerSeries.norm_eq_gaussNorm, AddSubgroupClass.coe_sub, coe_restrict,
+    OneMemClass.coe_one] at hlt
+
+variable [CompleteSpace R]
+
+/-- In `PowerSeries.IsEntire.subring R` over a complete ultrametric normed commutative ring, if `f`
+tends to `0` along the cofinite filter, then the family of finite products `s ↦ ∏ i ∈ s, f i` is
+unconditionally summable. -/
+theorem Filter.Tendsto.summable_finset_prod_isEntire_of_cofinite {ι : Type*}
+    {f : ι → IsEntire.subring R} (hf : Tendsto f cofinite (𝓝 0)) :
+    Summable fun s : Finset ι ↦ ∏ i ∈ s, f i := by
+  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero (tendsto_iff.mpr fun r ↦ ?_)
+  have hr : Tendsto (fun i ↦ restrict r (f i)) cofinite (𝓝 0) := by
+    simpa only [map_zero] using tendsto_iff.mp hf r
+  simpa only [map_zero, map_prod] using hr.finset_prod_of_cofinite
+
+/-- In `PowerSeries.IsEntire.subring R` over a complete ultrametric normed commutative ring, if `f`
+tends to `0` along the cofinite filter, then `i ↦ 1 + f i` is unconditionally multipliable. -/
+theorem Filter.Tendsto.multipliable_one_add_isEntire_of_cofinite {ι : Type*}
+    {f : ι → IsEntire.subring R} (hf : Tendsto f cofinite (𝓝 0)) :
+    Multipliable fun i ↦ 1 + f i :=
+  multipliable_one_add_of_summable_prod hf.summable_finset_prod_isEntire_of_cofinite
+
+/-- In `PowerSeries.IsEntire.subring R` over a complete ultrametric normed commutative ring, any
+family tending to `1` along the cofinite filter is unconditionally multipliable, even when its
+factors are not units of `PowerSeries.IsEntire.subring R`. -/
+theorem Filter.Tendsto.multipliable_isEntire_of_cofinite {ι : Type*}
+    {f : ι → IsEntire.subring R} (hf : Tendsto f cofinite (𝓝 1)) :
+    Multipliable f := by
+  have h0 : Tendsto (fun i ↦ f i - 1) cofinite (𝓝 0) := by
+    simpa only [sub_self] using hf.sub_const 1
+  simpa only [add_sub_cancel] using h0.multipliable_one_add_isEntire_of_cofinite
+
+end InfiniteProd
