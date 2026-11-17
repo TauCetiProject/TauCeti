@@ -47,7 +47,7 @@ private theorem coeff_single_eq_zero_of_mem_closure_span_weightedX_sq (i : Fin k
       {weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ^ 2} : Set _)) :
     MvPowerSeries.coeff (Finsupp.single i 1) (f : MvPowerSeries (Fin k) A) = 0 := by
   refine closure_minimal (fun g hg ↦ ?_) (isClosed_singleton.preimage
-    (continuous_coeff_one_weight (Finsupp.single i 1))) hf
+    (continuous_coeff_singleton isWeightFamily_one_weight (Finsupp.single i 1))) hf
   obtain ⟨g, rfl⟩ := Ideal.mem_span_singleton'.mp hg
   simp [coe_weightedX, MvPowerSeries.X_pow_eq, MvPowerSeries.coeff_mul_monomial]
 
