@@ -13,6 +13,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
@@ -49,17 +50,21 @@ The file develops:
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
   applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
   `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
-  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`); for positive degree it makes a homogeneous
-  symbol, with its value `0` at the zero frequency, continuous on all of `X × E`
-  (`HomogeneousSymbol.continuous_coefficient`);
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`), and at a nonzero frequency the mixed
+  derivatives of `∂_{xᵢ} ∂_{ξⱼ} a` are those of `a` with one more derivative of each kind
+  (`HomogeneousSymbol.mixedDeriv_spatialDeriv_frequencyDeriv`); for positive degree the growth
+  bound makes a homogeneous symbol, with its value `0` at the zero frequency, continuous on all
+  of `X × E` (`HomogeneousSymbol.continuous_coefficient`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
   frequency space it is bounded by `C ‖ξ‖ ^ (m - l)` for positions in a compact set
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_le`);
 * smoothness of the cut-off term `χ(ξ) • a(x, ξ)` on the whole space, for a frequency cutoff
-  `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`). On a proper frequency space it satisfies
-  the symbol estimates of order `m`, with the weight `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
+  `χ` (`HomogeneousSymbol.contDiff_smul_coefficient`), and of its rescaling `χ(ξ / R) • a(x, ξ)`
+  (`HomogeneousSymbol.contDiff_comp_inv_smul_snd_smul_coefficient`). On a proper frequency space
+  the cut-off term satisfies the symbol estimates of order `m`, with the weight
+  `⟨ξ⟩ ^ (m - l) = (1 + ‖ξ‖ ^ 2) ^ ((m - l) / 2)`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le`), and changing the cutoff
   changes it by a smoothing term, whose derivatives are bounded by every power of `⟨ξ⟩`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
@@ -775,20 +780,23 @@ theorem continuous_coefficient [ProperSpace E] [WeaklyLocallyCompactSpace X] (hm
     exact hC q.1 hq.1 q.2
   · exact (a.contDiffAt_coefficient hξ).continuousAt
 
-/-- For a frequency cutoff `χ`, the cut-off term `χ(ξ) • a(x, ξ)` is smooth on the whole space,
-including the zero frequency. -/
-theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
-    ContDiff ℝ ∞ fun p : X × E ↦ χ p.2 • a.coefficient p := by
+/-- For a frequency cutoff `χ` and a scale `R`, the cut-off term `χ(ξ / R) • a(x, ξ)` is smooth on
+the whole space, including the zero frequency. -/
+theorem contDiff_comp_inv_smul_snd_smul_coefficient (χ : FrequencyCutoff E) (R : ℝ) :
+    ContDiff ℝ ∞ fun p : X × E ↦ χ (R⁻¹ • p.2) • a.coefficient p := by
   rw [contDiff_iff_contDiffAt]
   intro p
   rcases eq_or_ne p.2 0 with h | h
   · -- Near the zero frequency the cutoff, hence the product, vanishes identically.
-    refine (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq ?_
-    filter_upwards [(continuous_snd.tendsto p).eventually
-      (χ.eventuallyEq_zero_of_norm_lt_one (ξ := p.2) (by simp [h]))] with q hq
-    rw [Pi.zero_apply] at hq
-    simp [hq]
-  · exact ((χ.contDiff.comp contDiff_snd).contDiffAt).smul (a.contDiffAt_coefficient h)
+    exact (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq
+      (χ.comp_inv_smul_snd_smul_eventuallyEq_zero R a.coefficient (by simp [h]))
+  · exact (χ.contDiff_comp_inv_smul_snd R).contDiffAt.smul (a.contDiffAt_coefficient h)
+
+/-- For a frequency cutoff `χ`, the cut-off term `χ(ξ) • a(x, ξ)` is smooth on the whole space,
+including the zero frequency. -/
+theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
+    ContDiff ℝ ∞ fun p : X × E ↦ χ p.2 • a.coefficient p := by
+  simpa using a.contDiff_comp_inv_smul_snd_smul_coefficient χ 1
 
 end Growth
 
@@ -851,6 +859,44 @@ theorem exists_norm_mixedDeriv_le
     exact congrArg (coordinateDeriv α · x)
       (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
   exact h ▸ hCK x hx ξ
+
+/-- At a nonzero frequency, the mixed derivatives of `∂_{xᵢ} ∂_{ξⱼ} a` are the mixed derivatives
+of `a` with one more position derivative along `i` and one more frequency derivative along `j`. -/
+theorem mixedDeriv_spatialDeriv_frequencyDeriv
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (i j : Fin n)
+    (α β : List (Fin n)) (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    mixedDeriv α β ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
+        (EuclideanSpace.single i 1)).coefficient x ξ =
+      mixedDeriv (α ++ [i]) (β ++ [j]) a.coefficient x ξ := by
+  -- The smooth cut-off term `G = χ(4 ξ' / ‖ξ‖) • a`, equal to `a` at frequencies `‖ξ'‖ > ‖ξ‖ / 2`.
+  have hξ' : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  let χ : FrequencyCutoff (CoordinateSpace n) := default
+  let G : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
+    fun p ↦ χ ((‖ξ‖ / 4)⁻¹ • p.2) • a.coefficient p
+  have hG : ContDiff ℝ ∞ G := a.contDiff_comp_inv_smul_snd_smul_coefficient χ _
+  have hGa (p : CoordinateSpace n × CoordinateSpace n) (hp : ‖ξ‖ / 2 < ‖p.2‖) :
+      G p = a.coefficient p := by
+    rw [show G p = χ ((‖ξ‖ / 4)⁻¹ • p.2) • a.coefficient p from rfl,
+      χ.apply_inv_smul_eq_one (by positivity) (by linarith), one_smul]
+  have hnhds : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 (x, ξ), ‖ξ‖ / 2 < ‖q.2‖ :=
+    (continuous_norm.comp continuous_snd).continuousAt.eventually_const_lt (half_lt_self hξ')
+  -- Near `(x, ξ)`, the derivative `∂_{xᵢ} ∂_{ξⱼ} a` is that of `G`.
+  have hgerm : ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
+      (EuclideanSpace.single i 1)).coefficient =ᶠ[𝓝 (x, ξ)]
+        fun p ↦ coordinateDeriv [i] (fun y ↦ coordinateDeriv [j] (fun η ↦ G (y, η)) p.2) p.1 := by
+    filter_upwards [hnhds] with p hp
+    have hp0 : p.2 ≠ 0 := norm_pos_iff.1 (by linarith)
+    rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+    congr 2
+    funext y
+    have h : (fun η ↦ G (y, η)) =ᶠ[𝓝 p.2] fun η ↦ a.coefficient (y, η) := by
+      filter_upwards [(continuous_norm.continuousAt (x := p.2)).eventually_const_lt hp] with η hη
+      exact hGa (y, η) hη
+    rw [coefficient_frequencyDeriv _ _ hp0, coordinateDeriv_cons, coordinateDeriv_nil,
+      h.fderiv_eq]
+  rw [hgerm.mixedDeriv_eq, mixedDeriv_coordinateDeriv_fst (hG.coordinateDeriv_snd [j]),
+    mixedDeriv_coordinateDeriv_snd]
+  exact (Filter.EventuallyEq.mixedDeriv_eq (hnhds.mono fun q hq ↦ hGa q hq) _ _)
 
 end MixedDeriv
 
