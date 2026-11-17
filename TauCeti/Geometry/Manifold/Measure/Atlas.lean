@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Measure.AE
 public import TauCeti.Geometry.Manifold.Measure.Differentiable
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.PartialEquiv
 
 /-!
 # Null sets and almost everywhere in charts of the maximal atlas
@@ -42,14 +43,6 @@ open scoped Manifold
 
 namespace TauCeti
 
-/-- The image under `e` of the points of its source where `p` fails is null exactly when `p` holds
-at the preimage of almost every point of the target of `e`. -/
-private theorem measure_image_setOf_not_inter_source_eq_zero_iff {α β : Type*}
-    [MeasurableSpace β] (e : PartialEquiv α β) (μ : Measure β) {p : α → Prop} :
-    μ (e '' ({x | ¬p x} ∩ e.source)) = 0 ↔ ∀ᵐ y ∂μ, y ∈ e.target → p (e.symm y) := by
-  rw [MeasureTheory.ae_iff, inter_comm, PartialEquiv.image_source_inter_eq']
-  simp only [inter_def, preimage_ofPred_eq, mem_ofPred_eq, not_imp]
-
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -76,7 +69,7 @@ theorem ae_iff_of_isAddHaarMeasure (μ : Measure E) [μ.IsAddHaarMeasure] {p : M
     (∀ᶠ x in ae I M, p x) ↔
       ∀ x₀ : M, ∀ᵐ y ∂μ, y ∈ (extChartAt I x₀).target → p ((extChartAt I x₀).symm y) :=
   ae_iff.trans <| (isNullSet_iff_of_isAddHaarMeasure μ).trans <| forall_congr' fun x₀ ↦
-    measure_image_setOf_not_inter_source_eq_zero_iff (extChartAt I x₀) μ
+    (extChartAt I x₀).measure_image_setOf_not_inter_source_eq_zero_iff μ
 
 end Manifold
 
@@ -155,7 +148,7 @@ theorem ae_extend_of_ae {p : M → Prop} (hp : ∀ᶠ x in ae I M, p x)
     ∀ᵐ y ∂μ, y ∈ (e.extend I).target → p ((e.extend I).symm y) := by
   have := (ae_iff.1 hp).measure_extend_image_eq_zero he μ
   rw [← e.extend_source (I := I)] at this
-  exact (measure_image_setOf_not_inter_source_eq_zero_iff _ μ).1 this
+  exact (PartialEquiv.measure_image_setOf_not_inter_source_eq_zero_iff _ μ).1 this
 
 /-- **Almost everywhere is read in a countable atlas.** If the sources of countably many charts of
 the `C¹` maximal atlas cover `M`, a property holds almost everywhere exactly when, in each of these
@@ -169,7 +162,7 @@ theorem ae_iff_of_iUnion_source_eq_univ {ι : Sort*} [Countable ι]
   refine ae_iff.trans <| (isNullSet_iff_of_iUnion_source_eq_univ he hcover μ).trans <|
     forall_congr' fun i ↦ ?_
   rw [← (e i).extend_source (I := I)]
-  exact measure_image_setOf_not_inter_source_eq_zero_iff _ μ
+  exact PartialEquiv.measure_image_setOf_not_inter_source_eq_zero_iff _ μ
 
 end Manifold
 
