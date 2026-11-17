@@ -109,12 +109,10 @@ private theorem mul_indicator_le_matrixBilinearForm_gradient
           W1p.posPart (by norm_num) (W1p.posPart (by norm_num) u - ε • v)) x)
           (W1p.gradient u x) := by
   set up := W1p.posPart (p := 2) (mu := mu) (Omega := Omega) (by norm_num) u
-  have hsmul : ⇑(W1p.gradient (ε • v)) =ᵐ[mu.restrict Omega] ε • ⇑(W1p.gradient v) := by
-    rw [← W1p.gradientL_apply, map_smul, W1p.gradientL_apply]
-    exact Lp.coeFn_smul _ _
   filter_upwards [W1p.gradient_sub_ae up (W1p.posPart (by norm_num) (up - ε • v)),
-    W1p.gradient_sub_ae up (ε • v), hsmul, W1p.gradient_posPart_ae (by norm_num) u,
-    W1p.gradient_posPart_ae (by norm_num) (up - ε • v), Lp.coeFn_posPart (W1p.value u),
+    W1p.gradient_sub_ae up (ε • v), W1p.gradient_smul_ae ε v,
+    W1p.gradient_posPart_ae (by norm_num) u, W1p.gradient_posPart_ae (by norm_num) (up - ε • v),
+    Lp.coeFn_posPart (W1p.value u),
     W1p.value_sub_ae up (ε • v), W1p.value_smul_ae ε v, self_mem_ae_restrict
       Omega.isOpen.measurableSet] with x h1 h2 h3 h4 h5 h6 h7 h8 hxO
   have hup : W1p.value up x = max (W1p.value u x) 0 := by

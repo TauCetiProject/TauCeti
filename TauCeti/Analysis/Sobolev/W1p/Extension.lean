@@ -56,6 +56,8 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
 * `TauCeti.W1p0.value_restrictL_extendByZeroL_ae`,
   `TauCeti.W1p0.gradient_restrictL_extendByZeroL_ae`: restricting the extension to `Ω'` to another
   open set `V ⊆ Ω'` gives `1_Ω u` and `1_Ω ∇u` on `V`.
+* `TauCeti.W1p0.setIntegral_gradient_restrictL_extendByZeroL`: integrating a density, vanishing at
+  `0`, of the gradient of that restriction over `V` is integrating it over `V ∩ Ω`.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -348,6 +350,22 @@ theorem W1p0.gradient_restrictL_extendByZeroL_ae {V : Opens E} (hsub : Omega ≤
       (coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
         (W1p.gradient (u : W1p mu Omega p)))] with x h1 h2
   rw [h1, W1p0.gradient_extendByZeroL, h2]
+
+/-- **Integrating against the gradient of a zero extension.** For `u ∈ W^{1,p}_0(Ω)`, `Ω ⊆ Ω'`,
+an open `V ⊆ Ω'` and a density `φ` with `φ x 0 = 0`, the integral over `V` of `φ x` applied to
+the gradient of the zero extension of `u` is the integral of `φ x (∇u x)` over `V ∩ Ω`. -/
+theorem W1p0.setIntegral_gradient_restrictL_extendByZeroL {V : Opens E} (hsub : Omega ≤ Omega')
+    (hV : V ≤ Omega') (u : W1p0 mu Omega p) (φ : E → E → ℝ) (hφ : ∀ x, φ x 0 = 0) :
+    ∫ x in V, φ x (W1p.gradient (W1p.restrictL hV
+        (W1p0.extendByZeroL hsub u : W1p mu Omega' p)) x) ∂mu =
+      ∫ x in (V : Set E) ∩ Omega, φ x (W1p.gradient (u : W1p mu Omega p) x) ∂mu := by
+  rw [← setIntegral_indicator Omega.isOpen.measurableSet]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p0.gradient_restrictL_extendByZeroL_ae hsub hV u] with x h1
+  rw [h1]
+  by_cases hxO : x ∈ (Omega : Set E)
+  · rw [indicator_of_mem hxO, indicator_of_mem hxO]
+  · rw [indicator_of_notMem hxO, indicator_of_notMem hxO, hφ]
 
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the

@@ -102,22 +102,6 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ} {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 
-/-- Integrating against the gradient of a zero extension: for `m ∈ H¹₀(U)` and a density `φ` with
-`φ x 0 = 0`, the integral over an open `V` of `φ x` applied to the gradient of the zero extension of
-`m` is the integral of `φ x (∇m x)` over `V ∩ U`. -/
-private theorem setIntegral_gradient_restrictL_extendByZeroL {U V : Opens (EuclideanSpace ℝ ι)}
-    (m : W1p0 mu U 2) (φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → ℝ) (hφ : ∀ x, φ x 0 = 0) :
-    ∫ x in V, φ x (W1p.gradient (W1p.restrictL (le_top : V ≤ ⊤)
-        (W1p0.extendByZeroL (le_top : U ≤ ⊤) m : W1p mu ⊤ 2)) x) ∂mu =
-      ∫ x in (V : Set (EuclideanSpace ℝ ι)) ∩ U, φ x (W1p.gradient (m : W1p mu U 2) x) ∂mu := by
-  rw [← setIntegral_indicator U.isOpen.measurableSet]
-  refine integral_congr_ae ?_
-  filter_upwards [W1p0.gradient_restrictL_extendByZeroL_ae (V := V) le_top le_top m] with x h1
-  rw [h1]
-  by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-  · rw [indicator_of_mem hxU, indicator_of_mem hxU]
-  · rw [indicator_of_notMem hxU, indicator_of_notMem hxU, hφ]
-
 /-- Moving a truncation from the ball `D` to `Ω`: let `ū` be the zero extension of `u⁺` to `D`,
 let `a'` agree with `a` on `Ω`, and let `m ∈ H¹₀(D)` have vanishing gradient where `u ≤ 0` in
 `Ω`. Then the energy of `ū` against `m` on `D` is the energy of `u` against the zero extension of
@@ -136,10 +120,10 @@ private theorem energyFormH1_restrictL_extendByZeroL_posPart_eq
         (W1p0.extendByZeroL (le_top : D ≤ ⊤) m : W1p mu ⊤ 2)) := by
   have hO := Omega.isOpen.measurableSet
   have hD := D.isOpen.measurableSet
-  have h₁ := setIntegral_gradient_restrictL_extendByZeroL (V := D)
+  have h₁ := W1p0.setIntegral_gradient_restrictL_extendByZeroL le_top (le_top : D ≤ ⊤)
     (⟨W1p.posPart (p := 2) (by norm_num) u, hb⟩ : W1p0 mu Omega 2)
     (fun x g => matrixBilinearForm (a' x) (W1p.gradient (m : W1p mu D 2) x) g) fun _ => map_zero _
-  have h₂ := setIntegral_gradient_restrictL_extendByZeroL (V := Omega) m
+  have h₂ := W1p0.setIntegral_gradient_restrictL_extendByZeroL le_top (le_top : Omega ≤ ⊤) m
     (fun x g => matrixBilinearForm (a x) g (W1p.gradient u x)) fun _ => by simp
   rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral, h₁, h₂,
     inter_comm]
@@ -168,7 +152,7 @@ private theorem setIntegral_inner_gradient_restrictL_extendByZeroL
     by_cases hxO : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
     · rw [indicator_of_mem hxO, indicator_of_mem hxO]
     · rw [indicator_of_notMem hxO, indicator_of_notMem hxO, inner_zero_left]
-  rw [setIntegral_gradient_restrictL_extendByZeroL m (fun x g => ⟪F x, g⟫)
+  rw [W1p0.setIntegral_gradient_restrictL_extendByZeroL le_top le_top m (fun x g => ⟪F x, g⟫)
     fun _ => inner_zero_right _, h₂, setIntegral_indicator Omega.isOpen.measurableSet, inter_comm]
 
 /-- The value of `ū - (w + K)` on `D`, where `ū` is the zero extension of `u⁺`. -/

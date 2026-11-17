@@ -525,6 +525,19 @@ theorem W1p.value_sub_ae (u v : W1p mu Omega p) :
     ⇑(W1p.value (u - v)) =ᵐ[mu.restrict Omega] ⇑(W1p.value u) - ⇑(W1p.value v) := by
   simpa only [← W1p.valueL_apply, map_sub] using Lp.coeFn_sub (W1p.value u) (W1p.value v)
 
+/-- The weak gradient of the negation of a Sobolev function is almost everywhere the negation of
+its weak gradient. -/
+theorem W1p.gradient_neg_ae (u : W1p mu Omega p) :
+    ⇑(W1p.gradient (-u)) =ᵐ[mu.restrict Omega] -⇑(W1p.gradient u) := by
+  simpa only [← W1p.gradientL_apply, map_neg] using Lp.coeFn_neg (W1p.gradient u)
+
+/-- The weak gradient of a sum of two Sobolev functions is almost everywhere the sum of their weak
+gradients. -/
+theorem W1p.gradient_add_ae (u v : W1p mu Omega p) :
+    ⇑(W1p.gradient (u + v)) =ᵐ[mu.restrict Omega] ⇑(W1p.gradient u) + ⇑(W1p.gradient v) := by
+  simpa only [← W1p.gradientL_apply, map_add] using
+    Lp.coeFn_add (W1p.gradient u) (W1p.gradient v)
+
 /-- The weak gradient of a difference of two Sobolev functions is almost everywhere the difference
 of their weak gradients. -/
 theorem W1p.gradient_sub_ae (u v : W1p mu Omega p) :
@@ -537,6 +550,12 @@ of its value. -/
 theorem W1p.value_smul_ae (c : ℝ) (u : W1p mu Omega p) :
     ⇑(W1p.value (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(W1p.value u) := by
   simpa only [← W1p.valueL_apply, map_smul] using Lp.coeFn_smul c (W1p.value u)
+
+/-- The weak gradient of a scalar multiple of a Sobolev function is almost everywhere the scalar
+multiple of its weak gradient. -/
+theorem W1p.gradient_smul_ae (c : ℝ) (u : W1p mu Omega p) :
+    ⇑(W1p.gradient (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(W1p.gradient u) := by
+  simpa only [← W1p.gradientL_apply, map_smul] using Lp.coeFn_smul c (W1p.gradient u)
 
 /-- The value of the midpoint of two Sobolev functions is almost everywhere the average of their
 values. -/
