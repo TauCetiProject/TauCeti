@@ -88,6 +88,18 @@ variable {k : ℕ∞} {ℓ : ℝ} [Fact (0 < ℓ)] (γ : ConvexTable k ℓ)
 instance : CoeFun (ConvexTable k ℓ) fun _ ↦ ℝ → ℂ :=
   ⟨toFun⟩
 
+/-- A table is determined by its parametrisation. -/
+theorem coe_injective : Injective fun γ : ConvexTable k ℓ ↦ (γ : ℝ → ℂ) := by
+  rintro ⟨⟩ ⟨⟩ h
+  congr
+
+/-- Two tables with the same parametrisation are equal. -/
+@[ext]
+theorem ext {γ₁ γ₂ : ConvexTable k ℓ} (h : ∀ s, γ₁ s = γ₂ s) : γ₁ = γ₂ :=
+  coe_injective (funext h)
+
+attribute [simp, grind =] norm_deriv
+
 theorem differentiable : Differentiable ℝ γ :=
   γ.contDiff.differentiable <| by
     have := γ.one_le
@@ -96,11 +108,11 @@ theorem differentiable : Differentiable ℝ γ :=
 theorem continuous : Continuous γ :=
   γ.differentiable.continuous
 
-@[simp]
+@[simp, grind =]
 theorem apply_add_period (s : ℝ) : γ (s + ℓ) = γ s :=
   γ.periodic s
 
-@[simp]
+@[simp, grind =]
 theorem deriv_add_period (s : ℝ) : deriv γ (s + ℓ) = deriv γ s :=
   γ.periodic.deriv s
 
@@ -116,21 +128,14 @@ theorem apply_eq_apply_iff {s t : ℝ} : γ t = γ s ↔ ∃ m : ℤ, t - s = m 
 /-- The parametrisation is injective on every half-open interval of length `ℓ`. -/
 theorem injOn_Ico (s : ℝ) : InjOn γ (Ico s (s + ℓ)) := by
   intro a ha b hb hab
-  obtain ⟨m, hm⟩ := γ.apply_eq_apply_iff.1 hab.symm
   have hℓ : 0 < ℓ := Fact.out
-  have h1 : (m : ℝ) * ℓ < 1 * ℓ := by linarith [ha.1, ha.2, hb.1, hb.2]
-  have h2 : (-1 : ℝ) * ℓ < m * ℓ := by linarith [ha.1, ha.2, hb.1, hb.2]
-  have hm0 : m = 0 := by
-    have := lt_of_mul_lt_mul_right h1 hℓ.le
-    have := lt_of_mul_lt_mul_right h2 hℓ.le
-    norm_cast at *
-    omega
-  simp only [hm0, Int.cast_zero, zero_mul] at hm
-  linarith
+  have h : toIcoMod hℓ s a = toIcoMod hℓ s b :=
+    (toIcoMod_eq_toIcoMod hℓ).2 (by simpa only [zsmul_eq_mul] using γ.apply_eq_apply_iff.1 hab.symm)
+  rwa [(toIcoMod_eq_self hℓ).2 ha, (toIcoMod_eq_self hℓ).2 hb] at h
 
 /-- The defining inequality in terms of points: every point of the table other than `γ(s)` lies
 strictly to the left of the tangent line at `γ(s)`. -/
-theorem cross_pos_of_ne {s t : ℝ} (h : γ t ≠ γ s) :
+theorem im_conj_deriv_mul_sub_pos_of_ne {s t : ℝ} (h : γ t ≠ γ s) :
     0 < (conj (deriv γ s) * (γ t - γ s)).im :=
   γ.left_of_tangent s t fun m hm ↦ h (γ.apply_eq_apply_iff.2 ⟨m, hm⟩)
 
@@ -147,13 +152,13 @@ def toStrictConvexBilliardTable : StrictConvexBilliardTable Complex.orientation 
   injOn := by simpa using γ.injOn_Ico 0
   areaForm_pos s t h := by
     rw [Complex.areaForm]
-    exact γ.cross_pos_of_ne h
+    exact γ.im_conj_deriv_mul_sub_pos_of_ne h
 
-@[simp]
+@[simp, grind =]
 theorem coe_toStrictConvexBilliardTable : ⇑γ.toStrictConvexBilliardTable = γ :=
   (rfl)
 
-@[simp]
+@[simp, grind =]
 theorem period_toStrictConvexBilliardTable : γ.toStrictConvexBilliardTable.period = ℓ :=
   (rfl)
 
@@ -168,8 +173,25 @@ def ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) : ConvexTable j ℓ where
   norm_deriv := γ.norm_deriv
   left_of_tangent := γ.left_of_tangent
 
-@[simp]
+@[simp, grind =]
 theorem coe_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) : ⇑(γ.ofLE hj hjk) = γ :=
+  (rfl)
+
+/-- Changing the regularity to itself does nothing. -/
+@[simp, grind =]
+theorem ofLE_self (hk : 1 ≤ k) (hkk : k ≤ k) : γ.ofLE hk hkk = γ :=
+  ext fun _ ↦ rfl
+
+/-- Changing the regularity twice is changing it once. -/
+@[simp, grind =]
+theorem ofLE_ofLE {j i : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (hi : 1 ≤ i) (hij : i ≤ j) :
+    (γ.ofLE hj hjk).ofLE hi hij = γ.ofLE hi (hij.trans hjk) :=
+  ext fun _ ↦ rfl
+
+/-- Changing the regularity does not change the underlying strictly convex billiard table. -/
+@[simp, grind =]
+theorem toStrictConvexBilliardTable_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) :
+    (γ.ofLE hj hjk).toStrictConvexBilliardTable = γ.toStrictConvexBilliardTable :=
   (rfl)
 
 /-- Starting the parametrisation at `γ(c)`: the table `s ↦ γ(s + c)`. -/
@@ -178,13 +200,45 @@ def shift (c : ℝ) : ConvexTable k ℓ where
   one_le := γ.one_le
   contDiff := γ.contDiff.comp (contDiff_id.add contDiff_const)
   periodic s := by simp [add_right_comm s ℓ c]
-  norm_deriv s := by simpa [deriv_comp_add_const] using γ.norm_deriv (s + c)
+  norm_deriv s := by simp [deriv_comp_add_const]
   left_of_tangent s t h := by
     simpa [deriv_comp_add_const] using γ.left_of_tangent (s + c) (t + c) (by simpa using h)
 
-@[simp]
+@[simp, grind =]
 theorem shift_apply (c s : ℝ) : γ.shift c s = γ (s + c) :=
   (rfl)
+
+theorem coe_shift (c : ℝ) : ⇑(γ.shift c) = fun s ↦ γ (s + c) :=
+  (rfl)
+
+/-- The unit tangent of the shifted table is the shifted unit tangent. -/
+@[simp, grind =]
+theorem deriv_shift (c s : ℝ) : deriv (γ.shift c) s = deriv γ (s + c) := by
+  rw [coe_shift, deriv_comp_add_const]
+
+/-- Shifting by `0` does nothing. -/
+@[simp, grind =]
+theorem shift_zero : γ.shift 0 = γ :=
+  ext fun s ↦ by rw [shift_apply, add_zero]
+
+/-- Shifting twice is shifting by the sum. -/
+@[simp, grind =]
+theorem shift_shift (c d : ℝ) : (γ.shift c).shift d = γ.shift (c + d) :=
+  ext fun s ↦ by rw [shift_apply, shift_apply, shift_apply, add_assoc, add_comm d c]
+
+/-- Shifting by a period does nothing. -/
+@[simp, grind =]
+theorem shift_period : γ.shift ℓ = γ :=
+  ext fun s ↦ by rw [shift_apply, apply_add_period]
+
+/-- Shifts differing by a period agree. -/
+@[simp, grind =]
+theorem shift_add_period (c : ℝ) : γ.shift (c + ℓ) = γ.shift c :=
+  ext fun s ↦ by rw [shift_apply, shift_apply, ← add_assoc, apply_add_period]
+
+theorem shift_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (c : ℝ) :
+    (γ.ofLE hj hjk).shift c = (γ.shift c).ofLE hj hjk :=
+  ext fun _ ↦ rfl
 
 /-- The image of a table under the rigid motion `z ↦ a z + b`, a rotation by `a` with `|a| = 1`
 followed by a translation by `b`. -/
@@ -207,33 +261,47 @@ def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
         conj (a : ℂ) * a * (conj (deriv γ s) * (γ t - γ s)) by ring, ha, one_mul]
     exact γ.left_of_tangent s t h
 
-@[simp]
+@[simp, grind =]
 theorem rigidMotion_apply (a : Circle) (b : ℂ) (s : ℝ) : γ.rigidMotion a b s = a * γ s + b :=
   (rfl)
 
-/-- Reversing the orientation never gives a table: no table, of any class, is parametrised by
-`s ↦ γ(-s)`. At `s = 0`, `t = ℓ / 2` the defining quantities of the two have opposite signs. -/
-theorem coe_ne_comp_neg {j : ℕ∞} (δ : ConvexTable j ℓ) : ⇑δ ≠ γ ∘ Neg.neg := by
-  intro hδ
-  have hℓ : 0 < ℓ := Fact.out
-  have hm : ∀ m : ℤ, ℓ / 2 - 0 ≠ m * ℓ := fun m hm ↦ by
-    have h1 : (2 * m : ℝ) * ℓ = 1 * ℓ := by linarith
-    have h2 : (2 * m : ℝ) = 1 := mul_right_cancel₀ hℓ.ne' h1
-    have : (2 * m : ℤ) = 1 := by exact_mod_cast h2
-    omega
-  have hm' : ∀ m : ℤ, -(ℓ / 2) - -0 ≠ m * ℓ := fun m h ↦
-    hm (-m) (by push_cast; linarith)
-  have hd : deriv (⇑δ) 0 = -deriv γ 0 := by
-    rw [hδ, show γ ∘ Neg.neg = fun s ↦ γ (-s) from rfl, deriv_comp_neg, neg_zero]
-  have h1 := δ.left_of_tangent 0 (ℓ / 2) hm
-  have h2 := γ.left_of_tangent (-0) (-(ℓ / 2)) hm'
-  rw [hd] at h1
-  simp only [hδ, comp_apply, map_neg, neg_mul, neg_im, neg_zero] at h1 h2
-  linarith
+theorem coe_rigidMotion (a : Circle) (b : ℂ) : ⇑(γ.rigidMotion a b) = fun s ↦ a * γ s + b :=
+  (rfl)
+
+/-- The unit tangent of the moved table is the rotated unit tangent. -/
+@[simp, grind =]
+theorem deriv_rigidMotion (a : Circle) (b : ℂ) (s : ℝ) :
+    deriv (γ.rigidMotion a b) s = a * deriv γ s := by
+  rw [coe_rigidMotion, deriv_add_const, deriv_const_mul _ (γ.differentiable s)]
+
+/-- The identity motion does nothing. -/
+@[simp, grind =]
+theorem rigidMotion_one_zero : γ.rigidMotion 1 0 = γ :=
+  ext fun s ↦ by simp
+
+/-- Moving twice is moving by the composite motion. -/
+@[simp, grind =]
+theorem rigidMotion_rigidMotion (a a' : Circle) (b b' : ℂ) :
+    (γ.rigidMotion a b).rigidMotion a' b' = γ.rigidMotion (a' * a) (a' * b + b') :=
+  ext fun s ↦ by simp only [rigidMotion_apply, Circle.coe_mul]; ring
+
+theorem rigidMotion_ofLE {j : ℕ∞} (hj : 1 ≤ j) (hjk : j ≤ k) (a : Circle) (b : ℂ) :
+    (γ.ofLE hj hjk).rigidMotion a b = (γ.rigidMotion a b).ofLE hj hjk :=
+  ext fun _ ↦ rfl
+
+theorem rigidMotion_shift (a : Circle) (b : ℂ) (c : ℝ) :
+    (γ.shift c).rigidMotion a b = (γ.rigidMotion a b).shift c :=
+  ext fun _ ↦ rfl
+
+/-- Reversing the orientation never gives a table: `γ` is not `s ↦ δ(-s)` for any table `δ`, of
+any class and perimeter (`StrictConvexBilliardTable.coe_ne_comp_neg`). -/
+theorem coe_ne_comp_neg {j : ℕ∞} {ℓ' : ℝ} [Fact (0 < ℓ')] (δ : ConvexTable j ℓ') :
+    ⇑γ ≠ δ ∘ Neg.neg :=
+  γ.toStrictConvexBilliardTable.coe_ne_comp_neg δ.toStrictConvexBilliardTable
 
 /-! ### The circle -/
 
-private theorem hasDerivAt_circle {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
+private theorem hasDerivAt_mul_exp_div_mul_I {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
     HasDerivAt (fun s : ℝ ↦ (R : ℂ) * exp (↑(s / R) * I)) (I * exp (↑(s / R) * I)) s := by
   have h := ((((hasDerivAt_id s).div_const R).ofReal_comp).mul_const I).cexp.const_mul (R : ℂ)
   simp only [id] at h
@@ -242,7 +310,7 @@ private theorem hasDerivAt_circle {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
   push_cast
   field_simp
 
-private theorem circle_cross_aux (R s t : ℝ) :
+private theorem im_conj_mul_sub_exp_aux (R s t : ℝ) :
     (conj (I * exp (↑(s / R) * I)) * (R * exp (↑(t / R) * I) - R * exp (↑(s / R) * I))).im =
       R * (1 - Real.cos ((t - s) / R)) := by
   simp only [map_mul, conj_I, ← exp_conj, conj_ofReal, mul_neg, ← neg_mul, ← ofReal_neg, mul_im,
@@ -256,41 +324,45 @@ private theorem pos_of_two_pi_mul_pos {R : ℝ} (h : 0 < 2 * π * R) : 0 < R :=
 
 /-- The positively oriented circle `s ↦ R exp(is/R)` of radius `R > 0`, of perimeter `2πR`, is a
 table of class `C^∞`: its unit tangent is `τ(s) = i exp(is/R)` (`ConvexTable.deriv_circle`) and
-`τ(s) × (γ(t) - γ(s)) = R(1 - cos((t - s)/R))` (`ConvexTable.circle_cross`). -/
+`τ(s) × (γ(t) - γ(s)) = R(1 - cos((t - s)/R))` (`ConvexTable.im_conj_deriv_circle_mul_sub`). -/
 def circle (R : ℝ) [Fact (0 < 2 * π * R)] : ConvexTable ⊤ (2 * π * R) where
   toFun s := R * exp (↑(s / R) * I)
   one_le := le_top
   contDiff := contDiff_const.mul <| contDiff_exp.comp <|
     (ofRealCLM.contDiff.comp (contDiff_id.div_const R)).mul contDiff_const
   periodic s := by
-    have hR := (pos_of_two_pi_mul_pos (Fact.out : 0 < 2 * π * R)).ne'
-    simp only
-    rw [show ((s + 2 * π * R) / R : ℝ) = s / R + 2 * π by field_simp, ofReal_add, add_mul,
-      exp_add, ofReal_mul, ofReal_ofNat, exp_two_pi_mul_I, mul_one]
+    simp only [ofReal_div, ofReal_add, ofReal_mul, ofReal_ofNat]
+    exact congrArg ((R : ℂ) * ·) (exp_mul_I_periodic.div_const (R : ℂ) s)
   norm_deriv s := by
     have hR := (pos_of_two_pi_mul_pos (Fact.out : 0 < 2 * π * R)).ne'
-    rw [(hasDerivAt_circle hR s).deriv, norm_mul, norm_I, one_mul, norm_exp_ofReal_mul_I]
+    rw [(hasDerivAt_mul_exp_div_mul_I hR s).deriv, norm_mul, norm_I, one_mul, norm_exp_ofReal_mul_I]
   left_of_tangent s t h := by
     have hR := pos_of_two_pi_mul_pos (Fact.out : 0 < 2 * π * R)
-    rw [(hasDerivAt_circle hR.ne' s).deriv, circle_cross_aux]
+    rw [(hasDerivAt_mul_exp_div_mul_I hR.ne' s).deriv, im_conj_mul_sub_exp_aux]
     refine mul_pos hR (sub_pos.2 (lt_of_le_of_ne (Real.cos_le_one _) fun h1 ↦ ?_))
     obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 h1
     exact h n (by field_simp at hn; linarith)
 
 variable (R : ℝ) [Fact (0 < 2 * π * R)]
 
+@[simp, grind =]
 theorem circle_apply (s : ℝ) : circle R s = R * exp (↑(s / R) * I) :=
   (rfl)
 
+/-- The circle `s ↦ R exp(is/R)` has derivative `i exp(is/R)`. -/
+theorem hasDerivAt_circle (s : ℝ) : HasDerivAt (circle R) (I * exp (↑(s / R) * I)) s :=
+  hasDerivAt_mul_exp_div_mul_I (pos_of_two_pi_mul_pos Fact.out).ne' s
+
+@[simp, grind =]
 theorem deriv_circle (s : ℝ) : deriv (circle R) s = I * exp (↑(s / R) * I) :=
-  (hasDerivAt_circle (pos_of_two_pi_mul_pos Fact.out).ne' s).deriv
+  (hasDerivAt_circle R s).deriv
 
 /-- On the circle of radius `R` the defining quantity of a table is `R(1 - cos((t - s)/R))`, equal
 to `2R` at `t - s = πR`. -/
-theorem circle_cross (s t : ℝ) :
+theorem im_conj_deriv_circle_mul_sub (s t : ℝ) :
     (conj (deriv (circle R) s) * (circle R t - circle R s)).im =
       R * (1 - Real.cos ((t - s) / R)) := by
-  rw [deriv_circle, circle_apply, circle_apply, circle_cross_aux]
+  rw [deriv_circle, circle_apply, circle_apply, im_conj_mul_sub_exp_aux]
 
 end ConvexTable
 
