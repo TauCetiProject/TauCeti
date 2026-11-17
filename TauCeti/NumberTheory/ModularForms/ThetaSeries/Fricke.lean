@@ -46,7 +46,7 @@ For an even full lattice `L` of rank `2k` and level `N = level L`, the level of 
 partner `√N • L^∨` divides `N`, so its general-level theta form `thetaFormOfLevel` restricts to
 `Γ₁(N)`. The bundled operators `TauCeti.frickeOperator` and `TauCeti.normalizedFrickeOperator`
 exchange `thetaFormOfLevel` of `L` with this restriction of `thetaFormOfLevel` of `√N • L^∨`.
-Because the theta character `χ_L` is quadratic (`χ_L⁻¹ = χ_L`), the restricted theta form of the
+Because the nebentypus `χ_L` is quadratic (`χ_L⁻¹ = χ_L`), the restricted theta form of the
 Fricke partner lies in the same nebentypus space `modFormCharSpace k χ_L`.
 
 ## Main statements
@@ -278,21 +278,21 @@ theorem normalizedFrickeOperator_restrict_thetaFormOfLevel_sqrt_level_smul_dual 
     congrFun hfn τ
 
 /-- **The restricted theta form of the Fricke partner lies in the same nebentypus space**:
-since `frickeOperator` carries `M_k(Γ₁(N), χ_L)` into `M_k(Γ₁(N), χ_L⁻¹)` and the theta
-character `χ_L` is quadratic, the restriction of the Fricke partner's theta form to `Γ₁(level L)`
-has nebentypus `χ_L`. -/
+since `frickeOperator` carries `M_k(Γ₁(N), χ_L)` into `M_k(Γ₁(N), χ_L⁻¹)` and the nebentypus
+`χ_L` is quadratic, the restriction of the Fricke partner's theta form to `Γ₁(level L)` has
+nebentypus `χ_L`. -/
 theorem restrict_thetaFormOfLevel_sqrt_level_smul_dual_mem_modFormCharSpace [NeZero (level L)]
     (hL : IsEven L) (hk : finrank ℝ E = 2 * k) :
     (thetaFormOfLevel (isEven_sqrt_level_smul_dual L) hk).restrict
         (CongruenceSubgroup.Gamma1_map_le_Gamma1_map_of_dvd hL.level_sqrt_level_smul_dual_dvd) ∈
-      modFormCharSpace (k : ℤ) (MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩)) := by
+      modFormCharSpace (k : ℤ) (MulChar.equivToUnitHom (hL.nebentypus ℂ ⟨k, by omega⟩)) := by
   have hmem := frickeOperator_mem_modFormCharSpace (N := level L) (k : ℤ)
-    (MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩))
+    (MulChar.equivToUnitHom (hL.nebentypus ℂ ⟨k, by omega⟩))
     (thetaFormOfLevel_mem_modFormCharSpace hL hk)
-  have hinv : (MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩))⁻¹ =
-      MulChar.equivToUnitHom (hL.thetaCharacter ⟨k, by omega⟩) := by
+  have hinv : (MulChar.equivToUnitHom (hL.nebentypus ℂ ⟨k, by omega⟩))⁻¹ =
+      MulChar.equivToUnitHom (hL.nebentypus ℂ ⟨k, by omega⟩) := by
     rw [← MulChar.mulEquivToUnitHom_apply, ← map_inv,
-      (hL.thetaCharacter_isQuadratic ⟨k, by omega⟩).inv, MulChar.mulEquivToUnitHom_apply]
+      (hL.nebentypus_isQuadratic ⟨k, by omega⟩).inv, MulChar.mulEquivToUnitHom_apply]
   rw [hinv, frickeOperator_thetaFormOfLevel] at hmem
   have hcard : 0 < Nat.card (DiscriminantGroup L) := by
     have := hL.isIntegral.finite_discriminantGroup
