@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
-public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Analysis.Holder.IsBigO
 
@@ -24,7 +23,8 @@ derivatives of `τ` at `z` of order at most `k`, and Mathlib's
 estimates for those factors. The derivatives of `τ`, and those of `g` of order less than `k`, are
 `C^1`, hence locally Lipschitz, and a Lipschitz bound gives an `α`-Hölder bound at distances at
 most one (`ContDiffAt.isBigO_sub_dist_rpow`). The derivative of order `k` of `g` is Hölder by
-hypothesis, and `τ` is locally Lipschitz (`HolderOnWith.isBigO_comp_sub_dist_rpow`).
+hypothesis, and `τ` is locally Lipschitz (`HolderOnWith.isBigO_comp_sub_dist_rpow`). The
+resulting estimate gives a Hölder bound on a ball (`Asymptotics.IsBigO.exists_holderOnWith_ball`).
 
 This is the estimate behind the independence of the Hölder spaces `C^{k,α}` of a compact manifold
 from the choice of charts: with `τ` a transition map between two charts.
@@ -44,64 +44,73 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 variable {g : F → G} {τ : E → F} {s : Set E} {t : Set F} {k : ℕ} {α : ℝ≥0} {z₀ : E}
 
 /-- **The Hölder chain rule for the top derivative.** Let `τ` be `C^{k+1}` on a neighbourhood `s`
-of `z₀`, mapping it into a set `t` on which `g` is `C^k`, with both sets of unique
-differentiability. If the `k`th derivative of `g` within `t` is `α`-Hölder on a neighbourhood of
-`τ z₀`, with `α ≤ 1`, then the `k`th derivative of `g ∘ τ` within `s` is `α`-Hölder on a ball
-around `z₀`. -/
+of `z₀`, mapping it into a set `t` of unique differentiability on which `g` is `C^k`. If the `k`th
+derivative of `g` within `t` is `α`-Hölder on a neighbourhood of `τ z₀` within `t`, with `α ≤ 1`,
+then the `k`th derivative of `g ∘ τ` within `s` is `α`-Hölder on a ball around `z₀`. -/
 theorem exists_holderOnWith_iteratedFDerivWithin_comp (hα : α ≤ 1) (hs : s ∈ 𝓝 z₀)
-    (hus : UniqueDiffOn 𝕜 s) (hut : UniqueDiffOn 𝕜 t) (hτ : ContDiffOn 𝕜 (k + 1) τ s)
-    (hg : ContDiffOn 𝕜 k g t) (hst : MapsTo τ s t) {K : Set F} (hK : K ∈ 𝓝 (τ z₀)) {C : ℝ≥0}
+    (hut : UniqueDiffOn 𝕜 t) (hτ : ContDiffOn 𝕜 (k + 1) τ s) (hg : ContDiffOn 𝕜 k g t)
+    (hst : MapsTo τ s t) {K : Set F} (hK : K ∈ 𝓝[t] (τ z₀)) {C : ℝ≥0}
     (hH : HolderOnWith C α (iteratedFDerivWithin 𝕜 k g t) K) :
     ∃ r > 0, ∃ L : ℝ≥0,
       HolderOnWith L α (iteratedFDerivWithin 𝕜 k (g ∘ τ) s) (Metric.ball z₀ r) := by
-  have hz₀ : z₀ ∈ s := mem_of_mem_nhds hs
-  have hτk : ContDiffOn 𝕜 k τ s := hτ.of_le (by simp)
-  have hτt : τ z₀ ∈ t := hst hz₀
+  -- Work on the open set `interior s`, which has unique differentiability.
+  have hs' : interior s ∈ 𝓝 z₀ := interior_mem_nhds.mpr hs
+  have hus' : UniqueDiffOn 𝕜 (interior s) := isOpen_interior.uniqueDiffOn
+  have hτ' : ContDiffOn 𝕜 (k + 1) τ (interior s) := hτ.mono interior_subset
+  have hst' : MapsTo τ (interior s) t := hst.mono_left interior_subset
+  have hz₀ : z₀ ∈ interior s := mem_of_mem_nhds hs'
+  have hτk : ContDiffOn 𝕜 k τ (interior s) := hτ'.of_le (by simp)
+  have hτt : τ z₀ ∈ t := hst' hz₀
+  have hτ1 : ContDiffAt 𝕜 1 τ z₀ := (hτ'.of_le (by simp) z₀ hz₀).contDiffAt hs'
+  have hτK : ∀ᶠ z in 𝓝 z₀, τ z ∈ K :=
+    (tendsto_nhdsWithin_iff.mpr ⟨hτ1.continuousAt.tendsto, mem_of_superset hs' hst'⟩).eventually
+      hK
   -- The derivatives of `τ` of order at most `k` are `C^1` at `z₀`.
-  have hτm (m : ℕ) (hm : m ≤ k) : ContDiffAt 𝕜 1 (iteratedFDerivWithin 𝕜 m τ s) z₀ :=
-    (ContDiffWithinAt.iteratedFDerivWithin_right (hτ z₀ hz₀) hus
-      (by exact_mod_cast (by omega : 1 + m ≤ k + 1)) hz₀).contDiffAt hs
+  have hτm (m : ℕ) (hm : m ≤ k) :
+      ContDiffAt 𝕜 1 (iteratedFDerivWithin 𝕜 m τ (interior s)) z₀ :=
+    (ContDiffWithinAt.iteratedFDerivWithin_right (hτ' z₀ hz₀) hus'
+      (by exact_mod_cast (by omega : 1 + m ≤ k + 1)) hz₀).contDiffAt hs'
   -- The derivatives of `g` of order at most `k`, along `τ`, are continuous at `z₀`.
   have hgc (m : ℕ) (hm : m ≤ k) :
       ContinuousAt (fun z ↦ iteratedFDerivWithin 𝕜 m g t (τ z)) z₀ :=
     (((hg.continuousOn_iteratedFDerivWithin (by exact_mod_cast hm) hut) _ hτt).comp
-      (ContDiffWithinAt.continuousWithinAt (hτ z₀ hz₀)) hst).continuousAt hs
-  have hfor (a : E × E) (ha : a.1 ∈ s ∧ a.2 ∈ s) :
+      (ContDiffWithinAt.continuousWithinAt (hτ' z₀ hz₀)) hst').continuousAt hs'
+  -- On `interior s`, the derivatives within `s` and within `interior s` agree.
+  have hint (z : E) (hz : z ∈ interior s) :
+      iteratedFDerivWithin 𝕜 k (g ∘ τ) s z = iteratedFDerivWithin 𝕜 k (g ∘ τ) (interior s) z :=
+    iteratedFDerivWithin_congr_set
+      ((eventuallyEqSet_univ.mpr (mem_interior_iff_mem_nhds.mp hz)).trans
+        (eventuallyEqSet_univ.mpr (isOpen_interior.mem_nhds hz)).symm) k
+  have hfor (a : E × E) (ha : a.1 ∈ interior s ∧ a.2 ∈ interior s) :
       iteratedFDerivWithin 𝕜 k (g ∘ τ) s a.1 - iteratedFDerivWithin 𝕜 k (g ∘ τ) s a.2 =
-        (ftaylorSeriesWithin 𝕜 g t (τ a.1)).taylorComp (ftaylorSeriesWithin 𝕜 τ s a.1) k -
-          (ftaylorSeriesWithin 𝕜 g t (τ a.2)).taylorComp (ftaylorSeriesWithin 𝕜 τ s a.2) k := by
-    rw [iteratedFDerivWithin_comp (hg _ (hst ha.1)) (hτk _ ha.1) hut hus ha.1 hst le_rfl,
-      iteratedFDerivWithin_comp (hg _ (hst ha.2)) (hτk _ ha.2) hut hus ha.2 hst le_rfl]
+        (ftaylorSeriesWithin 𝕜 g t (τ a.1)).taylorComp
+            (ftaylorSeriesWithin 𝕜 τ (interior s) a.1) k -
+          (ftaylorSeriesWithin 𝕜 g t (τ a.2)).taylorComp
+            (ftaylorSeriesWithin 𝕜 τ (interior s) a.2) k := by
+    rw [hint _ ha.1, hint _ ha.2,
+      iteratedFDerivWithin_comp (hg _ (hst' ha.1)) (hτk _ ha.1) hut hus' ha.1 hst' le_rfl,
+      iteratedFDerivWithin_comp (hg _ (hst' ha.2)) (hτk _ ha.2) hut hus' ha.2 hst' le_rfl]
   have hO := FormalMultilinearSeries.taylorComp_sub_taylorComp_isBigO (n := k)
     (p₁ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 g t (τ a.1))
     (p₂ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 g t (τ a.2))
-    (q₁ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 τ s a.1)
-    (q₂ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 τ s a.2)
+    (q₁ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 τ (interior s) a.1)
+    (q₂ := fun a : E × E ↦ ftaylorSeriesWithin 𝕜 τ (interior s) a.2)
     (f := fun a : E × E ↦ dist a.1 a.2 ^ (α : ℝ)) (l := 𝓝 z₀ ×ˢ 𝓝 z₀)
     (fun m hm ↦ ((hgc m hm).tendsto.comp tendsto_fst).norm.isBoundedUnder_le)
     (fun m hm ↦ by
       rcases hm.lt_or_eq with hm | rfl
       · -- Below the top order, the derivatives of `g` along `τ` are `C^1`.
         refine ContDiffAt.isBigO_sub_dist_rpow (𝕜 := 𝕜)
-          (φ := fun z ↦ iteratedFDerivWithin 𝕜 m g t (τ z)) ?_ hα
+          (φ := fun z ↦ iteratedFDerivWithin 𝕜 m g t (τ z)) ?_ one_ne_zero hα
         exact (ContDiffWithinAt.comp z₀ (ContDiffWithinAt.iteratedFDerivWithin_right (hg _ hτt)
           hut (by exact_mod_cast (by omega : 1 + m ≤ k)) hτt)
-          (ContDiffWithinAt.of_le (hτ z₀ hz₀) (by simp)) hst).contDiffAt hs
-      · exact hH.isBigO_comp_sub_dist_rpow hK
-          ((ContDiffWithinAt.of_le (hτ z₀ hz₀) (by simp)).contDiffAt hs))
+          (ContDiffWithinAt.of_le (hτ' z₀ hz₀) (by simp)) hst').contDiffAt hs'
+      · exact hH.isBigO_comp_sub_dist_rpow hτ1 hτK)
     (fun m hm ↦ ((hτm m hm).continuousAt.tendsto.comp tendsto_fst).norm.isBoundedUnder_le)
     (fun m hm ↦ ((hτm m hm).continuousAt.tendsto.comp tendsto_snd).norm.isBoundedUnder_le)
-    (fun m hm ↦ (hτm m hm).isBigO_sub_dist_rpow hα)
-  obtain ⟨c, hc, hcO⟩ := hO.exists_pos
-  obtain ⟨u, hu, hub⟩ := eventually_prod_self_iff'.mp
-    ((hcO.bound.and (prod_mem_prod hs hs)).mono fun a ha ↦ by
-      rw [hfor a ha.2]
-      exact ha.1 :
-      ∀ᶠ a in 𝓝 z₀ ×ˢ 𝓝 z₀, ‖iteratedFDerivWithin 𝕜 k (g ∘ τ) s a.1 -
-        iteratedFDerivWithin 𝕜 k (g ∘ τ) s a.2‖ ≤ c * ‖dist a.1 a.2 ^ (α : ℝ)‖)
-  obtain ⟨r, hr, hru⟩ := Metric.mem_nhds_iff.mp hu
-  refine ⟨r, hr, ⟨c, hc.le⟩, HolderOnWith.of_dist_le fun z hz w hw ↦ ?_⟩
-  have h := hub z (hru hz) w (hru hw)
-  rwa [Real.norm_of_nonneg (by positivity), ← dist_eq_norm] at h
+    (fun m hm ↦ (hτm m hm).isBigO_sub_dist_rpow one_ne_zero hα)
+  refine (hO.congr' ?_ EventuallyEq.rfl).exists_holderOnWith_ball
+  filter_upwards [prod_mem_prod hs' hs'] with a ha
+  exact (hfor a ha).symm
 
 end TauCeti

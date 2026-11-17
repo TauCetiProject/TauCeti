@@ -30,12 +30,13 @@ modelled on a locally compact space over `ℝ` or `ℂ`, and `F` is complete
 (`TauCeti.CompactChartAtlas.CkHolderSpace.instCompleteSpace`). For `α ≤ 1` and a boundaryless
 `C^{k+1}` manifold `M` over `ℝ` or `ℂ`, the spaces of two atlases consist of the same maps, and
 under the completeness assumptions above their norms are equivalent
-(`TauCeti.CompactChartAtlas.CkHolderSpace.atlasEquiv`).
+(`TauCeti.CompactChartAtlas.CkHolderSpace.atlasEquiv`, in
+`TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Holder.Atlas`).
 
 The usual Hölder spaces are those with `0 < α ≤ 1`, but the definitions accept every `α`.
 
 The derivatives are taken within the extended chart targets, so the definitions also apply to
-manifolds with boundary and corners; only completeness uses that `M` is boundaryless.
+manifolds with boundary and corners; in this file only completeness uses that `M` is boundaryless.
 
 ## Main definitions
 
