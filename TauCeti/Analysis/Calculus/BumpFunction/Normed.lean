@@ -7,22 +7,18 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Normalized smooth bumps on balls and scale-sharp Haar bounds
 
 This file supplements Mathlib's `ContDiffBump.normed` API with set-integral formulas, half-space
-integrals, and scale-sharp pointwise bounds against an additive Haar measure `μ`, together with the
-concentric bump parameters `TauCeti.ballBump x₀ hρ` (`rIn = ρ / 4`, `rOut = ρ / 2`) whose
-normalized cutoff `(ballBump x₀ hρ).normed μ` is smooth, nonnegative, symmetric under central
-reflection `x₀ + v ↦ x₀ - v`, supported in `Metric.closedBall x₀ (ρ / 2) ⊆ Metric.ball x₀ ρ`,
-integrates to `1`, and satisfies the scale-sharp bound
-`‖(ballBump x₀ hρ).normed μ y‖ ≤ C * ρ ^ (-finrank ℝ E)` with `C` independent of `x₀` and `ρ`.
-
-## Main definitions
-
-* `TauCeti.ballBump`: smooth bump parameters at `x₀` with `rIn = ρ / 4` and `rOut = ρ / 2`.
+integrals, and scale-sharp pointwise bounds against an additive Haar measure `μ`, and specializes
+them to `(TauCeti.ballBump x₀ hρ).normed μ`, which is supported in
+`Metric.closedBall x₀ (ρ / 2) ⊆ Metric.ball x₀ ρ` and satisfies the scale-sharp bound
+`‖(TauCeti.ballBump x₀ hρ).normed μ y‖ ≤ C * ρ ^ (-finrank ℝ E)` with `C` independent of `x₀`
+and `ρ`.
 
 ## Main results
 
@@ -88,23 +84,6 @@ end ContDiffBump
 
 namespace TauCeti
 
-/-- Smooth bump parameters centered at `x₀` with inner radius `ρ / 4` and outer radius `ρ / 2`, so
-`Metric.closedBall x₀ (ρ / 2)` sits strictly inside `Metric.ball x₀ ρ`. -/
-def ballBump {E : Type*} (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) : ContDiffBump x₀ :=
-  ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
-
-@[simp]
-theorem ballBump_rIn {E : Type*} (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) :
-    (ballBump x₀ hρ).rIn = ρ / 4 :=
-  (rfl)
-
-@[simp]
-theorem ballBump_rOut {E : Type*} (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) :
-    (ballBump x₀ hρ).rOut = ρ / 2 :=
-  (rfl)
-
-section BallBumpNormed
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
   [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E)
 
@@ -136,7 +115,5 @@ theorem exists_norm_normed_ballBump_le [μ.IsAddHaarMeasure] :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) (y : E),
       ‖(ballBump x₀ hρ).normed μ y‖ ≤ C * ρ ^ (-(finrank ℝ E : ℝ)) :=
   ⟨4 ^ finrank ℝ E / μ.real (closedBall (0 : E) 1), by positivity, norm_normed_ballBump_le μ⟩
-
-end BallBumpNormed
 
 end TauCeti
