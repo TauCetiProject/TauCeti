@@ -44,10 +44,10 @@ with time-independent coefficients whose energy form is coercive on `H¹₀(Ω)`
 `L²(Ω)`-valued representative of every weak solution is the orbit `t ↦ e^{-(t - t₀)L} u₀` of the
 Dirichlet semigroup `TauCeti.PDE.dirichletSemigroup`
 (`TauCeti.PDE.eqOn_realOperator_dirichletSemigroup_of_hasWeakLineDerivOn_gelfandDual`). In
-particular this applies to the weak solution of
-`TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1` for uniformly elliptic
-coefficients. For `L = -Δ` on a bounded domain this is the heat equation with zero boundary
-values.
+particular, for time-independent uniformly elliptic coefficients whose energy form is moreover
+coercive on `H¹₀(Ω)`, this applies to the weak solution of
+`TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1` with zero forcing. For `L = -Δ`
+on a bounded domain this is the heat equation with zero boundary values.
 
 ## The argument
 
@@ -142,6 +142,16 @@ theorem _root_.IsCoercive.exists_continuous_hasWeakLineDerivOn_realOperator_form
   rw [hfun]
   simpa [hval] using hderiv'.hasFDerivAt.hasLineDerivAt 1
 
+omit [CompleteSpace V] [CompleteSpace H] in
+/-- Coercivity of `B` is Gårding's inequality for `B` with the constants `α > 0` and `0`, in the
+form taken by the energy estimate and the existence theorem for the Gelfand triple of `J`. -/
+private theorem _root_.IsCoercive.exists_garding_zero (hB : IsCoercive B) (J : V →L[ℝ] H) :
+    ∃ α, 0 < α ∧ ∀ v, α * ‖v‖ ^ 2 - 0 * ‖J v‖ ^ 2 ≤ B v v := by
+  obtain ⟨α, hα, hcoer⟩ := hB
+  refine ⟨α, hα, fun v ↦ ?_⟩
+  rw [zero_mul, sub_zero, sq, ← mul_assoc]
+  exact hcoer v
+
 /-- **The energy estimate against an orbit of the domain.** A weak solution `u` of `u' + B u = 0`,
 with continuous representative `w`, stays within `‖w a - x‖` of the semigroup orbit of any `x` in
 the domain of the generator: the difference with the weak solution of
@@ -156,7 +166,7 @@ private theorem norm_sub_realOperator_formSemigroup_le_of_gelfandDual {u : ℝ �
     (hw : ContinuousOn w (Icc a b)) (hae : (fun t ↦ J (u t)) =ᵐ[volume.restrict (Ioo a b)] w)
     {x : H} (hx : x ∈ (hB.formGenerator J).domain) {t : ℝ} (ht : t ∈ Icc a b) :
     ‖w t - (hB.formSemigroup hJ).realOperator (t - a) x‖ ≤ ‖w a - x‖ := by
-  obtain ⟨α, hα, hcoer⟩ := id hB
+  obtain ⟨α, hα, hcoer⟩ := hB.exists_garding_zero J
   obtain ⟨U, hU, hJU, hdU⟩ := hB.exists_continuous_hasWeakLineDerivOn_realOperator_formSemigroup
     (a := a) (b := b) hJ hx
   have hUL : MemLp U 2 (volume.restrict (Ioo a b)) :=
@@ -173,10 +183,7 @@ private theorem norm_sub_realOperator_formSemigroup_le_of_gelfandDual {u : ℝ �
   have hE := hd.norm_sq_add_mul_integral_le_of_gelfandDual (A := fun _ ↦ B) (f := 0)
     (w := w - fun s ↦ (hB.formSemigroup hJ).realOperator (s - a) x)
     (hu.sub hUL) (hu'.sub (B.comp_memLp' hUL).neg)
-    (MemLp.zero (ε := StrongDual ℝ V)) hα le_rfl
-    (Eventually.of_forall fun _ v ↦ by
-      rw [zero_mul, sub_zero, sq, ← mul_assoc]
-      exact hcoer v)
+    (MemLp.zero (ε := StrongDual ℝ V)) hα le_rfl (Eventually.of_forall fun _ ↦ hcoer)
     (by
       filter_upwards [heq] with s hs
       rw [Pi.sub_apply, Pi.sub_apply, map_sub, Pi.zero_apply, ← hs]
@@ -187,11 +194,11 @@ private theorem norm_sub_realOperator_formSemigroup_le_of_gelfandDual {u : ℝ �
       rw [Pi.sub_apply, map_sub, hs, hJU s, Pi.sub_apply]) ht
   have hint : 0 ≤ ∫ s in a..t, ‖(u - U) s‖ ^ 2 :=
     intervalIntegral.integral_nonneg ht.1 fun _ _ ↦ sq_nonneg _
-  simp only [Pi.sub_apply, Pi.zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, zero_pow, intervalIntegral.integral_zero, mul_zero, add_zero, zero_mul,
-    Real.exp_zero, one_mul, sub_self, (hB.formSemigroup hJ).realOperator_zero_apply] at hE
+  have hE' : ‖w t - (hB.formSemigroup hJ).realOperator (t - a) x‖ ^ 2 +
+      α * ∫ s in a..t, ‖(u - U) s‖ ^ 2 ≤ ‖w a - x‖ ^ 2 := by
+    simpa using hE
   exact pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero |>.1 <|
-    (le_add_of_nonneg_right (mul_nonneg hα.le hint)).trans hE
+    (le_add_of_nonneg_right (mul_nonneg hα.le hint)).trans hE'
 
 /-- **Weak solutions are semigroup orbits.** Let `B` be a bounded coercive form on a real Hilbert
 space `V` and `J : V →L[ℝ] H` a continuous linear map with dense range into a real Hilbert space.
@@ -245,14 +252,11 @@ theorem _root_.IsCoercive.exists_hasWeakLineDerivOn_gelfandDual_ae_eq_realOperat
         Ioo_subset_Icc_self 2
     refine ⟨U, hUL, (B.comp_memLp' hUL).neg, hdU, ?_⟩
     simp [EventuallyEq, Ioo_eq_empty_of_le hba.le]
-  obtain ⟨α, hα, hcoer⟩ := id hB
+  obtain ⟨α, hα, hcoer⟩ := hB.exists_garding_zero J
   obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ :=
     exists_hasWeakLineDerivOn_gelfandDual (A := fun _ ↦ B) (f := 0) (Λ := ‖B‖) (β := 0) hJ hab
       (fun _ _ ↦ aestronglyMeasurable_const) (Eventually.of_forall fun _ ↦ le_rfl) hα
-      (Eventually.of_forall fun _ v ↦ by
-        rw [zero_mul, sub_zero, sq, ← mul_assoc]
-        exact hcoer v)
-      (MemLp.zero (ε := StrongDual ℝ V)) u₀
+      (Eventually.of_forall fun _ ↦ hcoer) (MemLp.zero (ε := StrongDual ℝ V)) u₀
   have hfun : (fun t ↦ (0 : ℝ → StrongDual ℝ V) t - B (u t)) = fun t ↦ -B (u t) :=
     funext fun _ ↦ zero_sub _
   rw [hfun] at hu' hd
