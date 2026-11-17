@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Star.StarAlgHom
 public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
 public import TauCeti.Algebra.TemperleyLieb.Trace.Star
 
+import TauCeti.Algebra.Ring.Invertible
+
 /-!
 # The sign isomorphism of Temperley–Lieb algebras
 
@@ -187,12 +189,6 @@ theorem aug_signEquiv (δ : R) {n : ℕ} (x : TemperleyLieb R δ n) :
 theorem aug_signEquiv_symm (δ : R) {n : ℕ} (x : TemperleyLieb R (-δ) n) :
     aug ((signEquiv δ n).symm x) = aug x := by
   simpa using (aug_signEquiv δ ((signEquiv δ n).symm x)).symm
-
-private theorem ringInverse_neg_one_pow_mul (k : ℕ) (a : R) :
-    Ring.inverse ((-1 : R) ^ k * a) = (-1 : R) ^ k * Ring.inverse a := by
-  have hinv1 : Ring.inverse (-1 : R) = -1 := by
-    simpa using Ring.inverse_unit (-1 : Rˣ)
-  rw [Ring.inverse_mul (Or.inl (isUnit_one.neg.pow k)), ← Ring.inverse_pow, hinv1, mul_comm]
 
 /-- The sign isomorphism sends the Jones–Wenzl projection at `δ` to the Jones–Wenzl projection at
 `-δ`, over every commutative ring and with no invertibility assumption on the quantum integers. -/
