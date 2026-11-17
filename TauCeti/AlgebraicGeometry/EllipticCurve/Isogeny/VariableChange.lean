@@ -56,6 +56,9 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
 
 * `TauCeti.Isogeny.variableChangeIsogeny`: the isogeny `W₁ ⟶ W₂` of a change of variables `C`
   with `C • W₁ = W₂`.
+* `TauCeti.Isogeny.conjByVariableChange`: the isogeny `C₁ • W₁ ⟶ C₂ • W₂` obtained by conjugating
+  `φ : W₁ ⟶ W₂` by changes of variables `C₁` and `C₂` (preserving degree and scaling the
+  differential constant by `C₂.u / C₁.u`).
 * `TauCeti.Isogeny.Hom.autGroupToUnits`: the homomorphism `W.autGroup →* (Hom W W)ˣ`.
 * `TauCeti.Isogeny.Hom.autGroupEquivUnits`: for an elliptic curve, the isomorphism
   `W.autGroup ≃* (Hom W W)ˣ`.
@@ -72,6 +75,11 @@ one of them: `W.autGroup ≃* (Hom W W)ˣ`.
   the negation isogeny.
 * `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`: a change of
   variables `C` pulls the invariant differential back to `C.u` times the invariant differential.
+* `TauCeti.Isogeny.conjByVariableChange_comp_variableChangeIsogeny`,
+  `TauCeti.Isogeny.conjByVariableChange_id`,
+  `TauCeti.Isogeny.conjByVariableChange_comp_conjByVariableChange`, and
+  `TauCeti.Isogeny.conjByVariableChange_inj`: intertwining, functoriality, and injectivity of
+  conjugation by changes of variables.
 * `TauCeti.Isogeny.exists_algebraMap_eq_pullback_of_degree_eq_one`: an isogeny of degree one out
   of a curve with integrally closed coordinate ring (for instance an elliptic curve) pulls the
   coordinate ring back into the coordinate ring.
@@ -254,6 +262,81 @@ theorem pullbackDifferential_variableChangeIsogeny_invariantDifferential (h : C 
     map_inv₀, hd, smul_smul, ← algebraMap_smul W₁.FunctionField (C.u : F), smul_smul]
   congr 1
   rw [mul_inv, mul_right_comm, ← map_inv₀, ← map_mul, hu]
+
+/-- The isogeny `C₁ • W₁ ⟶ C₂ • W₂` obtained by conjugating `φ : W₁ ⟶ W₂` by admissible changes of
+variables `C₁` and `C₂`. -/
+noncomputable def conjByVariableChange (φ : Isogeny W₁ W₂) (C₁ C₂ : VariableChange F) :
+    Isogeny (C₁ • W₁).toAffine (C₂ • W₂).toAffine :=
+  (variableChangeIsogeny C₂ rfl).comp
+    (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁)))
+
+/-- The definition of `TauCeti.Isogeny.conjByVariableChange`. -/
+theorem conjByVariableChange_def (φ : Isogeny W₁ W₂) (C₁ C₂ : VariableChange F) :
+    φ.conjByVariableChange C₁ C₂ =
+      (variableChangeIsogeny C₂ rfl).comp
+        (φ.comp (variableChangeIsogeny C₁⁻¹ (inv_smul_smul C₁ W₁))) :=
+  (rfl)
+
+/-- Conjugating an isogeny `φ : W₁ ⟶ W₂` by `C₁` and `C₂` intertwines `φ` with the variable-change
+isogenies of `C₁` and `C₂`. -/
+theorem conjByVariableChange_comp_variableChangeIsogeny (φ : Isogeny W₁ W₂)
+    (C₁ C₂ : VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).comp (variableChangeIsogeny C₁ rfl) =
+      (variableChangeIsogeny C₂ rfl).comp φ := by
+  rw [conjByVariableChange_def, comp_assoc, comp_assoc,
+    variableChangeIsogeny_inv_comp C₁ rfl (inv_smul_smul C₁ W₁), comp_id]
+
+/-- Conjugating the identity isogeny by a change of variables gives the identity isogeny. -/
+@[simp]
+theorem conjByVariableChange_id (W : WeierstrassCurve.Affine F) (C : VariableChange F) :
+    (id W).conjByVariableChange C C = id (C • W).toAffine := by
+  apply (variableChangeIsogeny C rfl).comp_right_injective
+  dsimp only
+  rw [conjByVariableChange_comp_variableChangeIsogeny, comp_id, id_comp]
+
+/-- Conjugation by changes of variables commutes with composition of isogenies. -/
+@[simp]
+theorem conjByVariableChange_comp_conjByVariableChange (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
+    (C₁ C₂ C₃ : VariableChange F) :
+    (ψ.conjByVariableChange C₂ C₃).comp (φ.conjByVariableChange C₁ C₂) =
+      (ψ.comp φ).conjByVariableChange C₁ C₃ := by
+  apply (variableChangeIsogeny C₁ rfl).comp_right_injective
+  dsimp only
+  rw [comp_assoc, conjByVariableChange_comp_variableChangeIsogeny, ← comp_assoc,
+    conjByVariableChange_comp_variableChangeIsogeny, comp_assoc,
+    conjByVariableChange_comp_variableChangeIsogeny]
+
+/-- Conjugating by changes of variables is injective on isogenies. -/
+@[simp]
+theorem conjByVariableChange_inj {φ ψ : Isogeny W₁ W₂} (C₁ C₂ : VariableChange F) :
+    φ.conjByVariableChange C₁ C₂ = ψ.conjByVariableChange C₁ C₂ ↔ φ = ψ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+  have h' := congrArg (fun χ ↦ (variableChangeIsogeny C₂⁻¹ (inv_smul_smul C₂ W₂)).comp
+    (χ.comp (variableChangeIsogeny C₁ rfl))) h
+  simpa only [conjByVariableChange_comp_variableChangeIsogeny, ← comp_assoc,
+    variableChangeIsogeny_inv_comp C₂ rfl (inv_smul_smul C₂ W₂), id_comp] using h'
+
+/-- Conjugating an isogeny by changes of variables preserves its degree. -/
+@[simp]
+theorem degree_conjByVariableChange (φ : Isogeny W₁ W₂) (C₁ C₂ : VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).degree = φ.degree := by
+  simp [conjByVariableChange_def]
+
+open _root_.WeierstrassCurve.Affine in
+/-- Conjugating `φ : W₁ ⟶ W₂` with `φ^*ω₂ = c ω₁` by changes of variables `C₁` and `C₂` scales the
+differential pullback constant by `C₂.u / C₁.u`. -/
+theorem pullbackDifferential_conjByVariableChange_invariantDifferential (φ : Isogeny W₁ W₂)
+    {c : F} (hc : φ.pullbackDifferential (invariantDifferential W₂) =
+      c • invariantDifferential W₁)
+    (C₁ C₂ : VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).pullbackDifferential
+        (invariantDifferential (C₂ • W₂).toAffine) =
+      (c * C₂.u / C₁.u) • invariantDifferential (C₁ • W₁).toAffine := by
+  simp only [conjByVariableChange, pullbackDifferential_comp, LinearMap.comp_apply,
+    pullbackDifferential_variableChangeIsogeny_invariantDifferential, map_smul, hc, smul_smul]
+  congr 1
+  simp [VariableChange.inv_def, div_eq_mul_inv]
+  ring
 
 /-! ### Every isomorphism is a change of variables -/
 

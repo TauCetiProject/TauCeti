@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Minimal models: a criterion, their comparison, and what transfers between them
@@ -91,6 +92,8 @@ have the same `c₄` valuation too.
   valuation rings, good and multiplicative reduction of an integral equation are unchanged.
 * `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
   reduction transfers along such a change of variables.
+* `WeierstrassCurve.isMinimal_smul_of_valuation_sub_le`: valuation-approximation criterion
+  transferring minimality across close changes of variables.
 
 `valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul` supply the unit needed for descent.
@@ -438,7 +441,7 @@ theorem exists_unit_algebraMap_eq_u_of_isMinimal_smul {W₁ W₂ : WeierstrassCu
     [IsMinimal R W₁] [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K)
     (hD : D • W₁ = W₂) : ∃ u₀ : Rˣ, algebraMap R K u₀ = D.u := by
   obtain ⟨u₀, hau⟩ := associated_of_valuation_eq (A := R) 1 (↑D.u : K)
-    (by rw [map_one]; exact (valuation_u_eq_one_of_isMinimal_smul R D hD).symm)
+    (by rw [_root_.map_one]; exact (valuation_u_eq_one_of_isMinimal_smul R D hD).symm)
   rw [Units.smul_def, Algebra.smul_def, mul_one] at hau
   exact ⟨u₀, hau⟩
 
@@ -642,6 +645,41 @@ theorem HasSplitMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : Weierstra
   exact (splits_variableChange_nodePolynomial_map_iff
     (algebraMap R (IsLocalRing.ResidueField R)) (W₁.integralModel R) C₀).mpr
       (by rw [nodePolynomial_def]; exact h₁.splitMultiplicativeReduction)
+
+section ValuationApproximation
+
+/-- **Minimality over `S` from valuation approximation of a minimalising change of variables.** If
+`D` carries `W` to an equation minimal over the discrete valuation ring `S` (where `w.Integers S`),
+then so does every `C` whose scaling factor has the same `w`-valuation as `D.u` and whose
+translation parameters approximate those of `D` as in
+`VariableChange.valuation_mul_inv_r_s_t_le_one`. -/
+theorem isMinimal_smul_of_valuation_sub_le {S F Γ₀ : Type*} [CommRing S] [IsDomain S]
+    [IsDiscreteValuationRing S] [Field F] [Algebra S F] [IsFractionRing S F]
+    [LinearOrderedCommGroupWithZero Γ₀] {w : Valuation F Γ₀} (hw : w.Integers S)
+    (W : WeierstrassCurve F) (C D : VariableChange F) [IsMinimal S (D • W)]
+    (hu : w C.u = w D.u)
+    (hr : w (C.r - D.r) ≤ w D.u ^ 2)
+    (hs : w (C.s - D.s) ≤ w D.u)
+    (ht : w (C.t - D.t - D.s * (C.r - D.r)) ≤ w D.u ^ 3) :
+    IsMinimal S (C • W) := by
+  have hD : 0 < w D.u := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+  have hBu : ((C * D⁻¹).u : F) = C.u / D.u := by
+    rw [VariableChange.mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
+  obtain ⟨hr', hs', ht'⟩ := VariableChange.valuation_mul_inv_r_s_t_le_one w C D hr hs ht
+  obtain ⟨u, hu'⟩ := hw.exists_of_le_one (r := ((C * D⁻¹).u : F)) (by
+    rw [hBu, map_div₀, hu, div_self hD.ne'])
+  obtain ⟨r, hr'⟩ := hw.exists_of_le_one hr'
+  obtain ⟨s, hs'⟩ := hw.exists_of_le_one hs'
+  obtain ⟨t, ht'⟩ := hw.exists_of_le_one ht'
+  have hunit : IsUnit u := hw.isUnit_of_one' (by
+    rw [hu', hBu, map_div₀, hu, div_self hD.ne'])
+  have hB : (⟨hunit.unit, r, s, t⟩ : VariableChange S).baseChange F = C * D⁻¹ :=
+    VariableChange.ext (Units.ext hu') hr' hs' ht'
+  have hCW : C • W = (C * D⁻¹) • (D • W) := by rw [smul_smul, inv_mul_cancel_right]
+  rw [hCW, ← hB]
+  exact isMinimal_baseChange_smul _ _ _
+
+end ValuationApproximation
 
 end WeierstrassCurve
 

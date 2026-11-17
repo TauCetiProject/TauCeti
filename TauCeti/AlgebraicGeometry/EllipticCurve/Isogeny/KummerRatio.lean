@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 import TauCeti.GroupTheory.Index.Comp
 
 /-!
@@ -14,7 +15,8 @@ import TauCeti.GroupTheory.Index.Comp
 Over a field `F`, the Kummer ratio of `φ : E₁ → E₂` is
 `[E₂(F) : φ E₁(F)] / #E₁(F)[φ]`. The kernel is always finite. The ratio is positive when the
 image has finite index, and zero otherwise, following the convention for subgroup indices.
-It is multiplicative under composition, without a finite-index hypothesis.
+It is multiplicative under composition, without a finite-index hypothesis, equals one for
+degree-one isogenies, and is invariant under conjugation by admissible changes of variables.
 
 Over completions of a global field, these ratios are the local factors in the global Selmer-ratio
 formula used in Cassels' proof of isogeny invariance of the Birch–Swinnerton-Dyer quotient.
@@ -80,5 +82,55 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
   have hrange : (AddMonoidHom.id W.Point).range = ⊤ :=
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
+
+/-- A degree-one isogeny induces a bijection on rational points, so its Kummer ratio is one. -/
+theorem kummerRatio_eq_one_of_degree_eq_one (φ : Isogeny W₁ W₂) (hφ : φ.degree = 1) :
+    φ.kummerRatio = 1 := by
+  classical
+  obtain ⟨ψ, hψφ, hφψ⟩ := exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one φ hφ
+  have hcomp₁ : (Hom.ofIsogeny ψ).pointMapHom.comp (Hom.ofIsogeny φ).pointMapHom =
+      AddMonoidHom.id W₁.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hψφ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hcomp₂ : (Hom.ofIsogeny φ).pointMapHom.comp (Hom.ofIsogeny ψ).pointMapHom =
+      AddMonoidHom.id W₂.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hφψ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    AddMonoidHom.ker_eq_bot _
+      (Function.LeftInverse.injective (g := (Hom.ofIsogeny ψ).pointMapHom)
+        (DFunLike.congr_fun hcomp₁))
+  have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
+    AddMonoidHom.range_eq_top_of_surjective _
+      (Function.RightInverse.surjective (g := (Hom.ofIsogeny ψ).pointMapHom)
+        (DFunLike.congr_fun hcomp₂))
+  simp [kummerRatio_def, hker, hrange]
+
+/-- The isogeny associated to an admissible change of variables has Kummer ratio one. -/
+@[simp]
+theorem kummerRatio_variableChangeIsogeny (C : WeierstrassCurve.VariableChange F)
+    (h : C • W₁ = W₂) :
+    (variableChangeIsogeny C h).kummerRatio = 1 :=
+  kummerRatio_eq_one_of_degree_eq_one _ (degree_variableChangeIsogeny C h)
+
+/-- Conjugating an isogeny by admissible changes of variables preserves its Kummer ratio. -/
+@[simp]
+theorem kummerRatio_conjByVariableChange (φ : Isogeny W₁ W₂)
+    (C₁ C₂ : WeierstrassCurve.VariableChange F) :
+    (φ.conjByVariableChange C₁ C₂).kummerRatio = φ.kummerRatio := by
+  simp [conjByVariableChange_def]
+
+/-- A cross-multiplied point-index and kernel-cardinality identity in a characteristic-zero field
+rearranges to multiplication by `kummerRatio`. -/
+theorem ratCast_kummerRatio_mul_eq_of_mul_index_eq_card_ker_mul [DecidableEq F]
+    {K : Type*} [Field K] [CharZero K] (φ : Isogeny W₁ W₂) {a b : K}
+    (h : a * (Hom.ofIsogeny φ).pointMapHom.range.index =
+      Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * b) :
+    (φ.kummerRatio : K) * a = b := by
+  have _ := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  have hker : (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : K) ≠ 0 :=
+    Nat.cast_ne_zero.mpr Nat.card_pos.ne'
+  rw [kummerRatio_def, Rat.cast_div, Rat.cast_natCast, Rat.cast_natCast, div_mul_eq_mul_div,
+    div_eq_iff hker, mul_comm _ a, h, mul_comm]
 
 end TauCeti.Isogeny
