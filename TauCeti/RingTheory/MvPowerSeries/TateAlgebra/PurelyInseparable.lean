@@ -17,30 +17,25 @@ import Mathlib.RingTheory.Localization.Integer
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.FieldTheory.PurelyInseparable.Embedding
 import TauCeti.LinearAlgebra.Basis.Basic
-import TauCeti.RingTheory.MvPowerSeries.Basic
-import TauCeti.RingTheory.MvPowerSeries.LexOrder
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 
 /-!
 # Purely inseparable extensions of Tate fraction fields via Frobenius roots
 
 Let `K` be an ultrametric normed field of exponential characteristic `p`, `σ` a variable type, and
 `c : σ → ℝ` a positive polyradius. Given `e : ℕ`, let `q := p ^ e`, `K' := FrobeniusRoot K p e`,
-and `r : σ → ℝ` a positive polyradius satisfying `r i ^ q = c i`. This file constructs the shared
-infrastructure for analyzing finite purely inseparable extensions `M` of
+and `r : σ → ℝ` a positive polyradius satisfying `r i ^ q = c i`. Building on the general
+base-changed expansion and coefficient-submodule separation infrastructure in
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand`, this file constructs the Frobenius-root and
+purely inseparable extension machinery for analyzing finite purely inseparable extensions `M` of
 `F := GaussFractionField σ K c` of exponent at most `e`:
 
-1. `TauCeti.MvPowerSeries.restrictedExpandAlgebraMap`: the canonical `K`-algebra homomorphism
-   `K{X / c} →ₐ[K] K'{X / r}` combining coefficient extension along `algebraMap K K'` with variable
-   expansion `X i ↦ X i ^ q`.
-2. `TauCeti.MvPowerSeries.restrictedFrobeniusRoot`: applying `FrobeniusRoot.root K p e`
+1. `TauCeti.MvPowerSeries.restrictedFrobeniusRoot`: applying `FrobeniusRoot.root K p e`
    coefficientwise gives a ring homomorphism `K{X / c} →+* K'{X / r}` extracting explicit `q`-th
-   roots with respect to `restrictedExpandAlgebraMap`.
-3. `TauCeti.MvPowerSeries.exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable`: embeds `M`
+   roots with respect to `TauCeti.MvPowerSeries.restrictedExpandAlgebraMap`.
+2. `TauCeti.MvPowerSeries.exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable`: embeds `M`
    into `GaussFractionField σ K' r` compatibly with `restrictedExpandAlgebraMap`, satisfying
    `‖ι y‖ = spectralNorm F M y` and sending an `F`-basis of `M` into `K'{X / r}`.
-4. `TauCeti.MvPowerSeries.exists_dual_norm_le_spectralNorm_of_isPurelyInseparable`: when `K` is
+3. `TauCeti.MvPowerSeries.exists_dual_norm_le_spectralNorm_of_isPurelyInseparable`: when `K` is
    complete and `σ` is countable, every nonzero `x₀ : M` is separated from `0` by an `F`-linear
    functional `φ : Module.Dual F M` that is bounded by `spectralNorm F M` and sends every element
    of `M` whose `p ^ e`-th power lies in `K{X / c}` into `Set.range (algebraMap T F)`.
@@ -61,79 +56,6 @@ namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries Filter
 open scoped Topology IntermediateField
-
-section ExpandAlgebraMap
-
-variable {σ K K' : Type*} [NormedField K] [IsUltrametricDist K]
-  [NormedCommRing K'] [IsUltrametricDist K'] [NormedAlgebra K K']
-  {c r : σ → ℝ}
-
-/-- Substituting `X i ↦ X i ^ q` and mapping coefficients along `algebraMap K K'` gives a
-`K`-algebra homomorphism `K{X / c} →ₐ[K] K'{X / r}` whenever `r i ^ q = c i`. -/
-noncomputable def restrictedExpandAlgebraMap (q : ℕ) (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) :
-    IsRestricted.subring (R := K) c →ₐ[K] IsRestricted.subring (R := K') r where
-  toRingHom :=
-    (restrictedExpand q hq hr).toRingHom.comp
-      (restrictedMap (algebraMap K K') (C := ‖(1 : K')‖) fun a ↦ by
-        rw [Algebra.algebraMap_eq_smul_one, mul_comm]
-        exact norm_smul_le a (1 : K'))
-  commutes' a := Subtype.ext <| by
-    rw [RingHom.toFun_eq_coe, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      coe_restrictedExpand, coe_restrictedMap, coe_algebraMap_isRestrictedSubring,
-      MvPowerSeries.map_C, expand_C,
-      IsScalarTower.algebraMap_apply K K' (IsRestricted.subring (R := K') r),
-      coe_algebraMap_isRestrictedSubring]
-
-private theorem restrictedExpandAlgebraMap_eq (q : ℕ) (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i)
-    (f : IsRestricted.subring (R := K) c) :
-    restrictedExpandAlgebraMap (K' := K') q hq hr f =
-      restrictedExpand q hq hr
-        (restrictedMap (algebraMap K K') (C := ‖(1 : K')‖) (fun a ↦ by
-          rw [Algebra.algebraMap_eq_smul_one, mul_comm]
-          exact norm_smul_le a (1 : K')) f) :=
-  rfl
-
-/-- The underlying formal power series of `restrictedExpandAlgebraMap` is `expand q` composed with
-`MvPowerSeries.map (algebraMap K K')`. -/
-theorem coe_restrictedExpandAlgebraMap (q : ℕ) (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i)
-    (f : IsRestricted.subring (R := K) c) :
-    (restrictedExpandAlgebraMap (K' := K') q hq hr f : _root_.MvPowerSeries σ K') =
-      expand q hq (MvPowerSeries.map (algebraMap K K') (f : _root_.MvPowerSeries σ K)) := by
-  rw [restrictedExpandAlgebraMap_eq, coe_restrictedExpand, coe_restrictedMap]
-
-/-- `restrictedExpandAlgebraMap` sends each coordinate indeterminate `X i` to `X i ^ q`. -/
-@[simp]
-theorem restrictedExpandAlgebraMap_X (q : ℕ) (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) (i : σ) :
-    restrictedExpandAlgebraMap (K' := K') q hq hr
-        (⟨X i, isRestricted_X c i⟩ : IsRestricted.subring (R := K) c) =
-      (⟨X i, isRestricted_X r i⟩ : IsRestricted.subring (R := K') r) ^ q := by
-  apply Subtype.ext
-  simp [coe_restrictedExpandAlgebraMap]
-
-/-- `restrictedExpandAlgebraMap` is injective whenever `algebraMap K K'` is injective. -/
-theorem restrictedExpandAlgebraMap_injective [FaithfulSMul K K']
-    (q : ℕ) (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) :
-    Function.Injective (restrictedExpandAlgebraMap (σ := σ) (K := K) (K' := K') q hq hr) := by
-  intro f g h
-  apply Subtype.ext
-  ext μ
-  have hμ := congrArg (fun u : IsRestricted.subring (R := K') r ↦
-    coeff (q • μ) (u : _root_.MvPowerSeries σ K')) h
-  simp only [coe_restrictedExpandAlgebraMap, coeff_expand_smul, coeff_map] at hμ
-  exact FaithfulSMul.algebraMap_injective K K' hμ
-
-/-- Over a normed field `K` and a normed `K`-algebra `K'` with `‖1‖ = 1`,
-`restrictedExpandAlgebraMap` preserves the Gauss norm. -/
-@[simp]
-theorem norm_restrictedExpandAlgebraMap [NormOneClass K']
-    [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
-    (q : ℕ) (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i)
-    (f : IsRestricted.subring (R := K) c) :
-    ‖restrictedExpandAlgebraMap (K' := K') q hq hr f‖ = ‖f‖ := by
-  rw [restrictedExpandAlgebraMap_eq, norm_restrictedExpand,
-    norm_restrictedMap _ _ (norm_algebraMap' K')]
-
-end ExpandAlgebraMap
 
 section FrobeniusRoot
 
@@ -348,175 +270,6 @@ end FrobeniusRoot
 
 section SeparatingDual
 
-section ComponentDual
-
-variable {σ K K' : Type*} [NormedField K] [IsUltrametricDist K]
-  [NormedField K'] [IsUltrametricDist K'] [NormedAlgebra K K']
-
-/-- The `K`-submodule of restricted series `K'{X / r}` whose coefficients all lie in `E`. -/
-private def restrictedCoeffSubmodule (r : σ → ℝ) (E : Submodule K K') :
-    Submodule K (IsRestricted.subring (R := K') r) where
-  carrier := {u | ∀ α, coeff α (u : _root_.MvPowerSeries σ K') ∈ E}
-  zero_mem' _ := by simp
-  add_mem' hu hv α := by simpa using E.add_mem (hu α) (hv α)
-  smul_mem' a u hu α := by
-    change coeff α ((algebraMap K (IsRestricted.subring (R := K') r) a * u :
-      IsRestricted.subring (R := K') r) : _root_.MvPowerSeries σ K') ∈ E
-    rw [Subring.coe_mul, IsScalarTower.algebraMap_apply K K' (IsRestricted.subring (R := K') r),
-      coe_algebraMap_isRestrictedSubring, coeff_C_mul, ← Algebra.smul_def]
-    exact E.smul_mem a (hu α)
-
-private theorem mul_mem_restrictedCoeffSubmodule {c r : σ → ℝ} {q : ℕ} (hq : q ≠ 0)
-    (hr : ∀ i, r i ^ q = c i) {E : Submodule K K'} (d : IsRestricted.subring (R := K) c)
-    {u : IsRestricted.subring (R := K') r} (hu : u ∈ restrictedCoeffSubmodule r E) :
-    restrictedExpandAlgebraMap (K' := K') q hq hr d * u ∈ restrictedCoeffSubmodule r E := fun β ↦ by
-  rw [Subring.coe_mul, coe_restrictedExpandAlgebraMap, ← MvPowerSeries.map_expand]
-  exact MvPowerSeries.coeff_map_mul_mem _ hu β
-
-private theorem mem_restrictedCoeffSubmodule_of_mul_mem {c r : σ → ℝ} {q : ℕ} (hq : q ≠ 0)
-    (hr : ∀ i, r i ^ q = c i) {E : Submodule K K'} {d : IsRestricted.subring (R := K) c}
-    (hd : d ≠ 0) {u : IsRestricted.subring (R := K') r}
-    (hdu : restrictedExpandAlgebraMap (K' := K') q hq hr d * u ∈ restrictedCoeffSubmodule r E) :
-    u ∈ restrictedCoeffSubmodule r E := by
-  have hexp_ne : MvPowerSeries.expand q hq (d : _root_.MvPowerSeries σ K) ≠ 0 := by
-    rw [← coe_restrictedExpand q hq hr d]
-    exact Subtype.coe_ne_coe.mpr ((map_ne_zero_iff _ (restrictedExpand_injective q hq hr)).mpr hd)
-  refine fun α ↦ MvPowerSeries.coeff_mem_of_coeff_map_mul_mem hexp_ne (fun β ↦ ?_) α
-  simpa only [Subring.coe_mul, coe_restrictedExpandAlgebraMap, ← MvPowerSeries.map_expand] using
-    hdu β
-
-/-- Extracting the `ν`-th `q`-adic component sends `restrictedCoeffSubmodule r E` `K`-linearly into
-`IsRestrictedFamily.addSubgroup E c`. -/
-private noncomputable def restrictedExpandComponentFamily {c r : σ → ℝ} [∀ i, Fact (0 < r i)]
-    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) (E : Submodule K K') (ν : σ →₀ ℕ) :
-    restrictedCoeffSubmodule r E →ₗ[K] IsRestrictedFamily.addSubgroup E c where
-  toFun u :=
-    ⟨fun α ↦ ⟨coeff α (restrictedExpandComponent hq hr ν u.1 : _root_.MvPowerSeries σ K'), by
-        rw [coeff_restrictedExpandComponent]; exact u.2 (q • α + ν)⟩,
-      IsRestrictedFamily.mem_addSubgroup.mpr <|
-        ((isRestrictedFamily_coeff_iff _).mpr
-          (restrictedExpandComponent hq hr ν u.1).2).of_norm_le (C := 1) fun _ ↦
-            (one_mul _).symm.le⟩
-  map_add' u v := IsRestrictedFamily.ext fun α ↦ Subtype.ext <| by
-    simp [restrictedExpandComponent_add]
-  map_smul' a u := IsRestrictedFamily.ext fun α ↦ Subtype.ext <| by
-    simp only [RingHom.id_apply, IsRestrictedFamily.coe_smul, Pi.smul_apply, SetLike.val_smul]
-    change coeff α (restrictedExpandComponent hq hr ν (a • u.1) : _root_.MvPowerSeries σ K') =
-      a • coeff α (restrictedExpandComponent hq hr ν u.1 : _root_.MvPowerSeries σ K')
-    rw [Algebra.smul_def, coeff_restrictedExpandComponent, Subring.coe_mul,
-      IsScalarTower.algebraMap_apply K K' (IsRestricted.subring (R := K') r),
-      coe_algebraMap_isRestrictedSubring, coeff_C_mul, coeff_restrictedExpandComponent,
-      ← Algebra.smul_def]
-
-/-- Composing `restrictedExpandComponentFamily` with a norm-bounded `K`-linear functional on `E`
-yields a `K`-linear map `restrictedCoeffSubmodule r E →ₗ[K] K{X / c}`. -/
-private noncomputable def restrictedExpandComponentDual {c r : σ → ℝ}
-    [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
-    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) (E : Submodule K K') (ν : σ →₀ ℕ)
-    (f : E →ₗ[K] K) {C : ℝ} (hf : ∀ v : E, ‖f v‖ ≤ C * ‖v‖) :
-    restrictedCoeffSubmodule r E →ₗ[K] IsRestricted.subring (R := K) c :=
-  (IsRestrictedFamily.subringLinearEquiv.symm.toLinearMap.restrictScalars K).comp
-    ((IsRestrictedFamily.mapLinearMap f hf).comp (restrictedExpandComponentFamily hq hr E ν))
-
-private theorem coeff_restrictedExpandComponentDual {c r : σ → ℝ}
-    [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
-    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) {E : Submodule K K'} (ν : σ →₀ ℕ)
-    (f : E →ₗ[K] K) {C : ℝ} (hf : ∀ v : E, ‖f v‖ ≤ C * ‖v‖)
-    (u : restrictedCoeffSubmodule r E) (α : σ →₀ ℕ) :
-    coeff α (restrictedExpandComponentDual hq hr E ν f hf u : _root_.MvPowerSeries σ K) =
-      f ⟨coeff (q • α + ν) (u.1 : _root_.MvPowerSeries σ K'), u.2 (q • α + ν)⟩ := by
-  simp only [restrictedExpandComponentDual, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-    LinearEquiv.coe_toLinearMap, IsRestrictedFamily.coeff_coe_subringLinearEquiv_symm_apply,
-    IsRestrictedFamily.coe_mapLinearMap, Function.comp_apply, restrictedExpandComponentFamily,
-    LinearMap.coe_mk, AddHom.coe_mk]
-  congr 1
-  exact Subtype.ext (coeff_restrictedExpandComponent hq hr ν α u.1)
-
-private theorem restrictedExpandComponentDual_mul {c r : σ → ℝ}
-    [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
-    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) {E : Submodule K K'}
-    {ν : σ →₀ ℕ} (hν : ∀ i, ν i < q)
-    (f : E →ₗ[K] K) {C : ℝ} (hf : ∀ v : E, ‖f v‖ ≤ C * ‖v‖)
-    (d : IsRestricted.subring (R := K) c) (u : restrictedCoeffSubmodule r E) :
-    restrictedExpandComponentDual hq hr E ν f hf
-        ⟨restrictedExpandAlgebraMap (K' := K') q hq hr d * u.1,
-          mul_mem_restrictedCoeffSubmodule hq hr d u.2⟩ =
-      d * restrictedExpandComponentDual hq hr E ν f hf u := by
-  classical
-  have hw_mul :
-      restrictedExpandComponentFamily hq hr E ν
-          ⟨restrictedExpandAlgebraMap (K' := K') q hq hr d * u.1,
-            mul_mem_restrictedCoeffSubmodule hq hr d u.2⟩ =
-        d • restrictedExpandComponentFamily hq hr E ν u := by
-    apply IsRestrictedFamily.ext
-    intro α
-    apply Subtype.ext
-    dsimp only [restrictedExpandComponentFamily, LinearMap.coe_mk, AddHom.coe_mk]
-    rw [restrictedExpandAlgebraMap_eq,
-      restrictedExpandComponent_restrictedExpand_mul hq hr hν _ u.1,
-      IsRestrictedFamily.coe_isRestrictedSubring_smul, convSMul_apply, Submodule.coe_sum,
-      Subring.coe_mul, coeff_mul]
-    refine Finset.sum_congr rfl fun pq _ ↦ ?_
-    rw [SetLike.val_smul, Algebra.smul_def, coeff_restrictedMap]
-  dsimp only [restrictedExpandComponentDual, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-    LinearEquiv.coe_toLinearMap]
-  rw [hw_mul, IsRestrictedFamily.mapLinearMap_isRestrictedSubring_smul,
-    IsRestrictedFamily.subringLinearEquiv.symm.map_smul, smul_eq_mul]
-
-private theorem norm_restrictedExpandComponentDual_le {c r : σ → ℝ}
-    [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
-    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) {E : Submodule K K'} (ν : σ →₀ ℕ)
-    (f : E →ₗ[K] K) {C : ℝ} (hC : 0 ≤ C) (hf : ∀ v : E, ‖f v‖ ≤ C * ‖v‖)
-    (u : restrictedCoeffSubmodule r E) :
-    ‖restrictedExpandComponentDual hq hr E ν f hf u‖ ≤
-      (C / ν.prod (r · ^ ·)) * ‖u.1‖ := by
-  calc ‖restrictedExpandComponentDual hq hr E ν f hf u‖
-      ≤ C * ‖restrictedExpandComponent hq hr ν u.1‖ := by
-        refine norm_le_mul_of_norm_coeff_le fun α ↦ ?_
-        rw [coeff_restrictedExpandComponentDual, coeff_restrictedExpandComponent]
-        exact hf ⟨coeff (q • α + ν) (u.1 : _root_.MvPowerSeries σ K'), u.2 (q • α + ν)⟩
-    _ ≤ C * (‖u.1‖ / ν.prod (r · ^ ·)) :=
-        mul_le_mul_of_nonneg_left ((le_div_iff₀ (prod_pow_pos ν)).mpr
-          (norm_restrictedExpandComponent_mul_prod_le hq hr ν u.1)) hC
-    _ = (C / ν.prod (r · ^ ·)) * ‖u.1‖ := by ring
-
-private theorem exists_linearMap_restrictedCoeffSubmodule_ne_zero {c r : σ → ℝ}
-    [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)]
-    {q : ℕ} (hq : q ≠ 0) (hr : ∀ i, r i ^ q = c i) {E : Submodule K K'}
-    (hsep : ∀ {x : E}, x ≠ 0 → ∃ (f : E →ₗ[K] K) (C : ℝ),
-      0 ≤ C ∧ (∀ v : E, ‖f v‖ ≤ C * ‖v‖) ∧ f x ≠ 0)
-    (u₀ : restrictedCoeffSubmodule r E) (hu₀_ne : u₀.1 ≠ 0) :
-    ∃ (π : restrictedCoeffSubmodule r E →ₗ[K] IsRestricted.subring (R := K) c) (C_π : ℝ),
-      0 ≤ C_π ∧
-      (∀ (d : IsRestricted.subring (R := K) c) (u : restrictedCoeffSubmodule r E),
-        π ⟨restrictedExpandAlgebraMap (K' := K') q hq hr d * u.1,
-          mul_mem_restrictedCoeffSubmodule hq hr d u.2⟩ = d * π u) ∧
-      (∀ u : restrictedCoeffSubmodule r E, ‖π u‖ ≤ C_π * ‖u.1‖) ∧
-      π u₀ ≠ 0 := by
-  obtain ⟨ν, hν, hν_norm⟩ := exists_norm_restrictedExpandComponent_mul_prod_eq hq hr u₀.1
-  have hcomp_ne : restrictedExpandComponent hq hr ν u₀.1 ≠ 0 := fun h0 ↦ by
-    rw [h0, norm_zero, zero_mul] at hν_norm
-    exact hu₀_ne (norm_eq_zero.mp hν_norm.symm)
-  obtain ⟨μ, hμ_ne⟩ :
-      ∃ μ, coeff μ (restrictedExpandComponent hq hr ν u₀.1 : _root_.MvPowerSeries σ K') ≠ 0 := by
-    by_contra! hall
-    exact hcomp_ne (Subtype.ext (MvPowerSeries.ext fun μ ↦ by
-      rw [ZeroMemClass.coe_zero, map_zero]; exact hall μ))
-  have hx_ne : (⟨coeff (q • μ + ν) (u₀.1 : _root_.MvPowerSeries σ K'), u₀.2 _⟩ : E) ≠ 0 := by
-    refine Subtype.coe_ne_coe.mp ?_
-    change coeff (q • μ + ν) (u₀.1 : _root_.MvPowerSeries σ K') ≠ 0
-    rwa [← coeff_restrictedExpandComponent hq hr ν μ u₀.1]
-  obtain ⟨f, C, hC, hf, hf_ne⟩ := hsep hx_ne
-  refine ⟨restrictedExpandComponentDual hq hr E ν f hf, C / ν.prod (r · ^ ·),
-    div_nonneg hC (prod_pow_pos ν).le,
-    restrictedExpandComponentDual_mul hq hr hν f hf,
-    norm_restrictedExpandComponentDual_le hq hr ν f hC hf, fun h0 ↦ hf_ne ?_⟩
-  have hcoeff := congrArg (fun t : IsRestricted.subring (R := K) c ↦
-    coeff μ (t : _root_.MvPowerSeries σ K)) h0
-  simpa only [coeff_restrictedExpandComponentDual, ZeroMemClass.coe_zero, map_zero] using hcoeff
-
-end ComponentDual
-
 /-- For any finite purely inseparable extension `M` of `F := GaussFractionField σ K c` over a
 complete ultrametric field `K` (trivially or nontrivially normed) and countable variable type `σ`,
 every nonzero `x₀ : M` is separated from `0` by an `F`-linear functional `φ : Module.Dual F M`
@@ -566,7 +319,7 @@ theorem exists_dual_norm_le_spectralNorm_of_isPurelyInseparable
     coeff idx.2 (rootG idx.1 : _root_.MvPowerSeries σ K')
   let E : Submodule K K' := Submodule.span K S
   let rootGSub (j : Fin m) : restrictedCoeffSubmodule r E :=
-    ⟨rootG j, fun α ↦ Submodule.subset_span ⟨(j, α), rfl⟩⟩
+    ⟨rootG j, mem_restrictedCoeffSubmodule.mpr fun α ↦ Submodule.subset_span ⟨(j, α), rfl⟩⟩
   let linComb (a : Fin m → T) : restrictedCoeffSubmodule r E :=
     ∑ j, ⟨Ψ (a j) * rootG j, mul_mem_restrictedCoeffSubmodule hq hr (a j) (rootGSub j).2⟩
   have hlin (a : Fin m → T) : (linComb a).1 = ∑ j, Ψ (a j) * rootG j := by simp [linComb]
@@ -579,13 +332,13 @@ theorem exists_dual_norm_le_spectralNorm_of_isPurelyInseparable
   obtain ⟨s₀, hs₀⟩ :=
     IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T) (b.repr x₀)
   choose a₀ ha₀ using hs₀
-  have hu₀_ne : (linComb a₀).1 ≠ 0 := fun h0 ↦ by
+  have hu₀_ne : linComb a₀ ≠ 0 := fun h0 ↦ by
     have hs₀_ne : algebraMap T' F' (Ψ (s₀ : T)) ≠ 0 := by
       rw [← norm_ne_zero_iff, norm_algebraMap_gaussFractionField, norm_restrictedExpandAlgebraMap,
         norm_ne_zero_iff]
       exact nonZeroDivisors.ne_zero s₀.2
     have hmul : algebraMap T' F' (Ψ (s₀ : T)) * ι x₀ = 0 := by
-      rw [← hmul_eq x₀ s₀ a₀ ha₀, h0, map_zero]
+      rw [← hmul_eq x₀ s₀ a₀ ha₀, congrArg Subtype.val h0, ZeroMemClass.coe_zero, map_zero]
     exact mul_ne_zero hs₀_ne ((map_ne_zero_iff ι ι.injective).mpr hx₀) hmul
   obtain ⟨π, C_π, hC_π, hπ_mul, hπ_norm, hπ_ne⟩ :=
     exists_linearMap_restrictedCoeffSubmodule_ne_zero hq hr
@@ -601,9 +354,10 @@ theorem exists_dual_norm_le_spectralNorm_of_isPurelyInseparable
     obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T)
       (b.repr y)
     choose a ha using hs
-    have hu_norm : ‖(linComb a).1‖ = ‖(s : T)‖ * spectralNorm F M y := by
-      rw [← norm_algebraMap_gaussFractionField σ K' r _, hmul_eq y s a ha, norm_mul,
-        norm_algebraMap_gaussFractionField σ K' r _, norm_restrictedExpandAlgebraMap, hι_norm]
+    have hu_norm : ‖linComb a‖ = ‖(s : T)‖ * spectralNorm F M y := by
+      rw [← Submodule.norm_coe, ← norm_algebraMap_gaussFractionField σ K' r _,
+        hmul_eq y s a ha, norm_mul, norm_algebraMap_gaussFractionField σ K' r _,
+        norm_restrictedExpandAlgebraMap, hι_norm]
     have hs_pos : 0 < ‖(s : T)‖ := by
       rw [← norm_algebraMap_gaussFractionField σ K c (s : T), norm_pos_iff]
       exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
@@ -614,7 +368,7 @@ theorem exists_dual_norm_le_spectralNorm_of_isPurelyInseparable
       _ = ‖∑ j, a j * g j‖ := by
           rw [b.algebraMap_mul_constr_eq_algebraMap_sum g y (s : T) a ha,
             norm_algebraMap_gaussFractionField σ K c _]
-      _ ≤ C_π * ‖(linComb a).1‖ := by rw [hπ_lin]; exact hπ_norm (linComb a)
+      _ ≤ C_π * ‖linComb a‖ := by rw [hπ_lin]; exact hπ_norm (linComb a)
       _ = ‖(s : T)‖ * (C_π * spectralNorm F M y) := by rw [hu_norm]; ring
   · -- Membership in `Set.range (algebraMap T F)` whenever `y ^ q ∈ T`.
     let ry : T' := restrictedFrobeniusRoot p e hr fy
