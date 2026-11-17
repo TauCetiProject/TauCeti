@@ -42,6 +42,7 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
   its values.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
+* `SchwartzMap.eLpNorm_gaussian`: its `Lᵖ` norms `(π / (p b.re))^(n/(2p))`, `0 < p < ∞`.
 * `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
   `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on tempered distributions.
 -/
@@ -135,6 +136,40 @@ theorem fourierInv_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [Borel
       (Real.pi / b) ^ (Module.finrank ℝ V / 2 : ℂ) * cexp (-Real.pi ^ 2 * ‖x‖ ^ 2 / b) := by
   rw [fourierInv_coe, Real.fourierInv_eq_fourier_neg, coe_gaussian,
     fourier_gaussian_innerProductSpace hb, norm_neg]
+
+open MeasureTheory Filter in
+open scoped ENNReal in
+/-- **The Lebesgue norms of the Gaussian.** For `0 < b.re` and `0 < p < ∞`, the Gaussian
+`exp (-b ‖x‖²)` on a real inner product space of dimension `n` has `Lᵖ` norm
+`(π / (p b.re))^(n/(2p))`. For `b = π` this is `p^(-n/(2p))`, in particular `1` for `p = 1`. -/
+theorem eLpNorm_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ}
+    (hb : 0 < b.re) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ (⊤ : ℝ≥0∞)) :
+    eLpNorm (gaussian hb : 𝓢(V, ℂ)) p volume =
+      ENNReal.ofReal ((Real.pi / (b.re * p.toReal)) ^
+        ((Module.finrank ℝ V : ℝ) / (2 * p.toReal))) := by
+  have hp' : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hbp : 0 < b.re * p.toReal := mul_pos hb hp'
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp
+    (gaussian hb).continuous.aestronglyMeasurable]
+  have hpow (x : V) : ‖gaussian hb x‖ₑ ^ p.toReal =
+      ENNReal.ofReal (Real.exp (-(b.re * p.toReal) * ‖x‖ ^ 2)) := by
+    rw [← ofReal_norm, gaussian_apply, norm_exp,
+      ENNReal.ofReal_rpow_of_nonneg (Real.exp_nonneg _) hp'.le, ← Real.exp_mul,
+      ← ofReal_pow, mul_comm (-b), re_ofReal_mul, neg_re]
+    ring_nf
+  have hint : Integrable (fun x : V ↦ Real.exp (-(b.re * p.toReal) * ‖x‖ ^ 2)) := by
+    refine (GaussianFourier.integrable_cexp_neg_mul_sq_norm_add (V := V)
+      (show 0 < ((b.re * p.toReal : ℝ) : ℂ).re by simpa using hbp) 0 0).norm.congr
+      (Eventually.of_forall fun x ↦ ?_)
+    simp only [zero_mul, add_zero, norm_exp]
+    norm_cast
+  simp_rw [hpow]
+  rw [← ofReal_integral_eq_lintegral_ofReal hint
+      (Eventually.of_forall fun x ↦ (Real.exp_pos _).le),
+    GaussianFourier.integral_rexp_neg_mul_sq_norm hbp,
+    ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity), ← Real.rpow_mul (by positivity)]
+  congr 2
+  field_simp
 
 end SchwartzMap
 
