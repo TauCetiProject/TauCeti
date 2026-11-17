@@ -22,11 +22,14 @@ laws and with positive-semidefinite covariance kernels over `ℝ`:
 
 1. **Semicircular systems and freeness of real field operators.** Both `FullFockSpace.field ℂ` and
    `FullFockSpace.realField` are `ℝ`-linear (while `field ℂ` is not `ℂ`-linear because annihilation
-   is conjugate-linear). Starting from a real inner product space `H`, `realField` embeds `H`
-   isometrically into `WithLp 2 (Complexification H)` and realizes the real Gram matrix
-   `(⟪v i, v j⟫_ℝ : ℂ)` as the covariance of a self-adjoint semicircular system on
-   `FullFockSpace ℂ (WithLp 2 (Complexification H))`, with free independence equivalent to real
-   orthogonality.
+   is conjugate-linear). Starting from a real inner product space `H`,
+   `WithLp.complexificationOfRealₗᵢ H` embeds `H` isometrically into
+   `WithLp 2 (Complexification H)`, and `FullFockSpace.realField` applies `FullFockSpace.field ℂ`
+   to that inclusion (sending `h : H` to the bounded self-adjoint operator
+   `field ℂ (WithLp.complexificationOfRealₗᵢ H h)` of norm `2 * ‖h‖` on
+   `FullFockSpace ℂ (WithLp 2 (Complexification H))`). For a family `v : ι → H`, this realizes the
+   real Gram matrix `(⟪v i, v j⟫_ℝ : ℂ)` as the covariance of a self-adjoint semicircular system,
+   with free independence equivalent to real orthogonality.
 2. **Semicircle laws on full Fock space.** Because `FullFockSpace ℂ H` is unconditionally complete,
    `FullFockSpace ℂ H →L[ℂ] FullFockSpace ℂ H` is a unital C⋆-algebra for every inner product space
    `H`. Under `FullFockSpace.vacuumState`, each shifted field operator `field ℂ h + c • 1` (and
