@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Projective
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Finiteness.Basic
-public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Finite generation and projectivity under restriction of scalars

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Projective.Trans
+public import Mathlib.Algebra.Module.Projective
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis

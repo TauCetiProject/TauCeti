@@ -10,10 +10,10 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.Ideal.Operations
+import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.Algebra.Module.Projective.Reduction
-import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective

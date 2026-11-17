@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.GroupAlgebra
 public import TauCeti.NumberTheory.Padics.TorsionDual
-import TauCeti.Algebra.Module.AuslanderReiten.StableTranspose
-import TauCeti.Algebra.Module.Projective.Trans
+import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.Finiteness.Prod
+import TauCeti.Algebra.Module.AuslanderReiten.StableTranspose
 
 /-!
 # The transpose of a `ℤ_p[G]`-module of projective dimension one

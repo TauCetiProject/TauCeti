@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.GroupTheory.Coset.Basic
 import Mathlib.Algebra.MonoidAlgebra.Basic
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Coset bases of group algebras

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import TauCeti.RingTheory.WeilRestriction.Basic
-public import TauCeti.Algebra.Module.Projective.Trans
 
 /-!
 # Composition of Weil restrictions
