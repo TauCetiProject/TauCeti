@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Contour.Argument.Cycle
 public import TauCeti.Analysis.Contour.Argument.Principle
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 import Mathlib.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 import TauCeti.Analysis.Normed.Module.Connected
 
 /-!
@@ -19,10 +20,10 @@ import TauCeti.Analysis.Normed.Module.Connected
 caller for the data of the counting problem: a finite set `S` collecting the nonzero-order points,
 an order function `ord`, and proofs that the two agree and that `S` is exhaustive. Mathlib's
 `MeromorphicOn.divisor` already packages that data — `MeromorphicOn.divisor_apply` evaluates it to
-`(meromorphicOrderAt f z).untop₀`, and local compactness supplies finiteness of the divisor support
-and of isolated representative defects. This file restates both the circle and null-homologous
-argument principles against the divisor API, so callers that already speak `divisor` or
-`TauCeti.divisorCount` need not rebuild the finset and the order function by hand.
+`(meromorphicOrderAt f z).untop₀`, and local compactness supplies finiteness of the divisor support.
+This file restates both the circle and null-homologous argument principles against the divisor API,
+so callers that already speak `divisor` or `TauCeti.divisorCount` need not rebuild the finset and
+the order function by hand.
 
 Requiring `meromorphicOrderAt f z = 0` on the boundary does double duty:
 
@@ -35,11 +36,13 @@ Requiring `meromorphicOrderAt f z = 0` on the boundary does double duty:
   nonempty frontier visited by `γ`), `MeromorphicOn.meromorphicOrderAt_ne_top_of_isPreconnected`
   propagates the finite order at a boundary point to the whole region.
 
-For a general piecewise-`C¹` boundary curve (`argumentPrinciple_nullHomologous_divisor`), the chosen
-representative must also be analytic on `frontier K`: changing an isolated value of a meromorphic
-function does not change its divisor, but can destroy the pointwise regularity needed by the contour
-integral. Isolated representative defects away from `frontier K` are allowed and absorbed into the
-internal finite exceptional set `S`.
+For `argumentPrinciple_nullHomologous_divisor`, neither openness of the ambient set `U` nor
+analyticity of the chosen representative on `frontier K` is required: passing to `toMeromorphicNFOn`
+on a compact thickening of `K` fills isolated representative defects, and the original logarithmic
+derivative agrees with the normal form's logarithmic derivative codiscretely on `frontier K`. On
+the finite set of discrepancies, `Set.Countable.ae_deriv_eq_zero_on_preimage` ensures that
+`deriv γ` vanishes almost everywhere, so the derivative-weighted boundary integrals agree without
+any regularity or non-degeneracy assumptions on `γ` beyond `IsPiecewiseC1On`.
 
 ## Main results
 
@@ -92,19 +95,60 @@ theorem argumentPrinciple_divisor {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 
     rw [MeromorphicOn.divisor_apply hfb hzball,
       WithTop.coe_untop₀_of_ne_top (htop z (ball_subset_closedBall hzball))]
 
+open scoped Classical in
+/-- Finite exceptional data for a meromorphic normal form on a preconnected neighbourhood of a
+closed set `K`, together with the finite-sum expression for its divisor count on `K`. -/
+private theorem normalForm_exceptional_data {F : ℂ → ℂ} {K V : Set ℂ} {p : ℂ}
+    (hK : IsClosed K) (hKV : K ⊆ V) (hV : IsPreconnected V) (hNF : MeromorphicNFOn F V)
+    (hfinite : (Function.support (MeromorphicOn.divisor F V)).Finite)
+    (hpfr : p ∈ frontier K) (hfr : ∀ x ∈ frontier K, meromorphicOrderAt F x = 0) :
+    ∃ S : Finset ℂ,
+      (∀ x ∈ V, x ∉ S → AnalyticAt ℂ F x ∧ F x ≠ 0) ∧
+      (∀ s ∈ S, s ∈ V → meromorphicOrderAt F s =
+        (MeromorphicOn.divisor F V s : WithTop ℤ)) ∧
+      (∀ s ∈ S, s ∉ frontier K) ∧
+      divisorCount F V K = ∑ s ∈ S with s ∈ K, MeromorphicOn.divisor F V s := by
+  classical
+  have hfV : MeromorphicOn F V := hNF.meromorphicOn
+  have hpV : p ∈ V := hKV (hK.frontier_subset hpfr)
+  have htop (x : ℂ) (hx : x ∈ V) : meromorphicOrderAt F x ≠ ⊤ :=
+    hfV.meromorphicOrderAt_ne_top_of_isPreconnected hV hpV hx (by simp [hfr p hpfr])
+  let S := hfinite.toFinset
+  refine ⟨S, ?_, ?_, ?_, ?_⟩
+  · intro x hx hxS
+    have hd : MeromorphicOn.divisor F V x = 0 := by
+      simpa [S, Function.mem_support] using hxS
+    have ho : meromorphicOrderAt F x = 0 := by
+      rw [hfV.divisor_apply hx, WithTop.untop₀_eq_zero] at hd
+      exact hd.resolve_right (htop x hx)
+    exact ⟨(hNF hx).meromorphicOrderAt_nonneg_iff_analyticAt.mp (by simp [ho]),
+      (hNF hx).meromorphicOrderAt_eq_zero_iff.mp ho⟩
+  · intro x _ hx
+    rw [hfV.divisor_apply hx, WithTop.coe_untop₀_of_ne_top (htop x hx)]
+  · intro x hx hxfr
+    have hd : MeromorphicOn.divisor F V x ≠ 0 := by simpa [S, Function.mem_support] using hx
+    exact hd (by
+      rw [hfV.divisor_apply (hKV (hK.frontier_subset hxfr))]
+      simp [hfr x hxfr])
+  · rw [divisorCount_def]
+    apply finsum_mem_eq_sum_of_subset
+    · intro x hx
+      exact Finset.mem_filter.mpr ⟨by simpa [S, Function.mem_support] using hx.2, hx.1⟩
+    · intro x hx
+      exact (Finset.mem_filter.mp hx).2
+
 /-- **The argument principle against the divisor on a compact preconnected region.** Let `K` be a
-compact preconnected set contained in an open set `U`, let `f` be meromorphic on `U`, analytic on
-`frontier K`, and of meromorphic order `0` on `frontier K`, and let `γ` be a closed piecewise-`C¹`
-curve on `[[a, b]]` tracing points of `frontier K`, null-homologous in `K`, and winding once around
-every point of `interior K`. Then the contour integral of `logDeriv f` along `γ` is `2πi` times
+compact preconnected set contained in a set `U`, let `f` be meromorphic on `U` with meromorphic
+order `0` on `frontier K`, and let `γ` be a closed piecewise-`C¹` curve on `[[a, b]]` tracing
+points of `frontier K`, null-homologous in `K`, and winding once around every point of
+`interior K`. Then the contour integral of `logDeriv f` along `γ` is `2πi` times
 `divisorCount f U K`.
 
-No global connectedness or boundedness of `U` is required, and isolated representative defects of
-`f` away from `frontier K` are allowed. -/
+The ambient meromorphic set `U` need not be open, connected, or bounded, and isolated changes of
+representative values on or off `frontier K` are allowed. -/
 theorem argumentPrinciple_nullHomologous_divisor {f : ℂ → ℂ} {U K : Set ℂ}
     (hK : IsCompact K) (hK_conn : IsPreconnected K)
-    (hU : IsOpen U) (hKU : K ⊆ U) (hf : MeromorphicOn f U)
-    (hreg : ∀ x ∈ frontier K, AnalyticAt ℂ f x)
+    (hKU : K ⊆ U) (hf : MeromorphicOn f U)
     (hfr : ∀ x ∈ frontier K, meromorphicOrderAt f x = 0)
     {γ : ℝ → ℂ} {a b : ℝ} (hγ : IsPiecewiseC1On γ a b)
     (hγfr : ∀ t ∈ uIcc a b, γ t ∈ frontier K) (hclosed : γ a = γ b)
@@ -113,65 +157,54 @@ theorem argumentPrinciple_nullHomologous_divisor {f : ℂ → ℂ} {U K : Set �
     ∫ t in a..b, deriv γ t • logDeriv f (γ t) =
       2 * (Real.pi : ℂ) * Complex.I * (divisorCount f U K : ℂ) := by
   classical
-  -- Work on a relatively compact preconnected open thickening of `K` inside `U`.
-  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
+  have hopen : IsOpen {x : ℂ | MeromorphicAt f x} := isOpen_iff_mem_nhds.mpr fun x hx ↦
+    (eventually_nhdsWithin_iff.mp <|
+      hx.eventually_analyticAt.mono fun _ ↦ AnalyticAt.meromorphicAt).mono fun y hy ↦
+        (eq_or_ne y x).elim (· ▸ hx) hy
+  obtain ⟨δ, hδ, hδM⟩ := hK.exists_cthickening_subset_open hopen (fun x hx ↦ hf x (hKU hx))
+  let W := cthickening δ K
   let V := thickening δ K
+  let F := toMeromorphicNFOn f W
+  have hfW : MeromorphicOn f W := fun _ hx ↦ hδM hx
+  have hNF : MeromorphicNFOn F W := meromorphicNFOn_toMeromorphicNFOn f W
+  have hVW : V ⊆ W := thickening_subset_cthickening δ K
   have hKV : K ⊆ V := self_subset_thickening hδ K
-  have hVU : V ⊆ U := (thickening_subset_cthickening δ K).trans hδU
-  have hfV : MeromorphicOn f V := hf.mono_set hVU
-  have hafr : γ a ∈ frontier K := hγfr a left_mem_uIcc
-  have htop (x : ℂ) (hx : x ∈ V) : meromorphicOrderAt f x ≠ ⊤ :=
-    hfV.meromorphicOrderAt_ne_top_of_isPreconnected (hK_conn.thickening δ)
-      (hKV (hK.isClosed.frontier_subset hafr)) hx (by simp [hfr (γ a) hafr])
-  -- Collect both divisor support and isolated representative defects in a single finite set `S`.
-  have hfinite : (Function.support (MeromorphicOn.divisor f V)).Finite :=
-    (hf.mono_set hδU).divisor_support_finite_of_subset hK.cthickening
-      (thickening_subset_cthickening δ K)
-  have hdefects := hK.cthickening.finite_sdiff_of_mem_codiscreteWithin
-    (hf.mono_set hδU).analyticAt_mem_codiscreteWithin
-  let S := hfinite.toFinset ∪ hdefects.toFinset
-  have hoff (x : ℂ) (hx : x ∈ V) (hxS : x ∉ S) : AnalyticAt ℂ f x ∧ f x ≠ 0 := by
-    have hxoff := Finset.notMem_union.mp hxS
-    have hd : MeromorphicOn.divisor f V x = 0 := by simpa using hxoff.1
-    have ho : meromorphicOrderAt f x = 0 := by
-      rw [hfV.divisor_apply hx, WithTop.untop₀_eq_zero] at hd
-      exact hd.resolve_right (htop x hx)
-    have ha : AnalyticAt ℂ f x := by
-      by_contra ha
-      exact hxoff.2 (hdefects.mem_toFinset.mpr ⟨thickening_subset_cthickening δ K hx, ha⟩)
-    exact ⟨ha, ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mp ho⟩
-  have hSfr (x : ℂ) (hx : x ∈ S) : x ∉ frontier K := by
-    intro hxfr
-    rcases Finset.mem_union.mp hx with hx | hx
-    · have hxV := (MeromorphicOn.divisor f V).supportWithinDomain (by simpa using hx)
-      have hd : MeromorphicOn.divisor f V x ≠ 0 := by simpa using hx
-      exact hd (by simp [hfV.divisor_apply hxV, hfr x hxfr])
-    · exact (hdefects.mem_toFinset.mp hx).2 (hreg x hxfr)
-  have hcount : divisorCount f U K = ∑ x ∈ S with x ∈ K, MeromorphicOn.divisor f U x := by
-    rw [divisorCount_def]
-    apply finsum_mem_eq_sum_of_subset
-    · intro x hx
-      refine Finset.mem_filter.mpr ⟨?_, hx.1⟩
-      apply Finset.mem_union_left
-      simpa only [Finite.mem_toFinset, Function.mem_support,
-        hf.divisor_apply (hKU hx.1), hfV.divisor_apply (hKV hx.1)] using hx.2
-    · intro x hx
-      exact (Finset.mem_filter.mp hx).2
-  rw [argumentPrinciple_nullHomologous (S := S) (U := V) (ord := MeromorphicOn.divisor f U)
-    isOpen_thickening hoff (fun s _ hsV ↦ hfV s hsV)
-    (fun s _ hsV ↦ by
-      rw [hf.divisor_apply (hVU hsV), WithTop.coe_untop₀_of_ne_top (htop s hsV)])
-    hγ (fun t ht ↦ hKV (hK.isClosed.frontier_subset (hγfr t ht))) hclosed
+  have horder (x : ℂ) (hx : x ∈ K) : meromorphicOrderAt F x = meromorphicOrderAt f x :=
+    meromorphicOrderAt_toMeromorphicNFOn hfW (hVW (hKV hx))
+  have hNFV : MeromorphicNFOn F V := fun _ hx ↦ hNF (hVW hx)
+  obtain ⟨S, hoff, hord, hSfr, hcount⟩ := normalForm_exceptional_data hK.isClosed hKV
+    (hK_conn.thickening δ) hNFV
+    (hNF.meromorphicOn.divisor_support_finite_of_subset hK.cthickening hVW)
+    (hγfr a left_mem_uIcc)
+    (fun x hx ↦ (horder x (hK.isClosed.frontier_subset hx)).trans (hfr x hx))
+  have hlog := (logDeriv_congr_codiscreteWithin isOpen_thickening <|
+    (toMeromorphicNFOn_eqOn_codiscrete hfW).filter_mono
+      (Filter.codiscreteWithin_mono hVW)).filter_mono
+    (Filter.codiscreteWithin_mono (hK.isClosed.frontier_subset.trans hKV))
+  have hbad := ((hK.of_isClosed_subset isClosed_frontier
+    hK.isClosed.frontier_subset).finite_sdiff_of_mem_codiscreteWithin hlog).countable
+  have hint : (∫ t in a..b, deriv γ t • logDeriv f (γ t)) =
+      ∫ t in a..b, deriv γ t • logDeriv F (γ t) := by
+    refine intervalIntegral.integral_congr_ae ?_
+    filter_upwards [hbad.ae_deriv_eq_zero_on_preimage γ MeasureTheory.volume] with t ht hmem
+    by_cases h : logDeriv f (γ t) = logDeriv F (γ t)
+    · rw [h]
+    · simp [ht ⟨hγfr t (uIoc_subset_uIcc hmem), h⟩]
+  rw [hint, argumentPrinciple_nullHomologous (S := S) (U := V) (ord := MeromorphicOn.divisor F V)
+    isOpen_thickening hoff (fun s _ hsV ↦ hNFV.meromorphicOn s hsV) hord hγ
+    (fun t ht ↦ hKV (hK.isClosed.frontier_subset (hγfr t ht))) hclosed
     (fun t ht hmem ↦ hSfr _ hmem (hγfr t ht))
     (isNullHomologous_iff.2 fun w hw ↦ isNullHomologous_iff.1 hnull w fun hwK ↦ hw (hKV hwK))]
   congr 1
-  rw [hcount, Int.cast_sum, Finset.sum_filter]
-  refine Finset.sum_congr rfl fun s hs ↦ ?_
-  split_ifs with hsK
-  · have hsint : s ∈ interior K := by
-      rw [← self_sdiff_frontier]
-      exact ⟨hsK, hSfr s hs⟩
-    rw [hwind s hsint, one_mul]
-  · rw [isNullHomologous_iff.1 hnull s hsK, zero_mul]
+  trans (divisorCount F V K : ℂ)
+  · rw [hcount, Int.cast_sum, Finset.sum_filter]
+    refine Finset.sum_congr rfl fun s hs ↦ ?_
+    split_ifs with hsK
+    · rw [hwind s (self_sdiff_frontier (s := K) ▸ ⟨hsK, hSfr s hs⟩), one_mul]
+    · rw [isNullHomologous_iff.1 hnull s hsK, zero_mul]
+  · congr 1
+    rw [divisorCount_def, divisorCount_def]
+    exact finsum_congr fun x ↦ finsum_congr fun hx ↦ by
+      rw [hNFV.meromorphicOn.divisor_apply (hKV hx), hf.divisor_apply (hKU hx), horder x hx]
 
 end TauCeti.Contour

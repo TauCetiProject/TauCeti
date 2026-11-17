@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
-public import TauCeti.Geometry.Manifold.Degree.Basic
+public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.RegularValue.Fibre
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
+import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # The smooth degree is the homological degree
@@ -41,6 +42,18 @@ For a map between compact manifolds, with `N` preconnected, this reads
 (`TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`), so a degree
 computed by counting preimages with signs computes the image of the fundamental class.
 
+When `N` is moreover σ-compact, a proper `C¹` map has a regular value by Sard's theorem, so its
+homological degree is the mapping degree `TauCeti.degree o o' f`
+(`TauCeti.Manifold.Orientation.degree_toHomologicalOrientation_eq_degree`). For a proper smooth
+map onto a connected σ-compact manifold, the degree formula of
+`TauCeti.Geometry.Manifold.Degree.Global` then computes the integrals of pulled-back compactly
+supported top forms through the homological degree, the integer `deg f` with
+`f_*[M]_{f⁻¹(K)} = deg f • [N]_K` for every compact `K ⊆ N`:
+$$\int_M f^*\varphi = \deg(f) \int_N \varphi$$
+(`TauCeti.Manifold.Orientation.integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul`).
+Neither manifold need be compact; for instance `f` may be a proper smooth self-map of an open
+disc.
+
 ## Main results
 
 * `TauCeti.Manifold.Orientation.localIndex_toHomologicalOrientation`: at a point of invertible
@@ -50,6 +63,10 @@ computed by counting preimages with signs computes the image of the fundamental 
 * `TauCeti.Manifold.Orientation.mapFundamentalClass_eq_degreeAtRegularValue_smul`: for a map
   between compact manifolds, with preconnected target, `f_*[M]` is the signed count of preimages
   of a regular value times `[N]`.
+* `TauCeti.Manifold.Orientation.degree_toHomologicalOrientation_eq_degree`: the homological
+  degree of a proper `C¹` map onto a preconnected σ-compact manifold is its mapping degree.
+* `TauCeti.Manifold.Orientation.integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul`:
+  `∫_M f^*φ = deg(f) ∫_N φ` for a proper smooth map, with the homological degree.
 
 ## References
 
@@ -170,6 +187,40 @@ theorem mapFundamentalClass_eq_degreeAtRegularValue_smul [CompactSpace M] [Compa
       degreeAtRegularValue o o' f y • (o'.toHomologicalOrientation hE).fundamentalClass hE := by
   rw [HomologicalOrientation.mapFundamentalClass_eq_degree_smul _ _ hE hE,
     degree_toHomologicalOrientation hE o o' f.continuous.isProperMap hy]
+
+/-- **The homological degree is the mapping degree.** For a proper `C¹` map `f : M → N` onto a
+preconnected σ-compact manifold, the degree of `f` with respect to the homological orientations of
+`o` and `o'` is the mapping degree `TauCeti.degree o o' f`, the signed count of preimages of a
+regular value. -/
+theorem degree_toHomologicalOrientation_eq_degree [SigmaCompactSpace N] [PreconnectedSpace N]
+    {f : C(M, N)} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) 1 f) (hfp : IsProperMap f) :
+    (o.toHomologicalOrientation hE).degree (o'.toHomologicalOrientation hE) hE f =
+      degree o o' f := by
+  rcases isEmpty_or_nonempty N with hN | hN
+  · rw [HomologicalOrientation.degree_of_isEmpty, degree_of_isEmpty]
+  -- The domain of a proper map to a σ-compact space is σ-compact, so Sard's theorem applies.
+  have := hfp.sigmaCompactSpace
+  have h : ∃ y, IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ, E) f y :=
+    (dense_isRegularValue rfl (hf.mdifferentiable one_ne_zero)).nonempty
+  rw [degree_eq_degreeAtRegularValue_choose h]
+  exact degree_toHomologicalOrientation hE o o' hfp h.choose_spec
+
+open scoped ContDiff in
+/-- **The degree formula for the homological degree.** For a proper smooth map `f : M → N` onto a
+connected σ-compact manifold and a compactly supported smooth top form `φ` on `N`,
+`∫_M f^*φ = deg(f) ∫_N φ`, where `deg(f)` is the degree of `f` with respect to the homological
+orientations of `o` and `o'`, so that `f_*[M]_{f⁻¹(K)} = deg(f) • [N]_K` for every compact
+`K ⊆ N`. -/
+theorem integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul
+    [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E) ∞ N] [SigmaCompactSpace N] [ConnectedSpace N]
+    {f : C(M, N)} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ f) (hfp : IsProperMap f)
+    {φ : RoughForm 𝓘(ℝ, E) N ℝ (n + 1)} (hφ : IsSmoothForm 𝓘(ℝ, E) ∞ φ)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin (n + 1)]→L[ℝ] ℝ) φ)) :
+    integralTopForm o (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) f φ) =
+      (o.toHomologicalOrientation hE).degree (o'.toHomologicalOrientation hE) hE f *
+        integralTopForm o' φ := by
+  rw [degree_toHomologicalOrientation_eq_degree hE o o' (hf.of_le (by simp)) hfp]
+  exact integralTopForm_mpullback_eq_degree_mul o o' hf hfp hφ hc
 
 end Manifold.Orientation
 
