@@ -11,25 +11,16 @@ public import Mathlib.Order.UpperLower.Basic
 /-!
 # Krull dimension of unions of upper and lower sets
 
-In a preorder `α`, every strictly ascending chain in a union `⋃ i, f i` of upper sets lies wholly
-in a single member `f i`: the head of the chain belongs to some `f i`, and upward closure forces
-every subsequent element into that same `f i`. Consequently, the Krull dimension of `⋃ i, f i` is
-the supremum of the Krull dimensions of the `f i`, with no finiteness hypothesis on the index
-family. Dually, the same holds for a union of lower sets by considering the last element of a
-chain.
-
-In commutative algebra, this applies directly to supports of modules in `PrimeSpectrum R`, which
-are upper sets by `Module.mem_support_mono`. For example, the support of `M ⧸ (I * J) • M` is the
-union of the supports of `M ⧸ I • M` and `M ⧸ J • M`, so its Krull dimension is the maximum of
-their Krull dimensions.
+In a preorder `α`, every strictly ascending chain in a union `⋃ i, f i` of upper sets (resp. lower
+sets) lies wholly in a single member `f i` containing its head (resp. last element). Hence
+`krullDim ↥(⋃ i, f i) = ⨆ i, krullDim (f i)` with no finiteness hypothesis on the index family.
+In commutative algebra this applies directly to module supports in `PrimeSpectrum R`, which are
+upper sets by `Module.mem_support_mono`.
 
 ## Main results
 
-* `Order.krullDim_iUnion_of_isUpperSet`: for an arbitrary family of upper sets in a preorder,
-  `krullDim ↥(⋃ i, f i) = ⨆ i, krullDim (f i)`.
-* `Order.krullDim_union_of_isUpperSet`: binary version for `s ∪ t`.
-* `Order.krullDim_iUnion_of_isLowerSet`: dual statement for an arbitrary family of lower sets.
-* `Order.krullDim_union_of_isLowerSet`: binary dual version for `s ∪ t`.
+* `Order.krullDim_iUnion_of_isUpperSet`, `Order.krullDim_union_of_isUpperSet`
+* `Order.krullDim_iUnion_of_isLowerSet`, `Order.krullDim_union_of_isLowerSet`
 -/
 
 public section
@@ -42,64 +33,44 @@ variable {α : Type*} [Preorder α]
 Krull dimensions: every strictly increasing chain lies in a member containing its first element. -/
 theorem krullDim_iUnion_of_isUpperSet {ι : Sort*} {f : ι → Set α}
     (hf : ∀ i, IsUpperSet (f i)) :
-    krullDim (⋃ i, f i : Set α) = ⨆ i, krullDim (f i) := by
-  refine le_antisymm ?_ ?_
-  · refine iSup_le fun p ↦ ?_
-    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.head.2
-    have hmem (k : Fin (p.length + 1)) : (p k : α) ∈ f i :=
-      hf i (p.monotone (Fin.zero_le k)) hi
-    let q : LTSeries (f i) :=
-      { length := p.length
-        toFun := fun k ↦ ⟨p k, hmem k⟩
-        step := fun k ↦ p.step k }
-    exact le_iSup_of_le i (LTSeries.length_le_krullDim q)
-  · refine iSup_le fun i ↦ krullDim_le_of_strictMono
-      (fun x : f i ↦ (⟨x.1, Set.subset_iUnion f i x.2⟩ : ↥(⋃ i, f i)))
-      (fun _ _ h ↦ h)
+    krullDim (⋃ i, f i : Set α) = ⨆ i, krullDim (f i) :=
+  le_antisymm
+    (iSup_le fun p ↦ by
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.head.2
+      exact le_iSup_of_le i (LTSeries.length_le_krullDim
+        ⟨p.length, fun k ↦ ⟨p k, hf i (p.monotone (Fin.zero_le k)) hi⟩, fun k ↦ p.step k⟩))
+    (iSup_le fun i ↦ krullDim_le_of_strictMono
+      (fun x : f i ↦ (⟨x.1, Set.subset_iUnion f i x.2⟩ : ↥(⋃ i, f i))) fun _ _ h ↦ h)
 
 /-- The Krull dimension of the union of two upper sets in a preorder is the supremum of their Krull
 dimensions. -/
 theorem krullDim_union_of_isUpperSet {s t : Set α} (hs : IsUpperSet s) (ht : IsUpperSet t) :
     krullDim (s ∪ t : Set α) = krullDim s ⊔ krullDim t := by
-  have hf : ∀ b : Bool, IsUpperSet (if b then s else t) := by
-    rintro (_ | _) <;> simpa
-  have h := krullDim_iUnion_of_isUpperSet hf
-  have hu : (⋃ b : Bool, if b then s else t) = s ∪ t := by
-    ext x
-    simp [or_comm]
-  rw [← hu, h, iSup_bool_eq]
-  simp
+  have hu : (⋃ b : Bool, if b then s else t) = s ∪ t := by ext x; simp [or_comm]
+  rw [← hu, krullDim_iUnion_of_isUpperSet (f := fun b : Bool ↦ if b then s else t)
+    (by rintro (_ | _) <;> simpa)]
+  simp [iSup_bool_eq]
 
 /-- The Krull dimension of an arbitrary union of lower sets in a preorder is the supremum of their
 Krull dimensions: every strictly increasing chain lies in a member containing its last element. -/
 theorem krullDim_iUnion_of_isLowerSet {ι : Sort*} {f : ι → Set α}
     (hf : ∀ i, IsLowerSet (f i)) :
-    krullDim (⋃ i, f i : Set α) = ⨆ i, krullDim (f i) := by
-  refine le_antisymm ?_ ?_
-  · refine iSup_le fun p ↦ ?_
-    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.last.2
-    have hmem (k : Fin (p.length + 1)) : (p k : α) ∈ f i :=
-      hf i (p.monotone (Fin.le_last k)) hi
-    let q : LTSeries (f i) :=
-      { length := p.length
-        toFun := fun k ↦ ⟨p k, hmem k⟩
-        step := fun k ↦ p.step k }
-    exact le_iSup_of_le i (LTSeries.length_le_krullDim q)
-  · refine iSup_le fun i ↦ krullDim_le_of_strictMono
-      (fun x : f i ↦ (⟨x.1, Set.subset_iUnion f i x.2⟩ : ↥(⋃ i, f i)))
-      (fun _ _ h ↦ h)
+    krullDim (⋃ i, f i : Set α) = ⨆ i, krullDim (f i) :=
+  le_antisymm
+    (iSup_le fun p ↦ by
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.mp p.last.2
+      exact le_iSup_of_le i (LTSeries.length_le_krullDim
+        ⟨p.length, fun k ↦ ⟨p k, hf i (p.monotone (Fin.le_last k)) hi⟩, fun k ↦ p.step k⟩))
+    (iSup_le fun i ↦ krullDim_le_of_strictMono
+      (fun x : f i ↦ (⟨x.1, Set.subset_iUnion f i x.2⟩ : ↥(⋃ i, f i))) fun _ _ h ↦ h)
 
 /-- The Krull dimension of the union of two lower sets in a preorder is the supremum of their Krull
 dimensions. -/
 theorem krullDim_union_of_isLowerSet {s t : Set α} (hs : IsLowerSet s) (ht : IsLowerSet t) :
     krullDim (s ∪ t : Set α) = krullDim s ⊔ krullDim t := by
-  have hf : ∀ b : Bool, IsLowerSet (if b then s else t) := by
-    rintro (_ | _) <;> simpa
-  have h := krullDim_iUnion_of_isLowerSet hf
-  have hu : (⋃ b : Bool, if b then s else t) = s ∪ t := by
-    ext x
-    simp [or_comm]
-  rw [← hu, h, iSup_bool_eq]
-  simp
+  have hu : (⋃ b : Bool, if b then s else t) = s ∪ t := by ext x; simp [or_comm]
+  rw [← hu, krullDim_iUnion_of_isLowerSet (f := fun b : Bool ↦ if b then s else t)
+    (by rintro (_ | _) <;> simpa)]
+  simp [iSup_bool_eq]
 
 end Order
