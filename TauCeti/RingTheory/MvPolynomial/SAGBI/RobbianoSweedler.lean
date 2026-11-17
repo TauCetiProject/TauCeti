@@ -294,25 +294,54 @@ noncomputable def robbianoSweedlerStage (R : Type*) [CommSemiring R] (n : ℕ) (
     MvPolynomial (Fin 2) R :=
   if (i : ℕ) = 0 then X 0 + X 1 else X 0 * X 1 ^ (i : ℕ)
 
+/-- Unfolding lemma for `TauCeti.robbianoSweedlerStage`. -/
+theorem robbianoSweedlerStage_def (R : Type*) [CommSemiring R] (n : ℕ) (i : Fin (n + 3)) :
+    robbianoSweedlerStage R n i =
+      if (i : ℕ) = 0 then X 0 + X 1 else X 0 * X 1 ^ (i : ℕ) :=
+  (rfl)
+
+/-- The `0`-th entry of `robbianoSweedlerStage R n` is `X 0 + X 1`. -/
+@[simp]
+theorem robbianoSweedlerStage_apply_zero (R : Type*) [CommSemiring R] (n : ℕ) :
+    robbianoSweedlerStage R n 0 = X 0 + X 1 := by
+  simp [robbianoSweedlerStage_def]
+
+/-- For every nonzero index `i`, the `i`-th entry of `robbianoSweedlerStage R n` is
+`X 0 * X 1 ^ (i : ℕ)`. -/
+@[simp]
+theorem robbianoSweedlerStage_apply_of_ne_zero (R : Type*) [CommSemiring R] (n : ℕ)
+    {i : Fin (n + 3)} (hi : i ≠ 0) :
+    robbianoSweedlerStage R n i = X 0 * X 1 ^ (i : ℕ) := by
+  simp [robbianoSweedlerStage_def, hi]
+
+/-- Extending `robbianoSweedlerStage R` from stage `n` to stage `n + 1` preserves all entries
+inherited along `Fin.castSucc`. -/
+@[simp]
+theorem robbianoSweedlerStage_succ_castSucc (R : Type*) [CommSemiring R] (n : ℕ)
+    (i : Fin (n + 3)) :
+    robbianoSweedlerStage R (n + 1) i.castSucc = robbianoSweedlerStage R n i := by
+  simp [robbianoSweedlerStage_def]
+
 /-- Stage `0` of `robbianoSweedlerStage R` coincides with the initial generator family
 `robbianoSweedlerGen R`. -/
 @[simp]
 theorem robbianoSweedlerStage_zero_eq (R : Type*) [CommSemiring R] :
     robbianoSweedlerStage R 0 = robbianoSweedlerGen R := by
   funext i
-  fin_cases i <;> simp [robbianoSweedlerStage]
+  fin_cases i <;> simp
 
 /-- Every generator at stage `n` of `robbianoSweedlerStage R` is `lex`-monic over any commutative
 semiring. -/
 theorem monic_robbianoSweedlerStage {R : Type*} [CommSemiring R]
     (n : ℕ) (i : Fin (n + 3)) : lex.Monic (robbianoSweedlerStage R n i) := by
-  by_cases hi : (i : ℕ) = 0
-  · simp only [robbianoSweedlerStage, hi, ↓reduceIte]
+  by_cases hi : i = 0
+  · subst hi
+    rw [robbianoSweedlerStage_apply_zero]
     nontriviality R
     exact lex.monic_X.add_of_lt (by
       rw [lex.degree_X, lex.degree_X, lex_lt_iff, Finsupp.Lex.single_lt_iff]
       exact zero_lt_one)
-  · simp only [robbianoSweedlerStage, hi, ↓reduceIte]
+  · rw [robbianoSweedlerStage_apply_of_ne_zero R n hi]
     exact lex.monic_X.mul lex.monic_X.pow
 
 /-- All three initial generators of `robbianoSweedlerGen R` are `lex`-monic over any commutative
@@ -329,12 +358,13 @@ theorem degree_robbianoSweedlerStage {R : Type*} [CommSemiring R] [Nontrivial R]
     lex.degree (robbianoSweedlerStage R n i) =
       Finsupp.single 0 1 + Finsupp.single 1 (i : ℕ) := by
   classical
-  by_cases hi : (i : ℕ) = 0
-  · simp only [robbianoSweedlerStage, hi, ↓reduceIte, Finsupp.single_zero, add_zero]
+  by_cases hi : i = 0
+  · subst hi
+    simp only [robbianoSweedlerStage_apply_zero, Fin.val_zero, Finsupp.single_zero, add_zero]
     rw [lex.degree_add_of_lt (by
       rw [lex.degree_X, lex.degree_X, lex_lt_iff, Finsupp.Lex.single_lt_iff]
       exact zero_lt_one), lex.degree_X]
-  · simp only [robbianoSweedlerStage, hi, ↓reduceIte]
+  · rw [robbianoSweedlerStage_apply_of_ne_zero R n hi]
     have hmon : (X 0 * X 1 ^ (i : ℕ) : MvPolynomial (Fin 2) R) =
         monomial (Finsupp.single 0 1 + Finsupp.single 1 (i : ℕ)) 1 := by
       rw [monomial_add_single, ← X]
@@ -347,11 +377,19 @@ noncomputable def robbianoSweedlerBinomial (R : Type*) [CommRing R] (n : ℕ) :
   monomial (Finsupp.single 0 1 + Finsupp.single ⟨n + 2, by omega⟩ 1) 1 -
     monomial (Finsupp.single ⟨1, by omega⟩ 1 + Finsupp.single ⟨n + 1, by omega⟩ 1) 1
 
+/-- Unfolding lemma for `TauCeti.robbianoSweedlerBinomial`. -/
+theorem robbianoSweedlerBinomial_def (R : Type*) [CommRing R] (n : ℕ) :
+    robbianoSweedlerBinomial R n =
+      monomial (Finsupp.single 0 1 + Finsupp.single ⟨n + 2, by omega⟩ 1) 1 -
+        monomial (Finsupp.single ⟨1, by omega⟩ 1 + Finsupp.single ⟨n + 1, by omega⟩ 1) 1 :=
+  (rfl)
+
 /-- `robbianoSweedlerBinomial R n` belongs to the toric ideal of the leading exponents of
 `robbianoSweedlerStage R n` (both monomials have common leading exponent `(2, n + 2)`). -/
 theorem robbianoSweedlerBinomial_mem_toricIdeal {R : Type*} [CommRing R] [Nontrivial R] (n : ℕ) :
     robbianoSweedlerBinomial R n ∈
       TauCeti.toricIdeal R (fun i ↦ lex.degree (robbianoSweedlerStage R n i)) := by
+  rw [robbianoSweedlerBinomial_def]
   refine TauCeti.monomial_sub_monomial_mem_toricIdeal ?_
   simp only [map_add, Finsupp.linearCombination_single, one_smul, degree_robbianoSweedlerStage]
   ext d
@@ -367,16 +405,8 @@ theorem aeval_robbianoSweedlerStage_binomial {R : Type*} [CommRing R] (n : ℕ) 
         (monomial (Finsupp.single a 1 + Finsupp.single b 1) (1 : R)) =
         robbianoSweedlerStage R n a * robbianoSweedlerStage R n b := by
     rw [monomial_add_single, ← X, pow_one, map_mul, aeval_X, aeval_X]
-  rw [robbianoSweedlerBinomial, map_sub, hmul, hmul]
-  have h0 : robbianoSweedlerStage R n 0 = X 0 + X 1 := by simp [robbianoSweedlerStage]
-  have hlast : robbianoSweedlerStage R n ⟨n + 2, by omega⟩ = X 0 * X 1 ^ (n + 2) := by
-    simp [robbianoSweedlerStage]
-  have h1 : robbianoSweedlerStage R n ⟨1, by omega⟩ = X 0 * X 1 := by
-    simp [robbianoSweedlerStage]
-  have hprev : robbianoSweedlerStage R n ⟨n + 1, by omega⟩ = X 0 * X 1 ^ (n + 1) := by
-    simp [robbianoSweedlerStage]
-  rw [h0, hlast, h1, hprev]
-  exact robbianoSweedler_step_identity (n + 1)
+  rw [robbianoSweedlerBinomial_def, map_sub, hmul, hmul]
+  simpa using robbianoSweedler_step_identity (R := R) (n + 1)
 
 /-- At every stage `n` over a nontrivial commutative ring, the toric binomial
 `robbianoSweedlerBinomial R n` subducts with zero quotient expression `Q = 0` and nonzero
@@ -438,12 +468,12 @@ theorem range_robbianoSweedlerStage_succ (n : ℕ) :
   · rintro ⟨i, rfl⟩
     rcases Fin.eq_castSucc_or_eq_last i with ⟨j, rfl⟩ | rfl
     · right
-      exact ⟨j, by simp [robbianoSweedlerStage]⟩
+      exact ⟨j, by simp⟩
     · left
-      simp [robbianoSweedlerStage]
+      simp
   · rintro (rfl | ⟨j, rfl⟩)
-    · exact ⟨Fin.last (n + 3), by simp [robbianoSweedlerStage]⟩
-    · exact ⟨j.castSucc, by simp [robbianoSweedlerStage]⟩
+    · exact ⟨Fin.last (n + 3), by simp⟩
+    · exact ⟨j.castSucc, by simp⟩
 
 /-- The leading-term subalgebras of `robbianoSweedlerStage k n` form an infinite strictly
 ascending chain of completion steps inside `lex.initialAlgebra (robbianoSweedlerSubalgebra k)`. -/
