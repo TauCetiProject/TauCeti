@@ -395,8 +395,7 @@ theorem existsUnique_isApproxTangentPlane_image
     (hs : Tendsto (fun r => volume (s ∩ closedBall x₀ r) / volume (closedBall x₀ r))
       (𝓝[>] 0) (𝓝 1)) :
     ∃! P : Submodule ℝ V, TauCeti.IsApproxTangentPlane (finrank ℝ U) (f '' s) P (f x₀) :=
-  hf.existsUnique_isApproxTangentPlane_of_tendsto_diff hx₀ hi hs Subset.rfl
-    (TauCeti.tendsto_measure_sdiff_inter_div_of_subset Subset.rfl _ _ _)
+  hf.existsUnique_isApproxTangentPlane_of_tendsto_diff hx₀ hi hs Subset.rfl (by simp)
 
 /-- On `f '' s` itself, `approxTangentPlane (finrank ℝ U) (f '' s) (f x₀) = range A`. -/
 theorem approxTangentPlane_image
@@ -404,8 +403,7 @@ theorem approxTangentPlane_image
     (hs : Tendsto (fun r => volume (s ∩ closedBall x₀ r) / volume (closedBall x₀ r))
       (𝓝[>] 0) (𝓝 1)) :
     TauCeti.approxTangentPlane (finrank ℝ U) (f '' s) (f x₀) = LinearMap.range A.toLinearMap :=
-  hf.approxTangentPlane_eq_range_of_tendsto_diff hx₀ hi hs Subset.rfl
-    (TauCeti.tendsto_measure_sdiff_inter_div_of_subset Subset.rfl _ _ _)
+  hf.approxTangentPlane_eq_range_of_tendsto_diff hx₀ hi hs Subset.rfl (by simp)
 
 end HasFDerivWithinAt
 

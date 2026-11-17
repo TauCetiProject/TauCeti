@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.TangentCone.Graph
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
 import TauCeti.MeasureTheory.Covering.EssentialBoundary
-import TauCeti.MeasureTheory.OuterMeasure.DensityQuotient
 
 /-!
 # Approximate tangency and tangential calculus on differentiable normal graphs
@@ -175,8 +174,7 @@ theorem normDet_tangentialFDeriv_normalGraphEmbedding
     (TauCeti.tangentialFDeriv (finrank ℝ E) (TauCeti.normalGraphEmbedding φ) s x).normDet =
       Real.sqrt (1 + ‖A‖ ^ 2) := by
   have hval := (hasFDerivWithinAt_id x s).normDet_tangentialFDeriv_eq_div hx
-    (AntilipschitzWith.id.domRestrict s) hs (by rw [image_id])
-    (by rw [image_id]; exact TauCeti.tendsto_measure_sdiff_inter_div_of_subset Subset.rfl _ _ _)
+    (AntilipschitzWith.id.domRestrict s) hs (by rw [image_id]) (by simp)
     (by simpa only [Function.comp_id] using hφ.normalGraphEmbedding)
   rw [id_eq] at hval
   rw [hval, ContinuousLinearMap.coe_id, LinearMap.normDet_id, div_one,
@@ -196,8 +194,7 @@ theorem normDet_tangentialFDeriv_normalGraphEmbedding_image_mul
         (TauCeti.normalGraphEmbedding φ x)).normDet * Real.sqrt (1 + ‖A‖ ^ 2) = B.normDet := by
   rw [← ContinuousLinearMap.normDet_normalGraphL]
   exact hφ.normalGraphEmbedding.normDet_tangentialFDeriv_mul_eq hx
-    ((TauCeti.antilipschitzWith_normalGraphEmbedding φ).domRestrict s) hs Subset.rfl
-    (TauCeti.tendsto_measure_sdiff_inter_div_of_subset Subset.rfl _ _ _) hg
+    ((TauCeti.antilipschitzWith_normalGraphEmbedding φ).domRestrict s) hs Subset.rfl (by simp) hg
 
 /-- **Tangential Jacobian of the base projection `WithLp.sndL` on a normal graph** at a
 density-one point `x ∈ s`. -/

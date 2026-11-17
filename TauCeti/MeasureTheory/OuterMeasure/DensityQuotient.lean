@@ -23,8 +23,6 @@ outer measures and measures without requiring a measurable space or metric struc
   quotients.
 * `TauCeti.tendsto_measure_inter_div_of_measure_eq_zero`: subsets of null sets have vanishing
   density quotients against arbitrary test sets.
-* `TauCeti.tendsto_measure_sdiff_inter_div_of_subset`: when `A ⊆ B`, `A \ B` has vanishing density
-  quotients against arbitrary test sets.
 -/
 
 public section
@@ -63,12 +61,5 @@ theorem tendsto_measure_inter_div_of_measure_eq_zero {S T : Set X} (hTS : T ⊆ 
     Tendsto (fun r => μ (T ∩ t r) / d r) l (𝓝 0) := by
   refine tendsto_const_nhds.congr fun r => ?_
   rw [measure_mono_null (inter_subset_left.trans hTS) hS, ENNReal.zero_div]
-
-/-- When `A ⊆ B`, the set difference `A \ B` is empty and therefore has vanishing density quotients.
-In particular (`A = B`), `(A \ A) ∩ t r` has zero density quotients. -/
-theorem tendsto_measure_sdiff_inter_div_of_subset {A B : Set X} (hAB : A ⊆ B)
-    (t : α → Set X) (d : α → ℝ≥0∞) (l : Filter α) :
-    Tendsto (fun r => μ ((A \ B) ∩ t r) / d r) l (𝓝 0) :=
-  tendsto_measure_inter_div_of_measure_eq_zero (sdiff_eq_empty.2 hAB).subset measure_empty t d l
 
 end TauCeti

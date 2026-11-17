@@ -31,7 +31,10 @@ normalization.
 
 In every dimension `k` the normalizing constant is `ω_k / 2 ^ k`, where `ω_k` is the volume of the
 unit ball of `EuclideanSpace ℝ (Fin k)`: `μHE[k] = (ω_k / 2 ^ k) • μH[k]` on every extended metric
-space (`TauCeti.euclideanHausdorffMeasure_eq_smul_hausdorffMeasure`). On `EuclideanSpace ℝ (Fin k)`
+space (`TauCeti.euclideanHausdorffMeasure_eq_smul_hausdorffMeasure`), and in any finite-dimensional
+real inner product space `E` the volume of any closed ball agrees with the corresponding closed ball
+in `EuclideanSpace ℝ (Fin (finrank ℝ E))` (`TauCeti.volume_closedBall_eq_euclideanSpace`), including
+dimension zero. On `EuclideanSpace ℝ (Fin k)`
 itself, the density comparison of `TauCeti.MeasureTheory.Covering.HausdorffDensity` applied to
 volume gives one inequality, and the isodiametric inequality the other
 (`EuclideanSpace.volume_eq_smul_hausdorffMeasure`). In this normalization the density comparison
@@ -231,6 +234,21 @@ theorem euclideanHausdorffMeasure_eq_smul_hausdorffMeasure (k : ℕ) :
     exact measure_ball_lt_top.ne (hvol.trans (by
       rw [htop]; exact ENNReal.mul_top (EuclideanSpace.volume_ball_div_two_pow_ne_zero k)))
   exact (ENNReal.mul_left_inj hB0 hBtop).1 (hdef.trans hvol)
+
+/-- In any finite-dimensional real inner product space `E`, the volume of a closed ball of radius
+`r` equals the volume of a closed ball of the same radius in `EuclideanSpace ℝ (Fin (finrank ℝ E))`.
+Unlike `InnerProductSpace.volume_closedBall`, this holds for every `r : ℝ` without assuming
+`[Nontrivial E]` (in particular, in dimension zero). -/
+theorem volume_closedBall_eq_euclideanSpace
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (x : E) (r : ℝ) :
+    volume (closedBall x r) =
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) r) := by
+  let e : EuclideanSpace ℝ (Fin (finrank ℝ E)) ≃ₗᵢ[ℝ] E := (stdOrthonormalBasis ℝ E).repr.symm
+  have himg : e '' closedBall 0 r = closedBall (0 : E) r := by simp
+  rw [addHaar_closedBall_center volume x r,
+    ← InnerProductSpace.euclideanHausdorffMeasure_eq_volume, ← himg,
+    e.isometry.euclideanHausdorffMeasure_image, EuclideanSpace.euclideanHausdorffMeasure_eq_volume]
 
 end TauCeti
 

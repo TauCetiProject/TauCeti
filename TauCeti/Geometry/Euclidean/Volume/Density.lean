@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.Order.LiminfLimsup
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
 /-!
@@ -296,21 +297,6 @@ variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteD
   [MeasurableSpace V] [BorelSpace V]
   {f : U → V} {s : Set U} {E : Set V} {x₀ : U} {A : U →L[ℝ] V} {L : ℝ≥0}
 
-private lemma volume_singleton_add_smul_closedBall (x₀ u : U) (c : ℝ) {r : ℝ} (hr : 0 < r) :
-    volume ({x₀} + r • closedBall u c) =
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ U))) (c * r)) := by
-  have hset : ({x₀} : Set U) + r • closedBall u c = closedBall (x₀ + r • u) (c * r) := by
-    rw [smul_closedBall' hr.ne', Real.norm_of_nonneg hr.le, mul_comm r c, singleton_add]
-    ext y; simp only [mem_image, mem_closedBall, dist_eq_norm]; constructor
-    · rintro ⟨z, hz, rfl⟩; rwa [show x₀ + z - (x₀ + r • u) = z - r • u by abel]
-    · exact fun hy => ⟨y - x₀, by rwa [show y - x₀ - r • u = y - (x₀ + r • u) by abel],
-        add_sub_cancel _ _⟩
-  let e : EuclideanSpace ℝ (Fin (finrank ℝ U)) ≃ₗᵢ[ℝ] U := (stdOrthonormalBasis ℝ U).repr.symm
-  have himg : e '' closedBall 0 (c * r) = closedBall (0 : U) (c * r) := by simp
-  rw [hset, addHaar_closedBall_center volume (x₀ + r • u) (c * r),
-    ← InnerProductSpace.euclideanHausdorffMeasure_eq_volume, ← himg,
-    e.isometry.euclideanHausdorffMeasure_image, EuclideanSpace.euclideanHausdorffMeasure_eq_volume]
-
 omit [FiniteDimensional ℝ U] [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V]
   [BorelSpace V] in
 private lemma image_inter_smul_closedBall_subset (hf : HasFDerivWithinAt f A s x₀)
@@ -414,7 +400,13 @@ theorem liminf_euclideanHausdorffMeasure_directional_closedBall_pos
         ← hinj.leftInvOn_invFunOn.image_image' inter_subset_left]
       exact ((hφ.mono (image_mono inter_subset_left)).euclideanHausdorffMeasure_image_le k).trans
         (by gcongr; exact hsub r hr)
-    rw [volume_singleton_add_smul_closedBall x₀ u c hr.1, ← Real.coe_toNNReal c hc.le,
+    have hvolB : volume ({x₀} + r • B) =
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) (c * r)) := by
+      rw [show ({x₀} : Set U) + r • B = closedBall (x₀ + r • u) (c * r) by
+          rw [smul_closedBall' hr.1.ne', Real.norm_of_nonneg hr.1.le, mul_comm r c, singleton_add]
+          simpa only [← image_vadd, vadd_eq_add] using Metric.vadd_closedBall x₀ (r • u) (c * r),
+        TauCeti.volume_closedBall_eq_euclideanSpace]
+    rw [hvolB, ← Real.coe_toNNReal c hc.le,
       ← TauCeti.div_volume_closedBall_eq_mul k _ hc' hr.1.le, ← mul_div_assoc]
     gcongr
   refine pos_iff_ne_zero.2 fun h0 =>
