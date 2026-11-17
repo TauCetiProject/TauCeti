@@ -17,11 +17,9 @@ public import TauCeti.Analysis.Quaternion.Basic
 public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
-import Mathlib.Analysis.Convex.Contractible
-import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
-import TauCeti.Topology.Homotopy.HomotopyEquiv
 import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
+import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # Homotopy groups of spheres up to their dimension
@@ -94,7 +92,7 @@ public section
 noncomputable section
 
 open Metric Set Module CategoryTheory Limits Topology.RelCWComplex
-open scoped Topology ContinuousMap
+open scoped Topology
 
 universe u
 
@@ -139,9 +137,9 @@ theorem subsingleton_homotopyGroup_sphere_of_lt {E : Type*} [NormedAddCommGroup 
     ((homotopyGroupEquivOfPath (PathConnectedSpace.somePath _ _)).subsingleton_congr.mp hpole)
 
 /-- **Punctured spaces are `(n - 1)`-connected.** For an `(n + 1)`-dimensional real normed space
-`E`, the homotopy set `πₖ(E ∖ {0}, x)` is trivial for every `k = Nat.card N < n`: polar coordinates
-`v ↦ (v / ‖v‖, ‖v‖)` identify `E ∖ {0}` with the product of the unit sphere `Sⁿ` and the
-contractible half-line `(0, ∞)`. -/
+`E`, the homotopy set `πₖ(E ∖ {0}, x)` is trivial for every `k = Nat.card N < n`, since
+`E ∖ {0}` is homotopy equivalent to the unit sphere `Sⁿ`
+(`TauCeti.complSingletonHomotopyEquivSphere`). -/
 theorem subsingleton_homotopyGroup_compl_zero_of_lt {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1)
     {N : Type*} (hN : Nat.card N < n) (x : ({0}ᶜ : Set E)) :
@@ -151,10 +149,7 @@ theorem subsingleton_homotopyGroup_compl_zero_of_lt {E : Type*} [NormedAddCommGr
   · -- for an infinite index set every homotopy set is trivial
     have := not_finite_iff_infinite.1 hfin
     infer_instance
-  have : ContractibleSpace (Ioi (0 : ℝ)) := (convex_Ioi 0).contractibleSpace nonempty_Ioi
-  let e : ({0}ᶜ : Set E) ≃ₕ sphere (0 : E) 1 :=
-    (homeomorphUnitSphereProd E).toHomotopyEquiv.trans
-      (ContinuousMap.HomotopyEquiv.prodContractible _ _)
+  let e := complSingletonHomotopyEquivSphere (0 : E)
   have := subsingleton_homotopyGroup_sphere_of_lt hE hN (e.toFun x)
   exact (HomotopyGroup.equivOfHomotopyEquiv e x).subsingleton
 

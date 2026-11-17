@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap.Basic
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
 public import TauCeti.Topology.VectorBundle.EulerClass
-import Mathlib.Analysis.Convex.Contractible
 import TauCeti.AlgebraicTopology.Singular.Homotopy.ConnectedMap
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
@@ -41,6 +40,11 @@ carry over directly to a local coefficient system, which need not be trivial ove
 open set of the base. The twisted vanishing is the range below the rank of the Thom isomorphism
 with local coefficients `Hₘ₊ᵣ(E, E₀; π^*L) ≅ Hₘ(B; o(E) ⊗ L)`, where `o(E)` is the orientation
 system of the bundle, since the right side vanishes in negative degrees.
+
+The chart, the Serre fibration property and the connectivity of `E₀ → B` follow the sphere bundle
+chart `Bundle.Trivialization.sphereBundle` and `TauCeti.isNConnected_sphereBundleProj` in
+`TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial`, without the normalization to unit
+vectors, so they hold over any nontrivially normed field.
 
 ## Main declarations
 
@@ -96,22 +100,24 @@ namespace Bundle.Trivialization
 
 open TauCeti
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
-  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type w} [TopologicalSpace B] {F : Type*}
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  [VectorBundle 𝕜 F E] (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
 
+include 𝕜 in
 /-- A nonzero vector of the bundle gives a nonzero vector of the model fibre. -/
 private theorem nonempty_compl_zero (v : TauCeti.zeroSectionCompl F E) : Nonempty ({0}ᶜ : Set F) :=
   ⟨⟨(trivializationAt F E (v : TotalSpace F E).proj v).2,
-    ((trivializationAt F E _).snd_apply_ne_zero_iff ℝ
+    ((trivializationAt F E _).snd_apply_ne_zero_iff 𝕜
       (FiberBundle.mem_baseSet_trivializationAt' _)).2 (mem_zeroSectionCompl.1 v.2)⟩⟩
 
+include 𝕜 in
 /-- A nonzero vector of the model fibre gives a nonzero vector of the bundle over every point. -/
 private theorem nonempty_zeroSectionCompl (b : B) (w : ({0}ᶜ : Set F)) :
     Nonempty (TauCeti.zeroSectionCompl F E) :=
   ⟨⟨⟨b, (trivializationAt F E b).symm b w⟩, mem_zeroSectionCompl.2
-    (((trivializationAt F E b).symm_apply_ne_zero_iff ℝ
+    (((trivializationAt F E b).symm_apply_ne_zero_iff 𝕜
       (FiberBundle.mem_baseSet_trivializationAt' b)).2 w.2)⟩⟩
 
 open scoped Classical in
@@ -119,12 +125,12 @@ open scoped Classical in
 arbitrary nonzero vector elsewhere. -/
 private def zeroSectionComplCoord (v : TauCeti.zeroSectionCompl F E) : ({0}ᶜ : Set F) :=
   if hv : (v : TotalSpace F E).proj ∈ e.baseSet then
-    ⟨(e v).2, (e.snd_apply_ne_zero_iff ℝ hv).2 (mem_zeroSectionCompl.1 v.2)⟩
-  else Classical.choice (nonempty_compl_zero v)
+    ⟨(e v).2, (e.snd_apply_ne_zero_iff 𝕜 hv).2 (mem_zeroSectionCompl.1 v.2)⟩
+  else Classical.choice (nonempty_compl_zero 𝕜 v)
 
 private theorem coe_zeroSectionComplCoord {v : TauCeti.zeroSectionCompl F E}
     (hv : (v : TotalSpace F E).proj ∈ e.baseSet) :
-    (e.zeroSectionComplCoord v : F) = (e v).2 := by
+    (e.zeroSectionComplCoord 𝕜 v : F) = (e v).2 := by
   simp only [zeroSectionComplCoord, hv, ↓reduceDIte]
 
 open scoped Classical in
@@ -132,37 +138,37 @@ open scoped Classical in
 arbitrary nonzero vector elsewhere. -/
 private def zeroSectionComplInv (p : B × ({0}ᶜ : Set F)) : TauCeti.zeroSectionCompl F E :=
   if hp : p.1 ∈ e.baseSet then
-    ⟨⟨p.1, e.symm p.1 p.2⟩, mem_zeroSectionCompl.2 ((e.symm_apply_ne_zero_iff ℝ hp).2 p.2.2)⟩
-  else Classical.choice (nonempty_zeroSectionCompl p.1 p.2)
+    ⟨⟨p.1, e.symm p.1 p.2⟩, mem_zeroSectionCompl.2 ((e.symm_apply_ne_zero_iff 𝕜 hp).2 p.2.2)⟩
+  else Classical.choice (nonempty_zeroSectionCompl 𝕜 p.1 p.2)
 
 private theorem coe_zeroSectionComplInv {p : B × ({0}ᶜ : Set F)} (hp : p.1 ∈ e.baseSet) :
-    (e.zeroSectionComplInv p : TotalSpace F E) = ⟨p.1, e.symm p.1 p.2⟩ := by
+    (e.zeroSectionComplInv 𝕜 p : TotalSpace F E) = ⟨p.1, e.symm p.1 p.2⟩ := by
   simp only [zeroSectionComplInv, hp, ↓reduceDIte]
 
 /-- **The chart of the nonzero vectors induced by a linear chart.** A linear bundle chart `e` of a
-real vector bundle restricts to a chart of the projection `E₀ → B` of the nonzero vectors, with
+vector bundle restricts to a chart of the projection `E₀ → B` of the nonzero vectors, with
 fibre the nonzero vectors of the model fibre and the same base set. -/
 def zeroSectionCompl :
     Trivialization ({0}ᶜ : Set F) (zeroSectionComplProj F E) where
-  toFun v := (zeroSectionComplProj F E v, e.zeroSectionComplCoord v)
-  invFun := e.zeroSectionComplInv
+  toFun v := (zeroSectionComplProj F E v, e.zeroSectionComplCoord 𝕜 v)
+  invFun := e.zeroSectionComplInv 𝕜
   source := zeroSectionComplProj F E ⁻¹' e.baseSet
   target := e.baseSet ×ˢ univ
   map_source' _ hv := ⟨hv, mem_univ _⟩
   map_target' p hp := by
-    rw [mem_preimage, zeroSectionComplProj_apply, e.coe_zeroSectionComplInv hp.1]
+    rw [mem_preimage, zeroSectionComplProj_apply, e.coe_zeroSectionComplInv 𝕜 hp.1]
     exact hp.1
   left_inv' v hv := by
     have hv' : (v : TotalSpace F E).proj ∈ e.baseSet := hv
     apply Subtype.ext
-    rw [e.coe_zeroSectionComplInv hv', e.coe_zeroSectionComplCoord hv', zeroSectionComplProj_apply,
-      e.symm_proj_apply _ hv']
+    rw [e.coe_zeroSectionComplInv 𝕜 hv', e.coe_zeroSectionComplCoord 𝕜 hv',
+      zeroSectionComplProj_apply, e.symm_proj_apply _ hv']
   right_inv' p hp := by
     have hp' : p.1 ∈ e.baseSet := hp.1
-    have hz : (e.zeroSectionComplInv p : TotalSpace F E).proj = p.1 := by
-      rw [e.coe_zeroSectionComplInv hp']
+    have hz : (e.zeroSectionComplInv 𝕜 p : TotalSpace F E).proj = p.1 := by
+      rw [e.coe_zeroSectionComplInv 𝕜 hp']
     refine Prod.ext hz (Subtype.ext ?_)
-    rw [e.coe_zeroSectionComplCoord (by rwa [hz]), e.coe_zeroSectionComplInv hp',
+    rw [e.coe_zeroSectionComplCoord 𝕜 (by rwa [hz]), e.coe_zeroSectionComplInv 𝕜 hp',
       e.apply_mk_symm hp']
   open_source := e.open_baseSet.preimage (zeroSectionComplProj F E).continuous
   open_target := e.open_baseSet.prod isOpen_univ
@@ -173,14 +179,14 @@ def zeroSectionCompl :
         (zeroSectionComplProj F E ⁻¹' e.baseSet) :=
       e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦ e.mem_source.2 hv
     refine (he.fst.prodMk he.snd).congr fun v hv ↦ ?_
-    exact Prod.ext (e.coe_fst (e.mem_source.2 hv)).symm (e.coe_zeroSectionComplCoord hv)
+    exact Prod.ext (e.coe_fst (e.mem_source.2 hv)).symm (e.coe_zeroSectionComplCoord 𝕜 hv)
   continuousOn_invFun := by
     -- Read the value in the total space of `E`, where the map is the inverse of `e`.
     rw [IsInducing.subtypeVal.continuousOn_iff]
     refine (e.continuousOn_symm.comp (continuous_id.prodMap continuous_subtype_val).continuousOn
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ⟨hp.1, mem_univ _⟩).congr
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ?_
-    exact e.coe_zeroSectionComplInv hp.1
+    exact e.coe_zeroSectionComplInv 𝕜 hp.1
   baseSet := e.baseSet
   open_baseSet := e.open_baseSet
   source_eq := rfl
@@ -189,46 +195,55 @@ def zeroSectionCompl :
 
 /-- The chart of the nonzero vectors has the base set of `e`. -/
 @[simp]
-theorem zeroSectionCompl_baseSet : e.zeroSectionCompl.baseSet = e.baseSet :=
+theorem zeroSectionCompl_baseSet : (e.zeroSectionCompl 𝕜).baseSet = e.baseSet :=
   (rfl)
 
 /-- Over its base set, the chart of the nonzero vectors reads a nonzero vector in the chart `e`. -/
 @[simp]
 theorem coe_zeroSectionCompl_apply_snd {v : TauCeti.zeroSectionCompl F E}
     (hv : (v : TotalSpace F E).proj ∈ e.baseSet) :
-    ((e.zeroSectionCompl v).2 : F) = (e v).2 :=
-  e.coe_zeroSectionComplCoord hv
+    ((e.zeroSectionCompl 𝕜 v).2 : F) = (e v).2 :=
+  e.coe_zeroSectionComplCoord 𝕜 hv
 
 /-- Over its base set, the inverse chart of the nonzero vectors is the inverse of `e`. -/
 @[simp]
 theorem coe_zeroSectionCompl_symm_apply {b : B} (hb : b ∈ e.baseSet) (w : ({0}ᶜ : Set F)) :
-    (e.zeroSectionCompl.toOpenPartialHomeomorph.symm (b, w) : TotalSpace F E) =
+    ((e.zeroSectionCompl 𝕜).toOpenPartialHomeomorph.symm (b, w) : TotalSpace F E) =
       ⟨b, e.symm b w⟩ :=
-  e.coe_zeroSectionComplInv (p := (b, w)) hb
+  e.coe_zeroSectionComplInv 𝕜 (p := (b, w)) hb
 
 end Bundle.Trivialization
 
 namespace TauCeti
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
-  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+section LocallyTrivial
 
-variable (F E) in
-/-- **The nonzero vectors of a real vector bundle form a locally trivial bundle.** Every point of
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type w} [TopologicalSpace B] (F : Type*)
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] (E : B → Type w) [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  [VectorBundle 𝕜 F E]
+
+include 𝕜 in
+/-- **The nonzero vectors of a vector bundle form a locally trivial bundle.** Every point of
 the base lies in the base set of a chart of `E₀ → B` with fibre the nonzero vectors of the model
 fibre `F`. -/
 theorem exists_trivialization_zeroSectionComplProj (b : B) :
     ∃ e : Trivialization ({0}ᶜ : Set F) (zeroSectionComplProj F E), b ∈ e.baseSet :=
-  ⟨(trivializationAt F E b).zeroSectionCompl, FiberBundle.mem_baseSet_trivializationAt' b⟩
+  ⟨(trivializationAt F E b).zeroSectionCompl 𝕜, FiberBundle.mem_baseSet_trivializationAt' b⟩
 
-variable (F E) in
-/-- **The projection of the nonzero vectors of a real vector bundle is a Serre fibration.** -/
+include 𝕜 in
+/-- **The projection of the nonzero vectors of a vector bundle is a Serre fibration.** -/
 theorem TopCat.mem_serreFibrations_zeroSectionComplProj :
     TopCat.serreFibrations (_root_.TopCat.ofHom (zeroSectionComplProj F E) :
       _root_.TopCat.of (zeroSectionCompl F E) ⟶ _root_.TopCat.of B) :=
   TopCat.mem_serreFibrations_of_exists_trivialization
-    (exists_trivialization_zeroSectionComplProj F E)
+    (exists_trivialization_zeroSectionComplProj 𝕜 F E)
+
+end LocallyTrivial
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
 variable (E) in
 /-- **The nonzero vectors of a bundle of rank `n + 1` form an `n`-connected map to the base.** If
@@ -238,9 +253,9 @@ on `πₙ`. -/
 theorem isNConnected_zeroSectionComplProj {n : ℕ} (hF : finrank ℝ F = n + 1) :
     (zeroSectionComplProj F E).IsNConnected n := by
   refine (TopCat.isNConnected_iff_of_mem_serreFibrations
-    (TopCat.mem_serreFibrations_zeroSectionComplProj F E) n).2 fun b ↦ ?_
+    (TopCat.mem_serreFibrations_zeroSectionComplProj ℝ F E) n).2 fun b ↦ ?_
   -- Every fibre is homeomorphic to the nonzero vectors of `F`, which are `(n - 1)`-connected.
-  obtain ⟨e, hb⟩ := exists_trivialization_zeroSectionComplProj F E b
+  obtain ⟨e, hb⟩ := exists_trivialization_zeroSectionComplProj ℝ F E b
   let h := e.preimageSingletonHomeomorph hb
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
   obtain ⟨w, hw⟩ := exists_ne (0 : F)
