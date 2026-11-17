@@ -113,19 +113,6 @@ private lemma zeroExt_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) (x 
   · exact TestFunction.toCompactlySupportedContinuousMap_apply φ ⟨x, h⟩
   · exact (φ.zero_on_compl h).symm
 
-/-- On a compact `K ⊆ Ω`, an order-zero bound can be taken with a nonnegative constant and tested
-against any pointwise bound. -/
-private lemma exists_nonneg_bound {T : 𝓕}
-    (hT : HasLocallyFiniteMass (T : 𝓓(Ω, ℝ) → ℝ)) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ C, 0 ≤ C ∧ ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ K → ∀ c, (∀ x, |φ x| ≤ c) → |T φ| ≤ C * c := by
-  obtain ⟨C, hC0, hC⟩ := hasLocallyFiniteMass_def.1 hT K hK hKΩ
-  refine ⟨C, hC0, fun φ hφ c hc => ?_⟩
-  have hc0 : 0 ≤ c := (abs_nonneg _).trans (hc 0)
-  have hφc : ‖(φ : E →ᵇ ℝ)‖ ≤ c := (BoundedContinuousFunction.norm_le hc0).2 fun x => by
-    simpa using hc x
-  rw [← Real.norm_eq_abs]
-  exact (hC φ hφ).trans (mul_le_mul_of_nonneg_left hφc hC0)
-
 /-- `φ` is a sequence of test functions, supported in a common compact subset of `Ω`, that
 approximates the extension by zero of `f` uniformly, with error at most `ε n` at step `n`. -/
 private def IsApprox (f : C_c(Ω, ℝ)) (φ : ℕ → 𝓓(Ω, ℝ)) (ε : ℕ → ℝ) : Prop :=
@@ -169,7 +156,7 @@ private lemma IsApprox.exists_abs_sub_le {f : C_c(Ω, ℝ)} {φ ψ : ℕ → �
     ∃ C, 0 ≤ C ∧ ∀ m n, |T (φ m) - T (ψ n)| ≤ C * (ε m + ε' n) := by
   obtain ⟨⟨K, hK, hKΩ, hφK⟩, hφε⟩ := hφ
   obtain ⟨⟨K', hK', hK'Ω, hψK⟩, hψε⟩ := hψ
-  obtain ⟨C, hC0, hC⟩ := exists_nonneg_bound hT (hK.union hK') (union_subset hKΩ hK'Ω)
+  obtain ⟨C, hC0, hC⟩ := hT.exists_nonneg_bound (hK.union hK') (union_subset hKΩ hK'Ω)
   refine ⟨C, hC0, fun m n => ?_⟩
   rw [← map_sub]
   refine hC _ ?_ _ fun x => ?_
@@ -263,13 +250,14 @@ private lemma exists_bound_extendₗ {K : Set E} (hK : IsCompact K) (hKΩ : K �
     ∃ C, ∀ g : C_c(Ω, ℝ), ((↑) : Ω → E) '' tsupport g ⊆ K → ∀ c, (∀ x, |zeroExt g x| ≤ c) →
       |extendₗ hT g| ≤ C * c := by
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  obtain ⟨C, -, hC⟩ := exists_nonneg_bound hT hK.cthickening hδΩ
+  obtain ⟨C, -, hC⟩ := hT.exists_nonneg_bound hK.cthickening hδΩ
   refine ⟨C, fun g hgK c hc => ?_⟩
   obtain ⟨φ, hφK, hφ⟩ := exists_isApprox_of_subset g hK hgK hδ hδΩ
   have h₀ := tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)
   refine le_of_tendsto_of_tendsto' (hφ.tendsto_extend hT h₀).abs
     (by simpa only [add_zero] using (h₀.const_add c).const_mul C)
     fun n => hC _ (hφK n) _ fun x => ?_
+  rw [Real.norm_eq_abs]
   linarith [abs_sub_abs_le_abs_sub (φ n x) (zeroExt g x), hφ.2 n x, hc x]
 
 /-- The extension of `T` is bounded above on every order interval `[0, f]`. -/
