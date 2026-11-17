@@ -29,17 +29,17 @@ anti-self-dual harmonic forms. The second statement says that a nonzero class `l
 has a nonzero self-dual part `l⁺`, whatever the metric. This is how a Seiberg–Witten label with
 `l² ≥ 0` is kept off the wall `l⁺ = 0`.
 
-When `sigPos Q ≤ 1`, every vector `y` with `Q y > 0` spans such a subspace, so a vector `x` with
-`Q x ≥ 0` and `polar Q x y = 0` vanishes (`QuadraticForm.eq_zero_of_polar_eq_zero_of_nonneg`).
-This is the light-cone lemma of Lorentzian geometry: a timelike vector is orthogonal to no
-nonzero causal vector. It implies that the sign of `polar Q x y`, for a fixed nonzero `x` with
-`Q x ≥ 0`, is the same for all `y` in one component of the cone `{y | Q y > 0}`: if `Q y > 0`,
-`Q z > 0` and `polar Q y z > 0`, then `polar Q x y` and `polar Q x z` have the same sign
-(`QuadraticForm.sign_polar_eq_sign_polar`). For a four-manifold with `b₂⁺ = 1`, the class
-`[ω_g]` of a self-dual harmonic form lies in the cone of positive classes. So for a nonzero class
-`l` with `l² ≥ 0`, the sign of `l · [ω_g]`, which places `l` in a Seiberg–Witten chamber, is the
-same for all metrics whose classes `[ω_g]` are normalized to pair positively with a fixed positive
-class, for instance the class of a symplectic form.
+When `Q` is nondegenerate and `sigPos Q ≤ 1`, every vector `y` with `Q y > 0` spans such a subspace,
+so a vector `x` with `Q x ≥ 0` and `polar Q x y = 0` vanishes
+(`QuadraticForm.eq_zero_of_polar_eq_zero_of_nonneg`). This is the light-cone lemma of Lorentzian
+geometry: a timelike vector is orthogonal to no nonzero causal vector. It implies that the sign of
+`polar Q x y`, for a fixed nonzero `x` with `Q x ≥ 0`, is the same for all `y` in one component of
+the cone `{y | Q y > 0}`: if `Q y > 0`, `Q z > 0` and `polar Q y z > 0`, then `polar Q x y` and
+`polar Q x z` have the same sign (`QuadraticForm.sign_polar_eq_sign_polar`). For a four-manifold
+with `b₂⁺ = 1`, the class `[ω_g]` of a self-dual harmonic form lies in the cone of positive classes.
+So for a nonzero class `l` with `l² ≥ 0`, the sign of `l · [ω_g]`, which places `l` in a
+Seiberg–Witten chamber, is the same for all metrics whose classes `[ω_g]` are normalized to pair
+positively with a fixed positive class, for instance the class of a symplectic form.
 
 ## Main results
 

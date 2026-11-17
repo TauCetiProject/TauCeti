@@ -156,11 +156,7 @@ any metric `g`, normalized to pair positively with `[Ω]`. Then `l · y`, with `
 sign of `c`.
 
 In the wall coordinate `w(g, 0) = -2π l · [ω_g]` of the unperturbed equations, this says that
-`w(g, 0)` has the sign of `-c` for every metric `g`. The reason is the light-cone lemma for the
-form `B_𝕜`, of positive index one: `l · l = 4 d(e) ≥ 0` and `l ≠ 0`, so `l · y` has the same sign
-for all `y` in the half of the positive cone containing `[Ω]`
-(`QuadraticForm.sign_polar_eq_sign_polar`), and at `y = [Ω]` this sign is the sign of `c`
-(`TauCeti.SmoothMappingTorus.sign_apply_two_smul_sub_add_mul_apply`). -/
+`w(g, 0)` has the sign of `-c` for every metric `g`. -/
 theorem sign_baseChange_tmul_two_smul_sub_apply {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
     [IsStrictOrderedRing 𝕜] (hv : B v v = 0) (ht : B t t = 0) (hvt : B v t = 1)
     (htv : B t v = 1) (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t)))
@@ -203,6 +199,8 @@ theorem sign_baseChange_tmul_two_smul_sub_apply {𝕜 : Type*} [Field 𝕜] [Lin
       (B ((2 : ℤ) • e - κ) t : 𝕜) + L * B ((2 : ℤ) • e - κ) v := by
     simp only [Bk, Ω, map_add, map_smul, BilinForm.baseChange_tmul, smul_eq_mul, mul_one,
       zsmul_eq_mul]
+  -- Light-cone lemma for `B_𝕜`, of positive index one: since `l · l ≥ 0` and `l ≠ 0`, `l · y`
+  -- has the same sign as `l · [Ω]`, which is the sign of `c`.
   have key := QuadraticForm.sign_polar_eq_sign_polar (Q := Q)
     (BilinForm.nondegenerate_toQuadraticMap_baseChange_of_isOfFinAddOrder_span ht hvt htv hspan)
     (BilinForm.sigPos_toQuadraticMap_baseChange_eq_one_of_isOfFinAddOrder_span hv ht hvt htv
