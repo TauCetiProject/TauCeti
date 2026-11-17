@@ -56,9 +56,10 @@ In the namespace `TauCeti.SmoothEmbedding`:
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
-* `nonempty_filteredSpaceSpectralSequence_page_two_X_iso_iUnion_negativeDiscBundle`: the first
-  page of the spectral sequence of the sublevel filtration of a Morse–Bott function is the relative
-  homology of the negative disc bundle attachments across its critical levels.
+* `nonempty_filteredSpaceSpectralSequence_page_two_X_iso_iUnion_negativeDiscBundle`: at a band of
+  a Morse–Bott function with one critical value `c`, the first page of the spectral sequence of the
+  sublevel filtration is the relative homology of the lower sublevel with the negative disc bundles
+  of the critical submanifolds on the level `c` attached.
 
 ## References
 
