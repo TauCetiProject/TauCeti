@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Analysis.InnerProductSpace.KulkarniNomizu
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Algebraic curvature tensors
@@ -233,6 +234,24 @@ theorem isClosed_algebraicCurvatureSubmodule :
     refine isClosed_iInter fun u ↦ isClosed_iInter fun v ↦ isClosed_iInter fun z ↦
       isClosed_iInter fun w ↦ isClosed_eq ?_ ?_ <;>
     fun_prop
+
+/-- Two four-tensors agree when they agree on every four-tuple `![u, v, z, w]`. -/
+theorem ext_vec {r s : FourTensor V} (h : ∀ u v z w, r ![u, v, z, w] = s ![u, v, z, w]) :
+    r = s :=
+  ContinuousMultilinearMap.ext fun m ↦ by
+    have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
+    rw [hm]
+    exact h (m 0) (m 1) (m 2) (m 3)
+
+/-- A four-tensor has operator norm at most `C` once
+`|r ![u, v, z, w]| ≤ C * ‖u‖ * ‖v‖ * ‖z‖ * ‖w‖` for all `u, v, z, w`. -/
+theorem opNorm_le_bound_vec {r : FourTensor V} {C : ℝ} (hC : 0 ≤ C)
+    (h : ∀ u v z w, |r ![u, v, z, w]| ≤ C * ‖u‖ * ‖v‖ * ‖z‖ * ‖w‖) : ‖r‖ ≤ C :=
+  ContinuousMultilinearMap.opNorm_le_bound hC fun m ↦ by
+    rw [Fin.prod_univ_four]
+    have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
+    conv_lhs => rw [hm]
+    simpa only [Real.norm_eq_abs, mul_assoc] using h (m 0) (m 1) (m 2) (m 3)
 
 /-- The pullback of a four-tensor by a continuous linear map `f` evaluates `r` on the images under
 `f`. -/
@@ -547,6 +566,14 @@ def coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) : FourTensor V :=
   (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).compContinuousLinearMap
     ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]
 
+/-- Definition of `coordFourTensor` as the composition of `mkPiAlgebraFin` with four inner-product
+functionals. -/
+theorem coordFourTensor_def {ι : Type*} (b : ι → V) (i j k l : ι) :
+    coordFourTensor b i j k l =
+      (ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).compContinuousLinearMap
+        ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)] :=
+  (rfl)
+
 /-- Evaluation of `coordFourTensor` on four vectors. -/
 @[simp]
 theorem coordFourTensor_apply {ι : Type*} (b : ι → V) (i j k l : ι) (u v z w : V) :
@@ -562,18 +589,14 @@ theorem norm_coordFourTensor {ι : Type*} (b : ι → V) (i j k l : ι) :
   · refine ((ContinuousMultilinearMap.mkPiAlgebraFin ℝ 4 ℝ).norm_compContinuousLinearMap_le
       ![innerSL ℝ (b i), innerSL ℝ (b j), innerSL ℝ (b k), innerSL ℝ (b l)]).trans_eq ?_
     simp [Fin.prod_univ_four, innerSL_apply_norm, mul_assoc]
-  · set P := ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖
-    by_cases hP : P = 0
-    · rw [hP]; exact norm_nonneg _
-    · have hPpos : 0 < P := lt_of_le_of_ne (by positivity) (Ne.symm hP)
-      have hle := (coordFourTensor b i j k l).le_opNorm ![b i, b j, b k, b l]
-      rw [coordFourTensor_apply, Fin.prod_univ_four] at hle
-      simp only [real_inner_self_eq_norm_sq, Real.norm_eq_abs, Matrix.cons_val_zero,
-        Matrix.cons_val_one, Matrix.cons_val, Fin.isValue] at hle
-      have hsq : |‖b i‖ ^ 2 * ‖b j‖ ^ 2 * ‖b k‖ ^ 2 * ‖b l‖ ^ 2| = P * P := by
-        rw [abs_of_nonneg (by positivity)]; simp only [P]; ring
-      rw [hsq] at hle
-      exact le_of_mul_le_mul_right hle hPpos
+  · refine le_trans ?_ ((coordFourTensor b i j k l).ratio_le_opNorm ![b i, b j, b k, b l])
+    rw [coordFourTensor_apply, Fin.prod_univ_four]
+    simp only [real_inner_self_eq_norm_sq, Real.norm_eq_abs, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val, Fin.isValue, abs_of_nonneg (by positivity :
+        0 ≤ ‖b i‖ ^ 2 * ‖b j‖ ^ 2 * ‖b k‖ ^ 2 * ‖b l‖ ^ 2)]
+    set P := ‖b i‖ * ‖b j‖ * ‖b k‖ * ‖b l‖
+    have hsq : ‖b i‖ ^ 2 * ‖b j‖ ^ 2 * ‖b k‖ ^ 2 * ‖b l‖ ^ 2 = P * P := by simp only [P]; ring
+    rw [hsq, mul_self_div_self]
 
 /-- Every coordinate four-tensor of an orthonormal family has unit operator norm. -/
 theorem norm_coordFourTensor_of_orthonormal {ι : Type*} {b : ι → V} (hb : Orthonormal ℝ b)
@@ -586,73 +609,23 @@ theorem coordFourTensor_compContinuousLinearMap_linearIsometry {ι : Type*} (f :
     (b : ι → W) (i j k l : ι) :
     (coordFourTensor (f ∘ b) i j k l).compContinuousLinearMap
       (fun _ ↦ f.toContinuousLinearMap) = coordFourTensor b i j k l := by
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
-  rw [hm, compContinuousLinearMap_apply_vec]
+  refine ext_vec fun u v z w ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
   simp
-
-private theorem sum_inner_mul_apply_first {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (r : FourTensor V) (u v z w : V) :
-    ∑ i, ⟪b i, u⟫_ℝ * r ![b i, v, z, w] = r ![u, v, z, w] := by
-  let φ : V →ₗ[ℝ] ℝ :=
-    { toFun := fun x ↦ r ![x, v, z, w]
-      map_add' := fun _ _ ↦ apply_add_first ..
-      map_smul' := fun _ _ ↦ apply_smul_first .. }
-  simpa [φ] using congrArg φ (b.sum_repr' u)
-
-private theorem sum_inner_mul_apply_second {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (r : FourTensor V) (u v z w : V) :
-    ∑ j, ⟪b j, v⟫_ℝ * r ![u, b j, z, w] = r ![u, v, z, w] := by
-  let φ : V →ₗ[ℝ] ℝ :=
-    { toFun := fun x ↦ r ![u, x, z, w]
-      map_add' := fun _ _ ↦ apply_add_second ..
-      map_smul' := fun _ _ ↦ apply_smul_second .. }
-  simpa [φ] using congrArg φ (b.sum_repr' v)
-
-private theorem sum_inner_mul_apply_third {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (r : FourTensor V) (u v z w : V) :
-    ∑ k, ⟪b k, z⟫_ℝ * r ![u, v, b k, w] = r ![u, v, z, w] := by
-  let φ : V →ₗ[ℝ] ℝ :=
-    { toFun := fun x ↦ r ![u, v, x, w]
-      map_add' := fun _ _ ↦ apply_add_third ..
-      map_smul' := fun _ _ ↦ apply_smul_third .. }
-  simpa [φ] using congrArg φ (b.sum_repr' z)
-
-private theorem sum_inner_mul_apply_fourth {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (r : FourTensor V) (u v z w : V) :
-    ∑ l, ⟪b l, w⟫_ℝ * r ![u, v, z, b l] = r ![u, v, z, w] := by
-  let φ : V →ₗ[ℝ] ℝ :=
-    { toFun := fun x ↦ r ![u, v, z, x]
-      map_add' := fun _ _ ↦ apply_add_fourth ..
-      map_smul' := fun _ _ ↦ apply_smul_fourth .. }
-  simpa [φ] using congrArg φ (b.sum_repr' w)
 
 /-- Every four-tensor on `V` is the sum of its components in an orthonormal basis `b` against the
 corresponding coordinate four-tensors `coordFourTensor b i j k l`. -/
 theorem sum_coordFourTensor_eq {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (r : FourTensor V) :
     (∑ i, ∑ j, ∑ k, ∑ l, r ![b i, b j, b k, b l] • coordFourTensor b i j k l) = r := by
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := (FinVec.etaExpand_eq m).symm
-  rw [hm]
-  simp only [sum_apply, smul_apply, coordFourTensor_apply, smul_eq_mul]
-  have h4 (i j k : ι) :
-      ∑ l, r ![b i, b j, b k, b l] *
-          (⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * ⟪b k, m 2⟫_ℝ * ⟪b l, m 3⟫_ℝ) =
-        ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * ⟪b k, m 2⟫_ℝ * r ![b i, b j, b k, m 3] := by
-    rw [← sum_inner_mul_apply_fourth b r (b i) (b j) (b k) (m 3), Finset.mul_sum]
-    exact Finset.sum_congr rfl fun l _ ↦ by ring
-  have h3 (i j : ι) :
-      ∑ k, ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * ⟪b k, m 2⟫_ℝ * r ![b i, b j, b k, m 3] =
-        ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * r ![b i, b j, m 2, m 3] := by
-    rw [← sum_inner_mul_apply_third b r (b i) (b j) (m 2) (m 3), Finset.mul_sum]
-    exact Finset.sum_congr rfl fun k _ ↦ by ring
-  have h2 (i : ι) :
-      ∑ j, ⟪b i, m 0⟫_ℝ * ⟪b j, m 1⟫_ℝ * r ![b i, b j, m 2, m 3] =
-        ⟪b i, m 0⟫_ℝ * r ![b i, m 1, m 2, m 3] := by
-    rw [← sum_inner_mul_apply_second b r (b i) (m 1) (m 2) (m 3), Finset.mul_sum]
-    exact Finset.sum_congr rfl fun j _ ↦ by ring
-  simp_rw [h4, h3, h2, sum_inner_mul_apply_first]
+  classical
+  apply ContinuousMultilinearMap.toMultilinearMap_injective
+  refine Module.Basis.ext_multilinear (fun _ ↦ b.toBasis) fun v ↦ ?_
+  have hv : (fun t : Fin 4 ↦ b.toBasis (v t)) = ![b (v 0), b (v 1), b (v 2), b (v 3)] := by
+    funext t; fin_cases t <;> rfl
+  simp only [ContinuousMultilinearMap.coe_coe, hv, sum_apply, smul_apply, coordFourTensor_apply,
+    smul_eq_mul, orthonormal_iff_ite.mp b.orthonormal, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
 
 end CoordFourTensor
 
