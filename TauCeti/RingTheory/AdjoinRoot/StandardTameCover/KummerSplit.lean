@@ -23,6 +23,7 @@ import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 import TauCeti.RingTheory.Etale.IntegralClosure
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Henselian.Etale
+import TauCeti.RingTheory.Henselian.Strict
 import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Basic
 import TauCeti.RingTheory.Localization.AtPrime
@@ -86,7 +87,7 @@ away from `f` of a finite product of standard tame covers extends across `f` to 
 4. **Strict henselianity and the converse.** If `A` is strictly henselian, so is the root cover
    `A' = A[x]/(x^e − f)` (`TauCeti.standardTameCover_henselianLocalRing`,
    `TauCeti.standardTameCover_isSepClosed_residueField`), so any finite étale `A'`-algebra `T`
-   splits (`Algebra.IsFiniteSplit.of_henselianLocalRing`); if `T` agrees with `S_f` away from `f`,
+   splits (`Algebra.IsFiniteSplit.of_isFiniteEtaleSplit`); if `T` agrees with `S_f` away from `f`,
    then `S_f` splits over `A'_f` and hence over `K'`. Conversely, over any commutative ring `A`,
    for a finite product `C ≃ₐ[A] ∏ᵢ A[x]/(x^{eᵢ} − f)` with `eᵢ ≥ 1` invertible in `A`, setting
    `e = ∏ᵢ eᵢ` and `T = ∏ᵢ A'[u]/(u^{eᵢ} − 1)` over `A' = A[x]/(x^e − f)` gives a finite étale
@@ -482,7 +483,7 @@ theorem isFiniteProductOfStandardTameCovers_of_etale_standardTameCover
   have := standardTameCover_isLocalRing hf he
   have := standardTameCover_henselianLocalRing hf he
   have := standardTameCover_isSepClosed_residueField (e := e) hf
-  have : Algebra.IsFiniteSplit (standardTameCover A f e) T := .of_henselianLocalRing _ T
+  have : Algebra.IsFiniteSplit (standardTameCover A f e) T := .of_isFiniteEtaleSplit T
   have : Algebra.IsFiniteSplit A'f (A'f ⊗[Af] Sf) := .of_algEquiv φ
   exact isFiniteProductOfStandardTameCovers_of_isFiniteSplit_away hf₀ Af Sf hfe A'f
 
