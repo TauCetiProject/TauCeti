@@ -296,42 +296,34 @@ private theorem galoisMapInv_mulCoact (t : H ⊗[R] N) :
   rw [galoisMapInv, LinearMap.comp_apply, ← Comodule.mulCoactEquiv_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_apply]
 
-/-- `h ⊗ x ↦ β⁻¹(1 ⊗ h) (1 ⊗ x)`. -/
-private noncomputable def untwist : H ⊗[R] A →ₗ[R] A ⊗[B] A :=
-  TensorProduct.lift ((LinearMap.mul R (A ⊗[B] A)).compl₁₂ (translation hβ)
-    (Algebra.TensorProduct.includeRight.toLinearMap.restrictScalars R))
-
-private theorem untwist_tmul (h : H) (x : A) :
-    untwist hβ (h ⊗ₜ x) = translation hβ h * (1 ⊗ₜ x) :=
-  (rfl)
-
-private theorem galoisMap_untwist (t : H ⊗[R] A) :
-    ComoduleAlgebra.galoisMap B hB (untwist hβ t) = Comodule.mulCoact R H A t := by
-  induction t with
-  | add t t' ht ht' => simp only [map_add, ht, ht']
-  | tmul h x =>
-    rw [untwist_tmul, map_mul, galoisMap_translation, ComoduleAlgebra.galoisMap_tmul,
-      ← Algebra.TensorProduct.one_def, one_mul, Comodule.mulCoact_tmul]
-    induction Comodule.coact (R := R) (C := H) x with
-    | add w w' hw hw' => simp only [mul_add, map_add, hw, hw']
-    | tmul y h' => simp
+/-- For `N = A`, `translationAct` is `h ⊗ x ↦ β⁻¹(1 ⊗ h) (1 ⊗ x)`. -/
+private theorem translationAct_self_tmul (h : H) (x : A) :
+    translationAct A hβ (h ⊗ₜ x) = translation hβ h * (1 ⊗ₜ x) := by
+  rw [translationAct_tmul]
+  induction translation hβ h with
+  | add z z' hz hz' => simp only [TensorProduct.add_tmul, map_add, add_mul, hz, hz']
+  | tmul y y' => simp
 
 /-- The element `a ⊗ 1` of `A ⊗[B] A` is `∑ β⁻¹(1 ⊗ S a₁) (1 ⊗ a₀)`. -/
-private theorem untwist_antipodeShear_coact (a : A) :
-    untwist hβ (Comodule.antipodeShear R H A (Comodule.coact (R := R) (C := H) a ⊗ₜ 1)) =
+private theorem translationAct_antipodeShear_coact (a : A) :
+    translationAct A hβ
+        (Comodule.antipodeShear R H A (Comodule.coact (R := R) (C := H) a ⊗ₜ 1)) =
       a ⊗ₜ[B] (1 : A) := by
+  have hself (z : A ⊗[B] A) : ComoduleAlgebra.galoisMap B hB z = galoisMap B A hB z :=
+    (LinearMap.congr_fun (galoisMap_self hB) z).symm
   apply hβ.1
-  rw [galoisMap_untwist, Comodule.mulCoact_antipodeShear_coact, ComoduleAlgebra.galoisMap_tmul,
-    ComoduleAlgebra.coact_one, mul_one]
+  rw [hself, galoisMap_translationAct, Comodule.mulCoact_antipodeShear_coact,
+    ComoduleAlgebra.galoisMap_tmul, ComoduleAlgebra.coact_one, mul_one]
 
 omit [IsRelativeHopfModule R H A N] [IsScalarTower R B N] in
 private theorem galoisMapInv_surjective : Function.Surjective (galoisMapInv N hβ) := by
   have key (n : N) (t : H ⊗[R] A) :
-      actOne R B N (untwist hβ t ⊗ₜ n) ∈ LinearMap.range (galoisMapInv N hβ) := by
+      actOne R B N (translationAct A hβ t ⊗ₜ n) ∈ LinearMap.range (galoisMapInv N hβ) := by
     induction t with
     | add t t' ht ht' => rw [map_add, TensorProduct.add_tmul, map_add]; exact add_mem ht ht'
     | tmul h x =>
-      rw [untwist_tmul, TensorProduct.AlgebraTensorModule.lTensor_liftBaseChange_assoc_mul_tmul,
+      rw [translationAct_self_tmul,
+        TensorProduct.AlgebraTensorModule.lTensor_liftBaseChange_assoc_mul_tmul,
         ← translationAct_tmul, ← galoisMapInv_mulCoact]
       exact LinearMap.mem_range_self _ _
   intro x
@@ -343,7 +335,7 @@ private theorem galoisMapInv_surjective : Function.Surjective (galoisMapInv N h�
   | tmul a n =>
     have h : a ⊗ₜ[B] n = actOne R B N ((a ⊗ₜ[B] (1 : A)) ⊗ₜ[R] n) := by
       rw [actOne_tmul, one_smul]
-    rw [h, ← untwist_antipodeShear_coact hβ]
+    rw [h, ← translationAct_antipodeShear_coact hβ]
     exact key n _
 
 include hβ in
