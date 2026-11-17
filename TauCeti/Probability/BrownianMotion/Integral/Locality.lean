@@ -78,7 +78,7 @@ theorem coeFn_l2Integral_indicator_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ 
             (measure_ne_top _ _) 1) =
         indicatorConstLp 2 (measurableSet_predictable_Ioc_prod (max s u) (min t v)
           (((ℱ.mono (le_max_left _ _)) _ hC).inter hB')) (measure_ne_top _ _) 1 := by
-      rw [holderL_linftyIndicator_indicatorConstLp]
+      rw [ContinuousLinearMap.holderL_apply_apply, holder_mul_linftyIndicator_indicatorConstLp]
       congr 1
       ext p
       simp only [mem_inter_iff, mem_prod, mem_Ioc, max_lt_iff, le_min_iff]
@@ -90,18 +90,20 @@ theorem coeFn_l2Integral_indicator_Ioc_prod (hW : IsFilteredPreBrownianReal ℱ 
     apply Lp.ext
     filter_upwards [hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T (max s u) (min t v) hAB 1,
       hW.coeFn_l2Integral_indicatorConstLp_Ioc_prod T (max s u) (min t v) hB' 1,
-      coeFn_holderL_linftyIndicator (ℱ.le s _ hA)
+      coeFn_holder_mul_linftyIndicator (ℱ.le s _ hA)
         (hW.l2Integral T (indicatorConstLp 2
           (measurableSet_predictable_Ioc_prod (max s u) (min t v) hB')
             (measure_ne_top _ _) 1))] with ω h₁ h₂ h₃
-    simp only [J, E, LinearIsometry.coe_toContinuousLinearMap] at *
+    simp only [J, E, LinearIsometry.coe_toContinuousLinearMap,
+      ContinuousLinearMap.holderL_apply_apply] at *
     rw [h₁, h₃]
     by_cases hωA : ω ∈ A <;> by_cases hωB : ω ∈ B <;> simp [hωA, hωB, h₂]
   have heq := congrArg (fun L : Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 P ↦ L f) hmaps
   simp only [ContinuousLinearMap.comp_apply, J, R, D,
-    LinearIsometry.coe_toContinuousLinearMap, holderL_linftyIndicator_eq_toLp] at heq
+    LinearIsometry.coe_toContinuousLinearMap, ContinuousLinearMap.holderL_apply_apply,
+    holder_mul_linftyIndicator_eq_toLp] at heq
   rw [heq]
-  exact coeFn_holderL_linftyIndicator (ℱ.le s _ hA) _
+  exact coeFn_holder_mul_linftyIndicator (ℱ.le s _ hA) _
 
 /-- If two predictable L² integrands agree on an event known at `s` during `(s,t]`,
 their integrals over that strip agree on that event, at any ambient horizon `T`. -/
@@ -140,7 +142,7 @@ theorem ae_l2Integral_indicator_Ioc_prod_eq_of_mem (hW : IsFilteredPreBrownianRe
 /-- A representative supported after `s` admits factoring by an event known at `s`.
 The event-cutoff representative may be supplied as any L² class `g` equal to it almost
 everywhere; callers need not construct a particular `MemLp.toLp` expression. -/
-theorem coeFn_l2Integral_eq_indicator_of_ae_eq
+theorem coeFn_l2Integral_ae_eq_indicator_of_ae_eq
     (hW : IsFilteredPreBrownianReal ℱ W P) {T s : ℝ≥0} {A : Set Ω}
     (hA : MeasurableSet[ℱ s] A) {f g : Lp ℝ 2 (ℱ.predictableMeasure P T)}
     (hf : ∀ᵐ p ∂ℱ.predictableMeasure P T, p.1 ≤ s → f p = 0)
@@ -172,6 +174,20 @@ theorem coeFn_l2Integral_eq_indicator_of_ae_eq
     by_cases h : p.1 ≤ s <;> simp [Set.indicator, Set.mem_prod, Set.mem_Ioc] at * <;> grind
   simpa only [hR, hD] using hW.coeFn_l2Integral_indicator_Ioc_prod T s T hA f
 
+/-- An event known at time zero factors out of the terminal Brownian integral.
+No support premise at time zero is needed, since it has zero time mass. -/
+theorem coeFn_l2Integral_ae_eq_indicator_of_ae_eq_of_measurableSet_zero
+    (hW : IsFilteredPreBrownianReal ℱ W P) {T : ℝ≥0} {A : Set Ω}
+    (hA : MeasurableSet[ℱ 0] A) {f g : Lp ℝ 2 (ℱ.predictableMeasure P T)}
+    (hg : g =ᵐ[ℱ.predictableMeasure P T] (univ ×ˢ A).indicator f) :
+    hW.l2Integral T g =ᵐ[P] A.indicator (hW.l2Integral T f) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  refine hW.coeFn_l2Integral_ae_eq_indicator_of_ae_eq hA ?_ hg
+  have hzero := measure_eq_zero_iff_ae_notMem.1
+    (ℱ.predictableMeasure_singleton_zero_prod P T (A := univ) MeasurableSet.univ)
+  filter_upwards [hzero] with p hp hs
+  exact False.elim (hp ⟨nonpos_iff_eq_zero.mp hs, mem_univ _⟩)
+
 /-- If two representatives agree before `s` and on an event known at `s`, their
 terminal Brownian integrals agree almost everywhere on that event. -/
 theorem ae_l2Integral_eq_of_mem (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -193,7 +209,7 @@ theorem ae_l2Integral_eq_of_mem (hW : IsFilteredPreBrownianReal ℱ W P)
       exact (sub_eq_zero.mpr (hp (Or.inr h.2))).symm
     · rw [Set.indicator_of_notMem h]
       rfl
-  have h := hW.coeFn_l2Integral_eq_indicator_of_ae_eq hA hd hz
+  have h := hW.coeFn_l2Integral_ae_eq_indicator_of_ae_eq hA hd hz
   rw [map_zero, map_sub] at h
   filter_upwards [h, Lp.coeFn_zero ℝ 2 P,
     Lp.coeFn_sub (hW.l2Integral T f) (hW.l2Integral T g)] with ω hω hz hd hAω
@@ -202,7 +218,7 @@ theorem ae_l2Integral_eq_of_mem (hW : IsFilteredPreBrownianReal ℱ W P)
 
 /-- Agreement on an event known initially implies agreement of the terminal Brownian
 integrals on that event. No premise at time zero is needed, since it has zero time mass. -/
-theorem ae_l2Integral_eq_of_mem_initial (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem ae_l2Integral_eq_of_mem_of_measurableSet_zero (hW : IsFilteredPreBrownianReal ℱ W P)
     {T : ℝ≥0} {A : Set Ω} (hA : MeasurableSet[ℱ 0] A)
     {f g : Lp ℝ 2 (ℱ.predictableMeasure P T)}
     (hfg : ∀ᵐ p ∂ℱ.predictableMeasure P T, p.2 ∈ A → f p = g p) :

@@ -197,33 +197,34 @@ theorem coeFn_linftyIndicator (hs : MeasurableSet s) :
 
 section Holder
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {p : ℝ≥0∞}
 
 /-- Hölder multiplication by an `L∞` indicator is almost everywhere the indicator cutoff. -/
-theorem coeFn_holderL_linftyIndicator (hs : MeasurableSet s) (f : Lp ℝ p μ) :
-    (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ p p (linftyIndicator μ s hs) f =ᵐ[μ]
+theorem coeFn_holder_mul_linftyIndicator (hs : MeasurableSet s) (f : Lp ℝ p μ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs) f =ᵐ[μ]
       s.indicator f := by
   filter_upwards [(ContinuousLinearMap.mul ℝ ℝ).coeFn_holder
     (r := p) (linftyIndicator μ s hs) f, coeFn_linftyIndicator (μ := μ) hs] with x hx hsx
-  rw [ContinuousLinearMap.holderL_apply_apply, hx, ContinuousLinearMap.mul_apply', hsx]
+  rw [hx, ContinuousLinearMap.mul_apply', hsx]
   by_cases h : x ∈ s <;> simp [h]
 
 /-- Hölder multiplication by an `L∞` indicator agrees with the `MemLp.toLp` cutoff. -/
-theorem holderL_linftyIndicator_eq_toLp (hs : MeasurableSet s) (f : Lp ℝ p μ) :
-    (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ p p (linftyIndicator μ s hs) f =
+theorem holder_mul_linftyIndicator_eq_toLp (hs : MeasurableSet s) (f : Lp ℝ p μ) :
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs) f =
       ((Lp.memLp f).indicator hs.nullMeasurableSet).toLp (s.indicator f) :=
-  Lp.ext ((coeFn_holderL_linftyIndicator hs f).trans
+  Lp.ext ((coeFn_holder_mul_linftyIndicator hs f).trans
     ((Lp.memLp f).indicator hs.nullMeasurableSet).coeFn_toLp.symm)
 
 /-- Cutting off a constant indicator class intersects its supporting set. -/
-theorem holderL_linftyIndicator_indicatorConstLp (hs : MeasurableSet s)
+@[simp]
+theorem holder_mul_linftyIndicator_indicatorConstLp (hs : MeasurableSet s)
     (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (c : ℝ) :
-    (ContinuousLinearMap.mul ℝ ℝ).holderL μ ∞ p p (linftyIndicator μ s hs)
+    (ContinuousLinearMap.mul ℝ ℝ).holder p (linftyIndicator μ s hs)
         (indicatorConstLp p ht hμt c) =
       indicatorConstLp p (hs.inter ht)
         (ne_top_of_le_ne_top hμt (measure_mono inter_subset_right)) c := by
   apply Lp.ext
-  filter_upwards [coeFn_holderL_linftyIndicator hs (indicatorConstLp p ht hμt c),
+  filter_upwards [coeFn_holder_mul_linftyIndicator hs (indicatorConstLp p ht hμt c),
     indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt) (c := c),
     indicatorConstLp_coeFn (p := p) (hs := hs.inter ht)
       (hμs := ne_top_of_le_ne_top hμt (measure_mono inter_subset_right)) (c := c)]
