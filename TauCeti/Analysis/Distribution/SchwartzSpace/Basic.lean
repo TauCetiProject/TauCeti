@@ -27,11 +27,14 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
+* `SchwartzMap.integrable_norm_rpow_mul_norm`: `‖x‖ ^ s ‖f x‖` is integrable for real `s ≥ 0`.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
+* `SchwartzMap.integrable_smul_apply`: a Schwartz function times a homogeneous polynomial
+  `A (x, …, x)` is integrable.
 * `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
   envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
   the integral.
@@ -188,6 +191,21 @@ theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F
       exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
 
 omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and real `s ≥ 0`, the moment weight `‖x‖ ^ s ‖f x‖` is
+integrable. -/
+theorem integrable_norm_rpow_mul_norm (f : 𝓢(E, F)) {s : ℝ} (hs : 0 ≤ s) :
+    Integrable (fun x ↦ ‖x‖ ^ s * ‖f x‖) μ :=
+  (f.integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := μ) 1 s).mono'
+    ((continuous_norm.rpow_const fun _ ↦ Or.inr hs).mul f.continuous.norm).aestronglyMeasurable
+    (.of_forall fun x ↦ by
+      rw [one_smul, Real.norm_of_nonneg (by positivity)]
+      gcongr
+      calc ‖x‖ ^ s = (‖x‖ ^ 2) ^ (s / 2) := by
+            rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x)]
+            ring_nf
+        _ ≤ (1 + ‖x‖ ^ 2) ^ (s / 2) := by gcongr; linarith)
+
+omit [SecondCountableTopology E] in
 /-- The norms of the derivatives of a Schwartz function are integrable. -/
 theorem integrable_norm_iteratedFDeriv (f : 𝓢(E, F)) (k : ℕ) :
     Integrable (fun x ↦ ‖iteratedFDeriv ℝ k f x‖) μ := by
@@ -252,6 +270,26 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
   simp [smulLeftCLM, hg]
 
 end Smul
+
+section Polynomial
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {μ : Measure E} [μ.HasTemperateGrowth]
+
+/-- A Schwartz function times a homogeneous polynomial, `y ↦ K y • A (y, …, y)` for a continuous
+multilinear map `A`, is integrable. -/
+theorem integrable_smul_apply (K : 𝓢(E, ℂ)) {n : ℕ} (A : E [×n]→L[ℝ] F) :
+    Integrable (fun y ↦ K y • A (fun _ ↦ y)) μ :=
+  ((K.integrable_pow_mul μ n).const_mul ‖A‖).mono'
+    (K.continuous.smul (A.coe_continuous.comp
+      (continuous_pi fun _ ↦ continuous_id))).aestronglyMeasurable
+    (.of_forall fun y ↦ by
+      rw [norm_smul, mul_comm, ← mul_assoc]
+      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+      simpa using A.le_opNorm (fun _ ↦ y))
+
+end Polynomial
 
 end SchwartzMap
 
