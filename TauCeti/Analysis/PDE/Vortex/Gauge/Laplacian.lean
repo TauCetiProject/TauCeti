@@ -97,6 +97,13 @@ open scoped Laplacian ContDiff
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
+/-- At a continuous field, the potential `p² + q²` of the gauge Laplacian is continuous. -/
+private theorem continuous_sq_add_sq (hcont : Continuous x) :
+    Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
+  have _ : Continuous fun z ↦ x z 2 := by fun_prop
+  have _ : Continuous fun z ↦ x z 3 := by fun_prop
+  fun_prop
+
 /-- At a continuous field of `A_m^s`, `s > 1`, the potential `p² + q²` of the gauge Laplacian is
 bounded and at least `1 / 8` outside a disc. -/
 private theorem potential_bounds {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldSpace f m s)
@@ -104,10 +111,7 @@ private theorem potential_bounds {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldS
     MemLp (fun z ↦ x z 2 ^ 2 + x z 3 ^ 2) ⊤ (volume : Measure ℂ) ∧
       ∃ R, ∀ z, R < ‖z‖ → 1 / 8 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
   have hlim := tendsto_normSq_of_mem_framedFieldSpace hs hx hcont
-  have hVc : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have _ : Continuous fun z ↦ x z 2 := by fun_prop
-    have _ : Continuous fun z ↦ x z 3 := by fun_prop
-    fun_prop
+  have hVc := continuous_sq_add_sq hcont
   obtain ⟨R₁, -, hR₁⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
   refine ⟨?_, R₁, fun z hz ↦ (hR₁ z hz).le⟩
   -- Outside a disc the potential is below `1 / 2`; inside it is bounded by compactness.
@@ -240,12 +244,6 @@ section Isomorphism
 open TopologicalSpace
 open scoped Topology Distributions
 
-/-- Almost everywhere statements on the whole plane, as a domain of `TauCeti.Wkp`, are almost
-everywhere statements on the plane. -/
-private theorem ae_le_ae_restrict_top :
-    ae (volume : Measure ℂ) ≤ ae ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ)) :=
-  ae_mono (Measure.restrict_coe_opens_top _).ge
-
 /-- An element of `W^{n,2}(ℂ)` is determined by its integrals against smooth compactly supported
 functions. -/
 private theorem wkp_eq_of_forall_integral_value_mul_eq {n : ℕ}
@@ -261,19 +259,8 @@ private theorem tendsto_integral_wkp_value_mul {n : ℕ} {ψ : ℂ → ℝ} (hψ
     (h : Tendsto w atTop (𝓝 w₀)) :
     Tendsto (fun i ↦ ∫ z, Wkp.value n (w i) z * ψ z) atTop
       (𝓝 (∫ z, Wkp.value n w₀ z * ψ z)) := by
-  have hψ' : MemLp ψ 2 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ)) := hψ.restrict _
-  -- the integral is the `L²` inner product with `ψ`
-  have key (u : Wkp (volume : Measure ℂ) ⊤ 2 n) :
-      ∫ z, Wkp.value n u z * ψ z = inner ℝ (Wkp.valueL n u) (hψ'.toLp ψ) := by
-    rw [L2.inner_def, Wkp.valueL_apply]
-    have hc := hψ'.coeFn_toLp
-    simp only [Opens.coe_top, Measure.restrict_univ] at hc ⊢
-    refine integral_congr_ae ?_
-    filter_upwards [hc] with z hz
-    rw [hz, real_inner_eq_re_inner, RCLike.inner_apply, conj_trivial, RCLike.re_to_real,
-      mul_comm]
-  simp_rw [key]
-  exact (((Wkp.valueL n).continuous.tendsto w₀).comp h).inner tendsto_const_nhds
+  simpa only [Measure.restrict_coe_opens_top, Function.comp_def] using
+    ((Wkp.continuous_integral_value_mul n (hψ.restrict _)).tendsto w₀).comp h
 
 variable {k j : ℕ}
 
@@ -307,8 +294,8 @@ private noncomputable def sqAddSqMul (hk : 1 < k) (hjk : j ≤ k)
     have h₁ := (exists_wkp_value_ae_eq_sq_add_sq_mul hk hjk hx (w + w')).choose_spec
     have h₂ := (exists_wkp_value_ae_eq_sq_add_sq_mul hk hjk hx w).choose_spec
     have h₃ := (exists_wkp_value_ae_eq_sq_add_sq_mul hk hjk hx w').choose_spec
-    have h₄ := (Wkp.value_add_ae _ w w').filter_mono ae_le_ae_restrict_top
-    have h₅ := (Wkp.value_add_ae _ a a').filter_mono ae_le_ae_restrict_top
+    have h₄ := (Wkp.value_add_ae _ w w').filter_mono Measure.ae_le_ae_restrict_coe_opens_top
+    have h₅ := (Wkp.value_add_ae _ a a').filter_mono Measure.ae_le_ae_restrict_coe_opens_top
     refine Wkp.ext j (Lp.ext (ae_restrict_of_ae ?_))
     filter_upwards [h₁, h₂, h₃, h₄, h₅] with z e₁ e₂ e₃ e₄ e₅
     rw [e₁, e₅, Pi.add_apply, e₂, e₃, e₄, Pi.add_apply, mul_add]
@@ -316,8 +303,8 @@ private noncomputable def sqAddSqMul (hk : 1 < k) (hjk : j ≤ k)
     set a := (exists_wkp_value_ae_eq_sq_add_sq_mul hk hjk hx w).choose
     have h₁ := (exists_wkp_value_ae_eq_sq_add_sq_mul hk hjk hx (c • w)).choose_spec
     have h₂ := (exists_wkp_value_ae_eq_sq_add_sq_mul hk hjk hx w).choose_spec
-    have h₃ := (Wkp.value_smul_ae _ c w).filter_mono ae_le_ae_restrict_top
-    have h₄ := (Wkp.value_smul_ae _ c a).filter_mono ae_le_ae_restrict_top
+    have h₃ := (Wkp.value_smul_ae _ c w).filter_mono Measure.ae_le_ae_restrict_coe_opens_top
+    have h₄ := (Wkp.value_smul_ae _ c a).filter_mono Measure.ae_le_ae_restrict_coe_opens_top
     refine Wkp.ext j (Lp.ext (ae_restrict_of_ae ?_))
     filter_upwards [h₁, h₂, h₃, h₄] with z e₁ e₂ e₃ e₄
     rw [RingHom.id_apply, e₁, e₄, Pi.smul_apply, e₂, e₃, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
@@ -340,11 +327,11 @@ private theorem gaugeLaplacianₗ_ae (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ fr
     (Wkp.value j (gaugeLaplacianₗ hk hjk hx w) : ℂ → ℝ) =ᵐ[volume]
       fun z ↦ -Wkp.value j (Wkp.laplacianL j w) z +
         (x z 2 ^ 2 + x z 3 ^ 2) * Wkp.value (j + 2) w z := by
-  have hT : gaugeLaplacianₗ hk hjk hx w = -Wkp.laplacianL j w + sqAddSqMul hk hjk hx w := rfl
-  rw [hT]
+  rw [gaugeLaplacianₗ, LinearMap.add_apply, LinearMap.neg_apply, ContinuousLinearMap.coe_coe]
   have h₁ := (Wkp.value_add_ae _ (-Wkp.laplacianL j w) (sqAddSqMul hk hjk hx w)).filter_mono
-    ae_le_ae_restrict_top
-  have h₂ := (Wkp.value_neg_ae _ (Wkp.laplacianL j w)).filter_mono ae_le_ae_restrict_top
+    Measure.ae_le_ae_restrict_coe_opens_top
+  have h₂ := (Wkp.value_neg_ae _ (Wkp.laplacianL j w)).filter_mono
+    Measure.ae_le_ae_restrict_coe_opens_top
   filter_upwards [h₁, h₂, sqAddSqMul_ae hk hjk hx w] with z e₁ e₂ e₃
   rw [e₁, Pi.add_apply, e₂, Pi.neg_apply, e₃]
 
@@ -357,10 +344,7 @@ private theorem integral_value_mul_gaugeAdjoint_gaugeDirection_eq_gaugeLaplacian
       ∫ z, Wkp.value j (gaugeLaplacianₗ hk hjk hx w) z * φ z := by
   set ψ : 𝓓((⊤ : Opens ℂ), ℝ) := ⟨φ, hφ, hc, by simp⟩
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
-  have hV : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have _ : Continuous fun z ↦ x z 2 := by fun_prop
-    have _ : Continuous fun z ↦ x z 3 := by fun_prop
-    fun_prop
+  have hV := continuous_sq_add_sq hcont
   have hw := Wkp.memLp_value _ w
   have hΔw := Wkp.memLp_value _ (Wkp.laplacianL j w)
   have hφL2 : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hc
@@ -411,10 +395,7 @@ private theorem gaugeLaplacianₗ_closedGraph (hk : 1 < k) (hjk : j ≤ k)
     g₀ = gaugeLaplacianₗ hk hjk hx w₀ := by
   refine wkp_eq_of_forall_integral_value_mul_eq fun φ hφ hc ↦ ?_
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
-  have hV : Continuous fun z ↦ x z 2 ^ 2 + x z 3 ^ 2 := by
-    have _ : Continuous fun z ↦ x z 2 := by fun_prop
-    have _ : Continuous fun z ↦ x z 3 := by fun_prop
-    fun_prop
+  have hV := continuous_sq_add_sq hcont
   -- `d₀* d₀ φ = -Δφ + (p² + q²) φ` is continuous with compact support, hence square integrable
   have hLφ : MemLp (fun z ↦ gaugeAdjoint x (gaugeDirection x φ) z) 2 volume := by
     have hc' : Continuous fun z ↦ -Δ φ z + (x z 2 ^ 2 + x z 3 ^ 2) * φ z :=
@@ -437,30 +418,22 @@ private noncomputable def gaugeLaplacianCLM (hk : 1 < k) (hjk : j ≤ k)
   ContinuousLinearMap.ofSeqClosedGraph (g := gaugeLaplacianₗ hk hjk hx)
     (gaugeLaplacianₗ_closedGraph hk hjk hx hcont)
 
-/-- The value of the zero element of `W^{n,2}(ℂ)` vanishes almost everywhere. -/
-private theorem wkp_value_zero_ae {n : ℕ} :
-    (Wkp.value n (0 : Wkp (volume : Measure ℂ) ⊤ 2 n) : ℂ → ℝ) =ᵐ[volume] 0 := by
-  have h0 : Wkp.value n (0 : Wkp (volume : Measure ℂ) ⊤ 2 n) = 0 := by
-    simpa only [Wkp.valueL_apply] using
-      map_zero (Wkp.valueL (mu := (volume : Measure ℂ)) (Omega := ⊤) (p := 2) n)
-  have h := Lp.coeFn_zero ℝ 2 ((volume : Measure ℂ).restrict ((⊤ : Opens ℂ) : Set ℂ))
-  rw [h0]
-  simpa only [Opens.coe_top, Measure.restrict_univ] using h
-
 /-- The gauge Laplacian on `W^{j+2,2}(ℂ)` is injective, by uniqueness of weak solutions. -/
 private theorem gaugeLaplacianₗ_injective (hk : 1 < k) (hjk : j ≤ k)
     (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) :
     Function.Injective (gaugeLaplacianₗ hk hjk hx) := by
   refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
   have hzero : ∀ φ : ℂ → ℝ, ∫ z, (0 : ℂ → ℝ) z * φ z = 0 := fun φ ↦ by simp
+  have hzero_ae (n : ℕ) : (Wkp.value n (0 : Wkp (volume : Measure ℂ) ⊤ 2 n) : ℂ → ℝ) =ᵐ[volume] 0 :=
+    (Wkp.value_zero_ae n).filter_mono Measure.ae_le_ae_restrict_coe_opens_top
   have hae := ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq (s := k)
     (by exact_mod_cast hk) hx hcont (Wkp.memLp_value _ w) (MemLp.zero' (ε := ℝ)) (g := 0)
     (fun φ hφ hc ↦ by
       rw [integral_value_mul_gaugeAdjoint_gaugeDirection_eq_gaugeLaplacianₗ hk hjk hx hcont w hφ
         hc, hw, hzero]
-      exact (integral_congr_ae (wkp_value_zero_ae.mono fun z hz ↦ by rw [hz])).trans (hzero φ))
+      exact (integral_congr_ae ((hzero_ae j).mono fun z hz ↦ by rw [hz])).trans (hzero φ))
     (fun φ _ _ ↦ by simp)
-  exact Wkp.ext _ (Lp.ext (ae_restrict_of_ae (hae.trans wkp_value_zero_ae.symm)))
+  exact Wkp.ext _ (Lp.ext (ae_restrict_of_ae (hae.trans (hzero_ae (j + 2)).symm)))
 
 /-- The gauge Laplacian on `W^{j+2,2}(ℂ)` is onto `W^{j,2}(ℂ)`, by existence and regularity of
 weak solutions. -/

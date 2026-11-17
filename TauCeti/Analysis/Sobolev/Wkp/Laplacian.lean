@@ -18,7 +18,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
-# The Laplacian of a `W^{2,p}` function
+# The weak Laplacian on the Sobolev scale
 
 For `u ∈ W^{2,p}(Ω)` on an open set `Ω` of a finite-dimensional real inner product space, the
 weak Hessian `TauCeti.Wkp.iteratedGradient 1 u` is an `Lᵖ` field of endomorphisms, and its trace
@@ -36,7 +36,8 @@ On the whole Sobolev scale, the sum of the second directional weak derivatives a
 orthonormal basis is a bounded operator `Δ : W^{k+2,p}(Ω) → W^{k,p}(Ω)`
 (`TauCeti.Wkp.laplacianL`). Integrating by parts twice in each direction shows that it is the
 distributional Laplacian, `∫ Δφ • u = ∫ φ • Δu` for every test function `φ` on `Ω`, and this
-identity determines it; in particular it does not depend on the basis.
+identity determines it; in particular it does not depend on the basis. On `W^{2,p}(Ω)` it is the
+trace of the weak Hessian.
 
 No boundedness or boundary regularity of `Ω` is used.
 
@@ -54,6 +55,8 @@ No boundedness or boundary regularity of `Ω` is used.
   and `TauCeti.Wkp.laplacianL_eq_of_forall_integral_laplacian_smul_eq`: it is the only element of
   `W^{k,p}(Ω)` that is, since elements of `W^{k,p}(Ω)` are determined by their integrals against
   test functions (`TauCeti.Wkp.ext_of_forall_integral_smul_value_eq`).
+* `TauCeti.Wkp.value_laplacianL_zero_ae_eq_trace`: on `W^{2,p}(Ω)` the weak Laplacian is the trace
+  of the weak Hessian.
 
 ## References
 
@@ -196,30 +199,6 @@ theorem integral_laplacian_smul_value_eq_laplacianL (k : ℕ) (u : Wkp mu Omega 
           rw [h, Finset.smul_sum]
         · simp [φ.zero_on_compl hxΩ]
 
-/-- **Elements of `W^{k,p}(Ω)` are determined by their integrals against test functions**: if
-`∫ φ • u = ∫ φ • v` for every test function `φ` on `Ω`, then `u = v`. -/
-theorem ext_of_forall_integral_smul_value_eq {k : ℕ} {u v : Wkp mu Omega p k}
-    (h : ∀ φ : 𝓓(Omega, ℝ),
-      ∫ x, (φ : E → ℝ) x • value k u x ∂mu = ∫ x, (φ : E → ℝ) x • value k v x ∂mu) :
-    u = v := by
-  have hloc (w : Wkp mu Omega p k) : LocallyIntegrableOn (value k w : E → ℝ) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict
-      ((Lp.memLp (value k w)).locallyIntegrable Fact.out)
-  have hzero := Omega.isOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-    ((hloc u).sub (hloc v)) fun g hg hgc hgs ↦ by
-      set φ : 𝓓(Omega, ℝ) := ⟨g, hg, hgc, hgs⟩
-      have hi₁ : Integrable (fun x ↦ g x • value k u x) mu := by
-        simpa [φ] using φ.integrable_smul (hloc u)
-      have hi₂ : Integrable (fun x ↦ g x • value k v x) mu := by
-        simpa [φ] using φ.integrable_smul (hloc v)
-      simp only [Pi.sub_apply, smul_sub]
-      rw [integral_sub hi₁ hi₂, sub_eq_zero]
-      simpa [φ] using h φ
-  refine ext k (Lp.ext ?_)
-  rw [Filter.EventuallyEq, ae_restrict_iff' Omega.isOpen.measurableSet]
-  filter_upwards [hzero] with x hx hxΩ
-  exact sub_eq_zero.1 (hx hxΩ)
-
 /-- **The weak Laplacian is determined by integration by parts**: an element `d ∈ W^{k,p}(Ω)` with
 `∫ Δφ • u = ∫ φ • d` for every test function `φ` on `Ω` is the weak Laplacian of
 `u ∈ W^{k+2,p}(Ω)`. -/
@@ -230,5 +209,13 @@ theorem laplacianL_eq_of_forall_integral_laplacian_smul_eq {k : ℕ} {u : Wkp mu
     laplacianL k u = d :=
   ext_of_forall_integral_smul_value_eq fun φ ↦
     (integral_laplacian_smul_value_eq_laplacianL k u φ).symm.trans (h φ)
+
+/-- **The weak Laplacian is the trace of the weak Hessian** on `W^{2,p}(Ω)`:
+`Δu = tr D²u` almost everywhere in `Ω`. -/
+theorem value_laplacianL_zero_ae_eq_trace (u : Wkp mu Omega p 2) :
+    ⇑(value 0 (laplacianL 0 u)) =ᵐ[mu.restrict Omega]
+      fun x ↦ LinearMap.trace ℝ E (iteratedGradient 1 u x) :=
+  ((forall_integral_laplacian_smul_value_eq_iff u (locallyIntegrableOn_value 0 _)).1
+    (integral_laplacian_smul_value_eq_laplacianL 0 u)).symm
 
 end TauCeti.Wkp

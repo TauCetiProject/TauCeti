@@ -173,8 +173,7 @@ of an element of the weak-derivative Sobolev space `W^{k,p}(ℝⁿ)` lies in `H^
 theorem _root_.TauCeti.Wkp.value_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp : 1 < p) (hp_top : p ≠ ⊤) {k : ℕ} (w : Wkp (volume : Measure E) ⊤ p k) :
     (Wkp.value k w : E → ℝ) ∈ realSobolevFunctions E k p := by
-  have hm : MemLp (Wkp.value k w : E → ℝ) p volume := by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (Wkp.value k w)
+  have hm := Wkp.memLp_value k w
   exact mem_realSobolevFunctions.2 ⟨hm.toLp _, hm.coeFn_toLp,
     (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k _).2 ⟨w, hm.coeFn_toLp.symm⟩⟩
 
