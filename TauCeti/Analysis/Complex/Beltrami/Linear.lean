@@ -29,7 +29,9 @@ A real-linear map `A` intertwines a tame structure `J` with multiplication by `i
 is a complex multiple of the affine normalizer. For the differential of `f` at `z` this is the
 pointwise Beltrami equation `\bar∂f(z) = μ_J ∂f(z)`
 (`TauCeti.Beltrami.isComplexLinear_iff_conjWirtingerDeriv_eq`). The coefficient vanishes exactly
-at the standard structure (`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`).
+at the standard structure (`TauCeti.Beltrami.coefficientEquiv_eq_zero_iff`). A real-linear `K`
+with `K² = -1` and `K 1 ≠ -i`, tame or not, is likewise intertwined with `i` by the affine
+normalizer of `(i - K 1) / (conj (K 1) - i)` (`TauCeti.Beltrami.linearMap_apply_eq_I_mul`).
 
 This is the pointwise normalization used before solving the variable-coefficient Beltrami
 equation. It does not construct isothermal charts or assume a solution of that equation.
@@ -288,6 +290,52 @@ theorem linearMap_intertwines (J : AlmostComplexStructure ℂ)
   rw [← hstd]
   apply J₀.injective
   simpa only [map_add, J₀.apply_apply, neg_add_rev, add_comm] using hh
+
+/-- **The affine normalizer of a complex structure of either orientation.** If a real-linear
+endomorphism `K` of the plane squares to `-1` and `K 1 ≠ -i`, then the affine normalizer of the
+coefficient `(i - K 1) / (conj (K 1) - i)` intertwines `K` with multiplication by `i`. Unlike
+`linearMap_intertwines`, `K` need not be tamed by the standard symplectic form. -/
+theorem linearMap_apply_eq_I_mul {K : ℂ →L[ℝ] ℂ} (hK : ∀ v, K (K v) = -v) (hK1 : K 1 ≠ -I)
+    (v : ℂ) :
+    linearMap ((I - K 1) / (conj (K 1) - I)) (K v) =
+      I * linearMap ((I - K 1) / (conj (K 1) - I)) v := by
+  set μ := (I - K 1) / (conj (K 1) - I)
+  have hμ : μ * (conj (K 1) - I) = I - K 1 := by
+    refine div_mul_cancel₀ _ fun h0 ↦ hK1 ?_
+    have := congrArg conj (sub_eq_zero.mp h0)
+    rwa [conj_conj, conj_I] at this
+  -- `K 1` is off the real line, since `K (r • 1) = r • K 1` cannot square to `-1`.
+  have ha : (K 1).im ≠ 0 := by
+    intro h
+    have hre : K 1 = (K 1).re • (1 : ℂ) := by
+      apply Complex.ext <;> simp [h]
+    have h1 := hK 1
+    rw [hre, map_smul, hre, smul_smul] at h1
+    have := congrArg Complex.re h1
+    simp only [Complex.real_smul, Complex.re_ofReal_mul, Complex.one_re, Complex.neg_re,
+      Complex.ofReal_mul, mul_one] at this
+    nlinarith [mul_self_nonneg (K 1).re]
+  -- Both sides are real-linear in `v`, and agree at `1` and at `K 1`, which span the plane.
+  have hv : v = (v.re - v.im * (K 1).re / (K 1).im) • (1 : ℂ) + (v.im / (K 1).im) • K 1 := by
+    apply Complex.ext
+    · simp only [Complex.add_re, Complex.real_smul, mul_one, Complex.ofReal_re,
+        Complex.re_ofReal_mul]
+      field_simp
+      ring
+    · simp only [Complex.add_im, Complex.real_smul, mul_one, Complex.ofReal_im,
+        Complex.im_ofReal_mul, zero_add]
+      field_simp
+  have h1 : linearMap μ (K 1) = I * linearMap μ 1 := by
+    simp only [linearMap_apply, map_one]
+    linear_combination hμ
+  have h2 : linearMap μ (K (K 1)) = I * linearMap μ (K 1) := by
+    simp only [hK 1, linearMap_apply, map_neg, map_one]
+    linear_combination (-I) * hμ - (1 + μ) * I_sq
+  rw [hv]
+  simp only [map_add, map_smul]
+  rw [h2, h1]
+  simp only [Complex.real_smul]
+  ring
 
 /-- The real-linear coordinate change given by the coefficient makes `J` exactly standard.
 Applied to the value of a field at a chosen point, this is the normalization `μ(0) = 0`. -/
