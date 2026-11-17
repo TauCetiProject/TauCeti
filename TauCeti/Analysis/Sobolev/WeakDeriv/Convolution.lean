@@ -55,7 +55,8 @@ theorem hasWeakFDerivOn_convolution_of_forall_integral_fderiv_mul_sub {K : E →
     HasWeakFDerivOn μ Ω (K ⋆[lsmul ℝ ℝ, μ] f) (K' ⋆[(lsmul ℝ ℝ).flip, μ] f) := by
   refine hasWeakFDerivOn_of_forall_integral_fderiv_smul
     (hfc.locallyIntegrable_convolution_right _ hK hf)
-    (hfc.locallyIntegrable_convolution_right _ hK' hf) (fun g hg hgc v ↦ ?_) Ω
+    (hfc.locallyIntegrable_convolution_right _ hK' hf) (fun g hg' hgc v ↦ ?_) Ω
+  have hg : ContDiff ℝ 1 g := hg'.of_le (by simp)
   have hKv : LocallyIntegrableOn (fun z ↦ K' z v) univ μ :=
     (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp (hK'.locallyIntegrableOn univ)
   have hgv : Continuous fun x ↦ fderiv ℝ g x v :=
