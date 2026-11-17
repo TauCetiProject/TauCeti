@@ -37,10 +37,10 @@ the negative- and positive-definite forms transports it to the compact Spin grou
 `∀ i, AddCircle (p i)` of rank `r` has at most `2 ^ r` points of order dividing two
 (`AddCircle.natCard_torsionBy_pi_le`), while every element of this subgroup squares
 to one. So this subgroup of order `16` is not contained in the image of any injective homomorphism
-from a torus of rank at most three (`TauCeti.not_realSpinSevenElementaryAbelian_le_range`). Since
-the maximal tori of `Spin(7)` have rank three, it follows that the subgroup lies in no torus of
-`Spin(7)`, although `Spin(7)` is compact, connected and simply connected; the rank of the maximal
-tori is not proved in this file.
+from a torus of rank at most three (`TauCeti.not_realSpinSevenElementaryAbelian_le_range`). That
+the subgroup lies in no torus of `Spin(7)` at all, although `Spin(7)` is compact, connected and
+simply connected, is `TauCeti.not_realSpinSevenElementaryAbelian_le_of_isTorus`, proved from the
+vector representation in `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Seven`.
 
 ## Main definitions
 
