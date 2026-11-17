@@ -119,20 +119,11 @@ theorem weightedEnergy_comap_symm {W : Type*} [Fintype W] [DecidableEq W] (e : V
     (P : Finpartition (univ : Finset V)) :
     (G.comap e.symm).weightedEnergy ((P.copy (image_univ_equiv e.symm).symm).comap e.symm) =
       G.weightedEnergy P := by
-  -- the part through `e v` is the part of `P` through `v`, relabelled
-  have hpart (v : V) : ((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part (e v) =
-      (P.part v).map e.toEmbedding := by
-    have hcopy : (P.copy (image_univ_equiv e.symm).symm).part v = P.part v :=
-      part_eq_of_mem _ (by simp) (P.mem_part (mem_univ v))
-    ext y
-    rw [Finpartition.part_comap (mem_univ _), mem_filter, Equiv.symm_apply_apply, hcopy,
-      mem_map_equiv]
-    simp
   rw [weightedEnergy_eq_sum_part, weightedEnergy_eq_sum_part, Fintype.card_congr e.symm,
     ← e.sum_comp]
   simp_rw [← e.sum_comp (fun y => ((G.comap e.symm).edgeDensity _
-    (((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part y) : ℝ) ^ 2), hpart,
-    edgeDensity_comap_symm]
+    (((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part y) : ℝ) ^ 2),
+    P.part_comap_copy_equiv, Equiv.symm_apply_apply, Equiv.symm_symm, edgeDensity_comap_symm]
 
 section Refinement
 
