@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Uniqueness
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Segment
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
+import TauCeti.Topology.EMetricSpace.Basic
 import TauCeti.Topology.VectorBundle.Riemannian.Basic
 
 /-!
@@ -597,11 +598,7 @@ theorem IsStronglyGeodesicallyConvex.mapsTo_riemannianExp_smul_riemannianLog {U 
     simpa using riemannianExp_riemannianLog (hsub hx)
   have hlen := hq.pathELength_riemannianExp_smul_riemannianLog_of_mem_ball subset_rfl (hsub hx)
   obtain ⟨γ, -, -, -, -, hmaps, huniq⟩ := isStronglyGeodesicallyConvex_def.1 hU hqU hx
-  intro t ht
-  change riemannianExp I M q (t • riemannianLog I M q (Metric.ball 0 r) x) ∈ U
-  rw [show riemannianExp I M q (t • riemannianLog I M q (Metric.ball 0 r) x) = γ t from
-    huniq hgeo h0 h1 hlen.le ht]
-  exact hmaps ht
+  exact hmaps.congr (huniq hgeo h0 h1 hlen.le).symm
 
 omit [I.Boundaryless] [IsRiemannianManifold I M] in
 /-- Convexity of `(edist p (γ t)).toReal ^ 2` along `[0, 1]` keeps a geodesic segment `γ` with
@@ -654,20 +651,6 @@ private theorem mapsTo_riemannianExp_smul_eball_three_mul {p x : M} {ε : ℝ} (
     _ < ENNReal.ofReal ε + ENNReal.ofReal (2 * ε) := ENNReal.add_lt_add (mem_eball'.1 hx) hed_xt
     _ = ENNReal.ofReal (3 * ε) := by rw [← ENNReal.ofReal_add hε0.le (by positivity)]; ring_nf
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsRiemannianManifold I M] in
-/-- Any two points of `eball p (ofReal ε)` lie at extended distance strictly less than `2 * ε`. -/
-private theorem edist_lt_two_mul_of_mem_eball {p x y : M} {ε : ℝ} (hε0 : 0 < ε)
-    (hx : x ∈ Metric.eball p (ENNReal.ofReal ε)) (hy : y ∈ Metric.eball p (ENNReal.ofReal ε)) :
-    edist x y < ENNReal.ofReal (2 * ε) :=
-  calc edist x y ≤ edist x p + edist p y := edist_triangle x p y
-    _ = edist p x + edist p y := by rw [edist_comm x p]
-    _ < ENNReal.ofReal ε + ENNReal.ofReal ε :=
-        ENNReal.add_lt_add (mem_eball'.1 hx) (mem_eball'.1 hy)
-    _ = ENNReal.ofReal (2 * ε) := by rw [← ENNReal.ofReal_add hε0.le hε0.le]; ring_nf
-
 /-- Core ball-convexity step of Lee Theorem 6.17: if `W₁` satisfies strict convexity of squared
 distance with normal radius `R`, and `eball p (ofReal (3 * ε)) ⊆ W₁` with `0 < ε` and `2 * ε ≤ R`,
 then `eball p (ofReal ε)` is strongly geodesically convex. -/
@@ -686,7 +669,9 @@ private theorem isStronglyGeodesicallyConvex_eball_of_strictConvex {W₁ : Set M
   have hpW₁ : p ∈ W₁ := h3ε_W₁ (Metric.mem_eball_self (ENNReal.ofReal_pos.2 (by positivity)))
   have hxW₁ : x ∈ W₁ := h3ε_W₁ (Metric.eball_subset_eball (by gcongr; linarith) hx)
   have hdom_x := (hnorm₁ x hxW₁).1
-  have hed_xy : edist x y < ENNReal.ofReal (2 * ε) := edist_lt_two_mul_of_mem_eball hε0 hx hy
+  have hed_xy : edist x y < ENNReal.ofReal (2 * ε) := by
+    rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
+    exact edist_lt_two_mul_of_mem_eball hx hy
   have hed_xy_R : edist x y < ENNReal.ofReal R :=
     hed_xy.trans_le (ENNReal.ofReal_le_ofReal h2εR)
   have hy_exp : y ∈ riemannianExp I M x '' Metric.ball 0 R := by
@@ -723,16 +708,16 @@ private theorem isStronglyGeodesicallyConvex_eball_of_strictConvex {W₁ : Set M
     (h1'.trans (riemannianExp_riemannianLog hy_exp).symm) (hlen'.trans_eq hγ_len.symm)
 
 /-- If every point `q ∈ eball p (ofReal ε)` has normal domain `B(0, 2 * r)` with `0 < r` and
-`0 < ε ≤ r`, then `eball p (ofReal ε)` is uniformly normal with uniform radius `2 * r`. -/
+`ε ≤ r`, then `eball p (ofReal ε)` is uniformly normal with uniform radius `2 * r`. -/
 private theorem isUniformlyNormal_eball_of_forall_isNormalDomain {p : M} {r ε : ℝ} (hr : 0 < r)
-    (hε : ε ∈ Ioc 0 r)
+    (hε : ε ≤ r)
     (hdom : ∀ q ∈ Metric.eball p (ENNReal.ofReal ε), IsNormalDomain I M q (Metric.ball 0 (2 * r))) :
     IsUniformlyNormal I (Metric.eball p (ENNReal.ofReal ε)) := by
   refine isUniformlyNormal_def.2 ⟨2 * r, by positivity, fun q hq ↦ ⟨hdom q hq, ?_⟩⟩
   rw [(hdom q hq).image_riemannianExp_ball subset_rfl]
   intro y hy
-  exact mem_eball'.2 <| (edist_lt_two_mul_of_mem_eball hε.1 hq hy).trans_le
-    (ENNReal.ofReal_le_ofReal (by linarith [hε.2]))
+  rw [mem_eball', ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
+  exact (edist_lt_two_mul_of_mem_eball hq hy).trans_le (by gcongr)
 
 /-- **Locally uniform strong geodesic convexity of Riemannian balls (Lee, Theorem 6.17).**
 Every point `p₀` has a radius `r > 0` and an open neighbourhood `W` such that for each `p ∈ W`,
@@ -773,15 +758,12 @@ theorem exists_isOpen_mem_isStronglyGeodesicallyConvex_eball (p₀ : M) :
     fun p hp ε hε ↦ ?_⟩
   have h3ε_sub : Metric.eball p (ENNReal.ofReal (3 * ε)) ⊆
       Metric.eball p₀ (ENNReal.ofReal (4 * r)) := fun q hq ↦ mem_eball'.2 <|
-    calc edist p₀ q ≤ edist p₀ p + edist p q := edist_triangle p₀ p q
-      _ < ENNReal.ofReal r + ENNReal.ofReal (3 * ε) :=
-          ENNReal.add_lt_add (mem_eball'.1 hp) (mem_eball'.1 hq)
-      _ ≤ ENNReal.ofReal (4 * r) := by
-          rw [← ENNReal.ofReal_add hr.le (by linarith [hε.1])]
-          exact ENNReal.ofReal_le_ofReal (by linarith [hε.2])
+    (edist_lt_add_of_mem_eball (Metric.mem_eball_comm.1 hp) hq).trans_le <| by
+      rw [← ENNReal.ofReal_add hr.le (by linarith [hε.1])]
+      exact ENNReal.ofReal_le_ofReal (by linarith [hε.2])
   refine ⟨isStronglyGeodesicallyConvex_eball_of_strictConvex hε.1 (by linarith [hε.2])
     (h3ε_sub.trans h4r_sub_W₁) hnorm₁ hconv₁,
-    isUniformlyNormal_eball_of_forall_isNormalDomain hr hε fun q hq ↦ hdom_4r q (h3ε_sub ?_)⟩
+    isUniformlyNormal_eball_of_forall_isNormalDomain hr hε.2 fun q hq ↦ hdom_4r q (h3ε_sub ?_)⟩
   exact Metric.eball_subset_eball (ENNReal.ofReal_le_ofReal (by linarith [hε.1])) hq
 
 /-- Pointwise strong-convexity radius: every point `p` admits `r > 0` such that `B(0, 2 * r)` is a
