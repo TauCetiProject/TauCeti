@@ -14,7 +14,9 @@ import Mathlib.Topology.Order.Compact
 
 A continuous family of bounded operators which is invertible on a compact parameter slice
 remains invertible on a common neighborhood of that slice, with a uniform operator-norm bound
-on its inverses. Only the domain of the operators needs to be complete.
+on its inverses. Only the domain of the operators needs to be complete. In particular, on a
+compact set of parameters such a family changes the norms of vectors by a bounded factor in both
+directions.
 -/
 
 public section
@@ -59,5 +61,28 @@ theorem exists_mem_nhds_isInvertible_norm_inverse_le {K : Set X} (hK : IsCompact
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_prod_iff.1 hnear
   refine ⟨V, hV, C, by positivity, fun x hx y hy ↦ ?_⟩
   exact (hUV ⟨subset_of_mem_nhdsSet hU hx, hy⟩).imp_right le_of_lt
+
+/-- On a compact set of parameters, a continuous family of invertible operators changes the norm
+of a vector by at most a fixed factor `c ≥ 1`, in both directions:
+`‖L x v‖ ≤ c ‖v‖` and `‖v‖ ≤ c ‖L x v‖`. -/
+theorem exists_norm_apply_le_mul_norm_and_norm_le_mul_norm_apply {K : Set X} (hK : IsCompact K)
+    (L : X → E →L[𝕜] F) (hL : ∀ x ∈ K, ContinuousAt L x)
+    (hinv : ∀ x ∈ K, (L x).IsInvertible) :
+    ∃ c, 1 ≤ c ∧ ∀ x ∈ K, ∀ v, ‖L x v‖ ≤ c * ‖v‖ ∧ ‖v‖ ≤ c * ‖L x v‖ := by
+  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn (f := fun x ↦ ‖L x‖)
+    fun x hx ↦ (hL x hx).norm.continuousWithinAt
+  obtain ⟨U, hU, B, -, hB⟩ := hK.exists_mem_nhds_isInvertible_norm_inverse_le
+    (fun p : X × Unit ↦ L p.1) () (fun x hx ↦ (hL x hx).comp continuousAt_fst) hinv
+  refine ⟨max 1 (max A B), le_max_left _ _, fun x hx v ↦ ⟨?_, ?_⟩⟩
+  · calc ‖L x v‖ ≤ ‖L x‖ * ‖v‖ := (L x).le_opNorm v
+      _ ≤ max 1 (max A B) * ‖v‖ := by
+          gcongr
+          exact (le_abs_self _).trans ((hA x hx).trans ((le_max_left A B).trans (le_max_right _ _)))
+  · calc ‖v‖ = ‖(L x).inverse (L x v)‖ := by rw [(hinv x hx).inverse_apply_self]
+      _ ≤ ‖(L x).inverse‖ * ‖L x v‖ := (L x).inverse.le_opNorm _
+      _ ≤ max 1 (max A B) * ‖L x v‖ := by
+          gcongr
+          exact ((hB x hx () (mem_of_mem_nhds hU)).2).trans
+            ((le_max_right A B).trans (le_max_right _ _))
 
 end IsCompact
