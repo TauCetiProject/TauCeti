@@ -53,6 +53,8 @@ domain.
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
   holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
+* `TauCeti.Floer.perturbationPullback_one_sub`: the pullback of a datum `P` on `ℂ` along the
+  exchange `w ↦ 1 - w` is `-P` at `1 - w`.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_realChart`: a map of the plane with a complex
   derivative has complex-linear derivative in the real coordinates.
 * `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
@@ -216,6 +218,21 @@ theorem perturbationPullback_realChart (P : ℂ → X → ℂ →L[ℝ] ℝ) {f 
   rw [perturbationPullback_apply, fderiv_realChart_apply hf, realChart_apply,
     ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply]
   exact ((P _ x : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I _).symm
+
+/-- The pullback of a datum `P` on `ℂ` along the exchange `σ(z) = (1, 0) - z`, which is `w ↦ 1 - w`
+in the real coordinates `ℝ × ℝ ≃ ℂ`, is `-P` at `1 - w`, since `σ` reverses tangent vectors. -/
+theorem perturbationPullback_one_sub (P : ℂ → X → ℂ →L[ℝ] ℝ) (v w : ℝ × ℝ) (x : X) :
+    perturbationPullback (fun z ↦ (1, 0) - z) (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
+      -P (1 - Complex.equivRealProdCLM.symm w) x (Complex.equivRealProdCLM.symm v) := by
+  have hσ : Complex.equivRealProdCLM.symm ((1, 0) - w) = 1 - Complex.equivRealProdCLM.symm w := by
+    apply Complex.ext <;> simp
+  have hv : Complex.equivRealProdCLM.symm v = v.1 • (1 : ℂ) + v.2 • Complex.I := by
+    apply Complex.ext <;> simp
+  rw [perturbationPullback_apply, fderiv_const_sub, fderiv_fun_id, hσ, hv]
+  simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg,
+    Prod.snd_neg, map_add, map_smul, smul_eq_mul]
+  ring
 
 /-- A map of the plane with a complex derivative is holomorphic in real coordinates: the derivative
 of its real chart is complex linear. -/
