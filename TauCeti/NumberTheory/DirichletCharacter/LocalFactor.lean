@@ -45,6 +45,8 @@ reduces questions about conductors of (quadratic) characters to prime-power leve
   `p ^ v_p(cond χ)`.
 * `DirichletCharacter.isPrimitive_iff_forall_isPrimitive_localFactor`: `χ` is primitive exactly
   when all its local factors are.
+* `DirichletCharacter.localFactor_pow_eq_one`: the local factors of a character of order dividing
+  `n` have order dividing `n`.
 * `DirichletCharacter.isQuadratic_iff_forall_isQuadratic_localFactor`: `χ` is quadratic exactly
   when all its local factors are.
 
@@ -184,6 +186,11 @@ theorem isPrimitive_iff_forall_isPrimitive_localFactor [NeZero N] {χ : Dirichle
   rw [isPrimitive_def, conductor_eq_prod_conductor_localFactor,
     Finset.prod_congr rfl fun p _ ↦ (isPrimitive_def _).mp (h p),
     ← Nat.prod_primeFactors_pow_factorization (NeZero.ne N)]
+
+/-- The local factors of a character of order dividing `n` have order dividing `n`. -/
+theorem localFactor_pow_eq_one {χ : DirichletCharacter R N} {n : ℕ} (hχ : χ ^ n = 1) (p : ℕ) :
+    localFactor p χ ^ n = 1 := by
+  rw [← map_pow, hχ, map_one]
 
 /-- The local factors of a quadratic character are quadratic. -/
 theorem _root_.MulChar.IsQuadratic.localFactor {R : Type*} [CommRing R]

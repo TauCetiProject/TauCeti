@@ -41,7 +41,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `gaugeFixedOperator_fun_smul` and `gaugeFixedAdjoint_fun_smul`: the Leibniz rules of `L_x` and
   `L_x*` for a real weight, whose commutators are the principal symbols
   `gaugeFixedOperatorSymbol` and `gaugeFixedAdjointSymbol`; both symbols scale norms by the norm
-  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`).
+  of the covector (`norm_sq_gaugeFixedOperatorSymbol`, `norm_sq_gaugeFixedAdjointSymbol`), and the
+  adjoint symbol is minus the transpose of the operator symbol (`inner_gaugeFixedOperatorSymbol`).
 * `gaugeFixedOperator_gaugeFixedAdjoint`: the pointwise Weitzenböck formula for `L_x L_x*` at
   every field, with the vortex defects `equation x` appearing explicitly. In complex notation,
   with `φ = α / 2`, `η = (ξ, ζ)`, `∇ = d + a` and the complex defect `E = ∂bar_a α`, it reads
@@ -464,6 +465,14 @@ theorem gaugeFixedOperatorSymbol_smul_right (d : ℂ →L[ℝ] ℝ) (r : ℝ)
     gaugeFixedOperatorSymbol d (r • v) = r • gaugeFixedOperatorSymbol d v := by
   ext i
   fin_cases i <;> simp <;> ring
+
+/-- The adjoint symbol is minus the transpose of the operator symbol, as the principal symbols of
+a first-order operator and of its formal adjoint are. -/
+theorem inner_gaugeFixedOperatorSymbol (d : ℂ →L[ℝ] ℝ) (v u : EuclideanSpace ℝ (Fin 4)) :
+    ⟪gaugeFixedOperatorSymbol d v, u⟫ = -⟪v, gaugeFixedAdjointSymbol d u⟫ := by
+  simp [gaugeFixedOperatorSymbol_def, gaugeFixedAdjointSymbol_def, PiLp.inner_apply,
+    Fin.sum_univ_four]
+  ring
 
 /-- The Leibniz rule of the gauge-fixed operator for a real weight, with its exact symbol
 commutator. -/

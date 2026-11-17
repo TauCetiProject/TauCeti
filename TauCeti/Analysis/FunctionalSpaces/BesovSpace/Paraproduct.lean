@@ -436,7 +436,9 @@ private theorem exists_hasSum_and_norm_le_of_annulus_of_block {F' : Type*} [Norm
         ‖w‖ ≤ C * K * ‖v‖ := by
   obtain ⟨C, hC⟩ := exists_hasSum_toDistr_and_norm_le_of_annulus (F := F) φ s ha b
   refine ⟨max C 0, le_max_right _ _, fun {p p' q} _ _ _ g v K hK hg hgv ↦ ?_⟩
-  obtain ⟨c, hc, hcv⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
+  set c := v.weightedBlockNorms
+  have hc (j : ℕ) : c j = _ := v.weightedBlockNorms_apply j
+  have hcv : ‖c‖ ≤ ‖v‖ := (norm_weightedBlockNorms v).le
   obtain ⟨w, hw, hwn⟩ := hC g (K • c) (fun j ↦ (hg j).mono (compl_subset_compl.2 sdiff_subset))
     (fun j _ ↦ (hg j).mono (subset_compl_iff_disjoint_right.2 disjoint_sdiff_right)) fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hc]
@@ -627,7 +629,9 @@ theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 
   set L : ℕ := N + 1
   refine ⟨C * 2 ^ (|β| * L) * (2 * L), by positivity,
     fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
-  obtain ⟨c, hc, hcv⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
+  set c := v.weightedBlockNorms
+  have hc (j : ℕ) : c j = _ := v.weightedBlockNorms_apply j
+  have hcv : ‖c‖ ≤ ‖v‖ := (norm_weightedBlockNorms v).le
   -- The window sums of the weighted block norms of `v`, as an element of `ℓ^q`.
   obtain ⟨W, hW, hWn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le c L
   obtain ⟨w, hw, hwn⟩ := hCw _ ((‖u‖ * 2 ^ (|β| * L)) • W)
