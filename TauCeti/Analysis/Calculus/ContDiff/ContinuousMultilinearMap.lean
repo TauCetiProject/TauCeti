@@ -17,8 +17,9 @@ Applying the same continuous linear map in every input slot gives an operator-va
 function that is smooth at every order, including the analytic order `ω`.
 
 Flipping the arguments of a multilinear map with values in operators,
-`ContinuousMultilinearMap.flipLinear`, is a bounded linear operation, so it preserves the
-regularity of a family of such maps (`ContDiffAt.continuousMultilinearMap_flipLinear`).
+`ContinuousMultilinearMap.flipLinear`, is the inverse of the continuous linear equivalence
+`ContinuousLinearMap.flipMultilinearEquiv`, so it preserves the regularity of a family of such
+maps (`ContDiffAt.continuousMultilinearMap_flipLinear`).
 -/
 
 public section
@@ -50,13 +51,6 @@ theorem ContDiffAt.continuousMultilinearMap_flipLinear {X : Type*} [NormedAddCom
     [NormedSpace 𝕜 X] {M : ι → Type*} [∀ i, NormedAddCommGroup (M i)] [∀ i, NormedSpace 𝕜 (M i)]
     {Φ : X → ContinuousMultilinearMap 𝕜 M (F →L[𝕜] G)} {x : X} {n : ℕ∞ω}
     (hΦ : ContDiffAt 𝕜 n Φ x) : ContDiffAt 𝕜 n (fun y ↦ (Φ y).flipLinear) x := by
-  have hL : IsBoundedLinearMap 𝕜 fun Ψ : ContinuousMultilinearMap 𝕜 M (F →L[𝕜] G) ↦
-      Ψ.flipLinear := by
-    refine ⟨⟨fun Ψ Ψ' ↦ ?_, fun c Ψ ↦ ?_⟩, ⟨1, one_pos, fun Ψ ↦ ?_⟩⟩
-    · ext
-      simp
-    · ext
-      simp
-    · rw [one_mul]
-      exact MultilinearMap.mkContinuousLinear_norm_le _ (norm_nonneg Ψ) _
-  exact hL.contDiff.contDiffAt.comp x hΦ
+  -- Flipping is the inverse of the continuous linear equivalence `flipMultilinearEquiv`.
+  simpa [Function.comp_def] using
+    (ContinuousLinearMap.flipMultilinearEquiv 𝕜 M F G).symm.contDiff.contDiffAt.comp x hΦ

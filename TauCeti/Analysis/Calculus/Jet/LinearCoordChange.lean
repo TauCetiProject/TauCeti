@@ -40,14 +40,14 @@ assume `IsRCLikeNormedField 𝕜`.
 
 ## Main declarations
 
-* `TauCeti.sameJetAt_finiteJetPolynomial_iteratedFDeriv`: a `C^r` map has the same `r`-jet as its
-  Taylor polynomial of degree `r`.
 * `TauCeti.linearJetCoordChange`: the coordinate change of `r`-jets.
 * `TauCeti.linearJetCoordChange_iteratedFDeriv`: it transforms the jet of a section into the jet
   of the transformed section.
-* `TauCeti.linearJetCoordChange_id`, `TauCeti.linearJetCoordChange_linearJetCoordChange`: the
-  identity and cocycle laws.
+* `TauCeti.linearJetCoordChange_id`, `TauCeti.linearJetCoordChange_comp`: the identity and
+  cocycle laws.
 * `TauCeti.linearJetCoordChange_apply_zero`: the value of a jet transforms by `g x`.
+* `TauCeti.linearJetCoordChange_apply_comp_perm`: coordinate changes take values in symmetric
+  jets.
 * `TauCeti.linearJetCoordChange_truncate`: coordinate changes commute with truncation.
 * `TauCeti.linearJetCoordChange_congr`: they depend only on the germs of `h` and `g`.
 * `ContDiffAt.linearJetCoordChange`, `ContDiffOn.linearJetCoordChange`: they are smooth in the
@@ -76,17 +76,9 @@ variable {𝕜 E E' E'' F G H : Type*} [NontriviallyNormedField 𝕜]
 
 namespace TauCeti
 
-/-- **Taylor polynomials have the jets of their functions.** Over `ℝ` or `ℂ`, a map `s` which is
-`C^r` at `y` has the same `r`-jet at `y` as its Taylor polynomial of degree `r` centerd at `y`. -/
-theorem sameJetAt_finiteJetPolynomial_iteratedFDeriv [IsRCLikeNormedField 𝕜] {r : ℕ}
-    {s : E → F} {y : E} (hs : ContDiffAt 𝕜 r s y) :
-    SameJetAt 𝕜 r y (finiteJetPolynomial r (fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val s y) y)
-      s := by
-  let := IsRCLikeNormedField.rclike 𝕜
-  rw [sameJetAt_iff]
-  intro i hi
-  exact iteratedFDeriv_finiteJetPolynomial_self r _ y ⟨i, Nat.lt_succ_of_le hi⟩
-    fun v σ ↦ hs.iteratedFDeriv_comp_perm_of_le (by exact_mod_cast hi) v σ
+/-- The order of a component of an `r`-jet is at most `r`. -/
+private theorem natCast_val_le {r : ℕ} (i : Fin (r + 1)) : (i.val : ℕ∞ω) ≤ r := by
+  exact_mod_cast i.is_le
 
 /-! ### The coordinate change of finite jets -/
 
@@ -106,14 +98,26 @@ private theorem contDiffAt_jetTransform {r : ℕ} {h : E' → E} {g : E' → F �
 
 /-- The **coordinate change of `r`-jets** under a change of base coordinates `h : E' → E` and a
 base-dependent linear change of fibre coordinates `g : E' → F →L[𝕜] G`, at the point `x : E'`.
-It takes the `r`-jet `(Dⁱ s (h x))ᵢ` of a section `s : E → F` at `h x` to the `r`-jet at `x` of
-the transformed section `z ↦ g z (s (h z))` (`TauCeti.linearJetCoordChange_iteratedFDeriv`).
-It is defined for all `h` and `g` and is continuous linear in the jet; the calculus lemmas assume
-that `h` and `g` are smooth at `x`. -/
+It is defined by realizing a jet `A` at `h x` by its Taylor polynomial `P` of degree `r` and
+taking the `r`-jet at `x` of `z ↦ g z (P (h z))` (`TauCeti.linearJetCoordChange_apply_apply`);
+this makes sense for all `h` and `g`, and is continuous linear in the jet. Over `ℝ` or `ℂ`, when
+`s : E → F`, `h` and `g` are `C^r`, it takes the `r`-jet `(Dⁱ s (h x))ᵢ` of `s` at `h x` to the
+`r`-jet at `x` of the transformed section `z ↦ g z (s (h z))`
+(`TauCeti.linearJetCoordChange_iteratedFDeriv`). -/
 def linearJetCoordChange (r : ℕ) (h : E' → E) (g : E' → F →L[𝕜] G) (x : E') :
     ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) →L[𝕜] ((i : Fin (r + 1)) → E' [×i.val]→L[𝕜] G) :=
   ContinuousLinearMap.pi fun i ↦ (iteratedFDeriv 𝕜 i.val
     (fun z ↦ (g z).comp (finiteJetPolynomialCLM r (h x) (h z))) x).flipLinear
+
+/-- Unfolding the coordinate change of jets: the component of order `i` of a transformed jet `A`
+is obtained by applying the derivative of order `i` at `x` of the operator-valued map
+`z ↦ g z ∘ P(h x, h z)` to `A`, where `P(c, y)` evaluates Taylor polynomials with center `c`
+at `y`. -/
+theorem linearJetCoordChange_apply_apply (r : ℕ) (h : E' → E) (g : E' → F →L[𝕜] G) (x : E')
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (i : Fin (r + 1)) (v : Fin i.val → E') :
+    linearJetCoordChange r h g x A i v =
+      iteratedFDeriv 𝕜 i.val (fun z ↦ (g z).comp (finiteJetPolynomialCLM r (h x) (h z))) x v A := by
+  simp [linearJetCoordChange]
 
 /-- The component of order `i` of a transformed jet `A` is the derivative of order `i` at `x` of
 the transformed Taylor polynomial `z ↦ g z (P_A (h z))` of `A`. -/
@@ -133,20 +137,35 @@ theorem linearJetCoordChange_apply {r : ℕ} {h : E' → E} {g : E' → F →L[�
     simp
   rw [hfun, (ContinuousLinearMap.apply 𝕜 G A).iteratedFDeriv_comp_left hT le_rfl]
   ext v
-  simp [linearJetCoordChange]
+  simp [linearJetCoordChange_apply_apply]
 
 /-- The component of order `0` of a transformed jet: the value `A 0 0` of a jet transforms by
 `g x`. -/
 theorem linearJetCoordChange_apply_zero (r : ℕ) (h : E' → E) (g : E' → F →L[𝕜] G) (x : E')
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (v : Fin 0 → E') :
     linearJetCoordChange r h g x A 0 v = g x (A 0 0) := by
-  -- The component of order `0` is the value at `x` of the transformed Taylor polynomial.
-  have h0 : linearJetCoordChange r h g x A 0 v =
-      (g x).comp (finiteJetPolynomialCLM r (h x) (h x)) A :=
-    congrArg (· A) (iteratedFDeriv_zero_apply (𝕜 := 𝕜)
-      (f := fun z ↦ (g z).comp (finiteJetPolynomialCLM r (h x) (h z))) (x := x) v)
-  rw [h0]
+  -- The component of order `0` is the value at `x` of the transformed Taylor polynomial; the
+  -- order is `(0 : Fin (r + 1)).val`, so state the value of a derivative of any order `k = 0`.
+  have hval : ∀ (k : ℕ), k = 0 → ∀ w : Fin k → E', iteratedFDeriv 𝕜 k
+      (fun z ↦ (g z).comp (finiteJetPolynomialCLM r (h x) (h z))) x w =
+        (g x).comp (finiteJetPolynomialCLM r (h x) (h x)) := by
+    rintro _ rfl w
+    exact iteratedFDeriv_zero_apply w
+  rw [linearJetCoordChange_apply_apply r h g x A 0 v, hval _ (Fin.val_zero _) v]
   simp
+
+/-- **Coordinate changes take values in symmetric jets.** If `h` and `g` are `C^n` at `x` with
+`minSmoothness 𝕜 i ≤ n` (`C^i` over `ℝ` or `ℂ`, analytic otherwise), then the component of order
+`i` of any transformed jet is symmetric. -/
+theorem linearJetCoordChange_apply_comp_perm {r : ℕ} {h : E' → E} {g : E' → F →L[𝕜] G} {x : E'}
+    {n : ℕ∞ω} (i : Fin (r + 1)) (hh : ContDiffAt 𝕜 n h x) (hg : ContDiffAt 𝕜 n g x)
+    (hn : minSmoothness 𝕜 i.val ≤ n) (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F)
+    (v : Fin i.val → E') (σ : Perm (Fin i.val)) :
+    linearJetCoordChange r h g x A i (v ∘ σ) = linearJetCoordChange r h g x A i v := by
+  have hi : (i.val : ℕ∞ω) ≤ n := le_minSmoothness.trans hn
+  rw [linearJetCoordChange_apply i (hh.of_le hi) (hg.of_le hi)]
+  exact (hg.clm_apply ((contDiff_finiteJetPolynomial r A (h x)).contDiffAt.comp x hh))
+    |>.iteratedFDeriv_comp_perm_of_le hn v σ
 
 /-- Coordinate changes of jets depend only on the germs of the coordinate maps. -/
 theorem linearJetCoordChange_congr {r : ℕ} {h h' : E' → E} {g g' : E' → F →L[𝕜] G} {x : E'}
@@ -168,15 +187,14 @@ theorem linearJetCoordChange_eq_of_sameJetAt {r : ℕ} {h : E' → E} {g : E' �
     linearJetCoordChange r h g x A =
       fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val (fun z ↦ g z (s (h z))) x := by
   funext i
-  have hi : (i.val : ℕ∞ω) ≤ r := by exact_mod_cast Nat.lt_succ_iff.1 i.isLt
-  rw [linearJetCoordChange_apply i (hh.of_le hi) (hg.of_le hi)]
+  rw [linearJetCoordChange_apply i (hh.of_le (natCast_val_le i)) (hg.of_le (natCast_val_le i))]
   -- The fibre map `(z, v) ↦ g z v` is smooth, so the chain rule for jets applies.
   have ha : ContDiffAt 𝕜 r (fun p : E' × F ↦ g p.1 p.2)
       (x, finiteJetPolynomial r A (h x) (h x)) :=
     (hg.comp _ contDiffAt_fst).clm_apply contDiffAt_snd
   exact (hA.coordChange (a := fun p : E' × F ↦ g p.1 p.2)
     (contDiff_finiteJetPolynomial r A (h x)).contDiffAt hs hh ha).iteratedFDeriv_eq
-      (Nat.lt_succ_iff.1 i.isLt)
+      i.is_le
 
 /-- **Coordinate changes of jets of sections.** Over `ℝ` or `ℂ`, the coordinate change of `r`-jets
 takes the `r`-jet of a `C^r` map `s` at `h x` to the `r`-jet at `x` of the transformed map
@@ -200,7 +218,7 @@ theorem linearJetCoordChange_id [CharZero 𝕜] {r : ℕ} (x : E)
 /-- **The cocycle law.** Over `ℝ` or `ℂ`, transforming a jet first by `(h₁, g₁)` at `h₂ x` and
 then by `(h₂, g₂)` at `x` is transforming it by the composite coordinate change
 `(h₁ ∘ h₂, z ↦ g₂ z ∘ g₁ (h₂ z))` at `x`. -/
-theorem linearJetCoordChange_linearJetCoordChange [IsRCLikeNormedField 𝕜] {r : ℕ}
+theorem linearJetCoordChange_comp [IsRCLikeNormedField 𝕜] {r : ℕ}
     {h₁ : E' → E} {g₁ : E' → F →L[𝕜] G} {h₂ : E'' → E'} {g₂ : E'' → G →L[𝕜] H} {x : E''}
     (hh₁ : ContDiffAt 𝕜 r h₁ (h₂ x)) (hg₁ : ContDiffAt 𝕜 r g₁ (h₂ x))
     (hh₂ : ContDiffAt 𝕜 r h₂ x) (hg₂ : ContDiffAt 𝕜 r g₂ x)
@@ -214,13 +232,13 @@ theorem linearJetCoordChange_linearJetCoordChange [IsRCLikeNormedField 𝕜] {r 
   have h₁A : linearJetCoordChange r h₁ g₁ (h₂ x) A =
       fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val σ (h₂ x) := by
     funext i
-    have hi : (i.val : ℕ∞ω) ≤ r := by exact_mod_cast Nat.lt_succ_iff.1 i.isLt
-    exact linearJetCoordChange_apply i (hh₁.of_le hi) (hg₁.of_le hi) A
+    exact linearJetCoordChange_apply i (hh₁.of_le (natCast_val_le i)) (hg₁.of_le (natCast_val_le i))
+      A
   rw [h₁A, linearJetCoordChange_iteratedFDeriv hσd hh₂ hg₂]
   funext i
-  have hi : (i.val : ℕ∞ω) ≤ r := by exact_mod_cast Nat.lt_succ_iff.1 i.isLt
   rw [linearJetCoordChange_apply (g := fun z ↦ (g₂ z).comp (g₁ (h₂ z))) i
-    ((hh₁.comp x hh₂).of_le hi) ((hg₂.clm_comp (hg₁.comp x hh₂)).of_le hi)]
+    ((hh₁.comp x hh₂).of_le (natCast_val_le i))
+    ((hg₂.clm_comp (hg₁.comp x hh₂)).of_le (natCast_val_le i))]
   simp [σ]
 
 /-- **Truncation commutes with coordinate changes.** Truncating a transformed symmetric `r`-jet
@@ -239,13 +257,13 @@ theorem linearJetCoordChange_truncate [CharZero 𝕜] {r r' : ℕ} (hr : r' ≤ 
     rw [iteratedFDeriv_finiteJetPolynomial_self r A (h x) ⟨j, by omega⟩ (hA _),
       iteratedFDeriv_finiteJetPolynomial_self r' _ (h x) ⟨j, by omega⟩
       fun v σ ↦ hA (Fin.castLE (by omega) ⟨j, by omega⟩) v σ]
-    rfl
+    simp only [Fin.castLE_mk]
   rw [linearJetCoordChange_eq_of_sameJetAt hP.symm
     (contDiff_finiteJetPolynomial r A (h x)).contDiffAt hh hg]
   funext i
   have hi : ((Fin.castLE (by omega) i : Fin (r + 1)).val : ℕ∞ω) ≤ r' := by
     rw [Fin.val_castLE]
-    exact_mod_cast Nat.lt_succ_iff.1 i.isLt
+    exact natCast_val_le i
   exact linearJetCoordChange_apply _ (hh.of_le hi) (hg.of_le hi) A
 
 end TauCeti
@@ -259,9 +277,7 @@ theorem ContDiffAt.linearJetCoordChange {r : ℕ} {h : E' → E} {g : E' → F �
     {n m : ℕ∞ω} (hh : ContDiffAt 𝕜 n h x₀) (hg : ContDiffAt 𝕜 n g x₀) (hmn : m + r ≤ n) :
     ContDiffAt 𝕜 m (linearJetCoordChange r h g) x₀ := by
   refine ContDiffAt.continuousLinearMapPi fun i ↦ ?_
-  have hi : m + i.val ≤ n := le_trans (by
-    gcongr
-    exact_mod_cast Nat.lt_succ_iff.1 i.isLt) hmn
+  have hi : m + i.val ≤ n := le_trans (add_le_add le_rfl (TauCeti.natCast_val_le i)) hmn
   exact (ContDiffAt.iteratedFDeriv
     (f := fun x z ↦ (g z).comp (finiteJetPolynomialCLM (𝕜 := 𝕜) (F := F) r (h x) (h z)))
     (g := id) (contDiffAt_jetTransform (p := (x₀, x₀)) hh hh hg) contDiffAt_id

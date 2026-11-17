@@ -8,8 +8,10 @@ module
 public import Mathlib.Analysis.Analytic.IteratedFDeriv
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Analysis.Calculus.Jet.Equivalence
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Symmetric
 
 /-!
 # Realization of finite symmetric jets
@@ -27,6 +29,8 @@ continuous linear map `finiteJetPolynomialCLM`, which depends smoothly on the ce
 evaluation point (`contDiff_finiteJetPolynomialCLM`). The main results are:
 
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
+* `sameJetAt_finiteJetPolynomial_iteratedFDeriv`: over `ℝ` or `ℂ`, a `C^r` map has the same
+  `r`-jet as its Taylor polynomial of degree `r`;
 * `exists_contDiff_iteratedFDeriv_eq_eventually_mem`: realization with the graph in any
   neighborhood of the center-value pair `(x, A 0 0)`;
 * `exists_contDiff_hasCompactSupport_iteratedFDeriv_eq`: on a finite-dimensional real base,
@@ -191,6 +195,19 @@ theorem iteratedFDeriv_finiteJetPolynomial_self (r : ℕ)
   simp_rw [hsym]
   simp [Fintype.card_perm, nsmul_eq_mul, ← smul_assoc,
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i.val)]
+
+/-- **Taylor polynomials have the jets of their functions.** Over `ℝ` or `ℂ`, a map `s` which is
+`C^r` at `y` has the same `r`-jet at `y` as its Taylor polynomial of degree `r` centered at `y`. -/
+theorem sameJetAt_finiteJetPolynomial_iteratedFDeriv [IsRCLikeNormedField 𝕜] {r : ℕ}
+    {s : E → F} {y : E} (hs : ContDiffAt 𝕜 r s y) :
+    SameJetAt 𝕜 r y (finiteJetPolynomial r (fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val s y) y)
+      s := by
+  let := IsRCLikeNormedField.rclike 𝕜
+  rw [sameJetAt_iff]
+  intro i hi
+  exact iteratedFDeriv_finiteJetPolynomial_self r _ y ⟨i, Nat.lt_succ_of_le hi⟩
+    fun v σ ↦ hs.iteratedFDeriv_comp_perm_of_le
+      (by rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast hi) v σ
 
 /-- A finite symmetric jet is realized by an analytic smooth function whose graph stays
 in any prescribed neighborhood of the center-value pair `(x, A 0 0)` near the center. -/
