@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
-public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 
 /-!
@@ -56,10 +55,9 @@ variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
 `finrank R K₀ = finrank R H₀(K) + finrank R im (K₁ ⟶ K₀)`. -/
 theorem finrank_X_zero [Module.Finite R (K.X 0)] :
     finrank R (K.X 0) = finrank R (K.homology 0) + finrank R (LinearMap.range (K.d 1 0).hom) := by
-  rw [K.finrank_X_eq_finrank_homology_add 0,
-    (ComplexShape.down ℕ).prev_eq' (rfl : (ComplexShape.down ℕ).Rel 1 0),
-    K.shape 0 _ (by simp), ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot, add_zero]
-  rfl
+  rw [K.finrank_X_eq_finrank_homology_add 0, ChainComplex.prev, K.shape 0 _ (by simp),
+    ModuleCat.hom_zero, LinearMap.range_zero]
+  simp
 
 /-- In degree `n + 1`, rank--nullity for `Kₙ₊₁ ⟶ Kₙ` gives
 `finrank R Kₙ₊₁ = finrank R Hₙ₊₁(K) + finrank R im (Kₙ₊₂ ⟶ Kₙ₊₁) + finrank R im (Kₙ₊₁ ⟶ Kₙ)`. -/
@@ -67,9 +65,7 @@ theorem finrank_X_succ (n : ℕ) [Module.Finite R (K.X (n + 1))] :
     finrank R (K.X (n + 1)) = finrank R (K.homology (n + 1)) +
       finrank R (LinearMap.range (K.d (n + 2) (n + 1)).hom) +
         finrank R (LinearMap.range (K.d (n + 1) n).hom) := by
-  rw [K.finrank_X_eq_finrank_homology_add (n + 1),
-    (ComplexShape.down ℕ).prev_eq' (rfl : (ComplexShape.down ℕ).Rel (n + 2) (n + 1)),
-    (ComplexShape.down ℕ).next_eq' (rfl : (ComplexShape.down ℕ).Rel (n + 1) n)]
+  rw [K.finrank_X_eq_finrank_homology_add (n + 1), ChainComplex.prev, ChainComplex.next_nat_succ]
   rfl
 
 /-- If the terms of `K` through degree `n` are finitely generated, the alternating sums up to
@@ -100,7 +96,7 @@ theorem sum_range_finrank_X_eq_sum_range_finrank_homology {n : ℕ}
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank R (K.X i) =
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * finrank R (K.homology i) := by
   rw [K.sum_range_finrank_X_eq_sum_range_finrank_homology_add n hfinite, hn, ModuleCat.hom_zero,
-    LinearMap.range_zero, finrank_eq_zero_of_subsingleton]
+    LinearMap.range_zero]
   simp
 
 /-- **Euler--Poincaré for a bounded chain complex of finitely generated modules.** Over a ring

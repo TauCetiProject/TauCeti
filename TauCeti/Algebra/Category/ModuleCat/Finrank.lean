@@ -22,13 +22,11 @@ the ring itself has finrank one (`ModuleCat.finrank_of_self`), a zero object has
 finrank is additive on biproducts and finite coproducts of finite free modules
 (`ModuleCat.finrank_biprod`, `ModuleCat.finrank_sigmaObj`).
 
-For short exact sequences in `ModuleCat R`, finite generation of the outer terms passes to the
-middle term over any ring (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finite_X₂`), and over a
-ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
-commutative domain, finrank is additive on every short exact sequence whose middle term is finitely
-generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`). Unlike Mathlib's
-`ModuleCat.free_shortExact_finrank_add`, no freeness is assumed, so this covers sequences of
-finitely generated abelian groups with torsion.
+Over a ring satisfying the rank-nullity theorem (`HasRankNullity`), such as a division ring or a
+commutative domain, finrank is moreover additive on every short exact sequence whose middle term
+is finitely generated (`CategoryTheory.ShortComplex.ShortExact.moduleCat_finrank_eq_add`). Unlike
+Mathlib's `ModuleCat.free_shortExact_finrank_add`, no freeness is assumed, so this covers sequences
+of finitely generated abelian groups with torsion.
 
 The first translation is what bounds the `Module.finrank` support of a bounded complex of vector
 spaces by its bounding interval, which is in turn what makes Mathlib's `finsum`-based Euler
@@ -97,14 +95,6 @@ theorem finrank_sigmaObj [StrongRankCondition R] {ι : Type*} [Fintype ι]
 end ModuleCat
 
 namespace CategoryTheory.ShortComplex.ShortExact
-
-/-- Over any ring `R`, if `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` is a short exact sequence in `ModuleCat R` with
-`X₁` and `X₃` finitely generated, then `X₂` is finitely generated. -/
-theorem moduleCat_finite_X₂ {R : Type u} [Ring R] {S : ShortComplex (ModuleCat.{v} R)}
-    (hS : S.ShortExact) [Module.Finite R S.X₁] [Module.Finite R S.X₃] :
-    Module.Finite R S.X₂ :=
-  Module.Finite.of_exact (f := S.f.hom) (g := S.g.hom)
-    ((moduleCat_exact_iff_function_exact S).1 hS.exact) hS.moduleCat_surjective_g
 
 variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
 

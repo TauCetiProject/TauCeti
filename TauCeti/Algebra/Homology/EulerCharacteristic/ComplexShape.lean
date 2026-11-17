@@ -20,20 +20,29 @@ Whereas `ChainComplex.eulerChar_eq_homologyEulerChar` and
 `CochainComplex.eulerChar_eq_homologyEulerChar` treat chain complexes on `ℕ` and cochain complexes
 on `ℤ`, spectral sequence pages live on `ℤ × ℤ` with shape `ComplexShape.up' ⟨r, 1 - r⟩`.
 This file proves the Euler–Poincaré equality `K.eulerChar = K.homologyEulerChar` for an arbitrary
-`c : ComplexShape ι`, over any ring `R` satisfying `StrongRankCondition` and `HasRankNullity`
-(covering division rings as well as commutative domains such as `ℤ`, with no Noetherianity
-hypothesis), for every complex `K` with finitely generated terms that vanishes outside a finite set
-of indices.
+`c : ComplexShape ι`, over any ring `R` satisfying `HasRankNullity` (covering division rings as well
+as commutative domains such as `ℤ`, with no Noetherianity hypothesis), for every complex `K` with
+terms of finite cardinal rank (`Module.rank R (K.X i) < ℵ₀`) that vanishes outside a finite set of
+indices, and specializes this under `StrongRankCondition` to complexes with finitely generated
+terms.
+
+We also factor out the reduction of `finsum`-based Euler characteristics to finite sums when a
+graded object or complex vanishes outside a `Finset`
+(`GradedObject.eulerChar_eq_sum_of_forall_notMem`,
+`HomologicalComplex.eulerChar_eq_sum_of_forall_notMem`,
+`HomologicalComplex.homologyEulerChar_eq_sum_of_forall_notMem`).
 
 At each index `i`, rank–nullity on the short complex `K.sc i` gives
 ```text
 finrank R (K.X i) =
   finrank R (K.homology i) + finrank R (im d_{prev i, i}) + finrank R (im d_{i, next i})
 ```
-(`HomologicalComplex.finrank_X_eq_finrank_homology_add`). Multiplying by `c.χ i` and summing over a
+(`HomologicalComplex.finrank_X_eq_finrank_homology_add_of_rank_lt_aleph0`,
+`HomologicalComplex.finrank_X_eq_finrank_homology_add`). Multiplying by `c.χ i` and summing over a
 finite set `s` outside which `K.X` vanishes rewrites both boundary sums over the pairs `(i, j)` in
 `s ×ˢ s` with `c.Rel i j`, where they cancel term by term because `c.χ j = -c.χ i`
-(`HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology`). No linear ordering or
+(`HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0`,
+`HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology`). No linear ordering or
 induction on the index type is needed.
 
 Finally, we equip `ComplexShape.up' u` on `ℤ × ℤ` when `u.1 + u.2` is odd — and in particular the
@@ -42,13 +51,21 @@ total-degree `EulerCharSigns`.
 
 ## Main results
 
-* `HomologicalComplex.finrank_X_eq_finrank_homology_add`: degreewise rank–nullity for a
-  homological complex of any shape.
-* `HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology`: finite-sum
+* `GradedObject.eulerChar_eq_sum_of_forall_notMem`,
+  `HomologicalComplex.eulerChar_eq_sum_of_forall_notMem`, and
+  `HomologicalComplex.homologyEulerChar_eq_sum_of_forall_notMem`: finite-sum expression for the
+  Euler characteristic of a graded object or complex vanishing outside a `Finset`.
+* `HomologicalComplex.finrank_X_eq_finrank_homology_add_of_rank_lt_aleph0` and
+  `HomologicalComplex.finrank_X_eq_finrank_homology_add`: degreewise rank–nullity for a homological
+  complex of any shape.
+* `HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0` and
+  `HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology`: finite-sum
   Euler–Poincaré over any `Finset` containing all nonzero terms.
-* `HomologicalComplex.eulerChar_eq_homologyEulerChar_of_forall_notMem` and
+* `HomologicalComplex.eulerChar_eq_homologyEulerChar_of_forall_notMem_of_rank_lt_aleph0`,
+  `HomologicalComplex.eulerChar_eq_homologyEulerChar_of_forall_notMem`, and
   `HomologicalComplex.eulerChar_eq_homologyEulerChar_of_finite`: Mathlib's term and homology Euler
-  characteristics agree for finitely supported complexes of finitely generated modules.
+  characteristics agree for finitely supported complexes of finite-rank or finitely generated
+  modules.
 * `ComplexShape.eulerCharSignsCohomologicalSpectralSequence`: total-degree alternating signs on the
   shape `ComplexShape.up' ⟨r, 1 - r⟩` of page `r` of a cohomological spectral sequence.
 
@@ -62,92 +79,129 @@ total-degree `EulerCharSigns`.
 
 public section
 
-open CategoryTheory Limits Module
+open CategoryTheory Limits Module Cardinal
 
 universe u v
 
+namespace GradedObject
+
+/-- If a graded object of `R`-modules vanishes outside `s : Finset ι`, its `finsum` Euler
+characteristic equals the finite alternating sum over `s`. -/
+theorem eulerChar_eq_sum_of_forall_notMem {R : Type u} [Ring R] [Nontrivial R]
+    {ι : Type*} (c : ComplexShape ι) [c.EulerCharSigns]
+    (X : CategoryTheory.GradedObject ι (ModuleCat.{v} R)) {s : Finset ι}
+    (hs : ∀ i ∉ s, IsZero (X i)) :
+    eulerChar c X = ∑ i ∈ s, (c.χ i : ℤ) * Module.finrank R (X i) :=
+  eulerChar_eq_sum_finSet_of_finrankSupport_subset c X s <|
+    (finrankSupport_subset_iff X s).2 fun i hi ↦ ModuleCat.finrank_eq_zero_of_isZero (hs i hi)
+
+end GradedObject
+
 namespace HomologicalComplex
+
+section Support
+
+variable {R : Type u} [Ring R] [Nontrivial R] {ι : Type*} {c : ComplexShape ι} [c.EulerCharSigns]
+
+/-- If a homological complex of `R`-modules vanishes outside `s : Finset ι`, its `finsum` Euler
+characteristic equals the finite alternating sum over `s`. -/
+theorem eulerChar_eq_sum_of_forall_notMem (K : HomologicalComplex (ModuleCat.{v} R) c)
+    {s : Finset ι} (hs : ∀ i ∉ s, IsZero (K.X i)) :
+    K.eulerChar = ∑ i ∈ s, (c.χ i : ℤ) * finrank R (K.X i) :=
+  GradedObject.eulerChar_eq_sum_of_forall_notMem c K.X hs
+
+/-- If the homology of a homological complex of `R`-modules vanishes outside `s : Finset ι`, its
+`finsum` homology Euler characteristic equals the finite alternating sum over `s`. -/
+theorem homologyEulerChar_eq_sum_of_forall_notMem (K : HomologicalComplex (ModuleCat.{v} R) c)
+    [∀ i, K.HasHomology i] {s : Finset ι} (hs : ∀ i ∉ s, IsZero (K.homology i)) :
+    K.homologyEulerChar = ∑ i ∈ s, (c.χ i : ℤ) * finrank R (K.homology i) :=
+  GradedObject.eulerChar_eq_sum_of_forall_notMem c (fun i ↦ K.homology i) hs
+
+end Support
 
 section EulerPoincare
 
-variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
+/-- If a relation `r` uniquely determines `j = step i` whenever `r i j`, and `g i (step i) = 0`
+whenever `¬ (r i (step i) ∧ step i ∈ s)`, then summing `g i (step i)` over `s` equals the nested
+sum over `(i, j) ∈ s ×ˢ s` guarded by `r i j`. -/
+private lemma sum_step_eq_sum_ite {ι : Type*} {s : Finset ι} (r : ι → ι → Prop)
+    [DecidableRel r] (step : ι → ι) (g : ι → ι → ℤ)
+    (hstep : ∀ i j, r i j → step i = j)
+    (hzero : ∀ i ∈ s, ¬ (r i (step i) ∧ step i ∈ s) → g i (step i) = 0) :
+    ∑ i ∈ s, g i (step i) = ∑ i ∈ s, ∑ j ∈ s, if r i j then g i j else 0 := by
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [Finset.sum_eq_single (step i)]
+  · split_ifs with hr
+    · rfl
+    · exact hzero i hi fun h ↦ hr h.1
+  · intro j _ hjne
+    exact ite_eq_right_iff.2 fun hij ↦ absurd (hstep i j hij).symm hjne
+  · intro hnot
+    split_ifs with hr
+    · exact hzero i hi fun h ↦ hnot h.2
+    · rfl
+
+section RankLtAleph0
+
+variable {R : Type u} [Ring R] [HasRankNullity.{v} R]
   {ι : Type*} {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c)
 
-/-- At any index `i` of a homological complex of modules, when `K.X i` is finitely generated, its
-rank is the rank of `K.homology i` plus the ranks of the incoming and outgoing boundaries. -/
-theorem finrank_X_eq_finrank_homology_add (i : ι) [Module.Finite R (K.X i)] :
+/-- At any index `i` of a homological complex of modules, when `K.X i` has finite cardinal rank,
+over a ring satisfying `HasRankNullity`, its rank is the rank of `K.homology i` plus the ranks of
+the incoming and outgoing boundaries. -/
+theorem finrank_X_eq_finrank_homology_add_of_rank_lt_aleph0 (i : ι)
+    (hX : Module.rank R (K.X i) < ℵ₀) :
     finrank R (K.X i) =
       finrank R (K.homology i) + finrank R (LinearMap.range (K.d (c.prev i) i).hom) +
         finrank R (LinearMap.range (K.d i (c.next i)).hom) :=
-  have : Module.Finite R (K.sc i).X₂ := ‹Module.Finite R (K.X i)›
-  (K.sc i).finrank_X₂_eq_finrank_homology_add
+  (K.sc i).finrank_X₂_eq_finrank_homology_add_of_rank_lt_aleph0 hX
 
 omit [HasRankNullity.{v} R] in
 /-- Outside the edges of `c` inside a finite set `s` containing all nonzero terms of `K`, every
 outgoing boundary `im d_{i, next i}` has rank zero, so its signed sum over `s` equals the sum over
 the directed edges of `c` in `s ×ˢ s`. -/
-private lemma sum_chi_finrank_range_d_next [c.EulerCharSigns]
-    [DecidablePred fun ij : ι × ι ↦ c.Rel ij.1 ij.2] {s : Finset ι}
-    (hs : ∀ i ∉ s, IsZero (K.X i)) :
+private lemma sum_chi_finrank_range_d_next [Nontrivial R] [c.EulerCharSigns] [DecidableRel c.Rel]
+    {s : Finset ι} (hs : ∀ i ∉ s, IsZero (K.X i)) :
     ∑ i ∈ s, (c.χ i : ℤ) * finrank R (LinearMap.range (K.d i (c.next i)).hom) =
       ∑ ij ∈ (s ×ˢ s).filter (fun ij ↦ c.Rel ij.1 ij.2),
         (c.χ ij.1 : ℤ) * finrank R (LinearMap.range (K.d ij.1 ij.2).hom) := by
-  classical
   rw [Finset.sum_filter, Finset.sum_product]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  by_cases hrel : c.Rel i (c.next i) ∧ c.next i ∈ s
-  · rw [Finset.sum_eq_single (c.next i)]
-    · simp [hrel.1]
-    · intro j _ hjne
-      exact ite_eq_right_iff.2 fun h : c.Rel i j ↦ absurd (c.next_eq' h).symm hjne
-    · exact fun hnot ↦ absurd hrel.2 hnot
-  · rw [Finset.sum_eq_zero]
-    · have hd0 : K.d i (c.next i) = 0 := by
+  exact sum_step_eq_sum_ite c.Rel c.next
+    (fun i j ↦ (c.χ i : ℤ) * finrank R (LinearMap.range (K.d i j).hom))
+    (fun _ _ h ↦ c.next_eq' h) fun i _ h ↦ by
+      have hd0 : K.d i (c.next i) = 0 := by
         by_cases hr : c.Rel i (c.next i)
-        · exact (hs (c.next i) fun hmem ↦ hrel ⟨hr, hmem⟩).eq_of_tgt _ _
+        · exact (hs (c.next i) fun hmem ↦ h ⟨hr, hmem⟩).eq_of_tgt _ _
         · exact K.shape _ _ hr
-      rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero, finrank_eq_zero_of_subsingleton]
+      rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero]
       simp
-    · intro j hj
-      simp only [ite_eq_right_iff]
-      intro hij
-      exact absurd ⟨c.next_eq' hij ▸ hij, c.next_eq' hij ▸ hj⟩ hrel
 
 omit [HasRankNullity.{v} R] in
 /-- Symmetrically, the signed sum over `s` of the incoming boundary ranks `im d_{prev j, j}` equals
 the sum over the directed edges of `c` in `s ×ˢ s`, weighted by `c.χ ij.2`. -/
-private lemma sum_chi_finrank_range_d_prev [c.EulerCharSigns]
-    [DecidablePred fun ij : ι × ι ↦ c.Rel ij.1 ij.2] {s : Finset ι}
-    (hs : ∀ i ∉ s, IsZero (K.X i)) :
+private lemma sum_chi_finrank_range_d_prev [Nontrivial R] [c.EulerCharSigns] [DecidableRel c.Rel]
+    {s : Finset ι} (hs : ∀ i ∉ s, IsZero (K.X i)) :
     ∑ j ∈ s, (c.χ j : ℤ) * finrank R (LinearMap.range (K.d (c.prev j) j).hom) =
       ∑ ij ∈ (s ×ˢ s).filter (fun ij ↦ c.Rel ij.1 ij.2),
         (c.χ ij.2 : ℤ) * finrank R (LinearMap.range (K.d ij.1 ij.2).hom) := by
-  classical
   rw [Finset.sum_filter, Finset.sum_product_right]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  by_cases hrel : c.Rel (c.prev j) j ∧ c.prev j ∈ s
-  · rw [Finset.sum_eq_single (c.prev j)]
-    · simp [hrel.1]
-    · intro i _ hine
-      exact ite_eq_right_iff.2 fun h : c.Rel i j ↦ absurd (c.prev_eq' h).symm hine
-    · exact fun hnot ↦ absurd hrel.2 hnot
-  · rw [Finset.sum_eq_zero]
-    · have hd0 : K.d (c.prev j) j = 0 := by
+  exact sum_step_eq_sum_ite (fun j i ↦ c.Rel i j) c.prev
+    (fun j i ↦ (c.χ j : ℤ) * finrank R (LinearMap.range (K.d i j).hom))
+    (fun _ _ h ↦ c.prev_eq' h) fun j _ h ↦ by
+      have hd0 : K.d (c.prev j) j = 0 := by
         by_cases hr : c.Rel (c.prev j) j
-        · exact (hs (c.prev j) fun hmem ↦ hrel ⟨hr, hmem⟩).eq_of_src _ _
+        · exact (hs (c.prev j) fun hmem ↦ h ⟨hr, hmem⟩).eq_of_src _ _
         · exact K.shape _ _ hr
-      rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero, finrank_eq_zero_of_subsingleton]
+      rw [hd0, ModuleCat.hom_zero, LinearMap.range_zero]
       simp
-    · intro i hi
-      simp only [ite_eq_right_iff]
-      intro hij
-      exact absurd ⟨c.prev_eq' hij ▸ hij, c.prev_eq' hij ▸ hi⟩ hrel
 
-/-- **Euler–Poincaré over a finite support set for an arbitrary complex shape.** If `K` vanishes
-outside `s` and its terms on `s` are finitely generated, the alternating sums of ranks of its terms
-and of its homology over `s` coincide. -/
-theorem sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology [c.EulerCharSigns] {s : Finset ι}
-    (hs : ∀ i ∉ s, IsZero (K.X i)) (hfin : ∀ i ∈ s, Module.Finite R (K.X i)) :
+/-- **Euler–Poincaré over a finite support set for an arbitrary complex shape (finite rank).**
+Over a ring satisfying `HasRankNullity`, if `K` vanishes outside `s` and its terms on `s` have
+finite cardinal rank, the alternating sums of ranks of its terms and of its homology over `s`
+coincide. -/
+theorem sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0 [c.EulerCharSigns]
+    {s : Finset ι} (hs : ∀ i ∉ s, IsZero (K.X i))
+    (hrank : ∀ i ∈ s, Module.rank R (K.X i) < ℵ₀) :
     ∑ i ∈ s, (c.χ i : ℤ) * finrank R (K.X i) =
       ∑ i ∈ s, (c.χ i : ℤ) * finrank R (K.homology i) := by
   classical
@@ -157,8 +211,7 @@ theorem sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology [c.EulerCharSigns] 
           ∑ i ∈ s, (c.χ i : ℤ) * finrank R (LinearMap.range (K.d i (c.next i)).hom)) := by
     simp only [← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have := hfin i hi
-    rw [K.finrank_X_eq_finrank_homology_add i]
+    rw [K.finrank_X_eq_finrank_homology_add_of_rank_lt_aleph0 i (hrank i hi)]
     push_cast
     ring
   rw [hstep, K.sum_chi_finrank_range_d_prev hs, K.sum_chi_finrank_range_d_next hs,
@@ -171,21 +224,51 @@ theorem sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology [c.EulerCharSigns] 
   rw [c.χ_next (Finset.mem_filter.1 hij).2]
   simp
 
+/-- **Euler–Poincaré for a complex of arbitrary shape supported in a finite set (finite rank).**
+Over a ring satisfying `HasRankNullity`, if `K` vanishes outside `s : Finset ι` and has terms of
+finite cardinal rank on `s`, then `K.eulerChar = K.homologyEulerChar`. -/
+theorem eulerChar_eq_homologyEulerChar_of_forall_notMem_of_rank_lt_aleph0 [c.EulerCharSigns]
+    {s : Finset ι} (hs : ∀ i ∉ s, IsZero (K.X i))
+    (hrank : ∀ i ∈ s, Module.rank R (K.X i) < ℵ₀) :
+    K.eulerChar = K.homologyEulerChar := by
+  rw [K.eulerChar_eq_sum_of_forall_notMem hs,
+    K.homologyEulerChar_eq_sum_of_forall_notMem fun i hi ↦
+      ((K.exactAt_iff i).2 (ShortComplex.exact_of_isZero_X₂ _ (hs i hi))).isZero_homology]
+  exact K.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0 hs hrank
+
+end RankLtAleph0
+
+variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
+  {ι : Type*} {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat.{v} R) c)
+
+/-- At any index `i` of a homological complex of modules, when `K.X i` is finitely generated, its
+rank is the rank of `K.homology i` plus the ranks of the incoming and outgoing boundaries. -/
+theorem finrank_X_eq_finrank_homology_add (i : ι) [Module.Finite R (K.X i)] :
+    finrank R (K.X i) =
+      finrank R (K.homology i) + finrank R (LinearMap.range (K.d (c.prev i) i).hom) +
+        finrank R (LinearMap.range (K.d i (c.next i)).hom) :=
+  K.finrank_X_eq_finrank_homology_add_of_rank_lt_aleph0 i (Module.rank_lt_aleph0 R (K.X i))
+
+/-- **Euler–Poincaré over a finite support set for an arbitrary complex shape.** If `K` vanishes
+outside `s` and its terms on `s` are finitely generated, the alternating sums of ranks of its terms
+and of its homology over `s` coincide. -/
+theorem sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology [c.EulerCharSigns] {s : Finset ι}
+    (hs : ∀ i ∉ s, IsZero (K.X i)) (hfin : ∀ i ∈ s, Module.Finite R (K.X i)) :
+    ∑ i ∈ s, (c.χ i : ℤ) * finrank R (K.X i) =
+      ∑ i ∈ s, (c.χ i : ℤ) * finrank R (K.homology i) :=
+  K.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0 hs fun i hi ↦
+    have := hfin i hi
+    Module.rank_lt_aleph0 R (K.X i)
+
 /-- **Euler–Poincaré for a complex of arbitrary shape supported in a finite set.** Over a ring
 satisfying `StrongRankCondition` and `HasRankNullity`, if `K` vanishes outside `s : Finset ι` and
 has finitely generated terms on `s`, then `K.eulerChar = K.homologyEulerChar`. -/
 theorem eulerChar_eq_homologyEulerChar_of_forall_notMem [c.EulerCharSigns] {s : Finset ι}
     (hs : ∀ i ∉ s, IsZero (K.X i)) (hfin : ∀ i ∈ s, Module.Finite R (K.X i)) :
-    K.eulerChar = K.homologyEulerChar := by
-  nontriviality R
-  rw [K.eulerChar_eq_sum_finSet_of_finrankSupport_subset s
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
-        ModuleCat.finrank_eq_zero_of_isZero (hs i hi)),
-    K.homologyEulerChar_eq_sum_finSet_of_finrankSupport_subset s
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
-        ModuleCat.finrank_eq_zero_of_isZero
-          (((K.exactAt_iff i).2 (ShortComplex.exact_of_isZero_X₂ _ (hs i hi))).isZero_homology))]
-  exact K.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology hs hfin
+    K.eulerChar = K.homologyEulerChar :=
+  K.eulerChar_eq_homologyEulerChar_of_forall_notMem_of_rank_lt_aleph0 hs fun i hi ↦
+    have := hfin i hi
+    Module.rank_lt_aleph0 R (K.X i)
 
 /-- **Euler–Poincaré for a finitely supported complex of arbitrary shape.** If `K` has finitely
 many nonzero terms and every term is finitely generated, `K.eulerChar = K.homologyEulerChar`. -/
@@ -213,12 +296,8 @@ def eulerCharSignsUp'ProdInt {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) :
   χ pq := (pq.1 + pq.2).negOnePow
   χ_next {pq pq'} (h : pq + u = pq') := by
     subst h
-    obtain ⟨k, hk⟩ := hu
-    have hsum : (pq + u).1 + (pq + u).2 = (pq.1 + pq.2) + (2 * k) + 1 := by
-      simp only [Prod.fst_add, Prod.snd_add]
-      lia
-    rw [hsum, Int.negOnePow_succ, Int.negOnePow_add, Int.negOnePow_even (2 * k) ⟨k, by lia⟩,
-      mul_one]
+    rw [Prod.fst_add, Prod.snd_add, add_add_add_comm, Int.negOnePow_add, Int.negOnePow_odd _ hu,
+      mul_neg, mul_one]
 
 /-- Evaluation of the total-degree Euler characteristic sign on `ComplexShape.up' u`. -/
 lemma eulerCharSignsUp'ProdInt_χ {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) (pq : ℤ × ℤ) :

@@ -9,48 +9,49 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
-import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import Mathlib.Order.SuccPred.Int
 import TauCeti.Algebra.Category.FGModuleCat.Exact
-import TauCeti.Algebra.Category.ModuleCat.Finrank
+import TauCeti.Algebra.Homology.SpectralObject.ModuleCat
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!
 # Euler characteristic of spectral sequences and filtered abutments
 
-Let `E` be a spectral sequence of `R`-modules over a Noetherian ring satisfying
-`StrongRankCondition` and `HasRankNullity` (for instance a division ring or a Noetherian
-commutative domain). Because each page `E_{r+1}` is isomorphic to the homology of `E_r`,
-subquotients preserve finite generation (`CategoryTheory.SpectralSequence.finite_page_X_of_le`), and
-when the alternating signs `(c s).χ` are independent of the page `s`, Euler–Poincaré for arbitrary
-complex shapes (`HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology`) shows
-that the Euler characteristic `(E.page r).eulerChar` is constant across all pages `r' ≥ r` once
-page `r` has finite support and finitely generated terms
-(`CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le`, specialized to cohomological spectral
-sequences in `CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le`).
+Let `E` be a spectral sequence of `R`-modules. Because each page `E_{r+1}` is isomorphic to the
+homology of `E_r`, subquotients preserve finite cardinal rank (`Module.rank R _ < ℵ₀`) over any
+ring `R` (`CategoryTheory.SpectralSequence.rank_page_X_lt_aleph0_of_le`), and over a Noetherian
+ring subquotients also preserve finite generation
+(`CategoryTheory.SpectralSequence.finite_page_X_of_le`).
 
-On the abutment side, for a spectral object `X` indexed by `EInt` in `ModuleCat R`, each filtration
-inclusion `F_q H^n ⟶ F_{q+1} H^n` fits into a short exact sequence with quotient
-`cokernel (X.abutmentFiltrationMap q n)`
-(`CategoryTheory.Abelian.SpectralObject.shortExact_abutmentFiltrationMap`).
-When the filtration vanishes at `a` and exhausts `H^n` at `b`, induction along `Ico a b` transfers
-finite generation
-(`CategoryTheory.Abelian.SpectralObject.finite_abutment_of_forall_finite_cokernel`) and `finrank`
-(`CategoryTheory.Abelian.SpectralObject.finrank_abutment_eq_sum_Ico`) from the graded pieces to the
-abutment. Combining strong convergence on a finite box of bidegrees with total-degree alternating
-signs equates `(E.page r).eulerChar` with the alternating sum of the ranks of `X.abutment`
+When `R` satisfies `HasRankNullity` (for instance a division ring or a commutative domain such as
+`ℤ`, with no Noetherianity hypothesis) and the alternating signs `(c s).χ` are independent of the
+page `s`, Euler–Poincaré for arbitrary complex shapes
+(`HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0`) shows
+that the Euler characteristic `(E.page r).eulerChar` is constant across all pages `r' ≥ r` once
+page `r` has finite support and terms of finite cardinal rank
+(`CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0`, specialized to
+finitely generated terms under `StrongRankCondition` in
+`CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le` and to cohomological spectral sequences in
+`CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0` and
+`CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le`).
+
+On the abutment side, `TauCeti.Algebra.Homology.SpectralObject.ModuleCat` supplies finite
+generation and rank additivity for finitely filtered abutments of spectral objects of modules.
+Combining strong convergence on a finite box of bidegrees with total-degree alternating signs
+equates `(E.page r).eulerChar` with the alternating sum of the ranks of `X.abutment`
 (`CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_sum_abutment`).
 
 ## Main results
 
+* `CategoryTheory.SpectralSequence.rank_page_X_lt_aleph0_of_le`: over any ring, finite cardinal
+  rank on page `r` is preserved on every page `r' ≥ r`.
 * `CategoryTheory.SpectralSequence.finite_page_X_of_le`: over a Noetherian ring, finitely generated
   objects on page `r` stay finitely generated on every page `r' ≥ r`.
-* `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le` and
+* `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0`,
+  `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le`,
+  `CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0`, and
   `CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le`: invariance of the Euler
-  characteristic across pages of a spectral sequence.
-* `CategoryTheory.Abelian.SpectralObject.finite_abutment_of_forall_finite_cokernel` and
-  `CategoryTheory.Abelian.SpectralObject.finrank_abutment_eq_sum_Ico`: finite generation and rank of
-  a finitely filtered module abutment from its graded pieces.
+  characteristic across pages of a spectral sequence without Noetherianity.
 * `CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_sum_abutment`: the Euler
   characteristic of a converged page equals the alternating sum of the ranks of the abutment.
 
@@ -64,11 +65,41 @@ signs equates `(E.page r).eulerChar` with the alternating sum of the ranks of `X
 
 public section
 
-open CategoryTheory Limits Module
+open CategoryTheory Limits Module Cardinal
 
 universe u v
 
 namespace CategoryTheory.SpectralSequence
+
+section Rank
+
+variable {R : Type u} [Ring R]
+  {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
+  (E : SpectralSequence (ModuleCat.{v} R) c r₀)
+
+/-- The property of having finite cardinal rank (`Module.rank R M < ℵ₀`). -/
+private def rankLtAleph0 (R : Type u) [Ring R] : ObjectProperty (ModuleCat.{v} R) :=
+  fun M ↦ Module.rank R M < ℵ₀
+
+private instance (R : Type u) [Ring R] : (rankLtAleph0.{u, v} R).IsClosedUnderSubobjects where
+  prop_of_mono f _ hN :=
+    (LinearMap.rank_le_of_injective f.hom
+      ((ModuleCat.mono_iff_injective f).mp inferInstance)).trans_lt hN
+
+private instance (R : Type u) [Ring R] : (rankLtAleph0.{u, v} R).IsClosedUnderQuotients where
+  prop_of_epi f _ hM :=
+    (LinearMap.rank_le_of_surjective f.hom
+      ((ModuleCat.epi_iff_surjective f).mp inferInstance)).trans_lt hM
+
+/-- Over any ring `R`, if the object at `pq` on page `r` of a spectral sequence of modules has
+finite cardinal rank (`Module.rank R _ < ℵ₀`), then the object at `pq` on every later page
+`r' ≥ r` also has finite cardinal rank. -/
+theorem rank_page_X_lt_aleph0_of_le {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
+    (h : Module.rank R ((E.page r).X pq) < ℵ₀) (r' : ℤ) (hrr' : r ≤ r') :
+    Module.rank R ((E.page r' (hr.trans hrr')).X pq) < ℵ₀ :=
+  E.prop_page_X_of_le (rankLtAleph0 R) hr h r' hrr'
+
+end Rank
 
 section Finite
 
@@ -88,17 +119,19 @@ end Finite
 
 section EulerChar
 
-variable {R : Type u} [Ring R] [IsNoetherianRing R] [StrongRankCondition R] [HasRankNullity.{v} R]
+section RankLtAleph0
+
+variable {R : Type u} [Ring R] [HasRankNullity.{v} R]
   {κ : Type*} {c : ℤ → ComplexShape κ} [∀ r, (c r).EulerCharSigns] {r₀ : ℤ}
   (E : SpectralSequence (ModuleCat.{v} R) c r₀)
 
-/-- Over a Noetherian ring satisfying `StrongRankCondition` and `HasRankNullity`, if page `r` of a
-spectral sequence vanishes outside `s : Finset κ`, has finitely generated terms on `s`, and the
-Euler characteristic signs `(c t).χ` agree on `s` for `r ≤ t ≤ r'`, then the alternating sum of
-ranks over `s` on page `r'` equals that on page `r`. -/
-theorem sum_eulerCharSigns_finrank_page_X_eq_of_le {r : ℤ} (hr : r₀ ≤ r) {s : Finset κ}
-    (hs : ∀ pq ∉ s, IsZero ((E.page r).X pq))
-    (hfin : ∀ pq ∈ s, Module.Finite R ((E.page r).X pq))
+/-- Over any ring satisfying `HasRankNullity`, if page `r` of a spectral sequence vanishes outside
+`s : Finset κ`, has terms of finite cardinal rank on `s`, and the Euler characteristic signs
+`(c t).χ` agree on `s` for `r ≤ t ≤ r'`, then the alternating sum of ranks over `s` on page `r'`
+equals that on page `r`. -/
+theorem sum_eulerCharSigns_finrank_page_X_eq_of_le_of_rank_lt_aleph0 {r : ℤ} (hr : r₀ ≤ r)
+    {s : Finset κ} (hs : ∀ pq ∉ s, IsZero ((E.page r).X pq))
+    (hrank : ∀ pq ∈ s, Module.rank R ((E.page r).X pq) < ℵ₀)
     (r' : ℤ) (hrr' : r ≤ r')
     (hχ : ∀ t, r ≤ t → t ≤ r' → ∀ pq ∈ s, (c t).χ pq = (c r).χ pq) :
     ∑ pq ∈ s, ((c r').χ pq : ℤ) * finrank R ((E.page r' (hr.trans hrr')).X pq) =
@@ -106,14 +139,50 @@ theorem sum_eulerCharSigns_finrank_page_X_eq_of_le {r : ℤ} (hr : r₀ ≤ r) {
   induction r', hrr' using Int.leInduction with
   | base => rfl
   | succ t hrt ih =>
-    have hstep := (E.page t (hr.trans hrt)).sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology
-      (fun pq hpq ↦ E.isZero_page_X_of_le hr (hs pq hpq) t hrt)
-      (fun pq hpq ↦ E.finite_page_X_of_le hr (hfin pq hpq) t hrt)
+    have hstep :=
+      HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0
+        (E.page t (hr.trans hrt))
+        (fun pq hpq ↦ E.isZero_page_X_of_le hr (hs pq hpq) t hrt)
+        (fun pq hpq ↦ E.rank_page_X_lt_aleph0_of_le hr (hrank pq hpq) t hrt)
     rw [← ih (fun u hru hut ↦ hχ u hru (hut.trans (Int.le_add_one le_rfl))), hstep]
     refine Finset.sum_congr rfl fun pq hpq ↦ ?_
     rw [hχ (t + 1) (Int.le_add_one hrt) le_rfl pq hpq,
       hχ t hrt (Int.le_add_one le_rfl) pq hpq,
       (E.iso t (t + 1) pq rfl (hr.trans hrt)).toLinearEquiv.finrank_eq]
+
+/-- **Page invariance of the Euler characteristic of a spectral sequence (finite rank).** Under the
+hypotheses of `sum_eulerCharSigns_finrank_page_X_eq_of_le_of_rank_lt_aleph0`,
+`(E.page r').eulerChar = (E.page r).eulerChar` for every `r' ≥ r`. -/
+theorem eulerChar_page_eq_of_le_of_rank_lt_aleph0 {r : ℤ} (hr : r₀ ≤ r) {s : Finset κ}
+    (hs : ∀ pq ∉ s, IsZero ((E.page r).X pq))
+    (hrank : ∀ pq ∈ s, Module.rank R ((E.page r).X pq) < ℵ₀)
+    (r' : ℤ) (hrr' : r ≤ r')
+    (hχ : ∀ t, r ≤ t → t ≤ r' → ∀ pq ∈ s, (c t).χ pq = (c r).χ pq) :
+    (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar := by
+  rw [(E.page r' (hr.trans hrr')).eulerChar_eq_sum_of_forall_notMem
+      (fun pq hpq ↦ E.isZero_page_X_of_le hr (hs pq hpq) r' hrr'),
+    (E.page r).eulerChar_eq_sum_of_forall_notMem hs]
+  exact E.sum_eulerCharSigns_finrank_page_X_eq_of_le_of_rank_lt_aleph0 hr hs hrank r' hrr' hχ
+
+end RankLtAleph0
+
+variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
+  {κ : Type*} {c : ℤ → ComplexShape κ} [∀ r, (c r).EulerCharSigns] {r₀ : ℤ}
+  (E : SpectralSequence (ModuleCat.{v} R) c r₀)
+
+/-- Over a ring satisfying `StrongRankCondition` and `HasRankNullity`, if page `r` of a spectral
+sequence vanishes outside `s : Finset κ`, has finitely generated terms on `s`, and the Euler
+characteristic signs `(c t).χ` agree on `s` for `r ≤ t ≤ r'`, then the alternating sum of ranks
+over `s` on page `r'` equals that on page `r`. -/
+theorem sum_eulerCharSigns_finrank_page_X_eq_of_le {r : ℤ} (hr : r₀ ≤ r) {s : Finset κ}
+    (hs : ∀ pq ∉ s, IsZero ((E.page r).X pq))
+    (hfin : ∀ pq ∈ s, Module.Finite R ((E.page r).X pq))
+    (r' : ℤ) (hrr' : r ≤ r')
+    (hχ : ∀ t, r ≤ t → t ≤ r' → ∀ pq ∈ s, (c t).χ pq = (c r).χ pq) :
+    ∑ pq ∈ s, ((c r').χ pq : ℤ) * finrank R ((E.page r' (hr.trans hrr')).X pq) =
+      ∑ pq ∈ s, ((c r).χ pq : ℤ) * finrank R ((E.page r).X pq) :=
+  E.sum_eulerCharSigns_finrank_page_X_eq_of_le_of_rank_lt_aleph0 hr hs
+    (fun pq hpq ↦ have := hfin pq hpq; Module.rank_lt_aleph0 R ((E.page r hr).X pq)) r' hrr' hχ
 
 /-- **Page invariance of the Euler characteristic of a spectral sequence.** Under the hypotheses of
 `sum_eulerCharSigns_finrank_page_X_eq_of_le`, `(E.page r').eulerChar = (E.page r).eulerChar` for
@@ -123,101 +192,47 @@ theorem eulerChar_page_eq_of_le {r : ℤ} (hr : r₀ ≤ r) {s : Finset κ}
     (hfin : ∀ pq ∈ s, Module.Finite R ((E.page r).X pq))
     (r' : ℤ) (hrr' : r ≤ r')
     (hχ : ∀ t, r ≤ t → t ≤ r' → ∀ pq ∈ s, (c t).χ pq = (c r).χ pq) :
-    (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar := by
-  nontriviality R
-  rw [(E.page r' (hr.trans hrr')).eulerChar_eq_sum_finSet_of_finrankSupport_subset s
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun pq hpq ↦
-        ModuleCat.finrank_eq_zero_of_isZero (E.isZero_page_X_of_le hr (hs pq hpq) r' hrr')),
-    (E.page r).eulerChar_eq_sum_finSet_of_finrankSupport_subset s
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun pq hpq ↦
-        ModuleCat.finrank_eq_zero_of_isZero (hs pq hpq))]
-  exact E.sum_eulerCharSigns_finrank_page_X_eq_of_le hr hs hfin r' hrr' hχ
+    (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar :=
+  E.eulerChar_page_eq_of_le_of_rank_lt_aleph0 hr hs
+    (fun pq hpq ↦ have := hfin pq hpq; Module.rank_lt_aleph0 R ((E.page r hr).X pq)) r' hrr' hχ
 
 end EulerChar
 
 end CategoryTheory.SpectralSequence
 
-namespace CategoryTheory.Abelian.SpectralObject
-
-variable {R : Type u} [Ring R] (X : SpectralObject (ModuleCat.{v} R) EInt)
-
-/-- Over any ring `R`, if `F_a H^n` is zero and every graded piece `F_{q+1} H^n / F_q H^n` for
-`a ≤ q < b` is finitely generated, then `F_b H^n` is finitely generated. -/
-theorem finite_abutmentFiltration_of_forall_finite_cokernel {a b n : ℤ} (hab : a ≤ b)
-    (ha : IsZero (X.abutmentFiltration a n))
-    (hcok : ∀ q ∈ Finset.Ico a b, Module.Finite R ↥(cokernel (X.abutmentFiltrationMap q n))) :
-    Module.Finite R (X.abutmentFiltration b n) := by
-  induction b, hab using Int.leInduction with
-  | base =>
-    have := ModuleCat.subsingleton_of_isZero ha
-    infer_instance
-  | succ q haq ih =>
-    have : Module.Finite R (X.abutmentFiltration q n) :=
-      ih fun i hi ↦ hcok i (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hi)
-    have : Module.Finite R ↥(cokernel (X.abutmentFiltrationMap q n)) :=
-      hcok q (Finset.mem_Ico.2 ⟨haq, Int.lt_add_one_iff.2 le_rfl⟩)
-    exact (X.shortExact_abutmentFiltrationMap q n).moduleCat_finite_X₂
-
-/-- Over any ring `R`, if the filtration of `X.abutment n` starts at `0` at `a`, exhausts the
-abutment at `b ≥ a`, and has finitely generated graded pieces on `Ico a b`, then `X.abutment n` is
-finitely generated. -/
-theorem finite_abutment_of_forall_finite_cokernel {a b n : ℤ} (hab : a ≤ b)
-    (ha : IsZero (X.abutmentFiltration a n)) (hb : IsIso (X.abutmentFiltrationι b n))
-    (hcok : ∀ q ∈ Finset.Ico a b, Module.Finite R ↥(cokernel (X.abutmentFiltrationMap q n))) :
-    Module.Finite R (X.abutment n) :=
-  have := hb
-  have := X.finite_abutmentFiltration_of_forall_finite_cokernel hab ha hcok
-  .equiv (asIso (X.abutmentFiltrationι b n)).toLinearEquiv
-
-/-- Over a ring satisfying `StrongRankCondition` and `HasRankNullity`, if `F_a H^n` is zero and
-every graded piece `F_{q+1} H^n / F_q H^n` for `a ≤ q < b` is finitely generated, then the rank of
-`F_b H^n` is the sum of the ranks of those graded pieces. -/
-theorem finrank_abutmentFiltration_eq_sum_Ico [StrongRankCondition R] [HasRankNullity.{v} R]
-    {a b n : ℤ} (hab : a ≤ b) (ha : IsZero (X.abutmentFiltration a n))
-    (hcok : ∀ q ∈ Finset.Ico a b, Module.Finite R ↥(cokernel (X.abutmentFiltrationMap q n))) :
-    finrank R (X.abutmentFiltration b n) =
-      ∑ q ∈ Finset.Ico a b, finrank R ↥(cokernel (X.abutmentFiltrationMap q n)) := by
-  nontriviality R
-  induction b, hab using Int.leInduction with
-  | base =>
-    simp [ModuleCat.finrank_eq_zero_of_isZero ha]
-  | succ q haq ih =>
-    have : Module.Finite R (X.abutmentFiltration (q + 1) n) :=
-      X.finite_abutmentFiltration_of_forall_finite_cokernel (Int.le_add_one haq) ha hcok
-    rw [← Finset.sum_Ico_add_eq_sum_Ico_add_one haq,
-      ← ih (fun i hi ↦ hcok i (Finset.Ico_subset_Ico_right (Int.le_add_one le_rfl) hi)),
-      (X.shortExact_abutmentFiltrationMap q n).moduleCat_finrank_eq_add]
-
-/-- Over a ring satisfying `StrongRankCondition` and `HasRankNullity`, if the filtration of
-`X.abutment n` starts at `0` at `a`, exhausts the abutment at `b ≥ a`, and has finitely generated
-graded pieces on `Ico a b`, then the rank of `X.abutment n` is the sum of the ranks of those graded
-pieces. -/
-theorem finrank_abutment_eq_sum_Ico [StrongRankCondition R] [HasRankNullity.{v} R]
-    {a b n : ℤ} (hab : a ≤ b) (ha : IsZero (X.abutmentFiltration a n))
-    (hb : IsIso (X.abutmentFiltrationι b n))
-    (hcok : ∀ q ∈ Finset.Ico a b, Module.Finite R ↥(cokernel (X.abutmentFiltrationMap q n))) :
-    finrank R (X.abutment n) =
-      ∑ q ∈ Finset.Ico a b, finrank R ↥(cokernel (X.abutmentFiltrationMap q n)) := by
-  have := hb
-  rw [← (asIso (X.abutmentFiltrationι b n)).toLinearEquiv.finrank_eq]
-  exact X.finrank_abutmentFiltration_eq_sum_Ico hab ha hcok
-
-end CategoryTheory.Abelian.SpectralObject
-
 namespace CategoryTheory.CohomologicalSpectralSequence
+
+section RankLtAleph0
+
+variable {R : Type u} [Ring R] [HasRankNullity.{v} R]
+
+/-- **Page invariance of the Euler characteristic of a cohomological spectral sequence (finite
+rank).** Over any ring satisfying `HasRankNullity`, if page `r` vanishes outside a finite set `s`
+of bidegrees and has terms of finite cardinal rank on `s`, then
+`(E.page r').eulerChar = (E.page r).eulerChar` for every `r' ≥ r`. -/
+theorem eulerChar_page_eq_of_le_of_rank_lt_aleph0 {r₀ : ℤ}
+    (E : CohomologicalSpectralSequence (ModuleCat.{v} R) r₀) {r : ℤ} (hr : r₀ ≤ r)
+    {s : Finset (ℤ × ℤ)} (hs : ∀ pq ∉ s, IsZero ((E.page r).X pq))
+    (hrank : ∀ pq ∈ s, Module.rank R ((E.page r).X pq) < ℵ₀) (r' : ℤ) (hrr' : r ≤ r') :
+    (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar :=
+  SpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0 E hr hs hrank r' hrr'
+    fun _ _ _ _ _ ↦ by simp
+
+end RankLtAleph0
 
 variable {R : Type u} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
 
 /-- **Page invariance of the Euler characteristic of a cohomological spectral sequence.** Over a
-Noetherian ring satisfying `StrongRankCondition` and `HasRankNullity`, if page `r` vanishes outside
-a finite set `s` of bidegrees and has finitely generated terms on `s`, then
+ring satisfying `StrongRankCondition` and `HasRankNullity`, if page `r` vanishes outside a finite
+set `s` of bidegrees and has finitely generated terms on `s`, then
 `(E.page r').eulerChar = (E.page r).eulerChar` for every `r' ≥ r`. -/
-theorem eulerChar_page_eq_of_le [IsNoetherianRing R] {r₀ : ℤ}
+theorem eulerChar_page_eq_of_le {r₀ : ℤ}
     (E : CohomologicalSpectralSequence (ModuleCat.{v} R) r₀) {r : ℤ} (hr : r₀ ≤ r)
     {s : Finset (ℤ × ℤ)} (hs : ∀ pq ∉ s, IsZero ((E.page r).X pq))
     (hfin : ∀ pq ∈ s, Module.Finite R ((E.page r).X pq)) (r' : ℤ) (hrr' : r ≤ r') :
     (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar :=
-  SpectralSequence.eulerChar_page_eq_of_le E hr hs hfin r' hrr' fun _ _ _ _ _ ↦ by simp
+  SpectralSequence.eulerChar_page_eq_of_le E hr hs hfin r' hrr'
+    fun _ _ _ _ _ ↦ by simp
 
 /-- **Euler characteristic of a converged page equals the alternating sum of abutment ranks.**
 Suppose page `r` of a cohomological spectral sequence `E` vanishes outside the bidegrees `pq` with
@@ -238,7 +253,6 @@ theorem eulerChar_page_eq_sum_abutment {r₀ : ℤ}
     (hiso : ∀ n ∈ I, ∀ q ∈ Finset.Ico a b,
       Nonempty (((E.page r).X (n - q, q)) ≅ cokernel (X.abutmentFiltrationMap q n))) :
     (E.page r).eulerChar = ∑ n ∈ I, (n.negOnePow : ℤ) * finrank R (X.abutment n) := by
-  nontriviality R
   let s : Finset (ℤ × ℤ) := (I ×ˢ Finset.Ico a b).image fun nq ↦ (nq.1 - nq.2, nq.2)
   have hmem_s (pq : ℤ × ℤ) : pq ∈ s ↔ pq.1 + pq.2 ∈ I ∧ pq.2 ∈ Finset.Ico a b := by
     constructor
@@ -249,9 +263,8 @@ theorem eulerChar_page_eq_sum_abutment {r₀ : ℤ}
     · rintro ⟨hn, hq⟩
       exact Finset.mem_image.2 ⟨(pq.1 + pq.2, pq.2), Finset.mem_product.2 ⟨hn, hq⟩,
         Prod.ext (add_sub_cancel_right pq.1 pq.2) rfl⟩
-  rw [(E.page r).eulerChar_eq_sum_finSet_of_finrankSupport_subset s
-    ((GradedObject.finrankSupport_subset_iff _ _).2 fun pq hpq ↦
-      ModuleCat.finrank_eq_zero_of_isZero (hzero pq ((hmem_s pq).not.1 hpq)))]
+  rw [(E.page r).eulerChar_eq_sum_of_forall_notMem
+      fun pq hpq ↦ hzero pq ((hmem_s pq).not.1 hpq)]
   rw [Finset.sum_image (by
     rintro ⟨n₁, q₁⟩ _ ⟨n₂, q₂⟩ _ h
     simp only [Prod.mk.injEq] at h ⊢
