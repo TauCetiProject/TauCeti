@@ -74,6 +74,12 @@ instance (priority := 90) instContinuousConstSMul
       (uniformContinuous_const_smul r).comp_tendstoUniformly <|
         tendsto_iff_tendstoUniformly.1 Filter.tendsto_id
 
+/-- A scalar acting injectively on `β` acts injectively on `C₀(α, β)`. -/
+theorem _root_.IsSMulRegular.zeroAtInftyContinuousMap [TopologicalSpace β] [Zero β] {M : Type*}
+    [SMulZeroClass M β] [ContinuousConstSMul M β] {r : M} (hr : IsSMulRegular β r) :
+    IsSMulRegular C₀(α, β) r :=
+  fun _ _ h ↦ ext fun x ↦ hr (congrArg (· x) h)
+
 /-- The coercion to functions commutes with finite sums. -/
 @[simp, norm_cast]
 theorem coe_sum [TopologicalSpace β] [AddCommMonoid β] [ContinuousAdd β] {ι : Type*}
@@ -184,6 +190,25 @@ def compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) : 
 @[simp]
 theorem compLeft_apply (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (f : C₀(α, E)) (x : α) :
     compLeft u hu f x = u (f x) := (rfl)
+
+/-- Postcomposing with the zero operator gives the zero operator on `C₀(α, E)`. -/
+@[simp]
+theorem compLeft_zero (h0 : ∃ C, ∀ x, ‖(0 : E →L[R] F) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (0 : E →L[R] F) h0 = 0 := by
+  ext; simp
+
+/-- `compLeft` is additive in the bounded operator. -/
+theorem compLeft_add (u v : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖)
+    (hv : ∃ C, ∀ x, ‖v x‖ ≤ C * ‖x‖) (huv : ∃ C, ∀ x, ‖(u + v) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (u + v) huv = compLeft u hu + compLeft v hv := by
+  ext; simp
+
+/-- `compLeft` commutes with scalar multiplication in the bounded operator. -/
+theorem compLeft_smul {S : Type*} [Semiring S] [Module S F]
+    [SMulCommClass R S F] [ContinuousConstSMul S F] (s : S) (u : E →L[R] F)
+    (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (hsu : ∃ C, ∀ x, ‖(s • u) x‖ ≤ C * ‖x‖) :
+    compLeft (α := α) (s • u) hsu = s • compLeft u hu := by
+  ext; simp
 
 /-- The coordinatewise action of a composite is the composite of the coordinatewise actions. -/
 theorem compLeft_comp {G : Type*} [SeminormedAddCommGroup G] [Module R G] [ContinuousConstSMul R G]
