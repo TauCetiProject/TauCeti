@@ -12,7 +12,8 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 # Singular chain complexes
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
-simplicial sets, and the singular homology functor to the simplicial homology map it induces.
+simplicial sets, and the singular homology functor to the simplicial homology of the singular
+simplicial set and the map it induces.
 It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
 without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
@@ -47,6 +48,12 @@ lemma singularChainComplexFunctor_map_app {R R' : C} (g : R ⟶ R') (X : TopCat.
     ((AlgebraicTopology.singularChainComplexFunctor C).map g).app X =
       ((SSet.chainComplexFunctor C).map g).app (TopCat.toSSet.obj X) :=
   (rfl)
+
+/-- The singular homology functor with coefficients in `R` evaluates on a space `X` to the
+simplicial homology of its singular simplicial set `TopCat.toSSet.obj X`. -/
+lemma singularHomologyFunctor_obj_obj [CategoryWithHomology C] (n : ℕ) (X : TopCat.{w}) :
+    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X =
+      (TopCat.toSSet.obj X).homology R n := rfl
 
 /-- The singular homology functor with coefficients in `R` sends a continuous map `f` to the
 simplicial homology map induced by the singular simplicial map `TopCat.toSSet.map f`. -/

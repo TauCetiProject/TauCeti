@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.MapHomologicalComplex
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+import TauCeti.CategoryTheory.Limits.Shapes.ZeroMorphisms
 
 /-!
 # Changing the category of coefficients of singular homology
@@ -25,6 +26,9 @@ that `F` commutes with singular homology
 
 `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`.
 
+When `F` is moreover faithful, `Hₙ(X; F R)` vanishes if and only if `Hₙ(X; R)` does
+(`CategoryTheory.Functor.isZero_singularHomology_obj_iff`).
+
 The main example is restriction of scalars `ModuleCat S ⥤ ModuleCat R` along a ring homomorphism
 `R →+* S`: it preserves all colimits, being left adjoint to coextension of scalars, and it is exact.
 So the homology with coefficients in an `S`-module `M`, regarded as an `R`-module, is the homology
@@ -39,6 +43,8 @@ Extension of scalars is another example of the chain-level statement, since it p
   naturally in `X`.
 * `CategoryTheory.Functor.singularHomologyFunctorObjCompIso`: `F (Hₙ(X; R)) ≅ Hₙ(X; F R)`,
   naturally in `X`.
+* `CategoryTheory.Functor.isZero_singularHomology_obj_iff`: for faithful `F`, `Hₙ(X; F R) = 0`
+  if and only if `Hₙ(X; R) = 0`.
 -/
 
 public section
@@ -87,5 +93,15 @@ lemma singularHomologyFunctorObjCompIso_hom_app (n : ℕ) (X : TopCat.{w}) :
         HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).hom.app X)
           n :=
   (rfl)
+
+/-- **A faithful exact coproduct-preserving functor detects vanishing of singular homology**:
+`Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`. -/
+theorem isZero_singularHomology_obj_iff [F.Faithful] (n : ℕ) (X : TopCat.{w}) :
+    IsZero (((singularHomologyFunctor D n).obj (F.obj R)).obj X) ↔
+      IsZero (((singularHomologyFunctor C n).obj R).obj X) :=
+  ⟨fun h ↦ F.isZero_of_isZero_obj
+      ((Iso.isZero_iff ((singularHomologyFunctorObjCompIso F R n).app X)).2 h),
+    fun h ↦ (Iso.isZero_iff ((singularHomologyFunctorObjCompIso F R n).app X)).1
+      (F.map_isZero h)⟩
 
 end CategoryTheory.Functor
