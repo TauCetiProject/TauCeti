@@ -22,6 +22,9 @@ circles about `z₀` shrink to points as their radius tends to `0`.
 
 ## Main results
 
+* `TauCeti.norm_sub_le_of_norm_fderiv_le_circle`: if `‖du‖ ≤ L` along the arc of the circle of
+  radius `ρ` about `z₀` between the angles `θ₁` and `θ₂`, then the images of its endpoints are at
+  distance at most `L ρ |θ₂ - θ₁|`.
 * `TauCeti.diam_image_sphere_le_of_norm_fderiv_le`: if `‖du‖ ≤ M` on the circle of radius `ρ`
   about `z₀`, then the image of that circle has diameter at most `π ρ M`.
 * `TauCeti.tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto`: if `u` is differentiable near
@@ -38,6 +41,25 @@ open scoped Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {u : ℂ → E} {z₀ : ℂ}
 
+/-- If `u : ℂ → E` is differentiable with `‖du‖ ≤ L` along the arc of the circle of radius
+`ρ ≥ 0` about `z₀` between the angles `θ₁` and `θ₂`, then the images of the endpoints of the arc
+are at distance at most `L ρ |θ₂ - θ₁|`. -/
+theorem norm_sub_le_of_norm_fderiv_le_circle {ρ L θ₁ θ₂ : ℝ} (hρ : 0 ≤ ρ)
+    (hu : ∀ θ ∈ uIcc θ₁ θ₂, DifferentiableAt ℝ u (circleMap z₀ ρ θ))
+    (hL : ∀ θ ∈ uIcc θ₁ θ₂, ‖fderiv ℝ u (circleMap z₀ ρ θ)‖ ≤ L) :
+    ‖u (circleMap z₀ ρ θ₂) - u (circleMap z₀ ρ θ₁)‖ ≤ L * ρ * |θ₂ - θ₁| := by
+  refine (convex_uIcc θ₁ θ₂).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun θ ↦ u (circleMap z₀ ρ θ))
+    (fun θ hθ ↦ ((hu θ hθ).hasFDerivAt.comp_hasDerivAt θ
+      (hasDerivAt_circleMap z₀ ρ θ)).hasDerivWithinAt) (fun θ hθ ↦ ?_) left_mem_uIcc
+    right_mem_uIcc |>.trans_eq (by rw [Real.norm_eq_abs])
+  calc _ ≤ ‖fderiv ℝ u (circleMap z₀ ρ θ)‖ * ‖circleMap 0 ρ θ * I‖ :=
+      ContinuousLinearMap.le_opNorm _ _
+    _ ≤ L * ρ := by
+      rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_nonneg hρ]
+      gcongr
+      exact hL θ hθ
+
 /-- If `u : ℂ → E` is differentiable on the circle of radius `ρ ≥ 0` about `z₀`, with
 `‖du‖ ≤ M` there, then the image of that circle has diameter at most `π ρ M`. -/
 theorem diam_image_sphere_le_of_norm_fderiv_le {ρ M : ℝ} (hρ : 0 ≤ ρ)
@@ -46,15 +68,6 @@ theorem diam_image_sphere_le_of_norm_fderiv_le {ρ M : ℝ} (hρ : 0 ≤ ρ)
     diam (u '' sphere z₀ ρ) ≤ π * ρ * M := by
   have hcmem (θ : ℝ) : circleMap z₀ ρ θ ∈ sphere z₀ ρ := circleMap_mem_sphere z₀ hρ θ
   have hM₀ : 0 ≤ M := (norm_nonneg _).trans (hM _ (hcmem 0))
-  -- The loop `θ ↦ u (circleMap z₀ ρ θ)` has speed at most `ρ M`.
-  have hlip (θ φ : ℝ) :
-      ‖u (circleMap z₀ ρ φ) - u (circleMap z₀ ρ θ)‖ ≤ ρ * M * ‖φ - θ‖ := by
-    refine convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u ∘ circleMap z₀ ρ)
-      (fun x _ ↦ ((hu _ (hcmem x)).hasFDerivAt.comp_hasDerivAt x
-        (hasDerivAt_circleMap z₀ ρ x)).hasDerivWithinAt) (fun x _ ↦ ?_) (mem_univ θ) (mem_univ φ)
-    refine ((fderiv ℝ u _).le_opNorm _).trans ?_
-    simpa [norm_circleMap_zero, abs_of_nonneg hρ, mul_comm] using
-      mul_le_mul_of_nonneg_left (hM _ (hcmem x)) hρ
   refine diam_le_of_forall_dist_le (by positivity) ?_
   have hsph : range (circleMap z₀ ρ) = sphere z₀ ρ := by
     rw [range_circleMap, abs_of_nonneg hρ]
@@ -63,11 +76,12 @@ theorem diam_image_sphere_le_of_norm_fderiv_le {ρ M : ℝ} (hρ : 0 ≤ ρ)
   -- Any two points of the circle are joined by an arc of angle at most `π`.
   obtain ⟨ψ, hψ, hφψ⟩ := (periodic_circleMap z₀ ρ).exists_mem_Ico Real.two_pi_pos φ (θ - π)
   rw [dist_eq_norm', hφψ]
-  have h : ‖ψ - θ‖ ≤ π := by
-    rw [Real.norm_eq_abs, abs_le]
+  have h : |ψ - θ| ≤ π := by
+    rw [abs_le]
     constructor <;> linarith [hψ.1, hψ.2]
-  calc ‖u (circleMap z₀ ρ ψ) - u (circleMap z₀ ρ θ)‖ ≤ ρ * M * ‖ψ - θ‖ := hlip θ ψ
-    _ ≤ ρ * M * π := mul_le_mul_of_nonneg_left h (mul_nonneg hρ hM₀)
+  calc ‖u (circleMap z₀ ρ ψ) - u (circleMap z₀ ρ θ)‖ ≤ M * ρ * |ψ - θ| :=
+      norm_sub_le_of_norm_fderiv_le_circle hρ (fun x _ ↦ hu _ (hcmem x)) fun x _ ↦ hM _ (hcmem x)
+    _ ≤ M * ρ * π := mul_le_mul_of_nonneg_left h (mul_nonneg hM₀ hρ)
     _ = π * ρ * M := by ring
 
 /-- If `u : ℂ → E` is differentiable near `z₀`, except possibly at `z₀`, and

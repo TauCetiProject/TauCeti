@@ -12,7 +12,8 @@ public import Mathlib.Topology.MetricSpace.ProperSpace
 # Closed annuli in proper metric spaces
 
 The closed annulus `{z | a ≤ dist z c ∧ dist z c ≤ b}` about `c` is compact in a proper space
-(`Metric.isCompact_annulus`), and likewise when it is written with the norm.
+(`Metric.isCompact_annulus`), and likewise when it is written with the norm. Shrinking the radii
+gives a smaller annulus (`TauCeti.setOf_le_norm_sub_le_subset`).
 -/
 
 public section
@@ -37,5 +38,12 @@ namespace TauCeti
 theorem isCompact_setOf_le_norm_sub_le {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E]
     (c : E) (a b : ℝ) : IsCompact {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} := by
   simpa only [dist_eq_norm] using Metric.isCompact_annulus c a b
+
+/-- The closed annulus `r₁ ≤ ‖z - c‖ ≤ r₂` lies in `a ≤ ‖z - c‖ ≤ b` when `a ≤ r₁` and
+`r₂ ≤ b`. -/
+theorem setOf_le_norm_sub_le_subset {E : Type*} [SeminormedAddCommGroup E] {c : E}
+    {a b r₁ r₂ : ℝ} (h₁ : a ≤ r₁) (h₂ : r₂ ≤ b) :
+    {z : E | r₁ ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ r₂} ⊆ {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} :=
+  fun _ hz ↦ ⟨h₁.trans hz.1, hz.2.trans h₂⟩
 
 end TauCeti

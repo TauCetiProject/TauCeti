@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 import TauCeti.Analysis.RCLike.OperatorNorm
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.MeasureTheory.Integral.Disc
 import TauCeti.Topology.MetricSpace.Annulus
 
@@ -79,17 +81,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
   {u : ℂ → V} {J : V → V →L[ℝ] V} {z₀ : ℂ} {a b c M : ℝ}
 
-/-- A circle of radius `r ∈ [a, b]` about `z₀` lies in the annulus `a ≤ |z - z₀| ≤ b`. -/
-private theorem circleMap_mem_annulus {r : ℝ} (ha : 0 ≤ a) (hr : r ∈ Icc a b) (θ : ℝ) :
-    circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-  simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-    abs_of_nonneg (ha.trans hr.1)] using (mem_Icc.mp hr)
-
-/-- A subannulus lies in the annulus. -/
-private theorem annulus_subset {r₁ r₂ : ℝ} (h₁ : a ≤ r₁) (h₂ : r₂ ≤ b) :
-    {z : ℂ | r₁ ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r₂} ⊆ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
-  fun _ hz ↦ ⟨h₁.trans hz.1, hz.2.trans h₂⟩
-
 /-- **Boundary control of the energy of an annulus.** For a uniformly tamed solution of
 `∂ₜu = J(u) ∂ₛu` on the annulus `a ≤ |z - z₀| ≤ b` with `‖J(u)‖ ≤ M`, twice the taming constant
 times the energy `∫ ‖∂ₛu‖²` is at most `(1 + M)²` times the sum of the boundary densities
@@ -106,7 +97,8 @@ theorem two_mul_mul_integral_norm_fderiv_one_sq_annulus_le
     2 * c * (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2) ≤
       (1 + M) ^ 2 * (b * (b * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ b θ) 1‖ ^ 2) +
         a * (a * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ a θ) 1‖ ^ 2)) := by
-  have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) := circleMap_mem_annulus (z₀ := z₀) ha hr θ
+  have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) :=
+    circleMap_mem_setOf_le_norm_sub_le (z₀ := z₀) ha hr θ
   have hbound := ω.integral_norm_fderiv_one_sq_annulus_le z₀ hg ha hab hc hu hCR htame
   have hb := integral_norm_deriv_comp_circleMap_sq_le (ha.trans hab)
     (fun θ ↦ (hu _ (hmem b ⟨hab, le_rfl⟩ θ)).of_le one_le_two)
@@ -213,6 +205,26 @@ private theorem exp_mul_integral_le_integral {G : ℝ → ℝ} {κ T : ℝ} (ha 
     exact hle t ht
   rwa [← hf T ⟨hT, le_rfl⟩, intervalIntegral.integral_same, sub_zero] at key
 
+omit [FiniteDimensional ℝ V] in
+/-- The energy density `‖∂ₛu‖²` of a `C¹` map on the annulus `a ≤ |z - z₀| ≤ b` is continuous
+there. -/
+private theorem continuousOn_norm_fderiv_one_sq_annulus
+    (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 1 u z) :
+    ContinuousOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
+  fun z hz ↦ ((((hu z hz).continuousAt_fderiv one_ne_zero).clm_apply
+    continuousAt_const).norm.pow 2).continuousWithinAt
+
+omit [FiniteDimensional ℝ V] in
+/-- The energy density `‖∂ₛu‖²` of a `C¹` map on the annulus `a ≤ |z - z₀| ≤ b` is integrable
+on every subannulus. -/
+private theorem integrableOn_norm_fderiv_one_sq_annulus
+    (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 1 u z) {r₁ r₂ : ℝ}
+    (h₁ : a ≤ r₁) (h₂ : r₂ ≤ b) :
+    IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) {z : ℂ | r₁ ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r₂} :=
+  ((continuousOn_norm_fderiv_one_sq_annulus hu).mono
+    (setOf_le_norm_sub_le_subset h₁ h₂)).integrableOn_compact
+    (isCompact_setOf_le_norm_sub_le z₀ r₁ r₂)
+
 /-- **Exponential decay of energy along a long annulus.** For a uniformly tamed solution of
 `∂ₜu = J(u) ∂ₛu` on the annulus `a ≤ |z - z₀| ≤ b` with `‖J(u)‖ ≤ M`, the energy of the
 subannulus `a e^T ≤ |z - z₀| ≤ b e^{-T}`, obtained by removing collars of length `T` from both
@@ -233,27 +245,25 @@ theorem integral_norm_fderiv_one_sq_annulus_le_exp_mul
         ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2 := by
   have hT' := radii_mem ha hTab ⟨hT, le_rfl⟩
   have hab : a ≤ b := hT'.1.trans (hT'.2.1.trans hT'.2.2)
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hJ _ (circleMap_mem_annulus ha.le ⟨le_rfl, hab⟩ 0))
+  have hM : 0 ≤ M := (norm_nonneg _).trans
+    (hJ _ (circleMap_mem_setOf_le_norm_sub_le ha.le ⟨le_rfl, hab⟩ 0))
   -- The energy of a subannulus is the radial integral of the boundary densities `G r`.
-  have he : ContinuousOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2)
-      {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := fun z hz ↦
-    ((((hu z hz).continuousAt_fderiv (by norm_num)).clm_apply
-      continuousAt_const).norm.pow 2).continuousWithinAt
+  have he := continuousOn_norm_fderiv_one_sq_annulus fun z hz ↦ (hu z hz).of_le one_le_two
   set G : ℝ → ℝ := fun r ↦ r * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2
   have hpolar (r₁ r₂ : ℝ) (h₁ : a ≤ r₁) (h₁₂ : r₁ ≤ r₂) (h₂ : r₂ ≤ b) :
       (∫ z in {z : ℂ | r₁ ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r₂}, ‖fderiv ℝ u z 1‖ ^ 2) =
         ∫ r in r₁..r₂, G r := by
     simpa only [smul_eq_mul] using integral_annulus_eq_integral_circleMap
-      (ha.le.trans h₁) h₁₂ (he.mono (annulus_subset h₁ h₂))
+      (ha.le.trans h₁) h₁₂ (he.mono (setOf_le_norm_sub_le_subset h₁ h₂))
   -- Boundary control on every subannulus `a e^t ≤ |z - z₀| ≤ b e^{-t}` is `κ f ≤ -f'`.
   have hkey := exp_mul_integral_le_integral (κ := 2 * c / (1 + M) ^ 2) ha hT hTab
     (by simpa only [smul_eq_mul] using he.smul_integral_comp_circleMap ha.le) fun t ht ↦ by
       obtain ⟨h₁, h₁₂, h₂⟩ := radii_mem ha hTab (Ioo_subset_Icc_self ht)
       have hbd := ω.two_mul_mul_integral_norm_fderiv_one_sq_annulus_le hg hc
-        (ha.le.trans h₁) h₁₂ (fun z hz ↦ hu z (annulus_subset h₁ h₂ hz))
-        (fun z hz ↦ hCR z (annulus_subset h₁ h₂ hz))
-        (fun z hz ↦ htame z (annulus_subset h₁ h₂ hz))
-        (fun z hz ↦ hJ z (annulus_subset h₁ h₂ hz))
+        (ha.le.trans h₁) h₁₂ (fun z hz ↦ hu z (setOf_le_norm_sub_le_subset h₁ h₂ hz))
+        (fun z hz ↦ hCR z (setOf_le_norm_sub_le_subset h₁ h₂ hz))
+        (fun z hz ↦ htame z (setOf_le_norm_sub_le_subset h₁ h₂ hz))
+        (fun z hz ↦ hJ z (setOf_le_norm_sub_le_subset h₁ h₂ hz))
       rw [hpolar _ _ h₁ h₁₂ h₂] at hbd
       rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
       linarith
@@ -261,18 +271,6 @@ theorem integral_norm_fderiv_one_sq_annulus_le_exp_mul
   rw [show Real.exp (-(2 * c / (1 + M) ^ 2 * T)) = (Real.exp (2 * c / (1 + M) ^ 2 * T))⁻¹ from
     Real.exp_neg _, ← div_eq_inv_mul, le_div_iff₀ (Real.exp_pos _), mul_comm]
   exact hkey
-
-omit [FiniteDimensional ℝ V] in
-/-- The energy density `‖∂ₛu‖²` of a `C¹` map on the annulus `a ≤ |z - z₀| ≤ b` is integrable
-on every subannulus. -/
-private theorem integrableOn_norm_fderiv_one_sq_annulus
-    (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 1 u z) {r₁ r₂ : ℝ}
-    (h₁ : a ≤ r₁) (h₂ : r₂ ≤ b) :
-    IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) {z : ℂ | r₁ ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r₂} := by
-  refine ContinuousOn.integrableOn_compact (isCompact_setOf_le_norm_sub_le z₀ r₁ r₂)
-    fun z hz ↦ ?_
-  exact ((((hu z (annulus_subset h₁ h₂ hz)).continuousAt_fderiv (by simp)).clm_apply
-    continuousAt_const).norm.pow 2).continuousWithinAt
 
 /-- **Energy decay towards the middle of an annulus.** For a uniformly tamed solution of
 `∂ₜu = J(u) ∂ₛu` on the annulus `a ≤ |z - z₀| ≤ b` with `‖J(u)‖ ≤ M`, and `a ≤ r₁ ≤ r₂ ≤ b`, the
@@ -311,7 +309,7 @@ theorem integral_norm_fderiv_one_sq_annulus_le_rpow_mul
     (h₁T.trans (h₁₂.trans h₂T))
   have hsub : {z : ℂ | r₁ ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r₂} ⊆
       {z : ℂ | a * Real.exp T ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b * Real.exp (-T)} :=
-    fun z hz ↦ ⟨h₁T.trans hz.1, hz.2.trans h₂T⟩
+    setOf_le_norm_sub_le_subset h₁T h₂T
   have hab : b * Real.exp (-T) ≤ b := mul_le_of_le_one_right (hr₂.trans_le h₂).le
     (Real.exp_le_one_iff.mpr (neg_nonpos.mpr hT))
   have hmono := setIntegral_mono_set
@@ -365,7 +363,8 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le
     rw [norm_sub_rev z w] at h1
     exact ⟨by linarith, by linarith⟩
   have hsub : {w : ℂ | ρ / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * ρ / 2} ⊆
-      {w : ℂ | a ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ b} := annulus_subset (by linarith) (by linarith)
+      {w : ℂ | a ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ b} :=
+    setOf_le_norm_sub_le_subset (by linarith) (by linarith)
   have hu1 (w : ℂ) (hw : w ∈ {w : ℂ | a ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ b}) : ContDiffAt ℝ 1 u w :=
     (hu w hw).of_le (by norm_num)
   have hEball := setIntegral_mono_set
@@ -474,29 +473,6 @@ private theorem norm_fderiv_le_of_pi_mul_sq_mul_norm_fderiv_one_sq_le {z : ℂ} 
     _ = _ := by ring
 
 omit [FiniteDimensional ℝ V] in
-/-- If `‖du‖ ≤ L` along the circle of radius `ρ` about `z₀`, then two points of the circle at
-angles `θ₁`, `θ₂` have images at distance at most `L ρ |θ₂ - θ₁|`. -/
-private theorem norm_sub_le_of_norm_fderiv_le_circle {ρ L θ₁ θ₂ : ℝ} (hρ : 0 ≤ ρ)
-    (hu : ∀ θ, DifferentiableAt ℝ u (circleMap z₀ ρ θ))
-    (hL : ∀ θ, ‖fderiv ℝ u (circleMap z₀ ρ θ)‖ ≤ L) :
-    ‖u (circleMap z₀ ρ θ₂) - u (circleMap z₀ ρ θ₁)‖ ≤ L * ρ * |θ₂ - θ₁| := by
-  have hd (θ : ℝ) := (hu θ).hasFDerivAt.comp_hasDerivAt θ (hasDerivAt_circleMap z₀ ρ θ)
-  refine (convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f := fun θ ↦ u (circleMap z₀ ρ θ)) (fun θ _ ↦ (hd θ).hasDerivWithinAt)
-    (fun θ _ ↦ ?_) (mem_univ θ₁) (mem_univ θ₂)).trans_eq (by rw [Real.norm_eq_abs])
-  calc _ ≤ ‖fderiv ℝ u (circleMap z₀ ρ θ)‖ * ‖circleMap 0 ρ θ * I‖ :=
-      ContinuousLinearMap.le_opNorm _ _
-    _ ≤ L * ρ := by
-      rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_nonneg hρ]
-      gcongr
-      exact hL θ
-
-omit [FiniteDimensional ℝ V] in
-/-- The circle of radius `ρ ≥ 0` about `z₀` has distance `ρ` from `z₀`. -/
-private theorem norm_circleMap_sub {ρ θ : ℝ} (hρ : 0 ≤ ρ) : ‖circleMap z₀ ρ θ - z₀‖ = ρ := by
-  rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hρ]
-
-omit [FiniteDimensional ℝ V] in
 /-- If `‖du‖ ≤ Kc ((2a / ρ) ^ γ + (ρ (3 / (2b))) ^ γ) / ρ` on the middle `2a ≤ ρ`, `3ρ ≤ 2b` of an
 annulus, `ρ = |z - z₀|`, then `u` moves by at most `Kc ((2a / s) ^ γ + (t (3 / (2b))) ^ γ) / γ`
 along a ray from radius `s` to radius `t` in the middle. -/
@@ -512,7 +488,7 @@ private theorem norm_sub_le_of_forall_norm_fderiv_le_ray {Kc γ s t θ : ℝ} (h
     simpa [circleMap] using ((hasDerivAt_id ρ).ofReal_comp.mul_const (exp (θ * I))).const_add z₀
   have hin {ρ : ℝ} (hρ : ρ ∈ Icc s t) :
       2 * a ≤ ‖circleMap z₀ ρ θ - z₀‖ ∧ 3 * ‖circleMap z₀ ρ θ - z₀‖ ≤ 2 * b := by
-    rw [norm_circleMap_sub (hs0.le.trans hρ.1)]
+    rw [norm_circleMap_sub_center _ (hs0.le.trans hρ.1)]
     constructor <;> linarith [hρ.1, hρ.2]
   refine norm_sub_le_of_norm_deriv_le (φ := fun ρ ↦ u (circleMap z₀ ρ θ))
     (φ' := fun ρ ↦ fderiv ℝ u (circleMap z₀ ρ θ) (exp (θ * I))) hKc (by linarith)
@@ -522,7 +498,7 @@ private theorem norm_sub_le_of_forall_norm_fderiv_le_ray {Kc γ s t θ : ℝ} (h
       _ ≤ _ := by
         rw [norm_exp_ofReal_mul_I, mul_one]
         refine (hd _ (hin hρ).1 (hin hρ).2).trans_eq ?_
-        rw [norm_circleMap_sub (hs0.le.trans hρ.1)]
+        rw [norm_circleMap_sub_center _ (hs0.le.trans hρ.1)]
 
 omit [FiniteDimensional ℝ V] in
 /-- If `‖du‖ ≤ Kc ((2a / ρ) ^ γ + (ρ (3 / (2b))) ^ γ) / ρ` on the middle `2a ≤ ρ`, `3ρ ≤ 2b` of an
@@ -556,10 +532,10 @@ private theorem norm_sub_le_of_forall_norm_fderiv_le {Kc γ r₁ r₂ : ℝ} (hK
   have harc := norm_sub_le_of_norm_fderiv_le_circle (z₀ := z₀) (u := u) hρ₁.le
     (θ₁ := arg (w₁ - z₀)) (θ₂ := arg (w₂ - z₀))
     (L := Kc * ((2 * a / r₁) ^ γ + (r₂ * (3 / (2 * b))) ^ γ) / ‖w₁ - z₀‖)
-    (fun θ ↦ hdiff _ (by rw [norm_circleMap_sub hρ₁.le]; linarith [hw₁.1])
-      (by rw [norm_circleMap_sub hρ₁.le]; linarith [hle, hw₂.2]))
-    fun θ ↦ by
-      refine (hd _ ?_ ?_).trans ?_ <;> rw [norm_circleMap_sub hρ₁.le]
+    (fun θ _ ↦ hdiff _ (by rw [norm_circleMap_sub_center _ hρ₁.le]; linarith [hw₁.1])
+      (by rw [norm_circleMap_sub_center _ hρ₁.le]; linarith [hle, hw₂.2]))
+    fun θ _ ↦ by
+      refine (hd _ ?_ ?_).trans ?_ <;> rw [norm_circleMap_sub_center _ hρ₁.le]
       · linarith [hw₁.1]
       · linarith [hle, hw₂.2]
       · exact div_le_div_of_nonneg_right
@@ -615,7 +591,7 @@ theorem exists_pos_forall_norm_sub_le
   refine ⟨δ, hδ, fun u z₀ a b c M ha hc hu hCR htame hJM huK hE r₁ r₂ h₁ h₂ w₁ hw₁ w₂ hw₂ ↦ ?_⟩
   have hb : 0 ≤ b := by linarith [hw₁.1, hw₁.2]
   have hM : 0 ≤ M := (norm_nonneg _).trans
-    (hJM _ (circleMap_mem_annulus ha.le ⟨le_rfl, by linarith [hw₁.1, hw₁.2]⟩ 0))
+    (hJM _ (circleMap_mem_setOf_le_norm_sub_le ha.le ⟨le_rfl, by linarith [hw₁.1, hw₁.2]⟩ 0))
   have hmem {z : ℂ} (hz₁ : 2 * a ≤ ‖z - z₀‖) (hz₂ : 3 * ‖z - z₀‖ ≤ 2 * b) :
       z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := ⟨by linarith, by linarith⟩
   have h := norm_sub_le_of_forall_norm_fderiv_le (γ := c / (1 + M) ^ 2)

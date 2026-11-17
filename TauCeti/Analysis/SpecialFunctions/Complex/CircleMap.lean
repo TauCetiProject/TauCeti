@@ -10,10 +10,14 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 /-!
-# Circles in punctured discs, and powers of circle maps
+# Circles in annuli and punctured discs, and powers of circle maps
 
 ## Main results
 
+* `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
+  from `c`.
+* `TauCeti.circleMap_mem_setOf_le_norm_sub_le`: a circle of radius `r ∈ [a, b]`, `0 ≤ a`, about
+  `z₀` lies in the closed annulus `a ≤ |z - z₀| ≤ b`.
 * `TauCeti.circleMap_mem_ball_diff_singleton`: the circle of radius `r < R` about `z₀` lies in the
   punctured disc of radius `R`.
 * `TauCeti.contDiff_circleMap_zpow`: the integer powers `θ ↦ (R e^{iθ}) ^ k` are smooth.
@@ -24,6 +28,18 @@ public section
 namespace TauCeti
 
 open Complex Metric Set
+
+/-- The circle of radius `R ≥ 0` about `c` has distance `R` from `c`. -/
+theorem norm_circleMap_sub_center (c : ℂ) {R : ℝ} (hR : 0 ≤ R) (θ : ℝ) :
+    ‖circleMap c R θ - c‖ = R := by
+  rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg hR]
+
+/-- A circle of radius `r ∈ [a, b]` about `z₀`, with `0 ≤ a`, lies in the closed annulus
+`a ≤ |z - z₀| ≤ b`. -/
+theorem circleMap_mem_setOf_le_norm_sub_le {z₀ : ℂ} {a b r : ℝ} (ha : 0 ≤ a) (hr : r ∈ Icc a b)
+    (θ : ℝ) : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+  rw [mem_ofPred_eq, norm_circleMap_sub_center z₀ (ha.trans hr.1)]
+  exact hr
 
 /-- The circle of radius `0 < r < R` about `z₀` lies in the punctured disc of radius `R`. -/
 theorem circleMap_mem_ball_diff_singleton {z₀ : ℂ} {r R : ℝ} (hr : 0 < r) (hrR : r < R)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Topology.MetricSpace.Annulus
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -44,9 +45,8 @@ theorem ContinuousOn.smul_integral_comp_circleMap [CompleteSpace F]
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   have hcompact : IsCompact A := TauCeti.isCompact_setOf_le_norm_sub_le z₀ a b
   obtain ⟨C, hC⟩ := hcompact.exists_bound_of_continuousOn hf
-  have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) : circleMap z₀ r θ ∈ A := by
-    simpa only [A, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-      abs_of_nonneg (ha.trans hr.1)] using (mem_Icc.mp hr)
+  have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) : circleMap z₀ r θ ∈ A :=
+    TauCeti.circleMap_mem_setOf_le_norm_sub_le ha hr θ
   have hcont (r : ℝ) (hr : r ∈ Icc a b) :
       ContinuousOn (fun θ ↦ f (circleMap z₀ r θ)) (Icc (-π) π) :=
     hf.comp (by unfold circleMap; fun_prop : Continuous (circleMap z₀ r)).continuousOn
