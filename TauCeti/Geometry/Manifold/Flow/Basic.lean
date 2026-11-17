@@ -108,6 +108,12 @@ theorem ordConnected_setOf_mem_flowDomain (v : (x : M) → TangentSpace I x) (x 
   simpa only [mem_flowDomain, ofPred_mem_eq] using
     (ordConnected_maximalIntegralCurveInterval (v := v) (x := x))
 
+/-- The times between `0` and a time at which the flow through `x` is defined are times at which
+it is defined. -/
+theorem uIcc_subset_setOf_mem_flowDomain {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : uIcc 0 t ⊆ {s | (s, x) ∈ flowDomain v} :=
+  (ordConnected_setOf_mem_flowDomain v x).uIcc_subset (mem_flowDomain_zero_of_mem ht) ht
+
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E]
 
 omit [CompleteSpace E] in
@@ -132,14 +138,6 @@ theorem mem_flowDomain_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x
     ((0 : ℝ), x) ∈ flowDomain v := by
   rw [mem_flowDomain]
   exact zero_mem_maximalIntegralCurveInterval hv.contMDiffAt
-
-omit [T2Space M] in
-/-- The times between `0` and a time at which the flow through `x` is defined are times at which
-it is defined. -/
-theorem uIcc_subset_setOf_mem_flowDomain [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
-    (ht : (t, x) ∈ flowDomain v) : uIcc 0 t ⊆ {s | (s, x) ∈ flowDomain v} :=
-  (ordConnected_setOf_mem_flowDomain v x).uIcc_subset (mem_flowDomain_zero hv x) ht
 
 omit [CompleteSpace E] in
 /-- A global integral curve of a `C¹` field is the maximal flow through its initial value.

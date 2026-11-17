@@ -101,10 +101,10 @@ theorem hasDerivAt_flowIntegral (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : Tangen
   have hopen : IsOpen {s | (s, x) ∈ flowDomain v} :=
     isOpen_setOf_mem_flowDomain hv continuous_id continuous_const
   exact intervalIntegral.integral_hasDerivAt_right
-    ((hcont.mono (uIcc_subset_setOf_mem_flowDomain hv ht)).intervalIntegrable)
+    ((hcont.mono (uIcc_subset_setOf_mem_flowDomain ht)).intervalIntegrable)
     (hcont.stronglyMeasurableAtFilter hopen t ht) (hcont.continuousAt (hopen.mem_nhds ht))
 
-omit [CompleteSpace F] in
+omit [CompleteSpace E] [CompleteSpace F] in
 /-- **Additivity of the trajectory integral.** If time `s` is defined at `x` and time `t` is
 defined at `φₛ x`, then `∫₀^(s+t) f(φᵤ x) du = ∫₀ˢ f(φᵤ x) du + ∫₀ᵗ f(φᵤ(φₛ x)) du`. -/
 theorem flowIntegral_add (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
@@ -122,9 +122,9 @@ theorem flowIntegral_add (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle
     rw [add_zero] at h
     rw [← h, flowIntegral_def]
     refine intervalIntegral.integral_congr fun u hu ↦ ?_
-    rw [(flowOf_add hv hs (uIcc_subset_setOf_mem_flowDomain hv ht hu)).2]
+    rw [(flowOf_add hv hs (uIcc_subset_setOf_mem_flowDomain ht hu)).2]
   rw [flowIntegral_def, flowIntegral_def, ← intervalIntegral.integral_add_adjacent_intervals
-    ((hcont.mono (uIcc_subset_setOf_mem_flowDomain hv hs)).intervalIntegrable)
+    ((hcont.mono (uIcc_subset_setOf_mem_flowDomain hs)).intervalIntegrable)
     ((hcont.mono
       ((ordConnected_setOf_mem_flowDomain v x).uIcc_subset hs hst)).intervalIntegrable), hshift]
 
