@@ -135,6 +135,11 @@ theorem circles_cast (hn : n = n') (hm : m = m') (x : TLDiagram n m) :
 theorem cast_refl (hn : n = n) (hm : m = m) : cast hn hm = Equiv.refl (TLDiagram n m) :=
   Equiv.ext fun x => TLDiagram.ext (by simp) (by simp)
 
+/-- Transporting back along `n = n'` and `m = m'` is transporting along `n' = n` and `m' = m`. -/
+@[simp]
+theorem cast_symm (hn : n = n') (hm : m = m') : (cast hn hm).symm = cast hn.symm hm.symm :=
+  Equiv.ext fun x => TLDiagram.ext (by simp [cast]) (by simp [cast])
+
 /-- Transports compose. -/
 @[simp]
 theorem cast_cast {n'' m'' : ℕ} (hn : n = n') (hm : m = m') (hn' : n' = n'') (hm' : m' = m'')

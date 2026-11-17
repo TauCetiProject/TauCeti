@@ -221,6 +221,7 @@ theorem insertBlock_val_castAdd_natAdd (x : PlanarMatching (a + b)) (y : PlanarM
 
 /-- Inserting a block keeps the arcs of the outer matching at its first `a` points: the partner of
 such a point is shifted past the block when it is one of the last `b` points. -/
+@[simp]
 theorem coe_insertBlock_val_castAdd_castAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
     (i : Fin a) :
     ((x.insertBlock y).1.val (Fin.castAdd b (Fin.castAdd l i)) : ℕ) =
@@ -234,6 +235,7 @@ theorem coe_insertBlock_val_castAdd_castAdd (x : PlanarMatching (a + b)) (y : Pl
 
 /-- Inserting a block keeps the arcs of the outer matching at its last `b` points, shifted by `l`:
 the partner of such a point is shifted past the block when it is one of the last `b` points. -/
+@[simp]
 theorem coe_insertBlock_val_natAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
     (j : Fin b) :
     ((x.insertBlock y).1.val (Fin.natAdd (a + l) j) : ℕ) =
@@ -293,6 +295,18 @@ private theorem contractFn_insFn_add {c j : ℕ} (φ : ℕ → ℕ) (y : PlanarM
   · rw [circleInd, circleInd, e₁]
     simp only [Nat.add_assoc, Nat.add_left_cancel_iff]
 
+/-- Rejoining at a pair of consecutive points outside the inserted block is rejoining at the
+corresponding pair of the outer matching. -/
+private theorem rejoin_insFn_ins {c l j j' : ℕ} (φ ψ : ℕ → ℕ) (h₁ : ins c l j = j')
+    (h₂ : ins c l (j + 1) = j' + 1) (w : ℕ) :
+    rejoin (insFn c l φ ψ) j' (ins c l w) = ins c l (rejoin φ j w) := by
+  by_cases hw₁ : w = j
+  · rw [hw₁, h₁, rejoin_of_eq_left _ rfl, ← h₂, insFn_ins, rejoin_of_eq_left _ rfl]
+  by_cases hw₂ : w = j + 1
+  · rw [hw₂, h₂, rejoin_of_eq_right _ rfl, ← h₁, insFn_ins, rejoin_of_eq_right _ rfl]
+  rw [rejoin_of_ne _ hw₁ hw₂, rejoin_of_ne _ (fun h => hw₁ (ins_injective c l (h.trans h₁.symm)))
+    (fun h => hw₂ (ins_injective c l (h.trans h₂.symm)))]
+
 /-- **Contracting a pair before the block** is contracting it in the outer matching. -/
 private theorem contractFn_insFn_of_lt {K c j : ℕ} (x : PlanarMatching K) (ψ : ℕ → ℕ)
     (hj : j ≤ c) (hc : c + 2 ≤ K) :
@@ -300,8 +314,6 @@ private theorem contractFn_insFn_of_lt {K c j : ℕ} (x : PlanarMatching K) (ψ 
       circleInd j (insFn (c + 2) l (pv x) ψ) = circleInd j (pv x) := by
   have e₁ := insFn_ins (c + 2) l (pv x) ψ j
   rw [ins_of_lt (show j < c + 2 by omega)] at e₁
-  have e₂ := insFn_ins (c + 2) l (pv x) ψ (j + 1)
-  rw [ins_of_lt (show j + 1 < c + 2 by omega)] at e₂
   refine ⟨funext fun q => ?_, ?_⟩
   · rcases exists_eq_ins_or_add c l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
     · have hs : skipN j (ins c l u) = ins (c + 2) l (skipN j u) := by
@@ -309,18 +321,8 @@ private theorem contractFn_insFn_of_lt {K c j : ℕ} (x : PlanarMatching K) (ψ 
       have hw := rejoin_ne x (c := j) (q := u) (by omega)
       rw [contractFn_apply, hs, insFn_ins, insFn_ins, contractFn_apply]
       generalize pv x (skipN j u) = w at hw
-      have hr : rejoin (insFn (c + 2) l (pv x) ψ) j (ins (c + 2) l w) =
-          ins (c + 2) l (rejoin (pv x) j w) := by
-        by_cases hw₁ : w = j
-        · rw [hw₁, ins_of_lt (show j < c + 2 by omega), rejoin_of_eq_left _ rfl, e₂,
-            rejoin_of_eq_left _ rfl]
-        by_cases hw₂ : w = j + 1
-        · rw [hw₂, ins_of_lt (show j + 1 < c + 2 by omega), rejoin_of_eq_right _ rfl, e₁,
-            rejoin_of_eq_right _ rfl]
-        rw [rejoin_of_ne _ hw₁ hw₂, rejoin_of_ne _
-          (show ins (c + 2) l w ≠ j by simp only [ins]; split_ifs <;> omega)
-          (show ins (c + 2) l w ≠ j + 1 by simp only [ins]; split_ifs <;> omega)]
-      rw [hr]
+      rw [rejoin_insFn_ins _ _ (ins_of_lt (show j < c + 2 by omega))
+        (ins_of_lt (show j + 1 < c + 2 by omega))]
       generalize rejoin (pv x) j w = w' at hw
       simp only [unskipN, ins]
       split_ifs <;> omega
@@ -340,8 +342,6 @@ private theorem contractFn_insFn_of_le {K c j : ℕ} (x : PlanarMatching K) (y :
       circleInd (j + l) (insFn c l (pv x) (pv y)) = circleInd j (pv x) := by
   have e₁ := insFn_ins c l (pv x) (pv y) j
   rw [ins_of_le hj] at e₁
-  have e₂ := insFn_ins c l (pv x) (pv y) (j + 1)
-  rw [ins_of_le (show c ≤ j + 1 by omega), show j + 1 + l = j + l + 1 by omega] at e₂
   refine ⟨funext fun q => ?_, ?_⟩
   · rcases exists_eq_ins_or_add c l q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
     · have hs : skipN (j + l) (ins c l u) = ins c l (skipN j u) := by
@@ -349,18 +349,8 @@ private theorem contractFn_insFn_of_le {K c j : ℕ} (x : PlanarMatching K) (y :
       have hw := rejoin_ne x (c := j) (q := u) (by omega)
       rw [contractFn_apply, hs, insFn_ins, insFn_ins, contractFn_apply]
       generalize pv x (skipN j u) = w at hw
-      have hr : rejoin (insFn c l (pv x) (pv y)) (j + l) (ins c l w) =
-          ins c l (rejoin (pv x) j w) := by
-        by_cases hw₁ : w = j
-        · rw [hw₁, ins_of_le hj, rejoin_of_eq_left _ rfl, e₂, rejoin_of_eq_left _ rfl]
-        by_cases hw₂ : w = j + 1
-        · rw [hw₂, ins_of_le (show c ≤ j + 1 by omega),
-            rejoin_of_eq_right _ (show j + 1 + l = j + l + 1 by omega), e₁,
-            rejoin_of_eq_right _ rfl]
-        rw [rejoin_of_ne _ hw₁ hw₂, rejoin_of_ne _
-          (show ins c l w ≠ j + l by simp only [ins]; split_ifs <;> omega)
-          (show ins c l w ≠ j + l + 1 by simp only [ins]; split_ifs <;> omega)]
-      rw [hr]
+      rw [rejoin_insFn_ins _ _ (ins_of_le hj)
+        (by rw [ins_of_le (show c ≤ j + 1 by omega)]; omega)]
       generalize rejoin (pv x) j w = w' at hw
       simp only [unskipN, ins]
       split_ifs <;> omega
