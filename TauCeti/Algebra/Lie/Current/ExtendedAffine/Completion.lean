@@ -279,36 +279,26 @@ theorem topologicalClosure_adjoin_insert_completedDegreeElement_range_completedT
     simpa using (denseRange_toExtendedCompletedEnveloping Φ hΦ hΦs a).closure_range
   exact eq_top_iff.2 (htop ▸ Subalgebra.topologicalClosure_mono hle)
 
-private def quotientsStageEquiv {A : Type*} [Ring A] {J : ℕ → Submodule A A}
-    (hJ : Antitone J) (n : ℕ) : (ModuleTower.quotients J hJ).obj (Opposite.op n) ≃ₗ[A] A ⧸ J n :=
-  ModuleTower.quotientsLiftEquiv J hJ n (J n).mkQ (Submodule.ker_mkQ _) (Submodule.mkQ_surjective _)
-private theorem quotientsStageEquiv_transition {A : Type*} [Ring A] {J : ℕ → Submodule A A}
-    (hJ : Antitone J) (n : ℕ) (q : (ModuleTower.quotients J hJ).obj (Opposite.op (n + 1))) :
-    quotientsStageEquiv hJ n ((ModuleTower.quotients J hJ).transition n q) =
-      Submodule.factor (hJ (Nat.le_succ n)) (quotientsStageEquiv hJ (n + 1) q) := by
-  obtain ⟨x, rfl⟩ := ModuleTower.quotientsπ_surjective J hJ (n + 1) q
-  simp [quotientsStageEquiv, Submodule.mkQ_apply]
 private def stageDegreeCoeffMap (j n : ℕ) :
     (UK' ⧸ extendedOrderLeftIdeal Φ hΦ hΦs a n) →ₗ[R] (UK ⧸ orderLeftIdeal Φ hΦ hΦs a n) :=
   (Finsupp.lapply j).comp (extendedOrderQuotientFinsuppEquiv Φ hΦ hΦs a n).toLinearMap
 private def stageDegreeCoeff (j n : ℕ) (q : (eTower).obj (Opposite.op n)) :
     (oTower).obj (Opposite.op n) :=
-  (quotientsStageEquiv oAnti n).symm
-    (stageDegreeCoeffMap Φ hΦ hΦs a j n (quotientsStageEquiv eAnti n q))
+  (ModuleTower.quotientsObjEquiv _ oAnti n).symm
+    (stageDegreeCoeffMap Φ hΦ hΦs a j n (ModuleTower.quotientsObjEquiv _ eAnti n q))
 private theorem stageDegreeCoeff_quotientsπ (j n : ℕ) (x : UK') :
     stageDegreeCoeff Φ hΦ hΦs a j n (ModuleTower.quotientsπ _ eAnti n x) =
       ModuleTower.quotientsπ _ oAnti n ((eOre x).coeff j) := by
-  simp [stageDegreeCoeff, stageDegreeCoeffMap, quotientsStageEquiv, LinearEquiv.symm_apply_eq,
-    Submodule.mkQ_apply]
+  simp [stageDegreeCoeff, stageDegreeCoeffMap, Submodule.mkQ_apply]
 private theorem transition_stageDegreeCoeff (j n : ℕ) (q : (eTower).obj (Opposite.op (n + 1))) :
     (oTower).transition n (stageDegreeCoeff Φ hΦ hΦs a j (n + 1) q) =
       stageDegreeCoeff Φ hΦ hΦs a j n ((eTower).transition n q) := by
-  apply (quotientsStageEquiv oAnti n).injective
   simp only [stageDegreeCoeff, stageDegreeCoeffMap, LinearMap.comp_apply,
-    LinearEquiv.coe_toLinearMap, Finsupp.lapply_apply, quotientsStageEquiv_transition,
-    LinearEquiv.apply_symm_apply]
-  exact (extendedOrderQuotientFinsuppEquiv_factor_apply Φ hΦ hΦs a
-    (Nat.cast_le.2 (Nat.le_succ n)) (quotientsStageEquiv eAnti (n + 1) q) j).symm
+    LinearEquiv.coe_toLinearMap, Finsupp.lapply_apply,
+    ModuleTower.transition_quotientsObjEquiv_symm, ModuleTower.quotientsObjEquiv_transition]
+  exact congrArg (ModuleTower.quotientsObjEquiv _ oAnti n).symm
+    (extendedOrderQuotientFinsuppEquiv_factor_apply Φ hΦ hΦs a
+      (Nat.cast_le.2 (Nat.le_succ n)) (ModuleTower.quotientsObjEquiv _ eAnti (n + 1) q) j).symm
 private def completedDegreeCoeffAux (j : ℕ) (w : Û') : Û :=
   ⟨fun n ↦ stageDegreeCoeff Φ hΦ hΦs a j n ((eTower).limπ n w), (oTower).mem_lim.2 fun n ↦ by
     rw [transition_stageDegreeCoeff, ← LinearMap.comp_apply, ModuleTower.transition_comp_limπ]⟩
@@ -349,7 +339,8 @@ variable {Φ hΦ hΦs a} in
 /-- An element of `Û'` lies in `Î'_n` iff all of its completed `d̂`-coefficients lie in `Î_n`. -/
 theorem mem_completedExtendedOrderLeftIdeal_iff_forall_completedDegreeCoeff {n : ℕ} {w : Û'} :
     w ∈ Î' n ↔ ∀ j, coeff̂ j w ∈ completedOrderLeftIdeal Φ hΦ hΦs a n := by
-  rw [mem_completedExtendedOrderLeftIdeal, ← (quotientsStageEquiv eAnti n).map_eq_zero_iff,
+  rw [mem_completedExtendedOrderLeftIdeal,
+    ← (ModuleTower.quotientsObjEquiv _ eAnti n).map_eq_zero_iff,
     ← (extendedOrderQuotientFinsuppEquiv Φ hΦ hΦs a n).map_eq_zero_iff, Finsupp.ext_iff]
   simp only [mem_completedOrderLeftIdeal, limπ_completedDegreeCoeff, stageDegreeCoeff,
     stageDegreeCoeffMap, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Finsupp.lapply_apply,
