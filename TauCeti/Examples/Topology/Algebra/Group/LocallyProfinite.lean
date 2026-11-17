@@ -1,0 +1,153 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
+import Mathlib.NumberTheory.Padics.ProperSpace
+import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+import TauCeti.Topology.Algebra.Group.LocallyProfinite
+import TauCeti.Topology.Algebra.Group.Perm
+import TauCeti.Topology.Algebra.MulAction.Stabilizer
+
+/-!
+# Examples of locally profinite groups and set stabilizers
+
+These concrete examples exercise `OpenSubgroup.stabilizer`, `OpenAddSubgroup.stabilizer`, and van
+Dantzig's theorem across four contrasting topological groups:
+
+* In the noncompact locally profinite additive group `ℚ_[2]`, the subsets `ℤ_[2]` and `2 • ℤ_[2]`
+  are compact open additive subgroups equal to their own translation stabilizers, and the scaled
+  lattices `(2 : ℚ_[2]) ^ m • ℤ_[2]` (`m : ℤ`) form a compact open additive subgroup basis of
+  `𝓝 (0 : ℚ_[2])`.
+* In the discrete symmetric group `Equiv.Perm (Fin 3)` (`S₃`), the subset
+  `C = {1, swap 0 1, swap 0 2}` is compact and clopen and contains `1`, yet is not a subgroup
+  because `swap 0 1 * swap 0 2` is a `3`-cycle outside `C`; its left-translation stabilizer is the
+  trivial subgroup `⊥` (`{1}`).
+* The trivial group `Unit` has `{⊤}` as its singleton family of compact open subgroups, forming a
+  basis of `𝓝 (1 : Unit)`.
+* On the locally compact Hausdorff additive group `ℝ`, the neighbourhood `Ioo (-1 : ℝ) 1` of `0`
+  contains no open additive subgroup, witnessing that local compactness without total
+  disconnectedness does not yield van Dantzig's conclusion.
+-/
+
+open Set Filter Topology
+open scoped Pointwise
+
+namespace TauCeti
+
+/-- `ℚ_[2]` is a locally profinite (locally compact, totally disconnected, nonarchimedean) additive
+group that is not compact. -/
+example : LocallyCompactSpace ℚ_[2] ∧ TotallyDisconnectedSpace ℚ_[2] ∧
+    NonarchimedeanAddGroup ℚ_[2] ∧ ¬ CompactSpace ℚ_[2] :=
+  ⟨inferInstance, inferInstance, inferInstance, not_compactSpace_iff.mpr inferInstance⟩
+
+/-- In `ℚ_[2]`, the scaled lattices `(2 : ℚ_[2]) ^ m • ℤ_[2]` (`m : ℤ`) — in particular `ℤ_[2]`
+(`m = 0`) and `2 • ℤ_[2]` (`m = 1`) — are compact open additive subgroups equal to their own
+additive translation stabilizers, and form a filter basis of `𝓝 (0 : ℚ_[2])`. -/
+example :
+    ∃ (L : ℤ → OpenAddSubgroup ℚ_[2]) (hL : ∀ m, IsCompact (L m : Set ℚ_[2])),
+      (∀ m, (L m : Set ℚ_[2]) = (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2])) ∧
+      (L 0 : Set ℚ_[2]) = (PadicInt.subring 2 : Set ℚ_[2]) ∧
+      (L 1 : Set ℚ_[2]) = (2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2]) ∧
+      (∀ m, OpenAddSubgroup.stabilizer ℚ_[2] (hL m) (L m).isOpen = L m) ∧
+      (OpenAddSubgroup.stabilizer ℚ_[2] (hL 0) (L 0).isOpen : Set ℚ_[2]) =
+        (PadicInt.subring 2 : Set ℚ_[2]) ∧
+      (OpenAddSubgroup.stabilizer ℚ_[2] (hL 1) (L 1).isOpen : Set ℚ_[2]) =
+        (2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2]) ∧
+      (𝓝 (0 : ℚ_[2])).HasBasis (fun _ : ℤ ↦ True) fun m : ℤ ↦ (L m : Set ℚ_[2]) := by
+  have hnorm (k : ℤ) : ‖(2 : ℚ_[2]) ^ k‖ = (2 : ℝ) ^ (-k) := by
+    simpa using Padic.norm_p_zpow (p := 2) k
+  have hsubring : (PadicInt.subring 2 : Set ℚ_[2]) = Metric.closedBall (0 : ℚ_[2]) 1 := by
+    ext x
+    simp [PadicInt.mem_subring_iff]
+  have hball (m : ℤ) : (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) =
+      Metric.closedBall (0 : ℚ_[2]) ((2 : ℝ) ^ (-m)) := by
+    rw [hsubring, smul_unitClosedBall, hnorm]
+  let L_sub (m : ℤ) : AddSubgroup ℚ_[2] :=
+    (PadicInt.subring 2).toAddSubgroup.map (AddMonoidHom.mulLeft ((2 : ℚ_[2]) ^ m))
+  have hL_coe (m : ℤ) : (L_sub m : Set ℚ_[2]) =
+      (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) := by
+    ext x
+    simp [L_sub, mem_smul_set, smul_eq_mul]
+  have hL_open (m : ℤ) : IsOpen (L_sub m : Set ℚ_[2]) := by
+    rw [hL_coe, hball]
+    exact (IsUltrametricDist.isClopen_closedBall (0 : ℚ_[2])
+      (zpow_ne_zero (-m) two_ne_zero)).isOpen
+  let L (m : ℤ) : OpenAddSubgroup ℚ_[2] := ⟨L_sub m, hL_open m⟩
+  have hL_set (m : ℤ) : (L m : Set ℚ_[2]) =
+      (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) := hL_coe m
+  have hL_compact (m : ℤ) : IsCompact (L m : Set ℚ_[2]) := by
+    rw [hL_set, hball]
+    exact isCompact_closedBall (0 : ℚ_[2]) ((2 : ℝ) ^ (-m))
+  have hL0 : (L 0 : Set ℚ_[2]) = (PadicInt.subring 2 : Set ℚ_[2]) := by simp [hL_set]
+  have hL1 : (L 1 : Set ℚ_[2]) = (2 : ℚ_[2]) • (PadicInt.subring 2 : Set ℚ_[2]) := by simp [hL_set]
+  refine ⟨L, hL_compact, hL_set, hL0, hL1,
+    fun m ↦ OpenAddSubgroup.stabilizer_coe (L m) (hL_compact m), ?_, ?_, ?_⟩
+  · rw [OpenAddSubgroup.stabilizer_coe, hL0]
+  · rw [OpenAddSubgroup.stabilizer_coe, hL1]
+  · simp_rw [hL_set, hball]
+    refine Metric.nhds_basis_closedBall.to_hasBasis'
+      (fun ε hε ↦ ?_) (fun m _ ↦ Metric.closedBall_mem_nhds 0 (zpow_pos two_pos (-m)))
+    obtain ⟨k, hk⟩ := PadicInt.exists_pow_neg_lt 2 hε
+    exact ⟨(k : ℤ), trivial, Metric.closedBall_subset_closedBall hk.le⟩
+
+/-- In discrete `S₃`, `C = {1, (0 1), (0 2)}` is compact and clopen, contains `1`, and is not a
+subgroup because `(0 1)(0 2)` lies outside `C`; its left-translation stabilizer is `{1}` (`⊥`). -/
+example :
+    let C : Set (Equiv.Perm (Fin 3)) := {1, Equiv.swap 0 1, Equiv.swap 0 2}
+    IsCompact C ∧ IsClopen C ∧
+      Equiv.swap (0 : Fin 3) 1 * Equiv.swap 0 2 ∉ C ∧
+      (¬ ∃ H : Subgroup (Equiv.Perm (Fin 3)), (H : Set (Equiv.Perm (Fin 3))) = C) ∧
+      (OpenSubgroup.stabilizer (Equiv.Perm (Fin 3))
+        C.toFinite.isCompact (isOpen_discrete C) :
+          Subgroup (Equiv.Perm (Fin 3))) = ⊥ := by
+  intro C
+  have hnot : Equiv.swap (0 : Fin 3) 1 * Equiv.swap 0 2 ∉ C := by
+    simp only [C, mem_insert_iff, mem_singleton_iff]
+    decide
+  refine ⟨C.toFinite.isCompact, isClopen_discrete C, hnot, ?_, ?_⟩
+  · rintro ⟨H, hH⟩
+    have h01 : Equiv.swap (0 : Fin 3) 1 ∈ H := by simp [← SetLike.mem_coe, hH, C]
+    have h02 : Equiv.swap (0 : Fin 3) 2 ∈ H := by simp [← SetLike.mem_coe, hH, C]
+    exact hnot (hH ▸ H.mul_mem h01 h02)
+  · rw [OpenSubgroup.toSubgroup_stabilizer, eq_bot_iff]
+    intro g hg
+    have hgC : g ∈ C := MulAction.stabilizer_subset_of_one_mem (by simp [C]) hg
+    have hg_mem := MulAction.mem_stabilizer_set.mp hg
+    rcases hgC with rfl | rfl | rfl
+    · exact Subgroup.one_mem _
+    · exact False.elim (hnot ((hg_mem (Equiv.swap 0 2)).mpr (by simp [C])))
+    · have hnot' : Equiv.swap (0 : Fin 3) 2 * Equiv.swap 0 1 ∉ C := by
+        simp only [C, mem_insert_iff, mem_singleton_iff]
+        decide
+      exact False.elim (hnot' ((hg_mem (Equiv.swap 0 1)).mpr (by simp [C])))
+
+/-- The trivial group `Unit` has `{⊤}` as its singleton family of compact open subgroups, and this
+singleton forms a filter basis of `𝓝 (1 : Unit)`. -/
+example : {H : OpenSubgroup Unit | IsCompact (H : Set Unit)} = {⊤} ∧
+    (𝓝 (1 : Unit)).HasBasis (fun H : OpenSubgroup Unit ↦ IsCompact (H : Set Unit))
+      fun H ↦ (H : Set Unit) := by
+  refine ⟨?_, NonarchimedeanGroup.nhds_one_hasBasis_isCompact_openSubgroup Unit⟩
+  ext H
+  refine ⟨fun _ ↦ mem_singleton_iff.mpr ?_, ?_⟩
+  · ext x
+    exact ⟨fun _ ↦ trivial, fun _ ↦ Subsingleton.elim (1 : Unit) x ▸ H.one_mem⟩
+  · rintro rfl
+    exact isCompact_univ
+
+/-- On the locally compact Hausdorff group `ℝ`, the identity neighbourhood `Ioo (-1 : ℝ) 1`
+contains no open additive subgroup, so local compactness alone does not yield van Dantzig's
+conclusion. -/
+example : LocallyCompactSpace ℝ ∧ T2Space ℝ ∧ Ioo (-1 : ℝ) 1 ∈ 𝓝 (0 : ℝ) ∧
+    ¬ ∃ H : OpenAddSubgroup ℝ, (H : Set ℝ) ⊆ Ioo (-1 : ℝ) 1 := by
+  refine ⟨inferInstance, inferInstance, Ioo_mem_nhds (by norm_num) (by norm_num), ?_⟩
+  rintro ⟨H, hH⟩
+  have huniv : (H : Set ℝ) = univ := IsClopen.eq_univ H.isClopen ⟨0, H.zero_mem⟩
+  have h1 : (1 : ℝ) ∈ Ioo (-1 : ℝ) 1 := hH (huniv ▸ mem_univ 1)
+  exact lt_irrefl (1 : ℝ) h1.2
+
+end TauCeti
