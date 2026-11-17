@@ -27,11 +27,6 @@ which commute with tensor products of modules. In particular the stalk of `F ⊗
 product of the stalks (`CategoryTheory.Functor.Monoidal.μIso`), and the stalk of the unit is `Λ`
 (`CategoryTheory.Functor.Monoidal.εIso`).
 
-Change of coefficients also commutes with stalks: for restriction of scalars this is Mathlib's
-`CategoryTheory.GrothendieckTopology.Point.sheafFiberCompIso`, and for extension of scalars,
-the sheafification of the sectionwise extension of scalars, it is
-`CategoryTheory.GrothendieckTopology.Point.composeAndSheafifyCompSheafFiberIso`.
-
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Scheme.monoidalCategorySheafModuleCat`,
@@ -67,8 +62,7 @@ instance isMonoidal_W_smallEtaleTopology :
     (ModuleCat.adj.{u} Λ).rightAdjoint_preservesLimits
   have : (smallEtaleTopology S).HasSheafCompose (forget (ModuleCat.{u} Λ)) :=
     hasSheafCompose_of_preservesMulticospan _ _
-  instIsMonoidalFunctorOppositeWOfHasSheafComposeForgetOfHasEnoughPoints.{u}
-    (C := S.Etale) (J := smallEtaleTopology S) (ModuleCat.{u} Λ)
+  (isConservativeFamilyOfPoints_pointSmallEtale' S).isMonoidal_W (ModuleCat.{u} Λ)
 
 /-- The monoidal structure on étale sheaves of `Λ`-modules: the tensor product is the
 sheafification of the sectionwise tensor product. -/
