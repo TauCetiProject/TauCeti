@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
+import Mathlib.Logic.Equiv.Fintype
 
 /-!
 # Stellar equivalence of simplicial complexes
@@ -56,6 +57,12 @@ common enlarged vertex type and allows arbitrary injective relabelings.
 * `PreAbstractSimplicialComplex.StellarEquivalentUpToRelabeling.dimension_eq`,
   `finite_faces_iff`, and `ne_bot_iff`: intrinsic stellar equivalence preserves dimension,
   face finiteness, and nonvoidness.
+* `PreAbstractSimplicialComplex.StellarEquivalentUpToRelabeling.exists_common_relabeling` and
+  `of_map`: on finite complexes, intrinsic stellar equivalence collapses to a single common
+  relabeling in `ι ⊕ ℕ` and is reflected along injective vertex maps.
+* `PreAbstractSimplicialComplex.stellarEquivalentUpToRelabeling_simplex_of_card_eq` and
+  `stellarEquivalentUpToRelabeling_simplexBoundary_of_card_eq`: standard simplices and simplex
+  boundaries of equal vertex cardinality are intrinsically stellar equivalent.
 -/
 
 public section
@@ -130,17 +137,20 @@ theorem IsStellarMove.map {κ : Type*} [DecidableEq κ] (h : IsStellarMove K L)
   obtain ⟨σ, v, hσ, hv, rfl⟩ := h
   refine ⟨σ.image f, f v, mem_map_iff.mpr ⟨σ, hσ, rfl⟩, ?_,
     map_stellarSubdivision f hf⟩
-  intro hfv
-  rw [mem_map_iff] at hfv
-  obtain ⟨τ, hτ, hτf⟩ := hfv
-  have hvτ : v ∈ τ := hf.mem_finset_image.mp
-    (hτf ▸ Finset.mem_singleton_self (f v))
-  exact hv (singleton_mem_of_mem hτ hvτ)
+  rw [← Finset.image_singleton, image_mem_map_iff_of_injective f hf]
+  exact hv
 
 /-- A complex is stellar equivalent to any of its starrings at a fresh vertex. -/
 theorem stellarEquivalent_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
     StellarEquivalent K (stellarSubdivision K σ v) :=
   (isStellarMove_stellarSubdivision hσ hv).stellarEquivalent
+
+/-- Starring any nonempty finset at a fresh vertex produces a stellar-equivalent complex. -/
+theorem stellarEquivalent_stellarSubdivision_of_nonempty (hσne : σ.Nonempty)
+    (hv : ({v} : Finset ι) ∉ K) : StellarEquivalent K (stellarSubdivision K σ v) := by
+  by_cases hσ : σ ∈ K
+  · exact stellarEquivalent_stellarSubdivision hσ hv
+  · rw [stellarSubdivision_eq_self_of_notMem hv hσne hσ]
 
 /-- Stellar equivalence is an equivalence relation. -/
 theorem equivalence_stellarEquivalent : Equivalence (StellarEquivalent (ι := ι)) :=
@@ -148,18 +158,28 @@ theorem equivalence_stellarEquivalent : Equivalence (StellarEquivalent (ι := ι
 
 namespace StellarEquivalent
 
+/-- Dependent eliminator for `StellarEquivalent`, supplying the intermediate equivalence witnesses
+in the symmetric and transitive steps. -/
+@[elab_as_elim]
+protected theorem induction {motive : ∀ A B, StellarEquivalent A B → Prop}
+    {K L : PreAbstractSimplicialComplex ι} (h : StellarEquivalent K L)
+    (rel : ∀ A B (hm : IsStellarMove A B), motive A B hm.stellarEquivalent)
+    (refl : ∀ A, motive A A (.refl A))
+    (symm : ∀ A B (hAB : StellarEquivalent A B), motive A B hAB → motive B A hAB.symm)
+    (trans : ∀ A B C (hAB : StellarEquivalent A B) (hBC : StellarEquivalent B C),
+      motive A B hAB → motive B C hBC → motive A C (hAB.trans hBC)) :
+    motive K L h :=
+  Relation.EqvGen.rec rel refl symm trans h
+
 /-- To prove a property of stellar equivalent complexes, it suffices to prove it for a stellar
 move and show that it is reflexive, symmetric, and transitive. -/
 theorem induction_on (h : StellarEquivalent K L)
     {P : PreAbstractSimplicialComplex ι → PreAbstractSimplicialComplex ι → Prop}
     (rel : ∀ A B, IsStellarMove A B → P A B) (refl : ∀ A, P A A)
     (symm : ∀ A B, P A B → P B A)
-    (trans : ∀ A B C, P A B → P B C → P A C) : P K L := by
-  induction h with
-  | rel A B h => exact rel A B h
-  | refl => exact refl _
-  | symm A B _ ih => exact symm A B ih
-  | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
+    (trans : ∀ A B C, P A B → P B C → P A C) : P K L :=
+  h.induction (motive := fun A B _ => P A B) rel refl (fun A B _ => symm A B)
+    (fun A B C _ _ => trans A B C)
 
 /-- An injective relabeling carries a stellar equivalence to one between the image complexes. -/
 theorem map {κ : Type*} [DecidableEq κ] (h : StellarEquivalent K L)
@@ -233,20 +253,31 @@ theorem of_common_relabeling (f g : ι ↪ (ι ⊕ ℕ))
     (h : StellarEquivalent (K.map f) (L.map g)) : StellarEquivalentUpToRelabeling K L :=
   Relation.EqvGen.rel _ _ ⟨f, g, h⟩
 
+/-- Dependent eliminator for `StellarEquivalentUpToRelabeling`, supplying the intermediate
+equivalence witnesses in the symmetric and transitive steps. -/
+@[elab_as_elim]
+protected theorem induction {motive : ∀ A B, StellarEquivalentUpToRelabeling A B → Prop}
+    {K L : PreAbstractSimplicialComplex ι} (h : StellarEquivalentUpToRelabeling K L)
+    (rel : ∀ A B (f g : ι ↪ (ι ⊕ ℕ)) (he : StellarEquivalent (A.map f) (B.map g)),
+      motive A B (of_common_relabeling f g he))
+    (refl : ∀ A, motive A A (.refl A))
+    (symm : ∀ A B (hAB : StellarEquivalentUpToRelabeling A B),
+      motive A B hAB → motive B A hAB.symm)
+    (trans : ∀ A B C (hAB : StellarEquivalentUpToRelabeling A B)
+        (hBC : StellarEquivalentUpToRelabeling B C),
+      motive A B hAB → motive B C hBC → motive A C (hAB.trans hBC)) :
+    motive K L h :=
+  Relation.EqvGen.rec (fun A B ⟨f, g, he⟩ => rel A B f g he) refl symm trans h
+
 /-- To prove a property of intrinsically stellar equivalent complexes, it suffices to prove it
 for a common-relabeling generator and show that it is reflexive, symmetric, and transitive. -/
 theorem induction_on (h : StellarEquivalentUpToRelabeling K L)
     {P : PreAbstractSimplicialComplex ι → PreAbstractSimplicialComplex ι → Prop}
     (rel : ∀ A B (f g : ι ↪ (ι ⊕ ℕ)), StellarEquivalent (A.map f) (B.map g) → P A B)
     (refl : ∀ A, P A A) (symm : ∀ A B, P A B → P B A)
-    (trans : ∀ A B C, P A B → P B C → P A C) : P K L := by
-  induction h with
-  | rel A B h =>
-      obtain ⟨f, g, he⟩ := h
-      exact rel A B f g he
-  | refl => exact refl _
-  | symm A B _ ih => exact symm A B ih
-  | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
+    (trans : ∀ A B C, P A B → P B C → P A C) : P K L :=
+  h.induction (motive := fun A B _ => P A B) rel refl (fun A B _ => symm A B)
+    (fun A B C _ _ => trans A B C)
 
 /-- An injective relabeling transports intrinsic stellar equivalence. -/
 theorem map {κ : Type*} [DecidableEq κ]
@@ -340,6 +371,216 @@ theorem ne_bot_iff (h : StellarEquivalentUpToRelabeling K L) : K ≠ ⊥ ↔ L �
 theorem ne_bot (h : StellarEquivalentUpToRelabeling K L) (hL : L ≠ ⊥) : K ≠ ⊥ :=
   h.ne_bot_iff.mpr hL
 
+/-! ### Collapsing finite chains and reflecting injective relabelings -/
+
+private def embedFinsetInr {α : Type*} [DecidableEq α] (S : Finset α)
+    (e : (S : Set α) ↪ ℕ) : α ↪ α ⊕ ℕ :=
+  ((Equiv.sumCompl (· ∈ (S : Set α))).symm.toEmbedding.trans
+    (e.sumMap (.subtype _))).trans (Equiv.sumComm ℕ α).toEmbedding
+
+private theorem stellarEquivalent_restrict_of_subset {α : Type*}
+    {X Y : PreAbstractSimplicialComplex α} {s t : Set α} [DecidableEq s] [DecidableEq t]
+    (he : StellarEquivalent (X.restrict s) (Y.restrict s))
+    (hXs : ∀ τ ∈ X, (τ : Set α) ⊆ s) (hYs : ∀ τ ∈ Y, (τ : Set α) ⊆ s) (hst : s ⊆ t) :
+    StellarEquivalent (X.restrict t) (Y.restrict t) := by
+  rw [← map_inclusion_restrict hXs hst, ← map_inclusion_restrict hYs hst]
+  exact he.map (Set.inclusion hst) (Set.inclusion_injective hst)
+
+private theorem exists_restrict_stellarEquivalent {α : Type*} [DecidableEq α]
+    {A B : PreAbstractSimplicialComplex α} (h : StellarEquivalent A B) (hA : A.faces.Finite) :
+    ∃ S : Finset α, (∀ τ ∈ A, (τ : Set α) ⊆ S) ∧ (∀ τ ∈ B, (τ : Set α) ⊆ S) ∧
+      StellarEquivalent (A.restrict (S : Set α)) (B.restrict (S : Set α)) := by
+  induction h with
+  | rel X Y hm =>
+      obtain ⟨σ, v, hσ, hv, rfl⟩ := hm
+      let S : Finset α := insert v (faceUnion hA)
+      have hXs : ∀ τ ∈ X, (τ : Set α) ⊆ S := fun _ hτ =>
+        Finset.coe_subset.mpr ((subset_faceUnion hA hτ).trans (Finset.subset_insert _ _))
+      have hvS : v ∈ (S : Set α) := Finset.mem_coe.mpr (Finset.mem_insert_self _ _)
+      have hσ' : (σ.subtype (· ∈ (S : Set α))).image Subtype.val = σ := by
+        simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
+          Finset.subtype_map_of_mem (hXs σ hσ)
+      refine ⟨S, hXs, fun _ hτ => subset_of_mem_stellarSubdivision hXs hvS hτ, ?_⟩
+      rw [restrict_stellarSubdivision (hXs σ hσ) hvS]
+      exact stellarEquivalent_stellarSubdivision (by rwa [mem_restrict_iff, hσ'])
+        (by rwa [mem_restrict_iff, Finset.image_singleton])
+  | refl X =>
+      have hX : ∀ τ ∈ X, (τ : Set α) ⊆ faceUnion hA :=
+        fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hA hτ)
+      exact ⟨faceUnion hA, hX, hX, .refl _⟩
+  | symm _ _ hXY ih =>
+      obtain ⟨S, hXS, hYS, he⟩ := ih ((StellarEquivalent.finite_faces_iff hXY).mpr hA)
+      exact ⟨S, hYS, hXS, he.symm⟩
+  | trans _ _ _ hXY _ ih₁ ih₂ =>
+      obtain ⟨S₁, hXS₁, hYS₁, he₁⟩ := ih₁ hA
+      obtain ⟨S₂, hYS₂, hZS₂, he₂⟩ := ih₂ ((StellarEquivalent.finite_faces_iff hXY).mp hA)
+      have hL : (S₁ : Set α) ⊆ (S₁ ∪ S₂ : Finset α) :=
+        Finset.coe_subset.mpr Finset.subset_union_left
+      have hR : (S₂ : Set α) ⊆ (S₁ ∪ S₂ : Finset α) :=
+        Finset.coe_subset.mpr Finset.subset_union_right
+      exact ⟨S₁ ∪ S₂, fun τ hτ => (hXS₁ τ hτ).trans hL, fun τ hτ => (hZS₂ τ hτ).trans hR,
+        (stellarEquivalent_restrict_of_subset he₁ hXS₁ hYS₁ hL).trans
+          (stellarEquivalent_restrict_of_subset he₂ hYS₂ hZS₂ hR)⟩
+
+private theorem exists_map_eq_of_finite {δ : Type*} [Finite δ]
+    (C : PreAbstractSimplicialComplex δ) (j₁ j₂ : δ ↪ ℕ) :
+    ∃ p₁ p₂ : ℕ ↪ ℕ, (C.map j₁).map p₁ = (C.map j₂).map p₂ := by
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair j₁ j₂ j₁.injective j₂.injective
+  refine ⟨σ.toEmbedding, .refl ℕ, ?_⟩
+  rw [map_map, map_map]
+  exact congrArg C.map (funext hσ)
+
+private def SingleNatEquiv (N₁ N₂ : PreAbstractSimplicialComplex ℕ) : Prop :=
+  ∃ f g : ℕ ↪ ℕ, StellarEquivalent (N₁.map f) (N₂.map g)
+
+private theorem SingleNatEquiv.symm {N₁ N₂ : PreAbstractSimplicialComplex ℕ}
+    (h : SingleNatEquiv N₁ N₂) : SingleNatEquiv N₂ N₁ :=
+  let ⟨f, g, he⟩ := h; ⟨g, f, he.symm⟩
+
+private theorem SingleNatEquiv.trans {N₁ N₂ N₃ : PreAbstractSimplicialComplex ℕ}
+    (hN₂ : N₂.faces.Finite) (h₁ : SingleNatEquiv N₁ N₂) (h₂ : SingleNatEquiv N₂ N₃) :
+    SingleNatEquiv N₁ N₃ := by
+  obtain ⟨f₁, g₁, he₁⟩ := h₁
+  obtain ⟨f₂, g₂, he₂⟩ := h₂
+  let sub : (faceUnion hN₂ : Set ℕ) ↪ ℕ := Function.Embedding.subtype _
+  have hsub (k : ℕ ↪ ℕ) : (N₂.restrict (faceUnion hN₂ : Set ℕ)).map (sub.trans k) = N₂.map k := by
+    rw [Function.Embedding.coe_trans, ← map_map, Function.Embedding.coe_subtype,
+      map_val_restrict fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hN₂ hτ)]
+  obtain ⟨p₁, p₂, hp⟩ := exists_map_eq_of_finite (N₂.restrict _) (sub.trans g₁) (sub.trans f₂)
+  rw [hsub g₁, hsub f₂] at hp
+  refine ⟨f₁.trans p₁, g₂.trans p₂, ?_⟩
+  rw [Function.Embedding.coe_trans, Function.Embedding.coe_trans, ← map_map, ← map_map]
+  exact (he₁.map p₁ p₁.injective).trans (hp ▸ he₂.map p₂ p₂.injective)
+
+private noncomputable def natEmbed {α : Type*} (S : Finset α) : (S : Set α) ↪ ℕ :=
+  (Fintype.equivFin (S : Set α)).toEmbedding.trans ⟨Fin.val, Fin.val_injective⟩
+
+private noncomputable def toNatModel {α : Type*} [DecidableEq α]
+    {A : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) :
+    PreAbstractSimplicialComplex ℕ :=
+  (A.restrict (faceUnion hA : Set α)).map (natEmbed (faceUnion hA))
+
+private theorem finite_faces_map_natEmbed {α : Type*}
+    (C : PreAbstractSimplicialComplex α) (S : Finset α) :
+    ((C.restrict (S : Set α)).map (natEmbed S)).faces.Finite :=
+  (finite_faces_map_iff_of_injective _ (natEmbed S).injective).mpr (Set.toFinite _)
+
+private theorem singleNatEquiv_toNatModel_of_map {α β : Type*} [DecidableEq α] [DecidableEq β]
+    {A : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) {f : α → β}
+    (hf : Function.Injective f) {S : Finset β} (hS : ∀ τ ∈ A.map f, (τ : Set β) ⊆ S)
+    (j : (S : Set β) ↪ ℕ) :
+    SingleNatEquiv (toNatModel hA) (((A.map f).restrict (S : Set β)).map j) := by
+  let fU : (faceUnion hA : Set α) ↪ (S : Set β) :=
+    ⟨fun x => ⟨f x.1, hS {f x.1} (singleton_mem_map_iff.mpr ⟨x.1, (mem_faceUnion hA).mp x.2, rfl⟩)
+      (by simp)⟩, fun _ _ hxy => Subtype.ext (hf (congrArg Subtype.val hxy))⟩
+  have hfU : Subtype.val ∘ ⇑fU = f ∘ Subtype.val := by
+    ext x
+    simp [fU]
+  have hmap : (A.restrict (faceUnion hA : Set α)).map fU = (A.map f).restrict (S : Set β) := by
+    rw [← map_inj_of_injective Subtype.val Subtype.val_injective, map_map, map_val_restrict hS,
+      hfU, ← map_map, map_val_restrict fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hA hτ)]
+  obtain ⟨p₁, p₂, hp⟩ := exists_map_eq_of_finite (A.restrict (faceUnion hA : Set α))
+    (natEmbed (faceUnion hA)) (fU.trans j)
+  exact ⟨p₁, p₂, by rw [toNatModel, hp, Function.Embedding.coe_trans, ← map_map, hmap]⟩
+
+private theorem singleNatEquiv_toNatModel {α : Type*} [DecidableEq α]
+    {A B : PreAbstractSimplicialComplex α} (h : StellarEquivalentUpToRelabeling A B)
+    (hA : A.faces.Finite) :
+    SingleNatEquiv (toNatModel hA) (toNatModel (h.finite_faces_iff.mp hA)) := by
+  revert hA
+  induction h with
+  | rel X Y hrel =>
+      intro hX
+      obtain ⟨f, g, he⟩ := hrel
+      have hXf := (finite_faces_map_iff_of_injective f f.injective).mpr hX
+      have hY := (finite_faces_map_iff_of_injective g g.injective).mp (he.finite_faces_iff.mp hXf)
+      obtain ⟨S, hXS, hYS, heS⟩ := exists_restrict_stellarEquivalent he hXf
+      have hmid : SingleNatEquiv (((X.map f).restrict (S : Set _)).map (natEmbed S))
+          (((Y.map g).restrict (S : Set _)).map (natEmbed S)) :=
+        ⟨.refl ℕ, .refl ℕ, by
+          simpa only [Function.Embedding.coe_refl, map_id] using
+            heS.map (natEmbed S) (natEmbed S).injective⟩
+      exact (singleNatEquiv_toNatModel_of_map hX f.injective hXS (natEmbed S)).trans
+        (finite_faces_map_natEmbed _ S)
+        (hmid.trans (finite_faces_map_natEmbed _ S)
+          (singleNatEquiv_toNatModel_of_map hY g.injective hYS (natEmbed S)).symm)
+  | refl _ => exact fun _ => ⟨.refl ℕ, .refl ℕ, .refl _⟩
+  | symm _ _ hXY ih =>
+      exact fun hY => (ih ((StellarEquivalentUpToRelabeling.finite_faces_iff hXY).mpr hY)).symm
+  | trans _ _ _ hXY _ ih₁ ih₂ =>
+      intro hX
+      have hY := (StellarEquivalentUpToRelabeling.finite_faces_iff hXY).mp hX
+      exact (ih₁ hX).trans (finite_faces_map_natEmbed _ _) (ih₂ hY)
+
+private theorem exists_common_relabeling_of_singleNatEquiv {α : Type*} [DecidableEq α]
+    {A B : PreAbstractSimplicialComplex α} (hA : A.faces.Finite) (hB : B.faces.Finite)
+    (h : SingleNatEquiv (toNatModel hA) (toNatModel hB)) :
+    ∃ f g : α ↪ α ⊕ ℕ, StellarEquivalent (A.map f) (B.map g) := by
+  have hmap {C : PreAbstractSimplicialComplex α} (hC : C.faces.Finite) (p : ℕ ↪ ℕ) :
+      C.map (embedFinsetInr (faceUnion hC) ((natEmbed (faceUnion hC)).trans p)) =
+        ((toNatModel hC).map p).map Sum.inr := by
+    have hval := map_val_restrict (K := C) (s := (faceUnion hC : Set α))
+      fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hC hτ)
+    refine (congrArg (·.map (embedFinsetInr (faceUnion hC)
+      ((natEmbed (faceUnion hC)).trans p))) hval.symm).trans ?_
+    rw [toNatModel, map_map, map_map, map_map]
+    exact congrArg (C.restrict _).map (funext fun x => by simp [embedFinsetInr])
+  obtain ⟨p₁, p₂, he⟩ := h
+  refine ⟨embedFinsetInr (faceUnion hA) ((natEmbed (faceUnion hA)).trans p₁),
+    embedFinsetInr (faceUnion hB) ((natEmbed (faceUnion hB)).trans p₂), ?_⟩
+  rw [hmap hA p₁, hmap hB p₂]
+  exact he.map Sum.inr Sum.inr_injective
+
+/-- For finite complexes, intrinsic stellar equivalence collapses to a single common relabeling in
+the enlarged vertex type `ι ⊕ ℕ`. -/
+theorem exists_common_relabeling (h : StellarEquivalentUpToRelabeling K L)
+    (hfin : K.faces.Finite) :
+    ∃ f g : ι ↪ ι ⊕ ℕ, StellarEquivalent (K.map f) (L.map g) :=
+  exists_common_relabeling_of_singleNatEquiv hfin (h.finite_faces_iff.mp hfin)
+    (singleNatEquiv_toNatModel h hfin)
+
+/-- An injective vertex map reflects intrinsic stellar equivalence on finite complexes. -/
+theorem of_map {κ : Type*} [DecidableEq κ] (hfin : K.faces.Finite) (f : ι → κ)
+    (hf : Function.Injective f) (h : StellarEquivalentUpToRelabeling (K.map f) (L.map f)) :
+    StellarEquivalentUpToRelabeling K L := by
+  have hKf := (finite_faces_map_iff_of_injective f hf).mpr hfin
+  have hLf := h.finite_faces_iff.mp hKf
+  have hL := (finite_faces_map_iff_of_injective f hf).mp hLf
+  have h₁ := singleNatEquiv_toNatModel_of_map hfin hf
+    (fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hKf hτ)) (natEmbed (faceUnion hKf))
+  have h₃ := (singleNatEquiv_toNatModel_of_map hL hf
+    (fun _ hτ => Finset.coe_subset.mpr (subset_faceUnion hLf hτ)) (natEmbed (faceUnion hLf))).symm
+  obtain ⟨a, b, he⟩ := exists_common_relabeling_of_singleNatEquiv hfin hL
+    ((h₁.trans (finite_faces_map_natEmbed _ _) (singleNatEquiv_toNatModel h hKf)).trans
+      (finite_faces_map_natEmbed _ _) h₃)
+  exact of_common_relabeling a b he
+
+/-- An injective vertex map preserves and reflects intrinsic stellar equivalence on finite
+complexes. -/
+theorem map_iff_of_injective {κ : Type*} [DecidableEq κ] (hfin : K.faces.Finite) (f : ι → κ)
+    (hf : Function.Injective f) :
+    StellarEquivalentUpToRelabeling (K.map f) (L.map f) ↔ StellarEquivalentUpToRelabeling K L :=
+  ⟨of_map hfin f hf, fun h => h.map f hf⟩
+
 end StellarEquivalentUpToRelabeling
+
+/-- Two simplices on vertex sets of the same cardinality are intrinsically stellar equivalent. -/
+theorem stellarEquivalentUpToRelabeling_simplex_of_card_eq {V W : Finset ι}
+    (h : V.card = W.card) :
+    StellarEquivalentUpToRelabeling (simplex V) (simplex W) := by
+  obtain ⟨σ, rfl⟩ := Equiv.Perm.exists_map_finset_eq V W h
+  apply StellarEquivalentUpToRelabeling.of_common_relabeling (σ.toEmbedding.trans .inl) .inl
+  rw [map_simplex, map_simplex, Finset.map_eq_image, Finset.image_image,
+    Function.Embedding.coe_trans, Function.comp_def]
+
+/-- Two simplex boundaries on vertex sets of the same cardinality are intrinsically stellar
+equivalent. -/
+theorem stellarEquivalentUpToRelabeling_simplexBoundary_of_card_eq {V W : Finset ι}
+    (h : V.card = W.card) :
+    StellarEquivalentUpToRelabeling (simplexBoundary V) (simplexBoundary W) := by
+  obtain ⟨σ, rfl⟩ := Equiv.Perm.exists_map_finset_eq V W h
+  apply StellarEquivalentUpToRelabeling.of_common_relabeling (σ.toEmbedding.trans .inl) .inl
+  rw [map_simplexBoundary V (σ.toEmbedding.trans .inl), map_simplexBoundary _ .inl,
+    Finset.map_eq_image, Finset.image_image, Function.Embedding.coe_trans, Function.comp_def]
 
 end PreAbstractSimplicialComplex
