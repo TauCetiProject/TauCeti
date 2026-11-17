@@ -147,11 +147,13 @@ theorem Subgroup.coe_congrOfMapEq_symm_apply (e : G ≃* H) {A : Subgroup G} {B 
   simp only [Subgroup.congrOfMapEq, MulEquiv.symm_trans_apply, MulEquiv.subgroupCongr_symm_apply,
     MulEquiv.subgroupMap_symm_apply]
 
+/-- The identity isomorphism restricts to the identity of a subgroup. The map equality is always
+true, so it is supplied by `Subgroup.map_id` rather than taken as an argument. -/
 @[simp]
-theorem Subgroup.congrOfMapEq_refl {A : Subgroup G}
-    (h : A.map (MulEquiv.refl G : G →* G) = A) :
-    Subgroup.congrOfMapEq (MulEquiv.refl G) h = MulEquiv.refl ↥A :=
-  MulEquiv.ext fun _ => Subtype.ext (by simp)
+theorem Subgroup.congrOfMapEq_refl {A : Subgroup G} :
+    Subgroup.congrOfMapEq (MulEquiv.refl G) (_root_.Subgroup.map_id A) = MulEquiv.refl ↥A :=
+  MulEquiv.ext fun x =>
+    Subtype.ext (Subgroup.coe_congrOfMapEq_apply (MulEquiv.refl G) _ x)
 
 @[simp]
 theorem Subgroup.congrOfMapEq_trans (e : G ≃* H) {A : Subgroup G} {B : Subgroup H}
@@ -281,7 +283,7 @@ coherence for the abelianization. -/
 @[simp]
 theorem _root_.MulEquiv.commutatorCongr_refl :
     MulEquiv.commutatorCongr (MulEquiv.refl G) = MulEquiv.refl ↥(commutator G) :=
-  Subgroup.congrOfMapEq_refl _
+  Subgroup.congrOfMapEq_refl
 
 /-- Restricting to derived subgroups is functorial: the restriction of `e.trans f` is the composite
 of the restrictions of `e` and of `f`.
