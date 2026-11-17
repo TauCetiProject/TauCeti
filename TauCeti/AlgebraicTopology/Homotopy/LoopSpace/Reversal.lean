@@ -92,12 +92,10 @@ theorem singularHomologyMap_symm_one [PathConnectedSpace (MooreLoopSpace X x)]
     (X := TopCat.of (MooreLoopSpace X x)) 1).surjective c
   -- the abelianization map is the quotient map
   obtain ⟨g, hg⟩ : ∃ g, Group.Abelianization.of g = a.toMul := QuotientGroup.mk_surjective _
-  obtain ⟨b, hb⟩ := (homotopyGroupEquivFundamentalGroupOfUnique (Fin 1)
-    (X := MooreLoopSpace X x) (x := 1)).surjective g
-  -- the multiplicative equivalence has the same underlying function
-  have hb' : homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1) b = g := hb
+  obtain ⟨b, hb⟩ :=
+    EquivLike.surjective (homotopyGroupOfUniqueMulEquivFundamentalGroup (Fin 1)) g
   have h := hurewiczHom_hom_one_eq_neg_hurewiczHomologyAddEquiv (Additive.ofMul b)
-  rw [toMul_ofMul, hb', hg, ofMul_toMul, ← singularCubicalHomologyIso_inv_cubicalHurewiczHom] at h
+  rw [toMul_ofMul, hb, hg, ofMul_toMul, ← singularCubicalHomologyIso_inv_cubicalHurewiczHom] at h
   rw [← neg_eq_iff_eq_neg.2 h]
   exact (map_neg _ _).trans (congrArg Neg.neg (singularHomologyMap_symm_cubicalHurewiczHom ℤ 0 _))
 
