@@ -104,6 +104,20 @@ private theorem coefficient_localize {r : ℝ} {x y : CoordinateSpace n} (hy : d
     (localize r x b).coefficient (y, ξ) = b.coefficient (y, ξ) := by
   simp [localize, coefficient_comp, coefficient_ofSpatial, (bump r x).one_of_mem_closedBall hy]
 
+private theorem coefficient_localize_of_mem_ball {r : ℝ} {x y : CoordinateSpace n}
+    (hy : y ∈ ball x r) (b : Symbol n V W m) (ξ : CoordinateSpace n) :
+    (localize r x b).coefficient (y, ξ) = b.coefficient (y, ξ) :=
+  coefficient_localize (ball_subset_closedBall.trans
+    (closedBall_subset_closedBall (le_max_left _ _)) hy) b ξ
+
+/-- The localization to the ball of radius `r + 1` about `x` agrees with `b` on the ball of
+radius `r` about every point of the ball of radius `1` about `x`. -/
+private theorem coefficient_localize_add_one {r : ℝ} {x y z : CoordinateSpace n}
+    (hy : y ∈ ball x 1) (hz : z ∈ ball y r) (b : Symbol n V W m) (ξ : CoordinateSpace n) :
+    (localize (r + 1) x b).coefficient (z, ξ) = b.coefficient (z, ξ) :=
+  coefficient_localize_of_mem_ball (ball_subset_ball' (add_le_add_right (mem_ball.1 hy).le r) hz)
+    b ξ
+
 end Auxiliary
 
 /-! ### Locality of the composition symbol -/
@@ -144,12 +158,7 @@ def properSharp (a : Symbol n W U m') (ha : a.HasPropagationLE ε) (b : Symbol n
     fun x ↦ ⟨a.sharp (localize (ε + 1) x b) (hasCompactSpatialSupport_localize (ε + 1) x b), by
       filter_upwards [ball_mem_nhds x one_pos] with y hy η
       refine ha.coefficient_sharp_congr _ _ (fun z hz ξ ↦ ?_) η
-      rw [coefficient_localize ((dist_triangle z y x).trans ?_),
-        coefficient_localize (ball_subset_closedBall.trans
-          (closedBall_subset_closedBall (le_max_left _ _)) hz)]
-      have hzy := mem_ball.1 hz
-      have hyx := mem_ball.1 hy
-      exact (add_lt_add hzy hyx).le.trans (le_max_left _ _)⟩
+      rw [coefficient_localize_add_one hy hz, coefficient_localize_of_mem_ball hz]⟩
 
 variable (ha : a.HasPropagationLE ε)
 include ha
@@ -164,8 +173,17 @@ theorem coefficient_properSharp_eq_sharp {b : Symbol n V W m} {b' : Symbol n V W
     (a.properSharp ha b).coefficient (x, ξ) = (a.sharp b' hb').coefficient (x, ξ) := by
   rw [properSharp, coefficient_ofEventuallyEq]
   refine ha.coefficient_sharp_congr _ hb' (fun y hy η ↦ ?_) ξ
-  rw [h y hy, coefficient_localize (ball_subset_closedBall.trans
-    (closedBall_subset_closedBall (le_max_left _ _)) hy)]
+  rw [h y hy, coefficient_localize_of_mem_ball hy]
+
+/-- The composition symbol does not depend on the propagation bound of `a` used to build it. -/
+theorem properSharp_congr {ε' : ℝ} (ha' : a.HasPropagationLE ε') {b : Symbol n V W m} :
+    a.properSharp ha b = a.properSharp ha' b :=
+  Symbol.ext <| funext fun ⟨x, ξ⟩ ↦ by
+    have hb := hasCompactSpatialSupport_localize (max ε ε') x b
+    rw [coefficient_properSharp_eq_sharp ha hb fun y hy ↦
+        coefficient_localize_of_mem_ball (ball_subset_ball (le_max_left _ _) hy) b,
+      coefficient_properSharp_eq_sharp ha' hb fun y hy ↦
+        coefficient_localize_of_mem_ball (ball_subset_ball (le_max_right _ _) hy) b]
 
 /-- For a right factor with compact spatial support, the composition symbol is `a # b`. -/
 theorem properSharp_eq_sharp {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport) :
@@ -180,15 +198,12 @@ theorem quantizeSchwartzValue_properSharp (b : Symbol n V W m) (u : 𝓢(Coordin
     quantizeSchwartzValue (a.properSharp ha b).coefficient u x =
       quantizeSchwartzValue a.coefficient w x := by
   have hb := hasCompactSpatialSupport_localize ε x b
-  have hloc {y : CoordinateSpace n} (hy : y ∈ ball x ε) (ξ : CoordinateSpace n) :
-      (localize ε x b).coefficient (y, ξ) = b.coefficient (y, ξ) :=
-    coefficient_localize (ball_subset_closedBall.trans
-      (closedBall_subset_closedBall (le_max_left _ _)) hy) b ξ
-  rw [quantizeSchwartzValue_congr_left (coefficient_properSharp_eq_sharp ha hb fun y hy ↦ hloc hy),
+  rw [quantizeSchwartzValue_congr_left (coefficient_properSharp_eq_sharp ha hb
+      fun y hy ↦ coefficient_localize_of_mem_ball hy b),
     quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
   refine ha.quantizeSchwartzValue_congr fun y hy ↦ ?_
   rw [HasCompactSupport.toSchwartzMap_toFun, hw y hy]
-  exact quantizeSchwartzValue_congr_left (hloc hy) u
+  exact quantizeSchwartzValue_congr_left (coefficient_localize_of_mem_ball hy b) u
 
 /-- **Composition of quantizations.** If `Op(b) u` has compact support, for instance when `u` has
 compact support and `b` has finite propagation
@@ -237,11 +252,8 @@ theorem isAsymptoticSum_properSharp (b : Symbol n V W m) :
   have hb := hasCompactSpatialSupport_localize (ε + 1) x b
   refine ⟨a.sharpRemainder _ hb N, ?_⟩
   filter_upwards [ball_mem_nhds x one_pos] with y hy η
-  have hyx := mem_ball.1 hy
   rw [coefficient_sharpRemainder, Pi.sub_apply, Pi.sub_apply, Finset.sum_apply, Finset.sum_apply,
-    coefficient_properSharp_eq_sharp ha hb (fun z hz ξ ↦ coefficient_localize
-      ((dist_triangle z y x).trans ((add_lt_add (mem_ball.1 hz) hyx).le.trans
-        (le_max_left _ _))) b ξ)]
+    coefficient_properSharp_eq_sharp ha hb (fun z hz ξ ↦ coefficient_localize_add_one hy hz b ξ)]
   -- The terms of the expansion at `y` only involve the derivatives of `b` at `y`.
   have hev : ∀ᶠ z in 𝓝 y, ∀ ξ, (localize (ε + 1) x b).coefficient (z, ξ) = b.coefficient (z, ξ) :=
     by
