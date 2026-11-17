@@ -172,14 +172,15 @@ theorem isCalibration_iff_apply_le_one [NeZero k]
   refine ⟨fun h ↦ ⟨h.isSmoothForm, h.mextDeriv_eq_zero, fun x v hv ↦ h.apply_le_one x v hv⟩,
     fun ⟨hs, hd, hle⟩ ↦ ⟨hs, hd, fun x v hv ↦ abs_le.2 ⟨?_, hle x v hv⟩⟩⟩
   -- Negating the first vector reverses the sign of `φ x` while preserving orthonormality.
+  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
   let v' : Fin k → TangentSpace I x := Function.update v 0 (-v 0)
   have hv' : ∀ i j, g.inner x (v' i) (v' j) = if i = j then 1 else 0 := by
-    intro i j
-    by_cases hi : i = 0 <;> by_cases hj : j = 0
-    · simpa [v', hi, hj] using hv 0 0
-    · simp [v', hi, hj, hv 0 j, Ne.symm hj]
-    · simp [v', hi, hj, hv i 0]
-    · simpa [v', hi, hj] using hv i j
+    have hvo' : Orthonormal ℝ v' :=
+      (orthonormal_iff_ite.2 hv : Orthonormal ℝ v).orthonormal_of_forall_eq_or_eq_neg fun i ↦ by
+        rcases eq_or_ne i 0 with rfl | hi
+        · exact Or.inr (Function.update_self 0 (-v 0) v)
+        · exact Or.inl (Function.update_of_ne hi (-v 0) v)
+    exact orthonormal_iff_ite.1 hvo'
   have hval : φ x v' = -φ x v := by
     have hsmul := (φ x).map_update_smul v 0 (-1 : ℝ) (v 0)
     simpa [v', Function.update_eq_self] using hsmul
