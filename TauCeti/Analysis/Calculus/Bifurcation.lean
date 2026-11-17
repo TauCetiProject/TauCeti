@@ -155,7 +155,8 @@ private theorem pitchfork_slice_of_nonneg {g : ℝ → ℝ} {d δ : ℝ} (hδ : 
     rw [neg_zero] at this
     linarith
   have hpos : ∀ y ∈ Ioc 0 δ, 0 < g y := fun y hy => by
-    have h := hconv.mul_sub_lt_sub_of_hasDerivAt ⟨le_rfl, hδ.le⟩ ⟨hy.1.le, hy.2⟩ hy.1.ne hd
+    have h := hconv.mul_sub_lt_sub_of_hasDerivWithinAt ⟨le_rfl, hδ.le⟩ ⟨hy.1.le, hy.2⟩ hy.1.ne
+      hd.hasDerivWithinAt
     rw [hg0, sub_zero, sub_zero] at h
     exact (mul_nonneg hd0 hy.1.le).trans_lt h
   ext y
@@ -298,16 +299,18 @@ theorem eventually_fold (hF : ContDiffAt ℝ 2 F 0) (h₀ : F 0 = 0)
     have hd0 : HasDerivAt (fun y => F (y, 0)) 0 0 := by
       have h := (hbox h0δ₀ h0δ₀).hasDerivAt_fst
       rwa [← h.deriv, h₁] at h
-    have h := (strictConvexOn_of_foldBox hbox hx h0δ₀).mul_sub_lt_sub_of_hasDerivAt
-      ⟨by simp, abs_nonneg x⟩ ⟨neg_abs_le x, le_abs_self x⟩ hx0.symm hd0
+    have h := (strictConvexOn_of_foldBox hbox hx h0δ₀).mul_sub_lt_sub_of_hasDerivWithinAt
+      ⟨by simp, abs_nonneg x⟩ ⟨neg_abs_le x, le_abs_self x⟩ hx0.symm hd0.hasDerivWithinAt
     rwa [zero_mul, h₀', sub_zero] at h
   -- Along vertical lines, `F (x, t) - F (x, 0)` has the sign of `b t`.
   have hsign : ∀ {x t : ℝ}, |x| < δ₀ → |t| < δ₀ → (0 < deriv (fun s => F (0, s)) 0 * t →
       F (x, 0) < F (x, t)) ∧ (deriv (fun s => F (0, s)) 0 * t < 0 → F (x, t) < F (x, 0)) :=
     fun hx ht => by
       simpa only [sub_zero] using lt_and_lt_of_hasDerivAt_of_mul_pos (a := 0) ordConnected_Ioo
-        (fun s hs => (hbox hx (abs_lt.2 hs)).hasDerivAt_snd)
-        (fun s hs => (hbox hx (abs_lt.2 hs)).mul_deriv_snd_pos) ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
+        (fun s hs => (hbox hx (abs_lt.2 hs)).hasDerivAt_snd.continuousAt.continuousWithinAt)
+        (fun s hs => (hbox hx (abs_lt.2 (interior_subset hs))).hasDerivAt_snd)
+        (fun s hs => (hbox hx (abs_lt.2 (interior_subset hs))).mul_deriv_snd_pos)
+        ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
   filter_upwards [Ioo_mem_nhdsGT hδ₀] with δ ⟨hδpos, hδδ₀⟩
   have hδabs : |δ| < δ₀ := by rwa [abs_of_pos hδpos]
   have hδabs' : |-δ| < δ₀ := by rwa [abs_neg]
@@ -439,8 +442,11 @@ theorem eventually_pitchfork (hF : ContDiffAt ℝ 3 F 0)
       (0 < b * t → 0 < partialFst F 1 (0, t)) ∧ (b * t < 0 → partialFst F 1 (0, t) < 0) :=
     fun ht => by
       simpa only [h00, sub_zero] using lt_and_lt_of_hasDerivAt_of_mul_pos (a := 0) ordConnected_Ioo
-        (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).hasDerivAt_partialFst_snd)
-        (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).mul_deriv_snd_pos) ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
+        (fun s hs => (hbox h0δ₀ (abs_lt.2 hs)).hasDerivAt_partialFst_snd.continuousAt
+          |>.continuousWithinAt)
+        (fun s hs => (hbox h0δ₀ (abs_lt.2 (interior_subset hs))).hasDerivAt_partialFst_snd)
+        (fun s hs => (hbox h0δ₀ (abs_lt.2 (interior_subset hs))).mul_deriv_snd_pos)
+        ⟨by linarith, hδ₀⟩ (abs_lt.1 ht)
   filter_upwards [Ioo_mem_nhdsGT hδ₀] with δ ⟨hδpos, hδδ₀⟩
   have hδabs : |δ| < δ₀ := by rwa [abs_of_pos hδpos]
   have hzero : F (0, 0) = 0 := by
@@ -449,8 +455,9 @@ theorem eventually_pitchfork (hF : ContDiffAt ℝ 3 F 0)
     linarith
   -- The slice at `t = 0` lies above its horizontal tangent at `0`.
   have hFδ0 : 0 < F (δ, 0) := by
-    have h := (strictConvexOn_of_pitchforkBox hbox hδpos hδδ₀ h0δ₀).mul_sub_lt_sub_of_hasDerivAt
-      ⟨le_rfl, hδpos.le⟩ ⟨hδpos.le, le_rfl⟩ hδpos.ne (hbox h0δ₀ h0δ₀).hasDerivAt_fst
+    have hconv0 := strictConvexOn_of_pitchforkBox hbox hδpos hδδ₀ h0δ₀
+    have h := hconv0.mul_sub_lt_sub_of_hasDerivWithinAt ⟨le_rfl, hδpos.le⟩ ⟨hδpos.le, le_rfl⟩
+      hδpos.ne (hbox h0δ₀ h0δ₀).hasDerivAt_fst.hasDerivWithinAt
     rwa [h00, zero_mul, hzero, sub_zero] at h
   filter_upwards [Ioo_mem_nhds (neg_neg_of_pos hδ₀) hδ₀,
     (hbox hδabs h0δ₀).continuousAt_snd.eventually (lt_mem_nhds hFδ0)] with t ht hFδt
