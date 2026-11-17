@@ -9,6 +9,8 @@ public import Mathlib.Data.ZMod.Basic
 public import TauCeti.AlgebraicGeometry.FormalScheme.SectionsTopology
 public import TauCeti.RingTheory.AdicRing.Padic
 
+import TauCeti.NumberTheory.Padics.PadicIntegers
+
 /-!
 # Examples for the canonical adic topology on affine formal opens
 
@@ -51,13 +53,13 @@ example :
   refine ⟨inferInstance, fun hdisc ↦ ?_, ⟨hU.isoSpf⟩⟩
   let e : ofSpf ℤ_[p] ≅ (Spec (CommRingCat.of hU.Sections)).toFormalScheme :=
     (ofSpf ℤ_[p]).restrictTopIso.symm ≪≫ hU.isoSpf ≪≫ (ofSchemeSpecIso hU.Sections).symm
-  exact Huber.PadicInt.not_discreteTopology (discreteTopology_of_ofSpf_iso_toFormalScheme e)
+  exact PadicInt.not_discreteTopology (discreteTopology_of_ofSpf_iso_toFormalScheme e)
 
 -- `ofSpf ℤ_[p]` is a genuine formal scheme: it is not isomorphic to `ofScheme.obj Y` for any
 -- ordinary scheme `Y`.
 example : ¬ ∃ Y : Scheme.{0}, Nonempty (ofSpf ℤ_[p] ≅ ofScheme.obj Y) := by
   simp only [ofScheme_obj, exists_ofSpf_iso_toFormalScheme_iff]
-  exact Huber.PadicInt.not_discreteTopology
+  exact PadicInt.not_discreteTopology
 
 end Padic
 
@@ -72,7 +74,7 @@ local instance zmodDiscreteTopology (n : ℕ) : DiscreteTopology (ZMod n) := ⟨
 example :
     let Y := Spec (CommRingCat.of (ZMod 4))
     let hU : Y.toFormalScheme.IsAffineOpen ⊤ :=
-      (isAffineOpen_toFormalScheme_iff Y ⊤).mpr (isAffineOpen_top Y)
+      (Y.isAffineOpen_toFormalScheme_iff ⊤).mpr (isAffineOpen_top Y)
     DiscreteTopology hU.Sections ∧ ¬ IsReduced hU.Sections := by
   intro Y hU
   refine ⟨inferInstance, fun hred ↦ ?_⟩

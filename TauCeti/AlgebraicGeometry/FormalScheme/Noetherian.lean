@@ -59,8 +59,8 @@ noetherian for `g` spanning the unit ideal of `B ⧸ J`. Hence `B ⧸ J` is noet
   section rings.
 * `TauCeti.FormalScheme.IsNoetherian.noetherianSpace`: every noetherian formal scheme has a
   noetherian underlying topological space.
-* `TauCeti.FormalScheme.isLocallyNoetherian_toFormalScheme_iff`,
-  `TauCeti.FormalScheme.isNoetherian_toFormalScheme_iff`: `Scheme.toFormalScheme` (`ofScheme`)
+* `AlgebraicGeometry.Scheme.isLocallyNoetherian_toFormalScheme_iff`,
+  `AlgebraicGeometry.Scheme.isNoetherian_toFormalScheme_iff`: `Scheme.toFormalScheme` (`ofScheme`)
   preserves and reflects both `IsLocallyNoetherian` and `IsNoetherian`.
 
 ## References
@@ -385,7 +385,11 @@ theorem isNoetherian_of_noetherianSpace (X : FormalScheme) [X.IsLocallyNoetheria
 
 end AffineOpensAndTopology
 
-section OfScheme
+end TauCeti.FormalScheme
+
+namespace AlgebraicGeometry.Scheme
+
+open TauCeti TauCeti.FormalScheme
 
 /-- An ordinary scheme `Y` is locally noetherian as a formal scheme if and only if it is locally
 noetherian as a scheme. -/
@@ -396,27 +400,26 @@ theorem isLocallyNoetherian_toFormalScheme_iff (Y : Scheme.{u}) :
   constructor
   · intro h
     refine ⟨fun U ↦ ?_⟩
-    exact h U.1 ((isAffineOpen_toFormalScheme_iff Y U.1).mpr U.2)
+    exact h U.1 ((Y.isAffineOpen_toFormalScheme_iff U.1).mpr U.2)
   · intro h U hU
     exact AlgebraicGeometry.IsLocallyNoetherian.component_noetherian
-      ⟨U, (isAffineOpen_toFormalScheme_iff Y U).mp hU⟩
+      ⟨U, (Y.isAffineOpen_toFormalScheme_iff U).mp hU⟩
 
 instance isLocallyNoetherian_toFormalScheme (Y : Scheme.{u})
     [AlgebraicGeometry.IsLocallyNoetherian Y] : Y.toFormalScheme.IsLocallyNoetherian :=
-  (isLocallyNoetherian_toFormalScheme_iff Y).mpr inferInstance
+  Y.isLocallyNoetherian_toFormalScheme_iff.mpr inferInstance
 
 /-- An ordinary scheme `Y` is noetherian as a formal scheme if and only if it is noetherian as a
 scheme. -/
 @[simp]
 theorem isNoetherian_toFormalScheme_iff (Y : Scheme.{u}) :
     Y.toFormalScheme.IsNoetherian ↔ AlgebraicGeometry.IsNoetherian Y := by
-  rw [isNoetherian_iff, AlgebraicGeometry.isNoetherian_iff, isLocallyNoetherian_toFormalScheme_iff]
+  rw [FormalScheme.isNoetherian_iff, AlgebraicGeometry.isNoetherian_iff,
+    Y.isLocallyNoetherian_toFormalScheme_iff]
   rfl
 
 instance isNoetherian_toFormalScheme (Y : Scheme.{u}) [AlgebraicGeometry.IsNoetherian Y] :
     Y.toFormalScheme.IsNoetherian :=
-  (isNoetherian_toFormalScheme_iff Y).mpr inferInstance
+  Y.isNoetherian_toFormalScheme_iff.mpr inferInstance
 
-end OfScheme
-
-end TauCeti.FormalScheme
+end AlgebraicGeometry.Scheme

@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.TrivSqZeroExt
 
 import Mathlib.RingTheory.KrullDimension.Field
 import Mathlib.RingTheory.KrullDimension.Zero
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # Examples and counterexamples for locally noetherian formal schemes
@@ -58,7 +59,7 @@ example :
   refine ⟨inferInstance, inferInstance, fun _ ↦ inferInstance, inferInstance,
     fun _ hU ↦ hU.isNoetherianRing, ?_⟩
   simp only [ofScheme_obj, exists_ofSpf_iso_toFormalScheme_iff]
-  exact Huber.PadicInt.not_discreteTopology
+  exact PadicInt.not_discreteTopology
 
 end Padic
 

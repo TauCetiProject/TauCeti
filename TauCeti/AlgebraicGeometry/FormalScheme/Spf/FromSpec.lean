@@ -229,12 +229,7 @@ theorem isOpenEmbedding_comap_fromSpecQuotientLift {C R : Type u} [CommRing C]
     simp only [PrimeSpectrum.comap_asIdeal, Ideal.mem_comap]
     exact Iff.of_eq (congrArg (· ∈ q'.asIdeal) (fromSpecQuotientLift_mk α hm c))
   have hhomeo : IsHomeomorph qK.base := fromSpecQuotient_isHomeomorph hK
-  have hemb : Topology.IsEmbedding fSpec.base :=
-    hhomeo.isOpenEmbedding.isEmbedding.of_comp_iff.mp (hcomp ▸ hα.isEmbedding)
-  have hrange : Set.range fSpec.base = qK.base ⁻¹' Set.range α.base := by
-    rw [← hcomp, Set.range_comp, Set.preimage_image_eq _ hhomeo.bijective.1]
-  exact (Topology.isOpenEmbedding_iff _).mpr
-    ⟨hemb, hrange ▸ hα.isOpen_range.preimage qK.base.hom.continuous⟩
+  exact hhomeo.isOpenEmbedding.of_comp _ (hcomp.symm ▸ hα)
 
 private theorem germ_basicOpen_toStalk {C R : Type u} [CommRing C] [TopologicalSpace C]
     [IsTopologicalRing C] [IsAdicRing C] [CommRing R]

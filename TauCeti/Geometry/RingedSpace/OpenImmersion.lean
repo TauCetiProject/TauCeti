@@ -109,12 +109,7 @@ theorem IsOpenImmersion.isOpenEmbedding_lift {X Y Z : LocallyRingedSpace.{u}}
   let α := IsOpenImmersion.lift f g H
   have hfac : α ≫ f = g := IsOpenImmersion.lift_fac f g H
   have hcomp : f.base ∘ α.base = g.base := funext fun x ↦ congrArg (fun t ↦ t.base x) hfac
-  have hemb : Topology.IsEmbedding α.base :=
-    hf.base_open.isEmbedding.of_comp_iff.mp (hcomp.symm ▸ hg.isEmbedding)
-  have hrange : Set.range α.base = f.base ⁻¹' Set.range g.base :=
-    IsOpenImmersion.lift_range f g H
-  exact (Topology.isOpenEmbedding_iff _).mpr
-    ⟨hemb, hrange ▸ hg.isOpen_range.preimage f.base.hom.continuous⟩
+  exact hf.base_open.of_comp _ (hcomp.symm ▸ hg)
 
 /-- Lifting a morphism through an open immersion preserves surjectivity of the stalk map at a
 point. -/

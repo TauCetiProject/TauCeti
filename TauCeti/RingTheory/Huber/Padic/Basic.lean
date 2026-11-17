@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Ring.Compact
 public import TauCeti.RingTheory.Huber.Adic
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
-import Mathlib.Algebra.CharZero.Infinite
 
 /-!
 # The p-adic integers are a Huber ring, and not a Tate ring
@@ -105,11 +104,6 @@ instance isHuberRing : IsHuberRing ℤ_[p] :=
 `TauCeti.Huber.PadicInt.isHuberRing` this separates `IsHuberRing` from `IsTateRing`. -/
 theorem not_isTateRing : ¬ IsTateRing ℤ_[p] := fun _ ↦
   (maximalIdeal.isMaximal ℤ_[p]).ne_top (IsTateRing.eq_top_of_isAdic isAdic_maximalIdeal)
-
-/-- **`ℤ_[p]` does not carry the discrete topology**: it is compact and infinite. -/
-theorem not_discreteTopology : ¬ DiscreteTopology ℤ_[p] := fun _ ↦ by
-  have := finite_of_compact_of_discrete (X := ℤ_[p])
-  exact not_finite ℤ_[p]
 
 end PadicInt
 

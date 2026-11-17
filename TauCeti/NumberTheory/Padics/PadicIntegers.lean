@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
@@ -87,6 +88,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
+* `PadicInt.not_discreteTopology`: `ℤ_[p]` does not carry the discrete topology.
 
 ## Main definitions
 
@@ -249,6 +251,11 @@ instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
 instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
   ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
+
+/-- **`ℤ_[p]` does not carry the discrete topology**: it is compact and infinite. -/
+theorem not_discreteTopology : ¬ DiscreteTopology ℤ_[p] := fun _ ↦ by
+  have := finite_of_compact_of_discrete (X := ℤ_[p])
+  exact not_finite ℤ_[p]
 
 variable (p) in
 /-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to

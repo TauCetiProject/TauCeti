@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace.ResidueField
 
 /-!
-# Residue-field evaluation on open restrictions of locally ringed spaces
+# Residue-field evaluation and vanishing ideals on locally ringed spaces
 
 On an open restriction `L.restrict U.isOpenEmbedding` of a locally ringed space `L` to
 `U : Opens L`, evaluating a section `s ∈ Γ(U, O_L)` at `x ∈ U` and applying the canonical
@@ -16,6 +16,16 @@ residue-field map of `L.ofRestrict U.isOpenEmbedding` agrees with global evaluat
 on `L.restrict U.isOpenEmbedding` after transporting `s` along `Opens.isOpenEmbedding_obj_top U`.
 In particular, the restricted global section vanishes in the residue field at `x` if and only if
 `s` vanishes in the residue field of `L` at `x`.
+
+The file also defines `AlgebraicGeometry.LocallyRingedSpace.vanishingIdeal X U`, the radical ideal
+in `Γ(U, O_X)` of sections vanishing in the residue field at every point of `U`, together with its
+membership, radicality, pullback along morphisms and isomorphisms, and compatibility with open
+restrictions.
+
+## Main definitions
+
+* `AlgebraicGeometry.LocallyRingedSpace.vanishingIdeal`: the radical ideal in `Γ(U, O_X)` of
+  sections vanishing in the residue field at every point of `U`.
 
 ## Main results
 
@@ -27,6 +37,20 @@ In particular, the restricted global section vanishes in the residue field at `x
   `L.restrict U.isOpenEmbedding`.
 * `AlgebraicGeometry.LocallyRingedSpace.Γevaluation_restrict_eq_zero_iff`: vanishing of the
   restricted global section at `x` is equivalent to `L.evaluation ⟨x.1, x.2⟩ s = 0`.
+* `AlgebraicGeometry.LocallyRingedSpace.mem_vanishingIdeal`,
+  `AlgebraicGeometry.LocallyRingedSpace.mem_vanishingIdeal_top`: membership characterizations for
+  `vanishingIdeal`.
+* `AlgebraicGeometry.LocallyRingedSpace.isRadical_vanishingIdeal`,
+  `AlgebraicGeometry.LocallyRingedSpace.radical_vanishingIdeal`: `X.vanishingIdeal U` is radical.
+* `AlgebraicGeometry.LocallyRingedSpace.vanishingIdeal_le_comap`,
+  `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_of_subset_range`,
+  `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_top_of_surjective`: functoriality and
+  pullback of `vanishingIdeal` along morphisms whose range covers `V`.
+* `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_of_iso`,
+  `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_top_of_iso`: pullback of
+  `vanishingIdeal` along isomorphisms of locally ringed spaces.
+* `AlgebraicGeometry.LocallyRingedSpace.comap_vanishingIdeal_restrict_top`: compatibility of
+  `vanishingIdeal` with open restriction `X.restrict U.isOpenEmbedding`.
 -/
 
 public section
@@ -99,5 +123,110 @@ theorem Γevaluation_restrict_eq_zero_iff (L : LocallyRingedSpace.{u}) (U : Open
       L.evaluation ⟨x.1, x.2⟩ s = 0 := by
   rw [← residueFieldMap_ofRestrict_evaluation, residueFieldMap_eq_zero_iff]
   rfl
+
+section VanishingIdeal
+
+/-- The ideal of sections over `U` vanishing in the residue field at every point of `U`. -/
+noncomputable def vanishingIdeal (X : LocallyRingedSpace.{u}) (U : Opens X) :
+    Ideal (X.presheaf.obj (op U)) :=
+  ⨅ x : U, RingHom.ker (X.evaluation x).hom
+
+/-- A section `s ∈ Γ(U, O_X)` belongs to `X.vanishingIdeal U` if and only if it vanishes in the
+residue field at every point of `U`. -/
+@[simp]
+theorem mem_vanishingIdeal {X : LocallyRingedSpace.{u}} {U : Opens X}
+    {s : X.presheaf.obj (op U)} :
+    s ∈ X.vanishingIdeal U ↔ ∀ x : U, X.evaluation x s = 0 := by
+  simp [vanishingIdeal, RingHom.mem_ker]
+
+/-- A global section belongs to `X.vanishingIdeal ⊤` if and only if it vanishes in the residue
+field at every point of `X`. -/
+theorem mem_vanishingIdeal_top {X : LocallyRingedSpace.{u}} {s : X.presheaf.obj (op ⊤)} :
+    s ∈ X.vanishingIdeal ⊤ ↔ ∀ x : X, X.Γevaluation x s = 0 := by
+  rw [mem_vanishingIdeal]
+  exact ⟨fun h x ↦ h ⟨x, Opens.mem_top x⟩, fun h ⟨x, _⟩ ↦ h x⟩
+
+/-- The vanishing ideal on any open is radical, being an intersection of prime ideals. -/
+theorem isRadical_vanishingIdeal (X : LocallyRingedSpace.{u}) (U : Opens X) :
+    (X.vanishingIdeal U).IsRadical := by
+  intro s hs
+  rw [mem_vanishingIdeal]
+  intro x
+  obtain ⟨n, hn⟩ := Ideal.mem_radical_iff.mp hs
+  exact eq_zero_of_pow_eq_zero (by simpa only [map_pow] using mem_vanishingIdeal.mp hn x)
+
+/-- The radical of `X.vanishingIdeal U` equals `X.vanishingIdeal U`. -/
+@[simp]
+theorem radical_vanishingIdeal (X : LocallyRingedSpace.{u}) (U : Opens X) :
+    (X.vanishingIdeal U).radical = X.vanishingIdeal U :=
+  (X.isRadical_vanishingIdeal U).radical
+
+/-- Any morphism `f : X ⟶ Y` of locally ringed spaces sends `Y.vanishingIdeal V` into the
+vanishing ideal of `f ⁻¹' V` on `X`. -/
+theorem vanishingIdeal_le_comap {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y) (V : Opens Y) :
+    Y.vanishingIdeal V ≤
+      (X.vanishingIdeal ((Opens.map f.base).obj V)).comap (f.c.app (op V)).hom := by
+  intro s hs
+  refine Ideal.mem_comap.mpr (mem_vanishingIdeal.mpr fun x ↦ ?_)
+  exact (evaluation_naturality_apply f x s).symm.trans
+    ((residueFieldMap_eq_zero_iff f x.1 _).mpr (mem_vanishingIdeal.mp hs ⟨f.base x.1, x.2⟩))
+
+/-- If `V ⊆ Set.range f.base`, the preimage of `X.vanishingIdeal (f ⁻¹' V)` along `f.c.app (op V)`
+equals `Y.vanishingIdeal V`. -/
+theorem comap_vanishingIdeal_of_subset_range {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y)
+    {V : Opens Y} (hV : (V : Set Y) ⊆ Set.range f.base) :
+    (X.vanishingIdeal ((Opens.map f.base).obj V)).comap (f.c.app (op V)).hom =
+      Y.vanishingIdeal V := by
+  refine le_antisymm ?_ (vanishingIdeal_le_comap f V)
+  intro s hs
+  have hs' := mem_vanishingIdeal.mp (Ideal.mem_comap.mp hs)
+  refine mem_vanishingIdeal.mpr fun y ↦ ?_
+  obtain ⟨x, hx⟩ := hV y.2
+  have hxV : x ∈ (Opens.map f.base).obj V := Opens.mem_map.mpr (hx.symm ▸ y.2)
+  have hev : residueFieldMap f x (Y.evaluation ⟨f.base x, hxV⟩ s) = 0 :=
+    (evaluation_naturality_apply f ⟨x, hxV⟩ s).trans (hs' ⟨x, hxV⟩)
+  have hyx : (⟨f.base x, hxV⟩ : V) = y := Subtype.ext hx
+  exact hyx ▸ (residueFieldMap_eq_zero_iff f x _).mp hev
+
+/-- A morphism `f : X ⟶ Y` with surjective base map pulls `X.vanishingIdeal ⊤` back to
+`Y.vanishingIdeal ⊤` on global sections. -/
+theorem comap_vanishingIdeal_top_of_surjective {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y)
+    (hf : Function.Surjective f.base) :
+    (X.vanishingIdeal ⊤).comap (f.c.app (op ⊤)).hom = Y.vanishingIdeal ⊤ :=
+  comap_vanishingIdeal_of_subset_range f (hf.range_eq.symm ▸ Set.subset_univ _)
+
+/-- An isomorphism `e : X ≅ Y` of locally ringed spaces pulls `X.vanishingIdeal (e ⁻¹' V)` back to
+`Y.vanishingIdeal V` along `e.hom.c.app (op V)`. -/
+theorem comap_vanishingIdeal_of_iso {X Y : LocallyRingedSpace.{u}} (e : X ≅ Y) (V : Opens Y) :
+    (X.vanishingIdeal ((Opens.map e.hom.base).obj V)).comap (e.hom.c.app (op V)).hom =
+      Y.vanishingIdeal V :=
+  comap_vanishingIdeal_of_subset_range e.hom
+    ((TopCat.homeoOfIso (forgetToTop.mapIso e)).surjective.range_eq.symm ▸ Set.subset_univ _)
+
+/-- An isomorphism `e : X ≅ Y` of locally ringed spaces pulls `X.vanishingIdeal ⊤` back to
+`Y.vanishingIdeal ⊤` along `e.hom.c.app (op ⊤)`. -/
+theorem comap_vanishingIdeal_top_of_iso {X Y : LocallyRingedSpace.{u}} (e : X ≅ Y) :
+    (X.vanishingIdeal ⊤).comap (e.hom.c.app (op ⊤)).hom = Y.vanishingIdeal ⊤ :=
+  comap_vanishingIdeal_top_of_surjective e.hom
+    (TopCat.homeoOfIso (forgetToTop.mapIso e)).surjective
+
+/-- Under the canonical identification `Γ(⊤, O_{X|_U}) ⟶ Γ(U, O_X)`, `X.vanishingIdeal U` pulls
+back to the global vanishing ideal on `X.restrict U.isOpenEmbedding`. -/
+theorem comap_vanishingIdeal_restrict_top (X : LocallyRingedSpace.{u}) (U : Opens X) :
+    (X.vanishingIdeal U).comap
+        (CommRingCat.Hom.hom (R := (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤))
+          (X.presheaf.map (eqToHom (congrArg op (Opens.isOpenEmbedding_obj_top U))))) =
+      (X.restrict U.isOpenEmbedding).vanishingIdeal ⊤ := by
+  let e : (X.restrict U.isOpenEmbedding).presheaf.obj (op ⊤) ≅ X.presheaf.obj (op U) :=
+    X.presheaf.mapIso (eqToIso (congrArg op (Opens.isOpenEmbedding_obj_top U)))
+  ext s
+  rw [Ideal.mem_comap, mem_vanishingIdeal, mem_vanishingIdeal_top]
+  have hs : e.inv (e.hom s) = s := Iso.hom_inv_id_apply e s
+  exact ⟨fun h x ↦ by
+      rw [← hs]
+      exact (Γevaluation_restrict_eq_zero_iff X U x (e.hom s)).mpr (h ⟨x.1, x.2⟩),
+    fun h x ↦ (Γevaluation_restrict_eq_zero_iff X U x (e.hom s)).mp (hs.symm ▸ h x)⟩
+
+end VanishingIdeal
 
 end AlgebraicGeometry.LocallyRingedSpace
