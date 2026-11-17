@@ -41,8 +41,8 @@ positive imaginary axis it satisfies `iy w(iy) → -ν(ℝ)` as `y → ∞`. By 
 characterization (`MeasureTheory.exists_isFiniteMeasure_resolventTransform_eq_of_tendsto`), there is
 a unique finite measure `ν.pastur t` on `ℝ` of total mass `ν(ℝ)` whose resolvent transform solves
 the Pastur equation off the real axis. When `ν` is a probability measure, `ν.pastur t` is a
-probability measure: it is the additive free convolution `ν ⊞ SC_t` with the centred semicircle law
-of variance `t`, defined for arbitrary (possibly heavy-tailed) laws `ν`.
+probability measure; by Biane (1997), this corresponds to the additive free convolution with the
+centred semicircle law of variance `t` (that identification is not formalized here).
 
 The family `(ν.pastur t)_{t ≥ 0}` forms a semigroup (`(ν.pastur s).pastur t = ν.pastur (s + t)`),
 covaries with real affine maps, and depends jointly continuously in the weak topology on
@@ -133,6 +133,16 @@ private lemma mul_integral_norm_resolvent_sq_eq (t : ℝ≥0) {z w : ℂ} (hz : 
     _ = ζ.im - z.im := by linarith [hζim]
     _ = (1 - z.im / ζ.im) * ζ.im := by field_simp [hζ0]
 
+/-- Uniform bound on `m_ν(z + t w)` for `0 < z.im` and `0 ≤ w.im`. -/
+private lemma norm_resolventTransform_add_nnreal_mul_le (t : ℝ≥0) {z w : ℂ} (hz : 0 < z.im)
+    (hw : 0 ≤ w.im) :
+    ‖resolventTransform ν (z + t * w)‖ ≤ (z.im)⁻¹ * ν.real univ := by
+  have hζ : z.im ≤ (z + t * w).im := le_im_add_nnreal_mul t z hw
+  have hζpos : 0 < (z + t * w).im := hz.trans_le hζ
+  calc ‖resolventTransform ν (z + t * w)‖
+      ≤ |(z + t * w).im|⁻¹ * ν.real univ := norm_resolventTransform_le hζpos.ne'
+    _ ≤ (z.im)⁻¹ * ν.real univ := by rw [abs_of_pos hζpos]; gcongr
+
 /-- Existence of a solution in the closed upper half-plane via Schauder's fixed-point theorem. -/
 private lemma exists_eq_resolventTransform_add_mul (t : ℝ≥0) {z : ℂ} (hz : 0 < z.im) :
     ∃ w : ℂ, 0 ≤ w.im ∧ w = resolventTransform ν (z + t * w) := by
@@ -145,13 +155,8 @@ private lemma exists_eq_resolventTransform_add_mul (t : ℝ≥0) {z : ℂ} (hz :
   have hKne : K.Nonempty := ⟨0, by simp, mem_closedBall_self hR0⟩
   have hmaps : MapsTo (fun w : ℂ ↦ resolventTransform ν (z + t * w)) K K := by
     rintro w ⟨hwim, -⟩
-    have hζ : z.im ≤ (z + t * w).im := le_im_add_nnreal_mul t z hwim
-    have hζpos : 0 < (z + t * w).im := hz.trans_le hζ
-    refine ⟨im_resolventTransform_nonneg hζpos.le, ?_⟩
-    rw [mem_closedBall_zero_iff]
-    calc ‖resolventTransform ν (z + t * w)‖
-        ≤ |(z + t * w).im|⁻¹ * ν.real univ := norm_resolventTransform_le hζpos.ne'
-      _ ≤ (z.im)⁻¹ * ν.real univ := by rw [abs_of_pos hζpos]; gcongr
+    exact ⟨im_resolventTransform_nonneg (im_add_nnreal_mul_pos t hz hwim).le,
+      mem_closedBall_zero_iff.2 (norm_resolventTransform_add_nnreal_mul_le t hz hwim)⟩
   have hcont : ContinuousOn (fun w : ℂ ↦ resolventTransform ν (z + t * w)) K := by
     intro w hw
     have hζpos : 0 < (z + t * w).im := im_add_nnreal_mul_pos t hz hw.1
@@ -167,14 +172,16 @@ private lemma eq_of_eq_resolventTransform_add_mul (t : ℝ≥0) {z w₁ w₀ : �
     (hw₁im : 0 ≤ w₁.im) (hw₁eq : w₁ = resolventTransform ν (z + t * w₁))
     (hw₀im : 0 ≤ w₀.im) (hw₀eq : w₀ = resolventTransform ν (z + t * w₀)) :
     w₁ = w₀ := by
-  set ζ₁ := z + t * w₁
-  set ζ₀ := z + t * w₀
+  set ζ₁ := z + t * w₁ with hζ₁
+  set ζ₀ := z + t * w₀ with hζ₀
   have hζ₁pos : 0 < ζ₁.im := im_add_nnreal_mul_pos t hz hw₁im
   have hζ₀pos : 0 < ζ₀.im := im_add_nnreal_mul_pos t hz hw₀im
   obtain ⟨hb₁, hq₁⟩ := mul_integral_norm_resolvent_sq_eq (ν := ν) t hz.ne'
     (mul_nonneg hz.le hw₁im) hw₁eq
   obtain ⟨hb₀, hq₀⟩ := mul_integral_norm_resolvent_sq_eq (ν := ν) t hz.ne'
     (mul_nonneg hz.le hw₀im) hw₀eq
+  rw [← hζ₁] at hb₁ hq₁
+  rw [← hζ₀] at hb₀ hq₀
   have hint_sq (ζ : ℂ) (hζ : ζ.im ≠ 0) := integrable_norm_resolvent_sq (μ := ν) hζ
   have hsub : w₁ - w₀ = ((t : ℂ) * (w₁ - w₀)) * ∫ x, resolvent ζ₁ x * resolvent ζ₀ x ∂ν := by
     have hdiff : ζ₁ - ζ₀ = (t : ℂ) * (w₁ - w₀) := by simp [ζ₁, ζ₀]; ring
@@ -201,8 +208,7 @@ private lemma eq_of_eq_resolventTransform_add_mul (t : ℝ≥0) {z w₁ w₀ : �
     have hr_le : r ≤ ((1 - z.im / ζ₁.im) + (1 - z.im / ζ₀.im)) / 2 := by
       calc r ≤ (t : ℝ) * ((∫ x, ‖resolvent ζ₁ x‖ ^ 2 ∂ν + ∫ x, ‖resolvent ζ₀ x‖ ^ 2 ∂ν) / 2) :=
             mul_le_mul_of_nonneg_left hle t.coe_nonneg
-        _ = ((1 - z.im / ζ₁.im) + (1 - z.im / ζ₀.im)) / 2 := by
-            dsimp only [ζ₁, ζ₀] at *; rw [← hb₁, ← hb₀]; ring
+        _ = ((1 - z.im / ζ₁.im) + (1 - z.im / ζ₀.im)) / 2 := by rw [← hb₁, ← hb₀]; ring
     linarith
   have hnorm_le : ‖w₁ - w₀‖ ≤ ‖w₁ - w₀‖ * r := by
     calc ‖w₁ - w₀‖ = ‖((t : ℂ) * (w₁ - w₀)) * ∫ x, resolvent ζ₁ x * resolvent ζ₀ x ∂ν‖ :=
@@ -243,49 +249,48 @@ private lemma eq_pasturAux_iff (t : ℝ≥0) {z w : ℂ} (hz : 0 < z.im) :
 private lemma norm_pasturAux_le (t : ℝ≥0) {z : ℂ} (hz : 0 < z.im) :
     ‖pasturAux ν t z‖ ≤ (z.im)⁻¹ * ν.real univ := by
   obtain ⟨hwim, hweq⟩ := pasturAux_spec (ν := ν) t hz
-  have hζ : z.im ≤ (z + t * pasturAux ν t z).im := le_im_add_nnreal_mul t z hwim
-  have hζpos : 0 < (z + t * pasturAux ν t z).im := hz.trans_le hζ
   rw [hweq]
-  calc ‖resolventTransform ν (z + t * pasturAux ν t z)‖
-      ≤ |(z + t * pasturAux ν t z).im|⁻¹ * ν.real univ := norm_resolventTransform_le hζpos.ne'
-    _ ≤ (z.im)⁻¹ * ν.real univ := by
-        rw [abs_of_pos hζpos]
-        gcongr
+  exact norm_resolventTransform_add_nnreal_mul_le t hz hwim
+
+/-- Compactness-plus-uniqueness criterion for convergence to `pasturAux ν t z`: if `f` eventually
+lies in the compact half-disc `{w | 0 ≤ w.im} ∩ closedBall 0 R` along `l` and every ultrafilter
+limit point solves the Pastur equation, then `Tendsto f l (𝓝 (pasturAux ν t z))`. -/
+private lemma tendsto_pasturAux_of_ultrafilter {α : Type*} {l : Filter α} {f : α → ℂ} {R : ℝ}
+    (t : ℝ≥0) {z : ℂ} (hz : 0 < z.im)
+    (hmem : ∀ᶠ a in l, 0 ≤ (f a).im ∧ ‖f a‖ ≤ R)
+    (hlim : ∀ (U : Ultrafilter α), ↑U ≤ l → ∀ w : ℂ, 0 ≤ w.im → Tendsto f U (𝓝 w) →
+      w = resolventTransform ν (z + t * w)) :
+    Tendsto f l (𝓝 (pasturAux ν t z)) := by
+  have hKcpt : IsCompact ({w : ℂ | 0 ≤ w.im} ∩ closedBall 0 R) :=
+    (isCompact_closedBall 0 R).inter_left (isClosed_le continuous_const continuous_im)
+  refine hKcpt.tendsto_nhds_of_unique_mapClusterPt
+    (hmem.mono fun a ha ↦ ⟨ha.1, mem_closedBall_zero_iff.2 ha.2⟩) fun w hwK hcl ↦ ?_
+  obtain ⟨U, hU, hwlim⟩ := mapClusterPt_iff_ultrafilter.1 hcl
+  exact (eq_pasturAux_iff t hz).2 ⟨hwK.1, hlim U hU w hwK.1 hwlim⟩
 
 private lemma continuousAt_pasturAux (t : ℝ≥0) {z : ℂ} (hz : 0 < z.im) :
     ContinuousAt (pasturAux ν t) z := by
-  rw [ContinuousAt, tendsto_iff_ultrafilter]
-  intro U hU
-  let R : ℝ := 2 * (z.im)⁻¹ * ν.real univ
-  let K : Set ℂ := {w : ℂ | 0 ≤ w.im} ∩ closedBall 0 R
-  have hKcpt : IsCompact K :=
-    (isCompact_closedBall 0 R).inter_left (isClosed_le continuous_const continuous_im)
-  have hmem : K ∈ U.map (pasturAux ν t) := by
-    rw [Ultrafilter.mem_map]
-    have hhalf : {u : ℂ | z.im / 2 < u.im} ∈ U :=
-      hU ((isOpen_lt continuous_const continuous_im).mem_nhds (by rw [mem_ofPred_eq]; linarith))
+  refine tendsto_pasturAux_of_ultrafilter t hz (R := 2 * (z.im)⁻¹ * ν.real univ) ?_ ?_
+  · have hhalf : {u : ℂ | z.im / 2 < u.im} ∈ 𝓝 z :=
+      (isOpen_lt continuous_const continuous_im).mem_nhds (by rw [mem_ofPred_eq]; linarith)
     filter_upwards [hhalf] with u hu
     have hupos : 0 < u.im := by linarith
-    refine ⟨(pasturAux_spec t hupos).1, mem_closedBall_zero_iff.2 ?_⟩
+    refine ⟨(pasturAux_spec t hupos).1, ?_⟩
     calc ‖pasturAux ν t u‖ ≤ (u.im)⁻¹ * ν.real univ := norm_pasturAux_le t hupos
       _ ≤ (z.im / 2)⁻¹ * ν.real univ := by gcongr
-      _ = R := by dsimp only [R]; ring
-  obtain ⟨w, hwK, hwlim⟩ := hKcpt.ultrafilter_le_nhds (U.map (pasturAux ν t))
-    (le_principal_iff.2 hmem)
-  have hwim : 0 ≤ w.im := hwK.1
-  have hζpos : 0 < (z + t * w).im := im_add_nnreal_mul_pos t hz hwim
-  have hζlim : Tendsto (fun u : ℂ ↦ u + t * pasturAux ν t u) U (𝓝 (z + t * w)) :=
-    (tendsto_id.mono_left hU).add (tendsto_const_nhds.mul hwlim)
-  have hrhs : Tendsto (fun u : ℂ ↦ resolventTransform ν (u + t * pasturAux ν t u)) U
-      (𝓝 (resolventTransform ν (z + t * w))) :=
-    (hasDerivAt_resolventTransform_of_im_ne_zero hζpos.ne').continuousAt.tendsto.comp hζlim
-  have hev : (fun u : ℂ ↦ pasturAux ν t u) =ᶠ[U]
-      fun u : ℂ ↦ resolventTransform ν (u + t * pasturAux ν t u) := by
-    filter_upwards [hU ((isOpen_lt continuous_const continuous_im).mem_nhds hz)] with u hu
-    exact (pasturAux_spec t hu).2
-  have hweq : w = pasturAux ν t z :=
-    (eq_pasturAux_iff t hz).2 ⟨hwim, tendsto_nhds_unique hwlim (hrhs.congr' hev.symm)⟩
-  exact hweq ▸ hwlim
+      _ = 2 * (z.im)⁻¹ * ν.real univ := by ring
+  · intro U hU w hwim hwlim
+    have hζpos : 0 < (z + t * w).im := im_add_nnreal_mul_pos t hz hwim
+    have hζlim : Tendsto (fun u : ℂ ↦ u + t * pasturAux ν t u) U (𝓝 (z + t * w)) :=
+      (tendsto_id.mono_left hU).add (tendsto_const_nhds.mul hwlim)
+    have hrhs : Tendsto (fun u : ℂ ↦ resolventTransform ν (u + t * pasturAux ν t u)) U
+        (𝓝 (resolventTransform ν (z + t * w))) :=
+      (hasDerivAt_resolventTransform_of_im_ne_zero hζpos.ne').continuousAt.tendsto.comp hζlim
+    have hev : (fun u : ℂ ↦ pasturAux ν t u) =ᶠ[U]
+        fun u : ℂ ↦ resolventTransform ν (u + t * pasturAux ν t u) := by
+      filter_upwards [hU ((isOpen_lt continuous_const continuous_im).mem_nhds hz)] with u hu
+      exact (pasturAux_spec t hu).2
+    exact tendsto_nhds_unique hwlim (hrhs.congr' hev.symm)
 
 /-- Implicit differentiation helper: if `f` is continuous at `z`, satisfies
 `f w = m_ν(w + t * f w)` near `z`, and `1 - t * m_ν'(z + t * f z) ≠ 0`, then `f` has complex
@@ -394,9 +399,10 @@ namespace Measure
 
 /-- **The Pastur measure** `ν.pastur t` of a Borel measure `ν` on `ℝ` at variance parameter
 `t : ℝ≥0`. When `ν` is finite, it is the unique finite measure on `ℝ` whose resolvent transform
-solves Pastur's self-consistent equation `m(z) = m_ν(z + t m(z))` off the real axis; for a
-probability measure `ν`, this is the free semicircle convolution `ν ⊞ SC_t`. When `ν` is not
-finite, `ν.pastur t` is `0`. -/
+solves Pastur's self-consistent equation `m(z) = m_ν(z + t m(z))` off the real axis (by Biane
+(1997), for a probability measure `ν` this corresponds to the additive free convolution with the
+centred semicircle law of variance `t`; that identification is not formalized here). When `ν` is
+not finite, `ν.pastur t` is `0`. -/
 def pastur (ν : Measure ℝ) (t : ℝ≥0) : Measure ℝ :=
   by
     classical
@@ -486,6 +492,25 @@ theorem im_mul_im_add_mul_resolventTransform_pastur_pos (t : ℝ≥0) {z : ℂ} 
   rw [him]
   nlinarith [t.coe_nonneg, mul_nonneg t.coe_nonneg hzw]
 
+omit [IsFiniteMeasure ν] in
+/-- Off the real axis, the shifted spectral parameter `z + t m_{ν.pastur t}(z)` stays off the real
+axis. -/
+theorem im_add_mul_resolventTransform_pastur_ne_zero (t : ℝ≥0) {z : ℂ} (hz : z.im ≠ 0) :
+    (z + t * resolventTransform (ν.pastur t) z).im ≠ 0 :=
+  right_ne_zero_of_mul (im_mul_im_add_mul_resolventTransform_pastur_pos (ν := ν) t hz).ne'
+
+omit [IsFiniteMeasure ν] in
+/-- The shifted spectral parameter `z + t m_{ν.pastur t}(z)` has imaginary part of magnitude at
+least `|z.im|`. -/
+theorem abs_im_le_abs_im_add_mul_resolventTransform_pastur (t : ℝ≥0) (z : ℂ) :
+    |z.im| ≤ |(z + t * resolventTransform (ν.pastur t) z).im| := by
+  have hzw := im_mul_im_resolventTransform_nonneg (ν.pastur t) z
+  have him : (z + t * resolventTransform (ν.pastur t) z).im =
+      z.im + t * (resolventTransform (ν.pastur t) z).im := by simp
+  rw [← sq_le_sq, him]
+  nlinarith [t.coe_nonneg, sq_nonneg ((t : ℝ) * (resolventTransform (ν.pastur t) z).im),
+    mul_nonneg t.coe_nonneg hzw]
+
 /-- **Strict contraction of the Pastur fixed-point derivative.** Off the real axis, at
 `ζ = z + t m_{ν.pastur t}(z)`, the complex derivative satisfies `‖t m_ν'(ζ)‖ < 1`. -/
 theorem norm_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_lt_one (t : ℝ≥0)
@@ -512,15 +537,13 @@ theorem hasDerivAt_resolventTransform_pastur (t : ℝ≥0) {z : ℂ} (hz : z.im 
       (deriv (resolventTransform ν) (z + t * resolventTransform (ν.pastur t) z) /
         (1 - (t : ℂ) * deriv (resolventTransform ν)
           (z + t * resolventTransform (ν.pastur t) z))) z := by
-  have hpos := im_mul_im_add_mul_resolventTransform_pastur_pos (ν := ν) t hz
-  have hζ0 : (z + t * resolventTransform (ν.pastur t) z).im ≠ 0 :=
-    fun h ↦ by simp [h] at hpos
   have heq : ∀ᶠ w : ℂ in 𝓝 z, resolventTransform (ν.pastur t) w =
       resolventTransform ν (w + t * resolventTransform (ν.pastur t) w) := by
     filter_upwards [(isOpen_compl_singleton.preimage continuous_im).mem_nhds hz] with w hw
     exact resolventTransform_pastur_eq t hw
   exact hasDerivAt_of_pastur_eq t
-    (hasDerivAt_resolventTransform_of_im_ne_zero hz).continuousAt heq hζ0
+    (hasDerivAt_resolventTransform_of_im_ne_zero hz).continuousAt heq
+    (im_add_mul_resolventTransform_pastur_ne_zero t hz)
     (one_sub_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_ne_zero t hz)
 
 end PasturAPI
@@ -540,7 +563,7 @@ theorem eq_pastur_iff {μ ν : Measure ℝ} [IsFiniteMeasure μ] [IsFiniteMeasur
 
 /-- The Pastur measure of the zero measure is zero. -/
 @[simp]
-theorem pastur_zero_measure (t : ℝ≥0) : (0 : Measure ℝ).pastur t = 0 :=
+theorem zero_pastur (t : ℝ≥0) : (0 : Measure ℝ).pastur t = 0 :=
   (eq_pastur_iff.2 fun _ _ ↦ by simp).symm
 
 /-- At `t = 0`, the Pastur measure of a finite measure `ν` is `ν` itself. -/
@@ -565,7 +588,7 @@ theorem pastur_pastur (ν : Measure ℝ) (s t : ℝ≥0) :
       push_cast
       ring
     exact ((eq_resolventTransform_pastur_iff (ν := ν.pastur s) t hz).2 ⟨hwim, hstep1⟩).symm
-  · rw [pastur_of_not_isFiniteMeasure hν, pastur_of_not_isFiniteMeasure hν, pastur_zero_measure]
+  · rw [pastur_of_not_isFiniteMeasure hν, pastur_of_not_isFiniteMeasure hν, zero_pastur]
 
 /-- **Affine covariance of the Pastur evolution.** Pushing `ν.pastur t` forward by `x ↦ a + b * x`
 evolves the pushed-forward measure at rescaled time `b² t` (including the degenerate slope `b = 0`).
@@ -616,8 +639,10 @@ end Measure
 
 namespace ProbabilityMeasure
 
-/-- **The Pastur evolution on `ProbabilityMeasure ℝ`.** At time `t`, this is the additive free
-convolution `ν ⊞ SC_t` with the centred semicircle law of variance `t`. -/
+/-- **The Pastur evolution on `ProbabilityMeasure ℝ`.** At parameter `t : ℝ≥0`, this bundles
+`(ν : Measure ℝ).pastur t` as a probability measure (by Biane (1997), this corresponds to the
+additive free convolution with the centred semicircle law of variance `t`; that identification is
+not formalized here). -/
 def pastur (ν : ProbabilityMeasure ℝ) (t : ℝ≥0) : ProbabilityMeasure ℝ :=
   ⟨(ν : Measure ℝ).pastur t, inferInstance⟩
 
@@ -699,45 +724,43 @@ theorem continuous_pastur : Continuous fun p : ProbabilityMeasure ℝ × ℝ≥0
   intro p
   rw [ContinuousAt, tendsto_iff_tendsto_resolventTransform]
   intro z hz
-  rw [tendsto_iff_ultrafilter]
-  intro U hU
+  rw [toMeasure_pastur, resolventTransform_pastur_eq_pasturAux (ν := (p.1 : Measure ℝ)) p.2 hz]
   let f : ProbabilityMeasure ℝ × ℝ≥0 → ℂ :=
     fun q ↦ resolventTransform (q.1.pastur q.2 : Measure ℝ) z
-  let K : Set ℂ := {w : ℂ | 0 ≤ w.im} ∩ closedBall 0 (z.im)⁻¹
-  have hKcpt : IsCompact K :=
-    (isCompact_closedBall 0 (z.im)⁻¹).inter_left (isClosed_le continuous_const continuous_im)
-  have hmem : K ∈ U.map f := Ultrafilter.mem_map.2 <| Eventually.of_forall fun q ↦
-    ⟨im_resolventTransform_nonneg hz.le,
-     mem_closedBall_zero_iff.2 <| by
+  refine tendsto_pasturAux_of_ultrafilter (ν := (p.1 : Measure ℝ)) (f := f) p.2 hz
+    (R := (z.im)⁻¹) ?_ ?_
+  · -- Uniform half-disc bound for resolvent transforms of probability measures
+    exact Eventually.of_forall fun q ↦
+      ⟨im_resolventTransform_nonneg hz.le, by
         simpa [f, abs_of_pos hz] using
           norm_resolventTransform_le (μ := (q.1.pastur q.2 : Measure ℝ)) hz.ne'⟩
-  obtain ⟨w, hwK, hwlim⟩ := hKcpt.ultrafilter_le_nhds (U.map f) (le_principal_iff.2 hmem)
-  have hwim : 0 ≤ w.im := hwK.1
-  let ζ₀ : ℂ := z + p.2 * w
-  have hζ₀pos : 0 < ζ₀.im := im_add_nnreal_mul_pos p.2 hz hwim
-  have hq2 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦ (q.2 : ℂ)) U (𝓝 (p.2 : ℂ)) :=
-    (continuous_ofReal.comp (NNReal.continuous_coe.comp continuous_snd)).tendsto p |>.mono_left hU
-  have h1 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦
-      ‖(q.2 : ℂ) * f q - (p.2 : ℂ) * w‖ / (z.im * ζ₀.im)) U (𝓝 0) := by
-    simpa using ((hq2.mul hwlim).sub (tendsto_const_nhds (x := (p.2 : ℂ) * w))).norm.div_const
-      (z.im * ζ₀.im)
-  have h2 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦
-      ‖resolventTransform (q.1 : Measure ℝ) ζ₀ - resolventTransform (p.1 : Measure ℝ) ζ₀‖)
-      U (𝓝 0) := by
-    have hweak := tendsto_resolventTransform_of_tendsto
-      (continuous_fst.tendsto p |>.mono_left hU) hζ₀pos.ne'
-    simpa using (hweak.sub (tendsto_const_nhds (x := resolventTransform (p.1 : Measure ℝ) ζ₀))).norm
-  have hdiff0 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦
-      f q - resolventTransform (p.1 : Measure ℝ) ζ₀) U (𝓝 0) :=
-    tendsto_zero_iff_norm_tendsto_zero.2 <| squeeze_zero (fun _ ↦ norm_nonneg _)
-      (fun q ↦ norm_resolventTransform_pastur_sub_resolventTransform_le p q hz hwim)
-      (by simpa only [f, ζ₀, add_zero] using h1.add h2)
-  have hflim : Tendsto f U (𝓝 (resolventTransform (p.1 : Measure ℝ) ζ₀)) := by
-    simpa using hdiff0.add (tendsto_const_nhds (x := resolventTransform (p.1 : Measure ℝ) ζ₀))
-  have hweq : w = f p := (eq_resolventTransform_pastur_iff (ν := (p.1 : Measure ℝ)) p.2 hz).2
-    ⟨hwim, tendsto_nhds_unique hwlim hflim⟩
-  dsimp only [f] at hweq hwlim
-  exact hweq ▸ hwlim
+  · -- Every ultrafilter limit point solves the Pastur equation at `p`
+    intro U hU w hwim hwlim
+    let ζ₀ : ℂ := z + p.2 * w
+    have hζ₀pos : 0 < ζ₀.im := im_add_nnreal_mul_pos p.2 hz hwim
+    have hq2 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦ (q.2 : ℂ)) U (𝓝 (p.2 : ℂ)) :=
+      (continuous_ofReal.comp (NNReal.continuous_coe.comp continuous_snd)).tendsto p
+        |>.mono_left hU
+    -- Bound the Pastur residual using Lipschitz continuity in `ζ` and weak continuity in `ν`
+    have h1 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦
+        ‖(q.2 : ℂ) * f q - (p.2 : ℂ) * w‖ / (z.im * ζ₀.im)) U (𝓝 0) := by
+      simpa using ((hq2.mul hwlim).sub (tendsto_const_nhds (x := (p.2 : ℂ) * w))).norm.div_const
+        (z.im * ζ₀.im)
+    have h2 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦
+        ‖resolventTransform (q.1 : Measure ℝ) ζ₀ - resolventTransform (p.1 : Measure ℝ) ζ₀‖)
+        U (𝓝 0) := by
+      have hweak := tendsto_resolventTransform_of_tendsto
+        (continuous_fst.tendsto p |>.mono_left hU) hζ₀pos.ne'
+      simpa using
+        (hweak.sub (tendsto_const_nhds (x := resolventTransform (p.1 : Measure ℝ) ζ₀))).norm
+    have hdiff0 : Tendsto (fun q : ProbabilityMeasure ℝ × ℝ≥0 ↦
+        f q - resolventTransform (p.1 : Measure ℝ) ζ₀) U (𝓝 0) :=
+      tendsto_zero_iff_norm_tendsto_zero.2 <| squeeze_zero (fun _ ↦ norm_nonneg _)
+        (fun q ↦ norm_resolventTransform_pastur_sub_resolventTransform_le p q hz hwim)
+        (by simpa only [f, ζ₀, add_zero] using h1.add h2)
+    have hflim : Tendsto f U (𝓝 (resolventTransform (p.1 : Measure ℝ) ζ₀)) := by
+      simpa using hdiff0.add (tendsto_const_nhds (x := resolventTransform (p.1 : Measure ℝ) ζ₀))
+    exact tendsto_nhds_unique hwlim hflim
 
 end ProbabilityMeasure
 

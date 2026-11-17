@@ -14,8 +14,9 @@ import Mathlib.MeasureTheory.Measure.DiracProba
 /-!
 # The Pastur semigroup on semicircle laws and Ornstein–Uhlenbeck ergodicity
 
-The Pastur measure evolution `ν ↦ ν.pastur t` represents additive free convolution `ν ⊞ SC_t`
-with the centred semicircle law `semicircleReal 0 t` of variance `t`. At a point mass `δ_a`, the
+By Biane (1997), the Pastur measure evolution `ν ↦ ν.pastur t` corresponds to the additive free
+convolution with the centred semicircle law `semicircleReal 0 t` of variance `t` (that
+identification is not formalized here). At a point mass `δ_a`, the
 Pastur self-consistent equation `w = (a - z - t w)⁻¹` rearranges to the semicircle quadratic
 `t w² + (z - a) w + 1 = 0`, identifying `(Measure.dirac a).pastur t = semicircleReal a t`
 (`TauCeti.Probability.pastur_dirac`). Combining this with the semigroup identity

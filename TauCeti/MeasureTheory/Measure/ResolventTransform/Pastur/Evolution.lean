@@ -77,23 +77,18 @@ theorem norm_resolventTransform_pastur_sub_le (s t : ℝ≥0) {z : ℂ} (hz : z.
   let d : ℝ≥0 := t - s
   have hd_coe : (d : ℝ) = |(t : ℝ) - s| := by
     rw [NNReal.coe_sub hst, abs_of_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))]
-  let wt := resolventTransform (ν.pastur t) z
-  have hwt_eq : wt = resolventTransform (ν.pastur s) (z + d * wt) := by
-    dsimp only [wt]
-    rw [← add_tsub_cancel_of_le hst, ← Measure.pastur_pastur]
-    exact resolventTransform_pastur_eq d hz
-  have him_prod : 0 ≤ z.im * wt.im := im_mul_im_resolventTransform_nonneg (ν.pastur t) z
-  have hζim_ge : |z.im| ≤ |(z + d * wt).im| := by
-    have h1 : (z + d * wt).im = z.im + (d : ℝ) * wt.im := by simp
-    rw [h1]
-    rcases hz.lt_or_gt with hneg | hpos
-    · have : wt.im ≤ 0 := nonpos_of_mul_nonneg_right him_prod hneg
-      rw [abs_of_neg hneg, abs_of_neg (by nlinarith [d.coe_nonneg])]; nlinarith [d.coe_nonneg]
-    · have : 0 ≤ wt.im := nonneg_of_mul_nonneg_right him_prod hpos
-      rw [abs_of_pos hpos, abs_of_pos (by nlinarith [d.coe_nonneg])]; nlinarith [d.coe_nonneg]
-  have hζ0 : (z + d * wt).im ≠ 0 := abs_pos.1 ((abs_pos.2 hz).trans_le hζim_ge)
+  have hpastur : ν.pastur t = (ν.pastur s).pastur d := by
+    rw [Measure.pastur_pastur, add_tsub_cancel_of_le hst]
+  rw [hpastur]
+  let wt := resolventTransform ((ν.pastur s).pastur d) z
+  have hwt_eq : wt = resolventTransform (ν.pastur s) (z + d * wt) :=
+    resolventTransform_pastur_eq d hz
+  have hζim_ge : |z.im| ≤ |(z + d * wt).im| :=
+    abs_im_le_abs_im_add_mul_resolventTransform_pastur (ν := ν.pastur s) d z
+  have hζ0 : (z + d * wt).im ≠ 0 :=
+    im_add_mul_resolventTransform_pastur_ne_zero (ν := ν.pastur s) d hz
   have hwt_norm : ‖wt‖ ≤ |z.im|⁻¹ * ν.real univ := by
-    simpa [wt] using norm_resolventTransform_le (μ := ν.pastur t) hz
+    simpa [wt] using norm_resolventTransform_le (μ := (ν.pastur s).pastur d) hz
   have hsub := norm_resolventTransform_sub_le (μ := ν.pastur s) hζ0 hz
   rw [Measure.pastur_real_univ] at hsub
   calc ‖wt - resolventTransform (ν.pastur s) z‖
@@ -121,6 +116,32 @@ theorem continuous_resolventTransform_pastur {z : ℂ} (hz : z.im ≠ 0) :
       rw [dist_eq_norm, NNReal.dist_eq, Real.coe_toNNReal _ (by positivity), mul_comm, ← mul_assoc]
       exact norm_resolventTransform_pastur_sub_le s t hz).continuous
 
+/-- Algebraic `dslope` linearization of the Pastur equation in time: letting
+`ζ(u) = z + u * m_{ν.pastur u}(z)` and `q = dslope (resolventTransform ν) (ζ t) (ζ s)`, we have
+`(1 - t * q) * (m_s(z) - m_t(z)) = (s - t) * (m_s(z) * q)`. -/
+private lemma one_sub_mul_dslope_mul_resolventTransform_pastur_sub [IsFiniteMeasure ν]
+    {z : ℂ} (hz : z.im ≠ 0) (s t : ℝ≥0) :
+    (1 - (t : ℂ) * dslope (resolventTransform ν)
+        (z + t * resolventTransform (ν.pastur t) z)
+        (z + s * resolventTransform (ν.pastur s) z)) *
+      (resolventTransform (ν.pastur s) z - resolventTransform (ν.pastur t) z) =
+    ((s : ℂ) - t) *
+      (resolventTransform (ν.pastur s) z * dslope (resolventTransform ν)
+        (z + t * resolventTransform (ν.pastur t) z)
+        (z + s * resolventTransform (ν.pastur s) z)) := by
+  set fs := resolventTransform (ν.pastur s) z
+  set ft := resolventTransform (ν.pastur t) z
+  have hfs : fs = resolventTransform ν (z + s * fs) := resolventTransform_pastur_eq s hz
+  have hft : ft = resolventTransform ν (z + t * ft) := resolventTransform_pastur_eq t hz
+  have hdiff : (z + s * fs) - (z + t * ft) = ((s : ℂ) - t) * fs + (t : ℂ) * (fs - ft) := by ring
+  have h1 : fs - ft = (((s : ℂ) - t) * fs + (t : ℂ) * (fs - ft)) *
+      dslope (resolventTransform ν) (z + t * ft) (z + s * fs) := by
+    rw [← hdiff]
+    nth_rw 1 [hfs, hft]
+    simpa only [smul_eq_mul] using
+      (sub_smul_dslope (resolventTransform ν) (z + t * ft) (z + s * fs)).symm
+  linear_combination h1
+
 /-- **Time-derivative of the Pastur resolvent transform on `[0, ∞)`.** For every measure `ν` on
 `ℝ`, `z : ℂ` with `z.im ≠ 0`, and `t : ℝ` with `0 ≤ t`, the map
 `s ↦ resolventTransform (ν.pastur s.toNNReal) z` has derivative `m_t(z) ∂_z m_t(z)` within `[0, ∞)`
@@ -134,9 +155,7 @@ theorem hasDerivWithinAt_resolventTransform_pastur_Ici {z : ℂ} (hz : z.im ≠ 
   · let f : ℝ → ℂ := fun s ↦ resolventTransform (ν.pastur s.toNNReal) z
     let ζ : ℝ → ℂ := fun s ↦ z + (s.toNNReal : ℂ) * f s
     let d : ℂ := deriv (resolventTransform ν) (ζ t)
-    have hpos := im_mul_im_add_mul_resolventTransform_pastur_pos (ν := ν) t.toNNReal hz
-    have hζ0 : (ζ t).im ≠ 0 := fun h ↦ by
-      dsimp only [ζ, f] at h; rw [h, mul_zero] at hpos; exact lt_irrefl 0 hpos
+    have hζ0 : (ζ t).im ≠ 0 := im_add_mul_resolventTransform_pastur_ne_zero t.toNNReal hz
     have hm_deriv : HasDerivAt (resolventTransform ν) d (ζ t) := by
       have h := hasDerivAt_resolventTransform_of_im_ne_zero (μ := ν) hζ0
       dsimp only [d]; rwa [h.deriv]
@@ -147,6 +166,7 @@ theorem hasDerivWithinAt_resolventTransform_pastur_Ici {z : ℂ} (hz : z.im ≠ 
         (ν := ν) t.toNNReal hz
     have hderiv_z : deriv (resolventTransform (ν.pastur t.toNNReal)) z = d / (1 - (t : ℂ) * d) :=
       ht_coe_c ▸ (hasDerivAt_resolventTransform_pastur (ν := ν) t.toNNReal hz).deriv
+    -- Limits of the numerator `f s * Q (ζ s)` and denominator `1 - t * Q (ζ s)` as `s → t`
     let Q : ℂ → ℂ := dslope (resolventTransform ν) (ζ t)
     have hQd : Q (ζ t) = d := dslope_same (resolventTransform ν) (ζ t)
     have hQ_cont : ContinuousAt Q (ζ t) := continuousAt_dslope_same.2 hm_deriv.differentiableAt
@@ -161,20 +181,15 @@ theorem hasDerivWithinAt_resolventTransform_pastur_Ici {z : ℂ} (hz : z.im ≠ 
     have hden_lim : Tendsto (fun s : ℝ ↦ 1 - (t : ℂ) * Q (ζ s)) (𝓝[Ici 0 \ {t}] t)
         (𝓝 (1 - (t : ℂ) * d)) :=
       tendsto_const_nhds.sub (tendsto_const_nhds.mul hQζ_lim)
+    -- Rewrite the slope `(s - t)⁻¹ • (f s - f t)` using the `dslope` linearization
     rw [hasDerivWithinAt_iff_tendsto_slope, hderiv_z, ← mul_div_assoc]
     refine (hnum_lim.div hden_lim hjac).congr' ?_
     filter_upwards [self_mem_nhdsWithin, hden_lim.eventually_ne hjac] with s ⟨hs0, hst⟩ hden
     have hs_coe_c : ((s.toNNReal : ℝ) : ℂ) = (s : ℂ) :=
       congrArg Complex.ofReal (Real.coe_toNNReal s hs0)
-    have hdiff_ζ : ζ s - ζ t = (s - t : ℂ) * f s + (t : ℂ) * (f s - f t) := by
-      dsimp only [ζ]; rw [hs_coe_c, ht_coe_c]; ring
     have hlin : (1 - (t : ℂ) * Q (ζ s)) * (f s - f t) = (s - t : ℂ) * (f s * Q (ζ s)) := by
-      have h1 : f s - f t = ((s - t : ℂ) * f s + (t : ℂ) * (f s - f t)) * Q (ζ s) := by
-        rw [← hdiff_ζ]; dsimp only [f, Q]
-        rw [resolventTransform_pastur_eq s.toNNReal hz, resolventTransform_pastur_eq t.toNNReal hz]
-        simpa only [smul_eq_mul] using
-          (sub_smul_dslope (resolventTransform ν) (ζ t) (ζ s)).symm
-      linear_combination h1
+      simpa only [f, ζ, Q, hs_coe_c, ht_coe_c] using
+        one_sub_mul_dslope_mul_resolventTransform_pastur_sub (ν := ν) hz s.toNNReal t.toNNReal
     have hst' : (s - t : ℂ) ≠ 0 := by rw [← ofReal_sub, ofReal_ne_zero]; exact sub_ne_zero.2 hst
     rw [Pi.div_apply, slope_def_module, real_smul, ofReal_inv, ofReal_sub, div_eq_iff hden]
     calc f s * Q (ζ s)
@@ -209,10 +224,8 @@ theorem continuous_deriv_resolventTransform_pastur {z : ℂ} (hz : z.im ≠ 0) :
     have hd_cont : Continuous fun t : ℝ≥0 ↦ deriv (resolventTransform ν) (ζ t) := by
       rw [continuous_iff_continuousAt]
       intro t
-      have hpos := im_mul_im_add_mul_resolventTransform_pastur_pos (ν := ν) t hz
-      have hζ0 : (ζ t).im ≠ 0 := fun h ↦ by
-        dsimp only [ζ] at h; rw [h, mul_zero] at hpos; exact lt_irrefl 0 hpos
-      exact (han (ζ t) hζ0).deriv.continuousAt.comp hζ_cont.continuousAt
+      exact (han (ζ t) (im_add_mul_resolventTransform_pastur_ne_zero t hz)).deriv.continuousAt.comp
+        hζ_cont.continuousAt
     have hden_cont : Continuous fun t : ℝ≥0 ↦
         1 - (t : ℂ) * deriv (resolventTransform ν) (ζ t) :=
       continuous_const.sub ((continuous_ofReal.comp NNReal.continuous_coe).mul hd_cont)
