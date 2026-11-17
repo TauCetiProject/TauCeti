@@ -249,11 +249,20 @@ theorem IsSeparatedBy.V_Rad (h : IsSeparatedBy κ ι) (S : Set (GX G X)) :
   (V_antitone κ (subset_Rad (ι := ι) S)).antisymm <| by
     simpa only [GroupAlgGeom.V_Rad] using V_antitone κ (SetLike.coe_subset_coe.2 (h.Rad_le S))
 
+/-- The `G`-homomorphisms out of the coordinate group `G_{R(S)}` are those out of the quotient
+`G[X] ⧸ Rad_H(S)`, the two coefficient maps being equal. -/
+private def CoordGroup.gHomEquivQuotient (S : Set (GX G X)) :
+    GHom (CoordGroup.coeff ι S) κ ≃ GHom (GX.quotientCoeff (Rad ι S)) κ where
+  toFun φ := ⟨φ.toMonoidHom, fun g => by simpa using φ.map_coeff g⟩
+  invFun φ := ⟨φ.toMonoidHom, fun g => by simpa using φ.map_coeff g⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
 /-- Evaluation at a solution `p` of a system `S` in a group `K` separated by `H` over `G`, as a
 `G`-homomorphism `G_{R(S)} → K` from the coordinate group of `S` over `H`. -/
 def CoordGroup.evalGHomOfIsSeparatedBy {S : Set (GX G X)} (h : IsSeparatedBy κ ι) (p : X → K)
     (hp : p ∈ V κ S) : GHom (CoordGroup.coeff ι S) κ :=
-  GX.quotientEvalGHom p ((h.V_Rad S).ge hp)
+  (gHomEquivQuotient S).symm (GX.quotientEvalGHom p ((h.V_Rad S).ge hp))
 
 @[simp]
 theorem CoordGroup.evalGHomOfIsSeparatedBy_mk {S : Set (GX G X)} (h : IsSeparatedBy κ ι)
@@ -282,19 +291,20 @@ by `H` over `G`: `G`-homomorphisms `G_{R(S)} → K` correspond to the solutions 
 their values at the generic point and by evaluation. -/
 def CoordGroup.homEquivOfIsSeparatedBy (h : IsSeparatedBy κ ι) (S : Set (GX G X)) :
     GHom (coeff ι S) κ ≃ V κ S :=
-  (GX.quotientHomEquiv κ (Rad ι S)).trans (Set.equivOfEq (h.V_Rad S))
+  (gHomEquivQuotient S).trans <|
+    (GX.quotientHomEquiv κ (Rad ι S)).trans (Set.equivOfEq (h.V_Rad S))
 
 @[simp]
 theorem CoordGroup.homEquivOfIsSeparatedBy_apply_coe (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
     (φ : GHom (coeff ι S) κ) (x : X) :
     (homEquivOfIsSeparatedBy h S φ : X → K) x = φ (genericPoint ι S x) := by
   rw [genericPoint_apply]
-  exact GX.quotientHomEquiv_apply_coe φ x
+  exact GX.quotientHomEquiv_apply_coe (gHomEquivQuotient S φ) x
 
 @[simp]
 theorem CoordGroup.homEquivOfIsSeparatedBy_symm_apply (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
     (p : V κ S) : (homEquivOfIsSeparatedBy h S).symm p = evalGHomOfIsSeparatedBy h p p.2 :=
-  GX.quotientHomEquiv_symm_apply _
+  congrArg (gHomEquivQuotient S).symm (GX.quotientHomEquiv_symm_apply _)
 
 /-- Evaluating an equation at the solution attached to a `G`-homomorphism `φ : G_{R(S)} → K` gives
 the image under `φ` of its class. -/
@@ -302,7 +312,7 @@ the image under `φ` of its class. -/
 theorem CoordGroup.eval_homEquivOfIsSeparatedBy (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
     (φ : GHom (coeff ι S) κ) (w : GX G X) :
     eval κ (homEquivOfIsSeparatedBy h S φ) w = φ (w : CoordGroup ι S) :=
-  GX.eval_quotientHomEquiv φ w
+  GX.eval_quotientHomEquiv (gHomEquivQuotient S φ) w
 
 /-- For `K = H` the bijection is the universal property `CoordGroup.homEquiv` of the coordinate
 group. -/

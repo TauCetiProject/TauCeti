@@ -715,7 +715,7 @@ namespace CoordGroup
 
 variable (ι) in
 /-- The coefficient homomorphism `G →* G_{R(S)}`. -/
-@[expose] def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
+def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
   GX.quotientCoeff _
 
 theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) := (rfl)
