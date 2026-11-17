@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Induction.Cyclotomic.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Realization
 import Mathlib.Algebra.Group.Shrink
 import Mathlib.Data.Fintype.Shrink
+import TauCeti.RepresentationTheory.CharacterTable.CoefficientAction
 import TauCeti.RepresentationTheory.Induction.Brauer.Induction
 import TauCeti.RepresentationTheory.Induction.Monomial
 public import TauCeti.NumberTheory.Cyclotomic.Adjoin
@@ -36,8 +37,8 @@ The character statement allows `K`, `L` and `G` in independent universes. The mo
 theorem for nilpotent groups puts the group in the universe of `L`, so the Brauer argument runs on
 the copy `Shrink G` of `G` in that universe, and its conclusion returns to `G` by pulling virtual
 characters back along the group isomorphism `Shrink.mulEquiv`
-(`TauCeti.comp_mem_virtualCharacters`). The reverse inclusion shrinks the carrier of a scalar
-extension with `FDRep.ofShrink`. The realization statements keep `K` and `L` in one universe,
+(`TauCeti.comp_mem_virtualCharacters`). The reverse inclusion is the change of coefficients
+`RingHom.comp_mem_virtualCharacters`. The realization statements keep `K` and `L` in one universe,
 since they compare the scalar extension with a representation over `L`. No cyclotomic hypothesis
 on the whole ambient field `L` is needed.
 
@@ -121,14 +122,9 @@ theorem virtualCharacters_eq_map_of_isPrimitiveRoot {n : ℕ} [NeZero n] {ζ : K
     refine AddSubgroup.mem_map.mpr ⟨g ∘ e.symm, comp_mem_virtualCharacters e.symm.toMonoidHom hg,
       funext fun x => ?_⟩
     simpa using congrFun hgf (e.symm x)
-  · -- Genuine characters over `K` extend to genuine characters over `L`.
-    apply AddSubgroup.map_le_iff_le_comap.mpr
-    refine virtualCharacters_le fun V => ?_
-    rw [AddSubgroup.mem_comap]
-    convert character_mem_virtualCharacters (FDRep.ofShrink (Representation.baseChange L V.ρ))
-      using 1
-    funext g
-    simp
+  · -- Changing coefficients along `K → L` preserves virtual characters.
+    exact AddSubgroup.map_le_iff_le_comap.mpr fun _ hf =>
+      (algebraMap K L).comp_mem_virtualCharacters hf
 
 end
 
