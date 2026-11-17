@@ -715,13 +715,13 @@ series, over a complete ultrametric norm-one ring. -/
 theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧}
     (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire) (hS' : S'.IsEntire)
     (heq : (Q : R⟦X⟧) * S = (Q : R⟦X⟧) * S') : S = S' := by
-  set Q₁ : Polynomial R := Polynomial.C (Ring.inverse Q.leadingCoeff) * Q
-  have hq₁ : Q₁.Monic :=
-    Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (Ring.inverse_mul_cancel _ hQ)
-  have hmul : (Q₁ : R⟦X⟧) * S = (Q₁ : R⟦X⟧) * S' := by
-    simp only [Q₁, Polynomial.coe_mul, Polynomial.coe_C, mul_assoc, heq]
-  have hdiv := congrArg (fun F : R⟦X⟧ ↦ F.divByMonic Q₁) hmul
-  rwa [hS.coe_mul_divByMonic_cancel_left hq₁, hS'.coe_mul_divByMonic_cancel_left hq₁] at hdiv
+  have : Nontrivial R := NormOneClass.nontrivial
+  have h0 : (0 : Polynomial R).degree < Q.degree := by
+    rw [Polynomial.degree_zero, bot_lt_iff_ne_bot, ne_eq, Polynomial.degree_eq_bot]
+    exact Polynomial.leadingCoeff_ne_zero.mp hQ.ne_zero
+  exact (eq_and_eq_of_entire_mul_add_eq hQ hS hS' h0 h0
+    (by rw [Polynomial.coe_zero, add_zero])
+    (by rw [Polynomial.coe_zero, add_zero]; exact heq.symm)).1
 
 /-- Over a complete ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
 with invertible leading coefficient in the subring of entire power series is equivalent to ordinary

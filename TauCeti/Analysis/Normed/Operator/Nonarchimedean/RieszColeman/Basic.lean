@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Algebra.Polynomial.Smeval
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.Algebra.Ring.SpectralIdempotent
 
 /-!
 # Riesz–Coleman projections and topological polynomial spectral splittings
@@ -128,8 +129,7 @@ namespace IsRieszColemanProjection
 
 variable {u E : M →L[R] M} {Q : R[X]}
 
-/-- For `Q = 1`, the finite spectral summand is zero: any Riesz–Coleman projection for `1` is
-`0`. -/
+/-- For `Q = 1`, the spectral summand is zero: any Riesz–Coleman projection for `1` is `0`. -/
 theorem eq_zero_of_one (hE : IsRieszColemanProjection u 1 E) : E = 0 := by
   simpa using hE.aeval_reverse_mul_eq_zero
 
@@ -314,14 +314,13 @@ theorem coe_equivKer_symm_apply (hE : IsRieszColemanProjection u Q E) (x : E.ker
 /-- **Uniqueness of the Riesz–Coleman projection.** Two Riesz–Coleman projections of `u` for the
 same polynomial `Q` are equal. -/
 theorem unique {E' : M →L[R] M} (hE : IsRieszColemanProjection u Q E)
-    (hE' : IsRieszColemanProjection u Q E') : E = E' := by
-  have h₁ : (1 - E') * E = 0 := by
-    rw [← hE'.inverse_mul_aeval_reverse, mul_assoc, hE.aeval_reverse_mul_eq_zero, mul_zero]
-  have h₂ : E' * (1 - E) = 0 := by
-    rw [← hE.aeval_reverse_mul_inverse, ← mul_assoc, hE'.mul_aeval_reverse_eq_zero, zero_mul]
-  rw [sub_mul (α := M →L[R] M), one_mul, sub_eq_zero] at h₁
-  rw [mul_sub (α := M →L[R] M), mul_one, sub_eq_zero] at h₂
-  exact h₁.trans h₂.symm
+    (hE' : IsRieszColemanProjection u Q E') : E = E' :=
+  hE.isIdempotentElem.eq_of_pow_mul_eq_zero (C := Polynomial.aeval u Q.reverse) (h := 1)
+    hE'.isIdempotentElem
+    (by rw [pow_one]; exact hE.aeval_reverse_mul_eq_zero)
+    (by rw [pow_one]; exact hE'.aeval_reverse_mul_eq_zero)
+    hE.aeval_reverse_mul_inverse hE.inverse_mul_aeval_reverse
+    hE'.aeval_reverse_mul_inverse hE'.inverse_mul_aeval_reverse
 
 /-- When `Q.leadingCoeff` is a unit, `E` factors on the left through `u`: specifically,
 `u * ((-lc(Q)⁻¹) • (Q*.divX)(u) * E) = E`. -/
@@ -388,13 +387,13 @@ noncomputable def equivRange (hE : IsRieszColemanProjection u Q E)
     (fun x ↦ Subtype.ext (hE.neg_inverse_smul_aeval_divX_reverse_apply hQ x.property))
     (fun x ↦ Subtype.ext (hE.apply_neg_inverse_smul_aeval_divX_reverse hQ x.property))
 
-/-- The finite-summand automorphism `equivRange` acts by `u`. -/
+/-- The spectral-summand automorphism `equivRange` acts by `u`. -/
 @[simp]
 theorem coe_equivRange_apply (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
     (x : E.range) : (hE.equivRange hQ x : M) = u x := by
   simp [equivRange, coe_restrict_apply hE.mapsTo_range]
 
-/-- The inverse finite-summand automorphism `equivRange.symm` acts by `-lc(Q)⁻¹ • (Q*/X)(u)`. -/
+/-- The inverse spectral-summand automorphism `equivRange.symm` acts by `-lc(Q)⁻¹ • (Q*/X)(u)`. -/
 @[simp]
 theorem coe_equivRange_symm_apply (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
     (x : E.range) :
@@ -454,7 +453,7 @@ theorem semiconj (hE : IsRieszColemanProjection u Q E) (hF : IsRieszColemanProje
   rw [map_sub, map_sub, hfixed, sub_eq_zero] at hzero
   exact hzero.symm
 
-/-- An intertwiner sends the finite spectral summand `range E` into `range F`. -/
+/-- An intertwiner sends the spectral summand `range E` into `range F`. -/
 theorem mapsTo_range_of_semiconj (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Set.MapsTo f E.range F.range := by
