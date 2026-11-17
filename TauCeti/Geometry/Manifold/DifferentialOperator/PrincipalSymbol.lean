@@ -75,6 +75,9 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
 * `TauCeti.forall_smoothCommutatorSymbol_eq_zero_iff`: on a boundaryless manifold, an operator of
   order at most `m + 1` has vanishing commutator symbol at every point exactly when it has order at
   most `m`.
+* `TauCeti.mem_differentialOperators_one_of_smoothPrincipalSymbol_eq_zero`: on a boundaryless
+  manifold, an operator of order at most two whose principal symbol vanishes at every point has
+  order at most one.
 * `TauCeti.smoothCommutatorSymbol_conjDifferentialOperators`,
   `TauCeti.smoothPrincipalSymbol_conjDifferentialOperators`: naturality under diffeomorphisms.
 
@@ -314,6 +317,37 @@ theorem smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators (hx : I.IsInt
     smoothPrincipalSymbol I hx D ξ = 0 := by
   simp [smoothPrincipalSymbol_def,
     smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators hx D hD]
+
+/-- On a boundaryless manifold, an operator of order at most two whose principal symbol vanishes at
+every point has order at most one. -/
+theorem mem_differentialOperators_one_of_smoothPrincipalSymbol_eq_zero [BoundarylessManifold I M]
+    (D : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 2)
+    (hD : ∀ (x : M) (ξ : TangentSpace I x →L[ℝ] ℝ),
+      smoothPrincipalSymbol I BoundarylessManifold.isInteriorPoint D ξ = 0) :
+    (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 1 := by
+  refine (forall_smoothCommutatorSymbol_eq_zero_iff D).1 fun x ↦ ?_
+  -- The commutator symbol `B` is a symmetric bilinear form vanishing on the diagonal, so it
+  -- vanishes by polarization: `0 = B(u + v, u + v) = B(u, u) + 2 B(u, v) + B(v, v) = 2 B(u, v)`.
+  set B := smoothCommutatorSymbol I (BoundarylessManifold.isInteriorPoint (x := x)) D
+  have hdiag (v : TangentSpace I x →L[ℝ] ℝ) : B ![v, v] = 0 := by
+    have h := hD x v
+    rw [smoothPrincipalSymbol_def] at h
+    have hv : (fun _ : Fin 2 ↦ v) = ![v, v] := by ext i; fin_cases i <;> rfl
+    simpa [hv] using h
+  have hsymm (u v : TangentSpace I x →L[ℝ] ℝ) : B ![u, v] = B ![v, u] := by
+    have h := smoothCommutatorSymbol_comp_perm BoundarylessManifold.isInteriorPoint D ![v, u]
+      (Equiv.swap 0 1)
+    have huv : ![v, u] ∘ Equiv.swap 0 1 = ![u, v] := by ext i; fin_cases i <;> rfl
+    rwa [huv] at h
+  have hadd (u v w : TangentSpace I x →L[ℝ] ℝ) : B ![u + v, w] = B ![u, w] + B ![v, w] :=
+    B.cons_add ![w] u v
+  ext ξ
+  have h := hdiag (ξ 0 + ξ 1)
+  rw [hadd, hsymm (ξ 0), hsymm (ξ 1), hadd, hadd, hdiag, hdiag, hsymm (ξ 1)] at h
+  have hξ : ξ = ![ξ 0, ξ 1] := by ext i; fin_cases i <;> rfl
+  rw [hξ, zero_apply]
+  linarith
 
 /-- **Principal symbols multiply under composition.** For operators `P` and `Q` of orders at most
 `m` and `k`, the principal symbol of `P ∘ Q`, as an operator of order at most `m + k`, is the
