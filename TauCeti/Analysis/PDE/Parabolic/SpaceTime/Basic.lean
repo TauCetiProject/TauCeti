@@ -37,6 +37,8 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
   the slab `E × [T - b, T - a]` onto `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
   `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
+* `TauCeti.ParabolicSpaceTime.slabSpaceIsometryEquiv`: a spatial isometric equivalence lifted to
+  an isometric equivalence between slabs.
 * `TauCeti.ParabolicSpaceTime.lipschitzWith_slabSpace`: the spatial position of a point of a slab
   is `1`-Lipschitz for the parabolic distance.
 
@@ -232,6 +234,36 @@ theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : �
   gcongr
   · exact (hf _ _).trans (mul_le_mul_left (by exact_mod_cast le_max_left K 1) _)
   · exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast le_max_right K 1)
+
+/-- Lifting an isometric equivalence `e : E ≃ᵢ E'` between spatial fibres to the slab
+`E × [a, b] ≃ᵢ E' × [a, b]`, acting as `(x, t) ↦ (e x, t)`. -/
+def slabSpaceIsometryEquiv {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ} (e : E ≃ᵢ E') :
+    slab (E := E) a b ≃ᵢ slab (E := E') a b where
+  toFun := slabSpaceMap e
+  invFun := slabSpaceMap e.symm
+  left_inv p := by
+    rw [← slabMk_space_slabTime p]
+    simp only [slabSpaceMap_slabMk, IsometryEquiv.symm_apply_apply]
+  right_inv q := by
+    rw [← slabMk_space_slabTime q]
+    simp only [slabSpaceMap_slabMk, IsometryEquiv.apply_symm_apply]
+  isometry_toFun p q := by
+    rw [← slabMk_space_slabTime p, ← slabMk_space_slabTime q, slabSpaceMap_slabMk,
+      slabSpaceMap_slabMk, edist_slabMk, edist_slabMk, e.edist_eq]
+
+@[simp]
+theorem slabSpaceIsometryEquiv_apply {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ}
+    (e : E ≃ᵢ E') (p : slab (E := E) a b) :
+    slabSpaceIsometryEquiv (a := a) (b := b) e p = slabSpaceMap e p := (rfl)
+
+theorem slabSpaceIsometryEquiv_slabMk {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ}
+    (e : E ≃ᵢ E') (x : E) (t : Icc a b) :
+    slabSpaceIsometryEquiv (a := a) (b := b) e (slabMk x t) = slabMk (e x) t := (rfl)
+
+@[simp]
+theorem slabSpaceIsometryEquiv_symm {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ}
+    (e : E ≃ᵢ E') :
+    (slabSpaceIsometryEquiv (a := a) (b := b) e).symm = slabSpaceIsometryEquiv e.symm := (rfl)
 
 end PseudoEMetricSpace
 

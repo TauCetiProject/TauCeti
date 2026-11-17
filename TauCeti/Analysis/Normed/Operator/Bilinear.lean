@@ -13,6 +13,9 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 /-!
 # Pulling back continuous bilinear maps, and their quadratic maps
 
+Evaluating continuous linear maps at a fixed vector `v` (`ContinuousLinearMap.apply 𝕜 G v`) has
+operator norm at most `‖v‖` (`ContinuousLinearMap.opNorm_apply_apply_le`).
+
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
 (`ContinuousLinearMap.pullbackBilinL`), so that it commutes with derivatives of families of
@@ -52,6 +55,12 @@ namespace ContinuousLinearMap
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Evaluating continuous linear maps at a fixed vector `v : V` has operator norm at most
+`‖v‖`. -/
+theorem opNorm_apply_apply_le (v : V) : ‖apply 𝕜 G v‖ ≤ ‖v‖ :=
+  opNorm_le_bound _ (norm_nonneg v) fun L ↦ by
+    simpa only [apply_apply, mul_comm] using L.le_opNorm v
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/

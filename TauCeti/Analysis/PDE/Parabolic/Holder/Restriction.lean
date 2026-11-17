@@ -197,9 +197,8 @@ private def reverse (f : ParabolicC2HolderSpace α E F hab) :
     ParabolicC2HolderSpace α E F (ha ▸ hb ▸ sub_lt_sub_left hab T) :=
   mk ((valueL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
     ((spatialFDerivL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
-    (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
-      (spatialSecondFDerivL f))
-    (-HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith (timeDerivL f))
+    (HolderSpace.slabTimeReverseLIE T ha hb (spatialSecondFDerivL f))
+    (-HolderSpace.slabTimeReverseLIE T ha hb (timeDerivL f))
     (fun t x ↦ by
       simpa using f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
     (fun t x ↦ by
@@ -210,7 +209,7 @@ private def reverse (f : ParabolicC2HolderSpace α E F hab) :
         ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
         (fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs)
       rw [neg_one_smul] at h
-      rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk]
+      rw [HolderSpace.neg_apply, HolderSpace.slabTimeReverseLIE_apply, slabTimeReverse_slabMk]
       refine h.congr_of_mem (fun s hs ↦ ?_) t.2
       simp [timeExtension_def, projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
         projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)])
@@ -221,19 +220,13 @@ private theorem reverse_apply (f : ParabolicC2HolderSpace α E F hab)
 
 private theorem norm_reverse_le (f : ParabolicC2HolderSpace α E F hab) :
     ‖reverse T ha hb f‖ ≤ ‖f‖ := by
-  have hH := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := E →L[ℝ] E →L[ℝ] F)
-    (X := slab (E := E) a b) (X' := slab (E := E) a' b')
-    (slabTimeReverse T ha hb).isometry.lipschitzWith
-  have hT := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := F)
-    (X := slab (E := E) a b) (X' := slab (E := E) a' b')
-    (slabTimeReverse T ha hb).isometry.lipschitzWith
   rw [norm_eq, norm_eq f, reverse, valueL_mk, spatialFDerivL_mk, spatialSecondFDerivL_mk,
     timeDerivL_mk, norm_neg]
   gcongr
   · exact BoundedContinuousFunction.norm_compContinuous_le _ _
   · exact BoundedContinuousFunction.norm_compContinuous_le _ _
-  · simpa using (HolderSpace.compLipschitzL _ _).le_of_opNorm_le hH (spatialSecondFDerivL f)
-  · simpa using (HolderSpace.compLipschitzL _ _).le_of_opNorm_le hT (timeDerivL f)
+  · exact ((HolderSpace.slabTimeReverseLIE T ha hb).norm_map _).le
+  · exact ((HolderSpace.slabTimeReverseLIE T ha hb).norm_map _).le
 
 /-- Time reversal about `T`: the map `u ↦ u ∘ R` with `R (x, s) = (x, T - s)`, from order-two
 parabolic Hölder maps on `E × [a, b]` to those on `E × [a', b']`, where `a' = T - b` and
@@ -281,7 +274,7 @@ theorem spatialSecondFDerivL_timeReverseLIE (f : ParabolicC2HolderSpace α E F h
     (p : slab (E := E) a' b') : spatialSecondFDerivL (timeReverseLIE T ha hb f) p =
       spatialSecondFDerivL f (slabTimeReverse T ha hb p) := by
   rw [timeReverseLIE_eq_reverse, reverse, spatialSecondFDerivL_mk,
-    HolderSpace.compLipschitzL_apply]
+    HolderSpace.slabTimeReverseLIE_apply]
 
 /-- Time reversal negates the time derivative. -/
 @[simp]
@@ -289,7 +282,7 @@ theorem timeDerivL_timeReverseLIE (f : ParabolicC2HolderSpace α E F hab)
     (p : slab (E := E) a' b') : timeDerivL (timeReverseLIE T ha hb f) p =
       -timeDerivL f (slabTimeReverse T ha hb p) := by
   rw [timeReverseLIE_eq_reverse, reverse, timeDerivL_mk, HolderSpace.neg_apply,
-    HolderSpace.compLipschitzL_apply]
+    HolderSpace.slabTimeReverseLIE_apply]
 
 /-- The inverse of time reversal is time reversal in the opposite direction. -/
 @[simp]
@@ -439,9 +432,10 @@ private theorem lipschitzWith_reverseIcc : LipschitzWith 1 (reverseIcc T ha hb) 
 private def reverse (f : ParabolicC1HolderSpace α E F a b) :
     ParabolicC1HolderSpace α E F a' b' :=
   mk ((valueL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
-    (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
-      (spatialFDerivL f))
-    (fun t x ↦ by simpa [reverseIcc] using f.hasSpatialFDerivAt (reverseIcc T ha hb t) x)
+    (HolderSpace.slabTimeReverseLIE T ha hb (spatialFDerivL f))
+    (fun t x ↦ by
+      simpa [reverseIcc, HolderSpace.slabTimeReverseLIE_apply] using
+        f.hasSpatialFDerivAt (reverseIcc T ha hb t) x)
     ((timeEHolderNorm_le_of_lipschitzWith (lipschitzWith_reverseIcc T ha hb)
       fun x t ↦ by simp [reverseIcc]).trans_lt f.timeEHolderNorm_lt_top)
 
@@ -460,9 +454,6 @@ private theorem timeSliceL_reverse (f : ParabolicC1HolderSpace α E F a b) (x : 
 
 private theorem norm_reverse_le (f : ParabolicC1HolderSpace α E F a b) :
     ‖reverse T ha hb f‖ ≤ ‖f‖ := by
-  have hH := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := E →L[ℝ] F)
-    (X := slab (E := E) a b) (X' := slab (E := E) a' b')
-    (slabTimeReverse T ha hb).isometry.lipschitzWith
   have hT := HolderSpace.norm_compLipschitzL_le_one (α := (1 + α) / 2) (Y := F)
     (lipschitzWith_reverseIcc T ha hb)
   rw [norm_eq, norm_eq f]
@@ -470,7 +461,7 @@ private theorem norm_reverse_le (f : ParabolicC1HolderSpace α E F a b) :
   · rw [reverse, valueL_mk]
     exact BoundedContinuousFunction.norm_compContinuous_le _ _
   · rw [reverse, spatialFDerivL_mk]
-    simpa using (HolderSpace.compLipschitzL _ _).le_of_opNorm_le hH (spatialFDerivL f)
+    exact ((HolderSpace.slabTimeReverseLIE T ha hb).norm_map _).le
   · refine lp.norm_le_of_forall_le (norm_nonneg _) fun x ↦ ?_
     rw [timeSliceL_reverse]
     exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le hT _).trans
@@ -513,7 +504,7 @@ theorem timeReverseLIE_apply (f : ParabolicC1HolderSpace α E F a b) (p : slab (
 theorem spatialFDerivL_timeReverseLIE (f : ParabolicC1HolderSpace α E F a b)
     (p : slab (E := E) a' b') : spatialFDerivL (timeReverseLIE T ha hb f) p =
       spatialFDerivL f (slabTimeReverse T ha hb p) := by
-  rw [timeReverseLIE_eq_reverse, reverse, spatialFDerivL_mk, HolderSpace.compLipschitzL_apply]
+  rw [timeReverseLIE_eq_reverse, reverse, spatialFDerivL_mk, HolderSpace.slabTimeReverseLIE_apply]
 
 /-- The inverse of time reversal is time reversal in the opposite direction. -/
 @[simp]

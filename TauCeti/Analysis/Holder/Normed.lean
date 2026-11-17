@@ -38,8 +38,12 @@ parallel notion of Hölder continuity.
   evaluation, and inclusion, with operator-norm bounds.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
   at most `max 1 (K ^ α)`.
+* `TauCeti.HolderSpace.compIsometryEquivLIE`: precomposition with an isometric equivalence, as a
+  linear isometric equivalence between bounded Hölder spaces.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry.
+* `TauCeti.HolderSpace.ofHolderOnWith`: promotes a `HolderOnWith` map (`0 < α`) on a compact set
+  to `HolderSpace`.
 
 ## References
 
@@ -582,6 +586,37 @@ theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
     ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ 1 := by
   simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
 
+/-- Precomposition with an isometric equivalence `e : X' ≃ᵢ X`, as a linear isometric equivalence
+between bounded Hölder spaces of the same exponent. -/
+def compIsometryEquivLIE (e : X' ≃ᵢ X) : HolderSpace α X Y ≃ₗᵢ[ℝ] HolderSpace α X' Y :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := compLipschitzL e e.isometry.lipschitzWith
+      invFun := compLipschitzL e.symm e.symm.isometry.lipschitzWith
+      map_add' := map_add _
+      map_smul' := map_smul _
+      left_inv f := by ext x; simp
+      right_inv g := by ext x; simp }
+    (fun f ↦
+      ((compLipschitzL e e.isometry.lipschitzWith).le_of_opNorm_le
+        (norm_compLipschitzL_le_one e.isometry.lipschitzWith) f).trans_eq (one_mul _))
+    (fun g ↦
+      ((compLipschitzL e.symm e.symm.isometry.lipschitzWith).le_of_opNorm_le
+        (norm_compLipschitzL_le_one e.symm.isometry.lipschitzWith) g).trans_eq (one_mul _))
+
+@[simp]
+theorem compIsometryEquivLIE_apply (e : X' ≃ᵢ X) (f : HolderSpace α X Y) (x : X') :
+    compIsometryEquivLIE e f x = f (e x) := (rfl)
+
+@[simp]
+theorem compIsometryEquivLIE_symm (e : X' ≃ᵢ X) :
+    (compIsometryEquivLIE (α := α) (Y := Y) e).symm = compIsometryEquivLIE e.symm := by
+  ext f x; rfl
+
+theorem compIsometryEquivLIE_toContinuousLinearMap (e : X' ≃ᵢ X) :
+    (compIsometryEquivLIE (α := α) (Y := Y) e).toLinearIsometry.toContinuousLinearMap =
+      compLipschitzL e e.isometry.lipschitzWith := by
+  ext f x; rfl
+
 end compLipschitz
 
 section compLeft
@@ -642,6 +677,35 @@ theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace
   simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
 
 end compLeft
+
+section ofHolderOnWith
+
+/-- Promote an `α`-Hölder map (`0 < α`) on a compact set `s : Set X` to an element of
+`HolderSpace α s Y`. -/
+def ofHolderOnWith (hα : 0 < α) {s : Set X} (hs : IsCompact s) {K : ℝ≥0} {f : X → Y}
+    (hf : HolderOnWith K α f s) : HolderSpace α s Y :=
+  haveI : CompactSpace s := isCompact_iff_compactSpace.mp hs
+  ofBoundedContinuousFunction
+    (BoundedContinuousFunction.mkOfCompact
+      ⟨fun x : s ↦ f x, (hf.continuousOn hα).comp_continuous continuous_subtype_val fun x ↦ x.2⟩)
+    (HolderWith.memHolder (C := K) fun x y ↦ by
+      simpa [BoundedContinuousFunction.mkOfCompact_apply, Subtype.edist_eq] using
+        hf x x.2 y y.2)
+
+@[simp]
+theorem ofHolderOnWith_apply (hα : 0 < α) {s : Set X} (hs : IsCompact s) {K : ℝ≥0} {f : X → Y}
+    (hf : HolderOnWith K α f s) (x : s) :
+    ofHolderOnWith hα hs hf x = f x := (rfl)
+
+/-- If `f` is bounded in norm by `M` (`0 ≤ M`) and `α`-Hölder with constant `K` on a compact set
+`s`, then `‖ofHolderOnWith hα hs hf‖ ≤ M + K`. -/
+theorem norm_ofHolderOnWith_le (hα : 0 < α) {s : Set X} (hs : IsCompact s) {M : ℝ} {K : ℝ≥0}
+    {f : X → Y} (hM0 : 0 ≤ M) (hM : ∀ x ∈ s, ‖f x‖ ≤ M) (hf : HolderOnWith K α f s) :
+    ‖ofHolderOnWith hα hs hf‖ ≤ M + K :=
+  norm_le_of_norm_le_of_holderWith hM0 (fun x ↦ by simpa using hM x x.2) fun x y ↦ by
+    simpa [Subtype.edist_eq] using hf x x.2 y y.2
+
+end ofHolderOnWith
 
 end HolderSpace
 
