@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -149,22 +150,7 @@ theorem contMDiffAt_sectionAlong_contactFlat {EN HN N : Type*} [NormedAddCommGro
       (fun m ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (b m)
         (degreeOneEquiv (α m) (b m))) m₀ :=
     contMDiffAt_sectionAlong_degreeOneEquiv_iff.2 hα
-  rw [contMDiffAt_hom_bundle]
-  have hα₂ := (contMDiffAt_hom_bundle _).1 hα₁
-  refine ⟨hα₂.1, ?_⟩
-  -- In coordinates, `α ⊗ α` is `smulRight` applied twice to the coordinate expression of `α`.
-  refine (((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
-    hα₂.2).clm_apply hα₂.2).congr_of_eventuallyEq ?_
-  filter_upwards [hα₂.1.continuousAt.preimage_mem_nhds
-    ((trivializationAt E (TangentSpace I) (b m₀)).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt E (TangentSpace I) (b m₀)))] with m
-    (hm : b m ∈ (trivializationAt E (TangentSpace I) (b m₀)).baseSet)
-  ext v w
-  rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hm hm (Set.mem_univ _)]
-  simp only [Function.comp_apply]
-  rw [ContinuousLinearMap.inCoordinates_eq (E' := Trivial M ℝ) hm
-    (by simp [Trivial.eq_trivialization M ℝ])]
-  simp [Trivial.eq_trivialization M ℝ]
+  exact hα₁.clm_bundle_smulRight hα₁
 
 /-- **The contact flat maps form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_contactFlat (α : SmoothForm I M ℝ 1) :

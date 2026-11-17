@@ -21,6 +21,7 @@ import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -789,9 +790,10 @@ theorem contMDiff_poissonBracket_uncurry {E' H' N : Type*} [NormedAddCommGroup E
     ContMDiff (J.prod I) 𝓘(ℝ) n (fun q : N × M ↦ σ.poissonBracket (f q.1) (g q.1) q.2) := by
   -- Pair the jointly `C^n` differential of `f` with the jointly `C^n` field `X_g`, in the
   -- trivial line bundle, and read off the fibre component.
-  have hc := ContMDiff.clm_bundle_apply (E₂ := Bundle.Trivial M ℝ)
-    hf.contMDiff_totalSpaceMk_mvfderiv_uncurry (h.contMDiff_hamiltonianVectorField_uncurry hn hg)
-  exact (Bundle.Trivial.contMDiff_mk_iff.1 hc).2.congr fun _ ↦ h.poissonBracket_eq_mvfderiv _ _ _
+  have hc : ContMDiff (J.prod I) 𝓘(ℝ) n _ := fun q ↦
+    (hf.contMDiff_totalSpaceMk_mvfderiv_uncurry q).clm_bundle_apply_scalar
+      (h.contMDiff_hamiltonianVectorField_uncurry hn hg q)
+  exact hc.congr fun _ ↦ h.poissonBracket_eq_mvfderiv _ _ _
 
 end IsNondegenerate
 
