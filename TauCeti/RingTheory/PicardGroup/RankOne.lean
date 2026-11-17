@@ -25,8 +25,7 @@ invertible.
 
 ## Main results
 
-* `Submodule.free_iff_isPrincipal`: an invertible submodule is free exactly when it is principal.
-* `Ideal.moduleInvertible_of_ne_bot`: a nonzero finite projective ideal of a domain is invertible.
+* `Ideal.moduleInvertible_of_ne_bot`: a nonzero projective ideal of a domain is invertible.
 * `Module.Invertible.rankAtStalk_eq_one`: an invertible module has rank one at every prime.
 * `Module.Invertible.of_rankAtStalk_eq_one`: a finite projective module of rank one at every prime
   is invertible.
@@ -89,39 +88,35 @@ theorem invertible_iff_rankAtStalk_eq_one :
 
 end Module
 
-namespace Submodule
-
-variable {R P : Type*} [CommRing R] [AddCommGroup P] [Module R P]
-
-/-- An invertible submodule is free exactly when it is principal. -/
-theorem free_iff_isPrincipal (I : Submodule R P) [Module.Invertible R I] :
-    Module.Free R I ↔ I.IsPrincipal := by
-  rw [Module.Invertible.free_iff_linearEquiv]
-  constructor
-  · rintro ⟨f⟩
-    exact ⟨_, Submodule.eq_span_singleton_of_surjective f.symm.surjective⟩
-  · rintro ⟨x, hx⟩
-    -- Multiplication by the generator maps `R` onto `I`, hence isomorphically.
-    let f : R →ₗ[R] I :=
-      (LinearMap.toSpanSingleton R P x).codRestrict I fun a ↦ by
-        rw [hx]
-        exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self x)
-    have hf : Function.Surjective f := by
-      rintro ⟨y, hy⟩
-      obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp (hx ▸ hy : y ∈ Submodule.span R {x})
-      exact ⟨a, rfl⟩
-    exact ⟨(LinearEquiv.ofBijective f (Module.Invertible.bijective_of_surjective hf)).symm⟩
-
-end Submodule
-
 namespace Ideal
 
 variable {R : Type*} [CommRing R] [IsDomain R]
 
-/-- A nonzero finite projective ideal of a domain is an invertible module. -/
-theorem moduleInvertible_of_ne_bot (I : Ideal R) [Module.Finite R I] [Module.Projective R I]
-    (hI : I ≠ ⊥) : Module.Invertible R I :=
-  .of_rankAtStalk_eq_one fun p ↦ by
+/-- A nonzero projective ideal of a domain is an invertible module. -/
+theorem moduleInvertible_of_ne_bot (I : Ideal R) [Module.Projective R I]
+    (hI : I ≠ ⊥) : Module.Invertible R I := by
+  classical
+  obtain ⟨a, ha, hane⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
+  obtain ⟨s, hs⟩ := Module.projective_def.mp (inferInstance : Module.Projective R I)
+  -- The splitting of every element is supported on the splitting of one nonzero element.
+  have : Module.Finite R I := by
+    refine Module.Finite.of_fg_top ⟨(s ⟨a, ha⟩).support, ?_⟩
+    apply top_unique
+    intro x _
+    rw [← hs x, Finsupp.linearCombination_apply]
+    apply Submodule.sum_mem
+    intro y hy
+    apply Submodule.smul_mem
+    apply Submodule.subset_span
+    apply Finset.mem_coe.mpr
+    by_contra h
+    have hy0 : (s ⟨a, ha⟩) y = 0 := Finsupp.notMem_support_iff.mp h
+    have hx : a • x = (x : R) • (⟨a, ha⟩ : I) := Subtype.ext (mul_comm _ _)
+    have heq := congrArg (fun z : I →₀ R ↦ z y) (congrArg s hx)
+    simp only [map_smul, Finsupp.smul_apply, smul_eq_mul] at heq
+    rw [hy0, mul_zero] at heq
+    exact (Finsupp.mem_support_iff.mp hy) ((mul_eq_zero.mp heq).resolve_left hane)
+  exact .of_rankAtStalk_eq_one fun p ↦ by
     rw [Module.rankAtStalk_eq, p.asIdeal.finrank_fiber_eq_finrank]
     exact le_antisymm ((Submodule.finrank_le I).trans (by simp))
       (Submodule.one_le_finrank_iff.mpr hI)
