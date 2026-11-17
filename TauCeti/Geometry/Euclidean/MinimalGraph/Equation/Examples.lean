@@ -6,16 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Euclidean.MinimalGraph.Equation.Operator
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.SeparableHeight
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 
@@ -24,9 +21,9 @@ import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 
 Affine height functions solve the minimal graph equation. In dimension `n`, squared norm has
 nondivergence operator `2n + 8(n-1)‖x‖²`, which is strictly positive in every positive dimension.
-On the Euclidean plane, the harmonic saddle `xy` has operator `-2xy`. The separated-variables
-height API computes the gradient, Hessian, Laplacian and nondivergence operator from the two
-profiles. This gives Scherk's graph as a solution of both forms wherever both cosines are nonzero,
+On the Euclidean plane, the harmonic saddle `xy` has operator `-2xy`. Using the separated-height
+calculus API, the nondivergence operator is computed from the two profiles. This gives Scherk's
+graph as a solution of both forms wherever both cosines are nonzero,
 including its customary square `|x|, |y| < π/2`.
 
 ## References
@@ -152,60 +149,6 @@ theorem nondivergenceOperator_saddleHeight_ne_zero (x : Plane) (h : x 0 * x 1 �
     nondivergenceOperator saddleHeight x ≠ 0 := by
   rw [nondivergenceOperator_saddleHeight]
   simpa only [mul_assoc] using (mul_ne_zero (by norm_num : (-2 : ℝ) ≠ 0) h)
-
-/-- A height obtained by adding one-variable profiles in the two Cartesian directions. -/
-def separableHeight (f g : ℝ → ℝ) (x : Plane) : ℝ := f (x 0) + g (x 1)
-
-@[simp] theorem separableHeight_apply (f g : ℝ → ℝ) (x : Plane) :
-    separableHeight f g x = f (x 0) + g (x 1) := (rfl)
-
-/-- The gradient of a separated height consists of the two profile derivatives. -/
-theorem gradient_separableHeight (f g : ℝ → ℝ) (x : Plane)
-    (hf : DifferentiableAt ℝ f (x 0)) (hg : DifferentiableAt ℝ g (x 1)) :
-    ∇ (separableHeight f g) x =
-      WithLp.toLp 2 ![deriv f (x 0), deriv g (x 1)] := by
-  apply (InnerProductSpace.toDual ℝ Plane).injective
-  rw [toDual_gradient]
-  have h0 := (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 0).differentiableAt
-  have h1 := (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 1).differentiableAt
-  have hd0 := fderiv_comp x hf h0
-  have hd1 := fderiv_comp x hg h1
-  have hd := fderiv_fun_add (hf.comp x h0) (hg.comp x h1)
-  simp only [Function.comp_def] at hd hd0 hd1
-  unfold separableHeight
-  rw [hd, hd0, hd1]
-  ext v
-  simp [(PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 0).fderiv,
-    (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 x 1).fderiv, InnerProductSpace.toDual_apply_apply,
-    EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two]
-
-/-- The Hessian of a separated height is diagonal in Cartesian coordinates. -/
-theorem fderiv_fderiv_separableHeight_apply (f g : ℝ → ℝ) (x v w : Plane)
-    (hf : ContDiffAt ℝ 2 f (x 0)) (hg : ContDiffAt ℝ 2 g (x 1)) :
-    fderiv ℝ (fderiv ℝ (separableHeight f g)) x v w =
-      iteratedDeriv 2 f (x 0) * v 0 * w 0 +
-        iteratedDeriv 2 g (x 1) * v 1 * w 1 := by
-  have heq : separableHeight f g =
-      (fun z : Fin 2 → ℝ ↦ ∑ i : Fin 2, ![f, g] i (z i)) ∘
-        EuclideanSpace.equiv (Fin 2) ℝ := by
-    funext y
-    simp [separableHeight, Fin.sum_univ_two]
-  rw [heq, ContinuousLinearEquiv.fderiv_fderiv_comp_right_apply_apply]
-  rw [TauCeti.fderiv_fderiv_sum_comp_eval_apply (Fin.forall_fin_two.2 ⟨hf, hg⟩)]
-  simp [Fin.sum_univ_two, iteratedDeriv_succ]
-
-/-- The flat Laplacian of a separated height is the sum of its one-variable second derivatives. -/
-theorem laplacian_separableHeight (f g : ℝ → ℝ) (x : Plane)
-    (hf : ContDiffAt ℝ 2 f (x 0)) (hg : ContDiffAt ℝ 2 g (x 1)) :
-    Δ (separableHeight f g) x =
-      iteratedDeriv 2 f (x 0) + iteratedDeriv 2 g (x 1) := by
-  rw [congrFun (InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis
-    (separableHeight f g) (EuclideanSpace.basisFun (Fin 2) ℝ)) x]
-  simp only [Fin.sum_univ_two, iteratedFDeriv_two_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [fderiv_fderiv_separableHeight_apply f g x _ _ hf hg,
-    fderiv_fderiv_separableHeight_apply f g x _ _ hf hg]
-  simp [EuclideanSpace.basisFun_apply]
 
 /-- The minimal graph operator on a separated height has the standard diagonal form. -/
 theorem nondivergenceOperator_separableHeight (f g : ℝ → ℝ) (x : Plane)
