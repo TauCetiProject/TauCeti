@@ -45,7 +45,8 @@ followed by restriction of scalars to `ULift ℤ` so that `Λ` can live in any u
   cover the space, so Mayer–Vietoris makes `Hₖ(U; N) ⊞ Hₖ(M ∖ L; N) ⟶ Hₖ(M ∖ (L ∖ U); N)` a
   monomorphism, while `Hₖ₊₁(M, M ∖ (L ∖ U); N) = 0` makes `Hₖ(M ∖ (L ∖ U); N) ⟶ Hₖ(M; N)` a
   monomorphism. Comparing the lifts of `α` to `U` and to `M ∖ L` forces `α = 0`
-  (`TauCeti.eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero`).
+  (`TauCeti.eq_zero_of_disjoint_isOpen_of_isZero_localHomology`,
+  `TauCeti.eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero`).
 * **Degrees above `n`.** By `TauCeti.isZero_localHomology_of_isCompact`, `Hₖ(M, M ∖ L; N)` and
   `Hₖ₊₁(M, M ∖ D; N)` both vanish for `k > n`, giving `Hₖ(M; N) = 0`.
 * **Top degree on noncompact components.** A class `α` pushed forward from compact `K` vanishes in
@@ -54,21 +55,16 @@ followed by restriction of scalars to `ULift ℤ` so that `Λ` can live in any u
   component of `x` is noncompact, then since `M` is locally path-connected that component is a
   closed path component, so it cannot lie inside `K`; transporting vanishing along a path from a
   point `x₀ ∉ K` of the component to `x` via
-  `TauCeti.localHomologyRestriction_univ_comp_localHomologyTransport` shows that `α` vanishes in
+  `TauCeti.singularHomologyToLocalHomology_eq_zero_of_joined` shows that `α` vanishes in
   `Hₙ(M, M ∖ {x}; N)` for every `x ∈ M`. Pointwise detection along compact sets
   (`TauCeti.eq_zero_of_forall_localHomologyRestriction_eq_zero`) then kills the image of `α` in
   `Hₙ(M, M ∖ L; N)` for every compact `L`, and the first step concludes `α = 0`.
 
 ## Main results
 
-* `TauCeti.eq_zero_of_disjoint_isOpen_of_isZero_localHomology`: if `M ∖ D = U ∪ V` is a union of
-  disjoint open subsets `U, V ⊆ M` and `Hₖ₊₁(M, M ∖ D; N) = 0`, any class in `Hₖ(M; N)` coming
-  from both `Hₖ(U; N)` and `Hₖ(V; N)` is zero.
 * `TauCeti.eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero`: in a locally compact Hausdorff
   space whose compact subsets have vanishing local homology in degree `k + 1`, a class in
   `Hₖ(M; N)` vanishing in `Hₖ(M, M ∖ L; N)` for all compact `L` is zero.
-* `TauCeti.singularHomologyToLocalHomology_eq_zero_of_joined`: vanishing in local homology
-  transports along paths on any Hausdorff boundaryless manifold.
 * `TauCeti.isZero_singularHomology_of_finrank_lt`: `Hₖ(M; N) = 0` for `k > n` on any Hausdorff
   boundaryless `n`-manifold.
 * `TauCeti.isZero_singularHomology_of_forall_not_isCompact_connectedComponent`: `Hₖ(M; N) = 0` for
@@ -110,92 +106,6 @@ section TopologicalSpace
 
 variable {M : Type w} [TopologicalSpace M]
 
-/-- If a homology class `α ∈ Hₖ(M; N)` comes from a subset `U ⊆ W`, it also comes from `W` via a
-class pushed forward from `Subtype.val ⁻¹' U : Set W`. -/
-private lemma exists_homologyMap_preimage_eq_of_subset {U W : Set M} (hUW : U ⊆ W) {k : ℕ}
-    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
-    (hU : ∃ γU, SSet.homologyMap
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal U))) N k γU = α) :
-    ∃ δU : ((TopCat.toSSet.obj (TopCat.of ↥(Subtype.val ⁻¹' U : Set (TopCat.of W)))).homology
-        N k : ModuleCat.{w} Λ),
-      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal W))) N k
-        (SSet.homologyMap (TopCat.toSSet.map
-          (TopCat.ofHom (ContinuousMap.subtypeVal
-            (Subtype.val ⁻¹' U : Set (TopCat.of W))))) N k δU) = α := by
-  obtain ⟨γU, hγU⟩ := hU
-  let U' : Set (TopCat.of W) := Subtype.val ⁻¹' U
-  let jU : TopCat.of ↥U ⟶ TopCat.of ↥U' :=
-    TopCat.ofHom ⟨fun x ↦ ⟨⟨x.1, hUW x.2⟩, x.2⟩, by fun_prop⟩
-  have hfac : jU ≫ TopCat.ofHom (ContinuousMap.subtypeVal U') ≫
-      TopCat.ofHom (ContinuousMap.subtypeVal W) = TopCat.ofHom (ContinuousMap.subtypeVal U) := by
-    ext; rfl
-  refine ⟨SSet.homologyMap (TopCat.toSSet.map jU) N k γU, ?_⟩
-  rw [← hγU, ← hfac]
-  simp [SSet.homologyMap_comp]
-
-/-- On a space `W` covered by two disjoint open subsets `U'` and `V'`, a class in `Hₖ(W; N)`
-pushed forward from `U'` and also from `V'` is zero: the Mayer–Vietoris map from the direct sum is
-injective because `U' ∩ V'` is empty. -/
-private lemma eq_zero_of_disjoint_isOpen_cover {W : TopCat.{w}} {U' V' : Set W}
-    (hU'o : IsOpen U') (hV'o : IsOpen V') (hUV'd : Disjoint U' V') (hUV' : U' ∪ V' = univ)
-    {k : ℕ}
-    {δU : ((TopCat.toSSet.obj (TopCat.of ↥U')).homology N k : ModuleCat.{w} Λ)}
-    {δV : ((TopCat.toSSet.obj (TopCat.of ↥V')).homology N k : ModuleCat.{w} Λ)}
-    (hEq : SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal U'))) N k
-        δU =
-      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal V'))) N k δV) :
-    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal U'))) N k δU =
-      0 := by
-  have : IsEmpty (TopCat.of ↥(U' ∩ V')) := ⟨fun ⟨_, hxU, hxV⟩ ↦ hUV'd.le_bot ⟨hxU, hxV⟩⟩
-  have hZeroUV : IsZero ((TopCat.toSSet.obj (TopCat.of ↥(U' ∩ V'))).homology N k) := by
-    rw [← singularHomologyFunctor_obj_obj]
-    exact isZero_singularHomologyFunctor_of_isEmpty N (TopCat.of ↥(U' ∩ V')) k
-  have hMV := (TopCat.mayerVietoris_exact₂ N hU'o hV'o hUV' k).mono_g (hZeroUV.eq_of_src _ _)
-  let HU := (TopCat.toSSet.obj (TopCat.of ↥U')).homology N k
-  let HV := (TopCat.toSSet.obj (TopCat.of ↥V')).homology N k
-  have hMVzero : SSet.mayerVietorisFromBiprod N
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal U')))
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal V'))) k
-      ((biprod.inl : HU ⟶ HU ⊞ HV) δU - (biprod.inr : HV ⟶ HU ⊞ HV) δV) = 0 := by
-    rw [map_sub, ← ConcreteCategory.comp_apply biprod.inl, SSet.inl_mayerVietorisFromBiprod,
-      ← ConcreteCategory.comp_apply biprod.inr, SSet.inr_mayerVietorisFromBiprod]
-    exact sub_eq_zero.2 hEq
-  have hbiprod := (ModuleCat.mono_iff_injective _).1 hMV (hMVzero.trans (map_zero _).symm)
-  have hδU : δU = 0 := by
-    have h := congrArg (biprod.fst : HU ⊞ HV ⟶ HU) hbiprod
-    rw [map_sub, ← ConcreteCategory.comp_apply biprod.inl, biprod.inl_fst,
-      ← ConcreteCategory.comp_apply biprod.inr, biprod.inr_fst] at h
-    simpa using h
-  rw [hδU, map_zero]
-
-/-- If `M ∖ D = U ∪ V` is decomposed into disjoint open subsets `U` and `V` of `M` and
-`Hₖ₊₁(M, M ∖ D; N) = 0`, then any class `α ∈ Hₖ(M; N)` lying in the images of both
-`Hₖ(U; N) ⟶ Hₖ(M; N)` and `Hₖ(V; N) ⟶ Hₖ(M; N)` is zero. -/
-theorem eq_zero_of_disjoint_isOpen_of_isZero_localHomology {D U V : Set M}
-    (hUo : IsOpen U) (hVo : IsOpen V) (hUV : Disjoint U V) (hUVD : U ∪ V = Dᶜ) {k : ℕ}
-    (hhigh : IsZero (localHomology N D (k + 1)))
-    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
-    (hU : ∃ γU, SSet.homologyMap
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal U))) N k γU = α)
-    (hV : ∃ γV, SSet.homologyMap
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal V))) N k γV = α) :
-    α = 0 := by
-  -- Lift the pushforwards from `U` and `V` to the disjoint open cover of `W = M \ D`.
-  obtain ⟨δU, hU'α⟩ := exists_homologyMap_preimage_eq_of_subset N
-    (subset_union_left.trans hUVD.subset) hU
-  obtain ⟨δV, hV'α⟩ := exists_homologyMap_preimage_eq_of_subset N
-    (subset_union_right.trans hUVD.subset) hV
-  -- Vanishing of `Hₖ₊₁(M, W; N)` makes `Hₖ(W; N) ⟶ Hₖ(M; N)` injective, so the lifts agree on `W`.
-  have hMonoW : Mono (SSet.homologyMap
-      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (Dᶜ : Set M)))) N k) :=
-    (TopPair.ofSubset (Dᶜ : Set (TopCat.of M))).mono_homologyMap_map_of_isZero N hhigh
-  have hEqW := (ModuleCat.mono_iff_injective _).1 hMonoW (hU'α.trans hV'α.symm)
-  -- Mayer–Vietoris on the disjoint open cover of `W` then kills the class on `W`, hence `α`.
-  have hZero := eq_zero_of_disjoint_isOpen_cover N (W := TopCat.of ↥(Dᶜ : Set M))
-    (hUo.preimage continuous_subtype_val) (hVo.preimage continuous_subtype_val)
-    (hUV.preimage _) (eq_univ_of_forall fun x ↦ hUVD.symm.subset x.2) hEqW
-  rw [← hU'α, hZero, map_zero]
-
 /-- **Compact-exhaustion vanishing criterion.** In a locally compact Hausdorff space `M` where
 `Hₖ₊₁(M, M ∖ D; N) = 0` for every compact `D ⊆ M`, a class `α ∈ Hₖ(M; N)` whose image in
 `Hₖ(M, M ∖ L; N)` vanishes for every compact `L ⊆ M` is zero. -/
@@ -234,24 +144,6 @@ section SameUniverseModel
 variable {M E : Type w} [TopologicalSpace M] [T2Space M]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
 
-private theorem singularHomologyToLocalHomology_eq_zero_of_joined_aux (E : Type w)
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {x y : M}
-    (hxy : Joined x y) {k : ℕ}
-    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
-    (hα : singularHomologyToLocalHomology N x k α = 0) :
-    singularHomologyToLocalHomology N y k α = 0 := by
-  let f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y :=
-    Path.Homotopic.Quotient.mk hxy.somePath
-  let β₀ := ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-    (C := ModuleCat.{w} Λ) N k).hom α
-  have hx₀ : localHomologyRestriction N (subset_univ {x}) k β₀ = 0 :=
-    (singularHomologyToLocalHomology_apply N x α).symm.trans hα
-  have hw := ConcreteCategory.congr_hom
-    (localHomologyRestriction_univ_comp_localHomologyTransport N (E := E) k f) β₀
-  exact (singularHomologyToLocalHomology_apply N y α).trans
-    (hw.symm.trans ((ConcreteCategory.comp_apply _ _ _).trans
-      ((congrArg (localHomologyTransport N M E k f) hx₀).trans (map_zero _))))
-
 private theorem isZero_singularHomology_of_finrank_lt_aux
     {Λ' : Type w} [Ring Λ'] (N' : ModuleCat.{w} Λ') {n k : ℕ} (hn : finrank ℝ E = n)
     (hk : n < k) :
@@ -284,7 +176,7 @@ private theorem isZero_singularHomology_top_of_forall_not_isCompact_connectedCom
     obtain ⟨x₀, hx₀c, hx₀K⟩ := not_subset.1 hnotSub
     have hjoined : Joined x₀ x :=
       (mem_pathComponent_iff.1 (pathComponent_eq_connectedComponent x ▸ hx₀c)).symm
-    refine singularHomologyToLocalHomology_eq_zero_of_joined_aux N' E hjoined ?_
+    refine singularHomologyToLocalHomology_eq_zero_of_joined N' E hjoined ?_
     rw [← hγK]
     exact singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem N' hx₀K γK
   refine eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero N'
@@ -299,20 +191,6 @@ section Manifold
 
 variable {M : Type w} [TopologicalSpace M] [T2Space M]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
-
-/-- **Vanishing in local homology transports along paths.** On a Hausdorff boundaryless manifold,
-if `α ∈ Hₖ(M; N)` vanishes in the local homology `Hₖ(M, M ∖ {x}; N)`, then it vanishes in
-`Hₖ(M, M ∖ {y}; N)` for every point `y` in the path component of `x`. -/
-theorem singularHomologyToLocalHomology_eq_zero_of_joined (E : Type*)
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
-    {x y : M} (hxy : Joined x y) {k : ℕ}
-    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
-    (hα : singularHomologyToLocalHomology N x k α = 0) :
-    singularHomologyToLocalHomology N y k α = 0 := by
-  let _ := ChartedSpace.compHomeomorph M (ContinuousLinearEquiv.ofFinrankEq
-    (finrank_euclideanSpace_ulift_fin.{w} (finrank ℝ E)).symm).toHomeomorph
-  exact singularHomologyToLocalHomology_eq_zero_of_joined_aux N
-    (EuclideanSpace ℝ (ULift.{w} (Fin (finrank ℝ E)))) hxy hα
 
 /-- **Singular homology of a boundaryless manifold vanishes above the dimension.** For any
 Hausdorff space `M` modelled on a real normed space `E` of finite dimension `n`, compact or not,

@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Glue
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 public import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
+import TauCeti.Geometry.Manifold.ChartedSpace
+
 /-!
 # The local homology system of a manifold
 
@@ -55,6 +57,8 @@ compatibility with composition characterizes the transport
   inside a compact convex set in a chart.
 * `TauCeti.eq_localHomologyTransport`: the transport is the only family of maps compatible with
   composition that has this property.
+* `TauCeti.singularHomologyToLocalHomology_eq_zero_of_joined`: vanishing in local homology
+  transports along paths on any Hausdorff boundaryless manifold.
 
 ## Implementation notes
 
@@ -703,5 +707,43 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
   exact hf
 
 end Chart
+
+section SingularHomologyTransport
+
+variable {M : Type w} [TopologicalSpace M] [T2Space M] {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
+
+private theorem singularHomologyToLocalHomology_eq_zero_of_joined_aux (E : Type w)
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+    {x y : M} (hxy : Joined x y) {k : ℕ}
+    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
+    (hα : singularHomologyToLocalHomology N x k α = 0) :
+    singularHomologyToLocalHomology N y k α = 0 := by
+  let f : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y :=
+    Path.Homotopic.Quotient.mk hxy.somePath
+  let β₀ := ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+    (C := ModuleCat.{w} Λ) N k).hom α
+  have hx₀ : localHomologyRestriction N (subset_univ {x}) k β₀ = 0 :=
+    (singularHomologyToLocalHomology_apply N x α).symm.trans hα
+  have hw := ConcreteCategory.congr_hom
+    (localHomologyRestriction_univ_comp_localHomologyTransport N (E := E) k f) β₀
+  exact (singularHomologyToLocalHomology_apply N y α).trans
+    (hw.symm.trans ((ConcreteCategory.comp_apply _ _ _).trans
+      ((congrArg (localHomologyTransport N M E k f) hx₀).trans (map_zero _))))
+
+/-- **Vanishing in local homology transports along paths.** On a Hausdorff boundaryless manifold,
+if `α ∈ Hₖ(M; N)` vanishes in the local homology `Hₖ(M, M ∖ {x}; N)`, then it vanishes in
+`Hₖ(M, M ∖ {y}; N)` for every point `y` in the path component of `x`. -/
+theorem singularHomologyToLocalHomology_eq_zero_of_joined (E : Type*)
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+    {x y : M} (hxy : Joined x y) {k : ℕ}
+    {α : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)}
+    (hα : singularHomologyToLocalHomology N x k α = 0) :
+    singularHomologyToLocalHomology N y k α = 0 := by
+  let _ := ChartedSpace.compHomeomorph M (ContinuousLinearEquiv.ofFinrankEq
+    (finrank_euclideanSpace_ulift_fin.{w} (Module.finrank ℝ E)).symm).toHomeomorph
+  exact singularHomologyToLocalHomology_eq_zero_of_joined_aux N
+    (EuclideanSpace ℝ (ULift.{w} (Fin (Module.finrank ℝ E)))) hxy hα
+
+end SingularHomologyTransport
 
 end TauCeti

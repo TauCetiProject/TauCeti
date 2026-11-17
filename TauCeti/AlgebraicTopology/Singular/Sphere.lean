@@ -236,16 +236,12 @@ variable {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphe
 
 -- `reducedSingularHomologySuccIso` targets `singularHomologyFunctor`, while the
 -- Mayer–Vietoris connecting morphism starts at `TopCat.toSSet` homology. Ordinary
--- singular homology is defined using `TopCat.toSSet`, so these objects are definitionally equal.
-private abbrev singularHomologyFunctor_obj_eq_toSSetHomology (n : ℕ) (X : TopCat.{w}) :
-    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X =
-      (TopCat.toSSet.obj X).homology R n := rfl
-
-private lemma singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp
+-- singular homology is defined using `TopCat.toSSet` (`singularHomologyFunctor_obj_obj`), so
+-- its `eqToIso` is the identity after reduction.
+private lemma eqToIso_singularHomologyFunctor_obj_obj_hom_comp
     (n : ℕ) (X : TopCat.{w}) {Y : C}
     (f : (TopCat.toSSet.obj X).homology R n ⟶ Y) :
-    (eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R n X)).hom ≫ f = f := by
-  -- The equality above is `rfl`, so its `eqToIso` is the identity after reduction.
+    (eqToIso (singularHomologyFunctor_obj_obj R n X)).hom ≫ f = f := by
   change 𝟙 _ ≫ f = f
   exact Category.id_comp f
 
@@ -261,7 +257,7 @@ def reducedSingularHomologySphereSuccIso (k : ℕ) :
   -- `TauCeti.isIso_reducedMayerVietorisδ_sphere` is a theorem rather than an instance, so it is
   -- supplied to `asIso` explicitly.
   (reducedSingularHomologySuccIso R k).app _ ≪≫
-    eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R (k + 1) _) ≪≫
+    eqToIso (singularHomologyFunctor_obj_obj R (k + 1) _) ≪≫
     @asIso _ _ _ _ (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
       isOpen_compl_singleton isOpen_compl_singleton
       (compl_singleton_union_compl_singleton_neg one_ne_zero p) k)
@@ -282,7 +278,7 @@ lemma reducedSingularHomologySphereSuccIso_hom (k : ℕ) :
         (reducedSingularHomologyFunctor R k).map (TopCat.ofHom (equatorHomotopyEquiv p).toFun) := by
   simp only [reducedSingularHomologySphereSuccIso, Iso.trans_hom, Iso.app_hom,
     reducedSingularHomologySuccIso_hom, ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom]
-  simp only [singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp, asIso_hom]
+  simp only [eqToIso_singularHomologyFunctor_obj_obj_hom_comp, asIso_hom]
   -- Both remaining compositions use the same `toSSet` homology object definitionally.
   rfl
 
