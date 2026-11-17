@@ -23,9 +23,9 @@ This file relates `λ` and the Newton slopes of `f` to the pointwise convergence
   `ℚ_[p]`), `f.convergenceRadius L = 0` if and only if the coefficient heights fail to be
   admissible (`¬IsAdmissible`), and `f.convergenceRadius L = ⊤` if and only if `λ = ⊤` (for
   admissible infinitely supported `f`, if and only if the finite Newton slopes are unbounded).
-* When `L` is complete and densely normed (such as `ℂ_[p]` or `PadicAlgCl p`),
-  `f.convergenceRadius L` equals `b ^ λ`, and for admissible infinitely supported `f` it equals `b`
-  raised to the supremum of the finite unit slopes of `f.newtonPolygon v`.
+* When `L` is complete and densely normed (such as `ℂ_[p]`), `f.convergenceRadius L` equals
+  `b ^ λ`, and for admissible infinitely supported `f` it equals `b` raised to the supremum of the
+  finite unit slopes of `f.newtonPolygon v`.
 * Over a discretely normed extension `A` whose nonzero norms are integer powers `b ^ m`, whenever
   `λ = t ∈ ℝ` is not an integer, the pointwise convergence radius is strictly smaller than
   `f.radius`, and when `A` is complete and `b ^ ⌊t⌋` is attained in `A`, it equals `b ^ ⌊t⌋`.
