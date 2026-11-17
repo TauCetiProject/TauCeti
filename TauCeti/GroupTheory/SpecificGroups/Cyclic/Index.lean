@@ -190,24 +190,8 @@ commutative group `G`, the image of `zsmulAddGroupHom m : G →+ G` has index
 theorem _root_.IsCyclic.index_zpowGroupHom_range {G : Type*} [CommGroup G] [IsCyclic G] (m : ℤ) :
     (zpowGroupHom m : G →* G).range.index = m.gcd (Nat.card G) := by
   obtain ⟨g, hg⟩ := isCyclic_iff_exists_zpowers_eq_top.mp ‹_›
-  refine Nat.dvd_right_iff_eq.mp fun n ↦ ?_
-  rw [← pow_mem_iff_index_dvd _ hg, MonoidHom.mem_range]
-  have hmem : (∃ x : G, zpowGroupHom m x = g ^ n) ↔
-      ∃ k : ℤ, (orderOf g : ℤ) ∣ k * m - n := by
-    refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ⟨g ^ k, ?_⟩⟩
-    · obtain ⟨k, rfl⟩ := mem_zpowers_iff.mp (hg.symm ▸ mem_top x)
-      refine ⟨k, orderOf_dvd_iff_zpow_eq_one.mpr ?_⟩
-      rw [zpow_sub, zpow_mul, zpow_natCast, zpowGroupHom_apply] at *; rw [hx, mul_inv_cancel]
-    · rw [zpowGroupHom_apply, ← zpow_mul, ← zpow_natCast]
-      exact mul_inv_eq_one.mp (by rw [← zpow_sub]; exact orderOf_dvd_iff_zpow_eq_one.mp hk)
-  rw [hmem, orderOf_eq_card_of_zpowers_eq_top hg]
-  refine ⟨fun ⟨k, j, hkj⟩ ↦ Int.natCast_dvd_natCast.mp ?_, fun hdiv ↦ ?_⟩
-  · have hn : (n : ℤ) = k * m - (Nat.card G : ℤ) * j := by omega
-    exact hn ▸ dvd_sub (dvd_mul_of_dvd_right (Int.gcd_dvd_left m (Nat.card G)) k)
-      (dvd_mul_of_dvd_left (Int.gcd_dvd_right m (Nat.card G)) j)
-  · obtain ⟨q, hq⟩ := Int.natCast_dvd_natCast.mpr hdiv
-    refine ⟨q * Int.gcdA m (Nat.card G), -(q * Int.gcdB m (Nat.card G)), ?_⟩
-    have := Int.gcd_eq_gcd_ab m (Nat.card G); grind
+  rw [MonoidHom.range_eq_map, ← hg, MonoidHom.map_zpowers, zpowGroupHom_apply,
+    Subgroup.index_zpowers_zpow hg, orderOf_eq_card_of_zpowers_eq_top hg]
 
 /-- **Index of the `m`-th power subgroup of an infinite cyclic group.** In an infinite cyclic
 commutative group `G` (such as `Multiplicative ℤ`), the image of `zpowGroupHom m : G →* G` has

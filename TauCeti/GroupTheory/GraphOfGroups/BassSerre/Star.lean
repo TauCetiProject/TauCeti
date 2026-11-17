@@ -99,7 +99,8 @@ theorem bassSerreDartOfSrcEq_cons_eq_iff (e : Γ.E) {v : Γ.V} (he : Γ.src e = 
       simpa only [Path.comp_ofVertex] using
         (hc.trans (Path.Homotopic.mul p a₂ (𝔸.α e c))).comp_right p.reverse
     simp [ha]
-  · rw [show a₁ = a₂ * 𝔸.α e c⁻¹ by simp [hc]]
+  · have ha : a₁ = a₂ * 𝔸.α e c⁻¹ := by simp [hc]
+    rw [ha]
     exact (Path.Homotopic.mul p a₂ (𝔸.α e c⁻¹)).symm
 
 /-- Two darts over `e` extending `p` by vertex group elements `a₁, a₂ ∈ A_{src e}` agree if and only
@@ -342,10 +343,7 @@ variable {A B v₀ e}
     (a : (coprod A B).vertexGroup (SerreGraph.segment.src e)) :
     ((coprodStarEquiv A B v₀ e p).symm a).1 =
       (coprod A B).bassSerreDart v₀ e (p.cons (Letter.vertex a)) := by
-  rw [coprodStarEquiv, Equiv.symm_trans_apply, Equiv.symm_trans_apply, MulEquiv.toEquiv_eq_coe,
-    ← MulEquiv.toEquiv_symm, MulEquiv.coe_toEquiv, QuotientGroup.quotientBot_symm_apply,
-    (Equiv.symm_apply_eq _).mpr (Subgroup.quotientEquivOfEq_mk _ a).symm,
-    segmentStarEquiv_symm_apply_val]
+  simp [coprodStarEquiv, (Equiv.symm_apply_eq _).mpr (Subgroup.quotientEquivOfEq_mk _ a).symm]
 
 @[simp] theorem coprodStarEquiv_apply_dart (p : (coprod A B).Path ⟨v₀⟩ ⟨SerreGraph.segment.src e⟩)
     (a : (coprod A B).vertexGroup (SerreGraph.segment.src e))
