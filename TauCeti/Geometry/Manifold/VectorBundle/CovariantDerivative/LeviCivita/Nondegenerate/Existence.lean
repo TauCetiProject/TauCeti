@@ -20,6 +20,20 @@ vector fields.
 The value on a vector field not differentiable at the evaluation point is chosen to be zero;
 connection laws and uniqueness only concern differentiable fields.
 
+## Main results
+
+* `ContMDiffNondegenerateMetric.leviCivitaConnection`: the connection obtained
+  from the Koszul formula of a smooth symmetric nondegenerate metric.
+* `ContMDiffNondegenerateMetric.two_apply_leviCivitaConnection_eq_koszul`:
+  it satisfies the Koszul formula.
+* `ContMDiffNondegenerateMetric.isLeviCivitaConnection_leviCivitaConnection`:
+  it is metric compatible and torsion free.
+* `ContMDiffNondegenerateMetric.leviCivitaConnection_eq_zero_of_not_mdifferentiableAt`:
+  it vanishes on a vector field not differentiable at the point.
+* `ContMDiffNondegenerateMetric.leviCivitaConnection_apply_eq_of_apply_eq_inner`:
+  for a positive metric it agrees with Mathlib's Levi-Civita connection on differentiable
+  vector fields.
+
 ## References
 
 * B. O'Neill, *Semi-Riemannian Geometry with Applications to Relativity*, Ch. 3, Thm. 11.
