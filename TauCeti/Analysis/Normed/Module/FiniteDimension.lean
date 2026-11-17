@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Normed.Module.ContinuousInverse
 
 /-!
 # Finite-dimensional normed spaces
@@ -225,10 +224,17 @@ norm. -/
 theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y i) :
     Continuous fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜) := by
   have := Fintype.ofFinite ι
-  refine continuous_iff_continuousAt.2 fun y ↦ ?_
-  simpa only [ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.symm_symm] using
-    (continuous_equivFunL_symm_of_continuous h).continuousAt.clm_inverse_of_eventually_isInvertible
-      (.of_forall fun _ ↦ ContinuousLinearMap.isInvertible_equiv)
+  have h' : (fun y ↦ ((B y).equivFunL : F →L[𝕜] ι → 𝕜)) =
+      fun y ↦ ((B y).equivFunL.symm : (ι → 𝕜) →L[𝕜] F).inverse := by
+    ext1 y
+    rw [ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.symm_symm]
+  rw [h', continuous_iff_continuousAt]
+  intro y
+  have := (B y).finiteDimensional_of_finite
+  have := FiniteDimensional.completeSpace 𝕜 F
+  exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
+    (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
+    (continuous_equivFunL_symm_of_continuous h).continuousAt
 
 /-- A set of continuous linear maps is bounded when their values on the vectors of a finite basis
 are uniformly bounded. -/

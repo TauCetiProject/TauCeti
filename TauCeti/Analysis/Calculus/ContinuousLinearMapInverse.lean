@@ -39,8 +39,6 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   `M * ‖B - A‖ < 1`, then `B` is invertible with `‖B⁻¹‖ ≤ M / (1 - M * ‖B - A‖)`.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
-* `ContinuousWithinAt.continuousLinearEquiv_symm`: inverting a family of continuous linear
-  equivalences out of a Banach space preserves continuity within a set in the operator norm.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
   inverse of a `C^n` family of maps between Banach spaces, on any domain, is `C^n` where the
   family is invertible.
@@ -181,22 +179,6 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
 
 end Perturbation
-
-section ContinuousInverse
-
-variable {X : Type*} [TopologicalSpace X] [CompleteSpace E] {e : X → E ≃L[𝕜] F} {s : Set X}
-  {x₀ : X}
-
-/-- The inverses of a family of continuous linear equivalences out of a Banach space which is
-continuous within `s` at `x₀` in the operator norm are continuous within `s` at `x₀`. -/
-theorem ContinuousWithinAt.continuousLinearEquiv_symm
-    (he : ContinuousWithinAt (fun x ↦ (e x : E →L[𝕜] F)) s x₀) :
-    ContinuousWithinAt (fun x ↦ ((e x).symm : F →L[𝕜] E)) s x₀ := by
-  simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
-    (contDiffAt_map_inverse (n := 0) (e x₀)).continuousAt.comp_continuousWithinAt
-      (f := fun x ↦ (e x : E →L[𝕜] F)) he
-
-end ContinuousInverse
 
 section ScalarTower
 

@@ -9,7 +9,6 @@ public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Analysis.Normed.Module.ContinuousInverse
 import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -303,7 +302,6 @@ theorem parametricMorseCoord_comp_prodMap (f : P' × E → ℝ) (σ : P → P') 
     parametricMorseCoord (fun z ↦ f (σ z.1, z.2)) (b, v) = parametricMorseCoord f (σ b, v) := by
   simp only [parametricMorseCoord_def]
 
-omit [CompleteSpace E] in
 /-- **The canonical parametric Morse coordinate under a change of trivialization.** Let `f` be a
 `C^2` family, and let `f'` be the same family in other coordinates near the zero section:
 `f' (σ b, T b v) = f (b, v)` for `(b, v)` near `(a, 0)`, where
@@ -316,11 +314,11 @@ theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
     (hcomp : ∀ᶠ z in 𝓝 (a, (0 : E)), f' (σ z.1, T z.1 z.2) = f z) :
     ∀ᶠ z in 𝓝 (a, (0 : E)), parametricMorseCoord f' (σ z.1, T z.1 z.2) =
       T z.1 (parametricMorseCoord f z) := by
-  -- Inversion of operators is continuous along the family of isomorphisms `T b`.
+  -- Inversion of operators is continuous at the isomorphism `T a`, since `E` is complete.
   have hTsymm : ContinuousAt (fun b ↦ ((T b).symm : E' →L[ℝ] E)) a := by
-    simpa only [ContinuousLinearMap.inverse_equiv] using
-      hT.clm_inverse_of_eventually_isInvertible
-        (.of_forall fun _ ↦ ContinuousLinearMap.isInvertible_equiv)
+    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
+      ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := fun b ↦ (T b : E →L[ℝ] E'))
+        (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
   -- The fibrewise changes of coordinates `(b, v) ↦ (b, T b v)` and its inverse fix `(a, 0)`.
   have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
     hT.tendsto_prodMk_clm_apply
