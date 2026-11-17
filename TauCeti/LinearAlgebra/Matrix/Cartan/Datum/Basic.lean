@@ -38,6 +38,8 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
   `TauCeti.CartanDatum.reflection`: the simple reflection `λ ↦ λ − ⟨λ, hᵢ⟩ αᵢ` of `X`, both
   Mathlib's `Module.reflection`.
 * `TauCeti.CartanDatum.simpleTorus`: the toral direction `dᵢ hᵢ ∈ Y`.
+* `TauCeti.CartanDatum.serreLength`: the Serre exponent `1 − aᵢⱼ` for `i ≠ j` (and `0` on the
+  diagonal).
 * `TauCeti.CartanDatum.Hom`: a morphism of Cartan data, a linear map of coweight lattices carrying
   coroots to coroots and compatible with the roots, such as the one induced by a central isogeny.
 
@@ -247,6 +249,29 @@ lemma coreflection_simpleTorus (i j : ι) :
 lemma coreflection_simpleTorus_self (i : ι) :
     D.coreflection i (D.simpleTorus i) = -D.simpleTorus i := by
   rw [simpleTorus_def, map_nsmul, coreflection_coroot_self, smul_neg]
+
+/-! ### Serre lengths -/
+
+/-- The Serre exponent `(1 - aᵢⱼ).toNat`: equal to `1 - aᵢⱼ ≥ 1` for `i ≠ j` and `0` on the
+diagonal `aᵢᵢ = 2`. -/
+def serreLength (i j : ι) : ℕ := (1 - D.cartan i j).toNat
+
+lemma serreLength_def (i j : ι) : D.serreLength i j = (1 - D.cartan i j).toNat := (rfl)
+
+@[simp] lemma serreLength_self (i : ι) : D.serreLength i i = 0 := by simp [serreLength_def]
+
+lemma one_le_serreLength {i j : ι} (hij : i ≠ j) : 1 ≤ D.serreLength i j := by
+  have := D.cartan_nonpos hij; rw [serreLength_def]; omega
+
+lemma serreLength_ne_zero {i j : ι} (hij : i ≠ j) : D.serreLength i j ≠ 0 :=
+  Nat.ne_of_gt (D.one_le_serreLength hij)
+
+lemma natCast_serreLength {i j : ι} (hij : i ≠ j) :
+    (D.serreLength i j : ℤ) = 1 - D.cartan i j := by
+  have := D.cartan_nonpos hij; rw [serreLength_def]; omega
+
+lemma serreLength_of_cartan_eq_zero {i j : ι} (h : D.cartan i j = 0) : D.serreLength i j = 1 := by
+  simp [serreLength_def, h]
 
 /-! ### Braid lengths -/
 
