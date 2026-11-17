@@ -48,8 +48,10 @@ For an alternating `B` and a contact covector `a`, the bilinear form `B + a ⊗ 
 `(v, w) ↦ B v w + a v * a w`, is left-separating
 (`Module.Dual.IsContact.separatingLeft_add_smulRight`), so in finite dimension `v ↦ B v + a(v) a`
 is an isomorphism onto the dual. This is the pointwise contact flat map `X ↦ ι_X dα + α(X) α` of a
-contact form. The preimage of `a` itself is characterized by the Reeb equations: `B r + a(r) a = a`
-exactly when `a r = 1` and `B r = 0` (`Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`).
+contact form. In odd finite dimension the converse holds, so contactness is exactly the
+left-separation of `B + a ⊗ a` (`Module.Dual.isContact_iff_separatingLeft_add_smulRight`). The
+preimage of `a` itself is characterized by the Reeb equations: `B r + a(r) a = a` exactly when
+`a r = 1` and `B r = 0` (`Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`).
 
 A contact covector `a` on a finite-dimensional space has a **Reeb vector** `r = a.reebVector B`
 (`Module.Dual.reebVector`): the unique vector with `a r = 1` which is `B`-orthogonal to `ker a`.
@@ -79,6 +81,8 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`: the symplectization form, which
   is nondegenerate exactly for contact covectors.
 * `Module.Dual.IsContact.separatingLeft_add_smulRight`: `B + a ⊗ a` is left-separating.
+* `Module.Dual.isContact_iff_separatingLeft_add_smulRight`: in odd finite dimension, `a` is contact
+  exactly when `B + a ⊗ a` is left-separating.
 * `Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`: the preimage of `a` under
   `v ↦ B v + a(v) a`.
 * `Module.Dual.reebVector`, `Module.Dual.IsContact.eq_reebVector_iff`: the Reeb vector and its
@@ -378,6 +382,38 @@ theorem IsContact.separatingLeft_add_smulRight (hB : B.IsAlt) (h : a.IsContact B
     simpa [hB v] using hv v
   refine Subtype.ext_iff.1 (h.nondegenerate_restrict.1 ⟨v, hvv⟩ fun w ↦ ?_)
   simpa [w.2] using hv w
+
+/-- **The converse in odd dimension.** On a finite-dimensional space of odd dimension, if `B` is
+alternating and `B + a ⊗ a` is left-separating, then `a` is contact for `B`. The odd dimension
+gives a nonzero vector `k` in the kernel of `B`; since `B + a ⊗ a` is left-separating, `a k ≠ 0`,
+so `V = ker a ⊕ K k`, and a vector of `ker a` which is `B`-orthogonal to `ker a` is then
+`B`-orthogonal to everything. The dimension hypothesis is needed: on a symplectic plane, `a = 0`
+is not contact although `B + a ⊗ a = B` is left-separating. -/
+theorem isContact_of_separatingLeft_add_smulRight [FiniteDimensional K V] (hB : B.IsAlt)
+    (hodd : Odd (finrank K V)) (h : (B + a.smulRight a).SeparatingLeft) : a.IsContact B := by
+  have hBv (v w : V) : (B + a.smulRight a) v w = B v w + a v * a w := by simp
+  -- An alternating form on an odd-dimensional space is degenerate: pick `k ≠ 0` in its kernel.
+  obtain ⟨k, hkB, hk⟩ : ∃ k, (∀ w, B k w = 0) ∧ k ≠ 0 := by
+    by_contra! hcon
+    exact Nat.not_even_iff_odd.2 hodd (LinearMap.BilinForm.IsAlt.even_finrank hB
+      ((LinearMap.IsRefl.nondegenerate_iff_separatingLeft hB.isRefl).2 hcon))
+  -- Since `B + a ⊗ a` is left-separating, `a k ≠ 0`.
+  have hak : a k ≠ 0 := fun hak ↦ hk (h k fun w ↦ by rw [hBv, hkB, hak, zero_mul, add_zero])
+  refine (isContact_iff_of_isRefl hB.isRefl).2 ⟨fun ha ↦ hak (by simp [ha]), fun v hv hvw ↦ ?_⟩
+  refine h v fun w ↦ ?_
+  -- Split `w` along `ker a ⊕ K k`; `B v k = -B k v = 0`.
+  have hw : a (w - (a w / a k) • k) = 0 := by
+    rw [map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ hak, sub_self]
+  have hvk : B v k = 0 := by rw [← hB.neg_eq, hkB, neg_zero]
+  have hsplit : B v w = B v (w - (a w / a k) • k) + (a w / a k) * B v k := by
+    rw [map_sub, map_smul, smul_eq_mul, sub_add_cancel]
+  rw [hBv, hv, zero_mul, add_zero, hsplit, hvw _ hw, hvk, mul_zero, add_zero]
+
+/-- On a finite-dimensional space of odd dimension, for an alternating `B`, the covector `a` is
+contact for `B` exactly when `B + a ⊗ a` is left-separating. -/
+theorem isContact_iff_separatingLeft_add_smulRight [FiniteDimensional K V] (hB : B.IsAlt)
+    (hodd : Odd (finrank K V)) : a.IsContact B ↔ (B + a.smulRight a).SeparatingLeft :=
+  ⟨fun h ↦ h.separatingLeft_add_smulRight hB, isContact_of_separatingLeft_add_smulRight hB hodd⟩
 
 /-- For an alternating `B` and a contact covector `a`, a vector `r` solves `B r + a(r) a = a`
 exactly when `a r = 1` and `r` is `B`-orthogonal to everything: these are the Reeb equations. -/

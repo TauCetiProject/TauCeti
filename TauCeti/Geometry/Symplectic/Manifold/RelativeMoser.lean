@@ -95,37 +95,14 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 smooth step function `Real.smoothTransition`. -/
 private def moserFamily (σ₀ σ₁ : SmoothTwoForm I M) :
     SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 2 :=
-  SmoothForm.mpullback Prod.snd contMDiff_snd σ₀ +
-    SmoothForm.funSMulₗ ⟨fun p ↦ Real.smoothTransition p.1, by
-      exact (Real.smoothTransition.contDiff (n := ⊤)).contMDiff.comp contMDiff_fst⟩
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (σ₁ - σ₀))
-
-/-- The slices of the Moser family are the forms `σ₀ + c(t) (σ₁ - σ₀)`. -/
-private theorem mpullback_prodMk_moserFamily (σ₀ σ₁ : SmoothTwoForm I M) (t : ℝ) :
-    SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id)
-        (moserFamily σ₀ σ₁) = σ₀ + Real.smoothTransition t • (σ₁ - σ₀) := by
-  apply Subtype.ext
-  -- `Prod.snd ∘ Prod.mk t` is the identity of `M`.
-  have hcomp (τ : SmoothTwoForm I M) : TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-      (TauCeti.mpullback (𝓘(ℝ, ℝ).prod I) I Prod.snd τ.1) = τ.1 := by
-    simpa only [SmoothForm.coe_mpullback, LinearMap.id_apply] using
-      congrArg Subtype.val ((SmoothForm.mpullback_mpullback (Prod.mk t) Prod.snd
-        (I' := 𝓘(ℝ, ℝ).prod I) (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
-          (LinearMap.congr_fun SmoothForm.mpullback_id τ))
-  simp only [moserFamily, map_add, SmoothForm.coe_mpullback, SmoothForm.add_toRoughForm, hcomp]
-  -- `erw`: the coercion of `funSMulₗ` carries the `IsManifold _ 1` instance derived from the
-  -- product, which differs syntactically from the one in the goal.
-  erw [SmoothForm.coe_funSMulₗ, mpullback_fun_smul, SmoothForm.coe_mpullback, hcomp]
-  -- The bundled cut-off function evaluates at `(t, x)` to `Real.smoothTransition t` by definition,
-  -- and the scalar multiple of a smooth form is computed pointwise.
-  rfl
+  SmoothForm.lineMapFamily σ₀ σ₁ (Real.smoothTransition.contDiff (n := ⊤))
 
 /-- The slices of the Moser family, as rough forms. -/
 private theorem mpullback_prodMk_moserFamily_coe (σ₀ σ₁ : SmoothTwoForm I M) (t : ℝ) :
     mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) (moserFamily σ₀ σ₁).1 =
       (σ₀ + Real.smoothTransition t • (σ₁ - σ₀)).1 :=
   (SmoothForm.coe_mpullback _ _ _).symm.trans
-    (congrArg Subtype.val (mpullback_prodMk_moserFamily σ₀ σ₁ t))
+    (congrArg Subtype.val (SmoothForm.mpullback_prodMk_lineMapFamily σ₀ σ₁ _ t))
 
 /-- The Moser vector field of the path `σ₀ + c(t) (σ₁ - σ₀)` and the primitive `β`, cut off by
 `ρ`: `X_t = ρ (σ_t♭)⁻¹ (-c'(t) β)`. -/
@@ -163,7 +140,7 @@ private theorem contMDiff_flat_moserFamily (σ₀ σ₁ : SmoothTwoForm I M) :
         ((σ₀ + Real.smoothTransition p.1 • (σ₁ - σ₀)).flat p.2)) := by
   intro p
   have hσ := SmoothForm.contMDiff_mpullback_prodMk (moserFamily σ₀ σ₁) p
-  simp only [mpullback_prodMk_moserFamily] at hσ
+  simp only [moserFamily, SmoothForm.mpullback_prodMk_lineMapFamily] at hσ
   simpa only [← flat_def] using contMDiffAt_sectionAlong_flatL (b := Prod.snd) hσ
 
 variable [FiniteDimensional ℝ E]
@@ -249,7 +226,7 @@ private theorem moserRate_eq_zero {σ₀ σ₁ : SmoothTwoForm I M} (h₀ : σ�
       (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) (moserFamily σ₀ σ₁).1) y =
       deriv Real.smoothTransition t • (σ₁ - σ₀).1 y := by
     have h := (moserFamily σ₀ σ₁).hasDerivAt_mpullback_prodMk_timeDeriv t y
-    simp only [mpullback_prodMk_moserFamily, SmoothForm.coe_mpullback,
+    simp only [moserFamily, SmoothForm.mpullback_prodMk_lineMapFamily, SmoothForm.coe_mpullback,
       SmoothForm.coe_timeDeriv] at h
     refine h.unique ?_
     have hc : HasDerivAt Real.smoothTransition (deriv Real.smoothTransition t) t :=

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -37,6 +38,12 @@ whenever the extension vanishes near every point of `W` outside `U`
 
 These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology, and
 the extension step of its compactly supported variant.
+
+A partial diffeomorphism `Ψ` between open subsets `U` and `V`, read in the ambient manifolds
+(`PartialDiffeomorph.liftOpens`), pulls a form back as `Ψ` pulls back its restriction to `V`
+(`TauCeti.mpullback_liftOpens_apply_coe`). So a construction carried out on an open submanifold,
+such as a flow defined only where some condition on the forms holds, transfers to the ambient
+manifold.
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
 coordinate reads the first coordinate of a tangent vector
@@ -385,5 +392,30 @@ theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTo
       (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) := by
   exact (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h
     (fun x hx ↦ RoughForm.eventually_extendByZero_smul_eq_zero h ω (hzero x hx))
+
+omit [IsManifold I 1 M] in
+/-- **Pullback along a partial diffeomorphism between open subsets.** Let `Ψ` be a partial
+diffeomorphism from an open subset `U` of `M` to an open subset `V` of `M'`, read in the ambient
+manifolds as `Ψ.liftOpens`. At a point of the source of `Ψ`, pulling a form on `M'` back along the
+lift is pulling its restriction to `V` back along `Ψ`. -/
+theorem mpullback_liftOpens_apply_coe {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {n : WithTop ℕ∞} {U : Opens M} {V : Opens M'}
+    (Ψ : PartialDiffeomorph I I' U V n) (hn : n ≠ 0) (hU : Nonempty U) (hV : Nonempty V)
+    (ω : RoughForm I' M' F k) {x : U} (hx : x ∈ Ψ.source) :
+    mpullback I I' (Ψ.liftOpens hU hV) ω x =
+      mpullback I I' Ψ (mpullback I' I' (Subtype.val : V → M') ω) x := by
+  have hval (z : V) : MDifferentiableAt I' I' (Subtype.val : V → M') z :=
+    contMDiff_subtype_val.mdifferentiableAt one_ne_zero
+  have hlift : MDifferentiableAt I I' (Ψ.liftOpens hU hV) x :=
+    (Ψ.liftOpens hU hV).mdifferentiableAt hn (by
+      rw [PartialDiffeomorph.liftOpens_source]
+      exact ⟨x, hx, rfl⟩)
+  -- On `U`, the lift composed with the inclusion is the inclusion composed with `Ψ`.
+  have hcomp : ⇑(Ψ.liftOpens hU hV) ∘ (Subtype.val : U → M) = Subtype.val ∘ ⇑Ψ :=
+    funext (Ψ.liftOpens_apply_coe hU hV)
+  refine (mpullback_subtype_val_apply _ x).symm.trans ?_
+  rw [← mpullback_comp_at (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hlift, hcomp,
+    mpullback_comp_at (Ψ.mdifferentiableAt hn hx) (hval _)]
 
 end TauCeti

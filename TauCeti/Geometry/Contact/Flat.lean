@@ -51,6 +51,9 @@ equivalence `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accomp
   family of one-forms depend smoothly on the parameter.
 * `TauCeti.SmoothForm.IsContactForm.isInvertible_contactFlat`: for a contact form in finite
   dimensions the contact flat maps are invertible.
+* `TauCeti.SmoothForm.isContactFormAt_iff_isInvertible_contactFlat`: in odd finite dimension, a
+  one-form is contact at a point exactly when its contact flat map there is invertible. Since
+  invertibility is an open condition, this shows that the contact condition is open.
 * `TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`: the preimage of `α` is
   characterized by the Reeb equations.
 * `TauCeti.SmoothForm.contactFlatₗ`, `TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`: the
@@ -160,6 +163,46 @@ theorem contMDiff_contactFlat (α : SmoothForm I M ℝ 1) :
   fun x₀ ↦ contMDiffAt_sectionAlong_contactFlat (b := id) (α := fun _ ↦ α) (α.contMDiff x₀)
     (contMDiff_mextDeriv α x₀)
 
+/-! ### Invertibility of the contact flat map -/
+
+/-- **The contact flat map at a contact point is invertible.** If `α` satisfies the pointwise
+contact condition at `x`, its contact flat map at `x` is invertible, on a finite-dimensional
+manifold. -/
+theorem isInvertible_contactFlat_of_isContactFormAt [FiniteDimensional ℝ E] {x : M}
+    (h : IsContactFormAt α.1 x) : (α.contactFlat x).IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
+    (isContactFormAt_iff_isContact.1 h).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v
+      fun w ↦ by
+        rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
+          LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
+          degreeOneEquiv_coe_apply, smul_eq_mul]
+        exact (contactFlat_apply α x v w).symm.trans (hv w)
+
+/-- **In odd dimension, an invertible contact flat map detects a contact point.** On a manifold
+modelled on a space of odd finite dimension, if the contact flat map of `α` at `x` is invertible,
+then `α` satisfies the pointwise contact condition at `x`. The parity hypothesis is needed: on
+`ℝ²`, the form `α = (x dy - y dx) / 2` vanishes at the origin, where its contact flat map is the
+invertible map `v ↦ ι_v (dx ∧ dy)`. -/
+theorem isContactFormAt_of_isInvertible_contactFlat [FiniteDimensional ℝ E]
+    (hodd : Odd (finrank ℝ E)) {x : M} (h : (α.contactFlat x).IsInvertible) :
+    IsContactFormAt α.1 x := by
+  refine isContactFormAt_iff_isContact.2 (Module.Dual.isContact_of_separatingLeft_add_smulRight
+    (V := TangentSpace I x) (isAlt_bilinFormAt _ x) hodd fun v hv ↦ h.bijective.1 ?_)
+  ext w
+  have hvw := hv w
+  rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
+    LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
+    degreeOneEquiv_coe_apply, smul_eq_mul] at hvw
+  rw [contactFlat_apply, map_zero, zero_apply]
+  exact hvw
+
+/-- On a manifold modelled on a space of odd finite dimension, `α` satisfies the pointwise contact
+condition at `x` exactly when its contact flat map at `x` is invertible. -/
+theorem isContactFormAt_iff_isInvertible_contactFlat [FiniteDimensional ℝ E]
+    (hodd : Odd (finrank ℝ E)) {x : M} :
+    IsContactFormAt α.1 x ↔ (α.contactFlat x).IsInvertible :=
+  ⟨isInvertible_contactFlat_of_isContactFormAt, isContactFormAt_of_isInvertible_contactFlat hodd⟩
+
 /-! ### Contact flat maps of contact forms -/
 
 namespace IsContactForm
@@ -184,12 +227,7 @@ theorem contactFlat_apply_eq_iff {x : M} {v : TangentSpace I x} :
 finite-dimensional manifold. -/
 theorem isInvertible_contactFlat [FiniteDimensional ℝ E] (x : M) :
     (α.contactFlat x).IsInvertible :=
-  ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
-    (isContactForm_def.1 hα x).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v fun w ↦ by
-      rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
-        LinearMap.smul_apply, ← mextDeriv_eq_bilinFormAt, degreeOneEquiv_coe_apply,
-        degreeOneEquiv_coe_apply, smul_eq_mul]
-      exact (contactFlat_apply α x v w).symm.trans (hv w)
+  isInvertible_contactFlat_of_isContactFormAt (isContactForm_iff_forall_isContactFormAt.1 hα x)
 
 /-- The Reeb vector field of a contact form is the image of `α` under the inverse contact flat
 map. -/
