@@ -41,7 +41,9 @@ A morphism out of zeroth homology is determined by its values on the classes of 
 (`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
 constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
 `TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
-class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
+class (`TauCeti.singularHomology₀Section_eq_of_joined`), and with coefficients in a module the
+converse holds on every nonzero coefficient
+(`TauCeti.singularHomology₀Section_apply_eq_iff`). On a path-connected space the class of a
 point does not depend on the point, and with coefficients in a ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
@@ -188,6 +190,25 @@ lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C
     (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) (x : X) :
     singularHomology₀Section R x ≫ singularHomology₀Desc R v hv = v x := by
   simp [singularHomology₀Desc]
+
+/-- With coefficients in a module, the classes of two points in zeroth singular homology agree
+on a nonzero coefficient `r` exactly when the points are joined by a path. -/
+theorem singularHomology₀Section_apply_eq_iff {k : Type v} [Ring k] {M : ModuleCat.{w} k}
+    {X : TopCat.{w}} {x y : X} {r : M} (hr : r ≠ 0) :
+    (singularHomology₀Section M x).hom r = (singularHomology₀Section M y).hom r ↔ Joined x y := by
+  classical
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [singularHomology₀Section_eq_of_joined M h]⟩
+  by_contra hxy
+  -- The morphism out of zeroth homology which is the identity on the classes of the points of
+  -- the path component of `x` and zero on the others separates `[x] r` from `[y] r`.
+  let v : X → (M ⟶ M) := fun z ↦ if Joined x z then 𝟙 M else 0
+  have hv : ∀ ⦃z z' : X⦄, Path z z' → v z = v z' := fun z z' γ ↦ by
+    simp only [v, show Joined x z ↔ Joined x z' from ⟨(·.trans ⟨γ⟩), (·.trans ⟨γ.symm⟩)⟩]
+  have hd := congrArg (singularHomology₀Desc M v hv).hom h
+  rw [← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    singularHomology₀Section_singularHomology₀Desc,
+    singularHomology₀Section_singularHomology₀Desc] at hd
+  exact hr (by simpa [v, hxy, Joined.refl] using hd)
 
 variable [HasKernels C]
 
