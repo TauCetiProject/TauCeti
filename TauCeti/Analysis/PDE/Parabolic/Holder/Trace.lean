@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.One
-public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.Iterated.Basic
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
