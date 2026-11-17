@@ -218,6 +218,14 @@ theorem dgHomEquiv_dgComp {X Y Z : DGSingleObj h} {p q n : ℤ} (f : DGHom R p X
   rw [(homComplexData h).dgComp_toDGCategory f g hpq]
   exact homComplexData_comp hpq f g
 
+/-- The differential of the Hom complex between any two consecutive indices `a` and `b = a + 1`
+is the differential of the algebra. -/
+theorem dgHomEquiv_dgHomComplex_d {X Y : DGSingleObj h} {a b : ℤ} (hab : a + 1 = b)
+    (f : DGHom R a X Y) :
+    (dgHomEquiv X Y b (((dgHomComplex R X Y).d a b).hom f) : A) = d (dgHomEquiv X Y a f) := by
+  subst hab
+  exact dgHomEquiv_dgDifferential a f
+
 end DGSingleObj
 
 end TauCeti
