@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.Analysis.Pseudodifferential.Integral
 public import TauCeti.Analysis.Pseudodifferential.LinearChange
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
+public import TauCeti.Topology.Algebra.Module.Equiv.AutomorphismGroup
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
@@ -38,9 +39,11 @@ instance of the compact parameter integral `TauCeti.Symbol.integral`. Its main p
   equivariant, `Op(avg a)(h • u) = h • Op(avg a) u`.
 * `TauCeti.Symbol.quantizeSchwartzValue_average`: the averaged operator is the average of the
   conjugated operators, `Op(avg a) u = ∫ g • Op(a)(g⁻¹ • u) dμ(g)`.
-* `TauCeti.Symbol.average_eq_self`: for a probability measure, averaging fixes invariant symbols;
-  in particular it is idempotent (`TauCeti.Symbol.average_average`). Trivial actions fix every
-  symbol (`TauCeti.Symbol.transport_one`), so for them averaging is the identity.
+* `TauCeti.Symbol.average_eq_smul_self`: averaging multiplies an invariant symbol by the total
+  mass of `μ`. So for a probability measure, averaging fixes invariant symbols
+  (`TauCeti.Symbol.average_eq_self`); in particular it is idempotent
+  (`TauCeti.Symbol.average_average`). Trivial actions fix every symbol
+  (`TauCeti.Symbol.transport_one`), so for them averaging is the identity.
 * Averaging is `ℂ`-linear (`TauCeti.Symbol.average_add`, `TauCeti.Symbol.average_smul`) and
   preserves smoothing symbols, estimates uniform in the position and compact spatial support
   (`TauCeti.Symbol.IsSmoothing.average`, `TauCeti.Symbol.IsUniform.average`,
@@ -92,16 +95,6 @@ private theorem coefficient_transport_eq_comp (A : CoordinateSpace n ≃L[ℝ] C
           (A.adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n)) :=
   funext fun ⟨x, ξ⟩ ↦ by simp [transport]
 
-/-- The coefficient of the transported symbol, as the conjugation `T ↦ f ∘ T ∘ e⁻¹` of the
-coefficient of a linear change of variables. -/
-private theorem coefficient_transport_eq_arrowCongr
-    (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V) (f : W ≃L[ℂ] W)
-    (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
-    (transport A e f a).coefficient p = e.arrowCongr f
-      ((compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) A.adjointEquiv
-        a).coefficient p) := by
-  simp [transport]
-
 @[simp]
 theorem coefficient_transport (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : V ≃L[ℂ] V)
     (f : W ≃L[ℂ] W) (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
@@ -125,25 +118,18 @@ theorem transport_smul (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e : 
 /-- Transport along the identity leaves a symbol unchanged. -/
 @[simp]
 theorem transport_one (a : Symbol n V W m) : transport 1 1 1 a = a := by
-  -- The unit of each automorphism group is the identity equivalence.
-  have hA : (1 : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) = .refl ℝ _ := rfl
-  have he : (1 : V ≃L[ℂ] V) = .refl ℂ V := rfl
-  have hf : (1 : W ≃L[ℂ] W) = .refl ℂ W := rfl
   refine Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ ?_)
-  simp [hA, he, hf, ContinuousLinearEquiv.adjointEquiv_apply, ContinuousLinearMap.adjoint_id]
+  simp [ContinuousLinearEquiv.one_eq_refl, ContinuousLinearEquiv.adjointEquiv_apply,
+    ContinuousLinearMap.adjoint_id]
 
 /-- Transport is compatible with composition of the symmetries: transporting along
 `(B, e', f')` and then along `(A, e, f)` is transporting along `(A B, e e', f f')`. -/
 theorem transport_transport (A B : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (e e' : V ≃L[ℂ] V)
     (f f' : W ≃L[ℂ] W) (a : Symbol n V W m) :
     transport A e f (transport B e' f' a) = transport (A * B) (e * e') (f * f') a := by
-  -- The product in each automorphism group is composition.
-  have hAB : A * B = B.trans A := rfl
-  have he : e * e' = e'.trans e := rfl
-  have hf : f * f' = f'.trans f := rfl
   refine Symbol.ext (funext fun p ↦ ContinuousLinearMap.ext fun v ↦ ?_)
-  simp [hAB, he, hf, ContinuousLinearEquiv.adjointEquiv_apply, ← ContinuousLinearEquiv.comp_coe,
-    ContinuousLinearMap.adjoint_comp]
+  simp [ContinuousLinearEquiv.mul_eq_trans, ContinuousLinearEquiv.adjointEquiv_apply,
+    ← ContinuousLinearEquiv.comp_coe, ContinuousLinearMap.adjoint_comp]
 
 open scoped FourierTransform
 
@@ -162,19 +148,13 @@ theorem quantizeSchwartzValue_transport (A : CoordinateSpace n ≃L[ℝ] Coordin
     simp
   rw [quantizeSchwartzValue_congr_left (b := fun p ↦ e.arrowCongr f
       ((compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) A.adjointEquiv
-        a).coefficient p)) (fun _ ↦ coefficient_transport_eq_arrowCongr _ _ _ _ _),
+        a).coefficient p)) (fun _ ↦ by rw [transport, coefficient_map_arrowCongr]),
     quantizeSchwartzValue_arrowCongr, ← A.apply_symm_apply y,
     quantizeSchwartzValue_compProdMap_symm_adjointEquiv, hv, A.apply_symm_apply]
 
 end Transport
 
 section Average
-
-/-- The inverse of the action of `g` is the action of `g⁻¹`. -/
-private theorem symm_eq_map_inv {G M R : Type*} [Group G] [Semiring R] [AddCommMonoid M]
-    [Module R M] [TopologicalSpace M] (π : G →* (M ≃L[R] M)) (g : G) : (π g).symm = π g⁻¹ := by
-  rw [map_inv]
-  rfl
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [MeasurableSpace G] [BorelSpace G] (μ : Measure G) [IsFiniteMeasure μ]
@@ -184,20 +164,6 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Comp
 variable {ρ σ τ}
 variable (hρ : Continuous fun g ↦ (ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n))
   (hσ : Continuous fun g ↦ (σ g : V →L[ℂ] V)) (hτ : Continuous fun g ↦ (τ g : W →L[ℂ] W))
-
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
-include hρ in
-/-- The inverse action on positions is continuous in the operator norm. -/
-private theorem continuous_symm_apply :
-    Continuous fun g ↦ ((ρ g).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) :=
-  (hρ.comp continuous_inv).congr fun g ↦ by rw [Function.comp_apply, symm_eq_map_inv]
-
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
-include hσ in
-/-- The inverse action on `V` is continuous in the operator norm. -/
-private theorem continuous_symm_apply_coefficient :
-    Continuous fun g ↦ ((σ g).symm : V →L[ℂ] V) :=
-  (hσ.comp continuous_inv).congr fun g ↦ by rw [Function.comp_apply, symm_eq_map_inv]
 
 omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
 include hρ hσ hτ in
@@ -225,14 +191,10 @@ private theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : �
       ((τ g : W →L[ℂ] W), ((σ g).symm : V →L[ℂ] V))) := by
     have hadj : Continuous fun g ↦
         ((ρ g).adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n) := by
-      have h : (fun g ↦ ((ρ g).adjointEquiv : CoordinateSpace n →L[ℝ] CoordinateSpace n)) =
-          fun g ↦ ContinuousLinearMap.adjoint (ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n) :=
-        funext fun g ↦ ContinuousLinearMap.ext fun ξ ↦
-          ContinuousLinearEquiv.adjointEquiv_apply _ ξ
-      rw [h]
+      simp only [ContinuousLinearEquiv.coe_adjointEquiv]
       exact ContinuousLinearMap.adjoint.continuous.comp hρ
-    exact ((continuous_symm_apply hρ).prodMk hadj).prodMk
-      (hτ.prodMk (continuous_symm_apply_coefficient hσ))
+    exact (hρ.continuous_symm_of_monoidHom.prodMk hadj).prodMk
+      (hτ.prodMk hσ.continuous_symm_of_monoidHom)
   refine ((hU.continuous_iteratedFDeriv_prod_right k (by simp)).comp
     ((hpar.comp continuous_fst).prodMk continuous_snd)).congr fun q ↦ ?_
   have hfun : (fun y ↦ U (((((ρ q.1).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n),
@@ -257,7 +219,7 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
         B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   -- The three actions are bounded in norm on the compact group, by the sup norms `Cρ`, `Cσ`, `Cτ`.
   set Cρ := ‖BoundedContinuousFunction.mkOfCompact ⟨_, hρ⟩‖
-  set Cσ := ‖BoundedContinuousFunction.mkOfCompact ⟨_, continuous_symm_apply_coefficient hσ⟩‖
+  set Cσ := ‖BoundedContinuousFunction.mkOfCompact ⟨_, hσ.continuous_symm_of_monoidHom⟩‖
   set Cτ := ‖BoundedContinuousFunction.mkOfCompact ⟨_, hτ⟩‖
   set c : ℝ := max 1 Cρ
   have hρc (g : G) : ‖(ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c :=
@@ -268,7 +230,7 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
   -- The position map is `ρ(g⁻¹)` and the frequency map is the adjoint of `ρ(g)`, with inverse the
   -- adjoint of `ρ(g⁻¹)`; all three have norm at most `c`.
   have hsymm : ‖((ρ g).symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c := by
-    simpa only [symm_eq_map_inv] using hρc g⁻¹
+    simpa only [map_inv, ContinuousLinearEquiv.inv_eq_symm] using hρc g⁻¹
   have hinv (ξ : CoordinateSpace n) : ‖ξ‖ ≤ c * ‖(ρ g).adjointEquiv ξ‖ := by
     calc ‖ξ‖ = ‖((ρ g).adjointEquiv.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)
           ((ρ g).adjointEquiv ξ)‖ := by
@@ -291,7 +253,7 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
     _ ≤ Cτ * (B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) * Cσ := by
         gcongr
         exacts [(BoundedContinuousFunction.mkOfCompact ⟨_, hτ⟩).norm_coe_le_norm g,
-          (BoundedContinuousFunction.mkOfCompact ⟨_, continuous_symm_apply_coefficient hσ⟩
+          (BoundedContinuousFunction.mkOfCompact ⟨_, hσ.continuous_symm_of_monoidHom⟩
             ).norm_coe_le_norm g]
     _ = _ := by ring
 
@@ -307,7 +269,7 @@ private theorem exists_bound_transport (a : Symbol n V W m) (K : Set (Coordinate
   -- The positions `ρ(g)⁻¹ x` with `x ∈ K` form the compact set `S`.
   set S := (fun q : G × CoordinateSpace n ↦ (ρ q.1).symm q.2) '' (Set.univ ×ˢ K)
   have hS : IsCompact S := (isCompact_univ.prod hK).image
-    (((continuous_symm_apply hρ).comp continuous_fst).clm_apply continuous_snd)
+    ((hρ.continuous_symm_of_monoidHom.comp continuous_fst).clm_apply continuous_snd)
   choose C _ hC using fun α' β' ↦ a.exists_bound S hS α' β'
   obtain ⟨B, hB0, hB⟩ := exists_bound_mixedDeriv_transport hρ hσ hτ a C hC α β
   exact ⟨B, hB0, fun g x hx ξ ↦ hB g x ⟨(g, x), ⟨Set.mem_univ _, hx⟩, rfl⟩ ξ⟩
@@ -330,34 +292,18 @@ theorem coefficient_average (a : Symbol n V W m) (p : CoordinateSpace n × Coord
         ((σ g).symm : V →L[ℂ] V) ∂μ := by
   simp only [average, coefficient_integral, coefficient_transport]
 
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
-include hρ hσ hτ in
-/-- At a fixed position and frequency, the transported coefficients depend continuously on `g`. -/
-private theorem continuous_coefficient_transport (a : Symbol n V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    Continuous fun g ↦ (transport (ρ g) (σ g) (τ g) a).coefficient p := by
-  have h := ((continuous_iteratedFDeriv_transport hρ hσ hτ a 0).comp
-    (continuous_id.prodMk (continuous_const (y := p)))).eval
-      (continuous_const (y := (0 : Fin 0 → CoordinateSpace n × CoordinateSpace n)))
-  simpa only [Function.comp_apply, iteratedFDeriv_zero_apply, id_eq] using h
-
 /-- Averaging is additive. -/
 theorem average_add (a b : Symbol n V W m) :
     average μ hρ hσ hτ (a + b) = average μ hρ hσ hτ a + average μ hρ hσ hτ b := by
-  refine Symbol.ext (funext fun p ↦ ?_)
-  have hi (c : Symbol n V W m) :
-      Integrable (fun g ↦ (transport (ρ g) (σ g) (τ g) c).coefficient p) μ :=
-    (continuous_coefficient_transport hρ hσ hτ c p).integrable_of_hasCompactSupport
-      (HasCompactSupport.of_compactSpace _)
-  simp only [average, coefficient_integral, coefficient_add, transport_add, Pi.add_apply]
-  exact MeasureTheory.integral_add (hi a) (hi b)
+  simp only [average, transport_add]
+  exact integral_add μ _ _ (continuous_iteratedFDeriv_transport hρ hσ hτ a)
+    (continuous_iteratedFDeriv_transport hρ hσ hτ b)
 
 /-- Averaging commutes with multiplication by complex scalars. -/
 theorem average_smul (c : ℂ) (a : Symbol n V W m) :
     average μ hρ hσ hτ (c • a) = c • average μ hρ hσ hτ a := by
-  refine Symbol.ext (funext fun p ↦ ?_)
-  simp only [average, coefficient_integral, coefficient_smul, transport_smul, Pi.smul_apply,
-    MeasureTheory.integral_smul]
+  simp only [average, transport_smul]
+  exact integral_smul μ c _ (continuous_iteratedFDeriv_transport hρ hσ hτ a)
 
 /-- The coefficient of the average depends only on the coefficient of the symbol, so averaging
 commutes with the inclusions of symbol classes. -/
@@ -426,17 +372,26 @@ theorem quantizeSchwartzValue_average (a : Symbol n V W m) (u : 𝓢(CoordinateS
   rw [← quantizeSchwartzValue_transport, hu]
 
 omit [μ.IsMulLeftInvariant] in
+/-- **Averaging an invariant symbol.** A symbol invariant under the action of every `g ∈ G`
+averages to its multiple by the total mass of `μ`. -/
+theorem average_eq_smul_self [CompleteSpace (V →L[ℂ] W)] {a : Symbol n V W m}
+    (ha : ∀ g, transport (ρ g) (σ g) (τ g) a = a) :
+    average μ hρ hσ hτ a = (μ.real Set.univ : ℂ) • a := by
+  simp only [average, ha]
+  exact integral_const μ a
+
+omit [μ.IsMulLeftInvariant] in
 /-- **Averaging fixes invariant symbols.** For a probability measure, a symbol invariant under
 the action of every `g ∈ G` is its own average. -/
-theorem average_eq_self [CompleteSpace W] [IsProbabilityMeasure μ] {a : Symbol n V W m}
-    (ha : ∀ g, transport (ρ g) (σ g) (τ g) a = a) : average μ hρ hσ hτ a = a := by
-  refine Symbol.ext (funext fun p ↦ ?_)
-  rw [average, coefficient_integral]
-  simp only [ha, MeasureTheory.integral_const, probReal_univ, one_smul]
+theorem average_eq_self [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ]
+    {a : Symbol n V W m} (ha : ∀ g, transport (ρ g) (σ g) (τ g) a = a) :
+    average μ hρ hσ hτ a = a := by
+  rw [average_eq_smul_self μ hρ hσ hτ ha, probReal_univ, Complex.ofReal_one, one_smul]
 
 /-- **Averaging is idempotent** for a left-invariant probability measure. -/
 @[simp]
-theorem average_average [CompleteSpace W] [IsProbabilityMeasure μ] (a : Symbol n V W m) :
+theorem average_average [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ]
+    (a : Symbol n V W m) :
     average μ hρ hσ hτ (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
   average_eq_self μ hρ hσ hτ (transport_average μ hρ hσ hτ a)
 
@@ -461,10 +416,9 @@ theorem IsUniform.average {a : Symbol n V W m} (ha : a.IsUniform) :
   have hcoef : (Symbol.average μ hρ hσ hτ a).coefficient =
       fun p ↦ ∫ g, (transport (ρ g) (σ g) (τ g) a).coefficient p ∂μ :=
     funext fun p ↦ by rw [Symbol.average, coefficient_integral]
-  rw [hcoef, mixedDeriv_integral_of_continuous_jets μ _
-    (continuous_iteratedFDeriv_transport hρ hσ hτ a)]
-  exact (norm_integral_le_of_norm_le_const (Filter.Eventually.of_forall fun g ↦
-    hB g x (Set.mem_univ _) ξ)).trans_eq (by ring)
+  rw [hcoef]
+  exact norm_mixedDeriv_integral_le μ _ (continuous_iteratedFDeriv_transport hρ hσ hτ a) α β x ξ
+    fun g ↦ hB g x (Set.mem_univ _) ξ
 
 /-- The average of a symbol with compact spatial support has compact spatial support: if `a`
 vanishes at positions outside `K`, its average vanishes outside the compact set `ρ(G) K`. -/

@@ -380,13 +380,16 @@ theorem adjointEquiv_symm_apply [CompleteSpace E] [CompleteSpace F]
     A.adjointEquiv.symm x = ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E) x := by
   rw [adjointEquiv_symm, adjointEquiv_apply]
 
+/-- As a continuous linear map, the adjoint equivalence is the adjoint of the equivalence. -/
+theorem coe_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
+    (A.adjointEquiv : F →L[𝕜] E) = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) :=
+  ContinuousLinearMap.ext A.adjointEquiv_apply
+
 /-- The adjoint equivalence has the same operator norm as the equivalence. -/
 @[simp]
 theorem norm_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
     ‖(A.adjointEquiv : F →L[𝕜] E)‖ = ‖(A : E →L[𝕜] F)‖ := by
-  have h : (A.adjointEquiv : F →L[𝕜] E) = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) :=
-    ContinuousLinearMap.ext A.adjointEquiv_apply
-  rw [h, LinearIsometryEquiv.norm_map]
+  rw [coe_adjointEquiv, LinearIsometryEquiv.norm_map]
 
 /-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then conjugating by `e` loses at most a factor `λ` in
 operator norm: `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/
