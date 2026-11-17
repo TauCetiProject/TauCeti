@@ -53,6 +53,8 @@ family of `F` linearly independent over `k` stays linearly independent over `k'`
 for algebraic `k' / k`, to the finite subextensions of `k' / k`, and
 `IntermediateField.LinearDisjoint.fieldRange_intermediateField` restricts it to any intermediate
 field. With no algebraicity assumption on the new constants,
+`TauCeti.productMap_injective_iff_linearDisjoint` characterizes linear disjointness by
+injectivity of the multiplication map `F ⊗[k] k' → E`,
 `IntermediateField.LinearDisjoint.transcendental_algebraMap` preserves transcendental elements,
 `IntermediateField.LinearDisjoint.isIntegrallyClosedIn` descends relative integral closure along
 any linearly disjoint extension,
@@ -239,6 +241,22 @@ section ExtendScalars
 variable {k' : Type*} {F : Type*} {E : Type*} [Field k'] [Field F] [Field E]
 variable [Algebra k k'] [Algebra k F] [Algebra k E] [Algebra k' E] [Algebra F E]
 variable [IsScalarTower k k' E] [IsScalarTower k F E]
+
+/-- Multiplication `F ⊗[k] k' → E` into a common overfield is injective if and only if
+the image of `k'` and `F` are linearly disjoint over `k`. -/
+theorem productMap_injective_iff_linearDisjoint :
+    Function.Injective (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F E)
+      (IsScalarTower.toAlgHom k k' E)) ↔
+      (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F := by
+  let fF := IsScalarTower.toAlgHom k F E
+  let fK := IsScalarTower.toAlgHom k k' E
+  rw [IntermediateField.linearDisjoint_iff, AlgHom.fieldRange_toSubalgebra,
+    Subalgebra.linearDisjoint_comm, Subalgebra.linearDisjoint_iff_injective]
+  let e := Algebra.TensorProduct.congr (AlgEquiv.ofInjective fF fF.injective)
+    (AlgEquiv.ofInjective fK fK.injective)
+  have h : Algebra.TensorProduct.productMap fF fK =
+      (fF.range.mulMap fK.range).comp e.toAlgHom := by ext x <;> rfl
+  rw [h, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.Injective.of_comp_iff' _ e.bijective]
 
 /-- **Linear independence over `k` persists over `k'` under linear disjointness**: if the image of
 `k'` in `E` and `F` are linearly disjoint over `k`, then a family of elements of `F` linearly
