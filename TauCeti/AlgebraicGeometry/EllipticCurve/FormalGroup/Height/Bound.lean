@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Basic
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Two
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Char.Three
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Supersingular
 
 /-!
 # The height-two bound for elliptic Weierstrass curves at 2 and 3
@@ -19,7 +18,7 @@ of its formal group is the unit ideal at the primes 2 and 3. Equivalently, Landw
 The statements concern families, including rings with nilpotents and the zero ring;
 they impose no characteristic assumption on the coefficient ring.
 
-The field-height classifications in characteristics 2 and 3, together with detection
+The field-height dichotomy in prime characteristic, together with detection
 of a proper height ideal on a maximal-ideal quotient, give the family-level result.
 This supplies the height-two unit condition for Landweber exactness at these primes.
 It does not assert the separate regularity of `p` and `v₁` for an arbitrary family.
@@ -46,12 +45,9 @@ theorem heightIdeal_formalGroup_eq_top_of_two_or_three (hp : p = 2 ∨ p = 3)
   apply ((formalGroup W).heightIdeal_eq_top_iff_forall_height_lt hprime (by omega)).mpr
   intro K _ _ f
   rw [← map_formalGroup]
-  have hheight : (formalGroup (W.map f)).height p = 1 ∨
-      (formalGroup (W.map f)).height p = 2 := by
-    rcases hp with rfl | rfl
-    · exact (W.map f).height_formalGroup_eq_one_or_eq_two_of_char_two
-    · exact (W.map f).height_formalGroup_eq_one_or_eq_two_of_char_three
-  rcases hheight with h | h <;> rw [h] <;> exact_mod_cast (by omega : _ < n)
+  have : Fact p.Prime := ⟨hprime⟩
+  rcases (W.map f).height_formalGroup_eq_one_or_two (p := p) with h | h <;> rw [h] <;>
+    exact_mod_cast (by omega : _ < n)
 
 /-- At 2 and 3, Landweber's `v₂` of the formal group of an elliptic Weierstrass curve is
 a unit modulo `(p, v₁)`. This is the height-two unit condition, with no regularity assumption
