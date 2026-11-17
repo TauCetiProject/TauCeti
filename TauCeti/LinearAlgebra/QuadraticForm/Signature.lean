@@ -238,6 +238,14 @@ theorem forall_nonpos_iff_sigPos_eq_zero (Q : _root_.QuadraticForm K M) :
     (∀ x, Q x ≤ 0) ↔ sigPos Q = 0 := by
   simpa only [neg_apply, neg_nonneg, sigNeg_neg] using forall_nonneg_iff_sigNeg_eq_zero (-Q)
 
+omit [FiniteDimensional K M] in
+/-- The zero quadratic form has negative index of inertia zero. -/
+@[simp]
+theorem sigNeg_zero : sigNeg (0 : _root_.QuadraticForm K M) = 0 := by
+  by_cases hM : Module.Finite K M
+  · exact (forall_nonneg_iff_sigNeg_eq_zero 0).mp fun _ ↦ le_rfl
+  · exact sigNeg_eq_zero_of_not_finite 0 hM
+
 omit [IsStrictOrderedRing K] in
 /-- Restricting a quadratic form to a subspace cannot increase its positive index. -/
 theorem sigPos_restrict_le (Q : _root_.QuadraticForm K M) (W : Subspace K M) :
