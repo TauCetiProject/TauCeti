@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Duality
 import Mathlib.Probability.Moments.Basic
+import TauCeti.Basic.ENNReal.Real
+import TauCeti.MeasureTheory.Integral.Exp.Log
 
 /-!
 # Canonical Schrödinger potentials and softmin regularity
@@ -71,29 +73,6 @@ section Softmin
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   {c : X × Y → ℝ≥0∞} {ε : ℝ≥0} {ν : Measure Y}
 
-omit [MeasurableSpace X] in
-/-- Monotonicity of the entropic softmin functional: if `g₁ ≤ g₂ + δ` pointwise, then
-`(-ε * log ∫ exp (g₂ / ε) dν) - (-ε * log ∫ exp (g₁ / ε) dν) ≤ δ`. -/
-private theorem neg_mul_log_integral_exp_sub_le [NeZero ν] (hε : ε ≠ 0)
-    {g₁ g₂ : Y → ℝ} {δ : ℝ} (hi₁ : Integrable (fun y ↦ Real.exp (g₁ y / ε)) ν)
-    (hi₂ : Integrable (fun y ↦ Real.exp (g₂ y / ε)) ν) (hle : ∀ y, g₁ y ≤ g₂ y + δ) :
-    -(ε : ℝ) * Real.log (∫ y, Real.exp (g₂ y / ε) ∂ν) -
-      (-(ε : ℝ) * Real.log (∫ y, Real.exp (g₁ y / ε) ∂ν)) ≤ δ := by
-  have hε0 : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
-  have hZ₁ : 0 < ∫ y, Real.exp (g₁ y / ε) ∂ν := integral_exp_pos hi₁
-  have hZ₂ : 0 < ∫ y, Real.exp (g₂ y / ε) ∂ν := integral_exp_pos hi₂
-  have hint_le : ∫ y, Real.exp (g₁ y / ε) ∂ν ≤
-      Real.exp (δ / ε) * ∫ y, Real.exp (g₂ y / ε) ∂ν := by
-    rw [← integral_const_mul]
-    refine integral_mono hi₁ (hi₂.const_mul _) fun y ↦ ?_
-    rw [← Real.exp_add, Real.exp_le_exp, ← add_div]
-    exact div_le_div_of_nonneg_right ((hle y).trans_eq (add_comm _ _)) ε.coe_nonneg
-  have hlog := Real.log_le_log hZ₁ hint_le
-  rw [Real.log_mul (Real.exp_pos _).ne' hZ₂.ne', Real.log_exp] at hlog
-  have hmul := mul_le_mul_of_nonneg_left hlog hε0.le
-  rw [mul_add, mul_div_cancel₀ _ hε0.ne'] at hmul
-  linarith
-
 private theorem integrable_exp_sub_toReal_div [IsFiniteMeasure ν] (hc : Measurable c)
     {ψ : Y → ℝ} {Cψ : ℝ} (hψ : Measurable ψ) (hψC : ∀ y, ψ y ≤ Cψ) (x : X) :
     Integrable (fun y ↦ Real.exp ((ψ y - (c (x, y)).toReal) / ε)) ν := by
@@ -130,6 +109,53 @@ private theorem eq_neg_mul_log_of_integral_entropicGibbsFactor_eq_one [IsFiniteM
   rw [(div_eq_iff hε_ne).1 hdiv]
   ring
 
+/-- Shifting a solution `φ₀` of the pointwise `ν`-marginal equation by the log-partition constant
+`a = -ε * log ∫ exp (ψ₀ / ε) dν` places `φ₀ x - a` inside `[0, B]` whenever `0 ≤ c ≤ B`. -/
+private theorem mem_Icc_sub_neg_mul_log_of_integral_entropicGibbsFactor_eq_one
+    [IsFiniteMeasure ν] [NeZero ν] {B : ℝ≥0} (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+    (hε : ε ≠ 0) {φ₀ : X → ℝ} {ψ₀ : Y → ℝ} {Cψ : ℝ} (hψ₀ : Measurable ψ₀)
+    (hψ₀C : ∀ y, ψ₀ y ≤ Cψ) {x : X}
+    (hrow : ∫ y, entropicGibbsFactor c ε φ₀ ψ₀ (x, y) ∂ν = 1) :
+    0 ≤ φ₀ x - (-(ε : ℝ) * Real.log (∫ y, Real.exp (ψ₀ y / ε) ∂ν)) ∧
+      φ₀ x - (-(ε : ℝ) * Real.log (∫ y, Real.exp (ψ₀ y / ε) ∂ν)) ≤ B := by
+  have hfin (z : X × Y) : c z ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
+  have hε0 : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  have hφ₀_eq :=
+    eq_neg_mul_log_of_integral_entropicGibbsFactor_eq_one hc hfin hε hψ₀ hψ₀C hrow
+  have hint_a : Integrable (fun y ↦ Real.exp (ψ₀ y / ε)) ν := by
+    simpa only [one_mul] using ProbabilityTheory.integrable_exp_mul_of_le (μ := ν) 1 (Cψ / ε)
+      zero_le_one (hψ₀.div_const (ε : ℝ)).aemeasurable
+      (ae_of_all _ fun y ↦ div_le_div_of_nonneg_right (hψ₀C y) ε.coe_nonneg)
+  have hint_x := integrable_exp_sub_toReal_div (ν := ν) (ε := ε) hc hψ₀ hψ₀C x
+  have hhi := mul_log_integral_exp_div_le_add_of_ae_le (δ := B) hε0 hint_a hint_x
+    (ae_of_all _ fun y ↦ by linarith [ENNReal.toReal_le_coe_of_le_coe (hcB (x, y))])
+  have hlo := mul_log_integral_exp_div_le_add_of_ae_le (δ := 0) hε0 hint_x hint_a
+    (ae_of_all _ fun y ↦ by linarith [ENNReal.toReal_nonneg (a := c (x, y))])
+  rw [hφ₀_eq]
+  exact ⟨by linarith, by linarith⟩
+
+/-- For a probability measure `ν` and a cost `c ≤ B`, a potential `φ` solving the pointwise
+`ν`-marginal equation against a measurable potential `ψ` taking values in `[0, B]` satisfies
+`|φ x| ≤ B`. -/
+private theorem abs_le_of_integral_entropicGibbsFactor_eq_one [IsProbabilityMeasure ν]
+    {B : ℝ≥0} (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) {φ : X → ℝ} {ψ : Y → ℝ}
+    (hψ : Measurable ψ) (hψB : ∀ y, 0 ≤ ψ y ∧ ψ y ≤ B) {x : X}
+    (hrow : ∫ y, entropicGibbsFactor c ε φ ψ (x, y) ∂ν = 1) :
+    |φ x| ≤ B := by
+  have hfin (z : X × Y) : c z ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
+  have hε0 : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
+  have hφ_eq := eq_neg_mul_log_of_integral_entropicGibbsFactor_eq_one hc hfin hε hψ
+    (fun y ↦ (hψB y).2) hrow
+  have hint_x := integrable_exp_sub_toReal_div (ν := ν) (ε := ε) hc hψ (fun y ↦ (hψB y).2) x
+  have hint_0 : Integrable (fun _ : Y ↦ Real.exp ((0 : ℝ) / ε)) ν := integrable_const _
+  have h0_val : (ε : ℝ) * Real.log (∫ _ : Y, Real.exp ((0 : ℝ) / ε) ∂ν) = 0 := by simp
+  have hhi := mul_log_integral_exp_div_le_add_of_ae_le (δ := B) hε0 hint_0 hint_x
+    (ae_of_all _ fun y ↦ by linarith [(hψB y).1, ENNReal.toReal_le_coe_of_le_coe (hcB (x, y))])
+  have hlo := mul_log_integral_exp_div_le_add_of_ae_le (δ := B) hε0 hint_x hint_0
+    (ae_of_all _ fun y ↦ by linarith [(hψB y).2, ENNReal.toReal_nonneg (a := c (x, y))])
+  rw [hφ_eq, abs_le]
+  exact ⟨by linarith, by linarith⟩
+
 /-- **Lipschitz regularity of Schrödinger marginal solutions.** For any nonzero finite measure `ν`
 on a measurable space `Y`, a finite-valued measurable cost `c` whose source slices
 `x ↦ (c (x, y)).toReal` are `K`-Lipschitz on an extended pseudometric space `X`, and any pair
@@ -144,6 +170,7 @@ theorem lipschitzWith_of_forall_integral_entropicGibbsFactor_eq_one [PseudoEMetr
     LipschitzWith K φ := by
   have hφeq (x : X) :=
     eq_neg_mul_log_of_integral_entropicGibbsFactor_eq_one hc hfin hε hψ hψC (hrow x)
+  have hε0 : (0 : ℝ) < ε := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hε)
   intro x x'
   rcases eq_or_ne K 0 with rfl | hK
   · have hcx : ∀ y, (c (x, y)).toReal = (c (x', y)).toReal := fun y ↦ by
@@ -155,24 +182,22 @@ theorem lipschitzWith_of_forall_integral_entropicGibbsFactor_eq_one [PseudoEMetr
   · rw [htop, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hK)]
     exact le_top
   set d := (edist x x').toReal
-  have hKd_ne_top : (K : ℝ≥0∞) * edist x x' ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top hd_fin
-  have hKd_toReal : ((K : ℝ≥0∞) * edist x x').toReal = K * d := by
-    rw [ENNReal.toReal_mul, ENNReal.coe_toReal]
-  have hc_diff (y : Y) : |(c (x, y)).toReal - (c (x', y)).toReal| ≤ K * d := by
-    have hy := (hL y) x x'
-    rw [edist_dist, Real.dist_eq] at hy
-    exact ((ENNReal.ofReal_le_iff_le_toReal hKd_ne_top).1 hy).trans_eq hKd_toReal
+  have hc_diff (y : Y) : |(c (x, y)).toReal - (c (x', y)).toReal| ≤ K * d :=
+    le_coe_mul_of_ofReal_le (by simpa only [edist_dist, Real.dist_eq] using (hL y) x x') hd_fin
   have hdir (x₁ x₂ : X) (hd : ∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ K * d) :
       φ x₁ - φ x₂ ≤ K * d := by
-    rw [hφeq x₁, hφeq x₂]
-    exact neg_mul_log_integral_exp_sub_le (ν := ν) hε
+    have hle := mul_log_integral_exp_div_le_add_of_ae_le (ν := ν) (δ := K * d) hε0
       (integrable_exp_sub_toReal_div hc hψ hψC x₂)
       (integrable_exp_sub_toReal_div hc hψ hψC x₁)
-      fun y ↦ by linarith [(abs_le.1 (hd y)).2]
+      (ae_of_all _ fun y ↦ by linarith [(abs_le.1 (hd y)).2])
+    rw [hφeq x₁, hφeq x₂]
+    linarith
   have habs : |φ x - φ x'| ≤ K * d :=
     abs_sub_le_iff.2 ⟨hdir x x' hc_diff,
       hdir x' x fun y ↦ by rw [abs_sub_comm]; exact hc_diff y⟩
-  rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hKd_ne_top, hKd_toReal]
+  have hKd_ne_top : (K : ℝ≥0∞) * edist x x' ≠ ∞ := ENNReal.mul_ne_top ENNReal.coe_ne_top hd_fin
+  rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hKd_ne_top, ENNReal.toReal_mul,
+    ENNReal.coe_toReal]
   exact ENNReal.ofReal_le_ofReal habs
 
 end Softmin
@@ -200,17 +225,15 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost_and_le
       kantorovichDualValue μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal ∧
       entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
   have hfin (z : X × Y) : c z ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
-  have hcB' (z : X × Y) : (c z).toReal ≤ B := ENNReal.toReal_le_coe_of_le_coe (hcB z)
-  obtain ⟨π, hπ, hopt, φ₀, ψ₀, C₀, hφ₀, hψ₀, _, hψ₀C, hrow₀, hcol₀, hπeq⟩ :=
+  -- Start from bounded Schrödinger potentials `(φ₀, ψ₀)` realising an optimal coupling `π`.
+  obtain ⟨π, hπ, hopt, φ₀, ψ₀, _, hφ₀, hψ₀, _, hψ₀C, hrow₀, hcol₀, hπeq⟩ :=
     exists_isCoupling_lintegral_add_mul_klDiv_eq_entropicTransportCost (μ := μ) (ν := ν) hc hcB hε
   have hrow₀' (x : X) : ∫ y, entropicGibbsFactor c ε φ₀ ψ₀ (x, y) ∂ν = 1 := by
     simpa only [entropicGibbsFactor_of_ne_top (hfin _)] using hrow₀ x
   have hcol₀' (y : Y) : ∫ x, entropicGibbsFactor c ε φ₀ ψ₀ (x, y) ∂μ = 1 := by
     simpa only [entropicGibbsFactor_of_ne_top (hfin _)] using hcol₀ y
-  have hint_a : Integrable (fun y ↦ Real.exp (ψ₀ y / ε)) ν := by
-    simpa only [one_mul] using ProbabilityTheory.integrable_exp_mul_of_le (μ := ν) 1 (C₀ / ε)
-      zero_le_one (hψ₀.div_const (ε : ℝ)).aemeasurable
-      (ae_of_all _ fun y ↦ div_le_div_of_nonneg_right (le_of_abs_le (hψ₀C y)) ε.coe_nonneg)
+  -- Shift by the log-partition constant `a` to normalise `φ` into `[0, B]` without changing the
+  -- Gibbs factor or the marginal equations.
   set a : ℝ := -(ε : ℝ) * Real.log (∫ y, Real.exp (ψ₀ y / ε) ∂ν)
   set φ : X → ℝ := fun x ↦ φ₀ x - a
   set ψ : Y → ℝ := fun y ↦ ψ₀ y + a
@@ -223,45 +246,16 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost_and_le
     simpa only [hfactor] using hrow₀' x
   have hcol (y : Y) : ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1 := by
     simpa only [hfactor] using hcol₀' y
-  have hφ_bounds (x : X) : 0 ≤ φ x ∧ φ x ≤ B := by
-    have hφ₀_eq := eq_neg_mul_log_of_integral_entropicGibbsFactor_eq_one hc hfin hε hψ₀
+  -- Derive `0 ≤ φ ≤ B` and `|ψ| ≤ B` from the softmin bounds on the row and column equations.
+  have hφ_bounds (x : X) : 0 ≤ φ x ∧ φ x ≤ B :=
+    mem_Icc_sub_neg_mul_log_of_integral_entropicGibbsFactor_eq_one hc hcB hε hψ₀
       (fun y ↦ le_of_abs_le (hψ₀C y)) (hrow₀' x)
-    have hint_x := integrable_exp_sub_toReal_div (ν := ν) (ε := ε) hc hψ₀
-      (fun y ↦ le_of_abs_le (hψ₀C y)) x
-    have hhi : φ x ≤ B := by
-      dsimp only [φ, a]
-      rw [hφ₀_eq]
-      exact neg_mul_log_integral_exp_sub_le hε hint_a hint_x fun y ↦ by linarith [hcB' (x, y)]
-    have hlo : 0 ≤ φ x := by
-      have h0 := neg_mul_log_integral_exp_sub_le (δ := 0) hε hint_x hint_a fun y ↦
-        by linarith [ENNReal.toReal_nonneg (a := c (x, y))]
-      dsimp only [φ, a]
-      rw [hφ₀_eq]
-      linarith
-    exact ⟨hlo, hhi⟩
-  have hψ_bounds (y : Y) : |ψ y| ≤ B := by
-    have hcol_swap : ∫ x, entropicGibbsFactor (c ∘ Prod.swap) ε ψ φ (y, x) ∂μ = 1 := by
-      simpa only [entropicGibbsFactor_comp_swap, Function.comp_apply, Prod.swap_prod_mk] using
-        hcol y
-    have hψ_eq := eq_neg_mul_log_of_integral_entropicGibbsFactor_eq_one
-      (hc.comp measurable_swap) (fun w ↦ hfin w.swap) hε hφ (fun x ↦ (hφ_bounds x).2) hcol_swap
-    have hint_y := integrable_exp_sub_toReal_div (c := c ∘ Prod.swap) (ν := μ) (ε := ε)
-      (hc.comp measurable_swap) hφ (fun x ↦ (hφ_bounds x).2) y
-    have hint_0 : Integrable (fun _ : X ↦ Real.exp ((0 : ℝ) / ε)) μ := integrable_const _
-    have h0_val : -(ε : ℝ) * Real.log (∫ _ : X, Real.exp ((0 : ℝ) / ε) ∂μ) = 0 := by simp
-    have hhi : ψ y ≤ B := by
-      have := neg_mul_log_integral_exp_sub_le (δ := B) hε hint_0 hint_y fun x ↦ by
-        simp only [Function.comp_apply, Prod.swap_prod_mk]
-        linarith [(hφ_bounds x).1, hcB' (x, y)]
-      rw [hψ_eq]
-      linarith
-    have hlo : -(B : ℝ) ≤ ψ y := by
-      have := neg_mul_log_integral_exp_sub_le (δ := B) hε hint_y hint_0 fun x ↦ by
-        simp only [Function.comp_apply, Prod.swap_prod_mk]
-        linarith [(hφ_bounds x).2, ENNReal.toReal_nonneg (a := c (x, y))]
-      rw [hψ_eq]
-      linarith
-    exact abs_le.2 ⟨hlo, hhi⟩
+  have hψ_bounds (y : Y) : |ψ y| ≤ B :=
+    abs_le_of_integral_entropicGibbsFactor_eq_one (c := c ∘ Prod.swap) (ν := μ)
+      (hc.comp measurable_swap) (fun w ↦ hcB w.swap) hε hφ hφ_bounds <| by
+        simpa only [entropicGibbsFactor_comp_swap, Function.comp_apply, Prod.swap_prod_mk] using
+          hcol y
+  -- Evaluate the entropic and Kantorovich dual objectives via complementary slackness.
   have hφ_abs (x : X) : |φ x| ≤ B :=
     abs_le.2 ⟨by linarith [(hφ_bounds x).1, B.coe_nonneg], (hφ_bounds x).2⟩
   have hπ_new : π = (μ.prod ν).withDensity fun z ↦

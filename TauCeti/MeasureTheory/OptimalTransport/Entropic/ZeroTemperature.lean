@@ -364,33 +364,6 @@ section Metric
 variable {X Y : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [PseudoMetricSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
 
-private theorem exists_measurable_fin_le_add_of_uniformContinuous
-    (hX : TotallyBounded (univ : Set X)) (hY : TotallyBounded (univ : Set Y)) {c : X × Y → ℝ≥0}
-    (hc : UniformContinuous c) (η : ℝ≥0) (hη : 0 < η) :
-    ∃ (n m : ℕ) (p : X → Fin n) (q : Y → Fin m), Measurable p ∧ Measurable q ∧
-      ∀ x x' y y', p x = p x' → q y = q y' →
-        (c (x, y) : ℝ≥0∞) ≤ (c (x', y') : ℝ≥0∞) + η := by
-  obtain ⟨δ, hδ, hcδ⟩ := Metric.uniformContinuous_iff.1 hc η (NNReal.coe_pos.2 hη)
-  obtain ⟨n, v, p, hp, hpv⟩ := exists_measurable_dist_lt X hX (half_pos hδ)
-  obtain ⟨m, w, q, hq, hqw⟩ := exists_measurable_dist_lt Y hY (half_pos hδ)
-  refine ⟨n, m, p, q, hp, hq, fun x x' y y' hpx hqy ↦ ?_⟩
-  -- two points with the same label are `δ`-close, so their costs are `η`-close
-  have hx : dist x x' < δ := calc
-    dist x x' ≤ dist x (v (p x)) + dist x' (v (p x')) := hpx ▸ dist_triangle_right _ _ _
-    _ < δ / 2 + δ / 2 := add_lt_add (hpv x) (hpv x')
-    _ = δ := add_halves δ
-  have hy : dist y y' < δ := calc
-    dist y y' ≤ dist y (w (q y)) + dist y' (w (q y')) := hqy ▸ dist_triangle_right _ _ _
-    _ < δ / 2 + δ / 2 := add_lt_add (hqw y) (hqw y')
-    _ = δ := add_halves δ
-  have hxy : dist (x, y) (x', y') < δ := by rw [Prod.dist_eq]; exact max_lt hx hy
-  have hd := hcδ hxy
-  rw [NNReal.dist_eq] at hd
-  have hle : c (x, y) ≤ c (x', y') + η := by
-    rw [← NNReal.coe_le_coe, NNReal.coe_add]
-    linarith [(abs_lt.1 hd).2]
-  exact_mod_cast hle
-
 /-- **Convergence to the transport cost on totally bounded spaces.** For a uniformly continuous
 real cost on totally bounded pseudometric spaces, the regularised transport cost of finite measures
 converges to the transport cost as `ε → 0⁺`. -/

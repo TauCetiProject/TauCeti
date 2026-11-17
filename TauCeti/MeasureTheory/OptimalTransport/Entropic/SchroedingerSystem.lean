@@ -456,6 +456,7 @@ theorem exists_isCoupling_withDensity_exp_add_of_ne_zero [IsFiniteMeasure μ] (h
     (abs_neg _).trans_le (abs_logIntegralExp_le hν hg hgM hψ hC x)
   set f : X × Y → ℝ≥0∞ := fun z ↦ ENNReal.ofReal (Real.exp (φ z.1 + ψ z.2 + g z)) with hf_def
   have hf : Measurable f := by fun_prop
+  -- Check the pointwise row and column `lintegral` equations for `f`.
   have hrow (x : X) : ∫⁻ y, f (x, y) ∂ν = 1 := by
     have := lintegral_ofReal_exp_add hν hg hgM hψ hC x (φ x)
     have h0 : φ x + logIntegralExp g ν ψ x = 0 := by simp only [hφ_def, neg_add_cancel]
@@ -476,6 +477,7 @@ theorem exists_isCoupling_withDensity_exp_add_of_ne_zero [IsFiniteMeasure μ] (h
     rw [hf_def]
     simp only [Function.comp_apply, Prod.swap_prod_mk]
     ring_nf
+  -- Deduce that `f` defines a coupling and force `exp (-c) = 1` by comparing total masses.
   have hcoupling := isCoupling_withDensity_of_lintegral_eq hμν hf.aemeasurable (ae_of_all _ hrow)
     (ae_of_all _ hcol)
   have hc1 : ENNReal.ofReal (Real.exp (-c)) = 1 := by
@@ -484,6 +486,7 @@ theorem exists_isCoupling_withDensity_exp_add_of_ne_zero [IsFiniteMeasure μ] (h
       simp [hcol]
     exact (ENNReal.mul_eq_right (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)).1
       (hmass.symm.trans hcoupling.measure_univ_right.symm)
+  -- Convert the `lintegral` marginal identities to Bochner integrals.
   have hrow_int (x : X) : ∫ y, Real.exp (φ x + ψ y + g (x, y)) ∂ν = 1 := by
     have hint : Integrable (fun y ↦ Real.exp (φ x + ψ y + g (x, y))) ν :=
       ((integrable_exp_add_of_abs_le (ν := ν) hg hgM hψ hC x).mul_const (Real.exp (φ x))).congr

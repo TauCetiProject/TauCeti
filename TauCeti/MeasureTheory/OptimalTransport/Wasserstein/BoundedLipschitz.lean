@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.WeakConvergence
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.KantorovichRubinstein
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
-import TauCeti.Topology.MetricSpace.Lipschitz.Basic
+import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
 # Bounded-Lipschitz transport and weak convergence

@@ -7,12 +7,13 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
-import Mathlib.Topology.ContinuousMap.Compact
+import TauCeti.Analysis.Normed.Field.Lipschitz
+import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.ZeroTemperature
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BoundedLipschitz
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.KantorovichRubinstein
+import TauCeti.Topology.ContinuousMap.Compact
 import TauCeti.Topology.Instances.ENNReal
-import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # Quantitative stability and weak continuity of entropic optimal transport
@@ -77,7 +78,7 @@ public section
 noncomputable section
 
 open Filter InformationTheory MeasureTheory Set
-open scoped BoundedContinuousFunction ENNReal NNReal Topology
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -202,15 +203,9 @@ theorem abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one
     (hL₂ : ∀ x, LipschitzWith K₂ fun y ↦ (c (x, y)).toReal) (hε : ε ≠ 0)
     (hw₁ : wassersteinEDist 1 μ' μ ≠ ∞) (hw₂ : wassersteinEDist 1 ν' ν ≠ ∞) :
     |(entropicTransportCost c ε μ' ν').toReal - (entropicTransportCost c ε μ ν).toReal| ≤
-      K₁ * (wassersteinEDist 1 μ' μ).toReal + K₂ * (wassersteinEDist 1 ν' ν).toReal := by
-  have h₁ : (K₁ : ℝ≥0∞) * wassersteinEDist 1 μ' μ ≠ ∞ :=
-    ENNReal.mul_ne_top ENNReal.coe_ne_top hw₁
-  have h₂ : (K₂ : ℝ≥0∞) * wassersteinEDist 1 ν' ν ≠ ∞ :=
-    ENNReal.mul_ne_top ENNReal.coe_ne_top hw₂
-  have h := (ENNReal.ofReal_le_iff_le_toReal (ENNReal.add_ne_top.2 ⟨h₁, h₂⟩)).1
-    (ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one hc hcB hL₁ hL₂ hε)
-  rwa [ENNReal.toReal_add h₁ h₂, ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal,
-    ENNReal.coe_toReal] at h
+      K₁ * (wassersteinEDist 1 μ' μ).toReal + K₂ * (wassersteinEDist 1 ν' ν).toReal :=
+  le_coe_mul_add_coe_mul_of_ofReal_le
+    (ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one hc hcB hL₁ hL₂ hε) hw₁ hw₂
 
 /-- Source-marginal stability of entropic optimal transport in terms of truncated optimal
 transport, with no moment assumption. -/
@@ -273,6 +268,7 @@ private theorem continuous_of_abs_sub_le_transportCost_truncated_dist
   have hR₂ : 0 < R₂ := by positivity
   have h2R₁ : 2 * R₁ = ((B : ℝ) + 1) / (K₁ + 1 : ℝ) := by dsimp [R₁]; field_simp
   have h2R₂ : 2 * R₂ = ((B : ℝ) + 1) / (K₂ + 1 : ℝ) := by dsimp [R₂]; field_simp
+  -- Truncated transport costs metrise weak convergence on both factors.
   have ht₁ : Tendsto (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
       (transportCost (fun z : X × X ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R₁)))
         q.1.toMeasure q₀.1.toMeasure).toReal) (𝓝 q₀) (𝓝 0) := by
@@ -293,6 +289,7 @@ private theorem continuous_of_abs_sub_le_transportCost_truncated_dist
       (K₂ + 1 : ℝ) * (transportCost (fun z : Y × Y ↦ ENNReal.ofReal (min (dist z.1 z.2) (2 * R₂)))
         q.2.toMeasure q₀.2.toMeasure).toReal) (𝓝 q₀) (𝓝 0) := by
     simpa using (ht₁.const_mul (K₁ + 1 : ℝ)).add (ht₂.const_mul (K₂ + 1 : ℝ))
+  -- Combine the separate left and right bounds by the triangle inequality.
   refine Metric.tendsto_nhds.2 fun δ hδ ↦ ?_
   filter_upwards [hub.eventually (gt_mem_nhds hδ)] with q hq
   rw [Real.dist_eq]
@@ -393,61 +390,27 @@ theorem continuous_toReal_entropicTransportCost
     Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
       (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal := by
   obtain ⟨B, hB⟩ := ENNReal.exists_forall_le_of_continuous hc hfin
+  -- Factor `c.toReal` through continuous surjections `Φ : X → K`, `Ψ : Y → L` onto compact
+  -- pseudometric spaces with a continuous reduced cost `g : K × L → ℝ` whose slices are
+  -- `1`-Lipschitz in both variables.
   let f : C(X × Y, ℝ) :=
     ⟨fun z ↦ (c z).toReal, ENNReal.continuousOn_toReal.comp_continuous hc hfin⟩
-  let K := Set.range f.curry
-  have : CompactSpace K := isCompact_iff_compactSpace.1 (isCompact_range f.curry.continuous)
-  let evalYK : C(Y × K, ℝ) := ⟨fun p ↦ p.2.1 p.1,
-    (continuous_eval : Continuous fun p : (Y →ᵇ ℝ) × Y ↦ p.1 p.2).comp
-      (((ContinuousMap.isometryEquivBoundedOfCompact Y ℝ).continuous.comp
-        (continuous_subtype_val.comp continuous_snd)).prodMk continuous_fst)⟩
-  let L := Set.range evalYK.curry
-  have : CompactSpace L := isCompact_iff_compactSpace.1 (isCompact_range evalYK.curry.continuous)
-  borelize ↥K ↥L
-  let Φ : X → K := Set.rangeFactorization f.curry
-  let Ψ : Y → L := Set.rangeFactorization evalYK.curry
-  have hΦc : Continuous Φ := f.curry.continuous.rangeFactorization
-  have hΨc : Continuous Ψ := evalYK.curry.continuous.rangeFactorization
-  have f_apply (z : X × Y) : f z = (c z).toReal := rfl
-  have evalYK_apply (y : Y) (k : K) : evalYK (y, k) = k.1 y := rfl
-  let g : K × L → ℝ := fun w ↦ w.2.1 w.1
-  have hg_comp (x : X) (y : Y) : g (Φ x, Ψ y) = (c (x, y)).toReal := by
-    dsimp only [g, Φ, Ψ]
-    rw [Set.rangeFactorization_coe, ContinuousMap.curry_apply, evalYK_apply,
-      Set.rangeFactorization_coe, ContinuousMap.curry_apply, f_apply]
-  have hg_surj (w : K × L) : ∃ x y, g w = (c (x, y)).toReal := by
-    obtain ⟨x, hx⟩ := w.1.2
-    obtain ⟨y, hy⟩ := w.2.2
-    refine ⟨x, y, ?_⟩
-    rw [← hg_comp x y]
-    exact congrArg₂ (fun k l ↦ g (k, l)) (Subtype.ext hx.symm) (Subtype.ext hy.symm)
+  obtain ⟨K, L, _, _, _, _, Φ, Ψ, g, hΦc, hΦs, hΨc, hΨs, hgc, hgL₁, hgL₂, hfg⟩ :=
+    f.exists_factor_lipschitzWith_one
+  borelize K L
+  have hg_surj : ∀ w : K × L, ∃ x y, g w = (c (x, y)).toReal := fun ⟨k, l⟩ ↦ by
+    obtain ⟨x, rfl⟩ := hΦs k
+    obtain ⟨y, rfl⟩ := hΨs l
+    exact ⟨x, y, hfg x y⟩
   have hg0 (w : K × L) : 0 ≤ g w := by
     obtain ⟨x, y, hxy⟩ := hg_surj w
-    rw [hxy]
-    exact ENNReal.toReal_nonneg
-  have hgB (w : K × L) : g w ≤ B := by
-    obtain ⟨x, y, hxy⟩ := hg_surj w
-    rw [hxy]
-    exact ENNReal.toReal_le_coe_of_le_coe (hB (x, y))
-  have hgL₁ (l : L) : LipschitzWith 1 fun k : K ↦ g (k, l) := by
-    obtain ⟨y, hy⟩ := l.2
-    refine LipschitzWith.of_dist_le_mul fun k₁ k₂ ↦ ?_
-    have h₁ : g (k₁, l) = k₁.1 y := by
-      dsimp only [g]
-      rw [← hy, ContinuousMap.curry_apply, evalYK_apply]
-    have h₂ : g (k₂, l) = k₂.1 y := by
-      dsimp only [g]
-      rw [← hy, ContinuousMap.curry_apply, evalYK_apply]
-    simpa only [NNReal.coe_one, one_mul, h₁, h₂, Subtype.dist_eq] using
-      ContinuousMap.dist_apply_le_dist (f := k₁.1) (g := k₂.1) y
-  have hgL₂ (k : K) : LipschitzWith 1 fun l : L ↦ g (k, l) :=
-    LipschitzWith.of_dist_le_mul fun l₁ l₂ ↦ by
-      simpa only [NNReal.coe_one, one_mul, g, Subtype.dist_eq] using
-        ContinuousMap.dist_apply_le_dist (f := l₁.1) (g := l₂.1) k
-  have hgc : Continuous g := (LipschitzWith.uncurry (f := Function.curry g) hgL₁ hgL₂).continuous
+    exact hxy ▸ ENNReal.toReal_nonneg
   let b : K × L → ℝ≥0 := fun w ↦ ⟨g w, hg0 w⟩
   have hbc : Continuous b := Continuous.subtype_mk hgc hg0
-  have hbB (w : K × L) : b w ≤ B := Subtype.mk_le_mk.2 (hgB w)
+  have hbB (w : K × L) : b w ≤ B := by
+    obtain ⟨x, y, hxy⟩ := hg_surj w
+    exact Subtype.mk_le_mk.2 (hxy ▸ ENNReal.toReal_le_coe_of_le_coe (hB (x, y)))
+  -- On `K × L`, `b` has `1`-Lipschitz slices, so weak continuity holds at every `ε : ℝ≥0`.
   have hcontKL : Continuous fun q' : ProbabilityMeasure K × ProbabilityMeasure L ↦
       (entropicTransportCost (fun w ↦ (b w : ℝ≥0∞)) ε q'.1.toMeasure q'.2.toMeasure).toReal :=
     continuous_of_abs_sub_le_transportCost_truncated_dist (B := B) (K₁ := 1) (K₂ := 1)
@@ -459,10 +422,10 @@ theorem continuous_toReal_entropicTransportCost
         have hswap : (fun w : L × K ↦ ((b ∘ Prod.swap) w : ℝ≥0∞)) =
             (fun w : K × L ↦ (b w : ℝ≥0∞)) ∘ Prod.swap := rfl
         rwa [hswap, entropicTransportCost_comp_swap, entropicTransportCost_comp_swap] at hb)
-  have hb_coe (w : K × L) : (b w : ℝ) = g w := rfl
+  -- Pull continuity back along the pushforward map `(q.1, q.2) ↦ (q.1.map Φ, q.2.map Ψ)`.
   have hcost_eq : c = fun z ↦ (b (Prod.map Φ Ψ z) : ℝ≥0∞) := funext fun z ↦ by
-    rw [← ENNReal.ofReal_toReal (hfin z), ← hg_comp z.1 z.2, ← ENNReal.ofReal_coe_nnreal,
-      Prod.map_apply, hb_coe]
+    rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
+    exact congrArg ENNReal.ofReal (hfg z.1 z.2).symm
   have hpush (q : ProbabilityMeasure X × ProbabilityMeasure Y) :
       entropicTransportCost c ε q.1.toMeasure q.2.toMeasure =
         entropicTransportCost (fun w ↦ (b w : ℝ≥0∞)) ε

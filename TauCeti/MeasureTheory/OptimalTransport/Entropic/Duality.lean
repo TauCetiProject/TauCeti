@@ -47,6 +47,10 @@ additive constant.
 
 ## Main statements
 
+* `TauCeti.entropicGibbsKernel_eq_iff`, `TauCeti.isHermitian_entropicGibbsKernel_iff`, and
+  `TauCeti.comp_swap_eq_of_posSemidef_entropicGibbsKernel`: at positive temperature the Gibbs
+  kernel determines the cost, so a Hermitian (in particular, positive-semidefinite) Gibbs kernel
+  forces the cost to be symmetric.
 * `TauCeti.IsCoupling.ofReal_entropicDualValue_le_lintegral_add_mul_klDiv` and
   `TauCeti.ofReal_entropicDualValue_le_entropicTransportCost`: weak duality, for a finite source
   measure and an almost everywhere measurable cost.
@@ -210,6 +214,46 @@ theorem entropicGibbsKernel_of_ne_top {x : X} {y : Y} (hz : c (x, y) ≠ ∞) :
 theorem entropicGibbsKernel_of_eq_top {x : X} {y : Y} (hz : c (x, y) = ∞) :
     entropicGibbsKernel c ε x y = 0 :=
   entropicGibbsFactor_of_eq_top hz
+
+/-- At positive temperature, the Gibbs kernel determines the cost: two Gibbs kernel entries agree
+exactly when the corresponding extended-nonnegative costs agree. -/
+theorem entropicGibbsKernel_eq_iff {X₁ Y₁ X₂ Y₂ : Type*} {c₁ : X₁ × Y₁ → ℝ≥0∞}
+    {c₂ : X₂ × Y₂ → ℝ≥0∞} {x₁ : X₁} {y₁ : Y₁} {x₂ : X₂} {y₂ : Y₂} (hε : ε ≠ 0) :
+    entropicGibbsKernel c₁ ε x₁ y₁ = entropicGibbsKernel c₂ ε x₂ y₂ ↔
+      c₁ (x₁, y₁) = c₂ (x₂, y₂) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rcases eq_or_ne (c₁ (x₁, y₁)) ∞ with h₁ | h₁ <;>
+      rcases eq_or_ne (c₂ (x₂, y₂)) ∞ with h₂ | h₂
+    · rw [h₁, h₂]
+    · rw [entropicGibbsKernel_of_eq_top h₁, entropicGibbsKernel_of_ne_top h₂] at h
+      exact False.elim ((Real.exp_pos _).ne h)
+    · rw [entropicGibbsKernel_of_ne_top h₁, entropicGibbsKernel_of_eq_top h₂] at h
+      exact False.elim ((Real.exp_pos _).ne' h)
+    · rw [entropicGibbsKernel_of_ne_top h₁, entropicGibbsKernel_of_ne_top h₂, Real.exp_eq_exp,
+        div_left_inj₀ (NNReal.coe_ne_zero.2 hε), neg_inj] at h
+      exact (ENNReal.toReal_eq_toReal_iff' h₁ h₂).1 h
+  · by_cases h₁ : c₁ (x₁, y₁) = ∞
+    · rw [entropicGibbsKernel_of_eq_top h₁, entropicGibbsKernel_of_eq_top (h ▸ h₁)]
+    · rw [entropicGibbsKernel_of_ne_top h₁, entropicGibbsKernel_of_ne_top (h ▸ h₁), h]
+
+/-- At positive temperature, the Gibbs kernel is symmetric (Hermitian) if and only if the cost is
+symmetric. -/
+theorem isHermitian_entropicGibbsKernel_iff {c : X × X → ℝ≥0∞} (hε : ε ≠ 0) :
+    Matrix.IsHermitian (entropicGibbsKernel c ε) ↔ c ∘ Prod.swap = c := by
+  constructor
+  · intro h
+    funext ⟨x, y⟩
+    have hxy := h.apply x y
+    rw [star_trivial] at hxy
+    exact (entropicGibbsKernel_eq_iff hε).1 hxy
+  · intro h
+    exact Matrix.ext fun x y ↦ (star_trivial _).trans
+      ((entropicGibbsKernel_eq_iff hε).2 (congrFun h (x, y)))
+
+/-- A positive-semidefinite Gibbs kernel at positive temperature forces the cost to be symmetric. -/
+theorem comp_swap_eq_of_posSemidef_entropicGibbsKernel {c : X × X → ℝ≥0∞} (hε : ε ≠ 0)
+    (hk : Matrix.PosSemidef (entropicGibbsKernel c ε)) : c ∘ Prod.swap = c :=
+  (isHermitian_entropicGibbsKernel_iff hε).1 hk.isHermitian
 
 /-- The Gibbs kernel is nonnegative. -/
 theorem entropicGibbsKernel_nonneg (x : X) (y : Y) : 0 ≤ entropicGibbsKernel c ε x y :=
