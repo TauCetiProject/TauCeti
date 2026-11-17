@@ -28,10 +28,12 @@ join of two oracles.
 
 Mathlib's `ComputableIn₂` expresses computability of binary total functions in terms of
 encodings; `ComputableIn₂.iff_nat` restates it for functions on `ℕ` as a `Nat.RecursiveIn`
-statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions are closed under
-composition, pairing, primitive recursion, and forming finite initial segments of a sequence.
-These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, and
-`Computable.nat_rec` in `Mathlib.Computability.Partrec` to `Nat.RecursiveIn`.
+statement on codes `Nat.pair a b` of pairs. Partial oracle-recursive predicates support unbounded
+search (`RecursiveIn.rfind`), and total oracle-computable functions are closed under composition,
+pairing, primitive recursion, forming finite initial segments of a sequence, and total unbounded
+search (`ComputableIn₂.find`). These closure proofs adapt Mathlib's `Partrec.rfind`,
+`Computable.comp`, `Computable.pair`, `Computable.nat_rec`, and `Computable.find` to
+`Nat.RecursiveIn`.
 -/
 
 public section
@@ -169,6 +171,35 @@ theorem nat_rec {f : α → ℕ} {g : α → β} {h : α → ℕ × β → β}
 
 end ComputableIn
 
+namespace RecursiveIn
+
+open Encodable
+
+variable {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)}
+
+/-- **Unbounded search** over a binary Boolean predicate partial recursive in `O`. This is the
+oracle-relative form of `Partrec.rfind`. -/
+theorem rfind {p : α → ℕ →. Bool} (hp : RecursiveIn₂ O p) :
+    RecursiveIn O fun a => Nat.rfind (p a) := by
+  -- `Nat.RecursiveIn.rfind` stops at `0`, whereas `encode true = 1` and `encode false = 0`;
+  -- apply `1 - ·` to swap the two codes before searching.
+  have hswap : Nat.Primrec fun m => 1 - m :=
+    Primrec.nat_iff.1 <| Primrec.nat_sub.comp (Primrec.const 1) Primrec.id
+  unfold RecursiveIn₂ RecursiveIn at hp
+  unfold RecursiveIn
+  refine (hp.map_primrec hswap).rfind.of_eq fun n => ?_
+  cases e : decode (α := α) n with
+  | none =>
+    simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
+  | some a =>
+    simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e, Option.bind_some,
+      Part.map_eq_map, Part.coe_some, Part.bind_some, Part.map_map]
+    congr 1
+    funext k
+    exact Part.map_id' (fun b : Bool => by cases b <;> rfl) (p a k)
+
+end RecursiveIn
+
 namespace ComputableIn₂
 
 variable {α β : Type*} [Primcodable α] [Primcodable β] {O : Set (ℕ →. ℕ)}
@@ -190,5 +221,16 @@ theorem list_range_map {f : α → ℕ → β} (hf : ComputableIn₂ O f) :
   induction n with
   | zero => rfl
   | succ n ih => simp [List.range_succ, ih]
+
+/-- **Total unbounded search.** If a binary Boolean predicate `b` is computable in `O` and every
+input `x` has a witness `n` with `b x n = true`, then the least witness `Nat.find (hex x)` is
+computable in `O`. -/
+theorem find {b : α → ℕ → Bool} (hb : ComputableIn₂ O b)
+    (hex : ∀ x, ∃ n, b x n = true) :
+    ComputableIn O fun x => Nat.find (hex x) := by
+  refine (RecursiveIn.rfind hb.recursiveIn₂).of_eq_tot fun x => ?_
+  simp only [Nat.mem_rfind, PFun.coe_val, Part.mem_some_iff, Nat.find_spec (hex x), true_and]
+  intro m hm
+  exact (Bool.eq_false_iff.2 (Nat.find_min (hex x) hm)).symm
 
 end ComputableIn₂
