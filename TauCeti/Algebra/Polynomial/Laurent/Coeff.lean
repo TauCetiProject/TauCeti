@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Laurent
 
+import TauCeti.Algebra.MonoidAlgebra.Eigenvector
+
 /-!
 # Coefficients of Laurent polynomials
 
@@ -45,26 +47,9 @@ theorem coeff_T_mul (n : ℤ) (f : R[T;T⁻¹]) (d : ℤ) : (T n * f).coeff d = 
 /-- A Laurent polynomial is fixed by left multiplication by `T n` only when `n = 0` or it is
 zero: otherwise its coefficients repeat with period `n`, and its support would be infinite. -/
 theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 ∨ f = 0 := by
-  refine ⟨fun h => or_iff_not_imp_right.mpr fun hf => ?_, ?_⟩
-  · by_contra hn
-    obtain ⟨d, hd⟩ : ∃ d, f.coeff d ≠ 0 := by
-      by_contra! h'
-      exact hf (LaurentPolynomial.ext fun a => by simp [h' a])
-    have hper (k : ℕ) : f.coeff (d - k * n) = f.coeff d := by
-      induction k with
-      | zero => simp
-      | succ k ih =>
-        rw [← ih]
-        conv_rhs => rw [← h, coeff_T_mul]
-        congr 1
-        push_cast
-        ring
-    have hinj : Function.Injective fun k : ℕ => d - k * n := fun k l hkl => by
-      have := mul_right_cancel₀ hn (sub_right_injective hkl)
-      exact_mod_cast this
-    exact Set.infinite_of_injective_forall_mem hinj
-      (fun k => Finsupp.mem_support_iff.mpr (by rw [hper k]; exact hd))
-      f.coeff.support.finite_toSet
+  refine ⟨fun h => or_iff_not_imp_left.mpr fun hn =>
+    TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder
+      (mt (isOfFinAddOrder_iff_eq_zero n).mp hn) ((T_mul n f).symm.trans h), ?_⟩
   · rintro (rfl | rfl) <;> simp [T_zero]
 
 /-- Left multiplication by a constant scales every coefficient. -/
