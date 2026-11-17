@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.EuclideanMetric
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Riemannian.Section
-import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.WithGradient
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -23,7 +23,8 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.WithGradient
 Let `f` be a smooth function on a boundaryless σ-compact Hausdorff manifold `M`, modelled on a
 finite-dimensional real space, and let `X` be a pseudo-gradient adapted to `f`
 (`TauCeti.IsAdaptedPseudoGradient`). Then `X` is the negative gradient of `f` for some smooth
-Riemannian metric `g` on `M` (`TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric`):
+Riemannian metric `g` on `M`
+(`TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric_neg_mgradient_eq`):
 `g (X, ·) = -df`, that is `X = -grad_g f`. This is a converse of
 `TauCeti.isAdaptedPseudoGradient_neg_mgradient`: results about negative gradient flows of smooth
 metrics apply to the flow of every adapted pseudo-gradient. Moreover `g` can be prescribed
@@ -48,8 +49,8 @@ metrics satisfy it.
 
 * `TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric_inner_eq`: a smooth metric
   with `g (X, ·) = -df` which is the Euclidean metric of given Morse charts on given closed sets.
-* `TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric`: **every adapted
-  pseudo-gradient is a negative gradient**, `X = -grad_g f` for a smooth metric `g`.
+* `TauCeti.IsAdaptedPseudoGradient.exists_contMDiffRiemannianMetric_neg_mgradient_eq`: **every
+  adapted pseudo-gradient is a negative gradient**, `X = -grad_g f` for a smooth metric `g`.
 
 ## References
 
@@ -83,6 +84,17 @@ private def metricCondition (X : (x : M) → TangentSpace 𝓘(ℝ, E) x)
     ({s | ∀ w, s (X y) w = -mvfderiv 𝓘(ℝ, E) f y w} ∩
       {s | ∀ i, y ∈ A i → s = (φ i).euclideanForm y})
 
+/-- A smooth local metric satisfying the conditions near `y₀`: a field of bilinear forms which is
+`C^∞` on a neighbourhood `U` of `y₀` and satisfies `metricCondition` at every point of `U`. -/
+private def HasLocalMetric (X : (x : M) → TangentSpace 𝓘(ℝ, E) x)
+    (φ : ∀ i, MorseChart E f (p i)) (A : ι → Set M) (y₀ : M) : Prop :=
+  ∃ U ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ,
+    ContMDiffOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ) y
+        (s y)) U ∧
+    ∀ y ∈ U, s y ∈ metricCondition X φ A y
+
 omit [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- The Euclidean metric of a Morse chart in which `X` is linear satisfies the conditions at a point
 of the source of the chart, provided it is the prescribed metric on the sets `A i` there. -/
@@ -105,12 +117,7 @@ private theorem exists_nhds_of_mem {φ : ∀ i, MorseChart E f (p i)}
     {A : ι → Set M} (hA : ∀ i, IsClosed (A i)) (hAf : LocallyFinite A)
     (hAd : Pairwise (Disjoint on A)) (hAφ : ∀ i, A i ⊆ (φ i).toChart.source)
     {i : ι} {y₀ : M} (hi : y₀ ∈ A i) :
-    ∃ U ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ,
-      ContMDiffOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
-        (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-          (E := fun y : M ↦ TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ) y
-          (s y)) U ∧
-      ∀ y ∈ U, s y ∈ metricCondition X φ A y := by
+    HasLocalMetric X φ A y₀ := by
   have hc : IsClosed (⋃ j : {j // j ≠ i}, A j) :=
     (hAf.comp_injective Subtype.coe_injective).isClosed_iUnion fun j ↦ hA j
   have hy₀c : y₀ ∉ ⋃ j : {j // j ≠ i}, A j := fun h ↦ by
@@ -130,12 +137,7 @@ in which `X` is linear is a local metric satisfying the conditions. -/
 private theorem exists_nhds_of_mfderiv_eq_zero (hX : IsAdaptedPseudoGradient f X)
     {φ : ∀ i, MorseChart E f (p i)} {A : ι → Set M} (hAc : IsClosed (⋃ i, A i))
     {y₀ : M} (hy₀ : y₀ ∉ ⋃ i, A i) (hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y₀ = 0) :
-    ∃ U ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ,
-      ContMDiffOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
-        (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-          (E := fun y : M ↦ TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ) y
-          (s y)) U ∧
-      ∀ y ∈ U, s y ∈ metricCondition X φ A y := by
+    HasLocalMetric X φ A y₀ := by
   obtain ⟨ψ, hψ⟩ := hX.exists_morseChart y₀ hcrit
   exact ⟨ψ.toChart.source ∩ (⋃ i, A i)ᶜ,
     (ψ.toChart.open_source.inter hAc.isOpen_compl).mem_nhds ⟨ψ.mem_source, hy₀⟩,
@@ -150,12 +152,7 @@ private theorem exists_nhds_of_mfderiv_ne_zero (hf : ContMDiff 𝓘(ℝ, E) 𝓘
     (g₀ : ContMDiffRiemannianMetric 𝓘(ℝ, E) ∞ E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x))
     {φ : ∀ i, MorseChart E f (p i)} {A : ι → Set M} (hAc : IsClosed (⋃ i, A i))
     {y₀ : M} (hy₀ : y₀ ∉ ⋃ i, A i) (hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y₀ ≠ 0) :
-    ∃ U ∈ 𝓝 y₀, ∃ s : (y : M) → TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ,
-      ContMDiffOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞
-        (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-          (E := fun y : M ↦ TangentSpace 𝓘(ℝ, E) y →L[ℝ] TangentSpace 𝓘(ℝ, E) y →L[ℝ] ℝ) y
-          (s y)) U ∧
-      ∀ y ∈ U, s y ∈ metricCondition X φ A y := by
+    HasLocalMetric X φ A y₀ := by
   have hXX : Continuous fun z ↦ mvfderiv 𝓘(ℝ, E) f z (X z) :=
     ((hf.contMDiff_mvfderiv_apply (m := ∞) (by simp)).comp hX.contMDiff).continuous
   refine ⟨(⋃ i, A i)ᶜ ∩ {z | mvfderiv 𝓘(ℝ, E) f z (X z) < 0},
@@ -170,9 +167,7 @@ private theorem exists_nhds_of_mfderiv_ne_zero (hf : ContMDiff 𝓘(ℝ, E) 𝓘
   refine ⟨⟨ContinuousLinearMap.withGradient_comm (g₀.symm z), fun v hv ↦
     ContinuousLinearMap.withGradient_apply_self_pos (g₀.symm z) (g₀.pos z) hpos hv⟩,
     fun w ↦ ?_, fun i hi ↦ (hz.1 (mem_iUnion.2 ⟨i, hi⟩)).elim⟩
-  rw [ContinuousLinearMap.withGradient_apply_left_self hpos.ne']
-  -- The negative of a continuous linear map is evaluated pointwise.
-  rfl
+  rw [ContinuousLinearMap.withGradient_apply_left_self hpos.ne', neg_apply]
 
 /-- **Every adapted pseudo-gradient is a negative gradient, for a metric prescribed near the
 critical points.** Let `f` be smooth and `X` a pseudo-gradient adapted to `f`. Let `A i` be a
@@ -233,7 +228,7 @@ theorem exists_contMDiffRiemannianMetric_inner_eq [T2Space M] [SigmaCompactSpace
 /-- **Every adapted pseudo-gradient is a negative gradient**: for a smooth function `f` on a
 σ-compact Hausdorff manifold and a pseudo-gradient `X` adapted to `f`, there is a smooth
 Riemannian metric for which `X = -grad f`. -/
-theorem exists_contMDiffRiemannianMetric [T2Space M] [SigmaCompactSpace M]
+theorem exists_contMDiffRiemannianMetric_neg_mgradient_eq [T2Space M] [SigmaCompactSpace M]
     (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hX : IsAdaptedPseudoGradient f X) :
     ∃ g : ContMDiffRiemannianMetric 𝓘(ℝ, E) ∞ E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x),
       letI : RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x) := ⟨g.toRiemannianMetric⟩
