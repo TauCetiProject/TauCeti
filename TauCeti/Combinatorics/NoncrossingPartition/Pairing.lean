@@ -101,11 +101,15 @@ theorem pairWeight_empty [Zero M] (K : α → α → M) : pairWeight K (∅ : Fi
 theorem pairWeight_singleton [Zero M] (K : α → α → M) (a : α) : pairWeight K {a} = 0 := by
   simp [pairWeight]
 
+/-- `pairWeight` of the zero function `(0 : α → α → M)` is `0`. -/
 @[simp]
 theorem pairWeight_zero [Zero M] (B : Finset α) : pairWeight (0 : α → α → M) B = 0 := by
   rw [pairWeight_def]
   split <;> rfl
 
+/-- `pairWeight` of the constant-zero kernel `fun _ _ => 0` is `0`. Kept as a separate `@[simp]`
+lemma alongside `pairWeight_zero` because `simp` and `rw` do not match `fun _ _ => 0` against
+`(0 : α → α → M)` (paralleling Mathlib's `integral_zero` and `integral_zero'`). -/
 @[simp]
 theorem pairWeight_const_zero [Zero M] (B : Finset α) :
     pairWeight (fun _ _ : α => (0 : M)) B = 0 :=

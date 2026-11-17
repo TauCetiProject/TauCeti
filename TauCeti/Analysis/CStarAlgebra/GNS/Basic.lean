@@ -203,7 +203,7 @@ semidefinite. -/
 theorem posSemidef_of_forall_apply_mul_eq_ofReal {s : ι → B} (hs : ∀ i, IsSelfAdjoint (s i))
     {C : Matrix ι ι ℝ} (hC : ∀ i j, f (s i * s j) = (C i j : ℂ)) :
     C.PosSemidef :=
-  Matrix.posSemidef_map_ofReal_iff (𝕜 := ℂ).mp <|
+  Matrix.posSemidef_map_complex_ofReal_iff.mp <|
     f.posSemidef_of_forall_apply_mul_eq hs fun i j => by simpa using hC i j
 
 end PosSemidef

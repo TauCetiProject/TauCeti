@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
-public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 import TauCeti.Analysis.Matrix.GramFactorization
 import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 
 /-!
 # Gram matrices and positive-semidefinite matrices
 
-For any index type `n` and `RCLike` scalar field `𝕜`, the Gram matrix `(i, j) ↦ ⟪v i, v j⟫_𝕜` of a
-family `v : n → E` in an inner product space is positive semidefinite (`TauCeti.posSemidef_gram`
-and `Matrix.posSemidef_gram`).
+Mathlib's `Matrix.posSemidef_gram` shows that for any index type `n` and `RCLike` scalar field `𝕜`,
+the Gram matrix `(i, j) ↦ ⟪v i, v j⟫_𝕜` of a family `v : n → E` in an inner product space is
+positive semidefinite.
 
 Conversely, every positive-semidefinite matrix `C : Matrix n n 𝕜` indexed by an arbitrary type `n`
 is the Gram matrix of a family of vectors in a complete Hilbert space over `𝕜`
@@ -27,7 +26,6 @@ already the Gram matrix of a family in `EuclideanSpace 𝕜 n`
 
 ## Main results
 
-* `TauCeti.posSemidef_gram`: the Gram matrix of an arbitrary family is positive semidefinite.
 * `Matrix.PosSemidef.exists_gram_eq`, `Matrix.posSemidef_iff_exists_gram_eq`: a matrix of arbitrary
   index type is positive semidefinite if and only if it is the Gram matrix of a family in a
   complete Hilbert space.
@@ -45,17 +43,6 @@ public section
 
 open Matrix
 open scoped ComplexOrder InnerProductSpace
-
-namespace TauCeti
-
-variable {𝕜 E n : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-variable (𝕜) in
-/-- The Gram matrix of a family of vectors indexed by an arbitrary type is positive semidefinite. -/
-theorem posSemidef_gram (v : n → E) : (gram 𝕜 v).PosSemidef :=
-  Matrix.posSemidef_gram 𝕜 v
-
-end TauCeti
 
 namespace Matrix
 

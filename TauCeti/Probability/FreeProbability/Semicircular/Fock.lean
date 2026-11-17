@@ -17,6 +17,7 @@ public import TauCeti.Probability.FreeProbability.StarIndependence
 public import TauCeti.Probability.FreeProbability.WeakClosure
 import TauCeti.Analysis.CStarAlgebra.GNS.Basic
 import TauCeti.Data.Finset.Basic
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Full Fock space realization of semicircular systems and `⋆`-freeness

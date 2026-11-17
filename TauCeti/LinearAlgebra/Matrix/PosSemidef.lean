@@ -414,7 +414,10 @@ theorem Matrix.posSemidef_map_ofReal_iff {α 𝕜 : Type*} [RCLike 𝕜] {C : Ma
     exact heq ▸ posSemidef_conjTranspose_mul_self _
 
 /-- Entrywise casting of a real matrix `C : Matrix α α ℝ` into `ℂ` preserves and reflects positive
-semidefiniteness. -/
+semidefiniteness. Kept as a separate `@[simp]` lemma alongside `Matrix.posSemidef_map_ofReal_iff`
+because `((↑) : ℝ → ℂ)` elaborates to `Complex.ofReal` rather than `RCLike.ofReal`, so `simp` and
+`rw` do not match `C.map Complex.ofReal` against `Matrix.posSemidef_map_ofReal_iff` (paralleling
+Mathlib's `integral_complex_ofReal` alongside `integral_ofReal`). -/
 @[simp]
 theorem Matrix.posSemidef_map_complex_ofReal_iff {α : Type*} {C : Matrix α α ℝ} :
     (C.map ((↑) : ℝ → ℂ)).PosSemidef ↔ C.PosSemidef :=
