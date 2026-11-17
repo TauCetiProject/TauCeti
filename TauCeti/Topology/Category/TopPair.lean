@@ -379,6 +379,8 @@ noncomputable def isoOfSubsetRange (P : TopPair.{u}) : P ≅ ofSubset (Set.range
   inv := TopPair.ofHom (𝟙 P.fst)
     (TopCat.ofHom ⟨_, P.isEmbedding_map.toHomeomorph.symm.continuous⟩)
     (by ext y; exact congrArg Subtype.val (P.isEmbedding_map.toHomeomorph.apply_symm_apply y))
+  -- `TopPair.ofHom` and `TopPair.Hom.fst` are abbreviations in Mathlib, so the ambient component
+  -- of each composite below is `𝟙 P.fst ≫ 𝟙 P.fst` by unfolding.
   hom_inv_id := hom_ext_of_fst _ (Category.id_comp _)
   inv_hom_id := hom_ext_of_fst _ (Category.id_comp _)
 
@@ -409,7 +411,12 @@ lemma isoOfSubsetRange_inv_snd_apply (P : TopPair.{u}) (y : (ofSubset (Set.range
 ambient space and the range of its embedding, as the map of pairs induced by its ambient map. -/
 lemma isoOfSubsetRange_hom_comp_ofSubsetMap (φ : P ⟶ ofSubset B) :
     (isoOfSubsetRange P).hom ≫ ofSubsetMap (Hom.fst φ) (mapsTo_range_map_of_hom φ) = φ :=
-  hom_ext_of_fst _ (Category.id_comp _)
+  hom_ext_of_fst _ <| by
+    ext x
+    rw [Hom.fst_comp, TopCat.comp_app, isoOfSubsetRange_hom_fst_apply]
+    -- Not a `rw`: the statement types `Hom.fst φ` as a map into `(ofSubset B).fst`, which is `X`
+    -- only after unfolding the abbreviation `TopPair.ofSubset`.
+    exact ofSubsetMap_fst_apply _ _ x
 
 end isIso
 

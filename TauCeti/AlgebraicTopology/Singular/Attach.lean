@@ -124,11 +124,18 @@ lemma exists_homotopy_id_of_deformation {Y : TopCat.{w}} {B N : Set Y} (H : C(I 
     (hHN : ∀ t, ∀ y ∈ N, H (t, y) ∈ N) (hH₁ : ∀ y ∈ N, H (1, y) ∈ B) :
     ∃ (ρ : Y ⟶ Y) (G : (TopCat.Hom.hom (𝟙 Y)).Homotopy ρ.hom),
       (∀ (τ : I) (y : Y), y ∈ B → G (τ, y) ∈ B) ∧ (∀ (τ : I) (y : Y), y ∈ N → G (τ, y) ∈ N) ∧
-        MapsTo ρ N B :=
-  ⟨TopCat.ofHom (H.curry 1), ofApplyZero H hH₀,
-    fun τ y hy ↦ (ofApplyZero_apply (f := TopCat.Hom.hom (𝟙 Y)) H hH₀ (τ, y)).symm ▸ hHB τ y hy,
-    fun τ y hy ↦ (ofApplyZero_apply (f := TopCat.Hom.hom (𝟙 Y)) H hH₀ (τ, y)).symm ▸ hHN τ y hy,
-    hH₁⟩
+        MapsTo ρ N B := by
+  refine ⟨TopCat.ofHom (H.curry 1), ?_⟩
+  rw [TopCat.hom_id, TopCat.hom_ofHom]
+  have hH₀' (y : Y) : H (0, y) = ContinuousMap.id Y y :=
+    (hH₀ y).trans (ContinuousMap.id_apply y).symm
+  refine ⟨ofApplyZero H hH₀', fun τ y hy ↦ ?_, fun τ y hy ↦ ?_, fun y hy ↦ ?_⟩
+  · rw [ofApplyZero_apply]
+    exact hHB τ y hy
+  · rw [ofApplyZero_apply]
+    exact hHN τ y hy
+  · rw [TopCat.ofHom_apply, ContinuousMap.curry_apply]
+    exact hH₁ y hy
 
 /-- **The deformation of an attachment.** In the setting of `TauCeti.attachHomotopy`, let `H` start
 at the identity, keep `O` inside `O` and push `O` into `S` at time one, and let `φ` send `S` into
