@@ -51,6 +51,9 @@ coefficient theorem needs for the vanishing of the cohomology of `M` above its d
 * `TauCeti.localHomologySystemCone`: the restrictions `Hₖ(M) ⟶ Hₖ(M, M ∖ {x})`, as a cone over
   the local homology system.
 * `TauCeti.isLimitLocalHomologySystemCone`: for compact `M`, the cone is a limit in degree `n`.
+* `TauCeti.localHomology_univ_ext_of_localHomologySystemCone`: for compact `M`, classes of
+  `Hₙ(M, M ∖ M)` with the same restrictions to the points of a set meeting every path component
+  are equal.
 * `TauCeti.localHomologySystemCone_π_app_injective` and
   `TauCeti.mem_range_localHomologySystemCone_π_app_iff`: for compact `M`, restriction to a point
   has image the classes invariant under transport along loops in degree `n`, and it is injective
@@ -124,6 +127,23 @@ def isLimitLocalHomologySystemCone [CompactSpace M] {n : ℕ} (hn : finrank ℝ 
 
 variable {M E}
 
+/-- **The top homology of a compact manifold is determined on a set meeting every path
+component**: two classes of `Hₙ(M, M ∖ M; N)` are equal as soon as their images in the local
+homology `Hₙ(M, M ∖ {x}; N)` agree at every point `x` of a set `D` from which every point of `M`
+can be reached by a path. -/
+theorem localHomology_univ_ext_of_localHomologySystemCone [CompactSpace M] {n : ℕ}
+    (hn : finrank ℝ E = n) {D : Set M} (hD : ∀ y, ∃ x ∈ D, Joined x y)
+    {γ δ : (localHomology N (univ : Set M) n : ModuleCat.{w} Λ)}
+    (h : ∀ x ∈ D, (localHomologySystemCone N M E n).π.app (.mk x) γ =
+      (localHomologySystemCone N M E n).π.app (.mk x) δ) :
+    γ = δ := by
+  refine Concrete.isLimit_ext _ (isLimitLocalHomologySystemCone N M E hn) γ δ fun y ↦ ?_
+  obtain ⟨x, hx, hxy⟩ := hD y.as
+  -- Transport the equality at `x` along a path from `x` to `y`.
+  let f : FundamentalGroupoid.mk x ⟶ y := Path.Homotopic.Quotient.mk hxy.somePath
+  rw [← Cone.w _ f]
+  exact congrArg (ConcreteCategory.hom ((localHomologySystem N M E n).map f)) (h x hx)
+
 /-- **Restriction to a point is injective on the top homology of a compact connected manifold**:
 a class of `Hₙ(M, M ∖ M; N)` is determined by its image in the local homology
 `Hₙ(M, M ∖ {x}; N)` at any single point. -/
@@ -133,10 +153,8 @@ theorem localHomologySystemCone_π_app_injective [CompactSpace M] [ConnectedSpac
   have := ChartedSpace.locallyPathConnectedSpace E M
   have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
   intro γ δ h
-  refine Concrete.isLimit_ext _ (isLimitLocalHomologySystemCone N M E hn) γ δ fun y ↦ ?_
-  -- Transport the equality at `x` along a path from `x` to `y`.
-  let f : x ⟶ y := Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath x.as y.as)
-  rw [← Cone.w _ f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h]
+  exact localHomology_univ_ext_of_localHomologySystemCone N hn (D := {x.as})
+    (fun y ↦ ⟨x.as, rfl, PathConnectedSpace.joined x.as y⟩) (by rintro _ rfl; exact h)
 
 /-- **A top-dimensional class of a compact manifold is determined on a set meeting every path
 component**: two classes of `Hₙ(M; N)` are equal as soon as their images in the local homology
@@ -154,15 +172,10 @@ theorem singularHomology_ext_of_singularHomologyToLocalHomology [CompactSpace M]
   have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
       (C := ModuleCat.{w} Λ) N n) := inferInstance
   refine ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1
-    (Concrete.isLimit_ext _ (isLimitLocalHomologySystemCone N M E hn) _ _ fun y ↦ ?_)
-  obtain ⟨x, hx, hxy⟩ := hD y.as
-  -- Transport the equality at `x` along a path from `x` to `y`.
-  let f : FundamentalGroupoid.mk x ⟶ y := Path.Homotopic.Quotient.mk hxy.somePath
+    (localHomology_univ_ext_of_localHomologySystemCone N hn hD fun x hx ↦ ?_)
   have hx' := h x hx
-  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
+  rwa [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply,
     ← localHomologySystemCone_π_app N M E n (FundamentalGroupoid.mk x)] at hx'
-  rw [← Cone.w _ f]
-  exact congrArg (ConcreteCategory.hom ((localHomologySystem N M E n).map f)) hx'
 
 /-- **A top-dimensional class of a compact connected manifold is determined at one point**: the map
 `Hₙ(M; N) → Hₙ(M, M ∖ {x}; N)` to the local homology at any point `x` is injective. -/
@@ -271,12 +284,12 @@ theorem exists_finset_hom_ext_localHomologySystemCone [CompactSpace M] {n : ℕ}
   have := ChartedSpace.locallyPathConnectedSpace E M
   obtain ⟨F, hF⟩ := isCompact_univ.elim_finite_subcover (fun x : M ↦ pathComponent x)
     (fun x ↦ IsOpen.pathComponent x) fun y _ ↦ mem_iUnion.2 ⟨y, mem_pathComponent_self y⟩
-  refine ⟨F, fun u v h ↦ (isLimitLocalHomologySystemCone N M E hn).hom_ext fun y ↦ ?_⟩
-  obtain ⟨x, hx, hxy⟩ := mem_iUnion₂.1 (hF (mem_univ y.as))
-  -- Transport the equality at `x` along a path from `x` to `y`.
-  let f : FundamentalGroupoid.mk x ⟶ y := Path.Homotopic.Quotient.mk (Joined.somePath hxy)
-  rw [← Cone.w _ f]
-  exact (Category.assoc _ _ _).symm.trans ((h x hx =≫ _).trans (Category.assoc _ _ _))
+  refine ⟨F, fun u v h ↦ ConcreteCategory.hom_ext _ _ fun z ↦ ?_⟩
+  refine localHomology_univ_ext_of_localHomologySystemCone N hn (D := F) (fun y ↦ ?_)
+    fun x hx ↦ ?_
+  · obtain ⟨x, hx, hxy⟩ := mem_iUnion₂.1 (hF (mem_univ y))
+    exact ⟨x, hx, hxy⟩
+  · exact ConcreteCategory.congr_hom (h x hx) z
 
 /-- **The top homology of a compact manifold is projective over a hereditary ring.** Let `Λ` be a
 ring over which every module has projective dimension at most one, such as `ℤ` or any principal
