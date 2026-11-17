@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
-public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
+public import TauCeti.CategoryTheory.Discrete.Basic
 
 /-!
 # The discrete pseudofunctor of a presheaf of types
@@ -41,15 +41,6 @@ open Opposite
 
 attribute [local instance] uliftCategory
 
-/-- The discrete category on a type, with objects lifted to a larger universe, is discrete. -/
-instance isDiscrete_ulift_discrete (α : Type w) : IsDiscrete (ULift.{w'} (Discrete α)) where
-  subsingleton X Y := inferInstanceAs (Subsingleton (X.down ⟶ Y.down))
-  eq_of_hom {X Y} f := by
-    obtain ⟨⟨a⟩⟩ := X
-    obtain ⟨⟨b⟩⟩ := Y
-    cases Discrete.eq_of_hom f
-    rfl
-
 namespace Pseudofunctor
 
 /-- The isomorphism between the objects of `ULift (Discrete α)` given by an equality in `α`. -/
@@ -81,27 +72,26 @@ is `P.map f`. -/
 def ofPresheaf : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, max w w'} :=
   (ofPresheafFunctor.{w'} P).toPseudofunctor'
 
-@[simp]
-lemma ofPresheaf_obj (X : Cᵒᵖ) :
-    (ofPresheaf.{w'} P).obj ⟨X⟩ = Cat.of (ULift.{w'} (Discrete (P.obj X))) :=
+lemma ofPresheaf_obj (X : LocallyDiscrete Cᵒᵖ) :
+    (ofPresheaf.{w'} P).obj X = Cat.of (ULift.{w'} (Discrete (P.obj X.as))) :=
   rfl
 
 @[simp]
-lemma ofPresheaf_map_obj {X Y : Cᵒᵖ} (f : X ⟶ Y) (x : P.obj X) :
-    ((ofPresheaf.{w'} P).map f.toLoc).toFunctor.obj ⟨⟨x⟩⟩ = ⟨⟨P.map f x⟩⟩ :=
+lemma ofPresheaf_map_obj {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (x : (ofPresheaf.{w'} P).obj X) :
+    ((ofPresheaf.{w'} P).map f).toFunctor.obj x = ⟨⟨P.map f.as x.down.as⟩⟩ :=
   rfl
 
 /-- The fibres of the discrete pseudofunctor of a presheaf of types are discrete categories,
 hence groupoids. -/
 instance isDiscrete_ofPresheaf_obj (X : LocallyDiscrete Cᵒᵖ) :
     IsDiscrete ((ofPresheaf.{w'} P).obj X) :=
-  isDiscrete_ulift_discrete _
+  isDiscrete_ulift _
 
 /-- Two objects of a fibre of the discrete pseudofunctor of `P` are related by a morphism if
 and only if the underlying sections of `P` are equal. -/
-lemma nonempty_hom_ofPresheaf_obj_iff {X : Cᵒᵖ} (x y : P.obj X) :
-    Nonempty ((⟨⟨x⟩⟩ : (ofPresheaf.{w'} P).obj ⟨X⟩) ⟶ ⟨⟨y⟩⟩) ↔ x = y :=
-  ⟨fun ⟨f⟩ ↦ Discrete.eq_of_hom f, fun h ↦ ⟨(uliftDiscreteIsoOfEq.{w'} h).hom⟩⟩
+lemma nonempty_hom_ofPresheaf_obj_iff {X : LocallyDiscrete Cᵒᵖ} (x y : (ofPresheaf.{w'} P).obj X) :
+    Nonempty (x ⟶ y) ↔ x.down.as = y.down.as :=
+  ⟨fun ⟨f⟩ ↦ Discrete.eq_of_hom f, fun h ↦ ⟨eqToHom (ULift.ext (Discrete.ext h))⟩⟩
 
 variable {P} in
 /-- The discrete pseudofunctor of `P` satisfies effective descent along a presieve if and only

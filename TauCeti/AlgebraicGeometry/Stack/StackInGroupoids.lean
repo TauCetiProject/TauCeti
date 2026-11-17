@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.AlgebraicGeometry.Stack.Basic
 public import TauCeti.CategoryTheory.Sites.Descent.Discrete
@@ -127,6 +128,12 @@ def ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u)) : StackInGroupoids.{u} 
 lemma ofSheaf_toSchPseudofunctor (F : Sheaf Scheme.fppfTopology.{u} (Type u)) :
     (ofSheaf F).toSchPseudofunctor = Pseudofunctor.ofPresheaf.{u + 1} F.obj :=
   (rfl)
+
+/-- The fibres of the stack in setoids of an fppf sheaf are discrete categories. -/
+instance isDiscrete_ofSheaf_obj (F : Sheaf Scheme.fppfTopology.{u} (Type u))
+    (S : LocallyDiscrete Scheme.{u}ᵒᵖ) : IsDiscrete ((ofSheaf F).toSchPseudofunctor.obj S) := by
+  rw [ofSheaf_toSchPseudofunctor]
+  infer_instance
 
 end StackInGroupoids
 
