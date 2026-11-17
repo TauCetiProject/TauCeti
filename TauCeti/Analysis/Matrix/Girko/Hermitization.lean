@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-public import TauCeti.Analysis.Matrix.SpectralMeasure.SingularValues
 
 /-!
 # The finite-dimensional Girko identity
 
 For a complex square matrix, away from its eigenvalues, its empirical logarithmic potential is
-the normalized logarithm of the determinant of the shifted matrix. The same quantity is the
-average logarithm of its singular values.
+the normalized logarithm of the norm of the shifted determinant, with normalization by the matrix
+dimension. The same quantity is the average logarithm of its singular values.
 
 This module proves the finite-dimensional identity only; distributional Laplacians and
 potential-convergence results are separate developments.
@@ -29,48 +29,32 @@ open MeasureTheory
 
 namespace Matrix
 
-variable {n : ℕ}
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
 
 /-- The empirical logarithmic potential of a complex square matrix, evaluated where its
 logarithmic kernel is finite on the empirical spectrum. -/
-def empiricalLogPotential [Nonempty (Fin n)] (A : Matrix (Fin n) (Fin n) ℂ)
+def empiricalLogPotential (A : Matrix ι ι ℂ)
     (z : ℂ) : ℝ :=
   ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ)
 
 /-- The empirical logarithmic potential is the integral of the logarithmic kernel against the
 empirical eigenvalue measure. -/
-theorem empiricalLogPotential_def [Nonempty (Fin n)] (A : Matrix (Fin n) (Fin n) ℂ)
+theorem empiricalLogPotential_def (A : Matrix ι ι ℂ)
     (z : ℂ) :
     A.empiricalLogPotential z =
       ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ) := rfl
 
-/-- The norm of the determinant is the product of the singular values. -/
-theorem norm_det_eq_prod_singularValues (A : Matrix (Fin n) (Fin n) ℂ) :
-    ‖A.det‖ = ∏ i : Fin n, (toEuclideanLin A).singularValues i := by
-  have hdet : (toEuclideanLin A).det = A.det := by
-    rw [toEuclideanLin_eq_toLin_orthonormal]
-    rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun (Fin n) ℂ).toBasis]
-    simp [LinearMap.toMatrix_toLin]
-  have hnorm : (toEuclideanLin A).normDet = ‖A.det‖ := by
-    rw [LinearMap.normDet_eq_norm_det, hdet]
-  have hprod : (toEuclideanLin A).normDet =
-      ∏ i : Fin n, (toEuclideanLin A).singularValues i := by
-    simpa only [finrank_euclideanSpace, Fintype.card_fin,
-      Fin.prod_univ_eq_prod_range] using
-        (LinearMap.normDet_eq_prod_singularValues (toEuclideanLin A))
-  exact hnorm.symm.trans hprod
-
-/-- Away from the eigenvalues, the empirical logarithmic potential is the logarithm of the
-shifted determinant. -/
-theorem empiricalLogPotential_eq_log_norm_det [Nonempty (Fin n)]
-    (A : Matrix (Fin n) (Fin n) ℂ) (z : ℂ)
-    (hdet : (A - scalar (Fin n) z).det ≠ 0) :
+/-- Away from the eigenvalues, the empirical logarithmic potential is `1 / card ι` times the
+logarithm of the norm of the shifted determinant. -/
+theorem empiricalLogPotential_eq_log_norm_det
+    (A : Matrix ι ι ℂ) (z : ℂ)
+    (hdet : (A - scalar ι z).det ≠ 0) :
     A.empiricalLogPotential z =
-      (Fintype.card (Fin n) : ℝ)⁻¹ * Real.log ‖(A - scalar (Fin n) z).det‖ := by
+      (Fintype.card ι : ℝ)⁻¹ * Real.log ‖(A - scalar ι z).det‖ := by
   classical
   rw [empiricalLogPotential, integral_eigenvalueMeasure]
-  rw [smul_eq_mul, Fintype.card_fin]
-  have hroots : (A - scalar (Fin n) z).det =
+  rw [smul_eq_mul]
+  have hroots : (A - scalar ι z).det =
       (A.charpoly.roots.map fun w : ℂ => w - z).prod := by
     rw [Matrix.det_eq_prod_roots_charpoly, Matrix.charpoly_sub_scalar]
     have hcomp :
@@ -88,14 +72,12 @@ theorem empiricalLogPotential_eq_log_norm_det [Nonempty (Fin n)]
     rw [Multiset.prod_eq_zero_iff]
     exact Multiset.mem_map.mpr ⟨w, hw, hzero⟩
   have hnorm :
-      ‖(A - scalar (Fin n) z).det‖ =
+      ‖(A - scalar ι z).det‖ =
         (A.charpoly.roots.map fun w : ℂ => ‖z - w‖).prod := by
-    rw [hroots]
-    induction A.charpoly.roots using Multiset.induction_on with
-    | empty => simp
-    | cons w roots ih => simp [norm_sub_rev, ih]
+    rw [hroots, Multiset.norm_prod, Multiset.map_map]
+    simp only [Function.comp_def, norm_sub_rev]
   have hlog :
-      Real.log ‖(A - scalar (Fin n) z).det‖ =
+      Real.log ‖(A - scalar ι z).det‖ =
         (A.charpoly.roots.map fun w : ℂ => Real.log ‖z - w‖).sum := by
     rw [hnorm, Real.log_multiset_prod]
     · simp only [Multiset.map_map, Function.comp_def]
@@ -111,27 +93,43 @@ theorem empiricalLogPotential_eq_log_norm_det [Nonempty (Fin n)]
 the logarithmic potential equals both the normalized log determinant and the average log
 singular value. -/
 theorem empiricalLogPotential_eq_log_det_eq_sum_log_singularValues
-    [Nonempty (Fin n)] (A : Matrix (Fin n) (Fin n) ℂ) (z : ℂ)
-    (hdet : (A - scalar (Fin n) z).det ≠ 0) :
+    (A : Matrix ι ι ℂ) (z : ℂ)
+    (hdet : (A - scalar ι z).det ≠ 0) :
     A.empiricalLogPotential z =
-      (Fintype.card (Fin n) : ℝ)⁻¹ *
-          Real.log ‖(A - scalar (Fin n) z).det‖ ∧
+      (Fintype.card ι : ℝ)⁻¹ *
+          Real.log ‖(A - scalar ι z).det‖ ∧
       A.empiricalLogPotential z =
-        (Fintype.card (Fin n) : ℝ)⁻¹ *
-          ∑ i : Fin n, Real.log ((toEuclideanLin (A - scalar (Fin n) z)).singularValues i) := by
+        (Fintype.card ι : ℝ)⁻¹ *
+          ∑ i : Fin (Fintype.card ι),
+            Real.log ((toEuclideanLin (A - scalar ι z)).singularValues i) := by
+  have hnormdet :
+      ‖(A - scalar ι z).det‖ =
+        ∏ i : Fin (Fintype.card ι),
+          (toEuclideanLin (A - scalar ι z)).singularValues i := by
+    have hdet' : (toEuclideanLin (A - scalar ι z)).det = (A - scalar ι z).det := by
+      rw [toEuclideanLin_eq_toLin_orthonormal]
+      rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun ι ℂ).toBasis]
+      simp [LinearMap.toMatrix_toLin]
+    have hnorm : (toEuclideanLin (A - scalar ι z)).normDet =
+        ‖(A - scalar ι z).det‖ := by
+      rw [LinearMap.normDet_eq_norm_det, hdet']
+    have hprod : (toEuclideanLin (A - scalar ι z)).normDet =
+        ∏ i : Fin (Fintype.card ι),
+          (toEuclideanLin (A - scalar ι z)).singularValues i := by
+      simpa only [finrank_euclideanSpace] using
+        (LinearMap.normDet_eq_prod_singularValues (toEuclideanLin (A - scalar ι z)))
+    exact hnorm.symm.trans hprod
   refine ⟨empiricalLogPotential_eq_log_norm_det A z hdet, ?_⟩
-  rw [empiricalLogPotential_eq_log_norm_det A z hdet, norm_det_eq_prod_singularValues]
-  have hne (i : Fin n) :
-      (toEuclideanLin (A - scalar (Fin n) z)).singularValues i ≠ 0 := by
-    intro hzero
-    have hprod :
-        ∏ j : Fin n, (toEuclideanLin (A - scalar (Fin n) z)).singularValues j = 0 := by
-      exact Finset.prod_eq_zero (Finset.mem_univ i) hzero
-    have hdet0 : ‖(A - scalar (Fin n) z).det‖ = 0 :=
-      (norm_det_eq_prod_singularValues (A - scalar (Fin n) z)).trans hprod
-    exact hdet (norm_eq_zero.mp hdet0)
-  have hpos (i : Fin n) :
-      0 < (toEuclideanLin (A - scalar (Fin n) z)).singularValues i :=
+  rw [empiricalLogPotential_eq_log_norm_det A z hdet, hnormdet]
+  have hprod : ∏ i : Fin (Fintype.card ι),
+      (toEuclideanLin (A - scalar ι z)).singularValues i ≠ 0 := by
+    rw [← hnormdet]
+    exact norm_ne_zero_iff.mpr hdet
+  have hne (i : Fin (Fintype.card ι)) :
+      (toEuclideanLin (A - scalar ι z)).singularValues i ≠ 0 :=
+    (Finset.prod_ne_zero_iff).mp hprod i (Finset.mem_univ _)
+  have hpos (i : Fin (Fintype.card ι)) :
+      0 < (toEuclideanLin (A - scalar ι z)).singularValues i :=
     lt_of_le_of_ne (LinearMap.singularValues_nonneg _ i) (Ne.symm (hne i))
   rw [Real.log_prod (fun i _ => (ne_of_gt (hpos i)))]
 
