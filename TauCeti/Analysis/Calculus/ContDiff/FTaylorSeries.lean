@@ -35,6 +35,8 @@ derivatives on an open set, recovering a smooth limit with those derivatives.
 Taylor series with matching coefficients glue across two closed sets on their union.
 For a closed cover of the whole space this gives a global piecewise Cᵏ criterion.
 Finite sums and constant scalar multiples carry the corresponding coefficientwise series.
+Basic evaluation and identity formulas for `ftaylorSeries` are also provided
+(`TauCeti.ftaylorSeries_apply`, `TauCeti.ftaylorSeries_id`).
 -/
 
 public section
@@ -325,3 +327,36 @@ theorem _root_.HasFTaylorSeriesUpToOn.contDiff_piecewise {k : ℕ∞} {f g : E �
   exact contDiffOn_univ.mp hglobal.contDiffOn
 
 end ClosedCoverOperations
+
+namespace TauCeti
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Unfold `ftaylorSeries` at a given order `n` to `iteratedFDeriv`. -/
+theorem ftaylorSeries_apply (f : E → F) (x : E) (n : ℕ) :
+    ftaylorSeries 𝕜 f x n = iteratedFDeriv 𝕜 n f x :=
+  (rfl)
+
+/-- The formal Taylor series of the identity map at `x` is `FormalMultilinearSeries.id 𝕜 E x`. -/
+@[simp]
+theorem ftaylorSeries_id (x : E) :
+    ftaylorSeries 𝕜 (_root_.id : E → E) x = FormalMultilinearSeries.id 𝕜 E x := by
+  funext m
+  match m with
+  | 0 =>
+    ext v
+    simp [ftaylorSeries_apply]
+  | 1 =>
+    ext v
+    simp [ftaylorSeries_apply]
+  | m + 2 =>
+    rw [ftaylorSeries_apply, FormalMultilinearSeries.id_apply_of_one_lt _ _ _ (by omega),
+      ← norm_eq_zero, ← norm_iteratedFDeriv_fderiv]
+    have h : fderiv 𝕜 (_root_.id : E → E) = fun _ ↦ ContinuousLinearMap.id 𝕜 E :=
+      funext fun _ ↦ fderiv_id
+    rw [h, iteratedFDeriv_succ_const]
+    simp
+
+end TauCeti
