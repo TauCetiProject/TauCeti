@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Geodesic
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Polar.Jacobian
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Polar.ConstantCurvature
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Compact
+import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
 import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
@@ -24,6 +25,9 @@ along `h`:
 `v` a unit vector and `w ⊥ v`, this has norm `|sin r| ‖w‖`: the angular Jacobian of geodesic
 polar coordinates on the round sphere is `|sin r|` on unit angular directions, and equals
 `sin r` for `0 ≤ r ≤ π`.
+
+The polar Jacobian formula is derived from the general constant-curvature formula and the
+unit sphere's sectional curvature `1`.
 
 ## Main results
 
@@ -94,18 +98,12 @@ theorem mvfderiv_coe_mfderiv_riemannianExp_sphere_of_inner_eq_zero (p : sphere (
 `j(r) = ‖d(exp_p)_(r v)(r w)‖ = |sin r| ‖w‖`. -/
 theorem polarJacobian_sphere (p : sphere (0 : E) 1) {v w : TangentSpace (𝓡 n) p} (hv : ‖v‖ = 1)
     (hvw : ⟪v, w⟫_ℝ = 0) (r : ℝ) : polarJacobian p v w r = |Real.sin r| * ‖w‖ := by
-  rcases eq_or_ne r 0 with rfl | hr
-  · simp
-  have hx : r • v ≠ 0 := smul_ne_zero hr (norm_ne_zero_iff.mp (hv.trans_ne one_ne_zero))
-  have hxh : ⟪r • v, r • w⟫_ℝ = 0 := by
-    simp only [real_inner_smul_left, real_inner_smul_right, hvw, mul_zero]
-  rw [polarJacobian_eq_norm, norm_tangentSpace_sphere,
-    mvfderiv_coe_mfderiv_riemannianExp_sphere_of_inner_eq_zero p hx hxh,
-    map_smul, smul_smul, norm_smul, ← norm_tangentSpace_sphere]
-  simp only [norm_smul, hv, Real.norm_eq_abs, mul_one]
-  congr 1
-  rcases hr.lt_or_gt with h | h
-  · rw [abs_of_neg h, Real.sin_neg, neg_div_neg_eq, div_mul_cancel₀ _ hr]
-  · rw [abs_of_pos h, div_mul_cancel₀ _ hr]
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hmem : r • v ∈ expDomain (𝓡 n) (sphere (0 : E) 1) p := by
+    rw [expDomain_eq_univ_of_compactSpace]
+    trivial
+  simpa only [curvatureSine_of_pos zero_lt_one, Real.sqrt_one, one_mul, div_one] using
+    polarJacobian_of_inner_eq_zero_of_hasSectionalCurvatureAt hmem
+      (fun _ _ ↦ hasConstantSectionalCurvature_sphere.hasSectionalCurvatureAt _) hv hvw
 
 end TauCeti
