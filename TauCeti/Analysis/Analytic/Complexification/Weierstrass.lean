@@ -510,19 +510,14 @@ theorem eventuallyEq_of_weierstrassDivision_sumElim_real {σ : Type*} [Fintype �
       fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (Sum.inr ()) - t₀) *
           q' p + ∑ i : Fin d, r' i (p ∘ Sum.inl) * (p (Sum.inr ()) - t₀) ^ (i : ℕ)) :
     q =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] q' ∧ ∀ i, r i =ᶠ[𝓝 x₀] r' i := by
-  let L : ((σ → ℝ) × ℝ) ≃L[ℝ] (σ ⊕ Unit → ℝ) :=
-    ((ContinuousLinearEquiv.refl ℝ (σ → ℝ)).prodCongr
-      (ContinuousLinearEquiv.funUnique Unit ℝ ℝ).symm).trans
-      (ContinuousLinearEquiv.sumPiEquivProdPi ℝ σ Unit (fun _ ↦ ℝ)).symm
-  have hL (p : (σ → ℝ) × ℝ) : L p = Sum.elim p.1 (fun _ ↦ p.2) := by
-    ext (i | ⟨⟩) <;> simp [L]
+  let L := ContinuousLinearEquiv.piProdEquivPiSumUnique ℝ σ Unit ℝ
   obtain ⟨hqq', hrr'⟩ := eventuallyEq_of_weierstrassDivision_real (x₀ := x₀) (t₀ := t₀) hc hc0
-    (hq.comp_of_eq (L.analyticAt _) (hL _)) hr (hq'.comp_of_eq (L.analyticAt _) (hL _)) hr' <| by
-      filter_upwards [(L.continuous.tendsto' (x₀, t₀) _ (hL _)).eventually h] with p hp
-      simpa [hL, Function.comp_def] using hp
+    (hq.comp_of_eq (L.analyticAt _) (by simp [L])) hr
+    (hq'.comp_of_eq (L.analyticAt _) (by simp [L])) hr' <| by
+      filter_upwards [(L.continuous.tendsto' (x₀, t₀) _ (by simp [L])).eventually h] with p hp
+      simpa [L, Function.comp_def] using hp
   refine ⟨?_, hrr'⟩
-  filter_upwards [(L.symm.continuous.tendsto' _ (x₀, t₀)
-    (by rw [← hL (x₀, t₀), L.symm_apply_apply])).eventually hqq'] with p hp
+  filter_upwards [(L.symm.continuous.tendsto' _ (x₀, t₀) (by simp [L])).eventually hqq'] with p hp
   simpa only [Function.comp_apply, L.apply_symm_apply] using hp
 
 /-- **Uniqueness of local real analytic Weierstrass preparation in `σ ⊕ Unit` coordinates.** -/
@@ -540,20 +535,14 @@ theorem eventuallyEq_of_weierstrassPreparation_sumElim_real {σ : Type*} [Fintyp
       fun p ↦ (Polynomial.monicOfCoeff (fun i ↦ c' i (p ∘ Sum.inl))).eval
           (p (Sum.inr ()) - t₀) * u' p) :
     (∀ i, c i =ᶠ[𝓝 x₀] c' i) ∧ u =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] u' := by
-  let L : ((σ → ℝ) × ℝ) ≃L[ℝ] (σ ⊕ Unit → ℝ) :=
-    ((ContinuousLinearEquiv.refl ℝ (σ → ℝ)).prodCongr
-      (ContinuousLinearEquiv.funUnique Unit ℝ ℝ).symm).trans
-      (ContinuousLinearEquiv.sumPiEquivProdPi ℝ σ Unit (fun _ ↦ ℝ)).symm
-  have hL (p : (σ → ℝ) × ℝ) : L p = Sum.elim p.1 (fun _ ↦ p.2) := by
-    ext (i | ⟨⟩) <;> simp [L]
+  let L := ContinuousLinearEquiv.piProdEquivPiSumUnique ℝ σ Unit ℝ
   obtain ⟨hcc', huu'⟩ := eventuallyEq_of_weierstrassPreparation_real (x₀ := x₀) (t₀ := t₀) hc hc0
-    (hu.comp_of_eq (L.analyticAt _) (hL _)) hc'
-    (hu'.comp_of_eq (L.analyticAt _) (hL _)) (by simpa [hL] using hu'0) <| by
-      filter_upwards [(L.continuous.tendsto' (x₀, t₀) _ (hL _)).eventually h] with p hp
-      simpa [hL, Function.comp_def] using hp
+    (hu.comp_of_eq (L.analyticAt _) (by simp [L])) hc'
+    (hu'.comp_of_eq (L.analyticAt _) (by simp [L])) (by simpa [L] using hu'0) <| by
+      filter_upwards [(L.continuous.tendsto' (x₀, t₀) _ (by simp [L])).eventually h] with p hp
+      simpa [L, Function.comp_def] using hp
   refine ⟨hcc', ?_⟩
-  filter_upwards [(L.symm.continuous.tendsto' _ (x₀, t₀)
-    (by rw [← hL (x₀, t₀), L.symm_apply_apply])).eventually huu'] with p hp
+  filter_upwards [(L.symm.continuous.tendsto' _ (x₀, t₀) (by simp [L])).eventually huu'] with p hp
   simpa only [Function.comp_apply, L.apply_symm_apply] using hp
 
 end TauCeti

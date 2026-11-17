@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Analytic.Order
 public import TauCeti.Geometry.RealAlgebraic.Nash.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import TauCeti.Analysis.Analytic.Complexification.Weierstrass
 import TauCeti.Analysis.Analytic.Constructions
+import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Analysis.Polynomial.Order
@@ -22,6 +22,7 @@ import TauCeti.Geometry.RealAlgebraic.Nash.Derivative
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Complex
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Derivative
 import TauCeti.RingTheory.Polynomial.Monic.Roots
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # The Nash Weierstrass preparation and division theorems
@@ -45,9 +46,9 @@ changes (`TauCeti.IsNashAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`)
    on an open neighborhood `V` whose realification has semialgebraic domain and graph
    (`TauCeti.IsNashAt.exists_complexification`). Differentiating in the real vertical direction
    shows by induction on `k` that every complex vertical derivative of `F` also has semialgebraic
-   real and imaginary parts on `V` (`TauCeti.IsSemialgebraicOn.fderiv_apply`). Shrinking to a
-   polydisc `ball x₀ δ × ball t₀ R` inside `V` on which the complexified Weierstrass unit `U` is
-   nonvanishing and all `d` complex roots of `P_x` lie in `ball 0 R`, a tuple `c' : Fin d → ℝ`
+   real and imaginary parts on `V` (`TauCeti.IsSemialgebraicOn.iteratedDerivInr_scalar`). Shrinking
+   to a polydisc `ball x₀ δ × ball t₀ R` inside `V` on which the complexified Weierstrass unit `U`
+   is nonvanishing and all `d` complex roots of `P_x` lie in `ball 0 R`, a tuple `c' : Fin d → ℝ`
    equals `fun i ↦ c i x` if and only if there exist `r ≤ d` pairwise distinct points `z l` in
    `ball 0 R` with multiplicities `m l` summing to `d` such that `w ↦ F (x, w)` vanishes to exact
    order `m l` at `t₀ + z l` (characterized by vanishing of the first `m l` vertical derivatives
@@ -101,23 +102,6 @@ section LinearCoordinates
 
 variable {σ : Type*} [Fintype σ]
 
-/-- The continuous linear equivalence identifying `(σ → ℝ) × ℝ` with `σ ⊕ Unit → ℝ`. -/
-private def prodRealEquivSumUnit (σ : Type*) :
-    ((σ → ℝ) × ℝ) ≃L[ℝ] (σ ⊕ Unit → ℝ) :=
-  ((ContinuousLinearEquiv.refl ℝ (σ → ℝ)).prodCongr
-      (ContinuousLinearEquiv.funUnique Unit ℝ ℝ).symm).trans
-    (ContinuousLinearEquiv.sumPiEquivProdPi ℝ σ Unit (fun _ ↦ ℝ)).symm
-
-@[simp]
-private theorem prodRealEquivSumUnit_apply {σ : Type*} (q : (σ → ℝ) × ℝ) :
-    prodRealEquivSumUnit σ q = Sum.elim q.1 (fun _ ↦ q.2) := by
-  ext (i | ⟨⟩) <;> rfl
-
-@[simp]
-private theorem prodRealEquivSumUnit_symm_apply {σ : Type*} (p : σ ⊕ Unit → ℝ) :
-    (prodRealEquivSumUnit σ).symm p = (p ∘ Sum.inl, p (Sum.inr ())) :=
-  Prod.ext rfl rfl
-
 /-- **General position in the vertical variable for Nash germs.** Let `f : (σ ⊕ Unit → ℝ) → ℝ` be
 a Nash germ at `p` that does not vanish on a neighborhood of `p`. Then there exist a continuous
 linear automorphism `L` of `σ ⊕ Unit → ℝ` and coordinates `(x₀, t₀)` with
@@ -129,7 +113,7 @@ theorem IsNashAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top
       L (Sum.elim x₀ (fun _ ↦ t₀)) = p ∧
       IsNashAt (f ∘ L) (Sum.elim x₀ (fun _ ↦ t₀)) ∧
       analyticOrderAt (fun t ↦ f (L (Sum.elim x₀ (fun _ ↦ t)))) t₀ ≠ ⊤ := by
-  let E := prodRealEquivSumUnit σ
+  let E := ContinuousLinearEquiv.piProdEquivPiSumUnique ℝ σ Unit ℝ
   have han : AnalyticAt ℝ (f ∘ E) (E.symm p) :=
     hf.analyticAt.comp_of_eq (E.analyticAt _) (E.apply_symm_apply p)
   have hne : ¬ (f ∘ E) =ᶠ[𝓝 (E.symm p)] 0 := fun h0 ↦ hf0 <| by
@@ -144,178 +128,6 @@ theorem IsNashAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top
   simpa [L, E, Function.comp_def] using hord
 
 end LinearCoordinates
-
-/-! ### Complex vertical derivatives of semialgebraic holomorphic functions -/
-
-section ComplexVerticalDerivatives
-
-variable {σ : Type*} [Fintype σ]
-
-/-- The `k`-th complex derivative in the `Unit` coordinate of `F : (σ ⊕ Unit → ℂ) → ℂ`. -/
-private noncomputable def complexVertDeriv (k : ℕ) (F : (σ ⊕ Unit → ℂ) → ℂ)
-    (z : σ ⊕ Unit → ℂ) : ℂ :=
-  iteratedDeriv k (fun w ↦ F (Sum.elim (z ∘ Sum.inl) (fun _ ↦ w))) (z (Sum.inr ()))
-
-omit [Fintype σ] in
-@[simp]
-private theorem complexVertDeriv_sumElim (k : ℕ) (F : (σ ⊕ Unit → ℂ) → ℂ)
-    (x : σ → ℂ) (w : ℂ) :
-    complexVertDeriv k F (Sum.elim x (fun _ ↦ w)) =
-      iteratedDeriv k (fun ζ ↦ F (Sum.elim x (fun _ ↦ ζ))) w := by
-  simp only [complexVertDeriv, Sum.elim_comp_inl, Sum.elim_inr]
-
-/-- For `F` holomorphic on `V`, the analytic order of the vertical slice
-`ζ ↦ F (Sum.elim x (fun _ ↦ ζ))` at `w` equals `n` if and only if the first `n` vertical
-derivatives vanish at `Sum.elim x (fun _ ↦ w)` and the `n`-th does not. -/
-private theorem analyticOrderAt_sumElim_eq_nat_iff {V : Set (σ ⊕ Unit → ℂ)}
-    {F : (σ ⊕ Unit → ℂ) → ℂ} (hFV : AnalyticOnNhd ℂ F V)
-    {x : σ → ℂ} {w : ℂ} (hpt : Sum.elim x (fun _ ↦ w) ∈ V) (n : ℕ) :
-    analyticOrderAt (fun ζ ↦ F (Sum.elim x (fun _ ↦ ζ))) w = n ↔
-      (∀ k : Fin n, complexVertDeriv k F (Sum.elim x (fun _ ↦ w)) = 0) ∧
-        complexVertDeriv n F (Sum.elim x (fun _ ↦ w)) ≠ 0 := by
-  have hslice : AnalyticAt ℂ (fun ζ ↦ F (Sum.elim x (fun _ ↦ ζ))) w :=
-    (hFV _ hpt).comp_of_eq (analyticAt_sumElim_const x w) rfl
-  rw [analyticOrderAt_eq_nat_iff_iteratedDeriv_eq_zero hslice]
-  simp [Fin.forall_iff]
-
-/-- On an open set where `G = complexVertDeriv k F` is holomorphic, the `(k + 1)`-th vertical
-derivative equals the complex Fréchet derivative of `G` in the unit vertical direction. -/
-private theorem complexVertDeriv_succ_eq_fderiv {V : Set (σ ⊕ Unit → ℂ)}
-    {F : (σ ⊕ Unit → ℂ) → ℂ} {k : ℕ} (hG : AnalyticOnNhd ℂ (complexVertDeriv k F) V)
-    {z : σ ⊕ Unit → ℂ} (hz : z ∈ V) :
-    complexVertDeriv (k + 1) F z =
-      fderiv ℂ (complexVertDeriv k F) z (Sum.elim 0 (fun _ ↦ 1)) := by
-  let vℂ : σ ⊕ Unit → ℂ := Sum.elim 0 (fun _ ↦ 1)
-  let φ : ℂ → (σ ⊕ Unit → ℂ) := fun w ↦ z + (w - z (Sum.inr ())) • vℂ
-  have hφ_eq (w : ℂ) : φ w = Sum.elim (z ∘ Sum.inl) (fun _ ↦ w) := by
-    ext (i | ⟨⟩) <;> simp [φ, vℂ]
-  have hφ_deriv : HasDerivAt φ vℂ (z (Sum.inr ())) := by
-    simpa [φ] using
-      (((hasDerivAt_id (z (Sum.inr ()))).sub_const (z (Sum.inr ()))).smul_const vℂ).const_add z
-  have hφz : φ (z (Sum.inr ())) = z := by simp [φ]
-  have hGφ := hφz ▸ (hG z hz).differentiableAt.hasFDerivAt
-  have hstep : complexVertDeriv (k + 1) F z =
-      deriv (fun w ↦ complexVertDeriv k F (φ w)) (z (Sum.inr ())) := by
-    simp only [complexVertDeriv, hφ_eq, Sum.elim_comp_inl, Sum.elim_inr, iteratedDeriv_succ]
-  rw [hstep]
-  simpa [hφz, Function.comp_def] using (hGφ.comp_hasDerivAt (z (Sum.inr ())) hφ_deriv).deriv
-
-/-- If `L ∘ complexVertDeriv k F ∘ (complexToRealPi (σ ⊕ Unit)).symm` has semialgebraic graph on
-`(complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V`, then so does the `(k + 1)`-th vertical derivative. -/
-private theorem isSemialgebraicOn_comp_complexVertDeriv_succ {V : Set (σ ⊕ Unit → ℂ)}
-    {F : (σ ⊕ Unit → ℂ) → ℂ} {k : ℕ} (hVo : IsOpen V)
-    (hGa : AnalyticOnNhd ℂ (complexVertDeriv k F) V) (L : ℂ →L[ℝ] ℝ)
-    (hLS : IsSemialgebraicOn
-      (fun a (_ : Unit) ↦ L (complexVertDeriv k F ((complexToRealPi (σ ⊕ Unit)).symm a)))
-      ((complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V)) :
-    IsSemialgebraicOn
-      (fun a (_ : Unit) ↦ L (complexVertDeriv (k + 1) F ((complexToRealPi (σ ⊕ Unit)).symm a)))
-      ((complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V) := by
-  let e := complexToRealPi (σ ⊕ Unit)
-  let S := e.symm ⁻¹' V
-  let vℂ : σ ⊕ Unit → ℂ := Sum.elim 0 (fun _ ↦ 1)
-  let g : ((σ ⊕ Unit) ⊕ (σ ⊕ Unit) → ℝ) → ℝ := ⇑L ∘ fun b ↦ complexVertDeriv k F (e.symm b)
-  have hSo : IsOpen S := hVo.preimage e.symm.continuous
-  have hfd (a : (σ ⊕ Unit) ⊕ (σ ⊕ Unit) → ℝ) (ha : a ∈ S) :
-      HasFDerivAt g
-        (L.comp (((fderiv ℂ (complexVertDeriv k F) (e.symm a)).restrictScalars ℝ).comp
-          e.symm.toContinuousLinearMap)) a :=
-    L.hasFDerivAt.comp a
-      (((hGa (e.symm a) ha).differentiableAt.hasFDerivAt.restrictScalars ℝ).comp
-        a e.symm.hasFDerivAt)
-  have hd : DifferentiableOn ℝ g S :=
-    fun a ha ↦ (hfd a ha).differentiableAt.differentiableWithinAt
-  have hgS : IsSemialgebraicOn (fun a (_ : Unit) ↦ g a) S := hLS
-  refine (hgS.fderiv_apply hSo hd (e vℂ)).congr fun a ha ↦ funext fun _ ↦ ?_
-  dsimp only
-  rw [(hfd a ha).fderiv]
-  simp [complexVertDeriv_succ_eq_fderiv hGa ha, vℂ, e]
-
-/-- Every complex vertical derivative of a holomorphic function with semialgebraic realified graph
-on an open set `V` is again holomorphic on `V` with semialgebraic realified graph on the same
-domain. -/
-private theorem analyticOnNhd_and_isSemialgebraicOn_complexVertDeriv {V : Set (σ ⊕ Unit → ℂ)}
-    {F : (σ ⊕ Unit → ℂ) → ℂ} (hVo : IsOpen V) (hFV : AnalyticOnNhd ℂ F V)
-    (hFS : IsSemialgebraicOn
-      (fun a ↦ complexToRealPi Unit (fun _ ↦ F ((complexToRealPi (σ ⊕ Unit)).symm a)))
-      ((complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V))
-    (k : ℕ) :
-    AnalyticOnNhd ℂ (complexVertDeriv k F) V ∧
-      IsSemialgebraicOn
-        (fun a ↦ complexToRealPi Unit
-          (fun _ ↦ complexVertDeriv k F ((complexToRealPi (σ ⊕ Unit)).symm a)))
-        ((complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V) := by
-  induction k with
-  | zero =>
-    have h0 : complexVertDeriv 0 F = F := by
-      ext z
-      simp only [complexVertDeriv, iteratedDeriv_zero]
-      exact congrArg F (Sum.elim_comp_inl_inr z)
-    simpa only [h0] using ⟨hFV, hFS⟩
-  | succ k ih =>
-    obtain ⟨hGa, hGS⟩ := ih
-    let vℂ : σ ⊕ Unit → ℂ := Sum.elim 0 (fun _ ↦ 1)
-    have han : AnalyticOnNhd ℂ (complexVertDeriv (k + 1) F) V := by
-      intro z hz
-      have hfd : AnalyticAt ℂ (fun y ↦ fderiv ℂ (complexVertDeriv k F) y vℂ) z :=
-        ((ContinuousLinearMap.apply ℂ ℂ vℂ).analyticAt _).comp (hGa z hz).fderiv
-      refine hfd.congr ?_
-      filter_upwards [hVo.mem_nhds hz] with y hy
-      exact (complexVertDeriv_succ_eq_fderiv hGa hy).symm
-    obtain ⟨hS, hcoords⟩ := isSemialgebraicOn_pi_iff.mp hGS
-    refine ⟨han, isSemialgebraicOn_pi_iff.mpr ⟨hS, fun j ↦ ?_⟩⟩
-    cases j with
-    | inl u =>
-      exact (isSemialgebraicOn_comp_complexVertDeriv_succ hVo hGa Complex.reCLM
-        ((hcoords (.inl u)).congr fun a _ ↦ funext fun _ ↦ by simp)).congr
-          fun a _ ↦ funext fun _ ↦ by simp
-    | inr u =>
-      exact (isSemialgebraicOn_comp_complexVertDeriv_succ hVo hGa Complex.imCLM
-        ((hcoords (.inr u)).congr fun a _ ↦ funext fun _ ↦ by simp)).congr
-          fun a _ ↦ funext fun _ ↦ by simp
-
-/-- Pulling back a realified complex vertical derivative along real polynomial coordinates `(xP,
-wRe, wIm)`: both the locus in `V` where it vanishes and the locus in `V` where it is nonzero are
-semialgebraic. -/
-private theorem isSemialgebraic_setOf_complexVertDeriv_eq_and_ne_zero {ν : Type*}
-    {V : Set (σ ⊕ Unit → ℂ)} {H : (σ ⊕ Unit → ℂ) → ℂ}
-    (hHS : IsSemialgebraicOn
-      (fun a ↦ complexToRealPi Unit (fun _ ↦ H ((complexToRealPi (σ ⊕ Unit)).symm a)))
-      ((complexToRealPi (σ ⊕ Unit)).symm ⁻¹' V))
-    (xP : σ → MvPolynomial ν ℝ) (wRe wIm : MvPolynomial ν ℝ) :
-    let pt : (ν → ℝ) → (σ ⊕ Unit → ℂ) := fun v ↦
-      Sum.elim (fun i ↦ (MvPolynomial.eval v (xP i) : ℂ))
-        (fun _ ↦ (MvPolynomial.eval v wRe : ℂ) + (MvPolynomial.eval v wIm : ℂ) * Complex.I)
-    IsSemialgebraic {v : ν → ℝ | pt v ∈ V ∧ H (pt v) = 0} ∧
-      IsSemialgebraic {v : ν → ℝ | pt v ∈ V ∧ H (pt v) ≠ 0} := by
-  intro pt
-  let pIn : (σ ⊕ Unit) ⊕ (σ ⊕ Unit) → MvPolynomial ν ℝ :=
-    Sum.elim (Sum.elim xP (fun _ ↦ wRe)) (Sum.elim (fun _ ↦ 0) (fun _ ↦ wIm))
-  have hpt (v : ν → ℝ) :
-      (complexToRealPi (σ ⊕ Unit)).symm (fun s ↦ MvPolynomial.eval v (pIn s)) = pt v := by
-    ext (i | ⟨⟩) <;> simp [pIn, pt]
-  have hdom : IsSemialgebraic {v : ν → ℝ | pt v ∈ V} := by
-    convert hHS.isSemialgebraic.preimage_eval pIn using 1
-    ext v
-    simp only [mem_ofPred_eq, mem_preimage, hpt]
-  let q : ((σ ⊕ Unit) ⊕ (σ ⊕ Unit)) ⊕ (Unit ⊕ Unit) → MvPolynomial ν ℝ := Sum.elim pIn 0
-  have hzero : IsSemialgebraic {v : ν → ℝ | pt v ∈ V ∧ H (pt v) = 0} := by
-    convert hHS.graph.preimage_eval q using 1
-    ext v
-    rw [mem_ofPred_eq, mem_preimage, mem_preimage_sumArrowEquivProdArrow_graphOn]
-    have hinl : ((fun t ↦ MvPolynomial.eval v (q t)) ∘ Sum.inl) =
-        fun s ↦ MvPolynomial.eval v (pIn s) := funext fun s ↦ by simp [q]
-    have hinr : ((fun t ↦ MvPolynomial.eval v (q t)) ∘ Sum.inr) = 0 := funext fun u ↦ by simp [q]
-    rw [hinl, hinr, mem_preimage, hpt]
-    refine and_congr_right fun _ ↦ ?_
-    simp [Complex.ext_iff, funext_iff]
-  refine ⟨hzero, ?_⟩
-  convert hdom.sdiff hzero using 1
-  ext v
-  simp only [Set.mem_ofPred_eq, Set.mem_sdiff]
-  tauto
-
-end ComplexVerticalDerivatives
 
 /-! ### Nash Weierstrass preparation -/
 
@@ -367,8 +179,8 @@ private theorem eventuallyEq_complexification_weierstrassPreparation {d : ℕ}
       Complex.continuous_ofReal.continuousAt.comp ((continuous_apply j).continuousAt)
   have hp_prod : Tendsto (fun p : σ ⊕ Unit → ℝ ↦ (p ∘ Sum.inl, p (Sum.inr ())))
       (𝓝 p₀) (𝓝 (x₀, t₀)) :=
-    ((prodRealEquivSumUnit σ).symm.continuous.tendsto' p₀ (x₀, t₀) (by simp [p₀])).congr
-      fun _ ↦ by simp
+    ((ContinuousLinearEquiv.piProdEquivPiSumUnique ℝ σ Unit ℝ).symm.continuous.tendsto' p₀
+      (x₀, t₀) (by simp [p₀])).congr fun _ ↦ by simp
   have hp_inl : Tendsto (fun p : σ ⊕ Unit → ℝ ↦ p ∘ Sum.inl) (𝓝 p₀) (𝓝 x₀) :=
     (continuous_fst.tendsto (x₀, t₀)).comp hp_prod
   filter_upwards [hp_real.eventually (hVo.mem_nhds hz₀V), ball_mem_nhds p₀ hrU,
@@ -417,7 +229,9 @@ private theorem exists_polydisc_weierstrass_rootMultiplicity {d : ℕ}
   obtain ⟨C, hC, hCc, -⟩ := exists_complexification_family hc
   have hu_sum : AnalyticAt ℝ (fun p : σ ⊕ Unit → ℝ ↦ u (p ∘ Sum.inl, p (Sum.inr ()))) p₀ := by
     simpa [Function.comp_def] using
-      hu.comp_of_eq ((prodRealEquivSumUnit σ).symm.analyticAt p₀) (by simp [p₀])
+      hu.comp_of_eq
+        ((ContinuousLinearEquiv.piProdEquivPiSumUnique ℝ σ Unit ℝ).symm.analyticAt p₀)
+        (by simp [p₀])
   obtain ⟨rU, hrU, U, hU, hUr, -⟩ := hu_sum.exists_complexification
   have hCc_ev : ∀ᶠ x in 𝓝 x₀, ∀ i, C i (fun j ↦ (x j : ℂ)) = c i x := eventually_all.mpr hCc
   have hF_eq := eventuallyEq_complexification_weierstrassPreparation hVo hz₀V hFV hFr
@@ -541,9 +355,9 @@ private theorem isSemialgebraic_rootCluster_branch {d : ℕ} {V : Set (σ ⊕ Un
         (∀ l l', l ≠ l' → z l ≠ z l') ∧
         (∀ l,
           Sum.elim (fun i ↦ (w (.inl i) : ℂ)) (fun _ ↦ (t₀ : ℂ) + z l) ∈ V ∧
-          (∀ k : Fin (m l), complexVertDeriv k F
+          (∀ k : Fin (m l), iteratedDerivInr k F
             (Sum.elim (fun i ↦ (w (.inl i) : ℂ)) (fun _ ↦ (t₀ : ℂ) + z l)) = 0) ∧
-          complexVertDeriv (m l) F
+          iteratedDerivInr (m l) F
             (Sum.elim (fun i ↦ (w (.inl i) : ℂ)) (fun _ ↦ (t₀ : ℂ) + z l)) ≠ 0) ∧
         ∀ i : Fin d, (w (.inr i) : ℂ) =
           (∏ l, (Polynomial.X - Polynomial.C (z l)) ^ m l).coeff (i : ℕ)} := by
@@ -557,19 +371,41 @@ private theorem isSemialgebraic_rootCluster_branch {d : ℕ} {V : Set (σ ⊕ Un
       isSemialgebraic_eval_lt (zRe l ^ 2 + zIm l ^ 2) (MvPolynomial.C (R ^ 2))) using 1
     ext v
     simp [zRe, zIm]
-  have h_eq (l : Fin r) (k : ℕ) := isSemialgebraic_setOf_complexVertDeriv_eq_and_ne_zero
-    (analyticOnNhd_and_isSemialgebraicOn_complexVertDeriv hVo hFV hFS k).2
-    xP (MvPolynomial.C t₀ + zRe l) (zIm l)
+  let pIn (l : Fin r) : (σ ⊕ Unit) ⊕ (σ ⊕ Unit) → MvPolynomial ν ℝ :=
+    Sum.elim (Sum.elim xP (fun _ ↦ MvPolynomial.C t₀ + zRe l))
+      (Sum.elim (fun _ ↦ 0) (fun _ ↦ zIm l))
+  have hpIn (l : Fin r) (v : ν → ℝ) :
+      (complexToRealPi (σ ⊕ Unit)).symm (fun s ↦ MvPolynomial.eval v (pIn l s)) =
+        Sum.elim (fun i ↦ (v (.inl (.inl i)) : ℂ))
+          (fun _ ↦ (t₀ : ℂ) + ((v (.inr (.inl l)) : ℂ) + (v (.inr (.inr l)) : ℂ) * Complex.I)) := by
+    ext (i | ⟨⟩) <;> simp [pIn, xP, zRe, zIm, add_assoc]
+  have h_eq (l : Fin r) (k : ℕ) :
+      IsSemialgebraic {v : ν → ℝ |
+        let pt := Sum.elim (fun i ↦ (v (.inl (.inl i)) : ℂ))
+          (fun _ ↦ (t₀ : ℂ) + ((v (.inr (.inl l)) : ℂ) + (v (.inr (.inr l)) : ℂ) * Complex.I))
+        pt ∈ V ∧ iteratedDerivInr k F pt = 0} := by
+    convert ((hFS.iteratedDerivInr_scalar hVo hFV k).isSemialgebraic_inter_setOf_eq_const
+      0).preimage_eval (pIn l) using 1
+    ext v
+    simp [hpIn, Complex.ext_iff, funext_iff]
+  have h_ne (l : Fin r) (k : ℕ) :
+      IsSemialgebraic {v : ν → ℝ |
+        let pt := Sum.elim (fun i ↦ (v (.inl (.inl i)) : ℂ))
+          (fun _ ↦ (t₀ : ℂ) + ((v (.inr (.inl l)) : ℂ) + (v (.inr (.inr l)) : ℂ) * Complex.I))
+        pt ∈ V ∧ iteratedDerivInr k F pt ≠ 0} := by
+    convert ((hFS.iteratedDerivInr_scalar hVo hFV k).isSemialgebraic_inter_setOf_ne_const
+      0).preimage_eval (pIn l) using 1
+    ext v
+    simp [hpIn, Complex.ext_iff, funext_iff]
   have hS_mult : IsSemialgebraic {v : ν → ℝ | ∀ l : Fin r,
       let pt := Sum.elim (fun i ↦ (v (.inl (.inl i)) : ℂ))
         (fun _ ↦ (t₀ : ℂ) + ((v (.inr (.inl l)) : ℂ) + (v (.inr (.inr l)) : ℂ) * Complex.I))
-      pt ∈ V ∧ (∀ k : Fin (m l), complexVertDeriv k F pt = 0) ∧
-        complexVertDeriv (m l) F pt ≠ 0} := by
+      pt ∈ V ∧ (∀ k : Fin (m l), iteratedDerivInr k F pt = 0) ∧
+        iteratedDerivInr (m l) F pt ≠ 0} := by
     convert IsSemialgebraic.iInter (fun l : Fin r ↦
-      (IsSemialgebraic.iInter fun k : Fin (m l) ↦ (h_eq l k).1).inter (h_eq l (m l)).2) using 1
+      (IsSemialgebraic.iInter fun k : Fin (m l) ↦ h_eq l k).inter (h_ne l (m l))) using 1
     ext v
-    simp only [Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_inter_iff, xP, zRe, zIm, map_add,
-      MvPolynomial.eval_C, MvPolynomial.eval_X, Complex.ofReal_add, add_assoc]
+    simp only [Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_inter_iff]
     refine forall_congr' fun _ ↦ ?_
     exact ⟨fun ⟨hV, hk0, hkne⟩ ↦ ⟨fun k ↦ ⟨hV, hk0 k⟩, hV, hkne⟩,
       fun ⟨hk0, hV, hkne⟩ ↦ ⟨hV, fun k ↦ (hk0 k).2, hkne⟩⟩
@@ -635,8 +471,9 @@ private theorem isNashAt_weierstrassPreparation_coeff {d : ℕ}
     · intro l
       obtain ⟨hptV, hord_eq⟩ := hord x hx (z l) (hroots x hx (z l) (hz_root l))
       simp only [Sum.elim_inl, Sum.elim_inr, Complex.re_add_im]
-      exact ⟨hptV, (analyticOrderAt_sumElim_eq_nat_iff hFV hptV (m l)).mp
-        (hord_eq.trans (congrArg Nat.cast (hmult l)))⟩
+      have hord' := ((hFV _ hptV).analyticOrderAt_sumElim_eq_nat_iff (m l)).mp
+        (hord_eq.trans (congrArg Nat.cast (hmult l)))
+      exact ⟨hptV, fun k ↦ hord'.1 k k.isLt, hord'.2⟩
     · intro j
       have hcj : w (.inr j) = c j x := (congrFun hcx j).symm
       rw [hcj, ← hP_coeff j, ← hprod]
@@ -651,7 +488,8 @@ private theorem isNashAt_weierstrassPreparation_coeff {d : ℕ}
       obtain ⟨hptV, hk0, hkne⟩ := hderiv l
       obtain ⟨-, hord_eq⟩ := hord x hx (z l) (hzR l)
       exact Nat.cast_injective (R := ℕ∞) <| hord_eq.symm.trans <|
-        (analyticOrderAt_sumElim_eq_nat_iff hFV hptV (m.1 l : ℕ)).mpr ⟨hk0, hkne⟩
+        ((hFV _ hptV).analyticOrderAt_sumElim_eq_nat_iff (m.1 l : ℕ)).mpr
+          ⟨fun k hk ↦ hk0 ⟨k, hk⟩, hkne⟩
     have hP_eq := hP_monic.eq_prod_X_sub_C_pow_of_le_rootMultiplicity (z := z)
       (m := fun l ↦ (m.1 l : ℕ)) (by rw [Polynomial.natDegree_monicOfCoeff, m.2])
       (fun _ _ h ↦ by_contra fun hne ↦ hpair _ _ hne h) (fun l ↦ (hmult l).ge)
@@ -674,7 +512,7 @@ theorem IsNashAt.exists_weierstrassPreparation {f : (σ ⊕ Unit → ℝ) → �
       IsNashAt u (Sum.elim x₀ (fun _ ↦ t₀)) ∧ u (Sum.elim x₀ (fun _ ↦ t₀)) ≠ 0 ∧
       f =ᶠ[𝓝 (Sum.elim x₀ (fun _ ↦ t₀))] fun p ↦
         (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (Sum.inr ()) - t₀) * u p := by
-  let E := prodRealEquivSumUnit σ
+  let E := ContinuousLinearEquiv.piProdEquivPiSumUnique ℝ σ Unit ℝ
   let p₀ : σ ⊕ Unit → ℝ := Sum.elim x₀ (fun _ ↦ t₀)
   have hf_prod : AnalyticAt ℝ (f ∘ E) (x₀, t₀) :=
     hf.analyticAt.comp_of_eq (E.analyticAt (x₀, t₀)) (by simp [E])
@@ -694,7 +532,7 @@ theorem IsNashAt.exists_weierstrassPreparation {f : (σ ⊕ Unit → ℝ) → �
     filter_upwards [(E.symm.continuous.tendsto' p₀ (x₀, t₀) (by simp [E, p₀])).eventually hfac_prod]
       with p hp
     rw [Function.comp_apply, E.apply_symm_apply] at hp
-    simpa only [u, E, prodRealEquivSumUnit_symm_apply] using hp
+    simpa [u, E] using hp
   have hP_nash : IsNashAt
       (fun p : σ ⊕ Unit → ℝ ↦
         (Polynomial.monicOfCoeff (fun i ↦ c i (p ∘ Sum.inl))).eval (p (Sum.inr ()) - t₀)) p₀ :=

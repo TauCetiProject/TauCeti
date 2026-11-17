@@ -352,21 +352,17 @@ theorem eventuallyEq_of_eventually_real {E : Type*} [NormedAddCommGroup E] [Norm
   filter_upwards [(hF.sub hG).eventually_eq_zero_of_eventually_real
     (h.mono fun x hx ↦ sub_eq_zero.2 hx)] with z hz using sub_eq_zero.1 hz
 
-/-- Canonical continuous linear equivalence identifying `(ι → 𝕜) × 𝕜` with `Option ι → 𝕜`,
-putting the scalar coordinate at `none`. -/
-private def prodPiEquivOption (𝕜 ι : Type*) [Semiring 𝕜] [TopologicalSpace 𝕜] :
-    ((ι → 𝕜) × 𝕜) ≃L[𝕜] (Option ι → 𝕜) :=
-  (ContinuousLinearEquiv.prodComm 𝕜 (ι → 𝕜) 𝕜).trans
-    (ContinuousLinearEquiv.piOptionEquivProd 𝕜 (M := fun _ : Option ι ↦ 𝕜)).symm
+private theorem piProdEquivPiOption_ofReal {ι : Type*} (p : (ι → ℝ) × ℝ) :
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ : Option ι ↦ ℂ)
+        ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) =
+      fun s ↦ (ContinuousLinearEquiv.piProdEquivPiOption ℝ
+        (M := fun _ : Option ι ↦ ℝ) p s : ℂ) := by
+  ext (i | _) <;> simp
 
-private theorem prodPiEquivOption_ofReal {ι : Type*} (p : (ι → ℝ) × ℝ) :
-    prodPiEquivOption ℂ ι ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) =
-      fun s ↦ (prodPiEquivOption ℝ ι p s : ℂ) := by
-  ext (i | _) <;> simp [prodPiEquivOption]
-
-private theorem prodPiEquivOption_star {ι : Type*} (p : (ι → ℂ) × ℂ) :
-    prodPiEquivOption ℂ ι (star p) = star (prodPiEquivOption ℂ ι p) := by
-  ext (i | _) <;> simp [prodPiEquivOption]
+private theorem piProdEquivPiOption_star {ι : Type*} (p : (ι → ℂ) × ℂ) :
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ : Option ι ↦ ℂ) (star p) =
+      star (ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ : Option ι ↦ ℂ) p) := by
+  ext (i | _) <;> simp
 
 /-- Two complex analytic functions on `(ι → ℂ) × ℂ` that agree at the real points near a real
 point `(x₀, t₀)` agree near `(x₀, t₀)`. -/
@@ -377,10 +373,12 @@ theorem eventuallyEq_of_eventually_real_prod {E : Type*} [NormedAddCommGroup E] 
     (h : ∀ᶠ p in 𝓝 (x₀, t₀),
       F ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = G ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ))) :
     F =ᶠ[𝓝 ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ))] G := by
-  let L := prodPiEquivOption ℝ ι
-  let Lℂ := prodPiEquivOption ℂ ι
+  let L : ((ι → ℝ) × ℝ) ≃L[ℝ] (Option ι → ℝ) :=
+    ContinuousLinearEquiv.piProdEquivPiOption ℝ (M := fun _ ↦ ℝ)
+  let Lℂ : ((ι → ℂ) × ℂ) ≃L[ℂ] (Option ι → ℂ) :=
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ ↦ ℂ)
   have hpt : Lℂ.symm (fun s ↦ (L (x₀, t₀) s : ℂ)) = ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)) := by
-    rw [← prodPiEquivOption_ofReal, Lℂ.symm_apply_apply]
+    rw [← piProdEquivPiOption_ofReal, Lℂ.symm_apply_apply]
   have hFG : (F ∘ Lℂ.symm) =ᶠ[𝓝 fun s ↦ (L (x₀, t₀) s : ℂ)] (G ∘ Lℂ.symm) := by
     refine (hF.comp_of_eq (Lℂ.symm.analyticAt _) hpt).eventuallyEq_of_eventually_real
       (hG.comp_of_eq (Lℂ.symm.analyticAt _) hpt) ?_
@@ -388,9 +386,9 @@ theorem eventuallyEq_of_eventually_real_prod {E : Type*} [NormedAddCommGroup E] 
       (L.symm_apply_apply _)).eventually h] with y hy
     have hy' : Lℂ.symm (fun s ↦ (y s : ℂ)) =
         ((fun i ↦ ((L.symm y).1 i : ℂ)), ((L.symm y).2 : ℂ)) := by
-      simp [L, Lℂ, prodPiEquivOption]
+      simp [L, Lℂ]
     simpa only [Function.comp_apply, hy'] using hy
-  filter_upwards [(Lℂ.continuous.tendsto' _ _ (prodPiEquivOption_ofReal (x₀, t₀))).eventually
+  filter_upwards [(Lℂ.continuous.tendsto' _ _ (piProdEquivPiOption_ofReal (x₀, t₀))).eventually
     hFG] with p hp
   simpa only [Function.comp_apply, Lℂ.symm_apply_apply] using hp
 
@@ -485,15 +483,17 @@ theorem exists_complexification_prod {f : (ι → ℝ) × ℝ → ℝ} {x₀ : �
     ∃ F : (ι → ℂ) × ℂ → ℂ, AnalyticAt ℂ F ((fun i ↦ (x₀ i : ℂ)), (t₀ : ℂ)) ∧
       (∀ᶠ p in 𝓝 (x₀, t₀), F ((fun i ↦ (p.1 i : ℂ)), (p.2 : ℂ)) = f p) ∧
         ∀ p, F (star p) = star (F p) := by
-  let L := prodPiEquivOption ℝ ι
-  let Lℂ := prodPiEquivOption ℂ ι
+  let L : ((ι → ℝ) × ℝ) ≃L[ℝ] (Option ι → ℝ) :=
+    ContinuousLinearEquiv.piProdEquivPiOption ℝ (M := fun _ ↦ ℝ)
+  let Lℂ : ((ι → ℂ) × ℂ) ≃L[ℂ] (Option ι → ℂ) :=
+    ContinuousLinearEquiv.piProdEquivPiOption ℂ (M := fun _ ↦ ℂ)
   obtain ⟨r, hr, G, hG, hGf, hGstar⟩ :=
     (hf.comp_of_eq (L.symm.analyticAt _) (L.symm_apply_apply _)).exists_complexification
   refine ⟨G ∘ Lℂ, (hG _ (mem_ball_self hr)).comp_of_eq (Lℂ.analyticAt _)
-      (prodPiEquivOption_ofReal (x₀, t₀)), ?_,
-    fun p ↦ by simp only [Function.comp_apply, Lℂ, prodPiEquivOption_star, hGstar]⟩
+      (piProdEquivPiOption_ofReal (x₀, t₀)), ?_,
+    fun p ↦ by simp only [Function.comp_apply, Lℂ, piProdEquivPiOption_star, hGstar]⟩
   filter_upwards [L.continuous.continuousAt.preimage_mem_nhds (ball_mem_nhds _ hr)] with p hp
-  rw [Function.comp_apply, prodPiEquivOption_ofReal, hGf _ hp, Function.comp_apply,
+  rw [Function.comp_apply, piProdEquivPiOption_ofReal, hGf _ hp, Function.comp_apply,
     L.symm_apply_apply]
 
 /-- **Conjugation compatibility of complexifications.** A complex analytic function of finitely

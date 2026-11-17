@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Algebraic.Defs
 public import TauCeti.Order.Filter.Germ.MvPolynomial
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.Analytic.Uniqueness
 
 /-!
@@ -372,17 +373,13 @@ variable {σ : Type*} [Fintype σ]
 noncomputable def mvPolynomialAlgebra (a : σ → 𝕜) :
     Algebra (MvPolynomial σ 𝕜) (analyticGerms 𝕜 a) :=
   RingHom.toAlgebra
-    { toFun p := ofAnalyticAt (fun y ↦ MvPolynomial.eval y p) (by
-        induction p using MvPolynomial.induction_on with
-        | C c => simpa using analyticAt_const
-        | add p q hp hq => simpa [map_add] using hp.fun_add hq
-        | mul_X p i hp =>
-          simpa [map_mul, MvPolynomial.eval_X] using
-            hp.fun_mul ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : σ ↦ 𝕜) i).analyticAt a))
+    { toFun p := ofAnalyticAt (fun y ↦ MvPolynomial.eval y p)
+        (AnalyticAt.aeval_mvPolynomial (f := id)
+          (fun i ↦ (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : σ ↦ 𝕜) i).analyticAt a) p)
       map_one' := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_one _))
-      map_mul' p q := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_mul _ _ _))
+      map_mul' _ _ := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_mul _ _ _))
       map_zero' := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_zero _))
-      map_add' p q := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_add _ _ _)) }
+      map_add' _ _ := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_add _ _ _)) }
 
 attribute [local instance] mvPolynomialAlgebra Filter.Germ.mvPolynomialAlgebra
 
