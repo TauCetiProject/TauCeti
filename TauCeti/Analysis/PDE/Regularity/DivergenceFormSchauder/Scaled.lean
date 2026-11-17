@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder
+public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Basic
 import TauCeti.Analysis.PDE.Caccioppoli.Divergence
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -83,45 +83,6 @@ namespace PDE
 
 variable {n : ℕ}
 
-/-- On an open set `B` inside a ball `B(x₀, ρ)` on which `a` is `α`-Hölder and uniformly elliptic,
-`a` is measurable on `B` and its energy integrands are essentially bounded there. -/
-private theorem memLp_energyIntegrand_of_holderOnWith
-    {B : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ : ℝ}
-    (hBρ : (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ ball x₀ ρ)
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
-    (h : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
-    {α : ℝ≥0} (hα : 0 < α) {Ka : ℝ≥0}
-    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
-    AEStronglyMeasurable a (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) ∧
-      MemLp (fun x => energyIntegrand (a x) 0 0) ⊤
-        (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
-  -- A matrix is a function of its entries, and the entries of `a` are continuous on the ball.
-  have ha : AEStronglyMeasurable a (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    ContinuousOn.aestronglyMeasurable (β := Fin (n + 1) → Fin (n + 1) → ℝ)
-      ((continuousOn_of_continuousOn_matrixBilinearForm (haK.continuousOn hα)).mono hBρ)
-      B.isOpen.measurableSet
-  exact ⟨ha, memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) h.upper_nonneg ha
-    aestronglyMeasurable_const aestronglyMeasurable_const (fun x hx => h.upper_bound hx)
-    (fun _ _ => by simp) (fun _ _ => by simp)⟩
-
-/-- On a set `B` inside a ball `B(x₀, ρ)` on which `G` is `α`-Hölder with constant `K_G`,
-`G - G x₀` is bounded by `K_G ρ^α`, hence square integrable on `B`. -/
-private theorem memLp_sub_and_norm_sub_le_of_holderOnWith
-    {B : Set (EuclideanSpace ℝ (Fin (n + 1)))} (hB : MeasurableSet B)
-    {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ : ℝ} (hBρ : B ⊆ ball x₀ ρ) {α : ℝ≥0} (hα : 0 < α)
-    {KG : ℝ≥0} {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hGK : HolderOnWith KG α G (ball x₀ ρ)) :
-    MemLp (fun x => G x - G x₀) 2 (volume.restrict B) ∧
-      ∀ x ∈ B, ‖G x - G x₀‖ ≤ KG * ρ ^ (α : ℝ) := by
-  have : IsFiniteMeasure (volume.restrict B) :=
-    isFiniteMeasure_restrict.2 (ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono hBρ))
-  have hGbd : ∀ x ∈ B, ‖G x - G x₀‖ ≤ KG * ρ ^ (α : ℝ) := fun x hx => by
-    rw [← dist_eq_norm]
-    exact hGK.dist_le_mul_rpow_of_mem_ball (hBρ hx)
-  exact ⟨MemLp.of_bound ((((hGK.continuousOn hα).mono hBρ).aestronglyMeasurable hB).sub
-    aestronglyMeasurable_const) (KG * ρ ^ (α : ℝ)) ((ae_restrict_iff' hB).2 (ae_of_all _ hGbd)),
-    hGbd⟩
-
 /-- The `L²` pairings of the weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` on `B`, with a constant `c`
 subtracted from `G`, written as integrals: the equation is `L u = f + div (c - G)`. -/
 private theorem inner_toLp_add_inner_toLp_eq_sub {B : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
@@ -187,8 +148,8 @@ private theorem energyFormH1_restrictL_eq_sub_of_holderOnWith
     energyFormH1 a 0 0 (W1p.restrictL hB u) (v : W1p volume B 2) =
       (∫ x in B, f x * W1p.value (v : W1p volume B 2) x) -
         ∫ x in B, ⟪G x₀ - G x, W1p.gradient (v : W1p volume B 2) x⟫_ℝ := by
-  obtain ⟨-, hcoeff⟩ := memLp_energyIntegrand_of_holderOnWith hBρ h hα haK
-  obtain ⟨hGc, -⟩ := memLp_sub_and_norm_sub_le_of_holderOnWith B.isOpen.measurableSet hBρ hα hGK
+  have hcoeff := memLp_energyIntegrand_of_holderOnWith (mu := volume) hBρ h hα haK
+  have hGc := memLp_sub_of_holderOnWith (mu := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
   exact (forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff hu hGc hf v).trans
     (inner_toLp_add_inner_toLp_eq_sub hGc hf _)
 
@@ -213,8 +174,8 @@ private theorem energyFormH1_restrictL_ofTestFunctionₗ_of_holderOnWith
     energyFormH1 a 0 0 (W1p.restrictL hB u) (W1p.ofTestFunctionₗ volume B 2 φ) =
       (∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
         ∫ x in B, f x * φ x := by
-  obtain ⟨-, hcoeff⟩ := memLp_energyIntegrand_of_holderOnWith hBρ h hα haK
-  obtain ⟨hGc, -⟩ := memLp_sub_and_norm_sub_le_of_holderOnWith B.isOpen.measurableSet hBρ hα hGK
+  have hcoeff := memLp_energyIntegrand_of_holderOnWith (mu := volume) hBρ h hα haK
+  have hGc := memLp_sub_of_holderOnWith (mu := volume) (p := 2) B.isOpen.measurableSet hBρ hα hGK
   exact (forall_energyFormH1_restrictL_eq_inner_add_inner hB hcoeff hu hGc hf
     ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans
     (inner_toLp_add_inner_toLp_ofTestFunctionₗ hGc hf φ)
@@ -231,37 +192,35 @@ private theorem add_add_le_mul_rpow_mul_sq {r U F K α t c₁ c₂ c₃ : ℝ} (
       (c₁ + c₂ * 2 ^ ((n : ℝ) + 1 + 2 * α) + c₃ * 2 ^ (((n : ℝ) + 1) * (1 - 2 / t))) *
         r ^ ((n : ℝ) - 1) * (r ^ (-(((n : ℝ) + 1) / 2)) * √U +
           r ^ (2 - ((n : ℝ) + 1) / t) * F + r ^ (1 + α) * K) ^ 2 := by
-  have h2r : (0 : ℝ) < 2 * r := by positivity
+  -- The three identities below are exponent arithmetic for real powers of `2` and of `r`.
+  have hpow : ∀ {b : ℝ}, 0 < b → ∀ x y z : ℝ, x + y = z → b ^ x * b ^ y = b ^ z :=
+    fun hb x y z h => h ▸ (Real.rpow_add hb x y).symm
+  have hsq : ∀ {b : ℝ}, 0 < b → ∀ x : ℝ, (b ^ x) ^ 2 = b ^ (2 * x) := fun hb x => by
+    rw [← Real.rpow_mul_natCast hb.le, mul_comm, Nat.cast_ofNat]
   have e₁ : (r ^ 2)⁻¹ * U = r ^ ((n : ℝ) - 1) * (r ^ (-(((n : ℝ) + 1) / 2)) * √U) ^ 2 := by
-    rw [mul_pow, ← Real.rpow_mul_natCast hr.le, Real.sq_sqrt hU, ← mul_assoc,
-      ← Real.rpow_add hr, ← Real.rpow_two, ← Real.rpow_neg hr.le]
-    congr 2
-    push_cast
+    have h : (r ^ 2)⁻¹ = r ^ ((n : ℝ) - 1) * r ^ (2 * -(((n : ℝ) + 1) / 2)) := by
+      rw [hpow hr _ _ (-2) (by ring), Real.rpow_neg hr.le, Real.rpow_two]
+    rw [h, mul_pow, Real.sq_sqrt hU, hsq hr]
     ring
   have e₃ : (2 * r) ^ (n + 1) * (K * (2 * r) ^ α) ^ 2 =
       2 ^ ((n : ℝ) + 1 + 2 * α) * r ^ ((n : ℝ) - 1) * (r ^ (1 + α) * K) ^ 2 := by
-    have h1 : (2 * r) ^ (n + 1) = (2 * r) ^ ((n : ℝ) + 1) := by
-      rw [← Real.rpow_natCast]
-      push_cast
-      rfl
-    rw [h1, mul_pow, mul_pow, ← Real.rpow_mul_natCast h2r.le, ← Real.rpow_mul_natCast hr.le,
-      mul_left_comm, ← Real.rpow_add h2r, Real.mul_rpow zero_le_two hr.le]
-    rw [show (2 : ℝ) ^ ((n : ℝ) + 1 + 2 * α) * r ^ ((n : ℝ) - 1) *
-        (r ^ ((1 + α) * ((2 : ℕ) : ℝ)) * K ^ 2) = K ^ 2 * (2 ^ ((n : ℝ) + 1 + 2 * α) *
-          (r ^ ((n : ℝ) - 1) * r ^ ((1 + α) * ((2 : ℕ) : ℝ)))) by ring, ← Real.rpow_add hr]
-    congr 3 <;> push_cast <;> ring
+    have h2 : (2 : ℝ) ^ ((n : ℝ) + 1) * 2 ^ (2 * α) = 2 ^ ((n : ℝ) + 1 + 2 * α) :=
+      hpow two_pos _ _ _ rfl
+    have hr2 : r ^ ((n : ℝ) + 1) * r ^ (2 * α) = r ^ ((n : ℝ) - 1) * r ^ (2 * (1 + α)) := by
+      rw [hpow hr _ _ _ rfl, hpow hr _ _ ((n : ℝ) + 1 + 2 * α) (by ring)]
+    rw [← Real.rpow_natCast (2 * r) (n + 1), Nat.cast_add_one, Real.mul_rpow zero_le_two hr.le,
+      Real.mul_rpow zero_le_two hr.le, mul_pow, mul_pow, mul_pow, hsq two_pos, hsq hr, hsq hr]
+    linear_combination K ^ 2 * 2 ^ ((n : ℝ) + 1) * 2 ^ (2 * α) * hr2 +
+      K ^ 2 * r ^ ((n : ℝ) - 1) * r ^ (2 * (1 + α)) * h2
   have e₂ : r ^ 2 * (F ^ 2 * (2 * r) ^ (((n : ℝ) + 1) * (1 - 2 / t))) =
       2 ^ (((n : ℝ) + 1) * (1 - 2 / t)) * r ^ ((n : ℝ) - 1) *
         (r ^ (2 - ((n : ℝ) + 1) / t) * F) ^ 2 := by
-    rw [Real.mul_rpow zero_le_two hr.le, mul_pow, ← Real.rpow_mul_natCast hr.le,
-      ← Real.rpow_natCast r 2]
-    have : r ^ ((2 : ℕ) : ℝ) * r ^ (((n : ℝ) + 1) * (1 - 2 / t)) =
-        r ^ ((n : ℝ) - 1) * r ^ ((2 - ((n : ℝ) + 1) / t) * ((2 : ℕ) : ℝ)) := by
-      rw [← Real.rpow_add hr, ← Real.rpow_add hr]
-      congr 1
-      push_cast
-      ring
-    linear_combination (2 ^ (((n : ℝ) + 1) * (1 - 2 / t)) * F ^ 2) * this
+    have hr2 : r ^ 2 * r ^ (((n : ℝ) + 1) * (1 - 2 / t)) =
+        r ^ ((n : ℝ) - 1) * r ^ (2 * (2 - ((n : ℝ) + 1) / t)) := by
+      rw [← Real.rpow_two, hpow hr _ _ _ rfl,
+        hpow hr _ _ (2 + ((n : ℝ) + 1) * (1 - 2 / t)) (by ring)]
+    rw [Real.mul_rpow zero_le_two hr.le, mul_pow, hsq hr]
+    linear_combination 2 ^ (((n : ℝ) + 1) * (1 - 2 / t)) * F ^ 2 * hr2
   rw [e₁, e₂, e₃]
   set a₁ := r ^ (-(((n : ℝ) + 1) / 2)) * √U
   set a₂ := r ^ (2 - ((n : ℝ) + 1) / t) * F
@@ -338,8 +297,9 @@ private theorem exists_setIntegral_ball_norm_gradient_sq_le_of_holderOnWith {α 
   refine ⟨C₁, fun {Omega u a G f Ka KG x₀ r lam Lam} h haK hGK hf2 hu hr hball => ?_⟩
   let B₂ : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ (2 * r), isOpen_ball⟩
   have hB₂ : B₂ ≤ Omega := hball
-  obtain ⟨ha, -⟩ := memLp_energyIntegrand_of_holderOnWith (B := B₂) subset_rfl h hα haK
-  obtain ⟨hGc, -⟩ := memLp_sub_and_norm_sub_le_of_holderOnWith measurableSet_ball subset_rfl hα hGK
+  have ha := aestronglyMeasurable_of_holderOnWith_matrixBilinearForm (mu := volume)
+    measurableSet_ball subset_rfl hα haK
+  have hGc := memLp_sub_of_holderOnWith (mu := volume) (p := 2) measurableSet_ball subset_rfl hα hGK
   have hF : MemLp (fun x => G x₀ - G x) 2 (volume.restrict (ball x₀ (2 * r))) :=
     hGc.neg.ae_eq (ae_of_all _ fun x => by simp)
   -- The restriction of `u` to `B(x₀, 2r)` solves `L u = f + div (G x₀ - G)` against `H¹₀`.
@@ -375,14 +335,14 @@ private theorem setIntegral_ball_norm_sub_sq_le_of_holderOnWith {α : ℝ≥0} (
     ∫ x in ball x₀ ρ, ‖G x₀ - G x‖ ^ 2 ≤
       ρ ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) *
         (KG * ρ ^ (α : ℝ)) ^ 2 := by
-  obtain ⟨hGc, hGbd⟩ :=
-    memLp_sub_and_norm_sub_le_of_holderOnWith measurableSet_ball subset_rfl hα hGK
+  have hGc : MemLp (fun x => G x - G x₀) 2 (volume.restrict (ball x₀ ρ)) :=
+    memLp_sub_of_holderOnWith measurableSet_ball subset_rfl hα hGK
   have hGi : IntegrableOn (fun x => ‖G x - G x₀‖ ^ 2) (ball x₀ ρ) := hGc.norm.integrable_sq
   calc _ ≤ ∫ _ in ball x₀ ρ, (KG * ρ ^ (α : ℝ)) ^ 2 :=
         setIntegral_mono_on (by simpa only [norm_sub_rev] using hGi)
           (integrableOn_const measure_ball_lt_top.ne) measurableSet_ball fun x hx => by
-            rw [norm_sub_rev]
-            exact pow_le_pow_left₀ (norm_nonneg _) (hGbd x hx) 2
+            rw [norm_sub_rev, ← dist_eq_norm]
+            exact pow_le_pow_left₀ dist_nonneg (hGK.dist_le_mul_rpow_of_mem_ball hx) 2
     _ = _ := by
       rw [setIntegral_const, smul_eq_mul, Measure.addHaar_real_ball_of_pos volume x₀ hρ,
         finrank_euclideanSpace_fin]
