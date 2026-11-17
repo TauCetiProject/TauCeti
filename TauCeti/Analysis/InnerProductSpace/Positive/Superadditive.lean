@@ -94,14 +94,6 @@ private theorem re_inner_sqrtColumn_comp_adjoint_apply_self (hA : A.IsPositive)
       WithLp.toLp 2 (x, y)⟫_𝕜 = ‖hA.sqrt x + hB.sqrt y‖ ^ 2 := by
   rw [comp_apply, ← adjoint_inner_right, adjoint_sqrtColumn_toLp, inner_self_eq_norm_sq]
 
-/-- The squared norm of `√A` at an eigenvector basis vector of `A` is the eigenvalue. -/
-private theorem norm_sqrt_eigenvectorBasis_sq (hA : A.IsPositive) (hn : finrank 𝕜 E = n)
-    (i : Fin n) :
-    ‖hA.sqrt (hA.isSymmetric.eigenvectorBasis hn i)‖ ^ 2 = hA.isSymmetric.eigenvalues hn i := by
-  rw [hA.norm_sqrt_apply_sq, hA.isSymmetric.apply_eigenvectorBasis, inner_smul_left,
-    inner_self_eq_norm_sq_to_K, OrthonormalBasis.norm_eq_one]
-  simp
-
 /-- **Superadditivity of convex spectral sums** (McCarthy; Bourin–Uchiyama). For positive
 operators `A` and `B` on an `n`-dimensional inner product space and a function `φ` convex on
 `[0, ∞)` with `φ 0 ≤ 0`, `tr φ(A) + tr φ(B) ≤ tr φ(A + B)`, written as sums over the eigenvalues.
