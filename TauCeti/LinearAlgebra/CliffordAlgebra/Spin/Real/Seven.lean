@@ -468,28 +468,6 @@ private theorem exists_isSignedBasis_of_mem_centralizer {x : realCliffordSpinGro
   · exact Or.inl (by rw [h]; rfl)
   · exact Or.inr (by simp [h, spinBasis])
 
-/-- If the basis monomials `e_s` and `e_t` commute, then the signs of `e_s * e_t` and `e_t * e_s` in
-`CliffordAlgebra.basis_mul_basis` agree. -/
-private theorem parity_eq_of_basis_mul_comm {s t : Finset (Fin (0 + 7))}
-    (h : basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s *
-        basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) t =
-      basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) t *
-        basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s) :
-    (∑ i ∈ s, (t.filter (· < i)).card) % 2 = (∑ i ∈ t, (s.filter (· < i)).card) % 2 := by
-  have hb := isOrthoᵢ_associated_realCliffordForm 0 7
-  rw [basis_mul_basis hb, basis_mul_basis hb, symmDiff_comm t s, Finset.inter_comm t s] at h
-  -- Compare the coefficients of `e_{s ∆ t}` on both sides.
-  have hc := congrArg (fun z ↦ (basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7)))).repr z
-    (s ∆ t)) h
-  simp only [map_smul, Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_eq_same,
-    smul_eq_mul, mul_one, Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _),
-    Finset.prod_const] at hc
-  have hc' := mul_right_cancel₀ (pow_ne_zero _ (by norm_num : (-1 : ℝ) ≠ 0)) hc
-  rw [neg_one_pow_eq_pow_mod_two, neg_one_pow_eq_pow_mod_two (n := ∑ i ∈ t, _)] at hc'
-  rcases Nat.mod_two_eq_zero_or_one (∑ i ∈ s, (t.filter (· < i)).card) with h₁ | h₁ <;>
-    rcases Nat.mod_two_eq_zero_or_one (∑ i ∈ t, (s.filter (· < i)).card) with h₂ | h₂ <;>
-    simp only [h₁, h₂] at hc' ⊢ <;> norm_num at hc'
-
 /-- **The elementary abelian subgroup is its own centralizer** in the Spin group of
 `realCliffordForm 0 7`. An element `x` commuting with it acts on `ℝ⁷` preserving the joint
 eigenspaces of the three sign changes `e₀e₁e₂e₃`, `e₀e₁e₄e₅`, `e₀e₂e₄e₆`, which are the seven
@@ -514,8 +492,9 @@ theorem centralizer_realSpinZeroSevenElementaryAbelian :
     · exact h
     · simpa only [mul_neg, neg_mul, neg_inj] using h
   refine mem_realSpinZeroSevenElementaryAbelian_iff.mpr
-    ⟨t, mem_spinSevenSupports_of_parity t ht fun s hs ↦ parity_eq_of_basis_mul_comm
-      (hcomm s hs), hxt⟩
+    ⟨t, mem_spinSevenSupports_of_parity t ht fun s hs ↦
+      (commute_basis_iff (isOrthoᵢ_associated_realCliffordForm 0 7) (fun i ↦ by
+        simp [realCliffordForm_single_one_of_le (Nat.zero_le _)]) s t).mp (hcomm s hs), hxt⟩
 
 /-! ### The compact Spin group -/
 
