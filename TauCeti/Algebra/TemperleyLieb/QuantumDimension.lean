@@ -12,11 +12,12 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Quantum dimensions of Jones–Wenzl projections
 
-Every unnormalized Markov trace takes the value `qInt R δ (n + 1)` on the Jones–Wenzl
-projection on `n` strands, whenever `[1], …, [n]` are units. In particular the next quantum
-integer may vanish: this is the quantum-dimension calculation used to detect negligible
-projections. The result also applies to any normalized element annihilated by the generators,
-by uniqueness of the projection, and specializes to the spin-model trace `markovTrace`.
+Every unnormalized Markov trace (whether on the full tower or truncated up to `N` strands) takes
+the value `qInt R δ (n + 1)` on the Jones–Wenzl projection on `n` strands, whenever `[1], …, [n]`
+are units. In particular the next quantum integer may vanish: this is the quantum-dimension
+calculation used to detect negligible projections. The result also applies to any normalized
+element annihilated by the generators, by uniqueness of the projection, and specializes to the
+spin-model trace `markovTrace`.
 
 ## References
 
@@ -32,27 +33,53 @@ public section
 namespace TauCeti.TemperleyLieb
 
 variable {R : Type*} [CommRing R] {δ : R}
-  {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
 
-namespace IsMarkovTrace
+namespace IsMarkovTraceUpTo
 
-/-- Every Markov trace takes the value `[n + 1]` on the Jones–Wenzl projection on `n`
-strands, provided `[1], …, [n]` are units. No assumption on `[n + 1]` is needed. -/
+variable {N : ℕ} {tr : ∀ n : ℕ, n ≤ N → TemperleyLieb R δ n →ₗ[R] R}
+
+/-- Every truncated Markov trace up to `N` strands takes the value `[n + 1]` on the Jones–Wenzl
+projection on `n ≤ N` strands, provided `[1], …, [n]` are units. No assumption on `[n + 1]` is
+needed. -/
 @[simp]
-theorem map_jonesWenzl (htr : IsMarkovTrace R δ tr) :
-    ∀ n, (∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) →
-      tr n (jonesWenzl δ n) = qInt R δ (n + 1)
-  | 0, _ => by simp [htr.map_one]
-  | 1, _ => by simp [htr.map_one]
-  | m + 2, h => by
+theorem map_jonesWenzl (htr : IsMarkovTraceUpTo R δ N tr) :
+    ∀ n (hn : n ≤ N), (∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) →
+      tr n hn (jonesWenzl δ n) = qInt R δ (n + 1)
+  | 0, hn, _ => by simp [htr.map_one 0 hn]
+  | 1, hn, _ => by simp [htr.map_one 1 hn]
+  | m + 2, hn, h => by
     have hprev : ∀ k ∈ Finset.Icc 1 (m + 1), IsUnit (qInt R δ k) :=
       fun k hk ↦ h k (Finset.Icc_subset_Icc le_rfl (by omega) hk)
     have hid := (isIdempotentElem_jonesWenzl hprev).eq
     rw [jonesWenzl_add_two, map_sub, map_smul, htr.map_strandIncl,
-      htr.map_strandIncl_mul_e_last_mul, hid, htr.map_jonesWenzl (m + 1) hprev,
+      htr.map_strandIncl_mul_e_last_mul, hid, htr.map_jonesWenzl (m + 1) (by omega) hprev,
       smul_eq_mul, qInt_add_two δ (m + 1)]
     linear_combination -(qInt R δ (m + 1)) *
       Ring.inverse_mul_cancel _ (h (m + 2) (by simp))
+
+/-- The quantum-dimension formula for a truncated Markov trace on any element of augmentation `1`
+annihilated on the left by the generators. -/
+theorem apply_jonesWenzl (htr : IsMarkovTraceUpTo R δ N tr) {n : ℕ} (hn : n ≤ N)
+    (h : ∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) (f : TemperleyLieb R δ n)
+    (hf : aug f = 1)
+    (hfe : ∀ i : Fin (n - 1), e δ i * f = 0) :
+    tr n hn f = qInt R δ (n + 1) := by
+  rw [eq_jonesWenzl_of_e_mul_eq_zero h hf hfe]
+  exact htr.map_jonesWenzl n hn h
+
+end IsMarkovTraceUpTo
+
+namespace IsMarkovTrace
+
+variable {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
+
+/-- Every Markov trace takes the value `[n + 1]` on the Jones–Wenzl projection on `n`
+strands, provided `[1], …, [n]` are units. No assumption on `[n + 1]` is needed. -/
+@[simp]
+theorem map_jonesWenzl (htr : IsMarkovTrace R δ tr) (n : ℕ)
+    (h : ∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) :
+    tr n (jonesWenzl δ n) = qInt R δ (n + 1) :=
+  (htr.isMarkovTraceUpTo n).map_jonesWenzl n le_rfl h
 
 /-- The quantum-dimension formula for any element of augmentation `1` annihilated on the
 left by the generators. One-sided annihilation already characterizes the Jones–Wenzl projection.
@@ -61,9 +88,8 @@ theorem apply_jonesWenzl (htr : IsMarkovTrace R δ tr) {n : ℕ}
     (h : ∀ k ∈ Finset.Icc 1 n, IsUnit (qInt R δ k)) (f : TemperleyLieb R δ n)
     (hf : aug f = 1)
     (hfe : ∀ i : Fin (n - 1), e δ i * f = 0) :
-    tr n f = qInt R δ (n + 1) := by
-  rw [eq_jonesWenzl_of_e_mul_eq_zero h hf hfe]
-  exact htr.map_jonesWenzl n h
+    tr n f = qInt R δ (n + 1) :=
+  (htr.isMarkovTraceUpTo n).apply_jonesWenzl le_rfl h f hf hfe
 
 end IsMarkovTrace
 

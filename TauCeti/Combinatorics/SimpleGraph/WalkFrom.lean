@@ -27,6 +27,9 @@ decidable subset of a finite function type.
   vertex is adjacent to the old endpoint.
 * `SimpleGraph.IsWalkFrom.update`: moving an interior vertex of a walk whose neighbouring positions
   carry the same vertex to another neighbour of that vertex gives a walk.
+* `SimpleGraph.IsWalkFrom.comp_castLE`: taking an initial segment of a walk gives a shorter walk.
+* `SimpleGraph.IsWalkFrom.apply_le_add`: along a walk, any `ℕ`-valued vertex function increasing by
+  at most `1` across edges grows by at most the step index.
 -/
 
 public section
@@ -106,5 +109,26 @@ theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v
     exact hx.symm
   · rw [update_of_ne h₁, update_of_ne h₂]
     exact hs.2 i
+
+/-- Taking the first `k + 1` vertices of a walk from `v₀` with `m` steps gives a walk from `v₀`
+with `k` steps, for every `k ≤ m`. -/
+theorem IsWalkFrom.comp_castLE {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    {k : ℕ} (hk : k ≤ m) :
+    IsWalkFrom G v₀ (s ∘ Fin.castLE (Nat.succ_le_succ hk)) :=
+  ⟨by simpa using hs.apply_zero, fun i ↦ hs.adj (by simp)⟩
+
+/-- Along a walk from `v₀`, any `ℕ`-valued vertex function that increases by at most `1` across
+each edge satisfies `f (s i) ≤ f v₀ + i`. -/
+theorem IsWalkFrom.apply_le_add {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    {f : V → ℕ} (hf : ∀ ⦃u v⦄, G.Adj u v → f v ≤ f u + 1) (i : Fin (m + 1)) :
+    f (s i) ≤ f v₀ + i.val := by
+  obtain ⟨j, hj⟩ := i
+  induction j with
+  | zero => simp [hs.apply_zero]
+  | succ j ih =>
+    have hstep := hf (hs.adj (a := ⟨j, by omega⟩) (b := ⟨j + 1, hj⟩) rfl)
+    have hprev := ih (by omega)
+    dsimp only at hprev ⊢
+    omega
 
 end SimpleGraph
