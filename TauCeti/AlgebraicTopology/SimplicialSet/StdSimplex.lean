@@ -192,12 +192,14 @@ lemma hom_ext {X : SSet.{u}} {k : ℕ} {σ σ' : X ⟶ Δ[k]}
 
 /-- The vertex `0` of an edge of `Δ[n]` from `y` to `x` is the vertex `y`, the face `δ 1` of the
 edge. -/
+@[simp]
 lemma edge_edge_apply_zero {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
     e.edge 0 = y 0 :=
   (δ_apply e.edge 1 0).symm.trans (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.src_eq)
 
 /-- The vertex `1` of an edge of `Δ[n]` from `y` to `x` is the vertex `x`, the face `δ 0` of the
 edge. -/
+@[simp]
 lemma edge_edge_apply_one {n : ℕ} {y x : (Δ[n] : SSet.{u}) _⦋0⦌} (e : Edge y x) :
     e.edge 1 = x 0 :=
   (δ_apply e.edge 0 0).symm.trans (congrArg (fun s : Δ[n] _⦋0⦌ ↦ s 0) e.tgt_eq)
