@@ -23,7 +23,9 @@ norm-controlled lift.
 Over ultrametric rings, `mapHom` satisfies the bound
 `‖restrict r (mapHom φ hφ f)‖ ≤ C * ‖restrict r f‖` on every smaller positive closed disc, so it is
 uniformly continuous for the open-disc Gauss uniformities, and is a uniform embedding when `φ`
-preserves norms. Over complete commutative ultrametric rings it commutes with point evaluation,
+preserves norms. Evaluating a mapped series at a point of a complete commutative target sums
+`φ(aₙ) bⁿ` on the whole open disc, with a Gauss-norm bound over an ultrametric target with
+`‖1‖ = 1`. Over complete commutative ultrametric rings `mapHom` commutes with point evaluation,
 with Taylor translation when `‖φ a‖ < R₀`, and with analytic substitution when the mapped inner
 series satisfies `∀ s, ‖restrict s (mapHom φ hφ g)‖ < R₀` (for instance when `C ≤ 1`).
 
@@ -43,6 +45,8 @@ series satisfies `∀ s, ‖restrict s (mapHom φ hφ g)‖ < R₀` (for instanc
   `TauCeti.PowerSeries.OnOpenDisc.uniformContinuous_mapHom`, and
   `TauCeti.PowerSeries.OnOpenDisc.isUniformEmbedding_mapHom`: compatibility with `ofIsRestricted`,
   closed-disc Gauss bounds, uniform continuity, and uniform embeddings from norm-preserving maps.
+* `TauCeti.PowerSeries.OnOpenDisc.hasSum_evalAt_mapHom` and
+  `TauCeti.PowerSeries.OnOpenDisc.norm_evalAt_mapHom_le`: evaluation of mapped series.
 * `TauCeti.PowerSeries.OnOpenDisc.evalAt_mapHom`, `TauCeti.PowerSeries.OnOpenDisc.mapHom_taylorHom`,
   and `TauCeti.PowerSeries.OnOpenDisc.mapHom_analyticSubst`: compatibility with point evaluation,
   Taylor translation, and analytic substitution.
@@ -178,7 +182,28 @@ theorem mapHom_algebraMap (a : R) :
     mapHom (R₀ := R₀) φ hφ (algebraMap R _ a) = algebraMap S _ (φ a) :=
   Subtype.ext (by simp)
 
+/-- Bounded coefficient maps act on scalar multiples by applying `φ` to the scalar. -/
+@[simp]
+theorem mapHom_smul (a : R) (f : OnOpenDisc.subring R R₀) :
+    mapHom φ hφ (a • f) = φ a • mapHom φ hφ f :=
+  Subtype.ext <| PowerSeries.ext fun n ↦ by simp
+
 end NormedCommRing
+
+section Evaluation
+
+variable {R S : Type*} [NormedRing R] [NormedCommRing S] [CompleteSpace S] {R₀ : ℝ}
+  (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖)
+
+/-- Evaluating the `φ`-mapped open-disc series at `b` with `‖b‖ < R₀` sums `φ(aₙ) bⁿ`. Even a
+non-contractive bounded `φ` evaluates on the full open disc of radius `R₀`, and `R` need not be
+commutative. -/
+theorem hasSum_evalAt_mapHom {b : S} (hb : ‖b‖ < R₀) (f : OnOpenDisc.subring R R₀) :
+    HasSum (fun n ↦ φ (coeff n (f : R⟦X⟧)) * b ^ n) ((mapHom φ hφ f : S⟦X⟧).evalAt b) := by
+  simpa only [coe_mapHom, coeff_map, smul_eq_mul] using
+    (OnOpenDisc.mem_subring.mp (mapHom φ hφ f).2).hasSum_evalAt hb
+
+end Evaluation
 
 section Ultrametric
 
@@ -256,6 +281,29 @@ theorem isUniformEmbedding_mapHom (hφ' : ∀ x, ‖φ x‖ = ‖x‖) :
     (AddMonoidHomClass.isometry_iff_norm φ).mpr hφ' |>.injective⟩
 
 end Ultrametric
+
+section UltrametricEval
+
+variable {R S : Type*} [NormedRing R] [IsUltrametricDist R]
+  [NormedCommRing S] [IsUltrametricDist S] [NormOneClass S] {R₀ : ℝ}
+  (φ : R →+* S) {C : ℝ} (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖)
+
+attribute [local instance] radius_pos
+
+/-- Evaluating a `φ`-mapped open-disc series at `b` in an ultrametric ring with `‖1‖ = 1` is
+bounded by `C` times any smaller closed-disc Gauss norm whose radius bounds `‖b‖`. -/
+theorem norm_evalAt_mapHom_le {b : S} (r : Set.Ioo (0 : ℝ) R₀) (hbr : ‖b‖ ≤ r)
+    (f : OnOpenDisc.subring R R₀) :
+    ‖(mapHom φ hφ f : S⟦X⟧).evalAt b‖ ≤ C * ‖restrict r f‖ := by
+  have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict r (mapHom φ hφ f)).2
+  rw [coe_restrict] at hf
+  calc ‖(mapHom φ hφ f : S⟦X⟧).evalAt b‖
+      ≤ (mapHom φ hφ f : S⟦X⟧).gaussNorm norm r := norm_evalAt_le_gaussNorm hf hbr
+    _ = ‖restrict r (mapHom φ hφ f)‖ := by
+        rw [TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict]
+    _ ≤ C * ‖restrict r f‖ := norm_restrict_mapHom_le φ hφ r f
+
+end UltrametricEval
 
 section Compatibilities
 

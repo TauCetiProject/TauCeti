@@ -41,8 +41,9 @@ value at `b` is bounded by a constant multiple of the Gauss norm at `r`
   `PowerSeries.OnOpenDisc.evalAt_map`: naturality in continuous algebra, module-compatible ring,
   and coefficient homomorphisms.
 * `PowerSeries.OnOpenDisc.evalAtHom_comp_inclusion`: entire series are evaluated as such.
-* `TauCeti.PowerSeries.OnOpenDisc.isRestrictedEvalAtHom_comp_restrict`: restricting to a closed
-  disc containing `b` and evaluating there is evaluation on the open disc.
+* `TauCeti.PowerSeries.OnOpenDisc.isRestrictedEvalAtHom_comp_restrict` and
+  `TauCeti.PowerSeries.OnOpenDisc.evalAtHom_comp_radiusHom`: restricting to a closed disc or a
+  smaller open disc containing `b` and evaluating there is evaluation on the open disc.
 * `TauCeti.PowerSeries.OnOpenDisc.continuous_evalAtHom`: evaluation is continuous.
 
 ## References
@@ -176,6 +177,14 @@ variable {R A : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormedRing A] [
 
 -- Supply the positivity witness used by the Gauss-norm instances on each closed disc.
 attribute [local instance] radius_pos
+
+omit [IsUltrametricDist R] in
+/-- Restricting to a smaller open disc of radius `R₁` containing `b` and evaluating there agrees
+with evaluation on the larger open disc. -/
+theorem evalAtHom_comp_radiusHom {R₁ : ℝ} (hb : ‖b‖ < R₁) (h : R₁ ≤ R₀) :
+    (OnOpenDisc.evalAtHom R hb).comp (radiusHom h) = OnOpenDisc.evalAtHom R (hb.trans_le h) := by
+  ext f
+  simp
 
 /-- Restricting a series on the open disc of radius `R₀` to a closed disc of radius `r < R₀`
 containing `b`, and evaluating it there at `b`, is evaluation at `b` on the open disc. -/
