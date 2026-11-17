@@ -77,10 +77,7 @@ theorem isCompactOperator_smulLeftContDiffMapSupportedIn [FiniteDimensional ℂ 
       smulLeftContDiffMapSupportedIn F hr hφ ∘L (inclusion hrs.le ∘L smulLeftCLM s ψ) := by
     ext u : 1
     refine ContDiffMapSupportedIn.ext fun x ↦ ?_
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      coe_smulLeftContDiffMapSupportedIn, coe_smulLeftContDiffMapSupportedIn, Pi.smul_apply',
-      Pi.smul_apply', toZeroAtInfty_inclusion (hs := by linarith) hrs.le,
-      toZeroAtInfty_smulLeftCLM_apply, smul_smul, hψφ]
+    simp [toZeroAtInfty_inclusion (hs := by linarith) hrs.le, smul_smul, hψφ]
   rw [heq, ContinuousLinearMap.coe_comp]
   exact (isCompactOperator_inclusion_comp_smulLeftCLM ψ hrs).clm_comp _
 

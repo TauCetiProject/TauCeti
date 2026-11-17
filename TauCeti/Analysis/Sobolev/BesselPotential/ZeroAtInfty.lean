@@ -61,9 +61,8 @@ variable {s r : ℝ}
 /-- An element of `H^s`, `s > dim E / 2`, has a continuous representative vanishing at
 infinity. -/
 private theorem exists_inclusionLp_ae_eq (h0 : 0 ≤ s) (hs : finrank ℝ E < 2 * s)
-    (u : H^{s}(E, F)) : ∃ g : C₀(E, F), inclusionLp h0 u =ᵐ[volume] g := by
-  refine MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq hs ?_
-  simpa using memSobolev_toLp_inclusion h0 u
+    (u : H^{s}(E, F)) : ∃ g : C₀(E, F), inclusionLp h0 u =ᵐ[volume] g :=
+  MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq hs (memSobolev_inclusionLp h0 u)
 
 /-- The continuous representative of an element of `H^s`, `s > dim E / 2`, as a linear map. -/
 private def toZeroAtInftyₗ (hs : finrank ℝ E < 2 * s) : H^{s}(E, F) →ₗ[ℂ] C₀(E, F) :=
@@ -84,10 +83,8 @@ private theorem exists_norm_iteratedFDeriv_le_of_ae_eq (h0 : 0 ≤ s) {k : ℕ}
   obtain ⟨C, hC, hbound⟩ :=
     TemperedDistribution.exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := F) hk
   refine ⟨C, hC, fun u g hg hug j hj x ↦ ?_⟩
-  have hu : MemSobolev s 2 (inclusionLp h0 u : 𝓢'(E, F)) := by
-    simpa using memSobolev_toLp_inclusion h0 u
-  have hnorm : hu.toBesselPotentialSpace = u := ext (by simp)
-  exact (hbound hu hg hug j hj x).trans_eq (by rw [hnorm])
+  exact (hbound (memSobolev_inclusionLp h0 u) hg hug j hj x).trans_eq
+    (by rw [toBesselPotentialSpace_memSobolev_inclusionLp])
 
 /-- **The Sobolev embedding `H^s(E, F) →L[ℂ] C₀(E, F)`** for `s > dim E / 2`: the bounded linear
 map sending an element of the Bessel-potential space `H^s` to its unique representative that is
@@ -189,9 +186,8 @@ end ZeroAtInfty
 theorem contDiff_toZeroAtInfty {k : ℕ} (hk : finrank ℝ E + 2 * k < 2 * s) (u : H^{s}(E, F)) :
     ContDiff ℝ k (toZeroAtInfty (by linarith) u) := by
   have h0 : 0 ≤ s := nonneg_of_finrank_lt (E := E) (by linarith)
-  refine MemSobolev.contDiff_of_ae_eq (by linarith) ?_ (toZeroAtInfty _ u).continuous
-    (inclusionLp_ae_eq_toZeroAtInfty h0 u)
-  simpa using memSobolev_toLp_inclusion h0 u
+  exact MemSobolev.contDiff_of_ae_eq (by linarith) (memSobolev_inclusionLp h0 u)
+    (toZeroAtInfty _ u).continuous (inclusionLp_ae_eq_toZeroAtInfty h0 u)
 
 /-- **The quantitative Sobolev embedding into `C^k`.** For `s > k + dim E / 2` there is a
 constant `C` such that the derivatives of order at most `k` of the Sobolev embedding of every
