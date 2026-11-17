@@ -149,12 +149,8 @@ theorem IsRecurrent.of_map_eq {γ : Type*} [MeasurableSpace γ] [MeasurableSingl
     η.IsRecurrent (f x) := by
   have hE : MeasurableSet {u : ℕ → γ | hittingAfter (fun n u => u n) {f x} 1 u ≠ ⊤} :=
     measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton (f x)) 1
-  have hmap : markovChainLaw (Measure.dirac (f x)) η =
-      (markovChainLaw (Measure.dirac x) κ).map (fun w n => f (w n)) := by
-    rw [Measure.markovChainLaw_map_comp (Measure.dirac x) κ η hf h, Measure.map_dirac' hf]
-  have hF : Measurable fun (w : ℕ → S) n => f (w n) :=
-    measurable_pi_iff.2 fun n => hf.comp (measurable_pi_apply n)
-  rw [isRecurrent_iff, hmap, Measure.map_apply hF hE]
+  rw [isRecurrent_iff, ← κ.markovChainLaw_dirac_map_comp η hf h x,
+    Measure.map_apply (by fun_prop) hE]
   refine le_antisymm prob_le_one ?_
   rw [← isRecurrent_iff.mp hx]
   exact measure_mono fun w hw => ne_top_of_le_ne_top hw <|
@@ -174,12 +170,8 @@ theorem meanReturnTime_le_of_map_eq {γ : Type*} [MeasurableSpace γ] [Measurabl
     Measurable.of_discrete.comp
       (Filtration.adapted_piLE.isStoppingTime_hittingAfter
         (f := Filtration.piLE (X := fun _ : ℕ => γ)) (measurableSet_singleton (f x))).measurable'
-  have hmap : markovChainLaw (Measure.dirac (f x)) η =
-      (markovChainLaw (Measure.dirac x) κ).map (fun w n => f (w n)) := by
-    rw [Measure.markovChainLaw_map_comp (Measure.dirac x) κ η hf h, Measure.map_dirac' hf]
-  have hF : Measurable fun (w : ℕ → S) n => f (w n) :=
-    measurable_pi_iff.2 fun n => hf.comp (measurable_pi_apply n)
-  rw [meanReturnTime_def, meanReturnTime_def, hmap, MeasureTheory.lintegral_map hτ hF]
+  rw [meanReturnTime_def, meanReturnTime_def, ← κ.markovChainLaw_dirac_map_comp η hf h x,
+    MeasureTheory.lintegral_map hτ (by fun_prop)]
   exact lintegral_mono fun w => ENat.toENNReal_mono <|
     (Set.mapsTo_singleton.mpr rfl : Set.MapsTo f {x} {f x}).hittingAfter_comp_le
       (fun n w => w n) 1 w
