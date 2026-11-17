@@ -122,6 +122,25 @@ private theorem fderiv_fst_apply_symm_comp_inl {Λ : Type*} [NormedAddCommGroup 
   ext w
   simp
 
+/-- The stable set of a nondegenerate critical point `q` of a `C^(n+2)` function is flattened by
+`C^(n+1)` slice charts around each of its points, in the form of the chart hypothesis of
+`TauCeti.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top`. -/
+private theorem IsNondegenerateCriticalPoint.exists_isSliceChart_stableSet {q : E}
+    (hq : IsNondegenerateCriticalPoint f q) {n : ℕ} (hfs : ContDiff ℝ (n + 2) f)
+    (hf : LipschitzWith K (∇ f)) {y : E}
+    (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
+    ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
+      (∀ z ∈ e.source, z ∈ Flow.stableSet (negativeGradientFlow f hf) q →
+        ContDiffAt ℝ (n + 1 : ℕ) e z) ∧
+      (∀ z ∈ e.source, z ∈ Flow.stableSet (negativeGradientFlow f hf) q →
+        DifferentiableAt ℝ e.symm (e z)) ∧
+      IsSliceChart e (hq.contDiffAt.stableLinearSubspace : Set E)
+        (Flow.stableSet (negativeGradientFlow f hf) q) := by
+  obtain ⟨e, hy, he, hes, hS⟩ :=
+    hq.exists_stableSet_chart (n := n + 1) (by exact_mod_cast hfs) hf hy
+  exact ⟨e, hy, fun z hz _ ↦ he z hz, fun z hz _ ↦ (hes _ (e.map_source hz)).differentiableAt
+    (by exact_mod_cast (by omega : n + 1 ≠ 0)), isSliceChart_iff.2 hS⟩
+
 /-- Below the supports of the family, a linear map whose range spans `E` together with the gradient
 of the perturbation spans `E` together with the tangent space of the stable set of `q` for `f`: the
 gradients agree there, and the flow direction is tangent to the stable set. -/
@@ -228,11 +247,8 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
   have hchart : ∀ z ∈ U, G z ∈ S → ∃ e' : OpenPartialHomeomorph E E, G z ∈ e'.source ∧
       (∀ y ∈ e'.source, y ∈ S → ContDiffAt ℝ (m + 1 : ℕ) e' y) ∧
       (∀ y ∈ e'.source, y ∈ S → DifferentiableAt ℝ e'.symm (e' y)) ∧
-      IsSliceChart e' (Ls : Set E) S := fun z _ hz ↦ by
-    obtain ⟨e', hz', he', hes', hS'⟩ :=
-      hq.exists_stableSet_chart (n := m + 1) (by exact_mod_cast hfs) hf hz
-    exact ⟨e', hz', fun y hy _ ↦ he' y hy,
-      fun y hy _ ↦ (hes' _ (e'.map_source hy)).differentiableAt hm0, isSliceChart_iff.2 hS'⟩
+      IsSliceChart e' (Ls : Set E) S := fun z _ hz ↦
+    hq.exists_isSliceChart_stableSet hfs hf hz
   -- `G` is transverse to the stable set: its parameter derivative spans with the flow direction.
   have htotal : ∀ z ∈ U, G z ∈ S →
       LinearMap.range (fderiv ℝ G z : Lu × EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔
@@ -276,7 +292,8 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
     exact range_fderiv_comp_le_span_tangentConeAt_unstableSet_perturb hfs2 hf hh hc₂
       (isSliceChart_iff.2 heS) hxe (hCu hxC) (hCc hxC) ((he x hxe).differentiableAt hm0)
       ((hes _ (e.map_source hxe)).differentiableAt hm0) s hf' T
-  · rw [tangentConeAt_stableSet_perturb hf hf' hc₁ q hlt hfs2.continuous.continuousAt]
+  · exact (congrArg (Submodule.span ℝ)
+      (tangentConeAt_stableSet_perturb hf hf' hc₁ q hlt hfs2.continuous.continuousAt)).ge
 
 /-- **Transversality for one pair of critical points, for almost every small perturbation.** Let
 `f` be a `C^r` function with Lipschitz gradient, `p` and `q` nondegenerate critical points with
