@@ -19,6 +19,9 @@ Moore paths starting at `b`. A continuous family of paths `τ d` from `b` to `f 
 gives an explicit fibre homotopy equivalence with `D × Ω_b X`. The forward map
 appends `τ d` to a loop; the inverse appends its reversal. Both maps and both
 inverse homotopies commute strictly with left concatenation by loops at `b`.
+Written with the loop first, the forward map `Ω_b X × D ⟶ f*P_b X`, `(ω, d) ↦ ω ⋆ τ d`
+(`TauCeti.MoorePathPullback.loopTrivialization`), is equivariant for concatenation of loops in
+front acting on the loop factor (`TauCeti.MoorePathPullback.loopTrivialization_mul`).
 All topologies are the raw compact-open Moore topologies, with duration retained.
 
 For a map on a star-convex set, `radialPaths` supplies this family by following
@@ -200,6 +203,23 @@ theorem trivializationMap_mul (d : D) (ω η : MooreLoopSpace X b) :
   simp only [path_trivializationMap, smul_eq_leftAct, path_leftAct,
     MooreLoopSpace.toMoorePath_mul]
   exact MoorePath.trans_assoc ..
+
+/-- The trivialization `Ω_b X × D ⟶ f*P_b X`, `(ω, d) ↦ ω ⋆ τ d`, of the pulled-back based path
+fibration, with the loop as the first factor. It is `TauCeti.MoorePathPullback.trivializationMap`
+with the factors swapped. -/
+def loopTrivialization : C(MooreLoopSpace X b × D, MoorePathPullback f b) :=
+  (trivializationMap τ h₀ h₁).comp ContinuousMap.prodSwap
+
+@[simp]
+theorem loopTrivialization_apply (ω : MooreLoopSpace X b) (d : D) :
+    loopTrivialization τ h₀ h₁ (ω, d) = trivializationMap τ h₀ h₁ (d, ω) :=
+  (rfl)
+
+/-- The loop-first trivialization is equivariant: concatenating a loop in front of the loop
+factor concatenates it in front of the path. -/
+theorem loopTrivialization_mul (ω η : MooreLoopSpace X b) (d : D) :
+    loopTrivialization τ h₀ h₁ (ω * η, d) = ω • loopTrivialization τ h₀ h₁ (η, d) :=
+  trivializationMap_mul τ h₀ h₁ d ω η
 
 /-- The inverse map is strictly left-loop-equivariant. -/
 theorem trivializationInverse_smul (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Basic
+import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 
 /-!
 # The Künneth theorem for a factor with projective homology
@@ -33,6 +34,11 @@ A typical `K` is the relative chain complex of a topological pair with free rela
 as a cube modulo its boundary; the theorem then computes the relative homology of the product of
 the pair with an arbitrary space.
 
+A quasi-isomorphism `φ : K ⟶ K'` between complexes of projective modules indexed by `ℕ` is a
+homotopy equivalence (Mathlib's `ChainComplex.quasiIso_iff_of_projective`). So tensoring with any
+complex `L` keeps it a quasi-isomorphism (`HomologicalComplex.quasiIso_whiskerLeft_of_projective`);
+here the homology of `K` need not be projective.
+
 ## References
 
 * C. Weibel, *An Introduction to Homological Algebra*, Section 3.6, the Künneth formula.
@@ -42,19 +48,20 @@ public section
 
 noncomputable section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 namespace HomologicalComplex
 
 universe u
 
 variable {R : Type u} [CommRing R] (K L : ChainComplex (ModuleCat.{u} R) ℕ)
-  [∀ p, Module.Projective R (K.X p)] [∀ p, Module.Projective R (K.homology p)]
+  [∀ p, Module.Projective R (K.X p)]
 
 /-- **The Künneth theorem when one factor is projective with projective homology.**  If `K` is a
 complex of projective modules indexed by `ℕ` whose homology modules are projective, then for every
 complex `L` the Künneth map `⨁_{p + q = n} Hₚ(K) ⊗ H_q(L) ⟶ Hₙ(K ⊗ L)` is an isomorphism. -/
-theorem isIso_homologyKunneth_of_projective (n : ℕ) : IsIso (homologyKunneth K L n) := by
+theorem isIso_homologyKunneth_of_projective [∀ p, Module.Projective R (K.homology p)] (n : ℕ) :
+    IsIso (homologyKunneth K L n) := by
   have (p : ℕ) : Projective (K.homology p) := ModuleCat.projective_of_categoryTheory_projective _
   have (p : ℕ) : Projective (K.X p) := ModuleCat.projective_of_categoryTheory_projective _
   have := K.isSplitMono_iCycles_of_projective_homology
@@ -67,5 +74,23 @@ theorem isIso_homologyKunneth_of_projective (n : ℕ) : IsIso (homologyKunneth K
     inferInstance
   rw [isIso_homologyKunneth_iff_of_homotopyEquiv n e (HomotopyEquiv.refl L)]
   exact isIso_homologyKunneth_of_d_eq_zero_of_flat K' L hK' n
+
+variable {K} {K' : ChainComplex (ModuleCat.{u} R) ℕ} [∀ p, Module.Projective R (K'.X p)]
+
+/-- **Tensoring preserves quasi-isomorphisms of projective complexes.** If `φ : K ⟶ K'` is a
+quasi-isomorphism of complexes of projective modules indexed by `ℕ` over a commutative ring `R`,
+then for every complex `L` the map `L ◁ φ : L ⊗ K ⟶ L ⊗ K'` is a quasi-isomorphism. No condition
+is imposed on `L` or on the homology of `K`. -/
+theorem quasiIso_whiskerLeft_of_projective (φ : K ⟶ K') [QuasiIso φ] : QuasiIso (L ◁ φ) := by
+  have (p : ℕ) : Projective (K.X p) := ModuleCat.projective_of_categoryTheory_projective _
+  have (p : ℕ) : Projective (K'.X p) := ModuleCat.projective_of_categoryTheory_projective _
+  -- `φ` is a homotopy equivalence, and the tensor product preserves homotopy equivalences
+  obtain ⟨e, he⟩ := (ChainComplex.quasiIso_iff_of_projective φ).1 ‹_›
+  have : QuasiIso (HomotopyEquiv.mapBifunctor (curriedTensor (ModuleCat.{u} R))
+      (ComplexShape.down ℕ) (HomotopyEquiv.refl L) e).hom :=
+    inferInstance
+  rw [HomotopyEquiv.mapBifunctor_hom, HomotopyEquiv.refl_hom, he] at this
+  rw [← id_tensorHom, tensorHom_eq_mapBifunctorMap]
+  exact this
 
 end HomologicalComplex
