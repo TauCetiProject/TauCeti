@@ -13,6 +13,7 @@ import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Complex.RigidMotion
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -120,8 +121,8 @@ private theorem lpMotion_lpMotion (R R' : E ≃ₗᵢ[ℝ] E) (g g' : ℂ ≃ᵃ
   filter_upwards [coeFn_lpMotion R g (lpMotion p R' g' f),
     (measurePreserving_top g).quasiMeasurePreserving.ae (coeFn_lpMotion R' g' f),
     coeFn_lpMotion (R'.trans R) (g.trans g') f] with z h₁ h₂ h₃
-  rw [h₁, h₂, h₃]
-  rfl
+  rw [h₁, h₂, h₃, LinearIsometryEquiv.trans_apply, AffineIsometryEquiv.coe_trans,
+    Function.comp_apply]
 
 private theorem lpMotion_symm (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) :
     (lpMotion p R g).symm = lpMotion p R.symm g.symm := by
@@ -244,11 +245,6 @@ private theorem w1pMotionEquiv_apply
     (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
     (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) : w1pMotionEquiv R g y = w1pMotion R g y := (rfl)
 
-private theorem rigidMotion_linearIsometryEquiv_symm_apply (u : Circle) (a w : ℂ) :
-    (u.rigidMotion a).linearIsometryEquiv.symm w = conj (u : ℂ) * w := by
-  rw [Circle.linearIsometryEquiv_rigidMotion, rotation_symm, rotation_apply,
-    Circle.coe_inv_eq_conj]
-
 /-! ### The rigid motions of the plane on the Sobolev realization -/
 
 /-- **The rigid motion `z ↦ u z + a` on the `L∞` classes of fields.** It sends the class of a
@@ -316,19 +312,19 @@ theorem gradient_variationMotion_ae (u : Circle) (a : ℂ)
         (conj (u : ℂ) * W1p.gradient (y k) ((u : ℂ) * z + a)) := by
   filter_upwards [gradient_w1pMotion_ae (fieldRotation u) (u.rigidMotion a) y] with z hz i
   rw [variationMotion, w1pMotionEquiv_apply, hz i]
-  simp only [rigidMotion_linearIsometryEquiv_symm_apply, Circle.rigidMotion_apply]
+  simp only [Circle.linearIsometryEquiv_rigidMotion_symm_apply, Circle.rigidMotion_apply]
 
 @[simp]
 theorem coefficientMotion_one_zero : coefficientMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
   LinearIsometryEquiv.ext fun c ↦ by
-    rw [coefficientMotion, fieldRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
-    rfl
+    rw [coefficientMotion, fieldRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl,
+      LinearIsometryEquiv.coe_refl, id_eq]
 
 @[simp]
 theorem targetMotion_one_zero : targetMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
   LinearIsometryEquiv.ext fun f ↦ by
-    rw [targetMotion, targetRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
-    rfl
+    rw [targetMotion, targetRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl,
+      LinearIsometryEquiv.coe_refl, id_eq]
 
 @[simp]
 theorem variationMotion_one_zero : variationMotion 1 0 = ContinuousLinearEquiv.refl ℝ _ :=
@@ -336,16 +332,9 @@ theorem variationMotion_one_zero : variationMotion 1 0 = ContinuousLinearEquiv.r
     rw [variationMotion, w1pMotionEquiv_apply, fieldRotation_one, Circle.rigidMotion_one_zero,
       w1pMotion_refl, ContinuousLinearEquiv.refl_apply]
 
-private theorem fieldRotation_trans_fieldRotation (u v : Circle) :
-    (fieldRotation v).trans (fieldRotation u) = fieldRotation (u * v) :=
-  LinearIsometryEquiv.ext (fieldRotation_fieldRotation u v)
-
-private theorem targetRotation_trans_targetRotation (u v : Circle) :
-    (targetRotation v).trans (targetRotation u) = targetRotation (u * v) :=
-  LinearIsometryEquiv.ext (targetRotation_targetRotation u v)
-
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
-`z ↦ v (u z + a) + b`. -/
+`z ↦ v (u z + a) + b`. Not a simp lemma: the type of the classes mentions the measure
+`volume.restrict ↑⊤`, which simp rewrites to `volume.restrict Set.univ`. -/
 theorem coefficientMotion_coefficientMotion (u v : Circle) (a b : ℂ)
     (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
     coefficientMotion u a (coefficientMotion v b c) = coefficientMotion (u * v) (v * a + b) c := by
@@ -353,7 +342,8 @@ theorem coefficientMotion_coefficientMotion (u v : Circle) (a b : ℂ)
     Circle.rigidMotion_trans_rigidMotion, fieldRotation_trans_fieldRotation]
 
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
-`z ↦ v (u z + a) + b`. -/
+`z ↦ v (u z + a) + b`. Not a simp lemma: the type of the classes mentions the measure
+`volume.restrict ↑⊤`, which simp rewrites to `volume.restrict Set.univ`. -/
 theorem targetMotion_targetMotion (u v : Circle) (a b : ℂ)
     (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     targetMotion u a (targetMotion v b f) = targetMotion (u * v) (v * a + b) f := by
@@ -423,7 +413,7 @@ theorem sobolevGaugeFixedOperator_coefficientMotion_apply (u : Circle) (a : ℂ)
   refine congrArg (· + _) ((congrArg gaugeFixedFirstOrder (funext fun i ↦ ?_)).trans
     (gaugeFixedFirstOrder_fieldRotation u fun k ↦ W1p.gradient (y k) (u.rigidMotion a z)))
   rw [h₆ i]
-  simp only [rigidMotion_linearIsometryEquiv_symm_apply]
+  simp only [Circle.linearIsometryEquiv_rigidMotion_symm_apply]
 
 /-- **Rigid motions conjugate the `H¹` realization of `L_x`.** The realization at the coefficient
 moved by `z ↦ u z + a` is the realization at `c` conjugated by the motions of variations and

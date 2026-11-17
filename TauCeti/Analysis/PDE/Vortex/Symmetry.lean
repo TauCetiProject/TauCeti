@@ -283,6 +283,12 @@ theorem fieldRotation_fieldRotation (u v : Circle) (w : EuclideanSpace ℝ (Fin 
   ext i
   fin_cases i <;> simp <;> ring
 
+/-- Successive rotations of field values multiply, as linear isometry equivalences. -/
+@[simp]
+theorem fieldRotation_trans_fieldRotation (u v : Circle) :
+    (fieldRotation v).trans (fieldRotation u) = fieldRotation (u * v) :=
+  LinearIsometryEquiv.ext (fieldRotation_fieldRotation u v)
+
 /-- The exchange of the coordinate pairs `(v 0, v 1)` and `(v 2, v 3)` of `ℝ⁴`. -/
 private def swapPairs : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
   LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (finRotate 4 ^ 2)
@@ -290,13 +296,17 @@ private def swapPairs : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace
 @[simp]
 private theorem swapPairs_apply (v : EuclideanSpace ℝ (Fin 4)) :
     swapPairs v = !₂[v 2, v 3, v 0, v 1] := by
+  -- The permutation `finRotate 4 ^ 2` adds `2` to each index, a finite check on `Fin 4`.
+  have h : ∀ i : Fin 4, (finRotate 4 ^ 2).symm i = i + 2 := by decide
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp [swapPairs, Equiv.piCongrLeft'_apply, h]
 
 @[simp]
 private theorem swapPairs_symm : swapPairs.symm = swapPairs := by
-  ext v i
-  fin_cases i <;> rfl
+  ext v : 1
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  fin_cases i <;> simp
 
 /-- The rotation of values by which `rotateTarget u` acts at the rotated point: the complex
 `∂bar` row is multiplied by `u⁻¹` and the two real rows are fixed
@@ -329,6 +339,12 @@ theorem targetRotation_targetRotation (u v : Circle) (w : EuclideanSpace ℝ (Fi
     targetRotation u (targetRotation v w) = targetRotation (u * v) w := by
   ext i
   fin_cases i <;> simp <;> ring
+
+/-- Successive rotations of target values multiply, as linear isometry equivalences. -/
+@[simp]
+theorem targetRotation_trans_targetRotation (u v : Circle) :
+    (targetRotation v).trans (targetRotation u) = targetRotation (u * v) :=
+  LinearIsometryEquiv.ext (targetRotation_targetRotation u v)
 
 /-- Pullback of a vortex field by the rotation `z ↦ u z`. The section is composed with the
 rotation; the connection coefficient `b₁ + i b₂` is composed with the rotation and multiplied

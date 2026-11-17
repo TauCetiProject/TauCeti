@@ -19,7 +19,8 @@ composition and inverse laws.
 ## Main declarations
 
 * `Circle.rigidMotion u a : ℂ ≃ᵃⁱ[ℝ] ℂ`: the motion `z ↦ u z + a`.
-* `Circle.linearIsometryEquiv_rigidMotion`: its linear part is `rotation u`.
+* `Circle.linearIsometryEquiv_rigidMotion`: its linear part is `rotation u`, whose inverse is
+  multiplication by `conj u` (`Circle.linearIsometryEquiv_rigidMotion_symm_apply`).
 * `Circle.rigidMotion_one_zero`, `Circle.rigidMotion_trans_rigidMotion` and
   `Circle.rigidMotion_symm`: the identity, composition and inverse laws.
 -/
@@ -29,6 +30,8 @@ public section
 noncomputable section
 
 namespace Circle
+
+open scoped ComplexConjugate
 
 /-- The rigid motion `z ↦ u z + a` of the plane, for `u` on the unit circle. -/
 def rigidMotion (u : Circle) (a : ℂ) : ℂ ≃ᵃⁱ[ℝ] ℂ :=
@@ -42,6 +45,13 @@ theorem rigidMotion_apply (u : Circle) (a z : ℂ) : u.rigidMotion a z = (u : �
 theorem linearIsometryEquiv_rigidMotion (u : Circle) (a : ℂ) :
     (u.rigidMotion a).linearIsometryEquiv = rotation u := by
   simp [rigidMotion]
+
+/-- The inverse of the linear part of the rigid motion `z ↦ u z + a` is multiplication by
+`conj u = u⁻¹`. Simp normalizes the left-hand side through `linearIsometryEquiv_rigidMotion`, so
+this is a rewriting lemma rather than a simp lemma. -/
+theorem linearIsometryEquiv_rigidMotion_symm_apply (u : Circle) (a w : ℂ) :
+    (u.rigidMotion a).linearIsometryEquiv.symm w = conj (u : ℂ) * w := by
+  rw [linearIsometryEquiv_rigidMotion, rotation_symm, rotation_apply, coe_inv_eq_conj]
 
 @[simp]
 theorem rigidMotion_one_zero : rigidMotion 1 0 = AffineIsometryEquiv.refl ℝ ℂ := by
@@ -57,6 +67,7 @@ theorem rigidMotion_trans_rigidMotion (u v : Circle) (a b : ℂ) :
   ring
 
 /-- The inverse of the motion `z ↦ u z + a` is the motion `z ↦ u⁻¹ z - u⁻¹ a`. -/
+@[simp]
 theorem rigidMotion_symm (u : Circle) (a : ℂ) :
     (u.rigidMotion a).symm = u⁻¹.rigidMotion (-((u : ℂ)⁻¹ * a)) := by
   ext z
