@@ -132,8 +132,12 @@ theorem exists_norm_toDistr_apply_le (φ : ContDiffBump (0 : E)) (s : ℝ) :
   refine ⟨2 * L * 2 ^ (|s| * L), by positivity, fun {p p' q q'} _ _ _ _ _ _ v f ↦ ?_⟩
   set u := SchwartzMap.toBesovSpaceCLM ℂ φ s p q f
   -- The weighted block norms of `f` in `ℓ^q`, and the window sums of those of `v` in `ℓ^{q'}`.
-  obtain ⟨a, haj, ha⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le u
-  obtain ⟨b, hbk, hb⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le v
+  set a := u.weightedBlockNorms
+  have haj (j : ℕ) : a j = _ := u.weightedBlockNorms_apply j
+  have ha : ‖a‖ ≤ ‖u‖ := (norm_weightedBlockNorms u).le
+  set b := v.weightedBlockNorms
+  have hbk (k : ℕ) : b k = _ := v.weightedBlockNorms_apply k
+  have hb : ‖b‖ ≤ ‖v‖ := (norm_weightedBlockNorms v).le
   obtain ⟨c, hcj, hc⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le b L
   have hterm (j : ℕ) : ‖littlewoodPaleyBlock F φ j v.toDistr f‖ ≤ 2 ^ (|s| * L) * (a j * c j) := by
     rw [← mul_assoc, haj, hcj, Finset.sum_congr rfl fun k _ ↦ hbk k]
