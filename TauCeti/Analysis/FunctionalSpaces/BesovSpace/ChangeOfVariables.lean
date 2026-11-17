@@ -11,8 +11,6 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley.ChangeOfVariables
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
 # Pullback of Besov spaces along diffeomorphisms with bounded derivatives
@@ -48,10 +46,9 @@ By the off-diagonal Littlewood–Paley block decay estimate
 
 `‖Δⱼ (φ^* Δₖ u)‖_p ≤ K 2^{-N |j - k|} ‖Δₖ u‖_p`
 
-for every `1 ≤ p ≤ ∞`. Weighting by `2^{js}` and comparing `s * j` with `s * k` bounds
-`2^{js} ‖Δⱼ (φ^* Δₖ u)‖_p` by `K r^{|j - k|} 2^{ks} ‖Δₖ u‖_p` with `r = 2^{|s| - N} < 1`.
-Summing over the frequency offset `d = k - j ∈ ℤ` via `lp.exists_hasSum_and_norm_le_of_summable`
-yields boundedness on `B^s_{p,q}` uniformly in `1 ≤ p, q ≤ ∞`.
+for every `1 ≤ p ≤ ∞`. Applying the operator-independent off-diagonal boundedness criterion
+`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_offDiagonal_decay` with `N > |s|` yields
+boundedness on `B^s_{p,q}` uniformly in `1 ≤ p, q ≤ ∞`.
 
 ## Main declarations
 
@@ -106,50 +103,14 @@ theorem BesovSpace.exists_toDistr_eq_compCLM_and_norm_le (χ : ContDiffBump (0 :
       (∀ n, 1 ≤ n → n ≤ N + 1 → ∀ y, ‖iteratedFDeriv ℝ n φ.symm y‖ ≤ L) →
       ∀ {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (u : BesovSpace F χ s p q),
       ∃ v : BesovSpace F χ s p q, v.toDistr = compCLM F φ hφ hψ u.toDistr ∧ ‖v‖ ≤ C * ‖u‖ := by
-  set r : ℝ := 2 ^ (|s| - N)
-  have hr0 : 0 ≤ r := by positivity
-  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
   obtain ⟨K, hK, hblock⟩ := exists_littlewoodPaleyBlock_compCLM_eq_and_norm_le (F := F) χ N L
-  refine ⟨K * ∑' d : ℤ, r ^ d.natAbs, by positivity, fun {φ} hφ hψ hφL hψL {p q} _ _ u ↦ ?_⟩
-  set c : ℕ → ℂ := fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)
-  choose v hv hvn using fun j k ↦
-    hblock hφ hψ hφL hψL j k u.toDistr (u.block k) (u.coe_block k).symm
-  have hentry (j k : ℕ) :
-      ‖c j • v j k‖ ≤ K * r ^ ((k : ℤ) - j).natAbs * ‖u.weightedBlocks k‖ := by
-    have hexp : s * j + -(N * |(j : ℝ) - k|) ≤ (|s| - N) * |(j : ℝ) - k| + s * k := by
-      have := (le_abs_self (s * (j - k))).trans_eq (abs_mul s ((j : ℝ) - k))
-      nlinarith
-    have hr : r ^ ((k : ℤ) - j).natAbs = (2 : ℝ) ^ ((|s| - N) * |(j : ℝ) - k|) := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, Nat.cast_natAbs, Int.cast_abs,
-        abs_sub_comm, Int.cast_sub, Int.cast_natCast, Int.cast_natCast]
-    rw [norm_smul, Complex.norm_of_nonneg (by positivity), u.norm_weightedBlocks_apply k, hr]
-    calc (2 : ℝ) ^ (s * j) * ‖v j k‖
-        ≤ (2 : ℝ) ^ (s * j) * (K * (2 : ℝ) ^ (-(N * |(j : ℝ) - k|)) * ‖u.block k‖) := by
-          gcongr; exact hvn j k
-      _ = K * (2 : ℝ) ^ (s * j + -(N * |(j : ℝ) - k|)) * ‖u.block k‖ := by
-          rw [Real.rpow_add two_pos]; ring
-      _ ≤ K * (2 : ℝ) ^ ((|s| - N) * |(j : ℝ) - k| + s * k) * ‖u.block k‖ := by
-          gcongr; exact one_le_two
-      _ = _ := by rw [Real.rpow_add two_pos]; ring
-  have hsum : Summable fun d : ℤ ↦ r ^ d.natAbs :=
-    summable_int_iff_summable_nat_and_neg.2
-      ⟨by simpa using summable_geometric_of_lt_one hr0 hr1,
-        by simpa using summable_geometric_of_lt_one hr0 hr1⟩
-  obtain ⟨W, hWj, hWn⟩ := lp.exists_hasSum_and_norm_le_of_summable u.weightedBlocks
-    (fun _ ↦ by positivity) hsum hK (fun j k ↦ c j • v j k) hentry
-  have hW (j : ℕ) : (W j : 𝓢'(E, F)) =
-      c j • littlewoodPaleyBlock F χ j (compCLM F φ hφ hψ u.toDistr) := by
-    have h₁ := ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto _).comp
-      (hWj j).tendsto_sum_nat
-    have h₂ := ((c j • (littlewoodPaleyBlock F χ j ∘L compCLM F φ hφ hψ)).continuous.tendsto _).comp
-      (tendsto_sum_littlewoodPaleyBlock χ u.toDistr)
-    refine tendsto_nhds_unique h₁ (h₂.congr fun n ↦ ?_)
-    simp only [Function.comp_apply, map_sum, map_smul, smul_apply,
-      ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply]
-    simp_rw [← u.coe_block, hv]
-  refine ⟨⟨compCLM F φ hφ hψ u.toDistr, W, hW⟩, rfl, ?_⟩
-  rw [← BesovSpace.norm_weightedBlocks, ← u.norm_weightedBlocks]
-  exact hWn.trans_eq (by ring)
+  have hr1 : (2 : ℝ) ^ (|s| - N) < 1 :=
+    Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  refine ⟨K * ((1 + (2 : ℝ) ^ (|s| - N)) / (1 - (2 : ℝ) ^ (|s| - N))),
+    by have := sub_pos.2 hr1; positivity, fun {φ} hφ hψ hφL hψL {p q} _ _ u ↦ ?_⟩
+  exact BesovSpace.exists_toDistr_eq_and_norm_le_of_offDiagonal_decay hN hK
+    (compCLM F φ hφ hψ) u
+    fun j k ↦ hblock hφ hψ hφL hψL j k u.toDistr (u.block k) (u.coe_block k).symm
 
 end TauCeti
 

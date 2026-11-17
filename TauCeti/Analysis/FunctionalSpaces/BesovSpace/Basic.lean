@@ -59,6 +59,10 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_block`: a tempered distribution whose
   blocks are `L^{p'}` functions with weighted norms `2^{js'} ‖Δⱼ w‖_{p'} ≤ B 2^{js} ‖Δⱼ u‖_p` for
   some `u ∈ B^s_{p,q}` lies in `B^{s'}_{p',q}`, with norm at most `B ‖u‖`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_offDiagonal_decay`: a continuous linear
+  operator `T` on tempered distributions whose block interactions satisfy the dyadic off-diagonal
+  bound `‖Δⱼ (T (Δₖ u))‖_p ≤ K 2^{-M |j - k|} ‖Δₖ u‖_p` with `M > |s|` maps `u ∈ B^s_{p,q}` to
+  `T u ∈ B^s_{p,q}` with `‖T u‖ ≤ K ((1 + 2^{|s| - M}) / (1 - 2^{|s| - M})) ‖u‖`.
 * `TauCeti.BesovSpace.toDistrCLM`: for `1 ≤ q`, the continuous inclusion of `B^s_{p,q}` in the
   tempered distributions, and the instance `CompleteSpace (TauCeti.BesovSpace F φ s p q)`:
   `B^s_{p,q}` is a Banach space.
@@ -644,6 +648,78 @@ theorem exists_toDistr_eq_and_norm_le_of_block {F' : Type*} [NormedAddCommGroup 
   refine ⟨v, hv, hvn.trans ?_⟩
   rw [norm_smul, Real.norm_of_nonneg hB]
   gcongr
+
+/-- **Off-diagonal boundedness criterion on Besov spaces.** Let `T : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F)` be a
+continuous linear operator on tempered distributions, `M > |s|`, and `K ≥ 0`. If for `u ∈ B^s_{p,q}`
+every Littlewood–Paley interaction `Δⱼ (T (Δₖ u))` is an `Lᵖ` function of norm at most
+`K 2^{-M |j - k|} ‖Δₖ u‖_p`, then `T u ∈ B^s_{p,q}` with
+`‖T u‖ ≤ K ((1 + 2^{|s| - M}) / (1 - 2^{|s| - M})) ‖u‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_offDiagonal_decay {M K : ℝ} (hM : |s| < M) (hK : 0 ≤ K)
+    (T : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) (u : BesovSpace F φ s p q)
+    (hT : ∀ j k : ℕ, ∃ v : Lp F p (volume : Measure E),
+      littlewoodPaleyBlock F φ j (T (u.block k : 𝓢'(E, F))) = v ∧
+      ‖v‖ ≤ K * (2 : ℝ) ^ (-(M * |(j : ℝ) - k|)) * ‖u.block k‖) :
+    ∃ v : BesovSpace F φ s p q, v.toDistr = T u.toDistr ∧
+      ‖v‖ ≤ K * ((1 + (2 : ℝ) ^ (|s| - M)) / (1 - (2 : ℝ) ^ (|s| - M))) * ‖u‖ := by
+  -- With `M > |s|`, the weighted interaction `2^{js} 2^{-M |j - k|} 2^{-ks}` of the blocks `j`
+  -- and `k` is at most `r^{|j - k|}` with `r = 2^{|s| - M} < 1`, and the weighted blocks of
+  -- `T u` are the row sums of a matrix with geometric decay away from the diagonal.
+  set r : ℝ := 2 ^ (|s| - M)
+  have hr0 : 0 ≤ r := by positivity
+  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
+  set c : ℕ → ℂ := fun j ↦ (((2 : ℝ) ^ (s * j) : ℝ) : ℂ)
+  choose v hv hvn using hT
+  have hentry (j k : ℕ) :
+      ‖c j • v j k‖ ≤ K * r ^ ((k : ℤ) - j).natAbs * ‖u.weightedBlocks k‖ := by
+    have hexp : s * j + -(M * |(j : ℝ) - k|) ≤ (|s| - M) * |(j : ℝ) - k| + s * k := by
+      have := (le_abs_self (s * (j - k))).trans_eq (abs_mul s ((j : ℝ) - k))
+      nlinarith
+    have hr : r ^ ((k : ℤ) - j).natAbs = (2 : ℝ) ^ ((|s| - M) * |(j : ℝ) - k|) := by
+      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, Nat.cast_natAbs, Int.cast_abs,
+        abs_sub_comm, Int.cast_sub, Int.cast_natCast, Int.cast_natCast]
+    rw [norm_smul, Complex.norm_of_nonneg (by positivity), u.norm_weightedBlocks_apply k, hr]
+    calc (2 : ℝ) ^ (s * j) * ‖v j k‖
+        ≤ (2 : ℝ) ^ (s * j) * (K * (2 : ℝ) ^ (-(M * |(j : ℝ) - k|)) * ‖u.block k‖) := by
+          gcongr
+          exact hvn j k
+      _ = K * (2 : ℝ) ^ (s * j + -(M * |(j : ℝ) - k|)) * ‖u.block k‖ := by
+          rw [Real.rpow_add two_pos]
+          ring
+      _ ≤ K * (2 : ℝ) ^ ((|s| - M) * |(j : ℝ) - k| + s * k) * ‖u.block k‖ := by
+          gcongr
+          exact one_le_two
+      _ = _ := by
+          rw [Real.rpow_add two_pos]
+          ring
+  have hnat : Summable fun n : ℕ ↦ r ^ (n : ℤ).natAbs := by
+    simpa using summable_geometric_of_lt_one hr0 hr1
+  have hneg : Summable fun n : ℕ ↦ r ^ (-(n : ℤ)).natAbs := by
+    simpa using summable_geometric_of_lt_one hr0 hr1
+  have hsum : Summable fun d : ℤ ↦ r ^ d.natAbs :=
+    Summable.of_nat_of_neg (f := fun d : ℤ ↦ r ^ d.natAbs) hnat hneg
+  have htsum : ∑' d : ℤ, r ^ d.natAbs = (1 + r) / (1 - r) := by
+    rw [Summable.tsum_of_nat_of_neg (f := fun d : ℤ ↦ r ^ d.natAbs) hnat hneg]
+    simp only [Int.natAbs_neg, Int.natAbs_natCast, Int.natAbs_zero, pow_zero,
+      tsum_geometric_of_lt_one hr0 hr1]
+    have : 1 - r ≠ 0 := by linarith
+    field_simp
+    ring
+  obtain ⟨W, hWj, hWn⟩ := lp.exists_hasSum_and_norm_le_of_summable u.weightedBlocks
+    (fun _ ↦ by positivity) hsum hK (fun j k ↦ c j • v j k) hentry
+  -- The tempered distribution of `W j` is `2^{js} Δⱼ (T u)`, the limit of
+  -- `2^{js} Δⱼ (T ∑_{k < n} Δₖ u)`.
+  have hW (j : ℕ) : (W j : 𝓢'(E, F)) = c j • littlewoodPaleyBlock F φ j (T u.toDistr) := by
+    have h₁ := ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto _).comp
+      (hWj j).tendsto_sum_nat
+    have h₂ := ((c j • (littlewoodPaleyBlock F φ j ∘L T)).continuous.tendsto _).comp
+      (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)
+    refine tendsto_nhds_unique h₁ (h₂.congr fun n ↦ ?_)
+    simp only [Function.comp_apply, map_sum, map_smul, smul_apply,
+      ContinuousLinearMap.comp_apply, Lp.toTemperedDistributionCLM_apply]
+    simp_rw [← u.coe_block, hv]
+  refine ⟨⟨T u.toDistr, W, hW⟩, rfl, ?_⟩
+  rw [← norm_weightedBlocks, ← u.norm_weightedBlocks]
+  simpa only [htsum] using hWn
 
 end Normed
 
