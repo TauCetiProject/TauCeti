@@ -19,8 +19,11 @@ converge to those of a probability measure `μ`, and `μ` is determined by its m
 probability measures with all moments, then `μₙ → μ` weakly (the method of moments).
 
 Unlike `TauCeti.Probability.Moments.MethodOfMoments.CompactSupport`, this version does not require
-compact support; it assumes moment determinacy instead. Determinacy criteria for supplying `hdet`
-are available in `TauCeti.Probability.Moments.Determinacy`.
+compact support; it assumes moment determinacy instead. The criteria in
+`TauCeti.Probability.Moments.Determinacy` currently use two-sided exponential integrability.
+Applying them here also requires deriving the needed exponential integrability of a candidate
+cluster-point law `ν` from its
+matching polynomial moments.
 
 ## Main results
 
