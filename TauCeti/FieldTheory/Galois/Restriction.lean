@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.KrullTopology
 
 /-!
@@ -269,13 +271,13 @@ theorem embeddingSubgroup_intermediateField (E : IntermediateField K M) :
   ext σ; rw [mem_embeddingSubgroup_iff, IntermediateField.mem_fixingSubgroup_iff]
   exact ⟨fun h x hx ↦ h ⟨x, hx⟩, fun h x ↦ h x.1 x.2⟩
 
-/-- In a finite Galois extension `M/K`, the fixed field of `embeddingSubgroup K L M` is the image
+/-- In a Galois extension `M/K`, the fixed field of `embeddingSubgroup K L M` is the image
 of `L` in `M`. -/
 @[simp]
-theorem fixedField_embeddingSubgroup [Module.Finite K M] [IsGalois K M] :
+theorem fixedField_embeddingSubgroup [IsGalois K M] :
     IntermediateField.fixedField (embeddingSubgroup K L M) =
       (IsScalarTower.toAlgHom K L M).fieldRange := by
-  rw [embeddingSubgroup_def, IsGalois.fixedField_fixingSubgroup]
+  rw [embeddingSubgroup_def, InfiniteGalois.fixedField_fixingSubgroup]
 
 /-- In a tower `M / L / E / K`, the fixing subgroup of `L` is contained in that of `E`. -/
 theorem embeddingSubgroup_antitone (E : Type*) [Field E] [Algebra K E] [Algebra E L]
@@ -284,15 +286,15 @@ theorem embeddingSubgroup_antitone (E : Type*) [Field E] [Algebra K E] [Algebra 
   mem_embeddingSubgroup_iff.2 fun x ↦ by
     rw [IsScalarTower.algebraMap_apply E L M]; exact mem_embeddingSubgroup_iff.1 hσ _
 
-/-- In a finite Galois extension `M/K` containing `L`, the order of `embeddingSubgroup K L M`
-equals `[M : L]`. -/
-theorem natCard_embeddingSubgroup [Module.Finite K M] [IsGalois K M] :
+/-- In a Galois extension `M/K` containing `L`, the order of `embeddingSubgroup K L M`
+equals `[M : L]`. When `M/L` is infinite, both sides are `0`. -/
+theorem natCard_embeddingSubgroup [IsGalois K M] :
     Nat.card (embeddingSubgroup K L M) = Module.finrank L M := by
-  have : Module.Finite L M := .of_restrictScalars_finite K L M
   have := IsGalois.tower_top_of_isGalois K L M
   rw [← range_restrictScalarsHom_eq_embeddingSubgroup K L M, ← Subgroup.map_top,
     Subgroup.card_map_of_injective (AlgEquiv.restrictScalarsHom_injective K),
-    Subgroup.card_top, IsGalois.card_aut_eq_finrank L M]
+    ← Subgroup.finrank_fixedField_eq_card (⊤ : Subgroup (M ≃ₐ[L] M)),
+    InfiniteGalois.fixedField_bot, IntermediateField.finrank_bot']
 
 /-- In a Galois extension `M/K` containing `L`, the index of `embeddingSubgroup K L M` in
 `Gal(M/K)` equals `[L : K]`. -/
