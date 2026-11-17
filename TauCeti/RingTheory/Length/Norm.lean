@@ -53,7 +53,7 @@ variable {A K B L : Type*} [CommRing A] [Field K] [Algebra A K] [CommRing B] [Al
   [Field L] [Algebra B L] [IsFractionRing B L] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
   [IsScalarTower A B L]
 
-variable [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A] [IsFractionRing A K]
+variable [Nontrivial A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A] [IsFractionRing A K]
   [Module.Finite A B]
 
 /-- **The order of a norm is a length** (Fulton, *Intersection Theory*, Appendix A.3, first step).
@@ -63,6 +63,7 @@ domain finite over `A`, with fraction field `L`. For nonzero `b : B` with `B ⧸
 theorem ordFrac_norm_eq_coe_of_length_eq {b : B} (hb : b ≠ 0) {n : ℕ}
     (hn : Module.length A (B ⧸ Ideal.span {b}) = n) :
     Ring.ordFrac A (Algebra.norm K (algebraMap B L b)) = Multiplicative.ofAdd (n : ℤ) := by
+  have : IsDomain A := .of_faithfulSMul A K
   -- The lattice `B ⊆ L`, the image of the `A`-linear map `f`.
   let f : B →ₗ[A] L := (IsScalarTower.toAlgHom A B L).toLinearMap
   have hf : Function.Injective f := by simpa [f] using IsFractionRing.injective B L
@@ -100,11 +101,11 @@ theorem ordFrac_norm_eq_coe_of_length_eq {b : B} (hb : b ≠ 0) {n : ℕ}
 
 section Fraction
 
-variable {A K B L : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
-  [IsLocalRing A] [Field K] [Algebra A K] [IsFractionRing A K] [CommRing B] [IsDomain B]
+variable {A K B L : Type*} [CommRing A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+  [IsLocalRing A] [Field K] [Algebra A K] [IsFractionRing A K] [CommRing B]
   [Algebra A B] [Module.Finite A B] [Field L] [Algebra B L] [IsFractionRing B L] [Algebra K L]
   [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
-  (R : MaximalSpectrum B → Type*) [∀ m, CommRing (R m)] [∀ m, IsDomain (R m)]
+  (R : MaximalSpectrum B → Type*) [∀ m, CommRing (R m)] [∀ m, Nontrivial (R m)]
   [∀ m, IsNoetherianRing (R m)] [∀ m, Ring.KrullDimLE 1 (R m)] [∀ m, Algebra B (R m)]
   [∀ m, IsLocalization.AtPrime (R m) m.asIdeal] [∀ m, Algebra (R m) L]
   [∀ m, IsScalarTower B (R m) L] [∀ m, IsFractionRing (R m) L]
@@ -118,6 +119,9 @@ theorem ordFrac_norm_algebraMap_eq_finprod {b : B} (hb : b ≠ 0) :
     Ring.ordFrac A (Algebra.norm K (algebraMap B L b)) =
       ∏ᶠ m, Ring.ordFrac (R m) (algebraMap B L b) ^ (Module.length A (B ⧸ m.asIdeal)).toNat := by
   classical
+  have : IsDomain A := .of_faithfulSMul A K
+  have : IsDomain B := .of_faithfulSMul B L
+  have : ∀ m, IsDomain (R m) := fun m ↦ .of_faithfulSMul (R m) L
   set S := (finite_setOf_mem_maximalSpectrum A hb).toFinset
   have hfin : Module.length A (B ⧸ Ideal.span {b}) ≠ ⊤ :=
     Module.length_ne_top_iff.2 (isFiniteLength_quotient_span_singleton hb)
@@ -147,6 +151,9 @@ the pushforward of principal divisors along finite maps (Fulton, Proposition 1.4
 theorem ordFrac_norm_eq_finprod {r : L} (hr : r ≠ 0) :
     Ring.ordFrac A (Algebra.norm K r) =
       ∏ᶠ m, Ring.ordFrac (R m) r ^ (Module.length A (B ⧸ m.asIdeal)).toNat := by
+  have : IsDomain A := .of_faithfulSMul A K
+  have : IsDomain B := .of_faithfulSMul B L
+  have : ∀ m, IsDomain (R m) := fun m ↦ .of_faithfulSMul (R m) L
   obtain ⟨b, c, hc, rfl⟩ := IsFractionRing.div_surjective (A := B) r
   have hc0 : c ≠ 0 := nonZeroDivisors.ne_zero hc
   have hb0 : b ≠ 0 := by rintro rfl; simp at hr
