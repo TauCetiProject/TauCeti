@@ -35,6 +35,7 @@ through Mathlib's `MulEquiv.cast` along equalities of indices.
 * `TauCeti.GraphOfGroups.αArrow`, `TauCeti.GraphOfGroups.ωArrow`: the boundary monomorphisms of
   a dart `e : a ⟶ b` of the quiver of `Γ`, with values in `A_a` and `A_b`.
 * `TauCeti.GraphOfGroups.segment`: the graph of groups of an amalgamated product.
+* `TauCeti.GraphOfGroups.coprod`: the segment graph of groups of a free product `A ∗ B`.
 * `TauCeti.GraphOfGroups.loop`: the graph of groups of an HNN extension.
 * `TauCeti.GraphOfGroups.trivial`: the graph of groups with trivial vertex and edge groups.
 * `TauCeti.GraphOfGroups.restrict`: the restriction of a graph of groups to the subgraph spanned
@@ -211,6 +212,26 @@ theorem range_ωArrow_eq_range_αArrow {c : Γ.V} (e' : a ⟶ b) (e : b ⟶ c) (
   obtain rfl := Γ.eq_reverse_of_val_eq_rev h
   exact 𝔸.range_ωArrow_reverse e
 
+/-- A dart with trivial edge group has trivial `α`-image. -/
+@[simp] theorem range_α_eq_bot_of_subsingleton (e : Γ.E)
+    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e))] : (𝔸.α e).range = ⊥ :=
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
+
+/-- A dart with trivial edge group has trivial `ω`-image. -/
+@[simp] theorem range_ω_eq_bot_of_subsingleton (e : Γ.E)
+    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e))] : (𝔸.ω e).range = ⊥ :=
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
+
+/-- An arrow with trivial edge group has trivial `αArrow`-image. -/
+@[simp] theorem range_αArrow_eq_bot_of_subsingleton (e : a ⟶ b)
+    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.1))] : (𝔸.αArrow e).range = ⊥ :=
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
+
+/-- An arrow with trivial edge group has trivial `ωArrow`-image. -/
+@[simp] theorem range_ωArrow_eq_bot_of_subsingleton (e : a ⟶ b)
+    [Subsingleton (𝔸.edgeGroup (Γ.toGeomEdge e.1))] : (𝔸.ωArrow e).range = ⊥ :=
+  MonoidHom.range_eq_bot_iff.mpr (Subsingleton.elim _ _)
+
 end Arrow
 
 /-- The graph of groups of an amalgamated product `A ∗_C B`: the segment with vertex groups `A`
@@ -245,7 +266,18 @@ variable {A B : Type w} {C : Type x} [Group A] [Group B] [Group C] (f : C →* A
 @[simp] theorem segment_α_true : (segment f g hf hg).α true = g :=
   MonoidHom.ext fun c => (segment f g hf hg).α_rev_apply false c
 
+instance [Subsingleton C] (y : SerreGraph.segment.GeomEdge) :
+    Subsingleton ((segment f g hf hg).edgeGroup y) :=
+  inferInstanceAs (Subsingleton C)
+
 end segment
+
+/-- The one-edge graph of groups of a free product `A ∗ B`: the segment with vertex groups `A` at
+`false` and `B` at `true` and trivial edge group `PUnit`. -/
+abbrev coprod (A B : Type w) [Group A] [Group B] :
+    GraphOfGroups.{0, 0, w, 0} SerreGraph.segment :=
+  segment (1 : PUnit →* A) (1 : PUnit →* B) (Function.injective_of_subsingleton _)
+    (Function.injective_of_subsingleton _)
 
 /-- The graph of groups of an HNN extension: one vertex with group `G`, one loop with edge
 group `C`, and monomorphisms `f g : C →* G`. The dart `((), true)` has `α = f` and `ω = g`. -/
@@ -276,6 +308,10 @@ variable {G : Type w} {C : Type x} [Group G] [Group C] (f g : C →* G)
 
 @[simp] theorem loop_α_false : (loop f g hf hg).α ((), false) = g :=
   MonoidHom.ext fun c => (loop f g hf hg).α_rev_apply ((), true) c
+
+instance [Subsingleton C] (y : (SerreGraph.rose Unit).GeomEdge) :
+    Subsingleton ((loop f g hf hg).edgeGroup y) :=
+  inferInstanceAs (Subsingleton C)
 
 end loop
 

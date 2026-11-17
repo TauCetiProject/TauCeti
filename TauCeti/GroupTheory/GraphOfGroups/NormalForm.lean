@@ -57,6 +57,9 @@ transversals. For a loop, the statement about the edge paths of reduced paths is
 
 * `TauCeti.GraphOfGroups.normalForm_eq_normalForm_iff`: two `𝔸`-paths are homotopic exactly
   when they have the same normal form.
+* `TauCeti.GraphOfGroups.exists_homotopic_cons_vertex_iff_setLast_eq`: two `𝔸`-paths differ on the
+  right by a vertex group element up to homotopy exactly when their normal forms agree up to the
+  final vertex group element.
 * `TauCeti.GraphOfGroups.NormalWord.toPath_homotopic_toPath_iff`: distinct normal words are not
   homotopic.
 * `TauCeti.GraphOfGroups.π₁.normalWordEquiv`: `π₁(𝔸, a)` is in bijection with the normal words of
@@ -930,6 +933,24 @@ private theorem normalForm_toPath_aux :
 @[simp] theorem NormalWord.toPath_homotopic_toPath_iff {w w' : NormalWord d a b} :
     w.toPath.Homotopic w'.toPath ↔ w = w' := by
   rw [← normalForm_eq_normalForm_iff d, normalForm_toPath, normalForm_toPath]
+
+/-- Two `𝔸`-paths from `a` to `b` differ on the right by an element of `A_b` up to homotopy if and
+only if their normal forms agree up to the final vertex group element. -/
+theorem exists_homotopic_cons_vertex_iff_setLast_eq {p q : 𝔸.Path ⟨a⟩ ⟨b⟩} :
+    (∃ g : 𝔸.vertexGroup b, p.Homotopic (q.cons (Letter.vertex g))) ↔
+      (normalForm d p).toAlternatingPath.setLast 1 =
+        (normalForm d q).toAlternatingPath.setLast 1 := by
+  refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun h ↦ ?_⟩
+  · rw [(normalForm_eq_normalForm_iff d).mpr hg]
+    simp
+  · refine ⟨((normalForm d q).toAlternatingPath.last)⁻¹ * (normalForm d p).toAlternatingPath.last,
+      (normalForm_eq_normalForm_iff d).mp (NormalWord.ext ?_)⟩
+    calc (normalForm d p).toAlternatingPath
+        = ((normalForm d p).toAlternatingPath.setLast 1).setLast
+            (normalForm d p).toAlternatingPath.last := by simp
+      _ = ((normalForm d q).toAlternatingPath.setLast 1).setLast
+            (normalForm d p).toAlternatingPath.last := by rw [h]
+      _ = (normalForm d (q.cons (Letter.vertex _))).toAlternatingPath := by simp
 
 end normalForm
 

@@ -17,7 +17,8 @@ between two vertices, and a tree has exactly one. These unique reduced paths are
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
 An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
-darts with the same endpoints, so a finite set of vertices induces finitely many darts. A
+darts with the same endpoints, so the target map identifies the outgoing darts at any vertex with
+its adjacent vertices and a finite set of vertices induces finitely many darts. A
 restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
 all its darts in `S`.
 
@@ -123,6 +124,22 @@ theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
     simpa using congrArg (Path.darts Γ)
       (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
   exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
+variable {Γ} in
+/-- In an acyclic Serre graph, the target map identifies the outgoing darts at any vertex `u` with
+the adjacent vertices `{w // Nonempty (u ⟶ w)}`. -/
+noncomputable def IsAcyclic.starEquivAdjacent (h : Γ.IsAcyclic) (u : Γ.V) :
+    {e : Γ.E // Γ.src e = u} ≃ {w : Γ.V // Nonempty (u ⟶ w)} :=
+  Equiv.ofBijective (fun e => ⟨Γ.tgt e.1, ⟨⟨e.1, e.2, rfl⟩⟩⟩)
+    ⟨fun ⟨_, h₁⟩ ⟨_, h₂⟩ h' =>
+      Subtype.ext (h.eq_of_src_eq_of_tgt_eq (h₁.trans h₂.symm) (congrArg Subtype.val h')),
+     fun ⟨_, ⟨f⟩⟩ => ⟨⟨f.1, f.2.1⟩, Subtype.ext f.2.2⟩⟩
+
+variable {Γ} in
+@[simp] theorem IsAcyclic.starEquivAdjacent_apply_val {h : Γ.IsAcyclic} (u : Γ.V)
+    (e : {e : Γ.E // Γ.src e = u}) :
+    (h.starEquivAdjacent u e).1 = Γ.tgt e.1 :=
+  (rfl)
 
 variable {Γ} in
 /-- In an acyclic graph, a single vertex induces no dart. -/
