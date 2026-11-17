@@ -23,7 +23,7 @@ This file packages the dual graph API in the category of pointed prestable curve
   `PointedPrestableFamily.dualGraphIrreducibleComponentsEquiv`, the normalized component curves
   `PointedPrestableFamily.normalizedComponent`, geometric characterizations of incidence, valence,
   rational tails, and rational bridges, and compatibility with `PointedPrestableFamily.reindex`
-  (`PointedPrestableFamily.reindexDualGraphIso`).
+  (`PointedPrestableFamily.dualGraph_reindex` and `PointedPrestableFamily.reindexDualGraphIso`).
 * **Smooth validation**: when `P.toBase` is smooth, `P.dualGraph` has first Betti number zero
   (`PointedPrestableFamily.firstBetti_dualGraph_of_smooth`) and combinatorial arithmetic genus
   equal to `P.total.genus K`
@@ -216,72 +216,17 @@ theorem isRationalBridge_dualGraph_iff (v : P.dualGraph.Vertex) :
           (P.dualGraphVertexEquiv v : Set (P.total.singularLocus K).blowup) :=
   P.total.isRationalBridge_dualGraph_iff _ P.marking P.range_marking_subset_smoothLocus_over v
 
+/-- Reindexing the markings of `P` along `e : Fin m ↪ Fin n` directly reindexes `P.dualGraph`. -/
+@[simp]
+theorem dualGraph_reindex (e : Fin m ↪ Fin n) :
+    (P.reindex e).dualGraph = P.dualGraph.reindex e :=
+  (P.total.reindex_dualGraph _ P.marking P.range_marking_subset_smoothLocus_over e).symm
+
 /-- Reindexing the markings of `P` along `e : Fin m ↪ Fin n` reindexes `P.dualGraph` up to canonical
 isomorphism. -/
 def reindexDualGraphIso (e : Fin m ↪ Fin n) :
     (P.reindex e).dualGraph.Iso (P.dualGraph.reindex e) :=
-  let veqv : (P.reindex e).dualGraph.Vertex ≃ (P.dualGraph.reindex e).Vertex :=
-    { toFun v := P.dualGraphVertexEquiv.symm ((P.reindex e).dualGraphVertexEquiv v)
-      invFun w := (P.reindex e).dualGraphVertexEquiv.symm (P.dualGraphVertexEquiv w)
-      left_inv v :=
-        (congrArg (P.reindex e).dualGraphVertexEquiv.symm
-          (P.dualGraphVertexEquiv.apply_symm_apply _)).trans
-          ((P.reindex e).dualGraphVertexEquiv.symm_apply_apply v)
-      right_inv w :=
-        (congrArg P.dualGraphVertexEquiv.symm
-          ((P.reindex e).dualGraphVertexEquiv.apply_symm_apply _)).trans
-          (P.dualGraphVertexEquiv.symm_apply_apply w) }
-  let eeqv : (P.reindex e).dualGraph.Edge ≃ (P.dualGraph.reindex e).Edge :=
-    { toFun x := P.dualGraphEdgeEquiv.symm ((P.reindex e).dualGraphEdgeEquiv x)
-      invFun y := (P.reindex e).dualGraphEdgeEquiv.symm (P.dualGraphEdgeEquiv y)
-      left_inv x :=
-        (congrArg (P.reindex e).dualGraphEdgeEquiv.symm
-          (P.dualGraphEdgeEquiv.apply_symm_apply _)).trans
-          ((P.reindex e).dualGraphEdgeEquiv.symm_apply_apply x)
-      right_inv y :=
-        (congrArg P.dualGraphEdgeEquiv.symm
-          ((P.reindex e).dualGraphEdgeEquiv.apply_symm_apply _)).trans
-          (P.dualGraphEdgeEquiv.symm_apply_apply y) }
-  have hv (v : (P.reindex e).dualGraph.Vertex) :
-      P.dualGraphVertexEquiv (veqv v) = (P.reindex e).dualGraphVertexEquiv v :=
-    P.dualGraphVertexEquiv.apply_symm_apply _
-  have he (x : (P.reindex e).dualGraph.Edge) :
-      P.dualGraphEdgeEquiv (eeqv x) = (P.reindex e).dualGraphEdgeEquiv x :=
-    P.dualGraphEdgeEquiv.apply_symm_apply _
-  { vertexEquiv := veqv
-    edgeEquiv := eeqv
-    ends_edgeEquiv x := by
-      apply Sym2.ext
-      intro w
-      have hends : (P.dualGraph.reindex e).ends (eeqv x) = P.dualGraph.ends (eeqv x) := by
-        rw [DualGraph.ends_def, DualGraph.ends_def,
-          DualGraph.endpoint_reindex, DualGraph.endpoint_reindex]
-      rw [hends, P.mem_ends_dualGraph_iff, Sym2.mem_map]
-      refine ⟨fun ⟨b, hb₁, hb₂⟩ ↦ ⟨veqv.symm w, ?_, veqv.apply_symm_apply w⟩, ?_⟩
-      · rw [(P.reindex e).mem_ends_dualGraph_iff]
-        refine ⟨b, hb₁.trans (he x), ?_⟩
-        have hvw : (P.reindex e).dualGraphVertexEquiv (veqv.symm w) = P.dualGraphVertexEquiv w :=
-          (P.reindex e).dualGraphVertexEquiv.apply_symm_apply _
-        exact hvw.symm ▸ hb₂
-      · rintro ⟨v, hv_mem, rfl⟩
-        rw [(P.reindex e).mem_ends_dualGraph_iff] at hv_mem
-        obtain ⟨b, hb₁, hb₂⟩ := hv_mem
-        exact ⟨b, hb₁.trans (he x).symm, (hv v).symm ▸ hb₂⟩
-    genus_vertexEquiv v := by
-      rw [DualGraph.genus_reindex, P.genus_dualGraph, (P.reindex e).genus_dualGraph]
-      exact congrArg
-        (fun u : irreducibleComponents (P.total.singularLocus K).blowup ↦
-          (P.total.normalizedComponent
-            (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := P.total ↘ Spec (.of K)))
-            u).genus K)
-        (hv v)
-    vertexEquiv_marking i := by
-      let _ := P.total.isRegular_blowup_singularLocus
-        (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := P.total ↘ Spec (.of K)))
-      apply P.dualGraphVertexEquiv.injective
-      exact (hv _).trans
-        (((P.reindex e).dualGraphVertexEquiv_marking i).trans
-          (P.dualGraphVertexEquiv_marking (e i)).symm) }
+  (P.dualGraph_reindex e) ▸ DualGraph.Iso.refl (P.reindex e).dualGraph
 
 /-- `reindexDualGraphIso` identifies normalized-component vertices of `(P.reindex e).dualGraph` and
 `P.dualGraph`. -/
@@ -289,8 +234,12 @@ def reindexDualGraphIso (e : Fin m ↪ Fin n) :
 theorem dualGraphVertexEquiv_reindexDualGraphIso_vertexEquiv
     (e : Fin m ↪ Fin n) (v : (P.reindex e).dualGraph.Vertex) :
     P.dualGraphVertexEquiv ((P.reindexDualGraphIso e).vertexEquiv v) =
-      (P.reindex e).dualGraphVertexEquiv v :=
-  P.dualGraphVertexEquiv.apply_symm_apply _
+      (P.reindex e).dualGraphVertexEquiv v := by
+  have hheq : ∀ {G H : DualGraph.{u} (Fin m)} (h : G = H) (v : G.Vertex),
+      HEq ((h ▸ DualGraph.Iso.refl G : G.Iso H).vertexEquiv v) v := by
+    rintro _ _ rfl v
+    simp
+  exact P.total.dualGraphVertexEquiv_eq_of_heq _ _ _ (hheq (P.dualGraph_reindex e) v)
 
 /-- `reindexDualGraphIso` identifies singular-point edges of `(P.reindex e).dualGraph` and
 `P.dualGraph`. -/
@@ -298,8 +247,12 @@ theorem dualGraphVertexEquiv_reindexDualGraphIso_vertexEquiv
 theorem dualGraphEdgeEquiv_reindexDualGraphIso_edgeEquiv
     (e : Fin m ↪ Fin n) (x : (P.reindex e).dualGraph.Edge) :
     P.dualGraphEdgeEquiv ((P.reindexDualGraphIso e).edgeEquiv x) =
-      (P.reindex e).dualGraphEdgeEquiv x :=
-  P.dualGraphEdgeEquiv.apply_symm_apply _
+      (P.reindex e).dualGraphEdgeEquiv x := by
+  have hheq : ∀ {G H : DualGraph.{u} (Fin m)} (h : G = H) (x : G.Edge),
+      HEq ((h ▸ DualGraph.Iso.refl G : G.Iso H).edgeEquiv x) x := by
+    rintro _ _ rfl x
+    simp
+  exact P.total.dualGraphEdgeEquiv_eq_of_heq _ _ _ (hheq (P.dualGraph_reindex e) x)
 
 /-- On edges, `reindexDualGraphIso` preserves the underlying singular point of `P.total`. -/
 theorem subschemeι_reindexDualGraphIso_edgeEquiv
@@ -364,9 +317,7 @@ def dualGraphIsoOfIso (e : P ≅ Q) : P.dualGraph.Iso Q.dualGraph :=
     (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := Q.total ↘ Spec (.of K)))
     (PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := P.total ↘ Spec (.of K)))
     ((Over.forget _).mapIso (toOver.mapIso e) : P.total ≅ Q.total)
-    (by
-      change e.hom.hom ≫ _ = _
-      simp)
+    (forget_mapIso_toOver_hom_comp_over e)
     Q.marking P.marking
     Q.range_marking_subset_smoothLocus_over P.range_marking_subset_smoothLocus_over
     (fun i ↦ e.hom.marking_comp_hom i)
@@ -379,9 +330,7 @@ theorem subschemeι_dualGraphIsoOfIso_edgeEquiv (e : P ≅ Q) (x : P.dualGraph.E
       e.hom.hom ((P.total.singularLocus K).subschemeι (P.dualGraphEdgeEquiv x)) :=
   TauCeti.AlgebraicGeometry.subschemeι_dualGraphIsoOfIso_edgeEquiv (X := Q.total) (X' := P.total)
     _ _ ((Over.forget _).mapIso (toOver.mapIso e) : P.total ≅ Q.total)
-    (by
-      change e.hom.hom ≫ _ = _
-      simp)
+    (forget_mapIso_toOver_hom_comp_over e)
     Q.marking P.marking
     Q.range_marking_subset_smoothLocus_over P.range_marking_subset_smoothLocus_over
     (fun i ↦ e.hom.marking_comp_hom i) x
@@ -396,9 +345,7 @@ theorem vertexEquiv_dualGraphIsoOfIso_eq_iff (e : P ≅ Q)
         (Q.dualGraphIrreducibleComponentsEquiv w : Set Q.total) :=
   TauCeti.AlgebraicGeometry.vertexEquiv_dualGraphIsoOfIso_eq_iff (X := Q.total) (X' := P.total)
     _ _ ((Over.forget _).mapIso (toOver.mapIso e) : P.total ≅ Q.total)
-    (by
-      change e.hom.hom ≫ _ = _
-      simp)
+    (forget_mapIso_toOver_hom_comp_over e)
     Q.marking P.marking
     Q.range_marking_subset_smoothLocus_over P.range_marking_subset_smoothLocus_over
     (fun i ↦ e.hom.marking_comp_hom i) v w
@@ -434,8 +381,8 @@ theorem dualGraphIsoOfIso_trans (e₁ : P ≅ Q) (e₂ : Q ≅ R) :
           (dualGraphIsoOfIso e₁).trans (dualGraphIsoOfIso e₂) := by
     rintro _ _ _ rfl
     exact TauCeti.AlgebraicGeometry.dualGraphIsoOfIso_trans _ _ _
-      e₁_tot (by change e₁.hom.hom ≫ _ = _; simp)
-      e₂_tot (by change e₂.hom.hom ≫ _ = _; simp)
+      e₁_tot (forget_mapIso_toOver_hom_comp_over e₁)
+      e₂_tot (forget_mapIso_toOver_hom_comp_over e₂)
       R.marking Q.marking P.marking
       R.range_marking_subset_smoothLocus_over Q.range_marking_subset_smoothLocus_over
       P.range_marking_subset_smoothLocus_over
@@ -456,7 +403,7 @@ theorem dualGraphIsoOfIso_symm (e : P ≅ Q) :
           (dualGraphIsoOfIso e).symm := by
     rintro _ _ _ rfl
     exact TauCeti.AlgebraicGeometry.dualGraphIsoOfIso_symm _ _
-      e_tot (by change e.hom.hom ≫ _ = _; simp) Q.marking P.marking
+      e_tot (forget_mapIso_toOver_hom_comp_over e) Q.marking P.marking
       Q.range_marking_subset_smoothLocus_over P.range_marking_subset_smoothLocus_over
       (fun i ↦ e.hom.marking_comp_hom i)
   exact aux _ _ _ (Iso.ext rfl)

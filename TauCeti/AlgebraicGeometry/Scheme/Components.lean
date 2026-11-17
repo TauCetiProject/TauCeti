@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.ConnectedComponent
 import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
+import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
@@ -17,23 +18,31 @@ import TauCeti.AlgebraicGeometry.Restrict
 On a locally Noetherian scheme `X` whose stalks are integral domains (in particular, any regular
 scheme or locally Noetherian normal scheme), local Noetherianity makes the underlying topological
 space locally connected while every open subscheme inherits local Noetherianity and integral-domain
-stalks. Each connected component `X.connectedComponentOpen x` is therefore an open-and-closed
-connected subscheme that is irreducible by
-`TauCeti.AlgebraicGeometry.irreducibleSpace_of_connected_of_isDomain_stalk` and reduced, hence
-integral (`TauCeti.AlgebraicGeometry.isIntegral_connectedComponentOpen_of_isDomain_stalk`, wrapping
-the argument of `TauCeti.AlgebraicGeometry.isIntegral_of_connected_of_isRegularLocalRing_stalk`).
+stalks (`AlgebraicGeometry.Scheme.Hom.isDomain_stalk_iff_of_isIso_stalkMap`). Each connected
+component `X.connectedComponentOpen x` is therefore an open-and-closed connected subscheme that is
+irreducible by `TauCeti.AlgebraicGeometry.irreducibleSpace_of_connected_of_isDomain_stalk` and
+reduced, hence integral
+(`TauCeti.AlgebraicGeometry.isIntegral_connectedComponentOpen_of_isDomain_stalk`, applying
+`TauCeti.AlgebraicGeometry.isIntegral_of_connected_of_isDomain_stalk`).
 Consequently the irreducible components of `X` coincide with its connected components: they are
 pairwise disjoint clopen subsets partitioning `X`, and each `v : irreducibleComponents X` carries a
 canonical clopen integral subscheme structure (`TauCeti.AlgebraicGeometry.componentOpen`).
 
-When `X'` is a pullback of `X` along a geometrically irreducible universally open morphism
-`h : S' ⟶ S` (for instance `Spec M ⟶ Spec K` over a separably closed field `K` for any `K`-algebra
-`M` with irreducible spectrum, via
-`TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isSepClosed` and
-`TauCeti.AlgebraicGeometry.irreducibleComponentsEquivOfIsPullback`, built on Mathlib's
-`AlgebraicGeometry.Scheme.Hom.irreducibleComponentsEquiv`), the projection `g : X' ⟶ X` induces a
-bijection on irreducible components and identifies each component open of `X'` as the base change of
-the corresponding component open of `X`
+For base change along a geometrically irreducible universally open morphism `h : S' ⟶ S` (for
+instance `Spec M ⟶ Spec K` over a separably closed field `K` for any `K`-algebra `M` with
+irreducible spectrum, via `TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isSepClosed`),
+the bijection on irreducible components holds unconditionally for arbitrary schemes `X` and
+pullbacks `X'` (`TauCeti.AlgebraicGeometry.irreducibleComponentsEquivOfIsPullback` and
+`TauCeti.AlgebraicGeometry.bijOn_preimage_irreducibleComponents_of_isSepClosed` in
+`TauCeti.AlgebraicGeometry.Geometrically.Irreducible`, built on Mathlib's
+`AlgebraicGeometry.Scheme.Hom.irreducibleComponentsEquiv`).
+
+Under the additional hypotheses that **both** `X` and the pullback `X'` are locally Noetherian with
+integral-domain stalks, the projection `g : X' ⟶ X` is compatible with `componentOf`
+(`TauCeti.AlgebraicGeometry.componentOf_apply_of_isPullback`), pulls back each `componentOpen` of
+`X` to the corresponding `componentOpen` of `X'`
+(`TauCeti.AlgebraicGeometry.preimage_componentOpen_of_isPullback`), and identifies each component
+open of `X'` as the base change of the corresponding component open of `X`
 (`TauCeti.AlgebraicGeometry.exists_isPullback_componentOpen`).
 
 ## References
@@ -54,26 +63,14 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry
 
-private theorem isIntegral_of_connected_of_isDomain_stalk (Z : Scheme.{u})
-    [IsLocallyNoetherian Z] [ConnectedSpace Z] [∀ z : Z, IsDomain (Z.presheaf.stalk z)] :
-    IsIntegral Z :=
-  have := irreducibleSpace_of_connected_of_isDomain_stalk Z fun _ ↦ inferInstance
-  have := isReduced_of_isReduced_stalk Z
-  isIntegral_of_irreducibleSpace_of_isReduced Z
-
-private theorem isDomain_stalk_opens (X : Scheme.{u})
-    [∀ x : X, IsDomain (X.presheaf.stalk x)] (U : X.Opens) (u : U.toScheme) :
-    IsDomain (U.toScheme.presheaf.stalk u) :=
-  (asIso (U.ι.stalkMap u)).commRingCatIsoToRingEquiv.symm.toMulEquiv.isDomain _
-
 /-- Each connected component of a locally Noetherian scheme with integral-domain stalks, equipped
 with its open-subscheme structure, is integral. -/
 instance isIntegral_connectedComponentOpen_of_isDomain_stalk (X : Scheme.{u})
     [IsLocallyNoetherian X] [∀ x : X, IsDomain (X.presheaf.stalk x)] (x : X) :
     IsIntegral (X.connectedComponentOpen x).toScheme :=
   have : ∀ u : (X.connectedComponentOpen x).toScheme,
-      IsDomain ((X.connectedComponentOpen x).toScheme.presheaf.stalk u) :=
-    isDomain_stalk_opens X (X.connectedComponentOpen x)
+      IsDomain ((X.connectedComponentOpen x).toScheme.presheaf.stalk u) := fun u ↦
+    ((X.connectedComponentOpen x).ι.isDomain_stalk_iff_of_isIso_stalkMap u).mp inferInstance
   isIntegral_of_connected_of_isDomain_stalk (X.connectedComponentOpen x).toScheme
 
 section Components
@@ -195,8 +192,8 @@ instance connectedSpace_componentOpen (v : irreducibleComponents X) :
 instance isIntegral_componentOpen (v : irreducibleComponents X) :
     IsIntegral (componentOpen X v).toScheme :=
   have : ∀ u : (componentOpen X v).toScheme,
-      IsDomain ((componentOpen X v).toScheme.presheaf.stalk u) :=
-    isDomain_stalk_opens X (componentOpen X v)
+      IsDomain ((componentOpen X v).toScheme.presheaf.stalk u) := fun u ↦
+    ((componentOpen X v).ι.isDomain_stalk_iff_of_isIso_stalkMap u).mp inferInstance
   isIntegral_of_connected_of_isDomain_stalk (componentOpen X v).toScheme
 
 instance isClosedImmersion_componentOpen_ι (v : irreducibleComponents X) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 public import TauCeti.AlgebraicGeometry.Blowup.IdealSheaf
 public import TauCeti.AlgebraicGeometry.Curves.Node.FiniteEtale
@@ -14,6 +15,7 @@ public import TauCeti.RingTheory.Node.TangentCone
 
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.Blowup.Pullback
+import TauCeti.AlgebraicGeometry.FiniteEtale.SepClosed
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.RingTheory.LocalRing.Localization
 
@@ -28,8 +30,10 @@ Let `X` be a nodal curve over a field `K`, and let `Sing(X/K)` be its singular s
 
 This file proves that `E ⟶ Sing(X/K)` is finite étale of rank two: every node has exactly two
 branches, possibly conjugate over a separable quadratic extension of its residue field. No
-properness of `X` is needed. When `X` is proper, `Sing(X/K)` is moreover finite étale over `K`
-(`AlgebraicGeometry.Scheme.isFinite_singularLocus_subschemeι_comp`).
+properness of `X` is needed. Over a separably closed field, the set-theoretic fibre of `E` over
+every singular point therefore has cardinality two
+(`AlgebraicGeometry.Scheme.natCard_branchFiber_eq_two`). When `X` is proper, `Sing(X/K)` is
+moreover finite étale over `K` (`AlgebraicGeometry.Scheme.isFinite_singularLocus_subschemeι_comp`).
 
 The proof is local at the nodes. A field-valued point `t` of `Sing(X/K)` factors through the local
 ring `A` of a standard syntomic affine chart of `X` at a prime containing the singular ideal. The
@@ -66,6 +70,8 @@ identification is not used here.
   subscheme.
 * `AlgebraicGeometry.Scheme.finrank_branchSchemeToSingularLocus`: it has rank two over every point
   of the singular subscheme.
+* `AlgebraicGeometry.Scheme.natCard_branchFiber_eq_two`: over a separably closed field, the
+  set-theoretic fibre of the branch scheme over every singular point has cardinality two.
 * `TauCeti.AlgebraicGeometry.isPullback_blowupSingularLocusMap` and
   `TauCeti.AlgebraicGeometry.isPullback_branchSchemeMap` (together with
   `AlgebraicGeometry.Scheme.exists_isPullback_branchSchemeToSingularLocus`): the blowup of the
@@ -531,5 +537,20 @@ theorem finrank_branchSchemeToSingularLocus
   rw [← (X.singularLocus K).subscheme.fromSpecResidueField_apply s y,
     ← Scheme.Hom.finrank_of_isPullback _ _ _ _ (IsPullback.of_hasPullback _ t)]
   exact (etale_isFinite_finrank_pullback_snd_branchSchemeToSingularLocus X hnodal t).2.2 y
+
+/-- Over a separably closed field, every singular point of a nodal curve has two branches in the
+branch scheme. -/
+theorem natCard_branchFiber_eq_two [IsSepClosed K]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
+    (e : letI := hnodal.syntomic; (X.singularLocus K).subscheme) :
+    letI := hnodal.syntomic
+    Nat.card {b : X.branchScheme K // X.branchSchemeToSingularLocus K b = e} = 2 := by
+  have := hnodal.syntomic
+  have := X.isFinite_branchSchemeToSingularLocus hnodal
+  have := X.etale_branchSchemeToSingularLocus hnodal
+  have := X.etale_singularLocus_subschemeι_comp hnodal
+  exact ((X.branchSchemeToSingularLocus K).natCard_preimage_eq_finrank_of_isSepClosed
+    ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) e).trans
+      (X.finrank_branchSchemeToSingularLocus hnodal e)
 
 end AlgebraicGeometry.Scheme

@@ -14,7 +14,9 @@ public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 
 For a proper nodal curve over a field, the relative singular subscheme is finite étale over the
 field. Finiteness follows from properness and the fact that a nodal singular locus is
-unramified; flatness over a field then gives étaleness. This is the scheme that records the
+unramified; flatness over a field then gives étaleness. Over any commutative ring with finite
+spectrum, a quasi-compact nodal relative curve already has finitely many singular points
+(`AlgebraicGeometry.Scheme.finite_singularLocus_subscheme`). This is the scheme that records the
 nodes before passing to a separable extension that labels them.
 
 ## References
@@ -49,6 +51,21 @@ theorem _root_.AlgebraicGeometry.Scheme.isFinite_singularLocus_subschemeι_comp
       ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
     hAffine.unramified_singularLocus
   exact IsFinite.of_isProper_of_locallyQuasiFinite _
+
+/-- Over a commutative ring with finite spectrum (in particular over any field), a quasi-compact
+nodal relative curve has finitely many singular points. -/
+theorem _root_.AlgebraicGeometry.Scheme.finite_singularLocus_subscheme [Finite (Spec (.of R))]
+    (X : Scheme.{u}) [X.Over (Spec (.of R))] [QuasiCompact (X ↘ Spec (.of R))]
+    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) :
+    letI := hnodal.syntomic
+    Finite (X.singularLocus R).subscheme := by
+  have := hnodal.syntomic
+  have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
+  have : Unramified ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
+    hAffine.unramified_singularLocus
+  exact Set.finite_univ_iff.mp
+    (((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))).finite_preimage Set.finite_univ)
 
 variable {K : Type u} [Field K]
 

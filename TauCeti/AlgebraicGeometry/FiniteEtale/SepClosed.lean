@@ -8,10 +8,10 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.FieldTheory.IsSepClosed
-public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
-import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
+import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+import TauCeti.FieldTheory.IsSepClosed
 
 /-!
 # Points and fibres of finite étale schemes over a separably closed field
@@ -34,14 +34,6 @@ applies in particular whenever `S` is unramified (for instance étale) over a se
 (`AlgebraicGeometry.Scheme.Hom.natCard_preimage_eq_finrank_of_isSepClosed`), without assuming `S` is
 finite over `K` or that `p` has constant rank across `S`.
 
-Finally, for any locally quasi-finite scheme `X` over a separably closed field `K` (in particular
-any étale `K`-scheme) and any field extension `L / K`, the base-change projection
-`X ×_K Spec L ⟶ X` is geometrically irreducible (via
-`TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isSepClosed`), open, and has discrete
-source, hence is a homeomorphism
-(`TauCeti.AlgebraicGeometry.isHomeomorph_of_isPullback_algebraMap_of_isSepClosed`), even when
-`L / K` is inseparable.
-
 ## References
 
 * [The Stacks Project, Tag 03QR](https://stacks.math.columbia.edu/tag/03QR): schemes étale over a
@@ -53,12 +45,6 @@ public section
 open CategoryTheory Limits AlgebraicGeometry Opposite
 
 universe u
-
-private theorem isSepClosed_of_ringEquiv {K L : Type u} [Field K] [Field L] [IsSepClosed K]
-    (e : K ≃+* L) : IsSepClosed L :=
-  ⟨fun p hp ↦ by
-    simpa [Polynomial.map_map] using
-      IsSepClosed.splits_domain (f := e.toRingHom) (p.map e.symm.toRingHom) hp.map⟩
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -132,46 +118,15 @@ theorem natCard_preimage_eq_finrank_of_isSepClosed {K : Type u} [Field K] [IsSep
     ⟨RingHom.injective _, (Ideal.bijective_algebraMap_quotient_residueField (f s).asIdeal).2.comp
       Ideal.Quotient.mk_surjective⟩
   have : IsSepClosed (f s).asIdeal.ResidueField :=
-    isSepClosed_of_ringEquiv (RingEquiv.ofBijective _ hbij)
+    IsSepClosed.of_ringEquiv (RingEquiv.ofBijective _ hbij)
   have : IsSepClosed ((Spec (.of K)).residueField (f.base s)) :=
-    isSepClosed_of_ringEquiv (Spec.residueFieldIso (.of K) (f s)).commRingCatIsoToRingEquiv.symm
+    IsSepClosed.of_ringEquiv (Spec.residueFieldIso (.of K) (f s)).commRingCatIsoToRingEquiv.symm
   let : Algebra ((Spec (.of K)).residueField (f.base s)) (S.residueField s) :=
     (f.residueFieldMap s).hom.toAlgebra
   have : IsSepClosed (S.residueField s) :=
-    isSepClosed_of_ringEquiv (RingEquiv.ofBijective _
+    IsSepClosed.of_ringEquiv (RingEquiv.ofBijective _
       (IsSepClosed.algebraMap_bijective ((Spec (.of K)).residueField (f.base s))
         (S.residueField s)))
   exact p.natCard_preimage_eq_finrank_of_isSepClosed_residueField s
 
 end AlgebraicGeometry.Scheme.Hom
-
-namespace TauCeti.AlgebraicGeometry
-
-/-- **Base change of a locally quasi-finite scheme over a separably closed field along any field
-extension is a homeomorphism.** -/
-theorem isHomeomorph_of_isPullback_algebraMap_of_isSepClosed
-    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
-    {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} [LocallyQuasiFinite f]
-    {f' : X' ⟶ Spec (.of L)} {g : X' ⟶ X}
-    (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
-    IsHomeomorph g := by
-  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
-  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
-  have : LocallyQuasiFinite f' := MorphismProperty.of_isPullback H inferInstance
-  have : IsLocallyArtinian X' := .of_locallyQuasiFinite f'
-  refine ⟨g.continuous, g.isOpenMap, ⟨fun x₁ x₂ hx ↦ by_contra fun hne ↦ ?_, g.surjective⟩⟩
-  obtain ⟨z, -, hz₁, hz₂⟩ := (g.isIrreducible_preimage g.isOpenMap isIrreducible_singleton).2
-    {x₁} {x₁}ᶜ (isOpen_discrete _) (isOpen_discrete _) ⟨x₁, hx, rfl⟩ ⟨x₂, rfl, Ne.symm hne⟩
-  exact hz₂ hz₁
-
-/-- Base change of a locally quasi-finite scheme over a separably closed field along any field
-extension is bijective on points. -/
-theorem bijective_of_isPullback_algebraMap_of_isSepClosed
-    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
-    {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} [LocallyQuasiFinite f]
-    {f' : X' ⟶ Spec (.of L)} {g : X' ⟶ X}
-    (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
-    Function.Bijective g :=
-  (isHomeomorph_of_isPullback_algebraMap_of_isSepClosed H).bijective
-
-end TauCeti.AlgebraicGeometry

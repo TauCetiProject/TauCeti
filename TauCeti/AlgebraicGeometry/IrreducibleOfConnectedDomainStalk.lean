@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 daouid. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: daouid
+Authors: daouid, The Tau Ceti contributors
 -/
 module
 
@@ -11,15 +11,17 @@ public import Mathlib.AlgebraicGeometry.Properties
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 
 /-!
-# Irreducibility of connected schemes with domain stalks
+# Irreducibility and integrality of connected schemes with domain stalks
 
-We show that a locally noetherian connected scheme whose stalks are domains is irreducible;
-when its stalks are regular local rings, it is integral.
+We show that a locally noetherian connected scheme whose stalks are domains is irreducible
+and in fact integral (`isIntegral_of_connected_of_isDomain_stalk`); in particular, when its
+stalks are regular local rings, it is integral.
 
 We prove that a locally noetherian connected scheme whose stalks have unique
 minimal primes is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime_stalk`),
 from which we deduce that such a scheme is irreducible if its stalks are
-integral domains (`irreducibleSpace_of_connected_of_isDomain_stalk`). Since regular local rings
+integral domains (`irreducibleSpace_of_connected_of_isDomain_stalk`) and hence integral
+(`isIntegral_of_connected_of_isDomain_stalk`). Since regular local rings
 are domains (`TauCeti.IsRegularLocalRing.isDomain`), a locally noetherian connected scheme whose
 stalks are regular local rings is integral (`isIntegral_of_connected_of_isRegularLocalRing_stalk`).
 
@@ -404,13 +406,19 @@ theorem irreducibleSpace_of_connected_of_isDomain_stalk (Z : Scheme.{u}) [IsLoca
     exact Set.uniqueSingleton ⊥
   exact irreducibleSpace_of_connected_of_unique_minimalPrime_stalk Z hU
 
+/-- A locally noetherian connected scheme whose stalks are integral domains is integral. -/
+theorem isIntegral_of_connected_of_isDomain_stalk (Z : Scheme.{u})
+    [IsLocallyNoetherian Z] [ConnectedSpace Z]
+    [∀ z : Z, IsDomain (Z.presheaf.stalk z)] : IsIntegral Z :=
+  have := irreducibleSpace_of_connected_of_isDomain_stalk Z fun _ ↦ inferInstance
+  have := isReduced_of_isReduced_stalk Z
+  isIntegral_of_irreducibleSpace_of_isReduced Z
+
 /-- A locally noetherian connected scheme whose stalks are regular local rings is integral. -/
 theorem isIntegral_of_connected_of_isRegularLocalRing_stalk (Z : Scheme.{u})
     [IsLocallyNoetherian Z] [ConnectedSpace Z]
     [∀ x : Z, IsRegularLocalRing (Z.presheaf.stalk x)] : IsIntegral Z :=
-  have := irreducibleSpace_of_connected_of_isDomain_stalk Z fun _ ↦ inferInstance
-  have := isReduced_of_isReduced_stalk Z
-  isIntegral_of_irreducibleSpace_of_isReduced Z
+  isIntegral_of_connected_of_isDomain_stalk Z
 
 end AlgebraicGeometry
 

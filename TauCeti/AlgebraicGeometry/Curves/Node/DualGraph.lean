@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
 public import TauCeti.AlgebraicGeometry.Curves.Node.NormalizedComponent
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 import Mathlib.Tactic.FinCases
-import TauCeti.AlgebraicGeometry.FiniteEtale.SepClosed
 import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 
 /-!
@@ -74,52 +73,11 @@ open CategoryTheory Limits AlgebraicGeometry TauCeti TauCeti.AlgebraicGeometry
 
 universe u v
 
-private theorem isPullback_of_iso_over {K : Type u} [Field K]
-    {X X' : Scheme.{u}} [X.Over (Spec (.of K))] [X'.Over (Spec (.of K))]
-    (e : X' ≅ X) (he : e.hom ≫ (X ↘ Spec (.of K)) = X' ↘ Spec (.of K)) :
-    letI : Algebra K K := Algebra.id K
-    IsPullback e.hom (X' ↘ Spec (.of K)) (X ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
-  let _ : Algebra K K := Algebra.id K
-  have hSpec_id : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) := by simp
-  rw [hSpec_id]
-  exact IsPullback.of_horiz_isIso ⟨by simp [he]⟩
-
 namespace AlgebraicGeometry.Scheme
-
-/-- Over a commutative ring with finite spectrum (in particular over any field), a quasi-compact
-nodal relative curve has finitely many singular points. -/
-theorem finite_singularLocus_subscheme {R : Type u} [CommRing R] [Finite (Spec (.of R))]
-    (X : Scheme.{u}) [X.Over (Spec (.of R))] [QuasiCompact (X ↘ Spec (.of R))]
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R))) :
-    letI := hnodal.syntomic
-    Finite (X.singularLocus R).subscheme := by
-  have := hnodal.syntomic
-  have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
-    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
-  have : Unramified ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
-    hAffine.unramified_singularLocus
-  exact Set.finite_univ_iff.mp
-    (((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))).finite_preimage Set.finite_univ)
 
 section SepClosed
 
 variable {K : Type u} [Field K] [IsSepClosed K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
-
-/-- Over a separably closed field, every singular point of a nodal curve has two branches in the
-branch scheme. -/
-theorem natCard_branchFiber_eq_two
-    (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)))
-    (e : letI := hnodal.syntomic; (X.singularLocus K).subscheme) :
-    letI := hnodal.syntomic
-    Nat.card {b : X.branchScheme K // X.branchSchemeToSingularLocus K b = e} = 2 := by
-  have := hnodal.syntomic
-  have := X.isFinite_branchSchemeToSingularLocus hnodal
-  have := X.etale_branchSchemeToSingularLocus hnodal
-  have := X.etale_singularLocus_subschemeι_comp hnodal
-  exact ((X.branchSchemeToSingularLocus K).natCard_preimage_eq_finrank_of_isSepClosed
-    ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) e).trans
-      (X.finrank_branchSchemeToSingularLocus hnodal e)
 
 /-- Choice of ordering of the two branches of `X` over a node `e`, used to populate the ordered
 `endpoint : Edge → Fin 2 → Vertex` field of `DualGraph`. All downstream statements pass immediately
@@ -370,6 +328,30 @@ theorem genus_dualGraph (v : (X.dualGraph hnodal s hs).Vertex) :
 theorem reindex_dualGraph {κ : Type*} (f : κ → ι) :
     (X.dualGraph hnodal s hs).reindex f = X.dualGraph hnodal (s ∘ f) (fun j ↦ hs (f j)) :=
   (rfl)
+
+/-- The identification `dualGraphVertexEquiv` does not depend on the markings: vertices equal up to
+`HEq` across two marking families represent the same irreducible component of `Bl X`. -/
+theorem dualGraphVertexEquiv_eq_of_heq {ι' : Type*} {s' : ι' → (Spec (.of K) ⟶ X)}
+    {hs' : ∀ i, Set.range (s' i) ⊆ (X ↘ Spec (.of K)).smoothLocus}
+    {v : (X.dualGraph hnodal s hs).Vertex}
+    {w : (X.dualGraph hnodal s' hs').Vertex}
+    (h : HEq v w) :
+    letI := hnodal.syntomic
+    X.dualGraphVertexEquiv hnodal s hs v = X.dualGraphVertexEquiv hnodal s' hs' w := by
+  cases h
+  rfl
+
+/-- The identification `dualGraphEdgeEquiv` does not depend on the markings: edges equal up to
+`HEq` across two marking families represent the same singular point of `X`. -/
+theorem dualGraphEdgeEquiv_eq_of_heq {ι' : Type*} {s' : ι' → (Spec (.of K) ⟶ X)}
+    {hs' : ∀ i, Set.range (s' i) ⊆ (X ↘ Spec (.of K)).smoothLocus}
+    {e₁ : (X.dualGraph hnodal s hs).Edge}
+    {e₂ : (X.dualGraph hnodal s' hs').Edge}
+    (h : HEq e₁ e₂) :
+    letI := hnodal.syntomic
+    X.dualGraphEdgeEquiv hnodal s hs e₁ = X.dualGraphEdgeEquiv hnodal s' hs' e₂ := by
+  cases h
+  rfl
 
 @[simp]
 theorem dualGraphVertexEquiv_marking (i : ι) :
@@ -664,10 +646,13 @@ theorem arithmeticGenus_dualGraph_eq_genus_of_smooth [Smooth (X ↘ Spec (.of K)
   have : IsIso (X.normalizedComponentι hnodal v₀') :=
     X.isIso_normalizedComponentι_of_eq_univ hnodal v₀' hv₀_univ
   let g₀ : X.dualGraphComponent hnodal v₀ ⟶ X := X.normalizedComponentι hnodal v₀' ≫ ν
-  have hpb := isPullback_of_iso_over (K := K) (asIso g₀) (by simp [g₀, v₀', ν])
-  have hgen : (X.dualGraphComponent hnodal v₀).genus K = X.genus K :=
-    letI : Algebra K K := Algebra.id K
-    genus_eq_of_isPullback_of_isProper hpb
+  have hgen : (X.dualGraphComponent hnodal v₀).genus K = X.genus K := by
+    let _ : Algebra K K := Algebra.id K
+    have hpb : IsPullback g₀ (X.dualGraphComponent hnodal v₀ ↘ Spec (.of K))
+        (X ↘ Spec (.of K)) (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
+      rw [show Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) by simp]
+      exact IsPullback.of_horiz_isIso ⟨by simp [g₀, v₀', ν]⟩
+    exact genus_eq_of_isPullback_of_isProper hpb
   rw [DualGraph.arithmeticGenus_def, X.firstBetti_dualGraph_of_smooth hnodal s hs, add_zero,
     Fintype.sum_eq_single v₀ (fun w hw ↦ absurd (huniq w) hw),
     X.genus_dualGraph hnodal s hs v₀, hgen]
@@ -939,9 +924,7 @@ theorem dualGraphVertexEquiv_dualGraphIsoOfIsPullback_vertexEquiv
         (X'.dualGraphVertexEquiv hnodal' s' hs' v') := by
   have := hnodal.syntomic
   have := hnodal'.syntomic
-  change X.dualGraphVertexEquiv hnodal s hs
-      (dualGraphIsoOfIsPullbackVertexEquiv hnodal hnodal' H s s' hs hs' v') = _
-  dsimp only [dualGraphIsoOfIsPullbackVertexEquiv, Equiv.trans_apply]
+  dsimp only [dualGraphIsoOfIsPullback, dualGraphIsoOfIsPullbackVertexEquiv, Equiv.trans_apply]
   exact Equiv.apply_symm_apply _ _
 
 /-- On edges, `dualGraphIsoOfIsPullback` sends a singular point `e'` of `X'` to the unique singular
@@ -969,10 +952,7 @@ theorem subschemeι_dualGraphIsoOfIsPullback_edgeEquiv
       g ((X'.singularLocus L).subschemeι (X'.dualGraphEdgeEquiv hnodal' s' hs' e')) := by
   have := hnodal.syntomic
   have := hnodal'.syntomic
-  change (X.singularLocus K).subschemeι
-      (X.dualGraphEdgeEquiv hnodal s hs
-        (dualGraphIsoOfIsPullbackEdgeEquiv hnodal hnodal' H s s' hs hs' e')) = _
-  dsimp only [dualGraphIsoOfIsPullbackEdgeEquiv, Equiv.trans_apply]
+  dsimp only [dualGraphIsoOfIsPullback, dualGraphIsoOfIsPullbackEdgeEquiv, Equiv.trans_apply]
   rw [Equiv.apply_symm_apply, Equiv.ofBijective_apply, ← Scheme.Hom.comp_apply,
     Scheme.IdealSheafData.subschemeMap_subschemeι, Scheme.Hom.comp_apply]
 
@@ -1084,15 +1064,6 @@ theorem dualGraphIsoOfIsPullback_trans
       subschemeι_dualGraphIsoOfIsPullback_edgeEquiv,
       subschemeι_dualGraphIsoOfIsPullback_edgeEquiv, Scheme.Hom.comp_apply]
 
-private theorem hmark_of_iso_over {K : Type u} [Field K] {X X' : Scheme.{u}}
-    (e : X' ≅ X) {ι : Type v} (s : ι → (Spec (.of K) ⟶ X)) (s' : ι → (Spec (.of K) ⟶ X'))
-    (hmark : ∀ i, s' i ≫ e.hom = s i) (i : ι) :
-    letI : Algebra K K := Algebra.id K
-    s' i ≫ e.hom = Spec.map (CommRingCat.ofHom (algebraMap K K)) ≫ s i := by
-  let _ : Algebra K K := Algebra.id K
-  have hSpec_id : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) := by simp
-  rw [hSpec_id, Category.id_comp, hmark i]
-
 /-- **Isomorphism invariance of the dual graph.** An isomorphism `e : X' ≅ X` of proper connected
 nodal curves over a separably closed field `K` compatible with smooth markings induces an
 isomorphism of their dual graphs. -/
@@ -1109,8 +1080,11 @@ def dualGraphIsoOfIso {K : Type u} [Field K] [IsSepClosed K]
     (hmark : ∀ i, s' i ≫ e.hom = s i) :
     (X'.dualGraph hnodal' s' hs').Iso (X.dualGraph hnodal s hs) :=
   letI : Algebra K K := Algebra.id K
-  dualGraphIsoOfIsPullback hnodal hnodal' (isPullback_of_iso_over e he) s s' hs hs'
-    (hmark_of_iso_over e s s' hmark)
+  dualGraphIsoOfIsPullback hnodal hnodal' (g := e.hom)
+    (by
+      rw [show Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) by simp]
+      exact IsPullback.of_horiz_isIso ⟨by simp [he]⟩)
+    s s' hs hs' (fun i ↦ by simp [hmark i])
 
 /-- On edges, `dualGraphIsoOfIso` sends a singular point `e'` of `X'` to the singular point of `X`
 mapped onto `e.hom (e')`. -/
@@ -1133,8 +1107,11 @@ theorem subschemeι_dualGraphIsoOfIso_edgeEquiv {K : Type u} [Field K] [IsSepClo
           ((dualGraphIsoOfIso hnodal hnodal' e he s s' hs hs' hmark).edgeEquiv e')) =
       e.hom ((X'.singularLocus K).subschemeι (X'.dualGraphEdgeEquiv hnodal' s' hs' e')) :=
   letI : Algebra K K := Algebra.id K
-  subschemeι_dualGraphIsoOfIsPullback_edgeEquiv hnodal hnodal' (isPullback_of_iso_over e he)
-    s s' hs hs' (hmark_of_iso_over e s s' hmark) e'
+  subschemeι_dualGraphIsoOfIsPullback_edgeEquiv hnodal hnodal' (g := e.hom)
+    (by
+      rw [show Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) by simp]
+      exact IsPullback.of_horiz_isIso ⟨by simp [he]⟩)
+    s s' hs hs' (fun i ↦ by simp [hmark i]) e'
 
 /-- On vertices, `dualGraphIsoOfIso` sends a component `v'` of `X'` to the unique component `w` of
 `X` containing the image under `e.hom` of the irreducible component corresponding to `v'`. -/
@@ -1155,8 +1132,11 @@ theorem vertexEquiv_dualGraphIsoOfIso_eq_iff {K : Type u} [Field K] [IsSepClosed
       e.hom '' (X'.dualGraphIrreducibleComponentsEquiv hnodal' s' hs' v' : Set X') ⊆
         (X.dualGraphIrreducibleComponentsEquiv hnodal s hs w : Set X) :=
   letI : Algebra K K := Algebra.id K
-  vertexEquiv_dualGraphIsoOfIsPullback_eq_iff hnodal hnodal' (isPullback_of_iso_over e he)
-    s s' hs hs' (hmark_of_iso_over e s s' hmark) v' w
+  vertexEquiv_dualGraphIsoOfIsPullback_eq_iff hnodal hnodal' (g := e.hom)
+    (by
+      rw [show Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) by simp]
+      exact IsPullback.of_horiz_isIso ⟨by simp [he]⟩)
+    s s' hs hs' (fun i ↦ by simp [hmark i]) v' w
 
 /-- The identity isomorphism of a pointed nodal curve induces the identity isomorphism of its dual
 graph. -/
@@ -1203,10 +1183,12 @@ theorem dualGraphIsoOfIso_trans {K : Type u} [Field K] [IsSepClosed K]
         (dualGraphIsoOfIso hnodal hnodal' e₂ he₂ s s' hs hs' hmark₂) := by
   let _ : Algebra K K := Algebra.id K
   have : IsScalarTower K K K := ⟨fun x y z ↦ mul_assoc x y z⟩
-  exact dualGraphIsoOfIsPullback_trans hnodal hnodal' hnodal''
-    (isPullback_of_iso_over e₁ he₁) (isPullback_of_iso_over e₂ he₂)
+  have hSpec_id : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 (Spec (.of K)) := by simp
+  exact dualGraphIsoOfIsPullback_trans hnodal hnodal' hnodal'' (g₁ := e₁.hom) (g₂ := e₂.hom)
+    (by rw [hSpec_id]; exact IsPullback.of_horiz_isIso ⟨by simp [he₁]⟩)
+    (by rw [hSpec_id]; exact IsPullback.of_horiz_isIso ⟨by simp [he₂]⟩)
     s s' s'' hs hs' hs''
-    (hmark_of_iso_over e₁ s' s'' hmark₁) (hmark_of_iso_over e₂ s s' hmark₂)
+    (fun i ↦ by simp [hmark₁ i]) (fun i ↦ by simp [hmark₂ i])
 
 /-- `dualGraphIsoOfIso` commutes with symmetry of pointed curve isomorphisms. -/
 theorem dualGraphIsoOfIso_symm {K : Type u} [Field K] [IsSepClosed K]

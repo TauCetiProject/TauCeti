@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Irreducible
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.Spectrum.Prime.Homeomorph
 public import TauCeti.RingTheory.TensorProduct.IsDomain
@@ -22,7 +23,9 @@ preimages identifies the irreducible components of `X` with those of `X'`: every
 component of a scheme over a separably closed field is geometrically irreducible. Thus, once the
 ground field is separably closed, no further field extension splits the irreducible components of
 a scheme; this is the input for splitting the components of a scheme of finite type over a finite
-separable extension of the ground field.
+separable extension of the ground field. When `X` is moreover locally quasi-finite over `K` (so that
+its base change `X'` to any field extension `L / K` is locally Artinian, hence discrete), the
+projection `X' ⟶ X` is in fact a homeomorphism.
 
 The proof has three steps.
 
@@ -60,6 +63,10 @@ subschemes.
 * `TauCeti.AlgebraicGeometry.bijOn_preimage_irreducibleComponents_of_isSepClosed`: over a separably
   closed field, preimage under a base change `X' ⟶ X` to a `K`-algebra with irreducible spectrum is
   a bijection from the irreducible components of `X` to those of `X'`.
+* `TauCeti.AlgebraicGeometry.isHomeomorph_of_isPullback_algebraMap_of_isSepClosed` and
+  `TauCeti.AlgebraicGeometry.bijective_of_isPullback_algebraMap_of_isSepClosed`: base change of a
+  locally quasi-finite scheme over a separably closed field along any field extension is a
+  homeomorphism (in particular, bijective on points), even when the extension is inseparable.
 * `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.geometricallyConnected`: the low-priority
   instance that geometric irreducibility implies geometric connectedness.
 * `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_comp_isDominant`: geometric irreducibility
@@ -240,6 +247,33 @@ theorem bijOn_preimage_irreducibleComponents_of_isSepClosed {K M : Type u} [Fiel
   · simpa [e] using (e ⟨Z, hZ⟩).2
   · have h' : (e ⟨Z, hZ⟩ : Set X') = (e ⟨W, hW⟩ : Set X') := by simpa [e] using h
     exact congrArg Subtype.val (e.injective (Subtype.ext h'))
+
+/-- **Base change of a locally quasi-finite scheme over a separably closed field along any field
+extension is a homeomorphism.** -/
+theorem isHomeomorph_of_isPullback_algebraMap_of_isSepClosed
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
+    {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} [LocallyQuasiFinite f]
+    {f' : X' ⟶ Spec (.of L)} {g : X' ⟶ X}
+    (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
+    IsHomeomorph g := by
+  have : GeometricallyIrreducible g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : UniversallyOpen g := MorphismProperty.of_isPullback H.flip inferInstance
+  have : LocallyQuasiFinite f' := MorphismProperty.of_isPullback H inferInstance
+  have : IsLocallyArtinian X' := .of_locallyQuasiFinite f'
+  refine ⟨g.continuous, g.isOpenMap, ⟨fun x₁ x₂ hx ↦ by_contra fun hne ↦ ?_, g.surjective⟩⟩
+  obtain ⟨z, -, hz₁, hz₂⟩ := (g.isIrreducible_preimage g.isOpenMap isIrreducible_singleton).2
+    {x₁} {x₁}ᶜ (isOpen_discrete _) (isOpen_discrete _) ⟨x₁, hx, rfl⟩ ⟨x₂, rfl, Ne.symm hne⟩
+  exact hz₂ hz₁
+
+/-- Base change of a locally quasi-finite scheme over a separably closed field along any field
+extension is bijective on points. -/
+theorem bijective_of_isPullback_algebraMap_of_isSepClosed
+    {K L : Type u} [Field K] [IsSepClosed K] [Field L] [Algebra K L]
+    {X X' : Scheme.{u}} {f : X ⟶ Spec (.of K)} [LocallyQuasiFinite f]
+    {f' : X' ⟶ Spec (.of L)} {g : X' ⟶ X}
+    (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K L)))) :
+    Function.Bijective g :=
+  (isHomeomorph_of_isPullback_algebraMap_of_isSepClosed H).bijective
 
 /-! ### Images and dense opens -/
 
