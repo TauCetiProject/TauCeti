@@ -101,17 +101,21 @@ back through the tangent trivialization at `p.proj`. -/
     cotangentCoreTotalSpaceDiffeomorph I b M k p =
       ⟨p.proj, ((FiniteRankBundleCore.dualCoords b.equivFunL).symm p.2).comp
         ((trivializationAt E (TangentSpace I) p.proj).continuousLinearMapAt 𝕜 p.proj)⟩ := by
-  rcases p with ⟨x, w⟩; dsimp only; change Fin r → 𝕜 at w
+  -- Chain via `.trans`: `cotangentCore` and `VectorBundleCore.Fiber` are non-reducible `def`s
+  -- (defeq to `ofLinearEquiv ...` and `Fin r → 𝕜`), so `rw` cannot match them directly.
   refine (FiniteRankBundleCore.ofLinearEquivTotalSpaceDiffeomorph_apply
     (FiniteRankBundleCore.dualCoords b.equivFunL)
-    (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) (I := I) (n := k) ⟨x, w⟩).trans ?_
-  refine congrArg (TotalSpace.mk' (E →L[𝕜] 𝕜) x) ?_
-  rw [FiniteRankBundleCore.ofLinearEquivFiberEquiv_apply,
-    ← Trivialization.symmL_apply (R := 𝕜) _
-      (mem_baseSet_trivializationAt (E →L[𝕜] 𝕜) (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) x)]
-  exact (Bundle.Trivialization.continuousLinearMap_symmL (trivializationAt E (TangentSpace I) x)
-    (trivializationAt 𝕜 (Bundle.Trivial M 𝕜) x) x
-    ((FiniteRankBundleCore.dualCoords b.equivFunL).symm w)).trans
+    (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) (I := I) (n := k) p).trans ?_
+  refine congrArg (TotalSpace.mk' (E →L[𝕜] 𝕜) p.proj) ?_
+  refine (FiniteRankBundleCore.ofLinearEquivFiberEquiv_apply
+    (FiniteRankBundleCore.dualCoords b.equivFunL)
+    (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) p.proj p.2).trans ?_
+  rw [← Trivialization.symmL_apply (R := 𝕜) _
+    (mem_baseSet_trivializationAt (E →L[𝕜] 𝕜) (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜) p.proj)]
+  exact (Bundle.Trivialization.continuousLinearMap_symmL
+    (trivializationAt E (TangentSpace I) p.proj)
+    (trivializationAt 𝕜 (Bundle.Trivial M 𝕜) p.proj) p.proj
+    ((FiniteRankBundleCore.dualCoords b.equivFunL).symm p.2)).trans
     (by simp [Trivial.eq_trivialization M 𝕜])
 
 /-- At `p.proj`, the inverse of `cotangentCoreTotalSpaceDiffeomorph` evaluates `p.2` on the chart
@@ -166,24 +170,28 @@ coordinate vectors. -/
 @[simp] theorem tangentDualCotangentDiffeomorph_apply (k : ℕ∞ω)
     (p : (tangentCore I b M).dual.core.TotalSpace) :
     tangentDualCotangentDiffeomorph I b M k p = ⟨p.proj, p.2⟩ := by
-  change (FiniteRankBundleCore.ofLinearEquiv b.equivFunL
-    (TangentSpace I : M → Type _)).dual.core.TotalSpace at p
-  rcases p with ⟨x, w⟩
+  -- Use `.trans` rather than `rw` across `tangentCore`/`cotangentCore` (non-reducible `@[expose]`
+  -- `def`s whose rank is defeq to `r`).
   refine (congrFun (FiniteRankBundleCore.coe_ofLinearEquivDualDiffeomorph
-    b.equivFunL (TangentSpace I : M → Type _) (I := I) (n := k)) ⟨x, w⟩).trans ?_
-  rw [CoordinateHom.totalSpaceMap_mk, FiniteRankBundleCore.fiberMap_ofLinearEquivDualIso_hom]; rfl
+    b.equivFunL (TangentSpace I : M → Type _) (I := I) (n := k)) p).trans ?_
+  refine (CoordinateHom.totalSpaceMap_mk (tangentDualCotangentIso I b M).hom p.proj p.2).trans ?_
+  exact congrArg (TotalSpace.mk' _ p.proj)
+    ((DFunLike.congr_fun (fiberMap_tangentDualCotangentIso_hom b p.proj) p.2).trans
+      (ContinuousLinearMap.id_apply p.2))
 
 /-- On total spaces, the inverse of `tangentDualCotangentDiffeomorph` acts as the identity on base
 points and coordinate vectors. -/
 @[simp] theorem tangentDualCotangentDiffeomorph_symm_apply (k : ℕ∞ω)
     (p : (cotangentCore I b M).core.TotalSpace) :
     (tangentDualCotangentDiffeomorph I b M k).symm p = ⟨p.proj, p.2⟩ := by
-  change (FiniteRankBundleCore.ofLinearEquiv (FiniteRankBundleCore.dualCoords b.equivFunL)
-    (fun y : M ↦ TangentSpace I y →L[𝕜] 𝕜)).core.TotalSpace at p
-  rcases p with ⟨x, w⟩
+  -- Use `.trans` rather than `rw` across `tangentCore`/`cotangentCore` (non-reducible `@[expose]`
+  -- `def`s whose rank is defeq to `r`).
   refine (congrFun (FiniteRankBundleCore.coe_ofLinearEquivDualDiffeomorph_symm
-    b.equivFunL (TangentSpace I : M → Type _) (I := I) (n := k)) ⟨x, w⟩).trans ?_
-  rw [CoordinateHom.totalSpaceMap_mk, FiniteRankBundleCore.fiberMap_ofLinearEquivDualIso_inv]; rfl
+    b.equivFunL (TangentSpace I : M → Type _) (I := I) (n := k)) p).trans ?_
+  refine (CoordinateHom.totalSpaceMap_mk (tangentDualCotangentIso I b M).inv p.proj p.2).trans ?_
+  exact congrArg (TotalSpace.mk' _ p.proj)
+    ((DFunLike.congr_fun (fiberMap_tangentDualCotangentIso_inv b p.proj) p.2).trans
+      (ContinuousLinearMap.id_apply p.2))
 
 end ManifoldOne
 

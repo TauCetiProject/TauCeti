@@ -308,12 +308,9 @@ theorem coordChange_ofLinearEquiv_dualCoords {i j x : B}
     (ofLinearEquiv (dualCoords e) (fun y ↦ V y →L[𝕜] 𝕜)).core.coordChange i j x =
       (ofLinearEquiv e V).dual.core.coordChange i j x := by
   rw [coordChange_ofLinearEquiv, coordChange_dual, coordChange_ofLinearEquiv]
-  change (dualCoords e).arrowCongr (dualCoords e)
-      ((trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) i).coordChangeL 𝕜
-        (trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) j) x) =
-    (e.arrowCongr e
-      ((trivializationAt F V j).coordChangeL 𝕜 (trivializationAt F V i) x)).piTranspose
-  refine (ContinuousLinearMap.eq_piTranspose_iff _ _).2 fun v w ↦ ?_
+  -- Pass `Fin r` explicitly so `Fintype` resolves to `Fin.fintype r` rather than
+  -- `Fin.fintype (ofLinearEquiv e V).rank` (defeq via `@[expose]` on `ofLinearEquiv`).
+  refine (ContinuousLinearMap.eq_piTranspose_iff (ι := Fin r) (κ := Fin r) _ _).2 fun v w ↦ ?_
   let ed (b : B) := trivializationAt (F →L[𝕜] 𝕜) (fun y ↦ V y →L[𝕜] 𝕜) b
   have hpair : ∑ k, v k *
       (dualCoords e).arrowCongr (dualCoords e) ((ed i).coordChangeL 𝕜 (ed j) x) w k =
@@ -328,7 +325,7 @@ theorem coordChange_ofLinearEquiv_dualCoords {i j x : B}
   rw [Trivialization.continuousLinearMapAt_apply_of_mem _ _ hi,
     Trivialization.symmL_apply (R := 𝕜) _ hj,
     ← Trivialization.coordChangeL_apply (R := 𝕜) _ _ ⟨hj, hi⟩, dualCoords_symm_apply]
-  rfl
+  simp only [ContinuousLinearEquiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe]
 
 private theorem baseSet_ofLinearEquiv_dual (i : B) :
     (ofLinearEquiv e V).dual.core.baseSet i = (trivializationAt F V i).baseSet :=

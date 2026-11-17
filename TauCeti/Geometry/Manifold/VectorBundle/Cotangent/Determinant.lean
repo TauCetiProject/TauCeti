@@ -315,25 +315,38 @@ private theorem contMDiff_cotangentDetCanonicalFiberEquiv (b : Basis (Fin (finra
   refine (((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
     b.topFormEquiv.symm).contDiff.comp_contMDiffAt
     ((cotangentCore I b M).det.contMDiffAt_localTriv_snd p₀)).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with ⟨x, u⟩ hq
-  change Fin (cotangentCore I b M).det.rank → 𝕜 at u
+  filter_upwards [hU] with ⟨x, w⟩ hq
   have hx₀ : x ∈ (chartAt H p₀.proj).source := by
     simpa [FiniteRankBundleCore.baseSet_det, baseSet_cotangentCore] using
-      ((cotangentCore I b M).det.core.mem_localTriv_source p₀.proj ⟨x, u⟩).1 hq
+      ((cotangentCore I b M).det.core.mem_localTriv_source p₀.proj ⟨x, w⟩).1 hq
+  have hlhs (u : Fin (cotangentCore I b M).det.rank → 𝕜) :
+      b.topFormEquiv (trivializationAt (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜)
+        (CanonicalBundle I M) p₀.proj ⟨x, cotangentDetCanonicalFiberEquiv I b M x u⟩).2 =
+      LinearMap.det (tangentCoordChange I p₀.proj x x : E →ₗ[𝕜] E) *
+        FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u := by
+    rw [b.topFormEquiv_apply, cotangentDetCanonicalFiberEquiv_apply,
+      CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul (mem_chart_source H x) hx₀ _ b,
+      ← Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ (mem_baseSet_trivializationAt _ _ x),
+      map_smul, Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
+        (mem_baseSet_trivializationAt _ _ x),
+      CanonicalBundle.trivializationAt_apply_snd_coordForm (mem_chart_source H x)]
+    simp [b.det_self]
+  have hrhs (u : Fin (cotangentCore I b M).det.rank → 𝕜) :
+      b.topFormEquiv (((FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M)).trans
+        b.topFormEquiv.symm)
+        (((cotangentCore I b M).det.core.coordChange x p₀.proj x) u)) =
+      LinearMap.det (tangentCoordChange I p₀.proj x x : E →ₗ[𝕜] E) *
+        FiniteRankBundleCore.detScalarEquiv (cotangentCore I b M) u := by
+    rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply,
+      coordChange_cotangentCore_det b (mem_chart_source H x) hx₀]
+    simp [_root_.smul_apply]
   apply b.topFormEquiv.injective
   dsimp only [Function.comp_apply]
-  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply,
-    b.topFormEquiv_apply, cotangentDetCanonicalFiberEquiv_apply,
-    CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul (mem_chart_source H x) hx₀ _ b,
-    ← Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ (mem_baseSet_trivializationAt _ _ x),
-    map_smul, Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
-      (mem_baseSet_trivializationAt _ _ x),
-    CanonicalBundle.trivializationAt_apply_snd_coordForm (mem_chart_source H x),
-    VectorBundleCore.localTriv_apply]
-  dsimp only
-  rw [(cotangentCore I b M).det.indexAt_eq,
-    coordChange_cotangentCore_det b (mem_chart_source H x) hx₀]
-  simp [b.det_self]
+  rw [VectorBundleCore.localTriv_apply, (cotangentCore I b M).det.indexAt_eq]
+  -- `VectorBundleCore.Fiber` is a semireducible `def` equal to the model fibre
+  -- `Fin (cotangentCore I b M).det.rank → 𝕜` with no wrapper lemma in Mathlib, so `rw` cannot
+  -- bridge them at reducible transparency; pass `w` directly into `hlhs` and `hrhs`.
+  exact (hlhs w).trans (hrhs w).symm
 
 /-- The reconstructed total space of `(cotangentCore I b M).det` is `C^k` diffeomorphic over `M` to
 `CanonicalBundle I M` at every regularity `k` (biholomorphic when `I = 𝓘(ℂ, E)` and `k = ∞`). -/
