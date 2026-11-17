@@ -12,14 +12,13 @@ import Mathlib.Algebra.MvPolynomial.Coeff
 # Ordered monomials in two variables
 
 The monomials `X 1 ^ a * X 0 ^ b` of `MvPolynomial (Fin 2) R`, with all powers of `X 1` to the left
-of all powers of `X 0`, are its monomial basis written in ordered form. This file records the
-normal form of a monomial as an ordered monomial, induction over ordered monomials, and
-extensionality of linear and bilinear maps on ordered monomials. These are the forms in which
-ordered products, such as `TauCeti.affineStar`, are defined and compared.
+of all powers of `X 0`, are its monomial basis written in ordered form. This file records
+induction over ordered monomials and extensionality of linear and bilinear maps on ordered
+monomials. These are the forms in which ordered products, such as `TauCeti.affineStar`, are defined
+and compared.
 
 ## Main results
 
-* `MvPolynomial.X_one_pow_mul_X_zero_pow_eq_monomial`: an ordered monomial as a monomial.
 * `MvPolynomial.induction_on_X_one_pow_mul_X_zero_pow`: induction over ordered monomials.
 * `MvPolynomial.linearMap_ext_X_one_pow_mul_X_zero_pow`,
   `MvPolynomial.linearMap_ext₂_X_one_pow_mul_X_zero_pow`: linear and bilinear maps agreeing on
@@ -31,12 +30,6 @@ public section
 namespace MvPolynomial
 
 variable {S : Type*} [CommSemiring S]
-
-/-- The ordered monomial `X 1 ^ a * X 0 ^ b` as a monomial with coefficient `1`. -/
-theorem X_one_pow_mul_X_zero_pow_eq_monomial (a b : ℕ) :
-    (X 1 ^ a * X 0 ^ b : MvPolynomial (Fin 2) S) =
-      monomial (Finsupp.single 1 a + Finsupp.single 0 b) 1 := by
-  simp [monomial_fin_two, mul_comm]
 
 /-- Induction on a polynomial in two variables through scalar multiples and sums of the ordered
 monomials `X 1 ^ a * X 0 ^ b`. -/

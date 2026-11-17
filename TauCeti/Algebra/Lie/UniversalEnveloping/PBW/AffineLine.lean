@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.AffineLine
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.RingTheory.MvPolynomial.AffineStar
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
-import TauCeti.Algebra.MvPolynomial.Fin.TwoOrdered
+import TauCeti.Algebra.MvPolynomial.Fin.Two.Ordered
 
 /-!
 # The ordered product and the enveloping algebra of the affine Lie algebra

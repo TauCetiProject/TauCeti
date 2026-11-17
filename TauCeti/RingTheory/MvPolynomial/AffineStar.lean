@@ -9,7 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.RingTheory.MvPolynomial.Rescale
 import Mathlib.Algebra.MvPolynomial.Coeff
-import TauCeti.Algebra.MvPolynomial.Fin.TwoOrdered
+import TauCeti.Algebra.MvPolynomial.Fin.Two.Ordered
 import TauCeti.Algebra.Ring.Commutator.Binomial
 
 /-!
@@ -90,8 +90,8 @@ theorem affineStar_X_one_pow_mul_X_zero_pow (h : S) (a b c d : ℕ) :
     affineStar h (X 1 ^ a * X 0 ^ b) (X 1 ^ c * X 0 ^ d) =
       ∑ n ∈ range (b + 1),
         C (b.choose n * c ^ n * h ^ n : S) * (X 1 ^ (a + c) * X 0 ^ (b + d - n)) := by
-  rw [X_one_pow_mul_X_zero_pow_eq_monomial a b, X_one_pow_mul_X_zero_pow_eq_monomial c d,
-    ← congrFun (coe_basisMonomials _ S), ← congrFun (coe_basisMonomials _ S), affineStar,
+  conv_lhs => simp only [X_pow_eq_monomial, monomial_mul_monomial, mul_one]
+  rw [← congrFun (coe_basisMonomials _ S), ← congrFun (coe_basisMonomials _ S), affineStar,
     Module.Basis.constr_basis, Module.Basis.constr_basis, affineStarTerm]
   simp
 
@@ -235,11 +235,10 @@ variable {A : Type*} [Semiring A] [Algebra S A]
 noncomputable def orderedEval (x y : A) : MvPolynomial (Fin 2) S →ₗ[S] A :=
   (basisMonomials (Fin 2) S).constr S fun s ↦ y ^ s 1 * x ^ s 0
 
-@[simp]
 theorem orderedEval_X_one_pow_mul_X_zero_pow (x y : A) (a b : ℕ) :
     orderedEval x y (X 1 ^ a * X 0 ^ b : MvPolynomial (Fin 2) S) = y ^ a * x ^ b := by
-  rw [X_one_pow_mul_X_zero_pow_eq_monomial, ← congrFun (coe_basisMonomials _ S), orderedEval,
-    Module.Basis.constr_basis]
+  simp only [X_pow_eq_monomial, monomial_mul_monomial, mul_one]
+  rw [← congrFun (coe_basisMonomials _ S), orderedEval, Module.Basis.constr_basis]
   simp
 
 @[simp]
@@ -290,7 +289,7 @@ theorem orderedEval_X_one_mul (x y : A) (p : MvPolynomial (Fin 2) S) :
   have key : orderedEval x y ∘ₗ LinearMap.mulLeft S (X 1) =
       LinearMap.mulLeft S y ∘ₗ orderedEval x y := by
     refine linearMap_ext_X_one_pow_mul_X_zero_pow fun a b ↦ ?_
-    simp [← mul_assoc, ← pow_succ']
+    simp [orderedEval_X_one_pow_mul_X_zero_pow, ← mul_assoc, ← pow_succ']
   exact LinearMap.congr_fun key p
 
 @[simp]
@@ -299,8 +298,42 @@ theorem orderedEval_mul_X_zero (x y : A) (p : MvPolynomial (Fin 2) S) :
   have key : orderedEval x y ∘ₗ LinearMap.mulRight S (X 0) =
       LinearMap.mulRight S x ∘ₗ orderedEval x y := by
     refine linearMap_ext_X_one_pow_mul_X_zero_pow fun a b ↦ ?_
-    simp [mul_assoc, ← pow_succ]
+    simp [orderedEval_X_one_pow_mul_X_zero_pow, mul_assoc, ← pow_succ]
   exact LinearMap.congr_fun key p
+
+@[simp]
+theorem orderedEval_X_one_pow_mul (x y : A) (a : ℕ) (p : MvPolynomial (Fin 2) S) :
+    orderedEval x y (X 1 ^ a * p) = y ^ a * orderedEval x y p := by
+  induction a with
+  | zero => simp
+  | succ a ih => rw [pow_succ', mul_assoc, orderedEval_X_one_mul, ih, pow_succ', mul_assoc]
+
+@[simp]
+theorem orderedEval_mul_X_zero_pow (x y : A) (b : ℕ) (p : MvPolynomial (Fin 2) S) :
+    orderedEval x y (p * X 0 ^ b) = orderedEval x y p * x ^ b := by
+  induction b with
+  | zero => simp
+  | succ b ih => rw [pow_succ, ← mul_assoc, orderedEval_mul_X_zero, ih, pow_succ, mul_assoc]
+
+@[simp]
+theorem orderedEval_X_one_pow (x y : A) (a : ℕ) :
+    orderedEval x y (X 1 ^ a : MvPolynomial (Fin 2) S) = y ^ a := by
+  simpa using orderedEval_X_one_pow_mul_X_zero_pow (S := S) x y a 0
+
+@[simp]
+theorem orderedEval_X_zero_pow (x y : A) (b : ℕ) :
+    orderedEval x y (X 0 ^ b : MvPolynomial (Fin 2) S) = x ^ b := by
+  simpa using orderedEval_X_one_pow_mul_X_zero_pow (S := S) x y 0 b
+
+@[simp]
+theorem orderedEval_C_mul (x y : A) (r : S) (p : MvPolynomial (Fin 2) S) :
+    orderedEval x y (C r * p) = algebraMap S A r * orderedEval x y p := by
+  rw [← smul_eq_C_mul, map_smul, Algebra.smul_def]
+
+@[simp]
+theorem orderedEval_mul_C (x y : A) (r : S) (p : MvPolynomial (Fin 2) S) :
+    orderedEval x y (p * C r) = orderedEval x y p * algebraMap S A r := by
+  rw [mul_comm, orderedEval_C_mul, Algebra.commutes]
 
 /-- Rescaling the variables by `s` before ordered evaluation rescales the evaluation points. -/
 theorem orderedEval_rescale (x y : A) (s : Fin 2 → S) (p : MvPolynomial (Fin 2) S) :
