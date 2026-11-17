@@ -141,24 +141,6 @@ theorem charge_congr {σ σ' : C(𝔻, Y)} (hσ : σ = σ') (h : IsCompact (σ �
 
 /-! ### Restriction to round subdiscs -/
 
-/-- If disjoint open round discs of positive radii cover `σ⁻¹(Z)`, no point of `σ⁻¹(Z)` lies on
-the boundary circle of any of them. -/
-private theorem norm_sub_ne_of_pairwise_disjoint {ι : Type*} {σ : C(𝔻, Y)} {c : ι → ℂ}
-    {r : ι → ℝ} (hr : ∀ i, 0 < r i)
-    (hdisj : Pairwise fun i j ↦ Disjoint (ball (c i) (r i)) (ball (c j) (r j)))
-    (hcov : ∀ z, σ z ∈ Z → ∃ i, (z : ℂ) ∈ ball (c i) (r i)) (i : ι) (z : 𝔻) (hz : σ z ∈ Z) :
-    ‖(z : ℂ) - c i‖ ≠ r i := by
-  intro hzi
-  obtain ⟨j, hj⟩ := hcov z hz
-  have hij : i ≠ j := by
-    rintro rfl
-    rw [mem_ball, dist_eq_norm, hzi] at hj
-    exact lt_irrefl _ hj
-  -- `z` lies in the closure of `B(cᵢ, rᵢ)` and in the open disc `B(cⱼ, rⱼ)` disjoint from it.
-  have hd := (hdisj hij).closure_left isOpen_ball
-  rw [closure_ball _ (hr i).ne'] at hd
-  exact Set.disjoint_left.1 hd (mem_closedBall_iff_norm.2 hzi.le) hj
-
 /-- If every point of `σ⁻¹(Z)` in the disc `B(c, r')` lies in the smaller disc `B(c, r)`, the
 integers of `σ` on the round subdiscs `B(c, r)` and `B(c, r')` agree for `0 < r ≤ r'`. -/
 theorem charge_comp_subdisc_eq_of_le {σ : C(𝔻, Y)} {c : ℂ} {r r' : ℝ} (hc : ‖c‖ + r ≤ 1)
@@ -205,13 +187,6 @@ theorem isCompact_preimage_comp_subdisc_of_isolated {σ : C(𝔻, Y)} (hσ : IsC
   have hwz := hiso w hw (by rwa [mem_ball, dist_eq_norm, hwr])
   rw [hwz, sub_self, norm_zero] at hwr
   exact hr.ne hwr
-
-/-- If `K ⊆ 𝔻` has closed image in `ℂ` and `z ∉ K`, some round disc `B(z, R)` misses `K`. -/
-private theorem exists_pos_forall_notMem_ball {K : Set 𝔻} (hK : IsClosed (((↑) : 𝔻 → ℂ) '' K))
-    {z : 𝔻} (hz : z ∉ K) : ∃ R > 0, ∀ w ∈ K, (w : ℂ) ∉ ball (z : ℂ) R := by
-  obtain ⟨R, hR, hRK⟩ := Metric.isOpen_iff.1 hK.isOpen_compl (z : ℂ) fun ⟨w, hw, hwz⟩ ↦
-    hz (coe_injective hwz ▸ hw)
-  exact ⟨R, hR, fun w hw hwb ↦ hRK hwb ⟨w, hw, rfl⟩⟩
 
 /-! ### Local charges -/
 

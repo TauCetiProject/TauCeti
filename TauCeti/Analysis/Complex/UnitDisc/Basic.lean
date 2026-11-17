@@ -21,7 +21,9 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
   (`Complex.UnitDisc.isCompact_setOf_norm_le`).
 * The inclusion of the open unit disc into `ℂ` is an open embedding
-  (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff.
+  (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff. A point outside a
+  set of the disc with closed image in `ℂ` is the centre of a round disc missing that set
+  (`Complex.UnitDisc.exists_pos_forall_notMem_ball`).
 * The closed unit disc `Complex.UnitClosedDisc` is a compact, second countable Hausdorff space,
   homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
   (`Complex.UnitClosedDisc.homeomorphClosedBall`).
@@ -69,6 +71,13 @@ theorem isOpenEmbedding_coe : Topology.IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
 /-- The open unit disc is Hausdorff. -/
 instance instT2Space : T2Space 𝔻 :=
   isEmbedding_coe.t2Space
+
+/-- If `K ⊆ 𝔻` has closed image in `ℂ` and `z ∉ K`, some round disc `B(z, R)` misses `K`. -/
+theorem exists_pos_forall_notMem_ball {K : Set 𝔻} (hK : IsClosed (((↑) : 𝔻 → ℂ) '' K))
+    {z : 𝔻} (hz : z ∉ K) : ∃ R > 0, ∀ w ∈ K, (w : ℂ) ∉ ball (z : ℂ) R := by
+  obtain ⟨R, hR, hRK⟩ := Metric.isOpen_iff.1 hK.isOpen_compl (z : ℂ) fun ⟨w, hw, hwz⟩ ↦
+    hz (coe_injective hwz ▸ hw)
+  exact ⟨R, hR, fun w hw hwb ↦ hRK hwb ⟨w, hw, rfl⟩⟩
 
 /-- Circle rotations act jointly continuously on the bundled open unit disc. -/
 instance instContinuousSMulCircle : ContinuousSMul Circle 𝔻 :=

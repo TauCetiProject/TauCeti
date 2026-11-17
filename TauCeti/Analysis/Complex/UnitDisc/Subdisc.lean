@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
 # Round subdiscs of the open unit disc
@@ -18,8 +19,10 @@ parametrizes it by `𝔻` (`Complex.UnitDisc.subdisc`), with inverse `w ↦ (w -
 circle `‖z - c‖ = r`, then the points of `𝔻` that `subdisc c r` sends into `K` form a compact set
 (`Complex.UnitDisc.isCompact_subdisc_preimage`): they are the rescaled points of `K` inside the
 disc, and the points of `K` in `B(c, r)` are its points at distance at most `r` from `c`, a
-compact set. This is what makes the restriction of a disc map to a round subdisc again a map with
-compact preimage of a closed set, as in the theory of positive cohomology assignments.
+compact set. When disjoint round discs of positive radii cover `K`, no point of `K` lies on any of
+their boundary circles (`Complex.UnitDisc.norm_sub_ne_of_pairwise_disjoint`). This is what makes
+the restriction of a disc map to a round subdisc again a map with compact preimage of a closed set,
+as in the theory of positive cohomology assignments.
 -/
 
 public section
@@ -119,5 +122,23 @@ theorem isCompact_subdisc_preimage {K : Set 𝔻} (hK : IsCompact K)
   rw [hKb]
   exact ((hK.image continuous_coe).inter_right isClosed_closedBall).image
     ((continuous_id.sub continuous_const).div_const _)
+
+/-- If disjoint open round discs of positive radii cover a set `K` of the unit disc, no point of
+`K` lies on the boundary circle of any of them. -/
+theorem norm_sub_ne_of_pairwise_disjoint {ι : Type*} {K : Set 𝔻} {c : ι → ℂ} {r : ι → ℝ}
+    (hr : ∀ i, 0 < r i)
+    (hdisj : Pairwise fun i j ↦ Disjoint (ball (c i) (r i)) (ball (c j) (r j)))
+    (hcov : ∀ z ∈ K, ∃ i, (z : ℂ) ∈ ball (c i) (r i)) (i : ι) :
+    ∀ z ∈ K, ‖(z : ℂ) - c i‖ ≠ r i := by
+  intro z hz hzi
+  obtain ⟨j, hj⟩ := hcov z hz
+  have hij : i ≠ j := by
+    rintro rfl
+    rw [mem_ball, dist_eq_norm, hzi] at hj
+    exact lt_irrefl _ hj
+  -- `z` lies in the closure of `B(cᵢ, rᵢ)` and in the open disc `B(cⱼ, rⱼ)` disjoint from it.
+  have hd := (hdisj hij).closure_left isOpen_ball
+  rw [closure_ball _ (hr i).ne'] at hd
+  exact Set.disjoint_left.1 hd (mem_closedBall_iff_norm.2 hzi.le) hj
 
 end Complex.UnitDisc
