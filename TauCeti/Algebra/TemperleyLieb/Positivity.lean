@@ -445,10 +445,9 @@ theorem map_star_mul_self_nonneg_of_lt_floor (htr : IsMarkovTrace ℂ (δ : ℂ)
   obtain _ | m := n
   · rw [htr.apply_zero, map_mul, aug_star]
     exact star_mul_self_nonneg (aug x)
-  have h2 : (2 : ℝ) ≤ π / arccos (δ / 2) :=
-    (show (2 : ℝ) ≤ ⌊π / arccos (δ / 2)⌋₊ by
-      exact_mod_cast (by omega : 2 ≤ ⌊π / arccos (δ / 2)⌋₊)).trans
-      (Nat.floor_le (div_nonneg pi_pos.le (arccos_nonneg _)))
+  have hfl : 2 ≤ ⌊π / arccos (δ / 2)⌋₊ := by omega
+  have h2 : (2 : ℝ) ≤ π / arccos (δ / 2) := by
+    exact_mod_cast (Nat.le_floor_iff (div_nonneg pi_pos.le (arccos_nonneg _))).1 hfl
   have h0 : 0 ≤ δ := by
     have hcos := ((le_pi_div_arccos_iff' one_lt_two).1 h2).1
     rw [cos_pi_div_two] at hcos

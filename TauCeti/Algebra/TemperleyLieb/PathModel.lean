@@ -149,7 +149,8 @@ theorem IsPathEigenvectorUpTo.apply_of_lt {δ : K} {m : ℕ}
     {a : Fin (m + 1)} (ha : a.val < m) :
     ∑ u ∈ G.neighborFinset (s a), r u ^ 2 = δ * r (s a) ^ 2 := by
   have h := hδ ha (hs.take ha.le)
-  rwa [Fin.take_apply, show Fin.castLE _ (Fin.last a.val) = a from Fin.ext (by simp)] at h
+  have hidx : Fin.castLE (Nat.add_le_add_right ha.le 1) (Fin.last a.val) = a := Fin.ext (by simp)
+  rwa [Fin.take_apply, hidx] at h
 
 end EigenvectorUpTo
 

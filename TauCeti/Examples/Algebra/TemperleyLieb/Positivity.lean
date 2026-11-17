@@ -227,7 +227,8 @@ example {δ : ℝ} (h1 : 1 < δ) (h2 : δ < √2)
     fun k hk ↦ hunit3 k (Finset.Icc_subset_Icc_right (by omega) hk)
   refine ⟨?_, ?_⟩
   · rw [htr.map_jonesWenzl 2 hunit2, hq, hq3]
-    exact_mod_cast (show 0 < δ ^ 2 - 1 by nlinarith)
+    have hpos : 0 < δ ^ 2 - 1 := by nlinarith
+    exact_mod_cast hpos
   · rw [htr.map_jonesWenzl 3 hunit3, hq, hq4]
     exact_mod_cast mul_neg_of_pos_of_neg (by linarith) (by linarith)
 
