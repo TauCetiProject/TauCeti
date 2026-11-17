@@ -115,42 +115,36 @@ theorem IsEffectiveCartier.pullback_mk_toInvertibleSheaf (hI : I.IsEffectiveCart
   have := isIso_pullbackSheafHom I g hI hI'
   exact ⟨asIso (I.pullbackSheafHom g)⟩
 
-variable {I g} in
+section
+open TauCeti.AlgebraicGeometry
+variable {I g}
+
 /-- **The class of `𝒪(D)` commutes with pullback.** If `I` and its inverse image along `g` are
 effective Cartier divisors, then pulling back the line-bundle class of `I.dual` along `g` gives
 the line-bundle class of `(I.comap g).dual`. -/
 theorem IsEffectiveCartier.pullback_mk_dual_toInvertibleSheaf (hI : I.IsEffectiveCartier)
     (hI' : (I.comap g).IsEffectiveCartier) :
-    TauCeti.AlgebraicGeometry.LineBundleClass.pullback g
-        (TauCeti.AlgebraicGeometry.LineBundleClass.mk hI.toInvertibleSheaf.dual) =
-      TauCeti.AlgebraicGeometry.LineBundleClass.mk hI'.toInvertibleSheaf.dual := by
-  rw [← TauCeti.AlgebraicGeometry.LineBundleClass.inv_mk,
-    ← TauCeti.AlgebraicGeometry.LineBundleClass.inv_mk,
-    TauCeti.AlgebraicGeometry.LineBundleClass.pullback_inv,
+    LineBundleClass.pullback g (LineBundleClass.mk hI.toInvertibleSheaf.dual) =
+      LineBundleClass.mk hI'.toInvertibleSheaf.dual := by
+  rw [← LineBundleClass.inv_mk, ← LineBundleClass.inv_mk, LineBundleClass.pullback_inv,
     hI.pullback_mk_toInvertibleSheaf hI']
 
-variable {I g} in
 /-- If `J = I.comap g` for effective Cartier divisors `I` and `J`, then pulling back `[I]` along
 `g` gives `[J]`. -/
-theorem IsEffectiveCartier.pullback_mk_toInvertibleSheaf_of_eq_comap
-    {J : X.IdealSheafData} (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier)
-    (heq : J = I.comap g) :
-    TauCeti.AlgebraicGeometry.LineBundleClass.pullback g
-        (TauCeti.AlgebraicGeometry.LineBundleClass.mk hI.toInvertibleSheaf) =
-      TauCeti.AlgebraicGeometry.LineBundleClass.mk hJ.toInvertibleSheaf := by
-  subst heq
-  exact hI.pullback_mk_toInvertibleSheaf hJ
+theorem IsEffectiveCartier.pullback_mk_toInvertibleSheaf_of_eq_comap {J : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier) (heq : J = I.comap g) :
+    LineBundleClass.pullback g (LineBundleClass.mk hI.toInvertibleSheaf) =
+      LineBundleClass.mk hJ.toInvertibleSheaf := by
+  subst heq; exact hI.pullback_mk_toInvertibleSheaf hJ
 
-variable {I g} in
 /-- If `J = I.comap g` for effective Cartier divisors `I` and `J`, then pulling back `[I.dual]`
 along `g` gives `[J.dual]`. -/
-theorem IsEffectiveCartier.pullback_mk_dual_toInvertibleSheaf_of_eq_comap
-    {J : X.IdealSheafData} (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier)
-    (heq : J = I.comap g) :
-    TauCeti.AlgebraicGeometry.LineBundleClass.pullback g
-        (TauCeti.AlgebraicGeometry.LineBundleClass.mk hI.toInvertibleSheaf.dual) =
-      TauCeti.AlgebraicGeometry.LineBundleClass.mk hJ.toInvertibleSheaf.dual := by
-  subst heq
-  exact hI.pullback_mk_dual_toInvertibleSheaf hJ
+theorem IsEffectiveCartier.pullback_mk_dual_toInvertibleSheaf_of_eq_comap {J : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier) (heq : J = I.comap g) :
+    LineBundleClass.pullback g (LineBundleClass.mk hI.toInvertibleSheaf.dual) =
+      LineBundleClass.mk hJ.toInvertibleSheaf.dual := by
+  subst heq; exact hI.pullback_mk_dual_toInvertibleSheaf hJ
+
+end
 
 end AlgebraicGeometry.Scheme.IdealSheafData

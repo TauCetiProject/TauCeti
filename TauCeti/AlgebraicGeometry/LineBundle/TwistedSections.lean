@@ -75,26 +75,21 @@ of an invertible sheaf `L` equals the nonvanishing locus of `e`. -/
 @[simp]
 theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (e : Γ(L, U)) {n : ℕ} (hn : 0 < n) :
     (tensorPow L n).nonvanishingLocus (tensorPowSection e n) = L.nonvanishingLocus e := by
-  ext x
-  by_cases hxU : x ∈ U
+  ext x; by_cases hxU : x ∈ U
   · obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
-    let i : U ⊓ V ⟶ V := homOfLE inf_le_right
-    let j : U ⊓ V ⟶ U := homOfLE inf_le_left
+    let i : U ⊓ V ⟶ V := homOfLE inf_le_right; let j : U ⊓ V ⟶ U := homOfLE inf_le_left
     let b : Γ(L, U ⊓ V) := L.presheaf.map i.op (trivializationGenerator L t)
     let r : Γ(X, U ⊓ V) := trivializationCoordinate L t i (L.presheaf.map j.op e)
-    -- On `U ⊓ V`, `e` is `r • b` for a nowhere-vanishing `b`, so `(e|_{U ⊓ V})ⁿ = rⁿ • bⁿ`.
     have hb : U ⊓ V ≤ L.nonvanishingLocus b := by
       rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
       exact le_inf le_rfl inf_le_right
     have hbn : U ⊓ V ≤ (tensorPow L n).nonvanishingLocus (tensorPowSection b n) :=
       (le_nonvanishingLocus_iff (tensorPowSection b n) (𝟙 (U ⊓ V))).mpr fun W k ↦ by
-        simpa only [Category.comp_id] using
-          bijective_smul_tensorPowSection b (fun W' k' ↦ by
-            simpa only [Category.comp_id] using
-              (le_nonvanishingLocus_iff b (𝟙 (U ⊓ V))).mp hb W' k') n W k
+        simpa only [Category.comp_id] using bijective_smul_tensorPowSection b
+          (fun W' k' ↦ by simpa only [Category.comp_id] using
+            (le_nonvanishingLocus_iff b (𝟙 (U ⊓ V))).mp hb W' k') n W k
     have he : L.presheaf.map j.op e = r • b :=
       eq_trivializationCoordinate_smul_map_trivializationGenerator L t i _
-    have hxUV : x ∈ U ⊓ V := ⟨hxU, hxV⟩
     have hLHS : x ∈ (U ⊓ V) ⊓ (tensorPow L n).nonvanishingLocus (tensorPowSection e n) ↔
         x ∈ X.basicOpen r := by
       rw [← nonvanishingLocus_map, map_tensorPowSection, he, tensorPowSection_smul,
@@ -103,8 +98,8 @@ theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (e : Γ(L, U)) {n : ℕ
     have hRHS : x ∈ (U ⊓ V) ⊓ L.nonvanishingLocus e ↔ x ∈ X.basicOpen r := by
       rw [← nonvanishingLocus_map, he, nonvanishingLocus_smul,
         inf_eq_left.mpr ((X.basicOpen_le r).trans hb)]
-    exact ⟨fun h ↦ (hRHS.mpr (hLHS.mp ⟨hxUV, h⟩)).2,
-      fun h ↦ (hLHS.mpr (hRHS.mp ⟨hxUV, h⟩)).2⟩
+    exact ⟨fun h ↦ (hRHS.mpr (hLHS.mp ⟨⟨hxU, hxV⟩, h⟩)).2,
+      fun h ↦ (hLHS.mpr (hRHS.mp ⟨⟨hxU, hxV⟩, h⟩)).2⟩
   · exact iff_of_false (fun h ↦ hxU ((tensorPow L n).nonvanishingLocus_le _ h))
       (fun h ↦ hxU (L.nonvanishingLocus_le _ h))
 

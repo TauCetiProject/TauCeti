@@ -115,27 +115,23 @@ def tensorProductCongrLeft {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M
   (tensorProductRightFunctor R N).mapIso e
 
 /-- `tensorProductIso` is natural with respect to `tensorProductCongrLeft`. -/
-@[reassoc]
-lemma tensorProductCongrLeft_hom_tensorProductIso_hom
+@[reassoc] lemma tensorProductCongrLeft_hom_tensorProductIso_hom
     {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') :
     (tensorProductCongrLeft R (N := N) e).hom ≫ (tensorProductIso R M' N).hom =
       (tensorProductIso R M N).hom ≫
         (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (e.hom.val ▷ N.val) := by
+  -- `tensorProductIso` is `Iso.refl _` and `tensorProductCongrLeft` applies sheafification to `▷`.
   simp only [tensorProductIso, Iso.refl_hom]
-  -- `tensorProductCongrLeft` applies `tensorRight N.val` followed by sheafification, which is
-  -- definitionally `(sheafification _).map (e.hom.val ▷ N.val)`.
   exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 /-- `tensorProductCongrLeft` sends the identity isomorphism to the identity isomorphism. -/
-@[simp]
-lemma tensorProductCongrLeft_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+@[simp] lemma tensorProductCongrLeft_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     tensorProductCongrLeft R (N := N) (Iso.refl M) = Iso.refl _ :=
   (tensorProductRightFunctor R N).mapIso_refl M
 
 /-- `tensorProductCongrLeft` commutes with taking inverses of isomorphisms. -/
-@[simp]
-lemma tensorProductCongrLeft_symm {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') :
-    tensorProductCongrLeft R (N := N) e.symm = (tensorProductCongrLeft R e).symm :=
+@[simp] lemma tensorProductCongrLeft_symm {M M' N : SheafOfModules.{u} (ringCatSheaf R)}
+    (e : M ≅ M') : tensorProductCongrLeft R (N := N) e.symm = (tensorProductCongrLeft R e).symm :=
   (tensorProductRightFunctor R N).mapIso_symm e
 
 /-- An isomorphism of the second argument transports through the tensor product. -/
@@ -144,26 +140,23 @@ def tensorProductCongrRight {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : 
   (tensorProductLeftFunctor R M).mapIso e
 
 /-- `tensorProductIso` is natural with respect to `tensorProductCongrRight`. -/
-@[reassoc]
-lemma tensorProductCongrRight_hom_tensorProductIso_hom
+@[reassoc] lemma tensorProductCongrRight_hom_tensorProductIso_hom
     {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : N ≅ N') :
     (tensorProductCongrRight R (M := M) e).hom ≫ (tensorProductIso R M N').hom =
       (tensorProductIso R M N).hom ≫
         (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map (M.val ◁ e.hom.val) := by
+  -- `tensorProductIso` is `Iso.refl _` and `tensorProductCongrRight` applies sheafification to `◁`.
   simp only [tensorProductIso, Iso.refl_hom]
-  -- `tensorProductCongrRight` applies `tensorLeft M.val` followed by sheafification, which is
-  -- definitionally `(sheafification _).map (M.val ◁ e.hom.val)`.
   exact (Category.comp_id _).trans (Category.id_comp _).symm
 
 /-- `tensorProductCongrRight` sends the identity isomorphism to the identity isomorphism. -/
-@[simp]
-lemma tensorProductCongrRight_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
+@[simp] lemma tensorProductCongrRight_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
     tensorProductCongrRight R (M := M) (Iso.refl N) = Iso.refl _ :=
   (tensorProductLeftFunctor R M).mapIso_refl N
 
 /-- `tensorProductCongrRight` commutes with taking inverses of isomorphisms. -/
-@[simp]
-lemma tensorProductCongrRight_symm {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : N ≅ N') :
+@[simp] lemma tensorProductCongrRight_symm {M N N' : SheafOfModules.{u} (ringCatSheaf R)}
+    (e : N ≅ N') :
     tensorProductCongrRight R (M := M) e.symm = (tensorProductCongrRight R e).symm :=
   (tensorProductLeftFunctor R M).mapIso_symm e
 
