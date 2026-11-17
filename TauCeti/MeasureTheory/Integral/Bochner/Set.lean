@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
@@ -25,7 +26,8 @@ constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and s
 ball `B`, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
 on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets.
+unions with disjoint sets, and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives
+`m ≤ ∫_a^{a+K} σ`.
 
 ## Main statements
 
@@ -39,6 +41,8 @@ unions with disjoint sets.
 * `TauCeti.div_le_setIntegral_inv` and `TauCeti.setIntegral_inv_pos`: if `λ ≤ a ≤ M` almost
   everywhere on a set `s` of finite measure, with `λ > 0`, then `∫_s a⁻¹ ≥ μ(s) / M`; the lower
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
+* `TauCeti.le_setIntegral_Icc_add_of_le_mul`: if `m ≤ K σ` on `[a, a + K]`, with `K > 0`, then
+  `m ≤ ∫_a^{a+K} σ`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
@@ -205,6 +209,16 @@ theorem setIntegral_inv_pos (hs₀ : μ s ≠ 0) (hs : μ s ≠ ∞) (hlam : 0 <
     (hlama.norm_inv_le_inv hlam)) (hlama.mono fun _ ht => inv_pos.2 (hlam.trans_le ht))
 
 end Reciprocal
+
+/-- If `m ≤ K σ(r)` for every `r ∈ [a, a + K]`, with `K > 0` and `σ` integrable there, then `m` is
+at most the integral of `σ` over `[a, a + K]`: the average of `σ` over the interval is at least
+`m / K`. -/
+theorem le_setIntegral_Icc_add_of_le_mul {σ : ℝ → ℝ} {a K m : ℝ} (hK : 0 < K)
+    (hσ : IntegrableOn σ (Icc a (a + K))) (hm : ∀ r ∈ Icc a (a + K), m ≤ K * σ r) :
+    m ≤ ∫ r in Icc a (a + K), σ r := by
+  have h := setIntegral_ge_of_const_le_real measurableSet_Icc (by simp)
+    (fun r hr ↦ (div_le_iff₀' hK).2 (hm r hr)) hσ
+  simpa [hK.le, hK.ne'] using h
 
 open Metric in
 /-- A function bounded by `K` on a closed ball and vanishing off it has `∫_s ψ² ≤ K² |B|` over
