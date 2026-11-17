@@ -6,21 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Preadditive
-public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 public import Mathlib.Topology.LocallyConstant.Algebra
 
 /-!
 # Trivial variable-rank bundle atlases and categorical zero objects
 
-`FiniteRankAtlas.stratumCore` packages the point-indexed coordinate core on each clopen rank
-stratum of a variable-rank atlas as a `FiniteRankBundleCore`. Given a locally constant rank
-function `r : LocallyConstant X ℕ`, `FiniteRankAtlas.trivial 𝕜 X r` places the constant-rank
-trivial core on each clopen rank stratum `{x : X // r x = n}`, with identity transition maps
-everywhere. `FiniteRankAtlas.continuous_mk_trivial_iff` characterizes continuity of maps into its
-reconstructed total space in terms of continuity of coordinate vectors on each clopen rank stratum,
-and `FiniteRankAtlas.trivialConstTotalSpaceHomeomorph` identifies the reconstructed total space of
-a constant-rank trivial atlas with `X × (Fin n → 𝕜)`.
+Given a locally constant rank function `r : LocallyConstant X ℕ`, `FiniteRankAtlas.trivial 𝕜 X r`
+places the constant-rank trivial core on each clopen rank stratum `{x : X // r x = n}`, with
+identity transition maps everywhere. `FiniteRankAtlas.continuous_mk_trivial_iff` characterizes
+continuity of maps into its reconstructed total space in terms of continuity of coordinate vectors
+on each clopen rank stratum, and `FiniteRankAtlas.trivialConstTotalSpaceHomeomorph` identifies the
+reconstructed total space of a constant-rank trivial atlas with `X × (Fin n → 𝕜)`.
 
 `FiniteRankAtlas.isZero_iff_rank_eq_zero` proves unconditionally (including when `X` is empty) that
 a variable-rank atlas `A` is a categorical zero object in `FiniteRankAtlas 𝕜 X` if and only if
@@ -42,26 +39,6 @@ universe u v
 
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
   {X : Type u} [TopologicalSpace X]
-
-/-- Package the point-indexed coordinate core on the rank-`n` clopen stratum of `A` as a
-`FiniteRankBundleCore`. -/
--- Expose the rank projection so the dependent coordinate model reduces to `Fin n → 𝕜`.
-@[expose]
-def stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
-    FiniteRankBundleCore 𝕜 {x : X // A.rank x = n} where
-  rank := n
-  core := A.charts n
-  indexAt_eq := A.indexAt_eq n
-
-/-- Rank of `A.stratumCore n`. -/
-@[simp]
-theorem rank_stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
-    (A.stratumCore n).rank = n := (rfl)
-
-/-- Underlying `VectorBundleCore` of `A.stratumCore n`. -/
-@[simp]
-theorem core_stratumCore (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
-    (A.stratumCore n).core = A.charts n := (rfl)
 
 variable (𝕜 X) in
 /-- The trivial variable-rank atlas of locally constant rank `r`, with identity coordinate changes
