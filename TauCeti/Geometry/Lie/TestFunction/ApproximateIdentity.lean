@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Lie.TestFunction.Basic
 public import TauCeti.Geometry.Lie.Basic
-public import Mathlib.Geometry.Manifold.BumpFunction
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.Sets.Opens
+import TauCeti.Geometry.Manifold.Measure.PeakFunction
 import TauCeti.MeasureTheory.Integral.PeakFunction
 
 /-!
@@ -20,7 +20,7 @@ Let `G` be a finite-dimensional real Lie group and `μ` a measure on `G` that is
 nonempty open sets and finite on compact sets, for instance a Haar measure. For every open
 neighbourhood `U` of the identity, `smoothApproximateIdentity I μ U` is a nonnegative test function
 supported in `U` with `∫ u_U dμ = 1`. It is a smooth bump function in a chart at the identity,
-normalized by its integral.
+normalized by its integral (`TauCeti.exists_contMDiff_nonneg_tsupport_subset_integral_eq_one`).
 
 As `U` shrinks to the identity, `∫ u_U(y) φ(y) dμ(y) → φ 1` for every continuous `φ`. The index
 type is Mathlib's `TopologicalSpace.OpenNhdsOf 1`, ordered by inclusion, and the net runs along
@@ -28,9 +28,6 @@ type is Mathlib's `TopologicalSpace.OpenNhdsOf 1`, ordered by inclusion, and the
 
 ## Main results
 
-* `TauCeti.exists_contMDiff_nonneg_tsupport_subset_integral_eq_one`: on a finite-dimensional
-  manifold, every neighbourhood of a point carries a nonnegative smooth compactly supported
-  function of unit integral.
 * `TauCeti.LieTestFunction.smoothApproximateIdentity I μ U`: the test function `u_U`.
 * `TauCeti.LieTestFunction.tendsto_integral_smoothApproximateIdentity_smul`: integration against
   `u_U` tends to evaluation at the identity on continuous functions.
@@ -52,32 +49,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-
-section Manifold
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MeasurableSpace M]
-
-variable (I) in
-/-- **Smooth peak functions exist.** On a manifold modelled on a finite-dimensional space, with a
-measure positive on nonempty open sets and finite on compact sets, every neighbourhood `U` of a
-point carries a nonnegative smooth compactly supported function of unit integral whose support
-closure lies in `U`: a smooth bump function, normalized by its integral. -/
-theorem exists_contMDiff_nonneg_tsupport_subset_integral_eq_one [FiniteDimensional ℝ E]
-    [T2Space M] [IsManifold I ∞ M] [OpensMeasurableSpace M] (μ : Measure M)
-    [μ.IsOpenPosMeasure] [IsFiniteMeasureOnCompacts μ] {x₀ : M} {U : Set M} (hU : U ∈ 𝓝 x₀) :
-    ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ HasCompactSupport f ∧ 0 ≤ f ∧ tsupport f ⊆ U ∧
-      ∫ x, f x ∂μ = 1 := by
-  obtain ⟨b, -, hb⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x₀).mem_iff.1 hU
-  have hpos : 0 < ∫ x, b x ∂μ :=
-    b.contMDiff.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero b.hasCompactSupport
-      (fun _ ↦ b.nonneg) (x := x₀) (by simp)
-  refine ⟨fun x ↦ (∫ x, b x ∂μ)⁻¹ * b x,
-    (contDiff_const_smul (∫ x, b x ∂μ)⁻¹).contMDiff.comp b.contMDiff,
-    b.hasCompactSupport.mul_left, fun x ↦ mul_nonneg (inv_nonneg.2 hpos.le) b.nonneg,
-    tsupport_mul_subset_right.trans hb, ?_⟩
-  rw [integral_const_mul, inv_mul_cancel₀ hpos.ne']
-
-end Manifold
 
 namespace LieTestFunction
 
@@ -104,6 +75,12 @@ def smoothApproximateIdentity (U : OpenNhdsOf (1 : G)) : LieTestFunction I G whe
   hasCompactSupport' := (exists_smoothApproximateIdentity I μ U).choose_spec.2.1.comp_left
     Complex.ofReal_zero
 
+/-- The smooth approximate identity is the complexification of the chosen real peak function. -/
+private theorem coe_smoothApproximateIdentity (U : OpenNhdsOf (1 : G)) :
+    ⇑(smoothApproximateIdentity I μ U) =
+      fun x ↦ ((exists_smoothApproximateIdentity I μ U).choose x : ℂ) :=
+  coe_mk
+
 /-- The smooth approximate identity takes real values. -/
 theorem smoothApproximateIdentity_eq_ofReal_re (U : OpenNhdsOf (1 : G)) (x : G) :
     smoothApproximateIdentity I μ U x = (smoothApproximateIdentity I μ U x).re :=
@@ -117,16 +94,16 @@ theorem smoothApproximateIdentity_nonneg (U : OpenNhdsOf (1 : G)) (x : G) :
 /-- The support closure of the smooth approximate identity lies in its indexing neighbourhood. -/
 theorem tsupport_smoothApproximateIdentity_subset (U : OpenNhdsOf (1 : G)) :
     tsupport (smoothApproximateIdentity I μ U) ⊆ U := by
-  have h := (exists_smoothApproximateIdentity I μ U).choose_spec.2.2.2.1
-  refine (tsupport_comp_subset Complex.ofReal_zero _).trans h
+  rw [coe_smoothApproximateIdentity]
+  exact (tsupport_comp_subset Complex.ofReal_zero _).trans
+    (exists_smoothApproximateIdentity I μ U).choose_spec.2.2.2.1
 
 /-- The smooth approximate identity has integral one. -/
 @[simp]
 theorem integral_smoothApproximateIdentity (U : OpenNhdsOf (1 : G)) :
     ∫ x, smoothApproximateIdentity I μ U x ∂μ = 1 := by
-  change ∫ x, ((exists_smoothApproximateIdentity I μ U).choose x : ℂ) ∂μ = 1
-  rw [integral_complex_ofReal, (exists_smoothApproximateIdentity I μ U).choose_spec.2.2.2.2,
-    Complex.ofReal_one]
+  rw [coe_smoothApproximateIdentity, integral_complex_ofReal,
+    (exists_smoothApproximateIdentity I μ U).choose_spec.2.2.2.2, Complex.ofReal_one]
 
 /-- The support closures of the smooth approximate identities shrink to the identity, in the
 `Filter.smallSets` sense. -/
@@ -151,9 +128,11 @@ theorem tendsto_integral_smoothApproximateIdentity_smul {F : Type*} [NormedAddCo
   obtain ⟨hf, hfc, hf0, -, hf1⟩ := (exists_smoothApproximateIdentity I μ U).choose_spec
   set f := (exists_smoothApproximateIdentity I μ U).choose
   let g : CompactlySupportedContinuousMap G ℝ := ⟨⟨f, hf.continuous⟩, hfc⟩
-  have hsupp : tsupport g = tsupport (smoothApproximateIdentity I μ U) :=
-    (tsupport_comp_eq Complex.ofReal_eq_zero _).symm
+  have hsupp : tsupport g = tsupport (smoothApproximateIdentity I μ U) := by
+    rw [coe_smoothApproximateIdentity]
+    exact (tsupport_comp_eq Complex.ofReal_eq_zero _).symm
   have hint : ∫ x, smoothApproximateIdentity I μ U x • φ x ∂μ = ∫ x, g x • φ x ∂μ := by
+    simp only [coe_smoothApproximateIdentity]
     congr 1 with x
   rw [dist_eq_norm, hint]
   refine (CompactlySupportedContinuousMap.norm_integral_smul_sub_le (ε := ε / 2) hf0 hf1 hφ

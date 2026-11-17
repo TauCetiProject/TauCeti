@@ -10,6 +10,8 @@ public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Algebra.Module.FunLike
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Support
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
+import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
 # Test functions on a Lie group
@@ -36,16 +38,23 @@ not an open subset of a normed space.
 * `TauCeti.LieTestFunction.conj`: pointwise complex conjugation, a conjugate-linear map.
 * `TauCeti.LieTestFunction.involution`: `a ↦ (x ↦ conj (a x⁻¹))`, a conjugate-linear involution.
 
+## Main results
+
+* `TauCeti.LieTestFunction.tsupport_leftTranslate`, `tsupport_rightTranslate`,
+  `tsupport_inversion`, `tsupport_conj`, `tsupport_involution`: the support closures of the
+  transformed functions, in pointwise form (`g • K`, `MulOpposite.op g⁻¹ • K`, `K⁻¹`); the same
+  formulas hold for the supports.
+
 ## Conventions
 
 Right translation is `R(y) a (x) = a (x * y)` and left translation is `L(y) a (x) = a (y⁻¹ * x)`,
 so that `L(x) ∘ L(y) = L(x * y)` and `R(x) ∘ R(y) = R(x * y)`.
 -/
 
-@[expose] public section
+public section
 
 open Function Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Pointwise
 
 namespace TauCeti
 
@@ -84,7 +93,7 @@ protected theorem continuous (a : LieTestFunction I G) : Continuous a :=
 
 @[simp]
 theorem toFun_eq_coe (a : LieTestFunction I G) : a.toFun = (a : G → ℂ) :=
-  rfl
+  (rfl)
 
 /-- See note [custom simps projection]. -/
 def Simps.coe (a : LieTestFunction I G) : G → ℂ := a
@@ -98,7 +107,7 @@ theorem ext {a b : LieTestFunction I G} (h : ∀ x, a x = b x) : a = b :=
 @[simp]
 theorem coe_mk {f : G → ℂ} {hf : ContMDiff I 𝓘(ℝ, ℂ) ∞ f} {hc : HasCompactSupport f} :
     ⇑(LieTestFunction.mk f hf hc) = f :=
-  rfl
+  (rfl)
 
 /-- A test function as a bundled smooth map. -/
 def toContMDiffMap (a : LieTestFunction I G) : C^∞⟮I, G; 𝓘(ℝ, ℂ), ℂ⟯ :=
@@ -106,7 +115,7 @@ def toContMDiffMap (a : LieTestFunction I G) : C^∞⟮I, G; 𝓘(ℝ, ℂ), ℂ
 
 @[simp]
 theorem coe_toContMDiffMap (a : LieTestFunction I G) : ⇑a.toContMDiffMap = a :=
-  rfl
+  (rfl)
 
 theorem toContMDiffMap_injective :
     Injective (toContMDiffMap : LieTestFunction I G → C^∞⟮I, G; 𝓘(ℝ, ℂ), ℂ⟯) :=
@@ -120,7 +129,7 @@ def ofContMDiffMap (f : C^∞⟮I, G; 𝓘(ℝ, ℂ), ℂ⟯) (hf : HasCompactSu
 @[simp]
 theorem coe_ofContMDiffMap (f : C^∞⟮I, G; 𝓘(ℝ, ℂ), ℂ⟯) (hf : HasCompactSupport f) :
     ⇑(ofContMDiffMap f hf) = f :=
-  rfl
+  (rfl)
 
 section Module
 
@@ -167,7 +176,7 @@ def toFunction : LieTestFunction I G →ₗ[ℂ] G → ℂ where
 
 @[simp]
 theorem toFunction_apply (a : LieTestFunction I G) : toFunction I G a = a :=
-  rfl
+  (rfl)
 
 theorem toFunction_injective : Injective (toFunction I G) :=
   DFunLike.coe_injective
@@ -185,11 +194,20 @@ def conj : LieTestFunction I G →ₗ⋆[ℂ] LieTestFunction I G where
 
 @[simp]
 theorem conj_apply (a : LieTestFunction I G) (x : G) : conj a x = starRingEnd ℂ (a x) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem conj_conj (a : LieTestFunction I G) : conj (conj a) = a :=
   ext fun x ↦ by simp
+
+@[simp]
+theorem support_conj (a : LieTestFunction I G) : support (conj a) = support a := by
+  ext x
+  simp
+
+@[simp]
+theorem tsupport_conj (a : LieTestFunction I G) : tsupport (conj a) = tsupport a := by
+  rw [tsupport, support_conj, tsupport]
 
 end Conj
 
@@ -208,7 +226,7 @@ def leftTranslate (g : G) : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G 
 @[simp]
 theorem leftTranslate_apply (g : G) (a : LieTestFunction I G) (x : G) :
     leftTranslate g a x = a (g⁻¹ * x) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem leftTranslate_one (a : LieTestFunction I G) : leftTranslate 1 a = a :=
@@ -217,6 +235,18 @@ theorem leftTranslate_one (a : LieTestFunction I G) : leftTranslate 1 a = a :=
 theorem leftTranslate_mul (g h : G) (a : LieTestFunction I G) :
     leftTranslate (g * h) a = leftTranslate g (leftTranslate h a) :=
   ext fun x ↦ by simp [mul_assoc]
+
+@[simp]
+theorem support_leftTranslate (g : G) (a : LieTestFunction I G) :
+    support (leftTranslate g a) = g • support a := by
+  ext x
+  simp [Set.mem_smul_set_iff_inv_smul_mem]
+
+@[simp]
+theorem tsupport_leftTranslate (g : G) (a : LieTestFunction I G) :
+    tsupport (leftTranslate g a) = g • tsupport a := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  rw [tsupport, support_leftTranslate, closure_smul, tsupport]
 
 /-- Right translation of test functions by `g`: `rightTranslate g a x = a (x * g)`. -/
 def rightTranslate (g : G) : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G :=
@@ -229,7 +259,7 @@ def rightTranslate (g : G) : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G
 @[simp]
 theorem rightTranslate_apply (g : G) (a : LieTestFunction I G) (x : G) :
     rightTranslate g a x = a (x * g) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem rightTranslate_one (a : LieTestFunction I G) : rightTranslate 1 a = a :=
@@ -238,6 +268,18 @@ theorem rightTranslate_one (a : LieTestFunction I G) : rightTranslate 1 a = a :=
 theorem rightTranslate_mul (g h : G) (a : LieTestFunction I G) :
     rightTranslate (g * h) a = rightTranslate g (rightTranslate h a) :=
   ext fun x ↦ by simp [mul_assoc]
+
+@[simp]
+theorem support_rightTranslate (g : G) (a : LieTestFunction I G) :
+    support (rightTranslate g a) = MulOpposite.op g⁻¹ • support a := by
+  ext x
+  simp [Set.mem_smul_set_iff_inv_smul_mem]
+
+@[simp]
+theorem tsupport_rightTranslate (g : G) (a : LieTestFunction I G) :
+    tsupport (rightTranslate g a) = MulOpposite.op g⁻¹ • tsupport a := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  rw [tsupport, support_rightTranslate, closure_smul, tsupport]
 
 /-- The inversion of test functions: `inversion a x = a x⁻¹`. -/
 def inversion : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G :=
@@ -249,11 +291,22 @@ def inversion : LieTestFunction I G →ₗ[ℂ] LieTestFunction I G :=
 
 @[simp]
 theorem inversion_apply (a : LieTestFunction I G) (x : G) : inversion a x = a x⁻¹ :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem inversion_inversion (a : LieTestFunction I G) : inversion (inversion a) = a :=
   ext fun x ↦ by simp
+
+@[simp]
+theorem support_inversion (a : LieTestFunction I G) : support (inversion a) = (support a)⁻¹ := by
+  ext x
+  simp
+
+@[simp]
+theorem tsupport_inversion (a : LieTestFunction I G) :
+    tsupport (inversion a) = (tsupport a)⁻¹ := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  rw [tsupport, support_inversion, ← inv_closure, tsupport]
 
 theorem inversion_leftTranslate (g : G) (a : LieTestFunction I G) :
     inversion (leftTranslate g a) = rightTranslate g (inversion a) :=
@@ -264,7 +317,7 @@ theorem inversion_rightTranslate (g : G) (a : LieTestFunction I G) :
   ext fun x ↦ by simp
 
 theorem conj_inversion (a : LieTestFunction I G) : conj (inversion a) = inversion (conj a) :=
-  rfl
+  (rfl)
 
 /-- The involution of test functions, `involution a x = conj (a x⁻¹)`. For a unimodular group
 this is the involution for which the integrated action of `involution a` in a unitary
@@ -275,11 +328,23 @@ def involution : LieTestFunction I G →ₗ⋆[ℂ] LieTestFunction I G :=
 @[simp]
 theorem involution_apply (a : LieTestFunction I G) (x : G) :
     involution a x = starRingEnd ℂ (a x⁻¹) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem involution_involution (a : LieTestFunction I G) : involution (involution a) = a :=
   ext fun x ↦ by simp
+
+@[simp]
+theorem support_involution (a : LieTestFunction I G) :
+    support (involution a) = (support a)⁻¹ := by
+  ext x
+  simp
+
+@[simp]
+theorem tsupport_involution (a : LieTestFunction I G) :
+    tsupport (involution a) = (tsupport a)⁻¹ := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  rw [tsupport, support_involution, ← inv_closure, tsupport]
 
 end LieGroup
 
