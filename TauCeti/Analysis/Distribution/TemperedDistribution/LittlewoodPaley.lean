@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Convolution.Commutator
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -255,6 +256,22 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j u =
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) u :=
   (rfl)
+
+/-- **The Littlewood–Paley blocks are symmetric.** For a tempered distribution `u` and a Schwartz
+function `f`, `(Δⱼ u) f = u (Δⱼ f)`, where on the right `Δⱼ` is the Fourier multiplier by `ψⱼ` on
+Schwartz functions. This holds because `ψⱼ` is even. -/
+theorem littlewoodPaleyBlock_apply_apply (j : ℕ) (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+    littlewoodPaleyBlock F φ j u f =
+      u (SchwartzMap.fourierMultiplierCLM ℂ
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) := by
+  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply_apply,
+    SchwartzMap.fourier_smulLeftCLM_fourierInv_eq
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+  congr 3
+  funext ξ
+  rcases j with _ | j
+  · simp [φ.neg]
+  · simp [ContDiffBump.inhomogeneousLittlewoodPaley_succ_apply, smul_neg, φ.neg]
 
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/

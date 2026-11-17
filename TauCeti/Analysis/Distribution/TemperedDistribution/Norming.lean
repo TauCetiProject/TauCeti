@@ -110,7 +110,7 @@ theorem exists_eq_toTemperedDistribution_and_norm_le (hp : 1 < p) (hp_top : p �
     rw [DenseRange, hcoe]
     exact SchwartzMap.denseRange_toLpCLM hp_top
   set S : 𝓢(E, ℂ) →ₗ[ℂ] ℂ := (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ)
-  have hS : ∀ g, ‖S g‖ ≤ B * ‖e g‖ := hu
+  have hS : ∀ g, ‖S g‖ ≤ B * ‖e g‖ := fun g ↦ by simpa [S, e] using hu g
   set Λ := S.extendOfNorm e
   have hΛ : ‖Λ‖ ≤ B := Λ.opNorm_le_bound hB (LinearMap.norm_extendOfNorm_apply_le he B hS)
   -- `Λ` is integration against some `h ∈ Lᵠ`, which represents `u`.
@@ -118,6 +118,6 @@ theorem exists_eq_toTemperedDistribution_and_norm_le (hp : 1 < p) (hp_top : p �
   ext g
   rw [Lp.toTemperedDistribution_apply_eq_toDual_apply (p := p), ← Lp.coe_dualEquiv hp hp_top,
     LinearIsometryEquiv.apply_symm_apply]
-  exact LinearMap.extendOfNorm_eq he ⟨B, hS⟩ g
+  simpa [S, e] using LinearMap.extendOfNorm_eq he ⟨B, hS⟩ g
 
 end TemperedDistribution

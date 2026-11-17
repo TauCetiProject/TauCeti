@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
-import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.Norming
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
@@ -26,9 +25,11 @@ bump function and on `s`, not on the exponents
 (`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_norm_apply_le`; Bahouri–Chemin–Danchin,
 Proposition 2.76). In particular every continuous linear functional `Λ` on `B^s_{p,q}` is, on the
 Schwartz functions, the pairing with an element of `B^{-s}_{p',q'}` of norm at most `C ‖Λ‖`
-(`TauCeti.BesovSpace.exists_toDistr_apply_eq_and_norm_le`). Together with the bound of the pairing
-between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of the Schwartz functions in `B^s_{p,q}`
-for `p, q < ∞`, this identifies the dual of `B^s_{p,q}` with `B^{-s}_{p',q'}`.
+(`TauCeti.BesovSpace.exists_toDistr_apply_eq_and_norm_le`). Mathematically, this is the converse
+half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 < p < ∞` and `q < ∞`. The other
+ingredients, the bound of the pairing between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of
+the Schwartz functions in `B^s_{p,q}`, are not proved here, so this file does not construct the
+identification itself. The case `p = 1` is not covered.
 
 ## The argument
 
@@ -69,20 +70,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 namespace TauCeti.BesovSpace
 
 variable (φ : ContDiffBump (0 : E))
-
-/-- **The blocks are symmetric.** `(Δⱼ u) f = u (Δⱼ f)`, where on the right `Δⱼ` is the Fourier
-multiplier by the even function `ψⱼ` on Schwartz functions. -/
-private theorem littlewoodPaleyBlock_apply_apply_eq (j : ℕ) (u : 𝓢'(E, ℂ)) (f : 𝓢(E, ℂ)) :
-    littlewoodPaleyBlock ℂ φ j u f = u (SchwartzMap.fourierMultiplierCLM ℂ
-      (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) := by
-  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply_apply,
-    SchwartzMap.fourier_smulLeftCLM_fourierInv_eq
-      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
-  congr 3
-  funext ξ
-  rcases j with _ | j
-  · simp [φ.neg]
-  · simp [ContDiffBump.inhomogeneousLittlewoodPaley_succ_apply, smul_neg, φ.neg]
 
 /-- **Blocks of Schwartz functions as `Lᵖ` functions.** There is `C₀ ≥ 0`, depending only on `φ`,
 such that the block `Δⱼ g` of a Schwartz function satisfies `‖Δⱼ g‖_p ≤ C₀ ‖g‖_p`, and its spectrum
@@ -264,7 +251,7 @@ theorem exists_toDistr_eq_and_norm_le_of_norm_apply_le (s : ℝ) :
   have hpair (t : Finset ℕ) (G : ℕ → 𝓢(E, ℂ)) (w : lp (fun _ : ℕ ↦ ℝ) q) (hw0 : ∀ j, 0 ≤ w j)
       (hw : ∀ j ∈ t, 2 ^ (s * j) * ‖(G j).toLp p‖ ≤ w j) :
       ‖∑ j ∈ t, littlewoodPaleyBlock ℂ φ j u (G j)‖ ≤ A * K * ‖w‖ := by
-    simp_rw [littlewoodPaleyBlock_apply_apply_eq, ← map_sum]
+    simp_rw [littlewoodPaleyBlock_apply_apply, ← map_sum]
     calc _ ≤ A * (K * ‖w‖) := (hu _).trans (by gcongr; exact hKt t G w hw0 hw)
       _ = A * K * ‖w‖ := by ring
   -- Each block of `u` is an `L^{p'}` function `hⱼ` with `‖hⱼ‖ ≤ A K 2^{js}`.
@@ -315,11 +302,17 @@ theorem exists_toDistr_apply_eq_and_norm_le (s : ℝ) :
           ‖v‖ ≤ C * ‖Λ‖ := by
   obtain ⟨C, hC⟩ := exists_toDistr_eq_and_norm_le_of_norm_apply_le φ s
   refine ⟨C, fun {p p'} _ _ _ {q q'} _ _ _ hp hp_top Λ ↦ ?_⟩
+  -- The restriction of `Λ` to the Schwartz functions, as a tempered distribution.
+  have hu (f : 𝓢(E, ℂ)) : ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) 𝓢(E, ℂ) ℂ
+      (Λ ∘L SchwartzMap.toBesovSpaceCLM ℂ φ s p q) f =
+        Λ (SchwartzMap.toBesovSpaceCLM ℂ φ s p q f) := by
+    rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
+    exact ContinuousLinearMap.comp_apply Λ _ f
   obtain ⟨v, hv, hvn⟩ := hC (p' := p') (q' := q') hp hp_top
     (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) 𝓢(E, ℂ) ℂ
-      (Λ ∘L SchwartzMap.toBesovSpaceCLM ℂ φ s p q)) (norm_nonneg Λ) fun f ↦ Λ.le_opNorm _
-  refine ⟨v, fun f ↦ ?_, hvn⟩
-  rw [hv, ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
-  exact ContinuousLinearMap.comp_apply Λ _ f
+      (Λ ∘L SchwartzMap.toBesovSpaceCLM ℂ φ s p q)) (norm_nonneg Λ) fun f ↦ by
+      rw [hu]
+      exact Λ.le_opNorm _
+  exact ⟨v, fun f ↦ by rw [hv, hu], hvn⟩
 
 end TauCeti.BesovSpace
