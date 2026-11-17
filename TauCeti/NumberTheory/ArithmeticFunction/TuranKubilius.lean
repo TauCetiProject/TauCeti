@@ -12,9 +12,9 @@ import TauCeti.Algebra.BigOperators.Finset.SquaredDeviation
 import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecificLimits.ReciprocalSeries
-import TauCeti.Data.Nat.Cast.Order.Field
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.Nat.Log
+import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.NumberTheory.Chebyshev.Mertens
 import TauCeti.NumberTheory.SumPrimePow
 
@@ -84,7 +84,7 @@ open Finset
 
 namespace ArithmeticFunction
 
-/-! ### Exact-valuation counts and correlations -/
+/-! ### Centered single-prime valuation parts -/
 
 section ValuationCounts
 
@@ -94,133 +94,6 @@ private noncomputable def valDensity (p k : ℕ) : ℝ :=
 
 private lemma valDensity_eq (p k : ℕ) :
     valDensity p k = 1 / (p : ℝ) ^ k - 1 / (p : ℝ) ^ (k + 1) := rfl
-
-private lemma valDensity_bounds {p k : ℕ} (hp : p.Prime) (hk : 1 ≤ k) :
-    0 ≤ valDensity p k ∧ valDensity p k ≤ 1 / 2 := by
-  have hp1 : (1 : ℝ) ≤ p := mod_cast hp.one_lt.le
-  have hp2 : (2 : ℝ) ≤ p := mod_cast hp.two_le
-  have hpow : (p : ℝ) ^ k ≤ (p : ℝ) ^ (k + 1) := pow_le_pow_right₀ hp1 (Nat.le_succ k)
-  have h2 : (2 : ℝ) ≤ (p : ℝ) ^ k := hp2.trans (le_self_pow₀ hp1 (by lia : k ≠ 0))
-  rw [valDensity_eq]
-  refine ⟨sub_nonneg.mpr (one_div_le_one_div_of_le (by positivity) hpow), ?_⟩
-  exact (sub_le_self _ (by positivity)).trans (one_div_le_one_div_of_le zero_lt_two h2)
-
-/-- Pulling a constant out of a real conditional sum `∑ i ∈ s, if P i then a else 0`. -/
-private lemma sum_ite_const {ι : Type*} (s : Finset ι) (P : ι → Prop) [DecidablePred P] (a : ℝ) :
-    (∑ i ∈ s, if P i then a else 0) = a * ∑ i ∈ s, if P i then (1 : ℝ) else 0 := by
-  rw [mul_sum]
-  exact sum_congr rfl fun _ _ ↦ by split_ifs <;> ring
-
-/-- Real-valued exact-valuation count on `Icc 1 N` via `Nat.card_filter_Icc_factorization_eq`. -/
-private lemma sum_ite_factorization_eq (N : ℕ) {p k : ℕ} (hp : p.Prime) :
-    ∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0) =
-      ((N / p ^ k : ℕ) : ℝ) - ((N / p ^ (k + 1) : ℕ) : ℝ) := by
-  have hle : N / p ^ (k + 1) ≤ N / p ^ k :=
-    Nat.div_le_div_left (Nat.pow_le_pow_right hp.pos (Nat.le_succ k)) (pow_pos hp.pos k)
-  rw [sum_boole, Nat.card_filter_Icc_factorization_eq N hp k, Nat.cast_sub hle]
-
-/-- Upper bound `≤ N / p ^ k` on the count of `n ∈ Icc 1 N` with `n.factorization p = k`. -/
-private lemma sum_ite_factorization_le (N : ℕ) {p k : ℕ} (hp : p.Prime) :
-    ∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0) ≤
-      (N : ℝ) / (p : ℝ) ^ k := by
-  rw [sum_ite_factorization_eq N hp]
-  have h1 : ((N / p ^ k : ℕ) : ℝ) ≤ (N : ℝ) / ((p ^ k : ℕ) : ℝ) := Nat.cast_div_le
-  push_cast at h1
-  linarith [Nat.cast_nonneg (α := ℝ) (N / p ^ (k + 1))]
-
-/-- The count of `n ∈ Icc 1 N` with `n.factorization p = k` is within `1` of
-`N * valDensity p k`. -/
-private lemma abs_sum_ite_factorization_sub_le (N : ℕ) {p k : ℕ} (hp : p.Prime) :
-    |(∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0)) -
-      (N : ℝ) * valDensity p k| ≤ 1 := by
-  have hr1_0 : 0 ≤ (N : ℝ) / ((p ^ k : ℕ) : ℝ) - ((N / p ^ k : ℕ) : ℝ) :=
-    sub_nonneg.mpr Nat.cast_div_le
-  have hr1_1 := (Nat.div_sub_cast_div_lt_one (α := ℝ) N (p ^ k)).le
-  have hr2_0 : 0 ≤ (N : ℝ) / ((p ^ (k + 1) : ℕ) : ℝ) - ((N / p ^ (k + 1) : ℕ) : ℝ) :=
-    sub_nonneg.mpr Nat.cast_div_le
-  have hr2_1 := (Nat.div_sub_cast_div_lt_one (α := ℝ) N (p ^ (k + 1))).le
-  push_cast at hr1_0 hr1_1 hr2_0 hr2_1
-  have hdiff : (∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0)) -
-      (N : ℝ) * valDensity p k =
-      ((N : ℝ) / (p : ℝ) ^ (k + 1) - ((N / p ^ (k + 1) : ℕ) : ℝ)) -
-        ((N : ℝ) / (p : ℝ) ^ k - ((N / p ^ k : ℕ) : ℝ)) := by
-    rw [sum_ite_factorization_eq N hp, valDensity_eq]; ring
-  rw [hdiff, abs_le]
-  exact ⟨by linarith, by linarith⟩
-
-/-- For distinct primes `p ≠ q`, the joint count of `n ∈ Icc 1 N` with `n.factorization p = k` and
-`n.factorization q = l` is within `2` of `N * valDensity p k * valDensity q l`. -/
-private lemma abs_sum_ite_factorization_mul_sub_le (N : ℕ) {p q k l : ℕ}
-    (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) :
-    |(∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0) *
-        (if n.factorization q = l then (1 : ℝ) else 0)) -
-      (N : ℝ) * valDensity p k * valDensity q l| ≤ 2 := by
-  have hboole : ∀ n : ℕ, (if n.factorization p = k then (1 : ℝ) else 0) *
-      (if n.factorization q = l then (1 : ℝ) else 0) =
-      if n.factorization p = k ∧ n.factorization q = l then (1 : ℝ) else 0 := fun n ↦ by
-    split_ifs <;> simp_all
-  have hle : N / (p ^ k * q ^ (l + 1)) + N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) := by
-    have hdiv_q : N / (p ^ k * q ^ (l + 1)) = N / (p ^ k * q ^ l) / q := by
-      rw [pow_succ, ← mul_assoc, Nat.div_div_eq_div_mul]
-    have hdiv_p : N / (p ^ (k + 1) * q ^ l) = N / (p ^ k * q ^ l) / p := by
-      rw [pow_succ, mul_right_comm, Nat.div_div_eq_div_mul]
-    rw [hdiv_q, hdiv_p, add_comm]
-    exact hp.div_add_div_le hq hpq _
-  have hsum : (∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0) *
-        (if n.factorization q = l then (1 : ℝ) else 0)) =
-      ((N / (p ^ k * q ^ l) : ℕ) : ℝ) - ((N / (p ^ k * q ^ (l + 1)) : ℕ) : ℝ) -
-        ((N / (p ^ (k + 1) * q ^ l) : ℕ) : ℝ) +
-          ((N / (p ^ (k + 1) * q ^ (l + 1)) : ℕ) : ℝ) := by
-    simp_rw [hboole]
-    rw [sum_boole, Nat.card_filter_Icc_factorization_eq_and_eq N hp hq hpq k l,
-      Nat.cast_add, Nat.cast_sub (by lia), Nat.cast_sub (by lia)]
-  set r := fun d : ℕ ↦ (N : ℝ) / (d : ℝ) - ((N / d : ℕ) : ℝ)
-  have hr0 : ∀ d, 0 ≤ r d := fun _ ↦ sub_nonneg.mpr Nat.cast_div_le
-  have hr1 : ∀ d, r d ≤ 1 := fun d ↦ (Nat.div_sub_cast_div_lt_one N d).le
-  have hdiff : (∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0) *
-        (if n.factorization q = l then (1 : ℝ) else 0)) -
-      (N : ℝ) * valDensity p k * valDensity q l =
-      (r (p ^ k * q ^ (l + 1)) - r (p ^ k * q ^ l)) +
-        (r (p ^ (k + 1) * q ^ l) - r (p ^ (k + 1) * q ^ (l + 1))) := by
-    simp only [hsum, r, valDensity_eq, Nat.cast_mul, Nat.cast_pow]; ring
-  rw [hdiff, abs_le]
-  constructor
-  · linarith [hr0 (p ^ k * q ^ (l + 1)), hr1 (p ^ k * q ^ l),
-      hr0 (p ^ (k + 1) * q ^ l), hr1 (p ^ (k + 1) * q ^ (l + 1))]
-  · linarith [hr1 (p ^ k * q ^ (l + 1)), hr0 (p ^ k * q ^ l),
-      hr1 (p ^ (k + 1) * q ^ l), hr0 (p ^ (k + 1) * q ^ (l + 1))]
-
-/-- Centered valuation indicators at distinct primes have empirical correlation bounded by `3`. -/
-private lemma abs_sum_centered_factorization_mul_le (N : ℕ) {p q k l : ℕ}
-    (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) (hk : 1 ≤ k) (hl : 1 ≤ l) :
-    |∑ n ∈ Icc 1 N, ((if n.factorization p = k then (1 : ℝ) else 0) - valDensity p k) *
-        ((if n.factorization q = l then (1 : ℝ) else 0) - valDensity q l)| ≤ 3 := by
-  set Ip : ℕ → ℝ := fun n ↦ if n.factorization p = k then 1 else 0
-  set Iq : ℕ → ℝ := fun n ↦ if n.factorization q = l then 1 else 0
-  have hid : (∑ n ∈ Icc 1 N, (Ip n - valDensity p k) * (Iq n - valDensity q l)) =
-      ((∑ n ∈ Icc 1 N, Ip n * Iq n) - (N : ℝ) * valDensity p k * valDensity q l) -
-        valDensity q l * ((∑ n ∈ Icc 1 N, Ip n) - (N : ℝ) * valDensity p k) -
-        valDensity p k * ((∑ n ∈ Icc 1 N, Iq n) - (N : ℝ) * valDensity q l) := by
-    have hexp : ∀ n, (Ip n - valDensity p k) * (Iq n - valDensity q l) =
-        (Ip n * Iq n - valDensity q l * Ip n - valDensity p k * Iq n) +
-          valDensity p k * valDensity q l := fun _ ↦ by ring
-    simp_rw [hexp, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_const, Nat.card_Icc,
-      add_tsub_cancel_right, nsmul_eq_mul]
-    ring
-  obtain ⟨hα0, hα⟩ := valDensity_bounds hp hk
-  obtain ⟨hβ0, hβ⟩ := valDensity_bounds hq hl
-  have hJ := abs_sum_ite_factorization_mul_sub_le N hp hq hpq (k := k) (l := l)
-  have hCp := abs_sum_ite_factorization_sub_le N hp (k := k)
-  have hCq := abs_sum_ite_factorization_sub_le N hq (k := l)
-  set E12 := (∑ n ∈ Icc 1 N, Ip n * Iq n) - (N : ℝ) * valDensity p k * valDensity q l
-  set E1 := (∑ n ∈ Icc 1 N, Ip n) - (N : ℝ) * valDensity p k
-  set E2 := (∑ n ∈ Icc 1 N, Iq n) - (N : ℝ) * valDensity q l
-  rw [hid]
-  have h1 := abs_sub (E12 - valDensity q l * E1) (valDensity p k * E2)
-  have h2 := abs_sub E12 (valDensity q l * E1)
-  rw [abs_mul, abs_of_nonneg hα0] at h1
-  rw [abs_mul, abs_of_nonneg hβ0] at h2
-  nlinarith
 
 /-- Centered prime-power valuation sum at a single prime `p` up to cutoff `M`. -/
 private noncomputable def centeredPrimePart (M : ℕ) (f : ArithmeticFunction ℝ) (p n : ℕ) : ℝ :=
@@ -251,10 +124,10 @@ private lemma sum_centered_single_prime_sq_le (N M : ℕ) (f : ArithmeticFunctio
     rw [sum_comm, mul_sum]
     refine sum_le_sum fun k _ ↦ ?_
     calc (∑ n ∈ Icc 1 N, if n.factorization p = k then f (p ^ k) ^ 2 else 0)
-        = f (p ^ k) ^ 2 * ∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0) :=
-          sum_ite_const _ _ _
+        = f (p ^ k) ^ 2 * ∑ n ∈ Icc 1 N, (if n.factorization p = k then (1 : ℝ) else 0) := by
+          simp only [mul_sum, mul_boole]
       _ ≤ f (p ^ k) ^ 2 * ((N : ℝ) / (p : ℝ) ^ k) :=
-          mul_le_mul_of_nonneg_left (sum_ite_factorization_le N hp) (sq_nonneg _)
+          mul_le_mul_of_nonneg_left (Nat.sum_Icc_ite_factorization_le N p k) (sq_nonneg _)
       _ = (N : ℝ) * (f (p ^ k) ^ 2 / (p : ℝ) ^ k) := by ring
   set δ : ℝ := (∑ n ∈ Icc 1 N, g n) - (N : ℝ) * μ
   have hδ_abs : |δ| ≤ ∑ k ∈ K, |f (p ^ k)| := by
@@ -264,12 +137,14 @@ private lemma sum_centered_single_prime_sq_le (N M : ℕ) (f : ArithmeticFunctio
       simp only [δ, g, μ, mul_sum]
       rw [sum_comm, ← sum_sub_distrib]
       refine sum_congr rfl fun k _ ↦ ?_
-      rw [sum_ite_const]
+      rw [mul_sub, mul_sum]
+      simp only [mul_boole]
       ring
     rw [hδ_eq]
     refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun k _ ↦ ?_)
-    rw [abs_mul]
-    exact mul_le_of_le_one_right (abs_nonneg _) (abs_sum_ite_factorization_sub_le N hp)
+    rw [abs_mul, valDensity_eq]
+    exact mul_le_of_le_one_right (abs_nonneg _)
+      (Nat.abs_sum_Icc_ite_factorization_sub_lt_one N hp k).le
   have hvar : ∑ n ∈ Icc 1 N, centeredPrimePart M f p n ^ 2 ≤
       (∑ n ∈ Icc 1 N, g n ^ 2) + δ ^ 2 / (N : ℝ) := by
     simpa [hY, δ] using (Icc 1 N).sum_sub_sq_le_sum_sq_add_div g μ
@@ -332,12 +207,13 @@ private lemma sum_small_centered_mul_le (N M : ℕ) (f : ArithmeticFunction ℝ)
       exact sum_congr rfl fun l _ ↦ (mul_sum _ _ _).symm
   rw [hexp]
   calc _ ≤ ∑ k ∈ Icc 1 (p.log M), ∑ l ∈ Icc 1 (q.log M), |f (p ^ k)| * |f (q ^ l)| * 3 := by
-        refine sum_le_sum fun k hk ↦ sum_le_sum fun l hl ↦ ?_
+        refine sum_le_sum fun k _ ↦ sum_le_sum fun l _ ↦ ?_
         set Ckl := ∑ n ∈ Icc 1 N,
           ((if n.factorization p = k then (1 : ℝ) else 0) - valDensity p k) *
             ((if n.factorization q = l then (1 : ℝ) else 0) - valDensity q l)
-        have hcorr : |Ckl| ≤ 3 :=
-          abs_sum_centered_factorization_mul_le N hp hq hpq (mem_Icc.mp hk).1 (mem_Icc.mp hl).1
+        have hcorr : |Ckl| ≤ 3 := by
+          simp only [Ckl, valDensity_eq]
+          exact (Nat.abs_sum_Icc_ite_factorization_sub_mul_sub_lt_three N hp hq hpq k l).le
         calc f (p ^ k) * f (q ^ l) * Ckl
             ≤ |f (p ^ k) * f (q ^ l) * Ckl| := le_abs_self _
           _ = |f (p ^ k)| * |f (q ^ l)| * |Ckl| := by rw [abs_mul, abs_mul]
@@ -562,8 +438,7 @@ private lemma sum_large_prime_powers_exp_one_inv_le (N : ℕ) :
           refine sum_le_sum_of_subset_of_nonneg (fun p hp ↦ ?_) fun _ _ _ ↦ by positivity
           obtain ⟨⟨p, k⟩, hx, rfl⟩ := mem_image.mp hp
           obtain ⟨hxL, rfl⟩ := mem_filter.mp hx
-          change ⟨p, 1⟩ ∈ largePrimePowers N at hxL
-          rw [largePrimePowers_eq] at hxL
+          simp only [L, largePrimePowers_eq] at hxL
           obtain ⟨hxsig, hxgt⟩ := mem_filter.mp hxL
           exact mem_filter.mpr ⟨(mem_sigma.mp hxsig).1, by simpa using hxgt⟩
   refine himg.trans ?_
@@ -625,14 +500,13 @@ private lemma sum_large_prime_powers_sq_le (N : ℕ) (f : ArithmeticFunction ℝ
       exact (largePrimePowers N).sum_ite_pow_of_subsingleton (fun x ↦ n.factorization x.1 = x.2)
         (fun x ↦ f (x.1 ^ x.2)) two_ne_zero (large_prime_powers_subsingleton hn)
   rw [sum_congr rfl hpt, sum_comm, largeVar_eq, mul_sum]
-  refine sum_le_sum fun x hx ↦ ?_
-  have hp := prime_of_mem_largePrimePowers hx
+  refine sum_le_sum fun x _ ↦ ?_
   calc (∑ n ∈ Icc 1 N, if n.factorization x.1 = x.2 then f (x.1 ^ x.2) ^ 2 else 0)
       = f (x.1 ^ x.2) ^ 2 *
-          ∑ n ∈ Icc 1 N, (if n.factorization x.1 = x.2 then (1 : ℝ) else 0) :=
-        sum_ite_const _ _ _
+          ∑ n ∈ Icc 1 N, (if n.factorization x.1 = x.2 then (1 : ℝ) else 0) := by
+        simp only [mul_sum, mul_boole]
     _ ≤ f (x.1 ^ x.2) ^ 2 * ((N : ℝ) / (x.1 : ℝ) ^ x.2) :=
-        mul_le_mul_of_nonneg_left (sum_ite_factorization_le N hp) (sq_nonneg _)
+        mul_le_mul_of_nonneg_left (Nat.sum_Icc_ite_factorization_le N x.1 x.2) (sq_nonneg _)
     _ = (N : ℝ) * (f (x.1 ^ x.2) ^ 2 / (x.1 : ℝ) ^ x.2) := by ring
 
 /-- First-moment discrepancy of the large-prime-power part `f_L` on `Icc 1 N`. -/
@@ -646,14 +520,14 @@ private lemma abs_sum_large_prime_powers_sub_le (N : ℕ) (f : ArithmeticFunctio
     simp only [largePart_apply, largeMean_eq, mul_sum]
     rw [sum_comm, ← sum_sub_distrib]
     refine sum_congr rfl fun x _ ↦ ?_
-    rw [sum_ite_const]
+    rw [mul_sub, mul_sum]
+    simp only [mul_boole]
     ring
   rw [hS1_eq, mul_sum]
-  refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun x hx ↦ ?_)
-  have hp := prime_of_mem_largePrimePowers hx
+  refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun x _ ↦ ?_)
   have hC0 : 0 ≤ ∑ n ∈ Icc 1 N, (if n.factorization x.1 = x.2 then (1 : ℝ) else 0) :=
     sum_nonneg fun _ _ ↦ by split_ifs <;> norm_num
-  have hCle := sum_ite_factorization_le N hp (k := x.2)
+  have hCle := Nat.sum_Icc_ite_factorization_le (α := ℝ) N x.1 x.2
   have hD0 : 0 ≤ (N : ℝ) / (x.1 : ℝ) ^ x.2 := by positivity
   have habs : |(∑ n ∈ Icc 1 N, (if n.factorization x.1 = x.2 then (1 : ℝ) else 0)) -
       (N : ℝ) / (x.1 : ℝ) ^ x.2| ≤ (N : ℝ) / (x.1 : ℝ) ^ x.2 := by

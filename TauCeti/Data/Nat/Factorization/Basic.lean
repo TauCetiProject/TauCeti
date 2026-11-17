@@ -6,6 +6,9 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Data.Nat.Factorization.Basic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import TauCeti.Data.Nat.Cast.Order.Field
 
 /-!
 # Prime-power factors and exact valuation counts
@@ -22,8 +25,11 @@ factors of `n` exactly when it is coprime to `n`.
 
 For a prime `p` and `n ≠ 0`, `n.factorization p = k` holds precisely when `p ^ k ∣ n` and
 `¬p ^ (k + 1) ∣ n`, giving exact inclusion–exclusion counts on `Finset.Icc 1 N` for one prime
-(`N / p ^ k - N / p ^ (k + 1)`) and for two distinct primes (`p ≠ q`). Moreover, if two prime
-powers `p ^ k` and `q ^ l` divide `n ≠ 0` with `n < p ^ k * q ^ l`, coprimality forces `p = q`.
+(`N / p ^ k - N / p ^ (k + 1)`) and for two distinct primes (`p ≠ q`). Casting these counts to
+an `AddCommGroupWithOne`, `Semifield`, or linearly ordered `Field` yields exact indicator-sum
+identities, the unconditional upper bound `≤ N / p ^ k`, single-prime and two-prime discrepancy
+bounds `< 1` and `< 2` around the asymptotic densities `1 / p ^ k - 1 / p ^ (k + 1)`, and the
+centered pairwise correlation bound `< 3` for distinct primes `p ≠ q` across all `k, l : ℕ`.
 Monomial products of an injective family of primes (or fixed positive powers of their casts in
 characteristic zero) are injective on finitely supported exponent tuples.
 
@@ -118,29 +124,6 @@ theorem Prime.factorization_eq_iff_pow_dvd_and_not_pow_dvd {p n k : ℕ} (hp : p
   rw [hp.pow_dvd_iff_le_factorization hn, hp.pow_dvd_iff_le_factorization hn]
   omega
 
-/-- If two prime powers `p ^ k` and `q ^ l` divide `n ≠ 0` and their product exceeds `n`, then
-`p = q`. -/
-theorem Prime.eq_of_pow_dvd_of_lt_mul {p q k l n : ℕ} (hp : p.Prime) (hq : q.Prime) (hn : n ≠ 0)
-    (hp_dvd : p ^ k ∣ n) (hq_dvd : q ^ l ∣ n) (hlt : n < p ^ k * q ^ l) : p = q := by
-  by_contra hpq
-  exact hlt.not_ge (le_of_dvd (pos_of_ne_zero hn)
-    ((((coprime_primes hp hq).mpr hpq).pow k l).mul_dvd_of_dvd_of_dvd hp_dvd hq_dvd))
-
-/-- For distinct primes `p ≠ q` and any `M : ℕ`, `M / p + M / q ≤ M` (since one of `p, q` is at
-least `2` and the other is at least `3`). -/
-theorem Prime.div_add_div_le {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) (M : ℕ) :
-    M / p + M / q ≤ M := by
-  have hp2 := hp.two_le
-  have hq2 := hq.two_le
-  have h3 : 3 ≤ p ∨ 3 ≤ q := by omega
-  rcases h3 with hp3 | hq3
-  · have := Nat.div_le_div_left hp3 (by decide : 0 < 3) (a := M)
-    have := Nat.div_le_div_left hq2 (by decide : 0 < 2) (a := M)
-    omega
-  · have := Nat.div_le_div_left hp2 (by decide : 0 < 2) (a := M)
-    have := Nat.div_le_div_left hq3 (by decide : 0 < 3) (a := M)
-    omega
-
 /-- Exactly `N / d` natural numbers in `[1, N]` are multiples of `d`. -/
 theorem card_filter_Icc_one_dvd (N d : ℕ) : #{n ∈ Finset.Icc 1 N | d ∣ n} = N / d := by
   have h : Finset.Icc 1 N = Finset.Ioc 0 N := by ext; simp; omega
@@ -164,6 +147,19 @@ theorem card_filter_Icc_factorization_eq (N : ℕ) {p : ℕ} (hp : p.Prime) (k :
     obtain ⟨hn', hdvd⟩ := Finset.mem_filter.mp hn
     exact Finset.mem_filter.mpr ⟨hn', (pow_dvd_pow p (Nat.le_succ k)).trans hdvd⟩
   rw [hsdiff, Finset.card_sdiff_of_subset hsub, card_filter_Icc_one_dvd, card_filter_Icc_one_dvd]
+
+/-- For all `N, p, k : ℕ` (without assuming `p` is prime), at most `N / p ^ k` numbers in `[1, N]`
+satisfy `n.factorization p = k`. -/
+theorem card_filter_Icc_factorization_eq_le (N p k : ℕ) :
+    #{n ∈ Finset.Icc 1 N | n.factorization p = k} ≤ N / p ^ k := by
+  by_cases hp : p.Prime
+  · rw [card_filter_Icc_factorization_eq N hp k]
+    exact Nat.sub_le _ _
+  · have hzero : ∀ n : ℕ, n.factorization p = 0 := fun n ↦
+      factorization_eq_zero_of_not_prime n hp
+    rcases eq_or_ne k 0 with rfl | hk
+    · simp [hzero]
+    · simp [hzero, hk.symm]
 
 /-- For distinct primes `p ≠ q`, the number of `n ∈ [1, N]` with `n.factorization p = k` and
 `n.factorization q = l` is given by inclusion–exclusion over multiples of `p ^ i * q ^ j`
@@ -210,14 +206,216 @@ theorem card_filter_Icc_factorization_eq_and_eq (N : ℕ) {p q : ℕ} (hp : p.Pr
   have h2 := Finset.card_union_add_card_inter (s k (l + 1)) (s (k + 1) l)
   rw [← htarget, hs_card] at h1
   rw [hinter, hs_card, hs_card, hs_card] at h2
-  have hdiv_q : N / (p ^ k * q ^ (l + 1)) = N / (p ^ k * q ^ l) / q := by
-    rw [pow_succ, ← mul_assoc, Nat.div_div_eq_div_mul]
-  have hdiv_p : N / (p ^ (k + 1) * q ^ l) = N / (p ^ k * q ^ l) / p := by
-    rw [pow_succ, mul_right_comm, Nat.div_div_eq_div_mul]
-  have hle : N / (p ^ k * q ^ (l + 1)) + N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) := by
-    rw [hdiv_q, hdiv_p, add_comm]
-    exact hp.div_add_div_le hq hpq _
+  have hq2 : N / (p ^ k * q ^ (l + 1)) ≤ N / (p ^ k * q ^ l) / 2 := by
+    rw [pow_succ, ← mul_assoc, ← Nat.div_div_eq_div_mul]
+    exact Nat.div_le_div_left hq.two_le (by decide)
+  have hp2 : N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) / 2 := by
+    rw [pow_succ, mul_right_comm, ← Nat.div_div_eq_div_mul]
+    exact Nat.div_le_div_left hp.two_le (by decide)
   omega
+
+/-- Indicator-sum form of `Nat.card_filter_Icc_factorization_eq` in any `AddCommGroupWithOne`. -/
+theorem sum_Icc_ite_factorization_eq {α : Type*} [AddCommGroupWithOne α] (N : ℕ)
+    {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    ∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0) =
+      ((N / p ^ k : ℕ) : α) - ((N / p ^ (k + 1) : ℕ) : α) := by
+  have hle : N / p ^ (k + 1) ≤ N / p ^ k :=
+    Nat.div_le_div_left (Nat.pow_le_pow_right hp.pos (Nat.le_succ k)) (pow_pos hp.pos k)
+  rw [Finset.sum_boole, card_filter_Icc_factorization_eq N hp k, Nat.cast_sub hle]
+
+/-- For all `N, p, k : ℕ` (without assuming `p` is prime), the indicator sum of
+`n.factorization p = k` over `Finset.Icc 1 N` in a linearly ordered semifield is at most
+`N / p ^ k`. -/
+theorem sum_Icc_ite_factorization_le {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] (N p k : ℕ) :
+    ∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0) ≤
+      (N : α) / (p : α) ^ k := by
+  rw [Finset.sum_boole]
+  exact (Nat.cast_le.mpr (card_filter_Icc_factorization_eq_le N p k)).trans
+    (by simpa [Nat.cast_pow] using Nat.cast_div_le (α := α) (m := N) (n := p ^ k))
+
+/-- Indicator-sum form of `Nat.card_filter_Icc_factorization_eq_and_eq` in any
+`AddCommGroupWithOne`. -/
+theorem sum_Icc_ite_factorization_eq_and_eq {α : Type*} [AddCommGroupWithOne α] (N : ℕ)
+    {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) (k l : ℕ) :
+    ∑ n ∈ Finset.Icc 1 N,
+        (if n.factorization p = k ∧ n.factorization q = l then (1 : α) else 0) =
+      ((N / (p ^ k * q ^ l) : ℕ) : α) - ((N / (p ^ k * q ^ (l + 1)) : ℕ) : α) -
+        ((N / (p ^ (k + 1) * q ^ l) : ℕ) : α) +
+          ((N / (p ^ (k + 1) * q ^ (l + 1)) : ℕ) : α) := by
+  have hq2 : N / (p ^ k * q ^ (l + 1)) ≤ N / (p ^ k * q ^ l) / 2 := by
+    rw [pow_succ, ← mul_assoc, ← Nat.div_div_eq_div_mul]
+    exact Nat.div_le_div_left hq.two_le (by decide)
+  have hp2 : N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) / 2 := by
+    rw [pow_succ, mul_right_comm, ← Nat.div_div_eq_div_mul]
+    exact Nat.div_le_div_left hp.two_le (by decide)
+  have hle : N / (p ^ k * q ^ (l + 1)) + N / (p ^ (k + 1) * q ^ l) ≤ N / (p ^ k * q ^ l) :=
+    (Nat.add_le_add hq2 hp2).trans (by omega)
+  rw [Finset.sum_boole, card_filter_Icc_factorization_eq_and_eq N hp hq hpq k l, Nat.cast_add,
+    Nat.cast_sub (Nat.le_sub_of_add_le' hle), Nat.cast_sub (Nat.le_of_add_right_le hle)]
+
+/-- For a prime `p`, the exact-valuation indicator sum over `Finset.Icc 1 N` is strictly within `1`
+of `N * (1 / p ^ k - 1 / p ^ (k + 1))` in any linearly ordered field. -/
+theorem abs_sum_Icc_ite_factorization_sub_lt_one {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] (N : ℕ) {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    |(∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0)) -
+      (N : α) * (1 / (p : α) ^ k - 1 / (p : α) ^ (k + 1))| < 1 := by
+  have hr1_0 : (0 : α) ≤ (N : α) / ((p ^ k : ℕ) : α) - ((N / p ^ k : ℕ) : α) :=
+    sub_nonneg.mpr Nat.cast_div_le
+  have hr1_1 : (N : α) / ((p ^ k : ℕ) : α) - ((N / p ^ k : ℕ) : α) < 1 :=
+    Nat.div_sub_cast_div_lt_one N (p ^ k)
+  have hr2_0 : (0 : α) ≤ (N : α) / ((p ^ (k + 1) : ℕ) : α) - ((N / p ^ (k + 1) : ℕ) : α) :=
+    sub_nonneg.mpr Nat.cast_div_le
+  have hr2_1 : (N : α) / ((p ^ (k + 1) : ℕ) : α) - ((N / p ^ (k + 1) : ℕ) : α) < 1 :=
+    Nat.div_sub_cast_div_lt_one N (p ^ (k + 1))
+  push_cast at hr1_0 hr1_1 hr2_0 hr2_1
+  have hdiff : (∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0)) -
+      (N : α) * (1 / (p : α) ^ k - 1 / (p : α) ^ (k + 1)) =
+      ((N : α) / (p : α) ^ (k + 1) - ((N / p ^ (k + 1) : ℕ) : α)) -
+        ((N : α) / (p : α) ^ k - ((N / p ^ k : ℕ) : α)) := by
+    rw [sum_Icc_ite_factorization_eq N hp k]; ring
+  rw [hdiff, abs_lt]
+  exact ⟨by linarith, by linarith⟩
+
+/-- For distinct primes `p ≠ q`, the joint exact-valuation indicator sum over `Finset.Icc 1 N` is
+strictly within `2` of `N * (1 / p ^ k - 1 / p ^ (k + 1)) * (1 / q ^ l - 1 / q ^ (l + 1))` in any
+linearly ordered field. -/
+theorem abs_sum_Icc_ite_factorization_mul_sub_lt_two {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] (N : ℕ) {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q)
+    (k l : ℕ) :
+    |(∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0) *
+        (if n.factorization q = l then (1 : α) else 0)) -
+      (N : α) * (1 / (p : α) ^ k - 1 / (p : α) ^ (k + 1)) *
+        (1 / (q : α) ^ l - 1 / (q : α) ^ (l + 1))| < 2 := by
+  have hboole : ∀ n : ℕ, (if n.factorization p = k then (1 : α) else 0) *
+      (if n.factorization q = l then (1 : α) else 0) =
+      if n.factorization p = k ∧ n.factorization q = l then (1 : α) else 0 := fun n ↦ by
+    split_ifs <;> simp_all
+  have hsum : (∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0) *
+        (if n.factorization q = l then (1 : α) else 0)) =
+      ((N / (p ^ k * q ^ l) : ℕ) : α) - ((N / (p ^ k * q ^ (l + 1)) : ℕ) : α) -
+        ((N / (p ^ (k + 1) * q ^ l) : ℕ) : α) +
+          ((N / (p ^ (k + 1) * q ^ (l + 1)) : ℕ) : α) := by
+    simp_rw [hboole]
+    exact sum_Icc_ite_factorization_eq_and_eq N hp hq hpq k l
+  set r : ℕ → α := fun d ↦ (N : α) / (d : α) - ((N / d : ℕ) : α)
+  have hr0 : ∀ d, 0 ≤ r d := fun _ ↦ sub_nonneg.mpr Nat.cast_div_le
+  have hr1 : ∀ d, r d < 1 := fun d ↦ Nat.div_sub_cast_div_lt_one N d
+  have hdiff : (∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0) *
+        (if n.factorization q = l then (1 : α) else 0)) -
+      (N : α) * (1 / (p : α) ^ k - 1 / (p : α) ^ (k + 1)) *
+        (1 / (q : α) ^ l - 1 / (q : α) ^ (l + 1)) =
+      (r (p ^ k * q ^ (l + 1)) - r (p ^ k * q ^ l)) +
+        (r (p ^ (k + 1) * q ^ l) - r (p ^ (k + 1) * q ^ (l + 1))) := by
+    simp only [hsum, r, Nat.cast_mul, Nat.cast_pow]; ring
+  rw [hdiff, abs_lt]
+  constructor
+  · linarith [hr0 (p ^ k * q ^ (l + 1)), hr1 (p ^ k * q ^ l),
+      hr0 (p ^ (k + 1) * q ^ l), hr1 (p ^ (k + 1) * q ^ (l + 1))]
+  · linarith [hr1 (p ^ k * q ^ (l + 1)), hr0 (p ^ k * q ^ l),
+      hr1 (p ^ (k + 1) * q ^ l), hr0 (p ^ (k + 1) * q ^ (l + 1))]
+
+/-- Helper for `Nat.abs_sum_Icc_ite_factorization_sub_mul_sub_lt_three`: the `k = 0` case, where
+`1 - (1 - 1 / p) = 1 / p` cancels the `q`-only remainder term. -/
+private lemma abs_sum_Icc_ite_factorization_zero_sub_mul_sub_lt_three {α : Type*} [Field α]
+    [LinearOrder α] [IsStrictOrderedRing α] (N : ℕ) {p q : ℕ} (hp : p.Prime) (hq : q.Prime)
+    (hpq : p ≠ q) (l : ℕ) :
+    |∑ n ∈ Finset.Icc 1 N,
+        ((if n.factorization p = 0 then (1 : α) else 0) -
+          (1 / (p : α) ^ 0 - 1 / (p : α) ^ (0 + 1))) *
+        ((if n.factorization q = l then (1 : α) else 0) -
+          (1 / (q : α) ^ l - 1 / (q : α) ^ (l + 1)))| < 3 := by
+  set dq : α := 1 / (q : α) ^ l - 1 / (q : α) ^ (l + 1)
+  set r : ℕ → α := fun d ↦ (N : α) / (d : α) - ((N / d : ℕ) : α)
+  have hr0 : ∀ d, 0 ≤ r d := fun _ ↦ sub_nonneg.mpr Nat.cast_div_le
+  have hr1 : ∀ d, r d < 1 := fun d ↦ Nat.div_sub_cast_div_lt_one N d
+  have hboole : ∀ n : ℕ, (if n.factorization p = 0 then (1 : α) else 0) *
+      (if n.factorization q = l then (1 : α) else 0) =
+      if n.factorization p = 0 ∧ n.factorization q = l then (1 : α) else 0 := fun _ ↦ by
+    split_ifs <;> simp_all
+  have hval : ∑ n ∈ Finset.Icc 1 N,
+      ((if n.factorization p = 0 then (1 : α) else 0) -
+        (1 / (p : α) ^ 0 - 1 / (p : α) ^ (0 + 1))) *
+      ((if n.factorization q = l then (1 : α) else 0) - dq) =
+      1 / (p : α) * (r (q ^ (l + 1)) - r (q ^ l)) +
+        (r (p * q ^ l) - r (p * q ^ (l + 1))) - dq * r p := by
+    simp_rw [sub_mul, mul_sub, Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.sum_mul,
+      Finset.sum_const, Nat.card_Icc, add_tsub_cancel_right, nsmul_eq_mul, hboole]
+    rw [sum_Icc_ite_factorization_eq_and_eq N hp hq hpq 0 l,
+      sum_Icc_ite_factorization_eq N hp 0, sum_Icc_ite_factorization_eq N hq l]
+    simp only [dq, r, pow_zero, one_mul, pow_one, Nat.div_one, Nat.cast_mul, Nat.cast_pow,
+      zero_add, div_one]; ring
+  have hp1 : (1 : α) ≤ p := Nat.one_le_cast.mpr hp.one_lt.le
+  have hq1 : (1 : α) ≤ q := Nat.one_le_cast.mpr hq.one_lt.le
+  have ht1 : |1 / (p : α) * (r (q ^ (l + 1)) - r (q ^ l))| ≤ 1 := by
+    rw [abs_mul, abs_of_nonneg (div_nonneg zero_le_one (by linarith))]
+    exact (mul_le_of_le_one_left (abs_nonneg _)
+      (div_le_one_of_le₀ hp1 (by linarith))).trans
+      (abs_le.mpr ⟨by linarith [hr0 (q ^ (l + 1)), hr1 (q ^ l)],
+        by linarith [hr1 (q ^ (l + 1)), hr0 (q ^ l)]⟩)
+  have hdq0 : 0 ≤ dq := sub_nonneg.mpr (one_div_le_one_div_of_le (pow_pos (by linarith) l)
+    (pow_le_pow_right₀ hq1 (Nat.le_succ l)))
+  have hdq1 : dq ≤ 1 := (sub_le_self _ (div_nonneg zero_le_one
+    (pow_nonneg (by linarith) _))).trans (div_le_one_of_le₀ (one_le_pow₀ hq1)
+      (pow_nonneg (by linarith) _))
+  have hmul0 : 0 ≤ dq * r p := mul_nonneg hdq0 (hr0 p)
+  have hmul1 : dq * r p < 1 := (mul_le_of_le_one_left (hr0 p) hdq1).trans_lt (hr1 p)
+  rw [hval, abs_lt]
+  rw [abs_le] at ht1
+  exact ⟨by linarith [hr0 (p * q ^ l), hr1 (p * q ^ (l + 1))],
+    by linarith [hr1 (p * q ^ l), hr0 (p * q ^ (l + 1))]⟩
+
+/-- Centered valuation indicators at distinct primes `p ≠ q` have empirical correlation strictly
+bounded by `3` over `Finset.Icc 1 N` in any linearly ordered field, for all `k, l : ℕ`. -/
+theorem abs_sum_Icc_ite_factorization_sub_mul_sub_lt_three {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] (N : ℕ) {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q)
+    (k l : ℕ) :
+    |∑ n ∈ Finset.Icc 1 N,
+        ((if n.factorization p = k then (1 : α) else 0) -
+          (1 / (p : α) ^ k - 1 / (p : α) ^ (k + 1))) *
+        ((if n.factorization q = l then (1 : α) else 0) -
+          (1 / (q : α) ^ l - 1 / (q : α) ^ (l + 1)))| < 3 := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · exact abs_sum_Icc_ite_factorization_zero_sub_mul_sub_lt_three N hp hq hpq l
+  rcases eq_or_ne l 0 with rfl | hl
+  · rw [Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _]
+    exact abs_sum_Icc_ite_factorization_zero_sub_mul_sub_lt_three N hq hp hpq.symm k
+  -- Main case `k ≠ 0`, `l ≠ 0`: `dp, dq ≤ 1 / 2` gives `|E12 - dq * E1 - dp * E2| < 2 + 1/2 + 1/2`.
+  have hdens {r m : ℕ} (hr : r.Prime) (hm : m ≠ 0) :
+      (0 : α) ≤ 1 / (r : α) ^ m - 1 / (r : α) ^ (m + 1) ∧
+        1 / (r : α) ^ m - 1 / (r : α) ^ (m + 1) ≤ 1 / 2 := by
+    have hr1 : (1 : α) ≤ r := Nat.one_le_cast.mpr hr.one_lt.le
+    have hr2 : (2 : α) ≤ r := by exact_mod_cast hr.two_le
+    exact ⟨sub_nonneg.mpr (one_div_le_one_div_of_le (pow_pos (by linarith) m)
+        (pow_le_pow_right₀ hr1 (Nat.le_succ m))),
+      (sub_le_self _ (div_nonneg zero_le_one (pow_nonneg (by linarith) _))).trans
+        (one_div_le_one_div_of_le zero_lt_two (hr2.trans (le_self_pow₀ hr1 hm)))⟩
+  set dp : α := 1 / (p : α) ^ k - 1 / (p : α) ^ (k + 1)
+  set dq : α := 1 / (q : α) ^ l - 1 / (q : α) ^ (l + 1)
+  obtain ⟨hdp0, hdp⟩ := hdens hp hk
+  obtain ⟨hdq0, hdq⟩ := hdens hq hl
+  have hJ := abs_sum_Icc_ite_factorization_mul_sub_lt_two (α := α) N hp hq hpq k l
+  have hCp := abs_sum_Icc_ite_factorization_sub_lt_one (α := α) N hp k
+  have hCq := abs_sum_Icc_ite_factorization_sub_lt_one (α := α) N hq l
+  set E12 := (∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0) *
+      (if n.factorization q = l then (1 : α) else 0)) - (N : α) * dp * dq
+  set E1 := (∑ n ∈ Finset.Icc 1 N, (if n.factorization p = k then (1 : α) else 0)) - (N : α) * dp
+  set E2 := (∑ n ∈ Finset.Icc 1 N, (if n.factorization q = l then (1 : α) else 0)) - (N : α) * dq
+  have hid : ∑ n ∈ Finset.Icc 1 N,
+      ((if n.factorization p = k then (1 : α) else 0) - dp) *
+      ((if n.factorization q = l then (1 : α) else 0) - dq) =
+      E12 - dq * E1 - dp * E2 := by
+    simp_rw [E12, E1, E2, sub_mul, mul_sub, Finset.sum_sub_distrib, ← Finset.mul_sum,
+      ← Finset.sum_mul, Finset.sum_const, Nat.card_Icc, add_tsub_cancel_right, nsmul_eq_mul]
+    ring
+  rw [hid]
+  have h1 := abs_sub (E12 - dq * E1) (dp * E2)
+  have h2 := abs_sub E12 (dq * E1)
+  rw [abs_mul, abs_of_nonneg hdp0] at h1
+  rw [abs_mul, abs_of_nonneg hdq0] at h2
+  have hm1 : dq * |E1| ≤ 1 / 2 := (mul_le_of_le_one_right hdq0 hCp.le).trans hdq
+  have hm2 : dp * |E2| ≤ 1 / 2 := (mul_le_of_le_one_right hdp0 hCq.le).trans hdp
+  linarith
 
 end Nat
 
