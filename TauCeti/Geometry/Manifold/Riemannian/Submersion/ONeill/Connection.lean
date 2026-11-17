@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Basic
 import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -81,69 +82,6 @@ variable
 private instance : IsManifold I (minSmoothness ℝ 2) M := by
   rw [minSmoothness_of_isRCLikeNormedField]
   exact .of_le (by norm_cast)
-
-private theorem hom_hom_apply
-    {S : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y}
-    (hS : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E)) ∞
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-        (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] TangentSpace I z) y (S y)))
-    {Y Z : Π y : M, TangentSpace I y} (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x)
-    (w : TangentSpace I x) :
-    ((leviCivitaConnection I M).hom ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
-        S x w (Y x) (Z x) =
-      leviCivitaConnection I M (fun y ↦ S y (Y y) (Z y)) x w -
-        S x (leviCivitaConnection I M Y x w) (Z x) -
-        S x (Y x) (leviCivitaConnection I M Z x w) := by
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  have hSd := hS.mdifferentiableAt (by simp) (x := x)
-  rw [CovariantDerivative.hom_apply _ _ hSd hY w, sub_apply,
-    CovariantDerivative.hom_apply _ _ (hSd.clm_bundle_apply hY) hZ w]
-  abel
-
-/-- Skew-adjointness of a smooth bilinear bundle section in its last two slots passes to its
-covariant derivative under the induced Hom-bundle connection. -/
-private theorem inner_hom_hom_of_skew
-    {S : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y}
-    (hS : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E)) ∞
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
-        (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] TangentSpace I z) y (S y)))
-    (hskew : ∀ y u a b, ⟪S y u a, b⟫_ℝ = -⟪a, S y u b⟫_ℝ)
-    (w u a b : TangentSpace I x) :
-    ⟪((leviCivitaConnection I M).hom ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
-        S x w u a, b⟫_ℝ =
-      -⟪a, ((leviCivitaConnection I M).hom
-          ((leviCivitaConnection I M).hom (leviCivitaConnection I M))) S x w u b⟫_ℝ := by
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E) := inferInstance
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hSd := hS.mdifferentiableAt (by simp) (x := x)
-  have hU := mdifferentiableAt_extend I E u
-  have hA := mdifferentiableAt_extend I E a
-  have hB := mdifferentiableAt_extend I E b
-  have hSUA := (hSd.clm_bundle_apply hU).clm_bundle_apply hA
-  have hSUB := (hSd.clm_bundle_apply hU).clm_bundle_apply hB
-  set φ₁ : M → ℝ := fun y ↦ ⟪S y (extend E u y) (extend E a y), extend E b y⟫_ℝ
-  set φ₂ : M → ℝ := fun y ↦ ⟪extend E a y, S y (extend E u y) (extend E b y)⟫_ℝ
-  have hzero : φ₁ + φ₂ = fun _ ↦ 0 :=
-    funext fun y ↦ by simp only [Pi.add_apply, φ₁, φ₂, hskew, neg_add_cancel]
-  have hmetric := isMetricCompatible_leviCivitaConnection I (M := M)
-  have hm₁ := hmetric.mvfderiv_inner_eq (extend E w) hSUA hB
-  have hm₂ := hmetric.mvfderiv_inner_eq (extend E w) hA hSUB
-  have hd : mvfderiv I (φ₁ + φ₂) x (extend E w x) = 0 := by
-    rw [hzero, mvfderiv_const, zero_apply]
-  rw [mvfderiv_add (TauCeti.Manifold.mdifferentiableAt_inner hSUA hB)
-      (TauCeti.Manifold.mdifferentiableAt_inner hA hSUB), add_apply, hm₁, hm₂] at hd
-  have hevalA := hom_hom_apply hS hU hA w
-  have hevalB := hom_hom_apply hS hU hB w
-  simp only [extend_apply_self, hskew] at hd hevalA hevalB
-  rw [hevalA, hevalB]
-  simp only [inner_sub_left, inner_sub_right, hskew]
-  linarith
 
 variable
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
@@ -327,7 +265,8 @@ theorem hom_oneillA_apply {Y Z : Π y : M, TangentSpace I y}
       leviCivitaConnection I M (fun y ↦ h.oneillA y (Y y) (Z y)) x w -
         h.oneillA x (leviCivitaConnection I M Y x w) (Z x) -
         h.oneillA x (Y x) (leviCivitaConnection I M Z x w) :=
-  hom_hom_apply h.contMDiff_oneillA hY hZ w
+  CovariantDerivative.hom_hom_apply _ _ _ (h.contMDiff_oneillA.mdifferentiableAt (by simp))
+    hY hZ w
 
 /-- Leibniz evaluation of the covariant derivative `∇T` on differentiable vector fields. -/
 theorem hom_oneillT_apply {Y Z : Π y : M, TangentSpace I y}
@@ -337,7 +276,8 @@ theorem hom_oneillT_apply {Y Z : Π y : M, TangentSpace I y}
       leviCivitaConnection I M (fun y ↦ h.oneillT y (Y y) (Z y)) x w -
         h.oneillT x (leviCivitaConnection I M Y x w) (Z x) -
         h.oneillT x (Y x) (leviCivitaConnection I M Z x w) :=
-  hom_hom_apply h.contMDiff_oneillT hY hZ w
+  CovariantDerivative.hom_hom_apply _ _ _ (h.contMDiff_oneillT.mdifferentiableAt (by simp))
+    hY hZ w
 
 /-- The covariant derivative `∇A` remains skew-adjoint in its last two arguments. -/
 theorem inner_hom_oneillA (w u a b : TangentSpace I x) :
@@ -345,7 +285,8 @@ theorem inner_hom_oneillA (w u a b : TangentSpace I x) :
         h.oneillA x w u a, b⟫_ℝ =
       -⟪a, ((leviCivitaConnection I M).hom
           ((leviCivitaConnection I M).hom (leviCivitaConnection I M))) h.oneillA x w u b⟫_ℝ :=
-  inner_hom_hom_of_skew h.contMDiff_oneillA h.inner_oneillA w u a b
+  (isMetricCompatible_leviCivitaConnection I (M := M)).inner_hom_hom_eq_neg
+    (h.contMDiff_oneillA.mdifferentiableAt (by simp)) (.of_forall h.inner_oneillA) w u a b
 
 /-- The covariant derivative `∇T` remains skew-adjoint in its last two arguments. -/
 theorem inner_hom_oneillT (w u a b : TangentSpace I x) :
@@ -353,7 +294,8 @@ theorem inner_hom_oneillT (w u a b : TangentSpace I x) :
         h.oneillT x w u a, b⟫_ℝ =
       -⟪a, ((leviCivitaConnection I M).hom
           ((leviCivitaConnection I M).hom (leviCivitaConnection I M))) h.oneillT x w u b⟫_ℝ :=
-  inner_hom_hom_of_skew h.contMDiff_oneillT h.inner_oneillT w u a b
+  (isMetricCompatible_leviCivitaConnection I (M := M)).inner_hom_hom_eq_neg
+    (h.contMDiff_oneillT.mdifferentiableAt (by simp)) (.of_forall h.inner_oneillT) w u a b
 
 /-- Differentiating `A_X X = 0` along any tangent vector `a` shows that `(∇_a A) u u` has no
 vertical component when `u` is horizontal. -/
@@ -372,7 +314,8 @@ theorem inner_hom_oneillA_self (a : TangentSpace I x)
   have hzero : (fun y ↦ h.oneillA y (X y) (X y)) = 0 :=
     funext fun y ↦ h.oneillA_self (h.horizontalLift_mem_orthogonal_ker y _)
   have heval := h.hom_oneillA_apply hXd hXd a
-  rw [show X x = u from hXx] at heval
+  dsimp only [X] at heval hzero
+  rw [hXx] at heval
   rw [heval, hzero, CovariantDerivative.zero, Pi.zero_apply, zero_apply,
     zero_sub, h.leviCivitaConnection_horizontalLift_apply hB1 a, hXx]
   set hpart := h.horizontalLift x (leviCivitaConnection J N B (f x) (mfderiv I J f x a)) +

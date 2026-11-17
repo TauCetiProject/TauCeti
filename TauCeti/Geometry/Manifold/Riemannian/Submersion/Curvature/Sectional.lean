@@ -31,11 +31,6 @@ remaining sectional-curvature corollaries of O'Neill's Theorem 2 (Corollaries 1 
 
 ## Main results
 
-* `TauCeti.IsRiemannianSubmersion.gram_horizontalLift`,
-  `TauCeti.IsRiemannianSubmersion.gram_mfderiv_of_mem`,
-  `TauCeti.IsRiemannianSubmersion.linearIndependent_mfderiv_iff_of_mem`, and
-  `TauCeti.IsRiemannianSubmersion.orthonormal_mfderiv_iff_of_mem`: horizontal lifting and `mfderiv`
-  preserve Gram matrices, linear independence, and orthonormality on horizontal pairs.
 * `TauCeti.IsRiemannianSubmersion.sectionalCurvature_horizontal_vertical` and
   `TauCeti.IsRiemannianSubmersion.sectionalCurvature_nonneg_of_eventually_oneillT_eq_zero`:
   mixed horizontal-vertical sectional curvature and non-negativity for totally geodesic fibres.
@@ -70,59 +65,17 @@ namespace TauCeti.IsRiemannianSubmersion
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   {f : M → N} (h : IsRiemannianSubmersion I J f)
 
 include h
-
-/-! ### Gram matrices, linear independence, and orthonormality on horizontal pairs -/
-
-section Gram
-
-/-- Horizontal lifting preserves Gram matrices of tangent pairs. -/
-@[simp]
-theorem gram_horizontalLift (x : M) (u v : TangentSpace J (f x)) :
-    Matrix.gram ℝ ![h.horizontalLift x u, h.horizontalLift x v] = Matrix.gram ℝ ![u, v] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [(h.horizontalLift x).inner_map_map]
-
-/-- On horizontal vectors, `mfderiv` preserves Gram matrices of tangent pairs. -/
-theorem gram_mfderiv_of_mem {x : M} {u v : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
-    Matrix.gram ℝ ![mfderiv I J f x u, mfderiv I J f x v] = Matrix.gram ℝ ![u, v] := by
-  rw [← h.gram_horizontalLift x, h.horizontalLift_mfderiv_of_mem x hu,
-    h.horizontalLift_mfderiv_of_mem x hv]
-
-/-- Two horizontal vectors at `x` are linearly independent if and only if their projections in
-`TangentSpace J (f x)` are linearly independent. -/
-theorem linearIndependent_mfderiv_iff_of_mem {x : M} {u v : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
-    LinearIndependent ℝ ![mfderiv I J f x u, mfderiv I J f x v] ↔
-      LinearIndependent ℝ ![u, v] := by
-  rw [← Matrix.det_gram_ne_zero_iff_linearIndependent (𝕜 := ℝ),
-    ← Matrix.det_gram_ne_zero_iff_linearIndependent (𝕜 := ℝ),
-    h.gram_mfderiv_of_mem hu hv]
-
-/-- Two horizontal vectors at `x` form an orthonormal pair if and only if their projections in
-`TangentSpace J (f x)` form an orthonormal pair. -/
-theorem orthonormal_mfderiv_iff_of_mem {x : M} {u v : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
-    Orthonormal ℝ ![mfderiv I J f x u, mfderiv I J f x v] ↔ Orthonormal ℝ ![u, v] := by
-  rw [← Matrix.gram_eq_one_iff_orthonormal (𝕜 := ℝ),
-    ← Matrix.gram_eq_one_iff_orthonormal (𝕜 := ℝ),
-    h.gram_mfderiv_of_mem hu hv]
-
-end Gram
-
-variable
-  [IsManifold I ∞ M] [IsManifold J ∞ N]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
 -- These regularity indices are propositionally, but not definitionally, equal to `2`.
 private instance : IsManifold I (minSmoothness ℝ 2) M := by
@@ -249,7 +202,13 @@ theorem sectionalCurvature_eq_add_horizontalLift (u v : TangentSpace J (f x)) :
           (h.horizontalLift x u) (h.horizontalLift x v) +
         3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 /
           (Matrix.gram ℝ ![u, v]).det := by
-  simpa only [h.mfderiv_horizontalLift, h.gram_horizontalLift] using
+  have hgram : Matrix.gram ℝ ![h.horizontalLift x u, h.horizontalLift x v] =
+      Matrix.gram ℝ ![u, v] := by
+    rw [← h.gram_horizontalLift x ![u, v]]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+  simpa only [h.mfderiv_horizontalLift, hgram] using
     h.sectionalCurvature_mfderiv (h.horizontalLift_mem_orthogonal_ker x u)
       (h.horizontalLift_mem_orthogonal_ker x v)
 
@@ -396,8 +355,11 @@ theorem le_sectionalCurvature_of_forall_le {κ : ℝ}
         (isMetricCompatible_leviCivitaConnection J) (f x) u v := by
   have hli : LinearIndependent ℝ ![h.horizontalLift x u, h.horizontalLift x v] := by
     rw [← h.linearIndependent_mfderiv_iff_of_mem
-      (h.horizontalLift_mem_orthogonal_ker x u) (h.horizontalLift_mem_orthogonal_ker x v)]
-    simpa only [h.mfderiv_horizontalLift] using huv
+      (Fin.forall_fin_two.mpr ⟨h.horizontalLift_mem_orthogonal_ker x u,
+        h.horizontalLift_mem_orthogonal_ker x v⟩)]
+    convert huv using 1
+    ext i
+    fin_cases i <;> simp
   exact (hκ _ _ hli).trans (h.sectionalCurvature_horizontalLift_le u v)
 
 end HorizontalSectional

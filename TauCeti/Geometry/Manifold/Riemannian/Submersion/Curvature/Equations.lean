@@ -89,12 +89,6 @@ private instance : IsManifold I (minSmoothness ℝ 2) M := by
   rw [minSmoothness_of_isRCLikeNormedField]
   exact .of_le (by norm_cast)
 
-private theorem contMDiffOn_leviCivitaConnection_apply_of_isOpen {u : Set M} (hu : IsOpen u)
-    {X σ : Π y : M, TangentSpace I y} (hX : CMDiff[u] ∞ (T% X)) (hσ : CMDiff[u] ∞ (T% σ)) :
-    CMDiff[u] ∞ (T% (fun y ↦ leviCivitaConnection I M σ y (X y))) :=
-  (contMDiffOn_leviCivitaConnection (I := I) (n := ∞) (m := ∞) (k := ∞) hu le_rfl le_rfl
-    (by simpa using hσ)).clm_bundle_apply hX
-
 variable
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
@@ -314,7 +308,8 @@ private theorem inner_leviCivitaConnection_horizontalLift_mem_ker
     .of_forall fun y ↦ h.leviCivitaConnection_of_eventually_mem_ker_of_mem_orthogonal_ker (hWd y)
       (.of_forall hWv) (h.horizontalLift_mem_orthogonal_ker y _)
   have hcovXW : CMDiff[f ⁻¹' W₀] ∞ (T% (fun y ↦ cov W y (X y))) :=
-    contMDiffOn_leviCivitaConnection_apply_of_isOpen hUopen hXW₀ hW.contMDiffOn
+    contMDiffOn_leviCivitaConnection_apply (I := I) (n := ∞) (m := ∞) (k := ∞) hUopen le_rfl le_rfl
+      hXW₀ (by simpa using hW.contMDiffOn)
   have hAXW : MDiffAt (T% (fun y ↦ h.oneillA y (X y) (W y))) x :=
     (((h.contMDiff_oneillA.contMDiffOn.clm_bundle_apply hXW₀).clm_bundle_apply
       hW.contMDiffOn).contMDiffAt (hUopen.mem_nhds hfxW₀)).mdifferentiableAt (by simp)
@@ -329,10 +324,13 @@ private theorem inner_leviCivitaConnection_horizontalLift_mem_ker
       (.of_forall fun _ ↦ Submodule.starProjection_apply_mem _ _) hv]
   have hev := h.leviCivitaConnection_oneillA_eq hXd (hWd x) v
   have hVW := h.leviCivitaConnection_of_eventually_mem_ker_of_mem_ker (hWd x) (.of_forall hWv) hv
-  have hVX : cov X x v = h.oneillA x u v + h.oneillT x v u := by
-    simpa only [X, hXx] using h.leviCivitaConnection_horizontalLift_of_mem_ker hB1 hv
-  rw [show X x = u from hXx, hWx] at hev
+  have hVX : leviCivitaConnection I M (fun y ↦ h.horizontalLift y (B (f y))) x v =
+      h.oneillA x u v + h.oneillT x v u := by
+    simpa only [hXx] using h.leviCivitaConnection_horizontalLift_of_mem_ker hB1 hv
+  dsimp only [X] at hev
+  rw [hXx, hWx] at hev
   rw [hWx] at hVW
+  dsimp only [cov, X]
   conv_lhs => rw [hev, hVW, hVX]
   have hAT0 : h.oneillA x (h.oneillT x v u) w = 0 := by
     rw [← Submodule.starProjection_eq_self_iff.mpr (h.oneillT_apply_mem_ker v hu),
@@ -347,7 +345,7 @@ private theorem inner_leviCivitaConnection_horizontalLift_mem_ker
   have horth₂ : ⟪h.oneillA x u (h.oneillT x v w), z⟫_ℝ = 0 :=
     Submodule.inner_right_of_mem_orthogonal
       (h.oneillA_apply_mem_ker u (h.oneillT_apply_mem_orthogonal_ker v hw)) hz
-  simp only [cov, X, map_add, add_apply, inner_add_left, hAT0, inner_zero_left, hAA, horth,
+  simp only [map_add, add_apply, inner_add_left, hAT0, inner_zero_left, hAA, horth,
     horth₂, hXx, h.inner_oneillA x u _ z]
   linarith
 
@@ -388,9 +386,11 @@ theorem inner_curvatureTensor_horizontal_vertical_vertical_horizontal
     have hT := ((torsion_eq_zero_iff cov).mp (torsion_leviCivitaConnection_eq_zero I)) hXd (hVd x)
     have hXV := h.leviCivitaConnection_of_eventually_mem_ker_of_mem_orthogonal_ker (hVd x)
       (.of_forall hVv) hu
-    have hVX : cov X x v = h.oneillA x u v + h.oneillT x v u := by
-      simpa only [X, hXx] using h.leviCivitaConnection_horizontalLift_of_mem_ker hB1 hv
-    rw [show X x = u from hXx, hVx] at hT
+    have hVX : leviCivitaConnection I M (fun y ↦ h.horizontalLift y (B (f y))) x v =
+        h.oneillA x u v + h.oneillT x v u := by
+      simpa only [hXx] using h.leviCivitaConnection_horizontalLift_of_mem_ker hB1 hv
+    dsimp only [cov, X] at hT ⊢
+    rw [hXx, hVx] at hT
     rw [hVx] at hXV
     rw [← hT, hVX]
     conv_lhs => rw [hXV]
@@ -443,7 +443,8 @@ private theorem inner_leviCivitaConnection_horizontalLift_iterated_mem_ker
   let Z := fun y ↦ h.horizontalLift y (B₃ (f y))
   let NBZ : Π q : N, TangentSpace J q := fun q ↦ leviCivitaConnection J N B₃ q (BB q)
   have hNBZon : CMDiff[W₀] ∞ (T% NBZ) :=
-    contMDiffOn_leviCivitaConnection_apply_of_isOpen (I := J) hW₀ hBB hB₃
+    contMDiffOn_leviCivitaConnection_apply (I := J) (n := ∞) (m := ∞) (k := ∞) hW₀ le_rfl le_rfl
+      hBB (by simpa using hB₃)
   have hLNBZ : CMDiff[f ⁻¹' W₀] ∞ (T% (fun y ↦ h.horizontalLift y (NBZ (f y)))) :=
     fun y hy ↦ (h.contMDiffAt_horizontalLift
       (hNBZon.contMDiffAt (hW₀.mem_nhds hy)) (by simp)).contMDiffWithinAt
@@ -455,7 +456,8 @@ private theorem inner_leviCivitaConnection_horizontalLift_iterated_mem_ker
     exact h.leviCivitaConnection_horizontalLift
       ((hB₃.contMDiffAt (hW₀.mem_nhds hy)).of_le (m := 1) (by simp)) (BB (f y))
   have hcovBZ : CMDiff[f ⁻¹' W₀] ∞ (T% (fun y ↦ cov Z y (B y))) :=
-    contMDiffOn_leviCivitaConnection_apply_of_isOpen hUopen hBon hZon
+    contMDiffOn_leviCivitaConnection_apply (I := I) (n := ∞) (m := ∞) (k := ∞) hUopen le_rfl le_rfl
+      hBon (by simpa using hZon)
   have hLNBZd := (hLNBZ.contMDiffAt (hUopen.mem_nhds hfx₀)).mdifferentiableAt (by simp)
   have hABZd := (hABZ.contMDiffAt (hUopen.mem_nhds hfx₀)).mdifferentiableAt (by simp)
   rw [cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
@@ -556,12 +558,10 @@ theorem inner_curvatureTensor_horizontal_vertical
     hW₀ hfx₀ hB₂on hB₃on hYon hZon hw
   have htYX := h.inner_leviCivitaConnection_horizontalLift_iterated_mem_ker (BA := B₂)
     hW₀ hfx₀ hB₁on hB₃on hXon hZon hw
-  rw [show X x = u from hXx₁, show Y x = v from hXx₂, show Z x = z from hXx₃] at hcurv
-  rw [hXx₁, hXx₂, hXx₃] at htXY htYX
+  dsimp only [cov, X, Y, Z] at hcurv hbr
+  rw [hXx₁, hXx₂, hXx₃] at hcurv htXY htYX
   rw [hcurv, curvatureOperator_apply, inner_sub_left, inner_sub_left,
-    show X x = u from hXx₁, show Y x = v from hXx₂,
-    show ⟪cov (fun y ↦ cov Z y (Y y)) x u, w⟫_ℝ = _ from htXY,
-    show ⟪cov (fun y ↦ cov Z y (X y)) x v, w⟫_ℝ = _ from htYX, hbr]
+    hXx₁, hXx₂, htXY, htYX, hbr]
   linarith
 
 /-- **O'Neill's curvature equation `{3}` (single-derivative form).** Using the first Bianchi
