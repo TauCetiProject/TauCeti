@@ -150,8 +150,9 @@ private theorem sqrt_sum_norm_toLp_iterate_lineDerivOp_smulLeftCLM_clm_sq_le {ι
     ((tsupport_smulLeftCLM_subset _ σ).trans (Set.inter_subset_left.trans hσ)) fun i ξ ↦ ?_
   calc ‖(∂_{b i})^[k + 1] (smulLeftCLM H L σ) ξ‖
       ≤ t * ‖L‖ * ‖(∂_{b i})^[k + 1] σ ξ‖ + (k + 1) * ‖L‖ * ‖(∂_{b i})^[k] σ ξ‖ := by
-        simpa using norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall L σ
-          ((subset_tsupport _).trans hσ) (b i) k ξ
+        simpa only [b.norm_eq_one, mul_one] using
+          norm_iterate_lineDerivOp_smulLeftCLM_clm_le_of_support_subset_closedBall L σ
+            ((subset_tsupport _).trans hσ) (b i) k ξ
     _ ≤ t * ‖L‖ * (A / t ^ (k + 1)) + (k + 1) * ‖L‖ * (A / t ^ k) := by
         gcongr
         exacts [hσk' i ξ, hσk i ξ]
