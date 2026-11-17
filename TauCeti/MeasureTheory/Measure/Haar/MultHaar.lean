@@ -29,12 +29,16 @@ radial coordinate is split off a multiplicative Haar measure, as in the decompos
 `dy / y = d*x × dt / t` of the archimedean parameters of a number field.
 
 Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
-(`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
-Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
-`dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
-integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). The
-integral of `u ^ α min 1 u⁻¹ ^ (α + β)` against `du / u` is `α⁻¹ + β⁻¹`
-(`TauCeti.lintegral_multHaar_rpow_mul_min_inv_rpow`), and by dilation the kernel
+(`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`,
+`TauCeti.lintegral_multHaar_eq_setLIntegral`), so the `Lᵖ(dt / t)` seminorm of
+`t ^ (1 / p) g(t)` is the `Lᵖ` seminorm of `g` on `(0, ∞)`
+(`TauCeti.eLpNorm_multHaar_ofReal_rpow_inv_mul`). In particular the Mellin transform
+`mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against `dt / t`
+(`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the integrability
+of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`). The integral of
+`u ^ θ` over `(0, 1]` against `du / u` is `θ⁻¹`
+(`TauCeti.lintegral_multHaar_indicator_Iic_one_rpow`), and that of `u ^ α min 1 u⁻¹ ^ (α + β)` is
+`α⁻¹ + β⁻¹` (`TauCeti.lintegral_multHaar_rpow_mul_min_inv_rpow`), and by dilation the kernel
 `s ^ θ₀ r ^ θ₁ min s⁻¹ r⁻¹ ^ (θ₀ + θ₁)` has integral `θ₀⁻¹ + θ₁⁻¹` in each variable
 (`TauCeti.lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_right`,
 `TauCeti.lintegral_multHaar_rpow_mul_rpow_mul_min_inv_rpow_left`).
@@ -320,6 +324,68 @@ theorem integral_multHaar_eq_setIntegral (f : ℝ → E) :
     measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
   rw [ENNReal.toReal_ofReal (inv_nonneg.mpr ht.le)]
+
+/-- `∫₀¹ u ^ θ du / u = θ⁻¹` for `θ > 0`. -/
+theorem lintegral_multHaar_indicator_Iic_one_rpow {θ : ℝ} (hθ : 0 < θ) :
+    ∫⁻ u, (Iic 1).indicator (fun u ↦ ENNReal.ofReal (u ^ θ)) u ∂multHaar =
+      ENNReal.ofReal θ⁻¹ := by
+  rw [← map_volume_exp, lintegral_map
+    ((Measurable.ennreal_ofReal (by fun_prop)).indicator measurableSet_Iic) Real.measurable_exp]
+  -- in the variable `x = log u` the integrand is `exp (θ x)` on `x ≤ 0`
+  have hexp (x : ℝ) : (Iic 1).indicator (fun u ↦ ENNReal.ofReal (u ^ θ)) (Real.exp x) =
+      (Iic 0).indicator (fun x ↦ ENNReal.ofReal (Real.exp (θ * x))) x := by
+    by_cases hx : x ≤ 0
+    · rw [indicator_of_mem (Real.exp_le_one_iff.2 hx), indicator_of_mem hx, ← Real.exp_mul,
+        mul_comm]
+    · rw [indicator_of_notMem (fun h ↦ hx (Real.exp_le_one_iff.1 h)), indicator_of_notMem hx]
+  simp_rw [hexp]
+  rw [lintegral_indicator measurableSet_Iic, ← ofReal_integral_eq_lintegral_ofReal
+    (integrableOn_exp_mul_Iic hθ 0) (ae_of_all _ fun _ ↦ (Real.exp_pos _).le),
+    integral_exp_mul_Iic hθ]
+  simp
+
+/-- The integral against `dt / t` is the integral of `t⁻¹ f t` over `(0, ∞)`. -/
+theorem lintegral_multHaar_eq_setLIntegral (f : ℝ → ℝ≥0∞) :
+    ∫⁻ t, f t ∂multHaar = ∫⁻ t in Ioi 0, ENNReal.ofReal t⁻¹ * f t := by
+  rw [multHaar_def, lintegral_withDensity_eq_lintegral_mul_non_measurable _
+    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  simp only [Pi.mul_apply]
+
+/-- The `Lᵖ(dt / t)` seminorm of `t ↦ t ^ (1 / p) g t` is the `Lᵖ` seminorm of `g` on `(0, ∞)`.
+For `p = ∞` the weight is `1`, and both sides are the essential supremum of `g` on `(0, ∞)`. -/
+theorem eLpNorm_multHaar_ofReal_rpow_inv_mul (p : ℝ≥0∞) {g : ℝ → ℝ≥0∞}
+    (hg : AEMeasurable g (volume.restrict (Ioi 0))) :
+    eLpNorm (fun t ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * g t) p multHaar =
+      eLpNorm g p (volume.restrict (Ioi 0)) := by
+  have hac : multHaar ≪ volume.restrict (Ioi 0) := by
+    rw [multHaar_def]
+    exact withDensity_absolutelyContinuous _ _
+  have hG : AEMeasurable (fun t ↦ ENNReal.ofReal (t ^ p.toReal⁻¹) * g t) multHaar :=
+    (Measurable.ennreal_ofReal (by fun_prop)).aemeasurable.mul (hg.mono_ac hac)
+  rcases eq_or_ne p 0 with rfl | hp0
+  · rw [eLpNorm_exponent_zero hG.aestronglyMeasurable,
+      eLpNorm_exponent_zero hg.aestronglyMeasurable]
+  rcases eq_or_ne p ∞ with rfl | hp
+  · -- `dt / t` and Lebesgue measure on `(0, ∞)` have the same null sets
+    have hac' : volume.restrict (Ioi 0) ≪ multHaar := by
+      rw [multHaar_def]
+      exact withDensity_absolutelyContinuous' measurable_inv.ennreal_ofReal.aemeasurable
+        ((ae_restrict_mem measurableSet_Ioi).mono fun t (ht : 0 < t) ↦ by simpa using ht)
+    simp only [ENNReal.toReal_top, inv_zero, Real.rpow_zero, ENNReal.ofReal_one, one_mul]
+    rw [eLpNorm_exponent_top (hg.mono_ac hac).aestronglyMeasurable,
+      eLpNorm_exponent_top hg.aestronglyMeasurable]
+    exact le_antisymm (eLpNormEssSup_mono_measure g hac) (eLpNormEssSup_mono_measure g hac')
+  have hp' : p.toReal ≠ 0 := (ENNReal.toReal_pos hp0 hp).ne'
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hG.aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hg.aestronglyMeasurable,
+    lintegral_multHaar_eq_setLIntegral]
+  congr 1
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+  simp only [eNorm_eq_self]
+  rw [ENNReal.mul_rpow_of_nonneg _ _ ENNReal.toReal_nonneg,
+    ENNReal.ofReal_rpow_of_nonneg (Real.rpow_nonneg ht.le _) ENNReal.toReal_nonneg,
+    Real.rpow_inv_rpow ht.le hp', ← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 ht.le),
+    inv_mul_cancel₀ ht.ne', ENNReal.ofReal_one, one_mul]
 
 /-- `∫ u ^ α min 1 u⁻¹ ^ (α + β) du / u = α⁻¹ + β⁻¹` for `α, β > 0`: the integrand is `u ^ α` on
 `(0, 1]` and `u ^ (-β)` on `[1, ∞)`. -/
