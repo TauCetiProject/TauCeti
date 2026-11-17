@@ -119,13 +119,10 @@ theorem nonempty_linearEquiv_of_corner [IsSimpleModule A V] [IsSimpleModule A V'
   have hle : LinearMap.ker (LinearMap.toSpanSingleton A V v₀) ≤
       LinearMap.ker (LinearMap.toSpanSingleton A V' (φ v : V')) := fun a ha ↦
     he.smul_eq_zero_of_linearEquiv_corner φ v hv ha
-  let f : V →ₗ[A] V' := ((LinearMap.ker _).liftQ _ hle).comp
-    (LinearMap.quotKerEquivOfSurjective _ hsurj).symm.toLinearMap
+  let f : V →ₗ[A] V' := (LinearMap.toSpanSingleton A V v₀).liftOfSurjective hsurj
+    ⟨LinearMap.toSpanSingleton A V' (φ v : V'), hle⟩
   have hf : f v₀ = (φ v : V') := by
-    have : (LinearMap.quotKerEquivOfSurjective _ hsurj).symm v₀ = Submodule.Quotient.mk 1 := by
-      rw [LinearEquiv.symm_apply_eq, LinearMap.quotKerEquivOfSurjective_apply_mk,
-        LinearMap.toSpanSingleton_apply, one_smul]
-    simp [f, this]
+    simpa using LinearMap.equivOfSurjective_apply hsurj hle (m := (1 : A))
   have hf0 : f ≠ 0 := fun h₀ ↦ by
     rw [h₀, LinearMap.zero_apply, eq_comm, ZeroMemClass.coe_eq_zero,
       LinearEquiv.map_eq_zero_iff] at hf
