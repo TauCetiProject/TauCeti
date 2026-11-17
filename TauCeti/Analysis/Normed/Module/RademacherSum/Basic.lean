@@ -7,15 +7,17 @@ module
 
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import TauCeti.Algebra.BigOperators.SignCube
 
 /-!
 # Second moments of finite Rademacher sums
 
 The Rademacher second moment `R₂(y) = (𝔼_ε ‖∑ i, εᵢ yᵢ‖²)^(1/2)` of a finite family `y` in a
-seminormed group is the quadratic mean of the norms of its signed sums, the signs `ε : ι → ℤˣ`
-being averaged uniformly over the finite sign cube. It agrees with `TauCeti.rademacherMoment 2 y`
-and is the quantity in which Rademacher type and cotype are defined. Being a finite average, it
-needs neither completeness, nor scalars, nor a measure space.
+seminormed group is the quadratic mean of the norms of its Rademacher sums
+`TauCeti.rademacherSum y ε`, the signs `ε : ι → ℤˣ` being averaged uniformly over the finite sign
+cube. It agrees with `TauCeti.rademacherMoment 2 y` and is the quantity in which Rademacher type
+and cotype are defined. Being a finite average, it needs neither completeness, nor scalars, nor a
+measure space.
 
 We record the specialization of the general moment API to `R₂` — absolute homogeneity, invariance
 under reindexing and zero-padding, comparison along bounded additive maps, and the summand bounds
@@ -59,16 +61,8 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 distinct Rademacher signs are orthogonal. -/
 theorem expect_units_apply_mul_apply (i j : ι) :
     𝔼 ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) * (ε j : ℤ) = if i = j then 1 else 0 := by
-  split_ifs with hij
-  · subst hij
-    simp [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-  · -- Flipping the sign of the `i`-th coordinate negates every term.
-    let σ := Equiv.mulLeft (Pi.mulSingle i (-1) : ι → ℤˣ)
-    have h := Fintype.expect_equiv σ (fun ε ↦ -(((ε i : ℤ) : ℝ) * (ε j : ℤ)))
-      (fun ε ↦ ((ε i : ℤ) : ℝ) * (ε j : ℤ)) fun ε ↦ by
-        simp [σ, Ne.symm hij]
-    rw [expect_neg_distrib] at h
-    linarith
+  simpa [← finiteMean_eq_expect (R := ℝ)] using
+    finiteMean_units_mul_units_smul (K := ℝ) (E := ℝ) i j 1
 
 end Signs
 
@@ -78,18 +72,18 @@ variable {ι κ 𝕜 E : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [Deci
 /-- The Rademacher second moment `R₂(y) = (𝔼_ε ‖∑ i, εᵢ yᵢ‖²)^(1/2)` of a finite family, the
 signs `ε : ι → ℤˣ` being averaged uniformly over the sign cube. -/
 def rademacherSecondMoment (y : ι → E) : ℝ :=
-  √(𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ ^ 2)
+  √(𝔼 ε : ι → ℤˣ, ‖rademacherSum y ε‖ ^ 2)
 
 /-- The defining average of the Rademacher second moment. -/
 theorem rademacherSecondMoment_def (y : ι → E) :
-    rademacherSecondMoment y = √(𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ ^ 2) :=
+    rademacherSecondMoment y = √(𝔼 ε : ι → ℤˣ, ‖rademacherSum y ε‖ ^ 2) :=
   (rfl)
 
 /-- At exponent `2`, `rademacherMoment` agrees with `rademacherSecondMoment`. -/
 theorem rademacherMoment_two (y : ι → E) :
     rademacherMoment 2 y = rademacherSecondMoment y := by
   rw [rademacherMoment_def, rademacherSecondMoment_def, Real.sqrt_eq_rpow]
-  simp
+  simp [rademacherSum_eq_sum_units_smul]
 
 /-- Rademacher second moments are nonnegative. -/
 theorem rademacherSecondMoment_nonneg (y : ι → E) : 0 ≤ rademacherSecondMoment y :=
@@ -98,21 +92,22 @@ theorem rademacherSecondMoment_nonneg (y : ι → E) : 0 ≤ rademacherSecondMom
 /-- Squaring the Rademacher second moment recovers the average squared norm of the signed
 sums. -/
 theorem rademacherSecondMoment_sq (y : ι → E) :
-    rademacherSecondMoment y ^ 2 = 𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ ^ 2 :=
+    rademacherSecondMoment y ^ 2 = 𝔼 ε : ι → ℤˣ, ‖rademacherSum y ε‖ ^ 2 :=
   Real.sq_sqrt (expect_nonneg fun _ _ ↦ sq_nonneg _)
 
 /-- A bound on the average squared norm of the signed sums bounds the Rademacher second
 moment. -/
 theorem rademacherSecondMoment_le_of_sq_le {y : ι → E} {c : ℝ} (hc : 0 ≤ c)
-    (h : 𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ ^ 2 ≤ c ^ 2) : rademacherSecondMoment y ≤ c :=
+    (h : 𝔼 ε : ι → ℤˣ, ‖rademacherSum y ε‖ ^ 2 ≤ c ^ 2) : rademacherSecondMoment y ≤ c :=
   Real.sqrt_le_iff.2 ⟨hc, h⟩
 
 /-- If every signed sum of `y` is at most `K` times the corresponding signed sum of `z`, then
 `R₂(y) ≤ K R₂(z)`. -/
 theorem rademacherSecondMoment_le_mul {F : Type*} [SeminormedAddCommGroup F] {y : ι → E}
-    {z : ι → F} {K : ℝ} (h : ∀ ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ ≤ K * ‖∑ i, ε i • z i‖) :
+    {z : ι → F} {K : ℝ} (h : ∀ ε : ι → ℤˣ, ‖rademacherSum y ε‖ ≤ K * ‖rademacherSum z ε‖) :
     rademacherSecondMoment y ≤ K * rademacherSecondMoment z := by
-  simpa only [rademacherMoment_two] using rademacherMoment_le_mul two_pos h
+  simpa only [rademacherMoment_two] using rademacherMoment_le_mul two_pos fun ε ↦ by
+    simpa only [rademacherSum_eq_sum_units_smul] using h ε
 
 /-- An additive map with `‖f x‖ ≤ M ‖x‖` multiplies Rademacher second moments by at most
 `M`. -/
@@ -181,11 +176,11 @@ variable (𝕜) in
 include 𝕜 in
 /-- In an inner product space the average squared norm of the signed sums of a family is the sum
 of the squared norms of its members. -/
-theorem expect_norm_sum_units_smul_sq (y : ι → H) :
-    𝔼 ε : ι → ℤˣ, ‖∑ i, ε i • y i‖ ^ 2 = ∑ i, ‖y i‖ ^ 2 := by
-  have h (ε : ι → ℤˣ) : ‖∑ i, ε i • y i‖ ^ 2 =
+theorem expect_norm_rademacherSum_sq (y : ι → H) :
+    𝔼 ε : ι → ℤˣ, ‖rademacherSum y ε‖ ^ 2 = ∑ i, ‖y i‖ ^ 2 := by
+  have h (ε : ι → ℤˣ) : ‖rademacherSum y ε‖ ^ 2 =
       ∑ i, ∑ j, ((ε i : ℤ) : ℝ) * (ε j : ℤ) * RCLike.re (inner 𝕜 (y i) (y j)) := by
-    rw [norm_sq_eq_re_inner (𝕜 := 𝕜), sum_inner, map_sum]
+    rw [rademacherSum_eq_sum_units_smul, norm_sq_eq_re_inner (𝕜 := 𝕜), sum_inner, map_sum]
     refine sum_congr rfl fun i _ ↦ ?_
     rw [inner_sum, map_sum]
     refine sum_congr rfl fun j _ ↦ ?_
@@ -199,7 +194,7 @@ include 𝕜 in
 /-- In an inner product space the Rademacher second moment of a family is its `ℓ²` norm. -/
 theorem rademacherSecondMoment_eq_norm_toLp_two (y : ι → H) :
     rademacherSecondMoment y = ‖WithLp.toLp 2 y‖ := by
-  rw [rademacherSecondMoment, expect_norm_sum_units_smul_sq 𝕜, PiLp.norm_eq_of_L2]
+  rw [rademacherSecondMoment, expect_norm_rademacherSum_sq 𝕜, PiLp.norm_eq_of_L2]
 
 end InnerProductSpace
 
