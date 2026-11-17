@@ -183,7 +183,6 @@ theorem hilbertSymbol_completion_mul_left (w : InfinitePlace K) (a a' c : w.Comp
   · simp [hilbertSymbol_completion_eq_one_of_isComplex hw]
 
 /-- Over the completion at an infinite place, the symbol with first argument `1` is `1`. -/
-@[simp]
 theorem hilbertSymbol_completion_one_left (w : InfinitePlace K) (c : w.Completionˣ) :
     hilbertSymbol 1 c = 1 := by
   have h := hilbertSymbol_completion_mul_left w 1 1 c
