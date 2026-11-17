@@ -127,6 +127,31 @@ theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hc : w
     wirtingerDeriv (normalizedChart ψ c) c 1 = 1 := by
   rw [wirtingerDeriv_normalizedChart, inv_mul_cancel₀ hc]
 
+/-- The inverse function step of the planar chart: a map which is `C¹` on `ball c (r + 1)` and has
+an invertible strict derivative at every point of `closedBall c r` restricts to an open partial
+homeomorphism on a neighbourhood of `c` inside `ball c r`, with `C¹` inverse. -/
+private theorem exists_openPartialHomeomorph_of_hasStrictFDerivAt {φ : ℂ → ℂ} {c : ℂ} {r : ℝ}
+    (hr : 0 < r) (hφ : ContDiffOn ℝ 1 φ (ball c (r + 1)))
+    (hφs : ∀ z ∈ closedBall c r, ∃ L : ℂ ≃L[ℝ] ℂ, HasStrictFDerivAt φ (L : ℂ →L[ℝ] ℂ) z) :
+    ∃ e : OpenPartialHomeomorph ℂ ℂ, ⇑e = φ ∧ c ∈ e.source ∧ e.source ⊆ ball c r ∧
+      ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z := by
+  obtain ⟨L, hL⟩ := hφs c (mem_closedBall_self hr.le)
+  set e := (hL.toOpenPartialHomeomorph φ).restrOpen (ball c r) isOpen_ball
+  have hcoe : ⇑e = φ := by
+    rw [OpenPartialHomeomorph.coe_restrOpen]
+    exact hL.toOpenPartialHomeomorph_coe
+  have hsrc : e.source ⊆ ball c r := by
+    rw [OpenPartialHomeomorph.restrOpen_source]
+    exact Set.inter_subset_right
+  refine ⟨e, hcoe, ?_, hsrc, fun z hz ↦ ?_⟩
+  · rw [OpenPartialHomeomorph.restrOpen_source]
+    exact ⟨hL.mem_toOpenPartialHomeomorph_source, mem_ball_self hr⟩
+  · have hzs := hsrc (e.map_target hz)
+    obtain ⟨L', hL'⟩ := hφs _ (ball_subset_closedBall hzs)
+    refine e.contDiffAt_symm (f₀' := L') hz ?_ ?_ <;> rw [hcoe]
+    · exact hL'.hasFDerivAt
+    · exact hφ.contDiffAt (isOpen_ball.mem_nhds (ball_subset_ball (by linarith) hzs))
+
 /-- **The planar Beltrami chart.** Let `0 < α < 1` and `0 < r`. There are `δ > 0` and `C` such
 that the following holds. Let `J` be a field of almost complex structures on the plane, tame on
 `closedBall c r`, and let `μ` be an `α`-Hölder function vanishing off that disc, equal there to the
@@ -141,7 +166,7 @@ with `‖h‖ ≤ 2 ‖μ‖`, such that `ψ = z + T h`
 
 and the normalized map `φ = (ψ - ψ(c)) / ∂ψ(c)` is `C¹` on `ball c (r + 1)`, has `φ(c) = 0` and
 `∂φ(c) = 1`, has a differential complex linear from `J` to `i` at every point of the disc, and is
-an open partial homeomorphism on a neighbourhood of `c` inside `ball c r`. -/
+an open partial homeomorphism on a neighbourhood of `c` inside `ball c r`, with `C¹` inverse. -/
 theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (hα1 : α < 1) (c : ℂ)
     (hr : 0 < r) :
     ∃ δ > 0, ∃ C : ℝ≥0, ∀ (J : ℂ → AlmostComplexStructure ℂ)
@@ -167,7 +192,7 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
           (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
           (fderiv ℝ (normalizedChart (cauchySolution h) c) z).toLinearMap) ∧
         ∃ e : OpenPartialHomeomorph ℂ ℂ, ⇑e = normalizedChart (cauchySolution h) c ∧
-          c ∈ e.source ∧ e.source ⊆ ball c r := by
+          c ∈ e.source ∧ e.source ⊆ ball c r ∧ ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z := by
   obtain ⟨δ, hδ, C, hsol⟩ := exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv hα hα1 c hr.le
   refine ⟨δ, hδ, C, fun J hJ μ hμ hμJ hμδ => ?_⟩
   obtain ⟨h, hh, hhμ, hC1, -, hbel, hnear, hhol, hinv⟩ := hsol μ hμ hμδ
@@ -195,8 +220,8 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     exact one_ne_zero (L.injective (hzero.trans L.map_zero.symm))
   set a := wirtingerDeriv ψ c 1
   set φ := normalizedChart ψ c
-  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, ?_, normalizedChart_self ψ c, ?_, ?_, ?_⟩
-  · exact (hC1.sub contDiffOn_const).const_smul a⁻¹
+  have hφ : ContDiffOn ℝ 1 φ (ball c (r + 1)) := (hC1.sub contDiffOn_const).const_smul a⁻¹
+  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, hφ, normalizedChart_self ψ c, ?_, ?_, ?_⟩
   · exact wirtingerDeriv_normalizedChart_self ha
   · intro z hz
     rw [fderiv_normalizedChart]
@@ -207,21 +232,13 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     rw [this]
     simp only [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul]
     ring
-  · -- The inverse function theorem at `c`, restricted to `ball c r`.
-    obtain ⟨L, hL⟩ := hinv c hc
+  · -- The inverse function theorem: at every point of the disc, `φ` has the invertible strict
+    -- derivative `∂ψ(c)⁻¹ dψ`.
     let M : ℂ ≃L[ℝ] ℂ := ContinuousLinearEquiv.smulLeft (Units.mk0 a⁻¹ (inv_ne_zero ha))
-    have hφs : HasStrictFDerivAt φ ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) c := by
-      have hLM : ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) :=
-        ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]
-      rw [hLM]
-      exact (hL.sub_const (ψ c)).const_smul a⁻¹
-    let e := hφs.toOpenPartialHomeomorph φ
-    refine ⟨e.restrOpen (ball c r) isOpen_ball, ?_, ?_, ?_⟩
-    · rw [OpenPartialHomeomorph.coe_restrOpen]
-      exact hφs.toOpenPartialHomeomorph_coe
-    · rw [OpenPartialHomeomorph.restrOpen_source]
-      exact ⟨hφs.mem_toOpenPartialHomeomorph_source, mem_ball_self hr⟩
-    · rw [OpenPartialHomeomorph.restrOpen_source]
-      exact Set.inter_subset_right
+    refine exists_openPartialHomeomorph_of_hasStrictFDerivAt hr hφ fun z hz ↦ ?_
+    obtain ⟨L, hL⟩ := hinv z hz
+    have hLM : ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) :=
+      ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]
+    exact ⟨L.trans M, by rw [hLM]; exact (hL.sub_const (ψ c)).const_smul a⁻¹⟩
 
 end TauCeti.Beltrami
