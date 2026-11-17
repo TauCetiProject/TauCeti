@@ -366,61 +366,39 @@ theorem exists_reebFlow_ne_self (x : M) : ∃ t : ℝ, hα.reebFlow hc t x ≠ x
 theorem mfderiv_reebFlow_mem_kerDistribution (t : ℝ) {x : M} {v : TangentSpace I x}
     (hv : v ∈ α.kerDistribution x) :
     mfderiv I I (hα.reebFlow hc t) x v ∈ α.kerDistribution (hα.reebFlow hc t x) := by
-  have hmem := (Diffeomorph.isContactomorphism_iff.1
-    (hα.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorField hc t).isContactomorphism
-    x v).2 hv
-  rwa [← hα.reebFlow_eq_coe_globalFlowDiffeomorph hc t] at hmem
+  have hfun : hα.reebFlow hc t = flowOf α.reebVectorField t :=
+    funext (hα.reebFlow_eq_flowOf hc t)
+  rw [hfun]
+  exact hα.mfderiv_flowOf_reebVectorField_mem_kerDistribution (hc.mem_flowDomain t x) hv
 
 /-- The Reeb flow preserves the exterior derivative `dα` on tangent vectors. -/
 theorem mextDeriv_mfderiv_reebFlow (t : ℝ) (x : M) (v w : TangentSpace I x) :
     mextDeriv α.1 (hα.reebFlow hc t x)
         ![mfderiv I I (hα.reebFlow hc t) x v, mfderiv I I (hα.reebFlow hc t) x w] =
       mextDeriv α.1 x ![v, w] := by
-  let Φ := globalFlowDiffeomorph hc le_top hα.contMDiff_reebVectorField t
-  have hstrict : SmoothForm.mpullback Φ Φ.contMDiff α = α :=
-    Diffeomorph.isStrictContactomorphism_def.1
-      (hα.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorField hc t)
-  rw [hα.reebFlow_eq_coe_globalFlowDiffeomorph hc t,
-    ← SmoothForm.mextDeriv_mpullback_apply_two Φ Φ.contMDiff α x v w, hstrict]
-
-private theorem mfderiv_reebFlow_neg_comp (t : ℝ) (x : M) (v : TangentSpace I x) :
-    mfderiv I I (hα.reebFlow hc (-t)) (hα.reebFlow hc t x)
-        (mfderiv I I (hα.reebFlow hc t) x v) = v := by
-  have hcomp := mfderiv_comp x
-    ((hα.contMDiff_reebFlow_apply hc (-t) _).mdifferentiableAt (by simp))
-    ((hα.contMDiff_reebFlow_apply hc t x).mdifferentiableAt (by simp))
-  have hid : hα.reebFlow hc (-t) ∘ hα.reebFlow hc t = id := funext fun y ↦ by
-    rw [Function.comp_apply, ← (hα.reebFlow hc).map_add, neg_add_cancel,
-      (hα.reebFlow hc).map_zero_apply, id_eq]
-  exact (DFunLike.congr_fun hcomp v).symm.trans <|
-    (congrArg (fun f : M → M ↦ (mfderiv I I f x v : E)) hid).trans (by rw [mfderiv_id]; rfl)
+  have hfun : hα.reebFlow hc t = flowOf α.reebVectorField t :=
+    funext (hα.reebFlow_eq_flowOf hc t)
+  rw [hfun]
+  exact hα.mextDeriv_mfderiv_flowOf_reebVectorField (hc.mem_flowDomain t x) v w
 
 /-- The differential of the time-`t` Reeb flow restricted to `ξ = ker α` as a linear equivalence
 `ξ_x ≃ₗ[ℝ] ξ_(φ_t x)`. -/
 def reebFlowKerEquiv (t : ℝ) (x : M) :
     α.kerDistribution x ≃ₗ[ℝ] α.kerDistribution (hα.reebFlow hc t x) :=
-  have hneg : hα.reebFlow hc (-t) (hα.reebFlow hc t x) = x := by
-    rw [← (hα.reebFlow hc).map_add, neg_add_cancel, (hα.reebFlow hc).map_zero_apply]
-  LinearEquiv.ofLinearMap
-    ((mfderiv I I (hα.reebFlow hc t) x).toLinearMap.restrict
-      fun _ hv ↦ hα.mfderiv_reebFlow_mem_kerDistribution hc t hv)
-    ((mfderiv I I (hα.reebFlow hc (-t)) (hα.reebFlow hc t x)).toLinearMap.restrict fun _ hv ↦ by
-      have h := hα.mfderiv_reebFlow_mem_kerDistribution hc (-t) hv
-      rwa [hneg] at h)
-    (LinearMap.ext fun w ↦ Subtype.ext <|
-      (congrArg₂ (fun (s : ℝ) (z : M) ↦
-          (mfderiv I I (hα.reebFlow hc s) z
-            (mfderiv I I (hα.reebFlow hc (-t)) (hα.reebFlow hc t x) w) : E))
-        (neg_neg t).symm hneg.symm).trans
-        (hα.mfderiv_reebFlow_neg_comp hc (-t) (hα.reebFlow hc t x) w))
-    (LinearMap.ext fun v ↦ Subtype.ext <| hα.mfderiv_reebFlow_neg_comp hc t x v)
+  (hα.reebFlow_eq_flowOf hc t x).symm ▸ hα.flowOfKerEquiv (hc.mem_flowDomain t x)
 
 /-- `reebFlowKerEquiv` acts as `mfderiv I I (hα.reebFlow hc t) x` on `ξ_x`. -/
 @[simp]
 theorem coe_reebFlowKerEquiv_apply (t : ℝ) (x : M) (v : α.kerDistribution x) :
     (hα.reebFlowKerEquiv hc t x v : TangentSpace I (hα.reebFlow hc t x)) =
-      mfderiv I I (hα.reebFlow hc t) x v :=
-  (rfl)
+      mfderiv I I (hα.reebFlow hc t) x v := by
+  suffices ∀ (f : M → M) (hpt : flowOf α.reebVectorField t x = f x),
+      f = flowOf α.reebVectorField t →
+      ((hpt ▸ hα.flowOfKerEquiv (hc.mem_flowDomain t x)) v : TangentSpace I (f x)) =
+        mfderiv I I f x v from
+    this _ _ (funext (hα.reebFlow_eq_flowOf hc t))
+  rintro _ hpt rfl
+  exact hα.coe_flowOfKerEquiv_apply (hc.mem_flowDomain t x) v
 
 /-- `(reebFlowKerEquiv ...).symm` acts as `mfderiv I I (hα.reebFlow hc (-t))` at
 `hα.reebFlow hc t x`. -/
@@ -428,15 +406,23 @@ theorem coe_reebFlowKerEquiv_apply (t : ℝ) (x : M) (v : α.kerDistribution x) 
 theorem coe_reebFlowKerEquiv_symm_apply (t : ℝ) (x : M)
     (w : α.kerDistribution (hα.reebFlow hc t x)) :
     ((hα.reebFlowKerEquiv hc t x).symm w : TangentSpace I x) =
-      mfderiv I I (hα.reebFlow hc (-t)) (hα.reebFlow hc t x) w :=
-  (rfl)
+      mfderiv I I (hα.reebFlow hc (-t)) (hα.reebFlow hc t x) w := by
+  suffices ∀ (f g : M → M) (hpt : flowOf α.reebVectorField t x = f x),
+      f = flowOf α.reebVectorField t → g = flowOf α.reebVectorField (-t) →
+      ∀ (w : α.kerDistribution (f x)),
+        ((hpt ▸ hα.flowOfKerEquiv (hc.mem_flowDomain t x)).symm w : TangentSpace I x) =
+          mfderiv I I g (f x) w from
+    this _ _ _ (funext (hα.reebFlow_eq_flowOf hc t)) (funext (hα.reebFlow_eq_flowOf hc (-t))) w
+  rintro _ _ hpt rfl rfl w
+  exact hα.coe_flowOfKerEquiv_symm_apply (hc.mem_flowDomain t x) w
 
 /-- `reebFlowKerEquiv` preserves `dα` on `ξ`. -/
 theorem mextDeriv_reebFlowKerEquiv (t : ℝ) (x : M) (v w : α.kerDistribution x) :
     mextDeriv α.1 (hα.reebFlow hc t x)
         ![hα.reebFlowKerEquiv hc t x v, hα.reebFlowKerEquiv hc t x w] =
-      mextDeriv α.1 x ![v, w] :=
-  hα.mextDeriv_mfderiv_reebFlow hc t x v w
+      mextDeriv α.1 x ![v, w] := by
+  simp only [coe_reebFlowKerEquiv_apply]
+  exact hα.mextDeriv_mfderiv_reebFlow hc t x v w
 
 end Complete
 
