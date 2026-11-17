@@ -71,18 +71,20 @@ noncomputable def gramLeftInverse (A : F →L[𝕜] V) : V →L[𝕜] F :=
   Ring.inverse (adjoint A ∘L A) ∘L adjoint A
 
 /-- The Gram left inverse is a left inverse of every operator with invertible Gram operator. -/
+@[simp]
 theorem gramLeftInverse_comp {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
     gramLeftInverse A ∘L A = 1 := by
   rw [gramLeftInverse, comp_assoc]
   exact Ring.inverse_mul_cancel _ hA
 
 /-- The Gram left inverse recovers `v` from `A v` when the Gram operator of `A` is invertible. -/
+@[simp]
 theorem gramLeftInverse_apply_apply {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) (v : F) :
     gramLeftInverse A (A v) = v :=
   congr($(gramLeftInverse_comp hA) v)
 
 /-- The Gram left inverse of a surjective operator with invertible Gram operator is injective. -/
-theorem injective_gramLeftInverse {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A))
+theorem gramLeftInverse_injective {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A))
     (hsurj : Surjective A) : Injective (gramLeftInverse A) := by
   intro v w h
   obtain ⟨x, rfl⟩ := hsurj v
