@@ -16,6 +16,7 @@ import Mathlib.Tactic.Ring
 import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.Data.ZMod.Two
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Radical

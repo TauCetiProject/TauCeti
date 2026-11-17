@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Dimension.Basis
 
 /-!
 # Symplectic bases of nondegenerate alternating forms
@@ -55,8 +56,6 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   `Matrix.J` witnesses `B.Nondegenerate`.
 * `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J`: two symplectic bases of the same form
   have relative determinant `1`.
-* `Module.finrank_eq_two_mul_card_of_basis_sum`: a module with a finite basis indexed by `ι ⊕ ι`
-  has `finrank` equal to `2 * Fintype.card ι`.
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
   even dimension.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
@@ -206,14 +205,6 @@ theorem basis_det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l
   rw [Basis.det_apply, SymplecticGroup.det_eq_one h]
 
 end Determinant
-
-/-- A module with a finite basis indexed by `ι ⊕ ι` has `finrank` equal to
-`2 * Fintype.card ι`. -/
-theorem _root_.Module.finrank_eq_two_mul_card_of_basis_sum {R M ι : Type*} [Semiring R]
-    [StrongRankCondition R] [AddCommMonoid M] [Module R M] [Fintype ι]
-    (b : Module.Basis (ι ⊕ ι) R M) :
-    Module.finrank R M = 2 * Fintype.card ι := by
-  rw [Module.finrank_eq_card_basis b, Fintype.card_sum, two_mul]
 
 section FinrankTwo
 

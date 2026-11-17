@@ -6,22 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Two
-public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
-public import Mathlib.LinearAlgebra.QuadraticForm.Prod
-public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.SymplecticGroup
-public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
+public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.Dimension.Basis
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
 /-!
-# Nonsingular quadratic forms in characteristic two and binary forms
+# Nonsingular quadratic forms in characteristic two
 
 In characteristic two, the polarization `QuadraticMap.polar Q` of a quadratic map satisfies
 `polar Q x x = 2 • Q x = 0`, so `Q.polarBilin` is alternating rather than recovering `Q`. In
@@ -30,22 +28,18 @@ particular, nondegeneracy of the polar bilinear form (`Q.polarBilin.Nondegenerat
 than `QuadraticMap.Nondegenerate`, which permits a rank-one polar kernel: `Q.polarBilin` is a
 symplectic form on the ambient space, forcing even dimension and symplectic coordinates.
 
-The characteristic-free polar-kernel descent, product, and totally isotropic dimension lemmas live
-in `TauCeti.LinearAlgebra.QuadraticForm.Radical`, `TauCeti.LinearAlgebra.QuadraticForm.Prod`,
-`TauCeti.LinearAlgebra.QuadraticForm.Isometry`, and
-`TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic`. This file builds the binary quadratic form
-models `[a, b]` and characteristic-two structure that underpin the Arf invariant:
+The characteristic-free polar-kernel descent, product, totally isotropic dimension, and binary
+quadratic form `[a, b]` APIs live in `TauCeti.LinearAlgebra.QuadraticForm.Radical`,
+`TauCeti.LinearAlgebra.QuadraticForm.Prod`, `TauCeti.LinearAlgebra.QuadraticForm.Isometry`,
+`TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic`, and
+`TauCeti.LinearAlgebra.QuadraticForm.Binary`. This file builds the characteristic-two structure
+that underpins the Arf invariant:
 
-1. **Binary quadratic forms `[a, b]`.** The binary quadratic form
-   `TauCeti.binaryQuadraticForm R a b` on `Fin 2 → R` given by
-   `a * x 0 ^ 2 + x 0 * x 1 + b * x 1 ^ 2` (Elman--Karpenko--Merkurjev, §7.B) carries a unimodular
-   polar pairing whenever `2 * a = 0` and `2 * b = 0` (in particular whenever `2 = 0` or
-   `a = b = 0`). Over any commutative ring, `binaryQuadraticForm R a 0` and
-   `binaryQuadraticForm R 0 b` are explicitly isometric to the hyperbolic plane
-   `binaryQuadraticForm R 0 0`. In characteristic two, the diagonal submodule of `M × M` is always
-   `(Q.prod Q)`-totally-isotropic, and the orthogonal sum of two copies of
-   `binaryQuadraticForm R 1 1` is explicitly isometric to the orthogonal sum of two hyperbolic
-   planes `binaryQuadraticForm R 0 0`.
+1. **Characteristic-two diagonals and binary forms `[a, b]`.** In characteristic two, the diagonal
+   submodule of `M × M` is always `(Q.prod Q)`-totally-isotropic, `Q.polarBilin` is alternating,
+   every binary form `TauCeti.binaryQuadraticForm R a b` has nondegenerate polar pairing
+   `x 0 * y 1 + x 1 * y 0`, and the orthogonal sum of two copies of `binaryQuadraticForm R 1 1` is
+   explicitly isometric to the orthogonal sum of two hyperbolic planes `binaryQuadraticForm R 0 0`.
 2. **Symplectic-basis decomposition.** Whenever `b : Module.Basis (ι ⊕ ι) R M` puts `Q.polarBilin`
    in standard symplectic form `Matrix.J ι R`, `Q` decomposes isometrically as the orthogonal sum of
    the binary forms `binaryQuadraticForm R (Q (b (Sum.inl i))) (Q (b (Sum.inr i)))`.
@@ -57,11 +51,6 @@ models `[a, b]` and characteristic-two structure that underpin the Arf invariant
 
 ## Main definitions
 
-* `TauCeti.binaryQuadraticForm`: the binary quadratic form `a * x 0 ^ 2 + x 0 * x 1 + b * x 1 ^ 2`
-  on `Fin 2 → R` (Elman--Karpenko--Merkurjev's `[a, b]`).
-* `TauCeti.isometryEquivBinaryQuadraticFormLeft`, `TauCeti.isometryEquivBinaryQuadraticFormRight`:
-  explicit shear isometries from `binaryQuadraticForm R a 0` and `binaryQuadraticForm R 0 b` to the
-  hyperbolic plane `binaryQuadraticForm R 0 0`.
 * `TauCeti.isometryEquivBinaryQuadraticFormOneProd`: explicit characteristic-two isometry from
   `(binaryQuadraticForm R 1 1).prod (binaryQuadraticForm R 1 1)` to
   `(binaryQuadraticForm R 0 0).prod (binaryQuadraticForm R 0 0)`.
@@ -73,6 +62,8 @@ models `[a, b]` and characteristic-two structure that underpin the Arf invariant
 * `QuadraticMap.isTotallyIsotropic_range_inl_add_inr_prod_self`: in characteristic two, the diagonal
   submodule of `M × M` is `(Q.prod Q)`-totally-isotropic.
 * `QuadraticMap.isAlt_polarBilin`: in characteristic two, `Q.polarBilin` is alternating.
+* `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm`: in characteristic two, every binary form
+  `binaryQuadraticForm R a b` has nondegenerate polar bilinear form.
 * `QuadraticMap.even_finrank_of_nondegenerate_polarBilin`,
   `QuadraticMap.exists_basis_toMatrix_polarBilin_eq_J`,
   `QuadraticMap.exists_basis_toMatrix_polarBilin_eq_J_of_finrank_eq`: over a field of characteristic
@@ -120,83 +111,20 @@ theorem isAlt_polarBilin [CharP R 2] (Q : QuadraticMap R M P) : Q.polarBilin.IsA
 
 end QuadraticMap
 
-/-! ### Binary quadratic forms `[a, b]` -/
+/-! ### Characteristic-two binary quadratic forms `[a, b]` -/
 
 namespace TauCeti
-
-open QuadraticMap
-
-section CommSemiring
-
-variable {R : Type u} [CommSemiring R]
-
-/-- The binary quadratic form `[a, b]` given by `a * x 0 ^ 2 + x 0 * x 1 + b * x 1 ^ 2` on
-`Fin 2 → R` (Elman--Karpenko--Merkurjev, §7.B).
-
-In characteristic two its polarization is the standard alternating pairing
-`x 0 * y 1 + x 1 * y 0` independently of `a` and `b`; `binaryQuadraticForm R 0 0` is the
-`xy`-hyperbolic plane, and over `ZMod 2` the form `binaryQuadraticForm (ZMod 2) 1 1` is the unique
-anisotropic nonsingular binary form. -/
-def binaryQuadraticForm (R : Type u) [CommSemiring R] (a b : R) :
-    QuadraticForm R (Fin 2 → R) :=
-  weightedSumSquares R ![a, b] + proj 0 1
-
-/-- Evaluation of `TauCeti.binaryQuadraticForm` in coordinates. -/
-@[simp]
-theorem binaryQuadraticForm_apply (a b : R) (x : Fin 2 → R) :
-    binaryQuadraticForm R a b x = a * x 0 ^ 2 + x 0 * x 1 + b * x 1 ^ 2 := by
-  simp only [binaryQuadraticForm, add_apply, weightedSumSquares_apply, Fin.sum_univ_two,
-    Matrix.cons_val_zero, Matrix.cons_val_one, proj_apply, smul_eq_mul, pow_two]
-  ring
-
-end CommSemiring
 
 section CommRing
 
 variable {R : Type u} [CommRing R]
 
-/-- Polarization of `TauCeti.binaryQuadraticForm` over a commutative ring. -/
-theorem polar_binaryQuadraticForm (a b : R) (x y : Fin 2 → R) :
-    polar (binaryQuadraticForm R a b) x y =
-      2 * (a * (x 0 * y 0) + b * (x 1 * y 1)) + (x 0 * y 1 + x 1 * y 0) := by
-  simp only [polar, binaryQuadraticForm_apply, Pi.add_apply]
-  ring
-
-/-- Polarization of the hyperbolic plane `binaryQuadraticForm R 0 0` in coordinates. -/
-@[simp]
-theorem polar_binaryQuadraticForm_zero (x y : Fin 2 → R) :
-    polar (binaryQuadraticForm R 0 0) x y = x 0 * y 1 + x 1 * y 0 := by
-  rw [polar_binaryQuadraticForm]
-  ring
-
 /-- In characteristic two, the polarization of `binaryQuadraticForm R a b` is
 `x 0 * y 1 + x 1 * y 0`, independent of `a` and `b`. -/
 @[simp]
 theorem polar_binaryQuadraticForm_of_charTwo [CharP R 2] (a b : R) (x y : Fin 2 → R) :
-    polar (binaryQuadraticForm R a b) x y = x 0 * y 1 + x 1 * y 0 := by
+    QuadraticMap.polar (binaryQuadraticForm R a b) x y = x 0 * y 1 + x 1 * y 0 := by
   rw [polar_binaryQuadraticForm, CharTwo.two_eq_zero, zero_mul, zero_add]
-
-/-- The polar bilinear form of the hyperbolic plane `binaryQuadraticForm R 0 0` is nondegenerate
-over every commutative ring. -/
-theorem nondegenerate_polarBilin_binaryQuadraticForm_zero :
-    (binaryQuadraticForm R 0 0).polarBilin.Nondegenerate := by
-  rw [LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    (binaryQuadraticForm R 0 0).isRefl_polarBilin]
-  intro x hx
-  have h0 : x 0 = 0 := by simpa [polarBilin_apply_apply] using hx ![0, 1]
-  have h1 : x 1 = 0 := by simpa [polarBilin_apply_apply] using hx ![1, 0]
-  ext i
-  fin_cases i <;> simp [h0, h1]
-
-/-- Whenever `2 * a = 0` and `2 * b = 0`, the polar bilinear form of `binaryQuadraticForm R a b`
-coincides with that of the hyperbolic plane `binaryQuadraticForm R 0 0`. -/
-theorem polarBilin_binaryQuadraticForm_of_two_mul_eq_zero {a b : R}
-    (ha : 2 * a = 0) (hb : 2 * b = 0) :
-    (binaryQuadraticForm R a b).polarBilin = (binaryQuadraticForm R 0 0).polarBilin :=
-  LinearMap.ext₂ fun x y ↦ by
-    rw [polarBilin_apply_apply, polarBilin_apply_apply, polar_binaryQuadraticForm,
-      polar_binaryQuadraticForm_zero, mul_add 2, ← mul_assoc 2 a, ← mul_assoc 2 b, ha, hb,
-      zero_mul, zero_mul, add_zero, zero_add]
 
 /-- In characteristic two, the polar bilinear form of `binaryQuadraticForm R a b` coincides with
 that of the hyperbolic plane `binaryQuadraticForm R 0 0`. -/
@@ -205,106 +133,12 @@ theorem polarBilin_binaryQuadraticForm_of_charTwo [CharP R 2] (a b : R) :
   polarBilin_binaryQuadraticForm_of_two_mul_eq_zero
     (by rw [CharTwo.two_eq_zero, zero_mul]) (by rw [CharTwo.two_eq_zero, zero_mul])
 
-/-- Whenever `2 * a = 0` and `2 * b = 0`, `binaryQuadraticForm R a b` has nondegenerate polar
-bilinear form. -/
-theorem nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero {a b : R}
-    (ha : 2 * a = 0) (hb : 2 * b = 0) :
-    (binaryQuadraticForm R a b).polarBilin.Nondegenerate := by
-  rw [polarBilin_binaryQuadraticForm_of_two_mul_eq_zero ha hb]
-  exact nondegenerate_polarBilin_binaryQuadraticForm_zero
-
 /-- In characteristic two, `binaryQuadraticForm R a b` has nondegenerate polar bilinear form for all
 `a, b : R`. -/
 theorem nondegenerate_polarBilin_binaryQuadraticForm [CharP R 2] (a b : R) :
     (binaryQuadraticForm R a b).polarBilin.Nondegenerate :=
   nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero
     (by rw [CharTwo.two_eq_zero, zero_mul]) (by rw [CharTwo.two_eq_zero, zero_mul])
-
-/-- The first coordinate axis `{x | x 1 = 0}` is totally isotropic for
-`binaryQuadraticForm R 0 b`. -/
-theorem isTotallyIsotropic_ker_proj_one_binaryQuadraticForm (b : R) :
-    (binaryQuadraticForm R 0 b).IsTotallyIsotropic
-      (LinearMap.ker (LinearMap.proj (R := R) (φ := fun _ : Fin 2 ↦ R) 1)) := by
-  rw [isTotallyIsotropic_iff]
-  intro x hx
-  rw [LinearMap.mem_ker, LinearMap.proj_apply] at hx
-  simp [hx]
-
-/-- Over a nontrivial commutative ring, the hyperbolic plane `binaryQuadraticForm R 0 0` is not
-anisotropic, since `![1, 0]` is a nonzero isotropic vector. -/
-theorem not_anisotropic_binaryQuadraticForm_zero [Nontrivial R] :
-    ¬(binaryQuadraticForm R 0 0).Anisotropic := by
-  intro h
-  have h10 := h ![1, 0] (by simp)
-  exact one_ne_zero (α := R) (by simpa using congrFun h10 0)
-
-/-- Explicit shear isometry `(x 0, x 1) ↦ (x 0, a * x 0 + x 1)` from `binaryQuadraticForm R a 0`
-to the hyperbolic plane `binaryQuadraticForm R 0 0`, valid over every commutative ring. -/
-def isometryEquivBinaryQuadraticFormLeft (a : R) :
-    (binaryQuadraticForm R a 0).IsometryEquiv (binaryQuadraticForm R 0 0) where
-  toFun x := ![x 0, a * x 0 + x 1]
-  invFun u := ![u 0, u 1 - a * u 0]
-  map_add' x y := by
-    ext i
-    fin_cases i <;> simp [mul_add, add_assoc, add_left_comm]
-  map_smul' c x := by
-    ext i
-    fin_cases i <;> simp [mul_add, mul_left_comm]
-  left_inv x := by
-    ext i
-    fin_cases i <;> simp
-  right_inv u := by
-    ext i
-    fin_cases i <;> simp
-  map_app' x := by
-    simp only [binaryQuadraticForm_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
-    ring
-
-/-- Coordinates of `TauCeti.isometryEquivBinaryQuadraticFormLeft`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormLeft_apply (a : R) (x : Fin 2 → R) :
-    isometryEquivBinaryQuadraticFormLeft a x = ![x 0, a * x 0 + x 1] :=
-  (rfl)
-
-/-- Coordinates of the inverse of `TauCeti.isometryEquivBinaryQuadraticFormLeft`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormLeft_symm_apply (a : R) (u : Fin 2 → R) :
-    (isometryEquivBinaryQuadraticFormLeft a).symm u = ![u 0, u 1 - a * u 0] :=
-  (rfl)
-
-/-- Explicit shear isometry `(x 0, x 1) ↦ (x 0 + b * x 1, x 1)` from `binaryQuadraticForm R 0 b`
-to the hyperbolic plane `binaryQuadraticForm R 0 0`, valid over every commutative ring. -/
-def isometryEquivBinaryQuadraticFormRight (b : R) :
-    (binaryQuadraticForm R 0 b).IsometryEquiv (binaryQuadraticForm R 0 0) where
-  toFun x := ![x 0 + b * x 1, x 1]
-  invFun u := ![u 0 - b * u 1, u 1]
-  map_add' x y := by
-    ext i
-    fin_cases i <;> simp [mul_add, add_assoc, add_left_comm]
-  map_smul' c x := by
-    ext i
-    fin_cases i <;> simp [mul_add, mul_left_comm]
-  left_inv x := by
-    ext i
-    fin_cases i <;> simp
-  right_inv u := by
-    ext i
-    fin_cases i <;> simp
-  map_app' x := by
-    simp only [binaryQuadraticForm_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
-    ring
-
-/-- Coordinates of `TauCeti.isometryEquivBinaryQuadraticFormRight`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormRight_apply (b : R) (x : Fin 2 → R) :
-    isometryEquivBinaryQuadraticFormRight b x = ![x 0 + b * x 1, x 1] :=
-  (rfl)
-
-/-- Coordinates of the inverse of `TauCeti.isometryEquivBinaryQuadraticFormRight`. -/
-@[simp]
-theorem isometryEquivBinaryQuadraticFormRight_symm_apply (b : R) (u : Fin 2 → R) :
-    (isometryEquivBinaryQuadraticFormRight b).symm u = ![u 0 - b * u 1, u 1] :=
-  (rfl)
 
 /-- In characteristic two, the orthogonal sum of two copies of `binaryQuadraticForm R 1 1` is
 explicitly isometric to the orthogonal sum of two hyperbolic planes
@@ -359,30 +193,6 @@ theorem isometryEquivBinaryQuadraticFormOneProd_symm_apply [CharP R 2]
   (rfl)
 
 end CommRing
-
-section Field
-
-/-- Over a field, `binaryQuadraticForm K 1 c` is anisotropic if and only if the Artin--Schreier
-polynomial `t ^ 2 + t + c` has no root in `K`. -/
-theorem anisotropic_binaryQuadraticForm_one_iff {K : Type u} [Field K] (c : K) :
-    (binaryQuadraticForm K 1 c).Anisotropic ↔ ∀ t : K, t ^ 2 + t + c ≠ 0 := by
-  refine ⟨fun h t ht ↦ ?_, fun h x hx ↦ ?_⟩
-  · have h0 := h ![t, 1] (by simpa [binaryQuadraticForm_apply] using ht)
-    exact one_ne_zero (α := K) (by simpa using congrFun h0 1)
-  · by_cases hx1 : x 1 = 0
-    · have hx0 : x 0 = 0 := by simpa [binaryQuadraticForm_apply, hx1] using hx
-      ext i
-      fin_cases i <;> simp [hx0, hx1]
-    · refine False.elim (h (x 0 / x 1) ?_)
-      have hdiv : (x 0 / x 1) ^ 2 + x 0 / x 1 + c =
-          (x 0 ^ 2 + x 0 * x 1 + c * x 1 ^ 2) / x 1 ^ 2 := by
-        field_simp
-      rw [hdiv]
-      have hx' : x 0 ^ 2 + x 0 * x 1 + c * x 1 ^ 2 = 0 := by
-        simpa [binaryQuadraticForm_apply] using hx
-      rw [hx', zero_div]
-
-end Field
 
 end TauCeti
 
