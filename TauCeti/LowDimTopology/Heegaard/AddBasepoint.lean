@@ -108,18 +108,18 @@ def addBasepoint (r₀ : Region) :
   beta := Sum.elim (fun p => (H.beta p).castSucc) fun _ => Fin.last n
   alphaNext := Equiv.Perm.sumCongr H.alphaNext (Equiv.swap 0 1)
   alphaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_fiber H.alphaNext_isCycleOn
-    (by simpa using isCycleOn_swap_fin_two_fiber (fun _ => 0) 0)
+    (by simpa using isCycleOn_swap_fiber (by decide) (fun _ : Fin 2 => (0 : Fin 1)) 0)
   betaNext := Equiv.Perm.sumCongr H.betaNext (Equiv.swap 0 1)
   betaNext_isCycleOn := Equiv.Perm.isCycleOn_sumCongr_fiber H.betaNext_isCycleOn
-    (by simpa using isCycleOn_swap_fin_two_fiber (fun _ => 0) 0)
+    (by simpa using isCycleOn_swap_fiber (by decide) (fun _ : Fin 2 => (0 : Fin 1)) 0)
   alphaLeft := Sum.elim (Sum.inl ∘ H.alphaLeft) ![Sum.inr 0, Sum.inr 2]
   alphaRight := Sum.elim (Sum.inl ∘ H.alphaRight) ![Sum.inl r₀, Sum.inr 1]
   betaLeft := Sum.elim (Sum.inl ∘ H.betaLeft) ![Sum.inr 2, Sum.inr 1]
   betaRight := Sum.elim (Sum.inl ∘ H.betaRight) ![Sum.inr 0, Sum.inl r₀]
   regionNonempty := ⟨Sum.inr 0⟩
   crossingCompatible := by
-    rintro (p | k)
-    · rcases H.crossingCompatible p with h | h
+    rintro (p | k) <;> rw [isCrossingCompatible_iff]
+    · rcases isCrossingCompatible_iff.1 (H.crossingCompatible p) with h | h
       · left
         simpa using h
       · right
