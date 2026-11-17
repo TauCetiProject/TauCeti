@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.Subalgebra.Adjoin
+public import Mathlib.Algebra.Algebra.Spectrum.Quasispectrum
 public import Mathlib.Algebra.Algebra.Subalgebra.Unitization
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 public import Mathlib.Analysis.Normed.Field.Basic
@@ -284,3 +285,39 @@ theorem norm_comp_unitizationSndL_le (D : A →L[𝕜] E) :
   exact D.le_opNorm _ |>.trans (by gcongr; exact le_add_of_nonneg_left (norm_nonneg _))
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+
+/-- The spectrum of `WithLp.toLp 1 (a : Unitization 𝕜 A)` in the ℓ¹ unitization equals
+`quasispectrum 𝕜 a`. -/
+@[simp]
+theorem spectrum_unitization_toLp_inr (a : A) :
+    spectrum 𝕜 (WithLp.toLp 1 (a : Unitization 𝕜 A)) = quasispectrum 𝕜 a := by
+  rw [← AlgEquiv.spectrum_eq (WithLp.unitizationAlgEquiv (𝕜 := 𝕜) (A := A) 𝕜),
+    WithLp.unitizationAlgEquiv_apply, WithLp.ofLp_toLp,
+    ← Unitization.quasispectrum_eq_spectrum_inr]
+
+/-- The spectrum of `WithLp.unitizationInrL 𝕜 A a` in the ℓ¹ unitization equals
+`quasispectrum 𝕜 a`. -/
+theorem spectrum_unitizationInrL (a : A) :
+    spectrum 𝕜 (WithLp.unitizationInrL 𝕜 A a) = quasispectrum 𝕜 a := by
+  rw [WithLp.unitizationInrL_apply, spectrum_unitization_toLp_inr]
+
+/-- Zero lies in the spectrum of `WithLp.toLp 1 (a : Unitization 𝕜 A)` for every element `a` of a
+nonunital normed algebra over a normed field `𝕜`. -/
+theorem zero_mem_spectrum_unitization_toLp_inr (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (WithLp.toLp 1 (a : Unitization 𝕜 A)) := by
+  rw [spectrum_unitization_toLp_inr]
+  exact quasispectrum.zero_mem 𝕜 a
+
+/-- Zero lies in the spectrum of `WithLp.unitizationInrL 𝕜 A a` for every element `a` of a
+nonunital normed algebra over a normed field `𝕜`. -/
+theorem zero_mem_spectrum_unitizationInrL (a : A) :
+    (0 : 𝕜) ∈ spectrum 𝕜 (WithLp.unitizationInrL 𝕜 A a) := by
+  rw [spectrum_unitizationInrL]
+  exact quasispectrum.zero_mem 𝕜 a
+
+end TauCeti
