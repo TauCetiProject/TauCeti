@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.Galois.Abelian.Maximal
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.FieldArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
-import TauCeti.FieldTheory.Galois.Abelian.Basic
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ConjugateSubgroups
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
@@ -74,6 +74,9 @@ for instance from a completion of a number field to a concrete model such as `�
   comparison of absolute Galois groups.
 * `TauCeti.ClassFieldTheory.artinMap_restrict`: the finite restrictions of the absolute local
   Artin map are the finite local Artin maps.
+* `TauCeti.ClassFieldTheory.abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap`:
+  restricting `artinMap K x` from `K^{ab}` to a finite subextension `M` computes
+  `normResidue K M x`.
 * `TauCeti.ClassFieldTheory.mem_normGroup_of_mk_eq_artinMap_of_fixes`: an element whose Artin
   symbol fixes a finite Galois extension `M/K` is a norm from `M`.
 * `TauCeti.ClassFieldTheory.mem_normGroup_fixedField_iff`: for a finite abelian extension `M/K`,
@@ -161,6 +164,45 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
     ← (localClassFormation K).abelianizationRestrict_absoluteArtinMap, habs,
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
     Group.abelianizationCongr_of, layerGalEquiv_mk]
+
+/-- **Finite restrictions of `artinMap K` on `K^{ab}/K`.** Let `M` be a finite intermediate field
+of `maximalAbelianExtension K (AlgebraicClosure K) / K`. Reading `artinMap K x` as an automorphism
+of `K^{ab}` via `topologicalAbelianizationEquivMaximalAbelianExtension` and restricting to `M`
+computes `normResidue K M x`. -/
+theorem abelianization_of_restrictNormalHom_maximalAbelianExtension_artinMap
+    (M : IntermediateField K (maximalAbelianExtension K (AlgebraicClosure K)))
+    [FiniteDimensional K M] (x : Kˣ) :
+    Group.Abelianization.of
+        (AlgEquiv.restrictNormalHom M
+          (topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
+            (artinMap K x))) =
+      normResidue K M (x : Kˣ ⧸ normGroup K M) := by
+  let Kab := maximalAbelianExtension K (AlgebraicClosure K)
+  let ιSep : Kab →ₐ[K] SeparableClosure K :=
+    IntermediateField.inclusion
+      (maximalAbelianExtension_le_separableClosure K (AlgebraicClosure K))
+  let ι : M →ₐ[K] SeparableClosure K := ιSep.comp M.val
+  obtain ⟨σ, hσ⟩ := QuotientGroup.mk_surjective (artinMap K x)
+  let σ₀ : Gal(AlgebraicClosure K/K) := σ
+  have hmk :
+      topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
+          (artinMap K x) =
+        AlgEquiv.restrictNormalHom Kab σ₀ := by
+    rw [← hσ]
+    exact AlgEquiv.topologicalAbelianizationEquivMaximalAbelianExtension_mk σ₀
+  have hcomp : Kab.val.comp M.val = (separableClosure K (AlgebraicClosure K)).val.comp ι :=
+    AlgHom.ext fun _ ↦ rfl
+  have hres :
+      AlgEquiv.restrictNormalHom M
+          (topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
+            (artinMap K x)) =
+        ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) := by
+    rw [hmk, absoluteGaloisGroupRestrictEquiv_apply K σ₀,
+      ← IntermediateField.restrictNormalHom_val M, ← IntermediateField.restrictNormalHom_val Kab,
+      ← IntermediateField.restrictNormalHom_val (separableClosure K (AlgebraicClosure K)),
+      AlgHom.restrictNormalHom_restrictNormalHom, AlgHom.restrictNormalHom_restrictNormalHom,
+      hcomp]
+  rw [hres, normResidue_mk K M ι x, artinMap_restrict K M ι x σ hσ, toMul_ofMul]
 
 /-- **An Artin symbol that fixes a finite Galois extension comes from a norm.** If
 `σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ` and fixes

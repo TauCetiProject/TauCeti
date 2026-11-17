@@ -6,15 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
+public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Isomorphism
+public import TauCeti.Combinatorics.Graph.Simple
 
 /-!
-# Transporting multigraph cuts, bridges, and bonds along isomorphisms
+# Isomorphism invariance of multigraph connectivity
 
 A multigraph isomorphism transports subsets of the actual vertices and edges by its two
 underlying equivalences. This transport sends an edge cut to the edge cut of the transported
 vertex side, and consequently preserves edge cuts, bridges, and bonds. It also preserves the
-absence of cycles, hence multigraph forests.
+absence of cycles, hence multigraph forests. For finite edge sets, it preserves weighted cut
+capacities and their aggregation by unordered pairs of vertices.
+
+Isomorphisms also preserve local and global edge- and vertex-connectivity and their numerical
+invariants. The edge statements retain edge identities, including loops and parallel edges;
+the vertex statements use the induced isomorphism of underlying simple graphs. All endpoints
+are actual vertices. No finiteness is needed, so the results include infinite connectivity
+and the empty-graph conventions.
 
 The set transport is stated on the ambient vertex and edge types because Mathlib's
 `Graph.edgeCut`, `Graph.IsEdgeCut`, and `Graph.IsBond` use ambient sets. Elements outside the
@@ -24,13 +35,14 @@ isomorphism is an exact inverse.
 
 public section
 
-open Set
+open Finset Set
 
-universe u v u' v'
+universe u v u' v' w
 
 namespace Graph
 
 variable {α : Type u} {β : Type v} {α' : Type u'} {β' : Type v'}
+variable {K : Type w}
 variable {G : Graph α β} {H : Graph α' β'}
 
 namespace Iso
@@ -43,6 +55,31 @@ theorem edgeEquiv_mem_edgeCut_mapVertexSet_iff (f : Iso G H) (S : Set α)
   obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
   rw [(f.map_isLink hxy).mem_edgeCut_iff, hxy.mem_edgeCut_iff]
   simp
+
+/-! ### Cut capacities -/
+
+/-- A graph isomorphism preserves the capacity of every cut once the edge capacities are
+relabelled along it. -/
+theorem edgeCutCapacity_map [Fintype E(G)] [Fintype E(H)] [AddCommMonoid K] (f : Iso G H)
+    (c : E(G) → K) (S : Finset V(G)) :
+    H.edgeCutCapacity (c ∘ f.edgeEquiv.symm) (S.map f.vertexEquiv.toEmbedding) =
+      G.edgeCutCapacity c S := by
+  classical
+  rw [edgeCutCapacity_def, edgeCutCapacity_def, coe_map, Equiv.coe_toEmbedding,
+    ← mapVertexSet_image_val]
+  exact (Fintype.sum_equiv f.edgeEquiv _ _ fun e ↦ by
+    simp [f.edgeEquiv_mem_edgeCut_mapVertexSet_iff]).symm
+
+/-- A graph isomorphism preserves the aggregated capacity of every unordered pair of actual
+vertices once the edge capacities are relabelled along it. -/
+theorem pairCapacity_map [Fintype E(G)] [Fintype E(H)] [AddCommMonoid K] (f : Iso G H)
+    (c : E(G) → K) (p : Sym2 V(G)) :
+    H.pairCapacity (c ∘ f.edgeEquiv.symm) (p.map f.vertexEquiv) = G.pairCapacity c p := by
+  classical
+  rw [pairCapacity_def, pairCapacity_def]
+  exact (Fintype.sum_equiv f.edgeEquiv _ _ fun e ↦ by
+    simp [Sym2.isDiag_map f.vertexEquiv.injective,
+      (Sym2.map.injective f.vertexEquiv.injective).eq_iff]).symm
 
 /-- Transporting an edge cut gives the edge cut of the transported vertex side. -/
 theorem mapEdgeSet_edgeCut (f : Iso G H) (S : Set α) :
@@ -133,6 +170,79 @@ theorem isForest_iff (f : Iso G H) : H.IsForest ↔ G.IsForest := by
     let e' : H.edgeSet := ⟨e, he⟩
     simpa [e'] using (f.isBridge_edgeEquiv_iff (f.edgeEquiv.symm e')).mpr
       (hG (f.edgeEquiv.symm e').2)
+
+/-- Edge reachability at every natural threshold is invariant under multigraph isomorphism. -/
+@[simp]
+theorem isEdgeReachable_iff (f : Iso G H) (k : ℕ) (x y : V(G)) :
+    H.IsEdgeReachable k (f.vertexEquiv x) (f.vertexEquiv y) ↔ G.IsEdgeReachable k x y := by
+  rw [isEdgeReachable_iff_forall_subset_edgeSet, isEdgeReachable_iff_forall_subset_edgeSet]
+  constructor
+  · intro h F hF hcard
+    exact (f.reachable_deleteEdges_mapEdgeSet_iff F x y).mp
+      (h (f.mapEdgeSet_subset_edgeSet F) (by simpa only [f.encard_mapEdgeSet hF] using hcard))
+  · intro h F hF hcard
+    have hr := h (f.symm.mapEdgeSet_subset_edgeSet F)
+      (by simpa only [f.symm.encard_mapEdgeSet hF] using hcard)
+    have ht := (f.reachable_deleteEdges_mapEdgeSet_iff (f.symm.mapEdgeSet F) x y).mpr hr
+    have hround := f.symm.symm_mapEdgeSet_mapEdgeSet hF
+    rw [symm_symm] at hround
+    rwa [hround] at ht
+
+/-- Global edge connectivity is invariant under multigraph isomorphism, including for empty
+actual vertex sets. -/
+theorem isEdgeConnected_iff (f : Iso G H) (k : ℕ) :
+    H.IsEdgeConnected k ↔ G.IsEdgeConnected k := by
+  simp only [isEdgeConnected_def]
+  constructor
+  · intro h x hx y hy
+    exact (f.isEdgeReachable_iff k ⟨x, hx⟩ ⟨y, hy⟩).mp
+      (h (f.vertexEquiv ⟨x, hx⟩).2 (f.vertexEquiv ⟨y, hy⟩).2)
+  · intro h x hx y hy
+    have hr := (f.isEdgeReachable_iff k (f.vertexEquiv.symm ⟨x, hx⟩)
+      (f.vertexEquiv.symm ⟨y, hy⟩)).mpr
+        (h (f.vertexEquiv.symm ⟨x, hx⟩).2 (f.vertexEquiv.symm ⟨y, hy⟩).2)
+    simpa using hr
+
+/-- Local numerical edge reachability is unchanged by a multigraph isomorphism. -/
+@[simp]
+theorem edgeReachability_eq (f : Iso G H) (x y : V(G)) :
+    H.edgeReachability (f.vertexEquiv x) (f.vertexEquiv y) = G.edgeReachability x y := by
+  apply ENat.eq_of_forall_natCast_le_iff
+  intro k
+  simp only [← isEdgeReachable_iff_le_edgeReachability, f.isEdgeReachable_iff]
+
+/-- Numerical edge connectivity is unchanged by a multigraph isomorphism. -/
+theorem edgeConnectivity_eq (f : Iso G H) : H.edgeConnectivity = G.edgeConnectivity := by
+  apply ENat.eq_of_forall_natCast_le_iff
+  intro k
+  simp only [← isEdgeConnected_iff_le_edgeConnectivity, f.isEdgeConnected_iff]
+
+/-- Local vertex reachability is invariant under multigraph isomorphism. -/
+@[simp]
+theorem isVertexReachable_iff (f : Iso G H) (k : ℕ) (x y : V(G)) :
+    H.IsVertexReachable k (f.vertexEquiv x) (f.vertexEquiv y) ↔ G.IsVertexReachable k x y := by
+  simpa only [toSimpleGraphIso_apply] using
+    (f.toSimpleGraphIso.isVertexReachable_iff (k := (k : ℕ∞)) x y)
+
+/-- Global vertex connectivity is invariant under multigraph isomorphism. -/
+theorem isVertexConnected_iff (f : Iso G H) (k : ℕ) :
+    H.IsVertexConnected k ↔ G.IsVertexConnected k :=
+  f.toSimpleGraphIso.isVertexConnected_iff
+
+/-- Numerical vertex connectivity is unchanged by a multigraph isomorphism, including on the
+empty actual vertex set. -/
+theorem vertexConnectivity_eq (f : Iso G H) : H.vertexConnectivity = G.vertexConnectivity :=
+  f.toSimpleGraphIso.vertexConnectivity_eq
+
+/-- A native multigraph cut vertex is carried to a native cut vertex by a multigraph
+isomorphism. -/
+@[simp]
+theorem isCutVertex_vertexEquiv_iff (f : Iso G H) (x : V(G)) :
+    H.IsCutVertex (f.vertexEquiv x) ↔ G.IsCutVertex x := by
+  rw [H.isCutVertex_iff_toSimpleGraph_isCutVertex (f.vertexEquiv x).property,
+    G.isCutVertex_iff_toSimpleGraph_isCutVertex x.property]
+  simpa only [toSimpleGraphIso_apply] using
+    (f.toSimpleGraphIso.isCutVertex_iff (v := x))
 
 end Iso
 

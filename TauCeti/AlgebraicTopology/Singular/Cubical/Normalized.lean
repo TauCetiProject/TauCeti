@@ -249,6 +249,15 @@ theorem induction_on {n : ℕ} {P : NormalizedCubicalChain X R n → Prop}
       rw [← smul_single_one, Submodule.Quotient.mk_smul]
       exact smul a _ (ofCube c)
 
+/-- A space without points has no nonzero normalized chains. -/
+instance [IsEmpty X] {n : ℕ} : Subsingleton (NormalizedCubicalChain X R n) :=
+  subsingleton_of_forall_eq 0 fun g ↦ by
+    induction g using induction_on with
+    | zero => rfl
+    | add a b ha hb => rw [ha, hb, add_zero]
+    | smul r a ha => rw [ha, smul_zero]
+    | ofCube c => exact isEmptyElim (c 0)
+
 @[simp]
 theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : SingularCube.IsDegenerate c) :
     ofCube X R c = 0 :=
@@ -323,6 +332,12 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   exact Submodule.mapQ_comp _ _ _ _ _ (degenerate_le_comap_map R f n)
     (degenerate_le_comap_map R g n)
 
+/-- Pushing forward along `f` and then along `g` is pushing forward along `g ∘ f`. -/
+@[simp]
+theorem map_map (g : C(Y, Z)) (f : C(X, Y)) {n : ℕ} (x : NormalizedCubicalChain X R n) :
+    map R g n (map R f n x) = map R (g.comp f) n x := by
+  rw [map_comp, LinearMap.comp_apply]
+
 /-- Normalization preserves injectivity of a map of spaces. No embedding hypothesis is needed. -/
 theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
     Function.Injective (map R f n) := by
@@ -391,6 +406,12 @@ theorem cast_cast {n m k : ℕ} (h : n = m) (h' : m = k) (c : NormalizedCubicalC
 theorem cast_rfl {n : ℕ} (c : NormalizedCubicalChain X R n) : cast R rfl c = c := by
   induction c using Submodule.Quotient.induction_on with
   | H c => simp
+
+/-- Reindexing the class of a cube is the class of the reindexed cube. -/
+@[simp]
+theorem cast_ofCube {n m : ℕ} (h : n = m) (c : SingularCube X n) :
+    cast R h (ofCube X R c) = ofCube X R (SingularCube.cast h c) := by
+  rw [ofCube_def, cast_mk, CubicalChain.cast_single, ← ofCube_def]
 
 /-- Reindexing commutes with the push-forward. -/
 theorem map_cast (f : C(X, Y)) {n m : ℕ} (h : n = m) (c : NormalizedCubicalChain X R n) :
