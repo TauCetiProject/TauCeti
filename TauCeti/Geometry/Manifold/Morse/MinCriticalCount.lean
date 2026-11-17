@@ -49,7 +49,8 @@ is nonempty and not simply connected
 (`TauCeti.three_le_minCriticalCount_of_not_simplyConnectedSpace`). On real projective space
 `ℝPⁿ`, `n ≥ 2`, whose fundamental group has two elements, this gives `3 ≤ c(ℝPⁿ)`
 (`TauCeti.three_le_minCriticalCount_projectivization_real`), while a moment function with
-distinct weights has `n + 1` critical points (`TauCeti.minCriticalCount_projectivization_real_le`).
+distinct weights has `n + 1` critical points on `ℝPⁿ` and on `ℂPⁿ`, so `c(ℝPⁿ) ≤ n + 1` and
+`c(ℂPⁿ) ≤ n + 1` (`TauCeti.minCriticalCount_projectivization_le`).
 So `c(ℝP²) = 3` (`TauCeti.minCriticalCount_projectivization_real_fin_three`): every smooth
 function on the real projective plane has at least three critical points, and the moment function
 has exactly three. On the torus `Tᵐ` the Lusternik–Schnirelmann count is `m + 1`
@@ -99,8 +100,9 @@ components (`TauCeti.two_mul_card_connectedComponents_le_totalCriticalCount`), h
 * O. Cornea, G. Lupton, J. Oprea and D. Tanré, *Lusternik–Schnirelmann Category*, Mathematical
   Surveys and Monographs 103, American Mathematical Society, 2003, Chapter 1.
 * J. Milnor, *Sommes de variétés différentiables et structures différentiables des sphères*,
-  Bull. Soc. Math. France 87 (1959), 439–444, Corollary 1: a closed manifold carrying a function
-  with two critical points is homeomorphic to a sphere.
+  Bull. Soc. Math. France 87 (1959), 439–444, Corollary 1: a compact space covered by two open
+  sets homeomorphic to `ℝᵐ` is homeomorphic to `Sᵐ`, which gives Reeb's theorem that a closed
+  manifold carrying a function with two critical points is homeomorphic to a sphere.
 -/
 
 public section
@@ -305,11 +307,11 @@ theorem three_le_minCriticalCount_projectivization_real (hn : 2 ≤ n) :
   exact RealProjectiveSpace.not_simplyConnectedSpace n hn
     (RealProjectiveSpace.homeomorphProjectivization n).toHomotopyEquiv.simplyConnectedSpace
 
-/-- Some smooth function on `ℝPⁿ`, a moment function with distinct weights, has exactly `n + 1`
-critical points, so `c(ℝPⁿ) ≤ n + 1`. -/
-theorem minCriticalCount_projectivization_real_le :
-    minCriticalCount 𝓘(ℝ, Fin n → ℝ) (ℙ ℝ (Fin (n + 1) → ℝ)) ≤ n + 1 :=
-  (minCriticalCount_le (contMDiff_projectiveMomentFunction (fun i ↦ (i : ℝ)))).trans_eq
+/-- Some smooth function on the projective space `𝕜Pⁿ`, `𝕜 = ℝ` or `ℂ`, a moment function with
+distinct weights, has exactly `n + 1` critical points, so `c(𝕜Pⁿ) ≤ n + 1`. -/
+theorem minCriticalCount_projectivization_le {𝕜 : Type*} [RCLike 𝕜] :
+    minCriticalCount 𝓘(ℝ, Fin n → 𝕜) (ℙ 𝕜 (Fin (n + 1) → 𝕜)) ≤ n + 1 :=
+  (minCriticalCount_le (contMDiff_projectiveMomentFunction (𝕜 := 𝕜) fun i ↦ (i : ℝ))).trans_eq
     (totalCriticalCount_projectiveMomentFunction fun _ _ h ↦ Fin.ext (by exact_mod_cast h))
 
 /-- **The minimal number of critical points of the real projective plane is `3`.** Every smooth
@@ -317,7 +319,7 @@ function on `ℝP²` has at least three critical points, degenerate or not, and 
 with distinct weights has exactly three. -/
 theorem minCriticalCount_projectivization_real_fin_three :
     minCriticalCount 𝓘(ℝ, Fin 2 → ℝ) (ℙ ℝ (Fin 3 → ℝ)) = 3 :=
-  le_antisymm minCriticalCount_projectivization_real_le
+  le_antisymm minCriticalCount_projectivization_le
     (three_le_minCriticalCount_projectivization_real le_rfl)
 
 end Projectivization
