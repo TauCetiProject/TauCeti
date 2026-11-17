@@ -118,9 +118,9 @@ private lemma norm_two_zpow_inv_smul_le_sub_one (j : ℤ) (ξ : E) :
   exact div_le_div_of_nonneg_left (norm_nonneg _) (zpow_pos two_pos _)
     (zpow_le_zpow_right₀ one_le_two (by omega))
 
-omit [NormedSpace ℝ E] in
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Some dyadic dilate `2^N φ.rIn` of the inner radius exceeds the outer radius. -/
-theorem exists_rOut_lt_two_pow_mul_rIn (φ : ContDiffBump (0 : E)) :
+theorem exists_rOut_lt_two_pow_mul_rIn {c : E} (φ : ContDiffBump c) :
     ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
   obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
   exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
