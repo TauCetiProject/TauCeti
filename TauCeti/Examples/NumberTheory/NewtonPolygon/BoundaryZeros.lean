@@ -38,7 +38,7 @@ an infinite horizontal ray of slope `0` with no finite face of slope `0` and
 However, their active indices at `r = 1` differ:
 
 * `‖unitRaySeries p - 1‖_1 = p⁻¹ < 1`, so `unitRaySeries p` has lowest dominant and distinguished
-  degrees `(0, 0)` at `1`, and hence `0` zeros in `‖x‖ ≤ 1` in `ℂ_[p]` (and in `ℚ_[p]`);
+  degrees `(0, 0)` at `1`, and hence `0` zeros in `‖x‖ ≤ 1` in `ℂ_[p]`;
 * `‖perturbedUnitRaySeries p - (1 + X)‖_1 = p⁻² < 1`, so `perturbedUnitRaySeries p` has lowest
   dominant degree `0` and distinguished degree `1` at `1`. By the nonarchimedean Rouché theorem it
   has `0` zeros in `‖x‖ < 1` and `1` zero on the unit sphere `‖x‖ = 1` of `ℂ_[p]`; moreover, its
@@ -242,16 +242,20 @@ theorem radius_perturbedUnitRaySeries : (perturbedUnitRaySeries p).radius = 1 :=
 theorem not_exists_isFiniteFace_unitRaySeries_zero :
     ¬∃ l u : ℕ, IsFiniteFace ((unitRaySeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
   rintro ⟨l, u, h⟩
-  exact not_isFiniteFace_affine 0 0 l u
-    (by simpa [newtonPolygon_unitRaySeries, Pi.zero_def] using h)
+  have hlt := (unitRaySeries p).lt_radius_of_isFiniteFace_newtonPolygon (padicRealValuation p)
+    (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
+    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) h
+  simp at hlt
 
 /-- `perturbedUnitRaySeries p` has no finite face of slope `0`. -/
 theorem not_exists_isFiniteFace_perturbedUnitRaySeries_zero :
     ¬∃ l u : ℕ,
       IsFiniteFace ((perturbedUnitRaySeries p).newtonPolygon (padicRealValuation p)) 0 l u := by
   rintro ⟨l, u, h⟩
-  exact not_isFiniteFace_affine 0 0 l u
-    (by simpa [newtonPolygon_perturbedUnitRaySeries, Pi.zero_def] using h)
+  have hlt := (perturbedUnitRaySeries p).lt_radius_of_isFiniteFace_newtonPolygon
+    (padicRealValuation p) (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)
+    (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) h
+  simp at hlt
 
 /-- The slope multiplicity at `0` of `unitRaySeries p` is the `Set.ncard` junk value `0`, because
 infinitely many unit edges have slope `0`. -/
@@ -336,7 +340,7 @@ private theorem isLowestDominant_one_add_X :
 private theorem gaussNorm_one_add_X_sub_perturbedUnitRaySeries_lt :
     ((1 + X : ℚ_[p]⟦X⟧) - perturbedUnitRaySeries p).gaussNorm norm 1 <
       (1 + X : ℚ_[p]⟦X⟧).gaussNorm norm 1 := by
-  rw [TauCeti.PowerSeries.gaussNorm_sub_comm, gaussNorm_perturbedUnitRaySeries_sub_one_add_X,
+  rw [PowerSeries.gaussNorm_sub_comm, gaussNorm_perturbedUnitRaySeries_sub_one_add_X,
     gaussNorm_one_add_X_eq_one]
   exact pow_lt_one₀ (by positivity)
     (inv_lt_one_of_one_lt₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt)) (by decide)

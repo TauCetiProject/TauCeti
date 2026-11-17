@@ -170,9 +170,7 @@ theorem IsDistinguished.encard_setOf_evalAt_eq_zero_le (hf : IsDistinguished c s
     simp [h]
   have : IsUltrametricDist L := .of_normedAlgebra K
   simpa using (hf.map (algebraMap K L) (norm_algebraMap' L)
-    ).encard_setOf_evalAt_eq_zero_le_of_completeSpace hc
-    (MvPowerSeries.isRestricted_map _ (algebraMap K L) (C := 1)
-      (fun a ↦ by rw [norm_algebraMap', one_mul]) hfr)
+    ).encard_setOf_evalAt_eq_zero_le_of_completeSpace hc hfr.map_algebraMap
 
 variable [CompleteSpace K]
 

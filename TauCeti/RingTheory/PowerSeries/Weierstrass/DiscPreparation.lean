@@ -223,8 +223,7 @@ theorem map {L : Type*} [NormedField L] (h : IsDiscPreparation r d f P U) (φ : 
   isDistinguished := h.isDistinguished.map φ hφ
   natDegree_eq := (Polynomial.natDegree_map_eq_of_injective φ.injective P).trans h.natDegree_eq
   coeff_zero_eq_one := by rw [Polynomial.coeff_map, h.coeff_zero_eq_one, map_one]
-  isRestricted := MvPowerSeries.isRestricted_map _ φ (C := 1) (fun a ↦ by rw [hφ, one_mul])
-    h.isRestricted
+  isRestricted := h.isRestricted.map φ (C := 1) fun a ↦ by rw [hφ, one_mul]
   constantCoeff_eq_one := by
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
       h.constantCoeff_eq_one, map_one]
@@ -371,7 +370,7 @@ theorem exists_isDiscPreparation_iff [CompleteSpace K] (hr : 0 < r) :
   refine ⟨fun ⟨P, U, h⟩ ↦ ⟨h.isDistinguished, ?_, ?_⟩, fun ⟨hf, hfr, hf0⟩ ↦
     hf.exists_isDiscPreparation hr hfr hf0⟩
   · rw [h.eq_mul]
-    exact (isRestricted_polynomial P).mul h.isRestricted
+    exact h.isRestricted.polynomial_mul P
   · rw [h.eq_mul, map_mul, Polynomial.constantCoeff_coe, h.coeff_zero_eq_one,
       h.constantCoeff_eq_one, one_mul]
 

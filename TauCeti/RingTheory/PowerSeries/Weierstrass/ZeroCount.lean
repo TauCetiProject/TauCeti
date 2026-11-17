@@ -311,6 +311,14 @@ theorem zeroMultiset_eq_filter_roots_map_of_isUnit_mul (he : IsUnit e) (hP : P �
   rw [Multiset.count_filter_of_pos (p := (‖·‖ ≤ r)) hx,
     order_taylor_map_eq_rootMultiplicity he hP hf hx, Polynomial.count_roots]
 
+/-- Auxiliary form of `zeroMultiset_eq_filter_roots_map_of_isUnit_mul` taking `f ≠ 0` instead of
+`P ≠ 0`. -/
+private theorem zeroMultiset_eq_filter_roots_map_of_ne_zero (he : IsUnit e) (hf0 : f ≠ 0)
+    (hf : (e : PowerSeries K) * P = f) :
+    f.zeroMultiset r L = (P.map (algebraMap K L)).roots.filter (‖·‖ ≤ r) :=
+  zeroMultiset_eq_filter_roots_map_of_isUnit_mul he
+    (Polynomial.coe_eq_zero_iff.not.mp (right_ne_zero_of_mul (hf.symm ▸ hf0))) hf
+
 /-- **The zero multiset is the root multiset.** Let `f = e * P` over an ultrametric normed field,
 with `e` a unit of the ring of series restricted at `r > 0` and `P` a polynomial of degree at most
 the distinguished degree `d` of `f` at `r`. In any complete normed field extension `L`, the zero
@@ -319,11 +327,8 @@ theorem IsDistinguished.zeroMultiset_eq_roots_map_of_isUnit_mul (hd : IsDistingu
     (hr : 0 < r) (he : IsUnit e) (hPdeg : P.natDegree ≤ d) (hf : (e : PowerSeries K) * P = f) :
     f.zeroMultiset r L = (P.map (algebraMap K L)).roots := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  have hP0 : P ≠ 0 := by
-    rintro rfl
-    exact hd.ne_zero (by simpa using hf.symm)
   obtain ⟨e', he', hmap⟩ := map_eq_restrictedMap_mul (L := L) hf
-  rw [zeroMultiset_eq_filter_roots_map_of_isUnit_mul he hP0 hf, Multiset.filter_eq_self]
+  rw [zeroMultiset_eq_filter_roots_map_of_ne_zero he hd.ne_zero hf, Multiset.filter_eq_self]
   exact fun z hz ↦ (hd.map (algebraMap K L) (norm_algebraMap' L)
     ).norm_le_of_mem_roots_of_isUnit_mul hr (he' he)
       (Polynomial.natDegree_map_le.trans hPdeg) hmap.symm hz
@@ -336,10 +341,7 @@ the zeros of `f` in the closed disc of radius `r`, counted with multiplicity, nu
 theorem IsDistinguished.card_zeroMultiset_eq_of_isUnit_mul (hd : IsDistinguished r d f)
     (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f)
     (hs : (P.map (algebraMap K L)).Splits) : (f.zeroMultiset r L).card = d := by
-  have hP0 : P ≠ 0 := by
-    rintro rfl
-    exact hd.ne_zero (by simpa using hf.symm)
-  rw [zeroMultiset_eq_filter_roots_map_of_isUnit_mul he hP0 hf]
+  rw [zeroMultiset_eq_filter_roots_map_of_ne_zero he hd.ne_zero hf]
   exact hd.card_filter_roots_map_norm_le_eq hr he hf hs
 
 /-- **Exactly `l` zeros in the open disc, split case.** Let `f = e * P` over an ultrametric normed
@@ -350,17 +352,8 @@ theorem IsLowestDominant.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul
     (hl : IsLowestDominant r l f) (hr : 0 < r) (he : IsUnit e)
     (hf : (e : PowerSeries K) * P = f) (hs : (P.map (algebraMap K L)).Splits) :
     ((f.zeroMultiset r L).filter (‖·‖ < r)).card = l := by
-  have hP0 : P ≠ 0 := by
-    rintro rfl
-    exact hl.ne_zero (by simpa using hf.symm)
-  have hfilt : ((P.map (algebraMap K L)).roots.filter (‖·‖ ≤ r)).filter (‖·‖ < r) =
-      (P.map (algebraMap K L)).roots.filter (‖·‖ < r) := by
-    rw [Multiset.filter_filter]
-    refine Multiset.filter_congr fun x _ ↦ ?_
-    rcases lt_or_ge ‖x‖ r with hx | hx
-    · simp [hx, hx.le]
-    · simp [hx.not_gt]
-  rw [zeroMultiset_eq_filter_roots_map_of_isUnit_mul he hP0 hf, hfilt]
+  rw [zeroMultiset_eq_filter_roots_map_of_ne_zero he hl.ne_zero hf, Multiset.filter_filter,
+    Multiset.filter_congr fun _ _ ↦ and_iff_left_of_imp le_of_lt]
   exact hl.card_filter_roots_map_norm_lt_eq hr he hf hs
 
 /-- **Exactly `d - l` zeros on the sphere, split case.** Let `f = e * P` over an ultrametric normed
@@ -372,15 +365,8 @@ theorem card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul (hd : IsDistinguished 
     (hl : IsLowestDominant r l f) (hr : 0 < r) (he : IsUnit e)
     (hf : (e : PowerSeries K) * P = f) (hs : (P.map (algebraMap K L)).Splits) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card = d - l := by
-  have hP0 : P ≠ 0 := by
-    rintro rfl
-    exact hd.ne_zero (by simpa using hf.symm)
-  have hfilt : ((P.map (algebraMap K L)).roots.filter (‖·‖ ≤ r)).filter (‖·‖ = r) =
-      (P.map (algebraMap K L)).roots.filter (‖·‖ = r) := by
-    rw [Multiset.filter_filter]
-    refine Multiset.filter_congr fun x _ ↦ ?_
-    by_cases hx : ‖x‖ = r <;> simp [hx]
-  rw [zeroMultiset_eq_filter_roots_map_of_isUnit_mul he hP0 hf, hfilt]
+  rw [zeroMultiset_eq_filter_roots_map_of_ne_zero he hd.ne_zero hf, Multiset.filter_filter,
+    Multiset.filter_congr fun _ _ ↦ and_iff_left_of_imp le_of_eq]
   exact card_filter_roots_map_norm_eq_eq hd hl hr he hf hs
 
 /-- **Perturbation invariance of the closed-disc zero count, split case.** Suppose `f = e * P` and
@@ -395,16 +381,10 @@ theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt_of_isUnit_mul
     (he' : IsUnit e') (hg : (e' : PowerSeries K) * Q = g) (hQs : (Q.map (algebraMap K L)).Splits)
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
-  have hfr : f.IsRestricted r := by
-    rw [← hf]
-    exact (PowerSeries.IsRestricted.subring r).mul_mem e.2 (isRestricted_polynomial P)
-  have hgr : g.IsRestricted r := by
-    rw [← hg]
-    exact (PowerSeries.IsRestricted.subring r).mul_mem e'.2 (isRestricted_polynomial Q)
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr (ne_zero_of_gaussNorm_sub_lt hfg)
-  have hdg := (isDistinguished_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hd
+  obtain ⟨_, _, hd, hdg, _, _⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (hf ▸ PowerSeries.IsRestricted.mul_polynomial e.2 P)
+      (hasGaussNorm_of_isRestricted (hg ▸ PowerSeries.IsRestricted.mul_polynomial e'.2 Q)) hfg
   rw [hd.card_zeroMultiset_eq_of_isUnit_mul hr he hf hs,
     hdg.card_zeroMultiset_eq_of_isUnit_mul hr he' hg hQs]
 
@@ -419,16 +399,10 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt_of_isUnit_mul
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ < r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
-  have hfr : f.IsRestricted r := by
-    rw [← hf]
-    exact (PowerSeries.IsRestricted.subring r).mul_mem e.2 (isRestricted_polynomial P)
-  have hgr : g.IsRestricted r := by
-    rw [← hg]
-    exact (PowerSeries.IsRestricted.subring r).mul_mem e'.2 (isRestricted_polynomial Q)
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr (ne_zero_of_gaussNorm_sub_lt hfg)
-  have hlg := (isLowestDominant_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hl
+  obtain ⟨_, _, _, _, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (hf ▸ PowerSeries.IsRestricted.mul_polynomial e.2 P)
+      (hasGaussNorm_of_isRestricted (hg ▸ PowerSeries.IsRestricted.mul_polynomial e'.2 Q)) hfg
   rw [hl.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul hr he hf hs,
     hlg.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul hr he' hg hQs]
 
@@ -443,29 +417,29 @@ theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt_of_isUnit_mul
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
-  have hfr : f.IsRestricted r := by
-    rw [← hf]
-    exact (PowerSeries.IsRestricted.subring r).mul_mem e.2 (isRestricted_polynomial P)
-  have hgr : g.IsRestricted r := by
-    rw [← hg]
-    exact (PowerSeries.IsRestricted.subring r).mul_mem e'.2 (isRestricted_polynomial Q)
-  have hf0 := ne_zero_of_gaussNorm_sub_lt hfg
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hf0
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr hf0
-  have hdg := (isDistinguished_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hd
-  have hlg := (isLowestDominant_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hl
+  obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (hf ▸ PowerSeries.IsRestricted.mul_polynomial e.2 P)
+      (hasGaussNorm_of_isRestricted (hg ▸ PowerSeries.IsRestricted.mul_polynomial e'.2 Q)) hfg
   rw [card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hd hl hr he hf hs,
     card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hdg hlg hr he' hg hQs]
 
-omit [IsUltrametricDist K] [CompleteSpace L] in
-private theorem isRestricted_map_algebraMap (hfr : f.IsRestricted r) :
-    (_root_.PowerSeries.map (algebraMap K L) f).IsRestricted r :=
-  _root_.MvPowerSeries.isRestricted_map _ (algebraMap K L) (C := 1)
-    (fun a ↦ by rw [norm_algebraMap', one_mul]) hfr
+omit [IsUltrametricDist K] in
+/-- Prepare `map (algebraMap K L) f` over the complete ultrametric extension `L` and identify
+`f.zeroMultiset r L` with the roots of the resulting monic Weierstrass polynomial. -/
+private theorem IsDistinguished.exists_isUnit_isMonicOfDegree_map [IsUltrametricDist L]
+    (hd : IsDistinguished r d f) (hr : 0 < r) (hfr : f.IsRestricted r) :
+    ∃ (e : PowerSeries.IsRestricted.subring (R := L) r) (P : Polynomial L),
+      IsUnit e ∧ P.IsMonicOfDegree d ∧
+        (e : PowerSeries L) * P = _root_.PowerSeries.map (algebraMap K L) f ∧
+        f.zeroMultiset r L = P.roots := by
+  have hdL := hd.map (algebraMap K L) (norm_algebraMap' L)
+  obtain ⟨e, P, he, hP, hfL⟩ := hdL.exists_isUnit_isMonicOfDegree_mul_eq
+    (isUnit_iff_ne_zero.mpr hdL.coeff_ne_zero) hr hfr.map_algebraMap
+  have hZ := hdL.zeroMultiset_eq_roots_map_of_isUnit_mul (L := L) hr he hP.natDegree_eq.le hfL
+  rw [_root_.PowerSeries.zeroMultiset_map_algebraMap, Algebra.algebraMap_self,
+    Polynomial.map_id] at hZ
+  exact ⟨e, P, he, hP, hfL, hZ⟩
 
 end TauCeti.PowerSeries
 
@@ -485,17 +459,10 @@ theorem order_taylor_eq_count_zeroMultiset [DecidableEq L]
     (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
       (f.zeroMultiset r L).count x := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hf0
-  have hdL := hd.map (algebraMap K L) (norm_algebraMap' L)
-  obtain ⟨e, P, he, hP, hfL⟩ := hdL.exists_isUnit_isMonicOfDegree_mul_eq
-    (isUnit_iff_ne_zero.mpr hdL.coeff_ne_zero) hr (isRestricted_map_algebraMap hfr)
-  have hZ := hdL.zeroMultiset_eq_roots_map_of_isUnit_mul (L := L) hr he hP.natDegree_eq.le hfL
-  have hPid : P.map (algebraMap L L) = P := by ext n; simp
-  rw [_root_.PowerSeries.zeroMultiset_map_algebraMap, hPid] at hZ
-  have hP0 : P ≠ 0 := by
-    rintro rfl
-    exact hdL.ne_zero (by simpa using hfL.symm)
-  rw [hZ, Polynomial.count_roots, ← hfL, order_taylor_mul_eq_rootMultiplicity he hP0 hx]
+  obtain ⟨_, hd⟩ := exists_isDistinguished hr hfr hf0
+  obtain ⟨_, P, he, hP, hfL, hZ⟩ := hd.exists_isUnit_isMonicOfDegree_map (L := L) hr hfr
+  rw [hZ, Polynomial.count_roots, ← hfL,
+    order_taylor_mul_eq_rootMultiplicity he hP.monic.ne_zero hx]
 
 /-- **Members of the zero multiset.** Let `f` be a nonzero power series over an ultrametric normed
 field `K`, restricted at `r > 0`. In any complete normed field extension `L`, the points of the
@@ -721,10 +688,12 @@ theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt {g V : PowerSeries K} {dg : ℕ
     (hr : 0 < r) (hs : (P.map (algebraMap K L)).Splits) (hQs : (Q.map (algebraMap K L)).Splits)
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
-  have hd' := (isDistinguished_iff_of_gaussNorm_sub_lt hr.le hfP.isDistinguished.hasGaussNorm
-    hgQ.isDistinguished.hasGaussNorm hfg).mp hfP.isDistinguished
+  obtain ⟨_, _, hd, hdg, _, _⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (hfP.eq_mul ▸ hfP.isRestricted.polynomial_mul P)
+      hgQ.isDistinguished.hasGaussNorm hfg
   rw [hfP.card_zeroMultiset_eq_of_splits hr hs, hgQ.card_zeroMultiset_eq_of_splits hr hQs,
-    hd'.unique hgQ.isDistinguished]
+    hfP.isDistinguished.unique hd, hdg.unique hgQ.isDistinguished]
 
 /-- **Perturbation invariance of open-disc zero counts for split disc polynomials.** Under the
 hypotheses of `TauCeti.PowerSeries.IsDiscPreparation.card_zeroMultiset_eq_of_gaussNorm_sub_lt`, `f`
@@ -735,10 +704,10 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt {g V : PowerSeri
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ < r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
-  have hfr : f.IsRestricted r := hfP.eq_mul ▸ (isRestricted_polynomial P).mul hfP.isRestricted
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr hfP.isDistinguished.ne_zero
-  have hlg := (isLowestDominant_iff_of_gaussNorm_sub_lt hr.le hfP.isDistinguished.hasGaussNorm
-    hgQ.isDistinguished.hasGaussNorm hfg).mp hl
+  obtain ⟨_, _, _, _, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (hfP.eq_mul ▸ hfP.isRestricted.polynomial_mul P)
+      hgQ.isDistinguished.hasGaussNorm hfg
   rw [hfP.card_filter_zeroMultiset_norm_lt_eq_of_splits hl hr hs,
     hgQ.card_filter_zeroMultiset_norm_lt_eq_of_splits hlg hr hQs]
 
@@ -751,14 +720,13 @@ theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt {g V : PowerSeri
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
-  have hfr : f.IsRestricted r := hfP.eq_mul ▸ (isRestricted_polynomial P).mul hfP.isRestricted
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr hfP.isDistinguished.ne_zero
-  have hd' := (isDistinguished_iff_of_gaussNorm_sub_lt hr.le hfP.isDistinguished.hasGaussNorm
-    hgQ.isDistinguished.hasGaussNorm hfg).mp hfP.isDistinguished
-  have hlg := (isLowestDominant_iff_of_gaussNorm_sub_lt hr.le hfP.isDistinguished.hasGaussNorm
-    hgQ.isDistinguished.hasGaussNorm hfg).mp hl
+  obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le
+      (hfP.eq_mul ▸ hfP.isRestricted.polynomial_mul P)
+      hgQ.isDistinguished.hasGaussNorm hfg
   rw [hfP.card_filter_zeroMultiset_norm_eq_eq_of_splits hl hr hs,
-    hgQ.card_filter_zeroMultiset_norm_eq_eq_of_splits hlg hr hQs, hd'.unique hgQ.isDistinguished]
+    hgQ.card_filter_zeroMultiset_norm_eq_eq_of_splits hlg hr hQs,
+    hfP.isDistinguished.unique hd, hdg.unique hgQ.isDistinguished]
 
 /-- **The disc polynomial is the product over the zeros.** If `f = P * U` is the normalised
 preparation of `f` on the closed disc of radius `r > 0` over an ultrametric normed field `K`, and
@@ -781,14 +749,8 @@ most `d`. -/
 theorem IsDistinguished.card_zeroMultiset_le (hd : IsDistinguished r d f) (hr : 0 < r)
     (hfr : f.IsRestricted r) : (f.zeroMultiset r L).card ≤ d := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  have hdL := hd.map (algebraMap K L) (norm_algebraMap' L)
-  obtain ⟨e, P, he, hP, hfL⟩ := hdL.exists_isUnit_isMonicOfDegree_mul_eq
-    (isUnit_iff_ne_zero.mpr hdL.coeff_ne_zero) hr (isRestricted_map_algebraMap hfr)
-  have hZ := hdL.zeroMultiset_eq_roots_map_of_isUnit_mul (L := L) hr he hP.natDegree_eq.le hfL
-  rw [_root_.PowerSeries.zeroMultiset_map_algebraMap] at hZ
-  rw [hZ]
-  exact (Polynomial.card_roots' _).trans
-    (Polynomial.natDegree_map_le.trans hP.natDegree_eq.le)
+  obtain ⟨_, P, _, hP, _, hZ⟩ := hd.exists_isUnit_isMonicOfDegree_map (L := L) hr hfr
+  exact hZ ▸ (Polynomial.card_roots' P).trans hP.natDegree_eq.le
 
 /-- **At most `l` zeros in the open disc.** Let `f` be a power series over an ultrametric normed
 field, restricted at `r > 0` with lowest dominant degree `l` there. In any complete normed field
@@ -797,15 +759,11 @@ most `l`. -/
 theorem IsLowestDominant.card_filter_zeroMultiset_norm_lt_le (hl : IsLowestDominant r l f)
     (hr : 0 < r) (hfr : f.IsRestricted r) : ((f.zeroMultiset r L).filter (‖·‖ < r)).card ≤ l := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hl.ne_zero
-  have hdL := hd.map (algebraMap K L) (norm_algebraMap' L)
+  obtain ⟨_, hd⟩ := exists_isDistinguished hr hfr hl.ne_zero
+  obtain ⟨_, _, he, _, hfL, hZ⟩ := hd.exists_isUnit_isMonicOfDegree_map (L := L) hr hfr
   have hlL := hl.map (algebraMap K L) (norm_algebraMap' L)
-  obtain ⟨e, P, he, hP, hfL⟩ := hdL.exists_isUnit_isMonicOfDegree_mul_eq
-    (isUnit_iff_ne_zero.mpr hdL.coeff_ne_zero) hr (isRestricted_map_algebraMap hfr)
-  have hZ := hdL.zeroMultiset_eq_roots_map_of_isUnit_mul (L := L) hr he hP.natDegree_eq.le hfL
-  rw [_root_.PowerSeries.zeroMultiset_map_algebraMap] at hZ
-  rw [hZ]
-  exact hlL.card_filter_roots_map_norm_lt_le (L := L) hr he hfL
+  rw [← hfL] at hlL
+  exact hZ ▸ (hlL.of_isUnit_mul hr he).card_filter_roots_norm_lt_le
 
 section AlgClosedExt
 
@@ -818,10 +776,8 @@ multiplicity, number exactly `d`. -/
 theorem IsDistinguished.card_zeroMultiset_eq (hd : IsDistinguished r d f) (hr : 0 < r)
     (hfr : f.IsRestricted r) : (f.zeroMultiset r L).card = d := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  have hdL := hd.map (algebraMap K L) (norm_algebraMap' L)
-  obtain ⟨e, P, he, _, hfL⟩ := hdL.exists_isUnit_isMonicOfDegree_mul_eq
-    (isUnit_iff_ne_zero.mpr hdL.coeff_ne_zero) hr (isRestricted_map_algebraMap hfr)
-  simpa using hdL.card_zeroMultiset_eq_of_isUnit_mul (L := L) hr he hfL (IsAlgClosed.splits _)
+  obtain ⟨_, P, _, hP, _, hZ⟩ := hd.exists_isUnit_isMonicOfDegree_map (L := L) hr hfr
+  rw [hZ, Polynomial.splits_iff_card_roots.mp (IsAlgClosed.splits P), hP.natDegree_eq]
 
 /-- **Exactly `l` zeros in the open disc.** Let `f` be a power series over an ultrametric normed
 field, restricted at `r > 0` with lowest dominant degree `l` there. In any algebraically closed
@@ -830,13 +786,11 @@ multiplicity, number exactly `l`. -/
 theorem IsLowestDominant.card_filter_zeroMultiset_norm_lt_eq (hl : IsLowestDominant r l f)
     (hr : 0 < r) (hfr : f.IsRestricted r) : ((f.zeroMultiset r L).filter (‖·‖ < r)).card = l := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hl.ne_zero
-  have hdL := hd.map (algebraMap K L) (norm_algebraMap' L)
+  obtain ⟨_, hd⟩ := exists_isDistinguished hr hfr hl.ne_zero
+  obtain ⟨_, P, he, _, hfL, hZ⟩ := hd.exists_isUnit_isMonicOfDegree_map (L := L) hr hfr
   have hlL := hl.map (algebraMap K L) (norm_algebraMap' L)
-  obtain ⟨e, P, he, _, hfL⟩ := hdL.exists_isUnit_isMonicOfDegree_mul_eq
-    (isUnit_iff_ne_zero.mpr hdL.coeff_ne_zero) hr (isRestricted_map_algebraMap hfr)
-  simpa using hlL.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul (L := L) hr he hfL
-    (IsAlgClosed.splits _)
+  rw [← hfL] at hlL
+  exact hZ ▸ (hlL.of_isUnit_mul hr he).card_filter_roots_norm_lt_eq hr (IsAlgClosed.splits P)
 
 /-- **Exactly `d - l` zeros on the sphere.** Let `f` be a power series over an ultrametric normed
 field, restricted at `r > 0`, distinguished of degree `d` and with lowest dominant degree `l`
@@ -846,12 +800,12 @@ theorem card_filter_zeroMultiset_norm_eq_eq (hd : IsDistinguished r d f)
     (hl : IsLowestDominant r l f) (hr : 0 < r) (hfr : f.IsRestricted r) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card = d - l := by
   have : IsUltrametricDist L := .of_normedAlgebra K
+  obtain ⟨_, P, he, _, hfL, hZ⟩ := hd.exists_isUnit_isMonicOfDegree_map (L := L) hr hfr
   have hdL := hd.map (algebraMap K L) (norm_algebraMap' L)
   have hlL := hl.map (algebraMap K L) (norm_algebraMap' L)
-  obtain ⟨e, P, he, _, hfL⟩ := hdL.exists_isUnit_isMonicOfDegree_mul_eq
-    (isUnit_iff_ne_zero.mpr hdL.coeff_ne_zero) hr (isRestricted_map_algebraMap hfr)
-  simpa using card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul (L := L) hdL hlL hr he hfL
-    (IsAlgClosed.splits _)
+  rw [← hfL] at hdL hlL
+  exact hZ ▸ card_filter_roots_norm_eq_eq (hdL.of_isUnit_mul hr he) (hlL.of_isUnit_mul hr he) hr
+    (IsAlgClosed.splits P)
 
 /-- **Nonarchimedean Rouché theorem on the closed disc.** Let `f` and `g` be power series over an
 ultrametric normed field, restricted at `r > 0`, with `‖f - g‖_r < ‖f‖_r`. In any algebraically
@@ -861,10 +815,9 @@ theorem card_zeroMultiset_eq_of_gaussNorm_sub_lt {g : PowerSeries K} (hr : 0 < r
     (hfr : f.IsRestricted r) (hgr : g.IsRestricted r)
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     (f.zeroMultiset r L).card = (g.zeroMultiset r L).card := by
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr (ne_zero_of_gaussNorm_sub_lt hfg)
-  have hdg := (isDistinguished_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hd
+  obtain ⟨_, _, hd, hdg, _, _⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le hfr
+      (hasGaussNorm_of_isRestricted hgr) hfg
   rw [hd.card_zeroMultiset_eq hr hfr, hdg.card_zeroMultiset_eq hr hgr]
 
 /-- **Nonarchimedean Rouché theorem on the open disc.** Let `f` and `g` be power series over an
@@ -876,10 +829,9 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_gaussNorm_sub_lt {g : PowerSeries
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ < r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ < r)).card := by
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr (ne_zero_of_gaussNorm_sub_lt hfg)
-  have hlg := (isLowestDominant_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hl
+  obtain ⟨_, _, _, _, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le hfr
+      (hasGaussNorm_of_isRestricted hgr) hfg
   rw [hl.card_filter_zeroMultiset_norm_lt_eq hr hfr, hlg.card_filter_zeroMultiset_norm_lt_eq hr hgr]
 
 /-- **Nonarchimedean Rouché theorem on the sphere.** Let `f` and `g` be power series over an
@@ -891,15 +843,9 @@ theorem card_filter_zeroMultiset_norm_eq_eq_of_gaussNorm_sub_lt {g : PowerSeries
     (hfg : (f - g).gaussNorm norm r < f.gaussNorm norm r) :
     ((f.zeroMultiset r L).filter (‖·‖ = r)).card =
       ((g.zeroMultiset r L).filter (‖·‖ = r)).card := by
-  have hf0 := ne_zero_of_gaussNorm_sub_lt hfg
-  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hf0
-  obtain ⟨l, hl⟩ := exists_isLowestDominant hr hfr hf0
-  have hdg := (isDistinguished_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hd
-  have hlg := (isLowestDominant_iff_of_gaussNorm_sub_lt (R := K) hr.le
-    (hasGaussNorm_of_isRestricted (R := K) hfr) (hasGaussNorm_of_isRestricted (R := K) hgr)
-    hfg).mp hl
+  obtain ⟨_, _, hd, hdg, hl, hlg⟩ :=
+    exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt hr.le hfr
+      (hasGaussNorm_of_isRestricted hgr) hfg
   rw [card_filter_zeroMultiset_norm_eq_eq hd hl hr hfr,
     card_filter_zeroMultiset_norm_eq_eq hdg hlg hr hgr]
 

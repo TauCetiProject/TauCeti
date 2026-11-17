@@ -32,7 +32,7 @@ section SeminormedRing
 variable {R : Type*} [SeminormedRing R]
 
 /-- The Gauss norm of a difference is symmetric in its arguments. -/
-theorem gaussNorm_sub_comm (f g : PowerSeries R) (c : ℝ) :
+theorem _root_.PowerSeries.gaussNorm_sub_comm (f g : PowerSeries R) (c : ℝ) :
     (f - g).gaussNorm norm c = (g - f).gaussNorm norm c := by
   simp only [gaussNorm_eq, map_sub, norm_sub_rev]
 
@@ -150,5 +150,39 @@ theorem isLowestDominant_iff_of_gaussNorm_sub_lt (hc : 0 ≤ c)
     refine ⟨hnorm.symm ▸ hs.gaussNorm_pos, (heq s).mpr hs.norm_coeff_mul_pow_eq, fun m hm ↦ ?_⟩
     exact lt_of_le_of_ne (PowerSeries.le_gaussNorm norm c f hf m) fun hfm ↦
       (hs.norm_coeff_mul_pow_lt m hm).ne ((heq m).mp hfm)
+
+section NormedRing
+
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {c : ℝ} {f g : PowerSeries R}
+
+/-- If `f` is restricted at `c ≥ 0`, `g` has bounded weighted coefficients at `c`, and
+`‖f - g‖_c < ‖f‖_c`, then `f` and `g` share a common distinguished degree and a common lowest
+dominant degree at `c`. -/
+theorem exists_isDistinguished_and_isLowestDominant_of_gaussNorm_sub_lt (hc : 0 ≤ c)
+    (hf : f.IsRestricted c) (hg : g.HasGaussNorm norm c)
+    (h : (f - g).gaussNorm norm c < f.gaussNorm norm c) :
+    ∃ d l, IsDistinguished c d f ∧ IsDistinguished c d g ∧
+      IsLowestDominant c l f ∧ IsLowestDominant c l g := by
+  have hfh : f.HasGaussNorm norm c := hasGaussNorm_of_isRestricted hf
+  have ⟨d, l, hd, hl⟩ : ∃ d l, IsDistinguished c d f ∧ IsLowestDominant c l f := by
+    rcases hc.eq_or_lt with rfl | hcpos
+    · have hpos : 0 < f.gaussNorm norm 0 :=
+        (PowerSeries.gaussNorm_nonneg norm 0 (f - g) norm_nonneg).trans_lt h
+      have h0 : f.gaussNorm norm 0 = ‖f.coeff 0‖ * (0 : ℝ) ^ 0 :=
+        gaussNorm_eq_of_forall_le (s := 0) fun n ↦ by
+          rcases eq_or_ne n 0 with rfl | hn
+          · exact le_rfl
+          · simp [zero_pow hn]
+      have hd : IsDistinguished 0 0 f :=
+        ⟨h0.symm, fun m hm ↦ by simpa [zero_pow hm.ne'] using hpos⟩
+      exact ⟨0, 0, hd, hd.isLowestDominant_zero⟩
+    · have hf0 := ne_zero_of_gaussNorm_sub_lt h
+      obtain ⟨d, hd⟩ := exists_isDistinguished hcpos hf hf0
+      obtain ⟨l, hl⟩ := exists_isLowestDominant hcpos hf hf0
+      exact ⟨d, l, hd, hl⟩
+  exact ⟨d, l, hd, (isDistinguished_iff_of_gaussNorm_sub_lt hc hfh hg h).mp hd,
+    hl, (isLowestDominant_iff_of_gaussNorm_sub_lt hc hfh hg h).mp hl⟩
+
+end NormedRing
 
 end TauCeti.PowerSeries

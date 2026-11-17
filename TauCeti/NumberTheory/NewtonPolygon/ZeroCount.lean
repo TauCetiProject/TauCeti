@@ -249,11 +249,9 @@ theorem card_zeroMultiset_eq_of_isFiniteFace_of_isUnit_mul {σ : ℝ} {l u : ℕ
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u)
     (he : IsUnit e) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
     (hs : (P.map (algebraMap K L)).Splits) :
-    (f.zeroMultiset (b ^ σ) L).card = u := by
-  have hfr : f.IsRestricted (b ^ σ) :=
-    hf ▸ (IsRestricted.subring (R := K) (b ^ σ)).mul_mem e.2
-      (TauCeti.PowerSeries.isRestricted_polynomial P)
-  exact (isDistinguished_of_isFiniteFace v hb hv hfr hface).card_zeroMultiset_eq_of_isUnit_mul
+    (f.zeroMultiset (b ^ σ) L).card = u :=
+  (isDistinguished_of_isFiniteFace v hb hv (hf ▸ IsRestricted.mul_polynomial e.2 P)
+    hface).card_zeroMultiset_eq_of_isUnit_mul
     (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hf hs
 
 /-- **Open-disc zero count at a finite face, split case.** Under the hypotheses of
@@ -265,11 +263,9 @@ theorem card_filter_zeroMultiset_norm_lt_eq_of_isFiniteFace_of_isUnit_mul {σ : 
     (he : IsUnit e) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
     (hs : (P.map (algebraMap K L)).Splits) :
     ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ < b ^ σ)).card = l := by
-  have hfr : f.IsRestricted (b ^ σ) :=
-    hf ▸ (IsRestricted.subring (R := K) (b ^ σ)).mul_mem e.2
-      (TauCeti.PowerSeries.isRestricted_polynomial P)
   obtain ⟨hl, _⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
-    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hfr) hface
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K)
+      (hf ▸ IsRestricted.mul_polynomial e.2 P)) hface
   exact hl.card_filter_zeroMultiset_norm_lt_eq_of_isUnit_mul
     (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hf hs
 
@@ -282,11 +278,9 @@ theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq_of_isUnit_mu
     (he : IsUnit e) (hf : (e : K⟦X⟧) * (P : K⟦X⟧) = f)
     (hs : (P.map (algebraMap K L)).Splits) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
-  have hfr : f.IsRestricted (b ^ σ) :=
-    hf ▸ (IsRestricted.subring (R := K) (b ^ σ)).mul_mem e.2
-      (TauCeti.PowerSeries.isRestricted_polynomial P)
   obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
-    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K) hfr) hface
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (R := K)
+      (hf ▸ IsRestricted.mul_polynomial e.2 P)) hface
   rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface,
     TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq_of_isUnit_mul hu hl
       (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) he hf hs]
