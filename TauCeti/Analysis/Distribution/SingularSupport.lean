@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Distribution.Support
-import TauCeti.MeasureTheory.Function.LocalRepresentative
+import TauCeti.Analysis.Calculus.ContDiff.Gluing
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
