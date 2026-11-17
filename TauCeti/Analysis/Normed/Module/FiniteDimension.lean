@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.LocallyConvex.Polar
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
@@ -18,7 +19,8 @@ space is continuous, so the continuous dual `E →L[𝕜] 𝕜` coincides with t
 `Module.Dual 𝕜 E`. Mathlib records that coincidence as the linear equivalence
 `LinearMap.toContinuousLinearMap`; this file reads off two consequences of it that dimension
 counts need: the continuous dual has the same dimension as the space, and every continuous
-functional on a space injecting into it extends to it.
+functional on a space injecting into it extends to it. Hence the annihilator of a subspace in the
+continuous dual has the complementary dimension.
 
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
@@ -42,6 +44,8 @@ vectors span those subspaces.
   dimension as the space.
 * `ContinuousLinearMap.surjective_compL_flip_of_injective`: precomposition with an injective map
   into a finite-dimensional space is surjective on continuous duals.
+* `StrongDual.finrank_add_finrank_polarSubmodule`: a subspace and its annihilator in the continuous
+  dual have complementary dimensions.
 * `TauCeti.finiteDimensional_of_finite_sphere`: a real normed space with a finite unit sphere is
   finite-dimensional.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
@@ -88,6 +92,24 @@ theorem _root_.ContinuousLinearMap.surjective_compL_flip_of_injective {F : Type*
   obtain ⟨g, hg⟩ := LinearMap.dualMap_surjective_of_injective (f := L.toLinearMap) hL
     f.toLinearMap
   exact ⟨LinearMap.toContinuousLinearMap g, ContinuousLinearMap.ext (LinearMap.congr_fun hg)⟩
+
+/-- In finite dimensions a subspace `S` and its annihilator `S°` in the continuous dual have
+complementary dimensions: `dim S + dim S° = dim E`. -/
+theorem _root_.StrongDual.finrank_add_finrank_polarSubmodule (S : Submodule 𝕜 E) :
+    Module.finrank 𝕜 S + Module.finrank 𝕜 (StrongDual.polarSubmodule 𝕜 S) =
+      Module.finrank 𝕜 E := by
+  -- Restriction to `S` is onto the continuous dual of `S`, with kernel `S°`.
+  let res : (E →L[𝕜] 𝕜) →L[𝕜] S →L[𝕜] 𝕜 := (ContinuousLinearMap.compL 𝕜 S E 𝕜).flip S.subtypeL
+  have hrange : LinearMap.range (res : (E →L[𝕜] 𝕜) →ₗ[𝕜] S →L[𝕜] 𝕜) = ⊤ :=
+    LinearMap.range_eq_top.mpr
+      (ContinuousLinearMap.surjective_compL_flip_of_injective S.injective_subtype)
+  have hker : LinearMap.ker (res : (E →L[𝕜] 𝕜) →ₗ[𝕜] S →L[𝕜] 𝕜) =
+      StrongDual.polarSubmodule 𝕜 S := by
+    ext p
+    simp [res, StrongDual.mem_polarSubmodule, ContinuousLinearMap.ext_iff]
+  have hrn := LinearMap.finrank_range_add_finrank_ker (res : (E →L[𝕜] 𝕜) →ₗ[𝕜] S →L[𝕜] 𝕜)
+  rwa [hrange, hker, finrank_top, ContinuousLinearMap.dual_finrank_eq,
+    ContinuousLinearMap.dual_finrank_eq] at hrn
 
 /-- Over a complete field, two complements of the same space `V` in a finite-dimensional space `W`
 are continuously linearly isomorphic: both have dimension `finrank W - finrank V`. -/
