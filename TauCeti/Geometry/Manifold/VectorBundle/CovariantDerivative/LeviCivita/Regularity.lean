@@ -59,8 +59,10 @@ merely to be written down, are carried for the same reason.
   pairing and three `C^(n+1)` vector fields is `C^n`, without symmetry or nondegeneracy.
 * `TauCeti.Manifold.contMDiffOn_koszul`: the Koszul expression of three `C^(n+1)` sections is
   `C^n`.
-* `CovariantDerivative.contMDiffOn_leviCivitaConnection`: on an open set, the Levi-Civita connection
-  carries a `C^(n+1)` section to a `C^n` section of `Hom(TM, TM)`.
+* `CovariantDerivative.contMDiffOn_leviCivitaConnection` and
+  `CovariantDerivative.contMDiffOn_leviCivitaConnection_apply`: on an open set, the Levi-Civita
+  connection carries a `C^(n+1)` section to a `C^n` section of `Hom(TM, TM)`, and evaluating along
+  a `C^n` vector field gives a `C^n` vector field.
 * `CovariantDerivative.contMDiffCovariantDerivativeOn_leviCivitaConnection` and the instance
   `CovariantDerivative.instContMDiffCovariantDerivativeLeviCivitaConnection`: **the Levi-Civita
   connection is of class `C^n`**, and in particular `C^∞` for a `C^∞` metric.
@@ -227,7 +229,7 @@ variable {n m k : ℕ∞ω} [IsManifold I m M]
 /-- The Levi-Civita connection differentiates a `C^(n+1)` vector field along a `C^(n+1)` vector
 field `Z` with one derivative lost, on an open subset `s` of a chart domain. Each direction of the
 connection is the Riesz dual of half the Koszul functional. -/
-private theorem contMDiffOn_leviCivitaConnection_apply [IsManifold I (n + 1) M]
+private theorem contMDiffOn_leviCivitaConnection_apply_of_subset_source [IsManifold I (n + 1) M]
     [IsManifold I (n + 1 + 1) M]
     [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] {s : Set M} {a : M}
     (hs : IsOpen s) (hsub : s ⊆ (chartAt H a).source) (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
@@ -307,7 +309,7 @@ theorem contMDiffOn_leviCivitaConnection {u : Set M} (hu : IsOpen u) (hm : n + 2
   have hdir (j : Fin (finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
       (fun y ↦ TotalSpace.mk' E y
         (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) s :=
-    contMDiffOn_leviCivitaConnection_apply hsopen hsub hm hk hσs (hframe j)
+    contMDiffOn_leviCivitaConnection_apply_of_subset_source hsopen hsub hm hk hσs (hframe j)
   -- Testing the hom-bundle section on the chart-local frame gives smoothness at `x`.
   have hhom := contMDiffOn_hom_of_localFrame (I := I) (n := n) (u := s)
     (e := trivializationAt E (TangentSpace I) x) (e' := trivializationAt E (TangentSpace I) x)
@@ -316,6 +318,16 @@ theorem contMDiffOn_leviCivitaConnection {u : Set M} (hu : IsOpen u) (hm : n + 2
     (A := fun y ↦ leviCivitaConnection I M σ y)
     (fun j ↦ by simpa only [← chartLocalFrame_def] using hdir j)
   exact (hhom.contMDiffAt (hsopen.mem_nhds hxs)).contMDiffWithinAt
+
+/-- On an open set `u`, evaluating the Levi-Civita derivative of a `C^(n+1)` vector field along a
+`C^n` vector field produces a `C^n` vector field. -/
+theorem contMDiffOn_leviCivitaConnection_apply {u : Set M} (hu : IsOpen u) (hm : n + 2 ≤ m)
+    (hk : n + 1 ≤ k) {X σ : Π x : M, TangentSpace I x}
+    (hX : ContMDiffOn I (I.prod 𝓘(ℝ, E)) n (fun y ↦ TotalSpace.mk' E y (X y)) u)
+    (hσ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (σ y)) u) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
+      (fun y ↦ TotalSpace.mk' E y (leviCivitaConnection I M σ y (X y))) u :=
+  (contMDiffOn_leviCivitaConnection hu hm hk hσ).clm_bundle_apply hX
 
 /-- **The Levi-Civita connection is of class `C^n`**, in the set-local form used to read it in a
 local frame. -/

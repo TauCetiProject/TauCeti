@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
@@ -21,8 +22,10 @@ complement, for the given Riemannian metric.
 The adjoint of the differential is the canonical isometric horizontal lift. Its composite with
 the differential is exactly the native orthogonal projection onto the horizontal space; the
 complementary projection is the vertical one. Thus the differential decreases norms, with
-equality exactly on horizontal vectors. The gradient of a pulled-back function is the horizontal
-lift of its gradient. Product projections give submersions with arbitrary-dimensional fibres.
+equality exactly on horizontal vectors, and horizontal lifting and the differential on horizontal
+families preserve Gram matrices, linear independence, and orthonormality. The gradient of a
+pulled-back function is the horizontal lift of its gradient. Product projections give submersions
+with arbitrary-dimensional fibres.
 
 These are pointwise splitting and metric identities. They do not assert regularity of the
 horizontal distribution or construct horizontal lifts of curves.
@@ -167,6 +170,41 @@ theorem norm_mfderiv_eq_iff (x : M) (v : TangentSpace I x) :
     ‖mfderiv I J f x v‖ = ‖v‖ ↔ v ∈ (mfderiv I J f x).kerᗮ := by
   rw [← (h.horizontalLift x).norm_map, h.horizontalLift_mfderiv]
   exact (Submodule.mem_iff_norm_starProjection _ v).symm
+
+/-- Horizontal lifting preserves the Gram matrix of any family of base tangent vectors. -/
+@[simp]
+theorem gram_horizontalLift (x : M) {ι : Type*} (u : ι → TangentSpace J (f x)) :
+    Matrix.gram ℝ (fun i ↦ h.horizontalLift x (u i)) = Matrix.gram ℝ u := by
+  ext i j
+  exact (h.horizontalLift x).inner_map_map (u i) (u j)
+
+/-- On a family of horizontal vectors, `mfderiv` preserves the Gram matrix. -/
+theorem gram_mfderiv_of_mem {x : M} {ι : Type*} {u : ι → TangentSpace I x}
+    (hu : ∀ i, u i ∈ (mfderiv I J f x).kerᗮ) :
+    Matrix.gram ℝ (fun i ↦ mfderiv I J f x (u i)) = Matrix.gram ℝ u := by
+  rw [← h.gram_horizontalLift x]
+  congr 1
+  ext i
+  exact h.horizontalLift_mfderiv_of_mem x (hu i)
+
+/-- A family of horizontal vectors at `x` is linearly independent if and only if its projection in
+`TangentSpace J (f x)` is linearly independent. -/
+theorem linearIndependent_mfderiv_iff_of_mem {x : M} {ι : Type*} {u : ι → TangentSpace I x}
+    (hu : ∀ i, u i ∈ (mfderiv I J f x).kerᗮ) :
+    LinearIndependent ℝ (fun i ↦ mfderiv I J f x (u i)) ↔ LinearIndependent ℝ u := by
+  rw [← Matrix.posDef_gram_iff_linearIndependent (𝕜 := ℝ),
+    ← Matrix.posDef_gram_iff_linearIndependent (𝕜 := ℝ),
+    h.gram_mfderiv_of_mem hu]
+
+/-- A family of horizontal vectors at `x` is orthonormal if and only if its projection in
+`TangentSpace J (f x)` is orthonormal. -/
+theorem orthonormal_mfderiv_iff_of_mem {x : M} {ι : Type*} {u : ι → TangentSpace I x}
+    (hu : ∀ i, u i ∈ (mfderiv I J f x).kerᗮ) :
+    Orthonormal ℝ (fun i ↦ mfderiv I J f x (u i)) ↔ Orthonormal ℝ u := by
+  classical
+  rw [← Matrix.gram_eq_one_iff_orthonormal (𝕜 := ℝ),
+    ← Matrix.gram_eq_one_iff_orthonormal (𝕜 := ℝ),
+    h.gram_mfderiv_of_mem hu]
 
 variable [IsManifold I 1 M] [IsManifold J 1 N]
 
