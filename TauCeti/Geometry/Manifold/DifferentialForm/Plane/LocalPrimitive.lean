@@ -13,9 +13,8 @@ public import TauCeti.Geometry.Manifold.DeRham.Period
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousPath
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Plane.XDy
-public import TauCeti.Topology.Circle.Loop
+public import TauCeti.Topology.Circle.Degree
 import Mathlib.Analysis.InnerProductSpace.NormPow
-import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
@@ -359,26 +358,16 @@ theorem mpullback_circleToPuncturedPlane_puncturedPlaneAngularFormRestricted :
     puncturedPlaneAngularCovector_apply_re_im, Circle.re_sq_add_im_sq z, div_one,
     planeAngularForm_apply]
 
-/-- The standard counterclockwise loop around the unit circle, `t ↦ exp (2πit)`. -/
-def circleUnitLoop : Path (1 : Circle) 1 :=
-  (ContinuousMap.id Circle).toBasedLoop
-
-@[simp]
-theorem circleUnitLoop_apply (t : unitInterval) :
-    circleUnitLoop t = Circle.exp (2 * Real.pi * t) :=
-  (ContinuousMap.toBasedLoop_apply (ContinuousMap.id Circle) t).trans (by
-    rw [ContinuousMap.id_apply, unitToCircle_apply])
-
 /-- The standard counterclockwise unit circle loop inside the punctured plane `ℂ \ {0}`. -/
 def puncturedPlaneUnitLoop : Path puncturedPlaneOne puncturedPlaneOne :=
-  circleUnitLoop.map contMDiff_circleToPuncturedPlane.continuous
+  Circle.expLoop.map contMDiff_circleToPuncturedPlane.continuous
 
 @[simp]
 theorem puncturedPlaneUnitLoop_apply (t : unitInterval) :
     (puncturedPlaneUnitLoop t : ℂ) = Circle.exp (2 * Real.pi * t) := by
-  have hmap : puncturedPlaneUnitLoop t = circleToPuncturedPlane (circleUnitLoop t) :=
-    congrFun (circleUnitLoop.map_coe contMDiff_circleToPuncturedPlane.continuous) t
-  rw [hmap, circleToPuncturedPlane, circleUnitLoop_apply]
+  have hmap : puncturedPlaneUnitLoop t = circleToPuncturedPlane (Circle.expLoop t) :=
+    congrFun (Circle.expLoop.map_coe contMDiff_circleToPuncturedPlane.continuous) t
+  rw [hmap, circleToPuncturedPlane, Circle.expLoop_apply]
 
 /-- The angular form `circleAngularForm` has local primitives on `Circle`. -/
 theorem forall_exists_isPrimitiveOn_circleAngularForm (z : Circle) :
@@ -389,9 +378,9 @@ theorem forall_exists_isPrimitiveOn_circleAngularForm (z : Circle) :
   rw [← mpullback_circleToPuncturedPlane_puncturedPlaneAngularFormRestricted]
   exact hgU.mpullback (contMDiff_circleToPuncturedPlane.mdifferentiable (by simp))
 
-/-- The continuous path integral of `circleAngularForm` around the unit circle loop is `2π`. -/
-theorem continuousPathIntegral_circleAngularForm_circleUnitLoop :
-    continuousPathIntegral circleAngularForm circleUnitLoop = 2 * Real.pi := by
+/-- The continuous path integral of `circleAngularForm` around `Circle.expLoop` is `2π`. -/
+theorem continuousPathIntegral_circleAngularForm_expLoop :
+    continuousPathIntegral circleAngularForm Circle.expLoop = 2 * Real.pi := by
   let c : ℝ → Circle := fun t ↦ Circle.exp (2 * Real.pi * t + 0)
   have hc : ContMDiff 𝓘(ℝ, ℝ) (𝓡 1) 1 c :=
     (contMDiff_circleExp (m := 1)).comp
@@ -409,16 +398,16 @@ theorem continuousPathIntegral_puncturedPlaneAngularForm_unitLoop :
     continuousPathIntegral puncturedPlaneAngularFormRestricted puncturedPlaneUnitLoop =
       2 * Real.pi := by
   rw [continuousPathIntegral_eq_of_apply_eq puncturedPlaneUnitLoop
-        (circleUnitLoop.map contMDiff_circleToPuncturedPlane.continuous)
+        (Circle.expLoop.map contMDiff_circleToPuncturedPlane.continuous)
         (fun t ↦ Subtype.ext (by
           rw [puncturedPlaneUnitLoop_apply,
-            congrFun (circleUnitLoop.map_coe contMDiff_circleToPuncturedPlane.continuous) t]
+            congrFun (Circle.expLoop.map_coe contMDiff_circleToPuncturedPlane.continuous) t]
           simp [circleToPuncturedPlane])),
     ← continuousPathIntegral_mpullback
       forall_exists_isPrimitiveOn_puncturedPlaneAngularFormRestricted
       (contMDiff_circleToPuncturedPlane.mdifferentiable (by simp)),
     mpullback_circleToPuncturedPlane_puncturedPlaneAngularFormRestricted,
-    continuousPathIntegral_circleAngularForm_circleUnitLoop]
+    continuousPathIntegral_circleAngularForm_expLoop]
 
 /-- Traversing the unit circle loop twice integrates the angular form to `4π`. -/
 theorem continuousPathIntegral_puncturedPlaneAngularForm_unitLoop_trans :
@@ -488,8 +477,8 @@ theorem not_exists_isPrimitiveOn_circleAngularForm :
     ¬ ∃ g : Circle → ℝ, IsPrimitiveOn circleAngularForm g univ := by
   rintro ⟨g, hg⟩
   have h0 := continuousPathIntegral_eq_sub_of_isPrimitiveOn
-    forall_exists_isPrimitiveOn_circleAngularForm hg circleUnitLoop (fun _ ↦ mem_univ _)
-  rw [sub_self, continuousPathIntegral_circleAngularForm_circleUnitLoop] at h0
+    forall_exists_isPrimitiveOn_circleAngularForm hg Circle.expLoop (fun _ ↦ mem_univ _)
+  rw [sub_self, continuousPathIntegral_circleAngularForm_expLoop] at h0
   linarith [Real.pi_pos]
 
 /-- The logarithmic derivative `dz / z` on the punctured plane has local primitives everywhere. -/
@@ -769,7 +758,9 @@ theorem hasDerivAt_xSqSinInv (x : ℝ) : HasDerivAt xSqSinInv (xSqSinInvDeriv x)
     refine squeeze_zero_norm' (a := fun t : ℝ ↦ |t|) ?_ ?_
     · filter_upwards [self_mem_nhdsWithin] with t ht
       simp only [xSqSinInv, zero_add, sub_zero, smul_eq_mul, Real.norm_eq_abs]
-      rw [show t⁻¹ * (t ^ 2 * Real.sin t⁻¹) = t * Real.sin t⁻¹ by field_simp [ht], abs_mul]
+      have hcancel : t⁻¹ * (t ^ 2 * Real.sin t⁻¹) = t * Real.sin t⁻¹ := by
+        field_simp [ht]
+      rw [hcancel, abs_mul]
       exact mul_le_of_le_one_right (abs_nonneg t) (Real.abs_sin_le_one _)
     · simpa using
         (continuous_abs.continuousAt (x := (0 : ℝ))).tendsto.mono_left
