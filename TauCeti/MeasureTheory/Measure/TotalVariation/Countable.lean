@@ -85,9 +85,30 @@ section Excess
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- A finite set of points where `ν {x} < μ {x}` has finite `ν`-mass. -/
+private theorem measure_coe_finset_ne_top_of_forall_lt [MeasurableSingletonClass α]
+    {μ ν : Measure α} {s : Finset α} (hs : ∀ x ∈ s, ν {x} < μ {x}) : ν (s : Set α) ≠ ∞ := by
+  rw [← sum_measure_singleton]
+  exact (ENNReal.sum_lt_top.2 fun x hx => (hs x hx).trans_le le_top).ne
+
 section Countable
 
 variable [Countable α] [MeasurableSingletonClass α] {μ ν : Measure α}
+
+/-- On a countable space with measurable singletons, if `ν {x} ≤ μ {x}` on `S` and `ν S ≠ ∞`,
+then `μ S - ν S` equals the sum of `μ {x} - ν {x}` over `S`. -/
+private theorem measure_sub_eq_tsum_indicator_singleton {S : Set α}
+    (hν : ν S ≠ ∞) (hle : ∀ x ∈ S, ν {x} ≤ μ {x}) :
+    μ S - ν S = ∑' x, S.indicator (fun y => μ {y} - ν {y}) x := by
+  have hsum : μ S = ν S + ∑' x, S.indicator (fun y => μ {y} - ν {y}) x := by
+    rw [← μ.tsum_indicator_apply_singleton S .of_discrete,
+      ← ν.tsum_indicator_apply_singleton S .of_discrete, ← tsum_add]
+    refine tsum_congr fun x => ?_
+    by_cases hx : x ∈ S
+    · simp only [Set.indicator_of_mem hx]
+      exact (add_tsub_cancel_of_le (hle x hx)).symm
+    · simp [Set.indicator_of_notMem hx]
+  rw [hsum, ENNReal.add_sub_cancel_left hν]
 
 /-- On a countable space with measurable singletons, the positive set `{x | ν {x} < μ {x}}`
 attains the sum of the truncated singleton differences `μ {x} - ν {x}` whenever `ν` gives that
@@ -96,19 +117,11 @@ side can vanish as `∞ - ∞` while the right-hand side is `∞` (e.g. `μ = 2 
 `ν = .count` on `ℕ`). -/
 theorem measure_setOf_lt_sub_eq_tsum_singleton (hν : ν {x | ν {x} < μ {x}} ≠ ∞) :
     μ {x | ν {x} < μ {x}} - ν {x | ν {x} < μ {x}} = ∑' x, (μ {x} - ν {x}) := by
-  set S : Set α := {x | ν {x} < μ {x}}
-  have hpoint (x : α) :
-      S.indicator (fun y => μ {y}) x = S.indicator (fun y => ν {y}) x + (μ {x} - ν {x}) := by
-    by_cases hx : x ∈ S
-    · simp only [Set.indicator_of_mem hx]
-      exact (add_tsub_cancel_of_le hx.le).symm
-    · have hle : μ {x} ≤ ν {x} := not_lt.mp hx
-      simp [Set.indicator_of_notMem hx, tsub_eq_zero_of_le hle]
-  have hsum : μ S = ν S + ∑' x, (μ {x} - ν {x}) := by
-    rw [← μ.tsum_indicator_apply_singleton S .of_discrete,
-      ← ν.tsum_indicator_apply_singleton S .of_discrete, ← tsum_add]
-    exact tsum_congr hpoint
-  rw [hsum, ENNReal.add_sub_cancel_left hν]
+  rw [measure_sub_eq_tsum_indicator_singleton hν fun _ hx => hx.le]
+  refine tsum_congr fun x => ?_
+  by_cases hx : ν {x} < μ {x}
+  · exact Set.indicator_of_mem hx _
+  · rw [Set.indicator_of_notMem hx, tsub_eq_zero_of_le (not_lt.1 hx)]
 
 /-- On a countable space with measurable singletons, the supremum of `μ A - ν A` over
 measurable events is the sum of the truncated singleton differences `μ {x} - ν {x}`. No
@@ -126,20 +139,14 @@ theorem iSup_measure_sub_eq_tsum_singleton :
   · rw [tsum_eq_iSup_sum]
     refine iSup_le fun t => ?_
     let B : Finset α := t.filter fun x => ν {x} < μ {x}
-    have hνB : ν (B : Set α) ≠ ∞ := by
-      rw [← sum_measure_singleton]
-      exact (ENNReal.sum_lt_top.2 fun x hx =>
-        ((Finset.mem_filter.1 hx).2.trans_le le_top)).ne
-    have hsum : ∑ x ∈ t, (μ {x} - ν {x}) = ∑ x ∈ B, (μ {x} - ν {x}) := by
-      refine (Finset.sum_filter_of_ne fun x _ hne => ?_).symm
-      exact not_le.1 fun hle => hne (tsub_eq_zero_of_le hle)
-    have hB : ∑ x ∈ B, (μ {x} - ν {x}) = μ (B : Set α) - ν (B : Set α) := by
-      have hadd : μ (B : Set α) = ν (B : Set α) + ∑ x ∈ B, (μ {x} - ν {x}) := by
-        rw [← sum_measure_singleton, ← sum_measure_singleton, ← Finset.sum_add_distrib]
-        exact Finset.sum_congr rfl fun x hx =>
-          (add_tsub_cancel_of_le (Finset.mem_filter.1 hx).2.le).symm
-      rw [hadd, ENNReal.add_sub_cancel_left hνB]
-    rw [hsum, hB]
+    have hB : ∀ x ∈ B, ν {x} < μ {x} := fun _ hx => (Finset.mem_filter.1 hx).2
+    have hsum : ∑ x ∈ t, (μ {x} - ν {x}) = μ (B : Set α) - ν (B : Set α) := by
+      rw [← Finset.sum_filter_of_ne (p := fun x => ν {x} < μ {x}) fun x _ hne =>
+          not_le.1 fun hle => hne (tsub_eq_zero_of_le hle),
+        sum_eq_tsum_indicator,
+        measure_sub_eq_tsum_indicator_singleton (measure_coe_finset_ne_top_of_forall_lt hB)
+          fun x hx => (hB x hx).le]
+    rw [hsum]
     exact le_iSup₂ (f := fun (A : Set α) (_ : MeasurableSet A) => μ A - ν A)
       (B : Set α) .of_discrete
 
@@ -156,9 +163,8 @@ theorem measure_setOf_lt_sub_eq_sum_singleton :
     μ {x | ν {x} < μ {x}} - ν {x | ν {x} < μ {x}} = ∑ x, (μ {x} - ν {x}) := by
   classical
   have hν : ν {x | ν {x} < μ {x}} ≠ ∞ := by
-    rw [← Finset.coe_filter_univ, ← sum_measure_singleton]
-    exact (ENNReal.sum_lt_top.2 fun x hx =>
-      ((Finset.mem_filter.1 hx).2.trans_le le_top)).ne
+    rw [← Finset.coe_filter_univ]
+    exact measure_coe_finset_ne_top_of_forall_lt fun _ hx => (Finset.mem_filter.1 hx).2
   rw [measure_setOf_lt_sub_eq_tsum_singleton hν, tsum_fintype]
 
 /-- On a finite type with measurable singletons, the largest excess `μ A - ν A` over measurable
