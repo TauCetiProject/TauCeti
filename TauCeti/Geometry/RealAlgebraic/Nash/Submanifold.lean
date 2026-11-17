@@ -13,6 +13,7 @@ public import TauCeti.Geometry.RealAlgebraic.Nash.Relation
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.PartialEquiv
 import Mathlib.Analysis.Analytic.Polynomial
 import TauCeti.Analysis.Analytic.Constructions
+import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Nash maps on semialgebraic analytic submanifolds

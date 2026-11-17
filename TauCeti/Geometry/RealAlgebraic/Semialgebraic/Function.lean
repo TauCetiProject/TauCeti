@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
-import Mathlib.Algebra.Module.LinearMap.Polynomial
 import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
+import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Semialgebraic functions
@@ -21,10 +21,9 @@ us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
 piecewise-gluing laws and shows that polynomial maps, affine maps on finite-dimensional coordinate
-spaces (`AffineMap.exists_mvPolynomial_eval_eq`, `AffineMap.isSemialgebraicOn`,
-`AffineMap.isSemialgebraicMap`, `TauCeti.IsSemialgebraic.preimage_affineMap`,
-`AffineMap.isSemialgebraic_pos`), and more generally functions whose graph over a semialgebraic
-domain is cut out by polynomial equations
+spaces (`AffineMap.isSemialgebraicOn`, `AffineMap.isSemialgebraicMap`,
+`TauCeti.IsSemialgebraic.preimage_affineMap`, `AffineMap.isSemialgebraic_pos`), and more generally
+functions whose graph over a semialgebraic domain is cut out by polynomial equations
 (`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the operations
 whose graphs are inverse images of the given graphs, so that no coordinate has to be eliminated:
 pairing two functions on the same domain
@@ -241,19 +240,6 @@ theorem isSemialgebraicMap_id [Finite σ] :
 end PolynomialMap
 
 section AffineMap
-
-omit [LinearOrder R] in
-/-- Every affine map out of a finite-dimensional coordinate space `σ → R` is given coordinatewise
-by evaluation of polynomials. -/
-theorem _root_.AffineMap.exists_mvPolynomial_eval_eq [Finite σ] (A : (σ → R) →ᵃ[R] (τ → R)) :
-    ∃ p : τ → MvPolynomial σ R, ∀ x, A x = fun i => eval x (p i) := by
-  classical
-  cases nonempty_fintype σ
-  refine ⟨fun i => (LinearMap.toMatrix' A.linear).toMvPolynomial i + C (A 0 i),
-    fun x => funext fun i => ?_⟩
-  have hx : A x = A.linear x + A 0 := by
-    simpa [vadd_eq_add] using A.map_vadd (0 : σ → R) x
-  simp [hx, Matrix.toMvPolynomial_eval_eq_apply, LinearMap.toMatrix'_mulVec]
 
 /-- An affine map between finite-dimensional coordinate spaces is semialgebraic on every
 semialgebraic domain. -/
