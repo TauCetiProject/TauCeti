@@ -390,10 +390,10 @@ theorem signedMorseBoundaryCoeff_pullback (p q : criticalPoints 𝓘(ℝ, E) f) 
 `f` and of `f'` given by `σ` intertwines the Morse boundary of `(f, X)`, for the orientation data
 pulled back from `𝔬'`, with the Morse boundary of `(f', X')` for `𝔬'`, over every ring of
 coefficients. -/
-theorem domLCongr_comp_signedMorseBoundary_pullback (hfM : IsMorse 𝓘(ℝ, E) f) (R : Type*)
-    [Ring R] :
+theorem domLCongr_comp_signedMorseBoundary_pullback (R : Type*) [Ring R] :
     (Finsupp.domLCongr (criticalPointsEquivOfComp hf)).toLinearMap ∘ₗ
-        hX.signedMorseBoundary (𝔬'.pullback hf hσX) hfM R =
+        hX.signedMorseBoundary (𝔬'.pullback hf hσX)
+          (hf ▸ hf'.comp_isLocalDiffeomorph σ.isLocalDiffeomorph) R =
       hX'.signedMorseBoundary 𝔬' hf' R ∘ₗ
         (Finsupp.domLCongr (criticalPointsEquivOfComp hf)).toLinearMap := by
   refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
