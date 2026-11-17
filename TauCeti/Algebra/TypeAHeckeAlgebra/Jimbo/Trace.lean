@@ -8,10 +8,10 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Polynomial
 public import TauCeti.Algebra.TypeAHeckeAlgebra.TraceRadical
-public import TauCeti.KnotTheory.Jimbo.StrandInclusion
+public import TauCeti.KnotTheory.Jimbo.Trace
 
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.KnotTheory.Jimbo.Stabilization
 
 /-!
 # The Turaev–Jimbo weighted trace on the type-A Hecke algebra
@@ -220,55 +220,19 @@ theorem jimboWeightedTrace_algebraMap (N : ℕ) (q : Rˣ) (n : ℕ) (r : R) :
 theorem jimboWeightedTrace_strandIncl (N : ℕ) (q : Rˣ) (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
     jimboWeightedTrace N q (n + 1) (strandIncl R q n x) =
       jimboWeightedTrace N q n x * ∑ a : Fin N, KnotTheory.jimboWeight q a := by
-  classical
-  rw [jimboWeightedTrace_eq_sum, ← (Fin.snocEquiv (fun _ : Fin (n + 1) ↦ Fin N)).sum_comp]
-  simp only [Fin.snocEquiv, Equiv.coe_fn_mk, Fintype.sum_prod_type,
-    jimbo_strandIncl_single_snoc_apply_snoc, ↓reduceIte]
-  have hweight (w : Fin n → Fin N) (a : Fin N) :
-      (∏ i : Fin (n + 1), KnotTheory.jimboWeight q ((Fin.snoc w a : Fin (n + 1) → Fin N) i)) =
-        (∏ i, KnotTheory.jimboWeight q (w i)) * KnotTheory.jimboWeight q a := by
-    rw [Fin.prod_univ_castSucc]
+  cases n with
+  | zero =>
+    obtain ⟨r, rfl⟩ := algebraMap_surjective_of_le_one (Nat.zero_le 1) x
     simp
-  simp only [hweight]
-  rw [jimboWeightedTrace_eq_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun a _ ↦ ?_
-  rw [Finset.sum_mul]
-  exact Finset.sum_congr rfl fun w _ ↦ by ring
-
-private theorem jimbo_strandIncl_mul_T_last_diagonal (N : ℕ) (q : Rˣ) {n : ℕ}
-    (x : TypeAHeckeAlgebra R q (n + 1)) (w : Fin (n + 1) → Fin N) (c : Fin N) :
-    jimbo (Fin N) q (strandIncl R q (n + 1) x * T q (Fin.last n))
-        (single (Fin.snoc w c) 1) (Fin.snoc w c) =
-      jimbo (Fin N) q x (single w 1) w *
-        (KnotTheory.jimboGenerator q (0 : Fin 2) 1 (single ![w (Fin.last n), c] 1))
-          ![w (Fin.last n), c] := by
-  classical
-  have hj : BraidGroup.strand (Fin.last n : Fin (n + 2 - 1)) = (Fin.last n).castSucc :=
-    Fin.ext (by simp)
-  have hk : BraidGroup.strandSucc (Fin.last n : Fin (n + 2 - 1)) = Fin.last (n + 1) :=
-    Fin.ext (by simp)
-  have hswap : Fin.snoc w c ∘ Equiv.swap (Fin.last n).castSucc (Fin.last (n + 1)) =
-      Fin.snoc (update w (Fin.last n) c) (w (Fin.last n)) := by
-    rw [Equiv.comp_swap_eq_update]
-    simp [← Fin.snoc_update, Fin.update_snoc_last]
-  have hswap₂ : (![w (Fin.last n), c] : Fin 2 → Fin N) ∘ Equiv.swap 0 1 =
-      ![c, w (Fin.last n)] := by
-    ext i
-    fin_cases i <;> simp
-  have hpair : (![c, w (Fin.last n)] : Fin 2 → Fin N) = ![w (Fin.last n), c] ↔
-      w (Fin.last n) = c := by
-    simp [funext_iff, Fin.forall_fin_two, eq_comm]
-  simp only [map_mul, mul_apply_eq_comp, jimbo_T, hj, hk,
-    KnotTheory.jimboGenerator_single_one, Fin.snoc_castSucc, Fin.snoc_last,
-    Matrix.cons_val_zero, Matrix.cons_val_one]
-  rcases lt_trichotomy (w (Fin.last n)) c with h | h | h
-  · simp only [h.ne, h, ↓reduceIte, hswap, hswap₂,
-      jimbo_strandIncl_single_snoc_apply_snoc, single_apply, hpair, mul_zero]
-  · simp only [h, ↓reduceIte, map_smul, Finsupp.smul_apply, smul_eq_mul,
-      jimbo_strandIncl_single_snoc_apply_snoc, single_eq_same, mul_one, mul_comm]
-  · simp only [h.ne.symm, h.not_gt, ↓reduceIte, hswap, hswap₂, map_add, map_smul,
-      Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul, jimbo_strandIncl_single_snoc_apply_snoc,
-      single_apply, hpair, zero_add, mul_one, mul_comm]
+  | succ n =>
+    let f : TypeAHeckeAlgebra R q (n + 1) →ₗ[R] R :=
+      jimboWeightedTrace N q (n + 2) ∘ₗ (strandIncl R q (n + 1)).toLinearMap
+    let g : TypeAHeckeAlgebra R q (n + 1) →ₗ[R] R :=
+      (∑ a : Fin N, KnotTheory.jimboWeight q a) • jimboWeightedTrace N q (n + 1)
+    have hfg : f = g :=
+      LinearMap.ext_on_range (span_range_braidHom (R := R) (q := q)) fun b ↦ by
+        simp [f, g, ← braidHom_strandIncl, mul_comm]
+    simpa [f, g, mul_comm] using LinearMap.congr_fun hfg x
 
 /-- Multiplying an included `(n + 1)`-strand element by the positive crossing `T (Fin.last n)`
 multiplies `jimboWeightedTrace` by `q ^ N`. -/
@@ -277,26 +241,22 @@ theorem jimboWeightedTrace_strandIncl_mul_T_last (N : ℕ) (q : Rˣ) (n : ℕ)
     (x : TypeAHeckeAlgebra R q (n + 1)) :
     jimboWeightedTrace N q (n + 2) (strandIncl R q (n + 1) x * T q (Fin.last n)) =
       ↑(q ^ N) * jimboWeightedTrace N q (n + 1) x := by
-  classical
-  rw [jimboWeightedTrace_eq_sum, ← (Fin.snocEquiv (fun _ : Fin (n + 2) ↦ Fin N)).sum_comp]
-  simp only [Fin.snocEquiv, Equiv.coe_fn_mk, Fintype.sum_prod_type,
-    jimbo_strandIncl_mul_T_last_diagonal]
-  have hweight (w : Fin (n + 1) → Fin N) (c : Fin N) :
-      (∏ i : Fin (n + 2), KnotTheory.jimboWeight q ((Fin.snoc w c : Fin (n + 2) → Fin N) i)) =
-        (∏ i, KnotTheory.jimboWeight q (w i)) * KnotTheory.jimboWeight q c := by
-    rw [Fin.prod_univ_castSucc]
-    simp
-  simp only [hweight]
-  rw [Finset.sum_comm, jimboWeightedTrace_eq_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun w _ ↦ ?_
-  calc
-    _ = (jimbo (Fin N) q x (single w 1) w * ∏ i, KnotTheory.jimboWeight q (w i)) *
-        (∑ c : Fin N,
-          (KnotTheory.jimboGenerator q (0 : Fin 2) 1 (single ![w (Fin.last n), c] 1))
-            ![w (Fin.last n), c] * KnotTheory.jimboWeight q c) := by
-      rw [Finset.mul_sum]
-      exact Finset.sum_congr rfl fun c _ ↦ by ring
-    _ = _ := by rw [KnotTheory.sum_jimboGenerator_coeff_mul_weight, ite_eq_left rfl]; ring
+  let f : TypeAHeckeAlgebra R q (n + 1) →ₗ[R] R :=
+    jimboWeightedTrace N q (n + 2) ∘ₗ LinearMap.mulRight R (T q (Fin.last n)) ∘ₗ
+      (strandIncl R q (n + 1)).toLinearMap
+  let g : TypeAHeckeAlgebra R q (n + 1) →ₗ[R] R :=
+    (↑(q ^ N) : R) • jimboWeightedTrace N q (n + 1)
+  have hfg : f = g :=
+    LinearMap.ext_on_range (span_range_braidHom (R := R) (q := q)) fun b ↦ by
+      have hmul :
+          strandIncl R q (n + 1) (braidHom R q (n + 1) b) * T q (Fin.last n) =
+            (braidHom R q (n + 2) (BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n)) :
+              TypeAHeckeAlgebra R q (n + 2)) := by
+        simp
+      simp only [f, g, LinearMap.comp_apply, LinearMap.mulRight_apply, AlgHom.toLinearMap_apply,
+        LinearMap.smul_apply, smul_eq_mul, hmul, jimboWeightedTrace_braidHom,
+        KnotTheory.jimboWeightedTrace_stabilize]
+  exact LinearMap.congr_fun hfg x
 
 /-- Two-sided Markov contraction for `jimboWeightedTrace` across the last generator. -/
 theorem jimboWeightedTrace_strandIncl_mul_T_last_mul (N : ℕ) (q : Rˣ) (n : ℕ)

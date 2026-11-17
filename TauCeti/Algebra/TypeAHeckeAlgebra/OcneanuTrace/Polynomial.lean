@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BaseChange
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Basic
 
+import Mathlib.RingTheory.Polynomial.Basic
+
 /-!
 # Polynomiality and homogenization of the Ocneanu trace
 
@@ -228,25 +230,17 @@ theorem natDegree_ocneanuPoly_le {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
     obtain ⟨r, rfl⟩ := hx
     rw [ocneanuPoly_algebraMap, Polynomial.natDegree_C]
   | succ n ih =>
-    let P : Submodule R (InfiniteTypeAHeckeAlgebra R q) :=
-      { carrier := {y | (ocneanuPoly R q y).natDegree ≤ n + 1}
-        zero_mem' := by simp
-        add_mem' := fun {a b} ha hb ↦ by
-          dsimp at ha hb ⊢
-          rw [map_add]
-          exact (Polynomial.natDegree_add_le _ _).trans (max_le ha hb)
-        smul_mem' := fun r _ ha ↦ by
-          dsimp at ha ⊢
-          rw [map_smul]
-          exact (Polynomial.natDegree_smul_le r _).trans ha }
-    have hP : Subalgebra.toSubmodule (stage R q (n + 2)) ≤ P := by
-      refine toSubmodule_stage_add_two_le_iff.2 ⟨fun y hy ↦ (ih hy).trans n.le_succ,
-        fun a ha b hb ↦ ?_⟩
-      change (ocneanuPoly R q (a * T q n * b)).natDegree ≤ n + 1
-      rw [ocneanuPoly_mul_T_mul ha hb, Nat.add_comm n 1]
-      exact Polynomial.natDegree_mul_le.trans
-        (Nat.add_le_add Polynomial.natDegree_X_le (ih (mul_mem hb ha)))
-    exact hP hx
+    have hP : Subalgebra.toSubmodule (stage R q (n + 2)) ≤
+        (Polynomial.degreeLE R ↑(n + 1)).comap (ocneanuPoly R q) := by
+      refine toSubmodule_stage_add_two_le_iff.2 ⟨fun y hy ↦ ?_, fun a ha b hb ↦ ?_⟩
+      · rw [Submodule.mem_comap, Polynomial.mem_degreeLE, ← Polynomial.natDegree_le_iff_degree_le]
+        exact (ih hy).trans n.le_succ
+      · rw [Submodule.mem_comap, Polynomial.mem_degreeLE, ← Polynomial.natDegree_le_iff_degree_le,
+          ocneanuPoly_mul_T_mul ha hb, Nat.add_comm n 1]
+        exact Polynomial.natDegree_mul_le.trans
+          (Nat.add_le_add Polynomial.natDegree_X_le (ih (mul_mem hb ha)))
+    exact Polynomial.natDegree_le_iff_degree_le.2
+      (Polynomial.mem_degreeLE.1 (Submodule.mem_comap.1 (hP hx)))
 
 end OcneanuPoly
 
