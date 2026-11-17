@@ -49,10 +49,14 @@ is the boundary step of the global Hölder estimate for the Dirichlet problem.
 
 ## Main declarations
 
+* `TauCeti.PDE.energyFormH1_posPart_left_nonpos_of_forall_pos`: `a(u⁺, v) ≤ 0` as soon as the
+  energy of `u` against every truncation `min(u⁺, ε v)`, `ε > 0`, is nonpositive.
 * `TauCeti.PDE.energyFormH1_posPart_left_nonpos`: `a(u⁺, v) ≤ 0` for every nonnegative
   `v ∈ H¹(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL_posPart_nonpos`: the zero extension of `u⁺` is a weak
   subsolution on every larger open set.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn`: extending a measurable
+  uniformly elliptic field by `λ I` off `Ω`.
 * `TauCeti.PDE.exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff`: the
   reduction of the supremum at the boundary.
 * `TauCeti.PDE.exists_ae_value_le_pow_mul_of_mul_measureReal_le_measureReal_ball_diff`: its
@@ -144,43 +148,18 @@ private theorem mul_indicator_le_matrixBilinearForm_gradient
       exact h.quadraticForm_nonneg hxO _
     · rw [indicator_of_notMem (s := {y | 0 < W1p.value u y}) hu, map_zero, zero_apply]
 
-/-- The cut-off step of the test-function argument: for `ε > 0`, the density `⟨a ∇u, ∇v⟩` of
-a subsolution `u` with `u⁺ ∈ H¹₀(Ω)` against a nonnegative `v ∈ H¹(Ω)`, cut off to `{u⁺ > ε v}`,
-has nonpositive integral. It is `ε⁻¹` times a lower bound for the energy of `u` against the test
-function `min(u⁺, ε v) = u⁺ - (u⁺ - ε v)⁺ ∈ H¹₀(Ω)`. -/
+/-- The cut-off step of the test-function argument: for `ε > 0`, if the energy of `u` against
+the test function `min(u⁺, ε v) = u⁺ - (u⁺ - ε v)⁺` is nonpositive, then so is the integral of
+the density `⟨a ∇u, ∇v⟩` cut off to `{u⁺ > ε v}`, which is `ε⁻¹` times a lower bound for that
+energy. -/
 private theorem setIntegral_indicator_matrixBilinearForm_nonpos
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
-    (hboundary : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2)
-    (hu : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
-    {v : W1p mu Omega 2} (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) {ε : ℝ}
-    (hε : 0 < ε) (hFm : MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0}) :
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u v : W1p mu Omega 2} {ε : ℝ}
+    (hε : 0 < ε) (hFm : MeasurableSet {x | ε * W1p.value v x < max (W1p.value u x) 0})
+    (htest : energyFormH1 a 0 0 u (W1p.posPart (by norm_num) u -
+      W1p.posPart (by norm_num) (W1p.posPart (by norm_num) u - ε • v)) ≤ 0) :
     ∫ x in Omega, {x | ε * W1p.value v x < max (W1p.value u x) 0}.indicator
       (fun x => matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)) x ∂mu ≤ 0 := by
-  set up := W1p.posPart (p := 2) (mu := mu) (Omega := Omega) (by norm_num) u
-  have hεv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (ε • v) x := by
-    filter_upwards [W1p.value_smul_ae ε v, hv] with x hx hvx
-    rw [hx, Pi.smul_apply, smul_eq_mul]
-    exact mul_nonneg hε.le hvx
-  -- The test function `min(u⁺, ε v) = u⁺ - (u⁺ - ε v)⁺` lies in `H¹₀(Ω)` and is nonnegative.
-  have hmem : up - W1p.posPart (by norm_num) (up - ε • v) ∈ w1p0Submodule mu Omega 2 :=
-    (w1p0Submodule mu Omega 2).toSubmodule.sub_mem hboundary
-      (W1p.posPart_sub_mem_w1p0Submodule (by norm_num) hboundary hεv)
-  have hnonneg : ∀ᵐ x ∂mu.restrict Omega,
-      0 ≤ W1p.value (up - W1p.posPart (by norm_num) (up - ε • v)) x := by
-    filter_upwards [W1p.value_sub_ae up (W1p.posPart (by norm_num) (up - ε • v)),
-      Lp.coeFn_posPart (W1p.value (up - ε • v)), W1p.value_sub_ae up (ε • v),
-      Lp.coeFn_posPart (W1p.value u), hεv] with x h1 h2 h3 h4 h5
-    rw [h1, Pi.sub_apply, W1p.value_posPart (u := up - ε • v), h2, h3, Pi.sub_apply,
-      W1p.value_posPart, h4]
-    rcases le_total (max (W1p.value u x) 0 - W1p.value (ε • v) x) 0 with hle | hle
-    · rw [max_eq_right hle, sub_zero]
-      exact le_max_right _ _
-    · rw [max_eq_left hle]
-      linarith
-  have htest := hu ⟨_, hmem⟩ hnonneg
   rw [energyFormH1_zero_zero_eq_setIntegral] at htest
   have hle := (integral_mono_ae
     (((integrable_matrixBilinearForm_gradient h ha u v).indicator hFm).const_mul ε)
@@ -189,19 +168,19 @@ private theorem setIntegral_indicator_matrixBilinearForm_nonpos
   rw [integral_const_mul] at hle
   exact nonpos_of_mul_nonpos_right hle hε
 
-/-- **Subsolutions vanishing on the boundary may be tested against any nonnegative function.**
-Let `a` be measurable and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≤ 0` on
-`∂Ω` in the sense that `u⁺ ∈ H¹₀(Ω)`. Then `a(u⁺, v) ≤ 0` for every nonnegative `v ∈ H¹(Ω)`, with
-no boundary condition on `v`. -/
-theorem energyFormH1_posPart_left_nonpos
+/-- **Testing against truncations suffices.** Let `a` be measurable and uniformly elliptic on
+`Ω`, let `u, v ∈ H¹(Ω)` with `v ≥ 0`, and suppose that for every `ε > 0` the energy of `u` against
+the truncation `min(u⁺, ε v) = u⁺ - (u⁺ - ε v)⁺` is nonpositive. Then `a(u⁺, v) ≤ 0`.
+
+The truncations carry the boundary values of `u⁺` and of `v` at once: `min(u⁺, ε v)` lies in
+`H¹₀` of a set as soon as one of `u⁺` and `ε v` does, which is how this lemma is used to test a
+subsolution against functions that do not vanish on the boundary. -/
+theorem energyFormH1_posPart_left_nonpos_of_forall_pos
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
-    (hboundary : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2)
-    (hu : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
-    {v : W1p mu Omega 2} (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) :
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u v : W1p mu Omega 2}
+    (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x)
+    (htest : ∀ ε : ℝ, 0 < ε → energyFormH1 a 0 0 u (W1p.posPart (by norm_num) u -
+      W1p.posPart (by norm_num) (W1p.posPart (by norm_num) u - ε • v)) ≤ 0) :
     energyFormH1 a 0 0 (W1p.posPart (by norm_num) u) v ≤ 0 := by
   set g : EuclideanSpace ℝ ι → ℝ :=
     fun x => matrixBilinearForm (a x) (W1p.gradient v x) (W1p.gradient u x)
@@ -235,8 +214,8 @@ theorem energyFormH1_posPart_left_nonpos
       rw [mem_ofPred_eq, max_eq_right (le_of_not_gt hux), not_lt]
       positivity
   have hint : ∫ x in Omega, {x | 0 < W1p.value u x}.indicator g x ∂mu ≤ 0 :=
-    le_of_tendsto' hlim fun n => setIntegral_indicator_matrixBilinearForm_nonpos h ha hboundary
-      hu hv (by positivity) (hFm _)
+    le_of_tendsto' hlim fun n => setIntegral_indicator_matrixBilinearForm_nonpos h ha
+      (by positivity) (hFm _) (htest _ (by positivity))
   -- The limit is `a(u⁺, v)`, because `∇u⁺ = 1_{u > 0} ∇u`.
   rw [energyFormH1_zero_zero_eq_setIntegral]
   refine le_of_eq_of_le (integral_congr_ae ?_) hint
@@ -247,6 +226,36 @@ theorem energyFormH1_posPart_left_nonpos
       indicator_of_mem (s := {y | 0 < W1p.value u y}) hux]
   · rw [indicator_of_notMem (s := {y | 0 < W1p.value u y}) hux,
       indicator_of_notMem (s := {y | 0 < W1p.value u y}) hux, map_zero]
+
+/-- **Subsolutions vanishing on the boundary may be tested against any nonnegative function.**
+Let `a` be measurable and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≤ 0` on
+`∂Ω` in the sense that `u⁺ ∈ H¹₀(Ω)`. Then `a(u⁺, v) ≤ 0` for every nonnegative `v ∈ H¹(Ω)`, with
+no boundary condition on `v`. -/
+theorem energyFormH1_posPart_left_nonpos
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hboundary : W1p.posPart (by norm_num) u ∈ w1p0Submodule mu Omega 2)
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤ 0)
+    {v : W1p mu Omega 2} (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) :
+    energyFormH1 a 0 0 (W1p.posPart (by norm_num) u) v ≤ 0 := by
+  refine energyFormH1_posPart_left_nonpos_of_forall_pos h ha hv fun ε hε => ?_
+  set up := W1p.posPart (p := 2) (mu := mu) (Omega := Omega) (by norm_num) u
+  have hεv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (ε • v) x := by
+    filter_upwards [W1p.value_smul_ae ε v, hv] with x hx hvx
+    rw [hx, Pi.smul_apply, smul_eq_mul]
+    exact mul_nonneg hε.le hvx
+  -- The test function `min(u⁺, ε v) = u⁺ - (u⁺ - ε v)⁺` lies in `H¹₀(Ω)` and is nonnegative.
+  have hmem : up - W1p.posPart (by norm_num) (up - ε • v) ∈ w1p0Submodule mu Omega 2 :=
+    (w1p0Submodule mu Omega 2).toSubmodule.sub_mem hboundary
+      (W1p.posPart_sub_mem_w1p0Submodule (by norm_num) hboundary hεv)
+  refine hu ⟨_, hmem⟩ ?_
+  filter_upwards [W1p.value_posPart_sub_posPart_sub_smul_ae (by norm_num) u v ε, hv]
+    with x h1 h2
+  rw [h1]
+  exact le_min (le_max_right _ _) (mul_nonneg hε.le h2)
 
 /-- **The zero extension of the positive part of a subsolution is a subsolution.** Let `a` be
 measurable and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
@@ -275,6 +284,35 @@ theorem energyFormH1_extendByZeroL_posPart_nonpos {Omega' : Opens (EuclideanSpac
   rw [energyFormH1_def, energyFormH1_def]
   exact setIntegral_congr_fun Omega.isOpen.measurableSet fun x hx => by rw [haa' hx]
 
+omit [mu.IsAddHaarMeasure] in
+/-- **Extending a measurable uniformly elliptic field by `λ I`.** A field `a`, measurable and
+uniformly elliptic on `Ω` with constants `λ, Λ`, agrees on `Ω` with a field that is measurable and
+uniformly elliptic with the same constants on the whole space, namely `a` extended by `λ I` off
+`Ω`. -/
+theorem UniformlyEllipticOn.exists_aestronglyMeasurable_eqOn
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) :
+    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ,
+      UniformlyEllipticOn (univ : Set (EuclideanSpace ℝ ι)) a' lam Lam ∧
+        AEStronglyMeasurable a' mu ∧ EqOn a' a (Omega : Set (EuclideanSpace ℝ ι)) := by
+  classical
+  have hI := uniformlyEllipticOn_const_smul_one (n := ι) (univ : Set (EuclideanSpace ℝ ι))
+    h.pos le_rfl h.le
+  refine ⟨(Omega : Set (EuclideanSpace ℝ ι)).piecewise a fun _ => lam • (1 : Matrix ι ι ℝ),
+    UniformlyEllipticOn.of_bounds h.pos h.le (fun x _ ξ => ?_) (fun x _ η ξ => ?_),
+    ha.piecewise Omega.isOpen.measurableSet.nullMeasurableSet aestronglyMeasurable_const,
+    piecewise_eqOn _ _ _⟩
+  · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
+    · rw [piecewise_eq_of_mem _ _ _ hx]
+      exact h.lower_bound hx ξ
+    · rw [piecewise_eq_of_notMem _ _ _ hx]
+      exact hI.lower_bound (mem_univ x) ξ
+  · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
+    · rw [piecewise_eq_of_mem _ _ _ hx]
+      exact h.upper_bound hx η ξ
+    · rw [piecewise_eq_of_notMem _ _ _ hx]
+      exact hI.upper_bound (mem_univ x) η ξ
+
 /-- The whole-space problem behind the boundary estimate: extending `a` by `λ I` off `Ω` gives a
 uniformly elliptic field on the whole space, for which the zero extension `ū` of `u⁺` is a weak
 subsolution; `ū` equals `u⁺` on `Ω` and vanishes off `Ω`. -/
@@ -296,51 +334,23 @@ private theorem exists_uniformlyEllipticOn_top_extendByZeroL_posPart
         energyFormH1 a' 0 0 ub (v : W1p mu ⊤ 2) ≤ 0) ∧
       ∀ᵐ x ∂mu, W1p.value ub x =
         (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => max (W1p.value u y) 0) x := by
-  classical
-  have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  set a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ :=
-    (Omega : Set (EuclideanSpace ℝ ι)).piecewise a fun _ => lam • (1 : Matrix ι ι ℝ)
-  have hI := uniformlyEllipticOn_const_smul_one (n := ι) (univ : Set (EuclideanSpace ℝ ι))
-    h.pos le_rfl h.le
-  have h' : UniformlyEllipticOn (((⊤ : Opens (EuclideanSpace ℝ ι)) :
-      Set (EuclideanSpace ℝ ι))) a' lam Lam := by
-    refine UniformlyEllipticOn.of_bounds h.pos h.le (fun x _ ξ => ?_) (fun x _ η ξ => ?_)
-    · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-      · rw [show a' x = a x from piecewise_eq_of_mem _ _ _ hx]
-        exact h.lower_bound hx ξ
-      · rw [show a' x = lam • 1 from piecewise_eq_of_notMem _ _ _ hx]
-        exact hI.lower_bound (mem_univ x) ξ
-    · by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-      · rw [show a' x = a x from piecewise_eq_of_mem _ _ _ hx]
-        exact h.upper_bound hx η ξ
-      · rw [show a' x = lam • 1 from piecewise_eq_of_notMem _ _ _ hx]
-        exact hI.upper_bound (mem_univ x) η ξ
-  have ha' : AEStronglyMeasurable a' (mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) :
-      Set (EuclideanSpace ℝ ι))) := by
-    rw [Opens.coe_top, Measure.restrict_univ]
-    exact ha.piecewise hOm.nullMeasurableSet aestronglyMeasurable_const
-  set ub : W1p mu ⊤ 2 :=
-    ((W1p0.extendByZeroL le_top ⟨_, hboundary⟩ : W1p0 mu ⊤ 2) : W1p mu ⊤ 2)
-  have hsubsol : ∀ v : W1p0 mu ⊤ 2,
-      (∀ᵐ x ∂mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
-        0 ≤ W1p.value (v : W1p mu ⊤ 2) x) →
-      energyFormH1 a' 0 0 ub (v : W1p mu ⊤ 2) ≤ 0 := fun v hv =>
-    energyFormH1_extendByZeroL_posPart_nonpos le_top (piecewise_eqOn _ _ _) h ha hboundary hu hv
+  obtain ⟨a', h', ha', haa'⟩ := h.exists_aestronglyMeasurable_eqOn ha
+  refine ⟨a', by rwa [Opens.coe_top], by rwa [Opens.coe_top, Measure.restrict_univ],
+    ((W1p0.extendByZeroL le_top ⟨_, hboundary⟩ : W1p0 mu ⊤ 2) : W1p mu ⊤ 2),
+    fun v hv => energyFormH1_extendByZeroL_posPart_nonpos le_top haa' h ha hboundary hu hv, ?_⟩
   -- The values of the extension: `u⁺` on `Ω` and `0` off `Ω`.
-  have hval : ∀ᵐ x ∂mu, W1p.value ub x =
-      (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => max (W1p.value u y) 0) x := by
-    have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm
-      (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (W1p.posPart (p := 2)
-        (mu := mu) (Omega := Omega) (by norm_num) u))
-    simp only [Opens.coe_top, Measure.restrict_univ] at hext
-    filter_upwards [hext, (ae_restrict_iff' hOm).1 (Lp.coeFn_posPart (W1p.value u))]
-      with x hx hx'
-    rw [W1p0.value_extendByZeroL]
-    by_cases hxO : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
-    · rw [indicator_of_mem hxO, ← hx' hxO, ← W1p.value_posPart (by norm_num), hx,
-        indicator_of_mem hxO]
-    · rw [indicator_of_notMem hxO, hx, indicator_of_notMem hxO]
-  exact ⟨a', h', ha', ub, hsubsol, hval⟩
+  have hOm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
+  have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm
+    (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (W1p.posPart (p := 2)
+      (mu := mu) (Omega := Omega) (by norm_num) u))
+  simp only [Opens.coe_top, Measure.restrict_univ] at hext
+  filter_upwards [hext, (ae_restrict_iff' hOm).1 (Lp.coeFn_posPart (W1p.value u))]
+    with x hx hx'
+  rw [W1p0.value_extendByZeroL]
+  by_cases hxO : x ∈ (Omega : Set (EuclideanSpace ℝ ι))
+  · rw [indicator_of_mem hxO, ← hx' hxO, ← W1p.value_posPart (by norm_num), hx,
+      indicator_of_mem hxO]
+  · rw [indicator_of_notMem hxO, hx, indicator_of_notMem hxO]
 
 /-- **Reduction of the supremum at the boundary (De Giorgi).** Let `n ≥ 1` be the dimension and
 fix a proportion `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension
