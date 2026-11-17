@@ -402,6 +402,21 @@ theorem relativeSpecPullbackFst_comp :
   -- `Γ(Spec_Z ((g ≫ f)^* A), (p ≫ g ≫ f)⁻¹ U)`.
   rfl
 
+/-- Compatibility of `relativeSpecPullbackFst` with composition along a commuting triangle
+`g ≫ f = h`: the relative-Spec map of `pullbackComp g f ≪≫ eqToIso _` followed by the two
+base-change projections is the projection for `h`. -/
+@[reassoc]
+theorem relativeSpecMap_pullbackComp_eqToIso_fst {h : Z ⟶ X} (hgf : g ≫ f = h) :
+    CommMon.relativeSpecMap
+        ((QuasicoherentAlgebra.pullbackComp g f ≪≫
+          eqToIso (congrArg QuasicoherentAlgebra.pullback hgf)).hom.app A).hom ≫
+      relativeSpecPullbackFst ((QuasicoherentAlgebra.pullback f).obj A) g ≫
+        relativeSpecPullbackFst A f =
+      relativeSpecPullbackFst A h := by
+  subst hgf
+  simp only [eqToIso_refl, Iso.trans_refl]
+  exact (relativeSpecPullbackFst_comp A f g).symm
+
 /-- **Base change of relative spectra along the identity.** The projection
 `Spec_X (𝟙^* A) ⟶ Spec_X A` is the identification induced by the identity isomorphism
 `A ≅ 𝟙^* A` of pullback. -/

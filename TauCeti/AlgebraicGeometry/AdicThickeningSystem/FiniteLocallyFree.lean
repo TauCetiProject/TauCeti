@@ -83,36 +83,6 @@ open TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.AdicThickeningSystem
 
 section Algebra
 
-/-- Auxiliary comparison expressing the composition isomorphism of `QuasicoherentAlgebra.pullback`
-followed by `eqToIso` along `u ≫ v = w` on underlying modules. -/
-private lemma pullbackComp_eqToIso_hom_app_hom_hom_hom {Y Z W : Scheme.{u}}
-    (u : Y ⟶ Z) (v : Z ⟶ W) {w : Y ⟶ W} (hw : u ≫ v = w) (C : QuasicoherentAlgebra W) :
-    ((QuasicoherentAlgebra.pullbackComp u v ≪≫
-        eqToIso (congrArg QuasicoherentAlgebra.pullback hw)).hom.app C).hom.hom.hom =
-      eqToHom ((QuasicoherentAlgebra.pullback_obj_X u _).trans
-        (congrArg (Modules.pullback u).obj (QuasicoherentAlgebra.pullback_obj_X v C))) ≫
-        ((Modules.pullbackComp u v ≪≫ Modules.pullbackCongr hw).app C.obj.X).hom ≫
-          eqToHom (QuasicoherentAlgebra.pullback_obj_X w C).symm := by
-  subst hw
-  simp only [eqToIso_refl, Iso.trans_refl,
-    QuasicoherentAlgebra.pullbackComp_hom_app_hom_hom_hom, Modules.pullbackCongr]
-  rfl
-
-/-- Inverse counterpart of `pullbackComp_eqToIso_hom_app_hom_hom_hom` on underlying modules. -/
-private lemma pullbackComp_eqToIso_inv_app_hom_hom_hom {Y Z W : Scheme.{u}}
-    (u : Y ⟶ Z) (v : Z ⟶ W) {w : Y ⟶ W} (hw : u ≫ v = w) (C : QuasicoherentAlgebra W) :
-    ((QuasicoherentAlgebra.pullbackComp u v ≪≫
-        eqToIso (congrArg QuasicoherentAlgebra.pullback hw)).inv.app C).hom.hom.hom =
-      eqToHom (QuasicoherentAlgebra.pullback_obj_X w C) ≫
-        ((Modules.pullbackComp u v ≪≫ Modules.pullbackCongr hw).app C.obj.X).inv ≫
-          eqToHom ((QuasicoherentAlgebra.pullback_obj_X u _).trans
-            (congrArg (Modules.pullback u).obj
-              (QuasicoherentAlgebra.pullback_obj_X v C))).symm := by
-  subst hw
-  simp only [eqToIso_refl, Iso.trans_refl,
-    QuasicoherentAlgebra.pullbackComp_inv_app_hom_hom_hom, Modules.pullbackCongr]
-  rfl
-
 /-- Pulling back the `(n + 1)`-st formal reduction of a quasi-coherent commutative `𝒪_X`-algebra
 along the transition `V(I ^ (n + 1)) ⟶ V(I ^ (n + 2))` recovers its `n`-th formal reduction,
 naturally in the algebra. -/
@@ -143,7 +113,7 @@ theorem algebraPullbackTransitionIso_hom_app_hom_hom_hom (X : Scheme.{u}) (I : X
         ((Modules.pullbackComp ((X.formalCompletion I).ι n) (toScheme X I (n + 1)) ≪≫
             Modules.pullbackCongr (ι_toScheme X I n)).app C.obj.X).hom ≫
           eqToHom (QuasicoherentAlgebra.pullback_obj_X (toScheme X I n) C).symm :=
-  pullbackComp_eqToIso_hom_app_hom_hom_hom _ _ (ι_toScheme X I n) C
+  QuasicoherentAlgebra.pullbackComp_eqToIso_hom_app_hom_hom_hom _ _ (ι_toScheme X I n) C
 
 /-- On underlying `𝒪`-modules, `(algebraPullbackTransitionIso X I n).inv.app C` is the inverse
 module pullback composition isomorphism along `ι_toScheme X I n`, conjugated by
@@ -158,7 +128,7 @@ theorem algebraPullbackTransitionIso_inv_app_hom_hom_hom (X : Scheme.{u}) (I : X
           eqToHom ((QuasicoherentAlgebra.pullback_obj_X ((X.formalCompletion I).ι n) _).trans
             (congrArg (Modules.pullback ((X.formalCompletion I).ι n)).obj
               (QuasicoherentAlgebra.pullback_obj_X (toScheme X I (n + 1)) C))).symm :=
-  pullbackComp_eqToIso_inv_app_hom_hom_hom _ _ (ι_toScheme X I n) C
+  QuasicoherentAlgebra.pullbackComp_eqToIso_inv_app_hom_hom_hom _ _ (ι_toScheme X I n) C
 
 variable {X : Scheme.{u}}
 
@@ -364,19 +334,6 @@ private lemma relativeSpecLevelIso_inv_map_app_hom {B A : QuasicoherentAlgebra X
       congrArg (·.app n) hcomp
     simp [hcomp_n, CommMon.relativeSpecMap_relativeSpecToBase]
 
-/-- Auxiliary composition compatibility for `relativeSpecPullbackFst` along `u ≫ v = w`. -/
-private lemma relativeSpecMap_pullbackComp_eqToIso_fst {Y Z W : Scheme.{u}}
-    (u : Y ⟶ Z) (v : Z ⟶ W) {w : Y ⟶ W} (hw : u ≫ v = w) (C : QuasicoherentAlgebra W) :
-    CommMon.relativeSpecMap
-        ((QuasicoherentAlgebra.pullbackComp u v ≪≫
-          eqToIso (congrArg QuasicoherentAlgebra.pullback hw)).hom.app C).hom ≫
-      relativeSpecPullbackFst ((QuasicoherentAlgebra.pullback v).obj C) u ≫
-        relativeSpecPullbackFst C v =
-      relativeSpecPullbackFst C w := by
-  subst hw
-  simp only [eqToIso_refl, Iso.trans_refl]
-  exact (relativeSpecPullbackFst_comp C v u).symm
-
 /-- Under `relativeSpecLevelIso`, the transition morphism `ι n` of the formal completion of
 `Spec_X(C)` corresponds to `algebraPullbackTransitionIso` composed with `relativeSpecPullbackFst`
 along `(X.formalCompletion I).ι n`. -/
@@ -391,7 +348,7 @@ private lemma relativeSpecLevelIso_inv_ι_hom (C : QuasicoherentAlgebra X) (n : 
   refine (isPullback_relativeSpecPullbackFst C (toScheme X I (n + 1))).hom_ext ?_ ?_
   · simp only [Category.assoc]
     rw [algebraPullbackTransitionIso_def,
-      relativeSpecMap_pullbackComp_eqToIso_fst _ _ (ι_toScheme X I n) C]
+      relativeSpecMap_pullbackComp_eqToIso_fst C _ _ (ι_toScheme X I n)]
     simp
   · simp [AdicThickeningSystem.Hom.naturality,
       CommMon.relativeSpecMap_relativeSpecToBase_assoc,
@@ -538,6 +495,28 @@ private lemma exists_hom_of_isIso_over {X V V' W W' : Scheme.{u}} {I : X.IdealSh
   rw [hcomp, hs_map]
   simp [a', eU, eV]
 
+/-- Formal-completion counterpart of `Scheme.Hom.relativeSpecFunctionsToScheme_naturality`:
+for affine morphisms `p : V ⟶ X` and `q : W ⟶ X` and a morphism `g : V ⟶ W` over `X`,
+completing the relative-Spec counit naturality square yields a commuting square of formal
+completions. -/
+private lemma map_relativeSpecFunctionsToScheme_naturality
+    {X V W : Scheme.{u}} {I : X.IdealSheafData}
+    {p : V ⟶ X} {q : W ⟶ X} [IsAffineHom p] [IsAffineHom q]
+    (g : V ⟶ W) (hg : g ≫ q = p)
+    (hm_le : (I.comap q.pushforwardStructureAlgebra.relativeSpecToBase).comap
+        (CommMon.relativeSpecMap (Scheme.Hom.pushforwardStructureAlgebraMap g hg)) ≤
+      I.comap p.pushforwardStructureAlgebra.relativeSpecToBase)
+    (hq_le : (I.comap q).comap q.relativeSpecFunctionsToScheme ≤
+      I.comap q.pushforwardStructureAlgebra.relativeSpecToBase)
+    (hp_le : (I.comap p).comap p.relativeSpecFunctionsToScheme ≤
+      I.comap p.pushforwardStructureAlgebra.relativeSpecToBase)
+    (hg_le : (I.comap q).comap g ≤ I.comap p) :
+    map (CommMon.relativeSpecMap (Scheme.Hom.pushforwardStructureAlgebraMap g hg)) hm_le ≫
+        map q.relativeSpecFunctionsToScheme hq_le =
+      map p.relativeSpecFunctionsToScheme hp_le ≫ map g hg_le :=
+  (map_comp_eq (Scheme.Hom.relativeSpecFunctionsToScheme_naturality g hg) hm_le hq_le _).trans
+    (map_comp p.relativeSpecFunctionsToScheme g hp_le hg_le).symm
+
 variable {X V W : Scheme.{u}} {I : X.IdealSheafData}
   {I_V : V.IdealSheafData} {I_W : W.IdealSheafData}
 
@@ -559,10 +538,13 @@ theorem hom_ext_of_isFinite_of_flat
   subst hp hq
   let m₁ := Scheme.Hom.pushforwardStructureAlgebraMap g₁ hg₁
   let m₂ := Scheme.Hom.pushforwardStructureAlgebraMap g₂ hg₂
-  have hq_eq : (I.comap q).comap (asIso q.relativeSpecFunctionsToScheme).hom =
+  have hq_eq : (I.comap q).comap q.relativeSpecFunctionsToScheme =
       I.comap q.pushforwardStructureAlgebra.relativeSpecToBase := by
-    rw [asIso_hom, ← IdealSheafData.comap_comp, q.relativeSpecFunctionsToScheme_comp]
-  let eQ := mapIso (asIso q.relativeSpecFunctionsToScheme) hq_eq
+    rw [← IdealSheafData.comap_comp, q.relativeSpecFunctionsToScheme_comp]
+  have : IsIso (map q.relativeSpecFunctionsToScheme hq_eq.le) := by
+    have hq_iso : IsIso (mapIso (asIso q.relativeSpecFunctionsToScheme) hq_eq).hom :=
+      inferInstance
+    rwa [mapIso_hom] at hq_iso
   have hp_le : (I.comap p).comap p.relativeSpecFunctionsToScheme ≤
       I.comap p.pushforwardStructureAlgebra.relativeSpecToBase := by
     rw [← IdealSheafData.comap_comp, p.relativeSpecFunctionsToScheme_comp]
@@ -573,16 +555,9 @@ theorem hom_ext_of_isFinite_of_flat
         (by rw [← IdealSheafData.comap_comp, CommMon.relativeSpecMap_relativeSpecToBase]) =
       map (CommMon.relativeSpecMap m₂)
         (by rw [← IdealSheafData.comap_comp, CommMon.relativeSpecMap_relativeSpecToBase]) := by
-    apply (cancel_mono eQ.hom).mp
-    rw [mapIso_hom,
-      map_comp_eq (by rw [asIso_hom, Scheme.Hom.relativeSpecFunctionsToScheme_naturality g₁ hg₁])
-        _ _ (by rw [← IdealSheafData.comap_comp, Category.assoc, hg₁,
-          p.relativeSpecFunctionsToScheme_comp]),
-      map_comp_eq (by rw [asIso_hom, Scheme.Hom.relativeSpecFunctionsToScheme_naturality g₂ hg₂])
-        _ _ (by rw [← IdealSheafData.comap_comp, Category.assoc, hg₂,
-          p.relativeSpecFunctionsToScheme_comp]),
-      ← map_comp_eq (J := I.comap p) rfl hp_le h₁,
-      ← map_comp_eq (J := I.comap p) rfl hp_le h₂, h]
+    apply (cancel_mono (map q.relativeSpecFunctionsToScheme hq_eq.le)).mp
+    rw [map_relativeSpecFunctionsToScheme_naturality g₁ hg₁ _ _ hp_le h₁,
+      map_relativeSpecFunctionsToScheme_naturality g₂ hg₂ _ _ hp_le h₂, h]
   have hf : (ObjectProperty.homMk m₁ :
       (⟨q.pushforwardStructureAlgebra, inferInstance⟩ : QuasicoherentAlgebra X) ⟶
         ⟨p.pushforwardStructureAlgebra, inferInstance⟩) =
