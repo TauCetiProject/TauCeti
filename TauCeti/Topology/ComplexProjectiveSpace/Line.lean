@@ -44,7 +44,8 @@ computation is not part of this file.
   `lineSphereFamily_apply_south`, `lineSphereFamily_injective`,
   `lineSphereFamily_eq_of_smul`, `lineSphereFamily_unitaryMap` and
   `lineSphereFamily_bijective`.
-* `TauCeti.ComplexProjectiveSpace.lineSphereFamilyFiber`: the based family over a point.
+* `TauCeti.ComplexProjectiveSpace.lineSphereFamilyFiber`: the based family over a point, with
+  `lineSphereFamilyFiber_apply_south`.
 
 ## References
 
@@ -248,6 +249,14 @@ theorem coe_lineSphereFamilyFiber_apply (f : finiteOrthonormalFrame ℂ 1 (n + 1
     (lineSphereFamilyFiber f w : C(Sphere2, ComplexProjectiveSpace n)) =
       lineSphereFamily n (f.snoc w) :=
   (rfl)
+
+/-- The two-sphere through `[u]` tangent to `w` sends the south pole to `[w]`. -/
+theorem lineSphereFamilyFiber_apply_south (f : finiteOrthonormalFrame ℂ 1 (n + 1))
+    (w : sphere (0 : f.complement) 1) :
+    (lineSphereFamilyFiber f w : C(Sphere2, ComplexProjectiveSpace n)) Sphere2.south =
+      mk n ⟨w.1.1, mem_sphere_zero_iff_norm.2 (mem_sphere_zero_iff_norm.1 w.2)⟩ := by
+  rw [coe_lineSphereFamilyFiber_apply, lineSphereFamily_apply_south]
+  exact congrArg (mk n) (f.toSphere_snoc_last w)
 
 /-- The two-sphere through `[u]` tangent to `w` sends `h (a, b)` to `[a u + b w]`. -/
 theorem lineSphereFamilyFiber_apply_hopfSphere2 (f : finiteOrthonormalFrame ℂ 1 (n + 1))
