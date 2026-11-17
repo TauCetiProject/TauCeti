@@ -11,14 +11,14 @@ public import Mathlib.Topology.ContinuousMap.Basic
 /-!
 # Round subdiscs of the open unit disc
 
-A round disc `B(c, r)` with `‖c‖ + r ≤ 1` lies in `𝔻`, and the affine map `z ↦ c + r z`
-parametrizes it by `𝔻` (`Complex.UnitDisc.subdisc`), with inverse `w ↦ (w - c) / r`
-(`Complex.UnitDisc.coe_subdisc_sub_div`). These maps compose like affine maps
-(`Complex.UnitDisc.subdisc_comp_subdisc`). If a compact subset `K` of `𝔻` meets no point of the
-circle `‖z - c‖ = r`, then the points of `𝔻` that `subdisc c r` sends into `K` form a compact set
-(`Complex.UnitDisc.isCompact_subdisc_preimage`): they are the rescaled points of `K` inside the
-disc, and the points of `K` in `B(c, r)` are its points at distance at most `r` from `c`, a
-compact set. This is what makes the restriction of a disc map to a round subdisc again a map with
+A round disc `B(c, r)` with `‖c‖ + r ≤ 1` lies in `𝔻`, and the affine map `z ↦ c + r z` parametrizes
+it by `𝔻` (`TauCeti.Complex.UnitDisc.subdisc`), with inverse `w ↦ (w - c) / r`
+(`TauCeti.Complex.UnitDisc.coe_subdisc_sub_div`). These maps compose like affine maps
+(`TauCeti.Complex.UnitDisc.subdisc_comp_subdisc`). If a compact subset `K` of `𝔻` meets no point of
+the circle `‖z - c‖ = r`, then the points of `𝔻` that `subdisc c r` sends into `K` form a compact
+set (`TauCeti.Complex.UnitDisc.isCompact_subdisc_preimage`): they are the rescaled points of `K`
+inside the disc, and the points of `K` in `B(c, r)` are its points at distance at most `r` from `c`,
+a compact set. This is what makes the restriction of a disc map to a round subdisc again a map with
 compact preimage of a closed set, as in the theory of positive cohomology assignments.
 -/
 
@@ -47,6 +47,12 @@ theorem exists_pos_lt_and_norm_add_le_one (z : 𝔻) {ε : ℝ} (hε : 0 < ε) :
   refine ⟨min (ε / 2) (1 - ‖(z : ℂ)‖), lt_min (by positivity) (by linarith),
     (min_le_left _ _).trans_lt (by linarith), ?_⟩
   linarith [min_le_right (ε / 2) (1 - ‖(z : ℂ)‖)]
+
+end Complex.UnitDisc
+
+open Complex.UnitDisc
+
+namespace TauCeti.Complex.UnitDisc
 
 /-- The **round subdisc map** `z ↦ c + r z`, parametrizing the disc `B(c, r)` of `ℂ` by the open
 unit disc. It is defined when `B(c, r)` lies in the unit disc, that is when `‖c‖ + r ≤ 1`, and
@@ -120,4 +126,4 @@ theorem isCompact_subdisc_preimage {K : Set 𝔻} (hK : IsCompact K)
   exact ((hK.image continuous_coe).inter_right isClosed_closedBall).image
     ((continuous_id.sub continuous_const).div_const _)
 
-end Complex.UnitDisc
+end TauCeti.Complex.UnitDisc

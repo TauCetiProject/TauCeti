@@ -28,8 +28,8 @@ open-disc substitute for a disc whose boundary stays away from `Z`, subject to t
 * **Degree.** `I(σ ∘ θ) = deg(θ) I(σ)` for every proper continuous `θ : 𝔻 → 𝔻`, with the
   homological degree `TauCeti.HomologicalOrientation.degree` of `θ`.
 * **Additivity.** If finitely many disjoint round discs `B(cᵢ, rᵢ) ⊆ 𝔻` contain `σ⁻¹(Z)`, then
-  `I(σ) = ∑ᵢ I(σ ∘ sᵢ)`, where `sᵢ = Complex.UnitDisc.subdisc cᵢ rᵢ` parametrizes `B(cᵢ, rᵢ)`.
-  The family may be empty.
+  `I(σ) = ∑ᵢ I(σ ∘ sᵢ)`, where `sᵢ = TauCeti.Complex.UnitDisc.subdisc cᵢ rᵢ` parametrizes
+  `B(cᵢ, rᵢ)`. The family may be empty.
 * **Positivity.** `I(σ) > 0` when `σ` is a nonconstant `J`-holomorphic disc meeting `Z`.
 
 The disc `𝔻` is open; compactness of `σ⁻¹(Z)` replaces the condition that the boundary of a closed
@@ -78,6 +78,7 @@ public section
 noncomputable section
 
 open Filter Metric Set Topology
+open Complex.UnitDisc TauCeti.Complex.UnitDisc
 open scoped Complex.UnitDisc Manifold ContDiff
 
 namespace TauCeti
@@ -86,7 +87,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   {I : ModelWithCorners ℝ E H} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
   [IsManifold I ∞ Y]
 
-open Complex.UnitDisc in
 /-- A **positive cohomology assignment** to a subset `Z` of an almost complex manifold `(Y, J)`:
 an integer `charge σ h` for every continuous disc `σ : 𝔻 → Y` with compact preimage `σ⁻¹(Z)`,
 which vanishes on discs missing `Z`, is invariant under homotopies with compact total preimage of
@@ -119,8 +119,6 @@ structure PositiveCohomologyAssignment (J : SmoothAlmostComplexStructure I Y) (Z
     (hnc : ∃ z w, σ z ≠ σ w) (hZ : ∃ z, σ z ∈ Z) : 0 < charge σ h
 
 namespace PositiveCohomologyAssignment
-
-open Complex.UnitDisc
 
 variable {J : SmoothAlmostComplexStructure I Y} {Z : Set Y} (A : PositiveCohomologyAssignment J Z)
 
