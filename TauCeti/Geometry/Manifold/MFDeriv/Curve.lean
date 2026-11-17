@@ -46,13 +46,13 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   with `TauCeti.Manifold.hasDerivAt_comp_curve` its unrestricted case.
 * `TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq`: every tangent vector on a
   boundaryless manifold is realized by a curve of the given regularity at the given parameter.
+* `TauCeti.Manifold.fromTangentSpace_curveVelocityWithin`: the velocity of a curve in an open
+  subset of a real normed space is the within derivative of its coordinate curve.
 * `TauCeti.Manifold.curveVelocityWithin` and `TauCeti.Manifold.curveVelocity`: the velocity of a
   curve within a parameter set and its unrestricted case, computed by
   `TauCeti.Manifold.curveVelocityWithin_apply` and `TauCeti.Manifold.curveVelocity_apply` and
   related by `TauCeti.Manifold.curveVelocityWithin_univ`; for a curve in a normed space they are
   its derivatives (`TauCeti.Manifold.curveVelocityWithin_eq_derivWithin`).
-* `TauCeti.Manifold.fromTangentSpace_curveVelocityWithin`: the velocity of a curve in an open
-  subset of a real normed space is the within derivative of its coordinate curve.
 * `TauCeti.Manifold.curveVelocityLiftWithin` and `TauCeti.Manifold.curveVelocityLift`: the
   corresponding curves in the tangent bundle, together with their projection and fibre formulas.
   By `Filter.EventuallyEq.curveVelocityLiftWithin_eq`, the velocity lift within `s` at `t`
