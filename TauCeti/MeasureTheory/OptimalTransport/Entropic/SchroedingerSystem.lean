@@ -487,27 +487,14 @@ theorem exists_isCoupling_withDensity_exp_add_of_ne_zero [IsFiniteMeasure μ] (h
     exact (ENNReal.mul_eq_right (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)).1
       (hmass.symm.trans hcoupling.measure_univ_right.symm)
   -- Convert the `lintegral` marginal identities to Bochner integrals.
-  have hrow_int (x : X) : ∫ y, Real.exp (φ x + ψ y + g (x, y)) ∂ν = 1 := by
-    have hint : Integrable (fun y ↦ Real.exp (φ x + ψ y + g (x, y))) ν :=
-      ((integrable_exp_add_of_abs_le (ν := ν) hg hgM hψ hC x).mul_const (Real.exp (φ x))).congr
-        (ae_of_all _ fun y ↦ by dsimp only; rw [← Real.exp_add]; ring_nf)
-    have h := (ofReal_integral_eq_lintegral_ofReal hint
-      (ae_of_all _ fun _ ↦ (Real.exp_pos _).le)).trans (hrow x)
-    have := congrArg ENNReal.toReal h
-    rwa [ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ (Real.exp_pos _).le),
-      ENNReal.toReal_one] at this
-  have hcol_int (y : Y) : ∫ x, Real.exp (φ x + ψ y + g (x, y)) ∂μ = 1 := by
-    have hint : Integrable (fun x ↦ Real.exp (φ x + ψ y + g (x, y))) μ :=
-      ((integrable_exp_add_of_abs_le (ν := μ) (hg.comp measurable_swap) (fun z ↦ hgM z.swap)
-        hφ hφC y).mul_const (Real.exp (ψ y))).congr (ae_of_all _ fun x ↦ by
-          dsimp only [Function.comp_apply, Prod.swap_prod_mk]
-          rw [← Real.exp_add]
-          ring_nf)
-    have h := (ofReal_integral_eq_lintegral_ofReal hint
-      (ae_of_all _ fun _ ↦ (Real.exp_pos _).le)).trans ((hcol y).trans hc1)
-    have := congrArg ENNReal.toReal h
-    rwa [ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ (Real.exp_pos _).le),
-      ENNReal.toReal_one] at this
+  have hrow_int (x : X) : ∫ y, Real.exp (φ x + ψ y + g (x, y)) ∂ν = 1 :=
+    (integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ (Real.exp_pos _).le)
+      (by fun_prop : Measurable _).aestronglyMeasurable).trans <|
+      (congrArg ENNReal.toReal (hrow x)).trans ENNReal.toReal_one
+  have hcol_int (y : Y) : ∫ x, Real.exp (φ x + ψ y + g (x, y)) ∂μ = 1 :=
+    (integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ (Real.exp_pos _).le)
+      (by fun_prop : Measurable _).aestronglyMeasurable).trans <|
+      (congrArg ENNReal.toReal ((hcol y).trans hc1)).trans ENNReal.toReal_one
   exact ⟨φ, ψ, max (M + C + |Real.log (ν.real univ)|) C, hφ, hψ,
     fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _),
     hrow_int, hcol_int, hcoupling⟩

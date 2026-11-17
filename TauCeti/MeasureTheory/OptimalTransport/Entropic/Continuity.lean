@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
-import TauCeti.Analysis.Normed.Field.Lipschitz
 import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.ZeroTemperature
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BoundedLipschitz
@@ -132,37 +131,17 @@ private theorem ofReal_abs_toReal_entropicTransportCost_sub_left_le_wassersteinE
     exists_lipschitzWith_source_potential_diff_bound (μ := μ) (μ' := μ') (ν := ν) hc hcB hL₁ hε
   obtain ⟨φ₂, _, hφ₂L, _, hφ₂i, hle₂⟩ :=
     exists_lipschitzWith_source_potential_diff_bound (μ := μ') (μ' := μ) (ν := ν) hc hcB hL₁ hε
-  rcases eq_or_ne K₁ 0 with rfl | hK₁
-  · obtain ⟨x₀⟩ := μ.nonempty_of_neZero
-    have hc₀ {φ : X → ℝ} (hL : LipschitzWith 0 φ) : φ = fun _ ↦ φ x₀ := funext fun x ↦ by
-      simpa using hL x x₀
-    rw [hc₀ hφ₁L] at hle₁; rw [hc₀ hφ₂L] at hle₂
-    simp only [integral_const, probReal_univ, one_smul, sub_self] at hle₁ hle₂
-    simp [ENNReal.ofReal_of_nonpos (abs_sub_le_iff.2 ⟨hle₁, hle₂⟩)]
-  have hK₁pos : (0 : ℝ) < K₁ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hK₁)
-  have hnorm : ‖(K₁ : ℝ)‖₊ = K₁ := NNReal.eq (Real.norm_of_nonneg K₁.coe_nonneg)
-  have hlip_div {φ : X → ℝ} (hL : LipschitzWith K₁ φ) : LipschitzWith 1 (fun x ↦ φ x / K₁) := by
-    simpa only [hnorm, div_self hK₁] using hL.div_const (K₁ : ℝ)
   rcases le_total (entropicTransportCost c ε μ ν).toReal
       (entropicTransportCost c ε μ' ν).toReal with h | h
   · rw [abs_of_nonneg (sub_nonneg.2 h)]
-    refine (ENNReal.ofReal_le_ofReal hle₁).trans ?_
-    have hdiv : ∫ x, φ₁ x ∂μ' - ∫ x, φ₁ x ∂μ =
-        K₁ * (∫ x, φ₁ x / K₁ ∂μ' - ∫ x, φ₁ x / K₁ ∂μ) := by
-      rw [integral_div, integral_div]; field_simp
-    rw [hdiv, ENNReal.ofReal_mul hK₁pos.le, ENNReal.ofReal_coe_nnreal]
-    gcongr
-    exact ofReal_integral_sub_integral_le_wassersteinEDist_one (hlip_div hφ₁L)
-      ((hφ₁i μ').div_const _) ((hφ₁i μ).div_const _)
+    exact (ENNReal.ofReal_le_ofReal (hle₁.trans (le_abs_self _))).trans
+      (ofReal_abs_integral_sub_integral_le_mul_wassersteinEDist_one (by simp) hφ₁L
+        (hφ₁i μ') (hφ₁i μ))
   · rw [abs_of_nonpos (sub_nonpos.2 h), neg_sub]
-    refine (ENNReal.ofReal_le_ofReal hle₂).trans ?_
-    have hdiv : ∫ x, φ₂ x ∂μ - ∫ x, φ₂ x ∂μ' =
-        K₁ * (∫ x, -(φ₂ x / K₁) ∂μ' - ∫ x, -(φ₂ x / K₁) ∂μ) := by
-      rw [integral_neg, integral_neg, integral_div, integral_div]; field_simp; ring
-    rw [hdiv, ENNReal.ofReal_mul hK₁pos.le, ENNReal.ofReal_coe_nnreal]
-    gcongr
-    exact ofReal_integral_sub_integral_le_wassersteinEDist_one (hlip_div hφ₂L).neg
-      ((hφ₂i μ').div_const _).neg ((hφ₂i μ).div_const _).neg
+    exact (ENNReal.ofReal_le_ofReal
+        (hle₂.trans ((le_abs_self _).trans_eq (abs_sub_comm _ _)))).trans
+      (ofReal_abs_integral_sub_integral_le_mul_wassersteinEDist_one (by simp) hφ₂L
+        (hφ₂i μ') (hφ₂i μ))
 
 /-- **`W₁`-Lipschitz stability of entropic optimal transport, in `ℝ≥0∞`
 (Feydy et al., Proposition 2).** On extended pseudometric spaces, for probability marginals, a
