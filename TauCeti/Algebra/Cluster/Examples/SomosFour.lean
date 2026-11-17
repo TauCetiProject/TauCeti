@@ -72,10 +72,14 @@ theorem exchangeMatrix_eq_submatrix (n : ℕ) :
     let k : Fin 4 := n
     let f : Fin 4 → Fin 4 := (· - k)
     have hf : Function.Injective f := fun _ _ h ↦ sub_left_inj.mp h
+    have hcompat (a : Fin 4) :
+        f ((Function.Embedding.refl (Fin 4)) a) =
+          (Function.Embedding.refl (Fin 4)) (f a) := by
+      simp only [Function.Embedding.refl_apply]
     have hm : matrixMutation (Function.Embedding.refl (Fin 4))
         (initialMatrix.submatrix f f) k =
         (matrixMutation (Function.Embedding.refl (Fin 4)) initialMatrix (f k)).submatrix f f := by
-      solve_by_elim [matrixMutation_submatrix, hf]
+      apply_rules [matrixMutation_submatrix, hf, hcompat]
     ext i j
     rw [exchangeMatrix_succ, ih, hm]
     simp [Matrix.submatrix_apply, f, k, mutation_initial, sub_sub]
@@ -86,12 +90,21 @@ theorem exchangeMatrix_add_four (n : ℕ) : exchangeMatrix (n + 4) = exchangeMat
   rw [exchangeMatrix_eq_submatrix, exchangeMatrix_eq_submatrix]
   simp
 
-/-- The column in the next mutation direction, read starting at that direction. -/
+/-- The column in the next mutation direction, at an arbitrary row index. -/
 @[simp]
-theorem exchangeMatrix_apply_add_col (n : ℕ) (r : Fin 4) :
-    exchangeMatrix n ((n : Fin 4) + r) n = ![(0 : ℤ), 1, -2, 1] r := by
+theorem exchangeMatrix_apply_col (n : ℕ) (i : Fin 4) :
+    exchangeMatrix n i n = ![(0 : ℤ), 1, -2, 1] (i - (n : Fin 4)) := by
   rw [exchangeMatrix_eq_submatrix]
-  simp only [Matrix.submatrix_apply, add_sub_cancel_left, sub_self]
+  simp only [Matrix.submatrix_apply, sub_self]
+  generalize i - (n : Fin 4) = r
+  fin_cases r <;> decide
+
+/-- Every diagonal entry of a cyclic exchange matrix is zero. -/
+@[simp]
+theorem exchangeMatrix_apply_self (n : ℕ) (i : Fin 4) : exchangeMatrix n i i = 0 := by
+  rw [exchangeMatrix_eq_submatrix]
+  simp only [Matrix.submatrix_apply]
+  generalize i - (n : Fin 4) = r
   fin_cases r <;> decide
 
 /-- All the exchange matrices admit the constant symmetrizer one. -/
@@ -104,6 +117,25 @@ theorem isSkewSymmetrizer_exchangeMatrix (n : ℕ) :
   rw [exchangeMatrix_eq_submatrix]
   exact h.submatrix _
 
+/-- The positive column monomial, in the original row order, is the product of the two
+neighboring variables. -/
+theorem prod_pow_toNat_exchangeMatrix {R : Type*} [CommMonoid R]
+    (n : ℕ) (x : Fin 4 → R) :
+    ∏ i : Fin 4, x i ^ (exchangeMatrix n i n).toNat =
+      x ((n : Fin 4) + 1) * x ((n : Fin 4) + 3) := by
+  rw [← Equiv.prod_comp (Equiv.addLeft (n : Fin 4))
+    (fun i ↦ x i ^ (exchangeMatrix n i n).toNat)]
+  simp [Fin.prod_univ_succ]
+
+/-- The negative column monomial, in the original row order, is the square of the opposite
+variable. -/
+theorem prod_pow_toNat_neg_exchangeMatrix {R : Type*} [CommMonoid R]
+    (n : ℕ) (x : Fin 4 → R) :
+    ∏ i : Fin 4, x i ^ (-(exchangeMatrix n i n)).toNat = x ((n : Fin 4) + 2) ^ 2 := by
+  rw [← Equiv.prod_comp (Equiv.addLeft (n : Fin 4))
+    (fun i ↦ x i ^ (-(exchangeMatrix n i n)).toNat)]
+  simp [Fin.prod_univ_succ]
+
 /-- The positive and negative column monomials, in the original row order, give exactly
 the two terms in the Somos–4 exchange numerator. -/
 theorem prod_pow_toNat_exchangeMatrix_add_prod_pow_toNat_neg
@@ -111,10 +143,6 @@ theorem prod_pow_toNat_exchangeMatrix_add_prod_pow_toNat_neg
     (∏ i : Fin 4, x i ^ (exchangeMatrix n i n).toNat) +
       (∏ i : Fin 4, x i ^ (-(exchangeMatrix n i n)).toNat) =
       x ((n : Fin 4) + 1) * x ((n : Fin 4) + 3) + x ((n : Fin 4) + 2) ^ 2 := by
-  rw [← Equiv.prod_comp (Equiv.addLeft (n : Fin 4))
-      (fun i ↦ x i ^ (exchangeMatrix n i n).toNat),
-    ← Equiv.prod_comp (Equiv.addLeft (n : Fin 4))
-      (fun i ↦ x i ^ (-(exchangeMatrix n i n)).toNat)]
-  simp [Fin.prod_univ_succ]
+  rw [prod_pow_toNat_exchangeMatrix, prod_pow_toNat_neg_exchangeMatrix]
 
 end TauCeti.SomosFour
