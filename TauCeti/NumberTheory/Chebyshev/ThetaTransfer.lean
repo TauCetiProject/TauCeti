@@ -64,8 +64,9 @@ open scoped Chebyshev Nat.Prime
 
 namespace Chebyshev
 
-open TauCeti.Real (logIntegral intervalIntegrable_inv_log_pow intervalIntegrable_div_mul_log_sq
+open TauCeti.Real (logIntegral intervalIntegrable_div_mul_log_sq integral_div_mul_log_sq_eq_sub_add
   integral_inv_log_sq_eq_logIntegral_sub_div_log_sub integral_div_mul_log_sq_le_integral_div_log_sq
+  neg_integral_div_log_sq_le_integral_div_mul_log_sq
   abs_integral_div_mul_log_sq_le_integral_div_log_sq)
 
 /-- The error `θ(t) - t` of the Chebyshev function is interval integrable: `θ` is monotone and the
@@ -98,18 +99,8 @@ theorem primeCounting_sub_logIntegral_eq {x : ℝ} (hx : 1 < x) :
     (π ⌊x⌋₊ : ℝ) - logIntegral x =
       (θ x - x) / Real.log x + (∫ t in (2 : ℝ)..x, (θ t - t) / (t * Real.log t ^ 2)) +
         2 / Real.log 2 := by
-  have hsplit : (∫ t in (2 : ℝ)..x, θ t / (t * Real.log t ^ 2)) =
-      (∫ t in (2 : ℝ)..x, (θ t - t) / (t * Real.log t ^ 2)) +
-        ∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹ := by
-    rw [← intervalIntegral.integral_add
-      (intervalIntegrable_div_mul_log_sq one_lt_two hx (intervalIntegrable_theta_sub_id 2 x))
-      (intervalIntegrable_inv_log_pow 2 one_lt_two hx)]
-    refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    have ht1 : 1 < t := by rcases mem_uIcc.mp ht with h | h <;> linarith [h.1]
-    have ht0 : t ≠ 0 := by linarith
-    have hlt : Real.log t ≠ 0 := (Real.log_pos ht1).ne'
-    field_simp
-    ring
+  have hsplit := integral_div_mul_log_sq_eq_sub_add 1 one_lt_two hx theta_mono.intervalIntegrable
+  simp only [one_mul] at hsplit
   have hLi := integral_inv_log_sq_eq_logIntegral_sub_div_log_sub one_lt_two hx
   rw [TauCeti.Real.logIntegral_two] at hLi
   rw [primeCounting_eq_theta_div_log_add_integral_of_one_lt hx, hsplit, hLi, sub_div]
@@ -201,10 +192,8 @@ theorem logIntegral_add_sub_le_primeCounting {ε : ℝ → ℝ} {x : ℝ} (hx : 
     logIntegral x + 2 / Real.log 2 - x * ε x / Real.log x -
         ∫ t in (2 : ℝ)..x, ε t / Real.log t ^ 2 ≤ (π ⌊x⌋₊ : ℝ) := by
   have hid := primeCounting_sub_logIntegral_eq (one_lt_two.trans_le hx)
-  have hint := integral_div_mul_log_sq_le_integral_div_log_sq one_lt_two hx
-    (intervalIntegrable_theta_sub_id 2 x).neg hε fun t ht ↦ by
-      simpa only [Pi.neg_apply, neg_sub_comm] using neg_le.mp (h t ht)
-  simp only [Pi.neg_apply, neg_div, intervalIntegral.integral_neg] at hint
+  have hint := neg_integral_div_log_sq_le_integral_div_mul_log_sq one_lt_two hx
+    (intervalIntegrable_theta_sub_id 2 x) hε h
   have hb : -(x * ε x) / Real.log x ≤ (θ x - x) / Real.log x :=
     div_le_div_of_nonneg_right (h x ⟨hx, le_rfl⟩) (Real.log_pos (by linarith)).le
   rw [neg_div] at hb
