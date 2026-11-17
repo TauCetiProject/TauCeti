@@ -29,11 +29,31 @@ the other.
   `subScalar A c`.
 * `LinearPMap.exists_linearMap_inverse_smul_sub`: a bijective shift has a linear two-sided inverse
   `E → E` with values in the domain of `A`.
+* `LinearPMap.surjective_neg_smul_sub_iff_surjective_add_smul`: the shift `x ↦ (-c) • x - A x` is
+  surjective if and only if `x ↦ A x + c • x` is surjective.
 -/
 
 public section
 
 namespace LinearPMap
+
+section Ring
+
+variable {R E : Type*} [Ring R] [AddCommGroup E] [Module R E]
+
+/-- The shift `x ↦ (-c) • x - A x` on the domain of `A` is surjective if and only if
+`x ↦ A x + c • x` is surjective, since the two maps are negatives of one another. -/
+theorem surjective_neg_smul_sub_iff_surjective_add_smul (A : E →ₗ.[R] E) (c : R) :
+    (Function.Surjective fun x : A.domain => (-c) • (x : E) - A x) ↔
+      Function.Surjective fun x : A.domain => A x + c • (x : E) := by
+  have hneg : (fun x : A.domain => (-c) • (x : E) - A x) =
+      (Equiv.neg E) ∘ fun x : A.domain => A x + c • (x : E) := by
+    ext x
+    simp only [Function.comp_apply, Equiv.neg_apply, _root_.neg_smul, neg_add_rev, sub_eq_add_neg]
+  rw [hneg]
+  exact (Equiv.neg E).comp_surjective _
+
+end Ring
 
 variable {R E : Type*} [CommRing R] [AddCommGroup E] [Module R E]
 
