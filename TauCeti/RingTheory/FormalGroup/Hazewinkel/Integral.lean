@@ -152,4 +152,18 @@ theorem hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup [Algebra ℚ R] (
   funext j
   exact MvPolynomial.eval₂_X _ _ _
 
+/-- At `v = 0`, `hazewinkelIntegralFormalGroup p 0` is the additive formal group law `𝔾ₐ`. -/
+@[simp]
+theorem hazewinkelIntegralFormalGroup_zero :
+    hazewinkelIntegralFormalGroup p (0 : ℕ+ → R) = FormalGroup.𝔾ₐ := by
+  have h0Q : Int.castRingHom ℚ ∘ (0 : ℕ+ → ℤ) = 0 := funext fun _ ↦ map_zero _
+  have h0R : Int.castRingHom R ∘ (0 : ℕ+ → ℤ) = 0 := funext fun _ ↦ map_zero _
+  have hZ : hazewinkelIntegralFormalGroup p (0 : ℕ+ → ℤ) = FormalGroup.𝔾ₐ :=
+    FormalGroup.map_injective (f := Int.castRingHom ℚ) Int.cast_injective <| by
+      dsimp only
+      rw [map_hazewinkelIntegralFormalGroup, FormalGroup.map_𝔾ₐ,
+        hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup, h0Q, hazewinkelFormalGroup_zero]
+  simpa only [map_hazewinkelIntegralFormalGroup, FormalGroup.map_𝔾ₐ, h0R] using
+    congrArg (fun F : FormalGroup ℤ ↦ F.map (Int.castRingHom R)) hZ
+
 end TauCeti

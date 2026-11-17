@@ -61,6 +61,9 @@ representable by a polynomial ring over the Lazard ring.
   additive law along `X + e X^(n + 1)` gives `X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`.
 * `FormalGroup.nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ`: if `e² = 0`, multiplication by `k` on
   that law is `k X + e (k^(n + 1) - k) X^(n + 1)`.
+* `FormalGroup.le_order_sub_of_smul_eq`, `FormalGroup.homogeneousComponent_sub_of_smul_eq`: if
+  `η • F = G` and `η ≡ X` below degree `m`, then `F ≡ G` below degree `m` with degree-`m`
+  component `-c ((X + Y)ᵐ - Xᵐ - Yᵐ)`.
 
 ## References
 
@@ -379,5 +382,44 @@ theorem nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ (n : ℕ+) {e : R} (he : 
   rw [hkψ, mul_add_mul_pow_of_mul_eq_zero hC]
   simp only [map_neg, map_mul, map_sub, map_pow]
   ring
+
+/-- If `η • F = G` and `η ≡ X` below degree `m`, then `F ≡ G` below degree `m`. -/
+theorem le_order_sub_of_smul_eq {F G : FormalGroup R} {η : FormalCoordinate R}
+    (hsmul : η • F = G) {m : ℕ} (hη : (m : ℕ∞) ≤ (η.toPowerSeries - PowerSeries.X).order) :
+    (m : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order := by
+  have hdef_η : F.homDefect G η.toPowerSeries = 0 := by
+    rw [← hsmul, homDefect_eq_sub_subst_pair, subst_toPowerSeries_eq_subst_smul_toPowerSeries,
+      sub_self]
+  have h := F.le_order_homDefect_sub (G := G) PowerSeries.constantCoeff_X hη
+  rwa [hdef_η, zero_sub, order_neg, homDefect_X] at h
+
+/-- If `η • F = G` and `η ≡ X` below degree `m ≠ 0`, then the degree-`m` homogeneous component of
+`F - G` is `-c ((X + Y)ᵐ - Xᵐ - Yᵐ)`, where `c` is the degree-`m` coefficient of `η - X`. -/
+theorem homogeneousComponent_sub_of_smul_eq {F G : FormalGroup R} {η : FormalCoordinate R}
+    (hsmul : η • F = G) {m : ℕ} (hm : m ≠ 0)
+    (hη : (m : ℕ∞) ≤ (η.toPowerSeries - PowerSeries.X).order) :
+    homogeneousComponent m (F.toPowerSeries - G.toPowerSeries) =
+      -((PowerSeries.coeff m (η.toPowerSeries - PowerSeries.X) •
+          ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ m - MvPolynomial.X 0 ^ m -
+            MvPolynomial.X 1 ^ m) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
+  set c := PowerSeries.coeff m (η.toPowerSeries - PowerSeries.X)
+  have hdef_η : F.homDefect G η.toPowerSeries = 0 := by
+    rw [← hsmul, homDefect_eq_sub_subst_pair, subst_toPowerSeries_eq_subst_smul_toPowerSeries,
+      sub_self]
+  have hη_approx : ((m + 1 : ℕ) : ℕ∞) ≤
+      (η.toPowerSeries - (PowerSeries.X + c • PowerSeries.X ^ m)).order :=
+    PowerSeries.nat_le_order _ _ fun k hk ↦ by
+      rw [sub_add_eq_sub_sub, map_sub, PowerSeries.coeff_smul, PowerSeries.coeff_X_pow]
+      rcases lt_or_eq_of_le (Nat.lt_succ_iff.mp hk) with hlt | rfl
+      · rw [PowerSeries.coeff_of_lt_order k ((Nat.cast_lt.mpr hlt).trans_le hη),
+          ite_eq_right hlt.ne, smul_zero, sub_zero]
+      · simp [c]
+  have hdef_step := F.le_order_homDefect_sub (G := G) (by simp [hm]) hη_approx
+  rw [hdef_η, zero_sub, order_neg] at hdef_step
+  have hhom0 : homogeneousComponent m (F.homDefect G (PowerSeries.X + c • PowerSeries.X ^ m)) = 0 :=
+    homogeneousComponent_of_lt_order_eq_zero
+      ((Nat.cast_lt.mpr (Nat.lt_succ_self m)).trans_le hdef_step)
+  have hlead := F.homogeneousComponent_homDefect_add_sub (G := G) PowerSeries.constantCoeff_X hm c
+  rwa [map_sub, hhom0, homDefect_X, zero_sub, neg_eq_iff_eq_neg] at hlead
 
 end FormalGroup

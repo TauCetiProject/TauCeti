@@ -11,7 +11,9 @@ public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.HopfAlgebroid
 public import TauCeti.RingTheory.FormalGroup.Hazewinkel.CoordinateChange
+import Mathlib.Algebra.CharP.Invertible
 import Mathlib.Algebra.MvPolynomial.Monad
+import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 
@@ -30,9 +32,13 @@ equip `(V, Γ_p)` with a **Hopf algebroid** structure (`TauCeti.Hazewinkel.right
 When primes `q ≠ p` are units in `R`, `(BP_*, BP_*BP)` classifies all strict isomorphisms between
 Hazewinkel laws (`TauCeti.Hazewinkel.strictIsoEquiv`, `TauCeti.Hazewinkel.strictIsoAlgEquiv`,
 `TauCeti.Hazewinkel.strictIsoEquivOfCharP`). Finally, we prove Ravenel's logarithm recursion and
-degree-one formulas and descend modulo `(p, v₁, v₂, …)` to Milnor's dual Steenrod algebra
-`𝔽_p[t₁, t₂, …]` (`TauCeti.Hazewinkel.milnorQuotient`, `TauCeti.Hazewinkel.milnorCoproduct`,
-`TauCeti.Hazewinkel.milnorConjugation`).
+degree-one formulas and descend modulo `(p, v₁, v₂, …)` to the Milnor Hopf algebra `𝔽_p[t₁, t₂, …]`
+(`TauCeti.Hazewinkel.milnorQuotient`, `TauCeti.Hazewinkel.milnorCoproduct`,
+`TauCeti.Hazewinkel.milnorConjugation`). For odd primes `p`, this is the polynomial part
+`𝔽_p[ξ₁, ξ₂, …]` of Milnor's mod-`p` dual Steenrod algebra (omitting the exterior generators `τᵢ`).
+For `p = 2`, it is isomorphic as an ungraded Hopf algebra to the full mod-`2` dual Steenrod algebra
+`𝔽_2[ξ₁, ξ₂, …]`; in standard topological grading (`|tₙ| = 2(2ⁿ - 1) = 2|ξₙ|`), it identifies with
+the subalgebra `𝔽_2[ξ₁², ξ₂², …]` via `tₙ ↦ ξₙ²`.
 
 ## References
 
@@ -137,10 +143,10 @@ end Lift
 @[simp] theorem map_coordinateChangeLift_universalStrictCoordinate (vt : (ℕ+ → R) × (ℕ+ → R)) :
     FormalCoordinate.map (coordinateChangeLift vt) (universalStrictCoordinate p) =
       (hazewinkelIntegralFormalGroup p vt.1).pTypicalStrictCoordinate p vt.2 := by
+  have hv : ⇑(MvPolynomial.homEquiv.symm vt.1) ∘ X = vt.1 := MvPolynomial.homEquiv.right_inv vt.1
   rw [map_universalStrictCoordinate, coordinateChangeLift_comp_C,
-    map_universalHazewinkelIntegralFormalGroup,
-    show ⇑(MvPolynomial.homEquiv.symm vt.1) ∘ X = vt.1 from MvPolynomial.homEquiv.right_inv vt.1,
-    show ⇑(coordinateChangeLift vt) ∘ X = vt.2 from funext (coordinateChangeLift_X vt)]
+    map_universalHazewinkelIntegralFormalGroup, hv,
+    (funext (coordinateChangeLift_X vt) : ⇑(coordinateChangeLift vt) ∘ X = vt.2)]
 
 /-- The **right unit** `η_R : ℤ[v₁, v₂, …] →+* ℤ[v₁, v₂, …][t₁, t₂, …]`, classifying the target
 Hazewinkel formal group law transported along `universalStrictCoordinate p`. -/
@@ -151,11 +157,11 @@ def rightUnit : MvPolynomial ℕ+ ℤ →+* MvPolynomial ℕ+ (MvPolynomial ℕ+
 theorem map_rightUnit :
     (universalHazewinkelIntegralFormalGroup p).map (rightUnit p) =
       universalStrictCoordinate p • (universalHazewinkelIntegralFormalGroup p).map C := by
-  have hw := (existsUnique_pTypicalStrictCoordinate_smul_hazewinkelIntegralFormalGroup p
-    (C ∘ (X : ℕ+ → MvPolynomial ℕ+ ℤ)) X).choose_spec.1
   have hX : ⇑(rightUnit p) ∘ X = _ := MvPolynomial.homEquiv.right_inv _
-  rw [map_universalHazewinkelIntegralFormalGroup, hX, ← hw, universalStrictCoordinate,
-    map_universalHazewinkelIntegralFormalGroup]
+  rw [map_universalHazewinkelIntegralFormalGroup, hX,
+    ← (existsUnique_pTypicalStrictCoordinate_smul_hazewinkelIntegralFormalGroup p
+      (C ∘ (X : ℕ+ → MvPolynomial ℕ+ ℤ)) X).choose_spec.1,
+    universalStrictCoordinate, map_universalHazewinkelIntegralFormalGroup]
 
 theorem map_comp_rightUnit (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
     (universalHazewinkelIntegralFormalGroup p).map (f.comp (rightUnit p)) =
@@ -183,7 +189,7 @@ end Counit
 @[simp] theorem map_counit_universalStrictCoordinate :
     FormalCoordinate.map counit (universalStrictCoordinate p) = 1 := by
   rw [map_universalStrictCoordinate, counit_comp_C, FormalGroup.map_id,
-    show ⇑counit ∘ X = 0 from funext counit_X, FormalGroup.pTypicalStrictCoordinate_zero]
+    (funext counit_X : ⇑counit ∘ X = 0), FormalGroup.pTypicalStrictCoordinate_zero]
 
 @[simp] theorem counit_comp_rightUnit : counit.comp (rightUnit p) = RingHom.id _ :=
   hom_ext p <| by
@@ -200,9 +206,8 @@ def strictIsoEquiv (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)
     {q : (ℕ+ → R) × (ℕ+ → R) × (FormalCoordinate.linearCoeff (R := R)).ker //
       q.2.2.1 • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
       (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) where
-  toFun q := coordinateChangeLift (q.1.1,
-    (existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p hlocal
-      (MonoidHom.mem_ker.mp q.1.2.2.2) q.2).choose)
+  toFun q := coordinateChangeLift (q.1.1, (existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p
+    hlocal (MonoidHom.mem_ker.mp q.1.2.2.2) q.2).choose)
   invFun f := ⟨(f.comp C ∘ X, f.comp (rightUnit p) ∘ X,
     ⟨FormalCoordinate.map f (universalStrictCoordinate p),
       map_universalStrictCoordinate_mem_ker p f⟩), by
@@ -214,10 +219,9 @@ def strictIsoEquiv (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)
     have hv : ⇑(f.comp C) ∘ X = v := funext (coordinateChangeLift_C_X _)
     have hφ : FormalCoordinate.map f (universalStrictCoordinate p) = φ.1 := by
       rw [map_coordinateChangeLift_universalStrictCoordinate, ← ht]
-    refine Subtype.ext (Prod.ext hv (Prod.ext (hazewinkelIntegralFormalGroup_injective p ?_)
-      (Subtype.ext hφ)))
-    simpa only [map_universalHazewinkelIntegralFormalGroup, hv, hφ, hsmul] using
-      map_comp_rightUnit p f
+    refine Subtype.ext (Prod.ext hv (Prod.ext (hazewinkelIntegralFormalGroup_injective p <| by
+      simpa only [map_universalHazewinkelIntegralFormalGroup, hv, hφ, hsmul] using
+        map_comp_rightUnit p f) (Subtype.ext hφ)))
   right_inv f := by
     have h := (map_comp_rightUnit p f).symm
     rw [map_universalHazewinkelIntegralFormalGroup, map_universalHazewinkelIntegralFormalGroup] at h
@@ -247,15 +251,13 @@ def strictIsoAlgEquiv (A : Type*) [CommRing A]
     {q : (ℕ+ → R) × (ℕ+ → R) × (FormalCoordinate.linearCoeff (R := R)).ker //
       q.2.2.1 • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
       (MvPolynomial ℕ+ (MvPolynomial ℕ+ A) →ₐ[A] R) :=
-  have hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R) := fun q hq hqp ↦ by
-    have hA : IsUnit (algebraMap ℤ A q) :=
-      (IsLocalization.AtPrime.isUnit_to_map_iff A (Ideal.span {(p : ℤ)}) (q : ℤ)).mpr <|
-        Ideal.mem_primeCompl_iff.mpr fun hmem ↦ hqp
-          ((Nat.prime_dvd_prime_iff_eq hp.out hq).mp
+  (strictIsoEquiv p fun q hq hqp ↦ by
+    have hqA : IsUnit (q : A) := by
+      simpa only [map_natCast] using
+        (IsLocalization.AtPrime.isUnit_to_map_iff A (Ideal.span {(p : ℤ)}) (q : ℤ)).mpr <|
+          Ideal.mem_primeCompl_iff.mpr fun hmem ↦ hqp ((Nat.prime_dvd_prime_iff_eq hp.out hq).mp
             (Int.natCast_dvd_natCast.mp (Ideal.mem_span_singleton.mp hmem))).symm
-    have hqA : IsUnit (q : A) := by simpa only [map_natCast] using hA
-    simpa only [map_natCast] using hqA.map (algebraMap A R)
-  (strictIsoEquiv p hlocal).trans
+    simpa only [map_natCast] using hqA.map (algebraMap A R)).trans
     { toFun f :=
         { toRingHom := eval₂Hom (MvPolynomial.aeval (f.comp C ∘ X)).toRingHom (f ∘ X)
           commutes' a := by
@@ -287,13 +289,9 @@ def strictIsoEquivOfCharP [CharP R p] :
     {q : (ℕ+ → R) × (ℕ+ → R) × (FormalCoordinate.linearCoeff (R := R)).ker //
       q.2.2.1 • hazewinkelIntegralFormalGroup p q.1 = hazewinkelIntegralFormalGroup p q.2.1} ≃
       (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :=
-  strictIsoEquiv p fun q hq hqp ↦ by
-    have hcop : Nat.Coprime q p := hq.coprime_iff_not_dvd.mpr fun hdvd ↦
-      hqp ((Nat.prime_dvd_prime_iff_eq hq hp.out).mp hdvd)
-    have hbez := congrArg (Int.castRingHom R) (Nat.gcd_eq_gcd_ab q p)
-    rw [hcop.gcd_eq_one, Nat.cast_one, map_one, map_add, map_mul, map_mul, map_natCast,
-      map_natCast, CharP.cast_eq_zero R p, zero_mul, add_zero] at hbez
-    exact IsUnit.of_mul_eq_one (Nat.gcdA q p : R) hbez.symm
+  strictIsoEquiv p fun _ hq hqp ↦
+    (CharP.isUnit_natCast_iff (R := R) hp.out).mpr fun hdvd ↦
+      hqp ((Nat.prime_dvd_prime_iff_eq hp.out hq).mp hdvd).symm
 
 @[simp] theorem strictIsoEquivOfCharP_symm_fst [CharP R p]
     (f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R) :
@@ -376,38 +374,31 @@ private theorem pTypicalParams_mem_range_of_injective
     · exact ih i (Nat.lt_succ_iff.mp hlt)
     · obtain rfl : i = n.succPNat := PNat.coe_injective heq
       let t_trunc : ℕ+ → A := fun j ↦ if hj : (j : ℕ) ≤ n then (ih j hj).choose else 0
-      have htrunc : ∀ j : ℕ+, (j : ℕ) ≤ n → tB j = (ι ∘ t_trunc) j := fun j hj ↦ by
-        dsimp only [t_trunc, Function.comp_apply]; rw [dite_eq_left hj]
-        exact (ih j hj).choose_spec.symm
       have hsub := (hazewinkelIntegralFormalGroup p (ι ∘ v)).coeff_pow_succ_pTypicalStrictCurve_sub
-        hp.out.one_lt htrunc
-      rw [show (ι ∘ t_trunc) n.succPNat = 0 by simp [t_trunc], sub_zero, ← hcurveB, ← map_inv,
+        hp.out.one_lt (t := tB) (t' := ι ∘ t_trunc) (n := n) fun j hj ↦ by
+          dsimp only [t_trunc, Function.comp_apply]; rw [dite_eq_left hj]
+          exact (ih j hj).choose_spec.symm
+      rw [(by simp [t_trunc] : (ι ∘ t_trunc) n.succPNat = 0), sub_zero, ← hcurveB, ← map_inv,
         FormalCoordinate.toPowerSeries_map, ← map_hazewinkelIntegralFormalGroup,
         ← FormalGroup.map_pTypicalStrictCurve, FormalGroup.Curve.toPowerSeries_map,
         ← map_sub (PowerSeries.map ι), PowerSeries.coeff_map] at hsub
       exact ⟨_, hsub⟩
 
-/-- **Integral descent of `p`-typical strict coordinates** along an injection into a
-`ℚ`-algebra. -/
+/-- **Integral descent of `p`-typical strict coordinates** along an injection into a ring `B` in
+which every prime `q ≠ p` is a unit. -/
 theorem existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective
-    {A B : Type*} [CommRing A] [CommRing B] [Algebra ℚ B] {ι : A →+* B}
-    (hι : Function.Injective ι) {v w : ℕ+ → A} {φ : FormalCoordinate A}
-    (hφ : FormalCoordinate.linearCoeff φ = 1)
+    {A B : Type*} [CommRing A] [CommRing B] {ι : A →+* B}
+    (hι : Function.Injective ι) (hlocalB : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : B))
+    {v w : ℕ+ → A} {φ : FormalCoordinate A} (hφ : FormalCoordinate.linearCoeff φ = 1)
     (hsmul : φ • hazewinkelIntegralFormalGroup p v = hazewinkelIntegralFormalGroup p w) :
     ∃! t : ℕ+ → A, φ = (hazewinkelIntegralFormalGroup p v).pTypicalStrictCoordinate p t := by
-  have hlocalB : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : B) := fun q hq _ ↦ by
-    simpa only [map_natCast] using
-      (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr hq.ne_zero) : IsUnit (q : ℚ)).map
-        (algebraMap ℚ B)
-  have hφB : FormalCoordinate.linearCoeff (FormalCoordinate.map ι φ) = 1 := by
-    ext; rw [FormalCoordinate.val_linearCoeff, FormalCoordinate.toPowerSeries_map,
+  obtain ⟨tB, htB, _⟩ := existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p hlocalB
+    (φ := FormalCoordinate.map ι φ)
+    (by ext; rw [FormalCoordinate.val_linearCoeff, FormalCoordinate.toPowerSeries_map,
       PowerSeries.coeff_map, ← FormalCoordinate.val_linearCoeff, hφ, Units.val_one, map_one,
-      Units.val_one]
-  have hsmulB : FormalCoordinate.map ι φ • hazewinkelIntegralFormalGroup p (ι ∘ v) =
-      hazewinkelIntegralFormalGroup p (ι ∘ w) := by
-    simpa only [FormalGroup.map_smul, map_hazewinkelIntegralFormalGroup] using
-      congrArg (fun F : FormalGroup A ↦ F.map ι) hsmul
-  obtain ⟨tB, htB, _⟩ := existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq p hlocalB hφB hsmulB
+      Units.val_one])
+    (by simpa only [FormalGroup.map_smul, map_hazewinkelIntegralFormalGroup] using
+      congrArg (fun F : FormalGroup A ↦ F.map ι) hsmul)
   have hmem := pTypicalParams_mem_range_of_injective p v φ
     (by rw [htB, FormalGroup.toPowerSeries_inv_pTypicalStrictCoordinate])
   let tA : ℕ+ → A := fun i ↦ (hmem i.val i le_rfl).choose
@@ -430,19 +421,19 @@ private theorem existsUnique_coproduct_params :
         (hazewinkelIntegralFormalGroup p
           (⇑(C.comp (C : MvPolynomial ℕ+ ℤ →+* MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) ∘
             X)).pTypicalStrictCoordinate p t := by
+  let R₃ := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))
   refine existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective p
     (B := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ)))
     (ι := map (map (map (Int.castRingHom ℚ))))
     (map_injective _ (map_injective _ (map_injective _ Int.cast_injective)))
+    (fun q hq _ ↦ by simpa only [map_natCast] using
+      (Nat.cast_ne_zero.mpr hq.ne_zero : (q : ℚ) ≠ 0).isUnit.map (algebraMap ℚ _))
     (w := ⇑((map (rightUnit p)).comp (rightUnit p)) ∘ X)
     (MonoidHom.mem_ker.mp (mul_mem (map_universalStrictCoordinate_mem_ker p _)
       (map_universalStrictCoordinate_mem_ker p _))) ?_
   rw [← map_universalHazewinkelIntegralFormalGroup, ← map_universalHazewinkelIntegralFormalGroup,
-    mul_smul,
-    ← map_comp_rightUnit (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) p C,
-    ← map_comp_C (rightUnit p),
-    ← map_comp_rightUnit (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) p
-      (map (rightUnit p))]
+    mul_smul, ← map_comp_rightUnit (R := R₃) p C, ← map_comp_C (rightUnit p),
+    ← map_comp_rightUnit (R := R₃) p (map (rightUnit p))]
 
 /-- The **coproduct** `Δ : Γ_p →+* Γ_p ⊗_V Γ_p`, classifying composition of strict `p`-typical
 coordinate changes. -/
@@ -478,14 +469,12 @@ theorem comp_coproduct_comp_C (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolyn
   rw [RingHom.comp_assoc, coproduct_comp_C, RingHom.comp_assoc]
 
 @[simp] theorem coproduct_comp_rightUnit :
-    (coproduct p).comp (rightUnit p) = (map (rightUnit p)).comp (rightUnit p) :=
-  hom_ext (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) p <| by
-    rw [map_comp_rightUnit (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) p
-        (coproduct p), map_coproduct_universalStrictCoordinate, coproduct_comp_C,
-      map_comp_rightUnit (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) p
-        (map (rightUnit p)), map_comp_C (rightUnit p),
-      map_comp_rightUnit (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) p C,
-      mul_smul]
+    (coproduct p).comp (rightUnit p) = (map (rightUnit p)).comp (rightUnit p) := by
+  let R₃ := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))
+  refine hom_ext (R := R₃) p ?_
+  rw [map_comp_rightUnit (R := R₃) p (coproduct p), map_coproduct_universalStrictCoordinate,
+    coproduct_comp_C, map_comp_rightUnit (R := R₃) p (map (rightUnit p)), map_comp_C (rightUnit p),
+    map_comp_rightUnit (R := R₃) p C, mul_smul]
 
 @[simp] theorem coproduct_rightUnit (a : MvPolynomial ℕ+ ℤ) :
     coproduct p (rightUnit p a) = map (rightUnit p) (rightUnit p a) :=
@@ -495,22 +484,21 @@ theorem comp_coproduct_comp_C (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolyn
 theorem tensorLift_counit_id_comp_coproduct :
     (tensorLift p ⟨(C.comp counit, RingHom.id _), by
         rw [RingHom.comp_assoc, counit_comp_rightUnit, RingHom.comp_id, RingHom.id_comp]⟩).comp
-          (coproduct p) = RingHom.id (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) := by
-  refine ringHom_ext_universalStrictCoordinate p ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C, RingHom.comp_assoc, counit_comp_C,
-      RingHom.comp_id, RingHom.id_comp]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C]; simp [FormalCoordinate.map_comp]
+          (coproduct p) = RingHom.id (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :=
+  ringHom_ext_universalStrictCoordinate p
+    (by rw [comp_coproduct_comp_C, tensorLift_comp_C, RingHom.comp_assoc, counit_comp_C,
+      RingHom.comp_id, RingHom.id_comp])
+    (by rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
+      tensorLift_comp_C]; simp [FormalCoordinate.map_comp])
 
 /-- **The right counit law** `(id ⊗ ε) ∘ Δ = id`. -/
 theorem tensorLift_id_counit_comp_coproduct :
     (tensorLift p ⟨(RingHom.id _, (rightUnit p).comp counit), by
         rw [RingHom.comp_assoc, counit_comp_C, RingHom.comp_id, RingHom.id_comp]⟩).comp
-          (coproduct p) = RingHom.id (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) := by
-  refine ringHom_ext_universalStrictCoordinate p ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C]; simp [FormalCoordinate.map_comp]
+          (coproduct p) = RingHom.id (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :=
+  ringHom_ext_universalStrictCoordinate p (by rw [comp_coproduct_comp_C, tensorLift_comp_C])
+    (by rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
+      tensorLift_comp_C]; simp [FormalCoordinate.map_comp])
 
 /-- **Coassociativity for composable triples** of homomorphisms `Γ_p →+* R`. -/
 theorem tensorLift_coproduct_assoc {f₁ f₂ f₃ : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* R}
@@ -520,12 +508,10 @@ theorem tensorLift_coproduct_assoc {f₁ f₂ f₃ : MvPolynomial ℕ+ (MvPolyno
           tensorLift_comp_map_rightUnit, h₂₃]⟩).comp (coproduct p) =
       (tensorLift p ⟨(f₁, (tensorLift p ⟨(f₂, f₃), h₂₃⟩).comp (coproduct p)), by
         rw [RingHom.comp_assoc, coproduct_comp_C, ← RingHom.comp_assoc,
-          tensorLift_comp_C, h₁₂]⟩).comp (coproduct p) := by
-  refine ringHom_ext_universalStrictCoordinate p ?_ ?_
-  · rw [comp_coproduct_comp_C, comp_coproduct_comp_C, tensorLift_comp_C, tensorLift_comp_C,
-      comp_coproduct_comp_C, tensorLift_comp_C]
-  · simp only [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C, mul_assoc]
+          tensorLift_comp_C, h₁₂]⟩).comp (coproduct p) :=
+  ringHom_ext_universalStrictCoordinate p (by simp only [comp_coproduct_comp_C, tensorLift_comp_C])
+    (by simp only [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
+      tensorLift_comp_C, mul_assoc])
 
 /-- **Universal coassociativity** `(Δ ⊗ id) ∘ Δ = (id ⊗ Δ) ∘ Δ` in `Γ_p ⊗_V Γ_p ⊗_V Γ_p`. -/
 theorem coproduct_coassoc :
@@ -556,8 +542,10 @@ private theorem existsUnique_conjugation_params :
         (hazewinkelIntegralFormalGroup p (⇑(rightUnit p) ∘ X)).pTypicalStrictCoordinate p t := by
   refine existsUnique_pTypicalStrictCoordinate_eq_of_smul_eq_of_injective p
     (B := MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ)) (ι := map (map (Int.castRingHom ℚ)))
-    (map_injective _ (map_injective _ Int.cast_injective)) (w := C ∘ X)
-    (MonoidHom.mem_ker.mp (inv_mem (universalStrictCoordinate_mem_ker p))) ?_
+    (map_injective _ (map_injective _ Int.cast_injective))
+    (fun q hq _ ↦ by simpa only [map_natCast] using
+      (Nat.cast_ne_zero.mpr hq.ne_zero : (q : ℚ) ≠ 0).isUnit.map (algebraMap ℚ _))
+    (w := C ∘ X) (MonoidHom.mem_ker.mp (inv_mem (universalStrictCoordinate_mem_ker p))) ?_
   rw [← map_universalHazewinkelIntegralFormalGroup, ← map_universalHazewinkelIntegralFormalGroup,
     map_rightUnit, inv_smul_smul]
 
@@ -586,18 +574,18 @@ def conjugation : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomial �
     conjugation p (rightUnit p a) = C a := RingHom.congr_fun (conjugation_comp_rightUnit p) a
 
 @[simp] theorem conjugation_comp_conjugation :
-    (conjugation p).comp (conjugation p) = RingHom.id _ := by
-  refine ringHom_ext_universalStrictCoordinate p ?_ ?_
-  · rw [RingHom.comp_assoc, conjugation_comp_C, conjugation_comp_rightUnit, RingHom.id_comp]
-  · simp [FormalCoordinate.map_comp]
+    (conjugation p).comp (conjugation p) = RingHom.id _ :=
+  ringHom_ext_universalStrictCoordinate p
+    (by rw [RingHom.comp_assoc, conjugation_comp_C, conjugation_comp_rightUnit, RingHom.id_comp])
+    (by simp [FormalCoordinate.map_comp])
 
 @[simp] theorem conjugation_conjugation (x : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :
     conjugation p (conjugation p x) = x := RingHom.congr_fun (conjugation_comp_conjugation p) x
 
-@[simp] theorem counit_comp_conjugation : counit.comp (conjugation p) = counit := by
-  refine ringHom_ext_universalStrictCoordinate p ?_ ?_
-  · rw [RingHom.comp_assoc, conjugation_comp_C, counit_comp_rightUnit, counit_comp_C]
-  · simp [FormalCoordinate.map_comp]
+@[simp] theorem counit_comp_conjugation : counit.comp (conjugation p) = counit :=
+  ringHom_ext_universalStrictCoordinate p
+    (by rw [RingHom.comp_assoc, conjugation_comp_C, counit_comp_rightUnit, counit_comp_C])
+    (by simp [FormalCoordinate.map_comp])
 
 @[simp] theorem counit_conjugation (x : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) :
     counit (conjugation p x) = counit x := RingHom.congr_fun (counit_comp_conjugation p) x
@@ -606,22 +594,22 @@ def conjugation : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomial �
 theorem tensorLift_conjugation_id_comp_coproduct :
     (tensorLift p ⟨(conjugation p, RingHom.id _), by
         rw [conjugation_comp_rightUnit, RingHom.id_comp]⟩).comp (coproduct p) =
-      (rightUnit p).comp counit := by
-  refine ringHom_ext_universalStrictCoordinate p ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C, conjugation_comp_C, RingHom.comp_assoc,
-      counit_comp_C, RingHom.comp_id]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C]; simp [FormalCoordinate.map_comp]
+      (rightUnit p).comp counit :=
+  ringHom_ext_universalStrictCoordinate p
+    (by rw [comp_coproduct_comp_C, tensorLift_comp_C, conjugation_comp_C, RingHom.comp_assoc,
+      counit_comp_C, RingHom.comp_id])
+    (by rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
+      tensorLift_comp_C]; simp [FormalCoordinate.map_comp])
 
 /-- **The right antipode equation** `μ ∘ (id ⊗ c) ∘ Δ = η_L ∘ ε`. -/
 theorem tensorLift_id_conjugation_comp_coproduct :
     (tensorLift p ⟨(RingHom.id _, conjugation p), by
-        rw [conjugation_comp_C, RingHom.id_comp]⟩).comp (coproduct p) = C.comp counit := by
-  refine ringHom_ext_universalStrictCoordinate p ?_ ?_
-  · rw [comp_coproduct_comp_C, tensorLift_comp_C, RingHom.comp_assoc, counit_comp_C,
-      RingHom.comp_id, RingHom.id_comp]
-  · rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C]; simp [FormalCoordinate.map_comp]
+        rw [conjugation_comp_C, RingHom.id_comp]⟩).comp (coproduct p) = C.comp counit :=
+  ringHom_ext_universalStrictCoordinate p
+    (by rw [comp_coproduct_comp_C, tensorLift_comp_C, RingHom.comp_assoc, counit_comp_C,
+      RingHom.comp_id, RingHom.id_comp])
+    (by rw [map_comp_coproduct_universalStrictCoordinate, tensorLift_comp_map_rightUnit,
+      tensorLift_comp_C]; simp [FormalCoordinate.map_comp])
 
 /-! ### Morphism from the Lazard Hopf algebroid `(L, L[b₁, b₂, …])` -/
 
@@ -662,11 +650,12 @@ def ofLazardCoordinateChange :
       ← FormalGroup.map_comp, map_ofLazardRing]
 
 @[simp] theorem counit_comp_ofLazardCoordinateChange :
-    counit.comp (ofLazardCoordinateChange p) = (ofLazardRing p).comp LazardRing.counit := by
-  refine FormalCoordinate.ringHom_ext_universalStrictCoordinate ?_ ?_
-  · rw [RingHom.comp_assoc, ofLazardCoordinateChange_comp_C, ← RingHom.comp_assoc, counit_comp_C,
-      RingHom.id_comp, RingHom.comp_assoc, LazardRing.counit_comp_C, RingHom.comp_id]
-  · simp [FormalCoordinate.map_comp]
+    counit.comp (ofLazardCoordinateChange p) = (ofLazardRing p).comp LazardRing.counit :=
+  FormalCoordinate.ringHom_ext_universalStrictCoordinate
+    (by rw [RingHom.comp_assoc, ofLazardCoordinateChange_comp_C, ← RingHom.comp_assoc,
+      counit_comp_C, RingHom.id_comp, RingHom.comp_assoc, LazardRing.counit_comp_C,
+      RingHom.comp_id])
+    (by simp [FormalCoordinate.map_comp])
 
 theorem coproduct_comp_ofLazardCoordinateChange :
     (coproduct p).comp (ofLazardCoordinateChange p) =
@@ -677,26 +666,26 @@ theorem coproduct_comp_ofLazardCoordinateChange :
             rw [RingHom.comp_assoc, ofLazardCoordinateChange_comp_rightUnit,
               RingHom.comp_assoc, ofLazardCoordinateChange_comp_C,
               ← RingHom.comp_assoc, ← RingHom.comp_assoc, map_comp_C (rightUnit p)]⟩).comp
-        LazardRing.coproduct := by
-  refine FormalCoordinate.ringHom_ext_universalStrictCoordinate
-    (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) ?_ ?_
-  · rw [RingHom.comp_assoc, ofLazardCoordinateChange_comp_C, ← RingHom.comp_assoc,
-      coproduct_comp_C, LazardRing.comp_coproduct_comp_C, LazardRing.tensorLift_comp_C]
-    dsimp only; rw [RingHom.comp_assoc, RingHom.comp_assoc, ofLazardCoordinateChange_comp_C]
-  · rw [LazardRing.map_comp_coproduct_universalStrictCoordinate,
-      LazardRing.tensorLift_comp_map_rightUnit, LazardRing.tensorLift_comp_C]
-    simp [FormalCoordinate.map_comp]
+        LazardRing.coproduct :=
+  FormalCoordinate.ringHom_ext_universalStrictCoordinate
+    (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)))
+    (by rw [RingHom.comp_assoc, ofLazardCoordinateChange_comp_C, ← RingHom.comp_assoc,
+          coproduct_comp_C, LazardRing.comp_coproduct_comp_C, LazardRing.tensorLift_comp_C]
+        dsimp only; rw [RingHom.comp_assoc, RingHom.comp_assoc, ofLazardCoordinateChange_comp_C])
+    (by rw [LazardRing.map_comp_coproduct_universalStrictCoordinate,
+          LazardRing.tensorLift_comp_map_rightUnit, LazardRing.tensorLift_comp_C]
+        simp [FormalCoordinate.map_comp])
 
 @[simp] theorem conjugation_comp_ofLazardCoordinateChange :
     (conjugation p).comp (ofLazardCoordinateChange p) =
-      (ofLazardCoordinateChange p).comp LazardRing.conjugation := by
-  refine FormalCoordinate.ringHom_ext_universalStrictCoordinate ?_ ?_
-  · rw [RingHom.comp_assoc, ofLazardCoordinateChange_comp_C, ← RingHom.comp_assoc,
+      (ofLazardCoordinateChange p).comp LazardRing.conjugation :=
+  FormalCoordinate.ringHom_ext_universalStrictCoordinate
+    (by rw [RingHom.comp_assoc, ofLazardCoordinateChange_comp_C, ← RingHom.comp_assoc,
       conjugation_comp_C, RingHom.comp_assoc, LazardRing.conjugation_comp_C,
-      ofLazardCoordinateChange_comp_rightUnit]
-  · simp [FormalCoordinate.map_comp]
+      ofLazardCoordinateChange_comp_rightUnit])
+    (by simp [FormalCoordinate.map_comp])
 
-/-! ### Ravenel's logarithm recursion, degree-one formulas, and Milnor's dual Steenrod algebra -/
+/-! ### Ravenel's logarithm recursion, degree-one formulas, and the Milnor Hopf algebra -/
 
 /-- **Ravenel's recursion for the right unit** over any `ℚ`-algebra `K`. -/
 theorem hazewinkelLogCoeff_comp_rightUnit {K : Type*} [CommRing K] [Algebra ℚ K]
@@ -706,47 +695,41 @@ theorem hazewinkelLogCoeff_comp_rightUnit {K : Type*} [CommRing K] [Algebra ℚ 
         ∑ i ∈ Finset.range n,
           hazewinkelLogCoeff p (f.comp C ∘ X) i * f (X (n - 1 - i).succPNat) ^ p ^ i := by
   have hF := map_comp_rightUnit p f
-  rw [map_universalStrictCoordinate, map_universalHazewinkelIntegralFormalGroup,
-    map_universalHazewinkelIntegralFormalGroup,
-    hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup,
+  simp only [map_universalStrictCoordinate, map_universalHazewinkelIntegralFormalGroup,
     hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup] at hF
   have hlog := congrArg (fun G : FormalGroup K ↦ PowerSeries.coeff (p ^ n) G.log) hF
   rwa [log_hazewinkelFormalGroup, coeff_hazewinkelLog_pow _ hp.out.one_lt n,
     log_pTypicalStrictCoordinate_smul_hazewinkelFormalGroup,
     coeff_pow_subst_pTypicalStrictCurve_hazewinkelLog hp.out.one_lt] at hlog
 
-private theorem cancel_natCast_of_injective_rat {A B : Type*} [CommRing A] [CommRing B]
-    [Algebra ℚ B] {ι : A →+* B} (hι : Function.Injective ι) {x y : A}
-    (h : (p : A) * x = (p : A) * y) : x = y := by
-  apply hι
-  have hpQ : IsUnit (p : B) := by
-    simpa only [map_natCast] using
-      (isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr hp.out.ne_zero) : IsUnit (p : ℚ)).map
-        (algebraMap ℚ B)
-  exact hpQ.mul_left_cancel (by simpa only [map_mul, map_natCast] using congrArg ι h)
+private theorem hazewinkelLogCoeff_comp_rightUnit_of_comp_C_eq_zero {K : Type*} [CommRing K]
+    [Algebra ℚ K] {f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* K}
+    (hf0 : ⇑(f.comp C) ∘ X = 0) (n : ℕ) :
+    hazewinkelLogCoeff p (f.comp (rightUnit p) ∘ X) (n + 1) = f (X n.succPNat) := by
+  rw [hazewinkelLogCoeff_comp_rightUnit, hf0, hazewinkelLogCoeff_zero_succ, zero_add,
+    Finset.sum_eq_single 0 (fun i _ hi0 ↦ by
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi0
+      rw [hazewinkelLogCoeff_zero_succ, zero_mul])
+    (fun h0 ↦ absurd (Finset.mem_range.mpr (Nat.succ_pos n)) h0)]
+  simp
 
 /-- **`η_R(v₁) = v₁ + p t₁`**. -/
 theorem rightUnit_X_one :
     rightUnit p (X 1) = C (X 1) + (p : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) * X 1 := by
-  let ι : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ) :=
-    map (map (Int.castRingHom ℚ))
-  have hι : Function.Injective ι := map_injective _ (map_injective _ Int.cast_injective)
-  apply hι
-  have hrec := hazewinkelLogCoeff_comp_rightUnit p ι 1
+  apply map_injective _ (map_injective (Int.castRingHom ℚ) Int.cast_injective)
+  have hrec := hazewinkelLogCoeff_comp_rightUnit p (map (map (Int.castRingHom ℚ))) 1
   simp only [Finset.range_one, Finset.sum_singleton, hazewinkelLogCoeff_one,
     hazewinkelLogCoeff_zero, Nat.sub_self, pow_zero, pow_one, one_mul, Function.comp_apply,
     RingHom.comp_apply] at hrec
-  have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
   have hmul := congrArg ((p : ℚ) • ·) hrec
-  rw [smul_add, smul_inv_smul₀ hp0, smul_inv_smul₀ hp0] at hmul
+  rw [smul_add, smul_inv_smul₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero),
+    smul_inv_smul₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero)] at hmul
   rw [hmul, map_add, map_mul, map_natCast, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]; rfl
 
 /-- **`Δ(t₁) = t₁ ⊗ 1 + 1 ⊗ t₁`**: `t₁` is primitive in `(V, Γ_p)`. -/
 theorem coproduct_X_one : coproduct p (X 1) = C (X 1) + X 1 := by
-  refine cancel_natCast_of_injective_rat p
-    (B := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ)))
-    (ι := map (map (map (Int.castRingHom ℚ))))
-    (map_injective _ (map_injective _ (map_injective _ Int.cast_injective))) ?_
+  apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero :
+    (p : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ))) ≠ 0)
   have hΔ := congrArg (coproduct p) (rightUnit_X_one p)
   rw [coproduct_rightUnit, rightUnit_X_one, map_add, map_C, map_mul, map_natCast, map_X,
     rightUnit_X_one, map_add, map_mul, map_natCast, map_add, coproduct_C, map_mul,
@@ -755,69 +738,49 @@ theorem coproduct_X_one : coproduct p (X 1) = C (X 1) + X 1 := by
 
 /-- **`c(t₁) = -t₁`**: conjugation negates `t₁`. -/
 theorem conjugation_X_one : conjugation p (X 1) = -X 1 := by
-  refine cancel_natCast_of_injective_rat p (B := MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ))
-    (ι := map (map (Int.castRingHom ℚ))) (map_injective _ (map_injective _ Int.cast_injective)) ?_
+  apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero :
+    (p : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) ≠ 0)
   have hc := congrArg (conjugation p) (rightUnit_X_one p)
   rw [conjugation_rightUnit, map_add, conjugation_C, rightUnit_X_one, map_mul, map_natCast] at hc
   linear_combination -hc
 
-private theorem hazewinkelLogCoeff_eval_zero_comp_rightUnit (k : ℕ) :
+private theorem hazewinkelLogCoeff_eval_zero_comp_rightUnit (n : ℕ) :
     hazewinkelLogCoeff p
-        (((map (Int.castRingHom ℚ)).comp (map (eval (0 : ℕ+ → ℤ)))).comp (rightUnit p) ∘ X) k =
-      if k = 0 then 1 else X (k - 1).succPNat := by
-  set f : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomial ℕ+ ℚ :=
-    (map (Int.castRingHom ℚ)).comp (map (eval (0 : ℕ+ → ℤ)))
-  have hf0 : ⇑(f.comp C) ∘ X = 0 := funext fun i ↦ by simp [f]
-  have h0_succ (m : ℕ) : hazewinkelLogCoeff p (0 : ℕ+ → MvPolynomial ℕ+ ℚ) (m + 1) = 0 := by
-    simp [hazewinkelLogCoeff_succ, zero_pow (pow_ne_zero _ hp.out.ne_zero)]
-  rcases k with _ | n
-  · simp
-  · rw [ite_eq_right (Nat.succ_ne_zero n), Nat.add_sub_cancel, hazewinkelLogCoeff_comp_rightUnit,
-      hf0, h0_succ n, zero_add, Finset.sum_eq_single 0]
-    · simp [f]
-    · intro i _ hi0; obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi0; rw [h0_succ m, zero_mul]
-    · exact fun h0 ↦ absurd (Finset.mem_range.mpr (Nat.succ_pos n)) h0
+        (((map (Int.castRingHom ℚ)).comp (map (eval (0 : ℕ+ → ℤ)))).comp (rightUnit p) ∘ X)
+        (n + 1) = X n.succPNat := by
+  simpa using hazewinkelLogCoeff_comp_rightUnit_of_comp_C_eq_zero p
+    (f := (map (Int.castRingHom ℚ)).comp (map (eval (0 : ℕ+ → ℤ)))) (funext fun _ ↦ by simp) n
 
 theorem map_eval_zero_rightUnit_X_succ (n : ℕ) :
     map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X n.succPNat)) +
         ∑ i ∈ Finset.range n, X i.succPNat *
           map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X (n - 1 - i).succPNat)) ^ p ^ (i + 1) =
       (p : MvPolynomial ℕ+ ℤ) * X n.succPNat := by
-  let ι : MvPolynomial ℕ+ ℤ →+* MvPolynomial ℕ+ ℚ := map (Int.castRingHom ℚ)
   apply MvPolynomial.map_injective (Int.castRingHom ℚ) Int.cast_injective
-  set wQ : ℕ+ → MvPolynomial ℕ+ ℚ := ((ι.comp (map (eval (0 : ℕ+ → ℤ)))).comp (rightUnit p)) ∘ X
-  have hrec := natCast_mul_hazewinkelLogCoeff_succ wQ hp.out.ne_zero n
-  rw [Finset.sum_range_succ', hazewinkelLogCoeff_eval_zero_comp_rightUnit p (n + 1),
-    ite_eq_right (Nat.succ_ne_zero n), Nat.add_sub_cancel, hazewinkelLogCoeff_zero, pow_zero,
-    pow_one, one_mul, Nat.sub_zero, add_comm] at hrec
-  rw [Finset.sum_congr rfl fun i _ ↦ by
-    rw [hazewinkelLogCoeff_eval_zero_comp_rightUnit p (i + 1), ite_eq_right (Nat.succ_ne_zero i),
-      Nat.add_sub_cancel, show n - (i + 1) = n - 1 - i by omega]] at hrec
-  simpa only [ι, wQ, map_add, map_sum, map_mul, map_pow, map_natCast, map_X,
+  have hrec := natCast_mul_hazewinkelLogCoeff_succ
+    ((((map (Int.castRingHom ℚ)).comp (map (eval (0 : ℕ+ → ℤ)))).comp (rightUnit p)) ∘ X)
+    hp.out.ne_zero n
+  rw [Finset.sum_range_succ', hazewinkelLogCoeff_eval_zero_comp_rightUnit p n,
+    hazewinkelLogCoeff_zero, pow_zero, pow_one, one_mul, Nat.sub_zero, add_comm,
+    Finset.sum_congr rfl fun i _ ↦ by
+      rw [hazewinkelLogCoeff_eval_zero_comp_rightUnit p i, ← Nat.sub_sub,
+        Nat.sub_right_comm]] at hrec
+  simpa only [map_add, map_sum, map_mul, map_pow, map_natCast, map_X,
     Function.comp_apply, RingHom.comp_apply] using hrec.symm
 
 theorem natCast_dvd_map_eval_zero_rightUnit_X (i : ℕ+) :
     (p : MvPolynomial ℕ+ ℤ) ∣ map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X i)) := by
   suffices ∀ n, ∀ j : ℕ+, (j : ℕ) ≤ n →
-      (p : MvPolynomial ℕ+ ℤ) ∣ map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X j)) from
-    this (i : ℕ) i le_rfl
+      (p : MvPolynomial ℕ+ ℤ) ∣ map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X j)) from this i i le_rfl
   intro n; induction n with
   | zero => intro j hj; have := j.pos; omega
   | succ n ih =>
     intro j hj; rcases lt_or_eq_of_le hj with hlt | heq
     · exact ih j (Nat.lt_succ_iff.mp hlt)
     · obtain rfl : j = n.succPNat := PNat.coe_injective heq
-      have hrec := map_eval_zero_rightUnit_X_succ p n
-      have hdvd_sum : (p : MvPolynomial ℕ+ ℤ) ∣ ∑ k ∈ Finset.range n, X k.succPNat *
-          map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X (n - 1 - k).succPNat)) ^ p ^ (k + 1) :=
-        Finset.dvd_sum fun k hk ↦ dvd_mul_of_dvd_right (dvd_pow
-          (ih (n - 1 - k).succPNat (by rw [Finset.mem_range] at hk; simp; omega))
-          (pow_ne_zero _ hp.out.ne_zero)) _
-      have heq' : map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X n.succPNat)) =
-          (p : MvPolynomial ℕ+ ℤ) * X n.succPNat - ∑ k ∈ Finset.range n, X k.succPNat *
-            map (eval (0 : ℕ+ → ℤ)) (rightUnit p (X (n - 1 - k).succPNat)) ^ p ^ (k + 1) := by
-        linear_combination hrec
-      exact heq' ▸ dvd_sub (dvd_mul_right _ _) hdvd_sum
+      exact (eq_sub_of_add_eq (map_eval_zero_rightUnit_X_succ p n)) ▸ dvd_sub (dvd_mul_right _ _)
+        (Finset.dvd_sum fun k hk ↦ dvd_mul_of_dvd_right (dvd_pow (ih (n - 1 - k).succPNat
+          (by rw [Finset.mem_range] at hk; simp; omega)) (pow_ne_zero _ hp.out.ne_zero)) _)
 
 theorem map_map_eval_zero_coproduct_X_succ (n : ℕ) :
     map (map (eval (0 : ℕ+ → ℤ))) (coproduct p (X n.succPNat)) =
@@ -828,43 +791,36 @@ theorem map_map_eval_zero_coproduct_X_succ (n : ℕ) :
   let CQ : MvPolynomial ℕ+ ℚ →+* MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ) := C
   let F : MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ)) →+*
       MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ) := (map ιQ).comp (map ev0)
-  have hF_inj : Function.Injective (map ιQ : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* _) :=
-    map_injective _ (map_injective _ Int.cast_injective)
-  have h0_succ (m : ℕ) :
-      hazewinkelLogCoeff p (0 : ℕ+ → MvPolynomial ℕ+ (MvPolynomial ℕ+ ℚ)) (m + 1) = 0 := by
-    simp [hazewinkelLogCoeff_succ, zero_pow (pow_ne_zero _ hp.out.ne_zero)]
-  apply hF_inj
+  apply map_injective (ιQ : MvPolynomial ℕ+ ℤ →+* _) (map_injective _ Int.cast_injective)
   have hA : hazewinkelLogCoeff p ((F.comp (coproduct p)).comp (rightUnit p) ∘ X) (n + 1) =
       map ιQ (map ev0 (coproduct p (X n.succPNat))) := by
-    rw [hazewinkelLogCoeff_comp_rightUnit,
-      show ⇑((F.comp (coproduct p)).comp C) ∘ X = 0 from funext fun i ↦ by simp [F, ev0, ιQ],
-      h0_succ n, zero_add, Finset.sum_eq_single 0]
-    · simp [F]
-    · intro i _ hi0; obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi0; rw [h0_succ m, zero_mul]
-    · exact fun h0 ↦ absurd (Finset.mem_range.mpr (Nat.succ_pos n)) h0
+    simpa [F] using hazewinkelLogCoeff_comp_rightUnit_of_comp_C_eq_zero p
+      (f := F.comp (coproduct p)) (funext fun _ ↦ by simp [F, ev0, ιQ]) n
   have hB : hazewinkelLogCoeff p
       ((F.comp (map (rightUnit p))).comp (rightUnit p) ∘ X) (n + 1) =
       C (X n.succPNat) + X n.succPNat +
         ∑ i ∈ Finset.range n, C (X i.succPNat) * X (n - 1 - i).succPNat ^ p ^ (i + 1) := by
     set w0Q : ℕ+ → MvPolynomial ℕ+ ℚ := ((ιQ.comp ev0).comp (rightUnit p)) ∘ X
-    have hFC : ⇑((F.comp (map (rightUnit p))).comp C) ∘ X = CQ ∘ w0Q :=
-      funext fun i ↦ by simp [F, ev0, ιQ, CQ, w0Q]
-    have hFX : ∀ k : ℕ+, (F.comp (map (rightUnit p))) (X k) = X k := fun k ↦ by simp [F, ev0, ιQ]
-    rw [hazewinkelLogCoeff_comp_rightUnit, hFC, ← map_hazewinkelLogCoeff w0Q CQ,
-      hazewinkelLogCoeff_eval_zero_comp_rightUnit p (n + 1), ite_eq_right (Nat.succ_ne_zero n),
-      Nat.add_sub_cancel, Finset.sum_range_succ', ← map_hazewinkelLogCoeff w0Q CQ,
-      hazewinkelLogCoeff_zero, map_one, one_mul, pow_zero, pow_one, Nat.sub_zero, hFX]
-    rw [Finset.sum_congr rfl fun i _ ↦ by
-      rw [← map_hazewinkelLogCoeff w0Q CQ, hazewinkelLogCoeff_eval_zero_comp_rightUnit p (i + 1),
-        ite_eq_right (Nat.succ_ne_zero i), Nat.add_sub_cancel, hFX,
-        show n - (i + 1) = n - 1 - i by omega]]; ring
-  have hEq : (F.comp (coproduct p)).comp (rightUnit p) =
-      (F.comp (map (rightUnit p))).comp (rightUnit p) := by
-    rw [RingHom.comp_assoc, coproduct_comp_rightUnit, ← RingHom.comp_assoc]
-  rw [← hA, hEq, hB]; simp [ιQ, map_add, map_sum, map_mul, map_pow, map_C, map_X]
+    have hFX (k : ℕ+) : (F.comp (map (rightUnit p))) (X k) = X k := by simp [F, ev0, ιQ]
+    rw [hazewinkelLogCoeff_comp_rightUnit,
+      (funext fun _ ↦ by simp [F, ev0, ιQ, CQ, w0Q] :
+        ⇑((F.comp (map (rightUnit p))).comp C) ∘ X = CQ ∘ w0Q),
+      ← map_hazewinkelLogCoeff w0Q CQ, hazewinkelLogCoeff_eval_zero_comp_rightUnit p n,
+      Finset.sum_range_succ', ← map_hazewinkelLogCoeff w0Q CQ, hazewinkelLogCoeff_zero, map_one,
+      one_mul, pow_zero, pow_one, Nat.add_sub_cancel, Nat.sub_zero, hFX,
+      Finset.sum_congr rfl fun i _ ↦ by
+        rw [← map_hazewinkelLogCoeff w0Q CQ, hazewinkelLogCoeff_eval_zero_comp_rightUnit p i,
+          hFX, ← Nat.sub_sub, Nat.sub_right_comm]]
+    dsimp only [CQ]; ring
+  rw [← hA, (by rw [RingHom.comp_assoc, coproduct_comp_rightUnit, ← RingHom.comp_assoc] :
+    (F.comp (coproduct p)).comp (rightUnit p) =
+      (F.comp (map (rightUnit p))).comp (rightUnit p)), hB]
+  simp [ιQ, map_add, map_sum, map_mul, map_pow, map_C, map_X]
 
-/-- **The quotient map to Milnor's polynomial dual Steenrod algebra**
-`ℤ[v₁, v₂, …][t₁, t₂, …] →+* 𝔽_p[t₁, t₂, …]`, killing `(p, v₁, v₂, …)`. -/
+/-- **The quotient map** `ℤ[v₁, v₂, …][t₁, t₂, …] →+* 𝔽_p[t₁, t₂, …]`, killing `(p, v₁, v₂, …)`,
+onto the polynomial part `𝔽_p[ξ₁, ξ₂, …]` of the mod-`p` dual Steenrod algebra (at odd primes `p`;
+at `p = 2`, isomorphic as an ungraded Hopf algebra to `𝔽_2[ξ₁, ξ₂, …]`, or to `𝔽_2[ξ₁², ξ₂², …]`
+in topological grading via `tₙ ↦ ξₙ²`). -/
 def milnorQuotient : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomial ℕ+ (ZMod p) :=
   map ((Int.castRingHom (ZMod p)).comp (eval (0 : ℕ+ → ℤ)))
 
@@ -874,11 +830,10 @@ def milnorQuotient : MvPolynomial ℕ+ (MvPolynomial ℕ+ ℤ) →+* MvPolynomia
   simp [milnorQuotient]
 
 theorem milnorQuotient_surjective : Function.Surjective (milnorQuotient p) := fun q ↦ by
-  have hcomp : (milnorQuotient p).comp (map (C : ℤ →+* MvPolynomial ℕ+ ℤ)) =
-      map (Int.castRingHom (ZMod p)) :=
-    ringHom_ext' (RingHom.ext_int _ _) fun i ↦ by simp [milnorQuotient]
   obtain ⟨qZ, hqZ⟩ := map_surjective (Int.castRingHom (ZMod p)) ZMod.intCast_surjective q
-  exact ⟨map C qZ, by simpa [← RingHom.comp_apply, hcomp] using hqZ⟩
+  refine ⟨map C qZ, by simpa [← RingHom.comp_apply, (ringHom_ext' (RingHom.ext_int _ _) fun _ ↦
+    by simp [milnorQuotient] : (milnorQuotient p).comp (map (C : ℤ →+* MvPolynomial ℕ+ ℤ)) =
+      map (Int.castRingHom (ZMod p)))] using hqZ⟩
 
 @[simp] theorem milnorQuotient_rightUnit_X (i : ℕ+) : milnorQuotient p (rightUnit p (X i)) = 0 := by
   obtain ⟨u, hu⟩ := natCast_dvd_map_eval_zero_rightUnit_X p i
@@ -895,15 +850,16 @@ theorem map_rightUnit_ker_eval_zero_mod :
   have hle : (RingHom.ker ((Int.castRingHom (ZMod p)).comp (eval (0 : ℕ+ → ℤ)))).map (rightUnit p) ≤
       (RingHom.ker ((Int.castRingHom (ZMod p)).comp (eval (0 : ℕ+ → ℤ)))).map C := by
     rw [← ker_map, ← milnorQuotient, Ideal.map_le_iff_le_comap]; intro a ha
-    have hEq : milnorQuotient p (rightUnit p a) = milnorQuotient p (C a) :=
-      RingHom.congr_fun (milnorQuotient_comp_rightUnit p) a
-    rw [Ideal.mem_comap, RingHom.mem_ker, hEq, milnorQuotient, map_C, RingHom.mem_ker.mp ha,
-      map_zero]
+    rw [Ideal.mem_comap, RingHom.mem_ker, ← RingHom.comp_apply (milnorQuotient p),
+      milnorQuotient_comp_rightUnit, RingHom.comp_apply, milnorQuotient, map_C,
+      RingHom.mem_ker.mp ha, map_zero]
   refine le_antisymm hle ?_
   have h' := Ideal.map_mono (f := conjugation p) hle
   rwa [Ideal.map_map, Ideal.map_map, conjugation_comp_rightUnit, conjugation_comp_C] at h'
 
-/-- **Milnor's coproduct** on the polynomial dual Steenrod algebra `𝔽_p[t₁, t₂, …]`:
+/-- **Milnor's coproduct** on `𝔽_p[t₁, t₂, …]` (the polynomial part of the mod-`p` dual Steenrod
+algebra at odd `p`; at `p = 2`, the ungraded dual Steenrod algebra `𝔽_2[ξ₁, ξ₂, …]`, or the
+subalgebra `𝔽_2[ξ₁², ξ₂², …]` in topological grading):
 `Δ(t_{n + 1}) = t_{n + 1} ⊗ 1 + 1 ⊗ t_{n + 1} + ∑_{i < n} t_{i + 1} ⊗ t_{n - i}^(p^(i + 1))`. -/
 def milnorCoproduct :
     MvPolynomial ℕ+ (ZMod p) →ₐ[ZMod p] MvPolynomial ℕ+ (MvPolynomial ℕ+ (ZMod p)) :=
@@ -921,12 +877,11 @@ theorem milnorCoproduct_comp_milnorQuotient :
   refine ringHom_ext' (MvPolynomial.homEquiv.injective <| funext fun _ ↦ by
     simp [MvPolynomial.homEquiv]) fun i ↦ ?_
   obtain ⟨n, rfl⟩ : ∃ n, n.succPNat = i := ⟨i.natPred, i.succPNat_natPred⟩
-  have hmq : milnorQuotient p =
-      (map (Int.castRingHom (ZMod p))).comp (map (eval (0 : ℕ+ → ℤ))) :=
-    RingHom.ext fun q ↦ (map_map _ _ q).symm
   rw [RingHom.comp_apply, milnorQuotient_X, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-    milnorCoproduct_X_succ, RingHom.comp_apply, hmq, ← map_map,
-    map_map_eval_zero_coproduct_X_succ]
+    milnorCoproduct_X_succ, RingHom.comp_apply,
+    (RingHom.ext fun q ↦ (map_map _ _ q).symm :
+      milnorQuotient p = (map (Int.castRingHom (ZMod p))).comp (map (eval (0 : ℕ+ → ℤ)))),
+    ← map_map, map_map_eval_zero_coproduct_X_succ]
   simp [map_add, map_sum, map_mul, map_pow, map_C, map_X]
 
 /-- **Milnor's conjugation (antipode)** on `𝔽_p[t₁, t₂, …]`, induced by `conjugation p`. -/
@@ -946,11 +901,10 @@ theorem milnorConjugation_comp_milnorQuotient :
     (milnorConjugation p).comp (milnorConjugation p) =
       AlgHom.id (ZMod p) (MvPolynomial ℕ+ (ZMod p)) :=
   MvPolynomial.algHom_ext fun i ↦ by
-    have h : milnorConjugation p (milnorQuotient p (conjugation p (X i))) =
-        milnorQuotient p (conjugation p (conjugation p (X i))) :=
+    simpa only [AlgHom.comp_apply, milnorConjugation_X_eq, RingHom.comp_apply,
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, conjugation_conjugation, milnorQuotient_X,
+      AlgHom.id_apply] using
       RingHom.congr_fun (milnorConjugation_comp_milnorQuotient p) (conjugation p (X i))
-    rw [AlgHom.comp_apply, milnorConjugation_X_eq, h, conjugation_conjugation, milnorQuotient_X,
-      AlgHom.id_apply]
 
 @[simp] theorem milnorConjugation_conjugation (x : MvPolynomial ℕ+ (ZMod p)) :
     milnorConjugation p (milnorConjugation p x) = x :=
@@ -965,9 +919,8 @@ theorem milnorConjugation_X_succ (n : ℕ) :
   let μc : MvPolynomial ℕ+ (MvPolynomial ℕ+ (ZMod p)) →+* MvPolynomial ℕ+ (ZMod p) :=
     eval₂Hom (RingHom.id _) (milnorConjugation p ∘ X)
   have hcomm : μc.comp (map (milnorQuotient p)) = (milnorQuotient p).comp
-      (tensorLift p ⟨(RingHom.id _, conjugation p), by
-        rw [conjugation_comp_C, RingHom.id_comp]⟩) :=
-    ringHom_ext' (RingHom.ext fun x ↦ by simp [μc]) fun i ↦ by simp [μc]
+      (tensorLift p ⟨(RingHom.id _, conjugation p), by rw [conjugation_comp_C, RingHom.id_comp]⟩) :=
+    ringHom_ext' (RingHom.ext fun _ ↦ by simp [μc]) fun _ ↦ by simp [μc]
   have hanti := congrArg (milnorQuotient p)
     (RingHom.congr_fun (tensorLift_id_conjugation_comp_coproduct p) (X n.succPNat))
   rw [RingHom.comp_apply, ← RingHom.comp_apply (milnorQuotient p), ← hcomm, RingHom.comp_apply,

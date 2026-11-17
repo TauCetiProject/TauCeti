@@ -91,6 +91,11 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   `TauCeti.isAddCocycle₂_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
   of degree `n`.
 * `TauCeti.smul_lazardCocycle_eq_zero_iff`: for `n ≥ 2`, `r • C_n = 0 ↔ r = 0`.
+* `TauCeti.isUnit_lazardGcd_of_forall_isUnit_prime`: if every prime `q ≠ p` is a unit and `m ≥ 2`
+  is not a positive power of `p`, then `d_m` is a unit.
+* `TauCeti.mem_of_coeff_smul_lazardCocycle_mem`,
+  `TauCeti.mem_range_of_coeff_smul_lazardCocycle_mem`: if all coefficients of `r • C_m` (`m ≥ 2`)
+  lie in an additive subgroup (or the range of a ring homomorphism), then so does `r`.
 
 ## References
 
@@ -240,6 +245,18 @@ theorem isUnit_lazardGcd {A : Type*} [CommSemiring A] {n p : ℕ} (hp : p.Prime)
   refine .of_mul_eq_one (m : A) ?_
   rw [← Nat.cast_mul, ← Nat.div_add_mod (lazardGcd n * m) p, hm]
   simp [hpA]
+
+/-- If every prime `q ≠ p` is a unit in `A` and `m ≥ 2` is not a positive power of `p`, then
+`d_m = lazardGcd m` is a unit in `A`. -/
+theorem isUnit_lazardGcd_of_forall_isUnit_prime {A : Type*} [CommSemiring A] {p m : ℕ}
+    (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : A)) (hm : 2 ≤ m)
+    (hpow : ∀ k : ℕ+, p ^ (k : ℕ) ≠ m) : IsUnit (lazardGcd m : A) := by
+  by_cases hpp : IsPrimePow m
+  · obtain ⟨q, k, hq, hk, hmk⟩ := (isPrimePow_nat_iff m).1 hpp
+    rw [← hmk, lazardGcd_prime_pow hq hk.ne']
+    exact hlocal q hq fun hqp ↦ hpow ⟨k, hk⟩ (hqp ▸ hmk)
+  · rw [lazardGcd_eq_one_of_not_isPrimePow (by omega) hpp, Nat.cast_one]
+    exact isUnit_one
 
 /-- `d ∣ d_n` if and only if `d` divides every `n.choose i`, `0 < i < n`. -/
 theorem dvd_lazardGcd_iff {n d : ℕ} :
@@ -516,6 +533,35 @@ theorem smul_lazardCocycle_injective {n : ℕ} (hn : 2 ≤ n) :
     Function.Injective fun r : R => r • lazardCocycle n R := fun r s h => by
   rw [← sub_eq_zero, ← smul_lazardCocycle_eq_zero_iff hn, sub_smul]
   exact sub_eq_zero.2 h
+
+/-- For `m ≥ 2`, if every coefficient of `r • C_m` at `XⁱYᵐ⁻ⁱ` (`0 < i < m`) lies in an additive
+subgroup `H` of `R`, then `r ∈ H`. -/
+theorem mem_of_coeff_smul_lazardCocycle_mem (H : AddSubgroup R) {m : ℕ} (hm : 2 ≤ m) {r : R}
+    (hr : ∀ i ∈ Icc 1 (m - 1),
+      (r • lazardCocycle m R).coeff (Finsupp.single 0 i + Finsupp.single 1 (m - i)) ∈ H) :
+    r ∈ H := by
+  obtain ⟨c, hc⟩ :=
+    Finset.gcd_eq_one_iff_exists_sum_natCast_mul_eq_one.1 (gcd_choose_div_lazardGcd_eq_one hm)
+  have h1 : (∑ i ∈ Icc 1 (m - 1), ((m.choose i / lazardGcd m : ℕ) : R) * (c i : R)) = 1 := by
+    simpa only [map_sum, map_mul, map_natCast, Int.coe_castRingHom, map_one] using
+      congrArg (Int.castRingHom R) hc
+  have hsum : ∑ i ∈ Icc 1 (m - 1),
+      c i • (r • lazardCocycle m R).coeff (Finsupp.single 0 i + Finsupp.single 1 (m - i)) = r := by
+    conv_rhs => rw [← one_mul r, ← h1, sum_mul]
+    refine sum_congr rfl fun i hi ↦ ?_
+    rw [mem_Icc] at hi
+    rw [MvPolynomial.coeff_smul, coeff_single_add_single_lazardCocycle (by omega) (by omega),
+      smul_eq_mul, zsmul_eq_mul]
+    ring
+  exact hsum ▸ H.sum_mem fun i hi ↦ H.zsmul_mem (hr i hi) (c i)
+
+/-- For `m ≥ 2`, if every coefficient of `r • C_m` at `XⁱYᵐ⁻ⁱ` (`0 < i < m`) lies in the range of a
+ring homomorphism `ι : R →+* S`, then `r ∈ ι.range`. -/
+theorem mem_range_of_coeff_smul_lazardCocycle_mem (ι : R →+* S) {m : ℕ} (hm : 2 ≤ m) {r : S}
+    (hr : ∀ i ∈ Icc 1 (m - 1),
+      (r • lazardCocycle m S).coeff (Finsupp.single 0 i + Finsupp.single 1 (m - i)) ∈ ι.range) :
+    r ∈ ι.range :=
+  mem_of_coeff_smul_lazardCocycle_mem ι.range.toAddSubgroup hm hr
 
 end lazardCocycle
 
