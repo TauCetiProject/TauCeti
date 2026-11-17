@@ -189,24 +189,15 @@ theorem measurableSet_setOf_isoSetoid [∀ n, Countable (L.Relations n)] [Finite
 
 omit [L.IsRelational] in
 /-- On a countable carrier, in a vocabulary with countably many relation symbols, the orbit
-relation of the logic action is analytic, for every language: it is the range of the continuous
-map `(σ, c) ↦ (σ • c, c)` on a Polish space. -/
+relation of the logic action is analytic, for every language: the permutation group of the
+discrete carrier is Polish and acts continuously on the Polish coding space
+(`MeasureTheory.analyticSet_setOf_orbitRel`). -/
 theorem analyticSet_setOf_orbitRel [∀ n, Countable (L.Relations n)] [Countable V] :
     AnalyticSet {p : RelationalConfiguration L V × RelationalConfiguration L V |
       MulAction.orbitRel (Equiv.Perm V) _ p.1 p.2} := by
-  -- With the discrete topology on the countable carrier, `Equiv.Perm V` is Polish and acts
-  -- continuously.
   let _ : TopologicalSpace V := ⊥
   have : DiscreteTopology V := ⟨rfl⟩
-  have h : {p : RelationalConfiguration L V × RelationalConfiguration L V |
-      MulAction.orbitRel (Equiv.Perm V) _ p.1 p.2} =
-      range fun q : Equiv.Perm V × RelationalConfiguration L V => (q.1 • q.2, q.2) := by
-    ext ⟨c, d⟩
-    simp only [mem_ofPred_eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff, mem_range,
-      Prod.exists, Prod.mk.injEq]
-    exact ⟨fun ⟨σ, hσ⟩ => ⟨σ, d, hσ, rfl⟩, fun ⟨σ, _, hσ, he⟩ => ⟨σ, he ▸ hσ⟩⟩
-  rw [h]
-  exact analyticSet_range_of_polishSpace (continuous_smul.prodMk continuous_snd)
+  exact MeasureTheory.analyticSet_setOf_orbitRel
 
 /-- On a countable carrier, in a countable relational vocabulary, the graph of isomorphism is
 analytic. -/
@@ -316,23 +307,19 @@ theorem isomorphismInvariant_iUnion {ι : Sort*} {A : ι → Set (RelationalConf
 
 omit [L.IsRelational] in
 /-- On a countable carrier the saturation of an analytic set of configurations under the logic
-action is analytic, for every language: it is the image of `univ ×ˢ A` under the continuous
-action of the Polish group `Equiv.Perm V`. -/
+action is analytic, for every language: the permutation group of the discrete carrier is Polish
+and acts continuously (`MeasureTheory.AnalyticSet.iUnion_smul`). -/
 theorem analyticSet_iUnion_smul [Countable V] (hA : AnalyticSet A) :
     AnalyticSet (⋃ σ : Equiv.Perm V, σ • A) := by
   let _ : TopologicalSpace V := ⊥
   have : DiscreteTopology V := ⟨rfl⟩
-  have h : (⋃ σ : Equiv.Perm V, σ • A) = image2 (· • ·) (univ : Set (Equiv.Perm V)) A := by
-    ext c
-    simp [mem_smul_set, Set.mem_smul]
-  rw [h]
-  exact AnalyticSet.image2 continuous_smul isClosed_univ.analyticSet hA
+  exact hA.iUnion_smul
 
 /-! ### Stabilizers -/
 
 /-- **Stabilizers are automorphism groups**: a permutation fixes a configuration under the logic
 action exactly when it is an automorphism of the decoded structure. -/
-theorem mem_stabilizer_iff (σ : Equiv.Perm V) (c : RelationalConfiguration L V) :
+theorem mem_stabilizer_iff (c : RelationalConfiguration L V) (σ : Equiv.Perm V) :
     σ ∈ MulAction.stabilizer (Equiv.Perm V) c ↔
       ∀ {l : ℕ} (R : L.Relations l) (v : Fin l → V),
         @Structure.RelMap L V c.toStructure l R (σ ∘ v) ↔
