@@ -16,6 +16,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Fiber
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Fibrewise sums of Euclidean coordinates
@@ -37,6 +38,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
+* `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
+  real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
@@ -91,6 +94,19 @@ theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
   rw [Set.ofPred_forall]
   exact MeasurableSet.iInter fun i ↦
     measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
+
+/-- A quadratic form `∑ i, w i * x i ^ 2` that is diagonal in the coordinates of real Euclidean
+space is positive definite exactly when all of its weights are positive. This is
+`QuadraticMap.posDef_weightedSumSquares_iff` read in Euclidean coordinates. -/
+theorem posDef_iff_of_forall_eq_sum_mul_sq {ι : Type*} [Fintype ι]
+    {Q : QuadraticForm ℝ (EuclideanSpace ℝ ι)} {w : ι → ℝ} (hQ : ∀ x, Q x = ∑ i, w i * x i ^ 2) :
+    Q.PosDef ↔ ∀ i, 0 < w i := by
+  have hQ' : Q = (QuadraticMap.weightedSumSquares ℝ w).comp
+      (WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap :=
+    QuadraticMap.ext fun x ↦ by simp [hQ, QuadraticMap.weightedSumSquares_apply, sq]
+  rw [← QuadraticMap.posDef_weightedSumSquares_iff, hQ']
+  refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp _ (WithLp.linearEquiv 2 ℝ (ι → ℝ)).injective⟩
+  simpa using h (WithLp.toLp 2 x) (by simpa using hx)
 
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
