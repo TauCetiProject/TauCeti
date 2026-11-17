@@ -40,8 +40,10 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
-* `TauCeti.singularHomologyπ_univ_singularHomologyMap`: passing to `Hₖ(M, M ∖ M)` is natural in
-  continuous maps.
+* `TauCeti.homologyMap_comp_singularHomologyπ_ofSubset`: passing from `Hₖ(M)` to `Hₖ(M, M ∖ S)`
+  is natural in continuous maps.
+* `TauCeti.singularHomologyπ_univ_singularHomologyMap`: its element-level form for
+  `Hₖ(M, M ∖ M)`.
 * `TauCeti.singularHomologyToLocalHomology_singularHomologyMap`: passing to local homology is
   natural in maps `j` for which `x` is the only preimage of `j x`.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
@@ -247,6 +249,23 @@ theorem localHomologyMap_eq_of_homotopy {j₀ j₁ : C(M, N)} (F : j₀.Homotopy
     (B := (Sᶜ : Set (TopCat.of M))) (B' := (Tᶜ : Set (TopCat.of N))) F
     fun τ y hy ↦ hF τ y hy).congr_singularHomologyMap R k
 
+/-- **Naturality of the passage to relative homology.** For `j : M → N` with `j ⁻¹' T ⊆ S`,
+mapping `Hₖ(M) ⟶ Hₖ(N)` by `j` and then passing to `Hₖ(N, N ∖ T)` is passing to
+`Hₖ(M, M ∖ S)` followed by the map of local homology induced by `j`. -/
+@[reassoc]
+theorem homologyMap_comp_singularHomologyπ_ofSubset {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S)
+    (k : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) R k ≫
+        (TopPair.ofSubset (Tᶜ : Set (TopCat.of N))).singularHomologyπ R k =
+      (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R k ≫
+        localHomologyMap R j h k := by
+  have h' := TopPair.singularHomologyπ_naturality
+    (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N) (B := Sᶜ) (B' := Tᶜ)
+      (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k
+  simp only [TopPair.ofSubsetMap_fst] at h'
+  rw [localHomologyMap_def]
+  exact h'
+
 end Map
 
 section SingularHomologyMap
@@ -263,16 +282,9 @@ theorem singularHomologyπ_univ_singularHomologyMap (j : C(M, N)) {k : ℕ}
         ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) L k).hom μ) =
       localHomologyMap L j (subset_univ _) k
         (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-          (C := ModuleCat.{w} Λ) L k).hom μ) := by
-  have h := congrArg (fun φ ↦ φ.hom μ)
-    (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap (X := TopCat.of M)
-      (Y := TopCat.of N) (B := (univ : Set M)ᶜ) (B' := (univ : Set N)ᶜ) (TopCat.ofHom j)
-      fun _ hy ↦ (hy (mem_univ _)).elim) L k)
-  -- The ambient map of `ofSubsetMap` is `j` itself; its source is read as `(ofSubset _).fst`,
-  -- which `rw` does not identify with `TopCat.of M`.
-  erw [TopPair.ofSubsetMap_fst] at h
-  rw [localHomologyMap_def]
-  exact h
+          (C := ModuleCat.{w} Λ) L k).hom μ) :=
+  congrArg (fun φ ↦ φ.hom μ)
+    (homologyMap_comp_singularHomologyπ_ofSubset L j (T := univ) (subset_univ _) k)
 
 /-- **Naturality of the passage to local homology.** If `x` is the only preimage of `j x` under
 `j : M → N`, the image in the local homology at `j x` of `j_* μ ∈ Hₖ(N; L)` is the image of the
