@@ -24,9 +24,10 @@ the counit: `Comonad.freeOpResolutionExtraDegeneracy`. This expresses the projec
 objects relative to the comonad, the input for the vanishing of comonad cohomology whose first
 argument is such an object.
 
-To compare the innermost layer with the outermost one, `Comonad.resolutionStageSuccObjIso`
-identifies `G^n (G X)` with `G^(n+1) X`. Through it, the last face is the counit at the innermost
-position, and the remaining faces and degeneracies are those of the resolution of `G X`.
+To compare the innermost layer with the outermost one, `Comonad.resolutionStageSuccObjIso` from
+`SimplicialResolution.Basic` identifies `G^n (G X)` with `G^(n+1) X`. Through it, the last face
+is the counit at the innermost position, and the remaining faces and degeneracies are those of the
+resolution of `G X`.
 
 ## References
 
@@ -46,85 +47,8 @@ namespace CategoryTheory.Comonad
 
 variable {C : Type u} [Category.{v} C] (G : Comonad C)
 
-/-- Moving the innermost layer of an iterated comonad to the outside: `G^n (G X) ≅ G^(n+1) X`.
-For each fixed `n` it is the identity of `G^(n+1) X`; it records this identification of the two
-iterates, which holds only up to computation for variable `n`. -/
-def resolutionStageSuccObjIso : ∀ (n : ℕ) (X : C),
-    (G.resolutionStage n).obj (G.obj X) ≅ (G.resolutionStage (n + 1)).obj X
-  | 0, X => Iso.refl (G.obj X)
-  | n + 1, X => G.mapIso (resolutionStageSuccObjIso n X)
-
--- As in `SimplicialResolution.Augmented`, keep these computation equations named rather than
--- `simp`: their two sides have different, definitionally equal, iterate carriers.
-
-lemma resolutionStageSuccObjIso_zero_hom (X : C) :
-    (G.resolutionStageSuccObjIso 0 X).hom = 𝟙 (G.obj X) := (rfl)
-
-lemma resolutionStageSuccObjIso_succ_hom (n : ℕ) (X : C) :
-    (G.resolutionStageSuccObjIso (n + 1) X).hom =
-      G.map (G.resolutionStageSuccObjIso n X).hom := (rfl)
-
-/-- The last face of the resolution is the counit at the innermost position. -/
-@[reassoc] lemma resolutionStageSuccObjIso_hom_comp_resolutionFace_last (n : ℕ) (X : C) :
-    (G.resolutionStageSuccObjIso n X).hom ≫ (G.resolutionFace n (Fin.last n)).app X =
-      (G.resolutionStage n).map (G.ε.app X) := by
-  induction n with
-  | zero =>
-    rw [resolutionStageSuccObjIso_zero_hom, Fin.last_zero, resolutionFace_zero_app]
-    -- In degree zero, `G^0` is the identity functor.
-    exact Category.id_comp _
-  | succ n ih =>
-    rw [← Fin.succ_last, resolutionFace_succ_app, resolutionStageSuccObjIso_succ_hom]
-    exact (G.map_comp _ _).symm.trans (congrArg G.map ih)
-
-/-- Every face but the last is a face of the resolution of `G X`. -/
-@[reassoc] lemma resolutionStageSuccObjIso_hom_comp_resolutionFace_castSucc (n : ℕ)
-    (j : Fin (n + 1)) (X : C) :
-    (G.resolutionStageSuccObjIso (n + 1) X).hom ≫ (G.resolutionFace (n + 1) j.castSucc).app X =
-      (G.resolutionFace n j).app (G.obj X) ≫ (G.resolutionStageSuccObjIso n X).hom := by
-  induction n with
-  | zero =>
-    obtain rfl : j = 0 := Fin.eq_zero j
-    rw [Fin.castSucc_zero, resolutionFace_zero_app, resolutionFace_zero_app,
-      resolutionStageSuccObjIso_succ_hom]
-    exact G.ε.naturality _
-  | succ n ih =>
-    induction j using Fin.cases with
-    | zero =>
-      rw [Fin.castSucc_zero, resolutionFace_zero_app, resolutionFace_zero_app,
-        resolutionStageSuccObjIso_succ_hom]
-      exact G.ε.naturality _
-    | succ j =>
-      rw [← Fin.succ_castSucc, resolutionFace_succ_app, resolutionFace_succ_app,
-        resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
-      exact (G.map_comp _ _).symm.trans ((congrArg G.map (ih j)).trans (G.map_comp _ _))
-
-/-- Every degeneracy but the last is a degeneracy of the resolution of `G X`. -/
-@[reassoc] lemma resolutionStageSuccObjIso_hom_comp_resolutionDegeneracy_castSucc (n : ℕ)
-    (j : Fin (n + 1)) (X : C) :
-    (G.resolutionStageSuccObjIso (n + 1) X).hom ≫
-        (G.resolutionDegeneracy (n + 1) j.castSucc).app X =
-      (G.resolutionDegeneracy n j).app (G.obj X) ≫
-        (G.resolutionStageSuccObjIso (n + 2) X).hom := by
-  induction n with
-  | zero =>
-    obtain rfl : j = 0 := Fin.eq_zero j
-    rw [Fin.castSucc_zero, resolutionDegeneracy_zero_app, resolutionDegeneracy_zero_app,
-      resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
-    exact G.δ.naturality _
-  | succ n ih =>
-    induction j using Fin.cases with
-    | zero =>
-      rw [Fin.castSucc_zero, resolutionDegeneracy_zero_app, resolutionDegeneracy_zero_app,
-        resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
-      exact G.δ.naturality _
-    | succ j =>
-      rw [← Fin.succ_castSucc, resolutionDegeneracy_succ_app, resolutionDegeneracy_succ_app,
-        resolutionStageSuccObjIso_succ_hom, resolutionStageSuccObjIso_succ_hom]
-      exact (G.map_comp _ _).symm.trans ((congrArg G.map (ih j)).trans (G.map_comp _ _))
-
 /-- The faces of the reversed augmented resolution are the counits at reversed positions. -/
-@[simp] lemma opFunctor_augmentedSimplicialResolution_obj_left_δ (X : C) {n : ℕ}
+lemma opFunctor_augmentedSimplicialResolution_obj_left_δ (X : C) {n : ℕ}
     (i : Fin (n + 2)) :
     (SimplicialObject.Augmented.opFunctor.obj (G.augmentedSimplicialResolution.obj X)).left.δ i =
       (G.resolutionFace (n + 1) i.rev).app X :=
@@ -134,7 +58,7 @@ lemma resolutionStageSuccObjIso_succ_hom (n : ℕ) (X : C) :
 
 /-- The degeneracies of the reversed augmented resolution are the comultiplications at reversed
 positions. -/
-@[simp] lemma opFunctor_augmentedSimplicialResolution_obj_left_σ (X : C) {n : ℕ}
+lemma opFunctor_augmentedSimplicialResolution_obj_left_σ (X : C) {n : ℕ}
     (i : Fin (n + 1)) :
     (SimplicialObject.Augmented.opFunctor.obj (G.augmentedSimplicialResolution.obj X)).left.σ i =
       (G.resolutionDegeneracy n i.rev).app X :=
@@ -182,15 +106,18 @@ def opResolutionExtraDegeneracy (a : SplitEpi (G.ε.app X)) :
   s'_comp_ε := by
     rw [SimplicialObject.Augmented.opFunctor_obj_hom_app, augmentedSimplicialResolution_obj_hom,
       simplicialResolutionAugmentation_app_zero]
-    exact a.id
+    -- `SimplicialObject.opObjIso` is the identity.
+    exact (congrArg (a.section_ ≫ ·) (Category.id_comp _)).trans a.id
   s₀_comp_δ₁ := by
     rw [opFunctor_augmentedSimplicialResolution_obj_left_δ,
       SimplicialObject.Augmented.opFunctor_obj_hom_app, augmentedSimplicialResolution_obj_hom,
       simplicialResolutionAugmentation_app_zero]
     refine (map_comp_hom_comp_resolutionFace_castSucc a.section_ 0 0).trans ?_
     rw [resolutionFace_zero_app, resolutionStageSuccObjIso_zero_hom]
-    -- In degree zero, `G^0` is the identity functor.
-    exact congrArg (G.ε.app X ≫ ·) (Category.comp_id a.section_)
+    -- In degree zero, `G^0` is the identity functor, and `SimplicialObject.opObjIso` is the
+    -- identity.
+    exact (congrArg (G.ε.app X ≫ ·) (Category.comp_id a.section_)).trans
+      (congrArg (· ≫ a.section_) (Category.id_comp _).symm)
   s_comp_δ₀ n := by
     rw [opFunctor_augmentedSimplicialResolution_obj_left_δ, Fin.rev_zero]
     exact (map_comp_hom_comp_resolutionFace_last a.section_ (n + 1)).trans

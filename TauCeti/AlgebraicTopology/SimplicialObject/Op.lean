@@ -48,9 +48,13 @@ def opFunctor : Augmented C ⥤ Augmented C where
 @[simp] lemma opFunctor_obj_right (X : Augmented C) :
     (opFunctor.obj X).right = X.right := (rfl)
 
-/-- The augmentation of the reversed object is the original augmentation. -/
+/-- The augmentation of the reversed object is the original augmentation, through
+`SimplicialObject.opObjIso`. -/
 @[simp] lemma opFunctor_obj_hom_app (X : Augmented C) (n : SimplexCategoryᵒᵖ) :
-    (opFunctor.obj X).hom.app n = X.hom.app n := (rfl)
+    (opFunctor.obj X).hom.app n =
+      _root_.SimplicialObject.opObjIso.hom ≫ X.hom.app n :=
+  -- `SimplicialObject.opObjIso` is the identity.
+  (Category.id_comp _).symm
 
 @[simp] lemma opFunctor_map_left {X Y : Augmented C} (f : X ⟶ Y) :
     (opFunctor.map f).left = _root_.SimplicialObject.opFunctor.map f.left := (rfl)
