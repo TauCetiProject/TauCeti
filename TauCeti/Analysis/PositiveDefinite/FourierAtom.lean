@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
@@ -110,9 +109,10 @@ theorem fourierAtom_sub (q v w : V) :
 /-- The spatial subtraction kernel supplied by a Fourier atom is positive definite. -/
 theorem posSemidef_fourierAtom (q : V) :
     Matrix.PosSemidef fun v w : V => fourierAtom q (v - w) := by
-  simp_rw [fourierAtom_sub]
-  simpa only [RCLike.star_def] using posSemidef_rankOne
-    (fun v : V => Complex.exp (2 * ((Real.pi : ℝ) : ℂ) * Complex.I * ((inner ℝ v q : ℝ) : ℂ)))
+  refine (congrArg Matrix.PosSemidef ?_).mp (Matrix.posSemidef_vecMulVec_star_self
+    fun v : V => Complex.exp (2 * ((Real.pi : ℝ) : ℂ) * Complex.I * ((inner ℝ v q : ℝ) : ℂ)))
+  ext v w
+  rw [Matrix.vecMulVec_apply, Pi.star_apply, RCLike.star_def, ← fourierAtom_sub]
 
 /-- Fourier atoms take values on the unit circle.
 
