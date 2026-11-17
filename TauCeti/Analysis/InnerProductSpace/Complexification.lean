@@ -43,9 +43,8 @@ self-adjoint operator, to operators on real Hilbert spaces.
 * `WithLp.complexificationEquivProd`: the real-linear isometric equivalence
   `WithLp 2 (Complexification X) ≃ₗᵢ[ℝ] WithLp 2 (X × X)`, and
   `WithLp.instComplexificationCompleteSpace` as a consequence.
-* `WithLp.instComplexificationFiniteDimensional` and `WithLp.finrank_complexification`: the
-  complexification of a finite-dimensional space is finite-dimensional, of complex dimension the
-  real dimension of `X`.
+* `WithLp.finrank_complexification`: the complexification of a finite-dimensional space has
+  complex dimension the real dimension of `X`.
 * `ContinuousLinearMap.complexifyL2`: the complexification of a bounded real operator, with
   `ContinuousLinearMap.eq_complexifyL2_iff` (it is the unique complex-linear extension),
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
@@ -140,11 +139,6 @@ theorem complexificationEquivProd_symm_apply (p : WithLp 2 (X × X)) :
 instance instComplexificationCompleteSpace [CompleteSpace X] :
     CompleteSpace (WithLp 2 (Complexification X)) :=
   (complexificationEquivProd X).toIsometryEquiv.completeSpace
-
-/-- The `L²` complexification of a finite-dimensional real space is finite-dimensional. -/
-instance instComplexificationFiniteDimensional [FiniteDimensional ℝ X] :
-    FiniteDimensional ℂ (WithLp 2 (Complexification X)) :=
-  (WithLp.linearEquiv 2 ℂ (Complexification X)).symm.finiteDimensional
 
 /-- The complex dimension of the complexification of `X` is the real dimension of `X`. -/
 @[simp]
