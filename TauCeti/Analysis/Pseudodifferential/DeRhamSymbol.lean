@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Complexification
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Pseudodifferential.HodgeLaplacian
+import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 
 /-!
 # The symbol complex of the de Rham complex
@@ -59,15 +60,6 @@ namespace TauCeti
 
 namespace HomogeneousSymbol
 
-/-- A real multiple of a complex-linear operator is the multiple by the real scalar viewed as a
-complex number. Stated for arbitrary normed spaces, so that the real scalar action is the one the
-structure of homogeneous symbols uses (the restriction of the complex one). -/
-private theorem real_smul_eq_ofReal_smul {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    [NormedAddCommGroup W] [NormedSpace ℂ W] (t : ℝ) (T : V →L[ℂ] W) : t • T = (t : ℂ) • T := by
-  ext v
-  simp only [FunLike.coe_smul, Pi.smul_apply]
-  exact RCLike.real_smul_eq_coe_smul (K := ℂ) t (T v)
-
 variable (X E : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
   [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -77,39 +69,9 @@ from complex `k`-forms `(⋀ᵏ E)_ℂ` to complex `(k + 1)`-forms. It is homoge
 def extDeriv (k : ℕ) :
     HomogeneousSymbol X E (WithLp 2 (Complexification (⋀[ℝ]^k E)))
       (WithLp 2 (Complexification (⋀[ℝ]^(k + 1) E))) 1 :=
-  ofLinear X
-    { toFun ξ :=
-        Complex.I • (ExteriorAlgebra.wedgeLeft (R := ℝ) ξ k).toContinuousLinearMap.complexifyL2
-      map_add' ξ η := by
-        rw [← ExteriorAlgebra.wedgeLeftₗ_apply, map_add, map_add,
-          ContinuousLinearMap.complexifyL2_add]
-        ext1 v
-        simp [smul_add]
-      map_smul' r ξ := by
-        refine Eq.trans ?_ (real_smul_eq_ofReal_smul r _).symm
-        rw [← ExteriorAlgebra.wedgeLeftₗ_apply, map_smul, map_smul,
-          ContinuousLinearMap.complexifyL2_smul]
-        -- Compare real and imaginary parts.
-        ext1 v
-        apply WithLp.ofLp_injective 2
-        ext <;> simp only [FunLike.coe_smul, Pi.smul_apply, WithLp.ofLp_smul,
-          Complexification.smul_re, Complexification.smul_im,
-          ContinuousLinearMap.ofLp_complexifyL2_apply, ContinuousLinearMap.complexify_apply_re,
-          ContinuousLinearMap.complexify_apply_im, Complexification.real_smul_re,
-          Complexification.real_smul_im, Complex.I_re, Complex.I_im, Complex.ofReal_re,
-          Complex.ofReal_im, zero_smul, one_smul, zero_sub, sub_zero, zero_add, add_zero,
-          ExteriorAlgebra.wedgeLeftₗ_apply, smul_neg, neg_zero]
-      cont := by
-        have h : (fun ξ : E ↦ (ExteriorAlgebra.wedgeLeft (R := ℝ) ξ k).toContinuousLinearMap) =
-            ⇑(LinearMap.toContinuousLinearMap (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ
-              ExteriorAlgebra.wedgeLeftₗ ℝ E k)) := by
-          funext ξ
-          simp
-        have hc : Continuous fun ξ : E ↦
-            (ExteriorAlgebra.wedgeLeft (R := ℝ) ξ k).toContinuousLinearMap := by
-          rw [h]
-          exact ContinuousLinearMap.continuous _
-        exact (ContinuousLinearMap.continuous_complexifyL2.comp hc).const_smul Complex.I }
+  ofLinear X <| Complex.I • ((ContinuousLinearMap.complexifyL2ₗᵢ _ _).toContinuousLinearMap ∘L
+    LinearMap.toContinuousLinearMap
+      (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ ExteriorAlgebra.wedgeLeftₗ ℝ E k))
 
 variable {X E}
 
@@ -117,8 +79,7 @@ variable {X E}
 theorem coefficient_extDeriv (k : ℕ) (p : X × E) :
     (extDeriv X E k).coefficient p =
       Complex.I • (ExteriorAlgebra.wedgeLeft p.2 k).toContinuousLinearMap.complexifyL2 := by
-  rw [extDeriv, coefficient_ofLinear]
-  rfl
+  simp [extDeriv]
 
 /-- The adjoint of the symbol of the exterior derivative, the symbol of the codifferential, is
 `-i ι_ξ`, the complexified contraction by `⟪ξ, ·⟫` multiplied by `-i`. -/
@@ -150,17 +111,10 @@ from the anticommutator identity `ε_ξ ι_ξ + ι_ξ ε_ξ = ‖ξ‖²`. -/
 theorem coefficient_hodgeLaplacian_extDeriv (k : ℕ) (p : X × E) :
     ((extDeriv X E k).hodgeLaplacian (extDeriv X E (k + 1))).coefficient p =
       (‖p.2‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℂ _ := by
-  have h : (ExteriorAlgebra.wedgeLeft (R := ℝ) p.2 k).toContinuousLinearMap.hodgeLaplacian
-      (ExteriorAlgebra.wedgeLeft (R := ℝ) p.2 (k + 1)).toContinuousLinearMap =
-      (‖p.2‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℝ _ :=
-    ContinuousLinearMap.ext fun v ↦ by
-      rw [ContinuousLinearMap.hodgeLaplacian_apply, ← LinearMap.adjoint_toContinuousLinearMap,
-        ← LinearMap.adjoint_toContinuousLinearMap]
-      simpa using LinearMap.congr_fun (wedgeLeft_comp_adjoint_add_adjoint_comp_wedgeLeft p.2 k) v
   rw [coefficient_hodgeLaplacian, coefficient_extDeriv, coefficient_extDeriv]
   refine (ContinuousLinearMap.hodgeLaplacian_smul_smul _ _ Complex.norm_I).trans ?_
-  rw [ContinuousLinearMap.hodgeLaplacian_complexifyL2, h, ContinuousLinearMap.complexifyL2_smul,
-    ContinuousLinearMap.complexifyL2_id]
+  rw [ContinuousLinearMap.hodgeLaplacian_complexifyL2, hodgeLaplacian_wedgeLeft,
+    ContinuousLinearMap.complexifyL2_smul, ContinuousLinearMap.complexifyL2_id]
 
 /-- The Laplacian of the de Rham symbol complex on `(k + 1)`-forms is the symbol `‖ξ‖² Id` of
 degree `2`. -/
@@ -170,31 +124,16 @@ theorem hodgeLaplacian_extDeriv (k : ℕ) :
     rw [coefficient_hodgeLaplacian_extDeriv, coefficient_normRpow_of_ne_zero _ _ _ hξ, mul_one,
       Real.rpow_two]
 
-/-- Multiplying an operator by the unimodular scalar `i` does not change `A† A`. -/
-private theorem adjoint_I_smul_comp_I_smul {V W : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℂ V] [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W]
-    [CompleteSpace W] (A : V →L[ℂ] W) :
-    (ContinuousLinearMap.adjoint (Complex.I • A)).comp (Complex.I • A) =
-      (ContinuousLinearMap.adjoint A).comp A := by
-  simpa [ContinuousLinearMap.hodgeLaplacian_def] using
-    ContinuousLinearMap.hodgeLaplacian_smul_smul (0 : V →L[ℂ] V) A Complex.norm_I
-
 /-- **The symbol of the Laplacian on functions**: `σ(d)† σ(d) = ‖ξ‖² Id` on complex `0`-forms,
 from `ι_ξ ε_ξ = ‖ξ‖²`. -/
 theorem coefficient_adjoint_comp_extDeriv_zero (p : X × E) :
     ((extDeriv X E 0).adjoint.comp (extDeriv X E 0)).coefficient p =
       (‖p.2‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℂ _ := by
-  have h : (ContinuousLinearMap.adjoint
-        (ExteriorAlgebra.wedgeLeft (R := ℝ) p.2 0).toContinuousLinearMap).comp
-        (ExteriorAlgebra.wedgeLeft p.2 0).toContinuousLinearMap =
-      (‖p.2‖ ^ 2 : ℝ) • ContinuousLinearMap.id ℝ _ :=
-    ContinuousLinearMap.ext fun v ↦ by
-      rw [ContinuousLinearMap.comp_apply, ← LinearMap.adjoint_toContinuousLinearMap]
-      simpa using LinearMap.congr_fun (adjoint_wedgeLeft_comp_wedgeLeft_zero p.2) v
   rw [coefficient_comp, coefficient_adjoint, coefficient_extDeriv]
-  refine (adjoint_I_smul_comp_I_smul _).trans ?_
-  rw [ContinuousLinearMap.adjoint_complexifyL2, ← ContinuousLinearMap.complexifyL2_comp, h,
-    ContinuousLinearMap.complexifyL2_smul, ContinuousLinearMap.complexifyL2_id]
+  refine (ContinuousLinearMap.adjoint_smul_comp_smul Complex.norm_I _).trans ?_
+  rw [ContinuousLinearMap.adjoint_complexifyL2, ← ContinuousLinearMap.complexifyL2_comp,
+    adjoint_wedgeLeft_comp_wedgeLeft_zero, ContinuousLinearMap.complexifyL2_smul,
+    ContinuousLinearMap.complexifyL2_id]
 
 /-- The Laplacian `σ(d)† σ(d)` on functions is the symbol `‖ξ‖² Id` of degree `2`. -/
 theorem adjoint_comp_extDeriv_zero :
@@ -202,13 +141,6 @@ theorem adjoint_comp_extDeriv_zero :
   ext_of_ne_zero fun x ξ hξ ↦ by
     rw [coefficient_adjoint_comp_extDeriv_zero, coefficient_normRpow_of_ne_zero _ _ _ hξ,
       one_add_one_eq_two, Real.rpow_two]
-
-/-- A nonzero real multiple of the identity is invertible. -/
-private theorem isInvertible_real_smul_id {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    {r : ℝ} (hr : r ≠ 0) : (r • ContinuousLinearMap.id ℂ V).IsInvertible := by
-  rw [real_smul_eq_ofReal_smul, ContinuousLinearMap.isInvertible_smul_iff
-    (Complex.ofReal_ne_zero.2 hr)]
-  exact ⟨ContinuousLinearEquiv.refl ℂ V, rfl⟩
 
 /-- **The de Rham symbol sequence is exact at every nonzero covector**:
 `(⋀ᵏ E)_ℂ → (⋀ᵏ⁺¹ E)_ℂ → (⋀ᵏ⁺² E)_ℂ`, both maps given by `i ξ ∧ ·`, is exact for `ξ ≠ 0`. -/
@@ -219,7 +151,8 @@ theorem exact_extDeriv (k : ℕ) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
   rw [coefficient_comp, coefficient_zero, Pi.zero_apply] at hBA
   rw [ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian _ _ hBA,
     ← coefficient_hodgeLaplacian, coefficient_hodgeLaplacian_extDeriv]
-  exact isInvertible_real_smul_id (by positivity)
+  exact ContinuousLinearMap.isInvertible_iff_isUnit.2
+    (ContinuousLinearMap.isUnit_smul_id_of_ne_zero (by positivity))
 
 /-- On functions, the symbol `i ξ` of the exterior derivative is injective at every nonzero
 covector: the de Rham symbol sequence `0 → ℂ → E_ℂ` is exact there. -/
@@ -230,7 +163,8 @@ theorem injective_extDeriv_zero {x : X} {ξ : E} (hξ : ξ ≠ 0) :
   intro v w hvw
   have hv := congrArg (ContinuousLinearMap.adjoint ((extDeriv X E 0).coefficient (x, ξ))) hvw
   rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.comp_apply, h] at hv
-  exact (isInvertible_real_smul_id (by positivity)).injective hv
+  exact (ContinuousLinearMap.isInvertible_iff_isUnit.2
+    (ContinuousLinearMap.isUnit_smul_id_of_ne_zero (by positivity))).injective hv
 
 /-- **The de Rham complex is elliptic**: the Laplacian of its symbol complex is elliptic in every
 positive degree. -/
@@ -243,7 +177,8 @@ theorem isElliptic_adjoint_comp_extDeriv_zero :
     ((extDeriv X E 0).adjoint.comp (extDeriv X E 0)).IsElliptic :=
   isElliptic_iff.2 fun x ξ hξ ↦ by
     rw [coefficient_adjoint_comp_extDeriv_zero]
-    exact isInvertible_real_smul_id (by positivity)
+    exact ContinuousLinearMap.isInvertible_iff_isUnit.2
+      (ContinuousLinearMap.isUnit_smul_id_of_ne_zero (by positivity))
 
 /-- **The exterior derivative on functions is elliptic only in dimension at most one.** At a
 nonzero covector `ξ`, `σ(d)(ξ) : ℂ → E_ℂ` is injective with one-dimensional image, so it is

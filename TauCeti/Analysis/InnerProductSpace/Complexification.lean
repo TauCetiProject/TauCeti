@@ -51,7 +51,7 @@ self-adjoint operator, to operators on real Hilbert spaces.
   `ContinuousLinearMap.norm_complexifyL2`, `ContinuousLinearMap.complexifyL2_comp` and
   `ContinuousLinearMap.adjoint_complexifyL2`.
 * `ContinuousLinearMap.complexifyL2ₗᵢ`: complexification as a real-linear isometry of operator
-  spaces, and `ContinuousLinearMap.continuous_complexifyL2`: complexification is continuous.
+  spaces.
 * `ContinuousLinearMap.complexifyL2StarAlgHom`: complexification of the bounded operators on a
   real Hilbert space, as a `⋆`-algebra homomorphism over `ℝ`.
 * `ContinuousLinearMap.isClosedEmbedding_complexifyL2StarAlgHom`: complexification of bounded
@@ -383,10 +383,6 @@ variable {X Y}
 
 @[simp]
 theorem complexifyL2ₗᵢ_apply (T : X →L[ℝ] Y) : complexifyL2ₗᵢ X Y T = T.complexifyL2 := (rfl)
-
-/-- Complexification of bounded operators is continuous for the operator norms. -/
-theorem continuous_complexifyL2 : Continuous (complexifyL2 : (X →L[ℝ] Y) → _) :=
-  (complexifyL2ₗᵢ X Y).continuous.congr complexifyL2ₗᵢ_apply
 
 @[simp]
 theorem complexifyL2StarAlgHom_apply [CompleteSpace X] (T : X →L[ℝ] X) :
