@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSqua
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Log.Pow
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Deriv
@@ -110,28 +111,6 @@ end LOneLowerBound
 
 section ZeroGap
 
-/-- Elementary log-to-power comparison: for any integer `n ≥ 3` and `ε > 0`,
-`32 √n (log n)² ≤ (128 / ε²) n ^ (1 / 2 + ε)`. -/
-private theorem mul_sqrt_mul_log_sq_le_rpow {n : ℕ} (hn : 3 ≤ n) {ε : ℝ} (hε : 0 < ε) :
-    32 * √(n : ℝ) * Real.log n ^ 2 ≤ 128 / ε ^ 2 * (n : ℝ) ^ (1 / 2 + ε) := by
-  have hn1 : (1 : ℝ) < n := by exact_mod_cast (by omega : 1 < n)
-  have hn0 : (0 : ℝ) < n := zero_lt_one.trans hn1
-  have hlog_nonneg : 0 ≤ Real.log n := Real.log_nonneg hn1.le
-  have hlog : Real.log n ≤ (n : ℝ) ^ (ε / 2) / (ε / 2) :=
-    Real.log_natCast_le_rpow_div n (half_pos hε)
-  have hlog_sq : Real.log n ^ 2 ≤ 4 / ε ^ 2 * (n : ℝ) ^ ε := by
-    calc Real.log n ^ 2 ≤ ((n : ℝ) ^ (ε / 2) / (ε / 2)) ^ 2 :=
-          pow_le_pow_left₀ hlog_nonneg hlog 2
-      _ = 4 / ε ^ 2 * ((n : ℝ) ^ (ε / 2)) ^ 2 := by field_simp; ring
-      _ = 4 / ε ^ 2 * (n : ℝ) ^ ε := by
-          rw [sq ((n : ℝ) ^ (ε / 2)), ← Real.rpow_add hn0, add_halves]
-  calc 32 * √(n : ℝ) * Real.log n ^ 2
-      ≤ 32 * (n : ℝ) ^ (1 / 2 : ℝ) * (4 / ε ^ 2 * (n : ℝ) ^ ε) := by
-        rw [← Real.sqrt_eq_rpow]
-        gcongr
-      _ = 128 / ε ^ 2 * ((n : ℝ) ^ (1 / 2 : ℝ) * (n : ℝ) ^ ε) := by ring
-      _ = 128 / ε ^ 2 * (n : ℝ) ^ (1 / 2 + ε) := by rw [← Real.rpow_add hn0]
-
 variable {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
 
 /-- **Conductor-level zero-gap bound for a nonprincipal quadratic character.** For every
@@ -142,10 +121,9 @@ theorem div_sqrt_conductor_mul_log_sq_le_one_sub_of_LFunction_eq_zero (hq : χ.I
     Real.log Real.goldenRatio / (32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2) ≤ 1 - β := by
   have hc3 : 3 ≤ χ.conductor := χ.three_le_conductor_of_ne_one hχ
   have : NeZero χ.conductor := ⟨by omega⟩
-  have hlog_gt1 : 1 < Real.log χ.conductor := by
-    have hc3' : (3 : ℝ) ≤ χ.conductor := mod_cast hc3
-    rw [← Real.log_exp 1]
-    exact Real.log_lt_log (Real.exp_pos 1) (by linarith [Real.exp_one_lt_d9])
+  have hlog_gt1 : 1 < Real.log χ.conductor :=
+    calc (1 : ℝ) < Real.log 3 := by linarith [Real.log_three_gt_d9]
+      _ ≤ Real.log χ.conductor := Real.log_le_log (by norm_num) (by exact_mod_cast hc3)
   rcases le_or_gt β 0 with hβ0 | hβ0
   · have hphi_lt1 : Real.log Real.goldenRatio < 1 := by
       rw [← Real.log_exp 1]
@@ -206,7 +184,19 @@ theorem mul_rpow_conductor_le_one_sub_of_LFunction_eq_zero {ε : ℝ} (hε : 0 <
   have hlog_pos : 0 < Real.log χ.conductor :=
     Real.log_pos (by exact_mod_cast (by omega : 1 < χ.conductor))
   have hphi : 0 ≤ Real.log Real.goldenRatio := (Real.log_pos Real.one_lt_goldenRatio).le
-  have hpow := mul_sqrt_mul_log_sq_le_rpow hc3 hε
+  have hlog_sq : Real.log χ.conductor ^ 2 ≤ 4 / ε ^ 2 * (χ.conductor : ℝ) ^ ε := by
+    have hc1 : (1 : ℝ) ≤ χ.conductor := by exact_mod_cast (by omega : 1 ≤ χ.conductor)
+    have h := TauCeti.log_pow_le_div_pow_mul_rpow hc1 hε 2
+    convert h using 1
+    ring
+  have hpow : 32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2 ≤
+      128 / ε ^ 2 * (χ.conductor : ℝ) ^ (1 / 2 + ε) := by
+    calc 32 * √(χ.conductor : ℝ) * Real.log χ.conductor ^ 2
+        ≤ 32 * (χ.conductor : ℝ) ^ (1 / 2 : ℝ) * (4 / ε ^ 2 * (χ.conductor : ℝ) ^ ε) := by
+          rw [← Real.sqrt_eq_rpow]
+          gcongr
+      _ = 128 / ε ^ 2 * ((χ.conductor : ℝ) ^ (1 / 2 : ℝ) * (χ.conductor : ℝ) ^ ε) := by ring
+      _ = 128 / ε ^ 2 * (χ.conductor : ℝ) ^ (1 / 2 + ε) := by rw [← Real.rpow_add hc0]
   have : 0 < √(χ.conductor : ℝ) := Real.sqrt_pos.mpr hc0
   calc ε ^ 2 * Real.log Real.goldenRatio / 128 * (χ.conductor : ℝ) ^ (-(1 / 2 + ε))
       = Real.log Real.goldenRatio / (128 / ε ^ 2 * (χ.conductor : ℝ) ^ (1 / 2 + ε)) := by

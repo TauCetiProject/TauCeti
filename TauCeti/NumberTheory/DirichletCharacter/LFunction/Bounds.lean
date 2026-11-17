@@ -36,33 +36,12 @@ The function being bounded is the native analytic continuation, not the Dirichle
 
 public section
 
-open Finset Filter MeasureTheory Complex Asymptotics
+open Finset Filter MeasureTheory Complex
 open scoped Topology
 
 namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-
-omit [NeZero N] χ in
-/-- The partial sums `∑_{k=1}^n χ(k)` of a nonprincipal Dirichlet character are `O(n ^ 0)` as
-`n → ∞`. -/
-theorem sum_Icc_isBigO_rpow_zero {F : Type*} [NormedField F] (χ : DirichletCharacter F N)
-    (hχ : χ ≠ 1) :
-    (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
-  rcases N.eq_zero_or_pos with rfl | hN
-  · refine isBigO_iff.mpr ⟨‖χ 1‖, Eventually.of_forall fun n ↦ ?_⟩
-    have hsub : ∑ k ∈ Icc 1 n, χ k = if 1 ≤ n then χ 1 else 0 := by
-      split_ifs with hn
-      · rw [← sum_erase_add (Icc 1 n) _ (left_mem_Icc.mpr hn), sum_eq_zero, zero_add, Nat.cast_one]
-        intro k hk
-        rw [mem_erase, mem_Icc] at hk
-        exact MulChar.map_nonunit χ fun hu ↦ by
-          rcases Int.isUnit_iff.mp (show IsUnit (k : ℤ) from hu) with h | h <;> omega
-      · rw [Icc_eq_empty hn, sum_empty]
-    split_ifs at hsub <;> simp [hsub]
-  · have : NeZero N := ⟨hN.ne'⟩
-    refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
-    simpa using χ.norm_sum_Icc_le_level hχ n
 
 /-- Partial summation represents the continued L-function of a nonprincipal character on the
 whole half-plane `Re(s) > 0`. -/

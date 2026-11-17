@@ -79,14 +79,14 @@ private theorem integral_Ioi_one_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
     setIntegral_indicator measurableSet_Ici,
     Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
 
-/-- The Mellin derivative of the partial-sum step function at `-s` is the `log t`-weighted
-integral over `(1, ∞)`. -/
-private theorem integral_Ioi_one_mul_log_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
-    ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * Real.log t * (t : ℂ) ^ (-(s + 1)) =
-      mellin (fun t : ℝ ↦ Real.log t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) := by
+/-- For any real weight `w`, the `w`-weighted partial-summation integral over `(1, ∞)` is the
+Mellin transform of `t ↦ w t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k` at `-s`. -/
+private theorem integral_Ioi_one_mul_eq_mellin (f : ℕ → ℂ) (w : ℝ → ℝ) (s : ℂ) :
+    ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * w t * (t : ℂ) ^ (-(s + 1)) =
+      mellin (fun t : ℝ ↦ w t • ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) := by
   set A : ℝ → ℂ := fun t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k
-  have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • (Real.log t • A t))
-      ((Set.Ici (1 : ℝ)).indicator fun t ↦ A t * Real.log t * (t : ℂ) ^ (-(s + 1)))
+  have hEq : Set.EqOn (fun t : ℝ ↦ (t : ℂ) ^ (-s - 1) • (w t • A t))
+      ((Set.Ici (1 : ℝ)).indicator fun t ↦ A t * w t * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 0) := by
     intro t _
     dsimp only
@@ -164,15 +164,20 @@ theorem hasDerivAt_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
       (fun z : ℂ ↦ z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(z + 1)))
       (∫ t in Set.Ioi (1 : ℝ),
         (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1))) s := by
+  have h1 (z : ℂ) :
+      ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(z + 1)) =
+        mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-z) := by
+    simpa only [ofReal_one, mul_one, one_smul] using
+      integral_Ioi_one_mul_eq_mellin f (fun _ ↦ 1) z
   have hm := (mellin_hasDerivAt_of_isBigO_rpow (a := -r)
     ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set Set.Ioi_subset_Ici_self)
     (by rw [neg_neg]; exact hO.comp_natFloor_rpow) (by simpa using hs)
     (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)).2
   have hprod := (hasDerivAt_id s).fun_mul (hm.comp s (hasDerivAt_id s).neg)
-  simp_rw [integral_Ioi_one_eq_mellin]
+  simp_rw [h1]
   refine hprod.congr_deriv ?_
   simp only [Function.comp_apply, id_eq, one_mul, mul_neg, mul_one,
-    ← integral_Ioi_one_eq_mellin, ← integral_Ioi_one_mul_log_eq_mellin]
+    ← h1, ← integral_Ioi_one_mul_eq_mellin f Real.log s]
   rw [← integral_const_mul, ← sub_eq_add_neg,
     ← integral_sub (integrableOn_sum_mul_cpow_of_isBigO f hO hs)
       ((integrableOn_sum_mul_log_mul_cpow_of_isBigO f hO hs).const_mul s)]

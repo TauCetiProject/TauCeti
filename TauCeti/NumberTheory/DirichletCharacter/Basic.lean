@@ -29,8 +29,7 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 
 ## Main results
 
-* `DirichletCharacter.sum_range_eq_zero_of_ne_one`,
-  `DirichletCharacter.sum_Icc_one_level_eq_zero`: cancellation over a full period.
+* `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
   a fibre of the reduction map.
 * `DirichletCharacter.factorsThrough_gcd_of_changeLevel_factorsThrough`: a factorisation of the
@@ -113,19 +112,6 @@ theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : �
         (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
         (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
     _ = 0 := χ.sum_eq_zero_of_ne_one hχ
-
-/-- A nonprincipal Dirichlet character sums to zero over `1 ≤ k ≤ N`. -/
-theorem sum_Icc_one_level_eq_zero {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
-    (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
-    ∑ k ∈ Finset.Icc 1 N, χ k = 0 := by
-  rcases N.eq_zero_or_pos with rfl | hN
-  · simp
-  have h1 : ∑ k ∈ Finset.Icc 1 N, χ k = χ (0 : ZMod N) + ∑ k ∈ Finset.Ico 1 N, χ k := by
-    rw [← Finset.insert_right_Ico hN, Finset.sum_insert Finset.right_notMem_Ico, ZMod.natCast_self]
-  have h2 : ∑ k ∈ Finset.range N, χ k = χ (0 : ZMod N) + ∑ k ∈ Finset.Ico 1 N, χ k := by
-    rw [Finset.range_eq_Ico, ← Finset.insert_Ico_add_one_left_eq_Ico hN, zero_add,
-      Finset.sum_insert (by simp), Nat.cast_zero]
-  exact h1.trans (h2.symm.trans (χ.sum_range_eq_zero_of_ne_one hχ))
 
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/
