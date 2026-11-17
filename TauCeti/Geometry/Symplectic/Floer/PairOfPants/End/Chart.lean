@@ -45,6 +45,10 @@ apply to all three ends.
 
 ## Main results
 
+* `TauCeti.Floer.continuousAt_endSign_mul_re_endCoord`,
+  `TauCeti.Floer.isOpen_endSign_mul_re_endCoord_lt`: in real coordinates the signed longitudinal
+  coordinate of an end is continuous away from its center, and the part of `S` where it is less
+  than a bound is open.
 * `TauCeti.Floer.isCompact_preimage_truncation`,
   `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
   `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
@@ -161,6 +165,25 @@ theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- The signed longitudinal coordinate `±s` of the end `q` is continuous in real coordinates away
+from the center of the end. -/
+theorem continuousAt_endSign_mul_re_endCoord (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ContinuousAt (fun z : ℝ × ℝ ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re)
+      z :=
+  continuousAt_const.mul ((q.contDiffAt_re_endCoord hz (n := 0)).continuousAt.comp
+    Complex.equivRealProdCLM.symm.continuous.continuousAt)
+
+/-- The part of `S` on which the signed longitudinal coordinate `±s` of the end `q` is less than
+`a` is open in real coordinates. -/
+theorem isOpen_endSign_mul_re_endCoord_lt (q : Puncture) (a : ℝ) :
+    IsOpen (thricePuncturedSphereReal ∩
+      (fun z : ℝ × ℝ ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) ⁻¹'
+        Iio a) :=
+  ContinuousOn.isOpen_inter_preimage (fun _ hz ↦ (continuousAt_endSign_mul_re_endCoord q
+    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)).continuousWithinAt)
+    isOpen_thricePuncturedSphereReal isOpen_Iio
 
 /-- The truncation at heights `R` is compact in real coordinates. -/
 theorem isCompact_preimage_truncationAt (R : Puncture → ℝ) :

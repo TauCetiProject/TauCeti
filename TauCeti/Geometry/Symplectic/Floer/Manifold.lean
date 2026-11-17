@@ -278,6 +278,14 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff (ω : SmoothTwoForm I M)
     rw [add_eq_zero_iff_eq_neg] at h
     rw [h, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
 
+/-- The perturbed derivative at `z` only depends on the values `K_s(z)` and `K_t(z)` of the
+perturbation at `z`, not on its derivatives. -/
+theorem perturbedMFDeriv_congr_perturbation (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = Ks' z)
+    (ht : Kt z = Kt' z) :
+    ω.perturbedMFDeriv Ks Kt u z = ω.perturbedMFDeriv Ks' Kt' u z :=
+  ContinuousLinearMap.ext fun v ↦ by rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hs, ht]
+
 /-- **The perturbed derivative of a translate.** The perturbed derivative of `w ↦ u (w + v)` for
 the translated data `w ↦ K (w + v)` at `z` is the perturbed derivative of `u` for `K` at `z + v`. -/
 theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
@@ -302,6 +310,14 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
       SmoothBundleForm.eval₂ ω (u z) (ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal)
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
+
+/-- The Floer energy density at `z` only depends on the values `K_s(z)` and `K_t(z)` of the
+perturbation at `z`, not on its derivatives. -/
+theorem floerEnergyDensity_congr_perturbation (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} (u : ℝ × ℝ → M) {z : ℝ × ℝ} (hs : Ks z = Ks' z)
+    (ht : Kt z = Kt' z) :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks' Kt' u z := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, ω.perturbedMFDeriv_congr_perturbation u hs ht]
 
 /-- At a point where the perturbation vanishes, the Floer energy density is the symplectic area
 density `ω(∂_s u, ∂_t u)`. -/
