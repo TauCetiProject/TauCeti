@@ -48,7 +48,9 @@ Both steps rest on a description of the orbits of the product:
 `Equiv.swap a b * σ` either shared an orbit of `σ` already, or were attached one to `a` and the
 other to `b`. That containment needs no hypothesis at all, and neither does the splitting
 statement `TauCeti.not_sameCycle_swap_mul_of_ne_of_sameCycle`: for `a ≠ b` in one orbit of `σ`, the
-product closes the arc between them into an orbit that contains only one of the two. What the
+product closes the arc between them into an orbit that contains only one of the two; nor does
+`TauCeti.sameCycle_swap_mul_iff_of_not_sameCycle`, which preserves the cycle relation of any point
+outside the cycles of `a` and `b`. What the
 merging statement `TauCeti.sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle` does need is that
 the orbit being walked round comes back to its starting point, that is, that `b` is periodic for
 `σ`. Every point of a finite type is periodic (`Function.Injective.mem_periodicPts`), which is how
@@ -177,6 +179,19 @@ theorem _root_.Equiv.Perm.SameCycle.swap_mul_of_sameCycle
   · exact hxy
   · exact SameCycle.trans (hx.elim id fun h => h.trans hab.symm)
       (SameCycle.symm (hy.elim id fun h => h.trans hab.symm))
+
+/-- Multiplying `σ` on the left by `Equiv.swap a b` preserves the cycle relation of `x` whenever
+`x` lies in neither the cycle of `a` nor the cycle of `b`. No finiteness or periodicity is
+required. -/
+theorem sameCycle_swap_mul_iff_of_not_sameCycle
+    (ha : ¬ σ.SameCycle x a) (hb : ¬ σ.SameCycle x b) :
+    (Equiv.swap a b * σ).SameCycle x y ↔ σ.SameCycle x y := by
+  have haux {τ : Perm α} {z : α} (hza : ¬ τ.SameCycle x a) (hzb : ¬ τ.SameCycle x b)
+      (h : (Equiv.swap a b * τ).SameCycle x z) : τ.SameCycle x z :=
+    h.sameCycle_or_of_swap_mul.elim id fun ⟨hx, _⟩ ↦ (hx.elim hza hzb).elim
+  exact ⟨haux ha hb, fun h ↦
+    haux (fun h' ↦ ha (haux ha hb h')) (fun h' ↦ hb (haux ha hb h'))
+      (by rwa [Equiv.swap_mul_self_mul])⟩
 
 /-- The walk along the orbit of `c`: as long as the powers of `σ` have carried `c` neither to `a`
 nor to `b`, the product `Equiv.swap a b * σ` has moved `c` exactly as `σ` does. -/

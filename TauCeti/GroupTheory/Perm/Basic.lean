@@ -25,7 +25,8 @@ transpositions,
 a permutation transporting two points outside a fixed set to another such pair,
 the values of the three-cycle written as a product of two transpositions sharing a point,
 a characterization of permutations with a unique fixed point, functions constant on a permutation
-orbit, the orbit relation of an involution, a positive-power representative of a relation inside a
+orbit (`Equiv.Perm.SameCycle.apply_eq_of_apply_eq`, `Equiv.Perm.not_sameCycle_of_apply_ne`), the
+orbit relation of an involution, a positive-power representative of a relation inside a
 periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins points in the same orbit
 (`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
 transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, a
@@ -233,6 +234,12 @@ theorem isCycleOn_preimage_quotientMk (b : Quotient (SameCycle.setoid σ)) :
       exact sameCycle_comm
     rw [hfibre]
     exact σ.isCycleOn_setOf_sameCycle x
+
+/-- If a `σ`-invariant function takes distinct values at `x` and `y`, then `x` and `y` do not
+lie in the same cycle of `σ`. -/
+theorem not_sameCycle_of_apply_ne {β : Sort*} {f : α → β} (hf : ∀ z, f (σ z) = f z)
+    {x y : α} (hxy : f x ≠ f y) : ¬ σ.SameCycle x y :=
+  fun h ↦ hxy (h.apply_eq_of_apply_eq hf)
 
 /-- A function invariant under a permutation that is a single cycle on each fibre of `g` factors
 through `g`. -/

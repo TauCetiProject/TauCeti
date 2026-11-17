@@ -210,23 +210,6 @@ end Smoothings
 
 section ComponentCount
 
-private theorem not_sameCycle_of_apply_eq_not {α : Type*} {τ : Perm α} {f : α → Bool}
-    (hf : ∀ x, f (τ x) = f x) {x y : α} (hxy : f y = !f x) : ¬τ.SameCycle x y :=
-  fun h ↦ Bool.not_ne_self (f x) (hxy.symm.trans (h.apply_eq_of_apply_eq hf).symm)
-
-private theorem sameCycle_swap_mul_iff_of_apply_eq_not {α : Type*} [DecidableEq α]
-    {τ : Perm α} {f : α → Bool} (hf : ∀ x, f (τ x) = f x) {a₁ b₁ a₂ b₂ : α}
-    (hoa₂ : f a₂ = !f a₁) (hob₂ : f a₂ = f b₂) :
-    (swap a₂ b₂ * τ).SameCycle a₁ b₁ ↔ τ.SameCycle a₁ b₁ := by
-  have hf' (x : α) : f ((swap a₂ b₂ * τ) x) = f x := by
-    rw [Perm.mul_apply, Equiv.apply_swap_eq_self hob₂, hf]
-  have haux {ρ : Perm α} (hρ : ∀ x, f (ρ x) = f x)
-      (h : (swap a₂ b₂ * ρ).SameCycle a₁ b₁) : ρ.SameCycle a₁ b₁ :=
-    h.sameCycle_or_of_swap_mul.elim id fun ⟨h1, _⟩ ↦
-      h1.elim (fun h2 ↦ absurd h2 (not_sameCycle_of_apply_eq_not hρ hoa₂))
-        (fun h2 ↦ absurd h2 (not_sameCycle_of_apply_eq_not hρ (hob₂.symm.trans hoa₂)))
-  exact ⟨haux hf, fun h ↦ haux hf' (by rwa [swap_mul_self_mul])⟩
-
 variable (D : OrientedPDCode (n + 1)) (c : Fin (n + 1))
 
 private theorem slotSmoothing_zero_and_two (b : Bool) :
@@ -303,7 +286,10 @@ private theorem orbitCount_resolveCrossingTurn_seifertState :
   have hcomp := D.crossingComponentOfHalfEdge_slotSmoothing_zero_and_two c b
   have hca₂ := D.crossingComponentOfHalfEdge_crossing_add_two c 0
   have hori : ∀ x, D.orientation (σ x) = D.orientation x := D.orientation_componentPerm
-  have hsc₁₂ := sameCycle_swap_mul_iff_of_apply_eq_not hori (b₁ := b₁) hoa₂ hob₂
+  have hsc₁₂ : (swap a₂ b₂ * σ).SameCycle a₁ b₁ ↔ σ.SameCycle a₁ b₁ :=
+    sameCycle_swap_mul_iff_of_not_sameCycle
+      (σ.not_sameCycle_of_apply_ne hori (by simp [hoa₂]))
+      (σ.not_sameCycle_of_apply_ne hori (by simp [← hob₂, hoa₂]))
   by_cases hc : D.crossingComponentOfHalfEdge a₁ = D.crossingComponentOfHalfEdge (D.crossing c 1)
   · have hc₁ := (D.sameCycle_componentPerm_iff_crossingComponentOfHalfEdge_eq hob₁).mpr
       (hc.trans hcomp.2.symm)
@@ -341,7 +327,7 @@ private theorem orbitCount_resolveCrossingTurn_not_seifertState :
   have hcomp := D.crossingComponentOfHalfEdge_slotSmoothing_zero_and_two c b
   have hca₂ := D.crossingComponentOfHalfEdge_crossing_add_two c 0
   have hnot₂ : ¬σ.SameCycle a₂ b₂ :=
-    not_sameCycle_of_apply_eq_not D.orientation_componentPerm (by rw [hob₂, hoa₂, Bool.not_not])
+    σ.not_sameCycle_of_apply_ne D.orientation_componentPerm (by simp [hoa₂, hob₂])
   have hstep₂ := orbitCount_swap_mul_add_one_of_not_sameCycle hnot₂
   have hab₂ : (swap a₂ b₂ * σ).SameCycle a₂ b₂ :=
     sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle (σ.injective.mem_periodicPts b₂) hnot₂
@@ -354,12 +340,12 @@ private theorem orbitCount_resolveCrossingTurn_not_seifertState :
       (hab₂.swap_mul_of_sameCycle hc₁₂).trans (hab₂.symm.trans (hab₂.swap_mul_of_sameCycle hc₂₁))
     simp only [hc, ↓reduceIte]
     rw [orbitCount_swap_mul_of_sameCycle (D.crossing_zero_ne_slotSmoothing_two c b) hsc₁]; omega
-  · have hnot₁ : ¬(swap a₂ b₂ * σ).SameCycle a₁ b₁ := fun h ↦
-      h.sameCycle_or_of_swap_mul.elim
-        (not_sameCycle_of_apply_eq_not D.orientation_componentPerm (hob₁.trans hoa₂))
-        fun ⟨h1, _⟩ ↦ h1.elim (not_sameCycle_of_apply_eq_not D.orientation_componentPerm hoa₂)
-          fun h2 ↦ hc <| ((D.sameCycle_componentPerm_iff_crossingComponentOfHalfEdge_eq
-            hob₂.symm).mp h2).trans hcomp.1
+  · have hnot₁ : ¬(swap a₂ b₂ * σ).SameCycle a₁ b₁ :=
+      (sameCycle_swap_mul_iff_of_not_sameCycle
+        (σ.not_sameCycle_of_apply_ne D.orientation_componentPerm (by simp [hoa₂]))
+        fun h2 ↦ hc <| ((D.sameCycle_componentPerm_iff_crossingComponentOfHalfEdge_eq
+          hob₂.symm).mp h2).trans hcomp.1).not.mpr
+        (σ.not_sameCycle_of_apply_ne D.orientation_componentPerm (by simp [hob₁, hoa₂]))
     have hstep₁ := orbitCount_swap_mul_add_one_of_not_sameCycle hnot₁
     simp only [hc, ↓reduceIte]; omega
 
