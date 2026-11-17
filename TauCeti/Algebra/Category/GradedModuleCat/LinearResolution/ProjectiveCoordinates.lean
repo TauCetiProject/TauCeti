@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Duality
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
 
 /-!
@@ -31,9 +32,9 @@ infinite linear resolutions.
 * P. Webb, *A Course in Finite Group Representation Theory*, Proposition 7.4.1, for the
   division-endomorphism dimension factor in projective/simple pairings.
 
-The coordinate calculation uses `TauCeti.gradedProjectiveExtEuler_simple_eq_mul_invert_repr`
-and the linear-resolution Ext equivalence
-`TauCeti.GradedProjectiveResolution.IsLinear.extLinearEquivShiftObj`.
+The coordinate calculation uses `TauCeti.gradedProjectiveExtEulerTarget_eq_mul_invert_repr`
+(cf. `TauCeti.gradedProjectiveExtEuler_simple_eq_mul_invert_repr`) and the linear-resolution Ext
+equivalence `TauCeti.GradedProjectiveResolution.IsLinear.extLinearEquivShiftObj`.
 -/
 
 public section
@@ -46,37 +47,12 @@ open CategoryTheory CategoryTheory.Abelian LaurentPolynomial
 
 universe uk uA uI
 
-section Terms
-
-variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A}
-
-namespace GradedProjectiveResolution
-
-variable {M : GradedModuleCat.{uA} 𝒜}
-
-/-- A finitely generated term of a concrete graded projective resolution, as an object of the
-finite graded projective category. -/
-def finiteProjectiveTerm
-    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
-    [Module.Finite A (r.X n)] : (gradedFiniteProjectiveModules 𝒜).FullSubcategory :=
-  ⟨r.termObj n, gradedFiniteProjectiveModules_iff.mpr ⟨inferInstance, r.projective n⟩⟩
-
-/-- The underlying graded object of the finite projective term is the original resolution term. -/
-@[simp]
-theorem finiteProjectiveTerm_obj
-    (r : GradedProjectiveResolution.{uk, uA, uA, uA} 𝒜 M.grading) (n : ℕ)
-    [Module.Finite A (r.X n)] : (r.finiteProjectiveTerm n).obj = r.termObj n := (rfl)
-
-end GradedProjectiveResolution
-
-end Terms
-
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
-  [Module.Finite k A] [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
+  [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
   {I : Type uI}
-  (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e : I → A}
+  (S : I → (gradedFiniteModules 𝒜).FullSubcategory) [∀ i, Module.Finite k (S i).obj]
+  {e : I → A}
   (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hI : ∀ i, (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜)
   (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
@@ -93,18 +69,18 @@ variable {M : GradedModuleCat.{uA} 𝒜}
 
 include he₀ hne hbP in
 /-- **Ext dimensions compute the projective coordinates of every linear resolution term.**
-The diagonal idempotent dimension retains the nonsplitting-field correction. There is no
-cohomological boundedness assumption, and `n = 0` is included. -/
+The diagonal idempotent dimension retains the nonsplitting-field correction. Neither
+finite-dimensionality of `A` nor cohomological boundedness is assumed, and `n = 0` is included. -/
 theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLinear)
-    (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (n : ℕ)
-    [Module.Finite A (r.X n)] (i : I) :
+    (i : I) (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (n : ℕ)
+    [Module.Finite A (r.X n)] :
     (S i).obj.smulGradedDimension (e i) *
         bP.repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i =
       C (Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) : ℤ) * T n := by
   have hgen : (r.finiteProjectiveTerm n).obj.grading.IsGeneratedInDegree A (n : ℤ) :=
     (isLinear_iff.mp hr) n
   rw [smulGradedDimension_mul_repr_of_isGeneratedInDegree S he he₀ hI hne bP hbP
-    (r.finiteProjectiveTerm n) hgen hconc i]
+    (r.finiteProjectiveTerm n) hgen i hconc]
   rw [finiteProjectiveTerm_obj]
   suffices Module.finrank k (r.termObj n ⟶ (S i).obj.shiftObj n) =
       Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) by rw [this]
@@ -120,29 +96,30 @@ theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLin
               r.differential_zero_comp_augmentation
             have hc : c.Exact := (GradedModuleCat.exact_iff).mpr r.exact_d_π
             exact hc.desc' f (hr.hom_eq_zero 1 (by
-              simpa [sub_eq_add_neg] using hconc i 1 (by omega))
+              simpa [sub_eq_add_neg] using hconc 1 (by omega))
               (r.differential 0 ≫ f))⟩
       exact (aug.symm.trans (Ext.linearEquiv₀ (R := k)).symm).finrank_eq
   | succ n =>
-      exact (hr.extLinearEquivShiftObj (hconc i) n).finrank_eq
+      exact (hr.extLinearEquivShiftObj hconc n).finrank_eq
 
 include he₀ hne hbP in
 /-- Over normalized projective/simple bases, the `i`th coordinate of `Pₙ` is
 `dim_k Extⁿ(M,Sᵢ{n}) qⁿ`. -/
 theorem IsLinear.repr_finiteProjectiveTerm (hr : r.IsLinear)
-    (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
-    (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
-    (n : ℕ) [Module.Finite A (r.X n)] (i : I) :
+    (i : I) (hconc : ∀ p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
+    (hself : (S i).obj.smulGradedDimension (e i) = 1)
+    (n : ℕ) [Module.Finite A (r.X n)] :
     bP.repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n)) i =
       C (Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) : ℤ) * T n := by
   simpa only [hself, one_mul] using
     hr.smulGradedDimension_mul_repr_finiteProjectiveTerm
-      S he he₀ hI hne bP hbP hconc n i
+      S he he₀ hI hne bP hbP i hconc n
 
 include he₀ hne hbP in
 /-- The class of a finite term of a linear resolution is the sum of its projective basis
 classes with coefficients given by diagonal Ext dimensions and the internal shift `qⁿ`. -/
-theorem IsLinear.of_finiteProjectiveTerm_eq_sum [Fintype I] (hr : r.IsLinear)
+theorem IsLinear.of_finiteProjectiveTerm_eq_sum [Fintype I]
+    (hr : r.IsLinear)
     (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
     (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
     (n : ℕ) [Module.Finite A (r.X n)] :
@@ -150,7 +127,8 @@ theorem IsLinear.of_finiteProjectiveTerm_eq_sum [Fintype I] (hr : r.IsLinear)
       ∑ i, (C (Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) : ℤ) * T n) • bP i := by
   classical
   conv_lhs => rw [← bP.sum_repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n))]
-  simp only [hr.repr_finiteProjectiveTerm S he he₀ hI hne bP hbP hconc hself]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [hr.repr_finiteProjectiveTerm S he he₀ hI hne bP hbP i (hconc i) (hself i) n]
 
 end GradedProjectiveResolution
 

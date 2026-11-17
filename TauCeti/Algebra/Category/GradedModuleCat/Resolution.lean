@@ -15,9 +15,10 @@ public import TauCeti.Algebra.Module.GradedModule.Resolution
 # Concrete graded resolutions as categorical projective resolutions
 
 A `TauCeti.GradedProjectiveResolution` records projective modules, homogeneous differentials,
-and an exact augmentation as linear maps. This file turns that data into a
-`CategoryTheory.ProjectiveResolution` in `TauCeti.GradedModuleCat`. Its terms retain their
-internal gradings, and its differentials and augmentation are the original maps.
+and an exact augmentation as linear maps. Without assuming a decomposition of `𝒜`, its terms and
+differentials form an exact `ChainComplex` (`TauCeti.GradedProjectiveResolution.complex`) in
+`TauCeti.GradedModuleCat`; when `𝒜` decomposes `A`, this data bundles into a
+`CategoryTheory.ProjectiveResolution` whose differentials and augmentation are the original maps.
 
 The resulting resolution can be used directly with Mathlib's comparison maps, uniqueness up to
 chain homotopy, and computation of Ext from projective resolutions. No enough-projectives
@@ -27,6 +28,8 @@ minimality, finite generation, nor boundedness.
 Forgetting the grading turns the same data into a projective resolution of the underlying
 `A`-module. Hence a graded resolution whose terms vanish from homological degree `n` on bounds the
 ungraded projective dimension (`TauCeti.GradedProjectiveResolution.hasProjectiveDimensionLT`).
+Regrading a resolution by `d` gives a resolution `r.shiftObj d` of `M{d}` whose `n`th term is
+`(r.termObj n){d}`, preserving minimality (`isMinimal_shiftObj_iff`).
 
 ## References
 
@@ -72,12 +75,48 @@ theorem differential_comp_differential (n : ℕ) :
 theorem differential_zero_comp_augmentation : r.differential 0 ≫ r.augmentation = 0 :=
   GradedModuleCat.hom_ext r.exact_d_π.linearMap_comp_eq_zero
 
-private noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
+/-- The chain complex in `GradedModuleCat 𝒜` underlying a concrete graded projective resolution,
+constructed without assuming a decomposition of `𝒜`. -/
+@[expose]
+noncomputable def complex : ChainComplex (GradedModuleCat.{v} 𝒜) ℕ :=
   ChainComplex.of r.termObj r.differential r.differential_comp_differential
 
-private theorem complex_d (n : ℕ) :
+/-- The `n`th object of `r.complex` is `r.termObj n`. -/
+@[simp]
+theorem complex_X (n : ℕ) :
+    r.complex.X n = r.termObj n := by
+  rfl
+
+/-- In positive homological degree, the differential of `r.complex` is `r.differential`. -/
+@[simp]
+theorem complex_d (n : ℕ) :
     r.complex.d (n + 1) n = r.differential n := by
   simp [complex]
+
+/-- The degree-zero differential of `r.complex` composes to zero with `r.augmentation`. -/
+@[reassoc]
+theorem complex_d_one_zero_comp_augmentation :
+    (r.complex.d 1 0 : r.complex.X 1 ⟶ r.complex.X 0) ≫ (r.augmentation : r.complex.X 0 ⟶ M) =
+      0 := by
+  rw [r.complex_d 0]
+  exact r.differential_zero_comp_augmentation
+
+/-- The augmentation of a concrete graded resolution is an epimorphism in `GradedModuleCat 𝒜`. -/
+instance epi_augmentation : Epi r.augmentation :=
+  (GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π
+
+/-- `r.complex` is exact at degree `0` against `r.augmentation`. -/
+theorem exact_complex_d_one_zero_augmentation :
+    (ShortComplex.mk (r.complex.d 1 0) (r.augmentation : r.complex.X 0 ⟶ M)
+      r.complex_d_one_zero_comp_augmentation).Exact :=
+  ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
+    r.augmentation r.differential_zero_comp_augmentation
+    (GradedModuleCat.exact_iff.mpr r.exact_d_π)
+
+/-- `r.complex` is exact at every positive homological degree `n + 1`. -/
+theorem complex_exactAt_succ (n : ℕ) : r.complex.ExactAt (n + 1) :=
+  ChainComplex.of_exactAt_succ r.termObj r.differential r.differential_comp_differential n
+    (GradedModuleCat.exact_iff.mpr (r.exact_d_d n))
 
 variable [DirectSum.Decomposition 𝒜]
 
@@ -85,16 +124,13 @@ variable [DirectSum.Decomposition 𝒜]
 category of graded modules. The quasi-isomorphism is its original augmentation. -/
 noncomputable def toProjectiveResolution : ProjectiveResolution M := by
   exact @ChainComplex.toProjectiveResolution _ _ _ M r.complex r.augmentation
-    (by rw [complex_d]; exact r.differential_zero_comp_augmentation)
+    r.complex_d_one_zero_comp_augmentation
     (fun n => by
       let := r.projective n
       exact inferInstanceAs (Projective (r.termObj n)))
-    ((GradedModuleCat.epi_iff_surjective r.augmentation).mpr r.surjective_π)
-    (ChainComplex.of_exact_d_one_zero r.termObj r.differential r.differential_comp_differential
-      r.augmentation r.differential_zero_comp_augmentation
-      (GradedModuleCat.exact_iff.mpr r.exact_d_π))
-    (fun n => ChainComplex.of_exactAt_succ r.termObj r.differential
-      r.differential_comp_differential n (GradedModuleCat.exact_iff.mpr (r.exact_d_d n)))
+    r.epi_augmentation
+    r.exact_complex_d_one_zero_augmentation
+    r.complex_exactAt_succ
 
 /-- The terms of the categorical resolution are the original graded modules. -/
 noncomputable def toProjectiveResolutionXIso (n : ℕ) :
@@ -168,6 +204,23 @@ theorem hasProjectiveDimensionLT (n : ℕ) (h : ∀ i, n ≤ i → Subsingleton 
   refine R.hasProjectiveDimensionLT n fun i hi ↦ ?_
   have := h i hi
   exact ModuleCat.isZero_of_subsingleton (ModuleCat.of A (r.X i))
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Shift a concrete graded projective resolution of `M` to a resolution of `M{d}` (`M.shiftObj d`),
+shifting every resolution term by `d`. -/
+abbrev shiftObj (d : ℤ) : GradedProjectiveResolution.{uk, uA, v, v} 𝒜 (M.shiftObj d).grading :=
+  r.shift (-d)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- The `n`th graded-module term of `r.shiftObj d` is `(r.termObj n).shiftObj d`. -/
+@[simp]
+theorem shiftObj_termObj (d : ℤ) (n : ℕ) :
+    (r.shiftObj d).termObj n = (r.termObj n).shiftObj d := (rfl)
+
+omit [DirectSum.Decomposition 𝒜] in
+/-- Shifting a resolution of `M` to `M{d}` preserves minimality. -/
+theorem isMinimal_shiftObj_iff (d : ℤ) : (r.shiftObj d).IsMinimal ↔ r.IsMinimal :=
+  r.isMinimal_shift_iff (-d)
 
 end GradedProjectiveResolution
 
