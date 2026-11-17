@@ -34,8 +34,8 @@ The paper's hypotheses are smooth, and so is the second form of the lemma. If th
 smooth local diffeomorphism at the point of the core where a smooth sphere meets it, transversely,
 the local homeomorphism hypothesis holds by
 `TauCeti.IsFramedTube.isLocalHomeomorphOn_pontryaginThomSphereMap_comp_of_transverse`
-(`TauCeti.IsFramedTube.injective_singularHomologyMap_map_map_of_transverse`). A smooth framing of
-the normal bundle of an embedded compact submanifold provides such a tube
+(`TauCeti.IsFramedTube.injective_singularHomologyMap_map_map_of_transverse`). A smooth framing,
+with smooth inverse, of the normal bundle of an embedded compact submanifold provides such a tube
 (`TauCeti.SmoothEmbedding.exists_isFramedTube_isLocalDiffeomorph`), which gives the lemma for a
 smooth sphere meeting a submanifold with trivial normal bundle transversely in one point
 (`TauCeti.SmoothEmbedding.injective_singularHomologyMap_map_map_of_transverse`).
@@ -134,9 +134,9 @@ variable {E V H G : Type*} {S Q : Type} [NormedAddCommGroup E] [NormedSpace ℝ 
   [SecondCountableTopology Q] {n : ℕ}
 
 /-- **Lemma 7.6 of Barraud–Damian–Humilière–Oancea.** Let `f : S → Q` embed a compact manifold
-with trivial normal bundle, framed by a smooth global trivialization `φ` of its normal bundle with
-fibre `ℝⁿ⁺²`, and let `σ : Sⁿ⁺² → Q` be a sphere meeting `f(S)` in the single point
-`σ x = f y`, `C^r` near `x` for some `1 ≤ r` and transverse there:
+with trivial normal bundle, framed by a smooth global trivialization `φ` with smooth inverse of
+its normal bundle with fibre `ℝⁿ⁺²`, and let `σ : Sⁿ⁺² → Q` be a sphere meeting `f(S)` in the
+single point `σ x = f y`, `C^r` near `x` for some `1 ≤ r` and transverse there:
 `im dσ_x + im df_y = T_{σ x} Q`. Then at every base point `z` of the sphere the map
 `Ω²σ : Ω²Sⁿ⁺² → Ω²Q` of Moore double loop spaces is injective on singular homology in every
 degree and with any coefficients. -/
