@@ -23,9 +23,10 @@ contributes once for each of its supported orderings, both to the count and to t
 The relative density is `0` on the empty support.
 
 Relative densities lie between `0` and `1`, and on a nonempty support the densities of all colors
-sum to one. Recoloring changes `relDensityOn`, multiplied by the support size, by at most
-the number of supported edited triples `editedOn`, defined in
-`TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy`.
+sum to one. Splitting a color by a labelling of the triples splits its density: the densities of
+the split colors `(c, i)` sum to the density of `c`. Recoloring changes `relDensityOn`,
+multiplied by the support size, by at most the number of supported edited triples `editedOn`,
+defined in `TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy`.
 
 ## Main definitions
 
@@ -34,6 +35,8 @@ the number of supported edited triples `editedOn`, defined in
 ## Main results
 
 * `TauCeti.Colored3Graph.sum_relDensityOn`: on a nonempty support the densities sum to one.
+* `TauCeti.Colored3Graph.sum_relDensityOn_split`: the split densities of a color sum to its
+  density.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_mul_card_le_card_editedOn`: the count-scaled
   density change is bounded by the supported edit count.
 * `TauCeti.Colored3Graph.abs_relDensityOn_sub_le_div_of_card_editedOn_le`: an `η`-fraction
@@ -205,6 +208,17 @@ theorem sum_relDensityOn [Fintype κ] (H : Colored3Graph κ V)
   rw [div_eq_one_iff_eq (by exact_mod_cast h.card_pos.ne')]
   -- Every supported triple has exactly one color.
   exact_mod_cast (card_eq_sum_card_fiberwise fun _ _ => mem_univ _).symm
+
+/-- Merging the split colors `(c, i)` over all labels `i` recovers the relative density of `c`. -/
+theorem sum_relDensityOn_split {ι : Type*} [Fintype ι] [DecidableEq ι] (H : Colored3Graph κ V)
+    (f : Set.powersetCard V 3 → ι) (c : κ)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    ∑ i, (H.split f).relDensityOn (c, i) supp = H.relDensityOn c supp := by
+  simp only [relDensityOn_def, ← sum_div, color_split, Prod.mk.injEq]
+  congr 1
+  rw [card_eq_sum_card_fiberwise (f := fun x ↦ f (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩))
+    (t := univ) fun _ _ ↦ mem_univ _]
+  simp [filter_filter]
 
 end Colored3Graph
 
