@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Frattini
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
-public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
+import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import Mathlib.Topology.Separation.Connected
 import TauCeti.Topology.Algebra.Group.Generation
 

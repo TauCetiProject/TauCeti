@@ -48,11 +48,13 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_inf_comap`, `AddSubgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is
   `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
-  of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
+  of the normal core of `B` when every element is `f x * b` with `b` in the normalizer of `B`.
 * `Subgroup.mul_mul_injective_of_disjoint`: the coordinates `u n b` are unique when `U`
   meets `n B n⁻¹` trivially.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
+* `Subgroup.le_map_conj_of_forall_coe_eq`: `V` lies in `gUg⁻¹` when a map `V → U` sends each `v`
+  to `g⁻¹ v g`.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
@@ -95,11 +97,11 @@ theorem _root_.Subgroup.subtype_comp_subgroupOfEquivOfLe {A B : Subgroup G} (h :
       B.subtype.comp (A.subgroupOf B).subtype :=
   MonoidHom.ext <| Subgroup.subgroupOfEquivOfLe_apply_coe h
 
-/-- The actions of a subgroup `V` of `G` and of its copy `V.subgroupOf U` inside a subgroup `U`
-on a type with a scalar action of `G` agree on elements with the same image in `G`: both are
-restrictions of the action of `G`. This is the compatibility of actions under which
-`TauCeti.DiscreteCoind.transIso` identifies `Coind_U^G (Coind_{V ⊓ U}^U M)` with
-`Coind_V^G M`. -/
+/-- The actions of a subgroup `V` of `G` and of the subgroup `V.subgroupOf U` of `U` (the preimage
+of `V` in `U`) on a type with a scalar action of `G` agree on elements with the same image in `G`:
+both are restrictions of the action of `G`. When `V ≤ U`, so that `V.subgroupOf U` is a copy of
+`V`, this is the compatibility of actions under which `TauCeti.DiscreteCoind.transIso` identifies
+`Coind_U^G (Coind_{V ⊓ U}^U M)` with `Coind_V^G M`. The lemma itself holds for all `U` and `V`. -/
 theorem _root_.Subgroup.subgroupOf_smul_eq (U V : Subgroup G)
     (M : Type*) [SMul G M] (v : V.subgroupOf U) (w : V) (a : M)
     (h : ((v : U) : G) = (w : G)) : w • a = v • a := by
@@ -320,10 +322,9 @@ theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
   exact Set.image_inter_preimage f H K
 
 /-- The normal core of `f⁻¹(B)` is the preimage of the normal core of `B` as soon as every element
-of the target is `f x * b` with `b ∈ B`: conjugating by `f x * b` is conjugating by `f x` and
-then by `b`, and `b` normalizes `B`. -/
+of the target is `f x * b` with `b` in the normalizer of `B`. -/
 theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) {B : Subgroup H}
-    (hf : ∀ g, ∃ x, ∃ b ∈ B, f x * b = g) :
+    (hf : ∀ g, ∃ x, ∃ b ∈ Subgroup.normalizer (B : Set H), f x * b = g) :
     (B.comap f).normalCore = B.normalCore.comap f := by
   refine le_antisymm (fun x hx g ↦ ?_) fun x hx y ↦ by simpa using hx (f y)
   -- Write `g⁻¹ = f y * b`, so that `g (f x) g⁻¹ = b⁻¹ f (y⁻¹ x y) b`.
@@ -333,7 +334,7 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
     simp only [map_mul, map_inv]
     group
   rw [hconj]
-  exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
+  exact (Subgroup.mem_normalizer_iff.mp (inv_mem hb) _).mp (hx y⁻¹)
 
 /-- The coordinates `u n b` are unique if `U` meets `n B n⁻¹` trivially. -/
 theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}
@@ -366,6 +367,15 @@ theorem _root_.Subgroup.map_conj_map_conj (R : Subgroup G) (g h : G) :
       R.map (MulAut.conj (h * g)).toMonoidHom := by
   simp only [Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
     ← MulEquiv.toMonoidHom_trans, ← MulAut.mul_def, ← map_mul]
+
+/-- A subgroup `V` lies in the conjugate `gUg⁻¹` of `U` as soon as some map `κ : V → U` sends
+each `v` to `g⁻¹ v g`.
+
+The map `κ` only witnesses `g⁻¹ v g ∈ U` for each `v ∈ V`; it need not be a homomorphism or
+continuous. -/
+theorem _root_.Subgroup.le_map_conj_of_forall_coe_eq (V U : Subgroup G) (g : G) (κ : V → U)
+    (hκ : ∀ v : V, (κ v : G) = g⁻¹ * v * g) : V ≤ U.map (MulAut.conj g).toMonoidHom :=
+  fun v hv ↦ Subgroup.mem_map.2 ⟨κ ⟨v, hv⟩, (κ ⟨v, hv⟩).2, by simp [hκ, mul_assoc]⟩
 
 /-- The image of a subgroup in `G ⧸ N`, pushed forward along the map `G ⧸ N →* H ⧸ M` induced by
 `f`, is the image in `H ⧸ M` of the image of the subgroup under `f`.

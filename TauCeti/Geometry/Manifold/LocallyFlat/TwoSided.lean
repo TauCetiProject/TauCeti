@@ -329,6 +329,32 @@ private theorem injective_glue (hcA : IsCollar (sideRestrict f A) cA)
     obtain ⟨rfl, hd⟩ := Prod.mk.inj (hcB.isOpenEmbedding.injective (Subtype.ext hxy))
     rw [← negBall_depth hs.le, ← negBall_depth ht.le, hd]
 
+/-- The image of a set `S` under the glued map is `O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f)`
+for any sets `O` and `O'` of `M` such that `O` contains the images of the points of `S` at
+nonnegative depth and `O ∩ (A ∪ range f)` lies in the image of `S`, and `O'` contains the images of
+the points of `S` at nonpositive depth and `O' ∩ B` lies in the image of `S`. It is used to prove
+that the glued map is open (`isOpenMap_glue`). -/
+private theorem image_glue_eq (hcA : IsCollar (sideRestrict f A) cA)
+    (hcB : IsCollar (sideRestrict f B) cB) {S : Set (N × ball (0 : ℝ) 1)} {O O' : Set M}
+    (hmemA : ∀ p, p ∈ A ∪ range f → p ∈ O → p ∈ glue cA cB '' S)
+    (hmemB : ∀ p, p ∈ B → p ∈ O' → p ∈ glue cA cB '' S)
+    (hO_of : ∀ x s, (x, s) ∈ S → 0 ≤ (s : ℝ) → glue cA cB (x, s) ∈ O)
+    (hO'_of : ∀ x s, (x, s) ∈ S → (s : ℝ) ≤ 0 → glue cA cB (x, s) ∈ O') :
+    glue cA cB '' S = O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f) := by
+  refine Subset.antisymm ?_ ?_
+  · rintro _ ⟨⟨x, s⟩, hxs, rfl⟩
+    rcases lt_trichotomy (s : ℝ) 0 with hs | hs | hs
+    · exact Or.inl (Or.inr ⟨hO'_of x s hxs hs.le, glue_mem_right hcB x hs⟩)
+    · exact Or.inr ⟨⟨hO_of x s hxs hs.ge, hO'_of x s hxs hs.le⟩,
+        Or.inr ⟨x, (glue_of_coe_eq_zero hcA x hs).symm⟩⟩
+    · exact Or.inl (Or.inl ⟨hO_of x s hxs hs.le, glue_mem_left hcA x hs⟩)
+  · rintro p ((⟨hpO, hpA⟩ | ⟨hpO', hpB⟩) | ⟨⟨hpO, hpO'⟩, (hpA | hpB) | hpR⟩)
+    · exact hmemA p (Or.inl hpA) hpO
+    · exact hmemB p hpB hpO'
+    · exact hmemA p (Or.inl hpA) hpO
+    · exact hmemB p hpB hpO'
+    · exact hmemA p (Or.inr hpR) hpO
+
 /-- The glued map is open. The image of an open set `S` is relatively open in `A ∪ f(N)` and in
 `B ∪ f(N)`, cut out by open sets `O` and `O'` of `M` that contain the same points of `f(N)`. It
 is therefore the union of `O ∩ A`, `O' ∩ B` and `O ∩ O' ∩ (A ∪ B ∪ f(N))`. -/
@@ -340,14 +366,14 @@ private theorem isOpenMap_glue (hcA : IsCollar (sideRestrict f A) cA)
     (hS.preimage (continuous_fst.prodMk (continuous_posBall.comp continuous_snd))))
   obtain ⟨O', hO', hOS'⟩ := isOpen_induced_iff.1 (hcB.isOpenEmbedding.isOpenMap _
     (hS.preimage (continuous_fst.prodMk (continuous_negBall.comp continuous_snd))))
-  -- A point of `A ∪ f(N)` in `O`, or of `B ∪ f(N)` in `O'`, is in the image of `S`.
+  -- A point of `A ∪ f(N)` in `O`, or of `B` in `O'`, is in the image of `S`.
   have hmemA : ∀ p, p ∈ A ∪ range f → p ∈ O → p ∈ glue cA cB '' S := fun p hp hpO => by
     have hp' : (⟨p, hp⟩ : ↥(A ∪ range f)) ∈ ((↑) : ↥(A ∪ range f) → M) ⁻¹' O := hpO
     rw [hOS] at hp'
     obtain ⟨q, hq, hqp⟩ := hp'
     exact ⟨(q.1, posBall q.2), hq, by rw [glue_posBall, hqp]⟩
-  have hmemB : ∀ p, p ∈ B ∪ range f → p ∈ O' → p ∈ glue cA cB '' S := fun p hp hpO => by
-    have hp' : (⟨p, hp⟩ : ↥(B ∪ range f)) ∈ ((↑) : ↥(B ∪ range f) → M) ⁻¹' O' := hpO
+  have hmemB : ∀ p, p ∈ B → p ∈ O' → p ∈ glue cA cB '' S := fun p hp hpO => by
+    have hp' : (⟨p, Or.inl hp⟩ : ↥(B ∪ range f)) ∈ ((↑) : ↥(B ∪ range f) → M) ⁻¹' O' := hpO
     rw [hOS'] at hp'
     obtain ⟨q, hq, hqp⟩ := hp'
     exact ⟨(q.1, negBall q.2), hq, by rw [glue_negBall hcA hcB, hqp]⟩
@@ -362,21 +388,7 @@ private theorem isOpenMap_glue (hcA : IsCollar (sideRestrict f A) cA)
     have hglue : glue cA cB (x, s) = cB (x, depth s) := by
       simpa only [negBall_depth hs] using glue_negBall hcA hcB (x, depth s)
     rwa [mem_preimage, ← hglue] at hmem
-  have himage : glue cA cB '' S = O ∩ A ∪ O' ∩ B ∪ O ∩ O' ∩ (A ∪ B ∪ range f) := by
-    refine Subset.antisymm ?_ ?_
-    · rintro _ ⟨⟨x, s⟩, hxs, rfl⟩
-      rcases lt_trichotomy (s : ℝ) 0 with hs | hs | hs
-      · exact Or.inl (Or.inr ⟨hO'_of x s hxs hs.le, glue_mem_right hcB x hs⟩)
-      · exact Or.inr ⟨⟨hO_of x s hxs hs.ge, hO'_of x s hxs hs.le⟩,
-          Or.inr ⟨x, (glue_of_coe_eq_zero hcA x hs).symm⟩⟩
-      · exact Or.inl (Or.inl ⟨hO_of x s hxs hs.le, glue_mem_left hcA x hs⟩)
-    · rintro p ((⟨hpO, hpA⟩ | ⟨hpO', hpB⟩) | ⟨⟨hpO, hpO'⟩, (hpA | hpB) | hpR⟩)
-      · exact hmemA p (Or.inl hpA) hpO
-      · exact hmemB p (Or.inl hpB) hpO'
-      · exact hmemA p (Or.inl hpA) hpO
-      · exact hmemB p (Or.inl hpB) hpO'
-      · exact hmemA p (Or.inr hpR) hpO
-  rw [himage]
+  rw [image_glue_eq hcA hcB hmemA hmemB hO_of hO'_of]
   exact ((hO.inter hA).union (hO'.inter hB)).union ((hO.inter hO').inter hW)
 
 /-- Collars of `f` on the sides `A` and `B` glue to a bicollar of `f` with these two sides. -/
