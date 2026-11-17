@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Basis.Fin
+public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.DualNumber
 
@@ -159,6 +160,10 @@ theorem dualNumberBasis_one : dualNumberBasis R 1 = eps :=
 /-- The dual numbers are a finite module over their coefficient ring, with basis `1, ε`. -/
 instance dualNumberModuleFinite : Module.Finite R (DualNumber R) :=
   Module.Finite.of_basis (dualNumberBasis R)
+
+/-- The dual numbers are a free `R`-module of rank two on the basis `1, ε`. -/
+instance dualNumberModuleFree : Module.Free R (DualNumber R) :=
+  Module.Free.of_basis (dualNumberBasis R)
 
 variable {R}
 

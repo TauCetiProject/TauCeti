@@ -12,6 +12,8 @@ public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.KnotTheory.Khovanov.Frobenius
+import TauCeti.Algebra.Algebra.Frobenius.Graded
+import TauCeti.LinearAlgebra.Graded.Shift
 
 /-!
 # The quantum grading of the Khovanov Frobenius algebra
@@ -55,6 +57,11 @@ underlying algebra `R[ε]` by `TauCeti.InternalGrading.totalIso`.
 * `TauCeti.Khovanov.isHomogeneous_mul'`, `TauCeti.Khovanov.isHomogeneous_comul`,
   `TauCeti.Khovanov.isHomogeneous_algebraLinearMap`, `TauCeti.Khovanov.isHomogeneous_counit`:
   the degrees of the four structure maps.
+* `TauCeti.Khovanov.parityGrading_quantumGrading_shift_one_eq_bot`,
+  `TauCeti.Khovanov.isHomogeneous_counit_shift_one`,
+  `TauCeti.Khovanov.isHomogeneous_comul_shift_one`,
+  `TauCeti.Khovanov.handle_mem_quantumGrading_shift_one_piece_neg_two`: even support and Frobenius
+  degrees on the regraded algebra `W = V⟨-1⟩`.
 
 ## References
 
@@ -263,6 +270,38 @@ variable {R}
 theorem eps_mem_quantumGrading_shift_one_piece_neg_two :
     (ε : R[ε]) ∈ ((quantumGrading R).shift 1).piece (-2) := by
   simp
+
+variable (R) in
+/-- The regraded algebra `W = V⟨-1⟩` is supported in even degrees. -/
+theorem parityGrading_quantumGrading_shift_one_eq_bot :
+    parityGrading ((quantumGrading R).shift 1).piece 1 = ⊥ := by
+  rw [parityGrading_one_eq_bot_iff]
+  intro k
+  rw [InternalGrading.shift_piece]
+  exact quantumGrading_piece_eq_bot (by omega) (by omega)
+
+/-- In the regraded algebra `W = V⟨-1⟩`, the counit has degree `2 = -(-2)`. -/
+theorem isHomogeneous_counit_shift_one :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := R[ε]))
+      ((quantumGrading R).shift 1).piece (trivialGrading R R) 2 := by
+  have hpiece : ((quantumGrading R).shift 1).piece = Graded.shift (quantumGrading R).piece 1 :=
+    funext fun p ↦ (InternalGrading.shift_piece _ 1 p).trans (Graded.shift_apply _ 1 p).symm
+  rw [hpiece, TauCeti.LinearMap.isHomogeneous_shift_source_iff]
+  simpa using isHomogeneous_counit
+
+/-- In the regraded algebra `W = V⟨-1⟩`, comultiplication has degree `-2`. -/
+theorem isHomogeneous_comul_shift_one :
+    TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := R[ε]))
+      ((quantumGrading R).shift 1).piece
+      (((quantumGrading R).shift 1).tensorProduct ((quantumGrading R).shift 1)).piece (-2) :=
+  TauCeti.Coalgebra.IsFrobenius.isHomogeneous_comul ((quantumGrading R).shift 1)
+    (d := -2) (by simpa using isHomogeneous_counit_shift_one)
+
+/-- In the regraded algebra `W = V⟨-1⟩`, the handle element lies in degree `-2`. -/
+theorem handle_mem_quantumGrading_shift_one_piece_neg_two :
+    TauCeti.Coalgebra.handle R R[ε] ∈ ((quantumGrading R).shift 1).piece (-2) :=
+  TauCeti.Coalgebra.IsFrobenius.handle_mem_piece ((quantumGrading R).shift 1)
+    (d := -2) (by simpa using isHomogeneous_counit_shift_one)
 
 end Shift
 

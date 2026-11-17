@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 
 /-!
 # Duals of internally graded modules
@@ -38,6 +39,8 @@ The construction follows the graded-dual convention used for DG and `A∞` objec
 
 * `InternalGrading.mem_dualPiece_iff`: a degree-`p` functional vanishes on every original degree
   other than `-p`.
+* `InternalGrading.isHomogeneous_trivialGrading_iff_mem_dualPiece`: a functional is homogeneous of
+  degree `p` into `trivialGrading R R` if and only if it belongs to `G.dualPiece p`.
 * `InternalGrading.dualPiece_apply_eq_zero_of_mem_piece_of_add_ne_zero`: evaluation vanishes unless
   the degrees of the functional and vector sum to zero.
 * `InternalGrading.dualPiece_apply_eq_apply_decompose`: a degree-`p` functional sees only the
@@ -86,6 +89,20 @@ theorem mem_dualPiece_iff (G : InternalGrading R M ℤ) (p : ℤ) (φ : Module.D
     φ ∈ G.dualPiece p ↔ ∀ q (x : M), x ∈ G.piece q → q ≠ -p → φ x = 0 := by
   simp only [dualPiece, Submodule.mem_iInf, Submodule.mem_dualAnnihilator]
   aesop
+
+/-- A functional `φ : M →ₗ[R] R` is homogeneous of degree `p` into the trivial grading on `R` if
+and only if it belongs to `G.dualPiece p`. -/
+@[simp]
+theorem isHomogeneous_trivialGrading_iff_mem_dualPiece (G : InternalGrading R M ℤ)
+    (φ : Module.Dual R M) (p : ℤ) :
+    LinearMap.IsHomogeneous φ G.piece (trivialGrading R R) p ↔ φ ∈ G.dualPiece p := by
+  rw [LinearMap.isHomogeneous_def, mem_dualPiece_iff]
+  refine ⟨fun h q x hx hq ↦ ?_, fun h q x hx ↦ ?_⟩
+  · exact (mem_trivialGrading_iff R R).mp (h q x hx) |>.resolve_left (by omega)
+  · rw [mem_trivialGrading_iff]
+    by_cases hq : q + p = 0
+    · exact Or.inl hq
+    · exact Or.inr (h q x hx (by omega))
 
 /-- A functional in dual degree `p` vanishes on an original homogeneous vector of degree `q`
 unless `p + q = 0`. -/

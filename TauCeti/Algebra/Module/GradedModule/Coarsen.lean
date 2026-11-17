@@ -285,6 +285,18 @@ theorem LinearMap.IsHomogeneous.coarsenGrading_zero {g : M →ₗ[R] N} {ℳ : �
           mem_coarsenGrading_of_mem f (by simpa only [add_zero] using hg.map_mem hy)
     exact hle hx
 
+/-- An injective degree-zero homogeneous linear map reflects vanishing of coarsened pieces along any
+map `f : ι → κ` of index types. -/
+theorem coarsenGrading_eq_bot_of_injective {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    {𝒩 : ι → Submodule R N} (hg_inj : Function.Injective g)
+    (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (f : ι → κ) {k : κ}
+    (hN : coarsenGrading 𝒩 f k = ⊥) : coarsenGrading ℳ f k = ⊥ := by
+  rw [Submodule.eq_bot_iff] at hN ⊢
+  intro x hx
+  have hgx : g x ∈ coarsenGrading 𝒩 f k := by
+    simpa using (hg.coarsenGrading_zero f).map_mem hx
+  exact hg_inj (by simpa using hN (g x) hgx)
+
 end Homogeneous
 
 section Parity
@@ -331,6 +343,22 @@ theorem parityGrading_one (ℳ : ℤ → Submodule R M) :
     rw [eq_add_of_sub_eq hk]
     exact le_iSup (fun k ↦ ℳ (2 * k + 1)) k
   · simpa [CharP.ofNat_eq_zero] using mem_parityGrading_of_mem hx
+
+/-- An integer-indexed family of submodules is supported in even degrees (`parityGrading ℳ 1 = ⊥`)
+if and only if every odd-degree piece `ℳ (2 * k + 1)` vanishes. -/
+theorem parityGrading_one_eq_bot_iff (ℳ : ℤ → Submodule R M) :
+    parityGrading ℳ 1 = ⊥ ↔ ∀ k : ℤ, ℳ (2 * k + 1) = ⊥ := by
+  rw [parityGrading_one, iSup_eq_bot]
+
+/-- Every nonzero homogeneous element of an even-supported integer-graded module has even
+degree. -/
+theorem even_of_parityGrading_one_eq_bot {ℳ : ℤ → Submodule R M}
+    (heven : parityGrading ℳ 1 = ⊥) {x : M} {d : ℤ} (hx : x ≠ 0) (hmem : x ∈ ℳ d) :
+    Even d := by
+  by_contra hodd
+  obtain ⟨k, rfl⟩ := Int.not_even_iff_odd.mp hodd
+  rw [(parityGrading_one_eq_bot_iff ℳ).mp heven k, Submodule.mem_bot] at hmem
+  exact hx hmem
 
 /-- When all odd-degree pieces vanish, every element has even parity. -/
 theorem mem_parityGrading_zero_of_odd_eq_bot {ℳ : ℤ → Submodule R M} [Decomposition ℳ]
@@ -388,6 +416,13 @@ noncomputable def parity (G : InternalGrading R M ℤ) : InternalGrading R M (ZM
 
 @[simp]
 theorem parity_piece (G : InternalGrading R M ℤ) : G.parity.piece = parityGrading G.piece := (rfl)
+
+/-- Every nonzero homogeneous element of an even-supported internally `ℤ`-graded module has even
+degree. -/
+theorem even_of_parityGrading_one_eq_bot (G : InternalGrading R M ℤ)
+    (heven : parityGrading G.piece 1 = ⊥) {x : M} {d : ℤ} (hx : x ≠ 0) (hmem : x ∈ G.piece d) :
+    Even d :=
+  TauCeti.even_of_parityGrading_one_eq_bot heven hx hmem
 
 end InternalGrading
 

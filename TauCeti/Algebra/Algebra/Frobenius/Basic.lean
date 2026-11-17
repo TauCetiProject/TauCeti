@@ -124,7 +124,30 @@ theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
   · refine MulOpposite.unop_injective (hφ.eq_zero_of_forall_left fun c => ?_)
     simpa using h (MulOpposite.op c)
 
+/-- A linear functional whose multiplication pairing is perfect is a Frobenius functional. -/
+theorem IsFrobeniusFunctional.of_isPerfPair [h : ((mul k A).compr₂ φ).IsPerfPair] :
+    φ.IsFrobeniusFunctional :=
+  h.nondegenerate
+
 end CommSemiring
+
+section CommAlgebra
+
+variable {k : Type v} [CommSemiring k] {A : Type u} [CommSemiring A] [Algebra k A]
+  {φ : A →ₗ[k] k}
+
+/-- On a commutative algebra, every Frobenius functional is symmetric. -/
+theorem IsFrobeniusFunctional.isSymmetric (hφ : φ.IsFrobeniusFunctional) :
+    φ.IsSymmetricFrobeniusFunctional :=
+  ⟨hφ, fun a b => by rw [mul_comm]⟩
+
+/-- On a commutative algebra, a linear functional whose multiplication pairing is perfect is a
+symmetric Frobenius functional. -/
+theorem IsSymmetricFrobeniusFunctional.of_isPerfPair [((mul k A).compr₂ φ).IsPerfPair] :
+    φ.IsSymmetricFrobeniusFunctional :=
+  IsFrobeniusFunctional.of_isPerfPair.isSymmetric
+
+end CommAlgebra
 
 section CommRing
 
