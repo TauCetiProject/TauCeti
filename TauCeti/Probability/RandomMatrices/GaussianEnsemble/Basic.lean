@@ -26,6 +26,10 @@ GOE (`β = 1`) or the GUE (`β = 2`). Realizations are Wigner matrices
 ## Main results
 
 * `TauCeti.Probability.isHermitian_gaussianEnsemble`: the matrix is Hermitian.
+* `TauCeti.Probability.im_gaussianEnsemble_one`,
+  `TauCeti.Probability.im_gaussianEnsemble_of_lt_of_ne_one`, and
+  `TauCeti.Probability.gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one`: imaginary-part and
+  `β ≠ 1` entry properties.
 * `TauCeti.Probability.gaussianEnsemble_add` and `TauCeti.Probability.gaussianEnsemble_smul`: the
   matrix is real-linear in the array.
 * `TauCeti.Probability.continuous_gaussianEnsemble`: it depends continuously on the array.
@@ -183,6 +187,12 @@ theorem gaussianEnsemble_smul (c : ℝ) (g : Fin n × Fin n → ℝ) :
 theorem gaussianEnsemble_zero : gaussianEnsemble β n 0 = 0 := by
   simpa using gaussianEnsemble_smul (β := β) 0 (0 : Fin n × Fin n → ℝ)
 
+/-- The Gaussian ensemble commutes with negation in the array. -/
+@[simp]
+theorem gaussianEnsemble_neg (g : Fin n × Fin n → ℝ) :
+    gaussianEnsemble β n (-g) = -gaussianEnsemble β n g := by
+  simpa using gaussianEnsemble_smul (β := β) (-1 : ℝ) g
+
 /-- The Gaussian ensemble is subtractive in the array. -/
 @[simp]
 theorem gaussianEnsemble_sub (g h : Fin n × Fin n → ℝ) :
@@ -245,6 +255,33 @@ theorem isHermitian_gaussianEnsemble (β n : ℕ) (g : Fin n × Fin n → ℝ) :
   have := gaussianEnsemble_eq_wignerMatrix β n (fun p (_ : Unit) ↦ g p) ()
   rw [this]
   exact wignerMatrix_isHermitian _ _ _ n
+
+/-- Every entry of the `β = 1` Gaussian ensemble has zero imaginary part. -/
+@[simp] theorem im_gaussianEnsemble_one {n : ℕ} (g : Fin n × Fin n → ℝ) (i j : Fin n) :
+    (gaussianEnsemble 1 n g i j).im = 0 := by
+  rcases lt_trichotomy i j with h | rfl | h <;>
+    simp [*, ← Complex.ofReal_inv, ← Complex.ofReal_mul]
+
+/-- Above the diagonal, the `β ≠ 1` Gaussian ensemble has imaginary part `g (j, i) / √(2n)`. -/
+theorem im_gaussianEnsemble_of_lt_of_ne_one {β n : ℕ} (g : Fin n × Fin n → ℝ) (hβ : β ≠ 1)
+    {i j : Fin n} (h : i < j) :
+    (gaussianEnsemble β n g i j).im = (Real.sqrt n)⁻¹ * ((Real.sqrt 2)⁻¹ * g (j, i)) := by
+  rw [gaussianEnsemble_apply_of_lt_of_ne_one g hβ h, ← Complex.ofReal_inv, div_eq_mul_inv,
+    ← Complex.ofReal_inv]
+  simp only [Complex.mul_im, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im]; ring
+
+/-- For `β = 2` and `n = 2`, the imaginary part of the `(0, 1)` entry is `g (1, 0) / 2`. -/
+theorem im_gaussianEnsemble_two_zero_one (g : Fin 2 × Fin 2 → ℝ) :
+    (gaussianEnsemble 2 2 g 0 1).im = g (1, 0) / 2 := by
+  rw [im_gaussianEnsemble_of_lt_of_ne_one g (by decide) (by decide : (0 : Fin 2) < 1),
+    Nat.cast_ofNat, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num), div_eq_inv_mul]
+
+/-- All `β ≠ 1` branches of `TauCeti.Probability.gaussianEnsemble` coincide with `β = 2`. -/
+theorem gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one {β n : ℕ} (hβ : β ≠ 1)
+    (g : Fin n × Fin n → ℝ) : gaussianEnsemble β n g = gaussianEnsemble 2 n g := by
+  ext i j; rw [gaussianEnsemble_apply, gaussianEnsemble_apply, ite_eq_right hβ,
+    ite_eq_right (by decide : (2 : ℕ) ≠ 1)]
 
 /-- For `n = 1` and `β = 1`, the single entry `√2 * g (0, 0)` of the ensemble is `N(0, 2)` when
 `g (0, 0)` is a standard Gaussian. -/
