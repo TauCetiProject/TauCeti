@@ -22,6 +22,10 @@ infinity in the cobounded filter, `closedBall x r` is eventually contained in ev
 complement is bounded (`Metric.tendsto_closedBall_cobounded_smallSets`). So a property holding
 near infinity eventually holds on whole balls of radius `r`, which is the form in which local
 estimates on balls, such as mean-value inequalities, are applied near infinity.
+
+In a proper pseudometric space, closed balls are compact and hence totally bounded, so any
+function whose distance from a base point is uniformly bounded has totally bounded range
+(`Metric.totallyBounded_range_of_dist_le`).
 -/
 
 public section
@@ -56,5 +60,12 @@ theorem tendsto_closedBall_cobounded_smallSets (r : ℝ) :
     ⟨s + r, trivial, fun x hx y hy ↦ ?_⟩
   simp only [Set.mem_compl_iff, mem_closedBall, not_le] at hx ⊢
   linarith [dist_triangle x y c, mem_closedBall'.1 hy]
+
+/-- In a proper pseudometric space, the range of a function bounded in distance from a base point
+is totally bounded. -/
+theorem totallyBounded_range_of_dist_le [ProperSpace X] {ι : Type*} {f : ι → X} {c : X} {M : ℝ}
+    (hM : ∀ i, dist (f i) c ≤ M) : TotallyBounded (Set.range f) :=
+  (isCompact_closedBall c M).totallyBounded.subset
+    (Set.range_subset_iff.2 fun i ↦ mem_closedBall.2 (hM i))
 
 end Metric
