@@ -110,8 +110,12 @@ variable [CompleteSpace V]
 
 /-- The right action of the unitary group `unitary (V →L[𝕜] V)` on the frames of a fibre by
 precomposition: `op g` carries the frame `φ` to `φ ∘ g`. -/
-instance instMulAction (b : B) : MulAction (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
+instance instSMul (b : B) : SMul (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
   smul g φ := ofFrame ((Unitary.linearIsometryEquiv g.unop).trans φ.frame)
+
+/-- The right precomposition action of `unitary (V →L[𝕜] V)` on `Fiber 𝕜 F E V b` is a monoid
+action. -/
+instance instMulAction (b : B) : MulAction (unitary (V →L[𝕜] V))ᵐᵒᵖ (Fiber 𝕜 F E V b) where
   -- By the definition of `smul`, both sides of each action law are points `ofFrame _`, so
   -- `congrArg ofFrame` reduces the law to an identity of linear isometric equivalences. In
   -- `mul_smul`, the frame of `h • φ` is by definition the composite that `trans_assoc` expects.
