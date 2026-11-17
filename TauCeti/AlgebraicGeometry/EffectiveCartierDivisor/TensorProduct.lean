@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Invertible
 public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorProduct
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+import TauCeti.Algebra.BigOperators.Group.Finset.Attach
 
 /-!
 # Ideal sheaves of sums of effective Cartier divisors
@@ -270,9 +271,7 @@ theorem mk_toInvertibleSheaf_prod {ι : Type*} (s : Finset ι) {I : ι → X.Ide
     rw [mk_toInvertibleSheaf_congr _ (TauCeti.isEffectiveCartier_mul
         (hI i (Finset.mem_insert_self i s)) (TauCeti.isEffectiveCartier_prod hs))
         (Finset.prod_insert hi),
-      mk_toInvertibleSheaf_mul _ (TauCeti.isEffectiveCartier_prod hs), ih hs, Finset.attach_insert,
-      Finset.prod_insert, Finset.prod_image]
-    · exact fun x _ y _ h ↦ Subtype.ext (congrArg Subtype.val h :)
-    · simpa using hi
+      mk_toInvertibleSheaf_mul _ (TauCeti.isEffectiveCartier_prod hs), ih hs,
+      Finset.prod_attach_insert hi]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
