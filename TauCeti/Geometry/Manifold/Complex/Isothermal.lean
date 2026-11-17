@@ -22,21 +22,21 @@ structure `j`. A chart `e : M → ℂ` of the real `C¹` maximal atlas is *isoth
 `j = i` in it: its differential carries `j` to multiplication by `i` at every point of its source.
 
 The derivative of the transition map between two isothermal charts commutes with multiplication
-by `i`: this is the Cauchy–Riemann equation, so the transition is holomorphic, hence analytic. If
-isothermal charts cover `M` (`SmoothAlmostComplexStructure.HasIsothermalCharts`), they are
-therefore the atlas of a complex analytic curve `TauCeti.IsothermalSurface j`, a copy of `M`. The
-identity of `M` is then a real `C¹` diffeomorphism `IsothermalSurface.diffeomorph` from this
-copy to `M`, which carries the almost complex structure `ofComplexManifold` of the copy to `j`.
+by `i`: this is the Cauchy–Riemann equation, so the transition is holomorphic, hence analytic.
+Isothermal charts cover `M` (see below), so they are the atlas of a complex analytic curve
+`TauCeti.IsothermalSurface j`, a copy of `M`. The identity of `M` is a real `C¹` diffeomorphism
+`IsothermalSurface.diffeomorph` from this copy to `M`, which carries the almost complex structure
+`ofComplexManifold` of the copy to `j`.
 
 Conversely, on a complex curve `X` the isothermal charts of `ofComplexManifold ℂ X` are exactly the
 holomorphic charts, so isothermal charts cover `X`, and the identity is a biholomorphism
 `IsothermalSurface.biholomorph` from the complex curve `IsothermalSurface (ofComplexManifold ℂ X)`
 to `X`. The two constructions are mutually inverse.
 
-Isothermal charts always exist: `HasIsothermalCharts j` holds for every smooth `j`
-(`SmoothAlmostComplexStructure.hasIsothermalCharts`). Read in a chart of `M`, `j` is a smooth field
-of complex structures on the plane, and the Beltrami equation gives a chart in which it is `i`
-(`TauCeti.Beltrami.exists_isothermal_chart`). This is the integrability of almost complex
+Isothermal charts always exist: every point of `M` lies in the source of an isothermal chart of
+`j` (`SmoothAlmostComplexStructure.exists_isIsothermalChart`). Read in a chart of `M`, `j` is a
+smooth field of complex structures on the plane, and the Beltrami equation gives a chart in which
+it is `i` (`TauCeti.Beltrami.exists_isothermal_chart`). This is the integrability of almost complex
 structures in real dimension two: every almost complex surface is, through `IsothermalSurface`, a
 complex curve.
 
@@ -47,8 +47,8 @@ complex curve.
 * `TauCeti.IsIsothermalChart.differentiableOn_symm_trans`,
   `TauCeti.IsIsothermalChart.analyticOnNhd_symm_trans`: the transition map between two isothermal
   charts is holomorphic, hence analytic.
-* `TauCeti.SmoothAlmostComplexStructure.hasIsothermalCharts`: every smooth almost complex structure
-  on a surface has isothermal charts.
+* `TauCeti.SmoothAlmostComplexStructure.exists_isIsothermalChart`: every smooth almost complex
+  structure on a surface has isothermal charts.
 * `TauCeti.IsothermalSurface j`: the surface `M` charted by the isothermal charts of `j`; it is a
   complex analytic curve, `IsManifold 𝓘(ℂ) ω (IsothermalSurface j)`.
 * `TauCeti.IsothermalSurface.mem_atlas_iff`: its charts are exactly the isothermal charts of `j`,
@@ -164,25 +164,18 @@ theorem not_isIsothermalChart_conj :
   rw [Complex.conjCLE_apply, Complex.conjCLE_apply] at h2
   norm_num [Complex.ext_iff] at h2
 
-/-! ### The complex curve of an almost complex surface with isothermal charts -/
+/-! ### The complex curve of an almost complex surface -/
 
 variable (j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M)
 
-/-- An almost complex structure on a real surface *has isothermal charts* when every point lies in
-the source of an isothermal chart. -/
-class SmoothAlmostComplexStructure.HasIsothermalCharts : Prop where
-  /-- Every point lies in the source of an isothermal chart. -/
-  exists_isIsothermalChart (x : M) : ∃ e : OpenPartialHomeomorph M ℂ,
-    IsIsothermalChart j e ∧ x ∈ e.source
-
 /-- **Isothermal charts exist.** Every smooth almost complex structure `j` on a real surface has
-isothermal charts: every point lies in the source of a chart of the real `C¹` maximal atlas in
+isothermal charts: every point `x` lies in the source of a chart of the real `C¹` maximal atlas in
 which `j = i`. Read in a chart of `M`, `j` is a smooth field of complex structures on the plane,
 and the Beltrami equation straightens it (`TauCeti.Beltrami.exists_isothermal_chart`). So every
 almost complex structure in real dimension two is integrable: `IsothermalSurface j` is a complex
 curve. -/
-instance SmoothAlmostComplexStructure.hasIsothermalCharts : j.HasIsothermalCharts := by
-  refine ⟨fun x ↦ ?_⟩
+theorem SmoothAlmostComplexStructure.exists_isIsothermalChart (x : M) :
+    ∃ e : OpenPartialHomeomorph M ℂ, IsIsothermalChart j e ∧ x ∈ e.source := by
   set q := chartAt ℂ x
   have hxq : x ∈ q.source := mem_chart_source ℂ x
   have hqd : ∀ y ∈ q.source, MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) q y := fun y hy ↦
@@ -217,8 +210,7 @@ instance SmoothAlmostComplexStructure.hasIsothermalCharts : j.HasIsothermalChart
     ((hlin _ hy.2 _).trans (ofComplexManifold_apply (E := ℂ) (M := ℂ) _ _).symm)
 
 /-- The surface `M` with the complex charted space structure given by the isothermal charts of
-`j`, a copy of `M` through `IsothermalSurface.homeomorph`. When `j` has isothermal charts, it is a
-complex analytic curve. -/
+`j`, a copy of `M` through `IsothermalSurface.homeomorph`. It is a complex analytic curve. -/
 structure IsothermalSurface (j : SmoothAlmostComplexStructure 𝓘(ℝ, ℂ) M) where
   /-- The point of `IsothermalSurface j` corresponding to a point of `M`. -/
   ofSurface ::
@@ -245,17 +237,15 @@ theorem homeomorph_apply (p : IsothermalSurface j) : homeomorph j p = p.toSurfac
 theorem homeomorph_symm_apply (x : M) : (homeomorph j).symm x = ofSurface x :=
   (rfl)
 
-variable [j.HasIsothermalCharts]
-
 /-- The isothermal surface of `j` is charted by the isothermal charts of `j`. -/
 instance instChartedSpace : ChartedSpace ℂ (IsothermalSurface j) where
   atlas := (homeomorph j).transOpenPartialHomeomorph '' {e | IsIsothermalChart j e}
   chartAt p := (homeomorph j).transOpenPartialHomeomorph
-    (HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface).choose
+    (j.exists_isIsothermalChart p.toSurface).choose
   mem_chart_source p := by
-    simpa using (HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface).choose_spec.2
+    simpa using (j.exists_isIsothermalChart p.toSurface).choose_spec.2
   chart_mem_atlas p :=
-    ⟨_, (HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface).choose_spec.1, rfl⟩
+    ⟨_, (j.exists_isIsothermalChart p.toSurface).choose_spec.1, rfl⟩
 
 variable {j} in
 /-- The charts of the isothermal surface of `j` are exactly the isothermal charts of `j`, read
@@ -295,7 +285,7 @@ instance instIsManifold : IsManifold 𝓘(ℂ) ω (IsothermalSurface j) := by
 /-- The identity from the isothermal surface of `j` to `M` is a real `C¹` map. -/
 theorem contMDiff_homeomorph : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 (homeomorph j) := by
   intro p
-  obtain ⟨e, he, hx⟩ := HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface
+  obtain ⟨e, he, hx⟩ := j.exists_isIsothermalChart p.toSurface
   set c := (homeomorph j).transOpenPartialHomeomorph e
   have hc : c ∈ maximalAtlas 𝓘(ℝ, ℂ) 1 (IsothermalSurface j) :=
     subset_maximalAtlas (transOpenPartialHomeomorph_mem_atlas he)
@@ -307,7 +297,7 @@ theorem contMDiff_homeomorph : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 (homeom
 /-- The identity from `M` to the isothermal surface of `j` is a real `C¹` map. -/
 theorem contMDiff_homeomorph_symm : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 (homeomorph j).symm := by
   intro x
-  obtain ⟨e, he, hx⟩ := HasIsothermalCharts.exists_isIsothermalChart (j := j) x
+  obtain ⟨e, he, hx⟩ := j.exists_isIsothermalChart x
   set c := (homeomorph j).transOpenPartialHomeomorph e
   have hc : c ∈ maximalAtlas 𝓘(ℝ, ℂ) 1 (IsothermalSurface j) :=
     subset_maximalAtlas (transOpenPartialHomeomorph_mem_atlas he)
@@ -337,7 +327,7 @@ theorem isPseudoholomorphic_homeomorph :
     IsPseudoholomorphic (ofComplexManifold ℂ (IsothermalSurface j)) j (homeomorph j) := by
   rw [isPseudoholomorphic_iff]
   intro p
-  obtain ⟨e, he, hx⟩ := HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface
+  obtain ⟨e, he, hx⟩ := j.exists_isIsothermalChart p.toSurface
   set c := (homeomorph j).transOpenPartialHomeomorph e
   have hc := transOpenPartialHomeomorph_mem_atlas he
   have hcp : IsPseudoholomorphicAt (ofComplexManifold ℂ (IsothermalSurface j))
@@ -354,7 +344,7 @@ theorem isPseudoholomorphic_homeomorph_symm :
     IsPseudoholomorphic j (ofComplexManifold ℂ (IsothermalSurface j)) (homeomorph j).symm := by
   rw [isPseudoholomorphic_iff]
   intro x
-  obtain ⟨e, he, hx⟩ := HasIsothermalCharts.exists_isIsothermalChart (j := j) x
+  obtain ⟨e, he, hx⟩ := j.exists_isIsothermalChart x
   set c := (homeomorph j).transOpenPartialHomeomorph e
   have hc := transOpenPartialHomeomorph_mem_atlas he
   have hcz : IsPseudoholomorphicAt (ofComplexManifold ℂ ℂ)

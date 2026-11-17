@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Beltrami.Holder
 public import TauCeti.Analysis.Complex.Beltrami.Linear
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
 # Planar `J`-holomorphic charts from the Beltrami equation
@@ -127,31 +128,6 @@ theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hc : w
     wirtingerDeriv (normalizedChart ψ c) c 1 = 1 := by
   rw [wirtingerDeriv_normalizedChart, inv_mul_cancel₀ hc]
 
-/-- The inverse function step of the planar chart: a map which is `C¹` on `ball c (r + 1)` and has
-an invertible strict derivative at every point of `closedBall c r` restricts to an open partial
-homeomorphism on a neighbourhood of `c` inside `ball c r`, with `C¹` inverse. -/
-private theorem exists_openPartialHomeomorph_of_hasStrictFDerivAt {φ : ℂ → ℂ} {c : ℂ} {r : ℝ}
-    (hr : 0 < r) (hφ : ContDiffOn ℝ 1 φ (ball c (r + 1)))
-    (hφs : ∀ z ∈ closedBall c r, ∃ L : ℂ ≃L[ℝ] ℂ, HasStrictFDerivAt φ (L : ℂ →L[ℝ] ℂ) z) :
-    ∃ e : OpenPartialHomeomorph ℂ ℂ, ⇑e = φ ∧ c ∈ e.source ∧ e.source ⊆ ball c r ∧
-      ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z := by
-  obtain ⟨L, hL⟩ := hφs c (mem_closedBall_self hr.le)
-  set e := (hL.toOpenPartialHomeomorph φ).restrOpen (ball c r) isOpen_ball
-  have hcoe : ⇑e = φ := by
-    rw [OpenPartialHomeomorph.coe_restrOpen]
-    exact hL.toOpenPartialHomeomorph_coe
-  have hsrc : e.source ⊆ ball c r := by
-    rw [OpenPartialHomeomorph.restrOpen_source]
-    exact Set.inter_subset_right
-  refine ⟨e, hcoe, ?_, hsrc, fun z hz ↦ ?_⟩
-  · rw [OpenPartialHomeomorph.restrOpen_source]
-    exact ⟨hL.mem_toOpenPartialHomeomorph_source, mem_ball_self hr⟩
-  · have hzs := hsrc (e.map_target hz)
-    obtain ⟨L', hL'⟩ := hφs _ (ball_subset_closedBall hzs)
-    refine e.contDiffAt_symm (f₀' := L') hz ?_ ?_ <;> rw [hcoe]
-    · exact hL'.hasFDerivAt
-    · exact hφ.contDiffAt (isOpen_ball.mem_nhds (ball_subset_ball (by linarith) hzs))
-
 /-- **The planar Beltrami chart.** Let `0 < α < 1` and `0 < r`. There are `δ > 0` and `C` such
 that the following holds. Let `J` be a field of almost complex structures on the plane, tame on
 `closedBall c r`, and let `μ` be an `α`-Hölder function vanishing off that disc, equal there to the
@@ -232,13 +208,16 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     rw [this]
     simp only [AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul]
     ring
-  · -- The inverse function theorem: at every point of the disc, `φ` has the invertible strict
-    -- derivative `∂ψ(c)⁻¹ dψ`.
+  · -- The inverse function theorem at `c`, inside `ball c r`.
+    obtain ⟨L, hL⟩ := hinv c hc
     let M : ℂ ≃L[ℝ] ℂ := ContinuousLinearEquiv.smulLeft (Units.mk0 a⁻¹ (inv_ne_zero ha))
-    refine exists_openPartialHomeomorph_of_hasStrictFDerivAt hr hφ fun z hz ↦ ?_
-    obtain ⟨L, hL⟩ := hinv z hz
-    have hLM : ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) :=
-      ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]
-    exact ⟨L.trans M, by rw [hLM]; exact (hL.sub_const (ψ c)).const_smul a⁻¹⟩
+    have hφs : HasStrictFDerivAt φ ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) c := by
+      rw [show ((L.trans M : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) = a⁻¹ • (L : ℂ →L[ℝ] ℂ) from
+        ContinuousLinearMap.ext fun v ↦ by simp [M, Units.smul_def]]
+      exact (hL.sub_const (ψ c)).const_smul a⁻¹
+    obtain ⟨e, he, hce, hes, hesymm⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph
+      (hφ.mono (ball_subset_ball (by linarith))) isOpen_ball (mem_ball_self hr) le_rfl
+      hφs.hasFDerivAt.fderiv.symm
+    exact ⟨e, he, hce, hes, fun z hz ↦ (hesymm z hz).contDiffAt (e.open_target.mem_nhds hz)⟩
 
 end TauCeti.Beltrami

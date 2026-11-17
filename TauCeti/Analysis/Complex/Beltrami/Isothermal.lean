@@ -30,7 +30,8 @@ The construction is the Beltrami argument of McDuff and Salamon.
   `u = B⁻¹ (z - z₀)` the field is `K u = B⁻¹ ∘ J (z₀ + B u) ∘ B`, with `K 0 = i`.
 * **The coefficient.** A real-linear endomorphism `K` of the plane with `K² = -1` and
   `K 1 ≠ -i`, of either orientation, is conjugate to multiplication by `i` through the affine
-  Beltrami normalizer `z ↦ z + ν conj z` of the coefficient `ν = (i - K 1) / (conj (K 1) - i)`.
+  Beltrami normalizer `z ↦ z + ν conj z` of the coefficient `ν = (i - K 1) / (conj (K 1) - i)`
+  (`TauCeti.Beltrami.linearMap_apply_eq_I_mul`).
   The coefficient `ν u` of `K u` is a `C¹` function of `u` near `0` with `ν 0 = 0`, hence Hölder
   near `0`.
 * **Rescaling.** For a bump function `χ` equal to `1` on the unit disc and supported in the disc
@@ -64,53 +65,6 @@ open scoped ComplexConjugate NNReal Topology
 
 namespace TauCeti.Beltrami
 
-/-! ### Complex structures on the plane in either orientation -/
-
-/-- **The coefficient of a complex structure on the plane, in either orientation.** If a
-real-linear endomorphism `K` of the plane squares to `-1` and `μ (conj (K 1) - i) = i - K 1`, then
-the affine Beltrami normalizer of `μ` carries `K` to multiplication by `i`. -/
-private theorem linearMap_apply_eq_I_mul {K : ℂ →L[ℝ] ℂ} (hK : ∀ v, K (K v) = -v) {μ : ℂ}
-    (hμ : μ * (conj (K 1) - I) = I - K 1) (v : ℂ) :
-    linearMap μ (K v) = I * linearMap μ v := by
-  -- `K 1` is off the real line, since `K (r • 1) = r • K 1` cannot square to `-1`.
-  have ha : (K 1).im ≠ 0 := by
-    intro h
-    have hre : K 1 = (K 1).re • (1 : ℂ) := by
-      apply Complex.ext <;> simp [h]
-    have h1 := hK 1
-    rw [hre, map_smul, hre, smul_smul] at h1
-    have := congrArg Complex.re h1
-    simp only [Complex.real_smul, Complex.re_ofReal_mul, Complex.one_re, Complex.neg_re,
-      Complex.ofReal_mul, mul_one] at this
-    nlinarith [mul_self_nonneg (K 1).re]
-  -- Both sides are real-linear in `v`, and agree at `1` and at `K 1`, which span the plane.
-  have hv : v = (v.re - v.im * (K 1).re / (K 1).im) • (1 : ℂ) + (v.im / (K 1).im) • K 1 := by
-    apply Complex.ext
-    · simp
-      field_simp
-      ring
-    · simp
-      field_simp
-  have h1 : linearMap μ (K 1) = I * linearMap μ 1 := by
-    simp only [linearMap_apply, map_one]
-    linear_combination hμ
-  have h2 : linearMap μ (K (K 1)) = I * linearMap μ (K 1) := by
-    simp only [hK 1, linearMap_apply, map_neg, map_one]
-    linear_combination (norm := (ring_nf; simp only [I_sq]; ring_nf)) (-I) * hμ
-  rw [hv]
-  simp only [map_add, map_smul]
-  rw [h2, h1]
-  simp only [Complex.real_smul]
-  ring
-
-/-- The coefficient `(i - b) / (conj b - i)` solves the equation of `linearMap_apply_eq_I_mul`
-for `b = K 1`, when `K 1 ≠ -i`. -/
-private theorem div_mul_conj_sub_I {b : ℂ} (hb : b ≠ -I) :
-    (I - b) / (conj b - I) * (conj b - I) = I - b := by
-  refine div_mul_cancel₀ _ fun h0 ↦ hb ?_
-  have := congrArg conj (sub_eq_zero.mp h0)
-  rwa [conj_conj, conj_I] at this
-
 /-! ### Affine changes of coordinates -/
 
 /-- An isothermal chart `e` for a field `K` on the plane, composed with a real-affine change of
@@ -129,7 +83,9 @@ private theorem exists_isothermal_chart_comp_affine {J K : ℂ → ℂ →L[ℝ]
   have hTc : ContDiff ℝ 1 fun z ↦ A (z - c) := A.contDiff.comp (contDiff_id.sub contDiff_const)
   have hTsc : ContDiff ℝ 1 fun w ↦ A.symm w + c := A.symm.contDiff.add contDiff_const
   let F := T.toOpenPartialHomeomorph.trans e
-  have hFcoe : ⇑F = e ∘ fun z ↦ A (z - c) := rfl
+  have hFcoe : ⇑F = e ∘ fun z ↦ A (z - c) := by
+    ext z
+    simp [F, T]
   have hFsrc : ∀ z, z ∈ F.source ↔ A (z - c) ∈ e.source := fun z ↦ by simp [F, T]
   refine ⟨F, hFsrc, fun z hz ↦ ?_, fun a ha ↦ ?_, fun z hz v ↦ ?_⟩
   · rw [hFcoe]
@@ -185,7 +141,7 @@ private theorem exists_holderOnWith_coefficient {K : ℂ → ℂ →L[ℝ] ℂ} 
     exact mul_le_mul_of_nonneg_left (mem_ball_zero_iff.mp hu).le L.coe_nonneg
   refine ⟨ρ, hρ, _, hνL.holderOnWith_of_norm_le hνb (by norm_num), fun u hu v ↦ ?_⟩
   obtain ⟨-, hKsq, hbne⟩ := hρgood u hu
-  exact linearMap_apply_eq_I_mul hKsq (div_mul_conj_sub_I hbne) v
+  exact linearMap_apply_eq_I_mul hKsq hbne v
 
 /-- **Isothermal charts at a point where the field is `i`, after rescaling.** If `K` is a `C¹`
 field of complex structures near `0` with `K 0 = i`, then for some `ε > 0` the rescaled field
@@ -278,10 +234,7 @@ theorem exists_isothermal_chart {J : ℂ → ℂ →L[ℝ] ℂ} {z₀ : ℂ} (hJ
     (K := fun w ↦ K (ε • w)) he hes heK
     (B.symm.trans (ContinuousLinearEquiv.smulLeft (Units.mk0 (ε⁻¹ : ℝ) (inv_ne_zero hε.ne'))))
     z₀ fun z _ v ↦ by
-      simp only [K, ContinuousLinearEquiv.trans_apply, ContinuousLinearMap.comp_apply,
-        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_def,
-        Units.val_mk0, map_smul, ContinuousLinearEquiv.apply_symm_apply, smul_smul,
-        mul_inv_cancel₀ hε.ne', one_smul, add_sub_cancel]
+      simp [K, Units.smul_def, smul_smul, mul_inv_cancel₀ hε.ne', -Complex.real_smul]
   exact ⟨F, (hFsrc z₀).2 (by simpa using he0), hF, hFs, hFJ⟩
 
 end TauCeti.Beltrami
