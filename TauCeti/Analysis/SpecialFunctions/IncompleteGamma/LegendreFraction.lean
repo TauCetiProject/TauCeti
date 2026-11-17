@@ -93,17 +93,17 @@ theorem upperIncompleteGammaContFracPartNum_one (a z : ℂ) :
 @[simp]
 theorem upperIncompleteGammaContFracPartNum_two_mul_add_two (a z : ℂ) (k : ℕ) :
     upperIncompleteGammaContFracPartNum a z (2 * k + 2) = ((k : ℂ) + 1 - a) * z⁻¹ := by
-  simp only [upperIncompleteGammaContFracPartNum, show 2 * k + 2 ≠ 1 by omega, ↓reduceIte,
-    show Even (2 * k + 2) from ⟨k + 1, by ring⟩, show (2 * k + 2) / 2 = k + 1 by omega,
-    Nat.cast_add, Nat.cast_one]
+  rw [upperIncompleteGammaContFracPartNum, ite_eq_right (by omega), ite_eq_left ⟨k + 1, by ring⟩,
+    Nat.mul_add_div zero_lt_two]
+  norm_num
 
 /-- Odd partial numerator `a_{2k+3} = (k + 1) * z⁻¹` of Legendre's continued fraction. -/
 @[simp]
 theorem upperIncompleteGammaContFracPartNum_two_mul_add_three (a z : ℂ) (k : ℕ) :
     upperIncompleteGammaContFracPartNum a z (2 * k + 3) = ((k : ℂ) + 1) * z⁻¹ := by
-  simp only [upperIncompleteGammaContFracPartNum, show 2 * k + 3 ≠ 1 by omega, ↓reduceIte,
-    show ¬Even (2 * k + 3) by simp [parity_simps], show (2 * k + 3) / 2 = k + 1 by omega,
-    Nat.cast_add, Nat.cast_one]
+  rw [upperIncompleteGammaContFracPartNum, ite_eq_right (by omega),
+    ite_eq_right (by simp [parity_simps]), Nat.mul_add_div zero_lt_two]
+  norm_num
 
 /-- Exact nonvanishing characterization of `upperIncompleteGammaContFracPartNum a z n`: it is
 nonzero if and only if `z ≠ 0` and, when `n` is even, `a ≠ (n / 2 : ℕ)`. -/
@@ -113,11 +113,11 @@ theorem upperIncompleteGammaContFracPartNum_ne_zero_iff {a z : ℂ} {n : ℕ} :
   · simp [and_comm]
   · simp
   · rcases Nat.even_or_odd' n with ⟨k, rfl | rfl⟩
-    · rw [upperIncompleteGammaContFracPartNum_two_mul_add_two,
-        show (2 * k + 2) / 2 = k + 1 by omega]
-      simp [show Even (2 * k + 2) from ⟨k + 1, by ring⟩, sub_eq_zero, eq_comm (a := a), and_comm]
+    · rw [add_assoc (2 * k) 1 1, upperIncompleteGammaContFracPartNum_two_mul_add_two,
+        Nat.mul_add_div zero_lt_two]
+      simp [parity_simps, sub_eq_zero, eq_comm (a := a), and_comm]
     · have hk1 : (k : ℂ) + 1 ≠ 0 := by exact_mod_cast Nat.succ_ne_zero k
-      rw [show 2 * k + 1 + 2 = 2 * k + 3 by ring,
+      rw [add_assoc (2 * k) 1 1, add_assoc (2 * k) 2 1,
         upperIncompleteGammaContFracPartNum_two_mul_add_three]
       simp [parity_simps, hk1]
 
@@ -164,8 +164,8 @@ theorem upperIncompleteGammaContFracSolution_one (a z : ℂ) :
 theorem upperIncompleteGammaContFracSolution_two_mul_add_one (a z : ℂ) (k : ℕ) :
     upperIncompleteGammaContFracSolution a z (2 * k + 1) =
       -(ascPochhammer ℂ k).eval (1 - a) * z⁻¹ ^ k * kummerLaplace k (a - 1 - k) z := by
-  simp only [upperIncompleteGammaContFracSolution, show Even (2 * k) from ⟨k, by ring⟩,
-    ↓reduceIte, show 2 * k / 2 = k by omega]
+  rw [upperIncompleteGammaContFracSolution, ite_eq_left (even_two_mul k),
+    Nat.mul_div_right k zero_lt_two]
 
 /-- Even-index formula for `upperIncompleteGammaContFracSolution`. -/
 @[simp]
@@ -173,8 +173,9 @@ theorem upperIncompleteGammaContFracSolution_two_mul_add_two (a z : ℂ) (k : �
     upperIncompleteGammaContFracSolution a z (2 * k + 2) =
       (ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) *
         kummerLaplace k (a - 2 - k) z := by
-  simp only [upperIncompleteGammaContFracSolution, show ¬Even (2 * k + 1) by simp [parity_simps],
-    ↓reduceIte, show (2 * k + 1) / 2 = k by omega]
+  rw [upperIncompleteGammaContFracSolution, ite_eq_right (by simp [parity_simps]),
+    Nat.mul_add_div zero_lt_two]
+  simp
 
 /-- **Three-term recurrence for Legendre's incomplete Gamma continued fraction.**
 On `slitPlane`, `f := upperIncompleteGammaContFracSolution a z` satisfies
@@ -191,7 +192,7 @@ theorem upperIncompleteGammaContFracSolution_add_two (a : ℂ) {z : ℂ} (hz : z
   · -- Base step `n = 0`: integration by parts at `c = 0`.
     have hibp := congr_arg (z⁻¹ * ·) (mul_kummerLaplace_zero (a - 1) hz)
     simp only [← mul_assoc, inv_mul_cancel₀ hz0, one_mul, mul_add, mul_one,
-      show a - 1 - 1 = a - 2 by ring] at hibp
+      sub_sub, one_add_one_eq_two] at hibp
     have h2 : upperIncompleteGammaContFracSolution a z 2 =
         (1 - a) * z⁻¹ * kummerLaplace 0 (a - 2) z := by
       simpa [ascPochhammer_one] using upperIncompleteGammaContFracSolution_two_mul_add_two a z 0
@@ -201,30 +202,30 @@ theorem upperIncompleteGammaContFracSolution_add_two (a : ℂ) {z : ℂ} (hz : z
   · obtain ⟨k, rfl | rfl⟩ : ∃ k, n = 2 * k + 1 ∨ n = 2 * k + 2 := ⟨(n - 1) / 2, by omega⟩
     · -- Odd step `n = 2k + 1`: contiguous difference in the middle parameter.
       have hdiff := kummerLaplace_sub_kummerLaplace_sub_one k (a - 1 - k) hz
-      rw [show a - 1 - (k : ℂ) - 1 = a - 2 - k by ring] at hdiff
-      simp only [show 2 * k + 1 + 2 = 2 * (k + 1) + 1 by ring,
-        show 2 * k + 1 + 1 = 2 * k + 2 from rfl,
-        upperIncompleteGammaContFracSolution_two_mul_add_one,
+      rw [sub_right_comm (a - 1) (k : ℂ) 1, sub_sub a 1 1, one_add_one_eq_two] at hdiff
+      rw [add_right_comm (2 * k) 1 2, ← mul_add_one 2 k,
+        upperIncompleteGammaContFracSolution_two_mul_add_one, mul_add_one 2 k,
         upperIncompleteGammaContFracSolution_two_mul_add_two,
         upperIncompleteGammaContFracPartNum_two_mul_add_two,
-        show a - 1 - ((k + 1 : ℕ) : ℂ) = a - 2 - k by push_cast; ring, ascPochhammer_succ_eval,
-        pow_succ]
+        upperIncompleteGammaContFracSolution_two_mul_add_one,
+        Nat.cast_add, Nat.cast_one, add_comm (k : ℂ) 1, ← sub_sub, sub_sub a 1 1,
+        one_add_one_eq_two, ascPochhammer_succ_eval, pow_succ]
       linear_combination (ascPochhammer ℂ k).eval (1 - a) * (1 - a + (k : ℂ)) *
         (z⁻¹ ^ k * z⁻¹) * hdiff
     · -- Even step `n = 2k + 2`: integration by parts at `c = k + 1`.
       have hibp := congr_arg (z⁻¹ * ·) (mul_kummerLaplace_add_one k (a - 2 - k) hz)
-      simp only [← mul_assoc, inv_mul_cancel₀ hz0, one_mul, mul_add,
-        show a - 2 - (k : ℂ) - 1 = a - 3 - k by ring] at hibp
-      rw [show 2 * k + 2 + 2 = 2 * (k + 1) + 2 by ring,
-        show 2 * k + 2 + 1 = 2 * (k + 1) + 1 by ring,
-        upperIncompleteGammaContFracSolution_two_mul_add_two,
+      simp only [← mul_assoc, inv_mul_cancel₀ hz0, one_mul, mul_add] at hibp
+      rw [sub_right_comm (a - 2) (k : ℂ) 1, sub_sub a 2 1] at hibp
+      norm_num at hibp
+      rw [← mul_add_one 2 k, upperIncompleteGammaContFracSolution_two_mul_add_two,
         upperIncompleteGammaContFracSolution_two_mul_add_one,
-        show 2 * (k + 1) + 1 = 2 * k + 3 by ring,
+        mul_add_one 2 k, add_assoc (2 * k) 2 1,
         upperIncompleteGammaContFracPartNum_two_mul_add_three,
         upperIncompleteGammaContFracSolution_two_mul_add_two,
-        show a - 2 - ((k + 1 : ℕ) : ℂ) = a - 3 - k by push_cast; ring,
-        show a - 1 - ((k + 1 : ℕ) : ℂ) = a - 2 - k by push_cast; ring,
-        ascPochhammer_succ_eval, Nat.cast_add, Nat.cast_one, pow_succ _ (k + 1)]
+        Nat.cast_add, Nat.cast_one, add_comm (k : ℂ) 1, ← sub_sub (a - 2), ← sub_sub (a - 1),
+        sub_sub a 2 1, sub_sub a 1 1, one_add_one_eq_two, ascPochhammer_succ_eval,
+        pow_succ _ (k + 1)]
+      norm_num
       linear_combination (ascPochhammer ℂ (k + 1)).eval (1 - a) * z⁻¹ ^ (k + 1) * hibp
 
 /-- When `z ∈ slitPlane` and `a` is not a positive integer, the Kummer-Laplace recurrence
@@ -250,7 +251,7 @@ theorem eventually_upperIncompleteGammaContFracSolution_ne_zero {a : ℂ}
   · rw [upperIncompleteGammaContFracSolution_two_mul_add_two]
     refine mul_ne_zero (mul_ne_zero (hp (k + 1)) (pow_ne_zero (k + 1) (inv_ne_zero hz0))) ?_
     have hk2 : N₂ ≤ k := (le_max_right N₁ N₂).trans (by omega)
-    simpa [show a - 1 - 1 - (k : ℂ) = a - 2 - k by ring] using hN₂ k hk2
+    simpa [sub_sub, one_add_one_eq_two] using hN₂ k hk2
 
 end Complex
 

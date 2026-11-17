@@ -151,14 +151,16 @@ theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ)
 /-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
 theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
     (1 + t) ^ n * exp (-a * t) ≤ (n ! : ℝ) * exp a / a ^ n := by
-  rw [show -a * t = -a * (1 + t) + a by ring, exp_add, ← mul_assoc, ← div_mul_eq_mul_div]
-  exact mul_le_mul_of_nonneg_right (pow_mul_exp_neg_mul_le ha (by linarith) n) (exp_pos a).le
+  have h := mul_le_mul_of_nonneg_right
+    (pow_mul_exp_neg_mul_le ha (t := 1 + t) (by linarith) n) (exp_pos a).le
+  rwa [mul_add, mul_one, add_comm (-a), exp_add, mul_assoc, mul_assoc, ← exp_add,
+    neg_add_cancel, exp_zero, mul_one, div_mul_eq_mul_div] at h
 
 /-- For `0 < a`, any `b : ℝ`, and `-1 ≤ t`, `(1 + t) ^ n * exp (-(a + b) * t)` is bounded by
 `((n ! * exp a) / a ^ n) * exp (-b * t)`. -/
 theorem one_add_pow_mul_exp_neg_add_mul_le {a b t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
     (1 + t) ^ n * exp (-(a + b) * t) ≤ ((n ! : ℝ) * exp a / a ^ n) * exp (-b * t) := by
-  rw [show -(a + b) * t = -a * t + -b * t by ring, exp_add, ← mul_assoc]
+  rw [neg_add, add_mul, exp_add, ← mul_assoc]
   exact mul_le_mul_of_nonneg_right (one_add_pow_mul_exp_neg_mul_le ha ht n) (exp_pos _).le
 
 /-- For `0 < a`, `0 < y`, and `m : ℕ`, the symmetric Laurent weight `(y ^ m)⁻¹ + y ^ m` against

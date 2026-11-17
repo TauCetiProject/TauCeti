@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
@@ -133,8 +134,7 @@ private theorem norm_kummerLaplaceRayIntegrand_le (c : ℕ) (d : ℂ) {z : ℂ} 
       mul_le_mul (mul_le_mul_of_nonneg_left hcos_rpow (by positivity)) hr_rpow
         (by positivity) (by positivity)
   have hexp_re : (-z * (r * cexp (θ * I))).re = -r * (z * cexp (θ * I)).re := by
-    rw [show -z * ((r : ℂ) * cexp (θ * I)) = ((-r : ℝ) : ℂ) * (z * cexp (θ * I)) by
-      push_cast; ring, re_ofReal_mul]
+    rw [neg_mul, neg_re, mul_left_comm, re_ofReal_mul, ← neg_mul]
   have hexp_le : Real.exp (-r * (z * cexp (θ * I)).re) ≤ Real.exp (-(η + η) * r) :=
     Real.exp_le_exp.mpr (by nlinarith)
   have hrc : ‖((r : ℂ) * cexp (θ * I)) ^ c‖ ≤ (1 + r) ^ c := by
@@ -288,7 +288,7 @@ private theorem tendsto_vertical_left_kummerLaplaceLogIntegrand (c : ℕ) (d : �
     simpa using (Real.tendsto_exp_atBot.comp tendsto_neg_atTop_atBot).const_mul
       (kummerLaplaceMajorantConst c d α η * |θ₂ - θ₁|)
   refine squeeze_zero_norm (fun R => ?_) hzero
-  rw [show -(R : ℂ) = ((-R : ℝ) : ℂ) by push_cast; rfl]
+  rw [← ofReal_neg]
   refine (norm_integral_kummerLaplaceLogIntegrand_vertical_le c d hα hη hstrip (-R)).trans ?_
   have hcos_pos : 0 < Real.cos (α / 2) :=
     Real.cos_pos_of_mem_Ioo ⟨by linarith [Real.pi_pos], by linarith⟩
@@ -317,7 +317,7 @@ private theorem tendsto_sub_horizontal_kummerLaplaceLogIntegrand (c : ℕ) (d : 
     have hy_abs : |y| ≤ α := by
       rcases mem_uIcc.mp hy with ⟨hl, hr⟩ | ⟨hl, hr⟩ <;>
         exact abs_le.mpr ⟨by linarith, by linarith⟩
-    exact ⟨hy_abs, by dsimp only [η]; linarith [show (z * cexp (θm * I)).re ≤ _ from hθm_min hy]⟩
+    exact ⟨hy_abs, (mul_div_cancel₀ _ two_ne_zero).trans_le (hθm_min hy)⟩
   have hrect : ∀ R : ℝ,
       ((∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₁ * I)) -
         (∫ x in (-R)..R, kummerLaplaceLogIntegrand c d z ((x : ℂ) + θ₂ * I))) +
@@ -412,9 +412,8 @@ theorem kummerLaplace_zero_ofReal_eq_cpow_neg_mul_exp_mul_integral (a : ℂ) {x 
   have hpow : (x : ℂ) ^ (-a) * (x : ℂ) * (x : ℂ) ^ (a - 1) = 1 := by
     nth_rw 2 [← cpow_one (x : ℂ)]
     rw [← cpow_add _ _ hx0, ← cpow_add _ _ hx0]; simp
-  rw [show (x + x * r : ℝ) = x * (1 + r) by ring, ofReal_mul, TauCeti.ofReal_mul_cpow hx.le,
-    ofReal_add, ofReal_one,
-    show -((x : ℂ) * (1 + (r : ℂ))) = -(x : ℂ) + -(x : ℂ) * (r : ℂ) by ring,
+  rw [← mul_one_add, ofReal_mul, TauCeti.ofReal_mul_cpow hx.le,
+    ofReal_add, ofReal_one, ← neg_mul, mul_one_add,
     Complex.exp_add, pow_zero, mul_one]
   linear_combination -(cexp (-(x : ℂ) * (r : ℂ)) * (1 + (r : ℂ)) ^ (a - 1)) *
     (cexp (x : ℂ) * cexp (-(x : ℂ)) * hpow + hexp)
@@ -497,9 +496,8 @@ private theorem norm_kummerLaplaceRayIntegrand_le_mul_exp (c m : ℕ) {d z : ℂ
       (Real.rpow_le_rpow_of_exponent_le (by linarith) (max_le (Nat.cast_nonneg m) hd_re))
       (by positivity) (by positivity)
   have hexp_re : (-z * t).re = -r * (z * cexp (θ * I)).re := by
-    rw [show -z * t = -(r : ℂ) * (z * cexp (θ * I)) by dsimp only [t]; ring, neg_mul, neg_re,
-      re_ofReal_mul]
-    ring
+    dsimp only [t]
+    rw [neg_mul, neg_re, mul_left_comm, re_ofReal_mul, ← neg_mul]
   rw [norm_mul, norm_mul, norm_exp, hexp_re, norm_pow, ht_norm, pow_add]
   calc Real.exp (-r * (z * cexp (θ * I)).re) * r ^ c * ‖(1 + t) ^ d‖
       ≤ Real.exp (-μ * r) * (1 + r) ^ c * (Real.exp (π * B) * (1 + r) ^ m) :=

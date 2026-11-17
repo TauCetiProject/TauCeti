@@ -130,7 +130,7 @@ private theorem saddle_prefactor_eq (a : ℂ) {z : ℂ} (hz : z ≠ 0) {k : ℕ}
   have hsk_ne : (Real.sqrt k : ℂ) ≠ 0 := ofReal_ne_zero.mpr hsk_pos.ne'
   have hk_pref : (((k : ℝ) ^ (1 / 4 : ℝ) : ℝ) : ℂ) * (Real.sqrt k : ℂ) ^ (a - 1) =
       (k : ℂ) ^ (a / 2 - 1 / 4) := by
-    rw [ofReal_cpow hk_pos.le, show (k : ℂ) = ((k : ℝ) : ℂ) by simp,
+    rw [ofReal_cpow hk_pos.le, ← ofReal_natCast,
       cpow_def_of_ne_zero hk_ne, cpow_def_of_ne_zero hsk_ne, cpow_def_of_ne_zero hk_ne,
       ← Complex.exp_add, ← ofReal_log hk_pos.le, ← ofReal_log hsk_pos.le, Real.log_sqrt hk_pos.le]
     congr 1; push_cast; ring
@@ -188,8 +188,8 @@ private theorem kummerLaplace_saddle_pointwise (a : ℂ) {z : ℂ} (hz : z ∈ s
   have hexp_split : cexp (-ζ * (s : ℂ)) =
       cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) * cexp (-(Real.sqrt k : ℂ) * ζ * ((u : ℂ) - 2)) := by
     have hkz : ((k : ℂ) * z) ^ (1 / 2 : ℂ) = (Real.sqrt k : ℂ) * ζ := by
-      rw [show (k : ℂ) = ((k : ℝ) : ℂ) by simp, TauCeti.ofReal_mul_cpow hk_pos.le,
-        Real.sqrt_eq_rpow, ofReal_cpow hk_pos.le]; push_cast; rfl
+      rw [← ofReal_natCast, TauCeti.ofReal_mul_cpow hk_pos.le,
+        Real.sqrt_eq_rpow, ofReal_cpow hk_pos.le, ofReal_div, ofReal_one, ofReal_ofNat]
     rw [← Complex.exp_add, hkz, hs_eq, ofReal_mul]; congr 1; ring
   unfold kummerLaplaceSaddleCore; dsimp only
   rw [mul_assoc (cexp _), hk_pow, hcpow_split, hexp_split]
@@ -432,7 +432,8 @@ private theorem norm_kummerLaplaceSaddleCore_exp_bound (a : ℂ) {z : ℂ} (hz :
       refine (le_of_eq ?_).trans (re_le_norm _)
       rw [add_re, one_re, ← ofReal_mul, div_ofReal_re, ← div_div, hy_eq, add_div, div_self hu.ne']
     have he1 : u / y ≤ Real.exp (-δ / y) := by
-      rw [show u / y = -δ / y + 1 by rw [hy_eq, div_add_one (hy_eq ▸ hy.ne')]; ring]
+      rw [eq_sub_of_add_eq hy_eq.symm, sub_div, div_self hy.ne', sub_eq_add_neg, add_comm,
+        ← neg_div]
       exact Real.add_one_le_exp _
     rw [norm_inv, norm_pow]
     calc (‖1 + ζ / ((Real.sqrt k : ℂ) * (u : ℂ))‖ ^ k)⁻¹
@@ -445,8 +446,8 @@ private theorem norm_kummerLaplaceSaddleCore_exp_bound (a : ℂ) {z : ℂ} (hz :
           field_simp [hsk_pos.ne', hy.ne']; rw [Real.sq_sqrt hk_pos.le]
   have hexp_norm : ‖cexp (-(Real.sqrt k : ℂ) * ζ * ((u : ℂ) - 2))‖ =
       Real.exp (-Real.sqrt k * σ * (u - 2)) := by
-    rw [norm_exp, show -(Real.sqrt k : ℂ) * ζ * ((u : ℂ) - 2) =
-      ((-Real.sqrt k * (u - 2) : ℝ) : ℂ) * ζ by push_cast; ring, re_ofReal_mul]
+    rw [norm_exp, mul_right_comm, ← ofReal_ofNat, ← ofReal_sub, ← ofReal_neg, ← ofReal_mul,
+      re_ofReal_mul]
     congr 1; dsimp only [σ]; ring
   have hexp_comb : Real.exp (-Real.sqrt k * σ * (u - 2)) * Real.exp (-Real.sqrt k * σ / y) =
       Real.exp (σ ^ 2) * Real.exp (-Real.sqrt k * σ * ((y - 1) ^ 2 / y)) := by
@@ -575,9 +576,9 @@ private theorem saddle_majorant_gt_two {σ : ℝ} (hσ : 0 < σ) (m : ℕ) {k : 
   have hvy : v ≤ Real.sqrt k * y := by
     have hq0 : q₄ ≠ 0 := (zero_lt_one.trans_le hq1).ne'
     have h1 : q₄ * v ≤ Real.sqrt k * y := by
-      dsimp only [y, saddleY, saddleU]; rw [← hq_sq]
-      rw [show q₄ ^ 2 * (1 + q₄⁻¹ * v + σ / q₄ ^ 2) = q₄ ^ 2 + q₄ * v + σ by field_simp [hq0]]
-      linarith [sq_nonneg q₄]
+      calc q₄ * v ≤ q₄ ^ 2 + q₄ * v + σ := by linarith [sq_nonneg q₄]
+        _ = Real.sqrt k * y := by
+          dsimp only [y, saddleY, saddleU]; rw [← hq_sq]; field_simp [hq0]; dsimp only [q₄]; ring
     linarith [le_mul_of_one_le_left hv_pos.le hq1]
   have hexp_split : Real.exp (-Real.sqrt k * σ * ((y - 1) ^ 2 / y)) ≤
       Real.exp (-(σ / 8) * y) * Real.exp (-(σ / 8) * v) := by
@@ -617,7 +618,7 @@ private theorem tendsto_integral_kummerLaplaceSaddleIntegrand (a : ℂ) {z : ℂ
         fun v : ℝ => cexp (z / 2) * cexp (-ζ * (v : ℂ) ^ 2) := by
       ext v; rw [← Complex.exp_add]; congr 1; ring
     rw [heq, integral_const_mul, integral_gaussian_complex hσ,
-      show (π : ℂ) / ζ = (π : ℂ) * ζ⁻¹ from div_eq_mul_inv _ _,
+      div_eq_mul_inv (π : ℂ) ζ,
       TauCeti.ofReal_mul_cpow Real.pi_pos.le, Real.sqrt_eq_rpow, ofReal_cpow Real.pi_pos.le]
     push_cast; ring
   rw [← hgauss]
@@ -665,12 +666,9 @@ theorem kummerLaplace_isEquivalent (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
     set C : ℂ := (k : ℂ) ^ (a / 2 - 1 / 4) * cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ))
     have hC : C ≠ 0 :=
       mul_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (Nat.cast_ne_zero.mpr (by omega)))) (exp_ne_zero _)
-    rw [show (k : ℂ) ^ (a / 2 - 1 / 4) * (z ^ (1 / 2 : ℂ))⁻¹ ^ a *
-          cexp (-2 * ((k : ℂ) * z) ^ (1 / 2 : ℂ)) *
-          (∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) =
-        ((ζ⁻¹) ^ a * ∫ v : ℝ, kummerLaplaceSaddleIntegrand a z k v) * C by dsimp only [ζ, C]; ring,
-      mul_assoc ((Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4)),
-      mul_div_mul_right _ _ hC]
+    rw [mul_assoc ((Real.sqrt π : ℂ) * cexp (z / 2) * z ^ (-a / 2 - 1 / 4)),
+      ← mul_div_mul_right _ _ hC]
+    congr 1; dsimp only [ζ, C]; ring
   · rw [hζ_comb, div_self]
     exact mul_ne_zero (mul_ne_zero (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr Real.pi_pos))
       (exp_ne_zero _)) (cpow_ne_zero_iff.mpr (Or.inl (slitPlane_ne_zero hz)))

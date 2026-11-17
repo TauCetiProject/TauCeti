@@ -56,12 +56,11 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
   `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
   inequality when `arg z ≠ π` and `|arg z| < π` on `slitPlane`.
-* `Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`,
-  `Complex.one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I`,
+* `Complex.one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I`,
   `Complex.norm_one_add_ofReal_mul_exp_mul_I_le`,
-  `Complex.one_add_ofReal_mul_exp_mul_I_mem_slitPlane`: on `0 ≤ z.re`, `1 + z` has real part and
-  norm at least `1`; along polar rays `1 + r e^{iθ}`, the norm lies between `(1 + r) cos (θ / 2)`
-  and `1 + |r|`, and `1 + r e^{iθ} ∈ slitPlane` when `|θ| < π` and `0 ≤ r`.
+  `Complex.one_add_ofReal_mul_exp_mul_I_mem_slitPlane`: along polar rays `1 + r e^{iθ}`,
+  the norm lies between `(1 + r) cos (θ / 2)` and `1 + |r|`, and `1 + r e^{iθ} ∈ slitPlane`
+  when `|θ| < π` and `0 ≤ r`.
 * `Complex.re_mul_exp_ofReal_mul_I_eq_norm_mul_cos`,
   `Complex.re_mul_exp_neg_arg_div_two_mul_I_pos`,
   `Complex.abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos`,
@@ -236,22 +235,13 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
   ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
 
-/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has real part at least `1`. -/
-theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
-  simp [hz]
-
-/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has norm at least `1`. -/
-theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
-  (one_le_re_one_add hz).trans (re_le_norm _)
-
 /-- Rotating `1 + r * exp (θ * I)` by `exp (-(θ / 2) * I)` projects onto the bisecting direction,
 giving `(1 + r) * cos (θ / 2) ≤ ‖1 + r * exp (θ * I)‖` for all real `θ` and `r`. -/
 theorem one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I (θ r : ℝ) :
     (1 + r) * Real.cos (θ / 2) ≤ ‖1 + (r : ℂ) * exp ((θ : ℂ) * I)‖ := by
   have hrot : (1 + (r : ℂ) * exp ((θ : ℂ) * I)) * exp ((-(θ / 2) : ℝ) * I) =
       exp ((-(θ / 2) : ℝ) * I) + (r : ℂ) * exp (((θ / 2) : ℝ) * I) := by
-    rw [add_mul, one_mul, mul_assoc, ← exp_add,
-      show (θ : ℂ) * I + (-(θ / 2) : ℝ) * I = ((θ / 2 : ℝ) : ℂ) * I by push_cast; ring]
+    rw [add_mul, one_mul, mul_assoc, ← exp_add, ← add_mul, ← ofReal_add, ← sub_eq_add_neg, sub_half]
   have hre : (exp ((-(θ / 2) : ℝ) * I) + (r : ℂ) * exp (((θ / 2) : ℝ) * I)).re =
       (1 + r) * Real.cos (θ / 2) := by
     rw [add_re, re_ofReal_mul, exp_ofReal_mul_I_re, exp_ofReal_mul_I_re, Real.cos_neg]; ring
@@ -288,14 +278,13 @@ theorem abs_arg_div_two_lt_pi_div_two {z : ℂ} (hz : arg z ≠ π) : |arg z / 2
 theorem re_mul_exp_ofReal_mul_I_eq_norm_mul_cos (z : ℂ) (y : ℝ) :
     (z * exp ((y : ℂ) * I)).re = ‖z‖ * Real.cos (arg z + y) := by
   nth_rw 1 [(norm_mul_exp_arg_mul_I z).symm]
-  rw [mul_assoc, ← exp_add, show (arg z : ℂ) * I + (y : ℂ) * I = ((arg z + y : ℝ) : ℂ) * I by
-    push_cast; ring, re_ofReal_mul, exp_ofReal_mul_I_re]
+  rw [mul_assoc, ← exp_add, ← add_mul, ← ofReal_add, re_ofReal_mul, exp_ofReal_mul_I_re]
 
 /-- Rotating a point `z` of the slit plane by `-arg z / 2` lands in the open right half-plane,
 with real part `‖z‖ * cos (arg z / 2) > 0`. -/
 theorem re_mul_exp_neg_arg_div_two_mul_I_pos {z : ℂ} (hz : z ∈ slitPlane) :
     0 < (z * exp ((-(arg z / 2) : ℝ) * I)).re := by
-  rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos, show arg z + -(arg z / 2) = arg z / 2 by ring]
+  rw [re_mul_exp_ofReal_mul_I_eq_norm_mul_cos, ← sub_eq_add_neg, sub_half]
   exact mul_pos (norm_pos_iff.2 (slitPlane_ne_zero hz))
     (Real.cos_pos_of_mem_Ioo (abs_lt.1 (abs_arg_div_two_lt_pi_div_two (slitPlane_arg_ne_pi hz))))
 
@@ -334,14 +323,10 @@ theorem re_mul_exp_mul_I_pos_of_mem_uIcc {z : ℂ} {θ₁ θ₂ θ : ℝ}
   set w : ℂ := z * exp ((m : ℂ) * I)
   have hshift (y : ℝ) : (w * exp (((y - m : ℝ) : ℂ) * I)).re = (z * exp ((y : ℂ) * I)).re := by
     dsimp only [w]
-    rw [mul_assoc, ← exp_add, show (m : ℂ) * I + ((y - m : ℝ) : ℂ) * I = (y : ℂ) * I by
-      push_cast; ring]
-  have hδ₁ : |θ₁ - m| ≤ π / 2 := by
-    rw [show θ₁ - m = (θ₁ - θ₂) / 2 by dsimp only [m]; ring, abs_div, abs_two]
-    exact div_le_div_of_nonneg_right hθ₁₂ two_pos.le
-  have hδ₂ : |θ₂ - m| ≤ π / 2 := by
-    rw [show θ₂ - m = -((θ₁ - θ₂) / 2) by dsimp only [m]; ring, abs_neg, abs_div, abs_two]
-    exact div_le_div_of_nonneg_right hθ₁₂ two_pos.le
+    rw [mul_assoc, ← exp_add, ← add_mul, ← ofReal_add, add_sub_cancel]
+  obtain ⟨h12l, h12r⟩ := abs_le.1 hθ₁₂
+  have hδ₁ : |θ₁ - m| ≤ π / 2 := by rw [abs_le]; dsimp only [m]; constructor <;> linarith
+  have hδ₂ : |θ₂ - m| ≤ π / 2 := by rw [abs_le]; dsimp only [m]; constructor <;> linarith
   have hre₁' : 0 < (w * exp (((θ₁ - m : ℝ) : ℂ) * I)).re := (hshift θ₁).symm ▸ hre₁
   have hw0 : w ≠ 0 := fun hw => by simp [hw] at hre₁'
   obtain ⟨h₁l, h₁r⟩ := abs_lt.1
