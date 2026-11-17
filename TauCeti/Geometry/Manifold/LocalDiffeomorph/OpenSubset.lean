@@ -33,8 +33,6 @@ subset can be carried, near any point of its source, to the ambient manifold.
 
 ## Main declarations
 
-* `PartialDiffeomorph.toPartialEquiv_injective` and `PartialDiffeomorph.ext`: extensionality for
-  `PartialDiffeomorph` through its underlying `PartialEquiv`.
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
 * `PartialDiffeomorph.contMDiffOn_toOpenPartialHomeomorph_restrOpen` and its `symm` version: the
   restrictions of the underlying open partial homeomorphism to an open set are smooth.
@@ -68,18 +66,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   (Φ : PartialDiffeomorph I J M N n) {s : Set M}
-
-/-- A partial diffeomorphism is determined by its underlying `PartialEquiv`. -/
-theorem toPartialEquiv_injective :
-    Function.Injective (toPartialEquiv : PartialDiffeomorph I J M N n → PartialEquiv M N)
-  | ⟨_, _, _, _, _⟩, ⟨_, _, _, _, _⟩, rfl => rfl
-
-/-- Two partial diffeomorphisms are equal when their forward maps, inverse maps, and sources
-agree. -/
-@[ext]
-protected theorem ext {Φ Ψ : PartialDiffeomorph I J M N n} (h : ∀ x, Φ x = Ψ x)
-    (hinv : ∀ y, Φ.symm y = Ψ.symm y) (hs : Φ.source = Ψ.source) : Φ = Ψ :=
-  toPartialEquiv_injective (PartialEquiv.ext h hinv hs)
 
 /-- The restriction of a partial diffeomorphism to an open set `s`: its source is
 `Φ.source ∩ s`, and its target is the image of that set. -/
