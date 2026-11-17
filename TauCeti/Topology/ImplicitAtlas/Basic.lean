@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Data.Finset.Pi
+public import Mathlib.Data.Finset.Update
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 
@@ -43,13 +43,13 @@ action need not be free.
 This file states the definition (`TauCeti.ImplicitAtlas`) and proves its first consequences: the
 zero sets are invariant (`TauCeti.ImplicitAtlas.act_mem_kuranishiZeroSet`), the images `U_IJ`
 are invariant under `Γ_I` (`TauCeti.ImplicitAtlas.act_mem_range_footprintMap`), the zero-set
-domains of the cocycle condition match (`TauCeti.ImplicitAtlas.mem_kuranishiZeroSet_iff`), the
-footprints are open and cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`,
-`TauCeti.ImplicitAtlas.iUnion_footprint`), and the regular locus is empty where the expected
-dimension `d + m_I` is negative (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_lt_zero`), so that a
-nonempty space carries no atlas whose expected dimensions are all negative
-(`TauCeti.ImplicitAtlas.isEmpty_of_forall_lt_zero`). Examples are in
-`TauCeti.Topology.ImplicitAtlas.Examples`.
+domains of the cocycle condition match
+(`TauCeti.ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`), the footprints are open and
+cover `X` (`TauCeti.ImplicitAtlas.isOpen_footprint`, `TauCeti.ImplicitAtlas.iUnion_footprint`),
+and the regular locus is empty where the expected dimension `d + m_I` is negative
+(`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
+whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
+Examples are in `TauCeti.Topology.ImplicitAtlas.Examples`.
 
 ## Implementation notes
 
@@ -93,6 +93,7 @@ def kuranishiZeroSet {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E
     (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) : Set (T J) :=
   {x | ∀ α : J, α.1 ∉ I → s J α x = 0}
 
+@[simp]
 theorem mem_kuranishiZeroSet {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E α)]
     {s : ∀ (J : Finset A) (α : J), T J → E α} {I J : Finset A} {x : T J} :
     x ∈ kuranishiZeroSet s I J ↔ ∀ α : J, α.1 ∉ I → s J α x = 0 :=
@@ -103,16 +104,11 @@ theorem kuranishiZeroSet_eq_univ {T : Finset A → Type*} {E : A → Type*} [∀
     kuranishiZeroSet s I J = univ :=
   eq_univ_of_forall fun _ ↦ mem_kuranishiZeroSet.2 fun α hα ↦ (hα (h α.2)).elim
 
-/-- Extension of an element of `∏_(α ∈ I) G α` to `∏_(α ∈ J) G α` by `1` on `J \ I`. -/
-private def extendOne [DecidableEq A] {G : A → Type*} [∀ α, One (G α)] {I J : Finset A}
-    (g : (α : I) → G α) : (α : J) → G α :=
-  fun α ↦ if hα : α.1 ∈ I then g ⟨α, hα⟩ else 1
-
-private theorem restrict₂_extendOne [DecidableEq A] {G : A → Type*} [∀ α, One (G α)]
-    {I J : Finset A} (h : I ⊆ J) (g : (α : I) → G α) :
-    Finset.restrict₂ (π := G) h (extendOne (J := J) g) = g := by
-  funext α
-  simp [Finset.restrict₂, extendOne, α.2]
+/-- Every point of `X_I` lies in `Z_II`, the domain of the footprint map `ψ_II`. -/
+theorem mem_kuranishiZeroSet_self {T : Finset A → Type*} {E : A → Type*} [∀ α, Zero (E α)]
+    (s : ∀ (J : Finset A) (α : J), T J → E α) {I : Finset A} (x : T I) :
+    x ∈ kuranishiZeroSet s I I :=
+  mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.2).elim
 
 /-- An **implicit atlas** of virtual dimension `d` on `X` (Pardon, Definition 3.1.1), with finite
 isotropy groups `Γ α`, obstruction representations `ρ α` on `E α`, thickenings `T I` and actions
@@ -148,7 +144,7 @@ structure ImplicitAtlas [DecidableEq A] (Γ : A → Type*) [∀ α, Group (Γ α
     (hx : act J g x ∈ kuranishiZeroSet kuranishi I J),
     footprintMap h ⟨act J g x, hx⟩ = act I (Finset.restrict₂ (π := Γ) h g) (footprintMap h x)
   footprintMap_self : ∀ (I : Finset A) (x : T I),
-    footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.2).elim⟩ = x
+    footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet_self kuranishi x⟩ = x
   /-- The cocycle condition `ψ_IJ ∘ ψ_JK = ψ_IK` on the common domain. -/
   footprintMap_footprintMap : ∀ ⦃I J K : Finset A⦄ (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet kuranishi J K)
@@ -214,7 +210,7 @@ theorem act_mem_kuranishiZeroSet {I J : Finset A} (g : (α : J) → Γ α) {x : 
 
 /-- The domains of the cocycle condition match: for `J ⊆ K`, a point `x` of `Z_JK` lies in
 `Z_IK` exactly when `ψ_JK x` lies in `Z_IJ`. -/
-theorem mem_kuranishiZeroSet_iff {I J K : Finset A} (hJK : J ⊆ K)
+theorem mem_kuranishiZeroSet_iff_footprintMap_mem {I J K : Finset A} (hJK : J ⊆ K)
     (x : kuranishiZeroSet 𝒜.kuranishi J K) :
     x.1 ∈ kuranishiZeroSet 𝒜.kuranishi I K ↔
       𝒜.footprintMap hJK x ∈ kuranishiZeroSet 𝒜.kuranishi I J := by
@@ -227,10 +223,11 @@ theorem mem_kuranishiZeroSet_iff {I J K : Finset A} (hJK : J ⊆ K)
     · exact mem_kuranishiZeroSet.1 x.2 α hαJ
 
 /-- The cocycle condition `ψ_IJ ∘ ψ_JK = ψ_IK`, with the domain of `ψ_IJ` supplied by
-`ImplicitAtlas.mem_kuranishiZeroSet_iff`. -/
+`ImplicitAtlas.mem_kuranishiZeroSet_iff_footprintMap_mem`. -/
 theorem footprintMap_footprintMap_mk {I J K : Finset A} (hIJ : I ⊆ J) (hJK : J ⊆ K)
     (x : kuranishiZeroSet 𝒜.kuranishi J K) (hx : x.1 ∈ kuranishiZeroSet 𝒜.kuranishi I K) :
-    𝒜.footprintMap hIJ ⟨𝒜.footprintMap hJK x, (𝒜.mem_kuranishiZeroSet_iff hJK x).1 hx⟩ =
+    𝒜.footprintMap hIJ
+        ⟨𝒜.footprintMap hJK x, (𝒜.mem_kuranishiZeroSet_iff_footprintMap_mem hJK x).1 hx⟩ =
       𝒜.footprintMap (hIJ.trans hJK) ⟨x, hx⟩ :=
   𝒜.footprintMap_footprintMap hIJ hJK x _ hx
 
@@ -244,8 +241,10 @@ theorem range_footprintMap_self (I : Finset A) :
 theorem act_mem_range_footprintMap {I J : Finset A} (h : I ⊆ J) (g : (α : I) → Γ α) {y : T I}
     (hy : y ∈ range (𝒜.footprintMap h)) : act I g y ∈ range (𝒜.footprintMap h) := by
   obtain ⟨x, rfl⟩ := hy
-  refine ⟨⟨act J (extendOne g) x, 𝒜.act_mem_kuranishiZeroSet _ x.2⟩, ?_⟩
-  rw [𝒜.footprintMap_act, restrict₂_extendOne]
+  refine ⟨⟨act J (J.restrict (Function.updateFinset 1 I g)) x,
+    𝒜.act_mem_kuranishiZeroSet _ x.2⟩, ?_⟩
+  rw [𝒜.footprintMap_act, ← Function.comp_apply (f := Finset.restrict₂ h),
+    Finset.restrict₂_comp_restrict, Function.restrict_updateFinset]
 
 /-- Points of `Z_IJ` with the same image under `ψ_IJ` lie together in `ψ_IJ⁻¹(X_I^reg)` or
 outside it, since they lie in one orbit and the regular locus is invariant. -/
@@ -259,6 +258,7 @@ theorem mem_regLocus_of_footprintMap_eq {I J : Finset A} (h : I ⊆ J)
 def footprint (I : Finset A) : Set X :=
   𝒜.baseHomeomorph '' (𝒜.footprintMap (Finset.empty_subset I) '' {x | x.1 ∈ 𝒜.regLocus I})
 
+@[simp]
 theorem mem_footprint {I : Finset A} {y : X} :
     y ∈ 𝒜.footprint I ↔ ∃ x : kuranishiZeroSet 𝒜.kuranishi ∅ I,
       x.1 ∈ 𝒜.regLocus I ∧ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset I) x) = y := by
@@ -278,8 +278,7 @@ theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
   have hopen : IsOpen (rangeFactorization ψ '' W) :=
     ((𝒜.isQuotientMap_footprintMap _).isOpen_preimage).1 (by rwa [hsat])
   have himage : ψ '' W = Subtype.val '' (rangeFactorization ψ '' W) := by
-    rw [image_image]
-    rfl
+    simp only [image_image, rangeFactorization_coe]
   exact 𝒜.baseHomeomorph.isOpenMap _ (himage ▸
     (𝒜.isOpen_range_footprintMap _).isOpenMap_subtype_val _ hopen)
 
@@ -291,27 +290,26 @@ theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
 
 /-- The expected dimension `d + m_I` is nonnegative wherever the regular locus `X_I^reg` is
 nonempty: there it is the dimension of a topological manifold. -/
-theorem zero_le_of_mem_regLocus {I : Finset A} {x : T I} (hx : x ∈ 𝒜.regLocus I) :
+theorem nonneg_of_mem_regLocus {I : Finset A} {x : T I} (hx : x ∈ 𝒜.regLocus I) :
     0 ≤ d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) := by
-  have hψ : 𝒜.footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet.2 fun α hα ↦ (hα α.2).elim⟩ ∈
-      𝒜.regLocus I := by
+  have hψ : 𝒜.footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet_self _ x⟩ ∈ 𝒜.regLocus I := by
     rwa [𝒜.footprintMap_self]
   obtain ⟨n, hn, -⟩ := 𝒜.exists_openPartialHomeomorph (subset_refl I) _ hψ
   exact hn ▸ Int.natCast_nonneg n
 
 /-- The regular locus `X_I^reg` is empty when the expected dimension `d + m_I` is negative. -/
-theorem regLocus_eq_empty_of_lt_zero {I : Finset A}
+theorem regLocus_eq_empty_of_neg {I : Finset A}
     (hI : d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) < 0) : 𝒜.regLocus I = ∅ :=
-  eq_empty_of_forall_notMem fun _ hx ↦ (𝒜.zero_le_of_mem_regLocus hx).not_gt hI
+  eq_empty_of_forall_notMem fun _ hx ↦ (𝒜.nonneg_of_mem_regLocus hx).not_gt hI
 
 include 𝒜 in
 /-- A space carries no implicit atlas whose expected dimensions `d + m_I` are all negative,
 unless it is empty: the regular footprints cover it, and they are empty. -/
-theorem isEmpty_of_forall_lt_zero
+theorem isEmpty_of_forall_neg
     (hd : ∀ I : Finset A, d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) < 0) : IsEmpty X :=
   ⟨fun y ↦ by
     obtain ⟨I, x, hx, -⟩ := 𝒜.exists_footprintMap_eq y
-    exact (𝒜.zero_le_of_mem_regLocus hx).not_gt (hd I)⟩
+    exact (𝒜.nonneg_of_mem_regLocus hx).not_gt (hd I)⟩
 
 end ImplicitAtlas
 

@@ -22,9 +22,10 @@ for the virtual fundamental class.
 * **The atlas `s(x) = xᵐ` on a point** (`TauCeti.ImplicitAtlas.powAtlas`, Pardon, Example 2.3.2).
   The point `X = {0}` of virtual dimension `0`, with one index `α`, trivial group `Γ_α`, obstruction
   space `E_α = ℝ`, thickening `X_α = ℝ` and Kuranishi map `s_α(x) = xᵐ`, `m ≥ 1`. The regular locus
-  of `X_∅ = X` is empty, while `X_α` is regular. The zero set `Z_∅α = {0}` maps onto `X`, so the
-  footprint `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not
-  cut out transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
+  of `X_∅ = X` is empty, while `X_α` is regular. The zero set `Z_∅α = {0}`
+  (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the footprint
+  `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not cut out
+  transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
 
 The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` of `ℝ`
 (`TauCeti.ImplicitAtlas.PowThickening`): the point `{0}` for `I = ∅` and `ℝ` for `I = {α}`.
@@ -73,14 +74,12 @@ noncomputable def ofChartedSpace :
     rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
     exact isOpen_univ
   range_footprintMap_inter _ _ _ _ _ := by
-    simp only [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim,
-      inter_self]
-  footprintMap_mem_range_iff _ _ _ _ _ _ := by
-    simp only [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim,
-      mem_univ]
+    ext
+    simp
+  footprintMap_mem_range_iff _ _ _ _ _ _ := by simp
   isQuotientMap_footprintMap I J _ :=
     IsQuotientMap.of_inverse
-      (f := fun y ↦ ⟨y.1, by simp [kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]⟩)
+      (f := fun y ↦ ⟨y.1, by simp⟩)
       (continuous_subtype_val.subtype_mk _) continuous_subtype_val.rangeFactorization
       fun _ ↦ rfl
   footprintMap_eq_footprintMap_iff _ _ _ x y :=
@@ -93,13 +92,18 @@ noncomputable def ofChartedSpace :
       (chartAt (EuclideanSpace ℝ (Fin n)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
       by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
   exists_footprintMap_eq y :=
-    ⟨∅, ⟨y, by simp [kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]⟩,
-      mem_univ _, rfl⟩
+    ⟨∅, ⟨y, by simp⟩, mem_univ _, rfl⟩
 
 /-- The regular locus of the manifold atlas is the whole space. -/
 @[simp]
 theorem regLocus_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).regLocus I = univ :=
   (rfl)
+
+/-- The regular footprint of the manifold atlas is the whole space. -/
+@[simp]
+theorem footprint_ofChartedSpace (I : Finset A) : (ofChartedSpace Γ E ρ n X).footprint I = univ :=
+  eq_univ_of_forall fun y ↦ (ofChartedSpace Γ E ρ n X).mem_footprint.2
+    ⟨⟨y, by simp⟩, mem_univ _, rfl⟩
 
 end ChartedSpace
 
@@ -125,9 +129,13 @@ private theorem eq_empty_of_notMem {I : Finset Unit} {α : Unit} (hα : α ∉ I
 
 variable {m : ℕ}
 
-/-- The zero set `Z_∅J` of `s(x) = xᵐ` is `{0}`. -/
-private theorem val_eq_zero_of_mem {J : Finset Unit} (hm : m ≠ 0) {x : PowThickening J}
-    (hx : x ∈ kuranishiZeroSet (E := fun _ ↦ ℝ) (powKuranishi m) ∅ J) : (x : ℝ) = 0 := by
+/-- The zero set `Z_∅J` of the Kuranishi map `s(x) = xᵐ` of `TauCeti.ImplicitAtlas.powAtlas` is
+`{0}`. -/
+theorem kuranishiZeroSet_powKuranishi_empty (hm : m ≠ 0) (J : Finset Unit) :
+    kuranishiZeroSet (E := fun _ ↦ ℝ) (powKuranishi m) ∅ J =
+      {x : PowThickening J | (x : ℝ) = 0} := by
+  ext x
+  refine ⟨fun hx ↦ ?_, fun hx ↦ mem_kuranishiZeroSet.2 fun _ _ ↦ by simp [hx.out, zero_pow hm]⟩
   by_cases hJ : J = ∅
   · exact x.2 hJ
   · obtain ⟨α, hα⟩ := Finset.nonempty_iff_ne_empty.2 hJ
@@ -136,7 +144,7 @@ private theorem val_eq_zero_of_mem {J : Finset Unit} (hm : m ≠ 0) {x : PowThic
 /-- The footprint map of `TauCeti.ImplicitAtlas.powAtlas` keeps the real coordinate. -/
 private def powFootprintMap (hm : m ≠ 0) {I J : Finset Unit} (_ : I ⊆ J)
     (x : kuranishiZeroSet (E := fun _ ↦ ℝ) (powKuranishi m) I J) : PowThickening I :=
-  ⟨x.1.1, fun hI ↦ val_eq_zero_of_mem hm (hI ▸ x.2)⟩
+  ⟨x.1.1, fun hI ↦ (kuranishiZeroSet_powKuranishi_empty hm J).subset (hI ▸ x.2)⟩
 
 /-- A continuous section of `powFootprintMap`, so that it is onto and a quotient map. -/
 private def powSection (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) (y : PowThickening I) :
