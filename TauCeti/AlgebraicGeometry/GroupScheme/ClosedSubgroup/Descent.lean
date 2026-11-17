@@ -15,8 +15,8 @@ import TauCeti.CategoryTheory.Monoidal.Mon
 Let `G₀` be an arbitrary group scheme over a base scheme `S`, and let `p : S' ⟶ S` be a morphism
 of schemes. A closed subgroup scheme `P` of `G₀` pulls back to a closed subgroup scheme
 `baseChange p P` of the base-changed group scheme `(Over.pullback p).mapGrp.obj G₀` over `S'`,
-whose two pullbacks to `S' ×_S S'` agree under the canonical overlap isomorphism `overlapIso p G₀`
-(`mapIso_overlapIso_baseChange`).
+whose two pullbacks to `S' ×_S S'` agree under the canonical overlap isomorphism
+`Grp.pullbackOverlapIso p G₀` (`mapIso_pullbackOverlapIso_baseChange`).
 
 This file proves that:
 
@@ -24,7 +24,8 @@ This file proves that:
   (`baseChange_le_baseChange_iff`) and is therefore injective (`baseChange_injective`);
 * when `p` is surjective, flat and quasi-compact, every closed subgroup scheme `H'` of
   `(Over.pullback p).mapGrp.obj G₀` satisfying the overlap condition
-  `mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') = baseChange (pullback.snd p p) H'`
+  `mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =`
+  `baseChange (pullback.snd p p) H'`
   descends uniquely to a closed subgroup scheme `descend p H' hH'` of `G₀`, giving an order
   isomorphism `descentOrderIso p G₀`;
 * morphism properties satisfying fpqc descent (finiteness, flatness, local finite presentation) and
@@ -172,7 +173,7 @@ variable {S S' : Scheme.{u}} (p : S' ⟶ S) [Surjective p] [Flat p] [QuasiCompac
   {G₀ : Grp (Over S)}
 
 /-- Given a morphism `iOver : K ⟶ G₀ ×_S S'` over `S'` and a morphism `u` between the two pullbacks
-of `K` to `S' ×_S S'` intertwining `iOver` with `overlapIso p G₀`, evaluating `u` on
+of `K` to `S' ×_S S'` intertwining `iOver` with `Grp.pullbackOverlapIso p G₀`, evaluating `u` on
 `(k, (π k, s₂))` and projecting to `K` yields an action `S' ×_S K ⟶ K` that intertwines `iOver` with
 the canonical descent action on `G₀ ×_S S'`. -/
 private theorem overlap_act_comp_left {p : S' ⟶ S} {G₀ : Grp (Over S)} {K : Over S'}
@@ -181,7 +182,7 @@ private theorem overlap_act_comp_left {p : S' ⟶ S} {G₀ : Grp (Over S)} {K : 
       (Over.pullback (pullback.snd p p)).obj K)
     (hu : u.left ≫ ((Over.pullback (pullback.snd p p)).map iOver).left =
       ((Over.pullback (pullback.fst p p)).map iOver).left ≫
-        (overlapIso p G₀).hom.hom.hom.left) :
+        (Grp.pullbackOverlapIso p G₀).hom.hom.hom.left) :
     (pullback.lift (pullback.snd p (K.hom ≫ p))
         (pullback.lift (pullback.snd p (K.hom ≫ p) ≫ K.hom) (pullback.fst p (K.hom ≫ p))
           (by rw [Category.assoc, ← pullback.condition]))
@@ -205,11 +206,11 @@ private theorem overlap_act_comp_left {p : S' ⟶ S} {G₀ : Grp (Over S)} {K : 
           pullback.fst ((Over.pullback p).obj G₀.X).hom (pullback.snd p p) := by
         simp only [Category.assoc, hf₂_fst]
     _ = θ ≫ ((Over.pullback (pullback.fst p p)).map iOver).left ≫
-          ((overlapIso p G₀).hom.hom.hom.left ≫
+          ((Grp.pullbackOverlapIso p G₀).hom.hom.hom.left ≫
             pullback.fst ((Over.pullback p).obj G₀.X).hom (pullback.snd p p)) :=
         congrArg (θ ≫ ·) ((congrArg (· ≫ _) hu).trans (Category.assoc _ _ _))
     _ = _ := congrArg (θ ≫ ((Over.pullback (pullback.fst p p)).map iOver).left ≫ ·)
-        (overlapIso_hom_left_fst p G₀)
+        (Grp.pullbackOverlapIso_hom_left_fst p G₀)
   rw [hθ]
   refine pullback.hom_ext ?_ ?_ <;> simp [θ]
 
@@ -218,7 +219,7 @@ condition on `S' ×_S S'`, the canonical descent datum on `(Over.pullback p).obj
 along the monomorphism `H'.1.arrow` to `(H'.1 : Grp (Over S')).X`. -/
 private theorem exists_restricted_descentDatum {p : S' ⟶ S} {G₀ : Grp (Over S)}
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H') :
     ∃ (D : DescentDatum p (H'.1 : Grp (Over S')).X)
       (φ : DescentDatum.Hom D (DescentDatum.baseChange p G₀.X)),
@@ -227,8 +228,8 @@ private theorem exists_restricted_descentDatum {p : S' ⟶ S} {G₀ : Grp (Over 
   let iOver : (H'.1 : Grp (Over S')).X ⟶ (Over.pullback p).obj G₀.X := i.hom.hom
   have : IsClosedImmersion iOver.left := isClosedImmersion_arrow H'
   -- The overlap equality `hH'` gives a comparison morphism `u` between the two pullbacks of `H'`
-  -- to `S' ×_S S'` intertwining `i` with `overlapIso p G₀`.
-  let f₁ := (Over.pullback (pullback.fst p p)).mapGrp.map i ≫ (overlapIso p G₀).hom
+  -- to `S' ×_S S'` intertwining `i` with `Grp.pullbackOverlapIso p G₀`.
+  let f₁ := (Over.pullback (pullback.fst p p)).mapGrp.map i ≫ (Grp.pullbackOverlapIso p G₀).hom
   let f₂ := (Over.pullback (pullback.snd p p)).mapGrp.map i
   have hmk : Subobject.mk f₁ ≤ Subobject.mk f₂ := by
     have heq := Subtype.ext_iff.1 hH'
@@ -244,10 +245,10 @@ private theorem exists_restricted_descentDatum {p : S' ⟶ S} {G₀ : Grp (Over 
 /-- **Existence of fpqc descent for closed subgroup schemes.** Let `p : S' ⟶ S` be surjective, flat
 and quasi-compact, and let `G₀` be an arbitrary group scheme over `S`. Every closed subgroup scheme
 `H'` of `(Over.pullback p).mapGrp.obj G₀` whose two pullbacks to `S' ×_S S'` agree under
-`overlapIso p G₀` is the base change along `p` of a closed subgroup scheme of `G₀`. -/
+`Grp.pullbackOverlapIso p G₀` is the base change along `p` of a closed subgroup scheme of `G₀`. -/
 theorem exists_baseChange_eq
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H') :
     ∃ P : ClosedSubgroupScheme G₀, baseChange p P = H' := by
   obtain ⟨D, φ, hφ⟩ := exists_restricted_descentDatum H' hH'
@@ -280,7 +281,7 @@ overlap condition on `S' ×_S S'`, `descend p H' hH'` is the unique closed subgr
 whose base change along `p` is `H'`. -/
 noncomputable def descend
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H') :
     ClosedSubgroupScheme G₀ :=
   (exists_baseChange_eq p H' hH').choose
@@ -289,7 +290,7 @@ noncomputable def descend
 @[simp]
 theorem baseChange_descend
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H') :
     baseChange p (descend p H' hH') = H' :=
   (exists_baseChange_eq p H' hH').choose_spec
@@ -297,13 +298,13 @@ theorem baseChange_descend
 /-- Descending the base change of a closed subgroup scheme `P` of `G₀` recovers `P`. -/
 @[simp]
 theorem descend_baseChange (P : ClosedSubgroupScheme G₀) :
-    descend p (baseChange p P) (mapIso_overlapIso_baseChange p P) = P :=
+    descend p (baseChange p P) (mapIso_pullbackOverlapIso_baseChange p P) = P :=
   baseChange_injective p (baseChange_descend p _ _)
 
 /-- Uniqueness characterization of `descend p H' hH'`. -/
 theorem eq_descend_iff {P : ClosedSubgroupScheme G₀}
     {H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀)}
-    {hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    {hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H'} :
     P = descend p H' hH' ↔ baseChange p P = H' :=
   ⟨fun h ↦ h ▸ baseChange_descend p H' hH',
@@ -313,13 +314,13 @@ variable (G₀) in
 /-- **Effective fpqc descent equivalence for closed subgroup schemes.** Base change along a
 surjective, flat and quasi-compact morphism `p : S' ⟶ S` is an order isomorphism from closed
 subgroup schemes of `G₀` to closed subgroup schemes of `(Over.pullback p).mapGrp.obj G₀` whose two
-pullbacks to `S' ×_S S'` correspond under `overlapIso p G₀`. -/
+pullbacks to `S' ×_S S'` correspond under `Grp.pullbackOverlapIso p G₀`. -/
 noncomputable def descentOrderIso :
     ClosedSubgroupScheme G₀ ≃o
       {H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀) //
-        mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+        mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
           baseChange (pullback.snd p p) H'} where
-  toFun P := ⟨baseChange p P, mapIso_overlapIso_baseChange p P⟩
+  toFun P := ⟨baseChange p P, mapIso_pullbackOverlapIso_baseChange p P⟩
   invFun H' := descend p H'.1 H'.2
   left_inv P := descend_baseChange p P
   right_inv H' := Subtype.ext (baseChange_descend p H'.1 H'.2)
@@ -334,7 +335,7 @@ theorem descentOrderIso_apply_coe (P : ClosedSubgroupScheme G₀) :
 @[simp]
 theorem descentOrderIso_symm_apply
     (H' : {H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀) //
-      mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+      mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
         baseChange (pullback.snd p p) H'}) :
     (descentOrderIso p G₀).symm H' = descend p H'.1 H'.2 :=
   (rfl)
@@ -377,7 +378,7 @@ theorem locallyOfFinitePresentation_baseChange_iff (P : ClosedSubgroupScheme G�
 over `S`. -/
 theorem isFinite_descend
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H')
     [IsFinite (H'.1 : Grp (Over S')).X.hom] :
     IsFinite ((descend p H' hH').1 : Grp (Over S)).X.hom := by
@@ -388,7 +389,7 @@ theorem isFinite_descend
 `S`. -/
 theorem flat_descend
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H')
     [Flat (H'.1 : Grp (Over S')).X.hom] :
     Flat ((descend p H' hH').1 : Grp (Over S)).X.hom := by
@@ -399,7 +400,7 @@ theorem flat_descend
 `descend p H' hH'` is locally of finite presentation over `S`. -/
 theorem locallyOfFinitePresentation_descend
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H')
     [LocallyOfFinitePresentation (H'.1 : Grp (Over S')).X.hom] :
     LocallyOfFinitePresentation ((descend p H' hH').1 : Grp (Over S)).X.hom := by
@@ -410,7 +411,7 @@ theorem locallyOfFinitePresentation_descend
 `S'`, then the rank of `H'` over `S'` is the rank of `descend p H' hH'` pulled back along `p`. -/
 theorem finrank_descend
     (H' : ClosedSubgroupScheme ((Over.pullback p).mapGrp.obj G₀))
-    (hH' : mapIso (overlapIso p G₀) (baseChange (pullback.fst p p) H') =
+    (hH' : mapIso (Grp.pullbackOverlapIso p G₀) (baseChange (pullback.fst p p) H') =
       baseChange (pullback.snd p p) H')
     [IsFinite (H'.1 : Grp (Over S')).X.hom] [Flat (H'.1 : Grp (Over S')).X.hom] :
     (H'.1 : Grp (Over S')).X.hom.finrank =
