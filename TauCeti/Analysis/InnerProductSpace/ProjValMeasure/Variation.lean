@@ -150,11 +150,8 @@ theorem polarizedComplexMeasure_variation_apply_le (P : ProjValMeasure X H) (ψ 
     (measurableSet_toMeasurable _ _).inter (measurableSet_toMeasurable _ _)
   have hBE : B ⊆ E := Set.subset_inter (subset_toMeasurable _ _) (subset_toMeasurable _ _)
   have hdiag (v : H) : ‖P.proj E hE v‖ₑ = (P.diag v E) ^ (1 / 2 : ℝ) := by
-    have hsq : P.diag v E = ‖P.proj E hE v‖ₑ ^ (2 : ℝ) := by
-      rw [← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag v) (s := E)),
-        ← P.norm_sq_proj_apply E hE v, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm,
-        ENNReal.rpow_two]
-    rw [hsq, ← ENNReal.rpow_mul, mul_one_div_cancel (two_ne_zero), ENNReal.rpow_one]
+    rw [← P.enorm_sq_proj_apply E hE v, ← ENNReal.rpow_two, ← ENNReal.rpow_mul,
+      mul_one_div_cancel two_ne_zero, ENNReal.rpow_one]
   have hψE : P.diag ψ E ≤ P.diag ψ B :=
     (measure_mono Set.inter_subset_left).trans_eq (measure_toMeasurable B)
   have hξE : P.diag ξ E ≤ P.diag ξ B :=
@@ -194,9 +191,10 @@ private theorem simpleFunc_lintegral_variation_le (P : ProjValMeasure X H) (ψ �
   have hξ : ∑ c ∈ s.range, c ^ 2 * P.diag ξ (s ⁻¹' {c}) = ∫⁻ t, s t ^ 2 ∂(P.diag ξ) := by
     rw [← SimpleFunc.map_lintegral (fun c => c ^ 2) s,
       ← (s.map (fun c => c ^ 2)).lintegral_eq_lintegral]
-    rfl
+    simp only [SimpleFunc.coe_map, Function.comp_apply]
   calc s.lintegral (P.polarizedComplexMeasure ψ ξ).variation
-      = ∑ c ∈ s.range, c * (P.polarizedComplexMeasure ψ ξ).variation (s ⁻¹' {c}) := rfl
+      = ∑ c ∈ s.range, c * (P.polarizedComplexMeasure ψ ξ).variation (s ⁻¹' {c}) := by
+        rw [SimpleFunc.lintegral]
     _ ≤ ∑ c ∈ s.range, (P.diag ψ (s ⁻¹' {c})) ^ (1 / 2 : ℝ) *
           (c * (P.diag ξ (s ⁻¹' {c})) ^ (1 / 2 : ℝ)) := by
         refine Finset.sum_le_sum fun c _ => ?_

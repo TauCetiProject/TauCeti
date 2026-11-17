@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Variation
 public import TauCeti.MeasureTheory.VectorMeasure.WithDensity
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Matrix elements of the integral against a projection-valued measure
@@ -128,10 +129,8 @@ theorem integrable_polarizedComplexMeasure_of_memLp {E : Type*} [NormedAddCommGr
     (P.polarizedComplexMeasure_variation_absolutelyContinuous_right ψ ξ), ?_⟩
   rw [HasFiniteIntegral]
   refine (P.lintegral_variation_polarizedComplexMeasure_le ψ ξ fun t => ‖f t‖ₑ).trans_lt ?_
-  have hsq : ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) < ⊤ := by
-    have h := (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
-      hf.aestronglyMeasurable).1 hf.eLpNorm_lt_top
-    simpa [ENNReal.rpow_two] using h
+  have hsq : ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) < ⊤ :=
+    hf.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hf
   exact ENNReal.mul_lt_top eNorm_lt_top (ENNReal.rpow_lt_top_of_nonneg (by positivity) hsq.ne)
 
 /-- Extended-norm Cauchy–Schwarz bound for integration against a polarized spectral measure.
@@ -153,10 +152,8 @@ theorem integral_norm_variation_polarizedComplexMeasure_le {E : Type*} [NormedAd
   have hint := P.integrable_polarizedComplexMeasure_of_memLp ψ hf
   have hsq : Integrable (fun t => ‖f t‖ ^ 2) (P.diag ξ) := by
     simpa using hf.integrable_norm_rpow two_ne_zero ENNReal.ofNat_ne_top
-  have hsq_lt : ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) ≠ ⊤ := by
-    have h := (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top
-      hf.aestronglyMeasurable).1 hf.eLpNorm_lt_top
-    simpa [ENNReal.rpow_two] using h.ne
+  have hsq_lt : ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag ξ) ≠ ⊤ :=
+    (hf.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.1 hf).ne
   rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun _ => norm_nonneg _)
     hint.norm.aestronglyMeasurable,
     integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun _ => sq_nonneg _)
@@ -251,8 +248,7 @@ theorem polarizedComplexMeasure_integral_left (P : ProjValMeasure X H)
             ContinuousLinearMap.adjoint_inner_right]
       _ = ⟪ψ, P.proj B hB (P.integral (star g) ξ)⟫_ℂ := by
           rw [P.integral_proj_apply]
-  rw [hswap, P.polarizedComplexMeasure_integral_right]
-  rfl
+  rw [hswap, P.polarizedComplexMeasure_integral_right, BoundedBorelFunction.coe_star]
 
 end ProjValMeasure
 end TauCeti

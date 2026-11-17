@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearPMap
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.MatrixElement
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Null
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
@@ -181,10 +182,8 @@ theorem mem_spectralIntegral_domain_iff_memLp (P : ProjValMeasure X H) (f : X �
 `P.spectralIntegral f` iff its second spectral moment `∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag x)` is finite. -/
 theorem mem_spectralIntegral_domain_iff (P : ProjValMeasure X H) {f : X → ℂ} {x : H}
     (hf : AEStronglyMeasurable f (P.diag x)) :
-    x ∈ (P.spectralIntegral f).domain ↔ ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag x) < ∞ := by
-  rw [mem_spectralIntegral_domain_iff_memLp, memLp_iff,
-    eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top two_ne_zero ENNReal.ofNat_ne_top hf]
-  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two]
+    x ∈ (P.spectralIntegral f).domain ↔ ∫⁻ t, ‖f t‖ₑ ^ 2 ∂(P.diag x) < ∞ :=
+  (P.mem_spectralIntegral_domain_iff_memLp f x).trans hf.memLp_two_iff_lintegral_enorm_sq_lt_top
 
 /-- **Matrix-element characterization** of the unbounded spectral integral: for every `x` in its
 domain and every `y : H`, `⟪y, P.spectralIntegral f x⟫` is the integral of `f` against the
@@ -264,8 +263,7 @@ theorem spectralIntegral_eq_toPMap (P : ProjValMeasure X H) (f : BoundedBorelFun
 @[simp]
 theorem spectralIntegral_boundedBorelFunction_domain (P : ProjValMeasure X H)
     (f : BoundedBorelFunction X) : (P.spectralIntegral f).domain = ⊤ := by
-  rw [P.spectralIntegral_eq_toPMap f]
-  rfl
+  rw [P.spectralIntegral_eq_toPMap f, LinearMap.toPMap_domain]
 
 /-- Every bounded Borel operator `P.integral g` leaves the domain of `P.spectralIntegral f`
 invariant. -/
@@ -313,20 +311,71 @@ theorem spectralIntegral_proj_apply (P : ProjValMeasure X H) (f : X → ℂ) (B 
   have hind := P.spectralIntegral_integral_apply f (BoundedBorelFunction.indicator B hB 1) x
   simpa only [P.integral_indicator hB] using hind
 
-/-- The bounded Borel truncation `f · 1_{‖f‖ ≤ R}` of a measurable symbol `f`. -/
-private def cutoffSymbol (f : X → ℂ) (hf : Measurable f) (R : ℝ) : BoundedBorelFunction X :=
-  BoundedBorelFunction.ofFunction ({t | ‖f t‖ ≤ R}.indicator f)
-    (hf.indicator (measurableSet_le hf.norm measurable_const))
+/-- Restrict a measurable symbol `f` to a measurable set `S` on which `‖f‖ ≤ R`, producing the
+bounded Borel symbol `f · 1_S`. -/
+private def restrictSymbol (f : X → ℂ) (hf : Measurable f) (S : Set X) (hS : MeasurableSet S)
+    (R : ℝ) (hR : ∀ t ∈ S, ‖f t‖ ≤ R) : BoundedBorelFunction X :=
+  BoundedBorelFunction.ofFunction (S.indicator f) (hf.indicator hS)
     ⟨max R 0, le_max_right R 0, fun t => by
-      by_cases ht : t ∈ {t | ‖f t‖ ≤ R}
+      by_cases ht : t ∈ S
       · rw [Set.indicator_of_mem ht]
-        exact le_max_of_le_left (Set.mem_ofPred_eq.mp ht)
+        exact le_max_of_le_left (hR t ht)
       · rw [Set.indicator_of_notMem ht, norm_zero]
         exact le_max_right R 0⟩
 
+private theorem restrictSymbol_apply (f : X → ℂ) (hf : Measurable f) (S : Set X)
+    (hS : MeasurableSet S) (R : ℝ) (hR : ∀ t ∈ S, ‖f t‖ ≤ R) (t : X) :
+    restrictSymbol f hf S hS R hR t = S.indicator f t :=
+  BoundedBorelFunction.ofFunction_apply ..
+
+/-- The bounded Borel truncation `f · 1_{‖f‖ ≤ R}` of a measurable symbol `f`. -/
+private def cutoffSymbol (f : X → ℂ) (hf : Measurable f) (R : ℝ) : BoundedBorelFunction X :=
+  restrictSymbol f hf {t | ‖f t‖ ≤ R} (measurableSet_le hf.norm measurable_const) R
+    fun _ ht => Set.mem_ofPred_eq.mp ht
+
 private theorem cutoffSymbol_apply (f : X → ℂ) (hf : Measurable f) (R : ℝ) (t : X) :
     cutoffSymbol f hf R t = ({t | ‖f t‖ ≤ R}.indicator f) t :=
-  BoundedBorelFunction.ofFunction_apply ..
+  restrictSymbol_apply ..
+
+/-- If `u =ᵐ[P.diag x] v` and `w =ᵐ[P.diag x] B.indicator v`, then
+`u =ᵐ[P.diag (P.proj B hB x)] w`. -/
+private theorem ae_eq_diag_proj_of_ae_eq_indicator (P : ProjValMeasure X H) {B : Set X}
+    (hB : MeasurableSet B) {x : H} {u v w : X → ℂ} (huv : u =ᵐ[P.diag x] v)
+    (hvw : w =ᵐ[P.diag x] B.indicator v) :
+    u =ᵐ[P.diag (P.proj B hB x)] w := by
+  rw [P.diag_proj]
+  filter_upwards [ae_restrict_of_ae huv, ae_restrict_of_ae hvw, ae_restrict_mem hB] with t h1 h2 ht
+  rw [h1, h2, Set.indicator_of_mem ht]
+
+/-- If `f =ᵐ[P.diag x] g`, then on `P.diag (P.proj S hS x)`, `f` agrees almost everywhere with
+`restrictSymbol g hg S hS R hR`. -/
+private theorem ae_eq_diag_proj_restrictSymbol (P : ProjValMeasure X H) {f g : X → ℂ}
+    (hg : Measurable g) {S : Set X} (hS : MeasurableSet S) (R : ℝ) (hR : ∀ t ∈ S, ‖g t‖ ≤ R)
+    {x : H} (hfg : f =ᵐ[P.diag x] g) :
+    f =ᵐ[P.diag (P.proj S hS x)] restrictSymbol g hg S hS R hR :=
+  P.ae_eq_diag_proj_of_ae_eq_indicator hS hfg
+    (Eventually.of_forall (restrictSymbol_apply g hg S hS R hR))
+
+/-- If `f =ᵐ[P.diag x] g`, then on `P.diag (P.proj {‖g‖ ≤ R} _ x)`, `f` agrees almost everywhere
+with `cutoffSymbol g hg R`. -/
+private theorem ae_eq_diag_proj_cutoffSymbol (P : ProjValMeasure X H) {f g : X → ℂ}
+    (hg : Measurable g) (R : ℝ) {x : H} (hfg : f =ᵐ[P.diag x] g) :
+    f =ᵐ[P.diag (P.proj {t | ‖g t‖ ≤ R} (measurableSet_le hg.norm measurable_const) x)]
+      cutoffSymbol g hg R :=
+  P.ae_eq_diag_proj_restrictSymbol hg (measurableSet_le hg.norm measurable_const) R
+    (fun _ ht => Set.mem_ofPred_eq.mp ht) hfg
+
+/-- Applying `P.integral (restrictSymbol g hg S hS R hR)` absorbs the projection `P.proj S hS`. -/
+private theorem integral_restrictSymbol_proj (P : ProjValMeasure X H) (g : X → ℂ)
+    (hg : Measurable g) (S : Set X) (hS : MeasurableSet S) (R : ℝ) (hR : ∀ t ∈ S, ‖g t‖ ≤ R)
+    (x : H) :
+    P.integral (restrictSymbol g hg S hS R hR) (P.proj S hS x) =
+      P.integral (restrictSymbol g hg S hS R hR) x := by
+  rw [← P.integral_indicator hS, ← mul_apply_eq_comp, ← map_mul]
+  congr 2
+  ext t
+  by_cases ht : t ∈ S <;>
+    simp [ht, restrictSymbol_apply, BoundedBorelFunction.indicator_apply]
 
 /-- Applying `P.proj {‖g‖ ≤ R}` to `P.spectralIntegral f x` produces
 `P.integral (cutoffSymbol g R) x` whenever `f =ᵐ[P.diag x] g`. -/
@@ -335,17 +384,10 @@ private theorem proj_cutoff_spectralIntegral_eq_integral (P : ProjValMeasure X H
     P.proj {t | ‖g t‖ ≤ R} (measurableSet_le hg.norm measurable_const) (P.spectralIntegral f x) =
       P.integral (cutoffSymbol g hg R) x := by
   have hB : MeasurableSet {t | ‖g t‖ ≤ R} := measurableSet_le hg.norm measurable_const
-  have hae : f =ᵐ[P.diag (P.proj {t | ‖g t‖ ≤ R} hB x)] cutoffSymbol g hg R := by
-    rw [P.diag_proj]
-    filter_upwards [ae_restrict_of_ae hfg, ae_restrict_mem hB] with t htf htB
-    rw [htf, cutoffSymbol_apply, Set.indicator_of_mem htB]
   rw [← P.spectralIntegral_proj_apply f {t | ‖g t‖ ≤ R} hB x,
-    P.spectralIntegral_apply_of_ae_eq_boundedBorelFunction hae, ← P.integral_indicator hB,
-    ← mul_apply_eq_comp, ← map_mul]
-  congr 2
-  ext t
-  by_cases ht : t ∈ {t | ‖g t‖ ≤ R} <;>
-    simp [ht, cutoffSymbol_apply, BoundedBorelFunction.indicator_apply]
+    P.spectralIntegral_apply_of_ae_eq_boundedBorelFunction
+      (P.ae_eq_diag_proj_cutoffSymbol hg R hfg)]
+  exact P.integral_restrictSymbol_proj g hg _ hB R (fun _ ht => Set.mem_ofPred_eq.mp ht) x
 
 /-- Strong convergence `P({‖g‖ ≤ n}) v → v` for any measurable `g : X → ℂ`. -/
 private theorem tendsto_proj_cutoff (P : ProjValMeasure X H) {g : X → ℂ} (hg : Measurable g)
@@ -368,12 +410,9 @@ private theorem tendsto_proj_cutoff (P : ProjValMeasure X H) {g : X → ℂ} (hg
 theorem proj_cutoff_mem_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ}
     (hf : Measurable f) (R : ℝ) (x : H) :
     P.proj {t | ‖f t‖ ≤ R} (measurableSet_le hf.norm measurable_const) x ∈
-      (P.spectralIntegral f).domain := by
-  have hB : MeasurableSet {t | ‖f t‖ ≤ R} := measurableSet_le hf.norm measurable_const
-  refine P.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction (g := cutoffSymbol f hf R) ?_
-  rw [P.diag_proj]
-  filter_upwards [ae_restrict_mem hB] with t ht
-  rw [cutoffSymbol_apply, Set.indicator_of_mem ht]
+      (P.spectralIntegral f).domain :=
+  P.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction
+    (P.ae_eq_diag_proj_cutoffSymbol hf R EventuallyEq.rfl)
 
 /-- On a spectral cutoff `{‖f‖ ≤ R}` of a measurable symbol `f`, `P.spectralIntegral f` agrees
 with the bounded integral of any bounded Borel symbol equal `P.diag x`-almost everywhere to
@@ -386,10 +425,8 @@ theorem spectralIntegral_proj_cutoff_apply (P : ProjValMeasure X H) {f : X → �
           P.proj_cutoff_mem_spectralIntegral_domain hf R x⟩ =
       P.integral g x := by
   have hB : MeasurableSet {t | ‖f t‖ ≤ R} := measurableSet_le hf.norm measurable_const
-  have hae : f =ᵐ[P.diag (P.proj {t | ‖f t‖ ≤ R} hB x)] g := by
-    rw [P.diag_proj]
-    filter_upwards [ae_restrict_of_ae hg, ae_restrict_mem hB] with t htg htB
-    rw [htg, Set.indicator_of_mem htB]
+  have hae : f =ᵐ[P.diag (P.proj {t | ‖f t‖ ≤ R} hB x)] g :=
+    P.ae_eq_diag_proj_of_ae_eq_indicator hB EventuallyEq.rfl hg
   rw [P.spectralIntegral_apply_of_ae_eq_boundedBorelFunction hae, ← P.integral_indicator hB,
     ← mul_apply_eq_comp, ← map_mul, ← sub_eq_zero, ← _root_.sub_apply, ← _root_.map_sub,
     P.integral_apply_eq_zero_iff]
@@ -431,14 +468,11 @@ private theorem mem_spectralIntegral_domain_of_cutoff_bound (P : ProjValMeasure 
   rw [P.mem_spectralIntegral_domain_iff (hg.aestronglyMeasurable.congr hfg.symm),
     lintegral_congr_ae (hfg.mono fun t ht => by rw [ht]), ← iSup_lintegral_cutoffSymbol_sq hg]
   refine (iSup_le fun n => ?_).trans_lt (ENNReal.ofReal_lt_top (r := C ^ 2))
-  have hint : Integrable (fun t => ‖cutoffSymbol g hg n t‖ ^ 2) (P.diag x) :=
-    .of_bound (((cutoffSymbol g hg n).measurable.norm.pow_const 2).aestronglyMeasurable)
-      (‖cutoffSymbol g hg n‖ ^ 2) (Eventually.of_forall fun t => by
-        rw [Real.norm_of_nonneg (sq_nonneg _)]
-        exact pow_le_pow_left₀ (norm_nonneg _) ((cutoffSymbol g hg n).norm_coe_le_norm t) 2)
   calc ∫⁻ t, ‖cutoffSymbol g hg n t‖ₑ ^ 2 ∂(P.diag x)
       = ENNReal.ofReal (∫ t, ‖cutoffSymbol g hg n t‖ ^ 2 ∂(P.diag x)) := by
-        rw [ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ => sq_nonneg _)]
+        rw [ofReal_integral_eq_lintegral_ofReal
+          ((cutoffSymbol g hg n).integrable_norm_pow 2 (P.diag x))
+          (Eventually.of_forall fun _ => sq_nonneg _)]
         simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
     _ = ENNReal.ofReal (‖P.integral (cutoffSymbol g hg n) x‖ ^ 2) := by
         rw [P.norm_sq_integral_apply]
@@ -485,52 +519,25 @@ private theorem exists_measurable_ae_eq_of_tendsto (P : ProjValMeasure X H) {f :
     {u : ℕ → H} {x : H} (hu : ∀ n, AEStronglyMeasurable f (P.diag (u n)))
     (hlim : Tendsto u atTop (𝓝 x)) :
     ∃ g : X → ℂ, Measurable g ∧ f =ᵐ[P.diag x] g ∧ ∀ n, f =ᵐ[P.diag (u n)] g := by
-  let g_seq : ℕ → X → ℂ := fun n => (hu n).mk f
-  let N : ℕ → Set X := fun n => toMeasurable (P.diag (u n)) {t | f t ≠ g_seq n t}
-  have hN_null (n : ℕ) : P.diag (u n) (N n) = 0 := by
-    rw [measure_toMeasurable]; exact (hu n).ae_eq_mk
-  let D : ℕ → Set X := disjointed fun n => (N n)ᶜ
-  have hD_meas (n : ℕ) : MeasurableSet (D n) :=
-    MeasurableSet.disjointed (fun k => (measurableSet_toMeasurable _ _).compl) n
-  let g : X → ℂ := fun t => ∑' n, (D n).indicator (g_seq n) t
-  have hsum_on {n : ℕ} {t : X} (ht : t ∈ D n) :
-      HasSum (fun k => (D k).indicator (g_seq k) t) (g_seq n t) := by
-    simpa [Set.indicator_of_mem ht] using
-      hasSum_single (f := fun k => (D k).indicator (g_seq k) t) n fun k hne =>
-        Set.indicator_of_notMem (Set.disjoint_left.1 (disjoint_disjointed _ hne.symm) ht) _
-  have hg_seq (k : ℕ) : Measurable (g_seq k) := (hu k).stronglyMeasurable_mk.measurable
-  have hg : Measurable g :=
-    measurable_of_tendsto_metrizable
-      (fun M => Finset.measurable_sum (Finset.range M) fun k _ => (hg_seq k).indicator (hD_meas k))
-      (tendsto_pi_nhds.2 fun t => by
-        by_cases hex : ∃ n, t ∈ D n
-        · obtain ⟨n, hn⟩ := hex
-          have hgt : g t = g_seq n t := (hsum_on hn).tsum_eq
-          rw [hgt]
-          exact (hsum_on hn).tendsto_sum_nat
-        · have hz (k : ℕ) : (D k).indicator (g_seq k) t = 0 :=
-            Set.indicator_of_notMem (fun h => hex ⟨k, h⟩) (g_seq k)
-          simp [g, hz])
-  have hfg_on {t : X} (ht : t ∈ ⋃ n, D n) : f t = g t := by
-    obtain ⟨n, hn⟩ := Set.mem_iUnion.1 ht
-    have hgt : g t = g_seq n t := (hsum_on hn).tsum_eq
-    rw [hgt]
-    by_contra hne
-    exact disjointed_subset (fun k => (N k)ᶜ) n hn (subset_toMeasurable _ _ hne)
-  have hZ_meas : MeasurableSet (⋃ n, D n)ᶜ := (MeasurableSet.iUnion hD_meas).compl
-  have hZ_null_u (n : ℕ) : P.diag (u n) (⋃ k, D k)ᶜ = 0 :=
-    measure_mono_null (by
-      rw [iUnion_disjointed]
-      exact fun t ht => not_not.1 fun htA => ht (Set.mem_iUnion.2 ⟨n, htA⟩)) (hN_null n)
-  have hZ_null_x : P.diag x (⋃ k, D k)ᶜ = 0 := by
-    have hproj_u (n : ℕ) : P.proj (⋃ k, D k)ᶜ hZ_meas (u n) = 0 :=
-      eNorm_eq_zero.1 <| sq_eq_zero_iff.1 <| by rw [P.enorm_sq_proj_apply, hZ_null_u n]
-    have hproj_x : P.proj (⋃ k, D k)ᶜ hZ_meas x = 0 :=
-      tendsto_nhds_unique (((P.proj (⋃ k, D k)ᶜ hZ_meas).continuous.tendsto x).comp hlim)
+  let μ : Measure X := Measure.sum fun n => P.diag (u n)
+  have h : AEStronglyMeasurable f μ := aestronglyMeasurable_sum_measure_iff.2 hu
+  let g : X → ℂ := h.mk f
+  have hfg_sum : f =ᵐ[μ] g := h.ae_eq_mk
+  let N : Set X := toMeasurable μ {t | f t ≠ g t}
+  have hN_meas : MeasurableSet N := measurableSet_toMeasurable μ _
+  have hN_sum : μ N = 0 := by rw [measure_toMeasurable]; exact hfg_sum
+  have hN_u (n : ℕ) : P.diag (u n) N = 0 := Measure.sum_apply_eq_zero.1 hN_sum n
+  have hN_x : P.diag x N = 0 := by
+    have hproj_u (n : ℕ) : P.proj N hN_meas (u n) = 0 :=
+      eNorm_eq_zero.1 <| sq_eq_zero_iff.1 <| by rw [P.enorm_sq_proj_apply, hN_u n]
+    have hproj_x : P.proj N hN_meas x = 0 :=
+      tendsto_nhds_unique (((P.proj N hN_meas).continuous.tendsto x).comp hlim)
         ((tendsto_const_nhds (x := (0 : H))).congr fun n => (hproj_u n).symm)
-    rw [← P.enorm_sq_proj_apply _ hZ_meas x, hproj_x]; simp
-  exact ⟨g, hg, Filter.mem_of_superset (MeasureTheory.mem_ae_iff.2 hZ_null_x) (fun _ => hfg_on),
-    fun n => Filter.mem_of_superset (MeasureTheory.mem_ae_iff.2 (hZ_null_u n)) (fun _ => hfg_on)⟩
+    rw [← P.enorm_sq_proj_apply N hN_meas x, hproj_x]
+    simp
+  exact ⟨g, h.stronglyMeasurable_mk.measurable,
+    MeasureTheory.ae_iff.2 (measure_mono_null (subset_toMeasurable μ _) hN_x),
+    Measure.ae_sum_iff.1 hfg_sum⟩
 
 /-- **Closedness of the unbounded spectral integral**: `P.spectralIntegral f` is closed for every
 `f : X → ℂ`, with no measurability hypothesis on `f`. -/
@@ -583,13 +590,9 @@ theorem dense_spectralIntegral_domain_iff (P : ProjValMeasure X H) (f : X → �
     have hfg : f =ᵐ[P.diag x] g := (hf x).ae_eq_mk
     refine mem_closure_iff_seq_limit.2
       ⟨fun n => P.proj {t | ‖g t‖ ≤ (n : ℝ)} (measurableSet_le hg.norm measurable_const) x,
-        fun n => ?_, P.tendsto_proj_cutoff hg x⟩
-    have hB : MeasurableSet {t | ‖g t‖ ≤ (n : ℝ)} := measurableSet_le hg.norm measurable_const
-    refine P.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction
-      (g := cutoffSymbol g hg n) ?_
-    rw [P.diag_proj]
-    filter_upwards [ae_restrict_of_ae hfg, ae_restrict_mem hB] with t htf htE
-    rw [htf, cutoffSymbol_apply, Set.indicator_of_mem htE]
+        fun n => P.mem_spectralIntegral_domain_of_ae_eq_boundedBorelFunction
+          (P.ae_eq_diag_proj_cutoffSymbol hg n hfg),
+        P.tendsto_proj_cutoff hg x⟩
 
 /-- For a measurable symbol `f`, the domain of `P.spectralIntegral f` is dense in `H`. -/
 theorem dense_spectralIntegral_domain (P : ProjValMeasure X H) {f : X → ℂ} (hf : Measurable f) :
@@ -679,9 +682,14 @@ theorem adjoint_spectralIntegral (P : ProjValMeasure X H) (f : X → ℂ)
   have hinner : ⟪w, xn⟫_ℂ = ((‖xn‖ ^ 2 : ℝ) : ℂ) := by
     have hadj := LinearPMap.adjoint_isFormalAdjoint hd ⟨y, hy⟩ ⟨xn, hxn_dom⟩
     rw [P.spectralIntegral_apply_of_ae_eq_boundedBorelFunction hae] at hadj
-    rw [hadj, ← ContinuousLinearMap.adjoint_inner_left, ← ContinuousLinearMap.star_eq_adjoint,
-      ← map_star, inner_self_eq_norm_sq_to_K, Complex.ofReal_pow]
-    rfl
+    calc ⟪w, xn⟫_ℂ
+        = ⟪y, P.integral gn xn⟫_ℂ := hadj
+      _ = ⟪P.integral (star gn) y, xn⟫_ℂ := by
+          rw [← ContinuousLinearMap.adjoint_inner_left, ← ContinuousLinearMap.star_eq_adjoint,
+            ← map_star]
+      _ = ⟪xn, xn⟫_ℂ := by simp only [xn]
+      _ = ((‖xn‖ ^ 2 : ℝ) : ℂ) := by
+          rw [inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal, Complex.ofReal_pow]
   have hsq : ‖xn‖ ^ 2 ≤ ‖w‖ * ‖xn‖ := by
     have := norm_inner_le_norm (𝕜 := ℂ) w xn
     rwa [hinner, Complex.norm_real, Real.norm_of_nonneg (sq_nonneg _)] at this
@@ -754,26 +762,12 @@ private theorem ae_eq_on_common_cutoff (P : ProjValMeasure X H) {f g f' g' : X �
   let E : Set X := {t | ‖f' t‖ ≤ (n : ℝ)} ∩ {t | ‖g' t‖ ≤ (n : ℝ)}
   have hE : MeasurableSet E :=
     (measurableSet_le hf'.norm measurable_const).inter (measurableSet_le hg'.norm measurable_const)
-  let mk (u : X → ℂ) (hu : Measurable u) (hle : ∀ t ∈ E, ‖u t‖ ≤ (n : ℝ)) :
-      BoundedBorelFunction X :=
-    BoundedBorelFunction.ofFunction (E.indicator u) (hu.indicator hE)
-      ⟨n, Nat.cast_nonneg n, fun t => by
-        by_cases ht : t ∈ E
-        · rw [Set.indicator_of_mem ht]; exact hle t ht
-        · rw [Set.indicator_of_notMem ht, norm_zero]; exact Nat.cast_nonneg n⟩
-  let fn := mk f' hf' fun _ ht => Set.mem_ofPred_eq.mp ht.1
-  let gn := mk g' hg' fun _ ht => Set.mem_ofPred_eq.mp ht.2
-  have hae (u u' : X → ℂ) (hu : Measurable u') (hle : ∀ t ∈ E, ‖u' t‖ ≤ (n : ℝ))
-      (huu' : u =ᵐ[P.diag x] u') : u =ᵐ[P.diag (P.proj E hE x)] mk u' hu hle := by
-    rw [P.diag_proj]
-    filter_upwards [ae_restrict_of_ae huu', ae_restrict_mem hE] with t htu htE
-    simp [mk, htu, Set.indicator_of_mem htE]
-  have hae_f := hae f f' hf' (fun _ ht => Set.mem_ofPred_eq.mp ht.1) hff'
-  have hae_g := hae g g' hg' (fun _ ht => Set.mem_ofPred_eq.mp ht.2) hgg'
-  have hmul (u : BoundedBorelFunction X) (hu : ∀ t ∉ E, u t = 0) :
-      P.integral u (P.proj E hE x) = P.integral u x := by
-    rw [← P.integral_indicator hE, ← mul_apply_eq_comp, ← map_mul]
-    congr 2; ext t; by_cases ht : t ∈ E <;> simp [ht, hu, BoundedBorelFunction.indicator_apply]
+  have hf_le : ∀ t ∈ E, ‖f' t‖ ≤ (n : ℝ) := fun _ ht => Set.mem_ofPred_eq.mp ht.1
+  have hg_le : ∀ t ∈ E, ‖g' t‖ ≤ (n : ℝ) := fun _ ht => Set.mem_ofPred_eq.mp ht.2
+  let fn := restrictSymbol f' hf' E hE n hf_le
+  let gn := restrictSymbol g' hg' E hE n hg_le
+  have hae_f := P.ae_eq_diag_proj_restrictSymbol hf' hE n hf_le hff'
+  have hae_g := P.ae_eq_diag_proj_restrictSymbol hg' hE n hg_le hgg'
   have hact : P.integral (fn - gn) x = 0 := by
     have heq_op :
         P.spectralIntegral f ⟨P.proj E hE x,
@@ -783,14 +777,14 @@ private theorem ae_eq_on_common_cutoff (P : ProjValMeasure X H) {f g f' g' : X �
       (LinearPMap.dExt_iff.1 h).2 rfl
     rw [P.spectralIntegral_apply_of_ae_eq_boundedBorelFunction hae_f,
       P.spectralIntegral_apply_of_ae_eq_boundedBorelFunction hae_g,
-      hmul fn (fun t ht => by simp [fn, mk, Set.indicator_of_notMem ht]),
-      hmul gn (fun t ht => by simp [gn, mk, Set.indicator_of_notMem ht])] at heq_op
+      P.integral_restrictSymbol_proj f' hf' E hE n hf_le x,
+      P.integral_restrictSymbol_proj g' hg' E hE n hg_le x] at heq_op
     rw [_root_.map_sub, _root_.sub_apply, sub_eq_zero]
     exact heq_op
   filter_upwards [(P.integral_apply_eq_zero_iff (fn - gn) x).1 hact] with t ht hfn hgn
   have htE : t ∈ E := ⟨Set.mem_ofPred_eq.mpr hfn, Set.mem_ofPred_eq.mpr hgn⟩
   have hsub : fn t - gn t = 0 := by simpa using ht
-  simpa [fn, gn, mk, Set.indicator_of_mem htE, sub_eq_zero] using hsub
+  simpa [fn, gn, restrictSymbol_apply, Set.indicator_of_mem htE, sub_eq_zero] using hsub
 
 /-- **Faithfulness**: when `P.spectralIntegral f` is densely defined, `P.spectralIntegral f =
 P.spectralIntegral g` iff `f = g` `P`-almost everywhere. -/
@@ -875,7 +869,7 @@ theorem existsUnique_spectralIntegral (P : ProjValMeasure X H) (f : X → ℂ)
     have heq : (P.spectralIntegral f)† x = P.spectralIntegral (star f) ⟨(x : H), hx'⟩ :=
       (LinearPMap.dExt_iff.1 hadj).2 rfl
     rw [heq, P.inner_spectralIntegral_apply]
-    rfl
+    simp only [Pi.star_apply]
   · refine P.eq_spectralIntegral_of_inner f ?_ hT.2.1
     ext x
     rw [hT.1 x, P.mem_spectralIntegral_domain_iff (hf x)]

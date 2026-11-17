@@ -32,21 +32,6 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 
 namespace ProjValMeasure
 
-/-- Squared extended norm of a spectral projection equals the diagonal mass
-of the corresponding measurable set. -/
-@[simp]
-theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
-    (hB : MeasurableSet B) (ξ : H) :
-    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
-  have hfin : (P.diag ξ) B ≠ ⊤ :=
-    measure_ne_top (μ := P.diag ξ) (s := B)
-  calc
-    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
-      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
-      rw [P.norm_sq_proj_apply B hB ξ]
-    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
-
 /-- For a countable measurable partition, the squared extended norms of the
 projected components sum to the squared extended norm of the original vector. -/
 theorem tsum_enorm_sq_proj (P : ProjValMeasure X H) {ι : Type*} [Countable ι]

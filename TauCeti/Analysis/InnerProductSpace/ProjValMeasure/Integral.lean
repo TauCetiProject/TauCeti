@@ -334,31 +334,20 @@ theorem norm_sq_integral_apply (P : ProjValMeasure X H) (f : BoundedBorelFunctio
 diagonal measure `P.diag ξ`. -/
 theorem integral_apply_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction X)
     (ξ : H) : P.integral f ξ = 0 ↔ ⇑f =ᵐ[P.diag ξ] 0 := by
-  have hint : Integrable (fun x => ‖f x‖ ^ 2) (P.diag ξ) :=
-    .of_bound (f.measurable.norm.pow_const 2).aestronglyMeasurable (‖f‖ ^ 2)
-      (Eventually.of_forall fun x => by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact pow_le_pow_left₀ (norm_nonneg _) (f.norm_coe_le_norm x) 2)
   rw [← norm_eq_zero, ← pow_eq_zero_iff (n := 2) two_ne_zero, norm_sq_integral_apply,
-    integral_eq_zero_iff_of_nonneg (fun x => by positivity) hint]
+    integral_eq_zero_iff_of_nonneg (fun x => by positivity) (f.integrable_norm_pow 2 (P.diag ξ))]
   simp [EventuallyEq]
 
 /-- The diagonal measure of `(∫ f dP) ξ` has density `‖f x‖ₑ ^ 2` with respect to `P.diag ξ`. -/
 theorem diag_integral (P : ProjValMeasure X H) (f : BoundedBorelFunction X) (ξ : H) :
     P.diag (P.integral f ξ) = (P.diag ξ).withDensity fun x => ‖f x‖ₑ ^ 2 := by
   refine Measure.ext fun B hB => ?_
-  rw [withDensity_apply _ hB, ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag _) (s := B)),
-    ← P.norm_sq_proj_apply B hB (P.integral f ξ), ← P.integral_indicator hB,
-    ← mul_apply_eq_comp, ← map_mul, P.norm_sq_integral_apply]
-  have hint : Integrable (fun x => ‖(BoundedBorelFunction.indicator B hB 1 * f) x‖ ^ 2)
-      (P.diag ξ) :=
-    .of_bound (((BoundedBorelFunction.indicator B hB 1 * f).measurable.norm.pow_const
-      2).aestronglyMeasurable) (‖BoundedBorelFunction.indicator B hB 1 * f‖ ^ 2)
-      (Eventually.of_forall fun x => by
-        rw [Real.norm_of_nonneg (by positivity)]
-        exact pow_le_pow_left₀ (norm_nonneg _)
-          ((BoundedBorelFunction.indicator B hB 1 * f).norm_coe_le_norm x) 2)
-  rw [ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun _ => by positivity),
+  rw [withDensity_apply _ hB, ← P.enorm_sq_proj_apply B hB, ← P.integral_indicator hB,
+    ← mul_apply_eq_comp, ← map_mul, ← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
+    P.norm_sq_integral_apply,
+    ofReal_integral_eq_lintegral_ofReal
+      ((BoundedBorelFunction.indicator B hB 1 * f).integrable_norm_pow 2 (P.diag ξ))
+      (Eventually.of_forall fun _ => by positivity),
     ← lintegral_indicator hB]
   refine lintegral_congr fun x => ?_
   by_cases hx : x ∈ B <;>

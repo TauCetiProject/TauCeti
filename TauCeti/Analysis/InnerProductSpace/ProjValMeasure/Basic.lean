@@ -42,9 +42,10 @@ from the structure's laws.
 * `hasSum_proj_of_pairwise_disjoint`: unconditional strong countable additivity
   (`HasSum`) on a pairwise-disjoint measurable family; `tendsto_sum_proj_of_pairwise_disjoint`
   gives convergence of the natural-order partial sums.
-* `diag`, `diag_real_univ`, `diag_univ`, `diag_zero`, `diag_smul`, `diag_add_add_sub`,
-  `diag_add_le`, `diag_proj`: the finite diagonal scalar measures carried by the structure,
-  their total masses, and their behavior under scaling, addition, and spectral projections.
+* `diag`, `enorm_sq_proj_apply`, `diag_real_univ`, `diag_univ`, `diag_zero`, `diag_smul`,
+  `diag_add_add_sub`, `diag_add_le`, `diag_proj`: the finite diagonal scalar measures carried by
+  the structure, their total masses, and their behavior under scaling, addition, and spectral
+  projections.
 * `tendsto_proj_iUnion_of_monotone`: strong convergence along an increasing measurable sequence.
 * `ext_of_diag`, `ext`, `ext_iff_diag`, `ext_iff`: extensionality from either
   data field.
@@ -256,6 +257,21 @@ lemma norm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSe
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), h1, P.inner_proj, RCLike.re_eq_complex_re,
     Complex.ofReal_re]
 
+/-- Squared extended norm of a spectral projection equals the diagonal mass
+of the corresponding measurable set. -/
+@[simp]
+theorem enorm_sq_proj_apply (P : ProjValMeasure X H) (B : Set X)
+    (hB : MeasurableSet B) (ξ : H) :
+    ‖P.proj B hB ξ‖ₑ ^ 2 = (P.diag ξ) B := by
+  have hfin : (P.diag ξ) B ≠ ⊤ :=
+    measure_ne_top (μ := P.diag ξ) (s := B)
+  calc
+    ‖P.proj B hB ξ‖ₑ ^ 2 = ENNReal.ofReal (‖P.proj B hB ξ‖ ^ 2) := by
+      rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+    _ = ENNReal.ofReal (((P.diag ξ) B).toReal) := by
+      rw [P.norm_sq_proj_apply B hB ξ]
+    _ = (P.diag ξ) B := ENNReal.ofReal_toReal hfin
+
 /-- The total mass of the diagonal measure as a real number. -/
 @[simp]
 theorem diag_real_univ (P : ProjValMeasure X H) (ξ : H) :
@@ -281,20 +297,15 @@ theorem diag_univ (P : ProjValMeasure X H) (ξ : H) :
 @[simp]
 theorem diag_zero (P : ProjValMeasure X H) : P.diag 0 = 0 := by
   refine Measure.ext fun B hB => ?_
-  rw [← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag 0) (s := B)),
-    ← P.norm_sq_proj_apply B hB 0]
+  rw [← P.enorm_sq_proj_apply B hB 0]
   simp
 
 /-- Scaling a vector by `c` scales its diagonal measure by `‖c‖ₑ ^ 2`. -/
 theorem diag_smul (P : ProjValMeasure X H) (c : ℂ) (ξ : H) :
     P.diag (c • ξ) = ‖c‖ₑ ^ 2 • P.diag ξ := by
   refine Measure.ext fun B hB => ?_
-  rw [smul_apply, smul_eq_mul,
-    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (c • ξ)) (s := B)),
-    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag ξ) (s := B)),
-    ← P.norm_sq_proj_apply B hB (c • ξ), ← P.norm_sq_proj_apply B hB ξ,
-    map_smul, norm_smul, mul_pow, ENNReal.ofReal_mul (sq_nonneg _),
-    ENNReal.ofReal_pow (norm_nonneg c), ofReal_norm]
+  rw [smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB (c • ξ),
+    ← P.enorm_sq_proj_apply B hB ξ, map_smul, eNorm_smul, mul_pow]
 
 /-- **Parallelogram law for diagonal measures**: the sum of the diagonal measures of `ξ + η` and
 `ξ - η` equals twice the sum of the diagonal measures of `ξ` and `η`. -/
@@ -303,17 +314,10 @@ theorem diag_add_add_sub (P : ProjValMeasure X H) (ξ η : H) :
   refine Measure.ext fun B hB => ?_
   have hpar := parallelogram_law_with_norm ℂ (P.proj B hB ξ) (P.proj B hB η)
   rw [← map_add, ← map_sub] at hpar
-  simp only [add_apply, smul_apply, smul_eq_mul]
-  rw [← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (ξ + η)) (s := B)),
-    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (ξ - η)) (s := B)),
-    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag ξ) (s := B)),
-    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag η) (s := B)),
-    ← P.norm_sq_proj_apply B hB (ξ + η), ← P.norm_sq_proj_apply B hB (ξ - η),
-    ← P.norm_sq_proj_apply B hB ξ, ← P.norm_sq_proj_apply B hB η,
-    ← ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _),
-    ← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (by positivity),
-    ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_add (by positivity) (by positivity)]
-  congr 1
+  simp only [add_apply, smul_apply, smul_eq_mul, ← P.enorm_sq_proj_apply B hB, eNorm_eq_nnNorm]
+  norm_cast
+  apply NNReal.coe_injective
+  push_cast
   linarith [hpar]
 
 /-- The diagonal measure of a sum is at most twice the sum of the diagonal measures. -/
@@ -326,11 +330,8 @@ theorem diag_add_le (P : ProjValMeasure X H) (ξ η : H) :
 theorem diag_proj (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B) (ξ : H) :
     P.diag (P.proj B hB ξ) = (P.diag ξ).restrict B := by
   refine Measure.ext fun C hC => ?_
-  rw [Measure.restrict_apply hC,
-    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag (P.proj B hB ξ)) (s := C)),
-    ← ENNReal.ofReal_toReal (measure_ne_top (μ := P.diag ξ) (s := C ∩ B)),
-    ← P.norm_sq_proj_apply C hC (P.proj B hB ξ), ← P.norm_sq_proj_apply (C ∩ B) (hC.inter hB) ξ,
-    ← mul_apply_eq_comp, P.proj_inter C B hC hB]
+  rw [Measure.restrict_apply hC, ← P.enorm_sq_proj_apply C hC,
+    ← P.enorm_sq_proj_apply (C ∩ B) (hC.inter hB), ← mul_apply_eq_comp, P.proj_inter C B hC hB]
 
 /-- For every measurable set `B`, `P(B)` is a contraction on vectors. -/
 lemma norm_proj_apply_le (P : ProjValMeasure X H) (B : Set X) (hB : MeasurableSet B)

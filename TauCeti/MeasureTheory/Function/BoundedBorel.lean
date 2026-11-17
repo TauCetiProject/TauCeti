@@ -184,6 +184,11 @@ theorem integrable (f : BoundedBorelFunction X) (μ : MeasureTheory.Measure X)
     [MeasureTheory.IsFiniteMeasure μ] : MeasureTheory.Integrable f μ :=
   .of_bound f.measurable.aestronglyMeasurable ‖f‖ (.of_forall (norm_coe_le_norm f))
 
+/-- Every natural power of the norm of a symbol is integrable against every finite measure. -/
+theorem integrable_norm_pow (f : BoundedBorelFunction X) (n : ℕ) (μ : MeasureTheory.Measure X)
+    [MeasureTheory.IsFiniteMeasure μ] : MeasureTheory.Integrable (fun x => ‖f x‖ ^ n) μ := by
+  simpa only [coe_pow, Pi.pow_apply, norm_pow] using ((f ^ n).integrable μ).norm
+
 /-- Bundle a measurable function with its everywhere bound. -/
 def ofFunction (f : X → ℂ) (hf : Measurable f)
     (hbound : ∃ M : ℝ, 0 ≤ M ∧ ∀ x, ‖f x‖ ≤ M) : BoundedBorelFunction X :=
