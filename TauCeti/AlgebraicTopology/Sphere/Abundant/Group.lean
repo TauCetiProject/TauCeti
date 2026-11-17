@@ -11,6 +11,7 @@ public import TauCeti.Topology.MappingSpace.Group
 public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import Mathlib.Analysis.Quaternion
 import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 
@@ -105,9 +106,8 @@ theorem isAbundantWithTwoSpheres_of_ne_zero (b : G) {k : ℕ} (hk : 0 < k)
   have hx : LivesOverFundamentalClass (R ⊗ R) (id ∘ Prod.fst) b x :=
     (o.livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff hn b rfl).2 hα
   -- Identify the coefficients `ℤ ⊗ ℤ` with `ℤ`.
-  let e : R ≅ 𝟙_ (ModuleCat.{0} ℤ) := (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
-  let φ : R ⊗ R ≅ R := tensorIso e e ≪≫ λ_ (𝟙_ _) ≪≫ e.symm
-  have hy := (livesOverFundamentalClass_homologyMap_coefficient_iff (R ⊗ R) φ).2 hx
+  have hy := (livesOverFundamentalClass_homologyMap_coefficient_iff (R ⊗ R)
+    (ModuleCat.uliftTensorSelfIso ℤ)).2 hx
   -- Carry the class to `Map(S², G)` along the homeomorphism over `G`.
   have hτ : (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)).comp Ψ =
       ContinuousMap.id _ :=
