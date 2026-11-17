@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 
 /-!
 # Gerbes over a site
@@ -64,15 +64,6 @@ attribute [instance] IsGerbe.isGroupoid
 
 variable {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {J : GrothendieckTopology C}
 
-/-- The component at `x` of the naturality isomorphism of a strong transformation `η : F ⟶ G`
-along `f : V ⟶ U`: the image under `η` of the pullback of `x` is isomorphic to the pullback of
-the image of `x`. -/
-private noncomputable def naturalityObjIso (η : StrongTrans F G) {U V : C} (f : V ⟶ U)
-    (x : F.obj (.mk (op U))) :
-    (η.app (.mk (op V))).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x) ≅
-      (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) :=
-  (Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x
-
 /-- Local isomorphy of objects transfers along a strong transformation whose components are
 essentially surjective. -/
 private lemma exists_covering_iso_of_essSurj [F.IsGerbe J] (η : StrongTrans F G)
@@ -86,8 +77,8 @@ private lemma exists_covering_iso_of_essSurj [F.IsGerbe J] (η : StrongTrans F G
   refine ⟨R, hR, fun V f hf ↦ ?_⟩
   obtain ⟨i⟩ := h f hf
   let p := (G.map f.op.toLoc).toFunctor
-  exact ⟨p.mapIso (e.objObjPreimageIso y).symm ≪≫ (naturalityObjIso η f _).symm ≪≫
-    (η.app (.mk (op V))).toFunctor.mapIso i ≪≫ naturalityObjIso η f _ ≪≫
+  exact ⟨p.mapIso (e.objObjPreimageIso y).symm ≪≫ (η.naturalityObjIso f.op.toLoc _).symm ≪≫
+    (η.app (.mk (op V))).toFunctor.mapIso i ≪≫ η.naturalityObjIso f.op.toLoc _ ≪≫
     p.mapIso (e.objObjPreimageIso y')⟩
 
 /-- Local isomorphy of objects is reflected by a strong transformation whose components are
@@ -101,7 +92,8 @@ private lemma exists_covering_iso_of_fullyFaithful [G.IsGerbe J] (η : StrongTra
   obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (J := J) (e.obj x) (e.obj x')
   refine ⟨R, hR, fun V f hf ↦ ?_⟩
   obtain ⟨i⟩ := h f hf
-  exact ⟨(hη V).preimageIso (naturalityObjIso η f x ≪≫ i ≪≫ (naturalityObjIso η f x').symm)⟩
+  exact ⟨(hη V).preimageIso (η.naturalityObjIso f.op.toLoc x ≪≫ i ≪≫
+    (η.naturalityObjIso f.op.toLoc x').symm)⟩
 
 /-- Let `η : F ⟶ G` be a strong transformation whose components are equivalences of fibre
 categories. If `F` is a gerbe and `G` is a stack, then `G` is a gerbe (Stacks, Section 06NY,
