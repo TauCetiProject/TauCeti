@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import TauCeti.Topology.FilledHull
 import Mathlib.Topology.MetricSpace.Bounded
+import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -18,6 +19,11 @@ A set `K` is *filled in* a set `Ω` (`TauCeti.IsFilledIn K Ω`) if no connected 
 topological hypothesis of Runge-type approximation theorems, under which functions holomorphic, or
 harmonic, near a compact set `K ⊆ Ω` are uniform limits on `K` of functions holomorphic, or
 harmonic, on all of `Ω`.
+
+In a locally connected space, the empty set is filled in every open set `Ω` meeting no compact
+connected component of the ambient space
+(`IsOpen.isFilledIn_empty_of_forall_not_isCompact_connectedComponent`), and in particular in every
+open subset of a locally connected, preconnected, noncompact space (`IsOpen.isFilledIn_empty`).
 
 In a proper, locally connected metric space,
 `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset` recasts the
@@ -35,6 +41,9 @@ Filled compact exhaustions of open sets in proper real normed spaces are constru
 ## Main declarations
 
 * `TauCeti.IsFilledIn`: no connected component of `Ω \ K` is relatively compact in `Ω`.
+* `IsOpen.isFilledIn_empty_of_forall_not_isCompact_connectedComponent`, `IsOpen.isFilledIn_empty`:
+  the empty set is filled in an open set `Ω` whenever no ambient connected component meeting `Ω`
+  is compact.
 * `TauCeti.isFilledIn_iff_forall_mem_filledHull_sdiff_not_connectedComponentIn_subset`: the same
   condition through the bounded components of `Kᶜ`.
 * `TauCeti.isFilledIn_univ_iff`: a closed set is filled in the whole space exactly when it equals
@@ -69,6 +78,28 @@ theorem isFilledIn_iff :
       ¬ (IsCompact (closure (connectedComponentIn (Ω \ K) x)) ∧
         closure (connectedComponentIn (Ω \ K) x) ⊆ Ω) :=
   Iff.rfl
+
+/-- In a locally connected space, the empty set is filled in any open set `Ω` meeting no compact
+connected component of the ambient space. -/
+theorem _root_.IsOpen.isFilledIn_empty_of_forall_not_isCompact_connectedComponent
+    [LocallyConnectedSpace X] (hΩ : IsOpen Ω)
+    (hX : ∀ x ∈ Ω, ¬ IsCompact (connectedComponent x)) : IsFilledIn ∅ Ω := by
+  rw [isFilledIn_iff]
+  rintro x ⟨hxΩ, -⟩ ⟨hcpt, hclΩ⟩
+  rw [sdiff_empty] at hcpt hclΩ
+  have hfr : frontier (connectedComponentIn Ω x) = ∅ :=
+    eq_empty_of_forall_notMem fun z hz ↦
+      frontier_connectedComponentIn_subset_compl hΩ x hz (hclΩ (frontier_subset_closure hz))
+  have hclopen : IsClopen (connectedComponentIn Ω x) := isClopen_iff_frontier_eq_empty.mpr hfr
+  exact hX x hxΩ (hcpt.of_isClosed_subset isClosed_connectedComponent
+    ((hclopen.connectedComponent_subset (mem_connectedComponentIn hxΩ)).trans subset_closure))
+
+/-- The empty set is filled in every open subset of a locally connected, preconnected, noncompact
+space. -/
+theorem _root_.IsOpen.isFilledIn_empty [LocallyConnectedSpace X] [PreconnectedSpace X]
+    [NoncompactSpace X] (hΩ : IsOpen Ω) : IsFilledIn ∅ Ω :=
+  hΩ.isFilledIn_empty_of_forall_not_isCompact_connectedComponent fun x _ ↦
+    not_isCompact_connectedComponent x
 
 end Topology
 

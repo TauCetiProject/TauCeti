@@ -5,21 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
-# Approximating holomorphic functions on a disc by entire functions
+# Approximating holomorphic functions by Taylor partial sums
 
 A holomorphic function on an open disc `ball c s` in `ℂ`, with values in a complex Banach space,
 is the uniform limit on every smaller closed disc `closedBall c r`, `r < s`, of the partial sums of
 its Taylor series at `c`. These partial sums are polynomial in `z - c`, hence entire. So the
-function is uniformly approximated on `closedBall c r` by entire functions.
+function is uniformly approximated on `closedBall c r` by entire functions
+(`DifferentiableOn.exists_differentiable_norm_sub_lt`).
 
-This is the disc case of Runge's approximation theorem. It is the correction step in the
-solution of the inhomogeneous Cauchy–Riemann equation on a disc by exhaustion, where local
+For a scalar entire function `g : ℂ → ℂ`, the Taylor series at `0` converges uniformly on every
+open disc `ball 0 r`, so its partial sums uniformly approximate `g` on any bounded subset `K ⊆ ℂ`
+by elements of `Polynomial ℂ`
+(`Bornology.IsBounded.exists_polynomial_norm_sub_lt_of_differentiable`).
+
+The disc approximation is the disc case of Runge's approximation theorem and is the correction step
+in the solution of the inhomogeneous Cauchy–Riemann equation on a disc by exhaustion, where local
 solutions on an increasing sequence of discs are made to converge by subtracting entire
 approximations of their holomorphic differences.
 
@@ -66,3 +73,31 @@ theorem DifferentiableOn.exists_differentiable_norm_sub_lt {h : ℂ → W} {c : 
       rw [ht']
       linarith [show ‖z - c‖ ≤ r by simpa [dist_eq_norm] using hz]
     simpa [dist_eq_norm] using hN (z - c) (by simpa using hz')
+
+/-- An entire function `g : ℂ → ℂ` is approximated uniformly on any bounded subset `K ⊆ ℂ` by
+complex polynomials. -/
+theorem Bornology.IsBounded.exists_polynomial_norm_sub_lt_of_differentiable {K : Set ℂ}
+    (hK : Bornology.IsBounded K) {g : ℂ → ℂ} (hg : Differentiable ℂ g) {ε : ℝ} (hε : 0 < ε) :
+    ∃ P : Polynomial ℂ, ∀ z ∈ K, ‖g z - P.eval z‖ < ε := by
+  obtain ⟨R, hR⟩ := hK.subset_closedBall 0
+  set r : ℝ≥0 := ⟨max R 0 + 1, by positivity⟩
+  have hr_coe : (r : ℝ) = max R 0 + 1 := rfl
+  have hKball : K ⊆ ball (0 : ℂ) r := fun z hz ↦ by
+    have hzR : dist z 0 ≤ R := mem_closedBall.mp (hR hz)
+    rw [mem_ball, hr_coe]
+    linarith [le_max_left R 0]
+  obtain ⟨p, hp⟩ : ∃ p, HasFPowerSeriesOnBall g p 0 ⊤ := ⟨_, hg.hasFPowerSeriesOnBall 0 one_pos⟩
+  have hunif : TendstoUniformlyOn (fun n z ↦ p.partialSum n (z - 0)) g Filter.atTop
+      (ball 0 r) :=
+    hp.tendstoUniformlyOn' ENNReal.coe_lt_top
+  obtain ⟨n, hn⟩ := (Metric.tendstoUniformlyOn_iff.mp hunif ε hε).exists
+  refine ⟨∑ k ∈ Finset.range n, Polynomial.C (p.coeff k) * Polynomial.X ^ k, fun z hz ↦ ?_⟩
+  have heval : (∑ k ∈ Finset.range n, Polynomial.C (p.coeff k) * Polynomial.X ^ k).eval z =
+      p.partialSum n (z - 0) := by
+    rw [← Polynomial.coe_evalRingHom, map_sum, FormalMultilinearSeries.partialSum]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [Polynomial.coe_evalRingHom, Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_pow,
+      Polynomial.eval_X, sub_zero, FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul,
+      mul_comm]
+  rw [heval, ← dist_eq_norm]
+  exact hn z (hKball hz)

@@ -12,7 +12,6 @@ import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.Pompeiu.Discretization
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
-import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Geometry.Manifold.Connected
 import TauCeti.Topology.ConnectedComponents
 
@@ -32,7 +31,7 @@ This file establishes three forms of Runge's theorem for compact subsets of open
   functions `g j` holomorphic on `Ω` all chosen independently of `f`, satisfies
   `‖f z - ∑ j, w j * f (ζ j) * g j z‖ ≤ ε * B` on `K` for every `U`-holomorphic `f` bounded by `B`
   on `L`.
-* **Scalar Runge equivalence** (`TauCeti.isRungeCompactPair_iff_approximation`): for open `Ω` and
+* **Scalar Runge equivalence** (`IsOpen.isRungeCompactPair_iff_approximation`): for open `Ω` and
   compact `K ⊆ Ω`, `(Ω, K)` is a compact Runge pair if and only if every function holomorphic on
   an open neighborhood of `K` can be uniformly approximated on `K` by functions holomorphic on `Ω`.
 * **Point separation off a Runge compactum**
@@ -94,20 +93,6 @@ protected theorem subset (h : IsRungeCompactPair Ω K) : K ⊆ Ω := h.2.2.1
 protected theorem isFilledIn (h : IsRungeCompactPair Ω K) : IsFilledIn K Ω := h.2.2.2
 
 end IsRungeCompactPair
-
-/-- The empty set is filled in every open subset of `ℂ`: a connected component of `Ω` with closure
-inside `Ω` would have empty frontier, hence equal `ℂ`, which is unbounded. -/
-theorem _root_.IsOpen.isFilledIn_empty {Ω : Set ℂ} (hΩ : IsOpen Ω) : IsFilledIn ∅ Ω := by
-  rw [isFilledIn_iff]
-  rintro x ⟨hxΩ, -⟩ ⟨hcpt, hclΩ⟩
-  rw [sdiff_empty] at hcpt hclΩ
-  have hfr : frontier (connectedComponentIn Ω x) = ∅ :=
-    eq_empty_of_forall_notMem fun z hz ↦
-      frontier_connectedComponentIn_subset_compl hΩ x hz (hclΩ (frontier_subset_closure hz))
-  have huniv : connectedComponentIn Ω x = univ :=
-    (isClopen_iff_frontier_eq_empty.mpr hfr).eq_univ ⟨x, mem_connectedComponentIn hxΩ⟩
-  rw [huniv, closure_univ] at hcpt
-  exact NormedSpace.unbounded_univ ℝ ℂ hcpt.isBounded
 
 @[simp]
 theorem isRungeCompactPair_empty {Ω : Set ℂ} : IsRungeCompactPair Ω ∅ ↔ IsOpen Ω :=
@@ -262,7 +247,7 @@ private theorem isFilledIn_of_forall_exists_differentiableOn_norm_sub_lt {Ω K :
 /-- **Runge's approximation theorem.** Every ambient-neighborhood holomorphic function is uniformly
 approximable on `K` by functions holomorphic on `Ω` if and only if `(Ω, K)` is a compact Runge pair
 (Rainer, Theorem 11.1). -/
-theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
+theorem _root_.IsOpen.isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
     (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     IsRungeCompactPair Ω K ↔
       ∀ U : Set ℂ, IsOpen U → K ⊆ U →

@@ -13,11 +13,11 @@ public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.Complex.AbsMax
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Trigonometric
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Connected.LocallyConnected
+import TauCeti.Analysis.Complex.PowerSeries.Approximation
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -31,30 +31,30 @@ The first half of the file develops the properties of `TauCeti.holomorphicHull` 
 directly from global holomorphicity without Runge approximation:
 * Hahn–Banach separation paired with `z ↦ exp (φ z)` places `TauCeti.holomorphicHull Ω K` inside
   `closedConvexHull ℝ K` (`TauCeti.holomorphicHull_subset_closedConvexHull`), preserving
-  boundedness and diameter.
+  boundedness (`Bornology.IsBounded.holomorphicHull`) and diameter.
 * Testing against `(w - a)⁻¹` for points `a ∉ Ω` shows that passing from `K ⊆ Ω` to
   `TauCeti.holomorphicHull Ω K` preserves the extended distance to `Ωᶜ`
   (`TauCeti.biInf_edist_compl_holomorphicHull`).
 * The maximum modulus principle places every point of `Ω` whose connected component in `Ω \ K` has
   compact closure inside `Ω` into `TauCeti.holomorphicHull Ω K`
-  (`TauCeti.mem_holomorphicHull_of_isCompact_closure_connectedComponentIn`).
+  (`IsOpen.mem_holomorphicHull_of_isCompact_closure_connectedComponentIn`).
 
 Combining that maximum-modulus inclusion with Runge point separation
 (`TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_lt_one_lt`) and compactness of the
 topological fill in the open subspace `↥Ω`
 (`IsCompact.isCompact_setOf_isCompact_closure_connectedComponentIn_compl`) yields the exact
-topological description `TauCeti.holomorphicHull_eq_fill`: for open `Ω` and compact `K ⊆ Ω`,
+topological description `IsOpen.holomorphicHull_eq_fill`: for open `Ω` and compact `K ⊆ Ω`,
 `TauCeti.holomorphicHull Ω K` is compact and equals `K` together with all connected components of
 `Ω \ K` having compact closure in `Ω`. In particular `(Ω, holomorphicHull Ω K)` is always a
 compact Runge pair (`IsOpen.isRungeCompactPair_holomorphicHull`), and for open `Ω` and compact `K`,
 `(Ω, K)` is a compact Runge pair if and only if `holomorphicHull Ω K = K`
-(`TauCeti.isRungeCompactPair_iff_holomorphicHull_eq_self`).
+(`IsOpen.isRungeCompactPair_iff_holomorphicHull_eq_self`).
 
 On `Ω = Set.univ`, `TauCeti.holomorphicHull Set.univ K` coincides both with the topological filled
 hull `TauCeti.filledHull K` (`IsCompact.holomorphicHull_univ_eq_filledHull`) and with the pullback
 of the one-variable polynomial hull `TauCeti.polynomialHull`
-(`TauCeti.holomorphicHull_univ_eq_preimage_polynomialHull`), giving the classical polynomial Runge
-theorem on `ℂ` (`IsCompact.isPreconnected_compl_iff_polynomial_approximation`).
+(`Bornology.IsBounded.holomorphicHull_univ_eq_preimage_polynomialHull`), giving the classical
+polynomial Runge theorem on `ℂ` (`IsCompact.isPreconnected_compl_iff_polynomial_approximation`).
 
 ## Main definitions
 
@@ -65,12 +65,12 @@ theorem on `ℂ` (`IsCompact.isPreconnected_compl_iff_polynomial_approximation`)
 * `TauCeti.holomorphicHull_subset_closedConvexHull`: `holomorphicHull Ω K ⊆ closedConvexHull ℝ K`.
 * `TauCeti.biInf_edist_compl_holomorphicHull`: taking the `Ω`-holomorphic hull preserves the
   extended distance to `Ωᶜ`.
-* `TauCeti.holomorphicHull_eq_fill`: compactness and exact topological formula for
+* `IsOpen.holomorphicHull_eq_fill`: compactness and exact topological formula for
   `holomorphicHull Ω K`.
 * `IsOpen.isRungeCompactPair_holomorphicHull`: `(Ω, holomorphicHull Ω K)` is a compact Runge pair.
-* `TauCeti.isRungeCompactPair_iff_holomorphicHull_eq_self`: `(Ω, K)` is a compact Runge pair iff
+* `IsOpen.isRungeCompactPair_iff_holomorphicHull_eq_self`: `(Ω, K)` is a compact Runge pair iff
   `holomorphicHull Ω K = K`.
-* `TauCeti.holomorphicHull_univ_eq_preimage_polynomialHull` and
+* `Bornology.IsBounded.holomorphicHull_univ_eq_preimage_polynomialHull` and
   `IsCompact.isPreconnected_compl_iff_polynomial_approximation`: comparison with
   `TauCeti.polynomialHull` and polynomial Runge approximation on `ℂ`.
 
@@ -189,15 +189,15 @@ theorem holomorphicHull_subset_closedConvexHull (Ω K : Set ℂ) :
   exact (Real.exp_lt_exp.mpr huz).not_ge hle
 
 /-- The `Ω`-holomorphic hull of a bounded set is bounded. -/
-theorem isBounded_holomorphicHull {Ω K : Set ℂ} (hK : IsBounded K) :
-    IsBounded (holomorphicHull Ω K) :=
+protected theorem _root_.Bornology.IsBounded.holomorphicHull {K : Set ℂ} (hK : IsBounded K)
+    (Ω : Set ℂ) : IsBounded (holomorphicHull Ω K) :=
   (isBounded_closedConvexHull.mpr hK).subset (holomorphicHull_subset_closedConvexHull Ω K)
 
 @[simp]
 theorem diam_holomorphicHull {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) :
     diam (holomorphicHull Ω K) = diam K := by
   by_cases hK : IsBounded K
-  · refine le_antisymm ?_ (diam_mono (subset_holomorphicHull hKΩ) (isBounded_holomorphicHull hK))
+  · refine le_antisymm ?_ (diam_mono (subset_holomorphicHull hKΩ) (hK.holomorphicHull Ω))
     exact (diam_mono (holomorphicHull_subset_closedConvexHull Ω K)
       (isBounded_closedConvexHull.mpr hK)).trans_eq diam_closedConvexHull
   · have hH : ¬ IsBounded (holomorphicHull Ω K) :=
@@ -253,7 +253,7 @@ theorem biInf_edist_compl_holomorphicHull {Ω K : Set ℂ} (hKΩ : K ⊆ Ω) :
 /-- **Maximum-modulus inclusion of relatively compact holes.** If `Ω` is open and the connected
 component of `z ∈ Ω` in `Ω \ K` has compact closure contained in `Ω`, then `z` belongs to
 `holomorphicHull Ω K`. -/
-theorem mem_holomorphicHull_of_isCompact_closure_connectedComponentIn {Ω K : Set ℂ}
+theorem _root_.IsOpen.mem_holomorphicHull_of_isCompact_closure_connectedComponentIn {Ω K : Set ℂ}
     (hΩ : IsOpen Ω) {z : ℂ} (hz : z ∈ Ω)
     (hcpt : IsCompact (closure (connectedComponentIn (Ω \ K) z)))
     (hclΩ : closure (connectedComponentIn (Ω \ K) z) ⊆ Ω) :
@@ -296,18 +296,6 @@ private def topologicalFill (Ω K : Set ℂ) : Set ℂ :=
   K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
     closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}
 
-/-- Under the inclusion `↥Ω → ℂ`, the connected component of `y : ↥Ω` in `K'ᶜ` maps onto the
-connected component of `y.1` in `Ω \ K`. -/
-private theorem image_subtype_connectedComponentIn_compl_eq {Ω K : Set ℂ} (y : ↥Ω) :
-    ((↑) : ↥Ω → ℂ) '' connectedComponentIn (((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ y =
-      connectedComponentIn (Ω \ K) y.1 := by
-  have hpre : ((↑) : ↥Ω → ℂ) ⁻¹' (Ω \ K) = (((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ := by
-    ext w
-    simp
-  rw [← hpre]
-  exact Topology.IsInducing.subtypeVal.image_connectedComponentIn_preimage
-    ((connectedComponentIn_subset _ _).trans (sdiff_subset.trans Subtype.range_coe.symm.subset))
-
 /-- `topologicalFill Ω K` is the image under `((↑) : ↥Ω → ℂ)` of the points of `↥Ω` whose
 connected component in `(((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ` has compact closure in `↥Ω`. -/
 private theorem image_subtype_setOf_isCompact_closure_connectedComponentIn_compl {Ω K : Set ℂ}
@@ -315,16 +303,20 @@ private theorem image_subtype_setOf_isCompact_closure_connectedComponentIn_compl
     ((↑) : ↥Ω → ℂ) ''
         {y : ↥Ω | IsCompact (closure (connectedComponentIn (((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ y))} =
       topologicalFill Ω K := by
-  set K' : Set ↥Ω := ((↑) : ↥Ω → ℂ) ⁻¹' K
+  have hpre : ((↑) : ↥Ω → ℂ) ⁻¹' (Ω \ K) = (((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ := by ext w; simp
+  rw [← hpre]
   refine Subset.antisymm ?_ ?_
   · rintro _ ⟨y, hyB, rfl⟩
     by_cases hyK : (y : ℂ) ∈ K
     · exact Or.inl hyK
     · refine Or.inr ⟨⟨y.2, hyK⟩, ?_⟩
-      set L : Set ℂ := ((↑) : ↥Ω → ℂ) '' closure (connectedComponentIn K'ᶜ y)
+      set L : Set ℂ :=
+        ((↑) : ↥Ω → ℂ) '' closure (connectedComponentIn (((↑) : ↥Ω → ℂ) ⁻¹' (Ω \ K)) y)
       have hLcpt : IsCompact L := hyB.image continuous_subtype_val
       have hCL : connectedComponentIn (Ω \ K) y.1 ⊆ L := by
-        rw [← image_subtype_connectedComponentIn_compl_eq y]
+        rw [← Topology.IsInducing.subtypeVal.image_connectedComponentIn_preimage
+          ((connectedComponentIn_subset _ _).trans
+            (sdiff_subset.trans Subtype.range_coe.symm.subset))]
         exact image_mono subset_closure
       have hclL : closure (connectedComponentIn (Ω \ K) y.1) ⊆ L :=
         closure_minimal hCL hLcpt.isClosed
@@ -332,19 +324,19 @@ private theorem image_subtype_setOf_isCompact_closure_connectedComponentIn_compl
         hclL.trans (by rintro _ ⟨w, -, rfl⟩; exact w.2)⟩
   · rintro z (hzK | ⟨hz, hcpt, hclΩ⟩)
     · refine ⟨⟨z, hKΩ hzK⟩, ?_, rfl⟩
-      have hnot : (⟨z, hKΩ hzK⟩ : ↥Ω) ∉ K'ᶜ := fun h ↦ h hzK
-      simp [connectedComponentIn_eq_empty hnot]
+      have hnot : (⟨z, hKΩ hzK⟩ : ↥Ω) ∉ ((↑) : ↥Ω → ℂ) ⁻¹' (Ω \ K) := fun h ↦ h.2 hzK
+      simp only [mem_ofPred_eq, connectedComponentIn_eq_empty hnot, closure_empty, isCompact_empty]
     · refine ⟨⟨z, hz.1⟩, ?_, rfl⟩
       set M' : Set ↥Ω := ((↑) : ↥Ω → ℂ) ⁻¹' closure (connectedComponentIn (Ω \ K) z)
       have himgM' : ((↑) : ↥Ω → ℂ) '' M' = closure (connectedComponentIn (Ω \ K) z) :=
         Subset.antisymm (image_preimage_subset _ _) fun w hw ↦ ⟨⟨w, hclΩ hw⟩, hw, rfl⟩
       have hM'cpt : IsCompact M' :=
         Topology.IsInducing.subtypeVal.isCompact_iff.mpr (himgM'.symm ▸ hcpt)
-      have hsubM' : connectedComponentIn K'ᶜ ⟨z, hz.1⟩ ⊆ M' := fun w hw ↦ by
-        have hw_img : (w : ℂ) ∈ connectedComponentIn (Ω \ K) z := by
-          rw [← image_subtype_connectedComponentIn_compl_eq (⟨z, hz.1⟩ : ↥Ω)]
-          exact mem_image_of_mem _ hw
-        exact subset_closure hw_img
+      have hsubM' : connectedComponentIn (((↑) : ↥Ω → ℂ) ⁻¹' (Ω \ K)) ⟨z, hz.1⟩ ⊆ M' :=
+        fun w hw ↦ subset_closure <|
+          (Topology.IsInducing.subtypeVal.image_connectedComponentIn_preimage (y := ⟨z, hz.1⟩)
+            ((connectedComponentIn_subset _ _).trans
+              (sdiff_subset.trans Subtype.range_coe.symm.subset))).subset (mem_image_of_mem _ hw)
       exact hM'cpt.of_isClosed_subset isClosed_closure (closure_minimal hsubM' hM'cpt.isClosed)
 
 /-- Compactness of `topologicalFill Ω K`, proved by viewing `K` inside the locally compact, locally
@@ -396,7 +388,8 @@ private theorem isFilledIn_topologicalFill {Ω K : Set ℂ} :
 /-- **Topological characterization of the holomorphic hull.** In one complex variable, the
 `Ω`-holomorphic hull of a compact `K ⊆ Ω` inside an open `Ω ⊆ ℂ` is compact and is obtained by
 adjoining the connected components of `Ω \ K` whose closures are compact subsets of `Ω`. -/
-theorem holomorphicHull_eq_fill {Ω K : Set ℂ} (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+theorem _root_.IsOpen.holomorphicHull_eq_fill {Ω K : Set ℂ} (hΩ : IsOpen Ω) (hK : IsCompact K)
+    (hKΩ : K ⊆ Ω) :
     IsCompact (holomorphicHull Ω K) ∧
       holomorphicHull Ω K =
         K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
@@ -411,21 +404,21 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ} (hΩ : IsOpen Ω) (hK : IsCompa
       have hle : ‖g a‖ ≤ 1 := ha.2 g hgΩ 1 fun w hw ↦ (hgF w (Or.inl hw)).le
       exact hga.not_ge hle
     · exact union_subset (subset_holomorphicHull hKΩ) fun z hz ↦
-        mem_holomorphicHull_of_isCompact_closure_connectedComponentIn hΩ hz.1.1 hz.2.1 hz.2.2
+        hΩ.mem_holomorphicHull_of_isCompact_closure_connectedComponentIn hz.1.1 hz.2.1 hz.2.2
   exact ⟨hEq ▸ hFcpt, hEq⟩
 
 /-- For any open `Ω` and compact `K ⊆ Ω`, `(Ω, holomorphicHull Ω K)` is a compact Runge pair. -/
 theorem _root_.IsOpen.isRungeCompactPair_holomorphicHull {Ω K : Set ℂ} (hΩ : IsOpen Ω)
     (hK : IsCompact K) (hKΩ : K ⊆ Ω) : IsRungeCompactPair Ω (holomorphicHull Ω K) := by
-  obtain ⟨hcpt, hEq⟩ := holomorphicHull_eq_fill hΩ hK hKΩ
+  obtain ⟨hcpt, hEq⟩ := hΩ.holomorphicHull_eq_fill hK hKΩ
   exact isRungeCompactPair_iff.mpr
     ⟨hΩ, hcpt, holomorphicHull_subset, hEq ▸ isFilledIn_topologicalFill⟩
 
 /-- For open `Ω` and compact `K ⊆ Ω`, `K` equals its `Ω`-holomorphic hull if and only if `K` is
 filled in `Ω`. -/
-theorem holomorphicHull_eq_self_iff_isFilledIn {Ω K : Set ℂ} (hΩ : IsOpen Ω) (hK : IsCompact K)
-    (hKΩ : K ⊆ Ω) : holomorphicHull Ω K = K ↔ IsFilledIn K Ω := by
-  rw [(holomorphicHull_eq_fill hΩ hK hKΩ).2, isFilledIn_iff]
+theorem _root_.IsOpen.holomorphicHull_eq_self_iff_isFilledIn {Ω K : Set ℂ} (hΩ : IsOpen Ω)
+    (hK : IsCompact K) (hKΩ : K ⊆ Ω) : holomorphicHull Ω K = K ↔ IsFilledIn K Ω := by
+  rw [(hΩ.holomorphicHull_eq_fill hK hKΩ).2, isFilledIn_iff]
   constructor
   · intro hEq x hx hrel
     have hxK : x ∈ K := hEq ▸ Or.inr ⟨hx, hrel⟩
@@ -436,13 +429,13 @@ theorem holomorphicHull_eq_self_iff_isFilledIn {Ω K : Set ℂ} (hΩ : IsOpen Ω
 
 /-- For open `Ω` and compact `K`, `(Ω, K)` is a compact Runge pair if and only if
 `holomorphicHull Ω K = K`. -/
-theorem isRungeCompactPair_iff_holomorphicHull_eq_self {Ω K : Set ℂ} (hΩ : IsOpen Ω)
+theorem _root_.IsOpen.isRungeCompactPair_iff_holomorphicHull_eq_self {Ω K : Set ℂ} (hΩ : IsOpen Ω)
     (hK : IsCompact K) : IsRungeCompactPair Ω K ↔ holomorphicHull Ω K = K :=
-  ⟨fun h ↦ (holomorphicHull_eq_self_iff_isFilledIn hΩ hK h.subset).mpr h.isFilledIn,
+  ⟨fun h ↦ (hΩ.holomorphicHull_eq_self_iff_isFilledIn hK h.subset).mpr h.isFilledIn,
     fun hEq ↦
       have hKΩ : K ⊆ Ω := hEq ▸ holomorphicHull_subset
       isRungeCompactPair_iff.mpr
-        ⟨hΩ, hK, hKΩ, (holomorphicHull_eq_self_iff_isFilledIn hΩ hK hKΩ).mp hEq⟩⟩
+        ⟨hΩ, hK, hKΩ, (hΩ.holomorphicHull_eq_self_iff_isFilledIn hK hKΩ).mp hEq⟩⟩
 
 end TopologicalFill
 
@@ -452,7 +445,7 @@ section WholePlane
 filled hull `TauCeti.filledHull K`. -/
 theorem _root_.IsCompact.holomorphicHull_univ_eq_filledHull {K : Set ℂ} (hK : IsCompact K) :
     holomorphicHull univ K = filledHull K := by
-  rw [(holomorphicHull_eq_fill isOpen_univ hK (subset_univ K)).2]
+  rw [(isOpen_univ.holomorphicHull_eq_fill hK (subset_univ K)).2]
   ext z
   constructor
   · rintro (hzK | ⟨-, hcpt, -⟩)
@@ -480,33 +473,6 @@ theorem _root_.IsCompact.isRungeCompactPair_univ_iff_isPreconnected_compl {K : S
       simpa only [union_compl_self] using hK.isBounded.union hbdd
     exact NormedSpace.unbounded_univ ℝ ℂ huniv
 
-/-- Partial sums of an entire function's Taylor series at `0` uniformly approximate it on any
-compact subset of `ℂ`. -/
-theorem _root_.IsCompact.exists_polynomial_norm_sub_lt_of_differentiable {K : Set ℂ}
-    (hK : IsCompact K) {g : ℂ → ℂ} (hg : Differentiable ℂ g) {ε : ℝ} (hε : 0 < ε) :
-    ∃ P : Polynomial ℂ, ∀ z ∈ K, ‖g z - P.eval z‖ < ε := by
-  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
-  set r : NNReal := ⟨max R 0 + 1, by positivity⟩
-  have hr_coe : (r : ℝ) = max R 0 + 1 := rfl
-  have hKball : K ⊆ ball (0 : ℂ) r := fun z hz ↦ by
-    have hzR : dist z 0 ≤ R := mem_closedBall.mp (hR hz)
-    rw [mem_ball, hr_coe]
-    linarith [le_max_left R 0]
-  obtain ⟨p, hp⟩ : ∃ p, HasFPowerSeriesOnBall g p 0 ⊤ := ⟨_, hg.hasFPowerSeriesOnBall 0 one_pos⟩
-  have hunif : TendstoUniformlyOn (fun n z ↦ p.partialSum n (z - 0)) g atTop (ball 0 r) :=
-    hp.tendstoUniformlyOn' ENNReal.coe_lt_top
-  obtain ⟨n, hn⟩ := (Metric.tendstoUniformlyOn_iff.mp hunif ε hε).exists
-  refine ⟨∑ k ∈ Finset.range n, Polynomial.C (p.coeff k) * Polynomial.X ^ k, fun z hz ↦ ?_⟩
-  have heval : (∑ k ∈ Finset.range n, Polynomial.C (p.coeff k) * Polynomial.X ^ k).eval z =
-      p.partialSum n (z - 0) := by
-    rw [← Polynomial.coe_evalRingHom, map_sum, FormalMultilinearSeries.partialSum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [Polynomial.coe_evalRingHom, Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_pow,
-      Polynomial.eval_X, sub_zero, FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul,
-      mul_comm]
-  rw [heval, ← dist_eq_norm]
-  exact hn z (hKball hz)
-
 /-- **Polynomial Runge theorem on `ℂ`.** A compact set `K ⊆ ℂ` has preconnected complement if and
 only if every function holomorphic on an open neighborhood of `K` can be uniformly approximated on
 `K` by complex polynomials. -/
@@ -516,11 +482,11 @@ theorem _root_.IsCompact.isPreconnected_compl_iff_polynomial_approximation {K : 
       ∀ U : Set ℂ, IsOpen U → K ⊆ U → ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U →
         ∀ ε > 0, ∃ P : Polynomial ℂ, ∀ z ∈ K, ‖f z - P.eval z‖ < ε := by
   rw [← hK.isRungeCompactPair_univ_iff_isPreconnected_compl,
-    isRungeCompactPair_iff_approximation isOpen_univ hK (subset_univ K)]
+    isOpen_univ.isRungeCompactPair_iff_approximation hK (subset_univ K)]
   constructor
   · intro happrox U hU hKU f hf ε hε
     obtain ⟨g, hg_univ, hg⟩ := happrox U hU hKU f hf (ε / 2) (half_pos hε)
-    obtain ⟨P, hP⟩ := hK.exists_polynomial_norm_sub_lt_of_differentiable
+    obtain ⟨P, hP⟩ := hK.isBounded.exists_polynomial_norm_sub_lt_of_differentiable
       (differentiableOn_univ.mp hg_univ) (half_pos hε)
     refine ⟨P, fun z hz ↦ ?_⟩
     calc ‖f z - P.eval z‖
@@ -535,7 +501,8 @@ theorem _root_.IsCompact.isPreconnected_compl_iff_polynomial_approximation {K : 
 /-- For any bounded `K ⊆ ℂ`, the entire-function hull `holomorphicHull Set.univ K` coincides with
 the pullback of the one-variable polynomial hull `TauCeti.polynomialHull` along `z ↦ (fun _ ↦ z)`.
 -/
-theorem holomorphicHull_univ_eq_preimage_polynomialHull {K : Set ℂ} (hK : IsBounded K) :
+theorem _root_.Bornology.IsBounded.holomorphicHull_univ_eq_preimage_polynomialHull {K : Set ℂ}
+    (hK : IsBounded K) :
     holomorphicHull univ K =
       (fun z (_ : Fin 1) ↦ z) ⁻¹' polynomialHull ((fun z (_ : Fin 1) ↦ z) '' K) := by
   ext z
@@ -548,8 +515,7 @@ theorem holomorphicHull_univ_eq_preimage_polynomialHull {K : Set ℂ} (hK : IsBo
         Q).differentiableOn c hc
   · intro hpoly f hf B hB
     refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
-    have hcpt : IsCompact (closure (Insert.insert z K)) := (hK.insert z).isCompact_closure
-    obtain ⟨P, hP⟩ := hcpt.exists_polynomial_norm_sub_lt_of_differentiable
+    obtain ⟨P, hP⟩ := (hK.insert z).exists_polynomial_norm_sub_lt_of_differentiable
       (differentiableOn_univ.mp hf) (half_pos hε)
     have hevalQ (w : ℂ) (R : Polynomial ℂ) :
         MvPolynomial.eval (fun _ : Fin 1 ↦ w) (Polynomial.aeval (MvPolynomial.X 0) R) =
@@ -560,14 +526,14 @@ theorem holomorphicHull_univ_eq_preimage_polynomialHull {K : Set ℂ} (hK : IsBo
     set Q : MvPolynomial (Fin 1) ℂ := Polynomial.aeval (MvPolynomial.X 0) P
     have hQK : ∀ w ∈ K, ‖MvPolynomial.eval (fun _ ↦ w) Q‖ ≤ B + ε / 2 := fun w hw ↦ by
       rw [hevalQ]
-      have hPw := hP w (subset_closure (mem_insert_of_mem z hw))
+      have hPw := hP w (mem_insert_of_mem z hw)
       have htri : ‖P.eval w‖ - ‖f w‖ ≤ ‖f w - P.eval w‖ := by
         rw [norm_sub_rev]
         exact norm_sub_norm_le _ _
       linarith [hB w hw]
     have hQz : ‖P.eval z‖ ≤ B + ε / 2 := by
       simpa only [Q, hevalQ] using hpoly Q (B + ε / 2) hQK
-    have hPz := hP z (subset_closure (mem_insert z K))
+    have hPz := hP z (mem_insert z K)
     have htri : ‖f z‖ - ‖P.eval z‖ ≤ ‖f z - P.eval z‖ := norm_sub_norm_le _ _
     linarith
 
@@ -577,8 +543,8 @@ theorem _root_.IsCompact.isPolynomiallyConvex_image_const_iff_isPreconnected_com
     (hK : IsCompact K) :
     IsPolynomiallyConvex ((fun z (_ : Fin 1) ↦ z) '' K) ↔ IsPreconnected Kᶜ := by
   rw [← hK.isRungeCompactPair_univ_iff_isPreconnected_compl,
-    isRungeCompactPair_iff_holomorphicHull_eq_self isOpen_univ hK,
-    holomorphicHull_univ_eq_preimage_polynomialHull hK.isBounded, isPolynomiallyConvex_iff]
+    isOpen_univ.isRungeCompactPair_iff_holomorphicHull_eq_self hK,
+    hK.isBounded.holomorphicHull_univ_eq_preimage_polynomialHull, isPolynomiallyConvex_iff]
   have hinj : Function.Injective (fun (z : ℂ) (_ : Fin 1) ↦ z) := fun z w h ↦ congrFun h 0
   constructor
   · intro hsub
