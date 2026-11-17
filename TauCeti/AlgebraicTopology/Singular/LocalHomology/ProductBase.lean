@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
+import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
 import TauCeti.Topology.Homeomorph.Prod
 
 /-!
@@ -71,19 +72,6 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E] [N
   (hd : finrank ℝ E = d) (x : M) (Y : Type) [TopologicalSpace Y]
 
 include o hd in
-/-- The local homology `Hₚ(M, M ∖ {x}; ℤ)` of an oriented `d`-manifold is projective in every
-degree: it vanishes for `p ≠ d` and is infinite cyclic for `p = d`. -/
-private theorem projective_localHomology (p : ℕ) :
-    Module.Projective ℤ (localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-      ({x} : Set M) p) := by
-  by_cases hp : p = d
-  · subst hp
-    exact .of_equiv (o.localOrientationEquiv hd x)
-  · have := ModuleCat.subsingleton_of_isZero (isZero_singularHomology_complSingleton_of_ne
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) (chartAt E x) (mem_chart_source E x) hd hp)
-    infer_instance
-
-include o hd in
 /-- Since the local homology of `M` at `x` vanishes outside degree `d`, the summand
 `H_d(M, M ∖ {x}) ⊗ H_q(Y)` is all of the degree `d + q` part of the tensor product of the
 homologies. -/
@@ -114,7 +102,11 @@ def singularHomologyCrossRelEquiv (q : ℕ) :
       ((TopPair.ofSubset ((Prod.fst ⁻¹' {x})ᶜ : Set (TopCat.of (M × Y)))).singularHomology
         (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) : ModuleCat.{0} ℤ) (d + q) :
           ModuleCat.{0} ℤ) :=
-  have := o.projective_localHomology hd x
+  have (p : ℕ) : Module.Projective ℤ (localHomology (A := ModuleCat.{0} ℤ)
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) ({x} : Set M) p) :=
+    have := projective_singularHomology_complSingleton (ModuleCat.of ℤ (ULift.{0} ℤ)) (chartAt E x)
+      (mem_chart_source E x) p
+    ModuleCat.projective_of_module_projective _
   have := o.isIso_ιTensorObj_localHomology hd x Y q
   have : IsIso (TopCat.singularHomologyKunnethRel (TopCat.of M) (TopCat.of Y) ({x}ᶜ)
       (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) (d + q)) :=
@@ -209,8 +201,6 @@ private theorem singularHomologyCrossRel_tmul_homologyMap_map (S : Set (TopCat.o
     (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
       (t ⊗ₜ (SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset S).map)
         (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom w)) hid.symm).trans h
-
-variable {X Q : Type} [TopologicalSpace X]
 
 /-- The map of pairs `(M × (X ∖ F), (M ∖ {b'}) × (X ∖ F)) ⟶ (M × X, (M ∖ {b'}) × X)`, for the
 fibre `F = p⁻¹(b)`. -/

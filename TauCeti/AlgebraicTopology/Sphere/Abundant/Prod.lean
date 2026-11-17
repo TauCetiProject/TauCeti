@@ -100,41 +100,33 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   [T2Space N] [CompactSpace N] [ChartedSpace V N] (o : HomologicalOrientation N V n)
   (hn : Module.finrank ℝ V = n)
 
-/-- The class of `Map(S², N × M)` built from a class `α` of `Map(S², M)`: the cross product
+/-- The map sending a class `α` of `Map(S², M)` to a class of `Map(S², N × M)`: the cross product
 `[N] × α`, with coefficients `ℤ ⊗ ℤ` identified with `ℤ`, carried to `Map(S², N × M)` along
 `constProdSphereMap`. -/
-private def prodClass {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+private def prodClass (k : ℕ) :
+    ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ) →ₗ[ℤ]
     ((TopCat.toSSet.obj (TopCat.of C(Sphere2, N × M))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k) : ModuleCat.{0} ℤ) :=
   (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom constProdSphereMap))
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom
-    ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      (ModuleCat.uliftTensorSelfIso ℤ).hom).app
-        (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom
-      ((TopCat.singularHomologyCross (TopCat.of N) (TopCat.of C(Sphere2, M))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl).hom
-          (o.fundamentalClass hn ⊗ₜ α)))
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom ∘ₗ
+  (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+    (ModuleCat.uliftTensorSelfIso ℤ).hom).app
+      (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom ∘ₗ
+  (TopCat.singularHomologyCross (TopCat.of N) (TopCat.of C(Sphere2, M))
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl).hom ∘ₗ
+  TensorProduct.mk ℤ ((TopCat.toSSet.obj (TopCat.of N)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
+    ModuleCat.{0} ℤ) ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ) (o.fundamentalClass hn)
 
 include hn in
-private theorem prodClass_sub {k : ℕ}
-    (α α' : ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    o.prodClass hn (α - α') = o.prodClass hn α - o.prodClass hn α' := by
-  rw [prodClass, prodClass, prodClass]
-  -- The tensor product of `ModuleCat` is not syntactically `TensorProduct`, so `rw` and `simp` do
-  -- not apply `TensorProduct.tmul_sub` here.
-  erw [TensorProduct.tmul_sub, map_sub, map_sub, map_sub]
-
-include hn in
-/-- The class `prodClass α` lives over the fundamental class of `N × M` at `(b', b)` exactly when
+/-- The class `prodClass k α` lives over the fundamental class of `N × M` at `(b', b)` exactly when
 `α` lives over the fundamental class of `M` at `b`. -/
 private theorem livesOverFundamentalClass_prodClass_iff [T1Space M] {k : ℕ} (b' : N) (b : M)
     (α : ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north)
-        (b', b) (o.prodClass hn α) ↔
+        (b', b) (o.prodClass hn k α) ↔
       LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north)
         b α :=
   (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id _ constProdSphereMap sphereMapSplit
@@ -152,8 +144,8 @@ private theorem homologyMap_prodClass {k : ℕ}
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
     (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
       (ContinuousMap.const'.comp (mappingSpaceEval (X := N × M) Sphere2.north))))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom (o.prodClass hn α) =
-      o.prodClass hn ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom (o.prodClass hn k α) =
+      o.prodClass hn k ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
         ((ContinuousMap.const' : C(M, C(Sphere2, M))).comp (mappingSpaceEval Sphere2.north))))
           (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
   -- `ρ ∘ Ψ = Ψ ∘ (id × ρ_M)`, the coefficient change is natural, and the cross product is natural.
@@ -180,7 +172,8 @@ private theorem homologyMap_prodClass {k : ℕ}
       (mappingSpaceEval Sphere2.north))) (ModuleCat.of ℤ (ULift.{0} ℤ))
     (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl) (o.fundamentalClass hn ⊗ₜ α)
   rw [CategoryTheory.Functor.map_id] at h₃
-  unfold prodClass
+  -- `prodClass` is the composite of the linear maps it is built from, so the composite of the
+  -- naturality squares `h₃`, `h₂`, `h₁` proves the claim definitionally.
   exact (ConcreteCategory.congr_hom h₁ _).trans (congrArg (SSet.homologyMap (TopCat.toSSet.map
     (TopCat.ofHom constProdSphereMap)) (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom
     ((ConcreteCategory.congr_hom h₂ _).symm.trans (congrArg (HomologicalComplex.homologyMap
@@ -205,9 +198,10 @@ theorem isAbundantWithTwoSpheres_prod_left [T1Space M] {m : ℕ} {b : M}
   · -- The localization of `[N] × α` is not that of a class of constant spheres: by
     -- `fiberLocalization_mem_range_localHomologyMap_const'_iff` this says that
     -- `[N] × (α - ρ_* α)` lives over the fundamental class, which it does since `α - ρ_* α` does.
-    refine (isAbundantWithTwoSpheres_iff _ _ _).2 ⟨n + k, o.prodClass hn α, hcl, Or.inr ⟨rfl, ?_⟩⟩
+    refine (isAbundantWithTwoSpheres_iff _ _ _).2 ⟨n + k, o.prodClass hn k α, hcl,
+      Or.inr ⟨rfl, ?_⟩⟩
     rw [fiberLocalization_mem_range_localHomologyMap_const'_iff, not_not, homologyMap_prodClass,
-      ← prodClass_sub, livesOverFundamentalClass_prodClass_iff]
+      ← map_sub, livesOverFundamentalClass_prodClass_iff]
     rwa [fiberLocalization_mem_range_localHomologyMap_const'_iff, not_not] at hk
 
 include o hn in
