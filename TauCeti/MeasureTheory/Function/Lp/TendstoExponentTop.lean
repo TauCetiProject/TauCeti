@@ -59,12 +59,6 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
-private theorem tendsto_mul_rpow_one_div_atTop (M : ℝ≥0∞) {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) :
-    Tendsto (fun p : ℝ≥0 ↦ M * c ^ (1 / (p : ℝ))) atTop (𝓝 M) := by
-  simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
-    ((ENNReal.tendsto_rpow_one_div_atTop hc0 hc).comp
-      (NNReal.tendsto_coe_atTop.2 tendsto_id)) (.inl one_ne_zero)
-
 section ENorm
 
 variable {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε] [ContinuousENorm ε]
@@ -89,7 +83,8 @@ theorem eLpNorm_exponent_top_le_liminf :
       fun _ ↦ le_of_lt
   -- Chebyshev gives `s * min c 1 ^ (1 / p) ≤ eLpNorm f p μ`, and the left side tends to `s`.
   set c' := min c 1
-  have hlim := tendsto_mul_rpow_one_div_atTop s (c := c') (by simp [c', hc0]) (by simp [c'])
+  have hlim := (ENNReal.tendsto_const_mul_rpow_one_div_atTop s (c := c') (by simp [c', hc0])
+    (by simp [c'])).comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
   refine le_liminf_of_le (by isBoundedDefault) ?_
   filter_upwards [hlim.eventually (lt_mem_nhds hrs), eventually_ne_atTop 0] with p hp hp0
   refine hp.le.trans ?_
@@ -97,8 +92,9 @@ theorem eLpNorm_exponent_top_le_liminf :
   have hcheb := mul_meas_ge_le_pow_eLpNorm' μ (ENNReal.coe_ne_zero.2 hp0) ENNReal.coe_ne_top
     (f := f) s
   rw [ENNReal.coe_toReal] at hcheb
-  rw [← ENNReal.rpow_le_rpow_iff hppos, ENNReal.mul_rpow_of_nonneg _ _ hppos.le,
-    ← ENNReal.rpow_mul, one_div_mul_cancel hppos.ne', ENNReal.rpow_one]
+  rw [Function.comp_apply, id_eq, ← ENNReal.rpow_le_rpow_iff hppos,
+    ENNReal.mul_rpow_of_nonneg _ _ hppos.le, ← ENNReal.rpow_mul, one_div_mul_cancel hppos.ne',
+    ENNReal.rpow_one]
   exact (mul_le_mul' le_rfl (min_le_left c 1)).trans hcheb
 
 /-- **`L^∞` seminorm bound from eventual `Lᵖ` seminorm bounds.** If `a ≠ ∞` and
@@ -108,8 +104,9 @@ theorem eLpNorm_exponent_top_le_of_eventually_le {M a : ℝ≥0∞} (ha : a ≠ 
     (h : ∀ᶠ p : ℝ≥0 in atTop, eLpNorm f p μ ≤ M * a ^ (1 / (p : ℝ))) :
     eLpNorm f ∞ μ ≤ M := by
   set a' := max 1 a
-  have hlim := tendsto_mul_rpow_one_div_atTop M (c := a')
-    (zero_lt_one.trans_le (le_max_left 1 a)).ne' (max_ne_top ENNReal.one_ne_top ha)
+  have hlim := (ENNReal.tendsto_const_mul_rpow_one_div_atTop M (c := a')
+    (zero_lt_one.trans_le (le_max_left 1 a)).ne' (max_ne_top ENNReal.one_ne_top ha)).comp
+    (NNReal.tendsto_coe_atTop.2 tendsto_id)
   refine eLpNorm_exponent_top_le_liminf.trans ((liminf_le_liminf ?_).trans_eq hlim.liminf_eq)
   exact h.mono fun p hp ↦ hp.trans
     (mul_le_mul' le_rfl (ENNReal.rpow_le_rpow (le_max_right 1 a) (by positivity)))
@@ -126,8 +123,8 @@ theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] :
   · simp
   refine tendsto_of_le_liminf_of_limsup_le eLpNorm_exponent_top_le_liminf ?_
   -- The comparison with the `L^∞` seminorm weighted by the root of the total mass.
-  have hlim := tendsto_mul_rpow_one_div_atTop (eLpNorm f ∞ μ) (c := μ Set.univ)
-    (by simp [NeZero.ne μ]) (measure_ne_top μ _)
+  have hlim := (ENNReal.tendsto_const_mul_rpow_one_div_atTop (eLpNorm f ∞ μ) (c := μ Set.univ)
+    (by simp [NeZero.ne μ]) (measure_ne_top μ _)).comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
   refine (limsup_le_limsup (.of_forall fun p ↦ ?_)).trans_eq hlim.limsup_eq
   simpa using eLpNorm_le_eLpNorm_mul_rpow_measure_univ (le_top : (p : ℝ≥0∞) ≤ ∞) hf
 
