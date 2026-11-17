@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.ScatteringDiagram.Path.Subdivision
 public import TauCeti.Geometry.ScatteringDiagram.Path.Affine
 public import Mathlib.Data.Finset.Sort
-import TauCeti.Topology.Algebra.ContinuousAffineMap
+import TauCeti.Topology.Algebra.ContinuousAffineEquiv
 
 /-!
 # Simultaneous signed wall crossings

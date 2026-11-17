@@ -221,6 +221,32 @@ private theorem crossings_eq_singleton {u v : WallComplement halfAxis} {i₀ : F
   simp only [WallComplement.mem_crossings, Set.mem_singleton_iff, Prod.mk.injEq]
   exact ⟨fun ⟨_, hi⟩ => honly i t hi, by rintro ⟨rfl, rfl⟩; exact ⟨ht₀, hi₀⟩⟩
 
+private theorem eq_half_of_sub_two_mul_eq_zero {t a : ℝ} (ha : a ≠ 0)
+    (h : (1 - 2 * t) * a = 0) : t = 1 / 2 := by
+  linarith [(mul_eq_zero.mp h).resolve_right ha]
+
+private def swapAxis : Fin 4 ≃ Fin 4 where
+  toFun
+    | 0 => 1
+    | 1 => 0
+    | 2 => 3
+    | 3 => 2
+  invFun
+    | 0 => 1
+    | 1 => 0
+    | 2 => 3
+    | 3 => 2
+  left_inv i := by fin_cases i <;> rfl
+  right_inv i := by fin_cases i <;> rfl
+
+private theorem swap_mem_halfAxis (p : ℝ × ℝ) (i : Fin 4) :
+    p.swap ∈ halfAxis (swapAxis i) ↔ p ∈ halfAxis i := by
+  fin_cases i <;> simp [swapAxis, and_comm]
+
+private def swapEndpoint (u : WallComplement halfAxis) : WallComplement halfAxis :=
+  ⟨u.val.swap, fun i hi => u.notMem (swapAxis.symm i) <|
+    (swap_mem_halfAxis u.val (swapAxis.symm i)).mp (by simpa using hi)⟩
+
 private theorem crossings_horizontal {u v : WallComplement halfAxis} {a b : ℝ}
     (ha : a ≠ 0) (hb : b ≠ 0) (hu : u.val = (a, b)) (hv : v.val = (-a, b)) :
     WallComplement.crossings u v = {(if 0 < b then 1 else 3, (1 / 2 : ℝ))} := by
@@ -232,17 +258,11 @@ private theorem crossings_horizontal {u v : WallComplement halfAxis} {a b : ℝ}
     rw [hpt] at hi
     fin_cases i
     · exact (hb hi.2).elim
-    · have ht : t = 1 / 2 := by
-        rcases mul_eq_zero.mp hi.1 with h | h
-        · linarith
-        · exact (ha h).elim
-      exact ⟨by rw [ite_eq_left (lt_of_le_of_ne hi.2 hb.symm)]; rfl, ht⟩
+    · exact ⟨by rw [ite_eq_left (lt_of_le_of_ne hi.2 hb.symm)]; rfl,
+        eq_half_of_sub_two_mul_eq_zero ha hi.1⟩
     · exact (hb hi.2).elim
-    · have ht : t = 1 / 2 := by
-        rcases mul_eq_zero.mp hi.1 with h | h
-        · linarith
-        · exact (ha h).elim
-      exact ⟨by rw [ite_eq_right (not_lt.mpr hi.2)]; rfl, ht⟩
+    · exact ⟨by rw [ite_eq_right (not_lt.mpr hi.2)]; rfl,
+        eq_half_of_sub_two_mul_eq_zero ha hi.1⟩
   · have hpt : AffineMap.lineMap u.val v.val (1 / 2 : ℝ) = (0, b) := by
       rw [AffineMap.lineMap_apply_module', hu, hv]
       ext <;> dsimp <;> ring
@@ -254,32 +274,18 @@ private theorem crossings_horizontal {u v : WallComplement halfAxis} {a b : ℝ}
 private theorem crossings_vertical {u v : WallComplement halfAxis} {a b : ℝ}
     (ha : a ≠ 0) (hb : b ≠ 0) (hu : u.val = (a, b)) (hv : v.val = (a, -b)) :
     WallComplement.crossings u v = {(if 0 < a then 0 else 2, (1 / 2 : ℝ))} := by
-  refine crossings_eq_singleton ?_ (by norm_num) ?_
-  · intro i t hi
-    have hpt : AffineMap.lineMap u.val v.val t = (a, (1 - 2 * t) * b) := by
-      rw [AffineMap.lineMap_apply_module', hu, hv]
-      ext <;> dsimp <;> ring
-    rw [hpt] at hi
-    fin_cases i
-    · have ht : t = 1 / 2 := by
-        rcases mul_eq_zero.mp hi.2 with h | h
-        · linarith
-        · exact (hb h).elim
-      exact ⟨by rw [ite_eq_left (lt_of_le_of_ne hi.1 ha.symm)]; rfl, ht⟩
-    · exact (ha hi.1).elim
-    · have ht : t = 1 / 2 := by
-        rcases mul_eq_zero.mp hi.2 with h | h
-        · linarith
-        · exact (hb h).elim
-      exact ⟨by rw [ite_eq_right (not_lt.mpr hi.1)]; rfl, ht⟩
-    · exact (ha hi.1).elim
-  · have hpt : AffineMap.lineMap u.val v.val (1 / 2 : ℝ) = (a, 0) := by
-      rw [AffineMap.lineMap_apply_module', hu, hv]
-      ext <;> dsimp <;> ring
-    rw [hpt]
-    split_ifs with hpos
-    · exact ⟨hpos.le, rfl⟩
-    · exact ⟨le_of_not_gt hpos, rfl⟩
+  have hswap := crossings_horizontal (u := swapEndpoint u) (v := swapEndpoint v) hb ha
+    (by simp [swapEndpoint, hu]) (by simp [swapEndpoint, hv])
+  ext ⟨i, t⟩
+  have hmem : (i, t) ∈ WallComplement.crossings u v ↔
+      (swapAxis i, t) ∈ WallComplement.crossings (swapEndpoint u) (swapEndpoint v) := by
+    have hline : AffineMap.lineMap (swapEndpoint u).val (swapEndpoint v).val t =
+        (AffineMap.lineMap u.val v.val t).swap := by
+      ext <;> simp [swapEndpoint, AffineMap.lineMap_apply_module']
+    simp only [WallComplement.mem_crossings, hline, swap_mem_halfAxis]
+  rw [hmem, hswap]
+  simp only [Set.mem_singleton_iff, Prod.mk.injEq, ← swapAxis.eq_symm_apply]
+  split_ifs <;> rfl
 
 @[simp]
 theorem crossings_segTop : WallComplement.crossings vPP vNP = {(1, (1 / 2 : ℝ))} := by

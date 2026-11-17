@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.ScatteringDiagram.Path.Product
 public import Mathlib.GroupTheory.FreeGroup.Basic
-import TauCeti.Analysis.Convex.Intrinsic
+public import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Data.Finset.Sort
 
 /-!
@@ -151,8 +151,9 @@ theorem crossingEventWord_def (ν : ι → V →ₗ[ℝ] ℝ)
       (signedCrossingEvent ν x y t).noncommProd (fun a => FreeGroup.of a.1 ^ a.2)
         (signedCrossingEvent_pairwise_of_disjoint ν e hdisj _ t) := (rfl)
 
+/-- If the signed crossing event at parameter `t` is empty, `crossingEventWord` is `1`. -/
 @[simp]
-theorem crossingEventWord_empty (ν : ι → V →ₗ[ℝ] ℝ)
+theorem crossingEventWord_eq_one_of_signedCrossingEvent_eq_empty (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : x ⟶ y) (t : ℝ) (ht : signedCrossingEvent ν x y t = ∅) :
     crossingEventWord ν hdisj e t = 1 := by
@@ -164,7 +165,8 @@ theorem crossingEventWord_eq_one_of_forall_notMem (ν : ι → V →ₗ[ℝ] ℝ
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : x ⟶ y) (t : ℝ) (h : ∀ i, (i, t) ∉ crossings x y) :
     crossingEventWord ν hdisj e t = 1 := by
-  refine crossingEventWord_empty ν hdisj e t (Finset.eq_empty_iff_forall_notMem.mpr ?_)
+  refine crossingEventWord_eq_one_of_signedCrossingEvent_eq_empty ν hdisj e t
+    (Finset.eq_empty_iff_forall_notMem.mpr ?_)
   rintro ⟨i, s⟩ his
   exact h i ((mem_signedCrossingEvent ν x y t i s).mp his).1
 
@@ -587,9 +589,7 @@ theorem crossingWord_affineMap [Finite ι] (ν : ι → V →ₗ[ℝ] ℝ)
       Disjoint (intrinsicInterior ℝ (e '' W i)) (intrinsicInterior ℝ (e '' W j))) :
     (p.affineMap e).crossingWord
         (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' =
-      p.crossingWord ν
-        (fun i j hij => (Set.disjoint_image_iff e.injective).mp
-          (e.intrinsicInterior_image (W i) ▸ e.intrinsicInterior_image (W j) ▸ hdisj' hij)) :=
+      p.crossingWord ν (e.pairwise_disjoint_intrinsicInterior_of_image hdisj') :=
   crossingWord_eq_of_signedCrossingEvents_eq _ _ hdisj' _ (p.affineMap e) p
     (signedCrossingEvents_affineMap ν p e)
 
@@ -604,14 +604,8 @@ theorem crossingWord_affineMapReindex [Finite ι] [Finite ι'] (ν : ι → V �
     (p.affineMapReindex e r hW).crossingWord
         (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' =
       FreeGroup.map r (p.crossingWord ν
-        (fun i j hij => (Set.disjoint_image_iff e.injective).mp
-          (e.intrinsicInterior_image (W i) ▸ e.intrinsicInterior_image (W j) ▸
-            hW i ▸ hW j ▸ hdisj' (r.injective.ne hij)))) := by
-  have hdisj : Pairwise fun i j =>
-      Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)) :=
-    fun i j hij => (Set.disjoint_image_iff e.injective).mp
-      (e.intrinsicInterior_image (W i) ▸ e.intrinsicInterior_image (W j) ▸
-        hW i ▸ hW j ▸ hdisj' (r.injective.ne hij))
+        (e.pairwise_disjoint_intrinsicInterior_of_image_reindex r.injective hW hdisj')) := by
+  have hdisj := e.pairwise_disjoint_intrinsicInterior_of_image_reindex r.injective hW hdisj'
   obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
   have hν :
       (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) =

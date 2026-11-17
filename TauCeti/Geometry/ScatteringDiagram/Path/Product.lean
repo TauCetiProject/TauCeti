@@ -44,6 +44,26 @@ noncomputable section
 
 open Set
 
+namespace TauCeti
+
+/-- Coplanar commutation pulls back along an affine map `f : P →ᵃ[k] Q` and a reindexing
+`r : ι → ι'` matching wall sets (`W' (r i) = f '' W i`) and labels (`label' (r i) = label i`). -/
+theorem commute_of_affineSpan_eq_of_image {k V₁ V₂ P Q ι ι' G : Type*} [Ring k]
+    [AddCommGroup V₁] [Module k V₁] [AddTorsor V₁ P]
+    [AddCommGroup V₂] [Module k V₂] [AddTorsor V₂ Q] [Mul G]
+    {W : ι → Set P} {W' : ι' → Set Q} {label : ι → G} {label' : ι' → G}
+    {f : P →ᵃ[k] Q} {r : ι → ι'} (hW : ∀ i, W' (r i) = f '' W i)
+    (hlabel : ∀ i, label' (r i) = label i)
+    (hcomm' : ∀ i' j', affineSpan k (W' i') = affineSpan k (W' j') →
+      Commute (label' i') (label' j'))
+    (i j : ι) (hij : affineSpan k (W i) = affineSpan k (W j)) :
+    Commute (label i) (label j) := by
+  rw [← hlabel i, ← hlabel j]
+  refine hcomm' (r i) (r j) ?_
+  rw [hW i, hW j, ← AffineSubspace.map_span f, ← AffineSubspace.map_span f, hij]
+
+end TauCeti
+
 namespace TauCeti.WallComplement
 
 variable {V ι G K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
@@ -534,9 +554,8 @@ theorem wallPathProduct_affineMapReindex {U ι' : Type*} [NormedAddCommGroup U] 
         (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap)
         (label ∘ r.symm) hcomm' =
       p.wallPathProduct ν label
-        (fun i j hij => r.symm_apply_apply i ▸ r.symm_apply_apply j ▸ hcomm' (r i) (r j)
-          (hW i ▸ hW j ▸ (AffineSubspace.map_span e.toAffineMap (W i)).symm.trans
-            (hij ▸ AffineSubspace.map_span e.toAffineMap (W j)))) := by
+        (commute_of_affineSpan_eq_of_image (f := e.toAffineMap) hW
+          (fun i => congrArg label (r.symm_apply_apply i)) hcomm') := by
   induction p with
   | nil => simp
   | cons p a ih =>
@@ -553,9 +572,8 @@ theorem wallPathProduct_affineMap {U : Type*} [NormedAddCommGroup U] [NormedSpac
     (p.affineMap e).wallPathProduct
         (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) label hcomm' =
       p.wallPathProduct ν label
-        (fun i j hij => hcomm' i j
-          ((AffineSubspace.map_span e.toAffineMap (W i)).symm.trans
-            (hij ▸ AffineSubspace.map_span e.toAffineMap (W j)))) := by
+        (commute_of_affineSpan_eq_of_image (f := e.toAffineMap) (r := id)
+          (fun _ => rfl) (fun _ => rfl) hcomm') := by
   rw [← affineMapReindex_refl]
   exact wallPathProduct_affineMapReindex (W' := fun i => e '' W i)
     ν label p e (Equiv.refl ι) (fun _ => rfl) hcomm'
