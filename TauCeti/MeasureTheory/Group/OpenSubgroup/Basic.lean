@@ -48,9 +48,12 @@ an open measurable embedding. Pulling an ambient measure `μ` on `G` back to `H`
 
 ## Main statements
 
-* `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
-  `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`:
-  Haar, regularity, and modular-character inheritance on open subgroups.
+* `MeasureTheory.Measure.isHaarMeasure_comap_subtype_of_isOpen`,
+  `OpenSubgroup.instIsHaarMeasureComap`, `OpenSubgroup.instRegularComap`,
+  `OpenSubgroup.innerRegular_comap_of_isSigmaCompact`, `OpenSubgroup.modularCharacter_eq`,
+  `IsOpen.isCompact_of_isMulLeftInvariant`, `OpenSubgroup.isCompact_of_measure_ne_top`:
+  Haar, compactness-from-finite-measure, regularity, and modular-character inheritance on open
+  subgroups.
 * `MeasureTheory.setIntegral_leftCoset_eq_comap`,
   `MeasureTheory.integral_mul_left_comap_eq_of_inv_mul_mem`,
   `MeasureTheory.setIntegral_rightCoset_eq_modularCharacter_smul_comap`,
@@ -77,6 +80,22 @@ open scoped ENNReal NNReal Pointwise
 
 /-! ### Haar measure, regularity, and modular character on open subgroups -/
 
+namespace MeasureTheory.Measure
+
+/-- Pulling a Haar measure back to an open subgroup (`SubgroupClass`) yields a Haar measure on the
+subgroup. -/
+@[to_additive /-- Pulling an additive Haar measure back to an open additive subgroup
+(`AddSubgroupClass`) yields an additive Haar measure on the subgroup. -/]
+theorem isHaarMeasure_comap_subtype_of_isOpen {G S : Type*} [Group G] [TopologicalSpace G]
+    [MeasurableSpace G] [MeasurableMul G] [BorelSpace G] [SetLike S G] [SubgroupClass S G]
+    (μ : Measure G) [μ.IsHaarMeasure] {H : S} (hH : IsOpen (H : Set G)) :
+    (μ.comap ((↑) : H → G)).IsHaarMeasure :=
+  have : (μ.comap ((↑) : H → G)).IsOpenPosMeasure :=
+    Measure.IsOpenPosMeasure.comap μ hH.isOpenEmbedding_subtypeVal
+  ⟨⟩
+
+end MeasureTheory.Measure
+
 namespace OpenSubgroup
 
 section HaarAndRegularity
@@ -92,7 +111,52 @@ instance instIsOpenPosMeasureComap [BorelSpace G] (μ : Measure G) [μ.IsOpenPos
 @[to_additive /-- Pulling an additive Haar measure back to an open additive subgroup yields an
 additive Haar measure on the open subgroup. -/]
 instance instIsHaarMeasureComap [MeasurableMul G] [BorelSpace G] (μ : Measure G)
-    [μ.IsHaarMeasure] (H : OpenSubgroup G) : (μ.comap ((↑) : H → G)).IsHaarMeasure where
+    [μ.IsHaarMeasure] (H : OpenSubgroup G) : (μ.comap ((↑) : H → G)).IsHaarMeasure :=
+  μ.isHaarMeasure_comap_subtype_of_isOpen H.isOpen
+
+/-- An open subgroup of a locally compact topological group with finite mass under a left-invariant
+measure positive on nonempty open sets is compact. -/
+@[to_additive /-- An open additive subgroup of a locally compact topological additive group with
+finite mass under a left-invariant measure positive on nonempty open sets is compact. -/]
+theorem isCompact_of_measure_ne_top [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G]
+    (H : OpenSubgroup G) {μ : Measure G} [μ.IsMulLeftInvariant] [μ.IsOpenPosMeasure]
+    (hμ : μ H ≠ ∞) : IsCompact (H : Set G) := by
+  have : LocallyCompactSpace H := H.isOpen.locallyCompactSpace
+  rw [isCompact_iff_compactSpace]
+  by_contra hnc
+  rw [not_compactSpace_iff] at hnc
+  have huniv : μ.comap ((↑) : H → G) univ = ∞ :=
+    measure_univ_of_isMulLeftInvariant (μ.comap ((↑) : H → G))
+  have hcoe : MeasurableEmbedding ((↑) : H → G) :=
+    MeasurableEmbedding.subtype_coe H.isOpen.measurableSet
+  rw [hcoe.comap_apply, image_univ, Subtype.range_coe] at huniv
+  exact hμ huniv
+
+end HaarAndRegularity
+
+end OpenSubgroup
+
+namespace IsOpen
+
+/-- An open subgroup (`SubgroupClass`) of a locally compact topological group with finite mass under
+a left-invariant measure positive on nonempty open sets is compact. -/
+@[to_additive /-- An open additive subgroup (`AddSubgroupClass`) of a locally compact topological
+additive group with finite mass under a left-invariant measure positive on nonempty open sets is
+compact. -/]
+theorem isCompact_of_isMulLeftInvariant {G S : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+    [SetLike S G] [SubgroupClass S G] {H : S} (hH : IsOpen (H : Set G))
+    {μ : Measure G} [μ.IsMulLeftInvariant] [μ.IsOpenPosMeasure] (hμ : μ H ≠ ∞) :
+    IsCompact (H : Set G) :=
+  (⟨Subgroup.ofClass H, hH⟩ : OpenSubgroup G).isCompact_of_measure_ne_top hμ
+
+end IsOpen
+
+namespace OpenSubgroup
+
+section HaarAndRegularity
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
 
 @[to_additive]
 instance instRegularComap [BorelSpace G] (μ : Measure G) [μ.Regular] (H : OpenSubgroup G) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Regular
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 import TauCeti.MeasureTheory.Measure.Comap
 
@@ -39,6 +40,8 @@ of `μ.comap (↑)`:
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
+* `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`: pulling a measure back to a
+  measurable `SetLike` subobject of measure `1` yields a probability measure.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.
@@ -80,6 +83,15 @@ theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) 
     (μ : Measure α) :
     (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
   (MeasurableEmbedding.subtype_coe ht).comap_comap (Set.inclusion hst) μ
+
+/-- Pulling a measure back to a measurable `SetLike` subobject of mass `1` yields a probability
+measure. -/
+theorem isProbabilityMeasure_comap_subtype {S : Type*} [SetLike S α] (μ : Measure α) {s : S}
+    (hs : MeasurableSet (s : Set α)) (hμ : μ s = 1) :
+    IsProbabilityMeasure (μ.comap ((↑) : s → α)) := by
+  refine ⟨?_⟩
+  have hcoe : MeasurableEmbedding ((↑) : s → α) := MeasurableEmbedding.subtype_coe hs
+  rw [hcoe.comap_apply, image_univ, Subtype.range_coe, hμ]
 
 end Measurable
 
