@@ -84,8 +84,50 @@ theorem pinnedRepresentation_ι_h (i : Fin (DynkinType.C (n + 1)).rank) :
   exact congrArg (fun x => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
     (pinnedLieEquiv_lieBasis_h n ht i)
 
-/-- Each signed pinned simple root acts by the corresponding native standard root operator. -/
+/-- A pinned positive simple generator acts by the native standard root operator. -/
 @[simp↓]
+theorem pinnedRepresentation_ι_e (i : Fin (DynkinType.C (n + 1)).rank) :
+    pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (((DynkinType.C (n + 1)).lieBasis ht).e i)) =
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (rootGenerator n (.inl (Fin.cast (DynkinType.rank_C _) i)))) := by
+  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
+    LieEquiv.coe_toLieHom]
+  exact congrArg (fun x => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
+    (pinnedLieEquiv_lieBasis_e n ht i)
+
+/-- A pinned negative simple generator acts by the native standard root operator. -/
+@[simp↓]
+theorem pinnedRepresentation_ι_f (i : Fin (DynkinType.C (n + 1)).rank) :
+    pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (((DynkinType.C (n + 1)).lieBasis ht).f i)) =
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (rootGenerator n (.inr (Fin.cast (DynkinType.rank_C _) i)))) := by
+  rw [pinnedRepresentation_def, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι,
+    LieEquiv.coe_toLieHom]
+  exact congrArg (fun x => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
+    (pinnedLieEquiv_lieBasis_f n ht i)
+
+/-- A positive pinned root generator acts by the native standard positive root operator. -/
+@[simp↓]
+theorem pinnedRepresentation_ι_rootGenerator_inl (i : Fin (DynkinType.C (n + 1)).rank) :
+    pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (((DynkinType.C (n + 1)).lieBasis ht).rootGenerator (.inl i))) =
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (rootGenerator n (.inl (Fin.cast (DynkinType.rank_C _) i)))) := by
+  rw [LieAlgebra.Basis.rootGenerator_inl, pinnedRepresentation_ι_e]
+
+/-- A negative pinned root generator acts by the native standard negative root operator. -/
+@[simp↓]
+theorem pinnedRepresentation_ι_rootGenerator_inr (i : Fin (DynkinType.C (n + 1)).rank) :
+    pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      (((DynkinType.C (n + 1)).lieBasis ht).rootGenerator (.inr i))) =
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (rootGenerator n (.inr (Fin.cast (DynkinType.rank_C _) i)))) := by
+  rw [LieAlgebra.Basis.rootGenerator_inr, pinnedRepresentation_ι_f]
+
+/-- Each signed pinned simple root acts by the corresponding native standard root operator. -/
+@[simp↓ low]
 theorem pinnedRepresentation_ι_rootGenerator
     (k : Fin (DynkinType.C (n + 1)).rank ⊕ Fin (DynkinType.C (n + 1)).rank) :
     pinnedRepresentation n ht (_root_.UniversalEnvelopingAlgebra.ι ℚ
