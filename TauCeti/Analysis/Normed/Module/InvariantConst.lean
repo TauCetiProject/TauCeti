@@ -16,7 +16,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 Let `u : V → X` be a map from a normed space to a Hausdorff space. Two kinds of invariance force
 `u` to be constant.
 
-* **Translations** (`TauCeti.apply_eq_of_periodic`). If `u (z + t) = u z` for a nonzero `t`
+* **Translations** (`Function.Periodic.apply_eq_of_tendsto`). If `u (z + t) = u z` for a nonzero `t`
   and `u` has a limit `y` at infinity, then `u` is constantly `y`: the points
   `z + n t` tend to infinity, and `u` is constant along them.
 * **Contractions** (`TauCeti.apply_eq_of_forall_apply_add_smul_sub_eq`). If
@@ -31,16 +31,15 @@ public section
 
 open Filter Topology
 
-namespace TauCeti
-
 variable {V X : Type*} [NormedAddCommGroup V] [TopologicalSpace X] [T2Space X] {u : V → X}
+
+namespace Function.Periodic
 
 /-- **A periodic map with a limit at infinity is constant.** If `u` is periodic with a nonzero
 period `t`, that is `u (z + t) = u z`, and `u` tends to `y` along the filter of complements of
 bounded sets, then `u` is constantly `y`. -/
-theorem apply_eq_of_periodic [NormedSpace ℝ V] {t : V} (ht : t ≠ 0)
-    (hu : Function.Periodic u t) {y : X} (hy : Tendsto u (Bornology.cobounded V) (𝓝 y))
-    (z : V) : u z = y := by
+theorem apply_eq_of_tendsto [NormedSpace ℝ V] {t : V} (hu : Function.Periodic u t) (ht : t ≠ 0)
+    {y : X} (hy : Tendsto u (Bornology.cobounded V) (𝓝 y)) (z : V) : u z = y := by
   have hn : ∀ n : ℕ, u (z + (n : ℝ) • t) = u z := fun n ↦ by
     rw [Nat.cast_smul_eq_nsmul]
     exact hu.nsmul n z
@@ -55,6 +54,10 @@ theorem apply_eq_of_periodic [NormedSpace ℝ V] {t : V} (ht : t ≠ 0)
   have := hy.comp hlim
   simp only [Function.comp_def, hn] at this
   exact tendsto_nhds_unique tendsto_const_nhds this
+
+end Function.Periodic
+
+namespace TauCeti
 
 /-- **A self-similar map is constant.** If `u (c + a • (z - c)) = u z` for all `z`, with
 `‖a‖ < 1`, and `u` is continuous at the fixed point `c`, then `u` is constantly `u c`. -/

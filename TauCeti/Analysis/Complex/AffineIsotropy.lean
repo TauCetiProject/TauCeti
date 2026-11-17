@@ -25,11 +25,11 @@ to a Hausdorff space with a limit at infinity, the isotropy is finite exactly wh
 invariant under all rotations `z ↦ z₀ + e^{iθ} (z - z₀)` about any centre `z₀`.
 
 A translation in the isotropy, or a scaling with `|a| ≠ 1`, forces `u` to be constant
-(`TauCeti.apply_eq_of_periodic`, `TauCeti.apply_eq_of_forall_apply_add_smul_sub_eq`). So, unless
-`u` is rotation invariant, the isotropy consists of rotations; two of them about different centres
-would have a nontrivial translation as commutator, so they share one centre. Their angles form a
-closed proper subgroup of `ℝ` containing `2π`, which is cyclic (`AddSubgroup.dense_or_isCyclic`),
-so the rotation factors are roots of unity of a fixed order.
+(`Function.Periodic.apply_eq_of_tendsto`, `TauCeti.apply_eq_of_forall_apply_add_smul_sub_eq`).
+So, unless `u` is rotation invariant, the isotropy consists of rotations; two of them about
+different centres would have a nontrivial translation as commutator, so they share one centre.
+Their angles form a closed proper subgroup of `ℝ` containing `2π`, which is cyclic
+(`AddSubgroup.dense_or_isCyclic`), so the rotation factors are roots of unity of a fixed order.
 
 No regularity beyond continuity is used. For pseudoholomorphic spheres, where rotation invariance
 forces constancy, see `TauCeti.Geometry.Symplectic.JHolomorphic.Isotropy`.
@@ -59,8 +59,9 @@ variable [T2Space X]
 private theorem eq_zero_of_forall_apply_add_eq {y : X} (hy : Tendsto u (cocompact ℂ) (𝓝 y))
     (hrot : ∀ z₀ : ℂ, ¬ ∀ (θ : ℝ) z, u (z₀ + Complex.exp (θ * Complex.I) * (z - z₀)) = u z)
     {t : ℂ} (ht : ∀ w, u (t + w) = u w) : t = 0 :=
-  by_contra fun ht0 ↦ hrot 0 <| forall_apply_rotation_eq_of_forall_eq (apply_eq_of_periodic ht0
-    (fun w ↦ by rw [add_comm, ht]) (by rwa [Metric.cobounded_eq_cocompact])) 0
+  by_contra fun ht0 ↦ hrot 0 <| forall_apply_rotation_eq_of_forall_eq
+    (Function.Periodic.apply_eq_of_tendsto (fun w ↦ by rw [add_comm, ht]) ht0
+      (by rwa [Metric.cobounded_eq_cocompact])) 0
 
 /-- Unless `u` is rotation invariant, an element of its isotropy has a linear coefficient of norm
 `1`, and it is the identity if that coefficient is `1`. -/
