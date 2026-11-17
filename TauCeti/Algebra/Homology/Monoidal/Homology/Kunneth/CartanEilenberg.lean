@@ -16,9 +16,10 @@ public import TauCeti.Algebra.Homology.TotalComplex.Basic
 # The Künneth bicomplex
 
 Let `K` and `L` be chain complexes of modules over a commutative ring `R`, indexed by `ℕ`, and let
-`Q` be the Cartan–Eilenberg resolution of `L` (`ChainComplex.cartanEilenbergResolution`). Tensoring
-each row of `Q` with `K` gives the first-quadrant bicomplex
-`HomologicalComplex.kunnethBicomplex K L` whose column `p` is `K ⊗ Q.X p`. The augmentation
+`Q` be the Cartan–Eilenberg resolution of `L` (`ChainComplex.cartanEilenbergResolution`).
+Tensoring each complex `Q.X p` (the row `p` in `ChainComplex.cartanEilenbergResolution`) with `K`
+gives the first-quadrant bicomplex `HomologicalComplex.kunnethBicomplex K L` whose column `p` is
+`K ⊗ Q.X p`, and whose row `n` is `p ↦ (K ⊗ Q.X p).X n`. The augmentation
 `Q.X 0 ⟶ L` induces an augmentation of its total complex to `K ⊗ L`
 (`HomologicalComplex.kunnethBicomplexAugmentation`).
 
@@ -33,8 +34,9 @@ rows make the augmentation of the total complex a quasi-isomorphism
 
 This bicomplex is the source of the Künneth spectral sequence. When every term of `K` is flat, the
 spectral sequence of its column filtration therefore converges to the homology of `K ⊗ L`. Since
-the rows of `Q` have projective terms and projective homology, the Künneth formula for its columns
-is expected to identify its second page with `Tor`; this file does not prove that identification.
+the complexes `Q.X p` have projective terms and projective homology, the Künneth formula for the
+columns `K ⊗ Q.X p` is expected to identify its second page with `Tor`; this file does not prove
+that identification.
 
 ## References
 
@@ -73,7 +75,7 @@ namespace HomologicalComplex
 -- whose types mention `K ⊗ Q.X p` where the bicomplex has `(kunnethBicomplex K L).X p`, elaborate.
 /-- **The Künneth bicomplex.** Its column `p` is `K ⊗ Q.X p`, where `Q` is the Cartan–Eilenberg
 resolution of `L`, and its horizontal differentials are induced by those of `Q`: it is `Q` with
-`tensorLeft K` applied to every row. -/
+`tensorLeft K` applied to every complex `Q.X p`. -/
 @[expose]
 def kunnethBicomplex : HomologicalComplex₂ (ModuleCat.{u} R) (ComplexShape.down ℕ)
     (ComplexShape.down ℕ) :=
