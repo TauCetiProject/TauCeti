@@ -117,9 +117,8 @@ theorem map_inversionSubgroup_conj_le_negativePoints (n : D.weylSubgroup K) :
     (D.inversionSubgroup K (D.weylProjection K n)).map
         (MulAut.conj (n : D.points K)).toMonoidHom ≤
       D.negativePoints K := by
-  rw [D.inversionSubgroup_def]
-  simp only [Subgroup.map_iSup, D.map_range_rootSubgroupPoints_conj]
-  refine iSup₂_le fun γ hγ => ?_
+  rw [D.inversionSubgroup_def, D.map_iSup_rootSubgroupPoints_conj]
+  refine iSup₂_le (Set.forall_mem_image.mpr fun γ hγ => ?_)
   rintro _ ⟨u, rfl⟩
   apply D.rootSubgroupPoints_mem_negativePoints K _ u
   rw [← compl_posRoots, t.posRoots_rationalRootSystem ht, compl_posRoots]
