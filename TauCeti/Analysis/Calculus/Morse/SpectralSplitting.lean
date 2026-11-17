@@ -58,6 +58,10 @@ remainder of the negative-gradient field, supplied by
 * `TauCeti.IsNondegenerateCriticalPoint.isCompl_unstableLinearSubspace_stableLinearSubspace` and
   `TauCeti.IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex`: the same two
   results stated for a nondegenerate critical point, which supplies the Hessian injectivity.
+* The excess dimension of a transverse intersection,
+  `IsNondegenerateCriticalPoint.finrank_unstableLinearSubspace_sub_codim_stableLinearSubspace`:
+  the dimension of the unstable linear subspace at `x` minus the codimension of the stable linear
+  subspace at `y` is `ind x - ind y`.
 * `ContDiffAt.stableProjection`: when the Hessian is injective, the continuous projection onto
   the stable linear subspace along the unstable linear subspace.
 * `ContDiffAt.unstableProjection`: the complementary projection onto the unstable linear
@@ -456,6 +460,18 @@ theorem IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex
     Module.finrank ℝ h.contDiffAt.stableLinearSubspace + morseIndex f x = Module.finrank ℝ E :=
   h.contDiffAt.finrank_stableLinearSubspace_add_morseIndex
     (LinearMap.ker_eq_bot.2 h.isInvertible_hessianOperator.injective)
+
+/-- **The excess dimension of a transverse intersection.** For nondegenerate critical points `x`
+and `y`, the dimension of the unstable linear subspace at `x` minus the codimension of the stable
+linear subspace at `y` is `ind x - ind y`. -/
+theorem IsNondegenerateCriticalPoint.finrank_unstableLinearSubspace_sub_codim_stableLinearSubspace
+    {y : E} (hx : IsNondegenerateCriticalPoint f x) (hy : IsNondegenerateCriticalPoint f y) :
+    Module.finrank ℝ hx.contDiffAt.unstableLinearSubspace -
+        (Module.finrank ℝ E - Module.finrank ℝ hy.contDiffAt.stableLinearSubspace) =
+      morseIndex f x - morseIndex f y := by
+  have := hy.finrank_stableLinearSubspace_add_morseIndex
+  rw [hx.contDiffAt.finrank_unstableLinearSubspace]
+  omega
 
 namespace IsNondegenerateCriticalPoint
 

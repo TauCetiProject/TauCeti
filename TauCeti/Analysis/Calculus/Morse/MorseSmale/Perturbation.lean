@@ -588,29 +588,6 @@ theorem perturbedFlow_apply_of_norm_le (hd : Differentiable ℝ f) (hf : Lipschi
   rw [perturbedFlow_eq_flowOfLipschitz]
   simpa using this.symm
 
-/-- **The derivative of the perturbed gradient flow.** For a parameter `s` of norm at most `1`,
-the derivative of the time-`t` map of the negative-gradient flow of `perturb f h s` at `x` is the
-derivative in the initial condition of the perturbed flow at `(x, s)`. -/
-theorem fderiv_negativeGradientFlow_perturb (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i))
-    {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1) {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s)))
-    (t : ℝ) (x : E) :
-    fderiv ℝ (negativeGradientFlow (perturb f h s) hf' t) x =
-      (ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
-        ((fderiv ℝ (perturbedFlow f h hf hh hc t) (x, s)).comp
-          (ContinuousLinearMap.inl ℝ E (EuclideanSpace ℝ ι))) := by
-  have hd : DifferentiableAt ℝ (perturbedFlow f h hf hh hc t) (x, s) :=
-    ((contDiff_perturbedFlow hfs hf hh hc).comp (contDiff_const.prodMk contDiff_id)).differentiable
-      one_ne_zero _
-  have heq : (fun x' ↦ (perturbedFlow f h hf hh hc t (x', s)).1) =
-      negativeGradientFlow (perturb f h s) hf' t := funext fun x' ↦ by
-    rw [perturbedFlow_apply_of_norm_le (hfs.differentiable two_ne_zero) hf hh hc hs hf']
-  rw [← heq]
-  refine (hasFDerivAt_fst.comp x (hd.hasFDerivAt.comp x
-    ((hasFDerivAt_id x).prodMk (hasFDerivAt_const s x)))).fderiv.trans ?_
-  ext w
-  simp
-
 end Flow
 
 section ParameterDerivative
@@ -642,6 +619,24 @@ private theorem differentiableAt_perturbedFlow (hfs : ContDiff ℝ 2 f)
     (p : E × EuclideanSpace ℝ ι) : DifferentiableAt ℝ (perturbedFlow f h hf hh hc t) p := by
   rw [perturbedFlow_eq_flowOfLipschitz]
   exact differentiable_flowOfLipschitz_apply _ (contDiff_perturbedField hfs hh) t p
+
+/-- **The derivative of the perturbed gradient flow.** For a parameter `s` of norm at most `1`,
+the derivative of the time-`t` map of the negative-gradient flow of `perturb f h s` at `x` is the
+derivative in the initial condition of the perturbed flow at `(x, s)`. -/
+theorem fderiv_negativeGradientFlow_perturb (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i))
+    {s : EuclideanSpace ℝ ι} (hs : ‖s‖ ≤ 1) {K' : ℝ≥0} (hf' : LipschitzWith K' (∇ (perturb f h s)))
+    (t : ℝ) (x : E) :
+    fderiv ℝ (negativeGradientFlow (perturb f h s) hf' t) x =
+      (ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+        ((fderiv ℝ (perturbedFlow f h hf hh hc t) (x, s)).comp
+          (ContinuousLinearMap.inl ℝ E (EuclideanSpace ℝ ι))) := by
+  have heq : (fun x' ↦ (perturbedFlow f h hf hh hc t (x', s)).1) =
+      negativeGradientFlow (perturb f h s) hf' t := funext fun x' ↦ by
+    rw [perturbedFlow_apply_of_norm_le (hfs.differentiable two_ne_zero) hf hh hc hs hf']
+  rw [← heq]
+  exact ((differentiableAt_perturbedFlow hfs hf hh hc t (x, s)).hasFDerivAt.comp x
+    (hasFDerivAt_prodMk_left x s)).fst.fderiv
 
 /-- **The parameter component of a variation is constant**: the derivative of the time-`t` map
 of the perturbed flow does not change the parameter component of a tangent vector. -/
