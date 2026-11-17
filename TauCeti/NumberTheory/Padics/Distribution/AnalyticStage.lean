@@ -61,8 +61,10 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 
 ## Main results
 
-* `TauCeti.AnalyticStage.eval_natCast_val_add_mul`: on the disc of `a`, the evaluation of `c` is
-  `∑ₙ wⁿ • c(a, n)`.
+* `TauCeti.AnalyticStage.eval_natCast_val_add_mul`, `TauCeti.AnalyticStage.eval_single`,
+  `TauCeti.AnalyticStage.eval_single_zero`: on the disc of `a`, the evaluation of `c` is
+  `∑ₙ wⁿ • c(a, n)`, and coordinate vectors evaluate to disc monomials.
+* `TauCeti.AnalyticStage.summable_smul_apply`: weighted coefficients on a single disc are summable.
 * `TauCeti.AnalyticStage.norm_eval_le`, `TauCeti.AnalyticStage.opNorm_eval_le_one`: evaluation
   does not increase norms.
 * `TauCeti.AnalyticStage.eval_injective`: evaluation is injective when multiplication by `p`
@@ -85,6 +87,11 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
   every multi-level transition preserves evaluation.
 * `TauCeti.AnalyticStage.transitionLE_injective`: multi-level transitions are injective under
   the same scalar-regularity hypothesis.
+* `TauCeti.AnalyticStage.eval_eq_eval`, `TauCeti.AnalyticStage.transition_eq_transition`:
+  evaluation and transitions do not depend on the choice of scalar ring.
+* `TauCeti.AnalyticStage.eval_compLeft`, `TauCeti.AnalyticStage.transition_compLeft`: evaluation
+  and transitions commute with the coordinatewise action of bounded continuous linear maps
+  compatible with the `ℤ_p`-action.
 
 ## References
 
@@ -148,7 +155,9 @@ private theorem norm_discTerm_le (i : ZMod (p ^ h) × ℕ) (e : E) : ‖discTerm
 
 variable [IsUltrametricDist E] [CompleteSpace E]
 
-private theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) {r : ℕ → ℤ_[p]}
+/-- For any sequence of scalars in `ℤ_p` of norm at most `1`, the weighted coefficients
+`r n • c (a, n)` on a single disc are summable. -/
+theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) {r : ℕ → ℤ_[p]}
     (hr : ∀ n, ‖r n‖ ≤ 1) : Summable fun n ↦ r n • c (a, n) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
     rw [Nat.cofinite_eq_atTop]
@@ -246,6 +255,27 @@ theorem hasSum_eval_natCast_val_add_mul (c : AnalyticStage p h E) (a : ZMod (p ^
 theorem eval_natCast_val_add_mul (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
     eval S c ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = ∑' n, w ^ n • c (a, n) :=
   (hasSum_eval_natCast_val_add_mul S c a w).tsum_eq.symm
+
+/-- Evaluating a coordinate vector `single (a, n) e` at `x` yields `wⁿ • e` if `x` lies in the
+disc of `a` (with disc coordinate `w`) and `0` otherwise. -/
+theorem eval_single (a : ZMod (p ^ h)) (n : ℕ) (e : E) (x : ℤ_[p]) :
+    eval S (ZeroAtInftyContinuousMap.single (a, n) e) x =
+      if PadicInt.toZModPow h x = a then
+        ((PadicInt.discHomeomorph p h).symm x).2 ^ n • e
+      else 0 := by
+  rw [eval_apply, tsum_eq_single n]
+  · by_cases hmod : PadicInt.toZModPow h x = a <;> simp [hmod]
+  · intro m hm
+    have hne : (PadicInt.toZModPow h x, m) ≠ (a, n) := fun h ↦ hm (Prod.ext_iff.mp h).2
+    simp [ZeroAtInftyContinuousMap.single_eq_of_ne hne]
+
+/-- Evaluating a degree-zero coordinate vector `single (a, 0) e` gives the indicator of the disc
+of `a` scaled by `e`. -/
+@[simp]
+theorem eval_single_zero (a : ZMod (p ^ h)) (e : E) (x : ℤ_[p]) :
+    eval S (ZeroAtInftyContinuousMap.single (a, 0) e) x =
+      if PadicInt.toZModPow h x = a then e else 0 := by
+  simp [eval_single]
 
 /-- Evaluation does not increase norms. -/
 theorem norm_eval_le (c : AnalyticStage p h E) : ‖eval S c‖ ≤ ‖c‖ :=
@@ -637,6 +667,61 @@ theorem transitionLE_injective (hpE : IsSMulRegular E (p : ℤ_[p])) (hhk : h �
   | succ k hhk ih =>
     rw [transitionLE_succ S hhk]
     exact (transition_injective S hpE).comp ih
+
+end AnalyticStage
+
+namespace AnalyticStage
+
+/-! ### Scalar independence and naturality under coefficient maps -/
+
+variable {h : ℕ} {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E]
+  [IsUltrametricDist E] [CompleteSpace E]
+
+/-- Stage evaluation does not depend on the choice of scalar ring. -/
+theorem eval_eq_eval {S₁ S₂ : Type*} [Semiring S₁] [Module S₁ E] [ContinuousConstSMul S₁ E]
+    [SMulCommClass ℤ_[p] S₁ E] [Semiring S₂] [Module S₂ E] [ContinuousConstSMul S₂ E]
+    [SMulCommClass ℤ_[p] S₂ E] (c : AnalyticStage p h E) :
+    eval S₁ c = eval S₂ c := by
+  ext x
+  rw [eval_apply, eval_apply]
+
+/-- Stage transition does not depend on the choice of scalar ring. -/
+theorem transition_eq_transition {S₁ S₂ : Type*} [Semiring S₁] [Module S₁ E]
+    [ContinuousConstSMul S₁ E] [SMulCommClass ℤ_[p] S₁ E] [Semiring S₂] [Module S₂ E]
+    [ContinuousConstSMul S₂ E] [SMulCommClass ℤ_[p] S₂ E] (c : AnalyticStage p h E) :
+    transition S₁ c = transition S₂ c := by
+  ext ⟨a', j⟩
+  rw [transition_apply, transition_apply]
+
+variable {F : Type*} [NormedAddCommGroup F] [Module ℤ_[p] F] [IsBoundedSMul ℤ_[p] F]
+  [IsUltrametricDist F] [CompleteSpace F]
+  (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
+  (S' : Type*) [Semiring S'] [Module S' F] [ContinuousConstSMul S' F] [SMulCommClass ℤ_[p] S' F]
+
+/-- Evaluation commutes with the coordinatewise action of a bounded continuous linear map
+compatible with the `ℤ_p`-action. -/
+theorem eval_compLeft {R : Type*} [Semiring R] [Module R E] [ContinuousConstSMul R E]
+    [Module R F] [ContinuousConstSMul R F] [LinearMap.CompatibleSMul E F ℤ_[p] R]
+    (u : E →L[R] F) (hu : ∃ C, ∀ e, ‖u e‖ ≤ C * ‖e‖)
+    (c : AnalyticStage p h E) (x : ℤ_[p]) :
+    eval S' (ZeroAtInftyContinuousMap.compLeft u hu c) x = u (eval S c x) := by
+  have h1 := hasSum_eval_apply S' (ZeroAtInftyContinuousMap.compLeft u hu c) x
+  have h2 := (hasSum_eval_apply S c x).mapL u
+  exact h1.unique (h2.congr_fun fun n ↦ by simp [ContinuousLinearMap.map_smul_of_tower])
+
+/-- The stage transition commutes with the coordinatewise action of a bounded continuous linear
+map compatible with the `ℤ_p`-action. -/
+theorem transition_compLeft {R : Type*} [Semiring R] [Module R E] [ContinuousConstSMul R E]
+    [Module R F] [ContinuousConstSMul R F] [LinearMap.CompatibleSMul E F ℤ_[p] R]
+    (u : E →L[R] F) (hu : ∃ C, ∀ e, ‖u e‖ ≤ C * ‖e‖)
+    (c : AnalyticStage p h E) :
+    transition S' (ZeroAtInftyContinuousMap.compLeft u hu c) =
+      ZeroAtInftyContinuousMap.compLeft u hu (transition S c) := by
+  ext ⟨a', j⟩
+  rw [transition_apply, ZeroAtInftyContinuousMap.compLeft_apply, transition_apply]
+  exact (((summable_transitionScalar_smul c (a'.val : ZMod (p ^ h))
+    ((a'.val / p ^ h : ℕ) : ℤ_[p]) j).hasSum.mapL u).congr_fun fun k ↦ by
+      simp [transitionScalar, ContinuousLinearMap.map_smul_of_tower]).tsum_eq
 
 end AnalyticStage
 

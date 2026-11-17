@@ -53,8 +53,10 @@ This file develops the coordinate structure of `C₀(I, E)`:
   are linearly independent, so over a ring with the strong rank condition a finitely generated
   submodule contains only finitely many of them
   (`ZeroAtInftyContinuousMap.finite_setOf_single_one_mem`);
-* `ZeroAtInftyContinuousMap.continuousLinearMap_ext`: continuous linear maps out of `C₀(I, E)`
-  are determined by their values on coordinate vectors;
+* `ZeroAtInftyContinuousMap.continuousLinearMap_ext` and
+  `ZeroAtInftyContinuousMap.continuousLinearMap_ext_compLeft_toSpanSingleton`: continuous linear
+  maps out of `C₀(I, E)` are determined by their values on coordinate vectors, or on the images
+  of `single i 1` under `compLeft (toSpanSingleton R e)`;
 * `ZeroAtInftyContinuousMap.indicatorCLM R S`: the coordinate projection `f ↦ S.indicator f`
   onto a set `S` of indices, of norm at most one; it has finite rank when `S` is finite and the
   coefficients form a finitely generated module, as on `C₀(I, R)`
@@ -518,6 +520,31 @@ theorem continuousLinearMap_ext_single_one {M : Type*} [AddCommMonoid M] [Module
     [TopologicalSpace M] [T2Space M] {φ ψ : C₀(I, R) →L[R] M}
     (h : ∀ i, φ (single i 1) = ψ (single i 1)) : φ = ψ :=
   continuousLinearMap_ext fun i r ↦ by rw [← smul_single_one, map_smul, map_smul, h]
+
+/-- Every coordinate vector `single i e` in `C₀(I, E)` is the coordinatewise image of the unit
+vector `single i 1` under `ContinuousLinearMap.toSpanSingleton R e`. -/
+theorem single_eq_compLeft_toSpanSingleton {E : Type*} [SeminormedAddCommGroup E] [Module R E]
+    [IsBoundedSMul R E] (i : I) (e : E)
+    (hu : ∃ C, ∀ r : R, ‖ContinuousLinearMap.toSpanSingleton R e r‖ ≤ C * ‖r‖) :
+    single i e = compLeft (ContinuousLinearMap.toSpanSingleton R e) hu (single i (1 : R)) := by
+  ext j
+  by_cases h : j = i <;> simp [h]
+
+/-- Continuous linear maps out of `C₀(I, E)` that agree on every image
+`compLeft (toSpanSingleton R e) _ (single i 1)` are equal. In particular, maps natural under
+`compLeft` are determined by their restriction to scalar coefficients `C₀(I, R)`. -/
+theorem continuousLinearMap_ext_compLeft_toSpanSingleton {E M : Type*} [SeminormedAddCommGroup E]
+    [Module R E] [IsBoundedSMul R E] [AddCommMonoid M] [Module R M] [TopologicalSpace M]
+    [T2Space M] {φ ψ : C₀(I, E) →L[R] M}
+    (h : ∀ (e : E) (hu : ∃ C, ∀ r : R, ‖ContinuousLinearMap.toSpanSingleton R e r‖ ≤ C * ‖r‖)
+      (i : I), φ (compLeft (ContinuousLinearMap.toSpanSingleton R e) hu (single i (1 : R))) =
+        ψ (compLeft (ContinuousLinearMap.toSpanSingleton R e) hu (single i (1 : R)))) :
+    φ = ψ :=
+  continuousLinearMap_ext fun i e ↦ by
+    have hu : ∃ C, ∀ r : R, ‖ContinuousLinearMap.toSpanSingleton R e r‖ ≤ C * ‖r‖ :=
+      ⟨‖e‖, fun r ↦ by simpa [mul_comm] using norm_smul_le r e⟩
+    rw [single_eq_compLeft_toSpanSingleton i e hu]
+    exact h e hu i
 
 end Ring
 

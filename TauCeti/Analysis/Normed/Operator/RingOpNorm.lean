@@ -50,9 +50,10 @@ would duplicate Mathlib's instance.
   `ContinuousLinearMap.ringOpNorm_pi_eq_sup`: finite-free coordinate bounds.
 * `ContinuousLinearMap.ringOpNorm_add_le`, `ContinuousLinearMap.ringOpNorm_add_le_max`,
   `ContinuousLinearMap.ringOpNorm_comp_le`, `ContinuousLinearMap.ringOpNorm_smul_le`: the norm laws.
-* `ContinuousLinearMap.ringOpNorm_toSpanSingleton`: right multiplication by `v` has norm `‖v‖`
-  over a norm-one ring; in particular multiplication by `a` on a norm-one commutative ring has norm
-  `‖a‖`.
+* `ContinuousLinearMap.norm_toSpanSingleton_apply_le`,
+  `ContinuousLinearMap.ringOpNorm_toSpanSingleton`: pointwise bound
+  `‖toSpanSingleton R v a‖ ≤ ‖v‖ * ‖a‖`, and over a norm-one ring right multiplication by `v` has
+  norm `‖v‖`; in particular multiplication by `a` on a norm-one commutative ring has norm `‖a‖`.
 
 ## References
 
@@ -387,16 +388,22 @@ end Tate
 
 section SpanSingleton
 
-variable {R E : Type*} [SeminormedRing R] [NormOneClass R]
+variable {R E : Type*} [SeminormedRing R]
   [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+
+/-- Pointwise norm bound for right multiplication `a ↦ a • v`:
+`‖toSpanSingleton R v a‖ ≤ ‖v‖ * ‖a‖`. -/
+theorem norm_toSpanSingleton_apply_le (v : E) (a : R) :
+    ‖ContinuousLinearMap.toSpanSingleton R v a‖ ≤ ‖v‖ * ‖a‖ := by
+  simpa [mul_comm] using norm_smul_le a v
 
 /-- **Right multiplication by `v` has norm `‖v‖`** over a norm-one ring: the map `a ↦ a • v`
 from `R` to `E`. For `E = R` commutative, this is multiplication by `v`. -/
 @[simp]
-theorem ringOpNorm_toSpanSingleton (v : E) : ‖ContinuousLinearMap.toSpanSingleton R v‖ = ‖v‖ := by
-  refine ringOpNorm_eq_of_bounds (norm_nonneg v) (fun a ↦ ?_) fun N _ hN ↦ ?_
-  · simpa [mul_comm] using norm_smul_le a v
-  · simpa using hN 1
+theorem ringOpNorm_toSpanSingleton [NormOneClass R] (v : E) :
+    ‖ContinuousLinearMap.toSpanSingleton R v‖ = ‖v‖ := by
+  refine ringOpNorm_eq_of_bounds (norm_nonneg v) (norm_toSpanSingleton_apply_le v) fun N _ hN ↦ ?_
+  simpa using hN 1
 
 end SpanSingleton
 

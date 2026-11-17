@@ -32,7 +32,9 @@ distributions here.
 A measure, a continuous linear functional on `C(ℤ_p, K)`, defines a distribution by integrating
 evaluated coefficient vectors (`LocallyAnalyticDistribution.ofMeasure`). Its stage seminorms are
 bounded by the norm of the measure, and a measure is determined by the distribution it defines,
-since locally analytic functions are dense in `C(ℤ_p, K)`.
+since locally analytic functions are dense in `C(ℤ_p, K)`. Specializing to a Dirac measure gives
+the Dirac distribution `LocallyAnalyticDistribution.dirac K x`, whose stage seminorms all equal
+`1`.
 
 ## Main definitions
 
@@ -44,6 +46,8 @@ since locally analytic functions are dense in `C(ℤ_p, K)`.
 * `TauCeti.LocallyAnalyticDistribution.stagesEquiv`: distributions are compatible families.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm h`: the operator norm on `LA_h(K)`.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure`: measures as distributions.
+* `TauCeti.LocallyAnalyticDistribution.dirac K x`: the Dirac distribution evaluating locally
+  analytic functions at `x : ℤ_p`.
 
 ## Main results
 
@@ -56,6 +60,9 @@ since locally analytic functions are dense in `C(ℤ_p, K)`.
   measure are bounded by its norm.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure_injective`: a measure is determined by its
   restriction to locally analytic functions.
+* `TauCeti.LocallyAnalyticDistribution.stageSeminorm_dirac`,
+  `TauCeti.LocallyAnalyticDistribution.dirac_injective`: every stage seminorm of a Dirac
+  distribution equals `1`, and distinct points define distinct Dirac distributions.
 
 ## References
 
@@ -274,6 +281,58 @@ theorem ofMeasure_injective : Function.Injective (ofMeasure (p := p) (K := K)) :
   exact AbstractMeasure.ext fun f ↦ congrFun
     ((denseRange_eval (p := p) (E := K) K).equalizer (map_continuous μ) (map_continuous ν)
       hcomp) f
+
+/-! ### Dirac distributions -/
+
+variable (K) in
+/-- The **Dirac distribution** at `x : ℤ_p`, evaluating locally analytic functions at `x`. -/
+noncomputable def dirac (x : ℤ_[p]) : LocallyAnalyticDistribution p K :=
+  ofMeasure (AbstractMeasure.dirac K x)
+
+/-- The distribution of the Dirac measure at `x` is the Dirac distribution at `x`. -/
+@[simp]
+theorem ofMeasure_dirac (x : ℤ_[p]) :
+    ofMeasure (AbstractMeasure.dirac K x) = dirac K x :=
+  (rfl)
+
+/-- Applying the Dirac distribution at `x` evaluates the function at `x`. -/
+@[simp]
+theorem coe_dirac_apply (x : ℤ_[p]) (f : LocallyAnalytic p K K) :
+    (dirac K x : Module.Dual K (LocallyAnalytic p K K)) f = LocallyAnalytic.eval K f x := by
+  rw [← ofMeasure_dirac, coe_ofMeasure_apply, AbstractMeasure.dirac_apply]
+
+/-- Restricting the Dirac distribution at `x` to stage `h` evaluates coefficient vectors at `x`. -/
+theorem stage_dirac_apply (x : ℤ_[p]) (h : ℕ) (c : AnalyticStage p h K) :
+    stage h (dirac K x) c = AnalyticStage.eval K c x := by
+  simp
+
+/-- The operator norm of a Dirac distribution on stage `h` equals `1`. -/
+@[simp]
+theorem norm_stage_dirac (x : ℤ_[p]) (h : ℕ) :
+    ‖stage h (dirac K x)‖ = 1 := by
+  refine le_antisymm ?_ ?_
+  · refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ ?_
+    rw [stage_dirac_apply, one_mul]
+    exact (ContinuousMap.norm_coe_le_norm _ x).trans (AnalyticStage.norm_eval_le K c)
+  · let c : AnalyticStage p h K := ZeroAtInftyContinuousMap.single (PadicInt.toZModPow h x, 0) 1
+    have hle := ContinuousLinearMap.le_opNorm (stage h (dirac K x)) c
+    simpa [c] using hle
+
+/-- Every stage seminorm of a Dirac distribution equals `1`. -/
+theorem stageSeminorm_dirac (x : ℤ_[p]) (h : ℕ) :
+    stageSeminorm h (dirac K x) = 1 := by
+  rw [stageSeminorm_apply]
+  exact norm_stage_dirac x h
+
+/-- Distinct points of `ℤ_p` define distinct Dirac distributions. -/
+theorem dirac_injective : Function.Injective (dirac (p := p) K) := by
+  intro x y hxy
+  refine PadicInt.ext_of_toZModPow.mp fun h ↦ ?_
+  let c : AnalyticStage p h K := ZeroAtInftyContinuousMap.single (PadicInt.toZModPow h x, 0) 1
+  have h1 := DFunLike.congr_fun (congrArg (stage h) hxy) c
+  simp only [stage_dirac_apply, c, AnalyticStage.eval_single_zero, ↓reduceIte] at h1
+  by_contra hne
+  simp [Ne.symm hne] at h1
 
 end LocallyAnalyticDistribution
 

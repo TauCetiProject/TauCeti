@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Regular.SMul
 public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -20,6 +21,8 @@ needed for scalar actions beyond normed fields:
   ring `R`;
 * `ZeroAtInftyContinuousMap.instContinuousConstSMul`: a continuous distributive scalar action
   on an additive uniform group `β` induces continuous fixed-scalar multiplication on `C₀(α, β)`;
+* `ZeroAtInftyContinuousMap.isSMulRegular`: regularity of a scalar action on `β` passes to
+  `C₀(α, β)`;
 * `ZeroAtInftyContinuousMap.norm_le` and `ZeroAtInftyContinuousMap.norm_eq_iSup_norm`: the norm
   on `C₀(α, β)` is the supremum of the pointwise norms;
 * `ZeroAtInftyContinuousMap.evalCLM`: evaluation at a point as a continuous linear map over an
@@ -69,6 +72,12 @@ instance (priority := 90) instContinuousConstSMul
     exact continuous_iff_continuousAt.2 fun f ↦ tendsto_iff_tendstoUniformly.2 <|
       (uniformContinuous_const_smul r).comp_tendstoUniformly <|
         tendsto_iff_tendstoUniformly.1 Filter.tendsto_id
+
+/-- Regularity of a scalar action on `β` passes to `C₀(α, β)`. -/
+theorem isSMulRegular [TopologicalSpace β] [Zero β] {R : Type*} [SMulZeroClass R β]
+    [ContinuousConstSMul R β] {r : R} (hr : IsSMulRegular β r) :
+    IsSMulRegular C₀(α, β) r :=
+  fun _ _ h ↦ ext fun x ↦ hr (DFunLike.congr_fun h x)
 
 /-- The coercion to functions commutes with finite sums. -/
 @[simp, norm_cast]

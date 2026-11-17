@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Isometry
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Transition
 public import TauCeti.NumberTheory.Padics.Distribution.Dual
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.LinearCombination
+import TauCeti.NumberTheory.Padics.Measure.Moments
 
 /-!
 # The Amice transform of locally analytic distributions
@@ -27,7 +29,8 @@ Let `K` be a complete nontrivially normed field with contractive `ℤ_p`-action.
 transform* of a locally analytic distribution `μ` on `ℤ_p` with values in `K` is the power series
 `∑ₙ μ(x ↦ (x choose n)) Tⁿ` of its moments,
 `TauCeti.LocallyAnalyticDistribution.amiceTransform`. On a measure it is Mathlib's
-`AbstractMeasure.amiceTransform` (`amiceTransform_ofMeasure`).
+`AbstractMeasure.amiceTransform` (`amiceTransform_ofMeasure`), and on a Dirac distribution it is
+the binomial series `(1 + T)ˣ` (`amiceTransform_dirac`).
 
 Since Amice's vectors form an orthonormal basis of the stage `LA_h(K)`, the restriction of `μ` to
 `LA_h(K)` is the linear combination map of its values `⌊n / pʰ⌋! bₙ` on that basis, where `bₙ` is
@@ -241,6 +244,12 @@ theorem amiceTransform_ofMeasure (μ : AbstractMeasure ℤ_[p] K K) :
   ext n
   rw [coeff_amiceTransform, coe_ofMeasure_apply, eval_mahlerTerm,
     AbstractMeasure.coeff_amiceTransform, PadicInt.mahlerTerm, ContinuousMap.const_one]
+
+/-- The Amice transform of the Dirac distribution at `x` is the binomial series `(1 + T)ˣ`. -/
+@[simp]
+theorem amiceTransform_dirac (x : ℤ_[p]) :
+    amiceTransform (dirac K x) = PowerSeries.binomialSeries K x := by
+  rw [← ofMeasure_dirac, amiceTransform_ofMeasure, AbstractMeasure.amiceTransform_dirac]
 
 section NormedAlgebra
 
