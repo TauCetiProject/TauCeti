@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.ValueDistribution.Proximity.Basic
 public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
-import TauCeti.MeasureTheory.Integral.CircleAverage
+import TauCeti.MeasureTheory.Integral.Circle.Average
 
 /-!
 # Single-circle properties of the Nevanlinna proximity function
