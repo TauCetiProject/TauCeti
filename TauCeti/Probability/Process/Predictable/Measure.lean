@@ -143,7 +143,7 @@ theorem ae_eq_predictableMeasure_iff {E : Type*} [MeasurableSpace E] [Measurable
 
 /-- For predictable functions the native `MemLp` condition can be tested in the ambient
 product measure, at every exponent (in particular exponent two). -/
-theorem memLp_predictableMeasure_iff {E : Type*} [NormedAddCommGroup E]
+theorem memLp_predictableMeasure_iff {E : Type*} [TopologicalSpace E] [ContinuousENorm E]
     {f : ℝ≥0 × Ω → E} (hf : StronglyMeasurable[ℱ.predictable] f) (T : ℝ≥0) (p : ℝ≥0∞) :
     MemLp f p (ℱ.predictableMeasure P T) ↔ MemLp f p ((timeMeasure T).prod P) := by
   simp only [MemLp, predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
@@ -152,7 +152,8 @@ end Dictionary
 
 /-- A left-endpoint-measurable `Lᵖ` height, extended by zero outside `(s,t]`, belongs to
 predictable `Lᵖ` on every finite horizon. Empty or reversed intervals are allowed. -/
-theorem memLp_indicator_Ioc_predictableMeasure {E : Type*} [NormedAddCommGroup E]
+theorem memLp_indicator_Ioc_predictableMeasure {E : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E]
     (ℱ : Filtration ℝ≥0 m) {P : Measure Ω} [SFinite P] {p : ℝ≥0∞}
     (T s t : ℝ≥0) {a : Ω → E} (ha : StronglyMeasurable[ℱ s] a) (haLp : MemLp a p P) :
     MemLp (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ a q.2) q.1)
