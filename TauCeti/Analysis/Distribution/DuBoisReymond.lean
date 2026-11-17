@@ -50,6 +50,11 @@ which are close to `f x` and `f y` by continuity.
   **the du Bois-Reymond lemma**.
 * `ContinuousOn.exists_eqOn_const_Ioo_of_integral_deriv_smul_eq_zero`: its form for continuous
   functions.
+* `LocallyIntegrableOn.exists_ae_eq_exp_smul_Ioo_of_integral_deriv_add_mul_smul_eq_zero`, in the
+  namespace `MeasureTheory`: distributional solutions of `f' = c f` on an interval are
+  `e^{c x} • v`.
+* `TauCeti.ae_eq_zero_of_integral_deriv_add_mul_mul_eq_zero`: a distributional solution of
+  `A' = λ A` on the line, `λ ≠ 0`, with uniformly bounded integrals over unit intervals vanishes.
 * `ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos`: a continuous function with nonnegative
   distributional derivative is monotone.
 -/
@@ -167,7 +172,132 @@ theorem exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero
   filter_upwards [(ae_restrict_iff' measurableSet_Ioo).mpr hae] with x hx
   exact sub_eq_zero.mp hx
 
+/-- **Weak solutions of `f' = c f` on an interval.** A function locally integrable on an open
+interval with `∫ x, (deriv φ x + c φ x) • f x = 0` for every test function `φ` on the interval,
+that is, a distributional solution of `f' = c f`, is almost everywhere equal to `x ↦ e^{c x} • v`
+on the interval for some vector `v`. Apply the du Bois-Reymond lemma to `e^{-c x} • f`: the test
+function `φ = e^{-c x} ψ` has `φ' + c φ = e^{-c x} ψ'`. -/
+theorem exists_ae_eq_exp_smul_Ioo_of_integral_deriv_add_mul_smul_eq_zero
+    {a b : ℝ} {f : ℝ → F} (hf : LocallyIntegrableOn f (Ioo a b)) (c : ℝ)
+    (h : ∀ φ : ℝ → ℝ, ContDiff ℝ ∞ φ → tsupport φ ⊆ Ioo a b →
+      ∫ x, (deriv φ x + c * φ x) • f x = 0) :
+    ∃ v : F, f =ᵐ[volume.restrict (Ioo a b)] fun x ↦ Real.exp (c * x) • v := by
+  have hexp : ContDiff ℝ ∞ fun x : ℝ ↦ Real.exp (-(c * x)) :=
+    Real.contDiff_exp.comp (contDiff_const.mul contDiff_id).neg
+  have hg : LocallyIntegrableOn (fun x ↦ Real.exp (-(c * x)) • f x) (Ioo a b) :=
+    hf.continuousOn_smul isOpen_Ioo.isLocallyClosed hexp.continuous.continuousOn
+  obtain ⟨v, hv⟩ := hg.exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero fun ψ hψ hψs ↦ by
+    have hφ : ContDiff ℝ ∞ fun x ↦ Real.exp (-(c * x)) * ψ x := hexp.mul hψ
+    have h0 := h _ hφ ((tsupport_mul_subset_right).trans hψs)
+    have hd (x : ℝ) : deriv (fun x ↦ Real.exp (-(c * x)) * ψ x) x + c * (Real.exp (-(c * x)) * ψ x)
+        = Real.exp (-(c * x)) * deriv ψ x := by
+      have h1 : HasDerivAt (fun x ↦ Real.exp (-(c * x))) (Real.exp (-(c * x)) * -(c * 1)) x :=
+        (((hasDerivAt_id x).const_mul c).neg).exp
+      have h2 : HasDerivAt (fun x ↦ Real.exp (-(c * x)) * ψ x)
+          (Real.exp (-(c * x)) * -(c * 1) * ψ x + Real.exp (-(c * x)) * deriv ψ x) x :=
+        h1.mul ((hψ.differentiable (by simp)) x).hasDerivAt
+      rw [h2.deriv]
+      ring
+    simp_rw [hd, mul_smul] at h0
+    simpa [smul_comm (deriv ψ _)] using h0
+  refine ⟨v, ?_⟩
+  filter_upwards [hv] with x hx
+  rw [← hx, smul_smul, ← Real.exp_add]
+  simp
+
 end MeasureTheory.LocallyIntegrableOn
+
+namespace TauCeti
+
+open MeasureTheory Set Filter
+open scoped ContDiff
+
+/-- Every unit interval `[n, n + 1]` lies in one of the intervals `(-(N + 1), N + 1)`. -/
+private theorem exists_Icc_subset_Ioo_natCast (n : ℝ) :
+    ∃ N : ℕ, Icc n (n + 1) ⊆ Ioo (-((N : ℝ) + 1)) (N + 1) := by
+  refine ⟨⌈|n|⌉₊ + 1, fun x hx ↦ ⟨?_, ?_⟩⟩ <;> push_cast <;>
+    linarith [Nat.le_ceil |n|, neg_abs_le n, le_abs_self n, hx.1, hx.2]
+
+/-- A distributional solution of `A' = λ A` on the line, integrable on bounded intervals, is
+`e^{λ s} c` almost everywhere on every interval `(-(N + 1), N + 1)`, with one constant `c`. -/
+private theorem exists_ae_eq_exp_mul_of_integral_deriv_add_mul_mul_eq_zero {lam : ℝ}
+    {A : ℝ → ℝ} (hint : ∀ a b, a ≤ b → IntegrableOn A (Icc a b))
+    (h : ∀ φ : ℝ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ s, (deriv φ s + lam * φ s) * A s = 0) :
+    ∃ c : ℝ, ∀ N : ℕ,
+      A =ᵐ[volume.restrict (Ioo (-((N : ℝ) + 1)) (N + 1))] fun x ↦ Real.exp (lam * x) * c := by
+  have hloc (N : ℕ) : ∃ v : ℝ,
+      A =ᵐ[volume.restrict (Ioo (-((N : ℝ) + 1)) (N + 1))] fun x ↦ Real.exp (lam * x) * v := by
+    have hA : LocallyIntegrableOn A (Ioo (-((N : ℝ) + 1)) (N + 1)) :=
+      ((hint _ _ (by linarith)).mono_set Ioo_subset_Icc_self).locallyIntegrableOn
+    obtain ⟨v, hv⟩ :=
+      LocallyIntegrableOn.exists_ae_eq_exp_smul_Ioo_of_integral_deriv_add_mul_smul_eq_zero hA lam
+      fun φ hφ hφs ↦ by
+        simpa [smul_eq_mul] using h φ hφ
+          (isCompact_Icc.of_isClosed_subset (isClosed_tsupport φ)
+            (hφs.trans Ioo_subset_Icc_self))
+    exact ⟨v, by simpa [smul_eq_mul] using hv⟩
+  choose v hv using hloc
+  refine ⟨v 0, fun N ↦ ?_⟩
+  -- The constants agree, by comparison on `(-1, 1)`.
+  have hsub : Ioo (-1 : ℝ) 1 ⊆ Ioo (-((N : ℝ) + 1)) (N + 1) :=
+    Ioo_subset_Ioo (by linarith [N.cast_nonneg (α := ℝ)]) (by linarith [N.cast_nonneg (α := ℝ)])
+  have h₁ := ae_restrict_of_ae_restrict_of_subset hsub (hv N)
+  have h₂ := ae_restrict_of_ae_restrict_of_subset
+    (show Ioo (-1 : ℝ) 1 ⊆ Ioo (-(((0 : ℕ) : ℝ) + 1)) ((0 : ℕ) + 1) by simp) (hv 0)
+  have : (ae (volume.restrict (Ioo (-1 : ℝ) 1))).NeBot :=
+    ae_restrict_neBot.2 (by simp [Real.volume_Ioo])
+  obtain ⟨x, hx₁, hx₂⟩ := (h₁.and h₂).exists
+  rw [← mul_left_cancel₀ (Real.exp_pos _).ne' (hx₁.symm.trans hx₂)]
+  exact hv N
+
+/-- **Distributional solutions of `A' = λ A` with uniformly bounded local integrals vanish.**
+If `λ ≠ 0`, `A` is integrable on bounded intervals with `∫_{[n, n + 1]} |A| ≤ M` for every `n`,
+and `∫ (φ' + λ φ) A = 0` for every test function `φ`, then `A = 0` almost everywhere. Indeed
+`A = e^{λ s} c` on every bounded interval, and `∫_{[n, n + 1]} e^{λ s}` is unbounded in `n`. -/
+theorem ae_eq_zero_of_integral_deriv_add_mul_mul_eq_zero {lam : ℝ} (hlam : lam ≠ 0)
+    {A : ℝ → ℝ} (hint : ∀ a b, a ≤ b → IntegrableOn A (Icc a b)) {M : ℝ}
+    (hM : ∀ n : ℝ, ∫ s in Icc n (n + 1), |A s| ≤ M)
+    (h : ∀ φ : ℝ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
+      ∫ s, (deriv φ s + lam * φ s) * A s = 0) :
+    A =ᵐ[volume] 0 := by
+  obtain ⟨c, hc⟩ := exists_ae_eq_exp_mul_of_integral_deriv_add_mul_mul_eq_zero hint h
+  -- The constant vanishes: otherwise `∫_{[n, n + 1]} |A| ≥ e^{λ n - |λ|} |c|` is unbounded.
+  have hc0 : c = 0 := by
+    by_contra hne
+    have hbound (n : ℝ) : Real.exp (lam * n - |lam|) * |c| ≤ M := by
+      obtain ⟨N, hN⟩ := exists_Icc_subset_Ioo_natCast n
+      refine le_trans ?_ (hM n)
+      rw [integral_congr_ae ((ae_restrict_of_ae_restrict_of_subset hN (hc N)).mono fun x hx ↦
+        show |A x| = |Real.exp (lam * x) * c| by rw [hx])]
+      have hle : ∀ x ∈ Icc n (n + 1), Real.exp (lam * n - |lam|) * |c| ≤
+          |Real.exp (lam * x) * c| := fun x hx ↦ by
+        rw [abs_mul, abs_of_pos (Real.exp_pos _)]
+        gcongr
+        have : |lam * (x - n)| ≤ |lam| := by
+          rw [abs_mul]
+          exact mul_le_of_le_one_right (abs_nonneg _)
+            (abs_le.2 ⟨by linarith [hx.1], by linarith [hx.2]⟩)
+        linarith [neg_abs_le (lam * (x - n))]
+      have := setIntegral_ge_of_const_le (μ := volume) measurableSet_Icc (by simp) hle
+        ((Real.continuous_exp.comp (continuous_const.mul continuous_id)).mul
+          continuous_const).abs.integrableOn_Icc
+      simpa [Real.volume_Icc] using this
+    have hc' : 0 < |c| := abs_pos.2 hne
+    have := hbound ((|lam| + Real.log ((|M| + 1) / |c|)) / lam)
+    rw [mul_div_cancel₀ _ hlam, add_sub_cancel_left,
+      Real.exp_log (div_pos (by positivity) hc'), div_mul_cancel₀ _ hc'.ne'] at this
+    linarith [le_abs_self M]
+  -- Hence `A = 0` almost everywhere.
+  have hall : ∀ᵐ x, ∀ N : ℕ, x ∈ Ioo (-((N : ℝ) + 1)) (N + 1) → A x = 0 := by
+    refine ae_all_iff.2 fun N ↦ (ae_restrict_iff' measurableSet_Ioo).1 ?_
+    filter_upwards [hc N] with x hx
+    rw [hx, hc0, mul_zero]
+  filter_upwards [hall] with x hx
+  obtain ⟨N, hN⟩ := exists_Icc_subset_Ioo_natCast x
+  exact hx N (hN ⟨le_rfl, by linarith⟩)
+
+end TauCeti
 
 namespace TauCeti
 

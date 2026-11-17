@@ -35,6 +35,10 @@ and the functional analysis that turns an elliptic estimate for a first-order op
 bounded coefficients on the cylinder into finite-dimensional kernel and closed range. It is the
 setting of the linearized operators of Floer theory along Floer cylinders.
 
+* The strip measure is the product of Lebesgue measure and Lebesgue measure on `[0, 1]`
+  (`TauCeti.CylinderSobolev.stripMeasure_eq_prod`), and a continuous bounded section vanishing
+  for `|s|` large lies in every `Lᵖ` of the strip
+  (`TauCeti.CylinderSobolev.memLp_stripMeasure_of_continuous`).
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
   `t` that vanish for `|s|` large.
 * The **jet** of a section is `jet ξ = (ξ, ∂s ξ, ∂t ξ)`. The jet of a test section is square
@@ -97,6 +101,30 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- Lebesgue measure on the strip `ℝ × [0, 1]`, the fundamental domain of the cylinder
 `ℝ × S¹`. -/
 abbrev stripMeasure : Measure (ℝ × ℝ) := volume.restrict (univ ×ˢ Icc 0 1)
+
+/-- The strip measure is the product of Lebesgue measure and Lebesgue measure on `[0, 1]`. -/
+theorem stripMeasure_eq_prod :
+    stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
+  rw [stripMeasure, Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
+omit [NormedSpace ℝ V] in
+/-- A continuous bounded section vanishing for `|s| > R` lies in every `Lᵖ` of the strip. -/
+theorem memLp_stripMeasure_of_continuous {u : ℝ × ℝ → V} (hu : Continuous u) {C R : ℝ}
+    (hC : ∀ z, ‖u z‖ ≤ C) (hR : ∀ z : ℝ × ℝ, R < |z.1| → u z = 0) (p : ℝ≥0∞) :
+    MemLp u p stripMeasure := by
+  set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
+  have hK : MeasurableSet K := measurableSet_Icc.prod measurableSet_Icc
+  have hae : u =ᵐ[stripMeasure] K.indicator u := by
+    refine ae_restrict_of_forall_mem (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ ?_
+    by_cases hzR : |z.1| ≤ R
+    · rw [indicator_of_mem (show z ∈ K from ⟨abs_le.1 hzR, hz.2⟩)]
+    · rw [hR z (not_le.1 hzR), indicator_apply_eq_zero.2 fun _ ↦ hR z (not_le.1 hzR)]
+  refine (memLp_congr_ae hae).2 ((memLp_indicator_iff_restrict hK.nullMeasurableSet).2 ?_)
+  have : IsFiniteMeasure (stripMeasure.restrict K) := ⟨by
+    rw [Measure.restrict_apply_univ, stripMeasure, Measure.restrict_apply hK]
+    exact (measure_mono inter_subset_left).trans_lt
+      ((isCompact_Icc.prod isCompact_Icc).measure_lt_top)⟩
+  exact MemLp.of_bound hu.aestronglyMeasurable C (ae_of_all _ hC)
 
 variable (V) in
 /-- The test sections of the trivial bundle with fibre `V` over the cylinder: `C²` maps
