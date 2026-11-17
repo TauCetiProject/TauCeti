@@ -109,10 +109,6 @@ end ProjectionFormula
 
 section CommAlg
 
-open scoped MonObj MonModuleEquivalenceAlgebra
-
-attribute [local instance] MonModuleEquivalenceAlgebra.MonObj.toCommRing
-
 variable {A : Type u} [CommRing A]
 
 /-- Extension of scalars of a commutative `A`-algebra `R` along `algebraMap A P` via
@@ -127,38 +123,38 @@ noncomputable def extendScalarsCommAlgIso (P : Type u) [CommRing P] [Algebra A P
   let G := extendScalars.{u, u, u} φ
   let R₀ := ModuleCat.of A R
   let R₀₂ : ModuleCat.{u} A := R₀ ⊗ R₀
-  let M := G.mapCommMon.obj (CommMonModuleEquivalenceCommAlgebra.inverse.obj R)
-  let eLin : (P ⊗[A] R) ≃ₗ[P] M.X :=
+  let R' := CommMonModuleEquivalenceCommAlgebra.inverse.obj R
+  let B := CommMonModuleEquivalenceCommAlgebra.functor.obj (G.mapCommMon.obj R')
+  let eLin : (P ⊗[A] R) ≃ₗ[P] B :=
     (extendScalarsAlgebraMapIso (S := P) R₀).symm.toLinearEquiv
-  CommAlgCat.isoMk <|
+  let eAlg : (P ⊗[A] R) ≃ₐ[P] B :=
     Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct eLin
       (fun p₁ p₂ r₁ r₂ ↦ by
         have heLin (p : P) (r : R) : eLin (p ⊗ₜ[A] r) = p ⊗ₜ[A, φ] (r : R₀) :=
           extendScalarsAlgebraMapIso_inv_tmul R₀ p r
         have hμ (q₁ q₂ : R) :
-            (Functor.LaxMonoidal.μ G R₀ R₀)
-                (((1 : P) ⊗ₜ[A, φ] (q₁ : R₀)) ⊗ₜ[P] ((1 : P) ⊗ₜ[A, φ] (q₂ : R₀))) =
-              (1 : P) ⊗ₜ[A, φ] ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂) :=
-          (congrArg (Functor.LaxMonoidal.μ G R₀ R₀)
-            (extendScalars_δ_tmul φ R₀ R₀ q₁ q₂).symm).trans
-            (ConcreteCategory.congr_hom (Functor.Monoidal.δ_μ G R₀ R₀)
+            Functor.LaxMonoidal.μ G R'.X R'.X
+                (TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X)
+                  (eLin (1 ⊗ₜ[A] q₁)) (eLin (1 ⊗ₜ[A] q₂))) =
+              (1 : P) ⊗ₜ[A, φ] ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂) := by
+          have hpair :
+              TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X)
+                  (eLin (1 ⊗ₜ[A] q₁)) (eLin (1 ⊗ₜ[A] q₂)) =
+                Functor.OplaxMonoidal.δ G R'.X R'.X
+                  ((1 : P) ⊗ₜ[A, φ] ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂)) :=
+            (congrArg₂ (TensorProduct.tmul P (M := G.obj R'.X) (N := G.obj R'.X))
+              (heLin 1 q₁) (heLin 1 q₂)).trans (extendScalars_δ_tmul φ R'.X R'.X q₁ q₂).symm
+          exact (congrArg (Functor.LaxMonoidal.μ G R'.X R'.X) hpair).trans
+            (ConcreteCategory.congr_hom (Functor.Monoidal.δ_μ G R'.X R'.X)
               ((1 : P) ⊗ₜ[A, φ] ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂)))
-        have hmul (q₁ q₂ : R) :
-            (G.map (ofHom (LinearMap.mul' A R)))
-                ((Functor.LaxMonoidal.μ G R₀ R₀)
-                  (((1 : P) ⊗ₜ[A, φ] (q₁ : R₀)) ⊗ₜ[P] ((1 : P) ⊗ₜ[A, φ] (q₂ : R₀)))) =
-              (1 : P) ⊗ₜ[A, φ] ((q₁ * q₂ : R) : R₀) :=
-          ((congrArg (G.map (ofHom (LinearMap.mul' A R))) (hμ q₁ q₂)).trans
-            (ExtendScalars.map_tmul φ (ofHom (LinearMap.mul' A R)) 1
-              ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂))).trans
-            (congrArg ((1 : P) ⊗ₜ[A, φ] ·) (LinearMap.mul'_apply (R := A) (a := q₁) (b := q₂)))
         have h1 (q₁ q₂ : R) :
-            eLin (1 ⊗ₜ[A] q₁) * eLin (1 ⊗ₜ[A] q₂) = eLin (1 ⊗ₜ[A] (q₁ * q₂)) :=
-          -- `MonObj.toCommRing` inherits `x * y = μ[M.X] (x ⊗ₜ y)` from `MonObj.toRing`, and
-          -- `G.mapCommMon` defines `μ[M.X]` as `LaxMonoidal.μ G R₀ R₀ ≫ G.map (mul' A R)`.
-          -- `Eq.trans` bridges the definitional equality between `M.X` and `G.obj R₀` across the
-          -- `mapCommMon`/`inverse` wrappers, where `rw` cannot unify them.
-          ((congrArg₂ (· * ·) (heLin 1 q₁) (heLin 1 q₂)).trans (hmul q₁ q₂)).trans
+            eLin (1 ⊗ₜ[A] q₁) * eLin (1 ⊗ₜ[A] q₂) = eLin (1 ⊗ₜ[A] (q₁ * q₂)) := by
+          rw [CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_mul G R', hμ q₁ q₂,
+            CommMonModuleEquivalenceCommAlgebra.inverse_obj_mul]
+          exact ((ExtendScalars.map_tmul φ (ofHom (LinearMap.mul' A R)) 1
+              ((q₁ : R₀) ⊗ₜ[A] (q₂ : R₀) : ↑R₀₂)).trans
+            (congrArg ((1 : P) ⊗ₜ[A, φ] ·)
+              (LinearMap.mul'_apply (R := A) (a := q₁) (b := q₂)))).trans
             (heLin 1 (q₁ * q₂)).symm
         have hsmul (p : P) (r : R) : eLin (p ⊗ₜ[A] r) = p • eLin (1 ⊗ₜ[A] r) := by
           rw [← eLin.map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
@@ -168,16 +164,15 @@ noncomputable def extendScalarsCommAlgIso (P : Type u) [CommRing P] [Algebra A P
           let _ := φ.toAlgebra
           (ConcreteCategory.congr_hom (extendScalars_ε φ) (1 : P)).trans
             (TensorProduct.AlgebraTensorModule.rid_symm_apply A P (1 : P))
-        have h1 : (1 : P) ⊗ₜ[A, φ] ((1 : R) : R₀) =
-            (G.map (ofHom (Algebra.linearMap A R))) (Functor.LaxMonoidal.ε G (1 : P)) :=
-          ((congrArg ((1 : P) ⊗ₜ[A, φ] ·) (map_one (algebraMap A R)).symm).trans
-            (ExtendScalars.map_tmul φ (ofHom (Algebra.linearMap A R)) 1 (1 : A)).symm).trans
-            (congrArg (G.map (ofHom (Algebra.linearMap A R))) hε.symm)
-        -- `MonObj.toCommRing` inherits `1 = η[M.X] 1` from `MonObj.toRing`, and `G.mapCommMon`
-        -- defines `η[M.X]` as `LaxMonoidal.ε G ≫ G.map (Algebra.linearMap A R)`. `Eq.trans`
-        -- bridges the definitional equality between `M.X` and `G.obj R₀` across
-        -- `mapCommMon`/`inverse`, where `rw` cannot unify them.
-        exact (extendScalarsAlgebraMapIso_inv_tmul R₀ 1 1).trans h1)
+        have hmap : G.map (ofHom (Algebra.linearMap A R)) (Functor.LaxMonoidal.ε G (1 : P)) =
+            (1 : P) ⊗ₜ[A, φ] ((1 : R) : R₀) :=
+          ((congrArg (G.map (ofHom (Algebra.linearMap A R))) hε).trans
+            (ExtendScalars.map_tmul φ (ofHom (Algebra.linearMap A R)) 1 (1 : A))).trans
+            (congrArg ((1 : P) ⊗ₜ[A, φ] ·) (map_one (algebraMap A R)))
+        rw [CommMonModuleEquivalenceCommAlgebra.functor_obj_mapCommMon_one G R',
+          CommMonModuleEquivalenceCommAlgebra.inverse_obj_one]
+        exact (extendScalarsAlgebraMapIso_inv_tmul R₀ 1 1).trans hmap.symm)
+  CommAlgCat.isoMk eAlg
 
 /-- `extendScalarsCommAlgIso` sends `p ⊗ r` to `p ⊗ r`. -/
 @[simp]
@@ -185,8 +180,9 @@ theorem extendScalarsCommAlgIso_hom_tmul (P : Type u) [CommRing P] [Algebra A P]
     (R : CommAlgCat.{u} A) (p : P) (r : R) :
     (extendScalarsCommAlgIso P R).hom (p ⊗ₜ[A] r) = p ⊗ₜ[A, algebraMap A P] r :=
   (Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct_apply
-    (C := ((extendScalars.{u, u, u} (algebraMap A P)).mapCommMon.obj
-      (CommMonModuleEquivalenceCommAlgebra.inverse.obj R)).X) _ _ _ _).trans
+    (C := CommMonModuleEquivalenceCommAlgebra.functor.obj
+      ((extendScalars.{u, u, u} (algebraMap A P)).mapCommMon.obj
+        (CommMonModuleEquivalenceCommAlgebra.inverse.obj R))) _ _ _ _).trans
     (extendScalarsAlgebraMapIso_inv_tmul (ModuleCat.of A R) p r)
 
 /-- The inverse of `extendScalarsCommAlgIso` sends `p ⊗ r` to `p ⊗ r`. -/
