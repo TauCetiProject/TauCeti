@@ -43,8 +43,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
-* `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a real-linear
-  continuous map.
+* `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
+  conjugate-linear map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 * `SchwartzMap.eq_of_forall_integral_mul_eq`: two `𝕜`-valued Schwartz functions with the same
@@ -308,16 +308,26 @@ open ComplexConjugate
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Pointwise complex conjugation of the values, as a real-linear map on Schwartz space. -/
-noncomputable def conjCLM : 𝓢(E, 𝕜) →L[ℝ] 𝓢(E, 𝕜) :=
-  postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap
+/-- Pointwise complex conjugation of the values, as a conjugate-linear map on Schwartz space. -/
+noncomputable def conjCLM : 𝓢(E, 𝕜) →L⋆[𝕜] 𝓢(E, 𝕜) where
+  -- Conjugation is real-linear, and postcomposition with a real-linear map is continuous.
+  toFun := postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap
+  map_add' := map_add _
+  map_smul' c f := by
+    ext x
+    simp
+  cont := (postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap).continuous
 
 @[simp]
 theorem conjCLM_apply (f : 𝓢(E, 𝕜)) (x : E) : conjCLM f x = conj (f x) :=
   (rfl)
 
 /-- Conjugation is antilinear: `conj (c • f) = conj c • conj f`. -/
-theorem conjCLM_smul (c : 𝕜) (f : 𝓢(E, 𝕜)) : conjCLM (c • f) = conj c • conjCLM f := by
+theorem conjCLM_smul (c : 𝕜) (f : 𝓢(E, 𝕜)) : conjCLM (c • f) = conj c • conjCLM f :=
+  map_smulₛₗ conjCLM c f
+
+@[simp]
+theorem conjCLM_conjCLM (f : 𝓢(E, 𝕜)) : conjCLM (conjCLM f) = f := by
   ext x
   simp
 
