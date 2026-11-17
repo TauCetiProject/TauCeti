@@ -24,9 +24,10 @@ exact sequence gives the coefficient connecting homomorphisms, including Bockste
 
 Extension of scalars along a ring map `f : R →+* S` with exact extension of scalars, such as a
 flat one, commutes with homology: `SSet.homologyExtendScalarsIso` identifies the extension of
-scalars of the homology with coefficients in `R` with the homology with coefficients in `S`.
-The instance `ModuleCat.preservesFiniteLimits_extendScalars_intCastRat` supplies the exactness
-for the flat map `ℤ → ℚ`, which compares integral and rational homology.
+scalars of the homology with coefficients in `R` with the homology with coefficients in `S`,
+naturally in the simplicial set (`SSet.homologyExtendScalarsIso_hom_naturality`). The instance
+`ModuleCat.preservesFiniteLimits_extendScalars_intCastRat` supplies the exactness for the flat map
+`ℤ → ℚ`, which compares integral and rational homology.
 
 ## References
 
@@ -99,5 +100,31 @@ def homologyExtendScalarsIso {R S : Type u} [CommRing R] [CommRing S] (X : SSet.
     HomologicalComplex.homologyMapIso
       (((SSet.chainComplexFunctor.{u} (ModuleCat.{u} S)).flip.obj X).mapIso eM) n
   exact eH ≪≫ eC
+
+/-- The identification of the extension of scalars of the homology with coefficients in `R` with
+the homology with coefficients in `S` is natural in the simplicial set. -/
+@[reassoc]
+theorem homologyExtendScalarsIso_hom_naturality {R S : Type u} [CommRing R] [CommRing S]
+    {X Y : SSet.{u}} (g : X ⟶ Y) (f : R →+* S)
+    [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
+    (ModuleCat.extendScalars f).map (SSet.homologyMap g (ModuleCat.of R (ULift.{u} R)) n) ≫
+        (Y.homologyExtendScalarsIso f n).hom =
+      (X.homologyExtendScalarsIso f n).hom ≫ SSet.homologyMap g (ModuleCat.of S S) n := by
+  let F : ModuleCat.{u} R ⥤ ModuleCat.{u} S := ModuleCat.extendScalars f
+  have : F.Additive := Functor.additive_of_preserves_binary_products F
+  let M := ModuleCat.of R (ULift.{u} R)
+  let eM : F.obj M ≅ ModuleCat.of S S := F.mapIso ULift.moduleEquiv.toModuleIso ≪≫
+    (letI := f.toAlgebra; (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso)
+  -- `homologyExtendScalarsIso` is by definition the composite of three comparisons, each natural.
+  have h₁ := ShortComplex.mapHomologyIso_inv_naturality
+    ((HomologicalComplex.shortComplexFunctor _ (.down ℕ) n).map (chainComplexMap g M)) F
+  have h₂ := congrArg (HomologicalComplex.homologyMap · n)
+    ((SSet.chainComplexFunctorObjCompMapIso F M).hom.naturality g)
+  have h₃ := congrArg (HomologicalComplex.homologyMap · n)
+    (((SSet.chainComplexFunctor (ModuleCat.{u} S)).map eM.hom).naturality g)
+  simp only [HomologicalComplex.homologyMap_comp, Functor.comp_map] at h₂ h₃
+  -- The squares name the same objects in different unfolded forms, so they are chained explicitly.
+  exact ((reassoc_of% h₁) _).trans <| congrArg (_ ≫ ·) <| ((reassoc_of% h₂) _).trans <|
+    congrArg (_ ≫ ·) h₃
 
 end SSet
