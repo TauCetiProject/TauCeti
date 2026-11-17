@@ -21,7 +21,8 @@ becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
 
 Combining an orthonormal family with the rows of a matrix `A` gives an orthonormal family exactly
 when `A * Aᴴ = 1` (`Orthonormal.orthonormal_sum_smul_iff`); for square matrices this
-identifies the changes of orthonormal frame with the unitary group.
+identifies the changes of orthonormal frame with the unitary group. Negating a single vector of an
+orthonormal family preserves orthonormality (`Orthonormal.update_neg`).
 -/
 
 public section
@@ -31,6 +32,12 @@ noncomputable section
 open scoped InnerProductSpace Matrix
 
 namespace Orthonormal
+
+/-- Negating one vector of an orthonormal family preserves orthonormality. -/
+theorem update_neg {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [DecidableEq ι] {v : ι → E} (hv : Orthonormal 𝕜 v) (i : ι) :
+    Orthonormal 𝕜 (Function.update v i (-v i)) :=
+  hv.orthonormal_of_forall_eq_or_eq_neg fun j ↦ by by_cases h : j = i <;> simp [h]
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [Fintype ι] {v : ι → E}

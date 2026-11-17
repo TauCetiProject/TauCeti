@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -66,6 +67,7 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `LinearIsometry.injective_mfderiv`: every linear isometry has an injective manifold derivative.
 -/
 
 public section
@@ -389,5 +391,13 @@ theorem mfderiv_apply_eq_zero_of_const_line {f : F → M} {z w : F}
     rfl
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
     rfl
+
+/-- Every linear isometry between normed spaces has an injective manifold derivative at every
+point. -/
+theorem _root_.LinearIsometry.injective_mfderiv (L : F →ₗᵢ[𝕜] F') (x : F) :
+    Function.Injective (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F') L x) := by
+  have hfderiv : fderiv 𝕜 (L : F → F') x = L.toContinuousLinearMap := L.toContinuousLinearMap.fderiv
+  rw [mfderiv_eq_fderiv, hfderiv]
+  exact L.injective
 
 end TauCeti

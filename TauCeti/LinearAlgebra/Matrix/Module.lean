@@ -27,6 +27,8 @@ used by matrix Morita equivalence with the usual full endomorphism representatio
 
 * `TauCeti.eq_zero_of_isUnit_one_sub_of_forall_eq_sum_smul`: a family fixed by `B` vanishes as
   soon as `1 - B` is a unit.
+* `TauCeti.sum_smul_sum_smul_of_mul_eq_one`: successive column-combinations by `A` and `B`
+  recover a family when `A * B = 1`.
 
 ## References
 
@@ -37,7 +39,7 @@ used by matrix Morita equivalence with the usual full endomorphism representatio
 
 public section
 
-open scoped Matrix.Module
+open scoped Matrix Matrix.Module
 
 namespace TauCeti
 
@@ -52,6 +54,15 @@ theorem eq_zero_of_isUnit_one_sub_of_forall_eq_sum_smul {A : Type*} [Ring A] {n 
   rw [sub_smul, one_smul, sub_eq_zero]
   ext i
   rw [Matrix.Module.smul_apply, ← hy i]
+
+/-- Applying column-combinations by `A` and then by `B` recovers a family `v` whenever
+`A * B = 1`. -/
+theorem sum_smul_sum_smul_of_mul_eq_one {R ι M : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    [AddCommGroup M] [Module R M] (v : ι → M) {A B : Matrix ι ι R} (hAB : A * B = 1) :
+    (fun j ↦ ∑ l, B l j • ∑ i, A i l • v i) = v := by
+  have h : Bᵀ • (Aᵀ • v) = v := by
+    rw [← mul_smul, ← Matrix.transpose_mul, hAB, Matrix.transpose_one, one_smul]
+  simpa only [Matrix.Module.smul_def, Matrix.transpose_apply] using h
 
 end TauCeti
 

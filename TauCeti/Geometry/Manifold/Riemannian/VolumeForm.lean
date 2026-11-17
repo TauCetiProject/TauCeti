@@ -22,7 +22,9 @@ space.  This file packages Mathlib's oriented inner-product-space volume form fi
 pointwise object for the manifold divergence and Stokes identities.
 
 The construction is total, as are the rough forms in the differential-form API.  Its defining
-characterization is that it evaluates to `1` on every positively oriented orthonormal basis.
+characterization is that it evaluates to `1` on every positively oriented orthonormal basis; it is
+nowhere zero (`TauCeti.riemannianVolumeForm_ne_zero`) and negates when the orientation is reversed
+(`TauCeti.riemannianVolumeForm_neg`).
 
 For a `C^n` metric on a `C^(n+1)` manifold the volume form is a `C^n` form
 (`TauCeti.isSmoothForm_riemannianVolumeForm`): in the frame of a tangent trivialization its value
@@ -122,6 +124,27 @@ theorem eq_riemannianVolumeForm_of_apply_orthonormal
   let := o.fact_finrank_tangentSpace x
   rw [riemannianVolumeForm_def]
   exact Orientation.eq_volumeFormL_of_apply_orthonormal _ ω b hb hω
+
+/-- Reversing the orientation negates the Riemannian volume form in every dimension `m ≥ 0`. -/
+@[simp]
+theorem riemannianVolumeForm_neg (o : Manifold.Orientation I M (Fin m)) :
+    riemannianVolumeForm (-o) = -riemannianVolumeForm o := by
+  funext x
+  ext v
+  let := o.fact_finrank_tangentSpace x
+  rw [Pi.neg_apply, ContinuousAlternatingMap.neg_apply, riemannianVolumeForm_apply,
+    riemannianVolumeForm_apply, Manifold.Orientation.orientationAt_neg,
+    Orientation.volumeForm_neg_orientation, _root_.neg_apply]
+
+/-- The Riemannian volume form is nowhere zero in every dimension `m ≥ 0`. -/
+theorem riemannianVolumeForm_ne_zero (o : Manifold.Orientation I M (Fin m)) (x : M) :
+    riemannianVolumeForm o x ≠ 0 := by
+  let := o.fact_finrank_tangentSpace x
+  let b : OrthonormalBasis (Fin m) ℝ (TangentSpace I x) :=
+    (stdOrthonormalBasis ℝ (TangentSpace I x)).reindex (finCongr Fact.out)
+  intro h
+  have habs := abs_riemannianVolumeForm_apply_orthonormal o x b
+  simp [h] at habs
 
 section Smooth
 

@@ -16,8 +16,9 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 /-!
 # Continuous oriented volume forms
 
-This file packages Mathlib's oriented volume form as a continuous alternating map.  The
-construction is shared by the manifold Riemannian volume form and the planar complex area form.
+This file packages Mathlib's oriented volume form as a continuous alternating map of operator norm
+`1` (`Orientation.norm_volumeFormL`).  The construction is shared by the manifold Riemannian volume
+form and the planar complex area form.
 
 It also evaluates the volume form on an arbitrary, not necessarily orthonormal, family of vectors:
 its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
@@ -90,6 +91,22 @@ theorem abs_volumeForm_apply_eq_sqrt_det_gram (o : Orientation ℝ E (Fin n)) (v
     simp [Module.Basis.toMatrix_apply]
   rw [o.volumeForm_robust' b, Module.Basis.det_apply, Matrix.gram_eq_conjTranspose_mul b,
     Matrix.det_mul, Matrix.det_conjTranspose, star_trivial, Real.sqrt_mul_self_eq_abs, hA]
+
+/-- The continuous oriented volume form on an `n`-dimensional real inner product space has operator
+norm `1` in every dimension `n`, including `n = 0`. -/
+@[simp]
+theorem norm_volumeFormL (o : Orientation ℝ E (Fin n)) : ‖o.volumeFormL‖ = 1 := by
+  refine le_antisymm (o.volumeFormL.opNorm_le_bound zero_le_one fun v ↦ by
+    simpa only [Real.norm_eq_abs, one_mul, volumeFormL_apply] using o.abs_volumeForm_apply_le v) ?_
+  rcases n with _ | m
+  · simpa [Real.norm_eq_abs, volumeFormL_apply, o.abs_volumeForm_apply_eq_sqrt_det_gram] using
+      o.volumeFormL.le_opNorm ![]
+  · have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ m
+    let b : OrthonormalBasis (Fin (m + 1)) ℝ E :=
+      (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
+    simpa [Real.norm_eq_abs, volumeFormL_apply, o.abs_volumeForm_apply_eq_sqrt_det_gram,
+      Matrix.gram_eq_one_iff_orthonormal.2 b.orthonormal, b.orthonormal.1] using
+      o.volumeFormL.le_opNorm b
 
 /-- The volume form is positive on a basis exactly when the basis is positively oriented. -/
 theorem volumeForm_apply_pos_iff {o : Orientation ℝ E (Fin n)} {b : Module.Basis (Fin n) ℝ E} :
