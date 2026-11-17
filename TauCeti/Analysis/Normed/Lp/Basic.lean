@@ -40,6 +40,14 @@ dense subsets are dense.
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
 (`lp.tendsto_apply_of_tendsto_apply_single`).
+
+For bounded linear operators `U : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] F` out of a scalar sequence space,
+this file records the coordinate norm bound (`ContinuousLinearMap.norm_apply_lp_single_one_le`),
+coordinate scaling (`ContinuousLinearMap.apply_lp_single_eq_smul`), coordinate-series expansion
+(`ContinuousLinearMap.hasSum_lp_single_smul`), coordinate extensionality for `q ≠ ∞` into normed
+spaces (`ContinuousLinearMap.ext_lp_of_ne_top`), and the coordinate-supremum operator-norm formula
+on scalar `ℓ¹` (`ContinuousLinearMap.opNorm_lpOne_le`, `ContinuousLinearMap.opNorm_lpOne_eq_iSup`,
+`ContinuousLinearMap.opNNNorm_lpOne_eq_iSup`).
 -/
 
 public section
@@ -336,3 +344,101 @@ theorem memℓp_const_mul_pow_iff {𝕜 : Type*} [NormedDivisionRing 𝕜] {C r 
 end TauCeti
 
 end Geometric
+
+namespace ContinuousLinearMap
+
+section LpCoord
+
+variable {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [DecidableEq ι]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+
+/-- The value of a bounded linear operator out of scalar `ℓ^q` at any unit coordinate vector has
+norm at most the operator norm. -/
+theorem norm_apply_lp_single_one_le (U : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] F) (i : ι) :
+    ‖U (lp.single q i 1)‖ ≤ ‖U‖ := by
+  simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
+    U.le_opNorm (lp.single q i (1 : 𝕜))
+
+/-- A bounded linear operator out of scalar `ℓ^q` scales its value on a unit coordinate vector:
+`U (lp.single q i c) = c • U (lp.single q i 1)`. -/
+theorem apply_lp_single_eq_smul (U : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] F) (i : ι) (c : 𝕜) :
+    U (lp.single q i c) = c • U (lp.single q i 1) := by
+  simpa [← lp.single_smul] using U.map_smul c (lp.single q i 1)
+
+/-- The norms of the images of unit coordinate vectors under a bounded linear operator out of
+scalar `ℓ^q` are bounded above by `‖U‖`. -/
+theorem bddAbove_range_norm_apply_lp_single_one (U : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] F) :
+    BddAbove (Set.range fun i ↦ ‖U (lp.single q i 1)‖) :=
+  ⟨‖U‖, Set.forall_mem_range.mpr U.norm_apply_lp_single_one_le⟩
+
+/-- Every bounded linear operator out of scalar `ℓ^q` with `q ≠ ∞` expands each input `α` as the
+unconditional sum `∑ i, α i • U (lp.single q i 1)`. -/
+theorem hasSum_lp_single_smul (hq : q ≠ ∞) (U : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] F)
+    (α : lp (fun _ : ι ↦ 𝕜) q) :
+    HasSum (fun i ↦ α i • U (lp.single q i 1)) (U α) := by
+  convert (lp.hasSum_single hq α).map U U.continuous using 1
+  ext i
+  exact (U.apply_lp_single_eq_smul i (α i)).symm
+
+end LpCoord
+
+section LpExt
+
+variable {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [DecidableEq ι]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {q : ℝ≥0∞} [Fact (1 ≤ q)]
+
+/-- Two bounded linear operators from scalar `ℓ^q` (`q ≠ ∞`) into a normed space are equal as soon
+as they agree on every unit coordinate vector `lp.single q i 1`. -/
+theorem ext_lp_of_ne_top (hq : q ≠ ∞) {U₁ U₂ : lp (fun _ : ι ↦ 𝕜) q →L[𝕜] F}
+    (h : ∀ i : ι, U₁ (lp.single q i 1) = U₂ (lp.single q i 1)) : U₁ = U₂ := by
+  ext α
+  refine (U₁.hasSum_lp_single_smul hq α).unique ?_
+  simpa only [h] using U₂.hasSum_lp_single_smul hq α
+
+end LpExt
+
+section LpOneNorm
+
+open scoped NNReal
+
+variable {𝕜 ι F : Type*} [NontriviallyNormedField 𝕜] [DecidableEq ι]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Bounding a bounded linear operator out of scalar `ℓ¹` on every unit coordinate vector by `C ≥ 0`
+bounds its operator norm by `C`. -/
+theorem opNorm_lpOne_le (U : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] F) {C : ℝ} (hC : 0 ≤ C)
+    (hU : ∀ i : ι, ‖U (lp.single 1 i 1)‖ ≤ C) : ‖U‖ ≤ C := by
+  refine U.opNorm_le_bound hC fun α ↦ ?_
+  have hlim₁ : Tendsto (fun s : Finset ι ↦ ‖∑ i ∈ s, α i • U (lp.single 1 i 1)‖) atTop (𝓝 ‖U α‖) :=
+    (continuous_norm.tendsto (U α)).comp (U.hasSum_lp_single_smul ENNReal.one_ne_top α)
+  have hlim₂ : Tendsto (fun s : Finset ι ↦ ∑ i ∈ s, C * ‖α i‖) atTop (𝓝 (C * ‖α‖)) :=
+    (lp.hasSum_norm_one α).mul_left C
+  refine le_of_tendsto_of_tendsto hlim₁ hlim₂ (Eventually.of_forall fun s ↦ ?_)
+  calc ‖∑ i ∈ s, α i • U (lp.single 1 i 1)‖
+      ≤ ∑ i ∈ s, ‖α i • U (lp.single 1 i 1)‖ := norm_sum_le _ _
+    _ ≤ ∑ i ∈ s, C * ‖α i‖ := Finset.sum_le_sum fun i _ ↦ by
+        rw [norm_smul, mul_comm C]
+        exact mul_le_mul_of_nonneg_left (hU i) (norm_nonneg (α i))
+
+/-- The operator norm of a bounded linear map out of scalar `ℓ¹` is the supremum of the norms of
+its values at unit coordinate vectors (`0` when the index type is empty). -/
+theorem opNorm_lpOne_eq_iSup (U : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] F) :
+    ‖U‖ = ⨆ i : ι, ‖U (lp.single 1 i 1)‖ :=
+  le_antisymm
+    (U.opNorm_lpOne_le (Real.iSup_nonneg fun _ ↦ norm_nonneg _)
+      fun i ↦ le_ciSup U.bddAbove_range_norm_apply_lp_single_one i)
+    (Real.iSup_le U.norm_apply_lp_single_one_le (norm_nonneg U))
+
+/-- The nonnegative operator norm of a bounded linear map out of scalar `ℓ¹` is the supremum of the
+nonnegative norms of its values at unit coordinate vectors. -/
+theorem opNNNorm_lpOne_eq_iSup (U : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] F) :
+    ‖U‖₊ = ⨆ i : ι, ‖U (lp.single 1 i 1)‖₊ := by
+  have hbdd : BddAbove (Set.range fun i ↦ ‖U (lp.single 1 i 1)‖₊) :=
+    ⟨‖U‖₊, Set.forall_mem_range.mpr fun i ↦ by exact_mod_cast U.norm_apply_lp_single_one_le i⟩
+  refine le_antisymm ?_ (ciSup_le' fun i ↦ by exact_mod_cast U.norm_apply_lp_single_one_le i)
+  exact_mod_cast U.opNorm_lpOne_le (NNReal.coe_nonneg _)
+    fun i ↦ NNReal.coe_le_coe.mpr (le_ciSup hbdd i)
+
+end LpOneNorm
+
+end ContinuousLinearMap

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Lp.Summation
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Kolmogorov
 import Mathlib.Topology.Algebra.SeparationQuotient.FiniteDimensional
 import Mathlib.Topology.Algebra.SeparationQuotient.Section
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Pietsch's lifting identity for Kolmogorov numbers
@@ -113,8 +114,7 @@ theorem singularValue_lpOne_eq_kolmogorovNumber (S : lp (fun _ : ι ↦ 𝕜) 1 
       Submodule.Quotient.norm_mk_lt (V.mkQL (S (lp.single 1 i 1))) (half_pos hε)
     refine ⟨⟨S (lp.single 1 i 1) - m, (Submodule.Quotient.eq V).mp hm.symm⟩, ?_⟩
     rw [sub_sub_cancel]
-    refine hmlt.le.trans (add_le_add_left ?_ _)
-    simpa [lp.norm_single zero_lt_one] using (V.mkQL ∘L S).le_opNorm (lp.single 1 i (1 : 𝕜))
+    exact hmlt.le.trans (add_le_add_left ((V.mkQL ∘L S).norm_apply_lp_single_one_le i) _)
   choose v hv using hex
   obtain ⟨L, hLrange, hnorm⟩ :=
     exists_range_le_norm_sub_le_of_lpOne S V (by positivity) hv
