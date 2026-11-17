@@ -101,7 +101,9 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   stays in a given neighbourhood of the chart point.
 * `TauCeti.exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt`: a convex neighbourhood of the
   chart point within the model range, inside the chart target, with unique derivatives and
-  interior accumulating at the chart point.
+  interior accumulating at the chart point;
+  `TauCeti.exists_convex_subset_mem_nhdsWithin_extChartAt_target` gives a convex neighbourhood
+  within the target of any point of a chart target.
 * `TauCeti.exists_contDiffBump_extChartAt_subset`: on a boundaryless manifold, a bump function in
   the chart at a point of an open set `U`, with closed outer ball in the chart target and image
   in `U`; `TauCeti.isCompact_extChartAt_symm_image_closedBall` shows such images are compact.
@@ -823,6 +825,19 @@ theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
   · rw [interior_inter, Metric.isOpen_ball.interior_eq]
     exact Metric.isOpen_ball.inter_closure
       ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
+
+/-- Every point of a chart target has a convex neighbourhood within the target. The target is
+relatively open in the convex range of the model, so a small ball intersected with `range I`
+works; it need not be open when `M` has boundary or corners. -/
+theorem exists_convex_subset_mem_nhdsWithin_extChartAt_target {𝕜 E H M : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+    {x : M} {z : E} (hz : z ∈ (extChartAt I x).target) :
+    ∃ t ⊆ (extChartAt I x).target, Convex ℝ t ∧ t ∈ 𝓝[(extChartAt I x).target] z := by
+  obtain ⟨r, hr, hrs⟩ := Metric.mem_nhdsWithin_iff.mp (extChartAt_target_mem_nhdsWithin_of_mem hz)
+  exact ⟨Metric.ball z r ∩ Set.range I, hrs, (convex_ball z r).inter I.convex_range,
+    mem_nhdsWithin.mpr ⟨Metric.ball z r, Metric.isOpen_ball, Metric.mem_ball_self hr,
+      fun y hy ↦ ⟨hy.1, extChartAt_target_subset_range x hy.2⟩⟩⟩
 
 section ClosedBall
 
