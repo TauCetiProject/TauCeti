@@ -65,7 +65,7 @@ along straight lines towards `v`. -/
 private lemma isZero_twistedHomology_halfCompl
     (L : LocalCoefficientSystem.{u, v, max v w} R (TopCat.of (B × F))) (W : Submodule ℝ F)
     (φ : F →ₗ[ℝ] ℝ) (v : F) (hv : v ∈ W) (hφv : φ v = 1) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (proj ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).twistedHomology L n) := by
+    IsZero ((TopPair.ofSubset (SubspaceComplPair.halfCompl proj W φ)).twistedHomology L n) := by
   obtain ⟨ρ, H, hS, hρ⟩ := exists_homotopy_halfCompl B W φ v hv hφv
   exact TopPair.isZero_twistedHomology_ofSubset_of_homotopy H hS hρ L n
 

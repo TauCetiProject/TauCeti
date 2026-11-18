@@ -330,11 +330,6 @@ private abbrev pair (B : Type w) [TopologicalSpace B] (W : Submodule ℝ F) : To
 private abbrev pairMap (g : C(B, B')) (W : Submodule ℝ F) : pair B W ⟶ pair B' W :=
   subspaceComplPairMap (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) (fun _ ↦ rfl) W
 
-/-- The complement in `B × F` of `B` times the closed half-subspace `{x ∈ W | φ x ≤ 0}`. -/
-private abbrev halfCompl (B : Type w) [TopologicalSpace B] (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) :
-    Set (TopCat.of (B × F)) :=
-  proj B ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ
-
 variable (B) in
 /-- `B × F` deforms into the complement of `B` times a closed half-subspace `{y ∈ W | φ y ≤ 0}`
 with `φ v = 1` for some `v ∈ W`, through maps keeping that complement inside itself: the homotopy
@@ -344,9 +339,10 @@ theorem exists_homotopy_halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ)
     ∃ (ρ : TopCat.of (B × F) ⟶ TopCat.of (B × F))
       (H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy ρ.hom),
       (∀ (τ : unitInterval) (p : TopCat.of (B × F)),
-        p ∈ (ContinuousMap.snd : C(TopCat.of (B × F), F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ →
-          H (τ, p) ∈ (ContinuousMap.snd : C(TopCat.of (B × F), F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ) ∧
-      ∀ p, ρ p ∈ (ContinuousMap.snd : C(TopCat.of (B × F), F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ :=
+        p ∈ SubspaceComplPair.halfCompl (ContinuousMap.snd : C(TopCat.of (B × F), F)) W φ →
+          H (τ, p) ∈
+            SubspaceComplPair.halfCompl (ContinuousMap.snd : C(TopCat.of (B × F), F)) W φ) ∧
+      ∀ p, ρ p ∈ SubspaceComplPair.halfCompl (ContinuousMap.snd : C(TopCat.of (B × F), F)) W φ :=
   ⟨TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩,
     { toFun q := (q.2.1, (q.1 : ℝ) • v + (1 - (q.1 : ℝ)) • q.2.2)
       continuous_toFun := by fun_prop
@@ -361,7 +357,8 @@ variable (B) in
 `B × F` deforms into that complement along straight lines towards `v`. -/
 private lemma isZero_singularHomology_halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F)
     (hv : v ∈ W) (hφv : φ v = 1) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (halfCompl B W φ)).singularHomology R n) := by
+    IsZero
+      ((TopPair.ofSubset (SubspaceComplPair.halfCompl (proj B) W φ)).singularHomology R n) := by
   obtain ⟨ρ, H, hS, hρ⟩ := exists_homotopy_halfCompl B W φ v hv hφv
   exact TopPair.isZero_singularHomology_ofSubset_of_homotopy H hS hρ R n
 
