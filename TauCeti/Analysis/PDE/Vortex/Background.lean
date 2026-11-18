@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.UnivUnitBall
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.SpecialFunctions.Exp.UniformConvergence
 
 /-!
 # The background amplitude of the prescribed-zero vortex problem
@@ -442,19 +443,7 @@ private theorem tendstoUniformly_exp_smul_exp_backgroundAmplitude_smul {w : ι �
     TendstoUniformly
       (fun i z ↦ Real.exp (w i z) • (Real.exp (backgroundAmplitude (P i).eval z) • (P i).eval z))
       (fun z ↦ Real.exp (w₀ z) • (Real.exp (backgroundAmplitude Q.eval z) • Q.eval z)) l := by
-  -- `exp (w i) → exp w₀` uniformly, through the complex exponential on a half-plane.
-  have hE : TendstoUniformly (fun i z ↦ Real.exp (w i z)) (fun z ↦ Real.exp (w₀ z)) l := by
-    have hev : ∀ᶠ i in l, ∀ z, ((w i z : ℝ) : ℂ) ∈ {x : ℂ | x.re ≤ M + 1} := by
-      filter_upwards [Metric.tendstoUniformly_iff.1 hconv 1 one_pos] with i hi z
-      have := hi z
-      rw [Real.dist_eq, abs_lt] at this
-      simp only [Complex.ofReal_re]
-      linarith [hM z]
-    have h := (UniformContinuousOn.cexp (M + 1)).comp_tendstoUniformly_eventually hev
-      (fun z ↦ by simpa using (hM z).trans (le_add_of_nonneg_right zero_le_one))
-      (Complex.ofRealCLM.uniformContinuous.comp_tendstoUniformly hconv)
-    simpa [← Complex.ofReal_exp, Function.comp_def] using
-      Complex.reCLM.uniformContinuous.comp_tendstoUniformly h
+  have hE := hconv.rexp_of_le hM
   have hG := tendstoUniformly_exp_backgroundAmplitude_smul hdeg hcoeff
   rw [Metric.tendstoUniformly_iff] at hE hG ⊢
   intro ε hε
