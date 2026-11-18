@@ -109,10 +109,17 @@ def etaleLocallyConstantSheaf : Type u ⥤ Sheaf (smallEtaleTopology S) (Type u)
 
 /-- The map from the constant presheaf with value `M` to the locally constant functions, sending
 `m` to the constant function `m`, naturally in `M`. -/
-@[expose, simps]
 def constToEtaleLocallyConstantPresheaf :
     Functor.const S.Etaleᵒᵖ ⟶ etaleLocallyConstantPresheaf S where
   app M := { app U := TypeCat.ofHom fun m ↦ LocallyConstant.const _ m }
+
+/-- The component of `constToEtaleLocallyConstantPresheaf` at `M` and `U` sends `m` to the
+constant function `m`. -/
+@[simp]
+theorem constToEtaleLocallyConstantPresheaf_app_app (M : Type u) (U : S.Etaleᵒᵖ) :
+    ((constToEtaleLocallyConstantPresheaf S).app M).app U =
+      TypeCat.ofHom fun m ↦ LocallyConstant.const U.unop.left m :=
+  (rfl)
 
 /-- Constant sections that agree are locally equal: two different constants agree only over an
 empty étale `S`-scheme, which is covered by the empty sieve. -/
