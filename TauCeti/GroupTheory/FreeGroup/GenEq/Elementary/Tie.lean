@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.SplitItem
 import Mathlib.Data.Fin.VecNotation
-import TauCeti.Data.Fin.Basic
 
 /-!
 # Introduction of a boundary
@@ -281,26 +280,6 @@ abbrev tieNew (p : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases) (k : Fin Ω.num
 variable {p : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} (hp : Ω.Crosses p μ)
   (hk : k ∈ Ω.baseItems (Ω.dual μ)) (hk' : ¬ Ω.IsConstantItem k)
 
-/-- A base containing `h_k` starts at a boundary `≤ k` of `Ω.splitItem k`. -/
-private theorem succAbove_left_le {ν : Fin Ω.numBases} (hk : k ∈ Ω.baseItems ν) :
-    (k.succ.castSucc.succAbove (Ω.left ν) : ℕ) ≤ k := by
-  have := (Ω.mem_baseItems.1 hk).1
-  rw [Fin.val_succAbove]
-  simp only [Fin.val_castSucc, Fin.val_succ]
-  split_ifs <;> lia
-
-/-- A base containing `h_k` ends at a boundary `≥ k + 2` of `Ω.splitItem k`. -/
-private theorem add_two_le_succAbove_right {ν : Fin Ω.numBases} (hk : k ∈ Ω.baseItems ν) :
-    (k : ℕ) + 2 ≤ k.succ.castSucc.succAbove (Ω.right ν) := by
-  have := (Ω.mem_baseItems.1 hk).2
-  rw [Fin.val_succAbove]
-  simp only [Fin.val_castSucc, Fin.val_succ]
-  split_ifs <;> lia
-
-/-- The boundary `k` of `Ω` keeps its number in `Ω.splitItem k`. -/
-private theorem val_succAbove_castSucc_self : (k.succ.castSucc.succAbove k.castSucc : ℕ) = k := by
-  simp
-
 variable (Ω) in
 /-- The word in the old items to which the new boundary connection of `Ω.tieNew p μ k hp hk`
 equates `h′_k`: `h[α(Δμ), k]⁻¹ h[α(μ), p]` when `ε(μ) = ε(Δμ)`, and `h[k, β(Δμ)] h[α(μ), p]`
@@ -310,31 +289,6 @@ private def tieList (p : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases) (k : Fin 
   if Ω.sign μ = Ω.sign (Ω.dual μ) then
     Ω.segment (Ω.left (Ω.dual μ)) k false ++ Ω.segment (Ω.left μ) p true
   else Ω.segment k (Ω.right (Ω.dual μ)) true ++ Ω.segment (Ω.left μ) p true
-
-/-- In `Ω.splitItem k`, a base containing `h_k` reaches the new boundary through the image of
-`h[α, k]` followed by `h′_k`. -/
-private theorem segment_splitItem_left_succ {ν : Fin Ω.numBases} (hk : k ∈ Ω.baseItems ν) :
-    (Ω.splitItem k).segment (k.succ.castSucc.succAbove (Ω.left ν)) (k.succ.castSucc : ℕ) true =
-      Ω.splitList k (Ω.segment (Ω.left ν) k true) ++ [(Sum.inl k.castSucc, true)] := by
-  have h₁ := segment_splitItem (k := k) (Ω.left ν) k.castSucc true
-  rw [val_succAbove_castSucc_self, Fin.val_castSucc] at h₁
-  rw [← h₁, ← (Ω.splitItem k).segment_succ k.castSucc true]
-  simp only [Fin.val_castSucc, Fin.val_succ]
-  exact ((Ω.splitItem k).segment_append (succAbove_left_le hk) (Nat.le_add_right _ 1)
-    (by simp)).symm
-
-/-- In `Ω.splitItem k`, the image of `h[k, β]` for a base containing `h_k` is `h′_k` followed by
-the word from the new boundary to the end of the base. -/
-private theorem segment_splitItem_castSucc_right {ν : Fin Ω.numBases} (hk : k ∈ Ω.baseItems ν) :
-    [(Sum.inl k.castSucc, true)] ++ (Ω.splitItem k).segment (k.succ.castSucc : ℕ)
-        (k.succ.castSucc.succAbove (Ω.right ν)) true =
-      Ω.splitList k (Ω.segment k (Ω.right ν) true) := by
-  have h := segment_splitItem (k := k) k.castSucc (Ω.right ν) true
-  rw [val_succAbove_castSucc_self, Fin.val_castSucc] at h
-  rw [← h, ← (Ω.splitItem k).segment_succ k.castSucc true]
-  simp only [Fin.val_castSucc, Fin.val_succ]
-  exact (Ω.splitItem k).segment_append (Nat.le_add_right _ 1)
-    (by have := add_two_le_succAbove_right hk; lia) (Fin.is_le _)
 
 include hk in
 /-- The boundary equation of the new connection of `Ω.tieNew p μ k hp hk` holds at a tuple
@@ -365,14 +319,16 @@ private theorem lift_mk_boundaryEquation_tieNew_iff {H : Type*} [Group H] (ι : 
       refine ⟨_, ite_eq_left hs, ?_⟩
       rw [(Ω.splitItem k).boundaryEquation_snd_of_sign_eq (c := (_, μ, _)) hs]
       dsimp only
-      rw [segment_splitItem_left_succ hk, hmul, hv, Ω.lift_mk_segment _ _ _ false]
+      rw [segment_splitItem_succAbove_succ_castSucc (Ω.mem_baseItems.1 hk).1, hmul, hv,
+        Ω.lift_mk_segment _ _ _ false]
       simp
     · -- The right side is `h′[k + 1, β(Δμ)]⁻¹`, where `h′_k h′[k + 1, β(Δμ)] = h[k, β(Δμ)]`.
       refine ⟨_, ite_eq_right hs, ?_⟩
       rw [(Ω.splitItem k).boundaryEquation_snd_of_sign_ne (c := (_, μ, _)) hs]
       dsimp only
-      rw [(Ω.splitItem k).lift_mk_segment _ _ _ false, ← hv, ← segment_splitItem_castSucc_right hk,
-        hmul]
+      rw [(Ω.splitItem k).lift_mk_segment _ _ _ false, ← hv,
+        ← cons_segment_splitItem_succ_castSucc_succAbove (Ω.mem_baseItems.1 hk).2,
+        ← List.singleton_append, hmul]
       simp
   -- Group identity: `x = t⁻¹ h′_k ↔ h′_k = t x`.
   rw [hR, boundaryEquation_fst, segment_splitItem, hv, ht, hmul]
@@ -551,8 +507,12 @@ def ofTieNew (U : (Ω.tieNew p μ k hp hk).Solution) : Ω.Solution where
   isReduced_word j := by
     rcases eq_or_ne j k with h | h
     · rw [h, Fin.contractNth_apply_of_eq _ _ _ _ rfl, ← substituteVars_segment_tieNew hp hk U]
-      exact U.isReduced_substituteVars_segment_of_le (Ω.dual μ) (succAbove_left_le hk)
-        (add_two_le_succAbove_right hk)
+      -- `h′_k` and `h′_{k+1}` both lie in `Δ(μ)`.
+      have h₁ := (Ω.splitItem k).mem_baseItems.1
+        (mem_baseItems_splitItem (x := k.castSucc).2 (by simpa using hk))
+      have h₂ := (Ω.splitItem k).mem_baseItems.1
+        (mem_baseItems_splitItem (x := k.succ).2 (by simpa using hk))
+      exact U.isReduced_substituteVars_segment_of_le (Ω.dual μ) h₁.1 h₂.2
     · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm]
       exact U.isReduced_word _
   word_ne_nil j := by
@@ -597,96 +557,6 @@ theorem toHom_comp_tieNewHom (U : (Ω.tieNew p μ k hp hk).Solution) :
   simpa [Function.comp_def, ← Solution.point_apply] using (congr_fun (Fin.comp_contractNth
     (· ++ ·) (· * ·) (fun _ _ => FreeGroup.mul_mk.symm) k.castSucc U.word) j).symm
 
-variable (k) in
-/-- The words of `U` with the word of `h_k` cut after its first `d` letters, as words for the
-items of `Ω.splitItem k`. -/
-private def splitWords (U : Ω.Solution) (d : ℕ) : Fin (Ω.numItems + 1) → List (A × Bool) :=
-  Fin.insertNth (α := fun _ => List (A × Bool)) k.castSucc ((U.word k).take d)
-    (Function.update U.word k ((U.word k).drop d))
-
-private theorem splitWords_castSucc (U : Ω.Solution) (d : ℕ) :
-    splitWords k U d k.castSucc = (U.word k).take d :=
-  Fin.insertNth_apply_same _ _ _
-
-private theorem splitWords_succ (U : Ω.Solution) (d : ℕ) :
-    splitWords k U d k.succ = (U.word k).drop d := by
-  rw [splitWords, ← Fin.succAbove_castSucc_self, Fin.insertNth_apply_succAbove,
-    Function.update_self]
-
-private theorem splitWords_succAbove (U : Ω.Solution) (d : ℕ) {j : Fin Ω.numItems} (hj : j ≠ k) :
-    splitWords k U d (k.castSucc.succAbove j) = U.word j := by
-  rw [splitWords, Fin.insertNth_apply_succAbove, Function.update_of_ne hj]
-
-/-- Concatenating the two halves of `h_k` in `splitWords` gives back the words of `U`. -/
-private theorem merge_splitWords (U : Ω.Solution) (d : ℕ) :
-    Fin.contractNth k.castSucc (· ++ ·) (splitWords k U d) = U.word := by
-  funext j
-  rcases eq_or_ne j k with rfl | h
-  · rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, splitWords_castSucc, splitWords_succ,
-      List.take_append_drop]
-  · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm,
-      splitWords_succAbove _ _ h]
-
-include hk' in
-/-- A property of the two sides of the equations of `Ω`, substituted with the words of `h′_k` and
-`h′_{k+1}` concatenated for `h_k`, is the property of the two sides of the equations of
-`Ω.splitItem k`, substituted with the words. -/
-private theorem forall_mem_equations_splitItem (W : Fin (Ω.numItems + 1) → List (A × Bool))
-    (P : List (A × Bool) → List (A × Bool) → Prop)
-    (h : ∀ e ∈ Ω.equations, P (substituteVars (Fin.contractNth k.castSucc (· ++ ·) W) e.1)
-      (substituteVars (Fin.contractNth k.castSucc (· ++ ·) W) e.2)) :
-    ∀ e ∈ (Ω.splitItem k).equations, P (substituteVars W e.1) (substituteVars W e.2) := by
-  rw [equations_splitItem hk', Set.forall_mem_image]
-  intro e he
-  rw [Prod.map_fst, Prod.map_snd, substituteVars_splitList, substituteVars_splitList]
-  exact h e he
-
-include hk' in
-/-- A solution of `Ω` with the word of `h_k` cut strictly inside, as a solution of
-`Ω.splitItem k`. -/
-private def splitSolution (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d) (hd : d < (U.word k).length) :
-    (Ω.splitItem k).Solution where
-  word := splitWords k U d
-  isReduced_word x := by
-    rcases Fin.eq_self_or_eq_succAbove k.castSucc x with rfl | ⟨j, rfl⟩
-    · rw [splitWords_castSucc]
-      exact (U.isReduced_word k).infix (List.take_prefix _ _).isInfix
-    · rcases eq_or_ne j k with hj | hj
-      · rw [hj, Fin.succAbove_castSucc_self, splitWords_succ]
-        exact (U.isReduced_word k).infix (List.drop_suffix _ _).isInfix
-      · rw [splitWords_succAbove _ _ hj]
-        exact U.isReduced_word j
-  word_ne_nil x := by
-    rcases Fin.eq_self_or_eq_succAbove k.castSucc x with rfl | ⟨j, rfl⟩
-    · rw [splitWords_castSucc, Ne, List.take_eq_nil_iff]
-      exact fun h => h.elim hd₀.ne' (U.word_ne_nil k)
-    · rcases eq_or_ne j k with hj | hj
-      · rw [hj, Fin.succAbove_castSucc_self, splitWords_succ, Ne, List.drop_eq_nil_iff]
-        lia
-      · rw [splitWords_succAbove _ _ hj]
-        exact U.word_ne_nil j
-  isReduced_subst := forall_mem_equations_splitItem hk' _
-    (fun u w => FreeGroup.IsReduced u ∧ FreeGroup.IsReduced w)
-    (by rw [merge_splitWords]; exact U.isReduced_subst)
-  subst_eq := forall_mem_equations_splitItem hk' _ (· = ·)
-    (by rw [merge_splitWords]; exact U.subst_eq)
-
-/-- The new boundary of the cut solution sits `d` letters after the boundary `k`. -/
-private theorem prefixLength_splitSolution (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d)
-    (hd : d < (U.word k).length) :
-    (splitSolution hk' U hd₀ hd).prefixLength (k + 1) = U.prefixLength k + d := by
-  have h := (splitSolution hk' U hd₀ hd).length_substituteVars_segment_add_prefixLength true
-    (Nat.le_add_right (k : ℕ) 1)
-  have h₁ := (Ω.splitItem k).segment_succ k.castSucc true
-  have h₂ := (splitSolution hk' U hd₀ hd).prefixLength_succAbove_of_word_eq U
-    (merge_splitWords U d).symm k.castSucc
-  simp only [Fin.val_castSucc] at h₁
-  rw [val_succAbove_castSucc_self, Fin.val_castSucc] at h₂
-  rw [h₁, FreeGroup.substituteVars_singleton_inl, h₂] at h
-  rw [← h]
-  simp only [splitSolution, splitWords_castSucc, List.length_take]
-  lia
-
 include hp hk hk' in
 /-- A solution of `Ω` whose word of `h_k` has its `d`-th letter at the position of `p` in `μ`,
 read in `Δ(μ)`, comes from a solution of `Ω.tieNew p μ k hp hk`. -/
@@ -696,30 +566,28 @@ private theorem exists_solution_tieNew_of_eq (U : Ω.Solution) {d : ℕ} (hd₀ 
         U.prefixLength k + d - U.prefixLength (Ω.left (Ω.dual μ))
       else U.prefixLength (Ω.right (Ω.dual μ)) - (U.prefixLength k + d)) :
     ∃ U' : (Ω.tieNew p μ k hp hk).Solution, U'.ofTieNew hp hk hk' = U := by
-  have e := (splitSolution hk' U hd₀ hd).prefixLength_succAbove_of_word_eq U
-    (merge_splitWords U d).symm
-  have key : (splitSolution hk' U hd₀ hd).prefixLength (k.succ.castSucc.succAbove p) -
-      (splitSolution hk' U hd₀ hd).prefixLength (k.succ.castSucc.succAbove (Ω.left μ)) =
+  have e := (U.splitItem hd₀ hd).prefixLength_succAbove_of_word_eq U
+    (U.contractNth_splitItem_word hd₀ hd).symm
+  have key : (U.splitItem hd₀ hd).prefixLength (k.succ.castSucc.succAbove p) -
+      (U.splitItem hd₀ hd).prefixLength (k.succ.castSucc.succAbove (Ω.left μ)) =
       if Ω.sign μ = Ω.sign (Ω.dual μ) then
-        (splitSolution hk' U hd₀ hd).prefixLength (k.succ.castSucc : ℕ) -
-          (splitSolution hk' U hd₀ hd).prefixLength
-            (k.succ.castSucc.succAbove (Ω.left (Ω.dual μ)))
-      else (splitSolution hk' U hd₀ hd).prefixLength
-          (k.succ.castSucc.succAbove (Ω.right (Ω.dual μ))) -
-        (splitSolution hk' U hd₀ hd).prefixLength (k.succ.castSucc : ℕ) := by
-    rw [e, e, e, e, Fin.val_castSucc, Fin.val_succ, prefixLength_splitSolution]
+        (U.splitItem hd₀ hd).prefixLength (k.succ.castSucc : ℕ) -
+          (U.splitItem hd₀ hd).prefixLength (k.succ.castSucc.succAbove (Ω.left (Ω.dual μ)))
+      else (U.splitItem hd₀ hd).prefixLength (k.succ.castSucc.succAbove (Ω.right (Ω.dual μ))) -
+        (U.splitItem hd₀ hd).prefixLength (k.succ.castSucc : ℕ) := by
+    rw [e, e, e, e, Fin.val_castSucc, Fin.val_succ, Solution.prefixLength_splitItem_add_one]
     exact h
   obtain ⟨U', hU'⟩ := (exists_solution_addConnection_iff _ _ _).2 key
   refine ⟨U', Solution.ext (funext fun j => ?_)⟩
   rw [Solution.ofTieNew_word, hU']
-  exact congrFun (merge_splitWords U d) j
+  exact congrFun (U.contractNth_splitItem_word hd₀ hd) j
 
 /-- Under a solution of `Ω.tieNew p μ k hp hk`, the new boundary sits strictly after the
 boundary `k` of the corresponding solution of `Ω`. -/
 private theorem prefixLength_ofTieNew_lt (U : (Ω.tieNew p μ k hp hk).Solution) :
     (U.ofTieNew hp hk hk').prefixLength k < U.prefixLength (k + 1) := by
   have e := Solution.prefixLength_ofTieNew hp hk hk' U k.castSucc
-  rw [val_succAbove_castSucc_self, Fin.val_castSucc] at e
+  rw [(by simp : (k.succ.castSucc.succAbove k.castSucc : ℕ) = k), Fin.val_castSucc] at e
   exact e ▸ U.prefixLength_lt (Nat.lt_add_one _) (by simp)
 
 /-- Under a solution of `Ω.tieNew p μ k hp hk`, the new boundary sits strictly before the

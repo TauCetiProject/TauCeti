@@ -9,6 +9,7 @@ public import Mathlib.Data.Fin.Embedding
 public import Mathlib.Data.Fin.Tuple.Basic
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Section
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Splitting an item of a generalised equation
@@ -19,28 +20,39 @@ equation `Ω` and renames the boundaries. This file makes the splitting
 (`TauCeti.GenEq.splitItem`): the result has the items `h′_0, …, h′_ρ`, where `h′_k h′_{k+1}`
 replaces `h_k` and every other item keeps its place; the boundary `j` of `Ω` becomes `j` for
 `j ≤ k` and `j + 1` otherwise, so that the new boundary is `k + 1`. Bases, constant bases and
-boundary connections move with the boundaries and items (`TauCeti.GenEq.mem_constBases_splitItem`,
-`TauCeti.GenEq.mem_connections_splitItem`).
+boundary connections move with the boundaries and items (`TauCeti.GenEq.mem_baseItems_splitItem`,
+`TauCeti.GenEq.mem_constBases_splitItem`, `TauCeti.GenEq.mem_connections_splitItem`).
 
 The substitution `h_k ↦ h′_k h′_{k+1}` (`TauCeti.GenEq.splitList` on words with letters,
 `TauCeti.GenEq.splitWord` as a tuple of words in the new items) contracts the two adjacent items
-`h′_k`, `h′_{k+1}` (`Fin.contractNth`). It carries the words `h[i, j]` of
-`Ω` to the words of the result between the renumbered boundaries
-(`TauCeti.GenEq.segment_splitItem`), hence the equations of `Ω` to those of the result, when `h_k`
-carries no constant base (`TauCeti.GenEq.equations_splitItem`). Consequently a tuple is a point of
-the system of the result exactly when its image under the substitution is a point of `Ω*`
-(`TauCeti.GenEq.mem_V_splitItem_iff`), and substituting words into a side of the result is
-substituting into the corresponding side of `Ω`, with the words of the two halves of `h_k`
-contracted by concatenation (`TauCeti.GenEq.substituteVars_splitList`).
+`h′_k`, `h′_{k+1}` (`Fin.contractNth`). It carries the words `h[i, j]` of `Ω` to the words of
+the result between the renumbered boundaries (`TauCeti.GenEq.segment_splitItem`; for the words up
+to and from the new boundary, `TauCeti.GenEq.segment_splitItem_succAbove_succ_castSucc` and
+`TauCeti.GenEq.cons_segment_splitItem_succ_castSucc_succAbove`), hence the equations of `Ω` to
+those of the result, when `h_k` carries no constant base (`TauCeti.GenEq.equations_splitItem`).
+Consequently a tuple is a point of the system of the result exactly when its image under the
+substitution is a point of `Ω*` (`TauCeti.GenEq.mem_V_splitItem_iff`), and substituting words into
+a side of the result is substituting into the corresponding side of `Ω`, with the words of the two
+halves of `h_k` contracted by concatenation (`TauCeti.GenEq.substituteVars_splitList`).
+
+On solutions: if the words of a solution of `Ω` are those of a solution of the result with the
+words of `h′_k` and `h′_{k+1}` concatenated, every boundary of `Ω` keeps its position in the words
+(`TauCeti.GenEq.Solution.prefixLength_succAbove_of_word_eq`). Conversely, cutting the word of
+`h_k` in a solution of `Ω` strictly inside, after `d` letters, gives a solution of the result
+(`TauCeti.GenEq.Solution.splitItem`), whose two halves concatenate back to the solution
+(`TauCeti.GenEq.Solution.contractNth_splitItem_word`) and whose new boundary sits `d` letters after
+the boundary `k` (`TauCeti.GenEq.Solution.prefixLength_splitItem_add_one`).
 
 A constant base on `h_k` is moved to `h′_{k+1}`; that case does not occur in ET5, where the split
-item carries no constant base, and every statement about equations excludes it.
+item carries no constant base, and every statement about equations excludes it. A solution never
+cuts a constant item: its word has a single letter.
 
 ## Main definitions
 
 * `TauCeti.GenEq.splitItem`: split the item `h_k` by a new boundary.
 * `TauCeti.GenEq.splitList`, `TauCeti.GenEq.splitWord`: the substitution `h_k ↦ h′_k h′_{k+1}` on
   words with letters, and as a tuple of words in the new items.
+* `TauCeti.GenEq.Solution.splitItem`: a solution with the word of `h_k` cut strictly inside.
 
 ## Main results
 
@@ -50,6 +62,9 @@ item carries no constant base, and every statement about equations excludes it.
   whose image under the substitution is a point of `Ω*`, in every `F(A)`-group.
 * `TauCeti.GenEq.Solution.prefixLength_succAbove_of_word_eq`: a boundary of `Ω` keeps its
   position in the words of a solution.
+* `TauCeti.GenEq.Solution.contractNth_splitItem_word`,
+  `TauCeti.GenEq.Solution.prefixLength_splitItem_add_one`: cutting a solution inside `h_k` and
+  merging the halves back are inverse, and the new boundary sits at the cut.
 
 ## References
 
@@ -149,6 +164,14 @@ theorem crosses_splitItem_succ_castSucc_iff {μ : Fin Ω.numBases} :
   rw [mem_baseItems, crosses_iff, Fin.lt_def, Fin.lt_def, val_succAbove_succ_castSucc,
     val_succAbove_succ_castSucc]
   simp only [Fin.val_castSucc, Fin.val_succ]
+  split_ifs <;> lia
+
+/-- The items of a base of `Ω.splitItem k` are the items sent into the base of `Ω` when `h′_k` and
+`h′_{k+1}` are merged back into `h_k` (`Fin.predAbove`). -/
+theorem mem_baseItems_splitItem {ν : Fin Ω.numBases} {x : Fin (Ω.numItems + 1)} :
+    x ∈ (Ω.splitItem k).baseItems ν ↔ k.predAbove x ∈ Ω.baseItems ν := by
+  rw [mem_baseItems, mem_baseItems, val_succAbove_succ_castSucc, val_succAbove_succ_castSucc,
+    Fin.val_predAbove]
   split_ifs <;> lia
 
 /-- The substitution `h_k ↦ h′_k h′_{k+1}` takes the empty word to the empty word. -/
@@ -257,6 +280,33 @@ theorem segment_splitItem (i j : Fin (Ω.numItems + 1)) (s : Bool) :
   cases s
   · rw [segment_false, segment_false, htrue, splitList_invRev]
   · exact htrue
+
+/-- The word of `Ω.splitItem k` from a renumbered boundary `i ≤ k` to the new boundary is the image
+of the word `h[i, k]` of `Ω` followed by `h′_k`. -/
+theorem segment_splitItem_succAbove_succ_castSucc {i : Fin (Ω.numItems + 1)} (hi : (i : ℕ) ≤ k) :
+    (Ω.splitItem k).segment (k.succ.castSucc.succAbove i) (k.succ.castSucc : ℕ) true =
+      Ω.splitList k (Ω.segment i k true) ++ [(Sum.inl k.castSucc, true)] := by
+  have h := segment_splitItem (k := k) i k.castSucc true
+  rw [(by simp : (k.succ.castSucc.succAbove k.castSucc : ℕ) = k), Fin.val_castSucc] at h
+  rw [← h, ← (Ω.splitItem k).segment_succ k.castSucc true]
+  simp only [Fin.val_castSucc, Fin.val_succ]
+  exact ((Ω.splitItem k).segment_append
+    (by rw [val_succAbove_succ_castSucc, ite_eq_left hi]; exact hi) (Nat.le_add_right _ 1)
+    (by simp)).symm
+
+/-- The letter `h′_k` followed by the word of `Ω.splitItem k` from the new boundary to a
+renumbered boundary `j > k` is the image of the word `h[k, j]` of `Ω`. -/
+theorem cons_segment_splitItem_succ_castSucc_succAbove {j : Fin (Ω.numItems + 1)}
+    (hj : (k : ℕ) < j) :
+    (Sum.inl k.castSucc, true) ::
+        (Ω.splitItem k).segment (k.succ.castSucc : ℕ) (k.succ.castSucc.succAbove j) true =
+      Ω.splitList k (Ω.segment k j true) := by
+  have h := segment_splitItem (k := k) k.castSucc j true
+  rw [(by simp : (k.succ.castSucc.succAbove k.castSucc : ℕ) = k), Fin.val_castSucc] at h
+  rw [← h, ← List.singleton_append, ← (Ω.splitItem k).segment_succ k.castSucc true]
+  simp only [Fin.val_castSucc, Fin.val_succ]
+  exact (Ω.splitItem k).segment_append (Nat.le_add_right _ 1)
+    (by rw [val_succAbove_succ_castSucc, ite_eq_right hj.not_ge]; lia) (Fin.is_le _)
 
 /-- The basic equation of a base of `Ω.splitItem k` is the basic equation of the base in `Ω`
 with `h_k` replaced by `h′_k h′_{k+1}`. -/
@@ -385,6 +435,117 @@ theorem Solution.prefixLength_succAbove_of_word_eq (U' : (Ω.splitItem k).Soluti
   have h₀ : ((k.succ.castSucc.succAbove 0 : Fin (Ω.numItems + 2)) : ℕ) = 0 := by simp
   rw [segment_splitItem, substituteVars_splitList, ← h, Fin.val_zero, h₂, h₀] at h₁
   simpa using h₁.symm
+
+/-! ### Cutting a solution inside an item -/
+
+/-- Concatenating the two halves of the word of `h_k` cut after `d` letters gives back the words. -/
+private theorem contractNth_insertNth_take_drop (W : Fin Ω.numItems → List (A × Bool)) (d : ℕ) :
+    Fin.contractNth k.castSucc (· ++ ·) (Fin.insertNth (α := fun _ => List (A × Bool)) k.castSucc
+      ((W k).take d) (Function.update W k ((W k).drop d))) = W := by
+  funext j
+  rcases eq_or_ne j k with rfl | h
+  · rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.insertNth_apply_same,
+      Fin.insertNth_castSucc_apply_succ, Function.update_self, List.take_append_drop]
+  · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm,
+      Fin.insertNth_apply_succAbove, Function.update_of_ne h]
+
+/-- When `h_k` carries no constant base, a property of the two sides of every equation of `Ω`,
+substituted with the words of `h′_k` and `h′_{k+1}` concatenated for `h_k`, is the property of the
+two sides of every equation of `Ω.splitItem k`, substituted with the words. -/
+private theorem forall_mem_equations_splitItem (hk' : ¬ Ω.IsConstantItem k)
+    (W : Fin (Ω.numItems + 1) → List (A × Bool)) (P : List (A × Bool) → List (A × Bool) → Prop)
+    (h : ∀ e ∈ Ω.equations, P (substituteVars (Fin.contractNth k.castSucc (· ++ ·) W) e.1)
+      (substituteVars (Fin.contractNth k.castSucc (· ++ ·) W) e.2)) :
+    ∀ e ∈ (Ω.splitItem k).equations, P (substituteVars W e.1) (substituteVars W e.2) := by
+  rw [equations_splitItem hk', Set.forall_mem_image]
+  intro e he
+  rw [Prod.map_fst, Prod.map_snd, substituteVars_splitList, substituteVars_splitList]
+  exact h e he
+
+namespace Solution
+
+/-- A solution of `Ω` with the word of `h_k` cut strictly inside, after its first `d` letters, as a
+solution of `Ω.splitItem k`: `h′_k` gets the first `d` letters of the word of `h_k`, `h′_{k+1}`
+the others, and every other item keeps its word. -/
+def splitItem (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d) (hd : d < (U.word k).length) :
+    (Ω.splitItem k).Solution :=
+  -- The word of a constant item has one letter, so `h_k` carries no constant base.
+  have hk' : ¬ Ω.IsConstantItem k := fun hc => by
+    obtain ⟨b, hb, rfl⟩ := Ω.isConstantItem_iff.1 hc
+    rw [U.word_of_mem_constBases hb, List.length_singleton] at hd
+    lia
+  { word := Fin.insertNth (α := fun _ => List (A × Bool)) k.castSucc ((U.word k).take d)
+      (Function.update U.word k ((U.word k).drop d))
+    isReduced_word x := by
+      rcases Fin.eq_self_or_eq_succAbove k.castSucc x with rfl | ⟨j, rfl⟩
+      · rw [Fin.insertNth_apply_same]
+        exact (U.isReduced_word k).infix (List.take_prefix _ _).isInfix
+      · rw [Fin.insertNth_apply_succAbove]
+        rcases eq_or_ne j k with hj | hj
+        · rw [hj, Function.update_self]
+          exact (U.isReduced_word k).infix (List.drop_suffix _ _).isInfix
+        · rw [Function.update_of_ne hj]
+          exact U.isReduced_word j
+    word_ne_nil x := by
+      rcases Fin.eq_self_or_eq_succAbove k.castSucc x with rfl | ⟨j, rfl⟩
+      · rw [Fin.insertNth_apply_same, Ne, List.take_eq_nil_iff]
+        exact fun h => h.elim hd₀.ne' (U.word_ne_nil k)
+      · rw [Fin.insertNth_apply_succAbove]
+        rcases eq_or_ne j k with hj | hj
+        · rw [hj, Function.update_self, Ne, List.drop_eq_nil_iff]
+          lia
+        · rw [Function.update_of_ne hj]
+          exact U.word_ne_nil j
+    isReduced_subst := forall_mem_equations_splitItem hk' _
+      (fun u w => FreeGroup.IsReduced u ∧ FreeGroup.IsReduced w)
+      (by rw [contractNth_insertNth_take_drop]; exact U.isReduced_subst)
+    subst_eq := forall_mem_equations_splitItem hk' _ (· = ·)
+      (by rw [contractNth_insertNth_take_drop]; exact U.subst_eq) }
+
+variable (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d) (hd : d < (U.word k).length)
+
+/-- The item `h′_k` of the cut solution carries the first `d` letters of the word of `h_k`. -/
+@[simp]
+theorem splitItem_word_castSucc : (U.splitItem hd₀ hd).word k.castSucc = (U.word k).take d := by
+  dsimp only [Solution.splitItem]
+  exact Fin.insertNth_apply_same _ _ _
+
+/-- The item `h′_{k+1}` of the cut solution carries the word of `h_k` without its first `d`
+letters. -/
+@[simp]
+theorem splitItem_word_succ : (U.splitItem hd₀ hd).word k.succ = (U.word k).drop d := by
+  dsimp only [Solution.splitItem]
+  rw [Fin.insertNth_castSucc_apply_succ, Function.update_self]
+
+/-- Every item other than `h′_k`, `h′_{k+1}` keeps its word in the cut solution. -/
+@[simp]
+theorem splitItem_word_succAbove {j : Fin Ω.numItems} (hj : j ≠ k) :
+    (U.splitItem hd₀ hd).word (k.castSucc.succAbove j) = U.word j := by
+  dsimp only [Solution.splitItem]
+  exact (Fin.insertNth_apply_succAbove _ _ _ _).trans (Function.update_of_ne hj _ _)
+
+/-- Concatenating the words of `h′_k` and `h′_{k+1}` of the cut solution gives back the words of
+the solution. -/
+theorem contractNth_splitItem_word :
+    Fin.contractNth k.castSucc (· ++ ·) (U.splitItem hd₀ hd).word = U.word := by
+  dsimp only [Solution.splitItem]
+  exact contractNth_insertNth_take_drop U.word d
+
+/-- The new boundary of the cut solution sits `d` letters after the boundary `k`. -/
+theorem prefixLength_splitItem_add_one :
+    (U.splitItem hd₀ hd).prefixLength (k + 1) = U.prefixLength k + d := by
+  have h := (U.splitItem hd₀ hd).length_substituteVars_segment_add_prefixLength true
+    (Nat.le_add_right (k : ℕ) 1)
+  have h₁ := (Ω.splitItem k).segment_succ k.castSucc true
+  have h₂ := (U.splitItem hd₀ hd).prefixLength_succAbove_of_word_eq U
+    (U.contractNth_splitItem_word hd₀ hd).symm k.castSucc
+  simp only [Fin.val_castSucc] at h₁
+  rw [(by simp : (k.succ.castSucc.succAbove k.castSucc : ℕ) = k), Fin.val_castSucc] at h₂
+  rw [h₁, FreeGroup.substituteVars_singleton_inl, h₂, splitItem_word_castSucc, List.length_take,
+    min_eq_left hd.le] at h
+  lia
+
+end Solution
 
 end GenEq
 
