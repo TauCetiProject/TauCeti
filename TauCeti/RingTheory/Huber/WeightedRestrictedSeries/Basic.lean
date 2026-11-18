@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Restricted.PowerSeries
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.Topology.Algebra.Nonarchimedean.Bases
 import TauCeti.Topology.Algebra.Nonarchimedean.Absorption
+import TauCeti.Topology.Algebra.Nonarchimedean.OpenSubgroupBasis
 
 /-!
 # Weighted restricted power series `A⟨X⟩_T`
@@ -488,18 +489,8 @@ theorem isWeightedRestricted_one_weight_iff [NonarchimedeanAddGroup A]
     {f : MvPowerSeries (Fin k) A} :
     IsWeightedRestricted (fun _ : Fin k ↦ ({1} : Set A)) f ↔
       Tendsto (fun ν ↦ MvPowerSeries.coeff ν f) cofinite (nhds 0) := by
-  rw [isWeightedRestricted_iff]
-  constructor
-  · intro h
-    rw [tendsto_nhds]
-    intro V hV h0V
-    obtain ⟨U, hUV⟩ := NonarchimedeanAddGroup.is_nonarchimedean V (hV.mem_nhds h0V)
-    filter_upwards [h U] with ν hν
-    exact hUV (by simpa using hν)
-  · intro h U
-    have := (tendsto_nhds.mp h) _ U.isOpen (SetLike.mem_coe.mpr U.zero_mem)
-    filter_upwards [this] with ν hν
-    simpa using hν
+  simp [isWeightedRestricted_iff,
+    (NonarchimedeanAddGroup.nhds_zero_hasBasis_openAddSubgroup A).tendsto_right_iff]
 
 /-- Anything with only finitely many nonzero coefficients is `T`-restricted, whatever the weight:
 the zero coefficients meet every bound. This is the source of all the polynomial constructors
