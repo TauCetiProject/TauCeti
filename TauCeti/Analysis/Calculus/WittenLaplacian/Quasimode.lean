@@ -212,8 +212,6 @@ theorem sum_euclideanWittenLaplacian_smul_diagonalQuadraticWittenEigenform_mul {
     rw [hΨ_def, hG, h₁.fderiv]
     simp
   have hΨx : Ψ x = (κ⁻¹ * gauss a p t x) • (Pi.single s₀ 1 : Finset ι → ℝ) := congrFun hG x
-  have hΨx' : diagonalQuadraticWittenEigenform a t 0 s₀ (x - p) =
-      (κ⁻¹ * gauss a p t x) • (Pi.single s₀ 1 : Finset ι → ℝ) := congrFun hG x
   -- The cross term of the Leibniz rule is a multiple of `Ψ x`.
   have hcross : ∑ i, fderiv ℝ θ x (Pi.single i 1) • fderiv ℝ Ψ x (Pi.single i 1) =
       (-(t * ∑ i, |a i| * (x i - p i) * fderiv ℝ θ x (Pi.single i 1))) • Ψ x := by
@@ -221,10 +219,8 @@ theorem sum_euclideanWittenLaplacian_smul_diagonalQuadraticWittenEigenform_mul {
     rw [Finset.mul_sum, ← Finset.sum_neg_distrib, Finset.sum_mul]
     exact congrArg (· • _) (Finset.sum_congr rfl fun i _ ↦ by ring)
   rw [euclideanWittenLaplacian_smul_apply hfC hθ.contDiffAt hΨ.contDiffAt, hΔΨ, hcross]
-  simp only [smul_zero, hΨx, hΨx', neg_smul, smul_neg, sub_neg_eq_add, zero_add, Pi.sub_apply,
-    Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, Pi.smul_apply',
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, ite_pow, zero_pow two_ne_zero]
-  ring
+  simp only [hΨ_def, Pi.sub_apply, Pi.smul_apply, Pi.smul_apply', Pi.zero_apply, smul_eq_mul]
+  exact (Finset.sum_congr rfl fun s _ ↦ by ring).trans (Finset.mul_sum _ _ _).symm
 
 /-! ### The Gaussian away from and near its centre -/
 

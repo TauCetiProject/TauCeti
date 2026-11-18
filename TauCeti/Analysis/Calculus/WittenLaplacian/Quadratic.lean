@@ -311,13 +311,14 @@ theorem sum_sq_diagonalQuadraticWittenEigenform_zero_apply (a : ι → ℝ) {t :
     (s : Finset ι) (x : ι → ℝ) :
     ∑ s', diagonalQuadraticWittenEigenform a t 0 s x s' ^ 2 =
       Real.exp (-(t * ∑ i, |a i| * x i ^ 2)) / √Real.pi ^ Fintype.card ι := by
-  rw [diagonalQuadraticWittenEigenform_zero_apply a ht]
-  simp only [Pi.smul_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero, ite_pow,
-    zero_pow two_ne_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, div_pow, ← pow_mul,
-    ← Real.exp_nat_mul]
-  rw [mul_comm (Fintype.card ι), pow_mul, Real.sq_sqrt (Real.sqrt_nonneg _)]
-  congr 2
-  ring
+  -- The square of the Gaussian factor.
+  have h : (Real.exp (-(t * ∑ i, |a i| * x i ^ 2) / 2) / √(√Real.pi) ^ Fintype.card ι) ^ 2 =
+      Real.exp (-(t * ∑ i, |a i| * x i ^ 2)) / √Real.pi ^ Fintype.card ι := by
+    rw [div_pow, ← Real.exp_nat_mul, pow_right_comm, Real.sq_sqrt (Real.sqrt_nonneg _)]
+    congr 2
+    ring
+  rw [diagonalQuadraticWittenEigenform_zero_apply a ht, ← h]
+  simp [Pi.single_apply]
 
 /-- **The translated ground state.** For `t ≥ 0`, the Witten Laplacian of the model
 `y ↦ b + ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` annihilates the translated ground state `Ψ_{0,s₀}(· - p)` in the

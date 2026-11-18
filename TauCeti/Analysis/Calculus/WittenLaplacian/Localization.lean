@@ -404,26 +404,14 @@ is `∑ⱼ cⱼ²` times the pointwise energies of the `v j`, since `Δ_t` is a 
 theorem sum_euclideanWittenLaplacian_sum_smul_mul_of_notMem_tsupport (f : (ι → ℝ) → ℝ) (t : ℝ)
     (c : κ → ℝ) {x : ι → ℝ} (hv : ∀ i j, i ≠ j → x ∈ tsupport (v i) → x ∉ tsupport (v j)) :
     ∑ s, euclideanWittenLaplacian f t (∑ j, c j • v j) x s * (∑ j, c j • v j) x s =
-      ∑ j, c j ^ 2 * ∑ s, euclideanWittenLaplacian f t (v j) x s * v j x s := by
-  classical
-  have hzero : ∀ j, x ∉ tsupport (v j) → v j x = 0 := fun j hj ↦
-    image_eq_zero_of_notMem_tsupport hj
-  by_cases hx : ∃ i, x ∈ tsupport (v i)
-  · obtain ⟨i, hi⟩ := hx
-    have hi' : ∀ j ≠ i, x ∉ tsupport (v j) := fun j hj ↦ hv i j (Ne.symm hj) hi
-    have hφ : (∑ j, c j • v j) =ᶠ[𝓝 x] c i • v i :=
-      sum_eventuallyEq_of_notMem_tsupport (Finset.mem_univ i) fun j _ hj hx ↦
-        hi' j hj (tsupport_smul_subset_right (fun _ ↦ c j) (v j) hx)
-    rw [((EventuallyEq.refl _ f).euclideanWittenLaplacian hφ t).eq_of_nhds, hφ.eq_of_nhds,
-      euclideanWittenLaplacian_const_smul, Finset.sum_eq_single i (fun j _ hj ↦ ?_) (by simp)]
-    · simp only [Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
-      exact Finset.sum_congr rfl fun s _ ↦ by ring
-    · rw [hzero j (hi' j hj)]
-      simp
-  · push Not at hx
-    have h₀ : (∑ j, c j • v j) x = 0 := by
-      simp [Finset.sum_apply, hzero _ (hx _)]
-    simp [h₀, hzero _ (hx _)]
+      ∑ j, c j ^ 2 * ∑ s, euclideanWittenLaplacian f t (v j) x s * v j x s :=
+  apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport
+    (fun φ ↦ ∑ s, euclideanWittenLaplacian f t φ x s * φ x s) (fun a φ ↦ by
+      simp only [euclideanWittenLaplacian_const_smul, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+      exact Finset.sum_congr rfl fun s _ ↦ by ring)
+    (fun φ ψ h ↦ by
+      rw [((EventuallyEq.refl _ f).euclideanWittenLaplacian h t).eq_of_nhds, h.eq_of_nhds])
+    c hv
 
 /-- **The span of forms with disjoint supports.** Let `v j` be linearly independent smooth
 compactly supported forms of degree `m` with pairwise disjoint supports, on each of which the
@@ -456,17 +444,11 @@ theorem exists_finrank_eq_forall_integral_sum_euclideanWittenLaplacian_mul_le
     obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero hxs
     exact hvm j x s (right_ne_zero_of_mul hj)
   -- At each point at most one `v j` is nonzero, so the squared norm splits like the energy.
-  have hsq : ∀ x, ∑ s, (∑ j, c j • v j) x s ^ 2 = ∑ j, c j ^ 2 * ∑ s, v j x s ^ 2 := by
-    intro x
-    by_cases hx : ∃ i, v i x ≠ 0
-    · obtain ⟨i, hi⟩ := hx
-      have hi' : ∀ j ≠ i, v j x = 0 := fun j hj ↦ image_eq_zero_of_notMem_tsupport
-        (hdisj x i j (Ne.symm hj) (subset_tsupport _ (Function.mem_support.2 hi)))
-      rw [Finset.sum_apply, Finset.sum_eq_single i (fun j _ hj ↦ by simp [hi' j hj]) (by simp),
-        Finset.sum_eq_single i (fun j _ hj ↦ by simp [hi' j hj]) (by simp)]
-      simp only [Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum]
-    · push Not at hx
-      simp [Finset.sum_apply, hx]
+  have hsq : ∀ x, ∑ s, (∑ j, c j • v j) x s ^ 2 = ∑ j, c j ^ 2 * ∑ s, v j x s ^ 2 := fun x ↦
+    apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport
+      (fun φ : (ι → ℝ) → Finset ι → ℝ ↦ ∑ s, φ x s ^ 2)
+      (fun a φ ↦ by simp only [Pi.smul_apply, smul_eq_mul, mul_pow, Finset.mul_sum])
+      (fun φ ψ h ↦ by rw [h.eq_of_nhds]) c (hdisj x)
   have hN : ∀ j, Integrable fun x ↦ c j ^ 2 * ∑ s, v j x s ^ 2 := fun j ↦
     (hvC j).continuous.integrable_mul_sum_sq_of_continuousOn (hvc j) subset_rfl
       continuousOn_const
