@@ -79,6 +79,8 @@ monotone in `W`.
   characteristics are invariant under symplectic diffeomorphisms, and by its variant
   `IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullback_eq_smul` under
   conformally symplectic ones.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence_image_iff`: so is the
+  contractible almost existence property.
 
 ## References
 
@@ -393,6 +395,22 @@ theorem IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullba
   have hσ : σ.IsNondegenerate := (isNondegenerate_smul_iff a ha).1 haσ
   rw [hσ₂.hasContractibleClosedCharacteristic_image_iff ψ hψ hF,
     hσ.hasContractibleClosedCharacteristic_smul_iff ha]
+
+/-- **Almost existence is symplectically invariant.** If a diffeomorphism `ψ : M → M₂` pulls a
+nondegenerate form `σ₂` back to `σ`, then the level `c` of `F ∘ ψ⁻¹` has the contractible almost
+existence property in `ψ(W)` for `σ₂` exactly when `F⁻¹(c)` has it in `W` for `σ`. The regular
+values of `F ∘ ψ⁻¹` are those of `F`, and `F` is differentiable along its regular levels, so no
+smoothness of `F` is assumed. -/
+theorem IsNondegenerate.hasContractibleAlmostExistence_image_iff
+    (hσ₂ : σ₂.IsNondegenerate) (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
+    σ₂.HasContractibleAlmostExistence (ψ '' W) (F ∘ ψ.symm) c ↔
+      σ.HasContractibleAlmostExistence W F c := by
+  simp only [hasContractibleAlmostExistence_iff, ψ.symm.isRegularValue_comp_iff (by simp)]
+  refine exists_congr fun ε ↦ and_congr_right fun _ ↦ Filter.eventually_congr
+    (Filter.Eventually.of_forall fun c' ↦ imp_congr_right fun _ ↦ imp_congr_right fun hc' ↦ ?_)
+  exact hσ₂.hasContractibleClosedCharacteristic_image_iff ψ hψ fun x hx ↦
+    (hc'.isRegularPoint hx).mdifferentiableAt
 
 end Invariance
 
