@@ -63,7 +63,7 @@ map* `θ_J : 𝕎 R⁺ [1/[ϖ]] → A` is induced by the quotient map, with kern
   `TauCeti.Perfectoid.untilt.quotientMapEquiv : 𝕎 R⁺ [1/[ϖ]] ⧸ J ≃+* A`.
 * `TauCeti.Perfectoid.untilt.spanPEquiv`: the untilt along `(p)` is `R⁺[1/ϖ]`.
 * `TauCeti.Perfectoid.untilt.quotientEquivUntiltPlus : 𝕎 R⁺ ⧸ (ξ) ≃+* A⁺` and
-  `TauCeti.Perfectoid.untilt.quotEquiv : A⁺ ⧸ (ϖ♯) ≃+* R⁺ ⧸ (ϖ)`, for primitive `ξ`.
+  `TauCeti.Perfectoid.untilt.quotientSharpEquiv : A⁺ ⧸ (ϖ♯) ≃+* R⁺ ⧸ (ϖ)`, for primitive `ξ`.
 
 ## Main results
 
@@ -395,9 +395,12 @@ theorem algebraMap_mem_untiltPlus (a : 𝕎 P.plus) :
 
 variable (p P) in
 /-- The *sharp map* `R⁺ → A`, `x ↦ x♯ = θ_J([x])`: the image of the Teichmüller representative.
-It is multiplicative but not additive. -/
-noncomputable def sharp : P.plus →* untilt p P J :=
-  (algebraMap (𝕎 P.plus) (untilt p P J) : 𝕎 P.plus →* untilt p P J).comp (teichmuller p)
+It is multiplicative and sends `0` to `0`, but it is not additive. -/
+noncomputable def sharp : P.plus →*₀ untilt p P J where
+  __ := (algebraMap (𝕎 P.plus) (untilt p P J) : 𝕎 P.plus →* untilt p P J).comp (teichmuller p)
+  map_zero' := by
+    change algebraMap (𝕎 P.plus) (untilt p P J) (teichmuller p 0) = 0
+    rw [WittVector.teichmuller_zero, map_zero]
 
 /-- `x♯` is the image of the Teichmüller representative `[x]`. -/
 theorem sharp_apply (x : P.plus) :
@@ -481,17 +484,30 @@ noncomputable def spanPEquiv : untilt p P (Ideal.span {(p : 𝕎 P.plus)}) ≃+*
     (T := Submonoid.powers ϖ) (untilt p P (Ideal.span {(p : 𝕎 P.plus)})) L
     WittVector.quotientPEquiv <| by
       rw [Submonoid.map_powers]
-      rfl
+      exact congrArg Submonoid.powers ((WittVector.quotientPEquiv_mk _).trans
+        ((WittVector.constantCoeff_apply _).trans (WittVector.teichmuller_coeff_zero _ ϖ)))
+
+/-- `spanPEquiv` sends the image of a Witt vector `a` to its zeroth Witt coordinate. -/
+@[simp]
+theorem spanPEquiv_algebraMap (a : 𝕎 P.plus) :
+    spanPEquiv hϖ L (algebraMap (𝕎 P.plus) _ a) = algebraMap P.plus L (a.coeff 0) := by
+  have := isLocalizationAway (J := Ideal.span {(p : 𝕎 P.plus)}) hϖ
+  have h := WittVector.quotientPEquiv_mk a
+  simp only [Submodule.Quotient.quot_mk_eq_mk, Ideal.Quotient.mk_eq_mk] at h
+  rw [algebraMap_apply, spanPEquiv, IsLocalization.ringEquivOfRingEquiv_eq, h,
+    WittVector.constantCoeff_apply]
 
 /-- `spanPEquiv` sends `x♯` to `x`. -/
 @[simp]
 theorem spanPEquiv_sharp (x : P.plus) :
     spanPEquiv hϖ L (sharp p P _ x) = algebraMap P.plus L x := by
-  have := isLocalizationAway (J := Ideal.span {(p : 𝕎 P.plus)}) hϖ
-  have h := WittVector.quotientPEquiv_mk (teichmuller p x)
-  simp only [Submodule.Quotient.quot_mk_eq_mk, Ideal.Quotient.mk_eq_mk] at h
-  rw [sharp_apply, algebraMap_apply, spanPEquiv, IsLocalization.ringEquivOfRingEquiv_eq, h,
-    WittVector.constantCoeff_apply, WittVector.teichmuller_coeff_zero]
+  rw [sharp_apply, spanPEquiv_algebraMap, WittVector.teichmuller_coeff_zero]
+
+/-- The inverse of `spanPEquiv` sends `x` to `x♯`. -/
+@[simp]
+theorem spanPEquiv_symm_algebraMap (x : P.plus) :
+    (spanPEquiv hϖ L).symm (algebraMap P.plus L x) = sharp p P _ x := by
+  rw [RingEquiv.symm_apply_eq, spanPEquiv_sharp]
 
 end SpanP
 
@@ -518,8 +534,8 @@ theorem coe_quotientEquivUntiltPlus_apply (hξ : ξ.IsPrimitive) (a : 𝕎 P.plu
 
 /-- **`A⁺ ⧸ (ϖ♯) ≃+* R⁺ ⧸ (ϖ)`** for the untilt along a primitive element `ξ`, for every
 `ϖ ∈ R⁺` dividing the zeroth Witt coordinate of `ξ`. It is induced by the zeroth Witt
-coordinate (`TauCeti.Perfectoid.untilt.quotEquiv_mk`). -/
-noncomputable def quotEquiv (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0) :
+coordinate (`TauCeti.Perfectoid.untilt.quotientSharpEquiv_mk`). -/
+noncomputable def quotientSharpEquiv (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0) :
     untiltPlus p P (Ideal.span {ξ}) ⧸
         Ideal.span {(⟨sharp p P _ ϖ, sharp_mem_untiltPlus _ ϖ⟩ :
           untiltPlus p P (Ideal.span {ξ}))} ≃+*
@@ -530,17 +546,18 @@ noncomputable def quotEquiv (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ �
         (coe_quotientEquivUntiltPlus_apply hξ _).symm)))).symm.trans
     (hξ.isDistinguished.quotientTeichmullerEquiv hξ₀)
 
-/-- `quotEquiv` sends the class of the image of a Witt vector `a` to the class of its zeroth Witt
-coordinate. -/
+/-- `quotientSharpEquiv` sends the class of the image of a Witt vector `a` to the class of its
+zeroth Witt coordinate. -/
 @[simp]
-theorem quotEquiv_mk (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0) (a : 𝕎 P.plus) :
-    quotEquiv hξ hξ₀
+theorem quotientSharpEquiv_mk (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0)
+    (a : 𝕎 P.plus) :
+    quotientSharpEquiv hξ hξ₀
         (Ideal.Quotient.mk _ ⟨algebraMap (𝕎 P.plus) _ a, algebraMap_mem_untiltPlus _ a⟩) =
       Ideal.Quotient.mk _ (a.coeff 0) := by
   have ha : (⟨algebraMap (𝕎 P.plus) _ a, algebraMap_mem_untiltPlus _ a⟩ :
       untiltPlus p P (Ideal.span {ξ})) = quotientEquivUntiltPlus hξ (Ideal.Quotient.mk _ a) :=
     Subtype.ext (algebraMap_apply _ a)
-  rw [ha, quotEquiv, RingEquiv.trans_apply, Ideal.quotientEquiv_symm_mk,
+  rw [ha, quotientSharpEquiv, RingEquiv.trans_apply, Ideal.quotientEquiv_symm_mk,
     RingEquiv.symm_apply_apply, WittVector.IsDistinguished.quotientTeichmullerEquiv_mk_mk]
 
 end PrimitivePlus

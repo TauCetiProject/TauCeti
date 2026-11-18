@@ -93,9 +93,9 @@ example (ϖ : (pair p).plus) (hϖ : IsPseudoUniformizer (ϖ : uniformTilt p ℂ_
 
 -- Recovery: along `(p)`, `A⁺ ⧸ (ϖ♯) ≃ R⁺ ⧸ (ϖ)` is induced by the zeroth Witt coordinate.
 example (ϖ : (pair p).plus) (a : WittVector p (pair p).plus) :
-    untilt.quotEquiv WittVector.isPrimitive_p (ϖ := ϖ) (by simp)
+    untilt.quotientSharpEquiv WittVector.isPrimitive_p (ϖ := ϖ) (by simp)
         (Ideal.Quotient.mk _ ⟨algebraMap _ _ a, untilt.algebraMap_mem_untiltPlus _ a⟩) =
       Ideal.Quotient.mk _ (a.coeff 0) :=
-  untilt.quotEquiv_mk _ _ a
+  untilt.quotientSharpEquiv_mk _ _ a
 
 end TauCeti.Examples.PrimitiveUntilt
