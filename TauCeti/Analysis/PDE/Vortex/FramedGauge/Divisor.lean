@@ -109,7 +109,7 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff {k : ℕ} (hk : 1 < k
     exact congrFun (hD.unique h) z
   · subst hDD'
     obtain ⟨u, hu, -, hux⟩ := exists_contDiff_gaugeTransform_eq (k := 2) le_rfl hxc hyc hxsol
-      hysol (tendsto_const_nhds.congr' ((eventually_norm_inv_phase_eq_one m).mono fun _ h ↦ h.symm))
+      hysol (tendsto_norm_inv_phase m)
       (tendsto_sectionValue_mul_inv_pow hk' hx hxc.continuous)
       (tendsto_sectionValue_mul_inv_pow hk' hy hyc.continuous)
       (isZeroMultiplicity_iff.1 hD) (isZeroMultiplicity_iff.1 hD')
@@ -185,7 +185,7 @@ theorem existsUnique_sobolevGaugeGroup_smul_eq {hs : 1 < (k : ℝ) + 1}
 
 /-- A `C²` vortex of `A_m^k` that is smooth has the divisor of the smooth framed vortex moduli. -/
 theorem sobolevVortexDivisor_eq_framedVortexDivisor (x : sobolevVortices f m k)
-    (x' : framedVortexSubMulAction m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
+    (x' : framedVortexSubMulAction 1 m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
     sobolevVortexDivisor x = framedVortexDivisor x' := by
   rw [sobolevVortexDivisor_eq_iff, hx]
   exact isZeroMultiplicity_sectionValue_framedVortexDivisor x'
