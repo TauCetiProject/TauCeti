@@ -22,7 +22,7 @@ The derivative of `x / log x ^ n` is also computed wherever `log x ≠ 0`, and t
 * `TauCeti.mul_deriv_comp_log`: under `x = e^y` the operator `x d/dx` is `d/dy`.
 * `TauCeti.Real.hasDerivAt_div_log_pow`: the derivative of `x / log x ^ n` for every natural
   exponent, assuming `log x ≠ 0`.
-* `Real.hasDerivAt_log_div`: the derivative of `log (c / r)` is `-r⁻¹`.
+* `Real.hasDerivAt_log_const_div`: the derivative of `log (c / r)` is `-r⁻¹`.
 
 The reciprocal-log-power derivative is adapted from the Ramanujan estimates in the
 [PrimeNumberTheoremAnd project][PNTLogPower].
@@ -101,8 +101,8 @@ end TauCeti.Real
 
 namespace Real
 
-/-- The derivative of the inner logarithm: `d/dr log (c / r) = -r⁻¹` for `c ≠ 0` and `r ≠ 0`. -/
-theorem hasDerivAt_log_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
+/-- The derivative of `r ↦ log (c / r)` is `-r⁻¹`, for `c ≠ 0` and `r ≠ 0`. -/
+theorem hasDerivAt_log_const_div {c r : ℝ} (hc : c ≠ 0) (hr : r ≠ 0) :
     HasDerivAt (fun s : ℝ => log (c / s)) (-r⁻¹) r := by
   have hdiv : HasDerivAt (fun s : ℝ => c / s) (-(c / r ^ 2)) r := by
     simpa only [div_eq_mul_inv, neg_mul_eq_mul_neg, ← inv_pow] using

@@ -10,7 +10,9 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.InvLog
+import TauCeti.MeasureTheory.Measure.OpenPos
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
@@ -55,8 +57,9 @@ All integrability statements are reduced to one-variable integrals by
 `TauCeti.integrableOn_fun_norm_sub_addHaar`, Mathlib's polar formula
 `integrableOn_fun_norm_addHaar` translated to the singularity `1`. The radial calculus of
 `log log (4 / r)` on `(0, 2)` is shared with the interior example `TauCeti.logLogInterior`:
-`Real.hasDerivAt_log_log_div`, `Real.tendsto_log_log_div`,
-`TauCeti.integrableOn_mul_log_log_div_sq` and `TauCeti.integrableOn_mul_inv_mul_log_div_sq`.
+`Real.hasDerivAt_log_log_const_div`, `Real.tendsto_log_log_const_div_nhdsNE_zero`,
+`TauCeti.integrableOn_mul_log_log_const_div_sq` and
+`TauCeti.integrableOn_mul_inv_mul_log_const_div_sq`.
 
 ## References
 
@@ -122,7 +125,7 @@ private theorem norm_gradient_logLogTraceExample_le {z : ℂ} (hz : z ∈ ball (
   obtain ⟨h0, h2⟩ := norm_sub_one_mem hz
   have hg : HasFDerivAt (fun w : ℂ => ‖w - 1‖) (fderiv ℝ (fun w : ℂ => ‖w - 1‖) z) z :=
     ((differentiableAt_id.sub_const 1).norm ℝ (norm_pos_iff.1 h0)).hasFDerivAt
-  have hcomp := (Real.hasDerivAt_log_log_div (c := 4) h0.ne' (by linarith)
+  have hcomp := (Real.hasDerivAt_log_log_const_div (c := 4) h0.ne' (by linarith)
     (by linarith)).comp_hasFDerivAt z hg
   have hf : logLogTraceExample =
       (fun s : ℝ => Real.log (Real.log (4 / s))) ∘ fun w : ℂ => ‖w - 1‖ :=
@@ -148,7 +151,7 @@ theorem memLp_logLogTraceExample :
   have h : IntegrableOn (fun z : ℂ => profile ‖z - 1‖ ^ 2) (ball 1 2) := by
     refine (integrableOn_fun_norm_sub_addHaar (f := fun r => profile r ^ 2)).2 ?_
     simpa [Complex.finrank_real_complex, profile] using
-      integrableOn_mul_log_log_div_sq (by norm_num : (2 : ℝ) < 4)
+      integrableOn_mul_log_log_const_div_sq (by norm_num : (2 : ℝ) < 4)
   exact h.mono_set (ball_subset_ball' (by norm_num))
 
 /-- The classical gradient of `f(z) = log log (4 / ‖1 - z‖)` is square integrable on the unit
@@ -164,7 +167,7 @@ theorem memLp_gradient_logLogTraceExample :
     refine (integrableOn_fun_norm_sub_addHaar
       (f := fun r => ((r * Real.log (4 / r))⁻¹) ^ 2)).2 ?_
     simpa [Complex.finrank_real_complex] using
-      integrableOn_mul_inv_mul_log_div_sq (by norm_num : (2 : ℝ) < 4)
+      integrableOn_mul_inv_mul_log_const_div_sq (by norm_num : (2 : ℝ) < 4)
   refine Integrable.mono' (h.mono_set (ball_subset_ball' (by norm_num))) (hm.norm.pow 2)
     (ae_restrict_of_forall_mem measurableSet_ball fun z hz => ?_)
   rw [Real.norm_of_nonneg (sq_nonneg _)]
@@ -178,7 +181,7 @@ theorem tendsto_logLogTraceExample :
     tendsto_nhdsWithin_iff.2 ⟨((continuous_id.sub continuous_const).norm.tendsto' 1 0
       (by simp)).mono_left nhdsWithin_le_nhds,
       eventually_nhdsWithin_of_forall fun z hz => (norm_sub_one_mem hz).1⟩
-  refine ((Real.tendsto_log_log_div four_ne_zero).comp
+  refine ((Real.tendsto_log_log_const_div_nhdsNE_zero four_ne_zero).comp
     (hr.mono_right (nhdsGT_le_nhdsNE 0))).congr fun z => ?_
   rw [logLogTraceExample_eq]
   rfl
@@ -187,26 +190,10 @@ theorem tendsto_logLogTraceExample :
 continuous at `1` relative to the closed disc. -/
 theorem not_continuousWithinAt_of_ae_eq_logLogTraceExample {g : ℂ → ℝ}
     (hg : g =ᵐ[volume.restrict (ball (0 : ℂ) 1)] logLogTraceExample) :
-    ¬ ContinuousWithinAt g (closedBall 0 1) 1 := by
-  intro hc
-  have hb : ∀ᶠ z in 𝓝[ball 0 1] 1, g z < g 1 + 1 :=
-    nhdsWithin_mono _ ball_subset_closedBall (hc.eventually (gt_mem_nhds (lt_add_one _)))
-  have hf : ∀ᶠ z in 𝓝[ball 0 1] 1, g 1 + 1 < logLogTraceExample z :=
-    tendsto_logLogTraceExample.eventually_gt_atTop _
-  obtain ⟨u, huo, hu1, hus⟩ := mem_nhdsWithin.1 (hb.and hf)
-  have hS : (u ∩ ball 0 1).Nonempty := by
-    have : (𝓝[ball (0 : ℂ) 1] 1).NeBot := mem_closure_iff_nhdsWithin_neBot.1
-      (by rw [closure_ball (0 : ℂ) one_ne_zero]; simp)
-    exact Filter.nonempty_of_mem (mem_nhdsWithin.2 ⟨u, huo, hu1, subset_rfl⟩)
-  have hpos : 0 < volume (u ∩ ball (0 : ℂ) 1) := (huo.inter isOpen_ball).measure_pos _ hS
-  have hfalse : ∀ᵐ _ ∂volume.restrict (u ∩ ball (0 : ℂ) 1), False := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_right hg,
-      ae_restrict_mem (huo.inter isOpen_ball).measurableSet] with z hz hzS
-    have := hus hzS
-    exact absurd (this.1.trans this.2) (by rw [hz]; exact lt_irrefl _)
-  have h0 : volume.restrict (u ∩ ball (0 : ℂ) 1) = 0 :=
-    ae_eq_bot.1 (eventually_false_iff_eq_bot.1 hfalse)
-  exact hpos.ne' (Measure.restrict_eq_zero.1 h0)
+    ¬ ContinuousWithinAt g (closedBall 0 1) 1 :=
+  not_continuousWithinAt_of_tendsto_of_ae_eq isOpen_ball
+    (by rw [closure_ball (0 : ℂ) one_ne_zero]; simp) ball_subset_closedBall
+    tendsto_logLogTraceExample (disjoint_nhds_atTop _) hg
 
 /-- **`W^{1,2}` functions on the disc need not have continuous boundary values.** The function
 `f(z) = log log (4 / ‖1 - z‖)` defines an element of `W^{1,2}` of the unit disc, with weak

@@ -107,9 +107,7 @@ theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U))
 `ball c R`, `R < r`. -/
 theorem memLpLoc_ball_iff {c : ℂ} {r : ℝ} :
     MemLpLoc p (Metric.ball c r) f ↔ ∀ R < r, MemLp f p (volume.restrict (Metric.ball c R)) := by
-  refine ⟨fun hf R hR => hf.memLp_of_closure_subset
-    ((isCompact_closedBall c R).of_isClosed_subset isClosed_closure
-      Metric.closure_ball_subset_closedBall)
+  refine ⟨fun hf R hR => hf.memLp_of_closure_subset Metric.isCompact_closure_ball
     (Metric.closure_ball_subset_closedBall.trans (Metric.closedBall_subset_ball hR)),
     fun hf K hK hKc => ?_⟩
   obtain ⟨R, hR, hKR⟩ := exists_lt_subset_ball hKc.isClosed hK

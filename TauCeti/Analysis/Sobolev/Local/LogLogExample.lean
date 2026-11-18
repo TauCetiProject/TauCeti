@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
@@ -22,8 +23,8 @@ import TauCeti.Analysis.Sobolev.Local.SmoothCoefficients
 import TauCeti.Analysis.Sobolev.Local.W1p
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.InvLog
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -55,7 +56,7 @@ to `u` almost everywhere near the origin is continuous at the origin
 (`TauCeti.not_continuousAt_of_ae_eq_logLogInterior`). Cutting `u` off with a bump function and
 translating it, every planar set `U` with nonempty interior carries, for `p ≤ 2`, a member of the
 local class `W^{1,p}` of `U` with no continuous representative on `U`
-(`TauCeti.exists_memWkpLoc_one_not_continuousOn_of_ae_eq`). For `p > 2` and `U` open there is
+(`TauCeti.exists_memWkpLoc_one_forall_ae_eq_not_continuousOn`). For `p > 2` and `U` open there is
 always one, by Morrey's inequality `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative`. So
 continuity of `W^{1,p}_loc` functions, needed to define Sobolev maps into a manifold through
 charts, requires `p > 2`.
@@ -63,9 +64,9 @@ charts, requires `p > 2`.
 ## Implementation notes
 
 The radial calculus is shared with `TauCeti.logLogTraceExample`, the same profile placed at a
-boundary point of the unit disc: `Real.hasDerivAt_log_log_div`, `Real.tendsto_log_log_div`,
-`TauCeti.integrableOn_mul_log_log_div_sq` and `TauCeti.integrableOn_mul_inv_mul_log_div_sq`, all
-with `c = 4`.
+boundary point of the unit disc: `Real.hasDerivAt_log_log_const_div`,
+`Real.tendsto_log_log_const_div_nhdsNE_zero`, `TauCeti.integrableOn_mul_log_log_const_div_sq` and
+`TauCeti.integrableOn_mul_inv_mul_log_const_div_sq`, all with `c = 4`.
 
 ## References
 
@@ -96,8 +97,7 @@ theorem logLogInterior_def (z : ℂ) :
 /-- The function `u(z) = log log (4 / ‖z‖)` is measurable. -/
 @[fun_prop]
 theorem measurable_logLogInterior : Measurable logLogInterior := by
-  rw [show logLogInterior = fun z : ℂ => Real.log (Real.log (4 / ‖z‖)) from
-    funext logLogInterior_def]
+  unfold logLogInterior
   fun_prop
 
 /-- The function `u(z) = log log (4 / ‖z‖)` is smooth on the punctured disc `ball 0 4`, where its
@@ -118,7 +118,7 @@ theorem hasFDerivAt_logLogInterior {z : ℂ} (hz : z ∈ ball (0 : ℂ) 4) (hz0 
   rw [mem_ball_zero_iff] at hz
   have hn : HasFDerivAt (fun w : ℂ => ‖w‖) (fderiv ℝ (fun w : ℂ => ‖w‖) z) z :=
     ((contDiffAt_norm ℝ hz0 (n := 1)).differentiableAt one_ne_zero).hasFDerivAt
-  exact (Real.hasDerivAt_log_log_div (norm_ne_zero_iff.2 hz0) hz.ne
+  exact (Real.hasDerivAt_log_log_const_div (norm_ne_zero_iff.2 hz0) hz.ne
     (by linarith [norm_nonneg z])).comp_hasFDerivAt z hn
 
 /-- On the punctured disc `ball 0 4` the classical derivative of `u(z) = log log (4 / ‖z‖)` has
@@ -137,7 +137,7 @@ private theorem integrableOn_inv_mul_log_sq {R : ℝ} (hR : R < 4) :
     IntegrableOn (fun z : ℂ => ((‖z‖ * Real.log (4 / ‖z‖))⁻¹) ^ 2) (ball (0 : ℂ) R) := by
   refine (integrableOn_fun_norm_addHaar volume
     (f := fun r => ((r * Real.log (4 / r))⁻¹) ^ 2)).2 ?_
-  simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_div_sq hR
+  simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_const_div_sq hR
 
 /-- Away from the origin, `u` has the derivative of `log (log 4 - log ‖z‖)`. -/
 private theorem hasFDerivAt_logLogInterior_log_norm {z : ℂ} (hz : ‖z‖ < 4) (hz0 : z ≠ 0) :
@@ -163,10 +163,7 @@ private theorem hasWeakFDerivOn_logLogInterior_ball :
   -- `log ‖z‖` as an element of `W^{1,1}(B)`.
   have hlog : MemWkpLoc 1 (⊤ : Opens ℂ) 1 (fun z : ℂ => Real.log ‖z‖) :=
     (memWkpLoc_one_log_norm_iff (by simp)).2 (by norm_num)
-  have hBc : IsCompact (closure (B : Set ℂ)) := by
-    simp only [B, Opens.coe_mk]
-    rw [closure_ball _ (by norm_num)]
-    exact isCompact_closedBall _ _
+  have hBc : IsCompact (closure (B : Set ℂ)) := isCompact_closure_ball
   obtain ⟨v, hvv, hvg⟩ := hlog.exists_w1p (hasWeakFDerivOn_log_norm ⊤) hBc (subset_univ _)
   -- `a = log 4 - log ‖z‖`, bounded below by `log 4` on `B`.
   set a : W1p volume B 1 := W1p.const (Real.log 4) - v
@@ -196,25 +193,8 @@ private theorem hasWeakFDerivOn_logLogInterior_ball :
     have hz4 : ‖z‖ < 4 := by
       have : ‖z‖ < 1 / 2 := mem_ball_zero_iff.1 hzB
       linarith
-    have hd : (InnerProductSpace.toDual ℝ ℂ).symm ((‖z‖ ^ 2)⁻¹ • innerSL ℝ z) =
-        (‖z‖ ^ 2)⁻¹ • z := by
-      have hz : innerSL ℝ z = InnerProductSpace.toDual ℝ ℂ z :=
-        ContinuousLinearMap.ext fun _ => by
-          rw [innerSL_apply_apply, InnerProductSpace.toDual_apply_apply]
-      rw [hz, map_smul, LinearIsometryEquiv.symm_apply_apply]
-    rw [(hasFDerivAt_logLogInterior_log_norm hz4 hz0).fderiv, h1, h2, h3, hd]
-    simp only [map_smul, map_neg]
-
-/-- Off the origin `u` is smooth, so its classical derivative is its weak derivative there. -/
-private theorem hasWeakFDerivOn_logLogInterior_punctured :
-    HasWeakFDerivOn volume ⟨ball (0 : ℂ) 4 \ {0}, isOpen_ball.sdiff isClosed_singleton⟩
-      logLogInterior (fderiv ℝ logLogInterior) := by
-  have hV : IsOpen (ball (0 : ℂ) 4 \ {0}) := isOpen_ball.sdiff isClosed_singleton
-  refine hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
-    contDiffOn_logLogInterior.continuousOn
-    ((contDiffOn_logLogInterior.continuousOn_fderiv_of_isOpen hV (by simp)).locallyIntegrableOn
-      hV.measurableSet) fun z hz => ?_
-  exact (hasFDerivAt_logLogInterior hz.1.1 hz.1.2).differentiableAt.hasFDerivAt
+    rw [(hasFDerivAt_logLogInterior_log_norm hz4 hz0).fderiv, h1, h2, h3]
+    simp only [map_smul, map_neg, InnerProductSpace.innerSL_toDual_symm]
 
 end LogLogInterior
 
@@ -226,7 +206,7 @@ theorem memLp_logLogInterior {R : ℝ} (hR : R < 4) :
     MemLp logLogInterior 2 (volume.restrict (ball (0 : ℂ) R)) := by
   refine (memLp_two_iff_integrable_sq measurable_logLogInterior.aestronglyMeasurable).2 ?_
   refine (integrableOn_fun_norm_addHaar volume (f := fun r => Real.log (Real.log (4 / r)) ^ 2)).2 ?_
-  simpa [Complex.finrank_real_complex] using integrableOn_mul_log_log_div_sq hR
+  simpa [Complex.finrank_real_complex] using integrableOn_mul_log_log_const_div_sq hR
 
 /-- The classical derivative of `u(z) = log log (4 / ‖z‖)` is square integrable on the disc
 `ball 0 R` for every `R < 4`, although it is unbounded near the origin. -/
@@ -246,8 +226,10 @@ the origin, has its classical derivative as weak derivative. -/
 theorem hasWeakFDerivOn_logLogInterior :
     HasWeakFDerivOn volume ⟨ball (0 : ℂ) 4, isOpen_ball⟩ logLogInterior
       (fderiv ℝ logLogInterior) := by
-  refine (hasWeakFDerivOn_logLogInterior_ball.sup
-    hasWeakFDerivOn_logLogInterior_punctured).mono fun z hz => ?_
+  -- Off the origin `u` is smooth, so its classical derivative is its weak derivative there.
+  have hpunct := (contDiffOn_logLogInterior.of_le (by simp)).hasWeakFDerivOn_fderiv (μ := volume)
+    (Ω := ⟨ball (0 : ℂ) 4 \ {0}, isOpen_ball.sdiff isClosed_singleton⟩)
+  refine (hasWeakFDerivOn_logLogInterior_ball.sup hpunct).mono fun z hz => ?_
   rw [← SetLike.mem_coe, Opens.coe_sup]
   by_cases hz0 : z = 0
   · left
@@ -269,7 +251,7 @@ theorem memWkpLoc_logLogInterior {p : ℝ≥0∞} {U : Set ℂ} (hp : p ≤ 2)
 
 /-- The function `u(z) = log log (4 / ‖z‖)` tends to `∞` at the origin. -/
 theorem tendsto_logLogInterior : Tendsto logLogInterior (𝓝[≠] 0) atTop :=
-  (Real.tendsto_log_log_div four_ne_zero).comp
+  (Real.tendsto_log_log_const_div_nhdsNE_zero four_ne_zero).comp
     ((tendsto_norm_nhdsNE_zero (E := ℂ)).mono_right (nhdsGT_le_nhdsNE 0))
 
 /-- No function equal almost everywhere on a neighbourhood `s` of the origin to
@@ -277,7 +259,7 @@ theorem tendsto_logLogInterior : Tendsto logLogInterior (𝓝[≠] 0) atTop :=
 theorem not_continuousAt_of_ae_eq_logLogInterior {s : Set ℂ} {g : ℂ → ℝ} (hs : s ∈ 𝓝 0)
     (hg : g =ᵐ[volume.restrict s] logLogInterior) :
     ¬ ContinuousAt g 0 :=
-  not_continuousAt_of_ae_eq_of_tendsto_atTop tendsto_logLogInterior hs hg
+  not_continuousAt_of_tendsto_of_ae_eq tendsto_logLogInterior (disjoint_nhds_atTop _) hs hg
 
 /-- **For `p ≤ 2` some member of the local class `W^{1,p}` has no continuous representative.**
 For every `p ≤ 2` and every planar set `U` with nonempty interior, some function in the local
@@ -285,7 +267,7 @@ class `W^{1,p}` of `U` agrees almost everywhere on `U` with no function continuo
 example is `u(z - z₀) = log log (4 / ‖z - z₀‖)`, cut off by a bump function about a point `z₀` of
 the interior of `U`. For `p > 2` and `U` open, Morrey's inequality
 `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative` gives a continuous representative. -/
-theorem exists_memWkpLoc_one_not_continuousOn_of_ae_eq {p : ℝ≥0∞} {U : Set ℂ} (hp : p ≤ 2)
+theorem exists_memWkpLoc_one_forall_ae_eq_not_continuousOn {p : ℝ≥0∞} {U : Set ℂ} (hp : p ≤ 2)
     (hU : (interior U).Nonempty) :
     ∃ f : ℂ → ℝ, MemWkpLoc p U 1 f ∧
       ∀ g : ℂ → ℝ, g =ᵐ[volume.restrict U] f → ¬ ContinuousOn g U := by
@@ -304,7 +286,8 @@ theorem exists_memWkpLoc_one_not_continuousOn_of_ae_eq {p : ℝ≥0∞} {U : Set
   have hf := htr.contDiff_smul_of_tsupport_subset (χ.contDiff (n := 1)) (by simp) hsupp
   refine ⟨fun z => χ z • logLogInterior (z - z₀), hf.mono (subset_univ U), fun g hg hc => ?_⟩
   have hU0 : U ∈ 𝓝 z₀ := mem_interior_iff_mem_nhds.1 hz₀
-  refine not_continuousAt_of_ae_eq_of_tendsto_atTop ?_ hU0 hg (hc.continuousAt hU0)
+  refine not_continuousAt_of_tendsto_of_ae_eq ?_ (disjoint_nhds_atTop _) hU0 hg
+    (hc.continuousAt hU0)
   have hsub : Tendsto (fun z => z - z₀) (𝓝[≠] z₀) (𝓝[≠] 0) :=
     tendsto_nhdsWithin_iff.2 ⟨((continuous_id.sub continuous_const).tendsto' z₀ 0
       (sub_self z₀)).mono_left nhdsWithin_le_nhds,
