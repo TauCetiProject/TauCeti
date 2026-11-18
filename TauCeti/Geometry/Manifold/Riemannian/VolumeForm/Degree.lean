@@ -17,6 +17,7 @@ This is the area-counting step for conformal maps of closed surfaces, including 
 
 ## References
 
+* The degree–volume formulas were ported from Riccardo Brasca's `ForTauCeti` formalization.
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Theorem 17.35.
 -/
 
