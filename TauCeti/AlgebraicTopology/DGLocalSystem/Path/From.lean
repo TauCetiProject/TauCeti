@@ -39,8 +39,7 @@ resolution of `R` over `C_*(Ω_b B; R)` is compared, as in Brown's twisted tenso
 The Moore paths from `b` to a point `c` are the fibre over `c` of the end point map
 `P_b B → B`. Pushing their chains forward along the inclusion
 (`TauCeti.cubicalChainModuleLinearMap`) identifies `C_*(P_{b→c} B; R)` with the chains of `P_b B`
-supported in that fibre
-(`TauCeti.cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_injective`,
+supported in that fibre (`TauCeti.cubicalChainModuleLinearMap_injective`,
 `TauCeti.range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom`). Since the inclusion
 commutes with the concatenation of loops in front (`TauCeti.MoorePathBetween.toMoorePathFrom_smul`),
 the push-forward is linear over `C_*(Ω_b B; R)` (`TauCeti.cubicalChainModuleLinearMap_smul`).
@@ -92,18 +91,6 @@ theorem exists_pathFromChainDifferential_eq_of_augmentation_eq_zero
 
 /-! ### The chains on a fibre of the end point map -/
 
-/-- The push-forward of chains along the inclusion of the Moore paths from `b` to `c` into the
-Moore paths from `b` is injective. -/
-theorem cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_injective {G : Type*} (c : B) :
-    Function.Injective (cubicalChainModuleLinearMap (G := G) (G' := H) R
-      (MoorePathBetween.toMoorePathFrom b c)) := by
-  -- Compare the components of each dimension, where the push-forward is injective.
-  refine fun x y h ↦ (cubicalChainModuleEquiv _ _ R).injective <| DirectSum.ext fun n ↦ ?_
-  have hn := congrArg (fun z ↦ cubicalChainModuleEquiv _ H R z n) h
-  simp only [cubicalChainModuleEquiv_linearMap, cubicalChainSumMap_apply] at hn
-  exact NormalizedCubicalChain.map_injective R _
-    MoorePathBetween.isEmbedding_toMoorePathFrom.injective n hn
-
 /-- **The chains on the paths from `b` to `c` are the chains of `P_b B` supported over `c`**: the
 image of the push-forward along the inclusion of the Moore paths from `b` to `c` is the chains
 supported in the fibre of the end point map over `c`. -/
@@ -111,20 +98,7 @@ theorem range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom {G : T
     LinearMap.range (cubicalChainModuleLinearMap (G := G) (G' := H) R
       (MoorePathBetween.toMoorePathFrom b c)) =
       cubicalChainModuleSupportedIn H R (MoorePathFrom.endpoint B b ⁻¹' {c}) := by
-  have hι := MoorePathBetween.isEmbedding_toMoorePathFrom (X := B) (b := b) (c := c)
   rw [← MoorePathBetween.range_toMoorePathFrom]
-  refine le_antisymm ?_ ?_
-  · rintro _ ⟨x, rfl⟩
-    induction x using cubicalChainModule.induction_on with
-    | add x x' hx hx' => rw [map_add]; exact add_mem hx hx'
-    | lof n y =>
-      rw [cubicalChainModuleLinearMap_lof,
-        cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff,
-        ← NormalizedCubicalChain.range_map_eq_supportedIn_range R hι.isInducing]
-      exact LinearMap.mem_range_self _ y
-  · rw [cubicalChainModuleSupportedIn_eq_span, Submodule.span_le]
-    rintro _ ⟨n, σ, hσ, rfl⟩
-    obtain ⟨y, hy⟩ := NormalizedCubicalChain.ofCube_mem_range_map R hι.isInducing hσ
-    exact ⟨cubicalChainModuleLof _ _ R n y, by rw [cubicalChainModuleLinearMap_lof, hy]⟩
+  exact range_cubicalChainModuleLinearMap MoorePathBetween.isEmbedding_toMoorePathFrom.isInducing
 
 end TauCeti

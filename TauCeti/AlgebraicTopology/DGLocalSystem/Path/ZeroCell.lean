@@ -64,7 +64,7 @@ open Set Topology Topology.RelCWComplex Finsupp
 
 namespace TauCeti
 
-open MoorePathBetween (toMoorePathFrom toMoorePathFrom_smul)
+open MoorePathBetween (isEmbedding_toMoorePathFrom toMoorePathFrom toMoorePathFrom_smul)
 
 universe u
 
@@ -92,10 +92,8 @@ private theorem exists_range_subset_preimage_zeroCellPoint {n : ℕ}
 private theorem pairwise_disjoint_preimage_zeroCellPoint :
     Pairwise (Function.onFun Disjoint fun q : cell C 0 ↦
       MoorePathFrom.endpoint B b ⁻¹' {(zeroCellPoint C q : B)}) := by
-  refine fun q q' hqq' ↦ Disjoint.preimage _ (disjoint_singleton.2 fun h ↦ hqq' ?_)
-  exact (zeroCellEquiv C).injective <| by
-    rw [zeroCellEquiv_apply, zeroCellEquiv_apply]
-    exact Subtype.ext h
+  exact fun q q' hqq' ↦ Disjoint.preimage _
+    (disjoint_singleton.2 fun h ↦ hqq' (zeroCellPoint_injective C (Subtype.ext h)))
 
 /-- The chains over the fibre of a zero-cell lie over the zero-skeleton. -/
 theorem cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_mem_pathFromChainSkeleton_zero
@@ -142,7 +140,7 @@ theorem eq_zero_of_sum_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFr
       cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _) (x q) = 0)
     {q : cell C 0} (hq : q ∈ s) :
     x q = 0 :=
-  cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_injective (H := H) (R := R) _ <| by
+  cubicalChainModuleLinearMap_injective (H := H) isEmbedding_toMoorePathFrom.injective <| by
     rw [map_zero]
     exact (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1
       (iSupIndep_cubicalChainModuleSupportedIn pairwise_disjoint_preimage_zeroCellPoint) s _
@@ -168,7 +166,7 @@ private theorem exists_eq_sum_of_mem_pathFromChainSkeleton_zero
     (range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom
       (G := MooreLoopSpace B (zeroCellPoint C q)) (H := H) (R := R) _).ge (hf q)
   refine ⟨W, f.support, fun q hq ↦
-    cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_injective (H := H) (R := R) _ ?_,
+    cubicalChainModuleLinearMap_injective (H := H) isEmbedding_toMoorePathFrom.injective ?_,
     ?_⟩
   · rw [hW, map_zero, ← notMem_support_iff.1 hq]
   · simp only [Finsupp.sum, hW]

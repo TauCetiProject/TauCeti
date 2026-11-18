@@ -205,6 +205,13 @@ theorem toMoorePathFrom_smul (ω : MooreLoopSpace X b) (γ : MoorePathBetween X 
     toMoorePathFrom b c (ω • γ) = ω • toMoorePathFrom b c γ :=
   MoorePathFrom.ext (by simp)
 
+/-- The inclusion commutes with the concatenation of loops at `b` in front, in the form of the
+`leftAct` functions. -/
+@[simp]
+theorem toMoorePathFrom_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathBetween X b c) :
+    toMoorePathFrom b c (leftAct ω γ) = MoorePathFrom.leftAct ω (toMoorePathFrom b c γ) :=
+  MoorePathFrom.ext (by simp)
+
 /-- The paths from `b` to `c` are the paths from `b` ending at `c`. -/
 theorem range_toMoorePathFrom :
     Set.range (toMoorePathFrom b c) = MoorePathFrom.endpoint X b ⁻¹' {c} := by
