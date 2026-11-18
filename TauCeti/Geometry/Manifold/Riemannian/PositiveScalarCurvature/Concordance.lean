@@ -852,12 +852,11 @@ whose differential is invertible at every point, gives a concordance from `f^* g
 theorem IsConcordance.pullback_prodMap (h : IsConcordance G g₀ g₁) (hf : ContMDiff I' I (∞ + 1) f)
     (hinv : ∀ x, (mfderiv I' I f x).IsInvertible) :
     IsConcordance (G.pullback (Prod.map f id) (hf.prodMap contMDiff_id) fun p ↦
-        (isInvertible_mfderiv_prodMap_id_right (hf.mdifferentiableAt (by simp))
-          (hinv p.1)).injective)
+        (isInvertible_mfderiv_prodMap_id_right (hinv p.1)).injective)
       (g₀.pullback f hf fun x ↦ (hinv x).injective)
       (g₁.pullback f hf fun x ↦ (hinv x).injective) := by
   have hinv' (p : M' × ℝ) :=
-    isInvertible_mfderiv_prodMap_id_right (J := 𝓘(ℝ)) (hf.mdifferentiableAt (by simp)) (hinv p.1)
+    isInvertible_mfderiv_prodMap_id_right (J := 𝓘(ℝ)) (hinv p.1)
   refine ⟨h.hasPositiveScalarCurvature.pullback_of_isInvertible _ hinv', fun p hp ↦ ?_,
     fun p hp ↦ ?_⟩
   · rw [← pullback_prodMap_cylinder g₀ hf _

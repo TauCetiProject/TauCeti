@@ -379,24 +379,30 @@ theorem mfderiv_extChartAt_extend {y : M} (w : TangentSpace I x)
   rw [← TangentBundle.continuousLinearMapAt_trivializationAt hy, extend_eq_trivializationAt_symm]
   exact (congrArg _ (t.symmL_apply (R := 𝕜) hyt w).symm).trans (t.continuousLinearMapAt_symmL hyt w)
 
-variable [I.Boundaryless] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M → F}
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Near `x`, the derivative of a `C¹` function `f` along the extension of a tangent vector `w`
-at `x` is the derivative of the coordinate expression of `f` along `w`, read through the
-preferred chart. -/
-theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x)
+/-- Near an interior point `x`, the derivative of a function `f` along the extension of a tangent
+vector `w` at `x` is the derivative of the coordinate expression of `f` along `w`, read through the
+preferred chart. Where `f` is not differentiable both sides are `0`, so no regularity of `f` is
+needed. -/
+theorem mvfderiv_extend_eventuallyEq (f : M → F) (hx : I.IsInteriorPoint x)
     (w : TangentSpace I x) :
     (fun y ↦ mvfderiv I f y (FiberBundle.extend E w y)) =ᶠ[𝓝 x]
       (fun z ↦ fderiv 𝕜 (f ∘ (extChartAt I x).symm) z w) ∘ extChartAt I x := by
-  have hdF : ∀ᶠ y in 𝓝 x,
-      DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) :=
-    (continuousAt_extChartAt x).eventually
-      ((hf.contDiffAt_comp_extChartAt_symm.eventually (by simp)).mono
-        fun z hz ↦ hz.differentiableAt (by simp))
-  filter_upwards [chart_source_mem_nhds H x, hdF] with y hy hdy
-  rw [Function.comp_apply, mvfderiv_apply_eq_mfderiv_apply,
-    mfderiv_eq_fderiv_comp_mfderiv_extChartAt (by simpa using hy) hdy]
-  exact congrArg _ (mfderiv_extChartAt_extend w hy)
+  have hint : ∀ᶠ y in 𝓝 x, extChartAt I x y ∈ interior (range I) :=
+    (continuousAt_extChartAt x).preimage_mem_nhds (isOpen_interior.mem_nhds hx)
+  filter_upwards [chart_source_mem_nhds H x, hint] with y hy hyi
+  have hy' : y ∈ (extChartAt I x).source := by simpa using hy
+  rw [Function.comp_apply, mvfderiv_apply_eq_mfderiv_apply]
+  by_cases hdy : DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y)
+  · rw [TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy' hdy]
+    exact congrArg _ (mfderiv_extChartAt_extend w hy)
+  · have hmd : ¬ MDifferentiableAt I 𝓘(𝕜, F) f y := fun hm ↦ hdy <| by
+      have h := (mdifferentiableAt_iff_source_of_mem_source hy).1 hm
+      rw [mdifferentiableWithinAt_iff_differentiableWithinAt] at h
+      exact h.differentiableAt (mem_interior_iff_mem_nhds.mp hyi)
+    rw [mfderiv_zero_of_not_mdifferentiableAt hmd, fderiv_zero_of_not_differentiableAt hdy]
+    rfl
 
 end Extend
 
@@ -1175,9 +1181,10 @@ theorem isInvertible_mfderiv_prodMap
     {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
     {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
     {f : M → M'} {g : N → N'} {p : M × N}
-    (hf : MDifferentiableAt I I' f p.1) (hg : MDifferentiableAt J J' g p.2)
     (hf' : (mfderiv I I' f p.1).IsInvertible) (hg' : (mfderiv J J' g p.2).IsInvertible) :
     (mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p).IsInvertible := by
+  have hf := mdifferentiableAt_of_isInvertible_mfderiv hf'
+  have hg := mdifferentiableAt_of_isInvertible_mfderiv hg'
   obtain ⟨e₁, he₁⟩ := hf'
   obtain ⟨e₂, he₂⟩ := hg'
   rw [mfderiv_prodMap hf hg, ← he₁, ← he₂]
@@ -1189,10 +1196,9 @@ theorem isInvertible_mfderiv_prodMap_id_right
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
-    {f : M → M'} {p : M × N} (hf : MDifferentiableAt I I' f p.1)
-    (hf' : (mfderiv I I' f p.1).IsInvertible) :
+    {f : M → M'} {p : M × N} (hf' : (mfderiv I I' f p.1).IsInvertible) :
     (mfderiv (I.prod J) (I'.prod J) (Prod.map f (id : N → N)) p).IsInvertible :=
-  isInvertible_mfderiv_prodMap hf mdifferentiableAt_id hf'
+  isInvertible_mfderiv_prodMap hf'
     ⟨.refl 𝕜 _, by rw [mfderiv_id, ContinuousLinearEquiv.coe_refl]⟩
 
 section RightComm
@@ -1264,7 +1270,7 @@ theorem isInvertible_mfderiv_prodMap_id {φ : 𝕜 → 𝕜} {p : M × 𝕜}
     (hφ' : deriv φ p.2 ≠ 0) :
     (mfderiv (I.prod 𝓘(𝕜)) (I.prod 𝓘(𝕜)) (Prod.map id φ) p).IsInvertible :=
   have hφ := differentiableAt_of_deriv_ne_zero hφ'
-  isInvertible_mfderiv_prodMap mdifferentiableAt_id hφ.mdifferentiableAt
+  isInvertible_mfderiv_prodMap
     ⟨.refl 𝕜 _, by rw [mfderiv_id, ContinuousLinearEquiv.coe_refl]⟩
     (by simp [mfderiv_eq_fderiv, (hφ.hasDerivAt.hasFDerivAt_equiv hφ').fderiv])
 
