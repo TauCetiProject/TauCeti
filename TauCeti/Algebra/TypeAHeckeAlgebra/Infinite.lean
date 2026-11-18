@@ -95,8 +95,7 @@ Markov traces are multiplicative; that they are injective, so embeddings, is
   `TauCeti.InfiniteTypeAHeckeAlgebra.span_range_braidHom`: the braid groups map compatibly into
   the stages and span them.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.commute_shift_of_mem_stage`: disjoint blocks commute.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.algebraMap_injective` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.T_ne_algebraMap`: the presentation does not collapse.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.algebraMap_injective`: the presentation does not collapse.
 
 ## References
 
@@ -794,11 +793,6 @@ theorem algebraMap_injective :
 
 instance [Nontrivial R] : Nontrivial (InfiniteTypeAHeckeAlgebra R q) :=
   algebraMap_injective.nontrivial
-
-/-- A generator is not a scalar when the two eigenvalues `q` and `-q⁻¹` are distinct. -/
-theorem T_ne_algebraMap (hq : (q : R) ≠ -↑q⁻¹) (i : ℕ) (r : R) : T q i ≠ algebraMap R _ r :=
-  fun h ↦ hq <| by
-    rw [← indexCharacter_T i, ← signCharacter_T i, h, AlgHom.commutes, AlgHom.commutes]
 
 end Characters
 
