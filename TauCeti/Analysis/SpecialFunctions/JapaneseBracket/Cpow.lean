@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -222,9 +223,13 @@ theorem hasTemperateGrowth_japaneseBracketCpow (z : ℂ) :
 
 /-- The complex power `x ↦ ⟨x⟩ ^ z` of the Japanese bracket is smooth. -/
 @[fun_prop]
-theorem contDiff_japaneseBracketCpow (z : ℂ) {n : ℕ∞} :
-    ContDiff ℝ n (japaneseBracketCpow z : H → ℂ) :=
-  (hasTemperateGrowth_japaneseBracketCpow z).1.of_le (mod_cast le_top)
+theorem contDiff_japaneseBracketCpow (z : ℂ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (japaneseBracketCpow z : H → ℂ) := by
+  have hbase : ContDiff ℝ n fun x : H ↦ 1 + ‖x‖ ^ 2 := contDiff_const.add (contDiff_norm_sq ℝ)
+  have hlog : ContDiff ℝ n fun x : H ↦ Real.log (1 + ‖x‖ ^ 2) / 2 :=
+    (hbase.log fun x ↦ by positivity).div_const 2
+  rw [funext (japaneseBracketCpow_eq_exp z)]
+  exact (contDiff_const.mul (ofRealCLM.contDiff.comp hlog)).cexp
 
 /-- The derivative of `x ↦ ⟨x⟩ ^ z` is `z ⟨x⟩ ^ (z - 2) ⟪x, ·⟫`. -/
 theorem hasFDerivAt_japaneseBracketCpow (z : ℂ) (x : H) :
