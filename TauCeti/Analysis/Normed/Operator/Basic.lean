@@ -83,7 +83,9 @@ A continuous bilinear map satisfies a Young-type bound
 
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
-radius (`ContinuousLinearMap.image_ball_eq_ball`).
+radius (`ContinuousLinearMap.image_ball_eq_ball`). Descending a bounded semilinear map to the
+separation quotient of its domain also preserves its operator norm
+(`SeparationQuotient.norm_liftCLM`).
 
 Finite real products also admit coordinate-basis estimates and continuous linear equivalences
 obtained by replacing one coordinate. The coordinate arguments are adapted from
@@ -663,5 +665,21 @@ theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[𝕜] V} (hA : A * A
     abel
 
 end ContinuousLinearMap
+
+namespace SeparationQuotient
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- Descending a bounded semilinear map to `SeparationQuotient` preserves its operator norm. -/
+@[simp] theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
+    ‖liftCLM f hf‖ = ‖f‖ := by
+  rw [ContinuousLinearMap.norm_def, ContinuousLinearMap.norm_def]
+  congr 1; ext c
+  exact and_congr_right fun _ ↦ ⟨fun h x ↦ by simpa only [liftCLM_mk, norm_mk] using h (mk x),
+    fun h ↦ surjective_mk.forall.2 fun x ↦ by simpa only [liftCLM_mk, norm_mk] using h x⟩
+
+end SeparationQuotient
 
 end
