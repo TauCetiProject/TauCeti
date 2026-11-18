@@ -42,6 +42,8 @@ off.
   open containing `y`, that prime pulls back to the prime ideal of `x`.
 * `TauCeti.AlgebraicGeometry.Scheme.specializes_of_comap_stalkSpecializes_maximalIdeal_le`: the
   primes of `𝒪_{X,y}` of two generizations of `y` are ordered as the generizations are.
+* `TauCeti.AlgebraicGeometry.Scheme.exists_comap_stalkSpecializes_maximalIdeal_eq`: every prime of
+  `𝒪_{X,y}` is the prime of a generization of `y`, whose coheight is the height of the prime.
 * `TauCeti.AlgebraicGeometry.Scheme.exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton`:
   on a locally Noetherian integral scheme, every prime element of `𝒪_{X,y}` generates the prime of
   a codimension-one generization of `y`, by Krull's principal ideal theorem.
@@ -180,6 +182,44 @@ theorem specializes_of_comap_stalkSpecializes_maximalIdeal_le {x' : X} (h : x �
   have hsp := ((PrimeSpectrum.le_iff_specializes _ _).mp hle').map hU.fromSpec.continuous
   rwa [hU.fromSpec_primeIdealOf, hU.fromSpec_primeIdealOf] at hsp
 
+/-- **Primes of a local ring and generizations.** Every prime `Q` of the local ring `𝒪_{X,y}` is
+the prime lying under the maximal ideal of `𝒪_{X,x}` for some generization `x` of `y`, and the
+coheight of `x` is the height of `Q`. -/
+theorem exists_comap_stalkSpecializes_maximalIdeal_eq (Q : Ideal (X.presheaf.stalk y))
+    [Q.IsPrime] :
+    ∃ x : X, ∃ h : x ⤳ y,
+      (maximalIdeal (X.presheaf.stalk x)).comap (X.presheaf.stalkSpecializes h).hom = Q ∧
+        Order.coheight x = Q.height := by
+  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
+  replace hU : IsAffineOpen U := hU
+  let := X.presheaf.algebra_section_stalk ⟨y, hyU⟩
+  have := hU.isLocalization_stalk ⟨y, hyU⟩
+  set P := hU.primeIdealOf ⟨y, hyU⟩
+  -- The prime `q` of `Γ(X, U)` under `Q`, contained in the prime `P` of `y`.
+  let q : Spec Γ(X, U) := ⟨Q.comap (algebraMap Γ(X, U) _), inferInstance⟩
+  have hqP : q.asIdeal ≤ P.asIdeal := by
+    rw [← IsLocalization.AtPrime.under_maximalIdeal (X.presheaf.stalk y) P.asIdeal]
+    exact Ideal.comap_mono (le_maximalIdeal (Ideal.IsPrime.ne_top inferInstance))
+  have hxy : hU.fromSpec q ⤳ y :=
+    (((PrimeSpectrum.le_iff_specializes q P).mp hqP).map hU.fromSpec.continuous).trans
+      (specializes_of_eq (hU.fromSpec_primeIdealOf ⟨y, hyU⟩))
+  have hprime : hU.primeIdealOf ⟨_, hxy.mem_open U.isOpen hyU⟩ = q :=
+    hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf _)
+  have hdisj : Disjoint (P.asIdeal.primeCompl : Set Γ(X, U)) q.asIdeal :=
+    Set.disjoint_left.mpr fun a ha haq ↦ ha (hqP haq)
+  have hmap : q.asIdeal.map (algebraMap Γ(X, U) (X.presheaf.stalk y)) = Q :=
+    IsLocalization.map_under P.asIdeal.primeCompl _ Q
+  refine ⟨_, hxy, ?_, ?_⟩
+  · -- Both ideals of the localization `𝒪_{X,y}` pull back to `q` on `Γ(X, U)`.
+    rw [← IsLocalization.map_under P.asIdeal.primeCompl (X.presheaf.stalk y)
+        ((maximalIdeal _).comap (X.presheaf.stalkSpecializes hxy).hom), ← hmap]
+    congr 1
+    exact (comap_germ_comap_stalkSpecializes_maximalIdeal hU hyU hxy).trans (congrArg _ hprime)
+  · rw [coheight_eq_of_isOpenImmersion hU.fromSpec, ← idealHeight_eq_coheight,
+      ← IsLocalization.height_map_of_disjoint (S := X.presheaf.stalk y) P.asIdeal.primeCompl
+        q.asIdeal hdisj, hmap]
+
 /-- **Prime elements of a local ring and codimension-one generizations.** On a locally Noetherian
 integral scheme, every prime element `p` of the local ring `𝒪_{X,y}` generates the prime of
 `𝒪_{X,y}` lying under the maximal ideal of `𝒪_{X,x}` for some codimension-one generization `x`
@@ -189,43 +229,12 @@ theorem exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton [IsIntegral
     ∃ x : X, Order.coheight x = 1 ∧ ∃ h : x ⤳ y,
       (maximalIdeal (X.presheaf.stalk x)).comap (X.presheaf.stalkSpecializes h).hom =
         Ideal.span {p} := by
-  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
-  have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
-  replace hU : IsAffineOpen U := hU
-  let := X.presheaf.algebra_section_stalk ⟨y, hyU⟩
-  have := hU.isLocalization_stalk ⟨y, hyU⟩
-  set P := hU.primeIdealOf ⟨y, hyU⟩
-  have hspan : (Ideal.span {p}).IsPrime := (Ideal.span_singleton_prime hp.ne_zero).mpr hp
-  -- The prime `q` of `Γ(X, U)` under `(p)`, contained in the prime `P` of `y`.
-  let q : Spec Γ(X, U) := ⟨(Ideal.span {p}).comap (algebraMap Γ(X, U) _), inferInstance⟩
-  have hqP : q.asIdeal ≤ P.asIdeal := by
-    rw [← IsLocalization.AtPrime.under_maximalIdeal (X.presheaf.stalk y) P.asIdeal]
-    refine Ideal.comap_mono ?_
-    rw [Ideal.span_singleton_le_iff_mem, mem_maximalIdeal]
-    exact hp.not_isUnit
-  have hxy : hU.fromSpec q ⤳ y :=
-    (((PrimeSpectrum.le_iff_specializes q P).mp hqP).map hU.fromSpec.continuous).trans
-      (specializes_of_eq (hU.fromSpec_primeIdealOf ⟨y, hyU⟩))
-  have hprime : hU.primeIdealOf ⟨_, hxy.mem_open U.isOpen hyU⟩ = q :=
-    hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf _)
-  have hdisj : Disjoint (P.asIdeal.primeCompl : Set Γ(X, U)) q.asIdeal :=
-    Set.disjoint_left.mpr fun a ha haq ↦ ha (hqP haq)
-  have hmap : q.asIdeal.map (algebraMap Γ(X, U) (X.presheaf.stalk y)) = Ideal.span {p} :=
-    IsLocalization.map_under P.asIdeal.primeCompl _ _
-  -- `fromSpec q` has codimension one, as `(p)` has height one by Krull's principal ideal theorem.
-  have hcoh : Order.coheight (hU.fromSpec q) = 1 := by
-    rw [coheight_eq_of_isOpenImmersion hU.fromSpec, ← idealHeight_eq_coheight,
-      ← IsLocalization.height_map_of_disjoint (S := X.presheaf.stalk y) P.asIdeal.primeCompl
-        q.asIdeal hdisj, hmap]
-    exact Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors
-      (mem_nonZeroDivisors_of_ne_zero hp.ne_zero) hp.not_isUnit
-  refine ⟨_, hcoh, hxy, ?_⟩
-  -- Both ideals of the localization `𝒪_{X,y}` pull back to `q` on `Γ(X, U)`.
-  rw [← IsLocalization.map_under P.asIdeal.primeCompl (X.presheaf.stalk y)
-      ((maximalIdeal _).comap (X.presheaf.stalkSpecializes hxy).hom), ← hmap]
-  congr 1
-  exact (comap_germ_comap_stalkSpecializes_maximalIdeal hU hyU hxy).trans (congrArg _ hprime)
+  have : (Ideal.span {p}).IsPrime := (Ideal.span_singleton_prime hp.ne_zero).mpr hp
+  obtain ⟨x, h, hx, hcoh⟩ := exists_comap_stalkSpecializes_maximalIdeal_eq (Ideal.span {p})
+  refine ⟨x, ?_, h, hx⟩
+  rw [hcoh]
+  exact Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors
+    (mem_nonZeroDivisors_of_ne_zero hp.ne_zero) hp.not_isUnit
 
 /-- On an irreducible scheme, the image in the function field of a germ at `y` is the image of its
 germ at a generization `x` of `y`. -/
