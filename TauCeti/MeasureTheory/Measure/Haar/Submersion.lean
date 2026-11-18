@@ -39,8 +39,8 @@ pull back along submersions.
 
 * `TauCeti.addHaar_preimage_inter_eq_zero_of_isSubmersionAt`: a submersion in normal form at
   every point of `A` has `μ₀ (θ ⁻¹' s ∩ A) = 0` whenever `μ s = 0`.
-* `TauCeti.quasiMeasurePreserving_restrict_of_isSubmersionAt`: such a map from a null-measurable
-  set `A` into `Ω` is quasi-measure-preserving from `μ₀.restrict A` to `μ.restrict Ω`.
+* `TauCeti.quasiMeasurePreserving_restrict_of_isSubmersionAt`: such a map from a set `A` into `Ω`
+  is quasi-measure-preserving from `μ₀.restrict A` to `μ.restrict Ω`.
 * `TauCeti.addHaar_preimage_inter_eq_zero_of_surjective_fderiv`,
   `TauCeti.quasiMeasurePreserving_restrict_of_surjective_fderiv`: the same for a map that is `C¹`
   with surjective derivative at every point of `A`.
@@ -116,18 +116,23 @@ theorem addHaar_preimage_inter_eq_zero_of_isSubmersionAt
     (inter_mem_nhdsWithin _ (h.domChart.open_source.mem_nhds h.mem_domChart_source))
     (fun y hy ↦ ⟨hy.1.1, hy.2⟩)
 
-variable (μ) in
-/-- If `θ` is a `C¹` submersion in normal form at every point of a null-measurable set `A` and maps
+variable (μ₀ μ) in
+/-- If `θ` is a `C¹` submersion in normal form at every point of a set `A` and maps
 `A` into `Ω`, then `θ` is quasi-measure-preserving from `μ₀.restrict A` to `μ.restrict Ω`. -/
 theorem quasiMeasurePreserving_restrict_of_isSubmersionAt
     (hθ : ∀ x ∈ A, IsSubmersionAt 𝓘(ℝ, E₀) 𝓘(ℝ, E) n θ x) (hn : 1 ≤ n)
-    (hA : NullMeasurableSet A μ₀) (hmaps : MapsTo θ A Ω) :
+    (hmaps : MapsTo θ A Ω) :
     QuasiMeasurePreserving θ (μ₀.restrict A) (μ.restrict Ω) := by
-  have hθm : AEMeasurable θ (μ₀.restrict A) := ContinuousOn.aemeasurable₀
-    (fun x hx ↦ (hθ x hx).contMDiffAt.continuousAt.continuousWithinAt) hA
+  -- The open submersion locus is a measurable neighbourhood of `A` on which `θ` is continuous.
+  let U := {x | IsSubmersionAt 𝓘(ℝ, E₀) 𝓘(ℝ, E) n θ x}
+  have hU : IsOpen U := isOpen_isSubmersionAt
+  have hθU : ContinuousOn θ U := fun x hx ↦
+    hx.contMDiffAt.continuousAt.continuousWithinAt
+  have hθm : AEMeasurable θ (μ₀.restrict A) :=
+    AEMeasurable.mono_set (t := U) hθ (hθU.aemeasurable hU.measurableSet)
   refine ⟨hθm, AbsolutelyContinuous.mk fun t ht ht0 ↦ ?_⟩
   rw [restrict_apply ht] at ht0
-  rw [map_apply_of_aemeasurable hθm ht, restrict_apply₀' hA]
+  rw [map_apply_of_aemeasurable hθm ht, restrict_apply₀ (hθm.nullMeasurable ht)]
   have hsub : θ ⁻¹' t ∩ A ⊆ θ ⁻¹' (t ∩ Ω) ∩ A := fun x hx ↦ ⟨⟨hx.1, hmaps hx.2⟩, hx.2⟩
   exact measure_mono_null hsub (addHaar_preimage_inter_eq_zero_of_isSubmersionAt μ₀ hθ hn ht0)
 
@@ -141,14 +146,14 @@ theorem addHaar_preimage_inter_eq_zero_of_surjective_fderiv (hθ : ∀ x ∈ A, 
   addHaar_preimage_inter_eq_zero_of_isSubmersionAt μ₀
     (fun x hx ↦ (hθ x hx).isSubmersionAt_of_surjective_fderiv (hsurj x hx)) le_rfl hs
 
-variable (μ) in
-/-- If `θ` is `C¹` with surjective derivative at every point of a null-measurable set `A` and maps
+variable (μ₀ μ) in
+/-- If `θ` is `C¹` with surjective derivative at every point of a set `A` and maps
 `A` into `Ω`, then `θ` is quasi-measure-preserving from `μ₀.restrict A` to `μ.restrict Ω`. -/
 theorem quasiMeasurePreserving_restrict_of_surjective_fderiv (hθ : ∀ x ∈ A, ContDiffAt ℝ 1 θ x)
-    (hsurj : ∀ x ∈ A, Surjective (fderiv ℝ θ x)) (hA : NullMeasurableSet A μ₀)
+    (hsurj : ∀ x ∈ A, Surjective (fderiv ℝ θ x))
     (hmaps : MapsTo θ A Ω) : QuasiMeasurePreserving θ (μ₀.restrict A) (μ.restrict Ω) :=
-  quasiMeasurePreserving_restrict_of_isSubmersionAt μ
-    (fun x hx ↦ (hθ x hx).isSubmersionAt_of_surjective_fderiv (hsurj x hx)) le_rfl hA hmaps
+  quasiMeasurePreserving_restrict_of_isSubmersionAt μ₀ μ
+    (fun x hx ↦ (hθ x hx).isSubmersionAt_of_surjective_fderiv (hsurj x hx)) le_rfl hmaps
 
 end TauCeti
 
@@ -172,8 +177,8 @@ quasi-measure-preserving from `μ₀.restrict U` to `μ.restrict Ω`. -/
 theorem quasiMeasurePreserving_restrict_of_surjective_fderiv (hθ : ContDiffOn ℝ 1 θ U)
     (hU : IsOpen U) (hsurj : ∀ x ∈ U, Surjective (fderiv ℝ θ x)) (hmaps : MapsTo θ U Ω) :
     QuasiMeasurePreserving θ (μ₀.restrict U) (μ.restrict Ω) :=
-  TauCeti.quasiMeasurePreserving_restrict_of_surjective_fderiv μ
-    (fun _ hx ↦ hθ.contDiffAt (hU.mem_nhds hx)) hsurj hU.measurableSet.nullMeasurableSet hmaps
+  TauCeti.quasiMeasurePreserving_restrict_of_surjective_fderiv μ₀ μ
+    (fun _ hx ↦ hθ.contDiffAt (hU.mem_nhds hx)) hsurj hmaps
 
 end ContDiffOn
 
