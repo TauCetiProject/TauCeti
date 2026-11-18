@@ -115,8 +115,8 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
 Strichartz space**, in every dimension `n`: solution measured along the energy pair `(∞, 2)` and
 forcing in the dual space of a non-endpoint admissible pair, `2 < q < ∞` and
 `2 / q + n / r = n / 2`, where `p` and `r'` are the Hölder conjugates of `q` and `r`. There is `C`
-such that for every almost everywhere strongly measurable `F : ℝ → L²(E)` for which
-`s ↦ S(-s) F(s)` is integrable, every measurable set of times `I` and every time `t`,
+such that for every `F : ℝ → L²(E)`, every measurable set of times `I` on which `F` is almost
+everywhere strongly measurable and `s ↦ S(-s) F(s)` is integrable, and every time `t`,
 
 `‖∫_I S(t - s) F(s) ds‖₂ ≤ C ‖F‖_{L^p(I; L^{r'})}`.
 
@@ -125,28 +125,29 @@ For `I = (-∞, t)` this is the retarded estimate
 theorem exists_enorm_setIntegral_schrodingerPropagator_sub_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
-    ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
-      Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) → ∀ {I : Set ℝ}, MeasurableSet I →
+    ∃ C : ℝ≥0, ∀ (F : ℝ → Lp ℂ 2 (volume : Measure E)) {I : Set ℝ}, MeasurableSet I →
+      AEStronglyMeasurable F (volume.restrict I) →
+      IntegrableOn (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) I →
       ∀ t : ℝ, ‖∫ s in I, schrodingerPropagator ℂ (t - s) (F s)‖ₑ ≤
         C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p (volume.restrict I) := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
     hqr
-  refine ⟨C, fun F hF hSF I hI t ↦ ?_⟩
+  refine ⟨C, fun F I hI hF hSF t ↦ ?_⟩
   -- `S(t - s) = S(t) S(-s)`, and `S(t)` is unitary, so it can be taken out of the integral.
   have hfac : ∫ s in I, schrodingerPropagator ℂ (t - s) (F s) =
       schrodingerPropagator ℂ t (∫ s in I, schrodingerPropagator ℂ (-s) (F s)) := by
     simp_rw [sub_eq_add_neg, schrodingerPropagator_def, phasePropagator_add_apply]
-    exact (phasePropagator ℂ laplacianSymbol t).integral_comp_comm hSF.integrableOn
-  rw [hfac, ← ofReal_norm, schrodingerPropagator_def, norm_phasePropagator_apply, ofReal_norm,
+    exact (phasePropagator ℂ laplacianSymbol t).integral_comp_comm hSF
+  rw [hfac, schrodingerPropagator_def, enorm_phasePropagator_apply,
     ← eLpNorm_indicator_eq_eLpNorm_restrict (hI.nullMeasurableSet (μ := volume))]
   simp_rw [← adjoint_schrodingerPropagator] at hC hSF ⊢
-  exact enorm_setIntegral_adjoint_le hC hF hSF hI
+  exact enorm_setIntegral_adjoint_le hC hI hF hSF
 
 /-- **The energy bound for Duhamel's formula with forcing in a dual Strichartz space**, in every
 dimension `n`, along a non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`,
 where `p` and `r'` are the Hölder conjugates of `q` and `r`. There is `C` such that for every
-`f ∈ L²(E)`, every almost everywhere strongly measurable `F : ℝ → L²(E)` for which
-`s ↦ S(-s) F(s)` is integrable, and every time `t`, the solution
+`f ∈ L²(E)`, every `F : ℝ → L²(E)` and every time `t` such that, on `Ι(0, t)`, `F` is almost
+everywhere strongly measurable and `s ↦ S(-s) F(s)` is integrable, the solution
 `u(t) = S(t) f - i ∫_0^t S(t - s) F(s) ds` of `i ∂ₜu + Δu = F`, `u(0) = f`, satisfies
 
 `‖u(t)‖₂ ≤ ‖f‖₂ + C ‖F‖_{L^p(Ι(0, t); L^{r'})}`,
@@ -156,20 +157,21 @@ where `Ι(0, t)` is `(0, t]` for `t ≥ 0` and `(t, 0]` for `t ≤ 0`. The const
 interval `I` containing `0`. -/
 theorem exists_enorm_schrodingerDuhamel_le (hq : 2 < q) (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
-    ∃ C : ℝ≥0, ∀ (f : Lp ℂ 2 (volume : Measure E)) (F : ℝ → Lp ℂ 2 (volume : Measure E)),
-      AEStronglyMeasurable F → Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) →
-      ∀ t : ℝ, ‖schrodingerDuhamel f F t‖ₑ ≤
+    ∃ C : ℝ≥0, ∀ (f : Lp ℂ 2 (volume : Measure E)) (F : ℝ → Lp ℂ 2 (volume : Measure E)) (t : ℝ),
+      AEStronglyMeasurable F (volume.restrict (uIoc 0 t)) →
+      IntegrableOn (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) (uIoc 0 t) →
+      ‖schrodingerDuhamel f F t‖ₑ ≤
         ‖f‖ₑ + C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p (volume.restrict (uIoc 0 t)) := by
   obtain ⟨C, hC⟩ := exists_enorm_setIntegral_schrodingerPropagator_sub_le (E := E) (r' := r') hq
     hpq hqr
-  refine ⟨C, fun f F hF hSF t ↦ ?_⟩
+  refine ⟨C, fun f F t hF hSF ↦ ?_⟩
   have hint : ‖∫ s in (0 : ℝ)..t, schrodingerPropagator ℂ (t - s) (F s)‖ₑ =
       ‖∫ s in uIoc 0 t, schrodingerPropagator ℂ (t - s) (F s)‖ₑ := by
     rw [← ofReal_norm, ← ofReal_norm, intervalIntegral.norm_integral_eq_norm_integral_uIoc]
   rw [schrodingerDuhamel_def]
   refine eNorm_sub_le.trans (add_le_add ?_ ?_)
-  · rw [← ofReal_norm, ← ofReal_norm, schrodingerPropagator_def, norm_phasePropagator_apply]
+  · rw [schrodingerPropagator_def, enorm_phasePropagator_apply]
   · rw [← ofReal_norm, norm_smul, Complex.norm_I, one_mul, ofReal_norm, hint]
-    exact hC F hF hSF measurableSet_uIoc t
+    exact hC F measurableSet_uIoc hF hSF t
 
 end TauCeti

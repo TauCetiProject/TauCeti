@@ -42,8 +42,8 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
 * `TauCeti.fourier_phasePropagator`, `TauCeti.coeFn_fourier_phasePropagator`: its action on the
   Fourier side.
 * `TauCeti.phasePropagator_zero`, `TauCeti.phasePropagator_add`: the group law.
-* `TauCeti.norm_phasePropagator_apply`, `TauCeti.inner_phasePropagator_apply`,
-  `TauCeti.adjoint_phasePropagator`: unitarity.
+* `TauCeti.norm_phasePropagator_apply`, `TauCeti.enorm_phasePropagator_apply`,
+  `TauCeti.inner_phasePropagator_apply`, `TauCeti.adjoint_phasePropagator`: unitarity.
 * `TauCeti.inner_phasePropagator_sub_apply`: the Duhamel pairing `⟪exp(i(t - s)ω(D)) f, g⟫` as a
   pairing of data pulled back to time zero.
 * `TauCeti.enorm_integral_phasePropagator_neg_le`: the dual energy estimate
@@ -220,6 +220,12 @@ theorem norm_phasePropagator_apply (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
     exact ((phasePropagator F ω (-t)).le_opNorm _).trans
       (mul_le_of_le_one_left (norm_nonneg _) (norm_phasePropagator_le ω (-t)))
 
+/-- **Conservation of the `L²` norm**, extended-norm form: `‖exp(itω(D)) f‖ₑ = ‖f‖ₑ`. -/
+@[simp]
+theorem enorm_phasePropagator_apply (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    ‖phasePropagator F ω t f‖ₑ = ‖f‖ₑ := by
+  rw [← ofReal_norm, ← ofReal_norm, norm_phasePropagator_apply]
+
 /-- The adjoint of `exp(itω(D))` is `exp(i(-t)ω(D))`. -/
 theorem adjoint_phasePropagator (t : ℝ) :
     ContinuousLinearMap.adjoint (phasePropagator (E := E) F ω t) = phasePropagator F ω (-t) := by
@@ -260,7 +266,7 @@ theorem enorm_integral_phasePropagator_neg_le (G : ℝ → Lp F 2 (volume : Meas
   by_cases hG : AEStronglyMeasurable (fun s ↦ eLpNorm (G s) 2 volume) volume
   · rw [eLpNorm_one_eq_lintegral_eNorm hG]
     refine (eNorm_integral_le_lintegral_eNorm _).trans_eq (lintegral_congr fun s ↦ ?_)
-    rw [eNorm_eq_self, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm, norm_phasePropagator_apply]
+    rw [eNorm_eq_self, ← Lp.eNorm_def, enorm_phasePropagator_apply]
   · rw [eLpNorm_of_not_aestronglyMeasurable hG]
     exact le_top
 
