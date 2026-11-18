@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TemperleyLieb.Positivity
 public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
-public import TauCeti.Algebra.TemperleyLieb.Trace.Star
+
+import Mathlib.Tactic.LinearCombination
 
 /-!
-# The sign isomorphism and positivity at negative loop parameters
+# The sign isomorphism
 
 Over every commutative ring `R`, the assignment `e i ↦ -e i` respects the Temperley–Lieb relations
 when the loop value changes sign: `(-e i) * (-e i) = e i * e i`, so the quadratic relation
@@ -29,11 +29,8 @@ of the last generator in the Markov property), so it is `tr` by uniqueness of th
 particular the normalised traces `(δ ^ n)⁻¹ * tr n` correspond exactly, and the trace radicals and
 their quotients correspond, compatibly with the strand maps.
 
-Combined with Jones's positivity theorem at the positive loop value `-δ`, this classifies the
-negative loop values with positive signed closure forms: for real `δ < 0`, the forms
-`(-1) ^ n * tr n (x⋆ * x)` are real and nonnegative on every number of strands exactly when `-δ`
-is an admissible loop parameter, `-δ = 2 cos (π / m)` for some `m ≥ 3` or `-δ ≥ 2`. The sign
-`(-1) ^ n` cannot be dropped: on one strand the unsigned form is `tr 1 1 = δ < 0`.
+The positivity of the signed closure forms at negative loop values, which combines these results
+with Jones's positivity theorem, is in `TauCeti.Algebra.TemperleyLieb.Positivity.Sign`.
 
 ## Main definitions
 
@@ -54,15 +51,11 @@ is an admissible loop parameter, `-δ = 2 cos (π / m)` for some `m ≥ 3` or `-
   correspond.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.comap_traceRadical_signEquiv`: the trace radicals
   correspond.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff`,
-  `TauCeti.TemperleyLieb.markovTrace_neg_one_pow_nonneg_iff`: **positivity at negative loop
-  parameters**.
 
 ## References
 
 * D. Penneys, *Unitary Quantum Symmetries Lite*, Part I, Chapter 4, Facts 4.4.14, for the signed
   closure forms at negative loop values.
-* V. F. R. Jones, *Index for subfactors*, Invent. Math. 72 (1983), 1–25.
 -/
 
 public section
@@ -99,6 +92,12 @@ theorem signEquiv_e (h : δ' = -δ) (i : Fin (n - 1)) : signEquiv h (e δ i) = -
 theorem signEquiv_symm (h : δ' = -δ) :
     (signEquiv (n := n) h).symm = signEquiv (neg_eq_iff_eq_neg.1 h.symm) :=
   (rfl)
+
+/-- The sign isomorphism is involutive: applying it at `δ` and then at `-δ` returns `x`. -/
+@[simp]
+theorem signEquiv_signEquiv (h : δ' = -δ) (h' : δ = -δ') (x : TemperleyLieb R δ n) :
+    signEquiv h' (signEquiv h x) = x :=
+  (signEquiv h).symm_apply_apply x
 
 /-- The sign isomorphism commutes with the strand inclusions. -/
 @[simp]
@@ -169,7 +168,8 @@ theorem inv_pow_mul_map_signEquiv {K : Type*} [Field K] {δ δ' : K}
     (x : TemperleyLieb K δ n) :
     (δ' ^ n)⁻¹ * tr' n (signEquiv h x) = (δ ^ n)⁻¹ * tr n x := by
   have hs : ((-1 : K) ^ n)⁻¹ * (-1) ^ n = 1 := inv_mul_cancel₀ (pow_ne_zero n (by simp))
-  rw [htr.map_signEquiv htr' h, h, neg_pow, mul_inv, mul_mul_mul_comm, hs, one_mul]
+  rw [htr.map_signEquiv htr' h, h, neg_pow, mul_inv]
+  linear_combination (δ ^ n)⁻¹ * tr n x * hs
 
 /-- The sign isomorphism identifies the trace radicals at `δ` and at `δ' = -δ`. -/
 theorem comap_traceRadical_signEquiv (htr : IsMarkovTrace R δ tr)
@@ -198,7 +198,7 @@ theorem quotientSignEquiv_mk (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace
     htr.quotientSignEquiv htr' h n
         (Ideal.Quotient.mk ((tr n).traceRadical (htr.map_mul_comm n)) x) =
       Ideal.Quotient.mk ((tr' n).traceRadical (htr'.map_mul_comm n)) (signEquiv h x) :=
-  (rfl)
+  Ideal.quotientEquivAlg_mk _ _ _ x
 
 /-- The quotient traces satisfy the trace relation of the sign isomorphism. -/
 @[simp]
@@ -211,6 +211,7 @@ theorem quotientTrace_quotientSignEquiv (htr : IsMarkovTrace R δ tr)
   simp only [quotientSignEquiv_mk, LinearMap.quotientTrace_mk, htr.map_signEquiv htr' h]
 
 /-- The induced isomorphisms of the trace-radical quotients commute with the strand maps. -/
+@[simp]
 theorem quotientStrandIncl_quotientSignEquiv (htr : IsMarkovTrace R δ tr)
     (htr' : IsMarkovTrace R δ' tr') (h : δ' = -δ) {n : ℕ}
     (x : TemperleyLieb R δ (n + 1) ⧸ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
@@ -228,38 +229,5 @@ theorem markovTrace_signEquiv (q : Rˣ) (hq : δ = -((q : R) + ((q⁻¹ : Rˣ) :
     (hq' : δ' = -((q' : R) + ((q'⁻¹ : Rˣ) : R))) (h : δ' = -δ) (x : TemperleyLieb R δ n) :
     markovTrace q' hq' (signEquiv h x) = (-1) ^ n * markovTrace q hq x :=
   (isMarkovTrace_markovTrace q hq).map_signEquiv (isMarkovTrace_markovTrace q' hq') h x
-
-open scoped ComplexOrder
-
-namespace IsMarkovTrace
-
-variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
-
-/-- **Positivity at negative loop parameters.** For `δ < 0`, the signed Hermitian forms
-`(x, y) ↦ (-1) ^ n * tr n (x⋆ * y)` of a Markov trace are positive semidefinite on every number
-`n` of strands exactly when `-δ` is an admissible loop parameter, `-δ = 2 cos (π / m)` for some
-`m ≥ 3` or `-δ ≥ 2`. -/
-theorem forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
-    (hδ : δ < 0) :
-    (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ (-1) ^ n * tr n (star x * x)) ↔
-      -δ ∈ jonesLoopParameters := by
-  have : Fact (IsSelfAdjoint ((-δ : ℝ) : ℂ)) := ⟨Complex.conj_ofReal _⟩
-  have h : ((δ : ℝ) : ℂ) = -((-δ : ℝ) : ℂ) := by push_cast; ring
-  rw [← (htr.comp_signEquiv h).forall_map_star_mul_self_nonneg_iff (neg_pos.2 hδ)]
-  refine forall_congr' fun n ↦ ((signEquiv h).surjective.forall).trans (forall_congr' fun x ↦ ?_)
-  simp [signEquiv_star]
-
-end IsMarkovTrace
-
-/-- **Positivity at negative loop parameters** for the spin-model trace. Let `δ < 0` and let `q` be
-a unit with `δ = -(q + q⁻¹)`. Then the signed closure forms
-`(-1) ^ n * TauCeti.TemperleyLieb.markovTrace q hq (x⋆ * x)` are real and nonnegative for every
-number `n` of strands and every `x` exactly when `-δ` is an admissible loop parameter. -/
-theorem markovTrace_neg_one_pow_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : δ < 0)
-    (q : ℂˣ) (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
-    (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n),
-        0 ≤ (-1) ^ n * markovTrace q hq (star x * x)) ↔
-      -δ ∈ jonesLoopParameters :=
-  (isMarkovTrace_markovTrace q hq).forall_neg_one_pow_mul_map_star_mul_self_nonneg_iff hδ
 
 end TauCeti.TemperleyLieb
