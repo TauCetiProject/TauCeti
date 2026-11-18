@@ -39,6 +39,8 @@ on a larger set of variables this count fails.
   in it.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.map_toWord_restrict`: renaming the variables of
   `S.restrict` along the inclusion `S.vars → X` gives `S`.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.eval_toWord_restrict`: at the restriction of a point
+  to `S.vars`, `S.restrict` takes the value of `S`.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.comp_val_mem_V_restrict_iff`,
   `TauCeti.GroupAlgGeom.Quadratic.Standard.V_restrict`: a point solves `S` exactly when its
   restriction to `S.vars` solves `S.restrict`, and the solutions of `S.restrict` are the
@@ -150,12 +152,17 @@ theorem map_eval_atoms_restrict (v : X → H) :
     S.restrict.atoms.map (eval ι (v ∘ Subtype.val)) = S.atoms.map (eval ι v) := by
   cases S <;> simp [restrict, Function.comp_def, map_commutatorElement]
 
+/-- At the restriction of a point to `S.vars`, `S.restrict` takes the value of `S`. -/
+@[simp]
+theorem eval_toWord_restrict (v : X → H) :
+    eval ι (v ∘ Subtype.val) S.restrict.toWord = eval ι v S.toWord := by
+  rw [← map_toWord_restrict S, eval_map, MonoidHom.comp_id]
+
 /-- The restriction of a point to `S.vars` solves `S.restrict` exactly when the point solves
 `S`: the variables absent from `S` are unconstrained. -/
 theorem comp_val_mem_V_restrict_iff (v : X → H) :
     v ∘ Subtype.val ∈ V ι {S.restrict.toWord} ↔ v ∈ V ι {S.toWord} := by
-  simp only [mem_V, Set.mem_singleton_iff, forall_eq, ← map_toWord_restrict S, eval_map,
-    MonoidHom.comp_id]
+  simp
 
 /-- The solutions of `S.restrict` are the restrictions to `S.vars` of the solutions of `S`. -/
 theorem V_restrict :
