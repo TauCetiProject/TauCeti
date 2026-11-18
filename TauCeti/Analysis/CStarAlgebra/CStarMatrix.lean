@@ -11,6 +11,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Basic
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -42,6 +43,8 @@ and the transpose as a linear map.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose.
+* `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
+  a rectangular matrix is supported on its initial projection.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
@@ -120,6 +123,22 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
     M.conjTranspose.conjTranspose = M := by
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
+
+/-- Over a star-ordered ring with proper star, a rectangular matrix whose initial Gram matrix is
+an idempotent `p` is supported on `p`. -/
+lemma mul_eq_self_of_conjTranspose_mul_eq {m : Type*} [Fintype m] [Fintype n] [NonUnitalRing A]
+    [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A] {p : CStarMatrix m m A}
+    (v : CStarMatrix n m A) (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) :
+    v * p = v := by
+  have hp' : IsIdempotentElem (v.conjTranspose * v) := by
+    rw [hv]
+    exact hp
+  have hpM := congrArg ofMatrix.symm hp'.eq
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at hpM
+  have h := Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) hpM
+  rw [← hv]
+  apply ofMatrix.symm.injective
+  simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)

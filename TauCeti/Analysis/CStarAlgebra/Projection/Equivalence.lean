@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Algebra.Star.PartialIsometry
-public import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 import TauCeti.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Hermitian
 import Mathlib.Data.Matrix.ColumnRowPartitioned
@@ -28,7 +27,7 @@ operations used to define `CStarMatrix` multiplication and conjugate transpose.
 
 ## References
 
-* B. Blackadar, *K-Theory for Operator Algebras*, Definition 4.6.1 and Propositions 4.6.2–4.6.6.
+* B. Blackadar, *K-Theory for Operator Algebras*, §4.6 (Definition 4.6.1) and §5.1.
 -/
 
 public section
@@ -65,13 +64,13 @@ theorem exists_matrix (h : MurrayVonNeumannEquiv p q) :
     ∃ v : CStarMatrix n m A, v.conjTranspose * v = p ∧ v * v.conjTranspose = q :=
   h.2.2
 
-/-- Every matrix projection is equivalent to itself, implemented by the projection. -/
+/-- Every matrix projection is Murray–von Neumann equivalent to itself. -/
 protected theorem refl (hp : IsStarProjection p) : MurrayVonNeumannEquiv p p :=
   ⟨hp, hp, p, by simpa only [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
     hp.isIdempotentElem.eq, by simpa only [← star_eq_conjTranspose,
       hp.isSelfAdjoint.star_eq] using hp.isIdempotentElem.eq⟩
 
-/-- Adjointing the rectangular implementing matrix reverses equivalence. -/
+/-- Rectangular Murray–von Neumann equivalence is symmetric. -/
 protected theorem symm (h : MurrayVonNeumannEquiv p q) : MurrayVonNeumannEquiv q p := by
   obtain ⟨hp, hq, v, hv, hv'⟩ := h
   exact ⟨hq, hp, v.conjTranspose, by simpa using hv', by simpa using hv⟩
@@ -112,25 +111,30 @@ theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
     (h : MurrayVonNeumannEquiv p q) (f : F) :
     MurrayVonNeumannEquiv (p.map f) (q.map f) := by
   obtain ⟨hp, hq, v, hv, hv'⟩ := h
-  refine ⟨isStarProjection_iff'.mpr ⟨?_, ?_⟩, isStarProjection_iff'.mpr ⟨?_, ?_⟩, v.map f, ?_, ?_⟩
-  · ext i j
-    simpa only [map_apply, mul_apply, map_sum, map_mul] using
-      congrArg f (congrFun (congrFun hp.isIdempotentElem.eq i) j)
-  · ext i j
-    simpa only [map_apply, star_apply, map_star] using
-      congrArg f (congrFun (congrFun hp.isSelfAdjoint.star_eq i) j)
-  · ext i j
-    simpa only [map_apply, mul_apply, map_sum, map_mul] using
-      congrArg f (congrFun (congrFun hq.isIdempotentElem.eq i) j)
-  · ext i j
-    simpa only [map_apply, star_apply, map_star] using
-      congrArg f (congrFun (congrFun hq.isSelfAdjoint.star_eq i) j)
-  · ext i j
-    simpa only [map_apply, mul_apply, conjTranspose_apply, map_sum, map_mul,
-      map_star] using congrArg f (congrFun (congrFun hv i) j)
-  · ext i j
-    simpa only [map_apply, mul_apply, conjTranspose_apply, map_sum, map_mul,
-      map_star] using congrArg f (congrFun (congrFun hv' i) j)
+  have hpf : ofMatrix.symm (p.map f) = (ofMatrix.symm p).map f := rfl
+  have hqf : ofMatrix.symm (q.map f) = (ofMatrix.symm q).map f := rfl
+  have hvf : ofMatrix.symm (v.map f) = (ofMatrix.symm v).map f := rfl
+  have hf : Function.Semiconj f star star := map_star f
+  refine ⟨isStarProjection_iff'.mpr ⟨?_, ?_⟩, isStarProjection_iff'.mpr ⟨?_, ?_⟩, v.map f, ?_,
+    ?_⟩ <;> apply ofMatrix.symm.injective
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
+      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
+      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hp.isIdempotentElem.eq)
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
+      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
+      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hp.isSelfAdjoint.star_eq)
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
+      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
+      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hq.isIdempotentElem.eq)
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
+      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
+      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hq.isSelfAdjoint.star_eq)
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
+      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
+      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hv)
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_star, ofMatrix_symm_conjTranspose, hpf, hqf, hvf,
+      Matrix.map_mul, Matrix.conjTranspose_map f hf] using
+      congrArg (Matrix.map · f) (congrArg ofMatrix.symm hv')
 
 /-- Padding a projection by a zero block does not change its rectangular equivalence class. -/
 theorem pad_zero (hp : IsStarProjection p) :
@@ -209,8 +213,8 @@ theorem murrayVonNeumannEquiv_iff (hp : IsStarProjection p) (hq : IsStarProjecti
 theorem murrayVonNeumannEquiv_self_iff : MurrayVonNeumannEquiv p p ↔ IsStarProjection p :=
   ⟨MurrayVonNeumannEquiv.isStarProjection_left, MurrayVonNeumannEquiv.refl⟩
 
-/-- For equal matrix sizes, the implementing matrices are exactly partial isometries with the
-specified initial and final projections. -/
+/-- For equal matrix sizes, two matrices are Murray–von Neumann equivalent if and only if they
+are the initial and final projections of some partial isometry. -/
 theorem murrayVonNeumannEquiv_iff_exists_partialIsometry {q : CStarMatrix m m A} :
     MurrayVonNeumannEquiv p q ↔
       ∃ v : CStarMatrix m m A, TauCeti.IsPartialIsometry v ∧ star v * v = p ∧
@@ -248,26 +252,6 @@ theorem zero_murrayVonNeumannEquiv_iff :
 
 end Algebraic
 
-section OrderedStar
-
-variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
-  {p : CStarMatrix m m A}
-
-/-- An implementing rectangular matrix is supported on its initial projection. -/
-theorem mul_eq_self_of_conjTranspose_mul_eq (v : CStarMatrix n m A)
-    (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) : v * p = v := by
-  have hp' : IsIdempotentElem (v.conjTranspose * v) := by
-    rw [hv]
-    exact hp
-  have hpM := congrArg ofMatrix.symm hp'.eq
-  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at hpM
-  have h := Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) hpM
-  rw [← hv]
-  apply ofMatrix.symm.injective
-  simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
-
-end OrderedStar
-
 /-- Unitary conjugacy implies Murray–von Neumann equivalence. -/
 theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableEq m]
     {p : CStarMatrix m m B} (hp : IsStarProjection p) (u : unitary (CStarMatrix m m B)) :
@@ -282,6 +266,5 @@ theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableE
       Unitary.coe_star_mul_self, one_mul, hp.isIdempotentElem.eq]
   · rw [← star_eq_conjTranspose, star_mul, hp.isSelfAdjoint.star_eq]
     simp only [mul_assoc, ← mul_assoc p, hp.isIdempotentElem.eq]
-
 
 end CStarMatrix
