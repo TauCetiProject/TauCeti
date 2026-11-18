@@ -127,6 +127,42 @@ which the coordinate `t = z ^ m` (`TauCeti.torusFamilyCyclicQuotientProjection`)
 
 end Opens
 
+/-! ### Maps out of open subsets through a local diffeomorphism -/
+
+section LocalDiffeomorph
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+  {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+  {E₃ : Type*} [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃]
+  {H₁ : Type*} [TopologicalSpace H₁] {H₂ : Type*} [TopologicalSpace H₂]
+  {H₃ : Type*} [TopologicalSpace H₃] {I₁ : ModelWithCorners 𝕜 E₁ H₁}
+  {I₂ : ModelWithCorners 𝕜 E₂ H₂} {I₃ : ModelWithCorners 𝕜 E₃ H₃} {n : ℕ∞ω}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H₁ M]
+  {B : Type*} [TopologicalSpace B] [ChartedSpace H₂ B]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H₃ N]
+
+/-- Let `p` be a `C^n` local diffeomorphism at `x` and `U` an open neighbourhood of `p x`. A map
+`g` out of `U` is `C^n` at `p x` when `g (p y) = f y` whenever `p y ∈ U`, for a map `f` that is
+`C^n` at `x`: near `p x`, `g` is `f` composed with a local inverse of `p`. This is the analogue
+of `IsLocalDiffeomorphAt.contMDiffAt_comp_iff` for maps defined only on an open subset. -/
+private theorem contMDiffAt_of_isLocalDiffeomorphAt_of_forall_eq {p : M → B} {x : M}
+    (hp : IsLocalDiffeomorphAt I₁ I₂ n p x) (U : Opens B) (hx : p x ∈ U) {f : M → N}
+    (hf : ContMDiffAt I₁ I₃ n f x) {g : U → N} (hg : ∀ y (hy : p y ∈ U), g ⟨p y, hy⟩ = f y) :
+    ContMDiffAt I₂ I₃ n g ⟨p x, hx⟩ := by
+  refine ContMDiffAt.congr_of_eventuallyEq (f := fun y : U ↦ f (hp.localInverse y)) ?_ ?_
+  · exact hf.comp_of_eq (hp.contMDiffAt_localInverse.comp (⟨p x, hx⟩ : U)
+        contMDiff_subtype_val.contMDiffAt)
+      (hp.localInverse_left_inv hp.localInverse_mem_target)
+  · filter_upwards [hp.localInverse_eventuallyEq_right.comp_tendsto
+      continuous_subtype_val.continuousAt] with ⟨y, hy⟩ hpy
+    simp only [Function.comp_apply, id_eq] at hpy
+    have hy' : p (hp.localInverse y) ∈ U := by rwa [hpy]
+    rw [← hg _ hy']
+    exact congrArg g (Subtype.ext hpy.symm)
+
+end LocalDiffeomorph
+
 /-! ### Regularity of the normalized action -/
 
 variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ]
@@ -229,22 +265,11 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
       ((torusFamilyProjection (powPullbackPeriod m r P) x₀ : rootsOfUnityBall m r) : ℂ) ≠ 0 :=
     fun h ↦ (mem_logTranslationQuotientPuncturedOpens P l).1 hq₀ (by
       rw [torusFamilyCyclicQuotientProjection_mk, h, zero_pow (NeZero.ne m)])
-  have hπ := isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree x₀
   refine (ContMDiffAt.subtypeVal_comp_iff (torusFamilyPuncturedOpens P) _ _).1 ?_
-  refine ContMDiffAt.congr_of_eventuallyEq
-    (f := fun q : logTranslationQuotientPuncturedOpens P l ↦
-      torusFamilyLogGauge P l (hπ.localInverse q.1)) ?_ ?_
-  · exact (contMDiffAt_torusFamilyLogGauge P hP hinj l hx₀).comp_of_eq
-      (hπ.contMDiffAt_localInverse.comp
-        (⟨Quotient.mk _ x₀, hq₀⟩ : logTranslationQuotientPuncturedOpens P l)
-        contMDiff_subtype_val.contMDiffAt)
-      (hπ.localInverse_left_inv hπ.localInverse_mem_target)
-  · filter_upwards [hπ.localInverse_eventuallyEq_right.comp_tendsto
-      continuous_subtype_val.continuousAt] with ⟨q, hq⟩ hmk
-    change Quotient.mk _ (hπ.localInverse q) = q at hmk
-    generalize hπ.localInverse q = x at hmk ⊢
-    subst hmk
-    exact torusFamilyLogGaugeEquiv_mk P l hr x hq
+  exact contMDiffAt_of_isLocalDiffeomorphAt_of_forall_eq
+    (isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree x₀) _ hq₀
+    (contMDiffAt_torusFamilyLogGauge P hP hinj l hx₀)
+    fun x hx ↦ torusFamilyLogGaugeEquiv_mk P l hr x hx
 
 /-- **The inverse of the logarithmic gauge in local form.** Near `(t₀, e₀)` with `t₀ ≠ 0`, the
 inverse of the logarithmic gauge composed with the orbit map `D_t × E → Y` is the `C^n` map
@@ -363,20 +388,10 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
     rwa [mem_torusFamilyPuncturedOpens, torusFamilyProjection_mk] at hy₀
   obtain ⟨F, hF, hFeq⟩ :=
     exists_contMDiffAt_eq_torusFamilyLogGaugeEquiv_symm_mk P l hP hinj hr hfree ht₀ e₀
-  have hmkY := isLocalDiffeomorph_torusFamily_mk P hinj hP (t₀, e₀)
   refine (ContMDiffAt.subtypeVal_comp_iff (logTranslationQuotientPuncturedOpens P l) _ _).1 ?_
-  refine ContMDiffAt.congr_of_eventuallyEq
-    (f := fun y : torusFamilyPuncturedOpens P ↦ F (hmkY.localInverse y.1)) ?_ ?_
-  · exact hF.comp_of_eq (hmkY.contMDiffAt_localInverse.comp
-        (⟨Quotient.mk _ (t₀, e₀), hy₀⟩ : torusFamilyPuncturedOpens P)
-        contMDiff_subtype_val.contMDiffAt)
-      (hmkY.localInverse_left_inv hmkY.localInverse_mem_target)
-  · filter_upwards [hmkY.localInverse_eventuallyEq_right.comp_tendsto
-      continuous_subtype_val.continuousAt] with ⟨y, hy⟩ hmk
-    change Quotient.mk _ (hmkY.localInverse y) = y at hmk
-    generalize hmkY.localInverse y = p at hmk ⊢
-    subst hmk
-    exact (hFeq p.1 p.2 hy).symm
+  exact contMDiffAt_of_isLocalDiffeomorphAt_of_forall_eq
+    (isLocalDiffeomorph_torusFamily_mk P hinj hP (t₀, e₀)) _ hy₀ hF
+    fun p hp ↦ (hFeq p.1 p.2 hp).symm
 
 /-- **The logarithmic gauge is a diffeomorphism.** Let `P` be a `C^n` family of full period
 lattices over the disc of radius `r ^ m`, and suppose the normalized pure translation action of the
