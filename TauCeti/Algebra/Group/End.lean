@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.End
 import Mathlib.Algebra.Group.AddChar
 
 /-!
-# Automorphisms as permutations, and powers of an additively indexed family of endomorphisms
+# Automorphisms as permutations, powers of indexed endomorphisms, and commuting self-maps
 
 The permutation underlying an automorphism, `MulAut.toPerm`, acts as the automorphism does, and
 it determines the automorphism by `MulEquiv.toEquiv_injective`. This moves `orderOf` and cycle
@@ -24,12 +24,13 @@ and `f b`, is an additive character `AddChar ℕ (Monoid.End M)`. Thus multiplic
 corresponds to powers in the endomorphism monoid: the `m`-th power of `f k` is `f (k * m)`.
 No associativity or identity laws for multiplication on `M` are needed.
 
-Multiplication of additive endomorphisms is composition (`AddMonoid.End.mul_apply`), so commuting
-additive endomorphisms commute on each element (`Commute.addMonoidEnd_apply_apply`).
-
 This is the shape of the iteration laws of an iterated Frobenius, `Frob_0 = id` and
 `Frob_(a + b) = Frob_a ∘ Frob_b`, and the lemma packages Mathlib's `AddChar.map_nsmul_eq_pow`
 for that shape once, so that each Chevalley carrier only supplies its two iteration laws.
+
+Multiplication in `Monoid.End M` and `AddMonoid.End M` is composition, recorded as
+`IsMulApplyEqComp` instances so that Mathlib's `mul_apply_eq_comp` applies to them. Commuting
+elements of any such type of self-maps commute on each point (`Commute.apply_apply`).
 
 ## Main definitions
 
@@ -40,7 +41,7 @@ for that shape once, so that each Chevalley carrier only supplies its two iterat
 
 * `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
 * `TauCeti.Monoid.End.pow_eq_of_add_eq_comp`: `f k ^ m = f (k * m)` in `Monoid.End M`.
-* `Commute.addMonoidEnd_apply_apply`: if `f * g = g * f` in `AddMonoid.End M`, then
+* `Commute.apply_apply`: if `f * g = g * f` and multiplication is composition, then
   `f (g x) = g (f x)`.
 -/
 
@@ -78,19 +79,16 @@ theorem subtypePerm_apply_coe (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ 
 
 end MonoidHom
 
-namespace AddMonoid.End
+instance Monoid.End.instIsMulApplyEqComp {M : Type*} [MulOne M] :
+    IsMulApplyEqComp (Monoid.End M) where
 
-variable {M : Type*} [AddZeroClass M]
+instance AddMonoid.End.instIsMulApplyEqComp {M : Type*} [AddZero M] :
+    IsMulApplyEqComp (AddMonoid.End M) where
 
-/-- Multiplication of additive endomorphisms is composition. -/
-theorem mul_apply (f g : AddMonoid.End M) (x : M) : (f * g) x = f (g x) := rfl
-
-end AddMonoid.End
-
-/-- Commuting additive endomorphisms commute on each element. -/
-theorem Commute.addMonoidEnd_apply_apply {M : Type*} [AddZeroClass M] {f g : AddMonoid.End M}
-    (h : Commute f g) (x : M) : f (g x) = g (f x) :=
-  DFunLike.congr_fun h.eq x
+/-- Commuting self-maps, multiplied by composition, commute on each point. -/
+theorem Commute.apply_apply {F α : Type*} [FunLike F α α] [Mul F] [IsMulApplyEqComp F]
+    {f g : F} (h : Commute f g) (x : α) : f (g x) = g (f x) := by
+  rw [← mul_apply_eq_comp, h.eq, mul_apply_eq_comp]
 
 namespace TauCeti
 

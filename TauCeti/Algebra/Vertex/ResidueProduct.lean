@@ -191,9 +191,7 @@ theorem lie_ncoeff_nonnegResidueProduct {T : Module.End R V} {A B : VertexOperat
         rw [mulSub_pow_map]
         simp only [residue_apply, g, LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply]
     _ = residue (totalDerivative ((mulSub ^ n) c)) k := by
-        rw [hT]
-        exact congrArg (fun d ↦ residue d k)
-          (DFunLike.congr_fun (commute_mulSub_totalDerivative.pow_left n).eq c)
+        rw [hT, (commute_mulSub_totalDerivative.pow_left n).apply_apply c]
 
 /-! ### Dong's lemma -/
 
@@ -227,7 +225,7 @@ theorem isLocalOfOrder_nonnegResidueProduct {A B C : VertexOperator R V} {Nab Na
     simp [ad, Ring.lie_def]
   -- `(z - w)^Nab` kills `t`, while `(z - x)^Nac (w - x)^Nbc` kills each of `u` and `w`.
   have ha : (mulSub₁₂ ^ (Nab - n)) ((mulSub₁₂ ^ n) t) = 0 := by
-    rw [← AddMonoid.End.mul_apply, ← pow_add, mulSub₁₂_pow_map,
+    rw [← mul_apply_eq_comp, ← pow_add, mulSub₁₂_pow_map,
       (isLocalOfOrder_iff_mulSub_pow_eq_zero A B _).mp (hab.mono (by omega))]
     funext i j k
     simp

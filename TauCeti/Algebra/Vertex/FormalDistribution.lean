@@ -252,7 +252,7 @@ theorem totalDerivative_apply (c : FormalDistribution M) (m n : ℤ) :
 theorem commute_mulSub_totalDerivative :
     Commute (mulSub : AddMonoid.End (FormalDistribution M)) totalDerivative := by
   ext c m n
-  simp only [AddMonoid.End.mul_apply, mulSub_apply, totalDerivative_apply,
+  simp only [mul_apply_eq_comp, mulSub_apply, totalDerivative_apply,
     add_sub_cancel_right, sub_add_cancel]
   module
 
@@ -305,43 +305,43 @@ theorem mulSub₂₃_apply_eq_sub (c : ℤ → ℤ → ℤ → M) : mulSub₂₃
 theorem commute_mulSub₁₂_mulSub₁₃ :
     Commute (mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₁₃ := by
   ext c i j k
-  simp only [AddMonoid.End.mul_apply, mulSub₁₂_apply, mulSub₁₃_apply]
+  simp only [mul_apply_eq_comp, mulSub₁₂_apply, mulSub₁₃_apply]
   abel
 
 theorem commute_mulSub₁₂_mulSub₂₃ :
     Commute (mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₂₃ := by
   ext c i j k
-  simp only [AddMonoid.End.mul_apply, mulSub₁₂_apply, mulSub₂₃_apply]
+  simp only [mul_apply_eq_comp, mulSub₁₂_apply, mulSub₂₃_apply]
   abel
 
 theorem commute_mulSub₁₃_mulSub₂₃ :
     Commute (mulSub₁₃ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₂₃ := by
   ext c i j k
-  simp only [AddMonoid.End.mul_apply, mulSub₁₃_apply, mulSub₂₃_apply]
+  simp only [mul_apply_eq_comp, mulSub₁₃_apply, mulSub₂₃_apply]
   abel
 
 /-- Fixing the third variable, `(z-w)^N` acts as on two-variable distributions. -/
 theorem mulSub₁₂_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
     (mulSub₁₂ ^ N) c i j k = (mulSub ^ N) (fun i j ↦ c i j k) i j := by
   induction N generalizing i j with
-  | zero => rfl
-  | succ N ih => simp only [pow_succ', AddMonoid.End.mul_apply, mulSub₁₂_apply, mulSub_apply, ih]
+  | zero => simp
+  | succ N ih => simp only [pow_succ', mul_apply_eq_comp, mulSub₁₂_apply, mulSub_apply, ih]
 
 /-- Fixing the second variable, `(z-x)^N` acts as on two-variable distributions. -/
 theorem mulSub₁₃_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
     (mulSub₁₃ ^ N) c i j k = (mulSub ^ N) (fun i k ↦ c i j k) i k := by
   induction N generalizing i k with
-  | zero => rfl
-  | succ N ih => simp only [pow_succ', AddMonoid.End.mul_apply, mulSub₁₃_apply, mulSub_apply, ih]
+  | zero => simp
+  | succ N ih => simp only [pow_succ', mul_apply_eq_comp, mulSub₁₃_apply, mulSub_apply, ih]
 
 /-- Fixing the first variable, `(w-x)^N` acts as on two-variable distributions. -/
 theorem mulSub₂₃_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i : ℤ) :
     (mulSub₂₃ ^ N) c i = (mulSub ^ N) (c i) := by
   induction N with
-  | zero => rfl
+  | zero => simp
   | succ N ih =>
     ext j k
-    simp only [pow_succ', AddMonoid.End.mul_apply, mulSub₂₃_apply, mulSub_apply, ih]
+    simp only [pow_succ', mul_apply_eq_comp, mulSub₂₃_apply, mulSub_apply, ih]
 
 /-- `(z-w)^N` commutes with applying, at each `x`-index `k`, an additive map `g k`. -/
 theorem mulSub₁₂_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ M') (N : ℕ)
@@ -366,15 +366,15 @@ theorem mulSub₂₃_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ 
 
 theorem mulSub₁₂_pow_apply_mulSub₁₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
     (mulSub₁₂ ^ a) ((mulSub₁₃ ^ b) c) = (mulSub₁₃ ^ b) ((mulSub₁₂ ^ a) c) :=
-  (commute_mulSub₁₂_mulSub₁₃.pow_pow a b).addMonoidEnd_apply_apply c
+  (commute_mulSub₁₂_mulSub₁₃.pow_pow a b).apply_apply c
 
 theorem mulSub₁₂_pow_apply_mulSub₂₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
     (mulSub₁₂ ^ a) ((mulSub₂₃ ^ b) c) = (mulSub₂₃ ^ b) ((mulSub₁₂ ^ a) c) :=
-  (commute_mulSub₁₂_mulSub₂₃.pow_pow a b).addMonoidEnd_apply_apply c
+  (commute_mulSub₁₂_mulSub₂₃.pow_pow a b).apply_apply c
 
 theorem mulSub₁₃_pow_apply_mulSub₂₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
     (mulSub₁₃ ^ a) ((mulSub₂₃ ^ b) c) = (mulSub₂₃ ^ b) ((mulSub₁₃ ^ a) c) :=
-  (commute_mulSub₁₃_mulSub₂₃.pow_pow a b).addMonoidEnd_apply_apply c
+  (commute_mulSub₁₃_mulSub₂₃.pow_pow a b).apply_apply c
 
 /-- The key estimate of Dong's lemma: if `(z-w)^a c = 0` and `(z-x)^b (w-x)^d c = 0`, then
 `(w-x)^(a+b+d-1) c = 0`. -/
@@ -388,22 +388,22 @@ theorem mulSub₂₃_pow_eq_zero {c : ℤ → ℤ → ℤ → M} {a b d : ℕ}
     induction b generalizing c with
     | zero =>
       rw [pow_zero, AddMonoid.End.one_apply] at hbd
-      rw [show a + 1 + 0 + d - 1 = a + d by omega, pow_add, AddMonoid.End.mul_apply, hbd,
+      rw [show a + 1 + 0 + d - 1 = a + d by omega, pow_add, mul_apply_eq_comp, hbd,
         map_zero]
     | succ b ihb =>
       rw [show a + 1 + (b + 1) + d - 1 = a + 1 + b + d - 1 + 1 by omega, pow_succ,
-        AddMonoid.End.mul_apply, mulSub₂₃_apply_eq_sub, map_sub]
+        mul_apply_eq_comp, mulSub₂₃_apply_eq_sub, map_sub]
       -- Split `(w-x) c = (z-x) c - (z-w) c` and lower the exponent `b` or `a` respectively.
       have h₁ : (mulSub₂₃ ^ (a + 1 + b + d - 1)) (mulSub₁₃ c) = 0 := by
         refine ihb ?_ ?_
-        · rw [(commute_mulSub₁₂_mulSub₁₃.pow_left _).addMonoidEnd_apply_apply, ha, map_zero]
-        · rw [(commute_mulSub₁₃_mulSub₂₃.pow_right d).symm.addMonoidEnd_apply_apply c, ← hbd,
-            pow_succ, AddMonoid.End.mul_apply]
+        · rw [(commute_mulSub₁₂_mulSub₁₃.pow_left _).apply_apply, ha, map_zero]
+        · rw [(commute_mulSub₁₃_mulSub₂₃.pow_right d).symm.apply_apply c, ← hbd,
+            pow_succ, mul_apply_eq_comp]
       have h₂ : (mulSub₂₃ ^ (a + (b + 1) + d - 1)) (mulSub₁₂ c) = 0 := by
         refine iha ?_ ?_
-        · rw [← ha, pow_succ, AddMonoid.End.mul_apply]
-        · rw [(commute_mulSub₁₂_mulSub₂₃.pow_right d).symm.addMonoidEnd_apply_apply c,
-            (commute_mulSub₁₂_mulSub₁₃.pow_right (b + 1)).symm.addMonoidEnd_apply_apply, hbd,
+        · rw [← ha, pow_succ, mul_apply_eq_comp]
+        · rw [(commute_mulSub₁₂_mulSub₂₃.pow_right d).symm.apply_apply c,
+            (commute_mulSub₁₂_mulSub₁₃.pow_right (b + 1)).symm.apply_apply, hbd,
             map_zero]
       rw [h₁, show a + 1 + b + d - 1 = a + (b + 1) + d - 1 by omega, h₂, sub_zero]
 
