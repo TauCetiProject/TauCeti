@@ -56,9 +56,9 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.surjective_coprod_neg_of_comp_right`: surjectivity of `f.coprod g` survives
   removing a precomposition from either map. In particular transversality passes from `α ∘ h`
   and `β`, or from `α` and `β ∘ h`, to `α` and `β`.
-* `LinearMap.surjective_of_surjective_prod`, `LinearMap.injective_domRestrict_of_injective_prod`,
-  `LinearMap.bijective_domRestrict_of_bijective_prod`: when the augmented map `f.prod g` is onto,
-  injective or bijective, `f` is onto, and `g` is injective or bijective on the kernel of `f`.
+* `LinearMap.injective_domRestrict_of_injective_prod`,
+  `LinearMap.bijective_domRestrict_of_bijective_prod`: when the augmented map `f.prod g` is
+  injective or bijective, `g` is injective or bijective on the kernel of `f`.
   Consequently the kernel of `f` is finite when the target of `g` is Noetherian
   (`LinearMap.finite_ker_of_injective_prod`), and the cokernel of `f` is zero
   (`LinearMap.subsingleton_quotient_range_of_surjective_prod`).
@@ -250,12 +250,6 @@ theorem surjective_coprod_of_comp_right {f : M₁ →ₗ[R] M₃} {g : M₂ →�
   obtain ⟨x, hx⟩ := H y
   exact ⟨LinearMap.id.prodMap h x, by simpa using hx⟩
 
-/-- If `f.prod g` is onto, so is `f`. -/
-theorem surjective_of_surjective_prod {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
-    (h : Function.Surjective (f.prod g)) : Function.Surjective f := fun n ↦
-  let ⟨m, hm⟩ := h (n, 0)
-  ⟨m, congrArg Prod.fst hm⟩
-
 /-- If `f.prod g` is injective, `g` is injective on the kernel of `f`. -/
 theorem injective_domRestrict_of_injective_prod {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃}
     (h : Function.Injective (f.prod g)) : Function.Injective (g.domRestrict (ker f)) :=
@@ -280,7 +274,8 @@ theorem subsingleton_quotient_range_of_surjective_prod {R M₁ M₂ M₃ : Type*
     [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃]
     [Module R M₃] {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃} (h : Function.Surjective (f.prod g)) :
     Subsingleton (M₂ ⧸ range f) :=
-  Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr (surjective_of_surjective_prod h))
+  -- `f` is `fst ∘ₗ f.prod g` by definition (`LinearMap.fst_prod` is proved by `rfl`).
+  Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr (Prod.fst_surjective.comp h))
 
 section Ring
 

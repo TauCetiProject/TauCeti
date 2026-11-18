@@ -69,20 +69,12 @@ section Fst
 
 variable (K N V)
 
-/-- The kernel `0 × V` of the projection `N × V → N` is a copy of `V`. -/
-private def kerFstEquiv : ker (fst K N V) ≃ₗ[K] V where
-  toFun x := (x : N × V).2
-  invFun v := ⟨(0, v), by simp⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv x := Subtype.ext (Prod.ext (mem_ker.mp x.2).symm rfl)
-  right_inv _ := rfl
-
 private theorem finrank_quotient_range_fst : finrank K (N ⧸ range (fst K N V)) = 0 :=
   finrank_quotient_range_eq_zero_of_surjective Prod.fst_surjective
 
+-- `ker (fst K N V)` is `Submodule.snd K N V` by definition.
 instance [FiniteDimensional K V] : FiniteDimensional K (ker (fst K N V)) :=
-  (kerFstEquiv K N V).symm.finiteDimensional
+  (Submodule.sndEquiv K N V).symm.finiteDimensional
 
 instance : FiniteDimensional K (N ⧸ range (fst K N V)) :=
   have : Subsingleton (N ⧸ range (fst K N V)) :=
@@ -90,11 +82,13 @@ instance : FiniteDimensional K (N ⧸ range (fst K N V)) :=
   inferInstance
 
 /-- **The determinant line of the projection `N × V → N` is `det V`.** The projection is onto, so
-its cokernel is zero, and its kernel `0 × V` is identified with `V` by the second projection. The
-isomorphism sends `w ⊗ φ` to the image of `w` in `det V`, multiplied by the value of `φ` on the
-empty exterior product of the cokernel (`LinearMap.coe_detLineFstEquiv_tmul`). -/
+its cokernel is zero, and its kernel `0 × V`, which is `Submodule.snd K N V`, is identified with
+`V` by the second projection (`Submodule.sndEquiv`). The isomorphism sends `w ⊗ φ` to the image of
+`w` in `det V`, multiplied by the value of `φ` on the empty exterior product of the cokernel
+(`LinearMap.coe_detLineFstEquiv_tmul`). -/
 def detLineFstEquiv : (fst K N V).detLine ≃ₗ[K] TauCeti.detLine K V :=
-  TensorProduct.congr (LinearEquiv.detLineCongr (kerFstEquiv K N V))
+  TensorProduct.congr (LinearEquiv.detLineCongr (LinearEquiv.ofEq (ker (fst K N V))
+      (Submodule.snd K N V) (Submodule.ext fun _ ↦ Iff.rfl) ≪≫ₗ Submodule.sndEquiv K N V))
       ((TauCeti.detLineEquivOfFinrankEqZero (finrank_quotient_range_fst K N V)).symm.dualMap ≪≫ₗ
         ringLmapEquivSelf K K K) ≪≫ₗ
     TensorProduct.rid K _
@@ -114,7 +108,7 @@ theorem coe_detLineFstEquiv_tmul (w : Fin (finrank K (ker (fst K N V))) → ker 
   rw [detLineFstEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, TensorProduct.rid_tmul,
     LinearEquiv.detLineCongr_ιMulti, SetLike.val_smul, exteriorPower.ιMulti_apply_coe,
     ← Function.comp_assoc, TauCeti.ExteriorAlgebra.ιMulti_comp_cast, he]
-  simp [ringLmapEquivSelf_apply, kerFstEquiv, Function.comp_def]
+  simp [ringLmapEquivSelf_apply, Function.comp_def]
 
 end Fst
 
@@ -208,8 +202,10 @@ private theorem coe_lid_detLineCompEquiv_fst_tmul (F : M →ₗ[K] N × V) [Fini
       finrank K (range (F.kerToCoker (fst K N V))) :=
     finrank_eq_finrank_range_add_finrank_range_of_exact _ _
       (F.exact_kerCompToKer_kerToCoker (fst K N V))
+  have hK' : finrank K (ker (fst K N V)) = finrank K (ker (fst K N V ∘ₗ F)) := by
+    rw [hK, hw, add_zero, hv]
   let w : Fin _ → ker (fst K N V) := Fin.elim0 ∘ Fin.cast hw
-  let a := Fin.append (F.kerCompToKer (fst K N V) ∘ u ∘ Fin.cast hv) w ∘ Fin.cast hK
+  let a := F.kerCompToKer (fst K N V) ∘ u ∘ Fin.cast hK'
   rw [F.detLineCompEquiv_tmul (fst K N V) (Fin.elim0 ∘ Fin.cast hker) (u ∘ Fin.cast hv) w
       (Fin.elim0 ∘ Fin.cast hx) (Fin.elim0 ∘ Fin.cast h₀)
       (β := exteriorPower.ιMulti K _ u) ?_ (γ := exteriorPower.ιMulti K _ a) ?_
@@ -223,26 +219,22 @@ private theorem coe_lid_detLineCompEquiv_fst_tmul (F : M →ₗ[K] N × V) [Fini
       SetLike.val_smul, detLineEquivOfBijective_tmul_ιMulti h _ _ (Fin.elim0 ∘ Fin.cast hcoker),
       LinearEquiv.coe_coe, TauCeti.detLineEquivOfFinrankEqZero_ιMulti, one_smul,
       coe_detLineFstEquiv_tmul _ _ (Fin.elim0 ∘ Fin.cast h₀)]
-    -- The second components of `a` are those of `F ∘ u`, followed by the empty family `w`.
-    have ha : (fun i ↦ (a i : N × V).2) = (snd K N V ∘ₗ (ker (fst K N V)).subtype) ∘
-        Fin.append (F.kerCompToKer (fst K N V) ∘ u ∘ Fin.cast hv) w ∘ Fin.cast hK := (rfl)
-    rw [ha, ← Function.comp_assoc, TauCeti.ExteriorAlgebra.ιMulti_comp_cast,
-      TauCeti.ExteriorAlgebra.ιMulti_comp_append,
-      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hw, mul_one]
-    simp only [← Function.comp_assoc, TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
-    congr 2
-    funext i
-    simp
-  · rw [exteriorPower.ιMulti_apply_coe, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hker, one_mul,
+    -- The second components of `a` are those of `F ∘ u`.
+    have ha : (fun i ↦ (a i : N × V).2) = (fun i ↦ (F (u i)).2) ∘ Fin.cast hK' :=
+      funext fun i ↦ congrArg Prod.snd (coe_kerCompToKer_apply F (fst K N V) _)
+    rw [ha, TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
+  · rw [exteriorPower.ιMulti_apply_coe,
+      TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left hker,
       TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
-  · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
+  · rw [exteriorPower.ιMulti_apply_coe,
+      TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right hw]
+    simp only [a, ← Function.comp_assoc, TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
   · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hcoker,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hw,
-      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hx, one_mul]
+      TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left hw,
+      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hx]
   · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hcf,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hx,
-      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero h₀, one_mul]
+      TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left hx,
+      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero h₀]
 
 variable [FiniteDimensional K V]
 
