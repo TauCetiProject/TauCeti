@@ -55,6 +55,7 @@ polynomials the degree estimate is Mathlib's `Polynomial.natDegree_wronskian_lt_
 ## Main results
 
 * `Polynomial.hasseWronskian_fin_two`: for two polynomials it is Mathlib's `wronskian`.
+* `Polynomial.hasseWronskian_X_pow`: the Hasse Wronskian of `1, X, …, X^(m - 1)` is `1`.
 * `Polynomial.prod_factorial_mul_hasseWronskian`: `(∏ k, k!) W(g)` is the classical Wronskian
   `derivative'.wronskian g`.
 * `Polynomial.hasseWronskian_comp_perm`: permuting the family multiplies `W(g)` by the sign.
@@ -118,6 +119,18 @@ theorem hasseWronskian_fin_two (g : Fin 2 → R[X]) :
   rw [hasseWronskian_def, det_fin_two, wronskian]
   simp only [of_apply, Fin.val_zero, Fin.val_one, hasseDeriv_zero', hasseDeriv_one']
   ring
+
+variable (R) in
+/-- The Hasse Wronskian of the monomials `1, X, …, X^(m - 1)` is `1`: the matrix of their Hasse
+derivatives is upper unitriangular. -/
+@[simp]
+theorem hasseWronskian_X_pow (m : ℕ) :
+    hasseWronskian (fun j : Fin m ↦ (X : R[X]) ^ (j : ℕ)) = 1 := by
+  rw [hasseWronskian_def, det_of_isUpperTriangular]
+  · simp [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]
+  · intro k l hlk
+    have hlk' : (l : ℕ) < k := Fin.lt_def.mp hlk
+    simp [← monomial_one_right_eq_X_pow, hasseDeriv_monomial, Nat.choose_eq_zero_of_lt hlk']
 
 /-- Multiplying the Hasse Wronskian by `∏ k < m, k!` gives the classical Wronskian, the
 determinant of the iterated ordinary derivatives `derivative^[k] gₗ`. -/

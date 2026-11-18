@@ -9,7 +9,6 @@ public import Mathlib.Data.ZMod.Basic
 public import TauCeti.RingTheory.Polynomial.HasseWronskian
 import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
-import Mathlib.LinearAlgebra.Matrix.Block
 
 /-!
 # Examples of Hasse Wronskians and their degree and multiplicity estimates
@@ -41,23 +40,15 @@ open Finset Polynomial
 
 namespace TauCeti.HasseWronskianExample
 
-/-- The Hasse Wronskian of the monomials `1, X, …, X^(ℓ - 1)` is `1`: the matrix of their Hasse
-derivatives is upper unitriangular. -/
-theorem hasseWronskian_X_pow (R : Type*) [CommRing R] (ℓ : ℕ) :
-    hasseWronskian (fun j : Fin ℓ ↦ (X : R[X]) ^ (j : ℕ)) = 1 := by
-  rw [hasseWronskian_def, Matrix.det_of_isUpperTriangular]
-  · simp [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]
-  · intro k l hlk
-    have hlk' : (l : ℕ) < k := hlk
-    simp [← monomial_one_right_eq_X_pow, hasseDeriv_monomial, Nat.choose_eq_zero_of_lt hlk']
-
 /-- For the monomials `1, X, …, X^(ℓ - 1)` over `ℤ` the degree estimate is the equality
 `0 + (0 + 1 + ⋯ + (ℓ - 1)) = 0 + 1 + ⋯ + (ℓ - 1)`. -/
 example (ℓ : ℕ) :
     (hasseWronskian fun j : Fin ℓ ↦ (X : ℤ[X]) ^ (j : ℕ)).natDegree + ∑ k : Fin ℓ, (k : ℕ) =
       ∑ j : Fin ℓ, ((X : ℤ[X]) ^ (j : ℕ)).natDegree := by
-  simp [hasseWronskian_X_pow]
+  simp
 
+/-- The Hasse Wronskian of `(1, X, X²)` over `ℚ` is `1`, the case `m = 3` of
+`Polynomial.hasseWronskian_X_pow`. -/
 theorem hasseWronskian_one_X_X_sq : hasseWronskian ![(1 : ℚ[X]), X, X ^ 2] = 1 := by
   convert hasseWronskian_X_pow ℚ 3 using 2
   ext1 j
