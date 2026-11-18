@@ -30,7 +30,14 @@ preserve the Floer equation and the energy, `u ∘ φ'_q` solves the Floer equat
 for `H'_q` beyond `T₀`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`), and its
 energy over a half-cylinder `(a, ∞) × [0, 1]` with `a ≥ max T₀ 0` is at most the energy of `u`
-over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`).
+over `S` (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le`), as
+is its energy over any measurable part of a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width
+one (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset`).
+The same holds for the translated ends `z ↦ u(φ'_q(z + (R, 0)))` at every height `R`: they solve
+the Floer equation of the half-cylinder where `z.1 + R > max T₀ 0`
+(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add`), and
+their energy over a set whose translate lies in such a band is at most the energy of `u` over `S`
+(`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le`).
 If the almost complex structure is cylindrical on the end, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`,
 then in the positive end chart it is `J'_q(t, x) = J_q(±t, x)`
 (`TauCeti.Floer.eq_comp_positiveEndChart`,
@@ -142,18 +149,12 @@ theorem hamiltonianAction_positiveEndHamiltonian {q : Puncture} (hH : Periodic (
     ω.hamiltonianAction (positiveEndHamiltonian H q) x =
       q.endSign * ω.hamiltonianAction (H q) (fun t ↦ x (q.endSign * t)) := by
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
-  · have hH' : positiveEndHamiltonian H q = H q := by
-      funext t y
-      simp [positiveEndHamiltonian_apply, h]
-    simp [hH', h]
-  · have hH' : positiveEndHamiltonian H q = fun t y ↦ -H q (-t) y := by
-      funext t y
-      simp [positiveEndHamiltonian_apply, h]
-    have hx' : Periodic (fun t ↦ x (-t)) 1 := by
+  · simp [positiveEndHamiltonian_of_endSign_eq_one H h, h]
+  · have hx' : Periodic (fun t ↦ x (-t)) 1 := by
       simpa only [h, neg_one_mul] using periodic_comp_endSign_mul (q := q) hx
     have h' := ω.hamiltonianAction_comp_neg hH hx'
     simp only [neg_neg] at h'
-    rw [hH', h]
+    rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h, h]
     simpa using h'
 
 /-! ### The ends of a Floer pair of pants as Floer half-cylinders -/
@@ -218,6 +219,90 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical
     ((le_max_left _ _).trans hζ.le)
     ((hu _ hmem).differentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hmem))
     (hfloer _ hmem)
+
+/-- **The energy of a part of an end of a Floer pair of pants.** Under the hypotheses of
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of
+`u ∘ φ'_q` for the end Hamiltonian `H'_q` over a measurable subset `s` of a band
+`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width one is at most the energy of `u` over `S`. -/
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t)) {u : ℝ × ℝ → V}
+    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal) (q : Puncture) {s : Set (ℝ × ℝ)}
+    (hs : MeasurableSet s) {t₀ : ℝ} (hst : s ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
+    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≤
+      ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  -- This is the manifold statement for the constant form.
+  simpa only [floerEnergyDensity_constSmooth] using
+    SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
+      (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hu.mdifferentiableOn q hs
+      hst
+
+/-- **The translated ends of a Floer pair of pants solve one cylindrical Floer equation.** Let
+`K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, and let `u` be differentiable on `S` and
+solve the Floer equation `(du - X_K)^{0,1} = 0` there, for a structure `J` which on the end `q`
+beyond `T₀` is `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`. Then for every height `R`, the translated
+end `v(z) = u(φ'_q(z + (R, 0)))` solves `∂_s v + J'_q(t, v) (∂_t v - X_{H'_q(t)}(v)) = 0` at every
+point `z` with `max T₀ 0 < z.1 + R`, for the datum `H'_q` and the structure
+`J'_q(t, x) = J_q(±t, x)` of the positive end, which do not depend on `R`. -/
+theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t)) {u : ℝ × ℝ → V}
+    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    {q : Puncture} {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    (R : ℝ) {z : ℝ × ℝ} (hz : max T₀ 0 < z.1 + R) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (Jq (q.endSign * z.2) (u (positiveEndChart q (z + (R, 0)))))
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+        (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z : ℝ × ℝ →ₗ[ℝ] V) := by
+  have h := isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_of_cylindrical hKH hH hHd
+    hu hfloer hJ (ζ := z + (R, 0)) (by simpa using hz)
+  have heq : ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+      (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z =
+        ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
+          (u ∘ positiveEndChart q) (z + (R, 0)) := by
+    rw [← ω.perturbedFDeriv_comp_add_right]
+    exact ω.perturbedFDeriv_congr _ rfl (by simp)
+  rw [heq]
+  simpa using h
+
+/-- **The energy of a translated end of a Floer pair of pants.** Under the hypotheses of
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, let `R` be a
+height and `s` a measurable set whose translate `s + (R, 0)` lies in a band
+`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width one. Then the energy of the translated end
+`z ↦ u(φ'_q(z + (R, 0)))` for the end Hamiltonian `H'_q` over `s` is at most the energy of `u`
+over `S`. -/
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, Differentiable ℝ (H q t)) {u : ℝ × ℝ → V}
+    (hu : DifferentiableOn ℝ u thricePuncturedSphereReal) (q : Puncture) (R : ℝ)
+    {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) {t₀ : ℝ}
+    (hst : ∀ z ∈ s, z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
+    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z) ≤
+      ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  have h := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) (R, 0)
+    ((· + ((R, 0) : ℝ × ℝ)) '' s)
+  rw [preimage_image_eq _ (add_left_injective _)] at h
+  simp only [Prod.snd_add, add_zero, comp_apply] at h
+  rw [h]
+  exact setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset hKH hH hHd hu q
+    ((measurableEmbedding_addRight _).measurableSet_image' hs)
+    (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz)
 
 /-- **The energy of an end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, the energy of

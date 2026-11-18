@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinea
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Lipschitz-small perturbations of the identity are diffeomorphisms
@@ -38,6 +39,8 @@ motions that move a point of a manifold continuously to every nearby point.
   inverse.
 * `ContDiff.exists_diffeomorph_apply_eq_add_of_lipschitzWith`: the same diffeomorphism as an
   existence statement.
+* `ContDiff.exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le`: a uniformly small derivative
+  error supplies a global diffeomorphism over a real-like scalar field.
 * `TauCeti.exists_diffeomorph_family_apply_eq_add`: a jointly smooth family of diffeomorphisms of
   `E` supported in a ball `B(c, r)` and carrying `c` to `c + d` for every small `d`.
 -/
@@ -172,6 +175,24 @@ theorem exists_diffeomorph_apply_eq_add_of_lipschitzWith {n : WithTop ℕ∞} {u
     (hu : ContDiff 𝕜 n u) (hn : 1 ≤ n) {K : ℝ≥0} (hlip : LipschitzWith K u) (hK : K < 1) :
     ∃ φ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E, ∀ x, φ x = x + u x :=
   ⟨hlip.idAddDiffeomorph hK hu hn, fun _ ↦ rfl⟩
+
+/-- A map whose derivative is uniformly within a constant less than one of the identity
+is a global diffeomorphism. -/
+theorem exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    {n : WithTop ℕ∞} {f : E → E} (hf : ContDiff 𝕜 n f) (hn : 1 ≤ n)
+    {c : ℝ≥0} (hc : c < 1)
+    (hclose : ∀ x, ‖fderiv 𝕜 f x - ContinuousLinearMap.id 𝕜 E‖ ≤ c) :
+    ∃ e : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E, ∀ x, e x = f x := by
+  have hu := hf.sub contDiff_id
+  have hd := hf.differentiable (zero_lt_one.trans_le hn).ne'
+  have hlip : LipschitzWith c (fun x ↦ f x - x) :=
+    lipschitzWith_of_nnNorm_fderiv_le (hd.sub differentiable_id) fun x ↦ by
+      rw [fderiv_fun_sub (hd x) differentiableAt_fun_id, fderiv_fun_id]
+      exact_mod_cast hclose x
+  obtain ⟨e, he⟩ := hu.exists_diffeomorph_apply_eq_add_of_lipschitzWith hn hlip hc
+  exact ⟨e, fun x ↦ by simpa only [id_eq, add_sub_cancel] using he x⟩
 
 end ContDiff
 
