@@ -203,14 +203,11 @@ theorem typeABoxMapOfHom_comp_of_act_eq_zero [CharP R 2] (N : TypeDStructure d �
     by_cases hk : K ≤ (k : ℕ)
     · simp [hf k hk]
     · simp [hg (n - k) (by omega)]
-  refine N.typeABoxMapOfHom_comp_of_bound g f (K := K) (fun n hn => ?_) (fun n hn => ?_)
-    fun n hn => ?_
-  · rw [f.cone.matrixAct_eq_zero_of_act_eq_zero X
-      (f.cone_act_eq_zero (hM n hn) (hM' n hn) (hf n hn)), zero_apply]
-  · rw [g.cone.matrixAct_eq_zero_of_act_eq_zero X
-      (g.cone_act_eq_zero (hM' n hn) (hM'' n hn) (hg n hn)), zero_apply]
-  · rw [(g.comp f).cone.matrixAct_eq_zero_of_act_eq_zero X ((g.comp f).cone_act_eq_zero
-      (hM n (by omega)) (hM'' n (by omega)) (hgf n hn)), zero_apply]
+  exact N.typeABoxMapOfHom_comp_of_bound g f (K := K)
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero hM hM' hf)
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero hM' hM'' hg)
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero (fun n hn => hM n (by omega))
+      (fun n hn => hM'' n (by omega)) hgf)
 
 end TypeDStructure
 
