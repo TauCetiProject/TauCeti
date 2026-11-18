@@ -31,6 +31,8 @@ not assert the existence of a Markov trace at every loop parameter.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.map_strandIncl_mul_e_last_mul`: the trace reduction for
   `strandIncl a * e δ (Fin.last n) * strandIncl b`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.unique`: uniqueness of the Markov trace.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.eq_zero_of_loop_zero`: at loop parameter `0`, every Markov
+  trace vanishes on one or more strands.
 
 ## References
 
@@ -97,6 +99,15 @@ theorem unique {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R} (htr : IsMa
     rintro _ (⟨a, rfl⟩ | ⟨⟨a, b⟩, rfl⟩)
     · rw [htr.map_strandIncl, htr'.map_strandIncl, ih]
     · rw [htr.map_strandIncl_mul_e_last_mul, htr'.map_strandIncl_mul_e_last_mul, ih]
+
+/-- At loop parameter `δ = 0`, every unnormalized Markov trace vanishes on one or more strands. -/
+theorem eq_zero_of_loop_zero {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
+    (htr : IsMarkovTrace R 0 tr) : ∀ n : ℕ, tr (n + 1) = 0 := by
+  have h0 : IsMarkovTrace R 0 (fun | 0 => tr 0 | _ + 1 => 0) :=
+    ⟨fun | 0 => htr.map_one 0 | _ + 1 => by simp,
+     fun | 0 => htr.map_mul_comm 0 | _ + 1 => fun _ _ ↦ rfl,
+     fun _ _ ↦ by simp, fun _ _ ↦ rfl⟩
+  exact fun n ↦ congrFun (htr.unique h0) (n + 1)
 
 end IsMarkovTrace
 
