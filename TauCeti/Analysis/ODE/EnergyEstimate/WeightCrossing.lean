@@ -81,27 +81,12 @@ noncomputable section
 
 open MeasureTheory TopologicalSpace Set Filter
 open scoped ENNReal Topology InnerProductSpace
+open ContinuousLinearMap (isSymmetric_sub_smul_id ker_sub_smul_id_eq_bot_of_not_hasEigenvalue)
 
 namespace TauCeti.WeakDerivStep
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E} {Aminus Aplus : E →L[ℝ] E}
-
-omit [FiniteDimensional ℝ E] in
-/-- Shifting a symmetric operator by a real multiple of the identity keeps it symmetric. -/
-private lemma isSymmetric_sub_smul_id {T : E →L[ℝ] E} (hT : (T : E →ₗ[ℝ] E).IsSymmetric)
-    (δ : ℝ) : ((T - δ • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric := by
-  simpa using hT.sub (LinearMap.IsSymmetric.id.smul (conj_trivial δ))
-
-omit [FiniteDimensional ℝ E] in
-/-- If `δ` is not an eigenvalue of `T`, then `T - δ • id` has trivial kernel. -/
-private lemma ker_sub_smul_id_eq_bot_of_not_hasEigenvalue {T : E →L[ℝ] E} {δ : ℝ}
-    (hT : ¬Module.End.HasEigenvalue (T : E →ₗ[ℝ] E) δ) :
-    LinearMap.ker ((T - δ • ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E) = ⊥ := by
-  rw [Module.End.hasEigenvalue_iff, not_not] at hT
-  rw [← hT]
-  ext x
-  simp [sub_eq_zero]
 
 /-- **The weighted trajectory operator is Fredholm.** Let `A` be a continuous family of operators
 on a finite-dimensional real inner product space with symmetric limits `A±` at `±∞`, and let `c`
@@ -122,7 +107,8 @@ theorem isFredholm_trajectoryOperator_sub_smul_id
     (trajectoryOperator (p := 2) BL).IsFredholm := by
   -- The shifted limits `A± - δ±` are symmetric, and injective since `δ±` is not an eigenvalue.
   exact (isFredholm_trajectoryOperator_iff (hA.sub (hc.smul continuous_const))
-    (isSymmetric_sub_smul_id hsymminus δminus) (isSymmetric_sub_smul_id hsymplus δplus)
+    (isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
+    (isSymmetric_sub_smul_id hsymplus (conj_trivial δplus))
     (hbot.sub (hcbot.smul_const _)) (htop.sub (hctop.smul_const _)) BL hBL).2
     ⟨LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_of_not_hasEigenvalue hδminus),
       LinearMap.ker_eq_bot.1 (ker_sub_smul_id_eq_bot_of_not_hasEigenvalue hδplus)⟩
@@ -163,8 +149,8 @@ theorem index_trajectoryOperator_sub_smul_id_eq_finrank_pointSpectralSubspace_su
     simpa [I] using Module.End.pointSpectralSubspace_sub_smul_id (A := (T : E →ₗ[ℝ] E))
       (Ω := Iio 0) δ
   rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-      (hA.sub (hc.smul continuous_const)) (isSymmetric_sub_smul_id hsymminus δminus)
-      (isSymmetric_sub_smul_id hsymplus δplus) (lt_min hα₁ hα₂)
+      (hA.sub (hc.smul continuous_const)) (isSymmetric_sub_smul_id hsymminus (conj_trivial δminus))
+      (isSymmetric_sub_smul_id hsymplus (conj_trivial δplus)) (lt_min hα₁ hα₂)
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v))
       (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v))
       (hbot.sub (hcbot.smul_const I)) (htop.sub (hctop.smul_const I)) BL hBL,
