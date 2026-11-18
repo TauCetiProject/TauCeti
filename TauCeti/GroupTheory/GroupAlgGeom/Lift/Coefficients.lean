@@ -19,7 +19,8 @@ variables `Y`.
   `ι : G' →* H`, is compatible with the image of `S` exactly when the data are compatible with
   `S` through `ι ∘ f`, and a lift of the data through `ι ∘ f` gives a lift of their image.
 * If `H` is separated by `G` over `G` through `ι : G →* H`, compatibility through `ι` descends
-  to `G`.
+  to `G`; if moreover `ι` is injective, a lift through `ι` exists exactly when a lift over `G`
+  does, the two radicals of `S` being equal.
 * Renaming the further variables along an injective `e : Z → Y` changes neither compatibility
   nor the existence of a lift.
 
@@ -33,8 +34,9 @@ to a free factor of finite rank and finitely many further variables.
 
 * `TauCeti.GroupAlgGeom.Lift.isCompatibleNe_image_map_iff`,
   `TauCeti.GroupAlgGeom.Lift.HasLiftNe.image_map`: change of the coefficient group.
-* `TauCeti.GroupAlgGeom.Lift.IsCompatibleNe.of_isSeparatedBy`: descent of compatibility to a
-  coefficient group by which the group of solutions is separated.
+* `TauCeti.GroupAlgGeom.Lift.IsCompatibleNe.of_isSeparatedBy`,
+  `TauCeti.GroupAlgGeom.Lift.hasLiftNe_iff_of_isSeparatedBy`: descent to a coefficient group by
+  which the group of solutions is separated.
 * `TauCeti.GroupAlgGeom.Lift.isCompatibleNe_image_map_sumMap_iff`,
   `TauCeti.GroupAlgGeom.Lift.hasLiftNe_image_map_sumMap_iff`: renaming the further variables.
 
@@ -101,6 +103,32 @@ theorem IsCompatibleNe.of_isSeparatedBy (hH : IsSeparatedBy ι (.id G))
   refine ⟨ψ ∘ w, ?_, ?_⟩
   · simpa [Sum.comp_elim, hψv] using ψ.comp_mem_V hw
   · simpa [Sum.comp_elim, hψv] using hψ
+
+/-- A lift through `ι` is a lift through `κ` when the radicals of `S` through `ι` and `κ` agree,
+the two coordinate groups being the same quotient of `G[X]`. -/
+private theorem HasLiftNe.of_Rad_eq {K : Type*} [Group K] {ι : G →* H} {κ : G →* K}
+    (hR : Rad ι S = Rad κ S) (h : HasLiftNe ι S T W) : HasLiftNe κ S T W := by
+  obtain ⟨w, hw, hW⟩ := hasLiftNe_iff.1 h
+  let φ : GHom (CoordGroup.coeff ι S) (CoordGroup.coeff κ S) :=
+    ⟨QuotientGroup.quotientMulEquivOfEq hR, fun _ => by simp [CoordGroup.coeff_apply]⟩
+  have hμ : φ ∘ Sum.elim (CoordGroup.genericPoint ι S) w =
+      Sum.elim (CoordGroup.genericPoint κ S) (φ ∘ w) := by
+    rw [Sum.comp_elim]
+    congr 1
+    funext x
+    simp [φ, CoordGroup.genericPoint_apply]
+  refine hasLiftNe_iff.2 ⟨φ ∘ w, ?_, ?_⟩
+  · rw [← hμ]
+    exact φ.comp_mem_V hw
+  · rwa [← hμ, ← map_eval, map_ne_one_iff φ (QuotientGroup.quotientMulEquivOfEq hR).injective]
+
+/-- If `H` is separated by `G` over `G` through an injective `ι`, a system with an inequation
+lifts to the generic point of `S` through `ι` exactly when it lifts over `G`. -/
+theorem hasLiftNe_iff_of_isSeparatedBy (hι : Function.Injective ι) (hH : IsSeparatedBy ι (.id G)) :
+    HasLiftNe ι S T W ↔ HasLiftNe (.id G) S T W :=
+  -- both coordinate groups are the quotient of `G[X]` by the same radical
+  ⟨.of_Rad_eq (Rad_eq_of_isSeparatedBy hι hH S),
+    .of_Rad_eq (Rad_eq_of_isSeparatedBy hι hH S).symm⟩
 
 end Separated
 
