@@ -164,10 +164,10 @@ private theorem exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder :
     hmu hP hr hrρ hball
   have hβ : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self (hr.trans hrρ))))
   have hγ : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₀ (hball (mem_ball_self (hr.trans hrρ))))
-  have hstep := hrev mu (S := S.toNNReal) h ha hb hc hb_bound hc_bound hS hu hm hmu
-    (by linarith : -P < 1) hr hrρ hball
-  rw [abs_neg, abs_of_pos hP, sub_neg_eq_add] at hstep
-  change _ ≤ ENNReal.ofReal S * _ * _ at hstep
+  have hstep := hrev mu (q := q) (S := S.toNNReal) h ha hb hc hb_bound hc_bound
+    (by simpa only [ENNReal.ofNNReal_toNNReal] using hS) hu hm hmu (by linarith : -P < 1) hr hrρ
+    hball
+  rw [abs_neg, abs_of_pos hP, sub_neg_eq_add, ENNReal.ofNNReal_toNNReal] at hstep
   refine hstep.trans ?_
   gcongr ENNReal.ofReal S * ENNReal.ofReal (C * ?_) * _
   exact add_div_mul_sqrt_le hP h.pos h.upper_nonneg hβ hγ (sub_pos.2 hrρ)

@@ -164,6 +164,26 @@ private theorem div_mul_sqrt_le_div_mul_sqrt {p lam beta gamma : ℝ} (hp0 : 0 �
 
 
 omit [DecidableEq ι] in
+/-- For a cutoff `ψ` with values in `[0, 1]`, gradient at most `G` and support in a ball
+`B(x₀, ρ) ⊆ Ω`, the cutoff term and the zeroth-order term of a Caccioppoli inequality for
+`w ∈ H¹(Ω)` are at most `G² ∫_{B(x₀, ρ)} w²` and `∫_{B(x₀, ρ)} w²`. -/
+private theorem setIntegral_cutoff_terms_le {mu : Measure (EuclideanSpace ℝ ι)}
+    [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} (w : W1p mu Omega 2)
+    {ψ : EuclideanSpace ℝ ι → ℝ} {G ρ : ℝ} {x₀ : EuclideanSpace ℝ ι} (hψ : ContDiff ℝ ∞ ψ)
+    (hψrange : range ψ ⊆ Icc 0 1) (hψg : ∀ x, ‖∇ ψ x‖ ≤ G) (hts : tsupport ψ ⊆ Metric.ball x₀ ρ)
+    (hball : Metric.ball x₀ ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+        G ^ 2 * ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu ∧
+      ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
+        ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu := by
+  rw [← inter_eq_right.2 hball]
+  exact ⟨W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hψg hts
+      (Lp.memLp (W1p.value w)).integrable_sq (Filter.Eventually.of_forall fun x => le_rfl),
+    W1p.setIntegral_sq_mul_value_sq_le w
+      (fun x => pow_le_one₀ (hψrange ⟨x, rfl⟩).1 (hψrange ⟨x, rfl⟩).2) hts
+      (Lp.memLp (W1p.value w)).integrable_sq (Filter.Eventually.of_forall fun x => le_rfl)⟩
+
+omit [DecidableEq ι] in
 /-- **A Caccioppoli inequality and a Sobolev inequality give a reverse Hölder inequality.** There
 is a constant `C ≥ 0`, depending only on the dimension, with the following property. Suppose that
 `W^{1,2}_0(Ω)` satisfies the Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂`, and that `w ∈ H¹(Ω)` satisfies
@@ -213,18 +233,9 @@ theorem exists_eLpNorm_value_le_mul_eLpNorm_value_of_caccioppoli :
     W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
       hts w
   -- The cutoff term and the zeroth-order term are controlled on `B(x₀, ρ)`.
+  obtain ⟨hY, hZ⟩ := setIntegral_cutoff_terms_le w hψ hψrange hψg (hψts.trans hρ'B) hball
   set I := ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu
   have hI0 : 0 ≤ I := integral_nonneg fun x => sq_nonneg _
-  have hY : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤ G ^ 2 * I := by
-    have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hψg
-      (hψts.trans hρ'B) (Lp.memLp (W1p.value w)).integrable_sq
-      (Filter.Eventually.of_forall fun x => le_rfl)
-    rwa [inter_eq_right.2 hball] at hbound
-  have hZ : ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤ I := by
-    have hbound := W1p.setIntegral_sq_mul_value_sq_le w
-      (fun x => pow_le_one₀ (hψrange ⟨x, rfl⟩).1 (hψrange ⟨x, rfl⟩).2) (hψts.trans hρ'B)
-      (Lp.memLp (W1p.value w)).integrable_sq (Filter.Eventually.of_forall fun x => le_rfl)
-    rwa [inter_eq_right.2 hball] at hbound
   -- The gradient of `z`.
   have hgradz : ‖W1p.gradient z‖ ≤ (4 * c₀ + 2) * ((1 + K) / (ρ - r) + L) * √I :=
     le_mul_add_mul_sqrt_of_sq_le (G := G) (norm_nonneg _) hK hL hc₀ hrρ hI0
@@ -314,6 +325,19 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder :
     eLpNorm_congr_ae (Filter.EventuallyEq.symm (ae_restrict_of_ae_restrict_of_subset hs hwv))
   rwa [hwu ((Metric.ball_subset_ball hrρ.le).trans hball), hwu hball]
 
+omit [DecidableEq ι] in
+/-- On a set `s ⊆ Ω` on which `u ≥ ε > 0`, the function `u^{p/2}` agrees almost everywhere with
+`‖u‖^{p/2}`, so the two have the same `Lᵗ` norm. -/
+private theorem eLpNorm_rpow_eq_eLpNorm_norm_rpow {mu : Measure (EuclideanSpace ℝ ι)}
+    [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {ε p : ℝ}
+    (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
+    {s : Set (EuclideanSpace ℝ ι)} (hs : s ⊆ Omega) (t : ℝ≥0∞) :
+    eLpNorm (fun x => W1p.value u x ^ (p / 2)) t (mu.restrict s) =
+      eLpNorm (fun x => ‖W1p.value u x‖ ^ (p / 2)) t (mu.restrict s) := by
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset hs hεu] with x hx
+  rw [Real.norm_eq_abs, abs_of_pos (hε.trans_le hx)]
+
 /-- **One step of Moser's iteration for small positive powers, with lower-order terms.** There is
 a constant `C ≥ 0`, depending only on the dimension, with the following property. Under the
 hypotheses of `TauCeti.PDE.exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder`, with a finite
@@ -375,16 +399,10 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_lowerOrder :
     -- `gcongr` reduces the goal to `hweak`, which it closes from the context.
     gcongr
   -- On every ball inside `Ω`, `u^{p/2} = ‖u‖^{p/2}`, since `u > 0` there.
-  have hconv : ∀ {t : ℝ≥0∞} {s : ℝ}, Metric.ball x₀ s ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      eLpNorm (fun x => W1p.value u x ^ (p / 2)) t (mu.restrict (Metric.ball x₀ s)) =
-        eLpNorm (fun x => ‖W1p.value u x‖ ^ (p / 2)) t (mu.restrict (Metric.ball x₀ s)) := by
-    intro t s hs
-    refine eLpNorm_congr_ae ?_
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hs hεu] with x hx
-    rw [Real.norm_eq_abs, abs_of_pos (hε.trans_le hx)]
   have hrB : Metric.ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (Metric.ball_subset_ball hrρ.le).trans hball
-  rw [hconv hrB, hconv hball, ← ENNReal.ofReal_coe_nnreal,
+  rw [eLpNorm_rpow_eq_eLpNorm_norm_rpow hε hεu hrB, eLpNorm_rpow_eq_eLpNorm_norm_rpow hε hεu hball,
+    ← ENNReal.ofReal_coe_nnreal,
     ← ENNReal.ofReal_mul (by positivity)] at hstep'
   have hpow := TauCeti.eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le
     ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure (Measure.restrict_mono hrB le_rfl))
@@ -449,14 +467,8 @@ private theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset [Nonemp
     linarith
   -- The Sobolev exponent `q = 2χ`, with `1/2 - 1/q = δ`.
   obtain ⟨q, hq⟩ : ∃ q : ℝ≥0, (q : ℝ) = 2 * χ := ⟨⟨2 * χ, by positivity⟩, rfl⟩
-  have hq2 : (2 : ℝ≥0∞) ≤ q := by
-    have : (2 : ℝ) ≤ q := by
-      rw [hq]
-      linarith
-    exact_mod_cast this
-  have hqχ : (q : ℝ≥0∞).toReal / 2 = χ := by
-    rw [ENNReal.coe_toReal, hq]
-    ring
+  have hq2 : (2 : ℝ≥0∞) ≤ q := by exact_mod_cast (show (2 : ℝ) ≤ q by rw [hq]; linarith)
+  have hqχ : (q : ℝ≥0∞).toReal / 2 = χ := by rw [ENNReal.coe_toReal, hq]; ring
   -- The constant of the Sobolev inequality on `B(x₀, R)` is `K R ^ (1 - n δ)`.
   obtain ⟨K, hK, hsob⟩ :=
     W1p.exists_forall_eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball (mu := mu)
