@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
@@ -17,6 +17,11 @@ Hilbert–Schmidt norm times `‖v‖²` is
 
 The Hilbert–Schmidt norm is expressed as the double sum of squared matrix coefficients in an
 arbitrary orthonormal basis. The identity holds for every vector, including zero.
+
+Adapted from Otis Chodosh's formalization in
+`ForTauCeti/Analysis/InnerProductSpace/Symmetric/TwoDimensional.lean` in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory)
+(commit `4c7bbc449a836e5e574058ccf0ac3f5110a99bd4`).
 -/
 
 public section
