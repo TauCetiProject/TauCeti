@@ -20,16 +20,18 @@ analytic function `f` factors as `f z = (z - a) ^ n • h z` (for instance throu
 More generally, multiplying by `(z - a) ^ p` shifts the Taylor coefficients at `a` up by `p`
 without changing them.
 
-For functions `c` and `d` with values in continuous linear maps, `Cⁿ` at a point, Leibniz's
-rule `(c ∘ d)⁽ⁿ⁾ = ∑ᵢ (n choose i) c⁽ⁱ⁾ ∘ d⁽ⁿ⁻ⁱ⁾` holds there for their pointwise composition.
+For functions `c` and `d` with values in continuous linear maps, `Cⁿ` at a point (within a set
+with unique derivatives), Leibniz's rule `(c ∘ d)⁽ⁿ⁾ = ∑ᵢ (n choose i) c⁽ⁱ⁾ ∘ d⁽ⁿ⁻ⁱ⁾` holds there
+for their pointwise composition.
 
 ## Main results
 
 * `TauCeti.iteratedDeriv_pow_sub_smul_self`: the identity above.
 * `TauCeti.inv_factorial_smul_iteratedDeriv_pow_sub_smul`: the `(p + i)`-th Taylor coefficient of
   `z ↦ (z - a) ^ p • h z` at `a` is the `i`-th Taylor coefficient of `h`.
-* `TauCeti.iteratedDeriv_clm_comp`: Leibniz's rule for the pointwise composition of functions
-  with values in continuous linear maps.
+* `TauCeti.iteratedDerivWithin_clm_comp`: Leibniz's rule within a set for the pointwise
+  composition of functions with values in continuous linear maps.
+* `TauCeti.iteratedDeriv_clm_comp`: the same rule for the plain iterated derivative.
 -/
 
 public section
@@ -97,39 +99,37 @@ section CLMComp
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
   [NormedSpace 𝕜 G]
 
-/-- Leibniz's rule for compositions of continuous linear maps, on an open set where both factors
-are `Cⁿ`. -/
-private theorem iteratedDeriv_clm_comp_of_isOpen {s : Set 𝕜} (hs : IsOpen s)
-    {c : 𝕜 → F →L[𝕜] G} {d : 𝕜 → E →L[𝕜] F} {n : ℕ} (hc : ContDiffOn 𝕜 n c s)
-    (hd : ContDiffOn 𝕜 n d s) {x : 𝕜} (hx : x ∈ s) :
-    iteratedDeriv n (fun y ↦ (c y).comp (d y)) x =
+/-- **Leibniz's rule for compositions of continuous linear maps** within a set. If `c` and `d`
+are `Cⁿ` at `x` within a set `s` with unique derivatives, the `n`-th derivative within `s` at `x`
+of their pointwise composition is `∑ᵢ (n choose i) c⁽ⁱ⁾(x) ∘ d⁽ⁿ⁻ⁱ⁾(x)`. -/
+theorem iteratedDerivWithin_clm_comp {s : Set 𝕜} {c : 𝕜 → F →L[𝕜] G} {d : 𝕜 → E →L[𝕜] F}
+    {n : ℕ} {x : 𝕜} (hx : x ∈ s) (h : UniqueDiffOn 𝕜 s) (hc : ContDiffWithinAt 𝕜 n c s x)
+    (hd : ContDiffWithinAt 𝕜 n d s x) :
+    iteratedDerivWithin n (fun y ↦ (c y).comp (d y)) s x =
       ∑ i ∈ Finset.range (n + 1),
-        n.choose i • (iteratedDeriv i c x).comp (iteratedDeriv (n - i) d x) := by
+        n.choose i • (iteratedDerivWithin i c s x).comp (iteratedDerivWithin (n - i) d s x) := by
   induction n generalizing c d with
   | zero => simp
   | succ n ih =>
-    have hc' : ContDiffOn 𝕜 n (deriv c) s := hc.deriv_of_isOpen hs (by norm_cast)
-    have hd' : ContDiffOn 𝕜 n (deriv d) s := hd.deriv_of_isOpen hs (by norm_cast)
-    -- On `s` the derivative of the composition is given by the product rule.
-    have heq : Set.EqOn (deriv fun y ↦ (c y).comp (d y))
-        ((fun y ↦ (deriv c y).comp (d y)) + fun y ↦ (c y).comp (deriv d y)) s := fun y hy ↦ by
-      have hm := hs.mem_nhds hy
-      exact deriv_clm_comp ((hc.differentiableOn (by simp)).differentiableAt hm)
-        ((hd.differentiableOn (by simp)).differentiableAt hm)
-    have hm := hs.mem_nhds hx
+    have hc' : ContDiffWithinAt 𝕜 n (derivWithin c s) s x := hc.derivWithin h le_rfl hx
+    have hd' : ContDiffWithinAt 𝕜 n (derivWithin d s) s x := hd.derivWithin h le_rfl hx
     have hle : (n : WithTop ℕ∞) ≤ (n + 1 : ℕ) := by norm_cast; omega
-    rw [iteratedDeriv_succ', heq.iteratedDeriv_of_isOpen hs n hx,
-      iteratedDeriv_add ((hc'.clm_comp (hd.of_le hle)).contDiffAt hm)
-        (((hc.of_le hle).clm_comp hd').contDiffAt hm), ih hc' (hd.of_le hle),
-      ih (hc.of_le hle) hd']
-    simp only [← iteratedDeriv_succ']
-    refine Eq.trans ?_ (Finset.sum_choose_succ_nsmul
-      (fun i k ↦ (iteratedDeriv i c x).comp (iteratedDeriv k d x)) n).symm
-    rw [add_comm]
-    congr 1
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [Finset.mem_range] at hi
-    rw [show n - i + 1 = n + 1 - i by omega]
+    -- Near `x` within `s`, the derivative of the composition is given by the product rule.
+    rw [iteratedDerivWithin_succ', Filter.EventuallyEq.iteratedDerivWithin_eq_of_nhds_insert
+        (g := (fun y ↦ (derivWithin c s y).comp (d y)) + fun y ↦ (c y).comp (derivWithin d s y))]
+    · rw [iteratedDerivWithin_add hx h (hc'.clm_comp (hd.of_le hle))
+          ((hc.of_le hle).clm_comp hd'), ih hc' (hd.of_le hle), ih (hc.of_le hle) hd']
+      simp only [← iteratedDerivWithin_succ']
+      refine Eq.trans ?_ (Finset.sum_choose_succ_nsmul
+        (fun i k ↦ (iteratedDerivWithin i c s x).comp (iteratedDerivWithin k d s x)) n).symm
+      rw [add_comm]
+      congr 1
+      refine Finset.sum_congr rfl fun i hi ↦ ?_
+      rw [Finset.mem_range] at hi
+      rw [show n - i + 1 = n + 1 - i by omega]
+    · filter_upwards [hc.eventually (by simp), hd.eventually (by simp)] with y hcy hdy
+      exact derivWithin_clm_comp (hcy.differentiableWithinAt (by simp))
+        (hdy.differentiableWithinAt (by simp))
 
 /-- **Leibniz's rule for compositions of continuous linear maps.** If `c` and `d` are `Cⁿ` at `x`,
 the `n`-th derivative at `x` of their pointwise composition is
@@ -139,11 +139,8 @@ theorem iteratedDeriv_clm_comp {c : 𝕜 → F →L[𝕜] G} {d : 𝕜 → E →
     iteratedDeriv n (fun y ↦ (c y).comp (d y)) x =
       ∑ i ∈ Finset.range (n + 1),
         n.choose i • (iteratedDeriv i c x).comp (iteratedDeriv (n - i) d x) := by
-  obtain ⟨u, hu, hcu⟩ := hc.contDiffOn le_rfl (by simp)
-  obtain ⟨v, hv, hdv⟩ := hd.contDiffOn le_rfl (by simp)
-  obtain ⟨s, hsuv, hs, hx⟩ := mem_nhds_iff.1 (Filter.inter_mem hu hv)
-  exact iteratedDeriv_clm_comp_of_isOpen hs (hcu.mono fun y hy ↦ (hsuv hy).1)
-    (hdv.mono fun y hy ↦ (hsuv hy).2) hx
+  simpa only [iteratedDerivWithin_univ] using iteratedDerivWithin_clm_comp (Set.mem_univ x)
+    uniqueDiffOn_univ hc.contDiffWithinAt hd.contDiffWithinAt
 
 end CLMComp
 
