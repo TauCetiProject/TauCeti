@@ -108,19 +108,13 @@ every point of `A`, then the preimage of a `μ`-null set meets `A` in a `μ₀`-
 theorem addHaar_preimage_inter_eq_zero_of_isSubmersionAt
     (hθ : ∀ x ∈ A, IsSubmersionAt 𝓘(ℝ, E₀) 𝓘(ℝ, E) n θ x) (hn : 1 ≤ n) (hs : μ s = 0) :
     μ₀ (θ ⁻¹' s ∩ A) = 0 := by
-  classical
-  let h x (hx : x ∈ A) := (hθ x hx).isSubmersionAtOfComplement_complement
-  obtain ⟨t, htA, htc, hAt⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (s := A) (f := fun x ↦ if hx : x ∈ A then (h x hx).domChart.source else univ)
-    fun x hx ↦ by
-      simp only [hx, ↓reduceDIte]
-      exact mem_nhdsWithin_of_mem_nhds
-        ((h x hx).domChart.open_source.mem_nhds (h x hx).mem_domChart_source)
-  refine measure_mono_null (inter_subset_inter_right _ hAt) ?_
-  rw [inter_iUnion₂]
-  refine (measure_biUnion_null_iff htc).2 fun x hx ↦ ?_
-  simpa [htA hx] using addHaar_preimage_inter_domChart_source_eq_zero (μ₀ := μ₀)
-    (h x (htA hx)) hn hs
+  refine measure_null_of_locally_null _ fun x hx ↦ ?_
+  let h := (hθ x hx.2).isSubmersionAtOfComplement_complement
+  refine ⟨θ ⁻¹' s ∩ h.domChart.source, ?_,
+    addHaar_preimage_inter_domChart_source_eq_zero (μ₀ := μ₀) h hn hs⟩
+  exact Filter.mem_of_superset
+    (inter_mem_nhdsWithin _ (h.domChart.open_source.mem_nhds h.mem_domChart_source))
+    (fun y hy ↦ ⟨hy.1.1, hy.2⟩)
 
 variable (μ) in
 /-- If `θ` is a `C¹` submersion in normal form at every point of a null-measurable set `A` and maps
