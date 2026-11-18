@@ -57,20 +57,14 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {a b : ℝ} {f f' : ℝ → V}
 
-omit [FiniteDimensional ℝ V] in
-/-- A function with continuous derivative everywhere is `C¹`. -/
-private theorem contDiff_one_of_hasDerivAt (hff' : ∀ t, HasDerivAt f (f' t) t)
-    (hf' : Continuous f') : ContDiff ℝ 1 f :=
-  contDiff_one_iff_deriv.2
-    ⟨fun t ↦ (hff' t).differentiableAt, (funext fun t ↦ (hff' t).deriv) ▸ hf'⟩
-
 /-- **The Dirichlet inequality for `C¹` functions.** If `f` has a continuous derivative and
 vanishes at both endpoints, then `(π / (b - a)) ^ 2 ∫ₐᵇ ‖f‖ ^ 2 ≤ ∫ₐᵇ ‖f'‖ ^ 2`. -/
 private theorem mul_integral_norm_sq_le_of_eq_zero_of_eq_zero (hab : a < b)
     (hff' : ∀ t, HasDerivAt f (f' t) t) (hf' : Continuous f') (ha : f a = 0) (hb : f b = 0) :
     (π / (b - a)) ^ 2 * ∫ t in a..b, ‖f t‖ ^ 2 ≤ ∫ t in a..b, ‖f' t‖ ^ 2 :=
   mul_integral_norm_sq_le_integral_norm_sq_of_eq_neg hab
-    (contDiff_one_of_hasDerivAt hff' hf').contDiffOn.absolutelyContinuousOnInterval
+    (contDiff_one_iff_deriv.2 ⟨fun t ↦ (hff' t).differentiableAt,
+      (funext fun t ↦ (hff' t).deriv) ▸ hf'⟩).contDiffOn.absolutelyContinuousOnInterval
     (Filter.Eventually.of_forall fun t _ ↦ hff' t)
     (hf'.continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc
       Ioc_subset_Icc_self 2)
@@ -84,7 +78,7 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_of_integral_eq_zero (hab : a < 
     (hff' : ∀ t, HasDerivAt f (f' t) t) (hf' : Continuous f')
     (hmean : ∫ t in a..b, f t = 0) :
     (π / (b - a)) ^ 2 * ∫ t in a..b, ‖f t‖ ^ 2 ≤ ∫ t in a..b, ‖f' t‖ ^ 2 := by
-  have hf : Continuous f := (contDiff_one_of_hasDerivAt hff' hf').continuous
+  have hf : Continuous f := continuous_iff_continuousAt.2 fun t ↦ (hff' t).continuousAt
   -- The primitive `F` of `f` vanishes at both endpoints and satisfies the Dirichlet inequality.
   set F : ℝ → V := fun t ↦ ∫ x in a..t, f x
   have hF (t : ℝ) : HasDerivAt F (f t) t := (hf.integral_hasStrictDerivAt a t).hasDerivAt
@@ -129,7 +123,7 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_of_mem_of_integral_mem_orthogon
     (hff' : ∀ t, HasDerivAt f (f' t) t) (hf' : Continuous f') {K : Submodule ℝ V}
     (ha : f a ∈ K) (hb : f b ∈ K) (hint : ∫ t in a..b, f t ∈ Kᗮ) :
     (π / (b - a)) ^ 2 * ∫ t in a..b, ‖f t‖ ^ 2 ≤ ∫ t in a..b, ‖f' t‖ ^ 2 := by
-  have hf : Continuous f := (contDiff_one_of_hasDerivAt hff' hf').continuous
+  have hf : Continuous f := continuous_iff_continuousAt.2 fun t ↦ (hff' t).continuousAt
   set P := K.starProjection
   set Q := Kᗮ.starProjection
   -- The component in `K` has mean zero, and the component in `Kᗮ` vanishes at both endpoints.

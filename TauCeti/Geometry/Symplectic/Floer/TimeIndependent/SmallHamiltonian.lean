@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Calculus.IntervalIntegral.Slice
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -174,13 +175,6 @@ private theorem fderiv_real_apply_real (hH : ContDiff ℝ 3 H) (hu : Differentia
   abel
 
 end Derivatives
-
-/-- For the metric `ω(·, J ·)`, `J X_H(x)` is the gradient of `H` at `x`. -/
-private theorem apply_hamiltonianVectorField_eq_gradient (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (x : V) : J (ω.hamiltonianVectorField H x) = ∇ H x :=
-  ext_inner_right ℝ fun w ↦ by
-    rw [inner_gradient_left, ← hg, ← associatedBilinForm_apply]
-    exact (ω.invariant_of_apply_apply_eq_inner hg).associatedBilinForm_hamiltonianVectorField H x w
 
 section Slice
 
@@ -513,12 +507,6 @@ section Strip
 
 variable {L : Submodule ℝ V} {a c M : ℝ}
 
-/-- The derivative of a curve in a subspace lies in the subspace, as a limit of slopes. -/
-private theorem mem_of_hasDerivAt_of_forall_mem {γ : ℝ → V} {v : V} {s : ℝ}
-    (hγ : HasDerivAt γ v s) (hL : ∀ s, γ s ∈ L) : v ∈ L :=
-  L.isClosed_of_finiteDimensional.mem_of_tendsto (hasDerivAt_iff_tendsto_slope.1 hγ)
-    (Eventually.of_forall fun y ↦ L.smul_mem _ (L.sub_mem (hL y) (hL s)))
-
 /-- **The boundary condition of `∂t u`.** Let `u` map the line `ℝ × {t}` into `L`, along which
 the gradient of `H` is tangent to `L`. If `u` solves the Floer equation of `K = H dt` at `(s, t)`,
 then `J ∂t u(s, t) ∈ L`. -/
@@ -533,8 +521,9 @@ private theorem apply_fderiv_apply_mem (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
     rw [he]
     abel
   rw [hJ]
-  exact L.sub_mem (hHL _ (hut s))
-    (mem_of_hasDerivAt_of_forall_mem (hasDerivAt_slice_left (hu (s, t))) hut)
+  simpa using L.sub_mem (hHL _ (hut s))
+    ((hasDerivAt_slice_left (hu (s, t))).hasFDerivAt.apply_mem_of_eventually_sub_mem
+      L.isClosed_of_finiteDimensional (.of_forall fun y ↦ L.sub_mem (hut y) (hut s)) 1)
 
 /-- **The boundary term of a strip vanishes.** If `J ξ(s, t) ∈ L` for every `s`, for an isotropic
 subspace `L`, then `⟪J ξ, ∂s ξ⟫ = 0` at `(s, t)`. -/
@@ -542,9 +531,9 @@ private theorem inner_apply_fderiv_eq_zero (hg : ∀ v w, ω v (J w) = ⟪v, w�
     (hL : ω.IsIsotropic L) {ξ : ℝ × ℝ → V} (hξ : Differentiable ℝ ξ) {t : ℝ}
     (hξt : ∀ s, J (ξ (s, t)) ∈ L) (s : ℝ) : ⟪J (ξ (s, t)), fderiv ℝ ξ (s, t) (1, 0)⟫ = 0 := by
   have hη : J (fderiv ℝ ξ (s, t) (1, 0)) ∈ L := by
-    refine mem_of_hasDerivAt_of_forall_mem (γ := fun s ↦ J (ξ (s, t))) (s := s) ?_ hξt
     simpa using (hasFDerivAt_apply (J := J) (hasDerivAt_slice_left (hξ (s, t))).hasFDerivAt
-      ).hasDerivAt
+      ).apply_mem_of_eventually_sub_mem L.isClosed_of_finiteDimensional
+        (.of_forall fun y ↦ L.sub_mem (hξt y) (hξt s)) 1
   rw [← hg]
   exact isIsotropic_iff.1 hL _ (hξt s) _ hη
 
@@ -652,7 +641,7 @@ theorem hasDerivAt_gradient_of_isComplexLinearMap_perturbedFDeriv_of_isIsotropic
       (hasDerivAt_slice_right (hud (s, 0))).hasDerivWithinAt
     have h₂ : HasDerivWithinAt (fun t ↦ u (s, t)) 0 (Icc 0 1) 0 :=
       (hasDerivWithinAt_const 0 (Icc (0 : ℝ) 1) (u (s, 0))).congr
-        (fun t ht ↦ hmain (show (s, t).2 ∈ Icc (0 : ℝ) 1 from ht)) rfl
+        (fun t ht ↦ hmain (x := (s, t)) ht) rfl
     exact (uniqueDiffOn_Icc zero_lt_one 0 ⟨le_rfl, zero_le_one⟩).eq_deriv _ h₁ h₂
   have he := fderiv_apply_real_eq (hfl (s, 0) ⟨le_rfl, zero_le_one⟩)
   rw [hξ₀, map_zero, neg_zero, zero_add, apply_hamiltonianVectorField_eq_gradient hg] at he
