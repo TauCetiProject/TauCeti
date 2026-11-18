@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Riccardo Brasca, The Tau Ceti contributors
 -/
 module
 
@@ -13,6 +13,8 @@ public import Mathlib.Analysis.InnerProductSpace.TwoDim
 For a real-linear map commuting with the positive right-angle rotations, the squared norms
 of its differential on a rotated pair sum to twice its oriented area on that pair. The identity
 also holds for the zero map, which is the pointwise model for a branch point.
+
+Adapted from Riccardo Brasca's `ForTauCeti` formalization.
 -/
 
 public section
@@ -28,16 +30,6 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W]
   [Fact (Module.finrank ℝ W = 2)]
 
-/-- The squared norm in an oriented real plane is the sum of the squared projections onto
-a unit vector and its positive right-angle rotation. -/
-theorem norm_sq_eq_inner_sq_add_inner_rightAngleRotation_sq
-    (o : Orientation ℝ V (Fin 2)) (v w : V) (hv : ‖v‖ = 1) :
-    ‖w‖ ^ 2 = inner ℝ w v ^ 2 + inner ℝ w (o.rightAngleRotation v) ^ 2 := by
-  have h := o.inner_sq_add_areaForm_sq v w
-  rw [← o.inner_rightAngleRotation_left, hv, one_pow, one_mul] at h
-  rw [real_inner_comm w v, real_inner_comm w (o.rightAngleRotation v)] at h
-  exact h.symm
-
 /-- For a complex-linear map of oriented real planes, twice the oriented area of the image
 of a rotated pair is its total squared differential norm on that pair. -/
 theorem two_mul_areaForm_map_eq_norm_sq_add_norm_sq
@@ -51,8 +43,9 @@ theorem two_mul_areaForm_map_eq_norm_sq_add_norm_sq
     real_inner_self_eq_norm_sq, o'.rightAngleRotation.norm_map]
   ring
 
-/-- A complex-linear map between oriented Euclidean planes is conformal. Its metric factor
-is the squared norm of the image of any unit vector. -/
+/-- A complex-linear map between oriented Euclidean planes is weakly conformal. Its metric
+factor is the squared norm of the image of any unit vector and may be zero. If `F ≠ 0`,
+this factor is positive and the map is conformal. -/
 theorem inner_map_map_eq_norm_sq_mul_inner
     (o : Orientation ℝ V (Fin 2)) (o' : Orientation ℝ W (Fin 2))
     (F : V →ₗ[ℝ] W)
