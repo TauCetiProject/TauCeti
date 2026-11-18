@@ -48,8 +48,12 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   character at an integer prime to the new level.
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
   at the integers prime to the level agree at every integer.
+* `DirichletCharacter.one_natCast`: the trivial character modulo `N` is `1` at the natural numbers
+  prime to `N` and `0` at the others.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
   to its level and congruent to `1` modulo a multiple of its conductor.
+* `DirichletCharacter.primitiveCharacter_pow_eq_one`: at a nonzero level, the primitive character
+  of a character of order dividing `n` has order dividing `n`.
 * `DirichletCharacter.conductor_dvd_iff_forall_odd`: conversely, the conductor divides `d`, which
   need not divide the level, as soon as the character is `1` at every *odd* natural number prime
   to the level and congruent to `1` modulo `d`. This is how a divisibility of the conductor is
@@ -65,6 +69,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.ext_of_level_four`, `DirichletCharacter.ext_of_level_eight`: a character of
   level four is determined by its value at `3`, and one of level eight by its values at `3`
   and `5`.
+* `DirichletCharacter.subsingleton_of_le_two`: at the levels `1` and `2` there is only one
+  character.
 * `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
   combination of symmetrised character sums that vanishes on every pair of units has vanishing
   coefficients against every pair of character multiplicities.
@@ -170,6 +176,15 @@ theorem ext_of_level_eight {R : Type*} [CommMonoidWithZero R]
   · exact h3
   · exact h5
   · rw [map_mul, map_mul, h3, h5]
+
+/-- At the levels `1` and `2` there is only one Dirichlet character, since `(ℤ/nℤ)ˣ` is trivial
+there. -/
+theorem subsingleton_of_le_two {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n] (hn : n ≤ 2) :
+    Subsingleton (DirichletCharacter R n) := by
+  have : Subsingleton (ZMod n)ˣ := by
+    obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
+    all_goals infer_instance
+  exact ⟨fun χ ψ ↦ MulChar.ext fun u ↦ by rw [Subsingleton.elim u 1]; simp⟩
 
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —
@@ -310,6 +325,14 @@ theorem apply_intCast_eq_of_forall_isCoprime {R : Type*} [CommMonoidWithZero R] 
     rw [χ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm]),
       ψ.map_nonunit (by rwa [ZMod.isUnit_intCast_iff_isCoprime, isCoprime_comm])]
 
+/-- **The trivial character at a natural number.** The trivial character modulo `N` is `1` at the
+natural numbers prime to `N` and `0` at the others. -/
+theorem one_natCast {R : Type*} [CommMonoidWithZero R] {N : ℕ} (n : ℕ) :
+    (1 : DirichletCharacter R N) n = if n.Coprime N then 1 else 0 := by
+  split_ifs with hn
+  · exact MulChar.one_apply ((ZMod.isUnit_iff_coprime n N).mpr hn)
+  · exact MulChar.map_nonunit _ (mt (ZMod.isUnit_iff_coprime n N).mp hn)
+
 /-- The product character at the least common multiple of the levels is the pointwise product
 on natural numbers, including the nonunits. -/
 @[simp] theorem mul_natCast {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
@@ -337,6 +360,13 @@ theorem apply_eq_one_of_conductor_dvd {R : Type*} [CommMonoidWithZero R] {N d : 
   rw [← primitiveCharacter_apply_of_isCoprime χ ha,
     (ZMod.intCast_eq_intCast_iff _ _ _).mpr (had.of_dvd (Int.natCast_dvd_natCast.mpr hd)),
     Int.cast_one, map_one]
+
+/-- The primitive character of a character of order dividing `n` at a nonzero level has order
+dividing `n`. -/
+theorem primitiveCharacter_pow_eq_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} {n : ℕ} (hχ : χ ^ n = 1) : χ.primitiveCharacter ^ n = 1 := by
+  apply changeLevel_injective χ.conductor_dvd_level
+  rw [map_pow, changeLevel_primitiveCharacter, map_one, hχ]
 
 /-- **The conductor, read on odd representatives.** The conductor of `χ` divides `d` exactly
 when `χ a = 1` for every odd natural number `a` prime to the level `N` with `a ≡ 1 (mod d)`.
