@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.Complement
+public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
@@ -233,15 +233,8 @@ variable {𝕜 E F Y : Type*} [NontriviallyNormedField 𝕜]
 /-- Between Banach spaces, `P ∘ L` is invertible exactly when `L` is injective, `P` is onto, and
 the kernel of `P` is complementary to the range of `L`. -/
 theorem isInvertible_comp_iff [CompleteSpace Y] :
-    (P ∘L L).IsInvertible ↔ Injective L ∧ IsCompl L.range P.ker ∧ Surjective P := by
-  refine ⟨fun h ↦ ⟨Injective.of_comp (f := P) h.injective,
-    (isTopCompl_range_ker_of_isInvertible_comp h).isCompl,
-    Surjective.of_comp (g := L) h.surjective⟩,
-    fun hc ↦ ?_⟩
-  have hb : Bijective (P ∘L L) :=
-    LinearMap.bijective_comp_iff (L := (L : E →ₗ[𝕜] F)).mpr hc
-  exact ⟨.ofBijective (P ∘L L) (LinearMap.ker_eq_bot.mpr hb.injective)
-    (LinearMap.range_eq_top.mpr hb.surjective), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩
+    (P ∘L L).IsInvertible ↔ Injective L ∧ IsCompl L.range P.ker ∧ Surjective P :=
+  isInvertible_iff_bijective.trans LinearMap.bijective_comp_iff
 
 /-- Every topological complement `W` of the range of an injective operator `L` between Banach
 spaces is the kernel of an auxiliary map `P` with `P ∘ L` invertible, namely the projection onto
