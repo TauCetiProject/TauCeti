@@ -403,6 +403,8 @@ theorem lieEquivOfIsLocalDiffeomorphAt_apply
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1)
     (X : LeftInvariantDerivation I G) :
     lieEquivOfIsLocalDiffeomorphAt φ hφ X = lieMap φ X := by
+  -- The coercion of `LieEquiv.ofBijective f _` is definitionally `f`, and Mathlib provides no
+  -- apply lemma for `LieEquiv.ofBijective`, so this holds by unfolding.
   rfl
 
 /-- The Lie homomorphism underlying the equivalence induced by a local diffeomorphism is its Lie

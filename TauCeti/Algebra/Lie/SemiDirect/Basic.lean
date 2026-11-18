@@ -181,6 +181,8 @@ noncomputable def semiDirectSumEquiv (h : IsCompl S.toSubmodule H.toSubmodule) :
 theorem semiDirectSumEquiv_apply (h : IsCompl S.toSubmodule H.toSubmodule)
     (z : ↥S ⋊⁅(ad S).comp H.incl⁆ ↥H) :
     semiDirectSumEquiv S H h z = (z.left : L) + (z.right : L) :=
+  -- The coercion of `LieEquiv.ofBijective f _` is definitionally `f`; Mathlib provides no apply
+  -- lemma for `LieEquiv.ofBijective`, so this reduces to `semiDirectSumHom_apply` by unfolding.
   semiDirectSumHom_apply S H z
 
 theorem semiDirectSumEquiv_inl (h : IsCompl S.toSubmodule H.toSubmodule) (s : S) :

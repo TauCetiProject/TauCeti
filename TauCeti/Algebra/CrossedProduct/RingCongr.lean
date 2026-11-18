@@ -157,6 +157,8 @@ private theorem scalarExtensionRingEquiv_includeRight (a : CrossedProduct c) :
       (comapRingEquiv c ι π hπ).symm a := by
   simp [scalarExtensionRingEquiv, ← Algebra.TensorProduct.includeRight_apply,
     RingEquiv.symm_apply_eq]
+  -- `simp` leaves the two sides as the same element seen through the `AlgEquiv.ofBijective` and
+  -- `toRingEquiv.trans` wrappers of `scalarExtensionRingEquiv`; they agree by unfolding them.
   rfl
 
 /-- Scalar extension along an isomorphism of base rings carries a crossed product to the

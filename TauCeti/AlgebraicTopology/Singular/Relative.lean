@@ -444,6 +444,8 @@ lemma singularHomologyFunctor_eq_chainComplexFunctor (n : ℕ) :
     apply eq_of_heq
     simp only [singularHomologyMap.eq_def, eqToHom_comp_heq_iff,
       comp_eqToHom_heq_iff, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
+    -- After unfolding `singularHomologyMap` and stripping the `eqToHom` casts, both sides are
+    -- the same homology map, so the `HEq` goal closes by `rfl`.
     rfl
   · intro Q
     exact (singularHomologyFunctor_obj Q R n).trans <|

@@ -245,6 +245,8 @@ noncomputable def quotientEquivOfIsCompl : (L ⧸ I) ≃ₗ⁅R⁆ S :=
 @[simp]
 theorem quotientEquivOfIsCompl_symm_apply (x : S) :
     (I.quotientEquivOfIsCompl S h).symm x = LieSubmodule.Quotient.mk (x : L) := by
+  -- The coercion of `LieEquiv.ofBijective f _` is definitionally `f`, and Mathlib provides no
+  -- apply lemma for `LieEquiv.ofBijective`, so this holds by unfolding.
   rfl
 
 /-- `LieIdeal.quotientEquivOfIsCompl` sends the class of `x : S` to `x`. -/
