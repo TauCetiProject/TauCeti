@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Torus
 public import TauCeti.Geometry.Manifold.DeRham.Torus
-public import TauCeti.Geometry.Symplectic.Flux
+public import TauCeti.Geometry.Symplectic.Flux.Endpoint
 
 /-!
-# The flux of the translations of a torus
+# The flux of the translations and of the loops of a torus
 
 For a finite family of positive periods `p i`, let `Tⁿ = ∀ i, AddCircle (p i)` be the torus with
 coordinate time forms `dt_i` (`TauCeti.torusTimeForm p i`), and let `φ_t (x) = x + [t v]` be the
@@ -40,6 +40,20 @@ loop all of whose maps preserve the area form
 `A p_0 p_1` times the integer combinations of the classes `[dt_i / p_i]`, which integrate to `1`
 around the `i`-th coordinate circle and to `0` around the other.
 
+Conversely, every loop of diffeomorphisms of the torus has the flux of a translation loop. A
+diffeotopy `Φ` of `Tⁿ` whose final diffeomorphism is the identity has a common displacement `v` of
+all points at time `1`, a vector of the period lattice, and its motion is homotopic with both time
+ends fixed to that of the translation loop along `v`
+(`TauCeti.Diffeotopy.exists_homotopy_cylinderMap_torusTranslationDiffeotopy`). By the homotopy
+invariance of the flux (`TauCeti.Diffeotopy.flux_eq_of_homotopy`), on the two-torus with the area
+form `A dt_0 ∧ dt_1` the flux of every loop is therefore
+`A (m p_1 [dt_0] + n p_0 [dt_1])` for some integers `m` and `n`
+(`TauCeti.Diffeotopy.exists_flux_smul_torusVolumeForm_eq`), whether or not its intermediate maps
+preserve the area form. Together with the translation loops this determines the flux group
+`Γ_σ` of the area form: it is exactly the lattice of these classes
+(`TauCeti.mem_fluxGroup_smul_torusVolumeForm_iff`). For unit periods this lattice is
+`A (ℤ [dt_0] + ℤ [dt_1])`, classically identified with `A H¹(T²; ℤ)`.
+
 ## Main results
 
 * `TauCeti.fluxForm_torusTranslationDiffeotopy_apply`: for a constant-coefficient two-form `β`,
@@ -57,6 +71,10 @@ around the `i`-th coordinate circle and to `0` around the other.
 * `TauCeti.exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq`: every class
   `A (m p_1 [dt_0] + n p_0 [dt_1])` with `m n : ℤ` is the flux of a loop of area-preserving
   diffeomorphisms based at the identity.
+* `TauCeti.Diffeotopy.exists_flux_smul_torusVolumeForm_eq`: the flux of a loop of the two-torus
+  for the area form lies in the lattice above.
+* `TauCeti.mem_fluxGroup_smul_torusVolumeForm_iff`: the flux group of the area form of the
+  two-torus is that lattice.
 
 ## References
 
@@ -240,6 +258,51 @@ theorem exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq (m n : ℤ) :
   rw [flux_torusTranslationDiffeotopy_smul_torusVolumeForm]
   simp only [v, Matrix.cons_val_zero, Matrix.cons_val_one, neg_smul, sub_neg_eq_add]
   rw [add_comm]
+
+/-- **The flux of a loop of the two-torus is integral.** On the two-torus with the area form
+`A dt_0 ∧ dt_1`, every diffeotopy whose final diffeomorphism is the identity has flux
+`A (m p_1 [dt_0] + n p_0 [dt_1])` for some integers `m` and `n`. The intermediate diffeomorphisms
+need not preserve the area form. The proof compares `Φ` with a translation loop along a lattice
+vector, to whose motion that of `Φ` is homotopic. -/
+theorem Diffeotopy.exists_flux_smul_torusVolumeForm_eq
+    (Φ : Diffeotopy (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) ∞ (∀ i, AddCircle (p i)))
+    (hΦ₁ : Φ.final = Diffeomorph.refl _ _ ∞)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer (A • torusVolumeForm p)) :
+    ∃ m n : ℤ, Φ.flux ⟨A • torusVolumeForm p, mem_closedForms_of_finrank_le _ (by simp) _⟩ hΦ =
+      A • ((m * p 1) • deRhamCohomology.mk (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) 1
+          (torusTimeClosedForm p 0) +
+        (n * p 0) • deRhamCohomology.mk (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) 1
+          (torusTimeClosedForm p 1)) := by
+  obtain ⟨v, hv, G, hG, hG₀, hG₁, h₀, h₁⟩ :=
+    Φ.exists_homotopy_cylinderMap_torusTranslationDiffeotopy hΦ₁
+  obtain ⟨k₀, hk₀⟩ := AddSubgroup.mem_zmultiples_iff.1 (hv 0)
+  obtain ⟨k₁, hk₁⟩ := AddSubgroup.mem_zmultiples_iff.1 (hv 1)
+  have heq := Φ.flux_eq_of_homotopy
+    ⟨A • torusVolumeForm p, mem_closedForms_of_finrank_le _ (by simp) _⟩ hΦ hG hG₀ hG₁ h₀
+    fun x s ↦ by rw [h₁, hΦ₁, Diffeomorph.coe_refl, id]
+  refine ⟨-k₁, k₀, ?_⟩
+  rw [← heq, flux_torusTranslationDiffeotopy_smul_torusVolumeForm, ← hk₀, ← hk₁]
+  simp only [zsmul_eq_mul, Int.cast_neg, neg_mul, neg_smul]
+  rw [add_comm, sub_eq_add_neg]
+
+/-- **The flux group of the two-torus.** On the two-torus with the area form `A dt_0 ∧ dt_1`, the
+flux group, the set of fluxes of loops of area-preserving diffeomorphisms based at the identity, is
+the lattice of classes `A (m p_1 [dt_0] + n p_0 [dt_1])` with `m n : ℤ`. For unit periods this is
+`A (ℤ [dt_0] + ℤ [dt_1])`, classically identified with `A H¹(T²; ℤ)`. -/
+theorem mem_fluxGroup_smul_torusVolumeForm_iff
+    {c : deRhamCohomology (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (∀ i, AddCircle (p i)) 1} :
+    c ∈ fluxGroup ⟨A • torusVolumeForm p, mem_closedForms_of_finrank_le _ (by simp) _⟩ ↔
+      ∃ m n : ℤ, c =
+        A • ((m * p 1) • deRhamCohomology.mk (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) 1
+            (torusTimeClosedForm p 0) +
+          (n * p 0) • deRhamCohomology.mk (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) 1
+            (torusTimeClosedForm p 1)) := by
+  rw [mem_fluxGroup]
+  refine ⟨fun ⟨Φ, _, hΦ₁, hc⟩ ↦ hc ▸ Φ.exists_flux_smul_torusVolumeForm_eq p A hΦ₁ _,
+    fun ⟨m, n, hc⟩ ↦ ?_⟩
+  obtain ⟨Φ, _, hslice, hΦ₁, hflux⟩ :=
+    exists_final_eq_refl_and_flux_smul_torusVolumeForm_eq p A m n
+  exact ⟨Φ, hslice, hΦ₁, hflux.trans hc.symm⟩
 
 end Area
 
