@@ -293,7 +293,8 @@ theorem mvfderiv_symmL_trivializationAt (hy : y ∈ (extChartAt I x).source)
 normed space and a compact set `L` of coordinates in the target of the extended chart at `x`, there
 is a constant `B` with `‖d f_y v‖ ≤ B ‖a‖` for every point `y` of the chart source with coordinate
 in `L` and every tangent vector `v` at `y` with coordinates `a` in the chart at `x`. -/
-theorem exists_forall_norm_mvfderiv_le_mul_norm (hf : ContMDiff I 𝓘(𝕜, F) 1 f) {L : Set E}
+theorem exists_forall_norm_mvfderiv_le_mul_norm
+    (hf : ContMDiffOn I 𝓘(𝕜, F) 1 f (extChartAt I x).source) {L : Set E}
     (hL : IsCompact L) (hLt : L ⊆ (extChartAt I x).target) :
     ∃ B, ∀ y ∈ (extChartAt I x).source, extChartAt I x y ∈ L → ∀ v : TangentSpace I y,
       ‖mvfderiv I f y v‖ ≤
@@ -301,7 +302,8 @@ theorem exists_forall_norm_mvfderiv_le_mul_norm (hf : ContMDiff I 𝓘(𝕜, F) 
   -- The derivative of the coordinate expression is continuous on the chart target.
   set g := f ∘ (extChartAt I x).symm
   have hg : ContDiffOn 𝕜 1 g (extChartAt I x).target :=
-    contMDiffOn_iff_contDiffOn.1 (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))
+    contMDiffOn_iff_contDiffOn.1
+      (hf.comp (contMDiffOn_extChartAt_symm x) fun _ hz ↦ (extChartAt I x).map_target hz)
   have hdg : ContinuousOn (fderivWithin 𝕜 g (range I)) (extChartAt I x).target :=
     (hg.continuousOn_fderivWithin (uniqueDiffOn_extChartAt_target x) le_rfl).congr fun z hz ↦
       fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin_of_mem hz)
@@ -312,7 +314,8 @@ theorem exists_forall_norm_mvfderiv_le_mul_norm (hf : ContMDiff I 𝓘(𝕜, F) 
   have hyT : y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
     rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
   conv_lhs => rw [← Bundle.Trivialization.symmL_continuousLinearMapAt (R := 𝕜) _ hyT v,
-    mvfderiv_symmL_trivializationAt hy (hf.mdifferentiableAt one_ne_zero)]
+    mvfderiv_symmL_trivializationAt hy
+      ((hf.contMDiffAt ((isOpen_extChartAt_source x).mem_nhds hy)).mdifferentiableAt one_ne_zero)]
   exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact hB _ hyL)
 
 /-- Read in a chart, a map into a normed space whose manifold derivative at `y` is injective has

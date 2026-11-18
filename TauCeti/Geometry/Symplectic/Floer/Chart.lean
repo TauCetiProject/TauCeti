@@ -218,10 +218,9 @@ theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M)
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
           ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) b)) := by
-  set T := trivializationAt E (TangentSpace I) α with hT
-  have hx : (extChartAt I α).symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      (extChartAt I α).map_target hy
+  set T := trivializationAt E (TangentSpace I) α
+  have hx : (extChartAt I α).symm y ∈ T.baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   simp only [associatedBilinFormInChartAt, comp_apply, flip_apply, compL_apply,
     ContinuousAlternatingMap.flatL_apply_apply]
   -- The coordinate expression of `ω` feeds it the vectors with the given tangent coordinates.
@@ -250,8 +249,8 @@ theorem associatedBilinFormInChartAt_extChartAt (ω : SmoothTwoForm I M)
         ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x v)
         ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x w) =
       SmoothBundleForm.eval₂ ω x v (J z x w) := by
-  have hxT : x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  have hxT : x ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hx
   have h := ω.associatedBilinFormInChartAt_apply J z ((extChartAt I α).map_source hx)
     ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x v)
     ((trivializationAt E (TangentSpace I) α).continuousLinearMapAt ℝ x w)
@@ -303,8 +302,8 @@ theorem fderiv_extChartAt_comp_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
       Floer.almostComplexInChartAt I α J (z, extChartAt I α (u z))
         (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
           ω.hamiltonianVectorFieldInChartAt α Ks (z, extChartAt I α (u z))) := by
-  have hb : u z ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  have hb : u z ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hz
   have hre := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz
     stdComplexLineReal
   have him := ω.continuousLinearMapAt_perturbedMFDeriv_apply (Ks := Ks) (Kt := Kt) hu hz

@@ -140,11 +140,10 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le
       ‖fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal‖ ^ 2 ≤
         A * ω.floerEnergyDensity Ks Kt u z + B := by
   set e := extChartAt I α
-  set T := trivializationAt E (TangentSpace I) α with hT
+  set T := trivializationAt E (TangentSpace I) α
   have hDK : IsCompact (D ×ˢ K) := hD.prod hK
-  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      e.map_target hy
+  have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `D × K`.
   set b := ω.associatedBilinFormInChartAt α J
   have hb : ∀ p ∈ D ×ˢ K, ∀ a, b p a a = SmoothBundleForm.eval₂ ω (e.symm p.2)
@@ -162,8 +161,8 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le
   refine ⟨2 / c, by positivity, 2 * B ^ 2, by positivity, fun u z hz hus huK hu h ↦ ?_⟩
   have hp : (z, e (u z)) ∈ D ×ˢ K := ⟨hz, huK⟩
   have hx : e.symm (e (u z)) = u z := e.left_inv hus
-  have hub : u z ∈ T.baseSet := by
-    simpa only [hT, TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using hus
+  have hub : u z ∈ T.baseSet :=
+    TangentBundle.mem_trivializationAt_baseSet_of_mem_extChartAt_source hus
   -- The coordinate `a` of the perturbed derivative `∂ₛu - X_{K_s}` has `c ‖a‖² ≤ e(u)`.
   set Xs := ω.hamiltonianVectorFieldInChartAt α Ks (z, e (u z)) with hXs
   set a := fderiv ℝ (e ∘ u) z stdComplexLineReal - Xs with ha
