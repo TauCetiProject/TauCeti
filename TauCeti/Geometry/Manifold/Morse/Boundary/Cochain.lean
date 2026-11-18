@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Opposite
 public import TauCeti.Algebra.Homology.Kronecker
 import TauCeti.Algebra.Category.ModuleCat.Injective.Semisimple
-import TauCeti.LinearAlgebra.Finsupp.LSum
+import TauCeti.Geometry.Manifold.Morse.Boundary.Duality
 
 /-!
 # The mod-two Morse cochain complex and duality for the opposite function
@@ -29,11 +29,13 @@ Morse indices `n - ind_f`, and the trajectories of `-X` are those of `X` run bac
 the chain of `-f` with the same values on the critical points
 (`IsMorseSmale.morseCochainToNegChain`) identifies the cochain module of `f` in degree `i` with the
 chain module of `-f` in degree `k` whenever `i + k = n`
-(`IsMorseSmale.bijective_morseCochainToNegChain`, built on the index reversal
-`TauCeti.IsMorse.criticalPointsIndexNegEquiv`), and this identification carries the Morse
-coboundary of `f` to the Morse boundary of `-f`
-(`IsMorseSmale.morseCochainToNegChain_d_comp`). Hence the Morse cohomology of `f` in degree `i` is
-isomorphic to the Morse homology of `-f` in degree `n - i`
+(`IsMorseSmale.bijective_morseCochainToNegChain`). There it inverts the identification of chains
+of `-f` with cochains of `f` of `TauCeti.Geometry.Manifold.Morse.Boundary.Duality`, built on the
+index reversal `TauCeti.IsMorse.criticalPointsIndexNegEquiv`
+(`IsMorseSmale.toDual_domLCongr_morseCochainToNegChain`), so the transposition identity
+`IsMorseSmale.toDual_comp_morseBoundaryAt_neg` shows that it carries the Morse coboundary of `f`
+to the Morse boundary of `-f` (`IsMorseSmale.morseCochainToNegChain_d_comp`). Hence the Morse
+cohomology of `f` in degree `i` is isomorphic to the Morse homology of `-f` in degree `n - i`
 (`IsMorseSmale.morseCohomologyEquivNegHomology`): the Morse complex of `-f` is the dual of the
 Morse complex of `f`, reindexed by `k ↦ n - k`. This refines the equality of dimensions
 `IsMorseSmale.finrank_homology_morseComplex_neg` of
@@ -52,6 +54,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 * `finrank_homology_morseCochainComplex`: the Morse cohomology and homology have the same
   dimension in each degree.
 * `morseCochainToNegChain`: a cochain of `f` read as a chain of `-f`.
+* `toDual_domLCongr_morseCochainToNegChain`: in complementary degrees it inverts the
+  identification of chains of `-f` with cochains of `f` of `toDual_comp_morseBoundaryAt_neg`.
 * `bijective_morseCochainToNegChain`: in complementary degrees it is an isomorphism.
 * `morseCochainToNegChain_d_comp`, `morseCochainComplex_d_comp_ofHom`: it carries the Morse
   coboundary of `f` to the Morse boundary of `-f`.
@@ -227,25 +231,41 @@ theorem morseCochainToNegChain_eq_zero {i k : ℕ} (hik : i + k ≠ finrank ℝ 
     exact absurd (by rw [← this, q.2, hq, add_comm]) hik
   · rfl
 
+/-- In complementary degrees `i + k = n`, the chain of `-f` associated with a cochain `a` of `f` of
+index `i` is sent back to `a`, with values in `ZMod 2`, by the identification of chains of `-f` with
+cochains of `f` of `IsMorseSmale.toDual_comp_morseBoundaryAt_neg`. -/
+theorem toDual_domLCongr_morseCochainToNegChain [DecidableEq (criticalPoints 𝓘(ℝ, E) f)]
+    {i k : ℕ} (hik : i + k = finrank ℝ E)
+    (a : (h.morseComplex hf).X i ⟶ ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) :
+    Finsupp.basisSingleOne.toDual (Finsupp.domLCongr (M := ZMod 2) (R := ZMod 2)
+        (hf.criticalPointsIndexNegEquiv ((add_comm k i).trans hik))
+        (h.morseCochainToNegChain hf i k a)) =
+      (ULift.moduleEquiv (R := ZMod 2) (M := ZMod 2)).toLinearMap ∘ₗ a.hom := by
+  refine Finsupp.basisSingleOne.ext fun p ↦ ?_
+  refine (Basis.toDual_apply_left _ _ _).trans ?_
+  -- The right side is the value of `a` at `p`. In the statement the source of `a` is written as
+  -- the Morse chains rather than as the term of the Morse complex, which agree by definition.
+  change _ = (a (Finsupp.single p 1)).down
+  simp [morseCochainToNegChain_apply_of_add_eq h hf hik]
+
 /-- **Cochains of `f` are chains of `-f`.** In complementary degrees `i + k = n`, reading a cochain
 of `f` of index `i` as a chain of `-f` of index `k` is an isomorphism. -/
 theorem bijective_morseCochainToNegChain {i k : ℕ} (hik : i + k = finrank ℝ E) :
     Function.Bijective (h.morseCochainToNegChain hf i k) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun a ha ↦ ?_, fun c ↦ ?_⟩
-  · -- A cochain vanishing at every critical point of index `i` is zero.
-    refine ModuleCat.hom_ext (Finsupp.lhom_ext' fun p ↦ LinearMap.ext_ring (ULift.ext ?_))
-    have := DFunLike.congr_fun ha
-      ((hf.criticalPointsIndexNegEquiv ((add_comm k i).trans hik)).symm p)
-    rwa [morseCochainToNegChain_apply_of_add_eq h hf hik, Equiv.apply_symm_apply] at this
-  · -- The cochain with the values of `c` at the critical points.
-    let a : (h.morseComplex hf).X i ⟶ ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)) :=
-      ModuleCat.ofHom (Finsupp.linearCombination (ZMod 2)
-        fun p ↦ ULift.up
-          (c ((hf.criticalPointsIndexNegEquiv ((add_comm k i).trans hik)).symm p)))
-    refine ⟨a, Finsupp.ext fun q ↦ ?_⟩
-    rw [morseCochainToNegChain_apply_of_add_eq h hf hik]
-    refine (congrArg ULift.down (ModuleCat.ofHom_apply _ _)).trans ?_
-    simp
+  classical
+  have := hf.finite_criticalPoints.to_subtype
+  -- It is the composite of the linear equivalence from cochains to linear forms with values in
+  -- `ZMod 2` and the inverse of the identification of `toDual_comp_morseBoundaryAt_neg`.
+  let e := (Finsupp.domLCongr (M := ZMod 2) (R := ZMod 2)
+    (hf.criticalPointsIndexNegEquiv ((add_comm k i).trans hik))).trans
+      Finsupp.basisSingleOne.toDualEquiv
+  let ψ : ((h.morseComplex hf).X i ⟶ ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) ≃ₗ[ZMod 2]
+      ((h.morseComplex hf).X i →ₗ[ZMod 2] ZMod 2) :=
+    ModuleCat.homLinearEquiv.trans (LinearEquiv.congrRight ULift.moduleEquiv)
+  have he : ⇑(h.morseCochainToNegChain hf i k) = e.symm ∘ ψ :=
+    funext fun a ↦ e.eq_symm_apply.2 (h.toDual_domLCongr_morseCochainToNegChain hf hik a)
+  rw [he]
+  exact e.symm.bijective.comp ψ.bijective
 
 /-- **The coboundary of `f` is the boundary of `-f`.** Reading cochains of `f` as chains of `-f`
 carries the Morse coboundary `a ↦ a ∘ ∂` of `f` from index `i` to index `i + 1` to the mod-two
@@ -255,44 +275,28 @@ theorem morseCochainToNegChain_d_comp (i k : ℕ)
     (a : (h.morseComplex hf).X i ⟶ ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2))) :
     h.morseCochainToNegChain hf (i + 1) k ((h.morseComplex hf).d (i + 1) i ≫ a) =
       (h.neg hf).morseBoundaryAt hf.neg k (h.morseCochainToNegChain hf i (k + 1) a) := by
-  have := hf.finite_criticalPoints.to_subtype
-  have := hf.neg.finite_criticalPoints.to_subtype
-  let _ := Fintype.ofFinite {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = i}
-  let _ := Fintype.ofFinite
-    {r : criticalPoints 𝓘(ℝ, E) (-f) // manifoldMorseIndex 𝓘(ℝ, E) (-f) r = k + 1}
-  ext q
-  rw [morseBoundaryAt_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
-    morseCochainToNegChain_apply]
-  split_ifs with hqi
-  · -- `q` has index `i + 1` for `f`, so the degrees `i` and `k + 1` are complementary.
-    have hik : i + (k + 1) = finrank ℝ E := by
-      have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-        (by simpa using q.1.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      have := q.2
-      omega
-    refine (congrArg ULift.down (ModuleCat.comp_apply _ _ _)).trans ?_
-    rw [morseComplex_d_apply]
-    -- Expand `a` on the basis of the chains of index `i`.
-    refine (congrArg ULift.down (a.hom.apply_eq_finsuppSum_smul _)).trans ?_
-    rw [← ULift.moduleEquiv_apply (R := ZMod 2), map_finsuppSum,
-      Finsupp.sum_fintype _ _ fun _ ↦ by simp]
-    refine Fintype.sum_equiv
-      (hf.criticalPointsIndexNegEquiv ((add_comm (k + 1) i).trans hik)).symm _ _ fun p ↦ ?_
-    -- After `simp`, both sides are the product of the value of `a` at `p` with the coefficient
-    -- `h.morseBoundaryCoeff hf q p`, in opposite orders: `ac_rfl` commutes them. The domain of
-    -- `a` is written as the Morse chains on one side and as the term of the Morse complex on the
-    -- other, which agree by definition.
-    simp [morseBoundaryAt_single_apply, morseCochainToNegChain_apply_of_add_eq h hf hik,
-      h.morseBoundaryCoeff_neg hf]
-    ac_rfl
-  · -- Otherwise no trajectory of `X` joins `q` to a critical point of index `i` for `f`.
-    refine (Finset.sum_eq_zero fun r _ ↦ ?_).symm
-    rw [morseCochainToNegChain_apply]
-    split_ifs with hri
-    · rw [h.morseBoundaryCoeff_neg hf, h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf,
-        mul_zero]
-      simpa [hri] using hqi
-    · rw [zero_mul]
+  by_cases hik : i + (k + 1) = finrank ℝ E
+  · classical
+    -- Send both sides to the cochains of `f` of index `i + 1`, where the boundary of `-f` is the
+    -- dual map of the boundary of `f` (`toDual_comp_morseBoundaryAt_neg`).
+    refine (Finsupp.domLCongr (M := ZMod 2) (R := ZMod 2)
+      (hf.criticalPointsIndexNegEquiv (j := k) (k := i + 1) (by omega))).injective
+      (Finsupp.basisSingleOne.toDual_injective ?_)
+    have key := LinearMap.congr_fun (h.toDual_comp_morseBoundaryAt_neg hf (j := k) (n := i)
+      (by omega)) (h.morseCochainToNegChain hf i (k + 1) a)
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at key
+    rw [key, h.toDual_domLCongr_morseCochainToNegChain hf (by omega),
+      h.toDual_domLCongr_morseCochainToNegChain hf (by omega)]
+    refine LinearMap.ext fun c ↦ ?_
+    -- Both sides are the value of `a` on the boundary of `c`; as in
+    -- `toDual_domLCongr_morseCochainToNegChain`, the source of `a` is written in two ways that
+    -- agree by definition.
+    change (((h.morseComplex hf).d (i + 1) i ≫ a) c).down = (a (h.morseBoundaryAt hf i c)).down
+    rw [ModuleCat.comp_apply]
+    exact congrArg (fun x ↦ (a x).down) (h.morseComplex_d_apply hf i c)
+  · -- Outside complementary degrees both sides vanish.
+    rw [h.morseCochainToNegChain_eq_zero hf (by omega), h.morseCochainToNegChain_eq_zero hf hik,
+      LinearMap.zero_apply, LinearMap.zero_apply, map_zero]
 
 /-- **Reading cochains of `f` as chains of `-f` commutes with the differentials.** It intertwines
 the coboundary of the Morse cochain complex of `f` from index `i` to index `i + 1` with the
