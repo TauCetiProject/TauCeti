@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -94,6 +96,24 @@ theorem locallyIntegrable_log_norm_pow {E : Type*} [NormedAddCommGroup E] [Norme
   calc |Real.log ‖x‖| ^ k ≤ (‖x‖ ^ (-ε) / ε + ‖x‖) ^ k := pow_le_pow_left₀ (abs_nonneg _) hlog k
     _ ≤ 2 ^ (k - 1) * ((‖x‖ ^ (-ε) / ε) ^ k + ‖x‖ ^ k) := add_pow_le (by positivity) hx k
     _ = _ := by rw [hrpow]; ring
+
+/-- The singular part of the logarithmic kernel is square integrable over the whole space.
+It is supported on the closed unit ball. -/
+theorem memLp_two_posLog_inv_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] : MemLp (fun z : E ↦ Real.posLog ‖z‖⁻¹) 2 μ := by
+  apply (memLp_two_iff_integrable_sq (by fun_prop)).2
+  have hloc := locallyIntegrable_log_norm_pow (E := E) (μ := μ) 2
+  have h := hloc.integrableOn_isCompact (isCompact_closedBall 0 1)
+  rw [← integrable_indicator_iff measurableSet_closedBall] at h
+  convert h using 1
+  funext z
+  rw [Real.posLog_apply, Real.log_inv]
+  by_cases hz : ‖z‖ ≤ 1
+  · rw [Set.indicator_of_mem (by simpa [Metric.mem_closedBall, dist_zero_right] using hz),
+      max_eq_right (neg_nonneg.mpr (Real.log_nonpos (norm_nonneg z) hz)), neg_sq]
+  · rw [Set.indicator_of_notMem (by simpa [Metric.mem_closedBall, dist_zero_right] using hz),
+      max_eq_left (neg_nonpos.mpr (Real.log_nonneg (le_of_not_ge hz))), zero_pow (by decide)]
 
 /-- On a finite-dimensional real normed space with an additive Haar measure, `x ↦ log ‖x‖` is
 locally integrable. -/
