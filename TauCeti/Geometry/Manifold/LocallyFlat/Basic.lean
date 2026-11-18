@@ -513,9 +513,11 @@ variable {f : N → M}
 
 namespace IsSliceEmbedding
 
+/-- A slice embedding is continuous. -/
 theorem continuous (h : IsSliceEmbedding S f) : Continuous f :=
   h.isEmbedding.continuous
 
+/-- A slice embedding is injective. -/
 theorem injective (h : IsSliceEmbedding S f) : Function.Injective f :=
   h.isEmbedding.injective
 
@@ -690,6 +692,7 @@ variable [Zero F']
 
 namespace IsLocallyFlat
 
+/-- A locally flat embedding is in particular a topological embedding. -/
 theorem isEmbedding (h : IsLocallyFlat F F' f) : IsEmbedding f :=
   IsSliceEmbedding.isEmbedding h
 
@@ -701,9 +704,11 @@ theorem exists_isSliceChart (h : IsLocallyFlat F F' f) (x : N) :
       IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) (range f) :=
   IsSliceEmbedding.exists_isSliceChart h x
 
+/-- A locally flat embedding is continuous. -/
 theorem continuous (h : IsLocallyFlat F F' f) : Continuous f :=
   h.isEmbedding.continuous
 
+/-- A locally flat embedding is injective. -/
 theorem injective (h : IsLocallyFlat F F' f) : Function.Injective f :=
   h.isEmbedding.injective
 
