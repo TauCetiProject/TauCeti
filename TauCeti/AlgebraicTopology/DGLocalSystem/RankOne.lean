@@ -367,6 +367,13 @@ theorem monodromy_fundamentalGroupHom (γ : MooreLoopSpace B b) :
     L.monodromy (MooreLoopSpace.fundamentalGroupHom b γ) = (L.ρ γ)⁻¹ := by
   rw [← monodromy_fundamentalGroupHom_inv, map_inv, inv_inv]
 
+/-- The monodromy of the fundamental-group class of the path underlying a Moore loop `γ` is the
+unit by which `γ` acts. This is `monodromy_fundamentalGroupHom_inv` in simp normal form. -/
+@[simp]
+theorem monodromy_fromPath_mk_toPath (γ : MooreLoopSpace B b) :
+    L.monodromy (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ.toPath)) = L.ρ γ := by
+  simpa using L.monodromy_fundamentalGroupHom_inv γ
+
 /-- The monodromy of a product is the product of the monodromies. -/
 @[simp]
 theorem monodromy_mul (L L' : RankOneLocalSystem B b R) :
@@ -390,18 +397,18 @@ def ofMonodromy (χ : FundamentalGroup B b →* Rˣ) : RankOneLocalSystem B b R 
 
 @[simp]
 theorem ofMonodromy_ρ_apply (χ : FundamentalGroup B b →* Rˣ) (γ : MooreLoopSpace B b) :
-    (ofMonodromy χ).ρ γ = χ (MooreLoopSpace.fundamentalGroupHom b γ)⁻¹ := by
-  rw [ofMonodromy, MonoidHom.inv_apply, MonoidHom.comp_apply, map_inv]
+    (ofMonodromy χ).ρ γ = (χ (MooreLoopSpace.fundamentalGroupHom b γ))⁻¹ :=
+  (rfl)
 
 @[simp]
 theorem monodromy_ofMonodromy (χ : FundamentalGroup B b →* Rˣ) : (ofMonodromy χ).monodromy = χ :=
   MooreLoopSpace.fundamentalGroup_hom_ext fun γ ↦ by
-    simp only [monodromy_fundamentalGroupHom, ofMonodromy_ρ_apply, map_inv, inv_inv]
+    simp only [monodromy_fundamentalGroupHom, ofMonodromy_ρ_apply, inv_inv]
 
 @[simp]
 theorem ofMonodromy_monodromy : ofMonodromy L.monodromy = L :=
   ext <| MonoidHom.ext fun γ ↦ by
-    rw [ofMonodromy_ρ_apply, monodromy_fundamentalGroupHom_inv]
+    rw [ofMonodromy_ρ_apply, monodromy_fundamentalGroupHom, inv_inv]
 
 /-- **Rank-one local systems are the characters of the fundamental group**: the monodromy is an
 isomorphism of groups onto `FundamentalGroup B b →* Rˣ`, with inverse `ofMonodromy`. -/
@@ -480,11 +487,10 @@ theorem monodromy_pullback (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSyste
 /-- **The twist is natural in the space**: `C_*(Ωf) ∘ Φ^{f^* L} = Φ^L ∘ C_*(Ωf)`. -/
 theorem loopChainMap_comp_twist_pullback (f : C(B, B')) (hf : f b = b')
     (L : RankOneLocalSystem B' b' R) :
-    (loopChainMap R f hf).comp (pullback f hf L).twist = L.twist.comp (loopChainMap R f hf) :=
-  cubicalChain_dgAlgHom_ext fun n y ↦ by
-    simpa [twist, pullback_character] using
-      DFunLike.congr_fun (cubicalChainDGAlgHom_comp_cubicalChainTwist (R := R)
-        (MooreLoopSpace.map f hf) L.character_eq_of_joined) (cubicalChainLof _ R n y)
+    (loopChainMap R f hf).comp (pullback f hf L).twist = L.twist.comp (loopChainMap R f hf) := by
+  rw [loopChainMap_eq]
+  exact cubicalChainDGAlgHom_comp_cubicalChainTwist (MooreLoopSpace.map f hf)
+    L.character_eq_of_joined
 
 /-- **Pulling back commutes with tensoring**: `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`. -/
 def tensorPullbackIso (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R) :
