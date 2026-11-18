@@ -20,7 +20,9 @@ product. No Hausdorff or countability assumptions are needed.
 
 The tangent-image formulas also apply when neither map is a submersion. In them the
 explicit `tangentSpaceCast` identifies the two target tangent spaces at a pair with
-`f x = g y`.
+`f x = g y`. Conversely, any `C^n` submersion (`n ≠ 0`) in either factor automatically supplies
+transversality (`TauCeti.transverse_of_isSubmersion_right`,
+`TauCeti.transverse_of_isSubmersion_left`).
 
 ## References
 
@@ -44,7 +46,33 @@ variable {EX HX X EY HY Y EN HN N : Type*}
   [TopologicalSpace X] [ChartedSpace HX X]
   [TopologicalSpace Y] [ChartedSpace HY Y]
   [TopologicalSpace N] [ChartedSpace HN N]
-  {n : ℕ∞ω} [IsManifold IX n X] [IsManifold IY n Y] [IsManifold IN n N]
+  {n : ℕ∞ω}
+
+/-- Every map in the first factor is transverse to a `C^n` submersion (`n ≠ 0`) in the second
+factor, because the second differential is surjective. -/
+theorem transverse_of_isSubmersion_right (f : X → N) {g : Y → N}
+    (hg : Manifold.IsSubmersion IY IN n g) (hn : n ≠ 0) (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hs := (tangentSpaceCast IN (g p.2) (f p.1)).surjective.comp
+    (hg.surjective_mfderiv hn p.2)
+  have hr : (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+      (mfderiv IY IN g p.2)).range = ⊤ := LinearMap.range_eq_top.2 hs
+  rw [hr, sup_top_eq]
+
+/-- A `C^n` submersion (`n ≠ 0`) in the first factor is transverse to every map in the second
+factor, because the first differential is surjective. -/
+theorem transverse_of_isSubmersion_left {f : X → N}
+    (hf : Manifold.IsSubmersion IX IN n f) (hn : n ≠ 0) (g : Y → N) (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hr : (mfderiv IX IN f p.1).range = ⊤ :=
+    LinearMap.range_eq_top.2 (hf.surjective_mfderiv hn p.1)
+  rw [hr, top_sup_eq]
+
+variable [IsManifold IX n X] [IsManifold IY n Y] [IsManifold IN n N]
   [IX.Boundaryless] [IY.Boundaryless] [IN.Boundaryless]
   [FiniteDimensional ℝ EX] [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EN]
   {f : X → N} {g : Y → N}
