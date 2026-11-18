@@ -42,32 +42,25 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
 
-/-- If the renewal-function increment over a window of length `x` tends to zero,
-the probability of an excess at most `x` tends to zero. No finite-mean assumption
-is needed, and genuine zero-time arrivals are allowed. -/
+/-- For i.i.d. nonnegative increments with `P {ω | T 0 ω = 0} < 1`, if the renewal-function
+increment over a window of length `x` tends to zero, then the probability of an excess at most `x`
+tends to zero. No finite-mean or strict increment-measurability assumption is needed, and genuine
+zero-time arrivals are allowed. -/
 theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) (x : ℝ≥0)
     (hlim : Tendsto (fun t ↦ ((P.map (T 0)).renewalFunction (t + x)).toReal -
       ((P.map (T 0)).renewalFunction t).toReal) atTop (𝓝 0)) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
-  obtain ⟨T', hT', hT'_ae, hindep', hid', hT'_id⟩ :=
-    hindep.exists_measurable_ae_eq_of_identDistrib hid
-  have hzero' : P {ω | T' 0 ω = 0} < 1 :=
-    ((hT'_id 0).measure_mem_eq (measurableSet_singleton 0)).trans_lt hzero
-  have heq (t : ℝ≥0) : P.real {ω | renewalExcess T t ω ≤ x} =
-      P.real {ω | renewalExcess T' t ω ≤ x} :=
-    measureReal_congr <| eventuallyEqSet_iff.2 <| by
-      filter_upwards [renewalExcess_congr_ae hT'_ae] with ω hω
-      simp [hω t]
-  simp_rw [heq]
+  have hF : (P.map (T 0)) {0} < 1 := by
+    rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   exact squeeze_zero (fun _ ↦ measureReal_nonneg)
-    (fun t ↦ (hT'_id 0).map_eq ▸ measureReal_renewalExcess_le_le_renewalFunction_sub
-      hT' hindep' hid' hzero' t x) hlim
+    (fun t ↦ measureReal_renewalExcess_le_le_renewalFunction_sub hindep hid hF t x) hlim
 
-/-- Vanishing successive renewal increments on one positive grid imply excess escape
-at all real observation times, for every bounded excess threshold. The increment
-hypothesis is exactly the zero-rate lattice Blackwell limit. -/
+/-- For i.i.d. nonnegative increments with `P {ω | T 0 ω = 0} < 1`, vanishing successive renewal
+increments on one positive grid imply excess escape at all real observation times, for every
+bounded excess threshold. The increment hypothesis is exactly the zero-rate lattice Blackwell
+limit. -/
 theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub_lattice
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hzero : P {ω | T 0 ω = 0} < 1) {a : ℝ≥0} (ha : 0 < a)
@@ -109,13 +102,7 @@ theorem tendsto_measureReal_lt_renewalExcess_of_mean_eq_top
   have := hindep.isProbabilityMeasure
   have he (t : ℝ≥0) : P.real {ω | x < renewalExcess T t ω} =
       1 - P.real {ω | renewalExcess T t ω ≤ x} := by
-    have hs : NullMeasurableSet {ω | renewalExcess T t ω ≤ x} P :=
-      (aemeasurable_renewalExcess (fun n ↦ (hid n).aemeasurable_fst) t).nullMeasurable
-        measurableSet_Iic
-    have hcompl : {ω | x < renewalExcess T t ω} = {ω | renewalExcess T t ω ≤ x}ᶜ := by
-      ext ω
-      simp
-    rw [hcompl, measureReal_compl₀ hs, probReal_univ]
+    linarith [measureReal_renewalExcess_le_eq_one_sub (fun n ↦ (hid n).aemeasurable_fst) t x]
   simp_rw [he]
   simpa only [sub_zero] using tendsto_const_nhds.sub
     (tendsto_measureReal_renewalExcess_le_of_mean_eq_top hindep hid hmean x)
