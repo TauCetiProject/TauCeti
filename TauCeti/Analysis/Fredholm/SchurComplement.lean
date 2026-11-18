@@ -19,9 +19,7 @@ Fredholm exactly when `S` is (`ContinuousLinearEquiv.isFredholm_coprod_prod_copr
 then the two indices agree (`ContinuousLinearEquiv.index_coprod_prod_coprod`).
 
 This is how the Fredholm theory of an operator with an invertible *fast* block is reduced to that
-of its *slow* Schur complement. For instance, when `E₂` and `F₂` are finite-dimensional, deciding
-whether `M` is Fredholm, and computing its index, is a question about the map `S` between
-finite-dimensional spaces.
+of its *slow* Schur complement.
 -/
 
 public section
