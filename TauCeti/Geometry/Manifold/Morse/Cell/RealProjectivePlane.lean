@@ -461,12 +461,8 @@ private theorem addLast_apply (w : Fin 2 → ℝ) : addLast w = ![w 0, w 1, 0] :
   · exact (Fin.castSucc_injective 2).extend_apply w 0 1
   · exact Function.extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ (Fin.castSucc_lt_last a).ne ha
 
-private theorem addLast_injective : Function.Injective addLast := fun w w' h ↦ by
-  rw [addLast_apply, addLast_apply] at h
-  ext i
-  fin_cases i
-  · exact congrFun h 0
-  · exact congrFun h 1
+private theorem addLast_injective : Function.Injective addLast :=
+  Function.extend_injective (Fin.castSucc_injective 2) 0
 
 private theorem dropLast_addLast (w : Fin 2 → ℝ) : dropLast (addLast w) = w := by
   rw [addLast_apply, dropLast_apply]
