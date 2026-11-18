@@ -37,8 +37,6 @@ motions that move a point of a manifold continuously to every nearby point.
   `K`-Lipschitz with `K < 1` makes `x ↦ x + u x` a homeomorphism, and a `C^n` diffeomorphism when
   `u` is `C^n`; `LipschitzWith.hasFDerivAt_idAddHomeomorph_symm` gives the derivative of the
   inverse.
-* `ContDiff.exists_diffeomorph_apply_eq_add_of_lipschitzWith`: the same diffeomorphism as an
-  existence statement.
 * `ContDiff.exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le`: a uniformly small derivative
   error supplies a global diffeomorphism over a real-like scalar field.
 * `TauCeti.exists_diffeomorph_family_apply_eq_add`: a jointly smooth family of diffeomorphisms of
@@ -165,17 +163,6 @@ end LipschitzWith
 
 namespace ContDiff
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [CompleteSpace E]
-
-/-- **A Lipschitz-small perturbation of the identity is a diffeomorphism.** If `u : E → E` is
-`C^n`, `1 ≤ n`, and `K`-Lipschitz with `K < 1`, on a Banach space `E`, then `x ↦ x + u x` is a
-`C^n` diffeomorphism of `E` (`LipschitzWith.idAddDiffeomorph`). -/
-theorem exists_diffeomorph_apply_eq_add_of_lipschitzWith {n : WithTop ℕ∞} {u : E → E}
-    (hu : ContDiff 𝕜 n u) (hn : 1 ≤ n) {K : ℝ≥0} (hlip : LipschitzWith K u) (hK : K < 1) :
-    ∃ φ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E, ∀ x, φ x = x + u x :=
-  ⟨hlip.idAddDiffeomorph hK hu hn, fun _ ↦ rfl⟩
-
 /-- A map whose derivative is uniformly within a constant less than one of the identity
 is a global diffeomorphism. -/
 theorem exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le {𝕜 : Type*}
@@ -191,8 +178,8 @@ theorem exists_diffeomorph_apply_eq_of_norm_fderiv_sub_id_le {𝕜 : Type*}
     lipschitzWith_of_nnNorm_fderiv_le (hd.sub differentiable_id) fun x ↦ by
       rw [fderiv_fun_sub (hd x) differentiableAt_fun_id, fderiv_fun_id]
       exact_mod_cast hclose x
-  obtain ⟨e, he⟩ := hu.exists_diffeomorph_apply_eq_add_of_lipschitzWith hn hlip hc
-  exact ⟨e, fun x ↦ by simpa only [id_eq, add_sub_cancel] using he x⟩
+  exact ⟨hlip.idAddDiffeomorph hc hu hn, fun x ↦ by
+    simp only [LipschitzWith.coe_idAddDiffeomorph, add_sub_cancel]⟩
 
 end ContDiff
 
@@ -240,10 +227,9 @@ theorem exists_diffeomorph_family_apply_eq_add (c : E) {r : ℝ} (hr : 0 < r) {n
     · rw [← NNReal.coe_lt_coe, NNReal.coe_mul, coe_nnNorm, NNReal.coe_one]
       exact (mul_le_mul_of_nonneg_left h.le L.coe_nonneg).trans_lt hLB
     · simp [h]
-  have hτ (d : E) := ContDiff.exists_diffeomorph_apply_eq_add_of_lipschitzWith
-    (u := fun p ↦ ρ p • κ d) (n := n) (ρ.contDiff.smul contDiff_const) (by exact_mod_cast hn)
-    (hlip d) (hlt d)
-  choose τ hτ using hτ
+  let τ (d : E) : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E :=
+    (hlip d).idAddDiffeomorph (hlt d) (ρ.contDiff.smul contDiff_const) (by exact_mod_cast hn)
+  have hτ (d p : E) : τ d p = p + ρ p • κ d := rfl
   refine ⟨B / 2, by positivity, τ, ?_, fun d p hp ↦ ?_, ?_, fun d hd ↦ ?_⟩
   · simp only [hτ]
     exact contDiff_snd.add ((ρ.contDiff.comp contDiff_snd).smul

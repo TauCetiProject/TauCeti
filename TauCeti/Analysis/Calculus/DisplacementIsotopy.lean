@@ -201,34 +201,6 @@ theorem displacementIsotopyHomeomorph_symm_apply_of_apply_eq
   rw [Homeomorph.symm_apply_eq, coe_displacementIsotopyHomeomorph,
     displacementIsotopy_apply_of_apply_eq hy]
 
-omit [CompleteSpace E] in
-/-- The absorption estimate behind the inverse: a slice moves points apart by at least the
-factor `1 - c`, up to a change of the parameter which costs `|ρ τ - ρ τ'|` times the
-displacement. -/
-private theorem one_sub_mul_norm_sub_le (hu : LipschitzWith c fun z ↦ h z - z)
-    {τ τ' : ℝ} (hτ : |ρ τ| ≤ 1) (w w' : E) :
-    (1 - c) * ‖w - w'‖ ≤ ‖displacementIsotopy h ρ τ w - displacementIsotopy h ρ τ' w'‖ +
-      |ρ τ - ρ τ'| * ‖h w' - w'‖ := by
-  have hsplit : w - w' = (displacementIsotopy h ρ τ w - displacementIsotopy h ρ τ' w') -
-      ρ τ • ((h w - w) - (h w' - w')) - (ρ τ - ρ τ') • (h w' - w') := by
-    simp only [displacementIsotopy_apply, smul_sub, sub_smul]
-    abel
-  have hlip : ‖ρ τ • ((h w - w) - (h w' - w'))‖ ≤ c * ‖w - w'‖ := by
-    rw [norm_smul, Real.norm_eq_abs]
-    calc |ρ τ| * ‖(h w - w) - (h w' - w')‖ ≤ 1 * (c * ‖w - w'‖) :=
-          mul_le_mul hτ (hu.norm_sub_le w w') (norm_nonneg _) zero_le_one
-      _ = c * ‖w - w'‖ := one_mul _
-  have hle : ‖w - w'‖ ≤ ‖displacementIsotopy h ρ τ w - displacementIsotopy h ρ τ' w'‖ +
-      c * ‖w - w'‖ + |ρ τ - ρ τ'| * ‖h w' - w'‖ := by
-    calc ‖w - w'‖ ≤ ‖displacementIsotopy h ρ τ w - displacementIsotopy h ρ τ' w'‖ +
-          ‖ρ τ • ((h w - w) - (h w' - w'))‖ + ‖(ρ τ - ρ τ') • (h w' - w')‖ := by
-          rw [hsplit]
-          exact (norm_sub_le _ _).trans (add_le_add_left (norm_sub_le _ _) _)
-      _ ≤ _ := by
-          rw [norm_smul (ρ τ - ρ τ'), Real.norm_eq_abs]
-          gcongr
-  linarith
-
 /-- **The inverse of a slice is `(1 - c)⁻¹`-Lipschitz.** -/
 theorem lipschitzWith_displacementIsotopyHomeomorph_symm (hu : LipschitzWith c fun z ↦ h z - z)
     (hc : c < 1) (τ : ℝ) (hτ : |ρ τ| ≤ 1) :
@@ -316,23 +288,31 @@ private theorem continuous_displacementIsotopyHomeomorph_symm
     (hρc : Continuous ρ) :
     Continuous fun p : ℝ × E ↦ (displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).symm p.2 := by
   set ψ := fun p : ℝ × E ↦ (displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).symm p.2
-  have hc' : (0 : ℝ) < 1 - c := sub_pos.2 (by exact_mod_cast hc)
   have hψ : ∀ p, displacementIsotopy h ρ p.1 (ψ p) = p.2 := fun p ↦ by
     rw [← coe_displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)]
     exact (displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).apply_symm_apply p.2
-  -- `(1 - c) ‖ψ p - ψ p₀‖ ≤ ‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| ‖h (ψ p₀) - ψ p₀‖`, whose right side
-  -- tends to zero at `p₀`.
+  -- `‖ψ p - ψ p₀‖ ≤ (1 - c)⁻¹ (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| ‖h (ψ p₀) - ψ p₀‖)`, by the
+  -- antilipschitz bound for the slice at `p.1`; the right side tends to zero at `p₀`.
   refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
   rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
   have hbound : ∀ p : ℝ × E, ‖ψ p - ψ p₀‖ ≤
-      (1 - (c : ℝ))⁻¹ * (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| * ‖h (ψ p₀) - ψ p₀‖) := fun p ↦ by
-    have key := one_sub_mul_norm_sub_le hu (hρ p.1) (τ' := p₀.1) (ψ p) (ψ p₀)
-    rw [hψ, hψ] at key
-    rw [← div_eq_inv_mul, le_div_iff₀ hc', mul_comm]
-    exact key
+      ((1 - c)⁻¹ : ℝ≥0) * (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| * ‖h (ψ p₀) - ψ p₀‖) := fun p ↦ by
+    have hp₀ : displacementIsotopy h ρ p.1 (ψ p₀) =
+        p₀.2 + (ρ p.1 - ρ p₀.1) • (h (ψ p₀) - ψ p₀) := by
+      rw [displacementIsotopy_apply, ← hψ p₀, displacementIsotopy_apply]
+      module
+    calc ‖ψ p - ψ p₀‖ = dist (ψ p) (ψ p₀) := (dist_eq_norm _ _).symm
+      _ ≤ ((1 - c)⁻¹ : ℝ≥0) *
+          dist (displacementIsotopy h ρ p.1 (ψ p)) (displacementIsotopy h ρ p.1 (ψ p₀)) :=
+        (antilipschitzWith_displacementIsotopy hu hc (hρ p.1)).le_mul_dist _ _
+      _ ≤ _ := by
+        rw [hψ, hp₀, dist_eq_norm, sub_add_eq_sub_sub]
+        gcongr
+        refine (norm_sub_le _ _).trans_eq ?_
+        rw [norm_smul, Real.norm_eq_abs]
   refine squeeze_zero (fun _ ↦ norm_nonneg _) hbound ?_
   have hcont : Continuous fun p : ℝ × E ↦
-      (1 - (c : ℝ))⁻¹ * (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| * ‖h (ψ p₀) - ψ p₀‖) := by
+      ((1 - c)⁻¹ : ℝ≥0) * (‖p.2 - p₀.2‖ + |ρ p.1 - ρ p₀.1| * ‖h (ψ p₀) - ψ p₀‖) := by
     fun_prop
   simpa using hcont.tendsto p₀
 
@@ -346,15 +326,11 @@ def displacementIsotopyTotalHomeomorph (hu : LipschitzWith c fun z ↦ h z - z) 
   left_inv p := by
     ext
     · rfl
-    · change (displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).symm
-        (displacementIsotopy h ρ p.1 p.2) = p.2
-      rw [Homeomorph.symm_apply_eq, coe_displacementIsotopyHomeomorph]
+    · simp [Homeomorph.symm_apply_eq]
   right_inv p := by
     ext
     · rfl
-    · change displacementIsotopy h ρ p.1
-        ((displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)).symm p.2) = p.2
-      rw [← coe_displacementIsotopyHomeomorph hu hc p.1 (hρ p.1), Homeomorph.apply_symm_apply]
+    · simp [← coe_displacementIsotopyHomeomorph hu hc p.1 (hρ p.1)]
   continuous_toFun := by
     have hh : Continuous h :=
       (hu.continuous.add continuous_id).congr fun z ↦ sub_add_cancel (h z) z
@@ -395,13 +371,7 @@ private theorem hasFDerivAt_displacementIsotopyTotal (hu : LipschitzWith c fun z
     ((hh p.2).hasFDerivAt.sub (hasFDerivAt_id p.2)).comp p hasFDerivAt_snd
   refine (hasFDerivAt_fst.prodMk (hasFDerivAt_snd.add (hρp.smul hhp))).congr_fderiv
     (ContinuousLinearMap.ext fun q ↦ Prod.ext rfl ?_)
-  simp only [ContinuousLinearMap.prod_apply, add_apply, smul_apply, sub_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst',
-    ContinuousLinearMap.coe_snd', ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.toSpanSingleton_apply,
-    ContinuousLinearMap.id_apply, smul_eq_mul, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.skewProd_apply, ContinuousLinearEquiv.refl_apply,
-    displacementIsotopyFDerivEquiv_apply hu hc p.1 (hρ p.1) (hh p.2)]
+  simp [displacementIsotopyFDerivEquiv_apply hu hc p.1 (hρ p.1) (hh p.2)]
   module
 
 /-- **The inverse of the total map is `C^n`** when `h` and `ρ` are `C^n`, `1 ≤ n`. -/
