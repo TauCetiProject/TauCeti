@@ -45,12 +45,12 @@ estimated term by term by
 
 ## Main declarations
 
-* `TauCeti.CkHolderSpace.compL`: precomposition by `φ` as a bounded linear operator
+* `TauCeti.CkHolderSpace.compOfFDerivL`: precomposition by `φ` as a bounded linear operator
   `C_b^{k+1,α}(E', F) →L[ℝ] C_b^{k+1,α}(E, F)`.
-* `TauCeti.CkHolderSpace.compL_apply`: its values are `g (φ x)`.
-* `TauCeti.CkHolderSpace.norm_compL_le`: the operator norm bound.
-* `TauCeti.CkHolderSpace.compCLE`: precomposition by a bijection `φ` such that `φ` and `φ⁻¹` both
-  have derivatives in `C_b^{k,α}`, as an isomorphism of bounded Hölder spaces.
+* `TauCeti.CkHolderSpace.compOfFDerivL_apply`: its values are `g (φ x)`.
+* `TauCeti.CkHolderSpace.norm_compOfFDerivL_le`: the operator norm bound.
+* `TauCeti.CkHolderSpace.compOfFDerivCLE`: precomposition by a bijection `φ` such that `φ` and
+  `φ⁻¹` both have derivatives in `C_b^{k,α}`, as an isomorphism of bounded Hölder spaces.
 
 ## References
 
@@ -276,8 +276,8 @@ private theorem norm_comp_le (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ
 /-- **Precomposition by a `C^{k+1,α}` map.** Let `0 ≤ α ≤ 1` and let `φ : E → E'` be
 differentiable with derivative `Dφ = ψ` a bounded `C^{k,α}` map. Then `g ↦ g ∘ φ` is a bounded
 linear operator from `C_b^{k+1,α}(E', F)` to `C_b^{k+1,α}(E, F)`; its norm is bounded in
-`norm_compL_le`. The map `φ` need not be bounded. -/
-def compL (hα : α ≤ 1) (φ : E → E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
+`norm_compOfFDerivL_le`. The map `φ` need not be bounded. -/
+def compOfFDerivL (hα : α ≤ 1) (φ : E → E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
     (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ) :
     CkHolderSpace (k + 1) α E' F →L[ℝ] CkHolderSpace (k + 1) α E F :=
   LinearMap.mkContinuous
@@ -286,23 +286,23 @@ def compL (hα : α ≤ 1) (φ : E → E') (ψ : CkHolderSpace k α E (E →L[�
       map_smul' c g := ext fun x ↦ by simp [coe_comp, coe_smul] }
     _ (norm_comp_le hα hφ hψ)
 
-/-- The values of the precomposition `compL … g` are `g (φ x)`. -/
+/-- The values of the precomposition `compOfFDerivL … g` are `g (φ x)`. -/
 @[simp]
-theorem compL_apply (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ)
-    (g : CkHolderSpace (k + 1) α E' F) (x : E) : compL hα φ ψ hφ hψ g x = g (φ x) :=
+theorem compOfFDerivL_apply (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ)
+    (g : CkHolderSpace (k + 1) α E' F) (x : E) : compOfFDerivL hα φ ψ hφ hψ g x = g (φ x) :=
   congrFun (coe_comp hα hφ hψ g) x
 
 @[simp]
-theorem coe_compL (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ)
-    (g : CkHolderSpace (k + 1) α E' F) : ⇑(compL hα φ ψ hφ hψ g) = g ∘ φ :=
-  funext (compL_apply hα hφ hψ g)
+theorem coe_compOfFDerivL (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ)
+    (g : CkHolderSpace (k + 1) α E' F) : ⇑(compOfFDerivL hα φ ψ hφ hψ g) = g ∘ φ :=
+  funext (compOfFDerivL_apply hα hφ hψ g)
 
 /-- **The chain rule bound in bounded Hölder spaces.** Precomposition by `φ` multiplies the
 `C^{k+1,α}` norm by at most `((k + 2)! + 3 (k + 2) N) max(1, ‖Dφ‖)^(k + 2)`, where `N` is the
 number of ordered partitions of a set of `k + 1` elements and `‖Dφ‖` is the `C^{k,α}` norm of the
 derivative `Dφ = ψ`. -/
-theorem norm_compL_le (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ) :
-    ‖compL (F := F) hα φ ψ hφ hψ‖ ≤
+theorem norm_compOfFDerivL_le (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ) :
+    ‖compOfFDerivL (F := F) hα φ ψ hφ hψ‖ ≤
       ((k + 2).factorial + 3 * (k + 2) * Fintype.card (OrderedFinpartition (k + 1))) *
         max 1 ‖ψ‖ ^ (k + 2) :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_comp_le hα hφ hψ)
@@ -311,31 +311,31 @@ theorem norm_compL_le (hα : α ≤ 1) (hφ : Differentiable ℝ φ) (hψ : fder
 be a bijection such that `φ` and `φ.symm` are differentiable with derivatives `ψ` and `ψ'` that
 are bounded `C^{k,α}` maps. Then precomposition by `φ` is an isomorphism
 `C_b^{k+1,α}(E', F) ≃L[ℝ] C_b^{k+1,α}(E, F)`, with inverse precomposition by `φ.symm`. -/
-def compCLE (hα : α ≤ 1) (φ : E ≃ E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
+def compOfFDerivCLE (hα : α ≤ 1) (φ : E ≃ E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
     (ψ' : CkHolderSpace k α E' (E' →L[ℝ] E)) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ)
     (hφ' : Differentiable ℝ φ.symm) (hψ' : fderiv ℝ φ.symm = ψ') :
     CkHolderSpace (k + 1) α E' F ≃L[ℝ] CkHolderSpace (k + 1) α E F :=
-  { compL hα φ ψ hφ hψ with
-    invFun := compL hα φ.symm ψ' hφ' hψ'
+  { compOfFDerivL hα φ ψ hφ hψ with
+    invFun := compOfFDerivL hα φ.symm ψ' hφ' hψ'
     left_inv g := ext fun x ↦ by simp
     right_inv g := ext fun x ↦ by simp
-    continuous_toFun := (compL hα φ ψ hφ hψ).continuous
-    continuous_invFun := (compL hα φ.symm ψ' hφ' hψ').continuous }
+    continuous_toFun := (compOfFDerivL hα φ ψ hφ hψ).continuous
+    continuous_invFun := (compOfFDerivL hα φ.symm ψ' hφ' hψ').continuous }
 
 @[simp]
-theorem compCLE_apply (hα : α ≤ 1) (φ : E ≃ E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
+theorem compOfFDerivCLE_apply (hα : α ≤ 1) (φ : E ≃ E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
     (ψ' : CkHolderSpace k α E' (E' →L[ℝ] E)) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ)
     (hφ' : Differentiable ℝ φ.symm) (hψ' : fderiv ℝ φ.symm = ψ')
     (g : CkHolderSpace (k + 1) α E' F) :
-    compCLE hα φ ψ ψ' hφ hψ hφ' hψ' g = compL hα φ ψ hφ hψ g :=
+    compOfFDerivCLE hα φ ψ ψ' hφ hψ hφ' hψ' g = compOfFDerivL hα φ ψ hφ hψ g :=
   (rfl)
 
 @[simp]
-theorem compCLE_symm_apply (hα : α ≤ 1) (φ : E ≃ E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
+theorem compOfFDerivCLE_symm_apply (hα : α ≤ 1) (φ : E ≃ E') (ψ : CkHolderSpace k α E (E →L[ℝ] E'))
     (ψ' : CkHolderSpace k α E' (E' →L[ℝ] E)) (hφ : Differentiable ℝ φ) (hψ : fderiv ℝ φ = ψ)
     (hφ' : Differentiable ℝ φ.symm) (hψ' : fderiv ℝ φ.symm = ψ')
     (g : CkHolderSpace (k + 1) α E F) :
-    (compCLE hα φ ψ ψ' hφ hψ hφ' hψ').symm g = compL hα φ.symm ψ' hφ' hψ' g :=
+    (compOfFDerivCLE hα φ ψ ψ' hφ hψ hφ' hψ').symm g = compOfFDerivL hα φ.symm ψ' hφ' hψ' g :=
   (rfl)
 
 end TauCeti.CkHolderSpace
