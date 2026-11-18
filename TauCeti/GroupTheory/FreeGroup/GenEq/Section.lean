@@ -125,6 +125,18 @@ theorem left_mem_baseItems (μ : Fin Ω.numBases) :
     ⟨Ω.left μ, Ω.left_lt_numItems μ⟩ ∈ Ω.baseItems μ :=
   Ω.mem_baseItems.2 ⟨le_rfl, Ω.left_lt_right μ⟩
 
+variable {Ω} in
+/-- The left end-point of an item of a variable base `μ` is a boundary of `μ`. -/
+theorem left_le_castSucc_of_mem_baseItems {μ : Fin Ω.numBases} {k : Fin Ω.numItems}
+    (hk : k ∈ Ω.baseItems μ) : Ω.left μ ≤ k.castSucc :=
+  Fin.le_def.2 (Ω.mem_baseItems.1 hk).1
+
+variable {Ω} in
+/-- The right end-point of an item of a variable base `μ` is a boundary of `μ`. -/
+theorem succ_le_right_of_mem_baseItems {μ : Fin Ω.numBases} {k : Fin Ω.numItems}
+    (hk : k ∈ Ω.baseItems μ) : k.succ ≤ Ω.right μ :=
+  Fin.le_def.2 (Ω.mem_baseItems.1 hk).2
+
 /-- A base `μ` is contained in a base `ν`, that is `σ(μ) ⊆ σ(ν)`, exactly when
 `α(ν) ≤ α(μ) < β(μ) ≤ β(ν)`. -/
 theorem baseItems_subset_baseItems_iff {μ ν : Fin Ω.numBases} :
