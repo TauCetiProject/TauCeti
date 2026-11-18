@@ -170,7 +170,7 @@ theorem erfc_ofReal (x : ℝ) : erfc x = (TauCeti.Real.erfc x : ℂ) := by
   push_cast
   rfl
 
-/-- `erf(z̄) = conj (erf z)`. -/
+/-- `erf(conj z) = conj (erf z)`. -/
 theorem erf_conj (z : ℂ) : erf (conj z) = conj (erf z) := by
   have hpt (s : ℝ) : conj z * cexp (-((s : ℂ) * conj z) ^ 2) =
       conj (z * cexp (-((s : ℂ) * z) ^ 2)) := by
@@ -180,7 +180,7 @@ theorem erf_conj (z : ℂ) : erf (conj z) = conj (erf z) := by
   congr 1
   simp [map_div₀, conj_ofReal, map_ofNat]
 
-/-- `erfc(z̄) = conj (erfc z)`. -/
+/-- `erfc(conj z) = conj (erfc z)`. -/
 theorem erfc_conj (z : ℂ) : erfc (conj z) = conj (erfc z) := by
   simp [erfc_def, erf_conj]
 
@@ -258,7 +258,7 @@ theorem faddeeva_I_mul (y : ℝ) :
     ring
   rw [faddeeva_def, h1, h2, Complex.erfc_ofReal, ofReal_exp]
 
-/-- `w(−z̄) = conj (w z)`. -/
+/-- `w(−conj z) = conj (w z)`. -/
 theorem faddeeva_neg_conj (z : ℂ) : faddeeva (-conj z) = conj (faddeeva z) := by
   have h : -I * -conj z = conj (-I * z) := by simp [conj_I]
   rw [faddeeva_def, faddeeva_def, h, Complex.erfc_conj, map_mul, ← exp_conj]
@@ -318,7 +318,7 @@ theorem fresnelC_neg (z : ℂ) : fresnelC (-z) = -fresnelC z :=
 theorem fresnelS_neg (z : ℂ) : fresnelS (-z) = -fresnelS z :=
   integral_mul_comp_mul_neg (f := fun u : ℂ => Complex.sin (π * u ^ 2 / 2)) (by simp) z
 
-/-- `C(z̄) = conj (C z)`. -/
+/-- `C(conj z) = conj (C z)`. -/
 theorem fresnelC_conj (z : ℂ) : fresnelC (conj z) = conj (fresnelC z) := by
   have hpt (s : ℝ) : conj z * Complex.cos (π * ((s : ℂ) * conj z) ^ 2 / 2) =
       conj (z * Complex.cos (π * ((s : ℂ) * z) ^ 2 / 2)) := by
@@ -326,7 +326,7 @@ theorem fresnelC_conj (z : ℂ) : fresnelC (conj z) = conj (fresnelC z) := by
     simp [map_pow, map_mul, map_div₀, conj_ofReal, map_ofNat]
   rw [fresnelC, fresnelC, funext hpt, intervalIntegral_conj]
 
-/-- `S(z̄) = conj (S z)`. -/
+/-- `S(conj z) = conj (S z)`. -/
 theorem fresnelS_conj (z : ℂ) : fresnelS (conj z) = conj (fresnelS z) := by
   have hpt (s : ℝ) : conj z * Complex.sin (π * ((s : ℂ) * conj z) ^ 2 / 2) =
       conj (z * Complex.sin (π * ((s : ℂ) * z) ^ 2 / 2)) := by
