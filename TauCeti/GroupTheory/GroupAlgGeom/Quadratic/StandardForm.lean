@@ -37,6 +37,8 @@ not occur, so that they apply inside a longer product.
   cross-caps ([GaXu], Step 5), `x⁻¹ y⁻¹ x y s² ↦ x² y² s²`.
 * `GX.exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq`: `n` handles followed by
   `r ≥ 1` cross-caps are `2n + r` cross-caps.
+* `GX.exists_mem_elementaryAut_apply_mul_prod_sq`: a word in which none of the variables `xᵢ`
+  occurs moves from the front of `∏ᵢ xᵢ²` to its back.
 
 ## References
 
@@ -193,5 +195,24 @@ theorem exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq {N n r : ℕ}
     obtain ⟨f₂, hf₂, hf₂w, hf₂a⟩ := ih (r := r + 3) (by lia) (by lia)
     exact ⟨f₂ * f₁, mul_mem hf₂ hf₁, by rw [MulAut.mul_apply, hf₁w, hf₂w],
       fun a ha => by rw [MulAut.mul_apply, hf₁a a ha, hf₂a a ha]⟩
+
+/-- **A word moves behind squares.** For `x : Fin N → X` and a word `P` in which no `xᵢ` occurs,
+an elementary automorphism which fixes every word in which no `xᵢ` occurs turns `P ∏_{i<N} xᵢ²`
+into `∏_{i<N} xᵢ² P`. -/
+theorem exists_mem_elementaryAut_apply_mul_prod_sq {N : ℕ} {x : Fin N → X} {P : GX G X}
+    (hP : ∀ i, P ∈ avoiding (x i)) : ∃ f ∈ elementaryAut G X,
+      f (P * (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).prod) =
+        (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).prod * P ∧
+      ∀ a, (∀ i, a ∈ avoiding (x i)) → f a = a := by
+  -- the simultaneous substitution `xᵢ ↦ P⁻¹ xᵢ P`
+  obtain ⟨f, hf, hfx, hfa⟩ := exists_mem_elementaryAut_forall_apply_inr_of
+    (Finset.univ.image x) (fun _ => P⁻¹) (fun _ => P) (by simp [hP]) (by simp [hP])
+  refine ⟨f, hf, ?_, fun a ha => hfa a (by simp [ha])⟩
+  -- `f` fixes `P` and acts on the squares `xᵢ²` as the conjugation by `P⁻¹`
+  have hl : (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).map f =
+      (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).map (MulAut.conj P⁻¹) := by
+    simp [List.map_ofFn, Function.comp_def, hfx, pow_two, mul_assoc]
+  rw [map_mul, hfa P (by simp [hP]), map_list_prod, hl, ← map_list_prod]
+  simp [mul_assoc]
 
 end TauCeti.GroupAlgGeom.GX

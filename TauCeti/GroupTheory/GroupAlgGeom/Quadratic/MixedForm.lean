@@ -24,9 +24,9 @@ The mixed form is a change of coordinates of the standard form: an elementary `G
 `G[X]` carries its left side to the left side of `S`
 (`Quadratic.Standard.exists_mem_elementaryAut_apply_mixedWord`). It is the composite of the rule
 that `n` handles followed by `r ≥ 1` cross-caps are `2n + r` cross-caps
-(`GX.exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq`) with the conjugation of the
-square variables by the product of the conjugated coefficients, which moves that product from the
-front of the word behind the squares, where the standard form has it.
+(`GX.exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq`) with the rule that moves the
+product of the conjugated coefficients from the front of the squares to their back, where the
+standard form has it (`GX.exists_mem_elementaryAut_apply_mul_prod_sq`).
 
 ## Main definitions
 
@@ -155,22 +155,6 @@ theorem mixedAtoms_nonorientableCoeff (hn : 0 < n) (inj : (Sum.elim x z).Injecti
             (inr (FreeGroup.of (mixedSnd x i)))⁻¹⁆) ++
           List.ofFn fun k => (inr (FreeGroup.of (mixedSq x k)) : GX G X) ^ 2) := (rfl)
 
--- Conjugating the variables `xᵢ` by a word `P` in which none of them occurs moves `P` from the
--- front of `∏ᵢ xᵢ²` to its back.
-private theorem exists_mem_elementaryAut_apply_mul_prod_sq [DecidableEq X] {N : ℕ} {x : Fin N → X}
-    {P : GX G X} (hP : ∀ i, P ∈ GX.avoiding (x i)) : ∃ f ∈ GX.elementaryAut G X,
-      f (P * (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).prod) =
-        (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).prod * P := by
-  obtain ⟨f, hf, hfx, hfa⟩ := GX.exists_mem_elementaryAut_forall_apply_inr_of
-    (Finset.univ.image x) (fun _ => P⁻¹) (fun _ => P) (by simp [hP]) (by simp [hP])
-  refine ⟨f, hf, ?_⟩
-  -- `f` fixes `P` and acts on the squares `xᵢ²` as the conjugation by `P⁻¹`
-  have hl : (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).map f =
-      (List.ofFn fun i => (inr (FreeGroup.of (x i)) : GX G X) ^ 2).map (MulAut.conj P⁻¹) := by
-    simp [List.map_ofFn, Function.comp_def, hfx, pow_two, mul_assoc]
-  rw [map_mul, hfa P (by simp [hP]), map_list_prod, hl, ← map_list_prod]
-  simp [mul_assoc]
-
 /-- **The mixed form is a change of coordinates of the standard form** ([IFT], §7.5, where a
 non-orientable equation is considered in the form (113) or (114)). For a non-orientable standard
 quadratic equation `S = 1`, an elementary `G`-automorphism of `G[X]` carries the left side of its
@@ -198,7 +182,7 @@ theorem exists_mem_elementaryAut_apply_mixedWord (S : Standard G X) (ho : ¬S.Is
     obtain ⟨f, hf, hfw, hfa⟩ := GX.exists_mem_elementaryAut_apply_prod_commutator_mul_prod_sq
       (G := G) (n := (N - 1) / 2) (r := N - 2 * ((N - 1) / 2)) (by lia) (by lia)
       (Sum.elim_injective.1 inj).1
-    obtain ⟨κ, hκ, hκw⟩ := exists_mem_elementaryAut_apply_mul_prod_sq hPx
+    obtain ⟨κ, hκ, hκw, -⟩ := GX.exists_mem_elementaryAut_apply_mul_prod_sq hPx
     refine ⟨κ * f, mul_mem hκ hf, ?_⟩
     simp only [mixedWord_def, mixedAtoms_nonorientableCoeff, toWord_def, atoms_nonorientableCoeff,
       constant_nonorientableCoeff, List.prod_append, ← hP, mixedFst_apply, mixedSnd_apply,
