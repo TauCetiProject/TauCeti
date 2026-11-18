@@ -33,7 +33,7 @@ public section
 
 open Set Function
 
-namespace TauCeti
+namespace IsCompact
 
 variable {X ι : Type*} [PseudoMetricSpace X] [Fintype ι]
 
@@ -107,4 +107,4 @@ theorem exists_ne_isMinOn_birkhoffSum_dist_sq {p : X} {m : ℕ} {r ρ : ℝ}
   rw [hper.birkhoffSum_apply_eq]
   exact hmin' hz
 
-end TauCeti
+end IsCompact
