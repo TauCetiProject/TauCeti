@@ -147,15 +147,8 @@ theorem mem_ker_monoidHomSubgroup_iff
 /-- If `K` normalizes `H` and the two subgroups meet trivially, multiplication `H ⋊ K → G` is
 injective. -/
 theorem monoidHomSubgroup_injective (h : H ⊓ K = ⊥) :
-    Function.Injective (monoidHomSubgroup hLE) := by
-  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
-  have hpair := (mem_ker_monoidHomSubgroup_iff hLE x).1 hx
-  -- The common value `x.left = x.right⁻¹` lies in `H ⊓ K = ⊥`.
-  have hmem : (x.left : G) ∈ H ⊓ K :=
-    ⟨x.left.2, hpair ▸ K.inv_mem x.right.2⟩
-  rw [h, Subgroup.mem_bot] at hmem
-  have hright : (x.right : G) = 1 := by rw [← inv_inv (x.right : G), ← hpair, hmem, inv_one]
-  ext <;> simp [hmem, hright]
+    Function.Injective (monoidHomSubgroup hLE) :=
+  (Subgroup.mul_injective_of_disjoint (disjoint_iff.mpr h)).comp equivProd.injective
 
 /-- **A semidirect product of two subgroups meeting trivially is their join.** If `K` normalizes
 `H` and `H ⊓ K = ⊥`, multiplication is an isomorphism `H ⋊ K ≃* H ⊔ K`. -/
