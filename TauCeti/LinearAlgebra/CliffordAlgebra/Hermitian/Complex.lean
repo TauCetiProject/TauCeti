@@ -14,10 +14,13 @@ public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 On the complexification of a real Clifford algebra, the adjoint relevant to Hermitian
 representations is `CliffordAlgebra.conjStar`, not Mathlib's complex-linear Clifford `star`.
 Skew-adjointness on the real vectors is equivalent to compatibility with this conjugate-linear
-adjoint on the whole algebra. For a real Clifford action `ρ`, this says that its complex-linear
-extension `CliffordAlgebra.liftBaseChange ℂ Q ρ` is a `*`-representation exactly when Clifford
-multiplication by every real vector is skew-adjoint
-(`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`).
+adjoint on the whole algebra (`CliffordAlgebra.sesqForm_map_eq_map_conjStar_iff` and
+`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`). For a real Clifford action `ρ`, this says that
+its complex-linear extension `CliffordAlgebra.liftBaseChange ℂ Q ρ` is compatible with `conjStar`
+for the inner product (without finite-dimensionality,
+`CliffordAlgebra.inner_liftBaseChange_eq_liftBaseChange_conjStar_iff`) and is a `*`-representation
+in finite dimension (`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`)
+exactly when Clifford multiplication by every real vector is skew-Hermitian / skew-adjoint.
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -74,6 +77,17 @@ theorem sesqForm_map_eq_map_conjStar (H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ)
   | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
   | mul a b ha hb =>
     simp only [map_mul, mul_apply_eq_comp, conjStar_mul, ha, hb]
+
+/-- Compatibility of a sesquilinear form with `CliffordAlgebra.conjStar` on the whole complexified
+Clifford algebra is equivalent to skew-adjointness of the real generators. -/
+theorem sesqForm_map_eq_map_conjStar_iff (H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ) :
+    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
+        H (ρ a x) y = H x (ρ (conjStar Q a) y)) ↔
+      ∀ (v : V) (x y : S),
+        H (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x) y =
+          -H x (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) y) :=
+  ⟨fun h v x y ↦ by simpa [conjStar_ι_tmul] using h (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x y,
+    sesqForm_map_eq_map_conjStar ρ H⟩
 
 end SesquilinearForm
 
@@ -133,14 +147,27 @@ end Hermitian
 
 section RealAction
 
-variable [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
-  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S}
+variable [NormedAddCommGroup S] [InnerProductSpace ℂ S]
+
+/-- For a real Clifford action `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S`, its complex-linear
+extension `CliffordAlgebra.liftBaseChange ℂ Q ρ` is compatible with `CliffordAlgebra.conjStar` for
+the inner product if and only if every real generator `ρ (ι Q v)` is skew-Hermitian, without
+assuming finite-dimensionality. -/
+theorem inner_liftBaseChange_eq_liftBaseChange_conjStar_iff
+    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} :
+    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
+        inner ℂ (liftBaseChange ℂ Q ρ a x) y =
+          inner ℂ x (liftBaseChange ℂ Q ρ (conjStar Q a) y)) ↔
+      ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
+  simpa only [innerₛₗ_apply_apply, liftBaseChange_ι_tmul, one_smul] using
+    sesqForm_map_eq_map_conjStar_iff (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ)
 
 /-- **`*`-representations of the complexified Clifford algebra**: on a finite-dimensional
 Hermitian module, the complex-linear extension `ρ_ℂ` of a real Clifford action satisfies
 `ρ_ℂ(a)* = ρ_ℂ(conjStar a)` for every `a` exactly when Clifford multiplication by every real
 vector is skew-adjoint. -/
-theorem adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff :
+theorem adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff [FiniteDimensional ℂ S]
+    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} :
     (∀ a, LinearMap.adjoint (liftBaseChange ℂ Q ρ a) = liftBaseChange ℂ Q ρ (conjStar Q a)) ↔
       ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v) := by
   simpa only [liftBaseChange_ι_tmul, one_smul] using

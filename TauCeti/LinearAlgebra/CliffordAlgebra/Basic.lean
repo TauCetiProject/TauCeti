@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import Mathlib.LinearAlgebra.BilinearForm.Properties
+import Mathlib.Tactic.Module
 import Mathlib.Tactic.NoncommRing
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
@@ -17,9 +18,10 @@ import Mathlib.LinearAlgebra.QuadraticForm.Basis
 # Basic Clifford algebra API
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
-linear equivalence with the exterior algebra, and the commutation rule
-`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another. Rescaling the
-factors of a product of vectors pulls the scalars out in front
+linear equivalence with the exterior algebra, the commutation rule
+`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another, and planar bivector
+scaling `CliffordAlgebra.ι_smul_add_smul_mul_ι_neg_smul_add_smul` for an orthogonal equal-square
+pair. Rescaling the factors of a product of vectors pulls the scalars out in front
 (`CliffordAlgebra.prod_map_ι_smul`).
 -/
 
@@ -68,6 +70,17 @@ theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R
   rw [map_sub, map_smul, sub_mul, smul_mul_assoc, ι_sq_scalar, Algebra.smul_def,
     ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
     ← ι_mul_ι_add_swap, add_sub_cancel_right]
+
+/-- For orthogonal vectors `e₁, e₂` with `Q e₁ = Q e₂`, a planar combination
+`(c • e₁ + s • e₂, -s • e₁ + c • e₂)` scales their Clifford product `ι Q e₁ * ι Q e₂` by
+`c ^ 2 + s ^ 2`. -/
+theorem ι_smul_add_smul_mul_ι_neg_smul_add_smul {Q : QuadraticForm R M} {e₁ e₂ : M}
+    (hQ : Q e₁ = Q e₂) (h12 : Q.IsOrtho e₁ e₂) (c s : R) :
+    ι Q (c • e₁ + s • e₂) * ι Q (-s • e₁ + c • e₂) =
+      (c ^ 2 + s ^ 2) • (ι Q e₁ * ι Q e₂) := by
+  simp only [neg_smul, map_add, map_neg, map_smul, add_mul, mul_add, mul_neg, smul_mul_assoc,
+    mul_smul_comm, smul_neg, ι_sq_scalar, hQ, ι_mul_ι_comm_of_isOrtho h12.symm]
+  module
 
 /-- Rescaling every factor of a product of vectors collects the product of the scalars in front
 of the product. -/

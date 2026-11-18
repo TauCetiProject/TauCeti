@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
+import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
@@ -21,10 +22,13 @@ orthogonality for `Q` is orthogonality for the inner product, so an orthonormal 
 an orthogonal basis for `Q` with `Q (eᵢ) = -1`. The general orthogonal-basis results of
 `TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis` therefore apply to `e`, and the Clifford
 basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
-`(-1) ^ ((|s| + 1).choose 2)`.
+`(-1) ^ ((|s| + 1).choose 2)`. Under any `ℝ`-algebra homomorphism out of `CliffordAlgebra Q`,
+orthogonal vectors anticommute, unit vectors and orthonormal bivectors square to `-1`, and the
+oriented bivector `c(e₁) c(e₂)` of an orthonormal pair is invariant under planar rotations.
 
 ## Main results
 
+* `QuadraticMap.polar_eq_neg_two_inner`: `polar Q v w = -2 ⟪v, w⟫_ℝ`.
 * `QuadraticMap.isOrtho_iff_inner_eq_zero`: orthogonality for `Q` is orthogonality for the inner
   product.
 * `OrthonormalBasis.isOrthoᵢ_associated`: an orthonormal basis is orthogonal for the polar form
@@ -34,11 +38,14 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 * `OrthonormalBasis.map_apply_mul_map_apply`: `Q (bᵢ) Q (bⱼ) = 1` for orthonormal basis vectors.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
-* `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
 * `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
   `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
+* `AlgHom.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner`,
+  `AlgHom.map_cliffordAlgebraι_cos_smul_add_sin_smul_mul_neg_sin_smul_add_cos_smul`:
+  polarized Clifford relation and 2-plane rotation invariance under an algebra homomorphism out of
+  `CliffordAlgebra Q`.
 
 ## References
 
@@ -52,6 +59,12 @@ open scoped RealInnerProductSpace
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
   (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
+
+/-- For `Q v = -‖v‖²` on a real inner product space, the polar bilinear form is `-2 ⟪v, w⟫_ℝ`. -/
+theorem QuadraticMap.polar_eq_neg_two_inner (v w : V) :
+    QuadraticMap.polar Q v w = -2 * ⟪v, w⟫ := by
+  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+  ring
 
 /-- For `Q v = -‖v‖²`, orthogonality for `Q` is orthogonality for the inner product. -/
 theorem QuadraticMap.isOrtho_iff_inner_eq_zero {x y : V} : Q.IsOrtho x y ↔ ⟪x, y⟫ = 0 := by
@@ -92,12 +105,6 @@ end OrthonormalBasis
 
 namespace CliffordAlgebra
 
-/-- For `Q v = -‖v‖²`, the polar form of `Q` is `-2 ⟪u, v⟫`. -/
-theorem _root_.QuadraticMap.polar_eq_neg_two_inner (u v : V) :
-    QuadraticMap.polar Q u v = -2 * ⟪u, v⟫ := by
-  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-  ring
-
 /-- **The polarized Clifford relation**: for `Q v = -‖v‖²`,
 `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
@@ -122,3 +129,68 @@ theorem basis_mul_self_of_orthonormal {ι : Type*} [Fintype ι] [LinearOrder ι]
   simp [Nat.choose_succ_succ', add_comm]
 
 end CliffordAlgebra
+
+omit hQ
+
+namespace AlgHom
+
+open CliffordAlgebra
+
+section Semiring
+
+variable {B : Type*} [Semiring B] [Algebra ℝ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
+
+/-- **Polarized Clifford relation** for `Q v = -‖v‖²`:
+`c(v) c(w) + c(w) c(v) = (-2 * ⟪v, w⟫_ℝ) • 1`. -/
+theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) (v w : V) :
+    ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) = (-2 * ⟪v, w⟫) • 1 := by
+  rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_eq_neg_two_inner hQ,
+    AlgHom.commutes, Algebra.algebraMap_eq_smul_one]
+
+/-- **2-plane rotation invariance**: rotating an orthonormal pair `(e₁, e₂)` by angle `θ` preserves
+the oriented Clifford product `c(e₁) c(e₂)` when `Q v = -‖v‖²`. -/
+theorem map_cliffordAlgebraι_cos_smul_add_sin_smul_mul_neg_sin_smul_add_cos_smul
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
+    (h12 : ⟪e₁, e₂⟫ = 0) (θ : ℝ) :
+    ρ (ι Q (Real.cos θ • e₁ + Real.sin θ • e₂)) *
+        ρ (ι Q (-Real.sin θ • e₁ + Real.cos θ • e₂)) =
+      ρ (ι Q e₁) * ρ (ι Q e₂) := by
+  rw [← map_mul ρ, ι_smul_add_smul_mul_ι_neg_smul_add_smul
+    (by rw [hQ, hQ, he₁, he₂]) ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h12),
+    Real.cos_sq_add_sin_sq, one_smul, map_mul ρ]
+
+end Semiring
+
+section Ring
+
+variable {B : Type*} [Ring B] [Algebra ℝ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
+
+/-- Orthogonal vectors anticommute under any algebra map out of `CliffordAlgebra Q` when
+`Q v = -‖v‖²`. -/
+theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_of_inner_eq_zero
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {v w : V} (hvw : ⟪v, w⟫ = 0) :
+    ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) := by
+  rw [← map_mul ρ, ← map_mul ρ, ← map_neg ρ,
+    ι_mul_ι_comm_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 hvw)]
+
+/-- A unit vector acts by a square root of `-1` when `Q v = -‖v‖²`. -/
+theorem map_cliffordAlgebraι_sq_of_norm_eq_one (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e : V}
+    (he : ‖e‖ = 1) :
+    ρ (ι Q e) * ρ (ι Q e) = -1 := by
+  rw [← map_mul ρ, ι_sq_scalar, hQ, he, one_pow, map_neg, map_one, map_neg, map_one]
+
+/-- For an orthonormal pair `(e₁, e₂)` and `Q v = -‖v‖²`, the bivector `c(e₁) c(e₂)` squares to
+`-1`. -/
+theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_sq_of_orthonormal
+    (hQ : ∀ v, Q v = -‖v‖ ^ 2) {e₁ e₂ : V} (he₁ : ‖e₁‖ = 1) (he₂ : ‖e₂‖ = 1)
+    (h12 : ⟪e₁, e₂⟫ = 0) :
+    (ρ (ι Q e₁) * ρ (ι Q e₂)) * (ρ (ι Q e₁) * ρ (ι Q e₂)) = -1 := by
+  rw [← map_mul ρ, ← map_mul ρ,
+    ι_mul_ι_mul_self_of_isOrtho ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h12),
+    map_neg, AlgHom.commutes, hQ, hQ, he₁, he₂]
+  simp
+
+end Ring
+
+end AlgHom
