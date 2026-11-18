@@ -212,7 +212,7 @@ theorem eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto {ι : Type*} {A : ι → 
   have hV : Continuous fun B : S ↦ (innerSL ℝ).comp (B : E →L[ℝ] E) :=
     continuous_const.clm_comp continuous_subtypeVal
   have hconst := eventually_sigNeg_toBilinForm_eq_of_continuousAt (x := (⟨L, hLsym⟩ : S))
-    (.of_forall fun B ↦ B.property.isSymm_toBilinForm_innerSL_comp) hV.continuousAt hLnd
+    hLsym.isSymm_toBilinForm_innerSL_comp hV.continuousAt hLnd
   have hlimS : Tendsto (fun s ↦ (⟨A s, hsym s⟩ : S)) l (𝓝 ⟨L, hLsym⟩) :=
     tendsto_subtype_rng.2 hlim
   filter_upwards [hlimS hconst, hlimS (hV.continuousAt.eventually_toBilinForm_nondegenerate hLnd)]
