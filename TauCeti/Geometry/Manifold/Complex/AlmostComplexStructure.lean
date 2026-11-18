@@ -246,8 +246,8 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
   obtain ⟨y, hy, rfl⟩ : ∃ y ∈ (extChartAt 𝓘(ℝ, E) x).source, extChartAt 𝓘(ℝ, E) x y = z :=
     ⟨_, (extChartAt _ x).map_target hz, (extChartAt _ x).right_inv hz⟩
   rw [mpullbackWithin_extChartAt_symm_apply _ hy, mpullbackWithin_extChartAt_symm_apply _ hy,
-    TangentBundle.trivializationAt_apply_tangentCoordChange,
-    TangentBundle.trivializationAt_apply_tangentCoordChange]
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange,
+    TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
   have h : y ∈ (chartAt E y).source ∩ (chartAt E x).source := by
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]
