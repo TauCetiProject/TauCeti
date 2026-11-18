@@ -33,9 +33,11 @@ the induced graph on `K` (`CoxeterMatrix.graph_restrict`), and is connected. The
 rests on the orthogonality `CoxeterMatrix.geometricForm_eq_zero_of_eq_two` and on the description
 `CoxeterMatrix.geometricForm_restrict` of the canonical form of a restriction.
 
-Together with the finiteness criterion of a Coxeter group by positive definiteness of its canonical
-form, this reduces the classification of finite Coxeter groups to Coxeter matrices with connected
-Coxeter graph.
+For a finite index type `B`, the Coxeter group is finite if and only if its canonical form is
+positive definite. Together with this criterion, the results here reduce the classification of
+finite Coxeter groups of finite rank to Coxeter matrices with connected Coxeter graph. Without
+finiteness of `B` positive definiteness does not imply finiteness of the group, for instance for
+infinitely many pairwise commuting generators.
 
 ## Main results
 
@@ -70,14 +72,6 @@ theorem connected_graph_restrict_supp (K : M.graph.ConnectedComponent) :
     (M.restrict K.supp).graph.Connected := by
   rw [graph_restrict]
   exact K.connected_toSimpleGraph
-
-/-- Indices in distinct connected components of the Coxeter graph have entry `2`, since they are
-distinct and not adjacent. -/
-private theorem eq_two_of_connectedComponentMk_ne {i j : B}
-    (h : M.graph.connectedComponentMk i ≠ M.graph.connectedComponentMk j) : M i j = 2 := by
-  by_contra hij
-  exact h (SimpleGraph.ConnectedComponent.connectedComponentMk_eq_of_adj
-    (M.graph_adj.mpr ⟨fun hij' ↦ h (congrArg _ hij'), hij⟩))
 
 /-- The canonical form of the restriction to `J`, evaluated on restrictions, is the canonical form
 of the parts supported on `J`. -/

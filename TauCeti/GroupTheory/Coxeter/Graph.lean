@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Coxeter.Artin
 public import TauCeti.GroupTheory.Coxeter.Matrix
 public import Mathlib.Combinatorics.SimpleGraph.Maps
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
 # The simply laced Artin presentation of a graph
@@ -24,8 +25,10 @@ distinct indices exactly when their entry is not `2`, that is, when the correspo
 reflections do not commute. Entries `0`, which encode infinite order, are edges too. This forgets
 the edge labels, and on simply laced matrices it inverts the first construction
 (`SimpleGraph.graph_coxeterMatrix`). Simple reflections whose indices are not adjacent in the
-Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`), and the Coxeter graph of the
-restriction of `M` to a set of indices is the induced graph (`CoxeterMatrix.graph_restrict`).
+Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`), indices in distinct connected
+components of the Coxeter graph have entry `2` (`CoxeterMatrix.eq_two_of_connectedComponentMk_ne`),
+and the Coxeter graph of the restriction of `M` to a set of indices is the induced graph
+(`CoxeterMatrix.graph_restrict`).
 -/
 
 public section
@@ -118,6 +121,14 @@ def graph : SimpleGraph B where
 
 @[simp]
 theorem graph_adj {i j : B} : M.graph.Adj i j ↔ i ≠ j ∧ M i j ≠ 2 := Iff.rfl
+
+/-- Indices in distinct connected components of the Coxeter graph have entry `2`, since they are
+distinct and not adjacent. -/
+theorem eq_two_of_connectedComponentMk_ne {i j : B}
+    (h : M.graph.connectedComponentMk i ≠ M.graph.connectedComponentMk j) : M i j = 2 := by
+  by_contra hij
+  exact h (SimpleGraph.ConnectedComponent.connectedComponentMk_eq_of_adj
+    (M.graph_adj.mpr ⟨fun hij' ↦ h (congrArg _ hij'), hij⟩))
 
 /-- **The Coxeter graph of a restriction is the induced graph** on the chosen indices. -/
 theorem graph_restrict (J : Set B) : (M.restrict J).graph = M.graph.induce J := by
