@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.Degree
 public import TauCeti.Combinatorics.Graph.Stallings.Morphism
 
 /-!
@@ -12,7 +13,8 @@ public import TauCeti.Combinatorics.Graph.Stallings.Morphism
 
 An isomorphism bijects vertices and darts, preserving incidence, reversal, the base vertex
 and labels. These are the comparisons in the uniqueness statement for subgroup graphs;
-in particular, distinct parallel darts and the two directions of a loop are retained.
+in particular, distinct parallel darts and the two directions of a loop are retained, and
+isomorphisms preserve degrees (`StallingsGraph.Iso.degree_vertexEquiv`).
 -/
 
 public section
@@ -75,6 +77,17 @@ theorem toHom_injective : Function.Injective (toHom (S := S) (T := T)) := by
   apply ext
   · exact Equiv.ext fun v => congrArg (fun k : S.Hom T => k.graphHom.mapV v) h
   · exact Equiv.ext fun e => congrArg (fun k : S.Hom T => k.graphHom.mapE e) h
+
+/-- An isomorphism of based labelled graphs preserves degrees. -/
+@[simp] theorem degree_vertexEquiv (f : Iso S T) (a : S.graph.V) :
+    T.graph.degree (f.vertexEquiv a) = S.graph.degree a := by
+  simpa using f.toHom.graphHom.degree_mapV (fun _ _ h => by simpa using h)
+    ⟨fun _ _ h => by simpa using h, fun e => ⟨f.dartEquiv.symm e, by simp⟩⟩ a
+
+/-- An isomorphism of based labelled graphs preserves degrees, read through its inverse. -/
+@[simp] theorem degree_vertexEquiv_symm (f : Iso S T) (b : T.graph.V) :
+    S.graph.degree (f.vertexEquiv.symm b) = T.graph.degree b := by
+  rw [← f.degree_vertexEquiv, Equiv.apply_symm_apply]
 
 /-- The identity isomorphism. -/
 def refl (S : StallingsGraph α) : Iso S S where

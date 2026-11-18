@@ -8,21 +8,22 @@ module
 public import TauCeti.Algebra.Lie.Sl2.ClebschGordan
 public import TauCeti.Algebra.Lie.Sl2.HighestWeight
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
+import TauCeti.Algebra.Lie.HighestWeight.Weyl.Inversion
 
 /-!
 # Isotypic multiplicities of `sl₂`-modules against their characters
 
-For `L = sl (Fin 2) K` over an algebraically closed field of characteristic zero, with the diagonal
-Cartan and the positive base selecting `e = E₀₁`, this file computes the isotypic decomposition of
-the module
+For `L = sl (Fin 2) K` over a field of characteristic zero, with the diagonal Cartan and the
+positive base selecting `e = E₀₁`, this file computes the isotypic decomposition of the module
 
 `M = (V(1) ⊗ V(1)) × V(0)`
 
 in two independent ways and checks that they agree.
 
 * **By Clebsch-Gordan.** `V(m) ⊗ V(n)` is the internal direct sum of copies of `V(m + n - 2k)`
-  for `k ≤ min m n` (`TauCeti.Sl2Std.isInternal_cgSummand`), and `V(p)` is `L(p)`, so by Schur's
-  lemma the multiplicity of `L(p)` in `V(m) ⊗ V(n)` counts the `k` with `m + n - 2k = p`
+  for `k ≤ min m n` (`TauCeti.Sl2Std.isInternal_cgSummand`), and `V(p)` is `L(p)`, so by
+  `TauCeti.Sl2Std.isotypicMultiplicity_irreducibleQuotient` the multiplicity of `L(p)` in
+  `V(m) ⊗ V(n)` counts the `k` with `m + n - 2k = p`
   (`TauCeti.Sl2Std.isotypicMultiplicity_tensor_irreducibleQuotient`). For `M` the multiplicities of
   `L(2)`, `L(1)`, `L(0)` are therefore `1`, `0`, `2`
   (`TauCeti.Sl2Std.isotypicMultiplicity_one_tensor_one_prod_zero`).
@@ -31,13 +32,24 @@ in two independent ways and checks that they agree.
   denominator `1 - e^{-2}` leaves the coefficients `1`, `0`, `2` at the weights `2`, `1`, `0`
   (`TauCeti.Sl2Std.coeff_formalCharacter_one_tensor_one_prod_zero_mul_weylDenominator`). These are
   the multiplicities again, as Weyl-alternating inversion
-  (`TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity`) predicts. Read on
+  (`TauCeti.coeff_formalCharacter_mul_weylDenominator_eq_isotypicMultiplicity`, stated over an
+  algebraically closed field) predicts; here the coefficients are computed directly. Read on
   characters the decomposition is `ch M = ch V(2) + 2 ch V(0)`
   (`TauCeti.Sl2Std.formalCharacter_one_tensor_one_prod_zero_eq_add`).
 
 The isotypic components of `M` then have dimensions `3`, `0`, `2`, the multiplicity times
 `dim L(p) = p + 1` (`TauCeti.Sl2Std.finrank_isotypicComponent_one_tensor_one_prod_zero`), and these
 add up to `dim M = 5` (`TauCeti.Sl2Std.sum_finrank_isotypicComponent_one_tensor_one_prod_zero`).
+Only these dimension statements assume the field is algebraically closed, as
+`LieModule.finrank_isotypicComponent` does.
+
+Finally, characters decide equivalence. `V(1) ⊗ V(1)` has character `e^{2} + 2 + e^{-2}`
+(`TauCeti.Sl2Std.formalCharacter_one_tensor_one`), which is also the character of `V(2) × V(0)`,
+so the two are equivalent because the formal character determines a finite-dimensional module
+(`TauCeti.Sl2Std.nonempty_lieModuleEquiv_one_tensor_one_two_prod_zero`). The module
+`V(1) × V(1)` has the same dimension `4` but the character `2e^{1} + 2e^{-1}`, so it is not
+equivalent to `V(1) ⊗ V(1)`
+(`TauCeti.Sl2Std.not_nonempty_lieModuleEquiv_one_tensor_one_one_prod_one`).
 
 ## References
 
@@ -62,8 +74,6 @@ variable {K : Type*} [Field K] [CharZero K]
 /-! ### Multiplicities by Clebsch-Gordan -/
 
 section Multiplicity
-
-variable [IsAlgClosed K]
 
 /-- **The Clebsch-Gordan multiplicities.** The multiplicity of `L(p)` in `V(m) ⊗ V(n)` is the
 number of `k ≤ min m n` with `m + n - 2k = p`. -/
@@ -105,11 +115,11 @@ end Multiplicity
 
 section Character
 
-/-- **The formal character of `(V(1) ⊗ V(1)) × V(0)`** is `e^{2} + 3 + e^{-2}`. -/
-theorem formalCharacter_one_tensor_one_prod_zero :
-    formalCharacter K (slTwoDiagonalCartan K) ((Sl2Std K 1 ⊗[K] Sl2Std K 1) × Sl2Std K 0) =
+/-- **The formal character of `V(1) ⊗ V(1)`** is `e^{2} + 2 + e^{-2}`. -/
+theorem formalCharacter_one_tensor_one :
+    formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1 ⊗[K] Sl2Std K 1) =
       AddMonoidAlgebra.single (slTwoWeight (2 : K)) 1 +
-        AddMonoidAlgebra.single (slTwoWeight (0 : K)) 3 +
+        AddMonoidAlgebra.single (slTwoWeight (0 : K)) 2 +
           AddMonoidAlgebra.single (slTwoWeight (-2 : K)) 1 := by
   -- The Cartan acts on `V(1) ⊗ V(1)` by restricting the action of `sl₂`; this agrees with the
   -- tensor product of the restricted actions, which `formalCharacter_tensor` is stated for, only
@@ -118,12 +128,23 @@ theorem formalCharacter_one_tensor_one_prod_zero :
       formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) *
         formalCharacter K (slTwoDiagonalCartan K) (Sl2Std K 1) :=
     formalCharacter_tensor
-  rw [formalCharacter_prod, htensor, formalCharacter_eq_sum, formalCharacter_eq_sum,
-    show (3 : ℤ) = 1 + 1 + 1 by norm_num, AddMonoidAlgebra.single_add,
+  rw [htensor, formalCharacter_eq_sum, show (2 : ℤ) = 1 + 1 by norm_num,
     AddMonoidAlgebra.single_add]
   simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_mul, mul_add, add_zero,
     AddMonoidAlgebra.single_mul_single, ← slTwoWeight_add, mul_one]
   norm_num only [Fin.val_zero, Fin.val_succ]
+  abel
+
+/-- **The formal character of `(V(1) ⊗ V(1)) × V(0)`** is `e^{2} + 3 + e^{-2}`. -/
+theorem formalCharacter_one_tensor_one_prod_zero :
+    formalCharacter K (slTwoDiagonalCartan K) ((Sl2Std K 1 ⊗[K] Sl2Std K 1) × Sl2Std K 0) =
+      AddMonoidAlgebra.single (slTwoWeight (2 : K)) 1 +
+        AddMonoidAlgebra.single (slTwoWeight (0 : K)) 3 +
+          AddMonoidAlgebra.single (slTwoWeight (-2 : K)) 1 := by
+  rw [formalCharacter_prod, formalCharacter_one_tensor_one, formalCharacter_eq_sum,
+    show (3 : ℤ) = 2 + 1 by norm_num, AddMonoidAlgebra.single_add]
+  simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero]
+  norm_num only [Fin.val_zero]
   abel
 
 /-- **The character of `(V(1) ⊗ V(1)) × V(0)` is `ch V(2) + 2 ch V(0)`**, the Clebsch-Gordan
@@ -199,6 +220,39 @@ theorem sum_finrank_isotypicComponent_one_tensor_one_prod_zero :
   norm_num
 
 end IsotypicComponent
+
+/-! ### Equivalence read off characters -/
+
+section Equivalence
+
+/-- **`V(1) ⊗ V(1) ≃ V(2) × V(0)`, read off characters.** Both modules have the character
+`e^{2} + 2 + e^{-2}`, so they are equivalent because the formal character determines a
+finite-dimensional module (`TauCeti.nonempty_lieModuleEquiv_iff_formalCharacter_eq`). -/
+theorem nonempty_lieModuleEquiv_one_tensor_one_two_prod_zero [IsAlgClosed K] :
+    Nonempty ((Sl2Std K 1 ⊗[K] Sl2Std K 1) ≃ₗ⁅K,SpecialLinear.sl (Fin 2) K⁆
+      (Sl2Std K 2 × Sl2Std K 0)) := by
+  rw [nonempty_lieModuleEquiv_iff_formalCharacter_eq (slTwoDiagonalCartan K),
+    formalCharacter_one_tensor_one, formalCharacter_prod, formalCharacter_eq_sum,
+    formalCharacter_eq_sum, show (2 : ℤ) = 1 + 1 by norm_num, AddMonoidAlgebra.single_add]
+  simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero]
+  norm_num only [Fin.val_zero, Fin.val_succ]
+  abel
+
+/-- **`V(1) ⊗ V(1)` and `V(1) × V(1)` are not equivalent**, although both have dimension `4`:
+the weight `0` occurs twice in `V(1) ⊗ V(1)` but not in `V(1) × V(1)`, whose character is
+`2e^{1} + 2e^{-1}`. -/
+theorem not_nonempty_lieModuleEquiv_one_tensor_one_one_prod_one :
+    ¬ Nonempty ((Sl2Std K 1 ⊗[K] Sl2Std K 1) ≃ₗ⁅K,SpecialLinear.sl (Fin 2) K⁆
+      (Sl2Std K 1 × Sl2Std K 1)) := by
+  rintro ⟨e⟩
+  have h := congr(($(formalCharacter_congr (e.restrictLie (slTwoDiagonalCartan K)))).coeff
+    (slTwoWeight (0 : K)))
+  rw [formalCharacter_one_tensor_one, formalCharacter_prod, formalCharacter_eq_sum] at h
+  simp only [Fin.sum_univ_succ, Fin.sum_univ_zero, add_zero, AddMonoidAlgebra.coeff_add,
+    AddMonoidAlgebra.coeff_single, Finsupp.add_apply] at h
+  norm_num at h
+
+end Equivalence
 
 end Sl2Std
 
