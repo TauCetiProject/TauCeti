@@ -19,7 +19,9 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
 * `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
-  change along `f ≫ g ≫ h` with the composite of the three base changes agree.
+  change along `f ≫ g ≫ h` with the composite of the three base changes agree;
+* `CategoryTheory.Over.pullbackCompIsoOfEq`: a commuting square `f₁ ≫ g₁ = f₂ ≫ g₂` induces a
+  natural isomorphism `Over.pullback g₁ ⋙ Over.pullback f₁ ≅ Over.pullback g₂ ⋙ Over.pullback f₂`.
 -/
 
 public section
@@ -63,6 +65,66 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom {W X Y Z : C} (f : W ⟶ X) (g : 
   apply pullback.hom_ext
   · simp [pullbackComp, eqToHom_comp_pullback_fst A.hom (Category.assoc f g h).symm]
   · simp [pullbackComp, eqToHom_comp_pullback_snd A.hom (Category.assoc f g h).symm]
+
+/-- A commuting square `f₁ ≫ g₁ = f₂ ≫ g₂` induces a natural isomorphism between the composite
+base-change functors `Over.pullback g₁ ⋙ Over.pullback f₁` and
+`Over.pullback g₂ ⋙ Over.pullback f₂`. -/
+noncomputable def pullbackCompIsoOfEq {W X Y Z : C} {f₁ : W ⟶ X} {g₁ : X ⟶ Z}
+    {f₂ : W ⟶ Y} {g₂ : Y ⟶ Z} [HasPullbacksAlong f₁] [HasPullbacksAlong g₁]
+    [HasPullbacksAlong f₂] [HasPullbacksAlong g₂] (h : f₁ ≫ g₁ = f₂ ≫ g₂) :
+    pullback g₁ ⋙ pullback f₁ ≅ pullback g₂ ⋙ pullback f₂ :=
+  (pullbackComp f₁ g₁).symm ≪≫
+    eqToIso (by
+      have heq : ∀ (k₁ k₂ : W ⟶ Z) [i₁ : HasPullbacksAlong k₁] [i₂ : HasPullbacksAlong k₂],
+          k₁ = k₂ → @pullback C _ W Z k₁ i₁ = @pullback C _ W Z k₂ i₂ := by
+        rintro _ _ _ _ rfl
+        rfl
+      exact heq _ _ h) ≪≫
+    pullbackComp f₂ g₂
+
+/-- First-projection compatibility for the forward direction of `pullbackCompIsoOfEq`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_hom_app_left_fst_fst {W X Y Z : C} {f₁ : W ⟶ X} {g₁ : X ⟶ Z}
+    {f₂ : W ⟶ Y} {g₂ : Y ⟶ Z} [HasPullbacksAlong f₁] [HasPullbacksAlong g₁]
+    [HasPullbacksAlong f₂] [HasPullbacksAlong g₂] (h : f₁ ≫ g₁ = f₂ ≫ g₂) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).hom.app A).left ≫
+        Limits.pullback.fst (Limits.pullback.snd A.hom g₂) f₂ ≫
+        Limits.pullback.fst A.hom g₂ =
+      Limits.pullback.fst (Limits.pullback.snd A.hom g₁) f₁ ≫
+        Limits.pullback.fst A.hom g₁ := by
+  simp [pullbackCompIsoOfEq, pullbackComp, eqToHom_comp_pullback_fst A.hom h]
+
+/-- Second-projection compatibility for the forward direction of `pullbackCompIsoOfEq`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_hom_app_left_snd {W X Y Z : C} {f₁ : W ⟶ X} {g₁ : X ⟶ Z}
+    {f₂ : W ⟶ Y} {g₂ : Y ⟶ Z} [HasPullbacksAlong f₁] [HasPullbacksAlong g₁]
+    [HasPullbacksAlong f₂] [HasPullbacksAlong g₂] (h : f₁ ≫ g₁ = f₂ ≫ g₂) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).hom.app A).left ≫
+        Limits.pullback.snd (Limits.pullback.snd A.hom g₂) f₂ =
+      Limits.pullback.snd (Limits.pullback.snd A.hom g₁) f₁ :=
+  Over.w ((pullbackCompIsoOfEq h).hom.app A)
+
+/-- First-projection compatibility for the inverse direction of `pullbackCompIsoOfEq`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_inv_app_left_fst_fst {W X Y Z : C} {f₁ : W ⟶ X} {g₁ : X ⟶ Z}
+    {f₂ : W ⟶ Y} {g₂ : Y ⟶ Z} [HasPullbacksAlong f₁] [HasPullbacksAlong g₁]
+    [HasPullbacksAlong f₂] [HasPullbacksAlong g₂] (h : f₁ ≫ g₁ = f₂ ≫ g₂) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).inv.app A).left ≫
+        Limits.pullback.fst (Limits.pullback.snd A.hom g₁) f₁ ≫
+        Limits.pullback.fst A.hom g₁ =
+      Limits.pullback.fst (Limits.pullback.snd A.hom g₂) f₂ ≫
+        Limits.pullback.fst A.hom g₂ := by
+  simp [pullbackCompIsoOfEq, pullbackComp, eqToHom_comp_pullback_fst A.hom h.symm]
+
+/-- Second-projection compatibility for the inverse direction of `pullbackCompIsoOfEq`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_inv_app_left_snd {W X Y Z : C} {f₁ : W ⟶ X} {g₁ : X ⟶ Z}
+    {f₂ : W ⟶ Y} {g₂ : Y ⟶ Z} [HasPullbacksAlong f₁] [HasPullbacksAlong g₁]
+    [HasPullbacksAlong f₂] [HasPullbacksAlong g₂] (h : f₁ ≫ g₁ = f₂ ≫ g₂) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).inv.app A).left ≫
+        Limits.pullback.snd (Limits.pullback.snd A.hom g₁) f₁ =
+      Limits.pullback.snd (Limits.pullback.snd A.hom g₂) f₂ :=
+  Over.w ((pullbackCompIsoOfEq h).inv.app A)
 
 end Over
 
