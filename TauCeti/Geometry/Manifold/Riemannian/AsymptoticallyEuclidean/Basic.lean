@@ -163,27 +163,21 @@ structure IsAsymptoticallyEuclideanEnd (t R : ℝ) (φ : EuclideanSpace ℝ (Fin
   /-- The parametrization is injective on the exterior of the ball. -/
   injOn : InjOn φ (closedBall 0 R)ᶜ
   /-- The differential of the parametrization is invertible on the exterior of the ball. -/
-  isInvertible_mfderiv (x : EuclideanSpace ℝ (Fin n)) (hx : R < ‖x‖) :
+  isInvertible_mfderiv (x : EuclideanSpace ℝ (Fin n)) (hx : x ∈ (closedBall 0 R)ᶜ) :
     (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x).IsInvertible
   /-- The pulled-back metric coefficients are twice continuously differentiable on the exterior
   of the ball. -/
   contDiffOn_pullbackMetricCoeff (i j : Fin n) :
     ContDiffOn ℝ 2 (pullbackMetricCoeff I φ · i j) (closedBall 0 R)ᶜ
   /-- The derivatives of order `k ≤ 2` of `g_ij - δ_ij` decay like `‖x‖^(-t-k)`. -/
-  exists_norm_iteratedFDeriv_le : ∃ C : ℝ, ∀ k ≤ 2, ∀ (i j : Fin n) (x : EuclideanSpace ℝ (Fin n)),
-    R < ‖x‖ → ‖iteratedFDeriv ℝ k
+  exists_norm_iteratedFDeriv_le : ∃ C : ℝ, ∀ k ≤ 2, ∀ (i j : Fin n),
+    ∀ x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ, ‖iteratedFDeriv ℝ k
       (fun y ↦ (pullbackMetricCoeff I φ y - 1) i j) x‖ ≤
         C * ‖x‖ ^ (-t - k)
 
 namespace IsAsymptoticallyEuclideanEnd
 
 variable {t R : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
-
-/-- A point lies in the exterior of the closed ball of radius `R` exactly when its norm exceeds
-`R`. -/
-private theorem mem_compl_closedBall_iff {x : EuclideanSpace ℝ (Fin n)} :
-    x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ ↔ R < ‖x‖ := by
-  simp
 
 /-- An end parametrized by the exterior of a ball is also an end on the exterior of every larger
 ball. -/
@@ -196,10 +190,10 @@ theorem mono_radius (h : IsAsymptoticallyEuclideanEnd I t R φ) {R' : ℝ} (hR :
     { radius_pos := h.radius_pos.trans_le hR
       contMDiffOn := h.contMDiffOn.mono hsub
       injOn := h.injOn.mono hsub
-      isInvertible_mfderiv := fun x hx ↦ h.isInvertible_mfderiv x (hR.trans_lt hx)
+      isInvertible_mfderiv := fun x hx ↦ h.isInvertible_mfderiv x (hsub hx)
       contDiffOn_pullbackMetricCoeff := fun i j ↦ (h.contDiffOn_pullbackMetricCoeff i j).mono hsub
       exists_norm_iteratedFDeriv_le :=
-        ⟨C, fun k hk i j x hx ↦ hC k hk i j x (hR.trans_lt hx)⟩ }
+        ⟨C, fun k hk i j x hx ↦ hC k hk i j x (hsub hx)⟩ }
 
 /-- An end of order `t` is an end of every smaller order. -/
 theorem mono_order (h : IsAsymptoticallyEuclideanEnd I t R φ) {t' : ℝ} (ht : t' ≤ t) :
@@ -208,7 +202,8 @@ theorem mono_order (h : IsAsymptoticallyEuclideanEnd I t R φ) {t' : ℝ} (ht : 
   refine
     { h with
       exists_norm_iteratedFDeriv_le := ⟨|C| * R ^ (t' - t), fun k hk i j x hx ↦ ?_⟩ }
-  have hx0 : 0 < ‖x‖ := h.radius_pos.trans hx
+  have hxR : R < ‖x‖ := by simpa using hx
+  have hx0 : 0 < ‖x‖ := h.radius_pos.trans hxR
   -- Split `‖x‖^(-t-k)` as `‖x‖^(t'-t) ‖x‖^(-t'-k)` and bound the first factor by `R^(t'-t)`.
   calc _ ≤ C * ‖x‖ ^ (-t - k) := hC k hk i j x hx
     _ ≤ |C| * (‖x‖ ^ (t' - t) * ‖x‖ ^ (-t' - k)) := by
@@ -216,7 +211,7 @@ theorem mono_order (h : IsAsymptoticallyEuclideanEnd I t R φ) {t' : ℝ} (ht : 
       exact mul_le_mul_of_nonneg_right (le_abs_self C) (Real.rpow_nonneg hx0.le _)
     _ ≤ |C| * (R ^ (t' - t) * ‖x‖ ^ (-t' - k)) := by
       gcongr ?_ * (?_ * _)
-      exact Real.rpow_le_rpow_of_nonpos h.radius_pos hx.le (sub_nonpos.2 ht)
+      exact Real.rpow_le_rpow_of_nonpos h.radius_pos hxR.le (sub_nonpos.2 ht)
     _ = |C| * R ^ (t' - t) * ‖x‖ ^ (-t' - k) := (mul_assoc _ _ _).symm
 
 /-- An end is a local diffeomorphism on the exterior of its ball, by the inverse function
@@ -224,7 +219,7 @@ theorem. -/
 theorem isLocalDiffeomorphOn [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
     IsLocalDiffeomorphOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ φ (closedBall 0 R)ᶜ := by
   rintro ⟨x, hx⟩
-  obtain ⟨e, he⟩ := h.isInvertible_mfderiv x (mem_compl_closedBall_iff.1 hx)
+  obtain ⟨e, he⟩ := h.isInvertible_mfderiv x hx
   exact isLocalDiffeomorphAt_of_mfderiv_eq h.contMDiffOn isClosed_closedBall.isOpen_compl hx
     BoundarylessManifold.isInteriorPoint (by simp) he
 
@@ -291,12 +286,11 @@ theorem comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
         (h.contDiffOn_pullbackMetricCoeff i j).congr fun _ hy ↦
           congrArg (fun A : Matrix (Fin n) (Fin n) ℝ ↦ A i j) (hcoeff hy)
       exists_norm_iteratedFDeriv_le := ⟨C, fun k hk i j x hx ↦ ?_⟩ }
-  · rw [mfderiv_comp x (hf.mdifferentiableAt (φ x)) (hdiff x (mem_compl_closedBall_iff.2 hx))]
+  · rw [mfderiv_comp x (hf.mdifferentiableAt (φ x)) (hdiff x hx)]
     exact (hf.isInvertible_mfderiv (φ x)).comp (h.isInvertible_mfderiv x hx)
-  · have hx' := mem_compl_closedBall_iff.2 hx
-    have hev : (fun y ↦ (pullbackMetricCoeff J (f ∘ φ) y - 1) i j) =ᶠ[𝓝 x]
+  · have hev : (fun y ↦ (pullbackMetricCoeff J (f ∘ φ) y - 1) i j) =ᶠ[𝓝 x]
         fun y ↦ (pullbackMetricCoeff I φ y - 1) i j := by
-      filter_upwards [hopen.mem_nhds hx'] with y hy
+      filter_upwards [hopen.mem_nhds hx] with y hy
       exact congrArg (fun A : Matrix (Fin n) (Fin n) ℝ ↦ (A - 1) i j) (hcoeff hy)
     rw [(hev.iteratedFDeriv ℝ k).eq_of_nhds]
     exact hC k hk i j x hx
@@ -359,7 +353,8 @@ theorem not_isAsymptoticallyEuclideanEnd_two_smul (hn : 0 < n) {t : ℝ} (ht : 0
   have hnorm : ‖s • EuclideanSpace.basisFun (Fin n) ℝ i‖ = s := by
     rw [norm_smul, (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal.1 i, mul_one,
       Real.norm_of_nonneg hs0.le]
-  have h0 := hC 0 (by norm_num) i i (s • EuclideanSpace.basisFun (Fin n) ℝ i) (by rwa [hnorm])
+  have h0 := hC 0 (by norm_num) i i (s • EuclideanSpace.basisFun (Fin n) ℝ i)
+    (by rwa [mem_compl_iff, mem_closedBall_zero_iff, not_le, hnorm])
   rw [norm_iteratedFDeriv_zero, Matrix.sub_apply, pullbackMetricCoeff_two_smul, Matrix.one_apply,
     hnorm] at h0
   norm_num at h0 hsC
