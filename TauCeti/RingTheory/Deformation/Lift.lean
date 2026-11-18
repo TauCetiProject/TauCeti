@@ -297,6 +297,27 @@ theorem mk_eq_mk_iff {ρ ρ' : Lift ρbar A} :
   refine Quotient.eq''.trans ?_
   rw [MulAction.orbitRel_apply, MulAction.mem_orbit_symm, MulAction.mem_orbit_iff]
 
+/-- A function on lifts that is invariant under conjugation by the strict kernel descends to strict
+classes. -/
+def lift {β : Sort*} (f : Lift ρbar A → β) (hf : ∀ (a : A.strictKernel n) ρ, f (a • ρ) = f ρ) :
+    StrictClass ρbar A → β :=
+  Quotient.lift f fun ρ ρ' h ↦ by
+    obtain ⟨a, rfl⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
+    exact hf a ρ'
+
+@[simp]
+theorem lift_mk {β : Sort*} (f : Lift ρbar A → β) (hf : ∀ (a : A.strictKernel n) ρ, f (a • ρ) = f ρ)
+    (ρ : Lift ρbar A) : lift f hf (mk ρ) = f ρ :=
+  (rfl)
+
+/-- The descent of an invariant function to strict classes is unique. -/
+theorem lift_unique {β : Sort*} (f : Lift ρbar A → β)
+    (hf : ∀ (a : A.strictKernel n) ρ, f (a • ρ) = f ρ) (g : StrictClass ρbar A → β)
+    (hg : ∀ ρ, g (mk ρ) = f ρ) : g = lift f hf :=
+  funext fun c ↦ by
+    obtain ⟨ρ, rfl⟩ := mk_surjective c
+    exact hg ρ
+
 /-- The pushforward of strict classes along a morphism `f : A ⟶ B` of `C_Λ`. -/
 def map (f : A ⟶ B) : StrictClass ρbar A → StrictClass ρbar B :=
   Quotient.map' (Lift.map f) fun ρ ρ' h ↦ by
@@ -321,11 +342,8 @@ theorem map_comp (f : A ⟶ B) (f' : B ⟶ C) (c : StrictClass ρbar A) :
   simp [Lift.map_comp]
 
 /-- Over the residue field there is at most one strict class. -/
-instance : Subsingleton (StrictClass ρbar (residue Λ k)) where
-  allEq c c' := by
-    obtain ⟨ρ, rfl⟩ := mk_surjective c
-    obtain ⟨ρ', rfl⟩ := mk_surjective c'
-    rw [Subsingleton.elim ρ ρ']
+instance : Subsingleton (StrictClass ρbar (residue Λ k)) :=
+  Quotient.instSubsingletonQuotient _
 
 end StrictClass
 
