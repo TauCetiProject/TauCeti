@@ -107,14 +107,7 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc
     rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   have := (P.map (T 0)).isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one
     hF hmean
-  have he (t : ℝ≥0) : P.real {ω | renewalExcess T t ω ≤ x} =
-      1 - P.real {ω | x < renewalExcess T t ω} := by
-    rw [← probReal_compl_eq_one_sub₀ (nullMeasurableSet_lt aemeasurable_const
-      (aemeasurable_renewalExcess hT t))]
-    congr 1
-    ext ω
-    simp
-  simp_rw [he]
+  simp_rw [measureReal_renewalExcess_le_eq_one_sub hT]
   have hcomp : (P.map (T 0)).equilibriumExcessLaw.real (Iic (x : ℝ)) =
       1 - (P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)) := by
     rw [← probReal_compl_eq_one_sub measurableSet_Ioi, compl_Ioi]
@@ -249,17 +242,7 @@ theorem tendsto_measureReal_renewalExcess_le_integral_tail
       (𝓝 (((∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹).toReal *
         ∫ s in Ioc 0 (x : ℝ), P.real {ω | s < (T 0 ω : ℝ)})) := by
   have := hindep.isProbabilityMeasure
-  have htail (s : ℝ) : (P.map (T 0)).real {u | s < (u : ℝ)} =
-      P.real {ω | s < (T 0 ω : ℝ)} :=
-    map_measureReal_apply_of_aemeasurable (hid 0).aemeasurable_fst
-      (measurableSet_lt measurable_const measurable_coe_nnreal_real)
-  have heq : (P.map (T 0)).equilibriumExcessLaw.real (Iic (x : ℝ)) =
-      ((∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹).toReal *
-        ∫ s in Ioc 0 (x : ℝ), P.real {ω | s < (T 0 ω : ℝ)} := by
-    rw [Measure.equilibriumExcessLaw_real_Iic,
-      lintegral_map' measurable_coe_nnreal_ennreal.aemeasurable (hid 0).aemeasurable_fst]
-    simp_rw [htail]
-  rw [← heq]
+  rw [← Measure.equilibriumExcessLaw_map_real_Iic P (hid 0).aemeasurable_fst]
   exact tendsto_measureReal_renewalExcess_le hindep hid hNL x
 
 /-- **Limiting cumulative distribution function of the excess life.** For a nonlattice
