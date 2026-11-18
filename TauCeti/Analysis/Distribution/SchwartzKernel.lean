@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.LinearEquiv
+public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.SchwartzKernel
 import TauCeti.Analysis.Distribution.Gluing
 import TauCeti.Analysis.Distribution.TestFunction.Complexify
@@ -29,12 +30,16 @@ test functions on `Ω × O` with
 where `(φ ⊗ ψ)(x, y) = φ x * ψ y` is `TestFunction.tensor`
 (`LinearMap.existsUnique_schwartzKernel_testFunction`). This is the Schwartz kernel theorem in the
 form of the construction in Hörmander's proof, which first derives the estimate above from the
-continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`. These two theorems take the estimate
-as a hypothesis; it is derived from the weak continuity of an operator in
-`LinearMap.existsUnique_kernelOperator_eq` below.
-For `F = ℂ` the kernel is an actual distribution `K ∈ 𝓓'(Ω × O, ℂ)`, acting on complex test
-functions through its complex-linear extension `Distribution.complexPairing`
-(`LinearMap.existsUnique_schwartzKernel_distribution`).
+continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`. For `F = ℂ` the kernel is an actual
+distribution `K ∈ 𝓓'(Ω × O, ℂ)`, acting on complex test functions through its complex-linear
+extension `Distribution.complexPairing` (`LinearMap.existsUnique_schwartzKernel_distribution`).
+
+These two theorems take the estimate as a hypothesis. It holds as soon as `B` is continuous in
+each variable for the topologies of test functions: the restriction of `B` to functions supported
+in `K₁` and `K₂` is then a separately continuous bilinear map on two Fréchet spaces, which has
+finite order (`LinearMap.exists_bound_supportedIn_of_continuous`, through the Banach–Steinhaus
+theorem). This gives `LinearMap.existsUnique_schwartzKernel_testFunction_of_continuous` and
+`LinearMap.existsUnique_schwartzKernel_distribution_of_continuous`.
 
 A real bilinear map `B` on the real test functions `𝓓(Ω, ℝ) × 𝓓(O, ℝ)` with values in a real
 Banach space `G`, under the same estimate, has a unique kernel `T ∈ 𝓓'(Ω × O, G)` with
@@ -57,11 +62,19 @@ operator has a kernel: a linear map `A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ)
 is `kernelOperator hV K` for exactly one `K ∈ 𝓓'(Ω × O, ℂ)`
 (`LinearMap.existsUnique_kernelOperator_eq`), in particular every continuous linear map
 `𝓓(O, ℝ) →L[ℝ] 𝓓'(Ω, ℂ)` (`ContinuousLinearMap.existsUnique_kernelOperator_eq`). For the proof,
-the bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` is extended to complex test functions. It is separately
-continuous on each pair of spaces `𝓓_{K₁} × 𝓓_{K₂}` of tests supported in compact sets, which
-are Fréchet spaces, so it satisfies the estimate above
-(`LinearMap.exists_bound_supportedIn_of_continuous`, through the Banach–Steinhaus theorem), and
-`LinearMap.existsUnique_schwartzKernel_distribution` supplies `K`.
+the bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` is extended to complex test functions. It is continuous in
+each variable, so `LinearMap.existsUnique_schwartzKernel_distribution_of_continuous` supplies `K`.
+
+In the same way a continuous linear map `T : 𝓓(O, ℂ) → 𝓓'(Ω, ℂ)` on complex test functions has a
+unique kernel `K ∈ 𝓓'(Ω × O, ℂ)` with
+
+`K (φ ⊗ ψ) = (T ψ) φ`
+
+(`ContinuousLinearMap.existsUnique_schwartzKernel`), its *Schwartz kernel*
+`ContinuousLinearMap.schwartzKernel`. The kernel depends linearly on `T` and determines it. The
+kernel of a transpose of `T`, a map `R : 𝓓(Ω, ℂ) → 𝓓'(O, ℂ)` with `(R φ) ψ = (T ψ) φ`, is the
+kernel of `T` with its two variables exchanged, and the kernel of a restriction of `T` to smaller
+open sets is the restriction of the kernel of `T`.
 
 ## Proof
 
@@ -92,6 +105,9 @@ on compact sets applies to it.
   distributions.
 * `LinearMap.existsUnique_schwartzKernel_prodSMulCLM`: its form for real test functions and
   distributions with values in a real Banach space.
+* `LinearMap.existsUnique_schwartzKernel_testFunction_of_continuous`,
+  `LinearMap.existsUnique_schwartzKernel_distribution_of_continuous`: the same for bilinear maps
+  continuous in each variable.
 
 * `Distribution.kernelOperator`: the operator `𝓓(O) → 𝓓'(Ω)` with kernel `K`, with
   `Distribution.kernelOperator_apply`, `Distribution.continuous_kernelOperator_apply` and
@@ -101,6 +117,16 @@ on compact sets applies to it.
   `𝓓(O, ℝ) → 𝓓'(Ω, ℂ)`.
 * `LinearMap.exists_kernelOperator_eq_iff`: the operators with a kernel are exactly the weakly
   continuous ones.
+* `ContinuousLinearMap.existsUnique_schwartzKernel`: the Schwartz kernel theorem for continuous
+  linear maps `𝓓(O, ℂ) → 𝓓'(Ω, ℂ)` on complex test functions.
+* `ContinuousLinearMap.schwartzKernel`: the kernel of such a map, characterized by
+  `ContinuousLinearMap.complexPairing_schwartzKernel_tensor` and
+  `ContinuousLinearMap.eq_schwartzKernel_iff`; it determines the map
+  (`ContinuousLinearMap.schwartzKernel_injective`).
+* `ContinuousLinearMap.schwartzKernel_eq_transportCLM_of_complexPairing_eq`: the kernel of a
+  transpose is obtained by exchanging the two variables.
+* `ContinuousLinearMap.schwartzKernel_eq_restrictCLM_of_complexPairing_eq`: the kernel of a
+  restriction is the restriction of the kernel.
 
 ## References
 
@@ -466,6 +492,55 @@ theorem existsUnique_schwartzKernel_prodSMulCLM {G : Type*} [NormedAddCommGroup 
   -- Uniqueness is the density of tensor products.
   exact ⟨S, hS, fun S' hS' ↦ ext_prodSMulCLM hV fun ψ φ ↦ by rw [hS', hS]⟩
 
+/-! ### Separately continuous bilinear maps -/
+
+section Continuous
+
+omit [CompleteSpace F] in
+variable (B) in
+/-- A bilinear map on complex test functions which is continuous in each variable satisfies the
+estimate of the Schwartz kernel theorem: for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C` and
+`k` give `‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for `φ` supported in `K₁` and `ψ` supported in `K₂`. This is
+`LinearMap.exists_bound_supportedIn_of_continuous` for the restriction of `B` to such functions. -/
+private theorem exists_bound_ofSupportedIn_of_continuous (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ)
+    (h₂ : ∀ φ, Continuous (B φ)) (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ))
+    (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω) (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O) :
+    ∃ (C : ℝ) (k : ℕ), ∀ φ ψ, ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
+      C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ *
+        ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ :=
+  exists_bound_supportedIn_of_continuous
+    (B.compl₁₂ (ofSupportedInCLM ℂ hK₁).toLinearMap (ofSupportedInCLM ℂ hK₂).toLinearMap)
+    (fun _ ↦ (h₁ _).comp (continuous_ofSupportedIn hK₁))
+    (fun _ ↦ (h₂ _).comp (continuous_ofSupportedIn hK₂))
+
+variable (B) in
+/-- **The Schwartz kernel theorem for separately continuous bilinear maps.** Let `B` be a complex
+bilinear map on the complex test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b`, with values in a
+complex Banach space, which is continuous in each variable. Then there is a unique continuous
+linear map `T` on the complex test functions on `V = Ω × O` with `T (φ ⊗ ψ) = B φ ψ` for all `φ`
+and `ψ`. -/
+theorem existsUnique_schwartzKernel_testFunction_of_continuous
+    (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ))
+    {V : Opens ((a → ℝ) × (b → ℝ))}
+    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    ∃! T : 𝓓(V, ℂ) →L[ℂ] F, ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
+      T (φ.tensor ψ hV.symm.subset) = B φ ψ :=
+  existsUnique_schwartzKernel_testFunction B (exists_bound_ofSupportedIn_of_continuous B h₁ h₂) hV
+
+/-- **The Schwartz kernel theorem for separately continuous bilinear forms.** A complex bilinear
+form on the complex test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b` which is continuous in each
+variable is given by a unique complex-valued distribution `K` on `V = Ω × O`: the complex-linear
+extension of `K` takes the value `B φ ψ` on `φ ⊗ ψ`. -/
+theorem existsUnique_schwartzKernel_distribution_of_continuous
+    (B : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] ℂ) (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ)
+    (h₂ : ∀ φ, Continuous (B φ)) {V : Opens ((a → ℝ) × (b → ℝ))}
+    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    ∃! K : 𝓓'(V, ℂ), ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
+      K.complexPairing (φ.tensor ψ hV.symm.subset) = B φ ψ :=
+  existsUnique_schwartzKernel_distribution B (exists_bound_ofSupportedIn_of_continuous B h₁ h₂) hV
+
+end Continuous
+
 end LinearMap
 
 /-! ### Operators and their kernels -/
@@ -563,24 +638,17 @@ private theorem pairing_apply (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
     pairing A hA φ ψ = (pairingLeft A hA φ).complexPairing ψ :=
   (rfl)
 
-/-- The bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` of a weakly continuous `A` satisfies the estimate of the
-Schwartz kernel theorem on each pair of compact sets: it is separately continuous on the Fréchet
-spaces of tests supported in them. -/
-private theorem exists_bound_pairing (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
-    (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ) (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ))
-    (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω) (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O) :
-    ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
-      ‖pairing A hA (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
-        C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ *
-          ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ :=
-  exists_bound_supportedIn_of_continuous ((pairing A hA).compl₁₂
-      (ofSupportedInCLM ℂ hK₁).toLinearMap (ofSupportedInCLM ℂ hK₂).toLinearMap)
-    (fun ψ ↦ by
-      simp only [compl₁₂_apply, ContinuousLinearMap.coe_coe, pairing_apply,
-        complexPairing_apply, pairingLeft_apply]
-      fun_prop)
-    (fun φ ↦ ((pairingLeft A hA (ofSupportedIn hK₁ φ)).complexPairing.continuous.comp
-      (ofSupportedInCLM ℂ hK₂).continuous).congr fun ψ ↦ by simp [pairing_apply])
+/-- The bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` of a weakly continuous `A` is continuous in `φ`. -/
+private theorem continuous_pairing_left (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
+    (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ) (ψ : 𝓓(O, ℂ)) :
+    Continuous fun φ ↦ pairing A hA φ ψ := by
+  simp only [pairing_apply, complexPairing_apply, pairingLeft_apply]
+  fun_prop
+
+/-- The bilinear form `(φ, ψ) ↦ ⟨A ψ, φ⟩` of a weakly continuous `A` is continuous in `ψ`. -/
+private theorem continuous_pairing_right (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, ℂ))
+    (hA : ∀ φ, Continuous fun ψ ↦ A ψ φ) (φ : 𝓓(Ω, ℂ)) : Continuous (pairing A hA φ) :=
+  (pairingLeft A hA φ).complexPairing.continuous.congr fun ψ ↦ (pairing_apply A hA φ ψ).symm
 
 /-- **The Schwartz kernel theorem.** Let `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b` be open sets and let
 `A : 𝓓(O, ℝ) → 𝓓'(Ω, ℂ)` be a linear map which is continuous for the weak topology of
@@ -592,7 +660,8 @@ theorem existsUnique_kernelOperator_eq (A : 𝓓(O, ℝ) →ₗ[ℝ] 𝓓'(Ω, �
     (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
     ∃! K : 𝓓'(V, ℂ), kernelOperator hV.symm.subset K = A := by
   obtain ⟨K, hK, -⟩ :=
-    existsUnique_schwartzKernel_distribution (pairing A hA) (exists_bound_pairing A hA) hV
+    existsUnique_schwartzKernel_distribution_of_continuous (pairing A hA)
+      (continuous_pairing_left A hA) (continuous_pairing_right A hA) hV
   -- `K` takes the value `⟨A ψ, φ⟩` on tensor products of real test functions.
   have hKA : kernelOperator hV.symm.subset K = A := by
     ext ψ φ
@@ -628,5 +697,138 @@ theorem existsUnique_kernelOperator_eq (A : 𝓓(O, ℝ) →L[ℝ] 𝓓'(Ω, ℂ
     ∃! K : 𝓓'(V, ℂ), kernelOperator hV.symm.subset K = A :=
   LinearMap.existsUnique_kernelOperator_eq _
     (fun φ ↦ (continuous_eval_const φ).comp A.continuous) hV
+
+/-! ### The Schwartz kernel of a continuous linear map on complex test functions -/
+
+section SchwartzKernel
+
+variable (T S : 𝓓(O, ℂ) →L[ℂ] 𝓓'(Ω, ℂ))
+  (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ)))
+
+
+/-- The bilinear form `(φ, ψ) ↦ (T ψ) φ` of a continuous linear map `T` from test functions to
+distributions, with the distributions `T ψ` acting on complex test functions through their
+complex-linear extensions. It is continuous in each variable. -/
+private def pairing : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] ℂ :=
+  LinearMap.mk₂ ℂ (fun φ ψ ↦ (T ψ).complexPairing φ) (fun _ _ _ ↦ map_add _ _ _)
+    (fun _ _ _ ↦ map_smul _ _ _) (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
+
+private theorem pairing_apply (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) :
+    pairing T φ ψ = (T ψ).complexPairing φ :=
+  rfl
+
+private theorem continuous_pairing_left (ψ : 𝓓(O, ℂ)) : Continuous fun φ ↦ pairing T φ ψ := by
+  simpa only [pairing_apply] using (T ψ).complexPairing.continuous
+
+private theorem continuous_pairing_right (φ : 𝓓(Ω, ℂ)) : Continuous (pairing T φ) :=
+  ((Distribution.continuous_complexPairing_apply φ).comp T.continuous).congr fun ψ ↦
+    (pairing_apply T φ ψ).symm
+
+/-- **The Schwartz kernel theorem.** A continuous linear map `T` from the complex test functions on
+an open set `O ⊆ ℝ^b` to the complex-valued distributions on an open set `Ω ⊆ ℝ^a` has a unique
+*kernel*: a complex-valued distribution `K` on `V = Ω × O` with `K (φ ⊗ ψ) = (T ψ) φ` for all
+complex test functions `φ` on `Ω` and `ψ` on `O`, where both distributions act on complex test
+functions through their complex-linear extensions. -/
+theorem existsUnique_schwartzKernel :
+    ∃! K : 𝓓'(V, ℂ), ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
+      K.complexPairing (φ.tensor ψ hV.symm.subset) = (T ψ).complexPairing φ := by
+  simpa only [pairing_apply] using
+    LinearMap.existsUnique_schwartzKernel_distribution_of_continuous (pairing T)
+      (continuous_pairing_left T) (continuous_pairing_right T) hV
+
+/-- The **Schwartz kernel** of a continuous linear map `T` from test functions on `O` to
+distributions on `Ω`: the unique distribution on `V = Ω × O` taking the value `(T ψ) φ` on
+`φ ⊗ ψ` (`ContinuousLinearMap.complexPairing_schwartzKernel_tensor`). -/
+def schwartzKernel : 𝓓'(V, ℂ) :=
+  (existsUnique_schwartzKernel T hV).exists.choose
+
+/-- The defining property of the Schwartz kernel: `K (φ ⊗ ψ) = (T ψ) φ`. -/
+@[simp]
+theorem complexPairing_schwartzKernel_tensor (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) :
+    (T.schwartzKernel hV).complexPairing (φ.tensor ψ hV.symm.subset) = (T ψ).complexPairing φ :=
+  (existsUnique_schwartzKernel T hV).exists.choose_spec φ ψ
+
+/-- A distribution on `Ω × O` is the Schwartz kernel of `T` exactly when it takes the value
+`(T ψ) φ` on every `φ ⊗ ψ`. -/
+theorem eq_schwartzKernel_iff {K : 𝓓'(V, ℂ)} :
+    K = T.schwartzKernel hV ↔ ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
+      K.complexPairing (φ.tensor ψ hV.symm.subset) = (T ψ).complexPairing φ :=
+  ⟨fun h ↦ h ▸ complexPairing_schwartzKernel_tensor T hV, fun h ↦
+    (existsUnique_schwartzKernel T hV).unique h (complexPairing_schwartzKernel_tensor T hV)⟩
+
+/-- The Schwartz kernel recovers `T`: for real test functions `φ`, the value `(T ψ) φ` is the
+kernel paired with `φ ⊗ ψ`. -/
+theorem apply_apply_eq_complexPairing_schwartzKernel (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℂ)) :
+    T ψ φ = (T.schwartzKernel hV).complexPairing
+      ((postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ).tensor ψ hV.symm.subset) := by
+  rw [complexPairing_schwartzKernel_tensor, Distribution.complexPairing_postcompCLM_ofRealCLM]
+
+/-- The Schwartz kernel of a sum is the sum of the Schwartz kernels. -/
+@[simp]
+theorem schwartzKernel_add :
+    (T + S).schwartzKernel hV = T.schwartzKernel hV + S.schwartzKernel hV :=
+  ((eq_schwartzKernel_iff _ hV).2 fun φ ψ ↦ by simp).symm
+
+/-- The Schwartz kernel of `c • T` is `c` times the Schwartz kernel of `T`. -/
+@[simp]
+theorem schwartzKernel_smul (c : ℂ) : (c • T).schwartzKernel hV = c • T.schwartzKernel hV :=
+  ((eq_schwartzKernel_iff _ hV).2 fun φ ψ ↦ by simp).symm
+
+/-- The Schwartz kernel of the zero map is zero. -/
+@[simp]
+theorem schwartzKernel_zero : (0 : 𝓓(O, ℂ) →L[ℂ] 𝓓'(Ω, ℂ)).schwartzKernel hV = 0 :=
+  ((eq_schwartzKernel_iff _ hV).2 fun φ ψ ↦ by simp).symm
+
+/-- A continuous linear map from test functions to distributions is determined by its Schwartz
+kernel. -/
+theorem schwartzKernel_injective :
+    Function.Injective fun T : 𝓓(O, ℂ) →L[ℂ] 𝓓'(Ω, ℂ) ↦ T.schwartzKernel hV := by
+  intro T S h
+  ext ψ φ
+  simp only at h
+  rw [apply_apply_eq_complexPairing_schwartzKernel _ hV, h,
+    ← apply_apply_eq_complexPairing_schwartzKernel _ hV]
+
+/-- Two continuous linear maps from test functions to distributions have the same Schwartz kernel
+exactly when they are equal. -/
+@[simp]
+theorem schwartzKernel_inj : T.schwartzKernel hV = S.schwartzKernel hV ↔ T = S :=
+  (schwartzKernel_injective hV).eq_iff
+
+/-- **Transposition swaps the variables of the kernel.** If `R` is a transpose of `T`, that is
+`(R φ) ψ = (T ψ) φ` for all complex test functions `φ` on `Ω` and `ψ` on `O`, then the kernel of
+`R` on `O × Ω` is the kernel of `T` with its two variables exchanged: its transport along
+`(y, x) ↦ (x, y)`. -/
+theorem schwartzKernel_eq_transportCLM_of_complexPairing_eq {V' : Opens ((b → ℝ) × (a → ℝ))}
+    (hV' : (V' : Set ((b → ℝ) × (a → ℝ))) = (O : Set (b → ℝ)) ×ˢ (Ω : Set (a → ℝ)))
+    (R : 𝓓(Ω, ℂ) →L[ℂ] 𝓓'(O, ℂ))
+    (hRT : ∀ φ ψ, (R φ).complexPairing ψ = (T ψ).complexPairing φ) :
+    R.schwartzKernel hV' = Distribution.transportCLM (ContinuousLinearEquiv.prodComm ℝ _ _)
+      (by rw [hV, hV']; exact fun p hp ↦ ⟨hp.2, hp.1⟩) (T.schwartzKernel hV) := by
+  refine ((eq_schwartzKernel_iff R hV').2 fun ψ φ ↦ ?_).symm
+  rw [Distribution.complexPairing_transportCLM, hRT, ← complexPairing_schwartzKernel_tensor T hV]
+  congr 1
+  ext p
+  simp [mul_comm]
+
+/-- **Restriction of the kernel.** Let `Ω' ⊆ Ω` and `O' ⊆ O` be open and let `R` be a restriction
+of `T` to them: `(R ψ) φ = (T ψ) φ` for complex test functions `φ` on `Ω'` and `ψ` on `O'`,
+extended by zero. Then the kernel of `R` on `Ω' × O'` is the restriction of the kernel of `T`. -/
+theorem schwartzKernel_eq_restrictCLM_of_complexPairing_eq {Ω' : Opens (a → ℝ)}
+    {O' : Opens (b → ℝ)} (hΩ : Ω' ≤ Ω) (hO : O' ≤ O) {V' : Opens ((a → ℝ) × (b → ℝ))}
+    (hV' : (V' : Set ((a → ℝ) × (b → ℝ))) = (Ω' : Set (a → ℝ)) ×ˢ (O' : Set (b → ℝ)))
+    (R : 𝓓(O', ℂ) →L[ℂ] 𝓓'(Ω', ℂ))
+    (hRT : ∀ φ ψ, (R ψ).complexPairing φ = (T (monoCLM ℂ ψ)).complexPairing (monoCLM ℂ φ)) :
+    R.schwartzKernel hV' = Distribution.restrictCLM (T.schwartzKernel hV) := by
+  have hVV' : V' ≤ V := by
+    rw [← SetLike.coe_subset_coe, hV, hV']
+    exact prod_mono hΩ hO
+  refine ((eq_schwartzKernel_iff R hV').2 fun φ ψ ↦ ?_).symm
+  rw [Distribution.complexPairing_restrictCLM, hRT, ← complexPairing_schwartzKernel_tensor T hV]
+  congr 1
+  ext p
+  simp [hΩ, hO, hVV']
+
+end SchwartzKernel
 
 end ContinuousLinearMap
