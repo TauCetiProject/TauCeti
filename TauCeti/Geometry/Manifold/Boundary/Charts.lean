@@ -51,8 +51,9 @@ step and are not proved here.
 
 ## Main results
 
-* `TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas`: boundary points are
-  detected by the vanishing zeroth coordinate in any ambient atlas chart.
+* `TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_maximalAtlas` and
+  `TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas`: boundary points are
+  detected by the vanishing zeroth coordinate in any ambient maximal-atlas chart.
 * `TauCeti.ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas`: interior
   points are detected by the positive zeroth coordinate in any ambient maximal-atlas chart.
 * `TauCeti.boundaryChartedSpace_atlas`: the boundary atlas is the range of its preferred charts.
@@ -101,17 +102,26 @@ variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) k M]
   {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))} {x : M}
 
+omit [IsManifold (𝓡∂ (n + 1)) k M] in
+/-- A point of a `C^k` manifold with boundary modeled on the `(n + 1)`-dimensional Euclidean
+half-space lies on the boundary exactly when any chart of its `C^k` maximal atlas around it reads
+it with vanishing zeroth coordinate. -/
+theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_maximalAtlas (hk : k ≠ 0)
+    (he : e ∈ IsManifold.maximalAtlas (𝓡∂ (n + 1)) k M) (hx : x ∈ e.source) :
+    x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).1 0 = 0 := by
+  rw [ModelWithCorners.boundary, mem_ofPred_eq,
+    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range hk he hx,
+    frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
+  exact eq_comm
+
 /-- A point of a `C^k` manifold with boundary modeled on the `(n + 1)`-dimensional Euclidean
 half-space lies on the boundary exactly when any chart around it reads it with vanishing zeroth
 coordinate. -/
 theorem ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas (hk : k ≠ 0)
     (he : e ∈ atlas (EuclideanHalfSpace (n + 1)) M) (hx : x ∈ e.source) :
-    x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).1 0 = 0 := by
-  rw [ModelWithCorners.boundary, mem_ofPred_eq,
-    ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range hk
-      (IsManifold.subset_maximalAtlas he) hx,
-    frontier_range_modelWithCornersEuclideanHalfSpace, modelWithCornersEuclideanHalfSpace_toFun]
-  exact eq_comm
+    x ∈ (𝓡∂ (n + 1)).boundary M ↔ (e x).1 0 = 0 :=
+  ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_maximalAtlas hk
+    (IsManifold.subset_maximalAtlas he) hx
 
 /-- The image under `e.symm` of a point of the coordinate hyperplane lying in `e.target` is a
 boundary point of `M`. -/
