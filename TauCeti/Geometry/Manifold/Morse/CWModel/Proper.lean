@@ -181,8 +181,9 @@ private theorem IsMorse.exists_sublevelCWModel_tower (hf : IsMorse I f) (hp : Is
 /-- **The CW model of a proper Morse function, with its sublevels** (Milnor, *Morse Theory*,
 Theorem 3.5 and its proof). Let `f` be a Morse function on a boundaryless manifold `M`, proper and
 bounded below. There are regular values `a 0 < a 1 < ⋯` of `f` tending to infinity, with `a 0`
-below every value of `f`, a Hausdorff CW complex `X` whose `m`-cells are labelled by the critical points of `f` of index `m`, a homotopy
-equivalence `H : X ≃ₕ M`, and subcomplexes `W k` of `X` such that:
+below every value of `f`, a Hausdorff CW complex `X` whose `m`-cells are labelled by the critical
+points of `f` of index `m`, a homotopy equivalence `H : X ≃ₕ M`, and subcomplexes `W k` of `X`
+such that:
 
 * the cells of `W k` are those labelled by the critical points in the sublevel `{f ≤ a k}`;
 * every compact subset of `X` lies in some `W k`;
@@ -259,10 +260,9 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse
     refine ⟨fun hk ↦ hx.2.trans (hmono.monotone hk), fun hk ↦ ?_⟩
     exact hmono.lt_iff_lt.1 (hx.1.trans_le hk)
   · -- On the stage `k`, which is homeomorphic to `S k`, `H` is the model of the sublevel `M_{a k}`.
-    refine ⟨(cwComplexOfIsColimitSubcomplexHomeomorph hF hιc hc k).toHomotopyEquiv.trans (S k).h,
-      fun w ↦ ?_⟩
-    rw [ContinuousMap.HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv, ← hH,
-      ι_app_cwComplexOfIsColimitSubcomplexHomeomorph]
+    exact ⟨(cwComplexOfIsColimitSubcomplexHomeomorph hF hιc hc k).toHomotopyEquiv.trans (S k).h,
+      fun w ↦ (hH k _).symm.trans
+        (congrArg H (ι_app_cwComplexOfIsColimitSubcomplexHomeomorph hF hιc hc k w))⟩
 
 /-- **The CW model of a proper Morse function** (Milnor, *Morse Theory*, Theorem 3.5). Let `f` be
 a Morse function on a boundaryless manifold `M`, proper and bounded below. Then `M` is homotopy
