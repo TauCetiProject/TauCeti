@@ -292,29 +292,34 @@ theorem hasDerivAt_rpow_mul_one_sub_rpow (a b : ℝ) {t : ℝ} (ht0 : t ≠ 0 �
   ring
 
 /-- Raising the second parameter of the beta integrand by one splits its integral as a
-difference: off the endpoints
+difference: the integrands agree at every point,
 `t ^ (a - 1) * (1 - t) ^ b = t ^ (a - 1) * (1 - t) ^ (b - 1) - t ^ a * (1 - t) ^ (b - 1)`. -/
-theorem integral_rpow_mul_one_sub_rpow_add_one_right (ha : 0 < a) (hb : 0 < b)
-    (hx0 : 0 ≤ x) (hx1 : x ≤ 1) :
+theorem integral_rpow_mul_one_sub_rpow_add_one_right (ha : 0 < a) (hb : 0 < b) :
     ∫ t in (0 : ℝ)..x, t ^ (a - 1) * (1 - t) ^ b =
       (∫ t in (0 : ℝ)..x, t ^ (a - 1) * (1 - t) ^ (b - 1)) -
         ∫ t in (0 : ℝ)..x, t ^ a * (1 - t) ^ (b - 1) := by
-  have hmem : x ∈ Icc (0 : ℝ) 1 := ⟨hx0, hx1⟩
-  have hzero : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
-  have hI := intervalIntegrable_rpow_mul_one_sub_rpow ha hb hzero hmem
+  have hI : IntervalIntegrable (fun t : ℝ => t ^ (a - 1) * (1 - t) ^ b) volume 0 x :=
+    (intervalIntegral.intervalIntegrable_rpow' (by linarith : -1 < a - 1)).mul_continuousOn
+      ((Real.continuous_rpow_const hb.le).comp (continuous_const.sub continuous_id)).continuousOn
   have hJ : IntervalIntegrable (fun t : ℝ => t ^ a * (1 - t) ^ (b - 1)) volume 0 x := by
-    simpa using
-      intervalIntegrable_rpow_mul_one_sub_rpow (by linarith : (0 : ℝ) < a + 1) hb hzero hmem
-  rw [← intervalIntegral.integral_sub hI hJ]
-  refine intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun t ht => ?_)
-  rw [uIoc_of_le hx0] at ht
-  have ht0 : 0 < t := ht.1
-  rcases eq_or_lt_of_le (ht.2.trans hx1) with rfl | ht1
-  · rw [Real.one_rpow, Real.one_rpow, sub_self, Real.zero_rpow hb.ne']
-    ring
-  · have h1t : (0 : ℝ) < 1 - t := by linarith
-    rw [Real.rpow_sub_one ht0.ne' a, Real.rpow_sub_one h1t.ne' b]
+    have h1 : IntervalIntegrable (fun t : ℝ => t ^ (b - 1)) volume 1 (1 - x) :=
+      intervalIntegral.intervalIntegrable_rpow' (by linarith : -1 < b - 1)
+    simpa using (h1.comp_sub_left 1).continuousOn_mul
+      (Real.continuous_rpow_const ha.le).continuousOn
+  have hpt : ∀ t : ℝ, t ^ (a - 1) * (1 - t) ^ (b - 1) =
+      t ^ (a - 1) * (1 - t) ^ b + t ^ a * (1 - t) ^ (b - 1) := by
+    intro t
+    by_cases ht0 : t = 0
+    · simp [ht0, Real.zero_rpow ha.ne']
+    by_cases ht1 : t = 1
+    · simp [ht1, Real.zero_rpow hb.ne']
+    have h1t : (1 : ℝ) - t ≠ 0 := sub_ne_zero_of_ne (Ne.symm ht1)
+    rw [Real.rpow_sub_one ht0 a, Real.rpow_sub_one h1t b]
     field_simp
+    ring
+  simp only [hpt]
+  rw [intervalIntegral.integral_add hI hJ]
+  ring
 
 /-! ### The power substitution `u = t ^ p` -/
 

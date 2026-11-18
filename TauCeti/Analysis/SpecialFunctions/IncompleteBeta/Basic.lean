@@ -749,7 +749,7 @@ theorem regularizedIncompleteBeta_add_one_left (ha : 0 < a) (hb : 0 < b)
   -- expand the integral of the derivative, and split off one power of `1 - t`
   rw [intervalIntegral.integral_sub (hA.const_mul a) (hJ.const_mul b),
     intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
-    integral_rpow_mul_one_sub_rpow_add_one_right ha hb hx0 hx1] at hftc
+    integral_rpow_mul_one_sub_rpow_add_one_right ha hb] at hftc
   rw [regularizedIncompleteBeta_def_of_mem_Icc ha1 hb hmem,
     regularizedIncompleteBeta_def_of_mem_Icc ha hb hmem, add_sub_cancel_right,
     beta_add_one_left ha.ne' hab.ne']
