@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
-public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # The radial Liouville structure of a symplectic vector space
@@ -25,12 +22,6 @@ with `dλ = ω` (`TauCeti.SymplecticForm.mextDeriv_radialPrimitive`). Its Liouvi
 the position field, `ι_Z ω = λ` for `Z(x) = x / 2`
 (`TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`).
 
-Since `dλ = ω`, the pullback of `λ` along a smooth map `f : M → V` has exterior derivative the
-pullback of `ω`. So `λ` pulls back to a closed one-form along every isotropic map, for instance
-along a Lagrangian immersion (`TauCeti.SymplecticForm.isClosed_mpullback_radialPrimitive`). Its
-periods along closed curves in `M` are then the symplectic areas of the discs these curves bound
-in `V`, which is how they measure the area of holomorphic discs with Lagrangian boundary.
-
 ## Main definitions
 
 * `TauCeti.SymplecticForm.radialPrimitive`: the one-form `λₓ(v) = ω(x, v) / 2`.
@@ -39,8 +30,6 @@ in `V`, which is how they measure the area of holomorphic discs with Lagrangian 
 
 * `TauCeti.SymplecticForm.mextDeriv_radialPrimitive`: `dλ = ω`.
 * `TauCeti.SymplecticForm.constSmooth_interior_two_inv_smul`: `ι_Z ω = λ` for `Z(x) = x / 2`.
-* `TauCeti.SymplecticForm.isClosed_mpullback_radialPrimitive`: an isotropic map pulls `λ` back to
-  a closed form.
 
 ## References
 
@@ -119,33 +108,5 @@ theorem constSmooth_interior_two_inv_smul :
   exact (LinearMap.map_smul₂ ω.toBilinForm _ x (v 0)).trans (smul_eq_mul _ _)
 
 end SymplecticForm
-
-/-! ### Pullback along isotropic maps -/
-
-section Isotropic
-
-/- The scoped `ContDiff` notation provides `∞` but also makes `ω` a notation, so the symplectic
-form is called `σ` in this section. -/
-open scoped ContDiff
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- **Isotropic maps pull the radial primitive back to closed forms.** Along a smooth map `f`
-whose tangent images are isotropic for `σ`, `d(f^* λ) = f^* σ = 0`. -/
-theorem SymplecticForm.isClosed_mpullback_radialPrimitive (σ : SymplecticForm V) {f : M → V}
-    (hf : ContMDiff I 𝓘(ℝ, V) ∞ f) (h : (isNondegenerate_constSmooth σ).IsIsotropicMap I f) :
-    (SmoothForm.mpullback f hf σ.radialPrimitive).IsClosed := by
-  have hprim : IsSmoothBundleForm (I := 𝓘(ℝ, V)) (F := ℝ) (V := Bundle.Trivial V ℝ) 1
-      σ.radialPrimitive.1 :=
-    (isSmoothBundleForm_def 1 _).mpr (σ.radialPrimitive.contMDiff.of_le (by simp))
-  rw [SmoothForm.isClosed_def, SmoothForm.coe_mpullback,
-    ← mpullback_mextDeriv (hf.of_le (by simp)) hprim, mextDeriv_radialPrimitive,
-    ← SmoothForm.coe_mpullback f hf,
-    (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero hf).1 h]
-  exact ZeroMemClass.coe_zero _
-
-end Isotropic
 
 end TauCeti
