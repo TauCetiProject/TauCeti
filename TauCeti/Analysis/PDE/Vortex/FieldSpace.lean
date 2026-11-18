@@ -42,7 +42,9 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
   (`TemperedDistribution.realSobolevFunctions`). This is the componentwise complexification on
   which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts. For `s ≥ 0` a
   field lies in it exactly when its coordinates are almost everywhere the `L²` functions of
-  elements of `H^s(ℂ)` (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`).
+  elements of `H^s(ℂ)` (`mem_sobolevFields_iff_exists_inclusionLp_ae_eq`), and its `L²` norm is
+  then at most `4` times the norm of these coordinates
+  (`eLpNorm_le_of_forall_inclusionLp_ae_eq`).
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
 
@@ -351,6 +353,39 @@ theorem mem_sobolevFields_iff_exists_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
 theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : y ∈ sobolevFields s) : MemLp y 2 volume :=
   memLp_piLp_iff.2 fun i ↦ memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)
+
+open BesselPotentialSpace in
+/-- A real field whose four coordinates are represented by `v : Fin 4 → H^s(ℂ)`, `s ≥ 0`, has
+`L²` norm at most `4 ‖v‖`. -/
+theorem eLpNorm_le_of_forall_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {v : Fin 4 → H^{s}(ℂ)}
+    (hv : ∀ a, ⇑(inclusionLp hs (v a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
+    eLpNorm y 2 volume ≤ ENNReal.ofReal (4 * ‖v‖) := by
+  have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
+    ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
+  have hpt : ∀ᵐ z ∂volume, ‖y z‖ ≤ ‖∑ a : Fin 4, ‖inclusionLp hs (v a) z‖‖ := by
+    filter_upwards [ae_all_iff.2 hv] with z hz
+    rw [Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
+    conv_lhs => rw [← (EuclideanSpace.basisFun (Fin 4) ℝ).sum_repr (y z)]
+    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun a _ ↦ ?_)
+    simp [norm_smul, hz a]
+  calc eLpNorm y 2 volume
+      ≤ eLpNorm (fun z ↦ ∑ a : Fin 4, ‖inclusionLp hs (v a) z‖) 2 volume :=
+        eLpNorm_mono_ae hy.aestronglyMeasurable hpt
+    _ = eLpNorm (∑ a : Fin 4, fun z ↦ ‖inclusionLp hs (v a) z‖) 2 volume := by
+        simp only [Finset.sum_fn]
+    _ ≤ ∑ a : Fin 4, eLpNorm (fun z ↦ ‖inclusionLp hs (v a) z‖) 2 volume :=
+        eLpNorm_sum_le (by norm_num)
+    _ ≤ ∑ _a : Fin 4, ENNReal.ofReal ‖v‖ := by
+        refine Finset.sum_le_sum fun a _ ↦ ?_
+        rw [eLpNorm_norm _ (Lp.aestronglyMeasurable _),
+          ← ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _), ← Lp.norm_def]
+        exact ENNReal.ofReal_le_ofReal
+          ((norm_inclusionLp_apply_le hs _).trans (norm_le_pi_norm v a))
+    _ = ENNReal.ofReal (4 * ‖v‖) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+          ENNReal.ofReal_mul (by norm_num)]
+        norm_num
 
 /-- A field lies in `sobolevFields 0` exactly when it is square integrable. -/
 @[simp]
