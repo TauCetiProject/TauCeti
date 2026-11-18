@@ -49,12 +49,22 @@ Hecke pair `(Γ₁(N), Δ₁(N))` from the same source file is not ported here.
   Diamond–Shurman §5.3, extended by zero when `n` is not coprime to `N`.
 * `modFormCharSpace`/`cuspFormCharSpace`: the nebentypus character spaces `M_k(Γ₁(N), χ)` and
   `S_k(Γ₁(N), χ)`, cut out as simultaneous diamond eigenspaces.
+* `functionCharSpace`: the `χ`-invariant functions `ℍ → ℂ` for `Γ₀(N)`, the nebentypus relation
+  on plain functions.
 
 ## Main results
 
 * `mem_modFormCharSpace_iff_nebentypus`/`mem_cuspFormCharSpace_iff_nebentypus`: membership in the
   character space is the classical nebentypus relation `f ∣[k] g = χ(d_g) • f` for all
   `g ∈ Γ₀(N)`.
+* `coe_mem_functionCharSpace_iff`, `coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace`: a
+  modular or cusp form has nebentypus `χ` exactly when its underlying function lies in
+  `functionCharSpace k χ`.
+* `slash_mapGL_eq_smul_of_mem_functionCharSpace`,
+  `slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1`,
+  `slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub`: a `χ`-invariant function is scaled by
+  `χ(d_g)` under `g ∈ Γ₀(N)`, is invariant under `Γ₁(N)`, and so has a slash by a matrix of
+  `SL(2, ℤ)` that depends only on the lower row modulo `N`.
 * `slash_mapGL_eq_diamondOpNat`/`slash_mapGL_eq_diamondOpCuspNat`: rational slashing by a
   suitable `Γ₀(N)` representative is the corresponding natural-indexed diamond operator;
   `slash_mapGL_gamma0Twist_eq_diamondOpNat` and its cusp counterpart specialize to the explicit
@@ -88,6 +98,12 @@ Hecke pair `(Γ₁(N), Δ₁(N))` from the same source file is not ported here.
   `cuspFormCharSpace_toModularForm'_mem` and `cuspFormCharSpace_of_toModularForm'_mem`. Those
   are two one-way statements about AINTLIB's own `CuspForm.toModularForm'`; here they are one
   `iff` through mathlib's coercion, which this repository uses instead.
+* `functionCharSpace` adapts `gamma0TwistedInvariantFunctionSubmodule` from
+  [AINTLIB](https://github.com/CBirkbeck/AINTLIB) commit
+  `2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache-2.0, Chris Birkbeck,
+  `LeanModularForms/HeckeRIngs/GL2/Unified/TwistedHeckeRing.lean`. The source's
+  `IsGamma0TwistedInvariant` predicate is not reproduced: its relation is already the right-hand
+  side of `mem_modFormCharSpace_iff_nebentypus`, and it is the carrier here.
 -/
 
 public section
@@ -398,6 +414,80 @@ theorem mem_cuspFormCharSpace_iff_nebentypus (k : ℤ) (χ₀ : (ZMod N)ˣ →* 
   · obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
     rw [diamondOpCuspHom_apply, diamondOpCusp_eq_diamondOpCuspAux k d g hg, ← hg]
     exact CuspForm.ext (congr_fun (h g))
+
+/-- **The `χ`-invariant functions for `Γ₀(N)`**: those `f : ℍ → ℂ` with
+`f ∣[k] g = χ(d_g) • f` for every `g ∈ Γ₀(N)`.
+
+This is the nebentypus relation of `mem_modFormCharSpace_iff_nebentypus` read on plain functions
+rather than on bundled modular forms. Constructions that act on functions before modularity is
+known need it in that form: the level-lowering descent (`ModularForms/Degeneracy.lean`), which
+reads the relation off `f ∣[k] diag(l, 1)` for a bare function `f`, and the twisted Hecke slash
+sums (`ModularForms/HeckeSlash/Nebentypus/`), which are endomorphisms of all of `ℍ → ℂ`. -/
+def functionCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) : Submodule ℂ (ℍ → ℂ) where
+  carrier := {f | ∀ g : ↥(Gamma0 N),
+    f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f}
+  zero_mem' := by simp
+  add_mem' := by
+    intro f₁ f₂ hf₁ hf₂ g
+    rw [SlashAction.add_slash, hf₁ g, hf₂ g, smul_add]
+  smul_mem' := by
+    intro c f hf g
+    rw [ModularForm.smul_slash_of_det_pos k
+      (det_pos_of_mem_slGL (MonoidHom.mem_range.mpr ⟨_, rfl⟩)), hf g]
+    exact smul_comm c _ f
+
+/-- Membership in `functionCharSpace` is the nebentypus relation, by definition.
+
+The carrier is the right-hand side of `mem_modFormCharSpace_iff_nebentypus` verbatim, and *not* a
+joint eigenspace: unlike `modFormCharSpace`, this is not `⨅ d, eigenspace ...`, because the
+diamond operators are built from the slash as a bundled endomorphism of `ModularForm` and have no
+counterpart on plain functions. `coe_mem_functionCharSpace_iff` and
+`coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace` are what tie the notions together. -/
+@[simp] lemma mem_functionCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) (f : ℍ → ℂ) :
+    f ∈ functionCharSpace k χ ↔ ∀ g : ↥(Gamma0 N),
+      f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f := Iff.rfl
+
+/-- A `χ`-invariant function for `Γ₀(N)` is scaled by `χ(d_g)` under the slash by `g ∈ Γ₀(N)`.
+Not `@[simp]`: `χ` occurs only in the hypothesis and the right-hand side, so `simp` cannot infer
+it. -/
+theorem slash_mapGL_eq_smul_of_mem_functionCharSpace {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ} {f : ℍ → ℂ}
+    (hf : f ∈ functionCharSpace k χ) (g : ↥(Gamma0 N)) :
+    f ∣[k] mapGL ℝ (g : SL(2, ℤ)) = (↑(χ ((Gamma0Map N).toHomUnits g)) : ℂ) • f :=
+  (mem_functionCharSpace_iff k χ f).mp hf g
+
+/-- A `χ`-invariant function for `Γ₀(N)` is invariant under `Γ₁(N)`, on which `χ(d_g)` is `1`. -/
+lemma slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 {k : ℤ}
+    {χ : (ZMod N)ˣ →* ℂˣ} {f : ℍ → ℂ} (hf : f ∈ functionCharSpace k χ) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma1 N) : f ∣[k] mapGL ℝ γ = f := by
+  have h := slash_mapGL_eq_smul_of_mem_functionCharSpace hf ⟨γ, Gamma1_in_Gamma0 N hγ⟩
+  rwa [(mem_Gamma1_iff_toHomUnits_eq_one _).mp hγ, map_one, Units.val_one, one_smul] at h
+
+/-- A `χ`-invariant function for `Γ₀(N)` has the same slash by two matrices of `SL(2, ℤ)` whose
+lower rows agree modulo `N`, since these lie in one right coset of `Γ₁(N)`
+(`CongruenceSubgroup.mul_inv_mem_Gamma1_iff_dvd_sub`). -/
+lemma slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub {k : ℤ} {χ : (ZMod N)ˣ →* ℂˣ}
+    {f : ℍ → ℂ} (hf : f ∈ functionCharSpace k χ) {A B : SL(2, ℤ)}
+    (h10 : (N : ℤ) ∣ A 1 0 - B 1 0) (h11 : (N : ℤ) ∣ A 1 1 - B 1 1) :
+    f ∣[k] mapGL ℝ A = f ∣[k] mapGL ℝ B := by
+  conv_lhs => rw [← inv_mul_cancel_right A B]
+  rw [map_mul, SlashAction.slash_mul, slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 hf
+    (mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨h10, h11⟩)]
+
+/-- **Bridge to the modular-form character space**: a modular form lies in `modFormCharSpace k χ`
+exactly when its underlying function is `χ`-invariant. Both sides are the same relation; this
+records that `functionCharSpace` is not a second notion. -/
+lemma coe_mem_functionCharSpace_iff (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
+    (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    (⇑f) ∈ functionCharSpace k χ ↔ f ∈ modFormCharSpace k χ :=
+  (mem_modFormCharSpace_iff_nebentypus k χ f).symm
+
+/-- **Bridge to the cusp-form character space**: a cusp form lies in `cuspFormCharSpace k χ`
+exactly when its underlying function is `χ`-invariant; the cusp-form counterpart of
+`coe_mem_functionCharSpace_iff`. -/
+lemma coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
+    (⇑f) ∈ functionCharSpace k χ ↔ f ∈ cuspFormCharSpace k χ :=
+  (mem_cuspFormCharSpace_iff_nebentypus k χ f).symm
 
 /-- The diamond operator indexed by a natural number: `⟨n⟩` is `diamondOp` at the unit `n mod N`
 when `n` is coprime to `N`, and `0` otherwise.

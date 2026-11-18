@@ -9,12 +9,9 @@ public import Mathlib.Analysis.Distribution.Support
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
-import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -84,9 +81,6 @@ annulus.
   inequalities.
 * `TauCeti.exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: Bernstein's inequality
   for one derivative, with a constant independent of the exponent `p`.
-* `TauCeti.exists_iteratedLineDerivOp_smulLeftCLM_eq_and_norm_le`: the Leibniz rule with
-  Bernstein's inequality, bounding the derivatives of the product of a band-limited function with a
-  function with bounded derivatives.
 * `OrthonormalBasis.exists_eq_sum_lineDerivOp_and_norm_le`: on an annulus of radius `R`, a
   function is a sum of derivatives of functions smaller by a factor of order `R⁻¹`.
 * `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`,
@@ -339,58 +333,6 @@ theorem exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier {p q 
         rw [Real.rpow_add hR, Real.rpow_natCast, mul_pow]
         ring
     _ ≤ max C₀ C₁ ^ (k + 1) * R ^ ((k : ℝ) + d) * (∏ i, ‖m i‖) * ‖f‖ := by gcongr
-
-/-- **Leibniz bound for band-limited functions.** There is `C`, depending only on `E`, with the
-following property. Let `g` be a function of temperate growth whose derivatives of order at most
-`k` are bounded by `G`, and let `f ∈ Lᵖ` have Fourier transform vanishing outside the closed ball
-of radius `R > 0`. Then `∂_{m₁} ⋯ ∂_{mₖ} (g f)` is an `Lᵖ` function of norm at most
-`(2 max 1 (C R)) ^ k ‖m₁‖ ⋯ ‖mₖ‖ G ‖f‖_p`. -/
-theorem exists_iteratedLineDerivOp_smulLeftCLM_eq_and_norm_le :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (k : ℕ) {g : E → ℂ} {G : ℝ},
-      g.HasTemperateGrowth → (∀ n ≤ k, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ {R : ℝ}, 0 < R →
-      ∀ f : Lp F p (volume : Measure E),
-      IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ → ∀ m : Fin k → E,
-      ∃ v : Lp F p (volume : Measure E), ∂^{m} (smulLeftCLM F g (f : 𝓢'(E, F))) = v ∧
-        ‖v‖ ≤ (2 * max 1 (C * R)) ^ k * (∏ i, ‖m i‖) * G * ‖f‖ := by
-  obtain ⟨C, hC, hB⟩ :=
-    exists_lineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
-  refine ⟨C, hC, fun {p} _ k ↦ ?_⟩
-  induction k with
-  | zero =>
-    intro g G hg hgG R _ f _ m
-    obtain ⟨v, hv, hvn⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le hg
-      (fun x ↦ by simpa using hgG 0 le_rfl x) f
-    exact ⟨v, by simpa [LineDeriv.iteratedLineDerivOp_zero] using hv, by simpa using hvn⟩
-  | succ k ih =>
-    intro g G hg hgG R hR f hf m
-    set w := m (Fin.last k)
-    -- `∂_w f` is band-limited to the same ball, and `∂_w (g f) = (∂_w g) f + g ∂_w f`.
-    obtain ⟨f', hf', hf'n⟩ := hB hR f hf w
-    have hf'v : IsVanishingOn (𝓕 (f' : 𝓢'(E, F)) : 𝓢'(E, F)) (closedBall 0 R)ᶜ := by
-      rw [← hf']
-      exact isVanishingOn_fourier_lineDerivOp hf w
-    obtain ⟨v₁, hv₁, hv₁n⟩ := ih (hg.fderiv_apply w)
-      (hg.1.norm_iteratedFDeriv_fderiv_apply_le_of_forall_le (by
-        rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast le_top) hgG w) hR f hf
-      (Fin.init m)
-    obtain ⟨v₂, hv₂, hv₂n⟩ := ih hg (fun n hn ↦ hgG n (by omega)) hR f' hf'v (Fin.init m)
-    refine ⟨v₁ + v₂, ?_, ?_⟩
-    · rw [LineDeriv.iteratedLineDerivOp_succ_right, lineDerivOp_smulLeftCLM hg, hf',
-        LineDeriv.iteratedLineDerivOp_add, hv₁, hv₂, Lp.toTemperedDistribution_add]
-    · have hG : 0 ≤ G := (norm_nonneg _).trans (by simpa using hgG 0 (by omega) 0)
-      set A := 2 * max 1 (C * R)
-      have h1 : 1 + C * R ≤ A := by
-        have := le_max_left 1 (C * R); have := le_max_right 1 (C * R); simp only [A]; linarith
-      calc ‖v₁ + v₂‖ ≤ ‖v₁‖ + ‖v₂‖ := norm_add_le _ _
-        _ ≤ A ^ k * (∏ i, ‖Fin.init m i‖) * (G * ‖w‖) * ‖f‖ +
-            A ^ k * (∏ i, ‖Fin.init m i‖) * G * (C * R * ‖w‖ * ‖f‖) := by
-          exact add_le_add hv₁n (hv₂n.trans (by gcongr))
-        _ = A ^ k * (∏ i, ‖Fin.init m i‖) * ‖w‖ * G * ‖f‖ * (1 + C * R) := by ring
-        _ ≤ A ^ k * (∏ i, ‖Fin.init m i‖) * ‖w‖ * G * ‖f‖ * A := by gcongr
-        _ = A ^ (k + 1) * (∏ i, ‖m i‖) * G * ‖f‖ := by
-          rw [Fin.prod_univ_castSucc]
-          simp only [Fin.init, w]
-          ring
 
 /-! ### The reverse inequality on annuli -/
 

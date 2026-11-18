@@ -89,6 +89,38 @@ end MeasureTheory.ProbabilityMeasure
 
 namespace MeasureTheory.ProbabilityMeasure
 
+open Filter Topology
+
+/-- Dilating real probability measures by factors tending to one preserves their weak
+limits in both directions. The factors need only be eventually nonzero. -/
+theorem tendsto_map_mul_iff {ι : Type*} (ν : ι → ProbabilityMeasure ℝ) {l : Filter ι}
+    {c : ι → ℝ} (hc : Tendsto c l (𝓝 1)) {μ : ProbabilityMeasure ℝ} :
+    Tendsto (fun i ↦ (ν i).map (fun x ↦ c i * x)) l (𝓝 μ) ↔ Tendsto ν l (𝓝 μ) := by
+  have hcont := continuous_map_of_continuous_uncurry
+    (f := fun c x : ℝ ↦ c * x) (by fun_prop)
+  have hid : μ.map (fun x ↦ x) = μ := by
+    apply toMeasure_injective
+    simp [toMeasure_map]
+  constructor
+  · intro h
+    have hi : Tendsto (fun i ↦ (c i)⁻¹) l (𝓝 1) := by
+      simpa using hc.inv₀ one_ne_zero
+    have ht := (hcont.tendsto (1, μ)).comp (hi.prodMk_nhds h)
+    have hne : ∀ᶠ i in l, c i ≠ 0 := hc.eventually_ne one_ne_zero
+    simp only [Function.comp_def, one_mul, hid] at ht
+    exact ht.congr' (hne.mono fun i hi ↦ by
+      apply toMeasure_injective
+      simp only [toMeasure_map]
+      rw [Measure.map_map (by fun_prop) (by fun_prop)]
+      simp [Function.comp_def, hi])
+  · intro h
+    have ht := (hcont.tendsto (1, μ)).comp (hc.prodMk_nhds h)
+    simpa only [Function.comp_def, one_mul, hid] using ht
+
+end MeasureTheory.ProbabilityMeasure
+
+namespace MeasureTheory.ProbabilityMeasure
+
 variable {T Ω E : Type*} [TopologicalSpace T] [SequentialSpace T] [MeasurableSpace Ω]
   [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
 

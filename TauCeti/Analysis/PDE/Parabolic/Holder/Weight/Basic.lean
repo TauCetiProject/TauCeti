@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 public import TauCeti.Analysis.Holder.Algebra
 public import TauCeti.Analysis.SpecialFunctions.Sigmoid
+import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -56,7 +57,7 @@ Hölder derivatives of every positive order (`Real.iteratedDeriv_succ_log_one_ad
   weighted map `exp (ℓ x) • v(x, t)`.
 * `TauCeti.ParabolicC2HolderSpace.euclideanWeightedFirstOrderCoeff` and
   `TauCeti.ParabolicC2HolderSpace.euclideanWeightedZerothOrderCoeff`: the coefficients `b_w` and
-  `c_w` of the conjugated operator, with the norm bounds
+  `c_w` of the conjugated operator, linear in `a`, `b`, `c`, with the norm bounds
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedZerothOrderCoeff_le` and their uniform
   forms `TauCeti.ParabolicC2HolderSpace.norm_euclideanWeightedFirstOrderCoeff_le_of_le` and
@@ -101,10 +102,8 @@ theorem hasFDerivAt_exp_smul {x : E} (hℓ : DifferentiableAt ℝ ℓ x)
     (v : ParabolicC2HolderSpace α E F ht) (t : Icc t₀ t₁) :
     HasFDerivAt (fun y ↦ exp (ℓ y) • v (slabMk y t))
       (exp (ℓ x) • (spatialFDerivL v (slabMk x t) + (fderiv ℝ ℓ x).smulRight (v (slabMk x t))))
-      x := by
-  convert (hℓ.hasFDerivAt.exp).smul (v.hasSpatialFDerivAt t x) using 1
-  ext h
-  simp [smul_add, smul_smul]
+      x :=
+  TauCeti.hasFDerivAt_exp_smul hℓ.hasFDerivAt (v.hasSpatialFDerivAt t x)
 
 /-- The spatial gradient of a weighted map, as a function of the base point. -/
 theorem fderiv_exp_smul (hℓ : Differentiable ℝ ℓ) (v : ParabolicC2HolderSpace α E F ht)
@@ -218,16 +217,47 @@ theorem euclideanWeightedZerothOrderCoeff_apply (p : slab (E := EuclideanSpace �
         ∑ i, b i p * dℓ i (p : ParabolicSpaceTime _).space := by
   simp [euclideanWeightedZerothOrderCoeff]
 
-/-- **Bound on the conjugated first-order coefficients.**
+/-- Linearity of the conjugated first-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, for a
+fixed weight. -/
+@[simp]
+theorem euclideanWeightedFirstOrderCoeff_sub
+    (a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) (i : ι) :
+    euclideanWeightedFirstOrderCoeff (a - a') (b - b') dℓ i =
+      euclideanWeightedFirstOrderCoeff a b dℓ i - euclideanWeightedFirstOrderCoeff a' b' dℓ i :=
+  HolderSpace.ext fun p ↦ by
+    simp only [euclideanWeightedFirstOrderCoeff_apply, HolderSpace.sub_apply, Pi.sub_apply,
+      sub_mul, add_mul, Finset.sum_sub_distrib, Finset.sum_add_distrib]
+    ring
+
+/-- Linearity of the conjugated zeroth-order coefficient in the coefficients `aⁱʲ`, `bⁱ`, `c`,
+for a fixed weight. -/
+@[simp]
+theorem euclideanWeightedZerothOrderCoeff_sub
+    (a' : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b' : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c' : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    euclideanWeightedZerothOrderCoeff (a - a') (b - b') (c - c') dℓ d2ℓ =
+      euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ -
+        euclideanWeightedZerothOrderCoeff a' b' c' dℓ d2ℓ :=
+  HolderSpace.ext fun p ↦ by
+    simp only [euclideanWeightedZerothOrderCoeff_apply, HolderSpace.sub_apply, Pi.sub_apply,
+      sub_mul, Finset.sum_sub_distrib]
+    ring
+
+variable (a b c dℓ d2ℓ) in
+/-- **Bound on the conjugated first-order coefficient.**
 `‖b_wⁱ‖ ≤ ‖bⁱ‖ + ∑ⱼ (‖aⁱʲ‖ + ‖aʲⁱ‖) ‖∂ⱼℓ‖`. -/
 theorem norm_euclideanWeightedFirstOrderCoeff_le (i : ι) :
-    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤ ‖b i‖ + ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
+    ‖euclideanWeightedFirstOrderCoeff a b dℓ i‖ ≤
+      ‖b i‖ + ∑ j, (‖a i j‖ + ‖a j i‖) * ‖dℓ j‖ := by
   refine (norm_add_le _ _).trans (add_le_add le_rfl ((norm_sum_le _ _).trans
     (Finset.sum_le_sum fun j _ ↦ (norm_mul_le _ _).trans ?_)))
   gcongr
   · exact norm_add_le _ _
   · exact HolderSpace.norm_compSlabSpaceL_apply_le _
 
+variable (a b c dℓ d2ℓ) in
 /-- **Bound on the conjugated zeroth-order coefficient.**
 `‖c_w‖ ≤ ‖c‖ + ∑ᵢⱼ ‖aⁱʲ‖ (‖∂ᵢ∂ⱼℓ‖ + ‖∂ᵢℓ‖ ‖∂ⱼℓ‖) + ∑ᵢ ‖bⁱ‖ ‖∂ᵢℓ‖`. -/
 theorem norm_euclideanWeightedZerothOrderCoeff_le :
@@ -621,10 +651,8 @@ variable {A : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] E →L[ℝ]
 theorem hasFDerivAt_exp_smul_slice (hφ : ∀ x, HasFDerivAt φ (ℓ x) x)
     (v : ParabolicC2HolderSpace α E F ht) (t : Icc t₀ t₁) (x : E) :
     HasFDerivAt (fun y ↦ Real.exp (φ y) • v (slabMk y t))
-      (Real.exp (φ x) • (spatialFDerivL v (slabMk x t) + (ℓ x).smulRight (v (slabMk x t)))) x := by
-  refine (((hφ x).exp).smul (v.hasSpatialFDerivAt t x)).congr_fderiv ?_
-  ext h
-  simp [smul_add, smul_smul]
+      (Real.exp (φ x) • (spatialFDerivL v (slabMk x t) + (ℓ x).smulRight (v (slabMk x t)))) x :=
+  TauCeti.hasFDerivAt_exp_smul (hφ x) (v.hasSpatialFDerivAt t x)
 
 /-- **The Hessian of a weighted slice.** For `v ∈ C_b^{2+α,1+α/2}`, `ℓ = Dφ` and `M = D²φ`, the
 gradient of `y ↦ exp (φ y) • v (y, t)` has derivative

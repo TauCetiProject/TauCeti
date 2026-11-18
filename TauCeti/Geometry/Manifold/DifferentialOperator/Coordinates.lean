@@ -39,8 +39,9 @@ with smooth coefficients `c_α`; the coefficients are unique. No continuity of `
   operators of order at most `m` are exactly the coordinate expressions of order `m`.
 * `Module.Basis.coordinateOperator_eq_zero_iff`: the coefficients of a coordinate expression of
   order `m` are unique.
-* `TauCeti.tsupport_apply_subset_of_mem_differentialOperators`: differential operators do not
-  enlarge supports.
+* `TauCeti.tsupport_coordinateOperator_apply_subset`: coordinate expressions do not enlarge
+  supports. For general differential operators on a boundaryless manifold this is
+  `TauCeti.tsupport_differentialOperators_apply_subset`.
 
 ## References
 
@@ -145,15 +146,5 @@ theorem tsupport_coordinateOperator_apply_subset [DecidableEq ι] (m : ℕ)
   rw [coordinateOperator_eq_sum_mulLeft]
   refine tsupport_sum_apply_subset _ (fun k _ ↦ tsupport_sum_apply_subset _ fun α _ g ↦ ?_) f
   exact (tsupport_mulLeft_apply_subset _ _).trans (tsupport_multiIndexDeriv_apply_subset v α g)
-
-/-- **Locality of differential operators.** A differential operator on `C^∞(E)`, in the sense of
-iterated commutators with multiplication operators, does not enlarge supports. -/
-theorem tsupport_apply_subset_of_mem_differentialOperators [FiniteDimensional ℝ E]
-    {D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {m : ℕ}
-    (hD : D ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
-      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) :
-    tsupport (D f) ⊆ tsupport f := by
-  rw [(Module.finBasis ℝ E).eq_coordinateOperator_coordinateCoeff hD]
-  exact tsupport_coordinateOperator_apply_subset _ _ _ f
 
 end TauCeti

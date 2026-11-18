@@ -77,6 +77,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   the critical point to its velocity.
 * `flow_log_eq_of_exp_smul_negativeCoord_eq`: two points of the unstable manifold whose directions
   are positive multiples of each other lie on the same orbit.
+* `eventually_mem_unstableSet_and_unstableFrame_eq`: on the unstable axis of a Morse chart, the
+  unstable frame of the coordinates is the velocity.
+* `eventually_mem_unstableSet_and_unstableFrame_eq_and_neg`: the same at `c` and at `-c`.
 
 ## References
 
@@ -410,7 +413,7 @@ private theorem mfderiv_toChart_comp_flow_neg_add {y : M} {T s : ℝ}
   have h := hX.coord_mfderiv_toChart_comp_flow_add hφ (T := -T) (s := -s) hT.1
     (fun t ht ↦ hT.2 t (by rw [uIcc_of_ge (by linarith)] at ht; exact ht.2)) w
   rw [show -s + -T = -(T + s) by ring, hw, map_smul, φ.linearFlow_smul,
-    φ.linearFlow_neg_coord_negativeExtend, smul_smul, ← Real.exp_add, ← map_smul] at h
+    φ.linearFlow_coord_negativeExtend, smul_smul, ← Real.exp_add, ← map_smul] at h
   refine φ.coord.injective (h.trans ?_)
   congr 3
   ring
@@ -605,7 +608,7 @@ theorem flow_log_eq_of_exp_smul_negativeCoord_eq (hf : IsMorse 𝓘(ℝ, E) f) {
       (φ.negativeExtend_negativeCoord fun _ hi ↦
         coord_toChart_flow_neg_eq_zero_of_not_weight_neg hφ hf hy hT hi).symm
     refine φ.coord.injective ?_
-    rw [hcs, hz, φ.linearFlow_neg_coord_negativeExtend, smul_smul, map_smul, map_smul,
+    rw [hcs, hz, φ.linearFlow_coord_negativeExtend, smul_smul, map_smul, map_smul,
       ← Real.exp_add]
     congr 2
     ring
@@ -628,6 +631,100 @@ theorem flow_log_eq_of_exp_smul_negativeCoord_eq (hf : IsMorse 𝓘(ℝ, E) f) {
   have := congrArg (hX.flow (S + Real.log μ)) heq
   rwa [← Flow.map_add, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply,
     show S + Real.log μ + -S = Real.log μ by ring] at this
+
+/-- A point of the unstable axis whose linear backward orbit stays in the chart lies on the
+unstable manifold: for `t ≤ 0` its flow is the linear flow, which tends to the centre. -/
+private theorem toChart_symm_negativeExtend_mem_unstableSet {c : {i // φ.weight i < 0} → ℝ}
+    (hmem : ∀ t ≤ 0, φ.coord.symm (φ.linearFlow t (φ.coord (φ.negativeExtend c))) ∈
+      φ.toChart.target) :
+    φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet x := by
+  set z := φ.coord (φ.negativeExtend c)
+  rw [Flow.mem_unstableSet]
+  have hflow : ∀ᶠ t in atBot, φ.toChart.symm (φ.coord.symm (Real.exp t • z)) =
+      hX.flow t (φ.toChart.symm (φ.negativeExtend c)) := by
+    filter_upwards [eventually_le_atBot 0] with t ht
+    rw [← LinearEquiv.symm_apply_apply φ.coord (φ.negativeExtend c),
+      flow_toChart_symm_of_forall_mem_uIcc hX φ hφ fun s hs ↦
+        hmem s (by rw [uIcc_of_ge ht] at hs; exact hs.2), φ.linearFlow_coord_negativeExtend]
+  refine Tendsto.congr' hflow ?_
+  have hexp : Tendsto (fun t : ℝ ↦ Real.exp t • z) atBot (𝓝 0) := by
+    simpa using Real.tendsto_exp_atBot.smul_const z
+  exact φ.tendsto_toChart_symm_coord_symm_nhds_zero.comp hexp
+
+/-- At a point of the unstable axis whose linear backward orbit stays in the chart, the unstable
+frame of the coordinates is the velocity: in the chart, the frame is read through
+`mfderiv_unstableFrame` at the time `0`, and the velocity through the linear field, which is the
+identity on the negative directions. -/
+private theorem unstableFrame_toChart_symm_negativeExtend {c : {i // φ.weight i < 0} → ℝ}
+    (hmem : ∀ t ≤ 0, φ.coord.symm (φ.linearFlow t (φ.coord (φ.negativeExtend c))) ∈
+      φ.toChart.target) :
+    hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
+      X (φ.toChart.symm (φ.negativeExtend c)) := by
+  have htarget : φ.negativeExtend c ∈ φ.toChart.target := by
+    simpa using hmem 0 le_rfl
+  set y := φ.toChart.symm (φ.negativeExtend c)
+  have hy : y ∈ φ.toChart.source := φ.toChart.map_target htarget
+  have hcoord : φ.coord (φ.toChart y) = φ.coord (φ.negativeExtend c) := by
+    rw [φ.toChart.right_inv htarget]
+  have hT : (0 : ℝ) ∈ hX.linearBackwardTimes φ y := by
+    refine (hX.mem_linearBackwardTimes φ).2 ⟨by simpa using hy, fun t ht ↦ ?_⟩
+    simpa [hcoord] using hmem t ht
+  have hF := mfderiv_unstableFrame hφ hT c
+  have hcomp : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := by
+    funext w
+    simp
+  rw [hcomp, neg_zero, Real.exp_zero, one_smul] at hF
+  have hV : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y) = φ.negativeExtend c := by
+    refine φ.coord.injective (funext fun i ↦ ?_)
+    simp only [hφ y hy, hcoord]
+    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+    · rw [hi]
+      ring
+    · rw [φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num), mul_zero, neg_zero]
+  have hinv := isInvertible_mfderiv_chart
+    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) hy
+  exact hinv.injective (hF.trans hV.symm)
+
+/-- **The unstable axis of a Morse chart.** Let `X` be linear in the Morse chart `φ` at `x`. For
+every small `c` in the space of coordinates of negative weight, the point `y` of the chart whose
+coordinates are `c` in the directions of negative weight and `0` elsewhere lies on the unstable
+manifold of `x`, and the unstable frame at `y` sends `c` to the velocity `X y`. -/
+theorem eventually_mem_unstableSet_and_unstableFrame_eq :
+    ∀ᶠ c in 𝓝 (0 : {i // φ.weight i < 0} → ℝ), φ.negativeExtend c ∈ φ.toChart.target ∧
+      φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet x ∧
+        hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
+          X (φ.toChart.symm (φ.negativeExtend c)) := by
+  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  have hcont : Continuous fun c : {i // φ.weight i < 0} → ℝ ↦ φ.coord (φ.negativeExtend c) :=
+    (φ.coord.toLinearMap.comp φ.negativeExtend).continuous_of_finiteDimensional
+  have h0 : Tendsto (fun c : {i // φ.weight i < 0} → ℝ ↦ ‖φ.coord (φ.negativeExtend c)‖) (𝓝 0)
+      (𝓝 0) := by
+    simpa using (hcont.tendsto 0).norm
+  filter_upwards [h0.eventually (gt_mem_nhds hr)] with c hc
+  -- Along the negative directions the linear flow is the scaling by `e^{t}`, which keeps the
+  -- point in the chart for `t ≤ 0`.
+  have hmem (t : ℝ) (ht : t ≤ 0) :
+      φ.coord.symm (φ.linearFlow t (φ.coord (φ.negativeExtend c))) ∈ φ.toChart.target := by
+    refine hrT _ ?_
+    rw [φ.linearFlow_coord_negativeExtend, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le]
+    exact (mul_le_of_le_one_left (norm_nonneg _) (Real.exp_le_one_iff.2 ht)).trans_lt hc
+  exact ⟨by simpa using hmem 0 le_rfl, toChart_symm_negativeExtend_mem_unstableSet hφ hmem,
+    unstableFrame_toChart_symm_negativeExtend hφ hmem⟩
+
+/-- **The unstable axis on both sides.** The conclusions of
+`eventually_mem_unstableSet_and_unstableFrame_eq` hold at both `c` and `-c`, for every small `c`. -/
+theorem eventually_mem_unstableSet_and_unstableFrame_eq_and_neg :
+    ∀ᶠ c in 𝓝 (0 : {i // φ.weight i < 0} → ℝ),
+      (φ.negativeExtend c ∈ φ.toChart.target ∧
+        φ.toChart.symm (φ.negativeExtend c) ∈ hX.flow.unstableSet x ∧
+          hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend c)) c =
+            X (φ.toChart.symm (φ.negativeExtend c))) ∧
+      (φ.negativeExtend (-c) ∈ φ.toChart.target ∧
+        φ.toChart.symm (φ.negativeExtend (-c)) ∈ hX.flow.unstableSet x ∧
+          hX.unstableFrame φ (φ.toChart.symm (φ.negativeExtend (-c))) (-c) =
+            X (φ.toChart.symm (φ.negativeExtend (-c)))) :=
+  have h := eventually_mem_unstableSet_and_unstableFrame_eq (hX := hX) hφ
+  h.and ((continuous_neg.tendsto' 0 0 neg_zero).eventually h)
 
 end IsAdaptedPseudoGradient
 
