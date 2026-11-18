@@ -41,6 +41,12 @@ contains `0`.
 
 The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to these centres.
 
+The points at which a map comes within `ε` of a set form the preimage of the union of the closed
+`ε`-balls about its points.
+
+A point off a finite set stays farther than `ε` from all of its points for every small enough
+`ε > 0`.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -65,6 +71,10 @@ The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
 * `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
+* `TauCeti.setOf_exists_norm_sub_le_eq_preimage` -- `{t | ∃ s ∈ S, ‖f t - s‖ ≤ ε}` is the
+  preimage under `f` of the union of the closed `ε`-balls about the points of `S`.
+* `TauCeti.eventually_not_exists_norm_sub_le` -- a point off a finite set `S` is, for every small
+  enough `ε > 0`, farther than `ε` from each point of `S`.
 -/
 
 public section
@@ -185,5 +195,23 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
 theorem dist_add_sub_eq {E : Type*} [SeminormedAddCommGroup E] (x c c₀ : E) :
     dist (x + (c - c₀)) c = dist x c₀ := by
   rw [← dist_add_right x c₀ (c - c₀), add_sub_cancel]
+
+/-- The set of points at which `f` comes within `ε` of some point of `S` is the preimage under `f`
+of the union of the closed `ε`-balls about the points of `S`. -/
+theorem setOf_exists_norm_sub_le_eq_preimage {α E : Type*} [SeminormedAddCommGroup E] (f : α → E)
+    (S : Set E) (ε : ℝ) :
+    {t | ∃ s ∈ S, ‖f t - s‖ ≤ ε} = f ⁻¹' ⋃ s ∈ S, closedBall s ε := by
+  ext; simp [dist_eq_norm]
+
+/-- **A point off a finite set keeps a positive distance from it.** If `z` is not in the finite set
+`S`, then for every small enough `ε > 0` it is farther than `ε` from each point of `S`. -/
+theorem eventually_not_exists_norm_sub_le {E : Type*} [NormedAddGroup E] {z : E} {S : Finset E}
+    (hz : z ∉ S) : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ¬ ∃ s ∈ S, ‖z - s‖ ≤ ε := by
+  -- Each of the finitely many distances `‖z - s‖` is positive.
+  have hlt : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ s ∈ S, ε < ‖z - s‖ :=
+    (eventually_all_finset S).mpr fun s hs => (eventually_lt_nhds <| norm_sub_pos_iff.mpr
+      fun h : z = s => hz (h ▸ hs)).filter_mono nhdsWithin_le_nhds
+  filter_upwards [hlt] with ε hε ⟨s, hs, hle⟩
+  exact (hε s hs).not_ge hle
 
 end TauCeti
