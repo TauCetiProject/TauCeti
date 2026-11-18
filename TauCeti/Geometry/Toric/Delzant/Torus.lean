@@ -511,7 +511,7 @@ theorem ker_vertexTorusHom (hi : IsIntegralLattice i) :
     (hx.vertexTorusHom p).ker = (facetTorusHom i u p).ker := by
   ext θ
   rw [mem_ker_facetTorusHom_iff_of_basis hi hx.basis, AddMonoidHom.mem_ker, funext_iff]
-  rfl
+  simp only [vertexTorusHom_apply, Pi.zero_apply]
 
 /-- `vertexTorusHom` is the identity on the angles supported on the active facets: it sends the
 extension by zero of `φ : (ℝ / pℤ)^A` back to `φ`. -/

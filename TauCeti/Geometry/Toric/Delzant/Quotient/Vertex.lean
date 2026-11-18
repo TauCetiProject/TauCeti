@@ -375,20 +375,44 @@ private theorem continuousAt_normalizer {x : EuclideanSpace ℝ ι × EuclideanS
   exact harg.sub (((continuous_extend_subtypeVal 0).comp
     (hv.continuous_vertexTorusHom (p := 2 * π))).continuousAt.comp harg)
 
+open Classical in
+/-- The coordinates in `A` of a point of `ℂ^ι`: the first factor of the splitting
+`EuclideanSpace.sumComplEquivProd` along `A`, applied to both real coordinates. -/
+private def activeCoords :
+    EuclideanSpace ℝ ι × EuclideanSpace ℝ ι →L[ℝ]
+      EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
+        EuclideanSpace ℝ (activeSet (facetPairing i u) c v) :=
+  (ContinuousLinearMap.fst ℝ _ _ ∘L (EuclideanSpace.sumComplEquivProd ℝ
+      (· ∈ activeSet (facetPairing i u) c v)).toContinuousLinearMap).prodMap
+    (ContinuousLinearMap.fst ℝ _ _ ∘L (EuclideanSpace.sumComplEquivProd ℝ
+      (· ∈ activeSet (facetPairing i u) c v)).toContinuousLinearMap)
+
+omit [FiniteDimensional ℝ V] [Fintype (activeSet (facetPairing i u) c v)] in
+@[simp]
+private theorem activeCoords_apply_fst (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+    (j : activeSet (facetPairing i u) c v) :
+    (activeCoords (i := i) (u := u) (c := c) (v := v) x).1 j = x.1 j := by
+  simp [activeCoords]
+
+omit [FiniteDimensional ℝ V] [Fintype (activeSet (facetPairing i u) c v)] in
+@[simp]
+private theorem activeCoords_apply_snd (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+    (j : activeSet (facetPairing i u) c v) :
+    (activeCoords (i := i) (u := u) (c := c) (v := v) x).2 j = x.2 j := by
+  simp [activeCoords]
+
 omit [FiniteDimensional ℝ V] [Fintype (activeSet (facetPairing i u) c v)] in
 include hi in
 /-- The coordinates in `A` of the normalized representative do not change when the point is moved
 by the kernel torus. Both normalized representatives lie in one orbit of the kernel torus and
 have the same nonnegative real coordinates outside `A`. The element relating them therefore
 vanishes outside `A`, and so is zero, since the active normals form a lattice basis. -/
-private theorem restrict_torusRotation_normalizer_torusRotation {θ : ι → AddCircle (2 * π)}
+private theorem activeCoords_torusRotation_normalizer_torusRotation {θ : ι → AddCircle (2 * π)}
     (hθ : θ ∈ (facetTorusHom i u (2 * π)).ker) {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι}
     (hx : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.1 j ^ 2 + x.2 j ^ 2) :
-    (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-        (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+    activeCoords (i := i) (u := u) (c := c) (v := v)
         (torusRotation (normalizer hv (torusRotation θ x)) (torusRotation θ x)) =
-      (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-        (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+      activeCoords (i := i) (u := u) (c := c) (v := v)
         (torusRotation (normalizer hv x) x) := by
   set δ := normalizer hv (torusRotation θ x) + θ - normalizer hv x
   have hb : torusRotation (normalizer hv (torusRotation θ x)) (torusRotation θ x) =
@@ -416,13 +440,12 @@ private def vertexChartFun (q : DelzantQuotient i u c) :
     EuclideanSpace ℝ (activeSet (facetPairing i u) c v) ×
       EuclideanSpace ℝ (activeSet (facetPairing i u) c v) :=
   lift (fun x ↦ if ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.1.1 j ^ 2 + x.1.2 j ^ 2 then
-      (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-        (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+      activeCoords (i := i) (u := u) (c := c) (v := v)
         (torusRotation (normalizer hv x) x) else 0)
     fun θ hθ x ↦ by
       simp only [coe_vadd_delzantLevel, torusRotation_apply_normSq]
       split_ifs with h
-      · exact restrict_torusRotation_normalizer_torusRotation hv hi hθ h
+      · exact activeCoords_torusRotation_normalizer_torusRotation hv hi hθ h
       · rfl
   q
 
@@ -430,8 +453,7 @@ omit [FiniteDimensional ℝ V] [Fintype (activeSet (facetPairing i u) c v)] in
 private theorem vertexChartFun_mk {x : delzantLevel i u c}
     (hx : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.1.1 j ^ 2 + x.1.2 j ^ 2) :
     vertexChartFun hv hi (mk x) =
-      (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-        (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+      activeCoords (i := i) (u := u) (c := c) (v := v)
         (torusRotation (normalizer hv x) x) := by
   rw [vertexChartFun, lift_mk]
   split_ifs with h
@@ -450,28 +472,26 @@ private theorem pos_of_lt_reducedMomentMap_mk {x : delzantLevel i u c}
 
 /-- The translated weight model at the image of a normalized representative is the moment value
 of its class. -/
-private theorem vertexMoment_restrict_normalizer (x : delzantLevel i u c) :
+private theorem vertexMoment_activeCoords_normalizer (x : delzantLevel i u c) :
     v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k)
-        ((EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-          (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+        (activeCoords (i := i) (u := u) (c := c) (v := v)
           (torusRotation (normalizer hv x) x)) =
       reducedMomentMap (hv.surjective_linearCombination_real hi) (mk x) := by
   refine (hv.edgeBasis hi).ext_elem fun k ↦ ?_
   rw [IsSmoothVertex.edgeBasis_repr, IsSmoothVertex.edgeBasis_repr, vertexMoment_apply_active,
-    reducedMomentMap_mk_apply, ContinuousLinearMap.coe_prodMap', Prod.map_fst, Prod.map_snd,
-    EuclideanSpace.restrict_apply, EuclideanSpace.restrict_apply, torusRotation_apply_normSq]
+    reducedMomentMap_mk_apply, activeCoords_apply_fst, activeCoords_apply_snd,
+    torusRotation_apply_normSq]
 
 /-- `vertexLift` recovers a normalized representative from its coordinates in `A`. -/
-private theorem vertexLift_restrict_normalizer (x : delzantLevel i u c) :
+private theorem vertexLift_activeCoords_normalizer (x : delzantLevel i u c) :
     vertexLift hv hi
-        ((EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-          (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+        (activeCoords (i := i) (u := u) (c := c) (v := v)
           (torusRotation (normalizer hv x) x)) =
       torusRotation (normalizer hv x) x := by
   ext j <;> by_cases hj : j ∈ activeSet (facetPairing i u) c v
   · simp [hj]
   · rw [vertexLift_fst_of_notMem hv hi _ hj, (torusRotation_normalizer_inactive hv x hj).1,
-      vertexMoment_restrict_normalizer, reducedMomentMap_mk_apply]
+      vertexMoment_activeCoords_normalizer, reducedMomentMap_mk_apply]
     ring_nf
   · simp [hj]
   · rw [vertexLift_snd_of_notMem hv hi _ hj, (torusRotation_normalizer_inactive hv x hj).2]
@@ -502,7 +522,7 @@ private theorem vertexChartFun_mem_target {q : DelzantQuotient i u c}
   induction q using DelzantQuotient.inductionOn with | h x =>
   intro j hj
   rw [vertexChartFun_mk hv hi (pos_of_lt_reducedMomentMap_mk hv hi hq),
-    vertexMoment_restrict_normalizer]
+    vertexMoment_activeCoords_normalizer]
   exact hq j hj
 
 /-- The inverse of the vertex chart sends its target into its source. -/
@@ -528,17 +548,16 @@ private theorem vertexChartSymm_vertexChartFun {q : DelzantQuotient i u c}
   induction q using DelzantQuotient.inductionOn with | h x =>
   have hle : ∀ j ∉ activeSet (facetPairing i u) c v, c j ≤
       (v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k)
-        ((EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-          (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+        (activeCoords (i := i) (u := u) (c := c) (v := v)
           (torusRotation (normalizer hv x) x)))
         (i (u j)) := fun j _ ↦ by
-    rw [vertexMoment_restrict_normalizer]
+    rw [vertexMoment_activeCoords_normalizer]
     exact mem_facetPolyhedron.1 (reducedMomentMap_mem_facetPolyhedron _ _) j
   rw [vertexChartFun_mk hv hi (pos_of_lt_reducedMomentMap_mk hv hi hq),
     vertexChartSymm_of_le hv hi hvP hle]
   -- The normalized representative is a rotation of `x` by the kernel torus.
   rw [← mk_vadd_of_mem_ker (normalizer_mem_ker hv hi x) x]
-  exact congrArg mk (Subtype.ext (vertexLift_restrict_normalizer hv hi x))
+  exact congrArg mk (Subtype.ext (vertexLift_activeCoords_normalizer hv hi x))
 
 omit [FiniteDimensional ℝ V] in
 /-- The inverse of the vertex chart is a right inverse on the target. -/
@@ -577,8 +596,7 @@ private theorem continuousOn_vertexChartFun :
     exact isOpen_iInter_of_finite fun j ↦ isOpen_iInter_of_finite fun _ ↦
       isOpen_lt continuous_const (by fun_prop)
   refine ContinuousAt.congr (f := fun y : delzantLevel i u c ↦
-    (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-      (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v))
+    activeCoords (i := i) (u := u) (c := c) (v := v)
       (torusRotation (normalizer hv y) y)) ?_
     (Filter.eventuallyEq_of_mem (hU.mem_nhds hx) fun y hy ↦
       (vertexChartFun_mk hv hi hy).symm)
@@ -636,6 +654,13 @@ def vertexChart :
   continuousOn_toFun := continuousOn_vertexChartFun hv hi
   continuousOn_invFun := continuousOn_vertexChartSymm hv hi hvP
 
+private theorem coe_vertexChart : ⇑(vertexChart hv hi hvP) = vertexChartFun hv hi := by
+  rw [vertexChart, OpenPartialHomeomorph.coe_mk, PartialEquiv.coe_mk]
+
+private theorem coe_vertexChart_symm :
+    ⇑(vertexChart hv hi hvP).symm = vertexChartSymm hv hi hvP := by
+  rw [vertexChart, OpenPartialHomeomorph.coe_mk_symm, PartialEquiv.coe_symm_mk]
+
 theorem vertexChart_source :
     (vertexChart hv hi hvP).source = {q | ∀ j ∉ activeSet (facetPairing i u) c v,
       c j < reducedMomentMap (hv.surjective_linearCombination_real hi) q (i (u j))} :=
@@ -675,9 +700,12 @@ theorem vertexChart_symm_apply
     (hw : w ∈ (vertexChart hv hi hvP).target) :
     (vertexChart hv hi hvP).symm w =
       mk ⟨vertexLift hv hi w, vertexLift_mem_delzantLevel hv hi
-        fun j hj ↦ ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le⟩ :=
-  vertexChartSymm_of_le hv hi hvP fun j hj ↦ ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le
+        fun j hj ↦ ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le⟩ := by
+  rw [coe_vertexChart_symm]
+  exact vertexChartSymm_of_le hv hi hvP fun j hj ↦
+    ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le
 
+open Classical in
 /-- **The vertex chart on a normalized representative.** If the coordinates outside `A` of a point
 `x` of the level are positive reals, then the class of `x` lies in the source of the chart, and
 the chart sends it to the coordinates of `x` in `A`. Every point of the source has such a
@@ -685,25 +713,29 @@ representative, in its orbit under the kernel torus. -/
 theorem vertexChart_mk {x : delzantLevel i u c}
     (hx : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.1.1 j ∧ x.1.2 j = 0) :
     vertexChart hv hi hvP (mk x) =
-      (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)).prodMap
-        (EuclideanSpace.restrict ℝ (activeSet (facetPairing i u) c v)) x.1 := by
+      ((EuclideanSpace.sumComplEquivProd ℝ (· ∈ activeSet (facetPairing i u) c v) x.1.1).1,
+        (EuclideanSpace.sumComplEquivProd ℝ (· ∈ activeSet (facetPairing i u) c v) x.1.2).1) := by
   have hpos : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.1.1 j ^ 2 + x.1.2 j ^ 2 :=
     fun j hj ↦ by nlinarith [(hx j hj).1]
-  change vertexChartFun hv hi (mk x) = _
-  rw [vertexChartFun_mk hv hi hpos,
+  rw [coe_vertexChart, vertexChartFun_mk hv hi hpos,
     normalizer_eq_zero hv fun j hj ↦ ⟨(hx j hj).1.le, (hx j hj).2⟩, torusRotation_zero,
     ContinuousLinearMap.id_apply]
+  ext j <;> simp
 
 /-- The class of a point of the level whose coordinates outside `A` are positive reals lies in the
 source of the vertex chart. -/
 theorem mk_mem_vertexChart_source {x : delzantLevel i u c}
     (hx : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.1.1 j ∧ x.1.2 j = 0) :
-    mk x ∈ (vertexChart hv hi hvP).source := fun j hj ↦ by
+    mk x ∈ (vertexChart hv hi hvP).source := by
+  rw [vertexChart_source, mem_ofPred_eq]
+  intro j hj
   rw [reducedMomentMap_mk_apply]
   nlinarith [(hx j hj).1]
 
 /-- The vertex chart is centred at the point over `v`: `0` lies in its target. -/
-theorem zero_mem_vertexChart_target : 0 ∈ (vertexChart hv hi hvP).target := fun j hj ↦ by
+theorem zero_mem_vertexChart_target : 0 ∈ (vertexChart hv hi hvP).target := by
+  rw [mem_vertexChart_target_iff]
+  intro j hj
   rw [weightMomentMap_zero, add_zero]
   exact (mem_facetPolyhedron.1 hvP j).lt_of_ne fun h ↦
     hj (mem_activeSet.2 (by rw [facetPairing_apply, h]))
@@ -717,7 +749,8 @@ theorem reducedMomentMap_vertexChart_symm
     reducedMomentMap (hv.surjective_linearCombination_real hi) ((vertexChart hv hi hvP).symm w) =
       v + weightMomentMap (fun k ↦ -hv.edgeBasis hi k) w := by
   rw [vertexChart_symm_apply hv hi hvP hw,
-    (reducedMomentMap_mk_eq_iff _).2 (vertexLift_moment hv hi fun j hj ↦ (hw j hj).le)]
+    (reducedMomentMap_mk_eq_iff _).2 (vertexLift_moment hv hi fun j hj ↦
+      ((mem_vertexChart_target_iff hv hi hvP).1 hw j hj).le)]
 
 /-- The moment value of a point of the source is the translated weight model at its image under
 the vertex chart. -/

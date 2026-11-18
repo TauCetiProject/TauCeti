@@ -53,8 +53,6 @@ Borel measurable structure on the scalar field.
   cardinality of `ι`.
 * `EuclideanSpace.exists_norm_eq_and_inner_eq`: consequently a finite family `ι → E` of vectors has
   a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
-* `EuclideanSpace.restrict`: the coordinates of a point of `EuclideanSpace 𝕜 ι` in a subset of
-  the indices.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 * `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
@@ -310,29 +308,6 @@ theorem exists_norm_eq_and_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerPro
   refine ⟨fun i ↦ L ⟨w i, hw i⟩, fun i ↦ ?_, fun i j ↦ ?_⟩
   · rw [L.norm_map, ← Submodule.norm_coe]
   · rw [L.inner_map_map, Submodule.coe_inner]
-
-section restrict
-
-omit [Fintype ι]
-
-variable (𝕜) (s : Set ι)
-
-/-- The coordinates of a point of `EuclideanSpace 𝕜 ι` in a subset `s` of the indices, as a
-continuous linear map `EuclideanSpace 𝕜 ι → EuclideanSpace 𝕜 s`. This is the analogue for
-subsets of Mathlib's `EuclideanSpace.restrict₂` for finsets. -/
-def restrict : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 s where
-  toFun x := WithLp.toLp 2 fun j : s ↦ x j
-  map_add' x y := by ext; simp
-  map_smul' m x := by ext; simp
-  cont := (PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ PiLp.continuous_apply 2 _ (j : ι))
-
-variable {𝕜 s}
-
-@[simp]
-theorem restrict_apply (x : EuclideanSpace 𝕜 ι) (j : s) : restrict 𝕜 s x j = x j :=
-  (rfl)
-
-end restrict
 
 section sumCompl
 
