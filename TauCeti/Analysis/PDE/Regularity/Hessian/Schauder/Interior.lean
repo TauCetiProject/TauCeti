@@ -159,8 +159,9 @@ private theorem exists_holderWith_and_abs_le_of_hasCompactSupport {α : ℝ≥0}
 
 /-- On the ball `B_R`, a `C²` function with `‖Du‖ ≤ N` and `‖D²u‖ ≤ N`, and each of its partial
 derivatives, are `α`-Hölder with constant `N (2R)^(1 - α)`:
-`TauCeti.holderOnWith_ball_of_norm_fderiv_le` gives this for `u` and `Du`, and evaluation at a
-unit vector is `1`-Lipschitz. -/
+`TauCeti.holderOnWith_ball_of_norm_fderiv_le` and
+`TauCeti.holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le` give this for `u` and `Du`, and
+evaluation at a unit vector is `1`-Lipschitz. -/
 private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ} {N α : ℝ≥0}
     (hα : α ≤ 1) (hu : ContDiffOn ℝ 2 u (ball x₀ R))
     (hN1 : ∀ x ∈ ball x₀ R, ‖fderiv ℝ u x‖ ≤ N)
@@ -168,14 +169,8 @@ private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ
     HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α u (ball x₀ R) ∧
       ∀ i, HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α
         (fun x => fderiv ℝ u x (EuclideanSpace.single i 1)) (ball x₀ R) := by
-  have hcda (x : E) (hx : x ∈ ball x₀ R) : ContDiffAt ℝ 2 u x :=
-    hu.contDiffAt (isOpen_ball.mem_nhds hx)
-  have hHDu := holderOnWith_ball_of_norm_fderiv_le hα
-    (fun x hx => (((hcda x hx).fderiv_right (m := 1) le_rfl).differentiableAt
-      (by norm_num)).differentiableWithinAt)
-    fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN2 x hx
-  refine ⟨holderOnWith_ball_of_norm_fderiv_le hα
-    (fun x hx => ((hcda x hx).differentiableAt (by norm_num)).differentiableWithinAt) hN1,
+  have hHDu := holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le hα hu hN2
+  refine ⟨holderOnWith_ball_of_norm_fderiv_le hα (hu.differentiableOn two_ne_zero) hN1,
     fun i => ?_⟩
   have hev : LipschitzWith 1 fun L : E →L[ℝ] ℝ => L (EuclideanSpace.single i 1) :=
     LipschitzWith.of_dist_le_mul fun L L' => by

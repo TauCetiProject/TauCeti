@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
 
@@ -24,6 +25,9 @@ controls its oscillation between distant points (`HolderOnWith.of_le_of_dist_le`
   the `2δ`-thickening of a set `K`, the function is Hölder on the `δ`-thickening of `K`.
 * `TauCeti.holderOnWith_ball_of_norm_fderiv_le`: on a ball `B_R`, the derivative bound `N₁` alone
   gives the Hölder constant `N₁ (2R)^(1 - α)`.
+* `TauCeti.holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le`: on a ball `B_R`, the
+  derivative of a `C²` function with second derivative bounded by `N₂` is Hölder with constant
+  `N₂ (2R)^(1 - α)`.
 -/
 
 public section
@@ -95,5 +99,16 @@ theorem holderOnWith_ball_of_norm_fderiv_le {g : E → F} {x₀ : E} {R : ℝ} {
       (fun x hx => hg.differentiableAt (isOpen_ball.mem_nhds hx))
       fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN x hx
   simpa using (holderOnWith_one.2 hL).of_le hA hα
+
+/-- The derivative of a `C²` function on the ball `B_R`, with second derivative bounded by `N`
+there, is `α`-Hölder on `B_R` with constant `N (2R)^(1 - α)` for every `α ≤ 1`: this is
+`holderOnWith_ball_of_norm_fderiv_le` applied to `Dg`. -/
+theorem holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le {g : E → F} {x₀ : E} {R : ℝ}
+    {N α : ℝ≥0} (hα : α ≤ 1) (hg : ContDiffOn ℝ 2 g (ball x₀ R))
+    (hN : ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ 2 g x‖ ≤ N) :
+    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α (fderiv ℝ g) (ball x₀ R) :=
+  holderOnWith_ball_of_norm_fderiv_le hα
+    ((hg.fderiv_of_isOpen isOpen_ball (m := 1) le_rfl).differentiableOn one_ne_zero)
+    fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN x hx
 
 end TauCeti
