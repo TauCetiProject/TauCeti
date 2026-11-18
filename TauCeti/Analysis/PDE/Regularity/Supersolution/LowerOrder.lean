@@ -11,6 +11,7 @@ import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -366,18 +367,14 @@ private theorem memLp_inv_and_toReal_eLpNorm_inv_eq {Omega : Opens (EuclideanSpa
   simp only [Real.norm_eq_abs, abs_inv, abs_of_pos (hm.trans_le hx)]
 
 omit [DecidableEq ι] in
-/-- On a set `s ⊆ Ω` on which `u ≥ m > 0`, the `Lᵗ` norm of `u^{-P/2}` is the `(P/2)`-th power of
-the `L^{tP/2}` norm of `u⁻¹`. -/
-private theorem eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow {Omega : Opens (EuclideanSpace ℝ ι)}
+/-- On a set `s ⊆ Ω` on which `u ≥ m > 0`, the function `u^{-P/2}` agrees almost everywhere with
+`‖u⁻¹‖^{P/2}`, so the two have the same `Lᵗ` norm. -/
+private theorem eLpNorm_rpow_neg_eq_eLpNorm_norm_inv_rpow {Omega : Opens (EuclideanSpace ℝ ι)}
     {u : W1p mu Omega 2} {m P : ℝ} (hm : 0 < m)
-    (hmu : ∀ᵐ x ∂mu.restrict Omega, m ≤ W1p.value u x) (hP : 0 < P)
+    (hmu : ∀ᵐ x ∂mu.restrict Omega, m ≤ W1p.value u x)
     {s : Set (EuclideanSpace ℝ ι)} (hs : s ⊆ Omega) (t : ℝ≥0∞) :
     eLpNorm (fun x => W1p.value u x ^ (-P / 2)) t (mu.restrict s) =
-      eLpNorm (fun x => (W1p.value u x)⁻¹) (t * ENNReal.ofReal (P / 2)) (mu.restrict s) ^
-        (P / 2) := by
-  rw [← eLpNorm_norm_rpow (fun x => (W1p.value u x)⁻¹)
-    (((Lp.aestronglyMeasurable (W1p.value u)).aemeasurable.inv).aestronglyMeasurable.mono_measure
-      (Measure.restrict_mono hs le_rfl)) (by positivity)]
+      eLpNorm (fun x => ‖(W1p.value u x)⁻¹‖ ^ (P / 2)) t (mu.restrict s) := by
   refine eLpNorm_congr_ae ?_
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hs hmu] with x hx
   have hux : 0 < W1p.value u x := hm.trans_le hx
@@ -403,14 +400,15 @@ private theorem eLpNorm_inv_le_ofReal_rpow_mul_of_eLpNorm_rpow_neg_le
   have h2 : (2 : ℝ≥0∞) * ENNReal.ofReal (P / 2) = ENNReal.ofReal P := by
     rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two]
     ring_nf
-  rw [eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow hm hmu hP hs,
-    eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow hm hmu hP ht, hq', h2] at h
-  -- Raise both sides to the power `2/P`.
-  have h2P : 0 ≤ 2 / P := by positivity
-  have hpow := ENNReal.rpow_le_rpow h h2P
-  rwa [ENNReal.mul_rpow_of_nonneg _ _ h2P, ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
-    ENNReal.ofReal_rpow_of_nonneg hB h2P,
-    show P / 2 * (2 / P) = 1 by field_simp, ENNReal.rpow_one, ENNReal.rpow_one] at hpow
+  have hinv : ∀ {s : Set (EuclideanSpace ℝ ι)}, s ⊆ Omega →
+      AEStronglyMeasurable (fun x => (W1p.value u x)⁻¹) (mu.restrict s) := fun hs =>
+    ((Lp.aestronglyMeasurable (W1p.value u)).aemeasurable.inv).aestronglyMeasurable.mono_measure
+      (Measure.restrict_mono hs le_rfl)
+  rw [eLpNorm_rpow_neg_eq_eLpNorm_norm_inv_rpow hm hmu hs,
+    eLpNorm_rpow_neg_eq_eLpNorm_norm_inv_rpow hm hmu ht] at h
+  have hpow := TauCeti.eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le (hinv hs) (hinv ht)
+    (by positivity) h
+  rwa [hq', h2, inv_div, ENNReal.ofReal_rpow_of_nonneg hB (by positivity)] at hpow
 
 /-- One step of Moser's iteration with negative exponents inside a ball `B(x₀, R) ⊆ Ω`, with the
 Sobolev inequality of `W^{1,2}_0(B(x₀, R))`. Let `χ > 1` with `(n - 2) χ < n`, and

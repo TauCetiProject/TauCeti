@@ -11,6 +11,7 @@ import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -248,20 +249,22 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm :
   set A := C * (1 + p * Lam / ((1 - p) * lam)) / (ρ - r)
   have hA : 0 ≤ A := div_nonneg (mul_nonneg hC0 (add_nonneg zero_le_one
     (div_nonneg (mul_nonneg hp0.le h.upper_nonneg) (by positivity)))) (by linarith)
-  -- On every ball inside `Ω`, `‖u^{p/2}‖_t = ‖u‖_{t p/2}^{p/2}`, since `u > 0` there.
+  -- On every ball inside `Ω`, `u^{p/2} = ‖u‖^{p/2}`, since `u > 0` there.
   have hconv : ∀ {t : ℝ≥0∞} {s : ℝ}, Metric.ball x₀ s ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       eLpNorm (fun x => W1p.value u x ^ (p / 2)) t (mu.restrict (Metric.ball x₀ s)) =
-        eLpNorm (W1p.value u) (t * ENNReal.ofReal (p / 2))
-          (mu.restrict (Metric.ball x₀ s)) ^ (p / 2) := by
+        eLpNorm (fun x => ‖W1p.value u x‖ ^ (p / 2)) t (mu.restrict (Metric.ball x₀ s)) := by
     intro t s hs
-    rw [← eLpNorm_norm_rpow _ ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure
-      (Measure.restrict_mono hs le_rfl)) (by positivity)]
     refine eLpNorm_congr_ae ?_
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hs hεu] with x hx
     rw [Real.norm_eq_abs, abs_of_pos (hε.trans_le hx)]
   have hrB : Metric.ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (Metric.ball_subset_ball hrρ.le).trans hball
-  rw [hconv hrB, hconv hball] at hstep'
+  rw [hconv hrB, hconv hball, ← ENNReal.ofReal_coe_nnreal,
+    ← ENNReal.ofReal_mul (by positivity)] at hstep'
+  have hpow := TauCeti.eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le
+    ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure (Measure.restrict_mono hrB le_rfl))
+    ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl))
+    (by positivity) hstep'
   have hq' : q * ENNReal.ofReal (p / 2) = ENNReal.ofReal (q.toReal / 2 * p) := by
     conv_lhs => rw [← ENNReal.ofReal_toReal hq]
     rw [← ENNReal.ofReal_mul ENNReal.toReal_nonneg]
@@ -269,13 +272,8 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm :
   have h2' : (2 : ℝ≥0∞) * ENNReal.ofReal (p / 2) = ENNReal.ofReal p := by
     rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two]
     ring_nf
-  rw [hq', h2', ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity)] at hstep'
-  -- Raise both sides to the power `2/p`.
-  have h2p : 0 ≤ 2 / p := by positivity
-  have hpow := ENNReal.rpow_le_rpow hstep' h2p
-  rw [ENNReal.mul_rpow_of_nonneg _ _ h2p, ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
-    ENNReal.ofReal_rpow_of_nonneg (mul_nonneg (NNReal.coe_nonneg S) hA) h2p,
-    show p / 2 * (2 / p) = 1 by field_simp, ENNReal.rpow_one, ENNReal.rpow_one] at hpow
+  rw [hq', h2', inv_div, ENNReal.ofReal_rpow_of_nonneg (mul_nonneg (NNReal.coe_nonneg S) hA)
+    (by positivity)] at hpow
   convert hpow using 4
   simp only [A]
   ring

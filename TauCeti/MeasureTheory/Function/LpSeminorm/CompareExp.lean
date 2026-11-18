@@ -30,6 +30,8 @@ This comparison is useful for embeddings of real interpolation spaces.
 * `TauCeti.eLpNorm_le_eLpNorm_rpow`: if `‖u‖ ≤ ‖f‖ ^ r`, then `‖u‖_s ≤ ‖f‖_p ^ r` when
   `1 / s = r / p`.
 * `TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one`: its form for Hölder conjugate exponents.
+* `TauCeti.eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le`: a bound between seminorms of
+  `‖f‖ ^ r` and `‖g‖ ^ r` is a bound between seminorms of `f` and `g` at `r` times the exponents.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
   for `1 ≤ p` implies convergence to zero in `L¹`.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_of_tendsto_eLpNorm_one`: convergence to zero in `L¹`
@@ -85,6 +87,20 @@ theorem eLpNorm_le_eLpNorm_rpow_toReal_sub_one {q q' : ℝ≥0∞} [hqq : q.Hold
   refine eLpNorm_le_eLpNorm_rpow (by linarith) hg ?_ hle
   rw [← ENNReal.HolderConjugate.sub_one_mul_inv q q' hq, ENNReal.ofReal_sub _ zero_le_one,
     ENNReal.ofReal_toReal hq, ENNReal.ofReal_one]
+
+/-- **Changing exponents through a power.** For `r > 0`, a bound
+`‖‖f‖^r‖_{L^p(μ)} ≤ B ‖‖g‖^r‖_{L^q(ν)}` is the bound
+`‖f‖_{L^{pr}(μ)} ≤ B^{1/r} ‖g‖_{L^{qr}(ν)}`. -/
+theorem eLpNorm_le_rpow_inv_mul_eLpNorm_of_eLpNorm_norm_rpow_le {ν : Measure α} {f : α → E}
+    {g : α → F} {p q B : ℝ≥0∞} {r : ℝ} (hf : AEStronglyMeasurable f μ)
+    (hg : AEStronglyMeasurable g ν) (hr : 0 < r)
+    (h : eLpNorm (fun x => ‖f x‖ ^ r) p μ ≤ B * eLpNorm (fun x => ‖g x‖ ^ r) q ν) :
+    eLpNorm f (p * ENNReal.ofReal r) μ ≤ B ^ r⁻¹ * eLpNorm g (q * ENNReal.ofReal r) ν := by
+  rw [eLpNorm_norm_rpow f hf hr, eLpNorm_norm_rpow g hg hr] at h
+  have hr' : 0 ≤ r⁻¹ := inv_nonneg.2 hr.le
+  have hpow := ENNReal.rpow_le_rpow h hr'
+  rwa [ENNReal.mul_rpow_of_nonneg _ _ hr', ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
+    mul_inv_cancel₀ hr.ne', ENNReal.rpow_one, ENNReal.rpow_one] at hpow
 
 end Rpow
 
