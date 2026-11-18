@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 import Mathlib.Algebra.Group.ULift
+import Mathlib.GroupTheory.Commutator.Basic
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import Mathlib.GroupTheory.SpecificGroups.Dihedral
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Amalgamated products: non-injective maps, centralizers, and the amalgamation of groups
@@ -30,7 +35,11 @@ since that image is also the image of `φ i c` under the inclusion of `G i`.
 Conversely, two injective homomorphisms `φ : C →* A` and `ψ : C →* B` of groups are completed to
 a commutative square of injective homomorphisms into a group: the amalgamated product
 `A ∗_C B`, in which both factors embed by the normal form theorem. This is the amalgamation
-property of the class of groups.
+property of the class of groups. For instance, for `n ≠ 0` every element `g` of a group `G` becomes
+an `n`-th power in some group containing `G`: in the dihedral group of order `2 · n · orderOf g`,
+the power `rⁿ` of the rotation `r` of order `n · orderOf g` has the order of `g`, and `G` embeds in
+its amalgam with that dihedral group along `g = rⁿ`. For `n = 2`, `r² = ⁅r, s⁆` with a reflection
+`s`, so `g` also becomes a commutator.
 
 ## Main results
 
@@ -42,10 +51,16 @@ property of the class of groups.
   image of `C` commutes with the image of `C` in the pushout.
 * `Monoid.PushoutI.exists_injective_comp_eq_comp`: two injective homomorphisms out of a group `C`
   are completed to a commutative square of injective homomorphisms.
+* `Monoid.PushoutI.exists_injective_pow_eq`: for `n ≠ 0`, every element of a group is an `n`-th
+  power in some group containing it.
+* `Monoid.PushoutI.exists_injective_commutatorElement_eq`: every element of a group is a
+  commutator in some group containing it.
 
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §1.1 and §1.2, Theorem 1 (the factors embed in the amalgam).
+* B. H. Neumann, *Adjunction of elements to groups*, J. London Math. Soc. 18 (1943), 4–11
+  (adjoining roots of elements by amalgamated products).
 -/
 
 public section
@@ -122,6 +137,47 @@ theorem exists_injective_comp_eq_comp {A : Type u} {B : Type v} {C : Type w} [Gr
     (of_injective hχ true).comp MulEquiv.ulift.symm.injective, ?_⟩
   ext c
   exact (of_apply_eq_base χ false c).trans (of_apply_eq_base χ true c).symm
+
+open DihedralGroup Subgroup
+
+open scoped commutatorElement
+
+/-- For `n ≠ 0`, a group `G` embeds in a group `P` that receives the dihedral group of order
+`2 · n · orderOf g` by a homomorphism sending `rⁿ` to `g`, where `r` is the rotation `r 1`, of
+order `n · orderOf g`: the amalgamated product of `G` and the dihedral group along `g = rⁿ`. -/
+private theorem exists_injective_dihedral {G : Type u} [Group G] {n : ℕ} (hn : n ≠ 0) (g : G) :
+    ∃ (P : Type u) (_ : Group P) (ι : G →* P) (β : DihedralGroup (n * orderOf g) →* P),
+      Function.Injective ι ∧ β (r 1 ^ n) = ι g := by
+  have hord : orderOf g = orderOf (r 1 ^ n : DihedralGroup (n * orderOf g)) := by
+    rw [orderOf_pow' _ hn, orderOf_r_one, Nat.gcd_mul_right_left,
+      Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn)]
+  -- the embedding `⟨g⟩ →* D`, `g ↦ rⁿ`
+  let ψ := (zpowers _).subtype.comp (mulEquivOfOrderOfEq
+    (fun y => (zpowers_mk_self_eq_top g).ge (mem_top y))
+    (fun y => (zpowers_mk_self_eq_top (r 1 ^ n : DihedralGroup (n * orderOf g))).ge (mem_top y))
+    (by rwa [orderOf_mk, orderOf_mk])).toMonoidHom
+  have hψ : Function.Injective ψ := (zpowers _).subtype_injective.comp (MulEquiv.injective _)
+  obtain ⟨P, _, α, β, hα, -, h⟩ := exists_injective_comp_eq_comp (zpowers g).subtype_injective hψ
+  exact ⟨P, _, α, β, hα, by simpa [ψ] using (DFunLike.congr_fun h ⟨g, mem_zpowers g⟩).symm⟩
+
+/-- For `n ≠ 0`, every element of a group `G` is an `n`-th power in a group containing `G`:
+`g = rⁿ` in the amalgamated product of `G` and a dihedral group along `g = rⁿ`. -/
+theorem exists_injective_pow_eq {G : Type u} [Group G] {n : ℕ} (hn : n ≠ 0) (g : G) :
+    ∃ (P : Type u) (_ : Group P) (ι : G →* P), Function.Injective ι ∧ ∃ a : P, a ^ n = ι g := by
+  obtain ⟨P, _, ι, β, hι, h⟩ := exists_injective_dihedral hn g
+  exact ⟨P, _, ι, hι, β (r 1), by rw [← map_pow, h]⟩
+
+/-- Every element of a group `G` is a commutator in a group containing `G`: `g = r² = ⁅r, s⁆` in
+the amalgamated product of `G` and a dihedral group along `g = r²`, where `s` is a reflection. -/
+theorem exists_injective_commutatorElement_eq {G : Type u} [Group G] (g : G) :
+    ∃ (P : Type u) (_ : Group P) (ι : G →* P), Function.Injective ι ∧ ∃ a b : P, ⁅a, b⁆ = ι g := by
+  obtain ⟨P, _, ι, β, hι, h⟩ := exists_injective_dihedral two_ne_zero g
+  have hrs : ⁅(r 1 : DihedralGroup (2 * orderOf g)), (sr 0 : DihedralGroup (2 * orderOf g))⁆ =
+      r 1 ^ 2 := by
+    simp only [commutatorElement_def, inv_r, inv_sr, r_mul_sr, sr_mul_r, sr_mul_sr, sq, r_mul_r]
+    congr 1
+    ring
+  exact ⟨P, _, ι, hι, β (r 1), β (sr 0), by rw [← map_commutatorElement, hrs, h]⟩
 
 end Amalgamation
 

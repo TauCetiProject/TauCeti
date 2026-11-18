@@ -8,6 +8,8 @@ module
 public import Mathlib.GroupTheory.HNNExtension
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.ProperPower
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Conjugating the base group by the stable letter of an HNN extension
@@ -32,7 +34,10 @@ for `A = zpowers u` whenever `u` is a nontrivial proper power, since a root of `
 
 Conversely, the stable letter can be used to make two elements conjugate: if `a, b ∈ G` have the
 same order, the HNN extension of `G` along the isomorphism `⟨a⟩ ≃* ⟨b⟩`, `a ↦ b`, is a group
-containing `G` in which `a` and `b` are conjugate.
+containing `G` in which `a` and `b` are conjugate. In a torsion-free group all nontrivial elements
+have infinite order, so any two of them become conjugate, and at most two such extensions make a
+given element a product of a conjugate of `c` and a conjugate of `c'`, for any nontrivial `c` and
+`c'`.
 
 ## Main results
 
@@ -52,6 +57,11 @@ containing `G` in which `a` and `b` are conjugate.
   not commutative transitive.
 * `HNNExtension.exists_injective_isConj_of_orderOf_eq`: two elements of the same order become
   conjugate in a group containing `G`.
+* `HNNExtension.exists_injective_isConj_of_ne_one`: two nontrivial elements of a torsion-free
+  group `G` become conjugate in some group containing `G`.
+* `HNNExtension.exists_injective_conj_mul_conj_eq`: for nontrivial `c` and `c'` in a torsion-free
+  group `G`, each element of `G` is a product of a conjugate of `c` and a conjugate of `c'` in some
+  group containing `G`.
 
 ## References
 
@@ -171,34 +181,51 @@ section Conjugate
 
 universe u
 
+variable {G : Type u} [Group G]
+
 /-- Two elements of the same order of a group `G` are conjugate in a group containing `G`: the HNN
 extension of `G` along the isomorphism `⟨a⟩ ≃* ⟨b⟩`, `a ↦ b`, whose stable letter conjugates `a`
 to `b`. -/
-theorem exists_injective_isConj_of_orderOf_eq {G : Type u} [Group G] {a b : G}
-    (h : orderOf a = orderOf b) :
+theorem exists_injective_isConj_of_orderOf_eq {a b : G} (h : orderOf a = orderOf b) :
     ∃ (P : Type u) (_ : Group P) (ι : G →* P), Function.Injective ι ∧ IsConj (ι a) (ι b) := by
-  have hmem (x : G) : x ∈ (zpowersHom G x).range := ⟨.ofAdd 1, by simp⟩
-  have hker : (zpowersHom G a).ker = (zpowersHom G b).ker := by
-    ext n
-    simp [← orderOf_dvd_iff_zpow_eq_one, h]
-  -- the isomorphism `⟨a⟩ ≃* ⟨b⟩` sending `a` to `b`, through `ℤ ⧸ orderOf a`
-  let φ : (zpowersHom G a).range ≃* (zpowersHom G b).range :=
-    (QuotientGroup.quotientKerEquivRange _).symm.trans
-      ((QuotientGroup.quotientMulEquivOfEq hker).trans (QuotientGroup.quotientKerEquivRange _))
-  -- by definition, `quotientKerEquivRange f` sends the class of `n` to `f n`, here `x ^ 1`
-  have hq (x : G) : ((QuotientGroup.quotientKerEquivRange (zpowersHom G x)
-      (Multiplicative.ofAdd 1 : Multiplicative ℤ) : (zpowersHom G x).range) : G) = x :=
-    zpow_one x
-  have hφ : φ ⟨a, hmem a⟩ = ⟨b, hmem b⟩ := by
-    have h1 : (QuotientGroup.quotientKerEquivRange (zpowersHom G a)).symm ⟨a, hmem a⟩ =
-        (Multiplicative.ofAdd 1 : Multiplicative ℤ) :=
-      (MulEquiv.symm_apply_eq _).2 (Subtype.ext (hq a).symm)
-    exact Subtype.ext (by simp only [φ, MulEquiv.trans_apply, h1,
-      QuotientGroup.quotientMulEquivOfEq_mk, hq])
+  let φ := mulEquivOfOrderOfEq (fun y => (zpowers_mk_self_eq_top a).ge (mem_top y))
+    (fun y => (zpowers_mk_self_eq_top b).ge (mem_top y)) (by rwa [orderOf_mk, orderOf_mk])
   refine ⟨HNNExtension G _ _ φ, inferInstance, of, of_injective _, isConj_iff.2 ⟨t, ?_⟩⟩
-  have h := equiv_eq_conj (φ := φ) ⟨a, hmem a⟩
-  rw [hφ] at h
-  exact h.symm
+  simpa [φ] using (equiv_eq_conj (φ := φ) ⟨a, mem_zpowers a⟩).symm
+
+variable [IsMulTorsionFree G]
+
+/-- Two nontrivial elements of a torsion-free group `G` are conjugate in a group containing `G`,
+since both have infinite order. -/
+theorem exists_injective_isConj_of_ne_one {a b : G} (ha : a ≠ 1) (hb : b ≠ 1) :
+    ∃ (P : Type u) (_ : Group P) (ι : G →* P), Function.Injective ι ∧ IsConj (ι a) (ι b) :=
+  exists_injective_isConj_of_orderOf_eq <| by
+    rw [orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree ha),
+      orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree hb)]
+
+/-- For nontrivial elements `c`, `c'` of a torsion-free group `G`, each `g ∈ G` is the product of
+a conjugate of `c` and a conjugate of `c'` in some group containing `G` (depending on `g`). -/
+theorem exists_injective_conj_mul_conj_eq {c c' : G} (hc : c ≠ 1) (hc' : c' ≠ 1) (g : G) :
+    ∃ (P : Type u) (_ : Group P) (ι : G →* P), Function.Injective ι ∧
+      ∃ k k' : P, k * ι c * k⁻¹ * (k' * ι c' * k'⁻¹) = ι g := by
+  rcases eq_or_ne c g with rfl | hg
+  · -- `g = c`: conjugate `c` to `c²` and then `c'` to `c⁻¹`
+    obtain ⟨P₁, _, ι₁, hι₁, hk₁⟩ :=
+      exists_injective_isConj_of_ne_one hc ((pow_eq_one_iff_left two_ne_zero).not.2 hc)
+    obtain ⟨k₁, hk₁⟩ := isConj_iff.1 hk₁
+    obtain ⟨P, _, ι₂, hι₂, hk₂⟩ := exists_injective_isConj_of_orderOf_eq (a := ι₁ c')
+      (b := ι₁ c⁻¹) (by
+        rw [orderOf_injective ι₁ hι₁, orderOf_injective ι₁ hι₁,
+          orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree hc'),
+          orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree (inv_ne_one.2 hc))])
+    obtain ⟨k₂, hk₂⟩ := isConj_iff.1 hk₂
+    refine ⟨P, _, ι₂.comp ι₁, hι₂.comp hι₁, ι₂ k₁, k₂, ?_⟩
+    calc ι₂ k₁ * (ι₂.comp ι₁) c * (ι₂ k₁)⁻¹ * (k₂ * (ι₂.comp ι₁) c' * k₂⁻¹)
+        = ι₂ (k₁ * ι₁ c * k₁⁻¹) * (k₂ * ι₂ (ι₁ c') * k₂⁻¹) := by simp
+      _ = (ι₂.comp ι₁) c := by rw [hk₁, hk₂]; simp [sq, mul_assoc]
+  · obtain ⟨P, _, ι, hι, hk⟩ := exists_injective_isConj_of_ne_one hc' (inv_mul_eq_one.not.2 hg)
+    obtain ⟨k, hk⟩ := isConj_iff.1 hk
+    exact ⟨P, _, ι, hι, 1, k, by simp [hk]⟩
 
 end Conjugate
 
