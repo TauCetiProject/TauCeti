@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.PushoutI.Basic
 public import TauCeti.GroupTheory.PushoutI.Reduced
 public import TauCeti.GroupTheory.TrivialIntersection
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
@@ -90,21 +91,20 @@ private def lprod (L : List (ι × PushoutI φ)) : PushoutI φ := (L.map Prod.sn
     lprod (L ++ L') = lprod L * lprod L' := by
   simp [lprod]
 
-private theorem base_mem_range_of (i : ι) (c : H) : base φ c ∈ (of (φ := φ) i).range :=
-  MonoidHom.mem_range.2 ⟨φ i c, of_apply_eq_base φ i c⟩
-
 private theorem IsLetter.inv {l : ι × PushoutI φ} (h : IsLetter l) : IsLetter (l.1, l.2⁻¹) :=
   ⟨inv_mem h.1, fun h' => h.2 (by simpa using inv_mem h')⟩
 
 private theorem IsLetter.base_mul {l : ι × PushoutI φ} (h : IsLetter l) (c : H) :
     IsLetter (l.1, base φ c * l.2) := by
-  have hc : (base φ c)⁻¹ ∈ (base φ).range := inv_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩)
-  exact ⟨mul_mem (base_mem_range_of _ c) h.1, fun h' => h.2 (by simpa using mul_mem hc h')⟩
+  have hc : base φ c ∈ (base φ).range := ⟨c, rfl⟩
+  exact ⟨mul_mem (base_range_le_of_range _ hc) h.1,
+    fun h' => h.2 (by simpa using mul_mem (inv_mem hc) h')⟩
 
 private theorem IsLetter.mul_base {l : ι × PushoutI φ} (h : IsLetter l) (c : H) :
     IsLetter (l.1, l.2 * base φ c) := by
-  have hc : (base φ c)⁻¹ ∈ (base φ).range := inv_mem (MonoidHom.mem_range.2 ⟨c, rfl⟩)
-  exact ⟨mul_mem h.1 (base_mem_range_of _ c), fun h' => h.2 (by simpa using mul_mem h' hc)⟩
+  have hc : base φ c ∈ (base φ).range := ⟨c, rfl⟩
+  exact ⟨mul_mem h.1 (base_range_le_of_range _ hc),
+    fun h' => h.2 (by simpa using mul_mem h' (inv_mem hc))⟩
 
 @[simp] private theorem isRed_nil : IsRed ([] : List (ι × PushoutI φ)) := by
   simp [IsRed]
@@ -684,7 +684,7 @@ private theorem exists_conj_eq_P_r (n : ℕ) :
   | _ n ih =>
   intro K hKn hK c
   rcases K with _ | ⟨⟨j, e⟩, K⟩
-  · exact Or.inl ⟨false, 1, by simpa using base_mem_range_of false c⟩
+  · exact Or.inl ⟨false, 1, by simpa using base_range_le_of_range false ⟨c, rfl⟩⟩
   have hZ : IsRed ((j, base φ c * e) :: K) := by
     obtain ⟨he, hh, hK'⟩ := isRed_cons.1 hK
     exact isRed_cons.2 ⟨he.base_mul c, hh, hK'⟩
