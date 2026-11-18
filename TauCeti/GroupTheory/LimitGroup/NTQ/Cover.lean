@@ -280,17 +280,6 @@ end TowerCover
 
 /-! ### Examples -/
 
-private theorem exists_gHom_coordGroup_of_isSeparatedBy {K : Type*} [Group K] {κ : G →* K}
-    (h : IsSeparatedBy κ (MonoidHom.id G)) {S : Set (GX G X)} {p : X → K} (hp : p ∈ V κ S) :
-    ∃ θ : GHom (CoordGroup.coeff (MonoidHom.id G) S) κ,
-      ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id G) S = p := by
-  -- The radical of `S` vanishes on the points `ψ ∘ p`, hence at `p`.
-  have hRad : Rad (MonoidHom.id G) S ≤ (eval κ p).ker := by
-    rw [Rad_def, ← h.I_range_comp_eq_ker_eval]
-    exact I_antitone _ (Set.range_subset_iff.2 fun ψ : GHom κ (MonoidHom.id G) ↦ ψ.comp_mem_V hp)
-  refine ⟨⟨QuotientGroup.lift _ (eval κ p) hRad, fun g ↦ by simp⟩, funext fun x ↦ ?_⟩
-  simp [CoordGroup.genericPoint_apply]
-
 /-- Over a nonabelian free group `F`, the one-level free tower `F[X]` covers the empty system, with
 the identity word map. -/
 noncomputable example {F : Type u} [Group F] [IsFreeGroup F] (hF : ¬IsMulCommutative F) (X : Type u)
@@ -353,7 +342,7 @@ theorem exists_gHom_commutatorPair_free
     ∃ θ : GHom (CoordGroup.coeff (MonoidHom.id G) (commutatorPair G)) (inl : G →* GX G (Fin 2)),
       ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id G) (commutatorPair G) =
         ![1, inr (of 0), inr (of 1)] :=
-  exists_gHom_coordGroup_of_isSeparatedBy h (by simp)
+  h.exists_gHom_coordGroup (by simp)
 
 /-- Over a nonabelian fully residually free group `G`, for instance a nonabelian free group, the
 word map `(u, v, x) ↦ (u, v, x)` induces a `G`-homomorphism from the coordinate group of
@@ -366,8 +355,7 @@ theorem exists_gHom_commutatorPair_abelian (hG : IsFullyResiduallyFree G)
         fun i : Fin 3 ↦ inr (Pi.mulSingle i (Multiplicative.ofAdd 1)) := by
   -- `G ∗ ℤ³` embeds over `G` in an ICE group over `G`, which is discriminated by `G`.
   obtain ⟨E, _, j, c, f, hf⟩ := exists_ice_embedding_coprod_pi hG hG' 3
-  exact exists_gHom_coordGroup_of_isSeparatedBy
-    ((c.isDiscriminatedBy hG).of_injective f hf).isSeparatedBy
+  exact ((c.isDiscriminatedBy hG).of_injective f hf).isSeparatedBy.exists_gHom_coordGroup
     (mem_V_commutatorPair.2 ⟨(Commute.all _ _).map inr, (Commute.all _ _).map inr⟩)
 
 /-- For non-commuting `a`, `b` in `G`, the solution `(u, v, x) = (1, a, b)` of
@@ -414,9 +402,8 @@ noncomputable example {α : Type u} (a b : α) :
           {⁅(inr (of ()) : GX (FreeGroup α) Unit), (inl (of (c j)) : GX (FreeGroup α) Unit)⁆} := by
       simpa [commutatorElement_eq_one_iff_commute] using
         (CentralizerExt.commute_of_t (Subgroup.mem_centralizer_singleton_iff.2 rfl) 0).symm
-    refine exists_gHom_coordGroup_of_isSeparatedBy (CentralizerExt.isDiscriminatedBy
-      IsFreeGroup.isBP IsFreeGroup.isCSA (of_ne_one _)).isSeparatedBy
-      (union_subset_V_unionEquations _ _ ?_)
+    refine (CentralizerExt.isDiscriminatedBy IsFreeGroup.isBP IsFreeGroup.isCSA
+      (of_ne_one _)).isSeparatedBy.exists_gHom_coordGroup (union_subset_V_unionEquations _ _ ?_)
     fin_cases j
     exacts [Or.inl ht, Or.inr ht]
   choose θ hθ using hθ

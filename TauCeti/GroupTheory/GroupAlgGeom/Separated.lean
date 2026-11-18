@@ -117,6 +117,9 @@ also cover systems without solutions, whose coordinate group is trivial.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_exists_coordGroup`: a group generated over `G` by the
   images of `X` is separated by `H` if and only if it is `G`-isomorphic to a coordinate group over
   `H` in the variables `X`.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_gHom_coordGroup`: for `K` separated by `H`, every
+  solution in `K` of a system `S` is the image of the generic point under a `G`-homomorphism
+  `G_{R(S)} → K`.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_bijective_gHom_coordGroup_empty`: if `G[X]` is
   separated by `H`, the coordinate group of the empty system is `G[X]`.
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_iff_exists_coordGroup`: over an equationally
@@ -290,6 +293,19 @@ theorem CoordGroup.isSeparatedBy_of_bijective {S : Set (GX G X)}
     (φ : GHom (CoordGroup.coeff ι S) κ) (hφ : Function.Bijective φ) : IsSeparatedBy κ ι :=
   (CoordGroup.isSeparatedBy_coeff S).of_injective (φ.symmOfBijective hφ)
     (φ.symmOfBijective_injective hφ)
+
+/-- If `K` is separated by `H` over `G`, every solution `p` in `K` of a system `S` factors through
+the coordinate group of `S` over `H`: evaluation at `p` induces a `G`-homomorphism
+`θ : G_{R(S)} → K` sending the generic point to `p`. -/
+theorem IsSeparatedBy.exists_gHom_coordGroup (h : IsSeparatedBy κ ι) {S : Set (GX G X)}
+    {p : X → K} (hp : p ∈ V κ S) :
+    ∃ θ : GHom (CoordGroup.coeff ι S) κ, ⇑θ ∘ CoordGroup.genericPoint ι S = p := by
+  -- The radical of `S` vanishes on the points `ψ ∘ p`, hence at `p`.
+  have hRad : Rad ι S ≤ (eval κ p).ker := by
+    rw [Rad_def, ← h.I_range_comp_eq_ker_eval]
+    exact I_antitone _ (Set.range_subset_iff.2 fun ψ : GHom κ ι => ψ.comp_mem_V hp)
+  refine ⟨⟨QuotientGroup.lift _ (eval κ p) hRad, fun g => by simp⟩, funext fun x => ?_⟩
+  simp [CoordGroup.genericPoint_apply]
 
 /-- If `G[X]` is separated by `H` over `G`, the coordinate group over `H` of the empty system in
 the variables `X` is `G[X]`, by the `G`-isomorphism sending the class of each `w ∈ G[X]` to `w`.
