@@ -59,10 +59,16 @@ and the added rank `n` is positive. A raw level of type (2) carries no such cond
   system has finitely many variables and is a finite system.
 * `TauCeti.LimitGroup.NTQ.System.coordGroupNilEquiv`: the raw lower group of the bottom level
   is `G`.
+* `TauCeti.LimitGroup.NTQ.System.comap_Rad_cons_empty`: an empty level does not change the radical
+  of the lower system.
 * `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_centralizer`,
   `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_abelian`,
   `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_empty`: levels of types (2)–(4) are solved
   by the trivial point, so only the quadratic levels can make a system degenerate.
+* `TauCeti.LimitGroup.NTQ.System.exists_sumElim_mem_V_cons`,
+  `TauCeti.LimitGroup.NTQ.System.IsNondegenerate.nonempty_V`: over a top level solvable in the raw
+  lower group every solution of the lower system extends, and a nondegenerate system has a
+  solution in `G`.
 * `TauCeti.LimitGroup.NTQ.not_isNondegenerate_commutator_eq_basis`: over `F(a, b)`, the one-level
   system `[x, y] = a` is degenerate, by abelianization.
 * `TauCeti.LimitGroup.NTQ.normalClosure_lt_Rad_commute_basis`: over `F(a, b)`, the radical of the
@@ -278,6 +284,18 @@ noncomputable def coordGroupNilEquiv : (nil : System G PEmpty).CoordGroup ≃* G
 theorem coordGroupNilEquiv_mk (w : GX G PEmpty) :
     coordGroupNilEquiv (w : (nil : System G PEmpty).CoordGroup) = GX.equivOfIsEmpty w := (rfl)
 
+/-- An equation in the lower variables lies in the radical of `cons S X empty` exactly when it
+lies in the radical of `S`: the radical of the system with the free variables `X` pulls back along
+`G[Y] → G[X ⊕ Y]` to the radical of `S`. -/
+@[simp]
+theorem comap_Rad_cons_empty {ι : G →* H} {Y : Type v} (S : System G Y) (X : Type v) [Finite X] :
+    (Rad ι (cons S X .empty).equations).comap
+      (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)) = Rad ι S.equations := by
+  ext w
+  simp only [Subgroup.mem_comap, mem_Rad, eval_map, MonoidHom.comp_id]
+  refine ⟨fun h v hv => ?_, fun h v hv => h _ (mem_V_cons.1 hv).1⟩
+  simpa using h (Sum.elim 1 v) (mem_V_cons.2 ⟨by simpa using hv, by simp⟩)
+
 /-- A raw TQ system is *nondegenerate* when each of its levels has a solution in its raw lower
 group: `nil` is nondegenerate, and `cons S X L` is nondegenerate when `S` is and the top level
 `L`, with its coefficients `G[Y]` read in `G_{R_G(S)}` through the quotient map, has a solution in
@@ -315,6 +333,32 @@ theorem isNondegenerate_cons_abelian {Y X : Type v} [Finite X] {S : System G Y} 
 theorem isNondegenerate_cons_empty {Y X : Type v} [Finite X] {S : System G Y} :
     (cons S X .empty).IsNondegenerate ↔ S.IsNondegenerate :=
   isNondegenerate_cons.trans <| and_iff_left <| by simp
+
+/-- If the top level `L` has a solution in the raw lower group, every solution `v` of the lower
+system `S` in `G` extends to a solution `Sum.elim x v` of `cons S X L`. The hypothesis on `L` is
+the top clause of the nondegeneracy of `cons S X L` (`isNondegenerate_cons`); the lower levels need
+not be nondegenerate. -/
+theorem exists_sumElim_mem_V_cons {Y X : Type v} [Finite X] {S : System G Y}
+    {L : Level (GX G Y) X}
+    (hL : (V (QuotientGroup.mk' (Rad (MonoidHom.id G) S.equations)) L.equations).Nonempty)
+    {v : Y → G} (hv : v ∈ V (MonoidHom.id G) S.equations) :
+    ∃ x : X → G, Sum.elim x v ∈ V (MonoidHom.id G) (cons S X L).equations := by
+  obtain ⟨s, hs⟩ := hL
+  -- Evaluation at `v`, as a homomorphism from the raw lower group to `G` over `G[Y]`.
+  let φ : GHom (QuotientGroup.mk' (Rad (MonoidHom.id G) S.equations)) (eval (.id G) v) :=
+    ⟨CoordGroup.evalGHom v hv, CoordGroup.evalGHom_mk hv⟩
+  exact ⟨φ ∘ s, mem_V_cons.2 ⟨by simpa using hv, by simpa using φ.comp_mem_V hs⟩⟩
+
+/-- A nondegenerate system has a solution in `G`. -/
+theorem IsNondegenerate.nonempty_V {Y : Type v} {S : System G Y} (h : S.IsNondegenerate) :
+    (V (MonoidHom.id G) S.equations).Nonempty := by
+  induction S with
+  | nil => exact ⟨PEmpty.elim, by simp⟩
+  | cons S X L ih =>
+    -- Extend a solution of the lower levels by the values there of a solution of the top level.
+    obtain ⟨v, hv⟩ := ih h.1
+    obtain ⟨x, hx⟩ := exists_sumElim_mem_V_cons h.2 hv
+    exact ⟨_, hx⟩
 
 end System
 
