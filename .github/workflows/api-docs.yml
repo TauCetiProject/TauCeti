@@ -176,8 +176,8 @@ jobs:
       # The doc-gen4 executable's content hash is part of every module's doc-gen4 trace, so a
       # different binary invalidates the whole database. Lean compiles reproducibly, but leansqlite,
       # UnicodeBasic and MD4Lean compile C with the runner's system `cc`, so a runner image update
-      # yields a different binary from the same sources, and the next run re-analyzes every
-      # module (as on 18 November 2026, image 20261111.127.1 to 20261111.370.1). Keep the
+      # can yield a different binary from the same sources, and the next run then re-analyzes every
+      # module (as after the move from image 20261111.127.1 to 20261111.370.1). Keep the
       # executable's build, keyed on the pins alone, so it changes only when its sources do. The
       # entry is saved as soon as it is built, before the long step that depends on it.
       - name: Restore the doc-gen4 executable's build
