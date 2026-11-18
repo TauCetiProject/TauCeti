@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.Geometry.Manifold.MayerVietoris
 public import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
 public import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
@@ -47,8 +48,9 @@ quasi-isomorphism on `U`:
 The case `U = M` is transported along the diffeomorphism of `M` with its top open subset
 (`Diffeomorph.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff`). Over projective
 coefficients, every chain group of a simplicial set is a coproduct of copies of `R`, hence
-projective, and a quasi-isomorphism of bounded below complexes of projective objects is a chain
-homotopy equivalence (`ChainComplex.quasiIso_iff_of_projective`).
+projective (`SSet.projective_chainComplex_X_of_projective`), and a quasi-isomorphism of bounded
+below complexes of projective objects is a chain homotopy equivalence
+(`ChainComplex.quasiIso_iff_of_projective`).
 
 The smoothness hypothesis `[IsManifold I ∞ M]` is used only by the contractions of the convex chart
 domains. Boundary and corners are allowed. As for the additivity of singular chains, `M` is a type
@@ -166,15 +168,6 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι :
         exact contMDiff_id }
   exact (top.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff R).1 (hall ⊤)
 
-omit [HasExactColimitsOfShape (Discrete ℕ) C] in
-/-- Each chain group of a simplicial set with projective coefficients is projective, as a
-coproduct of copies of the coefficients. -/
-private theorem projective_chainComplex_X (X : SSet.{0}) [Projective R] (n : ℕ) :
-    Projective ((X.chainComplex R).X n) where
-  factors f e _ := ⟨Sigma.desc fun x ↦ Projective.factorThru (X.ιChainComplex x ≫ f) e, by
-    ext x
-    simp [SSet.ιChainComplex]⟩
-
 variable (I M) in
 /-- **The smoothing theorem, as a chain homotopy equivalence.** On a Hausdorff σ-compact smooth
 manifold over a finite-dimensional real model with corners, with projective coefficients `R` (for
@@ -184,8 +177,6 @@ the two homotopies are chosen. -/
 def smoothSingularChainHomotopyEquiv [Projective R] :
     HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R) :=
-  have := projective_chainComplex_X R (smoothSingularSubcomplex I M : SSet)
-  have := projective_chainComplex_X R (TopCat.toSSet.obj (TopCat.of M))
   ((ChainComplex.quasiIso_iff_of_projective _).1
     (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι I M R)).choose
 
@@ -194,8 +185,6 @@ def smoothSingularChainHomotopyEquiv [Projective R] :
 theorem smoothSingularChainHomotopyEquiv_hom [Projective R] :
     (smoothSingularChainHomotopyEquiv I M R).hom =
       SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R :=
-  have := projective_chainComplex_X R (smoothSingularSubcomplex I M : SSet)
-  have := projective_chainComplex_X R (TopCat.toSSet.obj (TopCat.of M))
   ((ChainComplex.quasiIso_iff_of_projective _).1
     (quasiIso_chainComplexMap_smoothSingularSubcomplex_ι I M R)).choose_spec
 
