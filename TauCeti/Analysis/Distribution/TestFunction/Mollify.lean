@@ -47,6 +47,7 @@ it to evaluations at points gives the identity of test forms.
 ## Main declarations
 
 * `TestFunction.mollifyCLM`: mollification of test functions on `E`, with
+  `TestFunction.mollifyCLM_apply_eq_integral` giving it as an average of translates and
   `TestFunction.mollifyCLM_apply` identifying it with the convolution `ρ̂ ⋆ ω`.
 * `TestFunction.tsupport_mollifyCLM_subset`: the support of `M φ`.
 * `TestFunction.extDerivCLM_comp_mollifyCLM`: `d ∘ M = M ∘ d`.
@@ -222,13 +223,19 @@ def mollifyCLM : 𝓓((⊤ : Opens E), F) →L[ℝ] 𝓓((⊤ : Opens E), F) :=
   translateAverageCLM (μ.comap ((↑) : closedBall (0 : E) ρ.rOut → E))
     (continuous_mollifyWeight μ ρ) continuous_subtype_val
 
+/-- Mollification at a point, as the average of translates over the closed ball of radius
+`r = ρ.rOut`: `(M φ) x = ∫ ρ̂ y φ (x + y) dμ(y)`. -/
+theorem mollifyCLM_apply_eq_integral (φ : 𝓓((⊤ : Opens E), F)) (x : E) :
+    mollifyCLM μ ρ φ x =
+      ∫ y : closedBall (0 : E) ρ.rOut, ρ.normed μ y • φ (x + y) ∂(μ.comap (↑)) := by
+  rw [mollifyCLM, translateAverageCLM_apply]
+  simp only [_root_.smul_apply, ContinuousLinearMap.id_apply]
+
 /-- Mollification is convolution with the normalized bump. -/
 theorem mollifyCLM_apply (φ : 𝓓((⊤ : Opens E), F)) (x : E) :
     mollifyCLM μ ρ φ x = (ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] φ) x := by
-  rw [mollifyCLM, translateAverageCLM_apply]
-  simp only [_root_.smul_apply, ContinuousLinearMap.id_apply]
-  rw [ρ.integral_closedBall_normed_smul μ (fun y ↦ φ (x + y)), convolution_def,
-    ← integral_neg_eq_self]
+  rw [mollifyCLM_apply_eq_integral, ρ.integral_closedBall_normed_smul μ (fun y ↦ φ (x + y)),
+    convolution_def, ← integral_neg_eq_self]
   simp [ρ.normed_neg, sub_eq_add_neg]
 
 /-- On the whole space, mollification agrees with `TestFunction.mollify`. -/
