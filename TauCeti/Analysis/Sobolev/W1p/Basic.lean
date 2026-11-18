@@ -603,6 +603,19 @@ theorem W1p.ae_norm_gradient_sub_le_dist (u v : W1p mu Omega ⊤) :
     simpa only [dist_eq_norm, W1p.gradient_sub] using W1p.norm_gradient_le (u - v)
   simpa only [hcoe, Pi.sub_apply] using hx.trans hn
 
+/-- The `Lᵖ` norm of a Sobolev function on a subset of `Ω` is finite. -/
+theorem W1p.eLpNorm_value_restrict_ne_top (u : W1p mu Omega p) {s : Set E}
+    (hs : s ⊆ (Omega : Set E)) : eLpNorm (W1p.value u) p (mu.restrict s) ≠ ⊤ :=
+  ((eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl)).trans_lt
+    (Lp.eLpNorm_lt_top _)).ne
+
+/-- The `Lᵖ` norm of a Sobolev function on a subset of `Ω` is at most the norm of its value. -/
+theorem W1p.toReal_eLpNorm_value_le_norm (u : W1p mu Omega p) {s : Set E}
+    (hs : s ⊆ (Omega : Set E)) :
+    (eLpNorm (W1p.value u) p (mu.restrict s)).toReal ≤ ‖W1p.value u‖ :=
+  (ENNReal.toReal_mono (Lp.eLpNorm_ne_top _)
+    (eLpNorm_mono_measure _ (Measure.restrict_mono hs le_rfl))).trans_eq (Lp.norm_def _).symm
+
 /-- The `Lᵖ` norm of the weak gradient on subsets of `Ω` is monotone in the subset. -/
 theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst : s ⊆ t)
     (ht : t ⊆ (Omega : Set E)) :

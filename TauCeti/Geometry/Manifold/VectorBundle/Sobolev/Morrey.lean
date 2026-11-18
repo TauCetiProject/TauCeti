@@ -417,8 +417,7 @@ def morreyEmbedding (hp : (finrank ℝ E : ℝ≥0∞) < p) (i : Fin A.n) (K : S
 theorem morreyEmbedding_apply_apply (hp : (finrank ℝ E : ℝ≥0∞) < p) (i : Fin A.n) (K : Set E)
     [CompactSpace K] (hKi : K ⊆ A.image i) (w : SobolevSection A μ p 1) (y : K) :
     morreyEmbedding hp i K hKi w y = A.coord i (toSection hp w) y := by
-  rw [morreyEmbedding, LinearMap.mkContinuousOfExistsBound_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    coe_coordHolder, Set.domRestrict_apply]
+  simp [morreyEmbedding, coe_coordHolder]
 
 /-- **Compactness of Morrey's embedding.** For `n < p ≤ ∞`, where `n` is the dimension, and every
 exponent `β < 1 - n / p`, the embedding of `W^{1,p}(V)` into the Hölder space `C^{0,β}(K; F)` on a

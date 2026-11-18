@@ -306,14 +306,12 @@ theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
       self_mem_ae_restrict measurableSet_ball] with y hy hyB
     rw [hy]
     exact hpt y hyB
-  have hfin : eLpNorm (W1p.value u) p (mu.restrict B) ≠ ∞ :=
-    ((eLpNorm_mono_measure _ (Measure.restrict_mono hBΩ le_rfl)).trans_lt
-      (Lp.eLpNorm_lt_top _)).ne
   -- Average the pointwise bound over `B`.
   have havg := le_toReal_eLpNorm_div_of_ae_le
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
     (fun h => (measure_ball_pos mu x hr).ne' (Measure.restrict_eq_zero.1 h))
-    (by rw [Measure.restrict_apply_univ]; exact measure_ball_lt_top.ne) hfin hae
+    (by rw [Measure.restrict_apply_univ]; exact measure_ball_lt_top.ne)
+    (W1p.eLpNorm_value_restrict_ne_top u hBΩ) hae
   rw [Measure.restrict_apply_univ, ← measureReal_def] at havg
   linarith
 
@@ -337,10 +335,8 @@ theorem W1p.exists_forall_norm_preciseRepresentative_le_of_isCompact
     rw [mul_div_cancel₀ R two_ne_zero]
     exact (closedBall_subset_cthickening hx R).trans hRK
   have hval : (eLpNorm (W1p.value u) p (mu.restrict (ball x (R / 2)))).toReal ≤ ‖u‖ :=
-    ((ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) (eLpNorm_mono_measure _
-      (Measure.restrict_mono (ball_subset_closedBall.trans
-        ((closedBall_subset_closedBall (by linarith)).trans hxr)) le_rfl))).trans_eq
-      (Lp.norm_def _).symm).trans (W1p.norm_value_le u)
+    (W1p.toReal_eLpNorm_value_le_norm u (ball_subset_closedBall.trans
+      ((closedBall_subset_closedBall (by linarith)).trans hxr))).trans (W1p.norm_value_le u)
   refine (hsup u hr hxr).trans ?_
   rw [mu.addHaar_real_ball_center]
   calc (eLpNorm (W1p.value u) p (mu.restrict (ball x (R / 2)))).toReal / m +
