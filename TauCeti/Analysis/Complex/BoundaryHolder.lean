@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Schwarz
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public import TauCeti.Analysis.Calculus.DiffContOnCl
 public import TauCeti.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
@@ -87,26 +88,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E}
 
 namespace DiffContOnCl
 
-/-- For `0 ≤ α < 1`, the constant `cos (α π / 2)` is positive. -/
-private theorem cos_mul_pi_div_two_pos {α : ℝ} (hα0 : 0 ≤ α) (hα1 : α < 1) :
-    0 < Real.cos (α * π / 2) :=
-  Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
-
-/-- For `0 < α`, `|s| ^ α` tends to `0` as `s` tends to `0`. -/
-private theorem tendsto_abs_rpow_nhds_zero {α : ℝ} (hα0 : 0 < α) :
-    Tendsto (fun s : ℝ ↦ |s| ^ α) (𝓝 0) (𝓝 0) := by
-  simpa [Real.zero_rpow hα0.ne'] using
-    (continuous_abs.tendsto (0 : ℝ)).rpow_const (Or.inr hα0.le)
-
-/-- Precomposing with multiplication by `a`, for `‖a‖ ≤ 1`, preserves being differentiable on the
-open unit disc and continuous on the closed one. -/
-private theorem comp_const_mul (hf : DiffContOnCl ℂ f (ball 0 1)) {a : ℂ} (ha : ‖a‖ ≤ 1) :
-    DiffContOnCl ℂ (fun z ↦ f (a * z)) (ball 0 1) :=
-  hf.comp ((differentiable_id.const_mul a).diffContOnCl) fun z hz ↦ by
-    rw [mem_ball_zero_iff] at hz ⊢
-    rw [norm_mul]
-    nlinarith [norm_nonneg a, norm_nonneg z]
-
 /-- The comparison function `(C / k) (1 - conj w₀ * z) ^ α` is differentiable on the open unit
 disc and continuous on the closed one. -/
 private theorem diffContOnCl_cpow (w₀ : ℂ) (hw₀ : ‖w₀‖ = 1) {α : ℝ} (hα0 : 0 ≤ α) (a : ℂ) :
@@ -135,7 +116,7 @@ private theorem cos_mul_norm_sub_le_of_mem_sphere (hf : DiffContOnCl ℂ f (ball
     (hz : z ∈ closedBall (0 : ℂ) 1) :
     Real.cos (α * π / 2) * ‖f z - f w₀‖ ≤ C * ‖z - w₀‖ ^ α := by
   set k := Real.cos (α * π / 2)
-  have hk : 0 < k := cos_mul_pi_div_two_pos hα0 hα1
+  have hk : 0 < k := TauCeti.cos_mul_pi_div_two_pos hα0 hα1
   -- The real part of `G` is a harmonic majorant of `‖f - f w₀‖` on the circle.
   set G : ℂ → ℂ := fun z ↦ ((C / k : ℝ) : ℂ) * (1 - conj w₀ * z) ^ (α : ℂ)
   have hre (z : ℂ) (hz : z ∈ closedBall (0 : ℂ) 1) :
@@ -268,7 +249,7 @@ theorem holderOnWith_closedBall {c : ℂ} {R : ℝ} {C α : ℝ≥0} (hf : DiffC
   rcases le_or_gt R 0 with hR | hR
   · exact (subsingleton_closedBall c hR).holderOnWith _ _ _
   have hα1 : (α : ℝ) < 1 := by exact_mod_cast hα
-  have hk : 0 < Real.cos (α * π / 2) := cos_mul_pi_div_two_pos α.coe_nonneg hα1
+  have hk : 0 < Real.cos (α * π / 2) := TauCeti.cos_mul_pi_div_two_pos α.coe_nonneg hα1
   -- Transport `f` to the unit disc by the affine map `ξ ↦ c + R ξ`.
   have hR0 : (R : ℂ) ≠ 0 := ofReal_ne_zero.mpr hR.ne'
   set A : ℂ → ℂ := fun ξ ↦ c + R * ξ
@@ -414,8 +395,9 @@ private theorem norm_slope_sub_smul_deriv_le (hf : DiffContOnCl ℂ f (ball 0 1)
     ((tendsto_slope hf hz).const_sub (S t z)).norm
   have hlim' : Tendsto (fun s : ℝ ↦ C * |t| ^ (α : ℝ) + C * |s| ^ (α : ℝ)) (𝓝[≠] 0)
       (𝓝 (C * |t| ^ (α : ℝ))) := by
-    simpa using (tendsto_const_nhds.add ((tendsto_abs_rpow_nhds_zero
-      (NNReal.coe_pos.mpr hα0)).const_mul (C : ℝ))).mono_left nhdsWithin_le_nhds
+    simpa using (tendsto_const_nhds.add
+      (((continuous_abs.tendsto' 0 0 abs_zero).rpow_const_nhds_zero
+        (NNReal.coe_pos.mpr hα0)).const_mul (C : ℝ))).mono_left nhdsWithin_le_nhds
   exact le_of_tendsto_of_tendsto hlim hlim' (eventually_nhdsWithin_of_forall hcomp)
 
 /-- A function equal to `(I z) • f' z` on the open disc and to `v` on the circle is
@@ -430,8 +412,8 @@ private theorem diffContOnCl_of_eqOn [CompleteSpace E] (hf : DiffContOnCl ℂ f 
     (hf.differentiableOn.deriv isOpen_ball)).congr hgb, ?_⟩
   rw [closure_ball (0 : ℂ) one_ne_zero]
   have hpow : Tendsto (fun s : ℝ ↦ (C : ℝ) * |s| ^ (α : ℝ)) (𝓝[≠] 0) (𝓝 0) := by
-    simpa using ((tendsto_abs_rpow_nhds_zero (NNReal.coe_pos.mpr hα0)).const_mul
-      (C : ℝ)).mono_left nhdsWithin_le_nhds
+    simpa using (((continuous_abs.tendsto' 0 0 abs_zero).rpow_const_nhds_zero
+      (NNReal.coe_pos.mpr hα0)).const_mul (C : ℝ)).mono_left nhdsWithin_le_nhds
   have hunif : TendstoUniformlyOn (fun s : ℝ ↦ fun z ↦ (s : ℂ)⁻¹ • (f (exp (I * s) * z) - f z))
       g (𝓝[≠] 0) (closedBall 0 1) := by
     refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
@@ -472,9 +454,9 @@ theorem exists_holderOnWith_closedBall_smul_deriv [CompleteSpace E]
     simp only [g, hwb, ↓reduceIte]
   refine ⟨g, holderOnWith_closedBall (diffContOnCl_of_eqOn hf hv h hα0 hgb hgs) hα1 ?_, hgb,
     hgs⟩
-  intro x hx y hy
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
   rw [hgs x hx, hgs y hy]
-  exact h x hx y hy
+  exact h.dist_le hx hy
 
 /-- On the closed disc of radius `3 / 4`, the derivative of a function holomorphic on the unit
 disc is bounded and Lipschitz, with a common constant. -/
