@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+import TauCeti.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -142,20 +143,6 @@ theorem littlewoodPaley_apply (j : ℤ) (ξ : E) :
 theorem contDiff_littlewoodPaley {n : ℕ∞} (j : ℤ) : ContDiff ℝ n (φ.littlewoodPaley j) :=
   (φ.contDiff.comp (contDiff_const_smul ((2 : ℝ) ^ j)⁻¹)).sub
     (φ.contDiff.comp (contDiff_const_smul ((2 : ℝ) ^ (j - 1))⁻¹))
-
-/-- The rescaled bump function `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the open ball of radius
-`R φ.rOut`. -/
-theorem apply_inv_smul_eq_zero_of_le_norm {R : ℝ} (hR : 0 < R) {ξ : E}
-    (hξ : R * φ.rOut ≤ ‖ξ‖) : φ (R⁻¹ • ξ) = 0 :=
-  φ.zero_of_le_dist (by
-    rwa [dist_zero_right, norm_inv_smul_of_nonneg hR.le, le_div_iff₀ hR, mul_comm])
-
-/-- The complex rescaled bump function `φ (R⁻¹ ·)`, `R > 0`, vanishes outside the closed ball of
-radius `R φ.rOut`. -/
-theorem ofReal_apply_inv_smul_eq_zero {R : ℝ} (hR : 0 < R) :
-    ∀ ξ ∈ (Metric.closedBall (0 : E) (R * φ.rOut))ᶜ, (φ (R⁻¹ • ξ) : ℂ) = 0 := fun ξ hξ ↦ by
-  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hξ
-  rw [φ.apply_inv_smul_eq_zero_of_le_norm hR hξ.le, Complex.ofReal_zero]
 
 /-- The cutoff `ψⱼ` vanishes on the closed ball of radius `2^{j-1} φ.rIn`, where both terms
 are `1`. -/
