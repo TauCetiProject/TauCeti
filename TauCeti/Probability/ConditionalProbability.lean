@@ -66,8 +66,8 @@ elementary coupling bound between a law and its conditioning.
 * `MeasurableEmbedding.map_cond`
 * `ProbabilityTheory.map_cond_preimage`
 * `ProbabilityTheory.cond_univ_restrict`
-* `ProbabilityTheory.cond_inter_le_add_compl`, `ProbabilityTheory.cond_le_inter_add_compl` —
-  comparing conditioning on `s` and on `s ∩ E`
+* `MeasureTheory.Measure.cond_inter_le_add_compl`,
+  `MeasureTheory.Measure.cond_le_inter_add_compl` — comparing conditioning on `s` and on `s ∩ E`
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
@@ -397,6 +397,17 @@ end ComplSingleton
 theorem cond_univ_restrict (μ : Measure Ω) (s : Set Ω) : (μ.restrict s)[|univ] = μ[|s] := by
   rw [cond, cond, Measure.restrict_apply_univ, Measure.restrict_univ]
 
+end ProbabilityTheory
+
+namespace MeasureTheory.Measure
+
+open Filter ProbabilityTheory
+open scoped ENNReal Topology
+
+section ConditioningOnSmallerEvent
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
 /-! ### Conditioning on a smaller event -/
 
 /-- For every event `A`, conditioning `μ` on `s ∩ E` gives `A` at most the mass that conditioning
@@ -414,7 +425,7 @@ non-measurable set has its outer measure, but need not have this reading. -/
 theorem cond_inter_le_add_compl (μ : Measure Ω) (s E A : Set Ω) (hs : μ s ≠ ∞) :
     μ[A|s ∩ E] ≤ μ[A|s] + μ[Eᶜ|s] := by
   have happly (t B : Set Ω) : μ[B|t] = (μ t)⁻¹ * μ.restrict t B := by
-    rw [cond, _root_.smul_apply, smul_eq_mul]
+    rw [ProbabilityTheory.cond, _root_.smul_apply, smul_eq_mul]
   rcases eq_or_ne (μ (s ∩ E)) 0 with h0 | h0
   · simp [cond_eq_zero_of_meas_eq_zero h0]
   have hs0 : μ s ≠ 0 := fun h ↦ h0 (measure_mono_null Set.inter_subset_left h)
@@ -422,7 +433,7 @@ theorem cond_inter_le_add_compl (μ : Measure Ω) (s E A : Set Ω) (hs : μ s �
   -- `s` is covered by `s ∩ E` and by its part outside `E`.
   have hcover : μ s ≤ μ (s ∩ E) + μ.restrict s Eᶜ := by
     simpa only [Measure.restrict_apply_univ] using
-      Measure.restrict_le_restrict_inter_add_compl μ s E univ
+      restrict_apply_le_restrict_inter_add_compl μ s E univ
   have hmul : μ[A|s ∩ E] * μ (s ∩ E) = μ.restrict (s ∩ E) A := by
     rw [happly, mul_right_comm, ENNReal.inv_mul_cancel h0 hsE, one_mul]
   calc μ[A|s ∩ E]
@@ -449,8 +460,8 @@ most the probability of `Eᶜ`: the lower half of the elementary coupling bound 
 its conditioning. -/
 theorem cond_le_inter_add_compl (μ : Measure Ω) (s E A : Set Ω) :
     μ[A|s] ≤ μ[A|s ∩ E] + μ[Eᶜ|s] := by
-  simp only [cond, _root_.smul_apply, smul_eq_mul]
-  have hsplit := Measure.restrict_le_restrict_inter_add_compl μ s E A
+  simp only [ProbabilityTheory.cond, _root_.smul_apply, smul_eq_mul]
+  have hsplit := restrict_apply_le_restrict_inter_add_compl μ s E A
   calc (μ s)⁻¹ * μ.restrict s A
       ≤ (μ s)⁻¹ * (μ.restrict (s ∩ E) A + μ.restrict s Eᶜ) := by gcongr
     _ ≤ (μ (s ∩ E))⁻¹ * μ.restrict (s ∩ E) A + (μ s)⁻¹ * μ.restrict s Eᶜ := by
@@ -458,12 +469,7 @@ theorem cond_le_inter_add_compl (μ : Measure Ω) (s E A : Set Ω) :
       gcongr
       exact Set.inter_subset_left
 
-end ProbabilityTheory
-
-namespace MeasureTheory.Measure
-
-open Filter ProbabilityTheory
-open scoped ENNReal Topology
+end ConditioningOnSmallerEvent
 
 /-- Removing zero increments and dividing by a nonzero spacing rescales the extended mean by
 the reciprocal spacing and reciprocal retained mass. No normalization hypothesis is needed. -/

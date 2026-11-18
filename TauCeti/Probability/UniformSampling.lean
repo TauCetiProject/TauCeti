@@ -49,8 +49,8 @@ estimate is the classical union bound over unordered coordinate pairs, using
 * `uniformOn_injective_le_add` and `uniformOn_univ_le_injective_add` compare arbitrary events
   under the uniform measures on injective maps and on all maps (sampling without and with
   replacement, for finite types with measurable singletons); they specialise the conditioning
-  comparisons `ProbabilityTheory.cond_inter_le_add_compl` and
-  `ProbabilityTheory.cond_le_inter_add_compl` to the counting measure;
+  comparisons `MeasureTheory.Measure.cond_inter_le_add_compl` and
+  `MeasureTheory.Measure.cond_le_inter_add_compl` to the counting measure;
 * `uniformOn_injective_le_add_choose_two_div` and
   `uniformOn_univ_le_injective_add_choose_two_div` give the quantitative forms.
 * `uniformOn_injective_mem_range_and_mem_range` computes the probability that a uniform
@@ -245,7 +245,7 @@ theorem uniformOn_injective_le_add [MeasurableSpace κ] (A : Set (ι → κ)) :
     have := Finite.of_injective f hf
     infer_instance
   simpa only [uniformOn, Set.univ_inter, Set.compl_ofPred] using
-    cond_inter_le_add_compl Measure.count Set.univ {x : ι → κ | Function.Injective x} A
+    Measure.cond_inter_le_add_compl Measure.count Set.univ {x : ι → κ | Function.Injective x} A
       (measure_ne_top _ _)
 
 /-- The uniform measure on all maps differs from the uniform measure on injective maps only on the
@@ -263,7 +263,7 @@ theorem uniformOn_univ_le_injective_add [MeasurableSpace κ] (A : Set (ι → κ
     uniformOn Set.univ A ≤ uniformOn {x : ι → κ | Function.Injective x} A +
       uniformOn Set.univ {x : ι → κ | ¬Function.Injective x} := by
   simpa only [uniformOn, Set.univ_inter, Set.compl_ofPred] using
-    cond_le_inter_add_compl Measure.count Set.univ {x : ι → κ | Function.Injective x} A
+    Measure.cond_le_inter_add_compl Measure.count Set.univ {x : ι → κ | Function.Injective x} A
 
 variable [Fintype ι] [Fintype κ]
 
