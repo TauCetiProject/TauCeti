@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.Height.SInteger
 public import TauCeti.RingTheory.DedekindDomain.SInteger.ClassGroup
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Primitive
 
+import TauCeti.Algebra.BigOperators.Finprod
+
 /-!
 # The height of a point through finitely many places
 
@@ -34,6 +36,8 @@ which Bombieri and Gubler open the proof of the `S`-integral form of the Subspac
   norms at the finite places outside `S` are `1`.
 * `NumberField.mulHeight_le_prod`: the height of a nonzero tuple of `S`-integers is at most the
   product of its local sup norms over the infinite places and `S`.
+* `NumberField.mulHeight_le_prod_of_forall_le_one`: the same bound with `S` given as a finite set
+  of finite places, for a tuple integral outside it.
 * `NumberField.mulHeight_eq_prod_of_forall_iSup_eq_one` and
   `NumberField.mulHeight_eq_prod_of_isPrimitive`: equality when the local sup norms outside `S`
   are `1`, in particular for an `S`-primitive tuple.
@@ -137,6 +141,20 @@ theorem mulHeight_le_prod (S : Finset (HeightOneSpectrum (𝓞 K))) (hx : x ≠ 
         finprod_le_finprod₀ hFfin (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
           (S.finite_toSet.subset (Set.mulSupport_mulIndicator_subset)) hle
     _ = ∏ v ∈ S, F v := by rw [← finprod_mem_def, finprod_mem_coe_finset]
+
+/-- **The height of a nonzero tuple integral outside a finite set `S₀` of finite places is at most
+the product of its local sup norms over the infinite places and the places of `S₀`.** This is
+`NumberField.mulHeight_le_prod` with `S₀` given as finite places and integrality stated through
+their absolute values. -/
+theorem mulHeight_le_prod_of_forall_le_one (S₀ : Finset (FinitePlace K)) (hx : x ≠ 0)
+    (hxS₀ : ∀ v : FinitePlace K, v ∉ S₀ → ∀ i, v (x i) ≤ 1) :
+    mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult) * ∏ v ∈ S₀, ⨆ i, v (x i) := by
+  rw [NumberField.mulHeight_eq hx]
+  exact mul_le_mul_of_nonneg_left
+    (Finset.finprod_le_prod_of_le_one₀ S₀ (FinitePlace.hasFiniteMulSupport_iSup hx)
+      (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
+      fun v hv ↦ Real.iSup_le (hxS₀ v hv) zero_le_one)
+    (Finset.prod_nonneg fun v _ ↦ pow_nonneg (Real.iSup_nonneg fun i ↦ apply_nonneg _ _) _)
 
 /-- **The height of an `S`-primitive tuple is the product of its local sup norms over the
 infinite places and the places of `S`.** -/
