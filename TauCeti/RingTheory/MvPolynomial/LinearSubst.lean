@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Rescale
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Linear changes of variables in multivariate polynomials
@@ -255,14 +256,9 @@ theorem IsHomogeneous.linearSubst_neg {R : Type*} [CommRing R] {p : MvPolynomial
 
 /-- A linear change of variables commutes with taking homogeneous components. -/
 theorem homogeneousComponent_linearSubst (M : Matrix σ σ R) (n : ℕ) (p : MvPolynomial σ R) :
-    homogeneousComponent n (linearSubst M p) = linearSubst M (homogeneousComponent n p) := by
-  conv_lhs => rw [← sum_homogeneousComponent p, map_sum, map_sum]
-  rw [Finset.sum_congr rfl fun i _ ↦ homogeneousComponent_of_mem
-    ((mem_homogeneousSubmodule i _).mpr ((homogeneousComponent_isHomogeneous i p).linearSubst M)),
-    Finset.sum_ite_eq]
-  split_ifs with h
-  · rfl
-  · rw [homogeneousComponent_eq_zero n p (by simpa using h), map_zero]
+    homogeneousComponent n (linearSubst M p) = linearSubst M (homogeneousComponent n p) :=
+  weightedHomogeneousComponent_aeval (w := 1)
+    (fun i ↦ IsHomogeneous.sum _ _ _ fun j _ ↦ isHomogeneous_C_mul_X (M i j) j) p n
 
 variable (σ R) in
 /-- The linear changes of variables restricted to the forms of degree `n`, as a representation
