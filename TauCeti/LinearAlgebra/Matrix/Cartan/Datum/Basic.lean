@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.Reflection
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Generalized
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
 
 /-!
@@ -137,11 +138,13 @@ lemma cartan_eq_zero_iff (i j : ι) : D.cartan i j = 0 ↔ D.cartan j i = 0 := b
   · rw [h₀, mul_zero, mul_eq_zero] at h
     exact h.resolve_left hi
 
+/-- The Cartan matrix of a `TauCeti.CartanDatum` is a generalized Cartan matrix. -/
+theorem isGeneralizedCartan : D.cartan.IsGeneralizedCartan :=
+  ⟨D.cartan_apply_self, fun _ _ ↦ D.cartan_nonpos, D.cartan_eq_zero_iff⟩
+
 /-- The Cartan product `aᵢⱼ aⱼᵢ` of two nodes is nonnegative. -/
-lemma cartan_mul_cartan_nonneg (i j : ι) : 0 ≤ D.cartan i j * D.cartan j i := by
-  rcases eq_or_ne i j with rfl | hij
-  · simp
-  · exact mul_nonneg_of_nonpos_of_nonpos (D.cartan_nonpos hij) (D.cartan_nonpos hij.symm)
+lemma cartan_mul_cartan_nonneg (i j : ι) : 0 ≤ D.cartan i j * D.cartan j i :=
+  D.isGeneralizedCartan.mul_nonneg i j
 
 /-! ### Simple reflections -/
 

@@ -26,6 +26,8 @@ Linear maps conjugate under linear equivalences have linearly equivalent kernels
 `LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp`.
 Coordinate relabelling of function modules (`LinearEquiv.funCongrLeft`) is injective in the
 coordinate equivalence over a nontrivial target module.
+Group actions by linear automorphisms restrict to invariant submodules
+(`MonoidHom.restrictSubmoduleAut`).
 -/
 
 public section
@@ -162,3 +164,35 @@ theorem map_ker_toSemilinearEquiv {A B S : Type*} [Semiring A] [Semiring B] [Sem
   exact Iff.of_eq (congrArg (· = 0) (congrArg _ (Φ.apply_symm_apply y)))
 
 end RingEquiv
+
+namespace MonoidHom
+
+/-- Restrict a group action by linear automorphisms `ρ : G →* (V ≃ₗ[K] V)` to an invariant
+`R`-submodule `S : Submodule R V`, yielding the induced action `G →* (S ≃ₗ[R] S)`. -/
+def restrictSubmoduleAut {G R K V : Type*} [Group G] [Semiring R] [Semiring K]
+    [AddCommMonoid V] [Module R V] [Module K V] [LinearMap.CompatibleSMul V V R K]
+    (ρ : G →* (V ≃ₗ[K] V)) (S : Submodule R V)
+    (hS : ∀ (g : G) {x : V}, x ∈ S → ρ g x ∈ S) : G →* (S ≃ₗ[R] S) where
+  toFun g :=
+    { toFun x := ⟨ρ g x, hS g x.2⟩
+      map_add' x y := Subtype.ext (map_add (ρ g) x.1 y.1)
+      map_smul' c x := Subtype.ext (map_smul ((ρ g).restrictScalars R) c x.1)
+      invFun x := ⟨ρ g⁻¹ x, hS g⁻¹ x.2⟩
+      left_inv x := Subtype.ext <| (mul_apply_eq_comp _ _ _).symm.trans
+        (by rw [← map_mul, inv_mul_cancel, map_one, FunLike.coe_one_eq_id, id_eq])
+      right_inv x := Subtype.ext <| (mul_apply_eq_comp _ _ _).symm.trans
+        (by rw [← map_mul, mul_inv_cancel, map_one, FunLike.coe_one_eq_id, id_eq]) }
+  map_one' := by ext; simp
+  map_mul' _ _ := by ext; simp [mul_apply_eq_comp]
+
+/-- Evaluating `MonoidHom.restrictSubmoduleAut` on a submodule element agrees with the ambient
+action. -/
+@[simp]
+theorem coe_restrictSubmoduleAut_apply {G R K V : Type*} [Group G] [Semiring R] [Semiring K]
+    [AddCommMonoid V] [Module R V] [Module K V] [LinearMap.CompatibleSMul V V R K]
+    (ρ : G →* (V ≃ₗ[K] V)) (S : Submodule R V)
+    (hS : ∀ (g : G) {x : V}, x ∈ S → ρ g x ∈ S) (g : G) (x : S) :
+    (ρ.restrictSubmoduleAut S hS g x : V) = ρ g x :=
+  (rfl)
+
+end MonoidHom
