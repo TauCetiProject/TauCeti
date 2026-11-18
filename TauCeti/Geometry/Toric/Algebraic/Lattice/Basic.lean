@@ -495,6 +495,14 @@ theorem coe_weightLatticeBasis (b : Basis κ ℤ N) (j : κ) :
     (h.weightLatticeBasis b j : StrongDual ℝ V) = h.dualBasis b j := by
   simp [weightLatticeBasis]
 
+/-- The integer coordinates of a weight in `weightLatticeBasis b` are its values on the lattice
+vectors `i (b j)`. -/
+@[simp]
+theorem weightLatticeBasis_repr (b : Basis κ ℤ N) (x : weightLattice i) (j : κ) :
+    ((h.weightLatticeBasis b).repr x j : ℝ) = (x : StrongDual ℝ V) (i (b j)) := by
+  simpa [weightLatticeBasis] using Basis.restrictScalars_repr_apply ℤ (h.dualBasis b)
+    (LinearEquiv.ofEq _ _ (h.span_dualBasis b).symm x) j
+
 include h in
 /-- The weight lattice of an integral lattice is a discrete subgroup of `V*`. -/
 theorem discreteTopology_weightLattice : DiscreteTopology (weightLattice i) := by
