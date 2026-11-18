@@ -50,7 +50,9 @@ compatibility with composition characterizes the transport
   `Hₙ(M, M ∖ {x}; N)` of an `n`-manifold is a copy of `Λ`.
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
-  the identity, and is compatible with restriction on both sides.
+  the identity, and is compatible with restriction on both sides. Restricted to a point of `T`
+  outside the range of `j` it is zero
+  (`TauCeti.localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range`).
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
 * `TauCeti.isIso_singularHomologyδ_ofSubset_compl`: the connecting morphism of the triple
   `(M, M ∖ T, M ∖ S)` is an isomorphism when the local homology along `S` vanishes.
@@ -353,6 +355,17 @@ lemma localHomologyMap_comp_localHomologyRestriction {S : Set M} {T T' : Set N} 
     ← TopPair.singularHomologyMap_comp]
   exact congrArg (TopPair.singularHomologyMap · R k)
     (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _))
+
+/-- Restricting the map of local homology `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` to a point `y ∈ T` outside
+the range of `j` gives zero: no point of `M` lies over `y`, so the composite factors through
+`Hₖ(M, M) = 0`. -/
+theorem localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range {S : Set M}
+    {T : Set N} (h : j ⁻¹' T ⊆ S) {y : N} (hy : y ∈ T) (hyj : y ∉ range j) (k : ℕ) :
+    localHomologyMap R j h k ≫ localHomologyRestriction R (singleton_subset_iff.2 hy) k = 0 := by
+  have h' : j ⁻¹' {y} ⊆ ∅ := fun z hz ↦ hyj ⟨z, hz⟩
+  rw [localHomologyMap_comp_localHomologyRestriction,
+    ← localHomologyRestriction_comp_localHomologyMap R j (empty_subset S) h',
+    (isZero_localHomology_empty R k).eq_zero_of_tgt (localHomologyRestriction R _ k), zero_comp]
 
 /-- **Homotopy invariance of the maps of local homology.** Maps `j₀, j₁ : M → N` joined by a
 homotopy that never sends a point outside `S` into `T` induce the same map
