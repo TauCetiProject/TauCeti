@@ -52,7 +52,7 @@ then raises its regularity one step at a time up to `H^(k+1)`.
 
 * `integral_inner_fun_smul_gaugeFixedAdjoint_eq`: the weak Leibniz rule
   `L_x (w y) = w f + σ(dw) y`.
-* `gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt`,
+* `gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq`,
   `integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq`: for `w = exp(c ρ)` the commutator is the
   multiplication of `w y` by the smooth matrix `expWeightCoeff c`, whose entries have bounded
   derivatives of every order (`exists_norm_iteratedFDeriv_expWeightCoeff_le`).
@@ -146,7 +146,7 @@ private def symbolDirection : Fin 4 → Fin 4 → ℂ :=
 `ρ(z) = √(1 + |z|²)`: the entry `(i, j)` is `c ⟪z, e i j⟫ / ρ(z)`, where `e i j` is the complex
 number with `σ(d) = (d (e i j))` for the principal symbol `σ` of `L_x`. Multiplying a field `v`
 by this matrix gives `σ(d exp(c ρ)) v / exp(c ρ)`
-(`gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt`). -/
+(`gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq`). -/
 def expWeightCoeff (c : ℝ) (i j : Fin 4) (z : ℂ) : ℝ :=
   inner ℝ z (c • symbolDirection i j) * (1 + ‖z‖ ^ 2) ^ (-(1 / 2) : ℝ)
 
@@ -165,7 +165,7 @@ theorem exists_norm_iteratedFDeriv_expWeightCoeff_le (c : ℝ) (i j : Fin 4) (k 
 
 /-- The commutator of `L_x` with the weight `w = exp(c ρ)`: `σ(dw) v` is the multiplication of
 `w v` by the matrix `expWeightCoeff c`. -/
-theorem gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt (c : ℝ) (z : ℂ)
+theorem gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq (c : ℝ) (z : ℂ)
     (v : EuclideanSpace ℝ (Fin 4)) :
     gaugeFixedOperatorSymbol (fderiv ℝ (fun t : ℂ ↦ Real.exp (c * √(1 + ‖t‖ ^ 2))) z) v =
       WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4,
@@ -194,7 +194,7 @@ theorem integral_inner_exp_mul_smul_gaugeFixedAdjoint_eq (hx : Continuous x)
         expWeightCoeff c i j z * (Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) j), η z⟫ := by
   rw [integral_inner_fun_smul_gaugeFixedAdjoint_eq hx
     (contDiff_exp_mul_sqrt_add_norm_sq c one_pos) hy hf hweak hη hηc]
-  simp only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt]
+  simp only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_add_norm_sq]
 
 /-! ### Weighted regularity -/
 

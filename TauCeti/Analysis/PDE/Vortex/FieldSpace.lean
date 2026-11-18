@@ -20,6 +20,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # The affine Sobolev space of framed plane vortex fields
@@ -363,22 +364,20 @@ theorem eLpNorm_le_of_forall_inclusionLp_ae_eq {s : ℝ} (hs : 0 ≤ s)
     eLpNorm y 2 volume ≤ ENNReal.ofReal (4 * ‖v‖) := by
   have hy : MemLp y 2 volume := memLp_of_mem_sobolevFields
     ((mem_sobolevFields_iff_exists_inclusionLp_ae_eq hs).2 ⟨v, hv⟩)
-  have hpt : ∀ᵐ z ∂volume, ‖y z‖ ≤ ‖∑ a : Fin 4, ‖inclusionLp hs (v a) z‖‖ := by
-    filter_upwards [ae_all_iff.2 hv] with z hz
-    rw [Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
-    conv_lhs => rw [← (EuclideanSpace.basisFun (Fin 4) ℝ).sum_repr (y z)]
-    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun a _ ↦ ?_)
-    simp [norm_smul, hz a]
+  let b := (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis
   calc eLpNorm y 2 volume
-      ≤ eLpNorm (fun z ↦ ∑ a : Fin 4, ‖inclusionLp hs (v a) z‖) 2 volume :=
-        eLpNorm_mono_ae hy.aestronglyMeasurable hpt
-    _ = eLpNorm (∑ a : Fin 4, fun z ↦ ‖inclusionLp hs (v a) z‖) 2 volume := by
-        simp only [Finset.sum_fn]
-    _ ≤ ∑ a : Fin 4, eLpNorm (fun z ↦ ‖inclusionLp hs (v a) z‖) 2 volume :=
-        eLpNorm_sum_le (by norm_num)
+      ≤ ∑ a, ‖b a‖ₑ * eLpNorm (fun z ↦ b.coord a (y z)) 2 volume :=
+        b.eLpNorm_le_sum_enorm_mul_eLpNorm_coord hy.aestronglyMeasurable
     _ ≤ ∑ _a : Fin 4, ENNReal.ofReal ‖v‖ := by
         refine Finset.sum_le_sum fun a _ ↦ ?_
-        rw [eLpNorm_norm _ (Lp.aestronglyMeasurable _),
+        have hn : eLpNorm (fun z ↦ b.coord a (y z)) 2 volume =
+            eLpNorm (inclusionLp hs (v a)) 2 volume :=
+          eLpNorm_congr_norm_ae
+            ((b.coord a).continuous_of_finiteDimensional.comp_aestronglyMeasurable
+              hy.aestronglyMeasurable) (Lp.aestronglyMeasurable _)
+            ((hv a).mono fun z hz ↦ by simp [b, hz])
+        have hb : ‖b a‖ = 1 := by simp [b]
+        rw [← ofReal_norm, hb, ENNReal.ofReal_one, one_mul, hn,
           ← ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _), ← Lp.norm_def]
         exact ENNReal.ofReal_le_ofReal
           ((norm_inclusionLp_apply_le hs _).trans (norm_le_pi_norm v a))
