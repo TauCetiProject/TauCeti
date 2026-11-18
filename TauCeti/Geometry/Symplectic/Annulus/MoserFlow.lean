@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Symplectic.Area.StripMoser
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Dynamics.Flow.Variational

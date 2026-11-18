@@ -35,10 +35,10 @@ law of an ordinary `Flow`.
 * `TauCeti.eq_timeDependentFlow`: uniqueness for global solutions with prescribed initial time.
 * `TauCeti.timeDependentFlow_add_const`: the flow of a translation-invariant field commutes with
   the translation.
-* `TauCeti.timeDependentFlow_snd_eq_of_snd_eq`: the flow of a field on the plane tangent to a
-  horizontal line `y = c` preserves that line.
-* `TauCeti.timeDependentFlow_snd_mem_Icc`: the flow of a field on the plane tangent to the lines
-  `y = a` and `y = b` preserves the band `ℝ × [a, b]`.
+* `TauCeti.timeDependentFlow_snd_eq_of_snd_eq`: the flow of a field on a product `E × F`
+  tangent to a slice `E × {c}` preserves that slice.
+* `TauCeti.timeDependentFlow_snd_mem_Icc`: the flow of a field on `E × ℝ` tangent to the slices
+  `E × {a}` and `E × {b}` preserves the band `E × [a, b]`.
 
 The construction uses the global autonomous Picard--Lindelöf solution from
 `TauCeti.Analysis.ODE.GlobalSolution`.
@@ -226,18 +226,18 @@ theorem timeDependentFlow_add_const (v : ℝ → E → E) {K : ℝ≥0}
     (fun u ↦ by simpa only [hc] using (hasDerivAt_timeDependentFlow v hv s u x).add_const c) s t
   simpa using h.symm
 
-/-! ### Fields on the plane tangent to horizontal lines -/
+/-! ### Fields on a product tangent to slices -/
 
-section Plane
+section Slice
 
-variable {v : ℝ → ℝ × ℝ → ℝ × ℝ} {K : ℝ≥0}
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {K : ℝ≥0}
 
-/-- The time-dependent flow of a field on the plane whose second component vanishes on the line
-`y = c` preserves that line. -/
-theorem timeDependentFlow_snd_eq_of_snd_eq
-    (hv : LipschitzWith K (timeDependentSuspension v)) {c : ℝ} (hc : ∀ t x, (v t (x, c)).2 = 0)
-    (s t : ℝ) {p : ℝ × ℝ} (hp : p.2 = c) : (timeDependentFlow v hv s t p).2 = c := by
-  set φ : ℝ → ℝ × ℝ := fun u ↦ timeDependentFlow v hv s u p with hφ
+/-- The time-dependent flow of a field on a product `E × F` whose second component vanishes on
+the slice `E × {c}` preserves that slice. -/
+theorem timeDependentFlow_snd_eq_of_snd_eq {v : ℝ → E × F → E × F}
+    (hv : LipschitzWith K (timeDependentSuspension v)) {c : F} (hc : ∀ t x, (v t (x, c)).2 = 0)
+    (s t : ℝ) {p : E × F} (hp : p.2 = c) : (timeDependentFlow v hv s t p).2 = c := by
+  set φ : ℝ → E × F := fun u ↦ timeDependentFlow v hv s u p with hφ
   -- The height of the orbit and the constant `c` solve the same scalar equation.
   have hLip (u : ℝ) : LipschitzOnWith K (fun z ↦ (v u ((φ u).1, z)).2) univ := by
     refine (LipschitzWith.of_dist_le_mul fun z z' ↦ ?_).lipschitzOnWith
@@ -252,11 +252,12 @@ theorem timeDependentFlow_snd_eq_of_snd_eq
     (fun u ↦ ⟨by simpa only [hc] using hasDerivAt_const u c, trivial⟩) (by simpa [hφ] using hp)
   exact congrFun h t
 
-/-- The time-dependent flow of a field on the plane whose second component vanishes on the lines
-`y = a` and `y = b` preserves the band `ℝ × [a, b]`. -/
-theorem timeDependentFlow_snd_mem_Icc (hv : LipschitzWith K (timeDependentSuspension v))
+/-- The time-dependent flow of a field on `E × ℝ` whose second component vanishes on the slices
+`E × {a}` and `E × {b}` preserves the band `E × [a, b]`. -/
+theorem timeDependentFlow_snd_mem_Icc {v : ℝ → E × ℝ → E × ℝ}
+    (hv : LipschitzWith K (timeDependentSuspension v))
     {a b : ℝ} (ha : ∀ t x, (v t (x, a)).2 = 0) (hb : ∀ t x, (v t (x, b)).2 = 0) (s t : ℝ)
-    {p : ℝ × ℝ} (hp : p.2 ∈ Icc a b) :
+    {p : E × ℝ} (hp : p.2 ∈ Icc a b) :
     (timeDependentFlow v hv s t p).2 ∈ Icc a b := by
   -- If the orbit meets a boundary line at some time, it stays on it at every time.
   have hline (c : ℝ) (hc : ∀ t x, (v t (x, c)).2 = 0) (u : ℝ)
@@ -275,7 +276,7 @@ theorem timeDependentFlow_snd_mem_Icc (hv : LipschitzWith K (timeDependentSuspen
       (mem_uIcc.2 (Or.inl ⟨hs ▸ hp.2, hlt.le⟩))
     exact hlt.ne' (hline b hb u hu)
 
-end Plane
+end Slice
 
 end TauCeti
 
