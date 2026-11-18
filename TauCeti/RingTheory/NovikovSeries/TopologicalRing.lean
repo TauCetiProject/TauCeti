@@ -83,6 +83,8 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
 * `TauCeti.NovikovSeries.tsum_pow_mem_nonnegSubring` and
   `TauCeti.NovikovSeries.isUnit_one_sub_of_mem_posIdeal`: for `a` in the positive ideal, the
   geometric series `∑ aⁿ` lies in the nonnegative subring and `1 - a` is a unit there.
+* `TauCeti.NovikovSeries.posIdeal_ne_top`: over nontrivial coefficients the positive ideal is
+  proper, so its elements are not units of the nonnegative subring.
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
@@ -344,6 +346,15 @@ theorem isUnit_one_sub_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posId
 theorem single_mem_posIdeal {g : H} (hg : 0 < N g) (r : R) :
     (⟨single g r, single_mem_nonnegSubring hg.le r⟩ : nonnegSubring R N) ∈ posIdeal R N :=
   mem_posIdeal.2 fun h hh => coeff_single_of_ne (fun hgh => by subst hgh; linarith) r
+
+/-- Over nontrivial coefficients the positive ideal is proper, since `1` has the coefficient
+`1 ≠ 0` at the exponent `0`. In particular its elements, such as the monomials of positive
+period, are not units of the nonnegative subring. -/
+theorem posIdeal_ne_top [Nontrivial R] : posIdeal R N ≠ ⊤ := fun h => by
+  have h1 := mem_posIdeal.1 (h ▸ Submodule.mem_top : (1 : nonnegSubring R N) ∈ posIdeal R N) 0
+    (by simp)
+  rw [OneMemClass.coe_one, one_def, coeff_single_same] at h1
+  exact one_ne_zero h1
 
 /-- For `N g > 0`, the factor `1 - r e^g` as a unit of the nonnegative subring. Its inverse is the
 geometric series `∑ₖ rᵏ e^(k • g)` (`TauCeti.NovikovSeries.coe_inv_unitsOneSubSingle`). -/
