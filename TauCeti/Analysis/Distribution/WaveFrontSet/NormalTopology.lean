@@ -492,6 +492,7 @@ theorem toDistribution_smulLeftCLM (hg : ContDiff ℝ ∞ g) (u : WaveFrontSpace
   (rfl)
 
 /-- The seminorm `‖g T‖_{φ,V,N}` is the seminorm `‖T‖_{gφ,V,N}`. -/
+@[simp]
 theorem seminorm_smulLeftCLM (hg : ContDiff ℝ ∞ g) (i : WaveFrontSeminormIndex Ω Γ)
     (u : WaveFrontSpace Ω Γ) :
     WaveFrontSpace.seminorm i (smulLeftCLM hg u) = WaveFrontSpace.seminorm (i.smulLeft hg) u :=
@@ -689,6 +690,7 @@ theorem toDistribution_restrictCLM (h : Ω' ≤ Ω) (hΓ : Γ ∩ (Ω' : Set E) 
   (rfl)
 
 /-- The seminorm `‖T|_{Ω'}‖_{φ,V,N}` is the seminorm `‖T‖_{φ,V,N}` with `φ` extended by zero. -/
+@[simp]
 theorem seminorm_restrictCLM (h : Ω' ≤ Ω) (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆ Γ')
     (i : WaveFrontSeminormIndex Ω' Γ') (u : WaveFrontSpace Ω Γ) :
     WaveFrontSpace.seminorm i (restrictCLM h hΓ u) =
