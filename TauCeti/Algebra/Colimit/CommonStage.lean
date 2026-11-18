@@ -19,7 +19,9 @@ Mathlib's `Ring.DirectLimit` with its canonical maps as well as to any other coc
 properties.
 
 If every element of `L` comes from some stage, then finitely many elements of `L` come from a
-common stage (`TauCeti.DirectLimit.exists_lift`). If moreover two elements of a stage with the
+common stage (`TauCeti.DirectLimit.exists_lift`), and finitely many images of elements of
+subsets `Sᵢ ⊆ Aᵢ` preserved by the transition maps lift into a common `Sⱼ`
+(`TauCeti.DirectLimit.exists_lift_mem`). If moreover two elements of a stage with the
 same image in `L` become equal at a later stage, then two pairs of elements of two stages with
 the same images in `L` become equal at a common later stage
 (`TauCeti.DirectLimit.exists_eq_eq_of_eq_eq`).
@@ -27,6 +29,8 @@ the same images in `L` become equal at a common later stage
 ## Main results
 
 * `TauCeti.DirectLimit.exists_lift`: finitely many elements of the colimit lift to a common stage.
+* `TauCeti.DirectLimit.exists_lift_mem`: finitely many images of elements of a compatible family
+  of subsets `Sᵢ ⊆ Aᵢ` lift into a common `Sⱼ`.
 * `TauCeti.DirectLimit.exists_eq_eq_of_eq_eq`: two pairs of elements with the same images in the
   colimit become equal at a common later stage.
 -/
@@ -40,23 +44,33 @@ variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {A : ι → Type*} [∀
   (hφt : ∀ i j (h : i ≤ j) a, φ j (t i j h a) = φ i a)
 
 include hφt in
-/-- Finitely many elements of the colimit lift to a common stage. -/
-theorem exists_lift (hcover : ∀ x : L, ∃ i a, φ i a = x) (S : Finset L) :
-    ∃ i, ∃ g : L → A i, ∀ x ∈ S, φ i (g x) = x := by
+/-- Finitely many elements of the colimit, each the image of an element of a family of subsets
+`Sᵢ ⊆ Aᵢ` preserved by the transition maps, lift into `Sⱼ` at a common stage `j`. -/
+theorem exists_lift_mem [Nonempty ι] (S : ∀ i, Set (A i))
+    (hS : ∀ i j (h : i ≤ j), ∀ a ∈ S i, t i j h a ∈ S j) (X : Finset L)
+    (hX : ∀ x ∈ X, ∃ i, ∃ a ∈ S i, φ i a = x) :
+    ∃ i, ∃ g : L → A i, ∀ x ∈ X, g x ∈ S i ∧ φ i (g x) = x := by
   classical
-  induction S using Finset.induction_on with
-  | empty =>
-    obtain ⟨i, -⟩ := hcover 0
-    exact ⟨i, 0, by simp⟩
-  | insert a S _ ih =>
-    obtain ⟨i, g, hg⟩ := ih
-    obtain ⟨j, b, rfl⟩ := hcover a
+  induction X using Finset.induction_on with
+  | empty => exact ⟨Classical.arbitrary ι, 0, by simp⟩
+  | insert a X _ ih =>
+    obtain ⟨i, g, hg⟩ := ih fun x hx ↦ hX x (Finset.mem_insert_of_mem hx)
+    obtain ⟨j, b, hb, rfl⟩ := hX a (Finset.mem_insert_self a X)
     obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
     refine ⟨k, fun x ↦ if x = φ j b then t j k hjk b else t i k hik (g x), fun x hx ↦ ?_⟩
     by_cases hxa : x = φ j b
-    · simp only [hxa, ↓reduceIte, hφt]
-    · simp only [hxa, ↓reduceIte, hφt]
-      exact hg x ((Finset.mem_insert.mp hx).resolve_left hxa)
+    · simpa only [hxa, ↓reduceIte, hφt, and_true] using hS j k hjk b hb
+    · obtain ⟨hgS, hgx⟩ := hg x ((Finset.mem_insert.mp hx).resolve_left hxa)
+      simpa only [hxa, ↓reduceIte, hφt, hgx, and_true] using hS i k hik _ hgS
+
+include hφt in
+/-- Finitely many elements of the colimit lift to a common stage. -/
+theorem exists_lift (hcover : ∀ x : L, ∃ i a, φ i a = x) (S : Finset L) :
+    ∃ i, ∃ g : L → A i, ∀ x ∈ S, φ i (g x) = x := by
+  have : Nonempty ι := ⟨(hcover 0).choose⟩
+  obtain ⟨i, g, hg⟩ := exists_lift_mem hφt (fun _ ↦ Set.univ) (fun _ _ _ _ _ ↦ trivial) S
+    fun x _ ↦ (hcover x).imp fun _ ⟨a, ha⟩ ↦ ⟨a, trivial, ha⟩
+  exact ⟨i, g, fun x hx ↦ (hg x hx).2⟩
 
 include hφt in
 /-- Two pairs of elements of stages `i` and `j` with the same images in the colimit become equal
