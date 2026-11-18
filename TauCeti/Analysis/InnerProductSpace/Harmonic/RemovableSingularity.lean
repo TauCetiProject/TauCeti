@@ -20,8 +20,8 @@ function.
 
 * **The maximum principle with an exceptional point.** Let `U` be a bounded open set, `a` a point
   of `E`, `u` subharmonic and `w` superharmonic on `U \ {a}`, both continuous on
-  `closure U \ {a}`. If `u - w` is bounded above near `a` and `u ≤ w` on `frontier U` away from
-  `a`, then `u ≤ w` on `closure U \ {a}`
+  `closure U \ {a}`. If `u - w` is bounded above on `closure U` near `a` and `u ≤ w` on
+  `frontier U` away from `a`, then `u ≤ w` on `closure U \ {a}`
   (`TauCeti.SubharmonicOn.le_of_le_frontier_of_isBoundedUnder`). The point `a`
   may lie in `U` or on its frontier: no boundary condition is imposed at `a`.
 * **Removable singularities.** A harmonic function on a punctured neighbourhood of `a` that is
@@ -83,14 +83,14 @@ private theorem exists_harmonicOnNhd_comp_norm_sub (hE : 2 ≤ Module.finrank �
 /-- The comparison step on an annulus: with `ψ ‖x - a‖` the pole of
 `exists_harmonicOnNhd_comp_norm_sub` and `closure U ⊆ closedBall a R`, let `u` be subharmonic
 and `w` superharmonic on `U \ {a}`, with `u ≤ w` on `frontier U` away from `a` and `u - w ≤ M`
-near `a`. Then `u ≤ w + ε (ψ ‖x - a‖ - ψ R)` for every `ε > 0`. -/
+on `closure U` near `a`. Then `u ≤ w + ε (ψ ‖x - a‖ - ψ R)` for every `ε > 0`. -/
 private theorem le_add_mul_sub_of_le_frontier {ψ : ℝ → ℝ} {R M δ₀ ε : ℝ}
     (hU : IsOpen U) (hUb : Bornology.IsBounded U) (hu : SubharmonicOn u (U \ {a}))
     (huc : ContinuousOn u (closure U \ {a})) (hw : SubharmonicOn (-w) (U \ {a}))
     (hwc : ContinuousOn w (closure U \ {a})) (hψa : AntitoneOn ψ (Ioi 0))
     (hψt : Tendsto ψ (𝓝[>] 0) atTop) (hψh : HarmonicOnNhd (fun x ↦ ψ ‖x - a‖) {a}ᶜ)
     (hR : closure U ⊆ closedBall a R) (hδ₀ : 0 < δ₀)
-    (hM : ∀ y, y ≠ a → dist y a < δ₀ → u y - w y ≤ M)
+    (hM : ∀ y ∈ closure U, y ≠ a → dist y a < δ₀ → u y - w y ≤ M)
     (hle : ∀ y ∈ frontier U, y ≠ a → u y ≤ w y)
     (hε : 0 < ε) {x : E} (hxU : x ∈ closure U) (hxa : x ≠ a) :
     u x ≤ w x + ε * (ψ ‖x - a‖ - ψ R) := by
@@ -125,8 +125,8 @@ private theorem le_add_mul_sub_of_le_frontier {ψ : ℝ → ℝ} {R M δ₀ ε :
       have := mul_nonneg hε.le (sub_nonneg.2 (hψR y (frontier_subset_closure hyU) hya))
       linarith
     · rw [frontier_compl, frontier_closedBall' a δ] at hyδ
-      have hya : y ≠ a := ne_of_mem_sphere hyδ hδ0.ne'
-      have := hM y hya (by rw [mem_sphere.1 hyδ]; exact hδ.2.trans_le (min_le_left _ _))
+      obtain ⟨hyU, hya⟩ := hVa (frontier_subset_closure hy)
+      have := hM y hyU hya (by rw [mem_sphere.1 hyδ]; exact hδ.2.trans_le (min_le_left _ _))
       have : M ≤ ε * (ψ δ - ψ R) := by rw [← div_le_iff₀' hε]; linarith
       rw [mem_sphere_iff_norm.1 hyδ]
       linarith
@@ -148,13 +148,14 @@ private theorem le_add_mul_sub_of_le_frontier {ψ : ℝ → ℝ} {R M δ₀ ε :
 /-- **The maximum principle with an exceptional point.** In dimension at least two, let `U` be a
 bounded open set and `a` a point, in `U`, on its frontier, or elsewhere. Let `u` be subharmonic and
 `w` superharmonic (that is, `-w` is subharmonic) on `U \ {a}`, both continuous on
-`closure U \ {a}`, with `u - w` bounded above near `a`. If `u ≤ w` at every point of
-`frontier U` other than `a`, then `u ≤ w` on `closure U \ {a}`. No condition at `a` itself is
+`closure U \ {a}`, with `u - w` bounded above on `closure U` near `a`. If `u ≤ w` at every point
+of `frontier U` other than `a`, then `u ≤ w` on `closure U \ {a}`. No condition at `a` itself is
 needed: in dimension at least two a single point does not affect the maximum principle. -/
 theorem SubharmonicOn.le_of_le_frontier_of_isBoundedUnder (hE : 2 ≤ Module.finrank ℝ E)
     (hU : IsOpen U) (hUb : Bornology.IsBounded U) (hu : SubharmonicOn u (U \ {a}))
     (huc : ContinuousOn u (closure U \ {a})) (hw : SubharmonicOn (-w) (U \ {a}))
-    (hwc : ContinuousOn w (closure U \ {a})) (hb : IsBoundedUnder (· ≤ ·) (𝓝[≠] a) (u - w))
+    (hwc : ContinuousOn w (closure U \ {a}))
+    (hb : IsBoundedUnder (· ≤ ·) (𝓝[closure U \ {a}] a) (u - w))
     (hle : ∀ x ∈ frontier U, x ≠ a → u x ≤ w x) : ∀ x ∈ closure U \ {a}, u x ≤ w x := by
   rintro x ⟨hxU, hxa⟩
   obtain ⟨ψ, hψa, hψt, hψh⟩ := exists_harmonicOnNhd_comp_norm_sub hE a
@@ -167,7 +168,7 @@ theorem SubharmonicOn.le_of_le_frontier_of_isBoundedUnder (hE : 2 ≤ Module.fin
     simpa using (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε hε ↦
     le_add_mul_sub_of_le_frontier hU hUb hu huc hw hwc hψa hψt hψh hR hδ₀
-      (fun y hya hy ↦ hM ⟨mem_ball.2 hy, hya⟩) hle (mem_Ioi.1 hε) hxU hxa)
+      (fun y hyU hya hy ↦ hM ⟨mem_ball.2 hy, hyU, hya⟩) hle (mem_Ioi.1 hε) hxU hxa)
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- A harmonic function on a punctured neighbourhood of `a`, bounded near `a`, agrees on a punctured
@@ -203,11 +204,13 @@ private theorem exists_harmonicOnNhd_ball_eqOn_sdiff (hE : 2 ≤ Module.finrank 
         (isBoundedUnder_le_neg.2 (isBoundedUnder_le_abs.1 hb).2)
   have hle := SubharmonicOn.le_of_le_frontier_of_isBoundedUnder hE isOpen_ball isBounded_ball
     ((hu.mono hball).subharmonicOn) (hu.continuousOn.mono (hclb.trans hcl))
-    ((hP.neg.mono sdiff_subset).subharmonicOn) (hPc.mono (hclb.trans sdiff_subset)) huP
+    ((hP.neg.mono sdiff_subset).subharmonicOn) (hPc.mono (hclb.trans sdiff_subset))
+    (huP.mono (nhdsWithin_mono a fun _ hx ↦ hx.2))
     (fun x hx _ ↦ (hPu (hfr ▸ hx)).ge)
   have hge := SubharmonicOn.le_of_le_frontier_of_isBoundedUnder hE isOpen_ball isBounded_ball
     ((hP.mono sdiff_subset).subharmonicOn) (hPc.mono (hclb.trans sdiff_subset))
-    ((hu.neg.mono hball).subharmonicOn) (hu.continuousOn.mono (hclb.trans hcl)) hPu'
+    ((hu.neg.mono hball).subharmonicOn) (hu.continuousOn.mono (hclb.trans hcl))
+    (hPu'.mono (nhdsWithin_mono a fun _ hx ↦ hx.2))
     (fun x hx _ ↦ (hPu (hfr ▸ hx)).le)
   refine ⟨r, hr, P, hP, fun x hx ↦ ?_⟩
   have hx' : x ∈ closure (ball a r) \ {a} := ⟨subset_closure hx.1, hx.2⟩

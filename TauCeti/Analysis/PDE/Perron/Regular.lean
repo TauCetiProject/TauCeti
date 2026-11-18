@@ -225,11 +225,12 @@ theorem not_isBarrier_of_mem_nhdsNE (hE : 2 ≤ Module.finrank ℝ E) (hΩ : Ω 
     (u := fun _ ↦ w z) ((harmonicOnNhd_const _).subharmonicOn) continuousOn_const
     (hw.subharmonicOn_neg.mono ((sdiff_subset_sdiff_left ball_subset_closedBall).trans hpunct))
     (hw.continuousOn.mono ((hclb.trans sdiff_subset).trans hcl))
-    (isBoundedUnder_of_eventually_le (a := w z) <| by
-      filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds ξ hρ)] with x hx
-      have := hw.pos x (hcl (ball_subset_closedBall hx.2)) hx.1
-      simp only [Pi.sub_apply]
-      linarith)
+    (IsBoundedUnder.mono (g := 𝓝[≠] ξ) (nhdsWithin_mono ξ fun _ hx ↦ hx.2) <|
+      isBoundedUnder_of_eventually_le (a := w z) <| by
+        filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds ξ hρ)] with x hx
+        have := hw.pos x (hcl (ball_subset_closedBall hx.2)) hx.1
+        simp only [Pi.sub_apply]
+        linarith)
     (fun x hx _ ↦ hmin (frontier_ball ξ hρ.ne' ▸ hx))
   have hge : ∀ᶠ x in 𝓝[≠] ξ, w z ≤ w x := by
     filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds ξ hρ)] with x hx
