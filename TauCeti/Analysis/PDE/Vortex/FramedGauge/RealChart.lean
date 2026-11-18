@@ -86,8 +86,9 @@ private theorem continuousRepField_apply {h : 0 ≤ s} (u : Fin 4 → realSubmod
 
 private theorem coeFn_inclusionLp_ae_eq_continuousRepField (hs : 1 < s) {h : 0 ≤ s}
     (u : Fin 4 → realSubmodule ℂ h) (j : Fin 4) :
-    ⇑(inclusionLp h (u j : H^{s}(ℂ))) =ᵐ[volume] fun z ↦ (continuousRepField u z j : ℂ) :=
-  coeFn_inclusionLp_ae_eq_continuousRep (finrank_real_complex_lt_two_mul hs) (u j)
+    ⇑(inclusionLp h (u j : H^{s}(ℂ))) =ᵐ[volume] fun z ↦ (continuousRepField u z j : ℂ) := by
+  simpa only [continuousRepField_apply] using
+    coeFn_inclusionLp_ae_eq_continuousRep (finrank_real_complex_lt_two_mul hs) (u j)
 
 /-- Above the threshold `s > n + 1`, the continuous representatives of real `H^s` coordinates
 form a `Cⁿ` field. -/
@@ -97,11 +98,16 @@ private theorem contDiff_continuousRepField {n : ℕ} (hs : n + 1 < s) {h : 0 �
     rw [Complex.finrank_real_complex]
     push_cast
     linarith
-  exact contDiff_piLp' (p := 2) fun j ↦ contDiff_continuousRep hs' (u j)
+  exact contDiff_piLp' (p := 2) fun j ↦ by
+    simpa only [continuousRepField_apply] using contDiff_continuousRep hs' (u j)
 
 private theorem natCast_one_add_one_lt (hk : 2 ≤ k) : ((1 : ℕ) : ℝ) + 1 < k + 1 := by
   have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   push_cast
+  linarith
+
+private theorem one_lt_natCast_add_one (hk : 2 ≤ k) : 1 < (k : ℝ) + 1 := by
+  have : (2 : ℝ) ≤ k := by exact_mod_cast hk
   linarith
 
 private theorem continuousRepField_mem_sobolevFields (hs : 1 < s) {h : 0 ≤ s}
@@ -223,7 +229,7 @@ theorem sobolevEquation_mem_realSubmodule (hk : 2 ≤ k)
     (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) (i : Fin 3) :
     sobolevEquation f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ))) i ∈
       realSubmodule ℂ k.cast_nonneg := by
-  have hs : 1 < (k : ℝ) + 1 := by linarith [show (1 : ℝ) ≤ k by exact_mod_cast one_le_two.trans hk]
+  have hs := one_lt_natCast_add_one hk
   rw [mem_realSubmodule_iff]
   filter_upwards [coeFn_inclusionLp_sobolevEquation_ae_eq (f := f) (m := m)
     (one_le_two.trans hk) (coeFn_inclusionLp_ae_eq_continuousRepField hs u)
@@ -237,7 +243,7 @@ theorem sobolevLinearizedEquation_mem_realSubmodule (hk : 2 ≤ k)
     (u v : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) (i : Fin 3) :
     sobolevLinearizedEquation f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))
       (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) i ∈ realSubmodule ℂ k.cast_nonneg := by
-  have hs : 1 < (k : ℝ) + 1 := by linarith [show (1 : ℝ) ≤ k by exact_mod_cast one_le_two.trans hk]
+  have hs := one_lt_natCast_add_one hk
   rw [mem_realSubmodule_iff]
   filter_upwards [coeFn_inclusionLp_sobolevLinearizedEquation_ae_eq (f := f) (m := m)
     (one_le_two.trans hk) (coeFn_inclusionLp_ae_eq_continuousRepField hs u)
