@@ -12,7 +12,7 @@ public import Mathlib.Probability.BrownianMotion.Basic
 /-!
 # The Dyson system and its pathwise uniqueness
 
-The **Dyson system** of size `n` and parameter `β`, driven by real processes `B₁, …, Bₙ`, is
+The **Dyson system** of size `n` and parameter `β > 0`, driven by real processes `B₁, …, Bₙ`, is
 
 `dλᵢ = √(2 / (β n)) dBᵢ + n⁻¹ ∑_{j ≠ i} (λᵢ - λⱼ)⁻¹ dt`, `i = 1, …, n`.
 
@@ -145,13 +145,17 @@ theorem sum_dysonDrift_sub_mul_sub_nonpos_of_strictAnti {x y : Fin n → ℝ} (h
   · exact mul_pos (sub_pos.2 (hx h)) (sub_pos.2 (hy h))
   · exact mul_pos_of_neg_of_neg (sub_neg.2 (hx h)) (sub_neg.2 (hy h))
 
-/-- A path `X` solves the **Dyson system** of size `n` and parameter `β` from `x`, driven by the
-path `b`: `X` is continuous, lies in the open chamber `{x₁ > ⋯ > xₙ}` at every positive time,
+/-- A path `X` solves the **Dyson system** of size `n` and parameter `β > 0` from `x`, driven by
+the path `b`: `X` is continuous, lies in the open chamber `{x₁ > ⋯ > xₙ}` at every positive time,
 its drift is integrable on every interval `[0, t]`, and for every time `t` and index `i`
 
-`Xᵢ(t) = xᵢ + √(2 / (β n)) bᵢ(t) + ∫₀ᵗ n⁻¹ ∑_{j ≠ i} (Xᵢ(s) - Xⱼ(s))⁻¹ ds`. -/
+`Xᵢ(t) = xᵢ + √(2 / (β n)) (bᵢ(t) - bᵢ(0)) + ∫₀ᵗ n⁻¹ ∑_{j ≠ i} (Xᵢ(s) - Xⱼ(s))⁻¹ ds`.
+
+Only the increments of `b` enter, so `X` starts at `x` whatever `b(0)` is. -/
 structure IsDysonPath (β : ℝ) (n : ℕ) (x : Fin n → ℝ) (b : Fin n → ℝ≥0 → ℝ)
     (X : ℝ≥0 → Fin n → ℝ) : Prop where
+  /-- The parameter `β` is positive, so that the noise coefficient `√(2 / (β n))` is defined. -/
+  beta_pos : 0 < β
   /-- The path is continuous. -/
   continuous : Continuous X
   /-- At positive times the path lies in the open chamber `{x₁ > ⋯ > xₙ}`. -/
@@ -160,7 +164,7 @@ structure IsDysonPath (β : ℝ) (n : ℕ) (x : Fin n → ℝ) (b : Fin n → �
   intervalIntegrable : ∀ (t : ℝ≥0) (i : Fin n),
     IntervalIntegrable (fun s : ℝ ↦ dysonDrift n (X s.toNNReal) i) volume 0 t
   /-- The integral form of the Dyson system. -/
-  apply_eq : ∀ (t : ℝ≥0) (i : Fin n), X t i = x i + √(2 / (β * n)) * b i t +
+  apply_eq : ∀ (t : ℝ≥0) (i : Fin n), X t i = x i + √(2 / (β * n)) * (b i t - b i 0) +
     ∫ s in (0 : ℝ)..t, dysonDrift n (X s.toNNReal) i
 
 namespace IsDysonPath
@@ -168,7 +172,7 @@ namespace IsDysonPath
 variable {β : ℝ} {x : Fin n → ℝ} {b : Fin n → ℝ≥0 → ℝ} {X Y : ℝ≥0 → Fin n → ℝ}
 
 /-- A solution of the Dyson system starts at its initial condition. -/
-theorem apply_zero (hX : IsDysonPath β n x b X) : X 0 = x + √(2 / (β * n)) • fun i ↦ b i 0 := by
+theorem apply_zero (hX : IsDysonPath β n x b X) : X 0 = x := by
   ext i
   simp [hX.apply_eq 0 i]
 
@@ -234,12 +238,14 @@ theorem unique (hX : IsDysonPath β n x b X) (hY : IsDysonPath β n x b Y) : X =
 
 end IsDysonPath
 
-/-- For `n = 1` the Dyson system has no drift: `x + √(2 / β) b` is its solution driven by a
-continuous path `b`. -/
-theorem isDysonPath_one {β : ℝ} {x : Fin 1 → ℝ} {b : Fin 1 → ℝ≥0 → ℝ}
+/-- For `n = 1` the Dyson system has no drift: `x + √(2 / β) (b - b(0))` is its solution driven
+by a continuous path `b`. -/
+theorem isDysonPath_one {β : ℝ} (hβ : 0 < β) {x : Fin 1 → ℝ} {b : Fin 1 → ℝ≥0 → ℝ}
     (hb : ∀ i, Continuous (b i)) :
-    IsDysonPath β 1 x b (fun t i ↦ x i + √(2 / β) * b i t) where
-  continuous := continuous_pi fun i ↦ continuous_const.add (continuous_const.mul (hb i))
+    IsDysonPath β 1 x b (fun t i ↦ x i + √(2 / β) * (b i t - b i 0)) where
+  beta_pos := hβ
+  continuous := continuous_pi fun i ↦
+    continuous_const.add (continuous_const.mul ((hb i).sub continuous_const))
   strictAnti _ _ := Subsingleton.strictAnti _
   intervalIntegrable _ i := by
     obtain rfl := Subsingleton.elim i 0
@@ -274,11 +280,12 @@ theorem IsDysonSolution.ae_eq {β : ℝ} {x : Fin n → ℝ} {P : Measure Ω}
   filter_upwards [hX, hY] with ω hXω hYω t
   exact congrFun (hXω.unique hYω) t
 
-/-- For `n = 1` and Brownian `B`, the process `x + √(2 / β) B` solves the Dyson system. -/
-theorem isDysonSolution_one {β : ℝ} {x : Fin 1 → ℝ} {P : Measure Ω} {B : Fin 1 → ℝ≥0 → Ω → ℝ}
-    (hB : ∀ i, IsBrownianReal (B i) P) :
+/-- For `n = 1`, `β > 0` and Brownian `B`, the process `x + √(2 / β) B` solves the Dyson system. -/
+theorem isDysonSolution_one {β : ℝ} (hβ : 0 < β) {x : Fin 1 → ℝ} {P : Measure Ω}
+    {B : Fin 1 → ℝ≥0 → Ω → ℝ} (hB : ∀ i, IsBrownianReal (B i) P) :
     IsDysonSolution β 1 x P B (fun t ω i ↦ x i + √(2 / β) * B i t ω) := by
-  filter_upwards [ae_all_iff.2 fun i ↦ (hB i).cont] with ω hω
-  exact isDysonPath_one hω
+  filter_upwards [ae_all_iff.2 fun i ↦ (hB i).cont,
+    ae_all_iff.2 fun i ↦ (hB i).eval_zero_ae_eq_zero] with ω hω hω₀
+  simpa [hω₀] using isDysonPath_one hβ hω
 
 end TauCeti.Probability
