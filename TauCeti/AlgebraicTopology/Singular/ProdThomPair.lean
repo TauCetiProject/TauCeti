@@ -61,7 +61,7 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.prodThomPairProj`, `TauCeti.prodThomPairPuncturedProj`: the projections
   `B × F → B` and `B × (F ∖ {0}) → B`.
 * `TauCeti.prodZeroSection`: the zero section `B → B × F`, a homotopy equivalence
-  (`TauCeti.prodZeroSectionHomotopyEquiv`).
+  (`ContinuousMap.HomotopyEquiv.prodZeroSection`).
 * `TauCeti.prodThomPairPuncturedHomotopyEquiv`: for `e : F ≃L[ℝ] ℝᵈ⁺¹`, the punctured product
   `B × (F ∖ {0})` is homotopy equivalent to `Sᵈ × B` by `(b, x) ↦ (e x / ‖e x‖, b)`.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
@@ -281,36 +281,6 @@ theorem coe_prodThomPairPuncturedHomotopyEquiv_symm_apply
     ((coe_complSingletonHomotopyEquivSphere_symm_apply _ q.1.down).trans (add_zero _)))
 
 end Punctured
-
-section ZeroSection
-
-variable (B : Type w) [TopologicalSpace B] (F : Type w) [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The zero section of the product bundle is a homotopy equivalence, with homotopy inverse the
-projection: `(b, x) ↦ (b, t • x)` contracts `B × F` onto the zero section. -/
-def prodZeroSectionHomotopyEquiv : ContinuousMap.HomotopyEquiv B (B × F) where
-  toFun := (prodZeroSection B F).hom
-  invFun := ContinuousMap.fst
-  left_inv := ContinuousMap.Homotopic.refl _
-  right_inv := ⟨{
-    toFun := fun p ↦ (p.2.1, (p.1 : ℝ) • p.2.2)
-    continuous_toFun := by fun_prop
-    map_zero_left := fun p ↦ by simp [prodZeroSection]
-    map_one_left := fun p ↦ by simp }⟩
-
-/-- The underlying map of `TauCeti.prodZeroSectionHomotopyEquiv` is the zero section. -/
-@[simp]
-theorem prodZeroSectionHomotopyEquiv_toFun :
-    (prodZeroSectionHomotopyEquiv B F).toFun = (prodZeroSection B F).hom :=
-  (rfl)
-
-/-- The homotopy inverse of `TauCeti.prodZeroSectionHomotopyEquiv` is the projection. -/
-@[simp]
-theorem prodZeroSectionHomotopyEquiv_invFun :
-    (prodZeroSectionHomotopyEquiv B F).invFun = ContinuousMap.fst :=
-  (rfl)
-
-end ZeroSection
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {B : Type w} [TopologicalSpace B] {B' : Type w} [TopologicalSpace B']

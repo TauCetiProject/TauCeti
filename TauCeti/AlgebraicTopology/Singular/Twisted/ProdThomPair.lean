@@ -123,7 +123,12 @@ def prodThomPairTwistedHomologyIso (n m : ℕ) (h : n + finrank ℝ F = m := by 
         L n)).symm ≪≫
     (@asIso _ _ _ _ (LocalCoefficientSystem.twistedHomologyMap (prodZeroSection B F) L n)
       (by
-        have h := (prodZeroSectionHomotopyEquiv B F).isIso_twistedHomologyMap L n
-        rwa [prodZeroSectionHomotopyEquiv_toFun, TopCat.ofHom_hom] at h)).symm
+        have h := (ContinuousMap.HomotopyEquiv.prodZeroSection B F).isIso_twistedHomologyMap L n
+        have he : TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection B F).toFun =
+            prodZeroSection B F :=
+          ConcreteCategory.hom_ext _ _ fun b ↦
+            (ContinuousMap.HomotopyEquiv.prodZeroSection_apply B F b).trans
+              (prodZeroSection_apply F b).symm
+        rwa [he] at h)).symm
 
 end TauCeti

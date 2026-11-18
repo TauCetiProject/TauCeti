@@ -111,6 +111,20 @@ def unionExcisionMap :
   ofHom (TopCat.ofHom (ContinuousMap.inclusion Set.subset_union_right))
     (TopCat.ofHom (ContinuousMap.inclusion Set.inter_subset_left)) rfl
 
+/-- The total-space component of `TopPair.unionExcisionMap` is the inclusion `V ⊆ U ∪ V`. -/
+@[simp]
+lemma unionExcisionMap_fst :
+    Hom.fst (unionExcisionMap (U := U) (V := V)) =
+      TopCat.ofHom (ContinuousMap.inclusion Set.subset_union_right) :=
+  (rfl)
+
+/-- The subspace component of `TopPair.unionExcisionMap` is the inclusion `U ∩ V ⊆ U`. -/
+@[simp]
+lemma unionExcisionMap_snd :
+    Hom.snd (unionExcisionMap (U := U) (V := V)) =
+      TopCat.ofHom (ContinuousMap.inclusion Set.inter_subset_left) :=
+  (rfl)
+
 /-- **Excision of `U ∖ V`.** For open sets `U` and `V`, the inclusion of pairs
 `(V, U ∩ V) ⟶ (U ∪ V, U)` induces isomorphisms on twisted homology. -/
 theorem isIso_twistedHomologyMap_unionExcisionMap (hU : IsOpen U) (hV : IsOpen V)
