@@ -50,12 +50,17 @@ variable {α β N : Type*}
 intended applications), for a valuation `ρ` of the generators: a positive letter has the value of
 its generator, a negative letter the `star` of that value, and a word the product of the values of
 its letters. -/
-@[expose] def starVal [Monoid N] [Star N] (ρ : α → N) (w : List (α × Bool)) : N :=
+def starVal [Monoid N] [Star N] (ρ : α → N) (w : List (α × Bool)) : N :=
   (w.map fun p => bif p.2 then ρ p.1 else star (ρ p.1)).prod
 
 section Monoid
 
 variable [Monoid N] [Star N] (ρ : α → N)
+
+/-- The value of a signed word is the product of the values of its letters. -/
+theorem starVal_def (w : List (α × Bool)) :
+    starVal ρ w = (w.map fun p => bif p.2 then ρ p.1 else star (ρ p.1)).prod :=
+  (rfl)
 
 /-- The empty word has value `1`. -/
 @[simp] theorem starVal_nil : starVal ρ ([] : List (α × Bool)) = 1 := by
