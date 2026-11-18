@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.RegularLocalRing.GeometricallyRegular
+
+import TauCeti.RingTheory.Flat.Tower
+import TauCeti.RingTheory.RegularLocalRing.Descent
 
 /-!
 # Regular ring maps
@@ -31,6 +35,8 @@ excellent rings.
   isomorphic to `R`.
 * `TauCeti.Excellence.RegularAlgebraMap.isRegularRing`: a Noetherian regular algebra over a regular
   ring is a regular ring.
+* `TauCeti.Excellence.RegularAlgebraMap.of_faithfullyFlat`: if `R → C` is regular and `C` is
+  faithfully flat over an intermediate `R`-algebra `B`, then `R → B` is regular.
 * `RingEquiv.regularAlgebraMap_adicCompletion`: regularity of the completion map `A → Â` along an
   ideal is transported along a ring isomorphism matching the ideals.
 * `Ideal.regularAlgebraMap_adicCompletion_of_isAdicComplete`: the completion map of a ring along an
@@ -38,12 +44,15 @@ excellent rings.
 
 ## References
 
-* The Stacks Project, Section 15.42 (Regular ring maps), Definition 15.42.1.
+* The Stacks Project, Section 15.42 (Regular ring maps), Definition 15.42.1 and Lemma 15.42.7
+  (Tag 07NT).
 -/
 
 public section
 
 universe u v w
+
+open TensorProduct
 
 namespace TauCeti.Excellence
 
@@ -133,6 +142,30 @@ theorem isRegularRing [IsRegularRing R] [IsNoetherianRing B] [RegularAlgebraMap 
   IsRegularRing.of_flat_of_isRegularRing_fiber (R := R) fun p _ ↦
     GeometricallyRegular.isRegularRing p.ResidueField
 
+/-- **Regularity descends along faithfully flat maps.** If `R → B → C` are ring maps such that
+`R → C` is regular and `C` is faithfully flat over `B`, then `R → B` is regular
+(Stacks, Tag 07NT). Faithful flatness cannot be weakened to flatness: the punctured cusp
+`k[t, t⁻¹]` is smooth over `k` and flat over the cusp `k[x, y] ⧸ (y² - x³)`. -/
+theorem of_faithfullyFlat (C : Type w) [CommRing C] [Algebra R C] [Algebra B C]
+    [IsScalarTower R B C] [Module.FaithfullyFlat B C] [RegularAlgebraMap R C] :
+    RegularAlgebraMap R B := by
+  have := Module.Flat.of_faithfullyFlat_of_flat R B C
+  refine ⟨inferInstance, fun p _ ↦ ?_⟩
+  -- `L ⊗[κ(p)] (κ(p) ⊗[R] B) ≃ L ⊗[R] B` is regular for every finite purely inseparable `L`.
+  have key (L : Type u) [Field L] [Algebra p.ResidueField L] [Module.Finite p.ResidueField L]
+      [IsPurelyInseparable p.ResidueField L] : IsRegularRing (L ⊗[p.ResidueField] p.Fiber B) := by
+    let : Algebra R L := ((algebraMap p.ResidueField L).comp (algebraMap R _)).toAlgebra
+    have : IsScalarTower R p.ResidueField L := .of_algebraMap_eq fun _ ↦ rfl
+    have : IsRegularRing (L ⊗[R] C) := .of_ringEquiv
+      (Algebra.TensorProduct.cancelBaseChange R p.ResidueField L L C).toRingEquiv
+    have : IsRegularRing (L ⊗[R] B) := TauCeti.IsRegularRing.tensorProduct_of_faithfullyFlat L C
+    exact .of_ringEquiv
+      (Algebra.TensorProduct.cancelBaseChange R p.ResidueField L L B).symm.toRingEquiv
+  -- Taking `L = κ(p)` shows that the fibre itself is regular, in particular Noetherian.
+  have := (key p.ResidueField).toIsNoetherian
+  exact ⟨isNoetherianRing_of_ringEquiv _
+    (Algebra.TensorProduct.lid p.ResidueField (p.Fiber B)).toRingEquiv, key⟩
+
 end RegularAlgebraMap
 
 /-! ### Completion maps -/
@@ -172,6 +205,12 @@ example : RegularAlgebraMap ℤ ℚ := .of_isLocalization (nonZeroDivisors ℤ)
 /-- Polynomial rings in finitely many variables over `R` are regular `R`-algebras. -/
 example (R : Type u) [CommRing R] (n : ℕ) : RegularAlgebraMap R (MvPolynomial (Fin n) R) :=
   inferInstance
+
+/-- Regularity of `R → B` descends from the polynomial ring `B[X]`, which is free, hence faithfully
+flat, over a nontrivial ring `B`. -/
+example (R B : Type u) [CommRing R] [CommRing B] [Nontrivial B] [Algebra R B]
+    [RegularAlgebraMap R (Polynomial B)] : RegularAlgebraMap R B :=
+  .of_faithfullyFlat (Polynomial B)
 
 /-- The dual numbers `k[ε]/(ε²)` are flat over the field `k`, but their fibre is not
 geometrically regular, so they are not a regular `k`-algebra. -/
