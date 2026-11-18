@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.DiagonalTorus.RootDatum
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Positive
 
 /-!
 # The simple roots of the special linear group
@@ -94,45 +95,14 @@ theorem hasCartanType_diagonalRootDatum (r : ℕ) :
     (diagonalRootBase_support r) fun i j => by
       simpa using diagonalRootDatum_pairing_diagonalSimpleRootIndex.{u} r i j
 
-private theorem diagonalRootBase_coroot_nonneg {r : ℕ}
-    {p : SplitTorus.CoordinateRootIndex (Fin (r + 1))}
-    (hp : (diagonalRootBase.{u} r).IsPos p) (i : ULift.{u} (Fin r)) :
-    0 ≤ (diagonalRootDatum.{u} r).coroot p i := by
-  obtain ⟨f, _, hf⟩ := exists_coroot_eq_sum_nat_of_mem_posRoots
-    (diagonalRootDatum.{u} r) (diagonalRootBase r) ((mem_posRoots _ _ _).mpr hp)
-  rw [hf, Finset.sum_apply]
-  apply Finset.sum_nonneg
-  intro j hj
-  obtain ⟨k, rfl⟩ := (mem_diagonalRootBase_support r j).mp hj
-  simp only [diagonalSimpleRootIndex, diagonalRootDatum_coroot_castSucc_succ,
-    Pi.smul_apply, nsmul_eq_mul, Pi.single_apply]
-  split_ifs <;> positivity
-
-private theorem lt_of_diagonalRootBase_isPos {r : ℕ}
-    {p : SplitTorus.CoordinateRootIndex (Fin (r + 1))}
-    (hp : (diagonalRootBase.{u} r).IsPos p) : p.1.1 < p.1.2 := by
-  by_contra hlt
-  have hrev : p.1.2 < p.1.1 := lt_of_le_of_ne (not_lt.mp hlt) p.2.symm
-  let i : Fin r := ⟨p.1.2, by have := p.1.1.isLt; simp only [Fin.lt_def] at hrev; omega⟩
-  have h := diagonalRootBase_coroot_nonneg hp (ULift.up i)
-  simp only [diagonalRootDatum_coroot_apply, Fin.le_def, Fin.val_castSucc,
-    i, le_refl, ite_true] at h
-  simp only [Fin.lt_def] at hrev
-  split_ifs at h <;> omega
-
 /-- A root of the diagonal torus of `SL_{r+1}` is positive exactly when its row index is
 smaller than its column index. -/
 @[simp] theorem diagonalRootBase_isPos_iff (r : ℕ)
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (diagonalRootBase.{u} r).IsPos p ↔ p.1.1 < p.1.2 := by
-  refine ⟨lt_of_diagonalRootBase_isPos, fun hp => ?_⟩
-  by_contra hpos
-  have hneg : (diagonalRootBase.{u} r).IsPos ((diagonalRootDatum r).reflectionPerm p p) :=
-    (isPos_reflectionPerm_self_iff_mem_negRoots _ _ p).mpr ((mem_negRoots _ _ _).mpr hpos)
-  have hrev := lt_of_diagonalRootBase_isPos hneg
-  rw [diagonalRootDatum_reflectionPerm] at hrev
-  simp only [SplitTorus.coordinatePermRootIndex_coe, Equiv.swap_apply_left,
-    Equiv.swap_apply_right] at hrev
-  exact (not_lt_of_gt hp) hrev
+  have h := (typeASimplyConnectedBase r).isPos_map_iff (diagonalRootDatumEquiv.{u} r)
+    (typeAIndexEquiv r p)
+  rw [diagonalRootDatumEquiv_indexEquiv, Equiv.symm_apply_apply] at h
+  exact h.trans (isPos_typeAIndexEquiv_iff p)
 
 end TauCeti.SpecialLinear
