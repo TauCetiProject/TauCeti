@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Composition
 public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 
 /-!
 # Scalar formal multilinear series
@@ -26,7 +27,9 @@ In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
 (`TauCeti.one_le_ofScalars_choose_radius`) and represents `(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit
 ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
-`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`).
+`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Over a topological field `𝕜`, the scalar series
+`FormalMultilinearSeries.ofScalars 𝕜 c` agrees with `TauCeti.mkPiRingSeries 𝕜 c`
+(`TauCeti.mkPiRingSeries_eq_ofScalars`).
 -/
 
 public section
@@ -232,5 +235,14 @@ theorem hasFPowerSeriesOnBall_inverse_one_sub_pow (𝕜 A : Type*) [Nontrivially
     convert hasSum_choose_mul_geometric_of_norm_lt_one' k hy using 1
     ext n
     rw [FormalMultilinearSeries.ofScalars_apply_eq, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
+
+/-- Over any topological field `𝕜`, the one-variable series `TauCeti.mkPiRingSeries 𝕜 c` coincides
+with `FormalMultilinearSeries.ofScalars 𝕜 c`. -/
+theorem mkPiRingSeries_eq_ofScalars {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
+    [IsTopologicalRing 𝕜] (c : ℕ → 𝕜) :
+    mkPiRingSeries 𝕜 c = FormalMultilinearSeries.ofScalars 𝕜 c := by
+  ext1 n
+  rw [mkPiRingSeries_def, ← (FormalMultilinearSeries.ofScalars 𝕜 c n).mkPiRing_apply_one_eq_self]
+  simp [FormalMultilinearSeries.ofScalars]
 
 end TauCeti
