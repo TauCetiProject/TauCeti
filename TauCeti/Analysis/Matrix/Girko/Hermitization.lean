@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+public import TauCeti.Analysis.Matrix.SingularValues
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 
 /-!
@@ -31,8 +30,9 @@ namespace Matrix
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
 
-/-- The empirical logarithmic potential of a complex square matrix, evaluated where its
-logarithmic kernel is finite on the empirical spectrum. -/
+/-- The empirical logarithmic potential of a complex square matrix. The kernel uses Lean's
+totalized convention `Real.log 0 = 0`; away from the eigenvalues it agrees with the classical
+logarithmic potential. -/
 def empiricalLogPotential (A : Matrix ι ι ℂ)
     (z : ℂ) : ℝ :=
   ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ)
@@ -106,20 +106,8 @@ theorem empiricalLogPotential_eq_log_det_eq_sum_log_singularValues
   have hnormdet :
       ‖(A - scalar ι z).det‖ =
         ∏ i : Fin (Fintype.card ι),
-          (toEuclideanLin (A - scalar ι z)).singularValues i := by
-    have hdet' : (toEuclideanLin (A - scalar ι z)).det = (A - scalar ι z).det := by
-      rw [toEuclideanLin_eq_toLin_orthonormal]
-      rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun ι ℂ).toBasis]
-      simp [LinearMap.toMatrix_toLin]
-    have hnorm : (toEuclideanLin (A - scalar ι z)).normDet =
-        ‖(A - scalar ι z).det‖ := by
-      rw [LinearMap.normDet_eq_norm_det, hdet']
-    have hprod : (toEuclideanLin (A - scalar ι z)).normDet =
-        ∏ i : Fin (Fintype.card ι),
-          (toEuclideanLin (A - scalar ι z)).singularValues i := by
-      simpa only [finrank_euclideanSpace, Fin.prod_univ_eq_prod_range] using
-        (LinearMap.normDet_eq_prod_singularValues (toEuclideanLin (A - scalar ι z)))
-    exact hnorm.symm.trans hprod
+          (toEuclideanLin (A - scalar ι z)).singularValues i :=
+    Matrix.norm_det_eq_prod_singularValues (A - scalar ι z)
   refine ⟨empiricalLogPotential_eq_log_norm_det A z hdet, ?_⟩
   rw [empiricalLogPotential_eq_log_norm_det A z hdet, hnormdet]
   have hprod : ∏ i : Fin (Fintype.card ι),
@@ -129,10 +117,7 @@ theorem empiricalLogPotential_eq_log_det_eq_sum_log_singularValues
   have hne (i : Fin (Fintype.card ι)) :
       (toEuclideanLin (A - scalar ι z)).singularValues i ≠ 0 :=
     (Finset.prod_ne_zero_iff).mp hprod i (Finset.mem_univ _)
-  have hpos (i : Fin (Fintype.card ι)) :
-      0 < (toEuclideanLin (A - scalar ι z)).singularValues i :=
-    lt_of_le_of_ne (LinearMap.singularValues_nonneg _ i) (Ne.symm (hne i))
-  rw [Real.log_prod (fun i _ => (ne_of_gt (hpos i)))]
+  rw [Real.log_prod (fun i _ => hne i)]
 
 end Matrix
 

@@ -49,9 +49,7 @@ Euclidean linear map. The statement is independent of the scalar field represent
 theorem norm_det_eq_prod_singularValues (A : Matrix ι ι 𝕜) :
     ‖A.det‖ = ∏ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i := by
   have hdet : (toEuclideanLin A).det = A.det := by
-    rw [toEuclideanLin_eq_toLin_orthonormal]
-    rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun ι 𝕜).toBasis]
-    simp [LinearMap.toMatrix_toLin]
+    exact LinearMap.det_toLpLin 2 A
   have hnorm : (toEuclideanLin A).normDet = ‖A.det‖ := by
     rw [LinearMap.normDet_eq_norm_det, hdet]
   have hprod : (toEuclideanLin A).normDet =
