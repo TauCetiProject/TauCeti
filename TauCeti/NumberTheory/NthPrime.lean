@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.WeakPNT
-import TauCeti.Analysis.SpecialFunctions.LogIntegral
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 import TauCeti.NumberTheory.PrimeCounting
 
 /-!
@@ -18,7 +18,7 @@ This file proves the forward direction.
 
 The deduction is the asymptotic inversion of the scale `x / log x`
 (`Asymptotics.IsEquivalent.log_of_div_log` and `Asymptotics.IsEquivalent.of_div_log` in
-`TauCeti/Analysis/SpecialFunctions/LogIntegral.lean`): if `u → ∞` and `u / log u ∼ v`, then
+`TauCeti/Analysis/SpecialFunctions/Log/Asymptotics.lean`): if `u → ∞` and `u / log u ∼ v`, then
 `log u ∼ log v` and `u ∼ v log v`. At `u n = p_n` the prime number theorem and
 `π(p_n) = n + 1` (`Nat.primeCounting_nth_prime`) give `p_n / log p_n ∼ n + 1 ∼ n`, so the
 inversion applies with `v n = n`. The shift by one from the indexing `Nat.nth Nat.Prime 0 = 2`
