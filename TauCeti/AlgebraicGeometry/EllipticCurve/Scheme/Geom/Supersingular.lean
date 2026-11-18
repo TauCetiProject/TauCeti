@@ -47,6 +47,8 @@ supersingular at `0` in the sense of `WeierstrassCurve.IsSupersingular`; the com
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isSupersingular_iff_of_isPullback`: for `p ≠ 0`,
   `E` is supersingular at `p` if and only if `E'[p]` has no point with values in `Ω` other than
   zero, for a base change `E'` of `E` to an algebraically closed field `Ω`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isSupersingular_iff_of_isAlgClosed`: the case
+  where `K` itself is algebraically closed.
 * `WeierstrassCurve.isSupersingular_toEllipticCurveGeom_iff`: for `p ≠ 0`, the elliptic curve of
   an elliptic Weierstrass equation `W` is supersingular at `p` if and only if `W` is.
 
@@ -111,6 +113,16 @@ theorem isSupersingular_iff_of_isPullback
     have hy := h (Over.homMk (ht.lift a (𝟙 _) (by simpa using ha)) (by simp))
     rw [← h1, ← ht.lift_fst a (𝟙 _) (by simpa using ha), ← hy]
     simp [t]
+
+/-- **Supersingularity over an algebraically closed field.** For `p ≠ 0`, an elliptic curve `E`
+over an algebraically closed field `K` is supersingular at `p` if and only if the only point of
+`E[p]` with values in `K` is zero. -/
+theorem isSupersingular_iff_of_isAlgClosed [IsAlgClosed K] {p : ℕ} (hp : p ≠ 0) :
+    E.IsSupersingular p ↔ ∀ y : 𝟙_ (Over (Spec (.of K))) ⟶ (E.torsion p).X, y = 1 := by
+  have hq : Spec.map (CommRingCat.ofHom (algebraMap K K)) = 𝟙 _ := by
+    rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id]
+  exact isSupersingular_iff_of_isPullback (g := 𝟙 _) (by rw [hq]; exact IsPullback.of_id_fst)
+    (by simp) hp
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
