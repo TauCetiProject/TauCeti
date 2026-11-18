@@ -166,8 +166,10 @@ theorem card_conjClasses_dihedralGroup_even {n : ℕ} (hn : Even n) (hn0 : n ≠
   have h := card_comm_eq_card_conjClasses_mul_card (DihedralGroup n)
   rw [card_commute_dihedralGroup_even hn hn0, DihedralGroup.nat_card] at h
   obtain ⟨m, rfl⟩ := hn
-  rw [show (m + m) / 2 = m by lia]
-  refine Nat.eq_of_mul_eq_mul_right (show 0 < 2 * (m + m) by lia) ?_
+  have hdiv : (m + m) / 2 = m := by lia
+  have hpos : 0 < 2 * (m + m) := by lia
+  rw [hdiv]
+  refine Nat.eq_of_mul_eq_mul_right hpos ?_
   rw [← h]
   ring
 
