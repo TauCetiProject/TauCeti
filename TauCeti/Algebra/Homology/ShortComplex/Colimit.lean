@@ -195,6 +195,43 @@ theorem quasiIsoAt_sigmaDesc_iff (f : ∀ b, K b ⟶ L) :
   rw [quasiIsoAt_iff_isIso_homologyMap, Cofan.nonempty_isColimit_iff_isIso_sigmaDesc]
   exact (isIso_comp_left_iff (sigmaComparison _ K) _).symm.trans (iff_of_eq (congrArg IsIso h))
 
+/-- **Coproducts of quasi-isomorphisms.** When coproducts indexed by `β` are exact, the coproduct
+of a family of maps of homological complexes is a quasi-isomorphism in degree `q` exactly when
+every map of the family is. Each map of the family is a retract of the coproduct, which gives one
+direction; homology commutes with the coproduct, which gives the other. -/
+theorem quasiIsoAt_sigmaMap_iff {K L : β → HomologicalComplex C c} (f : ∀ b, K b ⟶ L b) :
+    QuasiIsoAt (Limits.Sigma.map f) q ↔ ∀ b, QuasiIsoAt (f b) q := by
+  classical
+  constructor
+  · intro _ b
+    -- `f b` is a retract of `Sigma.map f`: include the summand `b`, then project onto it.
+    let π (X : β → HomologicalComplex C c) : ∐ X ⟶ X b :=
+      Sigma.desc fun b' ↦ if h : b' = b then eqToHom (congrArg X h) else 0
+    have hπ (X : β → HomologicalComplex C c) : Sigma.ι X b ≫ π X = 𝟙 _ := by simp [π]
+    have r : RetractArrow (f b) (Limits.Sigma.map f) :=
+      { i := Arrow.homMk (Sigma.ι K b) (Sigma.ι L b) (Sigma.ι_map f b)
+        r := Arrow.homMk (π K) (π L) (Sigma.hom_ext _ _ fun b' ↦ by
+          simp only [Arrow.mk_hom, Sigma.ι_map_assoc]
+          by_cases h : b' = b
+          · subst h
+            simp [π]
+          · simp [π, h])
+        retract := Arrow.hom_ext _ _ (hπ K) (hπ L) }
+    exact quasiIsoAt_of_retract r q
+  · intro hf
+    let G := HomologicalComplex.homologyFunctor C c q
+    have h : sigmaComparison G K ≫ G.map (Limits.Sigma.map f) =
+        Limits.Sigma.map (fun b ↦ G.map (f b)) ≫ sigmaComparison G L :=
+      Sigma.hom_ext _ _ fun b ↦ by
+        rw [ι_comp_sigmaComparison_assoc, ← G.map_comp, Sigma.ι_map, Sigma.ι_map_assoc,
+          G.map_comp, ι_comp_sigmaComparison]
+    have (b : β) : IsIso (G.map (f b)) := (quasiIsoAt_iff_isIso_homologyMap (f b) q).mp (hf b)
+    rw [quasiIsoAt_iff_isIso_homologyMap]
+    have : IsIso (sigmaComparison G K ≫ G.map (Limits.Sigma.map f)) := by
+      rw [h]
+      infer_instance
+    exact IsIso.of_isIso_comp_left (sigmaComparison G K) (G.map (Limits.Sigma.map f))
+
 end Coproduct
 
 end TauCeti
