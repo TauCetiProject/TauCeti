@@ -33,7 +33,7 @@ so that the radial direction has unit length and the spheres about the tip are s
 The norm `‖x‖` is not differentiable at the tip, and the two coefficients `a` and
 `(1 - a) / ‖x‖²` are smooth there because, near the tip, `f` is the odd profile `2 sin (r / 2)` of
 a round sphere: then `a = 2 (1 - cos ‖x‖) / ‖x‖²` and
-`(1 - a) / ‖x‖² = 2 (‖x‖² - 2 (1 - cos ‖x‖)) / ‖x‖⁴` are analytic functions of `‖x‖²`, namely
+`(1 - a) / ‖x‖² = (‖x‖² - 2 (1 - cos ‖x‖)) / ‖x‖⁴` are analytic functions of `‖x‖²`, namely
 difference quotients at `0` of the entire function `TauCeti.cosSqrt` with
 `cosSqrt (r²) = cos r`.
 
