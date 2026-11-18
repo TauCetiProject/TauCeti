@@ -57,8 +57,7 @@ theorem coeff_sphereCoordinateDifferential_affineChart :
     sphereCoordinateDifferential.coeff affineChart = fun _ => 1 := by
   funext z
   have he := affineChart_mem_maximalAtlas (𝕜 := ℂ) (n := 1)
-  rw [sphereCoordinateDifferential, OneForm.coeff_mvfderiv he (by simp)
-    (mdifferentiableAt_of_mem_maximalAtlas he (by simp))]
+  rw [sphereCoordinateDifferential, OneForm.coeff_mvfderiv he (by simp)]
   simp [comp_def]
 
 /-- **The transformation law between the two charts of the sphere.** If `ω = g(z) dz` in the

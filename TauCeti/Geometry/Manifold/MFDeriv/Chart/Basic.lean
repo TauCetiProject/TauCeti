@@ -47,6 +47,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
+* `TauCeti.isInvertible_mvfderiv_extend`: the derivative of an extended chart of the maximal
+  atlas, read as a map into the model space, is invertible on the chart source.
 * `TauCeti.mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
   some chart locally agree with maps having equal Fréchet derivatives have equal differentials.
 * `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
@@ -126,6 +128,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.hasMFDerivAt_extChartAt_self` and `TauCeti.mfderiv_extChartAt_eq_id`: the extended
   chart at `x` has the identity as its manifold derivative at `x`, with no smoothness hypothesis on
   the atlas.
+* `TauCeti.hasMFDerivAt_extChartAt_symm_self`: on a boundaryless manifold, the inverse extended
+  chart at `x` has the identity as its manifold derivative at `extChartAt I x x`, with no
+  smoothness hypothesis on the atlas.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -287,6 +292,18 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · obtain ⟨w, rfl⟩ := L.surjective v
     exact DFunLike.congr_fun h w
   · exact DFunLike.congr_fun h (L w)
+
+omit [IsManifold I 1 M] in
+/-- The derivative of an extended chart of the `C¹` maximal atlas, read as a map into the model
+space, is invertible at every point of the chart source. -/
+theorem isInvertible_mvfderiv_extend {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (hx : x ∈ e.source) :
+    (mvfderiv I (e.extend I) x).IsInvertible := by
+  -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
+  -- space of `E` with `E`; both factors are invertible.
+  unfold mvfderiv
+  exact ContinuousLinearMap.IsInvertible.comp ⟨NormedSpace.fromTangentSpace (e.extend I x), rfl⟩
+    (isInvertible_mfderiv_extend he hx)
 
 /-- Read in a chart whose source contains `y`, two maps into a normed space have the same
 differential at `y` when, near the chart image of `y`, their coordinate expressions agree with maps
@@ -1081,6 +1098,21 @@ smoothness hypothesis on the atlas. -/
 theorem mfderiv_extChartAt_eq_id (x : M) :
     mfderiv I 𝓘(𝕜, E) (extChartAt I x) x = ContinuousLinearMap.id 𝕜 E :=
   (hasMFDerivAt_extChartAt_self x).mfderiv
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the inverse of the preferred extended chart at `x` has the identity
+as its manifold derivative at the chart image `extChartAt I x x` of its centre. There is no
+smoothness hypothesis on the atlas. -/
+theorem hasMFDerivAt_extChartAt_symm_self [I.Boundaryless] (x : M) :
+    HasMFDerivAt 𝓘(𝕜, E) I (extChartAt I x).symm (extChartAt I x x)
+      (ContinuousLinearMap.id 𝕜 E) := by
+  -- Read in the chart at `x`, the inverse chart is the identity on the chart target.
+  refine ⟨(continuousOn_extChartAt_symm x).continuousAt (extChartAt_target_mem_nhds x), ?_⟩
+  rw [writtenInExtChartAt, extChartAt_to_inv, extChartAt_model_space_eq_id]
+  exact (hasFDerivWithinAt_id (extChartAt I x x) _).congr_of_eventuallyEq
+    (Filter.eventuallyEq_of_mem (nhdsWithin_le_nhds (extChartAt_target_mem_nhds x))
+      fun _ h ↦ (extChartAt I x).right_inv h)
+    ((extChartAt I x).right_inv (mem_extChartAt_target x))
 
 end ExtChartAtSelf
 
