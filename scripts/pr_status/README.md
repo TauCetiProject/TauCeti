@@ -1,8 +1,8 @@
 # PR status and merge readiness
 
 GitHub lifecycle labels and the pipeline-health report use
-[`readiness.py`](readiness.py), which calls the **same pinned TauCetiReview
-merge gate as Auto-merge**. The label is a presentation of that decision, not an
+[`readiness.py`](readiness.py), which calls the **TauCetiReview main
+merge gate**. The label is a presentation of that decision, not an
 independent approximation based on a green build and a scoreboard heading.
 
 The adapter reads all comments and current commit statuses through GraphQL, fetches
@@ -66,10 +66,10 @@ from that fallback, then writes a replacement checkpoint rather than repeatedly
 restoring the corrupt one. Lost state or a hard runner loss before upload can
 repeat work since the last uploaded checkpoint.
 
-The workflows check out the exact policy revision used by Auto-merge, without
-persisting credentials. The workflow-pin tests require labels, the health report,
-and their tests to use that same revision. For local commands, check out that
-revision of TauCetiReview and set:
+The workflows check out TauCetiReview main through
+`.github/actions/checkout-merge-policy`, without persisting credentials. The
+workflow-pin tests require labels, the health report, and their tests to read the
+policy through that action. For local commands, check out TauCetiReview main and set:
 
 ```sh
 export TAUCETI_REVIEW_RUNNER=/path/to/TauCetiReview/runner
@@ -236,8 +236,8 @@ python3 -m unittest test_pr_labels test_readiness test_zulip test_stuck_alerts
 ```
 
 `test_pr_labels` covers the derivation (`core.review_state`) and label reconciliation. `test_readiness`
-runs the pinned merge gate on current/stale/incomplete reviews, ignored old markers,
-human paths, CI and pin guards, and head-move races. It needs the pinned engine
+runs the merge gate on current/stale/incomplete reviews, ignored old markers,
+human paths, CI and pin guards, and head-move races. It needs the engine
 checkout described above. `test_zulip` covers alert transport retry and duplicate-send prevention.
 GitHub and Zulip reads and writes are stubbed in these tests.
 

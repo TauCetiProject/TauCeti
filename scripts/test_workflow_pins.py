@@ -1,8 +1,8 @@
-"""Ensure TauCeti runs and reads one TauCetiReview commit everywhere.
+"""Ensure TauCeti reads the TauCetiReview merge policy from main, through one action.
 
-The policy commit appears in reusable-workflow `uses:` lines and their required
-`review_ref` inputs, and in the checkout-merge-policy action used by read-only readiness/reporting consumers.
-Other policy readers go through that action; every explicit reference must agree.
+The checkout-merge-policy action, used by read-only readiness/reporting consumers, checks out
+TauCetiReview main. The reusable review workflow requires an immutable `review_ref`, so its
+`uses:` line stays pinned to a full commit SHA, and that `review_ref` must equal it.
 
 Run with: python3 scripts/test_workflow_pins.py
 """
@@ -92,28 +92,24 @@ class WorkflowPins(unittest.TestCase):
                 self.assertEqual(tomllib.loads((ROOT / name).read_text())["tools"]["tools"]["ref"], "main")
         self.assertNotIn("harness_revision", json.loads((ROOT / ".tauceti/ci-source.json").read_text()))
 
-    def test_reusable_calls_and_action_share_one_sha(self):
-        pin = action_pin()
-        self.assertRegex(pin, r"^[0-9a-f]{40}$")
+    def test_merge_policy_action_reads_main(self):
+        self.assertEqual(action_pin(), "main")
+
+    def test_callers_pin_one_sha_and_pass_it_as_review_ref(self):
+        # The called workflow requires an explicit immutable ref; keep it equal to the `uses:` pin.
         for name in CALLERS:
             with self.subTest(workflow=name):
                 calls = CALL_PIN.findall((WORKFLOW_DIR / name).read_text())
-                self.assertEqual(calls, [pin], f"{name} calls a different TauCetiReview commit")
-
-    def test_callers_pass_the_exact_review_ref(self):
-        # The engine requires an explicit immutable ref; keep it equal to the workflow pin.
-        for name in CALLERS:
-            with self.subTest(workflow=name):
+                self.assertEqual(len(calls), 1, f"{name} must call TauCetiReview at one full SHA")
                 for job in workflow_jobs(name).values():
                     if CALL_PIN.search(str(job.get("uses", ""))):
-                        self.assertEqual((job.get("with") or {}).get("review_ref"), action_pin())
+                        self.assertEqual((job.get("with") or {}).get("review_ref"), calls[0])
 
     def test_policy_is_only_checked_out_through_the_action(self):
         for path in WORKFLOW_DIR.glob("*.yml"):
             with self.subTest(workflow=path.name):
                 text = path.read_text()
                 self.assertNotRegex(text, r"repository:\s*TauCetiProject/TauCetiReview")
-                self.assertNotIn(action_pin(), re.sub(r"review_ref:\s*[0-9a-f]{40}", "", CALL_PIN.sub("", text)))
 
     def test_policy_readers_use_the_action_from_a_trusted_checkout(self):
         found = {}
