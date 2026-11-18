@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
 public import TauCeti.LinearAlgebra.Determinant.Complex.Orientation
+public import TauCeti.LinearAlgebra.Determinant.DirectSum
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -36,7 +37,14 @@ conjugation: the quaternionic structure of the spinors is a conjugate-linear int
 Dirac operators of a `Spinᶜ` structure and of its conjugate, so it contributes `(-1)` to the
 complex index of the Dirac operator. Charge conjugation negates both the domain and the target of
 the real deformation operator on imaginary forms; that contributes `(-1)` to the sum of the
-dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
+dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`). On the determinant
+line `det (T ⊕ D) ≃ det T ⊗ det D` of a real map `T` and a complex-linear map `D`
+(`LinearMap.detLineProdMapEquiv`) the two factors combine: `(-1) × U` sends `x ⊗ z`, for `z`
+complex positive, to `ε` times `x` tensor a complex positive element, where
+`ε = (-1) ^ (dim ker T + dim coker T + dim_ℂ ker D + dim_ℂ coker D)`
+(`LinearMap.IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongr_eq`). When the real
+index of `T ⊕ D` is `2 k` and `dim coker T - dim ker T = 2 m`, this sign is `(-1) ^ (k + m)`
+(`LinearMap.IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongr_eq_zpow`).
 
 ## Main definitions
 
@@ -57,6 +65,9 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
   complex orientation of the determinant line of a complex-linear map.
 * `LinearMap.IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr`: conjugate-linear transport
   multiplies it by `(-1) ^ (k + c)`.
+* `LinearMap.IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongr_eq`,
+  `LinearMap.IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongr_eq_zpow`: the
+  determinant sign of `(-1) × U` on `det T ⊗ det D`, the determinant sign of charge conjugation.
 
 ## References
 
@@ -263,5 +274,113 @@ theorem IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr [FiniteDimensiona
     (fun y ↦ by rw [cokerCongrOfComp_smul f e₁ e₂ h he₂' y, neg_smul])
 
 end Transport
+
+/-! ### Charge conjugation of a real map and a complex-linear map -/
+
+section ChargeConjugation
+
+variable {M' N' P Q P' Q' : Type*} [AddCommGroup M'] [Module ℝ M'] [AddCommGroup N'] [Module ℝ N']
+  [AddCommGroup P] [Module ℂ P] [Module ℝ P] [IsScalarTower ℝ ℂ P]
+  [AddCommGroup Q] [Module ℂ Q] [Module ℝ Q] [IsScalarTower ℝ ℂ Q]
+  [AddCommGroup P'] [Module ℂ P'] [Module ℝ P'] [IsScalarTower ℝ ℂ P']
+  [AddCommGroup Q'] [Module ℂ Q'] [Module ℝ Q'] [IsScalarTower ℝ ℂ Q']
+  (T : M' →ₗ[ℝ] N') [FiniteDimensional ℝ (ker T)] [FiniteDimensional ℝ (N' ⧸ range T)]
+  {D : P →ₗ[ℂ] Q} {D' : P' →ₗ[ℂ] Q'} [FiniteDimensional ℝ (ker (D.restrictScalars ℝ))]
+  [FiniteDimensional ℝ (Q ⧸ range (D.restrictScalars ℝ))]
+  [FiniteDimensional ℝ (ker (D'.restrictScalars ℝ))]
+  [FiniteDimensional ℝ (Q' ⧸ range (D'.restrictScalars ℝ))]
+
+/-- **The determinant sign of charge conjugation.** Let `T` be a real-linear map and `D` a
+complex-linear map, both with finite-dimensional kernel and cokernel, and let conjugate-linear
+isomorphisms `U₁`, `U₂` intertwine `D` with a complex-linear map `D'`. The real-linear map
+`(-1) × U₁` of the sources and `(-1) × U₂` of the targets intertwine `T ⊕ D` with `T ⊕ D'`, so
+they act on the determinant line `det (T ⊕ D) ≃ det T ⊗ det D`
+(`LinearMap.detLineProdMapEquiv`). This action sends `x ⊗ z`, for `z` complex positive, to
+`ε • (x ⊗ z')` for a complex positive `z'`, where
+
+`ε = (-1) ^ (dim ker T + dim coker T + dim_ℂ ker D + dim_ℂ coker D)`.
+
+The first two exponents come from negating `T` (`LinearMap.detLineCongr_neg_apply`), the last two
+from the conjugate-linear transport of `D`
+(`LinearMap.IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr`); the parity of the latter is
+that of the complex index of `D`.
+
+For the Seiberg–Witten deformation operator, `T` is the real operator `(-2 d*, d⁺)` on imaginary
+one-forms, with kernel of dimension `b₁` and cokernel of dimension `1 + b⁺`, `D` is the complex
+Dirac operator, and `U₁`, `U₂` are the quaternionic structure `j` of the spinors, so `ε` is the
+determinant sign `(-1) ^ (1 + b₁ + b⁺ + ind_ℂ D)` of charge conjugation. -/
+theorem IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongr_eq (U₁ : P ≃ₗ[ℝ] P')
+    (U₂ : Q ≃ₗ[ℝ] Q')
+    (h : D'.restrictScalars ℝ ∘ₗ U₁.toLinearMap = U₂.toLinearMap ∘ₗ D.restrictScalars ℝ)
+    (hU₁ : ∀ x, U₁ (I • x) = -(I • U₁ x)) (hU₂ : ∀ y, U₂ (I • y) = -(I • U₂ y))
+    (x : T.detLine) {z : (D.restrictScalars ℝ).detLine} (hz : D.IsComplexPositiveDetLine z) :
+    ∃ z', D'.IsComplexPositiveDetLine z' ∧
+      detLineProdMapEquiv T (D'.restrictScalars ℝ)
+          ((T.prodMap (D.restrictScalars ℝ)).detLineCongr ((LinearEquiv.neg ℝ).prodCongr U₁)
+            ((LinearEquiv.neg ℝ).prodCongr U₂)
+            (by
+              rw [LinearEquiv.coe_prodCongr, LinearEquiv.coe_prodCongr, prodMap_comp, prodMap_comp,
+                h]
+              exact congrArg (prodMap · _) (LinearMap.ext fun v ↦ by simp))
+            ((detLineProdMapEquiv T (D.restrictScalars ℝ)).symm (x ⊗ₜ z))) =
+        (-1 : ℝ) ^ (finrank ℝ (ker T) + finrank ℝ (N' ⧸ range T) + finrank ℂ (ker D) +
+          finrank ℂ (Q ⧸ range D)) • (x ⊗ₜ z') := by
+  have : FiniteDimensional ℝ (ker D) := (D.kerRestrictScalarsEquiv ℝ).symm.finiteDimensional
+  have : FiniteDimensional ℂ (ker D) := .of_restrictScalars_finite ℝ ℂ _
+  have : FiniteDimensional ℝ (Q ⧸ range D) := (D.cokerRestrictScalarsEquiv ℝ).finiteDimensional
+  have : FiniteDimensional ℂ (Q ⧸ range D) := .of_restrictScalars_finite ℝ ℂ _
+  refine ⟨(-1 : ℝ) ^ (finrank ℂ (ker D) + finrank ℂ (Q ⧸ range D)) •
+    (D.restrictScalars ℝ).detLineCongr U₁ U₂ h z,
+    hz.neg_one_pow_smul_detLineCongr U₁ U₂ h hU₁ hU₂, ?_⟩
+  refine (detLineProdMapEquiv_detLineCongr_prodCongr T (D.restrictScalars ℝ) _ _
+    (LinearMap.ext fun v ↦ by simp) U₁ U₂ h _).trans ?_
+  simp only [LinearEquiv.apply_symm_apply, congr_tmul, detLineCongr_neg_apply, smul_smul,
+    ← pow_add, smul_tmul', tmul_smul]
+  -- The sign of the complex factor occurs twice and cancels.
+  congr 2
+  rw [add_assoc _ (finrank ℂ (ker D)), add_assoc, ← two_mul, pow_add (-1 : ℝ) _ (2 * _), pow_mul,
+    neg_one_sq, one_pow, mul_one]
+
+/-- **The determinant sign of charge conjugation in terms of indices.** In the situation of
+`LinearMap.IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongr_eq`, suppose that the
+real index `ind T + 2 ind_ℂ D` of `T ⊕ D` is even, equal to `2 k`, and write
+`dim coker T - dim ker T = 2 m`. Then the sign `ε` is `(-1) ^ (k + m)`; equivalently
+`ε (-1) ^ k = (-1) ^ m`.
+
+For the Seiberg–Witten deformation operator, `2 k` is the dimension `d` of the moduli space, `k`
+point insertions contribute `(-1) ^ k`, and `2 m = 1 - b₁ + b⁺`. So the total sign by which charge
+conjugation changes the point pairing is `(-1) ^ ((1 - b₁ + b⁺) / 2)`, independent of the
+`Spinᶜ` structure. -/
+theorem IsComplexPositiveDetLine.exists_detLineProdMapEquiv_detLineCongr_eq_zpow
+    (U₁ : P ≃ₗ[ℝ] P') (U₂ : Q ≃ₗ[ℝ] Q')
+    (h : D'.restrictScalars ℝ ∘ₗ U₁.toLinearMap = U₂.toLinearMap ∘ₗ D.restrictScalars ℝ)
+    (hU₁ : ∀ x, U₁ (I • x) = -(I • U₁ x)) (hU₂ : ∀ y, U₂ (I • y) = -(I • U₂ y))
+    (x : T.detLine) {z : (D.restrictScalars ℝ).detLine} (hz : D.IsComplexPositiveDetLine z)
+    {k m : ℤ}
+    (hk : (finrank ℝ (ker T) : ℤ) - finrank ℝ (N' ⧸ range T) +
+      2 * ((finrank ℂ (ker D) : ℤ) - finrank ℂ (Q ⧸ range D)) = 2 * k)
+    (hm : 2 * m = (finrank ℝ (N' ⧸ range T) : ℤ) - finrank ℝ (ker T)) :
+    ∃ z', D'.IsComplexPositiveDetLine z' ∧
+      detLineProdMapEquiv T (D'.restrictScalars ℝ)
+          ((T.prodMap (D.restrictScalars ℝ)).detLineCongr ((LinearEquiv.neg ℝ).prodCongr U₁)
+            ((LinearEquiv.neg ℝ).prodCongr U₂)
+            (by
+              rw [LinearEquiv.coe_prodCongr, LinearEquiv.coe_prodCongr, prodMap_comp, prodMap_comp,
+                h]
+              exact congrArg (prodMap · _) (LinearMap.ext fun v ↦ by simp))
+            ((detLineProdMapEquiv T (D.restrictScalars ℝ)).symm (x ⊗ₜ z))) =
+        (-1 : ℝ) ^ (k + m) • (x ⊗ₜ z') := by
+  obtain ⟨z', hz', heq⟩ := hz.exists_detLineProdMapEquiv_detLineCongr_eq T U₁ U₂ h hU₁ hU₂ x
+  refine ⟨z', hz', heq.trans (congrArg (· • (x ⊗ₜ z')) ?_)⟩
+  -- The two exponents differ by the even number `2 (m + dim ker T + dim_ℂ coker D)`.
+  have hexp : ((finrank ℝ (ker T) + finrank ℝ (N' ⧸ range T) + finrank ℂ (ker D) +
+      finrank ℂ (Q ⧸ range D) : ℕ) : ℤ) =
+        k + m + 2 * (m + finrank ℝ (ker T) + finrank ℂ (Q ⧸ range D)) := by
+    push_cast
+    omega
+  rw [← zpow_natCast, hexp, zpow_add₀ (neg_ne_zero.2 one_ne_zero),
+    (even_two_mul _).neg_one_zpow, mul_one]
+
+end ChargeConjugation
 
 end LinearMap
