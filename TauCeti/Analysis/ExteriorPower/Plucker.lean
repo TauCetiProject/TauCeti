@@ -18,7 +18,9 @@ import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 
 The Euclidean norm of the Plücker vector is at most the product of the Euclidean
 norms of the original vectors. For a nonarchimedean absolute value, the analogous
-statement holds for maximum norms. These are the local estimates underlying the
+statement holds for maximum norms; at an arbitrary absolute value, a Plücker coordinate of `p`
+vectors is at most `p!` times the product of bounds on their coordinates. These are the local
+estimates underlying the
 height bound for a subspace in terms of a spanning family. The overlapping-family
 inequality compares the common rows and their two extensions; it supplies the
 archimedean factor of subspace-height submodularity.
@@ -107,5 +109,15 @@ theorem plucker_le_prod_iSup {R ι : Type*} [CommRing R] [LinearOrder ι] [Finit
     v (plucker x s) ≤ ∏ i, ⨆ j, v (x i j) := by
   rw [plucker_apply]
   exact Matrix.abv_det_le_prod_of_le _ hv fun i j ↦ Finite.le_ciSup_of_le _ le_rfl
+
+/-- If every coordinate of the `i`-th vector of a family of `p` vectors is at most `b i` at an
+absolute value `v`, then every Plücker coordinate of the family is at most `p! * ∏ i, b i` there.
+-/
+theorem plucker_le_factorial_mul_prod {R S ι : Type*} [CommRing R] [CommRing S] [LinearOrder S]
+    [IsStrictOrderedRing S] [LinearOrder ι] {p : ℕ} (v : AbsoluteValue R S) {x : Fin p → ι → R}
+    {b : Fin p → S} (hx : ∀ i j, v (x i j) ≤ b i) (s : powersetCard ι p) :
+    v (plucker x s) ≤ p.factorial * ∏ i, b i := by
+  rw [plucker_apply]
+  exact (Matrix.abv_det_le_factorial_prod _ v fun i j ↦ hx i _).trans_eq (by rw [Fintype.card_fin])
 
 end AbsoluteValue
