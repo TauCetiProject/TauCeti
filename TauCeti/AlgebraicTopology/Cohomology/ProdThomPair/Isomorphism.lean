@@ -93,6 +93,67 @@ namespace TauCeti
 variable {K : Type w} [CommRing K] (M : ModuleCat.{w} K)
   {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-! ### The Thom map of `δ σ` -/
+
+omit [NormedSpace ℝ F] in
+/-- For any class `σ ∈ H^q(B × (F ∖ {0}); K)` with `q + 1 = r`, the Thom map `a ↦ π^*a ⌣ δ σ` of
+the product bundle sends `a ∈ Hᵖ(B; M)` to `(-1)^(p r) δ (σ ⌣ π^*a)`: the connecting morphism moves
+the cup product with `π^*a` past `δ`, and graded commutativity exchanges `π^*a` and `σ`. -/
+private theorem pullbackCup_prodThomPair_singularCohomologyδ_eq_smul {q r : ℕ} (hq : q + 1 = r)
+    {p n m : ℕ} (hn : q + p = n) (h : p + r = m)
+    (σ : (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} K)) K
+      (𝟙_ (ModuleCat.{w} K)) q)
+    (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
+    (prodThomPair B F).pullbackCup M (prodThomPairProj B F) r p m h
+        (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
+          q r hq) σ) a =
+      ((-1 : ℤ) ^ (p * r)) •
+        ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K M n m (by lia))
+          ((prodThomPair B F).snd.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (λ_ M).hom
+            q p n hn σ (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) p a)) := by
+  subst hq
+  -- The connecting morphism moves the cup product with `π^*a` past `δ`, up to `(-1)ᵖ`.
+  have hδ := TopPair.singularCohomologyδ_singularCup K (prodThomPair B F)
+    (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom (p := p) (q := q) (n := n) (q' := q + 1) (m := m)
+    (by lia) rfl (by lia) h
+    (TopCat.singularCohomologyMap (prodThomPairProj B F) p a) σ
+  -- Graded commutativity exchanges `π^*a` and `σ`, up to `(-1)^(p q)`.
+  have hcomm := TopCat.singularCup_gradedComm (prodThomPair B F).snd K
+    (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (u' := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
+    (by rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal])
+    (μ := (ρ_ M).hom) (μ' := (λ_ M).hom) (braiding_leftUnitor M) (p := p) (q := q)
+    (n := n) (by lia)
+    (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) p a) σ
+  rw [← map_comp_prodThomPairProj, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+    at hcomm ⊢
+  rw [hcomm, map_zsmul, hδ, smul_smul, TopPair.pullbackCup_apply]
+  -- The signs combine to `(-1)^(p (q + 1))` twice, which cancel.
+  rw [smul_smul, mul_assoc, ← pow_add, show p * q + p = p * (q + 1) by ring, mul_smul,
+    neg_one_pow_smul_neg_one_pow_smul]
+
+omit [NormedSpace ℝ F] in
+/-- The Thom map of `δ σ` is bijective in every degree as soon as `a ↦ δ (σ ⌣ π^*a)` is a linear
+equivalence `L`, since the Thom map is `L` up to a sign. -/
+private theorem bijective_pullbackCup_prodThomPair_singularCohomologyδ {q r : ℕ}
+    (hq : q + 1 = r) {p n m : ℕ} (hn : q + p = n) (h : p + r = m)
+    (σ : (prodThomPair B F).snd.singularCohomology (𝟙_ (ModuleCat.{w} K)) K
+      (𝟙_ (ModuleCat.{w} K)) q)
+    (L : (TopCat.of B).singularCohomology (𝟙_ (ModuleCat.{w} K)) K M p ≃ₗ[K]
+      (prodThomPair B F).singularCohomology (𝟙_ (ModuleCat.{w} K)) K M m)
+    (hL : ∀ a, L a = ((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K M n m
+      (by lia)) ((prodThomPair B F).snd.singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (λ_ M).hom
+        q p n hn σ (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) p a))) :
+    Function.Bijective ((prodThomPair B F).pullbackCup M (prodThomPairProj B F) r p m h
+      (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
+        q r hq) σ)) := by
+  have hcomp : ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F) r p m h
+      (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
+        q r hq) σ)) = (((-1 : ℤ) ^ (p * r)) • ·) ∘ L :=
+    funext fun a ↦ (pullbackCup_prodThomPair_singularCohomologyδ_eq_smul M hq hn h σ a).trans
+      (by rw [Function.comp_apply, hL])
+  rw [hcomp]
+  exact Function.Involutive.bijective (neg_one_pow_smul_neg_one_pow_smul _) |>.comp L.bijective
+
 /-! ### The Thom map of the class pulled back from the sphere -/
 
 section Sphere
@@ -111,44 +172,8 @@ theorem pullbackCup_prodThomPair_singularCohomologyδ (e : F ≃L[ℝ] Euclidean
           (d + 1) (d + 2)) (prodThomPairPuncturedClass K B e)) a =
       ((-1 : ℤ) ^ (p * (d + 2))) •
         prodThomPairSingularCohomologySphereEquiv M B e p m (by lia) a := by
-  -- The connecting morphism moves the cup product with `π^*a` past `δ`, up to `(-1)ᵖ`.
-  have hδ := TopPair.singularCohomologyδ_singularCup K (prodThomPair B F)
-    (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom (p := p) (q := d + 1) (n := d + 1 + p)
-    (q' := d + 2) (m := m) (by lia) rfl (by lia) h
-    (TopCat.singularCohomologyMap (prodThomPairProj B F) p a) (prodThomPairPuncturedClass K B e)
-  -- Graded commutativity exchanges `π^*a` and `σ`, up to `(-1)^(p (d + 1))`.
-  have hcomm := TopCat.singularCup_gradedComm (prodThomPair B F).snd K
-    (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (u' := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
-    (by rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal])
-    (μ := (ρ_ M).hom) (μ' := (λ_ M).hom) (braiding_leftUnitor M) (p := p) (q := d + 1)
-    (n := d + 1 + p) (by lia)
-    (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) p a)
-    (prodThomPairPuncturedClass K B e)
-  rw [← map_comp_prodThomPairProj, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
-    at hcomm
-  rw [prodThomPairSingularCohomologySphereEquiv_apply, ← map_comp_prodThomPairProj,
-    TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, hcomm, map_zsmul, hδ,
-    smul_smul, TopPair.pullbackCup_apply]
-  -- The signs combine to `(-1)^(p (d + 2))` twice, which cancel.
-  rw [smul_smul, mul_assoc, ← pow_add, show p * (d + 1) + p = p * (d + 2) by ring, mul_smul,
-    neg_one_pow_smul_neg_one_pow_smul]
-
-/-- The Thom map of `δ σ` is bijective in every degree, since it is the equivalence
-`TauCeti.prodThomPairSingularCohomologySphereEquiv` up to a sign. -/
-private theorem bijective_pullbackCup_prodThomPair_singularCohomologyδ
-    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) {p m : ℕ} (h : p + (d + 2) = m) :
-    Function.Bijective ((prodThomPair B F).pullbackCup M (prodThomPairProj B F) (d + 2) p m h
-      (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
-        (d + 1) (d + 2)) (prodThomPairPuncturedClass K B e))) := by
-  have hcomp : ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F) (d + 2) p m h
-      (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
-        (d + 1) (d + 2)) (prodThomPairPuncturedClass K B e))) =
-      (((-1 : ℤ) ^ (p * (d + 2))) • ·) ∘ prodThomPairSingularCohomologySphereEquiv M B e p m
-        (by lia) :=
-    funext (pullbackCup_prodThomPair_singularCohomologyδ M e h)
-  rw [hcomp]
-  exact Function.Involutive.bijective (neg_one_pow_smul_neg_one_pow_smul _) |>.comp
-    (LinearEquiv.bijective _)
+  rw [prodThomPairSingularCohomologySphereEquiv_apply]
+  exact pullbackCup_prodThomPair_singularCohomologyδ_eq_smul M rfl rfl h _ a
 
 end Sphere
 
@@ -168,39 +193,8 @@ theorem pullbackCup_prodThomPair_singularCohomologyδ_prodThomPairPuncturedLineC
         (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
           0 1) (prodThomPairPuncturedLineClass K B e)) a =
       ((-1 : ℤ) ^ p) • prodThomPairSingularCohomologyLineEquiv M B e p m h a := by
-  -- The connecting morphism moves the cup product with `π^*a` past `δ`, up to `(-1)ᵖ`.
-  have hδ := TopPair.singularCohomologyδ_singularCup K (prodThomPair B F)
-    (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom (p := p) (q := 0) (n := p) (q' := 1) (m := m)
-    (add_zero p) rfl h h (TopCat.singularCohomologyMap (prodThomPairProj B F) p a)
-    (prodThomPairPuncturedLineClass K B e)
-  -- Graded commutativity exchanges `π^*a` and `σ`, which has degree `0`, with no sign.
-  have hcomm := TopCat.singularCup_gradedComm (prodThomPair B F).snd K
-    (u := (λ_ (𝟙_ (ModuleCat.{w} K))).inv) (u' := (λ_ (𝟙_ (ModuleCat.{w} K))).inv)
-    (by rw [braiding_tensorUnit_left, Iso.inv_hom_id_assoc, unitors_inv_equal])
-    (μ := (ρ_ M).hom) (μ' := (λ_ M).hom) (braiding_leftUnitor M) (p := p) (q := 0) (n := p)
-    (add_zero p) (TopCat.singularCohomologyMap (prodThomPairPuncturedProj B F) p a)
-    (prodThomPairPuncturedLineClass K B e)
-  rw [← map_comp_prodThomPairProj, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
-    at hcomm
-  rw [prodThomPairSingularCohomologyLineEquiv_apply, ← map_comp_prodThomPairProj,
-    TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, hcomm, mul_zero, pow_zero,
-    one_smul, hδ, TopPair.pullbackCup_apply, neg_one_pow_smul_neg_one_pow_smul]
-
-/-- The Thom map of `δ σ` in rank one is bijective in every degree, since it is the equivalence
-`TauCeti.prodThomPairSingularCohomologyLineEquiv` up to a sign. -/
-private theorem bijective_pullbackCup_prodThomPair_singularCohomologyδ_lineClass
-    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) {p m : ℕ} (h : p + 1 = m) :
-    Function.Bijective ((prodThomPair B F).pullbackCup M (prodThomPairProj B F) 1 p m h
-      (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
-        0 1) (prodThomPairPuncturedLineClass K B e))) := by
-  have hcomp : ⇑((prodThomPair B F).pullbackCup M (prodThomPairProj B F) 1 p m h
-      (((prodThomPair B F).singularCohomologyδ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K))
-        0 1) (prodThomPairPuncturedLineClass K B e))) =
-      (((-1 : ℤ) ^ p) • ·) ∘ prodThomPairSingularCohomologyLineEquiv M B e p m h :=
-    funext (pullbackCup_prodThomPair_singularCohomologyδ_prodThomPairPuncturedLineClass M e h)
-  rw [hcomp]
-  exact Function.Involutive.bijective (neg_one_pow_smul_neg_one_pow_smul _) |>.comp
-    (LinearEquiv.bijective _)
+  rw [pullbackCup_prodThomPair_singularCohomologyδ_eq_smul M (zero_add 1) (zero_add p) h, mul_one,
+    prodThomPairSingularCohomologyLineEquiv_apply]
 
 end Line
 
@@ -267,11 +261,14 @@ private theorem exists_forall_bijective_pullbackCup_prodThomPair [FiniteDimensio
     exact exists_forall_bijective_pullbackCup_prodThomPair_of_subsingleton
   · obtain ⟨e⟩ : Nonempty (F ≃L[ℝ] EuclideanSpace ℝ (Fin 1)) :=
       ⟨ContinuousLinearEquiv.ofFinrankEq (by rw [finrank_euclideanSpace_fin, hr])⟩
-    exact ⟨_, fun M p m h ↦
-      bijective_pullbackCup_prodThomPair_singularCohomologyδ_lineClass M e h⟩
+    exact ⟨_, fun M p m h ↦ bijective_pullbackCup_prodThomPair_singularCohomologyδ M (zero_add 1)
+      (zero_add p) h _ (prodThomPairSingularCohomologyLineEquiv M B e p m h)
+      (prodThomPairSingularCohomologyLineEquiv_apply M e p m h)⟩
   · obtain ⟨e⟩ : Nonempty (F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) :=
       ⟨ContinuousLinearEquiv.ofFinrankEq (by rw [finrank_euclideanSpace_fin, hr])⟩
-    exact ⟨_, fun M p m h ↦ bijective_pullbackCup_prodThomPair_singularCohomologyδ M e h⟩
+    exact ⟨_, fun M p m h ↦ bijective_pullbackCup_prodThomPair_singularCohomologyδ M rfl rfl h _
+      (prodThomPairSingularCohomologySphereEquiv M B e p m (by lia))
+      (prodThomPairSingularCohomologySphereEquiv_apply M e p m (by lia))⟩
 
 /-- **The Thom isomorphism for a product bundle.** Let `F` be a real normed space of finite
 dimension `r`, and let `u ∈ Hʳ(B × F, B × (F ∖ {0}); K)` restrict on the fibre pair
