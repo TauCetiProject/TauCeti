@@ -77,11 +77,6 @@ variable {n : ℕ} {m : ℝ} {V V' W W' : Type*} [NormedAddCommGroup V] [NormedS
   [NormedAddCommGroup W'] [NormedSpace ℂ W']
   {Φ : CoordinateSpace n → W →L[ℂ] W'} {Ψ : CoordinateSpace n → V' →L[ℂ] V}
 
-/-- The coefficient of the symbol `ofSpatial Ψ` of multiplication by `Ψ`. -/
-private theorem coefficient_ofSpatial_eq (hΨ : ContDiff ℝ ∞ Ψ) :
-    (ofSpatial Ψ hΨ).coefficient = fun p ↦ Ψ p.1 :=
-  funext (coefficient_ofSpatial Ψ hΨ)
-
 /-! ### The frame change of a symbol -/
 
 section Def

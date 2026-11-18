@@ -320,8 +320,7 @@ theorem coefficient_sharpTerm_ofSpatial (a : Symbol n W U m')
       ∑ w : Fin k → Fin n,
         (mixedDeriv [] (List.ofFn w) a.coefficient x ξ).comp
           (coordinateDeriv (List.ofFn w) Ψ x) := by
-  have hΨ' : (ofSpatial Ψ hΨ).coefficient = fun p ↦ Ψ p.1 := funext (coefficient_ofSpatial Ψ hΨ)
-  simp only [coefficient_sharpTerm, hΨ', mixedDeriv_nil_comp_fst]
+  simp only [coefficient_sharpTerm, coefficient_ofSpatial_eq, mixedDeriv_nil_comp_fst]
 
 /-- Only the pointwise composition survives in the composition expansion of a symbol on the right
 that does not depend on the position: its later terms vanish. -/

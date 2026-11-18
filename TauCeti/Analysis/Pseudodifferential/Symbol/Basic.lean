@@ -851,6 +851,10 @@ def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f
 theorem coefficient_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
     (p : CoordinateSpace n × CoordinateSpace n) : (ofSpatial f hf).coefficient p = f p.1 := (rfl)
 
+/-- The coefficient of the symbol `ofSpatial f` of multiplication by `f`, as a function. -/
+theorem coefficient_ofSpatial_eq (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) :
+    (ofSpatial f hf).coefficient = fun p ↦ f p.1 := (rfl)
+
 @[simp]
 theorem ofSpatial_zero (hf : ContDiff ℝ ∞ (0 : CoordinateSpace n → V →L[ℂ] W)) :
     ofSpatial 0 hf = 0 := by
@@ -874,7 +878,7 @@ theorem ofSpatial_sub {f g : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff
 coordinate derivative of `f` is bounded. -/
 theorem isUniform_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) :
     (ofSpatial f hf).IsUniform ↔ ∀ α : List (Fin n), ∃ C, ∀ x, ‖coordinateDeriv α f x‖ ≤ C := by
-  have hc : (ofSpatial f hf).coefficient = fun p => f p.1 := funext (coefficient_ofSpatial f hf)
+  have hc := coefficient_ofSpatial_eq f hf
   refine ⟨fun h α => ?_, fun h α β => ?_⟩
   · obtain ⟨C, -, hC⟩ := h α []
     refine ⟨C, fun x => ?_⟩
