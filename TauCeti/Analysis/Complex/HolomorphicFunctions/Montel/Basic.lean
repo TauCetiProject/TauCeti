@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.HolomorphicFunctions.Montel.Precompact
-import Mathlib.Topology.UniformSpace.CompactConvergence
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.NormalFamilies
 import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # Montel's selection theorem
@@ -20,17 +20,16 @@ the target is `ℂ`, and supplies the subsequence selection used by Vitali's the
 `Conformal/Vitali.lean`. In several variables it is the compactness input to the Cartan–Serre
 finiteness theorem for coherent analytic cohomology.
 
-`HolomorphicFunctions/Montel/Precompact.lean` proves that the continuous restrictions form a
-relatively compact subset of `C(↥Ω, E)` with its compact-open topology, and characterizes this
-compactness by local boundedness. This file extracts a convergent subsequence and identifies its
-holomorphic limit.
+`HolomorphicFunctions/Montel/Precompact.lean` gives the equivalent compactness form: the
+continuous restrictions form a relatively compact subset of `C(↥Ω, E)` with its compact-open
+topology, exactly when the family is locally bounded.
 
-An open subset of a proper metric space is locally compact and second countable,
-hence hemicompact: its compact subsets admit a countable cofinal family. Thus the compact-open
-topology on `C(↥Ω, E)` is first countable, and `IsCompact.tendsto_subseq` extracts a convergent
-subsequence. `ContinuousMap.tendsto_iff_tendstoLocallyUniformly` identifies its convergence with
-locally uniform convergence, and `TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace`
-gives holomorphy of the limit.
+The equicontinuity theorem `TauCeti.IsLocallyBoundedOn.equicontinuousOn` and the pointwise norm
+bounds of local boundedness, which lie in compact closed balls since `E` is proper, are the
+hypotheses of the Arzelà–Ascoli selection theorem
+`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn`. It extracts a locally
+uniformly convergent subsequence, and
+`TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace` gives holomorphy of the limit.
 
 ## Main results
 
@@ -67,24 +66,10 @@ theorem montel [ProperSpace E] (hΩ : IsOpen Ω) (hF : ∀ n, DifferentiableOn �
     (hb : IsLocallyBoundedOn F Ω) :
     ∃ (φ : ℕ → ℕ) (g : V → E), StrictMono φ ∧ DifferentiableOn ℂ g Ω ∧
       TendstoLocallyUniformlyOn (fun n => F (φ n)) g atTop Ω := by
-  classical
-  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  set f : ℕ → C(Ω, E) := fun n => ⟨Ω.domRestrict (F n), ((hF n).continuousOn).domRestrict⟩
-  -- The relative compactness of the restricted family, from
-  -- `HolomorphicFunctions/Montel/Precompact.lean`.
-  have hcpt : IsCompact (closure (Set.range f)) :=
-    isCompact_closure_range_of_isLocallyBoundedOn hΩ hF hb fun _ => rfl
-  obtain ⟨a, -, φ, hφ, hconv⟩ := hcpt.tendsto_subseq (x := f) fun n => subset_closure ⟨n, rfl⟩
-  -- Compact-open convergence is locally uniform convergence; extend the limit off `Ω` by zero.
-  have hlim : ((fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) ∘ (Subtype.val : Ω → V))
-      = fun x : Ω => a x := by
-    funext x
-    simp [x.2]
-  have hconvOn : TendstoLocallyUniformlyOn (fun n => F (φ n))
-      (fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) atTop Ω := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hlim]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hconv
-  exact ⟨φ, _, hφ, hconvOn.differentiableOn_of_locallyCompactSpace
-    (Eventually.of_forall fun n => hF (φ n)) hΩ, hconvOn⟩
+  obtain ⟨φ, hφ, g, -, hg⟩ := exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ
+    (hb.equicontinuousOn hΩ hF) fun x hx => (hb.exists_forall_norm_le hx).elim fun C hC =>
+      ⟨closedBall 0 C, isCompact_closedBall _ _, fun n => mem_closedBall_zero_iff.2 (hC n)⟩
+  exact ⟨φ, g, hφ, hg.differentiableOn_of_locallyCompactSpace
+    (Eventually.of_forall fun n => hF (φ n)) hΩ, hg⟩
 
 end TauCeti
