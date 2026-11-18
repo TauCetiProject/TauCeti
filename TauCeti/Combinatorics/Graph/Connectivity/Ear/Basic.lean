@@ -760,6 +760,19 @@ protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
   graphAfter_last := d.graphAfter_last.trans h
 
 @[simp]
+theorem copy_copy {H' H'' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
+    (h' : H' = H'') : (d.copy h).copy h' = d.copy (h.trans h') := by
+  cases h
+  cases h'
+  rfl
+
+@[simp]
+theorem copy_inj {H' : Graph α β} {d₁ d₂ : G.EarDecomposition H} {h : H = H'} :
+    d₁.copy h = d₂.copy h ↔ d₁ = d₂ := by
+  cases h
+  rfl
+
+@[simp]
 theorem length_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := (rfl)
 

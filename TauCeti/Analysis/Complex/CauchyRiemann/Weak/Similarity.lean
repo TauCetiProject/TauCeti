@@ -7,16 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.StandardFrame
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
-import Mathlib.MeasureTheory.Function.UniformIntegrable
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import Mathlib.Topology.MetricSpace.Contracting
-import TauCeti.Basic.Real.ConjExponents
-import TauCeti.Analysis.Complex.Pompeiu.Pointwise
-import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
-import TauCeti.Analysis.Complex.Wirtinger.Weyl
+import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
+import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Comparison
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
-import TauCeti.MeasureTheory.Function.RankOne
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
@@ -41,34 +35,15 @@ point or on a nonempty open subset, and otherwise its zeros are isolated.
 These are the statements used for the local theory of pseudoholomorphic curves of finite
 regularity, whose linearized equations have Sobolev coefficients.
 
-The classical version, for `C¹` solutions with locally bounded coefficients and `J = i`, is
-deduced from this one in `TauCeti.Analysis.Complex.CauchyRiemann.Similarity`. Here only
-`C ∈ Lᵖ` is available, and the solution is only weakly differentiable, so the proof follows
-Carleman's argument with `Lᵖ` estimates.
-
-* **The standard structure.** For `J = i`
-  (`TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn`) the real-linear term `C ξ` is first
-  absorbed into a complex-linear coefficient `D` with `D ξ = C ξ` and `‖D‖ ≤ K ‖C‖`, a rank-one map
-  for an auxiliary inner product on `V` (`TauCeti.exists_complexLinear_apply_eq`). On a small
-  closed disc the Cauchy integral equation `Φ = 1 - T (½ D Φ)`, for the Cauchy transform `T`
-  inverting `bar∂ = (∂ₛ + i ∂ₜ)/2`, is solved by the contraction mapping theorem in the continuous
-  maps on the disc. Since `p > 2`, `T` maps `Lᵖ` data on the disc to continuous functions, with a
-  pointwise bound by the `Lᵖ` norm (`TauCeti.norm_cauchyTransform_le`,
-  `TauCeti.continuous_cauchyTransform_of_memLp`), and the `Lᵖ` norm of `D` on the disc is small when
-  the disc is small. The solution `Φ` is continuous, close to `1` and hence invertible, lies in
-  `W^{1,p}_loc` by the Calderón–Zygmund inequality
-  (`TauCeti.exists_hasWeakFDerivOn_cauchyTransform_of_memLp`), and satisfies `bar∂ Φ = -½ D Φ`. The
-  frame reduction `TauCeti.isWeakLinearCauchyRiemannOn_iff_frame` then shows that `σ = Φ⁻¹ ξ` solves
-  the equation with coefficient `Φ⁻¹(2 bar∂Φ + C Φ)`, which vanishes along `σ`, since
-  `2 bar∂Φ Φ⁻¹ ξ = -D ξ = -C ξ`. So `σ` is weakly holomorphic, hence holomorphic by Weyl's lemma.
-* **A variable structure.** The standard frame of `TauCeti.standardFrame` reduces the equation
-  for `J` to an equation for `i` with a new coefficient in `Lᵖ_loc`
-  (`TauCeti.isWeakLinearCauchyRiemannOn_iff_standardFrame`), to which the first case applies.
+The proof reduces to the standard structure `i`. The standard frame of
+`TauCeti.standardFrame` turns the equation for `J` into an equation for `i` with a new coefficient
+in `Lᵖ_loc` (`TauCeti.isWeakLinearCauchyRiemannOn_iff_standardFrame`), whose solutions factor by
+the similarity principle for the standard structure,
+`TauCeti.exists_similarity_of_hasWeakConjWirtingerDerivOn_of_ne_top`, with a `W^{1,p}_loc` factor.
+Composing that factor with the standard frame gives `Φ`.
 
 ## Main results
 
-* `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn`: the factorization for `J = i`, with
-  `Φ` complex-linear.
 * `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_of_complexStructure`: the
   factorization for a continuous `W^{1,p}_loc` field of complex structures `J`, with
   `J Φ = Φ i`.
@@ -95,305 +70,8 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-! ### The Cauchy integral equation with `Lᵖ` coefficients -/
-
-/-- The source term `½ D Φ` of the Cauchy integral equation, for `Φ` given on the closed disc and
-extended by `0`. -/
-private def lpCauchySource {c : ℂ} {r : ℝ} (D : ℂ → V →L[ℂ] V)
-    (Φ : C(closedBall c r, V →L[ℂ] V)) (z : ℂ) : V →L[ℂ] V :=
-  (2 : ℂ)⁻¹ • (D z).comp (extend Subtype.val Φ 0 z)
-
-private theorem lpCauchySource_of_mem {c : ℂ} {r : ℝ} (D : ℂ → V →L[ℂ] V)
-    (Φ : C(closedBall c r, V →L[ℂ] V)) {z : ℂ} (hz : z ∈ closedBall c r) :
-    lpCauchySource D Φ z = (2 : ℂ)⁻¹ • (D z).comp (Φ ⟨z, hz⟩) := by
-  rw [lpCauchySource, Subtype.val_injective.extend_apply Φ 0 ⟨z, hz⟩]
-
-private theorem lpCauchySource_of_notMem {c : ℂ} {r : ℝ} (D : ℂ → V →L[ℂ] V)
-    (Φ : C(closedBall c r, V →L[ℂ] V)) {z : ℂ} (hz : z ∉ closedBall c r) :
-    lpCauchySource D Φ z = 0 := by
-  rw [lpCauchySource, extend_apply' _ _ _ fun ⟨w, hw⟩ ↦ hz (hw ▸ w.2)]
-  simp
-
-private theorem support_lpCauchySource_subset {c : ℂ} {r : ℝ} (D : ℂ → V →L[ℂ] V)
-    (Φ : C(closedBall c r, V →L[ℂ] V)) : support (lpCauchySource D Φ) ⊆ closedBall c r :=
-  fun _ hz ↦ by_contra fun h ↦ hz (lpCauchySource_of_notMem D Φ h)
-
-private theorem lpCauchySource_sub {c : ℂ} {r : ℝ} (D : ℂ → V →L[ℂ] V)
-    (Φ Φ' : C(closedBall c r, V →L[ℂ] V)) :
-    lpCauchySource D (Φ - Φ') = lpCauchySource D Φ - lpCauchySource D Φ' := by
-  ext1 z
-  by_cases hz : z ∈ closedBall c r
-  · simp only [Pi.sub_apply, lpCauchySource_of_mem D _ hz, ContinuousMap.sub_apply,
-      ContinuousLinearMap.comp_sub, smul_sub]
-  · simp [lpCauchySource_of_notMem D _ hz]
-
-private theorem norm_lpCauchySource_le {c : ℂ} {r : ℝ} (D : ℂ → V →L[ℂ] V)
-    (Φ : C(closedBall c r, V →L[ℂ] V)) (z : ℂ) :
-    ‖lpCauchySource D Φ z‖ ≤ 2⁻¹ * ‖Φ‖ * ‖(closedBall c r).indicator D z‖ := by
-  by_cases hz : z ∈ closedBall c r
-  · rw [lpCauchySource_of_mem D Φ hz, indicator_of_mem hz, norm_smul, norm_inv,
-      Complex.norm_ofNat, mul_assoc]
-    gcongr
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (by rw [mul_comm]; gcongr; exact Φ.norm_coe_le_norm _)
-  · rw [lpCauchySource_of_notMem D Φ hz, norm_zero]
-    positivity
-
-private theorem aestronglyMeasurable_lpCauchySource {c : ℂ} {r : ℝ} {D : ℂ → V →L[ℂ] V}
-    (hD : AEStronglyMeasurable D (volume.restrict (closedBall c r)))
-    (Φ : C(closedBall c r, V →L[ℂ] V)) : AEStronglyMeasurable (lpCauchySource D Φ) volume := by
-  have he : ContinuousOn (extend Subtype.val Φ 0) (closedBall c r) := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    convert Φ.continuous using 1
-    ext1 z
-    exact Subtype.val_injective.extend_apply Φ 0 z
-  have heq : lpCauchySource D Φ = (closedBall c r).indicator (lpCauchySource D Φ) :=
-    (indicator_eq_self.2 (support_lpCauchySource_subset D Φ)).symm
-  rw [heq, aestronglyMeasurable_indicator_iff measurableSet_closedBall]
-  exact ((ContinuousLinearMap.compL ℂ V V V).aestronglyMeasurable_comp₂ hD
-    (he.aestronglyMeasurable measurableSet_closedBall)).const_smul (2 : ℂ)⁻¹
-
-private theorem memLp_lpCauchySource {p : ℝ≥0∞} {c : ℂ} {r : ℝ} {D : ℂ → V →L[ℂ] V}
-    (hD : MemLp ((closedBall c r).indicator D) p volume) (Φ : C(closedBall c r, V →L[ℂ] V)) :
-    MemLp (lpCauchySource D Φ) p volume :=
-  hD.of_le_mul (aestronglyMeasurable_lpCauchySource
-    ((aestronglyMeasurable_indicator_iff measurableSet_closedBall).1 hD.aestronglyMeasurable) Φ)
-    (Eventually.of_forall (norm_lpCauchySource_le D Φ))
-
-private theorem toReal_eLpNorm_lpCauchySource_le {p : ℝ≥0∞} {c : ℂ} {r : ℝ}
-    {D : ℂ → V →L[ℂ] V} (hD : MemLp ((closedBall c r).indicator D) p volume)
-    (Φ : C(closedBall c r, V →L[ℂ] V)) :
-    (eLpNorm (lpCauchySource D Φ) p volume).toReal ≤
-      2⁻¹ * ‖Φ‖ * (eLpNorm ((closedBall c r).indicator D) p volume).toReal := by
-  have h := eLpNorm_le_mul_eLpNorm_of_ae_le_mul (memLp_lpCauchySource hD Φ).aestronglyMeasurable
-    (Eventually.of_forall (norm_lpCauchySource_le D Φ)) p
-  rw [← ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2⁻¹ * ‖Φ‖), ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hD.eLpNorm_ne_top) h
-
-/-- **The Cauchy integral equation with `Lᵖ` coefficients.** Let `p` have a conjugate exponent
-`q < 2`, and let the Cauchy transform of `Lᵖ` data supported in a closed disc be bounded on the
-disc by `K` times the `Lᵖ` norm of the data. If the field `D` is `Lᵖ` on the disc with
-`K ‖D‖_{Lᵖ} ≤ 1/4`, there is `g ∈ Lᵖ`, supported in the disc, whose Cauchy transform is
-continuous and satisfies `g = ½ D (1 - T g)` on the disc, with `‖T g‖ < 1` there. So
-`Φ = 1 - T g` is a continuous family of invertible maps on the disc solving `bar∂Φ = -½ D Φ`. It
-is the fixed point of the contraction `Φ ↦ 1 - T (½ D Φ)` of the continuous maps on the disc. -/
-private theorem exists_cauchyTransform_eq_of_memLp [FiniteDimensional ℂ V] {p q : ℝ≥0∞}
-    [p.HolderConjugate q] (hq : q < 2) {D : ℂ → V →L[ℂ] V} {c : ℂ} {r K : ℝ} (hK : 0 ≤ K)
-    (hT : ∀ f : ℂ → V →L[ℂ] V, MemLp f p volume → support f ⊆ closedBall c r →
-      ∀ w ∈ closedBall c r, ‖cauchyTransform f w‖ ≤ K * (eLpNorm f p volume).toReal)
-    (hD : MemLp ((closedBall c r).indicator D) p volume)
-    (hDK : K * (eLpNorm ((closedBall c r).indicator D) p volume).toReal ≤ 4⁻¹) :
-    ∃ g : ℂ → V →L[ℂ] V, MemLp g p volume ∧ support g ⊆ closedBall c r ∧
-      Continuous (cauchyTransform g) ∧
-      (∀ z ∈ closedBall c r, g z = (2 : ℂ)⁻¹ • (D z).comp (1 - cauchyTransform g z)) ∧
-      ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
-  have := FiniteDimensional.completeSpace ℂ V
-  have hsupp := support_lpCauchySource_subset (c := c) (r := r) D
-  have hmem := memLp_lpCauchySource hD
-  have hnorm := toReal_eLpNorm_lpCauchySource_le hD
-  have hcont (Φ : C(closedBall c r, V →L[ℂ] V)) :
-      Continuous (cauchyTransform (lpCauchySource D Φ)) :=
-    continuous_cauchyTransform_of_memLp hq (hmem Φ) (hsupp Φ)
-  -- the Cauchy transform of the source is small on the disc
-  have hTs (Φ : C(closedBall c r, V →L[ℂ] V)) (w : ℂ) (hw : w ∈ closedBall c r) :
-      ‖cauchyTransform (lpCauchySource D Φ) w‖ ≤ 8⁻¹ * ‖Φ‖ := by
-    calc ‖cauchyTransform (lpCauchySource D Φ) w‖
-        ≤ K * (2⁻¹ * ‖Φ‖ * (eLpNorm ((closedBall c r).indicator D) p volume).toReal) :=
-          (hT _ (hmem Φ) (hsupp Φ) w hw).trans (by gcongr; exact hnorm Φ)
-      _ = 2⁻¹ * ‖Φ‖ * (K * (eLpNorm ((closedBall c r).indicator D) p volume).toReal) := by ring
-      _ ≤ 2⁻¹ * ‖Φ‖ * 4⁻¹ := by gcongr
-      _ = 8⁻¹ * ‖Φ‖ := by ring
-  -- and depends linearly on `Φ`
-  have hlin (Φ Φ' : C(closedBall c r, V →L[ℂ] V)) (w : ℂ) :
-      cauchyTransform (lpCauchySource D Φ) w - cauchyTransform (lpCauchySource D Φ') w =
-        cauchyTransform (lpCauchySource D (Φ - Φ')) w := by
-    rw [lpCauchySource_sub, cauchyTransform_sub_of_memLp hq (hmem Φ) (hsupp Φ) (hmem Φ')
-      (hsupp Φ'), Pi.sub_apply]
-  let op (Φ : C(closedBall c r, V →L[ℂ] V)) : C(closedBall c r, V →L[ℂ] V) :=
-    ⟨fun w ↦ 1 - cauchyTransform (lpCauchySource D Φ) w,
-      (continuous_const.sub (hcont Φ)).comp continuous_subtype_val⟩
-  have hop : ContractingWith 8⁻¹ op := by
-    refine ⟨by norm_num, LipschitzWith.of_dist_le_mul fun Φ Φ' ↦ ?_⟩
-    rw [NNReal.coe_inv, NNReal.coe_ofNat]
-    refine (ContinuousMap.dist_le (by positivity)).2 fun w ↦ ?_
-    simp only [op, ContinuousMap.coe_mk, dist_eq_norm, sub_sub_sub_cancel_left, hlin]
-    refine (hTs _ w w.2).trans_eq ?_
-    rw [dist_comm, dist_eq_norm Φ' Φ]
-  set Φ₀ := ContractingWith.fixedPoint op hop
-  set g := lpCauchySource D Φ₀ with hg
-  have hfix : op Φ₀ = Φ₀ := ContractingWith.fixedPoint_isFixedPt hop
-  have hΦ₀ (z : ℂ) (hz : z ∈ closedBall c r) : Φ₀ ⟨z, hz⟩ = 1 - cauchyTransform g z := by
-    rw [← hfix]
-    simp only [op, ContinuousMap.coe_mk, hg]
-  have hnorm₀ : ‖Φ₀‖ ≤ 8 / 7 := by
-    have h1 : ‖Φ₀‖ ≤ 1 + 8⁻¹ * ‖Φ₀‖ := by
-      refine (ContinuousMap.norm_le _ (by positivity)).2 fun w ↦ ?_
-      rw [hΦ₀ w w.2]
-      exact (norm_sub_le _ _).trans
-        (add_le_add ContinuousLinearMap.norm_id_le (hTs Φ₀ w w.2))
-    linarith
-  refine ⟨g, hmem Φ₀, hsupp Φ₀, hcont Φ₀, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · rw [hg, lpCauchySource_of_mem D Φ₀ hz, hΦ₀ z hz]
-  · calc ‖cauchyTransform g z‖ ≤ 8⁻¹ * ‖Φ₀‖ := hTs Φ₀ z hz
-      _ ≤ 8⁻¹ * (8 / 7) := by gcongr
-      _ < 1 := by norm_num
-
-/-! ### The similarity principle for the standard structure -/
-
-/-- **The Cauchy integral equation on a small disc.** For `p > 2` and a field `D` that is `Lᵖ` on
-the closed disc of radius `R` about `z₀`, there is a smaller closed disc about `z₀` on which the
-Cauchy integral equation `Φ = 1 - T (½ D Φ)` has a solution `Φ = 1 - T g` close to `1`. The
-radius is chosen so small that the `Lᵖ` norm of `D` on the disc, times the constant of the
-pointwise bound for the Cauchy transform of `Lᵖ` data, is at most `1/4`; since `p < ∞`, the
-`Lᵖ` norm on a set is small when its measure is. -/
-private theorem exists_cauchyTransform_eq_of_memLp_closedBall [FiniteDimensional ℂ V] {p : ℝ≥0}
-    (hp : 2 < p) {D : ℂ → V →L[ℂ] V} {z₀ : ℂ} {R : ℝ} (hR : 0 < R)
-    (hD : MemLp ((closedBall z₀ R).indicator D) p volume) :
-    ∃ r, 0 < r ∧ r ≤ R ∧ ∃ g : ℂ → V →L[ℂ] V, MemLp g p volume ∧ support g ⊆ closedBall z₀ r ∧
-      Continuous (cauchyTransform g) ∧
-      (∀ z ∈ closedBall z₀ r, g z = (2 : ℂ)⁻¹ • (D z).comp (1 - cauchyTransform g z)) ∧
-      ∀ z ∈ closedBall z₀ r, ‖cauchyTransform g z‖ < 1 := by
-  -- the conjugate exponent `q < 2`
-  obtain ⟨q, _, hq⟩ := ENNReal.exists_holderConjugate_lt_two (p := p) (by exact_mod_cast hp)
-  -- a radius `r ≤ R` on which `K ‖D‖_{Lᵖ} ≤ 1/4`, where `K` bounds `T` on discs of radius `≤ R`
-  set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal
-  have hK : 0 ≤ K := by positivity
-  obtain ⟨δ, hδ, hδD⟩ := hD.eLpNorm_indicator_le (by exact_mod_cast (one_lt_two.trans hp).le)
-    ENNReal.coe_ne_top (ENNReal.ofReal_pos.2 (by positivity : (0 : ℝ) < 4⁻¹ / (K + 1)))
-  have hlim : Tendsto (fun r : ℝ ↦ volume (closedBall z₀ r)) (𝓝 0) (𝓝 0) := by
-    simp only [Complex.volume_closedBall]
-    have h1 : Tendsto (fun r : ℝ ↦ ENNReal.ofReal r ^ 2) (𝓝 0) (𝓝 0) := by
-      simpa [Function.comp_def] using
-        ((ENNReal.continuous_pow 2).comp ENNReal.continuous_ofReal).tendsto 0
-    simpa using ENNReal.Tendsto.mul_const h1 (Or.inr ENNReal.coe_ne_top)
-  obtain ⟨r, ⟨hrδ, hrR⟩, hr⟩ := (((hlim.eventually (ge_mem_nhds hδ)).and
-    (eventually_le_nhds hR)).filter_mono nhdsWithin_le_nhds).and
-      (self_mem_nhdsWithin (s := Ioi (0 : ℝ)) (a := 0)) |>.exists
-  have hsub : closedBall z₀ r ⊆ closedBall z₀ R := closedBall_subset_closedBall hrR
-  have hrD := hδD (closedBall z₀ r) measurableSet_closedBall.nullMeasurableSet hrδ
-  rw [indicator_indicator, inter_eq_left.2 hsub] at hrD
-  have hDr : MemLp ((closedBall z₀ r).indicator D) p volume := by
-    simpa [indicator_indicator, inter_eq_left.2 hsub] using
-      MemLp.indicator (s := closedBall z₀ r) measurableSet_closedBall.nullMeasurableSet hD
-  have hDK : K * (eLpNorm ((closedBall z₀ r).indicator D) p volume).toReal ≤ 4⁻¹ :=
-    calc K * (eLpNorm ((closedBall z₀ r).indicator D) p volume).toReal
-        ≤ (K + 1) * (4⁻¹ / (K + 1)) := by
-          gcongr
-          · linarith
-          · exact ENNReal.toReal_le_of_le_ofReal (by positivity) hrD
-      _ = 4⁻¹ := by field_simp
-  exact ⟨r, hr, hrR, exists_cauchyTransform_eq_of_memLp hq hK
-    (fun f hf hs w hw ↦ norm_cauchyTransform_le hq hf (hs.trans hsub) (hsub hw)) hDr hDK⟩
-
-/-- **The frame step.** Let `Ψ` be a continuous family of invertible complex-linear maps on an
-open set `B`, with weak derivative `DΨ ∈ Lᵖ_loc`, `p > 2`, satisfying `∂ₛΨ + i ∂ₜΨ = -D Ψ` for a
-field `D` with `D ξ = C ξ`. If `ξ` solves `∂ₛξ + i ∂ₜξ + C ξ = 0` weakly on `B`, then `ξ = Ψ σ`
-with `σ` holomorphic on `B`: by the frame reduction, `σ = Ψ⁻¹ ξ` solves the equation with
-coefficient `Ψ⁻¹((∂ₛΨ + i ∂ₜΨ) + C Ψ)`, which vanishes along `σ`. -/
-private theorem exists_differentiableOn_eqOn_clm_apply [FiniteDimensional ℂ V] {p : ℝ≥0}
-    (hp : 2 < p) {B : Opens ℂ} {Ψ D : ℂ → V →L[ℂ] V} {DΨ : ℂ → ℂ →L[ℝ] V →L[ℂ] V}
-    {C : ℂ → V →L[ℝ] V} {ξ : ℂ → V} (hΨc : ContinuousOn Ψ B) (hΨu : ∀ z ∈ B, IsUnit (Ψ z))
-    (hΨ : HasWeakFDerivOn volume B Ψ DΨ) (hDΨ : MemLpLoc p B DΨ)
-    (hΨD : ∀ z ∈ B, DΨ z 1 + I • DΨ z I = -(D z).comp (Ψ z))
-    (hDξ : ∀ z ∈ B, D z (ξ z) = C z (ξ z))
-    (h : IsWeakLinearCauchyRiemannOn p B (fun _ ↦ I • ContinuousLinearMap.id ℝ V) C ξ) :
-    ∃ σ : ℂ → V, DifferentiableOn ℂ σ B ∧ EqOn ξ (fun z ↦ Ψ z (σ z)) B := by
-  have := FiniteDimensional.completeSpace ℂ V
-  -- the frame `Φ = Ψ`, read as a family of real-linear maps
-  let L : (V →L[ℂ] V) →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℝ
-  have hΦu (z : ℂ) (hz : z ∈ (B : Set ℂ)) : IsUnit (L (Ψ z)) :=
-    ContinuousLinearMap.isUnit_restrictScalars (hΨu z hz)
-  have hDΦ : MemLpLoc p B fun w ↦ L.comp (DΨ w) := hDΨ.continuousOn_clm_comp continuousOn_const
-  have hΦc : ContinuousOn (fun z ↦ L (Ψ z)) B := L.continuous.comp_continuousOn hΨc
-  have hη := (isWeakLinearCauchyRiemannOn_iff_frame hp hΦc (hΨ.clm_comp L) hDΦ hΦu
-    fun z _ ↦ by ext v; simp [L]).1 h
-  set σ := fun z ↦ Ring.inverse (L (Ψ z)) (ξ z)
-  have hinv (z : ℂ) (hz : z ∈ (B : Set ℂ)) : Ψ z (σ z) = ξ z := by
-    simpa [L, σ] using congr($(Ring.mul_inverse_cancel _ (hΦu z hz)) (ξ z))
-  -- the new coefficient vanishes along `σ`, since `(∂ₛΨ + i ∂ₜΨ) σ = -D ξ = -C ξ`
-  have hkey (z : ℂ) (hz : z ∈ (B : Set ℂ)) : frameCoeff (fun _ ↦ I • ContinuousLinearMap.id ℝ V)
-      C (fun z ↦ L (Ψ z)) (fun w ↦ L.comp (DΨ w)) z (σ z) = 0 := by
-    have h := congr($(hΨD z hz) (σ z))
-    simp only [add_apply, smul_apply, neg_apply, ContinuousLinearMap.comp_apply, hinv z hz,
-      hDξ z hz] at h
-    rw [frameCoeff_apply]
-    convert map_zero (Ring.inverse (L (Ψ z))) using 2
-    simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrict_scalarsL',
-      ContinuousLinearMap.coe_restrictScalars', smul_apply, ContinuousLinearMap.id_apply]
-    rw [hinv z hz, h, neg_add_cancel]
-  -- so `σ` is weakly holomorphic, hence holomorphic
-  obtain ⟨hσc, -, Dσ, hDσ, -, hae⟩ := isWeakLinearCauchyRiemannOn_iff_of_isOpen.1 hη
-  have hσ0 : HasWeakConjWirtingerDerivOn volume B σ 0 :=
-    hDσ.hasWeakConjWirtingerDerivOn.congr_ae_deriv <| by
-      filter_upwards [hae, ae_restrict_mem B.isOpen.measurableSet] with z hz hzB
-      rw [hkey z hzB, add_zero] at hz
-      simp only [Pi.zero_apply]
-      exact smul_eq_zero_of_right _ (by simpa using hz)
-  exact ⟨σ, hσ0.differentiableOn hσc, fun z hz ↦ (hinv z hz).symm⟩
-
-/-- **The similarity principle for weak solutions**, for the standard complex structure. Let
-`p > 2`, let `C` be a locally `Lᵖ` field of real-linear endomorphisms of a finite-dimensional
-complex normed space `V` on an open set `Ω`, and let `ξ` be a weak solution of
-`∂ₛξ + i ∂ₜξ + C ξ = 0` on `Ω`. Then every point `z₀ ∈ Ω` is the centre of a disc in `Ω` on which
-`ξ = Φ σ`, with `Φ` a continuous `W^{1,p}_loc` family of invertible complex-linear maps and `σ`
-holomorphic. -/
-theorem exists_similarity_of_isWeakLinearCauchyRiemannOn [FiniteDimensional ℂ V] {p : ℝ≥0}
-    (hp : 2 < p) {Ω : Opens ℂ} {C : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
-    (h : IsWeakLinearCauchyRiemannOn p Ω (fun _ ↦ I • ContinuousLinearMap.id ℝ V) C ξ)
-    (hC : MemLpLoc p Ω C) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) :
-    ∃ r > 0, ball z₀ r ⊆ Ω ∧ ∃ (Φ : ℂ → V →L[ℂ] V) (σ : ℂ → V),
-      ContinuousOn Φ (ball z₀ r) ∧ MemWkpLoc p (ball z₀ r) 1 Φ ∧
-      (∀ z ∈ ball z₀ r, IsUnit (Φ z)) ∧ DifferentiableOn ℂ σ (ball z₀ r) ∧
-      EqOn ξ (fun z ↦ Φ z (σ z)) (ball z₀ r) := by
-  have := FiniteDimensional.completeSpace ℂ V
-  have hp1 : (1 : ℝ≥0∞) < p := by exact_mod_cast one_lt_two.trans hp
-  -- absorb the real-linear coefficient into a complex-linear one, `Lᵖ` on a closed disc in `Ω`
-  obtain ⟨KD, -, habs⟩ := exists_complexLinear_apply_eq ℂ V
-  obtain ⟨D, hDξ, hDC, hDm⟩ := habs ξ C
-  obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
-  have hR₀Ω : closedBall z₀ (R / 2) ⊆ Ω := (closedBall_subset_ball (half_lt_self hR)).trans hRΩ
-  have hCR : MemLp C p (volume.restrict (closedBall z₀ (R / 2))) :=
-    memLpLoc_iff.1 hC _ hR₀Ω (isCompact_closedBall _ _)
-  have hDR : MemLp D p (volume.restrict (closedBall z₀ (R / 2))) :=
-    hCR.of_le_mul (hDm _ hCR.aestronglyMeasurable
-      ((h.continuousOn.mono hR₀Ω).aestronglyMeasurable (μ := volume) measurableSet_closedBall))
-      (Eventually.of_forall hDC)
-  -- solve the Cauchy integral equation `Ψ = 1 - T (½ D Ψ)` on a small closed disc
-  obtain ⟨r, hr, hrR, g, hg, hgs, hTg, hgeq, hTg1⟩ :=
-    exists_cauchyTransform_eq_of_memLp_closedBall hp (half_pos hR)
-      ((memLp_indicator_iff_restrict measurableSet_closedBall.nullMeasurableSet).2 hDR)
-  have hball : ball z₀ r ⊆ Ω :=
-    ball_subset_closedBall.trans ((closedBall_subset_closedBall hrR).trans hR₀Ω)
-  let B : Opens ℂ := ⟨ball z₀ r, isOpen_ball⟩
-  set Ψ : ℂ → V →L[ℂ] V := fun z ↦ 1 - cauchyTransform g z with hΨ
-  have hunit (z : ℂ) (hz : z ∈ ball z₀ r) : IsUnit (Ψ z) := by
-    by_contra hn
-    refine nonunits.subset_compl_ball hn ?_
-    rw [mem_ball_iff_norm, hΨ, sub_sub_cancel_left, norm_neg]
-    exact hTg1 z (ball_subset_closedBall hz)
-  -- its weak derivative `-DT` has `∂ₛΨ + i ∂ₜΨ = -2 g = -D Ψ`
-  obtain ⟨DT, hDTp, hDT, hDTI⟩ :=
-    exists_hasWeakFDerivOn_cauchyTransform_of_memLp hp1 ENNReal.coe_ne_top hg hgs
-  have h1 : HasWeakFDerivOn volume B (fun _ ↦ (1 : V →L[ℂ] V)) 0 :=
-    hasWeakFDerivOn_iff.2 fun v ↦ by simpa using hasWeakLineDerivOn_const (v := v) _
-  have hΨw : HasWeakFDerivOn volume B Ψ fun w ↦ -DT w :=
-    (h1.sub (hDT B)).congr_ae_deriv (Eventually.of_forall fun w ↦ by simp)
-  have hΨc : ContinuousOn Ψ B := (continuous_const.sub hTg).continuousOn
-  have hDΨ : MemLpLoc p B fun w ↦ -DT w := (hDTp.neg.restrict _).memLpLoc
-  obtain ⟨σ, hσ, hξσ⟩ := exists_differentiableOn_eqOn_clm_apply hp hΨc hunit hΨw hDΨ
-    (fun z hz ↦ by
-      rw [neg_apply, neg_apply, smul_neg, ← neg_add, hDTI, hgeq z (ball_subset_closedBall hz),
-        smul_smul, mul_inv_cancel₀ (two_ne_zero' ℂ), one_smul])
-    (fun z _ ↦ hDξ z) (h.mono hball)
-  exact ⟨r, hr, hball, Ψ, σ, hΨc,
-    memWkpLoc_succ_iff_of_isOpen.2 ⟨hΨc.memLpLoc, _, hΨw, memWkpLoc_zero_iff.2 hDΨ⟩, hunit, hσ,
-    hξσ⟩
-
-/-! ### A variable complex structure -/
-
-variable [FiniteDimensional ℂ V] {p : ℝ≥0} {Ω : Opens ℂ} {J C : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V] {p : ℝ≥0}
+  {Ω : Opens ℂ} {J C : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
 
 /-- **The similarity principle for weak solutions** (Carleman; McDuff–Salamon, Theorem 2.3.5).
 Let `p > 2`, let `J` be a continuous field of complex structures, `J² = -1`, on a
@@ -432,7 +110,8 @@ theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_of_complexStructure (hp
       hJc₁).2 (hC.mono_set hr₁Ω)
   -- and factor the solution of the reduced equation
   obtain ⟨r, hr, hrB, Ψ, σ, hΨc, hΨw, hΨu, hσ, hησ⟩ :=
-    exists_similarity_of_isWeakLinearCauchyRiemannOn hp hη hC₁ (mem_ball_self hr₁)
+    exists_similarity_of_hasWeakConjWirtingerDerivOn_of_ne_top (by exact_mod_cast hp)
+      ENNReal.coe_ne_top hC₁ hη.continuousOn hη.hasWeakConjWirtingerDerivOn (mem_ball_self hr₁)
   have hrr₁ : ball z₀ r ⊆ ball z₀ r₁ := hrB
   let L : (V →L[ℂ] V) →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℝ
   refine ⟨r, hr, hrr₁.trans hr₁Ω, fun z ↦ S z ∘L L (Ψ z), σ, ?_, ?_, fun z hz ↦ ⟨?_, ?_⟩, hσ,

@@ -20,14 +20,14 @@ not just almost everywhere. On an output disc its norm is bounded by the input `
 times the `L^q` norm of the reciprocal kernel truncated at the sum of the input and output
 radii, where `q` is conjugate to `p`. The latter norm is finite because `q < 2`.
 These bounds are useful for Cauchy integral equations with rough zeroth-order coefficients.
-The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`;
-every `p > 2` has such a conjugate `q < 2` (`ENNReal.exists_holderConjugate_lt_two`).
+The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`.
 For bounded data the transform is moreover continuous on the whole plane
 (`TauCeti.continuous_cauchyTransform_of_norm_le`), since moving the pole moves the reciprocal
-kernel continuously in `L¹` on the support disc. So is the transform of supercritical data
-(`TauCeti.continuous_cauchyTransform_of_memLp`): the pointwise bound makes it a locally uniform
-limit of the transforms of the bounded truncations of the data. On supercritical data supported in
-discs the transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`).
+kernel continuously in `L¹` on the support disc. On supercritical data supported in discs the
+transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`) and continuous
+(`TauCeti.continuous_cauchyTransform_of_memLp`): cutting off the large values of the data leaves
+bounded data, and changes the transform uniformly on each disc by at most the pointwise bound
+applied to the `Lᵖ` norm of the removed part.
 
 The normalization is `T f = π⁻¹ ∫ (w - z)⁻¹ • f z`, inverting
 `bar∂ = (∂ₛ + i ∂ₜ)/2`.
@@ -158,49 +158,59 @@ theorem continuous_cauchyTransform_of_norm_le (hf : AEStronglyMeasurable f volum
   simp only [mul_zero] at hlim
   exact squeeze_zero (fun _ ↦ norm_nonneg _) (fun w' ↦ hbound w w') hlim
 
-
-/-- **Continuity of the Cauchy transform of supercritical data.** For `p` whose conjugate exponent
-is `q < 2`, the Cauchy transform of `f ∈ Lᵖ` supported in a closed disc is continuous on the whole
-plane. Removing the part of `f` where `‖f‖ ≥ M` leaves bounded data, whose transform is continuous,
-and by the pointwise bound changes the transform uniformly on each disc by at most a constant
-times the `Lᵖ` norm of the removed part, which is small for large `M`. -/
+/-- **Continuity of the Cauchy transform of supercritical data.** The Cauchy transform of `Lᵖ`
+data supported in a closed disc, with `p` conjugate to some `q < 2`, so `p > 2`, is continuous on
+the whole plane. The data are bounded data plus a part of small `Lᵖ` norm, whose transform is
+uniformly small on every disc by `TauCeti.norm_cauchyTransform_le`. -/
 theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
     (hf : MemLp f p volume) (hs : support f ⊆ closedBall c r) :
     Continuous (cauchyTransform f) := by
-  refine continuous_of_locally_uniform_approx_of_continuousAt fun w u hu ↦ ?_
-  obtain ⟨ε, hε, hεu⟩ := mem_uniformity_dist.1 hu
-  set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (r + (dist w c + 1))) q volume).toReal
+  refine continuous_iff_continuousAt.2 fun w ↦
+    continuousAt_of_locally_uniform_approx_of_continuousAt fun u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.1 hu
+  set R := dist w c + 1
+  set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (r + R)) q volume).toReal
   have hK : 0 ≤ K := by positivity
+  -- the large values of `f` have small `Lᵖ` norm
   obtain ⟨M, hM⟩ := hf.eLpNorm_indicator_norm_ge_le
-    (ENNReal.ofReal_pos.2 (div_pos hε (by positivity : (0 : ℝ) < 2 * (K + 1))))
-  -- the large part `g` of `f` and the bounded rest `f - g`
-  set g := {x | M ≤ ‖f x‖₊}.indicator f
-  have hgm : AEStronglyMeasurable g volume := hf.aestronglyMeasurable.indicator₀
+    (ENNReal.ofReal_pos.2 (show 0 < ε / 2 / (K + 1) by positivity))
+  set fb := {x | M ≤ ‖f x‖₊}.indicator f
+  have hfbm : AEStronglyMeasurable fb volume := hf.aestronglyMeasurable.indicator₀
     (nullMeasurableSet_le aemeasurable_const
-      hf.aestronglyMeasurable.nnNorm.aemeasurable.coe_nnreal_real)
-  have hg : MemLp g p volume :=
-    hf.of_le hgm (Eventually.of_forall fun x ↦ norm_indicator_le_norm_self _ _)
-  have hgs : support g ⊆ closedBall c r := fun x hx ↦ hs fun h ↦ hx (by simp [g, h])
-  have hfg : ∀ x, ‖(f - g) x‖ ≤ max M 0 := fun x ↦ by
-    by_cases hx : x ∈ {x | M ≤ ‖f x‖₊}
-    · rw [Pi.sub_apply, show g x = f x from indicator_of_mem hx _, sub_self, norm_zero]
+      (measurable_subtype_coe.comp_aemeasurable hf.aestronglyMeasurable.nnNorm.aemeasurable))
+  have hfb : MemLp fb p volume :=
+    hf.of_le hfbm (ae_of_all _ fun x ↦ norm_indicator_le_norm_self f x)
+  have hfbs : support fb ⊆ closedBall c r := by
+    rw [support_indicator]
+    exact inter_subset_right.trans hs
+  -- the rest is bounded, so its transform is continuous
+  have hfg : MemLp (f - fb) p volume := hf.sub hfb
+  have hfgs : support (f - fb) ⊆ closedBall c r :=
+    (support_sub _ _).trans (union_subset hs hfbs)
+  have hbd (x : ℂ) : ‖(f - fb) x‖ ≤ max M 0 := by
+    simp only [fb, Pi.sub_apply]
+    by_cases hx : M ≤ ‖f x‖₊
+    · rw [indicator_of_mem (show x ∈ {x | M ≤ ‖f x‖₊} from hx), sub_self, norm_zero]
       exact le_max_right _ _
-    · rw [Pi.sub_apply, show g x = 0 from indicator_of_notMem hx _, sub_zero]
+    · rw [indicator_of_notMem (show x ∉ {x | M ≤ ‖f x‖₊} from hx), sub_zero]
       exact (le_of_lt (not_le.1 hx)).trans (le_max_left _ _)
-  have hcont : Continuous (cauchyTransform (f - g)) :=
-    continuous_cauchyTransform_of_norm_le (hf.aestronglyMeasurable.sub hgm)
-      ((support_sub _ _).trans (union_subset hs hgs)) (Eventually.of_forall hfg)
-  refine ⟨ball w 1, ball_mem_nhds _ one_pos, _, hcont.continuousAt, fun y hy ↦ hεu ?_⟩
-  have hy' : y ∈ closedBall c (dist w c + 1) := by
-    rw [mem_closedBall]
-    linarith [dist_triangle y w c, mem_ball.1 hy]
-  rw [cauchyTransform_sub_of_memLp hq hf hs hg hgs, Pi.sub_apply, dist_eq_norm, sub_sub_cancel]
-  have hgε : (eLpNorm g p volume).toReal ≤ ε / (2 * (K + 1)) :=
+  refine ⟨closedBall w 1, closedBall_mem_nhds w one_pos, cauchyTransform (f - fb),
+    (continuous_cauchyTransform_of_norm_le hfg.aestronglyMeasurable hfgs
+      (ae_of_all _ hbd)).continuousAt, fun y hy ↦ hεu ?_⟩
+  -- on the disc about `w`, the two transforms differ by the transform of the large values
+  have hyR : y ∈ closedBall c R := by
+    rw [mem_closedBall] at hy ⊢
+    linarith [dist_triangle y w c]
+  have hdiff : cauchyTransform f y - cauchyTransform (f - fb) y = cauchyTransform fb y := by
+    rw [cauchyTransform_sub_of_memLp hq hf hs hfb hfbs, Pi.sub_apply, sub_sub_cancel]
+  have hfbε : (eLpNorm fb p volume).toReal ≤ ε / 2 / (K + 1) :=
     ENNReal.toReal_le_of_le_ofReal (by positivity) hM
-  calc ‖cauchyTransform g y‖ ≤ K * (eLpNorm g p volume).toReal :=
-        norm_cauchyTransform_le hq hg hgs hy'
-    _ ≤ (K + 1) * (ε / (2 * (K + 1))) := by gcongr; linarith
-    _ = ε / 2 := by field_simp
-    _ < ε := half_lt_self hε
+  rw [dist_eq_norm, hdiff]
+  calc ‖cauchyTransform fb y‖ ≤ K * (eLpNorm fb p volume).toReal :=
+        norm_cauchyTransform_le hq hfb hfbs hyR
+    _ ≤ K * (ε / 2 / (K + 1)) := by gcongr
+    _ < ε := by
+        rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+        nlinarith
 
 end TauCeti

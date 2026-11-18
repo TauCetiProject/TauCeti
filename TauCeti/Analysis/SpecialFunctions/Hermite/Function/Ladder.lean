@@ -115,15 +115,12 @@ theorem mul_hermiteFunction (n : ℕ) (x : ℝ) :
       Real.sqrt_zero, zero_mul, add_zero]
     linear_combination (-(x * hermiteFunction 0 x)) * sqrt_half_mul_sqrt_two
   · -- successor case: reduce to the recurrence `√2·x·Hₘ₊₁ = Hₘ₊₂ + (m+1)·Hₘ`
-    -- the `aeval (x√2)` image of the three-term recurrence `Polynomial.hermite_add_two`
+    -- the evaluated three-term recurrence `Polynomial.aeval_hermite_add_two`
     -- (`H_{m+2} = X·H_{m+1} - (m+1)·Hₘ`), rearranged to isolate the `(x√2)·H_{m+1}` term
     have hrec : (x * Real.sqrt 2) * aeval (x * Real.sqrt 2) (hermite (m + 1)) =
         aeval (x * Real.sqrt 2) (hermite (m + 1 + 1))
           + ((m : ℝ) + 1) * aeval (x * Real.sqrt 2) (hermite m) := by
-      have h := congrArg (aeval (x * Real.sqrt 2)) (hermite_add_two m)
-      rw [map_sub, map_mul, map_nsmul, aeval_X, nsmul_eq_mul] at h
-      push_cast at h
-      linear_combination -h
+      linear_combination -aeval_hermite_add_two (x * Real.sqrt 2) m
     simp only [Nat.add_sub_cancel]
     rw [hermiteFunction_def, hermiteFunction_def, hermiteFunction_def,
       Real.sqrt_div (by positivity), Real.sqrt_div (by positivity)]
