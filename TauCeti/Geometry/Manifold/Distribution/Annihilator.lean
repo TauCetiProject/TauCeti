@@ -156,8 +156,7 @@ theorem IsContMDiffDistribution.exists_local_annihilator_apply_ne_zero
     rintro _ ⟨i, rfl⟩
     have hinv : (P ∘L A y).IsInvertible := (hUc y hy).1
     have hzero : c y ∘L A y = 0 := by
-      simp [c, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc,
-        ContinuousLinearMap.leftInverseAlong_comp_self hinv]
+      simp [c, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc, hinv]
     have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) (hUS hy).2
       (Pi.single i (1 : 𝕜))
     have heval : α y (X i y) = c y (e ⟨y, X i y⟩).2 :=

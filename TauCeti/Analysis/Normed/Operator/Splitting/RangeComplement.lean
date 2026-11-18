@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Topology.Algebra.Module.Complement
 public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.LinearAlgebra.LinearMap.Comp
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 
 /-!
 # Complements of the range cut out by a kernel
@@ -45,19 +45,19 @@ nor `f` depends on the auxiliary map `P` once its kernel `W` is fixed. For a fam
 of the family (`ContinuousAt.leftInverseAlong`, `ContinuousAt.id_sub_comp_leftInverseAlong`,
 `ContDiffAt.leftInverseAlong`, `ContDiffAt.id_sub_comp_leftInverseAlong`).
 
+The definition of `ContinuousLinearMap.leftInverseAlong` and its algebraic, complement and
+projection lemmas need no norm and live in
+`TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse`. This file adds the Banach-space
+results and the dependence on a parameter.
+
 ## Main declarations
 
-* `ContinuousLinearMap.leftInverseAlong L P`: the operator `(P ∘ L)⁻¹ ∘ P`.
 * `ContinuousLinearMap.isInvertible_comp_iff`: `P ∘ L` is invertible if and only if `L` is
   injective, `P` is onto, and `ker P` is complementary to the range of `L`.
-* `ContinuousLinearMap.isTopCompl_range_ker_of_isInvertible_comp`: if `P ∘ L` is invertible,
-  `ker P` is a topological complement of the range of `L`.
-* `ContinuousLinearMap.eq_leftInverseAlong`, `ContinuousLinearMap.leftInverseAlong_congr`: the
-  left inverse of `L` vanishing on `ker P` is unique, and depends on `P` only through `ker P`.
-* `ContinuousLinearMap.id_sub_comp_leftInverseAlong_eq_projectionL`: `1 - L (P ∘ L)⁻¹ P` is the
-  projection onto `ker P` along the range of `L`.
-* `ContinuousLinearMap.apply_add_mem_ker_iff`: `L f + S ∈ ker P` exactly for
-  `f = -(P ∘ L)⁻¹ P S`.
+* `ContinuousLinearMap.isInvertible_projectionOntoL_comp`: every topological complement of the
+  range of an injective `L` is the kernel of some `P` with `P ∘ L` invertible.
+* `ContinuousLinearMap.isOpen_setOf_isInvertible_comp`: invertibility of `P ∘ L x` is an open
+  condition on the parameter.
 * `ContinuousAt.leftInverseAlong`, `ContinuousAt.id_sub_comp_leftInverseAlong`,
   `ContDiffAt.leftInverseAlong`, `ContDiffAt.id_sub_comp_leftInverseAlong`: regularity in a
   parameter.
@@ -74,153 +74,6 @@ public section
 open Function Topology
 
 namespace ContinuousLinearMap
-
-section Ring
-
-variable {R E F Y : Type*} [Ring R]
-  [AddCommGroup E] [TopologicalSpace E] [Module R E]
-  [AddCommGroup F] [TopologicalSpace F] [Module R F]
-  [AddCommGroup Y] [TopologicalSpace Y] [Module R Y]
-  {L : E →L[R] F} {P : F →L[R] Y}
-
-/-- The left inverse `(P ∘ L)⁻¹ ∘ P` of `L` along the kernel of `P`. It is a left inverse of
-`L` with kernel `ker P` whenever `P ∘ L` is invertible
-(`ContinuousLinearMap.leftInverseAlong_comp_self`,
-`ContinuousLinearMap.ker_leftInverseAlong`), and otherwise a junk value built from the total
-inverse `ContinuousLinearMap.inverse`. -/
-noncomputable def leftInverseAlong (L : E →L[R] F) (P : F →L[R] Y) : F →L[R] E :=
-  (P ∘L L).inverse ∘L P
-
-/-- The defining formula of the left inverse along `ker P`. -/
-theorem leftInverseAlong_def (L : E →L[R] F) (P : F →L[R] Y) :
-    leftInverseAlong L P = (P ∘L L).inverse ∘L P :=
-  (rfl)
-
-/-- The value of the left inverse along `ker P`. -/
-theorem leftInverseAlong_apply (L : E →L[R] F) (P : F →L[R] Y) (f : F) :
-    leftInverseAlong L P f = (P ∘L L).inverse (P f) :=
-  (rfl)
-
-/-- `(P ∘ L)⁻¹ P` is a left inverse of `L`. -/
-theorem leftInverseAlong_comp_self (h : (P ∘L L).IsInvertible) :
-    leftInverseAlong L P ∘L L = .id R E := by
-  rw [leftInverseAlong_def, comp_assoc, h.inverse_comp_self]
-
-/-- `(P ∘ L)⁻¹ P` is a left inverse of `L`. -/
-@[simp]
-theorem leftInverseAlong_apply_self (h : (P ∘L L).IsInvertible) (x : E) :
-    leftInverseAlong L P (L x) = x := by
-  simpa [leftInverseAlong_apply] using h.inverse_apply_self x
-
-/-- The left inverse along `ker P` does not change the value of `P` after applying `L`. -/
-@[simp]
-theorem apply_apply_leftInverseAlong (h : (P ∘L L).IsInvertible) (f : F) :
-    P (L (leftInverseAlong L P f)) = P f := by
-  simpa [leftInverseAlong_apply] using h.self_apply_inverse (P f)
-
-/-- The kernel of the left inverse along `ker P` is exactly `ker P`. -/
-@[simp]
-theorem ker_leftInverseAlong (h : (P ∘L L).IsInvertible) :
-    (leftInverseAlong L P).ker = P.ker := by
-  ext f
-  simp only [LinearMap.mem_ker, coe_coe, leftInverseAlong_apply]
-  exact ⟨fun hf ↦ by simpa [hf] using (h.self_apply_inverse (P f)).symm,
-    fun hf ↦ by rw [hf, map_zero]⟩
-
-/-- `f - L ((P ∘ L)⁻¹ P f)` lies in the kernel of `P`. -/
-theorem sub_apply_leftInverseAlong_mem_ker (h : (P ∘L L).IsInvertible) (f : F) :
-    f - L (leftInverseAlong L P f) ∈ P.ker := by
-  simp [LinearMap.mem_ker, h]
-
-/-- **Uniqueness of the left inverse along a complement.** A left inverse of `L` that vanishes on
-`ker P` is `(P ∘ L)⁻¹ P`. -/
-theorem eq_leftInverseAlong (h : (P ∘L L).IsInvertible) {K : F →L[R] E}
-    (hKL : K ∘L L = .id R E) (hK : P.ker ≤ K.ker) : K = leftInverseAlong L P := by
-  ext f
-  have hw : K (f - L (leftInverseAlong L P f)) = 0 := hK (sub_apply_leftInverseAlong_mem_ker h f)
-  rw [map_sub, sub_eq_zero, ← comp_apply K L, hKL, id_apply] at hw
-  exact hw
-
-/-- The left inverse along `ker P` depends on `P` only through its kernel. -/
-theorem leftInverseAlong_congr {Y' : Type*} [AddCommGroup Y'] [TopologicalSpace Y'] [Module R Y']
-    {P' : F →L[R] Y'} (h : (P ∘L L).IsInvertible) (h' : (P' ∘L L).IsInvertible)
-    (hker : P.ker = P'.ker) : leftInverseAlong L P = leftInverseAlong L P' :=
-  eq_leftInverseAlong h' (leftInverseAlong_comp_self h) (by rw [← hker, ker_leftInverseAlong h])
-
-/-- If `P ∘ L` is invertible, the kernel of `P` is a topological complement of the range of
-`L`. -/
-theorem isTopCompl_range_ker_of_isInvertible_comp (h : (P ∘L L).IsInvertible) :
-    L.range.IsTopCompl P.ker := by
-  have hrange : (L ∘L (P ∘L L).inverse).range = L.range := by
-    simpa using LinearMap.range_comp_of_range_eq_top (L : E →ₗ[R] F)
-      (LinearMap.range_eq_top.mpr h.inverse.surjective)
-  have hleft : LeftInverse P (L ∘L (P ∘L L).inverse) := fun y ↦ by
-    simpa using h.self_apply_inverse y
-  exact hrange ▸ isTopCompl_range_ker_of_leftInverse _ _ hleft
-
-/-- As a linear map, the left inverse along `ker P` is Mathlib's left inverse
-`LinearMap.linearProjOfIsCompl` of the injection `L` along the complement `ker P` of its range.
-`ContinuousLinearMap.leftInverseAlong` realizes it continuously by the explicit formula
-`(P ∘ L)⁻¹ P`. -/
-theorem toLinearMap_leftInverseAlong (h : (P ∘L L).IsInvertible) :
-    (leftInverseAlong L P : F →ₗ[R] E) =
-      LinearMap.linearProjOfIsCompl P.ker (L : E →ₗ[R] F)
-        (Injective.of_comp (f := P) h.injective)
-        (isTopCompl_range_ker_of_isInvertible_comp h).isCompl := by
-  ext f
-  have hf := sub_apply_leftInverseAlong_mem_ker h f
-  conv_rhs => rw [← sub_add_cancel f (L (leftInverseAlong L P f))]
-  rw [map_add, LinearMap.linearProjOfIsCompl_apply_right' _ _ _ _ _ hf, zero_add]
-  exact (LinearMap.linearProjOfIsCompl_apply_left _ _ _ _ (leftInverseAlong L P f)).symm
-
-/-- `L (P ∘ L)⁻¹ P` is the projection onto the range of `L` along `ker P`. -/
-theorem comp_leftInverseAlong_eq_projectionL (h : (P ∘L L).IsInvertible) :
-    L ∘L leftInverseAlong L P =
-      L.range.projectionL P.ker (isTopCompl_range_ker_of_isInvertible_comp h) := by
-  have hc := isTopCompl_range_ker_of_isInvertible_comp h
-  ext f
-  have hrange : L.range.projectionL P.ker hc (L (leftInverseAlong L P f)) =
-      L (leftInverseAlong L P f) :=
-    (Submodule.projectionL_eq_self_iff hc _).mpr ⟨leftInverseAlong L P f, rfl⟩
-  have hker : L.range.projectionL P.ker hc (f - L (leftInverseAlong L P f)) = 0 :=
-    Submodule.projectionL_apply_eq_zero_of_mem_right hc (sub_apply_leftInverseAlong_mem_ker h f)
-  rw [map_sub, hrange, sub_eq_zero] at hker
-  exact hker.symm
-
-/-- `L f + S` lies in the kernel of `P` exactly for the correction `f = -(P ∘ L)⁻¹ P S`. In
-particular this correction depends on `P` only through its kernel. -/
-theorem apply_add_mem_ker_iff (h : (P ∘L L).IsInvertible) {S : F} {x : E} :
-    L x + S ∈ P.ker ↔ x = -leftInverseAlong L P S := by
-  constructor
-  · intro hx
-    have hK : leftInverseAlong L P (L x + S) = 0 := by
-      have hx' : L x + S ∈ (leftInverseAlong L P).ker := by rwa [ker_leftInverseAlong h]
-      exact LinearMap.mem_ker.mp hx'
-    rw [map_add, leftInverseAlong_apply_self h] at hK
-    exact eq_neg_of_add_eq_zero_left hK
-  · rintro rfl
-    simp [LinearMap.mem_ker, h]
-
-variable [IsTopologicalAddGroup F]
-
-/-- **The projection along the range.** If `P ∘ L` is invertible, `1 - L (P ∘ L)⁻¹ P` is the
-projection onto `ker P` along the range of `L`. In particular it depends on `P` only through its
-kernel. -/
-theorem id_sub_comp_leftInverseAlong_eq_projectionL (h : (P ∘L L).IsInvertible) :
-    .id R F - L ∘L leftInverseAlong L P =
-      P.ker.projectionL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm := by
-  rw [comp_leftInverseAlong_eq_projectionL h, Submodule.projectionL_eq_id_sub_projectionL
-    (isTopCompl_range_ker_of_isInvertible_comp h)]
-
-/-- **The leading correction.** For `S ∈ F`, the vector `f = -(P ∘ L)⁻¹ P S` satisfies
-`L f + S = Π S`, where `Π` is the projection onto `ker P` along the range of `L`. -/
-theorem apply_neg_leftInverseAlong_add_eq_projectionL (h : (P ∘L L).IsInvertible) (S : F) :
-    L (-leftInverseAlong L P S) + S =
-      P.ker.projectionL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm S := by
-  rw [← id_sub_comp_leftInverseAlong_eq_projectionL h, map_neg, sub_apply, id_apply, comp_apply]
-  abel
-
-end Ring
 
 section Banach
 

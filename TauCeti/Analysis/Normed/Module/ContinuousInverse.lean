@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
-public import TauCeti.Analysis.Normed.Operator.Splitting.RangeComplement
+public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 
 /-!
 # Continuity of inverses and left inverses of operators
