@@ -1,6 +1,7 @@
 # Adapted from Mathlib's comment-label workflow:
 # https://github.com/leanprover-community/mathlib4/blob/master/.github/workflows/labels_from_comment.yml
-# Any contributor may add/remove an allowlisted label with a standalone LABEL/-LABEL line.
+# Any contributor may add/remove an allowlisted label with a standalone, unindented LABEL/-LABEL line.
+# self-tested is a persistent PR-author declaration; pushes do not invalidate it.
 # Only newly posted conversation comments count; editing/deleting a comment does not undo it.
 # The last matching line for each label wins. Labels and matching are case-sensitive.
 name: Labels from comments
@@ -13,17 +14,32 @@ permissions: {}
 
 jobs:
   label:
-    # Reject ordinary comments before allocating a runner. This broad, case-insensitive
-    # prefilter must include every label below; the parser still enforces exact commands.
+    # Reject ordinary comments before allocating a runner. A command is a whole line, so
+    # admit only comments with an allowlisted label (or -label) at the start of some line.
+    # Prepending a newline to the body turns "start of body" into "after a newline".
+    # contains() is case-insensitive, so this is a superset of the exact parser below.
+    # Automated AI review scoreboards are never commands, so they never allocate a runner.
     if: >-
-      github.repository == 'TauCetiProject/TauCeti' && (
-        contains(github.event.comment.body, 'dont-repair-in-queue') ||
-        contains(github.event.comment.body, 'hold') ||
-        contains(github.event.comment.body, 'keep') ||
-        contains(github.event.comment.body, 'mathlib-overlap') ||
-        contains(github.event.comment.body, 'documentation') ||
-        contains(github.event.comment.body, 'enhancement') ||
-        contains(github.event.comment.body, 'help wanted')
+      github.repository == 'TauCetiProject/TauCeti' &&
+      !startsWith(github.event.comment.body, '<!--tauceti-scoreboard-->') && (
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}dont-repair-in-queue', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-dont-repair-in-queue', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}hold', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-hold', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}keep', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-keep', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}mathlib-overlap', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-mathlib-overlap', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}documentation', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-documentation', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}enhancement', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-enhancement', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}help wanted', fromJSON('"\n"'))) ||
+        contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-help wanted', fromJSON('"\n"'))) ||
+        (github.event.issue.pull_request != null &&
+         github.event.comment.user.id == github.event.issue.user.id && (
+          contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}self-tested', fromJSON('"\n"'))) ||
+          contains(format('{0}{1}', fromJSON('"\n"'), github.event.comment.body), format('{0}-self-tested', fromJSON('"\n"')))))
       )
     # Keep comment commands responsive when GitHub-hosted runners are backlogged.
     runs-on: ubuntu-24.04
@@ -43,10 +59,12 @@ jobs:
               'documentation',
               'enhancement',
               'help wanted',
+              'self-tested',
             ]);
             const commands = new Map();
             for (const raw of context.payload.comment.body.split(/\r?\n/)) {
-              const line = raw.trim();
+              // Commands start at the line start, matching the job-level prefilter.
+              const line = raw.trimEnd();
               const remove = line.startsWith('-');
               const label = remove ? line.slice(1) : line;
               if (allowed.has(label)) commands.set(label, !remove);
@@ -76,7 +94,16 @@ jobs:
           github-token: ${{ steps.token.outputs.token }}
           script: |
             const { owner, repo, number: issue_number } = context.issue;
+            const comment = context.payload.comment;
             for (const [label, add] of JSON.parse(process.env.LABEL_COMMANDS)) {
+              if (label === 'self-tested') {
+                if (!context.payload.issue.pull_request) continue;
+                const { data: pull } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                if (comment.user.id !== pull.user.id) continue;
+                if (add && pull.state !== 'open') continue;
+                const { data: fresh } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+                if (fresh.user.id !== comment.user.id || (add && fresh.state !== 'open')) continue;
+              }
               if (add) {
                 await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [label] });
               } else {
