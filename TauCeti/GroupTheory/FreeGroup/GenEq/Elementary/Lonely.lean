@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.FreeGroup.GenEq.DeleteItems
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Surgery
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Tied
+import TauCeti.GroupTheory.FreeGroup.Basic
 import Mathlib.Data.Fin.VecNotation
 
 /-!
@@ -411,18 +412,9 @@ items in an `F(A)`-group. -/
 private def evalWord {n : ℕ} (v : Fin n → H) (w : List ((Fin n ⊕ A) × Bool)) : H :=
   FreeGroup.lift (Sum.elim v (ι ∘ FreeGroup.of)) (FreeGroup.mk w)
 
-private theorem mem_V_iff_evalWord {T : GenEq A} {v : Fin T.numItems → H} :
-    v ∈ V ι T.toSystem ↔ ∀ e ∈ T.equations, evalWord ι v e.1 = evalWord ι v e.2 :=
-  T.mem_V_toSystem_iff
-
 private theorem evalWord_append {n : ℕ} (v : Fin n → H) (w w' : List ((Fin n ⊕ A) × Bool)) :
     evalWord ι v (w ++ w') = evalWord ι v w * evalWord ι v w' := by
   rw [evalWord, evalWord, evalWord, ← FreeGroup.mul_mk, map_mul]
-
-private theorem evalWord_singleton {n : ℕ} (v : Fin n → H) (x : Fin n ⊕ A) (s : Bool) :
-    evalWord ι v [(x, s)] =
-      cond s (Sum.elim v (ι ∘ FreeGroup.of) x) (Sum.elim v (ι ∘ FreeGroup.of) x)⁻¹ := by
-  simp [evalWord, FreeGroup.lift_mk]
 
 private theorem evalWord_restoreWord {n : ℕ} (S : Finset (Fin n)) (v : Fin n → H)
     (w : List ((Fin Sᶜ.card ⊕ A) × Bool)) :
@@ -431,7 +423,7 @@ private theorem evalWord_restoreWord {n : ℕ} (S : Finset (Fin n)) (v : Fin n �
   | nil => rw [restoreWord_nil]; rfl
   | cons x w ih =>
     rw [← List.singleton_append, restoreWord_append, evalWord_append, evalWord_append, ih]
-    obtain ⟨_ | _, b⟩ := x <;> simp [evalWord_singleton]
+    obtain ⟨_ | _, b⟩ := x <;> simp [evalWord]
 
 variable (Ω) in
 /-- The value of the prefix `h[0, i]` at `v`. -/
@@ -455,7 +447,8 @@ private theorem evalWord_segment (v : Fin Ω.numItems → H) {i j : ℕ} (hij : 
 end-points. -/
 private theorem apply_eq_prefixVal (v : Fin Ω.numItems → H) (k : Fin Ω.numItems) :
     v k = (prefixVal Ω ι v k)⁻¹ * prefixVal Ω ι v (k + 1) := by
-  rw [← evalWord_segment_true ι v (Nat.le_succ _) k.is_lt, Ω.segment_succ, evalWord_singleton]
+  rw [← evalWord_segment_true ι v (Nat.le_succ _) k.is_lt, Ω.segment_succ, evalWord,
+    FreeGroup.lift_mk_singleton]
   rfl
 
 private theorem inv_mul_eq_inv_mul_iff_mul_inv_eq_mul_inv {x y z w : H} :
@@ -635,7 +628,7 @@ include h hΩ in
 private theorem tiedDefect_eq_of_mem_V {v : Fin Ω.numItems → H} (hv : v ∈ V ι Ω.toSystem)
     {p : Fin (Ω.numItems + 1)} (h₁ : Ω.left μ ≤ p) (h₂ : p ≤ Ω.right μ) :
     tiedDefect Ω μ ι v p = tiedDefect Ω μ ι v (Ω.left μ) := by
-  rw [mem_V_iff_evalWord ι] at hv
+  rw [mem_V_toSystem_iff] at hv
   rcases h₁.eq_or_lt with rfl | h₁
   · rfl
   rcases h₂.eq_or_lt with rfl | h₂
@@ -655,9 +648,10 @@ private theorem coeffEquation_eq_iff (v : Fin Ω.numItems → H)
         (b.2.1, if Ω.sign μ = Ω.sign (Ω.dual μ) then b.2.2 else !b.2.2))).1 =
       evalWord ι v (Ω.coeffEquation (Ω.dualItem μ b.1,
         (b.2.1, if Ω.sign μ = Ω.sign (Ω.dual μ) then b.2.2 else !b.2.2))).2 := by
-  simp only [coeffEquation_fst, coeffEquation_snd, evalWord_singleton, Bool.cond_true,
-    Sum.elim_inl, Sum.elim_inr]
-  rw [hI _ hk, tiedSegment_of_mem_constBases h hb hk, evalWord_singleton, Sum.elim_inl]
+  simp only [evalWord, coeffEquation_fst, coeffEquation_snd, FreeGroup.lift_mk_singleton,
+    Bool.cond_true, Sum.elim_inl, Sum.elim_inr]
+  rw [hI _ hk, tiedSegment_of_mem_constBases h hb hk, evalWord, FreeGroup.lift_mk_singleton,
+    Sum.elim_inl]
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ) <;> cases b.2.2 <;> simp [hs, inv_eq_iff_eq_inv]
 
 /-! ### The substitution `π` -/
@@ -672,7 +666,8 @@ private theorem wordMap_removeLonelyWord_apply (v : Fin (Ω.removeLonely μ h).n
 private theorem wordMap_removeLonelyWord_orderEmbOfFin (v : Fin (Ω.removeLonely μ h).numItems → H)
     (j : Fin (Ω.baseItems μ)ᶜ.card) :
     wordMap ι (Ω.removeLonelyWord μ h) v ((Ω.baseItems μ)ᶜ.orderEmbOfFin rfl j) = v j := by
-  rw [wordMap_removeLonelyWord_apply, removeLonelyList_of_notMem, evalWord_singleton]
+  rw [wordMap_removeLonelyWord_apply, removeLonelyList_of_notMem, evalWord,
+    FreeGroup.lift_mk_singleton]
   rfl
 
 private theorem wordMap_removeLonelyWord_comp_of_mem (v : Fin Ω.numItems → H) {k : Fin Ω.numItems}
@@ -697,16 +692,18 @@ private theorem comp_mem_V_iff (v : Fin Ω.numItems → H) :
     v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl ∈ V ι (Ω.removeLonely μ h).toSystem ↔
       ∀ e ∈ ((Ω.moveConstBases μ).removePair μ).equations,
         evalWord ι v e.1 = evalWord ι v e.2 := by
-  rw [mem_V_iff_evalWord]
+  rw [mem_V_toSystem_iff]
   constructor
   · intro hv e he
     rcases equations_subset_union_deleteItems h.disjoint_baseItems_removePair he with
       ⟨e', he', rfl⟩ | ⟨b, ⟨hb, hk⟩, rfl⟩
-    · simpa only [restoreEquation_fst, restoreEquation_snd, evalWord_restoreWord] using hv e' he'
+    · simp only [restoreEquation_fst, restoreEquation_snd, evalWord_restoreWord]
+      exact hv e' he'
     · exact absurd hk (notMem_baseItems_of_mem_constBases h hΩ hb)
   · intro hv e' he'
-    simpa only [restoreEquation_fst, restoreEquation_snd, evalWord_restoreWord] using
-      hv _ (image_equations_deleteItems_subset h.disjoint_baseItems_removePair ⟨e', he', rfl⟩)
+    have := hv _ (image_equations_deleteItems_subset h.disjoint_baseItems_removePair ⟨e', he', rfl⟩)
+    simp only [restoreEquation_fst, restoreEquation_snd, evalWord_restoreWord] at this
+    exact this
 
 end Eval
 
@@ -726,7 +723,7 @@ theorem mapsTo_wordMap_removeLonely {H : Type*} [Group H] (ι : FreeGroup A →*
     rwa [hcomp] at this
   have hC := fun p => tiedDefect_eq_of_forall h hΩ ι v hI (p := p)
   have hv := (comp_mem_V_iff h hΩ ι v).1 (hcomp ▸ hv')
-  refine (mem_V_iff_evalWord ι).2 fun e he => ?_
+  refine Ω.mem_V_toSystem_iff.2 fun e he => ?_
   rcases Ω.equations_subset_union_moveConstBases μ he with he | ⟨b, ⟨hb, hk⟩, rfl⟩
   · rcases equations_subset_union_removeBases _ he with he | ⟨ν, hν, rfl⟩ | ⟨c, ⟨hc, hν⟩, rfl⟩
     · exact hv e he
@@ -752,7 +749,7 @@ theorem bijOn_wordMap_removeLonely {H : Type*} [Group H] (ι : FreeGroup A →* 
   -- A point of `Ω*` is the image of its restriction to the items outside `μ`.
   have hI : ∀ k ∈ Ω.baseItems μ, v k = evalWord ι v (Ω.tiedSegment μ k) := fun k hk =>
     eq_evalWord_tiedSegment_of_forall h hΩ ι v (fun _ => tiedDefect_eq_of_mem_V h hΩ ι hv) hk
-  rw [mem_V_iff_evalWord ι] at hv
+  rw [mem_V_toSystem_iff] at hv
   refine ⟨v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl, (comp_mem_V_iff h hΩ ι v).2 fun e he => ?_,
     funext fun k => ?_⟩
   · rcases Ω.equations_moveConstBases_subset_union μ (equations_removeBases_subset _ he) with
