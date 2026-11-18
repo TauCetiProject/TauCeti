@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Complex.RealChart
+import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
 # The Sobolev space `W^{1,2}` of the pair of pants
@@ -93,16 +94,6 @@ theorem isWeight_cylindricalWeight :
     exact add_pos (inv_pos.2 (Complex.normSq_pos.2 h₀))
       (inv_pos.2 (Complex.normSq_pos.2 (sub_ne_zero.2 h₁)))
 
-/-- The Jacobian of the end chart of `q` at `z` is `4π² |φ_q(z) - c_q|²`. -/
-theorem det_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
-    (fderiv ℝ (endChart q) z).det =
-      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm (endChart q z) - q.endCenter‖ ^ 2 := by
-  rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
-    (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, deriv_cylindricalEndLift,
-    ← endChart_eq_realChart, equivRealProdCLM_symm_endChart, Complex.normSq_eq_norm_sq, norm_neg,
-    norm_mul, norm_mul, Complex.norm_real, Complex.norm_ofNat, Real.norm_of_nonneg pi_pos.le]
-  ring
-
 /-- The arithmetic of the weight on an end: if a point lies at distance `x > 0` from the center of
 its end and at distance `y ≥ x / 2` from the other finite puncture, then
 `(x⁻² + y⁻²) 4π² x² ∈ [4π², 20π²]`. -/
@@ -168,14 +159,6 @@ theorem cylindricalWeight_endChart_mul_det_fderiv_mem_Icc (q : Puncture) {z : �
       rwa [norm_one] at this
     exact inv_sq_add_inv_sq_mul_mem_Icc (by linarith) (by linarith)
 
-/-- A continuous linear map on the plane at `(a, b)` is `a` times its value at `(1, 0)` plus `b`
-times its value at `(0, 1)`. -/
-private theorem apply_mk (L : ℝ × ℝ →L[ℝ] V) (a b : ℝ) :
-    L (a, b) = a • L (1, 0) + b • L (0, 1) := by
-  rw [← map_smul, ← map_smul, ← map_add]
-  congr 1
-  ext <;> simp
-
 /-- The partial derivatives of `ξ ∘ φ_q` are those of `ξ` composed with the conformal derivative
 `(1, 0) ↦ (a, b)`, `(0, 1) ↦ (-b, a)` of the end chart, whose Jacobian is `a² + b²`. -/
 private theorem exists_fderiv_comp_endChart (q : Puncture) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
@@ -192,10 +175,12 @@ private theorem exists_fderiv_comp_endChart (q : Puncture) {ξ : ℝ × ℝ → 
   · rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
       (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, Complex.normSq_apply]
     ring
-  · rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply, ← apply_mk]
+  · rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply,
+      ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
     congr 1
     simp [Complex.equivRealProdCLM_symm_apply, c]
-  · rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply, ← apply_mk]
+  · rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply,
+      ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
     congr 1
     simp [Complex.equivRealProdCLM_symm_apply, c]
 

@@ -17,7 +17,6 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
-import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Prod
 
@@ -43,11 +42,10 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
 
 * **Test sections** (`TauCeti.ConformalSobolev.testSection`) are the `C²` maps `ξ : ℝ × ℝ → V`
   with compact support inside `U`.
-* The **jet** of a section is `jet ρ ξ = (√ρ ξ, ∂s ξ, ∂t ξ)`, so that the `W^{1,2}` norm above is
-  the `L²` norm of the jet on `U` up to a factor between `1` and `√3`
-  (`TauCeti.ConformalSobolev.sq_norm_le_integral`). The jets of test sections are square
-  integrable (`TauCeti.ConformalSobolev.memLp_jet`), and their classes form the subspace
-  `TauCeti.ConformalSobolev.jetSubmodule` of `L²(U, V × V × V)`.
+* The **jet** of a section is `jet ρ ξ = (√ρ ξ, ∂s ξ, ∂t ξ)`, whose squared `L²` norm on `U` is at
+  most the squared `W^{1,2}` norm above (`TauCeti.ConformalSobolev.sq_norm_le_integral`). The jets
+  of test sections are square integrable (`TauCeti.ConformalSobolev.memLp_jet`), and their classes
+  form the subspace `TauCeti.ConformalSobolev.jetSubmodule` of `L²(U, V × V × V)`.
 * `TauCeti.ConformalSobolev.H1` is its closure, the completion of the test sections in the
   `W^{1,2}` norm, that is, the Sobolev space `W^{1,2}_0(U, V)`; it is a closed subspace of `L²`
   and hence complete. An element is an `L²` jet
@@ -61,8 +59,8 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   which the Fréchet–Kolmogorov criterion `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`
   applies; on `K` the weight `√ρ` is a bounded multiplier.
 * **Peetre's argument.** An operator `D` on `H1` satisfying an estimate
-  `‖x‖ ≤ C (‖D x‖ + ‖x‖_{L²(K)})` on the jets of test sections has finite-dimensional kernel
-  (`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`) and closed range
+  `‖x‖ ≤ C (‖D x‖ + ‖√ρ ξ‖_{L²(K)})` on the jets `x` of test sections `ξ` has finite-dimensional
+  kernel (`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`) and closed range
   (`TauCeti.ConformalSobolev.isClosed_range_of_estimate`), by Rellich's theorem and
   `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`.
 
@@ -331,18 +329,16 @@ private theorem setIntegral_smul_fderiv_add_eq_zero {φ : ℝ × ℝ → ℝ}
     (fun z _ ↦ hφ.differentiable one_ne_zero z) (fun z _ ↦ hξ1.differentiable one_ne_zero z),
     neg_add_cancel]
 
-/-- The quotient `∂_e φ / √ρ` of a test function supported in `U` is continuous with compact
-support. -/
-private theorem continuous_fderiv_div_sqrt (hρ : IsWeight U ρ) {φ : ℝ × ℝ → ℝ}
-    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hφU : tsupport φ ⊆ U) (e : ℝ × ℝ) :
-    Continuous (fun z ↦ fderiv ℝ φ z e / √(ρ z)) ∧
-      HasCompactSupport (fun z ↦ fderiv ℝ φ z e / √(ρ z)) := by
-  have hsupp : Function.support (fun z ↦ fderiv ℝ φ z e / √(ρ z)) ⊆ tsupport φ := fun z hz ↦
-    tsupport_fderiv_subset (𝕜 := ℝ) (subset_tsupport _ fun h ↦ hz (by simp [h]))
-  refine ⟨ContinuousOn.continuous_of_tsupport_subset ?_ hρ.isOpen
-    ((closure_minimal hsupp (isClosed_tsupport φ)).trans hφU), hφc.mono' hsupp⟩
-  exact (((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn).div
-    hρ.continuousOn.sqrt fun z hz ↦ (Real.sqrt_pos.2 (hρ.pos z hz)).ne'
+/-- The quotient `g / √ρ` of a continuous function `g` with compact support inside `U` is
+continuous with compact support. -/
+private theorem continuous_div_sqrt (hρ : IsWeight U ρ) {g : ℝ × ℝ → ℝ} (hg : Continuous g)
+    (hgc : HasCompactSupport g) (hgU : tsupport g ⊆ U) :
+    Continuous (fun z ↦ g z / √(ρ z)) ∧ HasCompactSupport (fun z ↦ g z / √(ρ z)) := by
+  have hsupp : Function.support (fun z ↦ g z / √(ρ z)) ⊆ tsupport g := fun z hz ↦
+    subset_tsupport _ fun h ↦ hz (by simp [h])
+  exact ⟨(hg.continuousOn.div hρ.continuousOn.sqrt fun z hz ↦
+    (Real.sqrt_pos.2 (hρ.pos z hz)).ne').continuous_of_tsupport_subset hρ.isOpen
+      ((closure_minimal hsupp (isClosed_tsupport g)).trans hgU), hgc.mono' hsupp⟩
 
 /-- The weak derivative identity on `H1`: for an `L²` jet `x ∈ H1`, a test function `φ` supported
 in `U` and a direction `e`, with `P` the component of the jet recording the derivative in the
@@ -352,7 +348,9 @@ private theorem integral_smul_add_eq_zero_of_mem_H1 [CompleteSpace V] (hρ : IsW
     (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hφU : tsupport φ ⊆ U) {e : ℝ × ℝ}
     {P : V × V × V →L[ℝ] V} (hP : ∀ (ξ : ℝ × ℝ → V) z, P (jet ρ ξ z) = fderiv ℝ ξ z e) :
     (∫ z in U, φ z • P (x z)) + ∫ z in U, (fderiv ℝ φ z e / √(ρ z)) • (x z).1 = 0 := by
-  obtain ⟨hψc, hψs⟩ := continuous_fderiv_div_sqrt hρ hφ hφc hφU e
+  obtain ⟨hψc, hψs⟩ := continuous_div_sqrt hρ
+    ((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const) (hφc.fderiv_apply (𝕜 := ℝ) e)
+    ((tsupport_fderiv_apply_subset ℝ e).trans hφU)
   have hφ₂ : MemLp φ 2 (volume.restrict U) := hφ.continuous.memLp_of_hasCompactSupport hφc
   have hψ₂ : MemLp (fun z ↦ fderiv ℝ φ z e / √(ρ z)) 2 (volume.restrict U) :=
     hψc.memLp_of_hasCompactSupport hψs
@@ -417,10 +415,10 @@ theorem weightedValueL_injective [CompleteSpace V]
       exact hint
     filter_upwards [h, ae_restrict_mem hρ.isOpen.measurableSet] with z hz hzU
     exact hz hzU
-  have h₂ := hcomp (P := (ContinuousLinearMap.fst ℝ V V).comp
-    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ rfl
-  have h₃ := hcomp (P := (ContinuousLinearMap.snd ℝ V V).comp
-    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ rfl
+  have h₂ := hcomp (e := (1, 0)) (P := (ContinuousLinearMap.fst ℝ V V).comp
+    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by simp [jet_apply]
+  have h₃ := hcomp (e := (0, 1)) (P := (ContinuousLinearMap.snd ℝ V V).comp
+    (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by simp [jet_apply]
   refine Subtype.ext ((Lp.eq_zero_iff_ae_eq_zero).2 ?_)
   filter_upwards [hx₁, h₂, h₃] with z h₁ h₂ h₃
   exact Prod.ext h₁ (Prod.ext h₂ h₃)
@@ -449,13 +447,8 @@ theorem coeFn_restrictWeightedValue (K : Set (ℝ × ℝ))
 private theorem exists_abs_le_mul_sqrt (hρ : IsWeight U ρ) {g : ℝ × ℝ → ℝ} (hg : Continuous g)
     (hgc : HasCompactSupport g) (hgU : tsupport g ⊆ U) :
     ∃ A, 0 ≤ A ∧ ∀ z, |g z| ≤ A * √(ρ z) := by
-  have hsupp : Function.support (fun z ↦ g z / √(ρ z)) ⊆ tsupport g := fun z hz ↦
-    subset_tsupport _ fun h ↦ hz (by simp [h])
-  have hc : Continuous fun z ↦ g z / √(ρ z) :=
-    (hg.continuousOn.div hρ.continuousOn.sqrt fun z hz ↦
-      (Real.sqrt_pos.2 (hρ.pos z hz)).ne').continuous_of_tsupport_subset hρ.isOpen
-        ((closure_minimal hsupp (isClosed_tsupport g)).trans hgU)
-  obtain ⟨C, hC⟩ := hc.bounded_above_of_compact_support (hgc.mono' hsupp)
+  obtain ⟨hc, hcs⟩ := continuous_div_sqrt hρ hg hgc hgU
+  obtain ⟨C, hC⟩ := hc.bounded_above_of_compact_support hcs
   refine ⟨max C 0, le_max_right _ _, fun z ↦ ?_⟩
   by_cases hz : z ∈ U
   · have hs := Real.sqrt_pos.2 (hρ.pos z hz)
@@ -538,23 +531,19 @@ private theorem cutoff_estimates {χ : ℝ × ℝ → ℝ} {A : ℝ} (hχ : Cont
             zero_le_one) (hval (c := fun z ↦ ‖fderiv ℝ χ z‖) hA' z)
       _ = (A + 2) * ‖jet ρ ξ z‖ := by ring
 
-/-- An element of `H1` of norm less than `1` is a limit of jets of test sections of norm less
-than `2`. -/
-private theorem mem_closure_setOf_norm_lt (x : H1 V U ρ) (hx : ‖x‖ < 1) :
+/-- An element of `H1` of norm less than `2` is a limit of jets of test sections of norm less
+than `2`, as `{f | ‖f‖ < 2}` is open (`IsOpen.inter_closure`). -/
+private theorem mem_closure_setOf_norm_lt (x : H1 V U ρ) (hx : ‖x‖ < 2) :
     (x : Lp (V × V × V) 2 (volume.restrict U)) ∈
       closure {f | f ∈ jetSubmodule V U ρ ∧ ‖f‖ < 2} := by
   have hxH : (x : Lp (V × V × V) 2 (volume.restrict U)) ∈
       closure (jetSubmodule V U ρ : Set (Lp (V × V × V) 2 (volume.restrict U))) := by
     rw [← Submodule.topologicalClosure_coe]
     exact x.2
-  refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-  obtain ⟨g, hg, hb⟩ := Metric.mem_closure_iff.1 hxH (min ε 1) (lt_min hε one_pos)
-  refine ⟨g, ⟨hg, ?_⟩, hb.trans_le (min_le_left _ _)⟩
-  have h := norm_le_norm_add_norm_sub' g (x : Lp (V × V × V) 2 (volume.restrict U))
-  rw [← dist_eq_norm, dist_comm] at h
-  have hx' : ‖(x : Lp (V × V × V) 2 (volume.restrict U))‖ < 1 :=
-    (Submodule.norm_coe x).trans_lt hx
-  linarith [min_le_right ε 1]
+  refine closure_mono ?_ ((isOpen_lt continuous_norm continuous_const).inter_closure
+    ⟨(Submodule.norm_coe x).trans_lt hx, hxH⟩)
+  rintro f ⟨hf2, hf⟩
+  exact ⟨hf, hf2⟩
 
 /-- On a compact set `K ⊆ U` the weight `√ρ` is a bounded multiplier: restriction to `K` followed
 by multiplication by `√ρ` is a continuous linear map from `L²` of the plane to `L²(K)`. -/
@@ -621,7 +610,7 @@ theorem isCompactOperator_restrictWeightedValue_comp [FiniteDimensional ℝ V] (
   rintro _ ⟨x, hx, rfl⟩
   exact closure_mono hsub (image_closure_subset_closure_image
     (restrictWeightedValue V U K).continuous
-      ⟨_, mem_closure_setOf_norm_lt x (by simpa using hx), rfl⟩)
+      ⟨_, mem_closure_setOf_norm_lt x ((mem_ball_zero_iff.1 hx).trans one_lt_two), rfl⟩)
 
 /-! ### Peetre's argument -/
 
