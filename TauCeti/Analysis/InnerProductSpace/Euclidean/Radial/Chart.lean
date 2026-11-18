@@ -45,46 +45,42 @@ theorem radialChart_source : (radialChart (n := n)).source = univ := by
     Homeomorph.toOpenPartialHomeomorph_source, preimage_univ, inter_univ]
   exact univ_inter _
 
+/-- The radial chart is `OpenPartialHomeomorph.univUnitBall` read through
+`EuclideanSpace.equiv`. -/
+theorem coe_radialChart : ⇑(radialChart (n := n)) =
+    EuclideanSpace.equiv (Fin n) ℝ ∘ OpenPartialHomeomorph.univUnitBall ∘
+      (EuclideanSpace.equiv (Fin n) ℝ).symm := by
+  funext z
+  rfl
+
+/-- The inverse of the radial chart is `OpenPartialHomeomorph.univUnitBall.symm` read through
+`EuclideanSpace.equiv`. -/
+theorem coe_radialChart_symm : ⇑(radialChart (n := n)).symm =
+    EuclideanSpace.equiv (Fin n) ℝ ∘ OpenPartialHomeomorph.univUnitBall.symm ∘
+      (EuclideanSpace.equiv (Fin n) ℝ).symm := by
+  funext z
+  rfl
+
 /-- The radial chart takes values in the open Euclidean unit ball. -/
 @[simp]
 theorem radialChart_target : (radialChart (n := n)).target = {z | ∑ j, z j ^ 2 < 1} := by
   ext z
-  simp only [radialChart, ContinuousLinearEquiv.toHomeomorph_symm,
-    Homeomorph.symm_toOpenPartialHomeomorph, OpenPartialHomeomorph.trans_toPartialEquiv,
-    OpenPartialHomeomorph.symm_toPartialEquiv, PartialEquiv.trans_target,
-    Homeomorph.toOpenPartialHomeomorph_target, PartialHomeomorph.coe_toPartialEquiv_symm,
-    OpenPartialHomeomorph.coe_toPartialHomeomorph_symm,
-    Homeomorph.toOpenPartialHomeomorph_symm_apply, ContinuousLinearEquiv.coe_symm_toHomeomorph,
-    PartialEquiv.symm_target, Homeomorph.toOpenPartialHomeomorph_source, preimage_univ,
-    subset_univ, inf_of_le_left, inf_of_le_right, mem_preimage,
-    PiLp.continuousLinearEquiv_symm_apply, mem_ofPred_eq,
-    OpenPartialHomeomorph.univUnitBall_target, mem_ball_zero_iff,
-    ← sq_lt_one_iff₀ (norm_nonneg _), EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs]
+  simp [radialChart, OpenPartialHomeomorph.univUnitBall_target, ← sq_lt_one_iff₀ (norm_nonneg _),
+    EuclideanSpace.norm_sq_eq]
 
 /-- The radial chart is `z ↦ z / √(1 + ∑ j, z j ^ 2)`. -/
 @[simp]
 theorem radialChart_apply (z : Fin n → ℝ) :
     radialChart z = (√(1 + ∑ j, z j ^ 2))⁻¹ • z := by
-  simp only [radialChart, ContinuousLinearEquiv.toHomeomorph_symm,
-    Homeomorph.symm_toOpenPartialHomeomorph, OpenPartialHomeomorph.coe_trans,
-    Homeomorph.toOpenPartialHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph,
-    Homeomorph.toOpenPartialHomeomorph_symm_apply, ContinuousLinearEquiv.coe_symm_toHomeomorph,
-    Function.comp_apply, PiLp.continuousLinearEquiv_symm_apply,
-    OpenPartialHomeomorph.univUnitBall_apply, EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs,
-    PiLp.coe_continuousLinearEquiv, WithLp.ofLp_smul]
+  simp [coe_radialChart, OpenPartialHomeomorph.univUnitBall_apply, EuclideanSpace.norm_sq_eq,
+    PiLp.coe_continuousLinearEquiv]
 
 /-- The inverse of the radial chart is `z ↦ z / √(1 - ∑ j, z j ^ 2)`. -/
 @[simp]
 theorem radialChart_symm_apply (z : Fin n → ℝ) :
     radialChart.symm z = (√(1 - ∑ j, z j ^ 2))⁻¹ • z := by
-  simp only [radialChart, ContinuousLinearEquiv.toHomeomorph_symm,
-    Homeomorph.symm_toOpenPartialHomeomorph, OpenPartialHomeomorph.coe_trans_symm,
-    OpenPartialHomeomorph.symm_symm, Homeomorph.toOpenPartialHomeomorph_apply,
-    ContinuousLinearEquiv.coe_toHomeomorph, Homeomorph.toOpenPartialHomeomorph_symm_apply,
-    ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_apply,
-    PiLp.continuousLinearEquiv_symm_apply, OpenPartialHomeomorph.univUnitBall_symm_apply,
-    EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs, PiLp.coe_continuousLinearEquiv,
-    WithLp.ofLp_smul]
+  simp [coe_radialChart_symm, OpenPartialHomeomorph.univUnitBall_symm_apply,
+    EuclideanSpace.norm_sq_eq, PiLp.coe_continuousLinearEquiv]
 
 /-- The radial chart is smooth. -/
 theorem contDiff_radialChart : ContDiff ℝ ∞ (radialChart (n := n)) :=

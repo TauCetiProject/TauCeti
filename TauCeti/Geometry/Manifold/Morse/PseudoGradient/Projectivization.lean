@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.EuclideanMetric
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Gradient
 public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Geometry.Manifold.Riemannian.Invariant
-public import TauCeti.Analysis.InnerProductSpace.Euclidean.RadialChart
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Radial.Chart
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.InformationTheory.Coding.Equivalence
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
@@ -244,13 +244,6 @@ theorem projectiveMomentCoord_smul (hk : ∀ i, i ≠ k → w i ≠ w k) (δ : F
     zsmul_eq_mul]
   ring
 
-/-- The sign changes preserve the source of the Morse chart at `[eₖ]`. -/
-theorem smul_mem_projectiveMomentMorseChart_source_iff (hk : ∀ i, i ≠ k → w i ≠ w k)
-    (ε : Fin (n + 1) → ℤˣ) {y : ℙ ℝ (Fin (n + 1) → ℝ)} :
-    ε • y ∈ (projectiveMomentMorseChart hk).toChart.source ↔
-      y ∈ (projectiveMomentMorseChart hk).toChart.source := by
-  simp
-
 /-- **The sign changes are isometries of the Euclidean metric of the Morse chart** of the moment
 function at `[eₖ]`. -/
 theorem projectiveMomentMorseChart_euclideanForm_smul (hk : ∀ i, i ≠ k → w i ≠ w k)
@@ -264,7 +257,7 @@ theorem projectiveMomentMorseChart_euclideanForm_smul (hk : ∀ i, i ≠ k → w
   set φ := projectiveMomentMorseChart hk
   let L : (Fin n → ℝ) →L[ℝ] (Fin n → ℝ) :=
     LinearMap.toContinuousLinearMap (DistribSMul.toLinearMap ℝ (Fin n → ℝ) (chartSigns ε k))
-  have hsrc : ε • y ∈ φ.toChart.source := (smul_mem_projectiveMomentMorseChart_source_iff hk ε).2 hy
+  have hsrc : ε • y ∈ φ.toChart.source := by simpa [φ] using hy
   have hcomp : (φ.toChart : _ → _) ∘ (ε • ·) = L ∘ φ.toChart :=
     funext fun y ↦ projectiveMomentMorseChart_toChart_smul hk ε y
   have hε : MDifferentiableAt 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n → ℝ)
@@ -281,9 +274,9 @@ theorem projectiveMomentMorseChart_euclideanForm_smul (hk : ∀ i, i ≠ k → w
       (φ.mdifferentiableAt_toChart hy)
     rw [hcomp, h2, L.mfderiv_eq] at h1
     exact (congrArg (· a) h1).symm
-  have hdot (a b : Fin n → ℝ) : projectiveMomentCoord hk (chartSigns ε k • a) ⬝ᵥ
-      projectiveMomentCoord hk (chartSigns ε k • b) =
-        projectiveMomentCoord hk a ⬝ᵥ projectiveMomentCoord hk b := by
+  have hdot (a b : Fin n → ℝ) : projectiveMomentCoord hk (L a) ⬝ᵥ projectiveMomentCoord hk (L b) =
+      projectiveMomentCoord hk a ⬝ᵥ projectiveMomentCoord hk b := by
+    simp only [L, LinearMap.coe_toContinuousLinearMap', DistribSMul.toLinearMap_apply]
     have hδ (c : Fin (Module.finrank ℝ (Fin n → ℝ)) → ℝ) :
         (chartSigns ε k ∘ finCongr (Module.finrank_fin_fun ℝ)) • c =
           signedEquiv (chartSigns ε k ∘ finCongr (Module.finrank_fin_fun ℝ)) (Equiv.refl _) c := by
