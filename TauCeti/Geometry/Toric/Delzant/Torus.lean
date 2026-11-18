@@ -262,6 +262,39 @@ theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
     exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
   · exact hθs j hj
 
+/-- **The kernel torus in lattice coordinates.** Let `b` be a basis of the integral lattice `N`,
+and write `u j = Σ_k a_(j k) b k` with integers `a_(j k)`. An element `θ` of `(ℝ / pℤ)^ι` lies in
+the kernel of `(ℝ / pℤ)^ι → V / p i(N)` exactly when `Σ_j a_(j k) θ_j = 0` in `ℝ / pℤ` for every
+`k`: these are the coordinates of `facetTorusHom θ` in the basis `i ∘ b`. -/
+theorem mem_ker_facetTorusHom_iff_of_basis (hi : IsIntegralLattice i) {κ : Type*} [Finite κ]
+    (b : Module.Basis κ ℤ N) {θ : ι → AddCircle p} :
+    θ ∈ (facetTorusHom i u p).ker ↔ ∀ k, ∑ j, b.repr (u j) k • θ j = 0 := by
+  have := Fintype.ofFinite κ
+  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
+  obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+  -- Read `Σ_j t_j i(u_j)` and the lattice points `p i(n)` in the real basis `i ∘ b` of `V`.
+  set B := hi.isBaseChange.basis b
+  have hrepr (n : N) (k : κ) : B.repr (i n) k = b.repr n k := by
+    simpa using hi.isBaseChange.basis_repr_comp_apply b n k
+  have hx (k : κ) : B.repr (Fintype.linearCombination ℝ (fun j ↦ i (u j)) t) k =
+      ∑ j, (b.repr (u j) k : ℝ) * t j := by
+    simp [Fintype.linearCombination_apply, hrepr, mul_comm]
+  have hcoe (k : κ) : ∑ j, b.repr (u j) k • (t j : AddCircle p) =
+      ((∑ j, (b.repr (u j) k : ℝ) * t j : ℝ) : AddCircle p) := by
+    simp [QuotientAddGroup.mk_sum, ← zsmul_eq_mul, QuotientAddGroup.mk_zsmul]
+  simp only [hcoe, AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff,
+    AddMonoidHom.mem_range, AddMonoidHom.smul_apply, AddSubgroup.mem_zmultiples_iff]
+  constructor
+  · rintro ⟨n, hn⟩ k
+    refine ⟨b.repr n k, ?_⟩
+    rw [← hx, ← hn, map_smul, Finsupp.smul_apply, hrepr]
+    simp [zsmul_eq_mul, mul_comm]
+  · intro h
+    choose m hm using h
+    refine ⟨∑ k, m k • b k, B.ext_elem fun k ↦ ?_⟩
+    rw [hx, ← hm, map_smul, Finsupp.smul_apply, hrepr, b.repr_sum_self]
+    simp [zsmul_eq_mul, mul_comm]
+
 /-! ### Changes of presentation -/
 
 section Presentation
@@ -421,6 +454,31 @@ theorem faceSubtorus_eq_top_iff [Countable N] {s : Set ι} :
 
 end FaceSubtorus
 
+/-! ### Smooth vertices -/
+
+section SmoothVertex
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V} {u : ι → N}
+  {c : ι → ℝ} {x : StrongDual ℝ V}
+
+/-- The facet normals generate the lattice as soon as the presentation has a smooth vertex: the
+normals active there already form a basis of it. -/
+theorem IsSmoothVertex.surjective_linearCombination (hx : IsSmoothVertex i u c x) :
+    Function.Surjective (Fintype.linearCombination ℤ u) := by
+  rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, eq_top_iff, ← hx.basis.span_eq]
+  refine Submodule.span_mono ?_
+  rintro _ ⟨j, rfl⟩
+  exact ⟨j, (hx.basis_apply j).symm⟩
+
+/-- At a smooth vertex of a presentation in an integral lattice, the real extension `β_ℝ` of the
+lattice map is surjective. -/
+theorem IsSmoothVertex.surjective_linearCombination_real (hx : IsSmoothVertex i u c x)
+    (hi : IsIntegralLattice i) :
+    Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)) :=
+  Toric.surjective_linearCombination_real hi.span_range_eq_top hx.surjective_linearCombination
+
+end SmoothVertex
+
 /-! ### Delzant polytopes -/
 
 section Delzant
@@ -436,13 +494,9 @@ include hΔ
 /-- The facet normals of a Delzant polytope generate the lattice: the normals at any vertex
 already form a basis of it. -/
 theorem surjective_linearCombination :
-    Function.Surjective (Fintype.linearCombination ℤ u) := by
-  obtain ⟨x, hx⟩ := hΔ.extremePoints_nonempty
-  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 (hΔ.isSmoothVertex x hx)
-  rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, eq_top_iff, ← b.span_eq]
-  refine Submodule.span_mono ?_
-  rintro _ ⟨j, rfl⟩
-  exact ⟨j, (hb j).symm⟩
+    Function.Surjective (Fintype.linearCombination ℤ u) :=
+  let ⟨x, hx⟩ := hΔ.extremePoints_nonempty
+  (hΔ.isSmoothVertex x hx).surjective_linearCombination
 
 /-- The kernel of the homomorphism `facetTorusHom` of a Delzant polytope is connected. -/
 theorem isConnected_ker_facetTorusHom (p : ℝ) :
