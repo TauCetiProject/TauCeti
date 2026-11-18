@@ -169,6 +169,7 @@ theorem SubharmonicOn.le_of_le_frontier_of_isBoundedUnder (hE : 2 ≤ Module.fin
     le_add_mul_sub_of_le_frontier hU hUb hu huc hw hwc hψa hψt hψh hR hδ₀
       (fun y hya hy ↦ hM ⟨mem_ball.2 hy, hya⟩) hle (mem_Ioi.1 hε) hxU hxa)
 
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- A harmonic function on a punctured neighbourhood of `a`, bounded near `a`, agrees on a punctured
 ball about `a` with a function harmonic on the whole ball: the Poisson integral of its values on
 the boundary sphere. -/
@@ -176,6 +177,7 @@ private theorem exists_harmonicOnNhd_ball_eqOn_sdiff (hE : 2 ≤ Module.finrank 
     (hs : s ∈ 𝓝 a) (hu : HarmonicOnNhd u (s \ {a}))
     (hb : IsBoundedUnder (· ≤ ·) (𝓝[≠] a) fun x ↦ |u x|) :
     ∃ r > 0, ∃ P, HarmonicOnNhd P (ball a r) ∧ EqOn u P (ball a r \ {a}) := by
+  borelize E
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   obtain ⟨r, hr, hrs⟩ := nhds_basis_closedBall.mem_iff.1 hs
   have hcl : closedBall a r \ {a} ⊆ s \ {a} := sdiff_subset_sdiff_left hrs
@@ -211,6 +213,7 @@ private theorem exists_harmonicOnNhd_ball_eqOn_sdiff (hE : 2 ≤ Module.finrank 
   have hx' : x ∈ closure (ball a r) \ {a} := ⟨subset_closure hx.1, hx.2⟩
   exact le_antisymm (hle x hx') (hge x hx')
 
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- **Removable singularity theorem for harmonic functions.** In dimension at least two, let `s`
 be a neighbourhood of `a` and let `u` be harmonic on `s \ {a}` and bounded near `a`. Then `u`
 redefined to be `limUnder (𝓝[≠] a) u` at `a` is harmonic on `s`. -/
@@ -237,6 +240,7 @@ theorem harmonicOnNhd_update_limUnder_of_isBoundedUnder [DecidableEq E]
     filter_upwards [eventually_ne_nhds hxa] with y hy
     exact update_of_ne hy _ _
 
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- **Removable singularity theorem for harmonic functions.** In dimension at least two, a
 function harmonic on a punctured neighbourhood of `a` and bounded near `a` has a limit at `a`. -/
 theorem tendsto_limUnder_of_harmonicAt_of_isBoundedUnder (hE : 2 ≤ Module.finrank ℝ E)

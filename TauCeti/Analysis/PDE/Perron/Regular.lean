@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Perron.Barrier
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.InnerProductSpace.Harmonic.RemovableSingularity
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Topology.Closure
 
 /-!
 # Regular boundary points
@@ -194,11 +195,6 @@ theorem forall_mem_frontier_exists_isBarrier_iff (hΩ : IsOpen Ω) (hb : Bornolo
   exact ⟨u, hu.isBarrier hΩ hb huc hξ hug⟩
 
 /-! ### Isolated boundary points -/
-
-/-- A set containing a punctured neighbourhood of `ξ` has `ξ` in its closure. -/
-private theorem mem_closure_of_mem_nhdsNE {X : Type*} [TopologicalSpace X] {s : Set X} {x : X}
-    [(𝓝[≠] x).NeBot] (hs : s ∈ 𝓝[≠] x) : x ∈ closure s :=
-  mem_closure_iff_nhdsWithin_neBot.2 (neBot_of_le (nhdsWithin_le_of_mem hs))
 
 /-- **An isolated boundary point is irregular.** In dimension at least two, if `Ω` contains a
 punctured neighbourhood of `ξ`, then no function is a barrier at `ξ` relative to `Ω`. -/
