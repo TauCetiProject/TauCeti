@@ -54,14 +54,19 @@ theorem nondegenerate_bilinFormAt_mpullback_subtype_val_iff {U : Opens M} (x : U
   -- Both sides are nondegeneracy of the same form, on tangent spaces which are the model space.
   exact Iff.rfl
 
+/-- The restriction of a two-form to an open submanifold `U` is nondegenerate exactly when the
+form is nondegenerate at every point of `U`. -/
+theorem isNondegenerate_mpullback_subtype_val_iff {U : Opens M} :
+    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) ↔
+      ∀ x ∈ U, (σ.bilinFormAt x).Nondegenerate := by
+  rw [isNondegenerate_def]
+  exact ⟨fun h x hx ↦ (nondegenerate_bilinFormAt_mpullback_subtype_val_iff ⟨x, hx⟩).1 (h _),
+    fun h x ↦ (nondegenerate_bilinFormAt_mpullback_subtype_val_iff x).2 (h x x.2)⟩
+
 /-- A nondegenerate two-form restricts to a nondegenerate form on every open submanifold. -/
 theorem IsNondegenerate.mpullback_subtype_val (hσ : σ.IsNondegenerate) (U : Opens M) :
-    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) := by
-  rw [isNondegenerate_iff_separatingLeft]
-  intro x v hv
-  exact ((nondegenerate_bilinFormAt_mpullback_subtype_val_iff x).2
-    (hσ.nondegenerate_bilinFormAt x)).1 v fun w ↦
-      (SmoothForm.bilinFormAt_apply _ x v w).trans (hv w)
+    IsNondegenerate (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) :=
+  isNondegenerate_mpullback_subtype_val_iff.2 fun x _ ↦ hσ.nondegenerate_bilinFormAt x
 
 /-- Inclusion of an open submanifold transports its tangent-space symplectic form to the
 ambient tangent-space form. -/
