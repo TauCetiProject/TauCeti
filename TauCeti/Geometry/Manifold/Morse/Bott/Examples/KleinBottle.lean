@@ -101,6 +101,11 @@ theorem contMDiff_height : ContMDiff (𝓘(ℝ).prod (𝓡 1)) 𝓘(ℝ) ∞ hei
   (SmoothMappingTorus.contMDiff_lift_iff _ _ le_rfl).2
     ((contMDiff_sphereHeight (n := 1) 1).comp contMDiff_snd)
 
+/-- The height function is `C^2` at every point, as the critical Hessian requires. -/
+private theorem contMDiffAt_height (p : KleinBottle) :
+    ContMDiffAt (𝓘(ℝ).prod (𝓡 1)) 𝓘(ℝ) 2 height p :=
+  contMDiff_height.contMDiffAt.of_le (by simp)
+
 /-- **The critical points of the height function** are the points `[t, z]` with `z = ±1`. -/
 theorem mk_mem_criticalPoints_height_iff {t : ℝ} {z : sphere (0 : ℂ) 1} :
     mk t z ∈ criticalPoints (𝓘(ℝ).prod (𝓡 1)) height ↔ z = 1 ∨ z = -1 := by
@@ -166,7 +171,7 @@ Klein bottle: at each point of the critical circle through `z = ±1`, the kernel
 Hessian of the height function is the tangent line of the circle. -/
 theorem isNondegenerateCriticalSubmanifold_criticalCircle {z : sphere (0 : ℂ) 1}
     (hz : z = 1 ∨ z = -1) : (criticalCircle z hz).IsNondegenerateCriticalSubmanifold height where
-  contMDiffAt _ := contMDiff_height.contMDiffAt.of_le (by simp)
+  contMDiffAt _ := contMDiffAt_height _
   mem_criticalPoints s := by
     induction s using QuotientAddGroup.induction_on with | H t => ?_
     rw [criticalCircle_coe]
@@ -182,7 +187,7 @@ theorem isNondegenerateCriticalSubmanifold_criticalCircle {z : sphere (0 : ℂ) 
       criticalCircle_coe hz t
     rw [hpt, (SmoothMappingTorus.isLocalDiffeomorph_uncurry_mk (n := ∞) conjCircleDiffeomorph
       (t, z)).ker_criticalHessian_eq_map (by simp)
-      (contMDiff_height.contMDiffAt.of_le (by simp)) hcrit, height_comp_uncurry_mk] at hv
+      (contMDiffAt_height _) hcrit, height_comp_uncurry_mk] at hv
     obtain ⟨u, hu, rfl⟩ := hv
     -- The vertical component of `u` lies in the kernel of the Hessian of the height of the circle
     -- at the nondegenerate critical point `z`, so it vanishes.
@@ -200,7 +205,11 @@ theorem isNondegenerateCriticalSubmanifold_criticalCircle {z : sphere (0 : ℂ) 
     rw [ContinuousLinearMap.coe_coe, criticalCircle, SmoothEmbedding.coe_ofIsSmoothEmbedding,
       SmoothMappingTorus.mfderiv_closedOrbit, SmoothMappingTorus.closedOrbit_coe,
       SmoothMappingTorus.timeVectorField_mk, Manifold.tangentSpaceProdEquiv_symm_apply]
-    -- `smulRight 1 v` sends `u.1` to `u.1 • v`.
+    -- Two definitional equalities close the goal: `smulRight 1 v` sends `u.1` to `u.1 • v`, and
+    -- a tangent vector of `ℝ × S¹` is a pair (`tangentSpaceProdEquiv` is the identity on
+    -- vectors), so `u = u.1 • (1, 0)` by `Prod.ext` as `u.2 = 0`. Rewriting with
+    -- `smulRight_apply` fails here: elaborating it does not find `Module ℝ` on its domain, the
+    -- type synonym `TangentSpace 𝓘(ℝ) ↑t`.
     exact (map_smul _ u.1 _).symm.trans
       (DFunLike.congr_arg _ (Prod.ext (mul_one u.1) ((smul_zero u.1).trans hu₂.symm)))
 
@@ -211,7 +220,7 @@ private theorem manifoldMorseIndex_height_mk {z : sphere (0 : ℂ) 1} (hz : z = 
       manifoldMorseIndex (𝓡 1) (sphereHeight 1) z := by
   have h := (SmoothMappingTorus.isLocalDiffeomorph_uncurry_mk (n := ∞) conjCircleDiffeomorph
     (t, z)).manifoldMorseIndex_comp (by simp) (f := height)
-    (contMDiff_height.contMDiffAt.of_le (by simp)) (mk_mem_criticalPoints_height_iff.2 hz)
+    (contMDiffAt_height _) (mk_mem_criticalPoints_height_iff.2 hz)
   rw [height_comp_uncurry_mk, manifoldMorseIndex_comp_snd] at h
   exact h.symm
 

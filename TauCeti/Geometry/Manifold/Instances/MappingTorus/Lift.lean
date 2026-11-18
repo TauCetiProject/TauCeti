@@ -34,6 +34,7 @@ function is `C^m`, for `m ≤ n`, exactly when `(t, x) ↦ g t x` is `C^m`
 * `TauCeti.SmoothMappingTorus.apply_add_intCast_of_apply_add_one`: such a function satisfies
   `g (t + k) x = g t ((φ ^ k) x)` for every integer `k`.
 * `TauCeti.SmoothMappingTorus.lift_mk`: the induced function sends `[t, x]` to `g t x`.
+* `TauCeti.SmoothMappingTorus.eq_lift_iff`: it is the only function on the mapping torus doing so.
 * `TauCeti.SmoothMappingTorus.contMDiff_lift_iff`: it is `C^m` exactly when `g` is, as a function
   of `(t, x)`.
 -/
@@ -85,6 +86,19 @@ theorem lift_mk (t : ℝ) (x : M) : lift φ g hg (mk φ t x) = g t x := by
 /-- On `ℝ × M`, the induced function is `g`. -/
 theorem lift_comp_uncurry_mk : lift φ g hg ∘ uncurry (mk φ) = uncurry g :=
   funext fun p ↦ lift_mk φ hg p.1 p.2
+
+/-- Two functions on the mapping torus are equal when they agree at every `[t, x]`. -/
+theorem funext_mk {f f' : SmoothMappingTorus φ → X} (h : ∀ t x, f (mk φ t x) = f' (mk φ t x)) :
+    f = f' :=
+  (uncurry_mk_surjective φ).injective_comp_right (funext fun p ↦ h p.1 p.2)
+
+/-- **Uniqueness of the induced function.** A function on the mapping torus is the function
+induced by `g` exactly when it sends `[t, x]` to `g t x`. -/
+theorem eq_lift_iff {f : SmoothMappingTorus φ → X} :
+    f = lift φ g hg ↔ ∀ t x, f (mk φ t x) = g t x := by
+  refine ⟨?_, fun h ↦ funext_mk φ fun t x ↦ by rw [h, lift_mk]⟩
+  rintro rfl t x
+  exact lift_mk φ hg t x
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] {E' : Type*}
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*} [TopologicalSpace H']
