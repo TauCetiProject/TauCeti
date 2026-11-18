@@ -41,6 +41,7 @@ is bounded on `x ≥ 0`.
   `t`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
+* `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 -/
 
 public section
@@ -190,5 +191,22 @@ theorem _root_.Real.abs_exp_sub_exp_le {a b M : ℝ} (ha : a ≤ M) (hb : b ≤ 
   rw [h2]
   exact (mul_le_mul_of_nonneg_left h1 (exp_pos a).le).trans
     (mul_le_mul_of_nonneg_right (exp_le_exp.2 ha) (sub_nonneg.2 hba))
+
+/-- For `0 < δ ≤ r`, `x e^{-r x} ≤ (2 / δ) e^{-(δ / 2) x}`, since `y ≤ e^y`: the weight
+`x e^{-r x}` is dominated uniformly in `r ≥ δ` by a single exponential, decaying as `x → ∞`. -/
+theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ) :
+    exp (-(r * x)) * x ≤ 2 / δ * exp (-(δ / 2 * x)) := by
+  rcases lt_or_ge x 0 with hx | hx
+  · exact (mul_nonpos_of_nonneg_of_nonpos (exp_pos _).le hx.le).trans (by positivity)
+  have hy := add_one_le_exp (δ / 2 * x)
+  have h1 : exp (-(r * x)) ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) := by
+    rw [← exp_add]
+    gcongr
+    nlinarith
+  have h2 : exp (-(δ / 2 * x)) * x ≤ 2 / δ := by
+    rw [le_div_iff₀ hδ, exp_neg, inv_mul_eq_div, div_mul_eq_mul_div, div_le_iff₀ (exp_pos _)]
+    nlinarith
+  calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
+    _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
 
 end TauCeti

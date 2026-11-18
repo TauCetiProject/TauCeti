@@ -45,8 +45,12 @@ its coefficients.
   `‖Γ(s)‖ ≤ (2 m + 1)! / (-Re s (Re s + 1) (1 + (Im s)²)^{m + 1})` for `-1 < Re s < 0`.
 * `Complex.exists_norm_Gamma_le_div_pow_of_re_mem_Icc`: uniform polynomial decay
   `‖Γ(s)‖ ≤ C / |Im s|ᵐ` across any closed strip `σ₀ ≤ Re s ≤ σ₁` for `|Im s| ≥ 1`.
+* `Complex.continuous_Gamma_ofReal_add_mul_I`: `t ↦ Γ(σ + i t)` is continuous for `σ` not a
+  nonpositive integer.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_add`: `Γ(s) Γ(s + a)` is integrable on every
+  vertical line `Re s = σ` with neither `σ` nor `σ + Re a` a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma_smul_of_norm_le`: `w ↦ Γ(w) • g(w)` is integrable on
   `Re w = σ` (`σ ≠ -n`) whenever `g` is measurable and almost everywhere polynomially bounded on
   that line.
@@ -217,16 +221,36 @@ theorem exists_norm_Gamma_le_div_pow_of_re_mem_Icc (σ₀ σ₁ : ℝ) (m : ℕ)
             simpa using abs_im_le_norm (s + k)
   exact (mul_le_mul_of_nonneg_left him_pow (norm_nonneg _)).trans (hbound.trans hΓ_le)
 
+/-- The Gamma function is continuous along every vertical line `Re s = σ` which avoids its
+poles. -/
+theorem continuous_Gamma_ofReal_add_mul_I {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
+    Continuous fun t : ℝ ↦ Gamma (σ + t * I) := by
+  refine continuous_iff_continuousAt.mpr fun t ↦ ?_
+  refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
+  simpa using congrArg re h
+
 /-- The Gamma function is integrable on every vertical line `Re s = σ` which avoids its poles,
 that is, for `σ` not a nonpositive integer. -/
 theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     VerticalIntegrable Gamma σ := by
   obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ 1
-  refine (integrable_inv_one_add_sq.const_mul C).mono' ?_
+  exact (integrable_inv_one_add_sq.const_mul C).mono'
+    (continuous_Gamma_ofReal_add_mul_I hσ).aestronglyMeasurable
     (Eventually.of_forall fun t ↦ by simpa using hC t)
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun t ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
+
+/-- On every vertical line `Re t = σ` with neither `σ` nor `σ + Re a` a nonpositive integer, the
+product `Γ(t) Γ(t + a)` is integrable. -/
+theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
+    (haσ : ∀ n : ℕ, σ + a.re ≠ -n) :
+    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ := by
+  have hadd (y : ℝ) : σ + y * I + a = ↑(σ + a.re) + ↑(y + a.im) * I := by
+    apply Complex.ext <;> simp
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
+  have hcont : Continuous fun y : ℝ ↦ Gamma (σ + y * I + a) := by
+    simp_rw [hadd]
+    exact (continuous_Gamma_ofReal_add_mul_I haσ).comp (continuous_id.add continuous_const)
+  exact (verticalIntegrable_Gamma hσ).mul_bdd (c := C) hcont.aestronglyMeasurable
+    (Eventually.of_forall fun y ↦ by simpa [hadd] using hC (y + a.im))
 
 /-- Because `Γ(σ + i t)` decays faster than every power of `|t|`, multiplying any measurable
 function `g` that is almost everywhere polynomially bounded on `Re w = σ` (`σ` not a nonpositive
@@ -238,12 +262,9 @@ theorem verticalIntegrable_Gamma_smul_of_norm_le {E : Type*} [NormedAddCommGroup
     VerticalIntegrable (fun w ↦ Gamma w • g w) σ := by
   obtain ⟨A, hA⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ (m + 1)
   have hA0 : 0 ≤ A := by simpa using (norm_nonneg (Gamma σ)).trans (by simpa using hA 0)
-  have hΓ_cont : Continuous fun t : ℝ ↦ Gamma (σ + t * I) :=
-    continuous_iff_continuousAt.mpr fun t ↦
-      (differentiableAt_Gamma _ fun n h ↦ hσ n (by simpa using congrArg re h)).continuousAt.comp
-        (by fun_prop)
   refine (integrable_inv_one_add_sq.const_mul (A * C)).mono'
-    (hΓ_cont.aestronglyMeasurable.smul hmeas) (hg.mono fun t hgt ↦ ?_)
+    ((continuous_Gamma_ofReal_add_mul_I hσ).aestronglyMeasurable.smul hmeas)
+    (hg.mono fun t hgt ↦ ?_)
   calc ‖Gamma (σ + t * I) • g (σ + t * I)‖
       = ‖Gamma (σ + t * I)‖ * ‖g (σ + t * I)‖ := norm_smul _ _
     _ ≤ (A * ((1 + t ^ 2) ^ (m + 1))⁻¹) * (C * (1 + t ^ 2) ^ m) :=
