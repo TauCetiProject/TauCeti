@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.FaaDiBruno
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Continuity of the Faà di Bruno composition
@@ -92,25 +93,19 @@ theorem ContDiff.exists_norm_iteratedFDeriv_comp_le [ProperSpace F] {g : F → G
     (hb : ∀ n ≤ m, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
     ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤ C := by
   obtain ⟨R, hR⟩ := hb 0 (Nat.zero_le _)
-  have hA (k : ℕ) : ∃ A, ∀ y ∈ Metric.closedBall (0 : F) R, k ≤ m →
-      ‖iteratedFDeriv 𝕜 k g y‖ ≤ A := by
-    by_cases hk : k ≤ m
-    · obtain ⟨A, hA⟩ := (isCompact_closedBall (0 : F) R).exists_bound_of_continuousOn
-        (hg.continuous_iteratedFDeriv (by exact_mod_cast hk)).continuousOn
-      exact ⟨A, fun y hy _ ↦ hA y hy⟩
-    · exact ⟨0, fun _ _ hk' ↦ absurd hk' hk⟩
+  obtain ⟨A, -, hA⟩ := hg.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ
+    (isCompact_closedBall (0 : F) R) (Set.subset_univ _)
   have hB (k : ℕ) : ∃ B, ∀ x, k ≤ m → ‖iteratedFDeriv 𝕜 k f x‖ ≤ B := by
     by_cases hk : k ≤ m
     · exact (hb k hk).imp fun B hB x _ ↦ hB x
     · exact ⟨0, fun _ hk' ↦ absurd hk' hk⟩
-  choose A hA using hA
   choose B hB using hB
   set B' := ∑ k ∈ Finset.range (m + 1), |B k|
-  refine ⟨max 1 B' ^ m * ∑ c : OrderedFinpartition m, A c.length, fun x ↦ ?_⟩
+  refine ⟨max 1 B' ^ m * ∑ _c : OrderedFinpartition m, A, fun x ↦ ?_⟩
   have hx : f x ∈ Metric.closedBall (0 : F) R := by simpa using hR x
   refine (hg.contDiffAt.norm_iteratedFDeriv_comp_le_sum hf.contDiffAt (B := B')
     fun k _ hkm ↦ ?_).trans ?_
   · exact (hB k x hkm).trans ((le_abs_self _).trans (Finset.single_le_sum (f := fun k ↦ |B k|)
       (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (by omega))))
   · gcongr with c
-    exact hA _ _ hx c.length_le
+    exact hA _ c.length_le _ hx
