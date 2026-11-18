@@ -113,6 +113,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   it.
 * `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`: the antipodal map acts on `H_redₙ(S)`
   by `(-1) ^ (n + 1)`.
+* `TauCeti.singularHomologyMap_sphere_neg_apply`: the antipodal map acts on the ordinary homology
+  `Hₙ₊₁(S; k)` of the unit sphere of an `(n + 2)`-dimensional space by `(-1) ^ (n + 2)`.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne`,
   `TauCeti.reducedSingularHomologyTopCatSphereIso` and
   `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryNeg`: the same for Mathlib's
@@ -761,6 +763,32 @@ theorem reducedSingularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank �
     ext; simp
   rw [h, reducedSingularHomologyFunctor_map_unitSphereMap R hE, hdet, LinearMap.det_smul]
   simp [hE, sign_pow]
+
+/-- **The antipodal map acts by `(-1) ^ (n + 2)` on the top ordinary homology of a sphere.**  For a
+real inner product space `E` of dimension `n + 2` and a ring `k`, the antipodal map `x ↦ -x` of the
+unit sphere `S` of `E` acts on `Hₙ₊₁(S; k)` by `(-1) ^ (n + 2)`, as on reduced homology
+(`TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`), which agrees with ordinary homology in
+positive degrees. -/
+theorem singularHomologyMap_sphere_neg_apply (k : Type w) [Ring k] {n : ℕ}
+    (hE : finrank ℝ E = n + 2)
+    (y : ((singularChains k).obj (TopCat.of (sphere (0 : E) 1))).homology (n + 1)) :
+    ContinuousMap.singularHomologyMap k (n + 1) ⟨Neg.neg, continuous_neg⟩ y =
+      (-1 : ℤ) ^ (n + 2) • y := by
+  let ν : TopCat.of (sphere (0 : E) 1) ⟶ TopCat.of (sphere (0 : E) 1) :=
+    TopCat.ofHom ⟨Neg.neg, continuous_neg⟩
+  have hnat := (reducedSingularHomologySuccIso (ModuleCat.of k k) n).hom.naturality ν
+  rw [reducedSingularHomologyFunctor_map_sphere_neg _ hE] at hnat
+  have hmap : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj
+      (ModuleCat.of k k)).map ν = (-1 : ℤ) ^ (n + 2) • 𝟙 _ := by
+    rw [← cancel_epi ((reducedSingularHomologySuccIso (ModuleCat.of k k) n).hom.app _)]
+    simpa using hnat.symm
+  rw [ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map, hmap, ModuleCat.hom_zsmul,
+    ModuleCat.hom_id]
+  -- The homology of `singularChains k`, where `y` lies, is by definition the object of the
+  -- singular homology functor (`TauCeti.singularHomologyFunctor_obj_obj`), so `rw` cannot apply
+  -- `LinearMap.smul_apply` and `LinearMap.id_apply` across the two types; they close the goal by
+  -- definition.
+  rfl
 
 end Orientation
 

@@ -124,12 +124,7 @@ theorem exists_eq_zero_of_continuous_of_inner_eq_zero (hn : Even n)
   have hxu (x : sphere (0 : E) 1) : ⟪(x : E), (u x : E)⟫_ℝ = 0 := by
     rw [coe_normalizeToSphere_apply, NormedSpace.normalize, real_inner_smul_right, real_inner_comm,
       ht, mul_zero]
-  refine not_homotopic_id_neg_sphere hn ⟨
-    { toFun p := ⟨Real.cos (Real.pi * p.1) • (p.2 : E) + Real.sin (Real.pi * p.1) • (u p.2 : E),
-        mem_sphere_zero_iff_norm.2 (norm_cos_smul_add_sin_smul _ _ (hxu p.2) _)⟩
-      continuous_toFun := by fun_prop
-      map_zero_left x := Subtype.ext (by simp)
-      map_one_left x := Subtype.ext (by simp) }⟩
+  exact not_homotopic_id_neg_sphere hn ((ContinuousMap.id _).homotopic_neg_of_inner_eq_zero u hxu)
 
 /-- **The hairy ball theorem.** A continuous tangent vector field on an even-dimensional unit
 sphere vanishes somewhere: if `v : E → E` is continuous on the unit sphere `Sⁿ` of a real inner
