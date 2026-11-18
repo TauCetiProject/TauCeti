@@ -6,58 +6,66 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Montel.Precompact
-import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Topology.UniformSpace.CompactConvergence
+import TauCeti.Analysis.Complex.UniformLimit
 
 /-!
 # Montel's selection theorem
 
-A locally bounded sequence of holomorphic maps on an open set `Ω ⊆ ℂ` into a proper complex
-normed space has a subsequence converging locally uniformly on `Ω` to a holomorphic map. This
+A locally bounded sequence of holomorphic maps on an open subset `Ω` of a proper (equivalently,
+finite-dimensional) complex normed space, such as `ℂ` or `ℂⁿ`, into a proper complex normed space
+has a subsequence converging locally uniformly on `Ω` to a holomorphic map. In one variable this
 normal-family compactness supports extremal arguments such as the Riemann mapping theorem, where
-the target is `ℂ`. It also supplies the subsequence selection used by Vitali's theorem in
-`Conformal/Vitali.lean`.
+the target is `ℂ`, and supplies the subsequence selection used by Vitali's theorem in
+`Conformal/Vitali.lean`. In several variables it is the compactness input to the Cartan–Serre
+finiteness theorem for coherent analytic cohomology.
 
 `Conformal/Montel/Precompact.lean` proves that the continuous restrictions form a relatively
 compact subset of `C(↥Ω, E)` with its compact-open topology, and characterizes this compactness by
 local boundedness. This file extracts a convergent subsequence and identifies its holomorphic
 limit.
 
-An open subset of `ℂ` is locally compact and second countable, hence hemicompact: its compact
-subsets admit a countable cofinal family. Thus the compact-open topology on `C(↥Ω, E)` is first
-countable, and `IsCompact.tendsto_subseq` extracts a convergent subsequence.
-`ContinuousMap.tendsto_iff_tendstoLocallyUniformly` identifies its convergence with locally uniform
-convergence, and `TendstoLocallyUniformlyOn.differentiableOn` gives holomorphy of the limit.
+An open subset of a proper metric space is locally compact and second countable,
+hence hemicompact: its compact subsets admit a countable cofinal family. Thus the compact-open
+topology on `C(↥Ω, E)` is first countable, and `IsCompact.tendsto_subseq` extracts a convergent
+subsequence. `ContinuousMap.tendsto_iff_tendstoLocallyUniformly` identifies its convergence with
+locally uniform convergence, and `TendstoLocallyUniformlyOn.differentiableOn_of_locallyCompactSpace`
+gives holomorphy of the limit.
 
 ## Main results
 
-* `TauCeti.montel`: a locally bounded sequence of holomorphic maps into a proper complex normed
-  space has a locally uniformly convergent subsequence with holomorphic limit.
+* `TauCeti.montel`: a locally bounded sequence of holomorphic maps on an open subset of `ℂⁿ` into
+  a proper complex normed space has a locally uniformly convergent subsequence with holomorphic
+  limit.
 
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 5 §5.
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. VII §2.
+* J.-P. Demailly, *Complex Analytic and Differential Geometry*, Chapter I, (3.12), for several
+  variables.
 * The Montel equicontinuity argument in the Riemann mapping formalization
   [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505).
 -/
 
 public section
 
-open Complex Metric Filter Topology Set BoundedContinuousFunction
+open Complex Metric Filter Topology Set
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω : Set ℂ} {F : ℕ → ℂ → E}
+variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [ProperSpace V]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] {Ω : Set V} {F : ℕ → V → E}
 
 /-- **Montel's selection theorem.** A locally bounded sequence of holomorphic maps on an open
-set `Ω ⊆ ℂ` into a proper complex normed space `E` has a subsequence converging locally uniformly
-on `Ω` to a holomorphic map.
+subset `Ω` of a proper complex normed space `V`, such as `ℂ` or `ℂⁿ`, into a proper complex normed
+space `E` has a subsequence converging locally uniformly on `Ω` to a holomorphic map.
 
-Over `ℂ`, properness of the target is equivalent to finite-dimensionality; in particular, the
-result applies to scalar-valued holomorphic maps. -/
+Over `ℂ`, properness of a normed space is equivalent to finite-dimensionality; in particular, the
+result applies to scalar-valued holomorphic functions of finitely many complex variables. -/
 theorem montel [ProperSpace E] (hΩ : IsOpen Ω) (hF : ∀ n, DifferentiableOn ℂ (F n) Ω)
     (hb : IsLocallyBoundedOn F Ω) :
-    ∃ (φ : ℕ → ℕ) (g : ℂ → E), StrictMono φ ∧ DifferentiableOn ℂ g Ω ∧
+    ∃ (φ : ℕ → ℕ) (g : V → E), StrictMono φ ∧ DifferentiableOn ℂ g Ω ∧
       TendstoLocallyUniformlyOn (fun n => F (φ n)) g atTop Ω := by
   classical
   have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
@@ -67,7 +75,7 @@ theorem montel [ProperSpace E] (hΩ : IsOpen Ω) (hF : ∀ n, DifferentiableOn �
     isCompact_closure_range_of_isLocallyBoundedOn hΩ hF hb fun _ => rfl
   obtain ⟨a, -, φ, hφ, hconv⟩ := hcpt.tendsto_subseq (x := f) fun n => subset_closure ⟨n, rfl⟩
   -- Compact-open convergence is locally uniform convergence; extend the limit off `Ω` by zero.
-  have hlim : ((fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) ∘ (Subtype.val : Ω → ℂ))
+  have hlim : ((fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) ∘ (Subtype.val : Ω → V))
       = fun x : Ω => a x := by
     funext x
     simp [x.2]
@@ -75,6 +83,7 @@ theorem montel [ProperSpace E] (hΩ : IsOpen Ω) (hF : ∀ n, DifferentiableOn �
       (fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) atTop Ω := by
     rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hlim]
     exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hconv
-  exact ⟨φ, _, hφ, hconvOn.differentiableOn (Eventually.of_forall fun n => hF (φ n)) hΩ, hconvOn⟩
+  exact ⟨φ, _, hφ, hconvOn.differentiableOn_of_locallyCompactSpace
+    (Eventually.of_forall fun n => hF (φ n)) hΩ, hconvOn⟩
 
 end TauCeti
