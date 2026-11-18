@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Gelfand
 public import TauCeti.LinearAlgebra.Dimension.Submodule
 
+import TauCeti.Analysis.Normed.Operator.Extend
+
 /-!
 # Bernstein numbers
 
@@ -32,8 +34,8 @@ subspace.
 The Bernstein numbers are injective, since a linear isometry on the target preserves every gain,
 and they lie below the Gelfand numbers, since a subspace of rank `n + 1` meets every subspace of
 codimension at most `n` in a nonzero vector. They are the smallest injective strict s-number
-sequence: if `T` is `d`-coercive on a subspace `M` of rank `n + 1`, then `T` restricted to `M`
-is the isometric inclusion of its range after an isomorphism `T₀` whose inverse has norm at most
+sequence: if `T` is `d`-coercive with `d > 0` on a subspace `M` of rank `n + 1`, then `id_M`
+factors through the corestriction of `T` to its range on `M`, with a factor of norm at most
 `d⁻¹`, and the normalization `s (id_M) n = 1` gives `d ≤ s T n`.
 
 The source spaces are normed, since the gain divides by the norm of the source vector; the
@@ -344,42 +346,24 @@ theorem IsStrictSNumberSequence.bernsteinNumber_le {s : SNumberFamily 𝕜}
   rcases eq_or_ne d 0 with rfl | hd0
   · exact zero_le
   have hd0' : (0 : ℝ) < d := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hd0)
-  -- Factor the restriction of `T` to `M` through its range `R`, as `R.subtypeL ∘L T₀`.
-  let R := LinearMap.range (T ∘L M.subtypeL : M →ₗ[𝕜] Y)
-  obtain ⟨T₀, hT₀⟩ : ∃ T₀ : M →L[𝕜] R, R.subtypeL ∘L T₀ = T ∘L M.subtypeL :=
-    ⟨_, ContinuousLinearMap.subtypeL_comp_codRestrict _ _ (LinearMap.mem_range_self _)⟩
-  have hT₀x (x : M) : (T₀ x : Y) = T x := DFunLike.congr_fun hT₀ x
-  have hcoer (x : M) : (d : ℝ) * ‖x‖ ≤ ‖T₀ x‖ := by
-    simpa [← hT₀x] using NNReal.coe_le_coe.mpr (hd x x.2)
-  have hbij : Function.Bijective T₀ := by
-    refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun ⟨_, x, hx⟩ ↦ ⟨x, ?_⟩⟩
-    · have h := hcoer x
-      rw [hx, norm_zero, ← mul_zero (d : ℝ)] at h
-      exact norm_le_zero_iff.mp (le_of_mul_le_mul_left h hd0')
-    · exact Subtype.ext ((hT₀x x).trans hx)
-  -- The inverse of `T₀` has norm at most `d⁻¹`.
-  obtain ⟨S, hS, hST⟩ : ∃ S : R →L[𝕜] M, ‖S‖₊ ≤ d⁻¹ ∧ S ∘L T₀ = ContinuousLinearMap.id 𝕜 M := by
-    let e := LinearEquiv.ofBijective (T₀ : M →ₗ[𝕜] R) hbij
-    have he (x : M) : e.symm (T₀ x) = x :=
-      LinearEquiv.ofBijective_symm_apply_apply (T₀ : M →ₗ[𝕜] R) x
-    refine ⟨e.symm.toLinearMap.mkContinuous d⁻¹ fun y ↦ ?_, ?_, ?_⟩
-    · obtain ⟨x, rfl⟩ := hbij.2 y
-      rw [LinearEquiv.coe_coe, he, inv_mul_eq_div, le_div_iff₀ hd0', mul_comm]
-      exact hcoer x
-    · rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv]
-      exact LinearMap.mkContinuous_norm_le _ (by positivity) _
-    · ext x
-      simp [he]
+  -- The coercivity bound factors `id_M` through the range of `g = T|_M`, with norm `≤ d⁻¹`.
+  let g := T ∘L M.subtypeL
+  obtain ⟨S, hS, hST⟩ := (ContinuousLinearMap.exists_eq_comp_rangeRestrict_iff
+      (f := ContinuousLinearMap.id 𝕜 M) (g := g) (C := (d : ℝ)⁻¹) (by positivity)).mpr fun x ↦ by
+    rw [ContinuousLinearMap.id_apply, inv_mul_eq_div, le_div_iff₀ hd0', mul_comm]
+    exact_mod_cast hd x x.2
+  have hS' : ‖S‖₊ ≤ d⁻¹ := by rwa [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_inv]
   have hsub : ‖M.subtypeL‖₊ ≤ 1 := by exact_mod_cast Submodule.norm_subtypeL_le M
-  -- Normalization on `id_M`, then injectivity along the isometric inclusion of `R`.
+  -- Normalization on `id_M`, then injectivity along the inclusion of the range of `g`.
   have key : 1 ≤ d⁻¹ * s T n :=
     calc (1 : ℝ≥0) = s (ContinuousLinearMap.id 𝕜 M) n :=
           (hs.normalize_of_lt_rank n (by rw [hM]; exact_mod_cast n.lt_succ_self)).symm
-      _ = s (S ∘L T₀) n := by rw [hST]
-      _ ≤ ‖S‖₊ * s T₀ n := hs.comp_le_left S T₀ n
-      _ = ‖S‖₊ * s (T ∘L M.subtypeL) n := by
-          rw [← hinj.linearIsometry_comp R.subtypeₗᵢ T₀ n,
-            Submodule.subtypeₗᵢ_toContinuousLinearMap, hT₀]
+      _ = s (S ∘L g.rangeRestrict) n := by rw [← hST]
+      _ ≤ ‖S‖₊ * s g.rangeRestrict n := hs.comp_le_left S _ n
+      _ = ‖S‖₊ * s g n := by
+          rw [← hinj.linearIsometry_comp (LinearMap.range (g : M →ₗ[𝕜] Y)).subtypeₗᵢ
+            g.rangeRestrict n, Submodule.subtypeₗᵢ_toContinuousLinearMap,
+            ContinuousLinearMap.subtypeL_comp_codRestrict]
       _ ≤ d⁻¹ * (s T n * ‖M.subtypeL‖₊) := by gcongr; exact hs.comp_le_right T M.subtypeL n
       _ ≤ d⁻¹ * s T n := by gcongr; exact mul_le_of_le_one_right' hsub
   simpa using (le_inv_mul_iff₀ (pos_iff_ne_zero.mpr hd0)).mp key
