@@ -210,16 +210,11 @@ private theorem exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder :
   refine ⟨4 * c₀ + 2, by positivity, ?_⟩
   intro mu _ Omega a b c lam Lam beta gamma q S u m P x₀ r ρ h ha hb hc hb_bound hc_bound hS hu hm
     hmu hP hr hrρ hball
-  have hx₀ : x₀ ∈ (Omega : Set (EuclideanSpace ℝ ι)) := hball (mem_ball_self (hr.trans hrρ))
-  have hβ : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ hx₀)
-  have hγ : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₀ hx₀)
-  -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ ρ'` with `ρ' = (r + ρ)/2`,
-  -- whose gradient is at most `2 c₀ / (ρ - r)`.
+  have hβ : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self (hr.trans hrρ))))
+  have hγ : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₀ (hball (mem_ball_self (hr.trans hrρ))))
+  -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ ρ'` with `ρ' = (r + ρ)/2`.
   set ρ' := (r + ρ) / 2
   obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le (by simp only [ρ']; linarith : r < ρ')
-  have hψg' : ∀ x, ‖∇ ψ x‖ ≤ 2 * c₀ / (ρ - r) := fun x => (hψg x).trans_eq (by
-    rw [show ρ' - r = (ρ - r) / 2 by simp only [ρ']; ring]
-    field_simp)
   have hρ'B : closedBall x₀ ρ' ⊆ ball x₀ ρ := closedBall_subset_ball (by simp only [ρ']; linarith)
   have hcpt : HasCompactSupport ψ :=
     (isCompact_closedBall x₀ ρ').of_isClosed_subset (isClosed_tsupport ψ) hψts
@@ -234,7 +229,7 @@ private theorem exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder :
     W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
       ((hψts.trans hρ'B).trans hball) w
   have hgradz := norm_gradient_contDiffSMul_le_lowerOrder h ha hb hc hb_bound hc_bound hβ hγ hu hm
-    hmu hP hwv hball hψ hψr hcpt (hψts.trans hρ'B) hψg' hM hψM' hgradM'
+    hmu hP hwv hball hψ hψr hcpt (hψts.trans hρ'B) hψg hM hψM' hgradM'
   -- The norms of `u^{-P/2}` on the two balls, through `w` and `z`.
   have hwB : eLpNorm (fun x => W1p.value u x ^ (-P / 2)) 2 (mu.restrict (ball x₀ ρ)) =
       ENNReal.ofReal √(∫ x in ball x₀ ρ, W1p.value w x ^ 2 ∂mu) := by
@@ -257,8 +252,8 @@ private theorem exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder :
         rw [← ofReal_norm]
         gcongr
         refine hgradz.trans (mul_le_mul_of_nonneg_right ?_ (Real.sqrt_nonneg _))
-        rw [show 2 * (1 + Lam / lam) * (2 * c₀ / (ρ - r)) =
-          4 * c₀ * ((1 + Lam / lam) / (ρ - r)) by ring]
+        rw [show 2 * (1 + Lam / lam) * (c₀ / (ρ' - r)) = 4 * c₀ * ((1 + Lam / lam) / (ρ - r)) by
+          rw [show ρ' - r = (ρ - r) / 2 by simp only [ρ']; ring]; field_simp; ring]
         nlinarith
     _ = _ := by rw [hwB, mul_assoc (ENNReal.ofReal S), ← ENNReal.ofReal_mul h12]
 
@@ -389,6 +384,34 @@ private theorem eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow {Omega : Opens (EuclideanSp
   rw [Real.norm_eq_abs, abs_inv, abs_of_pos hux, Real.inv_rpow hux.le, ← Real.rpow_neg hux.le,
     neg_div]
 
+omit [DecidableEq ι] in
+/-- The exponents of one step of the iteration. On sets `s, t ⊆ Ω` on which `u ≥ m > 0`, a bound
+`‖u^{-P/2}‖_{L^{2χ}(s)} ≤ B ‖u^{-P/2}‖_{L²(t)}` with `B ≥ 0` is the bound
+`‖u⁻¹‖_{L^{χP}(s)} ≤ B^{2/P} ‖u⁻¹‖_{L^P(t)}`. -/
+private theorem eLpNorm_inv_le_ofReal_rpow_mul_of_eLpNorm_rpow_neg_le
+    {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {m P χ B : ℝ} {q : ℝ≥0}
+    (hq : (q : ℝ) = 2 * χ) (hm : 0 < m) (hmu : ∀ᵐ x ∂mu.restrict Omega, m ≤ W1p.value u x)
+    (hP : 0 < P) (hB : 0 ≤ B) {s t : Set (EuclideanSpace ℝ ι)} (hs : s ⊆ Omega) (ht : t ⊆ Omega)
+    (h : eLpNorm (fun x => W1p.value u x ^ (-P / 2)) q (mu.restrict s) ≤
+      ENNReal.ofReal B * eLpNorm (fun x => W1p.value u x ^ (-P / 2)) 2 (mu.restrict t)) :
+    eLpNorm (fun x => (W1p.value u x)⁻¹) (ENNReal.ofReal (χ * P)) (mu.restrict s) ≤
+      ENNReal.ofReal (B ^ (2 / P)) *
+        eLpNorm (fun x => (W1p.value u x)⁻¹) (ENNReal.ofReal P) (mu.restrict t) := by
+  have hq' : (q : ℝ≥0∞) * ENNReal.ofReal (P / 2) = ENNReal.ofReal (χ * P) := by
+    rw [← ENNReal.ofReal_coe_nnreal, hq, ← ENNReal.ofReal_mul (by rw [← hq]; exact q.2)]
+    ring_nf
+  have h2 : (2 : ℝ≥0∞) * ENNReal.ofReal (P / 2) = ENNReal.ofReal P := by
+    rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two]
+    ring_nf
+  rw [eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow hm hmu hP hs,
+    eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow hm hmu hP ht, hq', h2] at h
+  -- Raise both sides to the power `2/P`.
+  have h2P : 0 ≤ 2 / P := by positivity
+  have hpow := ENNReal.rpow_le_rpow h h2P
+  rwa [ENNReal.mul_rpow_of_nonneg _ _ h2P, ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
+    ENNReal.ofReal_rpow_of_nonneg hB h2P,
+    show P / 2 * (2 / P) = 1 by field_simp, ENNReal.rpow_one, ENNReal.rpow_one] at hpow
+
 /-- One step of Moser's iteration with negative exponents inside a ball `B(x₀, R) ⊆ Ω`, with the
 Sobolev inequality of `W^{1,2}_0(B(x₀, R))`. Let `χ > 1` with `(n - 2) χ < n`, and
 `δ = (χ - 1)/(2χ)`. There is `C ≥ 0`, depending only on `χ`, the dimension and the normalization of
@@ -417,9 +440,8 @@ private theorem exists_eLpNorm_inv_le_ofReal_rpow_mul_eLpNorm_inv_of_ball_subset
           ((1 + Lam / lam) / (ρ - r) + beta / lam + √(P * gamma / lam))) ^ (2 / P)) *
           eLpNorm (fun x => (W1p.value u x)⁻¹) (ENNReal.ofReal P) (mu.restrict (ball x₀ ρ)) := by
   obtain ⟨C₀, hC₀, hstep⟩ := exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder (ι := ι)
-  have hn : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
   have hδn : (χ - 1) / (2 * χ) < (Fintype.card ι : ℝ)⁻¹ := by
-    rw [div_lt_iff₀ (by positivity), inv_mul_eq_div, lt_div_iff₀ hn]
+    rw [div_lt_iff₀ (by positivity), inv_mul_eq_div, lt_div_iff₀ (Nat.cast_pos.2 Fintype.card_pos)]
     linarith
   -- The Sobolev inequality of `W^{1,2}_0(B(x₀, R))` at the exponent `q = 2χ`, with
   -- `1/2 - 1/q = (χ - 1)/(2χ)`, has the constant `K R^{1 - nδ}`.
@@ -440,9 +462,8 @@ private theorem exists_eLpNorm_inv_le_ofReal_rpow_mul_eLpNorm_inv_of_ball_subset
   have hU : U ≤ Omega := hball
   have hwv : ∀ᵐ y ∂mu.restrict U, W1p.value (W1p.restrictL hU u) y = W1p.value u y :=
     W1p.value_restrictL_ae hU u
-  have hmw : ∀ᵐ y ∂mu.restrict U, m ≤ W1p.value (W1p.restrictL hU u) y := by
-    filter_upwards [hwv, ae_restrict_of_ae_restrict_of_subset hball hmu] with y h1 h2
-    rwa [h1]
+  have hmw : ∀ᵐ y ∂mu.restrict U, m ≤ W1p.value (W1p.restrictL hU u) y :=
+    (hwv.and (ae_restrict_of_ae_restrict_of_subset hball hmu)).mono fun y hy => hy.1 ▸ hy.2
   have hUsub : ∀ {s : ℝ}, s ≤ R → ball x₀ s ⊆ (U : Set (EuclideanSpace ℝ ι)) :=
     fun hs => ball_subset_ball hs
   have hone := hstep mu (Omega := U) (u := W1p.restrictL hU u) (h.mono_set hball)
@@ -451,8 +472,6 @@ private theorem exists_eLpNorm_inv_le_ofReal_rpow_mul_eLpNorm_inv_of_ball_subset
     (hc.mono_measure (Measure.restrict_mono hball le_rfl))
     (fun x hx => hb_bound x (hball hx)) (fun x hx => hc_bound x (hball hx)) (hsob hR rfl)
     (energyFormH1_restrictL_nonneg hU hu) hm hmw hP hr hrρ (hUsub hρR)
-  rw [eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow hm hmw hP (hUsub (hrρ.le.trans hρR)),
-    eLpNorm_rpow_neg_eq_eLpNorm_inv_rpow hm hmw hP (hUsub hρR)] at hone
   -- On balls inside `U`, the restriction and `u` agree.
   have hwu : ∀ {t : ℝ≥0∞} {s : ℝ}, s ≤ R →
       eLpNorm (fun y => (W1p.value (W1p.restrictL hU u) y)⁻¹) t (mu.restrict (ball x₀ s)) =
@@ -463,19 +482,10 @@ private theorem exists_eLpNorm_inv_le_ofReal_rpow_mul_eLpNorm_inv_of_ball_subset
     have := (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self hR)))
     have := h.upper_nonneg; have := h.pos; have := sub_pos.2 hrρ
     positivity
-  have hq' : (q : ℝ≥0∞) * ENNReal.ofReal (P / 2) = ENNReal.ofReal (χ * P) := by
-    rw [← ENNReal.ofReal_coe_nnreal, hq, ← ENNReal.ofReal_mul (by positivity)]
-    ring_nf
-  have h2 : (2 : ℝ≥0∞) * ENNReal.ofReal (P / 2) = ENNReal.ofReal P := by
-    rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two]
-    ring_nf
-  rw [hq', h2, ← ENNReal.ofReal_mul (by positivity), hwu (hrρ.le.trans hρR), hwu hρR] at hone
-  -- Raise both sides to the power `2/P`.
-  have h2P : 0 ≤ 2 / P := by positivity
-  have hpow := ENNReal.rpow_le_rpow hone h2P
-  rw [ENNReal.mul_rpow_of_nonneg _ _ h2P, ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
-    ENNReal.ofReal_rpow_of_nonneg (by positivity) h2P,
-    show P / 2 * (2 / P) = 1 by field_simp, ENNReal.rpow_one, ENNReal.rpow_one] at hpow
+  rw [← ENNReal.ofReal_mul (by positivity)] at hone
+  have hpow := eLpNorm_inv_le_ofReal_rpow_mul_of_eLpNorm_rpow_neg_le hq hm hmw hP (by positivity)
+    (hUsub (hrρ.le.trans hρR)) (hUsub hρR) hone
+  rw [hwu (hrρ.le.trans hρR), hwu hρR] at hpow
   convert hpow using 4
   ring
 

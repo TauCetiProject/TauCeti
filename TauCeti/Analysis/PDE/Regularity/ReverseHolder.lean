@@ -89,22 +89,49 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The arithmetic of the gradient bound: from `g² ≤ 2 (1 + K²) (G² I)`, with `G = 2 c / (ρ - r)`
-the gradient bound of the cutoff at the midpoint radius, we get
-`g ≤ 2 √2 c (1 + K) / (ρ - r) · √I`. -/
-private theorem le_mul_sqrt_of_sq_le {g K c r ρ I G : ℝ} (hg : 0 ≤ g) (hK : 0 ≤ K)
-    (hc : 0 ≤ c) (hrρ : r < ρ) (hI0 : 0 ≤ I) (hG : G = 2 * c / (ρ - r))
-    (h : g ^ 2 ≤ 2 * (1 + K ^ 2) * (G ^ 2 * I)) :
-    g ≤ 2 * √2 * c * (1 + K) / (ρ - r) * √I := by
-  have hsq : g ^ 2 ≤ (2 * √2 * c * (1 + K) / (ρ - r) * √I) ^ 2 := by
-    have h2 : (√2) ^ 2 = 2 := Real.sq_sqrt (by norm_num)
-    have hI' : (√I) ^ 2 = I := Real.sq_sqrt hI0
-    calc g ^ 2 ≤ 2 * (1 + K ^ 2) * (G ^ 2 * I) := h
-      _ ≤ 2 * (1 + K) ^ 2 * (G ^ 2 * I) := by gcongr; nlinarith
-      _ = (2 * √2 * c * (1 + K) / (ρ - r) * √I) ^ 2 := by
-          simp only [hG, mul_pow, div_pow, h2, hI']
-          ring
-  exact (pow_le_pow_iff_left₀ hg (by have := sub_pos.2 hrρ; positivity) two_ne_zero).1 hsq
+/-- The arithmetic of the gradient bound: from `g² ≤ 2 (1 + K²) (G² I)` we get
+`g ≤ √2 (1 + K) G √I`. -/
+private theorem le_mul_sqrt_of_sq_le {g K G I : ℝ} (hg : 0 ≤ g) (hK : 0 ≤ K) (hG : 0 ≤ G)
+    (hI0 : 0 ≤ I) (h : g ^ 2 ≤ 2 * (1 + K ^ 2) * (G ^ 2 * I)) :
+    g ≤ √2 * (1 + K) * G * √I := by
+  have hsq : g ^ 2 ≤ (√2 * (1 + K) * G * √I) ^ 2 := by
+    rw [mul_pow, mul_pow, mul_pow, Real.sq_sqrt zero_le_two, Real.sq_sqrt hI0]
+    nlinarith [mul_nonneg (mul_nonneg hK (sq_nonneg G)) hI0]
+  exact (pow_le_pow_iff_left₀ hg (by positivity) two_ne_zero).1 hsq
+
+/-- The gradient bound of the reverse Hölder step. Let `u ≥ ε > 0` be a weak supersolution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, let `w ∈ H¹(Ω)` have value `u^{p/2}` for some `p < 1`, and let `ψ` be a smooth
+cutoff with gradient at most `G` and support in a set `B ⊆ Ω`. Then
+`‖∇(ψ w)‖₂ ≤ √2 (1 + |p| Λ / ((1 - p) λ)) G (∫_B w²)^{1/2}`. -/
+private theorem norm_gradient_contDiffSMul_le {mu : Measure (EuclideanSpace ℝ ι)}
+    [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2))
+    {ε : ℝ} (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {p : ℝ} (hp : p < 1)
+    {w : W1p mu Omega 2}
+    (hwv : W1p.value w =ᵐ[mu.restrict Omega] fun x => W1p.value u x ^ (p / 2))
+    {B : Set (EuclideanSpace ℝ ι)} (hB : B ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hψB : tsupport ψ ⊆ B) {G : ℝ} (hψg : ∀ x, ‖∇ ψ x‖ ≤ G)
+    {M : ℝ} (hM : 0 ≤ M) (hψM : ∀ x ∈ Omega, |ψ x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M) :
+    ‖W1p.gradient (W1p.contDiffSMul ψ hψ hM hψM hgradM w)‖ ≤
+      √2 * (1 + |p| * Lam / ((1 - p) * lam)) * G * √(∫ x in B, W1p.value w x ^ 2 ∂mu) := by
+  -- The Caccioppoli inequality for powers, and the bound of its cutoff term on `B`.
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow ha hu hε hεu hp hwv hψ
+    hcpt (hψB.trans hB)
+  have hI := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hψg hψB
+    (Lp.memLp (W1p.value w)).integrable_sq (Filter.Eventually.of_forall fun x => le_rfl)
+  rw [inter_eq_right.2 hB] at hI
+  have hK : 0 ≤ |p| * Lam / ((1 - p) * lam) := by
+    have := h.pos; have := h.upper_nonneg; have := sub_pos.2 hp; positivity
+  refine le_mul_sqrt_of_sq_le (norm_nonneg _) hK ((norm_nonneg _).trans (hψg 0))
+    (integral_nonneg fun x => sq_nonneg _) ?_
+  have hleib := W1p.norm_gradient_contDiffSMul_sq_le hψ hM hψM hgradM w
+  nlinarith
 
 /-- **Moser's reverse Hölder inequality for powers of a positive supersolution.** There is a
 constant `C ≥ 0`, depending only on the dimension, with the following property. Let `a` be
@@ -137,18 +164,14 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   obtain ⟨c, hc0, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * √2 * c, by positivity, ?_⟩
   intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hS hu hε hεu hp hr hrρ hball
-  have hlam := h.pos
   set K := |p| * Lam / ((1 - p) * lam)
-  have hK : 0 ≤ K := div_nonneg (mul_nonneg (abs_nonneg p) h.upper_nonneg) (by positivity)
+  have hK : 0 ≤ K := by
+    have := h.pos; have := h.upper_nonneg; have := sub_pos.2 hp; positivity
   -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ ρ'` with `ρ' = (r + ρ)/2`.
   set ρ' := (r + ρ) / 2
-  have hrρ' : r < ρ' := by simp only [ρ']; linarith
-  have hρ'ρ : ρ' < ρ := by simp only [ρ']; linarith
-  obtain ⟨ψ, hψ, _, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
-  set G := c / (ρ' - r) with hG_def
+  obtain ⟨ψ, hψ, _, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le (by simp only [ρ']; linarith : r < ρ')
   have hρ'B : Metric.closedBall x₀ ρ' ⊆ Metric.ball x₀ ρ :=
-    Metric.closedBall_subset_ball hρ'ρ
-  have hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := (hψts.trans hρ'B).trans hball
+    Metric.closedBall_subset_ball (by simp only [ρ']; linarith)
   have hcpt : HasCompactSupport ψ :=
     (isCompact_closedBall x₀ ρ').of_isClosed_subset (isClosed_tsupport ψ) hψts
   obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
@@ -160,28 +183,15 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   set z := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
   have hz : z ∈ w1p0Submodule mu Omega 2 :=
     W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
-      hts w
-  -- The Caccioppoli inequality for powers, in terms of `w`.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow ha hu hε hεu hp hwv hψ
-    hcpt hts
-  -- The cutoff term is controlled on `B(x₀, ρ)`.
-  have hI : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
-      G ^ 2 * ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu := by
-    have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hψg
-      (hψts.trans hρ'B) (Lp.memLp (W1p.value w)).integrable_sq
-      (Filter.Eventually.of_forall fun x => le_rfl)
-    rwa [inter_eq_right.2 hball] at hbound
+      ((hψts.trans hρ'B).trans hball) w
   set I := ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu
-  have hI0 : 0 ≤ I := integral_nonneg fun x => sq_nonneg _
-  -- The gradient of `z`.
-  have hgradz : ‖W1p.gradient z‖ ≤ 2 * √2 * c * (1 + K) / (ρ - r) * √I :=
-    le_mul_sqrt_of_sq_le (G := G) (norm_nonneg _) hK hc0 hrρ hI0
-      (by
-        have hmid : ρ' - r = (ρ - r) / 2 := by simp only [ρ']; ring
-        rw [hG_def, hmid, div_div_eq_mul_div]
-        ring) (by
-      have hleib := W1p.norm_gradient_contDiffSMul_sq_le hψ hM hψM' hgradM' w
-      nlinarith)
+  -- The gradient of `z`, by the Caccioppoli inequality for powers.
+  have hgradz : ‖W1p.gradient z‖ ≤ 2 * √2 * c * (1 + K) / (ρ - r) * √I := by
+    refine (norm_gradient_contDiffSMul_le h ha hu hε hεu hp hwv hball hψ hcpt
+      (hψts.trans hρ'B) hψg hM hψM' hgradM').trans_eq ?_
+    rw [show ρ' - r = (ρ - r) / 2 by simp only [ρ']; ring]
+    simp only [K, I]
+    field_simp
   -- The `L²` norm of `w` on `B(x₀, ρ)` is `√I`.
   have hwB : eLpNorm (fun x => W1p.value u x ^ (p / 2)) 2 (mu.restrict (Metric.ball x₀ ρ)) =
       ENNReal.ofReal √I := by
