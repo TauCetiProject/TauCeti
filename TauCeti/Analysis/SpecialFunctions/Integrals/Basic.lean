@@ -169,9 +169,19 @@ open scoped Interval in
 over `[0, t' - h]` of norm at most `2 / (2 - α) A h^(α/2)`. This is the time integration, away from
 the singular endpoint, behind temporal Hölder estimates with time step `h`. -/
 theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
+    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hh : 0 < h) (hht : h < t')
     (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
     ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
+  have hA : 0 ≤ A := by
+    by_contra hA
+    have hnull : volume (Ioc 0 (t' - h)) = 0 := by
+      rw [measure_eq_zero_iff_ae_notMem]
+      filter_upwards [hg] with s hs hmem
+      have hpos : 0 < (t' - s) ^ ((α - 4) / 2) := rpow_pos_of_pos (by linarith [hmem.2]) _
+      have := mul_neg_of_neg_of_pos (mul_neg_of_neg_of_pos (lt_of_not_ge hA) hh) hpos
+      linarith [norm_nonneg (g s), hs hmem]
+    simp [Real.volume_Ioc] at hnull
+    linarith
   have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
     fun s hs => by
       rw [uIcc_of_le (by linarith)] at hs
