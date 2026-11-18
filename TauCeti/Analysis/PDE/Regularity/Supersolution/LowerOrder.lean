@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Power
-import TauCeti.Analysis.PDE.Regularity.ReverseHolder
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
-import TauCeti.MeasureTheory.Measure.OpenPos
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -59,7 +57,7 @@ with `δ = (χ - 1)/(2χ)`. Along the exponents `Pₖ = P χᵏ` and the radii `
 factors multiply to a bound `F R^{n/Pₖ - n/P}` with `F` independent of `k`, because the logarithms
 of the step constants grow at most linearly in `k` while the exponents `2/Pₖ` decay geometrically.
 Letting `k → ∞` bounds `u⁻¹` on `B(x₀, R/2)`, since the essential supremum is at most the limit
-inferior of the `Lᵖ` norms (`TauCeti.eLpNorm_exponent_top_le_liminf`).
+inferior of the `Lᵖ` norms (`TauCeti.ae_enorm_le_of_tendsto_of_eLpNorm_le`).
 
 ## Main declarations
 
@@ -339,34 +337,6 @@ private theorem mul_rpow_sub_mul_le_mul_pow_mul_rpow_neg {C L beta gamma lam σ 
         rw [Real.rpow_sub hR, Real.rpow_one, Real.rpow_neg hR.le]
         field_simp
 
-/-- The passage to the limit in Moser's iteration: if `‖f‖_{L^{pχᵏ}(μ)} ≤ F R^{n/(pχᵏ) - n/p} N`
-for every `k`, with `p > 0`, `χ > 1`, `R > 0` and `N` finite, then `|f| ≤ F R^{-n/p} N` almost
-everywhere. -/
-private theorem ae_abs_le_of_forall_eLpNorm_le_ofReal_mul_rpow_mul {α : Type*}
-    [MeasurableSpace α] {μ : Measure α} {f : α → ℝ} {p χ F R n : ℝ} {N : ℝ≥0∞} (hp : 0 < p)
-    (hχ : 1 < χ) (hF : 0 ≤ F) (hR : 0 < R) (hN : N ≠ ⊤)
-    (h : ∀ k : ℕ, eLpNorm f (ENNReal.ofReal (p * χ ^ k)) μ ≤
-      ENNReal.ofReal (F * R ^ (n / (p * χ ^ k) - n / p)) * N) :
-    ∀ᵐ x ∂μ, |f x| ≤ F * R ^ (-n / p) * N.toReal := by
-  have hχk := (tendsto_pow_atTop_atTop_of_one_lt hχ).const_mul_atTop hp
-  -- The right sides tend to `F R^{-n/p} N`.
-  have hlim : Tendsto (fun k : ℕ => ENNReal.ofReal (F * R ^ (n / (p * χ ^ k) - n / p)) * N) atTop
-      (𝓝 (ENNReal.ofReal (F * R ^ (-n / p) * N.toReal))) := by
-    have hexp : Tendsto (fun k : ℕ => n / (p * χ ^ k) - n / p) atTop (𝓝 (-n / p)) := by
-      simpa [neg_div] using (tendsto_const_nhds (x := n)).div_atTop hχk |>.sub_const (n / p)
-    have := ENNReal.Tendsto.mul_const
-      (ENNReal.tendsto_ofReal ((tendsto_const_nhds.rpow hexp (.inl hR.ne')).const_mul F)) (.inr hN)
-    rwa [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_toReal hN]
-  -- So the essential supremum of `|f|` is at most `F R^{-n/p} N`.
-  have htop : eLpNorm f ∞ μ ≤ ENNReal.ofReal (F * R ^ (-n / p) * N.toReal) := by
-    refine eLpNorm_exponent_top_le_liminf.trans <|
-      ((tendsto_real_toNNReal_atTop.comp hχk).liminf_le_liminf_comp).trans ?_
-    rw [← hlim.liminf_eq]
-    exact liminf_le_liminf (.of_forall h)
-  filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
-  have := hx.trans (eLpNormEssSup_le_eLpNorm_top.trans htop)
-  rwa [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_ofReal_iff (by positivity)] at this
-
 section Iteration
 
 variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure] {lam Lam : ℝ}
@@ -645,9 +615,17 @@ theorem exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow_lowerOrder [Nonempt
       linarith
     · gcongr
       exact hprod k
-  filter_upwards [ae_abs_le_of_forall_eLpNorm_le_ofReal_mul_rpow_mul hp hχ hF.le hR
-    hmem.eLpNorm_ne_top hk] with x hx
-  rw [← hN]
+  -- The exponents `pχᵏ` tend to `∞` and the right sides to `F R^{-n/p} ‖u⁻¹‖_{L^p(B(x₀, R))}`.
+  have hχk := (tendsto_pow_atTop_atTop_of_one_lt hχ).const_mul_atTop hp
+  have hexp : Tendsto (fun k : ℕ => n / (p * χ ^ k) - n / p) atTop (𝓝 (-n / p)) := by
+    simpa [neg_div] using (tendsto_const_nhds (x := n)).div_atTop hχk |>.sub_const (n / p)
+  have hlim := ENNReal.Tendsto.mul_const
+    (ENNReal.tendsto_ofReal ((tendsto_const_nhds.rpow hexp (.inl hR.ne')).const_mul F))
+    (.inr hmem.eLpNorm_ne_top)
+  filter_upwards [ae_enorm_le_of_tendsto_of_eLpNorm_le (tendsto_real_toNNReal_atTop.comp hχk)
+    hlim (.of_forall hk)] with x hx
+  rw [← ENNReal.ofReal_toReal hmem.eLpNorm_ne_top, ← ENNReal.ofReal_mul (by positivity),
+    Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_ofReal_iff (by positivity), hN] at hx
   exact (le_abs_self _).trans hx
 
 end Iteration
