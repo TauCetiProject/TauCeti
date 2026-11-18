@@ -12,7 +12,6 @@ import all TauCeti.Geometry.Manifold.Sobolev.LocalMap.Atlas
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Geometry.Manifold.Complex.Analytic
-import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Double
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Sobolev.ChartTransition
 
@@ -36,14 +35,13 @@ reflection `TauCeti.ClosedUpperHalfPlane.schwarzDouble e` is a holomorphic chart
 with `e` on the closed upper half-plane. So the change of chart
 `TauCeti.MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas` along the reflection, which holds on
 arbitrary subsets of the plane, applies on the relatively open test sets
-(`TauCeti.memWkpLoc_comp_bordered_transition`). Changing the chart of `M` is the chain rule
+(`TauCeti.memWkpLoc_comp_bordered_transition`, in
+`TauCeti.Geometry.Manifold.Sobolev.ChartTransition`). Changing the chart of `M` is the chain rule
 `TauCeti.memWkpLoc_extend_comp`, which also holds on arbitrary subsets of the plane.
 The steps are glued with the locality of the planar classes, `memWkpLoc_iff_locally`.
 
 ## Main declarations
 
-* `TauCeti.memWkpLoc_comp_bordered_transition`: precomposition with the transition map between
-  two bordered holomorphic charts preserves the planar classes of order at most one.
 * `TauCeti.memWkpLocMapOnBordered_iff_of_subset_maximalAtlas`: **chart independence** up to the
   boundary, testing families of charts covering `s` and `u '' s`;
   `TauCeti.memWkpLocMapOnBordered_iff_atlas` and `TauCeti.memWkpLocMapOnBordered_iff_chartAt` for
@@ -87,59 +85,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ F H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {p : ENNReal} {k : ℕ} {u : X → M} {s : Set X}
-
-/-! ### Change of bordered holomorphic chart -/
-
-/-- **Change of bordered holomorphic chart.** Precomposition with the transition map
-`φ ∘ φ'⁻¹` between two bordered holomorphic charts preserves the planar classes of order at most
-one on subsets of the overlap. The transition map is read through its Schwarz
-reflection, a holomorphic chart of `ℂ` agreeing with it on the closed upper half-plane. -/
-theorem memWkpLoc_comp_bordered_transition
-    {φ φ' : OpenPartialHomeomorph X ClosedUpperHalfPlane}
-    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas X)
-    (hφ' : φ' ∈ borderedHolomorphicGroupoid.maximalAtlas X)
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℂ → E} {V W : Set ℂ} (hk : k ≤ 1)
-    (hg : MemWkpLoc p V k g)
-    (hWφ : W ⊆ (φ'.extend closedUpperHalfPlaneModel).target ∩
-      (φ'.extend closedUpperHalfPlaneModel).symm ⁻¹' φ.source)
-    (hmaps : MapsTo (φ.extend closedUpperHalfPlaneModel ∘
-      (φ'.extend closedUpperHalfPlaneModel).symm) W V) :
-    MemWkpLoc p W k
-      (g ∘ φ.extend closedUpperHalfPlaneModel ∘ (φ'.extend closedUpperHalfPlaneModel).symm) := by
-  set e := φ'.symm ≫ₕ φ
-  have he : e ∈ borderedHolomorphicGroupoid :=
-    StructureGroupoid.compatible_of_mem_maximalAtlas hφ' hφ
-  have hre : PreservesRealAxis e := preservesRealAxis_of_mem_borderedHolomorphicGroupoid he
-  set Φ := schwarzDouble e hre
-  have hΦ : Φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 ℂ :=
-    (contDiffGroupoid 1 𝓘(ℂ)).mem_maximalAtlas_of_mem_groupoid
-      (contDiffGroupoid_le (by exact_mod_cast le_top) (schwarzDouble_mem_contDiffGroupoid hre he))
-  have hupper : ∀ z ∈ W, 0 ≤ z.im := fun z hz ↦ by
-    simpa using φ'.extend_target_subset_range (hWφ hz).1
-  -- On the closed upper half-plane the reflection is the transition map.
-  have hagree : ∀ z ∈ W, Φ z =
-      (φ.extend closedUpperHalfPlaneModel ∘ (φ'.extend closedUpperHalfPlaneModel).symm) z := by
-    intro z hz
-    rw [schwarzDouble_apply_of_im_nonneg hre (hupper z hz)]
-    simp [e, closedUpperHalfPlaneModel_symm_eq_fold (hupper z hz)]
-  have hsub : ∀ z ∈ W, z ∈ Φ.source := fun z hz ↦ by
-    obtain ⟨hzt, hzφ⟩ := hWφ hz
-    rw [OpenPartialHomeomorph.extend_target] at hzt
-    simp only [mem_preimage, OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply] at hzφ
-    simp only [Φ, e, schwarzDouble_source, mem_preimage, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, mem_inter_iff,
-      ← closedUpperHalfPlaneModel_symm_eq_fold (hupper z hz)]
-    exact ⟨hzt.1, hzφ⟩
-  refine ((hg.comp_symm_trans_of_mem_maximalAtlas hk
-    (contDiffGroupoid 1 𝓘(ℝ, ℂ)).id_mem_maximalAtlas
-    (IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero hΦ)).mono
-      fun z hz ↦ ⟨⟨mem_univ z, hsub z hz⟩, ?_⟩).congr fun z hz ↦ ?_
-  · simpa only [mem_preimage, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      OpenPartialHomeomorph.refl_symm, OpenPartialHomeomorph.refl_apply, id_eq, hagree z hz]
-      using hmaps hz
-  · simp only [Function.comp_apply, OpenPartialHomeomorph.refl_symm,
-      OpenPartialHomeomorph.refl_apply, id_eq]
-    rw [hagree z hz, Function.comp_apply]
 
 /-! ### Chart independence -/
 
@@ -347,25 +292,8 @@ theorem memWkpLocMapOnBordered_sqrt_im (hp : p < 2) :
     isOpen_lt (by fun_prop) continuous_const
   rw [memWkpLocMapOnBordered_iff_chartAt le_rfl hs]
   refine ⟨by fun_prop, fun x y ↦ ?_⟩
-  have hset : (extChartAt closedUpperHalfPlaneModel x).target ∩
-      (extChartAt closedUpperHalfPlaneModel x).symm ⁻¹'
-        ({z : ClosedUpperHalfPlane | ‖(z : ℂ)‖ < 1} ∩
-          (fun z : ClosedUpperHalfPlane ↦ √(z : ℂ).im) ⁻¹' (chartAt ℝ y).source) =
-      Metric.ball (0 : ℂ) 1 ∩ {z | 0 ≤ z.im} := by
-    ext z
-    simp only [extChartAt_target, extChartAt_coe_symm, chartAt_self_eq,
-      OpenPartialHomeomorph.refl_target, OpenPartialHomeomorph.refl_symm,
-      OpenPartialHomeomorph.refl_source, range_closedUpperHalfPlaneModel, mem_inter_iff,
-      mem_preimage, mem_ofPred_eq, mem_univ, Function.comp_apply, OpenPartialHomeomorph.refl_apply,
-      id_eq, preimage_univ, and_true, true_and, Metric.mem_ball, dist_zero_right]
-    constructor
-    · rintro ⟨hz, hzs⟩
-      rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz] at hzs
-      exact ⟨hzs, hz⟩
-    · rintro ⟨hzs, hz⟩
-      rw [coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz]
-      exact ⟨hz, hzs⟩
-  rw [hset]
+  rw [chartAt_self_eq (H := ℝ), OpenPartialHomeomorph.refl_source, preimage_univ, inter_univ,
+    extChartAt, extend_chartAt_target_inter_preimage_halfDisc]
   refine (memWkpLoc_sqrt_im_iff.2 hp).congr fun z hz ↦ ?_
   simp [chartAt_self_eq, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz.2]
 
