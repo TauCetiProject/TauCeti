@@ -62,7 +62,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
   contractive scalar action.
-* `PadicInt.norm_smul_le_of_norm_le_one`: a scalar of norm at most `1` does not increase norms.
+* `PadicInt.norm_smul_le_norm`: scalars in `ℤ_p` do not increase norms.
 * `PadicInt.norm_algebraMap_le_one`: a `p`-adic integer has norm at most `1` in every normed
   field extension of `ℚ_p`.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
@@ -190,11 +190,10 @@ theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZer
         rw [smul_smul, Units.inv_mul, one_smul]
     _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
 
-/-- Scalars in `ℤ_p` of norm at most `1` do not increase norms. -/
-theorem norm_smul_le_of_norm_le_one {E : Type*} [SeminormedAddGroup E]
-    [MulActionWithZero ℤ_[p] E] [IsBoundedSMul ℤ_[p] E] {r : ℤ_[p]} (e : E) (hr : ‖r‖ ≤ 1) :
-    ‖r • e‖ ≤ ‖e‖ :=
-  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) hr)
+/-- Scalars in `ℤ_p` do not increase norms, since they all have norm at most `1`. -/
+theorem norm_smul_le_norm {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] (r : ℤ_[p]) (e : E) : ‖r • e‖ ≤ ‖e‖ :=
+  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) (norm_le_one r))
 
 /-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
 theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :

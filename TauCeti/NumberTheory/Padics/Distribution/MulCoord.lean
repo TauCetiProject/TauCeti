@@ -87,11 +87,9 @@ private noncomputable def mulCoordCoeff (c : AnalyticStage p h E) : ZMod (p ^ h)
 private theorem norm_mulCoordCoeff_le (c : AnalyticStage p h E) (i : ZMod (p ^ h) × ℕ) :
     ‖mulCoordCoeff c i‖ ≤ max ‖c i‖ ‖c (i.1, i.2 - 1)‖ := by
   obtain ⟨a, _ | n⟩ := i
-  · exact (PadicInt.norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)).trans
-      (le_max_left _ _)
+  · exact (PadicInt.norm_smul_le_norm _ _).trans (le_max_left _ _)
   · exact (IsUltrametricDist.norm_add_le_max _ _).trans
-      (max_le_max (PadicInt.norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _))
-        (PadicInt.norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)))
+      (max_le_max (PadicInt.norm_smul_le_norm _ _) (PadicInt.norm_smul_le_norm _ _))
 
 private theorem norm_mulCoordCoeff_le_norm (c : AnalyticStage p h E) (i : ZMod (p ^ h) × ℕ) :
     ‖mulCoordCoeff c i‖ ≤ ‖c‖ :=

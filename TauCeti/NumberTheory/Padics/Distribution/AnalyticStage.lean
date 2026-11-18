@@ -144,16 +144,16 @@ private theorem norm_discTerm_le (i : ZMod (p ^ h) × ℕ) (e : E) : ‖discTerm
   (ContinuousMap.norm_le _ (norm_nonneg e)).mpr fun y ↦ by
     simp only [discTerm, ContinuousMap.coe_mk]
     split_ifs
-    · exact PadicInt.norm_smul_le_of_norm_le_one e (PadicInt.norm_le_one _)
+    · exact PadicInt.norm_smul_le_norm _ e
     · simp
 
 variable [IsUltrametricDist E] [CompleteSpace E]
 
-private theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) {r : ℕ → ℤ_[p]}
-    (hr : ∀ n, ‖r n‖ ≤ 1) : Summable fun n ↦ r n • c (a, n) :=
+private theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (r : ℕ → ℤ_[p]) :
+    Summable fun n ↦ r n • c (a, n) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
     rw [Nat.cofinite_eq_atTop]
-    exact squeeze_zero_norm (fun n ↦ PadicInt.norm_smul_le_of_norm_le_one _ (hr n))
+    exact squeeze_zero_norm (fun n ↦ PadicInt.norm_smul_le_norm (r n) _)
       (tendsto_zero_iff_norm_tendsto_zero.mp (tendsto_apply_mk_atTop c a))
 
 /-- The family of power series with coefficient vector `c`, as a continuous function of the
@@ -259,26 +259,22 @@ theorem opNorm_eval_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Normed
     simpa using norm_eval_le 𝕜 c
 
 private theorem summable_smul_apply_add (c : AnalyticStage p h E) (a : ZMod (p ^ h))
-    (n : ℕ) {r : ℕ → ℤ_[p]} (hr : ∀ k, ‖r k‖ ≤ 1) :
-    Summable fun k ↦ r k • c (a, k + n) := by
-  simpa using (summable_nat_add_iff n).mpr
-    (summable_smul_apply c a (r := fun k ↦ r (k - n)) fun k ↦ hr (k - n))
+    (n : ℕ) (r : ℕ → ℤ_[p]) : Summable fun k ↦ r k • c (a, k + n) := by
+  simpa using (summable_nat_add_iff n).mpr (summable_smul_apply c a fun k ↦ r (k - n))
 
 private theorem tsum_pow_smul_apply_add_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p]))
     (c : AnalyticStage p h E) (hc : eval S c = 0) (a : ZMod (p ^ h)) (n : ℕ)
     (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
     ∑' k, ((p : ℤ_[p]) ^ m) ^ k • c (a, k + n) = 0 := by
   set x : ℤ_[p] := p ^ m with hx
-  have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
-    fun k ↦ PadicInt.norm_le_one _
+  have hs := summable_smul_apply_add c a n fun k ↦ x ^ k
   refine ((hpE.pow m).pow n).right_eq_zero_of_smul ?_
   rw [← hx, ← hs.tsum_const_smul]
   have hzero : ∑' k, x ^ k • c (a, k) = 0 := by
     rw [← eval_natCast_val_add_mul S, hc, ContinuousMap.zero_apply]
   have hprefix : ∑ k ∈ Finset.range n, x ^ k • c (a, k) = 0 :=
     Finset.sum_eq_zero fun k hk ↦ by rw [hn k (Finset.mem_range.mp hk), smul_zero]
-  have htail := (summable_smul_apply c a (r := fun k ↦ x ^ k)
-    fun k ↦ PadicInt.norm_le_one _).sum_add_tsum_nat_add n
+  have htail := (summable_smul_apply c a fun k ↦ x ^ k).sum_add_tsum_nat_add n
   rw [hprefix, zero_add, hzero] at htail
   simpa only [smul_smul, ← pow_add, Nat.add_comm n] using htail
 
@@ -287,8 +283,7 @@ private theorem norm_apply_le_of_eval_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p
     (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
     ‖c (a, n)‖ ≤ ‖(p : ℤ_[p])‖ ^ m * ‖c‖ := by
   set x : ℤ_[p] := p ^ m with hx
-  have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
-    fun k ↦ PadicInt.norm_le_one _
+  have hs := summable_smul_apply_add c a n fun k ↦ x ^ k
   have hzero := tsum_pow_smul_apply_add_eq_zero S hpE c hc a n hn m
   rw [← hx, hs.tsum_eq_zero_add, pow_zero, one_smul, zero_add] at hzero
   have heq : c (a, n) = -∑' k, x ^ (k + 1) • c (a, k + 1 + n) :=
@@ -378,7 +373,7 @@ private noncomputable def transitionCoeff (c : AnalyticStage p h E)
 
 private theorem summable_transitionScalar_smul (c : AnalyticStage p h E) (a : ZMod (p ^ h))
     (b : ℤ_[p]) (j : ℕ) : Summable fun k ↦ transitionScalar b j k • c (a, k) :=
-  summable_smul_apply c a fun _ ↦ PadicInt.norm_le_one _
+  summable_smul_apply c a _
 
 omit [CompleteSpace E] in
 private theorem norm_transitionCoeff_le (c : AnalyticStage p h E) (i : ZMod (p ^ (h + 1)) × ℕ) :
