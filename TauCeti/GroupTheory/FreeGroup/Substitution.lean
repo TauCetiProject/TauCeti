@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.Computability
 public import TauCeti.GroupTheory.FreeGroup.Reduce
+import Mathlib.Algebra.Order.BigOperators.Group.List
 
 /-!
 # Primitive-recursive substitution of free-group words
@@ -21,7 +22,8 @@ letters (`FreeGroup.substituteVars`): it is the substitution in Makanin's genera
 where both sides must agree letter by letter. It is primitive recursive jointly in the word
 and a finite table of the substituted words (`FreeGroup.primrec₂_substituteVars_getD`). It only
 depends on the words assigned to the generators that occur, so changing the word of one generator
-changes the substitution only at the letters of that generator.
+changes the substitution only at the letters of that generator, and substituting words of length at
+most `k` multiplies the length of a word by at most `k`.
 -/
 
 public section
@@ -96,6 +98,15 @@ theorem flatMap_substituteLetter_invRev (f : α → List (β × Bool)) (w : List
     congr 1
     have hs : invRev [a] = [(a.1, !a.2)] := by simp [invRev]
     obtain ⟨x, _ | _⟩ := a <;> simp [hs, invRev_invRev]
+
+/-- If the generators occurring in a word are assigned words of length at most `k`, substitution
+without free reduction multiplies the length of the word by at most `k`. -/
+theorem length_flatMap_substituteLetter_le {f : α → List (β × Bool)} {k : ℕ} {w : List (α × Bool)}
+    (hf : ∀ a ∈ w, (f a.1).length ≤ k) :
+    (w.flatMap (substituteLetter f)).length ≤ k * w.length := by
+  rw [List.length_flatMap]
+  refine (List.sum_le_sum (g := fun _ => k) fun a ha => ?_).trans (by simp [mul_comm])
+  obtain ⟨a, _ | _⟩ := a <;> simpa [invRev_length] using hf _ ha
 
 /-- Substitution without free reduction agrees with the universal homomorphism from the free
 group. -/
