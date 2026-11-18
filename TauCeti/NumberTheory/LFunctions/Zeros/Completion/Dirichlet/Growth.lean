@@ -21,8 +21,10 @@ entire parts of Hurwitz functional-equation pairs, whose kernels decay exponenti
 The split Mellin estimates therefore give an explicit bound
 `‖Λ(s)‖ ≤ exp (C (1 + ‖s‖) log (2 + ‖s‖))` on the whole plane. Hence the completion has order
 at most one (`dirichletData_completed_orderLE_one`, the Dirichlet instance of the order bound for
-split Mellin integrals), and the record has finite order. On each closed vertical strip the
-Mellin bounds depend only on the real part, so the completion has vertical-strip growth.
+split Mellin integrals), as does the entire completion
+(`dirichletData_entireCompletion_orderLE_one`), and the record has finite order. On each closed
+vertical strip the Mellin bounds depend only on the real part, so the completion has
+vertical-strip growth.
 
 This route does not use Stirling's formula, partial summation or the functional equation.
 
@@ -66,6 +68,12 @@ theorem dirichletData_completed_orderLE_one (hne : χ ≠ 1) :
     OrderLE (dirichletData χ hχ).completed 1 := by
   obtain ⟨C, -, hC⟩ := exists_norm_dirichletData_completed_le_exp_mul_log χ hχ hne
   exact orderLE_one_of_norm_le_exp_mul_log hC
+
+/-- The entire completion of a nonprincipal primitive Dirichlet record has order at most one. -/
+theorem dirichletData_entireCompletion_orderLE_one (hne : χ ≠ 1) :
+    OrderLE (dirichletData χ hχ).entireCompletion 1 := by
+  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
+  exact dirichletData_completed_orderLE_one χ hχ hne
 
 /-- A primitive nonprincipal Dirichlet record has finite order. -/
 theorem dirichletData_isFiniteOrder (hne : χ ≠ 1) : (dirichletData χ hχ).IsFiniteOrder := by
