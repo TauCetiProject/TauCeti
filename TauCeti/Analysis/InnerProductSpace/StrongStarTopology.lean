@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.TransferInstance
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import TauCeti.Analysis.LocallyConvex.StrongOperatorTopology
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 
 /-!
@@ -38,6 +38,10 @@ has the same strong-star closure (`closure_image_ofCLM_eq_of_isStarNormal`).
 
 ## Implementation notes
 
+The type copy follows Mathlib's `ContinuousLinearMapWOT` and uses Tau Ceti's
+`TauCeti.ContinuousLinearMapUltrastrong` and `TauCeti.ContinuousLinearMapUltraweak`
+as implementation templates.
+
 The algebraic structure of the type copy is transported from `E →L[𝕜] F` along
 `ContinuousLinearMapStrongStar.equiv`, and the definitions are exposed so that this transport, and
 the agreement of the uniform structure with the topology, hold by definition for downstream
@@ -54,37 +58,6 @@ files. The seminorms are not exposed; they are used through `seminormFamily_inl`
 
 open Filter Topology
 open scoped InnerProduct InnerProductSpace
-
-/-! ### Strong convergence of normal operators -/
-
-namespace ContinuousLinearMap
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [CompleteSpace E]
-
-/-- If normal operators `T a` converge strongly to a normal operator `T₀`, then their adjoints
-converge strongly to `T₀†`. -/
-theorem tendsto_adjoint_apply_of_isStarNormal {α : Type*} {l : Filter α}
-    {T : α → E →L[𝕜] E} {T₀ : E →L[𝕜] E} (hT : ∀ᶠ a in l, IsStarNormal (T a))
-    (hT₀ : IsStarNormal T₀) (h : ∀ x, Tendsto (fun a ↦ T a x) l (𝓝 (T₀ x))) (y : E) :
-    Tendsto (fun a ↦ ((T a)†) y) l (𝓝 ((T₀†) y)) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  -- Expand `‖(T a)† y - T₀† y‖²` and use `‖(T a)† y‖ = ‖T a y‖` for the normal `T a`.
-  have hsq : ∀ᶠ a in l, ‖T a y‖ ^ 2 - 2 * RCLike.re ⟪y, T a ((T₀†) y)⟫_𝕜 + ‖(T₀†) y‖ ^ 2 =
-      ‖((T a)†) y - (T₀†) y‖ ^ 2 := by
-    filter_upwards [hT] with a ha
-    rw [@norm_sub_sq 𝕜, ← isStarNormal_iff_norm_eq_adjoint.mp ha y, adjoint_inner_left]
-  -- The expanded expression tends to the same expression for `T₀`, which vanishes.
-  have h0 : ‖T₀ y‖ ^ 2 - 2 * RCLike.re ⟪y, T₀ ((T₀†) y)⟫_𝕜 + ‖(T₀†) y‖ ^ 2 = 0 := by
-    rw [← adjoint_inner_left, isStarNormal_iff_norm_eq_adjoint.mp hT₀ y, ← @norm_sub_sq 𝕜,
-      sub_self, norm_zero, zero_pow two_ne_zero]
-  have hlim := (((h y).norm.pow 2).sub ((((RCLike.continuous_re (K := 𝕜)).tendsto _).comp
-    ((tendsto_const_nhds (x := y)).inner (h ((T₀†) y)))).const_mul 2)).add
-      (tendsto_const_nhds (x := ‖(T₀†) y‖ ^ 2))
-  rw [h0] at hlim
-  simpa [Real.sqrt_sq (norm_nonneg _)] using (hlim.congr' hsq).sqrt
-
-end ContinuousLinearMap
 
 namespace TauCeti
 
