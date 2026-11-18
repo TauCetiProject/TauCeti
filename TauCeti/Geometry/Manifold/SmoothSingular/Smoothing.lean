@@ -38,8 +38,8 @@ quasi-isomorphism on `U`:
 * a convex chart domain `U = (chartAt H x).source ∩ (extChartAt I x)⁻¹' C`, with `C` convex, is
   smoothly contractible: the chart identifies it with the convex set `C ∩ range I`, which contracts
   onto any of its points along straight lines
-  (`TauCeti.exists_contMDiff_contraction_of_convex_extChartAt`), so its smooth and singular chains
-  are chain homotopy equivalent
+  (`TauCeti.exists_contMDiff_contraction_of_starConvex_extChartAt`), so its smooth and singular
+  chains are chain homotopy equivalent
   (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction`);
 * the property passes to binary unions by the Mayer–Vietoris sequences of smooth and singular
   chains (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup`), and to countable
@@ -151,8 +151,8 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι :
       have : IsEmpty (⊥ : Opens M) := ⟨fun y ↦ y.2⟩
       exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty R)
     (fun x C U _ hCc hCt hU ⟨y₀, hy₀⟩ ↦ by
-      obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_convex_extChartAt hCc hCt hU
-        ⟨y₀, hy₀⟩
+      obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex_extChartAt hCt hU
+        ⟨y₀, hy₀⟩ (hCc.starConvex (hU ▸ hy₀ : y₀ ∈ (chartAt H x).source ∩ _ ⁻¹' C).2)
       exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction R hF _ h₀ h₁)
     (fun U V hU hV hUV ↦ quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup I R U V hU hV hUV)
     (fun s hs h ↦ quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup s C R

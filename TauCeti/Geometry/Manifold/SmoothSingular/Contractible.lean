@@ -50,10 +50,10 @@ and corners: the contraction stays in `range I` because `I '' U` does. A star-co
 a normed space `V` is the case `I = 𝓘(ℝ, V)`.
 
 On a smooth manifold the same straight-line contraction, read in the extended chart at a point
-`x`, contracts every nonempty convex chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`,
-for a convex `C` with `C ∩ range I` inside the chart target
-(`TauCeti.exists_contMDiff_contraction_of_convex_extChartAt`). The empty open set and these
-nonempty convex chart domains are the base cases of the Mayer–Vietoris induction
+`x`, contracts every chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C` containing a
+point `y₀`, for a `C` star-convex about the chart image of `y₀` with `C ∩ range I` inside the chart
+target (`TauCeti.exists_contMDiff_contraction_of_starConvex_extChartAt`). The empty open set and
+the nonempty convex chart domains are the base cases of the Mayer–Vietoris induction
 (`TauCeti.mayerVietoris_induction_extChartAt`) proving the smoothing theorem, which compares smooth
 with continuous singular homology on manifolds with corners. The step for countable disjoint unions
 is `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`.
@@ -69,8 +69,9 @@ is `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`.
   of the model space with star-convex image.
 * `TauCeti.exists_contMDiff_contraction_of_starConvex`: an open set of the model space with
   star-convex image is smoothly contractible.
-* `TauCeti.exists_contMDiff_contraction_of_convex_extChartAt`: on a smooth manifold, a nonempty
-  convex chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C` is smoothly contractible.
+* `TauCeti.exists_contMDiff_contraction_of_starConvex_extChartAt`: on a smooth manifold, a chart
+  domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C` with `C` star-convex about the chart image
+  of one of its points is smoothly contractible.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
   has no smooth singular homology in positive degrees.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has an open set of
@@ -140,15 +141,17 @@ theorem exists_contMDiff_contraction_of_starConvex {U : TopologicalSpace.Opens H
   · simp [h, Real.smoothTransition.zero]
   · simp [h, Real.smoothTransition.one]
 
-/-- **The straight-line contraction of a convex chart domain.** Let
-`U = (chartAt H x).source ∩ (extChartAt I x)⁻¹' C` for a convex set `C ⊆ E` with
-`C ∩ range I ⊆ (extChartAt I x).target`, and let `y₀ ∈ U`. Read in the extended chart at `x`,
+/-- **The straight-line contraction of a star-convex chart domain.** Let
+`U = (chartAt H x).source ∩ (extChartAt I x)⁻¹' C` for a set `C ⊆ E` with
+`C ∩ range I ⊆ (extChartAt I x).target`, let `y₀ ∈ U`, and let `C` be star-convex about the chart
+image of `y₀`. Read in the extended chart at `x`,
 `(t, y) ↦ c + (1 - ψ t) • (y - c)`, with `c` the chart image of `y₀` and `ψ` the smooth transition
 function from `0` to `1`, is a smooth map `ℝ × U → U` joining the identity to the constant map with
 value `y₀`. -/
-theorem exists_contMDiff_contraction_of_convex_extChartAt [IsManifold I ∞ M] {x : M} {C : Set E}
-    (hC : Convex ℝ C) (hCt : C ∩ range I ⊆ (extChartAt I x).target) {U : TopologicalSpace.Opens M}
-    (hU : (U : Set M) = (chartAt H x).source ∩ extChartAt I x ⁻¹' C) (y₀ : U) :
+theorem exists_contMDiff_contraction_of_starConvex_extChartAt [IsManifold I ∞ M] {x : M}
+    {C : Set E} (hCt : C ∩ range I ⊆ (extChartAt I x).target) {U : TopologicalSpace.Opens M}
+    (hU : (U : Set M) = (chartAt H x).source ∩ extChartAt I x ⁻¹' C) (y₀ : U)
+    (hC : StarConvex ℝ (extChartAt I x y₀) C) :
     ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ y, F (0, y) = y) ∧
       ∀ y, F (1, y) = y₀ := by
   set e := extChartAt I x
@@ -163,7 +166,7 @@ theorem exists_contMDiff_contraction_of_convex_extChartAt [IsManifold I ∞ M] {
   have hψ : ∀ t, 1 - Real.smoothTransition t ∈ Icc (0 : ℝ) 1 := fun t ↦
     ⟨by linarith [Real.smoothTransition.le_one t], by linarith [Real.smoothTransition.nonneg t]⟩
   have hmem : ∀ p, h p ∈ C ∩ range I := fun p ↦
-    ⟨hC.add_smul_sub_mem (hC' y₀) (hC' p.2) (hψ p.1),
+    ⟨hC.add_smul_sub_mem (hC' p.2) (hψ p.1).1 (hψ p.1).2,
       I.convex_range.add_smul_sub_mem (extChartAt_target_subset_range x (e.map_source (hsrc y₀)))
         (extChartAt_target_subset_range x (e.map_source (hsrc p.2))) (hψ p.1)⟩
   have hU' : ∀ p, e.symm (h p) ∈ (U : Set M) := fun p ↦ by
