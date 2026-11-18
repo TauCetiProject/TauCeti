@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Riccardo Brasca
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
+public import TauCeti.Topology.MetricSpace.Curve
 public import TauCeti.Topology.MetricSpace.Length
 import Mathlib.Analysis.Normed.Module.Ray
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -212,33 +213,6 @@ theorem norm_curveVelocity_eq_one_of_dist_eq_abs {γ : ℝ → M} {ε : ℝ} (h�
   -- The velocity lies in the fibre over `exp_{γ 0} (0 • v)`; rewriting this base point to `γ 0`
   -- transports the fibre norm back to `T_{γ 0} M`.
   rw [zero_smul, riemannianExp_zero, hv]
-
--- The degenerate case of the local constant-speed identity is locally constant.
-private theorem eventuallyEq_const_of_dist_eq_mul_zero {γ : ℝ → M} {ε t₀ : ℝ}
-    (hε : 0 < ε)
-    (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
-      dist (γ s) (γ t) = |s - t| * 0) : γ =ᶠ[𝓝 t₀] fun _ ↦ γ t₀ := by
-  have ht₀ : t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := ⟨by linarith, by linarith⟩
-  filter_upwards [Icc_mem_nhds (by linarith : t₀ - ε < t₀)
-    (by linarith : t₀ < t₀ + ε)] with t ht
-  rw [← dist_eq_zero, hdist t ht t₀ ht₀, mul_zero]
-
--- Normalize the local constant-speed identity to the zero-centred unit-speed identity.
-private theorem dist_reparam_eq_abs_of_dist_eq_mul_abs {γ : ℝ → M} {ε c t₀ : ℝ}
-    (hc : 0 < c)
-    (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
-      dist (γ s) (γ t) = |s - t| * c) :
-    ∀ s ∈ Icc (-(ε * c)) (ε * c), ∀ t ∈ Icc (-(ε * c)) (ε * c),
-      dist (γ (s / c + t₀)) (γ (t / c + t₀)) = |s - t| := by
-  have hmaps : ∀ s ∈ Icc (-(ε * c)) (ε * c), s / c + t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := by
-    intro s hs
-    have hleft : -ε ≤ s / c := (le_div_iff₀ hc).mpr (by nlinarith [hs.1])
-    have hright : s / c ≤ ε := (div_le_iff₀ hc).mpr hs.2
-    exact ⟨by linarith, by linarith⟩
-  intro s hs t ht
-  have hsub : s / c + t₀ - (t / c + t₀) = (s - t) / c := by ring
-  rw [hdist _ (hmaps s hs) _ (hmaps t ht), hsub, abs_div, abs_of_pos hc,
-    div_mul_cancel₀ _ hc.ne']
 
 /-- **A curve realizing distances at constant speed is smooth.** If
 `dist (γ s) (γ t) = |s - t| * c` for all `s, t` in `[t₀ - ε, t₀ + ε]`, with `c ≥ 0`, then `γ` is
