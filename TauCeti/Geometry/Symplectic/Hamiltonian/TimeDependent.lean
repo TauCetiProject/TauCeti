@@ -9,6 +9,10 @@ public import TauCeti.Dynamics.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
+public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
+import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Dynamics.Flow.Periodic.Basic
 
 /-!
 # Time-dependent Hamiltonian flows on symplectic vector spaces
@@ -54,7 +58,14 @@ the autonomous Hamiltonian vector field.
   `F` is conserved by the evolution exactly when `∂_t F + {F_t, H_t} = 0`.
 * `TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg`: reversing
   time turns a solution of `y' = X_{-G}(y)` into a solution of `x' = X_G(x)`; for instance a
-  solution for the reversed Hamiltonian `-H_{-t}` into a solution for `H_t`.
+  solution for the reversed Hamiltonian `-H_{-t}` into a solution for `H_t`
+  (`TauCeti.SymplecticForm.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse`).
+* `TauCeti.SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt` and
+  `TauCeti.SymplecticForm.eq_zero_of_dysonSeriesLeft_apply_eq_self`: a one-periodic orbit `x` with
+  `x(0)` a nondegenerate fixed point of the time-one map is isolated among the one-periodic orbits,
+  and the return map `Ψ(1)` of its linearized equation fixes no nonzero vector. The `_reverse`
+  variants state the same for the reversed Hamiltonian `-H_{-t}`, whose one-periodic orbits are
+  those of `H_t` traversed backwards.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of time-dependent
 Hamiltonian vector fields and flows.
@@ -63,7 +74,7 @@ Hamiltonian vector fields and flows.
 public section
 
 open Function
-open scoped NNReal
+open scoped NNReal Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -334,6 +345,15 @@ theorem hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg (omega : Sy
   rw [hamiltonianVectorField_neg, neg_one_smul, neg_neg] at h
   exact h
 
+/-- **Time reversal of Hamiltonian orbits.** Reversing time, `t ↦ x(-t)`, turns an orbit `x` of
+the reversed Hamiltonian `-H_{-t}` into an orbit of `H_t`. -/
+theorem hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse
+    (omega : SymplecticForm V) {H : ℝ → V → ℝ} {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t) (t : ℝ) :
+    HasDerivAt (fun s ↦ x (-s)) (omega.hamiltonianVectorField (H t) (x (-t))) t :=
+  omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg
+    (by simpa only [neg_neg, Pi.neg_def] using hx (-t))
+
 /-- **Conserved quantities of a time-dependent Hamiltonian.** For a time-dependent Hamiltonian
 whose suspended vector field is Lipschitz, a differentiable time-dependent function `F` is constant
 along its evolution, `F(t, Φ_{s,t} x) = F(s, x)`, exactly when `∂_t F + {F_t, H_t} = 0`. -/
@@ -361,6 +381,112 @@ theorem forall_apply_timeDependentHamiltonianFlow_eq_iff (omega : SymplecticForm
       fun u ↦ (h u _) ▸ hderiv s u x
     rw [is_const_of_deriv_eq_zero (fun u ↦ (hzero u).differentiableAt)
       (fun u ↦ (hzero u).deriv) t s, timeDependentHamiltonianFlow_self]
+
+section Nondegenerate
+
+/-! ### Nondegenerate one-periodic orbits -/
+
+/-- **Nondegenerate orbits are isolated.** A one-periodic orbit `x` of `H` such that `x(0)` is a
+nondegenerate fixed point of the time-one map is isolated among the one-periodic orbits of `H`. -/
+theorem exists_pos_forall_eq_of_isNondegenerateFixedPt (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    {x : ℝ → V} (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
+      (∀ t, HasDerivAt y (omega.hamiltonianVectorField (H t) (y t)) t) →
+      dist (y 0) (x 0) < ε → y = x := by
+  have hiso := hnd.eventually_not_isFixedPt
+  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
+  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
+  exact ⟨ε, hε, fun y hyper hy hyx ↦ h y hy hyper hyx⟩
+
+/-- **Nondegenerate orbits of the reversed Hamiltonian are isolated.** A one-periodic orbit `x` of
+the reversed Hamiltonian `-H_{-t}`, such that `x(0)` is a nondegenerate fixed point of the time-one
+map of `H`, is isolated among the one-periodic orbits of `-H_{-t}`. -/
+theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_reverse (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    {x : ℝ → V} (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 →
+      (∀ t, HasDerivAt y (omega.hamiltonianVectorField (fun z ↦ -H (-t) z) (y t)) t) →
+      dist (y 0) (x 0) < ε → y = x := by
+  obtain ⟨ε, hε, h⟩ := omega.exists_pos_forall_eq_of_isNondegenerateFixedPt hX
+    (omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx)
+    (by simpa only [neg_zero] using hnd)
+  refine ⟨ε, hε, fun y hyper hy hyx ↦ funext fun t ↦ ?_⟩
+  have hxy := congrFun (h _ hyper.comp_neg
+    (omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hy)
+    (by simpa only [neg_zero] using hyx)) (-t)
+  simpa only [neg_neg] using hxy
+
+/-- **The return map at a nondegenerate orbit fixes no nonzero vector.** Let `x` be an orbit of
+a jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz,
+with `x(0)` a nondegenerate fixed point of the time-one map. Then the return map `Ψ(1)` of the
+linearized Hamiltonian equation `ζ' = S_t ζ`, with `S_t = dX_{H_t}(x(t))`, fixes no nonzero
+vector: it is the derivative of the time-one map at `x(0)`
+(`fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`). -/
+theorem eq_zero_of_dysonSeriesLeft_apply_eq_self (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {v : V}
+    (hv : dysonSeriesLeft (fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (H t)) (x t)) 1 v = v) :
+    v = 0 := by
+  refine hnd.eq_zero_of_mfderiv_apply_eq ?_
+  rw [(omega.differentiable_timeDependentHamiltonianFlow hX hH 0 1 (x 0)).hasFDerivAt
+      |>.hasMFDerivAt.mfderiv,
+    omega.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX hH hx 0 1]
+  simp only [zero_add, sub_zero]
+  exact hv
+
+/-- **The return map at a nondegenerate orbit of the reversed Hamiltonian fixes no nonzero
+vector.** Let `x` be a
+one-periodic orbit of the reversed Hamiltonian `-H_{-t}` of a one-periodic, jointly `C²`
+Hamiltonian `H` whose suspended vector field is globally Lipschitz, such that `x(0)` is a
+nondegenerate fixed point of the time-one map of `H`. Then the return map of the linearized
+equation of `-H_{-t}` along `x` fixes no nonzero vector. Its linearization is
+`S'_t = -S_{-t}`, where `S_t` is that of `H` along the orbit `t ↦ x(-t)`, so `t ↦ ζ(-t)` turns a
+periodic solution of `ζ' = S'_t ζ` into one of `ζ' = S_t ζ`. -/
+theorem eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V} (hxp : Periodic x 1)
+    (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (fun y ↦ -H (-t) y) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (omega.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {v : V} (hv : dysonSeriesLeft
+      (fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (fun y ↦ -H (-t) y)) (x t)) 1 v = v) :
+    v = 0 := by
+  have hy := omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx
+  set S : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (H t)) (x (-t))
+  set S' : ℝ → V →L[ℝ] V :=
+    fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (fun y ↦ -H (-t) y)) (x t)
+  have hSc : Continuous S := omega.continuous_fderiv_hamiltonianVectorField_comp hH
+    (continuous_iff_continuousAt.2 fun t ↦ (hy t).continuousAt)
+  -- The linearization of the reversed Hamiltonian is `S'_t = -S_{-t}`.
+  have hS' (t : ℝ) : S' t = -S (-t) := by
+    have hX' : omega.hamiltonianVectorField (fun y ↦ -H (-t) y) =
+        fun y ↦ -omega.hamiltonianVectorField (H (-t)) y :=
+      funext fun y ↦ by simpa only [Pi.neg_def] using omega.hamiltonianVectorField_neg (H (-t)) y
+    simp only [S', S, hX', fderiv_fun_neg, neg_neg]
+  have hS'c : Continuous S' := by
+    rw [show S' = fun t ↦ -S (-t) from funext hS']
+    exact (hSc.comp continuous_neg).neg
+  have hS'p : Periodic S' 1 := fun t ↦ by
+    simp only [S', hxp t, neg_add, ← sub_eq_add_neg, hHp.sub_eq]
+  -- The periodic solution `t ↦ Ψ'(t) v` of `ζ' = S'_t ζ`, run backwards, is a periodic solution
+  -- of `ζ' = S_t ζ` starting at `v`.
+  set ζ : ℝ → V := fun t ↦ dysonSeriesLeft S' (-t) v
+  have hζ (t : ℝ) : HasDerivAt ζ (S t (ζ t)) t := by
+    have h := (hasDerivAt_dysonSeriesLeft_apply hS'c v (-t)).scomp t (hasDerivAt_neg t)
+    rw [hS', neg_neg, neg_one_smul, neg_apply, neg_neg] at h
+    exact h
+  have hζp : Periodic ζ 1 := ((periodic_dysonSeriesLeft_apply_iff hS'c hS'p v).2 hv).comp_neg
+  have hζ0 : ζ 0 = v := by simp [ζ, dysonSeriesLeft_zero]
+  refine omega.eq_zero_of_dysonSeriesLeft_apply_eq_self hX hH hy
+    (by simpa only [neg_zero] using hnd) ?_
+  rw [← hζ0, ← eq_dysonSeriesLeft_apply hSc hζ, ← zero_add (1 : ℝ), hζp 0]
+
+end Nondegenerate
 
 end TauCeti.SymplecticForm
 
