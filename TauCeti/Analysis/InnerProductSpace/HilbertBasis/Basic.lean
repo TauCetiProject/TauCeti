@@ -15,13 +15,19 @@ This file transfers orthogonality to every vector of a subspace from orthogonali
 element of a Hilbert basis of that subspace.  In particular, this lets Hilbert bases of mutually
 orthogonal eigenspaces be assembled into a spectral basis of the ambient space.
 
-A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`).
+A space with a Hilbert basis is complete (`HilbertBasis.completeSpace`), and every nonzero vector
+has a nonzero inner product with at least one basis element (`HilbertBasis.exists_inner_ne_zero`).
 
 It also expands the value of a continuous linear map in a Hilbert basis,
 `T x = ∑ᵢ ⟪bᵢ, x⟫ T bᵢ` (`HilbertBasis.hasSum_inner_smul_apply`). It records that a continuous
 linear map vanishing on all but finitely many vectors of a Hilbert basis has finite rank, since
 every vector is the sum of its basis expansion, and that a continuous linear map is determined by
 its matrix entries in Hilbert bases of its source and target (`HilbertBasis.ext_inner_apply`).
+
+Finally, `lp.hilbertBasisFun` bundles the standard unit coordinate vectors of `ℓ²(ι, 𝕜)` as a
+Hilbert basis (the `ℓ²` analogue of `EuclideanSpace.basisFun`), with simp lemmas for its
+coordinate representation (`lp.hilbertBasisFun_repr`), basis vectors (`lp.hilbertBasisFun_apply`),
+and coordinate inner products (`lp.hilbertBasisFun_inner`).
 -/
 
 public section
@@ -35,6 +41,14 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 /-- A space with a Hilbert basis is complete, being isometric to `ℓ²`. -/
 theorem completeSpace {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) : CompleteSpace E :=
   b.repr.toIsometryEquiv.completeSpace
+
+/-- A nonzero vector has a nonzero inner product with at least one member of any Hilbert basis. -/
+theorem exists_inner_ne_zero {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) {x : E}
+    (hx : x ≠ 0) : ∃ i, ⟪b i, x⟫_𝕜 ≠ 0 := by
+  by_contra! h
+  refine hx (b.repr.map_eq_zero_iff.1 ?_)
+  ext i
+  simp [b.repr_apply_apply, h i]
 
 /-- A vector orthogonal to every member of a Hilbert basis of a subspace is orthogonal to every
 vector of the represented subspace. -/
@@ -87,3 +101,35 @@ theorem hasFiniteRange_of_apply_eq_zero {iota F : Type*}
     exact ⟨b i, rfl⟩
 
 end HilbertBasis
+
+namespace lp
+
+open scoped InnerProductSpace lp
+
+/-- The standard unit coordinate vectors, bundled as a Hilbert basis of `ℓ²(ι, 𝕜)`. This is the
+`ℓ²` analogue of `EuclideanSpace.basisFun`. -/
+noncomputable def hilbertBasisFun (ι 𝕜 : Type*) [RCLike 𝕜] : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜) :=
+  HilbertBasis.ofRepr (LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜))
+
+/-- The coordinate representation of `lp.hilbertBasisFun` is the identity isometry on `ℓ²(ι, 𝕜)`. -/
+@[simp]
+theorem hilbertBasisFun_repr (ι 𝕜 : Type*) [RCLike 𝕜] :
+    (hilbertBasisFun ι 𝕜).repr = LinearIsometryEquiv.refl 𝕜 ℓ²(ι, 𝕜) :=
+  (rfl)
+
+/-- The `i`-th vector of `lp.hilbertBasisFun` is the unit single-coordinate vector at `i`. -/
+@[simp]
+theorem hilbertBasisFun_apply (ι 𝕜 : Type*) [RCLike 𝕜] [DecidableEq ι] (i : ι) :
+    hilbertBasisFun ι 𝕜 i = lp.single 2 i 1 := by
+  rw [← HilbertBasis.repr_symm_single, hilbertBasisFun_repr]
+  exact (LinearIsometryEquiv.refl 𝕜 _).symm_apply_eq.2 rfl
+
+/-- Inner product against the `i`-th vector of `lp.hilbertBasisFun` evaluates the `i`-th
+coordinate. -/
+@[simp]
+theorem hilbertBasisFun_inner (ι 𝕜 : Type*) [RCLike 𝕜] (x : ℓ²(ι, 𝕜)) (i : ι) :
+    ⟪hilbertBasisFun ι 𝕜 i, x⟫_𝕜 = x i := by
+  rw [← (hilbertBasisFun ι 𝕜).repr_apply_apply]
+  simp
+
+end lp
