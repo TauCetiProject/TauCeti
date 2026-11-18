@@ -1,7 +1,8 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen,
+Giada Franz, Riccardo Brasca
 -/
 module
 
@@ -15,6 +16,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Normed.Module.QuadraticMap
 
 /-!
 # Necessary and strict derivative tests
@@ -40,6 +42,9 @@ top of the space-time cylinder. The same test along the inward ray `t ↦ x - t 
 bound on difference quotients into a lower bound on a directional derivative, which is the last
 step of Hopf's boundary-point lemma.
 
+The finite-dimensional strict second-derivative test is adapted from Giada Franz's
+ForTauCeti formalization, with topology compatibility repairs by Riccardo Brasca.
+
 ## Main declarations
 
 * `IsLocalMaxOn.hasDerivWithinAt_Iic_nonneg`: the left derivative at a maximum from the left is
@@ -51,6 +56,8 @@ step of Hopf's boundary-point lemma.
   derivative just to the right of `x₀`.
 * `TauCeti.eventually_lt_of_deriv_deriv_pos`, `TauCeti.eventually_gt_of_deriv_deriv_neg`: the
   strict second-derivative tests.
+* `ContDiffAt.eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos`: the strict test for a
+  positive-definite Hessian on a finite-dimensional real normed space.
 * `TauCeti.deriv_deriv_nonpos_of_isLocalMax`: the local-maximum version.
 * `TauCeti.deriv_deriv_nonneg_of_isLocalMin`: the local-minimum version.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
@@ -354,3 +361,105 @@ theorem not_isLocalMin_of_strict_upper_support {f B : ℝ → ℝ} {c : ℝ}
 
 
 end TauCeti
+
+namespace ContDiffAt
+
+open Filter Metric Set Topology
+open scoped ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+private theorem eventually_pos_hessian {f : E → ℝ} {a : E}
+    (hf : ContDiffAt ℝ 2 f a)
+    (hpos : ∀ v, v ≠ 0 → 0 < fderiv ℝ (fderiv ℝ f) a v v) :
+    ∀ᶠ z in 𝓝 a, ∀ v, v ≠ 0 → 0 < fderiv ℝ (fderiv ℝ f) z v v := by
+  let B := fderiv ℝ (fderiv ℝ f) a
+  have hani : B.toBilinForm.toQuadraticMap.Anisotropic := by
+    intro v hv
+    by_contra hv0
+    exact (hpos v hv0).ne' hv
+  obtain ⟨c, hc, hcoer⟩ := hani.exists_pos_mul_norm_sq_le
+    (B.continuous₂.comp (continuous_id.prodMk continuous_id))
+  have hcont : ContinuousAt (fderiv ℝ (fderiv ℝ f)) a :=
+    hf.continuousAt_fderiv_fderiv le_rfl
+  have hclose : ∀ᶠ z in 𝓝 a, ‖fderiv ℝ (fderiv ℝ f) z - B‖ < c / 2 := by
+    -- `ContinuousAt` selects the bounded-convergence topology on continuous linear maps,
+    -- while `.norm` expects the topology projected from their seminormed group instance.
+    -- Mathlib's operator pseudometric replaces its uniformity to agree with that topology
+    -- (see `ContinuousLinearMap.toPseudoMetricSpace`); fix the target explicitly so the
+    -- elaborator can use this definitional agreement before applying the norm lemma.
+    have hlim : Tendsto (fderiv ℝ (fderiv ℝ f)) (𝓝 a)
+        (@nhds (E →L[ℝ] E →L[ℝ] ℝ)
+          (@UniformSpace.toTopologicalSpace _
+            (@PseudoMetricSpace.toUniformSpace _ SeminormedAddGroup.toPseudoMetricSpace)) B) :=
+      hcont
+    have hnorm := (hlim.sub_const B).norm
+    have hcenter : ‖B - B‖ < c / 2 := by
+      rw [sub_self, ContinuousLinearMap.opNorm_zero]
+      exact half_pos hc
+    exact hnorm.eventually (gt_mem_nhds hcenter)
+  filter_upwards [hclose] with z hz v hv
+  have hdiff := ContinuousLinearMap.le_opNorm₂
+    (fderiv ℝ (fderiv ℝ f) z - fderiv ℝ (fderiv ℝ f) a) v v
+  simp only [sub_apply] at hdiff
+  have hnh : 0 < ‖v‖ := norm_pos_iff.2 hv
+  have h1 := hcoer v
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
+    Real.norm_eq_abs, abs_of_pos (hpos v hv)] at h1
+  have h2 : ‖fderiv ℝ (fderiv ℝ f) z - fderiv ℝ (fderiv ℝ f) a‖ * ‖v‖ * ‖v‖ ≤
+      c / 2 * ‖v‖ ^ 2 := by
+    rw [mul_assoc, ← sq]
+    exact mul_le_mul_of_nonneg_right hz.le (sq_nonneg _)
+  have h3 := neg_abs_le (fderiv ℝ (fderiv ℝ f) z v v - fderiv ℝ (fderiv ℝ f) a v v)
+  rw [← Real.norm_eq_abs] at h3
+  nlinarith [sq_pos_of_pos hnh]
+
+/-- **The second derivative test.** Let `f` be `C²` at `a`, with `f'(a) = 0` and `f''(a)`
+positive definite. Then `f(a) < f(y)` for all `y ≠ a` close to `a`. -/
+theorem eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos {f : E → ℝ} {a : E}
+    (hf : ContDiffAt ℝ 2 f a) (hd : fderiv ℝ f a = 0)
+    (hpos : ∀ v, v ≠ 0 → 0 < fderiv ℝ (fderiv ℝ f) a v v) :
+    ∀ᶠ y in 𝓝[≠] a, f a < f y := by
+  have hev : ∀ᶠ z in 𝓝 a, ContDiffAt ℝ 2 f z := hf.eventually (by simp)
+  obtain ⟨δ, hδ, hball⟩ :=
+    Metric.eventually_nhds_iff_ball.1 (hev.and (eventually_pos_hessian hf hpos))
+  filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds a hδ)] with y hy
+  obtain ⟨hya, hyb⟩ := hy
+  set h := y - a
+  have hh : h ≠ 0 := sub_ne_zero.2 hya
+  have hseg (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : a + t • h ∈ ball a δ := by
+    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg ht.1]
+    calc
+      _ ≤ 1 * ‖h‖ := by gcongr; exact ht.2
+      _ < δ := by rw [one_mul, ← dist_eq_norm]; exact hyb
+  have hγ (t : ℝ) : HasDerivAt (fun s : ℝ ↦ a + s • h) h t := by
+    simpa using ((hasDerivAt_id t).smul_const h).const_add a
+  have hD1 (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      HasDerivAt (fun s ↦ f (a + s • h)) (fderiv ℝ f (a + t • h) h) t := by
+    have hz := (hball _ (hseg t ht)).1
+    exact ((hz.differentiableAt (by norm_num)).hasFDerivAt).comp_hasDerivAt t (hγ t)
+  have hD2 (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
+      HasDerivAt (fun s ↦ fderiv ℝ f (a + s • h) h)
+        (fderiv ℝ (fderiv ℝ f) (a + t • h) h h) t := by
+    exact TauCeti.hasDerivAt_fderiv_apply_line
+      ((hball _ (hseg t ht)).1.hasFDerivAt_fderiv le_rfl).differentiableAt h
+  have hmono1 : StrictMonoOn (fun s : ℝ ↦ fderiv ℝ f (a + s • h) h) (Icc 0 1) :=
+    strictMonoOn_of_deriv_pos (convex_Icc 0 1)
+      (fun t ht ↦ (hD2 t ht).continuousAt.continuousWithinAt)
+      (fun t ht ↦ by
+        rw [interior_Icc] at ht
+        rw [(hD2 t (Ioo_subset_Icc_self ht)).deriv]
+        exact (hball _ (hseg t (Ioo_subset_Icc_self ht))).2 h hh)
+  have hmono : StrictMonoOn (fun s : ℝ ↦ f (a + s • h)) (Icc 0 1) :=
+    strictMonoOn_of_deriv_pos (convex_Icc 0 1)
+      (fun t ht ↦ (hD1 t ht).continuousAt.continuousWithinAt)
+      (fun t ht ↦ by
+        rw [interior_Icc] at ht
+        rw [(hD1 t (Ioo_subset_Icc_self ht)).deriv]
+        have h0 : fderiv ℝ f (a + (0 : ℝ) • h) h = 0 := by simp [hd]
+        rw [← h0]
+        exact hmono1 (left_mem_Icc.2 zero_le_one) (Ioo_subset_Icc_self ht) ht.1)
+  have h01 := hmono (left_mem_Icc.2 zero_le_one) (right_mem_Icc.2 zero_le_one) zero_lt_one
+  simpa [h] using h01
+
+end ContDiffAt
