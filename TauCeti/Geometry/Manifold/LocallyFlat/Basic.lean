@@ -954,12 +954,13 @@ end StandardSlice
 
 section Graph
 
-/-- The graph of a continuous map from a topological space to a topological additive group is
-locally flat, with complementary model `F`. -/
+/-- The graph of a continuous map from a space `E` charted on `H` to a topological additive group
+is locally flat, with tangential model `H` and complementary model `F`. With `H = E` this is the
+graph of a map out of a topological space with the space itself as tangential model. -/
 theorem isLocallyFlat_graph
-    {E F : Type*} [TopologicalSpace E] [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
-    (f : E → F) (hf : Continuous f) :
-    IsLocallyFlat E F (fun x : E => (x, f x)) := by
+    {E F H : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace H] [AddGroup F]
+    [IsTopologicalAddGroup F] [ChartedSpace H E] (f : E → F) (hf : Continuous f) :
+    IsLocallyFlat H F (fun x : E => (x, f x)) := by
   let shear : E × F ≃ₜ E × F :=
     { toFun := fun p => (p.1, p.2 + f p.1)
       invFun := fun p => (p.1, p.2 - f p.1)
@@ -971,7 +972,7 @@ theorem isLocallyFlat_graph
         simp
       continuous_toFun := continuous_fst.prodMk (continuous_snd.add (hf.comp continuous_fst))
       continuous_invFun := continuous_fst.prodMk (continuous_snd.sub (hf.comp continuous_fst)) }
-  have h := (isLocallyFlat_prodMkLeft (N := E) (F := E) (F' := F)).homeomorph_comp shear
+  have h := (isLocallyFlat_prodMkLeft (N := E) (F := H) (F' := F)).homeomorph_comp shear
   convert h using 1
   ext x
   · rfl
@@ -997,18 +998,19 @@ theorem _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen
 
 /-- A continuous map is locally flat when an ambient homeomorphism presents its image as a graph.
 The section equation `(Φ (f x)).1 = x` identifies `f` with the graph of the second coordinate of
-`Φ ∘ f`, and the conclusion gives local flatness with complementary model `F`. -/
+`Φ ∘ f`, and the conclusion gives local flatness with complementary model `F` and tangential
+model any `H` in which `E` is charted. -/
 theorem _root_.Continuous.isLocallyFlat_of_homeomorph_graph
-    {E M F : Type*} [TopologicalSpace E] [TopologicalSpace M]
-    [TopologicalSpace F] [AddGroup F] [IsTopologicalAddGroup F]
+    {E M F H : Type*} [TopologicalSpace E] [TopologicalSpace M] [TopologicalSpace F]
+    [TopologicalSpace H] [AddGroup F] [IsTopologicalAddGroup F] [ChartedSpace H E]
     {f : E → M} (hf : Continuous f) (Φ : M ≃ₜ E × F)
     (hΦ : ∀ x, (Φ (f x)).1 = x) :
-    IsLocallyFlat E F f := by
+    IsLocallyFlat H F f := by
   let g : E → F := fun x => (Φ (f x)).2
   have hg : Continuous g := by
     apply continuous_snd.comp
     exact Φ.continuous.comp hf
-  have hgraph : IsLocallyFlat E F (fun x => (x, g x)) :=
+  have hgraph : IsLocallyFlat H F (fun x => (x, g x)) :=
     TauCeti.isLocallyFlat_graph g hg
   have htransport := hgraph.homeomorph_comp Φ.symm
   convert htransport using 1
