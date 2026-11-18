@@ -27,7 +27,10 @@ of variations. This file realizes the rest of the complex, for every integer `k 
   derivative (`TauCeti.Vortex.fieldMulOrderPreservingCLM`), because `H^(k+1)(ℂ)` is an algebra.
 * `sobolevGaugeAdjoint f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)`, its formal adjoint.
 * `sobolevScaleGaugeFixedOperator f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)⁴`, the gauge-fixed operator
-  `d₀* ⊕ d₁`.
+  `d₀* ⊕ d₁`. This is not `TauCeti.Vortex.sobolevGaugeFixedOperator` of
+  `TauCeti.Analysis.PDE.Vortex.SobolevRealization`, the realization `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` with an
+  `L∞` coefficient whose kernel is finite-dimensional with closed range at a vortex; no such
+  Fredholm property is proved here for the operator on the Sobolev scale.
 
 On complexified coordinates of real fields these compute the pointwise operators almost everywhere
 (`coeFn_inclusionLp_sobolevGaugeDirection_ae_eq`, `coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq`,
@@ -210,7 +213,9 @@ variable (f m) in
 coordinates `y ∈ H^(k+1)(ℂ)⁴`, the complexified gauge-fixed operator `L_x = d₀* ⊕ d₁`
 (`TauCeti.Vortex.gaugeFixedOperator`) at `x_m + y`, as a bounded operator
 `H^(k+1)(ℂ)⁴ → H^k(ℂ)⁴`: the gauge-fixing row `sobolevGaugeAdjoint` followed by the three rows of
-`sobolevLinearizedEquation`. -/
+`sobolevLinearizedEquation`. It acts on complexified coordinates and is distinct from the
+realization `TauCeti.Vortex.sobolevGaugeFixedOperator : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` with an `L∞`
+coefficient; no Fredholm property is proved for it here. -/
 def sobolevScaleGaugeFixedOperator (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :
     (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] (Fin 4 → H^{(k : ℝ)}(ℂ)) :=
   pi ![sobolevGaugeAdjoint f m hk y, (proj 0).comp (sobolevLinearizedEquation f m hk y),
