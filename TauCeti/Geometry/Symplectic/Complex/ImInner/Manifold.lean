@@ -86,15 +86,15 @@ theorem isLagrangianImmersion_imInnerSymplecticForm_iff {f : N → E}
 /-- **Lagrangian immersions into `ℂⁿ`.** An immersion of a manifold modelled on `ℝⁿ` into `ℂⁿ` is a
 Lagrangian immersion for `Im ⟪·, ·⟫_ℂ` exactly when `Im ⟪df v, df w⟫_ℂ = 0` for all tangent vectors
 at every point. -/
-theorem isLagrangianImmersion_imInnerSymplecticForm_euclideanSpace_iff {n : ℕ}
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin n)) H}
+theorem isLagrangianImmersion_imInnerSymplecticForm_euclideanSpace_iff {ι : Type*} [Fintype ι]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H}
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {f : M → EuclideanSpace ℂ (Fin n)} (hf : IsImmersion I 𝓘(ℝ, EuclideanSpace ℂ (Fin n)) ∞ f) :
+    {f : M → EuclideanSpace ℂ ι} (hf : IsImmersion I 𝓘(ℝ, EuclideanSpace ℂ ι) ∞ f) :
     (SymplecticForm.isNondegenerate_constSmooth
-        (imInnerSymplecticForm (EuclideanSpace ℂ (Fin n)))).IsLagrangianImmersion I f ↔
+        (imInnerSymplecticForm (EuclideanSpace ℂ ι))).IsLagrangianImmersion I f ↔
       ∀ x (v w : TangentSpace I x), (⟪mvfderiv I f x v, mvfderiv I f x w⟫_ℂ).im = 0 := by
   rw [isLagrangianImmersion_imInnerSymplecticForm_iff hf, and_iff_left]
-  rw [finrank_real_of_complex, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin]
+  rw [finrank_real_of_complex, finrank_euclideanSpace, finrank_euclideanSpace]
 
 /-- **Lagrangian maps into `ℂⁿ` in real coordinates.** A map `f` into `ℂⁿ` is Lagrangian for
 `Im ⟪·, ·⟫_ℂ` exactly when the map `(Re f, Im f)` into `ℝⁿ × ℝⁿ` is Lagrangian for the standard
