@@ -70,6 +70,8 @@ $J$-holomorphic curves.
   energy--area identity for the manifold derivative of a pseudoholomorphic curve.
 * `IsPseudoholomorphicWithinAt.mfderivWithin_stdComplexLineEnergyDensity_eq_two_mul_twoForm`:
   energy--area identity for the within-set derivative of a pseudoholomorphic curve.
+* `TauCeti.SmoothTwoForm.Tames.eval₂_mfderiv_nonneg`: under tameness, the symplectic area density
+  of a curve satisfying the Cauchy--Riemann equation is nonnegative.
 * `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm`: the Wirtinger
   identity on manifolds.
 * `TauCeti.SmoothTwoForm.Compatible.two_mul_twoForm_le_stdComplexLineEnergyDensity`: the Wirtinger
@@ -310,6 +312,26 @@ end IsPseudoholomorphicWithinAt
 namespace SmoothTwoForm
 
 variable {form : SmoothTwoForm I M} {J : SmoothAlmostComplexStructure I M} {x : M}
+
+/-- Under tameness, the symplectic area density `ω(∂ₛu, ∂ₜu)` of a curve `u` satisfying the
+Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` at `z` is nonnegative. No differentiability is assumed:
+the equation is stated for `mfderiv`, which is zero where `u` is not differentiable. -/
+lemma Tames.eval₂_mfderiv_nonneg (htame : form.Tames J) {u : ℝ × ℝ → M} {z : ℝ × ℝ}
+    (hCR : mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)) :
+    0 ≤ SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) := by
+  have hlin : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J.almostComplexStructureAt (u z))
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z).toLinearMap :=
+    (isComplexLinearMap_stdComplexLine_iff _).2 (by
+      simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+      exact hCR)
+  have h := htame.stdComplexLineEnergyDensity_nonneg (u z)
+    (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z).toLinearMap
+  rw [hlin.stdComplexLineEnergyDensity_eq_two_mul_twoForm] at h
+  exact (mul_nonneg_iff_of_pos_left two_pos).1 h
 
 /-- **Wirtinger identity on manifolds.** For an invariant pair `(form, J)`, the standard energy
 density minus twice the symplectic area density is the Cauchy--Riemann defect square:

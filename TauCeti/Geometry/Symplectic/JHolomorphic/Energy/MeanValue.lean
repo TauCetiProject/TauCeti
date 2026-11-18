@@ -472,8 +472,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimension
 
 /-- **The mean-value inequality for `J`-holomorphic curves in a finite-dimensional normed space.**
 This is `TauCeti.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`
-for a target `F` without an inner product, by moving the curves to a Euclidean space along
-`toEuclidean`; the constant `8` becomes a constant `A` depending on the norm of `F`. Let `J` be `C²`
+for a target `F` without an inner product; the constant `8` becomes a constant `A` depending on the
+norm of `F`. Let `J` be `C²`
 on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There are an energy
 threshold `δ > 0` and a constant `A > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` that is
 `C³` on the open disk `ball z₀ r`, has `∂ₛu` continuous on its closure, maps the disk into `K` and
@@ -502,8 +502,7 @@ theorem exists_pos_exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_mul_set
   refine ⟨δ / (a ^ 2 + 1), by positivity, 8 * (b ^ 2 * a ^ 2 + 1), by positivity,
     fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
   have hd (y : ℂ) (w : ℂ) : fderiv ℝ (L ∘ u) y w = L (fderiv ℝ u y w) := by
-    rw [L.comp_fderiv]
-    rfl
+    rw [L.comp_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
   have hLc : ContinuousOn (fun y ↦ L (fderiv ℝ u y 1)) (closedBall z₀ r) := by
     simpa [Function.comp_def] using
       L.toContinuousLinearMap.lipschitzWith.continuous.comp_continuousOn hu'

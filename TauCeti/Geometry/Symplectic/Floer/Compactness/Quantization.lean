@@ -11,6 +11,7 @@ import TauCeti.Analysis.Hofer
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
+import TauCeti.Geometry.Symplectic.Manifold.Energy
 
 /-!
 # Energy quantization for pseudoholomorphic planes in a manifold
@@ -35,7 +36,7 @@ The threshold is analytic, not a period of `ω`: the areas of spheres may be den
 proof covers `K` by finitely many charts, in each of which the following holds.
 
 * **Comparison with the chart norm.** In the tangent coordinates `ξ` of the chart, the energy form
-  `ω(a, J a)` is between `c ‖ξ‖²` and `C ‖ξ‖²`
+  `ω(ζ, J ζ)` of the tangent vectors `ζ` is between `c ‖ξ‖²` and `C ‖ξ‖²`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_mul_norm_sq_le_eval₂_le_mul_norm_sq`).
 * **Localization.** If the area density of `u` is at most `m²` on a ball of radius `r` with
   `m r` small, the ball is mapped into the chart, since the chart coordinate of `u` moves at speed
@@ -83,7 +84,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 omit [FiniteDimensional ℝ E] in
 /-- At a point `z` with `u z` in the source of the chart at `α`, the area density
-`ω(∂ₛu, ∂ₜu)` of a solution of `∂ₜu = J(u) ∂ₛu` is the energy form `ω(a, J a)` of `a = ∂ₛu`, whose
+`ω(∂ₛu, ∂ₜu)` of a solution of `∂ₜu = J(u) ∂ₛu` is the energy form `ω(ζ, J ζ)` of `ζ = ∂ₛu`, whose
 tangent coordinate is `∂ₛv` for the coordinate expression `v = extChartAt I α ∘ u`. -/
 private theorem eval₂_mfderiv_eq (hu : ContinuousAt u z) (hz : u z ∈ (extChartAt I α).source)
     (hCR : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
@@ -98,20 +99,9 @@ private theorem eval₂_mfderiv_eq (hu : ContinuousAt u z) (hz : u z ∈ (extCha
   rw [hCR, hu.symmL_fderiv_extChartAt_comp_apply hz]
 
 omit [FiniteDimensional ℝ E] in
-/-- The area density of a solution of `∂ₜu = J(u) ∂ₛu`, for `J` tamed by `ω`, is nonnegative. -/
-private theorem eval₂_mfderiv_nonneg (hJ : ω.Tames J)
-    (hCR : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
-      J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) :
-    0 ≤ SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
-  rw [hCR]
-  by_cases h0 : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal = 0
-  · simp [h0]
-  · exact (SmoothTwoForm.tames_iff.1 hJ (u z) _ h0).le
-omit [FiniteDimensional ℝ E] in
 /-- **The area density bounds the derivative in a chart.** Let `u` solve `∂ₜu = J(u) ∂ₛu` at `z`,
 with `u z` in the source of the chart at `α`, let `‖J‖ ≤ a` at `u z` in the chart, and let the
-energy form at `u z` satisfy `c ‖ξ‖² ≤ ω(a, J a)` for the tangent vectors `a` with tangent
+energy form at `u z` satisfy `c ‖ξ‖² ≤ ω(ζ, J ζ)` for the tangent vectors `ζ` with tangent
 coordinate `ξ`. Then the coordinate expression `v = extChartAt I α ∘ u` has
 `‖dv(z)‖ ≤ (1 + a) √(ρ / c)` for the area density `ρ = ω(∂ₛu, ∂ₜu)` at `z`. -/
 private theorem norm_fderiv_extChartAt_comp_le (hu : ContinuousAt u z)
@@ -147,7 +137,7 @@ private theorem norm_fderiv_extChartAt_comp_le (hu : ContinuousAt u z)
 
 omit [FiniteDimensional ℝ E] in
 /-- **The chart coordinate moves slowly along a segment.** Let `u` be a `C¹` solution of
-`∂ₜu = J(u) ∂ₛu`, let `‖J‖ ≤ a` and `c ‖ξ‖² ≤ ω(a, J a)` hold in the chart at `α` over the closed
+`∂ₜu = J(u) ∂ₛu`, let `‖J‖ ≤ a` and `c ‖ξ‖² ≤ ω(ζ, J ζ)` hold in the chart at `α` over the closed
 ball of radius `3η` about its chart point, and let the area density of `u` be at most `m²` on the
 closed ball of radius `r` about `w₀`, which contains `w`. If the points `w₀ + σ (w - w₀)`,
 `0 ≤ σ ≤ τ`, have chart coordinates within `3η` of the chart point, then the chart coordinate of
@@ -212,12 +202,10 @@ private theorem norm_extChartAt_comp_sub_le (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ
 
 /-- **Localization in a chart.** Let `u` be a `C¹` solution of `∂ₜu = J(u) ∂ₛu` and let the closed
 ball of radius `3η` about the chart point `y₀` of `α` lie in the chart target, with `‖J‖ ≤ a` and
-`c ‖ξ‖² ≤ ω(a, J a)` over it in the chart. If `u w₀` has chart coordinate within `η` of `y₀` and
+`c ‖ξ‖² ≤ ω(ζ, J ζ)` over it in the chart. If `u w₀` has chart coordinate within `η` of `y₀` and
 the area density of `u` is at most `m²` on the closed ball of radius `r` about `w₀`, with
 `(1 + a) (m / √c) r ≤ η`, then this ball is mapped into the chart source, with chart coordinates
-within `2η` of `y₀`. Along a segment from `w₀`, the first point where the chart coordinate leaves
-the ball of radius `3η` would be a limit of points with chart coordinates within `2η`, by
-`norm_extChartAt_comp_sub_le`, so there is no such point. -/
+within `2η` of `y₀`. -/
 private theorem mapsTo_closedBall_of_le [T2Space M] (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     (hCR : ∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
       J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal))
@@ -237,6 +225,9 @@ private theorem mapsTo_closedBall_of_le [T2Space M] (hu : ContMDiff 𝓘(ℝ, �
     (hrm : (1 + a) * (m / √c) * r ≤ η) :
     MapsTo u (closedBall w₀ r)
       ((extChartAt I α).source ∩ extChartAt I α ⁻¹' closedBall (extChartAt I α α) (2 * η)) := by
+  -- Along a segment from `w₀`, the first point where the chart coordinate leaves the ball of
+  -- radius `3η` would be a limit of points with chart coordinates within `2η`, by
+  -- `norm_extChartAt_comp_sub_le`, so there is no such point.
   set e := extChartAt I α
   intro w hw
   set G := e.source ∩ e ⁻¹' ball (e α) (3 * η)
@@ -289,7 +280,7 @@ private theorem mapsTo_closedBall_of_le [T2Space M] (hu : ContMDiff 𝓘(ℝ, �
   simpa [φ] using h1
 
 /-- **The energy form in a chart.** For `J` tamed by `ω` and a compact set `Kc` in the chart target
-at `α`, there are `c, C > 0` such that `c ‖ξ‖² ≤ ω(a, J a) ≤ C ‖ξ‖²` for the tangent vectors `a`
+at `α`, there are `c, C > 0` such that `c ‖ξ‖² ≤ ω(ζ, J ζ) ≤ C ‖ξ‖²` for the tangent vectors `ζ`
 with tangent coordinate `ξ` at the points with chart coordinate in `Kc`. -/
 private theorem exists_pos_forall_mul_norm_sq_le_and_le_of_chart (hJ : ω.Tames J) (α : M)
     {Kc : Set E} (hKc : IsCompact Kc)
@@ -314,7 +305,7 @@ private theorem exists_pos_forall_mul_norm_sq_le_and_le_of_chart (hJ : ω.Tames 
   exact ⟨h.1, h.2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (sq_nonneg _))⟩
 
 omit [FiniteDimensional ℝ E] in
-/-- The comparison of `exists_pos_forall_mul_norm_sq_le_and_le_of_chart` for `a = ∂ₛu` at
+/-- The comparison of `exists_pos_forall_mul_norm_sq_le_and_le_of_chart` for `ζ = ∂ₛu` at
 `equivRealProdCLM y`: its tangent coordinate is `∂ₛ` of the coordinate expression of `u` in the
 chart, read in the complex coordinate of the domain, and its energy form is the area density. -/
 private theorem mul_norm_fderiv_sq_le_and_le {c C : ℝ} {Kc : Set E}
@@ -340,8 +331,8 @@ private theorem mul_norm_fderiv_sq_le_and_le {c C : ℝ} {Kc : Set E}
   rw [fderiv_comp_equivRealProdCLM_one] at h ⊢
   rwa [← eval₂_mfderiv_eq hu.continuousAt hy.1 (hCR _)] at h
 
-/-- **The mean-value inequality in a chart.** Let `J` be tamed by `ω` and let `Kc` be a compact
-subset of the chart target at `α`, over which `c ‖ξ‖² ≤ ω(a, J a) ≤ C ‖ξ‖²` in the chart. There are
+/-- **The mean-value inequality in a chart.** Let `Kc` be a compact subset of the chart target at
+`α`, over which `c ‖ξ‖² ≤ ω(ζ, J ζ) ≤ C ‖ξ‖²` in the chart. There are
 constants `δ, A > 0` such that every `C³` solution `u` of `∂ₜu = J(u) ∂ₛu` mapping the closed ball
 of radius `r` about `w₀` into the chart, with chart coordinates in `Kc`, satisfies the following.
 Either the area of `u` over the disc of radius `r` about `w₀` is at least `δ`, or `π r² ρ(w₀)` is at
@@ -428,8 +419,7 @@ radius `3η` about the chart point of `α` lie in the chart target. There are a 
 `L > 0` and an energy `κ > 0` with the following property. Let `u` be a `C³` solution of
 `∂ₜu = J(u) ∂ₛu` and `m > 0`, with `u w₀` in the chart source and chart coordinate within `η` of
 the chart point, with area density at least `m²` at `w₀` and at most `(2m)²` on the closed ball of
-radius `L / m` about `w₀`. Then the area of `u` is at least `κ`: by `mapsTo_closedBall_of_le`
-this ball is mapped into the chart, where `exists_pos_forall_le_or_le_of_chart` applies. -/
+radius `L / m` about `w₀`. Then the area of `u` is at least `κ`. -/
 private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] [T2Space M]
     (hJ : ω.Tames J) (α : M) {η : ℝ} (hη : 0 < η)
     (hK : closedBall (extChartAt I α α) (3 * η) ⊆ (extChartAt I α).target) :
@@ -459,7 +449,8 @@ private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] 
     fun u w₀ m hu hCR hm hw₀s hw₀ hρ₀ hρ ↦ ?_⟩
   set φ := Complex.equivRealProdCLM
   have hr : 0 < L / m := by positivity
-  -- The closed ball of radius `L / m` about `w₀` is mapped into the chart.
+  -- The closed ball of radius `L / m` about `w₀` is mapped into the chart, by
+  -- `mapsTo_closedBall_of_le`, where `exists_pos_forall_le_or_le_of_chart` applies.
   have hloc := mapsTo_closedBall_of_le (ω := ω) (hu.of_le (by norm_num)) hCR hη hc
     (show (0 : ℝ) ≤ 2 * m by positivity) hK
     (fun y hy ↦ (show ‖J.inChart α y‖ ≤ a by simpa using ha y hy).trans (le_max_left _ _))
@@ -473,44 +464,38 @@ private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] 
       (isCompact_closedBall (φ.symm w₀) (L / m)))
     |>.mono_set ball_subset_closedBall
   refine (ENNReal.ofReal_le_ofReal ?_).trans ((ofReal_integral_eq_lintegral_ofReal hint
-    (Eventually.of_forall fun y ↦ eval₂_mfderiv_nonneg hJ (hCR _))).le.trans
+    (Eventually.of_forall fun y ↦ hJ.eval₂_mfderiv_nonneg (hCR _))).le.trans
     ((setLIntegral_le_lintegral _ _).trans_eq ?_))
   · rcases hdisc with h | h
     · exact (min_le_left _ _).trans h
     · refine (min_le_right _ _).trans ((div_le_iff₀' hA).2 (h.trans' ?_))
       calc π * L ^ 2 = π * (L / m) ^ 2 * m ^ 2 := by field_simp
         _ ≤ _ := mul_le_mul_of_nonneg_left hρ₀ (by positivity)
-  · rw [← (Complex.volume_preserving_equiv_real_prod).lintegral_comp_emb
-      Complex.measurableEquivRealProd.measurableEmbedding]
-    -- `equivRealProdCLM` and `measurableEquivRealProd` are both `z ↦ (re z, im z)`.
-    rfl
+  · -- `equivRealProdCLM` and `measurableEquivRealProd` are both `z ↦ (re z, im z)`.
+    have hφ : (φ : ℂ → ℝ × ℝ) = Complex.measurableEquivRealProd := funext fun z ↦ by
+      simp only [φ, Complex.equivRealProdCLM_apply, Complex.measurableEquivRealProd_apply]
+    rw [← (Complex.volume_preserving_equiv_real_prod).lintegral_comp_emb
+      Complex.measurableEquivRealProd.measurableEmbedding, ← hφ, Function.comp_def]
 
 omit [FiniteDimensional ℝ E] in
 /-- A nonconstant `C¹` solution of `∂ₜu = J(u) ∂ₛu`, for `J` tamed by `ω`, has positive area
-density somewhere: where the density vanishes, so do `∂ₛu` and `∂ₜu = J(u) ∂ₛu`. -/
+density somewhere. -/
 private theorem exists_pos_eval₂_mfderiv (hJ : ω.Tames J) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
     (hCR : ∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
       J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) (hnc : ∃ z w, u z ≠ u w) :
     ∃ z, 0 < SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   by_contra! h
+  -- Where the area density vanishes, so does the energy density `2 ω(∂ₛu, ∂ₜu)`, hence `du`.
   have hzero : ∀ w, mfderiv 𝓘(ℝ, ℝ × ℝ) I u w = 0 := fun w ↦ by
-    have hs : mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineReal = 0 := by
-      by_contra hne
-      have h1 := SmoothTwoForm.tames_iff.1 hJ (u w) _ hne
-      have h2 := h w
-      rw [hCR w] at h2
-      linarith
-    have hi : mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineImag = 0 := by
-      rw [hCR w, hs]
-      exact (J.toEndomorphism (u w)).map_zero
-    -- On the model domain the tangent space is `ℝ × ℝ`, where `apply_stdComplexLine` applies.
-    set D : ℝ × ℝ →L[ℝ] TangentSpace I (u w) := mfderiv 𝓘(ℝ, ℝ × ℝ) I u w
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    have hD := D.apply_stdComplexLine v
-    rw [show D stdComplexLineReal = 0 from hs, show D stdComplexLineImag = 0 from hi, smul_zero,
-      smul_zero, add_zero] at hD
-    exact hD
+    have hlin : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J.almostComplexStructureAt (u w)) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w).toLinearMap :=
+      (isComplexLinearMap_stdComplexLine_iff _).2 (by
+        simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+        exact hCR w)
+    refine (hJ.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff (u w) _).1 ?_
+    rw [hlin.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
+    exact mul_eq_zero_of_right 2 (le_antisymm (h w) (hJ.eval₂_mfderiv_nonneg (hCR w)))
   obtain ⟨z, w, hzw⟩ := hnc
   exact hzw ((hu.mdifferentiable (by norm_num)).apply_eq_of_mfderiv_eq_zero hzero z w)
 
@@ -553,7 +538,7 @@ theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryles
   refine ⟨κ₀, hκ₀, fun u hu huK hCR hnc ↦ ?_⟩
   set ρ : ℝ × ℝ → ℝ := fun w ↦ SmoothBundleForm.eval₂ ω (u w)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineImag)
-  have hsq (w : ℝ × ℝ) : √(ρ w) ^ 2 = ρ w := Real.sq_sqrt (eval₂_mfderiv_nonneg hJ (hCR w))
+  have hsq (w : ℝ × ℝ) : √(ρ w) ^ 2 = ρ w := Real.sq_sqrt (hJ.eval₂_mfderiv_nonneg (hCR w))
   -- Hofer's lemma gives a point `w'` of density `m² > 0`, with density at most `(2m)²` on a ball
   -- about `w'` of radius at least `R / m`.
   obtain ⟨w₁, hw₁⟩ := exists_pos_eval₂_mfderiv hJ (hu.of_le (by norm_num)) hCR hnc

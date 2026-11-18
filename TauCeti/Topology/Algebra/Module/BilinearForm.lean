@@ -81,8 +81,8 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
-* `IsCompact.exists_forall_le_mul_norm_sq`: in finite dimensions, a family of continuous bilinear
-  forms continuous on a compact set is bounded by a uniform multiple of `‖v‖²`.
+* `IsCompact.exists_forall_le_mul_norm_sq`: a family of continuous bilinear forms continuous on a
+  compact set is bounded by a uniform multiple of `‖v‖²`.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
@@ -429,29 +429,20 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
 
-/-- **Uniform bound over a compact family.** On a finite-dimensional real normed space, let `b x` be
-a family of continuous bilinear forms, continuous on a compact set `K`. Then one constant `C` gives
+/-- **Uniform bound over a compact family.** On a real normed space, let `b x` be a family of
+continuous bilinear forms, continuous on a compact set `K`. Then one constant `C` gives
 `b x v v ≤ C ‖v‖²` for every `x ∈ K` and every `v`. -/
 theorem _root_.IsCompact.exists_forall_le_mul_norm_sq
     {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] {K : Set X} (hK : IsCompact K) {b : X → E →L[ℝ] E →L[ℝ] ℝ}
+    {K : Set X} (hK : IsCompact K) {b : X → E →L[ℝ] E →L[ℝ] ℝ}
     (hb : ContinuousOn b K) : ∃ C, ∀ x ∈ K, ∀ v, b x v v ≤ C * ‖v‖ ^ 2 := by
-  -- The maximum over the compact set `K × S`, with `S` the unit sphere, is the constant.
-  have hcont : ContinuousOn (fun p : X × E ↦ b p.1 p.2 p.2) (K ×ˢ Metric.sphere (0 : E) 1) :=
-    ((hb.comp continuousOn_fst fun _ (hp : _ ∈ K ×ˢ _) ↦ hp.1).clm_apply
-      continuousOn_snd).clm_apply continuousOn_snd
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_sphere 0 1)).exists_bound_of_continuousOn hcont
+  -- `hb` is stated for the topology of `→L[ℝ]`, which is the operator-norm topology only up to
+  -- unfolding instances, so it is passed by `exact`.
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (f := b) (by exact hb)
   refine ⟨C, fun x hx v ↦ ?_⟩
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
-  have hh := (le_abs_self _).trans ((Real.norm_eq_abs _).symm.le.trans
-    (hC (x, ‖v‖⁻¹ • v) ⟨hx, by simp [norm_smul, hn.ne']⟩))
-  have heq : b x (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) = (‖v‖ ^ 2)⁻¹ * b x v v := by
-    simp only [map_smul, _root_.smul_apply, smul_eq_mul]
-    ring
-  rw [heq, inv_mul_le_iff₀ (by positivity)] at hh
-  linarith
+  calc b x v v ≤ ‖b x‖ * ‖v‖ * ‖v‖ := (Real.le_norm_self _).trans ((b x).le_opNorm₂ v v)
+    _ = ‖b x‖ * ‖v‖ ^ 2 := by ring
+    _ ≤ C * ‖v‖ ^ 2 := mul_le_mul_of_nonneg_right (hC x hx) (sq_nonneg _)
 
 /-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
 space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms
