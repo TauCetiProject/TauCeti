@@ -43,9 +43,11 @@ constant along paths is attained by such a morphism (`TauCeti.singularHomology�
 `TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
 class (`TauCeti.singularHomology₀Section_eq_of_joined`), while with coefficients in a module the
 classes of points in different path components are not proportional
-(`TauCeti.singularHomology₀Section_apply_ne_smul_of_not_joined`). On a path-connected space the
-class of a point does not depend on the point, and with coefficients in a ring it spans zeroth
-homology
+(`TauCeti.singularHomology₀Section_apply_ne_smul_of_not_joined`). Multiplying the class of each
+point by a unit that is constant along paths is an automorphism
+(`TauCeti.singularHomology₀UnitsSmul`, `TauCeti.isIso_singularHomology₀UnitsSmul`). On a
+path-connected space the class of a point does not depend on the point, and with coefficients in a
+ring it spans zeroth homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
 (`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`).
@@ -216,6 +218,34 @@ theorem singularHomology₀Section_apply_ne_smul_of_not_joined {k : Type*} [Ring
   simp only [v, hyx, Joined.refl, ↓reduceIte, ModuleCat.hom_id, LinearMap.id_apply,
     ModuleCat.hom_zero, LinearMap.zero_apply, smul_zero] at this
   exact hr this
+
+/-- The endomorphism of zeroth singular homology multiplying the class of each point `x` by a unit
+`u x` which is constant along paths. It is an automorphism
+(`TauCeti.isIso_singularHomology₀UnitsSmul`). -/
+def singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C] {X : TopCat.{w}}
+    (u : X → Kˣ) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) :
+    ((singularHomologyFunctor C 0).obj R).obj X ⟶ ((singularHomologyFunctor C 0).obj R).obj X :=
+  singularHomology₀Desc R (fun x ↦ (u x : K) • singularHomology₀Section R x)
+    fun x y γ ↦ by rw [hu γ, singularHomology₀Section_eq_of_joined _ ⟨γ⟩]
+
+/-- The morphism `TauCeti.singularHomology₀UnitsSmul R u hu` multiplies the class of the point `x`
+by `u x`. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀Section_singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C]
+    {X : TopCat.{w}} (u : X → Kˣ) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) (x : X) :
+    singularHomology₀Section R x ≫ singularHomology₀UnitsSmul R u hu =
+      (u x : K) • singularHomology₀Section R x :=
+  singularHomology₀Section_singularHomology₀Desc R _ _ x
+
+/-- Multiplying the class of each point `x` by a unit `u x` which is constant along paths is an
+automorphism of zeroth singular homology. -/
+instance isIso_singularHomology₀UnitsSmul {K : Type*} [Semiring K] [Linear K C] {X : TopCat.{w}}
+    (u : X → Kˣ) (hu : ∀ ⦃x y : X⦄, Path x y → u x = u y) :
+    IsIso (singularHomology₀UnitsSmul R u hu) :=
+  -- The inverse multiplies the class of `x` by `(u x)⁻¹`.
+  ⟨singularHomology₀UnitsSmul R (fun x ↦ (u x)⁻¹) fun x y γ ↦ by rw [hu γ],
+    singularHomology₀_hom_ext _ fun x ↦ by simp [smul_smul],
+    singularHomology₀_hom_ext _ fun x ↦ by simp [smul_smul]⟩
 
 variable [HasKernels C]
 

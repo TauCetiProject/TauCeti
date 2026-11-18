@@ -123,6 +123,17 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- In the real coordinates of `ℂ`, every part `‖w‖ > r` of the plane contains a part
+`‖w‖ > exp (2πa)` with `a ≥ 2`. -/
+theorem exists_two_le_exp_lt_norm_subset (r : ℝ) :
+    ∃ a : ℝ, 2 ≤ a ∧ {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
+  refine ⟨max 2 r, le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ lt_of_le_of_lt ?_ hz⟩
+  have h₁ := Real.add_one_le_exp (2 * π * max 2 r)
+  have h₂ : 0 ≤ (2 * π - 1) * max 2 r :=
+    mul_nonneg (by linarith [Real.two_le_pi]) (by linarith [le_max_left 2 r])
+  linarith [le_max_right 2 r]
+
 namespace Floer.PSSPlane
 
 /-! ### The end lift in real coordinates -/
@@ -171,6 +182,56 @@ theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × �
     0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
   rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
   simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
+
+/-- The end lift of the positive plane in real coordinates, at a point `(s, t)`, is the image of
+`s + i t`. -/
+theorem realChart_positive_mk (s t : ℝ) :
+    realChart positive.cylindricalEndLift (s, t) =
+      Complex.equivRealProdCLM
+        (positive.cylindricalEndLift (↑(positive.endSign * s) + ↑t * Complex.I)) := by
+  rw [realChart_apply, Complex.equivRealProdCLM_symm_apply, endSign_positive, one_mul]
+
+/-- The half-cylinder `s > a` of the positive plane lies in the part `‖w‖ > exp (2πa)` of the
+plane. -/
+theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1) :
+    Real.exp (2 * π * a) <
+      ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ := by
+  rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, norm_cylindricalEndLift,
+    endSign_positive, one_mul, Complex.equivRealProdCLM_symm_apply_re, Real.exp_lt_exp]
+  nlinarith [Real.pi_pos]
+
+/-- The end lift of the positive plane is injective on the half-strip `s > a`, `0 ≤ t < 1`. -/
+theorem injOn_realChart_positive (a : ℝ) :
+    InjOn (realChart positive.cylindricalEndLift) (Ioi a ×ˢ Ico 0 1) :=
+  TauCeti.Complex.injOn_realChart <| (positive.injOn_cylindricalEndLift 0).mono <| by
+    rintro _ ⟨p, hp, rfl⟩
+    simpa using hp.2
+
+/-- **Change of variables on the end of the positive plane.** If `g` is the pullback of a density
+`f` under the end lift `φ` of the positive plane, `g = det (dφ) · f ∘ φ` on the half-strip `s > a`,
+`0 ≤ t < 1`, then the integral of `g` over the half-cylinder `s > a`, `0 ≤ t ≤ 1` is at most the
+integral of `f` over the part `‖w‖ > exp (2πa)` of the plane: `φ` is injective on the half-strip
+and preserves orientation. -/
+theorem setLIntegral_ofReal_comp_realChart_positive_le {a : ℝ} {f g : ℝ × ℝ → ℝ}
+    (hfg : ∀ z ∈ Ioi a ×ˢ Ico (0 : ℝ) 1,
+      g z = (fderiv ℝ (realChart positive.cylindricalEndLift) z).det *
+        f (realChart positive.cylindricalEndLift z)) :
+    ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (g z) ≤
+      ∫⁻ z in {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖},
+        ENNReal.ofReal (f z) := by
+  have hS : MeasurableSet (Ioi a ×ˢ Ico (0 : ℝ) 1) :=
+    measurableSet_Ioi.prod measurableSet_Ico
+  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi a ×ˢ Ico 0 1 := by
+    rw [Measure.volume_eq_prod]
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
+  rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hS
+    (injOn_realChart_positive a)
+    (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
+      one_ne_zero z) fun z hz ↦ by
+      rw [hfg z hz, abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos z)]]
+  refine lintegral_mono_set ?_
+  rintro _ ⟨z, hz, rfl⟩
+  exact exp_lt_norm_realChart_positive hz.1
 
 end Floer.PSSPlane
 

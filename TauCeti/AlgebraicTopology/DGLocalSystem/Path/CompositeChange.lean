@@ -47,6 +47,8 @@ of the retractions needs to be linear over the loops at `c`.
 ## Main results
 
 * `TauCeti.tensorPathChainConcat_tmul`: on pure tensors it concatenates the path chains.
+* `TauCeti.tensorPathChainConcat_naturality`: the composite change of basepoint is natural in the
+  DG local system.
 * `TauCeti.pathChainToLoopChain_trans_pathChainConcat`: `ρ_{γ ⋆ δ}(σ ⋆ τ) = ρ_γ(σ · ρ_δ(τ))`.
 * `TauCeti.isQuasiIso_tensorPathChainConcat`: if `a` and `b` are joined by a Moore path, the
   composite change of basepoint is a quasi-isomorphism.
@@ -143,6 +145,21 @@ theorem tensorPathChainConcat_tmul {b c : B} (m : M)
   -- The bundled bimodule lemmas apply once the morphism is read in the bimodule category.
   refine (DGBimoduleCat.comp_apply _ _ _).trans ?_
   rw [DGBimoduleCat.tensorAssoc_hom_tmul, DGBimoduleCat.tensorMap_tmul, DGBimoduleCat.id_apply]
+
+/-- **Composing changes of basepoint is natural** in the DG local system. -/
+theorem tensorPathChainConcat_naturality {N : DGRightModuleCat.{w, max u w, v}
+    (loopChain_isDGAlgebra B a R)} (f : M ⟶ N) (b c : B) :
+    tensorBimoduleMap (tensorBimoduleMap f (𝟙 (pathChainBimodule B a b R)))
+          (𝟙 (pathChainBimodule B b c R)) ≫ tensorPathChainConcat N b c =
+      tensorPathChainConcat M b c ≫ tensorBimoduleMap f (𝟙 (pathChainBimodule B a c R)) := by
+  refine tensorBimoduleObj_hom_ext fun w y ↦ ?_
+  induction w using BalancedTensorProduct.induction_on with
+  | ht m x =>
+    rw [DGRightModuleCat.comp_apply, DGRightModuleCat.comp_apply, tensorBimoduleMap_tmul,
+      tensorBimoduleMap_tmul, DGBimoduleCat.id_apply, DGBimoduleCat.id_apply,
+      tensorPathChainConcat_tmul, tensorPathChainConcat_tmul, tensorBimoduleMap_tmul,
+      DGBimoduleCat.id_apply]
+  | ha w w' hw hw' => simp only [add_tmul, map_add, hw, hw']
 
 variable {M} {b c : B}
 
