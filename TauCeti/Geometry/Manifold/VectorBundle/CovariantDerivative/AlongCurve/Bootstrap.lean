@@ -64,11 +64,11 @@ private theorem contDiffWithinAt_alongCurveWithin_sub_christoffel
       (fun r ↦ TotalSpace.mk' E (γ r) (alongCurveWithin cov γ V s r)) s)
     {t : 𝕜} (ht : t ∈ s) :
     ContDiffWithinAt 𝕜 n
-      (fun r ↦ sectionCoord (F := E) γ (alongCurveWithin cov γ V s) (γ t) r
+      (fun r ↦ sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) (γ t) r
         - christoffelMap (Module.finBasis 𝕜 E)
           (cov.isCovariantDerivativeOn
             (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ r)
-          (sectionCoord (F := E) γ V (γ t) r)
+          (sectionCoord 𝕜 (F := E) γ V (γ t) r)
           (derivWithin (extChartAt I (γ t) ∘ γ) s r)) s t := by
   let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     ContMDiffVectorBundle.of_le (n := (n + 1 : ℕ)) (by exact_mod_cast Nat.le_succ n)
@@ -79,8 +79,8 @@ private theorem contDiffWithinAt_alongCurveWithin_sub_christoffel
   let e := trivializationAt E (TangentSpace I) (γ t)
   let Γ := christoffelMap (Module.finBasis 𝕜 E)
     (cov.isCovariantDerivativeOn (s := e.baseSet))
-  let v := sectionCoord (F := E) γ V (γ t)
-  let d := sectionCoord (F := E) γ (alongCurveWithin cov γ V s) (γ t)
+  let v := sectionCoord 𝕜 (F := E) γ V (γ t)
+  let d := sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) (γ t)
   let u := extChartAt I (γ t) ∘ γ
   have hx : γ t ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
   have hγn : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I n γ s t :=
@@ -124,8 +124,8 @@ theorem contMDiffOn_succ_of_alongCurveWithin
   let e := trivializationAt E (TangentSpace I) (γ t)
   let Γ := christoffelMap (Module.finBasis 𝕜 E)
     (cov.isCovariantDerivativeOn (s := e.baseSet))
-  let v := sectionCoord (F := E) γ V (γ t)
-  let d := sectionCoord (F := E) γ (alongCurveWithin cov γ V s) (γ t)
+  let v := sectionCoord 𝕜 (F := E) γ V (γ t)
+  let d := sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) (γ t)
   let u := extChartAt I (γ t) ∘ γ
   have hx : γ t ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
   -- Solving the fixed-chart connection formula gives a C^n candidate for v'.

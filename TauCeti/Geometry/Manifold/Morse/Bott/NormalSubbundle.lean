@@ -469,7 +469,7 @@ theorem exists_bundleDiffeomorph_negativeNormalSpace
           (E := fun s ↦ h.negativeNormalSpace hn g'.toRiemannianMetric s) v.proj
           ((h.negativeNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
             v.proj).toContinuousLinearEquiv v.2)) := fun v ↦
-    (hV'.contMDiffAt_totalSpace_mk (b := TotalSpace.proj)
+    (hV'.contMDiffAt_totalSpace_mk le_rfl (b := TotalSpace.proj)
       ((contMDiff_projection_negativeNormalSpace hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦ Submodule.coe_mem _).congr_of_eventuallyEq
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)
@@ -531,7 +531,7 @@ theorem exists_bundleDiffeomorph_positiveNormalSpace
           (E := fun s ↦ h.positiveNormalSpace hn g'.toRiemannianMetric s) v.proj
           ((h.positiveNormalSpaceEquiv hn g.toRiemannianMetric g'.toRiemannianMetric
             v.proj).toContinuousLinearEquiv v.2)) := fun v ↦
-    (hV'.contMDiffAt_totalSpace_mk (b := TotalSpace.proj)
+    (hV'.contMDiffAt_totalSpace_mk le_rfl (b := TotalSpace.proj)
       ((contMDiff_projection_positiveNormalSpace hn h hk hf hdim g').comp
         hV.contMDiff_totalSpace_inclusion v) fun _ ↦ Submodule.coe_mem _).congr_of_eventuallyEq
       (.of_forall fun w ↦ TotalSpace.mk_inj.mpr <| Subtype.ext <| by simp)

@@ -138,10 +138,8 @@ theorem mk_eq_mk {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w)
 /-- Two primitive representatives define the same slope exactly when they agree up to sign. -/
 @[simp]
 theorem mk_eq_mk_iff {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w) :
-    mk v hv = mk w hw ↔ v = w ∨ v = -w := by
-  constructor
-  · exact Quotient.exact
-  · exact mk_eq_mk hv hw
+    mk v hv = mk w hw ↔ v = w ∨ v = -w :=
+  Quotient.eq
 
 /-- Induction principle for slopes: it suffices to prove a property for `Slope.mk v hv` with `v`
 primitive. -/
@@ -160,15 +158,7 @@ def congr (φ : M ≃ₗ[ℤ] N) : Slope M ≃ Slope N :=
       invFun := fun w => ⟨φ.symm w.1, φ.symm.isPrimitive_iff.mpr w.2⟩
       left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.1)
       right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.1) }
-    fun a b => by
-      simp only [slopeSetoid_rel_iff, Equiv.coe_fn_mk]
-      constructor
-      · rintro (h | h)
-        · exact Or.inl (by rw [h])
-        · exact Or.inr (by rw [h, map_neg])
-      · rintro (h | h)
-        · exact Or.inl (φ.injective h)
-        · exact Or.inr (φ.injective (by rw [map_neg]; exact h))
+    fun a b => by simp only [slopeSetoid_rel_iff, Equiv.coe_fn_mk, ← map_neg, φ.injective.eq_iff]
 
 /-- Transporting the slope of a primitive class `v` along `φ` gives the slope of `φ v`. -/
 @[simp]
@@ -452,16 +442,12 @@ theorem slopeEquiv_symm_apply (x : OnePoint ℚ) :
 /-- The framed meridian has slope value `∞`. -/
 @[simp]
 theorem value_meridian : T.value T.meridian = ∞ := by
-  unfold value meridian
-  rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_zero]
-  exact slopeValue_of_snd_eq_zero rfl
+  simp [meridian]
 
 /-- The framed longitude has slope value `0`. -/
 @[simp]
 theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
-  unfold value longitude
-  rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
-  norm_num
+  simp [longitude]
 
 /-- A slope of finite value is not the meridian, whose value is `∞`. -/
 theorem slopeEquiv_symm_coe_ne_meridian (x : ℚ) : T.slopeEquiv.symm x ≠ T.meridian := by
