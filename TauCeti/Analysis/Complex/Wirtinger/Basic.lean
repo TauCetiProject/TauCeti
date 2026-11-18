@@ -19,6 +19,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # Wirtinger derivatives
@@ -437,15 +438,14 @@ isomorphism. -/
 theorem conjWirtingerDeriv_comp_continuousLinearEquiv {X : Type*} [NormedAddCommGroup X]
     [NormedSpace ℂ X] (e : X ≃L[ℂ] V) (g : V → W) (x : X) :
     conjWirtingerDeriv (g ∘ e) x = (conjWirtingerDeriv g (e x)).comp (e : X →L[ℂ] V) := by
-  -- `e` as a real continuous linear equivalence.
-  let eℝ : X ≃L[ℝ] V :=
-    { e.toLinearEquiv.restrictScalars ℝ with
-      continuous_toFun := e.continuous
-      continuous_invFun := e.symm.continuous }
-  have h : fderiv ℝ (g ∘ e) x = (fderiv ℝ g (e x)).comp ((e : X →L[ℂ] V).restrictScalars ℝ) :=
-    eℝ.comp_right_fderiv (f := g)
+  have h := (e.restrictScalars' ℝ).comp_right_fderiv (f := g) (x := x)
+  rw [ContinuousLinearEquiv.coe_restrictScalars'] at h
   rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart, h,
-    ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+    ← ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+  -- The real map underlying `e.restrictScalars' ℝ` is `e` with scalars restricted.
+  congr 2
+  ext
+  simp
 
 section Mul
 
