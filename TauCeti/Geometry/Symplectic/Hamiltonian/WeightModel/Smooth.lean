@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 import Mathlib.Geometry.Manifold.Algebra.Structures
-import TauCeti.Geometry.Manifold.Instances.AddCircle.Periodic
 
 /-!
 # Smoothness of the rotation torus action
