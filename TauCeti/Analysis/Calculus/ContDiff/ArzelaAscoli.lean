@@ -147,7 +147,7 @@ theorem exists_subseq_tendstoUniformlyOn_iteratedFDeriv {f : ℕ → E → F} {p
       funext fun x ↦ ((hlimq (k, m)).tendsto_at x).limUnder_eq
     rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe, hPΨ]
     exact hlimq (k, m)
-  set g : E → F := fun x ↦ (P 0 x).curry0 with hg
+  set g : E → F := fun x ↦ (P 0 x).curry0
   have hT : HasFTaylorSeriesUpToOn (⊤ : ℕ∞) g (fun x k ↦ P k x) (ball p R) := by
     refine ⟨fun x _ ↦ rfl, fun k _ x hx ↦ ?_, fun k _ ↦ ?_⟩
     · obtain ⟨m, hm⟩ := hmem hx
