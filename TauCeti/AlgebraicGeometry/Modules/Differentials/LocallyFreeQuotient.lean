@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Restriction
-public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 
 /-!
 # Locally free quotients of the sheaf of differentials
@@ -26,10 +25,9 @@ The predicate is sensitive to the characteristic: for the cusp `y² = x³` and `
 
 * `HasLocallyFreeQuotientOfDifferentials k X d`: `Ω_{X/k}` admits a locally free quotient of
   rank `d`;
+* `hasLocallyFreeQuotientOfDifferentials_iff`: the defining existential condition;
 * `HasLocallyFreeQuotientOfDifferentials.of_isOpenImmersion` and
   `HasLocallyFreeQuotientOfDifferentials.restrict`: the predicate passes to open subschemes;
-* `FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials`: the sheaf of differentials of a
-  scheme smooth of relative dimension `d`, as a finite locally free sheaf of constant rank `d`;
 * `hasLocallyFreeQuotientOfDifferentials_of_smoothOfRelativeDimension`: on a scheme smooth of
   relative dimension `d`, the identity of `Ω_{X/k}` witnesses the predicate.
 
@@ -54,10 +52,18 @@ variable (k : Type u) [CommRing k]
 /-- The sheaf of relative differentials `Ω_{X/k}` admits a locally free quotient of rank `d`:
 there are a finite locally free `𝒪_X`-module `E` of constant rank `d` and an epimorphism of
 `𝒪_X`-modules `Ω_{X/k} ⟶ E`. -/
-@[expose]
 def HasLocallyFreeQuotientOfDifferentials (X : Scheme.{u}) [X.Over (Spec (.of k))] (d : ℕ) :
     Prop :=
   ∃ (E : FiniteLocallyFreeSheaf.FixedRank X d) (q : X.relativeDifferentials k ⟶ E.obj.obj), Epi q
+
+/-- `Ω_{X/k}` admits a locally free quotient of rank `d` if and only if there is an epimorphism
+from it onto a finite locally free sheaf of constant rank `d`. -/
+theorem hasLocallyFreeQuotientOfDifferentials_iff (X : Scheme.{u}) [X.Over (Spec (.of k))]
+    (d : ℕ) :
+    HasLocallyFreeQuotientOfDifferentials k X d ↔
+      ∃ (E : FiniteLocallyFreeSheaf.FixedRank X d) (q : X.relativeDifferentials k ⟶ E.obj.obj),
+        Epi q :=
+  Iff.rfl
 
 variable {k}
 
@@ -89,23 +95,6 @@ end HasLocallyFreeQuotientOfDifferentials
 
 variable (k) (X : Scheme.{u}) [X.Over (Spec (.of k))] (d : ℕ)
   [SmoothOfRelativeDimension d (X ↘ Spec (.of k))]
-
-/-- The sheaf of relative differentials `Ω_{X/k}` of a scheme smooth of relative dimension `d`
-over `Spec k`, as a finite locally free sheaf of constant rank `d`. -/
-def FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials : FiniteLocallyFreeSheaf.FixedRank X d :=
-  haveI := SmoothOfRelativeDimension.smooth d (X ↘ Spec (.of k))
-  ⟨FiniteLocallyFreeSheaf.relativeDifferentials k X,
-    (FiniteLocallyFreeSheaf.isConstantRank_iff _ d).mpr
-      (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply k d)⟩
-
-/-- The underlying sheaf of `FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials k X d` is
-`Ω_{X/k}`. -/
-@[simp]
-lemma FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials_obj_obj :
-    (FiniteLocallyFreeSheaf.FixedRank.relativeDifferentials k X d).obj.obj =
-      X.relativeDifferentials k :=
-  haveI := SmoothOfRelativeDimension.smooth d (X ↘ Spec (.of k))
-  FiniteLocallyFreeSheaf.relativeDifferentials_obj k X
 
 /-- On a scheme smooth of relative dimension `d` over `Spec k`, the identity of `Ω_{X/k}`, which
 is finite locally free of constant rank `d`, is a locally free quotient of rank `d`. -/
