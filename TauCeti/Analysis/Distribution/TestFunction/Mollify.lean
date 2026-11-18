@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Convolution
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 public import TauCeti.Analysis.Distribution.TestFunction.Homotopy
 public import TauCeti.Analysis.Distribution.TestFunction.TranslateAverage
+public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.MeasureTheory.Measure.Comap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
@@ -50,9 +51,13 @@ it to evaluations at points gives the identity of test forms.
   `TestFunction.mollifyCLM_apply_eq_integral` giving it as an average of translates and
   `TestFunction.mollifyCLM_apply` identifying it with the convolution `ρ̂ ⋆ ω`.
 * `TestFunction.tsupport_mollifyCLM_subset`: the support of `M φ`.
+* `TestFunction.apply_mollifyCLM`: a current passes under `M`, as the average of the translates
+  `TauCeti.translateTestFunction`.
 * `TestFunction.extDerivCLM_comp_mollifyCLM`: `d ∘ M = M ∘ d`.
 * `TestFunction.mollifyHomotopyCLM`: the averaged straight-line homotopy operator `K`.
 * `TestFunction.tsupport_mollifyHomotopyCLM_subset`: the support of `K ω`.
+* `TestFunction.apply_mollifyHomotopyCLM`: a current passes under `K`, as the average of the
+  contracted translates.
 * `TestFunction.mollifyHomotopyCLM_comp_extDerivCLM`: `K ∘ d = M - id - d ∘ K`, and
   `TestFunction.mollifyHomotopyCLM_comp_extDerivCLM_finZero` in degree zero.
 
@@ -151,11 +156,18 @@ private theorem pullbackCLM_lineHomotopy_apply (y : E) (s : ℝ)
   ext v
   simp [lineHomotopy]
 
-/-- The translation `ω ↦ ω (· + y)` of test forms: the time-one slice of the straight-line
-homotopy. -/
-private abbrev translateCLM (y : E) :
-    𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F) →L[ℝ] 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F) :=
-  pullbackCLM _ (contDiffOn_lineHomotopy_slice y 1) (isCompact_lineHomotopy_slice y 1)
+omit [FiniteDimensional ℝ F] in
+/-- The slice at time `1` of the straight-line homotopy is the translation `ω ↦ ω (· + y)`. -/
+private theorem pullbackCLM_lineHomotopy_one (y : E)
+    {h₁ : ContDiffOn ℝ (⊤ : ℕ∞) (fun x ↦ lineHomotopy y (x, 1)) (⊤ : Opens E)}
+    {h₂ : ∀ K : Set E, IsCompact K → K ⊆ (⊤ : Opens E) →
+      IsCompact (((⊤ : Opens E) : Set E) ∩ (fun x ↦ lineHomotopy y (x, 1)) ⁻¹' K)}
+    (ω : 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F)) :
+    pullbackCLM (fun x ↦ lineHomotopy y (x, 1)) h₁ h₂ ω =
+      TauCeti.translateTestFunction (h := -y) (mapsTo_univ _ _) ω := by
+  ext x : 1
+  rw [pullbackCLM_lineHomotopy_apply, one_smul, TauCeti.translateTestFunction_apply,
+    sub_neg_eq_add]
 
 /-- The homotopy operator of the straight-line homotopy from the identity to the translation by
 `y`: `x ↦ ∫₀¹ ω (x + t y) (y, ·) dt`. -/
@@ -351,6 +363,55 @@ theorem tsupport_mollifyHomotopyCLM_subset (ω : 𝓓((⊤ : Opens E), E [⋀^Fi
   rw [mem_closedBall_zero_iff, norm_neg, norm_smul, Real.norm_of_nonneg t.2.1]
   exact (mul_le_of_le_one_left (norm_nonneg _) t.2.2).trans (mem_closedBall_zero_iff.1 y.2)
 
+section Currents
+
+variable {G V : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+
+/-- **A current passes under mollification**, as the average of its translates:
+`S (M ω) = ∫ ρ̂ y S (ω (· + y)) dμ(y)`. -/
+theorem apply_mollifyCLM (S : 𝓓((⊤ : Opens E), G) →L[ℝ] V) (ω : 𝓓((⊤ : Opens E), G)) :
+    S (mollifyCLM μ ρ ω) = ∫ y : closedBall (0 : E) ρ.rOut,
+      ρ.normed μ y • S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω)
+        ∂(μ.comap (↑)) := by
+  rw [mollifyCLM, S.apply_translateAverageCLM ω
+    (f := fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y •
+      TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω)
+    fun y x ↦ by simp [sub_neg_eq_add]]
+  simp only [map_smul]
+
+omit [FiniteDimensional ℝ G] [CompleteSpace V] in
+/-- The translates averaged by mollification, tested against a current, are integrable. -/
+private theorem integrable_apply_translateTestFunction (S : 𝓓((⊤ : Opens E), G) →L[ℝ] V)
+    (ω : 𝓓((⊤ : Opens E), G)) :
+    Integrable (fun y : closedBall (0 : E) ρ.rOut ↦
+      ρ.normed μ y • S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω))
+      (μ.comap (↑)) := by
+  simpa only [Function.comp_def, map_smul] using (S.continuous.comp
+    (continuous_of_apply_eq_apply_add (continuous_mollifyWeight μ ρ) continuous_subtype_val ω
+      (f := fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y •
+        TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω)
+      fun y x ↦ by simp [sub_neg_eq_add])).integrable_of_hasCompactSupport
+    (μ := μ.comap ((↑) : closedBall (0 : E) ρ.rOut → E)) (.of_compactSpace _)
+
+/-- **A current passes under the averaged homotopy operator**, as the average of the translates
+`ω (· + t y)` contracted with `y`: `S (K ω) = ∫ ρ̂ y S (ω (· + t y) (y, ·)) d(μ × dt)(y, t)`. -/
+theorem apply_mollifyHomotopyCLM [FiniteDimensional ℝ F]
+    (S : 𝓓((⊤ : Opens E), E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V)
+    (ω : 𝓓((⊤ : Opens E), E [⋀^Fin (k + 1)]→L[ℝ] F)) :
+    S (mollifyHomotopyCLM μ ρ ω) = ∫ q : closedBall (0 : E) ρ.rOut × unitInterval,
+      ρ.normed μ q.1 • S (postcompCLM (curryLeftFlipL (q.1 : E))
+        (TauCeti.translateTestFunction (h := -((q.2 : ℝ) • (q.1 : E))) (mapsTo_univ _ _) ω))
+        ∂((μ.comap (↑)).prod volume) := by
+  rw [mollifyHomotopyCLM, S.apply_translateAverageCLM ω
+    (f := fun q : closedBall (0 : E) ρ.rOut × unitInterval ↦
+      ρ.normed μ q.1 • postcompCLM (curryLeftFlipL (q.1 : E))
+      (TauCeti.translateTestFunction (h := -((q.2 : ℝ) • (q.1 : E))) (mapsTo_univ _ _) ω))
+    fun q x ↦ by simp [sub_neg_eq_add, map_smul]]
+  simp only [map_smul]
+
+end Currents
+
 section Identities
 
 variable [FiniteDimensional ℝ F] {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -374,7 +435,8 @@ private theorem continuous_mollifyHomotopyIntegrand
 /-- **A current passes under the averaged homotopy operator**, as the average of the
 straight-line homotopy currents: `S (K ω) = ∫ ρ̂ y S (h_y ω) dμ(y)`, and the integrand is
 integrable. -/
-private theorem apply_mollifyHomotopyCLM (S : 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F) →L[ℝ] V)
+private theorem apply_mollifyHomotopyCLM_lineHomotopyCLM
+    (S : 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F) →L[ℝ] V)
     (ω : 𝓓((⊤ : Opens E), E [⋀^Fin (m + 1)]→L[ℝ] F)) :
     Integrable (fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y • S (lineHomotopyCLM (y : E) ω))
       (μ.comap (↑)) ∧
@@ -393,27 +455,6 @@ private theorem apply_mollifyHomotopyCLM (S : 𝓓((⊤ : Opens E), E [⋀^Fin m
     integral_prod _ hint]
   exact integral_congr_ae (ae_of_all _ hinner)
 
-/-- **A current passes under mollification**, as the average of its translates:
-`S (M ω) = ∫ ρ̂ y S (ω (· + y)) dμ(y)`, and the integrand is integrable. -/
-private theorem apply_mollifyCLM (S : 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F) →L[ℝ] V)
-    (ω : 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F)) :
-    Integrable (fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y • S (translateCLM (y : E) ω))
-      (μ.comap (↑)) ∧
-    S (mollifyCLM μ ρ ω) = ∫ y : closedBall (0 : E) ρ.rOut,
-      ρ.normed μ y • S (translateCLM (y : E) ω) ∂(μ.comap (↑)) := by
-  have hf (y : closedBall (0 : E) ρ.rOut) (x : E) :
-      (ρ.normed μ y • translateCLM (y : E) ω) x =
-        (ρ.normed μ y • ContinuousLinearMap.id ℝ _) (ω (x + y)) := by
-    rw [FunLike.coe_smul, Pi.smul_apply, pullbackCLM_lineHomotopy_apply, one_smul]
-    simp
-  refine ⟨?_, ?_⟩
-  · simpa only [Function.comp_def, map_smul] using (S.continuous.comp
-      (continuous_of_apply_eq_apply_add (continuous_mollifyWeight μ ρ) continuous_subtype_val ω
-        hf)).integrable_of_hasCompactSupport
-      (μ := μ.comap ((↑) : closedBall (0 : E) ρ.rOut → E)) (.of_compactSpace _)
-  · rw [mollifyCLM, S.apply_translateAverageCLM ω hf]
-    simp only [map_smul]
-
 /-- The homotopy formula for the averaged homotopy operator, tested against a current. -/
 private theorem apply_mollifyHomotopyCLM_extDerivCLM
     (S : 𝓓((⊤ : Opens E), E [⋀^Fin (m + 1)]→L[ℝ] F) →L[ℝ] V)
@@ -422,19 +463,22 @@ private theorem apply_mollifyHomotopyCLM_extDerivCLM
       S (mollifyCLM μ ρ ω) - S ω - S (extDerivCLM (mollifyHomotopyCLM μ ρ ω)) := by
   have hy (y : closedBall (0 : E) ρ.rOut) :
       S (lineHomotopyCLM (y : E) (extDerivCLM ω)) =
-        S (translateCLM (y : E) ω) - S ω - (S ∘L extDerivCLM) (lineHomotopyCLM (y : E) ω) := by
+        S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω) - S ω -
+          (S ∘L extDerivCLM) (lineHomotopyCLM (y : E) ω) := by
     have h := congr($(ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM
       (hH := contDiffAt_lineHomotopy (y : E)) (hHp := isCompact_lineHomotopy (y : E)) S) ω)
     simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply,
-      pullbackCLM_lineHomotopy_zero] at h
+      pullbackCLM_lineHomotopy_zero, pullbackCLM_lineHomotopy_one] at h
     exact h
-  obtain ⟨hM, hMe⟩ := apply_mollifyCLM μ ρ S ω
-  obtain ⟨hK, hKe⟩ := apply_mollifyHomotopyCLM μ ρ (S ∘L extDerivCLM) ω
+  have hM := integrable_apply_translateTestFunction μ ρ S ω
+  obtain ⟨hK, hKe⟩ := apply_mollifyHomotopyCLM_lineHomotopyCLM μ ρ (S ∘L extDerivCLM) ω
   have hc := ρ.integrable_closedBall_normed_smul_const μ (S ω)
-  rw [(apply_mollifyHomotopyCLM μ ρ S _).2, hMe, ← ContinuousLinearMap.comp_apply S extDerivCLM,
-    hKe, ← ρ.integral_closedBall_normed_smul_const μ (S ω), ← integral_sub hM hc]
+  rw [(apply_mollifyHomotopyCLM_lineHomotopyCLM μ ρ S _).2, apply_mollifyCLM μ ρ S ω,
+    ← ContinuousLinearMap.comp_apply S extDerivCLM, hKe,
+    ← ρ.integral_closedBall_normed_smul_const μ (S ω), ← integral_sub hM hc]
   rw [← integral_sub (f := fun y : closedBall (0 : E) ρ.rOut ↦
-      ρ.normed μ y • S (translateCLM (y : E) ω) - ρ.normed μ y • S ω) (hM.sub hc) hK]
+      ρ.normed μ y • S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω) -
+        ρ.normed μ y • S ω) (hM.sub hc) hK]
   refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
   dsimp only
   rw [hy, smul_sub, smul_sub]
@@ -446,15 +490,16 @@ private theorem apply_mollifyHomotopyCLM_extDerivCLM_finZero
     (ω : 𝓓((⊤ : Opens E), E [⋀^Fin 0]→L[ℝ] F)) :
     S (mollifyHomotopyCLM μ ρ (extDerivCLM ω)) = S (mollifyCLM μ ρ ω) - S ω := by
   have hy (y : closedBall (0 : E) ρ.rOut) :
-      S (lineHomotopyCLM (y : E) (extDerivCLM ω)) = S (translateCLM (y : E) ω) - S ω := by
+      S (lineHomotopyCLM (y : E) (extDerivCLM ω)) =
+        S (TauCeti.translateTestFunction (h := -(y : E)) (mapsTo_univ _ _) ω) - S ω := by
     have h := congr($(ContinuousLinearMap.comp_homotopyPullbackCLM_comp_extDerivCLM_finZero
       (hH := contDiffAt_lineHomotopy (y : E)) (hHp := isCompact_lineHomotopy (y : E)) S) ω)
     simp only [ContinuousLinearMap.comp_apply, _root_.sub_apply,
-      pullbackCLM_lineHomotopy_zero] at h
+      pullbackCLM_lineHomotopy_zero, pullbackCLM_lineHomotopy_one] at h
     exact h
-  obtain ⟨hM, hMe⟩ := apply_mollifyCLM μ ρ S ω
+  have hM := integrable_apply_translateTestFunction μ ρ S ω
   have hc := ρ.integrable_closedBall_normed_smul_const μ (S ω)
-  rw [(apply_mollifyHomotopyCLM μ ρ S _).2, hMe,
+  rw [(apply_mollifyHomotopyCLM_lineHomotopyCLM μ ρ S _).2, apply_mollifyCLM μ ρ S ω,
     ← ρ.integral_closedBall_normed_smul_const μ (S ω), ← integral_sub hM hc]
   refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
   dsimp only
