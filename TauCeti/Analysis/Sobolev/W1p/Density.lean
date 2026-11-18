@@ -54,29 +54,23 @@ open scoped ENNReal Gradient Topology
 
 namespace TauCeti
 
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {p : ENNReal} [Fact (1 ≤ p)]
-
-/-- The whole-space restriction of an additive Haar measure is the measure itself. -/
-local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-  infer_instance
-
 /-! ### Truncation -/
+
+section Cutoff
+
+variable {E : Type*} [NormedAddCommGroup E]
 
 /-- The smooth bump equal to one on the unit ball and supported in the ball of radius two. -/
 private def unitBump : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
 
-omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
 private theorem unitBump_rIn : (unitBump (E := E)).rIn = 1 :=
   rfl
 
-omit [MeasurableSpace E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
 private theorem unitBump_rOut : (unitBump (E := E)).rOut = 2 :=
   rfl
 
-omit [MeasurableSpace E] [BorelSpace E] in
+variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
 private theorem exists_norm_fderiv_unitBump_le :
     ∃ C, 0 ≤ C ∧ ∀ x, ‖fderiv ℝ (unitBump (E := E)) x‖ ≤ C := by
   obtain ⟨C, hC⟩ := (((unitBump (E := E)).contDiff (n := 1)).continuous_fderiv
@@ -88,19 +82,15 @@ private theorem exists_norm_fderiv_unitBump_le :
 private def truncCutoff (n : ℕ) : E → ℝ :=
   fun x => unitBump (E := E) (((n : ℝ) + 1)⁻¹ • x)
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem contDiff_truncCutoff (n : ℕ) : ContDiff ℝ (⊤ : ℕ∞) (truncCutoff (E := E) n) :=
   (unitBump (E := E)).contDiff.comp (contDiff_const_smul _)
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem truncCutoff_nonneg (n : ℕ) (x : E) : 0 ≤ truncCutoff n x :=
   (unitBump (E := E)).nonneg
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem truncCutoff_le_one (n : ℕ) (x : E) : truncCutoff n x ≤ 1 :=
   (unitBump (E := E)).le_one
 
-omit [MeasurableSpace E] [BorelSpace E] in
 private theorem norm_gradient_truncCutoff_le {C : ℝ}
     (hbound : ∀ x, ‖fderiv ℝ (unitBump (E := E)) x‖ ≤ C) (n : ℕ) (x : E) :
     ‖∇ (truncCutoff n) x‖ ≤ C := by
@@ -113,7 +103,6 @@ private theorem norm_gradient_truncCutoff_le {C : ℝ}
         (norm_nonneg _) zero_le_one
     _ = C := one_mul C
 
-omit [MeasurableSpace E] [BorelSpace E] in
 /-- Near a point of norm less than `n + 1`, the cutoff is identically one. -/
 private theorem truncCutoff_eventuallyEq_one {n : ℕ} {x : E} (hx : ‖x‖ < (n : ℝ) + 1) :
     truncCutoff n =ᶠ[𝓝 x] fun _ => 1 := by
@@ -124,7 +113,6 @@ private theorem truncCutoff_eventuallyEq_one {n : ℕ} {x : E} (hx : ‖x‖ < (
     unitBump_rIn, inv_mul_le_iff₀ hn, mul_one]
   exact (mem_ball_zero_iff.1 hy).le
 
-omit [MeasurableSpace E] [BorelSpace E] in
 /-- Near a point of norm greater than `2 (n + 1)`, the cutoff is identically zero. -/
 private theorem truncCutoff_eventuallyEq_zero {n : ℕ} {x : E}
     (hx : 2 * ((n : ℝ) + 1) < ‖x‖) :
@@ -135,6 +123,17 @@ private theorem truncCutoff_eventuallyEq_zero {n : ℕ} {x : E}
   rw [dist_zero_right, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn), unitBump_rOut,
     le_inv_mul_iff₀ hn]
   linarith
+
+end Cutoff
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- The whole-space restriction of an additive Haar measure is the measure itself. -/
+local instance : (mu.restrict ((⊤ : Opens E) : Set E)).IsAddHaarMeasure := by
+  rw [Opens.coe_top, Measure.restrict_univ]
+  infer_instance
 
 /-- The truncation `ψ(x / (n + 1)) u` of a Sobolev function, with `C` bounding the gradients of
 all the cutoffs. -/
