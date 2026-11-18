@@ -9,6 +9,7 @@ public import Mathlib.Probability.Independence.Process.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Probability.HasLaw
 import Mathlib.LinearAlgebra.Matrix.RowCol
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Product laws and independence for random matrices
@@ -26,6 +27,44 @@ public section
 open MeasureTheory
 
 namespace ProbabilityTheory.iIndepFun
+
+/-- The rows of a finite matrix with independent entries are independent as vector-valued
+random variables. The entries may have different laws. -/
+theorem matrix_row {Ω m n R : Type*} [MeasurableSpace Ω] [MeasurableSpace R]
+    [Finite m] [Finite n] {P : Measure Ω} {X : Ω → Matrix m n R}
+    (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
+    (hX : AEMeasurable X P) : iIndepFun (fun i ω ↦ (X ω).row i) P := by
+  have := hind.isProbabilityMeasure
+  let := Fintype.ofFinite m
+  let := Fintype.ofFinite n
+  let ν (i : m) (j : n) := P.map (fun ω ↦ X ω i j)
+  have hmeas (i : m) (j : n) : AEMeasurable (fun ω ↦ X ω i j) P :=
+    Matrix.measurable_apply.comp_aemeasurable hX
+  have (i : m) (j : n) : IsProbabilityMeasure (ν i j) :=
+    (Measure.isProbabilityMeasure_map_iff (hmeas i j)).2 inferInstance
+  have hjoint := (TauCeti.measurePreserving_curry ν).hasLaw.comp
+    (hind.hasLaw_pi (fun ij : m × n ↦ hasLaw_map (hmeas ij.1 ij.2)))
+  have hcomp : (MeasurableEquiv.curry m n R) ∘ (fun ω (ij : m × n) ↦ X ω ij.1 ij.2) =
+      (fun ω ↦ (X ω).row) := by
+    funext ω i j
+    simp [MeasurableEquiv.coe_curry, Function.curry]
+  rw [hcomp] at hjoint
+  exact (TauCeti.Probability.hasLaw_pi_iff.1 hjoint).1
+
+/-- The columns of a finite matrix with independent entries are independent as vector-valued
+random variables. -/
+theorem matrix_col {Ω m n R : Type*} [MeasurableSpace Ω] [MeasurableSpace R]
+    [Finite m] [Finite n] {P : Measure Ω} {X : Ω → Matrix m n R}
+    (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
+    (hX : AEMeasurable X P) : iIndepFun (fun j ω ↦ (X ω).col j) P := by
+  have htranspose : AEMeasurable (fun ω ↦ (X ω).transpose) P :=
+    .of_eval fun j ↦ .of_eval fun i ↦ by
+      simpa only [Matrix.transpose_apply, Function.comp_def] using
+        (Matrix.measurable_apply (i := i) (j := j)).comp_aemeasurable hX
+  have hind' : iIndepFun (fun ij : n × m ↦ fun ω ↦ (X ω).transpose ij.1 ij.2) P := by
+    simpa only [Matrix.transpose_apply] using
+      hind.precomp (g := fun ij : n × m ↦ (ij.2, ij.1)) (Equiv.prodComm n m).injective
+  simpa only [Matrix.row_transpose] using hind'.matrix_row htranspose
 
 /-- Zeroing a column of a matrix with independent entries makes it independent of that column.
 Almost-everywhere measurability of the entire matrix suffices, even for infinite index types. -/
