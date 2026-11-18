@@ -182,30 +182,8 @@ distinguished of degree `j` at `b ^ σ`. The face already makes the series restr
 `b ^ σ` (`PowerSeries.isRestricted_of_isFiniteFace_newtonPolygon`). -/
 theorem isDistinguished_of_isFiniteFace {f : K⟦X⟧} {σ : ℝ} {l j : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l j) :
-    TauCeti.PowerSeries.IsDistinguished (b ^ σ) j f := by
-  have hf0 : f ≠ 0 := by
-    rintro rfl
-    exact hface.right_ne_top (by simp)
-  have hfn := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-    (isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface)
-  have hadm : IsAdmissible (fun n => v (f.coeff n)) :=
-    isAdmissible_iff_exists_supportingValue_ne_bot.mpr
-      ⟨σ, (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv σ).mp hfn⟩
-  have henv := f.isLowerConvexEnvelope_newtonPolygon hadm
-  obtain ⟨c, hc_poly, hset⟩ := hface.exists_intercept
-  have hc_coeff : IsSupportingLine (fun n => v (f.coeff n)) σ c :=
-    isSupportingLine_iff_forall.mpr fun n =>
-      (isSupportingLine_iff_forall.mp hc_poly n).trans (henv.le n)
-  have hj_poly : j ∈ supportingFace (f.newtonPolygon v) σ c :=
-    hset.symm.subset ⟨hface.left_le_right, le_rfl⟩
-  have hj_coeff : j ∈ supportingFace (fun n => v (f.coeff n)) σ c := by
-    rw [mem_supportingFace, ← henv.eq_right_of_isFiniteFace hface]
-    exact mem_supportingFace.mp hj_poly
-  have hc_eq : c = -Real.logb b (f.gaussNorm norm (b ^ σ)) := EReal.coe_injective <| by
-    rw [← supportingValue_eq_coe_of_mem_supportingFace hc_coeff hj_coeff,
-      supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm f v hb hv hfn hf0]
-  rw [isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn, ← hc_eq]
-  exact ⟨hj_coeff, fun m hm => (Set.mem_Icc.mp (hset ▸ henv.supportingFace_subset hc_coeff hm)).2⟩
+    TauCeti.PowerSeries.IsDistinguished (b ^ σ) j f :=
+  (isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hface).2
 
 /-- When `f` is distinguished of degree `j` at `b ^ σ`, slopes `τ > σ` contribute at most the
 slope-`σ` value to the Legendre reconstruction at any index `n ≤ j`. -/
