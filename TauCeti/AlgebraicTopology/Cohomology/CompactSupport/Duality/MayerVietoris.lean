@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.HasGroupoid
-public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality
+public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Duality.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.MayerVietoris
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
 
@@ -36,14 +35,10 @@ the duality map along open embeddings
 (`TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_dualityMap`), applied to the
 inclusions of open subsets
 (`TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_inclusion'_dualityMap` and
-`TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_toTopCat_map_dualityMap`), once
-the restriction of `o` to `W` and then to `V ⊆ W` is identified with its restriction to `V`
-(`TauCeti.HomologicalOrientation.comap_comap_toTopCat_map`).
+`TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_toTopCat_map_dualityMap`).
 
 ## Main results
 
-* `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_toTopCat_map_dualityMap`:
-  naturality of the duality maps for open sets `V ⊆ W` of `M`.
 * `TauCeti.HomologicalOrientation.compactSupportCohomologyMayerVietorisToBiprod_dualityMap`: the
   square at `Hᵖ_c(U ∩ V) ⟶ Hᵖ_c(U) ⊞ Hᵖ_c(V)`.
 * `TauCeti.HomologicalOrientation.compactSupportCohomologyMayerVietorisFromBiprod_dualityMap`:
@@ -71,16 +66,6 @@ noncomputable section
 
 open CategoryTheory Limits TopologicalSpace Topology Opens
 
-namespace TopologicalSpace.Opens
-
-/-- An open subset of a charted space, viewed as an object of `TopCat`, is a charted space. -/
-instance instChartedSpaceToTopCatObj {H M : Type*} [TopologicalSpace H] [TopologicalSpace M]
-    [ChartedSpace H M] (W : Opens (TopCat.of M)) :
-    ChartedSpace H ((toTopCat (TopCat.of M)).obj W) :=
-  TopologicalSpace.Opens.instChartedSpace (H := H) (M := M) W
-
-end TopologicalSpace.Opens
-
 namespace TauCeti
 
 attribute [local instance] MonoidalPreadditive.monoidalLinearInt
@@ -92,43 +77,6 @@ variable {M E : Type} [TopologicalSpace M] [T2Space M]
   {n : ℕ} (o : HomologicalOrientation M E n) (hn : Module.finrank ℝ E = n) (L : ModuleCat.{0} ℤ)
 
 variable {p q : ℕ} (h : p + q = n)
-
-/-- **Naturality of the duality map for an open subset**: for an open `W ⊆ M`, oriented by the
-restriction of `o`, extending compactly supported classes from `W` to `M` and then applying the
-duality map of `M` is applying the duality map of `W` and then pushing forward along the
-inclusion. -/
-@[reassoc]
-theorem compactSupportCohomologyExtend_inclusion'_dualityMap (W : Opens (TopCat.of M)) :
-    TopCat.compactSupportCohomologyExtend W.isOpenEmbedding p ≫ o.dualityMap hn L p q h =
-      (o.comap W.isOpenEmbedding).dualityMap hn L p q h ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-          (Opens.inclusion' W) :=
-  o.compactSupportCohomologyExtend_dualityMap hn L (j := (Opens.inclusion' W).hom)
-    W.isOpenEmbedding p q h
-
-/-- Restricting the orientation of `M` to an open `W` and then to an open `V ⊆ W` is restricting
-it to `V`. -/
-lemma comap_comap_toTopCat_map {V W : Opens (TopCat.of M)} (hVW : V ≤ W) :
-    (o.comap W.isOpenEmbedding).comap (isOpenEmbedding_toTopCat_map (homOfLE hVW)) =
-      o.comap V.isOpenEmbedding := by
-  rw [comap_comap]
-  exact o.comap_congr _ _ rfl
-
-/-- **Naturality of the duality map for nested open subsets**: for opens `V ⊆ W` of `M`, oriented
-by the restrictions of `o`, extending compactly supported classes from `V` to `W` intertwines the
-duality maps of `V` and `W` with the pushforward along the inclusion. -/
-@[reassoc]
-theorem compactSupportCohomologyExtend_toTopCat_map_dualityMap {V W : Opens (TopCat.of M)}
-    (hVW : V ≤ W) :
-    TopCat.compactSupportCohomologyExtend (isOpenEmbedding_toTopCat_map (homOfLE hVW)) p ≫
-        (o.comap W.isOpenEmbedding).dualityMap hn L p q h =
-      (o.comap V.isOpenEmbedding).dualityMap hn L p q h ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-          ((Opens.toTopCat (TopCat.of M)).map (homOfLE hVW)) := by
-  have := (o.comap W.isOpenEmbedding).compactSupportCohomologyExtend_dualityMap hn L
-    (j := ((Opens.toTopCat (TopCat.of M)).map (homOfLE hVW)).hom)
-    (isOpenEmbedding_toTopCat_map (homOfLE hVW)) p q h
-  rwa [comap_comap_toTopCat_map] at this
 
 variable (U V : Opens (TopCat.of M))
 
@@ -147,18 +95,20 @@ theorem compactSupportCohomologyMayerVietorisToBiprod_dualityMap :
         SSet.mayerVietorisToBiprod L
           (TopCat.toSSet.map ((Opens.toTopCat (TopCat.of M)).map (homOfLE inf_le_left)))
           (TopCat.toSSet.map ((Opens.toTopCat (TopCat.of M)).map (homOfLE inf_le_right))) q := by
-  refine biprod.hom_ext _ _ ?_ ?_
-  · refine (Category.assoc _ _ _).trans (Eq.trans ?_ (Category.assoc _ _ _).symm)
-    -- The duality map of `W` lands in the homology of `TopCat.of W`, which is the homology of the
-    -- object `W` of `TopCat` only up to unfolding, so `rw` cannot rewrite the composites.
-    erw [biprod.map_fst, SSet.mayerVietorisToBiprod_fst,
-      TopCat.compactSupportCohomologyMayerVietorisToBiprod_fst_assoc]
-    exact o.compactSupportCohomologyExtend_toTopCat_map_dualityMap hn L h inf_le_left
-  · refine (Category.assoc _ _ _).trans (Eq.trans ?_ (Category.assoc _ _ _).symm)
-    erw [biprod.map_snd, SSet.mayerVietorisToBiprod_snd,
+  apply biprod.hom_ext
+  · rw [Category.assoc, biprod.map_fst,
+      TopCat.compactSupportCohomologyMayerVietorisToBiprod_fst_assoc,
+      compactSupportCohomologyExtend_toTopCat_map_dualityMap, singularHomologyFunctor_obj_map]
+    -- The duality map lands in `((singularHomologyFunctor _ q).obj L).obj X`, which is
+    -- `(TopCat.toSSet.obj X).homology L q` only after unfolding `singularHomologyFunctor`, so the
+    -- composite on the right is type-correct only up to that unfolding: `rw` cannot reassociate
+    -- it, and `erw` is needed for these two steps.
+    erw [Category.assoc, SSet.mayerVietorisToBiprod_fst]
+  · rw [Category.assoc, biprod.map_snd,
       TopCat.compactSupportCohomologyMayerVietorisToBiprod_snd_assoc, Preadditive.neg_comp,
-      Preadditive.comp_neg, neg_inj]
-    exact o.compactSupportCohomologyExtend_toTopCat_map_dualityMap hn L h inf_le_right
+      compactSupportCohomologyExtend_toTopCat_map_dualityMap, singularHomologyFunctor_obj_map]
+    -- As in the first component, only up to unfolding `singularHomologyFunctor`.
+    erw [Category.assoc, SSet.mayerVietorisToBiprod_snd, Preadditive.comp_neg]
 
 /-- **The duality maps commute with the second Mayer–Vietoris maps**: for opens `U` and `V` of
 `M`, the map `Hᵖ_c(U) ⊞ Hᵖ_c(V) ⟶ Hᵖ_c(M)` of the Mayer–Vietoris sequence of cohomology with
@@ -173,16 +123,15 @@ theorem compactSupportCohomologyMayerVietorisFromBiprod_dualityMap :
           ((o.comap V.isOpenEmbedding).dualityMap hn L p q h) ≫
         SSet.mayerVietorisFromBiprod L (TopCat.toSSet.map (Opens.inclusion' U))
           (TopCat.toSSet.map (Opens.inclusion' V)) q := by
-  refine biprod.hom_ext' _ _ ?_ ?_
-  · refine (TopCat.inl_compactSupportCohomologyMayerVietorisFromBiprod_assoc _ _ _ _ _ _ _).trans
-      (Eq.trans ?_ (Category.assoc _ _ _))
-    -- As in `compactSupportCohomologyMayerVietorisToBiprod_dualityMap`, `rw` cannot rewrite here.
-    erw [biprod.inl_map, Category.assoc, SSet.inl_mayerVietorisFromBiprod]
-    exact o.compactSupportCohomologyExtend_inclusion'_dualityMap hn L h U
-  · refine (TopCat.inr_compactSupportCohomologyMayerVietorisFromBiprod_assoc _ _ _ _ _ _ _).trans
-      (Eq.trans ?_ (Category.assoc _ _ _))
-    erw [biprod.inr_map, Category.assoc, SSet.inr_mayerVietorisFromBiprod]
-    exact o.compactSupportCohomologyExtend_inclusion'_dualityMap hn L h V
+  apply biprod.hom_ext'
+  · rw [TopCat.inl_compactSupportCohomologyMayerVietorisFromBiprod_assoc,
+      compactSupportCohomologyExtend_inclusion'_dualityMap, singularHomologyFunctor_obj_map]
+    -- As in `compactSupportCohomologyMayerVietorisToBiprod_dualityMap`, the composite on the right
+    -- is type-correct only up to unfolding `singularHomologyFunctor`.
+    erw [biprod.inl_map_assoc, SSet.inl_mayerVietorisFromBiprod]
+  · rw [TopCat.inr_compactSupportCohomologyMayerVietorisFromBiprod_assoc,
+      compactSupportCohomologyExtend_inclusion'_dualityMap, singularHomologyFunctor_obj_map]
+    erw [biprod.inr_map_assoc, SSet.inr_mayerVietorisFromBiprod]
 
 end HomologicalOrientation
 
