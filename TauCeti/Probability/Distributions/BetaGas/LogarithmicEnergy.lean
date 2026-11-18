@@ -8,12 +8,10 @@ module
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 public import TauCeti.Probability.LargeDeviations.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
-import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
-import Mathlib.MeasureTheory.Group.Prod
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Prokhorov
+import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 
@@ -100,6 +98,15 @@ theorem continuous_logarithmicEnergyKernel {V : ℝ → ℝ} (hV : Continuous V)
     (EReal.continuousAt_add (.inl (EReal.coe_ne_top _)) (.inl (EReal.coe_ne_bot _))).comp
       ((h₁.prodMk h₂.neg).continuousAt (x := z))
 
+/-- A measurable potential gives a measurable weighted logarithmic kernel. -/
+theorem measurable_logarithmicEnergyKernel {V : ℝ → ℝ} (hV : Measurable V) :
+    Measurable (logarithmicEnergyKernel V) := by
+  have hlog : Continuous (fun z : ℝ × ℝ ↦ ENNReal.log (ENNReal.ofReal |z.1 - z.2|)) :=
+    ENNReal.continuous_log.comp (ENNReal.continuous_ofReal.comp
+      (continuous_fst.sub continuous_snd).abs)
+  exact (((hV.comp measurable_fst).add (hV.comp measurable_snd)).div_const 2).coe_real_ereal.add
+    hlog.neg.measurable
+
 /-- The part of the weighted kernel that controls escape of either coordinate to infinity. -/
 def logarithmicConfinement (V : ℝ → ℝ) (x : ℝ) : ℝ :=
   V x / 2 - Real.log (1 + |x|)
@@ -143,8 +150,8 @@ theorem tendsto_logarithmicConfinement_of_eventually_le_div_log {V : ℝ → ℝ
     Tendsto (logarithmicConfinement V) (cocompact ℝ) atTop := by
   have habs : Tendsto (fun x : ℝ ↦ |x|) (cocompact ℝ) atTop := by
     exact (tendsto_norm_cocompact_atTop (E := ℝ)).congr Real.norm_eq_abs
-  have hlead := (Real.tendsto_log_atTop.comp habs).atTop_mul_const
-    (show 0 < c / 2 - 1 by linarith)
+  have hcoeff : 0 < c / 2 - 1 := by linarith
+  have hlead := (Real.tendsto_log_atTop.comp habs).atTop_mul_const hcoeff
   have herr : Tendsto (fun x : ℝ ↦ -(Real.log (|x| + 1) - Real.log |x|))
       (cocompact ℝ) (𝓝 0) := by
     simpa only [Function.comp_def, neg_zero] using
@@ -274,7 +281,7 @@ theorem lintegral_logarithmicConfinement_le_logarithmicEnergy {V : ℝ → ℝ}
   linarith [hb z.2]
 
 /-- Under confinement, the weak sublevel sets of the weighted energy are compact at every
-finite level. The proof bounds their mass outside a common compact set. -/
+finite level. -/
 theorem isCompact_sublevel_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
     (hconf : Tendsto (logarithmicConfinement V) (cocompact ℝ) atTop) (a : ℝ) :
     IsCompact {μ | logarithmicEnergy V μ ≤ (a : EReal)} := by
@@ -396,26 +403,6 @@ theorem logarithmicEnergy_eq_integral_sub {V : ℝ → ℝ} (μ : ProbabilityMea
   congr 1
   ring
 
-private theorem integrable_log_sub_restrict_unitInterval_prod :
-    Integrable (fun z : ℝ × ℝ ↦ Real.log |z.1 - z.2|)
-      ((volume.restrict (Icc (0 : ℝ) 1)).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
-  let ν : Measure ℝ := volume.restrict (Icc 0 1)
-  let g := (Icc (-1 : ℝ) 1).indicator Real.log
-  have hgOn : IntegrableOn Real.log (Icc (-1 : ℝ) 1) volume :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le (by norm_num)).mp
-      intervalIntegral.intervalIntegrable_log'
-  have hg : Integrable g volume := hgOn.integrable_indicator measurableSet_Icc
-  have hprod : Integrable (fun z : ℝ × ℝ ↦ g z.2) (ν.prod volume) := hg.comp_snd ν
-  have hsub : Integrable (fun z : ℝ × ℝ ↦ g (z.1 - z.2)) (volume.prod ν) :=
-    ((measurePreserving_prod_sub_swap volume ν).integrable_comp hprod.aestronglyMeasurable).mpr
-      hprod
-  refine (hsub.mono_measure (Measure.prod_mono Measure.restrict_le_self le_rfl)).congr ?_
-  rw [Measure.prod_restrict]
-  filter_upwards [ae_restrict_mem (measurableSet_Icc.prod measurableSet_Icc)] with z hz
-  rcases hz with ⟨⟨hx₁, hx₂⟩, ⟨hy₁, hy₂⟩⟩
-  have hz' : z.1 - z.2 ∈ Icc (-1 : ℝ) 1 := ⟨by linarith, by linarith⟩
-  simp only [g, indicator_of_mem hz', Real.log_abs]
-
 /-- The energy attains a finite global minimum for a continuous confining potential.
 Normalized Lebesgue measure on the unit interval supplies a finite-energy competitor. -/
 theorem exists_isMinOn_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
@@ -444,7 +431,7 @@ theorem exists_isMinOn_logarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
     simpa only [ae_iff, not_not, hset] using hzero
   have hv : Integrable V ν := hV.continuousOn.integrableOn_compact isCompact_Icc
   have hval := logarithmicEnergy_eq_integral_sub μ₀ hfloor hv
-    integrable_log_sub_restrict_unitInterval_prod hne
+    (integrable_log_abs_sub_restrict_Icc_prod 0 1 0 1) hne
   have hfin : logarithmicEnergy V μ₀ < ⊤ := hval.symm ▸ EReal.coe_lt_top _
   let S := {μ | logarithmicEnergy V μ ≤ logarithmicEnergy V μ₀}
   have hS : IsCompact S := by
@@ -545,21 +532,37 @@ theorem truncatedLogarithmicEnergy_def (V : ℝ → ℝ) (M : ℝ) (μ : Probabi
       ∫ z, truncatedLogarithmicEnergyKernel V M z ∂(μ.prod μ).toMeasure :=
   (rfl)
 
+private theorem truncatedLogarithmicEnergyKernel_bounds {V : ℝ → ℝ} (M : ℝ) {a : ℝ}
+    (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z) (z : ℝ × ℝ) :
+    min a M ≤ truncatedLogarithmicEnergyKernel V M z ∧
+      truncatedLogarithmicEnergyKernel V M z ≤ M := by
+  constructor <;> rw [← EReal.coe_le_coe_iff, coe_truncatedLogarithmicEnergyKernel]
+  · exact le_min ((EReal.coe_le_coe_iff.mpr (min_le_left ..)).trans (ha z))
+      (EReal.coe_le_coe_iff.mpr (min_le_right ..))
+  · exact min_le_right ..
+
 private def boundedTruncatedLogarithmicEnergyKernel {V : ℝ → ℝ} (hV : Continuous V)
     (M : ℝ) {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z) :
     BoundedContinuousFunction (ℝ × ℝ) ℝ :=
   BoundedContinuousFunction.mkOfBound ⟨_, continuous_truncatedLogarithmicEnergyKernel hV M⟩
     (M - min a M) fun x y ↦ by
-      have bounds (z : ℝ × ℝ) :
-          min a M ≤ truncatedLogarithmicEnergyKernel V M z ∧
-            truncatedLogarithmicEnergyKernel V M z ≤ M := by
-        constructor <;> rw [← EReal.coe_le_coe_iff, coe_truncatedLogarithmicEnergyKernel]
-        · exact le_min ((EReal.coe_le_coe_iff.mpr (min_le_left ..)).trans (ha z))
-            (EReal.coe_le_coe_iff.mpr (min_le_right ..))
-        · exact min_le_right ..
+      have hx := truncatedLogarithmicEnergyKernel_bounds M ha x
+      have hy := truncatedLogarithmicEnergyKernel_bounds M ha y
       rw [Real.dist_eq, abs_le]
       simp only [ContinuousMap.coe_mk]
-      exact ⟨by linarith [(bounds x).1, (bounds y).2], by linarith [(bounds x).2, (bounds y).1]⟩
+      exact ⟨by linarith [hx.1, hy.2], by linarith [hx.2, hy.1]⟩
+
+private theorem integrable_truncatedLogarithmicEnergyKernel {V : ℝ → ℝ} (hV : Measurable V)
+    (M : ℝ) {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
+    (μ : ProbabilityMeasure ℝ) :
+    Integrable (truncatedLogarithmicEnergyKernel V M) (μ.prod μ).toMeasure := by
+  have hm : Measurable (truncatedLogarithmicEnergyKernel V M) :=
+    ((measurable_logarithmicEnergyKernel hV).min measurable_const).ereal_toReal
+  refine (integrable_const (max (-min a M) M)).mono' hm.aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  obtain ⟨hl, hu⟩ := truncatedLogarithmicEnergyKernel_bounds M ha z
+  rw [Real.norm_eq_abs, abs_le]
+  exact ⟨neg_le.mp ((neg_le_neg hl).trans (le_max_left ..)), hu.trans (le_max_right ..)⟩
 
 /-- At every finite cutoff height the truncated energy is weakly continuous. -/
 theorem continuous_truncatedLogarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
@@ -570,21 +573,19 @@ theorem continuous_truncatedLogarithmicEnergy {V : ℝ → ℝ} (hV : Continuous
     (ProbabilityMeasure.continuous_prod.comp (continuous_id.prodMk continuous_id))
 
 /-- The truncated energies increase with the cutoff height. -/
-theorem monotone_truncatedLogarithmicEnergy {V : ℝ → ℝ} (hV : Continuous V)
+theorem monotone_truncatedLogarithmicEnergy {V : ℝ → ℝ} (hV : Measurable V)
     {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z) (μ : ProbabilityMeasure ℝ) :
     Monotone fun M ↦ truncatedLogarithmicEnergy V M μ := by
   intro M N hMN
   dsimp only [truncatedLogarithmicEnergy]
-  have hint (T : ℝ) :
-      Integrable (truncatedLogarithmicEnergyKernel V T) (μ.prod μ).toMeasure :=
-    (boundedTruncatedLogarithmicEnergyKernel hV T ha).integrable _
-  apply integral_mono (hint M) (hint N)
+  apply integral_mono (integrable_truncatedLogarithmicEnergyKernel hV M ha μ)
+    (integrable_truncatedLogarithmicEnergyKernel hV N ha μ)
   intro z
   rw [← EReal.coe_le_coe_iff, coe_truncatedLogarithmicEnergyKernel,
     coe_truncatedLogarithmicEnergyKernel]
   exact min_le_min_left _ (EReal.coe_le_coe_iff.mpr hMN)
 
-private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (hV : Continuous V)
+private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (hV : Measurable V)
     {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
     (μ : ProbabilityMeasure ℝ) (n : ℕ) :
     ((truncatedLogarithmicEnergy V (a + n) μ : ℝ) : EReal) - (a : EReal) =
@@ -593,7 +594,7 @@ private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (h
   let M := a + (n : ℝ)
   let ν := (μ.prod μ).toMeasure
   let g := truncatedLogarithmicEnergyKernel V M
-  have hi : Integrable g ν := (boundedTruncatedLogarithmicEnergyKernel hV M ha).integrable _
+  have hi : Integrable g ν := integrable_truncatedLogarithmicEnergyKernel hV M ha μ
   have hpoint (z : ℝ × ℝ) :
       (g z : EReal) - (a : EReal) =
         min (logarithmicEnergyKernel V z - (a : EReal)) (n : EReal) := by
@@ -620,13 +621,13 @@ private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (h
   congr 1
   apply lintegral_congr
   intro z
-  rw [← EReal.real_coe_toENNReal, EReal.coe_sub, hpoint,
-    (show Monotone EReal.toENNReal from fun _ _ h ↦ EReal.toENNReal_le_toENNReal h).map_min]
+  have hmono : Monotone EReal.toENNReal := fun _ _ h ↦ EReal.toENNReal_le_toENNReal h
+  rw [← EReal.real_coe_toENNReal, EReal.coe_sub, hpoint, hmono.map_min]
   rw [← EReal.coe_natCast, EReal.real_coe_toENNReal, ENNReal.ofReal_natCast]
 
-/-- The energy is the increasing supremum of the weakly continuous upper truncations,
+/-- The energy is the increasing supremum of the upper truncations,
 with cutoffs tending to infinity in unit steps from any real lower bound for the kernel. -/
-theorem logarithmicEnergy_eq_iSup_truncated {V : ℝ → ℝ} (hV : Continuous V)
+theorem logarithmicEnergy_eq_iSup_truncated {V : ℝ → ℝ} (hV : Measurable V)
     {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
     (μ : ProbabilityMeasure ℝ) :
     logarithmicEnergy V μ =
@@ -634,7 +635,7 @@ theorem logarithmicEnergy_eq_iSup_truncated {V : ℝ → ℝ} (hV : Continuous V
   let ν := (μ.prod μ).toMeasure
   let f (z : ℝ × ℝ) := (logarithmicEnergyKernel V z - (a : EReal)).toENNReal
   have hf : Measurable f :=
-    (continuous_logarithmicEnergyKernel_sub_toENNReal hV a).measurable
+    ((measurable_logarithmicEnergyKernel hV).add_const (-(a : EReal))).ereal_toENNReal
   let J (n : ℕ) := ∫⁻ z, min (f z) (n : ℝ≥0∞) ∂ν
   have hJ : (∫⁻ z, f z ∂ν) = ⨆ n, J n := by
     have hmono : Monotone (fun n : ℕ ↦ fun z ↦ min (f z) (n : ℝ≥0∞)) :=
@@ -645,14 +646,9 @@ theorem logarithmicEnergy_eq_iSup_truncated {V : ℝ → ℝ} (hV : Continuous V
   have hfin (n : ℕ) : (J n : EReal) =
       (truncatedLogarithmicEnergy V (a + n) μ : EReal) - (a : EReal) :=
     (truncatedLogarithmicEnergy_sub_eq_lintegral hV ha μ n).symm
-  have hsup : ((⨆ n, J n : ℝ≥0∞) : EReal) = ⨆ n, (J n : EReal) := by
-    refine le_antisymm ?_ (iSup_le fun n ↦ EReal.coe_ennreal_le_coe_ennreal_iff.mpr (le_iSup J n))
-    have hzero : 0 ≤ ⨆ n, (J n : EReal) :=
-      (EReal.coe_ennreal_nonneg _).trans (le_iSup (fun n ↦ (J n : EReal)) 0)
-    rw [← EReal.coe_toENNReal hzero, EReal.coe_ennreal_le_coe_ennreal_iff]
-    exact iSup_le fun n ↦ by
-      simpa only [EReal.toENNReal_coe] using
-        EReal.toENNReal_le_toENNReal (le_iSup (fun n ↦ (J n : EReal)) n)
+  have hsup : ((⨆ n, J n : ℝ≥0∞) : EReal) = ⨆ n, (J n : EReal) :=
+    Monotone.map_ciSup_of_continuousAt continuous_coe_ennreal_ereal.continuousAt
+      EReal.coe_ennreal_strictMono.monotone
   rw [logarithmicEnergy_eq_lintegral_sub_add μ ha, hJ, hsup]
   simp_rw [hfin, EReal.iSup_sub_coe, EReal.sub_add_cancel]
 
@@ -784,7 +780,7 @@ theorem logarithmicEnergy_le_liminf_offDiag {V : ℝ → ℝ} (hV : Continuous V
     {μ : ProbabilityMeasure ℝ}
     (hμ : Tendsto (fun i ↦ empiricalMeasureOfFintype (x i)) l (𝓝 μ)) :
     logarithmicEnergy V μ ≤ liminf (fun i ↦ offDiagLogarithmicEnergy V (x i)) l := by
-  rw [logarithmicEnergy_eq_iSup_truncated hV ha]
+  rw [logarithmicEnergy_eq_iSup_truncated hV.measurable ha]
   refine iSup_le fun n ↦ ?_
   let M := a + (n : ℝ)
   have hT := ((continuous_truncatedLogarithmicEnergy hV ha M).tendsto μ).comp hμ
