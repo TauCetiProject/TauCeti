@@ -16,7 +16,6 @@ import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Exponential decay and exponential convergence at a nondegenerate end
