@@ -9,7 +9,10 @@ public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 
 /-!
-# Nonnegative sums of permutation matrices
+# Permutation matrices and nonnegative sums of them
+
+Left multiplication by the permutation matrix `Matrix.permMatrixHom σ` permutes rows
+(`Equiv.Perm.permMatrixHom_mul_apply`).
 
 Each permutation's weight bounds the entries on its diagonal in a nonnegative weighted
 sum of permutation matrices. This lets support arguments recover a whole permutation
@@ -27,6 +30,13 @@ theorem permMatrix_nonneg {n R : Type*} [DecidableEq n]
     0 ≤ σ.permMatrix R i j := by
   simp only [PEquiv.toMatrix_toPEquiv_apply]
   exact (Pi.single_nonneg (α := fun _ : n ↦ R)).2 zero_le_one _
+
+/-- Left multiplication by the permutation matrix of `σ` moves row `σ⁻¹ a` to row `a`. -/
+theorem permMatrixHom_mul_apply {n k R : Type*} [Fintype n] [DecidableEq n] [NonAssocSemiring R]
+    (σ : Equiv.Perm n) (M : Matrix n k R) (a : n) (j : k) :
+    (Matrix.permMatrixHom (R := R) σ * M) a j = M (σ.symm a) j := by
+  rw [Matrix.permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul]
+  rfl
 
 end Equiv.Perm
 

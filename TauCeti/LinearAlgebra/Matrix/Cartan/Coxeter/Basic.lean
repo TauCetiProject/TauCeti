@@ -37,6 +37,13 @@ theorem reflMatrix_apply {κ : Type*} [DecidableEq κ] (A : Matrix κ κ ℤ) (i
     reflMatrix A i k j = (if k = j then 1 else 0) - (if k = i then A j i else 0) :=
   (rfl)
 
+/-- Right multiplication by `sᵢ` subtracts `A j i` times column `i` from each column `j`. -/
+theorem mul_reflMatrix_apply {κ k : Type*} [Fintype κ] [DecidableEq κ] (M : Matrix k κ ℤ)
+    (A : Matrix κ κ ℤ) (i : κ) (a : k) (j : κ) :
+    (M * reflMatrix A i) a j = M a j - M a i * A j i := by
+  simp only [Matrix.mul_apply, reflMatrix, Matrix.of_apply, mul_sub, mul_ite, mul_one, mul_zero,
+    Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
 /-- Relabelling a Cartan matrix relabels its simple-reflection matrices. -/
 theorem reflMatrix_submatrix {κ : Type*} [DecidableEq κ] {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ)
     (e : κ ≃ Fin n) (i : κ) :

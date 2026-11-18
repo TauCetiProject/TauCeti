@@ -22,7 +22,8 @@ degree bounds.
 
 This file also groups products of linear factors according to their constant terms, records
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
-of geometric sums of mixed powers of equal-degree monic polynomials.
+of the geometric sum `1 + X + ⋯ + Xⁿ` and of geometric sums of mixed powers of equal-degree monic
+polynomials.
 
 A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`.
 
@@ -54,6 +55,13 @@ theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
   rw [coeff_C_mul_X_pow, ite_eq_right_iff]
   have := mem_range.1 hj
   omega
+
+/-- The geometric sum `1 + X + ⋯ + Xⁿ` has degree `n`. -/
+theorem natDegree_geom_sum_X [Nontrivial R] (n : ℕ) :
+    (∑ i ∈ range (n + 1), (X : R[X]) ^ i).natDegree = n := by
+  refine natDegree_eq_of_le_of_coeff_ne_zero (natDegree_sum_le_of_forall_le _ _ fun i hi ↦
+    (natDegree_X_pow_le i).trans (Nat.le_of_lt_succ (mem_range.1 hi))) ?_
+  simp [finsetSum_coeff, coeff_X_pow]
 
 end Semiring
 
