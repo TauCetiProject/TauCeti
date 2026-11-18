@@ -32,10 +32,14 @@ and resolvent methods:
 * the matrix depends only on the entries in its corner (`wignerMatrix_congr`), and the top-left
   `m × m` corner of `Hₙ` is `√(m/n) Hₘ` (`submatrix_castLE_wignerMatrix`);
 * measurability in the sample point;
+* the fixed-size product-law characterization `hasLaw_wignerMatrix_of_iIndepFun`;
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
   the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`), and the
   law of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
+* entries at distinct off-diagonal unordered positions, and their squared absolute values, are
+  independent (`iIndepFun_wignerMatrix_apply_of_ne`,
+  `iIndepFun_norm_wignerMatrix_apply_sq_of_ne`);
 * centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
   give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
   integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
@@ -76,6 +80,138 @@ noncomputable def wignerMatrix (ξ : StrictUpper → Ω → ℂ) (η : ℕ → �
     else if h' : j.val < i.val then star (ξ ⟨(j.val, i.val), h'⟩ ω)
     else (η i.val ω : ℂ)
 
+noncomputable section
+
+/-- Strictly upper-triangular positions in a fixed finite matrix. -/
+abbrev StrictUpperFin (n : ℕ) := {ij : Fin n × Fin n // ij.1.val < ij.2.val}
+
+/-- Convert a finite upper-triangular position to the index type used by `wignerMatrix`. -/
+def wignerUpperIndex {n : ℕ} (u : StrictUpperFin n) : StrictUpper :=
+  ⟨(u.1.1.val, u.1.2.val), by exact_mod_cast u.2⟩
+
+/-- Coordinate labels for a finite Wigner matrix: upper-triangular entries and its diagonal. -/
+abbrev WignerCoordinateIndex (n : ℕ) := StrictUpperFin n ⊕ Fin n
+
+/-- The value type of a Wigner coordinate, complex above the diagonal and real on the diagonal. -/
+abbrev WignerCoordinateType {n : ℕ} : WignerCoordinateIndex n → Type
+  | .inl _ => ℂ
+  | .inr _ => ℝ
+
+/-- Measurable-space instance for each coordinate type. -/
+instance wignerCoordinateMeasurableSpace {n : ℕ} (k : WignerCoordinateIndex n) :
+    MeasurableSpace (WignerCoordinateType k) := by
+  cases k <;> infer_instance
+
+/-- The family of coordinate laws for a finite Wigner matrix. -/
+def wignerCoordinateMeasures {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
+    (ν : Fin n → Measure ℝ) :
+    (k : WignerCoordinateIndex n) → Measure (WignerCoordinateType k)
+  | .inl u => μ u
+  | .inr i => ν i
+
+/-- The coordinate law above the diagonal. -/
+@[simp]
+theorem wignerCoordinateMeasures_inl {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
+    (ν : Fin n → Measure ℝ) (u : StrictUpperFin n) :
+    wignerCoordinateMeasures μ ν (.inl u) = μ u := by
+  simp [wignerCoordinateMeasures]
+
+/-- The coordinate law on the diagonal. -/
+@[simp]
+theorem wignerCoordinateMeasures_inr {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
+    (ν : Fin n → Measure ℝ) (i : Fin n) :
+    wignerCoordinateMeasures μ ν (.inr i) = ν i := by
+  simp [wignerCoordinateMeasures]
+
+/-- The finite family of random variables used to construct a Wigner matrix. -/
+def wignerCoordinates {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    (n : ℕ) (ω : Ω) :
+    (k : WignerCoordinateIndex n) → WignerCoordinateType k
+  | .inl u => ξ (wignerUpperIndex u) ω
+  | .inr i => η i.val ω
+
+/-- The coordinate above the diagonal comes from the infinite upper-triangular array. -/
+@[simp]
+theorem wignerCoordinates_inl {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    (n : ℕ) (ω : Ω) (u : StrictUpperFin n) :
+    wignerCoordinates ξ η n ω (.inl u) = ξ (wignerUpperIndex u) ω := by
+  simp [wignerCoordinates]
+
+/-- The diagonal coordinate comes from the diagonal array. -/
+@[simp]
+theorem wignerCoordinates_inr {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    (n : ℕ) (ω : Ω) (i : Fin n) :
+    wignerCoordinates ξ η n ω (.inr i) = η i.val ω := by
+  simp [wignerCoordinates]
+
+/-- Construct the normalized Wigner matrix from its finite vector of coordinates. -/
+def wignerMatrixOfCoordinates {n : ℕ}
+    (x : (k : WignerCoordinateIndex n) → WignerCoordinateType k) :
+    Matrix (Fin n) (Fin n) ℂ :=
+  Matrix.of fun i j => ((Real.sqrt n)⁻¹ : ℂ) *
+    if h : i.val < j.val then x (Sum.inl ⟨(i, j), h⟩)
+    else if h' : j.val < i.val then star (x (Sum.inl ⟨(j, i), h'⟩))
+    else (x (Sum.inr i) : ℂ)
+
+/-- The entries of the finite-coordinate construction. -/
+@[simp]
+theorem wignerMatrixOfCoordinates_apply {n : ℕ}
+    (x : (k : WignerCoordinateIndex n) → WignerCoordinateType k) (i j : Fin n) :
+    wignerMatrixOfCoordinates x i j = ((Real.sqrt n)⁻¹ : ℂ) *
+      if h : i.val < j.val then x (Sum.inl ⟨(i, j), h⟩)
+      else if h' : j.val < i.val then star (x (Sum.inl ⟨(j, i), h'⟩))
+      else (x (Sum.inr i) : ℂ) := by
+  simp [wignerMatrixOfCoordinates]
+
+/-- The coordinate construction agrees with `wignerMatrix`. -/
+theorem wignerMatrix_eq_wignerMatrixOfCoordinates {Ω : Type*}
+    (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
+    wignerMatrix ξ η n ω =
+      wignerMatrixOfCoordinates (wignerCoordinates ξ η n ω) := by
+  ext i j
+  simp [wignerMatrix, wignerMatrixOfCoordinates, wignerCoordinates, wignerUpperIndex]
+
+/-- The map from a finite vector of Wigner coordinates to its matrix is measurable. -/
+theorem measurable_wignerMatrixOfCoordinates {n : ℕ} :
+    Measurable (wignerMatrixOfCoordinates (n := n)) := by
+  apply Matrix.measurable_iff.mpr
+  intro i j
+  unfold wignerMatrixOfCoordinates
+  fun_prop
+
+/-- The law of a fixed-size Wigner matrix is the pushforward of the product of its coordinate
+laws. The hypotheses allow a separate law on the real diagonal; independence is required across
+both the upper-triangular and diagonal coordinates. -/
+theorem hasLaw_wignerMatrix_of_iIndepFun {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) (n : ℕ)
+    (μ : StrictUpperFin n → Measure ℂ) (ν : Fin n → Measure ℝ)
+    (hξ : ∀ u, HasLaw (fun ω => ξ (wignerUpperIndex u) ω) (μ u) P)
+    (hη : ∀ i, HasLaw (fun ω => η i.val ω) (ν i) P)
+    (hind : iIndepFun (fun k ω => wignerCoordinates ξ η n ω k) P) :
+    HasLaw (fun ω => wignerMatrix ξ η n ω)
+      (Measure.map wignerMatrixOfCoordinates (Measure.pi (wignerCoordinateMeasures μ ν))) P := by
+  have hcoordinates :
+      HasLaw (fun ω k => wignerCoordinates ξ η n ω k)
+        (Measure.pi (wignerCoordinateMeasures μ ν)) P := by
+    apply hind.hasLaw_pi
+    intro k
+    cases k with
+    | inl u => exact hξ u
+    | inr i => exact hη i
+  have hmatrix :
+      HasLaw (wignerMatrixOfCoordinates (n := n))
+        (Measure.map (wignerMatrixOfCoordinates (n := n))
+          (Measure.pi (wignerCoordinateMeasures μ ν)))
+        (Measure.pi (wignerCoordinateMeasures μ ν)) :=
+    hasLaw_map (P := Measure.pi (wignerCoordinateMeasures μ ν))
+      (measurable_wignerMatrixOfCoordinates (n := n)).aemeasurable
+  have h := hmatrix.fun_comp hcoordinates
+  exact h.congr (by
+    filter_upwards with ω
+    exact wignerMatrix_eq_wignerMatrixOfCoordinates ξ η n ω)
+
+end
+
 section Deterministic
 
 variable (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ) {n : ℕ} (ω : Ω)
@@ -97,6 +233,40 @@ theorem wignerMatrix_apply_of_gt {i j : Fin n} (h : j.val < i.val) :
 theorem wignerMatrix_apply_self (i : Fin n) :
     wignerMatrix ξ η n ω i i = (Real.sqrt n : ℂ)⁻¹ * η i.val ω := by
   simp [wignerMatrix]
+
+/-- A Wigner matrix is its zero-diagonal version plus the original real diagonal divided by
+the square root of the dimension. -/
+theorem wignerMatrix_eq_add_diagonal (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    (n : ℕ) (ω : Ω) :
+    wignerMatrix ξ η n ω = wignerMatrix ξ (fun _ _ ↦ 0) n ω +
+      diagonal (fun i : Fin n ↦ ((η i ω / Real.sqrt n : ℝ) : ℂ)) := by
+  ext i j
+  rcases lt_trichotomy i.val j.val with hij | hij | hij
+  · simp [wignerMatrix_apply_of_lt _ _ _ hij, Fin.ne_of_val_ne hij.ne]
+  · obtain rfl := Fin.ext hij
+    simp [div_eq_mul_inv, mul_comm]
+  · simp [wignerMatrix_apply_of_gt _ _ _ hij, Fin.ne_of_val_ne hij.ne']
+
+/-- The squared absolute value of a diagonal entry is the corresponding diagonal
+coordinate's square divided by the matrix size. -/
+theorem norm_wignerMatrix_apply_self_sq (i : Fin n) :
+    ‖wignerMatrix ξ η n ω i i‖ ^ 2 = (n : ℝ)⁻¹ * η i.val ω ^ 2 := by
+  simp only [wignerMatrix_apply_self, norm_mul, mul_pow, norm_inv, Complex.norm_real,
+    Real.norm_eq_abs, inv_pow, sq_abs, Real.sq_sqrt (Nat.cast_nonneg n)]
+
+/-- The squared absolute value of an off-diagonal entry is the corresponding upper
+coordinate's squared absolute value divided by the matrix size. -/
+theorem norm_wignerMatrix_apply_sq_of_ne {i j : Fin n} (h : i ≠ j) :
+    ‖wignerMatrix ξ η n ω i j‖ ^ 2 = (n : ℝ)⁻¹ *
+      ‖ξ ⟨(min i.val j.val, max i.val j.val), min_lt_max.mpr (Fin.val_ne_of_ne h)⟩ ω‖ ^ 2 := by
+  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
+    rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
+      inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne h) with hij | hij
+  · simp only [wignerMatrix_apply_of_lt _ _ _ hij, norm_mul, mul_pow, hn,
+      min_eq_left hij.le, max_eq_right hij.le]
+  · simp only [wignerMatrix_apply_of_gt _ _ _ hij, norm_mul, mul_pow, norm_star, hn,
+      min_eq_right hij.le, max_eq_left hij.le]
 
 /-- The normalised Wigner matrix is Hermitian for every sample point. -/
 theorem wignerMatrix_isHermitian (n : ℕ) : (wignerMatrix ξ η n ω).IsHermitian := by
@@ -297,6 +467,52 @@ theorem identDistrib_wignerMatrix {Ω' : Type*} [MeasurableSpace Ω'] {P' : Meas
 
 end Independence
 
+section IndependentEdges
+
+variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
+
+/-- Entries at distinct unordered off-diagonal positions are independent whenever the
+upper-triangular coordinates are independent. No condition is needed on the diagonal entries. -/
+theorem iIndepFun_wignerMatrix_apply_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
+    (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
+    (hindep : iIndepFun ξ P) :
+    iIndepFun (fun i ω ↦ wignerMatrix ξ η n ω (u i) (v i)) P := by
+  let e : ι → StrictUpper := fun i ↦
+    ⟨(min (u i).val (v i).val, max (u i).val (v i).val),
+      min_lt_max.mpr (Fin.val_ne_of_ne (hne i))⟩
+  have he : Function.Injective e := by
+    intro i j hij
+    apply hinj
+    have hmin := congrArg (fun x : StrictUpper ↦ x.1.1) hij
+    have hmax := congrArg (fun x : StrictUpper ↦ x.1.2) hij
+    simp only [e] at hmin hmax
+    rw [Sym2.eq_iff]
+    simp only [Fin.ext_iff]
+    omega
+  let f (i : ι) (z : ℂ) :=
+    (Real.sqrt n : ℂ)⁻¹ * if (u i).val < (v i).val then z else star z
+  have hf (i : ι) : Measurable (f i) := by
+    dsimp only [f]
+    split_ifs <;> fun_prop
+  refine ((iIndepFun.precomp he hindep).comp f hf).congr (fun i ↦ .of_forall fun ω ↦ ?_)
+  rcases lt_or_gt_of_ne (Fin.val_ne_of_ne (hne i)) with hij | hij
+  · simp only [Function.comp_apply, f, ite_eq_left hij, e, min_eq_left hij.le,
+      max_eq_right hij.le, wignerMatrix_apply_of_lt _ _ _ hij]
+  · simp only [Function.comp_apply, f, ite_eq_right hij.not_gt, e, min_eq_right hij.le,
+      max_eq_left hij.le, wignerMatrix_apply_of_gt _ _ _ hij]
+
+/-- Squared absolute values of entries at distinct unordered off-diagonal positions are
+independent whenever the upper-triangular coordinates are independent. No condition is needed
+on the diagonal entries. -/
+theorem iIndepFun_norm_wignerMatrix_apply_sq_of_ne {ι : Type*} {n : ℕ} (u v : ι → Fin n)
+    (hne : ∀ i, u i ≠ v i) (hinj : Function.Injective fun i ↦ s(u i, v i))
+    (hindep : iIndepFun ξ P) :
+    iIndepFun (fun i ω ↦ ‖wignerMatrix ξ η n ω (u i) (v i)‖ ^ 2) P :=
+  (iIndepFun_wignerMatrix_apply_of_ne u v hne hinj hindep).comp
+    (fun _ z ↦ ‖z‖ ^ 2) (fun _ ↦ by fun_prop)
+
+end IndependentEdges
+
 section Entries
 
 variable [MeasurableSpace Ω] {P : Measure Ω} {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ}
@@ -353,29 +569,20 @@ private theorem integral_norm_wignerMatrix_apply_sq {σ2 s : ℝ}
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) (hη : ∀ i, ∫ ω, η i ω ^ 2 ∂P = σ2) {n : ℕ}
     (i j : Fin n) :
     ∫ ω, ‖wignerMatrix ξ η n ω i j‖ ^ 2 ∂P = (n : ℝ)⁻¹ * if i = j then σ2 else s := by
-  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
-    rw [norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _),
-      inv_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow, hn, integral_const_mul,
-      hξ, Fin.ne_of_lt h, ↓reduceIte]
-  · obtain rfl := Fin.ext h
-    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, hn, integral_const_mul,
-      Complex.norm_real, Real.norm_eq_abs, sq_abs, hη, ↓reduceIte]
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow, hn,
-      integral_const_mul, hξ, Fin.ne_of_gt h, ↓reduceIte]
+  by_cases hij : i = j
+  · subst j
+    simp only [norm_wignerMatrix_apply_self_sq, integral_const_mul, hη, ↓reduceIte]
+  · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij, integral_const_mul,
+      hξ, hij, ↓reduceIte]
 
 private theorem integrable_norm_wignerMatrix_apply_sq
     (hξ : ∀ ij, Integrable (fun ω ↦ ‖ξ ij ω‖ ^ 2) P) (hη : ∀ i, Integrable (fun ω ↦ η i ω ^ 2) P)
     {n : ℕ} (i j : Fin n) : Integrable (fun ω ↦ ‖wignerMatrix ξ η n ω i j‖ ^ 2) P := by
-  rcases lt_trichotomy i.val j.val with h | h | h
-  · simp only [wignerMatrix_apply_of_lt _ _ _ h, norm_mul, mul_pow]
-    exact (hξ _).const_mul _
-  · obtain rfl := Fin.ext h
-    simp only [wignerMatrix_apply_self, norm_mul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
-      sq_abs]
+  by_cases hij : i = j
+  · subst j
+    simp only [norm_wignerMatrix_apply_self_sq]
     exact (hη _).const_mul _
-  · simp only [wignerMatrix_apply_of_gt _ _ _ h, norm_mul, norm_star, mul_pow]
+  · simp only [norm_wignerMatrix_apply_sq_of_ne _ _ _ hij]
     exact (hξ _).const_mul _
 
 /-- **Normalisation of Wigner matrices.** If the diagonal entries have second moment `σ²` and
