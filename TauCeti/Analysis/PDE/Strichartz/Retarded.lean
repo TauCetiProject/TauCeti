@@ -45,6 +45,7 @@ The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 
 ## Main declarations
 
+* `TauCeti.enorm_setIntegral_adjoint_le`: a dual estimate restricted to a set of times.
 * `TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`: the retarded estimate from the two
   dual estimates.
 * `TauCeti.one_lt_inv_add_inv_of_holderConjugate`: two time exponents, at most one of them at
@@ -88,7 +89,7 @@ theorem one_lt_inv_add_inv_of_holderConjugate {p q p₁ q₁ : ℝ≥0} (hpq : p
 
 /-- A dual estimate applies to the restriction of `F` to a set of times `I`, and bounds
 `∫_I U(s)* F(s) ds` by the mixed norm of `1_I F`. -/
-private theorem enorm_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {a p C : ℝ≥0∞}
+theorem enorm_setIntegral_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {a p C : ℝ≥0∞}
     (hC : ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
       ‖∫ s, ((U s)†) (F s)‖ₑ ≤ C * eLpNorm (fun s ↦ eLpNorm (F s) a μ) p)
     {F : ℝ → Lp E 2 μ} (hF : AEStronglyMeasurable F)

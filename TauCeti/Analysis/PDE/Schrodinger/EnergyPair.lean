@@ -1,0 +1,175 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
+public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
+import TauCeti.Analysis.PDE.Strichartz.Retarded
+import TauCeti.MeasureTheory.Integral.ChristKiselev
+
+/-!
+# The energy pair in the Strichartz estimates for the Schrödinger equation
+
+Besides the admissible pairs `(q, r)` with `2 < q < ∞` and `2 / q + n / r = n / 2`, the
+Strichartz estimates for the Schrödinger equation `i ∂ₜu + Δu = F`, `u(0) = f`, include the
+**energy pair** `(∞, 2)`, whose dual exponents are `(1, 2)`. Along the energy pair alone the
+estimate is the energy estimate `‖u(t)‖₂ ≤ ‖f‖₂ + ∫ ‖F(s)‖₂ ds`
+(`TauCeti.norm_schrodingerDuhamel_le`), with constant `1`. This file proves the inhomogeneous
+estimates in which the energy pair is combined with a non-endpoint admissible pair `(q, r)`, in
+either order. Write `S(t) = exp(itΔ)` for the Schrödinger propagator
+`TauCeti.schrodingerPropagator`, and `p`, `r'` for the Hölder conjugates of `q`, `r`, so that
+`L^p_t L^{r'}_x` is the dual Strichartz space of `(q, r)`. The pair `r = ∞` is allowed, so on the
+line the pair `(4, ∞)` is covered.
+
+* **forcing in `L¹_t L²_x`, solution in `L^q_t L^r_x`**: the retarded estimate
+  `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L¹_t L²_x}`, in weak form;
+* **forcing in `L^p_t L^{r'}_x`, solution in `L^∞_t L²_x`**: the bound
+  `‖∫_I S(t - s) F(s) ds‖₂ ≤ C ‖F‖_{L^p(I; L^{r'})}` for every set of times `I` and every time
+  `t`, and with it the energy bound `‖u(t)‖₂ ≤ ‖f‖₂ + C ‖F‖_{L^p(Ι(0, t); L^{r'})}` for the
+  solution `u` given by Duhamel's formula, with `C` independent of `t`.
+
+The energy pair's dual estimate `‖∫ S(-s) F(s) ds‖₂ ≤ ‖F‖_{L¹_t L²_x}`
+(`TauCeti.enorm_integral_phasePropagator_neg_le`) follows from unitarity. The retarded estimate
+combines it with the dual Strichartz estimate at `(q, r)`
+(`TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`) through the Christ–Kiselev lemma
+(`TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`), whose condition on the two time
+exponents `1` and `p`, `1 / 1 + 1 / p > 1`, holds since `p < ∞`. The energy bound needs no
+Christ–Kiselev argument: since `S(t - s) = S(t) S(-s)` and `S(t)` is unitary, the dual estimate at
+`(q, r)` applied to `1_I F` bounds `∫_I S(t - s) F(s) ds` directly.
+
+## Main declarations
+
+* `TauCeti.exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_eLpNorm_one`:
+  the retarded estimate with forcing in `L¹_t L²_x`, in weak form.
+* `TauCeti.exists_enorm_setIntegral_schrodingerPropagator_sub_le`: the `L^∞_t L²_x` bound for
+  forcing in a dual Strichartz space.
+* `TauCeti.exists_enorm_schrodingerDuhamel_le`: the energy bound for the solution given by
+  Duhamel's formula with forcing in a dual Strichartz space.
+
+## References
+
+* T. Tao, *Nonlinear Dispersive Equations: Local and Global Analysis*, CBMS Regional Conference
+  Series in Mathematics 106, AMS, 2006, Theorem 2.3.
+* M. Keel and T. Tao, *Endpoint Strichartz estimates*, Amer. J. Math. 120 (1998), 955–980.
+* M. Christ and A. Kiselev, *Maximal functions associated to filtrations*, J. Funct. Anal. 179
+  (2001), 409–425.
+-/
+
+public section
+
+open MeasureTheory Set
+open scoped ENNReal NNReal InnerProductSpace
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
+
+/-- **The inhomogeneous Strichartz estimate for the Schrödinger equation with forcing in the
+energy space**, in every dimension `n`, in weak form: forcing in `L¹_t L²_x`, the dual space of
+the energy pair `(∞, 2)`, and solution measured along a non-endpoint admissible pair, `2 < q < ∞`
+and `2 / q + n / r = n / 2`, where `p` and `r'` are the Hölder conjugates of `q` and `r`. There is
+`C` such that for all almost everywhere strongly measurable `F, G : ℝ → L²(E)` for which
+`s ↦ S(-s) F(s)` and `t ↦ S(-t) G(t)` are integrable,
+
+`|∫ ∫_{s < t} ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L¹_t L²_x} ‖G‖_{L^p_t L^{r'}_x}`.
+
+This is the Duhamel estimate `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L¹_t L²_x}`
+tested against `G`. The integrability hypotheses are qualitative: `C` does not depend on them. -/
+theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_eLpNorm_one
+    (hq : 2 < q) (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ F G : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
+      AEStronglyMeasurable G → Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) →
+      Integrable (fun t ↦ schrodingerPropagator ℂ (-t) (G t)) →
+      ‖∫ t, ∫ s in Set.Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ ≤
+        C * eLpNorm (fun s ↦ eLpNorm (F s) 2 volume) 1 volume *
+          eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
+  obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
+    hqr
+  -- The time exponents `1` and `p < ∞` satisfy the Christ–Kiselev condition `1 / 1 + 1 / p > 1`.
+  have hp : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hpq.lt.le
+  have hpp : 1 < (1 : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ := by
+    rw [inv_one]
+    exact ENNReal.lt_add_right ENNReal.one_ne_top (ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top)
+  set K : ℝ≥0∞ := (1 - 2 ^ (-((1 : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹
+  have hK : K ≠ ∞ := inv_one_sub_two_rpow_neg_ne_top one_ne_zero hp hpp
+  refine ⟨K.toNNReal * C, fun F G hF hG hSF hSG ↦ ?_⟩
+  rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
+  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply, ← schrodingerPropagator_def]
+  simp_rw [← adjoint_schrodingerPropagator] at hC hSF hSG
+  calc _ ≤ K * 1 * C * eLpNorm (fun s ↦ eLpNorm (F s) 2 volume) 1 volume *
+        eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume :=
+        enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp
+          (fun F _ _ ↦ by
+            simpa only [one_mul, adjoint_schrodingerPropagator] using
+              enorm_integral_phasePropagator_neg_le laplacianSymbol F)
+          hC hF hG hSF hSG
+    _ = _ := by rw [mul_one]
+
+/-- **The energy bound for the inhomogeneous Schrödinger equation with forcing in a dual
+Strichartz space**, in every dimension `n`: solution measured along the energy pair `(∞, 2)` and
+forcing in the dual space of a non-endpoint admissible pair, `2 < q < ∞` and
+`2 / q + n / r = n / 2`, where `p` and `r'` are the Hölder conjugates of `q` and `r`. There is `C`
+such that for every almost everywhere strongly measurable `F : ℝ → L²(E)` for which
+`s ↦ S(-s) F(s)` is integrable, every measurable set of times `I` and every time `t`,
+
+`‖∫_I S(t - s) F(s) ds‖₂ ≤ C ‖F‖_{L^p(I; L^{r'})}`.
+
+For `I = (-∞, t)` this is the retarded estimate
+`‖∫_{s < t} S(t - s) F(s) ds‖_{L^∞_t L²_x} ≤ C ‖F‖_{L^p_t L^{r'}_x}`. -/
+theorem exists_enorm_setIntegral_schrodingerPropagator_sub_le (hq : 2 < q)
+    (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
+      Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) → ∀ {I : Set ℝ}, MeasurableSet I →
+      ∀ t : ℝ, ‖∫ s in I, schrodingerPropagator ℂ (t - s) (F s)‖ₑ ≤
+        C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p (volume.restrict I) := by
+  obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
+    hqr
+  refine ⟨C, fun F hF hSF I hI t ↦ ?_⟩
+  -- `S(t - s) = S(t) S(-s)`, and `S(t)` is unitary, so it can be taken out of the integral.
+  have hfac : ∫ s in I, schrodingerPropagator ℂ (t - s) (F s) =
+      schrodingerPropagator ℂ t (∫ s in I, schrodingerPropagator ℂ (-s) (F s)) := by
+    simp_rw [sub_eq_add_neg, schrodingerPropagator_def, phasePropagator_add_apply]
+    exact (phasePropagator ℂ laplacianSymbol t).integral_comp_comm hSF.integrableOn
+  rw [hfac, ← ofReal_norm, schrodingerPropagator_def, norm_phasePropagator_apply, ofReal_norm,
+    ← eLpNorm_indicator_eq_eLpNorm_restrict (hI.nullMeasurableSet (μ := volume))]
+  simp_rw [← adjoint_schrodingerPropagator] at hC hSF ⊢
+  exact enorm_setIntegral_adjoint_le hC hF hSF hI
+
+/-- **The energy bound for Duhamel's formula with forcing in a dual Strichartz space**, in every
+dimension `n`, along a non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`,
+where `p` and `r'` are the Hölder conjugates of `q` and `r`. There is `C` such that for every
+`f ∈ L²(E)`, every almost everywhere strongly measurable `F : ℝ → L²(E)` for which
+`s ↦ S(-s) F(s)` is integrable, and every time `t`, the solution
+`u(t) = S(t) f - i ∫_0^t S(t - s) F(s) ds` of `i ∂ₜu + Δu = F`, `u(0) = f`, satisfies
+
+`‖u(t)‖₂ ≤ ‖f‖₂ + C ‖F‖_{L^p(Ι(0, t); L^{r'})}`,
+
+where `Ι(0, t)` is `(0, t]` for `t ≥ 0` and `(t, 0]` for `t ≤ 0`. The constant does not depend on
+`t`, so this is the bound `‖u‖_{L^∞(I; L²)} ≤ ‖f‖₂ + C ‖F‖_{L^p(I; L^{r'})}` on every time
+interval `I` containing `0`. -/
+theorem exists_enorm_schrodingerDuhamel_le (hq : 2 < q) (hpq : p.HolderConjugate q)
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ (f : Lp ℂ 2 (volume : Measure E)) (F : ℝ → Lp ℂ 2 (volume : Measure E)),
+      AEStronglyMeasurable F → Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) →
+      ∀ t : ℝ, ‖schrodingerDuhamel f F t‖ₑ ≤
+        ‖f‖ₑ + C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p (volume.restrict (uIoc 0 t)) := by
+  obtain ⟨C, hC⟩ := exists_enorm_setIntegral_schrodingerPropagator_sub_le (E := E) (r' := r') hq
+    hpq hqr
+  refine ⟨C, fun f F hF hSF t ↦ ?_⟩
+  have hint : ‖∫ s in (0 : ℝ)..t, schrodingerPropagator ℂ (t - s) (F s)‖ₑ =
+      ‖∫ s in uIoc 0 t, schrodingerPropagator ℂ (t - s) (F s)‖ₑ := by
+    rw [← ofReal_norm, ← ofReal_norm, intervalIntegral.norm_integral_eq_norm_integral_uIoc]
+  rw [schrodingerDuhamel_def]
+  refine eNorm_sub_le.trans (add_le_add ?_ ?_)
+  · rw [← ofReal_norm, ← ofReal_norm, schrodingerPropagator_def, norm_phasePropagator_apply]
+  · rw [← ofReal_norm, norm_smul, Complex.norm_I, one_mul, ofReal_norm, hint]
+    exact hC F hF hSF measurableSet_uIoc t
+
+end TauCeti

@@ -46,6 +46,8 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
   `TauCeti.adjoint_phasePropagator`: unitarity.
 * `TauCeti.inner_phasePropagator_sub_apply`: the Duhamel pairing `⟪exp(i(t - s)ω(D)) f, g⟫` as a
   pairing of data pulled back to time zero.
+* `TauCeti.enorm_integral_phasePropagator_neg_le`: the dual energy estimate
+  `‖∫ exp(-isω(D)) G(s) ds‖₂ ≤ ‖G‖_{L¹_t L²_x}`.
 * `TauCeti.continuous_phasePropagator_apply`: strong continuity.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 
@@ -244,6 +246,23 @@ theorem inner_phasePropagator_sub_apply (s t : ℝ) (f g : Lp F 2 (volume : Meas
   rw [adjoint_phasePropagator, adjoint_phasePropagator,
     ← inner_phasePropagator_apply ω (-t) (phasePropagator F ω (t - s) f) g,
     ← phasePropagator_add_apply, neg_add_eq_sub, sub_sub_cancel_left]
+
+/-- **The dual energy estimate**: pulling `G(s)` back from time `s` to time zero and integrating
+costs at most the mixed norm of `G` in `L¹_t L²_x`,
+
+`‖∫ exp(-isω(D)) G(s) ds‖₂ ≤ ‖G‖_{L¹_t L²_x}`.
+
+This is the dual estimate of the energy pair `(∞, 2)` in the Strichartz estimates. No
+integrability of `G` is needed: otherwise the left side is zero. -/
+theorem enorm_integral_phasePropagator_neg_le (G : ℝ → Lp F 2 (volume : Measure E)) :
+    ‖∫ s, phasePropagator F ω (-s) (G s)‖ₑ ≤
+      eLpNorm (fun s ↦ eLpNorm (G s) 2 volume) 1 volume := by
+  by_cases hG : AEStronglyMeasurable (fun s ↦ eLpNorm (G s) 2 volume) volume
+  · rw [eLpNorm_one_eq_lintegral_eNorm hG]
+    refine (eNorm_integral_le_lintegral_eNorm _).trans_eq (lintegral_congr fun s ↦ ?_)
+    rw [eNorm_eq_self, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm, norm_phasePropagator_apply]
+  · rw [eLpNorm_of_not_aestronglyMeasurable hG]
+    exact le_top
 
 /-- `exp(itω(D))` commutes with every `L²` Fourier multiplier. -/
 theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
