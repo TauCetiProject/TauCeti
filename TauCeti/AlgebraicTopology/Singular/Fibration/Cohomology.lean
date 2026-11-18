@@ -126,7 +126,7 @@ theorem isZero_serreCohomologySpectralSequence_page_one_X (s t : ℤ) (ht : t < 
   · exact isZero_filteredSpaceCohomologySpectralSequence_page_one_X _ _ _ _ s t hneg
   · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hpos
     exact (isZero_singularCohomology_preimageSkeleton hf k M C s n (by lia)).of_iso
-      (filteredSpaceCohomologySpectralSequenceFirstPageXIso _ _ _ _ s t n hn)
+      (filteredSpaceCohomologySpectralSequenceFirstPageXIso _ _ _ _ s t (s - 1) s rfl rfl n hn)
 
 end Relative
 

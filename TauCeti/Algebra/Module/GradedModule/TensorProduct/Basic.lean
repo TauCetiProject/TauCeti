@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 
@@ -38,6 +39,10 @@ degrees. This grading is used by tensor products of differential graded objects.
 * `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
 * `TauCeti.InternalGrading.tensorProduct_piece_le`: a submodule containing every homogeneous pure
   tensor of total degree `n` contains the degree-`n` piece.
+* `TauCeti.InternalGrading.shift_tensorProduct_piece`: shifting the first factor shifts the total
+  grading.
+* `TauCeti.InternalGrading.span_range_tmul_piece_eq_top`: pure tensors of homogeneous elements
+  span the tensor product.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
@@ -158,6 +163,30 @@ theorem tensorProduct_piece_le (G : InternalGrading R M ℤ) (H : InternalGradin
     (G.tensorProduct H).piece n ≤ C := by
   rw [tensorProduct_piece_eq_iSup]
   exact iSup_le fun p ↦ Submodule.map₂_le.2 fun x hx y hy ↦ h p x hx y hy
+
+/-- Shifting the grading of the first factor by `c` shifts the total grading of the tensor product
+by `c`. -/
+theorem shift_tensorProduct_piece (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (c : ℤ) :
+    ((G.shift c).tensorProduct H).piece = ((G.tensorProduct H).shift c).piece := by
+  funext d
+  refine le_antisymm (tensorProduct_piece_le _ _ fun p x hx y hy ↦ ?_) ?_
+  · rw [shift_piece] at hx ⊢
+    simpa [show p + c + (d - p) = d + c by ring] using tmul_mem_tensorProduct G H hx hy
+  · rw [shift_piece]
+    refine tensorProduct_piece_le _ _ fun p x hx y hy ↦ ?_
+    have hx' : x ∈ (G.shift c).piece (p - c) := by
+      rwa [shift_piece, sub_add_cancel]
+    simpa [show p - c + (d + c - p) = d by ring] using tmul_mem_tensorProduct (G.shift c) H hx' hy
+
+/-- Pure tensors of homogeneous elements span the tensor product of internally graded modules. -/
+theorem span_range_tmul_piece_eq_top (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
+    Submodule.span R (Set.range fun z : Σ pq : ℤ × ℤ, G.piece pq.1 × H.piece pq.2 ↦
+      (z.2.1 : M) ⊗ₜ[R] (z.2.2 : N)) = ⊤ := by
+  refine top_unique ?_
+  rw [← TensorProduct.map₂_mk_top_top_eq_top, ← G.span_setOf_exists_mem_piece_eq_top R,
+    ← H.span_setOf_exists_mem_piece_eq_top R, Submodule.map₂_span_span, Submodule.span_le]
+  rintro _ ⟨x, ⟨p, hx⟩, y, ⟨q, hy⟩, rfl⟩
+  exact Submodule.subset_span ⟨⟨(p, q), ⟨x, hx⟩, ⟨y, hy⟩⟩, rfl⟩
 
 /-- Reassociating a triple tensor product preserves total degree. -/
 theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]

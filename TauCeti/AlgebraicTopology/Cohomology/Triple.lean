@@ -6,27 +6,38 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.AlgebraicTopology.Singular.Triple
 
 /-!
-# The relative singular cochain sequence of a triple
+# The long exact sequence of a triple in relative singular cohomology
 
-For a triple `B ⊆ A ⊆ X` of topological spaces, the relative singular chains form the short exact
-sequence `0 ⟶ C(A, B) ⟶ C(X, B) ⟶ C(X, A) ⟶ 0`
-(`TauCeti.TopTriple.shortExact_singularChainComplexShortComplex`). In each degree its first map is
-a split monomorphism (`TauCeti.TopTriple.isSplitMono_singularChainComplexMap_innerToTotal_f`): a
-retraction lifts a relative chain of `(X, B)` to a chain of `X` by the splitting of the pair
-`(X, B)`, retracts it to a chain of `A` by the splitting of the inclusion of `A`, and takes its
-class modulo `B`. Applying `Hom(-, M)` to this degreewise split sequence therefore gives a short
-exact sequence of relative singular cochain complexes
+For a triple `B ⊆ A ⊆ X` of topological spaces, the relative singular chain sequence
+`0 ⟶ C(A, B) ⟶ C(X, B) ⟶ C(X, A) ⟶ 0` is short exact and split in each degree
+(`TauCeti.TopTriple.isSplitMono_singularChainComplexMap_innerToTotal_f`). Applying `Hom(-, M)`
+therefore gives a short exact sequence of relative singular cochain complexes
 
 `0 ⟶ C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B) ⟶ 0`
 
 (`TauCeti.TopTriple.shortExact_singularCochainComplexShortComplex`), whose long exact cohomology
-sequence is the long exact sequence of the triple in singular cohomology. Its first map is
-induced by the map of pairs `(X, B) ⟶ (X, A)` and its second by the map of pairs
-`(A, B) ⟶ (X, B)`.
+sequence is the long exact sequence of the triple
+
+`⋯ ⟶ Hⁿ(X, A) ⟶ Hⁿ(X, B) ⟶ Hⁿ(A, B) ⟶ Hⁿ⁺¹(X, A) ⟶ ⋯`.
+
+It is the cohomological counterpart of the long exact sequence of a triple in relative singular
+homology (`TauCeti.TopTriple.singularHomologyδ`). The short exactness identifies the graded pieces
+of the filtration of singular cochains by relative cochains, which underlies the cohomology spectral
+sequence of a filtered space.
+
+## Main declarations
+
+* `TauCeti.TopTriple.singularCochainComplexShortComplex`: the cochain sequence of a triple.
+* `TauCeti.TopTriple.shortExact_singularCochainComplexShortComplex`: it is short exact.
+* `TauCeti.TopTriple.singularCohomologyδ`: the connecting morphism `Hⁿ(A, B) ⟶ Hⁿ⁺¹(X, A)`, with
+  the zero composites `TauCeti.TopTriple.singularCohomologyδ_comp` and
+  `TauCeti.TopTriple.comp_singularCohomologyδ`, and the exactness statements
+  `TauCeti.TopTriple.singularCohomology_exact_outer`,
+  `TauCeti.TopTriple.singularCohomology_exact_total` and
+  `TauCeti.TopTriple.singularCohomology_exact_inner`.
 
 ## References
 
@@ -47,93 +58,56 @@ namespace TauCeti
 
 namespace TopTriple
 
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (T : TopTriple.{w})
-  (R : C)
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+  (T : TopTriple.{w}) (R : C) (k : Type*) [Ring k] [Linear k C] (M : C)
 
-/-- The retraction identity behind
-`TauCeti.TopTriple.isSplitMono_singularChainComplexMap_innerToTotal_f`, in a preadditive
-category: if `πX ≫ s = 𝟙 - r ≫ iX` with `iX = iB ≫ iA`, and `rA` retracts `iA` while `πA` kills
-`iB`, then `iA ≫ πX ≫ s ≫ rA ≫ πA = πA`. -/
-private lemma comp_comp_comp_comp_eq_of_splitting {D : Type*} [Category* D] [Preadditive D]
-    {A X X' B Z : D} {iA : A ⟶ X} {πX : X ⟶ X'} {s : X' ⟶ X} {r : X ⟶ B} {iX : B ⟶ X}
-    {iB : B ⟶ A} {rA : X ⟶ A} {πA : A ⟶ Z} (h₂ : πX ≫ s = 𝟙 X - r ≫ iX) (h₃ : iX = iB ≫ iA)
-    (hrA : iA ≫ rA = 𝟙 A) (h₄ : iB ≫ πA = 0) :
-    iA ≫ πX ≫ s ≫ rA ≫ πA = πA := by
-  rw [reassoc_of% h₂, Preadditive.sub_comp, Preadditive.comp_sub, Category.id_comp,
-    reassoc_of% hrA, h₃, Category.assoc, Category.assoc, reassoc_of% hrA, h₄, comp_zero,
-    comp_zero, sub_zero]
-
-/-- In each degree, the map `Cₙ(A, B) ⟶ Cₙ(X, B)` of relative singular chains of a triple
-`(X, A, B)` is a split monomorphism. -/
-instance isSplitMono_singularChainComplexMap_innerToTotal_f (n : ℕ) :
-    IsSplitMono ((TopPair.singularChainComplexMap (innerToTotal.app T) R).f n) := by
-  -- The splitting of `0 ⟶ Cₙ(B) ⟶ Cₙ(X) ⟶ Cₙ(X, B) ⟶ 0` and a retraction `rA` of
-  -- `Cₙ(A) ⟶ Cₙ(X)`.
-  let S := SSetPair.chainComplexXSplitting R (TopPair.toSSetPair.obj (totalPair.obj T)) n
-  obtain ⟨rA, hrA⟩ : ∃ r, (SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n ≫ r = 𝟙 _ :=
-    -- `T.outerMap` is the inclusion of the pair `outerPair.obj T`, so the splitting of the chains
-    -- of a pair of simplicial sets applies.
-    have : IsSplitMono ((SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n) :=
-      inferInstanceAs (IsSplitMono
-        ((SSet.chainComplexMap (TopPair.toSSetPair.obj (outerPair.obj T)).hom R).f n))
-    ⟨retraction _, IsSplitMono.id _⟩
-  have hπA : Epi (((innerPair.obj T).singularChainComplexπ R).f n) := inferInstanceAs (Epi
-    (((TopPair.toSSetPair.obj (innerPair.obj T)).chainComplexπ R).f n))
-  refine IsSplitMono.mk' ⟨S.s ≫ rA ≫ ((innerPair.obj T).singularChainComplexπ R).f n,
-    (cancel_epi (((innerPair.obj T).singularChainComplexπ R).f n)).1 ?_⟩
-  -- On a chain `c` of `A`, the lift of the class of `c` to `X` differs from `c` by a chain of `B`,
-  -- which the retraction carries back into `B` and the quotient map kills.
-  have h₁ : ((innerPair.obj T).singularChainComplexπ R).f n ≫
-      (TopPair.singularChainComplexMap (innerToTotal.app T) R).f n =
-        (SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n ≫
-          ((totalPair.obj T).singularChainComplexπ R).f n :=
-    (HomologicalComplex.comp_f _ _ n).symm.trans
-      ((congrArg (fun φ ↦ φ.f n) (T.singularChainComplexπ_comp_innerToTotal R)).trans
-        (HomologicalComplex.comp_f _ _ n))
-  have h₂ : ((totalPair.obj T).singularChainComplexπ R).f n ≫ S.s =
-      𝟙 _ - S.r ≫ (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n :=
-    eq_sub_of_add_eq' S.id
-  have h₃ : (SSet.chainComplexMap (TopCat.toSSet.map T.totalMap) R).f n =
-      (SSet.chainComplexMap (TopCat.toSSet.map T.innerMap) R).f n ≫
-        (SSet.chainComplexMap (TopCat.toSSet.map T.outerMap) R).f n := by
-    rw [← HomologicalComplex.comp_f, ← Functor.map_comp, ← Functor.map_comp,
-      T.innerMap_comp_outerMap]
-  have h₄ : (SSet.chainComplexMap (TopCat.toSSet.map T.innerMap) R).f n ≫
-      ((innerPair.obj T).singularChainComplexπ R).f n = 0 :=
-    (HomologicalComplex.comp_f _ _ n).symm.trans ((congrArg (fun φ ↦ φ.f n)
-      (TopPair.chainComplexMap_comp_singularChainComplexπ (innerPair.obj T) R)).trans
-        (HomologicalComplex.zero_f_apply _))
-  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) h₁).trans <|
-    (Category.assoc _ _ _).trans <| (comp_comp_comp_comp_eq_of_splitting h₂ h₃ hrA h₄).trans
-      (Category.comp_id _).symm
-
-variable (k : Type*) [Ring k] [Linear k C] (M : C)
-
-/-- The relative singular cochain sequence `C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B)` of a triple
-`(X, A, B)`: the image under `Hom(-, M)` of its relative singular chain sequence. Its first map is
-induced by the map of pairs `(X, B) ⟶ (X, A)` and its second by the map of pairs
-`(A, B) ⟶ (X, B)`. -/
+/-- The cochain sequence `C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B)` of a triple `(X, A, B)`: the image under
+`Hom(-, M)` of its relative singular chain sequence. -/
 abbrev singularCochainComplexShortComplex : ShortComplex (CochainComplex (ModuleCat.{v} k) ℕ) :=
   (T.singularChainComplexShortComplex R).op.map (TauCeti.ChainComplex.linearYonedaFunctor k M)
 
-/-- The first map of the cochain sequence of a triple `(X, A, B)` is induced by the map of pairs
-`(X, B) ⟶ (X, A)`. -/
-lemma singularCochainComplexShortComplex_f :
-    (T.singularCochainComplexShortComplex R k M).f =
-      TopPair.singularCochainComplexMap (totalToOuter.app T) := (rfl)
-
-/-- The second map of the cochain sequence of a triple `(X, A, B)` is induced by the map of pairs
-`(A, B) ⟶ (X, B)`. -/
-lemma singularCochainComplexShortComplex_g :
-    (T.singularCochainComplexShortComplex R k M).g =
-      TopPair.singularCochainComplexMap (innerToTotal.app T) := (rfl)
-
-/-- **The relative singular cochain sequence of a triple is short exact**:
-`0 ⟶ C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B) ⟶ 0`. -/
+/-- The cochain sequence `0 ⟶ C*(X, A) ⟶ C*(X, B) ⟶ C*(A, B) ⟶ 0` of a triple is short exact. -/
 lemma shortExact_singularCochainComplexShortComplex :
     (T.singularCochainComplexShortComplex R k M).ShortExact :=
   TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor k M
     (T.shortExact_singularChainComplexShortComplex R)
+
+/-- The connecting morphism `Hⁿ(A, B) ⟶ Hᵐ(X, A)` in the long exact sequence of a triple
+`(X, A, B)`, where `n + 1 = m`. -/
+abbrev singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
+    (innerPair.obj T).singularCohomology R k M n ⟶ (outerPair.obj T).singularCohomology R k M m :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).δ n m (by simpa)
+
+/-- The connecting morphism `Hⁿ(A, B) ⟶ Hᵐ(X, A)` followed by `Hᵐ(X, A) ⟶ Hᵐ(X, B)` is zero. -/
+@[reassoc (attr := simp)]
+lemma singularCohomologyδ_comp (n m : ℕ) (h : n + 1 = m := by lia) :
+    T.singularCohomologyδ R k M n m h ≫ TopPair.singularCohomologyMap (totalToOuter.app T) m = 0 :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
+
+/-- The map `Hⁿ(X, B) ⟶ Hⁿ(A, B)` followed by the connecting morphism `Hⁿ(A, B) ⟶ Hᵐ(X, A)` is
+zero. -/
+@[reassoc (attr := simp)]
+lemma comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
+    TopPair.singularCohomologyMap (innerToTotal.app T) n ≫ T.singularCohomologyδ R k M n m h = 0 :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa)
+
+/-- Exactness of `Hⁿ(A, B) ⟶ Hᵐ(X, A) ⟶ Hᵐ(X, B)` in the long exact sequence of a triple, for
+`n + 1 = m`. -/
+lemma singularCohomology_exact_outer (n m : ℕ) (h : n + 1 = m := by lia) :
+    (ShortComplex.mk _ _ (T.singularCohomologyδ_comp R k M n m h)).Exact :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₁ n m (by simpa)
+
+/-- Exactness of `Hⁿ(X, A) ⟶ Hⁿ(X, B) ⟶ Hⁿ(A, B)` in the long exact sequence of a triple. -/
+lemma singularCohomology_exact_total (n : ℕ) :
+    ((T.singularCochainComplexShortComplex R k M).map
+      (HomologicalComplex.homologyFunctor _ _ n)).Exact :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₂ n
+
+/-- Exactness of `Hⁿ(X, B) ⟶ Hⁿ(A, B) ⟶ Hᵐ(X, A)` in the long exact sequence of a triple, for
+`n + 1 = m`. -/
+lemma singularCohomology_exact_inner (n m : ℕ) (h : n + 1 = m := by lia) :
+    (ShortComplex.mk _ _ (T.comp_singularCohomologyδ R k M n m h)).Exact :=
+  (T.shortExact_singularCochainComplexShortComplex R k M).homology_exact₃ n m (by simpa)
 
 end TopTriple
 
