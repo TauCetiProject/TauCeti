@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.Order.Bounds.OrderIso
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
@@ -522,8 +523,10 @@ theorem isCompletelyReducible_iff_sSup_atoms_eq_top :
   let Φ := Subcomodule.convolutionSubmoduleOrderIso (R := R) (C := C) (M := V)
   have key : sSup {S : Subcomodule R C V | IsAtom S} =
       Φ.symm (sSup {m : Submodule (WithConv (C →ₗ[R] R)) V | IsAtom m}) := by
-    rw [Φ.symm.map_sSup_eq_sSup_symm_preimage]
-    simp only [OrderIso.symm_symm, Set.preimage_setOf_eq, Φ.isAtom_iff]
+    refine (isLUB_sSup _).unique ?_
+    simpa only [Set.preimage_ofPred_eq, Φ.isAtom_iff] using
+      (OrderIso.isLUB_preimage' Φ).2
+        (isLUB_sSup {m : Submodule (WithConv (C →ₗ[R] R)) V | IsAtom m})
   rw [key, ← Φ.symm.map_top, Φ.symm.injective.eq_iff]
 
 end Projective
