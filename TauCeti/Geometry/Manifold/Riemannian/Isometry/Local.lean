@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Riccardo Brasca
 -/
 module
 
@@ -39,8 +39,13 @@ along such maps.
   Riemannian isometry is a local diffeomorphism, by the inverse function theorem.
 * `TauCeti.IsLocalRiemannianIsometry.id` and `TauCeti.IsLocalRiemannianIsometry.comp`: the identity
   and composites.
+* `TauCeti.IsLocalRiemannianIsometry.of_comp_left`: cancel a local Riemannian isometry on the
+  left of a smooth composition.
 * `TauCeti.RiemannianIsometry.isLocalRiemannianIsometry`: a Riemannian isometry is a local
   Riemannian isometry.
+
+The cancellation theorem `TauCeti.IsLocalRiemannianIsometry.of_comp_left` is adapted from
+Riccardo Brasca's `ForTauCeti` formalization.
 
 ## References
 
@@ -210,6 +215,24 @@ protected theorem comp {g : N → P} (hg : IsLocalRiemannianIsometry J K g)
     rw [mfderiv_comp_apply x (hg.mdifferentiableAt (f x)) (hf.mdifferentiableAt x),
       mfderiv_comp_apply x (hg.mdifferentiableAt (f x)) (hf.mdifferentiableAt x),
       hg.inner_mfderiv, hf.inner_mfderiv]
+
+/-- Cancel a local Riemannian isometry on the left of a smooth composition. -/
+theorem of_comp_left {g : N → P} (hgf : IsLocalRiemannianIsometry I K (g ∘ f))
+    (hg : IsLocalRiemannianIsometry J K g) (hf : ContMDiff I J ∞ f) :
+    IsLocalRiemannianIsometry I J f := by
+  refine ⟨hf, fun x ↦ ?_, fun x v w ↦ ?_⟩
+  · have h := hgf.isInvertible_mfderiv x
+    rw [mfderiv_comp x (hg.mdifferentiableAt (f x))
+      (hf.mdifferentiableAt (by simp))] at h
+    obtain ⟨A, hA⟩ := hg.isInvertible_mfderiv (f x)
+    rw [← hA] at h
+    exact ContinuousLinearMap.isInvertible_equiv_comp.mp h
+  · have h := hgf.inner_mfderiv x v w
+    rw [mfderiv_comp_apply x (hg.mdifferentiableAt (f x))
+      (hf.mdifferentiableAt (by simp)),
+      mfderiv_comp_apply x (hg.mdifferentiableAt (f x))
+        (hf.mdifferentiableAt (by simp)), hg.inner_mfderiv] at h
+    exact h
 
 end IsLocalRiemannianIsometry
 
