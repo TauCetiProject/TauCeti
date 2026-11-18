@@ -92,18 +92,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart)
 open scoped NNReal ENNReal
 
-namespace TauCeti.MeasureTheory
-
-/-- A set integral of a real function is at most `E` once the integral of its positive part over
-the whole space is. -/
-private theorem setIntegral_le_of_lintegral_ofReal_le {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {f : α → ℝ} {E : ℝ≥0} (hE : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≤ E) (s : Set α) :
-    ∫ x in s, f x ∂μ ≤ E :=
-  (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
-    ((setLIntegral_le_lintegral _ _).trans (hE.trans_eq ENNReal.ofReal_coe_nnreal.symm)))
-
-end TauCeti.MeasureTheory
-
 namespace TauCeti.SymplecticForm
 
 open Floer TauCeti.MeasureTheory
