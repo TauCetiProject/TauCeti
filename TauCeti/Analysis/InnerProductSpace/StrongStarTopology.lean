@@ -33,8 +33,8 @@ topology. On normal operators the comparison with the strong operator topology i
 converge strongly to a normal operator `A`, then `Aᵢ† → A†` strongly as well
 (`ContinuousLinearMap.tendsto_adjoint_apply_of_isStarNormal`). In particular strong and
 strong-star convergence agree for nets of self-adjoint or of unitary operators with a limit of
-the same kind, and a set of normal operators whose strong operator closure consists of normal
-operators has the same strong-star closure (`closure_image_ofCLM_eq_of_isStarNormal`).
+the same kind, and a set of operators whose strong operator closure consists of normal operators
+has the same strong-star closure (`closure_image_ofCLM_eq_of_isStarNormal`).
 
 ## Implementation notes
 
@@ -201,8 +201,10 @@ variable [CompleteSpace E]
 noncomputable instance instStarRing : StarRing (ContinuousLinearMapStrongStar 𝕜 E E) :=
   equiv.starRing
 
-instance instStarModule : StarModule 𝕜 (ContinuousLinearMapStrongStar 𝕜 E E) :=
-  equiv.starModule 𝕜
+instance instStarModule {S : Type*} [Star S] [DistribSMul S E] [SMulCommClass 𝕜 S E]
+    [ContinuousConstSMul S E] [StarModule S (E →L[𝕜] E)] :
+    StarModule S (ContinuousLinearMapStrongStar 𝕜 E E) :=
+  equiv.starModule S
 
 @[simp] theorem toCLM_star (A : ContinuousLinearMapStrongStar 𝕜 E E) :
     (star A).toCLM = star A.toCLM := rfl
@@ -477,16 +479,17 @@ theorem mem_closure_iff_of_isStarNormal {s : Set (ContinuousLinearMapStrongStar 
   exact Iff.of_eq h
 
 /-- **Agreement of closures on normal operators.** If the strong operator closure of a set `s` of
-normal operators is a set `t` of normal operators, then `t` is also the strong-star closure
-of `s`. -/
+operators is a set `t` of normal operators, then `t` is also the strong-star closure of `s`. -/
 theorem closure_image_ofCLM_eq_of_isStarNormal {s t : Set (E →L[𝕜] E)}
-    (hs : ∀ x ∈ s, IsStarNormal x) (ht : ∀ x ∈ t, IsStarNormal x)
+    (ht : ∀ x ∈ t, IsStarNormal x)
     (h : closure (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E '' s) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E E '' t) :
     closure (ofCLM '' s) = ofCLM '' t := by
+  -- `s` lies in its strong closure `t`, so it consists of normal operators as well.
   have hs' : ∀ B ∈ ofCLM '' s, IsStarNormal B.toCLM := by
     rintro _ ⟨b, hb, rfl⟩
-    exact hs b hb
+    exact ht b (ContinuousLinearMap.toPointwiseConvergenceCLM_injective.mem_set_image.mp
+      (h ▸ subset_closure ⟨b, hb, rfl⟩))
   ext A
   obtain ⟨x, rfl⟩ : ∃ x, ofCLM x = A := ⟨A.toCLM, ofCLM_toCLM A⟩
   rw [ofCLM_injective.mem_set_image]

@@ -57,7 +57,7 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
-On such Hilbert spaces the adjoint commutes with real scalars as well
+The adjoint commutes with real scalars whenever these act on operators through `𝕜`
 (`ContinuousLinearMap.starModule_real`).
 
 ## Further results
@@ -109,6 +109,12 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- Real scalars act on operators through `𝕜`, so they commute with adjoints. Mathlib records
+only `StarModule 𝕜` here. -/
+instance starModule_real [CompleteSpace E] [SMul ℝ (E →L[𝕜] E)]
+    [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] : StarModule ℝ (E →L[𝕜] E) :=
+  ⟨fun r a ↦ by rw [← smul_one_smul 𝕜 r a, star_smul, star_smul, star_one, smul_one_smul]⟩
 
 section Inverse
 
@@ -203,12 +209,6 @@ theorem adjointRealCLM_apply (T : V →L[𝕜] W) : adjointRealCLM T = adjoint T
   rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
-
-/-- Real scalars act on operators through `𝕜`, so they commute with adjoints. Mathlib records
-only `StarModule 𝕜` here. -/
-instance starModule_real : StarModule ℝ (V →L[𝕜] V) := ⟨fun r a ↦ by
-  simp only [RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def,
-    RCLike.conj_ofReal, star_trivial]⟩
 
 end RealAdjoint
 
