@@ -127,11 +127,13 @@ variable {Q : Set X}
 theorem sumComplEquiv_inl (g : G) : sumComplEquiv G Q (inl g) = inl (inl g) := by
   simp [sumComplEquiv]
 
+@[simp]
 theorem sumComplEquiv_inr_of_of_mem {x : X} (hx : x ∈ Q) :
     sumComplEquiv G Q (inr (FreeGroup.of x)) = inl (inr (FreeGroup.of ⟨x, hx⟩)) := by
   classical
   simp [sumComplEquiv, Equiv.Set.sumCompl_symm_apply_of_mem hx]
 
+@[simp]
 theorem sumComplEquiv_inr_of_of_notMem {x : X} (hx : x ∉ Q) :
     sumComplEquiv G Q (inr (FreeGroup.of x)) = inr (FreeGroup.of ⟨x, hx⟩) := by
   classical
@@ -143,7 +145,7 @@ theorem sumComplEquiv_map (w : GX G Q) :
     sumComplEquiv G Q (Monoid.Coprod.map (.id G) (FreeGroup.map Subtype.val) w) = inl w := by
   induction w using induction_on with
   | inl g => simp
-  | inr w => induction w using FreeGroup.induction_on <;> simp_all [sumComplEquiv_inr_of_of_mem]
+  | inr w => induction w using FreeGroup.induction_on <;> simp_all
   | mul u w hu hw => simp [hu, hw]
 
 @[simp]

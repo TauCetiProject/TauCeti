@@ -8,7 +8,9 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.GroupAlgGeom.SumVars
 import Mathlib.GroupTheory.QuotientGroup.Basic
+import TauCeti.Data.Set.Function
 import TauCeti.GroupTheory.Subgroup.NormalClosure
+import TauCeti.Logic.Function.Basic
 
 /-!
 # A standard quadratic equation over the free factor of its first atom
@@ -201,15 +203,6 @@ theorem inl_mul_headAtom_ne_one (S : Standard G X) (g : G) :
 
 /-! ### The tail -/
 
-private theorem apply_mem_compl_pair {α : Type*} {F : α → X} (hF : F.Injective) {a b c : α}
-    (hb : a ≠ b) (hc : a ≠ c) : F a ∈ ({F b, F c} : Set X)ᶜ := by
-  simp [hF.ne hb, hF.ne hc]
-
-private theorem injective_of_val_eq {α β : Type*} {Q : Set X} {F' : α → Q} {F : β → X}
-    (hF : F.Injective) {e : α → β} (he : e.Injective) (h : ∀ a, (F' a : X) = F (e a)) :
-    F'.Injective :=
-  fun a b hab => he (hF (by rw [← h, ← h, hab]))
-
 /-- The tail of a standard quadratic equation `r₁ r₂ ⋯ r_k d = 1` with `k ≥ 2` atoms: the
 standard quadratic equation `r₂ ⋯ r_k (d r₁) = 1` over `G ∗ F(Q₁)`, for `Q₁` the variables of the
 first atom, in the other variables. Its atoms are `r₂, …, r_k` and its constant is `d r₁`. A
@@ -217,27 +210,27 @@ non-orientable equation of genus one has an orientable tail of genus zero. -/
 def tail : (S : Standard G X) → 2 ≤ S.atomicRank → Standard (GX G S.headVars) ↥S.headVarsᶜ
   | orientable (n + 2) hn x y inj, _ =>
     orientableCoeff (n + 1) 0 (by omega)
-      (fun i => ⟨x i.succ, apply_mem_compl_pair inj (a := .inl i.succ) (b := .inl 0)
+      (fun i => ⟨x i.succ, inj.apply_notMem_pair (a := .inl i.succ) (b := .inl 0)
         (c := .inr 0) (by simp) (by simp)⟩)
-      (fun i => ⟨y i.succ, apply_mem_compl_pair inj (a := .inr i.succ) (b := .inl 0)
+      (fun i => ⟨y i.succ, inj.apply_notMem_pair (a := .inr i.succ) (b := .inl 0)
         (c := .inr 0) (by simp) (by simp)⟩) Fin.elim0
-      (injective_of_val_eq inj (e := Sum.elim (Sum.map Fin.succ Fin.succ) Fin.elim0)
+      (.of_val_eq (inj.comp (f := Sum.elim (Sum.map Fin.succ Fin.succ) Fin.elim0)
         ((Sum.map_injective.2 ⟨Fin.succ_injective _, Fin.succ_injective _⟩).sumElim
-          (fun a => a.elim0) fun _ b => b.elim0)
+          (fun a => a.elim0) fun _ b => b.elim0))
         (by rintro ((a | a) | a) <;> first | rfl | exact a.elim0))
       Fin.elim0 (fun j => j.elim0) ((orientable (n + 2) hn x y inj).headAtom)
       (by simpa using inl_mul_headAtom_ne_one (orientable (n + 2) hn x y inj) (1 : G))
   | orientableCoeff (n + 1) m hnm x y z inj c hc d hd, h =>
     orientableCoeff n m (by simp [atomicRank_orientableCoeff] at h; omega)
-      (fun i => ⟨x i.succ, apply_mem_compl_pair inj (a := .inl (.inl i.succ))
+      (fun i => ⟨x i.succ, inj.apply_notMem_pair (a := .inl (.inl i.succ))
         (b := .inl (.inl 0)) (c := .inl (.inr 0)) (by simp) (by simp)⟩)
-      (fun i => ⟨y i.succ, apply_mem_compl_pair inj (a := .inl (.inr i.succ))
+      (fun i => ⟨y i.succ, inj.apply_notMem_pair (a := .inl (.inr i.succ))
         (b := .inl (.inl 0)) (c := .inl (.inr 0)) (by simp) (by simp)⟩)
-      (fun j => ⟨z j, apply_mem_compl_pair inj (a := .inr j)
+      (fun j => ⟨z j, inj.apply_notMem_pair (a := .inr j)
         (b := .inl (.inl 0)) (c := .inl (.inr 0)) (by simp) (by simp)⟩)
-      (injective_of_val_eq inj (e := Sum.map (Sum.map Fin.succ Fin.succ) id)
+      (.of_val_eq (inj.comp (f := Sum.map (Sum.map Fin.succ Fin.succ) id)
         (Sum.map_injective.2 ⟨Sum.map_injective.2 ⟨Fin.succ_injective _, Fin.succ_injective _⟩,
-          Function.injective_id⟩)
+          Function.injective_id⟩))
         (by rintro ((a | a) | a) <;> rfl))
       (fun j => inl (c j)) (fun j => (map_ne_one_iff _ inl_injective).2 (hc j))
       (inl d * (orientableCoeff (n + 1) m hnm x y z inj c hc d hd).headAtom)
@@ -247,8 +240,8 @@ def tail : (S : Standard G X) → 2 ≤ S.atomicRank → Standard (GX G S.headVa
       Fin.elim0 Fin.elim0
       (fun j => ⟨z j.succ, Set.mem_compl_singleton_iff.2
         (inj.ne (a₁ := .inr j.succ) (a₂ := .inr 0) (by simp))⟩)
-      (injective_of_val_eq inj (e := Sum.map id Fin.succ)
-        (Sum.map_injective.2 ⟨Function.injective_id, Fin.succ_injective _⟩)
+      (.of_val_eq (inj.comp (f := Sum.map id Fin.succ)
+        (Sum.map_injective.2 ⟨Function.injective_id, Fin.succ_injective _⟩))
         (by rintro ((a | a) | a) <;> first | rfl | exact a.elim0))
       (fun j => inl (c j.succ)) (fun j => (map_ne_one_iff _ inl_injective).2 (hc j.succ))
       (inl d * (orientableCoeff 0 (m + 1) hnm x y z inj c hc d hd).headAtom)
@@ -256,8 +249,8 @@ def tail : (S : Standard G X) → 2 ≤ S.atomicRank → Standard (GX G S.headVa
   | nonorientable (n + 2) hn x inj, _ =>
     nonorientableCoeff (n + 1) 0 (by omega)
       (fun i => ⟨x i.succ, Set.mem_compl_singleton_iff.2 (inj.ne (Fin.succ_ne_zero i))⟩) Fin.elim0
-      (injective_of_val_eq inj (e := Sum.elim Fin.succ Fin.elim0)
-        ((Fin.succ_injective _).sumElim (fun a => a.elim0) fun _ b => b.elim0)
+      (.of_val_eq (inj.comp (f := Sum.elim Fin.succ Fin.elim0)
+        ((Fin.succ_injective _).sumElim (fun a => a.elim0) fun _ b => b.elim0))
         (by rintro (a | a) <;> first | rfl | exact a.elim0))
       Fin.elim0 (fun j => j.elim0) ((nonorientable (n + 2) hn x inj).headAtom)
       (by simpa using inl_mul_headAtom_ne_one (nonorientable (n + 2) hn x inj) (1 : G))
@@ -267,8 +260,8 @@ def tail : (S : Standard G X) → 2 ≤ S.atomicRank → Standard (GX G S.headVa
         (inj.ne (a₁ := .inl i.succ) (a₂ := .inl 0) (by simp))⟩)
       (fun j => ⟨z j, Set.mem_compl_singleton_iff.2
         (inj.ne (a₁ := .inr j) (a₂ := .inl 0) (by simp))⟩)
-      (injective_of_val_eq inj (e := Sum.map Fin.succ id)
-        (Sum.map_injective.2 ⟨Fin.succ_injective _, Function.injective_id⟩)
+      (.of_val_eq (inj.comp (f := Sum.map Fin.succ id)
+        (Sum.map_injective.2 ⟨Fin.succ_injective _, Function.injective_id⟩))
         (by rintro (a | a) <;> rfl))
       (fun j => inl (c j)) (fun j => (map_ne_one_iff _ inl_injective).2 (hc j))
       (inl d * (nonorientableCoeff (n + 2) m hn x z inj c hc d hd).headAtom)
@@ -277,9 +270,9 @@ def tail : (S : Standard G X) → 2 ≤ S.atomicRank → Standard (GX G S.headVa
     orientableCoeff 0 (m + 1) (by omega) Fin.elim0 Fin.elim0
       (fun j => ⟨z j, Set.mem_compl_singleton_iff.2
         (inj.ne (a₁ := .inr j) (a₂ := .inl 0) (by simp))⟩)
-      (injective_of_val_eq inj (e := Sum.map (Sum.elim Fin.elim0 Fin.elim0) id)
+      (.of_val_eq (inj.comp (f := Sum.map (Sum.elim Fin.elim0 Fin.elim0) id)
         (Sum.map_injective.2 ⟨fun a => by rcases a with a | a <;> exact a.elim0,
-          Function.injective_id⟩)
+          Function.injective_id⟩))
         (by rintro ((a | a) | a) <;> first | rfl | exact a.elim0))
       (fun j => inl (c j)) (fun j => (map_ne_one_iff _ inl_injective).2 (hc j))
       (inl d * (nonorientableCoeff 1 (m + 1) hn x z inj c hc d hd).headAtom)
@@ -325,6 +318,7 @@ theorem atoms_eq_cons_tail :
   induction S, h using tail_cases <;> simp [tail, List.ofFn_succ, Function.comp_def]
 
 /-- The constant of the tail is the constant of `S` times the first atom. -/
+@[simp]
 theorem constant_tail : (S.tail h).constant = inl S.constant * S.headAtom := by
   induction S, h using tail_cases <;> simp [tail]
 
@@ -333,10 +327,12 @@ theorem atomicRank_tail : (S.tail h).atomicRank + 1 = S.atomicRank := by
   induction S, h using tail_cases <;> simp [tail] <;> omega
 
 /-- The tail has genus one less, or zero. -/
+@[simp]
 theorem genus_tail : (S.tail h).genus = S.genus - 1 := by
   induction S, h using tail_cases <;> simp [tail]
 
 /-- The tail is orientable exactly when `S` is orientable or has genus one. -/
+@[simp]
 theorem isOrientable_tail_iff : (S.tail h).IsOrientable ↔ S.IsOrientable ∨ S.genus = 1 := by
   induction S, h using tail_cases <;> simp [tail]
 
@@ -396,7 +392,7 @@ theorem image_val_vars_tail : Subtype.val '' (S.tail h).vars = S.vars \ S.headVa
 `r₂ ⋯ r_k (d r₁)` by the first atom `r₁`. -/
 theorem sumComplEquiv_toWord : GX.sumComplEquiv G S.headVars S.toWord =
     inl S.headAtom * (S.tail h).toWord * (inl S.headAtom)⁻¹ := by
-  rw [toWord_def, toWord_def, S.atoms_eq_cons_tail h, constant_tail]
+  rw [toWord_def, toWord_def, S.atoms_eq_cons_tail h]
   simp [map_list_prod, mul_assoc]
 
 /-- The values of the atoms of the tail at the restriction of a point `v` to the other variables,
