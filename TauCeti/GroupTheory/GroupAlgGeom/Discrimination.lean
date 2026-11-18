@@ -23,7 +23,9 @@ The coefficient maps need not be injective: the same definitions apply to the co
 of quotients of free `G`-groups, even before the quotient is known to be a `G`-group.
 
 With trivial coefficients, every power `ℤ^ι` of the infinite cyclic group is discriminated by `ℤ`
-through integer linear forms in finitely many coordinates.
+through integer linear forms in finitely many coordinates. More generally, separation by a
+torsion-free abelian group `A` implies discrimination by `A`, as soon as there is one homomorphism
+to `A` over `G`.
 
 Discrimination implies separation, but not conversely. A group discriminated by a commutative
 transitive group, such as a free group, is commutative transitive, while the product of a
@@ -57,6 +59,9 @@ to `F₂` keeping `(1, b)` nontrivial makes the images of `(a, 1)` and `(b, 1)` 
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
   coefficient-preserving homomorphism to `H`; with discrimination the group may be trivial
   (`TauCeti.GroupAlgGeom.IsDiscriminatedBy.nonempty_gHom`).
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.isDiscriminatedBy_of_commGroup`: a group separated by a
+  torsion-free abelian group `A`, with some coefficient-preserving homomorphism to `A`, is
+  discriminated by `A`.
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.injective_of_injective`: a group discriminated by a
   `G`-group is a `G`-group.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.mem_range_of_pow_mem_range`: in a group with unique roots
@@ -250,6 +255,38 @@ theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}
     (h : IsSeparatedBy ιK ιH) : Nonempty (GHom ιK ιH) :=
   let ⟨k, hk⟩ := exists_ne (1 : K)
   ⟨((isSeparatedBy_def _ _).1 h k hk).choose⟩
+
+/-- A group `K` separated over `G` by a torsion-free abelian group `A`, with some homomorphism to
+`A` over `G`, is discriminated by `A` over `G`. This is the abelian counterpart of the criterion
+for discrimination by a domain (Baumslag–Myasnikov–Remeslennikov, Theorem C1), abelian groups not
+being domains. -/
+theorem isDiscriminatedBy_of_commGroup {A : Type*} [CommGroup A] [IsMulTorsionFree A]
+    {ιK : G →* K} {ιA : G →* A} (h : IsSeparatedBy ιK ιA) (hK : Nonempty (GHom ιK ιA)) :
+    IsDiscriminatedBy ιK ιA := by
+  classical
+  refine (isDiscriminatedBy_def _ _).2 fun s hs ↦ ?_
+  induction s using Finset.induction_on with
+  | empty => exact ⟨hK.some, by simp⟩
+  | insert a s ha ih =>
+    obtain ⟨φ, hφ⟩ := ih fun k hk ↦ hs k (Finset.mem_insert_of_mem hk)
+    obtain ⟨φ', hφ'⟩ := (isSeparatedBy_def _ _).1 h a (hs a (Finset.mem_insert_self a s))
+    -- The homomorphisms `φ · (φ' / φ) ^ N` over `G`.
+    let ψ (N : ℤ) : GHom ιK ιA :=
+      ⟨(φ : K →* A) * ((φ' : K →* A) / φ) ^ N, fun g ↦ by simp [GHom.map_coeff]⟩
+    have hψ (N : ℤ) (k : K) : ψ N k = φ k * (φ' k / φ k) ^ N := by simp [ψ]
+    -- Each `k` is killed by `φ · (φ' / φ) ^ N` for at most one `N`, since `A` is torsion-free.
+    have hbad (k) (hk : k ∈ insert a s) : {N : ℤ | ψ N k = 1}.Subsingleton := by
+      intro N hN N' hN'
+      simp only [Set.mem_ofPred_eq, hψ] at hN hN'
+      by_cases hy : φ' k / φ k = 1
+      · rw [hy, one_zpow, mul_one] at hN
+        rw [hN, div_one] at hy
+        rcases Finset.mem_insert.1 hk with rfl | hk
+        exacts [(hφ' hy).elim, (hφ k hk hN).elim]
+      · exact (IsMulTorsionFree.zpow_right_inj hy).1 (mul_left_cancel (hN.trans hN'.symm))
+    obtain ⟨N, hN⟩ := ((insert a s).finite_toSet.biUnion fun k hk ↦
+      (hbad k hk).finite).infinite_compl.nonempty
+    exact ⟨ψ N, fun k hk hk1 ↦ hN (Set.mem_biUnion hk hk1)⟩
 
 /-- If a group `K` with unique roots is separated by the coefficients `G` over `G`, then the image
 of `G` in `K` contains every element of `K` having a nonzero power in it. -/
