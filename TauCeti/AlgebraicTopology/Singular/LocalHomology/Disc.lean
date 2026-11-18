@@ -162,7 +162,6 @@ theorem localDegree_comap_ball_eq_degree_toBasedLoop (hr : 0 < r)
       Circle.degree u.toBasedLoop := by
   rw [← radialExtension_comp_val hr hh hB hg, o.localDegree_comap o finrank_real_complex
       finrank_real_complex (j := ⟨Subtype.val, continuous_subtype_val⟩) B.isOpenEmbedding' _
-      (isCompact_radialExtension_preimage_zero hr hh hne)
       (radialExtension_preimage_zero_subset_range hr hh hne hB),
     o.localDegree_radialExtension hr hh hne hu]
 
@@ -202,8 +201,7 @@ theorem localDegree_comap_eq_degree_toBasedLoop (hr : 0 < r) {U : TopologicalSpa
       exact ((hgh z).symm.trans (radialExtension_apply hr hh (ball_subset_closedBall hz')).symm
         |>.trans hz :)
   rw [hcongr, o.localDegree_comap o finrank_real_complex finrank_real_complex
-      (j := j) U.isOpenEmbedding' _ (isCompact_radialExtension_preimage_zero hr hh hne)
-      fun w hw ↦ ⟨⟨w, hU (ball_subset_closedBall (hGsub hw))⟩, rfl⟩,
+      (j := j) U.isOpenEmbedding' _ fun w hw ↦ ⟨⟨w, hU (ball_subset_closedBall (hGsub hw))⟩, rfl⟩,
     o.localDegree_radialExtension hr hh hne fun ζ ↦ ?_]
   have hζ : z₀ + r * ζ ∈ U := hU (by simp [abs_of_pos hr])
   rw [hu ζ hζ, ← hgh ⟨_, hζ⟩]

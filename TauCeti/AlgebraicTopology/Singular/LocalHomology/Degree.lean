@@ -331,12 +331,17 @@ theorem degree_comp (hF : finrank ℝ F = n) (hG : finrank ℝ G = n) [Preconnec
       localDegree_comp o o' o'' hE hF hG (hg.isCompact_preimage isCompact_singleton) hf, mul_comm]
 
 /-- **The local degree is natural under open embeddings of the source.** Let `j : U → M` be an open
-embedding, with `U` oriented by `o.comap hj`. If the fibre of `f` over `y` is compact and lies in
-the range of `j`, then `f ∘ j` has the same local degree at `y` as `f`. -/
+embedding, with `U` oriented by `o.comap hj`. If the fibre of `f` over `y` lies in the range of
+`j`, then `f ∘ j` has the same local degree at `y` as `f`. -/
 theorem localDegree_comap (hF : finrank ℝ F = n) {U : Type} [TopologicalSpace U] [T2Space U]
     [ChartedSpace E U] {j : C(U, M)} (hj : IsOpenEmbedding j) (f : C(M, N)) {y : N}
-    (hy : IsCompact (f ⁻¹' {y})) (hyj : f ⁻¹' {y} ⊆ range j) :
+    (hyj : f ⁻¹' {y} ⊆ range j) :
     (o.comap hj).localDegree o' hE (f.comp j) y = o.localDegree o' hE f y := by
+  -- `j` maps the fibre of `f ∘ j` onto the fibre of `f`, so both are compact or neither is.
+  by_cases hy : IsCompact (f ⁻¹' {y})
+  swap
+  · rw [localDegree_of_not_isCompact o o' hE f hy, localDegree_of_not_isCompact _ o' hE _
+      fun hK ↦ hy (image_preimage_eq_of_subset hyj ▸ hK.image j.continuous)]
   have hK : IsCompact ((f.comp j) ⁻¹' {y}) := hj.isInducing.isCompact_preimage' hy hyj
   -- `j` carries the fundamental class of `U` along the fibre of `f ∘ j` to that of `M` along the
   -- fibre of `f`.
@@ -360,19 +365,15 @@ theorem localDegree_congr (hF : finrank ℝ F = n) {f g : C(M, N)} {y : N}
   obtain ⟨W, hWo, hAW, hW⟩ := eventually_nhdsSet_iff_exists.1 hfg
   have hfib : g ⁻¹' {y} = f ⁻¹' {y} :=
     hgf.antisymm fun x hx ↦ ((hW x (hAW hx)).symm.trans hx :)
-  by_cases hy : IsCompact (f ⁻¹' {y})
-  · let V : TopologicalSpace.Opens M := ⟨W, hWo⟩
-    have hrange (A : Set M) (hA : A ⊆ W) : A ⊆ range (Subtype.val : V → M) :=
-      fun x hx ↦ ⟨⟨x, hA hx⟩, rfl⟩
-    have hcomp : f.comp ⟨Subtype.val, continuous_subtype_val⟩ =
-        g.comp (⟨Subtype.val, continuous_subtype_val⟩ : C(V, M)) :=
-      ContinuousMap.ext fun x ↦ hW x x.2
-    let j : C(V, M) := ⟨Subtype.val, continuous_subtype_val⟩
-    rw [← o.localDegree_comap o' hE hF (j := j) V.isOpenEmbedding' f hy (hrange _ hAW), hcomp,
-      o.localDegree_comap o' hE hF (j := j) V.isOpenEmbedding' g (hfib ▸ hy)
-        (hfib ▸ hrange _ hAW)]
-  · rw [localDegree_of_not_isCompact o o' hE f hy,
-      localDegree_of_not_isCompact o o' hE g (hfib ▸ hy)]
+  let V : TopologicalSpace.Opens M := ⟨W, hWo⟩
+  have hrange (A : Set M) (hA : A ⊆ W) : A ⊆ range (Subtype.val : V → M) :=
+    fun x hx ↦ ⟨⟨x, hA hx⟩, rfl⟩
+  have hcomp : f.comp ⟨Subtype.val, continuous_subtype_val⟩ =
+      g.comp (⟨Subtype.val, continuous_subtype_val⟩ : C(V, M)) :=
+    ContinuousMap.ext fun x ↦ hW x x.2
+  let j : C(V, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  rw [← o.localDegree_comap o' hE hF (j := j) V.isOpenEmbedding' f (hrange _ hAW), hcomp,
+    o.localDegree_comap o' hE hF (j := j) V.isOpenEmbedding' g (hfib ▸ hrange _ hAW)]
 
 /-- **The local degree is additive over disjoint open sets.** Let the fibre of `f` over `y` be
 compact and covered by finitely many pairwise disjoint open sets `U i`, oriented by restricting `o`.
