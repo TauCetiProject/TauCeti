@@ -92,6 +92,15 @@ def baseRep (μ : Fin Ω.numBases) : Ω.BaseRep :=
   if h : μ ≤ Ω.dual μ then ⟨μ, h⟩ else
     ⟨Ω.dual μ, by rw [Ω.dual_involutive μ]; exact (not_le.1 h).le⟩
 
+/-- A base no larger than its dual is the representative of its pair. -/
+theorem baseRep_of_le {μ : Fin Ω.numBases} (h : μ ≤ Ω.dual μ) : Ω.baseRep μ = ⟨μ, h⟩ := by
+  simp [baseRep, h]
+
+/-- A representative is the representative of its own pair. -/
+@[simp]
+theorem baseRep_coe (r : Ω.BaseRep) : Ω.baseRep r = r :=
+  Ω.baseRep_of_le r.2
+
 /-- The representative of the pair `{μ, Δ(μ)}` is the smaller of the two bases. -/
 theorem coe_baseRep (μ : Fin Ω.numBases) : (Ω.baseRep μ : Fin Ω.numBases) = min μ (Ω.dual μ) := by
   unfold baseRep
@@ -129,6 +138,12 @@ theorem startPt_lt_endPt : ∀ e : Ω.PartElem, Ω.startPt e < Ω.endPt e
   | .inl _ => Nat.lt_succ_self _
   | .inr (.inl μ) => Ω.left_lt_right μ
   | .inr (.inr _) => Nat.lt_succ_self _
+
+/-- Every item, variable base and constant base ends at or before the last boundary. -/
+theorem endPt_le_numItems : ∀ e : Ω.PartElem, Ω.endPt e ≤ Ω.numItems
+  | .inl k => k.2
+  | .inr (.inl μ) => Nat.lt_succ_iff.1 (Ω.right μ).2
+  | .inr (.inr b) => b.1.1.2
 
 /-- The letter of a partition element in the label of its interval: the item `hₖ`; the
 representative of the pair of a variable base `μ`, with exponent `ε(μ)`; or the letter of a
@@ -179,7 +194,35 @@ theorem IsTiling.append {i j k : ℕ} {l₁ l₂ : List Ω.PartElem} (h₁ : Ω.
   | nil => exact (isTiling_nil.1 h₁) ▸ h₂
   | cons e l ih => exact ⟨(isTiling_cons.1 h₁).1, ih (isTiling_cons.1 h₁).2⟩
 
+/-- A tiling starting at a boundary ends at a boundary. -/
+theorem IsTiling.le_numItems {i j : ℕ} {l : List Ω.PartElem} (h : Ω.IsTiling i j l)
+    (hi : i ≤ Ω.numItems) : j ≤ Ω.numItems := by
+  induction l generalizing i with
+  | nil => exact isTiling_nil.1 h ▸ hi
+  | cons e l ih => exact ih (isTiling_cons.1 h).2 (Ω.endPt_le_numItems e)
+
 variable (Ω)
+
+/-- The items `hᵢ, …, h_{j-1}`, as partition elements. -/
+def itemTiling (i j : ℕ) : List Ω.PartElem :=
+  (((List.finRange Ω.numItems).take j).drop i).map .inl
+
+/-- The items `hᵢ, …, h_{j-1}` tile `[i, j]`. -/
+theorem isTiling_itemTiling {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.numItems) :
+    Ω.IsTiling i j (Ω.itemTiling i j) := by
+  induction h : j - i generalizing i with
+  | zero =>
+    obtain rfl : i = j := by omega
+    simp [itemTiling]
+  | succ n ih =>
+    have hi : i < (List.take j (List.finRange Ω.numItems)).length := by
+      simp only [List.length_take, List.length_finRange]
+      omega
+    have hget : ((List.take j (List.finRange Ω.numItems))[i] : ℕ) = i := by simp
+    rw [itemTiling, List.drop_eq_getElem_cons hi, List.map_cons, isTiling_cons]
+    refine ⟨by simp only [startPt, hget], ?_⟩
+    simp only [endPt, hget]
+    exact ih (by omega) (by omega)
 
 /-- The intervals of the cut equation of `Ω` on a set `T` of closed sections: the partitions of
 the sections of `T`. -/
@@ -223,43 +266,8 @@ theorem sectionValue_def (h : Fin Ω.numItems → FreeGroup A) (s : Ω.closedSec
 
 /-! ### Labels of tilings -/
 
-/-- Every item, variable base and constant base ends at or before the last boundary. -/
-private theorem endPt_le_numItems : ∀ e : Ω.PartElem, Ω.endPt e ≤ Ω.numItems
-  | .inl k => k.2
-  | .inr (.inl μ) => Nat.lt_succ_iff.1 (Ω.right μ).2
-  | .inr (.inr b) => b.1.1.2
-
-variable {Ω} in
-/-- A tiling starting at a boundary ends at a boundary. -/
-private theorem IsTiling.le_numItems {i j : ℕ} {l : List Ω.PartElem} (h : Ω.IsTiling i j l)
-    (hi : i ≤ Ω.numItems) : j ≤ Ω.numItems := by
-  induction l generalizing i with
-  | nil => exact isTiling_nil.1 h ▸ hi
-  | cons e l ih => exact ih (isTiling_cons.1 h).2 (Ω.endPt_le_numItems e)
-
-/-- The items `hᵢ, …, h_{j-1}`, as partition elements. -/
-private def itemTiling (i j : ℕ) : List Ω.PartElem :=
-  (((List.finRange Ω.numItems).take j).drop i).map .inl
-
-/-- The items `hᵢ, …, h_{j-1}` tile `[i, j]`. -/
-private theorem isTiling_itemTiling {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.numItems) :
-    Ω.IsTiling i j (Ω.itemTiling i j) := by
-  induction h : j - i generalizing i with
-  | zero =>
-    obtain rfl : i = j := by omega
-    simp [itemTiling]
-  | succ n ih =>
-    have hi : i < (List.take j (List.finRange Ω.numItems)).length := by
-      simp only [List.length_take, List.length_finRange]
-      omega
-    have hget : ((List.take j (List.finRange Ω.numItems))[i] : ℕ) = i := by simp
-    rw [itemTiling, List.drop_eq_getElem_cons hi, List.map_cons, isTiling_cons]
-    refine ⟨by simp only [startPt, hget], ?_⟩
-    simp only [endPt, hget]
-    exact ih (by omega) (by omega)
-
 /-- The label of the items `hᵢ, …, h_{j-1}` is the word `h[i, j]`, an item `hₖ` read as a piece. -/
-private theorem map_partLetter_itemTiling (i j : ℕ) :
+theorem map_partLetter_itemTiling (i j : ℕ) :
     (Ω.itemTiling i j).map Ω.partLetter =
       (Ω.segment i j true).map (Prod.map (Sum.map .inl id) id) := by
   simp [itemTiling, segment_true, Function.comp_def]
@@ -300,16 +308,6 @@ private theorem substituteVars_map_partLetter_of_isTiling {α : Ω.CutPiece → 
       ← FreeGroup.substituteVars_append,
       Ω.segment_append (Ω.startPt_lt_endPt e).le hl'.le (hl'.le_numItems (Ω.endPt_le_numItems e))]
 
-/-- A subword `h[i', j']` of `h[i, j]`, for `i ≤ i'` and `j' ≤ j`, is reduced as written after a
-substitution if `h[i, j]` is. -/
-private theorem isReduced_substituteVars_segment_of_le_of_le {w : Fin Ω.numItems → List (A × Bool)}
-    {i j i' j' : ℕ} (h : IsReduced (substituteVars w (Ω.segment i j true))) (hi : i ≤ i')
-    (hj : j' ≤ j) : IsReduced (substituteVars w (Ω.segment i' j' true)) := by
-  obtain ⟨t, ht⟩ := Ω.segment_prefix_segment (i := i') hj
-  obtain ⟨t', ht'⟩ := Ω.segment_suffix_segment (k := j) hi
-  rw [← ht', ← ht, FreeGroup.substituteVars_append, FreeGroup.substituteVars_append] at h
-  exact h.infix ⟨substituteVars w t', substituteVars w t, List.append_assoc _ _ _⟩
-
 /-! ### Solutions of `Ω` give solutions of `Π_Ω` -/
 
 namespace Solution
@@ -334,12 +332,11 @@ theorem cutPieces_inr (μ : Ω.BaseRep) :
 theorem cutPieces_baseRep (μ : Fin Ω.numBases) :
     U.cutPieces (.inr (Ω.baseRep μ)) =
       substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) (Ω.sign μ)) := by
-  have := U.subst_eq _ (Ω.basicEquation_mem_equations μ)
-  rw [basicEquation_fst, basicEquation_snd] at this
-  rw [cutPieces_inr, baseRep]
-  split_ifs
-  · rfl
-  · exact this.symm
+  rcases le_total μ (Ω.dual μ) with h | h
+  · rw [Ω.baseRep_of_le h, cutPieces_inr]
+  · have := U.subst_eq _ (Ω.basicEquation_mem_equations μ)
+    rw [basicEquation_fst, basicEquation_snd] at this
+    rw [← baseRep_dual, Ω.baseRep_of_le (by rwa [Ω.dual_involutive]), cutPieces_inr, this]
 
 /-- The value of a section at the point of a solution is the word of the section. -/
 theorem sectionValue_point (s : Ω.closedSections) :
