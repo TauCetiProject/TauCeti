@@ -92,6 +92,12 @@ theorem tsupport_smulLeftCLM_subset (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F
   rw [coe_smulLeftCLM]
   exact Set.subset_inter (tsupport_smul_subset_left f φ) (tsupport_smul_subset_right f φ)
 
+/-- Multiplying by a smooth function does not enlarge the support of a test function: the support
+of `f φ` lies in that of `φ`. -/
+theorem tsupport_smulLeftCLM_subset_right (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F)) :
+    tsupport (smulLeftCLM hf φ : E → F) ⊆ tsupport φ :=
+  (tsupport_smulLeftCLM_subset hf φ).trans Set.inter_subset_right
+
 /-- Multiplying by two smooth functions in turn is multiplying by their product. -/
 @[simp]
 theorem smulLeftCLM_smulLeftCLM (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)
