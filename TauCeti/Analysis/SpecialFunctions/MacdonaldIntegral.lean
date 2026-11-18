@@ -108,12 +108,13 @@ theorem integrableOn_cpow_mul_exp_neg_add_div_Ioi (a : ℂ) {c : ℝ} (hc : 0 < 
     calc (1 : ℝ) = n.factorial / c ^ n * s ^ n * (c ^ n / (s ^ n * n.factorial)) := by
           field_simp
       _ ≤ _ := by gcongr; rwa [div_le_iff₀ (by positivity)]
-  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos hs, norm_real, Real.norm_of_nonneg (exp_pos _).le,
-    neg_add, Real.exp_add, sub_re, one_re, add_sub_right_comm, Real.rpow_add hs,
-    Real.rpow_natCast]
-  calc s ^ (a.re - 1) * (Real.exp (-s) * Real.exp (-(c / s)))
-      ≤ s ^ (a.re - 1) * (Real.exp (-s) * (n.factorial / c ^ n * s ^ n)) := by gcongr
-    _ = _ := by ring
+  calc ‖(s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s))‖
+      = s ^ (a.re - 1) * (Real.exp (-s) * Real.exp (-(c / s))) := by
+        simp [norm_cpow_eq_rpow_re_of_pos hs, norm_exp, Real.exp_add, mul_comm]
+    _ ≤ s ^ (a.re - 1) * (Real.exp (-s) * (n.factorial / c ^ n * s ^ n)) := by gcongr
+    _ = _ := by
+        rw [add_sub_right_comm, Real.rpow_add hs, Real.rpow_natCast]
+        ring
 
 /-- The Macdonald integral `c ↦ ∫₀^∞ s^{a - 1} e^{-s - c/s} ds` is continuous on `(0, ∞)`. -/
 theorem continuousOn_integral_cpow_mul_exp_neg_add_div_Ioi (a : ℂ) :
@@ -205,6 +206,11 @@ private lemma exp_neg_mul_add_inv_exp_neg (ζ u : ℝ) :
   push_cast
   ring_nf
 
+/-- The norm of `e^{-ζ r}` for real `r` is `e^{-(Re ζ) r}`. -/
+private lemma norm_exp_neg_mul_ofReal (ζ : ℂ) (r : ℝ) :
+    ‖cexp (-(ζ * r))‖ = Real.exp (-(ζ.re * r)) := by
+  simp only [norm_exp, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
+
 /-- The real-`ζ` case of `integrable_exp_mul_mul_exp_neg_mul_cosh`, from the convergence of the
 Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` in logarithmic coordinates. -/
 private lemma integrable_exp_mul_mul_exp_neg_mul_cosh_of_real {ζ : ℝ} (hζ : 0 < ζ) (p : ℂ) :
@@ -219,8 +225,7 @@ theorem integrable_exp_mul_mul_exp_neg_mul_cosh {ζ : ℂ} (hζ : 0 < ζ.re) (p 
     Integrable (fun u : ℝ ↦ cexp (p * u) * cexp (-(ζ * Real.cosh u))) := by
   refine (integrable_exp_mul_mul_exp_neg_mul_cosh_of_real hζ p).norm.mono'
     (Measurable.aestronglyMeasurable (by fun_prop)) (Eventually.of_forall fun u ↦ le_of_eq ?_)
-  simp only [norm_mul, norm_exp, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero,
-    sub_zero]
+  simp only [norm_mul, norm_exp_neg_mul_ofReal, ofReal_re]
 
 /-- **Schläfli's integral as a Macdonald integral.** For `ζ > 0` and every complex `p`, the
 substitution `s = (ζ / 2) e^u` gives
@@ -249,10 +254,12 @@ theorem integral_exp_neg_mul_cosh_mul_cosh_Ioi {ζ : ℝ} (hζ : 0 < ζ) (p : �
     ring
   -- the two scale factors cancel; the product is formed in `ℝ`, where both factors are
   -- nonnegative, so that `mul_cpow_ofReal_nonneg` merges the two powers
-  have hcancel : ζ / 2 * (2 / ζ) = 1 := by field_simp
+  have hcancel : (ζ / 2 : ℂ) * (2 / ζ) = 1 := by
+    field_simp [ofReal_ne_zero.mpr hζ.ne']
   have hunit : (ζ / 2 : ℂ) ^ (-p) * ((2 / ζ : ℝ) : ℂ) ^ (-p) = 1 := by
-    rw [← ofReal_ofNat 2, ← ofReal_div, ← mul_cpow_ofReal_nonneg (by positivity) hk.le,
-      ← ofReal_mul, hcancel, ofReal_one, one_cpow]
+    have h := mul_cpow_ofReal_nonneg (half_pos hζ).le hk.le (-p)
+    push_cast at h ⊢
+    rw [← h, hcancel, one_cpow]
   rw [setIntegral_congr_fun measurableSet_Ioi (integrand_eq_comp_mul_left hζ p), ← mellin,
     mellin_comp_mul_left (fun x : ℝ ↦ ((Real.exp (-(ζ / 2 * (x + x⁻¹))) : ℝ) : ℂ)) p hk,
     hmellin, hsplit, smul_eq_mul]
@@ -303,14 +310,14 @@ theorem differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi (p : ℂ) :
     have hc : 0 < Real.cosh u := Real.cosh_pos u
     calc ‖cexp (-(ζ * Real.cosh u)) * Complex.cosh (p * u) * -(Real.cosh u : ℂ)‖
         = ‖Complex.cosh (p * u)‖ * (Real.exp (-(ζ.re * Real.cosh u)) * Real.cosh u) := by
-          rw [norm_mul, norm_mul, norm_neg, norm_real, Real.norm_of_nonneg hc.le, norm_exp]
-          simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
+          rw [norm_mul, norm_mul, norm_neg, norm_real, Real.norm_of_nonneg hc.le,
+            norm_exp_neg_mul_ofReal]
           ring
       _ ≤ ‖Complex.cosh (p * u)‖ * (2 / δ * Real.exp (-(δ / 2 * Real.cosh u))) :=
           mul_le_mul_of_nonneg_left (TauCeti.exp_neg_mul_mul_le hδ0 (hre ζ hζ).le _)
             (norm_nonneg _)
       _ = 2 / δ * (‖Complex.cosh (p * u)‖ * ‖w u‖) := by
-          simp only [hw, norm_exp, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
+          simp only [hw, norm_exp_neg_mul_ofReal, ofReal_re]
           ring
       _ ≤ bound u := by
           simp only [bound, ← norm_mul, neg_mul]
