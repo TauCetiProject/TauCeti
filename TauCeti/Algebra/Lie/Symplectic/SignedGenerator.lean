@@ -20,7 +20,7 @@ facts about the generators that the construction relies on.
 
 On native coordinates, `Sum.swap` plays the role of `i ↦ -i`, and the sign of a coordinate is
 `-1` on the `e`-coordinates `inl i` and `1` on the `f`-coordinates `inr i`
-(`TauCeti.LieAlgebra.Symplectic.coordSign`). With these, `F_ab = E_ab - sgn(a) sgn(b) E_(b', a')`
+(`TauCeti.Symplectic.coordSign`). With these, `F_ab = E_ab - sgn(a) sgn(b) E_(b', a')`
 makes sense for any index type `l` and is `TauCeti.LieAlgebra.Symplectic.spGenerator R a b`. It lies
 in `sp l R`, satisfies `F_(b', a') = -sgn(a) sgn(b) F_ab`, and the generators satisfy Molev's
 commutation relations
@@ -29,9 +29,9 @@ commutation relations
 
 with `θ_ab = sgn(a) sgn(b)`. The proof writes `F_ab = E_ab + J E_abᵀ J` as the symmetrization of a
 matrix unit under the involution `X ↦ J Xᵀ J`, whose fixed points form `sp l R`. In particular the
-diagonal generators `F_aa = E_aa - E_(a', a')` are diagonal matrices and each `F_cd` is an
-eigenvector of every `ad F_aa`. The form itself reads `J a b = sgn(a)` when `b = a'` and `0`
-otherwise.
+diagonal generators `F_aa = E_aa - E_(a', a')` are diagonal matrices and `ad F_aa` multiplies each
+`F_cd` by the scalar `δ_ca - δ_da - δ_(c, a') + δ_(d, a')`. The form itself reads `J a b = sgn(a)`
+when `b = a'` and `0` otherwise (`Matrix.J_apply_eq_ite`).
 
 For `l = Fin r`, the signed label `TauCeti.LieAlgebra.Symplectic.signedIndex` identifies the
 signed index `-i` with `e_(r + 1 - i)` and `+i` with `f_(r + 1 - i)`, that is `inl k ↦ k - r`
@@ -45,13 +45,11 @@ upper triangular, and the diagonal generator at the signed index `i > 0` is
 
 ## Main definitions
 
-* `TauCeti.LieAlgebra.Symplectic.coordSign`: the sign of a native coordinate.
 * `TauCeti.LieAlgebra.Symplectic.spGenerator`: the generator `F_ab` in native coordinates.
 * `TauCeti.LieAlgebra.Symplectic.signedIndex`: Molev's signed label of a native coordinate.
 
 ## Main results
 
-* `TauCeti.LieAlgebra.Symplectic.J_apply_eq_ite`: the standard form in signed terms.
 * `TauCeti.LieAlgebra.Symplectic.spGenerator_mem_sp`: the generators lie in `sp l R`.
 * `TauCeti.LieAlgebra.Symplectic.spGenerator_swap_swap`: `F_(b', a') = -θ_ab F_ab`.
 * `TauCeti.LieAlgebra.Symplectic.spGenerator_eq_add_J_mul_transpose_mul_J`:
@@ -77,50 +75,9 @@ upper triangular, and the diagonal generator at the signed index `i > 0` is
 
 public section
 
-open Matrix LieAlgebra.Symplectic
+open Matrix LieAlgebra.Symplectic TauCeti.Symplectic
 
 namespace TauCeti.LieAlgebra.Symplectic
-
-/-! ### Signs of coordinates and the standard form -/
-
-section Sign
-
-variable {l : Type*}
-
-/-- **The sign of a native coordinate** of the standard symplectic space `(l ⊕ l) → R`: `-1` on
-the `e`-coordinates `inl i` and `1` on the `f`-coordinates `inr i`. In Molev's signed indexing it
-is the sign of the signed index (`TauCeti.LieAlgebra.Symplectic.sign_signedIndex`). -/
-def coordSign : l ⊕ l → ℤ :=
-  Sum.elim (fun _ => -1) fun _ => 1
-
-@[simp]
-theorem coordSign_inl (i : l) : coordSign (Sum.inl i : l ⊕ l) = -1 :=
-  (rfl)
-
-@[simp]
-theorem coordSign_inr (i : l) : coordSign (Sum.inr i : l ⊕ l) = 1 :=
-  (rfl)
-
-/-- Passing to the paired coordinate changes the sign. -/
-@[simp]
-theorem coordSign_swap (a : l ⊕ l) : coordSign a.swap = -coordSign a := by
-  cases a <;> simp
-
-theorem coordSign_mul_self (a : l ⊕ l) : coordSign a * coordSign a = 1 := by
-  cases a <;> simp
-
-variable [DecidableEq l] {R : Type*} [CommRing R]
-
-/-- **The standard form in signed terms**: `J a b` is the sign of `a` when `b` is the coordinate
-paired with `a`, and vanishes otherwise. -/
-theorem J_apply_eq_ite (a b : l ⊕ l) :
-    J l R a b = if b = a.swap then (coordSign a : R) else 0 := by
-  split_ifs with h
-  · subst h
-    cases a <;> simp [J]
-  · exact J_apply_eq_zero_of_ne_swap l R h
-
-end Sign
 
 /-! ### The generators `F_ab` -/
 
@@ -132,7 +89,7 @@ variable {l : Type*} [DecidableEq l] {R : Type*} [CommRing R]
 
 /-- **Molev's generator `F_ab = E_ab - sgn(a) sgn(b) E_(b', a')`** of the symplectic Lie algebra,
 in native coordinates: `b'` and `a'` are the coordinates paired with `b` and `a`, and the signs are
-those of `TauCeti.LieAlgebra.Symplectic.coordSign`. -/
+those of `TauCeti.Symplectic.coordSign`. -/
 def spGenerator (R : Type*) [CommRing R] (a b : l ⊕ l) : Matrix (l ⊕ l) (l ⊕ l) R :=
   single a b 1 - single b.swap a.swap ((coordSign a * coordSign b : ℤ) : R)
 
@@ -174,56 +131,25 @@ theorem spGenerator_swap_right (a : l ⊕ l) :
   rcases a with i | i <;>
     simp [spGenerator, sub_eq_add_neg, ← single_neg, ← single_add, one_add_one_eq_two]
 
-/-- The second term of a generator is the image of the first under the involution
-`X ↦ J Xᵀ J` of the matrices, whose fixed points form `sp l R`. -/
-theorem J_mul_transpose_single_mul_J [Fintype l] (a b : l ⊕ l) :
-    J l R * (single a b (1 : R))ᵀ * J l R =
-      -(((coordSign a * coordSign b : ℤ) : R) • single b.swap a.swap 1) := by
-  have hinv : Function.Involutive (@Sum.swap l l) := Sum.swap_swap
-  ext x y
-  have hcol (w : l ⊕ l) :
-      (J l R * single b a (1 : R)) x w = if w = a then J l R x b else 0 := by
-    split_ifs with hw
-    · rw [hw, mul_single_apply_same, mul_one]
-    · exact mul_single_apply_of_ne (hbj := hw) ..
-  rw [transpose_single, Matrix.mul_apply,
-    Fintype.sum_congr _ _ fun w => by rw [hcol, ite_mul, zero_mul],
-    Fintype.sum_ite_eq' a, J_apply_eq_ite, J_apply_eq_ite,
-    Matrix.neg_apply, Matrix.smul_apply, single_apply]
-  clear hcol
-  by_cases hx : x = b.swap
-  · subst hx
-    by_cases hy : y = a.swap
-    · subst hy
-      simp [mul_comm]
-    · simp [hy, Ne.symm hy]
-  · have h₁ : b ≠ x.swap := fun h => hx (by rw [h, hinv])
-    simp [h₁, Ne.symm hx]
-
 /-- **A generator is a symmetrization**: `F_ab = E_ab + J E_abᵀ J`. -/
 theorem spGenerator_eq_add_J_mul_transpose_mul_J [Fintype l] (a b : l ⊕ l) :
     spGenerator R a b = single a b 1 + J l R * (single a b (1 : R))ᵀ * J l R := by
   rw [J_mul_transpose_single_mul_J, smul_single, smul_eq_mul, mul_one, spGenerator,
     sub_eq_add_neg]
 
-/-- The symmetrization `X ↦ X + J Xᵀ J` onto `sp l R`, as a linear map of matrices; it sends the
-matrix unit `E_ab` to the generator `F_ab`. -/
-private def symmetrizeJ [Fintype l] :
-    Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] Matrix (l ⊕ l) (l ⊕ l) R where
-  toFun X := X + J l R * Xᵀ * J l R
-  map_add' X Y := by
-    simp only [transpose_add, Matrix.mul_add, Matrix.add_mul]
-    abel
-  map_smul' c X := by
-    simp [smul_add]
+/-- The symmetrization `LieAlgebra.Symplectic.symmetrize` followed by the inclusion of `sp l R`,
+as a linear map of matrices; it sends the matrix unit `E_ab` to the generator `F_ab`. -/
+private noncomputable def symmetrizeJ [Fintype l] :
+    Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] Matrix (l ⊕ l) (l ⊕ l) R :=
+  (sp l R).incl.toLinearMap ∘ₗ symmetrize
 
 private theorem symmetrizeJ_apply [Fintype l] (X : Matrix (l ⊕ l) (l ⊕ l) R) :
-    symmetrizeJ X = X + J l R * Xᵀ * J l R :=
-  (rfl)
+    symmetrizeJ X = X + J l R * Xᵀ * J l R := by
+  simp [symmetrizeJ, coe_symmetrize_apply, jConj_apply]
 
 private theorem symmetrizeJ_single [Fintype l] (a b : l ⊕ l) :
-    symmetrizeJ (single a b (1 : R)) = spGenerator R a b :=
-  (spGenerator_eq_add_J_mul_transpose_mul_J a b).symm
+    symmetrizeJ (single a b (1 : R)) = spGenerator R a b := by
+  rw [symmetrizeJ_apply, spGenerator_eq_add_J_mul_transpose_mul_J]
 
 /-- The bracket of two symmetrizations is the symmetrization of `⁅X, Y⁆ + ⁅X, J Yᵀ J⁆`. -/
 private theorem lie_symmetrizeJ_symmetrizeJ [Fintype l] (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
@@ -237,8 +163,7 @@ private theorem lie_symmetrizeJ_symmetrizeJ [Fintype l] (X Y : Matrix (l ⊕ l) 
           noncomm_ring
       _ = _ := by noncomm_ring
   have hinv (A : Matrix (l ⊕ l) (l ⊕ l) R) : J l R * (J l R * Aᵀ * J l R)ᵀ * J l R = A := by
-    simpa only [transpose_mul, J_transpose, transpose_transpose, neg_mul, mul_neg, neg_neg,
-      mul_assoc] using J_mul_mul_J_mul_J A
+    simpa only [jConj_apply] using jConj_jConj A
   simp only [symmetrizeJ_apply, Ring.lie_def, transpose_add, transpose_sub, Matrix.mul_add,
     Matrix.add_mul, Matrix.mul_sub, Matrix.sub_mul]
   rw [hmul X Y, hmul Y X, hmul X, hmul _ X, hinv]
@@ -291,8 +216,8 @@ theorem lie_spGenerator_spGenerator [Fintype l] (a b c d : l ⊕ l) :
   rw [hd, hc]
   abel
 
-/-- **The diagonal generators act on each generator by a weight**: `F_cd` is an eigenvector of
-`ad F_aa`, with eigenvalue `δ_ca - δ_da - δ_(c, a') + δ_(d, a')`. -/
+/-- **The diagonal generators act on each generator by a weight**: `ad F_aa` multiplies `F_cd` by
+the scalar `δ_ca - δ_da - δ_(c, a') + δ_(d, a')`. -/
 theorem lie_spGenerator_self [Fintype l] (a c d : l ⊕ l) :
     ⁅spGenerator R a a, spGenerator R c d⁆ =
       ((if c = a then 1 else 0) - (if d = a then 1 else 0) - (if c = a.swap then 1 else 0) +
@@ -316,7 +241,7 @@ theorem submatrix_spGenerator_map {l' : Type*} [DecidableEq l'] {f : l → l'}
       spGenerator R a b := by
   have hinj : Function.Injective (Sum.map f f) := Sum.map_injective.mpr ⟨hf, hf⟩
   have hcomm (x : l ⊕ l) : (Sum.map f f x).swap = Sum.map f f x.swap := by cases x <;> rfl
-  have hsign (x : l ⊕ l) : coordSign (Sum.map f f x) = coordSign x := by cases x <;> rfl
+  have hsign (x : l ⊕ l) : coordSign (Sum.map f f x) = coordSign x := by cases x <;> simp
   ext x y
   simp only [spGenerator, submatrix_apply, Matrix.sub_apply, single_apply, hcomm, hsign,
     hinj.eq_iff]
@@ -374,8 +299,10 @@ theorem signedIndex_swap (a : Fin r ⊕ Fin r) : signedIndex a.swap = -signedInd
 @[simp]
 theorem sign_signedIndex (a : Fin r ⊕ Fin r) : (signedIndex a).sign = coordSign a := by
   rcases a with ⟨k, hk⟩ | ⟨k, hk⟩
-  · exact Int.sign_eq_neg_one_of_neg (by simp; omega)
-  · exact Int.sign_eq_one_of_pos (by simp; omega)
+  · rw [coordSign_inl]
+    exact Int.sign_eq_neg_one_of_neg (by simp; omega)
+  · rw [coordSign_inr]
+    exact Int.sign_eq_one_of_pos (by simp; omega)
 
 /-- In Molev's signed indices, the generator `F_ij` is `E_ij - sgn(i) sgn(j) E_(-j, -i)`. -/
 theorem spGenerator_eq_single_sub_single {R : Type*} [CommRing R] (a b : Fin r ⊕ Fin r) :

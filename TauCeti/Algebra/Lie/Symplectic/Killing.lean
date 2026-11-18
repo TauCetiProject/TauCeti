@@ -206,30 +206,6 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- The linear involution `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`. -/
-private noncomputable def jConj : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] Matrix (l ⊕ l) (l ⊕ l) R :=
-  LinearMap.mulLeft R (J l R) ∘ₗ LinearMap.mulRight R (J l R) ∘ₗ
-    (transposeLinearEquiv (l ⊕ l) (l ⊕ l) R R).toLinearMap
-
-private theorem jConj_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj Z = J l R * Zᵀ * J l R := by
-  simp [jConj, mul_assoc]
-
-private theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z) = Z := by
-  simp only [jConj_apply, transpose_mul, J_transpose, transpose_transpose, neg_mul, mul_neg,
-    neg_neg, ← mul_assoc]
-  simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
-
-/-- The map `Z ↦ Z + J Zᵀ J` into `sp l R`, which is multiplication by two on `sp l R`. -/
-private noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
-  toFun Z := ⟨Z + jConj Z, by
-    rw [mem_sp_iff_J_mul_transpose_mul_J_eq, ← jConj_apply, map_add, jConj_jConj, add_comm]⟩
-  map_add' Z W := by ext1; simp only [map_add, AddMemClass.coe_add]; abel
-  map_smul' c Z := by ext1; simp
-
-private theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
-    (symmetrize Z : Matrix (l ⊕ l) (l ⊕ l) R) = Z + jConj Z :=
-  rfl
-
 /-- The trace of `Z ↦ J (A Z B)ᵀ J` on the matrices. -/
 private theorem trace_jConj_comp (A B : Matrix (l ⊕ l) (l ⊕ l) R) :
     LinearMap.trace R _ (jConj ∘ₗ LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) =
