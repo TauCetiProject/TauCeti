@@ -90,13 +90,6 @@ local instance CkHolderSpace.instNormedAddCommGroupBoundedContinuousFunction (n 
     NormedAddCommGroup (E →ᵇ (E [×n]→L[ℝ] F)) :=
   inferInstance
 
-/-- Shortcut instance for bounded continuous fields of `n`-multilinear maps, needed for operator
-norms of continuous linear maps into these fields indexed by the order `n`. It is local for the
-same reason. -/
-local instance CkHolderSpace.instNormedSpaceBoundedContinuousFunction (n : ℕ) :
-    NormedSpace ℝ (E →ᵇ (E [×n]→L[ℝ] F)) :=
-  inferInstance
-
 /-- The space of bounded `C^k` maps whose iterated Fréchet derivatives through order `k` are
 bounded and whose `k`-th iterated derivative is globally `α`-Hölder. Its norm is
 
@@ -506,6 +499,13 @@ theorem hasFDerivAt (f : CkHolderSpace (k + 1) α E F) (x : E) :
     HasFDerivAt f (f.fderivBCF x) x := by
   rw [coe_fderivBCF]
   exact ((f.contDiff.differentiable (by simp)) x).hasFDerivAt
+
+/-- A bounded `C^{k+1,α}` map is Lipschitz, with the supremum norm of its first derivative field
+as Lipschitz constant. -/
+theorem lipschitzWith (f : CkHolderSpace (k + 1) α E F) :
+    LipschitzWith ‖f.iteratedFDeriv 1‖₊ f :=
+  lipschitzWith_of_nnNorm_fderiv_le (f.contDiff.differentiable (by simp))
+    f.norm_fderiv_le_iteratedFDeriv_one
 
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields. It is
 bounded by the `C^{k,α}` norm pointwise, by `CkHolderSpace.norm_iteratedFDeriv_le`. -/
