@@ -117,6 +117,11 @@ over the same base point. -/
 def toProd (p : SphereBundleTwoFieldEquators F E u v) : sphereBundle F E × TotalSpace F E :=
   (p.base, ⟨(p.base : TotalSpace F E).proj, p.vec⟩)
 
+@[simp]
+theorem toProd_apply (p : SphereBundleTwoFieldEquators F E u v) :
+    toProd p = (p.base, ⟨(p.base : TotalSpace F E).proj, p.vec⟩) :=
+  (rfl)
+
 theorem toProd_injective : Function.Injective (toProd (u := u) (v := v)) := by
   intro p q hpq
   obtain ⟨x, w, _, _, _⟩ := p
