@@ -100,13 +100,11 @@ private theorem substAlgHomAux_coe (φ : FormalCoordinate R) (f : R⟦X⟧) :
 
 private theorem substAlgHomAux_comp (φ ψ : FormalCoordinate R) :
     (substAlgHomAux ψ).comp (substAlgHomAux φ) = substAlgHomAux (φ * ψ) :=
-  AlgHom.toRingHom_injective <| IsLocalization.ringHom_ext (Submonoid.powers (X : R⟦X⟧)) <|
-    RingHom.ext fun p ↦ by
-      simp [substAlgHomAux_coe, FormalCoordinate.substAlgEquiv_mul, AlgEquiv.mul_apply]
+  algHom_ext fun p ↦ by
+    simp [substAlgHomAux_coe, FormalCoordinate.substAlgEquiv_mul, AlgEquiv.mul_apply]
 
 private theorem substAlgHomAux_one : substAlgHomAux (1 : FormalCoordinate R) = AlgHom.id R R⸨X⸩ :=
-  AlgHom.toRingHom_injective <| IsLocalization.ringHom_ext (Submonoid.powers (X : R⟦X⟧)) <|
-    RingHom.ext fun p ↦ by simp [substAlgHomAux_coe]
+  algHom_ext fun p ↦ by simp [substAlgHomAux_coe]
 
 /-- The substitution automorphism `σ_φ : f ↦ f (φ)` of `R⸨X⸩` attached to a formal coordinate `φ`
 over a commutative ring, with inverse the substitution of the compositional inverse `φ⁻¹`. It
@@ -133,8 +131,7 @@ into power series is the substitution automorphism `σ_φ`. -/
 theorem algHom_eq_substAlgEquiv (φ : FormalCoordinate R) (σ : R⸨X⸩ →ₐ[R] R⸨X⸩)
     (h : ∀ f : R⟦X⟧, σ f = ((φ.substAlgEquiv f : R⟦X⟧) : R⸨X⸩)) :
     σ = (substAlgEquiv φ).toAlgHom :=
-  AlgHom.toRingHom_injective <| IsLocalization.ringHom_ext (Submonoid.powers (X : R⟦X⟧)) <|
-    RingHom.ext fun f ↦ by simp [h]
+  algHom_ext fun f ↦ by simp [h]
 
 /-- Substitution fixes the constants. -/
 theorem substAlgEquiv_C (φ : FormalCoordinate R) (a : R) :
@@ -234,12 +231,12 @@ theorem mapRingHom_substAlgEquiv {S : Type*} [CommRing S] (σ : R →+* S) (φ :
     (f : R⸨X⸩) :
     mapRingHom σ (substAlgEquiv φ f) =
       substAlgEquiv (FormalCoordinate.map σ φ) (mapRingHom σ f) := by
-  refine congr($(IsLocalization.ringHom_ext (Submonoid.powers (X : R⟦X⟧))
-    (j := (mapRingHom σ).comp (substAlgEquiv φ : R⸨X⸩ →+* R⸨X⸩))
-    (k := (substAlgEquiv (FormalCoordinate.map σ φ) : S⸨X⸩ →+* S⸨X⸩).comp (mapRingHom σ))
-    (RingHom.ext fun p ↦ ?_)) f)
-  simp only [RingHom.comp_apply, RingHom.coe_coe, _root_.LaurentSeries.coe_algebraMap,
-    substAlgEquiv_coe, mapRingHom_apply, map_ofPowerSeries, FormalCoordinate.map_substAlgEquiv]
+  have h : (mapRingHom σ).comp (substAlgEquiv φ : R⸨X⸩ →+* R⸨X⸩) =
+      (substAlgEquiv (FormalCoordinate.map σ φ) : S⸨X⸩ →+* S⸨X⸩).comp (mapRingHom σ) :=
+    ringHom_ext fun p ↦ by
+      simp only [RingHom.comp_apply, RingHom.coe_coe, substAlgEquiv_coe, mapRingHom_apply,
+        map_ofPowerSeries, FormalCoordinate.map_substAlgEquiv]
+  exact congr($h f)
 
 /-! ### Differentiation and residues -/
 
@@ -287,10 +284,14 @@ private theorem coeff_neg_one_substAlgEquiv_single_mul_derivative (φ : FormalCo
     have hv₁ : (↑v⁻¹ : R⟦X⟧) * v = 1 := Units.inv_mul v
     rw [Derivation.leibniz, derivative_X, smul_eq_mul, smul_eq_mul, mul_one, pow_succ]
     linear_combination (↑v⁻¹ : R⟦X⟧) ^ k * hv₁
-  rw [substAlgEquiv_single_of_eq_X_mul φ hv, hv, ← PowerSeries.coe_derivative, mul_assoc,
-    ← PowerSeries.coe_mul, hpow, hφ',
-    show (-1 : ℤ) = (k : ℤ) + -((k + 1 : ℕ) : ℤ) by push_cast; ring, coeff_single_mul_add,
-    _root_.LaurentSeries.coeff_coe_powerSeries, map_add]
+  have hprod : substAlgEquiv φ (single (-((k + 1 : ℕ) : ℤ)) c) *
+      _root_.LaurentSeries.derivative R (φ.toPowerSeries : R⸨X⸩) =
+      single (-((k + 1 : ℕ) : ℤ)) c * (((↑v⁻¹ : R⟦X⟧) ^ k +
+        X * ((↑v⁻¹ : R⟦X⟧) ^ (k + 1) * d⁄dX (v : R⟦X⟧)) : R⟦X⟧) : R⸨X⸩) := by
+    rw [substAlgEquiv_single_of_eq_X_mul φ hv, hv, ← hφ', ← hpow]
+    simp only [mul_assoc, PowerSeries.coe_mul, PowerSeries.coe_derivative]
+  rw [hprod, show (-1 : ℤ) = (k : ℤ) + -((k + 1 : ℕ) : ℤ) by push_cast; ring,
+    coeff_single_mul_add, _root_.LaurentSeries.coeff_coe_powerSeries, map_add]
   rcases k with _ | n
   · simp
   · -- the universal coefficient identity for negative powers of a unit power series
