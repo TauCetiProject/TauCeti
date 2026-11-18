@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 public import TauCeti.MeasureTheory.Measure.IntegerValued.Basic
 public import TauCeti.MeasureTheory.Measure.Stieltjes
+public import Mathlib.Topology.Order.Cadlag
 
 /-!
 # Counting measures from Stieltjes functions
@@ -21,6 +22,11 @@ The construction uses Mathlib's `StieltjesFunction.measure`, rather than choosin
 ordering jump times. Integrality follows first on bounded windows from the generating
 π-system of initial intervals, then globally by a countable cover. No bound on the total
 number of occurrences is imposed.
+
+Conversely, the natural-valued cumulative count `t ↦ ⌊μ (0,t]⌋` of a locally finite
+integer-valued measure is a counting path: it starts at zero, is nondecreasing and
+right-continuous, and its jump from the left at a positive time is at most the mass of that
+time. In particular a simple measure has a count path with jumps of size at most one.
 
 ## References
 
@@ -93,3 +99,82 @@ theorem exists_measure_of_countingPath (N : ℝ≥0 → ℕ) (hN : Monotone N)
       simp [Nat.sub_eq_zero_of_le hba, ENNReal.ofReal_eq_zero, hba]
 
 end TauCeti.Probability
+
+namespace MeasureTheory.Measure
+
+variable {μ : Measure ℝ≥0} [IsLocallyFiniteMeasure μ]
+
+/-- The natural-valued cumulative count of a locally finite measure on the half-line is
+nondecreasing. No integrality is needed. -/
+theorem monotone_nat_count : Monotone fun t : ℝ≥0 => ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
+  fun _ _ hst => Nat.floor_mono <| ENNReal.toNNReal_mono measure_Ioc_lt_top.ne <|
+    measure_mono <| Ioc_subset_Ioc_right hst
+
+/-- For a locally finite integer-valued measure, the natural-valued count of a bounded
+interval is its mass. -/
+theorem IsIntegerValued.natCast_nat_count (hμ : μ.IsIntegerValued) (a b : ℝ≥0) :
+    (⌊(μ (Ioc a b)).toNNReal⌋₊ : ℝ≥0∞) = μ (Ioc a b) := by
+  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast measurableSet_Ioc measure_Ioc_lt_top
+  rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
+
+/-- The cumulative count of a locally finite integer-valued measure is right-continuous:
+it is constant on a right neighbourhood of each time. -/
+theorem IsIntegerValued.isRightContinuous_nat_count (hμ : μ.IsIntegerValued) :
+    IsRightContinuous fun t : ℝ≥0 => ⌊(μ (Ioc 0 t)).toNNReal⌋₊ := by
+  intro a
+  have hinter : ⋂ r > a, Ioc 0 r = Ioc 0 a := by
+    ext x
+    simp only [mem_iInter, mem_Ioc]
+    exact ⟨fun h => ⟨(h (a + 1) (lt_add_one a)).1, le_of_forall_gt_imp_ge_of_dense
+      fun r hr => (h r hr).2⟩, fun h r hr => ⟨h.1, h.2.trans hr.le⟩⟩
+  have hlim : Tendsto (fun r => μ (Ioc 0 r)) (𝓝[>] a) (𝓝 (μ (Ioc 0 a))) := by
+    simpa only [hinter, Function.comp_def] using
+      tendsto_measure_biInter_gt (μ := μ) (s := fun r => Ioc 0 r)
+        (fun _ _ => measurableSet_Ioc.nullMeasurableSet)
+        (fun _ _ _ hij => Ioc_subset_Ioc_right hij) ⟨a + 1, lt_add_one a, measure_Ioc_lt_top.ne⟩
+  rw [ContinuousWithinAt, nhds_discrete, tendsto_pure]
+  have hlt : μ (Ioc 0 a) < ⌊(μ (Ioc 0 a)).toNNReal⌋₊ + 1 := by
+    rw [hμ.natCast_nat_count]
+    exact ENNReal.lt_add_right measure_Ioc_lt_top.ne one_ne_zero
+  -- Masses just to the right of `a` are integers below the next integer, hence unchanged.
+  filter_upwards [hlim (Iio_mem_nhds hlt), self_mem_nhdsWithin] with r hr har
+  refine le_antisymm ?_ (monotone_nat_count (le_of_lt har))
+  rw [mem_preimage, mem_Iio, ← hμ.natCast_nat_count] at hr
+  exact_mod_cast Nat.lt_succ_iff.mp (by exact_mod_cast hr)
+
+/-- At a positive time of mass at most one, the cumulative count of a locally finite
+integer-valued measure jumps by at most one from the left. The bound is stated without left
+limits: some earlier count is at most one below. Other times need not be simple. -/
+theorem IsIntegerValued.exists_nat_count_le_add_one (hμ : μ.IsIntegerValued) {t : ℝ≥0}
+    (ht : 0 < t) (hs : μ {t} ≤ 1) :
+    ∃ s < t, ⌊(μ (Ioc 0 t)).toNNReal⌋₊ ≤ ⌊(μ (Ioc 0 s)).toNNReal⌋₊ + 1 := by
+  obtain ⟨u, hu, hut, hlim⟩ := exists_seq_strictMono_tendsto' ht
+  have hinter : ⋂ n, Ioc (u n) t = {t} := by
+    ext x
+    simp only [mem_iInter, mem_Ioc, mem_singleton_iff]
+    refine ⟨fun h => le_antisymm (h 0).2 (le_of_tendsto' hlim fun n => (h n).1.le), ?_⟩
+    rintro rfl n
+    exact ⟨(hut n).2, le_rfl⟩
+  -- The masses of `(u n, t]` decrease to the mass of `{t}`, which is below two.
+  have hmass := tendsto_measure_iInter_atTop (μ := μ) (s := fun n => Ioc (u n) t)
+    (fun _ => measurableSet_Ioc.nullMeasurableSet)
+    (fun _ _ hmn => Ioc_subset_Ioc_left (hu.monotone hmn)) ⟨0, measure_Ioc_lt_top.ne⟩
+  rw [hinter] at hmass
+  obtain ⟨n, hn⟩ :=
+    (hmass.eventually (Iio_mem_nhds (hs.trans_lt ENNReal.one_lt_two))).exists
+  refine ⟨u n, (hut n).2, ?_⟩
+  have hsplit : μ (Ioc 0 t) = μ (Ioc 0 (u n)) + μ (Ioc (u n) t) := by
+    rw [← measure_union (Ioc_disjoint_Ioc_of_le le_rfl) measurableSet_Ioc,
+      Ioc_union_Ioc_eq_Ioc (hut n).1.le (hut n).2.le]
+  have hn' : (⌊(μ (Ioc (u n) t)).toNNReal⌋₊ : ℝ≥0∞) < 2 := by
+    rw [hμ.natCast_nat_count]
+    exact hn
+  rw [← hμ.natCast_nat_count 0 t, ← hμ.natCast_nat_count 0 (u n),
+    ← hμ.natCast_nat_count (u n) t] at hsplit
+  have h1 : ⌊(μ (Ioc (u n) t)).toNNReal⌋₊ < 2 := by exact_mod_cast hn'
+  have h2 : ⌊(μ (Ioc 0 t)).toNNReal⌋₊ =
+      ⌊(μ (Ioc 0 (u n))).toNNReal⌋₊ + ⌊(μ (Ioc (u n) t)).toNNReal⌋₊ := by
+    exact_mod_cast hsplit
+  omega
+
+end MeasureTheory.Measure
