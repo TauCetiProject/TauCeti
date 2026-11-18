@@ -156,15 +156,17 @@ private theorem exists_holderWith_and_abs_le_of_hasCompactSupport {α : ℝ≥0}
     fun i => ⟨(hC₁ i).mono (h₁ i), fun x => (hM₁ i x).trans (by exact_mod_cast h₁ i)⟩,
     fun i j => ⟨(hC₂ i j).mono (h₂ i j), fun x => (hM₂ i j x).trans (by exact_mod_cast h₂ i j)⟩⟩
 
-/-- On the ball `B_R`, a `C²` function with `‖Du‖ ≤ N` and `‖D²u‖ ≤ N`, and each of its partial
-derivatives, are `α`-Hölder with constant `N (2R)^(1 - α)`: they are `N`-Lipschitz on the convex
-set `B_R`, whose diameter is at most `2R`. -/
-private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ} {N α : ℝ≥0}
+/-- On the ball `B_R`, a `C²` function `u` with `‖Du‖ ≤ N₁` and `‖D²u‖ ≤ N₂` is `α`-Hölder with
+constant `N₁ (2R)^(1 - α)`, and `Du` and each partial derivative of `u` are `α`-Hölder with
+constant `N₂ (2R)^(1 - α)`: they are Lipschitz on the convex set `B_R`, whose diameter is at most
+`2R`. -/
+theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ} {N₁ N₂ α : ℝ≥0}
     (hα : α ≤ 1) (hu : ContDiffOn ℝ 2 u (ball x₀ R))
-    (hN1 : ∀ x ∈ ball x₀ R, ‖fderiv ℝ u x‖ ≤ N)
-    (hN2 : ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N) :
-    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α u (ball x₀ R) ∧
-      ∀ i, HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α
+    (hN1 : ∀ x ∈ ball x₀ R, ‖fderiv ℝ u x‖ ≤ N₁)
+    (hN2 : ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ 2 u x‖ ≤ N₂) :
+    HolderOnWith (N₁ * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α u (ball x₀ R) ∧
+      HolderOnWith (N₂ * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α (fderiv ℝ u) (ball x₀ R) ∧
+      ∀ i, HolderOnWith (N₂ * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α
         (fun x => fderiv ℝ u x (EuclideanSpace.single i 1)) (ball x₀ R) := by
   have hA : ∀ x ∈ ball x₀ R, ∀ y ∈ ball x₀ R, edist x y ≤ (2 * R).toNNReal := by
     intro x hx y hy
@@ -173,24 +175,26 @@ private theorem holderOnWith_ball_of_norm_le {u : E → ℝ} {x₀ : E} {R : ℝ
     linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy]
   have hcda (x : E) (hx : x ∈ ball x₀ R) : ContDiffAt ℝ 2 u x :=
     hu.contDiffAt (isOpen_ball.mem_nhds hx)
-  have hLu : LipschitzOnWith N u (ball x₀ R) :=
+  have hLu : LipschitzOnWith N₁ u (ball x₀ R) :=
     (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun x hx => (hcda x hx).differentiableAt (by norm_num))
       fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN1 x hx
-  have hLDu : LipschitzOnWith N (fderiv ℝ u) (ball x₀ R) :=
+  have hLDu : LipschitzOnWith N₂ (fderiv ℝ u) (ball x₀ R) :=
     (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
       (fun x hx => ((hcda x hx).fderiv_right (m := 1) le_rfl).differentiableAt (by norm_num))
       fun x hx => by
         rw [← NNReal.coe_le_coe, coe_nnNorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
         exact hN2 x hx
-  have hholder {g : E → ℝ} (hg : LipschitzOnWith N g (ball x₀ R)) :
+  have hholder {N : ℝ≥0} {F : Type} [PseudoMetricSpace F] {g : E → F}
+      (hg : LipschitzOnWith N g (ball x₀ R)) :
       HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) := by
     simpa using (holderOnWith_one.2 hg).of_le hA hα
-  refine ⟨hholder hLu, fun i => hholder (LipschitzOnWith.of_dist_le_mul fun x hx y hy => ?_)⟩
+  refine ⟨hholder hLu, hholder hLDu,
+    fun i => hholder (LipschitzOnWith.of_dist_le_mul fun x hx y hy => ?_)⟩
   rw [dist_eq_norm, ← sub_apply]
   calc ‖(fderiv ℝ u x - fderiv ℝ u y) (EuclideanSpace.single i 1)‖
       ≤ ‖fderiv ℝ u x - fderiv ℝ u y‖ := (fderiv ℝ u x - fderiv ℝ u y).unit_le_opNorm _ (by simp)
-    _ ≤ N * dist x y := by
+    _ ≤ N₂ * dist x y := by
       rw [← dist_eq_norm]
       exact hLDu.dist_le_mul x hx y hy
 
@@ -390,7 +394,7 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
           (((n : ℝ) + 1) ^ 2 * (4 * Z)) * N := by
   subst hB₂ hδ
   have hsR : ball x₀ R ⊆ closedBall x₀ R := ball_subset_closedBall
-  obtain ⟨hHu, hHdu⟩ := holderOnWith_ball_of_norm_le hα1 hu hN1 hN2
+  obtain ⟨hHu, -, hHdu⟩ := holderOnWith_ball_of_norm_le hα1 hu hN1 hN2
   have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R) :
       |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
     simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans

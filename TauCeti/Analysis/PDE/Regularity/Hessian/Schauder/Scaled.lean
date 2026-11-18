@@ -285,26 +285,11 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_lowerO
   refine ⟨c₀, hc₀, C₁ * (1 + 3 * M), ?_⟩
   intro a b c x₀ δ Ka Kb Mb Kc Mc hδ hKa hMbM hKbM hMcM hKcM hlo hup hhol hent hb hbM hc hcM
     u N₀ N₁ N₂ K V hu hN₀ hN₁ hN₂ hV hK
-  -- `u` and `Du` are Lipschitz on the convex ball, with constants `N₁` and `N₂`, hence
-  -- `α`-Hölder there, since points of the ball are at distance at most `2 δ`.
-  have hdiam : ∀ x ∈ ball x₀ δ, ∀ y ∈ ball x₀ δ, edist x y ≤ ((2 * δ : ℝ≥0) : ℝ≥0∞) :=
-    fun x hx y hy => by
-      rw [edist_nndist, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nndist]
-      push_cast
-      linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy]
-  have hLu : LipschitzOnWith N₁ u (ball x₀ δ) :=
-    (convex_ball x₀ δ).lipschitzOnWith_of_nnNorm_fderiv_le
-      (fun x hx => (hu.differentiableOn (by norm_num)).differentiableAt (isOpen_ball.mem_nhds hx))
-      fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN₁ x hx
-  have hLDu : LipschitzOnWith N₂ (fderiv ℝ u) (ball x₀ δ) :=
-    (convex_ball x₀ δ).lipschitzOnWith_of_nnNorm_fderiv_le
-      (fun x hx => ((hu.fderiv_of_isOpen isOpen_ball (m := 1) (by norm_num)).differentiableOn
-        (by norm_num)).differentiableAt (isOpen_ball.mem_nhds hx))
-      fun x hx => by
-        rw [← NNReal.coe_le_coe, coe_nnNorm, ← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-        exact hN₂ x hx
-  have hHu := (holderOnWith_one.2 hLu).of_le hdiam hα1.le
-  have hHDu := (holderOnWith_one.2 hLDu).of_le hdiam hα1.le
+  -- `u` and `Du` are `α`-Hölder on the ball, with constants `N₁ (2 δ)^{1-α}` and
+  -- `N₂ (2 δ)^{1-α}`.
+  obtain ⟨hHu, hHDu, -⟩ := holderOnWith_ball_of_norm_le hα1.le hu hN₁ hN₂
+  rw [show (2 * (δ : ℝ)).toNNReal = 2 * δ by
+    rw [← NNReal.coe_ofNat, ← NNReal.coe_mul, Real.toNNReal_coe]] at hHu hHDu
   -- The principal part `L u - (b · ∇u + c u)` is `α`-Hölder on the ball.
   have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu hN₀ hN₁ hb hbM hc hcM
   have hprin := hK.sub hlow
