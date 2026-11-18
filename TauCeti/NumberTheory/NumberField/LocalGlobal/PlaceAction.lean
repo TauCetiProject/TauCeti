@@ -25,8 +25,10 @@ place of `K` form a single orbit.
 
 This file compares the action with Mathlib's pointwise action on valuation subrings of `L`: the
 localization of `𝓞 L` at `σ • w`, as a valuation subring of `L`, is the image under `σ` of the
-localization at `w`. Since the localization is the valuation subring of the `w`-adic valuation,
-which determines the place (Mathlib's `valuationSubringAtPrime_eq_valuationSubring` and
+localization at `w`. Both results hold for any Dedekind domain `R` with fraction field `L` and a
+group acting on `R` and `L` compatibly (`SMulDistribClass`), which `𝓞 L` satisfies. Since the
+localization is the valuation subring of the `w`-adic valuation, which determines the place
+(Mathlib's `valuationSubringAtPrime_eq_valuationSubring` and
 `valuationSubring_valuation_injective`), the stabilizer of `w` is
 Mathlib's decomposition subgroup `ValuationSubring.decompositionSubgroup` of the valuation subring
 `valuationSubringAtPrime L w`.
@@ -45,32 +47,48 @@ Mathlib's decomposition subgroup `ValuationSubring.decompositionSubgroup` of the
 
 public section
 
-open NumberField
 open scoped Pointwise
 
 namespace IsDedekindDomain.HeightOneSpectrum
 
-variable {K L : Type*} [Field K] [Field L] [NumberField L] [Algebra K L]
+section DedekindDomain
+
+variable {L R : Type*} [Field L] [CommRing R] [IsDedekindDomain R] [Algebra R L]
+  [IsFractionRing R L]
+
+section Group
+
+variable {G : Type*} [Group G] [MulSemiringAction G L] [MulSemiringAction G R]
+  [SMulDistribClass G R L]
 
 /-- The image under `σ` of the localization at `w` is contained in the localization at `σ • w`. -/
-private theorem smul_valuationSubringAtPrime_le (σ : L ≃ₐ[K] L) (w : HeightOneSpectrum (𝓞 L)) :
+private theorem smul_valuationSubringAtPrime_le (σ : G) (w : HeightOneSpectrum R) :
     σ • valuationSubringAtPrime L w ≤ valuationSubringAtPrime L (σ • w) := by
   intro x hx
   obtain ⟨y, ⟨a, s, hs, rfl⟩, rfl⟩ := (ValuationSubring.mem_smul_pointwise_iff_exists _ _ _).1 hx
   refine ⟨σ • a, σ • s, ?_, ?_⟩
   · simpa [Ideal.primeCompl, Ideal.smul_mem_pointwise_smul_iff] using hs
-  · simp [AlgEquiv.smul_def]
+  · simp [algebraMap.smul']
 
-/-- The localization of `𝓞 L` at `σ • w` is the image under `σ` of the localization at `w`. -/
-theorem smul_valuationSubringAtPrime (σ : L ≃ₐ[K] L) (w : HeightOneSpectrum (𝓞 L)) :
+/-- The localization of a Dedekind domain `R` at `σ • w`, as a valuation subring of its fraction
+field `L`, is the image under `σ` of the localization at `w`, for a group acting compatibly on `R`
+and `L` by ring automorphisms. -/
+theorem smul_valuationSubringAtPrime (σ : G) (w : HeightOneSpectrum R) :
     σ • valuationSubringAtPrime L w = valuationSubringAtPrime L (σ • w) := by
   refine le_antisymm (smul_valuationSubringAtPrime_le σ w) ?_
   rw [ValuationSubring.subset_pointwise_smul_iff]
   simpa using smul_valuationSubringAtPrime_le σ⁻¹ (σ • w)
 
-/-- The stabilizer of a finite place `w` of `L` in `Gal(L/K)` is Mathlib's decomposition subgroup
-of the valuation subring `valuationSubringAtPrime L w`. -/
-theorem stabilizer_eq_decompositionSubgroup (w : HeightOneSpectrum (𝓞 L)) :
+end Group
+
+variable {K : Type*} [Field K] [Algebra K L] [MulSemiringAction (L ≃ₐ[K] L) R]
+  [SMulDistribClass (L ≃ₐ[K] L) R L]
+
+/-- The stabilizer of a place `w` of a Dedekind domain `R` with fraction field `L`, under an
+action of `Gal(L/K)` on `R` compatible with its action on `L`, is Mathlib's decomposition subgroup
+of the valuation subring `valuationSubringAtPrime L w`. For `R = 𝓞 L` this is the stabilizer of
+a finite place of the number field `L`. -/
+theorem stabilizer_eq_decompositionSubgroup (w : HeightOneSpectrum R) :
     MulAction.stabilizer (L ≃ₐ[K] L) w =
       (valuationSubringAtPrime L w).decompositionSubgroup K := by
   ext σ
@@ -78,5 +96,7 @@ theorem stabilizer_eq_decompositionSubgroup (w : HeightOneSpectrum (𝓞 L)) :
     MulAction.mem_stabilizer_iff, smul_valuationSubringAtPrime,
     valuationSubringAtPrime_eq_valuationSubring, valuationSubringAtPrime_eq_valuationSubring,
     (valuationSubring_valuation_injective L).eq_iff]
+
+end DedekindDomain
 
 end IsDedekindDomain.HeightOneSpectrum
