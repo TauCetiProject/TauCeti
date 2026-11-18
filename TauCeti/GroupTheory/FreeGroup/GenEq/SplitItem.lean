@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Embedding
+public import Mathlib.Data.Fin.Tuple.Basic
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Section
 import TauCeti.Data.Fin.Basic
 
@@ -21,16 +22,17 @@ replaces `h_k` and every other item keeps its place; the boundary `j` of `Ω` be
 boundary connections move with the boundaries and items.
 
 The substitution `h_k ↦ h′_k h′_{k+1}` (`TauCeti.GenEq.splitList` on words with letters,
-`TauCeti.GenEq.splitWord` as a tuple of words in the new items) carries the words `h[i, j]` of
+`TauCeti.GenEq.splitWord` as a tuple of words in the new items) contracts the two adjacent items
+`h′_k`, `h′_{k+1}` (`Fin.contractNth`). It carries the words `h[i, j]` of
 `Ω` to the words of the result between the renumbered boundaries
 (`TauCeti.GenEq.segment_splitItem`), hence the equations of `Ω` to those of the result, when `h_k`
 carries no constant base (`TauCeti.GenEq.equations_splitItem`). Consequently a tuple is a point of
 the system of the result exactly when its image under the substitution is a point of `Ω*`
 (`TauCeti.GenEq.mem_V_splitItem_iff`), and substituting words into a side of the result is
-substituting into the corresponding side of `Ω`, with the two halves of `h_k` concatenated
-(`TauCeti.GenEq.substituteVars_splitList`).
+substituting into the corresponding side of `Ω`, with the words of the two halves of `h_k`
+contracted by concatenation (`TauCeti.GenEq.substituteVars_splitList`).
 
-A constant base on `h_k` is moved to `h′_k`; that case does not occur in ET5, where the split
+A constant base on `h_k` is moved to `h′_{k+1}`; that case does not occur in ET5, where the split
 item carries no constant base, and every statement about equations excludes it.
 
 ## Main definitions
@@ -71,7 +73,7 @@ variable {A : Type*} (Ω : GenEq A)
 result replace `h_k`, and the boundary `j` of `Ω` becomes the boundary `j` if `j ≤ k` and `j + 1`
 otherwise, so that the new boundary is `k + 1`. The bases, signs, duality, constant bases and
 boundary connections are those of `Ω` at the renumbered boundaries and items; a constant base on
-`h_k` goes to `h′_k`. -/
+`h_k` goes to `h′_{k+1}`. -/
 abbrev splitItem (k : Fin Ω.numItems) : GenEq A where
   numItems := Ω.numItems + 1
   numBases := Ω.numBases
@@ -82,7 +84,7 @@ abbrev splitItem (k : Fin Ω.numItems) : GenEq A where
   dual := Ω.dual
   dual_involutive := Ω.dual_involutive
   constBases := Ω.constBases.map
-    ((Fin.succAboveEmb k.succ).prodMap (Function.Embedding.refl _))
+    ((Fin.succAboveEmb k.castSucc).prodMap (Function.Embedding.refl _))
   connections := Ω.connections.map
     ((Fin.succAboveEmb k.succ.castSucc).prodMap
       ((Function.Embedding.refl _).prodMap (Fin.succAboveEmb k.succ.castSucc)))
@@ -102,15 +104,14 @@ renumbering the other items as in `Ω.splitItem k`. No free reduction takes plac
 def splitList (k : Fin Ω.numItems) (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
     List ((Fin (Ω.numItems + 1) ⊕ A) × Bool) :=
   w.flatMap (FreeGroup.substituteLetter (Sum.elim
-    (fun j => if j = k then [(Sum.inl k.castSucc, true), (Sum.inl k.succ, true)]
-      else [(Sum.inl (k.succ.succAbove j), true)])
+    (Fin.contractNth k.castSucc (· ++ ·) fun j => [(Sum.inl j, true)])
     fun a => [(Sum.inr a, true)]))
 
 /-- The substitution `h_k ↦ h′_k h′_{k+1}` of ET5 for a split item, as a tuple of words in
-`F(A)[h′]`: every other item goes to the item with its new number. -/
-def splitWord (k j : Fin Ω.numItems) : GX (FreeGroup A) (Fin (Ω.numItems + 1)) :=
-  if j = k then inr (FreeGroup.of k.castSucc) * inr (FreeGroup.of k.succ)
-  else inr (FreeGroup.of (k.succ.succAbove j))
+`F(A)[h′]`: the product of the adjacent items `h′_k`, `h′_{k+1}` replaces `h_k`, and every other
+item goes to the item with its new number. -/
+def splitWord (k : Fin Ω.numItems) : Fin Ω.numItems → GX (FreeGroup A) (Fin (Ω.numItems + 1)) :=
+  Fin.contractNth k.castSucc (· * ·) fun j => inr (FreeGroup.of j)
 
 variable {Ω} {k : Fin Ω.numItems}
 
@@ -150,6 +151,33 @@ theorem splitList_invRev (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
     Ω.splitList k (FreeGroup.invRev w) = FreeGroup.invRev (Ω.splitList k w) :=
   FreeGroup.flatMap_substituteLetter_invRev _ w
 
+/-- The substitution `h_k ↦ h′_k h′_{k+1}` takes the item `h_k` to `h′_k h′_{k+1}`. -/
+@[simp]
+theorem splitList_singleton_inl_self :
+    Ω.splitList k [(Sum.inl k, true)] = [(Sum.inl k.castSucc, true), (Sum.inl k.succ, true)] := by
+  simp [splitList, Fin.contractNth_apply_of_eq k.castSucc _ _ k rfl]
+
+/-- The substitution `h_k ↦ h′_k h′_{k+1}` takes `h_k⁻¹` to `h′_{k+1}⁻¹ h′_k⁻¹`. -/
+@[simp]
+theorem splitList_singleton_inl_self_false :
+    Ω.splitList k [(Sum.inl k, false)] =
+      [(Sum.inl k.succ, false), (Sum.inl k.castSucc, false)] := by
+  simp [splitList, Fin.contractNth_apply_of_eq k.castSucc _ _ k rfl, FreeGroup.invRev]
+
+/-- The substitution `h_k ↦ h′_k h′_{k+1}` takes an item `h_j ^ ±1` other than `h_k ^ ±1` to the
+item with its new number. -/
+@[simp]
+theorem splitList_singleton_inl_of_ne {j : Fin Ω.numItems} (hj : j ≠ k) (b : Bool) :
+    Ω.splitList k [(Sum.inl j, b)] = [(Sum.inl (k.castSucc.succAbove j), b)] := by
+  cases b <;> simp [splitList, FreeGroup.invRev,
+    Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne hj).symm]
+
+/-- The substitution `h_k ↦ h′_k h′_{k+1}` keeps the letters of `A^{±1}`. -/
+@[simp]
+theorem splitList_singleton_inr (a : A) (b : Bool) :
+    Ω.splitList k [(Sum.inr a, b)] = [(Sum.inr a, b)] := by
+  cases b <;> simp [splitList, FreeGroup.invRev]
+
 /-- The item `h_j` of `Ω` becomes the items between the renumbered boundaries `j` and `j + 1`
 of `Ω.splitItem k`: `h′_k h′_{k+1}` for `j = k`, and a single item otherwise. -/
 private theorem segment_splitItem_castSucc_succ (x : Fin Ω.numItems) :
@@ -158,22 +186,23 @@ private theorem segment_splitItem_castSucc_succ (x : Fin Ω.numItems) :
   have h₁ := (Ω.splitItem k).segment_succ x.castSucc true
   have h₂ := (Ω.splitItem k).segment_succ x.succ true
   simp only [Fin.val_castSucc, Fin.val_succ] at h₁ h₂
-  simp only [splitList, List.flatMap_cons, List.flatMap_nil, List.append_nil,
-    FreeGroup.substituteLetter_true, Sum.elim_inl]
   rw [val_succAbove_succ_castSucc, val_succAbove_succ_castSucc]
   simp only [Fin.val_castSucc, Fin.val_succ]
   rcases lt_trichotomy x k with h | h | h
   · have : (x : ℕ) < k := h
-    simp only [(by lia : (x : ℕ) ≤ k), (by lia : (x : ℕ) + 1 ≤ k), h.ne, ite_true, ite_false, h₁,
-      Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_succ_iff.2 h.le)]
+    simp only [(by lia : (x : ℕ) ≤ k), (by lia : (x : ℕ) + 1 ≤ k), ite_true, h₁,
+      splitList_singleton_inl_of_ne h.ne,
+      Fin.succAbove_of_castSucc_lt _ _ (Fin.castSucc_lt_castSucc_iff.2 h)]
   · subst h
-    simp only [le_refl, ite_true, (by lia : ¬ (x : ℕ) + 1 ≤ x), ite_false]
+    simp only [le_refl, ite_true, (by lia : ¬ (x : ℕ) + 1 ≤ x), ite_false,
+      splitList_singleton_inl_self]
     rw [← (Ω.splitItem x).segment_append (Nat.le_succ _) (Nat.le_succ _) (by simp; lia), h₁,
       h₂]
     rfl
   · have : (k : ℕ) < x := h
-    simp only [(by lia : ¬ (x : ℕ) ≤ k), (by lia : ¬ (x : ℕ) + 1 ≤ k), h.ne', ite_false,
-      Fin.succAbove_of_le_castSucc _ _ (Fin.succ_le_castSucc_iff.2 h)]
+    simp only [(by lia : ¬ (x : ℕ) ≤ k), (by lia : ¬ (x : ℕ) + 1 ≤ k), ite_false,
+      splitList_singleton_inl_of_ne h.ne',
+      Fin.succAbove_of_le_castSucc _ _ (Fin.castSucc_le_castSucc_iff.2 h.le)]
     simpa only [Fin.val_succ] using h₂
 
 /-- The words `h′[0, j′]` of `Ω.splitItem k` from the start to a renumbered boundary are the
@@ -224,12 +253,11 @@ theorem basicEquation_splitItem (μ : Fin Ω.numBases) :
 /-- The coefficient equation of a constant base of `Ω` on an item other than `h_k`, moved to
 `Ω.splitItem k`, is the coefficient equation in `Ω` with the item renumbered. -/
 theorem coeffEquation_splitItem {b : Fin Ω.numItems × (A × Bool)} (hb : b.1 ≠ k) :
-    (Ω.splitItem k).coeffEquation (k.succ.succAbove b.1, b.2) =
+    (Ω.splitItem k).coeffEquation (k.castSucc.succAbove b.1, b.2) =
       Prod.map (Ω.splitList k) (Ω.splitList k) (Ω.coeffEquation b) := by
   obtain ⟨j, a, t⟩ := b
-  refine Prod.ext ?_ ?_
-  · simp [splitList, hb]
-  · cases t <;> simp [splitList, FreeGroup.invRev]
+  have hj : j ≠ k := hb
+  exact Prod.ext (by simp [hj]) (by simp)
 
 /-- The boundary equation of a triple of `Ω.splitItem k` at renumbered boundaries is the boundary
 equation of the triple in `Ω` with `h_k` replaced by `h′_k h′_{k+1}`. -/
@@ -274,10 +302,10 @@ and `h′_{k+1}`, and reads every other item at its new number. -/
 @[simp]
 theorem eval_splitWord {H : Type*} [Group H] (ι : FreeGroup A →* H) (v : Fin (Ω.numItems + 1) → H)
     (j : Fin Ω.numItems) :
-    eval ι v (Ω.splitWord k j) = if j = k then v k.castSucc * v k.succ
-      else v (k.succ.succAbove j) := by
-  rw [splitWord]
-  split_ifs <;> simp
+    eval ι v (Ω.splitWord k j) = Fin.contractNth k.castSucc (· * ·) v j := by
+  rw [splitWord, ← Function.comp_apply (f := eval ι v),
+    Fin.comp_contractNth _ _ (map_mul (eval ι v))]
+  simp [Function.comp_def]
 
 /-- Evaluating a word with `h_k` replaced by `h′_k h′_{k+1}` is evaluating the word at the image
 of the point under the word map of the substitution. -/
@@ -290,7 +318,11 @@ theorem lift_mk_splitList {H : Type*} [Group H] (ι : FreeGroup A →* H)
   congr 1
   refine FreeGroup.ext_hom _ _ fun x => ?_
   rcases x with j | a
-  · by_cases h : j = k <;> simp [h, FreeGroup.lift_mk]
+  · -- Evaluation commutes with contracting the words of `h′_k` and `h′_{k+1}`.
+    have h := congr_fun (Fin.comp_contractNth (· ++ ·) (· * ·)
+      (f := fun l => FreeGroup.lift (Sum.elim v (ι ∘ FreeGroup.of)) (FreeGroup.mk l))
+      (fun _ _ => by rw [← FreeGroup.mul_mk, map_mul]) k.castSucc fun i => [(Sum.inl i, true)]) j
+    simpa [FreeGroup.lift_mk, Function.comp_def] using h
   · simp [FreeGroup.lift_mk]
 
 /-- Substituting words for the items of `Ω.splitItem k` into a word with `h_k` replaced by
@@ -298,13 +330,22 @@ theorem lift_mk_splitList {H : Type*} [Group H] (ι : FreeGroup A →* H)
 `h′_k` and `h′_{k+1}` for `h_k`. -/
 theorem substituteVars_splitList (W : Fin (Ω.numItems + 1) → List (A × Bool))
     (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
-    substituteVars W (Ω.splitList k w) = substituteVars
-      (fun j => if j = k then W k.castSucc ++ W k.succ else W (k.succ.succAbove j)) w := by
-  rw [substituteVars, substituteVars, splitList, List.flatMap_assoc]
-  refine List.flatMap_congr fun ⟨x, b⟩ _ => ?_
-  rcases x with j | a
-  · cases b <;> by_cases h : j = k <;> simp [h, FreeGroup.flatMap_substituteLetter_invRev]
-  · cases b <;> simp [FreeGroup.invRev]
+    substituteVars W (Ω.splitList k w) =
+      substituteVars (Fin.contractNth k.castSucc (· ++ ·) W) w := by
+  -- Substitution commutes with contracting the words of `h′_k` and `h′_{k+1}`.
+  have hW (j : Fin Ω.numItems) : substituteVars W
+      (Fin.contractNth k.castSucc (· ++ ·) (fun i => [(Sum.inl i, true)]) j) =
+        Fin.contractNth k.castSucc (· ++ ·) W j := by
+    simpa [Function.comp_def] using congr_fun (Fin.comp_contractNth (· ++ ·) (· ++ ·)
+      (FreeGroup.substituteVars_append W) k.castSucc fun i => [(Sum.inl i, true)]) j
+  induction w with
+  | nil => simp
+  | cons x w ih =>
+    rw [← List.singleton_append, splitList_append, FreeGroup.substituteVars_append,
+      FreeGroup.substituteVars_append, ih]
+    obtain ⟨j | a, b⟩ := x
+    · cases b <;> simp [splitList, hW, FreeGroup.substituteVars_invRev]
+    · simp
 
 /-- When `h_k` carries no constant base, a tuple is a point of the system of `Ω.splitItem k`
 exactly when its image under `h_k ↦ h′_k h′_{k+1}` is a point of `Ω*`. -/
@@ -319,8 +360,7 @@ theorem mem_V_splitItem_iff (hk' : ¬ Ω.IsConstantItem k) {H : Type*} [Group H]
 with those of `h′_k` and `h′_{k+1}` concatenated, a boundary of `Ω` sits in the words of `U` at
 the position of its renumbered boundary in the words of `U′`. -/
 theorem Solution.prefixLength_succAbove_of_word_eq (U' : (Ω.splitItem k).Solution) (U : Ω.Solution)
-    (h : U.word = fun j => if j = k then U'.word k.castSucc ++ U'.word k.succ
-      else U'.word (k.succ.succAbove j)) (i : Fin (Ω.numItems + 1)) :
+    (h : U.word = Fin.contractNth k.castSucc (· ++ ·) U'.word) (i : Fin (Ω.numItems + 1)) :
     U'.prefixLength (k.succ.castSucc.succAbove i) = U.prefixLength i := by
   have h₁ := U'.length_substituteVars_segment_eq_sub true (k.succ.castSucc.succAbove 0)
     (k.succ.castSucc.succAbove i)

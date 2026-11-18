@@ -270,46 +270,6 @@ variable {A : Type*} {Ω : GenEq A} {k : Fin Ω.numItems}
 
 /-! ### Introducing a boundary -/
 
-/-- In an `F(A)`-group, the boundary equation of the dual triple `(q, Δ(μ), p)` follows from the
-basic equation of `μ` and the boundary equation of `(p, μ, q)`, for a boundary `p` of `μ` and a
-boundary `q` of `Δ(μ)`. -/
-private theorem lift_mk_boundaryEquation_dual {T : GenEq A} {H : Type*} [Group H]
-    (f : Fin T.numItems ⊕ A → H) {p q : Fin (T.numItems + 1)} {μ : Fin T.numBases}
-    (hp₁ : T.left μ ≤ p) (hp₂ : p ≤ T.right μ) (hq₁ : T.left (T.dual μ) ≤ q)
-    (hq₂ : q ≤ T.right (T.dual μ)) (hb : FreeGroup.lift f (FreeGroup.mk (T.basicEquation μ).1) =
-      FreeGroup.lift f (FreeGroup.mk (T.basicEquation μ).2))
-    (h : FreeGroup.lift f (FreeGroup.mk (T.boundaryEquation (p, μ, q)).1) =
-      FreeGroup.lift f (FreeGroup.mk (T.boundaryEquation (p, μ, q)).2)) :
-    FreeGroup.lift f (FreeGroup.mk (T.boundaryEquation (q, T.dual μ, p)).1) =
-      FreeGroup.lift f (FreeGroup.mk (T.boundaryEquation (q, T.dual μ, p)).2) := by
-  have hμ := T.dual_involutive μ
-  rw [boundaryEquation_fst] at h ⊢
-  by_cases hs : T.sign μ = T.sign (T.dual μ)
-  · rw [T.boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) hs] at h
-    rw [T.boundaryEquation_snd_of_sign_eq (c := (q, T.dual μ, p)) (by simp [hμ, hs])]
-    simpa only [hμ] using h.symm
-  · -- With `g i j` the value of `h[i, j]`: `g(α, β) = g(α′, β′)⁻¹` and `g(α, p) = g(q, β′)⁻¹`.
-    rw [T.boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) hs, T.lift_mk_segment f _ _ false,
-      Bool.cond_false] at h
-    rw [T.boundaryEquation_snd_of_sign_ne (c := (q, T.dual μ, p)) (by simpa [hμ, eq_comm] using hs),
-      T.lift_mk_segment f _ _ false, Bool.cond_false]
-    simp only [hμ]
-    have hg {i j l : ℕ} (hij : i ≤ j) (hjl : j ≤ l) (hl : l ≤ T.numItems) :
-        FreeGroup.lift f (FreeGroup.mk (T.segment i l true)) =
-          FreeGroup.lift f (FreeGroup.mk (T.segment i j true)) *
-            FreeGroup.lift f (FreeGroup.mk (T.segment j l true)) := by
-      rw [← T.segment_append hij hjl hl, ← FreeGroup.mul_mk, map_mul]
-    have hb' : FreeGroup.lift f (FreeGroup.mk (T.segment (T.left μ) (T.right μ) true)) =
-        (FreeGroup.lift f (FreeGroup.mk
-          (T.segment (T.left (T.dual μ)) (T.right (T.dual μ)) true)))⁻¹ := by
-      rw [basicEquation_fst, basicEquation_snd, T.lift_mk_segment f _ _ (T.sign μ),
-        T.lift_mk_segment f _ _ (T.sign (T.dual μ))] at hb
-      cases h₁ : T.sign μ <;> cases h₂ : T.sign (T.dual μ) <;>
-        simp only [h₁, h₂, Bool.cond_true, Bool.cond_false, not_true_eq_false] at hb hs ⊢
-      exacts [inv_eq_iff_eq_inv.1 hb, hb]
-    rw [hg hp₁ hp₂ (T.right μ).is_le, hg hq₁ hq₂ (T.right (T.dual μ)).is_le, h, mul_inv_rev] at hb'
-    rw [mul_left_cancel hb', inv_inv]
-
 variable (Ω) in
 /-- Tie the boundary `p` inside `μ` to a new boundary splitting the item `h_k` of `Δ(μ)` (ET5,
 second kind). -/
@@ -363,17 +323,18 @@ private theorem segment_splitItem_left_succ {ν : Fin Ω.numBases} (hk : k ∈ �
   exact ((Ω.splitItem k).segment_append (succAbove_left_le hk) (Nat.le_add_right _ 1)
     (by simp)).symm
 
-/-- In `Ω.splitItem k`, a base containing `h_k` continues from the new boundary with `h′_{k+1}`
-followed by the image of `h[k + 1, β]`. -/
-private theorem segment_splitItem_succ_right {ν : Fin Ω.numBases} (hk : k ∈ Ω.baseItems ν) :
-    (Ω.splitItem k).segment (k.succ.castSucc : ℕ) (k.succ.castSucc.succAbove (Ω.right ν)) true =
-      [(Sum.inl k.succ, true)] ++ Ω.splitList k (Ω.segment (k + 1) (Ω.right ν) true) := by
-  have h₂ := segment_splitItem (k := k) k.succ (Ω.right ν) true
-  simp only [Fin.succAbove_castSucc_self, Fin.val_succ] at h₂
-  rw [← h₂, ← (Ω.splitItem k).segment_succ k.succ true]
+/-- In `Ω.splitItem k`, the image of `h[k, β]` for a base containing `h_k` is `h′_k` followed by
+the word from the new boundary to the end of the base. -/
+private theorem segment_splitItem_castSucc_right {ν : Fin Ω.numBases} (hk : k ∈ Ω.baseItems ν) :
+    [(Sum.inl k.castSucc, true)] ++ (Ω.splitItem k).segment (k.succ.castSucc : ℕ)
+        (k.succ.castSucc.succAbove (Ω.right ν)) true =
+      Ω.splitList k (Ω.segment k (Ω.right ν) true) := by
+  have h := segment_splitItem (k := k) k.castSucc (Ω.right ν) true
+  rw [val_succAbove_castSucc_self, Fin.val_castSucc] at h
+  rw [← h, ← (Ω.splitItem k).segment_succ k.castSucc true]
   simp only [Fin.val_castSucc, Fin.val_succ]
-  exact ((Ω.splitItem k).segment_append (Nat.le_add_right _ 1) (add_two_le_succAbove_right hk)
-    (Fin.is_le _)).symm
+  exact (Ω.splitItem k).segment_append (Nat.le_add_right _ 1)
+    (by have := add_two_le_succAbove_right hk; lia) (Fin.is_le _)
 
 include hk in
 /-- The boundary equation of the new connection of `Ω.tieNew p μ k hp hk` holds at a tuple
@@ -388,33 +349,34 @@ private theorem lift_mk_boundaryEquation_tieNew_iff {H : Type*} [Group H] (ι : 
     v k.castSucc = FreeGroup.lift (Sum.elim (wordMap ι (Ω.splitWord k) v) (ι ∘ FreeGroup.of))
       (FreeGroup.mk (Ω.tieList p μ k)) := by
   have hv := lift_mk_splitList (k := k) ι v
-  rw [boundaryEquation_fst, segment_splitItem, hv]
-  dsimp only
-  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
-  · -- The new equation reads `h[α(μ), p] = h[α(Δμ), k] h′_k`.
-    rw [(Ω.splitItem k).boundaryEquation_snd_of_sign_eq (c := (_, μ, _)) hs]
-    dsimp only
-    simp only [tieList, hs, ↓reduceIte]
-    rw [segment_splitItem_left_succ hk, ← FreeGroup.mul_mk, map_mul, hv, ← FreeGroup.mul_mk,
-      map_mul, segment_false, ← FreeGroup.inv_mk, map_inv, eq_inv_mul_iff_mul_eq, eq_comm]
-    simp
-  · -- The new equation reads `h[α(μ), p] = (h′_{k+1} h[k + 1, β(Δμ)])⁻¹`.
-    have e : Ω.segment k (Ω.right (Ω.dual μ)) true =
-        [(Sum.inl k, true)] ++ Ω.segment (k + 1) (Ω.right (Ω.dual μ)) true := by
-      rw [← Ω.segment_append (Nat.le_add_right (k : ℕ) 1) (Ω.mem_baseItems.1 hk).2
-        (Ω.right _).is_le, Ω.segment_succ k true]
-    have hof {β : Type _} (f : β → H) (x : β) :
-        FreeGroup.lift f (FreeGroup.mk [(x, true)]) = f x :=
-      FreeGroup.lift_apply_of
-    have hvk : wordMap ι (Ω.splitWord k) v k = v k.castSucc * v k.succ := by simp
-    rw [(Ω.splitItem k).boundaryEquation_snd_of_sign_ne (c := (_, μ, _)) hs]
-    dsimp only
-    simp only [tieList, hs, ↓reduceIte]
-    rw [(Ω.splitItem k).lift_mk_segment _ _ _ false, Bool.cond_false,
-      segment_splitItem_succ_right hk, ← FreeGroup.mul_mk, map_mul, hv, e, ← FreeGroup.mul_mk,
-      map_mul, ← FreeGroup.mul_mk, map_mul, hof, hof, Sum.elim_inl, Sum.elim_inl, hvk,
-      eq_comm (a := v k.castSucc), mul_assoc, mul_assoc, mul_eq_left, ← mul_assoc,
-      mul_eq_one_iff_inv_eq, eq_comm]
+  have hmul {β : Type _} (g : β → H) (l l' : List (β × Bool)) :
+      FreeGroup.lift g (FreeGroup.mk (l ++ l')) =
+        FreeGroup.lift g (FreeGroup.mk l) * FreeGroup.lift g (FreeGroup.mk l') := by
+    rw [← FreeGroup.mul_mk, map_mul]
+  -- Evaluation: `tieList = t h[α(μ), p]`, and the right side of the new equation is `t⁻¹ h′_k`,
+  -- with `t = h[α(Δμ), k]⁻¹` when `ε(μ) = ε(Δμ)` and `t = h[k, β(Δμ)]` otherwise.
+  obtain ⟨t, ht, hR⟩ : ∃ t, Ω.tieList p μ k = t ++ Ω.segment (Ω.left μ) p true ∧
+      FreeGroup.lift (Sum.elim v (ι ∘ FreeGroup.of)) (FreeGroup.mk ((Ω.splitItem k).boundaryEquation
+        (k.succ.castSucc.succAbove p, μ, k.succ.castSucc)).2) =
+      (FreeGroup.lift (Sum.elim (wordMap ι (Ω.splitWord k) v) (ι ∘ FreeGroup.of))
+        (FreeGroup.mk t))⁻¹ * v k.castSucc := by
+    by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+    · -- The right side is `h′[α(Δμ), k + 1] = h[α(Δμ), k] h′_k`.
+      refine ⟨_, ite_eq_left hs, ?_⟩
+      rw [(Ω.splitItem k).boundaryEquation_snd_of_sign_eq (c := (_, μ, _)) hs]
+      dsimp only
+      rw [segment_splitItem_left_succ hk, hmul, hv, Ω.lift_mk_segment _ _ _ false]
+      simp
+    · -- The right side is `h′[k + 1, β(Δμ)]⁻¹`, where `h′_k h′[k + 1, β(Δμ)] = h[k, β(Δμ)]`.
+      refine ⟨_, ite_eq_right hs, ?_⟩
+      rw [(Ω.splitItem k).boundaryEquation_snd_of_sign_ne (c := (_, μ, _)) hs]
+      dsimp only
+      rw [(Ω.splitItem k).lift_mk_segment _ _ _ false, ← hv, ← segment_splitItem_castSucc_right hk,
+        hmul]
+      simp
+  -- Group identity: `x = t⁻¹ h′_k ↔ h′_k = t x`.
+  rw [hR, boundaryEquation_fst, segment_splitItem, hv, ht, hmul]
+  exact eq_inv_mul_iff_mul_eq.trans eq_comm
 
 include hp hk hk' in
 /-- A tuple is a point of the system of `Ω.tieNew p μ k hp hk` exactly when its image under
@@ -432,8 +394,8 @@ private theorem mem_V_tieNew_iff {H : Type*} [Group H] (ι : FreeGroup A →* H)
     Set.forall_mem_singleton]
   -- The equation of the dual connection follows from the new one and the basic equation of `μ`.
   refine ⟨fun h => ⟨h.1, h.2.1⟩, fun h => ⟨h.1, h.2, ?_⟩⟩
-  exact lift_mk_boundaryEquation_dual _ hp₁.le hp₂.le hq₁.le hq₂.le
-    (h.1 _ ((Ω.splitItem k).basicEquation_mem_equations μ)) h.2
+  exact ((Ω.splitItem k).lift_mk_boundaryEquation_dual_iff _ hp₁.le hp₂.le hq₁.le hq₂.le
+    (h.1 _ ((Ω.splitItem k).basicEquation_mem_equations μ))).2 h.2
 
 variable (Ω) in
 /-- The inverse of the substitution `h_k ↦ h′_k h′_{k+1}` on the points of
@@ -441,32 +403,34 @@ variable (Ω) in
 `h′_{k+1} ↦ tieList⁻¹ h_k`, and every other item to the item with its old number. -/
 private def tieWord (p : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases) (k : Fin Ω.numItems) :
     Fin (Ω.numItems + 1) → GX (FreeGroup A) (Fin Ω.numItems) :=
-  Fin.insertNth (α := fun _ => GX (FreeGroup A) (Fin Ω.numItems)) k.succ
-    ((EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.tieList p μ k)))⁻¹ *
-      inr (FreeGroup.of k))
+  Fin.insertNth (α := fun _ => GX (FreeGroup A) (Fin Ω.numItems)) k.castSucc
+    (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.tieList p μ k)))
     (Function.update (fun j => inr (FreeGroup.of j)) k
-      (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.tieList p μ k))))
+      ((EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.tieList p μ k)))⁻¹ *
+        inr (FreeGroup.of k)))
 
 private theorem tieWord_castSucc : Ω.tieWord p μ k k.castSucc =
     EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.tieList p μ k)) := by
-  rw [tieWord, ← Fin.succAbove_succ_self, Fin.insertNth_apply_succAbove, Function.update_self]
+  rw [tieWord, Fin.insertNth_apply_same]
 
 private theorem tieWord_succ : Ω.tieWord p μ k k.succ =
     (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.tieList p μ k)))⁻¹ *
       inr (FreeGroup.of k) := by
-  rw [tieWord, Fin.insertNth_apply_same]
+  rw [tieWord, ← Fin.succAbove_castSucc_self, Fin.insertNth_apply_succAbove, Function.update_self]
 
 private theorem tieWord_succAbove {j : Fin Ω.numItems} (hj : j ≠ k) :
-    Ω.tieWord p μ k (k.succ.succAbove j) = inr (FreeGroup.of j) := by
+    Ω.tieWord p μ k (k.castSucc.succAbove j) = inr (FreeGroup.of j) := by
   rw [tieWord, Fin.insertNth_apply_succAbove, Function.update_of_ne hj]
 
 /-- Substituting `tieWord` into `h_k ↦ h′_k h′_{k+1}` gives back every item. -/
 private theorem eval_tieWord_splitWord (j : Fin Ω.numItems) :
     eval inl (Ω.tieWord p μ k) (Ω.splitWord k j) = inr (FreeGroup.of j) := by
   rw [eval_splitWord]
-  split_ifs with h
-  · rw [h, tieWord_castSucc, tieWord_succ, mul_inv_cancel_left]
-  · rw [tieWord_succAbove h]
+  rcases eq_or_ne j k with rfl | h
+  · rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, tieWord_castSucc, tieWord_succ,
+      mul_inv_cancel_left]
+  · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm,
+      tieWord_succAbove h]
 
 /-- The substitution `h_k ↦ h′_k h′_{k+1}` undoes `tieWord` on every tuple. -/
 private theorem wordMap_splitWord_wordMap_tieWord {H : Type*} [Group H] (ι : FreeGroup A →* H)
@@ -495,16 +459,14 @@ private theorem wordMap_tieWord_wordMap_splitWord {H : Type*} [Group H] (ι : Fr
         (EqIneqSystem.toGX _ FreeGroup.of (FreeGroup.mk (Ω.tieList p μ k))) := by
     rw [EqIneqSystem.eval_toGX, EqIneqSystem.eval_eq_lift]
   funext x
-  rcases Fin.eq_self_or_eq_succAbove k.succ x with rfl | ⟨j, rfl⟩
-  · rw [wordMap_apply, tieWord_succ, map_mul, map_inv, eval_inr_of, ← hcs, ← hk₀,
-      wordMap_apply, eval_splitWord]
-    simp
-  · by_cases hj : j = k
-    · subst hj
-      rw [Fin.succAbove_succ_self, wordMap_apply, tieWord_castSucc,
-        ← hcs, ← hk₀]
-    · rw [wordMap_apply, tieWord_succAbove hj, eval_inr_of, wordMap_apply, eval_splitWord]
-      simp [hj]
+  rcases Fin.eq_self_or_eq_succAbove k.castSucc x with rfl | ⟨j, rfl⟩
+  · rw [wordMap_apply, tieWord_castSucc, ← hcs, ← hk₀]
+  · rcases eq_or_ne j k with rfl | hj
+    · rw [Fin.succAbove_castSucc_self, wordMap_apply, tieWord_succ, map_mul, map_inv, eval_inr_of,
+        ← hcs, ← hk₀, wordMap_apply, eval_splitWord, Fin.contractNth_apply_of_eq _ _ _ _ rfl,
+        inv_mul_cancel_left]
+    · rw [wordMap_apply, tieWord_succAbove hj, eval_inr_of, wordMap_apply, eval_splitWord,
+        Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne hj).symm]
 
 include hk' in
 /-- **ET5, second kind, on group solutions.** The substitution `h_k ↦ h′_k h′_{k+1}` maps the
@@ -585,17 +547,20 @@ namespace Solution
 solution of `Ω`: the item `h_k` gets the concatenation of the words of the two new items, and
 every other item keeps its word. -/
 def ofTieNew (U : (Ω.tieNew p μ k hp hk).Solution) : Ω.Solution where
-  word j := if j = k then U.word k.castSucc ++ U.word k.succ else U.word (k.succ.succAbove j)
+  word := Fin.contractNth k.castSucc (· ++ ·) U.word
   isReduced_word j := by
-    split_ifs
-    · rw [← substituteVars_segment_tieNew hp hk U]
+    rcases eq_or_ne j k with h | h
+    · rw [h, Fin.contractNth_apply_of_eq _ _ _ _ rfl, ← substituteVars_segment_tieNew hp hk U]
       exact U.isReduced_substituteVars_segment_of_le (Ω.dual μ) (succAbove_left_le hk)
         (add_two_le_succAbove_right hk)
-    · exact U.isReduced_word _
+    · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm]
+      exact U.isReduced_word _
   word_ne_nil j := by
-    split_ifs
-    · exact List.append_ne_nil_of_left_ne_nil (U.word_ne_nil _) _
-    · exact U.word_ne_nil _
+    rcases eq_or_ne j k with h | h
+    · rw [h, Fin.contractNth_apply_of_eq _ _ _ _ rfl]
+      exact List.append_ne_nil_of_left_ne_nil (U.word_ne_nil _) _
+    · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm]
+      exact U.word_ne_nil _
   isReduced_subst e he := by
     have h := U.isReduced_subst _ (map_mem_equations_tieNew hp hk hk' he)
     rwa [Prod.map_fst, Prod.map_snd, substituteVars_splitList, substituteVars_splitList] at h
@@ -608,8 +573,7 @@ concatenation of the words of `h′_k` and `h′_{k+1}`, and to every other item
 with its new number. -/
 @[simp]
 theorem ofTieNew_word (U : (Ω.tieNew p μ k hp hk).Solution) (j : Fin Ω.numItems) :
-    (U.ofTieNew hp hk hk').word j =
-      if j = k then U.word k.castSucc ++ U.word k.succ else U.word (k.succ.succAbove j) :=
+    (U.ofTieNew hp hk hk').word j = Fin.contractNth k.castSucc (· ++ ·) U.word j :=
   (rfl)
 
 /-- A boundary of `Ω` sits in the words of the solution given by a solution `U` of
@@ -629,28 +593,39 @@ theorem toHom_comp_tieNewHom (U : (Ω.tieNew p μ k hp hk).Solution) :
   refine CoordGroup.gHom_ext fun j => ?_
   rw [GHom.coe_comp, Function.comp_apply, tieNewHom_inr_of, Solution.toHom_mk,
     Solution.toHom_inr_of, Solution.ofTieNew_word, eval_splitWord]
-  split_ifs <;> simp [FreeGroup.mul_mk]
+  -- `FreeGroup.mk` commutes with contracting the words of `h′_k` and `h′_{k+1}`.
+  simpa [Function.comp_def, ← Solution.point_apply] using (congr_fun (Fin.comp_contractNth
+    (· ++ ·) (· * ·) (fun _ _ => FreeGroup.mul_mk.symm) k.castSucc U.word) j).symm
 
 variable (k) in
 /-- The words of `U` with the word of `h_k` cut after its first `d` letters, as words for the
 items of `Ω.splitItem k`. -/
 private def splitWords (U : Ω.Solution) (d : ℕ) : Fin (Ω.numItems + 1) → List (A × Bool) :=
-  Fin.insertNth (α := fun _ => List (A × Bool)) k.succ ((U.word k).drop d)
-    (Function.update U.word k ((U.word k).take d))
+  Fin.insertNth (α := fun _ => List (A × Bool)) k.castSucc ((U.word k).take d)
+    (Function.update U.word k ((U.word k).drop d))
 
 private theorem splitWords_castSucc (U : Ω.Solution) (d : ℕ) :
-    splitWords k U d k.castSucc = (U.word k).take d := by
-  rw [splitWords, ← Fin.succAbove_succ_self, Fin.insertNth_apply_succAbove, Function.update_self]
+    splitWords k U d k.castSucc = (U.word k).take d :=
+  Fin.insertNth_apply_same _ _ _
+
+private theorem splitWords_succ (U : Ω.Solution) (d : ℕ) :
+    splitWords k U d k.succ = (U.word k).drop d := by
+  rw [splitWords, ← Fin.succAbove_castSucc_self, Fin.insertNth_apply_succAbove,
+    Function.update_self]
+
+private theorem splitWords_succAbove (U : Ω.Solution) (d : ℕ) {j : Fin Ω.numItems} (hj : j ≠ k) :
+    splitWords k U d (k.castSucc.succAbove j) = U.word j := by
+  rw [splitWords, Fin.insertNth_apply_succAbove, Function.update_of_ne hj]
 
 /-- Concatenating the two halves of `h_k` in `splitWords` gives back the words of `U`. -/
 private theorem merge_splitWords (U : Ω.Solution) (d : ℕ) :
-    (fun j => if j = k then splitWords k U d k.castSucc ++ splitWords k U d k.succ
-      else splitWords k U d (k.succ.succAbove j)) = U.word := by
+    Fin.contractNth k.castSucc (· ++ ·) (splitWords k U d) = U.word := by
   funext j
-  split_ifs with h
-  · subst h
-    rw [splitWords_castSucc, splitWords, Fin.insertNth_apply_same, List.take_append_drop]
-  · rw [splitWords, Fin.insertNth_apply_succAbove, Function.update_of_ne h]
+  rcases eq_or_ne j k with rfl | h
+  · rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, splitWords_castSucc, splitWords_succ,
+      List.take_append_drop]
+  · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm,
+      splitWords_succAbove _ _ h]
 
 include hk' in
 /-- A property of the two sides of the equations of `Ω`, substituted with the words of `h′_k` and
@@ -658,11 +633,8 @@ include hk' in
 `Ω.splitItem k`, substituted with the words. -/
 private theorem forall_mem_equations_splitItem (W : Fin (Ω.numItems + 1) → List (A × Bool))
     (P : List (A × Bool) → List (A × Bool) → Prop)
-    (h : ∀ e ∈ Ω.equations,
-      P (substituteVars (fun j => if j = k then W k.castSucc ++ W k.succ
-          else W (k.succ.succAbove j)) e.1)
-        (substituteVars (fun j => if j = k then W k.castSucc ++ W k.succ
-          else W (k.succ.succAbove j)) e.2)) :
+    (h : ∀ e ∈ Ω.equations, P (substituteVars (Fin.contractNth k.castSucc (· ++ ·) W) e.1)
+      (substituteVars (Fin.contractNth k.castSucc (· ++ ·) W) e.2)) :
     ∀ e ∈ (Ω.splitItem k).equations, P (substituteVars W e.1) (substituteVars W e.2) := by
   rw [equations_splitItem hk', Set.forall_mem_image]
   intro e he
@@ -676,24 +648,22 @@ private def splitSolution (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d) (hd : d < 
     (Ω.splitItem k).Solution where
   word := splitWords k U d
   isReduced_word x := by
-    rcases Fin.eq_self_or_eq_succAbove k.succ x with rfl | ⟨j, rfl⟩
-    · rw [splitWords, Fin.insertNth_apply_same]
-      exact (U.isReduced_word k).infix (List.drop_suffix _ _).isInfix
-    · rw [splitWords, Fin.insertNth_apply_succAbove]
-      by_cases hj : j = k
-      · rw [hj, Function.update_self]
-        exact (U.isReduced_word k).infix (List.take_prefix _ _).isInfix
-      · rw [Function.update_of_ne hj]
+    rcases Fin.eq_self_or_eq_succAbove k.castSucc x with rfl | ⟨j, rfl⟩
+    · rw [splitWords_castSucc]
+      exact (U.isReduced_word k).infix (List.take_prefix _ _).isInfix
+    · rcases eq_or_ne j k with hj | hj
+      · rw [hj, Fin.succAbove_castSucc_self, splitWords_succ]
+        exact (U.isReduced_word k).infix (List.drop_suffix _ _).isInfix
+      · rw [splitWords_succAbove _ _ hj]
         exact U.isReduced_word j
   word_ne_nil x := by
-    rcases Fin.eq_self_or_eq_succAbove k.succ x with rfl | ⟨j, rfl⟩
-    · rw [splitWords, Fin.insertNth_apply_same, Ne, List.drop_eq_nil_iff]
-      lia
-    · rw [splitWords, Fin.insertNth_apply_succAbove]
-      by_cases hj : j = k
-      · rw [hj, Function.update_self, Ne, List.take_eq_nil_iff]
-        exact fun h => h.elim hd₀.ne' (U.word_ne_nil k)
-      · rw [Function.update_of_ne hj]
+    rcases Fin.eq_self_or_eq_succAbove k.castSucc x with rfl | ⟨j, rfl⟩
+    · rw [splitWords_castSucc, Ne, List.take_eq_nil_iff]
+      exact fun h => h.elim hd₀.ne' (U.word_ne_nil k)
+    · rcases eq_or_ne j k with hj | hj
+      · rw [hj, Fin.succAbove_castSucc_self, splitWords_succ, Ne, List.drop_eq_nil_iff]
+        lia
+      · rw [splitWords_succAbove _ _ hj]
         exact U.word_ne_nil j
   isReduced_subst := forall_mem_equations_splitItem hk' _
     (fun u w => FreeGroup.IsReduced u ∧ FreeGroup.IsReduced w)

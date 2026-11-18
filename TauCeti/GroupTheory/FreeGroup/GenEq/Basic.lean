@@ -307,6 +307,56 @@ theorem boundaryEquation_snd_of_sign_ne
     (Ω.boundaryEquation c).2 = Ω.segment c.2.2 (Ω.right (Ω.dual c.2.1)) false := by
   simp only [boundaryEquation, h, ite_false]
 
+/-- In a group, given the basic equation of `μ`, the boundary equation of the dual triple
+`(q, Δ(μ), p)` holds exactly when that of `(p, μ, q)` does, for a boundary `p` of `μ` and a
+boundary `q` of `Δ(μ)`. -/
+theorem lift_mk_boundaryEquation_dual_iff {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H)
+    {p q : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases} (hp₁ : Ω.left μ ≤ p) (hp₂ : p ≤ Ω.right μ)
+    (hq₁ : Ω.left (Ω.dual μ) ≤ q) (hq₂ : q ≤ Ω.right (Ω.dual μ))
+    (hb : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2)) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (q, Ω.dual μ, p)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (q, Ω.dual μ, p)).2) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2) := by
+  have hμ := Ω.dual_involutive μ
+  rw [boundaryEquation_fst, boundaryEquation_fst]
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · -- Both equations read `h[α(μ), p] = h[α(Δμ), q]`.
+    rw [Ω.boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) hs,
+      Ω.boundaryEquation_snd_of_sign_eq (c := (q, Ω.dual μ, p)) (by simp [hμ, hs])]
+    simp only [hμ]
+    exact eq_comm
+  -- Write `g(i, j)` for the value of `h[i, j]`. The equations read `g(α(Δμ), q) = g(p, β(μ))⁻¹`
+  -- and `g(α(μ), p) = g(q, β(Δμ))⁻¹`.
+  rw [Ω.boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) hs,
+    Ω.boundaryEquation_snd_of_sign_ne (c := (q, Ω.dual μ, p)) (by simpa [hμ, eq_comm] using hs),
+    Ω.lift_mk_segment f _ _ false, Ω.lift_mk_segment f _ _ false, Bool.cond_false, Bool.cond_false]
+  simp only [hμ]
+  have hg {i j l : ℕ} (hij : i ≤ j) (hjl : j ≤ l) (hl : l ≤ Ω.numItems) :
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment i l true)) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)) *
+          FreeGroup.lift f (FreeGroup.mk (Ω.segment j l true)) := by
+    rw [← Ω.segment_append hij hjl hl, ← FreeGroup.mul_mk, map_mul]
+  -- The basic equation reads `g(α(μ), β(μ)) = g(α(Δμ), β(Δμ))⁻¹`; cut it at `p` and `q`.
+  have hb' : FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
+      (FreeGroup.lift f (FreeGroup.mk
+        (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))⁻¹ := by
+    rw [basicEquation_fst, basicEquation_snd, Ω.lift_mk_segment f _ _ (Ω.sign μ),
+      Ω.lift_mk_segment f _ _ (Ω.sign (Ω.dual μ))] at hb
+    cases h₁ : Ω.sign μ <;> cases h₂ : Ω.sign (Ω.dual μ) <;>
+      simp only [h₁, h₂, Bool.cond_true, Bool.cond_false, not_true_eq_false] at hb hs ⊢
+    exacts [inv_eq_iff_eq_inv.1 hb, hb]
+  rw [hg hp₁ hp₂ (Ω.right μ).is_le, hg hq₁ hq₂ (Ω.right (Ω.dual μ)).is_le, mul_inv_rev] at hb'
+  -- `hb'` reads `g(α(μ), p) g(p, β(μ)) = g(q, β(Δμ))⁻¹ g(α(Δμ), q)⁻¹`; cancel either side.
+  constructor
+  · intro h
+    rw [h, inv_inv] at hb'
+    exact mul_right_cancel hb'
+  · intro h
+    rw [h] at hb'
+    rw [mul_left_cancel hb', inv_inv]
+
 /-- The equations of a generalised equation: its basic, coefficient and boundary equations, each
 recorded as the pair of its two sides. -/
 def equations : Set (List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool)) :=
