@@ -172,8 +172,42 @@ jobs:
       # there is no second independently pinned copy to drift. The pinned doc-gen4 source still
       # uses Lean internals, though, and may need updating after a Lean bump. Compile it on its own
       # first so an incompatibility fails in minutes rather than near the end of the full build.
+      #
+      # The doc-gen4 executable's content hash is part of every module's doc-gen4 trace, so a
+      # different binary invalidates the whole database. Lean compiles reproducibly, but leansqlite,
+      # UnicodeBasic and MD4Lean compile C with the runner's system `cc`, so a runner image update
+      # yields a different binary from the same sources, and the next run re-analyzes every
+      # module (as on 18 November 2026, image 20261111.127.1 to 20261111.370.1). Keep the
+      # executable's build, keyed on the pins alone, so it changes only when its sources do. The
+      # entry is saved as soon as it is built, before the long step that depends on it.
+      - name: Restore the doc-gen4 executable's build
+        id: docgen-exe
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .lake/packages/doc-gen4/.lake/build
+            .lake/packages/leansqlite/.lake/build
+            .lake/packages/UnicodeBasic/.lake/build
+            .lake/packages/MD4Lean/.lake/build
+            .lake/packages/BibtexQuery/.lake/build
+            .lake/packages/Cli/.lake/build
+          key: docgen-exe-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'docbuild/lake-manifest.json') }}
+
       - name: Verify doc-gen4 is compatible with TauCeti's toolchain
         run: lake build doc-gen4
+
+      - name: Save the doc-gen4 executable's build
+        if: steps.docgen-exe.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .lake/packages/doc-gen4/.lake/build
+            .lake/packages/leansqlite/.lake/build
+            .lake/packages/UnicodeBasic/.lake/build
+            .lake/packages/MD4Lean/.lake/build
+            .lake/packages/BibtexQuery/.lake/build
+            .lake/packages/Cli/.lake/build
+          key: docgen-exe-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean-toolchain', 'docbuild/lake-manifest.json') }}
 
       # doc-gen4 documents a library's root modules and their closure; TauCeti's root is empty
       # by design, so we regenerate a throwaway aggregator root that imports the whole glob.
@@ -298,7 +332,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          for prefix in docs-build-v2-no-equations- docs-html-v2-; do
+          for prefix in docs-build-v2-no-equations- docs-html-v2- docgen-exe-v1-; do
             # Newest first; keep three so a Pages run that restored one just now still finds it.
             gh cache list -R "$REPO" --ref "$GITHUB_REF" --key "$prefix" --sort created_at --order desc --limit 100 --json id \
               --jq '.[3:][].id' |
