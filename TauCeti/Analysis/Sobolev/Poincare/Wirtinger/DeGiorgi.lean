@@ -75,8 +75,9 @@ private theorem exists_w1p_one_truncation [IsFiniteMeasure (mu.restrict (Omega :
           (fun x ↦ ‖W1p.gradient u x‖ₑ) x := by
   set nu := mu.restrict (Omega : Set E)
   set v : W1p mu Omega 1 := W1p.ofExponentLE Fact.out u
-  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := W1p.value_ofExponentLE_ae _ u
-  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u := W1p.gradient_ofExponentLE_ae _ u
+  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := (W1p.coeFn_value_ofExponentLE _ u).eventuallyEq
+  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u :=
+    (W1p.coeFn_gradient_ofExponentLE _ u).eventuallyEq
   have hmem : ∀ j : ℝ, MemLp (fun x ↦ max (W1p.value v x - j) 0) 1 nu := fun j ↦
     ((Lp.memLp (W1p.value v)).sub (memLp_const j)).pos_part
   set wk : W1p mu Omega 1 := W1p.posPartAboveOfMemLp ENNReal.one_ne_top k v (hmem k)
