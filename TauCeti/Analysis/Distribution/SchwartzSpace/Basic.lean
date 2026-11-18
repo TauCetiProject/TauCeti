@@ -27,6 +27,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
+* `SchwartzMap.integrable_mul`: `f x * g x` is integrable for scalar Schwartz functions.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
@@ -38,6 +39,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a real-linear
+  continuous map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 * `IsOpen.eqOn_of_integral_clm_apply_eq`: two operator families continuous on an open set `U`
@@ -45,6 +48,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supported in `U`.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
+* `TauCeti.eq_of_forall_integral_mul_eq`: scalar Schwartz functions are determined by their
+  integrals against Schwartz functions.
 * `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
   is the same whether built through `HasCompactSupport.toSchwartzMap` or from `MemLp`.
 -/
@@ -162,6 +167,11 @@ theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace �
   rw [mul_comm]
   exact (norm_inner_le_norm _ _).trans (by gcongr; exact g.norm_le_seminorm ℝ x)
 
+/-- For scalar Schwartz functions `f` and `g`, the pointwise product `f x * g x` is integrable. -/
+theorem integrable_mul {𝕜 : Type*} [RCLike 𝕜] (f g : 𝓢(E, 𝕜)) :
+    Integrable (fun x ↦ f x * g x) μ :=
+  (pairing (ContinuousLinearMap.mul 𝕜 𝕜) f g).integrable
+
 /-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
 integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
 theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup V]
@@ -253,6 +263,27 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
 
 end Smul
 
+section Conj
+
+open ComplexConjugate
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Pointwise complex conjugation of the values, as a real-linear map on Schwartz space. -/
+noncomputable def conjCLM : 𝓢(E, 𝕜) →L[ℝ] 𝓢(E, 𝕜) :=
+  postcompCLM (RCLike.conjCLE : 𝕜 ≃L[ℝ] 𝕜).toContinuousLinearMap
+
+@[simp]
+theorem conjCLM_apply (f : 𝓢(E, 𝕜)) (x : E) : conjCLM f x = conj (f x) :=
+  (rfl)
+
+/-- Conjugation is antilinear: `conj (c • f) = conj c • conj f`. -/
+theorem conjCLM_smul (c : 𝕜) (f : 𝓢(E, 𝕜)) : conjCLM (c • f) = conj c • conjCLM f := by
+  ext x
+  simp
+
+end Conj
+
 end SchwartzMap
 
 namespace TauCeti
@@ -300,6 +331,18 @@ theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[𝕜] W} (hg 
     (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 :=
   isOpen_univ.eqOn_of_integral_clm_apply_eq (μ := μ) (K₂ := 0) hg.continuousOn continuousOn_const
     (fun f _ _ ↦ by simp [h f]) (Set.mem_univ ζ)
+
+/-- **Schwartz functions are determined by their pairings.** Two scalar Schwartz functions `f`
+and `g` with `∫ f u ∂μ = ∫ g u ∂μ` for every Schwartz function `u` agree, for a locally finite
+measure of temperate growth charging every nonempty open set. -/
+theorem eq_of_forall_integral_mul_eq [μ.HasTemperateGrowth] {𝕜' : Type*} [RCLike 𝕜']
+    {f g : 𝓢(E, 𝕜')} (h : ∀ u : 𝓢(E, 𝕜'), ∫ x, f x * u x ∂μ = ∫ x, g x * u x ∂μ) : f = g := by
+  ext x
+  have h0 := eq_zero_of_forall_integral_apply_eq_zero (μ := μ)
+    (g := fun y ↦ ContinuousLinearMap.mul 𝕜' 𝕜' (f y - g y)) (by fun_prop) (fun u ↦ by
+      simp only [ContinuousLinearMap.mul_apply', sub_mul]
+      rw [integral_sub (f.integrable_mul u) (g.integrable_mul u), h u, sub_self]) x
+  simpa [sub_eq_zero] using congrArg (· 1) h0
 
 end TauCeti
 

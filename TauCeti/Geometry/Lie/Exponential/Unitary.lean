@@ -32,7 +32,7 @@ of the single exponential `exp x` would not be enough: `exp` is not injective, s
 the generator, and it is the whole line that pins `x` down.
 
 The line characterization is the algebra-side input for computing the Lie algebra of the unitary
-group; the geometric statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+group; the geometric statement is in `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 
 ## Main results
 

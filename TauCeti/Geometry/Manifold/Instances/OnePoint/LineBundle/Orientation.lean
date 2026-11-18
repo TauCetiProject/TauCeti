@@ -20,9 +20,9 @@ overlap `ℝ ∖ {0}` of the two charts. This transition changes sign between th
 overlap exactly when `k` is odd. So `𝒪(k)` is orientable if and only if `k` is even
 (`OnePoint.nonempty_vectorBundleOrientation_twistCore_iff`): for odd `k` it is a Möbius line.
 
-For a nonorientable bundle over a path-connected, locally path-connected base, the zeroth homology
-of the orientation local system with integer coefficients is `ℤ/2`
-(`TauCeti.VectorBundleOrientationCover.twistedHomology₀SignLocalSystemEquivOfIsEmpty`). So for odd
+For a nonorientable bundle over a connected, locally path-connected base, the zeroth homology of
+the orientation local system with integer coefficients is `ℤ/2`
+(`TauCeti.VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo`). So for odd
 `k` the zeroth homology of the circle with integer coefficients twisted by the orientation local
 system of `𝒪(k)` is `ℤ/2` (`OnePoint.twistedHomology₀TwistCoreAddEquivOfOdd`), and not `ℤ`
 (`OnePoint.not_nonempty_twistedHomology₀_twistCore_addEquiv_int_of_odd`), the zeroth homology of
@@ -167,11 +167,10 @@ def twistedHomology₀TwistCoreAddEquivOfOdd {k : ℤ} (hk : Odd k) :
     LocalCoefficientSystem.twistedHomology.{0, 0, 0}
       (VectorBundleOrientationCover.signLocalSystem ℝ (twistCore (𝕜 := ℝ) k).Fiber ℤ
         ((Fintype.card_fin 1).trans (finrank_self ℝ).symm)) 0 ≃+ ZMod 2 :=
-  -- The projective line `OnePoint ℝ` is a connected one-dimensional manifold, hence
-  -- path-connected and locally path-connected.
+  -- The projective line `OnePoint ℝ` is a connected one-dimensional manifold, hence locally
+  -- path-connected.
   haveI : LocallyPathConnectedSpace (OnePoint ℝ) := ChartedSpace.locallyPathConnectedSpace ℝ _
-  haveI : PathConnectedSpace (OnePoint ℝ) := pathConnectedSpace_iff_connectedSpace.2 inferInstance
-  (VectorBundleOrientationCover.twistedHomology₀SignLocalSystemEquivOfIsEmpty
+  (VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo
     ((Fintype.card_fin 1).trans (finrank_self ℝ).symm)
     (isEmpty_vectorBundleOrientation_twistCore_of_odd hk) (b := ((0 : ℝ) : OnePoint ℝ))
     (Basis.singleton (Fin 1) ℝ).orientation).toAddEquiv.trans

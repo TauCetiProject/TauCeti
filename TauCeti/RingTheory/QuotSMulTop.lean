@@ -168,9 +168,9 @@ end Ideal
 
 namespace LinearMap
 
-variable {R : Type*} [CommRing R]
-variable {M N P : Type*} [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
+variable {R : Type*} [CommSemiring R]
+variable {M N P : Type*} [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
 variable {f : M →ₗ[R] N} {g : N →ₗ[R] P} {r : R} {k : ℕ}
 
 /-- Bounded `r`-power torsion in the last term of an exact sequence gives a uniform comparison
