@@ -38,7 +38,7 @@ A complex of a common order folds into a two-periodic one, `p : U → V` on the 
 and `q : V → U` on the terms of odd degree, and its *folded symbol* is `p + q†`, the principal
 symbol of the folded operator `d + d* : Γ(E_even) → Γ(E_odd)` whose index is the Euler
 characteristic of the complex. By `TauCeti.HomogeneousSymbol.isElliptic_add_adjoint_iff`, for
-finite-dimensional `U` and `V` the folded symbol is elliptic exactly when the two-periodic symbol
+finite-dimensional `V` the folded symbol is elliptic exactly when the two-periodic symbol
 sequence is exact at every nonzero frequency.
 
 ## References
@@ -109,10 +109,10 @@ theorem isElliptic_hodgeLaplacian_iff [FiniteDimensional ℂ V] (hba : b.comp a 
 /-! ### The folded symbol of a two-periodic complex -/
 
 /-- **The folded symbol of a complex is elliptic exactly when the complex is.** For homogeneous
-symbols `p : U → V` and `q : V → U` of a common degree with `p q = 0` and `q p = 0`, between
-finite-dimensional spaces, the folded symbol `p + q†` is elliptic exactly when the two-periodic
+symbols `p : U → V` and `q : V → U` of a common degree with `p q = 0` and `q p = 0`, where `V` is
+finite-dimensional, the folded symbol `p + q†` is elliptic exactly when the two-periodic
 sequence `p (x, ξ)`, `q (x, ξ)` is exact at `U` and at `V` at every nonzero frequency. -/
-theorem isElliptic_add_adjoint_iff [FiniteDimensional ℂ U] [FiniteDimensional ℂ V]
+theorem isElliptic_add_adjoint_iff [FiniteDimensional ℂ V]
     {p : HomogeneousSymbol X E U V m} {q : HomogeneousSymbol X E V U m} (hpq : p.comp q = 0)
     (hqp : q.comp p = 0) :
     (p + q.adjoint).IsElliptic ↔ ∀ x ξ, ξ ≠ 0 →

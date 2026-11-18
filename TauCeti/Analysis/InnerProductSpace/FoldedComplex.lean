@@ -42,9 +42,10 @@ space facts behind that statement, by the Hodge theory of the complex.
   orthogonal sum of `range b` and the harmonic elements (the Hodge decomposition), so every class
   of `ker a / range b` has exactly one harmonic representative.
 * `ContinuousLinearMap.index_add_adjoint` and
-  `ContinuousLinearMap.index_add_adjoint_eq_finrank_sub_finrank`: when `a` and `b` have closed
-  range, the index of `a + b†` is `dim (ker a ⊓ ker b†) - dim (ker b ⊓ ker a†)`, which is the Euler
-  characteristic `dim (ker a / range b) - dim (ker b / range a)` of the complex.
+  `ContinuousLinearMap.index_add_adjoint_eq_finrank_quotient_sub_finrank_quotient`: when `a` and
+  `b` have closed range, the index of `a + b†` is `dim (ker a ⊓ ker b†) - dim (ker b ⊓ ker a†)`,
+  which is the Euler characteristic `dim (ker a / range b) - dim (ker b / range a)` of the
+  complex.
 * `ContinuousLinearMap.injective_add_adjoint_iff` and
   `ContinuousLinearMap.bijective_add_adjoint_iff`: when `a` and `b` have closed range, `a + b†` is
   injective exactly when the complex is exact at `V`, and bijective exactly when it is exact at
@@ -90,7 +91,7 @@ theorem norm_add_adjoint_apply_sq (hba : b ∘L a = 0) (v : V) :
     ‖(a + adjoint b) v‖ ^ 2 = ‖a v‖ ^ 2 + ‖adjoint b v‖ ^ 2 := by
   rw [add_apply, sq, sq, sq,
     norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (𝕜 := 𝕜) _ _ ?_]
-  rw [adjoint_inner_right, ← comp_apply, hba, zero_apply, inner_zero_left]
+  exact (isOrtho_range_range_adjoint hba).inner_eq ⟨v, rfl⟩ ⟨v, rfl⟩
 
 /-- **The kernel of the folded operator.** If `b a = 0`, the kernel of `a + b†` is the space
 `ker a ⊓ ker b†` of harmonic elements of `V`. -/
@@ -168,6 +169,11 @@ theorem isClosed_range_add_adjoint (hab : a ∘L b = 0) (hba : b ∘L a = 0)
 
 /-! ### Hodge decomposition and harmonic representatives -/
 
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- If `a b = 0`, the boundaries `range b` are cycles. -/
+private theorem range_le_ker_of_comp_eq_zero (hab : a ∘L b = 0) : b.range ≤ a.ker :=
+  LinearMap.range_le_ker_iff.2 (by simpa using congrArg toLinearMap hab)
+
 /-- **The Hodge decomposition of the cycles.** If `a b = 0` and `b` has closed range, then `ker a`
 is the sum of the boundaries `range b` and the harmonic elements `ker a ⊓ ker b†`, which are
 orthogonal since `ker b† = (range b)ᗮ`. -/
@@ -176,16 +182,24 @@ theorem range_sup_ker_inf_ker_adjoint (hab : a ∘L b = 0) (hb : IsClosed (b.ran
   have : b.range.HasOrthogonalProjection := Submodule.hasOrthogonalProjection_iff_isClosed.2 hb
   rw [← orthogonal_range, inf_comm]
   exact Submodule.sup_orthogonal_inf_of_hasOrthogonalProjection
-    (LinearMap.range_le_ker_iff.2 (congrArg toLinearMap hab))
+    (range_le_ker_of_comp_eq_zero hab)
 
 /-- The harmonic part `v - P v` of a cycle `v`, where `P` is the orthogonal projection onto
 `range b`, is a harmonic element in the class of `v`. -/
 private theorem sub_starProjection_mem_ker_inf_ker_adjoint (hab : a ∘L b = 0)
     [b.range.HasOrthogonalProjection] (v : a.ker) :
     (v : V) - b.range.starProjection v ∈ a.ker ⊓ (adjoint b).ker :=
-  ⟨sub_mem v.2 (LinearMap.range_le_ker_iff.2 (congrArg toLinearMap hab)
-      (b.range.starProjection_apply_mem v)),
+  ⟨sub_mem v.2 (range_le_ker_of_comp_eq_zero hab (b.range.starProjection_apply_mem v)),
     orthogonal_range b ▸ b.range.sub_starProjection_mem_orthogonal v⟩
+
+/-- A cycle `v` and its harmonic part `v - P v` have the same cohomology class. -/
+private theorem mk_eq_mk_sub_starProjection (hab : a ∘L b = 0) [b.range.HasOrthogonalProjection]
+    (v : a.ker) :
+    (Submodule.Quotient.mk v : a.ker ⧸ b.range.submoduleOf a.ker) =
+      Submodule.Quotient.mk ⟨(v : V) - b.range.starProjection v,
+        (sub_starProjection_mem_ker_inf_ker_adjoint hab v).1⟩ := by
+  rw [Submodule.Quotient.eq]
+  simp [Submodule.submoduleOf]
 
 private theorem bijective_mkQ_comp_inclusion (hab : a ∘L b = 0) (hb : IsClosed (b.range : Set V)) :
     Bijective ((b.range.submoduleOf a.ker).mkQ ∘ₗ
@@ -198,9 +212,8 @@ private theorem bijective_mkQ_comp_inclusion (hab : a ∘L b = 0) (hb : IsClosed
     have h₂ : (h : V) ∈ b.rangeᗮ := by rw [orthogonal_range]; exact h.2.2
     exact Subtype.ext (inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal h₁ h₂))
   · induction q using Submodule.Quotient.induction_on with | _ v => ?_
-    refine ⟨⟨_, sub_starProjection_mem_ker_inf_ker_adjoint hab v⟩, ?_⟩
-    rw [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
-    simp [Submodule.submoduleOf]
+    exact ⟨⟨_, sub_starProjection_mem_ker_inf_ker_adjoint hab v⟩,
+      (mk_eq_mk_sub_starProjection hab v).symm⟩
 
 /-- **Harmonic representatives.** If `a b = 0` and `b` has closed range, every class of the
 cohomology `ker a / range b` has exactly one harmonic representative: the harmonic elements
@@ -214,11 +227,13 @@ class. -/
 @[simp]
 theorem kerInfKerAdjointEquiv_apply (hab : a ∘L b = 0) (hb : IsClosed (b.range : Set V))
     (h : (a.ker ⊓ (adjoint b).ker : Submodule 𝕜 V)) :
-    kerInfKerAdjointEquiv hab hb h = Submodule.Quotient.mk (Submodule.inclusion inf_le_left h) :=
-  (rfl)
+    kerInfKerAdjointEquiv hab hb h = Submodule.Quotient.mk (Submodule.inclusion inf_le_left h) := by
+  rw [kerInfKerAdjointEquiv, LinearEquiv.ofBijective_apply, LinearMap.comp_apply,
+    Submodule.mkQ_apply]
 
 /-- The harmonic representative of the class of a cycle `v` is `v - P v`, where `P` is the
 orthogonal projection onto `range b`. -/
+@[simp]
 theorem coe_kerInfKerAdjointEquiv_symm_mk (hab : a ∘L b = 0) [b.range.HasOrthogonalProjection]
     (v : a.ker) :
     ((kerInfKerAdjointEquiv hab b.range.isClosed_of_hasOrthogonalProjection).symm
@@ -226,8 +241,8 @@ theorem coe_kerInfKerAdjointEquiv_symm_mk (hab : a ∘L b = 0) [b.range.HasOrtho
   have h : (kerInfKerAdjointEquiv hab b.range.isClosed_of_hasOrthogonalProjection).symm
       (Submodule.Quotient.mk v) =
       ⟨_, sub_starProjection_mem_ker_inf_ker_adjoint hab v⟩ := by
-    rw [LinearEquiv.symm_apply_eq, kerInfKerAdjointEquiv_apply, eq_comm, Submodule.Quotient.eq]
-    simp [Submodule.submoduleOf]
+    rw [LinearEquiv.symm_apply_eq, kerInfKerAdjointEquiv_apply, mk_eq_mk_sub_starProjection hab]
+    rfl
   rw [h]
 
 /-! ### The index -/
@@ -254,7 +269,8 @@ theorem index_add_adjoint (hab : a ∘L b = 0) (hba : b ∘L a = 0)
 /-- **The index of the folded operator is the Euler characteristic.** If `a b = 0`, `b a = 0` and
 `a` and `b` have closed range, the index of `a + b†` is
 `dim (ker a / range b) - dim (ker b / range a)`. -/
-theorem index_add_adjoint_eq_finrank_sub_finrank (hab : a ∘L b = 0) (hba : b ∘L a = 0)
+theorem index_add_adjoint_eq_finrank_quotient_sub_finrank_quotient (hab : a ∘L b = 0)
+    (hba : b ∘L a = 0)
     (ha : IsClosed (a.range : Set W)) (hb : IsClosed (b.range : Set V)) :
     (a + adjoint b).index =
       finrank 𝕜 (a.ker ⧸ b.range.submoduleOf a.ker) -
