@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 import TauCeti.Analysis.PDE.Strichartz.EnergyPair
+import TauCeti.MeasureTheory.Integral.ChristKiselev
 
 /-!
 # The energy pair in the Strichartz estimates for the Schrödinger equation
@@ -91,11 +92,11 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
     hqr
   have hp : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hpq.lt.le
   set K : ℝ≥0∞ := (1 - 2 ^ (-(p : ℝ≥0∞)⁻¹.toReal))⁻¹
+  have hpp : 1 < 1⁻¹ + (p : ℝ≥0∞)⁻¹ := by
+    simpa using ENNReal.lt_add_right ENNReal.one_ne_top (ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top)
   have hK : K ≠ ∞ := by
-    refine ENNReal.inv_ne_top.2 (tsub_pos_of_lt (ENNReal.rpow_lt_one_of_one_lt_of_neg
-      (by norm_num) (neg_neg_of_pos (ENNReal.toReal_pos ?_ ?_)))).ne'
-    · exact ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top
-    · exact ENNReal.inv_ne_top.2 (one_pos.trans_le hp).ne'
+    simpa only [inv_one, ENNReal.add_sub_cancel_left ENNReal.one_ne_top] using
+      inv_one_sub_two_rpow_neg_ne_top one_ne_zero hp hpp
   refine ⟨K.toNNReal * C, fun F G hF hG hSF hSG ↦ ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
   exact enorm_integral_setIntegral_Iio_inner_phasePropagator_sub_le_eLpNorm_one hp
