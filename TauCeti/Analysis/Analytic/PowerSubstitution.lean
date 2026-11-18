@@ -41,9 +41,8 @@ theorem taylorSeries_comp_pow (hf : AnalyticAt 𝕜 f 0) (d : ℕ) (hd : d ≠ 0
     have h : (fun z ↦ g (z ^ d)) =
         (fun _ ↦ g 0) + (fun z ↦ z - 0) ^ d * (fun z ↦ dslope g 0 (z ^ d)) := by
       funext z
-      have hz := sub_smul_dslope g 0 (z ^ d)
-      simp only [sub_zero, smul_eq_mul] at hz
-      simpa using (eq_add_of_sub_eq' hz.symm)
+      simpa only [Pi.add_apply, Pi.smul_apply, Pi.mul_apply, Pi.pow_apply, sub_zero,
+        smul_eq_mul] using congrFun (eq_const_add_sub_smul_dslope g 0) (z ^ d)
     have hc : AnalyticAt 𝕜 (fun z : 𝕜 ↦ z - 0) 0 := by fun_prop
     have hp : AnalyticAt 𝕜 (fun z : 𝕜 ↦ z ^ d) 0 := by fun_prop
     have ht : AnalyticAt 𝕜 (fun z ↦ dslope g 0 (z ^ d)) 0 :=

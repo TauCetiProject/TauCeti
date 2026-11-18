@@ -199,12 +199,8 @@ divided difference at the same centre. -/
 theorem taylorSeries_eq_C_add_X_mul {f : 𝕜 → 𝕜} {a : 𝕜} (hf : AnalyticAt 𝕜 f a) :
     taylorSeries f a = PowerSeries.C (f a) +
       PowerSeries.X * taylorSeries (dslope f a) a := by
-  have h : f = (fun _ ↦ f a) + (fun z ↦ z - a) * dslope f a := by
-    funext z
-    simpa only [Pi.add_apply, Pi.mul_apply, smul_eq_mul] using
-      (eq_add_of_sub_eq' (sub_smul_dslope f a z).symm)
   have hc : AnalyticAt 𝕜 (fun z : 𝕜 ↦ z - a) a := by fun_prop
-  conv_lhs => rw [h]
+  conv_lhs => rw [eq_const_add_sub_smul_dslope f a, smul_eq_mul]
   rw [taylorSeries_add analyticAt_const (hc.mul (hf.dslope a)),
     taylorSeries_const, taylorSeries_mul hc (hf.dslope a), taylorSeries_sub_const]
 

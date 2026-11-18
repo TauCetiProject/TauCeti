@@ -55,6 +55,18 @@ def pullbackPow (d : ℕ+) : meromorphicGerms 𝕜 0 →ₐ[𝕜] meromorphicGer
         exact pow_ne_zero _ hz⟩) with
     commutes' c := by apply pullback_algebraMap }
 
+/-- Power pullback composes the underlying punctured germ with the power map. -/
+@[simp]
+theorem coe_pullbackPow (d : ℕ+) (φ : meromorphicGerms 𝕜 0) :
+    (pullbackPow d φ : Germ (𝓝[≠] (0 : 𝕜)) 𝕜) =
+      (φ : Germ (𝓝[≠] (0 : 𝕜)) 𝕜).compTendsto (fun z ↦ z ^ (d : ℕ))
+        (by
+          simpa only [zero_pow d.ne_zero] using
+            (continuous_pow (d : ℕ)).continuousWithinAt.tendsto_nhdsWithin
+              (s := {0}ᶜ) (t := {0}ᶜ) (x := (0 : 𝕜))
+              (fun z (hz : z ≠ (0 : 𝕜)) ↦ pow_ne_zero _ hz)) := by
+  simp only [pullbackPow, AlgHom.coe_mk, coe_pullback]
+
 /-- Power pullback of a represented germ is represented by power substitution. -/
 @[simp]
 theorem pullbackPow_mk (d : ℕ+) (f : 𝕜 → 𝕜) (hf : MeromorphicAt f 0) :
@@ -64,15 +76,14 @@ theorem pullbackPow_mk (d : ℕ+) (f : 𝕜 → 𝕜) (hf : MeromorphicAt f 0) :
           (x := (0 : 𝕜)) _ (by fun_prop)
         simpa only [zero_pow d.ne_zero] using hf) := by
   apply Subtype.ext
-  simp only [pullbackPow, AlgHom.coe_mk, coe_pullback, coe_mk, Germ.coe_compTendsto]
-  rfl
+  simp only [coe_pullbackPow, coe_mk, Germ.coe_compTendsto, Function.comp_def]
 
 /-- The coordinate pulls back to its `d`-th power. -/
 @[simp]
 theorem pullbackPow_coordinate (d : ℕ+) :
     pullbackPow d (coordinate (0 : 𝕜)) = coordinate 0 ^ (d : ℕ) := by
   apply Subtype.ext
-  simp only [pullbackPow, AlgHom.coe_mk, coe_pullback, SubmonoidClass.coe_pow, coe_coordinate,
+  simp only [coe_pullbackPow, SubmonoidClass.coe_pow, coe_coordinate,
     Germ.coe_compTendsto, ← Germ.coe_pow]
   exact Germ.coe_eq.mpr (.of_forall fun z ↦ by simp)
 
@@ -104,7 +115,7 @@ theorem laurentSeries_pullbackPow (d : ℕ+) (φ : meromorphicGerms 𝕜 0) :
     simp [h, smul_eq_mul, hz]
   have hp : (pullbackPow d φ : Germ (𝓝[≠] (0 : 𝕜)) 𝕜) =
       (fun z ↦ ((z - 0) ^ ((d : ℕ) * N))⁻¹ * h (z ^ (d : ℕ)) : 𝕜 → 𝕜) := by
-    rw [pullbackPow, AlgHom.coe_mk, coe_pullback, hrep, Germ.coe_compTendsto]
+    rw [coe_pullbackPow, hrep, Germ.coe_compTendsto]
     simp only [Function.comp_def, sub_zero, pow_mul]
   have hhcomp : AnalyticAt 𝕜 (fun z ↦ h (z ^ (d : ℕ))) 0 :=
     hh.comp_of_eq (by fun_prop) (zero_pow d.ne_zero)
