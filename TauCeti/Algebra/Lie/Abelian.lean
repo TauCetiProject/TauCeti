@@ -25,11 +25,9 @@ def AbelianLieAlgebra (M : Type*) := M
 
 namespace AbelianLieAlgebra
 
-variable (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+variable (R M : Type*) [AddCommGroup M]
 
 instance : AddCommGroup (AbelianLieAlgebra M) := inferInstanceAs (AddCommGroup M)
-
-instance : Module R (AbelianLieAlgebra M) := inferInstanceAs (Module R M)
 
 instance : LieRing (AbelianLieAlgebra M) where
   bracket _ _ := 0
@@ -38,13 +36,25 @@ instance : LieRing (AbelianLieAlgebra M) where
   lie_self _ := rfl
   leibniz_lie _ _ _ := (zero_add _).symm
 
-instance : LieAlgebra R (AbelianLieAlgebra M) where
-  lie_smul _ _ _ := (smul_zero _).symm
+variable {M} in
+@[simp]
+theorem lie_eq_zero (x y : AbelianLieAlgebra M) : ⁅x, y⁆ = 0 := rfl
 
 instance : IsLieAbelian (AbelianLieAlgebra M) := ⟨fun _ _ => rfl⟩
 
+section Semiring
+
+variable [Semiring R] [Module R M]
+
+instance : Module R (AbelianLieAlgebra M) := inferInstanceAs (Module R M)
+
 /-- The underlying module of the abelian Lie algebra is the original module. -/
 def equiv : AbelianLieAlgebra M ≃ₗ[R] M := LinearEquiv.refl R M
+
+end Semiring
+
+instance [CommRing R] [Module R M] : LieAlgebra R (AbelianLieAlgebra M) where
+  lie_smul _ _ _ := (smul_zero _).symm
 
 end AbelianLieAlgebra
 

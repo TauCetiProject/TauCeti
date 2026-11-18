@@ -19,8 +19,11 @@ realization and the abelian Lie algebra on `Z`. The isomorphism retains the spec
 Cartan coordinates and the raising and lowering generators. In particular, applying this
 to a minimal sub-realization isolates precisely the extra central directions.
 
-The argument uses the universal property of the Serre presentation and does not require
-injectivity of the Cartan map or a nonsingular Cartan matrix.
+This reduces constructions on an enlarged realization to the algebra of a smaller realization
+and an abelian central factor. The splitting `centralSplitting` holds over an arbitrary field
+and index type, for any integer matrix, including a singular one;
+`exists_isMinimal_restrict_lieEquiv_prod` additionally assumes a finite index type, so that
+each realization has a minimal sub-realization.
 
 Reference: V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, §§1.1–1.3.
 -/
@@ -38,15 +41,6 @@ section Splitting
 
 variable (M Z : Submodule K H) (hc : R.corootSpan ≤ M)
   (hs : M ⊔ R.cartanCenter = ⊤) (h : IsCompl M Z) (hz : Z ≤ R.cartanCenter)
-
-include hz in
-private theorem root_projection (i : I) (x : H) :
-    R.root i (M.projectionOnto Z h x) = R.root i x := by
-  have he : (M.projectionOnto Z h x : H) + (Z.projectionOnto M h.symm x : H) = x :=
-    Submodule.projection_add_projection_eq_self h x
-  have he' := congrArg (R.root i) he
-  have hzero := (R.mem_cartanCenter_iff _).mp (hz (Z.projectionOnto M h.symm x).property) i
-  simpa only [map_add, hzero, add_zero] using he'
 
 private theorem inclusionRelations :
     SatisfiesRelations (R.restrict M hc hs) ((cartanElement R).comp M.subtype)
@@ -70,10 +64,10 @@ private theorem retractionRelations :
   lie_cartan_cartan _ _ := by simp
   lie_cartan_positive x j := by
     simp only [LinearMap.comp_apply, lie_cartanElement_positiveGenerator,
-      R.restrict_root_apply, root_projection R M Z h hz]
+      R.restrict_root_apply, Submodule.coe_projectionOnto_apply, R.root_projection h hz]
   lie_cartan_negative x j := by
     simp only [LinearMap.comp_apply, lie_cartanElement_negativeGenerator,
-      R.restrict_root_apply, root_projection R M Z h hz]
+      R.restrict_root_apply, Submodule.coe_projectionOnto_apply, R.root_projection h hz]
   lie_positive_negative_self i := by
     have he : M.projectionOnto Z h (R.coroot i) = (R.restrict M hc hs).coroot i := by
       apply Subtype.ext
@@ -158,70 +152,84 @@ private theorem splittingHom_comp_splittingInv :
 /-- A central complement in the realization splits off as an abelian direct factor of its
 presented Lie algebra. The first factor uses the actual restricted roots and coroots. -/
 noncomputable def centralSplitting : PresentedLieAlgebra R ≃ₗ⁅K⁆
-    PresentedLieAlgebra (R.restrict M hc hs) × AbelianLieAlgebra Z where
-  toLieHom := splittingHom R M Z hc hs h hz
-  invFun := splittingInv R M Z hc hs hz
-  left_inv x := DFunLike.congr_fun (splittingInv_comp_splittingHom R M Z hc hs h hz) x
-  right_inv x := DFunLike.congr_fun (splittingHom_comp_splittingInv R M Z hc hs h hz) x
+    PresentedLieAlgebra (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz)) ×
+      AbelianLieAlgebra Z where
+  toLieHom := splittingHom R M Z hc _ h hz
+  invFun := splittingInv R M Z hc _ hz
+  left_inv x := DFunLike.congr_fun (splittingInv_comp_splittingHom R M Z hc _ h hz) x
+  right_inv x := DFunLike.congr_fun (splittingHom_comp_splittingInv R M Z hc _ h hz) x
 
 /-- The splitting records the two projections of a Cartan vector. -/
 @[simp]
 theorem centralSplitting_cartanElement (x : H) :
-    centralSplitting R M Z hc hs h hz (cartanElement R x) =
-      (cartanElement (R.restrict M hc hs) (M.projectionOnto Z h x),
+    centralSplitting R M Z hc h hz (cartanElement R x) =
+      (cartanElement (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz))
+          (M.projectionOnto Z h x),
         (AbelianLieAlgebra.equiv K Z).symm (Z.projectionOnto M h.symm x)) := by
   simp [centralSplitting, splittingHom, retraction, centralProjection]
 
 /-- Raising generators belong to the smaller algebra factor. -/
 @[simp]
 theorem centralSplitting_positiveGenerator (i : I) :
-    centralSplitting R M Z hc hs h hz (positiveGenerator R i) =
-      (positiveGenerator (R.restrict M hc hs) i, 0) := by
+    centralSplitting R M Z hc h hz (positiveGenerator R i) =
+      (positiveGenerator (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz)) i,
+        0) := by
   simp [centralSplitting, splittingHom, retraction, centralProjection]
 
 /-- Lowering generators belong to the smaller algebra factor. -/
 @[simp]
 theorem centralSplitting_negativeGenerator (i : I) :
-    centralSplitting R M Z hc hs h hz (negativeGenerator R i) =
-      (negativeGenerator (R.restrict M hc hs) i, 0) := by
+    centralSplitting R M Z hc h hz (negativeGenerator R i) =
+      (negativeGenerator (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz)) i,
+        0) := by
   simp [centralSplitting, splittingHom, retraction, centralProjection]
 
 /-- The inverse splitting sums the two Cartan coordinates. -/
 @[simp]
-theorem centralSplitting_symm_cartanElement (m : M) (z : Z) :
-    (centralSplitting R M Z hc hs h hz).symm
-      (cartanElement (R.restrict M hc hs) m, (AbelianLieAlgebra.equiv K Z).symm z) =
-        cartanElement R ((m : H) + z) := by
-  apply (centralSplitting R M Z hc hs h hz).injective
+theorem centralSplitting_symm_cartanElement (m : M) (z : AbelianLieAlgebra Z) :
+    (centralSplitting R M Z hc h hz).symm
+      (cartanElement (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz)) m, z) =
+        cartanElement R ((m : H) + AbelianLieAlgebra.equiv K Z z) := by
+  apply (centralSplitting R M Z hc h hz).injective
+  simp
+
+/-- The inverse splitting sends the abelian factor to central Cartan vectors. -/
+@[simp]
+theorem centralSplitting_symm_zero_mk (z : AbelianLieAlgebra Z) :
+    (centralSplitting R M Z hc h hz).symm (0, z) =
+      cartanElement R (AbelianLieAlgebra.equiv K Z z) := by
+  apply (centralSplitting R M Z hc h hz).injective
   simp
 
 /-- The inverse splitting preserves raising generators. -/
 @[simp]
 theorem centralSplitting_symm_positiveGenerator (i : I) :
-    (centralSplitting R M Z hc hs h hz).symm
-      (positiveGenerator (R.restrict M hc hs) i, 0) = positiveGenerator R i := by
-  apply (centralSplitting R M Z hc hs h hz).injective
+    (centralSplitting R M Z hc h hz).symm
+      (positiveGenerator (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz)) i, 0) =
+        positiveGenerator R i := by
+  apply (centralSplitting R M Z hc h hz).injective
   simp
 
 /-- The inverse splitting preserves lowering generators. -/
 @[simp]
 theorem centralSplitting_symm_negativeGenerator (i : I) :
-    (centralSplitting R M Z hc hs h hz).symm
-      (negativeGenerator (R.restrict M hc hs) i, 0) = negativeGenerator R i := by
-  apply (centralSplitting R M Z hc hs h hz).injective
+    (centralSplitting R M Z hc h hz).symm
+      (negativeGenerator (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz)) i, 0) =
+        negativeGenerator R i := by
+  apply (centralSplitting R M Z hc h hz).injective
   simp
 
 end Splitting
 
 /-- Every realization is a minimal sub-realization together with an abelian central factor
 at the level of presented Lie algebras, even for a singular matrix. -/
-theorem exists_isMinimal_restrict_centralSplitting [Fintype I] :
+theorem exists_isMinimal_restrict_lieEquiv_prod [Fintype I] :
     ∃ (M Z : Submodule K H) (hc : R.corootSpan ≤ M)
       (hs : M ⊔ R.cartanCenter = ⊤),
       (R.restrict M hc hs).IsMinimal ∧ IsCompl M Z ∧ Z ≤ R.cartanCenter ∧
         Nonempty (PresentedLieAlgebra R ≃ₗ⁅K⁆
           PresentedLieAlgebra (R.restrict M hc hs) × AbelianLieAlgebra Z) := by
   obtain ⟨M, Z, hc, hs, hm, h, hz⟩ := R.exists_isMinimal_restrict_isCompl
-  exact ⟨M, Z, hc, hs, hm, h, hz, ⟨centralSplitting R M Z hc hs h hz⟩⟩
+  exact ⟨M, Z, hc, hs, hm, h, hz, ⟨centralSplitting R M Z hc h hz⟩⟩
 
 end TauCeti.KacMoody
