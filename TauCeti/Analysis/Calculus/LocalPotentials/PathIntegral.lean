@@ -68,6 +68,15 @@ defined near `f x`. -/
 def IsPrimitiveAlong (φ : E → E →L[ℝ] F) (f : X → E) (G : X → F) : Prop :=
   ∀ x, IsPrimitiveAlongAt φ f G x
 
+/-- Unfold the definition of `IsPrimitiveAlongAt`. -/
+theorem isPrimitiveAlongAt_iff {x : X} : IsPrimitiveAlongAt φ f G x ↔
+    ∃ g : E → F, (∀ᶠ y in 𝓝 (f x), HasFDerivAt g (φ y) y) ∧
+      ∀ᶠ x' in 𝓝 x, G x' - G x = g (f x') - g (f x) := Iff.rfl
+
+/-- Unfold the definition of `IsPrimitiveAlong`. -/
+theorem isPrimitiveAlong_iff : IsPrimitiveAlong φ f G ↔ ∀ x, IsPrimitiveAlongAt φ f G x :=
+  Iff.rfl
+
 /-- A potential of `φ` on an open set containing the image of `f` gives the primitive `g ∘ f`
 along `f`. -/
 theorem isPrimitiveAlong_comp_of_hasFDerivAt {U : Set E} {g : E → F} (hU : IsOpen U)
