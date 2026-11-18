@@ -11,18 +11,15 @@ public import TauCeti.Combinatorics.Graph.Serre.Dist
 /-!
 # Induced subgraphs of Serre graphs
 
-The subgraph `Γ.induce C` induced on a set `C` of vertices of a Serre graph `Γ` is the subgraph
-`Γ.subgraph C (Γ.inducedDarts C)`: it has the vertices of `C` and the darts of `Γ` with both
-endpoints in `C`. Every reduced path between vertices of a convex set lifts to it. Hence the
-subgraph induced on a convex set keeps the distances between its vertices, and it is preconnected
-exactly when its vertices are pairwise joined in `Γ`. A subgraph induced in an acyclic graph is
-acyclic, so the subgraph induced on a nonempty convex set of vertices of a tree is a tree: the
-subtree spanned by the set.
+The subgraph `Γ.induce C` induced on a set `C` of vertices of a Serre graph `Γ` has the vertices
+of `C` and the darts of `Γ` with both endpoints in `C`. Every reduced path between vertices of a
+convex set lifts to it. Hence the subgraph induced on a convex set keeps the distances between its
+vertices, and it is preconnected exactly when its vertices are pairwise joined in `Γ`. A subgraph
+induced in an acyclic graph is acyclic, so the subgraph induced on a nonempty convex set of
+vertices of a tree is a tree: the subtree spanned by the set.
 
 ## Main declarations
 
-* `TauCeti.SerreGraph.induce`, `TauCeti.SerreGraph.induceInclusion`: the induced subgraph and its
-  inclusion.
 * `TauCeti.SerreGraph.IsConvex.exists_induce_path`: reduced paths between vertices of a convex
   set lift to the induced subgraph.
 * `TauCeti.SerreGraph.IsConvex.preconnected_induce_iff`,
@@ -44,19 +41,7 @@ namespace TauCeti
 
 namespace SerreGraph
 
-variable (Γ : SerreGraph.{u, v})
-
-/-- The subgraph induced on a set of vertices: its vertices are those of the set and its darts
-are the darts of `Γ` with both endpoints in the set. -/
-abbrev induce (C : Set Γ.V) : SerreGraph.{u, v} :=
-  Γ.subgraph C (Γ.inducedDarts C) (fun _ he => (mem_inducedDarts_iff.1 he).1)
-    fun _ => rev_mem_inducedDarts_iff.2
-
-/-- The inclusion of an induced subgraph. -/
-abbrev induceInclusion (C : Set Γ.V) : (Γ.induce C).Hom Γ :=
-  Γ.subgraphInclusion _ _ _ _
-
-variable {Γ} {C : Set Γ.V}
+variable {Γ : SerreGraph.{u, v}} {C : Set Γ.V}
 
 /-- A reduced path of `Γ` between vertices of a convex set `C` lifts to the subgraph induced
 on `C`. -/

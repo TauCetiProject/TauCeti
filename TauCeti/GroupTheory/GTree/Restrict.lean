@@ -71,24 +71,29 @@ theorem comap_smul_dart (f : H →* G) (h : H) (e : (T.comap f).E) :
 
 /-- The stabilizer of a vertex for the restricted action is the preimage of its stabilizer. -/
 @[simp] theorem stabilizer_comap_vertex (f : H →* G) (v : (T.comap f).V) :
-    stabilizer H v = (stabilizer G (show T.V from v)).comap f :=
-  Subgroup.ext fun _ => Iff.rfl
+    stabilizer H v = (stabilizer G (show T.V from v)).comap f := by
+  ext h
+  rw [Subgroup.mem_comap, mem_stabilizer_iff, mem_stabilizer_iff, comap_smul_vertex]
+  rfl
 
 /-- The stabilizer of a dart for the restricted action is the preimage of its stabilizer. -/
 @[simp] theorem stabilizer_comap_dart (f : H →* G) (e : (T.comap f).E) :
-    stabilizer H e = (stabilizer G (show T.E from e)).comap f :=
-  Subgroup.ext fun _ => Iff.rfl
+    stabilizer H e = (stabilizer G (show T.E from e)).comap f := by
+  ext h
+  rw [Subgroup.mem_comap, mem_stabilizer_iff, mem_stabilizer_iff, comap_smul_dart]
+  rfl
 
 /-- An element acts elliptically on the restricted tree exactly when its image does on `T`. -/
 @[simp] theorem comap_isElliptic_iff (f : H →* G) (h : H) :
-    (T.comap f).IsElliptic h ↔ T.IsElliptic (f h) :=
-  (isElliptic_iff (T := T.comap f)).trans (isElliptic_iff (T := T)).symm
+    (T.comap f).IsElliptic h ↔ T.IsElliptic (f h) := by
+  simp only [isElliptic_iff, comap_smul_vertex]
+  rfl
 
 variable (C : Set T.V)
 
 /-- The automorphism of the subgraph induced on an invariant set of vertices given by an element
 of the group. -/
-@[expose] def induceAut (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C) (g : G) :
+def induceAut (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C) (g : G) :
     (T.toSerreGraph.induce C).Aut where
   equivV :=
     { toFun v := ⟨g • v.1, hinv g v.1 v.2⟩
@@ -105,6 +110,18 @@ of the group. -/
   map_src e := Subtype.ext (T.src_smul g e.1)
   map_rev e := Subtype.ext (T.rev_smul g e.1).symm
 
+variable {C} in
+/-- The automorphism given by `g` moves a vertex `v` of the induced subgraph to `g • v`. -/
+@[simp] theorem induceAut_equivV_apply_val (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C) (g : G)
+    (v : (T.toSerreGraph.induce C).V) :
+    ((T.induceAut C hinv g).equivV v).1 = g • (Subtype.val v : T.V) := (rfl)
+
+variable {C} in
+/-- The automorphism given by `g` moves a dart `e` of the induced subgraph to `g • e`. -/
+@[simp] theorem induceAut_equivE_apply_val (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C) (g : G)
+    (e : (T.toSerreGraph.induce C).E) :
+    ((T.induceAut C hinv g).equivE e).1 = g • (Subtype.val e : T.E) := (rfl)
+
 /-- The restriction of a `G`-tree to a nonempty convex invariant set of vertices: the subtree
 induced on the set, with the restricted action. -/
 @[expose] def subtree (hC : T.IsConvex C) (hne : C.Nonempty) (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C) :
@@ -113,19 +130,21 @@ induced on the set, with the restricted action. -/
   isTree := T.isTree.induce hC hne
   action :=
     { toFun := T.induceAut C hinv
-      map_one' := SerreGraph.Iso.ext (fun v => Subtype.ext (one_smul G v.1))
-        (fun e => Subtype.ext (one_smul G e.1))
-      map_mul' g h := SerreGraph.Iso.ext (fun v => Subtype.ext (mul_smul g h v.1))
-        (fun e => Subtype.ext (mul_smul g h e.1)) }
-  action_smul_ne_rev g e h := T.smul_ne_rev g e.1 (congrArg Subtype.val h)
+      map_one' := SerreGraph.Iso.ext (fun _ => Subtype.ext (by simp))
+        fun _ => Subtype.ext (by simp)
+      map_mul' g h := SerreGraph.Iso.ext (fun _ => Subtype.ext (by simp [mul_smul]))
+        fun _ => Subtype.ext (by simp [mul_smul]) }
+  action_smul_ne_rev g e h := T.smul_ne_rev g e.1 (by simpa using congrArg Subtype.val h)
 
 variable {C} (hC : T.IsConvex C) (hne : C.Nonempty) (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C)
 
 @[simp] theorem subtree_smul_vertex_val (g : G) (v : (T.subtree C hC hne hinv).V) :
-    Subtype.val (g • v) = g • (Subtype.val v : T.V) := (rfl)
+    Subtype.val (g • v) = g • (Subtype.val v : T.V) :=
+  T.induceAut_equivV_apply_val hinv g v
 
 @[simp] theorem subtree_smul_dart_val (g : G) (e : (T.subtree C hC hne hinv).E) :
-    Subtype.val (g • e) = g • (Subtype.val e : T.E) := (rfl)
+    Subtype.val (g • e) = g • (Subtype.val e : T.E) :=
+  T.induceAut_equivE_apply_val hinv g e
 
 /-- The stabilizer of a vertex of an invariant subtree is its stabilizer in the tree. -/
 @[simp] theorem stabilizer_subtree_vertex (v : (T.subtree C hC hne hinv).V) :
