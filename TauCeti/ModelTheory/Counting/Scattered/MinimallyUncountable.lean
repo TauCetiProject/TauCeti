@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Counting.Scattered.AnalyticSplits
 public import TauCeti.ModelTheory.Counting.Scattered.SentenceSplits
-public import TauCeti.ModelTheory.RelationalConfiguration.Separation
 public import TauCeti.ModelTheory.Counting.Vaught
 
 /-!
@@ -25,7 +25,7 @@ into two children that are inequivalent at a common higher level, and the limits
 branches give continuum many classes at one countable level, against scatteredness.
 The ingredients are three facts about the back-and-forth levels: level classes are cut out by
 sentences (`modelsOf_scottSentenceAtLevel`); every sentence is saturated from some countable
-level on (`exists_bfLevel_saturated_modelsOf`, from uniform back-and-forth separation); and a
+level on (`exists_bfLevel_saturated_modelsOf`, from its quantifier rank); and a
 chain of codes equivalent at levels `α i + ω` has a limit code (`exists_limit_of_bfEquiv_chain`).
 No continuum hypothesis and no continuity of the branch limits is used.
 
@@ -40,8 +40,9 @@ models on `ℕ`.
 
 ## Main results
 
-* `TauCeti.exists_bfLevel_saturated_modelsOf`: back-and-forth equivalence from some countable
-  level on decides every sentence.
+* `TauCeti.minimallyUncountableOn_modelsOf_iff`: the models on `ℕ` of `φ` are minimally
+  uncountable exactly when `φ` has uncountably many models up to isomorphism and, for every
+  sentence `θ`, one of `φ ⊓ θ` and `φ ⊓ θ.not` has countably many.
 * `TauCeti.MinimallyUncountableOn.concentratedAtBFLevels`: a scattered minimally uncountable set
   is concentrated at back-and-forth levels.
 * `TauCeti.ConcentratedAtBFLevels.minimallyUncountableOn`: a concentrated set meeting uncountably
@@ -61,34 +62,20 @@ models on `ℕ`.
 * J. R. Steel, *On Vaught's conjecture*, Cabal Seminar 76–77, Lecture Notes in Mathematics 689,
   Springer, 1978, 193–208.
 * Antonio Montalbán, *Computable Structure Theory: Beyond the Arithmetic*, Part 2, Chapter XII,
-  §XII.2 (Theorem XII.7, whose splitting-tree proof is followed here, with the saturation of a
-  sentence obtained from uniform back-and-forth separation instead of its quantifier complexity).
+  §XII.2 (Theorem XII.7, whose splitting-tree proof is followed here).
 -/
 
 public section
 
-universe u v w uι o
+universe u v
 
-open FirstOrder FirstOrder.Language Cardinal MeasureTheory Ordinal Set
+open FirstOrder FirstOrder.Language Cardinal Ordinal Set
 
 namespace TauCeti
 
 open RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational]
-
-/-- **Saturation of a sentence.** On a countable carrier, in a vocabulary with countably many
-relation symbols of each arity, back-and-forth equivalence at every level from some countable
-level `α` on decides each `L_{ω₁ω}` sentence. -/
-theorem exists_bfLevel_saturated_modelsOf [∀ n, Countable (L.Relations n)] {V : Type w}
-    [Countable V] {ι : Type uι} [Countable ι] (θ : L.SentenceInf ι) :
-    ∃ α : Ordinal.{o}, α < ω₁ ∧ ∀ β ≥ α, ∀ c d : RelationalConfiguration L V,
-      bfEquivSetoid L V β c d → (c ∈ modelsOf θ ↔ d ∈ modelsOf θ) := by
-  obtain ⟨α, hα, hsat⟩ := exists_bfLevel_mem_iff_of_measurableSet (V := V) (C := univ)
-    MeasurableSet.univ.analyticSet (measurableSet_modelsOf θ) fun c _ d _ hcd hc => by
-      obtain ⟨e⟩ := isoSetoid_apply.mp hcd
-      exact (e.mem_modelsOf_iff θ).mp hc
-  exact ⟨α, hα, fun β hβ c d hcd => hsat β hβ c trivial d trivial hcd⟩
 
 /-- A set `K` of configurations on `ℕ` is *minimally uncountable* when it meets uncountably many
 isomorphism classes, while for every sentence `θ` one of `K ∩ modelsOf θ` and `K \ modelsOf θ`
@@ -105,6 +92,54 @@ theorem minimallyUncountableOn_iff {K : Set (RelationalConfiguration L ℕ)} :
         (Quotient.mk (isoSetoid L ℕ) '' (K \ modelsOf θ)).Countable :=
   Iff.rfl
 
+/-- A minimally uncountable set meets uncountably many isomorphism classes. -/
+theorem MinimallyUncountableOn.not_countable_image {K : Set (RelationalConfiguration L ℕ)}
+    (h : MinimallyUncountableOn K) : ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable :=
+  h.1
+
+/-- A minimally uncountable set meets uncountably many isomorphism classes, in quotient form. -/
+theorem MinimallyUncountableOn.uncountable_isoClasses {K : Set (RelationalConfiguration L ℕ)}
+    (h : MinimallyUncountableOn K) :
+    Uncountable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) := by
+  rw [uncountable_iff_not_countable, Setoid.countable_quotient_comap_val_iff]
+  exact h.1
+
+/-- A minimally uncountable set is nonempty. -/
+theorem MinimallyUncountableOn.nonempty {K : Set (RelationalConfiguration L ℕ)}
+    (h : MinimallyUncountableOn K) : K.Nonempty := by
+  by_contra hK
+  rw [not_nonempty_iff_eq_empty] at hK
+  exact h.1 (by simp [hK])
+
+/-- Every sentence cut of a minimally uncountable set has a side meeting countably many
+isomorphism classes. -/
+theorem MinimallyUncountableOn.countable_isoClasses_inter_modelsOf_or_sdiff
+    {K : Set (RelationalConfiguration L ℕ)} (h : MinimallyUncountableOn K) (θ : L.Sentenceω) :
+    Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : ↥(K ∩ modelsOf θ) → _))) ∨
+      Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : ↥(K \ modelsOf θ) → _))) := by
+  simpa only [Setoid.countable_quotient_comap_val_iff] using h.2 θ
+
+/-- A set meeting countably many isomorphism classes is not minimally uncountable. -/
+theorem not_minimallyUncountableOn_of_countable_image {K : Set (RelationalConfiguration L ℕ)}
+    (hK : (Quotient.mk (isoSetoid L ℕ) '' K).Countable) : ¬ MinimallyUncountableOn K :=
+  fun h => h.1 hK
+
+/-- The empty set is not minimally uncountable. -/
+@[simp]
+theorem not_minimallyUncountableOn_empty :
+    ¬ MinimallyUncountableOn (∅ : Set (RelationalConfiguration L ℕ)) :=
+  not_minimallyUncountableOn_of_countable_image (by simp)
+
+/-- The models on `ℕ` of `φ` are minimally uncountable exactly when `φ` has uncountably many models
+on `ℕ` up to isomorphism and, for every sentence `θ`, one of `φ ⊓ θ` and `φ ⊓ θ.not` has only
+countably many. -/
+theorem minimallyUncountableOn_modelsOf_iff {φ : L.Sentenceω} :
+    MinimallyUncountableOn (modelsOf (V := ℕ) φ) ↔ Uncountable (Quotient (isoSetoidOn ℕ φ)) ∧
+      ∀ θ : L.Sentenceω, Countable (Quotient (isoSetoidOn ℕ (φ ⊓ θ))) ∨
+        Countable (Quotient (isoSetoidOn ℕ (φ ⊓ θ.not))) := by
+  simp only [minimallyUncountableOn_iff, isoSetoidOn, uncountable_iff_not_countable,
+    Setoid.countable_quotient_comap_val_iff, modelsOf_inf, modelsOf_not, sdiff_eq]
+
 /-- A back-and-forth scattered, minimally uncountable set is concentrated at back-and-forth
 levels. -/
 theorem MinimallyUncountableOn.concentratedAtBFLevels [Countable (Σ n, L.Relations n)]
@@ -113,16 +148,14 @@ theorem MinimallyUncountableOn.concentratedAtBFLevels [Countable (Σ n, L.Relati
   concentratedAtBFLevels_of_bfScattered_of_sentence_splits hK h.2
 
 /-- A set that is concentrated at back-and-forth levels and meets uncountably many isomorphism
-classes is minimally uncountable: every sentence is saturated from some countable level on, so
-one side of its cut lies off the centre's class. -/
-theorem ConcentratedAtBFLevels.minimallyUncountableOn [∀ n, Countable (L.Relations n)]
-    {K : Set (RelationalConfiguration L ℕ)} (hK : ConcentratedAtBFLevels K)
-    (hunc : ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable) : MinimallyUncountableOn K := by
-  refine ⟨hunc, fun θ => ?_⟩
-  obtain ⟨α, hα, hsat⟩ := exists_bfLevel_saturated_modelsOf.{u, v, 0, 0, 0} (V := ℕ) θ
-  have h := hK.countable_isoClasses_or_of_saturated inter_subset_left hα
-    fun b hb c hc hbc => ⟨hc, (hsat α le_rfl b c hbc).1 hb.2⟩
-  simpa only [Setoid.countable_quotient_comap_val_iff, sdiff_self_inter] using h
+classes is minimally uncountable, since every sentence cut of a concentrated set has a side
+meeting countably many isomorphism classes. -/
+theorem ConcentratedAtBFLevels.minimallyUncountableOn {K : Set (RelationalConfiguration L ℕ)}
+    (hK : ConcentratedAtBFLevels K) (hunc : ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable) :
+    MinimallyUncountableOn K :=
+  ⟨hunc, fun θ => by
+    simpa only [Setoid.countable_quotient_comap_val_iff] using
+      hK.countable_isoClasses_inter_modelsOf_or_sdiff θ⟩
 
 /-- A back-and-forth scattered set is minimally uncountable exactly when it is concentrated at
 back-and-forth levels and meets uncountably many isomorphism classes. -/
@@ -131,28 +164,6 @@ theorem minimallyUncountableOn_iff_concentratedAtBFLevels [Countable (Σ n, L.Re
     MinimallyUncountableOn K ↔
       ConcentratedAtBFLevels K ∧ ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable :=
   ⟨fun h => ⟨h.concentratedAtBFLevels hK, h.1⟩, fun h => h.1.minimallyUncountableOn h.2⟩
-
-/-- A set meeting uncountably many isomorphism classes and countably many classes at level `α`
-has a level-`α` class meeting it in uncountably many isomorphism classes. -/
-private theorem exists_bfClass_not_countable_isoClasses {K : Set (RelationalConfiguration L ℕ)}
-    (hK : ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable) {α : Ordinal.{0}}
-    [Countable (Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)))] :
-    ∃ c ∈ K, ¬ (Quotient.mk (isoSetoid L ℕ) '' (K ∩ {d | bfEquivSetoid L ℕ α c d})).Countable := by
-  refine (bfEquivSetoid L ℕ α).exists_class_not_small K
-    (fun A => (Quotient.mk (isoSetoid L ℕ) '' A).Countable) (fun S hS hs => ?_) hK
-  rw [image_sUnion, sUnion_image]
-  exact hS.biUnion hs
-
-/-- If each code of a sequence lies in the level-`α i` class of the previous one, and the levels
-grow by at least `ω` at each step, some code lies in the level-`α i` class of every member. -/
-private theorem exists_bfEquiv_of_chain {c : ℕ → RelationalConfiguration L ℕ}
-    {α : ℕ → Ordinal.{0}} (hα : ∀ i, α i + ω ≤ α (i + 1))
-    (hc : ∀ i, bfEquivSetoid L ℕ (α i) (c i) (c (i + 1))) :
-    ∃ d, ∀ i, bfEquivSetoid L ℕ (α i) d (c i) := by
-  obtain ⟨d, hd⟩ := exists_limit_of_bfEquiv_chain (c := fun i => c (i + 1))
-    (monotone_nat_of_le_succ fun i => le_self_add.trans (hα i))
-    fun i => bfEquivSetoid_anti (hα i) (hc (i + 1))
-  exact ⟨d, fun i => (bfEquivSetoid L ℕ _).trans (hd i) ((bfEquivSetoid L ℕ _).symm (hc i))⟩
 
 /-- **Binary splitting trees.** If some code and level satisfy `P`, and every such pair `(A, α)`
 has two children satisfying `P` at a common level `α' ≥ α + ω`, both in the level-`α` class of `A`
@@ -196,15 +207,9 @@ private theorem false_of_splitting_tree {K : Set (RelationalConfiguration L ℕ)
     (hsame : ∀ σ, α (false :: σ) = α (true :: σ))
     (hne : ∀ σ, ¬ bfEquivSetoid L ℕ (α (true :: σ)) (A (false :: σ)) (A (true :: σ))) :
     False := by
-  classical
-  -- the branch through `X` passes through the reversed prefixes of `X`; choose its limit
-  let word (X : ℕ → Bool) (i : ℕ) : List Bool := ((List.range i).reverse).map X
-  have hword (X : ℕ → Bool) (i : ℕ) : word X (i + 1) = X i :: word X i := by
-    simp [word, List.range_succ]
-  choose d hd using fun X => exists_bfEquiv_of_chain (c := fun i => A (word X i))
-    (α := fun i => α (word X i))
-    (fun i => by simpa only [hword] using hlvl _ (X i))
-    (fun i => by simpa only [hword] using hchild _ (X i))
+  -- the branch through `X` passes through the reversed prefixes `PiNat.res X i`; choose its limit
+  choose d hd using fun X => exists_bfEquiv_of_chain (c := fun i => A (PiNat.res X i))
+    (α := fun i => α (PiNat.res X i)) (fun i => hlvl _ (X i)) (fun i => hchild _ (X i))
   have hdK (X : ℕ → Bool) : d X ∈ K := hsub _ _ ((bfEquivSetoid L ℕ _).symm (hd X 0))
   -- every level of the tree lies below the countable ordinal `β`
   let β := ⨆ σ, α σ
@@ -216,25 +221,22 @@ private theorem false_of_splitting_tree {K : Set (RelationalConfiguration L ℕ)
     have hXY : bfEquivSetoid L ℕ β (d X) (d Y) :=
       Quotient.exact (s := (bfEquivSetoid L ℕ β).comap (Subtype.val : K → _)) hXY
     by_contra hXY'
-    have hex : ∃ i, X i ≠ Y i := by
-      by_contra! h
-      exact hXY' (funext h)
     -- the branches pass through a common word `σ`, then through its two different children
-    let i := Nat.find hex
-    have hagree : word X i = word Y i :=
-      List.map_congr_left fun j hj => by_contra fun h =>
-        Nat.find_min hex (List.mem_range.1 (List.mem_reverse.1 hj)) h
-    set σ := word X i
+    let i := PiNat.firstDiff X Y
+    have hagree : PiNat.res X i = PiNat.res Y i :=
+      PiNat.res_eq_res.2 fun _ hj => PiNat.apply_eq_of_lt_firstDiff hj
+    set σ := PiNat.res X i
     have hlvlσ (b : Bool) : α (b :: σ) = α (true :: σ) := by cases b <;> simp [hsame]
     have hX : bfEquivSetoid L ℕ (α (true :: σ)) (d X) (A (X i :: σ)) := by
-      have h := hd X (i + 1)
-      rwa [hword, hlvlσ] at h
+      have h : bfEquivSetoid L ℕ (α (X i :: σ)) (d X) (A (X i :: σ)) := hd X (i + 1)
+      rwa [hlvlσ] at h
     have hY : bfEquivSetoid L ℕ (α (true :: σ)) (d Y) (A (Y i :: σ)) := by
-      have h := hd Y (i + 1)
-      rwa [hword, ← hagree, hlvlσ] at h
+      have h : bfEquivSetoid L ℕ (α (Y i :: PiNat.res Y i)) (d Y) (A (Y i :: PiNat.res Y i)) :=
+        hd Y (i + 1)
+      rwa [← hagree, hlvlσ] at h
     have hXY := (bfEquivSetoid L ℕ _).trans ((bfEquivSetoid L ℕ _).symm hX)
       ((bfEquivSetoid L ℕ _).trans (bfEquivSetoid_anti (Ordinal.le_iSup α _) hXY) hY)
-    have hXi : X i ≠ Y i := Nat.find_spec hex
+    have hXi : X i ≠ Y i := PiNat.apply_firstDiff_ne hXY'
     cases hx : X i <;> cases hy : Y i <;> simp only [hx, hy] at hXi hXY
     · exact hXi rfl
     · exact hne σ hXY
@@ -283,7 +285,7 @@ private theorem exists_bfClass_split [Countable (Σ n, L.Relations n)] {Θ : L.S
       (hS : ¬ (Quotient.mk (isoSetoid L ℕ) '' S).Countable) : ∃ A' ∈ S, A' ∈ K ∧
       ¬ (Quotient.mk (isoSetoid L ℕ) '' (K ∩ {d | bfEquivSetoid L ℕ α' A' d})).Countable := by
     have := (hscat.mono (hSC.trans inter_subset_left)).countable_quotient hα'
-    obtain ⟨A', hA', hlarge'⟩ := exists_bfClass_not_countable_isoClasses hS (α := α')
+    obtain ⟨A', hA', hlarge'⟩ := (bfEquivSetoid L ℕ α').exists_class_not_countable_image _ S hS
     refine ⟨A', hA', (hSC hA').1, fun h => hlarge' (h.mono (image_mono ?_))⟩
     exact inter_subset_inter_left _ (hSC.trans inter_subset_left)
   obtain ⟨A₀, hA₀, hP₀⟩ := hside _ inter_subset_left hφ₁
@@ -307,7 +309,7 @@ theorem exists_minimallyUncountableOn_inf_of_bfScattered [Countable (Σ n, L.Rel
     ¬ (Quotient.mk (isoSetoid L ℕ) '' (K ∩ {d | bfEquivSetoid L ℕ α A d})).Countable
   have hroot : ∃ A α, P A α := by
     have := hscat.countable_quotient hαΘ
-    obtain ⟨A, hA, hlarge⟩ := exists_bfClass_not_countable_isoClasses hunc (α := αΘ)
+    obtain ⟨A, hA, hlarge⟩ := (bfEquivSetoid L ℕ αΘ).exists_class_not_countable_image _ K hunc
     exact ⟨A, αΘ, hαΘ, le_rfl, hA, hlarge⟩
   have hsplit (A : RelationalConfiguration L ℕ) (α : Ordinal.{0}) (hP : P A α) :
       ∃ α', α + ω ≤ α' ∧ ∃ A₀ A₁, P A₀ α' ∧ P A₁ α' ∧ bfEquivSetoid L ℕ α A A₀ ∧
