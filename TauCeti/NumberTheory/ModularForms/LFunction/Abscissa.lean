@@ -9,26 +9,30 @@ public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import Mathlib.NumberTheory.LSeries.Convergence
+import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.ModularForms.Bounds
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Bounds
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Dimension
+import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Bounds
+import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Dimension
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Bounds
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Dimension
+import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
 # The sharp non-cuspidal abscissa of convergence
 
 Let `Γ` be a subgroup of `GL₂(ℝ)` containing the image of `Γ₁(N)`, such as `Γ₁(N)` or `Γ₀(N)`.
-In weight `k ≥ 2`, the L-series `∑ aₙ n^(-s)` of the `q`-expansion coefficients of every modular
-form on `Γ` converges absolutely for `Re s > k` (Diamond–Shurman, Proposition 5.9.1). This
+In every weight `k ≥ 1`, the L-series `∑ aₙ n^(-s)` of the `q`-expansion coefficients of every
+modular form on `Γ` converges absolutely for `Re s > k` (Diamond–Shurman, Proposition 5.9.1). This
 sharpens the bound `k + 1` that `aₙ = O(nᵏ)` gives for every arithmetic subgroup
 (`ModularForm.abscissaOfAbsConv_qExpansion_coeff_le`).
 
-The proof splits a form on `Γ₁(N)` into its Eisenstein and cuspidal parts. The cuspidal part has
-coefficients `O(n^(k/2))` by Hecke's bound, and `k/2 ≤ k - 1`. A form on `Γ` is in particular a
-form on `Γ₁(N)`, with the same `q`-expansion.
+The proof splits a form on `Γ₁(N)` into its Eisenstein and cuspidal parts. In weight `k ≥ 2` the
+cuspidal part has coefficients `O(n^(k/2))` by Hecke's bound, and `k/2 ≤ k - 1`. A form on `Γ` is
+in particular a form on `Γ₁(N)`, with the same `q`-expansion.
 
 * In weight `k ≥ 3` the Eisenstein part is a linear combination of the normalized raised
   Eisenstein series with character, whose coefficients are twisted divisor sums and hence
@@ -42,6 +46,15 @@ form on `Γ₁(N)`, with the same `q`-expansion.
   (`TauCeti.EisensteinSeries.isBigO_qExpansion_coeff_of_mem_span_weightTwoForm`); that these
   series span the Eisenstein part is Diamond–Shurman, Theorem 4.6.2
   (`TauCeti.EisensteinSeries.span_range_weightTwoForm_eq_congruenceG2Subspace`).
+* In weight one the Eisenstein part is a linear combination of the series `E₁^{ψ,φ,t}`, whose
+  coefficients are bounded by the divisor count and hence are `O(n^ε)` for every `ε > 0`, so its
+  L-series has abscissa at most one
+  (`TauCeti.EisensteinSeries.abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_weightOneForm`);
+  that these series span a complement of the cusp forms is Diamond–Shurman, Theorem 4.8.1
+  (`TauCeti.EisensteinSeries.isCompl_span_range_weightOneForm_cuspFormSubmodule`). No pointwise
+  bound on the cuspidal coefficients is used here: the mean-square bound
+  `∑_{n ≤ X} |aₙ|² = O(X)` and the Cauchy–Schwarz inequality already give the abscissa one
+  (`CuspForm.abscissaOfAbsConv_qExpansion_coeff_le`).
 
 In weights one and two the estimate `aₙ = O(n^(k-1))` is false (the divisor sum `σ₁(n)` is not
 `O(n)`), so the hypothesis `3 ≤ k` cannot be dropped from that coefficient bound. For `k ≥ 2` the
@@ -55,13 +68,13 @@ weaker family of bounds `aₙ = O(n^(k-1+ε))`, for every `ε > 0`, still gives 
   `aₙ = O(n^(k-1))` in weight `k ≥ 3`.
 * `TauCeti.ModularFormClass.qExpansion_isBigO_rpow_of_Gamma1_le`: the coefficient bound
   `aₙ = O(n^(k-1+ε))` for every `ε > 0`, in weight `k ≥ 2`.
-* `TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`: in weight
-  `k ≥ 2`, the abscissa of absolute convergence of the coefficient L-series is at most `k`.
+* `TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`: in every
+  weight `k ≥ 1`, the abscissa of absolute convergence of the coefficient L-series is at most `k`.
 
 ## References
 
-* F. Diamond and J. Shurman, *A First Course in Modular Forms*, Theorems 4.5.2 and 4.6.2, and
-  Proposition 5.9.1.
+* F. Diamond and J. Shurman, *A First Course in Modular Forms*, Theorems 4.5.2, 4.6.2 and 4.8.1,
+  and Proposition 5.9.1 with its proof in §5.9.
 -/
 
 public section
@@ -154,6 +167,33 @@ private lemma isBigO_qExpansion_coeff_Gamma1_two {ε : ℝ} (hε : 0 < ε)
   rw [← hQ] at hE hC ⊢
   simpa using hE.add hC
 
+/-- In weight one, the coefficient L-series of every modular form on `Γ₁(N)` converges
+absolutely for `Re s > 1`: its Eisenstein part is a combination of the series `E₁^{ψ,φ,t}`, whose
+coefficients are `O(n^ε)` for every `ε > 0`, and its cuspidal part obeys the mean-square bound
+`∑_{n ≤ X} |aₙ|² = O(X)`. -/
+private lemma abscissaOfAbsConv_qExpansion_coeff_Gamma1_one
+    (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) 1) :
+    LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ (1 : EReal) := by
+  have hf : f ∈ Submodule.span ℂ (Set.range (CharIndex.weightOneForm (N := N))) ⊔
+      ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) 1 := by
+    rw [isCompl_span_range_weightOneForm_cuspFormSubmodule.sup_eq_top]
+    exact Submodule.mem_top
+  obtain ⟨e, he, c, hc, rfl⟩ := Submodule.mem_sup.mp hf
+  clear hf
+  have hE := abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_weightOneForm he
+  have hC : LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 c).coeff n) ≤ (1 : EReal) := by
+    obtain ⟨c, rfl⟩ := hc
+    have h := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le c
+    rw [strictWidthInfty_Gamma1] at h
+    norm_num at h
+    exact h
+  have hadd : (fun n ↦ (qExpansion 1 ⇑(e + c)).coeff n) =
+      (fun n ↦ (qExpansion 1 e).coeff n) + fun n ↦ (qExpansion 1 c).coeff n := by
+    ext n
+    simp [ModularForm.qExpansion_add one_pos (one_mem_strictPeriods_Gamma1_map N) e c]
+  rw [hadd]
+  exact (LSeries.abscissaOfAbsConv_add_le _ _).trans (max_le hE hC)
+
 namespace ModularFormClass
 
 variable {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
@@ -196,11 +236,17 @@ theorem qExpansion_isBigO_rpow_of_Gamma1_le (hΓ : (Gamma1 N).map (mapGL ℝ) �
     exact Real.rpow_le_rpow_of_exponent_le hn' (by linarith)
 
 /-- **The sharp non-cuspidal abscissa** (Diamond–Shurman, Proposition 5.9.1): if `Γ` contains
-`Γ₁(N)`, then the L-series of the `q`-expansion coefficients of a modular form of weight
-`k ≥ 2` on `Γ` converges absolutely for `Re s > k`. -/
+`Γ₁(N)`, then the L-series of the `q`-expansion coefficients of a modular form of positive
+weight `k` on `Γ` converges absolutely for `Re s > k`. -/
 theorem abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le
-    (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ) (hk : 2 ≤ k) [ModularFormClass F Γ k] (f : F) :
+    (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ) (hk : 0 < k) [ModularFormClass F Γ k] (f : F) :
     LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ ((k : ℝ) : EReal) := by
+  obtain rfl | hk := (by omega : k = 1 ∨ 2 ≤ k)
+  · have hcoe : ⇑(ModularForm.restrict hΓ (ModularFormClass.modularForm f)) = ⇑f := by
+      ext; simp
+    simpa only [hcoe, Int.cast_one, EReal.coe_one] using
+      abscissaOfAbsConv_qExpansion_coeff_Gamma1_one
+        (ModularForm.restrict hΓ (ModularFormClass.modularForm f))
   refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦ ?_
   have hε : 0 < (y - k) / 2 := by linarith
   refine LSeriesSummable_of_isBigO_rpow (x := k + (y - k) / 2)
