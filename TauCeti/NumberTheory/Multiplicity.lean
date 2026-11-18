@@ -34,6 +34,13 @@ valuation of two-variable cyclotomic values and for the nonprimitive prime divis
 `emultiplicity_pow_sub_pow_of_prime`, `Nat.multiplicity_pow_sub_pow` and
 `Nat.multiplicity_pow_two_sub_pow`.
 
+## The powers of two dividing `3 ^ n - 1`
+
+Specializing to `(x, y) = (3, 1)` gives `v₂(3 ^ n - 1) = 1` for odd `n` and
+`v₂(3 ^ n - 1) = v₂(n) + 2` for even `n ≠ 0`. Comparing with `n` shows that `2 ^ n` divides
+`3 ^ n - 1` only for `n ∈ {0, 1, 2, 4}`. This is the arithmetic that ends the Adams-operation
+proof that a map `S⁴ʳ⁻¹ → S²ʳ` of odd Hopf invariant exists only for `r ∈ {1, 2, 4}`.
+
 ## Lifting a residue so that `b ^ n - 1` has exact `p`-adic valuation
 
 Let `p` be a prime and `n` a natural number prime to `p`. If `b₀ ^ n ≡ 1 (mod p ^ k)`, then `b₀`
@@ -55,6 +62,10 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
   `v₂(x ^ n - y ^ n) = v₂(x - y)`.
 * `Nat.multiplicity_pow_two_sub_pow_of_even`: for odd `y < x` and even `n ≠ 0`,
   `v₂(x ^ n - y ^ n) + 1 = v₂(x ^ 2 - y ^ 2) + v₂(n)`.
+* `Nat.multiplicity_two_three_pow_sub_one_of_odd` and
+  `Nat.multiplicity_two_three_pow_sub_one_of_even`: `v₂(3 ^ n - 1)` is `1` for odd `n` and
+  `v₂(n) + 2` for even `n ≠ 0`.
+* `Nat.two_pow_dvd_three_pow_sub_one_iff`: `2 ^ n ∣ 3 ^ n - 1` exactly for `n ∈ {0, 1, 2, 4}`.
 * `TauCeti.exists_modEq_pow_sub_one_eq_mul`: the lift with `b ^ n - 1 = p ^ k * c`, `p ∤ c`.
 
 ## References
@@ -63,6 +74,8 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
   Math. (2) 5 (1904), 173–180, Theorem III, p. 175.
 * Ö. Avcı, *Large Zsigmondy primes*, arXiv:2011.06136v2 (2023), Lemma 2.2.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, proof of (7.4.1).
+* J. F. Adams and M. F. Atiyah, *K-theory and the Hopf invariant*, Quart. J. Math. Oxford (2) 17
+  (1966), 31–38 (the divisibility of `3 ^ n - 1` by `2 ^ n`).
 -/
 
 public section
@@ -116,6 +129,46 @@ theorem multiplicity_pow_two_sub_pow_of_even {x y n : ℕ} (hyx : y < x) (hx : O
   rw [Nat.sq_sub_sq, multiplicity_mul (by omega) (by omega),
     multiplicity_pow_two_sub_pow hyx (even_iff_two_dvd.mp (Nat.Odd.sub_odd hx hy))
       hx.not_two_dvd_nat hn0 hn]
+
+/-- For odd `n`, `v₂(3 ^ n - 1) = 1`: for instance `3 ^ 3 - 1 = 2 * 13`. -/
+theorem multiplicity_two_three_pow_sub_one_of_odd {n : ℕ} (hn : Odd n) :
+    multiplicity 2 (3 ^ n - 1) = 1 := by
+  simpa using multiplicity_pow_two_sub_pow_of_odd (x := 3) (y := 1) (by decide) odd_one hn
+
+/-- For even `n ≠ 0`, `v₂(3 ^ n - 1) = v₂(n) + 2`: for instance `3 ^ 2 - 1 = 2 ^ 3`,
+`3 ^ 4 - 1 = 2 ^ 4 * 5` and `3 ^ 6 - 1 = 2 ^ 3 * 91`. -/
+theorem multiplicity_two_three_pow_sub_one_of_even {n : ℕ} (hn : Even n) (hn0 : n ≠ 0) :
+    multiplicity 2 (3 ^ n - 1) = multiplicity 2 n + 2 := by
+  have h := multiplicity_pow_two_sub_pow_of_even (x := 3) (y := 1) (by norm_num) (by decide)
+    odd_one hn hn0
+  have h8 : multiplicity 2 (3 ^ 2 - 1 ^ 2) = 3 :=
+    multiplicity_pow_self_of_prime Nat.prime_two.prime 3
+  simp only [one_pow] at h h8
+  omega
+
+/-- `2 ^ n` divides `3 ^ n - 1` exactly when `n` is `0`, `1`, `2` or `4`. -/
+theorem two_pow_dvd_three_pow_sub_one_iff {n : ℕ} :
+    2 ^ n ∣ 3 ^ n - 1 ↔ n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 4 := by
+  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl | rfl | rfl) <;> decide⟩
+  rcases eq_or_ne n 0 with rfl | hn0
+  · exact .inl rfl
+  have hfin : FiniteMultiplicity 2 (3 ^ n - 1) :=
+    Nat.finiteMultiplicity_iff.2 ⟨by decide, Nat.sub_pos_of_lt (Nat.one_lt_pow hn0 (by decide))⟩
+  rw [hfin.pow_dvd_iff_le_multiplicity] at h
+  rcases Nat.even_or_odd n with hn | hn
+  · rw [multiplicity_two_three_pow_sub_one_of_even hn hn0] at h
+    -- `2 ^ v₂(n) ≤ n ≤ v₂(n) + 2` forces `v₂(n) ≤ 2`, hence `n ≤ 4`.
+    have hv : 2 ^ multiplicity 2 n ≤ n :=
+      Nat.le_of_dvd (Nat.pos_of_ne_zero hn0) (pow_multiplicity_dvd 2 n)
+    obtain ⟨k, rfl⟩ := hn
+    rcases Nat.lt_or_ge (multiplicity 2 (k + k)) 2 with hv2 | hv2
+    · omega
+    · obtain ⟨w, hw⟩ := Nat.exists_eq_add_of_le hv2
+      rw [hw, pow_add] at hv
+      have := Nat.lt_two_pow_self (n := w)
+      omega
+  · rw [multiplicity_two_three_pow_sub_one_of_odd hn] at h
+    omega
 
 end Nat
 
