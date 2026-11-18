@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.PicardGroup
 public import Mathlib.RingTheory.LocalProperties.Exactness
 public import TauCeti.RingTheory.Localization.Module
 import Mathlib.RingTheory.LocalProperties.FinitePresentation
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # Invertible modules and localization

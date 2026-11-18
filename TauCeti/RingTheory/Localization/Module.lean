@@ -281,28 +281,3 @@ theorem bijective_map_toSpanSingleton_iff {R M : Type*} [CommSemiring R] [AddCom
   rfl
 
 end LocalizedModule
-
-namespace TauCeti.IsLocalization
-
-open TensorProduct
-
-variable {R : Type*} [CommSemiring R] (S : Submonoid R)
-  (A : Type*) [CommSemiring A] [Algebra R A] [IsLocalization S A]
-  {M N : Type*} [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
-  [Module A M] [Module A N] [IsScalarTower R A M] [IsScalarTower R A N]
-
-/-- Changing the scalar ring of a tensor product along a localization preserves pure tensors. -/
-@[simp]
-theorem moduleTensorEquiv_tmul (m : M) (n : N) :
-    _root_.IsLocalization.moduleTensorEquiv S A M N (m ⊗ₜ[A] n) = m ⊗ₜ[R] n := by
-  have := _root_.IsLocalization.tensorProduct_compatibleSMul S A M N
-  exact mapOfCompatibleSMul_tmul ..
-
-/-- The inverse change of tensor-product scalars along a localization preserves pure tensors. -/
-@[simp]
-theorem moduleTensorEquiv_symm_tmul (m : M) (n : N) :
-    (_root_.IsLocalization.moduleTensorEquiv S A M N).symm (m ⊗ₜ[R] n) = m ⊗ₜ[A] n := by
-  have := _root_.IsLocalization.tensorProduct_compatibleSMul S A M N
-  exact mapOfCompatibleSMul_tmul ..
-
-end TauCeti.IsLocalization
