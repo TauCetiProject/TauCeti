@@ -6,7 +6,8 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Liouville
-public import Mathlib.NumberTheory.LSeries.Dirichlet
+public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+public import Mathlib.NumberTheory.LSeries.Convolution
 
 /-!
 # Completely multiplicative arithmetic functions
@@ -28,11 +29,11 @@ exactly the coercions of the monoid-with-zero homomorphisms `ℕ →*₀ R`.
   completely multiplicative function distributes over Dirichlet convolution.
 * `ArithmeticFunction.IsCompletelyMultiplicative.moebius_pmul_mul_self`: the Dirichlet inverse of
   a completely multiplicative `f` is `μ · f`.
-* Instances: `ζ`, `pow k`, `n ↦ n ^ ν` for complex `ν`, the Liouville function and the
-  arithmetic function of a Dirichlet character.
+* Instances: `ζ`, `pow k`, `n ↦ n ^ ν` for complex `ν` and the Liouville function.
 
 The Euler products of completely multiplicative functions are in
-`TauCeti/NumberTheory/EulerProduct/CompletelyMultiplicative.lean`.
+`TauCeti/NumberTheory/EulerProduct/CompletelyMultiplicative.lean`, and the instance for
+Dirichlet characters is in `TauCeti/NumberTheory/DirichletCharacter/ArithmeticFunction.lean`.
 -/
 
 public section
@@ -252,21 +253,6 @@ theorem isCompletelyMultiplicative_liouville : liouville.IsCompletelyMultiplicat
   ⟨liouville_apply_one, liouville_apply_mul⟩
 
 end ArithmeticFunction
-
-namespace DirichletCharacter
-
-open ArithmeticFunction
-
-/-- The arithmetic function of a Dirichlet character is completely multiplicative. -/
-theorem isCompletelyMultiplicative_toArithmeticFunction {R : Type*} [CommMonoidWithZero R]
-    {N : ℕ} (χ : DirichletCharacter R N) :
-    (toArithmeticFunction (χ ·)).IsCompletelyMultiplicative := by
-  refine .of_ne_zero (isMultiplicative_toArithmeticFunction χ).map_one fun hm hn ↦ ?_
-  simp only [← χ.apply_eq_toArithmeticFunction_apply (mul_ne_zero hm hn),
-    ← χ.apply_eq_toArithmeticFunction_apply hm, ← χ.apply_eq_toArithmeticFunction_apply hn,
-    cast_mul, map_mul]
-
-end DirichletCharacter
 
 /-! ### Checks -/
 
