@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
+import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.RingTheory.Flat.Basic
 
 /-!
@@ -49,12 +50,9 @@ The structure is `TauCeti.HermitianVectorBundle`; the other names are in its nam
 * L. Szpiro, *Degrés, intersections, hauteurs*, Astérisque 127 (1985), §1.2, p. 13.
 * J.-B. Bost, *Périodes et isogénies des variétés abéliennes sur les corps de nombres*,
   Séminaire Bourbaki 795 (1994/95), Appendice A.1–A.2.
-
-This is TauCetiRoadmap `ArakelovGeometryAndAbelianHeights` §1.1, together with the degree
-computed with a chosen section from §1.3.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 open NumberField ComplexConjugate TensorProduct Module
 
@@ -67,7 +65,7 @@ namespace HermitianVectorBundle
 /-- The complex numbers, viewed as an algebra over `𝓞 K` through the field embedding
 `σ : K →+* ℂ`. The complex fibre of an `𝓞 K`-module `E` at `σ` is
 `ComplexAlong σ ⊗[𝓞 K] E`. -/
-def ComplexAlong (_σ : K →+* ℂ) : Type := ℂ
+@[expose] def ComplexAlong (_σ : K →+* ℂ) : Type := ℂ
 
 namespace ComplexAlong
 
@@ -86,16 +84,16 @@ instance instAlgebraRingOfIntegers : Algebra (𝓞 K) (ComplexAlong σ) :=
 /-- Integers of `K` and complex numbers act on `ComplexAlong σ` by commuting multiplications. -/
 instance instSMulCommClass : SMulCommClass (𝓞 K) ℂ (ComplexAlong σ) where
   smul_comm a c z := by
-    change algebraMap (𝓞 K) (ComplexAlong σ) a * (c • z) = c • (algebraMap _ _ a * z)
+    rw [Algebra.smul_def a, Algebra.smul_def a]
     exact mul_smul_comm c _ z
 
 /-- The identification of `ComplexAlong σ` with `ℂ`. -/
-def toComplex : ComplexAlong σ ≃ₗ[ℂ] ℂ := LinearEquiv.refl ℂ ℂ
+@[expose] def toComplex : ComplexAlong σ ≃ₗ[ℂ] ℂ := LinearEquiv.refl ℂ ℂ
 
 /-- An integer `a` of `K` acts on `ComplexAlong σ` as the complex number `σ(a)`. -/
 theorem toComplex_algebraMap (a : 𝓞 K) :
     toComplex σ (algebraMap (𝓞 K) (ComplexAlong σ) a) = σ (algebraMap (𝓞 K) K a) :=
-  rfl
+  (rfl)
 
 end ComplexAlong
 
@@ -185,6 +183,19 @@ theorem Isometry.ext {f g : Isometry E F} (h : ∀ x, f.toLinearEquiv x = g.toLi
     f = g :=
   Isometry.toLinearEquiv_injective (LinearEquiv.ext h)
 
+/-- An isometry preserves the inner products of elements at every embedding. -/
+@[simp]
+theorem Isometry.inner_one_tmul (f : Isometry E F) (σ : K →+* ℂ) (x y : E) :
+    F.inner σ ((1 : ComplexAlong σ) ⊗ₜ f.toLinearEquiv x) (1 ⊗ₜ f.toLinearEquiv y) =
+      E.inner σ (1 ⊗ₜ x) (1 ⊗ₜ y) := by
+  simpa using f.inner_baseChange σ (1 ⊗ₜ x) (1 ⊗ₜ y)
+
+/-- An isometry preserves the norms of elements at every embedding. -/
+@[simp]
+theorem Isometry.norm_apply (f : Isometry E F) (σ : K →+* ℂ) (x : E) :
+    F.norm σ (f.toLinearEquiv x) = E.norm σ x := by
+  rw [norm, norm, f.inner_one_tmul]
+
 variable (E) in
 /-- A nonzero element of a hermitian vector bundle stays nonzero in every complex fibre, since
 `E` is flat and `𝓞 K → ℂ` is injective. -/
@@ -215,21 +226,24 @@ def trivialFiberEquiv : ComplexFiber σ (𝓞 K) ≃ₗ[ℂ] ℂ :=
   ((AlgebraTensorModule.rid (𝓞 K) (ComplexAlong σ) (ComplexAlong σ)).restrictScalars ℂ).trans
     (ComplexAlong.toComplex σ)
 
+/-- `trivialFiberEquiv σ` sends `1 ⊗ a` to `σ(a)`. -/
 @[simp]
 theorem trivialFiberEquiv_one_tmul (a : 𝓞 K) :
     trivialFiberEquiv σ ((1 : ComplexAlong σ) ⊗ₜ a) = σ (algebraMap (𝓞 K) K a) :=
   mul_one _
 
-/-- The standard inner product `h_σ(v, w) = conj (v) * w` on the complex fibre of `𝓞 K`. -/
+/-- The standard inner product `h_σ(v, w) = conj (v) * w` on the complex fibre of `𝓞 K`: the
+inner product of `ℂ` pulled back along `trivialFiberEquiv σ`. -/
 @[instance_reducible]
-def trivialCore : InnerProductSpace.Core ℂ (ComplexFiber σ (𝓞 K)) where
-  inner v w := conj (trivialFiberEquiv σ v) * trivialFiberEquiv σ w
-  conj_inner_symm v w := by simp [mul_comm]
-  re_inner_nonneg v := by simp [RCLike.conj_mul, ← Complex.ofReal_pow]
-  add_left u v w := by simp [add_mul]
-  smul_left v w c := by simp [mul_assoc]
-  definite v h := by
-    rcases mul_eq_zero.1 h with h | h <;> simpa using h
+def trivialCore : InnerProductSpace.Core ℂ (ComplexFiber σ (𝓞 K)) :=
+  letI := NormedAddCommGroup.induced _ ℂ (trivialFiberEquiv σ) (trivialFiberEquiv σ).injective
+  letI := InnerProductSpace.induced (𝕜 := ℂ) (trivialFiberEquiv σ)
+  InnerProductSpace.toCore
+
+/-- The standard inner product on the complex fibre of `𝓞 K` is `conj (v) * w`. -/
+theorem trivialCore_inner (v w : ComplexFiber σ (𝓞 K)) :
+    (trivialCore σ).inner v w = conj (trivialFiberEquiv σ v) * trivialFiberEquiv σ w :=
+  RCLike.inner_apply' _ _
 
 variable (K) in
 /-- The trivial hermitian line bundle `Ō_K = (𝓞 K, |·|_σ)`, with `h_σ(1, 1) = 1` for every
@@ -239,18 +253,17 @@ abbrev trivial : HermitianVectorBundle K where
   metric :=
     { core := trivialCore
       inner_conjugate σ x y := by
-        change conj (trivialFiberEquiv _ _) * trivialFiberEquiv _ _ =
-          conj (conj (trivialFiberEquiv _ _) * trivialFiberEquiv _ _)
-        simp [ComplexEmbedding.conjugate_coe_eq] }
+        simp [trivialCore_inner, ComplexEmbedding.conjugate_coe_eq] }
 
 /-- The inner product of `Ō_K` at `σ` on integral elements is `conj (σ x) * σ y`. -/
+@[simp]
 theorem trivial_inner (x y : 𝓞 K) :
     (trivial K).inner σ ((1 : ComplexAlong σ) ⊗ₜ[𝓞 K] x) (1 ⊗ₜ y) =
       conj (σ (algebraMap (𝓞 K) K x)) * σ (algebraMap (𝓞 K) K y) := by
-  change conj (trivialFiberEquiv σ _) * trivialFiberEquiv σ _ = _
-  simp
+  rw [inner, trivialCore_inner, trivialFiberEquiv_one_tmul, trivialFiberEquiv_one_tmul]
 
 /-- The norm on `Ō_K` at `σ` is the absolute value `|σ(x)|`. -/
+@[simp]
 theorem trivial_norm (x : 𝓞 K) : (trivial K).norm σ x = ‖σ (algebraMap (𝓞 K) K x)‖ := by
   rw [norm, trivial_inner, RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.ofReal_re,
     Real.sqrt_sq (norm_nonneg _)]
@@ -260,62 +273,69 @@ theorem trivial_norm_one : (trivial K).norm σ 1 = 1 := by
   simp [trivial_norm]
 
 /-- The trivial bundle has rank one. -/
+@[simp]
 theorem rank_trivial : (trivial K).rank = 1 := by
-  change finrank K (K ⊗[𝓞 K] 𝓞 K) = 1
-  rw [Module.finrank_baseChange, Module.finrank_self]
+  rw [rank, Module.finrank_baseChange, Module.finrank_self]
 
 end Trivial
 
 section Rescale
 
-/-- The inner products of `Ē(c)`: those of `Ē` multiplied by `e^{-2c}`. -/
+/-- The inner products of `Ē(c)`: those of `Ē` pulled back along multiplication by `e^{-c}`,
+that is, multiplied by `e^{-2c}`. -/
 @[instance_reducible]
-def rescaleCore (c : ℝ) (σ : K →+* ℂ) : InnerProductSpace.Core ℂ (ComplexFiber σ E) where
-  inner v w := ((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ v w
-  conj_inner_symm v w := by
-    rw [map_mul, Complex.conj_ofReal]
-    exact congrArg _ ((E.metric.core σ).conj_inner_symm v w)
-  re_inner_nonneg v := by
-    change 0 ≤ (((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ v v).re
-    rw [Complex.re_ofReal_mul]
-    exact mul_nonneg (by positivity) ((E.metric.core σ).re_inner_nonneg v)
-  add_left u v w := by
-    rw [← mul_add]
-    exact congrArg _ ((E.metric.core σ).add_left u v w)
-  smul_left v w a := by
-    change ((Real.exp (-c) ^ 2 : ℝ) : ℂ) * (E.metric.core σ).inner (a • v) w =
-      conj a * (((Real.exp (-c) ^ 2 : ℝ) : ℂ) * (E.metric.core σ).inner v w)
-    rw [(E.metric.core σ).smul_left v w a]
-    ring
-  definite v h := (E.metric.core σ).definite v
-    ((mul_eq_zero.1 h).resolve_left (Complex.ofReal_ne_zero.2 (by positivity)))
+def rescaleCore (c : ℝ) (σ : K →+* ℂ) : InnerProductSpace.Core ℂ (ComplexFiber σ E) :=
+  let f := LinearEquiv.smulOfNeZero ℂ (ComplexFiber σ E) (Real.exp (-c) : ℂ)
+    (Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne')
+  letI : NormedAddCommGroup (ComplexFiber σ E) := (E.metric.core σ).toNormedAddCommGroup
+  letI : InnerProductSpace ℂ (ComplexFiber σ E) := .ofCore (E.metric.core σ).toCore
+  @InnerProductSpace.toCore ℂ _ _ (NormedAddCommGroup.induced _ _ f f.injective)
+    (InnerProductSpace.induced (𝕜 := ℂ) f)
+
+/-- The inner products of `Ē(c)` are those of `Ē` multiplied by `e^{-2c}`. -/
+theorem rescaleCore_inner (c : ℝ) (σ : K →+* ℂ) (v w : ComplexFiber σ E) :
+    (E.rescaleCore c σ).inner v w = ((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ v w := by
+  set a : ℂ := ((Real.exp (-c) : ℝ) : ℂ)
+  have h : (E.rescaleCore c σ).inner v w = (E.metric.core σ).inner (a • v) (a • w) := rfl
+  have hr : (E.metric.core σ).inner v (a • w) = a * (E.metric.core σ).inner v w := by
+    rw [← (E.metric.core σ).conj_inner_symm, (E.metric.core σ).smul_left, map_mul,
+      Complex.conj_conj, (E.metric.core σ).conj_inner_symm]
+  rw [h, (E.metric.core σ).smul_left, hr, Complex.conj_ofReal, ← mul_assoc, ← Complex.ofReal_mul,
+    ← sq, inner]
 
 /-- The rescaled bundle `Ē(c)`: the same module, with every norm multiplied by `e^{-c}`, so
 that every inner product is multiplied by `e^{-2c}`. -/
+@[expose]
 def rescale (c : ℝ) : HermitianVectorBundle K where
   carrier := E
   metric :=
     { core := E.rescaleCore c
       inner_conjugate σ x y := by
-        change ((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner (ComplexEmbedding.conjugate σ) _ _ =
-          conj (((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ (1 ⊗ₜ x) (1 ⊗ₜ y))
-        rw [map_mul, Complex.conj_ofReal, E.inner_conjugate] }
+        rw [rescaleCore_inner, rescaleCore_inner, map_mul, Complex.conj_ofReal,
+          E.inner_conjugate] }
 
 /-- The inner products of `Ē(c)` are those of `Ē` multiplied by `e^{-2c}`. -/
+@[simp]
 theorem rescale_inner (c : ℝ) (σ : K →+* ℂ) (v w : ComplexFiber σ E) :
     (E.rescale c).inner σ v w = ((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ v w :=
-  rfl
+  E.rescaleCore_inner c σ v w
 
 /-- Rescaling multiplies every norm by `e^{-c}`. -/
+@[simp]
 theorem rescale_norm (c : ℝ) (σ : K →+* ℂ) (x : E) :
     (E.rescale c).norm σ x = Real.exp (-c) * E.norm σ x := by
-  change Real.sqrt (((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ (1 ⊗ₜ x) (1 ⊗ₜ x)).re =
-    Real.exp (-c) * Real.sqrt (E.inner σ (1 ⊗ₜ x) (1 ⊗ₜ x)).re
-  rw [Complex.re_ofReal_mul, Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]
+  have h : (E.rescale c).inner σ (1 ⊗ₜ x) (1 ⊗ₜ x) =
+      ((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ (1 ⊗ₜ x) (1 ⊗ₜ x) :=
+    E.rescale_inner c σ _ _
+  unfold norm
+  simp only [h, RCLike.re_to_complex]
+  rw [Complex.re_ofReal_mul, Real.sqrt_mul (by positivity),
+    Real.sqrt_sq (by positivity)]
 
 /-- Rescaling does not change the rank. -/
+@[simp]
 theorem rank_rescale (c : ℝ) : (E.rescale c).rank = E.rank :=
-  rfl
+  (rfl)
 
 end Rescale
 
@@ -326,14 +346,14 @@ variable [NumberField K]
 /-- The Arakelov degree of a hermitian line bundle computed with a section `s`:
 `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`, the sum running over all field embeddings
 `σ : K →+* ℂ`. For a nonzero section of a hermitian line bundle this is the Arakelov degree of
-TauCetiRoadmap `ArakelovGeometryAndAbelianHeights` §1.3; its independence of the section is
-the product formula. -/
+the bundle; its independence of the section is the product formula. -/
 def sectionDegree (s : E) : ℝ :=
   Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s)
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
+@[simp]
 theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 := by
-  simp [sectionDegree, trivial_norm_one, Ideal.span_singleton_one, Submodule.cardQuot_top]
+  simp [sectionDegree, Ideal.span_singleton_one, Submodule.cardQuot_top]
 
 /-- Rescaling the metric by `e^{-c}` adds `[K : ℚ] c` to the degree computed with a nonzero
 section. -/
@@ -343,6 +363,9 @@ theorem sectionDegree_rescale (c : ℝ) {s : E} (hs : s ≠ 0) :
     rw [rescale_norm, Real.log_mul (by positivity) (E.norm_pos σ hs).ne', Real.log_exp]
   simp only [sectionDegree, h, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
     NumberField.Embeddings.card, nsmul_eq_mul]
+  -- `E.rescale c` is `E` with a new metric: its carrier is `E` by definition, but the module
+  -- instance on the span differs syntactically, so `rw` cannot identify the two `cardQuot` terms
+  -- and `change` restates the left one over `E`.
   change Real.log (Submodule.span (𝓞 K) {s}).cardQuot - _ = _
   ring
 
