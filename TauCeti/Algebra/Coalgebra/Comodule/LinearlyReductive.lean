@@ -72,7 +72,7 @@ arbitrary field.
 * `TauCeti.Coalgebra.IsLinearlyReductive`: every finite-dimensional comodule is completely
   reducible, with constructor
   `TauCeti.Coalgebra.IsLinearlyReductive.of_forall_isCompletelyReducible`.
-* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible_sameUniverse`: use linear
+* `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible_same_universe`: use linear
   reductivity for a comodule in the carrier universe named by the hypothesis.
 * `TauCeti.Coalgebra.IsLinearlyReductive.isCompletelyReducible`: **every comodule over a
   linearly reductive coalgebra is completely reducible**, in every carrier universe and with no
@@ -519,7 +519,7 @@ variable {k : Type u} [Field k]
 
 Every comodule whose carrier lies in the universe quantified by the hypothesis is completely
 reducible: its finite subcomodules lie in that universe too. -/
-theorem isCompletelyReducible_sameUniverse (k : Type u) [Field k]
+theorem isCompletelyReducible_same_universe (k : Type u) [Field k]
     {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
     (h : IsLinearlyReductive.{u, v, w} k C)
     (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] :
