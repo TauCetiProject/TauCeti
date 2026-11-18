@@ -49,7 +49,7 @@ fibre exactly when the anchor vanishes at `x`, as for a bundle of Lie algebras w
 * `TauCeti.LieAlgebroid.bracket_apply_congr_left`, `TauCeti.LieAlgebroid.bracket_apply_congr_right`:
   `[a, b](x)` depends only on `a(x)` when `b(x)` is isotropic, and only on `b(x)` when `a(x)` is.
 * `TauCeti.LieAlgebroid.coe_bracket_isotropy`: the isotropy bracket is computed by any extensions.
-* `TauCeti.LieAlgebroid.isotropyEval_surjective`, `TauCeti.LieAlgebroid.mem_ker_isotropyEval`.
+* `TauCeti.LieAlgebroid.isotropyEval_surjective`.
 
 ## References
 
@@ -84,11 +84,26 @@ algebra, `TauCeti.LieAlgebroid.instLieRingIsotropy`. -/
 def isotropy (x : M) : Submodule ℝ (V x) :=
   LinearMap.ker ((A.anchor x : V x →L[ℝ] TangentSpace I x) : V x →ₗ[ℝ] TangentSpace I x)
 
+/-- The isotropy subspace is the kernel of the anchor at the point. -/
+theorem isotropy_def (x : M) : A.isotropy x = (A.anchor x).ker :=
+  (rfl)
+
 @[simp]
 theorem mem_isotropy_iff {x : M} {v : V x} : v ∈ A.isotropy x ↔ A.anchor x v = 0 :=
   LinearMap.mem_ker
 
+/-- The anchor vanishes on every isotropy vector. -/
+@[simp]
+theorem anchor_coe_isotropy {x : M} (v : A.isotropy x) : A.anchor x v = 0 :=
+  A.mem_isotropy_iff.mp v.2
+
+/-- The isotropy at `x` is zero exactly when the anchor at `x` is injective. -/
+theorem isotropy_eq_bot_iff {x : M} : A.isotropy x = ⊥ ↔ Function.Injective (A.anchor x) := by
+  rw [isotropy_def]
+  exact LinearMap.ker_eq_bot
+
 /-- The isotropy at `x` is the whole fibre exactly when the anchor vanishes at `x`. -/
+@[simp]
 theorem isotropy_eq_top_iff {x : M} : A.isotropy x = ⊤ ↔ A.anchor x = 0 := by
   rw [Submodule.eq_top_iff', ContinuousLinearMap.ext_iff]
   simp only [mem_isotropy_iff, zero_apply]
@@ -111,18 +126,10 @@ theorem bracket_apply_mem_isotropy {x : M} {a b : Cₛ^∞⟮I; F, V⟯} (ha : a
   exact mlieBracket_eq_zero_of_eq_zero ((A.anchorField_apply a x).trans ha)
     ((A.anchorField_apply b x).trans hb)
 
-/-- Every isotropy vector is the value of a smooth section. -/
-private theorem exists_apply_eq {x : M} (v : A.isotropy x) :
-    ∃ a : Cₛ^∞⟮I; F, V⟯, a x = v :=
-  let ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F ∞ (v : V x)
-  ⟨⟨s, hs⟩, hsx⟩
-
 variable [FiniteDimensional ℝ F]
 
-/-- If `a` vanishes at `x` and `b(x)` is isotropic then `[a, b]` vanishes at `x`: writing `a` as a
-sum of sections `f • u` with `f(x) = 0`, the Leibniz rule leaves only the derivative of `f` along
-`ρ(b(x)) = 0`. -/
-private theorem bracket_apply_eq_zero_of_apply_eq_zero {x : M} {a b : Cₛ^∞⟮I; F, V⟯}
+/-- If `a` vanishes at `x` and `b(x)` is isotropic, then `[a, b]` vanishes at `x`. -/
+theorem bracket_apply_eq_zero_of_apply_eq_zero_left {x : M} {a b : Cₛ^∞⟮I; F, V⟯}
     (ha : a x = 0) (hb : b x ∈ A.isotropy x) : A.bracket a b x = 0 := by
   rw [mem_isotropy_iff] at hb
   refine Submodule.smul_induction_on (p := fun u ↦ A.bracket u b x = 0)
@@ -133,10 +140,16 @@ private theorem bracket_apply_eq_zero_of_apply_eq_zero {x : M} {a b : Cₛ^∞�
   · intro u₁ u₂ h₁ h₂
     rw [map_add, LinearMap.add_apply, ContMDiffSection.coe_add, Pi.add_apply, h₁, h₂, add_zero]
 
+/-- If `a(x)` is isotropic and `b` vanishes at `x`, then `[a, b]` vanishes at `x`. -/
+theorem bracket_apply_eq_zero_of_apply_eq_zero_right {x : M} {a b : Cₛ^∞⟮I; F, V⟯}
+    (ha : a x ∈ A.isotropy x) (hb : b x = 0) : A.bracket a b x = 0 := by
+  rw [A.bracket_swap, ContMDiffSection.coe_neg, Pi.neg_apply,
+    A.bracket_apply_eq_zero_of_apply_eq_zero_left hb ha, neg_zero]
+
 /-- If `b(x)` is isotropic, then `[a, b](x)` depends only on the value `a(x)`. -/
 theorem bracket_apply_congr_left {x : M} {a a' b : Cₛ^∞⟮I; F, V⟯} (h : a x = a' x)
     (hb : b x ∈ A.isotropy x) : A.bracket a b x = A.bracket a' b x := by
-  have h₀ := A.bracket_apply_eq_zero_of_apply_eq_zero
+  have h₀ := A.bracket_apply_eq_zero_of_apply_eq_zero_left
     (a := a - a') (by rw [ContMDiffSection.coe_sub, Pi.sub_apply, h, sub_self]) hb
   rwa [map_sub, LinearMap.sub_apply, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h₀
 
@@ -160,59 +173,57 @@ smooth sections through the two isotropy vectors. By `TauCeti.LieAlgebroid.brack
 any other choice gives the same value (`TauCeti.LieAlgebroid.coe_bracket_isotropy`). -/
 instance instBracketIsotropy (x : M) : Bracket (A.isotropy x) (A.isotropy x) where
   bracket v w :=
-    ⟨A.bracket ⟨_, (FiberBundle.exists_contMDiff_section_eq I F ∞ (v : V x)).choose_spec.1⟩
-      ⟨_, (FiberBundle.exists_contMDiff_section_eq I F ∞ (w : V x)).choose_spec.1⟩ x,
+    ⟨A.bracket (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)).choose
+      (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)).choose x,
       A.bracket_apply_mem_isotropy
         (by
-          rw [ContMDiffSection.coeFn_mk,
-            (FiberBundle.exists_contMDiff_section_eq I F ∞ (v : V x)).choose_spec.2]
+          rw [(ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)).choose_spec]
           exact v.2)
         (by
-          rw [ContMDiffSection.coeFn_mk,
-            (FiberBundle.exists_contMDiff_section_eq I F ∞ (w : V x)).choose_spec.2]
+          rw [(ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)).choose_spec]
           exact w.2)⟩
 
 /-- The bracket of the isotropy Lie algebra at `x` is the value at `x` of the bracket of any two
 smooth sections through the two isotropy vectors. -/
 theorem coe_bracket_isotropy {x : M} {v w : A.isotropy x} {a b : Cₛ^∞⟮I; F, V⟯} (ha : a x = v)
     (hb : b x = w) : ((⁅v, w⁆ : A.isotropy x) : V x) = A.bracket a b x :=
-  have hv := (FiberBundle.exists_contMDiff_section_eq I F ∞ (v : V x)).choose_spec.2
-  have hw := (FiberBundle.exists_contMDiff_section_eq I F ∞ (w : V x)).choose_spec.2
+  have hv := (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)).choose_spec
+  have hw := (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)).choose_spec
   A.bracket_apply_congr (hv.trans ha.symm) (hw.trans hb.symm)
-    (by rw [ContMDiffSection.coeFn_mk, hv]; exact v.2)
-    (by rw [ContMDiffSection.coeFn_mk, hw]; exact w.2)
+    (by rw [hv]; exact v.2)
+    (by rw [hw]; exact w.2)
 
 /-- The **isotropy Lie algebra** of a Lie algebroid at `x`, with the bracket
 `TauCeti.LieAlgebroid.coe_bracket_isotropy` of isotropy vectors. Its Jacobi identity is that of the
 bracket of sections. -/
 instance instLieRingIsotropy (x : M) : LieRing (A.isotropy x) where
   add_lie v₁ v₂ w := by
-    obtain ⟨a₁, ha₁⟩ := A.exists_apply_eq v₁
-    obtain ⟨a₂, ha₂⟩ := A.exists_apply_eq v₂
-    obtain ⟨b, hb⟩ := A.exists_apply_eq w
+    obtain ⟨a₁, ha₁⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v₁ : V x)
+    obtain ⟨a₂, ha₂⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v₂ : V x)
+    obtain ⟨b, hb⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)
     ext
     rw [Submodule.coe_add, A.coe_bracket_isotropy ha₁ hb, A.coe_bracket_isotropy ha₂ hb,
       A.coe_bracket_isotropy (a := a₁ + a₂) (by
         rw [ContMDiffSection.coe_add, Pi.add_apply, ha₁, ha₂, Submodule.coe_add]) hb,
       map_add, LinearMap.add_apply, ContMDiffSection.coe_add, Pi.add_apply]
   lie_add v w₁ w₂ := by
-    obtain ⟨a, ha⟩ := A.exists_apply_eq v
-    obtain ⟨b₁, hb₁⟩ := A.exists_apply_eq w₁
-    obtain ⟨b₂, hb₂⟩ := A.exists_apply_eq w₂
+    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
+    obtain ⟨b₁, hb₁⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w₁ : V x)
+    obtain ⟨b₂, hb₂⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w₂ : V x)
     ext
     rw [Submodule.coe_add, A.coe_bracket_isotropy ha hb₁, A.coe_bracket_isotropy ha hb₂,
       A.coe_bracket_isotropy (b := b₁ + b₂) ha (by
         rw [ContMDiffSection.coe_add, Pi.add_apply, hb₁, hb₂, Submodule.coe_add]),
       map_add, ContMDiffSection.coe_add, Pi.add_apply]
   lie_self v := by
-    obtain ⟨a, ha⟩ := A.exists_apply_eq v
+    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
     ext
     rw [A.coe_bracket_isotropy ha ha, A.bracket_self, ContMDiffSection.coe_zero, Pi.zero_apply,
       Submodule.coe_zero]
   leibniz_lie u v w := by
-    obtain ⟨a, ha⟩ := A.exists_apply_eq u
-    obtain ⟨b, hb⟩ := A.exists_apply_eq v
-    obtain ⟨c, hc⟩ := A.exists_apply_eq w
+    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (u : V x)
+    obtain ⟨b, hb⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
+    obtain ⟨c, hc⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)
     ext
     rw [Submodule.coe_add, A.coe_bracket_isotropy ha (A.coe_bracket_isotropy hb hc).symm,
       A.coe_bracket_isotropy (A.coe_bracket_isotropy ha hb).symm hc,
@@ -222,8 +233,8 @@ instance instLieRingIsotropy (x : M) : LieRing (A.isotropy x) where
 /-- The isotropy Lie algebra at `x` is a Lie algebra over `ℝ`. -/
 instance instLieAlgebraIsotropy (x : M) : LieAlgebra ℝ (A.isotropy x) where
   lie_smul c v w := by
-    obtain ⟨a, ha⟩ := A.exists_apply_eq v
-    obtain ⟨b, hb⟩ := A.exists_apply_eq w
+    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
+    obtain ⟨b, hb⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)
     ext
     rw [Submodule.coe_smul, A.coe_bracket_isotropy ha hb, A.coe_bracket_isotropy (b := c • b) ha
       (by rw [ContMDiffSection.coe_smul, Pi.smul_apply, hb, Submodule.coe_smul]), map_smul,
@@ -288,7 +299,7 @@ theorem coe_isotropyEval_apply {x : M} (s : A.isotropySections x) :
 /-- Every isotropy vector is the value of an isotropic section. -/
 theorem isotropyEval_surjective (x : M) : Function.Surjective (A.isotropyEval x) := by
   intro v
-  obtain ⟨a, ha⟩ := A.exists_apply_eq v
+  obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
   refine ⟨⟨A.sectionsEquiv.symm a, ?_⟩, Subtype.ext ?_⟩
   · rw [mem_isotropySections_iff, LinearEquiv.apply_symm_apply, ha]
     exact v.2
@@ -299,11 +310,6 @@ theorem isotropyEval_surjective (x : M) : Function.Surjective (A.isotropyEval x)
 theorem isotropyEval_apply_eq_zero_iff {x : M} {s : A.isotropySections x} :
     A.isotropyEval x s = 0 ↔ A.sectionsEquiv s x = 0 := by
   rw [← Submodule.coe_eq_zero, coe_isotropyEval_apply]
-
-/-- The kernel of evaluation at `x` consists of the sections vanishing at `x`. -/
-theorem mem_ker_isotropyEval {x : M} {s : A.isotropySections x} :
-    s ∈ (A.isotropyEval x).ker ↔ A.sectionsEquiv s x = 0 := by
-  rw [LieHom.mem_ker, isotropyEval_apply_eq_zero_iff]
 
 end Sections
 

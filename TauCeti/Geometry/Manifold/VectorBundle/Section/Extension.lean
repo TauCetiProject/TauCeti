@@ -69,12 +69,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
 
+/-- In a `C^n` vector bundle with `n ≤ ∞`, every fibre vector is the value of a global `C^n`
+section. -/
+theorem exists_apply_eq (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
+    {x : M} (v : V x) : ∃ s : Cₛ^n⟮I; F, V⟯, s x = v := by
+  obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F n v
+  exact ⟨⟨s, hs⟩, hsx⟩
+
 /-- In a `C^n` vector bundle with `n ≤ ∞`, evaluation of `C^n` sections at a point is surjective:
 every fibre vector is the value of a global `C^n` section. -/
 theorem evalLinearMap_surjective (n : ℕ∞ω) [ENat.LEInfty n] [ContMDiffVectorBundle n F V I]
     (x : M) : Function.Surjective (evalLinearMap I F n V x) := fun v ↦ by
-  obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F n v
-  exact ⟨⟨s, hs⟩, by simpa using hsx⟩
+  obtain ⟨s, hs⟩ := exists_apply_eq (I := I) (F := F) n v
+  exact ⟨s, by simpa using hs⟩
 
 end Surjective
 
