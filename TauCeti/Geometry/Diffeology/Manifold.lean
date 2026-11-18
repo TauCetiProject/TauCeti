@@ -130,6 +130,15 @@ protected theorem _root_.ContMDiffOn.dSmooth_domRestrict
   fun _ p hp => isPlot_iff_contMDiff.mpr (hf.comp_contMDiff
     (isPlot_iff_contMDiff.mp (TauCeti.Diffeology.isPlot_subtype_iff.mp hp)) fun z => (p z).2)
 
+-- The model space `E` is determined by the compatibility instance, not by the statement.
+include E in
+/-- The D-topology of a compatible manifold is finer than its manifold topology: open sets of the
+manifold are D-open. This direction needs neither finite-dimensionality nor smooth atlas
+assumptions. -/
+theorem dTopology_le : (dTopology : TopologicalSpace M) ≤ tM :=
+  TopologicalSpace.le_def.mpr fun _ hs =>
+    isOpen_iff_preimages_plots.mpr fun _ _ hp => hs.preimage hp.contMDiff.continuous
+
 end
 
 instance : @IsContMDiffCompatible E _ _ M _ _ (manifoldDiffeology E M) := by
