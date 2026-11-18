@@ -42,7 +42,7 @@ followed by the local Taylor coordinates `TauCeti.taylorJetQuotientEquiv` at eac
 * `Polynomial.hasseJet a m`: the `R`-linear map `f ↦ ((hasseDeriv k f).eval (a i))_{i, k < m i}`.
 * `Polynomial.hermiteJet a m`: its restriction to `Polynomial.degreeLT R (∑ i, m i)`.
 * `Polynomial.hermiteQuotientEquiv`: for nodes with unit differences, the Chinese remainder
-  isomorphism `R[X] ⧸ (∏ i, (X - a i) ^ m i) ≃+* ∀ i, R[X] ⧸ ((X - a i) ^ m i)`.
+  isomorphism `R[X] ⧸ (∏ i, (X - a i) ^ m i) ≃ₐ[R] ∀ i, R[X] ⧸ ((X - a i) ^ m i)`.
 * `Polynomial.hermiteJetEquiv`: for nodes with unit differences, Hermite interpolation as a linear
   equivalence; its inverse sends a jet datum to its interpolation polynomial.
 * `Polynomial.hermiteBasis`: the basis of `degreeLT R (∑ i, m i)` dual to the Hasse jets.
@@ -185,20 +185,23 @@ theorem hasseJetQuotientEquiv_symm_hasseJet (f : R[X]) :
 
 /-- **Chinese remainder theorem** for the nodes: when the differences of the nodes are units, the
 quotient of `R[X]` by `∏ i, (X - a i) ^ m i` is the product of the local quotients
-`R[X] ⧸ ((X - a i) ^ m i)`. -/
+`R[X] ⧸ ((X - a i) ^ m i)` as an `R`-algebra. -/
 noncomputable def hermiteQuotientEquiv :
-    R[X] ⧸ Ideal.span {∏ i, (X - C (a i)) ^ m i} ≃+*
+    (R[X] ⧸ Ideal.span {∏ i, (X - C (a i)) ^ m i}) ≃ₐ[R]
       ∀ i, R[X] ⧸ Ideal.span {(X - C (a i)) ^ m i} :=
-  (Ideal.quotEquivOfEq (Ideal.iInf_span_singleton fun _ _ hij =>
+  AlgEquiv.ofRingEquiv (f :=
+    (Ideal.quotEquivOfEq (Ideal.iInf_span_singleton fun _ _ hij =>
       (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow).symm).trans <|
-    Ideal.quotientInfRingEquivPiQuotient _ fun _ _ hij =>
-      (Ideal.isCoprime_span_singleton_iff _ _).2 (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow
+      Ideal.quotientInfRingEquivPiQuotient _ fun _ _ hij =>
+        (Ideal.isCoprime_span_singleton_iff _ _).2
+          (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow) fun _ => rfl
 
 @[simp]
 theorem hermiteQuotientEquiv_mk (f : R[X]) (i : ι) :
     hermiteQuotientEquiv ha m (Ideal.Quotient.mk _ f) i = Ideal.Quotient.mk _ f := by
-  rw [hermiteQuotientEquiv, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk]
-  exact Ideal.quotientInfRingEquivPiQuotient_mk_apply _ _ _
+  -- The quotient-identification map, CRT map and `AlgEquiv.ofRingEquiv` act on representatives
+  -- by definition, as in `Ideal.quotientInfRingEquivPiQuotient_mk_apply`.
+  rfl
 
 /-- The jet coordinates of `R[X] ⧸ (∏ i, (X - a i) ^ m i)` at the node `a i` are the local Taylor
 coordinates `TauCeti.taylorJetQuotientEquiv` of its image under the Chinese remainder isomorphism:
@@ -402,8 +405,7 @@ example : ¬ Injective (hermiteJet ![(0 : ℚ), 0] ![1, 1]) := by
   fin_cases i <;> fin_cases k <;> simp
 
 /-- In characteristic `2` the ordinary jets with one node `0` of multiplicity `3` kill `X²`, so
-the unit hypothesis on the factorials in `eval_iterate_derivative_bijective` is necessary; the
-Hasse jet of order `2` of `X²` at `0` is `1`. -/
+the unit hypothesis on the factorials in `eval_iterate_derivative_bijective` is necessary. -/
 example : ¬ Injective fun (f : degreeLT (ZMod 2) (∑ i, ![3] i)) i (k : Fin (![3] i)) =>
     (derivative^[k] (f : (ZMod 2)[X])).eval (![0] i) := by
   intro h
@@ -435,7 +437,7 @@ example : (∏ i, (X - C (![(0 : ℚ), 1] i)) ^ ![1, 1] i) ∣ X ^ 2 - X := by
 `f'(0) = 0` and `f(1) = 0`. -/
 example (f : ℚ[X]) (hf : f ∈ degreeLT ℚ 3) (h₀ : f.eval 0 = 1) (h₁ : (derivative f).eval 0 = 0)
     (h₂ : f.eval 1 = 0) : f = 1 - X ^ 2 := by
-  have hM : ∑ i, ![2, 1] i = 3 := rfl
+  have hM : ∑ i, ![2, 1] i = 3 := by simp
   have hg : (1 - X ^ 2 : ℚ[X]) ∈ degreeLT ℚ (∑ i, ![2, 1] i) := by
     rw [hM, mem_degreeLT]
     compute_degree!
