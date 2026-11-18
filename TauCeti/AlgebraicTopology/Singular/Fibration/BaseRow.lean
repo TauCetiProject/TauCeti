@@ -261,13 +261,16 @@ def cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso (k : ℕ) (b m : ℤ)
 /-- The identification of the graded piece `F_k H_k / F_{k-1} H_k` with `H_k(B; R)` is induced by
 the inclusion of `F_k H_k` into the abutment, followed by the identification of the abutment with
 `H_k(B; R)`. -/
-@[reassoc]
-lemma π_cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso_hom (k : ℕ) :
-    cokernel.π _ ≫ (cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ rfl rfl).hom =
-      (serreSpectralObject univ (𝟙 B) R).abutmentFiltrationι ((k : ℤ) - 1 + 1) (-k) ≫
+@[reassoc (attr := simp)]
+lemma π_cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso_hom (k : ℕ) (b m : ℤ)
+    (hb : b = k - 1) (hm : m = -k) :
+    cokernel.π _ ≫ (cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k b m hb hm).hom =
+      (serreSpectralObject univ (𝟙 B) R).abutmentFiltrationι (b + 1) m ≫
+        eqToHom (congrArg (serreSpectralObject univ (𝟙 B) R).abutment hm) ≫
         (filteredSpaceAbutmentIso (ModuleCat.of R R) (monotone_preimageSkeleton (𝟙 B)) k).hom := by
+  subst hb hm
   simp only [cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso, Iso.trans_hom, Iso.symm_hom,
-    asIso_inv, asIso_hom, IsIso.hom_inv_id_assoc]
+    asIso_inv, asIso_hom, IsIso.hom_inv_id_assoc, eqToHom_refl, Category.id_comp]
 
 /-- **The row `q = 0` of the second page of the spectral sequence of the skeletal filtration.** For
 a CW complex `B`, the object `E²_{k,0}` of the Serre spectral sequence of the identity of `B`, at
