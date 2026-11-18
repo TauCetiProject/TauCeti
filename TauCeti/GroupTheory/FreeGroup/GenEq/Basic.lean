@@ -351,13 +351,17 @@ theorem basicEquation_snd (μ : Fin Ω.numBases) :
       Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) (Ω.sign (Ω.dual μ)) :=
   (rfl)
 
+/-- The basic equation of `Δ(μ)` is the basic equation of `μ` with its sides exchanged. -/
+theorem basicEquation_dual (μ : Fin Ω.numBases) :
+    Ω.basicEquation (Ω.dual μ) = (Ω.basicEquation μ).swap :=
+  Prod.ext (by simp) (by simp [Ω.dual_involutive μ])
+
 /-- The basic equations of `μ` and `Δ(μ)` have the same two sides, exchanged: as relators, each is
 the inverse of the other. -/
 theorem mk_basicEquation_dual (μ : Fin Ω.numBases) :
     FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).1 * (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).2)⁻¹ =
       (FreeGroup.mk (Ω.basicEquation μ).1 * (FreeGroup.mk (Ω.basicEquation μ).2)⁻¹)⁻¹ := by
-  rw [basicEquation_fst, basicEquation_snd, basicEquation_fst, basicEquation_snd,
-    Ω.dual_involutive, mul_inv_rev, inv_inv]
+  rw [basicEquation_dual, Prod.fst_swap, Prod.snd_swap, mul_inv_rev, inv_inv]
 
 /-- The left side of the coefficient equation of a constant base on item `k` is `hₖ`. -/
 @[simp]
