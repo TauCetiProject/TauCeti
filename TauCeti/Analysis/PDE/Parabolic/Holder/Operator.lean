@@ -49,6 +49,8 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanParabolicOperatorL_sub_le` and
   `TauCeti.ParabolicC2HolderSpace.continuous_euclideanParabolicOperatorL`: the operator is affine
   and Lipschitz continuous in its scalar coefficients.
+* `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_restrictL`: the operator commutes
+  with restriction to a smaller slab.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_const_apply_eq_add`: freezing the
   coefficient matrix at a point.
 * `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
@@ -417,6 +419,23 @@ theorem continuous_euclideanParabolicOperatorL :
       ∑ i, ∑ j, ‖y.1 i j - x.1 i j‖ + 24 * (∑ i, ‖y.2.1 i - x.2.1 i‖ + ‖y.2.2 - x.2.2‖) := by
     fun_prop
   simpa using h.tendsto x
+
+/-- **Restriction to a smaller slab.** The operator commutes with restriction from
+`ℝⁿ × [t₀, t₁]` to `ℝⁿ × [t₀', t₁']`, when the coefficients are restricted as well. -/
+theorem euclideanParabolicOperatorL_restrictL {t₀' t₁' : ℝ} (h₀ : t₀ ≤ t₀') (h₁ : t₁' ≤ t₁)
+    (ht' : t₀' < t₁') (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanParabolicOperatorL hα
+        (fun i j ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (a i j))
+        (fun i ↦ HolderSpace.compLipschitzL _
+          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (b i))
+        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) c)
+        (restrictL h₀ h₁ ht' u) =
+      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
+        (euclideanParabolicOperatorL hα a b c u) := by
+  ext p
+  simp only [euclideanParabolicOperatorL_apply, HolderSpace.compLipschitzL_apply, restrictL_apply,
+    spatialFDerivL_restrictL, spatialSecondFDerivL_restrictL, timeDerivL_restrictL]
 
 /-- **Freezing the coefficients at a point.** The operator `∂ₜ - ∑ᵢⱼ aⁱʲ(z₀) ∂ᵢ∂ⱼ` with the
 coefficient matrix frozen at `z₀` and no lower-order terms is `P` plus the frozen principal error
