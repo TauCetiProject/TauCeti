@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -37,6 +38,8 @@ difference of dimensions of spaces of square-integrable solutions is
 
 * `TauCeti.squareIntegrableSolutions`: the initial values of the square-integrable solutions of
   `v' + A(s) v = 0`.
+* `TauCeti.squareIntegrableSolutions_neg_comp_neg`: reflecting time, `s ↦ v (-s)`, identifies the
+  square-integrable solutions of `v' + A(s) v = 0` with those of `w' - A(-s) w = 0`.
 * `TauCeti.squareIntegrableSolutions_neg_smul_id_eq_bot`: a scalar equation `v' = b v` has no
   nonzero square-integrable solution when its scalar solution `g` is not square integrable.
 * `TauCeti.mem_squareIntegrableSolutions_iff_of_apply_eq_toLp`: for a block-diagonal coefficient
@@ -101,6 +104,24 @@ theorem mem_squareIntegrableSolutions {A : ℝ → F →L[ℝ] F} {x : F} :
     x ∈ squareIntegrableSolutions A ↔
       ∃ v : ℝ → F, v 0 = x ∧ (∀ s, HasDerivAt v (-A s (v s)) s) ∧ MemLp v 2 :=
   Iff.rfl
+
+/-- Reflecting time turns a square-integrable solution of `v' + A(s) v = 0` into the
+square-integrable solution `s ↦ v (-s)` of `w' - A(-s) w = 0`, with the same initial value. -/
+private theorem mem_squareIntegrableSolutions_neg_comp_neg {A : ℝ → F →L[ℝ] F} {x : F}
+    (hx : x ∈ squareIntegrableSolutions A) :
+    x ∈ squareIntegrableSolutions fun s ↦ -A (-s) := by
+  obtain ⟨v, rfl, hv, hv2⟩ := hx
+  refine ⟨fun s ↦ v (-s), by simp, fun s ↦ ?_, ?_⟩
+  · simpa [Function.comp_def] using (hv (-s)).scomp s (hasDerivAt_neg s)
+  · simpa [Function.comp_def] using hv2.comp_measurePreserving (Measure.measurePreserving_neg _)
+
+/-- **Time reversal of square-integrable solutions.** The equations `v' + A(s) v = 0` and
+`w' - A(-s) w = 0` have the same initial values of square-integrable solutions: `s ↦ v (-s)`
+solves the second equation exactly when `v` solves the first, and reflection preserves `L²`. -/
+theorem squareIntegrableSolutions_neg_comp_neg (A : ℝ → F →L[ℝ] F) :
+    squareIntegrableSolutions (fun s ↦ -A (-s)) = squareIntegrableSolutions A := by
+  refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ mem_squareIntegrableSolutions_neg_comp_neg hx
+  simpa using mem_squareIntegrableSolutions_neg_comp_neg hx
 
 /-- If the scalar equation `g' = b g` has a solution with `g 0 = 1` that is not square
 integrable, then `v' = b v` has no nonzero square-integrable solution in `F`: every solution is
