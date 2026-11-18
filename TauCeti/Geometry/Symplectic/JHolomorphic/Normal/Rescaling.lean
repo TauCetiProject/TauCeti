@@ -11,8 +11,7 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
 import Mathlib.Analysis.Calculus.TaylorIntegral
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
-import TauCeti.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Calculus.IteratedFDeriv.SliceLimit
 
 /-!
 # Normal rescaling of an almost complex structure along a pseudoholomorphic curve
@@ -58,8 +57,10 @@ tubular map defined on a disk bundle. This file proves:
   `C¹`, and `TauCeti.tendstoUniformlyOn_iteratedFDeriv_normalDilation`,
   `TauCeti.tendstoUniformlyOn_normalDilation` for globally defined fields). The proof writes
   `δ_a^* J` through Hadamard's lemma as a field depending smoothly on `(a, z, W)` jointly,
-  including `a = 0`, where its value is `J_N`. These statements take `N` complete, so that the
-  average in Hadamard's lemma is a Bochner integral;
+  including `a = 0`, where its value is `J_N`. It is smooth on the open set
+  `TauCeti.normalSegmentDomain Ω` of parameters whose normal segments from `(z, 0)` to `(z, a W)`
+  lie in `Ω`. These statements take `N` complete, so that the average in Hadamard's lemma is a
+  Bochner integral;
 * `J_N(z, W)` squares to `-1` when `J` is differentiable at `(z, 0)`, squares to `-1` near
   `(z, 0)`, and `J(z, 0)` preserves `E × {0}`
   (`TauCeti.normalLinearization_apply_normalLinearization_apply`); `J_N` is `Cᵐ` near `(z, W)`
@@ -360,14 +361,21 @@ theorem contDiff_normalLinearization {J : E × N → E × N →L[ℝ] E × N} {m
 
 /-! ### The normal dilation through Hadamard's lemma -/
 
-/-- The parameters `(a, z, W)` for which the segment from `(z, 0)` to `(z, a W)` lies in `Ω`, so
-that Hadamard's lemma applies to a field defined on `Ω`. -/
-private def hadamardDomain (Ω : Set (E × N)) : Set (ℝ × (E × N)) :=
+/-- The parameters `(a, z, W)` for which the normal segment from `(z, 0)` to `(z, a W)` lies in
+`Ω`. Hadamard's lemma along these segments writes normal dilations of fields and maps defined on
+`Ω` as functions of `(a, z, W)` that stay smooth at `a = 0`. -/
+def normalSegmentDomain (Ω : Set (E × N)) : Set (ℝ × (E × N)) :=
   {q | ∀ t ∈ Icc (0 : ℝ) 1, (q.2.1, t • q.1 • q.2.2) ∈ Ω}
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+@[simp]
+theorem mem_normalSegmentDomain {Ω : Set (E × N)} {q : ℝ × (E × N)} :
+    q ∈ normalSegmentDomain Ω ↔ ∀ t ∈ Icc (0 : ℝ) 1, (q.2.1, t • q.1 • q.2.2) ∈ Ω :=
+  Iff.rfl
+
 omit [NormedSpace ℝ E] in
-private theorem isOpen_hadamardDomain {Ω : Set (E × N)} (hΩ : IsOpen Ω) :
-    IsOpen (hadamardDomain Ω) := by
+theorem isOpen_normalSegmentDomain {Ω : Set (E × N)} (hΩ : IsOpen Ω) :
+    IsOpen (normalSegmentDomain Ω) := by
   refine isOpen_iff_mem_nhds.2 fun q hq ↦ ?_
   have hc : Continuous fun y : (ℝ × (E × N)) × ℝ ↦ ((y.1.2.1, y.2 • y.1.1 • y.1.2.2) : E × N) :=
     by fun_prop
@@ -376,8 +384,14 @@ private theorem isOpen_hadamardDomain {Ω : Set (E × N)} (hΩ : IsOpen Ω) :
       (hΩ.mem_nhds (hq t ht))
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-private theorem zero_mem_hadamardDomain {Ω : Set (E × N)} {p : E × N} (hp : (p.1, 0) ∈ Ω) :
-    ((0 : ℝ), p) ∈ hadamardDomain Ω := fun t _ ↦ by simpa using hp
+theorem zero_mem_normalSegmentDomain {Ω : Set (E × N)} {p : E × N} (hp : (p.1, 0) ∈ Ω) :
+    ((0 : ℝ), p) ∈ normalSegmentDomain Ω := fun t _ ↦ by simpa using hp
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The base point of a segment in `normalSegmentDomain Ω` lies in `Ω`. -/
+theorem mk_zero_mem_of_mem_normalSegmentDomain {Ω : Set (E × N)} {q : ℝ × (E × N)}
+    (hq : q ∈ normalSegmentDomain Ω) : (q.2.1, 0) ∈ Ω := by
+  simpa using hq 0 (left_mem_Icc.2 zero_le_one)
 
 /-- The normal dilation of `J` at `(a, p)`, written with Hadamard's lemma so that it is defined
 and smooth in `(a, p)` jointly, including `a = 0`: the block `E → N` of `J(z, a W)` divided by
@@ -411,19 +425,20 @@ private theorem hadamardField_apply (J : E × N → E × N →L[ℝ] E × N) (q 
 open set on which `J` is `C^(n+1)`. -/
 private theorem contDiffOn_hadamardField {J : E × N → E × N →L[ℝ] E × N} {Ω : Set (E × N)}
     (hΩ : IsOpen Ω) {n : ℕ∞} (hJ : ContDiffOn ℝ ((n : WithTop ℕ∞) + 1) J Ω) :
-    ContDiffOn ℝ n (hadamardField J) (hadamardDomain Ω) := by
+    ContDiffOn ℝ n (hadamardField J) (normalSegmentDomain Ω) := by
   have hJn : ContDiffOn ℝ n J Ω := hJ.of_le le_self_add
   have hJ' : ContDiffOn ℝ n (fderiv ℝ J) Ω := hJ.fderiv_of_isOpen hΩ le_rfl
-  have hJa : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2)) (hadamardDomain Ω) :=
+  have hJa : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2))
+      (normalSegmentDomain Ω) :=
     hJn.comp (by fun_prop : ContDiff ℝ n fun q : ℝ × (E × N) ↦
       ((q.2.1, q.1 • q.2.2) : E × N)).contDiffOn fun q hq ↦ by
         simpa using hq 1 (right_mem_Icc.2 zero_le_one)
   have hI : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ ∫ t in (0 : ℝ)..1,
       ContinuousLinearMap.snd ℝ E N ∘L fderiv ℝ J (q.2.1, t • q.1 • q.2.2) (0, q.2.2) ∘L
-        ContinuousLinearMap.inl ℝ E N) (hadamardDomain Ω) := by
-    refine ContDiffOn.parametric_intervalIntegral (isOpen_hadamardDomain hΩ) ?_
+        ContinuousLinearMap.inl ℝ E N) (normalSegmentDomain Ω) := by
+    refine ContDiffOn.parametric_intervalIntegral (isOpen_normalSegmentDomain hΩ) ?_
     have hpt : ContDiffOn ℝ n (fun y : (ℝ × (E × N)) × ℝ ↦
-        fderiv ℝ J (y.1.2.1, y.2 • y.1.1 • y.1.2.2)) (hadamardDomain Ω ×ˢ uIcc 0 1) :=
+        fderiv ℝ J (y.1.2.1, y.2 • y.1.1 • y.1.2.2)) (normalSegmentDomain Ω ×ˢ uIcc 0 1) :=
       hJ'.comp (by fun_prop : ContDiff ℝ n fun y : (ℝ × (E × N)) × ℝ ↦
         ((y.1.2.1, y.2 • y.1.1 • y.1.2.2) : E × N)).contDiffOn fun y hy ↦ by
         rw [uIcc_of_le zero_le_one] at hy
@@ -452,7 +467,7 @@ set containing the segment from `(p.1, 0)` to `(p.1, a • p.2)` and `J(p.1, 0)`
 `E × {0}`. -/
 private theorem hadamardField_of_ne_zero {J : E × N → E × N →L[ℝ] E × N} {Ω : Set (E × N)}
     (hΩ : IsOpen Ω) (hJ : ContDiffOn ℝ 1 J Ω) {a : ℝ} {p : E × N}
-    (hJ₀ : ∀ v, (J (p.1, 0) (v, 0)).2 = 0) (ha : a ≠ 0) (hq : (a, p) ∈ hadamardDomain Ω) :
+    (hJ₀ : ∀ v, (J (p.1, 0) (v, 0)).2 = 0) (ha : a ≠ 0) (hq : (a, p) ∈ normalSegmentDomain Ω) :
     hadamardField J (a, p) = normalDilation J a p := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have hseg (t : ℝ) : (p.1, (0 : N)) + t • ((0 : E), a • p.2) = (p.1, t • a • p.2) := by simp
@@ -515,42 +530,14 @@ theorem tendstoUniformlyOn_iteratedFDeriv_normalDilation_of_isOpen {Ω K : Set (
     (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
     TendstoUniformlyOn (fun a ↦ iteratedFDeriv ℝ i (normalDilation J a))
       (iteratedFDeriv ℝ i (normalLinearization J)) (𝓝[≠] 0) K := by
-  have hD := isOpen_hadamardDomain hΩ
-  have hG : ContDiffOn ℝ i (hadamardField J) (hadamardDomain Ω) :=
-    contDiffOn_hadamardField hΩ (hJ.of_le (by exact_mod_cast hi))
   have hJ1 : ContDiffOn ℝ 1 J Ω := hJ.of_le (le_trans (by exact_mod_cast Nat.le_add_left 1 i) hi)
-  -- The derivatives in `p` of `p ↦ G(a, p)` are jointly continuous near `{0} × K`.
-  have hΦ : ∀ p ∈ K, ContinuousAt (Function.uncurry fun a p ↦
-      iteratedFDeriv ℝ i (fun y ↦ hadamardField J (a, y)) p) (0, p) := by
-    intro p hp
-    have hmem := zero_mem_hadamardDomain (hKΩ p hp)
-    have hc : ContinuousAt (fun z : ℝ × (E × N) ↦
-        (iteratedFDeriv ℝ i (hadamardField J) z).compContinuousLinearMap
-          fun _ ↦ ContinuousLinearMap.inr ℝ ℝ (E × N)) (0, p) :=
-      (ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.continuousAt.comp
-        ((hG.contDiffAt (hD.mem_nhds hmem)).continuousAt_iteratedFDeriv le_rfl)
-    refine hc.congr ?_
-    filter_upwards [hD.mem_nhds hmem] with z hz
-    exact ((hG.contDiffAt (hD.mem_nhds hz)).iteratedFDeriv_prod_right i le_rfl).symm
-  have h := hK.tendstoUniformlyOn_of_continuousAt hΦ
-  have h0 : (fun y ↦ hadamardField J ((0 : ℝ), y)) = normalLinearization J :=
-    funext (hadamardField_zero J)
-  simp only [h0] at h
-  have h' : TendstoUniformlyOn (fun a ↦ iteratedFDeriv ℝ i fun y ↦ hadamardField J (a, y))
-      (iteratedFDeriv ℝ i (normalLinearization J)) (𝓝[≠] 0) K :=
-    fun u hu ↦ nhdsWithin_le_nhds (h u hu)
-  refine h'.congr ?_
-  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds
-    (hK.eventually_forall_of_forall_eventually (P := fun a p ↦ (a, p) ∈ hadamardDomain Ω)
-      fun p hp ↦ hD.mem_nhds (zero_mem_hadamardDomain (hKΩ p hp)))] with a ha haK p hp
-  refine (Filter.EventuallyEq.iteratedFDeriv ℝ ?_ i).eq_of_nhds
-  have hy : ∀ᶠ y in 𝓝 p, (a, y) ∈ hadamardDomain Ω :=
-    (continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
-      (hD.mem_nhds (haK p hp))
-  filter_upwards [hy] with y hy
-  have hy0 : (y.1, 0) ∈ Ω := by
-    simpa using hy 0 (left_mem_Icc.2 zero_le_one)
-  exact hadamardField_of_ne_zero hΩ hJ1 (hJ₀ y.1 hy0) ha hy
+  have h := ContDiffOn.tendstoUniformlyOn_iteratedFDeriv_slice
+    (contDiffOn_hadamardField (n := i) hΩ (hJ.of_le (by exact_mod_cast hi)))
+    (isOpen_normalSegmentDomain hΩ) hK (fun p hp ↦ zero_mem_normalSegmentDomain (hKΩ p hp))
+    nhdsWithin_le_nhds (g := normalDilation J)
+    (eventually_nhdsWithin_of_forall (s := {0}ᶜ) fun a ha y hy ↦ (hadamardField_of_ne_zero hΩ hJ1
+      (hJ₀ y.1 (mk_zero_mem_of_mem_normalSegmentDomain hy)) ha hy).symm)
+  rwa [funext (hadamardField_zero J)] at h
 
 /-- **The normal dilations of `J` converge to its normal linearization.** If `J` is `C¹` on an
 open set `Ω` and the zero section is `J`-holomorphic where it meets `Ω`, then `δ_a^* J → J_N`
