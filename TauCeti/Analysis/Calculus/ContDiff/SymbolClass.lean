@@ -83,23 +83,15 @@ private theorem rpow_mul_rpow_eventuallyEq (a b : ℝ) :
   filter_upwards [eventually_norm_pos] with z hz
   rw [Real.rpow_add hz]
 
-/-- If `c ‖z‖ ≤ ‖φ z‖ ≤ C ‖z‖` near `0`, then `‖φ z‖ ^ e = O(‖z‖ ^ e)` for every real `e`. -/
-private theorem isBigO_norm_rpow_of_le {φ : E → F} {c C e : ℝ} (hc : 0 < c)
-    (hlow : ∀ᶠ z in 𝓝[≠] (0 : E), c * ‖z‖ ≤ ‖φ z‖)
-    (hup : ∀ᶠ z in 𝓝[≠] (0 : E), ‖φ z‖ ≤ C * ‖z‖) :
-    (fun z ↦ ‖φ z‖ ^ e) =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ e := by
-  refine IsBigO.of_bound (max (c ^ e) (C ^ e)) ?_
-  filter_upwards [hlow, hup, eventually_norm_pos] with z hlz huz hz
-  have hcz : 0 < c * ‖z‖ := mul_pos hc hz
-  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
-  have hcC : c ≤ C := le_of_mul_le_mul_right (hlz.trans huz) hz
-  rcases le_total 0 e with he | he
-  · calc ‖φ z‖ ^ e ≤ (C * ‖z‖) ^ e := Real.rpow_le_rpow (norm_nonneg _) huz he
-      _ = C ^ e * ‖z‖ ^ e := Real.mul_rpow (hc.le.trans hcC) hz.le
-      _ ≤ max (c ^ e) (C ^ e) * ‖z‖ ^ e := by gcongr; exact le_max_right _ _
-  · calc ‖φ z‖ ^ e ≤ (c * ‖z‖) ^ e := Real.rpow_le_rpow_of_nonpos hcz hlz he
-      _ = c ^ e * ‖z‖ ^ e := Real.mul_rpow hc.le hz.le
-      _ ≤ max (c ^ e) (C ^ e) * ‖z‖ ^ e := by gcongr; exact le_max_left _ _
+/-- The exponents in the Leibniz rule for punctured derivative bounds add up: the product of the
+bounds of orders `i` and `n - i` for symbols of orders `ℓ` and `m` is the bound of order `n` for
+order `ℓ + m`. -/
+private theorem isBigO_rpow_mul_rpow (ℓ m : ℝ) {n i : ℕ} (hi : i ≤ n) :
+    (fun z : E ↦ ‖z‖ ^ (ℓ - i) * ‖z‖ ^ (m - (n - i : ℕ))) =O[𝓝[≠] (0 : E)]
+      fun z ↦ ‖z‖ ^ (ℓ + m - n) := by
+  refine ((rpow_mul_rpow_eventuallyEq _ _).trans (Eventually.of_forall fun z ↦ ?_)).isBigO
+  push_cast [Nat.cast_sub hi]
+  ring_nf
 
 variable [NormedSpace ℝ E] [NormedSpace ℝ F] [NormedSpace ℝ G] [NormedSpace ℝ H]
 
@@ -150,13 +142,13 @@ theorem tendsto_zero (hf : IsPuncturedSymbol ℓ f) (hℓ : 0 < ℓ) :
 /-- Being a punctured symbol only depends on the map on a punctured neighbourhood of `0`. -/
 theorem congr (hf : IsPuncturedSymbol ℓ f) (h : f =ᶠ[𝓝[≠] (0 : E)] f₁) :
     IsPuncturedSymbol ℓ f₁ := by
-  have hloc : ∀ᶠ z in 𝓝[≠] (0 : E), ∀ᶠ w in 𝓝 z, f w = f₁ w :=
+  have hloc : ∀ᶠ z in 𝓝[≠] (0 : E), f =ᶠ[𝓝 z] f₁ :=
     (eventually_nhdsWithin_eventually_nhds_iff_of_isOpen isOpen_compl_singleton).2 h
   refine ⟨?_, fun j ↦ (hf.2 j).congr' ?_ EventuallyEq.rfl⟩
   · filter_upwards [hf.1, hloc] with z hz hz'
-    exact hz.congr_of_eventuallyEq (show f =ᶠ[𝓝 z] f₁ from hz').symm
+    exact hz.congr_of_eventuallyEq hz'.symm
   · filter_upwards [hloc] with z hz
-    exact ((show f =ᶠ[𝓝 z] f₁ from hz).iteratedFDeriv ℝ j).eq_of_nhds
+    exact (hz.iteratedFDeriv ℝ j).eq_of_nhds
 
 /-- A punctured symbol of order `ℓ` has every smaller order. -/
 theorem mono (hf : IsPuncturedSymbol ℓ f) (h : m ≤ ℓ) : IsPuncturedSymbol m f := by
@@ -186,15 +178,6 @@ theorem neg (hf : IsPuncturedSymbol ℓ f) : IsPuncturedSymbol ℓ fun z ↦ -f 
 theorem sub (hf : IsPuncturedSymbol ℓ f) (hf₁ : IsPuncturedSymbol ℓ f₁) :
     IsPuncturedSymbol ℓ fun z ↦ f z - f₁ z := by
   simpa [sub_eq_add_neg] using hf.add hf₁.neg
-
-/-- A constant multiple of a punctured symbol of order `ℓ` has order `ℓ`. -/
-theorem const_smul (hf : IsPuncturedSymbol ℓ f) (a : ℝ) :
-    IsPuncturedSymbol ℓ fun z ↦ a • f z := by
-  refine ⟨?_, fun j ↦ ((hf.2 j).const_smul_left a).congr' ?_ EventuallyEq.rfl⟩
-  · filter_upwards [hf.1] with z hz
-    exact hz.const_smul a
-  · filter_upwards [hf.1] with z hz
-    exact (iteratedFDeriv_const_smul_apply (hz.of_le (by exact_mod_cast le_top))).symm
 
 /-- The image of a punctured symbol under a continuous linear map is a punctured symbol of the
 same order. -/
@@ -232,7 +215,7 @@ theorem isPuncturedSymbol_const (c : F) : IsPuncturedSymbol 0 fun _ : E ↦ c :=
 /-- The zero map is a punctured symbol of every order. -/
 theorem isPuncturedSymbol_zero (ℓ : ℝ) : IsPuncturedSymbol ℓ fun _ : E ↦ (0 : F) :=
   ⟨Eventually.of_forall fun _ ↦ contDiffAt_const, fun j ↦ by
-    rw [show (fun _ : E ↦ (0 : F)) = 0 from rfl, iteratedFDeriv_zero]
+    rw [iteratedFDeriv_fun_zero]
     exact isBigO_zero _ _⟩
 
 /-- A continuous linear map is a punctured symbol of order `1`. -/
@@ -267,29 +250,10 @@ private theorem isBigO_iteratedFDeriv_bilinear (B : F →L[ℝ] G →L[ℝ] H) {
     (hfn : ∀ i ≤ n, iteratedFDeriv ℝ i f =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (ℓ - i))
     (hgn : ∀ i ≤ n, iteratedFDeriv ℝ i g =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (m - i)) :
     iteratedFDeriv ℝ n (fun z ↦ B (f z) (g z)) =O[𝓝[≠] (0 : E)]
-      fun z ↦ ‖z‖ ^ (ℓ + m - n) := by
-  have hsum : (fun z ↦ ‖B‖ * ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) *
-      ‖iteratedFDeriv ℝ i f z‖ * ‖iteratedFDeriv ℝ (n - i) g z‖) =O[𝓝[≠] (0 : E)]
-        fun z ↦ ‖z‖ ^ (ℓ + m - n) := by
-    refine IsBigO.const_mul_left (IsBigO.fun_sum fun i hi ↦ ?_) _
-    have hi' : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-    refine (((hfn i hi').norm_left.const_mul_left _).mul
-      (hgn (n - i) (Nat.sub_le n i)).norm_left).congr' EventuallyEq.rfl ?_
-    refine (rpow_mul_rpow_eventuallyEq _ _).trans (Eventually.of_forall fun z ↦ ?_)
-    push_cast [Nat.cast_sub hi']
-    ring_nf
-  refine IsBigO.trans (IsBigO.of_bound 1 ?_) hsum
-  filter_upwards [hf, hg] with z hz hgz
-  rw [one_mul, Real.norm_eq_abs]
-  exact (B.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt hz hgz
-    (by exact_mod_cast le_top)).trans (le_abs_self _)
-
-private theorem eventually_contDiffAt_bilinear (B : F →L[ℝ] G →L[ℝ] H) {f : E → F} {g : E → G}
-    (hf : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ f z)
-    (hg : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ g z) :
-    ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ (fun z ↦ B (f z) (g z)) z := by
-  filter_upwards [hf, hg] with z hz hgz
-  exact (B.contDiff.contDiffAt.comp z hz).clm_apply hgz
+      fun z ↦ ‖z‖ ^ (ℓ + m - n) :=
+  B.isBigO_iteratedFDeriv_of_bilinear_of_contDiffAt (ρ₁ := fun i z ↦ ‖z‖ ^ (ℓ - i))
+    (ρ₂ := fun i z ↦ ‖z‖ ^ (m - i)) hf hg (by exact_mod_cast le_top) hfn hgn
+    fun _ hi ↦ isBigO_rpow_mul_rpow ℓ m hi
 
 namespace IsPuncturedSymbol
 
@@ -299,8 +263,8 @@ variable {ℓ m : ℝ} {f : E → F} {g : E → G}
 has order `ℓ` and `g` has order `m`, then `z ↦ B (f z) (g z)` has order `ℓ + m`. -/
 theorem bilinear (hf : IsPuncturedSymbol ℓ f) (hg : IsPuncturedSymbol m g)
     (B : F →L[ℝ] G →L[ℝ] H) : IsPuncturedSymbol (ℓ + m) fun z ↦ B (f z) (g z) :=
-  ⟨eventually_contDiffAt_bilinear B hf.1 hg.1, fun _ ↦
-    isBigO_iteratedFDeriv_bilinear B hf.1 hg.1 (fun i _ ↦ hf.2 i) (fun i _ ↦ hg.2 i)⟩
+  ⟨(hf.1.and hg.1).mono fun _ hz ↦ B.isBoundedBilinearMap.contDiff.comp₂_contDiffAt hz.1 hz.2,
+    fun _ ↦ isBigO_iteratedFDeriv_bilinear B hf.1 hg.1 (fun i _ ↦ hf.2 i) (fun i _ ↦ hg.2 i)⟩
 
 /-- A scalar punctured symbol of order `ℓ` times a vector punctured symbol of order `m` is a
 punctured symbol of order `ℓ + m`. -/
@@ -308,6 +272,12 @@ theorem smul {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [Module �
     [IsScalarTower ℝ 𝕜 G] {a : E → 𝕜} (ha : IsPuncturedSymbol ℓ a) (hg : IsPuncturedSymbol m g) :
     IsPuncturedSymbol (ℓ + m) fun z ↦ a z • g z :=
   ha.bilinear hg (ContinuousLinearMap.lsmul ℝ 𝕜)
+
+/-- A constant multiple of a punctured symbol of order `ℓ` has order `ℓ`. -/
+theorem const_smul {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [Module 𝕜 G]
+    [IsBoundedSMul 𝕜 G] [IsScalarTower ℝ 𝕜 G] (hg : IsPuncturedSymbol ℓ g) (a : 𝕜) :
+    IsPuncturedSymbol ℓ fun z ↦ a • g z := by
+  simpa using (isPuncturedSymbol_const a).smul hg
 
 /-- Products of punctured symbols with values in a normed algebra add their orders. -/
 theorem mul {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] {a b : E → A}
@@ -351,8 +321,7 @@ private theorem eventually_fderiv_inv_eventuallyEq
     isOpen_compl_singleton).2 hf] with z hz
   filter_upwards [hz] with y hy
   have hfd : HasFDerivAt f (fderiv ℝ f y) y := (hy.1.differentiableAt (by simp)).hasFDerivAt
-  rw [show (fun z ↦ (f z)⁻¹) = Inv.inv ∘ f from rfl,
-    ((hasFDerivAt_inv' hy.2).comp y hfd).fderiv]
+  rw [← Function.comp_def, ((hasFDerivAt_inv' hy.2).comp y hfd).fderiv]
   simp [ContinuousLinearMap.neg_comp]
 
 /-- The derivative bounds of `f⁻¹`, by induction on the derivative order: the derivative of
@@ -380,8 +349,11 @@ private theorem isBigO_iteratedFDeriv_inv (hf : IsPuncturedSymbol ℓ f) {c : �
     | zero => exact ih 0 (Nat.zero_le _)
     | succ k =>
       have hk : k ≤ n := Nat.succ_le_succ_iff.1 hi
-      have hprod := isBigO_iteratedFDeriv_bilinear (-ContinuousLinearMap.compL ℝ E R R)
-        (eventually_contDiffAt_bilinear (ContinuousLinearMap.mulLeftRight ℝ R) hg hg) hDf.1
+      have hgg : ∀ᶠ z in 𝓝[≠] (0 : E),
+          ContDiffAt ℝ ∞ (fun z ↦ ContinuousLinearMap.mulLeftRight ℝ R (f z)⁻¹ (f z)⁻¹) z :=
+        hg.mono fun _ hz ↦ (ContinuousLinearMap.mulLeftRight ℝ R).isBoundedBilinearMap.contDiff
+          |>.comp₂_contDiffAt hz hz
+      have hprod := isBigO_iteratedFDeriv_bilinear (-ContinuousLinearMap.compL ℝ E R R) hgg hDf.1
         (n := k) (ℓ := -ℓ + -ℓ) (m := ℓ - 1)
         (fun i hi ↦ isBigO_iteratedFDeriv_bilinear (ContinuousLinearMap.mulLeftRight ℝ R) hg hg
           (fun j hj ↦ ih j (hj.trans (hi.trans hk))) (fun j hj ↦ ih j (hj.trans (hi.trans hk))))
@@ -466,12 +438,15 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
   | zero =>
     intro j i hi
     obtain rfl : i = 0 := Nat.le_zero.1 hi
-    obtain ⟨C, hC⟩ := hφ.isBigO.bound
-    have hup : ∀ᶠ z in 𝓝[≠] (0 : E), ‖φ z‖ ≤ C * ‖z‖ := by
-      filter_upwards [hC] with z hz
-      simpa [Real.rpow_one] using hz
+    have hθ : (fun z ↦ ‖φ z‖) =Θ[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ := by
+      refine ⟨hφ.isBigO.norm_left.congr' EventuallyEq.rfl
+        (Eventually.of_forall fun z ↦ Real.rpow_one _), IsBigO.of_bound c⁻¹ ?_⟩
+      filter_upwards [hlow] with z hz
+      rw [norm_norm, norm_norm, inv_mul_eq_div, le_div_iff₀ hc, mul_comm]
+      exact hz
     have h := ((hg.2 j).comp_tendsto hφ0).norm_left.trans
-      (isBigO_norm_rpow_of_le hc hlow hup (e := ℓ - j))
+      (hθ.rpow (r := ℓ - j) (Eventually.of_forall fun _ ↦ norm_nonneg _)
+        (Eventually.of_forall fun _ ↦ norm_nonneg _)).isBigO
     refine IsBigO.of_norm_left (h.congr' (Eventually.of_forall fun z ↦ ?_)
       (Eventually.of_forall fun z ↦ ?_))
     · simp [norm_iteratedFDeriv_zero]
