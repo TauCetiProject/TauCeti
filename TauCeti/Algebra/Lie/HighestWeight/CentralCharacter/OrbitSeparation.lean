@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.DotOrbit
+public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
+import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
@@ -15,7 +16,12 @@ import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 For two weights in distinct dot orbits, finite interpolation produces a polynomial taking
 values zero and one on the respective orbits. Its product over Weyl pullbacks remains zero
 and one on those orbits and is dot-invariant. Consequently two weights have identical
-values on every dot-invariant polynomial exactly when they lie in one dot orbit.
+values on every dot-invariant polynomial exactly when they lie in one dot orbit
+(`TauCeti.forall_mem_dotInvariants_lift_eq_iff`).
+
+Translation by `-ρ` carries the dot-invariants onto the Weyl invariants `S(H)^W`, so the same
+holds for the linear action: two weights have identical values on every Weyl invariant exactly
+when they lie in one Weyl orbit (`TauCeti.forall_mem_linearInvariants_lift_eq_iff`).
 
 This is the invariant-theoretic step of the Harish-Chandra central-character orbit theorem.
 It is independent of surjectivity of the Harish-Chandra projection.
@@ -152,5 +158,25 @@ theorem forall_mem_dotInvariants_lift_eq_iff {lam mu : Dual K H} :
     simpa [hlam, hmu] using heq p hp
   · rintro ⟨w, rfl⟩ p hp
     exact ((mem_dotInvariants_iff.mp hp) w lam).symm
+
+/-- **Weyl invariants separate Weyl orbits.** Two weights take equal values on every Weyl
+invariant `p ∈ S(H)^W` exactly when they lie in one orbit of the linear action of the Weyl group.
+This is the dot-orbit statement `TauCeti.forall_mem_dotInvariants_lift_eq_iff` for the weights
+shifted by `-ρ`, carried over by translation, for any choice of base. -/
+theorem forall_mem_linearInvariants_lift_eq_iff {lam mu : Dual K H} :
+    (∀ p ∈ linearInvariants H, SymmetricAlgebra.lift lam p = SymmetricAlgebra.lift mu p) ↔
+      ∃ w : (IsKilling.rootSystem H).weylGroup, w • lam = mu := by
+  refine ⟨fun heq ↦ ?_, ?_⟩
+  · obtain ⟨b⟩ := (IsKilling.rootSystem H).nonempty_base
+    set ρ := weylVector (IsKilling.rootSystem H) b
+    -- the dot-invariants, translated by `-ρ`, are Weyl invariants
+    obtain ⟨w, hw⟩ := (forall_mem_dotInvariants_lift_eq_iff (b := b) (lam := lam - ρ)
+      (mu := mu - ρ)).mp fun p hp ↦ by
+        simpa [SymmetricAlgebra.lift_translation, sub_eq_add_neg] using
+          heq _ ((translation_neg_weylVector_mem_linearInvariants_iff b).mpr hp)
+    rw [dotAction_def, sub_add_cancel, sub_left_inj] at hw
+    exact ⟨w, hw⟩
+  · rintro ⟨w, rfl⟩ p hp
+    exact ((mem_linearInvariants_iff.mp hp) w lam).symm
 
 end TauCeti

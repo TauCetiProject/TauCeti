@@ -143,10 +143,7 @@ theorem lieCartanRestriction_injOn_lieInvariants :
   refine eq_zero_of_mem_lieInvariants_of_lift_eval_eq_zero (H := H)
     ((killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr (sub_mem hp hq)) fun h hh ↦ ?_
   -- evaluating at a point of `H` factors through restricting the polynomial function to `H`
-  have heval : lift (Dual.eval K L h) = (lift (Dual.eval K H ⟨h, hh⟩)).comp
-      (_root_.SymmetricAlgebra.map K H.incl.toLinearMap.dualMap) :=
-    algHom_ext (LinearMap.ext fun φ ↦ by simp)
-  rw [heval, AlgHom.comp_apply, map_dualMap_killingSymmetricEquiv, map_sub, hpq, sub_self,
-    map_zero, map_zero]
+  exact (lift_eval_killingSymmetricEquiv H ⟨h, hh⟩ (p - q)).trans
+    (by rw [map_sub, hpq, sub_self, map_zero])
 
 end LieSubalgebra

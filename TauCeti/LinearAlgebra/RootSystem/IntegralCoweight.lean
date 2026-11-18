@@ -7,6 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
+import TauCeti.LinearAlgebra.RootSystem.Flip
+import TauCeti.LinearAlgebra.RootSystem.Reduced
+import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 import Mathlib.Algebra.Module.Submodule.Union
 
 /-!
@@ -28,6 +31,14 @@ moved: some element of the Weyl group carries `x` to a coweight that is dominant
 this is the counterpart, over a field of characteristic zero carrying no order, of the
 ordered-field statement `RootPairing.exists_mem_dominantChamber`.
 
+The dominant coweight in such a Weyl orbit is unique
+(`RootPairing.Base.coweightEquiv_apply_eq_self_of_forall_exists_nat_root'`). This is the
+uniqueness of dominant integral weights (`TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`)
+for the flipped root pairing `P.flip`, whose weights are the coweights of `P`: the isomorphism
+`RootPairing.Equiv.autFlip` carries the Weyl group of `P` onto that of `P.flip`
+(`RootPairing.Equiv.map_weylGroup_autFlip`), and `w` acts on coweights as `autFlip P w` acts
+inversely on the weights of `P.flip`.
+
 In the Lie-theoretic application `x` is the neutral element `h` of an `sl₂` triple lying in a
 splitting Cartan subalgebra: its roots take integer values, and a base making `h` dominant puts the
 nilpositive element of the triple into the positive nilradical.
@@ -38,10 +49,15 @@ nilpositive element of the triple into the positive nilradical.
   integer value is dominant for some base.
 * `RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`: such a coweight is
   carried by the Weyl group to a coweight that is dominant for a given base.
+* `RootPairing.Base.coweightEquiv_apply_eq_self_of_forall_exists_nat_root'`: a Weyl group element
+  carrying a dominant integral coweight to a dominant one fixes it.
 
 ## References
 
 * J.-P. Serre, *Algèbres de Lie semi-simples complexes*, Benjamin, 1966, Ch. V, §8.
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. III,
+  §10.3, for the uniqueness argument, through
+  `TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`.
 -/
 
 public section
@@ -49,6 +65,8 @@ public section
 open Module IsAddIndecomposable
 
 namespace RootPairing
+
+section Existence
 
 variable {ι R M N : Type*} [Finite ι] [AddCommGroup M] [AddCommGroup N] [Field R] [CharZero R]
   [Module R M] [Module R N] (P : RootPairing ι R M N) [P.IsRootSystem] [P.IsCrystallographic]
@@ -127,5 +145,34 @@ theorem Base.exists_forall_exists_nat_root'_coweightEquiv_apply (b : P.Base) (x 
   refine ⟨n, ?_⟩
   rw [← hn, ← (w : P.Aut).root'_coweightEquiv j x]
   simp
+
+end Existence
+
+/-! ### Uniqueness of the dominant representative -/
+
+variable {ι R M N : Type*} [Finite ι] [CommRing R] [CharZero R] [IsDomain R] [AddCommGroup M]
+  [AddCommGroup N] [Module R M] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic]
+  [P.IsReduced]
+
+/-- **A dominant integral coweight is the only dominant one in its Weyl orbit.** Fix a base `b`.
+If every simple root of `b` takes a natural value at the coweight `x`, and also at its image under
+an element `w` of the Weyl group acting through `RootPairing.Equiv.coweightEquiv`, then `w`
+fixes `x`. This is the uniqueness counterpart of
+`RootPairing.Base.exists_forall_exists_nat_root'_coweightEquiv_apply`; like it, it needs no order
+on the coefficient ring. -/
+theorem Base.coweightEquiv_apply_eq_self_of_forall_exists_nat_root' (b : P.Base) (w : P.weylGroup)
+    {x : N} (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i x = n)
+    (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.root' i ((w : P.Aut).coweightEquiv x) = n) :
+    (w : P.Aut).coweightEquiv x = x := by
+  -- `w` acts on coweights as the inverse of `autFlip P w` acts on the weights of `P.flip`
+  -- the uniqueness of dominant integral weights is applied to `P.flip`, which is reduced as `P` is
+  have := P.flip_isReduced
+  let w' : P.flip.weylGroup := ⟨_, Equiv.autFlip_mem_weylGroup_iff.mpr w.2⟩
+  have hw' (y : N) : w' • y = (w : P.Aut).coweightEquiv.symm y :=
+    Equiv.autFlip_smul_coweight _ y
+  -- `(w x, x)` is a pair of dominant integral weights of `P.flip` related by `w'`
+  have h := TauCeti.weylGroup_smul_eq_self_of_dominantIntegral (P := P.flip) (b := b.flip)
+    (w := w') hwx (by rwa [hw', LinearEquiv.symm_apply_apply])
+  rwa [hw', LinearEquiv.symm_apply_apply, eq_comm] at h
 
 end RootPairing
