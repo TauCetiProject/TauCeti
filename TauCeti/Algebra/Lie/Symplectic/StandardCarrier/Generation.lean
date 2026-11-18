@@ -72,9 +72,7 @@ variable (n : ℕ)
 variable {A : Type v} [CommRing A]
 
 /-- The final raising point of the carrier is the positive long-root transvection. -/
--- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
--- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
--- unreachable. Consumers rewrite with it by name.
+@[simp]
 theorem rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit (u : Multiplicative A) :
     (rootSubgroupPoints n (.inl (Fin.last n)) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
@@ -88,9 +86,7 @@ theorem rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit (u : Mul
   simp [Matrix.transvection, Matrix.single_apply]
 
 /-- The final lowering point of the carrier is the negative long-root transvection. -/
--- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
--- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
--- unreachable. Consumers rewrite with it by name.
+@[simp]
 theorem rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit (u : Multiplicative A) :
     (rootSubgroupPoints n (.inr (Fin.last n)) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
@@ -104,9 +100,7 @@ theorem rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit (u : Mul
   simp [Matrix.transvection, Matrix.single_apply]
 
 /-- A nonfinal raising point of the carrier is the difference short-root element. -/
--- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
--- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
--- unreachable. Consumers rewrite with it by name.
+@[simp]
 theorem rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last (i : Fin (n + 1))
     (hi : i ≠ Fin.last n)
     (u : Multiplicative A) :
@@ -125,9 +119,7 @@ theorem rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last (i : Fin (n
   split_ifs <;> ring
 
 /-- A nonfinal lowering point of the carrier is the opposite difference short-root element. -/
--- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
--- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
--- unreachable. Consumers rewrite with it by name.
+@[simp]
 theorem rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last (i : Fin (n + 1))
     (hi : i ≠ Fin.last n)
     (u : Multiplicative A) :
