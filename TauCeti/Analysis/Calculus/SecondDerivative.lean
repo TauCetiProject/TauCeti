@@ -91,6 +91,8 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
+* `TauCeti.fderiv_fderiv_comp_add_right`: the second derivative of a translate is the translate
+  of the second derivative.
 * `TauCeti.fderiv_fderiv_smul_const_apply`: the second derivative of `y ↦ P y • v` is that of the
   scalar function `P`, times `v`.
 * `TauCeti.fderiv_fderiv_sub_clm`: subtracting a continuous linear map does not change the second
@@ -129,6 +131,13 @@ namespace TauCeti
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Negating a map negates its second derivative, including at points where the totalized
+first or second derivative is zero because differentiability fails. -/
+theorem fderiv_fderiv_neg {f : E → F} {x : E} :
+    fderiv 𝕜 (fderiv 𝕜 (-f)) x = -fderiv 𝕜 (fderiv 𝕜 f) x := by
+  have hneg : fderiv 𝕜 (-f) = -fderiv 𝕜 f := funext fun _ ↦ fderiv_neg
+  rw [hneg, fderiv_neg]
 
 /-- At a twice continuously differentiable point, `fderiv 𝕜 g` is differentiable, with derivative
 the second derivative of `g`. -/
@@ -395,6 +404,14 @@ theorem fderiv_fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : 
 theorem fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
     fderiv 𝕜 (fderiv 𝕜 (c • g)) x = c • fderiv 𝕜 (fderiv 𝕜 g) x := by
   rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 g), Pi.smul_apply]
+
+/-- The second derivative of a translate `v ↦ φ (v + y)` at `w` is that of `φ` at `w + y`. No
+regularity is needed. -/
+theorem fderiv_fderiv_comp_add_right (φ : E → F) (y w : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun v ↦ φ (v + y)) w = fderiv 𝕜 (fderiv 𝕜 φ) (w + y) := by
+  have hD : (fderiv 𝕜 fun v ↦ φ (v + y)) = fun v ↦ fderiv 𝕜 φ (v + y) :=
+    funext fun _ ↦ fderiv_comp_add_right y
+  rw [hD, fderiv_comp_add_right]
 
 /-- The second derivative of `y ↦ P y • v` is that of the scalar function `P`, times `v`. -/
 theorem fderiv_fderiv_smul_const_apply {P : E → 𝕜} {x : E} (hP : ContDiffAt 𝕜 2 P x) (v : F)

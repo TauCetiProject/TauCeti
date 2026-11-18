@@ -439,7 +439,8 @@ namespace IsTreeWalk
 variable {k : ℕ} {w : ℕ → ℕ} (hw : IsTreeWalk k w)
 include hw
 
-private theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
+/-- A tree walk of length `2 * k` discovers a new vertex at exactly `k` steps. -/
+theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
   have h := hw.card_vertices
   rw [card_filter, sum_range_succ'] at h
   have : ∑ i ∈ range (2 * k), (if w (i + 1) = i + 1 then 1 else 0) = k := by
@@ -447,8 +448,19 @@ private theorem card_up : #{j ∈ range (2 * k) | w (j + 1) = j + 1} = k := by
   rw [card_filter]
   exact this
 
+/-- Distinct discovery steps traverse distinct unordered edges. -/
+theorem injOn_edge_up :
+    Set.InjOn (fun i ↦ s(w i, w (i + 1)))
+      (↑{i ∈ range (2 * k) | w (i + 1) = i + 1} : Set ℕ) := by
+  intro i hi j hj he
+  simp only [mem_coe, mem_filter, mem_range] at hi hj
+  have hli := hw.le_self i hi.1.le
+  have hlj := hw.le_self j hj.1.le
+  simp only [hi.2, hj.2, Sym2.eq_iff] at he
+  omega
+
 /-- Every edge of a tree walk is the edge discovered by some up step. -/
-private theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
+theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
     ∃ i < 2 * k, w (i + 1) = i + 1 ∧ s(w j, w (j + 1)) = s(w i, i + 1) := by
   set U := {j ∈ range (2 * k) | w (j + 1) = j + 1} with hU
   set e : ℕ → Sym2 ℕ := fun j => s(w j, w (j + 1)) with he
@@ -462,13 +474,7 @@ private theorem exists_up_edge {j : ℕ} (hj : j < 2 * k) :
     rw [← h1] at h2
     simp at h2
     omega
-  have hinj : Set.InjOn e U := by
-    intro i hi i' hi' h
-    simp only [Finset.mem_coe, hU, mem_filter, mem_range] at hi hi'
-    have a1 := hw.le_self i (by omega)
-    have a2 := hw.le_self i' (by omega)
-    simp only [he, hi.2, hi'.2, Sym2.eq_iff] at h
-    omega
+  have hinj : Set.InjOn e U := hw.injOn_edge_up
   have hsub : U.image e ⊆ E := image_subset_image (filter_subset _ _)
   have hcard : #(U.image e) = k := by rw [card_image_of_injOn hinj, hU, hw.card_up]
   have heq : U.image e = E := eq_of_subset_of_card_le hsub (by omega)
@@ -538,6 +544,40 @@ theorem step_down {j : ℕ} (hj : j < 2 * k) (hn : ¬ w (j + 1) = j + 1) :
   rw [htel, hU] at hsplit
   simp only [nsmul_eq_mul, mul_neg, mul_one] at hlt
   linarith
+
+private theorem reverse_step_of_edge_eq {i j : ℕ} (hi : i < 2 * k) (hj : j < 2 * k)
+    (hup : w (i + 1) = i + 1) (hne : j ≠ i)
+    (he : s(w j, w (j + 1)) = s(w i, w (i + 1))) :
+    w j = i + 1 ∧ w (j + 1) = w i := by
+  rcases Sym2.eq_iff.mp he with h | h
+  · by_cases hjup : w (j + 1) = j + 1
+    · omega
+    · have hd := hw.step_down hj hjup
+      have hu := depth_succ_of_le (hw.le_self i hi.le)
+      rw [h.1, h.2, hup] at hd
+      omega
+  · exact ⟨h.1.trans hup, h.2⟩
+
+/-- An edge discovered at step `i` has precisely two occurrences: step `i` and a unique
+return step, with the opposite orientation. -/
+theorem exists_edge_fiber_eq_pair {i : ℕ} (hi : i < 2 * k) (hup : w (i + 1) = i + 1) :
+    ∃ j < 2 * k, w j = i + 1 ∧ w (j + 1) = w i ∧
+      {t ∈ range (2 * k) | s(w t, w (t + 1)) = s(w i, w (i + 1))} = {i, j} := by
+  let S := {t ∈ range (2 * k) | s(w t, w (t + 1)) = s(w i, w (i + 1))}
+  have hiS : i ∈ S := by simp [S, hi]
+  obtain ⟨a, b, hab, hS⟩ := card_eq_two.mp (hw.card_edge i hi)
+  have hS' : S = {a, b} := hS
+  have hj : ∃ j, j ≠ i ∧ S = {i, j} := by
+    rw [hS'] at hiS
+    simp only [mem_insert, mem_singleton] at hiS
+    rcases hiS with rfl | rfl
+    · exact ⟨b, hab.symm, hS'⟩
+    · exact ⟨a, hab, hS'.trans (pair_comm _ _)⟩
+  obtain ⟨j, hji, hpair⟩ := hj
+  have hjS : j ∈ S := by rw [hpair]; simp
+  obtain ⟨hj, he⟩ := mem_filter.mp hjS
+  obtain ⟨h₁, h₂⟩ := hw.reverse_step_of_edge_eq hi (mem_range.mp hj) hup hji he
+  exact ⟨j, mem_range.mp hj, h₁, h₂, hpair⟩
 
 /-- Up steps reconstruct the original tree walk on its full interval of definition. -/
 theorem walkOf_upSteps : ∀ j ≤ 2 * k, walkOf (upSteps k w) j = w j := by
