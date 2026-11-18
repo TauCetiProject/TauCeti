@@ -280,6 +280,18 @@ theorem rootSubgroupPoints_mem_negativePoints (A : Type v) [CommRing A] {γ : Fi
     (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.negativePoints A :=
   (D.negativePoints_le_iff.mp le_rfl) γ hγ u
 
+/-- The negative point subgroup is the supremum of all negative root subgroups. -/
+theorem negativePoints_eq_iSup (A : Type v) [CommRing A] :
+    D.negativePoints A =
+      ⨆ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        (D.rootSubgroupPoints γ A).range := by
+  apply le_antisymm
+  · exact D.negativePoints_le_iff.mpr fun γ hγ u =>
+      le_iSup₂ (f := fun γ _ => (D.rootSubgroupPoints γ A).range) γ hγ ⟨u, rfl⟩
+  · refine iSup₂_le fun γ hγ => ?_
+    rintro _ ⟨u, rfl⟩
+    exact D.rootSubgroupPoints_mem_negativePoints A hγ u
+
 /-- The negative point subgroup is nilpotent over every commutative ring. -/
 theorem isNilpotent_negativePoints (A : Type v) [CommRing A] :
     Group.IsNilpotent (D.negativePoints A) := by
