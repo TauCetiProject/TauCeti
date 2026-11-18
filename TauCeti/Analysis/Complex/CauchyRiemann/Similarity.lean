@@ -45,7 +45,10 @@ smooth solution vanishing to infinite order, and nowhere else, whose coefficient
 for no `p ≥ 1`.
 
 Classical solutions, of class `C¹` with a measurable, locally bounded coefficient, are the special
-case `p = ∞` (`TauCeti.exists_similarity_of_contDiffOn` and its consequences).
+case `p = ∞` (`TauCeti.exists_similarity_of_contDiffOn` and its consequences). A `C¹` map
+satisfying only the differential inequality `‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖`, with `M` locally bounded
+above, is such a solution for a rank-one coefficient, and so factors too
+(`TauCeti.hasSimilarityFactorizationAt_of_norm_le`).
 
 The coefficient `C` need not commute with `i`, and a solution is in general not holomorphic.
 The proof follows Carleman's argument as presented by McDuff and Salamon, after transporting the
@@ -77,6 +80,8 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
 * `TauCeti.exists_similarity_of_contDiffOn`, `TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`,
   `TauCeti.eqOn_zero_of_contDiffOn_of_forall_isBigO` and
   `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn`: the same for classical solutions.
+* `TauCeti.hasSimilarityFactorizationAt_of_norm_le`: the factorization for a classical solution
+  of the differential inequality `‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖` with `M` locally bounded above.
 
 ## References
 
@@ -580,6 +585,43 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn (hΩ : IsOpen Ω)
   have := FiniteDimensional.completeSpace ℂ V
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc hξ.continuousOn
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hCm hCb heq hz) hne
+
+/-- **The similarity principle for a differential inequality.** Let `η` be of class `C¹` on an
+open set `Ω ⊆ ℂ`, with values in a finite-dimensional complex inner product space, and satisfy
+`‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖` on `Ω` for a function `M` bounded above near every point of `Ω`. Then
+`η` solves `∂ₛη + i ∂ₜη + C η = 0` for the rank-one coefficient
+`C = -(∂ₛη + i ∂ₜη) η* / ‖η‖²` (`TauCeti.rankOneDivNormSq`), which is measurable and locally
+bounded, so `η` has a similarity factorization at every point of `Ω`. -/
+theorem hasSimilarityFactorizationAt_of_norm_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℂ E] [FiniteDimensional ℂ E] {η : ℂ → E} {M : ℂ → ℝ} (hΩ : IsOpen Ω)
+    (hη : ContDiffOn ℝ 1 η Ω) (hM : ∀ z ∈ Ω, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ Ω, ‖fderiv ℝ η z 1 + I • fderiv ℝ η z I‖ ≤ M z * ‖η z‖) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt η z₀ := by
+  set g : ℂ → E := fun z ↦ -(fderiv ℝ η z 1 + I • fderiv ℝ η z I) with hg
+  set R : ℂ → E →L[ℝ] E := fun z ↦ (rankOneDivNormSq ℂ (g z) (η z)).restrictScalars ℝ with hR
+  have hDη : ContinuousOn (fderiv ℝ η) Ω := hη.continuousOn_fderiv_of_isOpen hΩ le_rfl
+  have hgc : ContinuousOn g Ω := ((hDη.clm_apply continuousOn_const).add
+    (continuousOn_const.smul (hDη.clm_apply continuousOn_const))).neg
+  refine hasSimilarityFactorizationAt_of_contDiffOn (C := R) hΩ hη ?_ (fun z hz ↦ ?_)
+    (fun z hz ↦ ?_) hz₀
+  · exact (ContinuousLinearMap.restrictScalarsL ℂ E E ℝ ℂ).continuous.comp_aestronglyMeasurable
+      ((hgc.aestronglyMeasurable hΩ.measurableSet).rankOneDivNormSq
+        (hη.continuousOn.aestronglyMeasurable hΩ.measurableSet))
+  · -- `‖R w‖ = ‖g w‖ / ‖η w‖ ≤ M w`
+    obtain ⟨K, hK⟩ := hM z hz
+    refine ⟨max K 0, ?_⟩
+    filter_upwards [hΩ.mem_nhds hz, hK] with w hw hKw
+    rw [hR, ContinuousLinearMap.norm_restrictScalars, norm_rankOneDivNormSq, hg, norm_neg]
+    refine div_le_of_le_mul₀ (norm_nonneg _) (le_max_right _ _) ((hle w hw).trans ?_)
+    gcongr
+    exact hKw.trans (le_max_left _ _)
+  · -- `R η = g`, also at the zeros of `η`, where `g` vanishes
+    by_cases h0 : η z = 0
+    · have hg0 := hle z hz
+      rw [h0, norm_zero, mul_zero, norm_le_zero_iff] at hg0
+      rw [h0, map_zero, add_zero, hg0]
+    · rw [hR, ContinuousLinearMap.coe_restrictScalars', rankOneDivNormSq_apply_self _ h0, hg,
+        add_neg_cancel]
 
 end Classical
 
