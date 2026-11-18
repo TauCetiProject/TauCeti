@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Sphere.Equator
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.Stiefel.DoubleLoop
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
-import TauCeti.Algebra.Group.ZMultiples
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
 /-!
 # The meridian loops generate the homology of the loop space of a sphere
@@ -192,8 +192,7 @@ private theorem isIso_hurewicz_meridianCube {m : ℕ} (hE : finrank ℝ E = m + 
       rw [Submodule.norm_coe, norm_eq_of_mem_sphere u₀]
     simp only [coe_neg_sphere, coe_sphereMeridian, inner_neg_left, inner_add_left,
       real_inner_smul_left, hu, real_inner_self_eq_norm_sq, hn, mul_one_div, sin_pi_div_two] at h
-    nlinarith [sin_nonneg_of_nonneg_of_le_pi (mul_nonneg pi_pos.le t.2.1)
-      (by nlinarith [pi_pos, t.2.2] : π * t ≤ π)]
+    nlinarith [sin_pi_mul_nonneg t]
   exact GenLoop.isIso_hurewicz_of_bijOn_toSphere (n := m + 1) hE (meridianCube p u₀ c) hM hMne
     (bijOn_toSphere_meridianCube p u₀ c hcs hci)
 

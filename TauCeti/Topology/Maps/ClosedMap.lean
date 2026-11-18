@@ -15,8 +15,9 @@ A continuous closed map `f : X → Y` that sends the preimage of an open set `V`
 restricts to a homeomorphism `f⁻¹(V) ≃ₜ V`, so it is a local homeomorphism at every point of
 `f⁻¹(V)` (`IsClosedMap.isLocalHomeomorphOn_preimage`). Every continuous map from a compact space to
 a Hausdorff space is closed, so for such a map it suffices that each point of `V` have exactly one
-preimage. This is how a map of compact manifolds is seen to be a local homeomorphism near a point
-whose fibre is a single point, as the local degree computation of a map of spheres requires.
+preimage. This is how a map of compact manifolds is seen to be a local homeomorphism near the
+preimage of an open set each of whose points has exactly one preimage, as the local degree
+computation of a map of spheres requires.
 -/
 
 public section

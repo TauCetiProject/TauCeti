@@ -45,9 +45,6 @@ is path-connected, and in dimensions at most one the punctured sphere is empty.
 * `TauCeti.equatorHomotopyEquiv`: the unit sphere minus `p` and `-p` is homotopy equivalent to
   the unit sphere of `(ℝ ∙ p)ᗮ`, with `TauCeti.coe_equatorHomotopyEquiv_apply` and
   `TauCeti.coe_equatorHomotopyEquiv_symm_apply` computing both maps.
-* `TauCeti.exists_genLoop_sphere`: in dimension `k + 1`, the unit sphere is the image of a
-  generalized loop out of `I^k` at any of its points that covers it off the base point and
-  identifies only boundary points of the cube.
 * `TauCeti.exists_genLoop_sphereEquator`: in dimension `k + 2`, the equator
   `TauCeti.sphereEquator u` orthogonal to a nonzero vector `u` is the image of a generalized loop
   out of `I^k` that covers it off the base point and identifies only boundary points of the cube.
@@ -286,42 +283,6 @@ section sphereEquator
 open scoped Topology.Homotopy
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {u : V} {k : ℕ}
-
-/-- **The unit sphere is a sphere collapsed from a cube.** If `V` has dimension `k + 1`, then for
-every point `u₀` of its unit sphere there is a generalized loop of the sphere at `u₀`, out of the
-cube `I^k`, that covers the sphere off `u₀` and identifies only points of the boundary of the cube:
-the collapse `TauCeti.cubeToSphere` of the cube onto the unit sphere of `ℝᵏ⁺¹`, followed by a
-linear isometry of `ℝᵏ⁺¹` onto `V` sending the north pole to `u₀`. -/
-theorem exists_genLoop_sphere (hV : Module.finrank ℝ V = k + 1) (u₀ : sphere (0 : V) 1) :
-    ∃ c : Ω^ (Fin k) (sphere (0 : V) 1) u₀, (∀ q, q ≠ u₀ → ∃ y, c y = q) ∧
-      ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin k) ∧ z ∈ Cube.boundary (Fin k) := by
-  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
-  let e₀ : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] V :=
-    ((stdOrthonormalBasis ℝ V).reindex (finCongr hV)).repr.symm
-  obtain ⟨b, hb⟩ : ∃ b : EuclideanSpace ℝ (Fin (k + 1)), b = sphereNorthPole k := ⟨_, rfl⟩
-  have hab : ‖b‖ = ‖e₀.symm u₀‖ := by
-    rw [LinearIsometryEquiv.norm_map, hb]
-    simp [norm_eq_of_mem_sphere]
-  -- Rotate the north pole onto the preimage of `u₀` by a reflection.
-  let e := (ℝ ∙ (b - e₀.symm u₀))ᗮ.reflection.trans e₀
-  let F : C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, sphere (0 : V) 1) :=
-    ⟨fun s ↦ ⟨e s, by rw [mem_sphere_zero_iff_norm, e.norm_map, norm_eq_of_mem_sphere]⟩,
-      by fun_prop⟩
-  have hF (s) : (F s : V) = e s := rfl
-  have hFinj : Function.Injective F := fun s t h ↦
-    Subtype.ext (e.injective (by rw [← hF, ← hF, h]))
-  have he : F (sphereNorthPole k) = u₀ := by
-    refine Subtype.ext ?_
-    rw [hF, ← hb]
-    simp [e, Submodule.reflection_sub hab]
-  refine ⟨GenLoop.map F he (sphereGenLoop k), fun q hq ↦ ?_, fun y z h ↦ ?_⟩
-  · let s : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1 :=
-      ⟨e.symm q, by rw [mem_sphere_zero_iff_norm, e.symm.norm_map, norm_eq_of_mem_sphere]⟩
-    have hs : F s = q := Subtype.ext (by rw [hF]; exact e.apply_symm_apply _)
-    obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := s) fun h ↦ hq (by rw [← hs, h, he])
-    exact ⟨y, by rw [GenLoop.map_apply, sphereGenLoop_apply, hy, hs]⟩
-  · rw [GenLoop.map_apply, GenLoop.map_apply, sphereGenLoop_apply, sphereGenLoop_apply] at h
-    exact cubeToSphere_eq_cubeToSphere_iff.1 (hFinj h)
 
 /-- **The equator is a sphere collapsed from a cube.** If `V` has dimension `k + 2`, then for every
 point `p₀` of the equator orthogonal to the nonzero vector `u` there is a generalized loop of the

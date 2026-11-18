@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Geometry.Manifold.Instances.Stiefel.Rotation
 public import TauCeti.Topology.MappingSpace.Sphere.LoopFamily
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
 /-!
 # The double loops of a sphere swept by orthonormal two-frames
@@ -106,9 +107,8 @@ theorem sphereMeridian_apply (w : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : I) :
 theorem coe_sphereMeridian (w : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (t : I) :
     (sphereMeridian p w t : E) =
       cos (π * t) • (p : E) + sin (π * t) • ((w : (ℝ ∙ (p : E))ᗮ) : E) := by
-  simp only [sphereMeridian_apply, coe_sphereRotationFamily,
-    Circle.coe_homeomorphSphere_apply, Circle.coe_exp, Complex.exp_ofReal_mul_I_re,
-    Complex.exp_ofReal_mul_I_im]
+  simp only [sphereMeridian_apply, coe_sphereRotationFamily, Circle.coe_homeomorphSphere_exp_re,
+    Circle.coe_homeomorphSphere_exp_im]
 
 /-- The meridians form a continuous family in the direction and the time. -/
 theorem _root_.Continuous.sphereMeridian {Y : Type*} [TopologicalSpace Y]
@@ -123,31 +123,25 @@ meridian, at exactly one time. -/
 theorem eq_and_eq_of_sphereMeridian_eq {w w' : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1} {t t' : I}
     (h : sphereMeridian p w t = sphereMeridian p w' t') (hp : sphereMeridian p w t ≠ p)
     (hp' : sphereMeridian p w t ≠ -p) : w = w' ∧ t = t' := by
-  have hre (s : I) : ((Circle.homeomorphSphere (Circle.exp (π * s)) : ℂ)).re = cos (π * s) := by
-    rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp]
-    exact_mod_cast Complex.exp_ofReal_mul_I_re (π * s)
-  have him (s : I) : ((Circle.homeomorphSphere (Circle.exp (π * s)) : ℂ)).im = sin (π * s) := by
-    rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp]
-    exact_mod_cast Complex.exp_ofReal_mul_I_im (π * s)
   have hpi (s : I) : π * s ∈ Set.Icc 0 π :=
     ⟨mul_nonneg pi_pos.le s.2.1, by nlinarith [pi_pos, s.2.2]⟩
-  have hsin (s : I) : 0 ≤ sin (π * s) := sin_nonneg_of_nonneg_of_le_pi (hpi s).1 (hpi s).2
   rw [sphereMeridian_apply] at hp hp'
   -- The time `t` is off the poles, so its imaginary part is positive.
   have ht : sin (π * t) ≠ 0 := fun h0 ↦ by
     rcases sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero p (x := (w, _))
-      ((him t).trans h0) with h1 | h1
+      ((Circle.coe_homeomorphSphere_exp_im _).trans h0) with h1 | h1
     exacts [hp h1, hp' h1]
   rw [sphereMeridian_apply, sphereMeridian_apply] at h
   rcases (sphereRotationFamily_eq_sphereRotationFamily_iff p (x := (w, _))
-    ((him t).trans_ne ht)).1 h.symm with h1 | ⟨-, h1⟩
+    ((Circle.coe_homeomorphSphere_exp_im _).trans_ne ht)).1 h.symm with h1 | ⟨-, h1⟩
   · refine ⟨(Prod.ext_iff.1 h1).1.symm, Subtype.ext ?_⟩
     have hc := congrArg (fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).re) (Prod.ext_iff.1 h1).2
-    simp only [hre] at hc
+    simp only [Circle.coe_homeomorphSphere_exp_re] at hc
     exact mul_left_cancel₀ pi_ne_zero (injOn_cos (hpi t') (hpi t) hc).symm
   · have hc := congrArg Complex.im h1
-    rw [him, Complex.conj_im, him] at hc
-    exact absurd hc (by linarith [hsin t', (hsin t).lt_of_ne' ht])
+    rw [Circle.coe_homeomorphSphere_exp_im, Complex.conj_im, Circle.coe_homeomorphSphere_exp_im]
+      at hc
+    exact absurd hc (by linarith [sin_pi_mul_nonneg t', (sin_pi_mul_nonneg t).lt_of_ne' ht])
 
 /-- Every point of the sphere other than `±p` lies on a meridian. -/
 theorem exists_sphereMeridian_eq {q : sphere (0 : E) 1} (hqp : q ≠ p) (hqp' : q ≠ -p) :
@@ -162,10 +156,10 @@ theorem exists_sphereMeridian_eq {q : sphere (0 : E) 1} (hqp : q ≠ p) (hqp' : 
   rw [← hq, sphereMeridian_apply]
   congr 2
   refine Subtype.ext (Complex.ext ?_ ?_)
-  · rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp, Complex.exp_ofReal_mul_I_re]
+  · rw [Circle.coe_homeomorphSphere_exp_re]
     dsimp only
     rw [mul_div_cancel₀ _ pi_ne_zero, cos_arccos hre.1 hre.2]
-  · rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp, Complex.exp_ofReal_mul_I_im]
+  · rw [Circle.coe_homeomorphSphere_exp_im]
     dsimp only
     rw [mul_div_cancel₀ _ pi_ne_zero, sin_arccos,
       show 1 - (ζ : ℂ).re ^ 2 = (ζ : ℂ).im ^ 2 by linarith, sqrt_sq hζ.le]

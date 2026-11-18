@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.TangentCircle
-import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Double loops of a sphere swept by tangent circles
@@ -44,9 +43,10 @@ of its cube. Under the loop-space shifts `π_{n-2}(Ω²Sⁿ) ≅ π_{n-1}(ΩSⁿ
 class of the cube `(y, s, t) ↦ σ(c y)(s)(t)`, which is, up to the order of the cube coordinates,
 the family of circles through the circles through the points of `c` (`TauCeti.tangentCircleGenLoop`,
 applied twice). That cube is again a homeomorphism off the boundary, so its class generates
-`πₙ(Sⁿ)`. By the Hurewicz theorems for `Sⁿ` and for the `(n - 3)`-connected space `Ω²Sⁿ`
-(`HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`), the Hurewicz class of `σ ∘ c`
-generates `H_{n-2}(Ω²Sⁿ; ℤ)`, while that of `c` generates `H_{n-2}(Σ; ℤ)`.
+`πₙ(Sⁿ)`. By the Hurewicz theorems for `Sⁿ`, `ΩSⁿ` and the `(n - 3)`-connected space `Ω²Sⁿ`,
+which match generating Hurewicz classes across each loop-space shift
+(`HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff`, applied twice), the Hurewicz class of
+`σ ∘ c` generates `H_{n-2}(Ω²Sⁿ; ℤ)`, while that of `c` generates `H_{n-2}(Σ; ℤ)`.
 
 ## Main declarations
 
@@ -226,32 +226,17 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   set Q := GenLoop.genLoopLoopHomeomorph _ (m + 3) (GenLoop.genLoopLoopHomeomorph _ (m + 2) γ)
   have hQiso : IsIso (GenLoop.hurewicz R Q) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
     (bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDoubleLoop hu hv c hcs hci)
-  -- Connectivity of `Sⁿ` and of `Ω²Sⁿ`, for the Hurewicz theorem.
+  -- Connectivity of `Sⁿ` and of `ΩSⁿ`, for the Hurewicz theorem.
   have hS (x : sphere (0 : E) 1) :
-      ∀ k < m + 2 + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
+      ∀ k < m + 4, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
     fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 4) hE (by simpa using hk) x
-  have hΩ (x : sphere (0 : E) 1) : ∀ k < m + 2,
-      Subsingleton (HomotopyGroup (Fin k) (Ω (Ω (sphere (0 : E) 1) x) (Path.refl x))
-        (Path.refl (Path.refl x))) := fun k hk ↦
-    (subsingleton_homotopyGroup_loopSpace_iff _ k).2
-      ((subsingleton_homotopyGroup_loopSpace_iff x (k + 1)).2 (hS x (k + 1 + 1) (by omega)))
-  -- The two loop-space shifts send the class of `γ` to the class of `Q`.
-  have hshift : HomotopyGroup.pathLoopSpaceMulEquiv (m + 2)
-      (HomotopyGroup.pathLoopSpaceMulEquiv (m + 1) ⟦γ⟧) = ⟦Q⟧ := by
-    rw [HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph,
-      HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
-  -- Through the Hurewicz theorems for `Sⁿ` and for `Ω²Sⁿ`, the Hurewicz class of `γ` generates.
-  have hQgen := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hS _) Q).1 hQiso
-  have hF : ((HomotopyGroup.pathLoopSpaceMulEquiv (m + 1)).trans
-      (HomotopyGroup.pathLoopSpaceMulEquiv (m + 2))).toAdditive
-        (Additive.ofMul (α := π_ (m + 1 + 1) (Ω (Ω (sphere (0 : E) 1) _) (Path.refl _)) _) ⟦γ⟧) =
-      Additive.ofMul (α := π_ (m + 2 + 2) (sphere (0 : E) 1) _) ⟦Q⟧ := by
-    -- `toMul (ofMul ⟦γ⟧)` is `⟦γ⟧`, read in `π_ (m + 1 + 1)`
-    rw [MulEquiv.toAdditive_apply_apply, MulEquiv.trans_apply]
-    exact congrArg Additive.ofMul hshift
-  rw [← hF] at hQgen
-  have hγgen := (AddEquiv.bijective_zmultiplesHom_apply_iff _ _).1 hQgen
-  have hγ := (HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom (hΩ _) γ).2 hγgen
+  have hΩ (x : sphere (0 : E) 1) :
+      ∀ k < m + 3, Subsingleton (HomotopyGroup (Fin k) (Ω (sphere (0 : E) 1) x) (Path.refl x)) :=
+    fun k hk ↦ (subsingleton_homotopyGroup_loopSpace_iff x k).2 (hS x (k + 1) (by omega))
+  -- Across the two loop-space shifts, the Hurewicz class of `Q` generates, hence so does that of
+  -- `γ`.
+  have hγ := (HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff (n := m) (hΩ _) γ).1
+    ((HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff (n := m + 1) (hS _) _).1 hQiso)
   rw [GenLoop.hurewicz_map] at hγ
   exact IsIso.of_isIso_comp_left (GenLoop.hurewicz R c) _
 
