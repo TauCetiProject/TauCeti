@@ -99,9 +99,6 @@ not treated here.
 * `TauCeti.SymplecticForm.exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity`:
   the action defect of a loop of a Floer solution near a nondegenerate orbit is bounded by the
   energy of its slice, with constants independent of the solution.
-* `TauCeti.SymplecticForm.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le`,
-  `TauCeti.SymplecticForm.le_setIntegral_floerEnergyDensity_of_forall_le_mul`: comparison of the
-  energy of a rectangle with the energies of its slices.
 * `SymplecticForm.exists_forall_norm_sub_le_mul_add_mul_sqrt_setIntegral_floerEnergyDensity`: a
   loop of a Floer solution near a nondegenerate orbit is close to it in terms of the energy of a
   window `[s, s + h]` and a bound on `∂_s u`.
@@ -329,7 +326,6 @@ private theorem integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity
       (1 + M ^ 2) / c *
         ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (s, t) := by
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-  have hline : Continuous fun t : ℝ ↦ (s, t) := continuous_const.prodMk continuous_id
   -- The energy density controls the defect of the loop pointwise.
   have hdef (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) :
       ‖fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t))‖ ^ 2 ≤
@@ -340,13 +336,13 @@ private theorem integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity
     rw [div_mul_eq_mul_div, le_div_iff₀ hc]
     nlinarith
   have hslicec : Continuous fun t ↦ e (s, t) :=
-    (ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
-      (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn).comp_continuous hline hsU
+    continuous_slice_of_continuousOn (ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
+      (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn) hsU
   have hdefc : Continuous fun t ↦
       ‖fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t))‖ ^ 2 :=
-    ((((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).comp_continuous
-      hline hsU).sub ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-        (continuous_id.prodMk (hu.continuousOn.comp_continuous hline hsU)))).norm.pow 2
+    (continuous_norm_sliceDefect_sq (X := fun t ↦ ω.hamiltonianVectorField (H t)) hU hu
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsU).congr fun t ↦ by
+        rw [sliceDefect_def]
   rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
     ← intervalIntegral.integral_const_mul]
   exact integral_mono_on zero_le_one (hdefc.intervalIntegrable _ _)
@@ -381,8 +377,8 @@ theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
     fun {u J U s} hU hu hsU hu1 hJc hJM hfloer hclose ↦ ?_⟩
   set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
   have hγ' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
-    ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).comp_continuous
-      (continuous_const.prodMk continuous_id) hsU
+    continuous_slice_of_continuousOn
+      ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const) hsU
   have hγ (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t :=
     hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero).differentiableAt
       (hU.mem_nhds (hsU t)))
@@ -424,16 +420,16 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
   refine ⟨δ, hδ, C * √((1 + M ^ 2) / c), by positivity,
     fun {u J U s} hU hu hsU hu1 hJc hJM hfloer hclose t ht ↦ ?_⟩
   set η : ℝ → ℝ := fun t ↦ ‖fderiv ℝ u (s, t) (0, 1) - ω.hamiltonianVectorField (H t) (u (s, t))‖
-  have hline : Continuous fun t : ℝ ↦ (s, t) := continuous_const.prodMk continuous_id
   have hγ' : Continuous fun t ↦ fderiv ℝ u (s, t) (0, 1) :=
-    ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).comp_continuous
-      hline hsU
+    continuous_slice_of_continuousOn
+      ((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const) hsU
   have hγ (t : ℝ) : HasDerivAt (fun t ↦ u (s, t)) (fderiv ℝ u (s, t) (0, 1)) t :=
     hasDerivAt_slice_right ((hu.differentiableOn one_ne_zero).differentiableAt
       (hU.mem_nhds (hsU t)))
   have hηc : Continuous η :=
-    (hγ'.sub ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
-      (continuous_id.prodMk (hu.continuousOn.comp_continuous hline hsU)))).norm
+    (continuous_sliceDefect_slice (X := fun t ↦ ω.hamiltonianVectorField (H t)) hU hu
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsU).norm.congr fun t ↦ by
+        rw [sliceDefect_def]
   -- By Cauchy–Schwarz, the `L¹` norm of the defect is at most its `L²` norm.
   have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
     ((hηc.pow 2).intervalIntegrable 0 1)
@@ -446,63 +442,6 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
         mul_le_mul_of_nonneg_left (hCS.trans (Real.sqrt_le_sqrt hint)) hC
     _ = _ := by
         rw [Real.sqrt_mul (by positivity), mul_assoc]
-
-/-- The slice energies of `u` over `[s, s']` are integrable, and by Fubini's theorem their integral
-is the energy of the rectangle `[s, s'] × [0, 1]`. -/
-private theorem integrableOn_and_integral_setIntegral_floerEnergyDensity (ω : SymplecticForm V)
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {s' : ℝ}
-    (hR : Icc s s' ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
-    IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1,
-        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t)) (Icc s s') ∧
-      ∫ r in Icc s s', ∫ t in Icc (0 : ℝ) 1,
-          ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t) =
-        ∫ z in Icc s s' ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
-  have hRint : IntegrableOn e (Icc s s' ×ˢ Icc (0 : ℝ) 1) :=
-    ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
-      (contDiff_uncurry_cylindrical hH).contDiffOn).mono hR).integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc)
-  rw [Measure.volume_eq_prod] at hRint ⊢
-  refine ⟨?_, (setIntegral_prod e hRint).symm⟩
-  have h : Integrable e ((volume.restrict (Icc s s')).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
-    rwa [Measure.prod_restrict]
-  exact h.integral_prod_left
-
-/-- **A slice of at most average energy.** Let `u` be `C¹` on an open set `U` containing the
-rectangle `[s, s + h] × [0, 1]`, with `h > 0`, and let `H` be a `C¹` Hamiltonian. For the
-cylindrical perturbation `K = H_t dt`, some slice `σ ∈ [s, s + h]` has energy at most the average
-energy of the rectangle: `h ∫₀¹ e(σ, t) dt ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
-theorem exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le (ω : SymplecticForm V)
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {h : ℝ}
-    (hh : 0 < h) (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
-    ∃ σ ∈ Icc s (s + h), h * ∫ t in Icc (0 : ℝ) 1,
-        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (σ, t) ≤
-      ∫ z in Icc s (s + h) ×ˢ Icc 0 1,
-        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z := by
-  obtain ⟨hgint, heq⟩ := integrableOn_and_integral_setIntegral_floerEnergyDensity ω hH hU hu hR
-  obtain ⟨σ, hσ, hσle⟩ := exists_le_setAverage (by simpa using hh) (by simp) hgint
-  rw [setAverage_eq, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left, smul_eq_mul,
-    heq] at hσle
-  exact ⟨σ, hσ, (le_inv_mul_iff₀ hh).1 hσle⟩
-
-/-- **A lower bound on every slice bounds the energy.** Let `u` be `C¹` on an open set `U`
-containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`, and let `H` be a `C¹` Hamiltonian.
-For the cylindrical perturbation `K = H_t dt`, if `m ≤ h ∫₀¹ e(r, t) dt` for every
-`r ∈ [s, s + h]`, then `m ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
-theorem le_setIntegral_floerEnergyDensity_of_forall_le_mul (ω : SymplecticForm V)
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {h m : ℝ}
-    (hh : 0 < h) (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U)
-    (hm : ∀ r ∈ Icc s (s + h),
-      m ≤ h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t)) :
-    m ≤ ∫ z in Icc s (s + h) ×ˢ Icc 0 1,
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z := by
-  obtain ⟨hgint, heq⟩ := integrableOn_and_integral_setIntegral_floerEnergyDensity ω hH hU hu hR
-  have hint : ∫ _ in Icc s (s + h), m / h ≤ ∫ r in Icc s (s + h), ∫ t in Icc (0 : ℝ) 1,
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t) :=
-    setIntegral_mono_on (integrableOn_const (by simp)) hgint measurableSet_Icc fun r hr ↦
-      (div_le_iff₀' hh).2 (hm r hr)
-  rwa [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left,
-    smul_eq_mul, mul_div_cancel₀ _ hh.ne', heq] at hint
 
 /-- **A loop near a nondegenerate orbit from the energy of a window.** Let `H` be a `C²`
 Hamiltonian, `x` a nondegenerate orbit as in

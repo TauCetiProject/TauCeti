@@ -214,9 +214,10 @@ theorem max_le_two_mul_max_mul_exp_of_two_mul_le {g : ℝ → ℝ} {a b T : ℝ}
       exact max_le (by linarith [le_max_left (g (b - r)) 0])
         (mul_nonneg (by norm_num) (le_max_right _ _)))
     (sub_nonneg.2 hsb) (by linarith)
-  simp only [sub_zero, sub_sub_cancel, Real.log_div one_ne_zero two_ne_zero, Real.log_one,
-    zero_sub, neg_div, neg_mul] at h
-  rwa [div_div_eq_mul_div, div_one, mul_comm (max (g b) 0)] at h
+  have hlog : Real.log (1 / 2) = -Real.log 2 := by simp
+  calc max (g s) 0 = max (g (b - (b - s))) 0 := by rw [sub_sub_cancel]
+    _ ≤ _ := h
+    _ = _ := by rw [hlog, sub_zero, sub_zero]; ring_nf
 
 /-- On an interval `[a, b]` of length at least `T > 0`, if a nondecreasing `g` satisfies
 `2 g s ≤ g (s + T)` and `g s ≤ 2 g (s + T)` over every step of length `T`, then the positive part of
@@ -276,10 +277,13 @@ theorem sub_le_mul_exp_add_exp_of_two_mul_le {g : ℝ → ℝ} {a b T : ℝ}
     nlinarith
   rcases lt_or_ge (b - a) T with hshort | hlong
   · -- On a short interval `exp (-κ (b - s₂)) ≥ 1 / 2` and the total increase suffices.
-    have hhalf : 1 / 2 ≤ Real.exp (-(κ * (b - s₂))) := by
-      rw [← Real.exp_log (by norm_num : (0 : ℝ) < 1 / 2), Real.exp_le_exp, one_div,
-        Real.log_inv, neg_le_neg_iff, div_mul_eq_mul_div, div_le_iff₀ hT]
-      exact mul_le_mul_of_nonneg_left (by linarith) (Real.log_nonneg one_le_two)
+    have hκ : κ * (b - s₂) ≤ Real.log 2 := calc
+      κ * (b - s₂) ≤ κ * T :=
+        mul_le_mul_of_nonneg_left (by linarith) (div_nonneg (Real.log_nonneg one_le_two) hT.le)
+      _ = Real.log 2 := div_mul_cancel₀ _ hT.ne'
+    have hhalf : 1 / 2 ≤ Real.exp (-(κ * (b - s₂))) := calc
+      (1 : ℝ) / 2 = Real.exp (-Real.log 2) := by rw [Real.exp_neg, Real.exp_log two_pos, one_div]
+      _ ≤ _ := Real.exp_le_exp.2 (neg_le_neg hκ)
     nlinarith
   -- The positive part of `g` decays away from `b`, and its negative part, the positive part of
   -- the reflection `r ↦ -g (a + b - r)`, decays away from `a`.
