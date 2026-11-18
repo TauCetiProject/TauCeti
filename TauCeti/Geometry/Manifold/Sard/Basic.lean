@@ -46,9 +46,11 @@ case, which needs only first derivatives and allows boundary in the source, is
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_isInteriorPoint`: Sard's theorem on a set
   of interior critical points, for an arbitrary model with corners.
 * `TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt`: Sard's theorem at the sharp
-  regularity `k > m - n`, `k ≥ 1`, for arbitrary dimensions.
+  regularity `k > m - n`, `k ≥ 1`, for arbitrary dimensions and a boundaryless source
+  (`BoundarylessManifold I M`).
 * `ContMDiff.isNullSet_image_criticalPoints` and `ContMDiff.dense_isRegularValue`: the critical
-  values of such a map are null, and its regular values are dense.
+  values of such a map with boundaryless source (`BoundarylessManifold I M`) are null, and its
+  regular values are dense.
 
 ## References
 
