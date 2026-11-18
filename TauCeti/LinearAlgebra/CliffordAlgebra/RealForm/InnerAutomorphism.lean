@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.Action.ConjAct
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Filtration
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Pauli
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
@@ -87,15 +88,8 @@ namespace TauCeti
 /-! ### The positive plane -/
 
 /-- The invertible matrix `diag(2, 1)`. -/
-private noncomputable def diagTwoOne : Matrix.GeneralLinearGroup (Fin 2) ℝ where
-  val := !![2, 0; 0, 1]
-  inv := !![1 / 2, 0; 0, 1]
-  val_inv := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-  inv_val := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+private noncomputable def diagTwoOne : Matrix.GeneralLinearGroup (Fin 2) ℝ :=
+  diagGL ![Units.mk0 2 two_ne_zero, 1]
 
 /-- Conjugation by `D = diag(2, 1)` in the Pauli model of `Cliff(2, 0)`, transported back to
 `Cliff(2, 0)`. It fixes `e₂ ↦ Z` but moves `e₁ ↦ X` out of the vectors. -/
@@ -109,7 +103,9 @@ theorem realCliffordTwoZeroEquivPauli_realCliffordTwoZeroDiagConj
     (x : CliffordAlgebra (realCliffordForm 2 0)) :
     realCliffordTwoZeroEquivPauli (realCliffordTwoZeroDiagConj x) =
       !![2, 0; 0, 1] * realCliffordTwoZeroEquivPauli x * !![1 / 2, 0; 0, 1] := by
-  simp [realCliffordTwoZeroDiagConj, Matrix.GeneralLinearGroup.innerAut_apply, diagTwoOne]
+  simp only [realCliffordTwoZeroDiagConj, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply,
+    Matrix.GeneralLinearGroup.innerAut_apply, diagTwoOne, ← map_inv, diagGL_coe]
+  congr 2 <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp
 
 /-- The automorphism sends the generator `e₁`, the matrix `X`, to `!![0, 2; 1/2, 0]`. -/
 theorem realCliffordTwoZeroEquivPauli_realCliffordTwoZeroDiagConj_ι_single_zero :
