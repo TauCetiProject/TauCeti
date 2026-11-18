@@ -20,8 +20,8 @@ dimension `W` is Lagrangian exactly when `Wᗮ = J W`.
 ## Main declarations
 
 * `TauCeti.AlmostComplexStructure.orthogonal_symplecticForm`: `W^ω = (J W)ᗮ`.
-* `TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff`: `W` is Lagrangian exactly
-  when `Wᗮ = J W`.
+* `TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff_orthogonal_eq`: `W` is
+  Lagrangian exactly when `Wᗮ = J W`.
 
 ## References
 
@@ -48,7 +48,7 @@ theorem orthogonal_symplecticForm (W : Submodule ℝ V) :
 
 /-- For an orthogonal complex structure `J` on a finite-dimensional space, a subspace `W` is
 Lagrangian for `ω = ⟪J ·, ·⟫` exactly when its orthogonal complement is its image `J W`. -/
-theorem isLagrangian_symplecticForm_iff [FiniteDimensional ℝ V] {W : Submodule ℝ V} :
+theorem isLagrangian_symplecticForm_iff_orthogonal_eq [FiniteDimensional ℝ V] {W : Submodule ℝ V} :
     (J.symplecticForm hJ).IsLagrangian W ↔ Wᗮ = W.map J.toLinearMap := by
   rw [SymplecticForm.isLagrangian_iff, SymplecticForm.isIsotropic_iff_le,
     SymplecticForm.isCoisotropic_iff_le, and_comm, ← le_antisymm_iff,

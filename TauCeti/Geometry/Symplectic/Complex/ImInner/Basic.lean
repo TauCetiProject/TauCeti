@@ -43,15 +43,15 @@ These are the conventions in which holomorphic discs in `ℂⁿ` with boundary o
 submanifold are studied; the corresponding statements for maps are in
 `TauCeti.Geometry.Symplectic.Complex.ImInner.Manifold`.
 
-The statements about Lagrangian subspaces specialise, through `TauCeti.imInnerSymplecticForm_eq`,
+The statements about Lagrangian subspaces specialise, through `TauCeti.imInnerSymplecticForm_def`,
 those for an orthogonal almost complex structure `J` on a real inner product space
 (`TauCeti.AlmostComplexStructure.orthogonal_symplecticForm` and
-`TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff`).
+`TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff_orthogonal_eq`).
 
 ## Main declarations
 
 * `TauCeti.imInnerSymplecticForm`: the symplectic form `Im ⟪·, ·⟫_ℂ`, with
-  `TauCeti.imInnerSymplecticForm_eq`,
+  `TauCeti.imInnerSymplecticForm_def`,
   `TauCeti.imInnerSymplecticForm_compatible` and
   `TauCeti.imInnerSymplecticForm_associatedBilinForm_apply`.
 * `TauCeti.isLagrangian_imInnerSymplecticForm_iff` and
@@ -97,7 +97,7 @@ noncomputable def imInnerSymplecticForm : SymplecticForm E :=
 
 /-- The symplectic form `Im ⟪·, ·⟫_ℂ` is the symplectic form of the orthogonal complex structure
 given by multiplication by `i`. -/
-theorem imInnerSymplecticForm_eq :
+theorem imInnerSymplecticForm_def :
     imInnerSymplecticForm E = (AlmostComplexStructure.ofComplexModule E).symplecticForm
       AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule :=
   (rfl)
@@ -161,7 +161,7 @@ theorem isLagrangian_imInnerSymplecticForm_iff_orthogonal_eq [FiniteDimensional 
     {W : Submodule ℝ E} :
     (imInnerSymplecticForm E).IsLagrangian W ↔
       Wᗮ = W.map (AlmostComplexStructure.ofComplexModule E).toLinearMap :=
-  AlmostComplexStructure.isLagrangian_symplecticForm_iff _
+  AlmostComplexStructure.isLagrangian_symplecticForm_iff_orthogonal_eq _
 
 /-- On the complex line, `Im ⟪·, ·⟫_ℂ` is the standard area form. -/
 theorem imInnerSymplecticForm_complex : imInnerSymplecticForm ℂ = stdComplexSymplecticForm := by
