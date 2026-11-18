@@ -70,8 +70,9 @@ every point of `Δ` has its active facets among those of some vertex
 
 ## Main definitions
 
-* `TauCeti.Toric.DelzantQuotient.vertexLift`: the point of the level over `w ∈ ℂ^A` that is a
-  nonnegative real outside `A`.
+* `TauCeti.Toric.DelzantQuotient.vertexLift`: the point of `ℂ^ι` over `w ∈ ℂ^A` that is a
+  nonnegative real outside `A`; it lies in the level when `v + Σ_k ½ |w_k|² ε_k ∈ Δ`
+  (`TauCeti.Toric.DelzantQuotient.vertexLift_mem_delzantLevel`).
 * `TauCeti.Toric.DelzantQuotient.vertexChart`: the equivariant chart of `M_Δ` at a smooth vertex.
 
 ## Main results
