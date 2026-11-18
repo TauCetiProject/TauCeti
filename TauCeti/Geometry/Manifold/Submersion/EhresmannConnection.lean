@@ -17,12 +17,13 @@ import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 # Ehresmann connections on submersions
 
 An **Ehresmann connection** on a map `f : P → B` is a distribution `D` on `P`, the *horizontal*
-distribution, which is complementary to the vertical space `ker (df_x)` at every point `x` and
-is a `C^n` distribution of rank `dim B` (`TauCeti.IsEhresmannConnection`). At every point the
-derivative `df_x` then restricts to a linear isomorphism from the horizontal space `D x` onto
-`T_(f x) B`; its inverse is the **horizontal lift** of tangent vectors of the base
-(`TauCeti.IsEhresmannConnection.horizontalLift`). Integrating these pointwise lifts lifts paths of
-the base horizontally, which is how a connection transports fibres along paths.
+distribution, which is complementary to the vertical space `ker (df_x)` at every point `x` of
+a map with surjective derivative, and is a `C^n` distribution of rank `dim B`
+(`TauCeti.IsEhresmannConnection`). At every point the derivative `df_x` then restricts to a
+linear isomorphism from the horizontal space `D x` onto `T_(f x) B`; its inverse is the
+**horizontal lift** of tangent vectors of the base
+(`TauCeti.IsEhresmannConnection.horizontalLift`). Integrating these pointwise lifts lifts paths
+of the base horizontally, which is how a connection transports fibres along paths.
 
 Every submersion carries Ehresmann connections. For a Riemannian metric on `P`, the orthogonal
 complements `(ker df_x)ᗮ` of the vertical spaces of a `C^n` submersion form a `C^m` Ehresmann
@@ -83,14 +84,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 variable (I J n) in
 /-- A distribution `D` on `P` is a `C^n` **Ehresmann connection** on `f : P → B` when at every
-point `x` the horizontal space `D x` is a complement of the vertical space `ker (df_x)` in
-`T_x P`, and `D` is a `C^n` distribution of rank `dim B`, the dimension of the model space `F`
-of `B`. -/
+point `x` the derivative `df_x` is surjective and the horizontal space `D x` is a complement of
+the vertical space `ker (df_x)` in `T_x P`, and `D` is a `C^n` distribution of rank `dim B`, the
+dimension of the model space `F` of `B`. -/
 @[mk_iff]
 structure IsEhresmannConnection (f : P → B) (D : Π x : P, Submodule 𝕜 (TangentSpace I x)) :
     Prop where
   /-- The horizontal space at `x` is a complement of the vertical space `ker (df_x)`. -/
   isCompl_ker (x : P) : IsCompl (D x) (mfderiv I J f x).ker
+  /-- The derivative of `f` is surjective at every point, so that every tangent vector of the
+  base has a horizontal lift. -/
+  surjective_mfderiv (x : P) : Surjective (mfderiv I J f x)
   /-- The horizontal spaces form a `C^n` distribution of rank `dim B`. -/
   isContMDiffDistribution : IsContMDiffDistribution I n (finrank 𝕜 F) D
 
@@ -120,43 +124,40 @@ theorem injective_mfderiv_comp_subtype (x : P) :
   exact Subtype.ext ((Submodule.disjoint_def.1 (hD.isCompl_ker x).disjoint) w w.2
     (LinearMap.mem_ker.2 hw))
 
-variable [FiniteDimensional 𝕜 F]
+/-- The restriction of `df_x` to the horizontal space `D x` is surjective, as `df_x` is surjective
+and vanishes on the vertical complement of `D x`. -/
+theorem surjective_mfderiv_comp_subtype (x : P) :
+    Surjective ((mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x)) ∘ₗ
+      (D x).subtype) := by
+  intro v
+  obtain ⟨u, rfl⟩ := hD.surjective_mfderiv x v
+  obtain ⟨w, k, hw, hk, rfl⟩ := Submodule.codisjoint_iff_exists_add_eq.1 (hD.isCompl_ker x).2 u
+  have hk' : mfderiv I J f x k = 0 := LinearMap.mem_ker.1 hk
+  exact ⟨⟨w, hw⟩, by simp [hk']⟩
 
 /-- The **horizontal lift** of tangent vectors of the base at a point `x` of `P`: the linear
 isomorphism `T_(f x) B ≃ D x` inverse to the restriction of `df_x` to the horizontal space. -/
 def horizontalLift (x : P) : TangentSpace J (f x) ≃ₗ[𝕜] D x :=
-  haveI := hD.finiteDimensional x
-  haveI : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
-  (LinearMap.linearEquivOfInjective _ (hD.injective_mfderiv_comp_subtype x)
-    (hD.finrank_eq x)).symm
+  (LinearEquiv.ofBijective _
+    ⟨hD.injective_mfderiv_comp_subtype x, hD.surjective_mfderiv_comp_subtype x⟩).symm
 
 /-- The horizontal lift of a tangent vector of the base projects back to it. -/
 @[simp]
 theorem mfderiv_horizontalLift (x : P) (v : TangentSpace J (f x)) :
-    mfderiv I J f x (hD.horizontalLift x v) = v := by
-  have := hD.finiteDimensional x
-  have : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
-  exact (LinearMap.linearEquivOfInjective _ (hD.injective_mfderiv_comp_subtype x)
-    (hD.finrank_eq x)).apply_symm_apply v
+    mfderiv I J f x (hD.horizontalLift x v) = v :=
+  (hD.horizontalLift x).symm_apply_apply v
 
 /-- A horizontal vector is the horizontal lift of its projection. -/
 @[simp]
 theorem horizontalLift_mfderiv (x : P) (w : D x) :
-    hD.horizontalLift x (mfderiv I J f x w) = w := by
-  have := hD.finiteDimensional x
-  have : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
-  exact (LinearMap.linearEquivOfInjective _ (hD.injective_mfderiv_comp_subtype x)
-    (hD.finrank_eq x)).symm_apply_apply w
+    hD.horizontalLift x (mfderiv I J f x w) = w :=
+  (hD.horizontalLift x).apply_symm_apply w
 
 /-- The horizontal lift of `v` is the unique horizontal vector projecting to `v`. -/
 theorem eq_horizontalLift_iff {x : P} {v : TangentSpace J (f x)} {w : D x} :
     w = hD.horizontalLift x v ↔ mfderiv I J f x w = v := by
   refine ⟨fun h ↦ h ▸ hD.mfderiv_horizontalLift x v, fun h ↦ ?_⟩
   rw [← h, hD.horizontalLift_mfderiv]
-
-/-- A map with an Ehresmann connection has surjective derivative at every point. -/
-theorem surjective_mfderiv (x : P) : Surjective (mfderiv I J f x) :=
-  fun v ↦ ⟨hD.horizontalLift x v, hD.mfderiv_horizontalLift x v⟩
 
 end IsEhresmannConnection
 
@@ -314,6 +315,7 @@ theorem isEhresmannConnection_orthogonal_ker [IsManifold I (m + 1) P]
   isCompl_ker x := by
     have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
     exact (Submodule.isCompl_orthogonal (mfderiv I J f x).ker).symm
+  surjective_mfderiv := hf.surjective_mfderiv fun h ↦ by simp [h] at hmn
   isContMDiffDistribution := hf.isContMDiffDistribution_orthogonal_ker hmn
 
 end Metric
