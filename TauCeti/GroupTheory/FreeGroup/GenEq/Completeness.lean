@@ -78,29 +78,17 @@ private theorem getElem_blocks (w : List ((X ⊕ A) × Bool)) {j : ℕ} (hj : j 
     (blocks W w)[j] = substituteVars (fun x => (W x).toWord) [w[j]'(by simpa using hj)] :=
   List.getElem_map _
 
-/-- Substituting the reduced words of the values of `W` into a word and freely reducing evaluates
-the word at `W`. -/
-private theorem mk_substituteVars_toWord (w : List ((X ⊕ A) × Bool)) :
-    FreeGroup.mk (substituteVars (fun x => (W x).toWord) w) =
-      EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk w) := by
-  simp [FreeGroup.mk_substituteVars, FreeGroup.mk_toWord, EqIneqSystem.eval_eq_lift]
-
 /-- The product of the blocks of a word under `W` is the value of the word at `W`. -/
 private theorem mk_flatten_blocks (w : List ((X ⊕ A) × Bool)) :
     FreeGroup.mk (blocks W w).flatten = EqIneqSystem.eval W FreeGroup.of (FreeGroup.mk w) := by
-  rw [← mk_substituteVars_toWord]
-  simp [blocks, FreeGroup.substituteVars, List.flatMap_def]
-
-/-- The reduced word of the value of a letter, raised to its sign, is reduced. -/
-private theorem isReduced_substituteVars_toWord_singleton (y : (X ⊕ A) × Bool) :
-    FreeGroup.IsReduced (substituteVars (fun x => (W x).toWord) [y]) := by
-  obtain ⟨x | a, _ | _⟩ := y <;> simp [FreeGroup.isReduced_toWord, FreeGroup.IsReduced.singleton]
+  simpa [blocks, FreeGroup.substituteVars, List.flatMap_def, FreeGroup.mk_toWord] using
+    (EqIneqSystem.eval_mk_eq_mk_substituteVars (fun x => (W x).toWord) w).symm
 
 /-- The blocks of a word are reduced. -/
 private theorem isReduced_of_mem_blocks {w : List ((X ⊕ A) × Bool)} {b : List (A × Bool)}
     (hb : b ∈ blocks W w) : FreeGroup.IsReduced b := by
   obtain ⟨y, -, rfl⟩ := List.mem_map.1 hb
-  exact isReduced_substituteVars_toWord_singleton y
+  exact FreeGroup.isReduced_substituteVars_singleton fun _ _ => FreeGroup.isReduced_toWord
 
 /-- A table spelling, letter by letter, the blocks of the occurrences under `W`, with nonempty
 words for its letters, whose equations have trivial products, whose words are short and which keeps
@@ -117,7 +105,7 @@ private theorem isSolutionTable_of_substituteVars_eq (hu : ∀ z, u z ≠ [])
   have hf (o : Occurrence r) : ∀ y ∈ T o, Sum.elim u (fun a => [(a, true)]) y.1 ≠ [] := by
     rintro ⟨z | a, b⟩ - <;> simp [hu]
   have hred o : FreeGroup.IsReduced (substituteVars u (T o)) :=
-    hsub o ▸ isReduced_substituteVars_toWord_singleton _
+    hsub o ▸ FreeGroup.isReduced_substituteVars_singleton fun _ _ => FreeGroup.isReduced_toWord
   have hnil (o : Occurrence r) :
       T o = [] ↔ Sum.elim (fun x => (W x).toWord) (fun a => [(a, true)]) r[o.1][o.2].1 = [] := by
     rw [← FreeGroup.flatMap_substituteLetter_eq_nil_iff (hf o), ← substituteVars, hsub,
@@ -125,7 +113,10 @@ private theorem isSolutionTable_of_substituteVars_eq (hu : ∀ z, u z ≠ [])
     cases r[o.1][o.2].2 <;> simp [FreeGroup.invRev]
   refine ⟨⟨fun o => (hred o).of_flatMap_substituteLetter (hf o),
     hmk, hlen, fun o a h => hinr o a _ (Prod.ext h rfl), fun o o' h => by rw [hnil, hnil, h]⟩, hred,
-    fun o => by rw [hsub, mk_substituteVars_toWord], fun _ z _ _ => hu z⟩
+    fun o => by
+      rw [hsub, ← EqIneqSystem.eval_mk_eq_mk_substituteVars]
+      simp only [FreeGroup.mk_toWord],
+    fun _ z _ _ => hu z⟩
 
 end Spelling
 

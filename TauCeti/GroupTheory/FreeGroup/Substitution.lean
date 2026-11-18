@@ -242,6 +242,14 @@ theorem isReduced_substituteVars_cond (U : X → List (A × Bool)) (s : Bool)
     IsReduced (substituteVars U (cond s w (invRev w))) := by
   cases s <;> simpa
 
+/-- Substituting into a single letter gives a reduced word if the letter is in `A^{±1}` or its
+variable is assigned a reduced word. -/
+theorem isReduced_substituteVars_singleton {U : X → List (A × Bool)} {y : (X ⊕ A) × Bool}
+    (hU : ∀ x, y.1 = Sum.inl x → IsReduced (U x)) : IsReduced (substituteVars U [y]) := by
+  obtain ⟨x | a, b⟩ := y
+  · cases b <;> simpa using hU x rfl
+  · simp
+
 /-- If substituting into a word gives a reduced word, every variable occurring in the word is
 assigned a reduced word. -/
 theorem IsReduced.of_substituteVars_of_mem {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
