@@ -62,6 +62,8 @@ every vector (`CliffordAlgebra.map_lsmul_complexVolume_ι_smul`). Its twisting g
 ## Main results
 
 * `CliffordAlgebra.complexVolume_smul_twistingGrading`: `γ = Γ γ_W`.
+* `CliffordAlgebra.twistingGrading_eq_id_iff`: `γ` is the chirality action if and only if `γ_W` is
+  the identity.
 * `CliffordAlgebra.eigenspaceTwistingGradingEquiv_apply`: the components of an eigenvector of `γ`.
 * `CliffordAlgebra.isotypicEval_map_twistingGrading`: evaluation intertwines `Γ ⊗ γ_W` with `γ`.
 * `CliffordAlgebra.map_lsmul_complexVolume_ι_smul`: the graded twist is a graded module.
@@ -72,6 +74,7 @@ every vector (`CliffordAlgebra.map_lsmul_complexVolume_ι_smul`). Its twisting g
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §5.
 * N. Berline, E. Getzler and M. Vergne, *Heat Kernels and Dirac Operators* (1992), Chapter 3.
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, the chapter on Clifford modules.
 -/
 
 public section
@@ -134,6 +137,15 @@ theorem twistingGrading_involutive (hγ₂ : Function.Involutive γ) :
     Function.Involutive (twistingGrading o hn γ hγ) := fun ψ ↦ by
   rw [twistingGrading_apply, twistingGrading_apply, apply_complexVolume_smul o hn hγ, hγ₂,
     complexVolume_smul_complexVolume_smul o hQ]
+
+/-- **Chirally graded modules**: the grading `γ` coincides with the chirality action if and only
+if its twisting grading is the identity. -/
+theorem twistingGrading_eq_id_iff :
+    twistingGrading o hn γ hγ = LinearMap.id ↔ γ = Algebra.lsmul ℂ ℂ E (complexVolume Q o) := by
+  refine ⟨fun h ↦ LinearMap.ext fun ψ ↦ ?_, fun h ↦ LinearMap.ext fun ψ ↦ ?_⟩
+  · rw [← complexVolume_smul_twistingGrading o hn hγ hQ, h]
+    rfl
+  · simp [twistingGrading_apply, h, complexVolume_smul_complexVolume_smul o hQ]
 
 /-! ### The multiplicity space of a graded module -/
 
