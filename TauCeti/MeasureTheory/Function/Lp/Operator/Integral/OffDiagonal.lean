@@ -27,9 +27,10 @@ The kernel need not be integrable near the diagonal, and the operator, not the k
 primitive datum. This file shows that the kernel is nevertheless determined by the operator off
 the diagonal: two kernels representing the same operator in this sense agree `μ ⊗ μ`-almost
 everywhere on the complement of the diagonal
-(`ContinuousLinearMap.uncurry_ae_eq_of_ae_eq_integral`). On the diagonal nothing can be said:
-the representation never evaluates a kernel there, and the identity is represented by the zero
-kernel. The diagonal is `μ ⊗ μ`-null when `μ` has no atoms, but not in general.
+(`ContinuousLinearMap.uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral`). On the diagonal
+nothing can be said: the representation never evaluates a kernel there, and the identity is
+represented by the zero kernel. The diagonal is `μ ⊗ μ`-null when `μ` has no atoms, but not in
+general.
 
 The kernels are only assumed to be locally integrable in their second variable away from the
 first one, which the size estimate `‖k x y‖ ≤ C dist x y ^ (-n)` of a standard kernel provides.
@@ -40,10 +41,10 @@ finite-dimensional normed space with Lebesgue measure.
 
 Testing the operator against `f = 1_B v` for closed balls `B` and vectors `v` shows that the
 difference `k` of the two kernels satisfies `∫_B k x y v dμ(y) = 0` for almost every `x ∉ B`
-(`TauCeti.uncurry_ae_eq_zero_of_forall_ae_setIntegral_closedBall_eq_zero` takes this as its
-hypothesis). Only countably many balls are needed, with centres in a dense sequence and radii
-`1 / (n + 1)`, and only countably many vectors: the range of a strongly measurable kernel is
-separable, so countably many vectors recover the norms of all its values
+(`TauCeti.uncurry_ae_eq_zero_restrict_compl_diagonal_of_forall_ae_setIntegral_closedBall_eq_zero`
+takes this as its hypothesis). Only countably many balls are needed, with centres in a dense
+sequence and radii `1 / (n + 1)`, and only countably many vectors: the range of a strongly
+measurable kernel is separable, so countably many vectors recover the norms of all its values
 (`TopologicalSpace.IsSeparable.exists_countable_norming`). So one null set of first variables
 `x` serves for all of them. For such an `x` and `y ≠ x`, Lebesgue's differentiation theorem
 along balls from the countable family that shrink to `y` and stay away from `x` shows
@@ -63,17 +64,16 @@ public section
 open Filter Function MeasureTheory Metric Set TopologicalSpace
 open scoped ENNReal Topology
 
-variable {α : Type*} [MetricSpace α] [ProperSpace α] [SecondCountableTopology α]
-  [MeasurableSpace α] [BorelSpace α] {μ : Measure α} [IsUnifLocDoublingMeasure μ]
-  [IsLocallyFiniteMeasure μ]
+variable {α : Type*} [MetricSpace α] [ProperSpace α] [MeasurableSpace α] [BorelSpace α]
+  {μ : Measure α} [IsUnifLocDoublingMeasure μ] [IsLocallyFiniteMeasure μ]
   {𝕜 : Type*} [DenselyNormedField 𝕜]
   {H K : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
   [NormedAddCommGroup K] [NormedSpace 𝕜 K] [NormedSpace ℝ K] [CompleteSpace K]
 
 namespace TauCeti
 
-omit [SecondCountableTopology α] [BorelSpace α] [IsUnifLocDoublingMeasure μ]
-  [IsLocallyFiniteMeasure μ] [NormedSpace ℝ K] [CompleteSpace K] in
+omit [BorelSpace α] [IsUnifLocDoublingMeasure μ] [IsLocallyFiniteMeasure μ] [NormedSpace ℝ K]
+  [CompleteSpace K] in
 /-- A kernel that is locally integrable in its second variable away from the first is integrable
 on every closed ball not containing the first variable. -/
 private theorem integrableOn_closedBall_apply {k : α → α → H →L[𝕜] K}
@@ -84,8 +84,7 @@ private theorem integrableOn_closedBall_apply {k : α → α → H →L[𝕜] K}
     (fun _ hy ↦ mem_compl_singleton_iff.2 fun hyx ↦ hx (hyx ▸ hy))
     (isCompact_closedBall c ρ)).apply_continuousLinearMap v
 
-omit [SecondCountableTopology α] [IsUnifLocDoublingMeasure μ] [IsLocallyFiniteMeasure μ]
-  [NormedSpace ℝ K] [CompleteSpace K] in
+omit [IsUnifLocDoublingMeasure μ] [IsLocallyFiniteMeasure μ] [NormedSpace ℝ K] [CompleteSpace K] in
 /-- A kernel that is locally integrable in its second variable away from the first, truncated to
 the second variables at distance at least `r > 0` from the first, is locally integrable. -/
 private theorem locallyIntegrable_indicator_le_dist_apply {k : α → α → H →L[𝕜] K} {x : α}
@@ -98,9 +97,9 @@ private theorem locallyIntegrable_indicator_le_dist_apply {k : α → α → H �
   refine (hk.integrableOn_compact_subset (fun y hy ↦ mem_compl_singleton_iff.2 ?_)
     (hC.inter_left hS)).apply_continuousLinearMap v
   rintro rfl
-  have h0 : r ≤ dist y y := hy.1
-  rw [dist_self] at h0
-  exact (hr.trans_le h0).false
+  have h0 := hy.1
+  rw [mem_ofPred_eq, dist_self] at h0
+  linarith
 
 /-- One slice of the main theorem. Let `x` be such that `∫_B k x y v dμ(y) = 0` for every ball
 `B` from the countable family of closed balls with centres in a dense sequence and radii
@@ -116,6 +115,7 @@ private theorem ae_forall_apply_eq_zero_of_forall_setIntegral_closedBall_eq_zero
   -- Lebesgue points of the truncations `g v m = 1_{dist x · ≥ 1 / (m + 1)} k x · v`.
   set S : ℕ → Set α := fun m ↦ {y | 1 / ((m : ℝ) + 1) ≤ dist x y}
   set g : t → ℕ → α → K := fun v m ↦ (S m).indicator fun y ↦ k x y v
+  have hS {m : ℕ} {z : α} (hz : 1 / ((m : ℝ) + 1) ≤ dist x z) : z ∈ S m := by simpa [S] using hz
   have hleb (v : t) (m : ℕ) := IsUnifLocDoublingMeasure.ae_tendsto_average μ (f := g v m)
     (locallyIntegrable_indicator_le_dist_apply (hk x) (Nat.one_div_pos_of_nat (n := m)) _) 1
   filter_upwards [ae_all_iff.2 fun v ↦ ae_all_iff.2 fun m ↦ hleb v m] with y hy hyx v hv
@@ -148,19 +148,21 @@ private theorem ae_forall_apply_eq_zero_of_forall_setIntegral_closedBall_eq_zero
       rw [dist_self] at this
       linarith
     rw [setAverage_eq, setIntegral_congr_fun measurableSet_closedBall
-      (fun z hz ↦ indicator_of_mem (show z ∈ S m from (hm.trans (hfar z hz)).le) _),
+      (fun z hz ↦ indicator_of_mem (hS (hm.trans (hfar z hz)).le) _),
       h (a j) j v hv hxB, smul_zero]
   have hgy : g ⟨v, hv⟩ m y = 0 :=
     tendsto_nhds_unique hlim (tendsto_const_nhds.congr' (hev.mono fun _ hj ↦ hj.symm))
-  rwa [show g ⟨v, hv⟩ m y = k x y v from
-    indicator_of_mem (show y ∈ S m from (hm.trans (half_lt_self hxy)).le) _] at hgy
+  have hgk : g ⟨v, hv⟩ m y = k x y v := by
+    simp only [g]
+    exact indicator_of_mem (hS (hm.trans (half_lt_self hxy)).le) _
+  rwa [hgk] at hgy
 
 /-- **A kernel with vanishing integrals over balls avoiding the first variable vanishes off the
 diagonal.** Let `k : α → α → (H →L[𝕜] K)` be strongly measurable and locally integrable in its
 second variable away from the first. If for every closed ball `B` and every `v`,
 `∫_B k x y v dμ(y) = 0` for almost every `x ∉ B`, then `k = 0` almost everywhere off the
 diagonal, for the product measure `μ ⊗ μ`. -/
-theorem uncurry_ae_eq_zero_of_forall_ae_setIntegral_closedBall_eq_zero
+theorem uncurry_ae_eq_zero_restrict_compl_diagonal_of_forall_ae_setIntegral_closedBall_eq_zero
     {k : α → α → H →L[𝕜] K} (hkm : StronglyMeasurable (uncurry k))
     (hk : ∀ x, LocallyIntegrableOn (k x) {x}ᶜ μ)
     (h : ∀ (c : α) (ρ : ℝ) (v : H), ∀ᵐ x ∂μ, x ∉ closedBall c ρ →
@@ -200,8 +202,9 @@ each of two kernels `k` and `k'`: whenever `f` vanishes off a compact set `s`,
 `T f x = ∫ k x y (f y) dμ(y) = ∫ k' x y (f y) dμ(y)` for almost every `x ∉ s`. If both kernels are
 strongly measurable and locally integrable in their second variable away from the first, then
 `k = k'` almost everywhere off the diagonal, for the product measure `μ ⊗ μ`. -/
-theorem ContinuousLinearMap.uncurry_ae_eq_of_ae_eq_integral {p q : ℝ≥0∞} [Fact (1 ≤ p)]
-    [Fact (1 ≤ q)] (T : Lp H p μ →L[𝕜] Lp K q μ) {k k' : α → α → H →L[𝕜] K}
+theorem ContinuousLinearMap.uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral
+    {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (T : Lp H p μ →L[𝕜] Lp K q μ)
+    {k k' : α → α → H →L[𝕜] K}
     (hkm : StronglyMeasurable (uncurry k)) (hk'm : StronglyMeasurable (uncurry k'))
     (hk : ∀ x, LocallyIntegrableOn (k x) {x}ᶜ μ) (hk' : ∀ x, LocallyIntegrableOn (k' x) {x}ᶜ μ)
     (hrep : ∀ (f : Lp H p μ) (s : Set α), IsCompact s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
@@ -209,9 +212,10 @@ theorem ContinuousLinearMap.uncurry_ae_eq_of_ae_eq_integral {p q : ℝ≥0∞} [
     (hrep' : ∀ (f : Lp H p μ) (s : Set α), IsCompact s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
       ∀ᵐ x ∂μ, x ∉ s → T f x = ∫ y, k' x y (f y) ∂μ) :
     uncurry k =ᵐ[(μ.prod μ).restrict (diagonal α)ᶜ] uncurry k' := by
-  refine (TauCeti.uncurry_ae_eq_zero_of_forall_ae_setIntegral_closedBall_eq_zero
-    (k := fun x y ↦ k x y - k' x y) (hkm.sub hk'm) (fun x ↦ (hk x).sub (hk' x))
-    fun c ρ v ↦ ?_).mono fun _ hp ↦ sub_eq_zero.1 hp
+  refine
+    (TauCeti.uncurry_ae_eq_zero_restrict_compl_diagonal_of_forall_ae_setIntegral_closedBall_eq_zero
+      (k := fun x y ↦ k x y - k' x y) (hkm.sub hk'm) (fun x ↦ (hk x).sub (hk' x))
+      fun c ρ v ↦ ?_).mono fun _ hp ↦ sub_eq_zero.1 hp
   -- Test the operator against `f = 1_B v` for the closed ball `B = closedBall c ρ`.
   set f : Lp H p μ := indicatorConstLp p measurableSet_closedBall
     (measure_closedBall_lt_top (x := c) (r := ρ)).ne v
