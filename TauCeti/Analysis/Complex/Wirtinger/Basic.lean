@@ -76,6 +76,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   holomorphic map `φ`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
+* `TauCeti.norm_conjWirtingerDeriv_finset_prod_le`: if each factor satisfies
+  `‖\bar∂g_i‖ ≤ K ‖g_i‖`, a product of `k` factors satisfies `‖\bar∂(∏ g_i)‖ ≤ k K ‖∏ g_i‖`.
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
@@ -452,6 +454,37 @@ theorem conjWirtingerDeriv_fun_pow (hf : DifferentiableAt ℝ f x) (n : ℕ) :
   simp only [conjWirtingerDeriv_apply, fderiv_fun_pow n hf, nsmul_eq_mul, smul_apply,
     smul_eq_mul]
   ring
+
+/-- **The Leibniz bound for a finite product.** If each of the `#s` factors `g_i` is real
+differentiable at `x` with `‖\bar∂g_i(x)‖ ≤ K ‖g_i(x)‖`, then
+`‖\bar∂(∏ g_i)(x)‖ ≤ #s K ‖∏ g_i(x)‖`. For instance, differences of solutions of a real-linear
+Cauchy–Riemann equation `\bar∂u + u ν + \bar u μ = 0` satisfy the hypothesis with
+`K = ‖ν‖ + ‖μ‖`, and so do their products up to the factor `#s`. -/
+theorem norm_conjWirtingerDeriv_finset_prod_le {ι : Type*} {s : Finset ι} {g : ι → V → ℂ}
+    {K : ℝ} (hg : ∀ i ∈ s, DifferentiableAt ℝ (g i) x)
+    (hK : ∀ i ∈ s, ‖conjWirtingerDeriv (g i) x‖ ≤ K * ‖g i x‖) :
+    ‖conjWirtingerDeriv (fun y ↦ ∏ i ∈ s, g i y) x‖ ≤ s.card * K * ‖∏ i ∈ s, g i x‖ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    have hga := hg a (Finset.mem_insert_self a s)
+    have hgs : ∀ i ∈ s, DifferentiableAt ℝ (g i) x := fun i hi ↦ hg i (Finset.mem_insert_of_mem hi)
+    have hs := ih hgs fun i hi ↦ hK i (Finset.mem_insert_of_mem hi)
+    have hKa := hK a (Finset.mem_insert_self a s)
+    simp_rw [Finset.prod_insert ha]
+    rw [conjWirtingerDeriv_fun_mul hga
+        (HasFDerivAt.finsetProd fun i hi ↦ (hgs i hi).hasFDerivAt).differentiableAt,
+      Finset.card_insert_of_notMem ha]
+    calc ‖g a x • conjWirtingerDeriv (fun y ↦ ∏ i ∈ s, g i y) x +
+          (∏ i ∈ s, g i x) • conjWirtingerDeriv (g a) x‖
+        ≤ ‖g a x‖ * (s.card * K * ‖∏ i ∈ s, g i x‖) + ‖∏ i ∈ s, g i x‖ * (K * ‖g a x‖) := by
+          refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul] <;>
+            exact mul_le_mul_of_nonneg_left ‹_› (norm_nonneg _)
+      _ = ((s.card + 1 : ℕ) : ℝ) * K * ‖g a x * ∏ i ∈ s, g i x‖ := by
+          rw [norm_mul]
+          push_cast
+          ring
 
 end Mul
 
