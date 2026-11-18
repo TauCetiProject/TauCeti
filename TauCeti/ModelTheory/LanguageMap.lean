@@ -44,6 +44,14 @@ the expansion of its `L`-reduct by the interpretations of the added constants
 
 A function symbol of `L[[γ]]` is a function symbol of `L` or one of the added constants
 (`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
+
+A language equivalence `e : L ≃ᴸ L'` induces equivalences on function and relation symbols of each
+arity (`FirstOrder.Language.LEquiv.onFunction`, `FirstOrder.Language.LEquiv.onRelation`), so both
+its forward and inverse language homomorphisms are injective
+(`FirstOrder.Language.LEquiv.toLHom_injective`, `FirstOrder.Language.LEquiv.invLHom_injective`).
+Every language `L : Language.{u, v}` lifts to `L.ulift.{u', v'} : Language.{max u u', max v v'}`
+along a language equivalence `L.uliftEquiv.{u', v'}`, preserving relationality, algebraicity and
+symbol countability; for `L₀ : Language.{0, 0}` this presents `L₀` in any target universes `u', v'`.
 -/
 
 public section
@@ -235,5 +243,145 @@ theorem sumElim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions
   rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
 
 end WithConstantsSymbols
+
+namespace LEquiv
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}} (e : L ≃ᴸ L')
+
+/-- The equivalence of arity-`n` function symbols induced by a language equivalence. -/
+def onFunction (n : ℕ) : L.Functions n ≃ L'.Functions n where
+  toFun f := e.toLHom.onFunction f
+  invFun f := e.invLHom.onFunction f
+  left_inv f := by
+    simpa only [← LHom.comp_onFunction, LHom.id_onFunction, id_eq] using
+      congrFun (congrFun (congrArg LHom.onFunction e.left_inv) n) f
+  right_inv f := by
+    simpa only [← LHom.comp_onFunction, LHom.id_onFunction, id_eq] using
+      congrFun (congrFun (congrArg LHom.onFunction e.right_inv) n) f
+
+/-- `LEquiv.onFunction` applies the forward homomorphism on function symbols. -/
+@[simp]
+theorem onFunction_apply {n : ℕ} (f : L.Functions n) :
+    e.onFunction n f = e.toLHom.onFunction f :=
+  (rfl)
+
+/-- The inverse of `LEquiv.onFunction` applies the inverse homomorphism on function symbols. -/
+@[simp]
+theorem onFunction_symm_apply {n : ℕ} (f : L'.Functions n) :
+    (e.onFunction n).symm f = e.invLHom.onFunction f :=
+  (rfl)
+
+/-- The equivalence of arity-`n` relation symbols induced by a language equivalence. -/
+def onRelation (n : ℕ) : L.Relations n ≃ L'.Relations n where
+  toFun R := e.toLHom.onRelation R
+  invFun R := e.invLHom.onRelation R
+  left_inv R := by
+    simpa only [← LHom.comp_onRelation, LHom.id_onRelation, id_eq] using
+      congrFun (congrFun (congrArg LHom.onRelation e.left_inv) n) R
+  right_inv R := by
+    simpa only [← LHom.comp_onRelation, LHom.id_onRelation, id_eq] using
+      congrFun (congrFun (congrArg LHom.onRelation e.right_inv) n) R
+
+/-- `LEquiv.onRelation` applies the forward homomorphism on relation symbols. -/
+@[simp]
+theorem onRelation_apply {n : ℕ} (R : L.Relations n) :
+    e.onRelation n R = e.toLHom.onRelation R :=
+  (rfl)
+
+/-- The inverse of `LEquiv.onRelation` applies the inverse homomorphism on relation symbols. -/
+@[simp]
+theorem onRelation_symm_apply {n : ℕ} (R : L'.Relations n) :
+    (e.onRelation n).symm R = e.invLHom.onRelation R :=
+  (rfl)
+
+/-- The forward homomorphism of a language equivalence is injective. -/
+theorem toLHom_injective : e.toLHom.Injective where
+  onFunction {n} := (LEquiv.onFunction e n).injective
+  onRelation {n} := (LEquiv.onRelation e n).injective
+
+/-- The inverse homomorphism of a language equivalence is injective. -/
+theorem invLHom_injective : e.invLHom.Injective :=
+  e.symm.toLHom_injective
+
+end LEquiv
+
+section ULift
+
+/-- The **universe-lifted presentation** of a language `L : Language.{u, v}`: the language in
+`Language.{max u u', max v v'}` whose function and relation symbols of each arity are `ULift`s of
+those of `L`. When `L : Language.{0, 0}`, `L.ulift.{u', v'}` has type `Language.{u', v'}`. -/
+@[expose] def ulift.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) :
+    Language.{max u₂ u₁, max v₂ v₁} where
+  Functions n := ULift.{u₁} (L.Functions n)
+  Relations n := ULift.{v₁} (L.Relations n)
+
+/-- The function symbols of `L.ulift` of each arity are `ULift`s of those of `L`. -/
+theorem ulift_functions.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) (n : ℕ) :
+    L.ulift.{u₁, v₁}.Functions n = ULift.{u₁} (L.Functions n) :=
+  (rfl)
+
+/-- The relation symbols of `L.ulift` of each arity are `ULift`s of those of `L`. -/
+theorem ulift_relations.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) (n : ℕ) :
+    L.ulift.{u₁, v₁}.Relations n = ULift.{v₁} (L.Relations n) :=
+  (rfl)
+
+/-- The canonical equivalence between `L` and its universe-lifted presentation `L.ulift`. -/
+def uliftEquiv.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) : L ≃ᴸ L.ulift.{u₁, v₁} where
+  toLHom := ⟨fun {_} => ULift.up, fun {_} => ULift.up⟩
+  invLHom := ⟨fun {_} => ULift.down, fun {_} => ULift.down⟩
+  left_inv := LHom.funext (funext fun _ => rfl) (funext fun _ => rfl)
+  right_inv := LHom.funext (funext fun _ => rfl) (funext fun _ => rfl)
+
+/-- The forward map of `uliftEquiv` lifts a function symbol with `ULift.up`. -/
+@[simp]
+theorem uliftEquiv_toLHom_onFunction.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) {n : ℕ}
+    (f : L.Functions n) :
+    L.uliftEquiv.{u₁, v₁}.toLHom.onFunction f = ULift.up f :=
+  (rfl)
+
+/-- The forward map of `uliftEquiv` lifts a relation symbol with `ULift.up`. -/
+@[simp]
+theorem uliftEquiv_toLHom_onRelation.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) {n : ℕ}
+    (R : L.Relations n) :
+    L.uliftEquiv.{u₁, v₁}.toLHom.onRelation R = ULift.up R :=
+  (rfl)
+
+/-- The inverse map of `uliftEquiv` lowers a lifted function symbol with `ULift.down`. -/
+@[simp]
+theorem uliftEquiv_invLHom_onFunction.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) {n : ℕ}
+    (f : L.ulift.{u₁, v₁}.Functions n) :
+    L.uliftEquiv.{u₁, v₁}.invLHom.onFunction f = ULift.down f :=
+  (rfl)
+
+/-- The inverse map of `uliftEquiv` lowers a lifted relation symbol with `ULift.down`. -/
+@[simp]
+theorem uliftEquiv_invLHom_onRelation.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) {n : ℕ}
+    (R : L.ulift.{u₁, v₁}.Relations n) :
+    L.uliftEquiv.{u₁, v₁}.invLHom.onRelation R = ULift.down R :=
+  (rfl)
+
+/-- Lifting the symbol universes of a relational language preserves `IsRelational`. -/
+instance isRelational_ulift.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) [L.IsRelational] :
+    L.ulift.{u₁, v₁}.IsRelational :=
+  fun _ => Equiv.ulift.isEmpty
+
+/-- Lifting the symbol universes of an algebraic language preserves `IsAlgebraic`. -/
+instance isAlgebraic_ulift.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂}) [L.IsAlgebraic] :
+    L.ulift.{u₁, v₁}.IsAlgebraic :=
+  fun _ => Equiv.ulift.isEmpty
+
+/-- Lifting the symbol universes preserves countability of the arity-tagged function symbols. -/
+instance countable_functions_ulift.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂})
+    [Countable (Σ n, L.Functions n)] :
+    Countable (Σ n, L.ulift.{u₁, v₁}.Functions n) :=
+  Countable.of_equiv _ (Equiv.sigmaCongrRight fun _ => Equiv.ulift.symm)
+
+/-- Lifting the symbol universes preserves countability of the arity-tagged relation symbols. -/
+instance countable_relations_ulift.{u₁, v₁, u₂, v₂} (L : Language.{u₂, v₂})
+    [Countable (Σ n, L.Relations n)] :
+    Countable (Σ n, L.ulift.{u₁, v₁}.Relations n) :=
+  Countable.of_equiv _ (Equiv.sigmaCongrRight fun _ => Equiv.ulift.symm)
+
+end ULift
 
 end FirstOrder.Language
