@@ -234,7 +234,8 @@ theorem polynomialForm_polynomialMonomial (d i j : ℕ) :
         simp [Nat.sub_add_cancel hi, Nat.choose_symm hi]
       simp only [hiff, hdeg, hi, and_true, hmult, star_one, mul_one,
         one_div]
-    · simp [polynomialMonomial_of_lt (not_le.mp hj), show i ≠ j by omega]
+    · have hij : i ≠ j := by omega
+      simp [polynomialMonomial_of_lt (not_le.mp hj), hij]
   · simp [polynomialMonomial_of_lt (not_le.mp hi), hi]
 
 end TauCeti
