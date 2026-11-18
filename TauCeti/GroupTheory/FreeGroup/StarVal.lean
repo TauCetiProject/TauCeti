@@ -76,16 +76,16 @@ theorem starVal_def (w : List (α × Bool)) :
 
 /-- The value of a word beginning with a letter is the value of that letter times the value of
 the rest of the word. -/
-theorem starVal_cons (p : α × Bool) (w : List (α × Bool)) :
-    starVal ρ (p :: w) = starVal ρ [p] * starVal ρ w := by
-  rw [← starVal_append, List.singleton_append]
+@[simp] theorem starVal_cons (p : α × Bool) (w : List (α × Bool)) :
+    starVal ρ (p :: w) = (bif p.2 then ρ p.1 else star (ρ p.1)) * starVal ρ w := by
+  simp [starVal]
 
 /-- A positive letter has the value of its generator. -/
-@[simp] theorem starVal_singleton_true (a : α) : starVal ρ [(a, true)] = ρ a := by
+theorem starVal_singleton_true (a : α) : starVal ρ [(a, true)] = ρ a := by
   simp [starVal]
 
 /-- A negative letter has the `star` of the value of its generator. -/
-@[simp] theorem starVal_singleton_false (a : α) : starVal ρ [(a, false)] = star (ρ a) := by
+theorem starVal_singleton_false (a : α) : starVal ρ [(a, false)] = star (ρ a) := by
   simp [starVal]
 
 variable {ρ} in
@@ -126,7 +126,7 @@ theorem starVal_flatMap_substituteLetter (ψ : α → List (β × Bool)) (w : Li
   induction w with
   | nil => simp
   | cons p w ih =>
-    obtain ⟨a, _ | _⟩ := p <;> simp [starVal_cons _ _ w, ih]
+    obtain ⟨a, _ | _⟩ := p <;> simp [ih]
 
 end StarMul
 
