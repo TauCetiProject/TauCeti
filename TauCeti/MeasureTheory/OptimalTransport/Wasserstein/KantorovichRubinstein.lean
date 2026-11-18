@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Duality.Attainment
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Compact
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FiniteSupport
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward
+import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
 # Kantorovich–Rubinstein duality
@@ -43,9 +44,11 @@ is at most `2 * R`; finite measures reduce to probability measures by normalizat
 
 ## Main statements
 
-* `TauCeti.ofReal_integral_sub_integral_le_wassersteinEDist_one` — the difference of expectations
-  of an integrable `1`-Lipschitz function is at most `W₁`, on an arbitrary extended pseudometric
-  space;
+* `TauCeti.ofReal_integral_sub_integral_le_wassersteinEDist_one`,
+  `TauCeti.ofReal_abs_integral_sub_integral_le_wassersteinEDist_one`, and
+  `TauCeti.ofReal_abs_integral_sub_integral_le_mul_wassersteinEDist_one` — weak duality bounds for
+  the difference of expectations of integrable `1`-Lipschitz and `K`-Lipschitz functions in terms
+  of `W₁`, on an arbitrary extended pseudometric space;
 * `TauCeti.wassersteinEDist_one_eq_iSup_of_compactSpace` — Kantorovich–Rubinstein duality for
   probability measures on a compact pseudometric space;
 * `TauCeti.wassersteinEDist_one_eq_iSup` — Kantorovich–Rubinstein duality for probability measures
@@ -109,6 +112,50 @@ theorem ofReal_integral_sub_integral_le_wassersteinEDist_one {f : X → ℝ}
   refine le_wassersteinEDist fun π hπ ↦ hdual.trans
     ((transportCost_le_lintegral hπ _).trans ?_)
   simpa using lintegral_eNorm_le_eLpNorm_one (μ := π) (f := fun z : X × X ↦ edist z.1 z.2)
+
+/-- Absolute-value form of Kantorovich–Rubinstein weak duality: for arbitrary measures `μ` and `ν`
+and an integrable `1`-Lipschitz real function `f`, `|∫ f dμ - ∫ f dν|` is at most their
+`1`-Wasserstein distance. No measurability of the ground distance, finiteness, or equal-mass
+assumption on the measures is needed. -/
+theorem ofReal_abs_integral_sub_integral_le_wassersteinEDist_one {f : X → ℝ}
+    (hf : LipschitzWith 1 f) (hμ : Integrable f μ) (hν : Integrable f ν) :
+    ENNReal.ofReal |∫ x, f x ∂μ - ∫ x, f x ∂ν| ≤ wassersteinEDist 1 μ ν := by
+  rcases le_total (∫ x, f x ∂ν) (∫ x, f x ∂μ) with h | h
+  · rw [abs_of_nonneg (sub_nonneg.2 h)]
+    exact ofReal_integral_sub_integral_le_wassersteinEDist_one hf hμ hν
+  · rw [abs_of_nonpos (sub_nonpos.2 h), neg_sub]
+    simpa only [Pi.neg_apply, integral_neg, sub_neg_eq_add, neg_add_eq_sub] using
+      ofReal_integral_sub_integral_le_wassersteinEDist_one hf.neg hμ.neg hν.neg
+
+/-- Scaled absolute-value form of Kantorovich–Rubinstein weak duality: for measures of equal total
+mass and an integrable `K`-Lipschitz real function `f`, `|∫ f dμ - ∫ f dν|` is at most
+`K * W₁(μ, ν)`. Equal total mass (`μ univ = ν univ`) is needed for the `K = 0` case, where `f` is
+constant and `0 * ∞ = 0` in `ℝ≥0∞`. No measurability of the ground distance and no finiteness of
+the measures is needed. -/
+theorem ofReal_abs_integral_sub_integral_le_mul_wassersteinEDist_one {K : ℝ≥0} {f : X → ℝ}
+    (hmass : μ univ = ν univ) (hf : LipschitzWith K f) (hμ : Integrable f μ)
+    (hν : Integrable f ν) :
+    ENNReal.ofReal |∫ x, f x ∂μ - ∫ x, f x ∂ν| ≤ K * wassersteinEDist 1 μ ν := by
+  rcases eq_or_ne K 0 with rfl | hK
+  · rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+    · simp [Measure.eq_zero_of_isEmpty μ, Measure.eq_zero_of_isEmpty ν]
+    · have hc : f = fun _ ↦ f x₀ := funext fun x ↦ (LipschitzWith.zero_iff f).1 hf x x₀
+      rw [hc]
+      simp [measureReal_def, hmass]
+  · have hKpos : (0 : ℝ) < K := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hK)
+    have hnorm : ‖(K : ℝ)‖₊ = K := NNReal.eq (Real.norm_of_nonneg K.coe_nonneg)
+    have hdiv : LipschitzWith 1 (fun x ↦ f x / K) := by
+      simpa only [hnorm, div_self hK] using hf.div_const (K : ℝ)
+    have heq : |∫ x, f x ∂μ - ∫ x, f x ∂ν| =
+        (K : ℝ) * |∫ x, f x / K ∂μ - ∫ x, f x / K ∂ν| := by
+      have hsub : ∫ x, f x ∂μ - ∫ x, f x ∂ν =
+          (K : ℝ) * (∫ x, f x / K ∂μ - ∫ x, f x / K ∂ν) := by
+        rw [integral_div, integral_div, ← sub_div, mul_div_cancel₀ _ (NNReal.coe_ne_zero.2 hK)]
+      rw [hsub, abs_mul, abs_of_pos hKpos]
+    rw [heq, ENNReal.ofReal_mul hKpos.le, ENNReal.ofReal_coe_nnreal]
+    gcongr
+    exact ofReal_abs_integral_sub_integral_le_wassersteinEDist_one hdiv
+      (hμ.div_const _) (hν.div_const _)
 
 end WeakDuality
 
