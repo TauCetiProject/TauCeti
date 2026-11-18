@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Geometry.Symplectic.Manifold.Energy
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Energy quantization for pseudoholomorphic planes in a manifold
@@ -253,31 +254,22 @@ private theorem mapsTo_closedBall_of_le [T2Space M] (hu : ContMDiff 𝓘(ℝ, �
     refine ⟨e.map_target (hK (h23 hy)), ?_⟩
     rw [mem_preimage, e.right_inv (hK (h23 hy))]
     exact mem_ball.2 ((mem_closedBall.1 hy).trans_lt (by linarith))
-  -- The set of exit times from `G` is empty: its first element would lie in `Gc`.
-  set S := Icc (0 : ℝ) 1 ∩ φ ⁻¹' Gᶜ
-  have hSe : S = ∅ := by
-    by_contra hne
-    have hbdd : BddBelow S := ⟨0, fun t ht ↦ ht.1.1⟩
-    have htS := (isClosed_Icc.inter ((isOpen_extChartAt_preimage' α isOpen_ball).isClosed_compl
-      |>.preimage hφc)).csInf_mem (nonempty_iff_ne_empty.2 hne) hbdd
-    have hbefore : ∀ σ ∈ Ico 0 (sInf S), φ σ ∈ G := fun σ hσ ↦ by
-      by_contra h
-      exact notMem_of_lt_csInf hσ.2 hbdd ⟨⟨hσ.1, hσ.2.le.trans htS.1.2⟩, h⟩
-    have hw₀G : u w₀ ∈ G := ⟨hw₀s, ball_subset_ball (by linarith) hw₀⟩
-    have ht0 : 0 < sInf S := lt_of_le_of_ne htS.1.1 fun h0 ↦ htS.2 <| by
-      rw [← h0]
+  -- The segment never leaves `G`: its first exit point would be a limit of points of `Gc ⊆ G`.
+  have hstay : ∀ σ ∈ Icc (0 : ℝ) 1, φ σ ∈ G := by
+    by_contra! ⟨t, ht, htG⟩
+    have hw₀G : φ 0 ∈ G := by
       simp only [φ, zero_smul, add_zero]
-      exact hw₀G
-    refine htS.2 (hGcG (hGc.mem_of_tendsto (hφc.continuousAt.tendsto.mono_left
-      (nhdsWithin_le_nhds (s := Iio (sInf S)))) ?_))
-    filter_upwards [Ioo_mem_nhdsLT ht0] with σ hσ
-    have hσ' := h2 σ ⟨hσ.1.le, hσ.2.le.trans htS.1.2⟩ fun σ' hσ' ↦
+      exact ⟨hw₀s, ball_subset_ball (by linarith) hw₀⟩
+    have hG : IsOpen G := isOpen_extChartAt_preimage' α isOpen_ball
+    obtain ⟨T, hT, hT0, hTG, -, hbefore⟩ :=
+      hG.exists_first_exit hφc.continuousOn hw₀G ⟨t, ht, htG⟩
+    refine hTG (hGcG (hGc.mem_of_tendsto (hφc.continuousAt.tendsto.mono_left
+      (nhdsWithin_le_nhds (s := Iio T))) ?_))
+    filter_upwards [Ioo_mem_nhdsLT hT0] with σ hσ
+    have hσ' := h2 σ ⟨hσ.1.le, hσ.2.le.trans hT.2⟩ fun σ' hσ' ↦
       hbefore σ' ⟨hσ'.1, hσ'.2.trans_lt hσ.2⟩
     exact ⟨e (φ σ), hσ'.2, e.left_inv hσ'.1⟩
-  have h1 := h2 1 (right_mem_Icc.2 zero_le_one) fun σ hσ ↦ by
-    by_contra h
-    exact (hSe ▸ (⟨⟨hσ.1, hσ.2⟩, h⟩ : σ ∈ S) : σ ∈ (∅ : Set ℝ))
-  simpa [φ] using h1
+  simpa [φ] using h2 1 (right_mem_Icc.2 zero_le_one) hstay
 
 /-- **The energy form in a chart.** For `J` tamed by `ω` and a compact set `Kc` in the chart target
 at `α`, there are `c, C > 0` such that `c ‖ξ‖² ≤ ω(ζ, J ζ) ≤ C ‖ξ‖²` for the tangent vectors `ζ`
@@ -488,13 +480,9 @@ private theorem exists_pos_eval₂_mfderiv (hJ : ω.Tames J) (hu : ContMDiff �
   by_contra! h
   -- Where the area density vanishes, so does the energy density `2 ω(∂ₛu, ∂ₜu)`, hence `du`.
   have hzero : ∀ w, mfderiv 𝓘(ℝ, ℝ × ℝ) I u w = 0 := fun w ↦ by
-    have hlin : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-        (J.almostComplexStructureAt (u w)) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w).toLinearMap :=
-      (isComplexLinearMap_stdComplexLine_iff _).2 (by
-        simp only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-        exact hCR w)
     refine (hJ.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff (u w) _).1 ?_
-    rw [hlin.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
+    rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq (hCR w))
+      |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
     exact mul_eq_zero_of_right 2 (le_antisymm (h w) (hJ.eval₂_mfderiv_nonneg (hCR w)))
   obtain ⟨z, w, hzw⟩ := hnc
   exact hzw ((hu.mdifferentiable (by norm_num)).apply_eq_of_mfderiv_eq_zero hzero z w)
