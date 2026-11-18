@@ -78,11 +78,6 @@ namespace KleinBottle
 
 attribute [local instance] finrank_real_complex_fact'
 
-/-- The height of the circle in the direction of `1` is the real part. -/
-private theorem sphereHeight_one_apply (z : sphere (0 : ℂ) 1) :
-    sphereHeight 1 z = (z : ℂ).re := by
-  simp [sphereHeight_apply, Metric.unitSphere.coe_one, Complex.inner]
-
 /-- The **height function** `[t, z] ↦ Re z`, that is `[t, e^{iθ}] ↦ cos θ`, on the Klein bottle.
 It is well defined since conjugation preserves real parts. -/
 def height : KleinBottle → ℝ :=
@@ -106,17 +101,11 @@ theorem contMDiff_height : ContMDiff (𝓘(ℝ).prod (𝓡 1)) 𝓘(ℝ) ∞ hei
   (SmoothMappingTorus.contMDiff_lift_iff _ _ le_rfl).2
     ((contMDiff_sphereHeight (n := 1) 1).comp contMDiff_snd)
 
-/-- The quotient map of the Klein bottle is a local diffeomorphism at every point. -/
-private theorem isLocalDiffeomorphAt_uncurry_mk (p : ℝ × sphere (0 : ℂ) 1) :
-    IsLocalDiffeomorphAt (𝓘(ℝ).prod (𝓡 1)) (𝓘(ℝ).prod (𝓡 1)) ∞
-      (uncurry (SmoothMappingTorus.mk conjCircleDiffeomorph)) p :=
-  SmoothMappingTorus.isLocalDiffeomorph_uncurry_mk _ p
-
 /-- **The critical points of the height function** are the points `[t, z]` with `z = ±1`. -/
 theorem mk_mem_criticalPoints_height_iff {t : ℝ} {z : sphere (0 : ℂ) 1} :
     mk t z ∈ criticalPoints (𝓘(ℝ).prod (𝓡 1)) height ↔ z = 1 ∨ z = -1 := by
-  have h := (isLocalDiffeomorphAt_uncurry_mk (t, z)).mem_criticalPoints_comp_iff
-    (by simp) (f := height)
+  have h := (SmoothMappingTorus.isLocalDiffeomorph_uncurry_mk (n := ∞) conjCircleDiffeomorph
+    (t, z)).mem_criticalPoints_comp_iff (by simp) (f := height)
   rw [height_comp_uncurry_mk, mem_criticalPoints_comp_snd_iff, criticalPoints_sphereHeight] at h
   exact h.symm
 
@@ -162,10 +151,8 @@ theorem criticalPoints_height :
       range (criticalCircle 1 (.inl rfl)) ∪ range (criticalCircle (-1) (.inr rfl)) := by
   ext y
   obtain ⟨⟨t, z⟩, rfl⟩ := SmoothMappingTorus.uncurry_mk_surjective conjCircleDiffeomorph y
-  -- The class of `(t, z)` under the quotient map is `[t, z]` by definition.
-  change mk t z ∈ _ ↔ mk t z ∈ _
-  rw [mk_mem_criticalPoints_height_iff, mem_union, mk_mem_range_criticalCircle_iff,
-    mk_mem_range_criticalCircle_iff]
+  rw [uncurry_apply_pair, ← mk, mk_mem_criticalPoints_height_iff, mem_union,
+    mk_mem_range_criticalCircle_iff, mk_mem_range_criticalCircle_iff]
 
 /-- The differential of the critical circle through `z` at `t` sends `b` to the image of the
 vector `(b, 0)` of the cylinder at `(t, z)`, tangent to the `t`-direction, under the differential
@@ -190,6 +177,13 @@ private theorem mfderiv_criticalCircle_coe_apply {z : sphere (0 : ℂ) 1} (hz : 
   -- Both sides of `h₁` are evaluated at `b`; the tangent lines at `t` and `↑t` are `ℝ`.
   exact (congr($h₁ b)).symm
 
+/-- The points `±1` are nondegenerate critical points of the height of the circle. -/
+private theorem isManifoldNondegenerateCriticalPoint_sphereHeight_one {z : sphere (0 : ℂ) 1}
+    (hz : z = 1 ∨ z = -1) : IsManifoldNondegenerateCriticalPoint (𝓡 1) (sphereHeight 1) z := by
+  rcases hz with rfl | rfl
+  · exact isManifoldNondegenerateCriticalPoint_sphereHeight_self 1
+  · exact isManifoldNondegenerateCriticalPoint_sphereHeight_neg 1
+
 /-- **The critical circles are Morse–Bott critical submanifolds** of the height function on the
 Klein bottle: at each point of the critical circle through `z = ±1`, the kernel of the critical
 Hessian of the height function is the tangent line of the circle. -/
@@ -209,51 +203,47 @@ theorem isNondegenerateCriticalSubmanifold_criticalCircle {z : sphere (0 : ℂ) 
     have hpt : criticalCircle z hz t =
         uncurry (SmoothMappingTorus.mk conjCircleDiffeomorph) (t, z) :=
       criticalCircle_coe hz t
-    rw [hpt, (isLocalDiffeomorphAt_uncurry_mk (t, z)).ker_criticalHessian_eq_map (by simp)
+    rw [hpt, (SmoothMappingTorus.isLocalDiffeomorph_uncurry_mk (n := ∞) conjCircleDiffeomorph
+      (t, z)).ker_criticalHessian_eq_map (by simp)
       (contMDiff_height.contMDiffAt.of_le (by simp)) hcrit, height_comp_uncurry_mk] at hv
     obtain ⟨u, hu, rfl⟩ := hv
     -- The vertical component of `u` lies in the kernel of the Hessian of the height of the circle
     -- at the nondegenerate critical point `z`, so it vanishes.
-    have hnd : IsManifoldNondegenerateCriticalPoint (𝓡 1) (sphereHeight 1) z := by
-      rcases hz with rfl | rfl
-      · exact isManifoldNondegenerateCriticalPoint_sphereHeight_self 1
-      · exact isManifoldNondegenerateCriticalPoint_sphereHeight_neg 1
-    have hzc : z ∈ criticalPoints (𝓡 1) (sphereHeight 1) := by
-      rw [criticalPoints_sphereHeight]
-      exact hz
+    have hnd := isManifoldNondegenerateCriticalPoint_sphereHeight_one hz
     have hu₂ : u.2 = 0 := by
       refine hnd.isInvertible_criticalHessian.injective (ContinuousLinearMap.ext fun w ↦ ?_)
       have h := congr($(LinearMap.mem_ker.1 hu) ((0 : ℝ), w))
       rw [ContinuousLinearMap.coe_coe, criticalHessian_comp_apply rfl hnd.contMDiffAt
-        contMDiffAt_snd hzc u ((0 : ℝ), w), mfderiv_snd] at h
+        contMDiffAt_snd hnd.mem_criticalPoints u ((0 : ℝ), w), mfderiv_snd] at h
       exact h.trans
         (DFunLike.congr_fun (map_zero (criticalHessian (𝓡 1) (sphereHeight 1) z)) w).symm
     refine LinearMap.mem_range.2 ⟨u.1, ?_⟩
     rw [ContinuousLinearMap.coe_coe, mfderiv_criticalCircle_coe_apply]
     exact DFunLike.congr_arg _ (Prod.ext rfl hu₂.symm)
 
+/-- At a point `[t, z]` of a critical circle, the Morse index of the height function is that of
+the height of the circle at `z`. -/
+private theorem manifoldMorseIndex_height_mk {z : sphere (0 : ℂ) 1} (hz : z = 1 ∨ z = -1)
+    (t : ℝ) : manifoldMorseIndex (𝓘(ℝ).prod (𝓡 1)) height (mk t z) =
+      manifoldMorseIndex (𝓡 1) (sphereHeight 1) z := by
+  have h := (SmoothMappingTorus.isLocalDiffeomorph_uncurry_mk (n := ∞) conjCircleDiffeomorph
+    (t, z)).manifoldMorseIndex_comp (by simp) (f := height)
+    (contMDiff_height.contMDiffAt.of_le (by simp)) (mk_mem_criticalPoints_height_iff.2 hz)
+  rw [height_comp_uncurry_mk, manifoldMorseIndex_comp_snd] at h
+  exact h.symm
+
 /-- **The maximum circle has Morse index `1`**: at every point `[t, 1]` of the circle `θ = 0`, where
 the height function `cos θ` attains its maximum, the Morse index is `1`, the rank of the negative
 normal bundle. -/
 theorem manifoldMorseIndex_height_mk_one (t : ℝ) :
     manifoldMorseIndex (𝓘(ℝ).prod (𝓡 1)) height (mk t 1) = 1 := by
-  have h := (isLocalDiffeomorphAt_uncurry_mk (t, 1)).manifoldMorseIndex_comp (by simp)
-    (f := height) (contMDiff_height.contMDiffAt.of_le (by simp))
-    (mk_mem_criticalPoints_height_iff.2 (.inl rfl))
-  rw [height_comp_uncurry_mk, manifoldMorseIndex_comp_snd,
-    manifoldMorseIndex_sphereHeight_self] at h
-  exact h.symm
+  rw [manifoldMorseIndex_height_mk (.inl rfl), manifoldMorseIndex_sphereHeight_self]
 
 /-- **The minimum circle has Morse index `0`**: at every point `[t, -1]` of the circle `θ = π`,
 where the height function `cos θ` attains its minimum, the Morse index is `0`. -/
 theorem manifoldMorseIndex_height_mk_neg_one (t : ℝ) :
     manifoldMorseIndex (𝓘(ℝ).prod (𝓡 1)) height (mk t (-1)) = 0 := by
-  have h := (isLocalDiffeomorphAt_uncurry_mk (t, -1)).manifoldMorseIndex_comp (by simp)
-    (f := height) (contMDiff_height.contMDiffAt.of_le (by simp))
-    (mk_mem_criticalPoints_height_iff.2 (.inr rfl))
-  rw [height_comp_uncurry_mk, manifoldMorseIndex_comp_snd,
-    manifoldMorseIndex_sphereHeight_neg] at h
-  exact h.symm
+  rw [manifoldMorseIndex_height_mk (.inr rfl), manifoldMorseIndex_sphereHeight_neg]
 
 end KleinBottle
 

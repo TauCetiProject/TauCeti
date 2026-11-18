@@ -60,13 +60,12 @@ theorem apply_add_intCast_of_apply_add_one (hg : ∀ t x, g (t + 1) x = g t (φ 
   induction k generalizing x with
   | zero => simp
   | succ k ih =>
-    rw [Int.cast_add, Int.cast_one, ← add_assoc, hg, ih, zpow_add_one, Diffeomorph.mul_apply]
+    push_cast at ih ⊢
+    rw [← add_assoc, hg, ih, zpow_add_one, Diffeomorph.mul_apply]
   | pred k ih =>
-    have h := hg (t + ((-(k : ℤ) - 1 : ℤ) : ℝ)) (φ.symm x)
-    rw [Diffeomorph.apply_symm_apply, add_assoc, Int.cast_sub, Int.cast_one, sub_add_cancel,
-      ih] at h
-    rw [Int.cast_sub, Int.cast_one, ← h, zpow_sub_one, Diffeomorph.mul_apply,
-      Diffeomorph.inv_apply]
+    have h := hg (t + (-(k : ℝ) - 1)) (φ.symm x)
+    push_cast at ih ⊢
+    simpa [zpow_sub_one, Diffeomorph.mul_apply, add_assoc, ih] using h.symm
 
 /-- The function `[t, x] ↦ g t x` on the mapping torus induced by a function `g` on `ℝ × M` with
 `g (t + 1) x = g t (φ x)`. -/

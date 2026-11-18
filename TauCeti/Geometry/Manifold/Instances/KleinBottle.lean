@@ -52,12 +52,6 @@ restriction of the linear isometry `Complex.conjLIE`. -/
 abbrev conjCircleDiffeomorph : sphere (0 : ℂ) 1 ≃ₘ⟮𝓡 1, 𝓡 1⟯ sphere (0 : ℂ) 1 :=
   Complex.conjLIE.unitSphereDiffeomorph ∞
 
-/-- Complex conjugation of the unit circle acts on the underlying complex numbers by
-conjugation. -/
-theorem coe_conjCircleDiffeomorph_apply (z : sphere (0 : ℂ) 1) :
-    (conjCircleDiffeomorph z : ℂ) = (starRingEnd ℂ) (z : ℂ) := by
-  simp [conjCircleDiffeomorph]
-
 /-- As a function, complex conjugation of the unit circle is `TauCeti.conjSphere`. -/
 theorem coe_conjCircleDiffeomorph : ⇑conjCircleDiffeomorph = conjSphere :=
   funext fun z ↦ Subtype.ext (by simp)
