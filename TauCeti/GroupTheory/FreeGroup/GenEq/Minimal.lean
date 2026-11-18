@@ -8,7 +8,6 @@ module
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Fin.VecNotation
-import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
 import TauCeti.GroupTheory.GroupAlgGeom.ChangeOfCoordinates
 
 /-!
