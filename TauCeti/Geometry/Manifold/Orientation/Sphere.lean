@@ -69,8 +69,9 @@ orientations, and the antipodal map has orientation sign `(-1)^(n+1)` for every 
   circle of `ℂ` at `z` is positive exactly when it points counterclockwise,
   `Re z Im w - Im z Re w > 0`.
 * `TauCeti.circleTangentBasis`: a positively oriented tangent basis of the unit circle of `ℂ`.
-* `TauCeti.isOrientationReversingAt_conjSphere`: complex conjugation reverses the orientation of
-  the unit circle.
+* `TauCeti.isOrientationReversingAt_conjSphere`, `TauCeti.orientationSign_conjSphere`,
+  `TauCeti.degreeAtRegularValue_conjSphere`, `TauCeti.degree_conjSphere`: complex conjugation
+  reverses the orientation of the unit circle and has orientation sign and mapping degree `-1`.
 * `Orientation.sphereOrientation_neg`: reversing `o` reverses the outward-normal orientation.
 * `TauCeti.orientable_sphere`: the unit sphere is orientable.
 * `Orientation.isOrientationPreservingAt_neg_sphere`,
@@ -391,6 +392,44 @@ theorem isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ) 1) :
   rw [h]
   exact Complex.orientation.isOrientationReversingAt_unitSphereEquiv
     (by rw [Complex.det_conjLIE]; exact neg_one_lt_zero) z
+
+/-- Complex conjugation `conjSphere` on `sphere (0 : ℂ) 1` has orientation sign `-1` at every
+point, for either orientation `o` of the circle. -/
+@[simp]
+theorem orientationSign_conjSphere
+    (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) (z : sphere (0 : ℂ) 1) :
+    Manifold.Orientation.orientationSign o o conjSphere z = -1 := by
+  have := connectedSpace_sphere (E := ℂ) 1
+  have hstd : Manifold.Orientation.orientationSign Complex.orientation.sphereOrientation
+      Complex.orientation.sphereOrientation conjSphere z = -1 :=
+    Manifold.Orientation.orientationSign_of_isOrientationReversingAt
+      (isOrientationReversingAt_conjSphere z)
+  rcases o.eq_or_eq_neg Complex.orientation.sphereOrientation with rfl | rfl
+  · exact hstd
+  · rw [Manifold.Orientation.orientationSign_neg_left,
+      Manifold.Orientation.orientationSign_neg_right, neg_neg, hstd]
+
+/-- Complex conjugation `conjSphere` on `sphere (0 : ℂ) 1` has degree `-1` at every value. -/
+@[simp]
+theorem degreeAtRegularValue_conjSphere
+    (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) (y : sphere (0 : ℂ) 1) :
+    degreeAtRegularValue o o conjSphere y = -1 := by
+  rw [degreeAtRegularValue_eq_sum (s := {conjSphere y}) fun x ↦ by
+    rw [Finset.mem_singleton]
+    exact ⟨fun h ↦ by rw [h, conjSphere_conjSphere],
+      fun h ↦ by rw [← h, conjSphere_conjSphere]⟩,
+    Finset.sum_singleton, orientationSign_conjSphere]
+
+/-- **Degree of complex conjugation on `S¹`.** On `sphere (0 : ℂ) 1`, complex conjugation
+`z ↦ conj z` has smooth mapping degree `-1` for every orientation `o`. -/
+@[simp]
+theorem degree_conjSphere (o : Manifold.Orientation (𝓡 1) (sphere (0 : ℂ) 1) (Fin 1)) :
+    degree o o conjSphere = -1 := by
+  have hreg (y : sphere (0 : ℂ) 1) : IsRegularValue (𝓡 1) (𝓡 1) conjSphere y :=
+    isRegularValue_iff.2 fun z _ ↦ (isRegularPoint_iff_isInvertible_mfderiv rfl).2 <|
+      not_not.1 <| Manifold.Orientation.orientationSign_eq_zero_iff (o := o) (o' := o).not.1 <|
+        (orientationSign_conjSphere o z).trans_ne (by decide)
+  rw [degree_eq_degreeAtRegularValue_choose ⟨⟨1, by simp⟩, hreg _⟩, degreeAtRegularValue_conjSphere]
 
 end Circle
 
