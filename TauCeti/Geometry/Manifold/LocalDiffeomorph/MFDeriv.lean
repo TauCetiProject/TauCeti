@@ -7,23 +7,32 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Differentials of a partial diffeomorphism
 
 The differentials of a partial diffeomorphism and of its inverse are mutually inverse at
 corresponding points, as for a global diffeomorphism
-(`Diffeomorph.mfderiv_symm_apply_mfderiv_apply`), and on the open source of a partial
-diffeomorphism the differential within the source is the differential. More generally, this holds
-at any point of an open partial homeomorphism where it and its inverse are differentiable.
+(`Diffeomorph.mfderiv_symm_apply_mfderiv_apply`). The differential at a point of the source is a
+linear equivalence, as for a global diffeomorphism (`Diffeomorph.isInvertible_mfderiv`), so for a
+partial diffeomorphism into a normed space the differential read in that space is bijective. On the
+open source of a partial diffeomorphism the differential within the source is the differential.
+More generally, this holds at any point of an open partial homeomorphism where it and its inverse
+are differentiable.
 
 For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts, the transitions
 `ψ ∘ φ⁻¹` are differentiable, and their derivatives compose by the chain rule.
 
 ## Main results
+
+* `IsLocalDiffeomorphAt.finrank_eq`: a local diffeomorphism of nonzero regularity has source
+  and target model spaces of equal dimension.
 
 * `OpenPartialHomeomorph.mfderiv_symm_apply_mfderiv_apply`,
   `OpenPartialHomeomorph.mfderiv_apply_mfderiv_symm_apply`: where an open partial homeomorphism
@@ -33,6 +42,10 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   differential.
 * `PartialDiffeomorph.mfderiv_apply_mfderiv_symm_apply`: the differential undoes the differential of
   the inverse.
+* `PartialDiffeomorph.isInvertible_mfderiv`: the differential at a point of the source is a
+  linear equivalence.
+* `PartialDiffeomorph.bijective_mvfderiv`: for a partial diffeomorphism into a normed space, the
+  differential read in that space is bijective at a point of the source.
 * `PartialDiffeomorph.differentiableAt_comp_symm`: for partial diffeomorphisms into normed spaces,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
@@ -52,6 +65,14 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {n : WithTop ℕ∞}
+
+/-- A local diffeomorphism of nonzero regularity has source and target model spaces of equal
+dimension. -/
+theorem IsLocalDiffeomorphAt.finrank_eq {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) :
+    Module.finrank 𝕜 E = Module.finrank 𝕜 F := by
+  simpa only [TauCeti.finrank_tangentSpace] using
+    (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
 
 namespace OpenPartialHomeomorph
 
@@ -97,6 +118,21 @@ theorem mfderiv_apply_mfderiv_symm_apply (Φ : PartialDiffeomorph I J M N n) (hn
     (hy : y ∈ Φ.target) (v : TangentSpace J y) :
     mfderiv I J Φ (Φ.symm y) (mfderiv J I Φ.symm y v) = v :=
   Φ.symm.mfderiv_symm_apply_mfderiv_apply hn hy v
+
+/-- The differential of a partial diffeomorphism at a point of its source is a linear
+equivalence. -/
+theorem isInvertible_mfderiv (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}
+    (hx : x ∈ Φ.source) : (mfderiv I J Φ x).IsInvertible :=
+  (Φ.isLocalDiffeomorphAt I J n hx).isInvertible_mfderiv hn
+
+/-- The differential of a partial diffeomorphism into a normed space, read in that space, is
+bijective at a point of the source. -/
+theorem bijective_mvfderiv (Φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n) (hn : n ≠ 0) {x : M}
+    (hx : x ∈ Φ.source) : Function.Bijective (mvfderiv I Φ x) := by
+  have h := Φ.isInvertible_mfderiv hn hx
+  refine ⟨TauCeti.injective_mvfderiv_iff.2 h.injective, fun w ↦ ?_⟩
+  obtain ⟨v, hv⟩ := h.surjective w
+  exact ⟨v, (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans hv⟩
 
 section Transition
 

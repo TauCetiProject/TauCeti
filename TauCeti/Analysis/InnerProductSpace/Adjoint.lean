@@ -18,6 +18,8 @@ An endomorphism and its adjoint have the same real quadratic form
 (`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+The Gram operator of an operator with finite-dimensional source is invertible exactly when the
+operator is injective (`ContinuousLinearMap.isUnit_adjoint_comp_self_iff`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
 (`ContinuousLinearMap.ringInverse_adjoint`). Likewise an operator between two Hilbert spaces is
@@ -52,7 +54,7 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `LinearIsometry.cornerEmbedding`: extension by zero `T ↦ e T e†`, an isometric embedding
   of operator spaces along an isometric inclusion.
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence.
-* `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between complex
+* `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
@@ -106,6 +108,14 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- The Gram operator `B† B` of an operator out of a finite-dimensional space is invertible
+exactly when `B` is injective. -/
+theorem isUnit_adjoint_comp_self_iff [CompleteSpace E] [CompleteSpace F] [FiniteDimensional 𝕜 E]
+    (B : E →L[𝕜] F) :
+    IsUnit (adjoint B ∘L B) ↔ Function.Injective B := by
+  simp only [isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_ker_eq_bot,
+    ker_adjoint_comp_self, LinearMap.ker_eq_bot, coe_coe]
 
 section Inverse
 
@@ -185,20 +195,28 @@ end RealDual
 
 section RealAdjoint
 
-variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] [CompleteSpace V] [NormedAddCommGroup W]
+  [InnerProductSpace 𝕜 W] [NormedSpace ℝ W] [IsScalarTower ℝ 𝕜 W] [CompleteSpace W]
 
 /-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map: the conjugate-linear isometry
 `ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam theorem. -/
-noncomputable def adjointRealCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V) :=
+noncomputable def adjointRealCLM : (V →L[𝕜] W) →L[ℝ] (W →L[𝕜] V) :=
   (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
-    (adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv (by simp)).toContinuousLinearEquiv
+    (adjoint (𝕜 := 𝕜) (E := V) (F := W)).toIsometryEquiv (by simp)).toContinuousLinearEquiv
 
 @[simp]
-theorem adjointRealCLM_apply (T : V →L[ℂ] W) : adjointRealCLM T = adjoint T := by
+theorem adjointRealCLM_apply (T : V →L[𝕜] W) : adjointRealCLM T = adjoint T := by
   rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+
+end RealAdjoint
+
+section RealAdjointBilinear
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
 
 /-- The real-bilinear map `(S, T) ↦ S† ∘ T` on operators between complex Hilbert spaces. -/
 noncomputable def adjointCompL : (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] V) :=
@@ -224,7 +242,7 @@ theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) : ‖compAdjointL T S�
   rw [compAdjointL_apply, mul_comm, ← LinearIsometryEquiv.norm_map adjoint T]
   exact opNorm_comp_le _ _
 
-end RealAdjoint
+end RealAdjointBilinear
 
 end ContinuousLinearMap
 

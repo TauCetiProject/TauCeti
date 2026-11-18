@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Polynomial growth on vertical strips
@@ -15,8 +16,10 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 The height threshold depends on the strip: in particular, poles at nonzero heights
 need not obstruct this property. No regularity of `f` is required.
 
-The property is stable under addition and multiplication. Bounds extend to degenerate
-strips, and real exponential functions provide nonconstant examples of vertical-strip growth.
+The property is stable under addition, finite sums and multiplication, and every function
+bounded on each closed vertical strip has it. Bounds extend to degenerate strips, and real
+exponential functions and powers `n ^ (c s)` of positive integers provide nonconstant examples of
+vertical-strip growth.
 These facts allow growth estimates for completed L-functions to be assembled from their factors.
 -/
 
@@ -136,7 +139,28 @@ theorem pow (hf : HasVerticalStripGrowth f) (n : ℕ) :
   | zero => simpa only [pow_zero] using (hasVerticalStripGrowth_const (c := 1))
   | succ n ih => simpa only [pow_succ] using ih.mul hf
 
+/-- Finite sums preserve vertical-strip growth. -/
+theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
+    (h : ∀ i ∈ t, HasVerticalStripGrowth (F i)) :
+    HasVerticalStripGrowth (fun s ↦ ∑ i ∈ t, F i s) := by
+  classical
+  induction t using Finset.induction_on with
+  | empty => simpa only [Finset.sum_empty] using (hasVerticalStripGrowth_const (c := 0))
+  | insert i t hi ih =>
+    simp only [Finset.sum_insert hi]
+    exact (h i (Finset.mem_insert_self i t)).add
+      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
 end HasVerticalStripGrowth
+
+/-- A function bounded on every closed vertical strip has vertical-strip growth. -/
+theorem hasVerticalStripGrowth_of_forall_bound {f : ℂ → ℂ}
+    (h : ∀ a b : ℝ, ∃ M, ∀ s : ℂ, s.re ∈ Set.Icc a b → ‖f s‖ ≤ M) :
+    HasVerticalStripGrowth f := by
+  intro a b _
+  obtain ⟨M, hM⟩ := h a b
+  exact ⟨max M 1, lt_max_of_lt_right one_pos, 0, le_rfl, 0, le_rfl, fun s hs _ ↦ by
+    simpa only [Real.rpow_zero, mul_one] using (hM s hs).trans (le_max_left _ _)⟩
 
 /-- Pointwise equal functions have the same vertical-strip growth property. -/
 theorem hasVerticalStripGrowth_congr {f g : ℂ → ℂ} (h : ∀ s, f s = g s) :
@@ -154,5 +178,12 @@ theorem hasVerticalStripGrowth_cexp_ofReal_mul {r : ℝ} :
     zero_mul, sub_zero, Real.rpow_zero, mul_one]
   apply Real.exp_le_exp.mpr
   exact (le_abs_self _).trans (by rw [abs_mul]; gcongr)
+
+/-- For a positive integer `n` and real `c`, the powers `n ^ (c s)` have vertical-strip
+growth. -/
+theorem hasVerticalStripGrowth_natCast_cpow_ofReal_mul {n : ℕ} (hn : n ≠ 0) (c : ℝ) :
+    HasVerticalStripGrowth fun s : ℂ ↦ (n : ℂ) ^ ((c : ℂ) * s) :=
+  (hasVerticalStripGrowth_congr fun s ↦ (natCast_cpow_ofReal_mul hn c s).symm).mp
+    hasVerticalStripGrowth_cexp_ofReal_mul
 
 end TauCeti

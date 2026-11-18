@@ -121,10 +121,17 @@ is the statement the Nagell–Lutz layer consumes.
 * `WeierstrassCurve.zsmul_eq_zero_of_evalEval_ψ_eq_zero`: **the converse** — a vanishing `ψₙ` at
   a nonsingular point forces `n • P = 0`. Unrestricted in `n`, and so an annihilation statement
   rather than a torsion one: at `n = 0` both sides hold of every point.
+* `WeierstrassCurve.eval_preΨ_eq_zero_of_zsmul_eq_zero` and
+  `WeierstrassCurve.eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd`: the same criterion on `preΨₙ`,
+  the univariate factor of `ψₙ`. A point killed by `n` but not by `2` has `preΨₙ` vanishing at its
+  abscissa; at odd `n` this is an equivalence and the `2`-torsion exclusion is not needed.
 * `WeierstrassCurve.addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero`: the characterisation of
   two-torsion, `addOrderOf P = 2 ↔ ψ₂(x, y) = 0`, read off from the doubling formula through
   `Affine.Point.some_add_self_eq_zero_iff`. Its contrapositive is what discharges the
   `addOrderOf ≠ 2` guard the Nagell–Lutz theorems carry.
+* `WeierstrassCurve.evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero`,
+  `WeierstrassCurve.eval_Ψ₃_eq_zero_iff_nsmul_eq_zero`: `ψ₂` and `Ψ₃` vanish at a nonsingular
+  affine point exactly when `2 • P = 0`, respectively `3 • P = 0`.
 
 ## Provenance
 
@@ -1115,6 +1122,31 @@ theorem eval_ΨSq_eq_zero_iff_zsmul_eq_zero {x y : F} (hns : W.toAffine.Nonsingu
   exact ⟨zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns n,
     evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns n⟩
 
+/-- **At odd `n`, a point is `n`-torsion exactly when `preΨₙ` vanishes at its abscissa.** At odd
+`n` the factor `Ψ₂Sq` is absent from `ΨSqₙ = preΨₙ ² * Ψ₂Sq`, so `preΨₙ` carries the whole
+criterion `eval_ΨSq_eq_zero_iff_zsmul_eq_zero`. -/
+-- Not `@[simp]`, for the same reason as `eval_ΨSq_eq_zero_iff_zsmul_eq_zero`.
+theorem eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd {n : ℤ} (hodd : ¬Even n) {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    (W.preΨ n).eval x = 0 ↔ n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0 := by
+  rw [← eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns n, ΨSq, ite_eq_right hodd, mul_one, eval_pow,
+    pow_eq_zero_iff two_ne_zero]
+
+/-- **A point killed by `n` but not by `2` has `preΨₙ` vanishing at its abscissa.** At odd `n` this
+is `eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd`; at even `n`, `ψₙ = preΨₙ * ψ₂` on the curve, and
+`ψ₂` vanishes only on the `2`-torsion. -/
+theorem eval_preΨ_eq_zero_of_zsmul_eq_zero {n : ℤ} {x y : F} (hns : W.toAffine.Nonsingular x y)
+    (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
+    (h2ne : (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) ≠ 0) :
+    (W.preΨ n).eval x = 0 := by
+  by_cases heven : Even n
+  · have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero W hns n htors
+    rw [evalEval_ψ_eq_evalEval_Ψ W hns.left n, _root_.WeierstrassCurve.Ψ,
+      ite_eq_left heven, evalEval_mul, evalEval_C] at hψ
+    exact (mul_eq_zero.mp hψ).resolve_right fun hψ₂ ↦
+      h2ne (zsmul_eq_zero_of_evalEval_ψ_eq_zero W hns 2 (by rwa [ψ_two]))
+  · exact (eval_preΨ_eq_zero_iff_zsmul_eq_zero_of_odd W heven hns).mpr htors
+
 /-- **Torsion transports between the affine and Jacobian point groups.** `n • P = 0` affinely,
 with `n : ℕ`, is the same statement as `(n : ℤ) • P = 0` on the Jacobian side.
 
@@ -1163,5 +1195,20 @@ theorem addOrderOf_eq_two_iff_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
   exact ⟨fun h ↦ h ▸ addOrderOf_nsmul_eq_zero _,
     fun h ↦ addOrderOf_eq_prime h (Affine.Point.some_ne_zero hns)⟩
 
+/-- **`ψ₂` vanishes exactly at the points killed by `2`.** This is
+`Affine.Point.some_add_self_eq_zero_iff` with `P + P` read as `2 • P`. -/
+theorem evalEval_ψ₂_eq_zero_iff_nsmul_eq_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    W.ψ₂.evalEval x y = 0 ↔ 2 • Affine.Point.some _ _ hns = 0 := by
+  rw [ψ₂, ← Affine.Point.some_add_self_eq_zero_iff hns, two_nsmul]
+
+/-- **`Ψ₃` vanishes exactly at the abscissae of the points killed by `3`.** This is
+`eval_ΨSq_eq_zero_iff_zsmul_eq_zero` at `n = 3`, where `ΨSq₃ = Ψ₃²`. -/
+theorem eval_Ψ₃_eq_zero_iff_nsmul_eq_zero [DecidableEq F] {x y : F}
+    (hns : W.toAffine.Nonsingular x y) :
+    W.Ψ₃.eval x = 0 ↔ 3 • Affine.Point.some _ _ hns = 0 := by
+  rw [← pow_eq_zero_iff two_ne_zero, ← Polynomial.eval_pow, ← ΨSq_three,
+    eval_ΨSq_eq_zero_iff_zsmul_eq_zero W hns, zsmul_fromAffine_eq_zero_iff_zsmul_eq_zero,
+    ofNat_zsmul]
 
 end WeierstrassCurve
