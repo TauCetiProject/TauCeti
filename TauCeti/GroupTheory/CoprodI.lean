@@ -23,7 +23,8 @@ the homomorphisms induced by a pair of homomorphisms on the two members correspo
 is injective exactly when the other is.
 
 The free product of an empty family is trivial, and the free product of a family indexed by a
-type with a unique element is that single monoid.
+type with a unique element is that single monoid. A trivial member of a family indexed by
+`Option ι`, at the index `none`, can be dropped from the free product.
 
 ## Main declarations
 
@@ -36,6 +37,8 @@ type with a unique element is that single monoid.
 * `Monoid.CoprodI.instUniqueOfIsEmpty`: the free product of an empty family is trivial.
 * `MulEquiv.coprodIUnique`: the free product of a family indexed by a type with a unique element
   is isomorphic to the monoid at the single index.
+* `Monoid.CoprodI.optionEquivOfSubsingleton`: `CoprodI M ≃* CoprodI fun i => M (some i)` for a
+  family `M` indexed by `Option ι` whose member at `none` is trivial.
 -/
 
 public section
@@ -147,5 +150,43 @@ theorem coprodLift_injective_iff :
     Function.Injective (Coprod.lift (f false) (f true)) ↔ Function.Injective (lift f) := by
   rw [← lift_comp_boolEquivCoprod_symm, MonoidHom.coe_comp, MonoidHom.coe_ofClass]
   exact EquivLike.injective_comp _ _
+
+end Monoid.CoprodI
+
+namespace Monoid.CoprodI
+
+variable {ι : Type*} (M : Option ι → Type*) [∀ o, Monoid (M o)] [Subsingleton (M none)]
+
+/-- The free product of a family of monoids indexed by `Option ι` whose member at `none` is
+trivial is the free product of its members at `some i`: the factor at `none` goes to `1` and the
+factor at `some i` to the factor at `i`. -/
+def optionEquivOfSubsingleton : CoprodI M ≃* CoprodI fun i => M (some i) :=
+  MonoidHom.toMulEquiv
+    (lift fun
+      | none => 1
+      | some i => of (M := fun j => M (some j)) (i := i))
+    (lift fun i => of (i := some i))
+    (by
+      ext (_ | _) m
+      · simp [Subsingleton.elim m 1]
+      · simp)
+    (by ext; simp)
+
+variable {M}
+
+@[simp]
+theorem optionEquivOfSubsingleton_of_none (m : M none) :
+    optionEquivOfSubsingleton M (of m) = 1 := by
+  simp [Subsingleton.elim m 1]
+
+@[simp]
+theorem optionEquivOfSubsingleton_of_some {i : ι} (m : M (some i)) :
+    optionEquivOfSubsingleton M (of m) = of (i := i) m :=
+  lift_of ..
+
+@[simp]
+theorem optionEquivOfSubsingleton_symm_of {i : ι} (m : M (some i)) :
+    (optionEquivOfSubsingleton M).symm (of (i := i) m) = of m :=
+  lift_of ..
 
 end Monoid.CoprodI
