@@ -270,9 +270,7 @@ variable (k : Type w) [Ring k] (n : ℕ)
 theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
     [TopologicalSpace Z] {g g' : C(Y, Z)} (H : g.Homotopic g') :
     singularHomologyMap k n g = singularHomologyMap k n g' :=
-  congrArg ModuleCat.Hom.hom
-    (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
+  congrArg ModuleCat.Hom.hom (singularHomologyFunctor_map_eq_of_homotopic (ModuleCat.of k k) n H)
 
 /-- A continuous map with a left inverse up to homotopy is injective on singular homology. -/
 theorem injective_singularHomologyMap_of_homotopic_comp_id {Y Z : Type w} [TopologicalSpace Y]
