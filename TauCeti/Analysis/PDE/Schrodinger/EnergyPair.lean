@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
-import TauCeti.Analysis.PDE.Strichartz.Retarded
-import TauCeti.MeasureTheory.Integral.ChristKiselev
+import TauCeti.Analysis.PDE.Strichartz.EnergyPair
 
 /-!
 # The energy pair in the Strichartz estimates for the Schrödinger equation
@@ -31,14 +30,13 @@ line the pair `(4, ∞)` is covered.
   `t`, and with it the energy bound `‖u(t)‖₂ ≤ ‖f‖₂ + C ‖F‖_{L^p(Ι(0, t); L^{r'})}` for the
   solution `u` given by Duhamel's formula, with `C` independent of `t`.
 
-The energy pair's dual estimate `‖∫ S(-s) F(s) ds‖₂ ≤ ‖F‖_{L¹_t L²_x}`
-(`TauCeti.enorm_integral_phasePropagator_neg_le`) follows from unitarity. The retarded estimate
-combines it with the dual Strichartz estimate at `(q, r)`
-(`TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`) through the Christ–Kiselev lemma
-(`TauCeti.enorm_integral_setIntegral_Iio_inner_adjoint_le`), whose condition on the two time
-exponents `1` and `p`, `1 / 1 + 1 / p > 1`, holds since `p < ∞`. The energy bound needs no
-Christ–Kiselev argument: since `S(t - s) = S(t) S(-s)` and `S(t)` is unitary, the dual estimate at
-`(q, r)` applied to `1_I F` bounds `∫_I S(t - s) F(s) ds` directly.
+Both estimates hold for every unitary group `exp(itω(D))` satisfying a dual estimate, see
+`TauCeti.Analysis.PDE.Strichartz.EnergyPair`; here they are instantiated with the dual Strichartz
+estimate at `(q, r)` (`TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le`). The retarded
+estimate (`TauCeti.enorm_integral_setIntegral_Iio_inner_phasePropagator_sub_le_eLpNorm_one`)
+combines it with the energy pair's dual estimate `‖∫ S(-s) F(s) ds‖₂ ≤ ‖F‖_{L¹_t L²_x}` through
+the Christ–Kiselev lemma, and the `L^∞_t L²_x` bound
+(`TauCeti.enorm_setIntegral_phasePropagator_sub_le`) follows from it and the unitarity of `S(t)`.
 
 ## Main declarations
 
@@ -91,25 +89,17 @@ theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le
           eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
     hqr
-  -- The time exponents `1` and `p < ∞` satisfy the Christ–Kiselev condition `1 / 1 + 1 / p > 1`.
   have hp : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast hpq.lt.le
-  have hpp : 1 < (1 : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ := by
-    rw [inv_one]
-    exact ENNReal.lt_add_right ENNReal.one_ne_top (ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top)
-  set K : ℝ≥0∞ := (1 - 2 ^ (-((1 : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹
-  have hK : K ≠ ∞ := inv_one_sub_two_rpow_neg_ne_top one_ne_zero hp hpp
+  set K : ℝ≥0∞ := (1 - 2 ^ (-(p : ℝ≥0∞)⁻¹.toReal))⁻¹
+  have hK : K ≠ ∞ := by
+    refine ENNReal.inv_ne_top.2 (tsub_pos_of_lt (ENNReal.rpow_lt_one_of_one_lt_of_neg
+      (by norm_num) (neg_neg_of_pos (ENNReal.toReal_pos ?_ ?_)))).ne'
+    · exact ENNReal.inv_ne_zero.2 ENNReal.coe_ne_top
+    · exact ENNReal.inv_ne_top.2 (one_pos.trans_le hp).ne'
   refine ⟨K.toNNReal * C, fun F G hF hG hSF hSG ↦ ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hK]
-  simp_rw [schrodingerPropagator_def, inner_phasePropagator_sub_apply, ← schrodingerPropagator_def]
-  simp_rw [← adjoint_schrodingerPropagator] at hC hSF hSG
-  calc _ ≤ K * 1 * C * eLpNorm (fun s ↦ eLpNorm (F s) 2 volume) 1 volume *
-        eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume :=
-        enorm_integral_setIntegral_Iio_inner_adjoint_le hp hpp
-          (fun F _ _ ↦ by
-            simpa only [one_mul, adjoint_schrodingerPropagator] using
-              enorm_integral_phasePropagator_neg_le laplacianSymbol F)
-          hC hF hG hSF hSG
-    _ = _ := by rw [mul_one]
+  exact enorm_integral_setIntegral_Iio_inner_phasePropagator_sub_le_eLpNorm_one hp
+    ENNReal.coe_ne_top hC hF hG hSF hSG
 
 /-- **The energy bound for the inhomogeneous Schrödinger equation with forcing in a dual
 Strichartz space**, in every dimension `n`: solution measured along the energy pair `(∞, 2)` and
@@ -132,16 +122,7 @@ theorem exists_enorm_setIntegral_schrodingerPropagator_sub_le (hq : 2 < q)
         C * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p (volume.restrict I) := by
   obtain ⟨C, hC⟩ := exists_enorm_integral_schrodingerPropagator_neg_le (E := E) (r' := r') hq hpq
     hqr
-  refine ⟨C, fun F I hI hF hSF t ↦ ?_⟩
-  -- `S(t - s) = S(t) S(-s)`, and `S(t)` is unitary, so it can be taken out of the integral.
-  have hfac : ∫ s in I, schrodingerPropagator ℂ (t - s) (F s) =
-      schrodingerPropagator ℂ t (∫ s in I, schrodingerPropagator ℂ (-s) (F s)) := by
-    simp_rw [sub_eq_add_neg, schrodingerPropagator_def, phasePropagator_add_apply]
-    exact (phasePropagator ℂ laplacianSymbol t).integral_comp_comm hSF
-  rw [hfac, schrodingerPropagator_def, enorm_phasePropagator_apply,
-    ← eLpNorm_indicator_eq_eLpNorm_restrict (hI.nullMeasurableSet (μ := volume))]
-  simp_rw [← adjoint_schrodingerPropagator] at hC hSF ⊢
-  exact enorm_setIntegral_adjoint_le hC hI hF hSF
+  exact ⟨C, fun F I hI hF hSF t ↦ enorm_setIntegral_phasePropagator_sub_le hC hI hF hSF t⟩
 
 /-- **The energy bound for Duhamel's formula with forcing in a dual Strichartz space**, in every
 dimension `n`, along a non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`,
