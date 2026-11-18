@@ -91,12 +91,8 @@ theorem of_isAlgClosed_of_denseRange {K L : Type*} [Field K] [NormedField L] [Co
     refine ⟨k, by_contra fun hne ↦ hk.ne ?_⟩
     rw [dist_eq_norm, h _ (sub_ne_zero.mpr (Ne.symm hne))]
   let e := RingEquiv.ofBijective _ ⟨(algebraMap K L).injective, hsurj⟩
-  refine of_exists_root L fun f _ hf ↦ ?_
-  obtain ⟨k, hk⟩ := exists_root (f.map e.symm.toRingHom)
-    (by rw [degree_map]; exact (degree_pos_of_irreducible hf).ne')
-  have : e.toRingHom (f.eval₂ e.symm.toRingHom k) = e.toRingHom 0 := by rw [← eval_map, hk.eq_zero]
-  rw [hom_eval₂, RingEquiv.toRingHom_comp_symm_toRingHom, eval₂_id, map_zero] at this
-  exact ⟨_, this⟩
+  exact ⟨fun f ↦ by simpa only [Polynomial.map_map, RingEquiv.toRingHom_comp_symm_toRingHom,
+    Polynomial.map_id] using (IsAlgClosed.splits (f.map e.symm.toRingHom)).map e.toRingHom⟩
 
 end IsAlgClosed
 
