@@ -5,7 +5,6 @@ Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Separation.Hausdorff
 
