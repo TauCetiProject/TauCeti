@@ -9,6 +9,8 @@ public import Mathlib.Topology.Bases
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Topology.Compactness.Lindelof
+import Mathlib.Topology.Instances.ENNReal.Lemmas
+import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Metrizable.Basic
 
 /-!
@@ -21,6 +23,10 @@ any separable set on which a map is locally Lipschitz by countably many open set
 intersections with the set the map is Lipschitz
 (`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows that composing a function
 locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on that set.
+
+`LipschitzOnWith.closure_of_continuousWithinAt` extends a Lipschitz bound to the closure when
+continuity is supplied only at the added points. `LipschitzOnWith.Icc_of_Ico` specializes this
+to a half-open real interval. `LipschitzOnWith.edist_apply_min_le` controls a backward time clamp.
 
 The declaration `TauCeti.lipschitzWith_toReal_edist` and its proof follow
 [Mathlib pull request #41839](https://github.com/leanprover-community/mathlib4/pull/41839),
@@ -60,6 +66,56 @@ theorem lipschitzWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X) :
   constructor <;> linarith
 
 end TauCeti
+
+/-- A Lipschitz bound extends to the closure if the prescribed values at the added points are
+continuous limits from the original set. Continuity on the original set follows from the bound. -/
+theorem LipschitzOnWith.closure_of_continuousWithinAt {X Y : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] {f : X → Y} {s : Set X} {L : ℝ≥0}
+    (hf : LipschitzOnWith L f s)
+    (hc : ∀ x ∈ closure s \ s, ContinuousWithinAt f s x) :
+    LipschitzOnWith L f (closure s) := by
+  have hcont (x : X) (hx : x ∈ closure s) : ContinuousWithinAt f s x := by
+    by_cases hxs : x ∈ s
+    · exact hf.continuousOn x hxs
+    · exact hc x ⟨hx, hxs⟩
+  exact hf.closure (continuousOn_closure_inter_setOf.mono fun x hx ↦ ⟨hx, hcont x hx⟩)
+
+/-- A Lipschitz bound on `[a, b)` extends to `[a, b]` when the value at `b` is its left limit.
+The closed interval may be empty or a singleton. -/
+theorem LipschitzOnWith.Icc_of_Ico {Y : Type*} [PseudoEMetricSpace Y] {f : ℝ → Y}
+    {a b : ℝ} {L : ℝ≥0} (hf : LipschitzOnWith L f (Ico a b))
+    (hb : ContinuousWithinAt f (Iio b) b) : LipschitzOnWith L f (Icc a b) := by
+  by_cases hab : a < b
+  · rw [← closure_Ico hab.ne]
+    apply hf.closure_of_continuousWithinAt
+    intro t ht
+    have htb : t = b := by
+      rw [closure_Ico hab.ne] at ht
+      exact le_antisymm ht.1.2 (not_lt.mp fun h ↦ ht.2 ⟨ht.1.1, h⟩)
+    subst t
+    exact hb.mono Ico_subset_Iio_self
+  · intro x hx y hy
+    have hxy : x = y := by linarith [not_lt.mp hab, hx.1, hx.2, hy.1, hy.2]
+    subst y
+    simp
+
+/-- A Lipschitz bound on `[a, b]` controls displacement under clamping a time at `a`.
+If the time is already at most `a`, the displacement is zero. -/
+theorem LipschitzOnWith.edist_apply_min_le {Y : Type*} [PseudoEMetricSpace Y]
+    {f : ℝ → Y} {a b t : ℝ} {L : ℝ≥0} (hf : LipschitzOnWith L f (Icc a b)) (ht : t ≤ b) :
+    edist (f t) (f (min t a)) ≤ L * edist a b := by
+  by_cases hta : t ≤ a
+  · simp only [min_eq_left hta, edist_self]
+    exact zero_le
+  · have hat : a ≤ t := le_of_not_ge hta
+    have hab : a ≤ b := hat.trans ht
+    rw [min_eq_right hat]
+    refine (hf ⟨hat, ht⟩ ⟨le_rfl, hab⟩).trans (mul_le_mul' le_rfl ?_)
+    rw [edist_dist, edist_dist]
+    apply ENNReal.ofReal_le_ofReal
+    rw [Real.dist_eq, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr hat),
+      abs_of_nonpos (sub_nonpos.mpr hab)]
+    linarith
 
 /-- The inclusion of a subset into a larger subset is `1`-Lipschitz. -/
 protected theorem LipschitzWith.inclusion {α : Type*} [PseudoEMetricSpace α] {s t : Set α}
