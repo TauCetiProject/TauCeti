@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Pairing
-import Mathlib.Geometry.Manifold.BumpFunction
+public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.RealForm
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Integral
-import TauCeti.Analysis.Green.Comparison.Area.Basic
+import TauCeti.Geometry.Manifold.BumpFunction
+import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
@@ -35,7 +36,8 @@ such point `p` choose a closed coordinate disc, the discs pairwise disjoint, and
 `ψ ω` is smooth (`TauCeti.RiemannSurface.OneForm.isSmoothForm_smul_toRoughForm`), so the integral
 over `X` of its exterior derivative vanishes, for the real and imaginary parts alike
 (`TauCeti.integralTopForm_mextDeriv_eq_zero`). This exterior derivative is supported in the discs,
-and in the disc about `p` it is `d((1 - χ_p) f dz)` with `ω = f dz`, whose integral is
+and in the disc about `p` it is `d((1 - χ_p) f dz)` with `ω = f dz`. Its integral there is a planar
+integral (`TauCeti.RiemannSurface.integralTopForm_orientationLift_eq_integral`), equal to
 `2πi · Res_p ω`
 (`TauCeti.RiemannSurface.OneForm.integral_extDeriv_one_sub_mul_coeff_smul_dzForm_eq_residue`).
 
@@ -43,16 +45,15 @@ The Hausdorff hypothesis cannot be dropped: on the Riemann sphere with the point
 is compact but not Hausdorff, the `1`-form `dz / z` has residue `1` at `0` and `-1` at each copy
 of `∞`.
 
-As a consequence, the residue pairing of the principal parts of a meromorphic function `f` with a
+As a consequence, the residue pairing of the principal parts of a meromorphic function with a
 global section of `Ω_{-D}` vanishes
-(`TauCeti.RiemannSurface.PrincipalParts.residuePairing_principalParts_eq_zero`): it is the sum of
-the residues of a meromorphic `1`-form. This is how the residue pairing descends to
-`H¹(X, 𝒪_D) × H⁰(X, Ω_{-D}) → ℂ` in Serre duality (Forster, §17).
+(`TauCeti.RiemannSurface.PrincipalParts.residuePairing_principalParts_eq_zero`, in
+`TauCeti/Analysis/Complex/RiemannSurface/Differential/Residue/Pairing.lean`).
 
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
-  Theorem 10.21 (the residue theorem) and §17 (the residue pairing).
+  Theorem 10.21 (the residue theorem).
 -/
 
 noncomputable section
@@ -64,40 +65,6 @@ namespace TauCeti.RiemannSurface.OneForm
 
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   {ω : OneForm X}
-
-/-! ### The integral of a top form in a chart -/
-
-/-- The orientation lift of a Riemann surface whose chart signs are all `1` and whose model
-orientation is the standard orientation of `ℂ`. -/
-abbrev chartLift : Manifold.OrientationLift 𝓘(ℝ, ℂ) X (Fin 2) :=
-  Manifold.OrientationLift.ofHasGroupoid Complex.orientation (by simp)
-
-/-- The integral of a continuous top form supported in the preferred chart at `p` is the
-planar integral of its coefficient on the basis `1, i`, over the target of the chart. -/
-theorem integralTopForm_chartLift_eq_integral [CompactSpace X]
-    {φ : RoughForm 𝓘(ℝ, ℂ) X ℝ 2} (hφ : IsSmoothForm 𝓘(ℝ, ℂ) 0 φ) (p : X)
-    (hs : tsupport (α := ℂ [⋀^Fin 2]→L[ℝ] ℝ) φ ⊆ (chartAt ℂ p).source) :
-    integralTopForm (Manifold.Orientation.mk (chartLift (X := X))) φ =
-      ∫ z, (chartAt ℂ p).target.indicator (fun z ↦ φ.inChartAt p z ![1, I]) z := by
-  have hσ : ∀ x : X, (chartLift (X := X)).signAt p x = 1 := fun x ↦ by
-    by_cases hx : x ∈ (chartAt ℂ p).source
-    · rw [Manifold.OrientationLift.signAt_of_mem _ hx]
-      exact Manifold.OrientationLift.ofHasGroupoid_sign _ _ _ _
-    · exact Manifold.OrientationLift.signAt_of_notMem _ hx
-  rw [integralTopForm_eq_chartIntegral _ φ
-      (hφ.integrableTopForm (isClosed_tsupport _).isCompact Complex.basisOneI) p
-      (by simpa only [extChartAt_source] using hs),
-    Manifold.OrientationLift.chartIntegral_eq_const_mul_unsigned _ φ Complex.basisOneI p 1
-      fun x _ ↦ hσ x,
-    Manifold.OrientationLift.ofHasGroupoid_modelOrientation,
-    show Complex.orientation = Complex.basisOneI.orientation from rfl,
-    _root_.Orientation.signBasis_orientation, Green.basisOneI_addHaar]
-  simp only [Units.val_one, Int.cast_one, one_mul, RoughForm.signedInChartAt_one,
-    Complex.coe_basisOneI, extChartAt_target, ModelWithCorners.range_eq_univ, inter_univ]
-  refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
-  by_cases hz : z ∈ (chartAt ℂ p).target
-  · simp [indicator_of_mem hz]
-  · simp [indicator_of_notMem hz]
 
 /-! ### The contribution of one pole -/
 
@@ -127,11 +94,12 @@ theorem extDeriv_one_sub_mul_coeff_eq_zero {χ : ContDiffBump (chartAt ℂ p p)}
       ω.HolomorphicAt y)
     {z : ℂ} (hz : z ∈ closedBall (chartAt ℂ p p) R) (hzχ : χ.rOut < dist z (chartAt ℂ p p)) :
     extDeriv (fun y ↦ (((1 - χ y : ℝ) : ℂ) * ω.coeff (chartAt ℂ p) y) • dzForm) z = 0 := by
+  have hχ : (χ : ℂ → ℝ) =ᶠ[𝓝 z] 0 :=
+    notMem_tsupport_iff_eventuallyEq.1 (by rwa [χ.tsupport_eq, mem_closedBall, not_le])
   have hev : (fun y ↦ (((1 - χ y : ℝ) : ℂ) * ω.coeff (chartAt ℂ p) y) • dzForm) =ᶠ[𝓝 z]
       fun y ↦ ω.coeff (chartAt ℂ p) y • dzForm := by
-    filter_upwards [(isOpen_lt continuous_const (continuous_id.dist continuous_const)).mem_nhds
-      hzχ] with y hy
-    rw [χ.zero_of_le_dist (show χ.rOut ≤ dist y _ from hy.le), sub_zero, ofReal_one, one_mul]
+    filter_upwards [hχ] with y hy
+    rw [hy, Pi.zero_apply, sub_zero, ofReal_one, one_mul]
   have hzc : z ≠ chartAt ℂ p p := by
     rintro rfl
     rw [dist_self] at hzχ
@@ -216,7 +184,7 @@ theorem integralTopForm_smul_mapCoeff_mextDeriv_eq (L : ℂ →L[ℝ] ℝ)
     {θX : X → ℝ} (hθX : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) (⊤ : ℕ∞) θX)
     (hθXs : tsupport θX ⊆ (chartAt ℂ p).source)
     (hθXθ : ∀ z ∈ (chartAt ℂ p).target, θX ((chartAt ℂ p).symm z) = θ z) :
-    integralTopForm (Manifold.Orientation.mk (chartLift (X := X)))
+    integralTopForm (Manifold.Orientation.mk (orientationLift (X := X)))
       (fun x ↦ θX x • RoughForm.mapCoeff L (mextDeriv fun x ↦ ψ x • ω.toRoughForm x) x) =
       L (2 * π * I * ω.residue p) := by
   have hR : 0 < R := θ.rOut_pos.trans_le hθR
@@ -225,7 +193,7 @@ theorem integralTopForm_smul_mapCoeff_mextDeriv_eq (L : ℂ →L[ℝ] ℝ)
   have hD : IsSmoothForm 𝓘(ℝ, ℂ) 0
       (fun x ↦ θX x • RoughForm.mapCoeff L (mextDeriv fun x ↦ ψ x • ω.toRoughForm x) x) :=
     ((isSmoothForm_mextDeriv hα (n := 0) (by simp)).mapCoeff L).fun_smul (hθX.of_le (by simp))
-  rw [integralTopForm_chartLift_eq_integral hD p
+  rw [integralTopForm_orientationLift_eq_integral hD (isClosed_tsupport _).isCompact p
       ((tsupport_smul_subset_left _ _).trans hθXs),
     integral_congr_ae (ae_of_all _ (indicator_inChartAt_smul_mapCoeff_mextDeriv L hsub hhol hχθ
       hθR (hψ.of_le (by simp)) hψω hψχ hθXθ)),
@@ -244,33 +212,6 @@ end Pole
 section Cutoff
 
 omit [IsManifold 𝓘(ℂ) 1 X]
-
-/-- A smooth bump function about `p`, read in the preferred chart at `p`: equal to `1` on the
-closed coordinate disc of radius `r` and supported in the open disc of radius `r'`. -/
-def chartBump (p : X) {r r' : ℝ} (hr : 0 < r) (hrr' : r < r')
-    (hsub : closedBall (chartAt ℂ p p) r' ⊆ (chartAt ℂ p).target) :
-    SmoothBumpFunction 𝓘(ℝ, ℂ) p where
-  rIn := r
-  rOut := r'
-  rIn_pos := hr
-  rIn_lt_rOut := hrr'
-  closedBall_subset := by simpa using hsub
-
-/-- In the chart at `p`, the bump function `chartBump p` is its planar bump function. -/
-theorem chartBump_symm (p : X) {r r' : ℝ} (hr : 0 < r) (hrr' : r < r')
-    (hsub : closedBall (chartAt ℂ p p) r' ⊆ (chartAt ℂ p).target) {z : ℂ}
-    (hz : z ∈ (chartAt ℂ p).target) :
-    chartBump p hr hrr' hsub ((chartAt ℂ p).symm z) =
-      (chartBump p hr hrr' hsub).toContDiffBump z := by
-  rw [(chartBump p hr hrr' hsub).eqOn_source ((chartAt ℂ p).map_target hz)]
-  simp [(chartAt ℂ p).right_inv hz]
-
-/-- The bump function `chartBump p` is supported over the closed coordinate disc of radius `r'`. -/
-theorem tsupport_chartBump_subset [T2Space X] (p : X) {r r' : ℝ} (hr : 0 < r) (hrr' : r < r')
-    (hsub : closedBall (chartAt ℂ p p) r' ⊆ (chartAt ℂ p).target) :
-    tsupport (chartBump p hr hrr' hsub) ⊆
-      (chartAt ℂ p).symm '' closedBall (chartAt ℂ p p) r' := by
-  simpa [chartBump] using (chartBump p hr hrr' hsub).tsupport_subset_symm_image_closedBall
 
 /-- Coordinate discs about the points of a finite set `s`: closed discs of radius `R p` in the
 preferred charts, lying over pairwise disjoint open neighbourhoods `U p`. -/
@@ -313,14 +254,58 @@ theorem closedBall_half_subset_target (p : X) :
 /-- The cutoff about `p`: `1` on the coordinate disc of radius `R p / 4`, supported in the disc of
 radius `R p / 2`. -/
 def χ (p : X) : SmoothBumpFunction 𝓘(ℝ, ℂ) p :=
-  chartBump p (r := d.R p / 4) (r' := d.R p / 2) (by linarith [d.R_pos p])
-    (by linarith [d.R_pos p]) (d.closedBall_half_subset_target p)
+  SmoothBumpFunction.ofClosedBallSubset p (r := d.R p / 4) (r' := d.R p / 2)
+    (by linarith [d.R_pos p]) (by linarith [d.R_pos p]) (d.closedBall_half_subset_target p)
 
 /-- The localizing bump about `p`: `1` on the coordinate disc of radius `R p / 2`, supported in
 the disc of radius `R p`. -/
 def θ (p : X) : SmoothBumpFunction 𝓘(ℝ, ℂ) p :=
-  chartBump p (r := d.R p / 2) (r' := d.R p) (by linarith [d.R_pos p])
-    (by linarith [d.R_pos p]) (d.closedBall_subset_target p)
+  SmoothBumpFunction.ofClosedBallSubset p (r := d.R p / 2) (r' := d.R p)
+    (by linarith [d.R_pos p]) (by linarith [d.R_pos p]) (d.closedBall_subset_target p)
+
+theorem χ_rIn (p : X) : (d.χ p).rIn = d.R p / 4 :=
+  SmoothBumpFunction.ofClosedBallSubset_rIn _ _ _ _
+
+theorem χ_rOut (p : X) : (d.χ p).rOut = d.R p / 2 :=
+  SmoothBumpFunction.ofClosedBallSubset_rOut _ _ _ _
+
+theorem θ_rIn (p : X) : (d.θ p).rIn = d.R p / 2 :=
+  SmoothBumpFunction.ofClosedBallSubset_rIn _ _ _ _
+
+theorem θ_rOut (p : X) : (d.θ p).rOut = d.R p :=
+  SmoothBumpFunction.ofClosedBallSubset_rOut _ _ _ _
+
+/-- The cutoff about `p`, read in the preferred chart at `p`. -/
+def χc (p : X) : ContDiffBump (chartAt ℂ p p) where
+  rIn := d.R p / 4
+  rOut := d.R p / 2
+  rIn_pos := by linarith [d.R_pos p]
+  rIn_lt_rOut := by linarith [d.R_pos p]
+
+/-- The localizing bump about `p`, read in the preferred chart at `p`. -/
+def θc (p : X) : ContDiffBump (chartAt ℂ p p) where
+  rIn := d.R p / 2
+  rOut := d.R p
+  rIn_pos := by linarith [d.R_pos p]
+  rIn_lt_rOut := by linarith [d.R_pos p]
+
+theorem χc_rOut (p : X) : (d.χc p).rOut = d.R p / 2 := (rfl)
+
+theorem θc_rIn (p : X) : (d.θc p).rIn = d.R p / 2 := (rfl)
+
+theorem θc_rOut (p : X) : (d.θc p).rOut = d.R p := (rfl)
+
+theorem χ_symm (p : X) {z : ℂ} (hz : z ∈ (chartAt ℂ p).target) :
+    d.χ p ((chartAt ℂ p).symm z) = d.χc p z := by
+  rw [(d.χ p).apply_chartAt_symm hz, ContDiffBump.apply, ContDiffBump.apply, d.χ_rIn, d.χ_rOut,
+    TauCeti.extChartAt_model_apply_eq_chartAt_apply]
+  rfl
+
+theorem θ_symm (p : X) {z : ℂ} (hz : z ∈ (chartAt ℂ p).target) :
+    d.θ p ((chartAt ℂ p).symm z) = d.θc p z := by
+  rw [(d.θ p).apply_chartAt_symm hz, ContDiffBump.apply, ContDiffBump.apply, d.θ_rIn, d.θ_rOut,
+    TauCeti.extChartAt_model_apply_eq_chartAt_apply]
+  rfl
 
 /-- The global cutoff `1 - Σ_p χ_p`, vanishing near the points of `s`. -/
 def ψ (x : X) : ℝ :=
@@ -354,10 +339,12 @@ theorem contMDiff_ψ [T2Space X] [IsManifold 𝓘(ℝ, ℂ) (⊤ : ℕ∞) X] :
 variable [T2Space X]
 
 theorem tsupport_χ_subset (p : X) : tsupport (d.χ p) ⊆ d.U p :=
-  (tsupport_chartBump_subset _ _ _ _).trans (d.symm_image_subset p (half_le_self (d.R_pos p).le))
+  (d.χ p).tsupport_subset_chartAt_symm_image_closedBall.trans
+    (d.symm_image_subset p ((d.χ_rOut p).trans_le (half_le_self (d.R_pos p).le)))
 
 theorem tsupport_θ_subset (p : X) : tsupport (d.θ p) ⊆ d.U p :=
-  (tsupport_chartBump_subset _ _ _ _).trans (d.symm_image_subset p le_rfl)
+  (d.θ p).tsupport_subset_chartAt_symm_image_closedBall.trans
+    (d.symm_image_subset p (d.θ_rOut p).le)
 
 theorem ψ_eq {p : X} (hp : p ∈ s) {x : X} (hx : x ∈ d.U p) : d.ψ x = 1 - d.χ p x := by
   rw [ψ, Finset.sum_eq_single p (fun q hq hqp ↦
@@ -368,15 +355,16 @@ theorem ψ_eventuallyEq_zero {p : X} (hp : p ∈ s) : d.ψ =ᶠ[𝓝 p] 0 := by
   rw [d.ψ_eq hp hx, h1, Pi.one_apply, sub_self, Pi.zero_apply]
 
 theorem ψ_symm_eq {p : X} (hp : p ∈ s) {z : ℂ} (hz : z ∈ ball (chartAt ℂ p p) (d.R p)) :
-    d.ψ ((chartAt ℂ p).symm z) = 1 - (d.χ p).toContDiffBump z := by
+    d.ψ ((chartAt ℂ p).symm z) = 1 - d.χc p z := by
   have hzc := ball_subset_closedBall hz
-  rw [d.ψ_eq hp (d.symm_image_subset p le_rfl ⟨z, hzc, rfl⟩), χ,
-    chartBump_symm _ _ _ _ (d.closedBall_subset_target p hzc)]
+  rw [d.ψ_eq hp (d.symm_image_subset p le_rfl ⟨z, hzc, rfl⟩),
+    d.χ_symm p (d.closedBall_subset_target p hzc)]
 
 theorem θ_eq_one {p : X} {x : X} (hx : x ∈ tsupport (d.χ p)) : d.θ p x = 1 := by
-  obtain ⟨z, hz, rfl⟩ := tsupport_chartBump_subset _ _ _ _ hx
-  rw [θ, chartBump_symm _ _ _ _ (d.closedBall_half_subset_target p hz)]
-  exact ContDiffBump.one_of_mem_closedBall _ hz
+  obtain ⟨z, hz, rfl⟩ := (d.χ p).tsupport_subset_chartAt_symm_image_closedBall hx
+  rw [d.χ_rOut] at hz
+  rw [d.θ_symm p (d.closedBall_half_subset_target p hz)]
+  exact (d.θc p).one_of_mem_closedBall (by rwa [θc_rIn])
 
 variable {ω : OneForm X} (hs : ∀ x ∉ s, ω.HolomorphicAt x)
 include hs
@@ -398,9 +386,12 @@ theorem holomorphicAt_of_mem_disc {p : X} (hp : p ∈ s) {y : X} (hy : y ∈ (ch
 
 /-- The exterior derivative of `ψ ω` is supported in the supports of the cutoffs `χ_p`, where the
 localizing bumps are `1`: it is the sum of its products with the bumps `θ_p`. -/
-theorem sum_θ_smul_mapCoeff_mextDeriv [IsManifold 𝓘(ℂ) 1 X] (L : ℂ →L[ℝ] ℝ) (x : X) :
-    ∑ p ∈ s, d.θ p x • RoughForm.mapCoeff L (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x) x =
-      RoughForm.mapCoeff L (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x) x := by
+theorem sum_θ_smul_mapCoeff_mextDeriv [IsManifold 𝓘(ℂ) 1 X] (L : ℂ →L[ℝ] ℝ) :
+    (∑ p ∈ s, fun x ↦
+        d.θ p x • RoughForm.mapCoeff L (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x) x) =
+      RoughForm.mapCoeff L (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x) := by
+  funext x
+  rw [Finset.sum_apply]
   by_cases h : ∃ p ∈ s, x ∈ tsupport (d.χ p)
   · obtain ⟨p, hp, hx⟩ := h
     rw [Finset.sum_eq_single p (fun q hq hqp ↦ by
@@ -435,23 +426,19 @@ theorem sum_residue_eq_zero_of_forall_notMem [CompactSpace X] [T2Space X]
         (RoughForm.mapCoeff L (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x)) :=
       (isSmoothForm_mextDeriv hα (n := 0) (by simp)).mapCoeff L
     have hStokes := integralTopForm_mextDeriv_eq_zero
-      (Manifold.Orientation.mk (chartLift (X := X))) ((hα.mapCoeff L).of_le (by simp))
+      (Manifold.Orientation.mk (orientationLift (X := X))) ((hα.mapCoeff L).of_le (by simp))
       (isClosed_tsupport _).isCompact
-    rw [mextDeriv_mapCoeff L (hα.of_le (by simp)),
-      show RoughForm.mapCoeff L (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x) =
-        ∑ p ∈ s, fun x ↦ d.θ p x • RoughForm.mapCoeff L
-          (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x) x from
-        funext fun x ↦ by rw [Finset.sum_apply, d.sum_θ_smul_mapCoeff_mextDeriv hs],
+    rw [mextDeriv_mapCoeff L (hα.of_le (by simp)), ← d.sum_θ_smul_mapCoeff_mextDeriv hs L,
       integralTopForm_sum _ _ _ fun p _ ↦ (hD.fun_smul ((d.θ p).contMDiff.of_le (by simp)))
         |>.integrableTopForm (isClosed_tsupport _).isCompact Complex.basisOneI] at hStokes
     rw [Finset.mul_sum, map_sum, ← hStokes]
     refine Finset.sum_congr rfl fun p hp ↦ (integralTopForm_smul_mapCoeff_mextDeriv_eq L
-      (χ := (d.χ p).toContDiffBump) (θ := (d.θ p).toContDiffBump)
+      (χ := d.χc p) (θ := d.θc p)
       (d.closedBall_subset_target p) (hω p) (fun y hy hyR hyp ↦
-        d.holomorphicAt_of_mem_disc hs hp hy hyR hyp) le_rfl le_rfl d.contMDiff_ψ
+        d.holomorphicAt_of_mem_disc hs hp hy hyR hyp) ((d.χc_rOut p).trans (d.θc_rIn p).symm).le
+      (d.θc_rOut p).le d.contMDiff_ψ
       (fun _ ↦ d.holomorphicAt_of_mem_tsupport_ψ hs) (fun z hz ↦ d.ψ_symm_eq hp hz)
-      (d.θ p).contMDiff (d.θ p).tsupport_subset_chartAt_source
-      fun z hz ↦ chartBump_symm _ _ _ _ hz).symm
+      (d.θ p).contMDiff (d.θ p).tsupport_subset_chartAt_source fun z hz ↦ d.θ_symm p hz).symm
   have h0 : 2 * π * I * ∑ p ∈ s, ω.residue p = 0 :=
     Complex.ext (by simpa using key reCLM) (by simpa using key imCLM)
   exact (mul_eq_zero.1 h0).resolve_left (by simp [Real.pi_ne_zero, I_ne_zero])
@@ -469,13 +456,6 @@ namespace TauCeti.RiemannSurface.OneForm
 
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   {ω : OneForm X}
-
-/-- On a compact Riemann surface, a `1`-form meromorphic everywhere is holomorphic away from a
-finite set. -/
-theorem finite_setOf_not_holomorphicAt [CompactSpace X] (hω : ∀ x, ω.MeromorphicAt x) :
-    {x | ¬ ω.HolomorphicAt x}.Finite :=
-  mem_cofinite.1 (cofinite_le_codiscrete
-    (mem_codiscrete_iff_forall_mem_nhdsNE.2 fun x ↦ (hω x).eventually_holomorphicAt))
 
 variable [CompactSpace X] [T2Space X]
 
@@ -495,6 +475,7 @@ theorem sum_residue_eq_zero_of_support_subset (hω : ∀ x, ω.MeromorphicAt x) 
 /-- **The residue theorem on a compact Riemann surface** (Forster, Theorem 10.21). The residues of
 a `1`-form meromorphic everywhere add up to zero. A `1`-form that is not meromorphic everywhere has
 divisor the junk value `0`, so the sum is empty. -/
+@[simp]
 theorem sum_residue_eq_zero : ∑ x ∈ ω.divisor.support, ω.residue x = 0 := by
   by_cases hω : ∀ x, ω.MeromorphicAt x
   · exact sum_residue_eq_zero_of_support_subset hω fun _ hx ↦ by
@@ -507,40 +488,8 @@ theorem finsum_residue_eq_zero (hω : ∀ x, ω.MeromorphicAt x) : ∑ᶠ x, ω.
   rw [finsum_eq_sum _ (finite_support_residue hω)]
   exact sum_residue_eq_zero_of_support_subset hω (by simp)
 
-/-- **Check.** The residue theorem on the Riemann sphere
-(`TauCeti.RiemannSurface.OneForm.sum_residue_sphere`) is a special case. -/
+/-- **Check.** The residue theorem on the Riemann sphere is a special case. -/
 example {ω : OneForm (OnePoint ℂ)} : ∑ x ∈ ω.divisor.support, ω.residue x = 0 :=
   sum_residue_eq_zero
 
 end TauCeti.RiemannSurface.OneForm
-
-namespace TauCeti.RiemannSurface.PrincipalParts
-
-open OnePoint
-open TauCeti.AlgebraicGeometry (WeilDivisor)
-
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
-  [ConnectedSpace X] [CompactSpace X] [T2Space X] {D : WeilDivisor X}
-
-/-- **The residue pairing vanishes on the principal parts of a meromorphic function.** On a compact
-connected Riemann surface, the residue pairing of the principal parts of a meromorphic function `f`
-relative to `D` with any `ω ∈ H⁰(X, Ω_{-D})` is `0`: by
-`TauCeti.RiemannSurface.PrincipalParts.residuePairing_principalParts` it is the sum of the residues
-of the meromorphic `1`-form `f ω`, which vanishes by the residue theorem. -/
-theorem residuePairing_principalParts_eq_zero (f : MeromorphicFunction X)
-    (ω : differentialSections (-D) ⊤) : residuePairing D (f.principalParts D) ω = 0 := by
-  classical
-  set S := f.finite_setOf_eq_infty.toFinset ∪ D.support
-  have hf : {x | f x = ∞} ⊆ S := fun x hx ↦ Finset.mem_union_left _ (by simpa using hx)
-  have hD : D.support ⊆ S := Finset.subset_union_right
-  rw [residuePairing_principalParts f ω S hf hD]
-  refine OneForm.sum_residue_eq_zero_of_support_subset (fun x ↦
-    OneForm.MeromorphicAt.smul (f.meromorphicAt_finitePart x)
-      (differentialSections.isDifferentialSectionAt_toOneForm ω x).meromorphicAt) fun x hx ↦ ?_
-  by_contra hxS
-  have h := residuePairing_principalParts f ω (insert x S)
-    (hf.trans (Finset.subset_insert x S)) (hD.trans (Finset.subset_insert x S))
-  rw [residuePairing_principalParts f ω S hf hD, Finset.sum_insert hxS, eq_comm, add_eq_right] at h
-  exact hx h
-
-end TauCeti.RiemannSurface.PrincipalParts
