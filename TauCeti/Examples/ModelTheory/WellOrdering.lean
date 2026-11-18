@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.SetTheory.Cardinal.Aleph
 public import TauCeti.ModelTheory.Infinitary.CodedConnectives
-public import TauCeti.ModelTheory.Order
-public import TauCeti.ModelTheory.Scott.Sentence
-import TauCeti.ModelTheory.Scott.Isomorphism
+public import TauCeti.ModelTheory.Scott.WellOrder
 import TauCeti.ModelTheory.WellOrdering
 
 /-!
@@ -53,44 +50,6 @@ universe w w'
 namespace TauCeti.WellOrdersOfBoundedType
 
 /-! ### Disjunctions of Scott sentences of ordinals -/
-
-/-- The Scott sentence of a countable ordinal `β`, as a well-order in the language of orders. -/
-noncomputable def ordinalScottSentence (β : Ordinal.{w}) (hβ : β < ω₁) :
-    Language.order.Sentenceω :=
-  letI := orderStructure β.ToType
-  have := Cardinal.countable_toType_of_lt_omega_one hβ
-  scottSentence (L := Language.order) β.ToType
-
-/-- The Scott sentence of a countable ordinal is the canonical Scott sentence of its order. -/
-theorem ordinalScottSentence_def (β : Ordinal.{w}) (hβ : β < ω₁) :
-    ordinalScottSentence β hβ =
-      letI := orderStructure β.ToType
-      have := Cardinal.countable_toType_of_lt_omega_one hβ
-      scottSentence (L := Language.order) β.ToType :=
-  (rfl)
-
-/-- A countable ordinal satisfies its own Scott sentence. -/
-@[simp]
-theorem realize_ordinalScottSentence_self {β : Ordinal.{w}} (hβ : β < ω₁) :
-    letI := orderStructure β.ToType
-    SentenceInf.Realize (ordinalScottSentence β hβ) β.ToType := by
-  let := orderStructure β.ToType
-  have := Cardinal.countable_toType_of_lt_omega_one hβ
-  rw [ordinalScottSentence_def]
-  exact realize_scottSentence_self _
-
-/-- The Scott sentence of a countable ordinal `β` holds in a countable ordered structure, in any
-universe, exactly when that structure is order-isomorphic to `β`. -/
-@[simp]
-theorem realize_ordinalScottSentence_iff {β : Ordinal.{w}} (hβ : β < ω₁) (N : Type w')
-    [Language.order.Structure N] [LE N] [Language.order.OrderedStructure N] [Countable N] :
-    SentenceInf.Realize (ordinalScottSentence β hβ) N ↔ Nonempty (β.ToType ≃o N) := by
-  let := orderStructure β.ToType
-  have := Cardinal.countable_toType_of_lt_omega_one hβ
-  rw [ordinalScottSentence_def, realize_scottSentence_iff]
-  refine ⟨fun ⟨e⟩ => ?_, fun ⟨e⟩ => ⟨StrongHomClass.toEquiv e⟩⟩
-  let := StrongHomClass.toOrderIsoClass Language.order β.ToType N (β.ToType ≃[Language.order] N)
-  exact ⟨OrderIso.ofClass e⟩
 
 /-- For a countable ordinal `α`, the disjunction over the ordinals `β < α` of the Scott sentences
 of the well-orders `β`, in the language of orders. -/
