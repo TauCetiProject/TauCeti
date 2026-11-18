@@ -5,8 +5,6 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.EulerProduct.Basic
-public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.NumberTheory.ArithmeticFunction.CompletelyMultiplicative
 import TauCeti.NumberTheory.LSeries.EulerProduct
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.Data.Nat.GCD
 public import TauCeti.NumberTheory.LSeries.ZetaMul
 public import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
-public import TauCeti.NumberTheory.ArithmeticFunction.CompletelyMultiplicative
 
 /-!
 # Four-factor coefficients for a pair of Dirichlet characters
