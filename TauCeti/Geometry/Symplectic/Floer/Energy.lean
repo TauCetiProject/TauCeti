@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 
 /-!
@@ -64,7 +65,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 ## Main results
 
 * `SymplecticForm.floerEnergyDensity_eq`: the pointwise energy identity.
-* `SymplecticForm.floerEnergyDensity_nonneg`: the energy density of a solution is nonnegative.
+* `SymplecticForm.floerEnergyDensity_nonneg`: the energy density of a solution is nonnegative,
+  so its energy is monotone in the domain
+  (`SymplecticForm.setIntegral_floerEnergyDensity_mono_set`).
 * `SymplecticForm.floerEnergyDensity_eq_zero_iff`: under tameness, the energy density of a
   solution vanishes exactly where the perturbed derivative does.
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
@@ -570,17 +573,8 @@ theorem norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
       2 / c * ω.floerEnergyDensity Ks Kt u z +
         2 * ‖ω.hamiltonianVectorField (Ks z) (u z)‖ ^ 2 := by
   rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal]
-  set a := fderiv ℝ u z stdComplexLineReal
-  set X := ω.hamiltonianVectorField (Ks z) (u z)
-  -- `‖a‖ ≤ ‖a - X‖ + ‖X‖`, and `c ‖a - X‖²` is at most the energy density `ω(a - X, J (a - X))`.
-  have htri : ‖a‖ ≤ ‖a - X‖ + ‖X‖ := norm_le_norm_sub_add a X
-  have hsq : ‖a‖ ^ 2 ≤ 2 * ‖a - X‖ ^ 2 + 2 * ‖X‖ ^ 2 := by
-    nlinarith [norm_nonneg a, norm_nonneg (a - X), norm_nonneg X, sq_nonneg (‖a - X‖ - ‖X‖)]
-  have hle : ‖a - X‖ ^ 2 ≤ 1 / c * ω (a - X) (J (a - X)) := by
-    rw [one_div_mul_eq_div, le_div_iff₀ hc, mul_comm]
-    exact hJc (a - X)
-  rw [div_eq_mul_one_div 2 c, mul_assoc]
-  linarith
+  -- `c ‖∂ₛu - X_{K_s}‖²` is at most the energy density `ω(∂ₛu - X_{K_s}, J (∂ₛu - X_{K_s}))`.
+  exact norm_sq_le_of_mul_norm_sub_sq_le hc (hJc _)
 
 /-- **The energy density plus the curvature is exact.** For a `C²` map `u` into a symplectic
 vector space and a perturbation `K = K_s ds + K_t dt`, the Floer energy density plus the
@@ -813,6 +807,19 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
       (hKdiff hKs (habU hz)) (hKdiff hKt (habU hz)),
     integral_sub hsum hcurv, integral_add harea hderiv, stdComplexLineReal_eq,
     stdComplexLineImag_eq, integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+
+/-- **Monotonicity of the energy in the domain.** If `u` solves the Floer equation on a measurable
+set `t` for almost complex structures `J z` tamed by `ω`, and the Floer energy density is
+integrable on `t`, then the energy over every subset `s` of `t` is at most the energy over `t`. -/
+theorem setIntegral_floerEnergyDensity_mono_set (ω : SymplecticForm V) {s t : Set (ℝ × ℝ)}
+    (hst : s ⊆ t) (ht : MeasurableSet t) (hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) t)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ t, ω.Tames (J z))
+    (h : ∀ z ∈ t, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ∫ z in s, ω.floerEnergyDensity Ks Kt u z ≤ ∫ z in t, ω.floerEnergyDensity Ks Kt u z :=
+  setIntegral_mono_set hint
+    (ae_restrict_of_forall_mem ht fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (h z hz))
+    (Eventually.of_forall hst)
 
 /-- **The energy controls the perturbed derivative in `L²`.** Let `u` solve the Floer equation on
 a measurable set `U` for domain-dependent almost complex structures `J z` satisfying
