@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
 # Uniform curvature bounds for compactly supported perturbation families
@@ -33,11 +34,16 @@ constant form `TauCeti.SymplecticForm.constSmooth`.
 * `SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianCurvature_family`: the curvature of a
   jointly `C^(n+1)` family is jointly `C^n` in the parameter, the domain point and the target
   point.
+* `SmoothTwoForm.IsNondegenerate.continuousOn_hamiltonianCurvature_comp`: for a one-form which is
+  `C¹` over an open set `U` of the domain, the curvature along a map continuous on `U` is
+  continuous on `U`.
 * `SymplecticForm.continuous_hamiltonianCurvature_family`: the curvature of a jointly `C¹`
   family with a symplectic vector space target is jointly continuous.
 * `SmoothTwoForm.IsNondegenerate.exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact`,
   `SymplecticForm.exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact`: the
   uniform integrated curvature bound for a family with a common compact domain support.
+* `SmoothTwoForm.IsNondegenerate.integrable_hamiltonianCurvature_of_isCompact`: the curvature of a
+  single compactly supported `C¹` one-form is integrable along every map continuous on its support.
 * `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_add_of_eq_zero_on`: a perturbation supported
   inside the zero region of a one-form adds its integrated curvature exactly.
 
@@ -92,6 +98,59 @@ theorem IsNondegenerate.contMDiff_hamiltonianCurvature_family (hω : ω.IsNondeg
       (g := fun p : N × (ℝ × ℝ) ↦ Kt p.1 p.2) hKs hKt)).congr fun _ ↦
     hamiltonianCurvature_def _ _ _ _ _
 
+/-- For a nondegenerate two-form on a finite-dimensional manifold and a Hamiltonian one-form which
+is jointly `C¹` at every point of `U × M`, for an open set `U` of the domain, the curvature
+evaluated along a map continuous on `U` is continuous on `U`. -/
+theorem IsNondegenerate.continuousOn_hamiltonianCurvature_comp (hω : ω.IsNondegenerate)
+    {Ks Kt : ℝ × ℝ → M → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hKs : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (z, x))
+    (hKt : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (z, x))
+    {u : ℝ × ℝ → M} (hu : ContinuousOn u U) :
+    ContinuousOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) U := by
+  intro z₀ hz₀
+  -- Multiply the one-form by a bump function which is `1` near `z₀` and supported in `U`. The
+  -- product is `C¹` everywhere, so its curvature is jointly continuous, and near `z₀` it has the
+  -- same curvature as the one-form.
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 hU z₀ hz₀
+  let χ : ContDiffBump z₀ := ⟨r / 4, r / 2, by positivity, by linarith⟩
+  have hχU : tsupport χ ⊆ U := by
+    rw [χ.tsupport_eq]
+    exact (Metric.closedBall_subset_ball (show r / 2 < r by linarith)).trans hrU
+  have hcut (K : ℝ × ℝ → M → ℝ)
+      (hK : ∀ z ∈ U, ∀ x, ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (z, x)) :
+      ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun z x ↦ χ z * K z x) := by
+    rintro ⟨z, x⟩
+    by_cases hz : z ∈ U
+    · exact ((χ.contDiff.contMDiff.comp contMDiff_fst).contMDiffAt).smul (hK z hz x)
+    · -- Off `U` the bump function vanishes near `z`.
+      have h0 : (χ : ℝ × ℝ → ℝ) =ᶠ[𝓝 z] 0 :=
+        notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχU h)
+      have hev : (uncurry fun z x ↦ χ z * K z x) =ᶠ[𝓝 (z, x)] fun _ ↦ (0 : ℝ) :=
+        ((continuous_fst.tendsto (z, x)).eventually h0).mono fun p hp ↦ by simp [uncurry, hp]
+      exact contMDiffAt_const.congr_of_eventuallyEq hev
+  have hc : Continuous fun q : (ℝ × (ℝ × ℝ)) × M ↦ ω.hamiltonianCurvature
+      (fun z x ↦ χ z * Ks z x) (fun z x ↦ χ z * Kt z x) q.1.2 q.2 :=
+    (hω.contMDiff_hamiltonianCurvature_family (J := 𝓘(ℝ, ℝ)) (n := 0) (by simp)
+      (Ks := fun _ z x ↦ χ z * Ks z x) (Kt := fun _ z x ↦ χ z * Kt z x)
+      (by simpa [Function.comp_def] using
+        (hcut Ks hKs).comp (contMDiff_fst.snd.prodMk contMDiff_snd))
+      (by simpa [Function.comp_def] using
+        (hcut Kt hKt).comp (contMDiff_fst.snd.prodMk contMDiff_snd))).continuous
+  -- On the ball where the bump function is `1` the two curvatures agree.
+  have heq : ∀ᶠ z in 𝓝 z₀, ω.hamiltonianCurvature (fun z x ↦ χ z * Ks z x)
+      (fun z x ↦ χ z * Kt z x) z (u z) = ω.hamiltonianCurvature Ks Kt z (u z) := by
+    have hball : ∀ᶠ z in 𝓝 z₀, z ∈ Metric.ball z₀ (r / 4) :=
+      Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self (by positivity))
+    filter_upwards [hball] with z hz
+    have hone : ∀ᶠ w in 𝓝 z, χ w = 1 :=
+      eventually_of_mem (Metric.isOpen_ball.mem_nhds hz) fun w hw ↦
+        χ.one_of_mem_closedBall (Metric.ball_subset_closedBall hw)
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := Ks) (Kt' := Kt)
+      (hone.mono fun w hw ↦ by simp [hw]) (hone.mono fun w hw ↦ by simp [hw])]
+  exact ((hc.comp_continuousOn ((continuousOn_const.prodMk continuousOn_id).prodMk hu)
+    (f := fun z ↦ (((0 : ℝ), z), u z))) z₀ hz₀).congr_of_eventuallyEq
+    (eventually_nhdsWithin_of_eventually_nhds (heq.mono fun _ h ↦ h.symm)) heq.self_of_nhds.symm
+
 /-- For a nondegenerate two-form on a finite-dimensional manifold, a jointly `C¹` family
 supported in a common compact domain set has a finite integrated curvature bound, uniform over
 compact parameter and target windows and over all maps into the target window. In particular the
@@ -131,6 +190,28 @@ theorem IsNondegenerate.exists_lintegral_enorm_hamiltonianCurvature_le_of_isComp
     _ = ENNReal.ofReal (max B 0 * volume.real D) := by
         rw [setLIntegral_const, ENNReal.ofReal_mul (le_max_right _ _),
           ofReal_measureReal hD.measure_lt_top.ne]
+
+/-- For a nondegenerate two-form on a finite-dimensional manifold, the curvature of a jointly `C¹`
+Hamiltonian one-form supported in a compact domain set `D` is integrable along every map which is
+continuous on `D`. -/
+theorem IsNondegenerate.integrable_hamiltonianCurvature_of_isCompact (hω : ω.IsNondegenerate)
+    {Ks Kt : ℝ × ℝ → M → ℝ} (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks))
+    (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt)) {D : Set (ℝ × ℝ)}
+    (hD : IsCompact D) (hs : ∀ z ∉ D, Ks z = 0) (ht : ∀ z ∉ D, Kt z = 0) {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u D) :
+    Integrable fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- The curvature is jointly continuous: regard the one-form as a family constant in a real
+  -- parameter.
+  have hc : Continuous fun q : (ℝ × (ℝ × ℝ)) × M ↦ ω.hamiltonianCurvature Ks Kt q.1.2 q.2 :=
+    (hω.contMDiff_hamiltonianCurvature_family (J := 𝓘(ℝ, ℝ)) (n := 0) (by simp)
+      (Ks := fun _ ↦ Ks) (Kt := fun _ ↦ Kt)
+      (by simpa [Function.comp_def] using hKs.comp (contMDiff_fst.snd.prodMk contMDiff_snd))
+      (by simpa [Function.comp_def] using hKt.comp (contMDiff_fst.snd.prodMk contMDiff_snd))
+      ).continuous
+  refine IntegrableOn.integrable_of_forall_notMem_eq_zero
+    ((hc.comp_continuousOn ((continuousOn_const.prodMk continuousOn_id).prodMk hu)
+      (s := D) (f := fun z ↦ (((0 : ℝ), z), u z))).integrableOn_compact hD) fun z hz ↦ ?_
+  exact ω.hamiltonianCurvature_eq_zero_of_notMem hD.isClosed hs ht hz (u z)
 
 omit [FiniteDimensional ℝ E] in
 /-- Adding a perturbation `δ` supported in a closed set `D`, inside an open set `U` on which the
