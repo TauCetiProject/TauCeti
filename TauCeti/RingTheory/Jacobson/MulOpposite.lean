@@ -31,7 +31,9 @@ of the radical.
 * `TauCeti.Ring.op_mem_jacobson_mulOpposite_iff`: `MulOpposite.op x` lies in `Ring.jacobson Rᵐᵒᵖ`
   exactly when `x` lies in `Ring.jacobson R` -- the left-right symmetry, in membership form.
 * `TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv`: the resulting identification
-  `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ ≃+* (R ⧸ Ring.jacobson R)ᵐᵒᵖ`.
+  `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ ≃+* (R ⧸ Ring.jacobson R)ᵐᵒᵖ`, and
+  `TauCeti.Ring.finrank_quotient_jacobson_mulOpposite`: over a field, the two residue rings have
+  the same dimension.
 * `TauCeti.isSemiprimaryRing_mulOpposite_iff` and `TauCeti.IsSemiprimaryRing.mulOpposite`:
   semiprimarity passes to the opposite ring.
 
@@ -186,6 +188,18 @@ theorem quotientJacobsonMulOppositeRingEquiv_symm_op_mk (x : R) :
     (quotientJacobsonMulOppositeRingEquiv R).symm (op (Ideal.Quotient.mk (Ring.jacobson R) x)) =
       Ideal.Quotient.mk (Ring.jacobson Rᵐᵒᵖ) (op x) :=
   (RingEquiv.symm_apply_eq _).mpr (quotientJacobsonMulOppositeRingEquiv_mk R x).symm
+
+/-- **The residue ring modulo the Jacobson radical has the same dimension for the opposite
+algebra**: over a field `k`, `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ` and `R ⧸ Ring.jacobson R` have the same
+`k`-dimension, `TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv` being `k`-linear. -/
+theorem finrank_quotient_jacobson_mulOpposite (k : Type*) [Field k] [Algebra k R] :
+    Module.finrank k (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) = Module.finrank k (R ⧸ Ring.jacobson R) := by
+  let e : (Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ) ≃ₐ[k] (R ⧸ Ring.jacobson R)ᵐᵒᵖ :=
+    .ofRingEquiv (f := quotientJacobsonMulOppositeRingEquiv R) fun c ↦ by
+      rw [← Ideal.Quotient.mk_algebraMap, MulOpposite.algebraMap_apply,
+        quotientJacobsonMulOppositeRingEquiv_mk, Ideal.Quotient.mk_algebraMap,
+        MulOpposite.algebraMap_apply]
+  exact e.toLinearEquiv.finrank_eq.trans (MulOpposite.opLinearEquiv k).symm.finrank_eq
 
 /-- Semisimplicity of the quotient by the Jacobson radical is left-right symmetric. -/
 theorem isSemisimpleRing_quotient_jacobson_mulOpposite_iff :
