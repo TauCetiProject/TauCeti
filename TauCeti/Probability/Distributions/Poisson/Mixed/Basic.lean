@@ -37,6 +37,8 @@ second moment of `Λ`, and the variance and the cdf a probability mixing measure
 * `TauCeti.Probability.mixedPoissonMeasure_real_singleton`: the mass of `k` is
   `E[exp (-Λ) Λ ^ k / k!]`, and `TauCeti.Probability.mixedPoissonMeasure_real_Iic` gives the
   cumulative masses as the finite sum of these.
+* `TauCeti.Probability.mixedPoissonMeasure_eq_sum_dirac`: the law is the weighted sum of Dirac
+  measures with these masses.
 * `TauCeti.Probability.mixedPoissonMeasure_dirac`: mixing against a point mass gives back the
   Poisson law.
 * `TauCeti.Probability.lintegral_descFactorial_mixedPoissonMeasure` and
@@ -115,6 +117,14 @@ theorem mixedPoissonMeasure_singleton (ρ : Measure ℝ≥0) (k : ℕ) :
   simp only [mixedPoissonMeasure_def,
     Measure.bind_apply (measurableSet_singleton k) measurable_poissonMeasure.aemeasurable,
     poissonMeasure_singleton]
+
+/-- A mixed Poisson law is the weighted sum of Dirac measures whose coefficients are the
+integrated Poisson masses. -/
+theorem mixedPoissonMeasure_eq_sum_dirac (ρ : Measure ℝ≥0) :
+    mixedPoissonMeasure ρ = Measure.sum fun k : ℕ ↦
+      (∫⁻ x, ENNReal.ofReal (exp (-(x : ℝ)) * (x : ℝ) ^ k / k !) ∂ρ) • Measure.dirac k := by
+  rw [← Measure.sum_smul_dirac (mixedPoissonMeasure ρ)]
+  simp_rw [mixedPoissonMeasure_singleton]
 
 /-! ### Transfer of nonnegative Poisson integrals -/
 
