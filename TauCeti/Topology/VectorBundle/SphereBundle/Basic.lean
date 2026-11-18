@@ -26,9 +26,12 @@ fibres and positive off the zero section (`TauCeti.isFiberGauge_sqrt`), such as 
 a continuous family of positive definite quadratic forms `Q_b`. Its disc bundle `{q ≤ 1}` need not
 be the unit disc bundle of any norm already carried by the fibres: for instance the negative disc
 bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `q v = -Hess(v, v) / (2ε)`
-on the negative normal bundle. Each point of `S(E)` gives a unit vector in its fibre
-(`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects continuously onto the
-base (`TauCeti.sphereBundleProj`).
+on the negative normal bundle. Dividing a fibre gauge by a continuous positive radius function
+`r : B → ℝ` on the base yields another fibre gauge (`TauCeti.IsFiberGauge.div_comp_proj`), whose
+disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
+(`TauCeti.gaugeDiscBundle_div`, `TauCeti.gaugeSphereBundle_div`). Each point of `S(E)` gives a
+unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects
+continuously onto the base (`TauCeti.sphereBundleProj`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -119,6 +122,19 @@ theorem gaugeSphereBundle_sqrt (q : TotalSpace F E → ℝ) :
     gaugeSphereBundle (fun v ↦ √(q v)) = {v | q v = 1} := by
   ext v
   exact Real.sqrt_eq_one
+
+/-- The disc bundle of a function `ρ` divided by a positive function `r` is `{v | ρ v ≤ r v}`. -/
+theorem gaugeDiscBundle_div {ρ r : TotalSpace F E → ℝ} (hr : ∀ v, 0 < r v) :
+    gaugeDiscBundle (fun v ↦ ρ v / r v) = {v | ρ v ≤ r v} := by
+  ext v
+  exact div_le_one (hr v)
+
+/-- The sphere bundle of a function `ρ` divided by a nowhere-zero function `r` is
+`{v | ρ v = r v}`. -/
+theorem gaugeSphereBundle_div {ρ r : TotalSpace F E → ℝ} (hr : ∀ v, r v ≠ 0) :
+    gaugeSphereBundle (fun v ↦ ρ v / r v) = {v | ρ v = r v} := by
+  ext v
+  exact div_eq_one_iff_eq (hr v)
 
 /-- The sphere bundle of a gauge lies in its disc bundle. -/
 theorem gaugeSphereBundle_subset_gaugeDiscBundle (ρ : TotalSpace F E → ℝ) :
@@ -212,6 +228,17 @@ theorem nonneg (v : TotalSpace F E) : 0 ≤ ρ v := by
 /-- A fibre gauge vanishes exactly on the zero section. -/
 theorem eq_zero_iff {v : TotalSpace F E} : ρ v = 0 ↔ v.snd = 0 :=
   ⟨fun h ↦ by_contra fun hv ↦ (hρ.pos hv).ne' h, hρ.eq_zero_of_snd_eq_zero⟩
+
+/-- Dividing a fibre gauge `ρ` by a continuous positive function `r` on the base yields a fibre
+gauge whose disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
+(`TauCeti.gaugeDiscBundle_div`, `TauCeti.gaugeSphereBundle_div`). -/
+theorem div_comp_proj [TopologicalSpace B] [TopologicalSpace F] [∀ b, TopologicalSpace (E b)]
+    [FiberBundle F E] {r : B → ℝ} (hr : Continuous r) (hrpos : ∀ b, 0 < r b) :
+    IsFiberGauge fun v : TotalSpace F E ↦ ρ v / r v.proj where
+  continuous := hρ.continuous.div (hr.comp (FiberBundle.continuous_proj F E))
+    fun v ↦ (hrpos v.proj).ne'
+  smul_of_nonneg ht v := by rw [hρ.smul_of_nonneg ht v, mul_div_assoc]
+  pos {v} hv := div_pos (hρ.pos hv) (hrpos v.proj)
 
 end IsFiberGauge
 
