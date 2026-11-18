@@ -343,14 +343,14 @@ theorem exists_norm_fourier_slice_le_seminorm (K : Compacts (CoordinateSpace n))
   obtain ⟨t, C, hC0, hC⟩ := exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm
     (V := V) (W := W) (m := m) K ⌈r⌉₊
   refine ⟨C.toNNReal • ∑ α ∈ t, Symbol.seminorm K α [], ?_, fun a haK η ξ ↦ ?_⟩
-  · rw [FunLike.coe_smul]
-    refine Continuous.const_smul (Seminorm.continuous_finsetSum (𝕝 := ℂ)
-      (p := fun α ↦ (Symbol.seminorm K α [] : Seminorm ℂ (Symbol n V W m))) fun α _ ↦ ?_) _
-    simpa using (withSeminorms (n := n) (V := V) (W := W) (m := m)).continuous_seminorm (K, α, [])
+  · have hcont : Continuous (∑ α ∈ t, Symbol.seminorm K α [] : Seminorm ℂ (Symbol n V W m)) :=
+      Seminorm.continuous_finsetSum fun α _ ↦ by
+        simpa using (withSeminorms (n := n) (V := V) (W := W) (m := m)).continuous_seminorm
+          (K, α, [])
+    simpa using hcont.const_smul C.toNNReal
   have hq : (C.toNNReal • ∑ α ∈ t, Symbol.seminorm K α [] : Seminorm ℂ (Symbol n V W m)) a =
       C * ∑ α ∈ t, Symbol.seminorm K α [] a := by
-    rw [FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def, Real.coe_toNNReal _ hC0, smul_eq_mul,
-      FunLike.coe_sum, Finset.sum_apply]
+    simp [NNReal.smul_def, hC0]
   rw [hq]
   -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
   have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=

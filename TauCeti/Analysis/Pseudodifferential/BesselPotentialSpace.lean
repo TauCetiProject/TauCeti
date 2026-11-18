@@ -711,16 +711,13 @@ theorem exists_norm_quantizeBesselPotentialSpace_le_seminorm
     rw [Seminorm.coe_comp, ContinuousLinearMap.coe_coe]
     exact (hq j).comp T.continuous
   refine ⟨L • ∑ j ∈ Finset.range (n + 2), (q j).comp T.toLinearMap, ?_, fun a ha haK ↦ ?_⟩
-  · rw [FunLike.coe_smul]
-    exact (Seminorm.continuous_finsetSum fun j _ ↦ hqT j).const_smul _
+  · simpa using (Seminorm.continuous_finsetSum fun j _ ↦ hqT j).const_smul L
   obtain ⟨B, hB⟩ : ∃ B : ℝ, B = ∑ j ∈ Finset.range (n + 2), q j (T a) := ⟨_, rfl⟩
   obtain ⟨hB0, hBj⟩ := sum_range_nonneg_and_le (fun j ↦ apply_nonneg (q j) (T a)) (n + 2)
   rw [← hB] at hB0 hBj
   have hqB : (L • ∑ j ∈ Finset.range (n + 2), (q j).comp T.toLinearMap :
       Seminorm ℂ (Symbol n V W m)) a = L * B := by
-    rw [FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul, FunLike.coe_sum,
-      Finset.sum_apply, hB]
-    simp only [Seminorm.comp_apply, ContinuousLinearMap.coe_coe]
+    simp [hB, NNReal.smul_def]
   have hTa : T a = a.comp (besselPotential (-s)) := by rw [hT, compRightCLM_apply]
   have hbK (x : CoordinateSpace n) (hx : x ∉ K) (ξ : CoordinateSpace n) :
       (a.comp (besselPotential (-s) : Symbol n V V (-s))).coefficient (x, ξ) = 0 := by
