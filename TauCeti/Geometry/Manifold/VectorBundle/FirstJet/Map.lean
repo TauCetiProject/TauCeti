@@ -51,10 +51,11 @@ the value transformed by `Φ x` and the derivative by the product rule
   extension and the first-jet sequence, isomorphic bundles have isomorphic first-jet sequences.
 * `TauCeti.FirstJetBundle.coordChange_map`: the formula for `J¹Φ` above holds in the chart and
   trivializations at every point `i`, with the local representative of `Φ` at `i`.
-* `TauCeti.FirstJetBundle.contMDiffOn_map` and `TauCeti.FirstJetBundle.contMDiff_map`: if `Φ` is
-  a `C^(n+1)` section of the hom bundle, then `x ↦ J¹Φ x` is a `C^n` section of the bundle of
-  continuous linear maps from `J¹V₁` to `J¹V₂`. So a `C^(n+1)` morphism of vector bundles induces
-  a `C^n` morphism of their first-jet bundles.
+* `TauCeti.FirstJetBundle.contMDiffAt_map`, `TauCeti.FirstJetBundle.contMDiffOn_map` and
+  `TauCeti.FirstJetBundle.contMDiff_map`: if `Φ` is a `C^(n+1)` section of the hom bundle (at a
+  point, on an open set, or everywhere), then `x ↦ J¹Φ x` is a `C^n` section of the bundle of
+  continuous linear maps from `J¹V₁` to `J¹V₂` there. So a `C^(n+1)` morphism of vector bundles
+  induces a `C^n` morphism of their first-jet bundles.
 
 ## References
 
@@ -461,32 +462,33 @@ end Prolongation
 variable [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
 
 /-- **The prolongation of a `C^(n+1)` field of linear maps is a `C^n` bundle map.** If `Φ` is a
-`C^(n+1)` section of the hom bundle on an open set `U`, then `x ↦ J¹Φ x` is a `C^n` section of the
-bundle of continuous linear maps from `J¹V₁` to `J¹V₂` on `U`. -/
-theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M]
+`C^(n+1)` section of the hom bundle at `x₀`, then `x ↦ J¹Φ x` is a `C^n` section of the bundle of
+continuous linear maps from `J¹V₁` to `J¹V₂` at `x₀`. -/
+theorem contMDiffAt_map {n : ℕ∞ω} [IsManifold I (n + 1) M]
     [ContMDiffVectorBundle (n + 1) F₁ V₁ I] [ContMDiffVectorBundle (n + 1) F₂ V₂ I]
-    {Φ : ∀ x, V₁ x →L[𝕜] V₂ x} {U : Set M} (hU : IsOpen U)
-    (hΦ : ContMDiffOn I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) (n + 1)
-      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ V₁ y →L[𝕜] V₂ y) y (Φ y)) U) :
+    {Φ : ∀ x, V₁ x →L[𝕜] V₂ x} {x₀ : M}
+    (hΦ : ContMDiffAt I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) (n + 1)
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ V₁ y →L[𝕜] V₂ y) y (Φ y)) x₀) :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
     haveI : ContMDiffVectorBundle 1 F₁ V₁ I := .of_le (n := n + 1) le_add_self
     haveI : ContMDiffVectorBundle 1 F₂ V₂ I := .of_le (n := n + 1) le_add_self
-    ContMDiffOn I (I.prod 𝓘(𝕜, (F₁ × (E →L[𝕜] F₁)) →L[𝕜] F₂ × (E →L[𝕜] F₂))) n
+    ContMDiffAt I (I.prod 𝓘(𝕜, (F₁ × (E →L[𝕜] F₁)) →L[𝕜] F₂ × (E →L[𝕜] F₂))) n
       (fun y ↦ TotalSpace.mk' ((F₁ × (E →L[𝕜] F₁)) →L[𝕜] F₂ × (E →L[𝕜] F₂))
         (E := fun y ↦ FirstJetBundle I F₁ V₁ y →L[𝕜] FirstJetBundle I F₂ V₂ y) y
-        (map I F₁ F₂ Φ y)) U := by
+        (map I F₁ F₂ Φ y)) x₀ := by
   have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : ContMDiffVectorBundle 1 F₁ V₁ I := .of_le (n := n + 1) le_add_self
   have : ContMDiffVectorBundle 1 F₂ V₂ I := .of_le (n := n + 1) le_add_self
-  intro x₀ hx₀
   have h₁ := mem_baseSet_self (H := H) F₁ V₁ x₀
   have h₂ := mem_baseSet_self (H := H) F₂ V₂ x₀
   have hx₀' : x₀ ∈ (extChartAt I x₀).source := mem_extChartAt_source x₀
-  refine ContMDiffAt.contMDiffWithinAt ((contMDiffAt_hom_bundle _).2 ⟨contMDiffAt_id, ?_⟩)
+  -- `Φ` is `C^1`, hence differentiable, on a neighbourhood `u` of `x₀`.
+  obtain ⟨u, hu, hΦu⟩ :=
+    (contMDiffAt_iff_contMDiffOn_nhds (n := 1) (by simp)).1 (hΦ.of_le le_add_self)
+  refine (contMDiffAt_hom_bundle _).2 ⟨contMDiffAt_id, ?_⟩
   -- In the chart at `x₀`, the prolongation is the first-jet transformation with coefficients
   -- the local representative `g` of `Φ` and its derivative, which is `C^n`.
-  have hg := contDiffWithinAt_homLocalRep (hΦ.contMDiffAt (hU.mem_nhds hx₀)) h₁
-    (mem_baseSet_trivializationAt F₂ V₂ x₀)
+  have hg := contDiffWithinAt_homLocalRep hΦ h₁ (mem_baseSet_trivializationAt F₂ V₂ x₀)
   have hQ := (hg.of_le le_self_add).firstJetPullback (hg.fderivWithin_right I.uniqueDiffOn le_rfl
     (extChartAt_target_subset_range x₀ ((extChartAt I x₀).map_source hx₀')))
     (contDiffWithinAt_const (c := ContinuousLinearMap.id 𝕜 E))
@@ -499,9 +501,9 @@ theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M]
       contMDiffAt_extChartAt.contMDiffWithinAt fun x _ ↦ by
         rw [extChartAt_coe]; exact mem_range_self _
   refine hQ'.congr_of_eventuallyEq ?_
-  filter_upwards [hU.mem_nhds hx₀, (isOpen_baseSet F₁ V₁ x₀).mem_nhds h₁,
-    (isOpen_baseSet F₂ V₂ x₀).mem_nhds h₂] with y hyU hy₁ hy₂
-  have hΦy := ((hΦ y hyU).contMDiffAt (hU.mem_nhds hyU)).mdifferentiableAt (by simp)
+  filter_upwards [eventually_eventually_nhds.2 hu, (isOpen_baseSet F₁ V₁ x₀).mem_nhds h₁,
+    (isOpen_baseSet F₂ V₂ x₀).mem_nhds h₂] with y hyu hy₁ hy₂
+  have hΦy := (hΦu.contMDiffAt hyu).mdifferentiableAt (by simp)
   -- Read in the trivializations of the first-jet bundles at `x₀`, the prolongation is conjugated
   -- by first-jet coordinate changes.
   refine (VectorBundleCore.inCoordinates_eq (firstJetBundleCore I F₁ V₁)
@@ -517,6 +519,23 @@ theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M]
   exact (coordChange_map hΦy hy₁ hy₂ (coordChange I F₁ V₁ x₀ y y k)).trans (by
     rw [coordChange_comp_apply hy₁ (mem_baseSet_self F₁ V₁ y) hy₁, coordChange_self_apply hy₁])
 
+/-- **The prolongation of a `C^(n+1)` field of linear maps is a `C^n` bundle map.** If `Φ` is a
+`C^(n+1)` section of the hom bundle on an open set `U`, then `x ↦ J¹Φ x` is a `C^n` section of the
+bundle of continuous linear maps from `J¹V₁` to `J¹V₂` on `U`. -/
+theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [ContMDiffVectorBundle (n + 1) F₁ V₁ I] [ContMDiffVectorBundle (n + 1) F₂ V₂ I]
+    {Φ : ∀ x, V₁ x →L[𝕜] V₂ x} {U : Set M} (hU : IsOpen U)
+    (hΦ : ContMDiffOn I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) (n + 1)
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ V₁ y →L[𝕜] V₂ y) y (Φ y)) U) :
+    haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 F₁ V₁ I := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 F₂ V₂ I := .of_le (n := n + 1) le_add_self
+    ContMDiffOn I (I.prod 𝓘(𝕜, (F₁ × (E →L[𝕜] F₁)) →L[𝕜] F₂ × (E →L[𝕜] F₂))) n
+      (fun y ↦ TotalSpace.mk' ((F₁ × (E →L[𝕜] F₁)) →L[𝕜] F₂ × (E →L[𝕜] F₂))
+        (E := fun y ↦ FirstJetBundle I F₁ V₁ y →L[𝕜] FirstJetBundle I F₂ V₂ y) y
+        (map I F₁ F₂ Φ y)) U := fun _ hx ↦
+  (contMDiffAt_map (hΦ.contMDiffAt (hU.mem_nhds hx))).contMDiffWithinAt
+
 /-- **The prolongation of a `C^(n+1)` field of linear maps is a `C^n` bundle map.** -/
 theorem contMDiff_map {n : ℕ∞ω} [IsManifold I (n + 1) M]
     [ContMDiffVectorBundle (n + 1) F₁ V₁ I] [ContMDiffVectorBundle (n + 1) F₂ V₂ I]
@@ -529,9 +548,8 @@ theorem contMDiff_map {n : ℕ∞ω} [IsManifold I (n + 1) M]
     ContMDiff I (I.prod 𝓘(𝕜, (F₁ × (E →L[𝕜] F₁)) →L[𝕜] F₂ × (E →L[𝕜] F₂))) n
       fun y ↦ TotalSpace.mk' ((F₁ × (E →L[𝕜] F₁)) →L[𝕜] F₂ × (E →L[𝕜] F₂))
         (E := fun y ↦ FirstJetBundle I F₁ V₁ y →L[𝕜] FirstJetBundle I F₂ V₂ y) y
-        (map I F₁ F₂ Φ y) := by
-  rw [← contMDiffOn_univ] at hΦ ⊢
-  exact contMDiffOn_map isOpen_univ hΦ
+        (map I F₁ F₂ Φ y) :=
+  fun x₀ ↦ contMDiffAt_map (hΦ x₀)
 
 end FirstJetBundle
 
