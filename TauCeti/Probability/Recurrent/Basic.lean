@@ -70,8 +70,9 @@ often.
 
 The recurrence hypothesis of the Diaconis–Freedman theorem asks less: that the process return to
 its initial state infinitely often, the case `k = 0` of `recurrent_def`. In general this is strictly
-weaker, as the path `0, 1, 0, 2, 0, 3, …` shows. For a Markov exchangeable process started at a
-fixed state the two agree (`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`).
+weaker, as the path `0, 1, 0, 2, 0, 3, …` shows. For a Markov exchangeable process under a finite
+measure, started at a fixed state, the two agree
+(`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`).
 
 The body is not exposed; `recurrent_def` is the unfolding interface. -/
 def Recurrent (μ : Measure Ω) (X : ℕ → Ω → α) : Prop :=

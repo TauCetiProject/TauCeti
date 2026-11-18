@@ -478,16 +478,13 @@ theorem infinite_setOf_eq_of_forall_infinite_setOf_excursion_eq (h : {n | x n = 
   -- Time `k` lies in the excursion following the last visit to `a` before `k`.
   have hpos : 0 < visitCount x a k :=
     visitCount_pos_iff.2 ⟨0, Nat.pos_of_ne_zero fun hk0 => hk (hk0 ▸ h0), h0⟩
-  obtain ⟨t, ht, htc⟩ := exists_visitCount_of_infinite h (visitCount x a k)
   have hmem : x k ∈ excursion x a (visitCount x a k - 1) := by
     refine mem_excursion_iff.2 ⟨k, visitTime_lt_of_lt_visitCount (by omega), ?_, rfl⟩
-    rw [Nat.sub_add_cancel hpos, ← htc, visitTime_visitCount ht]
-    by_contra hle
-    rcases (not_lt.1 hle).lt_or_eq with hlt | rfl
-    · have hmono := visitCount_monotone x a (Nat.succ_le_of_lt hlt)
-      rw [visitCount_succ_of_eq ht, htc] at hmono
-      omega
-    · exact hk ht
+    rw [Nat.sub_add_cancel hpos]
+    have hle : k ≤ visitTime x a (visitCount x a k) := by
+      classical
+      simpa only [visitTime_def, visitCount_eq_count] using Nat.le_nth_count h k
+    exact hle.lt_of_ne fun hkt => hk (hkt ▸ apply_visitTime_of_infinite h _)
   -- Each repetition of that excursion visits `x k` again, after its own starting visit.
   refine Set.infinite_of_forall_exists_gt fun N => ?_
   obtain ⟨i, hi, hNi⟩ := (hexc (visitCount x a k - 1)).exists_gt N

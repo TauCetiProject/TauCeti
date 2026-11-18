@@ -30,9 +30,10 @@ to the exchangeable excursion process, as in
 `TauCeti.Probability.Exchangeability.Recurrence.Representation`.
 
 Returning to the initial state infinitely often is the recurrence hypothesis of the
-Diaconis–Freedman theorem. For a Markov exchangeable process started at a fixed state it implies
-recurrence in the sense of `TauCeti.Probability.Recurrent`, that every state the process visits is
-visited infinitely often (`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`).
+Diaconis–Freedman theorem. For a Markov exchangeable process under a finite measure, started at a
+fixed state, it implies recurrence in the sense of `TauCeti.Probability.Recurrent`, that every
+state the process visits is visited infinitely often
+(`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`).
 
 For a recurrent Markov chain itself the excursions are not merely exchangeable but i.i.d.
 (`TauCeti.Probability.Process.Excursion.MarkovChain`); in the language of de Finetti's theorem,
@@ -44,9 +45,9 @@ their directing measure is the constant excursion law.
   list of excursions does not change its probability.
 * `TauCeti.Probability.MarkovExchangeable.exchangeable_excursionProcess`: the excursions of a
   Markov exchangeable process that returns to its initial state infinitely often are exchangeable.
-* `TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`: a Markov exchangeable
-  process started at a fixed state and returning to it infinitely often visits each of its states
-  infinitely often.
+* `TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`: under a finite measure, a
+  Markov exchangeable process started at a fixed state and returning to it infinitely often visits
+  each of its states infinitely often.
 * `TauCeti.Probability.conditionallyIIDWith_excursionProcess`: the excursions of a recurrent
   Markov chain are conditionally i.i.d. with the constant excursion law as directing measure.
 
@@ -161,10 +162,10 @@ end Exchangeable
 /-! ## Recurrence from returns to the initial state -/
 
 /-- **A Markov exchangeable process that returns to its initial state infinitely often is
-recurrent.** If the process starts at `a₀` and returns to `a₀` infinitely often almost surely,
-then almost surely it visits each of its states infinitely often. The hypothesis is the recurrence
-hypothesis of the Diaconis–Freedman theorem; the conclusion is `TauCeti.Probability.Recurrent`,
-which asks this of every visited state. -/
+recurrent.** Under a finite measure, if the process starts at `a₀` and returns to `a₀` infinitely
+often almost surely, then almost surely it visits each of its states infinitely often. The
+hypothesis is the recurrence hypothesis of the Diaconis–Freedman theorem; the conclusion is
+`TauCeti.Probability.Recurrent`, which asks this of every visited state. -/
 theorem MarkovExchangeable.recurrent_of_ae_initial_eq [IsFiniteMeasure μ]
     (h : MarkovExchangeable μ X) (hret : ∀ᵐ ω ∂μ, {n | X n ω = a₀}.Infinite)
     (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀) : Recurrent μ X := by

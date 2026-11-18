@@ -24,9 +24,10 @@ change of variables that turns a row exchangeable array recording those successo
 mixture of Markov chains. This file supplies the missing hypothesis of that change of variables:
 for a recurrent Markov exchangeable process, the **visited successor array**
 `TauCeti.Probability.visitedSuccessorProcess`, whose rows at unvisited states are constant, is row
-exchangeable. A Markov exchangeable process started at a fixed state that returns to it infinitely
-often is recurrent (`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`), so the
-Diaconis--Freedman representation of such a process follows.
+exchangeable. Under a finite measure, a Markov exchangeable process started at a fixed state that
+returns to it infinitely often is recurrent
+(`TauCeti.Probability.MarkovExchangeable.recurrent_of_ae_initial_eq`), so the Diaconis--Freedman
+representation of such a process follows.
 
 ## The argument
 
