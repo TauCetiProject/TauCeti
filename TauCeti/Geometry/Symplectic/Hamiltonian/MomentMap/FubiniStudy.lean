@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
 public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
 public import TauCeti.LinearAlgebra.Projectivization.OnePoint
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
@@ -155,15 +156,11 @@ theorem fubiniStudyHeight_infty : fubiniStudyHeight ∞ = 1 := by
 `|z₁|² / (|z₀|² + |z₁|²)`, is `1` minus the height: the projector has trace `1`. -/
 theorem re_hermitianProjector_one_one (x : OnePoint ℂ) :
     (hermitianProjector (equivProjectivization ℂ x) 1 1).re = 1 - fubiniStudyHeight x := by
-  induction x using OnePoint.rec with
-  | infty => simp [rankOneHermitianProjector_apply, dotProduct, Fin.sum_univ_two]
-  | coe z =>
-    rw [equivProjectivization_apply_coe, hermitianProjector_mk _ (by simp),
-      rankOneHermitianProjector_apply, star_dotProduct_self_coe, fubiniStudyHeight_coe]
-    simp only [Matrix.cons_val_one, Matrix.cons_val_fin_one, star_one, mul_one, one_div,
-      ← Complex.ofReal_inv, Complex.ofReal_re]
-    field_simp
-    ring
+  have h := congrArg Complex.re (mem_hermitianProjectorLocus.1
+    (hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x))).2
+  rw [Matrix.trace_fin_two, Complex.add_re, Complex.one_re] at h
+  rw [fubiniStudyHeight]
+  linarith
 
 /-- The height at a finite point is `1 - (1 + |t|²)⁻¹`. -/
 theorem fubiniStudyHeight_coe_eq_one_sub (z : ℂ) :
@@ -227,30 +224,13 @@ theorem fubiniStudyHeight_eq_one_iff {x : OnePoint ℂ} :
 
 /-! ### Smoothness and the differential of the height -/
 
-/-- The derivative of `t ↦ (1 + |t|²)⁻¹` at `z` is `v ↦ -2 ⟪z, v⟫ / (1 + |z|²)²`. -/
-private theorem hasFDerivAt_inv_one_add_norm_sq (z : ℂ) :
-    HasFDerivAt (fun t : ℂ ↦ (1 + ‖t‖ ^ 2)⁻¹)
-      ((-(2 / (1 + ‖z‖ ^ 2) ^ 2)) • innerSL ℝ z) z := by
-  have hne : 1 + ‖z‖ ^ 2 ≠ 0 := by positivity
-  have h := (hasDerivAt_inv hne).comp_hasFDerivAt z
-    ((hasStrictFDerivAt_norm_sq z).hasFDerivAt.const_add 1)
-  refine h.congr_fderiv (ContinuousLinearMap.ext fun v ↦ ?_)
-  simp
-  ring
-
-private theorem contDiff_inv_one_add_norm_sq {n : WithTop ℕ∞} :
-    ContDiff ℝ n fun t : ℂ ↦ (1 + ‖t‖ ^ 2)⁻¹ :=
-  (contDiff_const.add (contDiff_norm_sq ℝ)).inv fun t ↦ by positivity
-
 /-- The height read in the affine chart at a finite point. -/
 private theorem fubiniStudyHeight_comp_extChartAt_coe_symm (z : ℂ) :
     fubiniStudyHeight ∘ (extChartAt 𝓘(ℝ, ℂ) (z : OnePoint ℂ)).symm =
       fun t ↦ 1 - (1 + ‖t‖ ^ 2)⁻¹ := by
   funext t
-  simp only [Function.comp_apply]
-  simp [chartAt_coe, affineChart_symm_apply]
-  field_simp
-  ring
+  simp [-fubiniStudyHeight_coe, chartAt_coe, affineChart_symm_apply,
+    fubiniStudyHeight_coe_eq_one_sub]
 
 /-- The height read in the inverted chart at `∞`. -/
 private theorem fubiniStudyHeight_comp_extChartAt_infty_symm :
@@ -263,31 +243,46 @@ private theorem fubiniStudyHeight_comp_extChartAt_infty_symm :
 coordinate and `(1 + |w|²)⁻¹` in the inverted coordinate. -/
 theorem contMDiff_fubiniStudyHeight {n : WithTop ℕ∞} :
     ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) n fubiniStudyHeight := by
+  -- `t ↦ (1 + |t|²)⁻¹` is the bracket power of exponent `-1`.
+  have h : ContDiff ℝ n fun t : ℂ ↦ (1 + ‖t‖ ^ 2)⁻¹ := by
+    simpa [Real.rpow_neg_one] using contDiff_one_add_norm_sq_rpow (E := ℂ) (-1) (n := n)
   intro x
   rw [contMDiffAt_iff_contDiffAt_comp_extChartAt_symm]
   induction x using OnePoint.rec with
   | infty =>
     rw [fubiniStudyHeight_comp_extChartAt_infty_symm]
-    exact contDiff_inv_one_add_norm_sq.contDiffAt
+    exact h.contDiffAt
   | coe z =>
     rw [fubiniStudyHeight_comp_extChartAt_coe_symm]
-    exact (contDiff_const.sub contDiff_inv_one_add_norm_sq).contDiffAt
+    exact (contDiff_const.sub h).contDiffAt
+
+/-- The differential of the height read in the preferred chart of its base point, whose target is
+all of `ℂ`. -/
+private theorem mvfderiv_fubiniStudyHeight_eq_fderiv (x : OnePoint ℂ) :
+    mvfderiv 𝓘(ℝ, ℂ) fubiniStudyHeight x =
+      fderiv ℝ (fubiniStudyHeight ∘ (extChartAt 𝓘(ℝ, ℂ) x).symm) (extChartAt 𝓘(ℝ, ℂ) x x) := by
+  have htarget : (extChartAt 𝓘(ℝ, ℂ) x).target = univ := by
+    induction x using OnePoint.rec with
+    | infty => simp [chartAt_infty, invChart_target]
+    | coe z => simp [chartAt_coe, affineChart_target]
+  rw [mvfderiv_eq_fderivWithin_extChartAt_target
+    ((contMDiff_fubiniStudyHeight (n := 1)).mdifferentiableAt one_ne_zero), htarget,
+    fderivWithin_univ]
 
 /-- The differential of the height at a finite point `z`: `dh(v) = 2 ⟪z, v⟫ / (1 + |z|²)²`. -/
+@[simp]
 theorem mvfderiv_fubiniStudyHeight_coe (z v : ℂ) :
     mvfderiv 𝓘(ℝ, ℂ) fubiniStudyHeight z v = 2 * ⟪z, v⟫_ℝ / (1 + ‖z‖ ^ 2) ^ 2 := by
-  rw [mvfderiv_eq_fderivWithin_extChartAt_target
-    ((contMDiff_fubiniStudyHeight (n := 1)).mdifferentiableAt one_ne_zero),
-    fubiniStudyHeight_comp_extChartAt_coe_symm]
-  have htarget : (extChartAt 𝓘(ℝ, ℂ) (z : OnePoint ℂ)).target = univ := by
-    simp [chartAt_coe, affineChart_target]
   have hz : extChartAt 𝓘(ℝ, ℂ) (z : OnePoint ℂ) z = z := by simp [chartAt_coe, affineChart_coe]
   have hd : fderiv ℝ (fun t : ℂ ↦ 1 - (1 + ‖t‖ ^ 2)⁻¹) z v =
       2 * ⟪z, v⟫_ℝ / (1 + ‖z‖ ^ 2) ^ 2 := by
-    rw [((hasFDerivAt_inv_one_add_norm_sq z).const_sub 1).fderiv]
+    have h := (hasFDerivAt_one_add_norm_sq_rpow (-1) z).const_sub 1
+    rw [show (-1 : ℝ) - 1 = -2 by norm_num, Real.rpow_neg (by positivity), Real.rpow_two] at h
+    simp only [Real.rpow_neg_one] at h
+    rw [h.fderiv]
     simp
     ring
-  rw [htarget, fderivWithin_univ, hz]
+  rw [mvfderiv_fubiniStudyHeight_eq_fderiv, fubiniStudyHeight_comp_extChartAt_coe_symm, hz]
   -- A tangent vector at `z` is read in the affine chart as the complex number `v`.
   exact hd
 
@@ -295,39 +290,12 @@ theorem mvfderiv_fubiniStudyHeight_coe (z v : ℂ) :
 @[simp]
 theorem mvfderiv_fubiniStudyHeight_infty :
     mvfderiv 𝓘(ℝ, ℂ) fubiniStudyHeight (∞ : OnePoint ℂ) = 0 := by
-  rw [mvfderiv_eq_fderivWithin_extChartAt_target
-    ((contMDiff_fubiniStudyHeight (n := 1)).mdifferentiableAt one_ne_zero),
-    fubiniStudyHeight_comp_extChartAt_infty_symm]
-  have htarget : (extChartAt 𝓘(ℝ, ℂ) (∞ : OnePoint ℂ)).target = univ := by
-    simp [chartAt_infty, invChart_target]
   have h0 : extChartAt 𝓘(ℝ, ℂ) (∞ : OnePoint ℂ) ∞ = 0 := by simp [chartAt_infty, invChart_infty]
-  have hd (v : ℂ) : fderiv ℝ (fun w : ℂ ↦ (1 + ‖w‖ ^ 2)⁻¹) 0 v = 0 := by
-    rw [(hasFDerivAt_inv_one_add_norm_sq 0).fderiv]
-    simp
-  rw [htarget, fderivWithin_univ, h0]
-  ext v
-  exact hd v
-
-/-- **The critical points of the height** are exactly the fixed points `0` and `∞` of the
-rotation. -/
-theorem mvfderiv_fubiniStudyHeight_eq_zero_iff {x : OnePoint ℂ} :
-    mvfderiv 𝓘(ℝ, ℂ) fubiniStudyHeight x = 0 ↔ x = (0 : ℂ) ∨ x = (∞ : OnePoint ℂ) := by
-  induction x using OnePoint.rec with
-  | infty => simp
-  | coe z =>
-    simp only [OnePoint.coe_ne_infty, or_false, OnePoint.coe_eq_coe]
-    refine ⟨fun h ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun (v : ℂ) ↦ ?_⟩
-    · -- Evaluate the vanishing differential on the tangent vector with coordinate `z`.
-      have hz : mvfderiv 𝓘(ℝ, ℂ) fubiniStudyHeight z z = 0 := by rw [h]; rfl
-      rw [mvfderiv_fubiniStudyHeight_coe, real_inner_self_eq_norm_sq] at hz
-      have : ‖z‖ ^ 2 = 0 := by
-        have hpos : 0 < (1 + ‖z‖ ^ 2) ^ 2 := by positivity
-        rw [div_eq_zero_iff, or_iff_left hpos.ne'] at hz
-        linarith
-      simpa using this
-    · subst h
-      rw [mvfderiv_fubiniStudyHeight_coe]
-      exact (by simp : 2 * ⟪(0 : ℂ), v⟫_ℝ / (1 + ‖(0 : ℂ)‖ ^ 2) ^ 2 = 0)
+  have hd : fderiv ℝ (fun w : ℂ ↦ (1 + ‖w‖ ^ 2)⁻¹) 0 = 0 := by
+    simpa [Real.rpow_neg_one] using (hasFDerivAt_one_add_norm_sq_rpow (E := ℂ) (-1) 0).fderiv
+  rw [mvfderiv_fubiniStudyHeight_eq_fderiv, fubiniStudyHeight_comp_extChartAt_infty_symm, h0]
+  -- The differential at `∞` is read in the inverted chart, whose model space is `ℂ`.
+  exact hd
 
 /-! ### The Hamiltonian identity -/
 
@@ -369,11 +337,20 @@ theorem isSymplectic_neg_two_pi_smul_fubiniStudyForm :
   isSymplectic_fubiniStudyForm.smul _ (neg_ne_zero.2 (by positivity))
 
 /-- The Hamiltonian vector field of the height for `-2π ω_FS` is the infinitesimal rotation. -/
+@[simp]
 theorem hamiltonianVectorField_fubiniStudyHeight :
     ((-(2 * Real.pi)) • fubiniStudyForm).hamiltonianVectorField fubiniStudyHeight =
       rotationVectorField :=
   (isSymplectic_neg_two_pi_smul_fubiniStudyForm.isNondegenerate.isHamiltonianVectorField_iff_eq.1
     isHamiltonianVectorField_rotationVectorField).symm
+
+/-- **The critical points of the height** are exactly the fixed points `0` and `∞` of the
+rotation, the zeros of its Hamiltonian vector field. -/
+theorem mvfderiv_fubiniStudyHeight_eq_zero_iff {x : OnePoint ℂ} :
+    mvfderiv 𝓘(ℝ, ℂ) fubiniStudyHeight x = 0 ↔ x = (0 : ℂ) ∨ x = (∞ : OnePoint ℂ) := by
+  rw [← isSymplectic_neg_two_pi_smul_fubiniStudyForm.isNondegenerate
+    |>.hamiltonianVectorField_eq_zero_iff, hamiltonianVectorField_fubiniStudyHeight,
+    rotationVectorField_eq_zero_iff]
 
 /-! ### The moment map of the diagonal torus -/
 
