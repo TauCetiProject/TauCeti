@@ -167,7 +167,7 @@ include hx
 
 /-- A point of the sphere lies on its own equator. -/
 theorem mk_self_mem_twoFieldEquators : (x, x) ∈ twoFieldEquators u v :=
-  ⟨hx.inner_vecCons_zero_one, hx.inner_vecCons_zero_two⟩
+  ⟨hx.inner_eq_zero_vecCons_zero_one, hx.inner_eq_zero_vecCons_zero_two⟩
 
 end Pointwise
 
@@ -179,20 +179,21 @@ include hx
 /-- The circle through `x` and `q` tangent to `v x` lies on the unit sphere. -/
 private theorem norm_tangentCircle_inner (θ : ℝ) :
     ‖tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) θ‖ = 1 :=
-  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) hx.norm_vecCons_two
-    hx.inner_vecCons_zero_two (norm_eq_of_mem_sphere xq.1.2) xq.2.2 θ
+  norm_tangentCircle (norm_eq_of_mem_sphere xq.1.1) hx.norm_eq_one_vecCons_two
+    hx.inner_eq_zero_vecCons_zero_two (norm_eq_of_mem_sphere xq.1.2) xq.2.2 θ
 
 /-- The circle through `x` and `q` tangent to `v x` is orthogonal to `u x`. -/
 private theorem inner_tangentCircle_inner (θ : ℝ) :
     ⟪tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) θ, u xq.1.1⟫ = 0 :=
-  inner_tangentCircle_eq_zero hx.inner_vecCons_zero_one
-    (inner_eq_zero_symm.1 hx.inner_vecCons_one_two) xq.2.1 θ
+  inner_tangentCircle_eq_zero hx.inner_eq_zero_vecCons_zero_one
+    (inner_eq_zero_symm.1 hx.inner_eq_zero_vecCons_one_two) xq.2.1 θ
 
 /-- The **inner circle** of the two-sphere of `(x, q)`: the circle through `x` and `q` tangent to
 `v x`, `s ↦ tangentCircle x (v x) q (2π s)`, as a loop at `x` in the equator of the sphere
 orthogonal to `u x`. -/
 def twoFieldInnerLoop :
-    Ω^ (Fin 1) (sphereEquator (u xq.1.1)) ⟨xq.1.1, mem_sphereEquator.2 hx.inner_vecCons_zero_one⟩
+    Ω^ (Fin 1) (sphereEquator (u xq.1.1))
+      ⟨xq.1.1, mem_sphereEquator.2 hx.inner_eq_zero_vecCons_zero_one⟩
     where
   val :=
     { toFun z := ⟨⟨tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) (2 * π * z 0),
@@ -219,8 +220,9 @@ include h hu hv
 `w` is the inner circle of `(x, q)`; this is `tangentCircleGenLoop` of `w` with the two cube
 coordinates exchanged. -/
 private def twoFieldSquare : C(twoFieldEquators u v × I^(Fin 2), sphere (0 : E) 1) where
-  toFun a := GenLoop.congr _ (Equiv.swap 0 1) (tangentCircleGenLoop (h a.1.1.1).norm_vecCons_one
-    (twoFieldInnerLoop a.1 (h a.1.1.1))) a.2
+  toFun a := GenLoop.congr _ (Equiv.swap 0 1)
+    (tangentCircleGenLoop (h a.1.1.1).norm_eq_one_vecCons_one
+      (twoFieldInnerLoop a.1 (h a.1.1.1))) a.2
   continuous_toFun := by
     refine continuous_induced_rng.2 (Continuous.congr (f := fun a ↦
       tangentCircle (a.1.1.1 : E) (u a.1.1.1)
@@ -241,7 +243,7 @@ private theorem factorsThrough_twoFieldSquare :
   · rfl
   · -- both boundary points go to the base point of the generalized loop defining the square
     have hb := GenLoop.boundary (GenLoop.congr _ (Equiv.swap 0 1)
-      (tangentCircleGenLoop (h xq.1.1).norm_vecCons_one (twoFieldInnerLoop xq (h xq.1.1))))
+      (tangentCircleGenLoop (h xq.1.1).norm_eq_one_vecCons_one (twoFieldInnerLoop xq (h xq.1.1))))
     exact (hb y hy).trans (hb y' hy').symm
 
 /-- **The family of two-spheres of two orthonormal tangent fields** (Barraud–Damian–Humilière–
@@ -258,7 +260,7 @@ coordinates exchanged so that the first one runs along the inner circle. -/
 theorem twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y : I^(Fin 2)) :
     twoFieldSphereFamily h hu hv xq (sphereCollapse 2 Sphere2.north y) =
       GenLoop.congr _ (Equiv.swap 0 1) (tangentCircleGenLoop
-        (h xq.1.1).norm_vecCons_one (twoFieldInnerLoop xq (h xq.1.1))) y :=
+        (h xq.1.1).norm_eq_one_vecCons_one (twoFieldInnerLoop xq (h xq.1.1))) y :=
   DFunLike.congr_fun ((isQuotientMap_prodMap_id_sphereCollapse 2
     Sphere2.north _).lift_comp _ (factorsThrough_twoFieldSquare h hu hv)) (xq, y)
 

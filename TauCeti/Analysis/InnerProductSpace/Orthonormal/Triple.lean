@@ -11,10 +11,10 @@ public import Mathlib.Analysis.InnerProductSpace.Orthonormal
 # Orthonormal triples
 
 The relations of an orthonormal triple `![a, b, c]`, read off by index: each vector is a unit
-vector (`Orthonormal.norm_vecCons_zero`, `Orthonormal.norm_vecCons_one`,
-`Orthonormal.norm_vecCons_two`) and any two distinct vectors are orthogonal
-(`Orthonormal.inner_vecCons_zero_one`, `Orthonormal.inner_vecCons_zero_two`,
-`Orthonormal.inner_vecCons_one_two`).
+vector (`Orthonormal.norm_eq_one_vecCons_zero`, `Orthonormal.norm_eq_one_vecCons_one`,
+`Orthonormal.norm_eq_one_vecCons_two`) and any two distinct vectors are orthogonal
+(`Orthonormal.inner_eq_zero_vecCons_zero_one`, `Orthonormal.inner_eq_zero_vecCons_zero_two`,
+`Orthonormal.inner_eq_zero_vecCons_one_two`).
 -/
 
 public section
@@ -28,27 +28,27 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 include h
 
 /-- The first vector of an orthonormal triple is a unit vector. -/
-theorem norm_vecCons_zero : ‖a‖ = 1 := by
+theorem norm_eq_one_vecCons_zero : ‖a‖ = 1 := by
   simpa using h.norm_eq_one 0
 
 /-- The second vector of an orthonormal triple is a unit vector. -/
-theorem norm_vecCons_one : ‖b‖ = 1 := by
+theorem norm_eq_one_vecCons_one : ‖b‖ = 1 := by
   simpa using h.norm_eq_one 1
 
 /-- The third vector of an orthonormal triple is a unit vector. -/
-theorem norm_vecCons_two : ‖c‖ = 1 := by
+theorem norm_eq_one_vecCons_two : ‖c‖ = 1 := by
   simpa using h.norm_eq_one 2
 
 /-- The first two vectors of an orthonormal triple are orthogonal. -/
-theorem inner_vecCons_zero_one : ⟪a, b⟫_𝕜 = 0 := by
+theorem inner_eq_zero_vecCons_zero_one : ⟪a, b⟫_𝕜 = 0 := by
   simpa using h.inner_eq_zero (by decide : (0 : Fin 3) ≠ 1)
 
 /-- The first and third vectors of an orthonormal triple are orthogonal. -/
-theorem inner_vecCons_zero_two : ⟪a, c⟫_𝕜 = 0 := by
+theorem inner_eq_zero_vecCons_zero_two : ⟪a, c⟫_𝕜 = 0 := by
   simpa using h.inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)
 
 /-- The last two vectors of an orthonormal triple are orthogonal. -/
-theorem inner_vecCons_one_two : ⟪b, c⟫_𝕜 = 0 := by
+theorem inner_eq_zero_vecCons_one_two : ⟪b, c⟫_𝕜 = 0 := by
   simpa using h.inner_eq_zero (by decide : (1 : Fin 3) ≠ 2)
 
 end Orthonormal

@@ -206,10 +206,11 @@ private theorem norm_twoFieldPoint (p : SphereBundleTwoFieldEquators F E u v) (�
     ‖twoFieldPoint p θ₀ θ₁‖ = 1 := by
   have hx : ‖(p.base : TotalSpace F E).2‖ = 1 := mem_sphereBundle.1 p.base.2
   have h := h p.base
-  exact norm_tangentCircle hx h.norm_vecCons_one h.inner_vecCons_zero_one
-    (norm_tangentCircle hx h.norm_vecCons_two h.inner_vecCons_zero_two p.norm_vec p.inner_vec_v θ₀)
-    (inner_tangentCircle_eq_zero h.inner_vecCons_zero_one
-      (inner_eq_zero_symm.1 h.inner_vecCons_one_two) p.inner_vec_u θ₀) θ₁
+  exact norm_tangentCircle hx h.norm_eq_one_vecCons_one h.inner_eq_zero_vecCons_zero_one
+    (norm_tangentCircle hx h.norm_eq_one_vecCons_two h.inner_eq_zero_vecCons_zero_two p.norm_vec
+      p.inner_vec_v θ₀)
+    (inner_tangentCircle_eq_zero h.inner_eq_zero_vecCons_zero_one
+      (inner_eq_zero_symm.1 h.inner_eq_zero_vecCons_one_two) p.inner_vec_u θ₀) θ₁
 
 omit h in
 /-- On the boundary of the square, the two-sphere of `(x, w)` is at `x`. -/
@@ -413,8 +414,8 @@ theorem sphereBundleProj_sphereBundleTwoFieldSphereFamily
 @[simp]
 theorem sphereBundleTwoFieldSphereFamily_diag (x : sphereBundle F E) :
     sphereBundleTwoFieldSphereFamily h hu hv
-        (SphereBundleTwoFieldEquators.diag (fun x ↦ (h x).inner_vecCons_zero_one)
-          (fun x ↦ (h x).inner_vecCons_zero_two) x) =
+        (SphereBundleTwoFieldEquators.diag (fun x ↦ (h x).inner_eq_zero_vecCons_zero_one)
+          (fun x ↦ (h x).inner_eq_zero_vecCons_zero_two) x) =
       ContinuousMap.const Sphere2 x := by
   ext z : 1
   obtain ⟨y, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north z
