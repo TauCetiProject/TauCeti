@@ -140,7 +140,10 @@ private theorem norm_le_one_of_not {w : ℂ} (hL : 1 ≤ L)
       Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
     linarith
   simp only [not_and_or, not_not] at hw
-  rcases hw with (rfl | rfl) | rfl <;> simp [hψ]
+  rcases hw with (rfl | rfl) | rfl
+  · simp
+  · simp
+  · exact hψ
 
 /-- **The missing points.** For `L ≥ 1` and `0 ≤ c ≤ 1`, at the points `0`, `1` and `ψ(1)` missing
 from the four-punctured sphere, every member of the family is `J₀`. -/
