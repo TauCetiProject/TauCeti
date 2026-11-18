@@ -154,7 +154,7 @@ its drift is integrable on every interval `[0, t]`, and for every time `t` and i
 Only the increments of `b` enter, so `X` starts at `x` whatever `b(0)` is. -/
 structure IsDysonPath (β : ℝ) (n : ℕ) (x : Fin n → ℝ) (b : Fin n → ℝ≥0 → ℝ)
     (X : ℝ≥0 → Fin n → ℝ) : Prop where
-  /-- The parameter `β` is positive, so that the noise coefficient `√(2 / (β n))` is defined. -/
+  /-- The parameter `β` is positive, the regime of the Dyson system. -/
   beta_pos : 0 < β
   /-- The path is continuous. -/
   continuous : Continuous X
@@ -184,13 +184,14 @@ theorem continuousOn_dysonDrift (hX : IsDysonPath β n x b X) (i : Fin n) :
   exact ((continuous_apply i).continuousAt.comp ((continuousAt_dysonDrift
     (hX.strictAnti _ (Real.toNNReal_pos.2 hs)).injective).comp (x := s) h)).continuousWithinAt
 
-/-- The difference of two solutions of the Dyson system driven by the same path is
-differentiable at positive times, with derivative the difference of their drifts. -/
-theorem hasDerivAt_sub (hX : IsDysonPath β n x b X) (hY : IsDysonPath β n x b Y) (i : Fin n)
-    {s : ℝ} (hs : 0 < s) :
+/-- The difference of two solutions of the Dyson system driven by the same path, from possibly
+different starts, is differentiable at positive times, with derivative the difference of their
+drifts. -/
+theorem hasDerivAt_sub {y : Fin n → ℝ} (hX : IsDysonPath β n x b X) (hY : IsDysonPath β n y b Y)
+    (i : Fin n) {s : ℝ} (hs : 0 < s) :
     HasDerivAt (fun r : ℝ ↦ X r.toNNReal i - Y r.toNNReal i)
       (dysonDrift n (X s.toNNReal) i - dysonDrift n (Y s.toNNReal) i) s := by
-  have hFTC {Z : ℝ≥0 → Fin n → ℝ} (hZ : IsDysonPath β n x b Z) :
+  have hFTC {z : Fin n → ℝ} {Z : ℝ≥0 → Fin n → ℝ} (hZ : IsDysonPath β n z b Z) :
       HasDerivAt (fun r ↦ ∫ u in (0 : ℝ)..r, dysonDrift n (Z u.toNNReal) i)
         (dysonDrift n (Z s.toNNReal) i) s := by
     have h := hZ.intervalIntegrable s.toNNReal i
@@ -198,7 +199,7 @@ theorem hasDerivAt_sub (hX : IsDysonPath β n x b X) (hY : IsDysonPath β n x b 
     exact intervalIntegral.integral_hasDerivAt_right h
       ((hZ.continuousOn_dysonDrift i).stronglyMeasurableAtFilter isOpen_Ioi s hs)
       ((hZ.continuousOn_dysonDrift i).continuousAt (isOpen_Ioi.mem_nhds hs))
-  refine ((hFTC hX).fun_sub (hFTC hY)).congr_of_eventuallyEq ?_
+  refine (((hFTC hX).fun_sub (hFTC hY)).const_add (x i - y i)).congr_of_eventuallyEq ?_
   filter_upwards [isOpen_Ioi.mem_nhds hs] with r (hr : 0 < r)
   rw [hX.apply_eq, hY.apply_eq, Real.coe_toNNReal _ hr.le]
   ring
@@ -264,6 +265,7 @@ def IsDysonSolution (β : ℝ) (n : ℕ) (x : Fin n → ℝ) (P : Measure Ω)
   ∀ᵐ ω ∂P, IsDysonPath β n x (fun i t ↦ B i t ω) (fun t ↦ X t ω)
 
 /-- A solution of the Dyson system is a process almost every path of which solves it. -/
+@[simp]
 theorem isDysonSolution_iff {β : ℝ} {x : Fin n → ℝ} {P : Measure Ω} {B : Fin n → ℝ≥0 → Ω → ℝ}
     {X : ℝ≥0 → Ω → Fin n → ℝ} :
     IsDysonSolution β n x P B X ↔
