@@ -47,8 +47,10 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
-* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
-  the same Gauss-norm bound, even across different coefficient rings.
+* `MvPowerSeries.IsRestricted.of_norm_coeff_le` and
+  `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound against a
+  restricted series preserves restrictedness and gives the same Gauss-norm bound, even across
+  different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
@@ -125,6 +127,18 @@ theorem IsRestricted.hasGaussNorm {c : σ → ℝ} {f : MvPowerSeries σ R}
 /-- The weights `∏ i, |c i| ^ t i` of the absolute polyradii are nonnegative. -/
 theorem prod_abs_pow_nonneg {c : σ → ℝ} (t : σ →₀ ℕ) : 0 ≤ t.prod (|c| · ^ ·) :=
   Finset.prod_nonneg fun _ _ ↦ pow_nonneg (abs_nonneg _) _
+
+/-- If each coefficient norm of `f` is bounded by `C` times the corresponding coefficient norm of a
+restricted series `g`, then `f` is restricted at the same polyradius. Neither positivity of the
+polyradii nor ultrametricity is needed, and the two series may have different coefficient rings. -/
+theorem IsRestricted.of_norm_coeff_le {S : Type*} [NormedRing S] {c : σ → ℝ}
+    {f : MvPowerSeries σ R} {g : MvPowerSeries σ S} {C : ℝ} (hg : IsRestricted c g)
+    (h : ∀ t, ‖coeff t f‖ ≤ C * ‖coeff t g‖) : IsRestricted c f := by
+  rw [← isRestricted_abs_iff, IsRestricted] at hg ⊢
+  refine tendsto_const_nhds.squeeze (mul_zero C ▸ hg.const_mul C)
+    (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t)) fun t ↦ ?_
+  rw [← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (h t) (prod_abs_pow_nonneg t)
 
 /-- Decreasing the polyradius `c` to `c'`, the weight of an exponent drops at least by the factor
 `(c'ᵢ / cᵢ) ^ νᵢ` coming from the variable `Xᵢ`. -/
