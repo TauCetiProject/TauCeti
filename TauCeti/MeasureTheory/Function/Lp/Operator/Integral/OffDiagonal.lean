@@ -27,7 +27,7 @@ The kernel need not be integrable near the diagonal, and the operator, not the k
 primitive datum. This file shows that the kernel is nevertheless determined by the operator off
 the diagonal: two kernels representing the same operator in this sense agree `μ ⊗ μ`-almost
 everywhere on the complement of the diagonal
-(`ContinuousLinearMap.uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral`). On the diagonal
+(`TauCeti.uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral`). On the diagonal
 nothing can be said: the representation never evaluates a kernel there, and the identity is
 represented by the zero kernel. The diagonal is `μ ⊗ μ`-null when `μ` has no atoms, but not in
 general.
@@ -194,17 +194,16 @@ theorem uncurry_ae_eq_zero_restrict_compl_diagonal_of_forall_ae_setIntegral_clos
   have hk0 := hnorm (k x y) (mem_range_self (x, y))
   rwa [himg, csSup_singleton, norm_eq_zero] at hk0
 
-end TauCeti
-
-/-- **The kernel of a singular integral operator is determined off the diagonal.** Let
-`T : Lᵖ(μ; H) → L^q(μ; K)` be a bounded operator given away from the support of its argument by
-each of two kernels `k` and `k'`: whenever `f` vanishes off a compact set `s`,
-`T f x = ∫ k x y (f y) dμ(y) = ∫ k' x y (f y) dμ(y)` for almost every `x ∉ s`. If both kernels are
-strongly measurable and locally integrable in their second variable away from the first, then
-`k = k'` almost everywhere off the diagonal, for the product measure `μ ⊗ μ`. -/
-theorem ContinuousLinearMap.uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral
-    {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (T : Lp H p μ →L[𝕜] Lp K q μ)
-    {k k' : α → α → H →L[𝕜] K}
+/-- **The kernel of a singular integral operator is determined off the diagonal.** Let `T` send
+each `f ∈ Lᵖ(μ; H)` to a function `α → K`, for instance a bounded operator
+`Lᵖ(μ; H) → L^q(μ; K)` followed by the coercion to functions, and let `T` be given away from the
+support of its argument by each of two kernels `k` and `k'`: whenever `f` vanishes off a compact
+set `s`, `T f x = ∫ k x y (f y) dμ(y) = ∫ k' x y (f y) dμ(y)` for almost every `x ∉ s`. If both
+kernels are strongly measurable and locally integrable in their second variable away from the
+first, then `k = k'` almost everywhere off the diagonal, for the product measure `μ ⊗ μ`.
+Neither linearity nor boundedness of `T` is needed. -/
+theorem uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integral
+    {p : ℝ≥0∞} (T : Lp H p μ → α → K) {k k' : α → α → H →L[𝕜] K}
     (hkm : StronglyMeasurable (uncurry k)) (hk'm : StronglyMeasurable (uncurry k'))
     (hk : ∀ x, LocallyIntegrableOn (k x) {x}ᶜ μ) (hk' : ∀ x, LocallyIntegrableOn (k' x) {x}ᶜ μ)
     (hrep : ∀ (f : Lp H p μ) (s : Set α), IsCompact s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
@@ -212,9 +211,8 @@ theorem ContinuousLinearMap.uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integ
     (hrep' : ∀ (f : Lp H p μ) (s : Set α), IsCompact s → (∀ᵐ x ∂μ, x ∉ s → f x = 0) →
       ∀ᵐ x ∂μ, x ∉ s → T f x = ∫ y, k' x y (f y) ∂μ) :
     uncurry k =ᵐ[(μ.prod μ).restrict (diagonal α)ᶜ] uncurry k' := by
-  refine
-    (TauCeti.uncurry_ae_eq_zero_restrict_compl_diagonal_of_forall_ae_setIntegral_closedBall_eq_zero
-      (k := fun x y ↦ k x y - k' x y) (hkm.sub hk'm) (fun x ↦ (hk x).sub (hk' x))
+  refine (uncurry_ae_eq_zero_restrict_compl_diagonal_of_forall_ae_setIntegral_closedBall_eq_zero
+    (k := fun x y ↦ k x y - k' x y) (hkm.sub hk'm) (fun x ↦ (hk x).sub (hk' x))
       fun c ρ v ↦ ?_).mono fun _ hp ↦ sub_eq_zero.1 hp
   -- Test the operator against `f = 1_B v` for the closed ball `B = closedBall c ρ`.
   set f : Lp H p μ := indicatorConstLp p measurableSet_closedBall
@@ -232,5 +230,7 @@ theorem ContinuousLinearMap.uncurry_ae_eq_restrict_compl_diagonal_of_ae_eq_integ
   have h₁₂ := (h₁ hx).symm.trans (h₂ hx)
   rw [hint, hint] at h₁₂
   simp only [sub_apply]
-  rw [integral_sub (TauCeti.integrableOn_closedBall_apply hk hx v)
-    (TauCeti.integrableOn_closedBall_apply hk' hx v), h₁₂, sub_self]
+  rw [integral_sub (integrableOn_closedBall_apply hk hx v)
+    (integrableOn_closedBall_apply hk' hx v), h₁₂, sub_self]
+
+end TauCeti
