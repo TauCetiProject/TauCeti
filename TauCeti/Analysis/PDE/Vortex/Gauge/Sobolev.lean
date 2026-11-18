@@ -88,24 +88,28 @@ section apply
 variable (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (v : H^{(k : ℝ) + 1 + 1}(ℂ))
 
 /-- The first connection component of `sobolevGaugeDirection`. -/
+@[simp]
 theorem sobolevGaugeDirection_apply_zero :
     sobolevGaugeDirection f m hk y v 0 =
       -lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 v :=
   (rfl)
 
 /-- The second connection component of `sobolevGaugeDirection`. -/
+@[simp]
 theorem sobolevGaugeDirection_apply_one :
     sobolevGaugeDirection f m hk y v 1 =
       -lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I v :=
   (rfl)
 
 /-- The real section component of `sobolevGaugeDirection`. -/
+@[simp]
 theorem sobolevGaugeDirection_apply_two :
     sobolevGaugeDirection f m hk y v 2 =
       -fieldMulOrderPreservingCLM f m hk y 3 (inclusion (lt_add_one _).le v) :=
   (rfl)
 
 /-- The imaginary section component of `sobolevGaugeDirection`. -/
+@[simp]
 theorem sobolevGaugeDirection_apply_three :
     sobolevGaugeDirection f m hk y v 3 =
       fieldMulOrderPreservingCLM f m hk y 2 (inclusion (lt_add_one _).le v) :=
@@ -170,6 +174,7 @@ def sobolevGaugeAdjoint (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :
   D 1 0 + D I 1 + X 2 3 - X 3 2
 
 /-- The defining formula of `sobolevGaugeAdjoint`. -/
+@[simp]
 theorem sobolevGaugeAdjoint_apply (hk : 1 ≤ k) (y h : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :
     sobolevGaugeAdjoint f m hk y h =
       lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 (h 0) +
@@ -270,8 +275,19 @@ theorem contDiff_sobolevGaugeDirection (hk : 1 ≤ k) :
   let T : (Fin 4 → H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ)) →L[ℂ]
       H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :=
     (piEquivL ℂ _ _ : _ ≃L[ℂ] _).toContinuousLinearMap
+  let D (v : ℂ) : H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
+    lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v
+  let X (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) :
+      H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
+    (fieldMulOrderPreservingCLM f m hk y a).comp (inclusion (lt_add_one _).le)
+  -- The operator is `T` applied to its four components, of which only the last two vary.
+  have hT : sobolevGaugeDirection f m hk = fun y ↦ T ![-D 1, -D I, -X y 3, X y 2] := by
+    funext y
+    ext v i : 2
+    fin_cases i <;> simp [T, D, X]
+  rw [hT]
   refine T.contDiff.comp (contDiff_pi' fun i ↦ ?_)
-  fin_cases i
+  fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val]
   · exact contDiff_const
   · exact contDiff_const
   · exact ((contDiff_fieldMulOrderPreservingCLM hk 3).clm_comp contDiff_const).neg
@@ -279,10 +295,19 @@ theorem contDiff_sobolevGaugeDirection (hk : 1 ≤ k) :
 
 /-- **The adjoint gauge action depends analytically on the field.** -/
 theorem contDiff_sobolevGaugeAdjoint (hk : 1 ≤ k) : ContDiff ℂ ω (sobolevGaugeAdjoint f m hk) := by
-  have hX (a b : Fin 4) : ContDiff ℂ ω fun y : Fin 4 → H^{(k : ℝ) + 1}(ℂ) ↦
-      (fieldMulCLM f m hk y a).comp
-        (proj (R := ℂ) (φ := fun _ : Fin 4 ↦ H^{(k : ℝ) + 1}(ℂ)) b) :=
+  let D (v : ℂ) (b : Fin 4) : (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
+    (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v).comp (proj b)
+  let X (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a b : Fin 4) :
+      (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
+    (fieldMulCLM f m hk y a).comp (proj b)
+  -- The derivative terms do not depend on the field; the multiplication terms do.
+  have hA : sobolevGaugeAdjoint f m hk = fun y ↦ D 1 0 + D I 1 + X y 2 3 - X y 3 2 := by
+    funext y
+    ext h
+    simp [D, X]
+  have hX (a b : Fin 4) : ContDiff ℂ ω fun y ↦ X y a b :=
     (contDiff_fieldMulCLM hk a).clm_comp contDiff_const
+  rw [hA]
   exact ((contDiff_const.add contDiff_const).add (hX 2 3)).sub (hX 3 2)
 
 /-- **The gauge-fixed operator depends analytically on the field.** As a map from the
@@ -294,8 +319,18 @@ theorem contDiff_sobolevScaleGaugeFixedOperator (hk : 1 ≤ k) :
   let T : (Fin 4 → (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ)) →L[ℂ]
       (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] (Fin 4 → H^{(k : ℝ)}(ℂ)) :=
     (piEquivL ℂ _ _ : _ ≃L[ℂ] _).toContinuousLinearMap
+  let P (i : Fin 3) : (Fin 3 → H^{(k : ℝ)}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ) := proj i
+  -- The operator is `T` applied to its four rows.
+  have hT : sobolevScaleGaugeFixedOperator f m hk = fun y ↦
+      T ![sobolevGaugeAdjoint f m hk y, (P 0).comp (sobolevLinearizedEquation f m hk y),
+        (P 1).comp (sobolevLinearizedEquation f m hk y),
+        (P 2).comp (sobolevLinearizedEquation f m hk y)] := by
+    funext y
+    ext h i : 2
+    fin_cases i <;> simp [T, P, -sobolevGaugeAdjoint_apply]
+  rw [hT]
   refine T.contDiff.comp (contDiff_pi' fun i ↦ ?_)
-  fin_cases i
+  fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val]
   · exact contDiff_sobolevGaugeAdjoint hk
   · exact contDiff_const.clm_comp hL
   · exact contDiff_const.clm_comp hL
