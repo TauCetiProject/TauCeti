@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Semigroups.CauchyProblem.Inhomogeneous
 public import TauCeti.Analysis.Semigroups.Group.Unitary
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.LinearAlgebra.LinearPMap.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Weak solutions of the Cauchy problem for a unitary group
@@ -71,20 +72,8 @@ private theorem integrableOn_Ioc_of_continuousOn {X : Type*} [NormedAddCommGroup
     (hf : ContinuousOn f (Ici 0)) (t : ℝ) : IntegrableOn f (Ioc 0 t) :=
   ((hf.mono Icc_subset_Ici_self).integrableOn_compact isCompact_Icc).mono_set Ioc_subset_Icc_self
 
-/-- A function locally integrable on `[0, ∞)` is integrable on every `(0, t]`. -/
-private theorem integrableOn_Ioc_of_locallyIntegrableOn {X : Type*} [NormedAddCommGroup X]
-    {f : ℝ → X} (hf : LocallyIntegrableOn f (Ici 0)) (t : ℝ) : IntegrableOn f (Ioc 0 t) :=
-  (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set Ioc_subset_Icc_self
-
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {U : StronglyContinuousGroup H} {F : ℝ → H} {x : H} {u : ℝ → H}
-
-omit [CompleteSpace H] in
-/-- The real generator of a unitary group, through which mild solutions are defined, is the real
-restriction of its complex generator. -/
-private theorem toSemigroup_generator_eq (hU : U.IsUnitary) :
-    U.toSemigroup.generator = (U.complexGenerator hU).restrictScalars ℝ := by
-  rw [complexGenerator_restrictScalars, generator_def]
 
 /-- **A mild solution is a weak solution.** If `u` is a mild solution of `u' = A u + F`,
 `u(0) = x`, for the generator `A` of a unitary group, then for every `ψ` in the domain of `A`
@@ -94,7 +83,7 @@ theorem inner_eq_of_isForcedMildSolution (hU : U.IsUnitary)
     (ψ : (U.complexGenerator hU).domain) {t : ℝ} (ht : 0 ≤ t) :
     ⟪(ψ : H), u t⟫_ℂ = ⟪(ψ : H), x⟫_ℂ - (∫ s in Ioc 0 t, ⟪U.complexGenerator hU ψ, u s⟫_ℂ) +
       ∫ s in Ioc 0 t, ⟪(ψ : H), F s⟫_ℂ := by
-  rw [toSemigroup_generator_eq hU] at hu
+  rw [← generator_def, ← U.complexGenerator_restrictScalars hU] at hu
   have hv := hu.integral_mem_domain ht
   have hA := hu.map_integral_eq_sub ht
   rw [LinearPMap.restrictScalars_apply] at hA
@@ -105,7 +94,7 @@ theorem inner_eq_of_isForcedMildSolution (hU : U.IsUnitary)
       ⟪U.complexGenerator hU ψ, ∫ s in Ioc 0 t, u s⟫_ℂ :=
     integral_inner (integrableOn_Ioc_of_continuousOn hu.continuousOn t) _
   have hiF : ∫ s in Ioc 0 t, ⟪(ψ : H), F s⟫_ℂ = ⟪(ψ : H), ∫ s in Ioc 0 t, F s⟫_ℂ :=
-    integral_inner (integrableOn_Ioc_of_locallyIntegrableOn hu.locallyIntegrableOn t) _
+    integral_inner (hu.locallyIntegrableOn.integrableOn_Ioc_of_Ici t) _
   have hvA : U.complexGenerator hU v = u t - x - ∫ s in Ioc 0 t, F s := hA
   rw [hvA, inner_sub_right, inner_sub_right] at hskew
   change ⟪U.complexGenerator hU ψ, ∫ s in Ioc 0 t, u s⟫_ℂ = _ at hskew
@@ -134,7 +123,7 @@ private theorem exists_mem_domain_complexGenerator_eq (hU : U.IsUnitary)
     have hiu : ∫ s in Ioc 0 t, ⟪A ψ, u s⟫_ℂ = ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ :=
       integral_inner (integrableOn_Ioc_of_continuousOn hu t) _
     have hiF : ∫ s in Ioc 0 t, ⟪(ψ : H), F s⟫_ℂ = ⟪(ψ : H), ∫ s in Ioc 0 t, F s⟫_ℂ :=
-      integral_inner (integrableOn_Ioc_of_locallyIntegrableOn hF t) _
+      integral_inner (hF.integrableOn_Ioc_of_Ici t) _
     have hval : ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ = -⟪(ψ : H), w⟫_ℂ := by
       simp only [w, inner_sub_right]
       rw [← hiu, ← hiF]
@@ -167,7 +156,7 @@ theorem isForcedMildSolution_of_forall_inner_eq (hU : U.IsUnitary)
       ⟪(ψ : H), u t⟫_ℂ = ⟪(ψ : H), x⟫_ℂ - (∫ s in Ioc 0 t, ⟪U.complexGenerator hU ψ, u s⟫_ℂ) +
         ∫ s in Ioc 0 t, ⟪(ψ : H), F s⟫_ℂ) :
     IsForcedMildSolution U.toSemigroup.generator F x u := by
-  rw [toSemigroup_generator_eq hU]
+  rw [← generator_def, ← U.complexGenerator_restrictScalars hU]
   have key (t : ℝ) (ht : 0 ≤ t) :=
     exists_mem_domain_complexGenerator_eq hU hF hu fun ψ ↦ h ψ t ht
   refine isForcedMildSolution_iff.2 ⟨inferInstance, hF, hu, ?_, fun t ht ↦ ?_⟩
