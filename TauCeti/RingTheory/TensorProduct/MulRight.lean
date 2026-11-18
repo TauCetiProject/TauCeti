@@ -28,8 +28,7 @@ variable {R A B : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B
 by `a` with the identity of `B`. -/
 theorem rTensor_mulRight_apply (a : A) (x : A ⊗[R] B) :
     (LinearMap.mulRight R a).rTensor B x = x * (a ⊗ₜ[R] 1) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul a' b => simp [Algebra.TensorProduct.tmul_mul_tmul]
-  | add x y hx hy => rw [map_add, hx, hy, add_mul]
+  simpa [LinearMap.mulRight_one, LinearMap.rTensor_def] using
+    (LinearMap.congr_fun (LinearMap.mulRight_tmul (R := R) a (1 : B)) x).symm
 
 end LinearMap
