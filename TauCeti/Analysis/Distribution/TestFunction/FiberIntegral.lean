@@ -29,10 +29,10 @@ linear map `𝓓(Ω, ℝ) →L[ℝ] 𝓓(Ω', ℝ)` (`TestFunction.fiberIntegral
 `f '' supp φ` (`TestFunction.tsupport_fiberIntegralCLM_subset`). Its transpose pulls distributions
 back along `f`, see `TauCeti.Analysis.Distribution.Submersion`.
 
-When `f` is a diffeomorphism the fibres are points, and `f_♯` is the pushforward of test densities
-`TestFunction.pushforwardCLM` of a change of variables. In general the fibres are submanifolds, and
-the absence of critical points is what makes `f_♯ φ` smooth: at a critical value the image measure
-of `φ μ` need not have a smooth density.
+When `f` is a diffeomorphism and `ν = μ`, the fibres are points, and `f_♯` is the pushforward of
+test densities `TestFunction.pushforwardCLM` of a change of variables. In general the fibres are
+submanifolds, and the absence of critical points is what makes `f_♯ φ` smooth: at a critical value
+the image measure of `φ μ` need not have a smooth density.
 
 ## Construction
 
@@ -225,6 +225,25 @@ section Submersion
 variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
   (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
 
+/-- `TestFunction.ext_of_forall_integral_smul_eq` for real-valued tests, with the integrands in
+the order `ψ y • g y` of the defining identity of fibre integration. -/
+private theorem ext_of_forall_integral_smul_contDiff_eq {ψ₁ ψ₂ : 𝓓(Ω', ℝ)}
+    (h : ∀ g : E' → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ Ω' →
+      ∫ y, ψ₁ y • g y ∂ν = ∫ y, ψ₂ y • g y ∂ν) :
+    ψ₁ = ψ₂ :=
+  ext_of_forall_integral_smul_eq (μ := ν) fun g hg hgc hgΩ ↦ by
+    simpa only [smul_eq_mul, mul_comm (g _)] using h g hg hgc hgΩ
+
+/-- `IsOpen.eqOn_zero_of_integral_contDiff_smul_eq_zero` for real-valued functions, with the
+integrands in the order `d y • g y` of the defining identity of fibre integration. -/
+private theorem eqOn_zero_of_integral_smul_contDiff_eq_zero {U : Set E'} (hU : IsOpen U)
+    {d : E' → ℝ} (hd : ContinuousOn d U)
+    (h : ∀ g : E' → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ U →
+      ∫ y, d y • g y ∂ν = 0) :
+    EqOn d 0 U :=
+  hU.eqOn_zero_of_integral_contDiff_smul_eq_zero (μ := ν) hd fun g hg hgc hgU ↦ by
+    simpa only [smul_eq_mul, mul_comm (g _)] using h g hg hgc hgU
+
 variable {f : E → E'} (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
   (hsurj : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ f x))
 
@@ -257,8 +276,7 @@ private theorem localFiberIntegral_monoCLM (a b : Ω)
     (φ : 𝓓(chartSource hf hsurj a ⊓ chartSource hf hsurj b, ℝ)) :
     localFiberIntegral μ ν hf hfΩ hsurj a (monoCLM ℝ φ) =
       localFiberIntegral μ ν hf hfΩ hsurj b (monoCLM ℝ φ) :=
-  ext_of_forall_integral_smul_eq (μ := ν) fun g hg _ _ ↦ by
-    simp_rw [smul_eq_mul, mul_comm (g _), ← smul_eq_mul]
+  ext_of_forall_integral_smul_contDiff_eq ν fun g hg _ _ ↦ by
     rw [integral_localFiberIntegral_smul μ ν hf hfΩ hsurj a _ hg.continuous.continuousOn,
       integral_localFiberIntegral_smul μ ν hf hfΩ hsurj b _ hg.continuous.continuousOn]
     simp
@@ -314,11 +332,10 @@ theorem eq_fiberIntegralCLM_iff {φ : 𝓓(Ω, ℝ)} {ψ : 𝓓(Ω', ℝ)} :
     ψ = fiberIntegralCLM μ ν f hf hfΩ hsurj φ ↔
       ∀ g : E' → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ Ω' →
         ∫ y, ψ y • g y ∂ν = ∫ x, φ x • g (f x) ∂μ := by
-  refine ⟨?_, fun h ↦ ext_of_forall_integral_smul_eq (μ := ν) fun g hg hgc hgΩ ↦ ?_⟩
+  refine ⟨?_, fun h ↦ ext_of_forall_integral_smul_contDiff_eq ν fun g hg hgc hgΩ ↦ ?_⟩
   · rintro rfl g hg - -
     exact integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ hg.continuous.continuousOn
-  · simp_rw [smul_eq_mul, mul_comm (g _), ← smul_eq_mul]
-    rw [h g hg hgc hgΩ, integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ
+  · rw [h g hg hgc hgΩ, integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ
       hg.continuous.continuousOn]
 
 /-- The fibre integral of `φ` is supported in the image under `f` of the support of `φ`. -/
@@ -330,9 +347,8 @@ theorem tsupport_fiberIntegralCLM_subset (φ : 𝓓(Ω, ℝ)) :
   by_contra hyK
   -- Off the compact set `f '' supp φ`, the fibre integral has zero integral against every test
   -- function, so it vanishes there.
-  refine hy (hK.isClosed.isOpen_compl.eqOn_zero_of_integral_contDiff_smul_eq_zero (μ := ν)
+  refine hy (eqOn_zero_of_integral_smul_contDiff_eq_zero ν hK.isClosed.isOpen_compl
     (fiberIntegralCLM μ ν f hf hfΩ hsurj φ).continuous.continuousOn (fun g hg _ hgK ↦ ?_) hyK)
-  simp_rw [smul_eq_mul, mul_comm (g _), ← smul_eq_mul]
   rw [integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ hg.continuous.continuousOn]
   have h0 : (fun x ↦ φ x • g (f x)) = 0 := funext fun x ↦ by
     by_cases hx : x ∈ tsupport φ
