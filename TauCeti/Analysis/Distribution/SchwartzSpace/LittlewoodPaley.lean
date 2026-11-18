@@ -324,7 +324,7 @@ theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
       fourierMultiplierCLM_apply]
   simp_rw [hsum]
   have h := ((fourierInvCLM ℂ 𝓢(E, F)).continuous.tendsto _).comp
-    (tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕 f))
+    (tendsto_smulLeftCLM_contDiffBump (tendsto_pow_atTop_atTop_of_one_lt one_lt_two) φ (𝓕 f))
   rwa [fourierInvCLM_apply, FourierTransform.fourierInv_fourier_eq] at h
 
 end SchwartzMap
