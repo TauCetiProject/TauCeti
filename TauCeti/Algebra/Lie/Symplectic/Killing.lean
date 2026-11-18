@@ -226,10 +226,7 @@ private theorem trace_jConj_comp_ad_comp_ad {A B : Matrix (l ⊕ l) (l ⊕ l) R}
   have hA' := (mem_sp_iff_J_mul_transpose_mul_J_eq A).mp hA
   have hB' := (mem_sp_iff_J_mul_transpose_mul_J_eq B).mp hB
   have hBA : J l R * (B * A)ᵀ * J l R = -(A * B) := by
-    calc J l R * (B * A)ᵀ * J l R = J l R * Aᵀ * -(J l R * J l R) * Bᵀ * J l R := by
-          rw [transpose_mul, J_squared]; noncomm_ring
-      _ = -((J l R * Aᵀ * J l R) * (J l R * Bᵀ * J l R)) := by noncomm_ring
-      _ = -(A * B) := by rw [hA', hB']
+    rw [← jConj_apply, jConj_mul, jConj_apply, jConj_apply, hA', hB']
   have hl : jConj ∘ₗ LinearMap.mulLeft R (A * B) =
       jConj ∘ₗ LinearMap.mulLeft R (A * B) ∘ₗ LinearMap.mulRight R 1 := by
     ext1 Z; simp

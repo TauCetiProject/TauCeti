@@ -149,6 +149,14 @@ theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z) = Z := 
     neg_neg, ← mul_assoc]
   simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
 
+/-- `Z ↦ J Zᵀ J` reverses products up to sign. -/
+theorem jConj_mul (A B : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (A * B) = -(jConj B * jConj A) := by
+  simp only [jConj_apply]
+  calc J l R * (A * B)ᵀ * J l R = J l R * Bᵀ * -(J l R * J l R) * Aᵀ * J l R := by
+        rw [J_squared, neg_neg, transpose_mul]
+        noncomm_ring
+    _ = _ := by noncomm_ring
+
 /-- The symmetrization `Z ↦ Z + J Zᵀ J` into `sp l R`, which is multiplication by two on
 `sp l R`. -/
 noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
@@ -164,16 +172,9 @@ theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
 /-- The bracket of two symmetrizations is the symmetrization of `⁅X, Y⁆ + ⁅X, J Yᵀ J⁆`. -/
 theorem lie_symmetrize_symmetrize (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
     ⁅symmetrize X, symmetrize Y⁆ = symmetrize (⁅X, Y⁆ + ⁅X, jConj Y⁆) := by
-  -- `Z ↦ J Zᵀ J` reverses products up to sign.
-  have hmul (A B : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (A * B) = -(jConj B * jConj A) := by
-    simp only [jConj_apply]
-    calc J l R * (A * B)ᵀ * J l R = J l R * Bᵀ * -(J l R * J l R) * Aᵀ * J l R := by
-          rw [J_squared, neg_neg, transpose_mul]
-          noncomm_ring
-      _ = _ := by noncomm_ring
   ext1
   rw [LieSubalgebra.coe_bracket, coe_symmetrize_apply, coe_symmetrize_apply, coe_symmetrize_apply]
-  simp only [Ring.lie_def, map_add, map_sub, hmul, jConj_jConj]
+  simp only [Ring.lie_def, map_add, map_sub, jConj_mul, jConj_jConj]
   noncomm_ring
 
 end LieAlgebra.Symplectic
