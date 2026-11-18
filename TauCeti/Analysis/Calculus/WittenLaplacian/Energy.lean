@@ -55,8 +55,8 @@ times its squared norm
 the linear-in-`t` gap of the model.
 
 **The gap in the degree of the Morse index.** In degree `s₀` the coefficient `φ_{s₀}` is acted on
-by the oscillators shifted by exactly their ground state energy `-t ∑ᵢ |aᵢ|`. Expanding it in the
-dilated Hermite functions (`TauCeti.Analysis.SpecialFunctions.Hermite.Function.Pi.SpectralGap`)
+by the oscillators shifted down by exactly their ground state energy `t ∑ᵢ |aᵢ|`. Expanding it in
+the dilated Hermite functions (`TauCeti.Analysis.SpecialFunctions.Hermite.Function.Pi.SpectralGap`)
 shows that, if `φ` is orthogonal to the Gaussian ground state
 `Ψ_{0,s₀} = TauCeti.diagonalQuadraticWittenEigenform a t 0 s₀`, this part also costs at least
 `2 t c` times its squared norm. So the whole quadratic form is at least `2 t c ∫ |φ|²` on forms
@@ -346,7 +346,7 @@ theorem
       fun h ↦ hs h.2) (integral_nonneg fun _ ↦ sq_nonneg _)).trans
       (diagonalQuadraticWittenEigenvalue_zero_mul_integral_le a t hφ hφc s)
   subst hs
-  -- in degree `s₀` the degree shift is `-t ∑ᵢ |aᵢ|`, the ground state energy of the oscillators
+  -- in degree `s₀` the degree shift `-t ∑ᵢ |aᵢ|` cancels the ground state energy of the oscillators
   have hshift : t * (∑ i, if i ∈ s₀ then a i else -a i) = -∑ i, t * |a i| := by
     have h := diagonalQuadraticWittenEigenvalue_zero_filter_neg a t
     rw [diagonalQuadraticWittenEigenvalue_zero] at h

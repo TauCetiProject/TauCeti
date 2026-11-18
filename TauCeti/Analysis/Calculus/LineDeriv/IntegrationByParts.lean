@@ -206,42 +206,18 @@ theorem integral_bilinear_fderiv_fderiv_apply_eq_integral_fderiv_fderiv_apply {V
     (hgc : HasCompactSupport g) (v w : E) :
     ∫ x, B (f x) (fderiv ℝ (fderiv ℝ g) x v w) ∂μ =
       ∫ x, B (fderiv ℝ (fderiv ℝ f) x w v) (g x) ∂μ := by
-  -- A globally `C²` map `F` agreeing with `f` near the support of `g`.
-  obtain ⟨F, hF, -, hFf⟩ := hgc.isCompact.exists_contDiff_eventuallyEq 2 hf
-  have h₁ : ∀ x, B (f x) (fderiv ℝ (fderiv ℝ g) x v w) =
-      B (F x) (fderiv ℝ (fderiv ℝ g) x v w) := fun x ↦ by
-    by_cases hx : x ∈ tsupport g
-    · rw [(hFf x hx).eq_of_nhds]
-    · simp [fderiv_fderiv_of_notMem_tsupport hx]
-  have h₂ : ∀ x, B (fderiv ℝ (fderiv ℝ f) x w v) (g x) =
-      B (fderiv ℝ (fderiv ℝ F) x w v) (g x) := fun x ↦ by
-    by_cases hx : x ∈ tsupport g
-    · rw [(hFf x hx).fderiv.fderiv_eq]
-    · simp [image_eq_zero_of_notMem_tsupport hx]
-  simp only [h₁, h₂]
-  have hg₁ : ContDiff ℝ 1 fun x ↦ fderiv ℝ g x w :=
-    (hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
+  -- Integrate by parts in `v` against the compactly supported `C¹` map `x ↦ ∂_w g x`, whose
+  -- support lies in that of `g`, then in `w` against `g`.
   have hsnd : ∀ x, fderiv ℝ (fun y ↦ fderiv ℝ g y w) x v = fderiv ℝ (fderiv ℝ g) x v w :=
     fun x ↦ by simp [(hg.contDiffAt.hasFDerivAt_fderiv_apply le_rfl w).fderiv]
-  have hDg : ∀ x, x ∉ tsupport g → fderiv ℝ g x w = 0 := fun x hx ↦ by
-    simp [fderiv_of_notMem_tsupport ℝ hx]
-  -- `∫ B F (∂_v ∂_w g) = -∫ B (∂_v F) (∂_w g)`, then `∫ B (∂_v F) (∂_w g) = -∫ B (∂_w ∂_v F) g`;
-  -- every integrand pairs a continuous map with one vanishing off the support of `g`
-  have h₃ := integral_bilinear_fderiv_right_eq_neg_left_of_integrable (μ := μ) (B := B)
-    (f := F) (g := fun x ↦ fderiv ℝ g x w) (v := v)
-    (integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hgc
-      ((hF.continuous_fderiv (by norm_num)).clm_apply continuous_const) hg₁.continuous hDg)
-    (by
-      simp only [hsnd]
-      exact integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hgc hF.continuous
-        (hg.continuous_fderiv_fderiv_apply le_rfl v w) fun x hx ↦ by
-          simp [fderiv_fderiv_of_notMem_tsupport hx])
-    (integrable_bilinear_of_forall_notMem_tsupport_eq_zero B hgc hF.continuous hg₁.continuous hDg)
-    (fun x _ ↦ hF.differentiable (by norm_num) x) (fun x _ ↦ hg₁.differentiable one_ne_zero x)
-  have h₄ := integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply (μ := μ) B
-    (fun x _ ↦ hF.contDiffAt) (hg.of_le (by norm_num)) hgc v w
-  simp only [hsnd] at h₃
-  rw [h₃, h₄, neg_neg]
+  have h := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := μ) B
+    (f := f) (g := fun x ↦ fderiv ℝ g x w)
+    (fun x hx ↦ (hf x (tsupport_fderiv_apply_subset ℝ w hx)).of_le one_le_two)
+    ((hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const)
+    (hgc.fderiv_apply (𝕜 := ℝ) w) v
+  simp only [hsnd] at h
+  rw [h, integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply B hf
+    (hg.of_le (by norm_num)) hgc v w, neg_neg]
 
 /-- Exchanging the two differentiation directions does not change the integral of a continuous
 bilinear pairing of two directional derivatives of a compactly supported `C²` map. -/
