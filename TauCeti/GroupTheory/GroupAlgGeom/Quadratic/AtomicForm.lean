@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.StandardForm
 import Mathlib.Algebra.Group.Submonoid.BigOperators
+import TauCeti.Data.List.OfFn
 
 /-!
 # Quadratic words in atomic form
@@ -81,6 +82,13 @@ def vars (P : AtomicForm G X) : List X :=
 theorem vars_def (P : AtomicForm G X) :
     P.vars = P.comms.flatMap (fun p => [p.1, p.2]) ++ P.squares ++ P.conjs.map Prod.fst := (rfl)
 
+private theorem vars_perm (P : AtomicForm G X) : P.vars.Perm
+    (P.comms.map Prod.fst ++ P.comms.map Prod.snd ++ P.squares ++ P.conjs.map Prod.fst) := by
+  -- the first variables `xᵢ` of the commutators, followed by their second variables `yᵢ`
+  simpa only [vars_def, ← List.map_eq_flatMap, List.append_assoc] using
+    (List.map_append_flatMap_perm P.comms Prod.fst fun p => [p.2]).symm.append_right
+      (P.squares ++ P.conjs.map Prod.fst)
+
 section DropTrivial
 
 variable [One G]
@@ -100,6 +108,12 @@ theorem squares_dropTrivial (P : AtomicForm G X) : P.dropTrivial.squares = P.squ
 theorem const_dropTrivial (P : AtomicForm G X) : P.dropTrivial.const = P.const := (rfl)
 
 @[simp]
+theorem conjs_dropTrivial [DecidableEq G] (P : AtomicForm G X) :
+    P.dropTrivial.conjs = P.conjs.filter fun p => p.2 ≠ 1 := by
+  simp only [dropTrivial]
+  congr!
+
+@[simp]
 theorem mem_conjs_dropTrivial {P : AtomicForm G X} {p : X × G} :
     p ∈ P.dropTrivial.conjs ↔ p ∈ P.conjs ∧ p.2 ≠ 1 := by
   simp [dropTrivial]
@@ -108,60 +122,6 @@ theorem vars_dropTrivial_sublist (P : AtomicForm G X) : P.dropTrivial.vars.Subli
   (List.filter_sublist.map _).append_left _
 
 end DropTrivial
-
-section Families
-
-private theorem injective_sumElim_comms_conjs {C : List (X × X)} {Z : List (X × G)}
-    (h : (C.flatMap (fun p => [p.1, p.2]) ++ Z.map Prod.fst).Nodup) :
-    (Sum.elim (Sum.elim (fun i : Fin C.length => C[(i : ℕ)].1)
-      fun i : Fin C.length => C[(i : ℕ)].2) fun j : Fin Z.length => Z[(j : ℕ)].1).Injective := by
-  -- the variables of the commutators, listed first by the `xᵢ` and then by the `yᵢ`
-  have hC : ∀ C : List (X × X),
-      (C.flatMap fun p => [p.1, p.2]).Perm (C.map Prod.fst ++ C.map Prod.snd) := by
-    intro C
-    induction C with
-    | nil => rfl
-    | cons p C ih => simpa using ((ih.cons p.2).trans List.perm_middle.symm).cons p.1
-  rw [((hC C).append_right _).nodup_iff] at h
-  simp only [List.nodup_append, List.mem_append, List.mem_map] at h
-  rw [Sum.elim_injective, Sum.elim_injective]
-  simp only [← List.nodup_ofFn, List.ofFn_getElem_eq_map C Prod.fst,
-    List.ofFn_getElem_eq_map C Prod.snd, List.ofFn_getElem_eq_map Z Prod.fst, Sum.forall,
-    Sum.elim_inl, Sum.elim_inr]
-  exact ⟨⟨h.1.1, h.1.2.1, fun a b => h.1.2.2 _ ⟨_, List.getElem_mem _, rfl⟩ _
-    ⟨_, List.getElem_mem _, rfl⟩⟩, h.2.1, fun a b => h.2.2 _ (.inl ⟨_, List.getElem_mem _, rfl⟩) _
-    ⟨_, List.getElem_mem _, rfl⟩, fun a b => h.2.2 _ (.inr ⟨_, List.getElem_mem _, rfl⟩) _
-    ⟨_, List.getElem_mem _, rfl⟩⟩
-
-private theorem range_sumElim_comms_conjs (C : List (X × X)) (Z : List (X × G)) :
-    Set.range (Sum.elim (Sum.elim (fun i : Fin C.length => C[(i : ℕ)].1)
-      fun i : Fin C.length => C[(i : ℕ)].2) fun j : Fin Z.length => Z[(j : ℕ)].1) =
-      {v | v ∈ C.flatMap (fun p => [p.1, p.2]) ++ Z.map Prod.fst} := by
-  ext v
-  simp only [Set.Sum.elim_range, Set.mem_union, ← List.mem_ofFn']
-  simp only [List.ofFn_getElem_eq_map C Prod.fst, List.ofFn_getElem_eq_map C Prod.snd,
-    List.ofFn_getElem_eq_map Z Prod.fst, Set.mem_ofPred_eq, List.mem_append, List.mem_flatMap,
-    List.mem_map, List.mem_cons, List.not_mem_nil, or_false]
-  grind
-
-private theorem injective_sumElim_squares_conjs {S : List X} {Z : List (X × G)}
-    (h : (S ++ Z.map Prod.fst).Nodup) :
-    (Sum.elim (fun i : Fin S.length => S[(i : ℕ)])
-      fun j : Fin Z.length => Z[(j : ℕ)].1).Injective := by
-  simp only [List.nodup_append, List.mem_map] at h
-  rw [Sum.elim_injective]
-  simp only [← List.nodup_ofFn, List.ofFn_getElem, List.ofFn_getElem_eq_map Z Prod.fst]
-  grind
-
-private theorem range_sumElim_squares_conjs (S : List X) (Z : List (X × G)) :
-    Set.range (Sum.elim (fun i : Fin S.length => S[(i : ℕ)]) fun j : Fin Z.length => Z[(j : ℕ)].1) =
-      {v | v ∈ S ++ Z.map Prod.fst} := by
-  ext v
-  simp only [Set.Sum.elim_range, Set.mem_union, ← List.mem_ofFn',
-    List.mem_append, List.ofFn_getElem]
-  simp
-
-end Families
 
 variable [Group G]
 
@@ -249,8 +209,8 @@ theorem exists_mem_elementaryAut_apply_toWord_eq_conj [DecidableEq X] (P : Atomi
     (fun _ _ y' hy' => ht y' (List.mem_toFinset.1 hy'))
   refine ⟨f, hf, P.apply_toWord_eq_conj hc (GX.apply_inl_of_mem_elementaryAut hf)
     (fun y hy => ?_) (fun z hz => ?_), fun w hw => hfw w fun y hy => hw y (List.mem_toFinset.1 hy)⟩
-  · simp [hfv y (List.mem_toFinset.2 (List.mem_append_left _ hy)), show y ∉ P.conjs.map Prod.fst
-      from fun h => hP hy h]
+  · have hyZ : y ∉ P.conjs.map Prod.fst := fun h => hP hy h
+    simp [hfv y (List.mem_toFinset.2 (List.mem_append_left _ hy)), hyZ]
   · simp [hfv z (List.mem_toFinset.2 (List.mem_append_right _ hz)), hz]
 
 private theorem exists_mem_elementaryAut_apply_toWord_append_singleton (C : List (X × X))
@@ -340,32 +300,37 @@ private theorem exists_standard_orientable {C : List (X × X)}
     (hne : (⟨C, [], [], 1⟩ : AtomicForm G X).vars ≠ []) :
     ∃ S : Standard G X, S.toWord = (⟨C, [], [], 1⟩ : AtomicForm G X).toWord ∧
       S.vars = {x | x ∈ (⟨C, [], [], 1⟩ : AtomicForm G X).vars} := by
-  simp only [vars_def, List.append_nil] at hP hne ⊢
-  have inj : (Sum.elim (fun i : Fin C.length => C[(i : ℕ)].1)
-      fun i : Fin C.length => C[(i : ℕ)].2).Injective :=
-    (injective_sumElim_comms_conjs (Z := ([] : List (X × G))) (by simpa using hP)).comp
-      Sum.inl_injective
-  refine ⟨.orientable C.length (List.length_pos_of_ne_nil (by rintro rfl; simp at hne)) _ _ inj,
-    ?_, ?_⟩
+  have hC := vars_perm (⟨C, [], [], 1⟩ : AtomicForm G X)
+  simp only [vars_def, List.map_nil, List.append_nil] at hC hP hne ⊢
+  refine ⟨.orientable C.length (List.length_pos_of_ne_nil (by rintro rfl; simp at hne))
+    (fun i : Fin C.length => C[(i : ℕ)].1) (fun i : Fin C.length => C[(i : ℕ)].2)
+    (List.nodup_ofFn_append_ofFn.1 (by simpa using hC.nodup_iff.1 hP)), ?_, ?_⟩
   · simp [Standard.toWord_def, toWord_def, List.ofFn_getElem_eq_map C
       fun p => ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2))⁻¹⁆]
-  · simpa [Set.range_comp] using range_sumElim_comms_conjs C ([] : List (X × G))
+  · ext v
+    simp only [Standard.vars_orientable, Set.Sum.elim_range, Set.mem_union, ← List.mem_ofFn',
+      List.ofFn_getElem_eq_map, Set.mem_ofPred_eq, hC.mem_iff, List.mem_append]
 
 private theorem exists_standard_orientableCoeff {C : List (X × X)} {Z : List (X × G)} {d : G}
     (hP : (⟨C, [], Z, d⟩ : AtomicForm G X).vars.Nodup)
     (hne : (⟨C, [], Z, d⟩ : AtomicForm G X).vars ≠ []) (hc : ∀ p ∈ Z, p.2 ≠ 1) (hd : d ≠ 1) :
     ∃ S : Standard G X, S.toWord = (⟨C, [], Z, d⟩ : AtomicForm G X).toWord ∧
       S.vars = {x | x ∈ (⟨C, [], Z, d⟩ : AtomicForm G X).vars} := by
-  simp only [vars_def, List.append_nil] at hP hne ⊢
+  have hC := vars_perm (⟨C, [], Z, d⟩ : AtomicForm G X)
+  simp only [vars_def, List.append_nil] at hC hP hne ⊢
   have hnm : 0 < C.length + Z.length := by
     rcases C with _ | _ <;> rcases Z with _ | _ <;> simp_all
-  refine ⟨.orientableCoeff C.length Z.length hnm _ _ _ (injective_sumElim_comms_conjs hP)
+  refine ⟨.orientableCoeff C.length Z.length hnm (fun i : Fin C.length => C[(i : ℕ)].1)
+    (fun i : Fin C.length => C[(i : ℕ)].2) (fun j : Fin Z.length => Z[(j : ℕ)].1)
+    (List.nodup_ofFn_append_ofFn_append_ofFn.1 (by simpa using hC.nodup_iff.1 hP))
     (fun j : Fin Z.length => Z[(j : ℕ)].2) (fun j => hc _ (List.getElem_mem _)) d hd, ?_, ?_⟩
   · simp [Standard.toWord_def, toWord_def, mul_assoc, List.ofFn_getElem_eq_map C
       fun p => ⁅(inr (FreeGroup.of p.1) : GX G X)⁻¹, (inr (FreeGroup.of p.2))⁻¹⁆,
       List.ofFn_getElem_eq_map Z
       fun p => (inr (FreeGroup.of p.1) : GX G X)⁻¹ * (inl p.2 * inr (FreeGroup.of p.1))]
-  · simpa using range_sumElim_comms_conjs C Z
+  · ext v
+    simp only [Standard.vars_orientableCoeff, Set.Sum.elim_range, Set.mem_union,
+      ← List.mem_ofFn', List.ofFn_getElem_eq_map, Set.mem_ofPred_eq, hC.mem_iff, List.mem_append]
 
 private theorem exists_standard_nonorientable {S : List X}
     (hP : (⟨[], S, [], 1⟩ : AtomicForm G X).vars.Nodup)
@@ -373,13 +338,12 @@ private theorem exists_standard_nonorientable {S : List X}
     ∃ T : Standard G X, T.toWord = (⟨[], S, [], 1⟩ : AtomicForm G X).toWord ∧
       T.vars = {x | x ∈ (⟨[], S, [], 1⟩ : AtomicForm G X).vars} := by
   simp only [vars_def, List.flatMap_nil, List.nil_append, List.map_nil, List.append_nil] at hP hne ⊢
-  have inj : (fun i : Fin S.length => S[(i : ℕ)]).Injective :=
-    (injective_sumElim_squares_conjs (Z := ([] : List (X × G))) (by simpa using hP)).comp
-      Sum.inl_injective
-  refine ⟨.nonorientable S.length (List.length_pos_of_ne_nil hne) _ inj, ?_, ?_⟩
+  refine ⟨.nonorientable S.length (List.length_pos_of_ne_nil hne)
+    (fun i : Fin S.length => S[(i : ℕ)]) (List.nodup_ofFn.1 (by simpa using hP)), ?_, ?_⟩
   · simp [Standard.toWord_def, toWord_def, List.ofFn_getElem_eq_map S
       fun x => (inr (FreeGroup.of x) : GX G X) ^ 2]
-  · simpa using range_sumElim_squares_conjs S ([] : List (X × G))
+  · ext v
+    simp only [Standard.vars_nonorientable, ← List.mem_ofFn', List.ofFn_getElem, Set.mem_ofPred_eq]
 
 private theorem exists_standard_nonorientableCoeff {S : List X} {Z : List (X × G)} {d : G}
     (hP : (⟨[], S, Z, d⟩ : AtomicForm G X).vars.Nodup) (hS : S ≠ []) (hc : ∀ p ∈ Z, p.2 ≠ 1)
@@ -387,13 +351,17 @@ private theorem exists_standard_nonorientableCoeff {S : List X} {Z : List (X × 
     ∃ T : Standard G X, T.toWord = (⟨[], S, Z, d⟩ : AtomicForm G X).toWord ∧
       T.vars = {x | x ∈ (⟨[], S, Z, d⟩ : AtomicForm G X).vars} := by
   simp only [vars_def, List.flatMap_nil, List.nil_append] at hP ⊢
-  refine ⟨.nonorientableCoeff S.length Z.length (List.length_pos_of_ne_nil hS) _ _
-    (injective_sumElim_squares_conjs hP) (fun j : Fin Z.length => Z[(j : ℕ)].2)
+  refine ⟨.nonorientableCoeff S.length Z.length (List.length_pos_of_ne_nil hS)
+    (fun i : Fin S.length => S[(i : ℕ)]) (fun j : Fin Z.length => Z[(j : ℕ)].1)
+    (List.nodup_ofFn_append_ofFn.1 (by simpa using hP)) (fun j : Fin Z.length => Z[(j : ℕ)].2)
     (fun j => hc _ (List.getElem_mem _)) d hd, ?_, ?_⟩
   · simp [Standard.toWord_def, toWord_def, mul_assoc, List.ofFn_getElem_eq_map S
       fun x => (inr (FreeGroup.of x) : GX G X) ^ 2, List.ofFn_getElem_eq_map Z
       fun p => (inr (FreeGroup.of p.1) : GX G X)⁻¹ * (inl p.2 * inr (FreeGroup.of p.1))]
-  · simpa using range_sumElim_squares_conjs S Z
+  · ext v
+    simp only [Standard.vars_nonorientableCoeff, Set.Sum.elim_range, Set.mem_union,
+      ← List.mem_ofFn', List.ofFn_getElem, List.ofFn_getElem_eq_map, Set.mem_ofPred_eq,
+      List.mem_append]
 
 /-- A word in atomic form in pairwise distinct variables, with at least one atom, without
 commutators or without squares, whose conjugated coefficients are nontrivial and whose constant is
