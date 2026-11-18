@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -53,10 +53,8 @@ test functions and integrating by parts; the Jacobian factor of the pushforward 
 differentiated.
 
 Composition with `φ` is also the transpose of the pushforward for the sesquilinear `L²` pairing,
-`∫ ⟪w ∘ φ, v⟫ dμ = ∫ ⟪w, φ_* v⟫ dμ` (`SchwartzMap.integral_inner_compCLM_eq`). On a real inner
-product space, the derivatives of `u ∘ g` along an orthonormal basis `b` follow the chain rule
-`∂_{bᵢ} (u ∘ g) = ∑ⱼ ⟪bⱼ, Dg(·) bᵢ⟫ (∂_{bⱼ} u) ∘ g` (`SchwartzMap.lineDerivOp_compCLM`). These are
-inputs of the Sobolev estimates for changes of variables in
+`∫ ⟪w ∘ φ, v⟫ dμ = ∫ ⟪w, φ_* v⟫ dμ` (`SchwartzMap.integral_inner_compCLM_eq`), an input of the
+Sobolev estimates for changes of variables in
 `TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
 
 ## References
@@ -175,18 +173,19 @@ variable {ι : Type*} [Fintype ι]
 omit [FiniteDimensional ℝ E] in
 /-- **The chain rule for composition with `φ`.** If `Dφ(x) v = ∑ᵢ cᵢ(x) bᵢ` in a basis `b`, then
 `∂_v (u ∘ φ)(x) = ∑ᵢ cᵢ(x) (∂_{bᵢ} u)(φ x)`. -/
-theorem lineDerivOp_compCLM_apply (b : Module.Basis ι ℝ E)
+theorem lineDerivOp_compCLM_apply [IsScalarTower ℝ 𝕜 F] (b : Module.Basis ι ℝ E)
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    (u : 𝓢(E, 𝕜)) (v x : E) :
+    (u : 𝓢(E, F)) (v x : E) :
     ∂_{v} (compCLM 𝕜 hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u) x =
-      ∑ i, ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜) * (∂_{b i} u) (φ x) := by
+      ∑ i, ((b.repr (fderiv ℝ φ x v) i : ℝ) : 𝕜) • (∂_{b i} u) (φ x) := by
   rw [lineDerivOp_apply_eq_fderiv, compCLM_apply,
     fderiv_comp x u.differentiableAt (hφ.1.differentiable (by simp) x),
     ContinuousLinearMap.comp_apply]
   calc fderiv ℝ u (φ x) (fderiv ℝ φ x v)
       = fderiv ℝ u (φ x) (∑ i, b.repr (fderiv ℝ φ x v) i • b i) := by rw [b.sum_repr]
     _ = _ := by
-      simp only [map_sum, map_smul, RCLike.real_smul_eq_coe_mul, lineDerivOp_apply_eq_fderiv]
+      simp only [map_sum, map_smul, RCLike.real_smul_eq_coe_smul (K := 𝕜),
+        lineDerivOp_apply_eq_fderiv]
 
 /-- The pushforward formula for a derivative, paired with a Schwartz function `u`: both sides are
 `-∫ f x ∂_v (u ∘ φ)(x) dx` after the change of variables and integration by parts. -/
@@ -214,7 +213,7 @@ private theorem integral_pushforwardCLM_lineDerivOp_mul [MeasurableSpace E] [Bor
         rw [← integral_finsetSum _ fun i _ ↦ hint i]
         congr 1
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
-        simp only [w, lineDerivOp_compCLM_apply 𝕜 b hφ hψ, Finset.sum_mul]
+        simp only [w, lineDerivOp_compCLM_apply 𝕜 b hφ hψ, smul_eq_mul, Finset.sum_mul]
         exact Finset.sum_congr rfl fun i _ ↦ by ring
     _ = -∑ i, ∫ y, pushforwardCLM 𝕜 φ hφ hψ (smulLeftCLM 𝕜 (c i) f) y * ∂_{b i} u y ∂μ := by
         congr 1
@@ -260,33 +259,5 @@ theorem pushforwardCLM_lineDerivOp (b : Module.Basis ι ℝ E)
   exact congrFun ((Continuous.ae_eq_iff_eq _ A.continuous B.continuous).1 hae) x
 
 end LineDeriv
-
-section InnerProduct
-
-open scoped RealInnerProductSpace LineDeriv ContDiff
-
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℂ F] {g : E → E}
-
-/-- **The chain rule on Schwartz functions.** For a map `g` of temperate growth, polynomially
-bounded below, and an orthonormal basis `b`, the derivative of `u ∘ g` along `bᵢ` is
-`∑ⱼ ⟪bⱼ, Dg(·) bᵢ⟫ (∂_{bⱼ} u) ∘ g`. -/
-theorem lineDerivOp_compCLM {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
-    (hg : g.HasTemperateGrowth) (hg' : ∃ (k : ℕ) (C : ℝ), ∀ x, ‖x‖ ≤ C * (1 + ‖g x‖) ^ k)
-    (u : 𝓢(E, F)) (i : ι) :
-    ∂_{b i} (compCLM ℂ hg hg' u) =
-      ∑ j, smulLeftCLM F (fun x ↦ ((⟪b j, fderiv ℝ g x (b i)⟫ : ℝ) : ℂ))
-        (compCLM ℂ hg hg' (∂_{b j} u)) := by
-  ext x
-  rw [lineDerivOp_apply_eq_fderiv, sum_apply]
-  simp only [smulLeftCLM_apply_apply (hg.inner_fderiv_apply _ _), compCLM_apply]
-  rw [fderiv_comp x u.differentiableAt (hg.1.differentiable (by simp) x),
-    ContinuousLinearMap.comp_apply]
-  conv_lhs => rw [← b.sum_repr' (fderiv ℝ g x (b i))]
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [map_smul, Complex.coe_smul, Function.comp_apply, lineDerivOp_apply_eq_fderiv]
-
-end InnerProduct
 
 end SchwartzMap

@@ -165,7 +165,7 @@ theorem norm_toBesselPotentialSpaceCLM_sq {F : Type*} [NormedAddCommGroup F]
     ENNReal.ofNat_ne_top, ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat]
   simp_rw [Real.rpow_two]
   rw [← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
-  norm_num
+  rw [Nat.cast_ofNat, inv_mul_cancel₀ two_ne_zero, Real.rpow_one]
   exact integral_congr_ae (.of_forall fun ξ ↦ norm_one_add_norm_sq_rpow_smul_sq r ξ _)
 
 omit [CompleteSpace F] in

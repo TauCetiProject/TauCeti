@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
@@ -50,8 +49,8 @@ The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz
   with the bound on `|det Dφ⁻¹|` (`TauCeti.integral_comp_equiv_le_mul_integral`). Raising the order
   by one adds the first derivatives, `‖v‖²_{H^{k+1}} = ‖v‖²_{H^k} + (2π)⁻² ∑ᵢ ‖∂ᵢ v‖²_{H^k}`
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_add_one_sq`), and by the chain rule
-  `∂ᵢ (u ∘ φ) = ∑ⱼ ⟪bⱼ, Dφ bᵢ⟫ (∂ⱼ u) ∘ φ` (`SchwartzMap.lineDerivOp_compCLM`), whose coefficients
-  are bounded multipliers on `H^k`
+  `∂ᵢ (u ∘ φ) = ∑ⱼ cᵢⱼ (∂ⱼ u) ∘ φ`, where `Dφ bᵢ = ∑ⱼ cᵢⱼ bⱼ`
+  (`SchwartzMap.lineDerivOp_compCLM_apply`), whose coefficients are bounded multipliers on `H^k`
   (`SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le`).
 * **Negative integer orders**, by duality. For the `L²` pairing the transpose of `u ↦ u ∘ φ` is the
   pushforward of densities `φ_* v = |det Dφ⁻¹| (v ∘ φ⁻¹)` (`SchwartzMap.integral_inner_compCLM_eq`),
@@ -149,11 +148,27 @@ end TemperedDistribution
 namespace SchwartzMap
 
 open MeasureTheory TemperedDistribution
-open scoped BesselPotentialSpace InnerProductSpace RealInnerProductSpace LineDeriv
+open scoped BesselPotentialSpace InnerProductSpace LineDeriv
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F] {φ : E ≃ E}
+
+/-- The coefficients `x ↦ (b.repr (Dg(x) v))ⱼ` of the chain rule for composition with `g` are
+bounded multipliers on `H^k` when the derivatives of `g` of positive order are bounded. -/
+private theorem exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_repr_fderiv_le {ι : Type*}
+    [Fintype ι] (b : OrthonormalBasis ι ℝ E) {g : E → E} (hg : g.HasTemperateGrowth)
+    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) g x‖ ≤ C) (k : ℕ) (v : E) (j : ι) :
+    ∃ c, 0 ≤ c ∧ ∀ w : 𝓢(E, F),
+      ‖toBesselPotentialSpaceCLM k 2
+        (smulLeftCLM F (fun x ↦ ((b.toBasis.repr (fderiv ℝ g x v) j : ℝ) : ℂ)) w)‖ ≤
+        c * ‖toBesselPotentialSpaceCLM k 2 w‖ :=
+  exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (by norm_num) ENNReal.ofNat_ne_top k
+    (hg.basis_repr_fderiv_apply b.toBasis v j) fun n _ ↦ by
+      obtain ⟨C, hC⟩ := hb n
+      exact ⟨C * ‖v‖, fun x ↦
+        (hg.1.norm_iteratedFDeriv_basis_repr_fderiv_apply_le (mod_cast le_top) b v j x).trans
+          (mul_le_mul_of_nonneg_right (hC x) (norm_nonneg _))⟩
 
 /-- The induction step of `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast`:
 a bound for `u ↦ u ∘ φ` on `H^k` gives one on `H^{k+1}`, through the chain rule and the
@@ -169,23 +184,27 @@ private theorem exists_sq_bound_compCLM_succ
       C' * ‖toBesselPotentialSpaceCLM (k + 1 : ℕ) 2 u‖ ^ 2 := by
   set P := compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)
   let b := stdOrthonormalBasis ℝ E
-  -- The coefficients of the chain rule are bounded multipliers on `H^k`.
-  have hc (i j : Fin (Module.finrank ℝ E)) : ∃ c, 0 ≤ c ∧ ∀ w : 𝓢(E, F),
-      ‖toBesselPotentialSpaceCLM k 2
-        (smulLeftCLM F (fun x ↦ ((⟪b j, fderiv ℝ φ x (b i)⟫ : ℝ) : ℂ)) w)‖ ≤
-        c * ‖toBesselPotentialSpaceCLM k 2 w‖ :=
-    exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (by norm_num) ENNReal.ofNat_ne_top k
-      (hφ.inner_fderiv_apply _ _)
-      fun n _ ↦ hφ.exists_norm_iteratedFDeriv_inner_fderiv_apply_le _ _ (hb n)
-  choose c _ hc using hc
+  -- The chain rule `∂ᵢ (u ∘ φ) = ∑ⱼ cᵢⱼ (∂ⱼ u) ∘ φ`, where `Dφ(x) bᵢ = ∑ⱼ cᵢⱼ(x) bⱼ`.
+  have hchain (i : Fin (Module.finrank ℝ E)) (u : 𝓢(E, F)) : ∂_{b i} (P u) =
+      ∑ j, smulLeftCLM F (fun x ↦ ((b.toBasis.repr (fderiv ℝ φ x (b i)) j : ℝ) : ℂ))
+        (P (∂_{b j} u)) := by
+    ext x
+    simp only [P]
+    rw [lineDerivOp_compCLM_apply ℂ b.toBasis hφ hψ, sum_apply]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [smulLeftCLM_apply_apply (hφ.basis_repr_fderiv_apply b.toBasis (b i) j), compCLM_apply,
+      Function.comp_apply, OrthonormalBasis.coe_toBasis, RCLike.ofReal_eq_complex_ofReal]
+  choose c _ hc using fun i j ↦
+    exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_repr_fderiv_le (F := F) b hφ hb k (b i) j
   set K := ∑ i, ∑ j, c i j ^ 2
   refine ⟨C * (1 + K), by positivity, fun u ↦ ?_⟩
   have hd (i : Fin (Module.finrank ℝ E)) :
       ‖toBesselPotentialSpaceCLM k 2 (∂_{b i} (P u))‖ ^ 2 ≤
         (∑ j, c i j ^ 2) * (C * ∑ j, ‖toBesselPotentialSpaceCLM k 2 (∂_{b j} u)‖ ^ 2) := by
-    rw [lineDerivOp_compCLM b, map_sum]
+    rw [hchain, map_sum]
     have h1 : ‖∑ j, toBesselPotentialSpaceCLM k 2
-        (smulLeftCLM F (fun x ↦ ((⟪b j, fderiv ℝ φ x (b i)⟫ : ℝ) : ℂ)) (P (∂_{b j} u)))‖ ≤
+        (smulLeftCLM F (fun x ↦ ((b.toBasis.repr (fderiv ℝ φ x (b i)) j : ℝ) : ℂ))
+          (P (∂_{b j} u)))‖ ≤
         ∑ j, c i j * ‖toBesselPotentialSpaceCLM k 2 (P (∂_{b j} u))‖ :=
       (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ hc i j _)
     calc _ ≤ (∑ j, c i j * ‖toBesselPotentialSpaceCLM k 2 (P (∂_{b j} u))‖) ^ 2 :=
@@ -316,7 +335,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le
     (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
-    ∃ C, ∀ u : 𝓢(E, F),
+    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F),
       ‖toBesselPotentialSpaceCLM s 2
           (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖ ≤
         C * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
@@ -343,7 +362,19 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le
     rw [Int.fract]
     ring
   rw [hs] at h
-  exact ⟨_, h⟩
+  exact ⟨_, by positivity, h⟩
+
+/-- **Changes of variables extend to `H^s`.** If `φ` and `φ⁻¹` have temperate growth and bounded
+derivatives of every positive order, then composition with `φ` on Schwartz functions extends to a
+bounded operator `H^s → H^s`, for every real `s`. -/
+theorem hasSobolevExtension_compCLM (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
+    (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
+    HasSobolevExtension
+      (compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)) s s :=
+  hasSobolevExtension_iff_exists_norm_le.2
+    (exists_norm_toBesselPotentialSpaceCLM_compCLM_le hφ hψ hb hb' s)
 
 end SchwartzMap
 
@@ -364,18 +395,11 @@ theorem MemSobolev.compCLM (hφ : (φ : E → E).HasTemperateGrowth)
     (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
     (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) {s : ℝ} {u : 𝓢'(E, F)}
     (hu : MemSobolev s 2 u) : MemSobolev s 2 (TemperedDistribution.compCLM F φ hφ hψ u) := by
-  obtain ⟨C, hC⟩ := SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_compCLM_le (F := F) hφ hψ hb
-    hb' s
-  set P := SchwartzMap.compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)
+  -- The extension `S` of `u ↦ u ∘ φ` from Schwartz functions to `H^s`.
+  obtain ⟨S, hS⟩ := SchwartzMap.hasSobolevExtension_iff.1
+    (SchwartzMap.hasSobolevExtension_compCLM (F := F) hφ hψ hb hb' s)
   have hdense := SchwartzMap.denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) s (p := 2)
     ENNReal.ofNat_ne_top
-  -- The extension of `u ↦ u ∘ φ` from Schwartz functions to `H^s`.
-  let S : H^{s}(E, F) →L[ℂ] H^{s}(E, F) :=
-    ((SchwartzMap.toBesselPotentialSpaceCLM s 2).toLinearMap ∘ₗ P.toLinearMap).extendOfNorm
-      (SchwartzMap.toBesselPotentialSpaceCLM s 2).toLinearMap
-  have hS (v : 𝓢(E, F)) : S (SchwartzMap.toBesselPotentialSpaceCLM s 2 v) =
-      SchwartzMap.toBesselPotentialSpaceCLM s 2 (P v) :=
-    LinearMap.extendOfNorm_eq hdense ⟨C, hC⟩ v
   -- It is the pullback of tempered distributions, by density of Schwartz functions.
   have hS' (f : H^{s}(E, F)) :
       (S f).toDistr = TemperedDistribution.compCLM F φ hφ hψ f.toDistr := by
@@ -383,8 +407,8 @@ theorem MemSobolev.compCLM (hφ : (φ : E → E).HasTemperateGrowth)
       (BesselPotentialSpace.continuous_toDistr.comp S.continuous)
       ((TemperedDistribution.compCLM F φ hφ hψ).continuous.comp
         BesselPotentialSpace.continuous_toDistr)) fun v ↦ ?_
-    rw [hS]
-    simp [P, compCLM_toTemperedDistributionCLM]
+    rw [← ContinuousLinearMap.comp_apply S, hS, ContinuousLinearMap.comp_apply]
+    simp [compCLM_toTemperedDistributionCLM]
   have h := (S hu.toBesselPotentialSpace).memSobolev_toDistr
   rwa [hS', hu.toBesselPotentialSpace_toDistr] at h
 
@@ -468,26 +492,3 @@ theorem compEquiv_symm_apply (u : H^{s}(E, F)) :
   (rfl)
 
 end BesselPotentialSpace
-
-namespace SchwartzMap
-
-open scoped BesselPotentialSpace
-
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-  [CompleteSpace F] {φ : E ≃ E}
-
-/-- **Changes of variables extend to `H^s`.** If `φ` and `φ⁻¹` have temperate growth and bounded
-derivatives of every positive order, then composition with `φ` on Schwartz functions extends to a
-bounded operator `H^s → H^s`, for every real `s`. -/
-theorem hasSobolevExtension_compCLM (hφ : (φ : E → E).HasTemperateGrowth)
-    (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
-    (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
-    HasSobolevExtension
-      (compCLM ℂ (F := F) hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv)) s s :=
-  hasSobolevExtension_iff.2 ⟨BesselPotentialSpace.compCLM φ hφ hψ hb hb' s,
-    ContinuousLinearMap.ext fun u ↦
-      BesselPotentialSpace.compCLM_toBesselPotentialSpaceCLM hφ hψ hb hb' u⟩
-
-end SchwartzMap

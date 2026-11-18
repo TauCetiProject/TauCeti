@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperateGrowth
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.InnerProductSpace.LinearMap
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Topology.Order.IntermediateValue
 
@@ -41,10 +42,11 @@ real function of temperate growth without zeros has temperate growth: on the con
 the function has constant sign. These give the Jacobian factor `|det Dφ⁻¹|` of a change of
 variables `φ` of Schwartz functions.
 
-When the derivatives of positive order of a map `g : E → E` are bounded, so are all derivatives of
-the coefficients `x ↦ ⟪w, Dg(x) v⟫` of the chain rule, and when those of `φ⁻¹` are bounded, so are
-all derivatives of the Jacobian factor `|det Dφ⁻¹|`. These are the inputs of the Sobolev estimates
-for changes of variables in `TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
+The derivatives of the coefficients `x ↦ (b.repr (Dg(x) v))ᵢ` of the chain rule in an orthonormal
+basis `b` are bounded by those of `g` of one order higher, and when the derivatives of positive
+order of `φ⁻¹` are bounded, so are all derivatives of the Jacobian factor `|det Dφ⁻¹|`. These are
+the inputs of the Sobolev estimates for changes of variables in
+`TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
 
 If `g ∘ f = id` and `g` has temperate growth, then `‖x‖` is
 bounded by a polynomial in `‖f x‖`, the growth condition of Mathlib's `SchwartzMap.compCLM`.
@@ -71,10 +73,8 @@ A measure of temperate growth is finite on compact sets.
 * `Function.HasTemperateGrowth.abs`: `|f|` has temperate growth if `f` has no zeros.
 * `Function.HasTemperateGrowth.abs_det_fderiv_symm`: the Jacobian factor `|det Dφ⁻¹|` of a
   bijection `φ` such that `φ` and `φ⁻¹` have temperate growth.
-* `Function.HasTemperateGrowth.inner_fderiv_apply`,
-  `Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_inner_fderiv_apply_le`: the chain-rule
-  coefficient `x ↦ ⟪w, Dg(x) v⟫` has temperate growth, and a bounded derivative of order `n` when
-  that of `g` of order `n + 1` is bounded.
+* `ContDiff.norm_iteratedFDeriv_basis_repr_fderiv_apply_le`: the derivatives of the chain-rule
+  coefficient `x ↦ (b.repr (Dg(x) v))ᵢ` in an orthonormal basis are bounded by those of `g`.
 * `Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le`: the Jacobian
   factor `|det Dφ⁻¹|` has a bounded derivative of order `n` when those of `φ⁻¹` of orders `1` to
   `n + 1` are bounded.
@@ -212,39 +212,33 @@ theorem Function.HasTemperateGrowth.abs_det_fderiv_symm {E : Type*} [NormedAddCo
 
 section InnerProduct
 
-open scoped RealInnerProductSpace
+/-- The derivatives of the coordinate `x ↦ (b.repr (Dg(x) v))ᵢ` of a directional derivative in an
+orthonormal basis `b`, the coefficient of the chain rule for composition with `g`, are bounded by
+those of `g`: `‖Dⁿ (x ↦ (b.repr (Dg(x) v))ᵢ)(x)‖ ≤ ‖D^{n+1} g(x)‖ ‖v‖`. -/
+theorem ContDiff.norm_iteratedFDeriv_basis_repr_fderiv_apply_le {E F ι : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [Fintype ι] {g : E → F} {N : WithTop ℕ∞} (hg : ContDiff ℝ N g) {n : ℕ} (hn : n + 1 ≤ N)
+    (b : OrthonormalBasis ι ℝ F) (v : E) (i : ι) (x : E) :
+    ‖iteratedFDeriv ℝ n (fun x ↦ ((b.toBasis.repr (_root_.fderiv ℝ g x v) i : ℝ) : ℂ)) x‖ ≤
+      ‖iteratedFDeriv ℝ (n + 1) g x‖ * ‖v‖ := by
+  set A : F →L[ℝ] ℂ := Complex.ofRealCLM.comp (innerSL ℝ (b i))
+  have hA : ‖A‖ ≤ 1 := by
+    refine A.opNorm_le_bound zero_le_one fun y ↦ ?_
+    simpa [A, b.orthonormal.1 i] using norm_inner_le_norm (𝕜 := ℝ) (b i) y
+  have hfun : (fun x ↦ ((b.toBasis.repr (_root_.fderiv ℝ g x v) i : ℝ) : ℂ)) =
+      A ∘ fun x ↦ _root_.fderiv ℝ g x v := by
+    ext x
+    simp [A, b.repr_apply_apply]
+  have hd : ContDiff ℝ n (fun x ↦ _root_.fderiv ℝ g x v) :=
+    (hg.fderiv_right (mod_cast hn)).clm_apply contDiff_const
+  rw [hfun]
+  refine (A.norm_iteratedFDeriv_comp_left hd.contDiffAt le_rfl).trans ?_
+  refine (mul_le_of_le_one_left (norm_nonneg _) hA).trans ?_
+  exact hg.norm_iteratedFDeriv_fderiv_apply_le (by simpa using hn) v x
 
 namespace Function.HasTemperateGrowth
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {g : E → E}
-
-/-- The coefficient `x ↦ ⟪w, Dg(x) v⟫` of the chain rule, as a complex function, is the
-composition of `Dg` with a continuous linear functional. -/
-private theorem ofReal_inner_fderiv_apply_eq (v w : E) :
-    (fun x ↦ ((⟪w, _root_.fderiv ℝ g x v⟫ : ℝ) : ℂ)) =
-      ((Complex.ofRealCLM.comp (innerSL ℝ w)).comp (ContinuousLinearMap.apply ℝ E v)) ∘
-        _root_.fderiv ℝ g := by
-  funext x
-  simp
-
-/-- The coefficient `x ↦ ⟪w, Dg(x) v⟫` of the chain rule has temperate growth. -/
-theorem inner_fderiv_apply (hg : g.HasTemperateGrowth) (v w : E) :
-    (fun x ↦ ((⟪w, _root_.fderiv ℝ g x v⟫ : ℝ) : ℂ)).HasTemperateGrowth := by
-  rw [ofReal_inner_fderiv_apply_eq]
-  exact (ContinuousLinearMap.hasTemperateGrowth _).comp hg.fderiv
-
-/-- If the derivative of `g` of order `n + 1` is bounded, then so is the derivative of order `n` of
-the chain-rule coefficient `x ↦ ⟪w, Dg(x) v⟫`. -/
-theorem exists_norm_iteratedFDeriv_inner_fderiv_apply_le (hg : g.HasTemperateGrowth) (v w : E)
-    {n : ℕ} (hb : ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) g x‖ ≤ C) :
-    ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ ((⟪w, _root_.fderiv ℝ g x v⟫ : ℝ) : ℂ)) x‖ ≤ C := by
-  obtain ⟨C, hC⟩ := hb
-  set L := (Complex.ofRealCLM.comp (innerSL ℝ w)).comp (ContinuousLinearMap.apply ℝ E v)
-  refine ⟨‖L‖ * C, fun x ↦ ?_⟩
-  rw [ofReal_inner_fderiv_apply_eq]
-  refine (L.norm_iteratedFDeriv_comp_left hg.fderiv.1.contDiffAt (by simp)).trans ?_
-  rw [norm_iteratedFDeriv_fderiv]
-  exact mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _)
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- If `φ` and `φ⁻¹` have temperate growth and the derivatives of `φ⁻¹` of orders `1` to `n + 1`
 are bounded, then the derivative of order `n` of the Jacobian factor `|det Dφ⁻¹|` is bounded. -/
