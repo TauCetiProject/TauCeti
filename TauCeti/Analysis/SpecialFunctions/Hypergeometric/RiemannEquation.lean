@@ -14,7 +14,7 @@ Riemann's differential equation (DLMF 15.11.1) with distinct finite singular poi
 exponent pairs `{a₁, a₂}`, `{b₁, b₂}`, `{c₁, c₂}` subject to Fuchs's relation
 `a₁ + a₂ + b₁ + b₂ + c₁ + c₂ = 1` (DLMF 15.11.2) is
 
-`w″ + (Σ (1 − a₁ − a₂)/(z − α)) w′ + (Σ (α − β)(α − γ) a₁ a₂/(z − α)) w / ((z − α)(z − β)(z − γ))
+`w′′ + (Σ (1 − a₁ − a₂)/(z − α)) w′ + (Σ (α − β)(α − γ) a₁ a₂/(z − α)) w / ((z − α)(z − β)(z − γ))
 = 0`,
 
 the sums running cyclically over the three singular points. If `u` solves the hypergeometric
