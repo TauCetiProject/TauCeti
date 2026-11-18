@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
 import TauCeti.GroupTheory.Index.Comp
 
 /-!
@@ -14,7 +16,9 @@ import TauCeti.GroupTheory.Index.Comp
 Over a field `F`, the Kummer ratio of `φ : E₁ → E₂` is
 `[E₂(F) : φ E₁(F)] / #E₁(F)[φ]`. The kernel is always finite. The ratio is positive when the
 image has finite index, and zero otherwise, following the convention for subgroup indices.
-It is multiplicative under composition, without a finite-index hypothesis.
+It is multiplicative under composition, without a finite-index hypothesis, and equals `1` on
+every degree-one isogeny (in particular on changes of Weierstrass variables and their base
+changes).
 
 Over completions of a global field, these ratios are the local factors in the global Selmer-ratio
 formula used in Cassels' proof of isogeny invariance of the Birch–Swinnerton-Dyer quotient.
@@ -80,5 +84,48 @@ theorem kummerRatio_id (W : WeierstrassCurve.Affine F) [W.IsElliptic] :
   have hrange : (AddMonoidHom.id W.Point).range = ⊤ :=
     AddMonoidHom.range_eq_top.mpr Function.surjective_id
   simp [kummerRatio_def, ← Hom.id_def, Hom.id_pointMapHom, hrange]
+
+/-- A degree-one isogeny is an isomorphism on rational points and therefore has Kummer ratio one,
+without any finite-index hypothesis. -/
+theorem kummerRatio_eq_one_of_degree_eq_one {φ : Isogeny W₁ W₂} (hφ : φ.degree = 1) :
+    φ.kummerRatio = 1 := by
+  classical
+  obtain ⟨ψ, hψφ, hφψ⟩ := exists_comp_eq_id_and_comp_eq_id_of_degree_eq_one φ hφ
+  have hcomp₁ : (Hom.ofIsogeny ψ).pointMapHom.comp (Hom.ofIsogeny φ).pointMapHom =
+      AddMonoidHom.id W₁.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hψφ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hcomp₂ : (Hom.ofIsogeny φ).pointMapHom.comp (Hom.ofIsogeny ψ).pointMapHom =
+      AddMonoidHom.id W₂.Point := by
+    rw [← Hom.comp_pointMapHom, Hom.ofIsogeny_comp_ofIsogeny, hφψ, ← Hom.id_def,
+      Hom.id_pointMapHom]
+  have hrange : (Hom.ofIsogeny φ).pointMapHom.range = ⊤ :=
+    AddMonoidHom.range_eq_top.mpr fun Q ↦
+      ⟨(Hom.ofIsogeny ψ).pointMapHom Q, DFunLike.congr_fun hcomp₂ Q⟩
+  have hker : (Hom.ofIsogeny φ).pointMapHom.ker = ⊥ :=
+    (AddMonoidHom.ker_eq_bot_iff _).mpr fun P₁ P₂ hP ↦
+      (DFunLike.congr_fun hcomp₁ P₁).symm.trans
+        ((congrArg (Hom.ofIsogeny ψ).pointMapHom hP).trans (DFunLike.congr_fun hcomp₁ P₂))
+  simp [kummerRatio_def, hrange, hker]
+
+/-- If two isogenies compose to the identity, both have Kummer ratio one, without any finite-index
+hypothesis. -/
+theorem kummerRatio_eq_one_of_comp_eq_id {ψ : Isogeny W₂ W₁} {φ : Isogeny W₁ W₂}
+    (h : ψ.comp φ = Isogeny.id W₁) : ψ.kummerRatio = 1 ∧ φ.kummerRatio = 1 :=
+  have ⟨hψ, hφ⟩ := degree_eq_one_of_comp_eq_id h
+  ⟨kummerRatio_eq_one_of_degree_eq_one hψ, kummerRatio_eq_one_of_degree_eq_one hφ⟩
+
+/-- The isomorphism induced by a change of Weierstrass variables has Kummer ratio one. -/
+@[simp]
+theorem kummerRatio_variableChangeIsogeny (C : WeierstrassCurve.VariableChange F)
+    (h : C • W₁ = W₂) : (variableChangeIsogeny C h).kummerRatio = 1 :=
+  kummerRatio_eq_one_of_degree_eq_one (degree_variableChangeIsogeny C h)
+
+/-- Base-changing the isomorphism of a change of variables preserves Kummer ratio one. -/
+@[simp]
+theorem kummerRatio_map_variableChangeIsogeny {K : Type*} [Field K]
+    (C : WeierstrassCurve.VariableChange F) (h : C • W₁ = W₂) (f : F →+* K) :
+    ((variableChangeIsogeny C h).map f).kummerRatio = 1 :=
+  kummerRatio_eq_one_of_degree_eq_one (by rw [degree_map, degree_variableChangeIsogeny])
 
 end TauCeti.Isogeny

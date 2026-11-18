@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Minimal models: a criterion, their comparison, and what transfers between them
@@ -26,6 +27,10 @@ have the same `c₄` valuation too.
 
 ## Main results
 
+* `WeierstrassCurve.VariableChange.valuation_mul_inv_le_one` and
+  `WeierstrassCurve.VariableChange.exists_baseChange_eq_mul_inv_of_valuation_sub_le`: valuation
+  bounds on `C - D` make `C * D⁻¹` integral over the valuation ring, and descend it to `R` when
+  `v C.u = v D.u`.
 * `WeierstrassCurve.isMinimal_of_valuation_c₄_eq_one`: over the fraction field of a discrete
   valuation ring, an integral Weierstrass equation with `v (c₄) = 1` is minimal.
 * `WeierstrassCurve.isMinimal_of_exp_neg_twelve_lt_valuation_Δ`: so is one with
@@ -144,6 +149,55 @@ exclusion of the reduction types and never compares two minimal models.
 public section
 
 namespace WeierstrassCurve
+
+namespace VariableChange
+
+section Valuation
+
+variable {K : Type*} [Field K] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
+
+/-- **The translation parameters of `C * D⁻¹` have valuation at most `1`** whenever those of `C`
+agree with those of `D` to the orders `v D.u ^ 2`, `v D.u`, and `v D.u ^ 3` (the last corrected by
+`D.s * (C.r - D.r)`). -/
+theorem valuation_mul_inv_le_one (v : Valuation K Γ₀) (C D : VariableChange K)
+    (hr : v (C.r - D.r) ≤ v D.u ^ 2) (hs : v (C.s - D.s) ≤ v D.u)
+    (ht : v (C.t - D.t - D.s * (C.r - D.r)) ≤ v D.u ^ 3) :
+    v (C * D⁻¹).r ≤ 1 ∧ v (C * D⁻¹).s ≤ 1 ∧ v (C * D⁻¹).t ≤ 1 := by
+  have hD : 0 < v D.u := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 D.u.ne_zero)
+  have hBr : (C * D⁻¹).r = (C.r - D.r) / (D.u : K) ^ 2 := by
+    rw [mul_inv_r, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  have hBs : (C * D⁻¹).s = (C.s - D.s) / (D.u : K) := by
+    rw [mul_inv_s, Units.val_inv_eq_inv_val, div_eq_mul_inv]
+  have hBt : (C * D⁻¹).t = (C.t - D.t - D.s * (C.r - D.r)) / (D.u : K) ^ 3 := by
+    rw [mul_inv_t, Units.val_inv_eq_inv_val, inv_pow, div_eq_mul_inv]
+  refine ⟨?_, ?_, ?_⟩
+  · rw [hBr, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 2)).2 hr
+  · rw [hBs, map_div₀]; exact (div_le_one₀ hD).2 hs
+  · rw [hBt, map_div₀, map_pow]; exact (div_le_one₀ (pow_pos hD 3)).2 ht
+
+/-- **Descent of `C * D⁻¹` to the ring of integers of a valuation.** If `C` and `D` have scaling
+factors of equal valuation and translation parameters close to the orders `v D.u ^ 2`, `v D.u`, and
+`v D.u ^ 3`, then `C * D⁻¹` is the base change of a change of variables over `R`. -/
+theorem exists_baseChange_eq_mul_inv_of_valuation_sub_le {R : Type*} [CommRing R] [Algebra R K]
+    {v : Valuation K Γ₀} (hv : v.Integers R) (C D : VariableChange K)
+    (hu : v C.u = v D.u) (hr : v (C.r - D.r) ≤ v D.u ^ 2) (hs : v (C.s - D.s) ≤ v D.u)
+    (ht : v (C.t - D.t - D.s * (C.r - D.r)) ≤ v D.u ^ 3) :
+    ∃ B : VariableChange R, B.baseChange K = C * D⁻¹ := by
+  have hD : (v D.u : Γ₀) ≠ 0 := (Valuation.ne_zero_iff _).2 D.u.ne_zero
+  have hBu : v ((C * D⁻¹).u : K) = 1 := by
+    rw [mul_inv_u, Units.val_mul, Units.val_inv_eq_inv_val, ← div_eq_mul_inv, map_div₀, hu,
+      div_self hD]
+  obtain ⟨hr', hs', ht'⟩ := valuation_mul_inv_le_one v C D hr hs ht
+  obtain ⟨u, hu'⟩ := hv.exists_of_le_one hBu.le
+  obtain ⟨r, hr'⟩ := hv.exists_of_le_one hr'
+  obtain ⟨s, hs'⟩ := hv.exists_of_le_one hs'
+  obtain ⟨t, ht'⟩ := hv.exists_of_le_one ht'
+  have hunit : IsUnit u := hv.isUnit_of_one' (by rwa [hu'])
+  exact ⟨⟨hunit.unit, r, s, t⟩, VariableChange.ext (Units.ext hu') hr' hs' ht'⟩
+
+end Valuation
+
+end VariableChange
 
 open IsDiscreteValuationRing IsDedekindDomain.HeightOneSpectrum
 
@@ -438,7 +492,7 @@ theorem exists_unit_algebraMap_eq_u_of_isMinimal_smul {W₁ W₂ : WeierstrassCu
     [IsMinimal R W₁] [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K)
     (hD : D • W₁ = W₂) : ∃ u₀ : Rˣ, algebraMap R K u₀ = D.u := by
   obtain ⟨u₀, hau⟩ := associated_of_valuation_eq (A := R) 1 (↑D.u : K)
-    (by rw [map_one]; exact (valuation_u_eq_one_of_isMinimal_smul R D hD).symm)
+    (by rw [_root_.map_one]; exact (valuation_u_eq_one_of_isMinimal_smul R D hD).symm)
   rw [Units.smul_def, Algebra.smul_def, mul_one] at hau
   exact ⟨u₀, hau⟩
 
