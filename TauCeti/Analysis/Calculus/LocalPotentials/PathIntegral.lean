@@ -100,16 +100,23 @@ theorem IsPrimitiveAlong.continuous (hG : IsPrimitiveAlong φ f G) (hf : Continu
     continuousAt_const.add (hgf.sub continuousAt_const)
   exact hc.congr_of_eventuallyEq (hGx.mono fun x' hx' ↦ eq_add_of_sub_eq' hx')
 
+/-- Two primitives at a point along a continuous map have the same increments near that point. -/
+theorem IsPrimitiveAlongAt.eventually_sub_eq_sub (hf : Continuous f) {x : X}
+    (h₁ : IsPrimitiveAlongAt φ f G₁ x) (h₂ : IsPrimitiveAlongAt φ f G₂ x) :
+    ∀ᶠ x' in 𝓝 x, G₁ x' - G₁ x = G₂ x' - G₂ x := by
+  obtain ⟨g₁, hg₁, hG₁⟩ := h₁
+  obtain ⟨g₂, hg₂, hG₂⟩ := h₂
+  filter_upwards [hG₁, hG₂, hf.continuousAt.eventually
+    (eventually_sub_eq_sub_of_hasFDerivAt hg₁ hg₂)] with x' hx₁ hx₂ hx
+  rw [hx₁, hx₂, hx]
+
 /-- Two primitives along a continuous map differ by a locally constant function. -/
 theorem IsPrimitiveAlong.isLocallyConstant_sub (hf : Continuous f)
     (h₁ : IsPrimitiveAlong φ f G₁) (h₂ : IsPrimitiveAlong φ f G₂) :
     IsLocallyConstant (G₁ - G₂) := by
   refine (IsLocallyConstant.iff_eventually_eq _).mpr fun x ↦ ?_
-  obtain ⟨g₁, hg₁, hG₁⟩ := h₁ x
-  obtain ⟨g₂, hg₂, hG₂⟩ := h₂ x
-  filter_upwards [hG₁, hG₂, hf.continuousAt.eventually
-    (eventually_sub_eq_sub_of_hasFDerivAt hg₁ hg₂)] with x' hx₁ hx₂ hx
-  rw [Pi.sub_apply, Pi.sub_apply, sub_eq_sub_iff_sub_eq_sub, hx₁, hx₂, hx]
+  filter_upwards [(h₁ x).eventually_sub_eq_sub hf (h₂ x)] with x' hx
+  rw [Pi.sub_apply, Pi.sub_apply, sub_eq_sub_iff_sub_eq_sub, hx]
 
 /-- On a preconnected domain, two primitives along a continuous map have the same increments. -/
 theorem IsPrimitiveAlong.sub_eq_sub [PreconnectedSpace X] (hf : Continuous f)
@@ -140,15 +147,12 @@ private theorem exists_isPrimitiveAlongAt_of_le_or_mem {f : I → E} (hf : Conti
   · refine (h₁ t htc.le).congr ?_
     filter_upwards [Iio_mem_nhds htc] with u (hu : u < c)
     simp only [hu.le, htc.le, ↓reduceIte]
-  · obtain ⟨g₁, hg₁, hG₁⟩ := h₁ t le_rfl
-    obtain ⟨g₂, hg₂, hG₂⟩ := h₂ t hc
-    refine ⟨g₁, hg₁, ?_⟩
-    filter_upwards [hG₁, hG₂, hf.continuousAt.eventually
-      (eventually_sub_eq_sub_of_hasFDerivAt hg₁ hg₂)] with u hu₁ hu₂ hu
+  · refine (h₁ t le_rfl).congr ?_
+    filter_upwards [(h₁ t le_rfl).eventually_sub_eq_sub hf (h₂ t hc)] with u hu
     by_cases hut : u ≤ t
-    · simpa only [hut, le_refl, ↓reduceIte] using hu₁
     · simp only [hut, le_refl, ↓reduceIte]
-      rw [hu, ← hu₂]
+    · simp only [hut, le_refl, ↓reduceIte]
+      rw [hu]
       abel
   · refine (h₂ t (ht.resolve_left htc.not_ge)).congr ?_
     filter_upwards [Ioi_mem_nhds htc] with u (hu : c < u)
@@ -294,11 +298,11 @@ theorem potentialIntegral_trans (hφ : HasLocalPotentials s φ) {δ : Path b c}
   let h₂ : I → I := fun t ↦ ⟨(1 + t) / 2, by constructor <;> linarith [t.2.1, t.2.2]⟩
   have hG₁ : IsPrimitiveAlong φ γ (G ∘ h₁) := by
     have e : (γ.trans δ) ∘ h₁ = γ :=
-      funext fun t ↦ Path.trans_apply_of_eq_two_mul γ δ t (by simp [h₁]; ring)
+      funext fun t ↦ Path.trans_apply_of_eq_two_mul γ δ t (by dsimp only [h₁]; ring)
     simpa only [e] using hG.comp (by fun_prop : Continuous h₁)
   have hG₂ : IsPrimitiveAlong φ δ (G ∘ h₂) := by
     have e : (γ.trans δ) ∘ h₂ = δ :=
-      funext fun t ↦ Path.trans_apply_of_eq_two_mul_sub_one γ δ t (by simp [h₂]; ring)
+      funext fun t ↦ Path.trans_apply_of_eq_two_mul_sub_one γ δ t (by dsimp only [h₂]; ring)
     simpa only [e] using hG.comp (by fun_prop : Continuous h₂)
   have e₀ : h₁ 0 = 0 := by ext; simp [h₁]
   have e₁ : h₁ 1 = h₂ 0 := by ext; simp [h₁, h₂]
