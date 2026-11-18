@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # Continuous inverses of shifts of partial linear maps
@@ -216,23 +217,12 @@ theorem eq_zero_of_apply_eq_smul (h : lambda ∈ resolventSet A) (x : A.domain)
 /-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
 `lambda` lies in the resolvent set of both, then `A = B`.
 
-A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for a unique `x ∈ D(A)`, by
-surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`.
-
 This is the step that upgrades "`A` is a restriction of the generator" to "`A` *is* the
 generator" in the generation theorems. -/
 theorem eq_of_le_of_mem_resolventSet {A B : X →ₗ.[𝕜] X} (hAB : A ≤ B)
-    (hA : lambda ∈ resolventSet A) (hB : lambda ∈ resolventSet B) : A = B := by
-  refine LinearPMap.eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
-  obtain ⟨x, hx⟩ := (smul_sub_bijective hA).surjective (lambda • y - B ⟨y, hy⟩)
-  obtain ⟨x', hx'coe, hx'val⟩ := LinearPMap.exists_of_le hAB x
-  have hxy : x' = (⟨y, hy⟩ : B.domain) := by
-    refine (smul_sub_bijective hB).injective ?_
-    simp only [← hx'coe, ← hx'val]
-    exact hx
-  have hcoe : (x : X) = y := by rw [hx'coe, hxy]
-  rw [← hcoe]
-  exact x.property
+    (hA : lambda ∈ resolventSet A) (hB : lambda ∈ resolventSet B) : A = B :=
+  eq_of_le_of_smul_sub_surjective_of_injective hAB (smul_sub_bijective hA).surjective
+    (smul_sub_bijective hB).injective
 
 /-- The resolvent commutes with `A` on `D(A)`: `R(lambda) (A x) = A (R(lambda) x)`. -/
 theorem resolvent_apply_comm (h : lambda ∈ resolventSet A) (x : A.domain) :
@@ -310,7 +300,7 @@ theorem resolvent_comm (hl : lambda ∈ A.resolventSet) (hm : mu ∈ A.resolvent
     have h2 := resolvent_sub_resolvent_apply hm hl y
     have h3 : (mu - lambda) • A.resolvent lambda (A.resolvent mu y)
         = (mu - lambda) • A.resolvent mu (A.resolvent lambda y) := by
-      rw [← h1, ← neg_sub lambda mu, neg_smul, ← h2]
+      rw [← h1, ← neg_sub lambda mu, _root_.neg_smul, ← h2]
       abel
     have h4 := congrArg (fun x : X => (mu - lambda)⁻¹ • x) h3
     simpa only [ContinuousLinearMap.comp_apply, smul_smul, inv_mul_cancel₀ hsub, one_smul]

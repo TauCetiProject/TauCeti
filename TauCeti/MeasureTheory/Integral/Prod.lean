@@ -42,6 +42,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
+* `TauCeti.enorm_integral_setIntegral_le_lintegral_lintegral` bounds an iterated integral
+  truncated to a region `s ∈ S t` (such as `s < t`) by the iterated integral of the norm, as used
+  to pass from bilinear to retarded estimates.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
@@ -275,5 +278,18 @@ theorem integrable_and_integral_prod_le [SFinite μ] [SFinite ν] {G : α × β 
     exact h.2
   exact ⟨hG_int, (integral_prod G hG_int).trans_le
     (integral_mono_ae hG_int.integral_prod_left hH_int (hslice.mono fun _ h ↦ h.2))⟩
+
+/-- The integral of `f s t` over a region `{(s, t) | s ∈ S t}` is bounded by the iterated
+integral of `‖f s t‖`: `|∫ ∫_{s ∈ S t} f s t ds dt| ≤ ∫∫ |f s t| ds dt`.
+
+With `f s t` a Duhamel pairing and `S = Iio`, this passes from a bilinear estimate to retarded
+estimates. -/
+theorem enorm_integral_setIntegral_le_lintegral_lintegral {S : α → Set β} {ρ : Measure β}
+    (f : β → α → E) :
+    ‖∫ t, ∫ s in S t, f s t ∂ρ ∂μ‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ ∂ρ ∂μ :=
+  calc _ ≤ ∫⁻ t, ‖∫ s in S t, f s t ∂ρ‖ₑ ∂μ := eNorm_integral_le_lintegral_eNorm _
+    _ ≤ ∫⁻ t, ∫⁻ s in S t, ‖f s t‖ₑ ∂ρ ∂μ :=
+        lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
+    _ ≤ _ := lintegral_mono fun _ ↦ setLIntegral_le_lintegral _ _
 
 end TauCeti

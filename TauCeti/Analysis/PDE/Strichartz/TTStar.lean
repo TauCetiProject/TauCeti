@@ -9,7 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Integral.RieszPotential
 import TauCeti.MeasureTheory.Function.Lp.Duality
-import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # The non-endpoint `TT*` argument
@@ -55,6 +56,9 @@ Hardy–Littlewood–Sobolev fails, needs the Keel–Tao argument instead.
   family `T(s, t)` decaying like `A |s - t| ^ (-2 / q)` from `L^{r'}` to `L^r`.
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_adjoint_le`: the bilinear `TT*` estimate
   `∫∫ |⟪U(s)* F(s), U(t)* G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`.
+* `TauCeti.enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm`: the truncation to
+  `s < t` of a pairing integral is bounded by the full integral of its absolute value, which
+  reduces retarded estimates to the bilinear one.
 * `TauCeti.exists_enorm_integral_adjoint_le`: the dual homogeneous estimate
   `‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^{q'} L^{r'}}`.
 * `TauCeti.exists_enorm_integral_inner_apply_le`: the homogeneous estimate in weak form,
@@ -170,6 +174,13 @@ theorem exists_lintegral_lintegral_enorm_inner_le {p q : ℝ≥0} (hq : 2 < q)
         gcongr
         exact hC b
     _ = _ := by ring
+
+/-- The reduction of a retarded estimate to the bilinear one: the pairing integrated over the
+region `s < t` is bounded by the integral of its absolute value over the whole `(s, t)` plane. -/
+theorem enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (f : ℝ → ℝ → V) :
+    ‖∫ t, ∫ s in Set.Iio t, f s t‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ :=
+  enorm_integral_setIntegral_le_lintegral_lintegral f
 
 variable [CompleteSpace E]
 

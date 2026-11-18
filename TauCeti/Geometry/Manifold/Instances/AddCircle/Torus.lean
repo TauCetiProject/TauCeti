@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
+public import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Integral linear automorphisms of a torus
@@ -26,9 +27,10 @@ circle. This is an action of the group `GL(ι, ℤ)` by additive maps
 torus, with inverse `x ↦ A⁻¹ • x` (`Diffeomorph.constSmul`), and the cotangent bundle `T*Tⁿ`
 inherits the cotangent-lifted action (`TauCeti.CotangentBundle.instMulAction`).
 
-The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, has derivative the identity of `ι → ℝ` at every
-point (`AddCircle.hasMFDerivAt_coe_pi`), and it intertwines the action of `A` on the torus with
-multiplication of real vectors by the matrix `A` (`AddCircle.generalLinearGroup_smul_coe_pi`).
+The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, is smooth (`AddCircle.contMDiff_coe_pi`), has
+derivative the identity of `ι → ℝ` at every point (`AddCircle.hasMFDerivAt_coe_pi`), and it
+intertwines the action of `A` on the torus with multiplication of real vectors by the matrix `A`
+(`AddCircle.generalLinearGroup_smul_coe_pi`).
 Hence the derivative of `x ↦ A • x` at every point is the matrix `A`, acting on `ι → ℝ`
 (`AddCircle.mfderiv_generalLinearGroup_smul_apply`). Choosing a basis of the period lattice of a
 torus is choosing such an `A`: these maps are the changes of angle coordinates of action–angle
@@ -42,7 +44,9 @@ For a torus `∀ i, AddCircle (p i)` with arbitrary positive periods, every tran
 * `AddCircle.instDistribMulActionGeneralLinearGroup`: the action of `GL(ι, ℤ)` on
   `ι → AddCircle p` by additive maps.
 * `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by smooth maps.
-* `AddCircle.hasMFDerivAt_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has derivative the identity.
+* `AddCircle.contMDiff_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` is smooth.
+* `AddCircle.hasMFDerivAt_coe_pi`, `AddCircle.mfderiv_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has
+  derivative the identity.
 * `AddCircle.hasMFDerivAt_pi_add_right`, `AddCircle.mfderiv_pi_add_right`: translations of a torus
   `∀ i, AddCircle (p i)` have derivative the identity.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
@@ -83,6 +87,21 @@ theorem hasMFDerivAt_coe_pi (t : ι → ℝ) :
     -- The product of the coordinate projections is the identity of `ι → ℝ`.
     ext v i
     rfl
+
+/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, has derivative the identity of
+`ι → ℝ`. -/
+@[simp]
+theorem mfderiv_coe_pi (t : ι → ℝ) :
+    mfderiv 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) t = ContinuousLinearMap.id ℝ (ι → ℝ) :=
+  (hasMFDerivAt_coe_pi p t).mfderiv
+
+/-- The covering map `(ι → ℝ) → (ι → AddCircle p)`, `t ↦ ([t i])ᵢ`, is smooth. -/
+theorem contMDiff_coe_pi (n : ℕ∞ω) :
+    ContMDiff 𝓘(ℝ, ι → ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
+      (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) :=
+  contMDiff_pi_iff.2 fun i ↦ (contMDiff_coe p n).comp
+    (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff
 
 end Cover
 
@@ -138,9 +157,7 @@ instance instDistribMulActionGeneralLinearGroup : DistribMulAction (GL ι ℤ) (
   one_smul x := funext fun i ↦ by
     simp [generalLinearGroup_smul_apply, Matrix.one_apply, ite_smul]
   mul_smul A B x := funext fun i ↦ by
-    simp only [generalLinearGroup_smul_apply, Units.val_mul, Matrix.mul_apply, Finset.sum_smul,
-      Finset.smul_sum, mul_smul]
-    exact Finset.sum_comm
+    simp only [generalLinearGroup_smul_apply, Units.val_mul, Matrix.sum_mul_apply_smul]
   smul_zero A := funext fun i ↦ by simp [generalLinearGroup_smul_apply]
   smul_add A x y := funext fun i ↦ by
     simp only [generalLinearGroup_smul_apply, Pi.add_apply, smul_add, Finset.sum_add_distrib]

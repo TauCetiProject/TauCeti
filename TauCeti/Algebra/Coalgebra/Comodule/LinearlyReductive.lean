@@ -212,20 +212,23 @@ variable [AddCommGroup V] [Module R V] [Comodule R C V]
 
 /-- **Complete reducibility via equivariant retractions.** A comodule is completely reducible
 exactly when every subcomodule is the image of a comodule endomorphism that fixes it pointwise. -/
-theorem isCompletelyReducible_iff_forall_exists_hom [Module.Flat R C] :
+theorem isCompletelyReducible_iff_forall_exists_hom :
     IsCompletelyReducible R C V ↔ ∀ W : Subcomodule R C V,
       ∃ P : Hom R C V V, (∀ v, P v ∈ W) ∧ ∀ w ∈ W, P w = w := by
-  -- A projection along a complement gives a retraction; conversely, flatness makes the kernel
-  -- of a retraction into a subcomodule complement.
+  -- A projection along a complement gives a retraction; conversely, the image of `id - P` is a
+  -- subcomodule complement.
   refine ⟨fun hV W ↦ ?_, fun hV ↦ IsCompletelyReducible.of_exists_isCompl fun W ↦ ?_⟩
   · obtain ⟨Q, hQ⟩ := hV.exists_isCompl W
     exact ⟨Subcomodule.projection W Q hQ, Subcomodule.projection_apply_mem hQ,
       fun _ ↦ Subcomodule.projection_apply_of_mem_left hQ⟩
   · obtain ⟨P, hP_mem, hP_self⟩ := hV W
-    refine ⟨Hom.ker P, ?_⟩
-    rw [Hom.ker_toSubmodule,
-      ← LinearMap.ker_codRestrict W.toSubmodule P.toLinearMap hP_mem]
-    exact LinearMap.isCompl_of_proj fun w ↦ Subtype.ext (hP_self w w.2)
+    -- The complement is the image of the endomorphism `id - P`, which is the kernel of `P`.
+    refine ⟨Hom.range (Hom.id R C V + (-1 : R) • P), ?_⟩
+    have hP : LinearMap.IsProj W.toSubmodule P.toLinearMap := ⟨hP_mem, hP_self⟩
+    have h : (Hom.id R C V + (-1 : R) • P).toLinearMap = LinearMap.id - P.toLinearMap := by
+      simp [sub_eq_add_neg]
+    rw [Hom.range_toSubmodule, h, ← LinearMap.IsIdempotentElem.ker_eq_range hP.isIdempotentElem]
+    exact hP.isCompl
 
 end Comodule
 
@@ -339,16 +342,6 @@ theorem of_forall_isCompletelyReducible
       Comodule.IsCompletelyReducible k C V) :
     IsLinearlyReductive.{u, v, w} k C :=
   h
-
-/-- Apply linear reductivity to a finite-dimensional comodule in the same carrier universe.
-
-Every finite-dimensional comodule whose carrier lies in the universe quantified by the
-hypothesis is completely reducible. -/
-theorem isCompletelyReducible_sameUniverse
-    (h : IsLinearlyReductive.{u, v, w} k C)
-    (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] [Module.Finite k V] :
-    Comodule.IsCompletelyReducible k C V :=
-  h V
 
 /-- If every finite-dimensional comodule whose carrier is in the base-field universe is
 completely reducible, then every finite-dimensional comodule is completely reducible, regardless
@@ -521,6 +514,19 @@ end Comodule
 namespace Coalgebra.IsLinearlyReductive
 
 variable {k : Type u} [Field k]
+
+/-- Apply linear reductivity to a comodule in the same carrier universe.
+
+Every comodule whose carrier lies in the universe quantified by the hypothesis is completely
+reducible: its finite subcomodules lie in that universe too. -/
+theorem isCompletelyReducible_sameUniverse (k : Type u) [Field k]
+    {C : Type v} [AddCommMonoid C] [Module k C] [Coalgebra k C]
+    (h : IsLinearlyReductive.{u, v, w} k C)
+    (V : Type w) [AddCommMonoid V] [Module k V] [Comodule k C V] :
+    Comodule.IsCompletelyReducible k C V := by
+  let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
+  let : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  exact Comodule.isCompletelyReducible_of_forall_finite fun F _ ↦ h F
 
 /-- **Every comodule over a linearly reductive coalgebra is completely reducible.** Linear
 reductivity only asks for complete reducibility of finite-dimensional comodules whose carrier

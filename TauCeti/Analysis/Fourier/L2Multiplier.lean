@@ -56,8 +56,6 @@ defined, it agrees with Mathlib's multipliers.
 * `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
   convolution with the Schwartz kernel `𝓕⁻ σ`, that is `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for
   almost every `x`. On Schwartz functions this is `SchwartzMap.fourierMultiplierCLM_eq_convolution`.
-* `SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le`: Young's inequality for it,
-  `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p` for `1 ≤ p ≤ ∞`.
 * `TauCeti.convolutionLp_eq_fourierMultiplierCLM`: convolution with an integrable kernel `k` is
   the multiplier whose symbol is the Fourier transform of `k`, and
   `TauCeti.coeFn_fourier_convolutionLp`, its Fourier-side form `𝓕 (k ⋆ f) = 𝓕 k • 𝓕 f`.
@@ -85,6 +83,7 @@ public section
 noncomputable section
 
 open scoped ENNReal FourierTransform ComplexInnerProductSpace SchwartzMap InnerProduct Topology
+  Convolution
 open FourierTransform ContinuousLinearMap Filter
 
 namespace MeasureTheory.Lp
@@ -327,22 +326,41 @@ theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
 
-/-- **`Lᵖ` bound for an `L²` multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier
-with a Schwartz symbol `σ` satisfies `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p` for every `f ∈ L²`, since `T_σ` is
-convolution with `𝓕⁻ σ`. On Schwartz functions this is
-`SchwartzMap.eLpNorm_fourierMultiplierCLM_le`. -/
+/-- **`Lᵖ` bound for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`, every
+`f ∈ L²` and every `1 ≤ p ≤ ∞`, `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`: `T_σ f` is the convolution of `f`
+with `𝓕⁻ σ`, and Young's inequality applies. Neither side is assumed finite, so `T_σ` maps
+`L² ∩ Lᵖ` into `Lᵖ`. On Schwartz functions this is `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`. -/
 theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_le (σ : 𝓢(E, ℂ))
     (f : Lp F 2 (volume : Measure E)) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) p volume ≤
       eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * eLpNorm f p volume := by
-  have h : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
-      convolution (𝓕⁻ (σ : E → ℂ)) (f : E → F) (lsmul ℂ ℂ) volume := by
+  have hconv : fourierMultiplierCLM F (σ.toLp ∞) f =ᵐ[volume]
+      (𝓕⁻ (σ : E → ℂ) ⋆[lsmul ℂ ℂ, volume] (f : E → F)) := by
     filter_upwards [σ.coeFn_fourierMultiplierCLM_toLp f] with x hx
-    rw [hx, convolution_lsmul_swap, SchwartzMap.fourierInv_coe]
-  rw [eLpNorm_congr_ae h, ← SchwartzMap.fourierInv_coe]
+    rw [hx, convolution_lsmul, ← integral_sub_left_eq_self _ volume x]
+    simp_rw [sub_sub_cancel, SchwartzMap.fourierInv_coe]
+  rw [eLpNorm_congr_ae hconv, ← SchwartzMap.fourierInv_coe]
   refine (eLpNorm_convolution_le _ (𝓕⁻ σ).continuous.aestronglyMeasurable
     (Lp.aestronglyMeasurable f) hp).trans ?_
   grw [opENorm_lsmul_le, one_mul]
+
+/-- **The `L¹ → L^∞` bound** for a multiplier with a Schwartz symbol `σ`: if the kernel `𝓕⁻ σ` is
+bounded by `B`, then `‖T_σ f‖_∞ ≤ B ‖f‖₁` for every integrable `f ∈ L²`. -/
+theorem _root_.SchwartzMap.eLpNorm_fourierMultiplierCLM_toLp_top_le (σ : 𝓢(E, ℂ)) {B : ℝ}
+    (hB : ∀ x, ‖𝓕⁻ σ x‖ ≤ B) {f : Lp F 2 (volume : Measure E)} (hf : Integrable f) :
+    eLpNorm (fourierMultiplierCLM F (σ.toLp ∞) f) ∞ volume ≤
+      ENNReal.ofReal B * eLpNorm f 1 volume := by
+  have hbound : ∀ᵐ x ∂volume, ‖fourierMultiplierCLM F (σ.toLp ∞) f x‖ ≤ B * ∫ y, ‖f y‖ := by
+    filter_upwards [SchwartzMap.coeFn_fourierMultiplierCLM_toLp σ f] with x hx
+    rw [hx, ← integral_const_mul]
+    refine norm_integral_le_of_norm_le (hf.norm.const_mul _) (Eventually.of_forall fun y ↦ ?_)
+    rw [norm_smul]
+    exact mul_le_mul_of_nonneg_right (hB _) (norm_nonneg _)
+  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_eNorm,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hf,
+    ← ENNReal.ofReal_mul ((norm_nonneg _).trans (hB 0))]
+  · exact eLpNormEssSup_le_of_ae_bound hbound
+  all_goals exact Lp.aestronglyMeasurable _
 
 /-- If the symbols `m i` are eventually bounded in `L^∞` uniformly in `i` along a countably
 generated filter `l` and converge to `m₀` almost everywhere along `l`, then
@@ -386,7 +404,6 @@ end MeasureTheory.Lp
 namespace TauCeti
 
 open MeasureTheory
-open scoped Convolution
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
