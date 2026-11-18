@@ -225,9 +225,7 @@ theorem memLp_one_add_norm_sq_rpow_smul_localFourier_iteratedLineDerivOp_sub_pro
 theorem IsMicrolocallySobolevAt.lineDerivOp {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (h : T.IsMicrolocallySobolevAt s x ξ) (v : E) :
     (∂_{v} T).IsMicrolocallySobolevAt (s - 1) x ξ := by
-  have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 h
-    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  have hx : x ∈ Ω := h.mem
   obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hL⟩ := h.exists_nhds_cone
   obtain ⟨ψ, hψ, hψx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem hU (Ω.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)

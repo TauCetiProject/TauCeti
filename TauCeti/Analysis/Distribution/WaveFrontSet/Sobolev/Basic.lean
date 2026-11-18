@@ -103,6 +103,12 @@ theorem isMicrolocallySobolevAt_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
         MemLp (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) 2 (volume.restrict Γ) :=
   Iff.rfl
 
+/-- A distribution can only be microlocally `H^s` over points of its domain. -/
+theorem IsMicrolocallySobolevAt.mem {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySobolevAt s x ξ) : x ∈ Ω := by
+  obtain ⟨φ, hφ, -⟩ := h
+  exact φ.tsupport_subset (subset_tsupport _ hφ)
+
 /-- The **`H^s` wave front set** of a complex distribution `T` on `Ω`: the pairs `(x, ξ)` with
 `x ∈ Ω` and `ξ ≠ 0` at which `T` is not microlocally `H^s`. -/
 def sobolevWaveFrontSet (s : ℝ) (T : 𝓓'(Ω, ℂ)) : Set (E × E) :=

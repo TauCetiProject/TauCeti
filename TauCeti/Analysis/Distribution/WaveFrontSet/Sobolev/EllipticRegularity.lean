@@ -250,9 +250,7 @@ theorem IsMicrolocallySobolevAt.of_sum_smul_iteratedLineDerivOp {ι : Type*} {t 
     (hP : (∑ i ∈ t, c i • ∂^{m i} T).IsMicrolocallySobolevAt s x ξ)
     (hξ : constCoeffPrincipalSymbol t c m M ξ ≠ 0) :
     T.IsMicrolocallySobolevAt (s + M) x ξ := by
-  have hx : x ∈ Ω := by
-    obtain ⟨φ, hφ, -⟩ := isMicrolocallySobolevAt_iff.1 hP
-    exact φ.tsupport_subset (subset_tsupport _ hφ)
+  have hx : x ∈ Ω := hP.mem
   obtain ⟨U₁, hU₁, Γ₁, hΓ₁, hξ₁, hcone₁, hL₁⟩ := hP.exists_nhds_cone
   obtain ⟨Γ₂, hΓ₂, hξ₂, hcone₂, c₀, hc₀, hell⟩ := exists_cone_le_norm_constCoeffPrincipalSymbol hξ
   -- The full symbol is elliptic at large frequencies in `Γ₂`.
@@ -334,8 +332,7 @@ theorem sobolevWaveFrontSet_laplacianCLM (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
   have h := sobolevWaveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero s Finset.univ
     (fun _ ↦ 1) (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl)
     (fun ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, iteratedLineDerivOp_one, Fin.tail]
-      using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 

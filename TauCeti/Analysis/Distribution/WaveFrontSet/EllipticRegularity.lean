@@ -900,6 +900,13 @@ theorem singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero [Measurab
   simpa using singularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s c
     (a := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) m hk (fun _ _ ξ hξ ↦ by simpa using hσ ξ hξ) T
 
+/-- The Laplacian `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)` is the sum of the second iterated
+derivatives `∂^{![b i, b i]}` along any orthonormal basis `b`. -/
+theorem laplacianCLM_eq_sum_iteratedLineDerivOp {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (T : 𝓓'(Ω, ℂ)) :
+    laplacianCLM ℝ E 𝓓'(Ω, ℂ) T = ∑ i, ∂^{![b i, b i]} T := by
+  simp [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left]
+
 /-- **The Laplacian preserves the wave front set.** The Laplacian
 `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`, which is `∑ i, ∂_{b i} ∂_{b i}` for any orthonormal
 basis `b`, satisfies `WF(Δ T) = WF(T)`: its principal symbol `∑ i, ⟪b i, ξ⟫ ^ 2 = ‖ξ‖ ^ 2`
@@ -910,8 +917,7 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
   set b := stdOrthonormalBasis ℝ E
   have h := waveFrontSet_sum_smul_iteratedLineDerivOp_of_forall_ne_zero Finset.univ (fun _ ↦ 1)
     (k := fun _ ↦ 2) (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, iteratedLineDerivOp_one, Fin.tail]
-      using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
 
