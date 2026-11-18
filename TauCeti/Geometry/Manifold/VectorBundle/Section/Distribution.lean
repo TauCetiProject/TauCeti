@@ -199,10 +199,11 @@ instance : T2Space (BundleTest I F V) :=
     fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩
 
 /-- Evaluation of bundle tests at a point is continuous. -/
-theorem continuous_apply (x : M) : Continuous fun s : BundleTest I F V ↦ s x := by
+theorem continuous_eval_const (x : M) : Continuous fun s : BundleTest I F V ↦ s x := by
   let := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
     (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
-  exact (continuous_eval_const _ _ _ (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩) x).comp
+  exact (ContMDiffSection.continuous_eval_const _ _ _
+    (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩) x).comp
     (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _)
 
 /-- Every fixed-compact support stage includes continuously into the bundle tests. -/
@@ -218,7 +219,7 @@ variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
 /-- The universal property of the test topology: a linear map from bundle tests to a locally
 convex real topological vector space is continuous exactly when it is continuous on every
 fixed-compact support stage. -/
-theorem continuous_iff (g : BundleTest I F V →ₗ[ℝ] G) :
+theorem continuous_iff_continuous_comp (g : BundleTest I F V →ₗ[ℝ] G) :
     letI := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
       (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
     Continuous g ↔ ∀ K : Compacts M,
@@ -234,7 +235,7 @@ def delta (x : M) (ℓ : V x →L[ℝ] ℝ) : BundleTest I F V →L_c[ℝ] ℝ w
   toFun s := ℓ (s x)
   map_add' s t := by simp
   map_smul' a s := by simp
-  cont := ℓ.continuous.comp (continuous_apply x)
+  cont := ℓ.continuous.comp (continuous_eval_const x)
 
 @[simp]
 theorem delta_apply (x : M) (ℓ : V x →L[ℝ] ℝ) (s : BundleTest I F V) :
