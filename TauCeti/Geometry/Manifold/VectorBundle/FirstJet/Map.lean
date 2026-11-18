@@ -12,12 +12,13 @@ public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 # First jets of vector bundle morphisms
 
 A family `Φ y : V y →L[𝕜] W y` of fibre maps between two vector bundles over the same base, which
-is differentiable as a section of the bundle `Hom(V, W)`, acts on first jets of sections:
+is differentiable as a section of the bundle `Hom(V, W)`, acts on first jets of sections
+differentiable at `x`:
 
 `J¹Φ (j¹s(x)) = j¹(Φ s)(x)`.
 
-In the chart and trivializations at `x`, where the local representative of `Φ` is the operator
-valued function `φ(z) = e^W ∘ Φ(z) ∘ (e^V)⁻¹`, the product rule gives
+In the chart and trivializations at `x`, where the local representative of `Φ` as a section of
+`Hom(V, W)` is the operator valued function `φ(z) = e^W ∘ Φ(z) ∘ (e^V)⁻¹`, the product rule gives
 
 `J¹Φ (v, A) = (φ(z₀) v, φ(z₀) ∘ A + dφ(z₀)(·) v)`,
 
@@ -31,10 +32,11 @@ differentiable in both directions induces isomorphisms `J¹Vₓ ≃ J¹Wₓ` of 
 
 ## Main definitions and results
 
-* `TauCeti.FirstJetBundle.homLocalRep`: the local representative of a bundle morphism in a chart
-  and the trivializations of source and target.
+* `TauCeti.FirstJetBundle.fderivWithin_localRep_apply`: the product rule for the local
+  representatives of a bundle morphism and a section.
 * `TauCeti.FirstJetBundle.map`: the first-jet prolongation `J¹Φ : J¹V → J¹W`.
-* `TauCeti.FirstJetBundle.map_jet`: `J¹Φ (j¹s(x)) = j¹(Φ s)(x)`.
+* `TauCeti.FirstJetBundle.map_jet`: `J¹Φ (j¹s(x)) = j¹(Φ s)(x)` for sections `s` differentiable at
+  `x`.
 * `TauCeti.FirstJetBundle.value_map` and `TauCeti.FirstJetBundle.map_ofDeriv`: `J¹Φ` covers `Φ` on
   values and sends the jet of `L : TₓM → Vₓ` to the jet of `Φₓ ∘ L`.
 * `TauCeti.FirstJetBundle.map_id` and `TauCeti.FirstJetBundle.map_comp`: functoriality.
@@ -79,105 +81,68 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ x, Module 𝕜 (W' x)] [∀ x, TopologicalSpace (W' x)] [FiberBundle G' W']
   [VectorBundle 𝕜 G' W']
 
-/-! ### The local representative of a bundle morphism -/
+variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
 
-/-- The local representative `z ↦ eᵢ^W ∘ Φ(φᵢ⁻¹ z) ∘ (eᵢ^V)⁻¹` of a family of fibre maps
-`Φ y : V y →L[𝕜] W y` in the extended chart `φᵢ` and the preferred trivializations of `V` and
-`W` at `i`. -/
-def homLocalRep (Φ : ∀ y, V y →L[𝕜] W y) (i : M) (z : E) : F →L[𝕜] G :=
-  ContinuousLinearMap.inCoordinates F V G W i ((extChartAt I i).symm z) i
-    ((extChartAt I i).symm z) (Φ ((extChartAt I i).symm z))
+/-! ### The local representative of a bundle morphism
 
-/-- `homLocalRep` is `Φ` read in the trivializations at `i`, at the inverse chart image of `z`. -/
-theorem homLocalRep_apply (Φ : ∀ y, V y →L[𝕜] W y) (i : M) (z : E) :
-    homLocalRep I F G Φ i z =
-      ContinuousLinearMap.inCoordinates F V G W i ((extChartAt I i).symm z) i
-        ((extChartAt I i).symm z) (Φ ((extChartAt I i).symm z)) :=
-  (rfl)
+A family `Φ y : V y →L[𝕜] W y` of fibre maps is a section of the bundle `Hom(V, W)`. Its local
+representative `localRep I (F →L[𝕜] G) Φ i` in the chart at `i` and the trivialization of
+`Hom(V, W)` at `i` is the operator valued function `z ↦ eᵢ^W ∘ Φ(φᵢ⁻¹ z) ∘ (eᵢ^V)⁻¹`
+(`Bundle.hom_trivializationAt_apply`). -/
 
 variable {I F G}
 
-/-- At the image of a point of the chart domain, the local representative of `Φ` is `Φ` read in
-the trivializations at `i`. -/
-theorem homLocalRep_extChartAt (Φ : ∀ y, V y →L[𝕜] W y) {i y : M}
-    (hy : y ∈ (chartAt H i).source) :
-    homLocalRep I F G Φ i (extChartAt I i y) =
-      ContinuousLinearMap.inCoordinates F V G W i y i y (Φ y) := by
-  rw [homLocalRep_apply, (extChartAt I i).left_inv (by rwa [extChartAt_source])]
+/-- A point of the chart domain at `i` is recovered from its chart coordinate, so it keeps every
+property it has. -/
+private theorem extChartAt_symm_extChartAt_mem {i y : M} (hy : y ∈ (chartAt H i).source)
+    {S : Set M} (h : y ∈ S) : (extChartAt I i).symm (extChartAt I i y) ∈ S := by
+  rwa [(extChartAt I i).left_inv (by rwa [extChartAt_source])]
+
+/-- A point of the first-jet chart domain of `V` at `i` where the trivialization of `W` at `i` is
+defined lies in the first-jet chart domain of `Hom(V, W)` at `i`. -/
+private theorem mem_baseSet_hom {i y : M} (hV : y ∈ baseSet (H := H) F V i)
+    (hW : y ∈ (trivializationAt G W i).baseSet) :
+    y ∈ baseSet (H := H) (F →L[𝕜] G) (fun y ↦ V y →L[𝕜] W y) i :=
+  have hV' := (mem_baseSet_iff _ _).1 hV
+  (mem_baseSet_iff _ _).2 ⟨by rw [hom_trivializationAt_baseSet]; exact ⟨hV'.1, hW⟩, hV'.2⟩
 
 /-- The local representative of `Φ s` is the local representative of `Φ` applied to that of `s`,
 at points whose inverse chart image lies in the domains of both trivializations. -/
-theorem homLocalRep_apply_localRep (Φ : ∀ y, V y →L[𝕜] W y) (s : ∀ y, V y) {i : M} {z : E}
+theorem localRep_apply_localRep (Φ : ∀ y, V y →L[𝕜] W y) (s : ∀ y, V y) {i : M} {z : E}
     (hV : (extChartAt I i).symm z ∈ (trivializationAt F V i).baseSet)
     (hW : (extChartAt I i).symm z ∈ (trivializationAt G W i).baseSet) :
-    homLocalRep I F G Φ i z (localRep I F s i z) = localRep I G (fun y ↦ Φ y (s y)) i z := by
-  rw [homLocalRep_apply, ContinuousLinearMap.inCoordinates, localRep_apply, localRep_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    Trivialization.symmL_apply _ hV, Trivialization.symm_apply_apply_mk _ hV,
+    localRep I (F →L[𝕜] G) Φ i z (localRep I F s i z) = localRep I G (fun y ↦ Φ y (s y)) i z := by
+  simp only [localRep_apply, hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    ContinuousLinearMap.comp_apply, Trivialization.symmL_apply _ hV,
+    Trivialization.symm_apply_apply_mk _ hV,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hW]
 
 /-- At the base point, the local representative of `Φ` is `Φ` read in the trivializations, so
 on values it is `Φ` itself. -/
-private theorem symm_homLocalRep_extChartAt_apply (Φ : ∀ y, V y →L[𝕜] W y) {x : M} (v : F) :
-    (trivializationAt G W x).symm x (homLocalRep I F G Φ x (extChartAt I x x) v) =
+private theorem symm_localRep_extChartAt_apply (Φ : ∀ y, V y →L[𝕜] W y) {x : M} (v : F) :
+    (trivializationAt G W x).symm x (localRep I (F →L[𝕜] G) Φ x (extChartAt I x x) v) =
       Φ x ((trivializationAt F V x).symm x v) := by
-  rw [homLocalRep_extChartAt Φ (mem_chart_source H x), ContinuousLinearMap.inCoordinates,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ← Trivialization.symmL_apply (R := 𝕜) _ (mem_baseSet_trivializationAt G W x),
-    Trivialization.symmL_continuousLinearMapAt _ (mem_baseSet_trivializationAt G W x),
-    Trivialization.symmL_apply _ (mem_baseSet_trivializationAt F V x)]
+  have hV := mem_baseSet_trivializationAt F V x
+  have hW := mem_baseSet_trivializationAt G W x
+  simp only [localRep_extChartAt I _ Φ (mem_chart_source H x), hom_trivializationAt_apply,
+    ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+    Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hW,
+    Trivialization.symm_apply_apply_mk _ hW, Trivialization.symmL_apply _ hV]
 
 /-- The local representative of a composite of bundle morphisms is the composite of their local
 representatives, at points in the domain of the trivialization of the middle bundle. -/
-theorem homLocalRep_comp (Φ : ∀ y, V y →L[𝕜] W y) (Ψ : ∀ y, W y →L[𝕜] W' y) {i : M} {z : E}
+theorem localRep_comp [∀ x, IsTopologicalAddGroup (W' x)] [∀ x, ContinuousSMul 𝕜 (W' x)]
+    (Φ : ∀ y, V y →L[𝕜] W y) (Ψ : ∀ y, W y →L[𝕜] W' y) {i : M} {z : E}
     (hW : (extChartAt I i).symm z ∈ (trivializationAt G W i).baseSet) :
-    homLocalRep I F G' (fun y ↦ (Ψ y).comp (Φ y)) i z =
-      (homLocalRep I G G' Ψ i z).comp (homLocalRep I F G Φ i z) := by
+    localRep I (F →L[𝕜] G') (fun y ↦ (Ψ y).comp (Φ y)) i z =
+      (localRep I (G →L[𝕜] G') Ψ i z).comp (localRep I (F →L[𝕜] G) Φ i z) := by
   ext v
-  simp only [homLocalRep_apply, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
-    Trivialization.symmL_continuousLinearMapAt _ hW]
+  simp only [localRep_apply, hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    ContinuousLinearMap.comp_apply, Trivialization.symmL_continuousLinearMapAt _ hW]
 
-section Differentiable
-
-variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
-
-/-- The local representative in the chart and trivializations at `i` of a bundle morphism that
-is `C^n` at a point `y` of their domains is `C^n` within `range I` at the image of `y`. -/
-theorem contDiffWithinAt_homLocalRep {n : ℕ∞ω} [IsManifold I n M] [ContMDiffVectorBundle n F V I]
-    [ContMDiffVectorBundle n G W I] {Φ : ∀ y, V y →L[𝕜] W y} {i y : M}
-    (hΦ : ContMDiffAt I (I.prod 𝓘(𝕜, F →L[𝕜] G)) n
-      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] W y) y (Φ y)) y)
-    (hV : y ∈ baseSet (H := H) F V i) (hW : y ∈ (trivializationAt G W i).baseSet) :
-    ContDiffWithinAt 𝕜 n (homLocalRep I F G Φ i) (range I) (extChartAt I i y) := by
-  have hy := mem_extChartAt_source_of_mem_baseSet I hV
-  have h₁ : ContMDiffAt I 𝓘(𝕜, F →L[𝕜] G) n
-      (fun x ↦ ContinuousLinearMap.inCoordinates F V G W i x i x (Φ x))
-      ((extChartAt I i).symm (extChartAt I i y)) := by
-    rw [(extChartAt I i).left_inv hy]
-    exact ((trivializationAt (F →L[𝕜] G) (fun y ↦ V y →L[𝕜] W y) i).contMDiffAt_section_iff
-      ⟨((mem_baseSet_iff _ _).1 hV).1, hW⟩).1 hΦ
-  exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h₁.comp_contMDiffWithinAt _
-    (contMDiffWithinAt_extChartAt_symm_range i ((extChartAt I i).map_source hy)))
+section
 
 variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] [ContMDiffVectorBundle 1 G W I]
-
-/-- The local representative in the chart and trivializations at `i` of a bundle morphism that
-is differentiable at a point `y` of their domains is differentiable within `range I` at the image
-of `y`. -/
-theorem differentiableWithinAt_homLocalRep {Φ : ∀ y, V y →L[𝕜] W y} {i y : M}
-    (hΦ : MDifferentiableAt I (I.prod 𝓘(𝕜, F →L[𝕜] G))
-      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] W y) y (Φ y)) y)
-    (hV : y ∈ baseSet (H := H) F V i) (hW : y ∈ (trivializationAt G W i).baseSet) :
-    DifferentiableWithinAt 𝕜 (homLocalRep I F G Φ i) (range I) (extChartAt I i y) := by
-  have hy := mem_extChartAt_source_of_mem_baseSet I hV
-  have h₁ : MDifferentiableAt I 𝓘(𝕜, F →L[𝕜] G)
-      (fun x ↦ ContinuousLinearMap.inCoordinates F V G W i x i x (Φ x))
-      ((extChartAt I i).symm (extChartAt I i y)) := by
-    rw [(extChartAt I i).left_inv hy]
-    exact ((trivializationAt (F →L[𝕜] G) (fun y ↦ V y →L[𝕜] W y) i).mdifferentiableAt_section_iff
-      I Φ ⟨((mem_baseSet_iff _ _).1 hV).1, hW⟩).1 hΦ
-  exact mdifferentiableWithinAt_iff_differentiableWithinAt.1 (h₁.comp_mdifferentiableWithinAt _
-    (mdifferentiableWithinAt_extChartAt_symm ((extChartAt I i).map_source hy)))
 
 /-- **Product rule for local representatives.** In the chart and trivializations at `i`, the
 chart derivative of the local representative of `Φ s` is
@@ -189,52 +154,49 @@ theorem fderivWithin_localRep_apply {Φ : ∀ y, V y →L[𝕜] W y} {s : ∀ y,
     (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun x ↦ TotalSpace.mk' F x (s x)) y)
     (hV : y ∈ baseSet (H := H) F V i) (hW : y ∈ (trivializationAt G W i).baseSet) :
     fderivWithin 𝕜 (localRep I G (fun y ↦ Φ y (s y)) i) (range I) (extChartAt I i y) =
-      (homLocalRep I F G Φ i (extChartAt I i y)).comp
+      (localRep I (F →L[𝕜] G) Φ i (extChartAt I i y)).comp
           (fderivWithin 𝕜 (localRep I F s i) (range I) (extChartAt I i y)) +
-        (fderivWithin 𝕜 (homLocalRep I F G Φ i) (range I) (extChartAt I i y)).flip
+        (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ i) (range I) (extChartAt I i y)).flip
           (localRep I F s i (extChartAt I i y)) := by
   have hy := mem_extChartAt_source_of_mem_baseSet I hV
-  have hprod := (differentiableWithinAt_homLocalRep hΦ hV hW).hasFDerivWithinAt.clm_apply
+  have hV' := (mem_baseSet_iff _ _).1 hV
+  have hprod := (differentiableWithinAt_localRep I (F →L[𝕜] G) hΦ
+    (mem_baseSet_hom hV hW)).hasFDerivWithinAt.clm_apply
     (differentiableWithinAt_localRep I F hs hV).hasFDerivWithinAt
   refine (hprod.congr_of_eventuallyEq ?_ ?_).fderivWithin
     (I.uniqueDiffOn _ (extChartAt_target_subset_range i ((extChartAt I i).map_source hy)))
-  · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hV ((mem_baseSet_iff _ _).1 hV).2,
+  · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hV hV'.2,
       mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hy
         ((trivializationAt G W i).open_baseSet.mem_nhds hW))] with z hzV hzW
-    exact (homLocalRep_apply_localRep Φ s ((mem_baseSet_iff _ _).1 hzV).1 hzW).symm
-  · exact (homLocalRep_apply_localRep Φ s
-      (by rw [(extChartAt I i).left_inv hy]; exact ((mem_baseSet_iff _ _).1 hV).1)
-      (by rw [(extChartAt I i).left_inv hy]; exact hW)).symm
-
-end Differentiable
+    exact (localRep_apply_localRep Φ s ((mem_baseSet_iff _ _).1 hzV).1 hzW).symm
+  · exact (localRep_apply_localRep Φ s (extChartAt_symm_extChartAt_mem hV'.2 hV'.1)
+      (extChartAt_symm_extChartAt_mem hV'.2 hW)).symm
 
 /-! ### The prolongation of a bundle morphism -/
-
-variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] [ContMDiffVectorBundle 1 G W I]
 
 variable (I F G) in
 /-- The first-jet prolongation `J¹Φ : J¹Vₓ → J¹Wₓ` of a family of fibre maps
 `Φ y : V y →L[𝕜] W y`. In the chart and trivializations at `x`, with `φ` the local representative
 of `Φ`, it sends `(v, A)` to `(φ(z₀) v, φ(z₀) ∘ A + dφ(z₀)(·) v)`: the transformation of first
-jets by the product rule. When `Φ` is differentiable at `x` it sends `j¹s(x)` to `j¹(Φ s)(x)`
-(`TauCeti.FirstJetBundle.map_jet`). -/
+jets by the product rule. When `Φ` and `s` are differentiable at `x` it sends `j¹s(x)` to
+`j¹(Φ s)(x)` (`TauCeti.FirstJetBundle.map_jet`). -/
 def map (Φ : ∀ y, V y →L[𝕜] W y) (x : M) :
     FirstJetBundle I F V x →L[𝕜] FirstJetBundle I G W x :=
-  ContinuousLinearMap.firstJetPullback (homLocalRep I F G Φ x (extChartAt I x x))
-    (fderivWithin 𝕜 (homLocalRep I F G Φ x) (range I) (extChartAt I x x))
+  ContinuousLinearMap.firstJetPullback (localRep I (F →L[𝕜] G) Φ x (extChartAt I x x))
+    (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ x) (range I) (extChartAt I x x))
     (ContinuousLinearMap.id 𝕜 E)
 
 /-- The value coordinate of `J¹Φ (v, A)` is `φ(z₀) v`. -/
 @[simp]
 theorem map_fst (Φ : ∀ y, V y →L[𝕜] W y) (x : M) (j : FirstJetBundle I F V x) :
-    (map I F G Φ x j).1 = homLocalRep I F G Φ x (extChartAt I x x) j.1 :=
+    (map I F G Φ x j).1 = localRep I (F →L[𝕜] G) Φ x (extChartAt I x x) j.1 :=
   congrArg Prod.fst (ContinuousLinearMap.firstJetPullback_apply _ _ _ _)
 
 /-- The derivative coordinate of `J¹Φ (v, A)` is `φ(z₀) ∘ A + dφ(z₀)(·) v`. -/
 @[simp]
 theorem map_snd (Φ : ∀ y, V y →L[𝕜] W y) (x : M) (j : FirstJetBundle I F V x) :
-    (map I F G Φ x j).2 = (homLocalRep I F G Φ x (extChartAt I x x)).comp j.2 +
-      (fderivWithin 𝕜 (homLocalRep I F G Φ x) (range I) (extChartAt I x x)).flip j.1 := by
+    (map I F G Φ x j).2 = (localRep I (F →L[𝕜] G) Φ x (extChartAt I x x)).comp j.2 +
+      (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ x) (range I) (extChartAt I x x)).flip j.1 := by
   refine (congrArg Prod.snd (ContinuousLinearMap.firstJetPullback_apply _ _ _ _)).trans ?_
   rw [ContinuousLinearMap.comp_id, add_comm]
 
@@ -243,7 +205,7 @@ of `j`. -/
 @[simp]
 theorem value_map (Φ : ∀ y, V y →L[𝕜] W y) (x : M) (j : FirstJetBundle I F V x) :
     value I G x (map I F G Φ x j) = Φ x (value I F x j) := by
-  rw [value_apply, value_apply, map_fst, symm_homLocalRep_extChartAt_apply]
+  rw [value_apply, value_apply, map_fst, symm_localRep_extChartAt_apply]
 
 /-- The value map intertwines `J¹Φ` and `Φ`. -/
 theorem value_comp_map (Φ : ∀ y, V y →L[𝕜] W y) (x : M) :
@@ -256,20 +218,15 @@ homomorphism `L : TₓM → Vₓ` to the jet of `Φₓ ∘ L`. Together with
 `0 → Hom(TₓM, Vₓ) → J¹Vₓ → Vₓ → 0` and `0 → Hom(TₓM, Wₓ) → J¹Wₓ → Wₓ → 0`. -/
 @[simp]
 theorem map_ofDeriv [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-    [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
     (Φ : ∀ y, V y →L[𝕜] W y) (x : M) (L : TangentSpace I x →L[𝕜] V x) :
     map I F G Φ x (ofDeriv I F x L) = ofDeriv I G x ((Φ x).comp L) := by
   refine Prod.ext (by rw [map_fst, ofDeriv_fst, map_zero, ofDeriv_fst]) ?_
   rw [map_snd, ofDeriv_fst, map_zero, add_zero, ofDeriv_snd, ofDeriv_snd,
-    homLocalRep_extChartAt Φ (mem_chart_source H x)]
+    localRep_extChartAt I _ Φ (mem_chart_source H x), hom_trivializationAt_apply]
   -- Both sides are `e^W ∘ Φₓ ∘ L`, once `(e^V)⁻¹ ∘ e^V = id` is cancelled on each vector.
   refine ContinuousLinearMap.ext fun v ↦ ?_
   exact congrArg (fun w ↦ (trivializationAt G W x).continuousLinearMapAt 𝕜 x (Φ x w))
     (Trivialization.symmL_continuousLinearMapAt _ (mem_baseSet_trivializationAt F V x) (L v))
-
-section Differentiable
-
-variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
 
 /-- **Naturality of first jets.** The prolongation of a bundle morphism `Φ` differentiable at `x`
 sends the first jet at `x` of a section `s` differentiable at `x` to the first jet of `Φ s`. -/
@@ -283,8 +240,9 @@ theorem map_jet {Φ : ∀ y, V y →L[𝕜] W y} {s : ∀ y, V y} {x : M}
   have hx := mem_chart_source H x
   refine Prod.ext ?_ ?_
   · rw [map_fst, jet_fst, jet_fst, ← localRep_extChartAt I F s hx,
-      homLocalRep_apply_localRep Φ s (by simpa using mem_baseSet_trivializationAt F V x)
-        (by simpa using hW),
+      localRep_apply_localRep Φ s
+        (extChartAt_symm_extChartAt_mem hx (mem_baseSet_trivializationAt F V x))
+        (extChartAt_symm_extChartAt_mem hx hW),
       localRep_extChartAt I G _ hx]
   · rw [map_snd, jet_snd, jet_snd, fderivWithin_localRep_apply hΦ hs hV hW, jet_fst,
       localRep_extChartAt I F s hx]
@@ -298,44 +256,41 @@ theorem coordChange_map {Φ : ∀ y, V y →L[𝕜] W y} {i y : M}
     (hV : y ∈ baseSet (H := H) F V i) (hW : y ∈ baseSet (H := H) G W i)
     (j : FirstJetBundle I F V y) :
     coordChange I G W y i y (map I F G Φ y j) =
-      ContinuousLinearMap.firstJetPullback (homLocalRep I F G Φ i (extChartAt I i y))
-        (fderivWithin 𝕜 (homLocalRep I F G Φ i) (range I) (extChartAt I i y))
+      ContinuousLinearMap.firstJetPullback (localRep I (F →L[𝕜] G) Φ i (extChartAt I i y))
+        (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ i) (range I) (extChartAt I i y))
         (ContinuousLinearMap.id 𝕜 E) (coordChange I F V y i y j) := by
   -- Realize `j` as the first jet of a section and compare both sides on its first jet.
   obtain ⟨s, hs, rfl⟩ := exists_contMDiffAt_jet_eq I F (n := 1) y j
   have hs' := hs.mdifferentiableAt one_ne_zero
   have hV' := (mem_baseSet_iff _ _).1 hV
   have hW' := (mem_baseSet_iff _ _).1 hW
-  have hy : (extChartAt I i).symm (extChartAt I i y) = y :=
-    (extChartAt I i).left_inv (mem_extChartAt_source_of_mem_baseSet I hV)
   rw [map_jet hΦ hs', coordChange_jet I G (hΦ.clm_bundle_apply hs') hW,
     coordChange_jet I F hs' hV, ContinuousLinearMap.firstJetPullback_apply,
     ContinuousLinearMap.comp_id, fderivWithin_localRep_apply hΦ hs' hV hW'.1, add_comm,
     ← localRep_extChartAt I F s hV'.2,
-    homLocalRep_apply_localRep Φ s (by rw [hy]; exact hV'.1) (by rw [hy]; exact hW'.1),
+    localRep_apply_localRep Φ s (extChartAt_symm_extChartAt_mem hV'.2 hV'.1)
+      (extChartAt_symm_extChartAt_mem hV'.2 hW'.1),
     localRep_extChartAt I G _ hV'.2]
-
-end Differentiable
 
 /-! ### Functoriality -/
 
 /-- The prolongation of the identity is the identity. -/
 @[simp]
-theorem map_id (x : M) :
+theorem map_id [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)] (x : M) :
     map I F F (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x = ContinuousLinearMap.id 𝕜 _ := by
   have hx := mem_baseSet_self (H := H) F V x
   have hx' := mem_extChartAt_source_of_mem_baseSet I hx
-  have hx₀ : (extChartAt I x).symm (extChartAt I x x) ∈ (trivializationAt F V x).baseSet := by
-    rw [(extChartAt I x).left_inv hx']; exact mem_baseSet_trivializationAt F V x
+  have hx₀ := extChartAt_symm_extChartAt_mem (I := I) (mem_chart_source H x)
+    (mem_baseSet_trivializationAt F V x)
   -- Near the base point the local representative of the identity is constantly the identity.
   have hrep : ∀ z, (extChartAt I x).symm z ∈ (trivializationAt F V x).baseSet →
-      homLocalRep I F F (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x z =
+      localRep I (F →L[𝕜] F) (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x z =
         ContinuousLinearMap.id 𝕜 F := fun z hz ↦ by
     ext w
-    rw [homLocalRep_apply, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
+    simp only [localRep_apply, hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
       ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
-      Trivialization.continuousLinearMapAt_symmL _ hz, ContinuousLinearMap.id_apply]
-  have hderiv : fderivWithin 𝕜 (homLocalRep I F F (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x)
+      Trivialization.continuousLinearMapAt_symmL _ hz]
+  have hderiv : fderivWithin 𝕜 (localRep I (F →L[𝕜] F) (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x)
       (range I) (extChartAt I x x) = 0 := by
     refine ((hasFDerivWithinAt_const (ContinuousLinearMap.id 𝕜 F) _ _).congr_of_eventuallyEq
       ?_ ?_).fderivWithin (I.uniqueDiffOn _ (extChartAt_target_subset_range x
@@ -350,7 +305,6 @@ theorem map_id (x : M) :
 section Comp
 
 variable [ContMDiffVectorBundle 1 G' W' I]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
   [∀ x, IsTopologicalAddGroup (W' x)] [∀ x, ContinuousSMul 𝕜 (W' x)]
 
 /-- **Functoriality of the prolongation**: the prolongation of a composite of differentiable
@@ -365,28 +319,30 @@ theorem map_comp {Φ : ∀ y, V y →L[𝕜] W y} {Ψ : ∀ y, W y →L[𝕜] W'
   have hW := mem_baseSet_trivializationAt G W x
   have hW' := mem_baseSet_trivializationAt G' W' x
   have hx' := mem_extChartAt_source_of_mem_baseSet I hV
-  have hWx : (extChartAt I x).symm (extChartAt I x x) ∈ (trivializationAt G W x).baseSet := by
-    rw [(extChartAt I x).left_inv hx']; exact hW
+  have hWx := extChartAt_symm_extChartAt_mem (I := I) (mem_chart_source H x) hW
   -- The product rule for the composite of the local representatives.
-  have hprod := (differentiableWithinAt_homLocalRep hΨ
-    ((mem_baseSet_iff _ _).2 ⟨hW, ((mem_baseSet_iff _ _).1 hV).2⟩) hW').hasFDerivWithinAt.clm_comp
-    (differentiableWithinAt_homLocalRep hΦ hV hW).hasFDerivWithinAt
-  have hD := (hprod.congr_of_eventuallyEq ?_ (homLocalRep_comp Φ Ψ hWx)).fderivWithin
+  have hWb : x ∈ baseSet (H := H) G W x := mem_baseSet_self G W x
+  have hprod := (differentiableWithinAt_localRep I (G →L[𝕜] G') hΨ
+    (mem_baseSet_hom hWb hW')).hasFDerivWithinAt.clm_comp
+    (differentiableWithinAt_localRep I (F →L[𝕜] G) hΦ (mem_baseSet_hom hV hW)).hasFDerivWithinAt
+  have hD := (hprod.congr_of_eventuallyEq ?_ (localRep_comp Φ Ψ hWx)).fderivWithin
     (I.uniqueDiffOn _ (extChartAt_target_subset_range x ((extChartAt I x).map_source hx')))
-  · rw [map, map, map, hD, homLocalRep_comp Φ Ψ hWx]
+  · rw [map, map, map, hD, localRep_comp Φ Ψ hWx]
     refine Eq.trans ?_ (ContinuousLinearMap.firstJetPullback_comp _ _ _ _ _ _).symm
     simp only [ContinuousLinearMap.comp_id]
+    -- The two sides are now the same first-jet transformation, typed on the left as a map of the
+    -- fibres `J¹Vₓ → J¹W'ₓ` and on the right as a map of their models `F × (E →L[𝕜] F)` and
+    -- `G' × (E →L[𝕜] G')`; the fibres of `J¹V` and `J¹W'` are by definition these models.
     rfl
   · filter_upwards [mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hx'
       ((trivializationAt G W x).open_baseSet.mem_nhds hW))] with z hz
-    exact homLocalRep_comp Φ Ψ hz
+    exact localRep_comp Φ Ψ hz
 
 end Comp
 
 section Equiv
 
 variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
-  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
 
 variable (I F G) in
 /-- **Bundle isomorphisms induce isomorphisms of first jets.** If the fibre maps
@@ -410,6 +366,12 @@ def mapEquiv (Φ : ∀ y, V y ≃L[𝕜] W y) (x : M)
       rw [← ContinuousLinearMap.comp_apply, ← map_comp hΦ' hΦ]
       simp only [ContinuousLinearEquiv.coe_comp_coe_symm, map_id, ContinuousLinearMap.id_apply])
 
+/-- The isomorphism of first jets induced by `Φ` acts as the prolongation of `Φ`. -/
+@[simp]
+theorem mapEquiv_apply (Φ : ∀ y, V y ≃L[𝕜] W y) (x : M) (hΦ hΦ') (j : FirstJetBundle I F V x) :
+    mapEquiv I F G Φ x hΦ hΦ' j = map I F G (fun y ↦ (Φ y : V y →L[𝕜] W y)) x j :=
+  ContinuousLinearEquiv.equivOfInverse_apply _ _ _ _ _
+
 @[simp]
 theorem coe_mapEquiv (Φ : ∀ y, V y ≃L[𝕜] W y) (x : M) (hΦ hΦ') :
     (mapEquiv I F G Φ x hΦ hΦ' : FirstJetBundle I F V x →L[𝕜] FirstJetBundle I G W x) =
@@ -421,15 +383,11 @@ theorem symm_mapEquiv (Φ : ∀ y, V y ≃L[𝕜] W y) (x : M) (hΦ hΦ') :
     (mapEquiv I F G Φ x hΦ hΦ').symm =
       mapEquiv I G F (fun y ↦ (Φ y).symm) x hΦ'
         (by simpa only [ContinuousLinearEquiv.symm_symm] using hΦ) :=
-  ContinuousLinearEquiv.ext (funext fun _ ↦ by simp [mapEquiv])
+  ContinuousLinearEquiv.symm_equivOfInverse _ _ _ _
 
 end Equiv
 
 /-! ### Smoothness of the prolongation -/
-
-section Smooth
-
-variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
 
 /-- **The prolongation in the first-jet charts.** Read in the preferred trivializations of `J¹V`
 and `J¹W` at `x₀`, the prolongation at a point `y` of their domains, where `Φ` is differentiable,
@@ -441,8 +399,8 @@ theorem inCoordinates_map {Φ : ∀ y, V y →L[𝕜] W y} {x₀ y : M}
     (hV : y ∈ baseSet (H := H) F V x₀) (hW : y ∈ baseSet (H := H) G W x₀) :
     ContinuousLinearMap.inCoordinates (F × (E →L[𝕜] F)) (FirstJetBundle I F V)
         (G × (E →L[𝕜] G)) (FirstJetBundle I G W) x₀ y x₀ y (map I F G Φ y) =
-      ContinuousLinearMap.firstJetPullback (homLocalRep I F G Φ x₀ (extChartAt I x₀ y))
-        (fderivWithin 𝕜 (homLocalRep I F G Φ x₀) (range I) (extChartAt I x₀ y))
+      ContinuousLinearMap.firstJetPullback (localRep I (F →L[𝕜] G) Φ x₀ (extChartAt I x₀ y))
+        (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ x₀) (range I) (extChartAt I x₀ y))
         (ContinuousLinearMap.id 𝕜 E) := by
   refine ContinuousLinearMap.ext fun j ↦ ?_
   refine (congrArg (fun T ↦ T j) (VectorBundleCore.inCoordinates_eq (firstJetBundleCore I F V)
@@ -455,6 +413,8 @@ theorem inCoordinates_map {Φ : ∀ y, V y →L[𝕜] W y} {x₀ y : M}
   refine (coordChange_map hΦ hV hW (coordChange I F V x₀ y y j)).trans ?_
   rw [coordChange_comp_apply hV (mem_baseSet_self F V y) hV, coordChange_self_apply hV]
 
+end
+
 /-- **The prolongation of a `C^(n+1)` bundle morphism is a `C^n` bundle morphism** of first-jet
 bundles: if `Φ` is a `C^(n+1)` section of `Hom(V, W)` on an open set `U`, then `J¹Φ` is a `C^n`
 section of `Hom(J¹V, J¹W)` on `U`. -/
@@ -462,26 +422,32 @@ theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVector
     [ContMDiffVectorBundle (n + 1) G W I] {Φ : ∀ y, V y →L[𝕜] W y} {U : Set M} (hU : IsOpen U)
     (hΦ : ContMDiffOn I (I.prod 𝓘(𝕜, F →L[𝕜] G)) (n + 1)
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] W y) y (Φ y)) U) :
+    haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 F V I := .of_le (n := n + 1) le_add_self
+    haveI : ContMDiffVectorBundle 1 G W I := .of_le (n := n + 1) le_add_self
     ContMDiffOn I (I.prod 𝓘(𝕜, (F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))) n
       (fun y ↦ TotalSpace.mk' ((F × (E →L[𝕜] F)) →L[𝕜] G × (E →L[𝕜] G))
         (E := fun y ↦ FirstJetBundle I F V y →L[𝕜] FirstJetBundle I G W y) y
         (map I F G Φ y)) U := by
+  have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
   have : IsManifold I n M := .of_le (n := n + 1) le_self_add
+  have : ContMDiffVectorBundle 1 F V I := .of_le (n := n + 1) le_add_self
+  have : ContMDiffVectorBundle 1 G W I := .of_le (n := n + 1) le_add_self
   intro x₀ hx₀
   refine ContMDiffAt.contMDiffWithinAt ((contMDiffAt_hom_bundle _).2 ⟨contMDiffAt_id, ?_⟩)
   -- The set of chart coordinates where the local representative of `Φ` at `x₀` is `C^(n+1)`.
   set T := (extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹'
     (U ∩ (baseSet (H := H) F V x₀ ∩ baseSet (H := H) G W x₀))
   have hTr : T ⊆ range I := fun z hz ↦ extChartAt_target_subset_range x₀ hz.1
-  have hT : ∀ z ∈ T, ContDiffWithinAt 𝕜 (n + 1) (homLocalRep I F G Φ x₀) (range I) z := by
+  have hT : ∀ z ∈ T, ContDiffWithinAt 𝕜 (n + 1) (localRep I (F →L[𝕜] G) Φ x₀) (range I) z := by
     rintro z ⟨hz, hzU, hzV, hzW⟩
     rw [← (extChartAt I x₀).right_inv hz]
-    exact contDiffWithinAt_homLocalRep ((hΦ _ hzU).contMDiffAt (hU.mem_nhds hzU)) hzV
-      ((mem_baseSet_iff _ _).1 hzW).1
+    exact contDiffWithinAt_localRep I (F →L[𝕜] G) ((hΦ _ hzU).contMDiffAt (hU.mem_nhds hzU))
+      (mem_baseSet_hom hzV ((mem_baseSet_iff _ _).1 hzW).1)
   -- In the chart at `x₀`, the prolongation is the first-jet transformation of the local
   -- representative, which depends `C^n` on the chart coordinate.
   have hΨ : ContDiffOn 𝕜 n (fun z ↦ ContinuousLinearMap.firstJetPullback
-      (homLocalRep I F G Φ x₀ z) (fderivWithin 𝕜 (homLocalRep I F G Φ x₀) (range I) z)
+      (localRep I (F →L[𝕜] G) Φ x₀ z) (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ x₀) (range I) z)
       (ContinuousLinearMap.id 𝕜 E)) T :=
     ContDiffOn.firstJetPullback (fun z hz ↦ ((hT z hz).mono hTr).of_le le_self_add)
       (fun z hz ↦ ((hT z hz).fderivWithin_right I.uniqueDiffOn le_rfl (hTr hz)).mono hTr)
@@ -498,8 +464,6 @@ theorem contMDiffOn_map {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVector
   exact inCoordinates_map (((hΦ y hy.1).contMDiffAt (hU.mem_nhds hy.1)).mdifferentiableAt
     (by simp)) hy.2.1 hy.2.2
 
-end Smooth
-
 /-! ### Trivial bundles -/
 
 section Trivial
@@ -507,11 +471,12 @@ section Trivial
 /-- For trivial bundles over a model space, the local representative of a family of fibre maps
 `φ y : F →L[𝕜] G` is `φ` itself. -/
 @[simp]
-theorem homLocalRep_trivial (φ : E → F →L[𝕜] G) (x : E) :
-    homLocalRep 𝓘(𝕜, E) F G (V := Bundle.Trivial E F) (W := Bundle.Trivial E G) φ x = φ := by
+theorem localRep_hom_trivial (φ : E → F →L[𝕜] G) (x : E) :
+    localRep 𝓘(𝕜, E) (F →L[𝕜] G)
+      (V := fun y ↦ Bundle.Trivial E F y →L[𝕜] Bundle.Trivial E G y) φ x = φ := by
   funext z
   ext v
-  simp [homLocalRep_apply, ContinuousLinearMap.inCoordinates]
+  simp [localRep_apply, hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates]
 
 /-- For trivial bundles over a model space, the prolongation of `φ : E → F →L[𝕜] G` sends the
 first jet `(v, A)` to `(φ x v, φ x ∘ A + dφ(x)(·) v)`. The second term records the derivative of
