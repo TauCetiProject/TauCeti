@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 import Mathlib.Algebra.MvPolynomial.Monad
+import TauCeti.Algebra.MvPolynomial.Lift
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
 /-!
@@ -26,9 +27,10 @@ formal group laws and their strict isomorphisms.
 Composable pairs `F → φ • F → ψ • (φ • F)` are classified by the pushout `Γ ⊗_L Γ` of `η_R` on the
 left factor and `η_L` on the right factor. As `Γ` is a polynomial ring over `L` through `η_L`, this
 pushout is the polynomial ring `Γ[b₁', b₂', …] = MvPolynomial ℕ+ Γ`, with left factor `C` and right
-factor `MvPolynomial.map η_R`; `TauCeti.LazardRing.tensorLift` is its universal property. The
-**coproduct** `Δ : Γ → Γ ⊗_L Γ` classifies the composite `ψ * φ = ψ ∘ φ`, and the
-**conjugation** `c : Γ → Γ` classifies the inverse `φ⁻¹ : φ • F → F`.
+factor `MvPolynomial.map η_R`; `TauCeti.LazardRing.tensorLift` instantiates the general polynomial
+pushout `MvPolynomial.pushoutEquiv` for `η_R`. The **coproduct** `Δ : Γ → Γ ⊗_L Γ` classifies the
+composite `ψ * φ = ψ ∘ φ`, and the **conjugation** `c : Γ → Γ` classifies the inverse
+`φ⁻¹ : φ • F → F`.
 
 The equations are proved by comparing classified data: a ring homomorphism out of `Γ` is
 determined by its restriction to `L` and by its base change of the universal strict coordinate
@@ -95,30 +97,22 @@ left factor and the left unit on the right factor, and its homomorphisms to `R` 
 composable pairs `F → φ • F → ψ • (φ • F)` of strict isomorphisms. -/
 def tensorLift :
     {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
-      p.1.comp rightUnit = p.2.comp C} ≃ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) where
-  toFun p := eval₂Hom p.1.1 (p.1.2 ∘ X)
-  invFun k := ⟨(k.comp C, k.comp (map rightUnit)), by
-    rw [RingHom.comp_assoc, RingHom.comp_assoc, map_comp_C]⟩
-  left_inv p := by
-    refine Subtype.ext (Prod.ext (RingHom.ext (eval₂Hom_C _ _)) ?_)
-    refine ringHom_ext' ?_ fun i ↦ by simp
-    ext r
-    simpa using RingHom.congr_fun p.2 r
-  right_inv k := ringHom_ext' (RingHom.ext fun r ↦ by simp) fun i ↦ by simp
+      p.1.comp rightUnit = p.2.comp C} ≃ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :=
+  MvPolynomial.pushoutEquiv rightUnit
 
 /-- The left component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
 left factor `C`. -/
 @[simp]
 theorem tensorLift_symm_apply_fst (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
     (tensorLift.symm k).1.1 = k.comp C :=
-  (rfl)
+  MvPolynomial.pushoutEquiv_symm_apply_fst rightUnit k
 
 /-- The right component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
 right factor `MvPolynomial.map η_R`. -/
 @[simp]
 theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
     (tensorLift.symm k).1.2 = k.comp (map rightUnit) :=
-  (rfl)
+  MvPolynomial.pushoutEquiv_symm_apply_snd rightUnit k
 
 /-- `tensorLift (f, g)` restricts to `f` on the left factor. -/
 @[simp]
@@ -126,7 +120,7 @@ theorem tensorLift_comp_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
     (tensorLift p).comp C = p.1.1 :=
-  congrArg (fun q ↦ q.1.1) (tensorLift.left_inv p)
+  MvPolynomial.pushoutEquiv_comp_C rightUnit p
 
 /-- `tensorLift (f, g)` restricts to `g` on the right factor. -/
 @[simp]
@@ -134,7 +128,7 @@ theorem tensorLift_comp_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
     (tensorLift p).comp (map rightUnit) = p.1.2 :=
-  congrArg (fun q ↦ q.1.2) (tensorLift.left_inv p)
+  MvPolynomial.pushoutEquiv_comp_map rightUnit p
 
 /-- `tensorLift (f, g)` agrees with `f` on the left factor. -/
 @[simp]
@@ -142,7 +136,7 @@ theorem tensorLift_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
     tensorLift p (C x) = p.1.1 x :=
-  RingHom.congr_fun (tensorLift_comp_C p) x
+  MvPolynomial.pushoutEquiv_C rightUnit p x
 
 /-- `tensorLift (f, g)` agrees with `g` on the right factor. -/
 @[simp]
@@ -150,21 +144,21 @@ theorem tensorLift_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
     tensorLift p (map rightUnit x) = p.1.2 x :=
-  RingHom.congr_fun (tensorLift_comp_map_rightUnit p) x
+  MvPolynomial.pushoutEquiv_map rightUnit p x
 
 /-- `tensorLift (f, g)` agrees with `g` on the generators of the right factor. -/
 @[simp]
 theorem tensorLift_X
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (i : ℕ+) :
-    tensorLift p (X i) = p.1.2 (X i) := by
-  simpa using tensorLift_map_rightUnit p (X i)
+    tensorLift p (X i) = p.1.2 (X i) :=
+  MvPolynomial.pushoutEquiv_X rightUnit p i
 
 /-- A ring homomorphism out of `Γ ⊗_L Γ` is determined by its restrictions to both factors. -/
 theorem tensor_ringHom_ext {k k' : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R}
     (h₁ : k.comp C = k'.comp C) (h₂ : k.comp (map rightUnit) = k'.comp (map rightUnit)) :
     k = k' :=
-  tensorLift.symm.injective (Subtype.ext (Prod.ext h₁ h₂))
+  MvPolynomial.ringHom_ext_comp_map rightUnit h₁ h₂
 
 /-! ### The coproduct -/
 

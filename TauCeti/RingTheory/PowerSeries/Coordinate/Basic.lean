@@ -72,6 +72,8 @@ coordinates over `K` and the opposite of `K⟦X⟧ ≃ₐ[K] K⟦X⟧`, with inv
   constant coefficients.
 * `TauCeti.FormalCoordinate.substAlgEquiv_ofAlgEquiv`: over a field, every automorphism of
   `K⟦X⟧` is the substitution of its value at `X`.
+* `TauCeti.FormalCoordinate.exists_toPowerSeries_mul_eq_X_add_X_pow_mul`: multiplying `φ` by a
+  perturbation `φ⁻¹ + X ^ m * r` yields `X + X ^ m * s` with `s(0) = φ.linearCoeff * r(0)`.
 -/
 
 public section
@@ -210,6 +212,19 @@ noncomputable def linearCoeff : FormalCoordinate R →* Rˣ where
 @[simp]
 theorem val_linearCoeff (φ : FormalCoordinate R) :
     (linearCoeff φ : R) = coeff 1 φ.toPowerSeries := (rfl)
+
+/-- If `ψ = φ⁻¹ + X ^ m * r` for `m ≠ 0`, then `φ * ψ = X + X ^ m * s` for a power series `s`
+whose constant coefficient is `(φ.linearCoeff : R) * constantCoeff r`. -/
+theorem exists_toPowerSeries_mul_eq_X_add_X_pow_mul {φ ψ : FormalCoordinate R}
+    {m : ℕ} (hm : m ≠ 0) {r : R⟦X⟧}
+    (hψ : ψ.toPowerSeries = φ⁻¹.toPowerSeries + X ^ m * r) :
+    ∃ s : R⟦X⟧, (φ * ψ).toPowerSeries = X + X ^ m * s ∧
+      constantCoeff s = (φ.linearCoeff : R) * constantCoeff r := by
+  obtain ⟨s, hs, hs0⟩ := PowerSeries.exists_subst_add_X_pow_mul φ.toPowerSeries
+    φ⁻¹.constantCoeff_toPowerSeries r hm
+  refine ⟨s, ?_, ?_⟩
+  · rw [toPowerSeries_mul, hψ, hs, ← toPowerSeries_mul, toPowerSeries_mul_inv]
+  · simpa only [Algebra.algebraMap_self, RingHom.id_apply, ← val_linearCoeff] using hs0
 
 /-- The substitution automorphism `σ_φ : f ↦ f (φ)` of `R⟦X⟧`, with inverse the substitution of
 the compositional inverse of `φ`. -/
