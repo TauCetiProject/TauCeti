@@ -28,7 +28,8 @@ the set of morphisms `T ⟶ X`.
 
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.ofSheaf`: the stack in setoids of an fppf sheaf.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.ofSheafMap`: the morphism of stacks induced by a
-  morphism of fppf sheaves.
+  morphism of fppf sheaves, with `ofSheafMapId` and `ofSheafMapComp` comparing it with identities
+  and composites.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.ofScheme`: the stack represented by a scheme.
 
 ## References
@@ -67,6 +68,22 @@ lemma ofSheafMap_app_toFunctor_obj_down {F G : Sheaf Scheme.fppfTopology (Type u
     (T : Scheme.{u}) (M : (ofSheaf F).toSchPseudofunctor.obj (.mk (op T))) :
     (((ofSheafMap α).app (.mk (op T))).toFunctor.obj M).down = α.hom.app (op T) M.down :=
   rfl
+
+open scoped Pseudofunctor.StrongTrans in
+/-- The morphism of stacks induced by the identity of an fppf sheaf is isomorphic to the
+identity. -/
+def ofSheafMapId (F : Sheaf Scheme.fppfTopology (Type u)) :
+    Iso (C := (ofSheaf F).toSchPseudofunctor ⟶ (ofSheaf F).toSchPseudofunctor)
+      (ofSheafMap (𝟙 F)) (Pseudofunctor.StrongTrans.id _) :=
+  Functor.discretePseudofunctorMapId F.obj
+
+open scoped Pseudofunctor.StrongTrans in
+/-- The morphism of stacks induced by a composite of morphisms of fppf sheaves is isomorphic to
+the composite of the induced morphisms of stacks. -/
+def ofSheafMapComp {F G H : Sheaf Scheme.fppfTopology (Type u)} (α : F ⟶ G) (β : G ⟶ H) :
+    Iso (C := (ofSheaf F).toSchPseudofunctor ⟶ (ofSheaf H).toSchPseudofunctor)
+      (ofSheafMap (α ≫ β)) ((ofSheafMap α).vcomp (ofSheafMap β)) :=
+  Functor.discretePseudofunctorMapComp α.hom β.hom
 
 /-- The stack represented by a scheme `X`: the stack in setoids of the fppf sheaf
 `T ↦ (T ⟶ X)`, which is a sheaf because the fppf topology is subcanonical. -/

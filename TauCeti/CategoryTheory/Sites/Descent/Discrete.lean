@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
-public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 
 /-!
@@ -30,7 +30,10 @@ particular algebraic spaces and representable functors, are viewed as stacks in 
 
 * `CategoryTheory.Functor.discretePseudofunctor`: the discrete pseudofunctor of `P`.
 * `CategoryTheory.Functor.discretePseudofunctorMap`: the strong transformation induced by a
-  morphism of presheaves.
+  morphism of presheaves, with `discretePseudofunctorMapId` and `discretePseudofunctorMapComp`
+  comparing it with identities and composites.
+* `CategoryTheory.Functor.descentDataEquivCompatible`: descent data for the discrete
+  pseudofunctor along a presieve `R` are equivalent to compatible families of `P` along `R`.
 * `CategoryTheory.Functor.isPrestackFor_discretePseudofunctor_iff`,
   `CategoryTheory.Functor.isStackFor_discretePseudofunctor_iff`: descent along a presieve `R`
   holds for morphisms iff `P` is separated for `R`, and is effective iff `P` is a sheaf for `R`.
@@ -148,6 +151,28 @@ lemma discretePseudofunctorMap_app_toFunctor_obj_down {Q : Cᵒᵖ ⥤ Type w} (
     (((discretePseudofunctorMap α).app a).toFunctor.obj M).down = α.app a.as M.down :=
   rfl
 
+open scoped Pseudofunctor.StrongTrans in
+/-- The strong transformation induced by the identity of `P` is isomorphic to the identity. -/
+def discretePseudofunctorMapId (P : Cᵒᵖ ⥤ Type w) :
+    Iso (C := P.discretePseudofunctor.{w'} ⟶ P.discretePseudofunctor.{w'})
+      (discretePseudofunctorMap (𝟙 P)) (Pseudofunctor.StrongTrans.id _) :=
+  Pseudofunctor.StrongTrans.isoMk
+    (fun _ ↦ Cat.Hom.isoMk (NatIso.ofComponents (fun _ ↦ isoMk rfl)
+      (fun _ ↦ InducedCategory.hom_ext (Subsingleton.elim _ _))))
+    (fun _ ↦ by ext; exact Subsingleton.elim _ _)
+
+open scoped Pseudofunctor.StrongTrans in
+/-- The strong transformation induced by a composite of morphisms of presheaves is isomorphic to
+the composite of the induced strong transformations. -/
+def discretePseudofunctorMapComp {Q R : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) (β : Q ⟶ R) :
+    Iso (C := P.discretePseudofunctor.{w'} ⟶ R.discretePseudofunctor.{w'})
+      (discretePseudofunctorMap (α ≫ β))
+      ((discretePseudofunctorMap α).vcomp (discretePseudofunctorMap β)) :=
+  Pseudofunctor.StrongTrans.isoMk
+    (fun _ ↦ Cat.Hom.isoMk (NatIso.ofComponents (fun _ ↦ isoMk rfl)
+      (fun _ ↦ InducedCategory.hom_ext (Subsingleton.elim _ _))))
+    (fun _ ↦ by ext; exact Subsingleton.elim _ _)
+
 variable {S : C}
 
 instance {ι : Type t} {X : ι → C} (f : ∀ i, X i ⟶ S)
@@ -158,30 +183,44 @@ instance (R : Presieve S) :
     (P.discretePseudofunctor.{w'}.toDescentData (fun (g : R.category) ↦ g.obj.hom)).Faithful :=
   ⟨fun _ ↦ Subsingleton.elim _ _⟩
 
-/-- The descent data for the discrete pseudofunctor of `P` attached to a compatible family of
-elements of `P` along a presieve. -/
-private def descentDataOfCompatible {R : Presieve S} (x : Presieve.FamilyOfElements P R)
-    (hx : x.Compatible) :
-    P.discretePseudofunctor.{w'}.DescentData (fun (g : R.category) ↦ g.obj.hom) where
-  obj g := ⟨x g.obj.hom g.property⟩
-  hom _ _ _ _ f₁ f₂ hf₁ hf₂ := homMk (hx f₁ f₂ _ _ (hf₁.trans hf₂.symm))
-  pullHom_hom := by intros; exact Subsingleton.elim _ _
-  hom_self := by intros; exact Subsingleton.elim _ _
-  hom_comp := by intros; exact Subsingleton.elim _ _
+/-- Descent data for the discrete pseudofunctor of `P` along a presieve `R` are the same as
+compatible families of elements of `P` along `R`: the descent datum is determined by its objects,
+and the morphisms of the descent datum exist exactly when the family is compatible. -/
+def descentDataEquivCompatible (R : Presieve S) :
+    P.discretePseudofunctor.{w'}.DescentData (fun (g : R.category) ↦ g.obj.hom) ≃
+      {x : Presieve.FamilyOfElements P R // x.Compatible} where
+  toFun D := ⟨fun _ f hf ↦ (D.obj (R.categoryMk f hf)).down,
+    fun _ _ _ g₁ g₂ f₁ f₂ h₁ h₂ w ↦ eq_of_hom
+      (D.hom (g₁ ≫ f₁) (i₁ := R.categoryMk f₁ h₁) (i₂ := R.categoryMk f₂ h₂) g₁ g₂ rfl w.symm)⟩
+  invFun x :=
+    { obj g := ⟨x.1 g.obj.hom g.property⟩
+      hom _ _ _ _ f₁ f₂ hf₁ hf₂ := homMk (x.2 f₁ f₂ _ _ (hf₁.trans hf₂.symm))
+      pullHom_hom := by intros; exact Subsingleton.elim _ _
+      hom_self := by intros; exact Subsingleton.elim _ _
+      hom_comp := by intros; exact Subsingleton.elim _ _ }
+  left_inv D := by
+    obtain ⟨obj, hom, _, _, _⟩ := D
+    dsimp only
+    congr 1
+    funext _ _ _ _ _ _ _ _
+    exact Subsingleton.elim _ _
+  right_inv _ := rfl
 
-/-- The family of elements of `P` underlying descent data for the discrete pseudofunctor of
-`P`. -/
-private def familyOfDescentData {R : Presieve S}
-    (D : P.discretePseudofunctor.{w'}.DescentData (fun (g : R.category) ↦ g.obj.hom)) :
-    Presieve.FamilyOfElements P R :=
-  fun _ f hf ↦ (D.obj (R.categoryMk f hf)).down
+/-- The compatible family attached to a descent datum consists of its underlying elements. -/
+@[simp]
+lemma descentDataEquivCompatible_apply_coe {R : Presieve S}
+    (D : P.discretePseudofunctor.{w'}.DescentData (fun (g : R.category) ↦ g.obj.hom))
+    {Y : C} (f : Y ⟶ S) (hf : R f) :
+    (descentDataEquivCompatible R D).1 f hf = (D.obj (R.categoryMk f hf)).down :=
+  rfl
 
-private lemma familyOfDescentData_compatible {R : Presieve S}
-    (D : P.discretePseudofunctor.{w'}.DescentData (fun (g : R.category) ↦ g.obj.hom)) :
-    (familyOfDescentData D).Compatible := by
-  intro _ _ _ g₁ g₂ f₁ f₂ h₁ h₂ w
-  exact eq_of_hom (D.hom (g₁ ≫ f₁) (i₁ := R.categoryMk f₁ h₁) (i₂ := R.categoryMk f₂ h₂) g₁ g₂
-    rfl w.symm)
+/-- The descent datum attached to a compatible family has the elements of the family as its
+objects. -/
+@[simp]
+lemma descentDataEquivCompatible_symm_apply_obj_down {R : Presieve S}
+    (x : {x : Presieve.FamilyOfElements P R // x.Compatible}) (g : R.category) :
+    (((descentDataEquivCompatible.{w'} R).symm x).obj g).down = x.1 g.obj.hom g.property :=
+  rfl
 
 private lemma nonempty_hom_toDescentData_obj_iff {R : Presieve S}
     (M N : P.discretePseudofunctor.{w'}.obj (.mk (op S))) :
@@ -215,9 +254,10 @@ lemma isStackFor_discretePseudofunctor_iff (R : Presieve S) :
   rw [Pseudofunctor.isStackFor_iff,
     ← Presieve.isSeparatedFor_and_exists_isAmalgamation_iff_isSheafFor, ← toDescentData_full_iff]
   refine ⟨fun h ↦ ⟨h.full, fun x hx ↦ ?_⟩, fun ⟨hfull, hx⟩ ↦ ⟨inferInstance, hfull, ⟨fun D ↦ ?_⟩⟩⟩
-  · obtain ⟨M, ⟨e⟩⟩ := h.essSurj.mem_essImage (descentDataOfCompatible x hx)
+  · obtain ⟨M, ⟨e⟩⟩ :=
+      h.essSurj.mem_essImage ((descentDataEquivCompatible.{w'} R).symm ⟨x, hx⟩)
     exact ⟨M.down, fun _ f hf ↦ eq_of_hom (e.hom.hom (R.categoryMk f hf))⟩
-  · obtain ⟨t, ht⟩ := hx _ (familyOfDescentData_compatible D)
+  · obtain ⟨t, ht⟩ := hx _ (descentDataEquivCompatible R D).2
     exact ⟨ULift.up t, ⟨Pseudofunctor.DescentData.isoMk (fun g ↦ isoMk (ht g.obj.hom g.property))
       (fun _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _)⟩⟩
 
