@@ -119,16 +119,14 @@ theorem eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le [SigmaFinite ν] (T : Lp E 2 
     RCLike.continuous_ofReal.comp_aestronglyMeasurable
       (hw.div₀ (aestronglyMeasurable_const.add (hw.norm.mul aestronglyMeasurable_const)))
   have hWb (n : ℕ) (y : β) : ‖(W n y : 𝕜)‖ ≤ (n : ℝ) + 1 := by
-    rw [RCLike.norm_ofReal, abs_div, abs_of_pos (hden n y), div_le_iff₀ (hden n y), mul_add,
-      mul_one, ← mul_assoc, mul_comm _ |w y|, mul_assoc, mul_one_div_cancel (by positivity),
-      mul_one]
-    exact le_add_of_nonneg_left (by positivity)
+    rw [RCLike.norm_ofReal, abs_div, abs_of_pos (hden n y), div_le_iff₀ (hden n y)]
+    field_simp
+    nlinarith [abs_nonneg (w y)]
   have hWw (n : ℕ) (y : β) : ‖(w y : 𝕜)⁻¹ * (W n y : 𝕜)‖ ≤ 1 := by
-    rcases eq_or_ne (w y) 0 with h | h
-    · simp [W, h]
-    rw [← RCLike.ofReal_inv, ← RCLike.ofReal_mul, RCLike.norm_ofReal, inv_mul_eq_div,
-      div_div_cancel_left₀ h, abs_inv, abs_of_pos (hden n y)]
-    exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (by positivity))
+    -- `|W n y| ≤ |w y|`, since the denominator is at least `1`.
+    simp only [W, norm_mul, norm_inv, RCLike.norm_ofReal, abs_div, abs_of_pos (hden n y)]
+    exact inv_mul_le_one_of_le₀
+      (div_le_self (abs_nonneg _) (le_add_of_nonneg_right (by positivity))) (abs_nonneg _)
   have hlim (y : β) : Filter.Tendsto (fun n : ℕ ↦ W n y) Filter.atTop (nhds (w y)) := by
     have hden_lim : Filter.Tendsto (fun n : ℕ ↦ 1 + |w y| * (1 / ((n : ℝ) + 1))) Filter.atTop
         (nhds (1 + |w y| * 0)) :=
