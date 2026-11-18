@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
 import Mathlib.Geometry.Manifold.Instances.Icc
@@ -41,8 +42,13 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_mulRightInvariantVectorField`: each orbit map `g ↦ g • x` relates the
   right-invariant vector field of `ξ` on `G` to `ξ_M`.
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
+* `TauCeti.tangentRepresentation_fundamentalVectorField`: at a fixed point `x` of `g`, the
+  tangent representation carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`.
 * `MonoidHom.fundamentalVectorField_groupLieAlgebraMap`: for an action through a homomorphism
   `φ : K →* G`, the fundamental vector field of `ξ ∈ Lie(K)` is that of `dφ ξ ∈ Lie(G)`.
+* `TauCeti.fundamentalVectorField_prod_of_smul_eq`: for an action on `M × N` through
+  homomorphisms `φ`, `ψ` to groups acting on `M` and `N`, such as the factorwise action of a
+  product group, `ξ_{M × N}` is the product of `(dφ ξ)_M` and `(dψ ξ)_N`.
 * `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
   `ξ_M` to `ξ_N`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
@@ -61,6 +67,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   (`TauCeti.finrank_orbitTangent_fundamental_smul`) and the fundamental vector fields span
   `T_{g • x} M` exactly when they span `T_x M`
   (`TauCeti.orbitTangent_fundamental_smul_eq_top_iff`).
+* `TauCeti.tangentRepresentation_mem_orbitTangent_fundamental`: the tangent representation of the
+  stabilizer of `x` preserves the orbit tangent space `𝔤 · x`.
 * `TauCeti.InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff`: `ξ_M` vanishes identically
   exactly when every `exp (t ξ)` acts trivially.
 * `TauCeti.InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot`: for a faithful action,
@@ -224,6 +232,56 @@ theorem mfderiv_smul_mulRightInvariantVectorField [ContMDiffMul I 1 G] [ContMDif
   funext h
   simp [mul_smul]
 
+/-- **Fundamental vector fields of a factorwise action.** Let `K` act on `M × N` through
+homomorphisms `φ : K →* G` and `ψ : K →* G'` that are differentiable at the identity,
+`k • (x, y) = (φ k • x, ψ k • y)`. Then the fundamental vector field of `ξ ∈ Lie(K)` is the
+product of the fundamental vector fields of `dφ ξ` on `M` and of `dψ ξ` on `N`. For the factorwise
+action of `G × G'` on `M × N`, `φ` and `ψ` are the two projections. -/
+theorem fundamentalVectorField_prod_of_smul_eq
+    {F HN : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HN]
+    {J : ModelWithCorners 𝕜 F HN} {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
+    {E₂ H₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [TopologicalSpace H₂]
+    {I₂ : ModelWithCorners 𝕜 E₂ H₂} {G' : Type*} [TopologicalSpace G'] [ChartedSpace H₂ G']
+    [Group G'] [MulAction G' N]
+    {EK HK : Type*} [NormedAddCommGroup EK] [NormedSpace 𝕜 EK] [TopologicalSpace HK]
+    {IK : ModelWithCorners 𝕜 EK HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K]
+    [Group K] [MulAction K (M × N)] [ContMDiffSMul I I' 1 G M] [ContMDiffSMul I₂ J 1 G' N]
+    (φ : K →* G) (ψ : K →* G') (hφ : MDifferentiableAt IK I φ 1)
+    (hψ : MDifferentiableAt IK I₂ ψ 1)
+    (hsmul : ∀ (k : K) (p : M × N), k • p = (φ k • p.1, ψ k • p.2)) (ξ : GroupLieAlgebra IK K) :
+    fundamentalVectorField (I'.prod J) ξ =
+      Manifold.prodVectorField
+        (fundamentalVectorField I' (φ.groupLieAlgebraMap IK I ξ) : ∀ x : M, TangentSpace I' x)
+        (fundamentalVectorField J (ψ.groupLieAlgebraMap IK I₂ ξ) : ∀ y : N, TangentSpace J y) := by
+  funext p
+  have hM : MDifferentiableAt I I' (fun g : G ↦ g • p.1) 1 :=
+    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := 1) p.1).mdifferentiableAt
+      one_ne_zero
+  have hN : MDifferentiableAt I₂ J (fun g : G' ↦ g • p.2) 1 :=
+    (ContMDiffSMul.contMDiff_smul_const (I := I₂) (I' := J) (n := 1) p.2).mdifferentiableAt
+      one_ne_zero
+  -- The orbit map of `p` is the pair of the orbit maps of `p.1` and `p.2`, composed with `φ`
+  -- and `ψ`; differentiate each component by the chain rule.
+  have e₁ : mfderiv IK I' (fun k : K ↦ φ k • p.1) 1 ξ =
+      mfderiv I I' (fun g : G ↦ g • p.1) 1 (φ.groupLieAlgebraMap IK I ξ) := by
+    rw [φ.groupLieAlgebraMap_apply]
+    exact mfderiv_comp_apply_of_eq 1 hM hφ (map_one φ) ξ
+  have e₂ : mfderiv IK J (fun k : K ↦ ψ k • p.2) 1 ξ =
+      mfderiv I₂ J (fun g : G' ↦ g • p.2) 1 (ψ.groupLieAlgebraMap IK I₂ ξ) := by
+    rw [ψ.groupLieAlgebraMap_apply]
+    exact mfderiv_comp_apply_of_eq 1 hN hψ (map_one ψ) ξ
+  have h := DFunLike.congr_fun (mfderiv_prodMk (hM.comp_of_eq 1 hφ (map_one φ))
+    (hN.comp_of_eq 1 hψ (map_one ψ))) ξ
+  -- The derivative's target tangent space is the product of the two model spaces.
+  erw [ContinuousLinearMap.prod_apply] at h
+  rw [fundamentalVectorField_apply, show (fun k : K ↦ k • p) = fun k ↦ (φ k • p.1, ψ k • p.2) from
+    funext fun k ↦ hsmul k p]
+  apply Prod.ext
+  · rw [Manifold.prodVectorField_fst, fundamentalVectorField_apply, ← e₁]
+    exact congrArg Prod.fst h
+  · rw [Manifold.prodVectorField_snd, fundamentalVectorField_apply, ← e₂]
+    exact congrArg Prod.snd h
+
 /-- The fundamental field of a diagonal action is the product of the fundamental fields on
 its two factors. The actions are `C¹`; no Lie group regularity assumption is needed. -/
 theorem fundamentalVectorField_prod
@@ -234,21 +292,10 @@ theorem fundamentalVectorField_prod
     fundamentalVectorField (I'.prod J) ξ =
       Manifold.prodVectorField (fundamentalVectorField I' ξ : ∀ x : M, TangentSpace I' x)
         (fundamentalVectorField J ξ : ∀ y : N, TangentSpace J y) := by
-  funext p
-  have hM : MDifferentiableAt I I' (fun g : G ↦ g • p.1) 1 :=
-    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := 1) p.1).mdifferentiableAt
-      one_ne_zero
-  have hN : MDifferentiableAt I J (fun g : G ↦ g • p.2) 1 :=
-    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := J) (n := 1) p.2).mdifferentiableAt
-      one_ne_zero
-  have h := DFunLike.congr_fun (mfderiv_prodMk hM hN) ξ
-  -- The derivative's target tangent space is the product of the two model spaces.
-  erw [ContinuousLinearMap.prod_apply] at h
-  apply Prod.ext
-  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_fst, Prod.smul_def] using
-      congrArg Prod.fst h
-  · simpa only [fundamentalVectorField_apply, Manifold.prodVectorField_snd, Prod.smul_def] using
-      congrArg Prod.snd h
+  have h := fundamentalVectorField_prod_of_smul_eq (I' := I') (J := J) (M := M) (N := N)
+    (MonoidHom.id G) (MonoidHom.id G) mdifferentiableAt_id mdifferentiableAt_id
+    (fun _ _ ↦ rfl) ξ
+  rwa [MonoidHom.groupLieAlgebraMap_id, ContinuousLinearMap.id_apply] at h
 
 /-- **Fundamental vector fields along a homomorphism.** Let `K` act on `M` through a homomorphism
 `φ : K →* G` that is differentiable at the identity, `k • x = φ k • x`. Then the fundamental vector
@@ -349,6 +396,19 @@ theorem mfderiv_smul_fundamentalVectorField [LieGroup I 1 G] (g : G) (ξ : Group
     ((DFunLike.congr_fun (mfderiv_congr (I := I) (I' := I') (x := (1 : G)) hfun) ξ).trans
       (mfderiv_comp_apply_of_eq (1 : G) (horbit (g • x) 1) hconj
         (by simp : Lie.conjDiffeomorph (I := I) (n := 1) g 1 = 1) ξ))
+
+/-- **The stabilizer acts on fundamental vector fields by the adjoint representation.** For `g` in
+the stabilizer of `x`, the tangent representation `dg_x` carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`. -/
+theorem tangentRepresentation_fundamentalVectorField [LieGroup I 1 G] {x : M}
+    (hd : ∀ g ∈ MulAction.stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x)
+    (g : MulAction.stabilizer G x) (ξ : GroupLieAlgebra I G) :
+    tangentRepresentation hd g (fundamentalVectorField I' ξ x) =
+      fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) x := by
+  rw [tangentRepresentation_apply]
+  -- `mfderiv_smul_fundamentalVectorField` lands in `T_{g • x} M`; both tangent spaces are the
+  -- model space `E'`, so the value at `g • x` is transported to `x` along `g • x = x`.
+  exact (mfderiv_smul_fundamentalVectorField (g : G) ξ x).trans (congrArg
+    (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) y : E')) g.2)
 
 /-- **The exponential flow.** For every `x`, the curve `t ↦ exp(t ξ) • x` is an integral curve of
 the fundamental vector field `ξ_M`. -/
@@ -577,6 +637,20 @@ theorem orbitTangent_fundamental_smul_eq_top_iff (g : G) (x : M) :
     (Diffeomorph.smul I I' 1 g).isInvertible_mfderiv one_ne_zero
   rw [orbitTangent_fundamental_smul, ← he]
   exact Submodule.map_eq_top_iff (e := e.toLinearEquiv)
+
+/-- **The stabilizer preserves the orbit tangent space.** The tangent representation
+`g ↦ dg_x` of the stabilizer of `x` maps the orbit tangent space `𝔤 · x` of the fundamental vector
+fields into itself, since `dg_x` carries `ξ_M(x)` to `(Ad_g ξ)_M(x)`. -/
+theorem tangentRepresentation_mem_orbitTangent_fundamental {x : M}
+    (hd : ∀ g ∈ MulAction.stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x)
+    (g : MulAction.stabilizer G x) {v : TangentSpace I' x}
+    (hv : v ∈ (InfinitesimalAction.fundamental I G I' M).orbitTangent x) :
+    tangentRepresentation hd g v ∈ (InfinitesimalAction.fundamental I G I' M).orbitTangent x := by
+  obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ x).1 hv
+  have h := (InfinitesimalAction.fundamental I G I' M).mem_orbitTangent x
+    (Lie.adjointContinuousLinearMap (g : G) ξ)
+  rw [InfinitesimalAction.fundamental_apply] at h ⊢
+  rwa [tangentRepresentation_fundamentalVectorField]
 
 section Kernel
 

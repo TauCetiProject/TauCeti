@@ -38,10 +38,10 @@ subsequence, the `vₙ` converge locally uniformly on the whole plane to a `C¹`
 This is a nonconstant `J(z₀, ·)`-holomorphic plane at the interior bubbling point, whose area is
 bounded by the energy concentrating there; its identification with a sphere of the stable limit
 needs the removal of singularities below. The locally uniform convergence of the maps is
-Arzelà–Ascoli on exhausting squares
-(`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`), and the convergence of the
-derivatives is the interior estimate for the Floer equation, applied to the rescaled equations as
-one family over the parameters `(cₙ, εₙ)`
+Arzelà–Ascoli on exhausting discs
+(`TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`), and the
+convergence of the derivatives is the interior estimate for the Floer equation, applied to the
+rescaled equations as one family over the parameters `(cₙ, εₙ)`
 (`TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer_parametric`), read in the complex
 coordinate `Complex.equivRealProdCLM`. The limit is only shown to be `C¹`; its smoothness, the
 removal of its singularity at infinity, which makes it a sphere, and the lower bound on its energy
@@ -332,22 +332,22 @@ theorem exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv (ω : Symp
   obtain ⟨c, ε, R, hε, hc, hε0, hR, -, hev⟩ := ω.exists_rescale_isComplexLinearMap_perturbedFDeriv
     (J := J) hU hz₀ (fun n ↦ (hu n).of_le (by simp)) (Eventually.of_forall hsol) hz hblow
   set ru : ℕ → ℝ × ℝ → V := fun n w ↦ u n (c n + ε n • w)
-  obtain ⟨N, hN⟩ := (hev.and (hR.eventually_ge_atTop 0)).exists_forall_of_atTop
-  -- From the index `N` on, the rescaled maps are `2`-Lipschitz on the squares of radius `R n`, with
+  obtain ⟨N, hN⟩ := hev.exists_forall_of_atTop
+  -- From the index `N` on, the rescaled maps are `2`-Lipschitz on the discs of radius `R n`, with
   -- values in `K` there, so a subsequence converges locally uniformly by Arzelà–Ascoli.
   have hlip (n : ℕ) : LipschitzOnWith 2 (ru (n + N)) (closedBall 0 (R (n + N))) := by
     have h := hN (n + N) (Nat.le_add_left N n)
     refine (convex_closedBall _ _).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ) (fun w hw ↦ ?_)
       fun w hw ↦ ?_
-    · have hmem := (h.1.2 w (mem_closedBall_zero_iff.1 hw)).1
+    · have hmem := (h.2 w (mem_closedBall_zero_iff.1 hw)).1
       exact (((hu _).differentiableOn (by simp) _ hmem).differentiableAt
         (hU.mem_nhds hmem)).comp w
           ((differentiableAt_id.const_smul (ε (n + N))).const_add (c (n + N)))
     · rw [← NNReal.coe_le_coe, coe_nnNorm]
-      exact_mod_cast (h.1.2 w (mem_closedBall_zero_iff.1 hw)).2.1
-  obtain ⟨ψ, hψ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK
-    (fun n ↦ (hN _ (Nat.le_add_left N n)).2) ((tendsto_add_atTop_iff_nat N).2 hR) hlip
-    fun n w hw ↦ huK _ ((hN _ (Nat.le_add_left N n)).1.2 w (mem_closedBall_zero_iff.1 hw)).1
+      exact_mod_cast (h.2 w (mem_closedBall_zero_iff.1 hw)).2.1
+  obtain ⟨ψ, hψ, g, htr⟩ := exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall hK
+    ((tendsto_add_atTop_iff_nat N).2 hR) hlip
+    fun n w hw ↦ huK _ ((hN _ (Nat.le_add_left N n)).2 w (mem_closedBall_zero_iff.1 hw)).1
   set φ : ℕ → ℕ := fun n ↦ ψ n + N
   have hφ : StrictMono φ := fun m n hmn ↦ Nat.add_lt_add_right (hψ hmn) N
   have hφN (n : ℕ) : N ≤ φ n := Nat.le_add_left N (ψ n)
@@ -358,15 +358,15 @@ theorem exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv (ω : Symp
   -- The derivatives converge too, and the limit is a `J(z₀, ·)`-holomorphic plane.
   obtain ⟨hgc, hderiv, hhol⟩ := contDiff_and_tendstoLocallyUniformly_fderiv_rescale ω hU hz₀ hKs
     hKt hJ (fun n ↦ hu _) (fun n ↦ hsol _) (hc.comp hφ.tendsto_atTop)
-    (hε0.comp hφ.tendsto_atTop) hRφ (Eventually.of_forall fun n ↦ (hN _ (hφN n)).1.2) hptw
+    (hε0.comp hφ.tendsto_atTop) hRφ (Eventually.of_forall fun n ↦ (hN _ (hφN n)).2) hptw
   have hnorm (w : ℝ × ℝ) := (continuous_norm.tendsto _).comp
     (hderiv.tendstoLocallyUniformlyOn.tendsto_at (mem_univ w))
   refine ⟨φ, c ∘ φ, ε ∘ φ, g, hφ, fun n ↦ hε _, hc.comp hφ.tendsto_atTop,
     hε0.comp hφ.tendsto_atTop, htr', hderiv, hgc, fun w ↦ hK.isClosed.mem_of_tendsto (hptw w)
-      ((hRφ.eventually_ge_atTop ‖w‖).mono fun n hn ↦ huK _ ((hN _ (hφN n)).1.2 w hn).1), hhol,
-    tendsto_nhds_unique (hnorm 0) (tendsto_const_nhds.congr fun n ↦ ((hN _ (hφN n)).1.1).symm),
+      ((hRφ.eventually_ge_atTop ‖w‖).mono fun n hn ↦ huK _ ((hN _ (hφN n)).2 w hn).1), hhol,
+    tendsto_nhds_unique (hnorm 0) (tendsto_const_nhds.congr fun n ↦ ((hN _ (hφN n)).1).symm),
     fun w ↦ le_of_tendsto (hnorm w)
-      ((hRφ.eventually_ge_atTop ‖w‖).mono fun n hn ↦ ((hN _ (hφN n)).1.2 w hn).2.1),
+      ((hRφ.eventually_ge_atTop ‖w‖).mono fun n hn ↦ ((hN _ (hφN n)).2 w hn).2.1),
     fun δ hδ ↦ ω.lintegral_symplecticForm_le_liminf_of_tendsto_rescale hU hz₀
       (fun n ↦ (hu _).of_le (by simp)) (hKs.of_le (by norm_num)) (hKt.of_le (by norm_num))
       (hc.comp hφ.tendsto_atTop) (hε0.comp hφ.tendsto_atTop) hptw

@@ -281,27 +281,6 @@ theorem _root_.TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (x : 
   have h := FiberBundle.mdifferentiableAt_extend (I := I) (V := TangentSpace I) (x := x) E u
   rwa [extend_eq_trivializationAt_symm (I := I) (x := x) u] at h
 
-/-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
-tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
-theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGroup E']
-    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
-    [ChartedSpace H' M'] [IsManifold I' 1 M'] (f : N → M) (g : N → M')
-    (ϕ : Π x : N, TangentSpace I (f x) →L[𝕜] TangentSpace I' (g x)) {x₀ x : N}
-    (hf : f x = f x₀) (hg : g x = g x₀) :
-    inTangentCoordinates I I' f g ϕ x₀ x = ϕ x := by
-  rw [inTangentCoordinates_eq _ _ _ (by rw [hf]; exact mem_chart_source H _)
-    (by rw [hg]; exact mem_chart_source H' _)]
-  have h₁ : achart H (f x₀) = achart H (f x) := by rw [hf]
-  have h₂ : achart H' (g x₀) = achart H' (g x) := by rw [hg]
-  ext v
-  simp only [ContinuousLinearMap.comp_apply, h₁, h₂,
-    (tangentBundleCore I' M').coordChange_self (achart H' (g x)) (g x)
-      (mem_chart_source H' (g x))]
-  -- `ContinuousLinearMap.comp_apply` does not fire on the inner composition, whose source is
-  -- `TangentSpace I (f x)` rather than `E`; it is applied by definition.
-  exact congrArg (ϕ x) ((tangentBundleCore I M).coordChange_self (achart H (f x)) (f x)
-    (mem_chart_source H (f x)) v)
-
 /-- A linear map between tangent spaces, read in the canonical trivializations at its own base
 points, is unchanged. -/
 @[simp]
@@ -314,6 +293,16 @@ theorem inCoordinates_tangentSpace_self {E' H' M' : Type*} [NormedAddCommGroup E
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     symmL_trivializationAt_self]
   exact continuousLinearMapAt_trivializationAt_self y (ϕ v)
+
+/-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
+tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
+theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] (f : N → M) (g : N → M')
+    (ϕ : Π x : N, TangentSpace I (f x) →L[𝕜] TangentSpace I' (g x)) {x₀ x : N}
+    (hf : f x = f x₀) (hg : g x = g x₀) :
+    inTangentCoordinates I I' f g ϕ x₀ x = ϕ x := by
+  rw [inTangentCoordinates, ← hf, ← hg, inCoordinates_tangentSpace_self]
 
 /-- The differential of the extended chart at `x₀`, at a point `x` of its source, is inverted by
 the inverse of the canonical tangent-bundle trivialization at `x₀`.  This is the inverse form of
@@ -703,7 +692,7 @@ This is deliberately a named equivalence rather than `ContinuousLinearEquiv.refl
 `TangentSpace` is not reducible, a statement phrased with `refl` is type-correct only after
 unfolding it, so `rw` and `simp` fail on such statements. Mathlib introduces
 `NormedSpace.fromTangentSpace` for the analogous identification for the same reason. -/
-noncomputable def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
+def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
     TangentSpace I x ≃L[𝕜] TangentSpace I (x : M) where
   toFun v := v
   invFun v := v
@@ -948,7 +937,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Restrict a field of continuous bilinear maps on the tangent spaces of `M` to an open
 submanifold `U`, through the canonical tangent-space identification. -/
-noncomputable def restrictOpenTangentSpaceBilinear
+def restrictOpenTangentSpaceBilinear
     (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U) :
     TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F :=
   let e := tangentSpaceOpenEquiv (I := I) x
@@ -1023,7 +1012,7 @@ variable
 the tangent spaces of the factors. Both are Mathlib's type synonym for the product of the model
 vector spaces; as for `tangentSpaceOpenEquiv`, the identification is named so that statements
 using it are type-correct without unfolding `TangentSpace`. -/
-noncomputable def tangentSpaceProdEquiv (p : M × N) :
+def tangentSpaceProdEquiv (p : M × N) :
     TangentSpace (I.prod J) p ≃L[𝕜] TangentSpace I p.1 × TangentSpace J p.2 where
   toFun v := v
   invFun v := v
