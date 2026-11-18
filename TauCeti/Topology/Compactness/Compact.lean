@@ -16,8 +16,9 @@ import TauCeti.Topology.Separation.InvFunOn
 # Compactness utilities
 
 General lemmas about compact and σ-compact subsets of topological spaces, limits along
-ultrafilters of families eventually in a compact set, and families whose values tend to the
-cocompact filter, whose images therefore lie in no fixed compact set.
+ultrafilters of families eventually in a compact set, families whose values tend to the
+cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
+valid near each point of a compact set to one constant valid on all of it.
 
 A continuous injection on a compact set `K` restricts to a closed embedding of `K`
 (`IsCompact.isClosedEmbedding_domRestrict`), so neighbourhoods of a point of `K`
@@ -46,6 +47,22 @@ theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
       (inter_subset_inter_left S (iUnion₂_subset fun x hx ↦ hWU x (htU hx)))
   rw [heq]
   exact htf.isCompact_biUnion fun x hx ↦ hWc x (htU hx)
+
+/-- **A locally valid constant is uniform over a compact set.** Let `p a y` be a property of a
+constant `a` at a point `y`, preserved when `a` moves up for a directed relation `r`. If near each
+point of a compact set `K`, within `K`, some constant works, then one constant works on all of `K`.
+-/
+theorem _root_.IsCompact.exists_forall_of_forall_exists_eventually {α : Type*}
+    {r : α → α → Prop} [IsDirected α r] [Nonempty α] {K : Set X} (hK : IsCompact K)
+    {p : α → X → Prop} (hp : ∀ ⦃a b⦄, r a b → ∀ ⦃y⦄, p a y → p b y)
+    (h : ∀ y ∈ K, ∃ a, ∀ᶠ z in 𝓝[K] y, p a z) : ∃ a, ∀ y ∈ K, p a y := by
+  refine hK.induction_on (p := fun t ↦ ∃ a, ∀ y ∈ t, p a y)
+    ⟨Classical.arbitrary α, fun _ h ↦ h.elim⟩ (fun _ _ hst ⟨a, ha⟩ ↦ ⟨a, fun y hy ↦ ha y (hst hy)⟩)
+    (fun _ _ ⟨a, ha⟩ ⟨b, hb⟩ ↦ ?_) fun y hy ↦ ?_
+  · obtain ⟨c, hac, hbc⟩ := directed_of r a b
+    exact ⟨c, fun y hy ↦ hy.elim (fun hy ↦ hp hac (ha y hy)) fun hy ↦ hp hbc (hb y hy)⟩
+  · obtain ⟨a, ha⟩ := h y hy
+    exact ⟨_, ha, a, fun _ h ↦ h⟩
 
 /-- **Connected components of a compact set are compact.** The connected component of a compact
 set `K` at a point is closed in `K`, hence compact; it is empty at a point outside `K`. -/
