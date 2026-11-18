@@ -175,17 +175,13 @@ theorem exists_tendsto_of_cauchySeq {f : ℕ → F} {S : Set A} (hS : Dense S)
         · exact (dist_apply_le (f N) x a).trans_lt hxa
       _ = ε := by ring
   choose g hg using fun x ↦ cauchySeq_tendsto_of_complete (hc x)
-  refine ⟨{
-      toFun := g
-      map_smul' := fun c x ↦ tendsto_nhds_unique (hg (c • x))
-        (by simpa only [map_smul, MonoidHom.id_apply] using (hg x).const_smul c)
-      map_zero' := tendsto_nhds_unique (hg 0) (by simpa only [map_zero] using tendsto_const_nhds)
-      map_add' := fun x y ↦ tendsto_nhds_unique (hg (x + y))
-        (by simpa only [map_add] using (hg x).add (hg y))
-      map_mul' := fun x y ↦ tendsto_nhds_unique (hg (x * y))
-        (by simpa only [map_mul] using (hg x).mul (hg y))
-      map_star' := fun x ↦ tendsto_nhds_unique (hg (star x))
-        (by simpa only [map_star] using (hg x).star) }, hg⟩
+  have hlim := tendsto_pi_nhds.mpr hg
+  have hlin : Tendsto (fun n x ↦ (f n : A →ₗ[ℂ] B) x) atTop (𝓝 g) := by
+    simpa only [LinearMap.coe_ofClass] using hlim
+  exact ⟨{ linearMapOfTendsto g (fun n ↦ (f n : A →ₗ[ℂ] B)) hlin, mulHomOfTendsto g f hlim with
+      map_zero' := map_zero (linearMapOfTendsto g _ hlin)
+      map_star' x := tendsto_nhds_unique (hg (star x)) (by simpa [map_star] using (hg x).star) },
+    fun a ↦ by simpa using hg a⟩
 
 /-- Pointwise convergence of `⋆`-homomorphisms between C⋆-algebras passes to convergent
 arguments: if `f i` tends to `g` pointwise and `x i` tends to `a`, then `f i (x i)` tends to
