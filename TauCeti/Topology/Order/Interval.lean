@@ -30,6 +30,7 @@ when the limit is finite.
 A continuous strictly increasing function on a compact interval has a continuous inverse on
 its range, extended to the whole codomain by clamping.
 A path that starts in an open set and leaves it has a first exit time.
+A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` is so on `[a, b]`.
 
 ## Main results
 
@@ -48,6 +49,9 @@ A path that starts in an open set and leaves it has a first exit time.
   order-connected sets.
 * `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
   different values at `a` and `b`.
+* `ContinuousOn.strictMonoOn_Icc_of_strictMonoOn_Ioo`,
+  `ContinuousOn.strictAntiOn_Icc_of_strictAntiOn_Ioo` — a function continuous on `[a, b]` and
+  strictly monotone (antitone) on `(a, b)` is strictly monotone (antitone) on `[a, b]`.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly increasing map on
   `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
@@ -270,6 +274,42 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
     (hsv.trans htv.symm)
   have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
   exact hvm (hsv.symm.trans (congrArg f hsm))
+
+/-- A function continuous on `[a, b]` and strictly monotone on `(a, b)` is strictly monotone on
+`[a, b]`. -/
+theorem _root_.ContinuousOn.strictMonoOn_Icc_of_strictMonoOn_Ioo {α β : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [LinearOrder β]
+    [TopologicalSpace β] [OrderClosedTopology β] {f : α → β} {a b : α}
+    (hf : ContinuousOn f (Icc a b)) (h : StrictMonoOn f (Ioo a b)) :
+    StrictMonoOn f (Icc a b) := by
+  rcases le_or_gt b a with hba | hab
+  · exact (subsingleton_Icc_of_ge hba).strictMonoOn f
+  -- By continuity, `f` stays monotone when the two endpoints are added.
+  have hmono : MonotoneOn f (Icc a b) := by
+    have hIco : MonotoneOn f (Ico a b) := by
+      rw [← insert_left_Ioo hab]
+      exact h.monotoneOn.insert_of_continuousWithinAt (left_nhdsWithin_Ioo_neBot hab)
+        ((hf a (left_mem_Icc.2 hab.le)).mono Ioo_subset_Icc_self)
+    rw [← insert_right_Ico hab.le]
+    exact hIco.insert_of_continuousWithinAt (right_nhdsWithin_Ico_neBot hab)
+      ((hf b (right_mem_Icc.2 hab.le)).mono Ico_subset_Icc_self)
+  -- Between `x < y` lie two points of `(a, b)`, where `f` increases strictly.
+  intro x hx y hy hxy
+  obtain ⟨s, hxs, hsy⟩ := exists_between hxy
+  obtain ⟨t, hst, hty⟩ := exists_between hsy
+  have hs : s ∈ Ioo a b := ⟨hx.1.trans_lt hxs, (hst.trans hty).trans_le hy.2⟩
+  have ht : t ∈ Ioo a b := ⟨hs.1.trans hst, hty.trans_le hy.2⟩
+  exact (hmono hx (Ioo_subset_Icc_self hs) hxs.le).trans_lt
+    ((h hs ht hst).trans_le (hmono (Ioo_subset_Icc_self ht) hy hty.le))
+
+/-- A function continuous on `[a, b]` and strictly antitone on `(a, b)` is strictly antitone on
+`[a, b]`. -/
+theorem _root_.ContinuousOn.strictAntiOn_Icc_of_strictAntiOn_Ioo {α β : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [LinearOrder β]
+    [TopologicalSpace β] [OrderClosedTopology β] {f : α → β} {a b : α}
+    (hf : ContinuousOn f (Icc a b)) (h : StrictAntiOn f (Ioo a b)) :
+    StrictAntiOn f (Icc a b) :=
+  ContinuousOn.strictMonoOn_Icc_of_strictMonoOn_Ioo (β := βᵒᵈ) hf h
 
 /-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
 has image `Ioi v`. -/

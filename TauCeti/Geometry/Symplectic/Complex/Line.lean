@@ -47,6 +47,8 @@ conjugating the coordinates exchanges them.
   by `I` is the norm square.
 * `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule_eq_inner`: more generally, the metric
   `σ(z, I w)` is the Euclidean inner product of `ℂ`.
+* `TauCeti.stdComplexSymplecticForm_smul_sub_smul`: a real-linear map `v ↦ α v - β ⟪z, v⟫ z`
+  scales the area form by its determinant.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
@@ -176,6 +178,16 @@ theorem stdComplexSymplecticForm_apply_ofComplexModule_eq_inner (z w : ℂ) :
     stdComplexSymplecticForm z (AlmostComplexStructure.ofComplexModule ℂ w) = inner ℝ z w := by
   simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
     Complex.inner]
+
+open scoped InnerProductSpace in
+/-- A real-linear map `v ↦ α v - β ⟪z, v⟫ z` of `ℂ` scales the area form by its determinant
+`α (α - β |z|²)`. -/
+theorem stdComplexSymplecticForm_smul_sub_smul (α β : ℝ) (z v w : ℂ) :
+    stdComplexSymplecticForm (α • v - (β * ⟪z, v⟫_ℝ) • z) (α • w - (β * ⟪z, w⟫_ℝ) • z) =
+      α * (α - β * ‖z‖ ^ 2) * stdComplexSymplecticForm v w := by
+  simp only [stdComplexSymplecticForm_apply, Complex.inner, Complex.sub_re, Complex.sub_im,
+    Complex.real_smul, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
+    Complex.conj_re, Complex.conj_im, Complex.sq_norm, Complex.normSq_apply]
   ring
 
 private noncomputable def planeBasis (J : AlmostComplexStructure ℂ) : Basis (Fin 2) ℝ ℂ :=

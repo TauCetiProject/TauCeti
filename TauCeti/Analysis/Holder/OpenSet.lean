@@ -48,6 +48,9 @@ completeness.
   with bounded derivatives through order `k` on `Ω` and `α`-Hölder `k`-th derivative on `Ω`.
 * `TauCeti.CkHolderSpaceOn.norm_eq`: the norm is the sum of the supremum norms of the
   derivative fields through order `k` and the `α`-Hölder seminorm of the `k`-th field.
+* `TauCeti.CkHolderSpaceOn.extend`: the extension by zero of an element, a canonical function on
+  `E` agreeing with it on `Ω`; `TauCeti.CkHolderSpaceOn.toBoundedContinuousFunctionCLM`: forgetting
+  the derivatives, a continuous linear map of norm at most one to `Ω →ᵇ F`.
 * `TauCeti.CkHolderSpaceOn.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of operator norm at
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
@@ -521,6 +524,131 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, FunLike.coe_smul,
     Pi.smul_apply]
   simp
+
+/-- The derivative field of order zero has the norm of the underlying function at each point. -/
+theorem norm_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
+    ‖f.iteratedFDeriv 0 x‖ = ‖f x‖ := by
+  rw [← toFun_eq_coe, toFun]
+  exact ((continuousMultilinearCurryFin0 ℝ E F).norm_map _).symm
+
+/-- The values of an element of `C^{k,α}(Ω)` are controlled by the supremum norm of its order-zero
+field. -/
+theorem norm_apply_le_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
+    ‖f x‖ ≤ ‖f.iteratedFDeriv 0‖ := by
+  rw [← norm_iteratedFDeriv_zero]
+  exact (f.iteratedFDeriv 0).norm_coe_le_norm x
+
+/-- The iterated derivatives through order `k` of a function that agrees with an element of
+`C^{k,α}(Ω)` on `Ω` are controlled on `Ω` by the `C^{k,α}(Ω)` norm. -/
+theorem norm_iteratedFDeriv_apply_le (f : CkHolderSpaceOn k α Ω F) {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) {i : ℕ} (hi : i ≤ k) (x : Ω) :
+    ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ ‖f‖ := by
+  rw [f.iteratedFDeriv_eq hg ⟨i, Nat.lt_succ_of_le hi⟩]
+  exact ((f.iteratedFDeriv _).norm_coe_le_norm x).trans (norm_iteratedFDeriv_le f _)
+
+/-- The extension by zero of an element of `C^{k,α}(Ω)` to a function on `E`. It agrees with the
+element on `Ω`, so it is a representative to which `CkHolderSpaceOn.iteratedFDeriv_eq`,
+`CkHolderSpaceOn.contDiffOn` and `CkHolderSpaceOn.holderOnWith_iteratedFDeriv` apply. -/
+def extend (f : CkHolderSpaceOn k α Ω F) : E → F :=
+  Function.extend Subtype.val f 0
+
+/-- The extension by zero agrees with the element on `Ω`. -/
+@[simp]
+theorem extend_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) : f.extend x = f x :=
+  Subtype.val_injective.extend_apply _ _ x
+
+/-- The extension by zero of an element of `C^{k,α}(Ω)` is `k` times continuously differentiable
+on `Ω`. -/
+theorem contDiffOn_extend (f : CkHolderSpaceOn k α Ω F) : ContDiffOn ℝ k f.extend Ω :=
+  f.contDiffOn f.extend_apply
+
+/-- The iterated derivatives of the extension by zero at points of `Ω` are the derivative fields. -/
+theorem iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) (x : Ω) :
+    _root_.iteratedFDeriv ℝ i f.extend x = f.iteratedFDeriv i x :=
+  f.iteratedFDeriv_eq f.extend_apply i x
+
+/-- The `k`-th iterated derivative of the extension by zero is `α`-Hölder on `Ω`, with constant the
+Hölder seminorm of the derivative field of order `k`. -/
+theorem holderOnWith_iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) :
+    HolderOnWith (nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F)) α
+      (_root_.iteratedFDeriv ℝ k f.extend) Ω :=
+  f.holderOnWith_iteratedFDeriv f.extend_apply
+
+/-- The iterated derivatives through order `k` of the extension by zero are controlled on `Ω` by
+the `C^{k,α}(Ω)` norm. -/
+theorem norm_iteratedFDeriv_extend_le (f : CkHolderSpaceOn k α Ω F) {i : ℕ} (hi : i ≤ k)
+    (x : Ω) : ‖_root_.iteratedFDeriv ℝ i f.extend x‖ ≤ ‖f‖ :=
+  f.norm_iteratedFDeriv_apply_le f.extend_apply hi x
+
+/-- The underlying function on `Ω` of an element of `C^{k,α}(Ω)` is continuous. -/
+theorem continuous (f : CkHolderSpaceOn k α Ω F) : Continuous f := by
+  have h := continuousOn_iff_continuous_domRestrict.1 f.contDiffOn_extend.continuousOn
+  convert h using 1
+  funext x
+  exact (f.extend_apply x).symm
+
+/-- The underlying function on `Ω` of an element of `C^{k,α}(Ω)`, as a bounded continuous
+function. -/
+def toBoundedContinuousFunction (f : CkHolderSpaceOn k α Ω F) : Ω →ᵇ F :=
+  BoundedContinuousFunction.ofNormedAddCommGroup f f.continuous ‖f‖ f.norm_apply_le
+
+@[simp]
+theorem coe_toBoundedContinuousFunction (f : CkHolderSpaceOn k α Ω F) :
+    ⇑f.toBoundedContinuousFunction = f :=
+  BoundedContinuousFunction.coe_ofNormedAddCommGroup ..
+
+/-- The underlying bounded continuous function has norm at most the `C^{k,α}(Ω)` norm. -/
+theorem norm_toBoundedContinuousFunction_le (f : CkHolderSpaceOn k α Ω F) :
+    ‖f.toBoundedContinuousFunction‖ ≤ ‖f‖ :=
+  BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ (norm_nonneg f) _
+
+/-- An element of `C^{k,α}(Ω)` is determined by its underlying bounded continuous function. -/
+theorem toBoundedContinuousFunction_injective :
+    Function.Injective (toBoundedContinuousFunction : CkHolderSpaceOn k α Ω F → Ω →ᵇ F) :=
+  fun _ _ h ↦ ext fun x ↦ by simpa using DFunLike.congr_fun h x
+
+/-- The supremum norm of the underlying function is that of the order-zero derivative field. -/
+theorem norm_toBoundedContinuousFunction (f : CkHolderSpaceOn k α Ω F) :
+    ‖f.toBoundedContinuousFunction‖ = ‖f.iteratedFDeriv 0‖ := by
+  rw [BoundedContinuousFunction.norm_eq_iSup_norm,
+    BoundedContinuousFunction.norm_eq_iSup_norm (f.iteratedFDeriv 0),
+    coe_toBoundedContinuousFunction]
+  congr 1 with x
+  exact (norm_iteratedFDeriv_zero f x).symm
+
+/-- The underlying bounded continuous function of a sum. -/
+@[simp]
+theorem toBoundedContinuousFunction_add (f g : CkHolderSpaceOn k α Ω F) :
+    (f + g).toBoundedContinuousFunction =
+      f.toBoundedContinuousFunction + g.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- The underlying bounded continuous function of a scalar multiple. -/
+@[simp]
+theorem toBoundedContinuousFunction_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) :
+    (c • f).toBoundedContinuousFunction = c • f.toBoundedContinuousFunction := by
+  ext x
+  simp
+
+/-- Forgetting the derivatives is a continuous linear map to bounded continuous functions on `Ω`.
+-/
+def toBoundedContinuousFunctionCLM : CkHolderSpaceOn k α Ω F →L[ℝ] (Ω →ᵇ F) :=
+  LinearMap.mkContinuous
+    { toFun := toBoundedContinuousFunction
+      map_add' := toBoundedContinuousFunction_add
+      map_smul' := toBoundedContinuousFunction_smul } 1 fun f ↦ by
+        rw [one_mul]
+        exact norm_toBoundedContinuousFunction_le f
+
+@[simp]
+theorem toBoundedContinuousFunctionCLM_apply (f : CkHolderSpaceOn k α Ω F) :
+    toBoundedContinuousFunctionCLM f = f.toBoundedContinuousFunction := (rfl)
+
+/-- Forgetting the derivatives has operator norm at most one. -/
+theorem norm_toBoundedContinuousFunctionCLM_le_one :
+    ‖toBoundedContinuousFunctionCLM (k := k) (α := α) (Ω := Ω) (F := F)‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 /-- A bounded continuous field on `Ω` built from a function on the whole space that is continuous
 on `Ω` and bounded there. -/
