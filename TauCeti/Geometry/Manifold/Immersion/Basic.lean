@@ -62,6 +62,8 @@ both sides, in order to apply the rule to `e.symm` as well.
 * `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
   immersion data, a point `b` of the source chart is sent by `f` to the point read as
   `h.equiv (b, 0)` in the target chart.
+* `Manifold.IsImmersion.tangentMap_injective_iff`: for a `C^n` immersion (`n ≠ 0`),
+  `tangentMap I J f` is injective if and only if `f` is injective.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -430,5 +432,20 @@ theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend
     h.writtenInCharts hb
   refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
   rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
+
+/-! ### Injectivity of `tangentMap` -/
+
+/-- For a `C^n` immersion (`n ≠ 0`), the induced map `tangentMap I J f` on tangent bundles is
+injective if and only if the base map `f` is injective. -/
+theorem _root_.Manifold.IsImmersion.tangentMap_injective_iff
+    (hf : IsImmersion I J n f) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J f) ↔ Function.Injective f := by
+  refine ⟨fun hinj x₁ x₂ hfx ↦ ?_, fun hinj ⟨x₁, v₁⟩ ⟨x₂, v₂⟩ hp ↦ ?_⟩
+  · have h0 : tangentMap I J f ⟨x₁, 0⟩ = tangentMap I J f ⟨x₂, 0⟩ := by
+      simp only [tangentMap, map_zero]; congr 1
+    exact congrArg Bundle.TotalSpace.proj (hinj h0)
+  · obtain rfl : x₁ = x₂ := hinj (congrArg Bundle.TotalSpace.proj hp)
+    simp only [tangentMap, Bundle.TotalSpace.mk_inj] at hp ⊢
+    exact hf.mfderiv_injective hn x₁ hp
 
 end TauCeti
