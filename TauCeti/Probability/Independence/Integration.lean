@@ -36,6 +36,7 @@ used to evaluate expected products of entries of random matrices along trace wor
 public section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace ProbabilityTheory.iIndepFun
 
@@ -110,6 +111,24 @@ theorem measureReal_preimage_le {Ω α β : Type*}
       filter_upwards [h] with x hx
       exact (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hb).2 hx
     _ = ENNReal.ofReal b := by simp
+
+/-- For independent random variables, a uniform bound on the probabilities of the sections
+of a measurable set in the product space bounds the measure of that set by the bound times
+the mass of the underlying measure. -/
+theorem measure_preimage_prodMk_le_of_forall
+    {Ω α β : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
+    {P : Measure Ω} [IsFiniteMeasure P] {X : Ω → α} {Y : Ω → β}
+    (hind : IndepFun X Y P) (hX : AEMeasurable X P) (hY : AEMeasurable Y P)
+    {s : Set (α × β)} (hs : MeasurableSet s) {b : ℝ≥0∞}
+    (h : ∀ a, P (Y ⁻¹' (Prod.mk a ⁻¹' s)) ≤ b) :
+    P ((fun ω ↦ (X ω, Y ω)) ⁻¹' s) ≤ b * P Set.univ := by
+  rw [← Measure.map_apply_of_aemeasurable (hX.prodMk hY) hs,
+    hind.map_prod_eq_prod_map_map hX hY, Measure.prod_apply hs]
+  have hsection (a : α) : P.map Y (Prod.mk a ⁻¹' s) ≤ b := by
+    rw [Measure.map_apply_of_aemeasurable hY (hs.preimage measurable_prodMk_left)]
+    exact h a
+  exact (lintegral_mono hsection).trans_eq (by
+    simp [Measure.map_apply_of_aemeasurable hX MeasurableSet.univ])
 
 end ProbabilityTheory.IndepFun
 
