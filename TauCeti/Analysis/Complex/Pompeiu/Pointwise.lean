@@ -20,7 +20,8 @@ not just almost everywhere. On an output disc its norm is bounded by the input `
 times the `L^q` norm of the reciprocal kernel truncated at the sum of the input and output
 radii, where `q` is conjugate to `p`. The latter norm is finite because `q < 2`.
 These bounds are useful for Cauchy integral equations with rough zeroth-order coefficients.
-The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`.
+The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`;
+every `p > 2` has such a conjugate `q < 2` (`TauCeti.exists_holderConjugate_lt_two`).
 For bounded data the transform is moreover continuous on the whole plane
 (`TauCeti.continuous_cauchyTransform_of_norm_le`), since moving the pole moves the reciprocal
 kernel continuously in `L¹` on the support disc. So is the transform of supercritical data
@@ -46,6 +47,19 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
   {f : ℂ → F} {c w : ℂ} {r R : ℝ} {p q : ENNReal}
+
+/-- A supercritical exponent `p > 2` has a Hölder conjugate `q < 2`, as the bounds below
+require. -/
+theorem exists_holderConjugate_lt_two (hp : 2 < p) : ∃ q, p.HolderConjugate q ∧ q < 2 := by
+  have hp0 : p ≠ 0 := (zero_lt_two.trans hp).ne'
+  have hle : p⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (one_le_two.trans hp.le)
+  refine ⟨(1 - p⁻¹)⁻¹, ENNReal.holderConjugate_iff.2 ?_, ?_⟩
+  · rw [inv_inv, add_tsub_cancel_of_le hle]
+  · rw [ENNReal.inv_lt_iff_inv_lt,
+      (ENNReal.cancel_of_ne (ENNReal.inv_ne_top.2 hp0)).lt_tsub_iff_right]
+    calc (2 : ℝ≥0∞)⁻¹ + p⁻¹ < 2⁻¹ + 2⁻¹ :=
+          ENNReal.add_lt_add_left (by simp) (ENNReal.inv_lt_inv.2 hp)
+      _ = 1 := ENNReal.inv_two_add_inv_two
 
 /-- Supercritical compactly supported data have an absolutely convergent Cauchy integral at
 every point. The conjugate exponent condition includes the bounded-data endpoint. -/

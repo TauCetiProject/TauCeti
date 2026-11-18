@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.StandardFrame
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
-import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Function.UniformIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Topology.MetricSpace.Contracting
@@ -17,6 +16,7 @@ import TauCeti.Analysis.Complex.Wirtinger.Weyl
 import TauCeti.Analysis.Sobolev.Local.Multiplication
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 import TauCeti.MeasureTheory.Function.RankOne
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # The similarity principle for weak solutions of linear Cauchy–Riemann equations
@@ -31,8 +31,8 @@ of the linear Cauchy–Riemann equation
 on `Ω` in the sense of `TauCeti.IsWeakLinearCauchyRiemannOn`: `ξ` is continuous, with a weak
 derivative in `Lᵖ_loc`, and the equation holds almost everywhere. The **vector similarity
 principle** (Carleman; McDuff–Salamon, Theorem 2.3.5) says that near every point `z₀ ∈ Ω` the
-solution factors as `ξ = Φ σ`, with `Φ` a continuous `W^{1,p}` family of invertible real-linear
-maps satisfying `J Φ = Φ i` and `σ` holomorphic
+solution factors as `ξ = Φ σ`, with `Φ` a continuous `W^{1,p}_loc` family of invertible
+real-linear maps satisfying `J Φ = Φ i` and `σ` holomorphic
 (`TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_of_complexStructure`). Consequently a
 weak solution has the zero structure of a holomorphic map: it has a similarity factorization at
 every point, it vanishes on a connected open set as soon as it vanishes to infinite order at one
@@ -41,20 +41,21 @@ These are the statements used for the local theory of pseudoholomorphic curves o
 regularity, whose linearized equations have Sobolev coefficients.
 
 The classical version, for `C¹` solutions with locally bounded coefficients and `J = i`, is
-`TauCeti.exists_similarity_of_contDiffOn`. Here only `C ∈ Lᵖ` is available, and the solution is
-only weakly differentiable, so the proof follows Carleman's argument with `Lᵖ` estimates.
+deduced from this one in `TauCeti.Analysis.Complex.CauchyRiemann.Similarity`. Here only
+`C ∈ Lᵖ` is available, and the solution is only weakly differentiable, so the proof follows
+Carleman's argument with `Lᵖ` estimates.
 
 * **The standard structure.** For `J = i`
   (`TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn`) the real-linear term `C ξ` is first
   absorbed into a complex-linear coefficient `D` with `D ξ = C ξ` and `‖D‖ ≤ K ‖C‖`, a rank-one map
-  for an auxiliary inner product on `V` (`TauCeti.rankOneDivNormSq`). On a small closed disc the
-  Cauchy integral equation `Φ = 1 - T (½ D Φ)`, for the Cauchy transform `T` inverting
-  `bar∂ = (∂ₛ + i ∂ₜ)/2`, is solved by the contraction mapping theorem in the continuous maps on the
-  disc. Since `p > 2`, `T` maps `Lᵖ` data on the disc to continuous functions, with a pointwise
-  bound by the `Lᵖ` norm (`TauCeti.norm_cauchyTransform_le`,
+  for an auxiliary inner product on `V` (`TauCeti.exists_complexLinear_apply_eq`). On a small
+  closed disc the Cauchy integral equation `Φ = 1 - T (½ D Φ)`, for the Cauchy transform `T`
+  inverting `bar∂ = (∂ₛ + i ∂ₜ)/2`, is solved by the contraction mapping theorem in the continuous
+  maps on the disc. Since `p > 2`, `T` maps `Lᵖ` data on the disc to continuous functions, with a
+  pointwise bound by the `Lᵖ` norm (`TauCeti.norm_cauchyTransform_le`,
   `TauCeti.continuous_cauchyTransform_of_memLp`), and the `Lᵖ` norm of `D` on the disc is small when
   the disc is small. The solution `Φ` is continuous, close to `1` and hence invertible, lies in
-  `W^{1,p}` by the Calderón–Zygmund inequality
+  `W^{1,p}_loc` by the Calderón–Zygmund inequality
   (`TauCeti.exists_hasWeakFDerivOn_cauchyTransform_of_memLp`), and satisfies `bar∂ Φ = -½ D Φ`. The
   frame reduction `TauCeti.isWeakLinearCauchyRiemannOn_iff_frame` then shows that `σ = Φ⁻¹ ξ` solves
   the equation with coefficient `Φ⁻¹(2 bar∂Φ + C Φ)`, which vanishes along `σ`, since
@@ -68,7 +69,8 @@ only weakly differentiable, so the proof follows Carleman's argument with `Lᵖ`
 * `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn`: the factorization for `J = i`, with
   `Φ` complex-linear.
 * `TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn_of_complexStructure`: the
-  factorization for a continuous `W^{1,p}` field of complex structures `J`, with `J Φ = Φ i`.
+  factorization for a continuous `W^{1,p}_loc` field of complex structures `J`, with
+  `J Φ = Φ i`.
 * `TauCeti.hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn_of_complexStructure`: the
   factorization in the form consumed by `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation`.
 * `TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_forall_isBigO_of_complexStructure` and
@@ -93,51 +95,6 @@ open scoped ENNReal NNReal
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-! ### Absorbing the real-linear coefficient -/
-
-variable (V) in
-/-- **A complex-linear coefficient along a solution.** For every `ξ` and every field `C` of
-real-linear maps there is a field `D` of complex-linear maps with `D ξ = C ξ` and `‖D‖ ≤ K ‖C‖`,
-measurable when `C` and `ξ` are, with a constant `K` depending only on `V`. It is a rank-one map
-for the inner product transported from a Euclidean space. -/
-private theorem exists_complexLinear_apply_eq [FiniteDimensional ℂ V] :
-    ∃ K : ℝ, 0 ≤ K ∧ ∀ (ξ : ℂ → V) (C : ℂ → V →L[ℝ] V), ∃ D : ℂ → V →L[ℂ] V,
-      (∀ z, D z (ξ z) = C z (ξ z)) ∧ (∀ z, ‖D z‖ ≤ K * ‖C z‖) ∧
-      ∀ μ : Measure ℂ, AEStronglyMeasurable C μ → AEStronglyMeasurable ξ μ →
-        AEStronglyMeasurable D μ := by
-  let E := EuclideanSpace ℂ (Fin (Module.finrank ℂ V))
-  let e : V ≃L[ℂ] E := ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  let eR : V →L[ℝ] E := (e : V →L[ℂ] E).restrictScalars ℝ
-  let eR' : E →L[ℝ] V := (e.symm : E →L[ℂ] V).restrictScalars ℝ
-  refine ⟨‖(e.symm : E →L[ℂ] V)‖ * (‖eR‖ * ‖eR'‖) * ‖(e : V →L[ℂ] E)‖, by positivity,
-    fun ξ C ↦ ?_⟩
-  let C' : ℂ → E →L[ℝ] E := fun z ↦ eR ∘L C z ∘L eR'
-  have hconj : Continuous fun A : E →L[ℂ] E ↦ (e.symm : E →L[ℂ] V) ∘L A ∘L (e : V →L[ℂ] E) :=
-    continuous_const.clm_comp (continuous_id.clm_comp continuous_const)
-  refine ⟨fun z ↦ (e.symm : E →L[ℂ] V) ∘L rankOneDivNormSq ℂ (C' z (e (ξ z))) (e (ξ z)) ∘L
-    (e : V →L[ℂ] E), fun z ↦ ?_, fun z ↦ ?_, fun μ hC hξ ↦ ?_⟩
-  · have h := (C' z).rankOneDivNormSq_apply_map (𝕜 := ℂ) (e (ξ z))
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-    rw [h]
-    simp [C', eR, eR']
-  · calc ‖(e.symm : E →L[ℂ] V) ∘L rankOneDivNormSq ℂ (C' z (e (ξ z))) (e (ξ z)) ∘L
-          (e : V →L[ℂ] E)‖
-        ≤ ‖(e.symm : E →L[ℂ] V)‖ * (‖rankOneDivNormSq ℂ (C' z (e (ξ z))) (e (ξ z))‖ *
-          ‖(e : V →L[ℂ] E)‖) :=
-          (ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _)
-      _ ≤ ‖(e.symm : E →L[ℂ] V)‖ * ((‖eR‖ * (‖C z‖ * ‖eR'‖)) * ‖(e : V →L[ℂ] E)‖) := by
-          gcongr
-          refine ((C' z).norm_rankOneDivNormSq_map_le _).trans ?_
-          exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _)
-      _ = _ := by ring
-  · have hC' : AEStronglyMeasurable C' μ :=
-      (continuous_const.clm_comp
-        (continuous_id.clm_comp continuous_const)).comp_aestronglyMeasurable hC
-    exact hconj.comp_aestronglyMeasurable
-      (hC'.rankOneDivNormSq_apply (𝕜 := ℂ) (e.continuous.comp_aestronglyMeasurable hξ))
 
 /-! ### The Cauchy integral equation with `Lᵖ` coefficients -/
 
@@ -298,19 +255,7 @@ private theorem exists_cauchyTransform_eq_of_memLp_closedBall [FiniteDimensional
       (∀ z ∈ closedBall z₀ r, g z = (2 : ℂ)⁻¹ • (D z).comp (1 - cauchyTransform g z)) ∧
       ∀ z ∈ closedBall z₀ r, ‖cauchyTransform g z‖ < 1 := by
   -- the conjugate exponent `q < 2`
-  have hp0 : (p : ℝ≥0∞) ≠ 0 := by positivity
-  have hle : (p : ℝ≥0∞)⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (by exact_mod_cast one_le_two.trans hp.le)
-  set q := (1 - (p : ℝ≥0∞)⁻¹)⁻¹
-  have : (p : ℝ≥0∞).HolderConjugate q := ENNReal.holderConjugate_iff.2 <| by
-    rw [inv_inv, add_tsub_cancel_of_le hle]
-  have hq : q < 2 := by
-    rw [ENNReal.inv_lt_iff_inv_lt,
-      (ENNReal.cancel_of_ne (ENNReal.inv_ne_top.2 hp0)).lt_tsub_iff_right]
-    calc (2 : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ < 2⁻¹ + 2⁻¹ := by
-          gcongr
-          · simp
-          · exact_mod_cast hp
-      _ = 1 := ENNReal.inv_two_add_inv_two
+  obtain ⟨q, _, hq⟩ := exists_holderConjugate_lt_two (p := p) (by exact_mod_cast hp)
   -- a radius `r ≤ R` on which `K ‖D‖_{Lᵖ} ≤ 1/4`, where `K` bounds `T` on discs of radius `≤ R`
   set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal
   have hK : 0 ≤ K := by positivity
@@ -357,9 +302,8 @@ private theorem exists_differentiableOn_eqOn_clm_apply [FiniteDimensional ℂ V]
   have := FiniteDimensional.completeSpace ℂ V
   -- the frame `Φ = Ψ`, read as a family of real-linear maps
   let L : (V →L[ℂ] V) →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℝ
-  have hΦu (z : ℂ) (hz : z ∈ (B : Set ℂ)) : IsUnit (L (Ψ z)) := by
-    obtain ⟨u, hu⟩ := hΨu z hz
-    exact hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩
+  have hΦu (z : ℂ) (hz : z ∈ (B : Set ℂ)) : IsUnit (L (Ψ z)) :=
+    ContinuousLinearMap.isUnit_restrictScalars (hΨu z hz)
   have hDΦ : MemLpLoc p B fun w ↦ L.comp (DΨ w) := memLpLoc_iff.2 fun K hK hc ↦
     (memLpLoc_iff.1 hDΨ K hK hc).of_le_mul (c := ‖L‖)
       ((continuous_const.clm_comp continuous_id).comp_aestronglyMeasurable
@@ -396,7 +340,7 @@ private theorem exists_differentiableOn_eqOn_clm_apply [FiniteDimensional ℂ V]
 `p > 2`, let `C` be a locally `Lᵖ` field of real-linear endomorphisms of a finite-dimensional
 complex normed space `V` on an open set `Ω`, and let `ξ` be a weak solution of
 `∂ₛξ + i ∂ₜξ + C ξ = 0` on `Ω`. Then every point `z₀ ∈ Ω` is the centre of a disc in `Ω` on which
-`ξ = Φ σ`, with `Φ` a continuous `W^{1,p}` family of invertible complex-linear maps and `σ`
+`ξ = Φ σ`, with `Φ` a continuous `W^{1,p}_loc` family of invertible complex-linear maps and `σ`
 holomorphic. -/
 theorem exists_similarity_of_isWeakLinearCauchyRiemannOn [FiniteDimensional ℂ V] {p : ℝ≥0}
     (hp : 2 < p) {Ω : Opens ℂ} {C : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
@@ -409,7 +353,7 @@ theorem exists_similarity_of_isWeakLinearCauchyRiemannOn [FiniteDimensional ℂ 
   have := FiniteDimensional.completeSpace ℂ V
   have hp1 : (1 : ℝ≥0∞) < p := by exact_mod_cast one_lt_two.trans hp
   -- absorb the real-linear coefficient into a complex-linear one, `Lᵖ` on a closed disc in `Ω`
-  obtain ⟨KD, -, habs⟩ := exists_complexLinear_apply_eq V
+  obtain ⟨KD, -, habs⟩ := exists_complexLinear_apply_eq ℂ V
   obtain ⟨D, hDξ, hDC, hDm⟩ := habs ξ C
   obtain ⟨R, hR, hRΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
   have hR₀Ω : closedBall z₀ (R / 2) ⊆ Ω := (closedBall_subset_ball (half_lt_self hR)).trans hRΩ
@@ -459,7 +403,7 @@ Let `p > 2`, let `J` be a continuous field of complex structures, `J² = -1`, on
 finite-dimensional complex normed space `V`, of class `W^{1,p}_loc` on an open set `Ω`, let `C` be
 a locally `Lᵖ` field of real-linear endomorphisms of `V`, and let `ξ` be a weak solution of
 `∂ₛξ + J ∂ₜξ + C ξ = 0` on `Ω`. Then every point `z₀ ∈ Ω` is the centre of a disc in `Ω` on which
-`ξ = Φ σ`, with `Φ` a continuous `W^{1,p}` family of invertible real-linear maps satisfying
+`ξ = Φ σ`, with `Φ` a continuous `W^{1,p}_loc` family of invertible real-linear maps satisfying
 `J Φ = Φ i` and `σ` holomorphic. -/
 theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_of_complexStructure (hp : 2 < p)
     (hJc : ContinuousOn J Ω) (hJ : MemWkpLoc p Ω 1 J)
@@ -502,9 +446,7 @@ theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_of_complexStructure (hp
     have hp1 : (1 : ℝ≥0) < p := one_lt_two.trans hp
     exact (hSw.mono hrr₁ : MemWkpLoc p Br 1 S).bilin (ContinuousLinearMap.compL ℝ V V V) hp hp1
       le_rfl (hΨw.clm_comp L : MemWkpLoc p Br 1 fun z ↦ L (Ψ z))
-  · obtain ⟨u, hu'⟩ := hΨu z hz
-    exact (hu z (hrr₁ hz)).mul
-      (hu' ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩)
+  · exact (hu z (hrr₁ hz)).mul (ContinuousLinearMap.isUnit_restrictScalars (hΨu z hz))
   · rw [← ContinuousLinearMap.comp_assoc, comp_standardFrame (hJJ z (hr₁Ω (hrr₁ hz))) h₀ hΦ₁,
       ContinuousLinearMap.comp_assoc, ContinuousLinearMap.comp_assoc]
     congr 1

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RankOne
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!
@@ -23,6 +25,11 @@ at most `‖C‖`. Thus every `Lᵖ` coefficient bound transfers, with the same 
 new coefficient. In the complex case this is the solution-dependent absorption of a real-linear
 zeroth-order coefficient used in the vector similarity principle. It does not construct a
 similarity factor or assert regularity of a solution.
+
+On a finite-dimensional complex normed space, with no inner product of its own, the same
+absorption holds up to a constant depending only on the space
+(`TauCeti.exists_complexLinear_apply_eq`): the rank-one map is taken for the inner product
+transported from a Euclidean space.
 
 The hypotheses are strong measurability, including in infinite-dimensional spaces. Mere Borel
 measurability is not silently converted into strong measurability without separability hypotheses.
@@ -105,3 +112,56 @@ theorem eLpNorm_rankOneDivNormSq_apply_le
     (Filter.Eventually.of_forall fun t => (C t).norm_rankOneDivNormSq_map_le (x t))
 
 end TauCeti.MeasureTheory
+
+namespace TauCeti
+
+open _root_.MeasureTheory
+
+variable {X V : Type*} [MeasurableSpace X] [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [FiniteDimensional ℂ V]
+
+variable (X V) in
+/-- **A complex-linear coefficient along a solution.** For every map `ξ` and every field `C` of
+real-linear endomorphisms of a finite-dimensional complex normed space `V`, there is a field `D`
+of complex-linear maps with `D ξ = C ξ` and `‖D‖ ≤ K ‖C‖`, strongly measurable when `C` and `ξ`
+are, with a constant `K` depending only on `V`. It is a rank-one map for the inner product
+transported from a Euclidean space. -/
+theorem exists_complexLinear_apply_eq :
+    ∃ K : ℝ, 0 ≤ K ∧ ∀ (ξ : X → V) (C : X → V →L[ℝ] V), ∃ D : X → V →L[ℂ] V,
+      (∀ x, D x (ξ x) = C x (ξ x)) ∧ (∀ x, ‖D x‖ ≤ K * ‖C x‖) ∧
+      ∀ μ : Measure X, AEStronglyMeasurable C μ → AEStronglyMeasurable ξ μ →
+        AEStronglyMeasurable D μ := by
+  let E := EuclideanSpace ℂ (Fin (Module.finrank ℂ V))
+  let e : V ≃L[ℂ] E := ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  let eR : V →L[ℝ] E := (e : V →L[ℂ] E).restrictScalars ℝ
+  let eR' : E →L[ℝ] V := (e.symm : E →L[ℂ] V).restrictScalars ℝ
+  refine ⟨‖(e.symm : E →L[ℂ] V)‖ * (‖eR‖ * ‖eR'‖) * ‖(e : V →L[ℂ] E)‖, by positivity,
+    fun ξ C ↦ ?_⟩
+  let C' : X → E →L[ℝ] E := fun x ↦ eR ∘L C x ∘L eR'
+  have hconj : Continuous fun A : E →L[ℂ] E ↦ (e.symm : E →L[ℂ] V) ∘L A ∘L (e : V →L[ℂ] E) :=
+    continuous_const.clm_comp (continuous_id.clm_comp continuous_const)
+  refine ⟨fun x ↦ (e.symm : E →L[ℂ] V) ∘L rankOneDivNormSq ℂ (C' x (e (ξ x))) (e (ξ x)) ∘L
+    (e : V →L[ℂ] E), fun x ↦ ?_, fun x ↦ ?_, fun μ hC hξ ↦ ?_⟩
+  · have h := (C' x).rankOneDivNormSq_apply_map (𝕜 := ℂ) (e (ξ x))
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+    rw [h]
+    simp [C', eR, eR']
+  · calc ‖(e.symm : E →L[ℂ] V) ∘L rankOneDivNormSq ℂ (C' x (e (ξ x))) (e (ξ x)) ∘L
+          (e : V →L[ℂ] E)‖
+        ≤ ‖(e.symm : E →L[ℂ] V)‖ * (‖rankOneDivNormSq ℂ (C' x (e (ξ x))) (e (ξ x))‖ *
+          ‖(e : V →L[ℂ] E)‖) :=
+          (ContinuousLinearMap.opNorm_comp_le _ _).trans
+            (by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _)
+      _ ≤ ‖(e.symm : E →L[ℂ] V)‖ * ((‖eR‖ * (‖C x‖ * ‖eR'‖)) * ‖(e : V →L[ℂ] E)‖) := by
+          gcongr
+          refine ((C' x).norm_rankOneDivNormSq_map_le _).trans ?_
+          exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+            (by gcongr; exact ContinuousLinearMap.opNorm_comp_le _ _)
+      _ = _ := by ring
+  · have hC' : AEStronglyMeasurable C' μ :=
+      (continuous_const.clm_comp
+        (continuous_id.clm_comp continuous_const)).comp_aestronglyMeasurable hC
+    exact hconj.comp_aestronglyMeasurable
+      (hC'.rankOneDivNormSq_apply (𝕜 := ℂ) (e.continuous.comp_aestronglyMeasurable hξ))
+
+end TauCeti
