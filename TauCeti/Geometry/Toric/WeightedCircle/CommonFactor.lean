@@ -160,7 +160,7 @@ theorem forall_weightedHopf_eq_imp_mem_orbit_iff (ha : 0 < a) (hb : 0 < b) (hε 
   refine ⟨fun h ↦ ?_, fun hab z w ↦ (weightedHopf_eq_weightedHopf_iff ha hb hab hε).1⟩
   by_contra hab
   have hg : 1 < a.gcd b := lt_of_le_of_ne (Nat.gcd_pos_of_pos_left b ha) (Ne.symm hab)
-  have hag : a / a.gcd b ≠ 0 := (Nat.div_pos (Nat.gcd_le_left b ha) (by omega)).ne'
+  have hag : a / a.gcd b ≠ 0 := (Nat.div_gcd_pos_of_pos_left b ha).ne'
   obtain ⟨z, hz, h₁, h₂⟩ := exists_mem_weightedEllipsoid_ne_zero ha hb hε
   have : NeZero a := ⟨ha.ne'⟩
   obtain ⟨ζ, hprim⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Circle a
@@ -183,9 +183,11 @@ theorem forall_weightedHopf_eq_imp_mem_orbit_iff (ha : 0 < a) (hb : 0 < b) (hε 
     simp only [weightedRotation_snd] at h₂'
     exact Circle.coe_injective (by rw [Circle.coe_pow]; exact mul_right_cancel₀ h₂ h₂')
   -- `ζ` has order `a`, but `ζ ^ (a / g) = 1` with `0 < a / g < a`.
+  have e : b * (a / a.gcd b) = a * (b / a.gcd b) := by
+    rw [← Nat.mul_div_assoc _ (a.gcd_dvd_left b), ← Nat.mul_div_assoc _ (a.gcd_dvd_right b),
+      mul_comm]
   have hζg : ζ ^ (a / a.gcd b) = 1 := by
-    rw [← hub, ← pow_mul, ← Nat.mul_div_assoc _ (a.gcd_dvd_left b), mul_comm b a,
-      Nat.mul_div_assoc _ (a.gcd_dvd_right b), pow_mul, hua, one_pow]
+    rw [← hub, ← pow_mul, e, pow_mul, hua, one_pow]
   exact (Nat.div_lt_self ha hg).not_ge
     (Nat.le_of_dvd (Nat.pos_of_ne_zero hag) (hprim.dvd_of_pow_eq_one _ hζg))
 
@@ -210,8 +212,8 @@ def reducedWeightedOrbitHomeomorph (ha : 0 < a) (hb : 0 < b) (hε : 0 < ε) :
   (commonFactorOrbitHomeomorph hg.ne' (Nat.mul_div_cancel' (a.gcd_dvd_left b)).symm
       (Nat.mul_div_cancel' (a.gcd_dvd_right b)).symm
       (mul_div_cancel₀ ε (Nat.cast_ne_zero.2 hg.ne')).symm).trans
-    (weightedOrbitHomeomorph (Nat.div_pos (Nat.gcd_le_left b ha) hg)
-      (Nat.div_pos (Nat.gcd_le_right a hb) hg) (Nat.coprime_div_gcd_div_gcd hg)
+    (weightedOrbitHomeomorph (Nat.div_gcd_pos_of_pos_left b ha)
+      (Nat.div_gcd_pos_of_pos_right a hb) (Nat.coprime_div_gcd_div_gcd hg)
       (div_pos hε (Nat.cast_pos.2 hg)))
 
 /-- The point `z` of the ellipsoid, as a point of the ellipsoid for the reduced weights. -/
@@ -238,8 +240,7 @@ theorem reducedWeightedOrbitHomeomorph_mk_eq_mk_iff_snd_eq_zero (ha : 0 < a) (hb
     reducedWeightedOrbitHomeomorph ha hb hε (Quotient.mk _ z) = mk ℂ ![1, 0] (by simp) ↔
       (z : ℂ × ℂ).2 = 0 := by
   rw [reducedWeightedOrbitHomeomorph_mk]
-  exact weightedHopf_eq_mk_iff_snd_eq_zero
-    (Nat.div_pos (Nat.gcd_le_left b ha) (Nat.gcd_pos_of_pos_left b ha)) _ _
+  exact weightedHopf_eq_mk_iff_snd_eq_zero (Nat.div_gcd_pos_of_pos_left b ha) _ _
 
 /-- The reduced power map sends the orbit of `z` to `[0 : 1]` exactly when `z` lies on the axis
 `z₁ = 0`, where the stabilizer has order `b`. -/
@@ -248,7 +249,6 @@ theorem reducedWeightedOrbitHomeomorph_mk_eq_mk_iff_fst_eq_zero (ha : 0 < a) (hb
     reducedWeightedOrbitHomeomorph ha hb hε (Quotient.mk _ z) = mk ℂ ![0, 1] (by simp) ↔
       (z : ℂ × ℂ).1 = 0 := by
   rw [reducedWeightedOrbitHomeomorph_mk]
-  exact weightedHopf_eq_mk_iff_fst_eq_zero
-    (Nat.div_pos (Nat.gcd_le_right a hb) (Nat.gcd_pos_of_pos_left b ha)) _ _
+  exact weightedHopf_eq_mk_iff_fst_eq_zero (Nat.div_gcd_pos_of_pos_right a hb) _ _
 
 end TauCeti.Toric
