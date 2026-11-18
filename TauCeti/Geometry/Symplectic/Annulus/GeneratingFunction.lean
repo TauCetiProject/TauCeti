@@ -296,6 +296,36 @@ theorem hasFDerivAt_stripGeneratingFunction {p : ℝ × ℝ}
   · simpa using (hfst.unique (hasDerivAt_stripGeneratingFunction_fst hU hFU hp hY hdet)).symm
   · simpa using (hsnd.unique hsnd').symm
 
+/-! ### The mixed coordinates -/
+
+/-- The change `(x, y) ↦ (x, X(x, y))` to the mixed coordinates `(x, X)` of a map `F = (X, Y)` of
+the plane. Where `F` twists, `∂_y X ≠ 0`, it is a local diffeomorphism
+(`TauCeti.exists_hasStrictFDerivAt_stripTwistCoord`). -/
+def stripTwistCoord (F : ℝ × ℝ → ℝ × ℝ) (p : ℝ × ℝ) : ℝ × ℝ := (p.1, (F p).1)
+
+theorem stripTwistCoord_def : stripTwistCoord F = fun p ↦ (p.1, (F p).1) := (rfl)
+
+@[simp]
+theorem stripTwistCoord_apply (p : ℝ × ℝ) : stripTwistCoord F p = (p.1, (F p).1) := (rfl)
+
+/-- Where `F` has strict derivative `F'` and twists, `(F' (0, 1)).1 ≠ 0`, the mixed coordinates
+have the invertible strict derivative `(u, v) ↦ (u, (F' (u, v)).1)`. -/
+theorem exists_hasStrictFDerivAt_stripTwistCoord {F' : (ℝ × ℝ) →L[ℝ] ℝ × ℝ} {p : ℝ × ℝ}
+    (hF : HasStrictFDerivAt F F' p) (htwist : (F' (0, 1)).1 ≠ 0) :
+    ∃ e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ,
+      (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) =
+          (ContinuousLinearMap.fst ℝ ℝ ℝ).prod ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp F') ∧
+        HasStrictFDerivAt (stripTwistCoord F) (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) p := by
+  set G' : (ℝ × ℝ) →L[ℝ] ℝ × ℝ :=
+    (ContinuousLinearMap.fst ℝ ℝ ℝ).prod ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp F')
+  -- The determinant of `G'` is the twist.
+  have hdetG : G'.det ≠ 0 := by
+    simpa [G', ContinuousLinearMap.det, LinearMap.det_finTwoProd] using htwist
+  refine ⟨G'.toContinuousLinearEquivOfDetNeZero hdetG,
+    G'.coe_toContinuousLinearEquivOfDetNeZero hdetG, ?_⟩
+  rw [G'.coe_toContinuousLinearEquivOfDetNeZero hdetG]
+  exact hasStrictFDerivAt_fst.prodMk (hasStrictFDerivAt_fst.comp p hF)
+
 /-- **The generating equations.** Let `F = (X, Y)` be `C²` at every point of the segment from
 `(x, 0)` to `p = (x, y)`, map `(x, 0)` to the line `y = 0`, preserve area at the interior points of
 that segment, and twist at `p`: `∂_y X(p) ≠ 0`. If a function `S'` of `(x, X)` agrees near `p`
@@ -309,39 +339,30 @@ theorem hasFDerivAt_of_eventuallyEq_stripGeneratingFunction {p : ℝ × ℝ}
     HasFDerivAt S' ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ -
       p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (p.1, (F p).1) := by
   have hFp : ContDiffAt ℝ 2 F p := hF p.2 right_mem_uIcc
-  set G : ℝ × ℝ → ℝ × ℝ := fun q ↦ (q.1, (F q).1)
-  set G' : (ℝ × ℝ) →L[ℝ] ℝ × ℝ :=
-    (ContinuousLinearMap.fst ℝ ℝ ℝ).prod ((ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p))
   set Λ : (ℝ × ℝ) →L[ℝ] ℝ :=
     (F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ
-  -- The coordinate change `G` has invertible derivative, since its determinant is the twist.
-  have hdetG : G'.det ≠ 0 := by
-    simpa [G', ContinuousLinearMap.det, LinearMap.det_finTwoProd] using htwist
-  set e : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ := G'.toContinuousLinearEquivOfDetNeZero hdetG
-  have he : (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) = G' := G'.coe_toContinuousLinearEquivOfDetNeZero hdetG
-  have hG : HasStrictFDerivAt G (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) p := by
-    rw [he]
-    exact hasStrictFDerivAt_fst.prodMk (hasStrictFDerivAt_fst.comp p
-      (hFp.hasStrictFDerivAt (hFp.differentiableAt two_ne_zero).hasFDerivAt two_ne_zero))
-  -- Through the local inverse of `G`, `S'` is the generating function.
-  set k := hG.localInverse G e p
-  have heq : S' =ᶠ[𝓝 (G p)] stripGeneratingFunction F ∘ k := by
+  -- The mixed coordinates have invertible derivative, since their Jacobian is the twist.
+  obtain ⟨e, he, hG⟩ := exists_hasStrictFDerivAt_stripTwistCoord
+    (hFp.hasStrictFDerivAt (hFp.differentiableAt two_ne_zero).hasFDerivAt two_ne_zero) htwist
+  -- Through the local inverse `k` of the mixed coordinates, `S'` is the generating function.
+  set k := hG.localInverse (stripTwistCoord F) e p
+  have heq : S' =ᶠ[𝓝 (stripTwistCoord F p)] stripGeneratingFunction F ∘ k := by
     filter_upwards [hG.eventually_right_inverse, hG.localInverse_tendsto.eventually hS']
       with z hz hz'
-    calc S' z = S' (G (k z)) := by rw [hz]
-      _ = (stripGeneratingFunction F ∘ k) z := hz'
-  -- The derivative of `S'` is `Λ`, since `Λ ∘ dG = dS`.
+    calc S' z = S' (stripTwistCoord F (k z)) := by rw [hz]
+      _ = (stripGeneratingFunction F ∘ k) z := by simpa using hz'
+  -- The derivative of `S'` is `Λ`, since `Λ ∘ e = dS`.
   have hΛ : (F p).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p) -
       p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ = Λ.comp (e : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) := by
     rw [he]
-    ext <;> simp [G', Λ]
+    ext <;> simp [Λ]
   have hS : HasFDerivAt (stripGeneratingFunction F)
       ((F p).2 • (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ F p) -
-        p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (k (G p)) := by
-    have hkp : k (G p) = p := hG.localInverse_apply_image
+        p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ) (k (stripTwistCoord F p)) := by
+    have hkp : k (stripTwistCoord F p) = p := hG.localInverse_apply_image
     rw [hkp]
     exact hasFDerivAt_stripGeneratingFunction hF hY hdet
-  have hSk := hS.comp (G p) hG.to_localInverse.hasFDerivAt
+  have hSk := hS.comp (stripTwistCoord F p) hG.to_localInverse.hasFDerivAt
   rw [hΛ, ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
     ContinuousLinearMap.comp_id] at hSk
   exact hSk.congr_of_eventuallyEq heq
