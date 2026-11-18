@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
+public import TauCeti.AlgebraicGeometry.Scheme.Normal
 
 /-!
 # Functions on a normal scheme universally closed over an affine base
@@ -82,11 +83,10 @@ theorem Hom.mem_range_germToFunctionField_iff {Y : Scheme.{u}} (f : X ⟶ Y)
 a normal integral scheme and `f : X ⟶ Y` is universally closed with `Y` affine, a rational
 function on `X` is a global function if and only if it is integral over `Γ(Y, ⊤)`. -/
 theorem Hom.mem_range_germToFunctionField_top_iff {Y : Scheme.{u}} [IsAffine Y] (f : X ⟶ Y)
-    [UniversallyClosed f] (hX : ∀ x : X, IsIntegrallyClosed (X.presheaf.stalk x))
-    (a : X.functionField) :
+    [UniversallyClosed f] [TauCeti.AlgebraicGeometry.IsNormalScheme X] (a : X.functionField) :
     a ∈ (X.germToFunctionField ⊤).hom.range ↔
       (f.appTop ≫ X.germToFunctionField ⊤).hom.IsIntegralElem a := by
   have : Nonempty (f ⁻¹ᵁ ⊤) := inferInstanceAs (Nonempty (⊤ : X.Opens))
-  exact f.mem_range_germToFunctionField_iff (isAffineOpen_top Y) (fun x _ ↦ hX x) a
+  exact f.mem_range_germToFunctionField_iff (isAffineOpen_top Y) (fun _ _ ↦ inferInstance) a
 
 end AlgebraicGeometry.Scheme
