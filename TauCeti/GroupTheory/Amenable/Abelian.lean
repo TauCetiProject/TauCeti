@@ -5,31 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Amenable.DirectedUnion
 public import TauCeti.GroupTheory.Amenable.Int
-public import TauCeti.GroupTheory.Amenable.Prod
-public import Mathlib.GroupTheory.NoncommPiCoprod
+import TauCeti.GroupTheory.Finiteness
+import TauCeti.GroupTheory.NoncommPiCoprod
 
 /-!
 # Amenability of commutative groups
 
-Every commutative topological group is amenable, with no hypothesis on its rank, its torsion or
-its topology.
+Every commutative topological group — additive or multiplicative — is amenable, with no hypothesis
+on its rank, its torsion, or its topology.
 
-A finite subset `s` of a commutative group `G` is the image of the standard generators under
-the homomorphism `(s → Multiplicative ℤ) →* G` sending `n` to `∏ x ∈ s, x ^ (n x).toAdd`. This
-is Mathlib's `MonoidHom.noncommPiCoprod` of the maps `zpowersHom G x`, whose commutation
-hypothesis holds because `G` is commutative. Its source is a finite power of the integers with
-the discrete topology, so it is amenable by amenability of the integers and of finite products,
-and the homomorphism is continuous for every topology on `G`. Every finite subset of `G`
-therefore lies in the image of a continuous homomorphism from an amenable group, which is the
-directed-union criterion `TauCeti.Amenable.of_forall_finset_subset_range`.
+We work first in the additive setting (`TauCeti.AddAmenable.of_addCommGroup`). By
+`TauCeti.AddAmenable.of_discrete`, it suffices to treat the discrete topology; by
+`TauCeti.AddAmenable.of_forall_fg`, it suffices to show that every finitely generated additive
+subgroup `K` is additively amenable. Choosing a finite generating family `S : Fin n → K`
+(`AddGroup.fg_iff_exists_fin_generating_family`), the homomorphism
+`TauCeti.zmultiplesPiHom S : (Fin n → ℤ) →+ K` sending the standard basis vectors to `S` is
+surjective (`TauCeti.surjective_zmultiplesPiHom_iff`). Since `Fin n → ℤ` is additively amenable as a
+finite product of copies of `ℤ`, closure under continuous homomorphisms with dense range gives
+additive amenability of `K`.
 
-For an additive commutative group `A`, the instance applies to `Multiplicative A`, which carries
-the topology of `A` and is a topological group when `A` is a topological additive group.
+The multiplicative counterpart `TauCeti.Amenable.of_commGroup` follows immediately via
+`TauCeti.addAmenable_additive_iff`.
 
 ## Main results
 
+* `TauCeti.AddAmenable.of_addCommGroup`: every commutative topological additive group is additively
+  amenable.
 * `TauCeti.Amenable.of_commGroup`: every commutative topological group is amenable.
 
 ## References
@@ -43,18 +45,23 @@ public section
 
 namespace TauCeti
 
+/-- Every commutative topological additive group is additively amenable, whatever its additive group
+topology. -/
+instance (priority := 100) AddAmenable.of_addCommGroup {A : Type*} [AddCommGroup A]
+    [TopologicalSpace A] [IsTopologicalAddGroup A] : AddAmenable A := by
+  refine .of_discrete ?_
+  let : TopologicalSpace A := ⊥
+  have : DiscreteTopology A := discreteTopology_bot A
+  refine .of_forall_fg fun K hK => ?_
+  have hKfg : AddGroup.FG K := (AddGroup.fg_iff_addSubgroup_fg K).2 hK
+  obtain ⟨n, S, hS⟩ := AddGroup.fg_iff_exists_fin_generating_family.1 hKfg
+  let φ := zmultiplesPiHom S fun _ _ => .all _ _
+  have hsurj : Function.Surjective φ := surjective_zmultiplesPiHom_iff.2 hS
+  exact .of_denseRange ⟨φ, continuous_of_discreteTopology⟩ hsurj.denseRange
+
 /-- Every commutative topological group is amenable, whatever its group topology. -/
 instance (priority := 100) Amenable.of_commGroup {G : Type*} [CommGroup G] [TopologicalSpace G]
-    [IsTopologicalGroup G] : Amenable G := by
-  classical
-  have hcomm (s : Finset G) : Pairwise fun x y : s => ∀ m n : Multiplicative ℤ,
-      Commute (zpowersHom G x m) (zpowersHom G y n) := fun _ _ _ _ _ => .all _ _
-  -- For a finite set `s`, the homomorphism `n ↦ ∏ x ∈ s, x ^ (n x).toAdd` out of `s → ℤ`.
-  let φ (s : Finset G) : (s → Multiplicative ℤ) →ₜ* G :=
-    ⟨MonoidHom.noncommPiCoprod (fun x : s => zpowersHom G x) (hcomm s),
-      continuous_of_discreteTopology⟩
-  refine .of_forall_finset_subset_range φ fun s =>
-    ⟨s, fun x hx => ⟨Pi.mulSingle ⟨x, hx⟩ (.ofAdd 1), ?_⟩⟩
-  simp [φ, MonoidHom.noncommPiCoprod_mulSingle]
+    [IsTopologicalGroup G] : Amenable G :=
+  addAmenable_additive_iff.1 inferInstance
 
 end TauCeti
