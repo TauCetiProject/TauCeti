@@ -776,6 +776,13 @@ theorem identity_coeff_eq_zero (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι 
     (identity ι hd hι hιι hsum).coeff n = 0 :=
   identityCoeff_eq_zero hn
 
+/-- The operations of the identity bimodule vanish from arity two on, so it can be boxed with any
+type `D` structure (`TauCeti.TypeDAStructure.boxTypeD`). -/
+theorem exists_forall_ge_identity_coeff_eq_zero (hd : IsUngradedDGAlgebra d)
+    (hι : ∀ s, d (ι s) = 0) (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) :
+    ∃ K, ∀ k, K ≤ k → (identity ι hd hι hιι hsum).coeff k = 0 :=
+  ⟨2, fun _ hk => identity_coeff_eq_zero hd hι hιι hsum (by omega)⟩
+
 /-- **The coefficients of `[I] ⊠ N`.** If moreover the idempotents are orthogonal, the coefficient
 of `[I] ⊠ N` from `(s, x)` to `(t, x')` is the coefficient of `N` from `x` to `x'` when `s` and `t`
 are the idempotents of `x` and `x'`, and zero otherwise. So the coefficients restricted to the
@@ -830,7 +837,7 @@ theorem boxTensorTypeD_identity_coeff (hd : IsUngradedDGAlgebra d) (hι : ∀ s,
     (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0)
     (N : TypeDStructure d ι X) (p q : {p : S × X // p.1 = N.idem p.2}) :
     ((identity ι hd hι hιι hsum).boxTensorTypeD N (isRightIdemCompatible_identity hd hι hιι hsum)
-        hιo hd (Or.inr ⟨2, fun _ hk => identity_coeff_eq_zero hd hι hιι hsum (by omega)⟩)).coeff
+        hιo hd (Or.inr (exists_forall_ge_identity_coeff_eq_zero hd hι hιι hsum))).coeff
         p q =
       N.coeff p.1.2 q.1.2 := by
   rw [boxTensorTypeD_coeff, boxCoeff_identity hd hι hιι hsum hιo, ite_eq_left ⟨p.2, q.2⟩]
@@ -840,7 +847,7 @@ theorem boxTensorTypeD_identity_idem (hd : IsUngradedDGAlgebra d) (hι : ∀ s, 
     (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0)
     (N : TypeDStructure d ι X) (p : {p : S × X // p.1 = N.idem p.2}) :
     ((identity ι hd hι hιι hsum).boxTensorTypeD N (isRightIdemCompatible_identity hd hι hιι hsum)
-        hιo hd (Or.inr ⟨2, fun _ hk => identity_coeff_eq_zero hd hι hιι hsum (by omega)⟩)).idem
+        hιo hd (Or.inr (exists_forall_ge_identity_coeff_eq_zero hd hι hιι hsum))).idem
         p =
       N.idem p.1.2 := by
   rw [boxTensorTypeD_idem, identity_idem, p.2]
