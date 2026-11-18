@@ -7,10 +7,9 @@ module
 public import TauCeti.NumberTheory.QuadraticOrder.Basic
 public import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
-import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
 public import Mathlib.NumberTheory.FundamentalDiscriminant
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
+import Mathlib.Algebra.QuadraticAlgebra.Int
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Nonsquare quadratic orders
@@ -19,10 +18,10 @@ For a nonsquare integer `D ≡ 0, 1 mod 4`, the rational quadratic algebra is a 
 The subalgebra `ℤ[(D + √D)/2]` constructed in `QuadraticOrder/Basic` is therefore an actual
 `GlobalNumberFields.NumberFieldOrder`, of discriminant `D`.
 
-This order is maximal exactly when `D` is a fundamental discriminant. For a fundamental
-`D`, the supplier's discriminant/index formula and Stickelberger's congruence force index one.
-If `D` is not fundamental, a proper square factor `D = p²e` with `e ≡ 0, 1 mod 4` supplies
-the integral element `(e + √D/p)/2` outside the order.
+This order is maximal exactly when `D` is a fundamental discriminant. The proof transports
+Mathlib's criterion `QuadraticAlgebra.Int.isIntegralClosure_iff` for the integral model
+`QuadraticAlgebra ℤ ((D - D²)/4) D` along the rational change of generator `ω ↦ (D + √D)/2`.
+That criterion needs no nonsquare hypothesis, so neither does the integral-closure form.
 
 ## References
 
@@ -53,64 +52,47 @@ noncomputable def numberFieldOrder (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
   rw [← (numberFieldOrder D hD).discr_eq_discr (basis D hD)]
   exact discr_basis D hD
 
-/-- A fundamental-discriminant order is maximal. -/
-private theorem numberFieldOrder_eq_maximal_of_isFundamentalDiscr (D : ℤ)
-    (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)] (hfund : Int.IsFundamentalDiscr D) :
-    numberFieldOrder D hD =
-      GlobalNumberFields.maximalNumberFieldOrder (QuadraticAlgebra ℚ (D : ℚ) 0) := by
-  rw [← GlobalNumberFields.NumberFieldOrder.index_eq_one_iff]
-  by_contra hidx
-  obtain ⟨p, hp, hpidx⟩ := Nat.ne_one_iff_exists_prime_dvd.mp hidx
-  obtain ⟨n, hn⟩ := hpidx
-  have hdisc := (numberFieldOrder D hD).discr_eq_index_sq_mul
-  rw [numberFieldOrder_discr, hn, Nat.cast_mul, mul_pow, mul_assoc] at hdisc
-  apply (Int.isFundamentalDiscr_iff_forall_prime.mp hfund).2 p hp
-  refine ⟨(n : ℤ) ^ 2 * NumberField.discr (QuadraticAlgebra ℚ (D : ℚ) 0), hdisc, ?_⟩
-  rw [Int.mul_emod, Int.sq_emod_four]
-  rcases TauCeti.NumberField.discr_emod_four_eq_zero_or_one
-      (QuadraticAlgebra ℚ (D : ℚ) 0) with hd | hd
-  · simp [hd]
-  · simp only [hd, mul_one]
-    omega
+/-- The rational algebra of the integral model is identified with `ℚ(√D)` by sending its
+generator to `(D + √D)/2`. -/
+private def ratEquiv (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    QuadraticAlgebra ℚ (((D - D ^ 2) / 4 : ℤ) : ℚ) (D : ℚ) ≃ₐ[ℚ]
+      QuadraticAlgebra ℚ (D : ℚ) 0 :=
+  changeGeneratorEquiv (D : ℚ) 0 (Units.mk0 (1 / 2) (by norm_num)) ((D : ℚ) / 2)
+    (by
+      have hd := parameter_discr D hD
+      rw [QuadraticAlgebra.discr_def] at hd
+      have hdQ : (D : ℚ) ^ 2 + 4 * (((D - D ^ 2) / 4 : ℤ) : ℚ) = D := by exact_mod_cast hd
+      rw [Units.val_mk0]
+      linear_combination hdQ / 4)
+    (by rw [Units.val_mk0]; ring)
 
-/-- A nonfundamental discriminant produces a proper suborder of the ring of integers. -/
-private theorem numberFieldOrder_ne_maximal_of_not_isFundamentalDiscr (D : ℤ)
-    (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)] (hfund : ¬ Int.IsFundamentalDiscr D) :
-    numberFieldOrder D hD ≠
-      GlobalNumberFields.maximalNumberFieldOrder (QuadraticAlgebra ℚ (D : ℚ) 0) := by
-  have hfactor : ¬ ∀ p : ℕ, p.Prime →
-      ¬ ∃ e : ℤ, D = (p : ℤ) ^ 2 * e ∧ (e % 4 = 0 ∨ e % 4 = 1) :=
-    fun h ↦ hfund (Int.isFundamentalDiscr_iff_forall_prime.mpr ⟨hD, h⟩)
-  push Not at hfactor
-  obtain ⟨p, hp, e, hDe, he⟩ := hfactor
-  have hpQ : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne_zero
-  have hDeQ : (D : ℚ) = (p : ℚ) ^ 2 * (e : ℚ) := by exact_mod_cast hDe
-  let φ : QuadraticAlgebra ℚ (e : ℚ) 0 →ₐ[ℚ] QuadraticAlgebra ℚ (D : ℚ) 0 :=
-    QuadraticAlgebra.changeGenerator (D : ℚ) 0 (p : ℚ)⁻¹ 0
-      (by simp only [mul_zero, sub_zero]; rw [hDeQ]; field_simp; ring)
-      (by simp)
-  have hgen : IsIntegral ℤ (generator e) := by
-    simpa only [coe_basis_one] using QuadraticOrder.isIntegral e he (basis e he 1)
-  have hint : IsIntegral ℤ (φ (generator e)) := hgen.map (φ.restrictScalars ℤ)
-  have hnotmem : φ (generator e) ∉ toSubalgebra D hD := by
-    intro hmem
-    obtain ⟨m, n, hmn⟩ := (mem_toSubalgebra_iff D hD _).mp hmem
-    have hi := congrArg QuadraticAlgebra.im hmn
-    have hnQ : (p : ℚ) * (n : ℚ) = 1 := by
-      have hn' : (p : ℚ)⁻¹ = (n : ℚ) := by
-        simpa [φ, mul_comm] using hi
-      rw [← hn', mul_inv_cancel₀ hpQ]
-    have hnZ : (p : ℤ) * n = 1 := by exact_mod_cast hnQ
-    have hu : IsUnit (p : ℤ) := isUnit_iff_dvd_one.mpr ⟨n, hnZ.symm⟩
-    rw [Int.isUnit_iff_natAbs_eq, Int.natAbs_natCast] at hu
-    exact hp.ne_one hu
-  intro hmax
-  apply hnotmem
-  have hmem : φ (generator e) ∈ (numberFieldOrder D hD).toSubalgebra := by
-    rw [hmax, GlobalNumberFields.maximalNumberFieldOrder_toSubalgebra,
-      mem_integralClosure_iff]
-    exact hint
-  exact hmem
+/-- The rational identification restricts to the integral-model embedding. -/
+private theorem ratEquiv_algebraMap (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (z : QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D) :
+    ratEquiv D hD (algebraMap _ (QuadraticAlgebra ℚ (((D - D ^ 2) / 4 : ℤ) : ℚ) (D : ℚ)) z) =
+      lift D hD z := by
+  rw [lift_apply]
+  ext <;> simp [ratEquiv]
+
+/-- **The order `ℤ[(D + √D)/2]` is the ring of integers exactly when `D` is fundamental.** The
+subalgebra `TauCeti.QuadraticOrder.toSubalgebra D` of the model `ℚ(√D)` is the integral closure
+of `ℤ` if and only if `D` is a fundamental discriminant. -/
+theorem toSubalgebra_eq_integralClosure_iff (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    toSubalgebra D hD = integralClosure ℤ (QuadraticAlgebra ℚ (D : ℚ) 0) ↔
+      Int.IsFundamentalDiscr D := by
+  have h := QuadraticAlgebra.Int.isIntegralClosure_iff (a := (D - D ^ 2) / 4) (b := D)
+  rw [parameter_discr D hD, isIntegralClosure_iff] at h
+  rw [← h, SetLike.ext_iff, ← (ratEquiv D hD).toEquiv.forall_congr_right]
+  refine forall_congr' fun x ↦ ?_
+  have hx : IsIntegral ℤ (ratEquiv D hD x) ↔ IsIntegral ℤ x :=
+    isIntegral_algEquiv ((ratEquiv D hD).restrictScalars ℤ)
+  change (ratEquiv D hD x ∈ _ ↔ ratEquiv D hD x ∈ _) ↔ _
+  rw [mem_integralClosure_iff, hx, mem_toSubalgebra_iff]
+  refine Iff.comm.trans <| iff_congr Iff.rfl
+    ⟨fun ⟨m, n, h⟩ ↦ ⟨⟨m, n⟩, (ratEquiv D hD).injective ?_⟩,
+    fun ⟨w, h⟩ ↦ ⟨w.re, w.im, ?_⟩⟩
+  · rw [ratEquiv_algebraMap, lift_apply, h]
+  · rw [← h, ratEquiv_algebraMap, lift_apply]
 
 /-- The quadratic field order is maximal exactly when its discriminant is fundamental. -/
 @[simp] theorem numberFieldOrder_eq_maximal_iff (D : ℤ)
@@ -118,22 +100,9 @@ private theorem numberFieldOrder_ne_maximal_of_not_isFundamentalDiscr (D : ℤ)
     numberFieldOrder D hD =
       GlobalNumberFields.maximalNumberFieldOrder (QuadraticAlgebra ℚ (D : ℚ) 0) ↔
         Int.IsFundamentalDiscr D := by
-  constructor
-  · intro hmax
-    by_contra hfund
-    exact numberFieldOrder_ne_maximal_of_not_isFundamentalDiscr D hD hfund hmax
-  · exact numberFieldOrder_eq_maximal_of_isFundamentalDiscr D hD
-
-/-- **The order `ℤ[(D + √D)/2]` is the ring of integers exactly when `D` is fundamental.** The
-subalgebra `TauCeti.QuadraticOrder.toSubalgebra D` of the model `ℚ(√D)` is the integral closure
-of `ℤ` if and only if `D` is a fundamental discriminant. -/
-theorem toSubalgebra_eq_integralClosure_iff (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
-    [Fact (¬ IsSquare D)] :
-    toSubalgebra D hD = integralClosure ℤ (QuadraticAlgebra ℚ (D : ℚ) 0) ↔
-      Int.IsFundamentalDiscr D := by
-  rw [← numberFieldOrder_eq_maximal_iff D hD, ← numberFieldOrder_toSubalgebra,
+  rw [← toSubalgebra_eq_integralClosure_iff D hD, ← numberFieldOrder_toSubalgebra,
     ← GlobalNumberFields.maximalNumberFieldOrder_toSubalgebra]
-  exact ⟨GlobalNumberFields.NumberFieldOrder.ext, congrArg _⟩
+  exact ⟨congrArg _, GlobalNumberFields.NumberFieldOrder.ext⟩
 
 end TauCeti.QuadraticOrder
 
