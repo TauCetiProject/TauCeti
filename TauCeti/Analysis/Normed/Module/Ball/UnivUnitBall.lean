@@ -32,6 +32,8 @@ The estimate rests on the fact that `t ↦ √(1 + t²)` is `1`-Lipschitz on the
 In a real inner product space, `⟪univUnitBall a, (√(1 + ‖a‖²))⁻¹ • x⟫ = (1 + ‖a‖²)⁻¹ ⟪a, x⟫`
 (`OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul`), which writes
 `(1 + ‖a‖²)⁻¹ ⟪a, x⟫` through `univUnitBall a` and a rescaling to which the estimates above apply.
+Under the hypotheses of the uniform closeness of rescalings, `(1 + ‖a‖²)⁻¹ ⟪a, a'⟫` and
+`(1 + ‖b‖²)⁻¹ ⟪b, b'⟫` are within `(24 C + 12) δ` (`TauCeti.abs_inv_one_add_sq_mul_inner_sub_le`).
 
 For `f` a complex polynomial, `univUnitBall ∘ f` is the section `exp(u₀) f` of the background
 amplitude `u₀ = -log (1 + ‖f‖²) / 2` used to construct plane vortices with prescribed zeros.
@@ -150,3 +152,47 @@ theorem inner_univUnitBall_inv_sqrt_smul {F : Type*} [SeminormedAddCommGroup F]
     Real.mul_self_sqrt (by positivity)]
 
 end OpenPartialHomeomorph
+
+namespace TauCeti
+
+variable {F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **Uniform closeness of normalized inner products.** If `‖a - b‖ ≤ δ (1 + ‖b‖)`,
+`‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with `0 ≤ δ ≤ 1 / 2`, then
+`(1 + ‖a‖²)⁻¹ ⟪a, a'⟫` and `(1 + ‖b‖²)⁻¹ ⟪b, b'⟫` differ by at most `(24 C + 12) δ`. This is the
+inner-product companion of `TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le`. -/
+theorem abs_inv_one_add_sq_mul_inner_sub_le {a b a' b' : F} {δ C : ℝ} (hδ0 : 0 ≤ δ)
+    (hδ : δ ≤ 1 / 2) (hC : 0 ≤ C) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖))
+    (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖)) (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) :
+    |(1 + ‖a‖ ^ 2)⁻¹ * ⟪a, a'⟫_ℝ - (1 + ‖b‖ ^ 2)⁻¹ * ⟪b, b'⟫_ℝ| ≤ (24 * C + 12) * δ := by
+  set A := √(1 + ‖a‖ ^ 2)
+  set B := √(1 + ‖b‖ ^ 2)
+  set G := OpenPartialHomeomorph.univUnitBall (E := F)
+  have hA : (1 + ‖b‖) / 4 ≤ A := one_add_norm_div_four_le_sqrt_one_add_norm_sq hδ ha
+  have hA0 : 0 < A := lt_of_lt_of_le (by positivity) hA
+  -- The three estimates: on `G a - G b`, on `a' / A` and on `a' / A - b' / B`.
+  have hG : ‖G a - G b‖ ≤ 4 * δ :=
+    OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le ha
+  have hGb : ‖G b‖ ≤ 1 := OpenPartialHomeomorph.norm_univUnitBall_le b
+  have hk : ‖A⁻¹ • a'‖ ≤ 4 * (C + δ) := by
+    have := norm_le_norm_add_norm_sub' a' b'
+    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hA0, inv_mul_le_iff₀ hA0]
+    nlinarith
+  have hk' := norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le hδ0 hδ hC ha ha' hb'
+  -- Split the difference of inner products and estimate each term.
+  rw [← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul,
+    ← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul]
+  have hsplit : ⟪G a, A⁻¹ • a'⟫_ℝ - ⟪G b, B⁻¹ • b'⟫_ℝ =
+      ⟪G a - G b, A⁻¹ • a'⟫_ℝ + ⟪G b, A⁻¹ • a' - B⁻¹ • b'⟫_ℝ := by
+    rw [inner_sub_left, inner_sub_right]
+    abel
+  rw [hsplit]
+  have e₁ := abs_real_inner_le_norm (G a - G b) (A⁻¹ • a')
+  have e₂ := abs_real_inner_le_norm (G b) (A⁻¹ • a' - B⁻¹ • b')
+  have m₁ := mul_le_mul hG hk (by positivity) (by positivity)
+  have m₂ := mul_le_mul hGb hk' (by positivity) zero_le_one
+  calc _ ≤ |⟪G a - G b, A⁻¹ • a'⟫_ℝ| + |⟪G b, A⁻¹ • a' - B⁻¹ • b'⟫_ℝ| := abs_add_le _ _
+    _ ≤ 4 * δ * (4 * (C + δ)) + 1 * ((4 + 8 * C) * δ) := by linarith
+    _ ≤ (24 * C + 12) * δ := by nlinarith
+
+end TauCeti

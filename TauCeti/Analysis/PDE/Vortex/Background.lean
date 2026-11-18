@@ -329,50 +329,6 @@ theorem fderiv_backgroundAmplitude_apply (hf : DifferentiableAt ℂ f z) (v : �
 
 /-! ### Uniform convergence along converging polynomials -/
 
-/-- **The pointwise estimate behind the convergence of `Du₀`.** If `‖a - b‖ ≤ δ (1 + ‖b‖)`,
-`‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with `0 ≤ δ ≤ 1 / 2`, then the values
-`-(1 + ‖a‖²)⁻¹ ⟪a, v a'⟫` and `-(1 + ‖b‖²)⁻¹ ⟪b, v b'⟫` of the derivatives of the background
-amplitudes (`TauCeti.Vortex.fderiv_backgroundAmplitude_apply`) differ by at most
-`(24 C + 12) δ ‖v‖`. -/
-private theorem abs_inv_one_add_sq_mul_inner_sub_le {a b a' b' : ℂ} {δ C : ℝ} (hδ0 : 0 ≤ δ)
-    (hδ : δ ≤ 1 / 2) (hC : 0 ≤ C) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖))
-    (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖)) (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) (v : ℂ) :
-    |(1 + ‖a‖ ^ 2)⁻¹ * ⟪a, v * a'⟫_ℝ - (1 + ‖b‖ ^ 2)⁻¹ * ⟪b, v * b'⟫_ℝ| ≤
-      (24 * C + 12) * δ * ‖v‖ := by
-  set A := √(1 + ‖a‖ ^ 2)
-  set B := √(1 + ‖b‖ ^ 2)
-  set F := OpenPartialHomeomorph.univUnitBall (E := ℂ)
-  have hA : (1 + ‖b‖) / 4 ≤ A := TauCeti.one_add_norm_div_four_le_sqrt_one_add_norm_sq hδ ha
-  have hA0 : 0 < A := lt_of_lt_of_le (by positivity) hA
-  -- The three estimates: on `F a - F b`, on `a' / A` and on `a' / A - b' / B`.
-  have hF : ‖F a - F b‖ ≤ 4 * δ :=
-    OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le ha
-  have hFb : ‖F b‖ ≤ 1 := OpenPartialHomeomorph.norm_univUnitBall_le b
-  have hk : ‖A⁻¹ • a'‖ ≤ 4 * (C + δ) := by
-    have := norm_le_norm_add_norm_sub' a' b'
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hA0, inv_mul_le_iff₀ hA0]
-    nlinarith
-  have hk' := TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le hδ0 hδ hC ha ha' hb'
-  -- Split the difference of inner products and estimate each term.
-  rw [← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul,
-    ← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul]
-  have hsplit : ⟪F a, A⁻¹ • (v * a')⟫_ℝ - ⟪F b, B⁻¹ • (v * b')⟫_ℝ =
-      ⟪F a - F b, v * (A⁻¹ • a')⟫_ℝ + ⟪F b, v * (A⁻¹ • a' - B⁻¹ • b')⟫_ℝ := by
-    rw [inner_sub_left, mul_sub, inner_sub_right, mul_smul_comm, mul_smul_comm]
-    abel
-  rw [hsplit]
-  have e₁ := abs_real_inner_le_norm (F a - F b) (v * (A⁻¹ • a'))
-  have e₂ := abs_real_inner_le_norm (F b) (v * (A⁻¹ • a' - B⁻¹ • b'))
-  rw [norm_mul] at e₁ e₂
-  have m₁ := mul_le_mul hF (mul_le_mul_of_nonneg_left hk (norm_nonneg v)) (by positivity)
-    (by positivity)
-  have m₂ := mul_le_mul hFb (mul_le_mul_of_nonneg_left hk' (norm_nonneg v)) (by positivity)
-    zero_le_one
-  calc _ ≤ |⟪F a - F b, v * (A⁻¹ • a')⟫_ℝ| + |⟪F b, v * (A⁻¹ • a' - B⁻¹ • b')⟫_ℝ| :=
-        abs_add_le _ _
-    _ ≤ 4 * δ * (‖v‖ * (4 * (C + δ))) + 1 * (‖v‖ * ((4 + 8 * C) * δ)) := by linarith
-    _ ≤ (24 * C + 12) * δ * ‖v‖ := by nlinarith [norm_nonneg v, mul_nonneg hδ0 (norm_nonneg v)]
-
 variable {ι : Type*} {l : Filter ι} {P : ι → Polynomial ℂ} {Q : Polynomial ℂ}
 
 /-- **Uniform convergence of the background sections.** If the coefficients of the polynomials
@@ -414,13 +370,18 @@ theorem tendstoUniformly_fderiv_backgroundAmplitude
     rw [lt_div_iff₀ (by positivity)] at this
     nlinarith
   rw [dist_comm, dist_eq_norm]
-  refine lt_of_le_of_lt (ContinuousLinearMap.opNorm_le_bound _ (mul_nonneg hK.le (hδ0 i))
-    fun v ↦ ?_)
+  refine lt_of_le_of_lt (ContinuousLinearMap.opNorm_le_of_unit_norm (mul_nonneg hK.le (hδ0 i))
+    fun v hv ↦ ?_)
     (by nlinarith : (24 * C + 12) * δ i < ε)
   rw [sub_apply, fderiv_backgroundAmplitude_apply ((P i).differentiable z),
     fderiv_backgroundAmplitude_apply (Q.differentiable z), Polynomial.deriv, Polynomial.deriv,
     Real.norm_eq_abs, neg_sub_neg, abs_sub_comm]
-  exact abs_inv_one_add_sq_mul_inner_sub_le (hδ0 i) hδ1 hC (hi z).1 (hi z).2 (hQ' z) v
+  -- Multiplying by a unit vector `v` preserves the hypotheses on the derivatives.
+  refine TauCeti.abs_inv_one_add_sq_mul_inner_sub_le (hδ0 i) hδ1 hC (hi z).1 ?_ ?_
+  · rw [← mul_sub, norm_mul, hv, one_mul]
+    exact (hi z).2
+  · rw [norm_mul, hv, one_mul]
+    exact hQ' z
 
 /-- **Continuity of the background sections in the uniform topology.** For a family of
 polynomials of a fixed degree whose coefficients depend continuously on a parameter, the background
