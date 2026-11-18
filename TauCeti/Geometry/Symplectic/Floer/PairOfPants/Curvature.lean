@@ -517,7 +517,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncationAt
       ((isCompact_preimage_truncationAt R).isClosed.measurableSet.diff
         (MeasurableSet.iUnion fun q ↦ measurableSet_image_endPiece q (R q)))
     have hzS := preimage_truncationAt_subset_thricePuncturedSphereReal R hz.1
-    refine (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
+    refine (ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt (K := pairOfPantsPerturbation H)
       (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) hzS (fun q ↦ ?_)
       (u z)).symm
     by_contra! h
@@ -548,7 +548,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation
       (fun _ ↦ hR) hu
   · -- Every `±s ≤ R < 1` on `S_R`, so the curvature vanishes there.
     refine integrableOn_zero.congr_fun (fun z hz ↦ ?_) (measurableSet_preimage_truncation R)
-    exact (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
+    exact (ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt (K := pairOfPantsPerturbation H)
       (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
       (preimage_truncation_subset_thricePuncturedSphereReal R hz)
       (fun q ↦ by linarith [(mem_preimage_truncation_iff.1 hz).2 q]) (u z)).symm
@@ -760,7 +760,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z (u z) = 0 :=
     setIntegral_eq_zero_of_forall_eq_zero fun z hz =>
-      ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
+      ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt (K := pairOfPantsPerturbation H)
         (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) (hTS hz.1) (hcore hz)
         (u z)
   rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hCE, hCR,
@@ -1226,7 +1226,7 @@ theorem sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturba
       by_contra! hq
       exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endChart hS (by linarith)⟩)
     simpa only [hamiltonianCurvature_constSmooth] using
-      ω.constSmooth.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
+      ω.constSmooth.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt
         (K := pairOfPantsPerturbation H)
         (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) hS hlt (u z)
 

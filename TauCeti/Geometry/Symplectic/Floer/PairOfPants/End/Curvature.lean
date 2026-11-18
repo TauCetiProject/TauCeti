@@ -28,7 +28,7 @@ vector-space curvature (`TauCeti.SymplecticForm.hamiltonianCurvature_constSmooth
   (`TauCeti.SmoothTwoForm.hamiltonianCurvature_perturbationPullback_endChart_of_eq`).
 * If `K` vanishes wherever the signed longitudinal coordinate of every end is at most `1`, its
   curvature vanishes where all of them are less than `1`
-  (`TauCeti.SmoothTwoForm.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt`), and its
+  (`TauCeti.SmoothTwoForm.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt`), and its
   integrated curvature along any map is at most the sum of its integrals over the images of the
   end strips (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_le_sum_endStrip`).
 * If, along a map `u`, the curvature of the pullback of `K` along each end chart is integrable over
@@ -106,7 +106,7 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 `ℂ` that vanishes wherever the signed longitudinal coordinate of every end is at most `1`. At a
 point of `S` where the signed longitudinal coordinate of every end is less than `1`, `K` vanishes
 nearby, and so does its curvature. -/
-theorem hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (ω : SmoothTwoForm I M)
+theorem hamiltonianCurvature_eq_zero_of_forall_endHeight_lt (ω : SmoothTwoForm I M)
     (hK : ∀ w, (∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ 1) → ∀ x, K w x = 0)
     {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     (h : ∀ q : Puncture, endHeight q z < 1) (x : M) :
@@ -155,7 +155,7 @@ theorem lintegral_enorm_hamiltonianCurvature_le_sum_endStrip (ω : SmoothTwoForm
       exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart ⟨h₀, h₁⟩ hq⟩)
     · simp only [not_exists, not_lt] at hq
       refine absurd ?_ hz
-      simp [ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt hK ⟨h₀, h₁⟩
+      simp [ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt hK ⟨h₀, h₁⟩
         (fun q ↦ (hq q).trans_lt (by norm_num))]
   calc _ = ∫⁻ z in (⋃ q : Puncture, endChart q '' endStrip q) ∪ N, ‖ω.hamiltonianCurvature
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
@@ -220,7 +220,7 @@ theorem integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip (ω : 
   -- Off the images of the strips every signed longitudinal coordinate is at most `1/2`.
   refine (integrableOn_finite_iUnion.2 himage).of_forall_sdiff_eq_zero
     isOpen_thricePuncturedSphereReal.measurableSet fun z ⟨hzS, hzA⟩ ↦ ?_
-  refine ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt hK hzS (fun q ↦ ?_) (u z)
+  refine ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt hK hzS (fun q ↦ ?_) (u z)
   by_contra! h
   exact hzA (mem_iUnion.2 ⟨q, mem_image_endChart hzS (by linarith)⟩)
 
