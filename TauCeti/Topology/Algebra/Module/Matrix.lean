@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Data.Matrix.Block
+public import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Continuous matrix actions and block maps over a topological module
@@ -86,9 +87,7 @@ theorem smulVecHom_one [DecidableEq ι] :
 theorem smulVecHom_mul [Fintype κ] (B : Matrix μ κ R) :
     (B * A).smulVecHom M = (B.smulVecHom M).comp (A.smulVecHom M) := by
   ext x m
-  simp only [smulVecHom_apply, ContinuousAddMonoidHom.comp_toFun, Matrix.mul_apply, Finset.sum_smul,
-    Finset.smul_sum, mul_smul]
-  exact Finset.sum_comm
+  simp only [smulVecHom_apply, ContinuousAddMonoidHom.comp_toFun, Matrix.sum_mul_apply_smul]
 
 end Module
 
