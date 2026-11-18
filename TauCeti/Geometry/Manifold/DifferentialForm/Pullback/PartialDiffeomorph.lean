@@ -55,6 +55,7 @@ theorem mpullbackWithin_symm_apply_mvfderiv {n : WithTop ℕ∞}
   refine (mpullbackWithin_apply (I := 𝓘(ℝ, V)) _ _ _ (Φ y) _).trans ?_
   rw [mfderivWithin_of_isOpen Φ.open_target (Φ.map_source hy)]
   refine (key _ (Φ.left_inv hy) _).trans (congrArg (φ y) (funext fun i ↦ ?_))
+  rw [mvfderiv_apply_eq_mfderiv_apply]
   exact Φ.mfderiv_symm_apply_mfderiv_apply hn hy (v i)
 
 variable [IsManifold I 1 M]
