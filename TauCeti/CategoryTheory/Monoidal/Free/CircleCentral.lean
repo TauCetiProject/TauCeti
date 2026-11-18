@@ -73,24 +73,24 @@ instance : ExactPairing generator generator where
     quotientFunctor.map (η_ FreeSelfDualityCat.generator FreeSelfDualityCat.generator)
   evaluation' :=
     quotientFunctor.map (ε_ FreeSelfDualityCat.generator FreeSelfDualityCat.generator)
+  -- Keep the cup and cap in quotient normal form; the transported pairing includes
+  -- identity comparisons, whose simp rules would otherwise rewrite the characteristic API.
   coevaluation_evaluation' := by
-    rw [CategoryTheory.Quotient.associator_inv_obj,
-      CategoryTheory.Quotient.rightUnitor_hom_obj,
-      CategoryTheory.Quotient.leftUnitor_inv_obj,
-      CategoryTheory.Quotient.whiskerLeft_map, CategoryTheory.Quotient.map_whiskerRight,
-      ← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp]
-    exact congrArg quotientFunctor.map
-      (ExactPairing.coevaluation_evaluation
-        FreeSelfDualityCat.generator FreeSelfDualityCat.generator)
+    simpa only [Functor.mapExactPairing_coevaluation, Functor.mapExactPairing_evaluation,
+      CategoryTheory.Quotient.functor_ε, CategoryTheory.Quotient.functor_δ,
+      CategoryTheory.Quotient.functor_μ, CategoryTheory.Quotient.functor_η,
+      Category.comp_id, Category.id_comp] using
+      (@ExactPairing.coevaluation_evaluation CircleCentralSelfDualityCat _ _ generator generator
+        (quotientFunctor.mapExactPairing
+          FreeSelfDualityCat.generator FreeSelfDualityCat.generator))
   evaluation_coevaluation' := by
-    rw [CategoryTheory.Quotient.associator_hom_obj,
-      CategoryTheory.Quotient.leftUnitor_hom_obj,
-      CategoryTheory.Quotient.rightUnitor_inv_obj,
-      CategoryTheory.Quotient.whiskerLeft_map, CategoryTheory.Quotient.map_whiskerRight,
-      ← Functor.map_comp, ← Functor.map_comp, ← Functor.map_comp]
-    exact congrArg quotientFunctor.map
-      (ExactPairing.evaluation_coevaluation
-        FreeSelfDualityCat.generator FreeSelfDualityCat.generator)
+    simpa only [Functor.mapExactPairing_coevaluation, Functor.mapExactPairing_evaluation,
+      CategoryTheory.Quotient.functor_ε, CategoryTheory.Quotient.functor_δ,
+      CategoryTheory.Quotient.functor_μ, CategoryTheory.Quotient.functor_η,
+      Category.comp_id, Category.id_comp] using
+      (@ExactPairing.evaluation_coevaluation CircleCentralSelfDualityCat _ _ generator generator
+        (quotientFunctor.mapExactPairing
+          FreeSelfDualityCat.generator FreeSelfDualityCat.generator))
 
 /-- The generating cup is the class of the free cup. -/
 theorem coevaluation_generator :
@@ -119,8 +119,8 @@ theorem circlesCommuteAt_generator :
     CategoryTheory.Quotient.map_whiskerRight]
   exact CategoryTheory.Quotient.sound _ (.of Rel.circle)
 
-/-- A monoidal natural transformation out of the quotient is determined by its component
-at the generator. -/
+/-- A monoidal natural transformation from a strong monoidal functor out of the quotient
+to a lax monoidal functor is determined by its component at the generator. -/
 theorem natTrans_ext {C : Type u} [Category.{v} C] [MonoidalCategory C]
     {F G : CircleCentralSelfDualityCat ⥤ C} [F.Monoidal] [G.LaxMonoidal] {α β : F ⟶ G}
     [NatTrans.IsMonoidal α] [NatTrans.IsMonoidal β]
@@ -134,19 +134,12 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] (V : C) [ExactPairin
   (hc : CirclesCommuteAt (η_ V V ≫ ε_ V V) V)
 
 include hc in
-/-- The free interpretation identifies the extra circle relation. -/
-theorem map_eq_of_rel ⦃X Y : FreeSelfDualityCat⦄ ⦃f g : X ⟶ Y⦄ (h : Rel f g) :
+/-- When the closed circle of `V` is central at `V`, `FreeSelfDualityCat.lift V` identifies
+morphisms related by `Rel`. -/
+theorem map_eq_map_of_rel ⦃X Y : FreeSelfDualityCat⦄ ⦃f g : X ⟶ Y⦄ (h : Rel f g) :
     (FreeSelfDualityCat.lift V).map f = (FreeSelfDualityCat.lift V).map g := by
   cases h
-  have hd : ε (FreeSelfDualityCat.lift V) ≫
-      (FreeSelfDualityCat.lift V).map
-        (η_ FreeSelfDualityCat.generator FreeSelfDualityCat.generator ≫
-          ε_ FreeSelfDualityCat.generator FreeSelfDualityCat.generator) ≫
-      η (FreeSelfDualityCat.lift V) = η_ V V ≫ ε_ V V := by
-    rw [Functor.map_comp, FreeSelfDualityCat.lift_map_coevaluation,
-      FreeSelfDualityCat.lift_map_evaluation, TensorSignature.Presented.lift_ε,
-      TensorSignature.Presented.lift_η]
-    exact (by simp : 𝟙 (𝟙_ C) ≫ (η_ V V ≫ ε_ V V) ≫ 𝟙 (𝟙_ C) = η_ V V ≫ ε_ V V)
+  have hd := (FreeSelfDualityCat.lift_sendsSelfDuality V).coevaluation_comp_evaluation
   have hcentral := ObjectProperty.prop_of_iso (CirclesCommuteAt (η_ V V ≫ ε_ V V))
     (FreeSelfDualityCat.liftObjIso V).symm hc
   rw [circlesCommuteAt_iff, ← hd] at hcentral
@@ -160,7 +153,7 @@ theorem map_eq_of_rel ⦃X Y : FreeSelfDualityCat⦄ ⦃f g : X ⟶ Y⦄ (h : Re
 central at the chosen object `V`. -/
 abbrev lift : CircleCentralSelfDualityCat ⥤ C :=
   CategoryTheory.Quotient.lift _ (FreeSelfDualityCat.lift V) fun _ _ _ _ h =>
-    HomRel.MonoidalClosure.map_eq (map_eq_of_rel V hc) h
+    HomRel.MonoidalClosure.map_eq (map_eq_map_of_rel V hc) h
 
 /-- The interpretation on an object represented in the free self-duality category. -/
 @[simp]
@@ -212,18 +205,14 @@ theorem lift_map_evaluation : (lift V hc).map (ε_ generator generator) = ε_ V 
 
 /-- The interpretation preserves the specified self-duality. -/
 theorem lift_sendsSelfDuality : SendsSelfDuality (lift V hc) V (liftObjIso V hc) where
-  -- Computing the comparison morphisms leaves identities on tensor words; give their
-  -- concrete types so simplification does not need to unfold the interpretation on objects.
   coevaluation := by
-    simp only [lift_map_coevaluation, liftObjIso_inv, CategoryTheory.Quotient.lift_ε,
-      CategoryTheory.Quotient.lift_μ, TensorSignature.Presented.lift_ε,
-      TensorSignature.Presented.lift_μ]
-    exact (by simp : 𝟙 (𝟙_ C) ≫ η_ V V = η_ V V ≫ (𝟙 V ⊗ₘ 𝟙 V) ≫ 𝟙 (V ⊗ V))
+    rw [coevaluation_generator, lift_map, CategoryTheory.Quotient.lift_ε,
+      CategoryTheory.Quotient.lift_μ]
+    exact (FreeSelfDualityCat.lift_sendsSelfDuality V).coevaluation
   evaluation := by
-    simp only [lift_map_evaluation, liftObjIso_inv, CategoryTheory.Quotient.lift_η,
-      CategoryTheory.Quotient.lift_μ, TensorSignature.Presented.lift_η,
-      TensorSignature.Presented.lift_μ]
-    exact (by simp : (𝟙 V ⊗ₘ 𝟙 V) ≫ 𝟙 (V ⊗ V) ≫ ε_ V V ≫ 𝟙 (𝟙_ C) = ε_ V V)
+    rw [evaluation_generator, lift_map, CategoryTheory.Quotient.lift_η,
+      CategoryTheory.Quotient.lift_μ]
+    exact (FreeSelfDualityCat.lift_sendsSelfDuality V).evaluation
 
 /-- A strong monoidal functor sending the generating self-duality to that of `V` is
 monoidally naturally isomorphic to its interpretation, compatibly with the identification
@@ -241,7 +230,11 @@ theorem lift_unique (G : CircleCentralSelfDualityCat ⥤ C) [G.Monoidal]
   refine ⟨CategoryTheory.Quotient.natIsoLift _ j, ?_, ?_⟩
   · rw [CategoryTheory.Quotient.natIsoLift_hom]
     infer_instance
-  · simpa [j, generator, liftObjIso] using heq
+  · rw [CategoryTheory.Quotient.natIsoLift_hom,
+      CategoryTheory.Quotient.natTransLift_app]
+    simpa only [j, Iso.trans_hom, NatTrans.comp_app, Iso.symm_hom,
+      CategoryTheory.Quotient.lift.isLift_inv, Category.comp_id, liftObjIso_inv,
+      FreeSelfDualityCat.liftObjIso_inv] using heq
 
 end Lift
 
