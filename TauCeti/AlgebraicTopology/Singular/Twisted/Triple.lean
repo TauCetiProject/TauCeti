@@ -20,7 +20,10 @@ relative twisted chain complexes form a short exact sequence
 Its homology sequence is the long exact sequence of the triple, natural under
 morphisms of the coefficient system. The connecting map factors through the connecting
 map of `(X,A)` and the quotient to `(A,B)`, as needed
-for successive connecting maps in a filtered space.
+for successive connecting maps in a filtered space. When `(X,A)` has vanishing twisted
+homology in two adjacent degrees, the inclusion `(A,B) ⟶ (X,B)` is an isomorphism in the
+lower one (`TauCeti.TopTriple.isIso_twistedHomologyMap_innerToTotal_of_isZero`), and in
+degree zero the quotient `H₀(X,B;L) ⟶ H₀(X,A;L)` is always surjective.
 
 The construction follows `TauCeti.TopTriple.shortExact_singularChainComplexShortComplex`
 and the cokernel presentations in `TopPair.twistedChainComplex`. Pullback along a
@@ -320,5 +323,31 @@ theorem isIso_twistedHomologyδ_of_isZero (n m : ℕ)
     (hm : IsZero ((totalPair.obj T).twistedHomology L m)) (h : m + 1 = n := by lia) :
     IsIso (T.twistedHomologyδ L n m h) :=
   (T.shortExact_twistedChainComplexShortComplex L).isIso_δ n m (by simpa) hn hm
+
+/-- The inclusion `(A,B) ⟶ (X,B)` is an isomorphism in degree `n` when the outer pair `(X,A)` has
+vanishing twisted homology in degrees `n` and `n + 1`. -/
+theorem isIso_twistedHomologyMap_innerToTotal_of_isZero (n : ℕ)
+    (hn : IsZero ((outerPair.obj T).twistedHomology L n))
+    (hn₁ : IsZero ((outerPair.obj T).twistedHomology L (n + 1))) :
+    IsIso (TopPair.twistedHomologyMap (innerToTotal.app T) L n) := by
+  -- The maps are named explicitly: unifying them with the exact sequences runs out of time.
+  have : Mono (TopPair.twistedHomologyMap (P := innerPair.obj T) (Q := totalPair.obj T)
+      (innerToTotal.app T) L n) :=
+    (T.twistedHomology_exact_inner L (n + 1) n).mono_g (hn₁.eq_of_src _ _)
+  have : Epi (TopPair.twistedHomologyMap (P := innerPair.obj T) (Q := totalPair.obj T)
+      (innerToTotal.app T) L n) :=
+    (T.twistedHomology_exact_total L n).epi_f (hn.eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- In degree zero, the quotient `H₀(X,B;L) ⟶ H₀(X,A;L)` is surjective. -/
+instance epi_twistedHomologyTotalToOuter_zero : Epi (T.twistedHomologyTotalToOuter L 0) := by
+  have : Epi (((outerPair.obj T).twistedChainComplexπ L).f 0) :=
+    (ModuleCat.epi_iff_surjective _).2
+      ((outerPair.obj T).twistedChainComplexπ_f_surjective L (k := 0))
+  have h := congrArg (fun g ↦ g.f 0) (T.twistedChainComplexπ_comp_totalToOuter L)
+  simp only [HomologicalComplex.comp_f] at h
+  have : Epi ((T.twistedChainComplexTotalToOuter L).f 0) := epi_of_epi_fac h
+  exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel
+    (T.twistedChainComplexTotalToOuter L) 0 (by simp)
 
 end TauCeti.TopTriple

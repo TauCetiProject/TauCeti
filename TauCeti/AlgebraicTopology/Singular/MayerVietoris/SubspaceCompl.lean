@@ -115,10 +115,11 @@ namespace SubspaceComplPair
 variable (q)
 
 /-- The preimage of the complement of the closed half-subspace `{y ∈ W | φ y ≤ 0}`. -/
-private abbrev half (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) : Set X :=
+abbrev half (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) : Set X :=
   q ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ
 
-private lemma isOpen_half [FiniteDimensional ℝ F] (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) :
+/-- The complement of a closed half-subspace has open preimage. -/
+lemma isOpen_half [FiniteDimensional ℝ F] (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) :
     IsOpen (half q W φ) :=
   ((W.isClosed_of_finiteDimensional.inter (isClosed_le φ.continuous_of_finiteDimensional
     continuous_const)).isOpen_compl).preimage q.continuous
@@ -126,13 +127,15 @@ private lemma isOpen_half [FiniteDimensional ℝ F] (W : Submodule ℝ F) (φ : 
 variable {W : Submodule ℝ F}
 
 /-- A chosen extension to `F` of the functional of an extension by a line. -/
-private def extension (s : W.LineExtension) : F →ₗ[ℝ] ℝ :=
+def extension (s : W.LineExtension) : F →ₗ[ℝ] ℝ :=
   (LinearMap.exists_extend s.φ).choose
 
-private lemma extension_comp (s : W.LineExtension) : extension s ∘ₗ s.W'.subtype = s.φ :=
+/-- The chosen functional `SubspaceComplPair.extension s` extends the functional of `s`. -/
+lemma extension_comp (s : W.LineExtension) : extension s ∘ₗ s.W'.subtype = s.φ :=
   (LinearMap.exists_extend s.φ).choose_spec
 
-private lemma extension_apply_v (s : W.LineExtension) : extension s s.v = 1 :=
+/-- The chosen functional `SubspaceComplPair.extension s` is one on the vector of `s`. -/
+lemma extension_apply_v (s : W.LineExtension) : extension s s.v = 1 :=
   (LinearMap.congr_fun (extension_comp s) s.v).trans s.apply_v
 
 /-- The identification of `(X, q⁻¹(F ∖ W))` with the pair modulo the union of the two
