@@ -57,7 +57,7 @@ attribute [local instance] normedAddCommGroupTangentSpaceVectorSpace
 /-- **Lipschitz bound from the centre of a ball.** A map `f` into a real normed space which is
 `C¹` on the open ball `B(p, r)` and whose differential at points of the ball stretches tangent
 vectors by at most `K` satisfies `‖f x - f p‖ ≤ K d(p, x)` on the ball. -/
-theorem norm_sub_le_mul_dist_of_mem_ball [IsManifold I 1 M] {f : M → F} {p x : M} {r K : ℝ}
+theorem norm_sub_le_mul_dist_of_mem_ball {f : M → F} {p x : M} {r K : ℝ}
     (hf : ContMDiffOn I 𝓘(ℝ, F) 1 f (ball p r)) (hK0 : 0 ≤ K)
     (hK : ∀ y ∈ ball p r, ∀ v : TangentSpace I y, ‖mvfderiv I f y v‖ ≤ K * ‖v‖)
     (hx : x ∈ ball p r) : ‖f x - f p‖ ≤ K * dist p x := by
