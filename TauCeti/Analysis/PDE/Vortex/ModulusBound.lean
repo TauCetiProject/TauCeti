@@ -21,10 +21,10 @@ of `m` points of `ℂ`, and write `α` for its section. This file proves the exp
 
 `|α(z)|² ≥ ∏_{a ∈ D} ‖z - a‖² / (‖z - a‖² + C)`  for every `C > 16 m`
 
-(`TauCeti.Vortex.prod_div_le_normSq`). It depends on the vortex only through its zeros, so it is
-uniform over all vortices whose zeros lie in a prescribed compact set: the modulus is close to one
-at a definite distance from the divisor, with constants depending only on `m`. Three consequences
-are drawn.
+(`TauCeti.Vortex.prod_div_le_normSq`). It depends on the vortex only through the distances to its
+zeros, so it is uniform over all vortices and all divisors of degree `m`: the modulus is close to
+one at a definite distance from the divisor, with constants depending only on `m`. Three
+consequences are drawn.
 
 * **Polynomial decay.** `1 - |α(z)|² ≤ ∑_{a ∈ D} C / (‖z - a‖² + C)`
   (`TauCeti.Vortex.one_sub_normSq_le_sum`), by `1 - ∏ (1 - tₐ) ≤ ∑ tₐ`.
