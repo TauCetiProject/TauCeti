@@ -174,7 +174,7 @@ theorem twistedReflection_conj (hR : Function.Involutive R) (ξ : ℂ → V) (z 
 
 /-- On the closed upper half-plane the twisted reflection of `ξ` agrees almost everywhere with
 `ξ`, since the real axis is a null set. -/
-theorem twistedReflection_ae_eq (R : V →L[ℝ] V) (ξ : ℂ → V) :
+theorem twistedReflection_ae_eq_restrict (R : V →L[ℝ] V) (ξ : ℂ → V) :
     twistedReflection R ξ =ᵐ[volume.restrict {z : ℂ | 0 ≤ z.im}] ξ := by
   have hm : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
   have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
@@ -335,13 +335,66 @@ private theorem integral_lapIntegrand_twistedReflection (hΩ : MapsTo (starRingE
         (upper.indicator g) z + J (conjLIE z) := by
     have h1 : conj (1 : ℂ) = 1 := by simp
     have hI : conj I = -I := by simp
-    simp only [J, lapIntegrand, TestFunction.laplacian_compConj, TestFunction.fderiv_compConj,
+    simp only [J, lapIntegrand, TestFunction.laplacian_compConj, TestFunction.fderiv_compConj_apply,
       conjLIE_apply, RCLike.conj_conj, h1, hI, map_neg, twistedReflection, neg_apply,
       smul_add, smul_neg, neg_smul]
     abel
   have hJc : Integrable fun z ↦ J (conjLIE z) := (integrable_comp conjLIE J).2 hJ
   rw [integral_congr_ae (Eventually.of_forall hpt),
     integral_add (integrable_lapIntegrand φ hξ' hf' hg') hJc, integral_comp conjLIE J]
+
+/-- Cut off to the upper half-plane, `u + s R u` is `u⁺ + s R u⁺`, where `u⁺` is the cutoff of
+`u`. -/
+private theorem indicator_upper_add_smul (R : V →L[ℝ] V) (s : ℝ) (u : ℂ → V) :
+    upper.indicator (fun z ↦ u z + s • R (u z)) =
+      upper.indicator u + s • fun z ↦ R (upper.indicator u z) := by
+  rw [indicator_add, indicator_const_smul, ← Function.comp_def R u,
+    indicator_comp_of_zero (map_zero R)]
+  ext z
+  simp only [Pi.add_apply, Pi.smul_apply, Function.comp_apply]
+
+/-- **The reflection formula for a test function of parity `s`.** If `φ (conj z) = s φ z`, the
+reflected triple satisfies the weak identity against `φ` exactly when `ξ + s Rξ`, `f + s Rf`,
+`g + s Rg` satisfy it against `φ` on the upper half-plane. -/
+private theorem integral_lapIntegrand_twistedReflection_eq_zero_iff
+    (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (R : V →L[ℝ] V)
+    (hξ : LocallyIntegrableOn ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hf : LocallyIntegrableOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hg : LocallyIntegrableOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) {φ : 𝓓(Ω, ℝ)} (s : ℝ)
+    (hφ : ∀ z, φ (conj z) = s * φ z) :
+    ∫ z, lapIntegrand (φ : ℂ → ℝ) (twistedReflection R ξ) (twistedReflection R f)
+        (twistedReflection (-R) g) z = 0 ↔
+      ∫ z in upper, Δ (φ : ℂ → ℝ) z • (ξ z + s • R (ξ z)) =
+        -∫ z in upper, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (f z + s • R (f z)) +
+          fderiv ℝ (φ : ℂ → ℝ) z I • (g z + s • R (g z))) := by
+  have hξ' := locallyIntegrableOn_indicator_upper hξ
+  have hf' := locallyIntegrableOn_indicator_upper hf
+  have hg' := locallyIntegrableOn_indicator_upper hg
+  have hRξ : LocallyIntegrableOn (s • fun w ↦ R (upper.indicator ξ w)) Ω :=
+    (R.locallyIntegrableOn_comp hξ').smul s
+  have hRf : LocallyIntegrableOn (s • fun w ↦ R (upper.indicator f w)) Ω :=
+    (R.locallyIntegrableOn_comp hf').smul s
+  have hRg : LocallyIntegrableOn (s • fun w ↦ R (upper.indicator g w)) Ω :=
+    (R.locallyIntegrableOn_comp hg').smul s
+  have hc : TestFunction.compConj hΩ φ = s • φ := by
+    ext z
+    simp [hφ]
+  -- Moving the parity `s` from the test function to the data.
+  have hs (a b c : ℂ → V) : ∫ z, lapIntegrand ((s • φ : 𝓓(Ω, ℝ)) : ℂ → ℝ) a b c z =
+      ∫ z, lapIntegrand (φ : ℂ → ℝ) (s • a) (s • b) (s • c) z := by
+    congr 1
+    ext z
+    have hΔ : Δ ((s • φ : 𝓓(Ω, ℝ)) : ℂ → ℝ) z = s • Δ (φ : ℂ → ℝ) z := by
+      rw [← TestFunction.laplacianCLM_apply, map_smul, FunLike.coe_smul, Pi.smul_apply,
+        TestFunction.laplacianCLM_apply]
+    have hd : fderiv ℝ ((s • φ : 𝓓(Ω, ℝ)) : ℂ → ℝ) z = s • fderiv ℝ (φ : ℂ → ℝ) z := by
+      rw [FunLike.coe_smul]
+      exact fderiv_const_smul (φ.contDiff.differentiable (by simp) z) s
+    simp only [lapIntegrand, hΔ, hd, smul_apply, Pi.smul_apply, smul_smul, smul_eq_mul, mul_comm]
+  rw [integral_lapIntegrand_twistedReflection hΩ R φ hξ hf hg, hc, hs,
+    ← integral_lapIntegrand_add_data φ hξ' hf' hg' hRξ hRf hRg, setIntegral_eq_neg_iff,
+    indicator_upper_add_smul, indicator_upper_add_smul, indicator_upper_add_smul,
+    integral_eq_neg_iff φ (hξ'.add hRξ) (hf'.add hRf) (hg'.add hRg)]
 
 /-- **Reflecting the weak divergence-form Laplace equation across the real axis.** Let `Ω` be
 a conjugation-invariant open set, `R` a continuous linear map of `V`, and `ξ`, `f`, `g` locally
@@ -366,82 +419,19 @@ theorem forall_integral_laplacian_smul_twistedReflection_eq_iff (hΩ : ∀ z ∈
       ∫ z in {z : ℂ | 0 < z.im}, Δ (φ : ℂ → ℝ) z • (ξ z - R (ξ z)) =
         -∫ z in {z : ℂ | 0 < z.im}, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (f z - R (f z)) +
           fderiv ℝ (φ : ℂ → ℝ) z I • (g z - R (g z)))) := by
-  have hξ' := locallyIntegrableOn_indicator_upper hξ
-  have hf' := locallyIntegrableOn_indicator_upper hf
-  have hg' := locallyIntegrableOn_indicator_upper hg
-  have hRξ : LocallyIntegrableOn (fun z ↦ R (upper.indicator ξ z)) Ω :=
-    R.locallyIntegrableOn_comp hξ'
-  have hRf : LocallyIntegrableOn (fun z ↦ R (upper.indicator f z)) Ω :=
-    R.locallyIntegrableOn_comp hf'
-  have hRg : LocallyIntegrableOn (fun z ↦ R (upper.indicator g z)) Ω :=
-    R.locallyIntegrableOn_comp hg'
+  have hΩ' : MapsTo (starRingEnd ℂ) Ω Ω := fun z hz ↦ hΩ z hz
   have hξr := locallyIntegrableOn_twistedReflection hΩ R hξ
   have hfr := locallyIntegrableOn_twistedReflection hΩ R hf
   have hgr := locallyIntegrableOn_twistedReflection hΩ (-R) hg
-  -- The indicator of `ξ ± Rξ` is `ξ⁺ ± Rξ⁺`, where `ξ⁺` is `ξ` cut off to the upper half-plane.
-  have hind (s : ℝ) (u : ℂ → V) : upper.indicator (fun z ↦ u z + s • R (u z)) =
-      upper.indicator u + s • fun z ↦ R (upper.indicator u z) := by
-    rw [indicator_add, indicator_const_smul, ← Function.comp_def R u,
-      indicator_comp_of_zero (map_zero R)]
-    ext z
-    simp only [Pi.add_apply, Pi.smul_apply, Function.comp_apply]
-  have hplus (u : ℂ → V) : upper.indicator (fun z ↦ u z + R (u z)) =
-      upper.indicator u + fun z ↦ R (upper.indicator u z) := by
-    simpa using hind 1 u
-  have hminus (u : ℂ → V) : upper.indicator (fun z ↦ u z - R (u z)) =
-      upper.indicator u + -fun z ↦ R (upper.indicator u z) := by
-    simpa [sub_eq_add_neg] using hind (-1) u
-  -- The half-plane identities, as vanishing of the integral of `lapIntegrand`.
-  have heven (φ : 𝓓(Ω, ℝ)) :
-      (∫ z in upper, Δ (φ : ℂ → ℝ) z • (ξ z + R (ξ z)) =
-        -∫ z in upper, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (f z + R (f z)) +
-          fderiv ℝ (φ : ℂ → ℝ) z I • (g z + R (g z)))) ↔
-      (∫ z, lapIntegrand (φ : ℂ → ℝ) (upper.indicator ξ) (upper.indicator f)
-          (upper.indicator g) z) +
-        ∫ z, lapIntegrand (φ : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
-          (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w)) z = 0 := by
-    rw [setIntegral_eq_neg_iff, hplus, hplus, hplus,
-      integral_eq_neg_iff φ (hξ'.add hRξ) (hf'.add hRf) (hg'.add hRg),
-      integral_lapIntegrand_add_data φ hξ' hf' hg' hRξ hRf hRg]
-  have hodd (φ : 𝓓(Ω, ℝ)) :
-      (∫ z in upper, Δ (φ : ℂ → ℝ) z • (ξ z - R (ξ z)) =
-        -∫ z in upper, (fderiv ℝ (φ : ℂ → ℝ) z 1 • (f z - R (f z)) +
-          fderiv ℝ (φ : ℂ → ℝ) z I • (g z - R (g z)))) ↔
-      (∫ z, lapIntegrand (φ : ℂ → ℝ) (upper.indicator ξ) (upper.indicator f)
-          (upper.indicator g) z) +
-        ∫ z, lapIntegrand (-φ : 𝓓(Ω, ℝ)) (fun w ↦ R (upper.indicator ξ w))
-          (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w)) z = 0 := by
-    rw [setIntegral_eq_neg_iff, hminus, hminus, hminus,
-      integral_eq_neg_iff φ (hξ'.add hRξ.neg) (hf'.add hRf.neg) (hg'.add hRg.neg),
-      integral_lapIntegrand_add_data φ hξ' hf' hg' hRξ.neg hRf.neg hRg.neg]
-    have hneg : ∫ z, lapIntegrand ((-φ : 𝓓(Ω, ℝ)) : ℂ → ℝ) (fun w ↦ R (upper.indicator ξ w))
-        (fun w ↦ R (upper.indicator f w)) (fun w ↦ R (upper.indicator g w)) z =
-        ∫ z, lapIntegrand (φ : ℂ → ℝ) (-fun w ↦ R (upper.indicator ξ w))
-          (-fun w ↦ R (upper.indicator f w)) (-fun w ↦ R (upper.indicator g w)) z := by
-      congr 1
-      ext z
-      simp [lapIntegrand, laplacian_neg, fderiv_neg]
-    rw [hneg]
-  -- The reflection formula for even and odd test functions.
-  have hΩ' : MapsTo (starRingEnd ℂ) Ω Ω := fun z hz ↦ hΩ z hz
-  have hconj_even {φ : 𝓓(Ω, ℝ)} (hφ : ∀ z, φ (conj z) = φ z) :
-      TestFunction.compConj hΩ' φ = φ := by
-    ext z; rw [TestFunction.compConj_apply, hφ]
-  have hconj_odd {φ : 𝓓(Ω, ℝ)} (hφ : ∀ z, φ (conj z) = -φ z) :
-      TestFunction.compConj hΩ' φ = -φ := by
-    ext z; rw [TestFunction.compConj_apply, hφ]; simp
-  have hrefl (φ : 𝓓(Ω, ℝ)) := integral_lapIntegrand_twistedReflection hΩ' R φ hξ hf hg
+  have key (φ : 𝓓(Ω, ℝ)) (s : ℝ) (hφ : ∀ z, φ (conj z) = s * φ z) :=
+    integral_lapIntegrand_twistedReflection_eq_zero_iff hΩ' R hξ hf hg s hφ
   constructor
   · intro h
     refine ⟨fun φ hφ ↦ ?_, fun φ hφ ↦ ?_⟩
-    · have h' := hrefl φ
-      rw [hconj_even hφ] at h'
-      rw [heven, ← h', ← integral_eq_neg_iff φ hξr hfr hgr]
-      exact h φ
-    · have h' := hrefl φ
-      rw [hconj_odd hφ] at h'
-      rw [hodd, ← h', ← integral_eq_neg_iff φ hξr hfr hgr]
-      exact h φ
+    · simpa only [one_smul] using
+        (key φ 1 (by simpa using hφ)).1 ((integral_eq_neg_iff φ hξr hfr hgr).1 (h φ))
+    · simpa only [neg_smul, one_smul, ← sub_eq_add_neg] using
+        (key φ (-1) (by simpa using hφ)).1 ((integral_eq_neg_iff φ hξr hfr hgr).1 (h φ))
   · rintro ⟨he, ho⟩ φ
     rw [integral_eq_neg_iff φ hξr hfr hgr]
     -- Split `φ + φ` into the even test function `φ + φ ∘ conj` and the odd one `φ - φ ∘ conj`.
@@ -450,21 +440,16 @@ theorem forall_integral_laplacian_smul_twistedReflection_eq_iff (hΩ : ∀ z ∈
       intro z; simp [ψ, add_comm]
     have hO : ∀ z, (φ - ψ) (conj z) = -(φ - ψ) z := by
       intro z; simp [ψ]
-    have hE' : ∫ z, lapIntegrand ((φ + ψ : 𝓓(Ω, ℝ)) : ℂ → ℝ) (twistedReflection R ξ)
-        (twistedReflection R f) (twistedReflection (-R) g) z = 0 := by
-      rw [hrefl, hconj_even hE]
-      exact (heven (φ + ψ)).1 (he _ hE)
-    have hO' : ∫ z, lapIntegrand ((φ - ψ : 𝓓(Ω, ℝ)) : ℂ → ℝ) (twistedReflection R ξ)
-        (twistedReflection R f) (twistedReflection (-R) g) z = 0 := by
-      rw [hrefl, hconj_odd hO]
-      exact (hodd (φ - ψ)).1 (ho _ hO)
+    have hE' := (key (φ + ψ) 1 (by simpa using hE)).2 (by simpa only [one_smul] using he _ hE)
+    have hO' := (key (φ - ψ) (-1) (by simpa using hO)).2
+      (by simpa only [neg_smul, one_smul, ← sub_eq_add_neg] using ho _ hO)
     have hsum : (φ + ψ) + (φ - ψ) = φ + φ := by abel
     have h2 := integral_lapIntegrand_add (φ + ψ) (φ - ψ) hξr hfr hgr
     rw [hE', hO', hsum, integral_lapIntegrand_add φ φ hξr hfr hgr, add_zero] at h2
-    have key (x : V) (hx : x + x = 0) : x = 0 := by
-      rw [← two_smul ℝ x] at hx
-      exact (smul_eq_zero.1 hx).resolve_left two_ne_zero
-    exact key _ h2
+    have h2' : (2 : ℝ) • ∫ z, lapIntegrand (φ : ℂ → ℝ) (twistedReflection R ξ)
+        (twistedReflection R f) (twistedReflection (-R) g) z = 0 := by
+      rw [two_smul, h2]
+    exact (smul_eq_zero.1 h2').resolve_left two_ne_zero
 
 /-- **The doubled weak Laplace equation.** If, on the upper half-plane, `ξ + Rξ`, `f + Rf`,
 `g + Rg` satisfy the weak divergence-form Laplace identity against every test function on `Ω`
