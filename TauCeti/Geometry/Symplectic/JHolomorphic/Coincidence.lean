@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Geometry.Symplectic.JHolomorphic.AdaptedChart
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 
 /-!
 # Accumulating coincidences of pseudoholomorphic discs
