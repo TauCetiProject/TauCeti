@@ -421,6 +421,16 @@ theorem alongCurveWithin_subset {s u : Set 𝕜} {t : 𝕜} (hsu : s ⊆ u)
     alongCurveInChartWithin_apply, derivWithin_subset hsu hs hV,
     derivWithin_subset hsu hs hγ]
 
+/-- On a set with unique derivatives, restricting differentiable curve and field data to the
+set preserves their unrestricted covariant derivative. -/
+theorem alongCurveWithin_eq_alongCurve {s : Set 𝕜} {t : 𝕜}
+    (hs : UniqueDiffWithinAt 𝕜 s t) (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) t) :
+    alongCurveWithin cov γ V s t = alongCurve cov γ V t := by
+  rw [alongCurveWithin_subset cov γ V (Set.subset_univ s) hs hV.differentiableWithinAt
+    ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))).comp t
+      hγ).differentiableAt.differentiableWithinAt, alongCurveWithin_univ]
+
 variable {γ} in
 /-- Covariant derivatives of sections along locally equal curves agree after identifying
 their fibres. Values at the tested parameter are required as well as within-set germs. -/
