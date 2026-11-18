@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
+import TauCeti.Analysis.Calculus.ContDiffZPow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.Asymptotics.Lemmas
 
@@ -108,6 +109,21 @@ theorem isPuncturedSymbol_iff {ℓ : ℝ} {f : E → F} :
     IsPuncturedSymbol ℓ f ↔ (∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ f z) ∧
       ∀ j : ℕ, iteratedFDeriv ℝ j f =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (ℓ - j) :=
   Iff.rfl
+
+/-- The inductive step of the derivative bounds for inverses and compositions: if `fderiv F'`
+agrees near every point of a punctured neighbourhood with a map `G'` whose `k`-th derivative is
+`O(‖z‖ ^ (a - k))`, then the `(k + 1)`-th derivative of `F'` is `O(‖z‖ ^ (b - (k + 1)))` for
+`b = a + 1`. -/
+private theorem isBigO_iteratedFDeriv_succ_of_eventuallyEq {F' : E → F} {G' : E → E →L[ℝ] F}
+    {a b : ℝ} {k : ℕ} (hF : ∀ᶠ z in 𝓝[≠] (0 : E), fderiv ℝ F' =ᶠ[𝓝 z] G')
+    (hG : iteratedFDeriv ℝ k G' =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (a - k)) (hab : a + 1 = b) :
+    iteratedFDeriv ℝ (k + 1) F' =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (b - (k + 1 : ℕ)) := by
+  subst hab
+  refine IsBigO.of_norm_left (hG.norm_left.congr' ?_ (Eventually.of_forall fun z ↦ ?_))
+  · filter_upwards [hF] with z hz
+    rw [← (hz.iteratedFDeriv ℝ k).eq_of_nhds, norm_iteratedFDeriv_fderiv]
+  · push_cast
+    ring_nf
 
 /-! ### Basic properties -/
 
@@ -302,13 +318,11 @@ section Inverse
 
 variable {ℓ : ℝ} {R : Type*} [NormedDivisionRing R] [NormedAlgebra ℝ R] {f : E → R}
 
+/-- Inversion is smooth wherever `f` is smooth and nonzero: `ContDiffAt.zpow` at exponent `-1`. -/
 private theorem eventually_contDiffAt_inv
     (hf : ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ f z ∧ f z ≠ 0) :
-    ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ (fun z ↦ (f z)⁻¹) z := by
-  filter_upwards [hf] with z hz
-  have hinv : ContDiffAt ℝ ∞ (fun x : R ↦ x⁻¹) (f z) := by
-    simpa [Ring.inverse_eq_inv'] using contDiffAt_ringInverse ℝ (Units.mk0 (f z) hz.2)
-  exact hinv.comp z hz.1
+    ∀ᶠ z in 𝓝[≠] (0 : E), ContDiffAt ℝ ∞ (fun z ↦ (f z)⁻¹) z :=
+  hf.mono fun _ hz ↦ by simpa using hz.1.zpow (m := -1) (Or.inl hz.2)
 
 /-- Near every point of a punctured neighbourhood where `f` is smooth and invertible, the
 derivative of `f⁻¹` is the bilinear expression `-(f⁻¹ ⬝ f⁻¹) ∘ Df` in `f⁻¹ ⊗ f⁻¹` and `Df`. -/
@@ -340,8 +354,8 @@ private theorem isBigO_iteratedFDeriv_inv (hf : IsPuncturedSymbol ℓ f) {c : �
     obtain rfl : i = 0 := Nat.le_zero.1 hi
     refine IsBigO.of_bound c⁻¹ ?_
     filter_upwards [hlow, eventually_norm_pos] with z hz hz0
-    rw [norm_iteratedFDeriv_zero, Real.norm_of_nonneg (by positivity), CharP.cast_eq_zero,
-      sub_zero, Real.rpow_neg hz0.le, norm_inv, ← mul_inv]
+    simp only [norm_iteratedFDeriv_zero, Nat.cast_zero, sub_zero, norm_inv, Real.norm_eq_abs]
+    rw [abs_of_nonneg (by positivity), Real.rpow_neg hz0.le, ← mul_inv]
     exact inv_anti₀ (by positivity) hz
   | succ n ih =>
     intro i hi
@@ -358,12 +372,8 @@ private theorem isBigO_iteratedFDeriv_inv (hf : IsPuncturedSymbol ℓ f) {c : �
         (fun i hi ↦ isBigO_iteratedFDeriv_bilinear (ContinuousLinearMap.mulLeftRight ℝ R) hg hg
           (fun j hj ↦ ih j (hj.trans (hi.trans hk))) (fun j hj ↦ ih j (hj.trans (hi.trans hk))))
         (fun i _ ↦ hDf.2 i)
-      refine IsBigO.of_norm_left (hprod.norm_left.congr' ?_ ?_)
-      · filter_upwards [eventually_fderiv_inv_eventuallyEq hne] with z hz
-        rw [← (hz.iteratedFDeriv ℝ k).eq_of_nhds, norm_iteratedFDeriv_fderiv]
-      · refine Eventually.of_forall fun z ↦ ?_
-        push_cast
-        ring_nf
+      exact isBigO_iteratedFDeriv_succ_of_eventuallyEq (eventually_fderiv_inv_eventuallyEq hne)
+        hprod (by ring)
 
 /-- **The inverse of a punctured symbol.** If `f` has order `ℓ`, with values in a normed
 division algebra, and `‖f z‖ ≥ c ‖z‖ ^ ℓ` near `0` for some `c > 0`, then `z ↦ (f z)⁻¹` is a
@@ -442,8 +452,7 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
       refine ⟨hφ.isBigO.norm_left.congr' EventuallyEq.rfl
         (Eventually.of_forall fun z ↦ Real.rpow_one _), IsBigO.of_bound c⁻¹ ?_⟩
       filter_upwards [hlow] with z hz
-      rw [norm_norm, norm_norm, inv_mul_eq_div, le_div_iff₀ hc, mul_comm]
-      exact hz
+      simpa only [norm_norm, le_inv_mul_iff₀ hc] using hz
     have h := ((hg.2 j).comp_tendsto hφ0).norm_left.trans
       (hθ.rpow (r := ℓ - j) (Eventually.of_forall fun _ ↦ norm_nonneg _)
         (Eventually.of_forall fun _ ↦ norm_nonneg _)).isBigO
@@ -468,12 +477,8 @@ private theorem isBigO_iteratedFDeriv_comp (hg : IsPuncturedSymbol ℓ g)
             G).toContinuousLinearEquiv.toContinuousLinearMap) hDj hDφ.1 (n := k)
         (ℓ := ℓ - (j + 1 : ℕ)) (m := 1 - 1)
         (fun i hi ↦ ih (j + 1) i (hi.trans hk)) (fun i _ ↦ hDφ.2 i)
-      refine IsBigO.of_norm_left (hprod.norm_left.congr' ?_ ?_)
-      · filter_upwards [eventually_fderiv_comp_eventuallyEq hs j] with z hz
-        rw [← (hz.iteratedFDeriv ℝ k).eq_of_nhds, norm_iteratedFDeriv_fderiv]
-      · refine Eventually.of_forall fun z ↦ ?_
-        push_cast
-        ring_nf
+      exact isBigO_iteratedFDeriv_succ_of_eventuallyEq (eventually_fderiv_comp_eventuallyEq hs j)
+        hprod (by push_cast; ring)
 
 /-- **Composition with a reparametrization.** If `g` is a punctured symbol of order `ℓ` and
 `φ` is a punctured symbol of order `1` with `‖φ z‖ ≥ c ‖z‖` near `0` for some `c > 0`, then
