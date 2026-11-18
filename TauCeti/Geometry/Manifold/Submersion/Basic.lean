@@ -46,6 +46,9 @@ constant on the fibres factors through a unique `C^m` map
 ## Main results
 
 * `Manifold.isSubmersionOfComplement_iff`: a submersion with complement `F` is one at every point.
+* `Manifold.IsSubmersion.of_le`, together with its `Manifold.IsSubmersionAt`,
+  `Manifold.IsSubmersionOfComplement` and `Manifold.IsSubmersionAtOfComplement` forms: lowering the
+  regularity order preserves submersions.
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_extend_comp_mfderiv`: the derivative of a
   submersion in its normal-form charts.
 * `Manifold.IsSubmersionAtOfComplement.surjective_mfderiv`,
@@ -110,6 +113,41 @@ theorem isSubmersionOfComplement_fst [IsManifold I n M] [IsManifold J n N] :
 theorem isSubmersion_fst [IsManifold I n M] [IsManifold J n N] :
     IsSubmersion (I.prod J) I n (@Prod.fst M N) :=
   isSubmersionOfComplement_fst.isSubmersion
+
+section OfLe
+
+variable {m : WithTop ℕ∞}
+
+/-- Lowering the regularity order preserves the submersion normal form at a point, with the same
+complement. -/
+theorem IsSubmersionAtOfComplement.of_le {x : M}
+    (h : IsSubmersionAtOfComplement F I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAtOfComplement F I J n f x :=
+  IsSubmersionAtOfComplement.mk_of_charts h.equiv h.domChart h.codChart
+    h.mem_domChart_source h.mem_codChart_source
+    (IsManifold.maximalAtlas_subset_of_le hnm h.domChart_mem_maximalAtlas)
+    (IsManifold.maximalAtlas_subset_of_le hnm h.codChart_mem_maximalAtlas)
+    h.source_subset_preimage_source h.writtenInCharts
+
+/-- Lowering the regularity order preserves being a submersion at a point. -/
+theorem IsSubmersionAt.of_le {x : M}
+    (h : IsSubmersionAt I J m f x) (hnm : n ≤ m) :
+    IsSubmersionAt I J n f x :=
+  (h.isSubmersionAtOfComplement_complement.of_le hnm).isSubmersionAt
+
+/-- Lowering the regularity order preserves submersions with a fixed complement. -/
+theorem IsSubmersionOfComplement.of_le
+    (h : IsSubmersionOfComplement F I J m f) (hnm : n ≤ m) :
+    IsSubmersionOfComplement F I J n f :=
+  fun x ↦ (h x).of_le hnm
+
+/-- Lowering the regularity order preserves submersions. -/
+theorem IsSubmersion.of_le
+    (h : IsSubmersion I J m f) (hnm : n ≤ m) :
+    IsSubmersion I J n f :=
+  (h.isSubmersionOfComplement_complement.of_le hnm).isSubmersion
+
+end OfLe
 
 end Pointwise
 
