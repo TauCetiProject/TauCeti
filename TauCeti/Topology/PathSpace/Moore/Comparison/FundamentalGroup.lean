@@ -93,6 +93,15 @@ theorem fundamentalGroupHom_surjective (x : X) : Function.Surjective (fundamenta
     induction q using Quotient.inductionOn with
     | h γ => exact ⟨γ, (zerothHomotopyEquivFundamentalGroup_mk γ).symm⟩
 
+/-- Two homomorphisms out of the fundamental group agree once they agree on the classes of Moore
+loops. -/
+theorem fundamentalGroup_hom_ext {M : Type*} [Monoid M] {χ ψ : FundamentalGroup X x →* M}
+    (h : ∀ γ : MooreLoopSpace X x, χ (fundamentalGroupHom x γ) = ψ (fundamentalGroupHom x γ)) :
+    χ = ψ :=
+  MonoidHom.ext fun g ↦ by
+    obtain ⟨γ, rfl⟩ := fundamentalGroupHom_surjective x g
+    exact h γ
+
 /-- Two Moore loops have the same multiplicative class exactly when they are joined by a path in
 the Moore loop space. -/
 theorem fundamentalGroupHom_eq_iff_joined {γ δ : MooreLoopSpace X x} :

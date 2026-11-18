@@ -26,7 +26,9 @@ to the normalized chains, and it is a morphism of DG algebras of `C^□_*(G; R)`
 Twisting is multiplicative in the character (`TauCeti.cubicalChainTwist_mul`), so a
 character with values in the units `Rˣ` gives an automorphism. Twisting is natural: pushing
 chains forward along a map `f` turns the twist by `w ∘ f` into the twist by `w`
-(`TauCeti.NormalizedCubicalChain.map_comp_twist`).  For the Moore loop space this is
+(`TauCeti.NormalizedCubicalChain.map_comp_twist`), and for a continuous monoid homomorphism this
+holds for the induced morphism of DG algebras
+(`TauCeti.cubicalChainDGAlgHom_comp_cubicalChainTwist`).  For the Moore loop space this is
 the map `Φ^L` of the source's §2.3, attached to a rank-one local system `L`.
 
 ## Main definitions
@@ -259,6 +261,19 @@ theorem cubicalChainTwist_one :
   cubicalChain_dgAlgHom_ext fun n y ↦ by
     rw [cubicalChainTwist_lof, DGAlgHom.id_apply]
     exact congrArg _ (LinearMap.congr_fun (twist_one n) y)
+
+/-- **Twisting is natural in the monoid**: the morphism induced by a continuous monoid
+homomorphism `φ` turns the twist by `χ ∘ φ` into the twist by `χ`. -/
+theorem cubicalChainDGAlgHom_comp_cubicalChainTwist {G' : Type*} [TopologicalSpace G'] [Monoid G']
+    [ContinuousMul G'] (φ : G →ₜ* G') {χ : G' →* R}
+    (hχ : ∀ ⦃x y : G'⦄, Joined x y → χ x = χ y) :
+    (cubicalChainDGAlgHom R φ).comp
+        (cubicalChainTwist R (χ.comp φ.toMonoidHom) fun _ _ h ↦ hχ (h.map φ.continuous)) =
+      (cubicalChainTwist R χ hχ).comp (cubicalChainDGAlgHom R φ) :=
+  cubicalChain_dgAlgHom_ext fun n y ↦ by
+    rw [DGAlgHom.comp_apply, DGAlgHom.comp_apply, cubicalChainTwist_lof, cubicalChainDGAlgHom_lof,
+      cubicalChainDGAlgHom_lof, cubicalChainTwist_lof]
+    exact congrArg _ (LinearMap.congr_fun (map_comp_twist _ _ n) y)
 
 end Monoid
 
