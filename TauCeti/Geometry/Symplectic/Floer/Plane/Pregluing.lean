@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
-public import TauCeti.Geometry.Symplectic.Floer.Pregluing
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+public import TauCeti.Geometry.Symplectic.Floer.Pregluing.EndChart
 
 /-!
 # Pre-gluing a Floer cylinder to the end of a PSS plane
@@ -34,8 +33,10 @@ output, `(s, t) ↦ v(-s, -t)` is then a Floer cylinder for `H` whose input is t
 plane.
 
 The first step of gluing such a pair is the *pre-glued plane*
-(`TauCeti.Floer.PSSPlane.preglueEnd x u v R`). Up to the height `R - 1` of the end it is `u`;
-further out it is the pre-glued map `TauCeti.Floer.preglue x U v R` of
+(`TauCeti.Floer.PSSPlane.preglueEnd x u v R`), the pre-glued map
+`TauCeti.Floer.preglueEndChart` of `TauCeti.Geometry.Symplectic.Floer.Pregluing.EndChart` for the
+end chart `φ` (`TauCeti.Floer.PSSPlane.isEndChart_realChart_positive`). Up to the height `R - 1`
+of the end it is `u`; further out it is the pre-glued map `TauCeti.Floer.preglue x U v R` of
 `TauCeti.Geometry.Symplectic.Floer.Pregluing`, moved out along the end by `R`. It interpolates
 through the orbit `x` on the neck `R - 1 ≤ s ≤ R + 1` and is the translate `v(s - 2R, t)` beyond
 `R + 1`, so its end is the other end of the cylinder `v`.
@@ -84,7 +85,7 @@ that corrects the pre-glued plane to a solution are not treated here.
 public section
 
 open Filter Set Topology Function ContinuousLinearMap Real
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart contDiff_realChart)
 
 namespace TauCeti
 
@@ -94,18 +95,27 @@ namespace Floer.PSSPlane
 
 /-! ### The pre-glued plane -/
 
+/-- The end lift of the positive plane is a cylindrical end chart, with the end coordinates
+`(log ‖w‖ / 2π, arg w / 2π)` of a point `w`. -/
+theorem isEndChart_realChart_positive :
+    IsEndChart (realChart positive.cylindricalEndLift) fun z ↦
+      ((positive.endCoord (Complex.equivRealProdCLM.symm z)).re,
+        (positive.endCoord (Complex.equivRealProdCLM.symm z)).im) where
+  chart_endCoord _ h₀ := realChart_positive_endCoord fun h ↦ by simp [h] at h₀
+  exists_endCoord_chart y := exists_endCoord_realChart_positive y.1 y.2
+  chart_add_one := realChart_positive_add_one
+
 /-- **The pre-glued plane** of a map `u` on a PSS plane and a map `v` on the cylinder, through the
-loop `x`, with gluing parameter `R`. At a point whose end coordinates `(s, t)` in the end lift `φ`
-of the positive plane have `s > 0` it is the pre-glued map `preglue x (u ∘ φ) v R` at `(s - R, t)`;
-elsewhere it is `u`. It is `u` where `s ≤ R - 1` (`TauCeti.Floer.PSSPlane.preglueEnd_of_le`), and
-`v(s - 2R, t)` where `s ≥ R + 1` when `x` and `v` have period one in `t`
+loop `x`, with gluing parameter `R`: the pre-glued map `TauCeti.Floer.preglueEndChart` of the end
+lift `φ` of the positive plane. At a point whose end coordinates `(s, t)` in `φ` have `s > 0` it is
+the pre-glued map `preglue x (u ∘ φ) v R` at `(s - R, t)`; elsewhere it is `u`. It is `u` where
+`s ≤ R - 1` (`TauCeti.Floer.PSSPlane.preglueEnd_of_le`), and `v(s - 2R, t)` where `s ≥ R + 1` when
+`R ≥ 0` and `x` and `v` have period one in `t`
 (`TauCeti.Floer.PSSPlane.preglueEnd_realChart_of_add_one_le`). -/
 noncomputable def preglueEnd (x : ℝ → V) (u v : ℝ × ℝ → V) (R : ℝ) (z : ℝ × ℝ) : V :=
-  if 0 < (positive.endCoord (Complex.equivRealProdCLM.symm z)).re then
-    preglue x (u ∘ realChart positive.cylindricalEndLift) v R
-      ((positive.endCoord (Complex.equivRealProdCLM.symm z)).re - R,
-        (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)
-  else u z
+  preglueEndChart (realChart positive.cylindricalEndLift)
+    (fun z ↦ ((positive.endCoord (Complex.equivRealProdCLM.symm z)).re,
+      (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)) x u v R z
 
 theorem preglueEnd_def (x : ℝ → V) (u v : ℝ × ℝ → V) (R : ℝ) (z : ℝ × ℝ) :
     preglueEnd x u v R z =
@@ -113,26 +123,21 @@ theorem preglueEnd_def (x : ℝ → V) (u v : ℝ × ℝ → V) (R : ℝ) (z : �
         preglue x (u ∘ realChart positive.cylindricalEndLift) v R
           ((positive.endCoord (Complex.equivRealProdCLM.symm z)).re - R,
             (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)
-      else u z :=
-  (rfl)
+      else u z := by
+  rw [preglueEnd, preglueEndChart_def]
 
 variable {x : ℝ → V} {u v : ℝ × ℝ → V} {R : ℝ} {z : ℝ × ℝ}
 
 /-- **Away from the neck the pre-glued plane is `u`.** At a point of height at most `R - 1` in the
 end lift, the pre-glued plane is `u`. -/
 theorem preglueEnd_of_le (h : (positive.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ R - 1) :
-    preglueEnd x u v R z = u z := by
-  rw [preglueEnd_def]
-  split_ifs with h₀
-  · have hz : Complex.equivRealProdCLM.symm z ≠ 0 := fun h ↦ by simp [h] at h₀
-    rw [preglue_of_le_neg_one (by dsimp only; linarith), Prod.mk_add_mk, sub_add_cancel, add_zero,
-      comp_apply, realChart_positive_endCoord hz]
-  · rfl
+    preglueEnd x u v R z = u z :=
+  preglueEndChart_of_le isEndChart_realChart_positive h
 
 /-- **Near the pole the pre-glued plane is `u`.** For `R ≥ 1` the pre-glued plane agrees with `u`
 near the pole `0`, since the height `log ‖w‖ / 2π` is at most `0` on the unit disc; so it satisfies
 whatever incidence condition `u` satisfies at the pole. -/
-theorem preglueEnd_eventuallyEq_zero (hR : 1 ≤ R) : preglueEnd x u v R =ᶠ[𝓝 0] u := by
+theorem preglueEnd_eventuallyEq_nhds_zero (hR : 1 ≤ R) : preglueEnd x u v R =ᶠ[𝓝 0] u := by
   have hc : ContinuousAt (fun w : ℝ × ℝ ↦ ‖Complex.equivRealProdCLM.symm w‖) 0 := by fun_prop
   have h₁ : ‖Complex.equivRealProdCLM.symm (0 : ℝ × ℝ)‖ < 1 := by simp
   filter_upwards [hc.eventually_lt continuousAt_const h₁] with w hw
@@ -150,12 +155,10 @@ theorem preglueEnd_eventuallyEq_of_lt
   by_cases hz : Complex.equivRealProdCLM.symm z = 0
   · obtain rfl : z = 0 := by simpa using hz
     rw [hz, endCoord_zero, Complex.zero_re] at h
-    exact preglueEnd_eventuallyEq_zero (by linarith)
-  · have hc : ContinuousAt
-        (fun w : ℝ × ℝ ↦ (positive.endCoord (Complex.equivRealProdCLM.symm w)).re) z :=
-      (positive.contDiffAt_re_endCoord hz (n := 0)).continuousAt.comp
-        Complex.equivRealProdCLM.symm.continuous.continuousAt
-    exact (hc.eventually_lt continuousAt_const h).mono fun _ hw ↦ preglueEnd_of_le hw.le
+    exact preglueEnd_eventuallyEq_nhds_zero (by linarith)
+  · exact preglueEndChart_eventuallyEq_of_lt isEndChart_realChart_positive
+      ((positive.contDiffAt_re_endCoord hz (n := 0)).continuousAt.comp
+        Complex.equivRealProdCLM.symm.continuous.continuousAt) h
 
 /-- **The pre-glued plane on the end.** At the image under the end lift of a point `(s, t)` with
 `s > 0`, the pre-glued plane is the pre-glued map at `(s - R, t)`, when the loop `x` and the map
@@ -163,14 +166,8 @@ theorem preglueEnd_eventuallyEq_of_lt
 theorem preglueEnd_realChart (hx : Periodic x 1) (hv : ∀ s, Periodic (fun t ↦ v (s, t)) 1)
     {s : ℝ} (hs : 0 < s) (t : ℝ) :
     preglueEnd x u v R (realChart positive.cylindricalEndLift (s, t)) =
-      preglue x (u ∘ realChart positive.cylindricalEndLift) v R (s - R, t) := by
-  obtain ⟨k, h₁, h₂⟩ := exists_endCoord_realChart_positive s t
-  have hU (s : ℝ) :
-      Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1 := fun t ↦ by
-    simp only [comp_apply, realChart_positive_add_one]
-  have hper := (periodic_preglue hx hU hv (R := R) (s - R)).int_mul k t
-  rw [mul_one] at hper
-  simpa only [preglueEnd_def, h₁, h₂, hs, ↓reduceIte] using hper
+      preglue x (u ∘ realChart positive.cylindricalEndLift) v R (s - R, t) :=
+  preglueEndChart_chart isEndChart_realChart_positive hx hv hs t
 
 /-- **The pre-glued plane in the end chart.** If the loop `x` and the map `v` have period one in
 `t` and `R ≥ 1`, the pre-glued plane read in the end lift `φ` of the positive plane is the
@@ -178,23 +175,16 @@ pre-glued map of `u ∘ φ` and `v`, translated by `R`. -/
 theorem preglueEnd_comp_realChart (hx : Periodic x 1) (hv : ∀ s, Periodic (fun t ↦ v (s, t)) 1)
     (hR : 1 ≤ R) :
     preglueEnd x u v R ∘ realChart positive.cylindricalEndLift =
-      fun y ↦ preglue x (u ∘ realChart positive.cylindricalEndLift) v R (y - (R, 0)) := by
-  funext ⟨s, t⟩
-  rw [comp_apply, Prod.mk_sub_mk, sub_zero]
-  rcases lt_or_ge 0 s with hs | hs
-  · exact preglueEnd_realChart hx hv hs t
-  · obtain ⟨k, h₁, -⟩ := exists_endCoord_realChart_positive s t
-    rw [preglueEnd_of_le (by rw [h₁]; linarith), preglue_of_le_neg_one (by dsimp only; linarith),
-      Prod.mk_add_mk, sub_add_cancel, add_zero, comp_apply]
+      fun y ↦ preglue x (u ∘ realChart positive.cylindricalEndLift) v R (y - (R, 0)) :=
+  preglueEndChart_comp_chart isEndChart_realChart_positive hx hv hR
 
 /-- **Far out on the end the pre-glued plane is the cylinder.** If the loop `x` and the map `v`
 have period one in `t` and `R ≥ 0`, then at the image under the end lift of a point `(s, t)` with
 `s ≥ R + 1` the pre-glued plane is `v(s - 2R, t)`. -/
 theorem preglueEnd_realChart_of_add_one_le (hx : Periodic x 1)
     (hv : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (hR : 0 ≤ R) {s : ℝ} (hs : R + 1 ≤ s) (t : ℝ) :
-    preglueEnd x u v R (realChart positive.cylindricalEndLift (s, t)) = v (s - 2 * R, t) := by
-  rw [preglueEnd_realChart hx hv (by linarith) t, preglue_of_one_le (by dsimp only; linarith),
-    Prod.mk_sub_mk, sub_zero, sub_sub, ← two_mul]
+    preglueEnd x u v R (realChart positive.cylindricalEndLift (s, t)) = v (s - 2 * R, t) :=
+  preglueEndChart_chart_of_add_one_le isEndChart_realChart_positive hx hv hR hs t
 
 /-- **The pre-glued plane is smooth.** If `u` is `Cⁿ` on the plane, the loop `x` and the map `v`
 are `Cⁿ` and of period one in `t`, and `R ≥ 1`, the pre-glued plane is `Cⁿ` on the whole plane. -/
@@ -204,36 +194,14 @@ theorem contDiff_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Period
   refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
   by_cases hz : Complex.equivRealProdCLM.symm z = 0
   · obtain rfl : z = 0 := by simpa using hz
-    exact hu.contDiffAt.congr_of_eventuallyEq (preglueEnd_eventuallyEq_zero hR)
-  -- Away from the pole, `preglueEnd = F ∘ φ⁻¹` near `z` for the translated pre-glued map `F`,
-  -- with a local inverse of the end lift `φ` around the end coordinates `y` of `z`.
-  set y : ℝ × ℝ := ((positive.endCoord (Complex.equivRealProdCLM.symm z)).re,
-    (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)
-  have hy : realChart positive.cylindricalEndLift y = z := realChart_positive_endCoord hz
-  -- The end lift is smooth, so its local inverse is smooth, whatever `n` is.
-  have hn : ((⊤ : ℕ∞) : WithTop ℕ∞) ≠ 0 := by simp
-  have hφ : ContDiffAt ℝ (⊤ : ℕ∞) (realChart positive.cylindricalEndLift) y :=
+    exact hu.contDiffAt.congr_of_eventuallyEq (preglueEnd_eventuallyEq_nhds_zero hR)
+  -- Away from the pole, every point is the image under the end lift of its end coordinates.
+  obtain ⟨y, rfl⟩ : ∃ y, realChart positive.cylindricalEndLift y = z :=
+    ⟨_, realChart_positive_endCoord hz⟩
+  exact contDiffAt_preglueEndChart isEndChart_realChart_positive
     (contDiff_realChart positive.contDiff_cylindricalEndLift).contDiffAt
-  have hφ' : HasFDerivAt (realChart positive.cylindricalEndLift) ((LinearMap.equivOfDetNeZero _
-      (det_fderiv_realChart_cylindricalEndLift_pos positive y).ne').toContinuousLinearEquiv :
-        ℝ × ℝ →L[ℝ] ℝ × ℝ) y :=
-    ((contDiff_realChart (n := 1) positive.contDiff_cylindricalEndLift).differentiable
-      one_ne_zero y).hasFDerivAt
-  have hF : ContDiffAt ℝ n
-      (fun w ↦ preglue x (u ∘ realChart positive.cylindricalEndLift) v R (w - (R, 0))) y :=
-    (contDiffAt_preglue hx.contDiffAt
-      ((hu.comp (contDiff_realChart positive.contDiff_cylindricalEndLift)).contDiffAt)
-      hv.contDiffAt).comp y (contDiffAt_id.sub contDiffAt_const)
-  have hEq : preglueEnd x u v R =ᶠ[𝓝 (realChart positive.cylindricalEndLift y)]
-      (fun w ↦ preglue x (u ∘ realChart positive.cylindricalEndLift) v R (w - (R, 0))) ∘
-        hφ.localInverse hφ' hn := by
-    filter_upwards [(hφ.hasStrictFDerivAt hφ' hn).eventually_right_inverse] with w hw
-    conv_lhs => rw [← hw]
-    exact congrFun (preglueEnd_comp_realChart hxper hvper hR) _
-  rw [← hφ.localInverse_apply_image hφ' hn] at hF
-  rw [← hy]
-  exact (hF.comp _ ((hφ.to_localInverse hφ' hn).of_le (by exact_mod_cast le_top))
-    ).congr_of_eventuallyEq hEq
+    (det_fderiv_realChart_cylindricalEndLift_pos positive y).ne' hx hxper
+    (hu.comp (contDiff_realChart positive.contDiff_cylindricalEndLift)).contDiffAt hv hvper hR
 
 /-! ### Convergence to the broken plane -/
 
@@ -313,14 +281,9 @@ theorem exists_eventually_norm_floerOperator_preglueEnd_comp_realChart_le (ω : 
     ∃ C', ∀ᶠ R in atTop, ∀ z ∈ Ioi T ×ˢ Icc (0 : ℝ) 1,
       ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
           (PSSPlane.preglueEnd x u v R ∘ realChart positive.cylindricalEndLift) z‖ ≤
-        C' * Real.exp (-(κ * R)) := by
-  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud
-    hu hdu hvd hv hdv (fun z hz ↦ huF z hz) fun z hz ↦ hvF z hz
-  refine ⟨C', (hC'.and (eventually_ge_atTop 1)).mono fun R ⟨hR, hR₁⟩ z hz ↦ ?_⟩
-  rw [PSSPlane.preglueEnd_comp_realChart hxper hvper hR₁, floerOperator_comp_sub]
-  refine hR _ (by simpa using hz.2) (fun _ ↦ ⟨?_, by simpa using hz.2⟩)
-    fun _ ↦ ⟨mem_univ _, by simpa using hz.2⟩
-  simpa using hz.1
+        C' * Real.exp (-(κ * R)) :=
+  ω.exists_eventually_norm_floerOperator_preglueEndChart_comp_le
+    PSSPlane.isEndChart_realChart_positive hH hJ hx hxper hκ hud hu hdu huF hvd hv hdv hvper hvF
 
 end SymplecticForm
 
