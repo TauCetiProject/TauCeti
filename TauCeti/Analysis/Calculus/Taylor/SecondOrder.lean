@@ -5,7 +5,7 @@ Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.MeanValue
+public import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # A first-order Taylor bound on the unit interval
@@ -42,12 +42,10 @@ theorem norm_sub_sub_deriv_le_of_norm_deriv_deriv_le {c : ℝ → F} {K : ℝ}
     norm_image_sub_le_of_norm_deriv_le_segment' (fun t ht ↦ (hdd t ht).hasDerivWithinAt)
       fun t ht ↦ hK t (Ico_subset_Icc_self ht)
   have hK0 : 0 ≤ K := (norm_nonneg _).trans (hK 0 ⟨le_rfl, zero_le_one⟩)
-  have h := norm_image_sub_le_of_norm_deriv_le_segment' (f := fun t ↦ c t - t • deriv c 0)
-    (f' := fun t ↦ deriv c t - deriv c 0) (C := K)
-    (fun t ht ↦ ((hd t ht).sub ((hasDerivAt_id t).smul_const (deriv c 0))).hasDerivWithinAt
-      |>.congr_deriv (by simp))
-    (fun t ht ↦ (hvel t (Ico_subset_Icc_self ht)).trans (by nlinarith [ht.1, ht.2.le]))
-    1 ⟨zero_le_one, le_rfl⟩
-  simpa [sub_right_comm] using h
+  have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le' (s := Icc (0 : ℝ) 1)
+    (φ := deriv c 0) (C := K) (fun t ht ↦ (hd t ht).hasDerivWithinAt)
+    (fun t ht ↦ (hvel t ht).trans (by nlinarith [ht.1, ht.2])) (convex_Icc _ _)
+    (x := 0) (y := 1) ⟨le_rfl, zero_le_one⟩ ⟨zero_le_one, le_rfl⟩
+  simpa using h
 
 end TauCeti
