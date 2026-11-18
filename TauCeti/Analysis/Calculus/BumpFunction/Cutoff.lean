@@ -674,12 +674,19 @@ theorem exists_contDiff_angle_cutoff [InnerProductSpace ℝ E] [CompleteSpace E]
       _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
       _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
 
-/-- **A smooth cutoff of the identity on the line.** For `0 < r < R`, some smooth `k : ℝ → ℝ`
+/-- **A smooth cutoff of the identity on the line.** For `r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.
-It is `s ↦ χ s * s` for a smooth bump `χ` equal to one on `[-r, r]` and supported in `[-R, R]`. -/
-theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
+For `0 < r` it is `s ↦ χ s * s` for a smooth bump `χ` equal to one on `[-r, r]` and supported in
+`[-R, R]`; for `r ≤ 0` the constraints on `(-r, r)` are vacuous or trivial and `k = 0` serves. -/
+theorem exists_contDiff_cutoff_id {r R : ℝ} (hrR : r < R) :
     ∃ k : ℝ → ℝ, ContDiff ℝ ∞ k ∧ (∀ s, |s| ≤ r → k s = s) ∧ (∀ s, R ≤ |s| → k s = 0) ∧
       ∀ s, |s| < r → HasDerivAt k 1 s := by
+  by_cases hr : 0 < r
+  swap
+  · refine ⟨0, contDiff_const, fun s hs ↦ ?_, fun s _ ↦ rfl, fun s hs ↦ ?_⟩
+    · have : s = 0 := abs_nonpos_iff.1 (hs.trans (not_lt.1 hr))
+      simp [this]
+    · exact absurd ((abs_nonneg s).trans_lt hs) hr
   let χ : ContDiffBump (0 : ℝ) := ⟨r, R, hr, hrR⟩
   have hsmall : ∀ s, |s| ≤ r → χ s * s = s := by
     intro s hs
