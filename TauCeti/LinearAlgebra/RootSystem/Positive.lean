@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Height
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Positive and negative roots
@@ -89,6 +90,11 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
+* `RootPairing.exists_mem_posRoots_ofIdx_eq` says every root reflection is the reflection in a
+  positive root, and `RootPairing.injOn_ofIdx_posRoots` says distinct positive roots of a reduced
+  pairing have distinct reflections. Hence `RootPairing.eq_of_ker_coroot'_le_of_mem_posRoots`
+  says that, in a finite reduced root pairing over a domain of characteristic zero, a positive root
+  is determined by its fixed hyperplane.
 
 ## Implementation notes
 
@@ -312,6 +318,43 @@ theorem eq_of_isPos_of_reflection_eq [P.IsReduced] {β γ : ι} (hβ : b.IsPos �
     have hneg : β = P.reflectionPerm γ γ := P.root.injective (by
       rw [heq, RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self])
     exact ((isPos_reflectionPerm_self_iff_mem_negRoots P b γ).mp (hneg ▸ hβ) hγ).elim
+
+/-- Every root reflection is the reflection in a positive root. -/
+theorem _root_.RootPairing.exists_mem_posRoots_ofIdx_eq (j : ι) :
+    ∃ i ∈ posRoots P b, RootPairing.weylGroup.ofIdx P i = RootPairing.weylGroup.ofIdx P j := by
+  by_cases hj : j ∈ posRoots P b
+  · exact ⟨j, hj, rfl⟩
+  · let := P.indexNeg
+    refine ⟨-j, ?_, RootPairing.weylGroup.ext fun x ↦ ?_⟩
+    · rw [RootPairing.indexNeg_neg, reflectionPerm_self_mem_posRoots_iff_mem_negRoots,
+        ← not_mem_posRoots_iff_mem_negRoots]
+      exact hj
+    · simp only [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
+        RootPairing.reflection_indexNeg_neg]
+
+/-- **Distinct positive roots have distinct reflections.** -/
+theorem _root_.RootPairing.injOn_ofIdx_posRoots [P.IsReduced] :
+    Set.InjOn (RootPairing.weylGroup.ofIdx P) (posRoots P b) := by
+  intro i hi j hj hij
+  have h : P.reflection i (P.root i) = P.reflection j (P.root i) := by
+    simpa using congrArg (· • P.root i) hij
+  refine eq_of_isPos_of_reflection_eq ((mem_posRoots P b i).1 hi) ((mem_posRoots P b j).1 hj) h ?_
+  rw [RootPairing.reflection_apply_self]
+  intro h
+  -- Applying the coroot of `i` to `-αᵢ = αᵢ` gives `-2 = 2`, impossible in characteristic zero.
+  have h2 := congrArg (P.coroot' i) h
+  simp only [map_neg, RootPairing.root_coroot'_eq_pairing, RootPairing.pairing_same] at h2
+  have h4 : ((4 : ℕ) : R) = 0 := by push_cast; linear_combination -h2
+  exact absurd (Nat.cast_eq_zero.1 h4) (by norm_num)
+
+/-- **A positive root is determined by its hyperplane.** In a finite reduced root pairing over a
+domain of characteristic zero, if the kernel of the coroot of a positive root `i` lies in the kernel
+of the coroot of a positive root `j`, then `i = j`. -/
+theorem _root_.RootPairing.eq_of_ker_coroot'_le_of_mem_posRoots [IsDomain R]
+    [Module.IsTorsionFree R M] [Finite ι] [P.IsReduced] {i j : ι} (hi : i ∈ posRoots P b)
+    (hj : j ∈ posRoots P b) (h : LinearMap.ker (P.coroot' i) ≤ LinearMap.ker (P.coroot' j)) :
+    i = j :=
+  P.injOn_ofIdx_posRoots b hi hj (RootPairing.weylGroup.ofIdx_eq_of_ker_coroot'_le P h)
 
 /-- The positive roots are closed under addition: a root that is the sum of two positive roots is
 positive, because heights add. -/
