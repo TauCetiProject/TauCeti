@@ -6,17 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Normed.Group.Real
+import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 import TauCeti.Order.Filter.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Global Hölder estimate for divergence-form equations on an interval
+# Hölder and classical regularity of divergence-form equations on an interval
 
 On a bounded interval `(x₀, x₁)` consider the one-dimensional divergence-form equation
 
@@ -39,6 +45,16 @@ measurability is used, and the exponent is the best possible: for `a = 1`, `f = 
 is a primitive of `-F` plus an affine function, which is in general no better than
 `(1 - 1 / s)`-Hölder.
 
+The first integral also transfers regularity of the coefficient and the data to `ū`, up to the
+classical `C^{2,α}` theory. If `a` is continuous, bounded and nowhere zero and `F` is continuous,
+then `ū' = (k - ∫ f - F) / a` holds at every point of `(x₀, x₁)`, so `ū` is `C¹` there. If moreover
+`a` and `F` are differentiable with bounded continuous derivatives, `f` is bounded and continuous,
+and `a ≥ λ > 0`, the quotient rule makes `ū'` differentiable: `ū` is `C²` on `(x₀, x₁)`, solves
+`-(a ū')' = f + F'` there pointwise, and has a bounded second derivative. If `a'`, `f` and `F'` are
+`α`-Hölder, `0 < α ≤ 1`, then so is `ū''`, uniformly on `(x₀, x₁)`. This is the one-dimensional
+`C^{2,α}` regularity of divergence-form equations, for which a Hölder continuous derivative of the
+coefficient is the natural hypothesis.
+
 ## Main declarations
 
 * `TauCeti.PDE.exists_ae_mul_gradient_add_eq_sub_intervalIntegral`: the first integral
@@ -52,6 +68,12 @@ is a primitive of `-F` plus an affine function, which is in general no better th
 * `TauCeti.PDE.exists_norm_intervalRepresentativeL_le_and_holderWith`: the global estimate
   `‖ū‖_∞ + [ū]_{1 - 1 / s} ≲ |ū x₀| + |ū x₁| + ‖f‖₁ + ‖F‖ₛ`, with a constant depending only on
   the interval, `λ`, `M` and `s`.
+* `TauCeti.PDE.exists_hasDerivAt_intervalRepresentativeL_of_forall_integral_eq`: for a continuous
+  coefficient, `ū` is differentiable on `(x₀, x₁)` with `ū' = (k - ∫ f - F) / a`.
+* `TauCeti.PDE.contDiffOn_intervalRepresentativeL_and_exists_abs_le_of_forall_integral_eq`: for a
+  differentiable coefficient, `ū` is a classical `C²` solution with bounded second derivative.
+* `TauCeti.PDE.contDiffOn_intervalRepresentativeL_and_exists_holderOnWith_of_forall_integral_eq`:
+  for Hölder `a'`, `f` and `F'`, the second derivative `ū''` is Hölder.
 
 ## References
 
@@ -507,5 +529,273 @@ theorem exists_norm_intervalRepresentativeL_le_and_holderWith (hx : x₀ < x₁)
   · rw [Real.coe_toNNReal _ (by positivity), hβ, Real.dist_eq, Subtype.dist_eq, Real.dist_eq,
       abs_sub_comm (y : ℝ), abs_sub_comm (ū y)]
     exact (hinc y z).trans (by gcongr)
+
+/-! ### Classical regularity -/
+
+section Classical
+
+open scoped Topology
+
+/-- A Hölder function on a bounded set is bounded there. -/
+private theorem exists_norm_le_of_holderOnWith {X Y : Type*} [PseudoMetricSpace X]
+    [SeminormedAddCommGroup Y] {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
+    (hs : Bornology.IsBounded s) : ∃ M : ℝ≥0, ∀ x ∈ s, ‖f x‖ ≤ M := by
+  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 (hf.isBounded_image hs)
+  exact ⟨M.toNNReal, fun x hx ↦ (hM _ ⟨x, hx, rfl⟩).trans (Real.le_coe_toNNReal M)⟩
+
+/-- Products of bounded Hölder functions on a set are bounded and Hölder. -/
+private theorem exists_holderOnWith_mul {X : Type*} [PseudoMetricSpace X] {s : Set X}
+    {α : ℝ≥0} {f g : X → ℝ}
+    (hf : ∃ K M : ℝ≥0, HolderOnWith K α f s ∧ ∀ x ∈ s, ‖f x‖ ≤ M)
+    (hg : ∃ K M : ℝ≥0, HolderOnWith K α g s ∧ ∀ x ∈ s, ‖g x‖ ≤ M) :
+    ∃ K M : ℝ≥0, HolderOnWith K α (fun x ↦ f x * g x) s ∧ ∀ x ∈ s, ‖f x * g x‖ ≤ M := by
+  obtain ⟨Kf, Mf, hf, hfM⟩ := hf
+  obtain ⟨Kg, Mg, hg, hgM⟩ := hg
+  refine ⟨_, Mf * Mg, (ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ hf hg hfM hgM,
+    fun x hx ↦ ?_⟩
+  rw [norm_mul, NNReal.coe_mul]
+  exact mul_le_mul (hfM x hx) (hgM x hx) (norm_nonneg _) Mf.coe_nonneg
+
+
+/-- **Differentiability of interval weak solutions.** Let `a` be continuous, bounded and nowhere
+zero on `(x₀, x₁)`, let `f` and `F` be integrable there, and let `F` be continuous. If
+`u ∈ W^{1,p}(x₀, x₁)` solves `-(a u')' = f + F'` in the sense of distributions, then its continuous
+representative `ū` is differentiable on `(x₀, x₁)`, with `ū' = (k - ∫_{x₀}^t f - F) / a` for a
+constant `k`. -/
+theorem exists_hasDerivAt_intervalRepresentativeL_of_forall_integral_eq (hx : x₀ < x₁) {M : ℝ}
+    (ha : ContinuousOn a (Ioo x₀ x₁)) (ha0 : ∀ t ∈ Ioo x₀ x₁, a t ≠ 0)
+    (haM : ∀ t ∈ Ioo x₀ x₁, |a t| ≤ M) (hf : IntegrableOn f (Ioo x₀ x₁))
+    (hF : IntegrableOn F (Ioo x₀ x₁)) (hFc : ContinuousOn F (Ioo x₀ x₁))
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ∃ k, ∀ t ∈ Ioo x₀ x₁,
+      HasDerivAt (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s))
+        ((k - (∫ s in x₀..t, f s) - F t) / a t) t := by
+  obtain ⟨k, hk⟩ := exists_ae_mul_gradient_add_eq_sub_intervalIntegral
+    (ha.aestronglyMeasurable measurableSet_Ioo) (ae_restrict_of_forall_mem measurableSet_Ioo haM)
+    hf hF hu
+  obtain ⟨q, hq_def⟩ : ∃ q : ℝ → ℝ, q = fun t ↦ (k - (∫ s in x₀..t, f s) - F t) / a t := ⟨_, rfl⟩
+  -- The weak gradient is the continuous function `q`.
+  have hgrad : ∀ᵐ t, t ∈ Ioo x₀ x₁ → W1p.gradient u t = q t := by
+    rw [← ae_restrict_iff' measurableSet_Ioo]
+    filter_upwards [hk, ae_restrict_mem measurableSet_Ioo] with t ht hmem
+    rw [hq_def, eq_div_iff (ha0 t hmem)]
+    linear_combination ht
+  have hΦ : ContinuousOn (fun t ↦ ∫ s in x₀..t, f s) (Ioo x₀ x₁) :=
+    (intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
+      (left_mem_Icc.2 hx.le)).mono Ioo_subset_Icc_self
+  have hqc : ContinuousOn q (Ioo x₀ x₁) :=
+    hq_def ▸ ((continuousOn_const.sub hΦ).sub hFc).div ha ha0
+  refine ⟨k, fun t ht ↦ ?_⟩
+  rw [show (k - (∫ s in x₀..t, f s) - F t) / a t = q t by rw [hq_def]]
+  have hsub : ∀ s ∈ Ioo x₀ x₁, uIoc t s ⊆ Ioo x₀ x₁ := fun s hs ↦
+    uIoc_subset_uIcc.trans (ordConnected_Ioo.uIcc_subset ht hs)
+  have hU : ∀ s ∈ Ioo x₀ x₁, W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s) =
+      W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t) + ∫ r in t..s, q r := by
+    intro s hs
+    have h := W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u
+      ⟨t, Ioo_subset_Icc_self ht⟩ ⟨s, Ioo_subset_Icc_self hs⟩
+    have hint : ∫ r in t..s, W1p.gradient u r = ∫ r in t..s, q r :=
+      intervalIntegral.integral_congr_ae (hgrad.mono fun r hr hr' ↦ hr (hsub s hs hr'))
+    rw [projIcc_of_mem hx.le (Ioo_subset_Icc_self hs),
+      projIcc_of_mem hx.le (Ioo_subset_Icc_self ht)]
+    linarith
+  have hderiv : HasDerivAt (fun s ↦ ∫ r in t..s, q r) (q t) t :=
+    intervalIntegral.integral_hasDerivAt_right IntervalIntegrable.refl
+      (hqc.stronglyMeasurableAtFilter isOpen_Ioo t ht)
+      (hqc.continuousAt (isOpen_Ioo.mem_nhds ht))
+  refine (hderiv.const_add (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t))
+    ).congr_of_eventuallyEq ?_
+  filter_upwards [isOpen_Ioo.mem_nhds ht] with s hs using hU s hs
+
+
+/-- A function with bounded derivative on `(x₀, x₁)` is bounded and Hölder there. -/
+private theorem exists_holderOnWith_of_hasDerivAt {α : ℝ≥0} (hα : α ≤ 1) {g g' : ℝ → ℝ}
+    (hg : ∀ t ∈ Ioo x₀ x₁, HasDerivAt g (g' t) t) {M : ℝ≥0} (hM : ∀ t ∈ Ioo x₀ x₁, ‖g' t‖ ≤ M) :
+    ∃ K N : ℝ≥0, HolderOnWith K α g (Ioo x₀ x₁) ∧ ∀ t ∈ Ioo x₀ x₁, ‖g t‖ ≤ N := by
+  have hL : LipschitzOnWith M g (Ioo x₀ x₁) :=
+    (convex_Ioo x₀ x₁).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
+      (fun t ht ↦ (hg t ht).hasDerivWithinAt) fun t ht ↦ by exact_mod_cast hM t ht
+  obtain ⟨N, hN⟩ := exists_norm_le_of_holderOnWith hL.holderOnWith (Metric.isBounded_Ioo x₀ x₁)
+  exact ⟨_, N, hL.holderOnWith_of_norm_le hN hα, hN⟩
+
+
+/-- A bounded continuous function on `(x₀, x₁)` is integrable there. -/
+private theorem integrableOn_Ioo_of_continuousOn {g : ℝ → ℝ} (hg : ContinuousOn g (Ioo x₀ x₁))
+    {M : ℝ≥0} (hM : ∀ t ∈ Ioo x₀ x₁, ‖g t‖ ≤ M) : IntegrableOn g (Ioo x₀ x₁) :=
+  IntegrableOn.of_bound measure_Ioo_lt_top (hg.aestronglyMeasurable measurableSet_Ioo) M
+    (ae_restrict_of_forall_mem measurableSet_Ioo hM)
+
+/-- The common step of the classical regularity theorems: under bounds on `a'`, `f` and `F'`, the
+derivative of `ū` is `N / a` for the flux `N = k - ∫ f - F`, and it is differentiable with the
+derivative obtained by the quotient rule. -/
+private theorem exists_hasDerivAt_deriv_intervalRepresentativeL (hx : x₀ < x₁) {lam : ℝ}
+    (hlam : 0 < lam) {a' F' : ℝ → ℝ} {Ma' Mf MF' : ℝ≥0}
+    (ha : ∀ t ∈ Ioo x₀ x₁, HasDerivAt a (a' t) t) (hlama : ∀ t ∈ Ioo x₀ x₁, lam ≤ a t)
+    (hMa' : ∀ t ∈ Ioo x₀ x₁, ‖a' t‖ ≤ Ma') (hfc : ContinuousOn f (Ioo x₀ x₁))
+    (hMf : ∀ t ∈ Ioo x₀ x₁, ‖f t‖ ≤ Mf) (hF : ∀ t ∈ Ioo x₀ x₁, HasDerivAt F (F' t) t)
+    (hMF' : ∀ t ∈ Ioo x₀ x₁, ‖F' t‖ ≤ MF')
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ∃ N : ℝ → ℝ, (∀ t ∈ Ioo x₀ x₁, HasDerivAt N (-f t - F' t) t) ∧
+      (∀ t ∈ Ioo x₀ x₁, HasDerivAt
+        (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) (N t / a t) t) ∧
+      ∀ t ∈ Ioo x₀ x₁, HasDerivAt
+        (deriv fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s))
+        (-((f t + F' t) * (a t)⁻¹ + N t * a' t * ((a t)⁻¹ * (a t)⁻¹))) t := by
+  have ha0 : ∀ t ∈ Ioo x₀ x₁, a t ≠ 0 := fun t ht ↦ (hlam.trans_le (hlama t ht)).ne'
+  obtain ⟨-, Ma, -, hMa⟩ := exists_holderOnWith_of_hasDerivAt le_rfl ha hMa'
+  obtain ⟨-, MF, -, hMF⟩ := exists_holderOnWith_of_hasDerivAt le_rfl hF hMF'
+  have hFc : ContinuousOn F (Ioo x₀ x₁) := fun t ht ↦ (hF t ht).continuousAt.continuousWithinAt
+  have hac : ContinuousOn a (Ioo x₀ x₁) := fun t ht ↦ (ha t ht).continuousAt.continuousWithinAt
+  have hfi := integrableOn_Ioo_of_continuousOn hfc hMf
+  obtain ⟨k, hk⟩ := exists_hasDerivAt_intervalRepresentativeL_of_forall_integral_eq hx hac ha0
+    (M := Ma) (fun t ht ↦ by simpa using hMa t ht) hfi (integrableOn_Ioo_of_continuousOn hFc hMF)
+    hFc hu
+  have hN : ∀ t ∈ Ioo x₀ x₁, HasDerivAt (fun t ↦ k - (∫ s in x₀..t, f s) - F t)
+      (-f t - F' t) t := fun t ht ↦ by
+    have hΦ : HasDerivAt (fun t ↦ ∫ s in x₀..t, f s) (f t) t :=
+      intervalIntegral.integral_hasDerivAt_right
+        (hfi.intervalIntegrable_of_mem_Icc (left_mem_Icc.2 hx.le) (Ioo_subset_Icc_self ht))
+        (hfc.stronglyMeasurableAtFilter isOpen_Ioo t ht)
+        (hfc.continuousAt (isOpen_Ioo.mem_nhds ht))
+    exact ((hasDerivAt_const t k).sub hΦ).sub (hF t ht) |>.congr_deriv (by ring)
+  refine ⟨_, hN, hk, fun t ht ↦ ?_⟩
+  have hev : (deriv fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) =ᶠ[𝓝 t]
+      fun s ↦ (k - (∫ r in x₀..s, f r) - F s) / a s := by
+    filter_upwards [isOpen_Ioo.mem_nhds ht] with s hs using (hk s hs).deriv
+  refine (((hN t ht).div (ha t ht) (ha0 t ht)).congr_deriv ?_).congr_of_eventuallyEq hev
+  field_simp [ha0 t ht]
+  ring
+
+/-- **Classical regularity of interval weak solutions.** Let `a` be differentiable on `(x₀, x₁)`
+with `a ≥ λ > 0` and a continuous bounded derivative `a'`, let `f` be continuous and bounded, and
+let `F` be differentiable with a continuous bounded derivative `F'`. If `u ∈ W^{1,p}(x₀, x₁)`
+solves `-(a u')' = f + F'` in the sense of distributions, then its continuous representative `ū`
+is `C²` on `(x₀, x₁)`, solves the equation there classically, and has a bounded second
+derivative. -/
+theorem contDiffOn_intervalRepresentativeL_and_exists_abs_le_of_forall_integral_eq
+    (hx : x₀ < x₁) {lam : ℝ} (hlam : 0 < lam) {a' F' : ℝ → ℝ} {Ma' Mf MF' : ℝ≥0}
+    (ha : ∀ t ∈ Ioo x₀ x₁, HasDerivAt a (a' t) t) (hlama : ∀ t ∈ Ioo x₀ x₁, lam ≤ a t)
+    (ha'c : ContinuousOn a' (Ioo x₀ x₁)) (hMa' : ∀ t ∈ Ioo x₀ x₁, |a' t| ≤ Ma')
+    (hfc : ContinuousOn f (Ioo x₀ x₁)) (hMf : ∀ t ∈ Ioo x₀ x₁, |f t| ≤ Mf)
+    (hF : ∀ t ∈ Ioo x₀ x₁, HasDerivAt F (F' t) t) (hF'c : ContinuousOn F' (Ioo x₀ x₁))
+    (hMF' : ∀ t ∈ Ioo x₀ x₁, |F' t| ≤ MF')
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ContDiffOn ℝ 2 (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s))
+        (Ioo x₀ x₁) ∧
+      (∀ t ∈ Ioo x₀ x₁, -deriv (fun s ↦ a s *
+        deriv (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) s) t =
+          f t + F' t) ∧
+      ∃ M : ℝ, ∀ t ∈ Ioo x₀ x₁,
+        |deriv (deriv fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) t| ≤ M := by
+  have ha0 : ∀ t ∈ Ioo x₀ x₁, a t ≠ 0 := fun t ht ↦ (hlam.trans_le (hlama t ht)).ne'
+  obtain ⟨N, hN, hUN, hdU⟩ := exists_hasDerivAt_deriv_intervalRepresentativeL hx hlam ha hlama
+    (fun t ht ↦ hMa' t ht) hfc (fun t ht ↦ hMf t ht) hF (fun t ht ↦ hMF' t ht) hu
+  obtain ⟨-, MN, -, hMN⟩ := exists_holderOnWith_of_hasDerivAt le_rfl hN (M := Mf + MF')
+    fun t ht ↦ by
+      rw [sub_eq_add_neg, ← neg_add, norm_neg]
+      exact (norm_add_le _ _).trans (by push_cast; exact add_le_add (hMf t ht) (hMF' t ht))
+  generalize (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) = U at hUN hdU ⊢
+  have hddU : ∀ t ∈ Ioo x₀ x₁, deriv (deriv U) t =
+      -((f t + F' t) * (a t)⁻¹ + N t * a' t * ((a t)⁻¹ * (a t)⁻¹)) := fun t ht ↦ (hdU t ht).deriv
+  refine ⟨?_, fun t ht ↦ ?_, (Mf + MF') / lam + MN * Ma' / lam ^ 2, fun t ht ↦ ?_⟩
+  · have hac : ContinuousOn a (Ioo x₀ x₁) := fun t ht ↦ (ha t ht).continuousAt.continuousWithinAt
+    have hNc : ContinuousOn N (Ioo x₀ x₁) := fun t ht ↦ (hN t ht).continuousAt.continuousWithinAt
+    have hinv : ContinuousOn (fun t ↦ (a t)⁻¹) (Ioo x₀ x₁) := hac.inv₀ ha0
+    have h3 : ContinuousOn (deriv (deriv U)) (Ioo x₀ x₁) :=
+      (((hfc.add hF'c).mul hinv).add ((hNc.mul ha'c).mul (hinv.mul hinv))).neg.congr hddU
+    rw [show (2 : WithTop ℕ∞) = 1 + 1 by norm_num, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioo]
+    refine ⟨fun t ht ↦ (hUN t ht).differentiableAt.differentiableWithinAt, by simp, ?_⟩
+    rw [show (1 : WithTop ℕ∞) = 0 + 1 by norm_num, contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioo]
+    exact ⟨fun t ht ↦ (hdU t ht).differentiableAt.differentiableWithinAt, by simp,
+      contDiffOn_zero.2 h3⟩
+  · -- The flux `a U'` is `N` near `t`.
+    have hflux : (fun s ↦ a s * deriv U s) =ᶠ[𝓝 t] N := by
+      filter_upwards [isOpen_Ioo.mem_nhds ht] with s hs
+      rw [(hUN s hs).deriv, mul_div_cancel₀ _ (ha0 s hs)]
+    rw [((hN t ht).congr_of_eventuallyEq hflux).deriv]
+    ring
+  · have hat : 0 < a t := hlam.trans_le (hlama t ht)
+    have hinv : |(a t)⁻¹| ≤ lam⁻¹ := by
+      rw [abs_inv, abs_of_pos hat]
+      exact inv_anti₀ hlam (hlama t ht)
+    have hfF : |f t + F' t| ≤ Mf + MF' :=
+      (abs_add_le _ _).trans (add_le_add (hMf t ht) (hMF' t ht))
+    have hNt : |N t| ≤ MN := by simpa using hMN t ht
+    rw [hddU t ht, abs_neg]
+    calc _ ≤ |f t + F' t| * |(a t)⁻¹| + |N t| * |a' t| * (|(a t)⁻¹| * |(a t)⁻¹|) := by
+          refine (abs_add_le _ _).trans ?_
+          simp only [abs_mul, le_refl]
+      _ ≤ (Mf + MF') * lam⁻¹ + MN * Ma' * (lam⁻¹ * lam⁻¹) := by
+          gcongr
+          exact hMa' t ht
+      _ = _ := by field_simp
+
+/-- **`C^{2,α}` regularity of interval weak solutions.** Let `0 < α ≤ 1`. Let `a` be
+differentiable on `(x₀, x₁)` with `a ≥ λ > 0` and an `α`-Hölder derivative `a'`, let `f` be
+`α`-Hölder, and let `F` be differentiable with an `α`-Hölder derivative `F'`. If
+`u ∈ W^{1,p}(x₀, x₁)` solves `-(a u')' = f + F'` in the sense of distributions, then its continuous
+representative `ū` is `C²` on `(x₀, x₁)`, solves the equation there classically, and `ū''` is
+`α`-Hölder on `(x₀, x₁)`. -/
+theorem contDiffOn_intervalRepresentativeL_and_exists_holderOnWith_of_forall_integral_eq
+    (hx : x₀ < x₁) {α : ℝ≥0} (hα₀ : 0 < α) (hα : α ≤ 1) {lam : ℝ} (hlam : 0 < lam)
+    {a' F' : ℝ → ℝ} {Ka Kf KF : ℝ≥0}
+    (ha : ∀ t ∈ Ioo x₀ x₁, HasDerivAt a (a' t) t) (hlama : ∀ t ∈ Ioo x₀ x₁, lam ≤ a t)
+    (ha' : HolderOnWith Ka α a' (Ioo x₀ x₁)) (hf : HolderOnWith Kf α f (Ioo x₀ x₁))
+    (hF : ∀ t ∈ Ioo x₀ x₁, HasDerivAt F (F' t) t) (hF' : HolderOnWith KF α F' (Ioo x₀ x₁))
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ContDiffOn ℝ 2 (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s))
+        (Ioo x₀ x₁) ∧
+      (∀ t ∈ Ioo x₀ x₁, -deriv (fun s ↦ a s *
+        deriv (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) s) t =
+          f t + F' t) ∧
+      ∃ K : ℝ≥0, HolderOnWith K α
+        (deriv (deriv fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)))
+        (Ioo x₀ x₁) := by
+  have hIoo := Metric.isBounded_Ioo x₀ x₁
+  obtain ⟨Ma', hMa'⟩ := exists_norm_le_of_holderOnWith ha' hIoo
+  obtain ⟨Mf, hMf⟩ := exists_norm_le_of_holderOnWith hf hIoo
+  obtain ⟨MF', hMF'⟩ := exists_norm_le_of_holderOnWith hF' hIoo
+  obtain ⟨h2, heq, -⟩ := contDiffOn_intervalRepresentativeL_and_exists_abs_le_of_forall_integral_eq
+    hx hlam ha hlama (ha'.continuousOn hα₀) (fun t ht ↦ hMa' t ht) (hf.continuousOn hα₀)
+    (fun t ht ↦ hMf t ht) hF (hF'.continuousOn hα₀) (fun t ht ↦ hMF' t ht) hu
+  obtain ⟨N, hN, -, hdU⟩ := exists_hasDerivAt_deriv_intervalRepresentativeL hx hlam ha hlama hMa'
+    (hf.continuousOn hα₀) hMf hF hMF' hu
+  refine ⟨h2, heq, ?_⟩
+  -- `ū''` is a combination of bounded Hölder functions.
+  have hb : ∃ K M : ℝ≥0, HolderOnWith K α (fun t ↦ (a t)⁻¹) (Ioo x₀ x₁) ∧
+      ∀ t ∈ Ioo x₀ x₁, ‖(a t)⁻¹‖ ≤ M := by
+    refine exists_holderOnWith_of_hasDerivAt hα
+      (fun t ht ↦ (ha t ht).inv (hlam.trans_le (hlama t ht)).ne')
+      (M := (Ma' / lam ^ 2).toNNReal) fun t ht ↦ (le_trans ?_ (Real.le_coe_toNNReal _))
+    rw [neg_div, norm_neg, norm_div, norm_pow, Real.norm_eq_abs (a t),
+      abs_of_pos (hlam.trans_le (hlama t ht))]
+    gcongr
+    · exact hMa' t ht
+    · exact hlama t ht
+  have hNH : ∃ K M : ℝ≥0, HolderOnWith K α N (Ioo x₀ x₁) ∧ ∀ t ∈ Ioo x₀ x₁, ‖N t‖ ≤ M :=
+    exists_holderOnWith_of_hasDerivAt hα hN (M := Mf + MF') fun t ht ↦ by
+      rw [sub_eq_add_neg, ← neg_add, norm_neg]
+      exact (norm_add_le _ _).trans (by push_cast; exact add_le_add (hMf t ht) (hMF' t ht))
+  have hfF : ∃ K M : ℝ≥0, HolderOnWith K α (fun t ↦ f t + F' t) (Ioo x₀ x₁) ∧
+      ∀ t ∈ Ioo x₀ x₁, ‖f t + F' t‖ ≤ M :=
+    ⟨_, Mf + MF', hf.add hF', fun t ht ↦ (norm_add_le _ _).trans
+      (by push_cast; exact add_le_add (hMf t ht) (hMF' t ht))⟩
+  obtain ⟨K₁, -, h₁, -⟩ := exists_holderOnWith_mul hfF hb
+  obtain ⟨K₂, -, h₂, -⟩ :=
+    exists_holderOnWith_mul (exists_holderOnWith_mul hNH ⟨Ka, Ma', ha', hMa'⟩)
+      (exists_holderOnWith_mul hb hb)
+  refine ⟨K₁ + K₂, fun s hs t ht ↦ ?_⟩
+  rw [(hdU s hs).deriv, (hdU t ht).deriv]
+  exact isometry_neg.comp_holderOnWith (h₁.add h₂) s hs t ht
+
+end Classical
 
 end TauCeti.PDE

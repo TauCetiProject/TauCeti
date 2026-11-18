@@ -6,10 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Convex.SchauderFixedPoint
+import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.DirichletProblem.Interval
+import TauCeti.Analysis.PDE.Regularity.Interval
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Quasilinear divergence-form equations on an interval
@@ -32,7 +38,18 @@ coefficient `a = A(·, ū)`, with `λ ≤ a ≤ M`, the global Hölder estimate
 `TauCeti.PDE.exists_norm_intervalRepresentativeL_le_and_holderWith` applies to it, with a constant
 that does not depend on `A` beyond `λ` and `M`.
 
-## The argument
+Weak solutions are classical as soon as `A` and the data are regular
+(`TauCeti.PDE.contDiffOn_intervalRepresentativeL_and_exists_holderOnWith_of_forall_setIntegral_eq`).
+If `0 < α ≤ 1`, `A` is differentiable on `(x₀, x₁) × ℝ` with `A ≥ λ` and a derivative that is
+`α`-Hölder on `(x₀, x₁) × [-R, R]` for every `R`, `f` is `α`-Hölder and `F` has an `α`-Hölder
+derivative `F'`, then every solution has `ū ∈ C²(x₀, x₁)` with `ū''` `α`-Hölder on `(x₀, x₁)`, and
+`-(A(x, ū) ū')' = f + F'` holds pointwise. The proof bootstraps through the linear theory of
+`TauCeti/Analysis/PDE/Regularity/Interval.lean` with the frozen coefficient `a = A(·, ū)`:
+continuity of `a` makes `ū` a `C¹` function with bounded derivative; then `a` is differentiable with
+`a' = ∂ₓA(·, ū) + ∂ᵤA(·, ū) ū'` continuous and bounded, so `ū` is `C²` with bounded `ū''`; then `ū'`
+is Lipschitz, `a'` is `α`-Hölder, and `ū''` is `α`-Hölder.
+
+## The argument for existence
 
 The proof is Schauder's compact-map argument. For a fixed measurable coefficient `a` with
 `λ ≤ a ≤ M`, the linear problem `-(a u')' = f + F'` with the same boundary values is solved
@@ -149,5 +166,212 @@ theorem exists_intervalTraceL_eq_and_forall_setIntegral_eq (hx : x₀ < x₁) (h
     ext y
     rw [hrep, ← DFunLike.congr_fun hū y, intervalDirichletSolution_apply]
   exact ⟨u, htr, by rwa [hū']⟩
+
+/-! ### Regularity -/
+
+section Regularity
+
+open Function
+open scoped NNReal
+
+/-- On a bounded rectangle where `A` is differentiable with a Hölder derivative, the derivative and
+`A` itself are bounded. -/
+private theorem exists_norm_fderiv_le_and_abs_le {α KA R : ℝ≥0}
+    (hA : DifferentiableOn ℝ (uncurry A) (Ioo x₀ x₁ ×ˢ univ))
+    (hKA : HolderOnWith KA α (fderiv ℝ (uncurry A)) (Ioo x₀ x₁ ×ˢ Icc (-(R : ℝ)) R)) :
+    ∃ MG MA : ℝ, (∀ q ∈ Ioo x₀ x₁ ×ˢ Icc (-(R : ℝ)) R,
+      HasFDerivAt (uncurry A) (fderiv ℝ (uncurry A) q) q) ∧
+      (∀ q ∈ Ioo x₀ x₁ ×ˢ Icc (-(R : ℝ)) R, ‖fderiv ℝ (uncurry A) q‖ ≤ MG) ∧
+      ∀ q ∈ Ioo x₀ x₁ ×ˢ Icc (-(R : ℝ)) R, |uncurry A q| ≤ MA := by
+  have hS : Bornology.IsBounded (Ioo x₀ x₁ ×ˢ Icc (-(R : ℝ)) R) :=
+    (isBounded_Ioo x₀ x₁).prod (isBounded_Icc _ _)
+  obtain ⟨MG, hMG⟩ := isBounded_iff_forall_norm_le.1 (hKA.isBounded_image hS)
+  have hdA : ∀ q ∈ Ioo x₀ x₁ ×ˢ Icc (-(R : ℝ)) R,
+      HasFDerivAt (uncurry A) (fderiv ℝ (uncurry A) q) q := fun q hq ↦
+    (hA.differentiableAt ((isOpen_Ioo.prod isOpen_univ).mem_nhds ⟨hq.1, trivial⟩)).hasFDerivAt
+  have hAL : LipschitzOnWith MG.toNNReal (uncurry A) (Ioo x₀ x₁ ×ˢ Icc (-(R : ℝ)) R) :=
+    ((convex_Ioo x₀ x₁).prod (convex_Icc _ _)).lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
+      (fun q hq ↦ (hdA q hq).hasFDerivWithinAt) fun q hq ↦ by
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
+        exact (hMG _ ⟨q, hq, rfl⟩).trans (Real.le_coe_toNNReal MG)
+  obtain ⟨MA, hMA⟩ := isBounded_iff_forall_norm_le.1 (hAL.holderOnWith.isBounded_image hS)
+  exact ⟨MG, MA, hdA, fun q hq ↦ hMG _ ⟨q, hq, rfl⟩, fun q hq ↦ hMA _ ⟨q, hq, rfl⟩⟩
+
+/-- A Hölder datum `f` and a differentiable `F` with Hölder derivative are bounded, continuous and
+integrable on `(x₀, x₁)`. -/
+private theorem exists_norm_le_and_integrableOn {α Kf KF : ℝ≥0} (hα₀ : 0 < α) {F' : ℝ → ℝ}
+    (hf : HolderOnWith Kf α f (Ioo x₀ x₁)) (hF : ∀ t ∈ Ioo x₀ x₁, HasDerivAt F (F' t) t)
+    (hF' : HolderOnWith KF α F' (Ioo x₀ x₁)) :
+    ∃ Mf MF' MF : ℝ, (∀ t ∈ Ioo x₀ x₁, ‖f t‖ ≤ Mf) ∧ (∀ t ∈ Ioo x₀ x₁, ‖F' t‖ ≤ MF') ∧
+      (∀ t ∈ Ioo x₀ x₁, ‖F t‖ ≤ MF) ∧ ContinuousOn F (Ioo x₀ x₁) ∧
+      IntegrableOn f (Ioo x₀ x₁) ∧ IntegrableOn F (Ioo x₀ x₁) := by
+  obtain ⟨Mf, hMf⟩ := isBounded_iff_forall_norm_le.1 (hf.isBounded_image (isBounded_Ioo x₀ x₁))
+  obtain ⟨MF', hMF'⟩ :=
+    isBounded_iff_forall_norm_le.1 (hF'.isBounded_image (isBounded_Ioo x₀ x₁))
+  have hFL : LipschitzOnWith MF'.toNNReal F (Ioo x₀ x₁) :=
+    (convex_Ioo x₀ x₁).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
+      (fun t ht ↦ (hF t ht).hasDerivWithinAt) fun t ht ↦ by
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
+        exact (hMF' _ ⟨t, ht, rfl⟩).trans (Real.le_coe_toNNReal MF')
+  obtain ⟨MF, hMF⟩ :=
+    isBounded_iff_forall_norm_le.1 (hFL.holderOnWith.isBounded_image (isBounded_Ioo x₀ x₁))
+  have hFc : ContinuousOn F (Ioo x₀ x₁) := fun t ht ↦ (hF t ht).continuousAt.continuousWithinAt
+  refine ⟨Mf, MF', MF, fun t ht ↦ hMf _ ⟨t, ht, rfl⟩, fun t ht ↦ hMF' _ ⟨t, ht, rfl⟩,
+    fun t ht ↦ hMF _ ⟨t, ht, rfl⟩, hFc, ?_, ?_⟩
+  · exact IntegrableOn.of_bound measure_Ioo_lt_top
+      ((hf.continuousOn hα₀).aestronglyMeasurable measurableSet_Ioo) Mf
+      (ae_restrict_of_forall_mem measurableSet_Ioo fun t ht ↦ hMf _ ⟨t, ht, rfl⟩)
+  · exact IntegrableOn.of_bound measure_Ioo_lt_top (hFc.aestronglyMeasurable measurableSet_Ioo) MF
+      (ae_restrict_of_forall_mem measurableSet_Ioo fun t ht ↦ hMF _ ⟨t, ht, rfl⟩)
+
+/-- The first step of the bootstrap: for a continuous bounded elliptic coefficient `a`, the
+continuous representative of a weak solution of `-(a u')' = f + F'` has a continuous bounded
+derivative on `(x₀, x₁)`. -/
+private theorem exists_hasDerivAt_and_norm_le_of_forall_integral_eq (hx : x₀ < x₁)
+    (hlam : 0 < lam) {a : ℝ → ℝ} {MA Mf MF : ℝ} (hac : ContinuousOn a (Ioo x₀ x₁))
+    (hla : ∀ t ∈ Ioo x₀ x₁, lam ≤ a t) (haM : ∀ t ∈ Ioo x₀ x₁, |a t| ≤ MA)
+    (hfi : IntegrableOn f (Ioo x₀ x₁)) (hMf : ∀ t ∈ Ioo x₀ x₁, ‖f t‖ ≤ Mf)
+    (hFc : ContinuousOn F (Ioo x₀ x₁)) (hFi : IntegrableOn F (Ioo x₀ x₁))
+    (hMF : ∀ t ∈ Ioo x₀ x₁, ‖F t‖ ≤ MF) {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p}
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, a t * W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ∃ q : ℝ → ℝ, ∃ Mq : ℝ, (∀ t ∈ Ioo x₀ x₁,
+      HasDerivAt (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) (q t) t) ∧
+      ContinuousOn q (Ioo x₀ x₁) ∧ ∀ t ∈ Ioo x₀ x₁, ‖q t‖ ≤ Mq := by
+  have ha0 : ∀ t ∈ Ioo x₀ x₁, a t ≠ 0 := fun t ht ↦ (hlam.trans_le (hla t ht)).ne'
+  obtain ⟨k, hk⟩ := exists_hasDerivAt_intervalRepresentativeL_of_forall_integral_eq hx hac ha0 haM
+    hfi hFi hFc hu
+  have hΦc : ContinuousOn (fun t ↦ ∫ s in x₀..t, f s) (Ioo x₀ x₁) :=
+    (intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hfi
+      (left_mem_Icc.2 hx.le)).mono Ioo_subset_Icc_self
+  refine ⟨_, (|k| + Mf * (x₁ - x₀) + MF) / lam, hk,
+    ((continuousOn_const.sub hΦc).sub hFc).div hac ha0, fun t ht ↦ ?_⟩
+  have hMf0 : 0 ≤ Mf := (norm_nonneg _).trans (hMf t ht)
+  have hMF0 : 0 ≤ MF := (norm_nonneg _).trans (hMF t ht)
+  have : 0 ≤ x₁ - x₀ := sub_nonneg.2 hx.le
+  have hΦ : ‖∫ s in x₀..t, f s‖ ≤ Mf * (x₁ - x₀) := by
+    refine (intervalIntegral.norm_integral_le_of_norm_le_const (a := x₀) (b := t) (C := Mf)
+      fun s hs ↦ ?_).trans ?_
+    · rw [uIoc_of_le ht.1.le] at hs
+      exact hMf s ⟨hs.1, hs.2.trans_lt ht.2⟩
+    · rw [abs_of_pos (sub_pos.2 ht.1)]
+      gcongr
+      exact ht.2.le
+  rw [norm_div, Real.norm_eq_abs, Real.norm_eq_abs]
+  refine div_le_div₀ (by positivity) ?_ hlam ((hla t ht).trans (le_abs_self _))
+  refine (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans (add_le_add le_rfl ?_)) ?_)
+  · simpa [Real.norm_eq_abs] using hΦ
+  · simpa [Real.norm_eq_abs] using hMF t ht
+
+/-- The second step of the bootstrap: a `C²` function on `(x₀, x₁)` with bounded second derivative
+has a Lipschitz derivative there. -/
+private theorem lipschitzOnWith_deriv_of_contDiffOn {U : ℝ → ℝ} {M : ℝ}
+    (hU : ContDiffOn ℝ 2 U (Ioo x₀ x₁)) (hM : ∀ t ∈ Ioo x₀ x₁, |deriv (deriv U) t| ≤ M) :
+    LipschitzOnWith M.toNNReal (deriv U) (Ioo x₀ x₁) := by
+  rw [show (2 : WithTop ℕ∞) = 1 + 1 by norm_num,
+    contDiffOn_succ_iff_deriv_of_isOpen isOpen_Ioo] at hU
+  exact (convex_Ioo x₀ x₁).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
+    (fun t ht ↦ ((hU.2.2.differentiableOn one_ne_zero).differentiableAt
+      (isOpen_Ioo.mem_nhds ht)).hasDerivAt.hasDerivWithinAt) fun t ht ↦ by
+        rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs]
+        exact (hM t ht).trans (Real.le_coe_toNNReal _)
+
+/-- The third step of the bootstrap: if the derivative `G` of `A` is `α`-Hölder and bounded on a
+set containing the graph of a Lipschitz `U`, and `q` is Lipschitz and bounded, then
+`t ↦ G (t, U t) (1, q t)` is `α`-Hölder. -/
+private theorem exists_holderOnWith_apply_prodMk {α KA KU Kq : ℝ≥0} (hα : α ≤ 1)
+    {S : Set (ℝ × ℝ)} {G : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ} {U q : ℝ → ℝ} {MG Mq : ℝ}
+    (hG : HolderOnWith KA α G S) (hGM : ∀ z ∈ S, ‖G z‖ ≤ MG)
+    (hUS : ∀ t ∈ Ioo x₀ x₁, (t, U t) ∈ S) (hU : LipschitzOnWith KU U (Ioo x₀ x₁))
+    (hq : LipschitzOnWith Kq q (Ioo x₀ x₁)) (hqM : ∀ t ∈ Ioo x₀ x₁, ‖q t‖ ≤ Mq) :
+    ∃ K : ℝ≥0, HolderOnWith K α (fun t ↦ G (t, U t) ((1 : ℝ), q t)) (Ioo x₀ x₁) := by
+  have hGU : HolderOnWith (KA * (max 1 KU) ^ (α : ℝ)) α (fun t ↦ G (t, U t)) (Ioo x₀ x₁) := by
+    simpa only [mul_one, Function.comp_def, id] using hG.comp
+      ((LipschitzWith.id.lipschitzOnWith (s := Ioo x₀ x₁)).prodMk hU).holderOnWith hUS
+  have hvM : ∀ t ∈ Ioo x₀ x₁, ‖((1 : ℝ), q t)‖ ≤ (max 1 Mq).toNNReal := fun t ht ↦ by
+    rw [Prod.norm_mk, norm_one]
+    exact (max_le_max le_rfl (hqM t ht)).trans (Real.le_coe_toNNReal _)
+  have hv := ((LipschitzWith.const (1 : ℝ)).lipschitzOnWith (s := Ioo x₀ x₁)).prodMk
+    hq |>.holderOnWith_of_norm_le hvM hα
+  exact ⟨_, (ContinuousLinearMap.id ℝ (ℝ × ℝ →L[ℝ] ℝ)).holderOnWith_comp₂ hGU hv
+    (Mf := MG.toNNReal) (fun t ht ↦ (hGM _ (hUS t ht)).trans (Real.le_coe_toNNReal _)) hvM⟩
+
+/-- **`C^{2,α}` regularity for the quasilinear problem on an interval.** Let `0 < α ≤ 1` and
+`λ > 0`. Let `A` be differentiable on `(x₀, x₁) × ℝ` with `A ≥ λ` there, and let its derivative
+be `α`-Hölder on `(x₀, x₁) × [-R, R]` for every `R`. Let `f` be `α`-Hölder on `(x₀, x₁)`, and let
+`F` be differentiable there with an `α`-Hölder derivative `F'`. If `u ∈ W^{1,p}(x₀, x₁)` solves
+`-(A(x, u) u')' = f + F'` weakly, then its continuous representative `ū` is `C²` on `(x₀, x₁)`,
+solves the equation there classically, and `ū''` is `α`-Hölder on `(x₀, x₁)`. -/
+theorem contDiffOn_intervalRepresentativeL_and_exists_holderOnWith_of_forall_setIntegral_eq
+    (hx : x₀ < x₁) {α : ℝ≥0} (hα₀ : 0 < α) (hα : α ≤ 1) (hlam : 0 < lam)
+    (hA : DifferentiableOn ℝ (uncurry A) (Ioo x₀ x₁ ×ˢ univ))
+    (hAlam : ∀ t ∈ Ioo x₀ x₁, ∀ y, lam ≤ A t y)
+    (hA' : ∀ R, ∃ K : ℝ≥0, HolderOnWith K α (fderiv ℝ (uncurry A)) (Ioo x₀ x₁ ×ˢ Icc (-R) R))
+    {F' : ℝ → ℝ} {Kf KF : ℝ≥0} (hf : HolderOnWith Kf α f (Ioo x₀ x₁))
+    (hF : ∀ t ∈ Ioo x₀ x₁, HasDerivAt F (F' t) t) (hF' : HolderOnWith KF α F' (Ioo x₀ x₁))
+    {u : W1p volume ⟨Ioo x₀ x₁, isOpen_Ioo⟩ p}
+    (hu : ∀ φ : 𝓓(⟨Ioo x₀ x₁, isOpen_Ioo⟩, ℝ),
+      ∫ t in Ioo x₀ x₁, A t (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le t)) *
+          W1p.gradient u t * deriv φ t =
+        (∫ t in Ioo x₀ x₁, f t * φ t) - ∫ t in Ioo x₀ x₁, F t * deriv φ t) :
+    ContDiffOn ℝ 2 (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s))
+        (Ioo x₀ x₁) ∧
+      (∀ t ∈ Ioo x₀ x₁, -deriv (fun s ↦
+        A s (W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) *
+          deriv (fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)) s) t =
+          f t + F' t) ∧
+      ∃ K : ℝ≥0, HolderOnWith K α
+        (deriv (deriv fun s ↦ W1p.intervalRepresentativeL hx u (projIcc x₀ x₁ hx.le s)))
+        (Ioo x₀ x₁) := by
+  set ū := W1p.intervalRepresentativeL hx u
+  have hUR : ∀ s, ū (projIcc x₀ x₁ hx.le s) ∈ Icc (-(‖ū‖₊ : ℝ)) ‖ū‖₊ := fun s ↦
+    abs_le.1 (by simpa [Real.norm_eq_abs] using ū.norm_coe_le_norm (projIcc x₀ x₁ hx.le s))
+  have hUc : Continuous fun s ↦ ū (projIcc x₀ x₁ hx.le s) :=
+    W1p.continuous_intervalRepresentativeL_projIcc hx u
+  -- Bounds on the rectangle `S = (x₀, x₁) × [-R, R]` containing the graph of `ū`.
+  obtain ⟨KA, hKA⟩ := hA' ‖ū‖₊
+  obtain ⟨MG, MA, hdA, hGM, hAM⟩ := exists_norm_fderiv_le_and_abs_le hA hKA
+  have hγS : ∀ t ∈ Ioo x₀ x₁, (t, ū (projIcc x₀ x₁ hx.le t)) ∈ Ioo x₀ x₁ ×ˢ
+      Icc (-(‖ū‖₊ : ℝ)) ‖ū‖₊ := fun t ht ↦ ⟨ht, hUR t⟩
+  obtain ⟨Mf, MF', MF, hMf, hMF', hMF, hFc, hfi, hFi⟩ :=
+    exists_norm_le_and_integrableOn hα₀ hf hF hF'
+  -- First pass: `ū` is `C¹` with a continuous bounded derivative `q`.
+  obtain ⟨q, Mq, hUq, hqc, hqM⟩ := exists_hasDerivAt_and_norm_le_of_forall_integral_eq hx hlam
+    (hA.continuousOn.comp (continuous_id.prodMk hUc).continuousOn fun t ht ↦ ⟨ht, trivial⟩)
+    (fun t ht ↦ hAlam t ht _) (fun t ht ↦ hAM _ (hγS t ht)) hfi hMf hFc hFi hMF hu
+  -- The derivative of the coefficient, `a' = ∂ₜA + ∂ᵤA ū'`, is continuous and bounded.
+  set G := fderiv ℝ (uncurry A)
+  have ha : ∀ t ∈ Ioo x₀ x₁, HasDerivAt (fun s ↦ A s (ū (projIcc x₀ x₁ hx.le s)))
+      (G (t, ū (projIcc x₀ x₁ hx.le t)) ((1 : ℝ), q t)) t := fun t ht ↦
+    (hdA _ (hγS t ht)).comp_hasDerivAt (f := fun s ↦ (s, ū (projIcc x₀ x₁ hx.le s))) t
+      ((hasDerivAt_id' t).prodMk (hUq t ht))
+  have ha'M : ∀ t ∈ Ioo x₀ x₁,
+      |G (t, ū (projIcc x₀ x₁ hx.le t)) ((1 : ℝ), q t)| ≤ (MG * max 1 Mq).toNNReal := fun t ht ↦
+    (((G _).le_opNorm _).trans (mul_le_mul (hGM _ (hγS t ht))
+      (by rw [Prod.norm_mk, norm_one]; exact max_le_max le_rfl (hqM t ht)) (norm_nonneg _)
+      ((norm_nonneg _).trans (hGM _ (hγS t ht))))).trans (Real.le_coe_toNNReal _)
+  -- Second pass: `ū` is `C²` with bounded `ū''`, so `ū' = q` is Lipschitz.
+  obtain ⟨h2, -, Mdd, hMdd⟩ :=
+    contDiffOn_intervalRepresentativeL_and_exists_abs_le_of_forall_integral_eq hx hlam ha
+    (fun t ht ↦ hAlam t ht _)
+    (((hKA.continuousOn hα₀).comp (continuous_id.prodMk hUc).continuousOn hγS).clm_apply
+      (continuousOn_const.prodMk hqc)) ha'M (hf.continuousOn hα₀)
+    (Mf := Mf.toNNReal) (fun t ht ↦ (hMf t ht).trans (Real.le_coe_toNNReal _)) hF
+    (hF'.continuousOn hα₀) (MF' := MF'.toNNReal)
+    (fun t ht ↦ (hMF' t ht).trans (Real.le_coe_toNNReal _)) hu
+  have hqL : LipschitzOnWith Mdd.toNNReal q (Ioo x₀ x₁) := fun s hs t ht ↦ by
+    rw [← (hUq s hs).deriv, ← (hUq t ht).deriv]
+    exact lipschitzOnWith_deriv_of_contDiffOn h2 hMdd hs ht
+  -- Third pass: `a'` is `α`-Hölder, so `ū''` is `α`-Hölder.
+  obtain ⟨K, ha'H⟩ := exists_holderOnWith_apply_prodMk hα hKA hGM hγS
+    ((convex_Ioo x₀ x₁).lipschitzOnWith_of_nnNorm_hasDerivWithin_le
+      (fun t ht ↦ (hUq t ht).hasDerivWithinAt) (C := Mq.toNNReal) fun t ht ↦ by
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
+        exact (hqM t ht).trans (Real.le_coe_toNNReal _)) hqL hqM
+  exact contDiffOn_intervalRepresentativeL_and_exists_holderOnWith_of_forall_integral_eq hx hα₀ hα
+    hlam ha (fun t ht ↦ hAlam t ht _) ha'H hf hF hF' hu
+
+end Regularity
 
 end TauCeti.PDE
