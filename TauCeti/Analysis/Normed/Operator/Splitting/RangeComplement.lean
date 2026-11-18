@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.Complement
+public import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # Complements of the range cut out by a kernel
@@ -37,12 +38,12 @@ spaces every topological complement `W` of the range of an injective `L` arises 
 projection onto the range along `W` (`ContinuousLinearMap.isInvertible_projectionOntoL_comp`).
 
 This is the leading step of a Lyapunov–Schmidt reduction: an equation `L f + S = 0` with `L` not
-onto is solved modulo the fixed complement `W`, leaving the finite remainder `Π S` in `W`. Neither
-`Π` nor `f` depends on the auxiliary map `P` once its kernel `W` is fixed. For a family of
-operators `L x` over a parameter space, invertibility of `P ∘ L x` is an open condition
+onto is solved modulo the fixed complement `W`, leaving the remainder `Π S` in `W`. Neither `Π`
+nor `f` depends on the auxiliary map `P` once its kernel `W` is fixed. For a family of operators
+`L x` over a parameter space, invertibility of `P ∘ L x` is an open condition
 (`ContinuousLinearMap.isOpen_setOf_isInvertible_comp`), and on it `K` and `Π` have the regularity
-of the family (`ContDiffAt.leftInverseAlong`,
-`ContDiffAt.id_sub_comp_leftInverseAlong`).
+of the family (`ContinuousAt.leftInverseAlong`, `ContinuousAt.id_sub_comp_leftInverseAlong`,
+`ContDiffAt.leftInverseAlong`, `ContDiffAt.id_sub_comp_leftInverseAlong`).
 
 ## Main declarations
 
@@ -57,7 +58,8 @@ of the family (`ContDiffAt.leftInverseAlong`,
   projection onto `ker P` along the range of `L`.
 * `ContinuousLinearMap.apply_add_mem_ker_iff`: `L f + S ∈ ker P` exactly for
   `f = -(P ∘ L)⁻¹ P S`.
-* `ContDiffAt.leftInverseAlong`, `ContDiffAt.id_sub_comp_leftInverseAlong`: regularity in a
+* `ContinuousAt.leftInverseAlong`, `ContinuousAt.id_sub_comp_leftInverseAlong`,
+  `ContDiffAt.leftInverseAlong`, `ContDiffAt.id_sub_comp_leftInverseAlong`: regularity in a
   parameter.
 
 ## References
@@ -70,42 +72,6 @@ of the family (`ContDiffAt.leftInverseAlong`,
 public section
 
 open Function Topology
-
-namespace LinearMap
-
-variable {R E F Y : Type*} [Ring R] [AddCommGroup E] [Module R E] [AddCommGroup F] [Module R F]
-  [AddCommGroup Y] [Module R Y]
-
-/-- A composite `P ∘ L` is bijective exactly when `L` is injective, `P` is onto, and the kernel of
-`P` is complementary to the range of `L`. -/
-theorem bijective_comp_iff {L : E →ₗ[R] F} {P : F →ₗ[R] Y} :
-    Bijective (P ∘ₗ L) ↔ Injective L ∧ IsCompl (range L) (ker P) ∧ Surjective P := by
-  constructor
-  · rintro ⟨hinj, hsurj⟩
-    refine ⟨fun x y hxy ↦ hinj (by simp [hxy]), ⟨?_, ?_⟩, fun y ↦ ?_⟩
-    · rw [Submodule.disjoint_def]
-      rintro _ ⟨x, rfl⟩ hx
-      rw [mem_ker] at hx
-      rw [hinj (show (P ∘ₗ L) x = (P ∘ₗ L) 0 by simpa using hx), map_zero]
-    · rw [codisjoint_iff, eq_top_iff]
-      intro f _
-      obtain ⟨x, hx⟩ := hsurj (P f)
-      refine Submodule.mem_sup.mpr ⟨L x, ⟨x, rfl⟩, f - L x, ?_, add_sub_cancel _ _⟩
-      simpa [sub_eq_zero] using hx.symm
-    · obtain ⟨x, hx⟩ := hsurj y
-      exact ⟨L x, hx⟩
-  · rintro ⟨hL, hc, hP⟩
-    refine ⟨fun x y hxy ↦ hL ?_, fun y ↦ ?_⟩
-    · have hmem : L (x - y) ∈ range L ⊓ ker P :=
-        ⟨⟨x - y, rfl⟩, by simpa [mem_ker, sub_eq_zero] using hxy⟩
-      rw [hc.inf_eq_bot, Submodule.mem_bot, map_sub, sub_eq_zero] at hmem
-      exact hmem
-    · obtain ⟨f, rfl⟩ := hP y
-      have hf : f ∈ range L ⊔ ker P := hc.sup_eq_top ▸ Submodule.mem_top
-      obtain ⟨_, ⟨x, rfl⟩, w, hw, rfl⟩ := Submodule.mem_sup.mp hf
-      exact ⟨x, by simp [mem_ker.mp hw]⟩
-
-end LinearMap
 
 namespace ContinuousLinearMap
 
@@ -144,15 +110,13 @@ theorem leftInverseAlong_comp (h : (P ∘L L).IsInvertible) :
 @[simp]
 theorem leftInverseAlong_apply_apply (h : (P ∘L L).IsInvertible) (x : E) :
     leftInverseAlong L P (L x) = x := by
-  rw [leftInverseAlong_apply]
-  exact h.inverse_apply_self x
+  simpa [leftInverseAlong_apply] using h.inverse_apply_self x
 
 /-- The left inverse along `ker P` does not change the value of `P` after applying `L`. -/
 @[simp]
 theorem apply_apply_leftInverseAlong (h : (P ∘L L).IsInvertible) (f : F) :
     P (L (leftInverseAlong L P f)) = P f := by
-  rw [leftInverseAlong_apply]
-  exact h.self_apply_inverse (P f)
+  simpa [leftInverseAlong_apply] using h.self_apply_inverse (P f)
 
 /-- The kernel of the left inverse along `ker P` is exactly `ker P`. -/
 @[simp]
@@ -190,7 +154,8 @@ theorem isTopCompl_range_ker_of_isInvertible_comp (h : (P ∘L L).IsInvertible) 
   have hrange : (L ∘L (P ∘L L).inverse).range = L.range := by
     simpa using LinearMap.range_comp_of_range_eq_top (L : E →ₗ[R] F)
       (LinearMap.range_eq_top.mpr h.inverse.surjective)
-  have hleft : LeftInverse P (L ∘L (P ∘L L).inverse) := h.self_apply_inverse
+  have hleft : LeftInverse P (L ∘L (P ∘L L).inverse) := fun y ↦ by
+    simpa using h.self_apply_inverse y
   exact hrange ▸ isTopCompl_range_ker_of_leftInverse _ _ hleft
 
 /-- As a linear map, the left inverse along `ker P` is Mathlib's left inverse
@@ -276,7 +241,7 @@ theorem isInvertible_comp_iff [CompleteSpace Y] :
   have hb : Bijective (P ∘L L) :=
     LinearMap.bijective_comp_iff (L := (L : E →ₗ[𝕜] F)).mpr hc
   exact ⟨.ofBijective (P ∘L L) (LinearMap.ker_eq_bot.mpr hb.injective)
-    (LinearMap.range_eq_top.mpr hb.surjective), rfl⟩
+    (LinearMap.range_eq_top.mpr hb.surjective), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩
 
 /-- Every topological complement `W` of the range of an injective operator `L` between Banach
 spaces is the kernel of an auxiliary map `P` with `P ∘ L` invertible, namely the projection onto
@@ -335,6 +300,16 @@ theorem ContDiffAt.leftInverseAlong [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     (hL : ContDiffAt 𝕜 n L x) (hP : ContDiffAt 𝕜 n P x) (h : (P x ∘L L x).IsInvertible) :
     ContDiffAt 𝕜 n (fun y ↦ ContinuousLinearMap.leftInverseAlong (L y) (P y)) x :=
   (contDiffAt_leftInverseAlong h).comp (f := fun y ↦ (L y, P y)) x (hL.prodMk hP)
+
+/-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` are
+continuous at every parameter where both families are continuous and `P x ∘ L x` is invertible. -/
+theorem ContinuousAt.id_sub_comp_leftInverseAlong [TopologicalSpace X] {L : X → E →L[𝕜] F}
+    {P : X → F →L[𝕜] Y} {x : X} (hL : ContinuousAt L x) (hP : ContinuousAt P x)
+    (h : (P x ∘L L x).IsInvertible) :
+    ContinuousAt
+      (fun y ↦ ContinuousLinearMap.id 𝕜 F - L y ∘L
+        ContinuousLinearMap.leftInverseAlong (L y) (P y)) x :=
+  continuousAt_const.sub (hL.clm_comp (hL.leftInverseAlong hP h))
 
 /-- The projections `1 - L x (P x ∘ L x)⁻¹ P x` onto `ker (P x)` along the range of `L x` have
 the regularity of the two families at every parameter where `P x ∘ L x` is invertible. -/
