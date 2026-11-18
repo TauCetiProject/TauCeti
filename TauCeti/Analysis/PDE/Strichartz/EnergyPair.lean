@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.PhaseGroup
 import TauCeti.Analysis.PDE.Strichartz.Retarded
+import TauCeti.MeasureTheory.Integral.ChristKiselev
 
 /-!
 # The energy pair in the Strichartz estimates for a phase group
@@ -37,6 +38,7 @@ with `1 ≤ p < ∞`, in either order:
 
 * `TauCeti.enorm_integral_setIntegral_Iio_inner_phasePropagator_sub_le_eLpNorm_one`: the retarded
   estimate with forcing in `L¹_t L²_x`, in weak form.
+* `TauCeti.inv_one_sub_two_rpow_neg_toReal_inv_ne_top`: its constant `(1 - 2^{-1/p})⁻¹` is finite.
 * `TauCeti.enorm_setIntegral_phasePropagator_sub_le`: the `L^∞_t L²_x` bound for forcing in the
   dual space of the second pair.
 
@@ -60,6 +62,17 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
   {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V] {ω : C(E, ℝ)}
   {a p C : ℝ≥0∞}
+
+/-- The constant `(1 - 2^{-1/p})⁻¹` of the retarded estimate with forcing in the energy space
+(`TauCeti.enorm_integral_setIntegral_Iio_inner_phasePropagator_sub_le_eLpNorm_one`) is finite for
+`0 < p < ∞`: it is the Christ–Kiselev constant for the time exponents `p` and `1`. -/
+theorem inv_one_sub_two_rpow_neg_toReal_inv_ne_top (hp : p ≠ 0) (hp_top : p ≠ ∞) :
+    (1 - 2 ^ (-p⁻¹.toReal))⁻¹ ≠ ∞ := by
+  have hp1 : 1 < p⁻¹ + 1⁻¹ := by
+    rw [inv_one, add_comm]
+    exact ENNReal.lt_add_right ENNReal.one_ne_top (ENNReal.inv_ne_zero.2 hp_top)
+  simpa only [inv_one, ENNReal.add_sub_cancel_right ENNReal.one_ne_top] using
+    inv_one_sub_two_rpow_neg_ne_top hp le_rfl hp1
 
 /-- **The retarded estimate with forcing in the energy space**, in weak form: if `S(t) =
 exp(itω(D))` satisfies the dual estimate `‖∫ S(-s) G(s) ds‖₂ ≤ C ‖G‖_{L^p_t L^a_x}` with
