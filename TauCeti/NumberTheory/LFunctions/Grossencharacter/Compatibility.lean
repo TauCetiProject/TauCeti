@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Basic
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Ideal
 
 /-!
 # Hecke's unit relation for a presentation
@@ -69,13 +69,12 @@ namespace Grossencharacter
 /-- On the integral ideals prime to `𝔪`, the ideal character of the presented Hecke character is
 the unitary weight times the norm to the ideal-side shift: both are multiplicative, and at a prime
 both are the local component at a uniformizer (`toHeckeCharacter_primeIdele`). -/
-private theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
-    (h𝔣 : (⟨χ.toHeckeCharacter.finiteConductor, χ.toHeckeCharacter.finiteConductor_ne_bot, ∅⟩ :
-      Modulus K) ∣ 𝔪) (J : integralIdealsPrimeTo 𝔪) :
-    (χ.toHeckeCharacter.idealCharacter
-        (NumberFieldArithmetic.integralIdealsAwayHom K _ (integralIdealsPrimeToInclusion h𝔣 J)) :
-        ℂ) =
+theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
+    (J : integralIdealsPrimeTo 𝔪) :
+    (χ.toHeckeCharacter.idealCharacter (NumberFieldArithmetic.integralIdealsAwayHom K _
+        (integralIdealsPrimeToInclusion χ.mk_finiteConductor_dvd J)) : ℂ) =
       χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ) := by
+  have h𝔣 := χ.mk_finiteConductor_dvd
   let g : integralIdealsPrimeTo 𝔪 →* ℂ :=
     { toFun J := χ.unitaryWeight.1 J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ)
       map_one' := by simp
@@ -110,29 +109,20 @@ theorem compatibility (χ : Grossencharacter K 𝔪) (x : Kˣ) (hx : IsCongrOne 
       ∏ τ : K →+* ℂ, τ (x : K) ^ χ.infinityType τ = 1 := by
   set ψ := χ.toHeckeCharacter
   set 𝔣 : Modulus K := ⟨ψ.finiteConductor, ψ.finiteConductor_ne_bot, ∅⟩
-  have h𝔣 : 𝔣 ∣ 𝔪 :=
-    Modulus.dvd_iff.mpr ⟨χ.finiteConductor_dvd_finitePart, Finset.empty_subset _⟩
+  have h𝔣 : 𝔣 ∣ 𝔪 := χ.mk_finiteConductor_dvd
   have hx𝔣 : IsCongrOne 𝔣 x := hx.mono h𝔣
   -- The fractional ideal of `x` is the integral ideal `(a)`, prime to `𝔪` and to `𝔣`.
-  have hspan : ((Ideal.span {a} : Ideal (𝓞 K)) : FractionalIdeal (𝓞 K)⁰ K) =
-      ((toPrincipalIdeal (𝓞 K) K x : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) := by
-    rw [coe_toPrincipalIdeal, FractionalIdeal.coeIdeal_span_singleton, ha]
-  have hne : Ideal.span {a} ≠ ⊥ := by
-    rw [Ne, Ideal.span_singleton_eq_bot]
-    rintro rfl
-    exact x.ne_zero (by rw [← ha, map_zero])
-  have hmem {𝔫 : Modulus K} (h𝔫 : IsCongrOne 𝔫 x) :
-      Ideal.span {a} ∈ NumberFieldArithmetic.integralIdealsAway 𝔫.support :=
-    NumberFieldArithmetic.mem_integralIdealsAway_iff_count_eq_zero.mpr ⟨hne, fun v hv ↦ by
-      rw [hspan]
-      exact NumberFieldArithmetic.mem_idealsAway_iff.mp h𝔫.toPrincipalIdeal_mem_idealsPrimeTo v hv⟩
+  have hmem : Ideal.span {a} ∈ integralIdealsPrimeTo 𝔪 :=
+    Modulus.mem_integralIdealsPrimeTo.mpr (Modulus.isCoprimeTo_span_singleton_iff.mpr
+      ⟨⟨x, congruenceSubgroup_le_primeToSubgroup 𝔪 (mem_congruenceSubgroup.mpr hx)⟩, ha.symm⟩)
   have hideal : NumberFieldArithmetic.integralIdealsAwayHom K 𝔣.support
-        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem hx⟩) =
+        (integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem⟩) =
       ⟨toPrincipalIdeal (𝓞 K) K x, hx𝔣.toPrincipalIdeal_mem_idealsPrimeTo⟩ :=
-    Subtype.ext (Units.ext (by
-      rw [NumberFieldArithmetic.coe_integralIdealsAwayHom, coe_integralIdealsPrimeToInclusion,
-        hspan]))
-  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ h𝔣 ⟨_, hmem hx⟩
+    (NumberFieldArithmetic.integralIdealsAwayHom_eq_principalIdealAway
+      (coe_integralIdealsPrimeToInclusion h𝔣 ⟨_, hmem⟩)
+      (x := ⟨x, congruenceSubgroup_le_primeToSubgroup 𝔣 (mem_congruenceSubgroup.mpr hx𝔣)⟩)
+      ha).trans (Subtype.ext (NumberFieldArithmetic.coe_principalIdealAway _ _))
+  have hfinite := coe_idealCharacter_integralIdealsAwayHom χ ⟨_, hmem⟩
   -- The ideal character of `(x)` is the inverse of the archimedean monomial: at a real place
   -- where the parities differ, the place divides `𝔪`, where `x` is positive.
   have hpos (w : {w : InfinitePlace K // w.IsReal})
