@@ -9,6 +9,7 @@ public import TauCeti.Probability.Moments.HansonWright
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.Analysis.Matrix.SampleSecondMoment
 import TauCeti.Analysis.Matrix.MeasurableSpace
+import TauCeti.Analysis.Matrix.SampleCovariance.Measurable
 import TauCeti.Probability.Independence.Matrix
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 
@@ -120,10 +121,8 @@ theorem measureReal_norm_star_dotProduct_sampleCovariance_resolvent_mulVec_sub_t
       2 * exp (-(1 / 150528) *
         min ((Fintype.card n : ℝ) ^ 2 * t ^ 2 * |z.im| ^ 2 /
           ((K : ℝ) ^ 2 * Fintype.card p)) ((Fintype.card n : ℝ) * t * |z.im| / K)) := by
-  have hcov : Measurable (sampleCovariance : Matrix p n ℂ → Matrix p p ℂ) := by
-    rw [funext sampleCovariance_def]
-    exact (TauCeti.measurable_matrix_mul_conjTranspose (R := ℂ) (m := p) (n := n)
-      continuous_star.measurable).const_smul (1 / (Fintype.card n : ℝ))
+  have hcov : Measurable (sampleCovariance : Matrix p n ℂ → Matrix p p ℂ) :=
+    measurable_sampleCovariance
   have hup : Measurable (fun M : Matrix p n ℂ ↦ M.updateCol k 0) := by
     apply Measurable.of_eval_matrix
     intro i j
