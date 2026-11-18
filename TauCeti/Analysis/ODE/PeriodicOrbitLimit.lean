@@ -19,12 +19,14 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Strip
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.Connected.MetricSpace
 import TauCeti.Topology.Connected.TotallyDisconnected
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.OmegaLimit
@@ -860,19 +862,6 @@ theorem exists_pos_forall_eq_of_forall_dist_lt (hK : IsCompact K) (hX : Continuo
       _ = ε := add_halves ε
   exact hne _ (hxzn.trans hyzn.symm)
 
-/-- On a strip `(a, b) × ℝ` where the derivative of `u` is bounded by `C ≥ 0`, the loops depend
-`C`-Lipschitz continuously on `s` in the uniform distance. -/
-private theorem dist_le_mul_abs_sub_of_norm_fderiv_le {b C : ℝ}
-    (hu : ContDiffOn ℝ 1 u (Ioo a b ×ˢ univ)) (hC : ∀ z ∈ Ioo a b ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
-    {s σ : ℝ} (hs : s ∈ Ioo a b) (hσ : σ ∈ Ioo a b) (t : ℝ) :
-    dist (u (s, t)) (u (σ, t)) ≤ C * |s - σ| := by
-  have h := ((convex_Ioo a b).prod convex_univ).norm_image_sub_le_of_norm_fderiv_le (f := u)
-    (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt
-      ((isOpen_Ioo.prod isOpen_univ).mem_nhds hz)) hC (x := (σ, t)) (y := (s, t))
-    ⟨hσ, mem_univ t⟩ ⟨hs, mem_univ t⟩
-  rwa [Prod.mk_sub_mk, sub_self, Prod.norm_def, norm_zero, max_eq_left (norm_nonneg _),
-    Real.norm_eq_abs, ← dist_eq_norm] at h
-
 /-- Let every `C¹`, `1`-periodic loop in `K` with squared defect integral below `δ` be within
 `e / 2` of a periodic solution in `K`. Let `u` be `C¹` on a strip `(a, b) × ℝ`, with derivative
 bounded by `C ≥ 0` and `1`-periodic loops in `K`, and let `[s, s + h]` lie in `(a, b)`, where
@@ -903,40 +892,11 @@ private theorem exists_periodic_hasDerivAt_forall_dist_lt_of_Icc_subset {b C δ 
     linarith [hσ.2]
   calc dist (u (s, t)) (x t) ≤ dist (u (s, t)) (u (σ, t)) + dist (u (σ, t)) (x t) :=
         dist_triangle _ _ _
-    _ < e / 2 + e / 2 := add_lt_add_of_le_of_lt ((dist_le_mul_abs_sub_of_norm_fderiv_le hu hC
+    _ < e / 2 + e / 2 := add_lt_add_of_le_of_lt ((dist_le_mul_abs_sub_of_norm_fderiv_le
+        (hu.differentiableOn one_ne_zero) hC
         (hs ⟨le_rfl, by linarith⟩) (hs hσ) t).trans ((mul_le_mul_of_nonneg_left hsσ hC₀).trans
           hCh)) (hxd t)
     _ = e := add_halves e
-
-omit [NormedSpace ℝ V] in
-/-- Let `P` be a property of loops, and suppose that along `[p, q]` every loop of `u` is within `e`
-of a loop with property `P`, and that two such loops near loops of `u` at times at most `η > 0`
-apart coincide. Then a loop with property `P` near the loop at `p` is near every loop of `u` along
-`[p, q]`: being near it is locally constant along the connected interval. -/
-private theorem forall_dist_lt_of_forall_exists_dist_lt {P : (ℝ → V) → Prop} {p q e η : ℝ}
-    (hη : 0 < η)
-    (hnear : ∀ s ∈ Icc p q, ∃ y, P y ∧ ∀ t, dist (u (s, t)) (y t) < e)
-    (hsame : ∀ s ∈ Icc p q, ∀ s' ∈ Icc p q, |s - s'| ≤ η → ∀ y y', P y → P y' →
-      (∀ t, dist (u (s, t)) (y t) < e) → (∀ t, dist (u (s', t)) (y' t) < e) → y = y')
-    {x : ℝ → V} (hx : P x) (hpq : p ≤ q) (hxd : ∀ t, dist (u (p, t)) (x t) < e) :
-    ∀ s ∈ Icc p q, ∀ t, dist (u (s, t)) (x t) < e := by
-  classical
-  set f : ℝ → Bool := fun s ↦ decide (∀ t, dist (u (s, t)) (x t) < e)
-  have hf (s : ℝ) (hs : s ∈ Icc p q) (y : ℝ → V) (hy : P y)
-      (hyd : ∀ t, dist (u (s, t)) (y t) < e) : f s = true ↔ x = y :=
-    ⟨fun h ↦ hsame s hs s hs (by simpa using hη.le) x y hx hy (of_decide_eq_true h) hyd,
-      fun h ↦ decide_eq_true (h ▸ hyd)⟩
-  have hcont : ContinuousOn f (Icc p q) := fun s hs ↦ by
-    rw [ContinuousWithinAt, nhds_discrete, tendsto_pure]
-    filter_upwards [self_mem_nhdsWithin,
-      nhdsWithin_le_nhds (Metric.closedBall_mem_nhds s hη)] with s' hs' hball
-    obtain ⟨y, hy, hyd⟩ := hnear s hs
-    obtain ⟨y', hy', hy'd⟩ := hnear s' hs'
-    have hyy' : y' = y := hsame s' hs' s hs (by rwa [← Real.dist_eq]) y' y hy' hy hy'd hyd
-    rw [Bool.eq_iff_iff, hf s' hs' y' hy' hy'd, hf s hs y hy hyd, hyy']
-  intro s hs
-  exact of_decide_eq_true
-    ((isPreconnected_Icc.constant hcont hs ⟨le_rfl, hpq⟩).trans (decide_eq_true hxd))
 
 /-- **A long cylinder with small defect stays near a single periodic solution.** Let `X` be a
 continuous, `1`-periodic time-dependent vector field and `K` a compact set in which the
@@ -1002,7 +962,8 @@ theorem exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt (hK : IsComp
       _ < e + e / 2 + e := by
           gcongr
           · rw [dist_comm]; exact hxd t
-          · exact (dist_le_mul_abs_sub_of_norm_fderiv_le hu hC'u (hIsub hs) (hIsub hs') t).trans_lt
+          · exact (dist_le_mul_abs_sub_of_norm_fderiv_le (hu.differentiableOn one_ne_zero) hC'u
+              (hIsub hs) (hIsub hs') t).trans_lt
               ((mul_le_mul_of_nonneg_left hss' hC').trans_lt hCη)
           · exact hx'd t
       _ ≤ ε₀ := by linarith [min_le_right ε (ε₀ / 3)]
@@ -1012,7 +973,7 @@ theorem exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt (hK : IsComp
   refine (forall_dist_lt_of_forall_exists_dist_lt
     (P := fun y ↦ Periodic y 1 ∧ (∀ t, HasDerivAt y (X t (y t)) t) ∧ ∀ t, y t ∈ K) hη
     (fun s hs ↦ ?_) (fun s hs s' hs' hss' y y' hy hy' ↦ hsame s hs s' hs' hss' y y' hy.1 hy.2.1
-      hy.2.2 hy'.1 hy'.2.1 hy'.2.2) ⟨hxper, hx, hxK⟩ hab hxd s hs t).trans_le (min_le_left _ _)
+      hy.2.2 hy'.1 hy'.2.1 hy'.2.2) ⟨hxper, hx, hxK⟩ hxd s hs t).trans_le (min_le_left _ _)
   obtain ⟨y, hyper, hy, hyK, hyd⟩ := hnear s hs
   exact ⟨y, ⟨hyper, hy, hyK⟩, hyd⟩
 
