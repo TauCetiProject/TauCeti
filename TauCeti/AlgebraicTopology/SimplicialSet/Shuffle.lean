@@ -303,6 +303,12 @@ private lemma whiskerLeft_app_prodCone {p q : ℕ} (k : Fin (q + 1)) {m : ℕ}
   -- a whiskered map acts on the components of a simplex of a product separately
   Prod.ext rfl (map_cone (SimplexCategory.δ k.succ) (Fin.succ_succAbove_zero k) x.2)
 
+private lemma braiding_hom_app_prodCone {p q m : ℕ} (x : ((Δ[p] : SSet.{w}) ⊗ Δ[q]) _⦋m⦌) :
+    (β_ (Δ[p] : SSet.{w}) Δ[q]).hom.app _ (prodCone x) =
+      prodCone ((β_ (Δ[p] : SSet.{w}) Δ[q]).hom.app _ x) :=
+  -- the swap of simplicial sets exchanges the two components of a simplex of the product
+  rfl
+
 /-- The step adding a first horizontal edge: the face `δ 0` in the first factor followed by the
 cone from `(0, 0)`. -/
 private def hStep (p q n : ℕ) :
@@ -543,8 +549,7 @@ lemma shuffleChain_zero_left (q : ℕ) (h : 0 + q = q) (f : (Δ[q] : SSet.{w}) �
 private lemma prodConeChain_chainComplexMap_braiding (p q m : ℕ) :
     prodConeChain p q T m ≫ (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q]).hom T).f (m + 1) =
       (chainComplexMap (β_ (Δ[p] : SSet.{w}) Δ[q]).hom T).f m ≫ prodConeChain q p T m :=
-  -- the swap exchanges the two components of a simplex of the product, and so of its cone
-  (chainComplexMap_f_prodConeChain T _ (fun _ _ ↦ rfl) m).symm
+  (chainComplexMap_f_prodConeChain T _ (fun _ x ↦ braiding_hom_app_prodCone x) m).symm
 
 /-- The swap turns the first horizontal edge into the first vertical edge. -/
 @[reassoc]
