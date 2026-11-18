@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Height
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Positive and negative roots
@@ -41,6 +42,10 @@ positive root is a nonnegative integer combination of the simple coroots.
   half of the roots are positive, and `TauCeti.posRootsFinset_eq_filter`,
   `TauCeti.card_posRootsFinset` read `TauCeti.posRootsFinset` as the filter of the positivity
   predicate and its cardinality as the cardinality of `TauCeti.posRoots`.
+* `TauCeti.ncard_setOf_isPos_and_coroot'_ne_zero` says the positive roots not orthogonal to a
+  weight are as many as the roots pairing negatively with it, and
+  `TauCeti.ncard_setOf_isPos_and_coroot'_smul_ne_zero` deduces that their number is invariant
+  under the Weyl group.
 * `TauCeti.add_mem_posRoots` and `TauCeti.add_mem_negRoots` say each of the two sets is closed
   under those sums of its members that are again roots, and
   `TauCeti.reflectionPerm_self_notMem_posRoots`, `TauCeti.reflectionPerm_self_notMem_negRoots` say
@@ -713,6 +718,74 @@ lemma reflectionPerm_ne_of_mem_posRoots {i j : ι} (hi : i ∈ b.support)
     rw [← P.reflectionPerm_self i j, h]
   rw [mem_posRoots, hji, isPos_reflectionPerm_self_iff_mem_negRoots, mem_negRoots] at hj
   exact hj (b.isPos_of_mem_support hi)
+
+/-! ### Positive roots not orthogonal to a weight -/
+
+section NotOrthogonal
+
+open RootPairing
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι]
+
+omit [IsStrictOrderedRing R] in
+/-- The positive roots not orthogonal to a weight split into those pairing negatively and those
+pairing positively with it. -/
+theorem ncard_setOf_isPos_and_coroot'_ne_zero_eq_add (x : M) :
+    {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard =
+      {i | b.IsPos i ∧ P.coroot' i x < 0}.ncard + {i | b.IsPos i ∧ 0 < P.coroot' i x}.ncard := by
+  rw [← ncard_union_eq]
+  · congr 1
+    ext i
+    simp only [mem_ofPred_eq, mem_union, ne_iff_lt_or_gt]
+    tauto
+  · exact disjoint_left.mpr fun i hi hi' ↦ hi.2.not_gt hi'.2
+
+/-- **The positive roots not orthogonal to a weight are as many as the roots pairing negatively with
+it.** Root negation carries the positive roots pairing positively with `x` onto the negative roots
+pairing negatively with it. -/
+theorem ncard_setOf_isPos_and_coroot'_ne_zero (x : M) :
+    {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard = {i | P.coroot' i x < 0}.ncard := by
+  have hall : {i | P.coroot' i x < 0} =
+      {i | b.IsPos i ∧ P.coroot' i x < 0} ∪ {i | ¬ b.IsPos i ∧ P.coroot' i x < 0} := by
+    ext i
+    simp only [mem_ofPred_eq, mem_union]
+    tauto
+  -- Root negation matches the positive roots pairing positively with the negative roots pairing
+  -- negatively.
+  have hneg : {i | b.IsPos i ∧ 0 < P.coroot' i x}.ncard =
+      {i | ¬ b.IsPos i ∧ P.coroot' i x < 0}.ncard := by
+    refine ncard_congr (fun i _ ↦ P.reflectionPerm i i) (fun i hi ↦ ?_)
+      (fun _ _ _ _ h ↦ (reflectionPerm_self_involutive P).injective h) (fun j hj ↦ ?_)
+    · refine ⟨fun h ↦ reflectionPerm_self_notMem_posRoots P b ((mem_posRoots P b i).mpr hi.1)
+        ((mem_posRoots P b _).mpr h), ?_⟩
+      rw [coroot'_reflectionPerm_self, LinearMap.neg_apply, neg_lt_zero]
+      exact hi.2
+    · refine ⟨P.reflectionPerm j j, ⟨(isPos_reflectionPerm_self_iff_mem_negRoots P b j).mpr
+        ((mem_negRoots P b j).mpr hj.1),
+        ?_⟩, reflectionPerm_reflectionPerm_self P j⟩
+      rw [coroot'_reflectionPerm_self, LinearMap.neg_apply, neg_pos]
+      exact hj.2
+  rw [ncard_setOf_isPos_and_coroot'_ne_zero_eq_add, hall, ncard_union_eq, hneg]
+  exact disjoint_left.mpr fun i hi hi' ↦ hi'.1 hi.1
+
+/-- **The number of positive roots not orthogonal to a weight is invariant under the Weyl group.**
+For a dominant weight this is the number of positive roots outside the root subsystem of its
+stabilizer, and so it is the same at every point of its orbit. -/
+theorem ncard_setOf_isPos_and_coroot'_smul_ne_zero (w : P.weylGroup) (x : M) :
+    {i | b.IsPos i ∧ P.coroot' i (w • x) ≠ 0}.ncard =
+      {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard := by
+  rw [ncard_setOf_isPos_and_coroot'_ne_zero, ncard_setOf_isPos_and_coroot'_ne_zero]
+  -- `w` carries the roots pairing negatively with `x` onto those pairing negatively with `w x`.
+  refine ncard_congr (fun i _ ↦ P.weylGroupToPerm w⁻¹ i) (fun i hi ↦ ?_)
+    (fun _ _ _ _ h ↦ (P.weylGroupToPerm w⁻¹).injective h) (fun j hj ↦ ?_)
+  · rw [mem_ofPred_eq, ← coroot'_weylGroupToPerm_smul P w⁻¹ i (w • x), inv_smul_smul] at hi
+    exact hi
+  · refine ⟨P.weylGroupToPerm w j, ?_, ?_⟩
+    · rw [mem_ofPred_eq, coroot'_weylGroupToPerm_smul]
+      exact hj
+    · simp [map_inv]
+
+end NotOrthogonal
 
 /-! ### The simple roots are the indecomposable positive roots -/
 
