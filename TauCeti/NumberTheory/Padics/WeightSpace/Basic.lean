@@ -199,10 +199,8 @@ end Monoid
 
 section CommMonoid
 
-section
-variable {R : Type*} [CommMonoid R] [TopologicalSpace R] [T2Space R]
+variable {R : Type*} [CommMonoid R] [TopologicalSpace R]
 
-omit [T2Space R] in
 /-- If a weight `κ` has exact conductor `p ^ (k + j + 1)`, where `q = p ^ k`, that is, `κ` is
 trivial on `1 + p ^ (k + j + 1) ℤ_p` but not on `1 + p ^ (k + j) ℤ_p`, then `κ(γ)` is a primitive
 `p ^ (j + 1)`-th root of unity. -/
@@ -230,8 +228,7 @@ theorem isPrimitiveRoot_apply_padicUnitsGenerator (κ : WeightSpace p R) {j : �
     simpa using h hm
   exact orderOf_eq_prime_pow (p := p) hnot hfin ▸ IsPrimitiveRoot.orderOf _
 
-end
-variable {R : Type*} [CommMonoid R] [TopologicalSpace R] [ContinuousMul R]
+variable [ContinuousMul R]
 
 /-- The weight with finite part `η` and principal part `ψ`, for a continuous additive character
 `ψ` of `ℤ_p`: `x ↦ η(x mod q) · ψ(s)` where `x = ω(x mod q) exp(q s)`. -/
@@ -342,14 +339,13 @@ theorem coord_ofAddChar (η : (ZMod (p ^ padicUnitsDepth p))ˣ →* Rˣ) (ψ : A
     (hψ : Continuous ψ) : (ofAddChar η ψ hψ).coord = ψ 1 - 1 := by
   rw [coord_eq_principalChar_one_sub, principalChar_ofAddChar]
 
-end CommRing
-
-
 /-- The coordinates of weights multiply after adding one: `1 + T_{κκ'} = (1 + T_κ)(1 + T_κ')`. -/
-theorem coord_mul {R : Type*} [CommRing R] [TopologicalSpace R] [ContinuousMul R]
-    (κ κ' : WeightSpace p R) : (κ * κ').coord = κ.coord * κ'.coord + κ.coord + κ'.coord := by
+theorem coord_mul (κ κ' : WeightSpace p R) :
+    (κ * κ').coord = κ.coord * κ'.coord + κ.coord + κ'.coord := by
   simp only [coord_def, ContinuousMonoidHom.mul_apply, Units.val_mul]
   ring
+
+end CommRing
 
 section Normed
 

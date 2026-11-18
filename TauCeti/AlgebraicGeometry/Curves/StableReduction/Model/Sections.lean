@@ -7,7 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
+public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Section
+import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 
 /-!
 # Extending markings to proper models
@@ -18,11 +22,16 @@ identification, and is compatible with morphisms of proper models. Equivalently,
 model are in bijection with rational points of that generic fibre.
 
 This extends each marking separately. Distinct generic markings can meet on the special fibre,
-and their extensions need not pass through the relative smooth locus.
+and their extensions need not pass through the relative smooth locus: on the node `xy = π²` the
+section `x = y = π` passes through the singular point. On a model whose total space is regular,
+however, every extended marking lies in the smooth locus of the structure morphism
+(`TauCeti.Model.range_extendSection_subset_smoothLocus`), so the special fibre is smooth along it.
 
 ## References
 
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Chapter 10.
+* Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1 (sections of regular fibred
+  surfaces).
 * R. Hartshorne, *Algebraic Geometry*, Theorem II.4.7 (the valuative criterion of properness).
 -/
 
@@ -187,5 +196,14 @@ theorem extendSection_hom_apply {M N : Model R K C toK} [M.IsProper] [N.IsProper
     (f : M ⟶ N) (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) (x : Spec (.of R)) :
     f.hom (M.extendSection p hp x) = N.extendSection p hp x := by
   rw [← Scheme.Hom.comp_apply, extendSection_hom]
+
+/-- **Extended markings of a regular model are smooth points.** If the total space of a proper
+model is regular, then the extension of every rational point of the generic fibre lies in the
+smooth locus of the structure morphism. -/
+theorem range_extendSection_subset_smoothLocus (M : Model R K C toK) [M.IsProper]
+    [∀ x : M.total, IsRegularLocalRing (M.total.presheaf.stalk x)]
+    (p : Spec (.of K) ⟶ C) (hp : p ≫ toK = 𝟙 _) :
+    Set.range (M.extendSection p hp) ⊆ M.toBase.smoothLocus :=
+  M.toBase.range_subset_smoothLocus_of_isRegularLocalRing (M.extendSection_toBase p hp)
 
 end TauCeti.Model

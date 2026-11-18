@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 
 /-!
 # Regularity of the Levi-Civita connection
@@ -147,11 +148,8 @@ theorem contMDiffOn_koszulBilinear_family {s : Set M} (hs : IsOpen s) (hm : n + 
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (U y)) s)
       (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (V y)) s) :
       ContMDiffOn (IP.prod I) 𝓘(ℝ) j (fun q : P × M ↦ b q.1 q.2 (U q.2) (V q.2))
-        (univ ×ˢ s) := by
-    intro q hq
-    have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ)
-      ((hb.of_le hj) q hq) (hlift hU q hq) (hlift hV q hq)
-    simpa using (contMDiffWithinAt_totalSpace_iff.mp h).2
+        (univ ×ˢ s) :=
+    (hb.of_le hj).clm_bundle_apply₂_trivial (hlift hU) (hlift hV)
   have hderiv {U V W : Π x : M, TangentSpace I x}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
       (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s)
@@ -450,7 +448,7 @@ theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnectio
     (hV : ContMDiffWithinAt 𝓘(ℝ, ℝ) I.tangent 2
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t) (ht : t ∈ s) :
     DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
+      (sectionCoord ℝ (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
     ((contMDiffWithinAt_alongCurveWithin_leviCivitaConnection (n := 1) (m := 3) (k := 2)
       (by norm_num) (by norm_num) hs ht hV).mdifferentiableWithinAt one_ne_zero)
@@ -463,7 +461,7 @@ theorem differentiableAt_sectionCoord_alongCurve_leviCivitaConnection
     (hV : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t) :
     DifferentiableAt ℝ
-      (sectionCoord (F := E) γ (alongCurve (leviCivitaConnection I M) γ V) (γ t)) t := by
+      (sectionCoord ℝ (F := E) γ (alongCurve (leviCivitaConnection I M) γ V) (γ t)) t := by
   simpa only [differentiableWithinAt_univ,
     funext (alongCurveWithin_univ (leviCivitaConnection I M) γ V)] using
     differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
