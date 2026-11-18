@@ -175,6 +175,30 @@ theorem normalLinearization_apply (J : E × N → E × N →L[ℝ] E × N) (p v 
         (fderiv ℝ J (p.1, 0) (0, p.2) (v.1, 0)).2 + (J (p.1, 0) (0, v.2)).2) := by
   simp [normalLinearization]
 
+/-- The operator norm of the normal linearization grows at most linearly in the normal
+coordinate: `‖J_N(z, W)‖ ≤ ‖J(z, 0)‖ + ‖dJ(z, 0)‖ ‖W‖`. -/
+theorem norm_normalLinearization_le (J : E × N → E × N →L[ℝ] E × N) (p : E × N) :
+    ‖normalLinearization J p‖ ≤ ‖J (p.1, 0)‖ + ‖fderiv ℝ J (p.1, 0)‖ * ‖p.2‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  set A := J (p.1, 0)
+  set D := fderiv ℝ J (p.1, 0)
+  have h₁ : ‖((v.1, 0) : E × N)‖ ≤ ‖v‖ := by simpa using norm_fst_le v
+  have h₂ : ‖((0, v.2) : E × N)‖ ≤ ‖v‖ := by simpa using norm_snd_le v
+  have hA₁ : ‖A (v.1, 0)‖ ≤ ‖A‖ * ‖v‖ := (A.le_opNorm _).trans (by gcongr)
+  have hA₂ : ‖A (0, v.2)‖ ≤ ‖A‖ * ‖v‖ := (A.le_opNorm _).trans (by gcongr)
+  have hD : ‖D (0, p.2) (v.1, 0)‖ ≤ ‖D‖ * ‖p.2‖ * ‖v‖ := by
+    calc ‖D (0, p.2) (v.1, 0)‖ ≤ ‖D (0, p.2)‖ * ‖((v.1, 0) : E × N)‖ := (D (0, p.2)).le_opNorm _
+      _ ≤ ‖D‖ * ‖((0, p.2) : E × N)‖ * ‖v‖ := by gcongr; exact D.le_opNorm _
+      _ = ‖D‖ * ‖p.2‖ * ‖v‖ := by simp
+  have hDv : 0 ≤ ‖D‖ * ‖p.2‖ * ‖v‖ := by positivity
+  rw [normalLinearization_apply, Prod.norm_mk]
+  refine max_le ((norm_fst_le (A (v.1, 0))).trans (hA₁.trans ?_)) ?_
+  · nlinarith
+  · calc ‖(D (0, p.2) (v.1, 0)).2 + (A (0, v.2)).2‖
+        ≤ ‖D (0, p.2) (v.1, 0)‖ + ‖A (0, v.2)‖ :=
+          (norm_add_le _ _).trans (add_le_add (norm_snd_le _) (norm_snd_le _))
+      _ ≤ (‖A‖ + ‖D‖ * ‖p.2‖) * ‖v‖ := by nlinarith
+
 /-! ### Algebraic properties -/
 
 /-- For `a ≠ 0` the normal dilation of `J` squares to `-1` at `p` when `J` squares to `-1` at the
