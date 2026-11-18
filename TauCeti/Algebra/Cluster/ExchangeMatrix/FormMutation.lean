@@ -144,14 +144,6 @@ private theorem transpose_mul_mul_sign (row : K ↪ I) (B : Matrix I K ℤ) {Λ 
     (h : ∀ j ≠ row k, (Bᵀ * Λ) k j = 0) :
     (matrixMutationLeft row B k 1)ᵀ * Λ * matrixMutationLeft row B k 1 =
       (matrixMutationLeft row B k (-1))ᵀ * Λ * matrixMutationLeft row B k (-1) := by
-  have hd (l : I) : matrixMutationLeft row B k 1 l (row k) -
-      matrixMutationLeft row B k (-1) l (row k) = -B l k := by
-    by_cases hl : l = row k
-    · simp [hl, hkk]
-    · simp only [matrixMutationLeft_apply_col, hl, ite_false, neg_mul, one_mul,
-        neg_neg]
-      rw [posPart_neg]
-      linear_combination -(posPart_sub_negPart (B l k))
   have hrow (j : I) (hj : j ≠ row k) :
       ((matrixMutationLeft row B k 1)ᵀ * Λ * matrixMutationLeft row B k 1) (row k) j =
       ((matrixMutationLeft row B k (-1))ᵀ * Λ *
@@ -160,7 +152,7 @@ private theorem transpose_mul_mul_sign (row : K ↪ I) (B : Matrix I K ℤ) {Λ 
       transpose_mul_mul_apply_of_ne row B Λ k (-1) _ hj]
     apply sub_eq_zero.mp
     rw [← Finset.sum_sub_distrib]
-    simp_rw [← sub_mul, hd, neg_mul]
+    simp_rw [← sub_mul, matrixMutationLeft_apply_col_one_sub_neg_one row B k hkk, neg_mul]
     rw [Finset.sum_neg_distrib]
     have hh := h j hj
     simp only [Matrix.mul_apply, Matrix.transpose_apply] at hh
