@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
-public import TauCeti.Algebra.Homology.ModuleCat.KFlat.Tensor
+public import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
 public import Mathlib.CategoryTheory.Functor.Derived.LeftDerivedTwo
 public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Derives
 public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Product
 public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Algebra.Category.ModuleCat.AB
 import Mathlib.RingTheory.Flat.CategoryTheory
+public import TauCeti.Algebra.Homology.Monoidal.KFlat.LeftDerivedTensor
+public import TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic
 
 /-!
 # Derived tensor products on unbounded module derived categories
@@ -21,9 +23,9 @@ Over a commutative ring `R`, the external product of the K-flat left derivabilit
 `CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R)` with itself is a left derivability
 structure on pairs of cochain complexes, and it derives the totalized tensor product bifunctor
 followed by `DerivedCategory.Q` because tensoring with a K-flat complex on either side preserves
-quasi-isomorphisms. Consequently, the tensor product bifunctor admits a left derived bifunctor
-(`TauCeti.hasLeftDerivedFunctor₂_tensor`, `TauCeti.derivedTensor`) on the unbounded derived category
-`DerivedCategory (ModuleCat.{u} R)`.
+quasi-isomorphisms. The resulting left derived bifunctor on the unbounded derived category
+`DerivedCategory (ModuleCat.{u} R)` is the instance `TauCeti.derivedTensor (ModuleCat.{u} R)` of the
+general construction in `TauCeti.Algebra.Homology.Monoidal.KFlat.LeftDerivedTensor`.
 
 For any left derived bifunctor `(LF, α)` of the tensor product:
 * the partial evaluations `LF.obj (DerivedCategory.Q.obj K)` and
@@ -40,9 +42,6 @@ For any left derived bifunctor `(LF, α)` of the tensor product:
 
 ## Main definitions
 
-* `TauCeti.derivedTensor`, `TauCeti.derivedTensorCounit`: the left derived tensor bifunctor
-  `D(R) ⥤ D(R) ⥤ D(R)` on the unbounded derived category of `R`-modules and its comparison
-  natural transformation.
 * `TauCeti.leftDerivedTensorObjIsoKFlatTensor`: for K-flat `P`, the natural isomorphism identifying
   `LF.obj (DerivedCategory.Q.obj P)` with `P.kFlatTensor`.
 * `TauCeti.leftDerivedTensorObjModelIsoOfIsStrictlyLEFlat`,
@@ -52,8 +51,8 @@ For any left derived bifunctor `(LF, α)` of the tensor product:
 
 ## Main results
 
-* `TauCeti.hasLeftDerivedFunctor₂_tensor`: the totalized tensor product of complexes of
-  `R`-modules followed by `DerivedCategory.Q` has a left derived bifunctor.
+* `CochainComplex.KFlat.prod_localizerMorphism_derives_tensor`: the product of the K-flat
+  localizer morphism with itself derives the tensor product followed by `DerivedCategory.Q`.
 * `TauCeti.isIso_app_app_of_isKFlat_left_of_isLeftDerivedFunctor₂_tensor`,
   `TauCeti.isIso_app_app_of_isKFlat_right_of_isLeftDerivedFunctor₂_tensor`: the derived tensor
   comparison `(α.app P).app L` is an isomorphism whenever either `P` or `L` is K-flat.
@@ -114,61 +113,6 @@ end CochainComplex.KFlat
 
 namespace TauCeti
 
-section Existence
-
-variable (R : Type u) [CommRing R] [HasDerivedCategory.{w} (ModuleCat.{u} R)]
-
-/-- **Existence of the derived tensor product.** Over a commutative ring `R`, the totalized tensor
-product of cochain complexes of `R`-modules followed by `DerivedCategory.Q` admits a left derived
-bifunctor with respect to quasi-isomorphisms in both variables. -/
-theorem hasLeftDerivedFunctor₂_tensor :
-    (MonoidalCategory.curriedTensor (CochainComplex (ModuleCat.{u} R) ℤ) ⋙
-      (Functor.whiskeringRight _ _ _).obj
-        (DerivedCategory.Q (C := ModuleCat.{u} R))).HasLeftDerivedFunctor₂
-      (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ))
-      (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ)) := by
-  have := (CochainComplex.KFlat.prod_localizerMorphism_derives_tensor
-    (R := R)).hasPointwiseLeftDerivedFunctor
-  infer_instance
-
-attribute [instance] hasLeftDerivedFunctor₂_tensor
-
-/-- The left derived tensor product bifunctor `D(R) ⥤ D(R) ⥤ D(R)` on the unbounded derived
-category of `R`-modules. -/
-def derivedTensor :
-    DerivedCategory (ModuleCat.{u} R) ⥤
-      DerivedCategory (ModuleCat.{u} R) ⥤
-        DerivedCategory (ModuleCat.{u} R) :=
-  Functor.leftDerived₂
-    (MonoidalCategory.curriedTensor (CochainComplex (ModuleCat.{u} R) ℤ) ⋙
-      (Functor.whiskeringRight _ _ _).obj (DerivedCategory.Q (C := ModuleCat.{u} R)))
-    DerivedCategory.Q DerivedCategory.Q
-    (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ))
-    (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ))
-
-/-- The canonical counit comparison natural transformation exhibiting `TauCeti.derivedTensor R` as
-a left derived bifunctor of the totalized tensor product of complexes. -/
-def derivedTensorCounit :
-    (((whiskeringLeft₂ (DerivedCategory (ModuleCat.{u} R))).obj DerivedCategory.Q).obj
-      DerivedCategory.Q).obj (derivedTensor R) ⟶
-      MonoidalCategory.curriedTensor (CochainComplex (ModuleCat.{u} R) ℤ) ⋙
-        (Functor.whiskeringRight _ _ _).obj (DerivedCategory.Q (C := ModuleCat.{u} R)) :=
-  Functor.leftDerivedCounit₂
-    (MonoidalCategory.curriedTensor (CochainComplex (ModuleCat.{u} R) ℤ) ⋙
-      (Functor.whiskeringRight _ _ _).obj (DerivedCategory.Q (C := ModuleCat.{u} R)))
-    DerivedCategory.Q DerivedCategory.Q
-    (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ))
-    (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ))
-
-instance :
-    (derivedTensor R).IsLeftDerivedFunctor₂ (derivedTensorCounit R)
-      (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ))
-      (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ)) := by
-  dsimp only [derivedTensor, derivedTensorCounit]
-  infer_instance
-
-end Existence
-
 section ModelComparison
 
 variable {R : Type u} [CommRing R] [HasDerivedCategory.{w} (ModuleCat.{u} R)]
@@ -182,49 +126,21 @@ variable (LF : DerivedCategory (ModuleCat.{u} R) ⥤
     (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ))
     (HomologicalComplex.quasiIso (ModuleCat.{u} R) (.up ℤ))]
 
-private lemma isIso_app_app_of_isKFlat_both
-    (P Q : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] [Q.IsKFlat] :
-    IsIso ((α.app P).app Q) := by
-  have h := (CochainComplex.KFlat.prod_localizerMorphism_derives_tensor (R := R)).isIso'
-    (Functor.whiskeringLeft₂HomEquiv α)
-    (L₂ := (DerivedCategory.Q (C := ModuleCat.{u} R)).prod DerivedCategory.Q)
-    (CochainComplex.KFlat.mk P, CochainComplex.KFlat.mk Q)
-  have heq : (((CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R)).prod
-      (CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R))).functor.obj
-      (CochainComplex.KFlat.mk P, CochainComplex.KFlat.mk Q)) = (P, Q) := by
-    simp
-  rw [NatTrans.isIso_app_iff_of_iso (Functor.whiskeringLeft₂HomEquiv α) (eqToIso heq)] at h
-  exact h
-
 /-- For any left derived bifunctor `(LF, α)` of the tensor product, `(α.app P).app L` is an
 isomorphism whenever `P` is K-flat, for every (possibly unbounded) complex `L`. -/
 instance isIso_app_app_of_isKFlat_left_of_isLeftDerivedFunctor₂_tensor
     (P L : CochainComplex (ModuleCat.{u} R) ℤ) [P.IsKFlat] :
-    IsIso ((α.app P).app L) := by
-  obtain ⟨Q, π, hπ, hQ⟩ := L.exists_quasiIso_isKFlat_moduleCat
-  have : QuasiIso π := hπ
-  have : Q.IsKFlat := hQ
-  have := isIso_app_app_of_isKFlat_both LF α P Q
-  have hnat := (α.app P).naturality π
-  dsimp at hnat
-  rw [← IsIso.eq_inv_comp] at hnat
-  rw [hnat]
-  infer_instance
+    IsIso ((α.app P).app L) :=
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left DerivedCategory.Q
+    (Localization.inverts _ _) α P L
 
 /-- For any left derived bifunctor `(LF, α)` of the tensor product, `(α.app K).app Q` is an
 isomorphism whenever `Q` is K-flat, for every (possibly unbounded) complex `K`. -/
 instance isIso_app_app_of_isKFlat_right_of_isLeftDerivedFunctor₂_tensor
     (K Q : CochainComplex (ModuleCat.{u} R) ℤ) [Q.IsKFlat] :
-    IsIso ((α.app K).app Q) := by
-  obtain ⟨P, π, hπ, hP⟩ := K.exists_quasiIso_isKFlat_moduleCat
-  have : QuasiIso π := hπ
-  have : P.IsKFlat := hP
-  have := isIso_app_app_of_isKFlat_both LF α P Q
-  have hnat := NatTrans.congr_app (α.naturality π) Q
-  dsimp at hnat
-  rw [← IsIso.eq_inv_comp] at hnat
-  rw [hnat]
-  infer_instance
+    IsIso ((α.app K).app Q) :=
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right DerivedCategory.Q
+    (Localization.inverts _ _) α K Q
 
 /-- For any complex `K` of `R`-modules (without any K-flatness assumption), `LF.obj (Q.obj K)` is a
 left derived functor of `K ⊗ - ⋙ Q` via `Functor.bifunctorCounit₁ α K`. -/
@@ -431,3 +347,49 @@ theorem leftDerivedTensorFlipObjModelIsoOfIsStrictlyLEFlat_hom
 end ModelComparison
 
 end TauCeti
+
+/-! ### Further results -/
+
+open CategoryTheory CategoryTheory.Functor HomologicalComplex
+
+namespace CategoryTheory.Functor
+
+variable {R : Type u} [CommRing R] {H : Type*} [Category* H]
+  (F : CochainComplex (ModuleCat.{u} R) ℤ ⥤ H)
+  (hF : (quasiIso (ModuleCat.{u} R) (.up ℤ)).IsInvertedBy F)
+  {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
+  {L₁ : CochainComplex (ModuleCat.{u} R) ℤ ⥤ D₁} {L₂ : CochainComplex (ModuleCat.{u} R) ℤ ⥤ D₂}
+  [L₁.IsLocalization (quasiIso (ModuleCat.{u} R) (.up ℤ))]
+  [L₂.IsLocalization (quasiIso (ModuleCat.{u} R) (.up ℤ))] {LF : D₁ ⥤ D₂ ⥤ H}
+  (α : (((whiskeringLeft₂ H).obj L₁).obj L₂).obj LF ⟶
+    MonoidalCategory.curriedTensor (CochainComplex (ModuleCat.{u} R) ℤ) ⋙
+      (whiskeringRight _ _ _).obj F)
+  [LF.IsLeftDerivedFunctor₂ α
+    (quasiIso (ModuleCat.{u} R) (.up ℤ)) (quasiIso (ModuleCat.{u} R) (.up ℤ))]
+
+include hF in
+/-- **Flat-model comparison on the left.** When `F` inverts quasi-isomorphisms, any left derived
+bifunctor `(LF, α)` of
+`curriedTensor (CochainComplex (ModuleCat.{u} R) ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible
+comparison component `(α.app P).app L` whenever `P` is a bounded-above complex of flat
+`R`-modules. -/
+theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_left
+    (P : CochainComplex (ModuleCat.{u} R) ℤ) (b : ℤ) [P.IsStrictlyLE b]
+    (hP : ∀ n, Module.Flat R (P.X n)) (L : CochainComplex (ModuleCat.{u} R) ℤ) :
+    IsIso ((α.app P).app L) :=
+  have := CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat P b hP
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left F hF α P L
+
+include hF in
+/-- **Flat-model comparison on the right.** When `F` inverts quasi-isomorphisms, any left derived
+bifunctor `(LF, α)` of
+`curriedTensor (CochainComplex (ModuleCat.{u} R) ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible
+comparison component `(α.app K).app Q` whenever `Q` is a bounded-above complex of flat
+`R`-modules. -/
+theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_right
+    (K Q : CochainComplex (ModuleCat.{u} R) ℤ) (b : ℤ) [Q.IsStrictlyLE b]
+    (hQ : ∀ n, Module.Flat R (Q.X n)) : IsIso ((α.app K).app Q) :=
+  have := CochainComplex.isKFlat_of_boundedAbove_flat_moduleCat Q b hQ
+  isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right F hF α K Q
+
+end CategoryTheory.Functor
