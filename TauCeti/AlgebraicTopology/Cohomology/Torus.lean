@@ -149,6 +149,20 @@ theorem singularCohomologyTorusOneEquiv_apply (p : k × k) :
   erw [TopCat.singularCup_singularCohomologyZeroOne_right]
   exact add_comm _ _
 
+/-- The inverse of the equivalence `k × k ≃ H¹(S¹ × S¹; k)` sends `α` to `(1, 0)`. -/
+@[simp]
+theorem singularCohomologyTorusOneEquiv_symm_singularCohomologyTorusFst :
+    (singularCohomologyTorusOneEquiv k).symm (singularCohomologyTorusFst k) = (1, 0) := by
+  rw [LinearEquiv.symm_apply_eq, singularCohomologyTorusOneEquiv_apply, one_smul, zero_smul,
+    add_zero]
+
+/-- The inverse of the equivalence `k × k ≃ H¹(S¹ × S¹; k)` sends `β` to `(0, 1)`. -/
+@[simp]
+theorem singularCohomologyTorusOneEquiv_symm_singularCohomologyTorusSnd :
+    (singularCohomologyTorusOneEquiv k).symm (singularCohomologyTorusSnd k) = (0, 1) := by
+  rw [LinearEquiv.symm_apply_eq, singularCohomologyTorusOneEquiv_apply, one_smul, zero_smul,
+    zero_add]
+
 /-- **The second cohomology of the torus**: `c ↦ c (α ⌣ β)` is a linear equivalence
 `k ≃ H²(S¹ × S¹; k)` (`TauCeti.singularCohomologyTorusTwoEquiv_apply`). -/
 def singularCohomologyTorusTwoEquiv :
@@ -179,6 +193,14 @@ theorem singularCohomologyTorusTwoEquiv_apply (c : k) :
   erw [TopCat.singularCohomologySphereProdSlantEquiv_symm_apply, map_zero, zero_add]
   rw [singularCohomologyTopCatSphereEquiv_symm_eq_smul, map_smul, map_smul]
   rfl
+
+/-- The inverse of the equivalence `k ≃ H²(S¹ × S¹; k)` sends `α ⌣ β` to `1`. -/
+@[simp]
+theorem singularCohomologyTorusTwoEquiv_symm_singularCup :
+    (singularCohomologyTorusTwoEquiv k).symm
+        ((TopCat.sphere.{w} 1 ⊗ TopCat.sphere.{w} 1).singularCup k (λ_ _).inv (λ_ _).hom 1 1 2
+          rfl (singularCohomologyTorusFst k) (singularCohomologyTorusSnd k)) = 1 := by
+  rw [LinearEquiv.symm_apply_eq, singularCohomologyTorusTwoEquiv_apply, one_smul]
 
 /-- **The cup product on `H¹` of the torus is the determinant**:
 `(a α + b β) ⌣ (a' α + b' β) = (a b' - b a') (α ⌣ β)`. -/

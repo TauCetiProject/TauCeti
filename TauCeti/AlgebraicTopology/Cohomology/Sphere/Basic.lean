@@ -122,6 +122,7 @@ lemma singularKronecker_singularCohomologyTopCatSphereGenerator (n : ℕ) :
 
 /-- The dual `θ` of the sphere generator spans `Hⁿ⁺¹(TopCat.sphere (n + 1); k)`: the inverse of
 evaluation on the standard generator sends `c` to `c θ`. -/
+@[simp]
 theorem singularCohomologyTopCatSphereEquiv_symm_eq_smul (n : ℕ) (c : k) :
     (singularCohomologyTopCatSphereEquiv k (𝟙_ (ModuleCat.{w} k)) n).symm c =
       c • singularCohomologyTopCatSphereGenerator k n := by
