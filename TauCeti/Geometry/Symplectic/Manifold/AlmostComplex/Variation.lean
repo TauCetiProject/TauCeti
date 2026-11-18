@@ -205,7 +205,7 @@ theorem exists_contMDiffSection_mem_tangentSpace_integral_pos
   obtain ⟨e, he⟩ : ∃ e, η z₀ e ≠ 0 := by simpa using DFunLike.ne_iff.1 hη₀
   obtain ⟨A₀, hA₀, hA₀w⟩ :=
     (J.almostComplexStructureAt (u z₀)).exists_mem_tangentSpace_apply_eq hw₀ ((η z₀ e)⁻¹ • e)
-  obtain ⟨A, hA, -, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset (n := ⊤)
+  obtain ⟨A, hA, -, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset (n := ∞)
     (I := I) (F := E →L[ℝ] E) (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (u z₀)
     (LinearMap.toContinuousLinearMap A₀) univ_mem
   obtain ⟨ρ, hYc, hYW, hpos⟩ := exists_localizedVariation (μ := μ) (J := J) hw hη hinj (A := A)
@@ -272,7 +272,7 @@ theorem IsNondegenerate.exists_contMDiffSection_mem_compatibleTangentSpace_integ
   obtain ⟨e, he⟩ : ∃ e, η z₀ e ≠ 0 := by simpa using DFunLike.ne_iff.1 hη₀
   obtain ⟨A₀, hA₀, hA₀w⟩ := (SymplecticForm.Compatible.of_tames (hJσ' (u z₀)) hJ₀
     ).exists_mem_compatibleTangentSpace_apply_eq hw₀ ((η z₀ e)⁻¹ • e)
-  obtain ⟨C, hC, -, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset (n := ⊤)
+  obtain ⟨C, hC, -, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset (n := ∞)
     (I := I) (F := E →L[ℝ] E) (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (u z₀)
     (LinearMap.toContinuousLinearMap A₀) univ_mem
   have hA : hσ.skewPart C (u z₀) = LinearMap.toContinuousLinearMap A₀ := by
