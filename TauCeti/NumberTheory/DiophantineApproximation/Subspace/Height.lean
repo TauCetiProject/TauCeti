@@ -12,7 +12,7 @@ import TauCeti.Analysis.ExteriorPower.Plucker
 import TauCeti.LinearAlgebra.Dual.AbsoluteValue
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
-import TauCeti.NumberTheory.Height.Primitive
+import TauCeti.NumberTheory.Height.NumberField
 
 /-!
 # The height of the span of an approximation domain
