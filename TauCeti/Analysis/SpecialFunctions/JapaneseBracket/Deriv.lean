@@ -39,8 +39,6 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   `(1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.contDiff_one_add_norm_sq_rpow`, `TauCeti.contDiff_ofReal_one_add_norm_sq_rpow`: the
   bracket power `(1 + ‖x‖ ^ 2) ^ r` and its complex version are smooth.
-* `TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: the bounds for the
-  complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half`: for
@@ -374,20 +372,6 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le (s : ℝ) (k : �
     _ ≤ max C 0 * (2 ^ ((|s| + k) / 2) * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) *
           (1 + ‖y‖ ^ 2) ^ ((|s| + k) / 2)) := by gcongr
     _ = _ := by ring
-
-/-- **The complex Bessel weight is a symbol.** The complex-valued bracket power
-`(1 + ‖x‖ ^ 2) ^ (s / 2)` satisfies the symbol estimates of order `s`:
-`‖D^k (1 + ‖x‖ ^ 2) ^ (s / 2)‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((s - k) / 2)`. It is the symbol of the Bessel
-potential of order `s`. -/
-theorem exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (s : ℝ) (k : ℕ) :
-    ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖ ≤
-      C * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E) (s / 2) k
-  refine ⟨C, fun x ↦ ?_⟩
-  calc _ = ‖iteratedFDeriv ℝ k (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ (s / 2)) x‖ :=
-        Complex.ofRealLI.norm_iteratedFDeriv_comp_left
-          (contDiff_one_add_norm_sq_rpow (s / 2)).contDiffAt le_rfl
-    _ ≤ _ := (hC x).trans_eq (by rw [sub_div])
 
 /-- **Derivative bounds for a linear function times a bracket power.** For every `v`, every real
 `r` and every `k`, `‖D^k (⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r + 1 / 2 - k / 2)`. -/

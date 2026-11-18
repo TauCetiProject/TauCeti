@@ -60,6 +60,8 @@ what makes the imaginary powers `⟨ξ⟩ ^ (i τ)` multipliers on `Lᵖ` with n
   `‖D^k ⟨x⟩ ^ z‖ ≤ C (1 + ‖z‖) ^ k (1 + ‖x‖ ^ 2) ^ ((re z - k) / 2)`, uniformly in `z`.
 * `TauCeti.exists_norm_iteratedFDeriv_japaneseBracketCpow_le_div_pow`: for `re z ≤ 0`, Mihlin's
   condition `‖D^k ⟨ξ⟩ ^ z‖ ≤ C (1 + ‖z‖) ^ k / ‖ξ‖ ^ k`.
+* `TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: the real-order case,
+  symbol estimates of order `s` for the complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`.
 -/
 
 public section
@@ -244,7 +246,9 @@ theorem hasFDerivAt_japaneseBracketCpow (z : ℂ) (x : H) :
   ext v
   simp only [japaneseBracketCpow]
   rw [show (z - 2) / 2 = z / 2 - 1 by ring]
-  simp
+  simp only [ofReal_add, ofReal_one, ofReal_pow, ContinuousLinearMap.comp_smul, smul_apply,
+    ContinuousLinearMap.comp_apply, coe_innerSL_apply, ofRealCLM_apply, nsmul_eq_mul,
+    Nat.cast_ofNat, smul_eq_mul]
   ring
 
 /-- The real-bilinear map `(x, v) ↦ z ⟪x, v⟫`, with complex values. -/
@@ -270,7 +274,8 @@ private theorem fderiv_japaneseBracketCpow (z : ℂ) :
   rw [(hasFDerivAt_japaneseBracketCpow z x).fderiv]
   ext v
   have h : innerSL ℝ x v = inner ℝ x v := innerSL_apply_apply ℝ x v
-  simp [innerSLSmul_apply_apply, h]
+  simp only [smul_apply, ContinuousLinearMap.comp_apply, h, ofRealCLM_apply, smul_eq_mul,
+    innerSLSmul_apply_apply]
   ring
 
 /-- The orders `z` and `z - 2` have comparable sizes: for `i ≤ k`,
@@ -342,6 +347,19 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le (k : ℕ) :
         gcongr _ * ?_ * _
         exact one_add_norm_sub_two_pow_mul_le z hik
     _ = _ := by ring
+
+/-- **The complex Bessel weight is a symbol.** The complex-valued bracket power
+`(1 + ‖x‖ ^ 2) ^ (s / 2)` satisfies the symbol estimates of order `s`:
+`‖D^k (1 + ‖x‖ ^ 2) ^ (s / 2)‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((s - k) / 2)`. It is the symbol of the Bessel
+potential of order `s`, the power `⟨x⟩ ^ s` of real order. -/
+theorem exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (s : ℝ) (k : ℕ) :
+    ∃ C, ∀ x : H, ‖iteratedFDeriv ℝ k (fun x : H ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_japaneseBracketCpow_le (H := H) k
+  refine ⟨C * (1 + |s|) ^ k, fun x ↦ ?_⟩
+  have h : (fun x : H ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) = japaneseBracketCpow (s : ℂ) :=
+    funext fun x ↦ (japaneseBracketCpow_ofReal s x).symm
+  simpa only [h, norm_real, Real.norm_eq_abs, ofReal_re] using hC s x
 
 /-- **Complex powers of nonpositive real part are Mihlin multipliers.** For every `k` there is a
 constant `C` such that, for every complex order `z` with `re z ≤ 0` and every `ξ ≠ 0`,

@@ -271,7 +271,7 @@ theorem exists_eLpNorm_besselPotentialCLM_le (hp : 1 < p) (hp_top : p ≠ ∞) :
       exact_mod_cast Finset.single_le_sum (f := fun k ↦ ‖D k‖₊) (fun i _ ↦ by positivity)
         (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
     have hz1 : (1 : ℝ) ≤ 1 + ‖z‖ := le_add_of_nonneg_right (norm_nonneg z)
-    rw [NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_add, NNReal.coe_one, coe_nnNorm]
+    push_cast
     exact (hD k z hz ξ hξ).trans (div_le_div_of_nonneg_right
       (mul_le_mul hDk (pow_le_pow_right₀ hz1 hk) (by positivity) D'.coe_nonneg) (by positivity))
   refine (hC (TauCeti.hasTemperateGrowth_japaneseBracketCpow z) hmihlin u).trans_eq ?_
