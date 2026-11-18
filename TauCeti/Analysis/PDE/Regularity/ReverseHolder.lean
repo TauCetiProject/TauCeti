@@ -91,7 +91,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 omit [DecidableEq ι] in
 /-- The `L²` norm on a ball `B(x₀, ρ) ⊆ Ω` of a power `u^{p/2}`, which agrees almost everywhere
 with `w ∈ H¹(Ω)`, is `√(∫ w²)`. -/
-private theorem eLpNorm_two_eq_ofReal_sqrt_integral {mu : Measure (EuclideanSpace ℝ ι)}
+theorem eLpNorm_two_eq_ofReal_sqrt_integral {mu : Measure (EuclideanSpace ℝ ι)}
     [mu.IsAddHaarMeasure]
     {Omega : Opens (EuclideanSpace ℝ ι)} {u w : W1p mu Omega 2} {p ρ : ℝ}
     {x₀ : EuclideanSpace ℝ ι} (hball : Metric.ball x₀ ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
@@ -110,7 +110,7 @@ omit [DecidableEq ι] in
 /-- If a cutoff `ψ` equals `1` on `B(x₀, r) ⊆ Ω`, the `L^q` norm on `B(x₀, r)` of a power
 `u^{p/2}`, which agrees almost everywhere with `w ∈ H¹(Ω)`, is at most the `L^q(Ω)` norm of
 `ψ w`. -/
-private theorem eLpNorm_rpow_le_eLpNorm_contDiffSMul {mu : Measure (EuclideanSpace ℝ ι)}
+theorem eLpNorm_rpow_le_eLpNorm_contDiffSMul {mu : Measure (EuclideanSpace ℝ ι)}
     [mu.IsAddHaarMeasure]
     {Omega : Opens (EuclideanSpace ℝ ι)} {u w : W1p mu Omega 2} {p r M : ℝ} {q : ℝ≥0∞}
     {x₀ : EuclideanSpace ℝ ι} {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
