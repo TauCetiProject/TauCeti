@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Normed.Module.Cone
 
 /-!
 # Products of distributions under the wave front condition
@@ -34,8 +35,10 @@ with `e_η x = 𝐞 (-⟪x, η⟫)` and `η ↦ T (φ e_η)` the localized Fouri
 (`Distribution.NoOppositeCovectorsOn.exists_integrable_and_norm_integral_le`), with a bound by
 finitely many derivatives of `ψ`, so that `cutoffProduct` is continuous. The pointwise
 condition of Hörmander implies the uniform one on a neighbourhood
-(`Distribution.exists_mem_nhds_noOppositeCovectorsOn`), and a distribution without wave front set,
-such as a smooth function, satisfies it against every other distribution.
+(`Distribution.exists_mem_nhds_noOppositeCovectorsOn`), and a distribution without wave front set
+over `K` satisfies it against every other distribution
+(`Distribution.noOppositeCovectorsOn_of_forall_notMem_waveFrontSet_right`), for instance a smooth
+function (`Distribution.noOppositeCovectorsOn_of_apply_eq_integral_right`).
 
 The product extends multiplication by smooth functions in either factor: if `T` coincides near the
 support of `φ` with a smooth function `g`, then `φ² S T` is the distribution `ψ ↦ S (ψ φ² g)`
@@ -111,6 +114,18 @@ theorem NoOppositeCovectorsOn.smul_right (h : NoOppositeCovectorsOn S T K) (c : 
     NoOppositeCovectorsOn S (c • T) K :=
   (h.symm.smul_left c).symm
 
+/-- If `T` has no wave front set over `K`, then `S` and `T` have no opposite covectors over `K`,
+whatever `S` is. -/
+theorem noOppositeCovectorsOn_of_forall_notMem_waveFrontSet_right
+    (hT : ∀ y ∈ K, ∀ ξ : E, (y, ξ) ∉ T.waveFrontSet) : NoOppositeCovectorsOn S T K :=
+  fun _ _ y hy ξ _ ↦ hT y hy (-ξ)
+
+/-- If `S` has no wave front set over `K`, then `S` and `T` have no opposite covectors over `K`,
+whatever `T` is. -/
+theorem noOppositeCovectorsOn_of_forall_notMem_waveFrontSet_left
+    (hS : ∀ x ∈ K, ∀ ξ : E, (x, ξ) ∉ S.waveFrontSet) : NoOppositeCovectorsOn S T K :=
+  (noOppositeCovectorsOn_of_forall_notMem_waveFrontSet_right hS).symm
+
 variable [FiniteDimensional ℝ E]
 
 theorem NoOppositeCovectorsOn.add_left (h : NoOppositeCovectorsOn S T K)
@@ -127,46 +142,41 @@ some neighbourhood of `x`. -/
 theorem exists_mem_nhds_noOppositeCovectorsOn {x : E} (hx : x ∈ Ω)
     (h : ∀ ξ : E, (x, ξ) ∈ S.waveFrontSet → (x, -ξ) ∉ T.waveFrontSet) :
     ∃ U ∈ 𝓝 x, NoOppositeCovectorsOn S T U := by
-  -- Near each unit covector one of the two distributions is microlocally smooth on a product
-  -- neighbourhood, since the sets of microlocally smooth points are open.
+  -- Near each unit covector one of the two distributions is microlocally smooth on a
+  -- neighbourhood of `x` and an open cone: the cutoff and cone witnessing microlocal smoothness
+  -- at `x` witness it wherever the cutoff is nonzero.
   have hloc : ∀ ν ∈ sphere (0 : E) 1, ∃ V ∈ 𝓝 x, ∃ G : Set E, IsOpen G ∧ ν ∈ G ∧
+      (∀ t : ℝ, 0 < t → ∀ ζ ∈ G, t • ζ ∈ G) ∧
       ((∀ y ∈ V, ∀ ζ ∈ G, S.IsMicrolocallySmoothAt y ζ) ∨
         ∀ y ∈ V, ∀ ζ ∈ G, T.IsMicrolocallySmoothAt y (-ζ)) := by
     intro ν hν
     have hν0 : ν ≠ 0 := ne_of_mem_sphere hν one_ne_zero
     by_cases hS : S.IsMicrolocallySmoothAt x ν
-    · obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.1
-        (S.isOpen_setOf_isMicrolocallySmoothAt.mem_nhds (show (x, ν) ∈ _ from hS))
-      exact ⟨u, hu, interior v, isOpen_interior, mem_interior_iff_mem_nhds.2 hv,
-        Or.inl fun y hy ζ hζ ↦ by exact huv (mk_mem_prod hy (interior_subset hζ))⟩
+    · obtain ⟨φ, hφ, Γ, hΓ, hνΓ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hS
+      exact ⟨{y | φ y ≠ 0}, (isOpen_ne_fun φ.continuous continuous_const).mem_nhds hφ, Γ, hΓ, hνΓ,
+        hcone, Or.inl fun y hy ζ hζ ↦
+          isMicrolocallySmoothAt_iff.2 ⟨φ, hy, Γ, hΓ, hζ, hcone, hdecay⟩⟩
     · have hT : T.IsMicrolocallySmoothAt x (-ν) := by
         by_contra hT
         exact h ν (mem_waveFrontSet_iff.2 ⟨hx, hν0, hS⟩)
           (mem_waveFrontSet_iff.2 ⟨hx, neg_ne_zero.2 hν0, hT⟩)
-      obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.1
-        (T.isOpen_setOf_isMicrolocallySmoothAt.mem_nhds (show (x, -ν) ∈ _ from hT))
-      exact ⟨u, hu, -interior v, isOpen_interior.neg,
-        Set.mem_neg.2 (mem_interior_iff_mem_nhds.2 hv),
-        Or.inr fun y hy ζ hζ ↦ by exact huv (mk_mem_prod hy (interior_subset (Set.mem_neg.1 hζ)))⟩
-  choose! V hV G hG hνG hVG using hloc
-  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover
-    (fun ν : sphere (0 : E) 1 ↦ G ν) (fun ν ↦ hG ν ν.2)
-    fun ν hν ↦ mem_iUnion.2 ⟨⟨ν, hν⟩, hνG ν hν⟩
+      obtain ⟨φ, hφ, Γ, hΓ, hνΓ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hT
+      refine ⟨{y | φ y ≠ 0}, (isOpen_ne_fun φ.continuous continuous_const).mem_nhds hφ, -Γ,
+        hΓ.neg, Set.mem_neg.2 hνΓ, fun t ht ζ hζ ↦ ?_,
+        Or.inr fun y hy ζ hζ ↦
+          isMicrolocallySmoothAt_iff.2 ⟨φ, hy, Γ, hΓ, Set.mem_neg.1 hζ, hcone, hdecay⟩⟩
+      rw [Set.mem_neg, ← smul_neg]
+      exact hcone t ht _ (Set.mem_neg.1 hζ)
+  choose! V hV G hG hνG hcone hVG using hloc
+  obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion
+    (Γ := fun ν : sphere (0 : E) 1 ↦ G ν) (fun ν ↦ hG ν ν.2) (fun ν ↦ hνG ν ν.2)
+    fun ν ↦ hcone ν ν.2
   refine ⟨⋂ ν ∈ t, V ν, (biInter_finset_mem t).2 fun ν _ ↦ hV ν ν.2, fun y hy z hz ξ hS hT ↦ ?_⟩
-  -- The direction of `ξ` lies in one of the finitely many sets `G ν`.
-  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 (mem_waveFrontSet_iff.1 hS).2.1
-  have hνs : ‖ξ‖⁻¹ • ξ ∈ sphere (0 : E) 1 := by
-    simp [norm_smul, hn.ne']
-  have hξ : ξ = ‖ξ‖ • (‖ξ‖⁻¹ • ξ) := by
-    rw [smul_smul, mul_inv_cancel₀ hn.ne', one_smul]
-  obtain ⟨ν, hνt, hξG⟩ := mem_iUnion₂.1 (ht hνs)
+  -- The nonzero covector `ξ` lies in one of the finitely many cones `G ν`.
+  obtain ⟨ν, hνt, hξG⟩ := mem_iUnion₂.1 (ht (mem_waveFrontSet_iff.1 hS).2.1)
   rcases hVG ν ν.2 with hS' | hT'
-  · refine (mem_waveFrontSet_iff.1 hS).2.2 ?_
-    rw [hξ]
-    exact (isMicrolocallySmoothAt_smul_iff hn).2 (hS' y (mem_iInter₂.1 hy ν hνt) _ hξG)
-  · refine (mem_waveFrontSet_iff.1 hT).2.2 ?_
-    rw [hξ, ← smul_neg]
-    exact (isMicrolocallySmoothAt_smul_iff hn).2 (hT' z (mem_iInter₂.1 hz ν hνt) _ hξG)
+  · exact (mem_waveFrontSet_iff.1 hS).2.2 (hS' y (mem_iInter₂.1 hy ν hνt) ξ hξG)
+  · exact (mem_waveFrontSet_iff.1 hT).2.2 (hT' z (mem_iInter₂.1 hz ν hνt) ξ hξG)
 
 /-- The point mass and itself have opposite covectors over every set containing its point, in every
 positive dimension: `δ_{x₀} · δ_{x₀}` is not covered by the wave front condition. -/
@@ -187,9 +197,10 @@ variable [MeasurableSpace E] [BorelSpace E]
 opposite covectors over `K`, whatever `S` is: `T` has no wave front set over `U`. -/
 theorem noOppositeCovectorsOn_of_apply_eq_integral_right {U : Set E} (hU : IsOpen U) {g : E → ℂ}
     (hg : ContDiffOn ℝ ∞ g U) (hT : ∀ χ : 𝓓(Ω, ℝ), tsupport χ ⊆ U → T χ = ∫ y, χ y • g y)
-    (hKU : K ⊆ U) : NoOppositeCovectorsOn S T K := fun _ _ _ hy _ _ hT' ↦
-  (mem_waveFrontSet_iff.1 hT').2.2
-    (isMicrolocallySmoothAt_of_apply_eq_integral hU hg hT (hKU hy) (mem_waveFrontSet_iff.1 hT').1 _)
+    (hKU : K ⊆ U) : NoOppositeCovectorsOn S T K :=
+  noOppositeCovectorsOn_of_forall_notMem_waveFrontSet_right fun _ hy _ hT' ↦
+    (mem_waveFrontSet_iff.1 hT').2.2 (isMicrolocallySmoothAt_of_apply_eq_integral hU hg hT
+      (hKU hy) (mem_waveFrontSet_iff.1 hT').1 _)
 
 /-- If `S` coincides with a smooth function `g` on an open set `U ⊇ K`, then `S` and `T` have no
 opposite covectors over `K`, whatever `T` is. -/
@@ -275,9 +286,9 @@ theorem NoOppositeCovectorsOn.exists_forall_one_add_norm_pow_mul_le {φ : 𝓓(�
   -- unit sphere, hence every nonzero frequency.
   choose! Γ hΓ hνΓ hcone r C hC0 hC using fun ν (hν : ν ∈ sphere (0 : E) 1) ↦
     h.exists_isOpen_cone_forall_one_add_norm_pow_mul_le N (ne_of_mem_sphere hν one_ne_zero)
-  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover
-    (fun ν : sphere (0 : E) 1 ↦ Γ ν) (fun ν ↦ hΓ ν ν.2)
-    fun ν hν ↦ mem_iUnion.2 ⟨⟨ν, hν⟩, hνΓ ν hν⟩
+  obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion
+    (Γ := fun ν : sphere (0 : E) 1 ↦ Γ ν) (fun ν ↦ hΓ ν ν.2) (fun ν ↦ hνΓ ν ν.2)
+    fun ν ↦ hcone ν ν.2
   have hC0' : 0 ≤ ∑ ν ∈ t, C ν := Finset.sum_nonneg fun ν _ ↦ hC0 ν ν.2
   refine ⟨max kT (t.sup fun ν ↦ r ν), CS * CT + ∑ ν ∈ t, C ν,
     add_nonneg (mul_nonneg hCS0 hCT0) hC0', fun φ' hφ' B hB η ↦ ?_⟩
@@ -290,15 +301,10 @@ theorem NoOppositeCovectorsOn.exists_forall_one_add_norm_pow_mul_le {φ : 𝓓(�
           gcongr
           · simpa using hS 0
       _ ≤ (CS * CT + ∑ ν ∈ t, C ν) * B := by nlinarith
-  · have hn : 0 < ‖η‖ := norm_pos_iff.2 hη
-    have hηs : ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 := by simp [norm_smul, hn.ne']
-    obtain ⟨ν, hνt, hηΓ⟩ := mem_iUnion₂.1 (ht hηs)
-    have hηΓ' : η ∈ Γ ν := by
-      have := hcone ν ν.2 ‖η‖ hn _ hηΓ
-      rwa [smul_smul, mul_inv_cancel₀ hn.ne', one_smul] at this
+  · obtain ⟨ν, hνt, hηΓ⟩ := mem_iUnion₂.1 (ht hη)
     calc (1 + ‖η‖) ^ N * (‖S.localFourier φ η‖ * ‖T.localFourier φ' (-η)‖) ≤ C ν * B :=
           hC ν ν.2 φ' hφ' B (fun i hi ↦ hB i (hi.trans ((Finset.le_sup
-            (f := fun ν : sphere (0 : E) 1 ↦ r ν) hνt).trans (le_max_right _ _)))) η hηΓ'
+            (f := fun ν : sphere (0 : E) 1 ↦ r ν) hνt).trans (le_max_right _ _)))) η hηΓ
       _ ≤ (CS * CT + ∑ ν ∈ t, C ν) * B := by
           gcongr
           exact le_add_of_nonneg_of_le (mul_nonneg hCS0 hCT0)
@@ -362,7 +368,8 @@ private theorem NoOppositeCovectorsOn.exists_norm_integral_le_seminorm {φ : �
   -- bounded by `2 ^ r M A`.
   have hM : ∀ i ≤ r, ∀ y ∈ tsupport φ,
       ‖iteratedFDeriv ℝ i (fun z ↦ ((ofSupportedIn hK f z : ℝ) : ℂ)) y‖ ≤ M := fun i hi y _ ↦ by
-    rw [show (fun z ↦ ((ofSupportedIn hK f z : ℝ) : ℂ)) = ofRealLI ∘ f from rfl,
+    rw [show (fun z ↦ ((ofSupportedIn hK f z : ℝ) : ℂ)) = ofRealLI ∘ f by
+        rw [coe_ofSupportedIn]; rfl,
       ofRealLI.norm_iteratedFDeriv_comp_left f.contDiff.contDiffAt (mod_cast le_top)]
     exact (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
       (Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 hi))
@@ -473,6 +480,22 @@ theorem dsupport_cutoffProduct_subset {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovect
 
 /-! ### Agreement with multiplication by smooth functions -/
 
+/-- If `T` coincides with a function `g` smooth on an open set `U` containing the support of `φ`,
+then `φ g` is a Schwartz function `f` and `T (φ e_(-η)) = 𝓕⁻ f η`. -/
+private theorem exists_schwartzMap_localFourier_neg_eq_fourierInv {U : Set E} (hU : IsOpen U)
+    {g : E → ℂ} (hg : ContDiffOn ℝ ∞ g U)
+    (hT : ∀ χ : 𝓓(Ω, ℝ), tsupport χ ⊆ U → T χ = ∫ y, χ y • g y) {φ : 𝓓(Ω, ℂ)}
+    (hφU : tsupport φ ⊆ U) :
+    ∃ f : 𝓢(E, ℂ), (∀ y, f y = φ y * g y) ∧ ∀ η, T.localFourier φ (-η) = 𝓕⁻ f η := by
+  have hfc : HasCompactSupport fun y ↦ φ y * g y := φ.hasCompactSupport.mul_right
+  have hfd : ContDiff ℝ ∞ fun y ↦ φ y * g y := by
+    simpa [mul_comm] using (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right hg
+      φ.contDiff.contDiffOn hU hφU
+  have hf := hfc.toSchwartzMap_toFun hfd
+  refine ⟨hfc.toSchwartzMap hfd, hf, fun η ↦ ?_⟩
+  rw [localFourier_eq_fourier (hg.continuousOn.locallyIntegrableOn hU.measurableSet) hT hφU,
+    SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg, funext hf]
+
 /-- **The product with a smooth function, on the right.** If `T` coincides with a function `g`
 smooth on an open set `U` containing the support of `φ`, then `φ² S T` is the distribution
 `ψ ↦ S (ψ φ² g)`: the product extends multiplication of `S` by smooth functions. -/
@@ -485,15 +508,7 @@ theorem cutoffProduct_apply_of_apply_eq_integral_right {U : Set E} (hU : IsOpen 
   set φ' := TestFunction.smulLeftCLM ψ.contDiff φ
   have hφ'U : tsupport φ' ⊆ U := (tsupport_smulLeftCLM_subset_right ψ.contDiff φ).trans hφU
   -- `ψ φ g` is a Schwartz function `f`, and `T (ψ φ e_(-η)) = 𝓕⁻ f η`.
-  have hfc : HasCompactSupport fun y ↦ φ' y * g y := φ'.hasCompactSupport.mul_right
-  let f : 𝓢(E, ℂ) := hfc.toSchwartzMap (by
-    simpa [mul_comm] using (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right hg
-      φ'.contDiff.contDiffOn hU hφ'U)
-  have hf (y : E) : f y = φ' y * g y := (rfl)
-  have hT' (η : E) : T.localFourier φ' (-η) = 𝓕⁻ f η := by
-    rw [localFourier_eq_fourier (hg.continuousOn.locallyIntegrableOn hU.measurableSet) hT hφ'U,
-      SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg]
-    rfl
+  obtain ⟨f, hf, hT'⟩ := exists_schwartzMap_localFourier_neg_eq_fourierInv hU hg hT hφ'U
   simp only [hT', mul_comm (S.localFourier φ _)]
   rw [integral_fourierInv_mul_localFourier, cutoffTempered_apply]
   intro x
@@ -509,16 +524,10 @@ theorem cutoffProduct_apply_of_apply_eq_integral_left {U : Set E} (hU : IsOpen U
     {φ : 𝓓(Ω, ℂ)} (hφU : tsupport φ ⊆ U) (h : NoOppositeCovectorsOn S T (tsupport φ))
     (ψ : 𝓓(Ω, ℝ)) {χ : 𝓓(Ω, ℂ)} (hχ : ∀ x, χ x = ψ x * φ x ^ 2 * g x) :
     S.cutoffProduct T φ h ψ = T.complexPairing χ := by
-  -- `φ g` is a Schwartz function `f`, and `S (φ e_η) = 𝓕 f η = 𝓕⁻ f (-η)`.
-  have hfc : HasCompactSupport fun y ↦ φ y * g y := φ.hasCompactSupport.mul_right
-  let f : 𝓢(E, ℂ) := hfc.toSchwartzMap (by
-    simpa [mul_comm] using (ContinuousLinearMap.mul ℝ ℂ).contDiff_of_tsupport_subset_right hg
-      φ.contDiff.contDiffOn hU hφU)
-  have hf (y : E) : f y = φ y * g y := (rfl)
+  -- `φ g` is a Schwartz function `f`, and `S (φ e_η) = 𝓕⁻ f (-η)`.
+  obtain ⟨f, hf, hS''⟩ := exists_schwartzMap_localFourier_neg_eq_fourierInv hU hg hS hφU
   have hS' (η : E) : S.localFourier φ η = 𝓕⁻ f (-η) := by
-    rw [localFourier_eq_fourier (hg.continuousOn.locallyIntegrableOn hU.measurableSet) hS hφU,
-      SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg, neg_neg]
-    rfl
+    simpa using hS'' (-η)
   simp only [cutoffProduct_apply, hS']
   rw [← integral_neg_eq_self]
   simp only [neg_neg]
