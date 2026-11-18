@@ -26,29 +26,30 @@ whose class (`TauCeti.freeLoopTorusClassHom`) is spherical. Its class in `Γ` de
 
 `π₁(𝓛₀X, x) → Γ`
 
-(`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoop`), whose area and first Chern number are
-those of the torus. Its kernel consists of the loops sweeping out tori of zero area and zero first
-Chern number (`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoop_eq_zero_iff`), and the cap
+(`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup`), whose area and first
+Chern number are those of the torus. Its kernel consists of the loops sweeping out tori of zero area
+and zero first Chern number
+(`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_eq_zero_iff`), and the cap
 cover is the connected covering space of `𝓛₀X` associated with this subgroup. The homomorphism is
 onto when `X` is path connected
-(`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoop_surjective`), so the
+(`TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective`), so the
 quotient of `π₁(𝓛₀X, x)` by the kernel is `Γ`, the group acting simply transitively on the cap
 classes of a contractible loop (`TauCeti.Floer.SphericalCapClass`). The covering space itself and
 the identification of its fibres with cap classes are not constructed here.
 
 ## Main definitions
 
-* `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoop`: the period homomorphism
+* `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup`: the period homomorphism
   `π₁(𝓛₀X, x) → Γ`.
 
 ## Main results
 
-* `TauCeti.Floer.SphericalPeriodGroup.area_ofContractibleLoop`,
-  `TauCeti.Floer.SphericalPeriodGroup.chern_ofContractibleLoop`: its area and first Chern number
-  are those of the torus swept out by the loop.
-* `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoop_eq_zero_iff`: its kernel consists of the
-  loops sweeping out tori of zero area and zero first Chern number.
-* `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoop_surjective`: it is onto for a
+* `TauCeti.Floer.SphericalPeriodGroup.area_ofContractibleLoopsHomotopyGroup`,
+  `TauCeti.Floer.SphericalPeriodGroup.chern_ofContractibleLoopsHomotopyGroup`: its area and first
+  Chern number are those of the torus swept out by the loop.
+* `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_eq_zero_iff`: its kernel
+  consists of the loops sweeping out tori of zero area and zero first Chern number.
+* `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective`: it is onto for a
   path-connected `X`.
 
 ## References
@@ -85,7 +86,7 @@ variable (ω c) in
 /-- **The period homomorphism of the cap cover** `π₁(𝓛₀X, x) → Γ`: a loop of contractible free loops
 at the constant loop at `x` goes to the class in the period group of the torus it sweeps out, which
 is spherical (`TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`). -/
-def ofContractibleLoop (x : X) :
+def ofContractibleLoopsHomotopyGroup (x : X) :
     Additive (HomotopyGroup (Fin 1) (contractibleLoops X) (constContractibleLoop x)) →+
       SphericalPeriodGroup ω c :=
   (QuotientAddGroup.mk' _).comp ((contractibleTorusClassHom x).codRestrict _
@@ -94,29 +95,29 @@ def ofContractibleLoop (x : X) :
 /-- The area of the period class of a loop of contractible free loops is the area of the torus it
 sweeps out. -/
 @[simp]
-theorem area_ofContractibleLoop (x : X)
+theorem area_ofContractibleLoopsHomotopyGroup (x : X)
     (a : Additive (HomotopyGroup (Fin 1) (contractibleLoops X) (constContractibleLoop x))) :
-    PeriodGroup.area _ _ (ofContractibleLoop ω c x a) =
+    PeriodGroup.area _ _ (ofContractibleLoopsHomotopyGroup ω c x a) =
       ω (freeLoopTorusClassHom X (ContinuousMap.const Circle x)
         (Additive.ofMul (contractibleLoopsHomotopyGroupMulEquiv x a.toMul))) := by
-  simp [ofContractibleLoop, contractibleTorusClassHom]
+  simp [ofContractibleLoopsHomotopyGroup, contractibleTorusClassHom]
 
 /-- The first Chern number of the period class of a loop of contractible free loops is the first
 Chern number of the torus it sweeps out. -/
 @[simp]
-theorem chern_ofContractibleLoop (x : X)
+theorem chern_ofContractibleLoopsHomotopyGroup (x : X)
     (a : Additive (HomotopyGroup (Fin 1) (contractibleLoops X) (constContractibleLoop x))) :
-    PeriodGroup.chern _ _ (ofContractibleLoop ω c x a) =
+    PeriodGroup.chern _ _ (ofContractibleLoopsHomotopyGroup ω c x a) =
       c (freeLoopTorusClassHom X (ContinuousMap.const Circle x)
         (Additive.ofMul (contractibleLoopsHomotopyGroupMulEquiv x a.toMul))) := by
-  simp [ofContractibleLoop, contractibleTorusClassHom]
+  simp [ofContractibleLoopsHomotopyGroup, contractibleTorusClassHom]
 
 /-- **The kernel of the period homomorphism**, the subgroup of the cap cover: a loop of
 contractible free loops has trivial period class exactly when the torus it sweeps out has zero area
 and zero first Chern number. -/
-theorem ofContractibleLoop_eq_zero_iff (x : X)
+theorem ofContractibleLoopsHomotopyGroup_eq_zero_iff (x : X)
     (a : Additive (HomotopyGroup (Fin 1) (contractibleLoops X) (constContractibleLoop x))) :
-    ofContractibleLoop ω c x a = 0 ↔
+    ofContractibleLoopsHomotopyGroup ω c x a = 0 ↔
       ω (freeLoopTorusClassHom X (ContinuousMap.const Circle x)
           (Additive.ofMul (contractibleLoopsHomotopyGroupMulEquiv x a.toMul))) = 0 ∧
         c (freeLoopTorusClassHom X (ContinuousMap.const Circle x)
@@ -127,8 +128,8 @@ theorem ofContractibleLoop_eq_zero_iff (x : X)
 /-- **The period homomorphism is onto** for a path-connected space: every class of the period group
 is the class of the torus swept out by a loop of contractible free loops at the constant loop at
 `x`. -/
-theorem ofContractibleLoop_surjective [PathConnectedSpace X] (x : X) :
-    Function.Surjective (ofContractibleLoop ω c x) := by
+theorem ofContractibleLoopsHomotopyGroup_surjective [PathConnectedSpace X] (x : X) :
+    Function.Surjective (ofContractibleLoopsHomotopyGroup ω c x) := by
   intro γ
   obtain ⟨b, rfl⟩ := ofHomotopyGroup_surjective (ω := ω) (c := c) x γ
   obtain ⟨g, hg⟩ : hurewiczIntHom X x 1 b ∈
@@ -136,7 +137,8 @@ theorem ofContractibleLoop_surjective [PathConnectedSpace X] (x : X) :
     (range_freeLoopTorusClassHom_const x).symm ▸ ⟨b, rfl⟩
   refine ⟨Additive.ofMul ((contractibleLoopsHomotopyGroupMulEquiv x).symm g.toMul),
     PeriodGroup.ext ?_ ?_⟩ <;>
-    simp only [area_ofContractibleLoop, chern_ofContractibleLoop, area_ofHomotopyGroup,
-      chern_ofHomotopyGroup, toMul_ofMul, MulEquiv.apply_symm_apply, ofMul_toMul, hg]
+    simp only [area_ofContractibleLoopsHomotopyGroup, chern_ofContractibleLoopsHomotopyGroup,
+      area_ofHomotopyGroup, chern_ofHomotopyGroup, toMul_ofMul, MulEquiv.apply_symm_apply,
+      ofMul_toMul, hg]
 
 end TauCeti.Floer.SphericalPeriodGroup

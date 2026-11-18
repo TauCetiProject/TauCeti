@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop
-public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Chains
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
+public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Complex
 
 /-!
 # Torus classes of loops of free loops
@@ -16,10 +17,11 @@ A loop `Λ` in the free loop space `𝓛Q = C(S¹, Q)` sweeps out a torus `(s, t
 `Q`. This file defines the class of that torus in the second homology of `Q` and computes the
 classes obtained from loops at a constant loop.
 
-On normalized cubical chains, crossing with the standard loop of the circle (`TauCeti.circleCube`)
-and pushing forward along evaluation `S¹ × 𝓛Q → Q` (`TauCeti.freeLoopEval`) is a chain map up to
-sign (`TauCeti.boundary_freeLoopTorusChain`), since the standard loop is a cycle. It induces the
-**torus map** `H^□ₖ(𝓛Q; R) → H^□ₖ₊₁(Q; R)`, `a ↦ ev_* ([S¹] × a)` (`TauCeti.freeLoopTorusHomology`).
+The standard loop of the circle (`TauCeti.circleCube`) is a cycle, whose class is the fundamental
+class `[S¹]` (`TauCeti.circleHomologyClass`). The homology cross product with `[S¹]`, followed by
+the push-forward along evaluation `S¹ × 𝓛Q → Q` (`TauCeti.freeLoopEval`), is the **torus map**
+`H^□ₖ(𝓛Q; R) → H^□ₖ₊₁(Q; R)`, `a ↦ ev_* ([S¹] × a)` (`TauCeti.freeLoopTorusHomology`). On cycles
+it is the torus chain map `TauCeti.freeLoopTorusChain` (`TauCeti.freeLoopTorusHomology_homologyπ`).
 After the cubical Hurewicz map of `𝓛Q` it gives the **torus class** `π₁(𝓛Q, γ) → H^□₂(Q; R)` of
 loops of free loops (`TauCeti.cubicalFreeLoopTorusClassHom`), which sends the class of `Λ` to the
 class of the cube swept out by `Λ` (`TauCeti.cubicalFreeLoopTorusClassHom_mk`).
@@ -32,7 +34,7 @@ torus of a loop of constant loops is degenerate, so its class vanishes
 (`TauCeti.cubicalFreeLoopTorusClassHom_eq_zero_of_forall_const`). Hence the torus classes at a
 constant loop are exactly the Hurewicz classes of `π₂(Q, x)`
 (`TauCeti.range_cubicalFreeLoopTorusClassHom_const`), and the same holds in singular homology
-(`TauCeti.range_freeLoopTorusClassHom_const`): the torus classes are spherical
+(`TauCeti.range_freeLoopTorusClassHom_const`): the torus classes at a constant loop are spherical
 (`TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`).
 
 This is the transgression from loops of contractible free loops to spherical classes through which
@@ -40,6 +42,7 @@ the period and first Chern number of capped loops are read in Floer theory.
 
 ## Main definitions
 
+* `TauCeti.circleHomologyClass`: the fundamental class `[S¹] ∈ H^□₁(S¹; R)`.
 * `TauCeti.freeLoopTorusHomology`: the torus map `H^□ₖ(𝓛Q; R) ⟶ H^□ₖ₊₁(Q; R)`.
 * `TauCeti.cubicalFreeLoopTorusClassHom`: the torus class `π₁(𝓛Q, γ) → H^□₂(Q; R)`.
 * `TauCeti.freeLoopTorusClassHom`: the torus class `π₁(𝓛Q, γ) → H₂(Q; ℤ)` in singular homology.
@@ -48,7 +51,8 @@ the period and first Chern number of capped loops are read in Floer theory.
 
 * `TauCeti.range_cubicalFreeLoopTorusClassHom_const`, `TauCeti.range_freeLoopTorusClassHom_const`:
   at the constant loop at `x`, the torus classes are the Hurewicz classes of `π₂(Q, x)`.
-* `TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`: the torus classes are spherical.
+* `TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`: the torus classes of loops of free
+  loops at a constant loop are spherical.
 
 ## References
 
@@ -62,7 +66,7 @@ public section
 
 noncomputable section
 
-open AlgebraicTopology CategoryTheory HomotopyGroup TauCeti
+open AlgebraicTopology CategoryTheory HomotopyGroup MonoidalCategory TauCeti
 open scoped unitInterval Topology Topology.Homotopy
 
 universe u
@@ -131,48 +135,6 @@ theorem freeLoopTorusChain_ofCube (k : ℕ) (c : SingularCube C(Circle, Q) k) :
   rw [freeLoopTorusChain_apply, NormalizedCubicalChain.crossProduct_ofCube,
     NormalizedCubicalChain.map_ofCube, NormalizedCubicalChain.cast_ofCube]
 
-/-- The torus chain of a `0`-chain is a cycle. -/
-theorem boundary_freeLoopTorusChain_zero (a : NormalizedCubicalChain C(Circle, Q) R 0) :
-    NormalizedCubicalChain.boundary Q R 0 (freeLoopTorusChain Q R 0 a) = 0 := by
-  rw [freeLoopTorusChain_apply, NormalizedCubicalChain.cast_rfl,
-    ← LinearMap.comp_apply (NormalizedCubicalChain.boundary Q R 0),
-    ← NormalizedCubicalChain.map_boundary, LinearMap.comp_apply,
-    NormalizedCubicalChain.boundary_crossProduct_zero_right, boundary_ofCube_circleCube]
-  simp
-
-/-- The cross product with the standard loop of the circle anticommutes with the boundary, since the
-standard loop is a cycle. -/
-theorem boundary_crossProduct_circleCube {Y : Type*} [TopologicalSpace Y] (k : ℕ)
-    (b : NormalizedCubicalChain Y R (k + 1)) :
-    NormalizedCubicalChain.boundary (Circle × Y) R (1 + k)
-        (NormalizedCubicalChain.crossProduct Circle Y R 1 (k + 1)
-          (NormalizedCubicalChain.ofCube Circle R circleCube) b) =
-      -NormalizedCubicalChain.crossProduct Circle Y R 1 k
-          (NormalizedCubicalChain.ofCube Circle R circleCube)
-          (NormalizedCubicalChain.boundary Y R k b) := by
-  have hL := NormalizedCubicalChain.boundary_crossProduct (p := 0) (q := k) (R := R)
-    (NormalizedCubicalChain.ofCube Circle R circleCube) b
-  rw [boundary_ofCube_circleCube, map_zero, LinearMap.zero_apply] at hL
-  have h : 1 + k = 0 + k + 1 := by omega
-  apply NormalizedCubicalChain.cast_injective R h
-  rw [← NormalizedCubicalChain.boundary_cast]
-  convert hL using 1
-  simp
-
-/-- **The torus chain map anticommutes with the boundary**:
-`∂ (ev_♯ ([S¹] × b)) = - ev_♯ ([S¹] × ∂ b)`, since the standard loop is a cycle. -/
-theorem boundary_freeLoopTorusChain (k : ℕ) (b : NormalizedCubicalChain C(Circle, Q) R (k + 1)) :
-    NormalizedCubicalChain.boundary Q R (k + 1) (freeLoopTorusChain Q R (k + 1) b) =
-      -freeLoopTorusChain Q R k (NormalizedCubicalChain.boundary _ R k b) := by
-  have e : freeLoopTorusChain Q R (k + 1) b = NormalizedCubicalChain.cast R
-      (congrArg Nat.succ (Nat.add_comm 1 k)) (NormalizedCubicalChain.map R (freeLoopEval Q)
-        (1 + k + 1) (NormalizedCubicalChain.crossProduct Circle C(Circle, Q) R 1 (k + 1)
-          (NormalizedCubicalChain.ofCube Circle R circleCube) b)) := rfl
-  rw [e, NormalizedCubicalChain.boundary_cast, ← LinearMap.comp_apply
-    (NormalizedCubicalChain.boundary Q R (1 + k)), ← NormalizedCubicalChain.map_boundary,
-    LinearMap.comp_apply, boundary_crossProduct_circleCube, map_neg, map_neg,
-    freeLoopTorusChain_apply]
-
 end Chains
 
 /-! ### The torus map on homology -/
@@ -181,98 +143,162 @@ section Homology
 
 variable {Q : Type u} [TopologicalSpace Q] (R : Type u) [CommRing R]
 
-/-- The differential of the normalized cubical chain complex of a space is the cubical
-boundary. -/
-private theorem d_apply (X : Type u) [TopologicalSpace X] (n : ℕ)
-    (g : NormalizedCubicalChain X R (n + 1)) :
-    ((normalizedCubicalChainComplex R).obj (TopCat.of X)).d (n + 1) n g =
-      NormalizedCubicalChain.boundary X R n g :=
-  normalizedCubicalChainComplex_obj_d_apply (R := R) (TopCat.of X) n g
+/-- The standard loop of the circle as a cycle of degree `1` of the normalized cubical chain
+complex of the circle, lifted to the universe `u` of the coefficients. -/
+def circleCycle :
+    ((normalizedCubicalChainComplex R).obj (TopCat.of (ULift.{u} Circle))).cycles 1 :=
+  ((normalizedCubicalChainComplex R).obj _).moduleCatCyclesMk
+    ((normalizedCubicalChainComplexXEquiv _ 1).symm
+      (NormalizedCubicalChain.map R (⟨ULift.up, continuous_uliftUp⟩ : C(Circle, ULift.{u} Circle)) 1
+        (NormalizedCubicalChain.ofCube Circle R circleCube))) 0 (by simp) (by
+      rw [← (normalizedCubicalChainComplexXEquiv (R := R) _ 0).map_eq_zero_iff,
+        normalizedCubicalChainComplexXEquiv_d_apply, LinearEquiv.apply_symm_apply,
+        ← LinearMap.comp_apply (NormalizedCubicalChain.boundary _ R 0),
+        ← NormalizedCubicalChain.map_boundary, LinearMap.comp_apply, boundary_ofCube_circleCube,
+        map_zero])
 
-/-- The torus chain of a cycle of the free loop space is a cycle. -/
-private theorem boundary_freeLoopTorusChain_iCycles (k : ℕ)
-    (z : ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).cycles k) :
-    ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).d (k + 1) k
-      (freeLoopTorusChain Q R k (normalizedCubicalChainComplexXEquiv _ k
-        (((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).iCycles k z))) = 0 := by
-  rw [d_apply]
-  cases k with
-  | zero => exact boundary_freeLoopTorusChain_zero R _
-  | succ j =>
-    have hz := normalizedCubicalChainComplexXEquiv_d_apply (R := R) (TopCat.of C(Circle, Q)) j
-      (((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).iCycles (j + 1) z)
-    rw [HomologicalComplex.moduleCat_d_iCycles_apply, map_zero] at hz
-    rw [boundary_freeLoopTorusChain, ← hz, map_zero, neg_zero]
-    -- The two zeros differ only by reading the chains of `Q` as a term of its chain complex.
-    rfl
+/-- The underlying chain of `circleCycle R` is the standard loop of the circle. -/
+theorem iCycles_circleCycle :
+    ((normalizedCubicalChainComplex R).obj (TopCat.of (ULift.{u} Circle))).iCycles 1
+        (circleCycle R) =
+      (normalizedCubicalChainComplexXEquiv _ 1).symm
+        (NormalizedCubicalChain.map R (⟨ULift.up, continuous_uliftUp⟩ : C(Circle, ULift.{u} Circle))
+          1 (NormalizedCubicalChain.ofCube Circle R circleCube)) :=
+  HomologicalComplex.iCycles_moduleCatCyclesMk ..
+
+/-- The fundamental class `[S¹] ∈ H^□₁(S¹; R)` of the circle: the class of its standard loop. -/
+def circleHomologyClass :
+    ((normalizedCubicalChainComplex R).obj (TopCat.of (ULift.{u} Circle))).homology 1 :=
+  ((normalizedCubicalChainComplex R).obj _).homologyπ 1 (circleCycle R)
 
 variable (Q) in
-/-- The torus chain map on cycles, from degree `k` of the free loop space to degree `k + 1` of
-`Q`. -/
-def freeLoopTorusCycles (k : ℕ) :
-    ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).cycles k ⟶
-      ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).cycles (k + 1) :=
-  ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).liftCycles
-    (((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).iCycles k ≫
-      ModuleCat.ofHom ((normalizedCubicalChainComplexXEquiv _ (k + 1)).symm.toLinearMap ∘ₗ
-        freeLoopTorusChain Q R k ∘ₗ (normalizedCubicalChainComplexXEquiv _ k).toLinearMap)) k
-    (by simp)
-    (by ext z; exact boundary_freeLoopTorusChain_iCycles R k z)
+/-- Evaluation `S¹ × 𝓛Q → Q`, `(z, γ) ↦ γ z`, of free loops, with the circle lifted to the
+universe of `Q`. -/
+def uliftFreeLoopEval : C(ULift.{u} Circle × C(Circle, Q), Q) :=
+  (freeLoopEval Q).comp
+    ((⟨ULift.down, continuous_uliftDown⟩ : C(ULift.{u} Circle, Circle)).prodMap (.id _))
 
-/-- The cycle `freeLoopTorusCycles Q R k z` is the torus chain of the cycle `z`. -/
 @[simp]
-theorem iCycles_freeLoopTorusCycles_apply (k : ℕ)
+theorem uliftFreeLoopEval_apply (z : ULift.{u} Circle) (γ : C(Circle, Q)) :
+    uliftFreeLoopEval Q (z, γ) = γ z.down :=
+  (rfl)
+
+/-- On chains, crossing with the lifted standard loop of the circle and evaluating is the torus
+chain map. -/
+private theorem map_cast_crossProduct_map_ofCube_circleCube (k : ℕ)
+    (a : NormalizedCubicalChain C(Circle, Q) R k) :
+    NormalizedCubicalChain.map R (uliftFreeLoopEval Q) (k + 1)
+        (NormalizedCubicalChain.cast R (Nat.add_comm 1 k)
+          (NormalizedCubicalChain.crossProduct (ULift.{u} Circle) C(Circle, Q) R 1 k
+            (NormalizedCubicalChain.map R
+              (⟨ULift.up, continuous_uliftUp⟩ : C(Circle, ULift.{u} Circle)) 1
+              (NormalizedCubicalChain.ofCube Circle R circleCube)) a)) =
+      freeLoopTorusChain Q R k a := by
+  have h := NormalizedCubicalChain.map_crossProduct (R := R)
+    (⟨ULift.up, continuous_uliftUp⟩ : C(Circle, ULift.{u} Circle)) (ContinuousMap.id C(Circle, Q))
+    (NormalizedCubicalChain.ofCube Circle R circleCube) a
+  have he : (uliftFreeLoopEval Q).comp
+      ((⟨ULift.up, continuous_uliftUp⟩ : C(Circle, ULift.{u} Circle)).prodMap
+        (ContinuousMap.id C(Circle, Q))) = freeLoopEval Q := by
+    ext ⟨z, γ⟩
+    simp
+  rw [NormalizedCubicalChain.map_id, LinearMap.id_apply] at h
+  rw [NormalizedCubicalChain.map_cast, freeLoopTorusChain_apply, ← h,
+    NormalizedCubicalChain.map_map, he]
+
+/-- The cross product of `circleCycle R` with a cycle `z` of the free loop space, pushed forward
+along evaluation, has underlying chain the torus chain of `z`. -/
+private theorem iCycles_cyclesMap_cyclesMap_cyclesCross_circleCycle (k : ℕ)
     (z : ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).cycles k) :
     ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).iCycles (k + 1)
-        (freeLoopTorusCycles Q R k z) =
-      (normalizedCubicalChainComplexXEquiv _ (k + 1)).symm
-        (freeLoopTorusChain Q R k (normalizedCubicalChainComplexXEquiv _ k
+        (HomologicalComplex.cyclesMap
+          ((normalizedCubicalChainComplex R).map (TopCat.ofHom (uliftFreeLoopEval Q))) (k + 1)
+          (HomologicalComplex.cyclesMap
+            (cubicalCrossProduct R (TopCat.of (ULift.{u} Circle)) (TopCat.of C(Circle, Q))) (k + 1)
+            (HomologicalComplex.cyclesCross
+              ((normalizedCubicalChainComplex R).obj (TopCat.of (ULift.{u} Circle)))
+              ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))) 1 k (k + 1)
+              (Nat.add_comm 1 k) (circleCycle R ⊗ₜ z)))) =
+      (normalizedCubicalChainComplexXEquiv _ (k + 1)).symm (freeLoopTorusChain Q R k
+        (normalizedCubicalChainComplexXEquiv _ k
           (((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).iCycles k z))) := by
-  rw [freeLoopTorusCycles, ← ModuleCat.comp_apply, HomologicalComplex.liftCycles_i]
-  -- The lifted morphism is the composite of `iCycles` with the torus chain map, by definition.
-  rfl
-
-/-- The torus chain of a boundary has zero homology class. -/
-private theorem toCycles_freeLoopTorusCycles_homologyπ (k : ℕ) :
-    ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).toCycles (k + 1) k ≫
-      freeLoopTorusCycles Q R k ≫
-        ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).homologyπ (k + 1) = 0 := by
-  ext y
-  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-    ModuleCat.hom_zero, LinearMap.zero_apply, ← map_zero
-      (((normalizedCubicalChainComplex R).obj (TopCat.of Q)).homologyπ (k + 1)).hom]
-  refine HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d _ (m := k + 2)
-    (-freeLoopTorusChain Q R (k + 1) (normalizedCubicalChainComplexXEquiv _ (k + 1) y)) ?_
-  rw [map_zero, sub_zero, iCycles_freeLoopTorusCycles_apply,
-    HomologicalComplex.moduleCat_iCycles_toCycles_apply,
-    normalizedCubicalChainComplexXEquiv_d_apply,
-    d_apply, map_neg, boundary_freeLoopTorusChain, neg_neg]
-  -- `normalizedCubicalChainComplexXEquiv` is the identity of the underlying chains.
-  rfl
+  -- The underlying chain of the cross product of the cycles is the cross product of the chains.
+  have h₁ := ConcreteCategory.congr_hom (HomologicalComplex.cyclesCross_iCycles
+    ((normalizedCubicalChainComplex R).obj (TopCat.of (ULift.{u} Circle)))
+    ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))) 1 k (k + 1)
+    (Nat.add_comm 1 k)) (circleCycle R ⊗ₜ z)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul,
+    iCycles_circleCycle] at h₁
+  have h₂ := ConcreteCategory.congr_hom (ι_cubicalCrossProduct_f (R := R)
+    (X := TopCat.of (ULift.{u} Circle)) (Y := TopCat.of C(Circle, Q)) (Nat.add_comm 1 k))
+    ((normalizedCubicalChainComplexXEquiv _ 1).symm
+        (NormalizedCubicalChain.map R (⟨ULift.up, continuous_uliftUp⟩ : C(Circle, ULift.{u} Circle))
+          1 (NormalizedCubicalChain.ofCube Circle R circleCube)) ⊗ₜ
+      ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).iCycles k z)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₂
+  -- The steps are chained by transitivity: the cycles of the tensor product are named through
+  -- `HomologicalComplex.tensorObj`, which agrees with the monoidal tensor product only after
+  -- unfolding, so they cannot be rewritten.
+  refine (HomologicalComplex.moduleCat_iCycles_cyclesMap_apply _ _ _ _).trans ?_
+  refine (congrArg _ (HomologicalComplex.moduleCat_iCycles_cyclesMap_apply _ _ _ _)).trans ?_
+  refine (congrArg _ ((congrArg _ h₁).trans h₂)).trans ?_
+  refine (congrArg (ConcreteCategory.hom (((normalizedCubicalChainComplex R).map _).f (k + 1)))
+    (cubicalCrossProductSummand_apply R _ _ 1 k (k + 1) (Nat.add_comm 1 k) _ _)).trans ?_
+  rw [normalizedCubicalChainComplex_map_f_apply, normalizedCubicalChainComplexXEquiv_symm_apply,
+    normalizedCubicalChainComplexXEquiv_symm_apply, normalizedCubicalChainComplexXEquiv_apply]
+  exact map_cast_crossProduct_map_ofCube_circleCube R k _
 
 variable (Q) in
 /-- **The torus map** `H^□ₖ(𝓛Q; R) ⟶ H^□ₖ₊₁(Q; R)` on normalized cubical homology: a class `a` of
 the free loop space `𝓛Q = C(S¹, Q)` goes to `ev_* ([S¹] × a)`, the push-forward along evaluation
-`S¹ × 𝓛Q → Q` of its cross product with the class of the standard loop of the circle. A loop of
-free loops is a torus in `Q`, and this map sends its class to the class of the torus. -/
+`S¹ × 𝓛Q → Q` of its homology cross product (`HomologicalComplex.homologyCross`, followed by the
+cubical cross product `TauCeti.cubicalCrossProduct`) with the fundamental class of the circle. A
+loop of free loops is a torus in `Q`, and this map sends its class to the class of the torus. -/
 def freeLoopTorusHomology (k : ℕ) :
     ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).homology k ⟶
       ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).homology (k + 1) :=
-  (Limits.CokernelCofork.IsColimit.desc' (((normalizedCubicalChainComplex R).obj
-    (TopCat.of C(Circle, Q))).homologyIsCokernel (k + 1) k (by simp)) _
-    (toCycles_freeLoopTorusCycles_homologyπ R k)).1
+  (λ_ _).inv ≫ (ModuleCat.ofHom (LinearMap.toSpanSingleton R _ (circleHomologyClass R)) ▷ _) ≫
+    HomologicalComplex.homologyCross _ _ 1 k (k + 1) (Nat.add_comm 1 k) ≫
+      HomologicalComplex.homologyMap
+        (cubicalCrossProduct R (TopCat.of (ULift.{u} Circle)) (TopCat.of C(Circle, Q))) (k + 1) ≫
+        HomologicalComplex.homologyMap
+          ((normalizedCubicalChainComplex R).map (TopCat.ofHom (uliftFreeLoopEval Q))) (k + 1)
 
-/-- The torus map sends the class of a cycle `z` to the class of its torus chain
-`ev_♯ ([S¹] × z)`. -/
-@[simp]
+/-- The torus map sends the class of a cycle `z` to the class of any cycle whose underlying chain
+is the torus chain `ev_♯ ([S¹] × z)` of `z`. -/
 theorem freeLoopTorusHomology_homologyπ (k : ℕ)
-    (z : ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).cycles k) :
+    (z : ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).cycles k)
+    (z' : ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).cycles (k + 1))
+    (hz' : ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).iCycles (k + 1) z' =
+      (normalizedCubicalChainComplexXEquiv _ (k + 1)).symm (freeLoopTorusChain Q R k
+        (normalizedCubicalChainComplexXEquiv _ k
+          (((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).iCycles k z)))) :
     freeLoopTorusHomology Q R k
         (((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))).homologyπ k z) =
-      ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).homologyπ (k + 1)
-        (freeLoopTorusCycles Q R k z) :=
-  ConcreteCategory.congr_hom (Limits.CokernelCofork.IsColimit.desc' _ _
-    (toCycles_freeLoopTorusCycles_homologyπ R k)).2 z
+      ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).homologyπ (k + 1) z' := by
+  simp only [freeLoopTorusHomology, ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.leftUnitor_inv_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
+    ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, one_smul, circleHomologyClass]
+  -- The cross product of the classes of `circleCycle R` and `z` is the class of their cross
+  -- product.
+  have h₁ := ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_tensorHom_homologyCross
+    ((normalizedCubicalChainComplex R).obj (TopCat.of (ULift.{u} Circle)))
+    ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))) 1 k (k + 1)
+    (Nat.add_comm 1 k)) (circleCycle R ⊗ₜ z)
+  rw [ConcreteCategory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul] at h₁
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₁
+  -- Both push-forwards on homology are computed on cycles.
+  have h₂ := ConcreteCategory.congr_hom ((HomologicalComplex.homologyπ_naturality_assoc
+    (cubicalCrossProduct R (TopCat.of (ULift.{u} Circle)) (TopCat.of C(Circle, Q))) (k + 1) _).trans
+      (congrArg (_ ≫ ·) (HomologicalComplex.homologyπ_naturality
+        ((normalizedCubicalChainComplex R).map (TopCat.ofHom (uliftFreeLoopEval Q))) (k + 1))))
+    ((HomologicalComplex.cyclesCross
+      ((normalizedCubicalChainComplex R).obj (TopCat.of (ULift.{u} Circle)))
+      ((normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))) 1 k (k + 1)
+      (Nat.add_comm 1 k)).hom (circleCycle R ⊗ₜ z))
+  have hz := hz'.trans (iCycles_cyclesMap_cyclesMap_cyclesCross_circleCycle R k z).symm
+  rw [HomologicalComplex.moduleCat_iCycles_injective _ _ hz]
+  exact (congrArg _ h₁).trans h₂
 
 end Homology
 
@@ -319,7 +345,8 @@ theorem cubicalFreeLoopTorusClassHom_mk {γ : C(Circle, Q)} (Λ : Ω^ (Fin 1) C(
       ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).homologyπ 2 z := by
   let K := (normalizedCubicalChainComplex R).obj (TopCat.of C(Circle, Q))
   let w := K.moduleCatCyclesMk (NormalizedCubicalChain.ofCube _ R (Λ : SingularCube _ 1)) 0
-    (by simp) (by rw [d_apply]; exact GenLoop.boundary_ofCube_eq_zero R Λ)
+    (by simp) (by
+      rw [normalizedCubicalChainComplex_obj_d_apply]; exact GenLoop.boundary_ofCube_eq_zero R Λ)
   have hw : K.iCycles 1 w = NormalizedCubicalChain.ofCube _ R (Λ : SingularCube _ 1) :=
     HomologicalComplex.iCycles_moduleCatCyclesMk ..
   -- By definition, the torus class is the torus map applied to the cubical Hurewicz class.
@@ -329,12 +356,9 @@ theorem cubicalFreeLoopTorusClassHom_mk {γ : C(Circle, Q)} (Λ : Ω^ (Fin 1) C(
           (HomotopyGroup.cubicalHurewicz_mk R 0 Λ))
     _ = freeLoopTorusHomology Q R 1 (K.homologyπ 1 w) := by
       rw [GenLoop.homologyπ_eq_cubicalHurewicz R Λ hw]
-    _ = _ := by
-      rw [freeLoopTorusHomology_homologyπ]
-      congr 1
-      refine HomologicalComplex.moduleCat_iCycles_injective _ _ ?_
-      rw [iCycles_freeLoopTorusCycles_apply, hz, hw]
-      exact freeLoopTorusChain_ofCube R 1 _
+    _ = _ := freeLoopTorusHomology_homologyπ R 1 w z (by
+      rw [hz, hw]
+      exact (freeLoopTorusChain_ofCube R 1 _).symm)
 
 /-- The torus swept out by a loop of free loops at the constant loop at `x`, all of whose loops
 start at `x`, is a generalized loop of `Q` at `x`: its boundary is sent to `x`. -/
@@ -369,7 +393,9 @@ theorem cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz {x : Q}
   let z := ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).moduleCatCyclesMk
     (NormalizedCubicalChain.ofCube Q R (freeLoopTorusCube (Λ : SingularCube C(Circle, Q) 1))) 1
     (by simp)
-    (by rw [d_apply]; exact GenLoop.boundary_ofCube_eq_zero R (GenLoop.freeLoopTorus Λ hΛ))
+    (by
+      rw [normalizedCubicalChainComplex_obj_d_apply]
+      exact GenLoop.boundary_ofCube_eq_zero R (GenLoop.freeLoopTorus Λ hΛ))
   have hz : ((normalizedCubicalChainComplex R).obj (TopCat.of Q)).iCycles 2 z =
       NormalizedCubicalChain.ofCube Q R (freeLoopTorusCube (Λ : SingularCube C(Circle, Q) 1)) :=
     HomologicalComplex.iCycles_moduleCatCyclesMk ..
@@ -385,10 +411,11 @@ theorem cubicalFreeLoopTorusClassHom_eq_zero_of_forall_const {γ : C(Circle, Q)}
       0 := by
   have hdeg : SingularCube.IsDegenerate (freeLoopTorusCube (Λ : SingularCube C(Circle, Q) 1)) :=
     SingularCube.isDegenerate_iff.2 ⟨0, SingularCube.isDegenerateAt_iff.2 fun z t ↦ by simp [hΛ]⟩
-  -- The zero cycle has underlying chain the class of the degenerate torus; the two zeros differ
-  -- only by reading the chains of `Q` as a term of its chain complex.
-  rw [cubicalFreeLoopTorusClassHom_mk R Λ (z := 0)
-    (by rw [map_zero, NormalizedCubicalChain.ofCube_eq_zero R hdeg]; rfl), map_zero]
+  -- The zero cycle has underlying chain the class of the degenerate torus.
+  rw [cubicalFreeLoopTorusClassHom_mk R Λ (z := 0) (by
+    rw [map_zero, ← normalizedCubicalChainComplexXEquiv_symm_apply (R := R) (TopCat.of Q) 2
+      (NormalizedCubicalChain.ofCube Q R _), NormalizedCubicalChain.ofCube_eq_zero R hdeg,
+      map_zero]), map_zero]
 
 /-- Every generalized loop `p` of `Q` at `x` is the torus swept out by a loop of based loops: the
 loop `t ↦ (s ↦ p (s, t))` of loops at `x`, read as circle maps. -/
@@ -448,7 +475,7 @@ private theorem cubicalFreeLoopTorusClassHom_map_const' {x : Q}
     rw [HomotopyGroup.map_mk]
     -- Every loop of the family is constant.
     exact cubicalFreeLoopTorusClassHom_eq_zero_of_forall_const R _ fun t z ↦ by
-      rw [GenLoop.map_apply]; rfl
+      simp only [GenLoop.map_apply, ContinuousMap.coe_const', ContinuousMap.const_apply]
 
 /-- **The torus classes at a constant loop are the cubical Hurewicz classes of `π₂`.** At the
 constant loop at `x`, the image of the torus class `π₁(𝓛Q, x) → H^□₂(Q; R)` is the image of the
