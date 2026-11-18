@@ -46,9 +46,9 @@ Consequences:
   (`TauCeti.eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le`), and membership
   of `T f` in the local Sobolev class `W^{1,p}_loc` on every subset of the plane
   (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`);
-* for data with values in a finite-dimensional space without an inner product, a weak derivative
-  in `Lᵖ(ℂ)` with antiholomorphic part `f`
-  (`TauCeti.exists_hasWeakFDerivOn_cauchyTransform_of_memLp`), by transport to a Euclidean space;
+* for data with values in a finite-dimensional space without an inner product, membership of
+  `T f` in `W^{1,p}_loc` (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional`),
+  by transport to a Euclidean space;
 * continuity in parameters of the derivative term: for a family of data depending continuously
   on a parameter in `Lᵖ`, the fields `w ↦ wirtingerPartsCLM (B f w) (f w)` depend continuously on
   it in `Lᵖ(ℂ)` (`TauCeti.continuous_toLp_wirtingerPartsCLM_beurlingLp`). The function term is
@@ -290,39 +290,28 @@ section FiniteDimensional
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
   {p : ℝ≥0∞}
 
-/-- **The weak derivative of the Cauchy transform of `Lᵖ` data in a finite-dimensional space.**
+/-- **The Cauchy transform of `Lᵖ` data in a finite-dimensional space is locally `W^{1,p}`.**
 For `1 < p < ∞` and `f ∈ Lᵖ(ℂ)` supported in a closed disc, with values in a finite-dimensional
-complex normed space `F` that need not carry an inner product, `T f` has a weak derivative `D` on
-every open subset of the plane, with `D ∈ Lᵖ(ℂ)` and antiholomorphic part `f`, that is
-`D 1 + i D i = 2 f`. It is transported from `TauCeti.hasWeakFDerivOn_cauchyTransform_of_memLp`
-along a complex-linear equivalence of `F` with a Euclidean space, with which the Cauchy transform
-commutes (`ContinuousLinearEquiv.cauchyTransform_comp_comm`). -/
-theorem exists_hasWeakFDerivOn_cauchyTransform_of_memLp (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
-    {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ} (hs : support f ⊆ closedBall c r) :
-    ∃ D : ℂ → ℂ →L[ℝ] F, MemLp D p volume ∧
-      (∀ Ω : Opens ℂ, HasWeakFDerivOn volume Ω (cauchyTransform f) D) ∧
-      ∀ w, D w 1 + I • D w I = (2 : ℂ) • f w := by
+complex normed space `F` that need not carry an inner product, `T f` belongs to the local Sobolev
+class `W^{1,p}_loc` on every subset of the plane. It is transported from
+`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp` along a complex-linear equivalence of `F` with a
+Euclidean space, with which the Cauchy transform commutes
+(`ContinuousLinearEquiv.cauchyTransform_comp_comm`). -/
+theorem memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ}
+    (hs : support f ⊆ closedBall c r) (U : Set ℂ) : MemWkpLoc p U 1 (cauchyTransform f) := by
   have := FiniteDimensional.completeSpace ℂ F
   have : Fact (1 ≤ p) := ⟨hp.le⟩
   let G := EuclideanSpace ℂ (Fin (Module.finrank ℂ F))
   let A : F ≃L[ℂ] G := ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  let AsR : G →L[ℝ] F := (A.symm : G →L[ℂ] F).restrictScalars ℝ
-  have hfA : MemLp (fun z ↦ A (f z)) p volume := (A : F →L[ℂ] G).comp_memLp' hf
   have hfAs : support (fun z ↦ A (f z)) ⊆ closedBall c r :=
     fun z hz ↦ hs fun h0 ↦ hz (by simp only [h0, map_zero])
-  set W := fun w ↦ wirtingerPartsCLM (beurlingLp p hp hp_top (hfA.toLp _) w) (A (f w))
-  have hT : (fun w ↦ AsR (cauchyTransform (fun z ↦ A (f z)) w)) = cauchyTransform f := by
+  have hT : (fun w ↦ (A.symm : G →L[ℂ] F).restrictScalars ℝ
+      (cauchyTransform (fun z ↦ A (f z)) w)) = cauchyTransform f := by
     funext w
-    simp [AsR, A.cauchyTransform_comp_comm]
-  have hW : MemLp W p volume := (Lp.memLp _).wirtingerPartsCLM hfA
-  refine ⟨fun w ↦ AsR.comp (W w), (ContinuousLinearMap.compL ℝ ℂ G F AsR).comp_memLp' hW,
-    fun Ω ↦ hT ▸ (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hfA hfAs Ω).clm_comp AsR,
-    fun w ↦ ?_⟩
-  have h : W w 1 + I • W w I = (2 : ℂ) • A (f w) := by
-    simp only [W, wirtingerPartsCLM_apply, one_smul, map_one, Complex.conj_I, smul_add, smul_neg,
-      neg_smul, smul_smul, Complex.I_mul_I]
-    module
-  simpa [AsR] using congrArg A.symm h
+    simp [A.cauchyTransform_comp_comm]
+  exact hT ▸ (memWkpLoc_one_cauchyTransform_of_memLp hp hp_top ((A : F →L[ℂ] G).comp_memLp' hf)
+    hfAs U).clm_comp _
 
 end FiniteDimensional
 

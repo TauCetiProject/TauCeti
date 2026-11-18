@@ -66,7 +66,7 @@ solution `Ψ` is continuous, close to `1` and hence invertible, and has weak der
 `bar∂Ψ = ½ Ψ D`. The Leibniz rule for `bar∂` (`TauCeti.HasWeakConjWirtingerDerivOn.clm_apply`)
 then gives `bar∂ (Ψ ξ) = Ψ (bar∂ξ + ½ D ξ) = Ψ (bar∂ξ + ½ C ξ) = 0` weakly, so `σ = Ψ ξ` is
 holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`. For finite `p` the Calderón–Zygmund inequality
-(`TauCeti.exists_hasWeakFDerivOn_cauchyTransform_of_memLp`) puts `Ψ`, and with it `Ψ⁻¹`
+(`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional`) puts `Ψ`, and with it `Ψ⁻¹`
 (`TauCeti.MemWkpLoc.ring_inverse`), in `W^{1,p}_loc`.
 
 ## Main results
@@ -393,11 +393,9 @@ private theorem exists_similarity_of_innerProductSpace [FiniteDimensional ℂ E]
     rw [mem_ball_iff_norm, hΨ, add_sub_cancel_left]
     exact hTg1 z (ball_subset_closedBall hz)
   -- `T g` is `W^{1,p}_loc` by the Calderón–Zygmund inequality, hence so is `Ψ⁻¹`
-  obtain ⟨DT, hDTp, hDT, -⟩ := exists_hasWeakFDerivOn_cauchyTransform_of_memLp
-    ((by norm_num : (1 : ℝ≥0∞) < 2).trans hp) hp_top hg hgs
   have hΨw : MemWkpLoc p (ball z₀ r) 1 Ψ := (memWkpLoc_const 1).add
-    (memWkpLoc_succ_iff_of_isOpen (Ω := ⟨ball z₀ r, isOpen_ball⟩).2 ⟨hTg.continuousOn.memLpLoc,
-      DT, hDT _, memWkpLoc_zero_iff.2 (hDTp.restrict _).memLpLoc⟩)
+    (memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional
+      ((by norm_num : (1 : ℝ≥0∞) < 2).trans hp) hp_top hg hgs _)
   refine ⟨r, hr, ball_subset_closedBall.trans hsubΩ, fun z ↦ Ring.inverse (Ψ z),
     fun z ↦ Ψ z (ξ z), fun z hz ↦ ?_,
     hΨw.ring_inverse (continuous_const.add hTg).continuousOn hunit, fun z hz ↦ ?_,
