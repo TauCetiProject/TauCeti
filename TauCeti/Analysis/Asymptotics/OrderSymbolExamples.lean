@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-public import Mathlib.Analysis.Analytic.OfScalars
+public import TauCeti.Analysis.Analytic.OfScalars
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
@@ -27,10 +27,9 @@ sector `|ph z| ≤ π/2 - δ` but not in the open half-plane `|ph z| < π/2`.
   `e^{-z} = o(1)` as `z → ∞` in `|ph z| ≤ π/2 - δ`, and not in `|ph z| < π/2`.
 * `TauCeti.sin_pi_mul_add_inv_isBigO`: `sin(πn + n⁻¹) = O(n⁻¹)` as `n → ±∞` in `ℤ` (DLMF 2.1.6).
 * `TauCeti.exp_ofReal_mul_I_isBigO_one`: `e^{ix} = O(1)` on all of `ℝ` (DLMF 2.1.7).
-* `TauCeti.tsum_tail_isBigO_pow`: the tail from index `n` of a power series that converges near
-  `0` is `O(zⁿ)` (DLMF 2.1.8).
-
-DLMF 2.1.9, `e^z = 1 + z + O(z²)` as `z → 0`, is the case `n = 2` of Mathlib's
+DLMF 2.1.8, that the tail from index `n` of a power series converging near `0` is `O(zⁿ)`, is
+`TauCeti.tsum_tail_isBigO_pow` of `TauCeti.Analysis.Analytic.OfScalars`; an `example` records its
+case `𝕜 = ℂ`. DLMF 2.1.9, `e^z = 1 + z + O(z²)` as `z → 0`, is the case `n = 2` of Mathlib's
 `Complex.exp_sub_sum_range_isBigO_pow`; an `example` at the end of the file records it.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
@@ -122,37 +121,11 @@ theorem exp_ofReal_mul_I_isBigO_one :
     (fun x : ℝ => exp (x * I)) =O[⊤] fun _ => (1 : ℝ) :=
   isBigO_top.mpr ⟨1, fun x => by simp [norm_exp_ofReal_mul_I]⟩
 
-/-- DLMF 2.1.8: if `∑ aₛ zˢ` converges for all sufficiently small `z`, then for each `n`,
-`∑_{s ≥ n} aₛ zˢ = O(zⁿ)` as `z → 0`. For a function with a power series in Mathlib's sense this
-is `HasFPowerSeriesAt.isBigO_sub_partialSum_pow`; here the hypothesis is the convergence of the
-scalar series. -/
-theorem tsum_tail_isBigO_pow {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-    {a : ℕ → 𝕜} (ha : ∀ᶠ z in 𝓝 0, Summable fun s => a s * z ^ s) (n : ℕ) :
-    (fun z : 𝕜 => ∑' s, a (s + n) * z ^ (s + n)) =O[𝓝 0] fun z => z ^ n := by
-  set p := FormalMultilinearSeries.ofScalars 𝕜 a with hp
-  -- `p` has positive radius: its terms at a small nonzero `x` tend to `0`.
-  obtain ⟨ε, hε, hs⟩ := Metric.eventually_nhds_iff.mp ha
-  obtain ⟨x, hx0, hxε⟩ := NormedField.exists_norm_lt 𝕜 hε
-  have hsx := hs (y := x) (by simpa using hxε)
-  have hrad : (‖x‖₊ : ENNReal) ≤ p.radius := p.le_radius_of_tendsto (l := 0) <| by
-    simpa [hp, FormalMultilinearSeries.ofScalars_norm, norm_mul, norm_pow] using
-      hsx.tendsto_atTop_zero.norm
-  have h := ((FormalMultilinearSeries.hasFPowerSeriesOnBall p
-    ((ENNReal.coe_pos.mpr (nnNorm_pos.mpr (norm_pos_iff.mp hx0))).trans_le hrad)
-    ).hasFPowerSeriesAt).isBigO_sub_partialSum_pow n
-  -- Near `0` the remainder after `n` terms is the tail of the scalar series.
-  have heq : (fun z : 𝕜 => p.sum (0 + z) - p.partialSum n z) =ᶠ[𝓝 0]
-      fun z => ∑' s, a (s + n) * z ^ (s + n) := by
-    filter_upwards [ha] with z hz
-    have hsum := hz.sum_add_tsum_nat_add n
-    simp only [zero_add, FormalMultilinearSeries.partialSum, hp,
-      FormalMultilinearSeries.ofScalars_apply_eq, smul_eq_mul]
-    rw [show p.sum z = ∑' s, a s * z ^ s by
-      simpa [hp, FormalMultilinearSeries.ofScalarsSum] using
-        FormalMultilinearSeries.ofScalars_sum_eq a z]
-    rw [← hsum]; ring
-  refine (h.congr' heq EventuallyEq.rfl).trans ?_
-  simpa [norm_pow] using (isBigO_refl (fun z : 𝕜 => z ^ n) (𝓝 0)).norm_left
+/-- DLMF 2.1.8 over `ℂ`: if `∑ aₛ zˢ` converges for all sufficiently small `|z|`, then for each
+`n`, `∑_{s ≥ n} aₛ zˢ = O(zⁿ)` as `z → 0`; the case `𝕜 = ℂ` of `TauCeti.tsum_tail_isBigO_pow`. -/
+example {a : ℕ → ℂ} (ha : ∀ᶠ z in 𝓝 0, Summable fun s => a s * z ^ s) (n : ℕ) :
+    (fun z : ℂ => ∑' s, a (s + n) * z ^ (s + n)) =O[𝓝 0] fun z => z ^ n :=
+  tsum_tail_isBigO_pow ha n
 
 /-- DLMF 2.1.9: `e^z = 1 + z + O(z²)` as `z → 0` in `ℂ`, the case `n = 2` of Mathlib's
 `Complex.exp_sub_sum_range_isBigO_pow`. -/
