@@ -56,7 +56,7 @@ imposed on the analytic record.
 
 ## Main results
 
-* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`.
+* `AnalyticLFunctionData.dual_dual`, `degree_dual`, `gammaFactor_dual`, `exists_shift_norm_le`.
 * `HasDirichletAgreement.dual`, `HasMeromorphicContinuation.dual`, `HasFunctionalEquation.dual`.
 * `HasFunctionalEquation.eventuallyEq`: the functional equation as germs at every point.
 
@@ -115,6 +115,22 @@ theorem gammaFactor_def (s : ℂ) :
     d.gammaFactor s =
       (d.gammaR.map fun μ ↦ Gammaℝ (s + μ)).prod * (d.gammaC.map fun ν ↦ Gammaℂ (s + ν)).prod :=
   (rfl)
+
+/-- Every record `d` has a finite norm bound on its real and complex gamma shifts. -/
+theorem exists_shift_norm_le :
+    ∃ M ≥ 0, (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) ∧ (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) := by
+  have hnn (m : Multiset ℂ) : ∀ x ∈ m.map norm, (0 : ℝ) ≤ x := by
+    intro x hx
+    obtain ⟨z, -, rfl⟩ := Multiset.mem_map.mp hx
+    exact norm_nonneg z
+  have hR0 : 0 ≤ (d.gammaR.map norm).sum := Multiset.sum_nonneg (hnn d.gammaR)
+  have hC0 : 0 ≤ (d.gammaC.map norm).sum := Multiset.sum_nonneg (hnn d.gammaC)
+  refine ⟨(d.gammaR.map norm).sum + (d.gammaC.map norm).sum, add_nonneg hR0 hC0,
+    fun μ hμ ↦ ?_, fun ν hν ↦ ?_⟩
+  · have h1 := Multiset.single_le_sum (hnn d.gammaR) ‖μ‖ (Multiset.mem_map_of_mem norm hμ)
+    linarith
+  · have h2 := Multiset.single_le_sum (hnn d.gammaC) ‖ν‖ (Multiset.mem_map_of_mem norm hν)
+    linarith
 
 /-- The **dual card**: conjugate coefficients, conjugate gamma shifts, conjugate root number, the
 reflected completed function `s ↦ conj Λ(conj s)`, and the conjugate polar divisor. The conductor
