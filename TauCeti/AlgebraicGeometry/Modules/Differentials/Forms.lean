@@ -33,9 +33,10 @@ determinant `det Ω_{X/R}` (the canonical sheaf of `X` over `R`), and `Ωᵖ_{X/
 * `TauCeti.AlgebraicGeometry.differentialForms R f p`: the sheaf `Ωᵖ_{X/R}`;
 * `differentialFormsZeroIso` and `differentialFormsOneIso`: `Ω⁰_{X/R} ≅ 𝒪_X` and
   `Ω¹_{X/R} ≅ Ω_{X/R}`;
-* `FiniteLocallyFreeSheaf.differentialForms R X p` and
-  `FiniteLocallyFreeSheaf.rank_differentialForms_apply`: on a smooth scheme `Ωᵖ_{X/R}` is finite
-  locally free, of rank `n.choose p` in relative dimension `n`;
+* `FiniteLocallyFreeSheaf.differentialForms R X p`, `FiniteLocallyFreeSheaf.differentialForms_def`,
+  `FiniteLocallyFreeSheaf.rank_differentialForms_apply'` and
+  `FiniteLocallyFreeSheaf.rank_differentialForms_apply`: on a smooth scheme `Ωᵖ_{X/R}` is the
+  finite locally free exterior power of `Ω_{X/R}`, of rank `n.choose p` in relative dimension `n`;
 * `isZero_differentialForms`: `Ωᵖ_{X/R} = 0` for `p` above the relative dimension;
 * `isInvertible_differentialForms` and `differentialFormsIsoDet`: the top-degree forms are
   invertible and are the determinant of `Ω_{X/R}`.
@@ -97,7 +98,20 @@ lemma FiniteLocallyFreeSheaf.differentialForms_obj [Smooth (X ↘ Spec (.of R))]
       TauCeti.AlgebraicGeometry.differentialForms R (X ↘ Spec (.of R)) p := by
   rw [differentialForms, exteriorPower_obj_obj, relativeDifferentials_obj, differentialForms_def]
 
+/-- On a scheme smooth over `Spec R`, `FiniteLocallyFreeSheaf.differentialForms R X p` is the
+`p`-th exterior power of the finite locally free sheaf `Ω_{X/R}`. -/
+lemma FiniteLocallyFreeSheaf.differentialForms_def [Smooth (X ↘ Spec (.of R))] (p : ℕ) :
+    differentialForms R X p = (exteriorPower X p).obj (relativeDifferentials R X) :=
+  (rfl)
+
 variable {X}
+
+/-- On a scheme smooth over `Spec R`, the rank of the sheaf of differential `p`-forms at `x` is
+`r.choose p`, where `r` is the rank of `Ω_{X/R}` at `x`. -/
+@[simp]
+theorem FiniteLocallyFreeSheaf.rank_differentialForms_apply' [Smooth (X ↘ Spec (.of R))] (p : ℕ)
+    (x : X) : (differentialForms R X p).rank x = ((relativeDifferentials R X).rank x).choose p := by
+  rw [differentialForms_def, rank_exteriorPower_apply]
 
 /-- On a scheme smooth of relative dimension `n` over `Spec R`, the sheaf of differential
 `p`-forms has rank `n.choose p` at every point. -/
@@ -106,7 +120,7 @@ theorem FiniteLocallyFreeSheaf.rank_differentialForms_apply (n p : ℕ)
     haveI := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
     (differentialForms R X p).rank x = n.choose p := by
   have := SmoothOfRelativeDimension.smooth n (X ↘ Spec (.of R))
-  rw [differentialForms, rank_exteriorPower_apply, rank_relativeDifferentials_apply R n]
+  rw [rank_differentialForms_apply', rank_relativeDifferentials_apply R n]
 
 variable (X)
 
