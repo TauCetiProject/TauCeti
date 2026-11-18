@@ -11,7 +11,7 @@ import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
-# The logarithmic gauge is biholomorphic
+# The logarithmic gauge is a diffeomorphism
 
 Let `P : D_t → (Λ →ₗ[ℤ] E)` be a `C^n` family of full lattices over the disc `D_t` of radius
 `r ^ m`, with family of tori `Y = (D_t × E)/Λ`, and let `X = (D_z × E)/Λ` be its pullback along
@@ -380,8 +380,8 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
     (fun y hy ↦ Subtype.val_injective.extend_apply _ _ ⟨y, hy⟩)
     (by rwa [torusFamilyProjection_mk] at hy) e
 
-/-- **The logarithmic gauge is biholomorphic.** For a `C^n` family of periods `P` over the disc of
-radius `r ^ m` and `l : Λ` such that the normalized pure translation action
+/-- **The logarithmic gauge is a diffeomorphism.** For a `C^n` family of periods `P` over the disc
+of radius `r ^ m` and `l : Λ` such that the normalized pure translation action
 `TauCeti.logTranslationMulAction` on the pulled-back family `X` is free, the logarithmic gauge
 `[[z, e]] ↦ [z ^ m, e - (log z / 2πi) • P (z ^ m) l]` from the punctured cyclic quotient
 `Q* = {t ≠ 0}` of `Q = X / C_m` to the punctured family `Y* = {t ≠ 0}`

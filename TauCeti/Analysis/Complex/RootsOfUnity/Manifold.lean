@@ -41,8 +41,8 @@ on which the rotations lift.
 * `TauCeti.rootsOfUnityBall.instContMDiffConstSMul`: the rotations act on the disc by `C^n` maps,
   that is, by biholomorphisms.
 * `TauCeti.rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq`: near a nonzero point, the
-  power map `u ↦ u ^ m` between the discs has a holomorphic local section together with a
-  holomorphic logarithm of it.
+  power map `u ↦ u ^ m` between the discs has a `C^n` local section together with a `C^n`
+  logarithm of it (holomorphic for `n ≠ 0`).
 -/
 
 public section
