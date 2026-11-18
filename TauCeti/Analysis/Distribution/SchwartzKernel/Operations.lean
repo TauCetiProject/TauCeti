@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.Restriction
-public import TauCeti.Analysis.Distribution.SchwartzKernel
+public import TauCeti.Analysis.Distribution.SchwartzKernel.Basic
 public import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 
 /-!
@@ -195,13 +196,12 @@ theorem isVanishingOn_prod_iff_kernelOperator (hV : (V : Set (E × D)) = (Ω : S
       have hφ : ⇑(monoCLM ℝ φ : 𝓓(Ω, ℝ)) = φ := by ext; simp [Ω']
       exact h _ (hψ ▸ ψ.tsupport_subset.trans inter_subset_right) _
         (hφ ▸ φ.tsupport_subset.trans inter_subset_right)
-  -- The test `χ` is supported in `V'`, so it is the extension by zero of a test `χ'` on `V'`.
+  -- The test `χ` is supported in `V'`, so it is the extension by zero of a test on `V'`.
   have hχV' : tsupport χ ⊆ V' := fun p hp ↦ by
     have hpV : p ∈ (Ω : Set E) ×ˢ (O : Set D) := hV ▸ χ.tsupport_subset hp
     exact ⟨⟨hpV.1, (hχ hp).1⟩, hpV.2, (hχ hp).2⟩
-  let χ' : 𝓓(V', ℝ) := ⟨χ, χ.contDiff, χ.hasCompactSupport, hχV'⟩
-  have hχ' : monoCLM ℝ χ' = χ := by ext; simp [χ', hVV']
-  rw [← hχ', ← restrictCLM_apply, hK', zero_apply]
+  obtain ⟨χ', rfl⟩ := exists_monoCLM_eq_of_tsupport_subset hVV' hχV'
+  rw [← restrictCLM_apply, hK', zero_apply]
 
 /-- **Output support.** For an open set `s ⊆ E`, the kernel `K` on `Ω × O` vanishes on `s × D`
 exactly when every output `A_K ψ` vanishes on `s`. -/
