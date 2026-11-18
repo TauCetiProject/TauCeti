@@ -30,8 +30,8 @@ of its argument it is the singular integral operator with kernel
 estimates `|K_v(z)| ≤ c_n ‖v‖ ‖z‖⁻ⁿ` and `|K_v(a) - K_v(b)| ≤ C ‖v‖ ‖a - b‖ ‖b‖⁻ⁿ⁻¹` for
 `2 ‖a - b‖ < ‖b‖`, so `R_v` is a Calderón–Zygmund operator
 (`TauCeti.hasStandardKernel_rieszTransform`) and in particular of weak type `(1, 1)`
-(`TauCeti.exists_mul_volume_lt_enorm_rieszTransform_le`). In dimension one, `K_1(z) = 1 / (π z)`
-is the kernel of the Hilbert transform.
+(`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le`). In dimension one,
+`K_1(z) = 1 / (π z)` is the kernel of the Hilbert transform.
 
 ## The argument
 
@@ -748,18 +748,5 @@ theorem hasStandardKernel_rieszTransform (v : E) :
     filter_upwards [ae_rieszTransform_eq_integral v f hs hf] with x hx hxs
     rw [hx hxs]
     simp_rw [Complex.coe_smul]
-
-/-- **The Riesz transforms are of weak type `(1, 1)`.** There is a constant `A` with
-`t · |{x | ‖R_v f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. For `v ≠ 0` and
-nonzero `F`, the Riesz transform is not bounded on `L¹`; this is the endpoint substitute. It
-is the weak type `(1, 1)` of Calderón–Zygmund operators
-(`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le`) for the kernel
-`K_v(x - y)` (`TauCeti.hasStandardKernel_rieszTransform`). -/
-theorem exists_mul_volume_lt_enorm_rieszTransform_le (v : E) :
-    ∃ A : ℝ≥0, ∀ (f : Lp F 2 (volume : Measure E)) (t : ℝ≥0∞),
-      t * volume {x | t < ‖rieszTransform F v f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
-  obtain ⟨A, hA⟩ := (hasStandardKernel_rieszTransform (F := F) v).exists_mul_volume_lt_enorm_le
-  exact ⟨A, fun f t ↦
-    (eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)) ▸ hA f t⟩
 
 end TauCeti
