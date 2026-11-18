@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.MorphismProperty.Basic
-public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import TauCeti.CategoryTheory.ObjectProperty.ArrowIso
 
 /-!
 # Monomorphisms whose cokernel satisfies a property
@@ -21,7 +20,9 @@ monomorphisms with small acyclic cokernels.
 ## Main definitions
 
 * `CategoryTheory.ObjectProperty.monoWithCokernel`: the monomorphisms whose cokernel satisfies `S`.
-  It respects isomorphisms of arrows when `S` is closed under isomorphisms.
+  It respects isomorphisms of arrows when `S` is closed under isomorphisms, because the cokernel
+  of a morphism satisfies such a property as soon as that of an isomorphic arrow does
+  (`CategoryTheory.ObjectProperty.prop_cokernel_of_arrowIso`).
 -/
 
 public section
@@ -43,9 +44,8 @@ lemma mem_monoWithCokernel_iff {X Y : C} (g : X ⟶ Y) :
   Iff.rfl
 
 instance [S.IsClosedUnderIsomorphisms] : S.monoWithCokernel.RespectsIso :=
-  .of_respects_arrow_iso _ fun f g e ⟨hm, hf⟩ ↦
+  .of_respects_arrow_iso _ fun _ _ e ⟨hm, hf⟩ ↦
     ⟨(MorphismProperty.monomorphisms C).arrow_iso_iff e |>.1 hm,
-      S.prop_of_iso (cokernel.mapIso f.hom g.hom (Arrow.leftFunc.mapIso e)
-        (Arrow.rightFunc.mapIso e) (Arrow.w e.hom).symm) hf⟩
+      S.prop_cokernel_of_arrowIso e hf⟩
 
 end CategoryTheory.ObjectProperty
