@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.Lojasiewicz
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -38,10 +39,11 @@ the other hand, near a point of any critical zero section the critical value is 
 and the energy difference is quadratic in the distance to it,
 `|f z - f (a, 0)| ≤ C ‖z.2‖ ^ 2` (`TauCeti.exists_abs_sub_le_mul_norm_snd_sq`). Together these give
 the **Morse–Bott form of Łojasiewicz's gradient inequality** with exponent `1 / 2`,
-`lam * |f z - f (a, 0)| ≤ ‖Df(z)‖ ^ 2` (`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq`). It is
-the input for the exponential convergence of gradient trajectories to points of a Morse–Bott
-critical submanifold, exactly as at a nondegenerate critical point, although near a Morse–Bott
-zero section the critical points need not be isolated.
+`lam * |f z - f (a, 0)| ≤ ‖Df(z)‖ ^ 2`
+(`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`). It is the input for the exponential
+convergence of gradient trajectories to points of a Morse–Bott critical submanifold, exactly as at
+a nondegenerate critical point, although near a Morse–Bott zero section the critical points need
+not be isolated.
 
 With the parametric Morse lemma this gives the **Morse–Bott lemma** in product coordinates
 (`TauCeti.exists_morseBott_chart_of_contDiffOn`): if `f` is `C^{n+2}` near `(a, 0)`, with
@@ -74,8 +76,8 @@ orthogonal to the fibre.
   differential is bounded below by a multiple of the distance to the zero section.
 * `TauCeti.exists_abs_sub_le_mul_norm_snd_sq`: near a point of a critical zero section, the energy
   difference is bounded by a multiple of the squared distance to it.
-* `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq`: the Morse–Bott form of Łojasiewicz's gradient
-  inequality.
+* `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`: the Morse–Bott form of
+  Łojasiewicz's gradient inequality.
 * `TauCeti.exists_morseBott_chart_of_contDiffOn`: the Morse–Bott lemma in product coordinates.
 * `TauCeti.exists_congruence_fderiv_fderiv_slice_right`: nearby vertical Hessians are congruent
   by a `C^n` family of invertible operators.
@@ -238,7 +240,7 @@ squared norm of the differential: the Łojasiewicz inequality holds with exponen
 nondegenerate critical point
 (`TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`), although the
 critical points near `(a, 0)` need not be isolated. -/
-theorem exists_mul_abs_sub_le_norm_fderiv_sq [FiniteDimensional ℝ F]
+theorem exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le [FiniteDimensional ℝ F]
     (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
     (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
     ∃ lam > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), lam * |f z - f (a, 0)| ≤ ‖fderiv ℝ f z‖ ^ 2 := by

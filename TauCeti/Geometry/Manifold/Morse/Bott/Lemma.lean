@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Bott
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
+import TauCeti.Analysis.Calculus.Lojasiewicz
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -60,7 +61,7 @@ a Morse–Bott function isolated, so that a compact critical component has a nei
 other critical points.
 
 The slice coordinates also carry the **Morse–Bott form of Łojasiewicz's gradient inequality**
-(`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq`) to the manifold: near `i s`,
+(`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`) to the manifold: near `i s`,
 `lam * |f y - f (i s)|` is at most the squared norm of the differential of `f` read in the
 preferred chart at `i s`
 (`IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq`).
@@ -443,7 +444,7 @@ theorem exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq
   have : FiniteDimensional ℝ (E' × F) := L.symm.toLinearEquiv.finiteDimensional
   have : FiniteDimensional ℝ F :=
     Module.Finite.of_surjective (LinearMap.snd ℝ E' F) LinearMap.snd_surjective
-  obtain ⟨lam, hlam, hloj⟩ := exists_mul_abs_sub_le_norm_fderiv_sq hga hcrit hker
+  obtain ⟨lam, hlam, hloj⟩ := exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le hga hcrit hker
   -- The slice chart distorts the differential, relative to the preferred chart, by at most `K`,
   -- and the linear coordinates `L` by at most `‖L‖ + 1`.
   obtain ⟨K, -, hKb⟩ := exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm
