@@ -21,7 +21,9 @@ The map `((s, t), x) ↦ ([s], [t, x])` from `(ℝ × ℝ) × M` to the symplect
 
 This file describes its differential and proves that it pulls the suspension form
 `Ω = ds ∧ dt + σ_v` back to the product form `ds ∧ dt + σ`. These identities allow tensor
-constructions on the product to descend to the suspension.
+constructions on the product to descend to the suspension. The map of suspensions induced by a map
+`g` intertwining two monodromies lifts along the covering maps to `id × g`
+(`TauCeti.SmoothMappingTorus.prodMap_map_suspensionCover`).
 
 They also compute the orientation of the symplectic suspension. When `σ` is nondegenerate, the
 symplectic orientation of `Ω` is `ds ∧ dt` followed by the symplectic orientation of the fibre: the
@@ -104,6 +106,21 @@ theorem suspensionCover_add_snd_symm (p : (ℝ × ℝ) × M) :
     suspensionCover φ (p.1 + (0, 1), φ.symm p.2) = suspensionCover φ p := by
   obtain ⟨⟨s, t⟩, x⟩ := p
   simp [suspensionCover_apply, mk_add_one]
+
+section Map
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  {φ} {ψ : N ≃ₘ⟮J, J⟯ N}
+
+/-- The map `(θ, [t, x]) ↦ (θ, [t, g x])` of suspensions induced by a map `g` intertwining `φ` and
+`ψ` lifts along the covering maps to `((s, t), x) ↦ ((s, t), g x)`. -/
+theorem prodMap_map_suspensionCover {g : M → N} (h : Semiconj g φ ψ) (p : (ℝ × ℝ) × M) :
+    Prod.map id (map φ ψ g h) (suspensionCover φ p) = suspensionCover ψ (Prod.map id g p) := by
+  obtain ⟨⟨s, t⟩, x⟩ := p
+  simp
+
+end Map
 
 variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
 

@@ -191,7 +191,7 @@ the publisher.
 Digests establish byte integrity; the existing exact-candidate builds and audits establish
 proof correctness and producer eligibility. If inherited bytes disappear after staging,
 publication fails closed. A new producer run with `LAKE_CACHE_FULL_PUBLICATION=1` transfers all
-built objects to repair the cache. See [incremental publication operations](../scripts/lake-cache-publication.md)
+built objects to repair the cache. See [incremental publication operations](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/lake-cache-publication.md)
 for the fallback bounds, retry behavior and byte/time fields to compare.
 
 ## Why a custom domain

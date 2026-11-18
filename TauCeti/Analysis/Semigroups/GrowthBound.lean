@@ -126,6 +126,18 @@ theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega_of_one_le_const
     S.toStronglyContinuousSemigroup.HasGrowthBound ω M :=
   S.hasGrowthBound.mono hω hM
 
+/-! ## Strong continuity from a growth bound -/
+
+/-- The real-time orbit of a semigroup with a growth bound is continuous on all of `ℝ`. Unlike
+`StronglyContinuousSemigroup.continuous_realOperator_apply` this needs no completeness: the
+growth bound replaces the Banach--Steinhaus bound on `[0, t₀]`. -/
+theorem StronglyContinuousSemigroup.HasGrowthBound.continuous_realOperator_apply
+    {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hb : S.HasGrowthBound ω M) (x : X) :
+    Continuous (fun t : ℝ => S.realOperator t x) :=
+  continuous_iff_continuousAt.2 fun _ =>
+    S.realOperator_continuousAt_of_norm_le x
+      fun _ ht htt₀ => hb.norm_le_mul_exp_max_zero_mul_of_le ht htt₀
+
 variable [CompleteSpace X]
 
 /-! ## Growth Bounds and Exponential Type -/
@@ -221,6 +233,24 @@ theorem StronglyContinuousSemigroup.continuousOn_realOperator_apply
     {f : Y → ℝ} {g : Y → X} (hf : ContinuousOn f s) (hg : ContinuousOn g s) :
     ContinuousOn (fun u => S.realOperator (f u) (g u)) s := fun u hu =>
   S.tendsto_realOperator_apply (hf u hu) (hg u hu)
+
+/-- Joint strong continuity as continuity of the map `(t, x) ↦ S t x` on `ℝ × X`. -/
+theorem StronglyContinuousSemigroup.continuous_realOperator_uncurry
+    (S : StronglyContinuousSemigroup X) :
+    Continuous fun p : ℝ × X => S.realOperator p.1 p.2 :=
+  continuous_iff_continuousAt.2 fun _ =>
+    S.tendsto_realOperator_apply continuous_fst.continuousAt continuous_snd.continuousAt
+
+/-- A C₀-semigroup is uniformly bounded on every half-line `(-∞, t₀]`: times before `0` act as
+the identity, and a growth bound controls `[0, t₀]`. -/
+theorem StronglyContinuousSemigroup.exists_norm_realOperator_le
+    (S : StronglyContinuousSemigroup X) (t₀ : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ t ≤ t₀, ‖S.realOperator t‖ ≤ C := by
+  obtain ⟨ω, M, hb⟩ := S.existsGrowthBound
+  refine ⟨M * Real.exp (max ω 0 * max t₀ 0),
+    mul_nonneg (zero_le_one.trans hb.one_le) (Real.exp_nonneg _), fun t ht => ?_⟩
+  rw [← S.realOperator_max_zero]
+  exact hb.norm_le_mul_exp_max_zero_mul_of_le (le_max_right _ _) (max_le_max ht le_rfl)
 
 end TauCeti.Semigroups
 

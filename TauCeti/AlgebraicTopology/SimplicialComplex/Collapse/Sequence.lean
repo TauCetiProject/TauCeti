@@ -19,6 +19,9 @@ contractible. Polyhedra are the support-defined subspaces of any containing weak
 vertices removed by a collapse are absent from the target. Neither finiteness of the ambient
 complex nor local finiteness is required.
 
+More generally, a complex onto which a collapsible complex collapses has contractible
+realization, even when it is not collapsible itself.
+
 The construction composes the elementary deformations from
 `ElementaryCollapsesTo.exists_strong_deformation_retraction`, keeping the terminal
 polyhedron fixed at every time, including along the empty collapse sequence.
@@ -134,12 +137,31 @@ theorem Collapsible.contractibleSpace (h : Collapsible K)
     exact Realization.eq_vertex_of_support_eq A (r x).1 (mem_point.mp (r x).2)
   exact (contractible_iff_id_nullhomotopic X).mpr ⟨p, hend ▸ hR.homotopic⟩
 
+/-- If a collapsible complex collapses onto an abstract simplicial complex `L`, then the
+realization of `L` is contractible, although `L` itself need not be collapsible. The polyhedron of
+`L` is a strong deformation retract of the contractible polyhedron of the collapsible complex. -/
+theorem CollapsesTo.contractibleSpace_realization {L : AbstractSimplicialComplex ι}
+    (h : CollapsesTo K L.toPreAbstractSimplicialComplex) (hK : Collapsible K) :
+    ContractibleSpace (Realization L) := by
+  let T : AbstractSimplicialComplex ι := ⊤
+  have hKT : K ≤ T.toPreAbstractSimplicialComplex := le_top
+  have hLT : L ≤ T := le_top
+  have := hK.contractibleSpace hKT
+  obtain ⟨r, hr, hR⟩ := h.exists_strong_deformation_retraction hKT
+  have := (ContinuousMap.HomotopyEquiv.ofRetraction
+    (A := {x : Realization T | x.1.support ∈ L.toPreAbstractSimplicialComplex})
+    (B := {x : Realization T | x.1.support ∈ K})
+    (fun _ hx => h.le hx) r hr hR.homotopic.symm.some).contractibleSpace
+  have hrange : range (realizationMap hLT) =
+      {x : Realization T | x.1.support ∈ L.toPreAbstractSimplicialComplex} := by
+    ext x
+    exact mem_range_realizationMap hLT x
+  exact ((isClosedEmbedding_realizationMap hLT).isEmbedding.toHomeomorph.trans
+    (Homeomorph.setCongr hrange)).contractibleSpace
+
 /-- The realization of a collapsible abstract simplicial complex is contractible. -/
 theorem Collapsible.contractibleSpace_realization
-    (h : Collapsible A.toPreAbstractSimplicialComplex) : ContractibleSpace (Realization A) := by
-  have huniv : {x : Realization A | x.1.support ∈ A.toPreAbstractSimplicialComplex} = univ :=
-    eq_univ_of_forall fun x => support_mem _ x
-  have := h.contractibleSpace le_rfl
-  exact ((Homeomorph.setCongr huniv).trans (Homeomorph.Set.univ _)).symm.contractibleSpace
+    (h : Collapsible A.toPreAbstractSimplicialComplex) : ContractibleSpace (Realization A) :=
+  (CollapsesTo.refl _).contractibleSpace_realization h
 
 end PreAbstractSimplicialComplex
