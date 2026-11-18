@@ -54,10 +54,6 @@ namespace TauCeti.Huber
 
 variable (A : Type*) [CommRing A]
 
-section Topological
-
-variable [TopologicalSpace A] [NonarchimedeanRing A]
-
 local notation "R₁" =>
   weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
 
@@ -65,6 +61,10 @@ local notation "R₂" =>
   weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight
 
 local notation "R±" => R₂ ⧸ laurentIdeal A
+
+section Topological
+
+variable [TopologicalSpace A] [NonarchimedeanRing A]
 
 /-- The relation ideal `(f-X)` defining the Laurent piece `{|f| ≤ 1}`. -/
 noncomputable def laurentCoverLeIdeal (f : A) : Ideal R₁ :=
@@ -265,14 +265,6 @@ section Complete
 
 variable [UniformSpace A] [IsUniformAddGroup A] [NonarchimedeanRing A] [CompleteSpace A]
   [T0Space A]
-
-local notation "R₁" =>
-  weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
-
-local notation "R₂" =>
-  weightedRestrictedSubring (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight
-
-local notation "R±" => R₂ ⧸ laurentIdeal A
 
 /-- The difference of the two restriction maps from the quotient presentations `laurentCoverLe`
 and `laurentCoverGe` to `laurentCoverOverlap` is surjective. -/
