@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Sphere.TangentCircle
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Triple
 public import TauCeti.Topology.Homotopy.Cube.Sphere
 public import TauCeti.Topology.MappingSpace.Evaluation
 public import TauCeti.Topology.Sphere.Suspension
 public import TauCeti.Topology.VectorBundle.SphereBundle.Orthogonal
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Triple
 import TauCeti.Topology.Homotopy.GenLoop.Loop
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 
@@ -192,10 +192,7 @@ private theorem inner_tangentCircle_inner (θ : ℝ) :
 `v x`, `s ↦ tangentCircle x (v x) q (2π s)`, as a loop at `x` in the equator of the sphere
 orthogonal to `u x`. -/
 def twoFieldInnerLoop :
-    -- The witness is stated through `simpa`: the bare index term `hx.inner_eq_zero _` has type
-    -- `⟪![x, u x, v x] 0, ![x, u x, v x] 1⟫ = 0`, which `simp` rejects as ill-typed here.
-    Ω^ (Fin 1) (sphereEquator (u xq.1.1))
-      ⟨xq.1.1, mem_sphereEquator.2 (by simpa using hx.inner_eq_zero (by decide : (0 : Fin 3) ≠ 1))⟩
+    Ω^ (Fin 1) (sphereEquator (u xq.1.1)) ⟨xq.1.1, mem_sphereEquator.2 hx.inner_vecCons_zero_one⟩
     where
   val :=
     { toFun z := ⟨⟨tangentCircle (xq.1.1 : E) (v xq.1.1) (xq.1.2 : E) (2 * π * z 0),
@@ -260,10 +257,8 @@ tangent to `u x` and through the points of the inner circle `twoFieldInnerLoop`,
 coordinates exchanged so that the first one runs along the inner circle. -/
 theorem twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y : I^(Fin 2)) :
     twoFieldSphereFamily h hu hv xq (sphereCollapse 2 Sphere2.north y) =
-      -- As in `twoFieldInnerLoop`, the bare index term `(h x).norm_eq_one 1` has type
-      -- `‖![x, u x, v x] 1‖ = 1`, which `simp` rejects as ill-typed after rewriting.
       GenLoop.congr _ (Equiv.swap 0 1) (tangentCircleGenLoop
-        (by simpa using (h xq.1.1).norm_eq_one 1) (twoFieldInnerLoop xq (h xq.1.1))) y :=
+        (h xq.1.1).norm_vecCons_one (twoFieldInnerLoop xq (h xq.1.1))) y :=
   DFunLike.congr_fun ((isQuotientMap_prodMap_id_sphereCollapse 2
     Sphere2.north _).lift_comp _ (factorsThrough_twoFieldSquare h hu hv)) (xq, y)
 
