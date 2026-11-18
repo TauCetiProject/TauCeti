@@ -524,6 +524,11 @@ set-theoretic section of `B → C` is continuous because `C` is discrete. -/
 theorem topShortExact [ContinuousSMul G B] : S.toShortComplex.TopShortExact where
   isEmbedding_f := (IsClosedEmbedding.of_continuous_injective_isClosedMap
     continuous_of_discreteTopology S.incl_injective fun _ _ ↦ isClosed_discrete _).isEmbedding
+  -- The remaining fields hold by unfolding `toShortComplex`, `ofDiscreteModuleMap` and
+  -- `ofDiscreteModule`: the objects are `B` and `C`, the maps are `S.incl` and `S.proj` on
+  -- elements, and `X₂.ρ` is the given action (`toShortComplex_g_hom_apply`,
+  -- `toShortComplex_X₂_ρ_apply`). Those rfl lemmas are stated for elements of `B` and do not
+  -- match elements of `S.toShortComplex.X₂` syntactically, so the fields are given as terms.
   exact := S.exact
   exists_continuous_section := ⟨Function.surjInv S.proj_surjective,
     continuous_of_discreteTopology (α := C), Function.surjInv_eq S.proj_surjective⟩

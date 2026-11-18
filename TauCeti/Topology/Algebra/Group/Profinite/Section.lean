@@ -291,11 +291,12 @@ theorem _root_.MonoidHom.exists_continuous_section_of_surjective [CompactSpace G
   let f' : G →ₜ* H := ⟨f, hf⟩
   let e := f'.quotientKerEquivOfSurjective hsurj
   obtain ⟨t, ht, hts, ht1⟩ := exists_continuous_section f.ker f'.isClosed_ker
+  -- The bundled `f'` is `f` on elements, by definition of its coercion.
+  have hf' : ∀ x, f x = f' x := fun _ => rfl
   refine ⟨t ∘ e.symm, ht.comp e.symm.continuous, fun h => ?_, ?_⟩
-  · change f' (t (e.symm h)) = h
-    rw [← f'.quotientKerEquivOfSurjective_apply_mk hsurj, hts, e.apply_symm_apply]
-  · change t (e.symm 1) = 1
-    rw [← map_one f', f'.quotientKerEquivOfSurjective_symm_apply]
+  · rw [Function.comp_apply, hf', ← f'.quotientKerEquivOfSurjective_apply_mk hsurj, hts,
+      e.apply_symm_apply]
+  · rw [Function.comp_apply, ← map_one f', f'.quotientKerEquivOfSurjective_symm_apply]
     exact ht1
 
 /-- **Continuous sections of surjections of profinite additive groups.** A continuous surjective
