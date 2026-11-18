@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -16,6 +16,8 @@ For a finite-dimensional real inner product space `E`, viewed as a Riemannian ma
 on itself with its standard metric, the chart Gram matrix in the identity chart is the Gram matrix
 of the model basis, so the chart volume is the volume measure of `E`. Hence the Riemannian volume
 of a Euclidean space is its volume measure.
+
+Ported from Giada Franz's `ForTauCeti` formalization.
 
 ## Main results
 
@@ -56,7 +58,7 @@ private theorem chartGramMatrix_innerProductSpace (α z : E) :
   rfl
 
 /-- The Riemannian volume of a Euclidean space is its volume measure. -/
-theorem riemannianVolume_eq_volume :
+@[simp] theorem riemannianVolume_eq_volume :
     riemannianVolume 𝓘(ℝ, E) E = (volume : Measure E) := by
   obtain rfl : ‹MeasurableSpace E› = borel E := BorelSpace.measurable_eq
   let : MeasurableSpace E := borel E
