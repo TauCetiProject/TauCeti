@@ -41,14 +41,21 @@ variable {K : Type u} [Field K] {L : Type v} [Field L] [Algebra K L]
 variable (n : ℕ) (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
 /-- Base change commutes with the inclusion of roots-of-unity cohomology into the Brauer group,
-read on the explicit roots-of-unity model. -/
-theorem brBaseChange_h2MuToBr_muNRepH2Equiv
+read on the explicit roots-of-unity model, along any equivariant coefficient map
+`μ_n(Kˢ) → μ_m(Lˢ)` that applies `τ` to the underlying root of unity. The levels `n` and `m` are
+not required to be syntactically equal, so this applies when the level over `L` is only
+propositionally equal to `n`, such as the degree of a base-changed isogeny. -/
+theorem brBaseChange_h2MuToBr_muNRepH2Equiv_of_toMul_eq {m : ℕ}
+    (f : KummerCoeff K n →+ KummerCoeff L m)
+    (hf : ∀ (g : AbsoluteGaloisGroup L) (y : KummerCoeff K n),
+      f (absoluteGaloisGroupMap τ g • y) = g • f y)
+    (hfτ : ∀ y : KummerCoeff K n, ((f y).toMul : (SeparableClosure L)ˣ) =
+      Units.map (τ : SeparableClosure K →* SeparableClosure L) y.toMul)
     (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
     brBaseChange K L (h2MuToBr n K (muNRepH2Equiv n K x)) =
-      h2MuToBr n L (muNRepH2Equiv n L
+      h2MuToBr m L (muNRepH2Equiv m L
         (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
-          (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
-          continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) := by
+          (KummerCoeff L m) (absoluteGaloisGroupMap τ) f continuous_of_discreteTopology hf x)) := by
   rw [h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2, h2MuToBr_muNRepH2Equiv_eq_explicitCoeff2,
     brBaseChange_apply K L τ, AddEquiv.symm_apply_apply]
   apply congrArg (unitsRepH2Equiv L)
@@ -60,11 +67,11 @@ theorem brBaseChange_h2MuToBr_muNRepH2Equiv
     (AbsoluteGaloisGroup L) (UnitsCoeff L) (absoluteGaloisGroupMap τ)
     (unitsCoeffBaseChange τ) continuous_of_discreteTopology (unitsCoeffBaseChange_smul τ)
   have hright := explicitMap2_comp (AbsoluteGaloisGroup K) (KummerCoeff K n)
-    (AbsoluteGaloisGroup L) (KummerCoeff L n) (absoluteGaloisGroupMap τ)
-    (kummerCoeffBaseChange n τ) continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ)
+    (AbsoluteGaloisGroup L) (KummerCoeff L m) (absoluteGaloisGroupMap τ)
+    f continuous_of_discreteTopology hf
     (AbsoluteGaloisGroup L) (UnitsCoeff L) (ContinuousMonoidHom.id _)
-    (kummerCoeffInclHom L n).toAddMonoidHom continuous_of_discreteTopology
-    (fun g m ↦ (kummerCoeffInclHom L n).map_smul g m)
+    (kummerCoeffInclHom L m).toAddMonoidHom continuous_of_discreteTopology
+    (fun g y ↦ (kummerCoeffInclHom L m).map_smul g y)
   rw [explicitCoeff2_eq_explicitMap2, explicitCoeff2_eq_explicitMap2]
   refine DFunLike.congr_fun (hleft.symm.trans ((explicitMap2_congr_of_eq
     (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L) (UnitsCoeff L)
@@ -74,7 +81,18 @@ theorem brBaseChange_h2MuToBr_muNRepH2Equiv
   · refine AddMonoidHom.ext fun y ↦ ?_
     apply Additive.toMul.injective
     simp only [AddMonoidHom.comp_apply, kummerCoeffInclHom_toAddMonoidHom,
-      toMul_unitsCoeffBaseChange, toMul_kummerCoeffIncl, toMul_kummerCoeffBaseChange]
+      toMul_unitsCoeffBaseChange, toMul_kummerCoeffIncl, hfτ]
+
+/-- Base change commutes with the inclusion of roots-of-unity cohomology into the Brauer group,
+read on the explicit roots-of-unity model. -/
+theorem brBaseChange_h2MuToBr_muNRepH2Equiv
+    (x : H2 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
+    brBaseChange K L (h2MuToBr n K (muNRepH2Equiv n K x)) =
+      h2MuToBr n L (muNRepH2Equiv n L
+        (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
+          (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
+          continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) :=
+  brBaseChange_h2MuToBr_muNRepH2Equiv_of_toMul_eq n τ _ _ (toMul_kummerCoeffBaseChange n τ) x
 
 /-- Transporting roots of unity preserves the coefficient pairing selected by a primitive root,
 provided that root is transported along the field map as well. -/
