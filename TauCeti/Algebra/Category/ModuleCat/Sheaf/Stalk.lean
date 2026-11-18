@@ -118,7 +118,8 @@ def sheafificationStalkEquiv :
 /-- The sheafification stalk equivalence sends a germ to the germ of its unit image. -/
 @[simp]
 theorem sheafificationStalkEquiv_germ (U : Opens X) (hx : x ∈ U) (m : P.obj (op U)) :
-    dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      sheafCompose_obj_obj]
     (P.sheafificationStalkEquiv S x (TopCat.Presheaf.germ P.presheaf U x hx m) =
       TopCat.Presheaf.germ
         ((sheafification (R := TauCeti.SheafOfModules.ringCatSheaf S)
@@ -131,7 +132,8 @@ theorem sheafificationStalkEquiv_germ (U : Opens X) (hx : x ∈ U) (m : P.obj (o
 @[simp]
 theorem sheafificationStalkEquiv_symm_germ_unit
     (U : Opens X) (hx : x ∈ U) (m : P.obj (op U)) :
-    dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      sheafCompose_obj_obj, Functor.id_obj]
     ((P.sheafificationStalkEquiv S x).symm
       (TopCat.Presheaf.germ
         ((sheafification (R := TauCeti.SheafOfModules.ringCatSheaf S)

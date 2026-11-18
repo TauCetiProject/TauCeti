@@ -144,6 +144,7 @@ theorem forall_pow_card_eq_star_iff :
     (∀ z : QuadraticAlgebra F r 0, z ^ Nat.card F = star z) ↔ ¬IsSquare r :=
   ⟨fun h hr ↦ omega_pow_card_ne_star hr (h ω), pow_card_eq_star⟩
 
+omit [Finite F] in
 /-- In the inert case the Frobenius algebra endomorphism is conjugation. -/
 theorem frobeniusAlgHom_eq_starAlgEquiv [Fintype F] (hr : ¬IsSquare r) :
     FiniteField.frobeniusAlgHom F (QuadraticAlgebra F r 0) =
