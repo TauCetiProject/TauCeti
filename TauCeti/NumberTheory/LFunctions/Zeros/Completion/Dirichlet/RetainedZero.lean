@@ -121,7 +121,7 @@ theorem finite_zero_sum_le_logDeriv (hne : χ ≠ 1) (S : Finset ℂ) (hS : ∀ 
   have hsupp : Function.support f ⊆ d.support := fun ρ hρ hd ↦ hρ (by simp [f, hd])
   have hsum : Summable f := by
     have h : Summable fun ρ : d.support ↦ f ρ :=
-      summable_divisor_mul_re_one_div_sub_dirichletData_entireCompletion χ hχ hne hΛ
+      summable_divisor_dirichletData_entireCompletion_mul_re_one_div_sub χ hχ hne hΛ
     rw [← Set.indicator_eq_self.mpr hsupp]
     exact summable_subtype_iff_indicator.mp h
   calc ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / (σ - ρ)).re
@@ -129,7 +129,7 @@ theorem finite_zero_sum_le_logDeriv (hne : χ ≠ 1) (S : Finset ℂ) (hS : ∀ 
         simp only [f, d, divisor_dirichletData_entireCompletion_toNat_eq_analyticOrderNatAt χ hχ
           hne (hS ρ hρ)]
     _ ≤ ∑' ρ, f ρ := hsum.sum_le_tsum S fun ρ _ ↦
-        divisor_mul_re_one_div_sub_dirichletData_entireCompletion_nonneg χ hχ hne hσre ρ
+        divisor_dirichletData_entireCompletion_mul_re_one_div_sub_nonneg χ hχ hne hσre ρ
     _ = ∑' ρ : d.support, f ρ := (tsum_subtype_eq_of_support_subset hsupp).symm
     _ = (logDeriv χ.LFunction σ).re + Real.log N / 2 + (logDeriv χ.gammaFactor σ).re :=
         tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction χ hχ hne
