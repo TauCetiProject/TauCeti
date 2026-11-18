@@ -16,9 +16,10 @@ The cyclotomic-primary submodule consists of elements killed by a power of some
 cyclotomic factors. It is the saturation obtained by repeatedly taking the preimage of the
 delta submodule of the quotient. Its quotient has zero delta submodule.
 
-For a noetherian power-series module, one power of one `ωₙ` kills this submodule. When the
-coefficient ring is `I`-adically complete for an ideal `I` containing the prime `p`, that power is
-distinguished at `I`, so the submodule is finite over the coefficients.
+When this submodule is finitely generated, for instance over a noetherian power-series module,
+one power of one `ωₙ` kills it. When the coefficient ring is `I`-adically complete for an ideal
+`I` containing the prime `p`, that power is distinguished at `I`, so the submodule is finite over
+the coefficients.
 Thus it separates the cyclotomic-primary part before studying the remaining Iwasawa module.
 
 The construction uses Mathlib's `Ideal.primaryComponent` for the ideals `(ωₙ)`.
@@ -179,11 +180,12 @@ theorem mem_cyclotomicPrimarySubmodule_iff_exists_mem_cyclotomicPrimaryFiltratio
   rw [cyclotomicPrimarySubmodule_eq_iSup_cyclotomicPrimaryFiltration,
     Submodule.mem_iSup_of_directed _ (monotone_cyclotomicPrimaryFiltration p O M).directed_le]
 
-/-- On a noetherian module the recursive saturation reaches the cyclotomic-primary part
+/-- When the cyclotomic-primary part is finitely generated, the recursive saturation reaches it
 after finitely many steps. -/
-theorem exists_cyclotomicPrimarySubmodule_eq_cyclotomicPrimaryFiltration [IsNoetherian O⟦X⟧ M] :
+theorem exists_cyclotomicPrimarySubmodule_eq_cyclotomicPrimaryFiltration
+    [Module.Finite O⟦X⟧ (cyclotomicPrimarySubmodule p O M)] :
     ∃ r : ℕ, cyclotomicPrimarySubmodule p O M = cyclotomicPrimaryFiltration p O M r := by
-  exact (IsNoetherian.noetherian (cyclotomicPrimarySubmodule p O M)).stabilizes_of_iSup_eq
+  exact Submodule.FG.of_finite.stabilizes_of_iSup_eq
     ⟨_, monotone_cyclotomicPrimaryFiltration p O M⟩
     (cyclotomicPrimarySubmodule_eq_iSup_cyclotomicPrimaryFiltration p O M).symm
 
@@ -221,36 +223,36 @@ theorem cyclotomicPrimarySubmodule_le_of_deltaSubmodule_quotient_eq_bot
     simpa only [hN, Submodule.mem_bot, Submodule.mkQ_apply,
       Submodule.Quotient.mk_eq_zero] using hq
 
-/-- On a noetherian module one power of one cyclotomic element kills the entire
-cyclotomic-primary submodule. -/
-theorem exists_cyclotomicPrimarySubmodule_eq_torsionBy [IsNoetherian O⟦X⟧ M] :
+/-- When the cyclotomic-primary part is finitely generated, one power of one cyclotomic element
+kills all of it. -/
+theorem exists_cyclotomicPrimarySubmodule_eq_torsionBy
+    [Module.Finite O⟦X⟧ (cyclotomicPrimarySubmodule p O M)] :
     ∃ n k : ℕ, cyclotomicPrimarySubmodule p O M =
       torsionBy O⟦X⟧ M (((1 + X) ^ p ^ n - 1 : O⟦X⟧) ^ k) := by
-  obtain ⟨n, hn⟩ :=
-    (IsNoetherian.noetherian (cyclotomicPrimarySubmodule p O M)).stabilizes_of_iSup_eq
-      ⟨_, monotone_primaryComponent_span_one_add_X_pow_sub_one p O M⟩ rfl
+  have hfg : (cyclotomicPrimarySubmodule p O M).FG := .of_finite
+  obtain ⟨n, hn⟩ := hfg.stabilizes_of_iSup_eq
+    ⟨_, monotone_primaryComponent_span_one_add_X_pow_sub_one p O M⟩ rfl
   obtain ⟨k, hk⟩ := Ideal.exists_le_torsionBySet_pow_of_le_primaryComponent
-      (𝔞 := Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)})
-      (IsNoetherian.noetherian (cyclotomicPrimarySubmodule p O M)) hn.le
+      (𝔞 := Ideal.span {((1 + X) ^ p ^ n - 1 : O⟦X⟧)}) hfg hn.le
   refine ⟨n, k, le_antisymm ?_ ?_⟩
   · simpa only [Ideal.span_singleton_pow, torsionBySet_ideal_span_singleton_eq] using hk
   · intro x hx
     exact (mem_cyclotomicPrimarySubmodule p O M x).mpr ⟨n, k, (mem_torsionBy_iff _ _).mp hx⟩
 
-/-- If the coefficients are `I`-adically complete for an ideal `I` containing the prime `p`, the
-cyclotomic-primary part of a noetherian power-series module is finite over the coefficients. -/
+/-- If the coefficients are `I`-adically complete for an ideal `I` containing the prime `p`, a
+finitely generated cyclotomic-primary part is finite over the coefficients. -/
 theorem finite_cyclotomicPrimarySubmodule [Fact p.Prime]
-    [Module O M] [IsScalarTower O O⟦X⟧ M] [IsNoetherian O⟦X⟧ M]
+    [Module O M] [IsScalarTower O O⟦X⟧ M] [Module.Finite O⟦X⟧ (cyclotomicPrimarySubmodule p O M)]
     {I : Ideal O} [IsAdicComplete I O] (hp : (p : O) ∈ I) :
     Module.Finite O (cyclotomicPrimarySubmodule p O M) := by
   obtain ⟨n, k, hnk⟩ := exists_cyclotomicPrimarySubmodule_eq_torsionBy p O M
-  rw [hnk]
   have hF := ((TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one
     (Fact.out : p.Prime) hp n).pow k).isWeierstrassFactorizationAt
   apply hF.finite_of_isTorsionBy
+  intro x
+  rw [← Submodule.coe_eq_zero, Submodule.coe_smul]
   simpa only [Polynomial.coe_pow, Polynomial.coe_sub, Polynomial.coe_add,
-    Polynomial.coe_one, Polynomial.coe_X] using
-    torsionBy_isTorsionBy (M := M) (((1 + X) ^ p ^ n - 1 : O⟦X⟧) ^ k)
+    Polynomial.coe_one, Polynomial.coe_X] using (mem_torsionBy_iff _ _).mp (hnk.le x.property)
 
 /-- A module has no cyclotomic-primary part exactly when it has no delta elements. -/
 theorem cyclotomicPrimarySubmodule_eq_bot_iff :
