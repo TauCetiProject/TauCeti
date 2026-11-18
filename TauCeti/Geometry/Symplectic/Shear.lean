@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Annulus.TwistFactorization
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
+public import TauCeti.Geometry.Symplectic.StripShear
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Unipotent

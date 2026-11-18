@@ -15,7 +15,10 @@ operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le
 operators assembled from separate operators for each component of the data, for instance the
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
 has operator norm at most `‖f (1, 0)‖ + ‖f (0, 1)‖`
-(`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`).
+(`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). For an
+endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`
+(`ContinuousLinearMap.norm_apply_fst_sub_fst_le`, `ContinuousLinearMap.norm_apply_snd_sub_snd_le`),
+so `L` moves each coordinate of `v` little when it is close to the identity.
 -/
 
 public section
@@ -45,5 +48,15 @@ theorem opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one (f : 𝕜 × 𝕜 
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, mul_comm]
   · exact mul_le_mul_of_nonneg_left (_root_.norm_fst_le p) (norm_nonneg _)
   · exact mul_le_mul_of_nonneg_left (_root_.norm_snd_le p) (norm_nonneg _)
+
+/-- The first component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_fst_sub_fst_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).1 - v.1‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_fst_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
+
+/-- The second component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_snd_sub_snd_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).2 - v.2‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_snd_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
 
 end ContinuousLinearMap

@@ -7,13 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
+public import TauCeti.Geometry.Symplectic.StripShear
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Ring.Units
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.UniformSpace.HeineCantor
-import TauCeti.LinearAlgebra.Determinant.Prod
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
@@ -21,9 +21,7 @@ import TauCeti.Topology.Algebra.Module.Determinant
 
 Let `R_c(x, y) = (x + c y, y)` be the shear of the plane `ℝ × ℝ` with twist `c`
 (`TauCeti.stripShear c`). For `c > 0` it is a positive twist map: writing `X` for the first
-component of a map, `R_c` has `∂ₓ X = 1 > 0` and `∂_y X = c > 0`. It has Jacobian determinant `1`,
-fixes the line `y = 0` pointwise, maps the line `y = 1` into itself, and commutes with the deck
-translation `(x, y) ↦ (x + 1, y)` of the strip `ℝ × [0, 1]` over the closed annulus.
+component of a map, `R_c` has `∂ₓ X = 1 > 0` and `∂_y X = c > 0`.
 
 Every map `H` of the strip is `R_c ∘ N` for `N = R_c⁻¹ ∘ H`. This file shows that when `H` is
 `C¹`-close to the identity, `N` is a *negative* twist map with `∂ₓ X > 0`. Precisely, if
@@ -33,11 +31,14 @@ Every map `H` of the strip is `R_c ∘ N` for `N = R_c⁻¹ ∘ H`. This file sh
 
 at `q` (`TauCeti.one_sub_mul_le_fderiv_stripShear_symm_comp_apply_fst`,
 `TauCeti.fderiv_stripShear_symm_comp_apply_fst_le`), so both signs are strict once
-`δ (1 + c) < min 1 c`. The factor `N` has the same Jacobian determinant as `H`
-(`TauCeti.det_fderiv_stripShear_symm_comp`). Since `R_c⁻¹ = R_(-c)` (`TauCeti.stripShear_symm`)
-leaves second coordinates unchanged (`TauCeti.stripShear_symm_apply`) and commutes with the deck
-translation (`TauCeti.stripShear_add_fst`), `N` maps each boundary line of the strip into itself
-and commutes with the deck translation whenever `H` does.
+`δ (1 + c) < min 1 c`. These follow from the formula `∂X - c ∂Y` for the derivative of the first
+component of `N`, where `(X, Y)` are the components of `H`
+(`TauCeti.fderiv_stripShear_symm_comp_apply_fst`). The factor `N` has the same Jacobian
+determinant as `H` (`TauCeti.det_fderiv_stripShear_symm_comp`). Since
+`R_c⁻¹ = R_(-c)` (`TauCeti.stripShear_symm`) leaves second coordinates unchanged
+(`TauCeti.stripShear_symm_apply`) and commutes with the deck translation
+(`TauCeti.stripShear_add_fst`), `N` maps each boundary line of the strip into itself and commutes
+with the deck translation whenever `H` does.
 
 The second half supplies the smallness. Let `t ↦ h_t`, `t ∈ [0, 1]`, be a path of maps of the
 plane whose derivatives `Dh_t(p)` are jointly continuous and invertible over the unit square and
@@ -61,12 +62,10 @@ The shear `R_c` must be fixed relative to the size of the increments: for the in
 `H(x, y) = (x + (2y - 1) / 8, y)`, the factor `R_c⁻¹ ∘ H` has `∂_y X = 1 / 4 - c`, which is
 negative for `c = 1` but positive for `c = 1 / 8` (see the examples at the end of the file).
 
-## Main definitions
-
-* `TauCeti.stripShear c`: the shear `(x, y) ↦ (x + c y, y)` as a continuous linear equivalence.
-
 ## Main results
 
+* `TauCeti.fderiv_stripShear_symm_comp_apply_fst`: the first component of the derivative of
+  `R_c⁻¹ ∘ H`.
 * `TauCeti.one_sub_mul_le_fderiv_stripShear_symm_comp_apply_fst`,
   `TauCeti.fderiv_stripShear_symm_comp_apply_fst_le`: the twist bounds of `R_c⁻¹ ∘ H` for `H`
   within `δ` of the identity in `C¹`.
@@ -91,66 +90,20 @@ open scoped Topology
 
 namespace TauCeti
 
-/-! ### The shear of the strip -/
-
-/-- The **shear** `R_c(x, y) = (x + c y, y)` of the plane `ℝ × ℝ`, with twist `c`. -/
-def stripShear (c : ℝ) : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
-  LinearEquiv.toContinuousLinearEquiv
-    { toFun := fun p ↦ (p.1 + c * p.2, p.2)
-      invFun := fun p ↦ (p.1 - c * p.2, p.2)
-      map_add' := fun p q ↦ Prod.ext (by simp only [Prod.fst_add, Prod.snd_add]; ring) rfl
-      map_smul' := fun a p ↦ Prod.ext
-        (by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, RingHom.id_apply]; ring) rfl
-      left_inv := fun p ↦ by simp
-      right_inv := fun p ↦ by simp }
-
-@[simp]
-theorem stripShear_apply (c : ℝ) (p : ℝ × ℝ) : stripShear c p = (p.1 + c * p.2, p.2) :=
-  (rfl)
-
-@[simp]
-theorem stripShear_symm_apply (c : ℝ) (p : ℝ × ℝ) :
-    (stripShear c).symm p = (p.1 - c * p.2, p.2) :=
-  (rfl)
-
-/-- The inverse of the shear with twist `c` is the shear with twist `-c`. -/
-theorem stripShear_symm (c : ℝ) : (stripShear c).symm = stripShear (-c) := by
-  ext p <;> simp [sub_eq_add_neg]
-
-/-- Shears compose by adding their twists. -/
-@[simp]
-theorem stripShear_trans_stripShear (a b : ℝ) :
-    (stripShear a).trans (stripShear b) = stripShear (a + b) := by
-  ext p <;> simp only [ContinuousLinearEquiv.trans_apply, stripShear_apply]; ring
-
-@[simp]
-theorem stripShear_zero : stripShear 0 = ContinuousLinearEquiv.refl ℝ (ℝ × ℝ) := by
-  ext p <;> simp
-
-/-- The shear preserves area: its determinant is `1`. -/
-@[simp]
-theorem det_stripShear (c : ℝ) : (stripShear c : ℝ × ℝ →L[ℝ] ℝ × ℝ).det = 1 := by
-  rw [ContinuousLinearMap.det, LinearMap.det_finTwoProd]
-  simp
-
-/-- The shear commutes with the horizontal translations `(x, y) ↦ (x + a, y)`, in particular with
-the deck translation of the strip. -/
-theorem stripShear_add_fst (c a : ℝ) (p : ℝ × ℝ) :
-    stripShear c (p + (a, 0)) = stripShear c p + (a, 0) := by
-  ext <;> simp only [stripShear_apply, Prod.fst_add, Prod.snd_add, add_zero]; ring
-
 /-! ### Twist bounds for maps near the identity -/
 
-/-- If `‖L - 1‖ ≤ δ`, both coordinates of `L v - v` are at most `δ ‖v‖` in absolute value. -/
-private theorem abs_apply_fst_sub_le_and_abs_apply_snd_sub_le {L : ℝ × ℝ →L[ℝ] ℝ × ℝ} {δ : ℝ}
-    (hL : ‖L - 1‖ ≤ δ) (v : ℝ × ℝ) :
-    |(L v).1 - v.1| ≤ δ * ‖v‖ ∧ |(L v).2 - v.2| ≤ δ * ‖v‖ := by
-  have h := ((L - 1).le_opNorm v).trans (mul_le_mul_of_nonneg_right hL (norm_nonneg v))
-  exact ⟨(Real.norm_eq_abs _ ▸ norm_fst_le _).trans h, (Real.norm_eq_abs _ ▸ norm_snd_le _).trans h⟩
-
-/-- The first component of the derivative of `R_c⁻¹ ∘ H`. -/
-private theorem fderiv_stripShear_symm_comp_apply_fst (c : ℝ) (H : ℝ × ℝ → ℝ × ℝ) (q v : ℝ × ℝ) :
+/-- The first component of the derivative of `R_c⁻¹ ∘ H` is `∂X - c ∂Y`, where `(X, Y)` are the
+components of `H`. -/
+@[simp]
+theorem fderiv_stripShear_symm_comp_apply_fst (c : ℝ) (H : ℝ × ℝ → ℝ × ℝ) (q v : ℝ × ℝ) :
     (fderiv ℝ ((stripShear c).symm ∘ H) q v).1 = (fderiv ℝ H q v).1 - c * (fderiv ℝ H q v).2 := by
+  rw [ContinuousLinearEquiv.comp_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, stripShear_symm_apply]
+
+/-- The second component of `R_c⁻¹ ∘ H` has the same derivative as that of `H`. -/
+@[simp]
+theorem fderiv_stripShear_symm_comp_apply_snd (c : ℝ) (H : ℝ × ℝ → ℝ × ℝ) (q v : ℝ × ℝ) :
+    (fderiv ℝ ((stripShear c).symm ∘ H) q v).2 = (fderiv ℝ H q v).2 := by
   rw [ContinuousLinearEquiv.comp_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, stripShear_symm_apply]
 
@@ -159,22 +112,24 @@ private theorem fderiv_stripShear_symm_comp_apply_fst (c : ℝ) (H : ℝ × ℝ 
 theorem one_sub_mul_le_fderiv_stripShear_symm_comp_apply_fst {H : ℝ × ℝ → ℝ × ℝ} {q : ℝ × ℝ}
     {c δ : ℝ} (hc : 0 ≤ c) (hH : ‖fderiv ℝ H q - 1‖ ≤ δ) :
     1 - δ * (1 + c) ≤ (fderiv ℝ ((stripShear c).symm ∘ H) q (1, 0)).1 := by
-  obtain ⟨h₁, h₂⟩ := abs_apply_fst_sub_le_and_abs_apply_snd_sub_le hH (1, 0)
-  simp only [Prod.norm_mk, norm_one, norm_zero, zero_le_one, sup_of_le_left, mul_one, sub_zero]
-    at h₁ h₂
+  have h₁ := (fderiv ℝ H q).norm_apply_fst_sub_fst_le (1, 0)
+  have h₂ := (fderiv ℝ H q).norm_apply_snd_sub_snd_le (1, 0)
+  simp only [Prod.norm_mk, norm_one, norm_zero, zero_le_one, sup_of_le_left, mul_one, sub_zero,
+    Real.norm_eq_abs] at h₁ h₂
   rw [fderiv_stripShear_symm_comp_apply_fst]
-  nlinarith [(abs_le.1 h₁).1, (abs_le.1 h₂).2]
+  nlinarith [(abs_le.1 (h₁.trans hH)).1, (abs_le.1 (h₂.trans hH)).2]
 
 /-- If `‖DH(q) - 1‖ ≤ δ`, the first component `X` of `R_c⁻¹ ∘ H` has
 `∂_y X ≤ δ (1 + c) - c` at `q`. -/
 theorem fderiv_stripShear_symm_comp_apply_fst_le {H : ℝ × ℝ → ℝ × ℝ} {q : ℝ × ℝ} {c δ : ℝ}
     (hc : 0 ≤ c) (hH : ‖fderiv ℝ H q - 1‖ ≤ δ) :
     (fderiv ℝ ((stripShear c).symm ∘ H) q (0, 1)).1 ≤ δ * (1 + c) - c := by
-  obtain ⟨h₁, h₂⟩ := abs_apply_fst_sub_le_and_abs_apply_snd_sub_le hH (0, 1)
-  simp only [Prod.norm_mk, norm_one, norm_zero, zero_le_one, sup_of_le_right, mul_one, sub_zero]
-    at h₁ h₂
+  have h₁ := (fderiv ℝ H q).norm_apply_fst_sub_fst_le (0, 1)
+  have h₂ := (fderiv ℝ H q).norm_apply_snd_sub_snd_le (0, 1)
+  simp only [Prod.norm_mk, norm_one, norm_zero, zero_le_one, sup_of_le_right, mul_one, sub_zero,
+    Real.norm_eq_abs] at h₁ h₂
   rw [fderiv_stripShear_symm_comp_apply_fst]
-  nlinarith [(abs_le.1 h₁).2, (abs_le.1 h₂).1]
+  nlinarith [(abs_le.1 (h₁.trans hH)).2, (abs_le.1 (h₂.trans hH)).1]
 
 /-- The factor `R_c⁻¹ ∘ H` has the same Jacobian determinant as `H`; in particular it preserves
 area wherever `H` does. -/
