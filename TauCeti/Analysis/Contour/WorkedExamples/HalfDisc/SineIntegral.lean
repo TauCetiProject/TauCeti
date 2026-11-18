@@ -1,13 +1,15 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Robby Sneiderman, The Tau Ceti contributors
 -/
 module
 
 public import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.Dirichlet
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 import TauCeti.MeasureTheory.Integral.OddSymmetric
+import Mathlib.Topology.Order.Compact
+import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -62,6 +64,9 @@ since that is where Jordan's lemma enters.
 * `TauCeti.Contour.tendsto_integral_sin_div_atTop` and
   `TauCeti.Contour.tendsto_integral_sinc_atTop` — the unit-frequency case, in the `sin x / x` and
   the `Real.sinc` spellings.
+
+* `Real.exists_norm_integral_sinc_le`: the sinc primitive is bounded uniformly over every
+  real endpoint.
 
 ## References
 
@@ -362,6 +367,32 @@ theorem tendsto_integral_sinc_atTop :
   exact (Real.sinc_of_ne_zero (by simpa using hx)).symm
 
 end TauCeti.Contour
+
+/-- The primitive of `Real.sinc` is bounded uniformly over all real endpoints, including
+negative endpoints with the usual interval-integral orientation. -/
+theorem Real.exists_norm_integral_sinc_le :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ z : ℝ, ‖∫ t in (0 : ℝ)..z, Real.sinc t‖ ≤ M := by
+  let S : ℝ → ℝ := fun z ↦ ∫ t in (0 : ℝ)..z, Real.sinc t
+  have hc : Continuous S := continuous_iff_continuousAt.mpr fun z ↦
+    (Real.continuous_sinc.integral_hasStrictDerivAt 0 z).hasDerivAt.continuousAt
+  obtain ⟨B, hB⟩ := TauCeti.Contour.tendsto_integral_sinc_atTop.norm.isBoundedUnder_le.eventually_le
+  obtain ⟨A, hA⟩ := Filter.eventually_atTop.mp hB
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    (hc.continuousOn : ContinuousOn S (Set.Icc 0 (max A 0)))
+  have hp (z : ℝ) (hz : 0 ≤ z) : ‖S z‖ ≤ max C B := by
+    by_cases hzA : z ≤ max A 0
+    · exact (hC z ⟨hz, hzA⟩).trans (le_max_left _ _)
+    · exact (hA z (le_trans (le_max_left _ _) (not_le.mp hzA).le)).trans (le_max_right _ _)
+  have hs (z : ℝ) : S (-z) = -S z := by
+    have H := intervalIntegral.integral_comp_neg (f := Real.sinc) (a := 0) (b := z)
+    simp only [Real.sinc_neg, neg_zero] at H
+    dsimp only [S]
+    rw [intervalIntegral.integral_symm (a := 0) (b := -z)] at H
+    linarith only [H]
+  refine ⟨max C B, (norm_nonneg (S 0)).trans (hp 0 le_rfl), fun z ↦ ?_⟩
+  rcases le_or_gt 0 z with hz | hz
+  · exact hp z hz
+  · simpa only [hs, norm_neg] using hp (-z) (neg_nonneg.mpr hz.le)
 
 end
 
