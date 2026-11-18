@@ -32,9 +32,10 @@ positive on `V`, the transverse geodesics from all the points of `γ` near a giv
 leaving the boundary of a domain inwards enter the domain.
 
 Combined with an endpoint correction in a chart, the exponential variation realizes every `C^n`
-field `V` along `γ` on `[a, b]` as the variation field of a `C^n` variation whose left endpoint
-follows a prescribed curve `σ` with `σ 0 = γ a` and velocity `V a`, and whose right endpoint
-follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 0`.
+field `V` along `γ` on the segment between `a` and `b ≠ a` as the variation field of a `C^n`
+variation whose curves pass through a prescribed curve `σ` at parameter `a` for `s` near `0`,
+with `σ 0 = γ a` and velocity `V a`, and follow the geodesic `s ↦ exp_(γ b) (s • V b)` at
+parameter `b`, which is fixed when `V b = 0`. The prescribed moving endpoint may be either end.
 
 ## Main definitions and results
 
@@ -53,7 +54,7 @@ follows the geodesic `s ↦ exp_(γ b) (s • V b)`, which is fixed when `V b = 
 * `TauCeti.Manifold.eventually_pos_on_initial_interval_comp_exponentialVariation`: its transverse
   geodesics from a zero set of `ρ` enter `{ρ > 0}` on a common initial interval.
 * `TauCeti.Manifold.exists_contMDiffAt_variationField_eq`: every `C^n` field along a curve is the
-  variation field of a `C^n` variation with a prescribed moving left endpoint.
+  variation field of a `C^n` variation with a prescribed moving endpoint at either end.
 
 ## References
 
@@ -222,26 +223,30 @@ theorem eventually_pos_on_initial_interval_comp_exponentialVariation {t : ℝ} {
     zero_lt_one hφ hpos (hzero.mono fun u hu ↦ by simpa only [exponentialVariation_zero] using hu)
   exact ⟨τ, hτ, h.mono fun u hu s hs ↦ hu s (by rwa [zero_add])⟩
 
-/-- **Realization of a field with a moving endpoint.** Let `V` be a field along `γ` whose lift to
-the tangent bundle is `C^n`, `1 ≤ n`, on `[a, b]`, with `a < b`, and let `σ` be a curve which is
-`C^n` at `0`, with `σ 0 = γ a` and velocity `V a` at `0`. Then there is a `C^n` variation of `γ`
-with variation field `V` on `[a, b]`, whose curves start at `σ s` for `s` near `0` and end at
-`exp_(γ b) (s • V b)`. In particular the right endpoint is fixed when `V b = 0`. -/
+/-- **Realization of a field with a moving endpoint.** Let `γ` be continuous at `a`, and let
+`σ` be `C^n` at `0`, with `1 ≤ n`, `σ 0 = γ a` and velocity `V a` at `0`. For `a ≠ b` there is a
+variation of `γ` with variation field `V` at every parameter. It is jointly `C^n` at `(0, t)`
+wherever the lift of `V` to the tangent bundle is `C^n` at `t`. Its curves pass through `σ s`
+at `a` for `s` near `0` and through `exp_(γ b) (s • V b)` at `b`. In particular the endpoint at
+`b` is fixed when `V b = 0`. -/
 theorem exists_contMDiffAt_variationField_eq {n : ℕ∞} (hn : 1 ≤ n) {σ : ℝ → M} {a b : ℝ}
-    (hab : a < b)
-    (hV : ∀ t ∈ uIcc a b,
-      ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t)
+    (hab : a ≠ b) (hγ : ContinuousAt γ a)
     (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I n σ 0) (hbase : γ a = σ 0) (hvel : curveVelocity I σ 0 = V a) :
     ∃ F : ℝ → ℝ → M, F 0 = γ ∧
-      (∀ t ∈ uIcc a b,
+      (∀ t, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t →
         ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) ∧
       (∀ᶠ s in 𝓝 0, F s a = σ s) ∧ (∀ s, F s b = exponentialVariation I γ V s b) ∧
-      ∀ t ∈ uIcc a b, variationField I F t = V t := by
-  obtain ⟨F, hF₀, hF, hFa, hFb, hFV⟩ := exists_contMDiffAt_endpointCorrection hn hab
-    (fun t ht ↦ contMDiffAt_exponentialVariation_zero γ V (hV t ht)) hσ
+      ∀ t, variationField I F t = V t := by
+  have hslice (t : ℝ) :
+      ContMDiffAt 𝓘(ℝ, ℝ) I n (fun s ↦ exponentialVariation I γ V s t) 0 :=
+    (contMDiffAt_riemannianExp_smul_zero (γ t) (V t)).of_le (by exact_mod_cast le_top)
+  obtain ⟨F, hF₀, hF, hFa, hFb, hFV⟩ := exists_contMDiffAt_endpointCorrection hab
+    (by simpa only [exponentialVariation_zero] using hγ) (hslice a) hσ
     (by rw [exponentialVariation_zero]; exact hbase)
-    (by rw [variationField_exponentialVariation]; exact hvel)
-  exact ⟨F, hF₀.trans (exponentialVariation_zero γ V), hF, hFa, hFb,
-    fun t ht ↦ (hFV t ht).trans (variationField_exponentialVariation γ V t)⟩
+  refine ⟨F, hF₀.trans (exponentialVariation_zero γ V),
+    fun t ht ↦ hF t (contMDiffAt_exponentialVariation_zero γ V ht), hFa, hFb, fun t ↦ ?_⟩
+  exact (hFV hn (by rw [variationField_exponentialVariation]; exact hvel) t
+    ((hslice t).mdifferentiableAt (by exact_mod_cast (zero_lt_one.trans_le hn).ne'))).trans
+      (variationField_exponentialVariation γ V t)
 
 end TauCeti.Manifold
