@@ -53,8 +53,8 @@ top degree is determined by those restrictions
 (`Bundle.Trivialization.singularCohomology_thomPairOver_ext`).
 In homology, a class of `(F, F ∖ {0})` read through `e` as a class of the fibre pair over `b`
 has an image in `H_d(E|_W, E₀|_W)`, `d = dim F`, which does not change as `b` moves along a path in
-`W` within the base set of `e`
-(`Bundle.Trivialization.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq`).
+`W` within the base set of `e` (in `Bundle.Trivialization`,
+`singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn`).
 
 The Thom pair of the trivial bundle is that of the product bundle `B × F`
 (`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
@@ -102,9 +102,9 @@ for the fibre classes of an oriented bundle. In homology, the maps
   trivializing set with prescribed restrictions to the fibres.
 * `Bundle.Trivialization.singularCohomology_thomPairOver_ext`: over a trivializing set, a class in
   the top degree is determined on the fibres.
-* `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq`:
-  in homology, the fibre classes read through a trivialization are constant along paths in `W`
-  within its base set.
+* `singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn` (in
+  `Bundle.Trivialization`): in homology, the fibre classes read through a trivialization are
+  constant along paths in `W` within its base set.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
   read in two trivializations differ by the sign of the coordinate change.
 * `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: the maps on
@@ -414,7 +414,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
 points `b` and `b'` joined by a path in `W` within the base set of a linear trivialization `e`, a
 class of `H_d(F, F ∖ {0})`, `d = dim F`, read as a class of the fibre pair over `b` or over `b'`
 through `e`, has the same image in `H_d(E|_W, E₀|_W)`. -/
-theorem singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq
+theorem singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn
     {W : Set B} {b b' : B} (h : JoinedIn (W ∩ e.baseSet) b b') (d : ℕ) (hd : finrank ℝ F = d) :
     TopPair.singularHomologyMap
         ((e.continuousLinearEquivAt ℝ b h.source_mem.2).complZeroPairIso.inv ≫

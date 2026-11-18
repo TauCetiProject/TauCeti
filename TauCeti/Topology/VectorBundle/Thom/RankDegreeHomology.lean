@@ -197,26 +197,22 @@ private theorem fiberClassOver_eq_of_joinedIn (hg : IsLocalFiberGenerator K F E 
     {W : Set B} {x y : W}
     (h : JoinedIn {z : W | (z : B) ∈ (trivializationAt F E c).baseSet ∧ ε c z = ε c x} x y) :
     fiberClassOver g W x = fiberClassOver g W y := by
-  set T := (trivializationAt F E c).baseSet
-  have hW : W ∩ T ⊆ T := inter_subset_right
-  let x' : ↥(W ∩ T) := ⟨x, x.2, h.source_mem.1⟩
-  let y' : ↥(W ∩ T) := ⟨y, y.2, h.target_mem.1⟩
-  -- The two points are joined in `W ∩ T`, so their classes in `H₀` agree.
-  have hj : Joined x' y' :=
-    h.joined_subtype.map (f := fun z : {z : W | (z : B) ∈ T ∧ ε c z = ε c x} ↦
-      (⟨z.1.1, z.1.2, z.2.1⟩ : ↥(W ∩ T))) (by fun_prop)
-  have hxy : fiberClassOver g (W ∩ T) x' = fiberClassOver g (W ∩ T) y' := by
-    apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap
-      ((trivializationAt F E c).thomPairOverIso ℝ hW).hom (ModuleCat.of K K)
-        (finrank ℝ F))).1 inferInstance
-    rw [singularHomologyMap_thomPairOverIso_fiberClassOver hg c hW,
-      singularHomologyMap_thomPairOverIso_fiberClassOver hg c hW,
-      singularHomology₀Section_eq_of_joined _ hj]
-    exact congrArg (fun u : Kˣ ↦ (u : K) • _) h.target_mem.2.symm
-  have := congrArg (TopPair.singularHomologyMap (thomPairOverMap F E inter_subset_left)
-    (ModuleCat.of K K) (finrank ℝ F)) hxy
-  rwa [singularHomologyMap_thomPairOverMap_fiberClassOver,
-    singularHomologyMap_thomPairOverMap_fiberClassOver] at this
+  set e := trivializationAt F E c
+  have hJ : JoinedIn (W ∩ e.baseSet) (x : B) y :=
+    (h.map continuous_subtype_val.continuousOn).mono fun _ ⟨z, hz, hzb⟩ ↦ hzb ▸ ⟨z.2, hz.1⟩
+  -- Each fibre class is the generator, multiplied by `ε c`, read through `e` as a fibre class.
+  have hg' (z : W) (hz : (z : B) ∈ e.baseSet) :
+      fiberClassOver g W z = (ε c z : K) • TopPair.singularHomologyMap
+        ((e.continuousLinearEquivAt ℝ z hz).complZeroPairIso.inv ≫ fiberThomPairOverMap F E z.2)
+        (ModuleCat.of K K) (finrank ℝ F)
+        (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)) := by
+    rw [← map_smul, ← hg.map_eq c z hz, ← ConcreteCategory.comp_apply,
+      ← TopPair.singularHomologyMap_comp, Iso.hom_inv_id_assoc, fiberClassOver]
+  obtain ⟨hy, hε⟩ := h.target_mem
+  rw [hg' x h.source_mem.1, hg' y hy, hε]
+  exact congrArg _ (ConcreteCategory.congr_hom
+    (e.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn
+      (ModuleCat.of K K) hJ (finrank ℝ F) rfl) _)
 
 /-- **The fibre classes are constant along paths.** -/
 private theorem fiberClassOver_eq_of_path (hg : IsLocalFiberGenerator K F E g ε) {W : Set B}

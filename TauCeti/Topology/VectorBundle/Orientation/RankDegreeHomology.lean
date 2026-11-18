@@ -48,8 +48,8 @@ homology is the colimit of the local system over the fundamental groupoid
 fibre classes are compatible with transport along paths. Transport along a path precomposes with
 path lifting in the orientation double cover, and the fibre classes are constant along paths in
 the cover: over the base set of a trivialization they are read in the product `W × F`, where the
-fibre inclusions over points joined by a path agree
-(`Bundle.Trivialization.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq`).
+fibre inclusions over points joined by a path agree (in `Bundle.Trivialization`,
+`singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn`).
 
 The same construction over every subset `W` of the base gives maps
 `H₀(W; o(E)) ⟶ Hᵣ(E|_W, E₀|_W; ℤ)` commuting with the restrictions. Over a subset of the base set
@@ -67,7 +67,7 @@ open sets and the passage to the whole base by compact supports
 
 * `TauCeti.fiberLocalOrientation`: the local orientation of the fibre pair `(E_b, E_b ∖ {0})`
   selected by an orientation of `E_b`; it does not depend on the trivialization reading it
-  (`TauCeti.fiberLocalOrientation_eq`).
+  (`TauCeti.fiberLocalOrientation_eq_map`).
 * `TauCeti.thomPairSingularHomologyIsoTwistedHomology`: `Hᵣ(E, E₀; ℤ) ≅ H₀(B; o(E))`.
 * `TauCeti.thomPairSingularHomologyIsoTwistedHomology_hom_apply`: it sends the local orientation of
   the fibre over `b` selected by `o` to the element with value `1` at `o`.
@@ -109,7 +109,7 @@ def fiberLocalOrientation (b : B) (o : Orientation ℝ (E b) (Fin (n + 1))) :
       (mem_baseSet_trivializationAt F E b)).complZeroPairIso.symm
 
 /-- Any linear trivialization at `b` reads the same local orientation. -/
-theorem fiberLocalOrientation_eq (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
+theorem fiberLocalOrientation_eq_map (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
     (hb : b ∈ e.baseSet) (o : Orientation ℝ (E b) (Fin (n + 1))) :
     fiberLocalOrientation hF b o =
       ((e.mapOrientation (Fin (n + 1)) hb o).localOrientation hF).map
@@ -174,8 +174,8 @@ private theorem singularHomologyMap_thomPairOverIso_fiberClassOver (e : Triviali
   rw [fiberClassOver, ← ConcreteCategory.comp_apply, ← TopPair.singularHomologyMap_comp,
     Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ e hW hb,
     TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply,
-    fiberLocalOrientation_eq hF e (hW hb), ← LocalOrientation.coe_map, ← LocalOrientation.map_trans,
-    Iso.symm_self_id, LocalOrientation.map_refl]
+    fiberLocalOrientation_eq_map hF e (hW hb), ← LocalOrientation.coe_map,
+    ← LocalOrientation.map_trans, Iso.symm_self_id, LocalOrientation.map_refl]
 
 variable [FiniteDimensional ℝ F]
 
@@ -190,12 +190,12 @@ private theorem fiberClassOver_eq_of_mapOrientation_eq (e : Trivialization F (π
       e.mapOrientation (Fin (n + 1)) (h.target_mem.2) o') :
     fiberClassOver F E hF W h.source_mem.1 o = fiberClassOver F E hF W h.target_mem.1 o' := by
   have key := ConcreteCategory.congr_hom
-    (e.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq
+    (e.singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn
       (ModuleCat.of ℤ (ULift.{w} ℤ)) h (n + 1) hF)
     ((e.mapOrientation (Fin (n + 1)) h.target_mem.2 o').localOrientation hF).val
   simp only [TopPair.singularHomologyMap_comp, ConcreteCategory.comp_apply] at key
-  rw [fiberClassOver, fiberClassOver, fiberLocalOrientation_eq hF e h.source_mem.2,
-    fiberLocalOrientation_eq hF e h.target_mem.2, ho, LocalOrientation.coe_map,
+  rw [fiberClassOver, fiberClassOver, fiberLocalOrientation_eq_map hF e h.source_mem.2,
+    fiberLocalOrientation_eq_map hF e h.target_mem.2, ho, LocalOrientation.coe_map,
     LocalOrientation.coe_map, Iso.symm_hom, Iso.symm_hom]
   exact key
 
