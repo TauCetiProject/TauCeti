@@ -26,6 +26,13 @@ The coefficient of the `j`th term is exactly `Res_z (z-w)^j c`. Applied to the c
 native vertex operators, this gives the formal delta expansion of mutual locality.
 No multiplication of arbitrary distributions or convergence of infinite sums is asserted.
 
+The total derivative `∂_z + ∂_w` (`FormalDistribution.totalDerivative`) commutes with
+multiplication by `z - w`; it describes the commutator of translation covariant fields with the
+translation operator. Three-variable distributions carry the commuting multiplications by
+`z - w`, `z - x` and `w - x` (`FormalDistribution.mulSub₁₂`, `mulSub₁₃`, `mulSub₂₃`). If
+`(z-w)^a` and `(z-x)^b (w-x)^d` both kill a distribution, so does `(w-x)^(a+b+d-1)`
+(`FormalDistribution.mulSub₂₃_pow_eq_zero`); this is the estimate behind Dong's lemma.
+
 ## References
 
 * V. Kac, *Vertex Algebras for Beginners*, 2nd ed., §2.1 and §2.3.
@@ -218,6 +225,194 @@ theorem mulSub_pow_apply (N : ℕ) (c : FormalDistribution M) (m n : ℤ) :
         hindex]
     rw [Finset.sum_congr rfl h₁, Finset.sum_congr rfl h₂, Finset.sum_neg_distrib]
     abel
+
+/-- Multiplication by `(z-w)^N` commutes with applying an additive map to the coefficients. -/
+theorem mulSub_pow_map {M' : Type*} [AddCommGroup M'] (g : M →+ M') (N : ℕ)
+    (c : FormalDistribution M) :
+    (mulSub ^ N) (fun m n ↦ g (c m n)) = fun m n ↦ g ((mulSub ^ N) c m n) := by
+  ext m n
+  simp [mulSub_pow_apply, map_sum, map_zsmul]
+
+/-! ### The total derivative -/
+
+/-- The total derivative `∂_z + ∂_w` of a formal distribution. In normalized indexing,
+`∂_z` sends the coefficient `c m n` of `z^(-m-1) w^(-n-1)` to `-m • c (m - 1) n`. -/
+def totalDerivative : AddMonoid.End (FormalDistribution M) where
+  toFun c m n := (-m) • c (m - 1) n + (-n) • c m (n - 1)
+  map_zero' := by ext m n; simp
+  map_add' c d := by ext m n; simp only [Pi.add_apply, smul_add]; abel
+
+@[simp]
+theorem totalDerivative_apply (c : FormalDistribution M) (m n : ℤ) :
+    totalDerivative c m n = (-m) • c (m - 1) n + (-n) • c m (n - 1) := (rfl)
+
+/-- The total derivative commutes with multiplication by `z - w`, because
+`(∂_z + ∂_w)(z - w) = 0`. -/
+theorem commute_mulSub_totalDerivative :
+    Commute (mulSub : AddMonoid.End (FormalDistribution M)) totalDerivative := by
+  ext c m n
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, mulSub_apply, totalDerivative_apply,
+    add_sub_cancel_right, sub_add_cancel]
+  module
+
+/-- The residue of a total derivative is the derivative of the residue: `Res_z ∂_z c = 0`. -/
+theorem residue_totalDerivative (c : FormalDistribution M) (n : ℤ) :
+    residue (totalDerivative c) n = (-n) • residue c (n - 1) := by
+  simp
+
+/-! ### Three variables
+
+A three-variable formal distribution `c : ℤ → ℤ → ℤ → M` has coefficient `c i j k` at
+`z^(-i-1) w^(-j-1) x^(-k-1)`. Multiplication by `z - w`, `z - x` and `w - x` are commuting
+operators, with `w - x = (z - x) - (z - w)`. -/
+
+/-- Multiplication of a three-variable formal distribution by `z - w`. -/
+def mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
+  toFun c i j k := c (i + 1) j k - c i (j + 1) k
+  map_zero' := by ext i j k; simp
+  map_add' c d := by ext i j k; simp; abel
+
+/-- Multiplication of a three-variable formal distribution by `z - x`. -/
+def mulSub₁₃ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
+  toFun c i j k := c (i + 1) j k - c i j (k + 1)
+  map_zero' := by ext i j k; simp
+  map_add' c d := by ext i j k; simp; abel
+
+/-- Multiplication of a three-variable formal distribution by `w - x`. -/
+def mulSub₂₃ : AddMonoid.End (ℤ → ℤ → ℤ → M) where
+  toFun c i j k := c i (j + 1) k - c i j (k + 1)
+  map_zero' := by ext i j k; simp
+  map_add' c d := by ext i j k; simp; abel
+
+@[simp]
+theorem mulSub₁₂_apply (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
+    mulSub₁₂ c i j k = c (i + 1) j k - c i (j + 1) k := (rfl)
+
+@[simp]
+theorem mulSub₁₃_apply (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
+    mulSub₁₃ c i j k = c (i + 1) j k - c i j (k + 1) := (rfl)
+
+@[simp]
+theorem mulSub₂₃_apply (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
+    mulSub₂₃ c i j k = c i (j + 1) k - c i j (k + 1) := (rfl)
+
+/-- `w - x = (z - x) - (z - w)`. -/
+theorem mulSub₂₃_apply_eq_sub (c : ℤ → ℤ → ℤ → M) : mulSub₂₃ c = mulSub₁₃ c - mulSub₁₂ c := by
+  ext i j k
+  simp
+
+theorem commute_mulSub₁₂_mulSub₁₃ :
+    Commute (mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₁₃ := by
+  ext c i j k
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, mulSub₁₂_apply, mulSub₁₃_apply]
+  abel
+
+theorem commute_mulSub₁₂_mulSub₂₃ :
+    Commute (mulSub₁₂ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₂₃ := by
+  ext c i j k
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, mulSub₁₂_apply, mulSub₂₃_apply]
+  abel
+
+theorem commute_mulSub₁₃_mulSub₂₃ :
+    Commute (mulSub₁₃ : AddMonoid.End (ℤ → ℤ → ℤ → M)) mulSub₂₃ := by
+  ext c i j k
+  simp only [AddMonoid.End.coe_mul, Function.comp_apply, mulSub₁₃_apply, mulSub₂₃_apply]
+  abel
+
+/-- Fixing the third variable, `(z-w)^N` acts as on two-variable distributions. -/
+theorem mulSub₁₂_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
+    (mulSub₁₂ ^ N) c i j k = (mulSub ^ N) (fun i j ↦ c i j k) i j := by
+  induction N generalizing i j with
+  | zero => rfl
+  | succ N ih => simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply,
+      mulSub₁₂_apply, mulSub_apply, ih]
+
+/-- Fixing the second variable, `(z-x)^N` acts as on two-variable distributions. -/
+theorem mulSub₁₃_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i j k : ℤ) :
+    (mulSub₁₃ ^ N) c i j k = (mulSub ^ N) (fun i k ↦ c i j k) i k := by
+  induction N generalizing i k with
+  | zero => rfl
+  | succ N ih => simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply,
+      mulSub₁₃_apply, mulSub_apply, ih]
+
+/-- Fixing the first variable, `(w-x)^N` acts as on two-variable distributions. -/
+theorem mulSub₂₃_pow_apply (N : ℕ) (c : ℤ → ℤ → ℤ → M) (i : ℤ) :
+    (mulSub₂₃ ^ N) c i = (mulSub ^ N) (c i) := by
+  induction N with
+  | zero => rfl
+  | succ N ih =>
+    ext j k
+    simp only [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply, mulSub₂₃_apply,
+      mulSub_apply, ih]
+
+/-- `(z-w)^N` commutes with applying, at each `x`-index `k`, an additive map `g k`. -/
+theorem mulSub₁₂_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ M') (N : ℕ)
+    (c : FormalDistribution M) :
+    (mulSub₁₂ ^ N) (fun i j k ↦ g k (c i j)) = fun i j k ↦ g k ((mulSub ^ N) c i j) := by
+  ext i j k
+  rw [mulSub₁₂_pow_apply, mulSub_pow_map]
+
+/-- `(z-x)^N` commutes with applying, at each `w`-index `j`, an additive map `g j`. -/
+theorem mulSub₁₃_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ M') (N : ℕ)
+    (c : FormalDistribution M) :
+    (mulSub₁₃ ^ N) (fun i j k ↦ g j (c i k)) = fun i j k ↦ g j ((mulSub ^ N) c i k) := by
+  ext i j k
+  rw [mulSub₁₃_pow_apply, mulSub_pow_map]
+
+/-- `(w-x)^N` commutes with applying, at each `z`-index `i`, an additive map `g i`. -/
+theorem mulSub₂₃_pow_map {M' : Type*} [AddCommGroup M'] (g : ℤ → M →+ M') (N : ℕ)
+    (c : FormalDistribution M) :
+    (mulSub₂₃ ^ N) (fun i j k ↦ g i (c j k)) = fun i j k ↦ g i ((mulSub ^ N) c j k) := by
+  ext i j k
+  rw [mulSub₂₃_pow_apply, mulSub_pow_map]
+
+/-- Commuting additive endomorphisms commute on each element. -/
+private theorem apply_apply_of_commute {F : Type*} [AddCommGroup F] {f g : AddMonoid.End F}
+    (h : Commute f g) (x : F) : f (g x) = g (f x) :=
+  DFunLike.congr_fun h.eq x
+
+theorem mulSub₁₂_pow_apply_mulSub₁₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
+    (mulSub₁₂ ^ a) ((mulSub₁₃ ^ b) c) = (mulSub₁₃ ^ b) ((mulSub₁₂ ^ a) c) :=
+  apply_apply_of_commute (commute_mulSub₁₂_mulSub₁₃.pow_pow a b) c
+
+theorem mulSub₁₂_pow_apply_mulSub₂₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
+    (mulSub₁₂ ^ a) ((mulSub₂₃ ^ b) c) = (mulSub₂₃ ^ b) ((mulSub₁₂ ^ a) c) :=
+  apply_apply_of_commute (commute_mulSub₁₂_mulSub₂₃.pow_pow a b) c
+
+theorem mulSub₁₃_pow_apply_mulSub₂₃_pow (a b : ℕ) (c : ℤ → ℤ → ℤ → M) :
+    (mulSub₁₃ ^ a) ((mulSub₂₃ ^ b) c) = (mulSub₂₃ ^ b) ((mulSub₁₃ ^ a) c) :=
+  apply_apply_of_commute (commute_mulSub₁₃_mulSub₂₃.pow_pow a b) c
+
+/-- The key estimate of Dong's lemma. If `(z-w)^a c = 0` and `(z-x)^b (w-x)^d c = 0`, then
+`(w-x)^(a+b+d-1) c = 0`: expand `(w-x)^(a+b-1) = ((z-x) - (z-w))^(a+b-1)`, in which every
+term contains `(z-x)^b` or `(z-w)^a`. -/
+theorem mulSub₂₃_pow_eq_zero {c : ℤ → ℤ → ℤ → M} {a b d : ℕ}
+    (ha : (mulSub₁₂ ^ a) c = 0) (hbd : (mulSub₁₃ ^ b) ((mulSub₂₃ ^ d) c) = 0) :
+    (mulSub₂₃ ^ (a + b + d - 1)) c = 0 := by
+  induction a generalizing b c with
+  | zero => simp_all
+  | succ a iha =>
+    induction b generalizing c with
+    | zero =>
+      rw [pow_zero, AddMonoid.End.one_apply] at hbd
+      rw [show a + 1 + 0 + d - 1 = a + d by omega, pow_add, AddMonoid.End.coe_mul,
+        Function.comp_apply, hbd, map_zero]
+    | succ b ihb =>
+      rw [show a + 1 + (b + 1) + d - 1 = a + 1 + b + d - 1 + 1 by omega, pow_succ,
+        AddMonoid.End.coe_mul, Function.comp_apply, mulSub₂₃_apply_eq_sub, map_sub]
+      -- Split `(w-x) c = (z-x) c - (z-w) c` and lower the exponent `b` or `a` respectively.
+      have h₁ : (mulSub₂₃ ^ (a + 1 + b + d - 1)) (mulSub₁₃ c) = 0 := by
+        refine ihb ?_ ?_
+        · rw [apply_apply_of_commute (commute_mulSub₁₂_mulSub₁₃.pow_left _), ha, map_zero]
+        · rw [apply_apply_of_commute (commute_mulSub₁₃_mulSub₂₃.pow_right d).symm c, ← hbd,
+            pow_succ, AddMonoid.End.coe_mul, Function.comp_apply]
+      have h₂ : (mulSub₂₃ ^ (a + (b + 1) + d - 1)) (mulSub₁₂ c) = 0 := by
+        refine iha ?_ ?_
+        · rw [← ha, pow_succ, AddMonoid.End.coe_mul, Function.comp_apply]
+        · rw [apply_apply_of_commute (commute_mulSub₁₂_mulSub₂₃.pow_right d).symm c,
+            apply_apply_of_commute (commute_mulSub₁₂_mulSub₁₃.pow_right (b + 1)).symm, hbd,
+            map_zero]
+      rw [h₁, show a + 1 + b + d - 1 = a + (b + 1) + d - 1 by omega, h₂, sub_zero]
 
 end FormalDistribution
 
