@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.GroupTheory.OrderOfElement
+public import Mathlib.NumberTheory.Real.Irrational
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -43,12 +45,15 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
-  of `sphere (0 : ℂ) 1`.
+  of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
+  `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
 * `Circle.exp_pow_eq_one_iff`: `exp (i θ)` is an `n`-th root of unity exactly when `θ` is an
   integer multiple of `2π / n`.
+* `Circle.isOfFinOrder_exp_two_pi_mul_iff`: `exp (2π i x)` has finite order exactly when `x` is
+  rational.
 * `Circle.exp_neg_arg_mul_self`: rotating `x : ℂ` by `exp (-i arg x)` gives `‖x‖`.
 * `Circle.inv_eq_self_iff`: the points of the circle equal to their inverses are `1` and `-1`.
 * `Circle.im_coe_eq_zero_iff`: the real points of the circle are `1` and `-1`.
@@ -100,6 +105,15 @@ theorem _root_.Complex.zpow_mul_conj_zpow_of_mem_sphere {z : ℂ} (hz : z ∈ sp
   have hz1 : ‖z‖ = 1 := by simpa using hz
   have hz0 : z ≠ 0 := by rintro rfl; simp at hz1
   rw [map_zpow₀, ← Complex.inv_eq_conj hz1, inv_zpow', ← zpow_add₀ hz0, sub_eq_add_neg]
+
+/-- On the unit sphere of `ℂ`, `z ^ k * conj a - a` is fixed by `b ↦ -(z ^ k * conj b)`: at
+`z = e^{iθ}` it lies on the line `i e^{ikθ/2} ℝ`. -/
+theorem _root_.Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere {z : ℂ}
+    (hz : z ∈ sphere (0 : ℂ) 1) (k : ℤ) (a : ℂ) :
+    z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a)) := by
+  rw [map_sub, map_mul, Complex.conj_conj, mul_sub, ← mul_assoc,
+    Complex.zpow_mul_conj_zpow_of_mem_sphere hz, sub_self, zpow_zero]
+  ring
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
@@ -163,6 +177,27 @@ theorem exp_pow_eq_one_iff {n : ℕ} (hn : n ≠ 0) {θ : ℝ} :
   rw [← exp_natCast_mul, exp_eq_one]
   refine exists_congr fun m ↦ ?_
   rw [mul_div_assoc', eq_div_iff hn', mul_comm θ]
+
+/-- **Rational rotations.** `exp (2π i x)` has finite order in the circle group exactly when `x` is
+rational. -/
+theorem isOfFinOrder_exp_two_pi_mul_iff {x : ℝ} :
+    IsOfFinOrder (exp (2 * Real.pi * x)) ↔ ¬Irrational x := by
+  have hπ : 2 * Real.pi ≠ 0 := by positivity
+  rw [isOfFinOrder_iff_pow_eq_one, Irrational, not_not]
+  constructor
+  · rintro ⟨n, hn, hpow⟩
+    obtain ⟨m, hm⟩ := (exp_pow_eq_one_iff hn.ne').1 hpow
+    refine ⟨m / n, ?_⟩
+    have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn.ne'
+    rw [mul_div_assoc', eq_div_iff hn'] at hm
+    push_cast
+    rw [div_eq_iff hn']
+    exact mul_left_cancel₀ hπ (by linear_combination -hm)
+  · rintro ⟨q, rfl⟩
+    refine ⟨q.den, q.den_pos, (exp_pow_eq_one_iff q.den_ne_zero).2 ⟨q.num, ?_⟩⟩
+    have hd : (q.den : ℝ) ≠ 0 := Nat.cast_ne_zero.2 q.den_ne_zero
+    rw [Rat.cast_def]
+    field_simp
 
 /-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
 theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by

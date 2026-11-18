@@ -69,6 +69,7 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   two tail products of a word, modulo a normal subgroup.
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
+* `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
 -/
 
 public section
@@ -330,5 +331,16 @@ theorem _root_.Subgroup.sum_eq_sum_rightCosets (f : G → M) :
     (fun h => f ((q.out * (h : G))⁻¹)) fun _ => by simp).symm
 
 end Finite
+
+/-- `QuotientAddGroup.congr` sends the class of an element to the class of its image. This is the
+additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups. -/
+@[simp]
+theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
+    (G' : AddSubgroup G) (H' : AddSubgroup H) [G'.Normal] [H'.Normal] (e : G ≃+ H)
+    (he : G'.map (e : G →+ H) = H') (x : G) :
+    QuotientAddGroup.congr G' H' e he (x : G ⧸ G') = (e x : H ⧸ H') :=
+  rfl
+
+attribute [to_additive existing] QuotientGroup.congr_mk
 
 end TauCeti

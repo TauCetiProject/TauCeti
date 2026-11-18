@@ -33,6 +33,11 @@ edges, a path never leaves its starting vertex. Such a graph is preconnected exa
 at most one vertex, and connected exactly when it has exactly one: the empty graph is
 preconnected but not connected, and two isolated vertices are not even preconnected.
 
+A morphism to a preconnected graph is surjective as soon as its source is nonempty and every dart
+issuing from a vertex of its image is the image of a dart
+(`SerreGraph.Hom.mapV_surjective_of_preconnected`,
+`SerreGraph.Hom.mapE_surjective_of_preconnected`).
+
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
 
@@ -122,6 +127,14 @@ theorem toGeomEdge_eq_toGeomEdge_iff {e f : Γ.E} :
   · rintro (rfl | rfl)
     · rfl
     · exact (Γ.toGeomEdge_rev e).symm
+
+variable {Γ} in
+/-- Two darts with the same initial vertex and distinct terminal vertices lie on distinct geometric
+edges. -/
+theorem toGeomEdge_ne_toGeomEdge_of_src_eq_of_tgt_ne {e₁ e₂ : Γ.E} (hsrc : Γ.src e₁ = Γ.src e₂)
+    (h : Γ.tgt e₁ ≠ Γ.tgt e₂) : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂ := by
+  rw [Ne, toGeomEdge_eq_toGeomEdge_iff]
+  rintro (rfl | rfl) <;> simp_all
 
 /-- A function on darts taking the same value on mutually reverse darts descends to geometric
 edges. -/
@@ -361,6 +374,21 @@ theorem Hom.toGeomEdge_mapE_congr {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, 
   · rfl
   · rw [f.map_rev, Δ.toGeomEdge_rev]
 
+/-- Two distinct darts with the same image under a morphism of Serre graphs lie on distinct
+geometric edges: the images of a dart and of its reverse are distinct. -/
+theorem Hom.toGeomEdge_ne_toGeomEdge_of_ne_of_mapE_eq {Γ : SerreGraph.{u, v}}
+    {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) {e₁ e₂ : Γ.E} (hne : e₁ ≠ e₂)
+    (he : f.mapE e₁ = f.mapE e₂) : Γ.toGeomEdge e₁ ≠ Γ.toGeomEdge e₂ := by
+  rw [Ne, toGeomEdge_eq_toGeomEdge_iff]
+  rintro (rfl | rfl)
+  · exact hne rfl
+  · exact Δ.rev_ne (f.mapE e₁) (by rw [← f.map_rev, he])
+
+/-- A morphism of Serre graphs identifying two darts identifies their terminal vertices. -/
+theorem Hom.mapV_tgt_eq_of_mapE_eq {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ)
+    {e₁ e₂ : Γ.E} (he : f.mapE e₁ = f.mapE e₂) : f.mapV (Γ.tgt e₁) = f.mapV (Γ.tgt e₂) := by
+  rw [← f.map_tgt, ← f.map_tgt, he]
+
 /-- The preimage of an orientation under a morphism of Serre graphs is an orientation. -/
 theorem Hom.isOrientation_preimage {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
     (f : Γ.Hom Δ) {O' : Set Δ.E} (hO' : Δ.IsOrientation O') : Γ.IsOrientation (f.mapE ⁻¹' O') :=
@@ -408,6 +436,29 @@ theorem Hom.connected_of_surjective {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w
   obtain ⟨⟨x⟩, hpre⟩ := (connected_iff Γ).1 hΓ
   exact (connected_iff Δ).2 ⟨⟨f.mapV x⟩, f.preconnected_of_surjective hf hpre⟩
 
+/-- A morphism from a nonempty graph to a preconnected graph is surjective on vertices when every
+dart issuing from a vertex of its image is the image of a dart. -/
+theorem Hom.mapV_surjective_of_preconnected {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) [Nonempty Γ.V] (hΔ : Δ.Preconnected)
+    (hf : ∀ d : Δ.E, Δ.src d ∈ Set.range f.mapV → d ∈ Set.range f.mapE) :
+    Function.Surjective f.mapV := by
+  intro b
+  obtain ⟨a₀⟩ := ‹Nonempty Γ.V›
+  obtain ⟨p⟩ := Δ.preconnected_iff.mp hΔ (f.mapV a₀) b
+  induction p with
+  | nil => exact ⟨a₀, rfl⟩
+  | cons _ d ih =>
+    obtain ⟨e, he⟩ := hf d.1 (by rwa [d.2.1])
+    exact ⟨Γ.tgt e, by rw [← f.map_tgt, he, d.2.2]⟩
+
+/-- A morphism from a nonempty graph to a preconnected graph is surjective on darts when every
+dart issuing from a vertex of its image is the image of a dart. -/
+theorem Hom.mapE_surjective_of_preconnected {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) [Nonempty Γ.V] (hΔ : Δ.Preconnected)
+    (hf : ∀ d : Δ.E, Δ.src d ∈ Set.range f.mapV → d ∈ Set.range f.mapE) :
+    Function.Surjective f.mapE := fun d =>
+  hf d (f.mapV_surjective_of_preconnected hΔ hf (Δ.src d))
+
 /-- Identity morphism of a Serre graph. -/
 def Hom.id : Γ.Hom Γ where
   mapV := _root_.id
@@ -448,6 +499,13 @@ theorem Hom.comp_assoc {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     {Ξ : SerreGraph} (f : Γ.Hom Δ) (g : Δ.Hom Θ) (h : Θ.Hom Ξ) :
     Hom.comp h (Hom.comp g f) = Hom.comp (Hom.comp h g) f := by
   apply Hom.ext <;> rfl
+
+/-- A morphism of Serre graphs surjective on vertices and on darts is right-cancellable. -/
+theorem Hom.cancel_right {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+    {f : Γ.Hom Δ} {g₁ g₂ : Δ.Hom Θ} (hfV : Function.Surjective f.mapV)
+    (hfE : Function.Surjective f.mapE) : g₁.comp f = g₂.comp f ↔ g₁ = g₂ :=
+  ⟨fun h => Hom.ext _ (hfV.injective_comp_right (congrArg Hom.mapV h))
+    (hfE.injective_comp_right (congrArg Hom.mapE h)), congrArg (Hom.comp · f)⟩
 
 @[simp] theorem Hom.toPrefunctor_id :
     (Hom.id Γ).toPrefunctor = Prefunctor.id Γ.V := by
