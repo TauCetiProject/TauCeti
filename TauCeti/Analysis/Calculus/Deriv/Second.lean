@@ -38,6 +38,10 @@ Under the change of variables `x = e^y` the operators `x d/dx` and `x² d²/dx²
 `(f ∘ exp)''(y) = e^y f'(e^y) + e^{2y} f''(e^y)`. These turn equations of Euler type, whose
 coefficients `x` and `x²` degenerate at `0`, into equations with constant coefficients.
 
+If `f′ = f ℓ` near a point, then `f′′ = f (ℓ ^ 2 + ℓ′)` there. The Möbius map
+`w ↦ (w - a) / (w - b)` has first and second derivatives `(a - b) / (w - b) ^ 2` and
+`-2 (a - b) / (w - b) ^ 3` away from `b`.
+
 ## Main results
 
 * `TauCeti.iteratedDeriv_comp_mul_left`: the iterated derivatives of `fun x ↦ f (c * x)`, and
@@ -49,6 +53,10 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 * `TauCeti.sq_mul_deriv_deriv_comp_log`, `TauCeti.deriv_deriv_comp_exp`: the second derivatives
   under the change of variables `x = e^y`.
+* `TauCeti.deriv_deriv_of_eventually_hasDerivAt_mul`: the second derivative of `f` from a
+  logarithmic derivative `ℓ` of `f`.
+* `TauCeti.hasDerivAt_sub_div_sub`, `TauCeti.hasDerivAt_deriv_sub_div_sub`: the first and second
+  derivatives of the Möbius map `w ↦ (w - a) / (w - b)`.
 -/
 
 public section
@@ -131,6 +139,52 @@ theorem iteratedDeriv_two_const_add_smul (a b : F) :
     Pi.zero_def]
 
 end AffineLine
+
+section LogDeriv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+
+/-- If `f′ = f · ℓ` near `z`, so that `ℓ` is a logarithmic derivative of `f` there, and `ℓ` has
+derivative `ℓ′` at `z`, then `f′′(z) = f(z) (ℓ(z) ^ 2 + ℓ′)`. -/
+theorem deriv_deriv_of_eventually_hasDerivAt_mul {f ℓ : 𝕜 → 𝕜} {ℓ' z : 𝕜}
+    (hf : ∀ᶠ w in 𝓝 z, HasDerivAt f (f w * ℓ w) w) (hℓ : HasDerivAt ℓ ℓ' z) :
+    deriv (deriv f) z = f z * (ℓ z ^ 2 + ℓ') := by
+  have hev : deriv f =ᶠ[𝓝 z] fun w ↦ f w * ℓ w := hf.mono fun w hw ↦ hw.deriv
+  rw [hev.deriv_eq]
+  refine (hf.self_of_nhds.mul hℓ).deriv.trans ?_
+  ring
+
+end LogDeriv
+
+section SubDivSub
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a b z : 𝕜}
+
+/-- The derivative of the Möbius map `w ↦ (w - a) / (w - b)` at `z ≠ b` is
+`(a - b) / (z - b) ^ 2`. -/
+theorem hasDerivAt_sub_div_sub (hz : z ≠ b) :
+    HasDerivAt (fun w ↦ (w - a) / (w - b)) ((a - b) / (z - b) ^ 2) z := by
+  have hzb : z - b ≠ 0 := sub_ne_zero.mpr hz
+  refine (((hasDerivAt_id z).sub_const a).div ((hasDerivAt_id z).sub_const b) hzb).congr_deriv ?_
+  simp only [id]
+  field_simp
+  ring
+
+/-- The derivative of the Möbius map `w ↦ (w - a) / (w - b)`, as a function, has derivative
+`-2 (a - b) / (z - b) ^ 3` at `z ≠ b`. -/
+theorem hasDerivAt_deriv_sub_div_sub (hz : z ≠ b) :
+    HasDerivAt (deriv fun w ↦ (w - a) / (w - b)) (-2 * (a - b) / (z - b) ^ 3) z := by
+  have hzb : z - b ≠ 0 := sub_ne_zero.mpr hz
+  have hev : (fun w ↦ (a - b) / (w - b) ^ 2) =ᶠ[𝓝 z] deriv fun w ↦ (w - a) / (w - b) :=
+    Filter.mem_of_superset (isOpen_ne.mem_nhds hz) fun w hw ↦
+      (hasDerivAt_sub_div_sub hw).deriv.symm
+  refine (((hasDerivAt_const z (a - b)).div (((hasDerivAt_id z).sub_const b).pow 2)
+    (pow_ne_zero 2 hzb)).congr_of_eventuallyEq hev.symm).congr_deriv ?_
+  simp only [id, Pi.pow_apply, Nat.cast_ofNat]
+  field_simp
+  ring
+
+end SubDivSub
 
 /-- The second derivative of the square root of a quadratic polynomial
 `Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is
