@@ -596,9 +596,9 @@ lemma shuffleChain_chainComplexMap_braiding : ∀ (p q n : ℕ) (h : p + q = n),
       reassoc_of% (shuffleChain_chainComplexMap_braiding (p + 1) q n (by omega))]
     simp only [Preadditive.zsmul_comp, smul_add, smul_smul, ← pow_add]
     -- both sides are the same two cones, with signs of the same parities
-    rw [show p + 1 + (p + 1) * q = (p + 1) * (q + 1) by ring,
-      show (p + 1) * (q + 1) + (q + 1) = p * (q + 1) + 2 * (q + 1) by ring, pow_add _ _ (2 * _),
-      pow_mul (-1 : ℤ) 2, neg_one_sq, one_pow, mul_one]
+    have hs : (-1 : ℤ) ^ ((p + 1) * (q + 1) + (q + 1)) = (-1) ^ (p * (q + 1)) := by
+      simp [show (p + 1) * (q + 1) + (q + 1) = p * (q + 1) + 2 * (q + 1) by ring, pow_add, pow_mul]
+    rw [show p + 1 + (p + 1) * q = (p + 1) * (q + 1) by ring, hs]
     exact add_comm _ _
   | 0, 0, _ + 1, h | _ + 1, _, 0, h | 0, _ + 1, 0, h => absurd h (by omega)
 
