@@ -112,6 +112,14 @@ theorem schottkyDoubleHomeomorphDiscDouble_swap (p : SchottkyDouble 𝕔𝔻) :
       DoubleAlong.swap _ (schottkyDoubleHomeomorphDiscDouble p) :=
   DoubleAlong.congr_swap _ _ p
 
+/-- The homeomorphism of doubles carries the fixed set of the sheet swap of the Schottky double
+onto that of the disc double. -/
+theorem schottkyDoubleHomeomorphDiscDouble_image_fixed :
+    schottkyDoubleHomeomorphDiscDouble ''
+        {p | DoubleAlong.swap (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ p = p} =
+      {p | DoubleAlong.swap DoubleAlong.discBoundary p = p} :=
+  DoubleAlong.image_congr_fixed _ _
+
 @[simp]
 theorem schottkyDoubleHomeomorphDiscDouble_symm_swap (p : DoubleAlong DoubleAlong.discBoundary) :
     schottkyDoubleHomeomorphDiscDouble.symm (DoubleAlong.swap _ p) =
@@ -343,10 +351,9 @@ theorem schottkyDoubleDiffeomorph_image_fixed :
     schottkyDoubleDiffeomorph '' {p | DoubleAlong.swap (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ p = p} =
       (↑) '' sphere (0 : ℂ) 1 := by
   rw [← DoubleAlong.discDoubleHomeomorph_image_fixed_eq_sphere,
-    ← DoubleAlong.image_congr_fixed homeomorphClosedBall
-      image_homeomorphClosedBall_compl_borderedInterior, image_image,
+    ← schottkyDoubleHomeomorphDiscDouble_image_fixed, image_image,
     ← schottkyDoubleDiffeomorph.coe_toHomeomorph, schottkyDoubleDiffeomorph_toHomeomorph]
-  rfl
+  exact congrArg (· '' _) (funext fun x ↦ Homeomorph.trans_apply _ _ x)
 
 /-- The Euler characteristic of the closed unit disc is `1`, the disc being contractible. -/
 @[simp]
