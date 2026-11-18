@@ -118,8 +118,7 @@ theorem exists_finset_isCover_isCompressibleVector_zero
   · intro x hx
     obtain ⟨hn, s, hs, hx⟩ := isCompressibleVector_zero_right_iff.mp hx
     obtain ⟨t, hst, htu, ht⟩ := exists_subsuperset_card_eq (subset_univ s) hs (by simpa using hk)
-    obtain ⟨y, hy, hxy⟩ := hN t (show x ∈ {x : EuclideanSpace 𝕜 ι | ‖x‖ = 1 ∧ ∀ i ∉ t, x i = 0} from
-      ⟨hn, fun i hi ↦ hx i (fun his ↦ hi (hst his))⟩)
+    obtain ⟨y, hy, hxy⟩ := hN t ⟨hn, fun i hi ↦ hx i (fun his ↦ hi (hst his))⟩
     exact ⟨y, mem_biUnion.mpr ⟨t, mem_powersetCard.mpr ⟨htu, ht⟩, hy⟩, hxy⟩
   · calc
       _ ≤ ∑ s ∈ supports, ((N s).card : ℝ) := by

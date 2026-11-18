@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Compressible.Net
 public import TauCeti.Probability.Moments.SubGaussian.Matrix.SmallBall
 public import TauCeti.Probability.Moments.SubGaussian.Matrix
+import TauCeti.Analysis.SpecialFunctions.Choose
 
 /-!
 # Invertibility on compressible vectors
@@ -72,9 +73,9 @@ private theorem compressible_event_subset_net
   have ht : ‖L y‖ < t := by linarith only [hny, hdiff, hsmall']
   exact Set.mem_iUnion.2 ⟨y, Set.mem_iUnion.2 ⟨hy, ht⟩⟩
 
-/-- Conditional on the operator norm being at most `M`, the compressible-vector lower tail
-is bounded by the number of points in a sparse sphere net times the fixed-direction tail.
-Here `K` is the common variance proxy and `v` bounds every entry's second moment below. -/
+/-- The probability of the compressible-vector lower-tail event intersected with
+`{ω | ‖A ω‖ ≤ M}` is at most the size bound for a sparse sphere net times the fixed-direction
+tail. Here `K` is the common variance proxy and `v` bounds every entry's second moment below. -/
 theorem measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
     (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) P)
     (hA : ∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) K P)
@@ -103,54 +104,6 @@ theorem measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
       hind.measureReal_norm_toEuclideanLin_lt_le hA hmom (hNs hy).norm_eq_one
     _ = (N.card : ℝ) * q := by simp [nsmul_eq_mul]
     _ ≤ _ := mul_le_mul_of_nonneg_right hcard' (by positivity)
-
-/-- For a fixed real sphere-net base and exponent, the binomial cost of sparse nets is
-absorbed in that exponent when the sparsity fraction is sufficiently small. -/
-private theorem exists_sparsity_fraction (η : ℝ≥0) {a : ℝ} (ha : 0 < a) :
-    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 ∧ ∀ d k : ℕ, (k : ℝ) ≤ δ * d →
-      (d.choose k : ℝ) * (1 + 2 / (η : ℝ)) ^ k ≤ Real.exp (a * d) := by
-  let B : ℝ := 1 + 2 / (η : ℝ)
-  have hB : 1 ≤ B := le_add_of_nonneg_right (by positivity)
-  let r := min (a / 2) 1
-  have hr : 0 < r := lt_min (by positivity) one_pos
-  have hrB : r ≤ B := (min_le_right _ _).trans hB
-  let b := Real.log (B / r)
-  have hb : 0 ≤ b := Real.log_nonneg ((le_div_iff₀ hr).2 (by simpa using hrB))
-  let δ := min 1 (r / (1 + b))
-  have hδ : 0 < δ := lt_min one_pos (by positivity)
-  have hδ₁ : δ ≤ 1 := min_le_left _ _
-  have hδb : δ * b ≤ r := by
-    have h := (le_div_iff₀ (by positivity : 0 < 1 + b)).mp
-      (min_le_right (1 : ℝ) (r / (1 + b)))
-    linarith
-  refine ⟨δ, hδ, hδ₁, fun d k hk ↦ ?_⟩
-  have hkd : k ≤ d := by
-    exact_mod_cast hk.trans (mul_le_of_le_one_left (Nat.cast_nonneg d) hδ₁)
-  have hterm : (d.choose k : ℝ) * r ^ k ≤ (r + 1) ^ d := by
-    calc
-      _ = r ^ k * 1 ^ (d - k) * (d.choose k : ℝ) := by rw [one_pow, mul_one, mul_comm]
-      _ ≤ _ := by
-        rw [add_pow]
-        exact single_le_sum (f := fun j : ℕ ↦ r ^ j * 1 ^ (d - j) * (d.choose j : ℝ))
-          (fun j _ ↦ by positivity) (mem_range.mpr (Nat.lt_succ_of_le hkd))
-  have hpow : (B / r) ^ k = Real.exp (b * k) := by
-    rw [mul_comm, Real.exp_nat_mul, Real.exp_log (by positivity : 0 < B / r)]
-  calc
-    _ = ((d.choose k : ℝ) * r ^ k) * (B / r) ^ k := by
-      rw [mul_assoc, ← mul_pow, mul_div_cancel₀ _ hr.ne']
-    _ ≤ (r + 1) ^ d * (B / r) ^ k :=
-      mul_le_mul_of_nonneg_right hterm (by positivity)
-    _ ≤ Real.exp (r * d) * Real.exp (b * k) := by
-      rw [hpow, mul_comm r _, Real.exp_nat_mul]
-      gcongr
-      exact Real.add_one_le_exp r
-    _ = Real.exp (r * d + b * k) := (Real.exp_add _ _).symm
-    _ ≤ _ := by
-      apply Real.exp_le_exp.mpr
-      have hbk := mul_le_mul_of_nonneg_left hk hb
-      have hbudget := mul_le_mul_of_nonneg_right hδb (by positivity : (0 : ℝ) ≤ d)
-      have hrate := mul_le_mul_of_nonneg_right (min_le_left (a / 2) 1) (Nat.cast_nonneg d)
-      nlinarith only [hbk, hbudget, hrate]
 
 private def fixedDirectionRate (L : ℝ≥0) : ℝ :=
   (1 / 1536) * min (1 / (4 * ((L ^ 2 : ℝ≥0) : ℝ) ^ 2)) (1 / (2 * ((L ^ 2 : ℝ≥0) : ℝ)))
@@ -262,7 +215,8 @@ theorem exists_measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
     have hL' : (1 : ℝ) ≤ L := by exact_mod_cast hL
     rw [inv_eq_one_div]
     exact (div_le_div_iff_of_pos_left one_pos (by positivity) (by positivity)).mpr (by linarith)
-  obtain ⟨δ, hδ, hδ₁, hentropy⟩ := exists_sparsity_fraction ρ (half_pos hg)
+  obtain ⟨δ, hδ, hδ₁, hentropy⟩ :=
+    TauCeti.exists_pos_choose_mul_pow_le_exp (1 + 2 / (ρ : ℝ)) (half_pos hg)
   refine ⟨δ, hδ, hδ₁, ρ, hρ, hρ₄, min 1 (g / 2), lt_min one_pos (half_pos hg), ?_⟩
   intro Ω m n _ _ _ _ P A hind hA hmom hdim
   let k := ⌊δ * Fintype.card n⌋₊
