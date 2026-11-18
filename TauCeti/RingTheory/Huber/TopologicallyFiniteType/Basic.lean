@@ -315,10 +315,7 @@ theorem IsTopologicallyFiniteType.comp_ringEquiv {φ : A →+* B} (h : IsTopolog
     continuous_weightedMapCompletionEquiv .., continuous_weightedMapCompletionEquiv_symm ..⟩
   refine isTopologicallyFiniteType_iff.mpr ⟨k, _, fun i ↦ (hTfin i).image _, hT', π.comp ψ,
     hπ.comp hψ, RingHom.ext fun a ↦ ?_⟩
-  -- `ψ` passes `he : Continuous e` for continuity of `(e : A' →+* A)`, so the lemmas about the
-  -- induced maps only match once instantiated at that `he`
-  simp [ψ, weightedMapCompletion_coe (φ := (e : A' →+* A)) he,
-    weightedMap_weightedC (φ := (e : A' →+* A)) he]
+  simp [ψ]
 
 end RingEquiv
 
