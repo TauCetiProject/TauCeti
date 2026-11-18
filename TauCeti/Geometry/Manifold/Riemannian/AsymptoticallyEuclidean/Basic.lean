@@ -11,13 +11,15 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 
 /-!
 # Asymptotically Euclidean ends
 
 An asymptotically Euclidean end of order `t` of a Riemannian manifold `M` is a smooth
-parametrization `φ` of an open subset of `M` by the exterior `{x ∈ ℝⁿ : R < ‖x‖}` of a closed
-ball, injective with invertible differential there, such that the coefficients
+parametrization `φ` of an open subset of `M` by the exterior `{x ∈ ℝⁿ : R < ‖x‖}`, `n > 0`, of a
+closed ball, injective with invertible differential there, such that the coefficients
 `g_ij(x) = g(dφ_x eᵢ, dφ_x eⱼ)` of the pulled-back metric in the standard basis satisfy
 `|∂^α (g_ij - δ_ij)| ≤ C ‖x‖^(-t-|α|)` for `|α| ≤ 2`. A manifold is finite-ended
 asymptotically Euclidean when finitely many, and at least one, such ends have pairwise disjoint
@@ -55,7 +57,8 @@ inside the ball carry no data. The size of the derivatives is measured by the op
   Riemannian isometries.
 * `TauCeti.isAsymptoticallyEuclideanEnd_id` and
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_id`: the identity parametrization of flat
-  Euclidean space is an end of every order, and a finite-ended structure with one end.
+  Euclidean space of positive dimension is an end of every order, and a finite-ended structure
+  with one end.
 * `TauCeti.not_isAsymptoticallyEuclideanEnd_two_smul`: the parametrization `x ↦ 2 • x` of flat
   Euclidean space, whose pulled-back coefficients are `4 δ_ij`, is not an end of any positive
   order, although its coefficients are bounded.
@@ -130,9 +133,11 @@ theorem pullbackMetricCoeff_eq_gram_fderiv {G : Type*} [NormedAddCommGroup G]
     [InnerProductSpace ℝ G] (φ : EuclideanSpace ℝ (Fin n) → G) (x : EuclideanSpace ℝ (Fin n)) :
     pullbackMetricCoeff 𝓘(ℝ, G) φ x =
       Matrix.gram ℝ fun i ↦ fderiv ℝ φ x (EuclideanSpace.basisFun (Fin n) ℝ i) := by
-  rw [pullbackMetricCoeff_def, mfderiv_eq_fderiv]
-  -- The flat metric on each tangent space of `G` is the inner product of `G`.
-  rfl
+  ext i j
+  rw [pullbackMetricCoeff_apply, Matrix.gram_apply, Manifold.inner_tangentSpace_vectorSpace]
+  -- Read each partial derivative in `G` as the vector-valued derivative, then as `fderiv`.
+  congr 1 <;> exact (NormedSpace.fromTangentSpace_apply _ _).trans
+    ((mvfderiv_apply_eq_mfderiv_apply _ _ _).symm.trans (mvfderiv_eq_fderiv_apply _ _ _))
 
 /-- For the flat metric of Euclidean space, the coefficients pulled back along the identity are
 the identity matrix. -/
@@ -146,10 +151,11 @@ theorem pullbackMetricCoeff_id (x : EuclideanSpace ℝ (Fin n)) :
 
 variable (I) in
 /-- `φ` is an **asymptotically Euclidean end** of order `t` of `M`, parametrized by the exterior
-`{x | R < ‖x‖}` of the closed ball of radius `R > 0` in `EuclideanSpace ℝ (Fin n)`: on that open
-set `φ` is smooth and injective with invertible differential, the pulled-back metric
-coefficients `g_ij` are `C²`, and for some constant `C` the derivatives of order `k ≤ 2` of the
-entries `g_ij - δ_ij` of `g - 1` are bounded by `C ‖x‖^(-t-k)`.
+`{x | R < ‖x‖}` of the closed ball of radius `R > 0` in `EuclideanSpace ℝ (Fin n)` with `n > 0`,
+so that this exterior is nonempty: on that open set `φ` is smooth and injective with invertible
+differential, the pulled-back metric coefficients `g_ij` are `C²`, and for some constant `C` the
+derivatives of order `k ≤ 2` of the entries `g_ij - δ_ij` of `g - 1` are bounded by
+`C ‖x‖^(-t-k)`.
 
 Only the decay of the metric is asked for; integrability of the scalar curvature, needed for the
 mass to exist, is a separate hypothesis. The `C²` regularity of the coefficients is automatic for a
@@ -158,6 +164,9 @@ of `φ` on the closed ball are irrelevant. -/
 structure IsAsymptoticallyEuclideanEnd (t R : ℝ) (φ : EuclideanSpace ℝ (Fin n) → M) : Prop where
   /-- The radius of the excised ball is positive. -/
   radius_pos : 0 < R
+  /-- The dimension of the parametrizing space is positive, so the exterior of the ball is
+  nonempty. -/
+  dim_pos : 0 < n
   /-- The parametrization is smooth on the exterior of the ball. -/
   contMDiffOn : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ φ (closedBall 0 R)ᶜ
   /-- The parametrization is injective on the exterior of the ball. -/
@@ -188,6 +197,7 @@ theorem mono_radius (h : IsAsymptoticallyEuclideanEnd I t R φ) {R' : ℝ} (hR :
   obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
   exact
     { radius_pos := h.radius_pos.trans_le hR
+      dim_pos := h.dim_pos
       contMDiffOn := h.contMDiffOn.mono hsub
       injOn := h.injOn.mono hsub
       isInvertible_mfderiv := fun x hx ↦ h.isInvertible_mfderiv x (hsub hx)
@@ -213,6 +223,13 @@ theorem mono_order (h : IsAsymptoticallyEuclideanEnd I t R φ) {t' : ℝ} (ht : 
       gcongr ?_ * (?_ * _)
       exact Real.rpow_le_rpow_of_nonpos h.radius_pos hxR.le (sub_nonpos.2 ht)
     _ = |C| * R ^ (t' - t) * ‖x‖ ^ (-t' - k) := (mul_assoc _ _ _).symm
+
+/-- The image of an end is nonempty, since the exterior of a ball in positive dimension is. -/
+theorem nonempty_image (h : IsAsymptoticallyEuclideanEnd I t R φ) :
+    (φ '' (closedBall 0 R)ᶜ).Nonempty := by
+  have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
+  obtain ⟨x, hx⟩ := NormedSpace.exists_lt_norm ℝ (EuclideanSpace ℝ (Fin n)) R
+  exact ⟨φ x, x, by simpa using hx, rfl⟩
 
 /-- An end is a local diffeomorphism on the exterior of its ball, by the inverse function
 theorem. -/
@@ -279,6 +296,7 @@ theorem comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
   obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
   refine
     { radius_pos := h.radius_pos
+      dim_pos := h.dim_pos
       contMDiffOn := hf.contMDiff.comp_contMDiffOn h.contMDiffOn
       injOn := hinj.comp h.injOn (mapsTo_image _ _)
       isInvertible_mfderiv := fun x hx ↦ ?_
@@ -307,11 +325,13 @@ theorem isAsymptoticallyEuclideanEnd_comp_iff (Φ : RiemannianIsometry I J M N) 
   rwa [← comp_assoc, show ⇑Φ.symm ∘ Φ = id from funext Φ.symm_apply_apply, id_comp] at h'
 
 /-- The identity parametrization of flat Euclidean space is an asymptotically Euclidean end of
-every order on the exterior of every ball: its coefficients are exactly `δ_ij`. -/
-theorem isAsymptoticallyEuclideanEnd_id (t : ℝ) {R : ℝ} (hR : 0 < R) :
+every order on the exterior of every ball, in positive dimension: its coefficients are exactly
+`δ_ij`. -/
+theorem isAsymptoticallyEuclideanEnd_id (hn : 0 < n) (t : ℝ) {R : ℝ} (hR : 0 < R) :
     IsAsymptoticallyEuclideanEnd 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t R
       (id : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) where
   radius_pos := hR
+  dim_pos := hn
   contMDiffOn := contMDiffOn_id
   injOn := injOn_id _
   isInvertible_mfderiv x _ := by
@@ -339,12 +359,12 @@ private theorem pullbackMetricCoeff_two_smul (x : EuclideanSpace ℝ (Fin n)) (i
   ring
 
 /-- The dilation `x ↦ 2 • x` of flat Euclidean space is not an asymptotically Euclidean end of
-any positive order, in positive dimension: its coefficients `4 δ_ij` are bounded, but
-`g_ii - 1 = 3` does not decay. -/
-theorem not_isAsymptoticallyEuclideanEnd_two_smul (hn : 0 < n) {t : ℝ} (ht : 0 < t) (R : ℝ) :
+any positive order: its coefficients `4 δ_ij` are bounded, but `g_ii - 1 = 3` does not
+decay. -/
+theorem not_isAsymptoticallyEuclideanEnd_two_smul {t : ℝ} (ht : 0 < t) (R : ℝ) :
     ¬ IsAsymptoticallyEuclideanEnd 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t R
       (fun y : EuclideanSpace ℝ (Fin n) ↦ (2 : ℝ) • y) := by
-  rintro ⟨-, -, -, -, -, C, hC⟩
+  rintro ⟨-, hn, -, -, -, -, C, hC⟩
   let i : Fin n := ⟨0, hn⟩
   -- For large `s`, the point `s • eᵢ` lies outside the ball and `C s^(-t) < 3`.
   obtain ⟨s, hsR, hs0, hsC⟩ := (eventually_gt_atTop R).and ((eventually_gt_atTop 0).and
@@ -421,14 +441,15 @@ theorem isFiniteEndedAsymptoticallyEuclidean_comp_iff (Φ : RiemannianIsometry I
   simp only [← comp_assoc, show ⇑Φ.symm ∘ Φ = id from funext Φ.symm_apply_apply, id_comp] at h'
   exact h'
 
-/-- Flat Euclidean space, with the identity parametrization of the exterior of a ball of positive
-radius as its only end, is finite-ended asymptotically Euclidean of every order. -/
-theorem isFiniteEndedAsymptoticallyEuclidean_id (t : ℝ) {R : ℝ} (hR : 0 < R) :
+/-- Flat Euclidean space of positive dimension, with the identity parametrization of the exterior
+of a ball of positive radius as its only end, is finite-ended asymptotically Euclidean of every
+order. -/
+theorem isFiniteEndedAsymptoticallyEuclidean_id (hn : 0 < n) (t : ℝ) {R : ℝ} (hR : 0 < R) :
     IsFiniteEndedAsymptoticallyEuclidean 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t (fun _ : Unit ↦ R)
       (fun _ ↦ (id : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n))) where
   finite := inferInstance
   nonempty := inferInstance
-  isAsymptoticallyEuclideanEnd _ := isAsymptoticallyEuclideanEnd_id t hR
+  isAsymptoticallyEuclideanEnd _ := isAsymptoticallyEuclideanEnd_id hn t hR
   pairwise_disjoint e e' hee' := (hee' (Subsingleton.elim e e')).elim
   isCompact_compl_iUnion := by
     simpa only [iUnion_const, image_id, compl_compl] using isCompact_closedBall 0 R
