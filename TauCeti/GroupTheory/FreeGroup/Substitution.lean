@@ -23,7 +23,8 @@ where both sides must agree letter by letter. It is primitive recursive jointly 
 and a finite table of the substituted words (`FreeGroup.primrec₂_substituteVars_getD`). It only
 depends on the words assigned to the generators that occur, so changing the word of one generator
 changes the substitution only at the letters of that generator, and substituting words of length at
-most `k` multiplies the length of a word by at most `k`.
+most `k` multiplies the length of a word by at most `k`. Two such substitutions compose to the
+substitution of the substituted words, and substituting every generator by itself is the identity.
 -/
 
 public section
@@ -98,6 +99,23 @@ theorem flatMap_substituteLetter_invRev (f : α → List (β × Bool)) (w : List
     congr 1
     have hs : invRev [a] = [(a.1, !a.2)] := by simp [invRev]
     obtain ⟨x, _ | _⟩ := a <;> simp [hs, invRev_invRev]
+
+/-- Substituting words for letters twice is substituting the substituted words. -/
+theorem flatMap_substituteLetter_flatMap_substituteLetter {γ : Type*} (f : α → List (β × Bool))
+    (g : β → List (γ × Bool)) (w : List (α × Bool)) :
+    (w.flatMap (substituteLetter f)).flatMap (substituteLetter g) =
+      w.flatMap (substituteLetter fun a => (f a).flatMap (substituteLetter g)) := by
+  rw [List.flatMap_assoc]
+  refine List.flatMap_congr fun a _ => ?_
+  obtain ⟨a, _ | _⟩ := a <;> simp [flatMap_substituteLetter_invRev]
+
+/-- Substituting for every generator its own one-letter word leaves a word unchanged. -/
+@[simp]
+theorem flatMap_substituteLetter_singleton_true (w : List (α × Bool)) :
+    w.flatMap (substituteLetter fun a => [(a, true)]) = w := by
+  conv_rhs => rw [← List.flatMap_singleton' w]
+  refine List.flatMap_congr fun a _ => ?_
+  obtain ⟨a, _ | _⟩ := a <;> simp [invRev]
 
 /-- If the generators occurring in a word are assigned words of length at most `k`, substitution
 without free reduction multiplies the length of the word by at most `k`. -/
