@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
 public import Mathlib.RingTheory.Localization.Basic
 public import Mathlib.RingTheory.Localization.Finiteness
+public import Mathlib.RingTheory.Ideal.Colon
 
 /-!
 # Submodules over a localization
@@ -106,3 +107,72 @@ theorem LinearMap.localizedMap_injective_iff_subsingleton_localized_ker {R M N :
   rw [(IsLocalizedModule.iso S (LinearMap.toKerIsLocalized S (LocalizedModule.mkLinearMap S M)
       (LocalizedModule.mkLinearMap S N) φ)).subsingleton_congr, Submodule.subsingleton_iff_eq_bot,
     LinearMap.ker_eq_bot, IsLocalizedModule.map_injective_iff_localizedModuleMap_injective]
+
+namespace Submodule
+
+variable {R M M' : Type*} [CommSemiring R]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']
+
+/-- A localized fraction lies in the localization of a submodule exactly when a multiple of
+its numerator by an element of the denominator monoid lies in the original submodule. -/
+theorem mk'_mem_localized₀_iff (N : Submodule R M) (p : Submonoid R)
+    (f : M →ₗ[R] M') [IsLocalizedModule p f] (m : M) (s : p) :
+    IsLocalizedModule.mk' f m s ∈ N.localized₀ p f ↔ ∃ t : p, (t : R) • m ∈ N := by
+  constructor
+  · rintro ⟨n, hn, t, h⟩
+    obtain ⟨c, hc⟩ := (IsLocalizedModule.mk'_eq_mk'_iff f n m t s).mp h
+    simp only [Submonoid.smul_def] at hc
+    refine ⟨c * t, ?_⟩
+    have hN := N.smul_mem (c : R) (N.smul_mem (s : R) hn)
+    rw [← hc] at hN
+    simpa only [Submonoid.coe_mul, mul_smul] using hN
+  · rintro ⟨t, ht⟩
+    exact ⟨(t : R) • m, ht, t * s, IsLocalizedModule.mk'_cancel_left f m t s⟩
+
+variable (S : Type*) [CommSemiring S] [Algebra R S] [Module S M']
+  [IsScalarTower R S M']
+
+/-- A localized fraction belongs to a localized submodule exactly when a denominator multiple
+of its numerator belongs to the original submodule. -/
+theorem mk'_mem_localized'_iff (N : Submodule R M) (p : Submonoid R)
+    [IsLocalization p S] (f : M →ₗ[R] M') [IsLocalizedModule p f] (m : M) (s : p) :
+    IsLocalizedModule.mk' f m s ∈ N.localized' S p f ↔ ∃ t : p, (t : R) • m ∈ N :=
+  mk'_mem_localized₀_iff N p f m s
+
+/-- The image of a numerator belongs to a localized submodule exactly when a denominator
+multiple belongs to the original submodule. -/
+@[simp]
+theorem map_mem_localized'_iff (N : Submodule R M) (p : Submonoid R)
+    [IsLocalization p S] (f : M →ₗ[R] M') [IsLocalizedModule p f] (m : M) :
+    f m ∈ N.localized' S p f ↔ ∃ t : p, (t : R) • m ∈ N := by
+  rw [← IsLocalizedModule.mk'_one p f m, mk'_mem_localized'_iff S]
+
+/-- Localization commutes with the colon ideal of a submodule by a single element. -/
+theorem map_colon_singleton_localized' (N : Submodule R M) (p : Submonoid R)
+    [IsLocalization p S] (f : M →ₗ[R] M') [IsLocalizedModule p f] (m : M) :
+    (N.colon {m}).map (algebraMap R S) = (N.localized' S p f).colon {f m} := by
+  ext x
+  obtain ⟨⟨a, s⟩, rfl⟩ := IsLocalization.mk'_surjective p x
+  rw [IsLocalization.mk'_mem_map_algebraMap_iff p S,
+    Submodule.mem_colon_singleton, ← IsLocalizedModule.mk'_one p f m,
+    IsLocalizedModule.mk'_smul_mk' S, mul_one, mk'_mem_localized'_iff S]
+  simp only [Submodule.mem_colon_singleton, mul_smul, Subtype.exists,
+    exists_prop]
+
+/-- Localization commutes with the colon ideal of a submodule by a finitely generated submodule.
+No finite-generation assumption on the numerator submodule is needed. -/
+theorem map_colon_localized' (N P : Submodule R M) (hP : P.FG) (p : Submonoid R)
+    [IsLocalization p S] (f : M →ₗ[R] M') [IsLocalizedModule p f] :
+    (N.colon (P : Set M)).map (algebraMap R S) =
+      (N.localized' S p f).colon (P.localized' S p f : Set M') := by
+  classical
+  obtain ⟨t, rfl⟩ := hP
+  rw [Submodule.colon_span, Submodule.localized'_span, Submodule.colon_span]
+  induction t using Finset.induction_on with
+  | empty => simp [Ideal.map_top]
+  | @insert m t _ ih =>
+    simp only [Finset.coe_insert, Set.insert_eq, Set.image_union, Set.image_singleton,
+      Submodule.colon_union, IsLocalization.map_inf p S, ih]
+    rw [map_colon_singleton_localized' S N p f m]
+
+end Submodule
