@@ -61,15 +61,6 @@ universe u
 
 variable {G : Type u} [Group G] {X : Type*}
 
--- Over an abelian group, evaluating at `v` is evaluating at `v₀` times evaluating at `v / v₀`
--- with all coefficients replaced by `1`.
-open scoped IsMulCommutative in
-private theorem eval_eq_eval_mul_eval_one_div [IsMulCommutative G] (v₀ v : X → G) (w : GX G X) :
-    eval (.id G) v w = eval (.id G) v₀ w * eval 1 (v / v₀) w :=
-  DFunLike.congr_fun (hom_ext (MonoidHom.ext fun g => by simp)
-    (FreeGroup.ext_hom _ _ fun x => by simp) :
-      eval (.id G) v = eval (.id G) v₀ * eval 1 (v / v₀)) w
-
 -- Over an abelian group, an equation lies in the radical of a system `S` with a solution `v₀`
 -- exactly when it vanishes at `v₀` and, with its coefficients replaced by `1`, at every quotient
 -- `v / v₀` of solutions.
@@ -85,8 +76,8 @@ private theorem Rad_eq_ker_inf_ker [IsMulCommutative G] {S : Set (GX G X)} {v₀
   ext w
   simp only [mem_Rad, mem_inf, MonoidHom.mem_ker]
   refine ⟨fun h => ⟨h v₀ hv₀, funext fun v => ?_⟩, fun ⟨h₀, h₁⟩ v hv => ?_⟩
-  · simpa [hp, h v.1 v.2, h v₀ hv₀] using (eval_eq_eval_mul_eval_one_div v₀ v.1 w).symm
-  · simpa [eval_eq_eval_mul_eval_one_div v₀ v w, h₀, hp] using congr_fun h₁ ⟨v, hv⟩
+  · simpa [hp, h v.1 v.2, h v₀ hv₀] using (eval_eq_eval_mul_eval_one_div (.id G) v₀ v.1 w).symm
+  · simpa [eval_eq_eval_mul_eval_one_div (.id G) v₀ v w, h₀, hp] using congr_fun h₁ ⟨v, hv⟩
 
 open scoped IsMulCommutative in
 /-- Over an abelian torsion-free group `G`, the coordinate group of a consistent system of
