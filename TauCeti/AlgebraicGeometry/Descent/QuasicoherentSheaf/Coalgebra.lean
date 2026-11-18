@@ -18,8 +18,9 @@ Let `f : X ⟶ S` be a flat, quasi-compact and quasi-separated morphism of schem
 `p₁, p₂ : X ×_S X ⟶ X`. A descent datum `D` for quasi-coherent modules along `f` (Mathlib's
 `Pseudofunctor.DescentData` for `qcohPseudofunctor` and the single morphism `f`) consists of a
 quasi-coherent module `E` on `X` and gluing isomorphisms `u^* E ⟶ v^* E` for all `u v : Y ⟶ X` with
-`u ≫ f = v ≫ f`, compatible with pullback and composition (`qcohDescentDataHom`). By flat base
-change `f^* f_* E ≅ p₂_* p₁^* E` (`Scheme.Modules.isIso_pushforwardBaseChange_app`), the adjunct
+`u ≫ f = v ≫ f`, compatible with pullback and composition (`qcohDescentDataHom`, in
+`TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Basic`). By flat base change
+`f^* f_* E ≅ p₂_* p₁^* E` (`Scheme.Modules.isIso_pushforwardBaseChange_app`), the adjunct
 `E ⟶ p₂_* p₁^* E` of the gluing isomorphism `p₂^* E ⟶ p₁^* E` is a morphism `E ⟶ f^* f_* E`
 (`qcohDescentDataCoaction`). It is a coalgebra structure for the comonad `f^* f_*`: the counit law
 comes from the normalisation of `D` on the diagonal of `X ×_S X`, and coassociativity from the
@@ -34,10 +35,6 @@ coalgebra comes from a quasi-coherent module on `S`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataHom`: the gluing morphisms of a descent datum
-  on underlying modules, with `qcohDescentDataHom_self`, `qcohDescentDataHom_comp`,
-  `pullbackComp_inv_app_comp_pullback_map_qcohDescentDataHom` (compatibility with pullback) and
-  `qcohDescentDataHom_ofObj`;
 * `TauCeti.AlgebraicGeometry.Descent.qcohDescentDataCoaction`: the coaction `E ⟶ f^* f_* E`, with
   the counit law `qcohDescentDataCoaction_counit`, coassociativity
   `qcohDescentDataCoaction_coassoc` and naturality `qcohDescentDataCoaction_comp_map`;
@@ -68,79 +65,8 @@ namespace TauCeti.AlgebraicGeometry.Descent
 
 open _root_.AlgebraicGeometry
 
-variable {X S : Scheme.{u}} (f : X ⟶ S)
-  (D : qcohPseudofunctor.DescentData (fun _ : PUnit ↦ f))
-
-/-- The gluing morphism `u^* E ⟶ v^* E` of a descent datum `D` along `f` on underlying modules,
-for `u v : Y ⟶ X` with `u ≫ f = v ≫ f`, where `E` is the module of `D`. -/
-def qcohDescentDataHom {Y : Scheme.{u}} (u v : Y ⟶ X) (h : u ≫ f = v ≫ f) :
-    (Scheme.Modules.pullback u).obj (D.obj PUnit.unit).obj ⟶
-      (Scheme.Modules.pullback v).obj (D.obj PUnit.unit).obj :=
-  (D.hom (u ≫ f) u v rfl h.symm).hom
-
-variable {f D}
-
-/-- The gluing morphism from `u^* E` to itself is the identity. -/
-@[simp]
-lemma qcohDescentDataHom_self {Y : Scheme.{u}} (u : Y ⟶ X) :
-    qcohDescentDataHom f D u u rfl = 𝟙 _ := by
-  rw [qcohDescentDataHom, D.hom_self _ _ rfl]
-  rfl
-
-/-- `qcohDescentDataHom` is the underlying morphism of modules of `D.hom q u v` for any `q` through
-which both `u ≫ f` and `v ≫ f` factor. -/
-lemma qcohDescentDataHom_eq {Y : Scheme.{u}} (q : Y ⟶ S) (u v : Y ⟶ X) (hu : u ≫ f = q)
-    (hv : v ≫ f = q) :
-    qcohDescentDataHom f D u v (hu.trans hv.symm) = (D.hom q u v hu hv).hom := by
-  subst hu
-  rfl
-
-/-- The gluing morphisms compose: `δ(u, v) ≫ δ(v, w) = δ(u, w)`. -/
-@[reassoc (attr := simp)]
-lemma qcohDescentDataHom_comp {Y : Scheme.{u}} (u v w : Y ⟶ X) (h : u ≫ f = v ≫ f)
-    (h' : v ≫ f = w ≫ f) :
-    qcohDescentDataHom f D u v h ≫ qcohDescentDataHom f D v w h' =
-      qcohDescentDataHom f D u w (h.trans h') := by
-  rw [qcohDescentDataHom_eq (u ≫ f) v w h.symm (h.trans h').symm, qcohDescentDataHom,
-    qcohDescentDataHom_eq (u ≫ f) u w rfl (h.trans h').symm, ← D.hom_comp (u ≫ f) u v w]
-  rfl
-
-/-- The gluing morphisms are compatible with pullback: `g^* δ(u, v)`, read through
-`g^* u^* ≅ (g ≫ u)^*` and `g^* v^* ≅ (g ≫ v)^*`, is `δ(g ≫ u, g ≫ v)`. -/
-lemma pullbackComp_inv_app_comp_pullback_map_qcohDescentDataHom {Y Y' : Scheme.{u}} (g : Y' ⟶ Y)
-    (u v : Y ⟶ X) (h : u ≫ f = v ≫ f) :
-    (Scheme.Modules.pullbackComp g u).inv.app _ ≫
-        (Scheme.Modules.pullback g).map (qcohDescentDataHom f D u v h) ≫
-          (Scheme.Modules.pullbackComp g v).hom.app _ =
-      qcohDescentDataHom f D (g ≫ u) (g ≫ v) (by simp [h]) := by
-  have H := (qcohPseudofunctor_pullHom_hom (D.hom (u ≫ f) u v rfl h.symm) g (g ≫ u) (g ≫ v) rfl
-    rfl).symm.trans (congrArg InducedCategory.Hom.hom (D.pullHom_hom g (u ≫ f) (g ≫ u ≫ f) rfl
-      (i₁ := PUnit.unit) (i₂ := PUnit.unit) u v rfl h.symm (g ≫ u) (g ≫ v) rfl rfl))
-  have H' := (modulesPseudofunctor_pullHom (M₁ := (D.obj PUnit.unit).obj)
-    (M₂ := (D.obj PUnit.unit).obj) (qcohDescentDataHom f D u v h) g (g ≫ u) (g ≫ v) rfl
-    rfl).symm.trans H
-  -- The identifications `(g ≫ u)^* = (g ≫ u)^*` of `pullHom` are identities.
-  have e {Z : Scheme.{u}} (a : Z ⟶ X) :
-      (Scheme.Modules.pullbackCongr (rfl : a = a)).hom.app (D.obj PUnit.unit).obj = 𝟙 _ ∧
-        (Scheme.Modules.pullbackCongr (rfl : a = a)).inv.app (D.obj PUnit.unit).obj = 𝟙 _ :=
-    ⟨rfl, rfl⟩
-  rw [(e _).1, (e _).2, Category.id_comp, Category.comp_id] at H'
-  rw [H', qcohDescentDataHom_eq (g ≫ u ≫ f) (g ≫ u) (g ≫ v) (by simp) (by simp [h])]
-
-/-- The gluing morphisms of the descent datum of the pullback of a quasi-coherent module `M` on
-`S` are the canonical identifications `u^* f^* M ≅ (u ≫ f)^* M = (v ≫ f)^* M ≅ v^* f^* M`. -/
-lemma qcohDescentDataHom_ofObj (M : QuasicoherentSheaf S) {Y : Scheme.{u}} (u v : Y ⟶ X)
-    (h : u ≫ f = v ≫ f) :
-    qcohDescentDataHom f (.ofObj M) u v h =
-      (Scheme.Modules.pullbackComp u f).hom.app M.obj ≫
-        (Scheme.Modules.pullbackCongr h).hom.app M.obj ≫
-          (Scheme.Modules.pullbackComp v f).inv.app M.obj := by
-  have h₁ := qcohPseudofunctor_mapComp'_inv_toNatTrans_app_hom f u (u ≫ f) rfl M
-  have h₂ := qcohPseudofunctor_mapComp'_hom_toNatTrans_app_hom f v (u ≫ f) h.symm M
-  have e : (Scheme.Modules.pullbackCongr (rfl : u ≫ f = u ≫ f)).hom.app M.obj = 𝟙 _ := rfl
-  rw [e, Category.comp_id] at h₁
-  -- `(v ≫ f)^* ≅ (u ≫ f)^*` read backwards is `(u ≫ f)^* ≅ (v ≫ f)^*`: both are `eqToHom`.
-  exact (congrArg₂ (· ≫ ·) h₁ h₂).trans (Category.assoc _ _ _)
+variable {X S : Scheme.{u}} {f : X ⟶ S}
+  {D : qcohPseudofunctor.DescentData (fun _ : PUnit ↦ f)}
 
 section Aux
 
@@ -271,6 +197,112 @@ private lemma paste_aux {Z : Scheme.{u}} {g' f' p₁₃ : Z ⟶ pullback f f}
   rw [← P1, ← reassoc_of% P2, reassoc_of% C, ← Functor.map_comp]
   simp [Scheme.Modules.pullbackCongr]
 
+/-- The left side `σ ≫ p₁^* a` of `comp_pullback_map_aux`, followed by the base change morphisms
+`p₁^* f^* f_* E ⟶ p₁^* p₂_* p₁^* E ⟶ q₂_* q₁^* p₁^* E` on `Z = (X ×_S X) ×_X (X ×_S X)`, is the
+adjunct of the left side of the cocycle condition `cocycle_aux`. -/
+private lemma comp_pullback_map_left_aux
+    (a : E ⟶ (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pullback f).obj E)
+    (ha : a ≫
+        (Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).app E =
+      (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd f f)).unit.app _ ≫
+        (Scheme.Modules.pushforward (pullback.snd f f)).map
+          (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)) :
+    (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm ≫
+        (Scheme.Modules.pullback (pullback.fst f f)).map a) ≫
+      (Scheme.Modules.pullback (pullback.fst f f)).map
+        ((Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).app E) ≫
+      (Scheme.Modules.pushforwardBaseChange
+        (IsPullback.of_hasPullback (pullback.snd f f) (pullback.fst f f)).toCommSq).app _ =
+    (Scheme.Modules.pullbackPushforwardAdjunction
+        (pullback.snd (pullback.snd f f) (pullback.fst f f))).unit.app _ ≫
+      (Scheme.Modules.pushforward (pullback.snd (pullback.snd f f) (pullback.fst f f))).map
+        ((Scheme.Modules.pullback (pullback.snd (pullback.snd f f) (pullback.fst f f))).map
+            (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm) ≫
+          ((Scheme.Modules.pullbackComp (pullback.snd (pullback.snd f f) (pullback.fst f f))
+              (pullback.fst f f)).hom.app E ≫
+            (Scheme.Modules.pullbackCongr
+              (IsPullback.of_hasPullback (pullback.snd f f) (pullback.fst f f)).w.symm).hom.app E ≫
+              (Scheme.Modules.pullbackComp (pullback.fst (pullback.snd f f) (pullback.fst f f))
+                (pullback.snd f f)).inv.app E) ≫
+          (Scheme.Modules.pullback (pullback.fst (pullback.snd f f) (pullback.fst f f))).map
+            (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)) := by
+  have H' := IsPullback.of_hasPullback (pullback.snd f f) (pullback.fst f f)
+  have ha' := congrArg (Scheme.Modules.pullback (pullback.fst f f)).map ha
+  have hn := (Scheme.Modules.pushforwardBaseChange H'.toCommSq).naturality
+    (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)
+  have hu := Scheme.Modules.pullback_map_unit_comp_pushforwardBaseChange_app H'.toCommSq E
+  have hu' := (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd (pullback.snd f f)
+    (pullback.fst f f))).unit.naturality
+      (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)
+  dsimp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj, Functor.id_map] at hn hu hu'
+  simp only [Functor.map_comp, Category.assoc] at ha' hu ⊢
+  -- `p₁^*` of the defining equation of the coaction `a`.
+  rw [reassoc_of% ha']
+  -- Naturality of base change along `q₁, q₂ : Z ⟶ X ×_S X` in the gluing morphism.
+  rw [hn]
+  -- Base change turns the pulled-back unit of `p₂^* ⊣ p₂_*` into the unit of `q₂^* ⊣ q₂_*`.
+  rw [reassoc_of% hu]
+  -- Naturality of the unit of `q₂^* ⊣ q₂_*` in the gluing morphism.
+  rw [reassoc_of% hu']
+
+/-- The right side `p₂^* a ≫ c` of `comp_pullback_map_aux`, followed by the base change morphisms
+as in `comp_pullback_map_left_aux`, is the adjunct of the right side of the cocycle condition
+`cocycle_aux`, for `p₁₃ : Z ⟶ X ×_S X` the projection to the outer factors. -/
+private lemma comp_pullback_map_right_aux
+    {p₁₃ : pullback (pullback.snd f f) (pullback.fst f f) ⟶ pullback f f}
+    (h₁ : p₁₃ ≫ pullback.fst f f = pullback.fst _ _ ≫ pullback.fst f f)
+    (h₂ : p₁₃ ≫ pullback.snd f f = pullback.snd _ _ ≫ pullback.snd f f)
+    (a : E ⟶ (Scheme.Modules.pushforward f ⋙ Scheme.Modules.pullback f).obj E)
+    (ha : a ≫
+        (Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).app E =
+      (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd f f)).unit.app _ ≫
+        (Scheme.Modules.pushforward (pullback.snd f f)).map
+          (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)) :
+    ((Scheme.Modules.pullback (pullback.snd f f)).map a ≫
+        (Scheme.Modules.pullbackComp (pullback.snd f f) f).hom.app _ ≫
+          (Scheme.Modules.pullbackCongr pullback.condition.symm).hom.app _ ≫
+            (Scheme.Modules.pullbackComp (pullback.fst f f) f).inv.app _) ≫
+      (Scheme.Modules.pullback (pullback.fst f f)).map
+        ((Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).app E) ≫
+      (Scheme.Modules.pushforwardBaseChange
+        (IsPullback.of_hasPullback (pullback.snd f f) (pullback.fst f f)).toCommSq).app _ =
+    (Scheme.Modules.pullbackPushforwardAdjunction
+        (pullback.snd (pullback.snd f f) (pullback.fst f f))).unit.app _ ≫
+      (Scheme.Modules.pushforward (pullback.snd (pullback.snd f f) (pullback.fst f f))).map
+        (((Scheme.Modules.pullbackComp (pullback.snd (pullback.snd f f) (pullback.fst f f))
+              (pullback.snd f f)).hom.app E ≫
+            (Scheme.Modules.pullbackCongr h₂.symm).hom.app E ≫
+              (Scheme.Modules.pullbackComp p₁₃ (pullback.snd f f)).inv.app E) ≫
+          (Scheme.Modules.pullback p₁₃).map
+            (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm) ≫
+          (Scheme.Modules.pullbackComp p₁₃ (pullback.fst f f)).hom.app E ≫
+            (Scheme.Modules.pullbackCongr h₁).hom.app E ≫
+              (Scheme.Modules.pullbackComp (pullback.fst (pullback.snd f f) (pullback.fst f f))
+                (pullback.fst f f)).inv.app E) := by
+  have w : CommSq p₁₃ (pullback.snd _ _) (pullback.snd f f) (pullback.snd f f) := ⟨h₂⟩
+  have hpaste := paste_aux (E := E)
+    (IsPullback.of_hasPullback (pullback.snd f f) (pullback.fst f f)).toCommSq h₁ h₂
+  have hcc : (Scheme.Modules.pullbackCongr (pullback.condition (f := f) (g := f)).symm).hom.app
+      ((Scheme.Modules.pushforward f).obj E) ≫
+      (Scheme.Modules.pullbackCongr (pullback.condition (f := f) (g := f))).hom.app _ = 𝟙 _ := by
+    simp [Scheme.Modules.pullbackCongr]
+  have ha' := congrArg (Scheme.Modules.pullback (pullback.snd f f)).map ha
+  have hn := (Scheme.Modules.pushforwardBaseChange w).naturality
+    (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)
+  have hu := Scheme.Modules.pullback_map_unit_comp_pushforwardBaseChange_app w E
+  dsimp only [Functor.comp_map, Functor.comp_obj] at hn hu
+  simp only [Functor.map_comp, Category.assoc] at hpaste ha' hu ⊢
+  -- Paste the base change morphisms over the outer square of `Z` through `p₁₃` instead.
+  rw [hpaste]
+  -- The identifications `p₂^* f^* ≅ p₁^* f^*` and back cancel.
+  rw [reassoc_of% hcc, Iso.hom_inv_id_app_assoc]
+  -- `p₂^*` of the defining equation of the coaction `a`.
+  rw [reassoc_of% ha']
+  -- Naturality of base change along `p₁₃, q₂` in the gluing morphism.
+  rw [reassoc_of% hn]
+  -- Base change turns the pulled-back unit of `p₂^* ⊣ p₂_*` into the unit of `q₂^* ⊣ q₂_*`.
+  rw [reassoc_of% hu]
+
 /-- The coaction `a` is a morphism of descent data from `δ` to the canonical descent datum of
 `f_* E`: `σ ≫ p₁^* a = p₂^* a ≫ c`, for `σ` the gluing isomorphism and `c` the identification
 `p₂^* f^* ≅ p₁^* f^*`. -/
@@ -297,18 +329,6 @@ private lemma comp_pullback_map_aux [E.IsQuasicoherent] [QuasiCompact f] [QuasiS
   have := Scheme.Modules.isIso_pushforwardBaseChange_app H'
     ((Scheme.Modules.pullback (pullback.fst f f)).obj E)
   have := Scheme.Modules.isIso_pushforwardBaseChange_app (IsPullback.of_hasPullback f f) E
-  rw [← cancel_mono ((Scheme.Modules.pullback (pullback.fst f f)).map
-    ((Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).app E) ≫
-      (Scheme.Modules.pushforwardBaseChange H'.toCommSq).app _)]
-  have hn := (Scheme.Modules.pushforwardBaseChange H'.toCommSq).naturality
-    (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)
-  have hu := Scheme.Modules.pullback_map_unit_comp_pushforwardBaseChange_app H'.toCommSq E
-  have hu' := (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd (pullback.snd f f)
-    (pullback.fst f f))).unit.naturality
-      (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)
-  dsimp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj, Functor.id_map] at hn hu hu'
-  conv_lhs => rw [Category.assoc, ← (Scheme.Modules.pullback (pullback.fst f f)).map_comp_assoc,
-    ha, Functor.map_comp, Category.assoc, hn, reassoc_of% hu, reassoc_of% hu']
   -- The projection `p₁₃ : Z ⟶ X ×_S X` to the outer factors of `Z = X ×_S X ×_S X`.
   let p₁₃ : pullback (pullback.snd f f) (pullback.fst f f) ⟶ pullback f f :=
     pullback.lift (pullback.fst _ _ ≫ pullback.fst f f) (pullback.snd _ _ ≫ pullback.snd f f)
@@ -316,23 +336,13 @@ private lemma comp_pullback_map_aux [E.IsQuasicoherent] [QuasiCompact f] [QuasiS
   have h₁ : p₁₃ ≫ pullback.fst f f = pullback.fst _ _ ≫ pullback.fst f f := pullback.lift_fst _ _ _
   have h₂ : p₁₃ ≫ pullback.snd f f = pullback.snd _ _ ≫ pullback.snd f f :=
     pullback.lift_snd _ _ _
-  have w : CommSq p₁₃ (pullback.snd _ _) (pullback.snd f f) (pullback.snd f f) := ⟨h₂⟩
-  have hpaste := paste_aux (E := E) H'.toCommSq h₁ h₂
-  have hcc : (Scheme.Modules.pullbackCongr (pullback.condition (f := f) (g := f)).symm).hom.app
-      ((Scheme.Modules.pushforward f).obj E) ≫
-      (Scheme.Modules.pullbackCongr (pullback.condition (f := f) (g := f))).hom.app _ = 𝟙 _ := by
-    simp [Scheme.Modules.pullbackCongr]
-  have hn' := (Scheme.Modules.pushforwardBaseChange w).naturality
-    (δ (pullback.snd f f) (pullback.fst f f) pullback.condition.symm)
-  have hw := Scheme.Modules.pullback_map_unit_comp_pushforwardBaseChange_app w E
-  dsimp only [Functor.comp_map, Functor.comp_obj] at hn' hw
-  conv_rhs => rw [Category.assoc, Category.assoc, Category.assoc, hpaste,
-    reassoc_of% hcc, Iso.hom_inv_id_app_assoc, ← Functor.map_comp_assoc, ha, Functor.map_comp,
-    Category.assoc, reassoc_of% hn', reassoc_of% hw]
-  have hc := cocycle_aux δ hcomp hpull _ _ p₁₃ H'.w h₁ h₂
-  have hc' := congrArg (Scheme.Modules.pushforward (pullback.snd _ _)).map hc
-  simp only [Functor.map_comp, Category.assoc] at hc' ⊢
-  rw [hc']
+  -- After the base change isomorphisms, both sides are adjuncts of the two sides of the cocycle
+  -- condition on `Z`.
+  rw [← cancel_mono ((Scheme.Modules.pullback (pullback.fst f f)).map
+    ((Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).app E) ≫
+      (Scheme.Modules.pushforwardBaseChange H'.toCommSq).app _),
+    comp_pullback_map_left_aux δ a ha, comp_pullback_map_right_aux δ h₁ h₂ a ha,
+    cocycle_aux δ hcomp hpull _ _ p₁₃ H'.w h₁ h₂]
 
 private lemma coassoc_aux [E.IsQuasicoherent] [QuasiCompact f] [QuasiSeparated f] [Flat f]
     (hcomp : ∀ ⦃Y : Scheme.{u}⦄ (u v w : Y ⟶ X) (h : u ≫ f = v ≫ f) (h' : v ≫ f = w ≫ f),
@@ -363,9 +373,18 @@ private lemma coassoc_aux [E.IsQuasicoherent] [QuasiCompact f] [QuasiSeparated f
   have hu := Scheme.Modules.pullback_map_unit_comp_pushforwardBaseChange_app
     (IsPullback.of_hasPullback f f).toCommSq ((Scheme.Modules.pushforward f).obj E)
   have hu' := (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd f f)).unit.naturality a
+  have hc := congrArg (Scheme.Modules.pushforward (pullback.snd f f)).map
+    (comp_pullback_map_aux δ hcomp hpull a ha)
   dsimp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj, Functor.id_map] at hn hu hu' ⊢
-  rw [Category.assoc, hn, reassoc_of% ha, Category.assoc, hu, reassoc_of% hu',
-    ← Functor.map_comp, ← Functor.map_comp, comp_pullback_map_aux δ hcomp hpull a ha]
+  simp only [Functor.map_comp, Category.assoc] at hu hc ⊢
+  -- Naturality of base change in `a`, then the defining equation of `a`.
+  rw [hn, reassoc_of% ha]
+  -- `a` is a morphism of descent data (`comp_pullback_map_aux`), pushed forward along `p₂`.
+  rw [hc]
+  -- Naturality of the unit of `p₂^* ⊣ p₂_*` in `a`.
+  rw [← reassoc_of% hu']
+  -- Base change turns `f^*` of the unit of `f^* ⊣ f_*` into the unit of `p₂^* ⊣ p₂_*`.
+  rw [hu]
 
 private lemma comp_map_aux [QuasiCompact f] [QuasiSeparated f] [Flat f] {E' : X.Modules}
     [E'.IsQuasicoherent]
@@ -395,9 +414,15 @@ private lemma comp_map_aux [QuasiCompact f] [QuasiSeparated f] [Flat f] {E' : X.
   have hn :=
     (Scheme.Modules.pushforwardBaseChange (IsPullback.of_hasPullback f f).toCommSq).naturality φ
   have hu := (Scheme.Modules.pullbackPushforwardAdjunction (pullback.snd f f)).unit.naturality φ
+  have hφ' := congrArg (Scheme.Modules.pushforward (pullback.snd f f)).map hφ
   dsimp only [Functor.comp_map, Functor.comp_obj, Functor.id_obj, Functor.id_map] at hn hu ⊢
-  rw [Category.assoc, hn, reassoc_of% ha, Category.assoc, ha', reassoc_of% hu,
-    ← Functor.map_comp, ← Functor.map_comp, hφ]
+  simp only [Functor.map_comp, Category.assoc] at hφ' ⊢
+  -- Naturality of base change in `φ`, then the defining equations of `a` and `a'`.
+  rw [hn, reassoc_of% ha, ha']
+  -- `φ` commutes with the gluing morphisms, pushed forward along `p₂`.
+  rw [← hφ']
+  -- Naturality of the unit of `p₂^* ⊣ p₂_*` in `φ`.
+  rw [reassoc_of% hu]
 
 omit δ in
 private lemma eq_pullback_map_unit_aux [QuasiCompact f] [QuasiSeparated f] [Flat f]
@@ -495,8 +520,11 @@ theorem qcohDescentDataCoaction_comp_map
   have : (D₂.obj PUnit.unit).obj.IsQuasicoherent := (D₂.obj PUnit.unit).property
   comp_map_aux (E := (D₁.obj PUnit.unit).obj) (fun _ u v h ↦ qcohDescentDataHom f D₁ u v h)
     (fun _ u v h ↦ qcohDescentDataHom f D₂ u v h) (ψ.hom PUnit.unit).hom
-    (congrArg InducedCategory.Hom.hom (ψ.comm (pullback.snd f f ≫ f) (i₁ := PUnit.unit)
-      (i₂ := PUnit.unit) (pullback.snd f f) (pullback.fst f f) rfl pullback.condition))
+    (by
+      rw [qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition,
+        qcohDescentDataHom_eq (pullback.snd f f ≫ f) _ _ rfl pullback.condition]
+      exact congrArg InducedCategory.Hom.hom (ψ.comm (pullback.snd f f ≫ f) (i₁ := PUnit.unit)
+        (i₂ := PUnit.unit) (pullback.snd f f) (pullback.fst f f) rfl pullback.condition))
     _ qcohDescentDataCoaction_comp_pushforwardBaseChange_app
     _ qcohDescentDataCoaction_comp_pushforwardBaseChange_app
 

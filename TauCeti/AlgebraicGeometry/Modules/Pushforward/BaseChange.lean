@@ -38,11 +38,10 @@ quasi-compact quasi-separated `f` and flat `g` is
   two squares placed side by side is the composite of their base change morphisms, and
   `AlgebraicGeometry.Scheme.Modules.pushforwardBaseChange_congr` compares the base change morphisms
   of squares with equal sides;
-* `AlgebraicGeometry.Scheme.Modules.pushforwardToPullback`: for a section `s` of `p`, the morphism
-  `p_* ⟶ s^*`; by
-  `AlgebraicGeometry.Scheme.Modules.pushforwardBaseChange_app_comp_pushforwardToPullback_app`, on a
-  square `p₁ ≫ f = p₂ ≫ f` with a common section of `p₁` and `p₂`, such as the diagonal of
-  `X ×_S X`, it turns the base change morphism into the counit of `f^* ⊣ f_*`.
+* `AlgebraicGeometry.Scheme.Modules.pushforwardBaseChange_app_comp_pushforwardToPullback_app`: on a
+  square `p₁ ≫ f = p₂ ≫ f` with a common section `s` of `p₁` and `p₂`, such as the diagonal of
+  `X ×_S X`, the morphism `p₂_* ⟶ s^*` of `AlgebraicGeometry.Scheme.Modules.pushforwardToPullback`
+  turns the base change morphism into the counit of `f^* ⊣ f_*`.
 
 ## References
 
@@ -59,92 +58,6 @@ noncomputable section
 universe u
 
 namespace AlgebraicGeometry.Scheme.Modules
-
-section Unit
-
-variable {X Y Z : Scheme.{u}}
-
-/-- The unit of `(f ≫ g)^* ⊣ (f ≫ g)_*`, read through `(f ≫ g)^* ≅ f^* g^*`, is the unit of
-`g^* ⊣ g_*` followed by `g_*` of the unit of `f^* ⊣ f_*` and `g_* f_* = (f ≫ g)_*`. -/
-@[reassoc]
-lemma unit_comp_pushforward_map_pullbackComp_inv_app (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) :
-    (pullbackPushforwardAdjunction (f ≫ g)).unit.app M ≫
-        (pushforward (f ≫ g)).map ((pullbackComp f g).inv.app M) =
-      (pullbackPushforwardAdjunction g).unit.app M ≫
-        (pushforward g).map ((pullbackPushforwardAdjunction f).unit.app ((pullback g).obj M)) ≫
-          (pushforwardComp f g).hom.app _ := by
-  have h := CategoryTheory.unit_conjugateEquiv
-    ((pullbackPushforwardAdjunction g).comp (pullbackPushforwardAdjunction f))
-    (pullbackPushforwardAdjunction (f ≫ g)) (pullbackComp f g).inv M
-  rw [conjugateEquiv_pullbackComp_inv] at h
-  rw [← h, Adjunction.comp_unit_app, Category.assoc]
-  rfl
-
-/-- The unit of the pullback-pushforward adjunction of a morphism `e` equal to the identity is the
-identification `M ≅ (𝟙 X)^* M = e^* M`, read through `e_* = (𝟙 X)_* = 𝟭`. -/
-lemma unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app {e : X ⟶ X} (he : e = 𝟙 X)
-    (M : X.Modules) :
-    (pullbackPushforwardAdjunction e).unit.app M ≫ (pushforwardCongr he).hom.app _ ≫
-        (pushforwardId X).hom.app _ =
-      (pullbackId X).inv.app M ≫ (pullbackCongr he.symm).hom.app M := by
-  subst he
-  have h := CategoryTheory.unit_conjugateEquiv Adjunction.id
-    (pullbackPushforwardAdjunction (𝟙 X)) (pullbackId X).hom M
-  rw [conjugateEquiv_pullbackId_hom, Adjunction.id_unit, NatTrans.id_app, Category.id_comp] at h
-  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app, Category.comp_id]
-  have hi := (pushforwardId X).hom.naturality ((pullbackId X).hom.app M)
-  have hc := (pushforwardCongr (rfl : 𝟙 X = 𝟙 X)).hom.naturality ((pullbackId X).hom.app M)
-  dsimp only [Functor.id_map] at hi hc
-  rw [← cancel_mono ((pullbackId X).hom.app M), Iso.inv_hom_id_app, Category.assoc,
-    Category.assoc, ← hi, ← reassoc_of% hc, ← reassoc_of% h]
-  refine hom_ext _ _ fun U ↦ ?_
-  simp only [Hom.comp_app, pushforwardId_inv_app_app, pushforwardCongr_hom_app_app,
-    pushforwardId_hom_app_app]
-  exact (Category.id_comp _).trans ((Category.comp_id _).trans (M.presheaf.map_id _))
-
-/-- For a section `s` of `p` (`s ≫ p = 𝟙 X`), the morphism `p_* T ⟶ s^* T` obtained by applying
-`p_*` to the unit `T ⟶ s_* s^* T` and identifying `p_* s_* = (s ≫ p)_* = 𝟭`. -/
-def pushforwardToPullback {p : Y ⟶ X} {s : X ⟶ Y} (hs : s ≫ p = 𝟙 X) :
-    pushforward p ⟶ pullback s where
-  app T := (pushforward p).map ((pullbackPushforwardAdjunction s).unit.app T) ≫
-    (pushforwardComp s p).hom.app _ ≫ (pushforwardCongr hs).hom.app _ ≫
-      (pushforwardId X).hom.app _
-  naturality T T' φ := by
-    have hu := (pullbackPushforwardAdjunction s).unit.naturality φ
-    have hc := (pushforwardComp s p).hom.naturality ((pullback s).map φ)
-    have hc' := (pushforwardCongr hs).hom.naturality ((pullback s).map φ)
-    have hi := (pushforwardId X).hom.naturality ((pullback s).map φ)
-    dsimp only [Functor.comp_map, Functor.id_map, Functor.comp_obj, Functor.id_obj]
-      at hu hc hc' hi ⊢
-    simp only [Category.assoc]
-    rw [← (pushforward p).map_comp_assoc, hu, Functor.map_comp_assoc, reassoc_of% hc,
-      reassoc_of% hc', hi]
-
-/-- The components of `pushforwardToPullback`. -/
-lemma pushforwardToPullback_app {p : Y ⟶ X} {s : X ⟶ Y} (hs : s ≫ p = 𝟙 X) (T : Y.Modules) :
-    (pushforwardToPullback hs).app T =
-      (pushforward p).map ((pullbackPushforwardAdjunction s).unit.app T) ≫
-        (pushforwardComp s p).hom.app _ ≫ (pushforwardCongr hs).hom.app _ ≫
-          (pushforwardId X).hom.app _ :=
-  (rfl)
-
-/-- If `s` is a section of `p` (`s ≫ p = 𝟙 X`), the unit `M ⟶ p_* p^* M` followed by
-`pushforwardToPullback : p_* p^* M ⟶ s^* p^* M` is the identification
-`M ≅ (𝟙 X)^* M = (s ≫ p)^* M ≅ s^* p^* M`. -/
-@[reassoc]
-lemma unit_comp_pushforwardToPullback_app {p : Y ⟶ X} {s : X ⟶ Y} (hs : s ≫ p = 𝟙 X)
-    (M : X.Modules) :
-    (pullbackPushforwardAdjunction p).unit.app M ≫ (pushforwardToPullback hs).app _ =
-      (pullbackId X).inv.app M ≫ (pullbackCongr hs.symm).hom.app M ≫
-        (pullbackComp s p).inv.app M := by
-  have hc := (pushforwardCongr hs).hom.naturality ((pullbackComp s p).inv.app M)
-  have hi := (pushforwardId X).hom.naturality ((pullbackComp s p).inv.app M)
-  have hu := unit_comp_pushforward_map_pullbackComp_inv_app s p M
-  dsimp only [Functor.id_map, Functor.comp_obj] at hi hc hu
-  rw [pushforwardToPullback_app, ← reassoc_of% hu, reassoc_of% hc, hi,
-    reassoc_of% unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app hs M]
-
-end Unit
 
 variable {X X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : S' ⟶ S} {g' : X' ⟶ X}
 
