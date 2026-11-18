@@ -52,7 +52,6 @@ private theorem exists_pos_mul_norm_sq_le (B : E →L[ℝ] E →L[ℝ] ℝ)
     rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hnv.ne']
   have h := hmin hw
   simp only [mem_ofPred_eq, map_smul, smul_apply, smul_eq_mul] at h
-  have hv' : v = ‖v‖ • (‖v‖⁻¹ • v) := by rw [smul_smul, mul_inv_cancel₀ hnv.ne', one_smul]
   calc
     B u u * ‖v‖ ^ 2 ≤ ‖v‖⁻¹ * (‖v‖⁻¹ * B v v) * ‖v‖ ^ 2 := by gcongr
     _ = B v v := by field_simp
@@ -76,7 +75,9 @@ theorem eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos {f : E → ℝ} {a 
   have hclose : ∀ᶠ z in 𝓝 a, ‖fderiv ℝ (fderiv ℝ f) z - fderiv ℝ (fderiv ℝ f) a‖ < c / 2 := by
     have hnorm := (hlim.sub_const (fderiv ℝ (fderiv ℝ f) a)).norm
     have hcenter : ‖fderiv ℝ (fderiv ℝ f) a - fderiv ℝ (fderiv ℝ f) a‖ < c / 2 := by
-      simpa using half_pos hc
+      rw [sub_self]
+      rw [ContinuousLinearMap.opNorm_zero]
+      exact half_pos hc
     exact hnorm.eventually (gt_mem_nhds hcenter)
   obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hev.and hclose)
   filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds a hδ)] with y hy
