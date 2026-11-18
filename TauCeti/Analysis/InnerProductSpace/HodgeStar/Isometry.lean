@@ -41,6 +41,8 @@ anti-self-dual two-vector is determined by its coordinates along `e₀ ∧ e₁`
 `e₀ ∧ e₃`, and its squared norm is twice the sum of their squares
 (`Orientation.inner_ιMulti_two_of_hodgeStar_eq_neg`, `Orientation.norm_sq_of_hodgeStar_eq_neg`,
 `Orientation.inner_ιMulti_two_of_hodgeStar_eq_self`, `Orientation.norm_sq_of_hodgeStar_eq_self`).
+A self-dual two-vector thus vanishes exactly when these three coordinates do
+(`Orientation.eq_zero_iff_of_hodgeStar_eq_self`).
 
 ## References
 
@@ -336,5 +338,19 @@ theorem norm_sq_of_hodgeStar_eq_self {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl 
   obtain ⟨h23, h13, h12⟩ := o.inner_ιMulti_two_of_hodgeStar_eq_self hkl he hμ
   rw [e.norm_sq_eq_sum_sq_inner_ιMulti_two, h23, h13, h12]
   ring
+
+/-- For a positively oriented orthonormal basis `e` in dimension four, a self-dual `μ`, with
+`⋆μ = μ`, vanishes exactly when its three coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`
+do. -/
+theorem eq_zero_iff_of_hodgeStar_eq_self {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = μ) :
+    μ = 0 ↔ ⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ = 0 ∧ ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ = 0 ∧
+      ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ = 0 := by
+  rw [← norm_eq_zero, ← sq_eq_zero_iff, o.norm_sq_of_hodgeStar_eq_self hkl he hμ]
+  constructor
+  · intro h
+    refine ⟨?_, ?_, ?_⟩ <;> nlinarith [sq_nonneg ⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫,
+      sq_nonneg ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫, sq_nonneg ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫]
+  · rintro ⟨h1, h2, h3⟩
+    simp [h1, h2, h3]
 
 end Orientation

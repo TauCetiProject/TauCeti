@@ -276,10 +276,7 @@ theorem inner_quadraticTwoFormPolar_ιMulti_zero_two (hu₀₁ : ‖u₀‖ = 1)
     cliffordRestriction_ιMulti_zero_two_apply hQ, inner_add_left,
     inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right, inner_smul_right,
     inner_smul_right, inner_self_eq_norm_sq_to_K, h1, h0]
-  simp only [mul_zero, zero_add, RCLike.ofReal_one, one_pow, mul_one, Complex.mul_re,
-    Complex.neg_re, Complex.I_re, Complex.neg_im, Complex.I_im, Complex.mul_im, Complex.conj_re,
-    Complex.conj_im]
-  ring
+  simp [mul_comm]
 
 /-- **The quadratic term along `e₀ ∧ e₃`**: for a unit canonical spinor `u₀` with paired spinor
 `β₀`, `⟪q'(α u₀, f u₀ + g β₀), e₀ ∧ e₃⟫ = Re(α conj g) / 2`. -/
@@ -481,11 +478,6 @@ private theorem normalModelConnection_frame (ξ η : ℂ → EuclideanSpace ℝ 
         (fun y' ↦ ξ (normalCoord e y') 1) := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> funext y' <;> simp [normalModelConnection_apply, e.inner_eq_ite]
 
-private theorem differentiableAt_comp_normalCoord_apply {c : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hc : DifferentiableAt ℝ c (normalCoord e y)) (i : Fin 4) :
-    DifferentiableAt ℝ (fun w ↦ c w i) (normalCoord e y) :=
-  (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hc
-
 /-- The derivatives along a vector `v` of the coefficients of the connection of the normal model on
 the frame, through the normal coordinate. -/
 private theorem fderiv_normalModelConnection_frame (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
@@ -501,8 +493,8 @@ private theorem fderiv_normalModelConnection_frame (hξ : DifferentiableAt ℝ �
   obtain ⟨h0, h1, h2, h3⟩ := normalModelConnection_frame (e := e) ξ η
   refine ⟨fun v ↦ ?_, fun v ↦ ?_, fun v ↦ ?_, fun v ↦ ?_⟩ <;>
     simp only [h0, h1, h2, h3, fderiv_fun_neg, neg_apply,
-      fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hη _),
-      fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hξ _)]
+      fderiv_comp_normalCoord_apply (differentiableAt_euclidean.1 hη _),
+      fderiv_comp_normalCoord_apply (differentiableAt_euclidean.1 hξ _)]
 
 /-- The connection of the normal model is differentiable where its plane fields are. -/
 theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
@@ -510,7 +502,7 @@ theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (n
     DifferentiableAt ℝ (normalModelConnection e ξ η) y := by
   have hc {c : ℂ → EuclideanSpace ℝ (Fin 4)} (hc : DifferentiableAt ℝ c (normalCoord e y))
       (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ c (normalCoord e y') i) y :=
-    (differentiableAt_comp_normalCoord_apply hc i).comp y (normalCoord e).differentiableAt
+    (differentiableAt_euclidean.1 hc i).comp y (normalCoord e).differentiableAt
   have h : normalModelConnection e ξ η = fun y' ↦
       ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ) (0 : Fin 1)
         ((ξ (normalCoord e y') 0 • innerSL ℝ (e 2) + ξ (normalCoord e y') 1 • innerSL ℝ (e 3)) +
@@ -565,11 +557,8 @@ theorem flatDeformationGauge_normalModel (hu₀₁ : ‖u₀‖ = 1)
     zero_add]
   rw [hψ, hζ, inner_smul_left, inner_smul_left, inner_add_right, inner_smul_right,
     inner_smul_right, hu, hβ]
-  simp only [Fin.isValue, conj_I, Vortex.sectionValue_apply, map_mul, map_add, conj_ofReal, mul_neg,
-    mul_one, mul_zero, add_zero, neg_mul, neg_re, mul_re, I_re, conj_re, re_ofNat, add_re,
-    ofReal_re, ofReal_im, I_im, sub_self, neg_zero, conj_im, im_ofNat, add_im, neg_im, mul_im,
-    zero_add, zero_mul, sub_zero, sub_neg_eq_add, one_mul, zero_sub, neg_add_rev, neg_neg,
-    Vortex.gaugeAdjoint_def]
+  simp only [mul_one, mul_zero, add_zero, conj_I, neg_mul, neg_re, I_mul_re, neg_neg,
+    Vortex.conj_sectionValue_mul_sectionValue_im, Vortex.gaugeAdjoint_def]
   ring
 
 omit [FiniteDimensional ℂ W] in
@@ -629,10 +618,7 @@ theorem inner_flatDeformationCurvature_normalModel_zero_one (hu₀₁ : ‖u₀�
     inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl he h₀ h₂ hρ hu₀ hu₀₁]
   simp only [d0, d2, d3, normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three,
     map_zero, zero_add, one_mul]
-  simp only [Fin.isValue, Vortex.sectionValue_apply, map_mul, map_add, conj_ofReal, conj_I, mul_neg,
-    mul_re, conj_re, re_ofNat, add_re, ofReal_re, neg_re, I_re, mul_zero, ofReal_im, I_im,
-    mul_one, sub_self, neg_zero, add_zero, conj_im, im_ofNat, add_im, neg_im, mul_im, zero_add,
-    zero_mul, sub_zero, neg_mul, sub_neg_eq_add, Vortex.gaugeFixedOperator_apply_one,
+  rw [Vortex.conj_sectionValue_mul_sectionValue_re, Vortex.gaugeFixedOperator_apply_one,
     Vortex.linearizedEquation_apply_zero]
   ring
 
@@ -651,10 +637,8 @@ theorem inner_flatDeformationCurvature_normalModel_zero_two (hu₀₁ : ‖u₀�
     inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl he h₀ h₂ hρ hu₀ hu₀₁]
   simp only [d0, d1, d3, normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three,
     map_zero, sub_zero]
-  simp only [Fin.isValue, mul_neg, neg_mul, one_mul, neg_neg, Vortex.sectionValue_apply, map_mul,
-    map_add, conj_ofReal, conj_I, mul_im, mul_re, re_ofNat, add_re, ofReal_re, I_re, mul_zero,
-    ofReal_im, I_im, mul_one, sub_self, add_zero, im_ofNat, add_im, zero_add, zero_mul, sub_zero,
-    conj_re, neg_im, conj_im, neg_zero, neg_re, Vortex.gaugeFixedAdjoint_apply_zero, neg_sub]
+  rw [mul_comm (Vortex.sectionValue x _), Vortex.conj_sectionValue_mul_sectionValue_im,
+    Vortex.gaugeFixedAdjoint_apply_zero]
   ring
 
 /-- **The curvature row of the normal model along `e₀ ∧ e₃` is minus the curvature row of
@@ -673,10 +657,8 @@ theorem inner_flatDeformationCurvature_normalModel_zero_three (hu₀₁ : ‖u�
     inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl he h₀ h₂ hρ hu₀ hu₀₁]
   simp only [d0, d1, d2, normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three,
     map_zero, sub_zero, one_mul]
-  simp only [Fin.isValue, Vortex.sectionValue_apply, map_mul, map_add, conj_ofReal, conj_I, mul_neg,
-    mul_re, re_ofNat, add_re, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
-    add_zero, im_ofNat, add_im, mul_im, zero_add, zero_mul, sub_zero, conj_re, neg_re, neg_zero,
-    conj_im, neg_im, sub_neg_eq_add, Vortex.gaugeFixedAdjoint_apply_one, neg_sub]
+  rw [mul_comm (Vortex.sectionValue x _), Vortex.conj_sectionValue_mul_sectionValue_re,
+    Vortex.gaugeFixedAdjoint_apply_one]
   ring
 
 end Curvature
@@ -768,10 +750,10 @@ theorem flatDeformationDirac_normalModel (hξ : DifferentiableAt ℝ ξ (normalC
           Vortex.gaugeFixedOperator x ξ (normalCoord e y) 3 * I) := by
     simp only [hX, hY, normalModelConnection_apply, e.inner_eq_ite, normalCoord_apply_zero,
       normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three, map_zero,
-      Vortex.fderiv_sectionValue_apply (differentiableAt_comp_normalCoord_apply hξ 2)
-        (differentiableAt_comp_normalCoord_apply hξ 3),
-      Vortex.fderiv_sectionValue_apply (differentiableAt_comp_normalCoord_apply hη 2)
-        (differentiableAt_comp_normalCoord_apply hη 3)]
+      Vortex.fderiv_sectionValue_apply (differentiableAt_euclidean.1 hξ 2)
+        (differentiableAt_euclidean.1 hξ 3),
+      Vortex.fderiv_sectionValue_apply (differentiableAt_euclidean.1 hη 2)
+        (differentiableAt_euclidean.1 hη 3)]
     constructor <;> apply Complex.ext <;> simp only [ofReal_zero, zero_mul, add_zero, mul_zero,
       Pi.zero_apply, Fin.isValue, PiLp.zero_apply, ↓reduceIte, mul_one, one_ne_zero, sub_self,
       Fin.reduceEq, Vortex.sectionValue_apply, sub_zero, zero_add, zero_ne_one, zero_sub,
@@ -828,23 +810,12 @@ theorem flatDeformation_normalModel_eq_zero_iff (x : ℂ → EuclideanSpace ℝ 
       exact ⟨by linarith, by linarith⟩
     · rintro ⟨rfl, rfl⟩
       simp
-  -- A self-dual two-vector vanishes exactly when its coordinates along `e₀ ∧ eⱼ` do.
-  have hsd {μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = μ) :
-      μ = 0 ↔ ⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫ = 0 ∧ ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫ = 0 ∧
-        ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫ = 0 := by
-    rw [← norm_eq_zero, ← sq_eq_zero_iff, o.norm_sq_of_hodgeStar_eq_self hkl he hμ]
-    constructor
-    · intro h
-      refine ⟨?_, ?_, ?_⟩ <;> nlinarith [sq_nonneg ⟪μ, ιMulti ℝ 2 ![e 0, e 1]⟫,
-        sq_nonneg ⟪μ, ιMulti ℝ 2 ![e 0, e 2]⟫, sq_nonneg ⟪μ, ιMulti ℝ 2 ![e 0, e 3]⟫]
-    · rintro ⟨h1, h2, h3⟩
-      simp [h1, h2, h3]
   have hvec (v : EuclideanSpace ℝ (Fin 4)) : v = 0 ↔ v 0 = 0 ∧ v 1 = 0 ∧ v 2 = 0 ∧ v 3 = 0 := by
     refine ⟨fun h ↦ by simp [h], fun ⟨h0, h1, h2, h3⟩ ↦ ?_⟩
     ext i
     fin_cases i <;> simp [h0, h1, h2, h3]
   rw [flatDeformationGauge_normalModel hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hξ hη,
-    hsd (hodgeStar_flatDeformationCurvature hkl _ _ _ _),
+    o.eq_zero_iff_of_hodgeStar_eq_self hkl he (hodgeStar_flatDeformationCurvature hkl _ _ _ _),
     inner_flatDeformationCurvature_normalModel_zero_one hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hξ hη,
     inner_flatDeformationCurvature_normalModel_zero_two hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hξ hη,
     inner_flatDeformationCurvature_normalModel_zero_three hQ hkl he h₀ h₂ hρ hu₀ x hu₀₁ hξ hη,
