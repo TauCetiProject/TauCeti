@@ -35,7 +35,8 @@ It also records three facts about Mathlib's extension of scalars `ModuleCat.exte
 Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars is the tensor
 product `S ⊗[R] M` taken with the algebra module structure of `S`
 (`ModuleCat.extendScalarsAlgebraMapIso`), naturally in `M`
-(`ModuleCat.extendScalarsAlgebraMapIso_inv_naturality`). When `S` is flat over `R`, this
+(`ModuleCat.extendScalarsAlgebraMapIso_inv_naturality`,
+`ModuleCat.extendScalarsAlgebraMapIso_hom_naturality`). When `S` is flat over `R`, this
 extension of scalars is exact and so preserves finite limits
 (`ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`). An `R`-linear map `f : M → N` to an
 `S`-module exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
@@ -251,6 +252,15 @@ theorem extendScalarsAlgebraMapIso_inv_naturality {M N : ModuleCat.{w} R} (g : M
     rw [extendScalarsAlgebraMapIso_inv_tmul, extendScalarsAlgebraMapIso_inv_tmul]
     exact (ExtendScalars.map_tmul (algebraMap R S) g s x).symm
   | add x y hx hy => simp_all
+
+/-- `extendScalarsAlgebraMapIso` is natural: it carries the extension of scalars of an `R`-linear
+map `φ` to its base change `S ⊗[R] φ`. -/
+@[reassoc]
+theorem extendScalarsAlgebraMapIso_hom_naturality {M N : ModuleCat.{w} R} (φ : M ⟶ N) :
+    (extendScalars (algebraMap R S)).map φ ≫ (extendScalarsAlgebraMapIso N).hom =
+      (extendScalarsAlgebraMapIso M).hom ≫ ofHom (φ.hom.baseChange S) := by
+  rw [← Iso.inv_comp_eq, ← extendScalarsAlgebraMapIso_inv_naturality_assoc, Iso.inv_hom_id,
+    Category.comp_id]
 
 end AlgebraMap
 
