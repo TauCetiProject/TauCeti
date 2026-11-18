@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Data.Fintype.Fin
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Permutations of `Fin n`
@@ -32,6 +33,7 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
   `Fin (n + 1)` counts each value `n!` times.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
+* `Equiv.Perm.IsSwap.two_le`: if `Fin n` admits a transposition, then `2 ≤ n`.
 -/
 
 public section
@@ -149,5 +151,9 @@ theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
   (card_equiv σ fun _ => by simp).trans Fin.card_filter_val_lt
 
 end
+
+/-- If `Fin n` admits a transposition, then `2 ≤ n`. -/
+theorem IsSwap.two_le {n : ℕ} {τ : Perm (Fin n)} (hτ : τ.IsSwap) : 2 ≤ n := by
+  simpa only [Fintype.card_fin] using hτ.two_le_card
 
 end Equiv.Perm
