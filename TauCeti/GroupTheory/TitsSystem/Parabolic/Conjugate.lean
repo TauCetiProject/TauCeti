@@ -26,8 +26,8 @@ These are statements about an arbitrary Tits system, with no topology, field or 
 
 * `TauCeti.TitsSystem.mem_of_conj_subgroupB_le`: if `g B g⁻¹ ⊆ P` for a subgroup `P ⊇ B`,
   then `g ∈ P`.
-* `TauCeti.TitsSystem.conj_standardParabolic_le_iff`: `g P_J g⁻¹ ⊆ P_{J'}` iff `J ⊆ J'` and
-  `g ∈ P_{J'}`.
+* `TauCeti.TitsSystem.conj_smul_standardParabolic_le_iff`: `g P_J g⁻¹ ≤ P_{J'}` iff `J ⊆ J'`
+  and `g ∈ P_{J'}`, with the elementwise form `conj_standardParabolic_le_iff`.
 * `TauCeti.TitsSystem.conj_standardParabolic_eq_iff`: `g P_J g⁻¹ = P_{J'}` iff `J = J'` and
   `g ∈ P_J`.
 
@@ -105,53 +105,53 @@ theorem mem_of_conj_subgroupB_le {P : Subgroup G} (hB : T.subgroupB ≤ P) {g : 
     have hxP := hsP hx
     refine P.mul_mem hxP (ih ?_ hl' hy (by omega))
     intro b hb
-    have h := P.mul_mem (P.mul_mem (P.inv_mem hxP) (hconj b hb)) hxP
-    simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one] using h
+    have h := hconj b hb
+    rwa [mul_inv_rev, ← mul_assoc, P.mul_mem_cancel_right (P.inv_mem hxP), mul_assoc x,
+      mul_assoc x, P.mul_mem_cancel_left hxP] at h
 
 /-- **Conjugation into a standard parabolic.** For subsets `J, J'` of the simple reflections,
-`g P_J g⁻¹ ⊆ P_{J'}` holds exactly when `J ⊆ J'` and `g ∈ P_{J'}`. For `J = ∅` this says that
-`g B g⁻¹ ⊆ P_{J'}` forces `g ∈ P_{J'}`; applied to `g` and `g⁻¹` it says that conjugate standard
+`g P_J g⁻¹ ≤ P_{J'}` holds exactly when `J ⊆ J'` and `g ∈ P_{J'}`. For `J = ∅` this says that
+`g B g⁻¹ ≤ P_{J'}` forces `g ∈ P_{J'}`; applied to `g` and `g⁻¹` it says that conjugate standard
 parabolics are equal (Bourbaki, Ch. IV §2, nos. 5--6; Borel--Tits 1965, Corollaire 5.18 (ii)). -/
+theorem conj_smul_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
+    MulAut.conj g • T.standardParabolic J ≤ T.standardParabolic J' ↔
+      J ⊆ J' ∧ g ∈ T.standardParabolic J' := by
+  refine ⟨fun h ↦ ?_, fun ⟨hJ, hg⟩ ↦
+    Subgroup.conj_smul_le_of_le (T.standardParabolic_monotone hJ) ⟨g, hg⟩⟩
+  have h' : ∀ p ∈ T.standardParabolic J, g * p * g⁻¹ ∈ T.standardParabolic J' :=
+    fun p hp ↦ h (Subgroup.smul_mem_pointwise_smul p _ _ hp)
+  have hg : g ∈ T.standardParabolic J' :=
+    T.mem_of_conj_subgroupB_le (T.subgroupB_le_standardParabolic J')
+      fun b hb ↦ h' b (T.subgroupB_le_standardParabolic J hb)
+  refine ⟨(T.standardParabolic_le_standardParabolic_iff J J').mp fun p hp ↦ ?_, hg⟩
+  have := h' p hp
+  rwa [(T.standardParabolic J').mul_mem_cancel_right ((T.standardParabolic J').inv_mem hg),
+    (T.standardParabolic J').mul_mem_cancel_left hg] at this
+
+/-- The elementwise form of `conj_smul_standardParabolic_le_iff`: `g p g⁻¹ ∈ P_{J'}` for every
+`p ∈ P_J` exactly when `J ⊆ J'` and `g ∈ P_{J'}`. -/
 theorem conj_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
     (∀ p ∈ T.standardParabolic J, g * p * g⁻¹ ∈ T.standardParabolic J') ↔
       J ⊆ J' ∧ g ∈ T.standardParabolic J' := by
-  refine ⟨fun h ↦ ?_, fun ⟨hJ, hg⟩ p hp ↦ ?_⟩
-  · have hg : g ∈ T.standardParabolic J' :=
-      T.mem_of_conj_subgroupB_le (T.subgroupB_le_standardParabolic J')
-        fun b hb ↦ h b (T.subgroupB_le_standardParabolic J hb)
-    refine ⟨(T.standardParabolic_le_standardParabolic_iff J J').mp fun p hp ↦ ?_, hg⟩
-    have := (T.standardParabolic J').mul_mem
-      ((T.standardParabolic J').mul_mem ((T.standardParabolic J').inv_mem hg) (h p hp)) hg
-    simpa only [mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one] using this
-  · have hp' := T.standardParabolic_monotone hJ hp
-    exact (T.standardParabolic J').mul_mem ((T.standardParabolic J').mul_mem hg hp')
-      ((T.standardParabolic J').inv_mem hg)
+  rw [← T.conj_smul_standardParabolic_le_iff]
+  refine ⟨fun h y hy ↦ ?_, fun h p hp ↦ h (Subgroup.smul_mem_pointwise_smul p _ _ hp)⟩
+  obtain ⟨p, hp, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hy
+  exact h p hp
 
 /-- **Conjugate standard parabolics are equal.** For subsets `J, J'` of the simple reflections,
 `g P_J g⁻¹ = P_{J'}` holds exactly when `J = J'` and `g ∈ P_J`. -/
 theorem conj_standardParabolic_eq_iff (J J' : Set T.simple) (g : G) :
     MulAut.conj g • T.standardParabolic J = T.standardParabolic J' ↔
       J = J' ∧ g ∈ T.standardParabolic J := by
-  have hle : ∀ (K K' : Set T.simple) (x : G),
-      MulAut.conj x • T.standardParabolic K ≤ T.standardParabolic K' ↔
-        K ⊆ K' ∧ x ∈ T.standardParabolic K' := fun K K' x ↦ by
-    rw [← T.conj_standardParabolic_le_iff]
-    refine ⟨fun h p hp ↦ h (Subgroup.smul_mem_pointwise_smul p _ _ hp), fun h y hy ↦ ?_⟩
-    obtain ⟨p, hp, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hy
-    exact h p hp
   constructor
   · intro h
-    obtain ⟨hJ, hg⟩ := (hle J J' g).mp h.le
+    obtain ⟨hJ, hg⟩ := (T.conj_smul_standardParabolic_le_iff J J' g).mp h.le
     have hge : MulAut.conj g⁻¹ • T.standardParabolic J' = T.standardParabolic J := by
-      rw [← h, smul_smul, map_inv, inv_mul_cancel, one_smul]
-    obtain ⟨hJ', -⟩ := (hle J' J g⁻¹).mp hge.le
+      rw [← h, map_inv, inv_smul_smul]
+    obtain ⟨hJ', -⟩ := (T.conj_smul_standardParabolic_le_iff J' J g⁻¹).mp hge.le
     have hJJ : J = J' := hJ.antisymm hJ'
     exact ⟨hJJ, hJJ ▸ hg⟩
   · rintro ⟨rfl, hg⟩
-    refine le_antisymm ((hle J J g).mpr ⟨subset_rfl, hg⟩) ?_
-    rw [← Subgroup.pointwise_smul_le_pointwise_smul_iff (a := MulAut.conj g⁻¹), smul_smul,
-      map_inv, inv_mul_cancel, one_smul]
-    rw [← map_inv]
-    exact (hle J J g⁻¹).mpr ⟨subset_rfl, inv_mem hg⟩
+    exact Subgroup.conj_smul_eq_self_of_mem hg
 
 end TauCeti.TitsSystem
