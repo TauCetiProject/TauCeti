@@ -180,11 +180,9 @@ theorem lie_ncoeff_nonnegResidueProduct {T : Module.End R V} {A B : VertexOperat
   let g := (LieAlgebra.ad R (Module.End R V) T).toAddMonoidHom
   have hT : (fun i j ↦ g (c i j)) = totalDerivative c := by
     funext i j
-    simp only [g, c, LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply,
-      commutatorDistribution_apply]
-    rw [← Ring.lie_def, leibniz_lie, hA, hB, ncoeff_derivative, ncoeff_derivative, smul_lie,
-      lie_smul]
-    simp only [totalDerivative_apply, commutatorDistribution_apply, Ring.lie_def]
+    simp only [g, c, LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply, totalDerivative_apply,
+      commutatorDistribution_apply, ← Ring.lie_def, leibniz_lie, hA, hB, ncoeff_derivative,
+      smul_lie, lie_smul]
   rw [ncoeff_derivative, ← residue_mulSub_pow_commutatorDistribution,
     ← residue_mulSub_pow_commutatorDistribution, ← residue_totalDerivative]
   calc ⁅T, residue ((mulSub ^ n) c) k⁆ = residue ((mulSub ^ n) (fun i j ↦ g (c i j))) k := by
@@ -217,24 +215,29 @@ theorem isLocalOfOrder_nonnegResidueProduct {A B C : VertexOperator R V} {Nab Na
     simp only [t, u, w, ad, commutatorDistribution_apply, Pi.add_apply, AddMonoidHom.neg_apply,
       LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply, ← Ring.lie_def]
     rw [lie_skew, lie_lie, sub_eq_add_neg]
+  -- Powers of `z - w` act on `t` through the distribution `[A(z), B(w)]` inside it.
+  have ht_map (N : ℕ) : (mulSub₁₂ ^ N) t =
+      fun i j k ↦ (-ad (C[[k]])) ((mulSub ^ N) (A.commutatorDistribution B) i j) :=
+    mulSub₁₂_pow_map (fun k ↦ -ad (C[[k]])) N _
   -- The commutator of `A₍ₙ₎B` with `C` is the slice of `(z - w)ⁿ t` at `z`-index `0`.
   have hP : (nonnegResidueProduct n A B).commutatorDistribution C = (mulSub₁₂ ^ n) t 0 := by
     ext p q : 2
-    rw [mulSub₁₂_pow_map, commutatorDistribution_apply,
-      ← residue_mulSub_pow_commutatorDistribution]
+    rw [ht_map, commutatorDistribution_apply, ← residue_mulSub_pow_commutatorDistribution]
     simp [ad, Ring.lie_def]
   -- `(z - w)^Nab` kills `t`, while `(z - x)^Nac (w - x)^Nbc` kills each of `u` and `w`.
   have ha : (mulSub₁₂ ^ (Nab - n)) ((mulSub₁₂ ^ n) t) = 0 := by
-    rw [← mul_apply_eq_comp, ← pow_add, mulSub₁₂_pow_map,
+    rw [← mul_apply_eq_comp, ← pow_add, ht_map,
       (isLocalOfOrder_iff_mulSub_pow_eq_zero A B _).mp (hab.mono (by omega))]
     funext i j k
     simp
   have hu : (mulSub₂₃ ^ Nbc) u = 0 := by
-    rw [mulSub₂₃_pow_map, (isLocalOfOrder_iff_mulSub_pow_eq_zero B C _).mp hbc]
+    refine (mulSub₂₃_pow_map (fun i ↦ ad (A[[i]])) Nbc _).trans ?_
+    rw [(isLocalOfOrder_iff_mulSub_pow_eq_zero B C _).mp hbc]
     funext i j k
     simp
   have hw : (mulSub₁₃ ^ Nac) w = 0 := by
-    rw [mulSub₁₃_pow_map, (isLocalOfOrder_iff_mulSub_pow_eq_zero A C _).mp hac]
+    refine (mulSub₁₃_pow_map (fun j ↦ -ad (B[[j]])) Nac _).trans ?_
+    rw [(isLocalOfOrder_iff_mulSub_pow_eq_zero A C _).mp hac]
     funext i j k
     simp
   have hbd : (mulSub₁₃ ^ Nac) ((mulSub₂₃ ^ Nbc) ((mulSub₁₂ ^ n) t)) = 0 := by
