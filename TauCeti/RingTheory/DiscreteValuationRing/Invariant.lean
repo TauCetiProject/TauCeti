@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
+import TauCeti.RingTheory.LocalRing.RingHom
 
 /-!
 # Invariants of a finite group acting on a discrete valuation ring
@@ -17,15 +18,16 @@ in `B` between invariants holds in `B^G`, so every nonzero ideal of `B^G` is gen
 its elements of least valuation in `B`, and `B^G` is not a field because `B` is integral over it.
 The action need not be faithful, and `A` is arbitrary.
 
-If moreover `A → B` is a finite extension of discrete valuation rings with separable residue
-extension, then so is `A → B^G`, and `B^G` is therefore generated over `A` by a single element.
+If moreover `B` is finite over a Noetherian local ring `A`, by a local homomorphism with separable
+residue extension, then so is `B^G`, and `B^G` is therefore generated over `A` by a single
+element.
 
 ## Main results
 
 * `TauCeti.FixedPoints.isDiscreteValuationRing_subalgebra`: the invariants `B^G` form a discrete
   valuation ring.
-* `TauCeti.FixedPoints.exists_adjoin_eq_top`: for a finite extension `A → B` of discrete
-  valuation rings with separable residue extension, `B^G` is generated over `A` by a single
+* `TauCeti.FixedPoints.exists_adjoin_eq_top`: for a finite local homomorphism `A → B` from a
+  Noetherian local ring with separable residue extension, `B^G` is generated over `A` by a single
   element.
 -/
 
@@ -69,20 +71,20 @@ instance isDiscreteValuationRing_subalgebra :
   exact hdvd _ _ <| IsDiscreteValuationRing.addVal_le_iff_dvd.1 <|
     Function.argminOn_le v s (a := b) ⟨hb, hb0⟩
 
-variable [IsDomain A] [IsDiscreteValuationRing A] [Module.Finite A B] [FaithfulSMul A B]
+variable [IsLocalRing A] [IsNoetherianRing A] [Module.Finite A B] [IsLocalHom (algebraMap A B)]
   [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
 
 variable (A B G) in
-/-- Let `A → B` be a finite extension of discrete valuation rings with separable residue
-extension, and let a finite group `G` act on `B` by `A`-algebra automorphisms. Then the
+/-- Let `B` be finite over a Noetherian local ring `A`, by a local homomorphism with separable
+residue extension, and let a finite group `G` act on `B` by `A`-algebra automorphisms. Then the
 invariants `B^G` are generated over `A` by a single element. -/
 theorem exists_adjoin_eq_top :
     ∃ y : FixedPoints.subalgebra A B G, Algebra.adjoin A {y} = ⊤ := by
   have : Module.Finite A (FixedPoints.subalgebra A B G) :=
     Module.Finite.of_injective (Subalgebra.val _).toLinearMap Subtype.val_injective
-  have := FaithfulSMul.tower_bot A (FixedPoints.subalgebra A B G) B
   have := Algebra.isSeparable_tower_bot_of_isSeparable (ResidueField A)
     (ResidueField (FixedPoints.subalgebra A B G)) (ResidueField B)
-  exact IsDiscreteValuationRing.exists_adjoin_eq_top
+  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible (FixedPoints.subalgebra A B G)
+  exact TauCeti.IsLocalRing.exists_adjoin_eq_top_of_span_eq_maximalIdeal hπ.maximalIdeal_eq.symm
 
 end TauCeti.FixedPoints

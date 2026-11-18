@@ -67,9 +67,6 @@ theorem ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum [IsGalois L M]
       ∑ τ : M ≃ₐ[L] M, lowerIndex 𝒪[M] (σ * τ.restrictScalars K) := by
   obtain ⟨x, hx⟩ := TauCeti.exists_integerRing_adjoin_eq_top K M
   obtain ⟨y, hy⟩ := TauCeti.exists_integerRing_adjoin_eq_top K L
-  have : SMulCommClass (M ≃ₐ[L] M) 𝒪[K] 𝒪[M] := ⟨fun τ a z ↦ by
-    rw [← AlgEquiv.restrictScalars_smul_integerRing (K := K), smul_comm,
-      AlgEquiv.restrictScalars_smul_integerRing]⟩
   rw [ramificationIndex_eq_ramificationIdx, ← finsum_eq_sum_of_fintype]
   exact TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top hx hy
     (AlgEquiv.smul_algebraMap_integerRing σ) (AlgEquiv.restrictScalars_smul_integerRing (K := K))

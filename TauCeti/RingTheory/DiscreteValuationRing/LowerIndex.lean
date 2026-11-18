@@ -65,25 +65,15 @@ open IsLocalRing
 
 namespace TauCeti
 
-/-- An integral extension of a ring of dimension at most one in a discrete valuation ring is
-injective: its kernel is a prime strictly below the contraction of the maximal ideal. -/
-private theorem faithfulSMul_of_isIntegral {R S : Type*} [CommRing R] [Ring.DimensionLEOne R]
-    [CommRing S] [IsDomain S] [IsDiscreteValuationRing S] [Algebra R S] [Algebra.IsIntegral R S] :
-    FaithfulSMul R S := by
-  rw [faithfulSMul_iff_algebraMap_injective, RingHom.injective_iff_ker_eq_bot,
-    RingHom.ker_eq_comap_bot]
-  exact Ring.DimensionLEOne.eq_bot_of_lt _ _ <| Ideal.IsIntegral.under_lt_under (R := R) <|
-    bot_lt_iff_ne_bot.2 (IsDiscreteValuationRing.not_a_field S)
-
 namespace IsLocalRing
 
 section Monogenic
 
-variable {A C B : Type*} [CommRing A] [CommRing C] [IsDomain C] [IsDiscreteValuationRing C]
+variable {A C B : Type*} [CommSemiring A] [CommRing C] [IsDomain C] [IsDiscreteValuationRing C]
   [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A C] [Algebra A B] [Algebra C B]
   {G G' H : Type*} [Group G] [MulSemiringAction G B] [SMulCommClass G A B]
   [Group G'] [MulSemiringAction G' C] [SMulCommClass G' A C]
-  [Group H] [Finite H] [MulSemiringAction H B] [SMulCommClass H A B] [SMulCommClass H C B]
+  [Group H] [Finite H] [MulSemiringAction H B] [SMulCommClass H C B]
   [FaithfulSMul H B] [Algebra.IsInvariant C B H]
 
 /-- **Serre's quotient formula for the lower index, monogenic form.** Let `C → B` be an extension
@@ -98,9 +88,10 @@ theorem ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top {x : B}
     ((maximalIdeal B).ramificationIdx C : ℕ∞) * lowerIndex C σ' =
       ∑ᶠ τ : H, lowerIndex B (σ * ι τ) := by
   have := Fintype.ofFinite H
+  have : SMulCommClass H A B := ⟨fun τ a b ↦ by rw [← hι, smul_comm, hι]⟩
   -- `B` is integral over `C`, so `C → B` is injective and local.
   have := Algebra.IsInvariant.isIntegral C B H
-  have := faithfulSMul_of_isIntegral (R := C) (S := B)
+  have := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := C) (S := B)
   -- `σ y - y` and `(σ f)(x) = ∏_{τ ∈ H} (x - σ τ x)` divide each other in `B`, for `f` the
   -- characteristic polynomial of `x` under `H`: the `H`-invariants are the image of `C`,
   -- generated over `A` by `y`.
@@ -147,13 +138,13 @@ theorem ramificationIdx_mul_lowerIndex_mk_eq_finsum [IsLocalHom (algebraMap A B)
         lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ᶠ τ : H, lowerIndex B (σ * τ) := by
   have := Algebra.IsInvariant.isIntegral A B G
-  have := faithfulSMul_of_isIntegral (R := A) (S := B)
+  have := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
   have : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
   have := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
   obtain ⟨y, hy⟩ := FixedPoints.exists_adjoin_eq_top A B H
   exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top hx hy
-    (fun c ↦ (FixedPoints.coe_mk_smul H σ c).symm) fun _ _ ↦ rfl
+    (fun c ↦ (FixedPoints.coe_mk_smul H σ c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
 
 variable (A) in
 /-- **Serre's lemma on the lower index of a quotient**, in counting form. Let a finite group `G`

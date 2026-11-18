@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RingTheory.Invariant.Galois
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.IntegralClosure.Transfer
 
 /-!
 # Galois groups of integral closures
@@ -166,10 +167,5 @@ theorem TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed (G A B : Type*)
   -- `B` embeds `A`-linearly in the integral closure of `A` in `Frac B`, which is finite over `A`.
   have := IsIntegralClosure.finite A (FractionRing A) (FractionRing B)
     (integralClosure A (FractionRing B))
-  let f := (IsScalarTower.toAlgHom A B (FractionRing B)).codRestrict
-    (integralClosure A (FractionRing B)) fun b ↦ by
-      rw [IsScalarTower.toAlgHom_apply, mem_integralClosure_iff]
-      exact (Algebra.IsIntegral.isIntegral b).algebraMap
-  refine Module.Finite.of_injective f.toLinearMap ?_
-  rw [AlgHom.coe_toLinearMap, AlgHom.injective_codRestrict, IsScalarTower.coe_toAlgHom']
-  exact IsFractionRing.injective B (FractionRing B)
+  exact TauCeti.IsIntegralClosure.finite_of_injective (C' := integralClosure A (FractionRing B))
+    (IsScalarTower.toAlgHom A B (FractionRing B)) (IsFractionRing.injective B (FractionRing B))
