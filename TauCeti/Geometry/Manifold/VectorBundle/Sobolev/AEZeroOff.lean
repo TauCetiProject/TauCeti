@@ -279,7 +279,8 @@ variable (A μ p k) in
 /-- **Extension by zero at order `k`.** For every closed subset `L` of the domain of a chart `i`,
 every tuple of chart-`i` Sobolev functions vanishing almost everywhere off `L` consists of the
 chart-`i` components of an element of `W^{k,p}(V)` vanishing off `L`. Over surfaces this holds for
-`k ≤ 1` (`TauCeti.SobolevSection.hasExtensionByZero_of_le_one`). -/
+`Cⁿ` bundles at orders `k ≤ n` with `k ≤ 1` or `p ≠ ∞` (`TauCeti.SobolevSection.hasExtensionByZero`
+in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density`). -/
 def HasExtensionByZero : Prop :=
   ∀ ⦃i : Fin A.n⦄ ⦃L : Set M⦄, IsClosed L → L ⊆ A.dom i →
     Function.Surjective (chartRestrictL A μ p k i L)

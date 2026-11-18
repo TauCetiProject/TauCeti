@@ -23,8 +23,9 @@ product space `E`, let `V → M` be a smooth real vector bundle with finite-dime
 `1 ≤ p < ∞` the `C^∞` sections of `V` are dense in the Sobolev space `W^{k,p}(V)` of
 `TauCeti.SobolevSection A μ p k` as soon as `W^{k,p}(V)` admits extension by zero from a single
 chart (`TauCeti.SobolevSection.HasExtensionByZero`). Over surfaces (`E = ℂ`, with Lebesgue
-measure) extension by zero holds for `k ≤ 1`
-(`TauCeti.SobolevSection.hasExtensionByZero_of_le_one`), so there the `C^∞` sections are dense
+measure) extension by zero holds for `Cⁿ` bundles at every order `k ≤ n` with `k ≤ 1` or `p ≠ ∞`
+(`TauCeti.SobolevSection.hasExtensionByZero`), so for smooth bundles over surfaces the `C^∞`
+sections are dense at every order
 (`TauCeti.SobolevSection.denseRange_ofContMDiffSection_comp_ofLE`), and hence so are the `Cᵏ`
 sections (`TauCeti.SobolevSection.denseRange_ofContMDiffSection`).
 
@@ -42,7 +43,7 @@ components converge to those of `u`; continuity of `extendByZeroL` gives converg
 `W^{k,p}(V)`.
 
 Extension by zero is the only step that depends on the order `k`. Over surfaces it follows from
-the invariance of the local Sobolev classes of order at most one under changes of chart
+the invariance of the local Sobolev classes under changes of chart and trivialization
 (`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`): the
 section equal to the given functions on the chart and zero off it has locally `W^{k,p}` readings
 in chart `i` near `L` and in every chart away from `L`.
@@ -55,12 +56,13 @@ in chart `i` near `L` and in every chart away from `L`.
 * `TauCeti.SobolevSection.denseRange_ofContMDiffSection_comp_ofLE_of_hasExtensionByZero`,
   `TauCeti.SobolevSection.denseRange_ofContMDiffSection_of_hasExtensionByZero`: under extension by
   zero, `C^∞` sections, and hence `Cᵏ` sections, are dense in `W^{k,p}(V)` for `1 ≤ p < ∞`.
-* `TauCeti.SobolevSection.hasExtensionByZero_of_le_one`: over surfaces, extension by zero holds
-  for `k ≤ 1`.
+* `TauCeti.SobolevSection.hasExtensionByZero`: over surfaces, extension by zero holds for `Cⁿ`
+  bundles at orders `k ≤ n` with `k ≤ 1` or `p ≠ ∞`; `hasExtensionByZero_of_le_one` is the case
+  `k ≤ 1` for `C¹` bundles.
 * `TauCeti.SobolevSection.denseRange_ofContMDiffSection_comp_ofLE`: over surfaces, `C^∞` sections
-  are dense in `W^{k,p}(V)` for `1 ≤ p < ∞` and `k ≤ 1`.
+  are dense in `W^{k,p}(V)` for every `k` and `1 ≤ p < ∞`.
 * `TauCeti.SobolevSection.denseRange_ofContMDiffSection`: over surfaces, `Cᵏ` sections are dense
-  in `W^{k,p}(V)` for `1 ≤ p < ∞` and `k ≤ 1`.
+  in `W^{k,p}(V)` for every `k` and `1 ≤ p < ∞`.
 
 ## References
 
@@ -232,13 +234,15 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   {A : FiniteBundleAtlas ℂ M F V} {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 
-/-- **Extension by zero over surfaces at orders `k ≤ 1`.** Let `L` be a closed subset of the
-domain of chart `i`, and `g` a tuple of chart-`i` Sobolev functions vanishing off `L`. The section
-equal to the function `g` defines on the chart, and zero off it, has locally `W^{k,p}` readings in
-chart `i` and in every chart away from `L`, so it defines an element of `W^{k,p}(V)`
+/-- **Extension by zero over surfaces.** For a `Cⁿ` bundle over a `Cⁿ` surface, `n ≠ 0`, and an
+order `k ≤ n` with `k ≤ 1` or `p ≠ ∞`: let `L` be a closed subset of the domain of chart `i`, and
+`g` a tuple of chart-`i` Sobolev functions vanishing off `L`. The section equal to the function `g`
+defines on the chart, and zero off it, has locally `W^{k,p}` readings in chart `i` and in every
+chart away from `L`, so it defines an element of `W^{k,p}(V)`
 (`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`). -/
-theorem hasExtensionByZero_of_le_one [IsManifold 𝓘(ℝ, ℂ) 1 M]
-    [ContMDiffVectorBundle 1 F V 𝓘(ℝ, ℂ)] (hk : k ≤ 1) : HasExtensionByZero A volume p k := by
+theorem hasExtensionByZero {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, ℂ) n M]
+    [ContMDiffVectorBundle n F V 𝓘(ℝ, ℂ)] (hkp : k ≤ 1 ∨ p ≠ ⊤) (hn : n ≠ 0)
+    (hkn : (k : WithTop ℕ∞) ≤ n) : HasExtensionByZero A volume p k := by
   refine hasExtensionByZero_iff.2 fun i L hL hLi g ↦ ?_
   classical
   obtain ⟨G, hG⟩ : ∃ G : ℂ → F, ∀ y, G y = if (A.chart i).symm y ∈ L then
@@ -294,8 +298,7 @@ theorem hasExtensionByZero_of_le_one [IsManifold 𝓘(ℝ, ℂ) 1 M]
     (A := A) A.chart (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv U hU
     (fun x ↦ let ⟨i', hi', hi'U⟩ := hcover x
       ⟨i', A.dom_subset_chart_source i' hi', A.dom_subset_baseSet i' hi', hi'U⟩)
-    (fun i' ↦ by simpa only [funext (A.coord_def i' _)] using hmem i') (.inl hk) one_ne_zero
-    (by exact_mod_cast hk)
+    (fun i' ↦ by simpa only [funext (A.coord_def i' _)] using hmem i') hkp hn hkn
   refine ⟨⟨w, mem_aeZeroOff_of_ae_eq_coord hw ht⟩,
     Subtype.ext <| funext fun j ↦ Wkp.ext k <| Lp.ext ?_⟩
   rw [coe_chartRestrictL_apply]
@@ -304,21 +307,29 @@ theorem hasExtensionByZero_of_le_one [IsManifold 𝓘(ℝ, ℂ) 1 M]
   refine h1.trans ?_
   rw [coord_chartSection G hy, h2]
 
+/-- **Extension by zero over surfaces at orders `k ≤ 1`**, for a `C¹` bundle over a `C¹` surface
+and every `1 ≤ p ≤ ∞`. -/
+theorem hasExtensionByZero_of_le_one [IsManifold 𝓘(ℝ, ℂ) 1 M]
+    [ContMDiffVectorBundle 1 F V 𝓘(ℝ, ℂ)] (hk : k ≤ 1) : HasExtensionByZero A volume p k :=
+  hasExtensionByZero (.inl hk) one_ne_zero (by exact_mod_cast hk)
+
 variable [IsManifold 𝓘(ℝ, ℂ) ∞ M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
 
-/-- **`C^∞` sections are dense in `W^{k,p}(V)`** over a compact Hausdorff surface, for
-`1 ≤ p < ∞` and `k ≤ 1`. -/
-theorem denseRange_ofContMDiffSection_comp_ofLE [T2Space M] (hp : p ≠ ⊤) (hk : k ≤ 1) :
+/-- **`C^∞` sections are dense in `W^{k,p}(V)`** over a compact Hausdorff surface, for every order
+`k` and `1 ≤ p < ∞`. -/
+theorem denseRange_ofContMDiffSection_comp_ofLE [T2Space M] (hp : p ≠ ⊤) :
     DenseRange ((ofContMDiffSection A volume p k).comp
       (ContMDiffSection.ofLE (I := 𝓘(ℝ, ℂ)) (F := F) (V := V) ENat.LEInfty.out)) :=
-  denseRange_ofContMDiffSection_comp_ofLE_of_hasExtensionByZero hp (hasExtensionByZero_of_le_one hk)
+  denseRange_ofContMDiffSection_comp_ofLE_of_hasExtensionByZero hp
+    (hasExtensionByZero (n := ∞) (.inr hp) (by simp) (by exact_mod_cast le_top))
 
-/-- **`Cᵏ` sections are dense in `W^{k,p}(V)`** over a compact Hausdorff surface, for
-`1 ≤ p < ∞` and `k ≤ 1`. In fact the `C^∞` sections are dense
+/-- **`Cᵏ` sections are dense in `W^{k,p}(V)`** over a compact Hausdorff surface, for every order
+`k` and `1 ≤ p < ∞`. In fact the `C^∞` sections are dense
 (`TauCeti.SobolevSection.denseRange_ofContMDiffSection_comp_ofLE`). -/
-theorem denseRange_ofContMDiffSection [T2Space M] (hp : p ≠ ⊤) (hk : k ≤ 1) :
+theorem denseRange_ofContMDiffSection [T2Space M] (hp : p ≠ ⊤) :
     DenseRange (ofContMDiffSection A volume p k) :=
-  denseRange_ofContMDiffSection_of_hasExtensionByZero hp (hasExtensionByZero_of_le_one hk)
+  denseRange_ofContMDiffSection_of_hasExtensionByZero hp
+    (hasExtensionByZero (n := ∞) (.inr hp) (by simp) (by exact_mod_cast le_top))
 
 end Planar
 
