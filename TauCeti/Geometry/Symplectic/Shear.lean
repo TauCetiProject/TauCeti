@@ -13,17 +13,15 @@ public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Unipotent
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import Mathlib.LinearAlgebra.FixedSubmodule
-public import Mathlib.LinearAlgebra.Transvection.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
 # The symplectic shear of the plane
 
-The shear `S(q, p) = (q + p, p)` of `ℝ²` (`TauCeti.linearPlaneShear`), the transvection
-`x ↦ x + p(x) • (1, 0)` of Mathlib's `LinearEquiv.transvection`, preserves the standard symplectic
-form `ω = dq ∧ dp` (`TauCeti.isSymplectomorphism_linearPlaneShear`); it is the shear of the strip
-with twist `1` (`TauCeti.stripShear_one`). It shows what goes wrong in the
+The shear `S(q, p) = (q + p, p)` of `ℝ²` (`TauCeti.linearPlaneShear`), the shear of the strip
+with twist `1` (`TauCeti.stripShear 1`), preserves the standard symplectic form `ω = dq ∧ dp`
+(`TauCeti.isSymplectomorphism_linearPlaneShear`). It shows what goes wrong in the
 fixed-locus theorem for groups of symplectomorphisms when no invariant metric is assumed:
 
 * its fixed points form the line `p = 0` (`TauCeti.fixedSubmodule_linearPlaneShear`), which is
@@ -56,23 +54,17 @@ open Manifold
 
 namespace TauCeti
 
-/-- The shear `(q, p) ↦ (q + p, p)` of the plane: the transvection `x ↦ x + x.2 • (1, 0)`. -/
+/-- The shear `(q, p) ↦ (q + p, p)` of the plane: the shear of the strip with twist `1`. -/
 def linearPlaneShear : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
-  (LinearEquiv.transvection (f := LinearMap.snd ℝ ℝ ℝ) (v := ((1 : ℝ), (0 : ℝ)))
-    (LinearMap.snd_apply _)).toContinuousLinearEquiv
+  stripShear 1
 
 @[simp]
 theorem linearPlaneShear_apply (x : ℝ × ℝ) : linearPlaneShear x = (x.1 + x.2, x.2) := by
-  simp [linearPlaneShear, LinearMap.transvection.apply, Prod.ext_iff]
+  simp [linearPlaneShear]
 
 @[simp]
 theorem linearPlaneShear_symm_apply (x : ℝ × ℝ) : linearPlaneShear.symm x = (x.1 - x.2, x.2) := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, linearPlaneShear_apply]
-  simp
-
-/-- The shear is the shear of the strip with twist `1`. -/
-theorem stripShear_one : stripShear 1 = linearPlaneShear := by
-  ext x <;> simp
+  simp [linearPlaneShear]
 
 /-- The shear preserves the standard symplectic form `ω = dq ∧ dp` of the plane. -/
 theorem isSymplectomorphism_linearPlaneShear :
