@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Regularity.Graph.InducedCount
 public import TauCeti.Combinatorics.Regularity.Partition.Energy
-import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.Analysis.Normed.Ring.ProdSubProd
 import TauCeti.Data.Fintype.BigOperators
 
 /-!

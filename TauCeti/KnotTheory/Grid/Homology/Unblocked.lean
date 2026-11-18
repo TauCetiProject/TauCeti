@@ -204,6 +204,55 @@ theorem unblockedHomologyClass_eq_zero_iff (z : LinearMap.ker (G.unblockedDiffer
 
 end Quotient
 
+section HomologyMap
+
+variable {m : ℕ} (G' : GridDiagram m)
+
+/-- A class-compatible surjective map on unblocked homology lifts cycles modulo boundaries. -/
+theorem exists_sub_map_mem_range_unblockedDifferential_of_surjective
+    (f : GridChainMinus R m → GridChainMinus R n)
+    (hf : ∀ z ∈ LinearMap.ker (G'.unblockedDifferential R),
+      f z ∈ LinearMap.ker (G.unblockedDifferential R))
+    (F : G'.unblockedHomology R → G.unblockedHomology R)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
+    (h : Function.Surjective F) {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    ∃ z ∈ LinearMap.ker (G'.unblockedDifferential R),
+      c - f z ∈ LinearMap.range (G.unblockedDifferential R) := by
+  obtain ⟨y, hy⟩ := h (G.unblockedHomologyClass R ⟨c, hc⟩)
+  obtain ⟨z, rfl⟩ := G'.unblockedHomologyClass_surjective R y
+  have hz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := hf z z.2
+  rw [hF z hz] at hy
+  have he : G.unblockedHomologyClass R (⟨c, hc⟩ - ⟨f z, hz⟩) = 0 := by
+    calc
+      _ = G.unblockedHomologyClass R ⟨c, hc⟩ -
+          G.unblockedHomologyClass R ⟨f z, hz⟩ := map_sub _ _ _
+      _ = 0 := sub_eq_zero.mpr hy.symm
+  exact ⟨z, z.2, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
+
+/-- A class-compatible injective map on unblocked homology reflects boundaries of cycles. -/
+theorem mem_range_unblockedDifferential_of_map_mem_range_of_injective
+    (f : GridChainMinus R m → GridChainMinus R n)
+    {𝓕 : Type*} [FunLike 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)]
+    [ZeroHomClass 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)] (F : 𝓕)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
+    (h : Function.Injective F) {z : GridChainMinus R m}
+    (hz : z ∈ LinearMap.ker (G'.unblockedDifferential R))
+    (hb : f z ∈ LinearMap.range (G.unblockedDifferential R)) :
+    z ∈ LinearMap.range (G'.unblockedDifferential R) := by
+  have hfz : f z ∈ LinearMap.ker (G.unblockedDifferential R) :=
+    (LinearMap.range_le_ker_iff.mpr (G.unblockedDifferential_comp_self_eq_zero R)) hb
+  apply (G'.unblockedHomologyClass_eq_zero_iff R ⟨z, hz⟩).1
+  apply h
+  rw [map_zero, hF ⟨z, hz⟩ hfz, unblockedHomologyClass_eq_zero_iff]
+  exact hb
+
+end HomologyMap
+
 /-! ### The equivalence induced by an intertwining map -/
 
 section Intertwining

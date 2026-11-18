@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Normed.Module.Ball
-public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
+-- Proof-only: Brunn–Minkowski and Prékopa–Leindler for the volume.
+import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
 -- Proof-only: equality in Brunn–Minkowski for convex bodies forces a translate.
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Homothety
 -- Proof-only: a subset of a ball with the ball's volume agrees with it a.e.
@@ -29,8 +31,12 @@ each scaled by `1 / 2`, shows that half the difference body has at least the vol
 of the closure, and half the difference body lies in the closed ball of radius `d / 2`
 (`TauCeti.half_smul_add_neg_half_smul_subset_closedBall_diam_div_two`).
 
-We give the bound against a closed ball of any center, the normalized form
-with `ω_n`, a hypothesis-free extended form using `Metric.ediam`, and a real-valued form.
+We give the bound against a closed ball of any center
+(`MeasureTheory.Measure.addHaar_le_addHaar_closedBall_diam_div_two`), the normalized form
+with `ω_n` (`MeasureTheory.Measure.addHaar_le_ofReal_diam_div_two_pow_mul_addHaar_ball`), a
+hypothesis-free extended form using `Metric.ediam`
+(`MeasureTheory.Measure.addHaar_le_ediam_div_two_pow_mul_addHaar_ball`), and a real-valued form
+(`MeasureTheory.Measure.addHaar_real_le_diam_div_two_pow_mul_addHaar_real_ball`).
 
 ## Equality
 
