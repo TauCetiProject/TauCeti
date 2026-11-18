@@ -46,11 +46,12 @@ space facts behind that statement, by the Hodge theory of the complex.
   `b` have closed range, the index of `a + b†` is `dim (ker a ⊓ ker b†) - dim (ker b ⊓ ker a†)`,
   which is the Euler characteristic `dim (ker a / range b) - dim (ker b / range a)` of the
   complex.
-* `ContinuousLinearMap.injective_add_adjoint_iff` and
-  `ContinuousLinearMap.bijective_add_adjoint_iff`: when `a` and `b` have closed range, `a + b†` is
-  injective exactly when the complex is exact at `V`, and bijective exactly when it is exact at
-  `V` and at `W`. Applied fibrewise to principal symbols, where all spaces are finite-dimensional,
-  this says that the folded symbol of an elliptic complex is elliptic.
+* `ContinuousLinearMap.injective_add_adjoint_iff`, `ContinuousLinearMap.surjective_add_adjoint_iff`
+  and `ContinuousLinearMap.bijective_add_adjoint_iff`: when `a` and `b` have closed range, `a + b†`
+  is injective exactly when the complex is exact at `V`, surjective exactly when it is exact at
+  `W`, and bijective exactly when it is exact at `V` and at `W`. Applied fibrewise to principal
+  symbols, where all spaces are finite-dimensional, this says that the folded symbol of an
+  elliptic complex is elliptic.
 
 ## References
 
@@ -169,11 +170,6 @@ theorem isClosed_range_add_adjoint (hab : a ∘L b = 0) (hba : b ∘L a = 0)
 
 /-! ### Hodge decomposition and harmonic representatives -/
 
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- If `a b = 0`, the boundaries `range b` are cycles. -/
-private theorem range_le_ker_of_comp_eq_zero (hab : a ∘L b = 0) : b.range ≤ a.ker :=
-  LinearMap.range_le_ker_iff.2 (by simpa using congrArg toLinearMap hab)
-
 /-- **The Hodge decomposition of the cycles.** If `a b = 0` and `b` has closed range, then `ker a`
 is the sum of the boundaries `range b` and the harmonic elements `ker a ⊓ ker b†`, which are
 orthogonal since `ker b† = (range b)ᗮ`. -/
@@ -181,15 +177,17 @@ theorem range_sup_ker_inf_ker_adjoint (hab : a ∘L b = 0) (hb : IsClosed (b.ran
     b.range ⊔ a.ker ⊓ (adjoint b).ker = a.ker := by
   have : b.range.HasOrthogonalProjection := Submodule.hasOrthogonalProjection_iff_isClosed.2 hb
   rw [← orthogonal_range, inf_comm]
+  -- The boundaries `range b` are cycles.
   exact Submodule.sup_orthogonal_inf_of_hasOrthogonalProjection
-    (range_le_ker_of_comp_eq_zero hab)
+    (LinearMap.range_le_ker_iff.2 (by simpa using congrArg toLinearMap hab))
 
 /-- The harmonic part `v - P v` of a cycle `v`, where `P` is the orthogonal projection onto
 `range b`, is a harmonic element in the class of `v`. -/
 private theorem sub_starProjection_mem_ker_inf_ker_adjoint (hab : a ∘L b = 0)
     [b.range.HasOrthogonalProjection] (v : a.ker) :
     (v : V) - b.range.starProjection v ∈ a.ker ⊓ (adjoint b).ker :=
-  ⟨sub_mem v.2 (range_le_ker_of_comp_eq_zero hab (b.range.starProjection_apply_mem v)),
+  ⟨sub_mem v.2 ((range_sup_ker_inf_ker_adjoint hab b.range.isClosed_of_hasOrthogonalProjection).le
+      (Submodule.mem_sup_left (b.range.starProjection_apply_mem v))),
     orthogonal_range b ▸ b.range.sub_starProjection_mem_orthogonal v⟩
 
 /-- A cycle `v` and its harmonic part `v - P v` have the same cohomology class. -/
@@ -241,8 +239,8 @@ theorem coe_kerInfKerAdjointEquiv_symm_mk (hab : a ∘L b = 0) [b.range.HasOrtho
   have h : (kerInfKerAdjointEquiv hab b.range.isClosed_of_hasOrthogonalProjection).symm
       (Submodule.Quotient.mk v) =
       ⟨_, sub_starProjection_mem_ker_inf_ker_adjoint hab v⟩ := by
-    rw [LinearEquiv.symm_apply_eq, kerInfKerAdjointEquiv_apply, mk_eq_mk_sub_starProjection hab]
-    rfl
+    rw [LinearEquiv.symm_apply_eq, kerInfKerAdjointEquiv_apply, mk_eq_mk_sub_starProjection hab,
+      Submodule.inclusion_apply]
   rw [h]
 
 /-! ### The index -/
@@ -284,9 +282,21 @@ theorem index_add_adjoint_eq_finrank_quotient_sub_finrank_quotient (hab : a ∘L
 exactly when the complex is exact at `V`. -/
 theorem injective_add_adjoint_iff (hab : a ∘L b = 0) (hba : b ∘L a = 0)
     (hb : IsClosed (b.range : Set V)) : Injective (a + adjoint b) ↔ Exact b a := by
-  rw [b.exact_iff_injective_hodgeLaplacian a hab hb, ← coe_coe, ← coe_coe (b.hodgeLaplacian a),
-    ← LinearMap.ker_eq_bot, ← LinearMap.ker_eq_bot]
-  exact Eq.congr_left (ker_add_adjoint_eq_ker_hodgeLaplacian hba)
+  rw [b.exact_iff_injective_hodgeLaplacian a hab hb]
+  simp only [← coe_coe, ← LinearMap.ker_eq_bot]
+  rw [ker_add_adjoint_eq_ker_hodgeLaplacian hba]
+
+/-- If `a b = 0`, `b a = 0` and `a` and `b` have closed range, the folded operator `a + b†` is
+surjective exactly when the complex is exact at `W`. -/
+theorem surjective_add_adjoint_iff (hab : a ∘L b = 0) (hba : b ∘L a = 0)
+    (ha : IsClosed (a.range : Set W)) (hb : IsClosed (b.range : Set V)) :
+    Surjective (a + adjoint b) ↔ Exact a b := by
+  rw [← injective_add_adjoint_iff hba hab ha, ← adjoint_add_adjoint a b]
+  -- `a + b†` is onto exactly when the orthogonal complement `ker (a + b†)†` of its range is zero.
+  have : (a + adjoint b).range.HasOrthogonalProjection :=
+    Submodule.hasOrthogonalProjection_iff_isClosed.2 (isClosed_range_add_adjoint hab hba ha hb)
+  simp only [← coe_coe, ← LinearMap.range_eq_top, ← LinearMap.ker_eq_bot]
+  rw [← orthogonal_range, Submodule.orthogonal_eq_bot_iff]
 
 /-- **Exactness and the folded operator.** If `a b = 0`, `b a = 0` and `a` and `b` have closed
 range, the folded operator `a + b†` is bijective exactly when the complex is exact at `V` and at
@@ -294,13 +304,6 @@ range, the folded operator `a + b†` is bijective exactly when the complex is e
 theorem bijective_add_adjoint_iff (hab : a ∘L b = 0) (hba : b ∘L a = 0)
     (ha : IsClosed (a.range : Set W)) (hb : IsClosed (b.range : Set V)) :
     Bijective (a + adjoint b) ↔ Exact b a ∧ Exact a b := by
-  rw [Bijective, injective_add_adjoint_iff hab hba hb,
-    ← injective_add_adjoint_iff (a := b) (b := a) hba hab ha]
-  refine and_congr_right' ?_
-  -- `a + b†` is onto exactly when the orthogonal complement `ker (b + a†)` of its range is zero.
-  have : (a + adjoint b).range.HasOrthogonalProjection :=
-    Submodule.hasOrthogonalProjection_iff_isClosed.2 (isClosed_range_add_adjoint hab hba ha hb)
-  rw [← coe_coe, ← LinearMap.range_eq_top, ← coe_coe (b + adjoint a), ← LinearMap.ker_eq_bot,
-    ← adjoint_add_adjoint a b, ← orthogonal_range, Submodule.orthogonal_eq_bot_iff]
+  rw [Bijective, injective_add_adjoint_iff hab hba hb, surjective_add_adjoint_iff hab hba ha hb]
 
 end ContinuousLinearMap

@@ -91,9 +91,8 @@ exact at every nonzero frequency. -/
 theorem exact_of_isElliptic_hodgeLaplacian [FiniteDimensional ℂ V] (hba : b.comp a = 0)
     (h : (a.hodgeLaplacian b).IsElliptic) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     Function.Exact (a.coefficient (x, ξ)) (b.coefficient (x, ξ)) := by
-  have hBA : b.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = 0 := by
-    simpa using congrFun (congrArg coefficient hba) (x, ξ)
-  rw [ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian _ _ hBA,
+  rw [ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian _ _
+      (coefficient_comp_coefficient_eq_zero hba _),
     ← coefficient_hodgeLaplacian]
   exact isElliptic_iff.1 h x ξ hξ
 
@@ -119,13 +118,10 @@ theorem isElliptic_add_adjoint_iff [FiniteDimensional ℂ V]
       Function.Exact (q.coefficient (x, ξ)) (p.coefficient (x, ξ)) ∧
         Function.Exact (p.coefficient (x, ξ)) (q.coefficient (x, ξ)) := by
   refine isElliptic_iff.trans (forall₂_congr fun x ξ ↦ imp_congr_right fun _ ↦ ?_)
-  have h₁ : p.coefficient (x, ξ) ∘L q.coefficient (x, ξ) = 0 := by
-    simpa using congrFun (congrArg coefficient hpq) (x, ξ)
-  have h₂ : q.coefficient (x, ξ) ∘L p.coefficient (x, ξ) = 0 := by
-    simpa using congrFun (congrArg coefficient hqp) (x, ξ)
   rw [coefficient_add, Pi.add_apply, coefficient_adjoint,
     ContinuousLinearMap.isInvertible_iff_bijective,
-    ContinuousLinearMap.bijective_add_adjoint_iff h₁ h₂ (Submodule.isClosed_of_finiteDimensional _)
+    ContinuousLinearMap.bijective_add_adjoint_iff (coefficient_comp_coefficient_eq_zero hpq _)
+      (coefficient_comp_coefficient_eq_zero hqp _) (Submodule.isClosed_of_finiteDimensional _)
       (Submodule.isClosed_of_finiteDimensional _)]
 
 end HomogeneousSymbol
