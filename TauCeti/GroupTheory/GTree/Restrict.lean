@@ -58,8 +58,10 @@ acts through `G`. -/
 @[simp] theorem comap_toSerreGraph (f : H →* G) : (T.comap f).toSerreGraph = T.toSerreGraph :=
   (rfl)
 
-/-! A vertex or dart of `T.comap f` is one of `T`; in the statements below, `show` gives it the
-type `T.V` or `T.E`, on which `G` acts. -/
+/-! A vertex or dart of `T.comap f` is one of `T`: `comap` keeps the graph of `T`
+(`comap_toSerreGraph`), so `(T.comap f).V` and `(T.comap f).E` are `T.V` and `T.E` by definition.
+In the statements below, `show` gives a vertex or dart of `T.comap f` the type `T.V` or `T.E`, on
+which `G` acts. -/
 
 /-- An element of `H` acts on the restricted tree through its image in `G`. -/
 @[simp] theorem comap_smul_vertex (f : H →* G) (h : H) (v : (T.comap f).V) :
@@ -74,20 +76,23 @@ type `T.V` or `T.E`, on which `G` acts. -/
     stabilizer H v = (stabilizer G (show T.V from v)).comap f := by
   ext h
   rw [Subgroup.mem_comap, mem_stabilizer_iff, mem_stabilizer_iff, comap_smul_vertex]
-  rfl
+  -- Both sides say `f h • v = v`, with `v` read in `(T.comap f).V` and in `T.V`.
+  exact Iff.rfl
 
 /-- The stabilizer of a dart for the restricted action is the preimage of its stabilizer. -/
 @[simp] theorem stabilizer_comap_dart (f : H →* G) (e : (T.comap f).E) :
     stabilizer H e = (stabilizer G (show T.E from e)).comap f := by
   ext h
   rw [Subgroup.mem_comap, mem_stabilizer_iff, mem_stabilizer_iff, comap_smul_dart]
-  rfl
+  -- Both sides say `f h • e = e`, with `e` read in `(T.comap f).E` and in `T.E`.
+  exact Iff.rfl
 
 /-- An element acts elliptically on the restricted tree exactly when its image does on `T`. -/
 @[simp] theorem isElliptic_comap_iff (f : H →* G) (h : H) :
     (T.comap f).IsElliptic h ↔ T.IsElliptic (f h) := by
   simp only [isElliptic_iff, comap_smul_vertex]
-  rfl
+  -- Both sides say that `f h` fixes a vertex, ranging over `(T.comap f).V` and over `T.V`.
+  exact Iff.rfl
 
 variable (C : Set T.V)
 
