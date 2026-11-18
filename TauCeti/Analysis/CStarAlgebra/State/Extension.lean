@@ -72,12 +72,12 @@ end Compact
 section Face
 
 variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
-/-- **The extensions of a pure state form a face.** Along a star homomorphism `f : A → B` of unital
-C⋆-algebras, the states of `B` restricting to a pure state `φ` of `A` form an extreme subset of the
-state space of `B`. The homomorphism `f` need not be unital. -/
+/-- **The extensions of a pure state form a face.** Along a star homomorphism `f : A → B` from a
+unital C⋆-algebra to a C⋆-algebra, the states of `B` restricting to a pure state `φ` of `A` form an
+extreme subset of the state space of `B`. Neither `B` nor `f` need be unital. -/
 theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : WeakDual ℂ A}
     (hφ : φ ∈ extremePoints ℝ (stateSpace A)) :
     IsExtreme ℝ (stateSpace B) (stateSpace B ∩ pullbackFunctional A f ⁻¹' {φ}) := by
