@@ -13,7 +13,6 @@ public import TauCeti.RingTheory.DedekindDomain.SInteger.Primitive
 
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.NumberTheory.DiophantineApproximation.Subspace.AffineProd
-import TauCeti.NumberTheory.Height.Primitive
 import TauCeti.NumberTheory.NumberField.Global.Places.Height
 import TauCeti.NumberTheory.NumberField.SUnits.AffineHeight
 

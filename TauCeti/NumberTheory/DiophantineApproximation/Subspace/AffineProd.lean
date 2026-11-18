@@ -27,13 +27,14 @@ equations use it (Bombieri–Gubler, Corollary 7.2.5 and Theorem 7.2.6).
 The passage between the two forms is one identity,
 `TauCeti.NumberField.affineProd_eq_approxProd_mul`: dropping the local denominators multiplies the
 approximation product, taken over all the infinite places and `S`, by the product `P(x)` of the
-local sup norms of `x` over these places, once per form. For an `S`-integral point, `P(x)` is at
-least the height (`NumberField.mulHeight_le_prod`), with equality for an `S`-primitive point
-(`NumberField.mulHeight_eq_prod_of_isPrimitive`). Hence every `S`-integral solution of the affine
-inequality solves the projective inequality `approxProd … x ≤ mulHeight x ^ (-card ι - ε)` of the
-Subspace Theorem with the same `ε`, and for `S`-primitive points the two inequalities are
-equivalent. Scaling by an `S`-unit changes neither the affine product nor `S`-primitivity
-(`Set.IsPrimitive.unit_smul`).
+local sup norms of `x` over these places, once per form. For a nonzero `S`-integral point, `P(x)`
+is at least the height (`NumberField.mulHeight_le_prod`), with equality for an `S`-primitive point
+(`NumberField.mulHeight_eq_prod_of_isPrimitive`). At `x = 0` with `ι` nonempty, `P(x)` is `0` while
+the height is `1`, but there the approximation product vanishes too. Hence every `S`-integral
+solution of the affine inequality, zero included, solves the projective inequality
+`approxProd … x ≤ mulHeight x ^ (-card ι - ε)` of the Subspace Theorem with the same `ε`, and for
+`S`-primitive points the two inequalities are equivalent. Scaling by an `S`-unit changes neither
+the affine product nor `S`-primitivity (`Set.IsPrimitive.unit_smul`).
 
 ## Main definitions
 
@@ -48,9 +49,10 @@ equivalent. Scaling by an `S`-unit changes neither the affine product nor `S`-pr
 * `TauCeti.NumberField.affineProd_eq_approxProd_mul_mulHeight_pow`: for an `S`-primitive point the
   last factor is `mulHeight x ^ card ι`.
 * `TauCeti.NumberField.approxProd_mul_mulHeight_pow_le_affineProd` and
-  `TauCeti.NumberField.approxProd_le_of_affineProd_le`: for a point with `S`-integral coordinates
-  this factor is at least `mulHeight x ^ card ι`, so the affine inequality implies the projective
-  one.
+  `TauCeti.NumberField.approxProd_le_of_affineProd_le`: for a nonzero point with `S`-integral
+  coordinates this factor is at least `mulHeight x ^ card ι`, so the affine inequality implies the
+  projective one; both results also hold at `x = 0`, where the approximation product is `0` when
+  `ι` is nonempty.
 * `TauCeti.NumberField.affineProd_le_iff_approxProd_le`: for an `S`-primitive point the two
   inequalities are equivalent.
 * `TauCeti.NumberField.affineProd_smul` and `TauCeti.NumberField.affineProd_units_smul`: scaling
