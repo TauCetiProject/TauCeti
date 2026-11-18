@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Sobolev.Local.HalfPlane
 import TauCeti.Analysis.Sobolev.Local.Locality
 import TauCeti.Analysis.Sobolev.Local.Reflection
-import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
 
 /-!
 # Composition of local Sobolev maps on half-discs at every order
@@ -88,56 +87,6 @@ theorem MemWkpLoc.contDiffOn_comp_succ_halfPlane (hp : 2 < p) {k : ℕ} {u : ℂ
   simp only [mem_preimage, v, planarReflection_of_nonneg _ _ hw.2]
   exact huW ⟨hrΩ hw.1, hw.2⟩
 
-variable (F) in
-/-- The real coordinates `(im z, (re z, y))` of `ℂ × F`, with the normal coordinate first, as used
-by the half-space extension. -/
-private def imReProdEquiv : (ℂ × F) ≃L[ℝ] (ℝ × (ℝ × F)) :=
-  ((Complex.equivRealProdCLM.trans (ContinuousLinearEquiv.prodComm ℝ ℝ ℝ)).prodCongr
-    (ContinuousLinearEquiv.refl ℝ F)).trans (ContinuousLinearEquiv.prodAssoc ℝ ℝ ℝ F)
-
-omit [FiniteDimensional ℝ F] in
-private theorem imReProdEquiv_apply (q : ℂ × F) :
-    imReProdEquiv F q = (q.1.im, (q.1.re, q.2)) :=
-  rfl
-
-omit [FiniteDimensional ℝ F] in
-private theorem im_fst_imReProdEquiv_symm (w : ℝ × (ℝ × F)) :
-    ((imReProdEquiv F).symm w).1.im = w.1 := by
-  obtain ⟨q, rfl⟩ := (imReProdEquiv F).surjective w
-  rw [ContinuousLinearEquiv.symm_apply_apply, imReProdEquiv_apply]
-
-omit [FiniteDimensional ℝ H] in
-/-- Near a point of `{q | 0 ≤ q.1.im}`, a map that is `C^{k+1}` on `W ∩ {q | 0 ≤ q.1.im}` for an
-open `W` agrees on `{q | 0 ≤ q.1.im}` with a map that is `C^{k+1}` on an open neighbourhood of the
-point. At a point with `q.1.im = 0` the extension reflects across `{q | q.1.im = 0}`. -/
-private theorem exists_contDiffOn_eq_of_im_nonneg {k : ℕ} {g : ℂ × F → H} {W : Set (ℂ × F)}
-    (hW : IsOpen W) (hg : ContDiffOn ℝ k g (W ∩ {q | 0 ≤ q.1.im})) {q₀ : ℂ × F} (hq₀ : q₀ ∈ W)
-    (hq₀0 : 0 ≤ q₀.1.im) :
-    ∃ T : Set (ℂ × F), IsOpen T ∧ q₀ ∈ T ∧ ∃ G : ℂ × F → H, ContDiffOn ℝ k G T ∧
-      ∀ q ∈ T, 0 ≤ q.1.im → G q = g q := by
-  rcases hq₀0.lt_or_eq with hpos | hzero
-  · exact ⟨W ∩ {q | 0 < q.1.im},
-      hW.inter (isOpen_lt continuous_const (Complex.continuous_im.comp continuous_fst)),
-      ⟨hq₀, hpos⟩, g, hg.mono fun q hq => ⟨hq.1, (show 0 < q.1.im from hq.2).le⟩,
-      fun _ _ _ => rfl⟩
-  · have hge : ContDiffOn ℝ k (g ∘ (imReProdEquiv F).symm)
-        (HalfSpaceExtension.upperHalfSpace (ℝ × F) ∩ (imReProdEquiv F).symm ⁻¹' W) := by
-      refine hg.comp (imReProdEquiv F).symm.contDiff.contDiffOn fun w hw => ⟨hw.2, ?_⟩
-      simpa only [mem_ofPred_eq, im_fst_imReProdEquiv_symm] using
-        HalfSpaceExtension.mem_upperHalfSpace.1 hw.1
-    have hq₀W : ((0 : ℝ), (q₀.1.re, q₀.2)) ∈ (imReProdEquiv F).symm ⁻¹' W := by
-      rw [mem_preimage, hzero, ← imReProdEquiv_apply, ContinuousLinearEquiv.symm_apply_apply]
-      exact hq₀
-    obtain ⟨G, hG, hGg⟩ := HalfSpaceExtension.exists_local_contDiff_extension_halfSpace k
-      (g ∘ (imReProdEquiv F).symm) (hW.preimage (imReProdEquiv F).symm.continuous) hge _ hq₀W
-    obtain ⟨T, hT, hTo, hq₀T⟩ := _root_.eventually_nhds_iff.1 hGg
-    refine ⟨imReProdEquiv F ⁻¹' T, hTo.preimage (imReProdEquiv F).continuous, ?_,
-      G ∘ imReProdEquiv F, (hG.comp (imReProdEquiv F).contDiff).contDiffOn, fun q hq hq0 => ?_⟩
-    · rw [mem_preimage, imReProdEquiv_apply, ← hzero]
-      exact hq₀T
-    · simpa only [Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply] using
-        hT _ hq (by simpa only [imReProdEquiv_apply] using hq0)
-
 /-- **Composition with domain dependence on half-discs at every order.** For `p > 2`, if `u` is
 continuous on `Ω ∩ {0 ≤ im}` and belongs to `W^{k+1,p}_loc(Ω ∩ {0 ≤ im})`, and `g : ℂ × F → H` is
 `C^{k+1}` on `W ∩ {q | 0 ≤ q.1.im}` for an open set `W` containing the graph of `u` over
@@ -155,7 +104,7 @@ theorem MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane (hp : 2 < p) {k : ℕ} {u
     continuousOn_id.prodMk huc
   refine memWkpLoc_iff_locally.2 fun z hz => ?_
   obtain ⟨T, hTo, hzT, G, hG, hGg⟩ :=
-    exists_contDiffOn_eq_of_im_nonneg hW hg (huW z hz) (mem_ofPred.1 hz.2)
+    exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg hW hg ⟨huW z hz, mem_ofPred.1 hz.2⟩
   obtain ⟨O, hO, hOeq⟩ := continuousOn_iff'.1 hgrc T hTo
   have hzO : z ∈ O := by
     have h : z ∈ (fun z => (z, u z)) ⁻¹' T ∩ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := ⟨hzT, hz⟩
@@ -172,6 +121,7 @@ theorem MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane (hp : 2 < p) {k : ℕ} {u
   · refine mem_of_superset (inter_mem_nhdsWithin _ (hO.mem_nhds hzO)) fun w hw => ?_
     exact ⟨⟨hw.1.1, hw.2⟩, hw.1.2⟩
   refine (((contDiff_id.memWkpLoc).prodMk (hu.mono hsub)).contDiffOn_comp_succ_halfPlane hp
-    (hgrc.mono hsub) hTo hG hmaps).congr_mono (fun w hw => (hGg _ (hmaps hw) hw.2).symm) subset_rfl
+    (hgrc.mono hsub) hTo hG hmaps).congr_mono
+    (fun w hw => (hGg ⟨⟨huW w (hsub hw), hw.2⟩, hmaps hw⟩).symm) subset_rfl
 
 end TauCeti
