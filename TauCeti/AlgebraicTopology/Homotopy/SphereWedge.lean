@@ -25,10 +25,7 @@ The wedge of `(n + 1)`-spheres is `n`-connected
 (`TauCeti.subsingleton_homotopyGroup_sphereWedge`), since attaching `(n + 1)`-cells is onto on
 `π_k` for `k ≤ n`. For `n ≥ 2` the classes of the spheres form a basis of the abelian group
 `πₙ(⋁ᵢ Sⁿ)`, which is therefore free abelian on `ι` (`TauCeti.sphereWedgeHomotopyGroupBasis`),
-with no finiteness assumption on `ι`. Hence a map out of the wedge is determined on `πₙ` by
-the images of the spheres, and every homomorphism out of `πₙ(⋁ᵢ Sⁿ)` is induced by the map
-`TauCeti.sphereWedgeLift` sending each sphere onto a chosen generalized loop
-(`TauCeti.exists_sphereWedge_mapHom_eq`).
+with no finiteness assumption on `ι`.
 
 The proof goes through homology. The wedge is `(n - 1)`-connected, so the Hurewicz map is an
 isomorphism `πₙ(⋁ᵢ Sⁿ) ≅ Hₙ(⋁ᵢ Sⁿ; ℤ)` (`HomotopyGroup.hurewiczAddEquiv`), and `Hₙ(⋁ᵢ Sⁿ; ℤ)`

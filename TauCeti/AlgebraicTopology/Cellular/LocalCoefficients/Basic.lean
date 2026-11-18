@@ -63,9 +63,6 @@ theorem isZero_twistedHomology_sigmaDiskPair_of_ne (ι : Type w) {n k : ℕ} (hk
       ((LocalCoefficientSystem.pullback (TopPair.Hom.fst e.hom).hom).obj L) k) :=
     (TopPair.isColimitCofanTwistedHomology _ _ k).isZero_pt
       (Functor.isZero _ fun _ ↦ TopPair.isZero_twistedHomology_diskBoundaryPair_of_ne hk _)
-  have : IsIso (TopPair.twistedHomologyMap e.hom L k) :=
-    isIso_relativeTwistedHomologyMap_of_homotopyInverse L e.hom e.inv
-      ⟨e.hom_inv_id ▸ TopPair.Homotopy.refl _⟩ ⟨e.inv_hom_id ▸ TopPair.Homotopy.refl _⟩ k
   exact h.of_iso (asIso (TopPair.twistedHomologyMap e.hom L k)).symm
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]

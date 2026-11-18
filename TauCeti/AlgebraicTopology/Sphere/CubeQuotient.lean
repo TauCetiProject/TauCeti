@@ -657,6 +657,8 @@ theorem exists_diskBoundaryMap_eq (r : TopCat.diskBoundary.{u} (n + 1) ⟶ X) :
   refine ⟨(sphereEquiv n X _).symm ⟨r.hom.comp ⟨ULift.up, continuous_uliftUp⟩, rfl⟩, ?_⟩
   ext s
   rw [diskBoundaryMap_apply, ← coe_sphereEquiv_apply, Equiv.apply_symm_apply]
+  -- Both sides evaluate `r` at `s`: `ULift.up s.down` is `s` by structure eta, and
+  -- `TopCat.Hom.hom` and `ConcreteCategory.hom` agree by definition.
   rfl
 
 end GenLoop

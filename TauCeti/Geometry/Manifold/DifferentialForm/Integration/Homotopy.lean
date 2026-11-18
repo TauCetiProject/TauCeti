@@ -52,9 +52,10 @@ This is the two-dimensional analogue of the line integral `TauCeti.pathIntegral`
 along an arbitrary map of the plane, without the integrability conditions of the integral of a top
 form over the rectangle manifold. Like the line integral, it is additive over adjacent rectangles
 (`TauCeti.rectangleIntegral_add_adjacent`) and invariant under `C¹` reparametrization
-(`TauCeti.rectangleIntegral_comp_prodMap`, in the first coordinate), and the two are related by
-Stokes' formula: the integral of an exact form `dα` over a map of a rectangle is the signed sum of
-the line integrals of `α` along the images of the four edges
+(`TauCeti.rectangleIntegral_comp_prodMap`, in the first coordinate, and
+`TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` function), and the two are
+related by Stokes' formula: the integral of an exact form `dα` over a map of a rectangle is the
+signed sum of the line integrals of `α` along the images of the four edges
 (`TauCeti.rectangleIntegral_mextDeriv`).
 
 The proof pulls `φ` back to the flat form `ψ = Φ^* φ` on `(ℝ × ℝ) × ℝ`, which is closed because
@@ -78,7 +79,8 @@ operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold wit
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_const`: the integral over a constant map vanishes.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
-* `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate.
+* `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate,
+  and `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` change of parameter.
 * `TauCeti.rectangleIntegral_mextDeriv`: Stokes' formula for the integral of an exact form, in
   terms of line integrals along the edges.
 * `TauCeti.rectangleIntegral_sub_rectangleIntegral_eq_sides`: Stokes' formula for a homotopy of
@@ -337,6 +339,17 @@ theorem rectangleIntegral_comp_prodMap {φ : RoughForm I M F 2} (hφ : IsSmoothF
   congr 2
   funext i
   fin_cases i <;> rfl
+
+/-- **Reparametrization by a `C¹` function in the first coordinate.** For a continuous form, a
+`C¹` map `u` and a `C¹` function `σ`, the integral over `(s, t) ↦ u (σ s, t)` is the integral over
+`u` on the rectangle between the image corners. -/
+theorem rectangleIntegral_comp_prodMap_of_contDiff {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {σ : ℝ → ℝ}
+    (hσ : ContDiff ℝ 1 σ) {a b : ℝ × ℝ} :
+    rectangleIntegral φ (u ∘ Prod.map σ id) a b =
+      rectangleIntegral φ u (σ a.1, a.2) (σ b.1, b.2) :=
+  rectangleIntegral_comp_prodMap hφ hu (fun s _ ↦ (hσ.differentiable one_ne_zero s).hasDerivAt)
+    (hσ.continuous_deriv le_rfl).continuousOn
 
 end Continuous
 

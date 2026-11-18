@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
-public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInvariance
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
-public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.Homotopy
-public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Compression
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
-public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
+public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
+public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
+public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
+import Mathlib.Algebra.Homology.DerivedCategory.KProjective
+import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInvariance
+import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
+import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Compression
+import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 
 /-!
 # Weak homotopy equivalences induce isomorphisms on singular homology
@@ -101,8 +103,6 @@ are what the dual statements for singular cohomology are deduced from, in
 
 public section
 
-noncomputable section
-
 open CategoryTheory AlgebraicTopology TauCeti
 
 universe u v
@@ -158,19 +158,11 @@ theorem quasiIso_twistedChainComplexMap (hf : f.IsWeakHomotopyEquivalence)
   let ψ : X ≃ₜ A := MappingCylinder.inclHomeomorph f
   let i : TopCat.of A ⟶ TopCat.of (MappingCylinder f) := TopCat.ofHom (ContinuousMap.subtypeVal A)
   let p := TopCat.ofHom (MappingCylinder.homotopyEquiv f).toFun
-  -- The singular cubes of the mapping cylinder deform into the bottom face, so its inclusion
-  -- induces a quasi-isomorphism of cubical chains with local coefficients, and hence, through the
-  -- comparison of cubical and simplicial chains, of singular chains.
-  have : QuasiIso (twistedChainComplexMap i ((pullback p.hom).obj L)) := by
-    have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom ((pullback p.hom).obj L)) :=
-      quasiIso_normalizedTwistedCubicalChainComplexMap_subtypeVal_of_relHomotopyGroup
-        (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
-        (fun n ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin n)) _
-    have h := twistedCubicalToSingularMap_naturality i ((pullback p.hom).obj L)
-    have : QuasiIso (normalizedTwistedCubicalChainComplexMap i.hom ((pullback p.hom).obj L) ≫
-        twistedCubicalToSingularMap ((pullback p.hom).obj L)) := inferInstance
-    rw [h] at this
-    exact quasiIso_of_comp_left (twistedCubicalToSingularMap _) _
+  -- The singular cubes of the mapping cylinder deform into the bottom face.
+  have : QuasiIso (twistedChainComplexMap i ((pullback p.hom).obj L)) :=
+    quasiIso_twistedChainComplexMap_subtypeVal_of_relHomotopyGroup
+      (MappingCylinder.exists_mem_range_incl_joined hf.exists_joined)
+      (fun n ↦ hf.subsingleton_relHomotopyGroup_mappingCylinder (Fin n)) _
   -- The other two factors of `f`, the bottom face `X ≃ₜ A` and the projection, are homotopy
   -- equivalences.
   have : QuasiIso (twistedChainComplexMap (TopCat.ofHom ψ.toHomotopyEquiv.toFun)
