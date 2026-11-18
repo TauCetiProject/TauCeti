@@ -9,10 +9,13 @@ public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -59,6 +62,8 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `exteriorPower.norm_ιMulti_update_smul`: the volume of a frame is invariant under linear
   isometries and reorderings, and scales by `|c|` when one vector is multiplied by `c`.
 * `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
+* `Orthonormal.ιMulti_eq_ιMulti_iff`: two orthonormal frames have the same wedge exactly when they
+  differ by a special orthogonal change of frame.
 * `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
   `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
   and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
@@ -222,6 +227,33 @@ theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ 
     ‖ιMulti ℝ n v‖ = 1 := by
   rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
     Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
+
+omit [FiniteDimensional ℝ E] in
+/-- Two orthonormal frames have the same wedge exactly when one is obtained from the other by a
+special orthogonal change of frame, `vⱼ = ∑ i, A j i • eᵢ` with `A ∈ SO(n)`: they span the same
+subspace and induce the same orientation on it. -/
+theorem _root_.Orthonormal.ιMulti_eq_ιMulti_iff {e v : Fin n → E} (he : Orthonormal ℝ e)
+    (hv : Orthonormal ℝ v) :
+    ιMulti ℝ n v = ιMulti ℝ n e ↔
+      ∃ A ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ, v = fun j ↦ ∑ i, A j i • e i := by
+  classical
+  refine ⟨fun h ↦ ?_, ?_⟩
+  swap
+  · rintro ⟨A, hA, rfl⟩
+    rw [ιMulti_sum_smul, (Matrix.mem_specialOrthogonalGroup_iff.1 hA).2, one_smul]
+  -- Every `vⱼ` lies in the span of `e`, since `vⱼ ∧ e₁ ∧ ⋯ ∧ eₙ = vⱼ ∧ v₁ ∧ ⋯ ∧ vₙ = 0`.
+  have hmem (j : Fin n) : v j ∈ Submodule.span ℝ (Set.range e) := by
+    rw [TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero he.linearIndependent, ← h]
+    exact (TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hv.linearIndependent
+      (v j)).1 (Submodule.subset_span ⟨j, rfl⟩)
+  choose c hc using fun j ↦ (Submodule.mem_span_range_iff_exists_fun ℝ).1 (hmem j)
+  let A : Matrix (Fin n) (Fin n) ℝ := Matrix.of c
+  have hvA : v = fun j ↦ ∑ i, A j i • e i := funext fun j ↦ (hc j).symm
+  have hAO : A ∈ Matrix.orthogonalGroup (Fin n) ℝ :=
+    (he.orthonormal_sum_smul_iff_mem_unitaryGroup A).1 (hvA ▸ hv)
+  refine ⟨A, Matrix.mem_specialOrthogonalGroup_iff.2 ⟨hAO, ?_⟩, hvA⟩
+  refine smul_left_injective ℝ ((ιMulti_ne_zero_iff e).2 he.linearIndependent) ?_
+  simp only [← ιMulti_sum_smul, ← hvA, h, one_smul]
 
 end exteriorPower
 

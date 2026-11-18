@@ -58,6 +58,14 @@ theorem divisorSumAt_def (k : ℕ) (q : K) :
     divisorSumAt k q = ∑' n : ℕ, (((σ k n : ℕ) : ℤ) : K) * q ^ n := by
   simp only [divisorSumAt]
 
+/-- The divisor-sum series as a sum over positive integers, `s_k(q) = ∑_{n ≥ 1} σ_k(n) qⁿ`, the
+form in which Mathlib states the `q`-expansions of Eisenstein series. -/
+theorem divisorSumAt_eq_tsum_pnat (k : ℕ) (q : K) :
+    divisorSumAt k q = ∑' n : ℕ+, (σ k n : K) * q ^ (n : ℕ) := by
+  rw [divisorSumAt_def, tsum_pnat_eq_tsum_of_eq_zero (f := fun n : ℕ ↦ (σ k n : K) * q ^ n)
+    (by simp)]
+  simp
+
 /-- Continuous ring homomorphisms commute with convergent divisor-sum series. -/
 theorem map_divisorSumAt [CompleteSpace K] {L : Type*} [NormedRing L] (f : K →+* L)
     (hf : Continuous f)
