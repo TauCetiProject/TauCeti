@@ -605,6 +605,22 @@ theorem exists_contDiff_antitone_cutoff {a b v : ℝ} (hab : a < b) (hv : 0 ≤ 
   · have h : (r - a) / (b - a) < 1 := (div_lt_one hba).2 (by linarith)
     exact mul_pos hv (sub_pos.2 (Real.smoothTransition.lt_one_of_lt_one h))
 
+/-- A smooth **step** from `0` to `1`: for `a < b` there is a smooth function equal to `0` on
+`(-∞, a]` and to `1` on `[b, ∞)`, whose derivative vanishes outside `(a, b)`. -/
+theorem exists_contDiff_step {a b : ℝ} (hab : a < b) :
+    ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ (∀ r ≤ a, μ r = 0) ∧ (∀ r, b ≤ r → μ r = 1) ∧
+      ∀ r ∉ Ioo a b, deriv μ r = 0 := by
+  obtain ⟨ν, hν, hνa, hν0, hνb, hν1, -⟩ := exists_contDiff_antitone_cutoff hab zero_le_one
+  have hνle (r : ℝ) : ν r ≤ 1 := (hνa (min_le_left r a)).trans_eq (hν1 _ (min_le_right r a))
+  refine ⟨fun r ↦ 1 - ν r, contDiff_const.sub hν, fun r hr ↦ by simp [hν1 r hr],
+    fun r hr ↦ by simp [hνb r hr], fun r hr ↦ ?_⟩
+  -- Off `(a, b)` the step attains its minimum `0` or its maximum `1`, so Fermat's theorem applies.
+  rcases not_and_or.mp hr with hr | hr
+  · refine IsLocalMin.deriv_eq_zero (Eventually.of_forall fun x ↦ ?_)
+    simp [hν1 r (not_lt.mp hr), hνle x]
+  · refine IsLocalMax.deriv_eq_zero (Eventually.of_forall fun x ↦ ?_)
+    simp [hνb r (not_lt.mp hr), hν0 x]
+
 /-- A smooth **plateau** on `[a, b]`: for `δ > 0` there is a smooth function with values in
 `[0, 1]`, vanishing outside `(a, b)` and equal to `1` on `[a + δ, b - δ]`. Its integral over
 `[a, b]` is therefore at least `b - a - 2δ`. -/
