@@ -109,22 +109,6 @@ variable {C D : Set B} [RelCWComplex C D]
 
 variable {p}
 
-/-- A differential of the page `r` shifts `a + 2b` at the position `(a, b)` by `2 - r` in one
-direction or the other; in particular the differentials of the first page, numbered `2`, preserve
-the rows. -/
-private lemma add_two_mul_eq_of_rel {r : ℤ} {pq pq' : ℤ × ℤ}
-    (h : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq' ∨
-      (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq' pq) :
-    pq'.1 + 2 * pq'.2 = pq.1 + 2 * pq.2 + (2 - r) ∨
-      pq'.1 + 2 * pq'.2 = pq.1 + 2 * pq.2 - (2 - r) := by
-  rcases h with rfl | rfl
-  · left
-    simp only [Prod.fst_add, Prod.snd_add]
-    lia
-  · right
-    simp only [Prod.fst_add, Prod.snd_add]
-    lia
-
 /-- On the row `q = 0` of the first page, the projection of the Serre spectral sequence of a
 fibration with path-connected fibres onto the base is an isomorphism: the map
 `H_k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); R) ⟶ H_k(Xᵏ, Xᵏ⁻¹; R)` is, cell by cell, the map `H₀(F) ⟶ H₀(pt)` of the
@@ -179,7 +163,7 @@ theorem isIso_serreSpectralSequenceProj_hom_three_f (hp : serreFibrations p)
     isIso_serreSpectralSequenceProj_hom_two_f R hp hconn pq' (by
       rcases hpq' with rfl | hpq'
       · exact hpq
-      · rcases add_two_mul_eq_of_rel hpq' with h | h <;> lia)
+      · rcases ComplexShape.add_two_mul_eq_of_up'_rel hpq' with h | h <;> lia)
 
 end Row
 
@@ -229,7 +213,7 @@ lemma isZero_serreSpectralSequence_id_page_three_X_of_rel {C D : Set B}
     IsZero (((serreSpectralSequence C (𝟙 B) R).page 3).X pq') :=
   (serreSpectralSequence C (𝟙 B) R).isZero_page_X_of_le (r := 2) le_rfl
     (isZero_serreSpectralSequence_id_page_two_X R pq' (by
-      rcases add_two_mul_eq_of_rel hpq' with h | h <;> lia)) 3 (by norm_num)
+      rcases ComplexShape.add_two_mul_eq_of_up'_rel hpq' with h | h <;> lia)) 3 (by norm_num)
 
 variable [CWComplex (univ : Set B)]
 

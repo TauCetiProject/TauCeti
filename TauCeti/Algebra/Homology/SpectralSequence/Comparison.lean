@@ -20,9 +20,31 @@ page, and, by induction, on every object of every page `r' ≥ r`.
 * `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_add_one`: the comparison at one position, from
   the three positions joined by the differentials of the previous page.
 * `CategoryTheory.SpectralSequence.Hom.isIso_hom_f_of_le`: the comparison on later pages.
+* `ComplexShape.add_two_mul_eq_of_up'_rel`: the differentials of the page `r` of a cohomological
+  spectral sequence shift `a + 2b` at the position `(a, b)` by `±(2 - r)`, so those of the page `2`
+  preserve the lines `a + 2b = const`.
 -/
 
 public section
+
+namespace ComplexShape
+
+/-- A differential of the page `r` of a cohomological spectral sequence shifts `a + 2b` at the
+position `(a, b)` by `2 - r` in one direction or the other; in particular the differentials of the
+page `2` preserve `a + 2b`. -/
+lemma add_two_mul_eq_of_up'_rel {r : ℤ} {pq pq' : ℤ × ℤ}
+    (h : (up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq' ∨ (up' ((r, 1 - r) : ℤ × ℤ)).Rel pq' pq) :
+    pq'.1 + 2 * pq'.2 = pq.1 + 2 * pq.2 + (2 - r) ∨
+      pq'.1 + 2 * pq'.2 = pq.1 + 2 * pq.2 - (2 - r) := by
+  rcases h with rfl | rfl
+  · left
+    simp only [Prod.fst_add, Prod.snd_add]
+    lia
+  · right
+    simp only [Prod.fst_add, Prod.snd_add]
+    lia
+
+end ComplexShape
 
 namespace CategoryTheory.SpectralSequence.Hom
 
