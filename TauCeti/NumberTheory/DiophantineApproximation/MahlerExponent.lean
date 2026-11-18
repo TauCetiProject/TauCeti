@@ -47,8 +47,9 @@ gives the reverse inequality.
   of an integer polynomial**, `c ≤ |P(ξ)| H(P) ^ (D - 1)` for complex algebraic `ξ` and
   `P ∈ ℤ[X]` of degree at most `n` with `P(ξ) ≠ 0`.
 * `IsAlgebraic.mahlerExponent_le`: for real algebraic `ξ` of degree `D`, `wₙ(ξ) ≤ D - 1`.
-* `TauCeti.mahlerExponent_eq_of_natDegree_minpoly_eq`: for real `ξ` algebraic of degree `n + 1`,
-  `wₙ(ξ) = n`, so the bound is attained.
+* `TauCeti.mahlerExponent_eq_of_natDegree_minpoly_eq`,
+  `IsAlgebraic.mahlerExponent_eq_of_natDegree_minpoly_le`: for real `ξ` algebraic of degree
+  `D ≤ n + 1`, `wₙ(ξ) = D - 1`, so Liouville's bound is attained for every `n ≥ D - 1`.
 * `TauCeti.mahlerExponent_ratCast`: rational numbers have Mahler exponent `0` in every degree.
 * `TauCeti.mahlerExponent_mul_add_div_mul_add`: `wₙ` is invariant under rational Möbius
   transformations of nonzero determinant; in particular under adding or multiplying by a nonzero
@@ -179,7 +180,7 @@ theorem IsAlgebraic.mahlerExponent_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ) (n :
           have := (linearFormPoly x).supNorm_nonneg
           gcongr
           · exact hx.2
-          · exact supNorm_linearFormPoly_le x
+          · exact (supNorm_linearFormPoly x).le
       _ = ‖x‖ ^ ((e : ℝ) - w) := by
           rw [← Real.rpow_natCast, ← Real.rpow_add hx0]
           ring_nf
@@ -198,6 +199,21 @@ theorem mahlerExponent_eq_of_natDegree_minpoly_eq {ξ : ℝ} {n : ℕ}
     (by_contra fun h ↦ by simp [minpoly.eq_zero h] at hn : IsIntegral ℚ ξ).isAlgebraic
   refine le_antisymm ?_ (natCast_le_mahlerExponent fun h ↦ by omega)
   simpa [hn] using hξ.mahlerExponent_le n
+
+end TauCeti
+
+/-- If `ξ` is a real algebraic number of degree `D ≤ n + 1` over `ℚ`, then `wₙ(ξ) = D - 1`. -/
+theorem IsAlgebraic.mahlerExponent_eq_of_natDegree_minpoly_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ)
+    {n : ℕ} (hn : (minpoly ℚ ξ).natDegree ≤ n + 1) :
+    TauCeti.mahlerExponent n ξ = ((minpoly ℚ ξ).natDegree - 1 : ℕ) := by
+  have hpos : 1 ≤ (minpoly ℚ ξ).natDegree := minpoly.natDegree_pos hξ.isIntegral
+  refine le_antisymm (hξ.mahlerExponent_le n) ?_
+  calc (((minpoly ℚ ξ).natDegree - 1 : ℕ) : ℝ≥0∞)
+      = TauCeti.mahlerExponent ((minpoly ℚ ξ).natDegree - 1) ξ :=
+        (TauCeti.mahlerExponent_eq_of_natDegree_minpoly_eq (by omega)).symm
+    _ ≤ TauCeti.mahlerExponent n ξ := TauCeti.mahlerExponent_mono ξ (by omega)
+
+namespace TauCeti
 
 /-- Rational numbers have Mahler exponent `0` in every degree. -/
 @[simp]
@@ -236,10 +252,8 @@ private theorem mahlerExponent_mul_add_div_mul_add_le_of_int (n : ℕ) {ξ : ℝ
           (norm_coeffVec_le _ _).trans (supNorm_le_l1Norm _)
       _ ≤ (linearFormPoly x).supNorm * (g.l1Norm + k.l1Norm) ^ n :=
           l1Norm_aeval_homogenize_le _ _ _ _
-      _ ≤ (g.l1Norm + k.l1Norm) ^ n * ‖x‖ := by
-          rw [mul_comm]
-          exact mul_le_mul_of_nonneg_left (supNorm_linearFormPoly_le x)
-            (pow_nonneg (add_nonneg g.l1Norm_nonneg k.l1Norm_nonneg) n)
+      _ = (g.l1Norm + k.l1Norm) ^ n * ‖x‖ := by
+          rw [supNorm_linearFormPoly, mul_comm]
 
 /-- Mahler's exponent is invariant under a Möbius transformation with integer coefficients and
 nonzero determinant, away from its pole: the inverse transformation has matrix
