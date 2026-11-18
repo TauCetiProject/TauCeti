@@ -148,8 +148,7 @@ theorem IsSmoothForm.contMDiff_metricDual {n : ℕ∞ω} [IsManifold I (n + 1) M
   intro x
   simp only [RoughForm.metricDual_def]
   refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
-  have hframe := (contMDiffOn_chartLocalFrame (I := I) (n := n) x j).contMDiffAt
-    (by simpa only [TangentBundle.trivializationAt_baseSet] using chart_source_mem_nhds H x)
+  have hframe := contMDiffAt_chartLocalFrame (I := I) (n := n) x j
   have h := (hΦ x).clm_bundle_apply hframe
   rw [contMDiffAt_section_iff] at h
   simpa only [Trivial.eq_trivialization M ℝ, Trivial.trivialization_apply] using h

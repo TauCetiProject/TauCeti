@@ -334,8 +334,7 @@ theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
     simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
     rw [fderiv_fderiv_slice_right_apply hf]
     simp
-  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod,
-    (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero (0 : QuadraticForm ℝ E)).mp fun _ ↦ by simp,
+  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod, QuadraticForm.sigNeg_zero,
     zero_add]
 
 /-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
