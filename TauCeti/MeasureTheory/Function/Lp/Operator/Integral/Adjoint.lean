@@ -395,19 +395,6 @@ open scoped InnerProductSpace
 variable {𝕜 V H K : Type*} [RCLike 𝕜] [MeasurableSpace V] {μ : Measure V}
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K]
 
-/-- An operator-valued function, bounded on `t`, applied to an integrable function vanishing
-outside `t` is integrable. -/
-theorem integrable_apply_of_norm_le {A : V → H →L[𝕜] K} (hA : StronglyMeasurable A)
-    {f : V → H} (hf : Integrable f μ) {t : Set V} {M : ℝ} (hM : ∀ y ∈ t, ‖A y‖ ≤ M)
-    (hft : ∀ᵐ y ∂μ, y ∉ t → f y = 0) : Integrable (fun y ↦ A y (f y)) μ := by
-  refine (hf.norm.const_mul M).mono'
-    ((isBoundedBilinearMap_apply.continuous).comp_aestronglyMeasurable
-      (hA.aestronglyMeasurable.prodMk hf.aestronglyMeasurable)) ?_
-  filter_upwards [hft] with y hy
-  by_cases hyt : y ∈ t
-  · exact (le_opNorm _ _).trans (mul_le_mul_of_nonneg_right (hM y hyt) (norm_nonneg _))
-  · simp [hy hyt]
-
 /-- The integrand `⟪g x, k x y (φ y)⟫` of the double integral pairing `g` with `T φ` is integrable
 on the product when `g` and `φ` are integrable and vanish outside sets on whose product `k` is
 bounded. This is the counterpart of `TauCeti.integrable_inner_apply_kernel` for kernels bounded
@@ -475,8 +462,9 @@ private theorem integral_inner_adjoint_apply_eq (T : Lp H 2 μ →L[𝕜] Lp K 2
       filter_upwards [hg, hrep φ t ht hφ] with z hgz hTz
       by_cases hz : z ∈ s
       · rw [hTz (disjoint_left.1 hst hz)]
-        exact (integral_inner (TauCeti.integrable_apply_of_norm_le
-          (hkm.comp_measurable measurable_prodMk_left) hφi (hM z hz) hφ) (g z)).symm
+        exact (integral_inner (hφi.apply_of_norm_le
+          (hkm.comp_measurable measurable_prodMk_left).aestronglyMeasurable (hM z hz) hφ)
+          (g z)).symm
       · simp [hgz hz]
     _ = ∫ y, ∫ z, ⟪g z, k z y (φ y)⟫_𝕜 ∂μ ∂μ := integral_integral_swap
       (TauCeti.integrable_inner_apply_kernel_of_norm_le hkm hM hgi hg hφi hφ)
@@ -485,9 +473,9 @@ private theorem integral_inner_adjoint_apply_eq (T : Lp H 2 μ →L[𝕜] Lp K 2
       filter_upwards [hφ] with y hy
       by_cases hyt : y ∈ t
       · have hint : Integrable (fun z ↦ adjoint (k z y) (g z)) μ :=
-          TauCeti.integrable_apply_of_norm_le
+          hgi.apply_of_norm_le
             ((adjoint : (H →L[𝕜] K) ≃ₗᵢ⋆[𝕜] (K →L[𝕜] H)).continuous.comp_stronglyMeasurable
-              (hkm.comp_measurable measurable_prodMk_right)) hgi
+              (hkm.comp_measurable measurable_prodMk_right)).aestronglyMeasurable
             (fun z hz ↦ (LinearIsometryEquiv.norm_map _ _).trans_le (hM z hz y hyt)) hg
         simp_rw [← adjoint_inner_left (k _ y)]
         rw [← inner_conj_symm, ← integral_inner hint, ← integral_conj]
