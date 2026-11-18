@@ -46,12 +46,13 @@ torsion, integrality or ellipticity hypothesis.
 an arbitrary commutative ring finite order says nothing about divisibility; the divisibility is
 extracted in the integral Nagell–Lutz setting, from the coordinate formula for `2 • P` together
 with the integrality of the coordinates. Both of those are point-level results that this file does
-not contain. Read the hypothesis as the shape a later torsion argument is expected to supply, not
-as a consequence of torsion.
+not contain. Read the hypothesis as the shape a torsion argument supplies, not as a consequence of
+torsion.
 
-This is an ingredient for the Nagell–Lutz theorem, whose short-model form `lutz_nagell` concludes
-`x, y ∈ ℤ` and `y = 0 ∨ y² ∣ Δ`; it is the sharp algebraic form of that second conjunct's
-divisibility step.
+This is the algebraic step of the discriminant half of the Nagell–Lutz theorem,
+`y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`, which supplies `y² ∣ Ψ₃(x)` for a torsion point with
+integral coordinates through `sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat`. On the short model it
+gives the classical `y² ∣ 4A³ + 27B²` of `lutz_nagell_sharp`.
 
 ## Provenance
 
