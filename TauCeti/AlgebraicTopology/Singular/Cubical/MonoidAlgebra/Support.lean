@@ -199,13 +199,13 @@ theorem isHomogeneous_cubicalChainModuleSupportedIn (S : Set Y) :
     · rw [DirectSum.decompose_of_mem_ne _ (cubicalChainModuleLof_mem _) (Ne.symm hi)]
       exact zero_mem _
 
-/-- **Chains supported in two subsets are supported in their intersection.** Every homogeneous
-component of such a chain is a chain of one dimension supported in both subsets, hence in their
-intersection (`TauCeti.NormalizedCubicalChain.supportedIn_inter`). -/
+/-- **Chains supported in two subsets are supported in their intersection.** -/
 theorem cubicalChainModuleSupportedIn_inter (S S' : Set Y) :
     cubicalChainModuleSupportedIn H R (S ∩ S') =
       cubicalChainModuleSupportedIn H R S ⊓ cubicalChainModuleSupportedIn H R S' := by
   classical
+  -- Every homogeneous component of such a chain is a chain of one dimension supported in both
+  -- subsets, hence in their intersection.
   refine le_antisymm (le_inf (cubicalChainModuleSupportedIn_mono Set.inter_subset_left)
     (cubicalChainModuleSupportedIn_mono Set.inter_subset_right)) fun x ⟨hS, hS'⟩ ↦ ?_
   rw [← DirectSum.sum_support_decompose (cubicalChainModuleGrading Y H R) x]

@@ -48,9 +48,9 @@ Pushing path chains forward along a continuous map sends the `0`-chain of a path
 image (`TauCeti.cubicalChainModuleLinearMap_pathChainPoint`) and intertwines the maps `ρ` of a path
 and of its image (`TauCeti.pathChainToLoopChain_cubicalChainModuleLinearMap`).
 
-The same two maps make the chains on the paths from `a` to `b` homotopy equivalent to the chains on
-the loops at `a`, as complexes: `α ↦ α · [δ]` from `C_*(Ω_a B)` to `C_*(P_{a→b} B)` is linear for
-the loops at `a` acting in front, and it is a quasi-isomorphism
+The same two maps compare the chains on the paths from `a` to `b` with the chains on the loops at
+`a`: `α ↦ α · [δ]` from `C_*(Ω_a B)` to `C_*(P_{a→b} B)` is linear for the loops at `a` acting in
+front, and it is a quasi-isomorphism
 (`TauCeti.exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq`). This is the
 computation over a zero-cell in Brown's model of the chains on the based path space of a CW complex.
 
@@ -206,10 +206,7 @@ theorem exists_pathChainToLoopChain_pathChainPoint_eq_one_add (δ : MoorePathBet
 /-- **Appending a path is a quasi-isomorphism of left modules**, on elements. For a Moore path `δ`
 from `a` to `b`, the map `C_*(Ω_a B) → C_*(P_{a→b} B)`, `α ↦ α · [δ]`, which is linear for the
 loops at `a` acting in front, has relative cycles that are relative boundaries: if `α` is a cycle
-and `α · [δ] = d w`, then `α = d α'` and `α' · [δ] + d w' = w` for some `α'` and `w'`. Appending
-the reversal of `δ` is a homotopy inverse: `ρ(α · [δ]) = α ρ([δ])` differs from `α` by the product
-of the cycle `α` with a boundary, and `ρ(w) · [δ]` is homotopic to `w`
-(`TauCeti.pathChainAppendHomotopy_spec`). -/
+and `α · [δ] = d w`, then `α = d α'` and `α' · [δ] + d w' = w` for some `α'` and `w'`. -/
 theorem exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq
     (δ : MoorePathBetween B a b) {α : loopChainAlgebra B a R}
     {w : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R}
@@ -219,6 +216,8 @@ theorem exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq
       (w' : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R),
       cubicalChainDifferential (MooreLoopSpace B a) R α' = α ∧
         α' • pathChainPoint R δ + cubicalChainModuleDifferential _ _ R w' = w := by
+  -- Appending the reversal of `δ` is a homotopy inverse: `ρ(α · [δ]) = α ρ([δ])` differs from `α`
+  -- by the product of the cycle `α` with a boundary, and `ρ(w) · [δ]` is homotopic to `w`.
   set dM := cubicalChainModuleDifferential (MoorePathBetween B a b) (MooreLoopSpace B b) R
   set K := pathChainAppendHomotopy R δ a
   have hM := cubicalChainModule_isDGLeftModule (MooreLoopSpace B a) (MoorePathBetween B a b)
