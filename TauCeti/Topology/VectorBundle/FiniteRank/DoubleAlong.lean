@@ -110,6 +110,61 @@ theorem doubleAlongCoordChange_inr {C : FiniteRankBundleCore ℂ X} (hC : C.IsRe
       exact hx hyA
     simp [doubleAlongCoordChange, this]
 
+/-- The doubled transition from a chart to itself is the identity on the chart. -/
+theorem doubleAlongCoordChange_self {C : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)
+    (i y : DoubleAlong A) (hy : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A i))
+    (v : Fin C.rank → ℂ) : doubleAlongCoordChange C A i i y v = v := by
+  induction y using DoubleAlong.induction_on with
+  | hl x =>
+    rw [doubleAlongCoordChange_inl]
+    exact C.core.coordChange_self _ x (by simpa using hy) v
+  | hr x =>
+    have hx : x ∈ C.core.baseSet (DoubleAlong.fold A i) := by simpa using hy
+    rw [doubleAlongCoordChange_inr hC hx hx, ofConv_star_apply,
+      C.core.coordChange_self _ x hx, star_star]
+
+/-- The doubled transitions satisfy the cocycle condition. -/
+theorem doubleAlongCoordChange_comp {C : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)
+    (i j k y : DoubleAlong A)
+    (hi : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A i))
+    (hj : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A j))
+    (hk : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A k)) (v : Fin C.rank → ℂ) :
+    doubleAlongCoordChange C A j k y (doubleAlongCoordChange C A i j y v) =
+      doubleAlongCoordChange C A i k y v := by
+  induction y using DoubleAlong.induction_on with
+  | hl x =>
+    simp only [DoubleAlong.fold_inl] at hi hj hk
+    simp only [doubleAlongCoordChange_inl]
+    exact C.core.coordChange_comp _ _ _ x ⟨⟨hi, hj⟩, hk⟩ v
+  | hr x =>
+    simp only [DoubleAlong.fold_inr] at hi hj hk
+    rw [doubleAlongCoordChange_inr hC hi hj, doubleAlongCoordChange_inr hC hj hk,
+      doubleAlongCoordChange_inr hC hi hk, ofConv_star_apply, ofConv_star_apply,
+      ofConv_star_apply, star_star, C.core.coordChange_comp _ _ _ x ⟨⟨hi, hj⟩, hk⟩]
+
+/-- Along a closed subset, the doubled transitions are continuous on the overlap of the folded
+charts: the two sheet formulas agree on the frontier of the first sheet, which lies over `A`. -/
+theorem continuousOn_doubleAlongCoordChange {C : FiniteRankBundleCore ℂ X} (hA : IsClosed A)
+    (hC : C.IsRealAlong A) (i j : DoubleAlong A) :
+    ContinuousOn (doubleAlongCoordChange C A i j)
+      (DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A i) ∩
+        DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A j)) := by
+  classical
+  have hc : ContinuousOn
+      (fun y => C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)
+        (DoubleAlong.fold A y))
+      (DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A i) ∩
+        DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A j)) :=
+    (C.core.continuousOn_coordChange _ _).comp
+      (DoubleAlong.fold A).continuous.continuousOn fun _ hy => hy
+  refine ContinuousOn.piecewise ?_ (hc.mono inter_subset_left)
+    ((ContinuousLinearMap.continuous_intrinsicStar.comp_continuousOn hc).mono
+      inter_subset_left)
+  rintro y ⟨⟨hyi, hyj⟩, hfr⟩
+  obtain ⟨x, hx, rfl⟩ := (DoubleAlong.frontier_range_inl A hA).subset hfr
+  simp only [mem_preimage, DoubleAlong.fold_inl] at hyi hyj ⊢
+  exact (hC _ _ x (hA.frontier_subset hx) hyi hyj).symm
+
 /-- The double of a complex core along a closed subset `A` on which its transitions are real:
 `C` on the first sheet and its conjugate on the second sheet, glued along `A` by the identity in
 coordinates. The chart at `z` lies over the chart of `C` at the folded point. -/
@@ -121,47 +176,14 @@ noncomputable def doubleAlong (C : FiniteRankBundleCore ℂ X) (hA : IsClosed A)
   core :=
     { baseSet := fun z => DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A z)
       isOpen_baseSet := fun z =>
-        (C.core.isOpen_baseSet _).preimage (DoubleAlong.fold A).continuous
+        (C.core.isOpen_baseSet (DoubleAlong.fold A z)).preimage (DoubleAlong.fold A).continuous
       indexAt := id
       mem_baseSet_at := fun z => C.mem_baseSet_self (DoubleAlong.fold A z)
       coordChange := doubleAlongCoordChange C A
-      coordChange_self := fun i y hy v => by
-        induction y using DoubleAlong.induction_on with
-        | hl x =>
-          rw [doubleAlongCoordChange_inl]
-          exact C.core.coordChange_self _ x (by simpa using hy) v
-        | hr x =>
-          have hx : x ∈ C.core.baseSet (DoubleAlong.fold A i) := by simpa using hy
-          rw [doubleAlongCoordChange_inr hC hx hx, ofConv_star_apply,
-            C.core.coordChange_self _ x hx, star_star]
-      continuousOn_coordChange := fun i j => by
-        classical
-        have hc : ContinuousOn
-            (fun y => C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)
-              (DoubleAlong.fold A y))
-            (DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A i) ∩
-              DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A j)) :=
-          (C.core.continuousOn_coordChange _ _).comp
-            (DoubleAlong.fold A).continuous.continuousOn fun _ hy => hy
-        refine ContinuousOn.piecewise ?_ (hc.mono inter_subset_left)
-          ((ContinuousLinearMap.continuous_intrinsicStar.comp_continuousOn hc).mono
-            inter_subset_left)
-        rintro y ⟨⟨hyi, hyj⟩, hfr⟩
-        obtain ⟨x, hx, rfl⟩ := (DoubleAlong.frontier_range_inl A hA).subset hfr
-        simp only [mem_preimage, DoubleAlong.fold_inl] at hyi hyj ⊢
-        exact (hC _ _ x (hA.frontier_subset hx) hyi hyj).symm
-      coordChange_comp := fun i j k y hy v => by
-        induction y using DoubleAlong.induction_on with
-        | hl x =>
-          simp only [doubleAlongCoordChange_inl]
-          exact C.core.coordChange_comp _ _ _ x (by simpa using hy) v
-        | hr x =>
-          obtain ⟨⟨hi, hj⟩, hk⟩ := hy
-          simp only [mem_preimage, DoubleAlong.fold_inr] at hi hj hk
-          rw [doubleAlongCoordChange_inr hC hi hj, doubleAlongCoordChange_inr hC hj hk,
-            doubleAlongCoordChange_inr hC hi hk, ofConv_star_apply, ofConv_star_apply,
-            ofConv_star_apply, star_star,
-            C.core.coordChange_comp _ _ _ x ⟨⟨hi, hj⟩, hk⟩] }
+      coordChange_self := fun i y hy v => doubleAlongCoordChange_self hC i y hy v
+      continuousOn_coordChange := continuousOn_doubleAlongCoordChange hA hC
+      coordChange_comp := fun i j k y hy v =>
+        doubleAlongCoordChange_comp hC i j k y hy.1.1 hy.1.2 hy.2 v }
   indexAt_eq := fun _ => rfl
 
 section Double
