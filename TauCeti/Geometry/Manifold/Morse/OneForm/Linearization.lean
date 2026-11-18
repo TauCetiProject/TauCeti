@@ -81,7 +81,7 @@ theorem IsPrimitiveOn.surjective_sectionLinearization_iff [FiniteDimensional ℝ
     isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
   have hcrit : mvfderiv I f x = 0 :=
     mem_criticalPoints.mp ((hf.eq_zero_iff_mem_criticalPoints hxU).1 hx)
-  exact ⟨fun h ↦ ⟨hf₂, hcrit, ContinuousLinearMap.isInvertible_of_surjective (E := E) h⟩,
+  exact ⟨fun h ↦ ⟨hf₂, hcrit, ContinuousLinearMap.isInvertible_of_surjective h⟩,
     fun h ↦ h.2.2.surjective⟩
 
 /-- The section linearization of a Morse one-form is surjective at every zero. -/
