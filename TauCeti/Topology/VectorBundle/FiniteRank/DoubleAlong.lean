@@ -192,8 +192,8 @@ variable (C : FiniteRankBundleCore ℂ X) (hA : IsClosed A) (hC : C.IsRealAlong 
 
 @[simp] theorem rank_doubleAlong : (C.doubleAlong hA hC).rank = C.rank := (rfl)
 
-@[simp] theorem baseSet_doubleAlong (z : DoubleAlong A) :
-    (C.doubleAlong hA hC).core.baseSet z =
+@[simp] theorem localTriv_baseSet_doubleAlong (z : DoubleAlong A) :
+    ((C.doubleAlong hA hC).core.localTriv z).baseSet =
       DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A z) := (rfl)
 
 @[simp] theorem coordChange_doubleAlong (i j y : DoubleAlong A) :
@@ -273,7 +273,8 @@ theorem doubleAlongCoordChange_swap {i j y : DoubleAlong A}
     doubleAlongCoordChange C A (DoubleAlong.swap A i) (DoubleAlong.swap A j)
         (DoubleAlong.swap A y) (star v) =
       star (doubleAlongCoordChange C A i j y v) := by
-  simp only [baseSet_doubleAlong, mem_preimage] at hi hj
+  replace hi : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A i) := hi
+  replace hj : DoubleAlong.fold A y ∈ C.core.baseSet (DoubleAlong.fold A j) := hj
   induction y using DoubleAlong.induction_on with
   | hl x =>
     simp only [DoubleAlong.fold_inl] at hi hj
