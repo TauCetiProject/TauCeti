@@ -187,6 +187,15 @@ theorem jetField_apply (u : W1p mu Omega p) (x : E) :
     unfold jetField
     rfl
 
+open scoped Gradient in
+/-- The jet of a test function, as an element of `W^{1,p}(Ω)`, is its value and gradient. -/
+theorem jetField_ofTestFunctionₗ_ae [FiniteDimensional ℝ E] (φ : 𝓓(Omega, ℝ)) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      jetField (W1p.ofTestFunctionₗ mu Omega p φ) x = (φ x, ∇ (φ : E → ℝ) x) := by
+  filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ,
+    gradientTestFunctionLp_apply_ae (mu := mu) p φ] with x h1 h2
+  rw [jetField_apply, h1, W1p.gradient_ofTestFunctionₗ, h2]
+
 private theorem jetField_zero_ae :
     jetField (0 : W1p mu Omega p) =ᵐ[mu.restrict Omega] 0 := by
   have hval : W1p.value (0 : W1p mu Omega p) = 0 := by
