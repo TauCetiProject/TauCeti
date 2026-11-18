@@ -77,12 +77,15 @@ theorem ContMDiffAt.exists_contMDiffAt_leftInverse {A : M → G →L[𝕜'] F} {
   have hinv : ContDiffAt 𝕜 n Ring.inverse (P ∘L A x₀) := by
     rw [hQ₀]
     exact contDiffAt_ringInverse 𝕜 1
-  refine ⟨fun x ↦ Ring.inverse (P ∘L A x) ∘L P,
-    (((ContinuousLinearMap.compL 𝕜' F G G).flip P).restrictScalars 𝕜).contDiff.comp_contMDiffAt
-      (hinv.comp_contMDiffAt (f := fun x ↦ P ∘L A x) hQ), ?_⟩
-  filter_upwards [hQ.continuousAt.preimage_mem_nhds (hQ₀ ▸ Units.nhds 1)] with x hx v
-  have := congrArg (fun T : G →L[𝕜'] G ↦ T v) (Ring.inverse_mul_cancel _ hx)
-  simpa using this
+  have hi : (P ∘L A x₀).IsInvertible := by
+    rw [hQ₀]
+    exact ⟨ContinuousLinearEquiv.refl 𝕜' G, rfl⟩
+  refine ⟨fun x ↦ (A x).leftInverseAlong P, ?_,
+    (hQ.continuousAt.eventually hi.eventually_nhds).mono fun x hx ↦
+      ContinuousLinearMap.leftInverseAlong_apply_self hx⟩
+  simp_rw [ContinuousLinearMap.leftInverseAlong_def, ← ContinuousLinearMap.ringInverse_eq_inverse]
+  exact (((ContinuousLinearMap.compL 𝕜' F G G).flip P).restrictScalars 𝕜).contDiff.comp_contMDiffAt
+    (hinv.comp_contMDiffAt (f := fun x ↦ P ∘L A x) hQ)
 
 /-- Ground-field smoothness can be tested after a smoothly varying extension-linear split
 injection. No regularity of `v` is assumed in advance. -/
