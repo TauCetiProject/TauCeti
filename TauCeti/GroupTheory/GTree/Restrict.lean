@@ -138,6 +138,10 @@ induced on the set, with the restricted action. -/
 
 variable {C} (hC : T.IsConvex C) (hne : C.Nonempty) (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C)
 
+/-- The underlying graph of an invariant subtree is the subgraph induced on its vertices. -/
+@[simp] theorem subtree_toSerreGraph :
+    (T.subtree C hC hne hinv).toSerreGraph = T.toSerreGraph.induce C := (rfl)
+
 @[simp] theorem subtree_smul_vertex_val (g : G) (v : (T.subtree C hC hne hinv).V) :
     Subtype.val (g • v) = g • (Subtype.val v : T.V) :=
   T.induceAut_equivV_apply_val hinv g v
