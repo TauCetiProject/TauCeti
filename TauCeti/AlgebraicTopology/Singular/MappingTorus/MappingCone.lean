@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
 public import TauCeti.Algebra.Homology.HomotopyCofiber
+import Mathlib.RingTheory.Nilpotent.Basic
 import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
 
 /-!
@@ -186,13 +187,6 @@ private lemma cylinderChainHomotopy_hom_comp_coverChainMap (i j : ℕ) :
   rw [cylinderChainHomotopy_hom, singularChainHomotopy_hom, coverChainMap_def]
   exact h.symm
 
-omit [HasCoproducts.{w} C] in
-/-- The components of the homotopy from `g - f` to `0` obtained from a homotopy from `f` to `g`
-are the negatives of its components. -/
-private lemma equivSubZero_symm_hom {K L : ChainComplex C ℕ} {f g : K ⟶ L} (h : Homotopy f g)
-    (i j : ℕ) : (Homotopy.equivSubZero h.symm).hom i j = -h.hom i j := by
-  simp [Homotopy.equivSubZero, Homotopy.symm]
-
 variable [HasBinaryBiproducts C]
 
 /-- The composite `(id - φ_*) ≫ s_* ≫ inr` into the mapping cone of `𝟙 - τ_*` is null-homotopic:
@@ -219,7 +213,7 @@ private lemma coneComparisonHomotopy_hom (n : ℕ) :
           homotopyCofiber.inrX (𝟙 _ - deckChainMap φ R) (n + 1) := by
   simp only [coneComparisonHomotopy, Homotopy.trans_hom, Homotopy.add_hom,
     Homotopy.ofEq_hom, Pi.zero_apply, Homotopy.compLeft_hom, Homotopy.compRight_hom,
-    equivSubZero_symm_hom,
+    Homotopy.equivSubZero_apply_hom, Homotopy.symm_hom,
     homotopyCofiber.inrCompHomotopy_hom (𝟙 _ - deckChainMap φ R) _ n (n + 1) (by simp),
     zero_add, add_zero, Preadditive.neg_comp, homotopyCofiber.inr_f, sub_eq_add_neg]
 
@@ -363,15 +357,10 @@ private lemma coneDefect_comp_coneDefect : coneDefect φ R ≫ coneDefect φ R =
 with inverse `𝟙 + X`. -/
 private lemma isIso_coneComparison_comp_coneProj :
     IsIso (coneComparison φ R ≫ coneProj φ R) := by
-  have h : coneComparison φ R ≫ coneProj φ R = 𝟙 _ - coneDefect φ R := by
-    rw [coneDefect, sub_sub_cancel]
-  refine ⟨𝟙 _ + coneDefect φ R, ?_, ?_⟩
-  · rw [h, Preadditive.sub_comp, Preadditive.comp_add, Preadditive.comp_add, Category.id_comp,
-      Category.comp_id, Category.id_comp, coneDefect_comp_coneDefect]
-    abel
-  · rw [h, Preadditive.add_comp, Preadditive.comp_sub, Preadditive.comp_sub, Category.id_comp,
-      Category.comp_id, Category.id_comp, coneDefect_comp_coneDefect]
-    abel
+  have h : coneComparison φ R ≫ coneProj φ R = (1 - End.of (coneDefect φ R)).asHom := by
+    simp [coneDefect]
+  rw [h, ← isUnit_iff_isIso]
+  exact IsNilpotent.isUnit_one_sub ⟨2, End.ext (by simp [pow_two, coneDefect_comp_coneDefect])⟩
 
 end Preadditive
 
