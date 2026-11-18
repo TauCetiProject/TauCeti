@@ -176,6 +176,17 @@ theorem mem_V_centralizer {U : Set K} {hU : U.Finite} : v ∈ V ι (centralizer 
   simp only [mem_V, Set.forall_mem_range, Prod.forall, Subtype.forall, map_commutatorElement,
     eval_inr, eval_inl, FreeGroup.lift_apply_of, commutatorElement_eq_one_iff_commute]
 
+/-- Over a commutative transitive group `H`, if two coefficients `ι c₀` and `ι c₁`, `c₀, c₁ ∈ U`,
+do not commute, then the only solution of the level of an extension of a centralizer is
+trivial. -/
+theorem eq_one_of_mem_V_centralizer (hH : Group.IsCommTransitive H) {U : Set K} {hU : U.Finite}
+    {c₀ c₁ : K} (hc₀ : c₀ ∈ U) (hc₁ : c₁ ∈ U) (h : ¬Commute (ι c₁) (ι c₀))
+    (hv : v ∈ V ι (centralizer U hU).equations) : v = 1 := by
+  funext x
+  by_contra hx
+  have hv' := (mem_V_centralizer.1 hv).2 x
+  exact h ((Group.isCommTransitive_iff H).1 hH _ (v x) _ hx (hv' c₁ hc₁).symm (hv' c₀ hc₀))
+
 end Level
 
 /-! ### Raw triangular quasi-quadratic systems -/
