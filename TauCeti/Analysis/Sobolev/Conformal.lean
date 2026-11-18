@@ -53,8 +53,9 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   (`TauCeti.ConformalSobolev.weightedValueL_injective`): the derivative components are the weak
   derivatives of `ξ = η / √ρ` on `U`, which vanish where `η` does.
 * **Rellich's theorem.** On a compact set `K ⊆ U` the weighted value is a compact operator from
-  `H1` to `L²(K)` (`TauCeti.ConformalSobolev.isCompactOperator_restrictWeightedValue_comp`). A
-  smooth cutoff equal to `1` on `K` and supported in `U` turns the test sections of bounded norm
+  `H1` to `L²(K)`
+  (`TauCeti.ConformalSobolev.isCompactOperator_restrictWeightedValue_comp_subtypeL`). A smooth
+  cutoff equal to `1` on `K` and supported in `U` turns the test sections of bounded norm
   into sections of the plane of bounded `W^{1,2}(ℝ²)` norm supported in a fixed compact set, to
   which the Fréchet–Kolmogorov criterion `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`
   applies; on `K` the weight `√ρ` is a bounded multiplier.
@@ -564,8 +565,8 @@ private theorem exists_restrict_sqrt_smul (hρ : IsWeight U ρ) {K : Set (ℝ ×
 
 /-- **Rellich's theorem on a domain with a conformal metric.** For a compact set `K ⊆ U`, the
 weighted value on `K` is a compact operator from `W^{1,2}_0(U, V)` to `L²(K, V)`. -/
-theorem isCompactOperator_restrictWeightedValue_comp [FiniteDimensional ℝ V] (hρ : IsWeight U ρ)
-    {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKU : K ⊆ U) :
+theorem isCompactOperator_restrictWeightedValue_comp_subtypeL [FiniteDimensional ℝ V]
+    (hρ : IsWeight U ρ) {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKU : K ⊆ U) :
     IsCompactOperator ((restrictWeightedValue V U K).comp (H1 V U ρ).subtypeL) := by
   obtain ⟨χ, A, hχ, hχc, hχU, hχK, hχ1, hA0, hA, hA'⟩ := exists_cutoff hρ hK hKU
   have hest := fun ξ (hξ : ξ ∈ testSection V U) ↦ cutoff_estimates hχ hχU hχ1 hA0 hA hA' hξ
@@ -619,7 +620,7 @@ private theorem compact_estimate [FiniteDimensional ℝ V] (hρ : IsWeight U ρ)
       ‖x‖ ≤ C * (‖D x‖ + ‖restrictWeightedValue V U K x‖)) :
     IsCompactOperator (C • (restrictWeightedValue V U K).comp (H1 V U ρ).subtypeL) ∧
       ∀ x, ‖x‖ ≤ C * ‖D x‖ + ‖(C • (restrictWeightedValue V U K).comp (H1 V U ρ).subtypeL) x‖ := by
-  refine ⟨(isCompactOperator_restrictWeightedValue_comp hρ hK hKU).smul C, fun x ↦ ?_⟩
+  refine ⟨(isCompactOperator_restrictWeightedValue_comp_subtypeL hρ hK hKU).smul C, fun x ↦ ?_⟩
   set R := (restrictWeightedValue V U K).comp (H1 V U ρ).subtypeL
   -- The estimate holds on a closed set containing the dense set of jets of test sections.
   have hS : IsClosed {x : H1 V U ρ | ‖x‖ ≤ C * (‖D x‖ + ‖R x‖)} :=
