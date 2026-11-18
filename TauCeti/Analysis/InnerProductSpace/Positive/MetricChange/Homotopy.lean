@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Orientation
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Topology.Homotopy.Basic
+import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Naturality
 
 /-!
 # Homotopy compatibility of canonical metric changes
@@ -27,7 +28,9 @@ hypothesis is required.
 The constructions use `ContinuousLinearMap.metricChangeCompositionCorrection` and the native
 operator-norm topology on `unitary (E →L[ℝ] E)`. In finite dimension,
 `metricChangeCompositionCorrectionSpecialOrthogonalPath` restricts this path to
-`TauCeti.specialOrthogonalGroup`.
+`TauCeti.specialOrthogonalGroup`. The composition homotopy also commutes with linear isometric
+coordinate changes (`metricChangeCompositionHomotopy_bilinearComp`) and acts continuously on
+continuously varying times, metrics and vectors (`Continuous.metricChangeCompositionHomotopy`).
 
 ## References
 
@@ -127,6 +130,62 @@ theorem metricChangeCompositionHomotopy_apply (h k : E →L[ℝ] E →L[ℝ] ℝ
       k.metricChangeTransport
         ((metricChangeCompositionCorrectionPath h k hH hK t : E →L[ℝ] E) v) :=
   (rfl)
+
+/-- At each time the composition homotopy is successive canonical transport through the
+interpolated intermediate metric. This formula does not refer to the orthogonal correction. -/
+theorem metricChangeCompositionHomotopy_eq_metricChangeBetween
+    (h k : E →L[ℝ] E →L[ℝ] ℝ) (hH : IsStrictlyPositive h♯)
+    (hK : IsStrictlyPositive k♯) (t : unitInterval) (v : E) :
+    metricChangeCompositionHomotopy h k hH hK (t, v) =
+      (AffineMap.lineMap k h (t : ℝ)).metricChangeBetween k
+        ((AffineMap.lineMap k h (t : ℝ)).metricChangeTransport v) := by
+  rw [metricChangeCompositionHomotopy_apply, metricChangeCompositionCorrectionPath_apply]
+  exact congrArg (fun A : E →L[ℝ] E ↦ A v)
+    (metricChangeBetween_mul_metricChangeTransport _ _
+      (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) hK).symm
+
+/-- Applying the composition homotopy to continuous families of times, positive metrics and
+vectors is continuous. The metric parameters and the vector may all vary together. -/
+theorem _root_.Continuous.metricChangeCompositionHomotopy
+    {X : Type*} [TopologicalSpace X] {t : X → unitInterval}
+    {h k : X → E →L[ℝ] E →L[ℝ] ℝ} {v : X → E}
+    (ht : Continuous t) (hh : Continuous h) (hk : Continuous k) (hv : Continuous v)
+    (hpos : ∀ x, IsStrictlyPositive (h x)♯) (kpos : ∀ x, IsStrictlyPositive (k x)♯) :
+    Continuous fun x ↦ metricChangeCompositionHomotopy
+      (h x) (k x) (hpos x) (kpos x) (t x, v x) := by
+  have hQ := (hh.metricChangeCompositionCorrectionPath hk hpos kpos).comp
+    (ht.prodMk continuous_id)
+  exact ((continuousOn_metricChangeTransport.comp_continuous hk kpos).clm_apply
+    ((continuous_subtype_val.comp hQ).clm_apply hv)).congr fun x ↦
+      (metricChangeCompositionHomotopy_apply _ _ _ _ _ _).symm
+
+/-- The composition homotopy is natural under linear isometric changes of coordinates. -/
+theorem metricChangeCompositionHomotopy_bilinearComp
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+    (h k : F →L[ℝ] F →L[ℝ] ℝ) (e : E ≃ₗᵢ[ℝ] F)
+    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯)
+    (t : unitInterval) (v : E) :
+    metricChangeCompositionHomotopy
+      (h.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))
+      (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))
+      (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv h
+        e.toContinuousLinearEquiv hH)
+      (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv k
+        e.toContinuousLinearEquiv hK) (t, v) =
+      e.symm (metricChangeCompositionHomotopy h k hH hK (t, e v)) := by
+  have hline : AffineMap.lineMap
+      (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))
+      (h.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F)) (t : ℝ) =
+      (AffineMap.lineMap k h (t : ℝ)).bilinearComp
+        (e : E →L[ℝ] F) (e : E →L[ℝ] F) := by
+    ext u w
+    simp [AffineMap.lineMap_apply_module]
+  simp only [metricChangeCompositionHomotopy_eq_metricChangeBetween, hline]
+  rw [metricChangeTransport_bilinearComp e
+    (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2),
+    metricChangeBetween_bilinearComp _ _ e.toContinuousLinearEquiv
+      (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) hK]
+  simp
 
 /-- Every slice of the composition homotopy is an isometry from the reference inner product
 to `k`, not merely a linear homotopy of maps. -/
