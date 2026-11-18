@@ -51,6 +51,9 @@ Compressing the square of the difference `P_U - P_V` to `U`, from either side, g
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
+Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` of Hilbert
+spaces gives the orthogonal projection onto `e(V)`.
+
 ## Provenance
 
 The submodule inclusion-adjoint identity is adapted from
@@ -114,6 +117,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `U.starProjection`, and operators commuting with `U.starProjection` leave `U` invariant.
 * `LinearMap.apply_sub_starProjection_ker`,
   `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
+* `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
+  equivalence `e` gives the orthogonal projection onto `e(V)`.
 -/
 
 public section
@@ -659,3 +664,19 @@ theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] F) [u.ker.HasOrthog
     u.toLinearMap.apply_sub_starProjection_ker x
 
 end ContinuousLinearMap
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` gives the
+orthogonal projection onto the image of `V` under `e`. -/
+theorem conjStarAlgEquiv_starProjection (e : E ≃ₗᵢ[𝕜] F) (V : Submodule 𝕜 E)
+    [V.HasOrthogonalProjection] :
+    e.conjStarAlgEquiv V.starProjection =
+      (V.map (e.toLinearEquiv : E →ₗ[𝕜] F)).starProjection := by
+  ext x
+  simpa using (Submodule.starProjection_map_apply e V x).symm
+
+end LinearIsometryEquiv
