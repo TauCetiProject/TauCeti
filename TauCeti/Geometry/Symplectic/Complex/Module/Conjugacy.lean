@@ -32,6 +32,8 @@ close to `i`.
   real-linear automorphism `Φ₁`.
 * `ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul`:
   `A Φ = Φ i` for some real-linear isomorphism `Φ : ℂⁿ → E`, on a real normed space `E`.
+* `ContinuousLinearEquiv.symm_apply_eq_I_smul_symm_of_comp_eq`: in such a frame,
+  `Φ⁻¹ A = i Φ⁻¹`.
 
 ## References
 
@@ -101,3 +103,20 @@ theorem exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul {E : Typ
   simpa [B] using h
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup E]
+  [NormedSpace ℝ E]
+
+/-- **Coordinates in a complex frame.** If a real-linear isomorphism `Φ : V → E` turns `A` into
+multiplication by `i`, that is `A Φ = Φ i`, then `Φ⁻¹ A = i Φ⁻¹`. -/
+theorem symm_apply_eq_I_smul_symm_of_comp_eq (Φ : V ≃L[ℝ] E) {A : E →L[ℝ] E}
+    (hA : A ∘L (Φ : V →L[ℝ] E) = (Φ : V →L[ℝ] E) ∘L (I • ContinuousLinearMap.id ℝ V)) (w : E) :
+    Φ.symm (A w) = I • Φ.symm w := by
+  have h := congr($hA (Φ.symm w))
+  simp only [ContinuousLinearMap.comp_apply, coe_coe, apply_symm_apply,
+    _root_.smul_apply, ContinuousLinearMap.id_apply] at h
+  rw [h, symm_apply_apply]
+
+end ContinuousLinearEquiv
