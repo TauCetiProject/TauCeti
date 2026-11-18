@@ -518,9 +518,11 @@ section Torsor
 
 variable {R H ι₁ ι₂ ι₀ : Type*} [AddGroup H] {N : H →+ ℝ}
   {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
-  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
-  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
-  {C : ℝ} {n : (Σ i, P₁ i) → (Σ j, P₂ j) → (Σ k, P₀ k) → R}
+
+section VAdd
+
+variable [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {n : (Σ i, P₁ i) → (Σ j, P₂ j) → (Σ k, P₀ k) → R}
 
 /-- Translating both inputs of an invariant kernel is the same as translating its output by the
 negatives, in reverse order. -/
@@ -536,7 +538,15 @@ theorem kernel_vadd_vadd
   rw [vadd_neg_vadd] at h₁ h₂
   exact h₁.trans h₂
 
+end VAdd
+
 section Matrix
+
+variable [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  {C : ℝ} {n : (Σ i, P₁ i) → (Σ j, P₂ j) → (Σ k, P₀ k) → R}
+
+section Def
 
 variable [Semiring R] [Finite ι₀] (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
   (hfin : ∀ p₁ p₂, n p₁ p₂ ∈ NovikovModule R F₀)
@@ -548,7 +558,6 @@ def kernelMatrix (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P�
     NovikovSeries R H N :=
   coordinates hF₀ r₀ ⟨n ⟨i, r₁ i⟩ ⟨j, r₂ j⟩, hfin _ _⟩ k
 
-omit [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] in
 /-- The coefficient at `h` of a kernel matrix entry is the kernel coefficient of the reference
 inputs and the output generator `h +ᵥ r₀ k`. -/
 @[simp]
@@ -557,9 +566,8 @@ theorem kernelMatrix_coeff (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ :
     (kernelMatrix hF₀ hfin r₁ r₂ r₀ i j k).coeff h = n ⟨i, r₁ i⟩ ⟨j, r₂ j⟩ ⟨k, h +ᵥ r₀ k⟩ := by
   rw [kernelMatrix, coordinates_coeff]
 
-end Matrix
+end Def
 
-omit [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] in
 /-- Under a potential bound with constant `C`, the `(i, j, k)` entry of the kernel matrix lies in
 the period filtration at level `F₀(r₀ k) - F₁(r₁ i) - F₂(r₂ j) - C`. -/
 theorem kernelMatrix_mem_periodFiltration [Ring R] [Finite ι₀]
@@ -576,9 +584,14 @@ theorem kernelMatrix_mem_periodFiltration [Ring R] [Finite ι₀]
   rw [hF₀] at h₀
   linarith
 
+end Matrix
+
 section Coordinates
 
-variable [CommSemiring R] [Fintype ι₁] [Fintype ι₂] [Finite ι₀]
+variable [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  {C : ℝ} {n : (Σ i, P₁ i) → (Σ j, P₂ j) → (Σ k, P₀ k) → R}
+  [CommSemiring R] [Fintype ι₁] [Fintype ι₂] [Finite ι₀]
   (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
   (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
   (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
@@ -653,20 +666,19 @@ theorem coordinates_kernelProduct (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) 
 
 end Coordinates
 
-section Novikov
+section NovikovLeft
 
-variable [CommSemiring R] [Finite ι₀]
+variable [∀ i, AddTorsor H (P₁ i)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  {C : ℝ} {n : (Σ i, P₁ i) → (Σ j, P₂ j) → (Σ k, P₀ k) → R}
+  [CommSemiring R] [Finite ι₀]
   (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
-  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
   (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
   (hn : ∀ p₁ p₂ p₀, n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C)
   (hfin : ∀ p₁ p₂, n p₁ p₂ ∈ NovikovModule R F₀)
   (hn₁ : ∀ (g : H) i (p₁ : P₁ i) p₂ k (p₀ : P₀ k),
     n ⟨i, g +ᵥ p₁⟩ p₂ ⟨k, g +ᵥ p₀⟩ = n ⟨i, p₁⟩ p₂ ⟨k, p₀⟩)
-  (hn₂ : ∀ (g : H) p₁ j (p₂ : P₂ j) k (p₀ : P₀ k),
-    n p₁ ⟨j, g +ᵥ p₂⟩ ⟨k, g +ᵥ p₀⟩ = n p₁ ⟨j, p₂⟩ ⟨k, p₀⟩)
 
-omit [∀ j, AddTorsor H (P₂ j)] in
 include hn₁ in
 /-- The product of a kernel invariant in its first input is linear over the Novikov ring in its
 first argument. -/
@@ -685,7 +697,21 @@ theorem kernelProduct_smul_left [Finite ι₁] (β : NovikovSeries R H N) (a : N
     kernelProduct_eq_kernelMap_left hn hfin b hm hmfin]
   exact kernelMap_smul hF₁ hF₀ hm hmfin hinv β a
 
-omit [∀ i, AddTorsor H (P₁ i)] in
+end NovikovLeft
+
+section NovikovRight
+
+variable [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  {C : ℝ} {n : (Σ i, P₁ i) → (Σ j, P₂ j) → (Σ k, P₀ k) → R}
+  [CommSemiring R] [Finite ι₀]
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (hn : ∀ p₁ p₂ p₀, n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C)
+  (hfin : ∀ p₁ p₂, n p₁ p₂ ∈ NovikovModule R F₀)
+  (hn₂ : ∀ (g : H) p₁ j (p₂ : P₂ j) k (p₀ : P₀ k),
+    n p₁ ⟨j, g +ᵥ p₂⟩ ⟨k, g +ᵥ p₀⟩ = n p₁ ⟨j, p₂⟩ ⟨k, p₀⟩)
+
 include hn₂ in
 /-- The product of a kernel invariant in its second input is linear over the Novikov ring in its
 second argument. -/
@@ -704,7 +730,7 @@ theorem kernelProduct_smul_right [Finite ι₂] (β : NovikovSeries R H N) (a : 
     kernelProduct_eq_kernelMap_right hn hfin a hm hmfin]
   exact kernelMap_smul hF₂ hF₀ hm hmfin hinv β b
 
-end Novikov
+end NovikovRight
 
 end Torsor
 
