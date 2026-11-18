@@ -10,14 +10,16 @@ import TauCeti.Probability.RandomMatrix.Wigner.CornerAverage
 import TauCeti.Probability.RandomMatrix.Centering
 import TauCeti.Probability.RandomMatrix.Diagonal
 import TauCeti.Analysis.Matrix.SpectralMeasure.ResolventStability
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Data.Nat.Choose.Cast
+import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 
 /-!
 # The almost-sure semicircle law
 
 For corners of a single complex Wigner array, a finite second moment of the upper-entry law
-suffices. Bounded cutoffs obey the resolvent law, and the strong law for the upper-triangular
-corners controls the normalized Frobenius error in each cutoff. The conclusion allows a
+suffices. Bounded approximations obey the resolvent law, and the strong law for the upper-triangular
+corners controls the normalized Frobenius error in each approximation. The conclusion allows a
 nonzero upper-entry mean and an identically distributed, pairwise independent real diagonal
 with no moment assumption.
 
@@ -32,81 +34,12 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Matrix
-open scoped Topology NNReal Matrix.Norms.Frobenius
+open scoped Topology NNReal ENNReal Matrix.Norms.Frobenius
 
 namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-  {ξ : StrictUpper → Ω → ℂ} {X : Ω → ℂ}
-
-private theorem exists_centered_norm_cutoffs [IsProbabilityMeasure P] (hX : MemLp X 2 P)
-    (hmean : ∫ ω, X ω ∂P = 0) :
-    ∃ g : ℕ → ℂ → ℂ, (∀ k, Measurable (g k)) ∧
-      (∀ k, ∃ b : ℝ≥0, ∀ x, ‖g k x‖ ≤ b) ∧ (∀ k, ∫ ω, g k (X ω) ∂P = 0) ∧
-      Tendsto (fun k ↦ ∫ ω, ‖g k (X ω)‖ ^ 2 ∂P) atTop (𝓝 (∫ ω, ‖X ω‖ ^ 2 ∂P)) ∧
-      Tendsto (fun k ↦ ∫ ω, ‖X ω - g k (X ω)‖ ^ 2 ∂P) atTop (𝓝 0) := by
-  let f (k : ℕ) (x : ℂ) := if ‖x‖ ≤ (k : ℝ) then x else 0
-  let c (k : ℕ) := ∫ ω, f k (X ω) ∂P
-  let g (k : ℕ) (x : ℂ) := f k x - c k
-  let B := ∫ ω, ‖X ω‖ ∂P
-  have hf (k : ℕ) : Measurable (f k) :=
-    measurable_id.ite (measurableSet_le continuous_norm.measurable measurable_const)
-      measurable_const
-  have hbound (k : ℕ) (x : ℂ) : ‖f k x‖ ≤ min (k : ℝ) ‖x‖ := by
-    dsimp only [f]
-    split_ifs with h
-    · simp [min_eq_right h]
-    · exact (norm_zero (E := ℂ)).le.trans (le_min (by positivity) (norm_nonneg _))
-  have hX₁ : Integrable X P := hX.integrable (by norm_num)
-  have hfx (k : ℕ) : Integrable (fun ω ↦ f k (X ω)) P :=
-    hX₁.norm.mono' ((hf k).comp_aemeasurable hX.aemeasurable).aestronglyMeasurable
-      (.of_forall fun ω ↦ (hbound k (X ω)).trans (min_le_right _ _))
-  have hc (k : ℕ) : ‖c k‖ ≤ B :=
-    (norm_integral_le_integral_norm _).trans
-      (integral_mono (hfx k).norm hX₁.norm fun ω ↦ (hbound k (X ω)).trans (min_le_right _ _))
-  have hlim (x : ℂ) : Tendsto (fun k ↦ f k x) atTop (𝓝 x) := by
-    apply tendsto_const_nhds.congr'
-    filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop ‖x‖] with k hk
-    simp [f, hk]
-  -- The discarded entries have vanishing contribution to the mean.
-  have hc0 : Tendsto c atTop (𝓝 0) := by
-    rw [← hmean]
-    exact tendsto_integral_filter_of_dominated_convergence (fun ω ↦ ‖X ω‖)
-      (.of_forall fun k ↦ (hfx k).aestronglyMeasurable)
-      (.of_forall fun k ↦ .of_forall fun ω ↦ (hbound k (X ω)).trans (min_le_right _ _))
-      hX₁.norm (.of_forall fun ω ↦ hlim (X ω))
-  have hg (k : ℕ) : Measurable (g k) := (hf k).sub_const _
-  have hgnorm (k : ℕ) (ω : Ω) : ‖g k (X ω)‖ ≤ ‖X ω‖ + B :=
-    (norm_sub_le _ _).trans (add_le_add ((hbound k _).trans (min_le_right _ _)) (hc k))
-  have hg_lim (ω : Ω) : Tendsto (fun k ↦ g k (X ω)) atTop (𝓝 (X ω)) := by
-    simpa only [sub_zero] using (hlim (X ω)).sub hc0
-  have hdom (b : ℝ) : Integrable (fun ω ↦ (b * ‖X ω‖ + B) ^ 2) P :=
-    ((hX.norm.const_mul b).add (memLp_const B)).integrable_sq
-  -- The same integrable bound controls the centered variables and the approximation errors.
-  refine ⟨g, hg, fun k ↦ ⟨k + ‖c k‖₊, fun x ↦ ?_⟩, fun k ↦ ?_, ?_, ?_⟩
-  · simpa only [NNReal.coe_add, NNReal.coe_natCast, coe_nnNorm] using
-      (norm_sub_le (f k x) (c k)).trans
-        (add_le_add ((hbound k x).trans (min_le_left _ _)) le_rfl)
-  · simp [g, c, integral_sub (hfx k) (integrable_const _)]
-  · refine tendsto_integral_filter_of_dominated_convergence _ ?_ ?_ (hdom 1) ?_
-    · exact .of_forall fun k ↦
-        (((hg k).comp_aemeasurable hX.aemeasurable).norm.pow_const 2).aestronglyMeasurable
-    · exact .of_forall fun k ↦ .of_forall fun ω ↦ by
-        rw [Real.norm_of_nonneg (sq_nonneg _), one_mul]
-        gcongr
-        exact hgnorm k ω
-    · exact .of_forall fun ω ↦ (hg_lim ω).norm.pow 2
-  · rw [← integral_zero Ω ℝ]
-    refine tendsto_integral_filter_of_dominated_convergence _ ?_ ?_ (hdom 2) ?_
-    · exact .of_forall fun k ↦ ((hX.aemeasurable.sub
-        ((hg k).comp_aemeasurable hX.aemeasurable)).norm.pow_const 2).aestronglyMeasurable
-    · exact .of_forall fun k ↦ .of_forall fun ω ↦ by
-        rw [Real.norm_of_nonneg (sq_nonneg _)]
-        exact pow_le_pow_left₀ (norm_nonneg _)
-          (by linarith [norm_sub_le (X ω) (g k (X ω)), hgnorm k ω]) _
-    · exact .of_forall fun ω ↦ by
-        simpa only [sub_self, norm_zero, zero_pow (by decide : 2 ≠ 0)] using
-          ((tendsto_const_nhds (x := X ω)).sub (hg_lim ω)).norm.pow 2
+  {ξ : StrictUpper → Ω → ℂ}
 
 omit [MeasurableSpace Ω] in
 private theorem norm_wignerMatrix_sub_div_sqrt_le
@@ -140,7 +73,7 @@ section Limit
 
 local notation "e₀" => (⟨(0, 1), by decide⟩ : StrictUpper)
 
-private theorem ae_tendsto_wigner_cutoff_error
+private theorem ae_tendsto_wigner_approximation_error
     (hind : iIndepFun ξ P) (hid : ∀ i, IdentDistrib (ξ i) (ξ e₀) P P)
     (hξ : MemLp (ξ e₀) 2 P) {g : ℂ → ℂ} (hg : Measurable g)
     {b : ℝ≥0} (hb : ∀ x, ‖g x‖ ≤ b) :
@@ -160,7 +93,7 @@ private theorem ae_tendsto_wigner_cutoff_error
     (fun _ _ hij ↦ (hind.indepFun hij).comp hf hf) (fun i ↦ (hid i).comp hf)] with ω hω
   exact (hω.comp (tendsto_add_atTop_nat 1)).sqrt
 
-private theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_cutoff
+private theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_bounded
     (hind : iIndepFun ξ P) (hid : ∀ i, IdentDistrib (ξ i) (ξ e₀) P P)
     {g : ℂ → ℂ} (hg : Measurable g) {b : ℝ≥0} (hb : ∀ x, ‖g x‖ ≤ b)
     (hmean : ∫ ω, g (ξ e₀ ω) ∂P = 0) (v : ℝ≥0)
@@ -177,27 +110,32 @@ private theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_cutoff
     (hind.comp (fun _ ↦ g) (fun _ ↦ hg))
     (fun i ↦ (((hi i).comp (by fun_prop : Measurable fun x : ℂ ↦ ‖x‖ ^ 2)).integral_eq.trans hv))
 
-/-- Almost-sure weak convergence of the zero-diagonal Wigner corners for centred i.i.d.
-upper entries with finite second moment `v`. -/
-theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp
+private theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_bounded_approximations
     (hind : iIndepFun ξ P) (hid : ∀ i, IdentDistrib (ξ i) (ξ e₀) P P)
-    (hξ : MemLp (ξ e₀) 2 P) (hmean : ∫ ω, ξ e₀ ω ∂P = 0)
-    (v : ℝ≥0) (hv : ∫ ω, ‖ξ e₀ ω‖ ^ 2 ∂P = v) :
+    (hξ : MemLp (ξ e₀) 2 P) (v : ℝ≥0) (hv : ∫ ω, ‖ξ e₀ ω‖ ^ 2 ∂P = v)
+    {g : ℕ → ℂ → ℂ} (hg : ∀ k, Measurable (g k))
+    {b : ℕ → ℝ≥0} (hb : ∀ k x, ‖g k x‖ ≤ b k)
+    (hmean_g : ∀ k, ∫ ω, g k (ξ e₀ ω) ∂P = 0)
+    (hG : ∀ k, MemLp (fun ω ↦ g k (ξ e₀ ω)) 2 P)
+    (hGL : Tendsto (fun k ↦ (hG k).toLp fun ω ↦ g k (ξ e₀ ω)) atTop (𝓝 (hξ.toLp (ξ e₀)))) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ (wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1))) atTop
       (𝓝 (⟨semicircleReal 0 v, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
-  have : IsProbabilityMeasure P := hind.isProbabilityMeasure
-  obtain ⟨g, hg, hb, hmean_g, hv_lim, he_lim⟩ := exists_centered_norm_cutoffs hξ hmean
-  choose b hb using hb
   let vₖ (k : ℕ) : ℝ≥0 := ⟨∫ ω, ‖g k (ξ e₀ ω)‖ ^ 2 ∂P, integral_nonneg fun _ ↦ sq_nonneg _⟩
-  have hv_lim : Tendsto (fun k ↦ ((vₖ k : ℝ≥0) : ℝ)) atTop (𝓝 (v : ℝ)) := hv ▸ hv_lim
+  have hvₖ (k : ℕ) : (vₖ k : ℝ) = ∫ ω, ‖g k (ξ e₀ ω)‖ ^ 2 ∂P := rfl
+  have hv_lim : Tendsto (fun k ↦ (vₖ k : ℝ)) atTop (𝓝 (v : ℝ)) := by
+    simpa only [MemLp.norm_toLp_sq, hv, hvₖ] using hGL.norm.pow 2
+  have he_lim : Tendsto (fun k ↦ ∫ ω, ‖ξ e₀ ω - g k (ξ e₀ ω)‖ ^ 2 ∂P) atTop (𝓝 0) := by
+    have herr := (tendsto_const_nhds (x := hξ.toLp (ξ e₀))).sub hGL
+    simpa only [← MemLp.toLp_sub, MemLp.norm_toLp_sq, Pi.sub_apply, sub_self, norm_zero, zero_pow
+      (by decide : 2 ≠ 0)] using herr.norm.pow 2
   apply ProbabilityMeasure.ae_tendsto_of_ae_tendsto_resolventTransform
   intro z hz
   let s (u : ℝ≥0) := resolventTransform (semicircleReal 0 u) z
-  have hcut k := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_cutoff
+  have hbounded k := ae_tendsto_spectralMeasure_wignerMatrix_zero_of_bounded
     hind hid (hg k) (hb k) (hmean_g k) (vₖ k) rfl
-  have herror k := ae_tendsto_wigner_cutoff_error hind hid hξ (hg k) (hb k)
-  filter_upwards [ae_all_iff.2 hcut, ae_all_iff.2 herror] with ω hcut herror
+  have herror k := ae_tendsto_wigner_approximation_error hind hid hξ (hg k) (hb k)
+  filter_upwards [ae_all_iff.2 hbounded, ae_all_iff.2 herror] with ω hbounded herror
   rw [Metric.tendsto_nhds]
   intro ε hε
   have hs (k : ℕ) : ‖s (vₖ k) - s v‖ ≤ |(vₖ k : ℝ) - v| / z.im ^ 3 :=
@@ -212,7 +150,7 @@ theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp
     ((W x n).spectralMeasure (wignerMatrix_isHermitian x _ ω (n + 1)) : Measure ℝ) z
   let ζ (i : StrictUpper) (ω' : Ω) := g k (ξ i ω')
   have hzeta : Tendsto (m ζ) atTop (𝓝 (s (vₖ k))) :=
-    ProbabilityMeasure.tendsto_resolventTransform_of_tendsto (hcut k) hz.ne'
+    ProbabilityMeasure.tendsto_resolventTransform_of_tendsto (hbounded k) hz.ne'
   filter_upwards [Metric.tendsto_nhds.mp hzeta (ε / 3) (by positivity),
     ((herror k).const_mul (z.im⁻¹ ^ 2)).eventually_lt_const hk₂] with n hn hnorm
   have hpert := Matrix.norm_resolventTransform_spectralMeasure_sub_le_frobenius
@@ -227,6 +165,66 @@ theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp
   exact (norm_sub_le_norm_sub_add_norm_sub (m ξ n) (m ζ n) (s v)).trans_lt
     (by linarith [norm_sub_le_norm_sub_add_norm_sub (m ζ n) (s (vₖ k)) (s v),
       (hs k).trans_lt hk₁])
+
+/-- Almost-sure weak convergence of the zero-diagonal Wigner corners for centred i.i.d.
+upper entries with finite second moment `v`. -/
+theorem ae_tendsto_spectralMeasure_wignerMatrix_zero_of_memLp
+    (hind : iIndepFun ξ P) (hid : ∀ i, IdentDistrib (ξ i) (ξ e₀) P P)
+    (hξ : MemLp (ξ e₀) 2 P) (hmean : ∫ ω, ξ e₀ ω ∂P = 0)
+    (v : ℝ≥0) (hv : ∫ ω, ‖ξ e₀ ω‖ ^ 2 ∂P = v) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ (wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).spectralMeasure
+      (wignerMatrix_isHermitian ξ (fun _ _ ↦ 0) ω (n + 1))) atTop
+      (𝓝 (⟨semicircleReal 0 v, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
+  have : IsProbabilityMeasure P := hind.isProbabilityMeasure
+  let X := ξ e₀
+  -- Approximate the identity under the entry law so that one map works for every entry.
+  let f (k : ℕ) := SimpleFunc.approxOn (id : ℂ → ℂ) measurable_id Set.univ 0 (Set.mem_univ _) k
+  have hbound (k : ℕ) : ∃ b : ℝ≥0, ∀ z, ‖f k z‖ ≤ b := by
+    obtain ⟨b, hb⟩ := ((f k).finite_range.image fun z ↦ ‖z‖₊).bddAbove
+    exact ⟨b, fun z ↦ hb ⟨f k z, ⟨z, rfl⟩, rfl⟩⟩
+  choose b hb using hbound
+  let F (k : ℕ) (ω : Ω) := f k (X ω)
+  have hF (k : ℕ) : MemLp (F k) 2 P :=
+    (memLp_const (b k : ℝ)).of_le
+      ((f k).measurable.comp_aemeasurable hξ.aemeasurable).aestronglyMeasurable
+      (.of_forall fun ω ↦ by simpa only [Real.norm_of_nonneg (b k).coe_nonneg] using hb k (X ω))
+  have happrox {p : ℝ≥0∞} (hp : p ≠ ∞) (hX : MemLp X p P) :
+      Tendsto (fun k ↦ eLpNorm (F k - X) p P) atTop (𝓝 0) := by
+    have hid_mem : MemLp (id : ℂ → ℂ) p (P.map X) :=
+      (memLp_map_measure_iff aestronglyMeasurable_id hX.aemeasurable).2 hX
+    have hmap (k : ℕ) : eLpNorm (⇑(f k) - id) p (P.map X) = eLpNorm (F k - X) p P :=
+      eLpNorm_map_measure ((f k).aestronglyMeasurable.sub aestronglyMeasurable_id) hX.aemeasurable
+    have ht : Tendsto (fun k ↦ eLpNorm (⇑(f k) - id) p (P.map X)) atTop (𝓝 0) :=
+      SimpleFunc.tendsto_approxOn_Lp_eLpNorm measurable_id (Set.mem_univ (0 : ℂ)) hp
+        (.of_forall fun z ↦ subset_closure (Set.mem_univ (id z)))
+        (by simpa only [sub_zero] using hid_mem.eLpNorm_lt_top)
+    simpa only [hmap] using ht
+  let c (k : ℕ) := ∫ ω, F k ω ∂P
+  have hc : Tendsto c atTop (𝓝 0) :=
+    hmean ▸ tendsto_integral_of_L1' X (.of_forall fun k ↦ (hF k).integrable one_le_two)
+      (happrox (by simp) (hξ.mono_exponent one_le_two))
+  let g (k : ℕ) (z : ℂ) := f k z - c k
+  have hG (k : ℕ) : MemLp (fun ω ↦ g k (X ω)) 2 P := (hF k).sub (memLp_const (c k))
+  -- Centering changes the L² classes by constants tending to zero.
+  have hFL : Tendsto (fun k ↦ (hF k).toLp (F k)) atTop (𝓝 (hξ.toLp X)) :=
+    (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' F hF X hξ).2 (happrox (by simp) hξ)
+  have hcL := ((Lp.constL 2 P ℂ : ℂ →L[ℂ] Lp ℂ 2 P).continuous.tendsto 0).comp hc
+  have hcenter (k : ℕ) : (hG k).toLp (fun ω ↦ g k (X ω)) =
+      (hF k).toLp (F k) - Lp.const 2 P (c k) := by
+    rw [← MemLp.toLp_const]
+    exact MemLp.toLp_sub (hF k) (memLp_const (c k))
+  have hGL : Tendsto (fun k ↦ (hG k).toLp fun ω ↦ g k (X ω)) atTop (𝓝 (hξ.toLp X)) := by
+    simpa only [hcenter, Function.comp_def, Lp.constL_apply, map_zero, sub_zero] using hFL.sub hcL
+  refine ae_tendsto_spectralMeasure_wignerMatrix_zero_of_bounded_approximations hind hid hξ v hv
+    (g := g) (b := fun k ↦ b k + ‖c k‖₊) (fun k ↦ (f k).measurable.sub_const _) ?_ ?_ hG hGL
+  · intro k z
+    simpa only [NNReal.coe_add, coe_nnNorm] using
+      (norm_sub_le (f k z) (c k)).trans (add_le_add (hb k z) le_rfl)
+  · intro k
+    have hcenter_mean : ∫ ω, (F k ω - c k) ∂P = 0 := by
+      rw [integral_sub ((hF k).integrable one_le_two) (integrable_const (c k))]
+      simp [c]
+    exact hcenter_mean
 
 /-- **Wigner's semicircle law.** The empirical spectral measures of the corners of a single
 array converge almost surely to the standard semicircle law if the complex upper entries
