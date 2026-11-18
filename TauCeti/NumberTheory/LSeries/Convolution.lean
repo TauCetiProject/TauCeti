@@ -19,8 +19,6 @@ has the single nonzero term `1` and therefore converges at every `s`.
 ## Main results
 
 * `LSeriesHasSum_delta`: the Dirichlet series of `δ` has sum `1` at every `s`.
-* `ArithmeticFunction.natCoe_pow`: the cast `ArithmeticFunction ℕ → ArithmeticFunction R`
-  commutes with convolution powers.
 * `ArithmeticFunction.LSeriesHasSum_pow`: if the Dirichlet series of `f` has sum `a` at `s`,
   then the Dirichlet series of `f ^ k` has sum `a ^ k`.
 -/
@@ -36,14 +34,6 @@ theorem LSeriesHasSum_delta (s : ℂ) : LSeriesHasSum δ s 1 := by
   exact hasSum_ite_eq 1 1
 
 namespace ArithmeticFunction
-
-/-- The cast of an `ℕ`-valued arithmetic function commutes with Dirichlet-convolution powers. -/
-@[simp, norm_cast]
-theorem natCoe_pow {R : Type*} [Semiring R] (f : ArithmeticFunction ℕ) (k : ℕ) :
-    (↑(f ^ k) : ArithmeticFunction R) = (f : ArithmeticFunction R) ^ k := by
-  induction k with
-  | zero => rw [pow_zero, pow_zero, natCoe_one]
-  | succ k ih => rw [pow_succ, pow_succ, natCoe_mul, ih]
 
 /-- If the Dirichlet series of `f` has sum `a` at `s`, then the Dirichlet series of the
 convolution power `f ^ k` has sum `a ^ k` at `s`. -/

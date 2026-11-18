@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.LSeries.Dirichlet
+import TauCeti.NumberTheory.ArithmeticFunction.Defs
 import TauCeti.NumberTheory.LSeries.Convolution
 
 /-!
