@@ -45,6 +45,9 @@ both sides use Mathlib's `finrank`, which is zero on an infinite-dimensional spa
 * `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_zero_trivial_dvd_finrank_cohomology` and
   `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_zero_trivial_dvd_eulerCharBelow`: the
   resulting divisibilities.
+* `AlgebraicGeometry.Scheme.Modules.eulerCharBelow_mul_finrank_cohomology_zero_trivial`: for two
+  unrelated structures of `X` over fields `k` and `κ`,
+  `χ_k(M) · dim_κ H⁰(X, 𝒪_X) = dim_k H⁰(X, 𝒪_X) · χ_κ(M)`.
 
 ## References
 
@@ -116,6 +119,26 @@ theorem finrank_cohomology_zero_trivial_dvd_eulerCharBelow
     rw [eulerCharBelow_succ]
     exact ih.add ((Int.natCast_dvd_natCast.mpr
       (finrank_cohomology_zero_trivial_dvd_finrank_cohomology k hX M n)).mul_left _)
+
+variable (κ : Type u) [Field κ] [X.Over (Spec (.of κ))]
+
+/-- **Truncated Euler characteristics over two base fields.** If the global functions of `X` form
+a field, then for two structures of `X` over fields `k` and `κ`, which need not be related,
+`χ_k(M) · dim_κ H⁰(X, 𝒪_X) = dim_k H⁰(X, 𝒪_X) · χ_κ(M)` for every truncation. Both sides are
+`dim_k H⁰(X, 𝒪_X) · dim_κ H⁰(X, 𝒪_X)` times the truncated Euler characteristic over the
+constant field `Γ(X, 𝒪_X)`. -/
+theorem eulerCharBelow_mul_finrank_cohomology_zero_trivial
+    (hX : IsField Γ(X, ⊤)) (M : X.Modules) (n : ℕ) :
+    eulerCharBelow k X M n * finrank κ (Cohomology (InvertibleSheaf.trivial X).obj 0) =
+      finrank k (Cohomology (InvertibleSheaf.trivial X).obj 0) * eulerCharBelow κ X M n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [eulerCharBelow_succ, eulerCharBelow_succ,
+      finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul k hX M n,
+      finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul κ hX M n]
+    push_cast
+    linear_combination ih
 
 end AlgebraicGeometry.Scheme.Modules
 
