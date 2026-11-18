@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Integral.Rectangle
-import TauCeti.Topology.Instances.Real.EventuallyConst
 import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
@@ -61,9 +60,14 @@ error terms are controlled by the `L²` norm of `ξ` over the compact cylinder.
 * `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add` is the
   semi-Fredholm estimate along a Floer trajectory between the Sobolev spaces with an exponential
   weight `e^{κ(s)}`, read as the estimate of `D_u - κ'(s)`, when the slope `κ'` equals constants
-  `δ±` near `±∞` that are not eigenvalues of the asymptotic operators at the ends. The end
-  estimates are
-  `exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq`.
+  `δ±` near `±∞` for which the shifted fields `dX_{H_t}(x±(t)) - δ± J_t(x±(t))` have
+  nondegenerate return maps; for one-periodic data this says that `δ±` are not eigenvalues of the
+  asymptotic operators at the ends. It is a case of
+  `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical`,
+  the same estimate for data that are cylindrical near the ends, whose end estimates are
+  `exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq` and whose
+  case `c = 0` is
+  `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`.
 
 Sections are `C²` maps `ξ : ℝ × ℝ → V` of period one in `t` that vanish outside a strip
 `(a, b) × ℝ`, and the integrals are over the fundamental domain `[a, b] × [0, 1]`. The Sobolev
@@ -497,6 +501,106 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_e
       (fun ξ hξ hper a b hab hb hsa hsb ↦ by
         simpa only [Pi.zero_apply, zero_smul, sub_zero] using hm hξ hper hab hb hsa hsb)
 
+/-- **The weighted semi-Fredholm estimate for Floer data that are cylindrical near the ends.**
+Let `J(z)`, `K_s`, `K_t` be Floer data on the cylinder that agree with the cylindrical data
+`(J₋_t, 0, H₋_t)` for `s ≤ -R` and with `(J₊_t, 0, H₊_t)` for `s ≥ R`, as for a continuation
+cylinder from `H₋` to `H₊`. Suppose that `J` is `C¹` and `K_s`, `K_t` are `C²` at the points
+`(z, u z)`, where `u` is a `C¹` map along which `J` is `ω`-compatible. Let `c : ℝ → ℝ` be
+continuous, equal to `δm` for `s ≤ -R` and to `δp` for `s ≥ R`. Let the end Hamiltonians `H±`
+be jointly `C²`, the end structures `J±_t(y)` be `C¹` families compatible along continuous loops
+`x±`, such that the shifted fields `dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return
+maps, and let the loops of `u` converge uniformly to `xm` at `-∞` and to `xp` at `+∞` while the
+slice defects `∂t u - X_{H±_t}(u)` tend uniformly to zero there. Then there are `C ≥ 0` and `T`
+such that every `C²` map `ξ` of period one in `t` that vanishes for `s ∉ (a, b)` satisfies
+
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ - c(s) ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`
+
+over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the data `(J, K_s, K_t)`. Beyond
+`±R` the operator `D_u - c(s)` is the operator `D_u - δ±` of the end data, so its end estimates are
+those of `exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq`. -/
+theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ}
+    (hJm_eq : ∀ z : ℝ × ℝ, z.1 ≤ -R → J z = Jm z.2) (hJp_eq : ∀ z : ℝ × ℝ, R ≤ z.1 → J z = Jp z.2)
+    (hKs_eq : ∀ z : ℝ × ℝ, z.1 ∉ Ioo (-R) R → Ks z = 0)
+    (hKtm_eq : ∀ z : ℝ × ℝ, z.1 ≤ -R → Kt z = Hm z.2)
+    (hKtp_eq : ∀ z : ℝ × ℝ, R ≤ z.1 → Kt z = Hp z.2) {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    (hJu : ∀ z, ω.Compatible (J z (u z))) {c : ℝ → ℝ} (hc : Continuous c) {δm δp : ℝ}
+    (hcm : ∀ s ≤ -R, c s = δm) (hcp : ∀ s, R ≤ s → c s = δp)
+    (hHm : ContDiff ℝ 2 (Function.uncurry Hm)) {xm : ℝ → V} (hxm : Continuous xm)
+    (hJm : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jm p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (Jm t (xm t)))
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hm t)) (xm t) -
+        δm • (Jm t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    (hHp : ContDiff ℝ 2 (Function.uncurry Hp)) {xp : ℝ → V} (hxp : Continuous xp)
+    (hJp : ContDiff ℝ 1 fun p : ℝ × V ↦ (Jp p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxp : ∀ t, ω.Compatible (Jp t (xp t)))
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (Hp t)) (xp t) -
+        δp • (Jp t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ T, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
+      ∀ ⦃a b : ℝ⦄, a ≤ b → (∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+          C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
+            (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z - c z.1 • ξ z‖ ^ 2) +
+            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) := by
+  obtain ⟨B, hcB⟩ := exists_forall_norm_le_of_tendsto hc
+    (tendsto_const_nhds.congr' (eventually_atBot.2 ⟨-R, fun s hs ↦ (hcm s hs).symm⟩))
+    (tendsto_const_nhds.congr' (eventually_atTop.2 ⟨R, fun s hs ↦ (hcp s hs).symm⟩))
+  have hu' (l : Filter ℝ) : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t) :=
+    Eventually.of_forall fun _ _ _ ↦ hu.contDiffAt
+  obtain ⟨Cp, -, Up, hUp, hp⟩ :=
+    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq hHp hxp
+      hJp hJxp hdetp (hu' atTop) huxp hδp
+  obtain ⟨Cm, -, Um, hUm, hm⟩ :=
+    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq hHm hxm
+      hJm hJxm hdetm (hu' atBot) huxm hδm
+  obtain ⟨Rp, hRp⟩ := mem_atTop_sets.1 hUp
+  obtain ⟨Rm, hRm⟩ := mem_atBot_sets.1 hUm
+  -- Beyond `R` the operator `D_u - c(s)` of `(J, K_s, K_t)` is the operator `D_u - δ±` of the
+  -- cylindrical end data.
+  have hD {J' : ℝ → V → AlmostComplexStructure V} {H : ℝ → V → ℝ} {δ : ℝ} {ξ : ℝ × ℝ → V}
+      {S : Set ℝ} (hS : ∀ s ∈ S, s ∉ Ioo (-R) R) (hJS : ∀ z : ℝ × ℝ, z.1 ∈ S → J z = J' z.2)
+      (hKtS : ∀ z : ℝ × ℝ, z.1 ∈ S → Kt z = H z.2) (hcS : ∀ s ∈ S, c s = δ) :
+      EqOn (fun z ↦ ‖ω.floerLinearization (fun w y ↦ (J' w.2 y).toLinearMap.toContinuousLinearMap)
+          (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z - δ • ξ z‖ ^ 2)
+        (fun z ↦ ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+          Ks Kt u ξ z - c z.1 • ξ z‖ ^ 2) (S ×ˢ Icc (0 : ℝ) 1) := fun z hz ↦ by
+    beta_reduce
+    rw [hcS z.1 hz.1, ω.floerLinearization_congr_data (Ks' := Ks) (Kt' := Kt)
+      (J' := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u ξ ?_
+      (hKs_eq z (hS z.1 hz.1)).symm (hKtS z hz.1).symm]
+    simp only [hJS z hz.1]
+  refine ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_ends hJ
+    hKs hKt hu hJu hc hcB (Cp := Cp) (Cm := Cm) (Rp := max Rp R) (Rm := min Rm (-R))
+    (fun ξ hξ hper a b ha hab hsa hsb ↦ ?_) (fun ξ hξ hper a b hab hb hsa hsb ↦ ?_)
+  · have hR : ∀ s ∈ Icc a b, R ≤ s := fun s hs ↦ (le_max_right Rp R).trans (ha.trans hs.1)
+    refine (hp hξ hper hab (fun s hs ↦ hRp s ((le_max_left Rp R).trans (ha.trans hs.1))) hsa
+      hsb).trans_eq ?_
+    rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc)
+      (hD (fun s hs h ↦ (hR s hs).not_gt h.2) (fun z hz ↦ hJp_eq z (hR _ hz))
+        (fun z hz ↦ hKtp_eq z (hR _ hz)) (fun s hs ↦ hcp s (hR s hs)))]
+  · have hR : ∀ s ∈ Icc a b, s ≤ -R := fun s hs ↦ hs.2.trans (hb.trans (min_le_right Rm _))
+    refine (hm hξ hper hab (fun s hs ↦ hRm s (hs.2.trans (hb.trans (min_le_left Rm _)))) hsa
+      hsb).trans_eq ?_
+    rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc)
+      (hD (fun s hs h ↦ (hR s hs).not_gt h.1) (fun z hz ↦ hJm_eq z (hR _ hz))
+        (fun z hz ↦ hKtm_eq z (hR _ hz)) (fun s hs ↦ hcm s (hR s hs)))]
+
 /-- **The semi-Fredholm estimate for Floer data that are cylindrical near the ends.** Let
 `J(z)`, `K_s`, `K_t` be Floer data on the cylinder that agree with the cylindrical data
 `(J₋_t, 0, H₋_t)` for `s ≤ -R` and with `(J₊_t, 0, H₊_t)` for `s ≥ R`, as for a continuation
@@ -511,7 +615,9 @@ satisfies
 
 `∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C (∫ ‖D_u ξ‖² + ∫_{[-T, T] × [0, 1]} ‖ξ‖²)`
 
-over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the data `(J, K_s, K_t)`. -/
+over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the data `(J, K_s, K_t)`. This
+is the case `c = 0` of
+`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical`. -/
 theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical
     (ω : SymplecticForm V) {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ}
     {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ}
@@ -551,44 +657,19 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_c
           C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) := by
-  have hu' (l : Filter ℝ) : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t) :=
-    Eventually.of_forall fun _ _ _ ↦ hu.contDiffAt
-  obtain ⟨Cp, -, Up, hUp, hp⟩ :=
-    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq hXp hHp hxp hndp
-      hJp hJxp (hu' atTop) huxp hδp
-  obtain ⟨Cm, -, Um, hUm, hm⟩ :=
-    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq hXm hHm hxm hndm
-      hJm hJxm (hu' atBot) huxm hδm
-  obtain ⟨Rp, hRp⟩ := mem_atTop_sets.1 hUp
-  obtain ⟨Rm, hRm⟩ := mem_atBot_sets.1 hUm
-  -- Beyond `R` the operator of `(J, K_s, K_t)` is the operator of the cylindrical end data.
-  have hD {J' : ℝ → V → AlmostComplexStructure V} {H : ℝ → V → ℝ} {ξ : ℝ × ℝ → V} {S : Set ℝ}
-      (hS : ∀ s ∈ S, s ∉ Ioo (-R) R) (hJS : ∀ z : ℝ × ℝ, z.1 ∈ S → J z = J' z.2)
-      (hKtS : ∀ z : ℝ × ℝ, z.1 ∈ S → Kt z = H z.2) :
-      EqOn (fun z ↦ ‖ω.floerLinearization (fun w y ↦ (J' w.2 y).toLinearMap.toContinuousLinearMap)
-          (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ z‖ ^ 2)
-        (fun z ↦ ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          Ks Kt u ξ z‖ ^ 2) (S ×ˢ Icc (0 : ℝ) 1) := fun z hz ↦ by
-    beta_reduce
-    rw [ω.floerLinearization_congr_data (Ks' := Ks) (Kt' := Kt)
-      (J' := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u ξ ?_
-      (hKs_eq z (hS z.1 hz.1)).symm (hKtS z hz.1).symm]
-    simp only [hJS z hz.1]
-  refine ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_ends hJ hKs hKt
-    hu hJu (Cp := Cp) (Cm := Cm) (Rp := max Rp R) (Rm := min Rm (-R))
-    (fun ξ hξ hper a b ha hab hsa hsb ↦ ?_) (fun ξ hξ hper a b hab hb hsa hsb ↦ ?_)
-  · have hR : ∀ s ∈ Icc a b, R ≤ s := fun s hs ↦ (le_max_right Rp R).trans (ha.trans hs.1)
-    refine (hp hξ hper hab (fun s hs ↦ hRp s ((le_max_left Rp R).trans (ha.trans hs.1))) hsa
-      hsb).trans_eq ?_
-    rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc)
-      (hD (fun s hs h ↦ (hR s hs).not_gt h.2) (fun z hz ↦ hJp_eq z (hR _ hz))
-        (fun z hz ↦ hKtp_eq z (hR _ hz)))]
-  · have hR : ∀ s ∈ Icc a b, s ≤ -R := fun s hs ↦ hs.2.trans (hb.trans (min_le_right Rm _))
-    refine (hm hξ hper hab (fun s hs ↦ hRm s (hs.2.trans (hb.trans (min_le_left Rm _)))) hsa
-      hsb).trans_eq ?_
-    rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc)
-      (hD (fun s hs h ↦ (hR s hs).not_gt h.1) (fun z hz ↦ hJm_eq z (hR _ hz))
-        (fun z hz ↦ hKtm_eq z (hR _ hz)))]
+  have hcont {H : ℝ → V → ℝ} {x : ℝ → V}
+      (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : Continuous x :=
+    continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  simpa only [Pi.zero_apply, zero_smul, sub_zero] using
+    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical
+      hJm_eq hJp_eq hKs_eq hKtm_eq hKtp_eq hJ hKs hKt hu hJu (c := 0) continuous_const
+      (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm (hcont hxm) hJm hJxm
+      (by simpa only [zero_smul, sub_zero] using
+        ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hXm hHm hxm hndm)
+      huxm hδm hHp (hcont hxp) hJp hJxp
+      (by simpa only [zero_smul, sub_zero] using
+        ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hXp hHp hxp hndp)
+      huxp hδp
 
 /-- **The semi-Fredholm estimate along a Floer trajectory.** Let `H` be a jointly `C²`
 Hamiltonian whose suspended vector field is globally Lipschitz, and let `J_t(y)` be a `C¹` family
@@ -643,7 +724,8 @@ along which `J_t` is `ω`-compatible, whose loops converge uniformly to continuo
 `∂t u - X_{H_t}(u)` tends uniformly to zero at both ends, as for a Floer trajectory from `xm` to
 `xp`. Let `c : ℝ → ℝ` be continuous, equal to `δm` for `s ≤ -R` and to `δp` for `s ≥ R`, where the
 end weights are such that `S±_t - δ± J_t(x±(t))` have nondegenerate return maps, for
-`S±_t = dX_{H_t}(x±(t))`: `δ±` is not an eigenvalue of the asymptotic operator at `x±`. Then
+`S±_t = dX_{H_t}(x±(t))`; when `H`, `J` and `x±` are one-periodic in `t`, this says that `δ±` is
+not an eigenvalue of the asymptotic operator at `x±`. Then
 there are `C ≥ 0` and `T` such that every `C²` map `ξ` of period one in `t` that vanishes for
 `s ∉ (a, b)` satisfies
 
@@ -682,34 +764,12 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul
           C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
             (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
             (fun w ↦ H w.2) u ξ z - c z.1 • ξ z‖ ^ 2) +
-            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) := by
-  obtain ⟨B, hcB⟩ := hc.exists_forall_norm_le_of_eq_of_eq hcm hcp
-  have hu' (l : Filter ℝ) : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t) :=
-    Eventually.of_forall fun _ _ _ ↦ hu.contDiffAt
-  obtain ⟨Cp, -, Up, hUp, hp⟩ :=
-    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq hH hxp
-      hJ hJxp hdetp (hu' atTop) huxp hδp
-  obtain ⟨Cm, -, Um, hUm, hm⟩ :=
-    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq hH hxm
-      hJ hJxm hdetm (hu' atBot) huxm hδm
-  obtain ⟨Rp, hRp⟩ := mem_atTop_sets.1 hUp
-  obtain ⟨Rm, hRm⟩ := mem_atBot_sets.1 hUm
-  -- Beyond `R` the weight term is `δ± ξ`, as in the end estimates.
-  refine ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_ends
-    (J := fun w y ↦ J w.2 y) (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
+            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) :=
+  ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical
+    (J := fun w y ↦ J w.2 y) (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) (R := R)
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
     (fun _ ↦ (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
     (fun _ ↦ contDiffAt_const) (fun _ ↦ (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)).contDiffAt)
-    hu hJu hc hcB (Cp := Cp) (Cm := Cm) (Rp := max Rp R) (Rm := min Rm (-R))
-    (fun ξ hξ hper a b ha hab hsa hsb ↦ ?_) (fun ξ hξ hper a b hab hb hsa hsb ↦ ?_)
-  · have hR : ∀ s ∈ Icc a b, R ≤ s := fun s hs ↦ (le_max_right Rp R).trans (ha.trans hs.1)
-    refine (hp hξ hper hab (fun s hs ↦ hRp s ((le_max_left Rp R).trans (ha.trans hs.1))) hsa
-      hsb).trans_eq
-      (congrArg _ (setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ ?_))
-    simp only [hcp z.1 (hR _ hz.1)]
-  · have hR : ∀ s ∈ Icc a b, s ≤ -R := fun s hs ↦ hs.2.trans (hb.trans (min_le_right Rm _))
-    refine (hm hξ hper hab (fun s hs ↦ hRm s (hs.2.trans (hb.trans (min_le_left Rm _)))) hsa
-      hsb).trans_eq
-      (congrArg _ (setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ ?_))
-    simp only [hcm z.1 (hR _ hz.1)]
+    hu hJu hc hcm hcp hH hxm hJ hJxm hdetm huxm hδm hH hxp hJ hJxp hdetp huxp hδp
 
 end TauCeti.SymplecticForm

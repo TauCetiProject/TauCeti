@@ -76,8 +76,8 @@ The same holds in the `L²` norms with exponential weight `e^{δ s}`, for every 
 again survives the passage to `D_u - δ`
 (`eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`; the
 unweighted estimate is its case `δ = 0`). More generally the estimate of `D_u - δ` holds at every
-fixed weight `δ` for which `S_t - δ J_t` has a nondegenerate return map, that is, `δ` is not an
-eigenvalue of the asymptotic operator, however large `δ` is
+fixed weight `δ` for which `S_t - δ J_t` has a nondegenerate return map, however large `δ` is;
+for one-periodic data this says that `δ` is not an eigenvalue of the asymptotic operator
 (`exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`, and
 `exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq` in the norm
 of `V`). Undoing the conjugation by `e^{δ s}`
@@ -317,17 +317,19 @@ private theorem continuous_fderiv_hamiltonianVectorField_sub_smul (ω : Symplect
 be a continuous loop, `H` a jointly `C²` Hamiltonian and `J_t(y)` a `C¹` family of almost complex
 structures that are `ω`-compatible along `x`, and let `δ` be a weight for which the shifted field
 `S_δ = dX_{H_t}(x(t)) - δ J_t(x(t))` has a nondegenerate return map: `ζ' = S_δ ζ` has no nonzero
-solution of period one. Let `u` be a map that is `C¹` on the slices `s` eventually along a filter
-`l`, whose loops converge uniformly to `x` along `l` while its slice defect `∂t u - X_{H_t}(u)`
-tends uniformly to zero. Then there are a constant `C ≥ 0` and a set `U ∈ l` of slices such that
-every `C²` map `ξ` of period one in `t`, vanishing on the slices `s = a` and `s = b` with
-`[a, b] ⊆ U`, satisfies
+solution with `ζ(1) = ζ(0)`. Let `u` be a map that is `C¹` on the slices `s` eventually along a
+filter `l`, whose loops converge uniformly to `x` along `l` while its slice defect
+`∂t u - X_{H_t}(u)` tends uniformly to zero. Then there are a constant `C ≥ 0` and a set
+`U ∈ l` of slices such that every `C²` map `ξ` of period one in `t`, vanishing on the slices
+`s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
 
 `∫ (g(∂s ξ, ∂s ξ) + g(∂t ξ - S_δ ξ, ∂t ξ - S_δ ξ) + g(ξ, ξ)) ≤ C ∫ g(D_u ξ - δ ξ, D_u ξ - δ ξ)`
 
 over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K = H_t dt` and
-`g_t = ω(·, J_t(x(t)) ·)`. The weight need not be small: the hypothesis says that `δ` is not an
-eigenvalue of the asymptotic operator at `x` (`TauCeti.Floer.asymptoticOperator`). -/
+`g_t = ω(·, J_t(x(t)) ·)`. The weight need not be small. When `H`, `J` and `x` are one-periodic
+in `t`, the hypothesis says that `δ` is not an eigenvalue of the asymptotic operator
+`TauCeti.Floer.asymptoticOperator` at `x`
+(`TauCeti.Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero`). -/
 theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
     (hxc : Continuous x) {J : ℝ → V → AlmostComplexStructure V}
