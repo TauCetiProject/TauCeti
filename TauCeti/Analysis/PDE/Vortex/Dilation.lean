@@ -19,7 +19,7 @@ section `α = 2(p + i q)`. Pullback by `z ↦ t z` multiplies connection compone
 with coupling `c` is `*iF_a = c(1 - |α|²)/8`. Dilation changes `c` to `t² c`,
 multiplies the curvature defect by `t²`, and multiplies the complex defect by `t`.
 In particular, the physical coefficient `r/4` becomes `1/8` in the coordinate
-`w = √(2r) z`. The curvature coefficient `*iF_a` is multiplied by `t²` and the covariant
+`w = √(2r) z`. The curvature coefficient `∂₁ b₂ - ∂₂ b₁` is multiplied by `t²` and the covariant
 derivative `d_a α` by `t`, so for `t = √(2r)` the plane integral of the integrand of Taubes's
 scaled energy does not depend on `r`.
 
@@ -138,7 +138,7 @@ theorem differentiableAt_dilateField {t : ℝ} {x : ℂ → EuclideanSpace ℝ (
   · simpa [dilateField] using hc 2
   · simpa [dilateField] using hc 3
 
-/-- Dilation multiplies the curvature coefficient `*iF_a` by `t²`. -/
+/-- Dilation multiplies the curvature coefficient `∂₁ b₂ - ∂₂ b₁` by `t²`. -/
 @[simp]
 theorem curvature_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     curvature (dilateField t x) z = t ^ 2 * curvature x (t • z) := by

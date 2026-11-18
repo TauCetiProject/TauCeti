@@ -450,7 +450,7 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff_equati
 
 include h₀ h₂₃ in
 /-- **The curvature of a pulled-back connection has the plane curvature as its norm**:
-`|F| = |*iF_a|` at `z(y)`, since `F = -(*iF_a) e₂ ∧ e₃` and `e₂ ∧ e₃` is a unit two-vector. -/
+`|F| = |*iF_a|` at `z(y)`, since `F = (*iF_a) e₂ ∧ e₃` and `e₂ ∧ e₃` is a unit two-vector. -/
 theorem norm_alternatingFormEquiv_symm_neg_extDeriv_normalConnection
     (hx : DifferentiableAt ℝ x (normalCoord e y)) :
     ‖(alternatingFormEquiv V 2).symm (-extDeriv (normalConnection e x) y)‖ =
