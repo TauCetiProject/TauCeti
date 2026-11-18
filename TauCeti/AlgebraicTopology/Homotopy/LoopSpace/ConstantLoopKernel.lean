@@ -44,7 +44,7 @@ it.
 * If `πⱼ(Q, x)` vanishes for `2 ≤ j < k`, with `k ≥ 3`, the kernel in degree `k - 2` is all of
   `H_{k-2}(P_{⋆→Q} 𝓛₀Q; ℤ)`, which is isomorphic to `π_k(Q, x)` by the Hurewicz theorem for the
   double loop space (`TauCeti.basedConstContractibleMoorePathsHomologyAddEquiv`,
-  `TauCeti.singularHomologyMap_basedConstContractibleMoorePathsInclusion_succ`).
+  `TauCeti.singularHomologyMap_basedConstContractibleMoorePathsInclusion_succ_eq_zero`).
 
 ## References
 
@@ -63,46 +63,6 @@ namespace TauCeti
 
 universe w v u
 
-section Paths
-
-variable (Q : Type u) [TopologicalSpace Q] (x : Q)
-
-/-- The inclusion `P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q` of the Moore paths in the contractible free loops
-from the constant loop at `x` to a constant loop into all Moore paths starting at the constant loop
-at `x`: the map of total spaces of path fibrations over the inclusion of the constant loops. -/
-def basedConstContractibleMoorePathsInclusion :
-    C(BasedConstContractibleMoorePaths Q x,
-      MoorePathFrom (contractibleLoops Q) (constContractibleLoop x)) :=
-  ⟨fun γ ↦ ⟨γ.1, (MoorePath.mem_pathsBetween.mp γ.2).1⟩, continuous_subtype_val.subtype_mk _⟩
-
-@[simp]
-theorem coe_basedConstContractibleMoorePathsInclusion_apply
-    (γ : BasedConstContractibleMoorePaths Q x) :
-    (basedConstContractibleMoorePathsInclusion Q x γ : MoorePath (contractibleLoops Q)) = γ.1 :=
-  (rfl)
-
-/-- **`P_{⋆→Q} 𝓛₀Q` is a double loop space.** The Moore paths in `𝓛₀Q` from the constant loop at
-`x` to a constant loop are homotopy equivalent to `Ω²Q = Ω (Ω Q x) (Path.refl x)`, through the
-based maps `Map_*(S², Q)`. -/
-def basedConstContractibleMoorePathsHomotopyEquiv :
-    BasedConstContractibleMoorePaths Q x ≃ₕ Ω (Ω Q x) (Path.refl x) :=
-  (basedMapSphere2HomotopyEquivMoorePaths Q x).trans
-    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
-      Sphere2.north).toHomotopyEquiv
-
-/-- The homotopy equivalence `TauCeti.basedConstContractibleMoorePathsHomotopyEquiv` sends the
-constant path of duration zero at the constant loop to the constant double loop. -/
-@[simp]
-theorem basedConstContractibleMoorePathsHomotopyEquiv_refl :
-    basedConstContractibleMoorePathsHomotopyEquiv Q x (basedConstContractibleMooreRefl Q x) =
-      Path.refl (Path.refl x) := by
-  -- the composite is the homeomorphism applied to the image in `Map_*(S², Q)`, the constant map
-  exact (congrArg (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
-      Sphere2.north) (basedMapSphere2HomotopyEquivMoorePaths_refl (Q := Q) (x := x))).trans
-    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace_const 2 ⟨Q, x⟩ _)
-
-end Paths
-
 section Kernel
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
@@ -111,7 +71,7 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
 omit [HasKernels C] in
 /-- The map induced on positive-degree homology by the inclusion `P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q`
 is zero, so its kernel is the whole homology group. -/
-theorem singularHomologyMap_basedConstContractibleMoorePathsInclusion_succ (n : ℕ) :
+theorem singularHomologyMap_basedConstContractibleMoorePathsInclusion_succ_eq_zero (n : ℕ) :
     ((singularHomologyFunctor C (n + 1)).obj R).map
       (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x)) = 0 :=
   (isZero_singularHomologyFunctor_of_contractibleSpace R _ n.succ_ne_zero).eq_of_tgt _ _
@@ -123,7 +83,7 @@ contractible. -/
 def isLimitReducedSingularHomologyιBasedConstContractibleMoorePaths (n : ℕ) :
     IsLimit (KernelFork.ofι
       ((reducedSingularHomologyι R n).app (TopCat.of (BasedConstContractibleMoorePaths Q x)))
-      (reducedSingularHomologyι_app_comp_map_of_contractibleSpace R
+      (reducedSingularHomologyι_app_comp_map_eq_zero_of_contractibleSpace R
         (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x)) n)) :=
   isLimitReducedSingularHomologyιOfContractibleSpace R _ n
 
@@ -190,9 +150,9 @@ variable {Q : Type} [TopologicalSpace Q] (x : Q)
 /-- **Proposition 5.11 of Barraud–Damian–Humilière–Oancea, case `k > 2`, on path spaces.** If
 `π_{j+2}(Q, x)` vanishes for `j ≤ n`, the first possibly nontrivial higher homotopy group being
 `π_{n+3}(Q, x)`, then `H_{n+1}(P_{⋆→Q} 𝓛₀Q; ℤ) ≅ π_{n+3}(Q, x)`. By
-`TauCeti.singularHomologyMap_basedConstContractibleMoorePathsInclusion_succ` this whole group is the
-kernel of the inclusion `P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q` in degree `n + 1`. It is the Hurewicz
-isomorphism of the double loop space, through
+`TauCeti.singularHomologyMap_basedConstContractibleMoorePathsInclusion_succ_eq_zero` this whole
+group is the kernel of the inclusion `P_{⋆→Q} 𝓛₀Q → P_{⋆→𝓛₀Q} 𝓛₀Q` in degree `n + 1`. It is the
+Hurewicz isomorphism of the double loop space, through
 `TauCeti.basedConstContractibleMoorePathsHomotopyEquiv`. -/
 def basedConstContractibleMoorePathsHomologyAddEquiv :
     (n : ℕ) → (∀ j ≤ n, Subsingleton (π_ (j + 2) Q x)) →
@@ -210,6 +170,33 @@ def basedConstContractibleMoorePathsHomologyAddEquiv :
     (doubleLoopSpaceHomologyAddEquiv x m fun j hj ↦ hQ j (by omega)).trans
       ((basedConstContractibleMoorePathsHomotopyEquiv Q x).singularHomologyIso
         (ModuleCat.of ℤ ℤ) (m + 2)).symm.toLinearEquiv.toAddEquiv
+
+/-- In the case `n = 0`, `TauCeti.basedConstContractibleMoorePathsHomologyAddEquiv` sends a class
+in `π₃(Q, x)` to its image under the loop-space shift and the Hurewicz isomorphism
+`π₁(Ω²Q) ≅ H₁(Ω²Q; ℤ)`, pushed forward along the homotopy inverse `Ω²Q → P_{⋆→Q} 𝓛₀Q`. -/
+theorem basedConstContractibleMoorePathsHomologyAddEquiv_zero_apply
+    (hQ : ∀ j ≤ 0, Subsingleton (π_ (j + 2) Q x)) (a : Additive (π_ 3 Q x)) :
+    basedConstContractibleMoorePathsHomologyAddEquiv x 0 hQ a =
+      haveI : PathConnectedSpace (Ω (Ω Q x) (Path.refl x)) :=
+        (pathConnectedSpace_doubleLoopSpace_iff x).2 (hQ 0 le_rfl)
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj (ModuleCat.of ℤ ℤ)).map
+        (TopCat.ofHom (basedConstContractibleMoorePathsHomotopyEquiv Q x).invFun)).hom
+          (pathLoopSpaceFirstHomologyAddEquiv (Path.refl x)
+            (Additive.ofMul ((pathLoopSpaceMulEquiv (X := Q) (x := x) 1).symm a.toMul))) := by
+  rw [← ContinuousMap.HomotopyEquiv.singularHomologyIso_inv]
+  rfl
+
+/-- In the case `n = m + 1`, `TauCeti.basedConstContractibleMoorePathsHomologyAddEquiv` is the
+Hurewicz isomorphism `TauCeti.doubleLoopSpaceHomologyAddEquiv` of the double loop space, pushed
+forward along the homotopy inverse `Ω²Q → P_{⋆→Q} 𝓛₀Q`. -/
+theorem basedConstContractibleMoorePathsHomologyAddEquiv_succ_apply (m : ℕ)
+    (hQ : ∀ j ≤ m + 1, Subsingleton (π_ (j + 2) Q x)) (a : Additive (π_ (m + 4) Q x)) :
+    basedConstContractibleMoorePathsHomologyAddEquiv x (m + 1) hQ a =
+      (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
+        (TopCat.ofHom (basedConstContractibleMoorePathsHomotopyEquiv Q x).invFun)).hom
+          (doubleLoopSpaceHomologyAddEquiv x m (fun j hj ↦ hQ j (by omega)) a) := by
+  rw [← ContinuousMap.HomotopyEquiv.singularHomologyIso_inv]
+  rfl
 
 end Integral
 

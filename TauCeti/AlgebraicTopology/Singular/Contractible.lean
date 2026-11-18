@@ -97,7 +97,7 @@ theorem isZero_reducedSingularHomologyFunctor_of_contractibleSpace (X : TopCat.{
 
 /-- A map into a contractible space kills the reduced homology of its source. -/
 @[reassoc (attr := simp)]
-theorem reducedSingularHomologyι_app_comp_map_of_contractibleSpace {X Y : TopCat.{w}}
+theorem reducedSingularHomologyι_app_comp_map_eq_zero_of_contractibleSpace {X Y : TopCat.{w}}
     [ContractibleSpace Y] (f : X ⟶ Y) (n : ℕ) :
     (reducedSingularHomologyι R n).app X ≫ ((singularHomologyFunctor C n).obj R).map f = 0 := by
   rw [← (reducedSingularHomologyι R n).naturality,
@@ -111,7 +111,7 @@ augmentation of `X`, and in positive degrees `f_*` is zero. -/
 def isLimitReducedSingularHomologyιOfContractibleSpace {X Y : TopCat.{w}} [ContractibleSpace Y]
     (f : X ⟶ Y) (n : ℕ) :
     IsLimit (KernelFork.ofι ((reducedSingularHomologyι R n).app X)
-      (reducedSingularHomologyι_app_comp_map_of_contractibleSpace R f n)) := by
+      (reducedSingularHomologyι_app_comp_map_eq_zero_of_contractibleSpace R f n)) := by
   cases n with
   | zero =>
     -- a morphism killed by `f_*` is killed by the augmentation `f_* ≫ ε_Y = ε_X`
