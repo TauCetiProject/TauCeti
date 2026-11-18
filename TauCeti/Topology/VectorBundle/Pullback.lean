@@ -98,9 +98,9 @@ theorem linearEquivAt_pullback (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
 image point. -/
 theorem symm_pullback (e : Trivialization F (π F E)) (f : K) {b : B'}
     (hb : f b ∈ e.baseSet) (y : F) :
-    (e.pullback f).symm b y = e.symm (f b) y :=
-  (congrArg ((e.pullback f).symm b) (congrArg Prod.snd (e.apply_mk_symm hb y))).symm.trans
-    ((e.pullback f).symm_apply_apply_mk hb _)
+    (e.pullback f).symm b y = e.symm (f b) y := by
+  simpa only [pullback_apply, Pullback.lift_mk, apply_mk_symm e hb] using
+    (e.pullback f).symm_apply_apply_mk hb (e.symm (f b) y)
 
 end Bundle.Trivialization
 
@@ -129,13 +129,10 @@ theorem continuousLinearMapAt_pullback (e : Trivialization F (π F V)) [e.IsLine
     (f : K) (x : B') :
     (e.pullback f).continuousLinearMapAt 𝕜 x = e.continuousLinearMapAt 𝕜 (f x) := by
   ext v
-  by_cases hx : f x ∈ e.baseSet
-  · exact ((e.pullback f).continuousLinearMapAt_apply_of_mem (R := 𝕜) hx v).trans
-      ((congrArg Prod.snd (e.pullback_apply f ⟨x, v⟩)).trans
-        (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx v).symm)
-  · -- Off the base set both charts are zero.
-    exact (LinearMap.congr_fun (linearMapAt_def_of_notMem (e.pullback f) (b := x) hx) v).trans
-      (LinearMap.congr_fun (linearMapAt_def_of_notMem e hx) v).symm
+  -- Both sides are the chart at `f x` on the base set and zero off it.
+  change (e.pullback f).linearMapAt 𝕜 x v = e.linearMapAt 𝕜 (f x) v
+  simp only [coe_linearMapAt]
+  rfl
 
 end Bundle.Trivialization
 

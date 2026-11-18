@@ -115,23 +115,27 @@ theorem pullbackMap_jet {s : ∀ y, V y} {x : N}
   have hg : MDifferentiableAt I 𝓘(𝕜, F) g (f x) :=
     ((trivializationAt F V (f x)).mdifferentiableAt_section_iff I s
       (mem_baseSet_trivializationAt F V (f x))).1 hs
-  -- The trivialization of `f*V` at `x` is by definition the pullback of the trivialization of `V`
-  -- at `f x`, so the pulled-back section reads as `g ∘ f` in it, with value `g (f x)` at `x`.
+  -- The trivialization of `f*V` at `x` is the pullback of the trivialization of `V` at `f x`, so
+  -- the pulled-back section reads as `g ∘ f` in it, with value `g (f x)` at `x`.
+  have hgf : (fun y ↦ (trivializationAt F ((f : N → M) *ᵖ V) x ⟨y, s (f y)⟩).2) = g ∘ f := by
+    simp only [trivializationAt, FiberBundle.pullback_trivializationAt']
+    rfl
   refine Prod.ext ((pullbackMap_fst f x _).trans ((jet_fst I F s (f x)).trans
-    (jet_fst (V := (f : N → M) *ᵖ V) J F (fun y ↦ s (f y)) x).symm))
+    ((congrFun hgf x).symm.trans (jet_fst (V := (f : N → M) *ᵖ V) J F (fun y ↦ s (f y)) x).symm)))
     ((pullbackMap_snd f x _).trans ?_)
   -- By the chain rule, the derivative of `g ∘ f` at `x` is `dg_{f x} ∘ df_x`.
+  have hd := mfderiv_comp x hg (f.contMDiff.mdifferentiableAt one_ne_zero)
+  rw [← hgf] at hd
   exact (congrArg (fun A : E →L[𝕜] F ↦ A.comp (mfderiv J I f x))
     (jet_snd_eq_mfderiv I F s (f x))).trans
-    ((mfderiv_comp x hg (f.contMDiff.mdifferentiableAt one_ne_zero)).symm.trans
-      (jet_snd_eq_mfderiv (V := (f : N → M) *ᵖ V) J F (fun y ↦ s (f y)) x).symm)
+    (hd.symm.trans (jet_snd_eq_mfderiv (V := (f : N → M) *ᵖ V) J F (fun y ↦ s (f y)) x).symm)
 
 /-- The pullback of first jets lies over the identity of `V_{f x} = (f*V)_x` on values. -/
 @[simp]
 theorem value_pullbackMap (x : N) (j : FirstJetBundle I F V (f x)) :
     value J F x (pullbackMap I J F f x j) = value I F (f x) j := by
   rw [value_apply, value_apply, pullbackMap_fst]
-  -- The trivialization of `f*V` at `x` is by definition the pullback of the one of `V` at `f x`.
+  simp only [trivializationAt, FiberBundle.pullback_trivializationAt']
   exact (trivializationAt F V (f x)).symm_pullback f (mem_baseSet_trivializationAt F V (f x)) j.1
 
 end Pullback
@@ -154,14 +158,11 @@ variable {I J F}
 the underlying `C^1` map. -/
 @[simp]
 theorem pullbackEquiv_apply (j : FirstJetBundle I F V (f x)) :
-    pullbackEquiv I J F f hf j = pullbackMap I J F f x j := by
-  refine Prod.ext ((congrArg Prod.fst (ContinuousLinearEquiv.firstJetPullback_apply _ _ _ j)).trans
-    (pullbackMap_fst f x j).symm) ?_
-  refine (congrArg Prod.snd (ContinuousLinearEquiv.firstJetPullback_apply _ _ _ j)).trans ?_
-  rw [pullbackMap_snd]
-  simp only [ContinuousLinearMap.flip_zero, zero_apply, zero_add,
-    ContinuousLinearEquiv.coe_refl, ContinuousLinearMap.id_comp]
-  exact congrArg j.2.comp (hf.mfderivToContinuousLinearEquiv_coe one_ne_zero)
+    pullbackEquiv I J F f hf j = pullbackMap I J F f x j :=
+  -- The underlying map of `firstJetPullback` of equivalences is `firstJetPullback` of their
+  -- underlying maps, here the identity and the differential `df_x`.
+  DFunLike.congr_fun (ContinuousLinearEquiv.coe_firstJetPullback (E := E) (E' := E')
+    (ContinuousLinearEquiv.refl 𝕜 F) 0 (hf.mfderivToContinuousLinearEquiv one_ne_zero)) j
 
 /-- The inverse of the pullback of first jets along a local diffeomorphism keeps the value
 coordinate. -/
