@@ -42,8 +42,10 @@ a high power of an ample line bundle: on projective space, sections of `F` over 
   for an invertible sheaf `L`, `t ↦ t ⊗ eⁿ` is bijective over the nonvanishing locus of `e`.
 * `AlgebraicGeometry.Scheme.Modules.exists_tmulRight_tensorPowSection_eq_zero`: a section over a
   quasi-compact open vanishing on `X_s` is killed by tensoring with a power of `s`.
-* `AlgebraicGeometry.Scheme.Modules.exists_map_eq_tmulRight_tensorPowSection`: on a quasi-compact
-  quasi-separated open, `t ⊗ sⁿ` extends from `X_s` for every section `t` over `X_s` and large `n`.
+* `AlgebraicGeometry.Scheme.Modules.exists_map_eq_tmulRight_tensorPowSection` and
+  `AlgebraicGeometry.Scheme.Modules.exists_forall_ge_exists_map_eq_tmulRight_tensorPowSection`:
+  on a quasi-compact quasi-separated open, `t ⊗ sⁿ` extends from `X_s` for every section `t` over
+  `X_s` and all sufficiently large `n`.
 
 ## References
 
@@ -230,6 +232,50 @@ theorem exists_map_eq_tmulRight_tensorPowSection [F.IsQuasicoherent] {U : X.Open
   simp only [y'', F.map_smul, map_pow, hy', smul_smul, ← pow_add]
   rw [add_comm M N, ← tmulRight_tensorPowSection_smul, hs i]
   simp only [← Functor.map_comp_apply, ← op_comp, homOfLE_comp]
+
+/-- If `t ⊗ sⁿ` extends from `X_s` to `U`, then `t ⊗ sⁿ⁺¹` also extends from `X_s` to `U`. -/
+private theorem exists_map_eq_tmulRight_tensorPowSection_succ
+    {U : X.Opens} (s : Γ(L, U)) (t : Γ(F, L.nonvanishingLocus s)) {n : ℕ}
+    {t' : Γ(F ⊗ tensorPow L n, U)}
+    (ht' : (F ⊗ tensorPow L n).presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t' =
+      tmulRight F
+        (tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) n) t) :
+    ∃ t'' : Γ(F ⊗ tensorPow L (n + 1), U),
+      (F ⊗ tensorPow L (n + 1)).presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t'' =
+        tmulRight F
+          (tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) (n + 1))
+          t := by
+  let φ : (F ⊗ tensorPow L n) ⊗ L ⟶ F ⊗ tensorPow L (n + 1) :=
+    (α_ F (tensorPow L n) L).hom ≫ F ◁ (tensorPowSuccIso L n).hom
+  let i : L.nonvanishingLocus s ⟶ U := homOfLE (L.nonvanishingLocus_le s)
+  refine ⟨φ.app U (tmulRight (F ⊗ tensorPow L n) s t'), ?_⟩
+  have hnat : φ.app (L.nonvanishingLocus s)
+      (((F ⊗ tensorPow L n) ⊗ L).presheaf.map i.op (tmulRight (F ⊗ tensorPow L n) s t')) =
+      (F ⊗ tensorPow L (n + 1)).presheaf.map i.op (φ.app U (tmulRight (F ⊗ tensorPow L n) s t')) :=
+    φ.mapPresheaf.naturality_apply i.op _
+  rw [← hnat, map_tmulRight, ht']
+  simp only [φ, Hom.comp_app, ConcreteCategory.comp_apply]
+  rw [associator_hom_app_tmulRight, whiskerLeft_app_tmulRight,
+    tensorPowSuccIso_hom_app_tmulRight_tensorPowSection]
+
+/-- **Uniform extension of sections from a nonvanishing locus**: for quasi-coherent `F`, invertible
+`L`, a quasi-compact quasi-separated open `U`, and a section `t` of `F` over `X_s`, there exists
+`n₀` such that `t ⊗ sⁿ` extends to a section of `F ⊗ Lⁿ` over `U` for *every* `n ≥ n₀`. -/
+theorem exists_forall_ge_exists_map_eq_tmulRight_tensorPowSection [F.IsQuasicoherent] {U : X.Opens}
+    (hU : IsCompact (U : Set X)) (hU' : IsQuasiSeparated (U : Set X)) (s : Γ(L, U))
+    (t : Γ(F, L.nonvanishingLocus s)) :
+    ∃ n₀ : ℕ, ∀ n ≥ n₀, ∃ t' : Γ(F ⊗ tensorPow L n, U),
+      (F ⊗ tensorPow L n).presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t' =
+        tmulRight F
+          (tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) n) t := by
+  obtain ⟨n₀, t₀, ht₀⟩ := exists_map_eq_tmulRight_tensorPowSection F hU hU' s t
+  refine ⟨n₀, fun n hn ↦ ?_⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
+  induction k with
+  | zero => exact ⟨t₀, ht₀⟩
+  | succ k ih =>
+    obtain ⟨t', ht'⟩ := ih (Nat.le_add_right n₀ k)
+    exact exists_map_eq_tmulRight_tensorPowSection_succ F s t ht'
 
 end
 

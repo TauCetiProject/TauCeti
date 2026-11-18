@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
@@ -38,7 +39,9 @@ over an arbitrary site. This file only packages it over a scheme:
   from an open cover, respectively from a neighbourhood of each point, together with a
   trivialization over each member, and `TauCeti.SheafOfModules.LocalTrivializations.unitIsoRestrict`
   turns a free rank-one trivialization over an open `U` into an isomorphism from the structure
-  sheaf of the open subscheme `U` to the restriction of the module to `U`.
+  sheaf of the open subscheme `U` to the restriction of the module to `U`;
+* `Scheme.Modules.isFinitePresentation_of_isInvertible` specializes the site-level
+  finite-presentation instance for invertible sheaves to `X.Modules`.
 
 A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives local coordinates:
 
@@ -224,6 +227,12 @@ universe u
 noncomputable section
 
 variable {X : Scheme.{u}}
+
+/-- An invertible `𝒪_X`-module is finitely presented. -/
+instance isFinitePresentation_of_isInvertible (L : X.Modules)
+    [TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L] :
+    L.IsFinitePresentation :=
+  TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := L)
 
 /-- The coordinate isomorphism from a locally trivial rank-one module sheaf to the structure
 sheaf on the trivializing open subset. -/

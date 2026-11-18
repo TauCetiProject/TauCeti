@@ -44,6 +44,8 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
   invariant under isomorphisms of invertible sheaves;
 * `AlgebraicGeometry.Scheme.Modules.range_nonvanishingLocus_eq_of_iso`: isomorphic invertible
   sheaves have the same nonvanishing loci of sections over each open;
+* `AlgebraicGeometry.Scheme.Modules.isCompact_nonvanishingLocus`: the nonvanishing locus of a
+  section over a quasi-compact open is quasi-compact;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
   basic open set of the regular function `r`.
 
@@ -305,5 +307,26 @@ theorem nonvanishingLocus_unit {U : X.Opens} (r : Γ(X, U)) :
   · exact congrArg _ (mul_one r).symm
   · rw [hone]
     exact (inf_eq_left.mpr (X.basicOpen_le r)).symm
+
+/-- The nonvanishing locus of a section of an invertible sheaf over a quasi-compact open is
+quasi-compact. -/
+theorem isCompact_nonvanishingLocus {U : X.Opens} (hU : IsCompact (U : Set X)) (s : Γ(M, U)) :
+    IsCompact (M.nonvanishingLocus s : Set X) := by
+  have H (x : U) : ∃ A : X.Opens,
+      (x : X) ∈ A ∧ IsCompact ((A ⊓ M.nonvanishingLocus s : X.Opens) : Set X) := by
+    obtain ⟨V, t, hxV⟩ := exists_mem_trivialization M x
+    obtain ⟨_, ⟨A, hA, rfl⟩, hxA, hAUV⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
+      (show (x : X) ∈ ((U ⊓ V : X.Opens) : Set X) from ⟨x.2, hxV⟩) (U ⊓ V).isOpen
+    refine ⟨A, hxA, ?_⟩
+    rw [← nonvanishingLocus_map (homOfLE (fun y hy ↦ (hAUV hy).1)),
+      nonvanishingLocus_eq_basicOpen t (homOfLE (fun y hy ↦ (hAUV hy).2))]
+    exact (hA.basicOpen _).isCompact
+  choose A hxA hAc using H
+  obtain ⟨S, hS⟩ := hU.elim_finite_subcover (fun x : U ↦ (A x : Set X)) (fun x ↦ (A x).isOpen)
+    fun x hx ↦ Set.mem_iUnion.mpr ⟨⟨x, hx⟩, hxA ⟨x, hx⟩⟩
+  convert S.isCompact_biUnion fun x _ ↦ hAc x using 1
+  refine Set.Subset.antisymm (fun y hy ↦ ?_) (Set.iUnion₂_subset fun _ _ _ hy ↦ hy.2)
+  obtain ⟨x, hxS, hyA⟩ := Set.mem_iUnion₂.mp (hS (nonvanishingLocus_le s hy))
+  exact Set.mem_iUnion₂.mpr ⟨x, hxS, hyA, hy⟩
 
 end AlgebraicGeometry.Scheme.Modules

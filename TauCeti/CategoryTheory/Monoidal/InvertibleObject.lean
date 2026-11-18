@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.Linear
 
 /-!
@@ -38,6 +39,8 @@ identities.  For the same reason only the counit has a closed form; the unit is 
   `(X ⟶ Y ⊗ M) ≃ (X ⊗ L ⟶ Y)`.
 * `CategoryTheory.MonoidalCategory.tensorRightHomLinearEquivOfIso`: the same bijection, as an
   `R`-linear equivalence.
+* `CategoryTheory.MonoidalCategory.isEquivalence_tensorRight_of_iso`: in a braided monoidal
+  category, a single isomorphism `L ⊗ M ≅ 𝟙_ C` makes `tensorRight L` an equivalence.
 -/
 
 public section
@@ -159,6 +162,12 @@ theorem tensorRightHomLinearEquivOfIso_symm_apply (e₁ : L ⊗ M ≅ 𝟙_ C) (
   tensorRightHomEquivOfIso_symm_apply e₁ e₂ g
 
 end Linear
+
+/-- In a braided monoidal category, a single isomorphism `L ⊗ M ≅ 𝟙_ C` suffices to make
+`tensorRight L` an equivalence of categories (with quasi-inverse `tensorRight M`). -/
+theorem isEquivalence_tensorRight_of_iso [BraidedCategory C] (e : L ⊗ M ≅ 𝟙_ C) :
+    (tensorRight L).IsEquivalence :=
+  (tensorRightEquivalenceOfIso e (β_ M L ≪≫ e)).isEquivalence_functor
 
 end MonoidalCategory
 
