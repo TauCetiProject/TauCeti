@@ -60,10 +60,14 @@ the restriction of `φ - φ ∘ ρ`, which lies in `H¹₀(U ∩ H)`; so it equa
   reflected coefficients.
 * `TauCeti.PDE.energyIntegrand_pullback_reflectPrincipal`: off the hyperplane, the reflected
   coefficients are invariant under the change of variables `ρ`.
+* `TauCeti.PDE.energyIntegrand_reflectPrincipal_zero_zero`: a principal coefficient that is
+  already invariant under the reflection is unchanged by it.
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL`: the odd reflection
   of a weak solution vanishing on the flat boundary is a weak solution of the reflected equation.
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral`: the
-  same for a right-hand side `f ∈ L²(U ∩ H)`, which is reflected oddly.
+  same for a right-hand side `f ∈ L²(U ∩ H)`, which is reflected oddly, and
+  `TauCeti.PDE.energyFormH1_sub_compHyperplaneReflectionL_eq_setIntegral`: for a principal
+  coefficient invariant under the reflection, the reflected equation is the original one.
 * `TauCeti.PDE.UniformlyEllipticOn.reflectPrincipal`: the reflected principal coefficient is
   uniformly elliptic and bounded with the constants of `a`, and
   `TauCeti.PDE.norm_reflectDrift_le` and `TauCeti.PDE.norm_reflectDensity_le`: the reflected
@@ -196,6 +200,25 @@ theorem energyIntegrand_pullback_reflectPrincipal (hν : ν ≠ 0) (hx : ⟪x, �
       hyperplaneReflection_hyperplaneReflection, Submodule.reflection_reflection,
       Submodule.reflection_reflection, reflectPrincipal_of_le hgt.le, reflectDrift_of_le hgt.le,
       reflectDensity_of_le hgt.le]
+
+/-- **Reflection-invariant principal coefficients are their own reflection.** If the bilinear
+form of `a (ρ x)` on reflected vectors is that of `a x`, that is `a (ρ x) = R a(x) R` with `R` the
+linear part of the reflection `ρ`, then the reflected principal coefficient has the energy
+integrand of `a` at `x`, in the absence of lower-order terms. -/
+theorem energyIntegrand_reflectPrincipal_zero_zero
+    (ha : ∀ η ξ, matrixBilinearForm (a (hyperplaneReflection ν c₀ x)) ((ℝ ∙ ν)ᗮ.reflection η)
+      ((ℝ ∙ ν)ᗮ.reflection ξ) = matrixBilinearForm (a x) η ξ) :
+    energyIntegrand (reflectPrincipal ν c₀ a x) 0 0 = energyIntegrand (a x) 0 0 := by
+  by_cases hx : ⟪x, ν⟫_ℝ < c₀
+  · refine ContinuousLinearMap.ext fun W => ContinuousLinearMap.ext fun W' => ?_
+    have h := energyIntegrand_pullback_hyperplaneReflection (a := a)
+      (b := (0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) (c := (0 : EuclideanSpace ℝ ι → ℝ))
+      (ν := ν) (c₀ := c₀) (x := x) W W'
+    simp only [pullbackDrift_apply, pullbackDensity_apply, Pi.zero_apply, map_zero, smul_zero,
+      mul_zero] at h
+    rw [reflectPrincipal_of_lt hx, h, energyIntegrand_apply, energyIntegrand_apply, ha]
+    simp [driftForm_apply, massForm_apply]
+  · rw [reflectPrincipal_of_le (not_lt.1 hx)]
 
 @[simp]
 theorem reflectDrift_zero :
@@ -494,6 +517,41 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegr
     ← energyFormH1_sub_right hcoeff, energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0,
     ← W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ, hu,
     W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL _ hH hU hf]
+
+/-- **Odd reflection for reflection-invariant coefficients.** Let `H = {x | c₀ < ⟪x, ν⟫}` with
+`ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, with linear part `R`, and let `U` be
+open with `ρ U ⊆ U`. Let `a` be measurable on `U ∩ H`, uniformly elliptic on the part of `U` in the
+closed half-space `{x | c₀ ≤ ⟪x, ν⟫}` and invariant under the reflection, `a(ρ x) = R a(x) R` on
+`U`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ L²(U ∩ H)`, tested against `H¹₀(U ∩ H)`. Then the odd reflection
+`u - u ∘ ρ` is a weak solution on `U` of the same equation `-∂ᵢ(aⁱʲ ∂ⱼw) = g`, tested against
+`H¹₀(U)`, whose right-hand side is the odd reflection `g x = 1_H f x - 1_H f (ρ x)` of `f`. -/
+theorem energyFormH1_sub_compHyperplaneReflectionL_eq_setIntegral [Nonempty ι] (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
+    {lam Lam : ℝ} (ha : UniformlyEllipticOn {x | x ∈ U ∧ c₀ ≤ ⟪x, ν⟫_ℝ} a lam Lam)
+    (ham : AEStronglyMeasurable a (mu.restrict (U ⊓ H)))
+    (hinv : ∀ x ∈ U, ∀ η ξ, matrixBilinearForm (a (hyperplaneReflection ν c₀ x))
+      ((ℝ ∙ ν)ᗮ.reflection η) ((ℝ ∙ ν)ᗮ.reflection ξ) = matrixBilinearForm (a x) η ξ)
+    {u : W1p mu U 2} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict (U ⊓ H)))
+    (hu : ∀ v : W1p0 mu (U ⊓ H) 2,
+      energyFormH1 a 0 0 (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u) (v : W1p mu (U ⊓ H) 2) =
+        ∫ x in U ⊓ H, f x * W1p.value (v : W1p mu (U ⊓ H) 2) x ∂mu)
+    (φ : W1p0 mu U 2) :
+    energyFormH1 a 0 0 (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u)
+        (φ : W1p mu U 2) =
+      ∫ x in U, ((H : Set (EuclideanSpace ℝ ι)).indicator f x -
+        (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) *
+          W1p.value (φ : W1p mu U 2) x ∂mu := by
+  have h := energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral hν hH hU
+    (memLp_energyIntegrand_reflectPrincipal (b := 0) (c := 0) (beta := 0) (gamma := 0) hν hH hU
+      ha ham aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
+      (fun _ _ => by simp)) hu0 hf hu φ
+  rw [reflectDrift_zero, reflectDensity_zero] at h
+  rw [← h, energyFormH1_def, energyFormH1_def]
+  -- Being invariant under the reflection, `a` is its own reflected coefficient on `U`.
+  refine setIntegral_congr_fun U.isOpen.measurableSet fun x hx => ?_
+  simp only [Pi.zero_apply, energyIntegrand_reflectPrincipal_zero_zero (hinv x hx)]
 
 end WeakSolution
 
