@@ -41,6 +41,7 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
   real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
@@ -240,6 +241,12 @@ theorem piLpExtendByZero_castLEEmb_take (hm : m ≤ n) {x : EuclideanSpace 𝕜 
 end take
 
 variable [RCLike 𝕜]
+
+omit [Fintype ι] in
+/-- Every coordinate projection of Euclidean space is surjective. -/
+theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i) := by
+  classical
+  exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
