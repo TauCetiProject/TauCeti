@@ -44,8 +44,9 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
   coordinate when `I` is nonempty;
 * `ZeroAtInftyContinuousMap.hasSum_single`: every `f` is the unconditional sum of its coordinate
-  vectors `single i (f i)`, and for scalar families `f = ∑ i, f i • single i 1`
-  (`ZeroAtInftyContinuousMap.hasSum_smul_single_one`);
+  vectors `single i (f i)`, every continuous linear map out of `C₀(I, E)` is given by its
+  coordinate-map series (`ZeroAtInftyContinuousMap.hasSum_comp_singleCLM`), and for scalar families
+  `f = ∑ i, f i • single i 1` (`ZeroAtInftyContinuousMap.hasSum_smul_single_one`);
 * `ZeroAtInftyContinuousMap.dense_setOf_finite_support` and
   `ZeroAtInftyContinuousMap.dense_span_single_one`: finitely supported families are dense, and
   the coordinate vectors `single i 1` span a dense submodule of `C₀(I, R)`;
@@ -439,6 +440,14 @@ theorem hasSum_single (f : C₀(I, β)) : HasSum (fun i ↦ single i (f i)) f :=
   simpa only [HasSum, SummationFilter.unconditional_filter, indicatorCLM_finset_apply] using
     tendsto_indicatorCLM ℕ (s := fun s : Finset I ↦ (s : Set I))
       eventually_finset_mem_atTop f
+
+/-- Every continuous linear map out of `C₀(I, β)` is given by the series of its coordinate maps
+`φ ∘ singleCLM R i`. -/
+theorem hasSum_comp_singleCLM {R M : Type*} [Semiring R] [Module R β] [ContinuousConstSMul R β]
+    [AddCommMonoid M] [TopologicalSpace M] [Module R M]
+    (φ : C₀(I, β) →L[R] M) (f : C₀(I, β)) :
+    HasSum (fun i ↦ φ.comp (singleCLM R i) (f i)) (φ f) := by
+  simpa using (hasSum_single f).mapL φ
 
 /-- Continuous linear maps out of `C₀(I, β)` agreeing on all coordinate vectors are equal. -/
 theorem continuousLinearMap_ext {R M : Type*} [Semiring R] [Module R β] [ContinuousConstSMul R β]

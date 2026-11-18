@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
@@ -28,6 +29,13 @@ of the ambient simplicial set comes from the subspace exactly when its image lie
 
 The quotient map on zeroth homology is an epimorphism already for preadditive coefficients with
 coproducts and homology.
+
+In abelian coefficients, the long exact sequence of a pair gives five lemmas comparing maps of
+pairs: on relative homology (`TopPair.isIso_singularHomologyMap_of_isIso`) and on the homology of
+the ambient spaces when the relative homology vanishes (`TopPair.isIso_homologyMap_fst_of_isZero`).
+The five lemma for the ambient spaces, `TopPair.isIso_homologyMap_fst_of_isIso`, is the case of
+the zero objects of its form modulo a Serre class, in
+`TauCeti.AlgebraicTopology.Singular.SerreClass`.
 
 The construction follows the quotient-chain presentation in Eilenberg--Steenrod, *Foundations of
 Algebraic Topology*, Chapters I--III, and is implemented using Mathlib's `SSetPair` relative-chain
@@ -205,6 +213,20 @@ variable {P P'} in
 noncomputable abbrev singularChainComplexMap :
     P.singularChainComplex R ⟶ P'.singularChainComplex R :=
   SSetPair.chainComplexMap (toSSetPair.map f) R
+
+/-- Relative singular chains send the identity map of a pair to the identity chain map. -/
+@[simp]
+lemma singularChainComplexMap_id : singularChainComplexMap (𝟙 P) R = 𝟙 _ := by
+  simp only [singularChainComplexMap, SSetPair.chainComplexMap, CategoryTheory.Functor.map_id]
+
+variable {P P'} in
+/-- Relative singular chains send a composite of maps of pairs to the composite of the induced
+chain maps. -/
+@[reassoc]
+lemma singularChainComplexMap_comp {P'' : TopPair.{w}} (g : P' ⟶ P'') :
+    singularChainComplexMap (f ≫ g) R =
+      singularChainComplexMap f R ≫ singularChainComplexMap g R := by
+  simp only [singularChainComplexMap, SSetPair.chainComplexMap, Functor.map_comp]
 
 @[simp]
 lemma singularChainComplexFunctor_obj_map :
@@ -557,6 +579,28 @@ lemma isIso_homologyMap_map_of_isZero {n : ℕ} (h₁ : IsZero (P.singularHomolo
   have := P.mono_homologyMap_map_of_isZero R h₁
   have := P.epi_homologyMap_map_of_isZero R h₀
   isIso_of_mono_of_epi _
+
+/-- A map of pairs `f : (X, A) ⟶ (X', A')` such that `Hₙ` of both pairs and `Hₙ₊₁(X', A')` vanish
+induces an isomorphism `Hₙ(X) ≅ Hₙ(X')` if it induces one on `Hₙ(A) ≅ Hₙ(A')`. -/
+lemma isIso_homologyMap_fst_of_isZero {P P' : TopPair.{w}} (f : P ⟶ P') {n : ℕ}
+    (h₀ : IsZero (P.singularHomology R n)) (h₁' : IsZero (P'.singularHomology R (n + 1)))
+    (h₀' : IsZero (P'.singularHomology R n))
+    (hsnd : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n)) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
+  have := P'.isIso_homologyMap_map_of_isZero R h₁' h₀'
+  have hw : SSet.homologyMap (TopCat.toSSet.map P.map) R n ≫
+      SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n =
+        SSet.homologyMap (TopCat.toSSet.map (Hom.snd f)) R n ≫
+          SSet.homologyMap (TopCat.toSSet.map P'.map) R n := by
+    rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
+      Hom.w]
+  -- `Hₙ(A) ⟶ Hₙ(X)` is a monomorphism, since following it by the map on `Hₙ(X)` is an
+  -- isomorphism, and an epimorphism since `Hₙ(X, A)` vanishes.
+  have := mono_of_mono_fac hw
+  have := P.epi_homologyMap_map_of_isZero R h₀
+  have := isIso_of_mono_of_epi (SSet.homologyMap (TopCat.toSSet.map P.map) R n)
+  rw [← isIso_comp_left_iff (SSet.homologyMap (TopCat.toSSet.map P.map) R n), hw]
+  infer_instance
 
 /-- The connecting morphism of the long exact sequence of a topological pair is natural: for a
 map of pairs `f : (X, A) ⟶ (X', A')`, following `Hₙ(X, A) ⟶ Hₘ(A)` by the map induced by `f` on
