@@ -202,6 +202,37 @@ theorem perturbedMFDeriv_apply (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
       v.2 • ω.hamiltonianVectorField (Kt z) (u z) :=
   (rfl)
 
+/-- The Hamiltonian vector field `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}` of the perturbation one-form
+`K = K_s ds + K_t dt` with manifold target, at the domain point `z` and the target point `x`: it
+sends a tangent vector `(a, b)` of the domain to `a X_{K_s}(x) + b X_{K_t}(x)` in `T_x M`. -/
+def hamiltonianOneForm (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ) (z : ℝ × ℝ) (x : M) :
+    ℝ × ℝ →L[ℝ] TangentSpace I x :=
+  (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (Ks z) x) +
+    (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (Kt z) x)
+
+@[simp]
+theorem hamiltonianOneForm_apply (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ) (z : ℝ × ℝ)
+    (x : M) (v : ℝ × ℝ) :
+    ω.hamiltonianOneForm Ks Kt z x v =
+      v.1 • ω.hamiltonianVectorField (Ks z) x + v.2 • ω.hamiltonianVectorField (Kt z) x :=
+  (rfl)
+
+/-- The perturbed derivative is `du - X_K(u)`. -/
+theorem perturbedMFDeriv_eq_sub (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.perturbedMFDeriv Ks Kt u z =
+      -- As in `perturbedMFDeriv`, the difference is taken in maps out of the model `ℝ × ℝ`.
+      HSub.hSub (α := ℝ × ℝ →L[ℝ] TangentSpace I (u z)) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z)
+        (ω.hamiltonianOneForm Ks Kt z (u z)) :=
+  ContinuousLinearMap.ext fun v ↦ (perturbedMFDeriv_apply ω Ks Kt u z v).trans (sub_sub _ _ _)
+
+/-- The perturbed derivative is `du - X_K(u)`, applied to a tangent vector of the domain. -/
+theorem perturbedMFDeriv_apply_eq_sub (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (z v : ℝ × ℝ) :
+    ω.perturbedMFDeriv Ks Kt u z v =
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z v - ω.hamiltonianOneForm Ks Kt z (u z) v :=
+  (perturbedMFDeriv_apply ω Ks Kt u z v).trans (sub_sub _ _ _)
+
 /-- The real-coordinate component is `∂s u - X_(Ks)`. -/
 @[simp]
 theorem perturbedMFDeriv_apply_stdComplexLineReal (ω : SmoothTwoForm I M)
