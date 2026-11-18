@@ -34,7 +34,6 @@ of the Coxeter matrix (`CoxeterSystem.orderOf_simple_mul_simple`).
 
 ## Main definitions
 
-* `CoxeterMatrix.restrict`: the restriction of a Coxeter matrix to a set of indices.
 * `CoxeterSystem.parabolicHom`: the homomorphism `W →* W'` induced by a map of index types along
   which the Coxeter matrices agree.
 
@@ -63,28 +62,6 @@ of the Coxeter matrix (`CoxeterSystem.orderOf_simple_mul_simple`).
 -/
 
 public section
-
-namespace CoxeterMatrix
-
-variable {B : Type*} (M : CoxeterMatrix B)
-
-/-- The **restriction** of a Coxeter matrix to a set `J` of indices: the Coxeter matrix on `J` with
-the same entries. Along the inclusion `Subtype.val`, `CoxeterSystem.parabolicHom` identifies its
-Coxeter group with the standard parabolic subgroup of `J`. -/
-def restrict (J : Set B) : CoxeterMatrix J where
-  M := M.M.submatrix (↑) (↑)
-  isSymm := M.isSymm.submatrix _
-  diagonal i := M.diagonal i
-  off_diagonal i i' h := M.off_diagonal i i' (Subtype.coe_injective.ne h)
-
-/-- The entries of the restriction are the entries of the original matrix. -/
-@[simp]
-theorem restrict_apply (J : Set B) (i i' : J) : M.restrict J i i' = M i i' :=
-  -- `(rfl)`, not `rfl`: the body of `restrict` is not `@[expose]`d, so this must not be inferred
-  -- `@[defeq]`.
-  (rfl)
-
-end CoxeterMatrix
 
 namespace CoxeterSystem
 

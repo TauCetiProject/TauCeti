@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.GroupTheory.Coxeter.Graph
-public import TauCeti.GroupTheory.Coxeter.Restriction
+public import TauCeti.GroupTheory.Coxeter.Geometric.Basic
 import TauCeti.Data.Finsupp.MapDomain
 
 /-!
@@ -29,7 +29,9 @@ a finite sum over any finite set of components containing those that meet the su
 if and only if every `B_K` is (`CoxeterMatrix.geometricForm_posDef_iff_forall_connectedComponent`).
 Both statements hold more generally for any map `c : B → ι` whose distinct fibres are joined only
 by entries `2`, with the fibres of `c` in place of the components. The Coxeter graph of `M_K` is
-the induced graph on `K`, and is connected.
+the induced graph on `K` (`CoxeterMatrix.graph_restrict`), and is connected. The decomposition
+rests on the orthogonality `CoxeterMatrix.geometricForm_eq_zero_of_eq_two` and on the description
+`CoxeterMatrix.geometricForm_restrict` of the canonical form of a restriction.
 
 Together with the finiteness criterion of a Coxeter group by positive definiteness of its canonical
 form, this reduces the classification of finite Coxeter groups to Coxeter matrices with connected
@@ -37,13 +39,8 @@ Coxeter graph.
 
 ## Main results
 
-* `CoxeterMatrix.graph_restrict`: the Coxeter graph of a restriction is the induced graph.
 * `CoxeterMatrix.connected_graph_restrict_supp`: the restriction to a connected component of the
   Coxeter graph has connected Coxeter graph.
-* `CoxeterMatrix.geometricForm_restrict`: the canonical form of a restriction is the pullback of
-  the canonical form along extension by zero.
-* `CoxeterMatrix.geometricForm_eq_zero_of_eq_two`: vectors whose supports are joined only by
-  entries `2` are orthogonal.
 * `CoxeterMatrix.geometricForm_eq_sum_restrict` and
   `CoxeterMatrix.geometricForm_eq_sum_connectedComponent`: the canonical form is the sum of the
   canonical forms of the restrictions to the fibres, in particular to the connected components.
@@ -65,12 +62,7 @@ namespace CoxeterMatrix
 
 variable {B : Type*} (M : CoxeterMatrix B)
 
-/-! ### The Coxeter graph of a restriction -/
-
-/-- **The Coxeter graph of a restriction is the induced graph** on the chosen indices. -/
-theorem graph_restrict (J : Set B) : (M.restrict J).graph = M.graph.induce J := by
-  ext i j
-  simp [Subtype.coe_injective.ne_iff]
+/-! ### Connectivity of the components -/
 
 /-- **The restriction to a connected component of the Coxeter graph has connected Coxeter
 graph.** -/
@@ -87,15 +79,6 @@ private theorem eq_two_of_connectedComponentMk_ne {i j : B}
   exact h (SimpleGraph.ConnectedComponent.connectedComponentMk_eq_of_adj
     (M.graph_adj.mpr ⟨fun hij' ↦ h (congrArg _ hij'), hij⟩))
 
-/-! ### The canonical form of a restriction -/
-
-/-- **The canonical form of a restriction** is the pullback of the canonical form along extension
-by zero, which sends the simple root of `i ∈ J` to the simple root of `i`. -/
-theorem geometricForm_restrict (J : Set B) (u v : J →₀ ℝ) :
-    (M.restrict J).geometricForm u v =
-      M.geometricForm (u.mapDomain Subtype.val) (v.mapDomain Subtype.val) :=
-  (geometricForm_mapDomain_mapDomain (fun _ _ ↦ M.restrict_apply J _ _) u v).symm
-
 /-- The canonical form of the restriction to `J`, evaluated on restrictions, is the canonical form
 of the parts supported on `J`. -/
 private theorem geometricForm_restrict_subtypeDomain (J : Set B) [DecidablePred (· ∈ J)]
@@ -105,23 +88,7 @@ private theorem geometricForm_restrict_subtypeDomain (J : Set B) [DecidablePred 
   rw [geometricForm_restrict, Finsupp.mapDomain_subtypeDomain_eq_filter,
     Finsupp.mapDomain_subtypeDomain_eq_filter]
 
-/-! ### Orthogonality and the decomposition of the form -/
-
-/-- **Vectors whose supports are joined only by entries `2` are orthogonal** for the canonical
-form: each Gram entry between them is `-cos (π / 2) = 0`. -/
-theorem geometricForm_eq_zero_of_eq_two {x y : B →₀ ℝ}
-    (h : ∀ i ∈ x.support, ∀ j ∈ y.support, M i j = 2) : M.geometricForm x y = 0 := by
-  have hx : M.geometricForm x = x.sum fun i a ↦ a • M.geometricForm (Finsupp.single i 1) := by
-    conv_lhs => rw [← x.sum_single]
-    simp only [Finsupp.sum, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← map_smul, Finsupp.smul_single_one]
-  rw [hx, Finsupp.sum, LinearMap.sum_apply]
-  refine Finset.sum_eq_zero fun i hi ↦ ?_
-  rw [LinearMap.smul_apply, ← y.sum_single, map_finsuppSum, Finsupp.sum]
-  rw [Finset.sum_eq_zero fun j hj ↦ ?_, smul_zero]
-  rw [geometricForm_single_single, h i hi j hj]
-  norm_num
+/-! ### The decomposition of the form -/
 
 /-- For `c : B → ι` whose distinct fibres are joined only by entries `2`, the canonical form is the
 sum of the canonical forms of the parts supported on the fibres. -/

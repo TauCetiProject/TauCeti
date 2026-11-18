@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.Artin
-public import Mathlib.Combinatorics.SimpleGraph.Basic
+public import TauCeti.GroupTheory.Coxeter.Matrix
+public import Mathlib.Combinatorics.SimpleGraph.Maps
 
 /-!
 # The simply laced Artin presentation of a graph
@@ -23,7 +24,8 @@ distinct indices exactly when their entry is not `2`, that is, when the correspo
 reflections do not commute. Entries `0`, which encode infinite order, are edges too. This forgets
 the edge labels, and on simply laced matrices it inverts the first construction
 (`SimpleGraph.graph_coxeterMatrix`). Simple reflections whose indices are not adjacent in the
-Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`).
+Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`), and the Coxeter graph of the
+restriction of `M` to a set of indices is the induced graph (`CoxeterMatrix.graph_restrict`).
 -/
 
 public section
@@ -116,6 +118,11 @@ def graph : SimpleGraph B where
 
 @[simp]
 theorem graph_adj {i j : B} : M.graph.Adj i j ↔ i ≠ j ∧ M i j ≠ 2 := Iff.rfl
+
+/-- **The Coxeter graph of a restriction is the induced graph** on the chosen indices. -/
+theorem graph_restrict (J : Set B) : (M.restrict J).graph = M.graph.induce J := by
+  ext i j
+  simp [Subtype.coe_injective.ne_iff]
 
 end CoxeterMatrix
 
