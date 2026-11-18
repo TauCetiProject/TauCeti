@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Finset.Card
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.Logic.Equiv.Fin.Rotate
@@ -101,18 +102,6 @@ theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k →
     have h := card_image_range_le_card_nonloop_edges_add_one v (k + 1)
     rw [hvertices] at h
     exact h.trans (Nat.add_le_add_right (card_le_card hedges) 1)
-
-/-- A map whose fibers contain at least two elements has at most half as many image elements
-as domain elements. -/
-theorem two_mul_card_image_le_of_no_singleton_fiber {ι β : Type*} [Fintype ι]
-    [DecidableEq β] {f : ι → β} (h : ∀ a, ∃ b ≠ a, f b = f a) :
-    2 * #(univ.image f) ≤ Fintype.card ι := by
-  have hfiber : ∀ y ∈ univ.image f, 2 ≤ #{a | f a = y} := by
-    intro y hy
-    obtain ⟨a, -, rfl⟩ := mem_image.1 hy
-    obtain ⟨b, hba, hb⟩ := h a
-    exact one_lt_card.2 ⟨a, by simp, b, mem_filter.2 ⟨mem_univ _, hb⟩, hba.symm⟩
-  simpa only [card_univ] using mul_card_image_le_card univ 2 hfiber
 
 private theorem two_le_card_cyclic_edge_fiber_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i)))
