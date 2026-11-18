@@ -923,8 +923,8 @@ theorem IsUniform.exists_norm_coefficient_sharpRemainder_le (ha : a.IsUniform) {
     (fun ha ↦ ha.exists_bound_coefficient.imp fun _ hC ↦ ⟨hC.1, fun x _ ξ ↦ hC.2 x ξ⟩) N ha hc
     hcF
   refine ⟨C, hC0, fun i x ξ ↦ ?_⟩
-  have h := hC i 1 ⟨zero_le_one, le_rfl⟩ x (Set.mem_univ x) ξ
-  rwa [← coefficient_remainderSymbol] at h
+  rw [coefficient_sharpRemainder_eq, coefficient_remainderSymbol]
+  exact hC i 1 ⟨zero_le_one, le_rfl⟩ x (Set.mem_univ x) ξ
 
 /-- The composition symbol `a # b` is the pointwise composition `a ∘ b` up to a symbol of order
 `m' + m - 1`. -/

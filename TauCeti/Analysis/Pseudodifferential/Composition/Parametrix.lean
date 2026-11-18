@@ -557,7 +557,8 @@ private theorem exists_quantizeUniformCLM_comp_eq_id_add_of_isUniformAsymptoticS
     quantizeUniformCLM_congr hc (hid'.add hs.isUniform) (by funext q; simp),
     quantizeUniformCLM_add hid' hs.isUniform, quantizeUniformCLM_inclusion hid,
     quantizeUniformCLM_const]
-  congr 1
+  ext u x
+  simp
 
 /-- **The uniform parametrix as an operator.** Let `a` be a symbol of order `m` whose estimates are
 uniform in the position and which is uniformly elliptic above some radius. Then there is a uniform
