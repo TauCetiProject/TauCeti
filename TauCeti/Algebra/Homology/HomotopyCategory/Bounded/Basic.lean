@@ -285,9 +285,8 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
 
 /-- Every object of the homotopy category represented by a bounded complex is represented by a
 bounded below complex. -/
-lemma bounded_le_plus : HomotopyCategory.bounded C ≤ _root_.HomotopyCategory.plus C := by
-  rintro _ ⟨K, hK⟩
-  exact ⟨K, hK.1⟩
+lemma bounded_le_plus : HomotopyCategory.bounded C ≤ _root_.HomotopyCategory.plus C :=
+  ObjectProperty.strictMap_monotone inf_le_left _
 
 /-- The homotopy category of bounded cochain complexes. -/
 abbrev Bounded := (HomotopyCategory.bounded C).FullSubcategory
