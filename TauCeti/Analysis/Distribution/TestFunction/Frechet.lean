@@ -41,6 +41,8 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
   `𝓓^{n}_{K}(E, F)` completely metrizable, hence a Baire space and barrelled.
 * `LinearMap.exists_bound_supportedIn_of_continuous`: a separately continuous bilinear map on two
   such spaces is bounded by `C N_{≤k}(φ) N_{≤k}(ψ)` for some `C` and `k`.
+* `ContDiffMapSupportedIn.supSeminorm_le_of_forall_norm_iteratedFDeriv_le`: a uniform bound `B`
+  on the derivatives of order at most `r` bounds the seminorm `N_{≤r}` by `B`.
 
 ## References
 
@@ -117,6 +119,21 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace 𝓓^{n}_{K}(E, F) 
 barrelled (`BaireSpace.instBarrelledSpace`), so the Banach–Steinhaus theorem applies to it. -/
 instance instBaireSpace [CompleteSpace F] : BaireSpace 𝓓^{n}_{K}(E, F) :=
   BaireSpace.of_completelyPseudoMetrizable
+
+end ContDiffMapSupportedIn
+
+namespace ContDiffMapSupportedIn
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F] {K : Compacts E}
+
+/-- A function supported in `K` whose derivatives of order at most `r` are bounded by `B`
+has `sup_{i ≤ r} N_i χ ≤ B`. -/
+theorem supSeminorm_le_of_forall_norm_iteratedFDeriv_le {χ : 𝓓_{K}(E, F)} {r : ℕ} {B : ℝ}
+    (hB : 0 ≤ B) (h : ∀ i ≤ r, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B) :
+    ContDiffMapSupportedIn.supSeminorm ℂ E F ⊤ K r χ ≤ B :=
+  Seminorm.finset_sup_apply_le hB fun i hi ↦
+    (ContDiffMapSupportedIn.seminorm_top_le_iff ℂ hB i χ).2 fun x _ ↦ h i (Finset.mem_Iic.1 hi) x
 
 end ContDiffMapSupportedIn
 

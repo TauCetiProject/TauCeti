@@ -184,7 +184,7 @@ theorem isSmoothForm_kahlerForm (J : SmoothAlmostComplexStructure I M)
         Riemannian.Tensor.chartLocalFrame (I := I) x j y⟫) x :=
     ContMDiffAt.inner_bundle (IB := I) (n := ∞) (F := E) (E := fun y : M ↦ TangentSpace I y)
       ((hJi i).contMDiffAt hbase)
-      ((Riemannian.Tensor.contMDiffOn_chartLocalFrame (I := I) (n := ∞) x j).contMDiffAt hbase)
+      (Riemannian.Tensor.contMDiffAt_chartLocalFrame (I := I) (n := ∞) x j)
   exact (contMDiffAt_finsetSum (t := Finset.univ) fun i _ ↦
     (contMDiffAt_const (c := b.repr (v 0) i)).mul <|
     contMDiffAt_finsetSum (t := Finset.univ) fun j _ ↦

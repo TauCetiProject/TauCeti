@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.DrinfeldBasis.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 public import TauCeti.AlgebraicGeometry.IdealSheaf.IncidenceLocus
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Rank
 
 /-!
 # Being a Drinfeld basis is a closed condition
@@ -82,6 +82,13 @@ noncomputable def drinfeldBasisLocus
     (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
     S.IdealSheafData :=
   equalityLocus E.structureMap (E.pointsDivisor φ) (E.torsionι N).left.ker
+
+/-- The Drinfeld-basis locus is the equality locus of `∑_a [φ a]` and `E[N]`. -/
+theorem drinfeldBasisLocus_def
+    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
+    E.drinfeldBasisLocus N φ =
+      equalityLocus E.structureMap (E.pointsDivisor φ) (E.torsionι N).left.ker :=
+  (rfl)
 
 variable {E N} {S' : Scheme.{u}} {E' : EllipticCurveGeom S'} {g : E'.carrier ⟶ E.carrier}
   {f : S' ⟶ S}
