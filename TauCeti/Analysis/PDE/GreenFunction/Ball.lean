@@ -59,8 +59,8 @@ dimension two that kernel vanishes identically, so the planar case is instead
   `TauCeti.ballGreenKernel_eq_zero_of_norm_eq_one_right`: vanishing when either argument lies on
   the unit sphere.
 * `TauCeti.ballGreenKernel_pos`: positivity inside the ball outside dimension two.
-* `TauCeti.ballGreenKernel_le_newtonianKernel_sub`: for `n ≥ 3`, domination by the Newtonian
-  kernel, since the corrector is nonnegative (`TauCeti.ballGreenCorrector_nonneg`).
+* `TauCeti.ballGreenKernel_le_newtonianKernel_sub`: outside dimension one, domination by the
+  Newtonian kernel, since the corrector is nonnegative (`TauCeti.ballGreenCorrector_nonneg`).
 * `TauCeti.abs_ballGreenKernel_le`: the bound `|G(x, y)| ≤ |Φ(y - x)| + |Φ(z)|`, `‖z‖ = 2`, off the
   diagonal of the ball, from the lower bound `TauCeti.newtonianKernel_le_ballGreenCorrector`.
 * `TauCeti.measurable_ballGreenKernel`: joint measurability.
@@ -390,18 +390,22 @@ theorem hasFDerivAt_ballGreenKernel (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fi
   rw [ballGreenKernel_fun]
   exact (hasFDerivAt_newtonianKernel_sub n hn hxy).sub (hasFDerivAt_ballGreenCorrector hn h)
 
-/-- For `n ≥ 3` the corrector of the Green kernel of the unit ball is nonnegative. -/
-theorem ballGreenCorrector_nonneg (hn : 3 ≤ n) (x y : EuclideanSpace ℝ (Fin n)) :
+/-- Outside dimension one the corrector of the Green kernel of the unit ball is nonnegative; in
+dimensions zero and two it vanishes. -/
+theorem ballGreenCorrector_nonneg (hn : n ≠ 1) (x y : EuclideanSpace ℝ (Fin n)) :
     0 ≤ ballGreenCorrector n x y := by
-  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+  have hc : 0 ≤ (n : ℝ) * ((n : ℝ) - 2) := by
+    obtain rfl | hn2 : n = 0 ∨ 2 ≤ n := by omega
+    · simp
+    · have hn2ℝ : (2 : ℝ) ≤ n := by exact_mod_cast hn2
+      exact mul_nonneg (by linarith) (by linarith)
   rw [ballGreenCorrector_def]
-  exact mul_nonneg (inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
-      (volume_real_unitBall_pos n).le))
+  exact mul_nonneg (inv_nonneg.2 (mul_nonneg hc (volume_real_unitBall_pos n).le))
     (Real.rpow_nonneg ((sq_nonneg _).trans (one_sub_norm_mul_norm_sq_le x y)) _)
 
-/-- **The Green kernel of the unit ball is dominated by the Newtonian kernel.** For `n ≥ 3`,
-`G(x, y) ≤ Φ(y - x)` for all `x` and `y`. -/
-theorem ballGreenKernel_le_newtonianKernel_sub (hn : 3 ≤ n) (x y : EuclideanSpace ℝ (Fin n)) :
+/-- **The Green kernel of the unit ball is dominated by the Newtonian kernel.** Outside dimension
+one, `G(x, y) ≤ Φ(y - x)` for all `x` and `y`. -/
+theorem ballGreenKernel_le_newtonianKernel_sub (hn : n ≠ 1) (x y : EuclideanSpace ℝ (Fin n)) :
     ballGreenKernel n x y ≤ newtonianKernel n (y - x) := by
   rw [ballGreenKernel_def]
   exact sub_le_self _ (ballGreenCorrector_nonneg hn x y)
