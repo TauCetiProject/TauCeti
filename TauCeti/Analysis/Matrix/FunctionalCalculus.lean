@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.Topology.Instances.Matrix
@@ -105,16 +106,14 @@ variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix 
 /-- Multiplying the functional calculus by its Hermitian matrix on the left multiplies the
 scalar function by the identity. -/
 theorem IsHermitian.mul_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
-    A * cfc f A = cfc (fun x ↦ x * f x) A := by
-  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
-    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+    A * cfc f A = cfc (fun x ↦ x * f x) A :=
+  (TauCeti.cfc_id_mul f A (A.finite_real_spectrum.continuousOn _) hA.isSelfAdjoint).symm
 
 /-- Multiplying the functional calculus by its Hermitian matrix on the right multiplies the
 scalar function by the identity. -/
 theorem IsHermitian.cfc_mul (hA : A.IsHermitian) (f : ℝ → ℝ) :
-    cfc f A * A = cfc (fun x ↦ f x * x) A := by
-  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
-    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+    cfc f A * A = cfc (fun x ↦ f x * x) A :=
+  (TauCeti.cfc_mul_id f A (A.finite_real_spectrum.continuousOn _) hA.isSelfAdjoint).symm
 
 /-- **The functional calculus preserves intertwiners.** If a rectangular matrix `V` intertwines
 the Hermitian matrices `A` and `B`, that is `A * V = V * B`, then `cfc f A * V = V * cfc f B` for

@@ -79,6 +79,9 @@ of positive (negative) square has at most as many members as the positive (negat
   `QuadraticForm.sigNeg_eq_finrank_of_isCompl_of_negDef`: a form which is positive (negative)
   definite on `A` and negative (positive) semidefinite on a complement of `A` has positive
   (negative) index of inertia `dim A`.
+* `QuadraticForm.sigNeg_eq_finrank_of_injective`: the same for a form which is negative definite
+  and nonnegative on the preimages, under an injective map, of two independent subspaces of its
+  range whose dimensions add up to `dim M`.
 * `LinearMap.BilinForm.card_le_sigPos_toQuadraticMap_of_iIsOrtho` and
   `LinearMap.BilinForm.card_le_sigNeg_toQuadraticMap_of_iIsOrtho`: an orthogonal family of
   vectors of positive (negative) square has at most `sigPos` (`sigNeg`) members.
@@ -239,6 +242,14 @@ theorem forall_nonneg_iff_sigNeg_eq_zero (Q : _root_.QuadraticForm K M) :
 theorem forall_nonpos_iff_sigPos_eq_zero (Q : _root_.QuadraticForm K M) :
     (∀ x, Q x ≤ 0) ↔ sigPos Q = 0 := by
   simpa only [neg_apply, neg_nonneg, sigNeg_neg] using forall_nonneg_iff_sigNeg_eq_zero (-Q)
+
+omit [FiniteDimensional K M] in
+/-- The zero quadratic form has positive index of inertia zero. -/
+@[simp]
+theorem sigPos_zero : sigPos (0 : _root_.QuadraticForm K M) = 0 := by
+  by_cases hM : Module.Finite K M
+  · exact (forall_nonpos_iff_sigPos_eq_zero 0).mp fun _ ↦ le_rfl
+  · exact sigPos_eq_zero_of_not_finite 0 hM
 
 omit [FiniteDimensional K M] in
 /-- The zero quadratic form has negative index of inertia zero. -/
@@ -530,6 +541,39 @@ theorem sigNeg_eq_finrank_of_isCompl_of_negDef (Q : _root_.QuadraticForm K M)
   rw [← sigPos_neg]
   exact sigPos_eq_finrank_of_isCompl_of_posDef (-Q) hAB hA fun x hx ↦
     neg_nonpos.mpr (hB x hx)
+
+/-- **Sylvester's law of inertia through an embedding.** Let `U : M → N` be injective and let
+`R₋`, `R₊` be independent subspaces of its range whose dimensions add up to that of `M`. If a
+quadratic form on `M` is negative definite on the vectors sent into `R₋` and nonnegative on those
+sent into `R₊`, its negative index is the dimension of `R₋`. -/
+theorem sigNeg_eq_finrank_of_injective {N : Type*} [AddCommGroup N] [Module K N]
+    (Q : _root_.QuadraticForm K M) {U : M →ₗ[K] N} (hU : Function.Injective U)
+    {Rm Rp : Submodule K N} [FiniteDimensional K Rm] [FiniteDimensional K Rp]
+    (hm : Rm ≤ U.range) (hp : Rp ≤ U.range) (hd : Rm ⊓ Rp = ⊥)
+    (hdim : Module.finrank K M = Module.finrank K Rm + Module.finrank K Rp)
+    (hneg : ∀ v, U v ∈ Rm → v ≠ 0 → Q v < 0) (hpos : ∀ v, U v ∈ Rp → 0 ≤ Q v) :
+    sigNeg Q = Module.finrank K Rm := by
+  set A := Rm.comap U
+  set B := Rp.comap U
+  have hfA : Module.finrank K A = Module.finrank K Rm := by
+    have h := (Submodule.equivMapOfInjective _ hU A).finrank_eq
+    rwa [Submodule.map_comap_eq_of_le hm] at h
+  have hfB : Module.finrank K B = Module.finrank K Rp := by
+    have h := (Submodule.equivMapOfInjective _ hU B).finrank_eq
+    rwa [Submodule.map_comap_eq_of_le hp] at h
+  have hcompl : IsCompl A B := by
+    have hAB : Disjoint A B := by
+      rw [disjoint_iff, ← Submodule.comap_inf, hd, Submodule.comap_bot]
+      exact LinearMap.ker_eq_bot.2 hU
+    refine ⟨hAB, codisjoint_iff.2 (Submodule.eq_top_of_finrank_eq ?_)⟩
+    have h := Submodule.finrank_sup_add_finrank_inf_eq A B
+    rw [disjoint_iff.1 hAB, finrank_bot, add_zero, hfA, hfB] at h
+    rw [h, hdim]
+  have hnegA : ((-Q).restrict A).PosDef := fun v hv0 ↦ by
+    have := hneg v v.property fun h ↦ hv0 (Subtype.ext h)
+    rw [QuadraticMap.restrict_apply, _root_.neg_apply]
+    linarith
+  rw [sigNeg_eq_finrank_of_isCompl_of_negDef Q hcompl hnegA hpos, hfA]
 
 end QuadraticForm
 
