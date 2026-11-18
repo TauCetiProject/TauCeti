@@ -7,10 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
-import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
@@ -134,32 +134,24 @@ theorem ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq [SigmaFinite μ]
       S (indicatorConstLp p hs hμs v) =ᵐ[μ] fun x ↦ m x (s.indicator (fun _ ↦ v) x)) :
     ∀ᵐ x ∂μ, ‖m x‖ ≤ ‖S‖ := by
   have hp₀ : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hq : 0 < p.toReal := ENNReal.toReal_pos hp₀ hp
   have hv (v : E) : ∀ᵐ x ∂μ, ‖m x v‖ₑ ≤ ‖S‖ₑ * ‖v‖ₑ := by
-    have : (fun x ↦ ‖m x v‖ₑ ^ p.toReal) ≤ᵐ[μ] fun _ ↦ (‖S‖ₑ * ‖v‖ₑ) ^ p.toReal := by
-      refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite
-        (((apply 𝕜 F v).continuous.comp_stronglyMeasurable hm).eNorm.pow_const _)
-        fun s hs hμs ↦ ?_
-      have h₁ : ∫⁻ x in s, ‖m x v‖ₑ ^ p.toReal ∂μ =
-          eLpNorm (S (indicatorConstLp p hs hμs.ne v)) p μ ^ p.toReal := by
-        rw [eLpNorm_eq_eLpNorm' hp₀ hp, ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' hq,
-          ← lintegral_indicator hs]
-        · refine lintegral_congr_ae ?_
-          filter_upwards [hmS s hs hμs.ne v] with x hx
-          by_cases hxs : x ∈ s <;> simp [hx, hxs, hq]
-        · exact Lp.aestronglyMeasurable _
-      have h₂ : ‖indicatorConstLp p hs hμs.ne v‖ₑ = ‖v‖ₑ * μ s ^ (1 / p.toReal) := by
-        rw [Lp.eNorm_def, eLpNorm_congr_ae indicatorConstLp_coeFn,
-          eLpNorm_indicator_const hs.nullMeasurableSet hp₀ hp]
-      rw [h₁, setLIntegral_const, ← Lp.eNorm_def]
-      calc ‖S (indicatorConstLp p hs hμs.ne v)‖ₑ ^ p.toReal
-          ≤ (‖S‖ₑ * ‖indicatorConstLp p hs hμs.ne v‖ₑ) ^ p.toReal :=
-            ENNReal.rpow_le_rpow (S.le_opENorm _) hq.le
-        _ = (‖S‖ₑ * ‖v‖ₑ) ^ p.toReal * μ s := by
-            rw [h₂, ← mul_assoc, ENNReal.mul_rpow_of_nonneg _ _ hq.le, one_div,
-              ENNReal.rpow_inv_rpow hq.ne']
-    filter_upwards [this] with x hx
-    exact (ENNReal.rpow_le_rpow_iff hq).1 hx
+    have ha : AEStronglyMeasurable (fun x ↦ m x v) μ :=
+      ((apply 𝕜 F v).continuous.comp_stronglyMeasurable hm).aestronglyMeasurable
+    have hind (s : Set α) (hs : MeasurableSet s) (hμs : μ s < ∞) :
+        eLpNorm (s.indicator fun x ↦ m x v) p μ ≤ ‖S‖ₑ * ‖v‖ₑ * μ s ^ (1 / p.toReal) := by
+      have hSs : eLpNorm (s.indicator fun x ↦ m x v) p μ =
+          ‖S (indicatorConstLp p hs hμs.ne v)‖ₑ := by
+        rw [Lp.eNorm_def]
+        refine eLpNorm_congr_ae ?_
+        filter_upwards [hmS s hs hμs.ne v] with x hx
+        by_cases hxs : x ∈ s <;> simp [hx, hxs]
+      rw [hSs, mul_assoc, ← eLpNorm_indicator_const hs.nullMeasurableSet hp₀ hp,
+        ← eLpNorm_congr_ae indicatorConstLp_coeFn, ← Lp.eNorm_def]
+      exact S.le_opENorm _
+    have h := eLpNorm_top_le_of_forall_eLpNorm_indicator_le ha hp₀ hp hind
+    rw [eLpNorm_exponent_top ha] at h
+    filter_upwards [ae_le_eLpNormEssSup (f := fun x ↦ m x v) (μ := μ)] with x hx
+    exact hx.trans h
   obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq E
   filter_upwards [ae_all_iff.2 fun k ↦ hv (u k)] with x hx
   refine opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
