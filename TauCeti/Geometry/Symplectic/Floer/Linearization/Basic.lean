@@ -85,6 +85,16 @@ theorem floerOperator_comp_add_right (ω : SymplecticForm V)
       ω.floerOperator J Ks Kt u (z + v) := by
   simp only [floerOperator_def, fderiv_comp_add_right]
 
+/-- The Floer operator is `P(∂s) + J P(∂t)` for the perturbed derivative `P = du - X_K`. -/
+theorem floerOperator_eq_perturbedFDeriv (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.floerOperator J Ks Kt u z =
+      ω.perturbedFDeriv Ks Kt u z stdComplexLineReal +
+        J z (u z) (ω.perturbedFDeriv Ks Kt u z stdComplexLineImag) := by
+  rw [floerOperator_def, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag]
+
 /-- For almost complex coefficients, vanishing is complex linearity of `du - X_K`. -/
 theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → AlmostComplexStructure V) (Ks Kt : ℝ × ℝ → V → ℝ)
