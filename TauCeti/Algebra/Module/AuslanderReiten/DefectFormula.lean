@@ -50,7 +50,7 @@ natural: the snake map, because a lift for `δ` composed with `a₂` and `a₁` 
 * `Function.Exact.dualContravariantDefectEquivCovariantDefect`: **Auslander's defect formula**
   `D δ^*(X) ≅ δ_*(D Tr X)`.
 * `LinearMap.contravariantDefectMap` and `LinearMap.covariantDefectMap`: the maps of defects
-  induced by a morphism of exact sequences.
+  induced by a morphism of exact sequences, functorial in it (`_id`, `_comp`).
 * `Function.Exact.contravariantDefectEquivKer_mk`: the snake map on representatives.
 * `Function.Exact.dualContravariantDefectEquivCovariantDefect_naturality`: naturality of the
   defect formula in the exact sequence.
@@ -121,6 +121,26 @@ theorem contravariantDefectMap_mk {ψ : M₂ →ₗ[A] M₃} {ψ' : M₂' →ₗ
     contravariantDefectMap k h X (Submodule.Quotient.mk g) = Submodule.Quotient.mk (a₃ ∘ₗ g) := by
   simp [contravariantDefectMap]
 
+@[simp]
+theorem contravariantDefectMap_id {ψ : M₂ →ₗ[A] M₃} (h : LinearMap.id ∘ₗ ψ = ψ ∘ₗ LinearMap.id)
+    (X : Type*) [AddCommGroup X] [Module A X] :
+    contravariantDefectMap k h X = LinearMap.id := by
+  ext g
+  simp
+
+variable {M₂'' M₃'' : Type*} [AddCommGroup M₂''] [Module A M₂''] [Module k M₂'']
+  [IsScalarTower k A M₂''] [AddCommGroup M₃''] [Module A M₃''] [Module k M₃'']
+  [IsScalarTower k A M₃''] in
+/-- The maps of contravariant defects compose along composed squares. -/
+theorem contravariantDefectMap_comp {ψ : M₂ →ₗ[A] M₃} {ψ' : M₂' →ₗ[A] M₃'}
+    {ψ'' : M₂'' →ₗ[A] M₃''} {a₂ : M₂ →ₗ[A] M₂'} {a₃ : M₃ →ₗ[A] M₃'} {b₂ : M₂' →ₗ[A] M₂''}
+    {b₃ : M₃' →ₗ[A] M₃''} (h : a₃ ∘ₗ ψ = ψ' ∘ₗ a₂) (h' : b₃ ∘ₗ ψ' = ψ'' ∘ₗ b₂)
+    (h'' : (b₃ ∘ₗ a₃) ∘ₗ ψ = ψ'' ∘ₗ (b₂ ∘ₗ a₂)) (X : Type*) [AddCommGroup X] [Module A X] :
+    contravariantDefectMap k h'' X =
+      contravariantDefectMap k h' X ∘ₗ contravariantDefectMap k h X := by
+  ext g
+  simp [LinearMap.comp_assoc]
+
 end Contravariant
 
 /-- The map `δ'_*(Y) → δ_*(Y)` of covariant defects induced by a commutative square
@@ -140,6 +160,25 @@ theorem covariantDefectMap_mk {φ : M₁ →ₗ[A] M₂} {φ' : M₁' →ₗ[A] 
     (u : M₁' →ₗ[A] Y) :
     covariantDefectMap k h Y (Submodule.Quotient.mk u) = Submodule.Quotient.mk (u ∘ₗ a₁) := by
   simp [covariantDefectMap, lcomp_apply']
+
+@[simp]
+theorem covariantDefectMap_id {φ : M₁ →ₗ[A] M₂} (h : LinearMap.id ∘ₗ φ = φ ∘ₗ LinearMap.id)
+    (Y : Type*) [AddCommGroup Y] [Module A Y] [Module k Y] [IsScalarTower k A Y] :
+    covariantDefectMap k h Y = LinearMap.id := by
+  ext u
+  simp
+
+variable {M₁'' M₂'' : Type*} [AddCommGroup M₁''] [Module A M₁''] [AddCommGroup M₂'']
+  [Module A M₂''] in
+/-- The maps of covariant defects compose, in the reverse order, along composed squares. -/
+theorem covariantDefectMap_comp {φ : M₁ →ₗ[A] M₂} {φ' : M₁' →ₗ[A] M₂'} {φ'' : M₁'' →ₗ[A] M₂''}
+    {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'} {b₁ : M₁' →ₗ[A] M₁''} {b₂ : M₂' →ₗ[A] M₂''}
+    (h : a₂ ∘ₗ φ = φ' ∘ₗ a₁) (h' : b₂ ∘ₗ φ' = φ'' ∘ₗ b₁)
+    (h'' : (b₂ ∘ₗ a₂) ∘ₗ φ = φ'' ∘ₗ (b₁ ∘ₗ a₁))
+    (Y : Type*) [AddCommGroup Y] [Module A Y] [Module k Y] [IsScalarTower k A Y] :
+    covariantDefectMap k h'' Y = covariantDefectMap k h Y ∘ₗ covariantDefectMap k h' Y := by
+  ext u
+  simp [LinearMap.comp_assoc]
 
 end DefectMaps
 
@@ -196,7 +235,9 @@ theorem contravariantDefectEquivKer_mk (hfp : Exact f p) (hp : Surjective p) (h�
       (P₁ →ₗ[A] M₁) ⧸ range (f.lcomp k M₁)) = Submodule.Quotient.mk z := by
   simp only [contravariantDefectEquivKer, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
     LinearEquiv.coe_ofEq_apply, LinearMap.quotKerEquivRange_apply_mk]
-  exact SnakeLemma.δ'_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ g y hy z hz
+  exact SnakeLemma.δ'_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ g y
+    (by rw [compRight_apply, lcomp_apply']; exact hy) z
+    (by rw [compRight_apply, lcomp_apply']; exact hz)
 
 variable {M₁' M₂' M₃' : Type*}
   [AddCommGroup M₁'] [Module A M₁'] [Module k M₁'] [IsScalarTower k A M₁']
@@ -204,6 +245,17 @@ variable {M₁' M₂' M₃' : Type*}
   [AddCommGroup M₃'] [Module A M₃'] [Module k M₃'] [IsScalarTower k A M₃']
   {φ' : M₁' →ₗ[A] M₂'} {ψ' : M₂' →ₗ[A] M₃'} {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'}
   {a₃ : M₃ →ₗ[A] M₃'}
+
+omit [Module.Projective A P₀] in
+/-- A lift composed with a commutative square is a lift: if `ψ ∘ y = g ∘ q` and
+`b ∘ ψ = ψ' ∘ a`, then `ψ' ∘ (a ∘ y) = (b ∘ g) ∘ q`. -/
+private theorem comp_lift_eq {U V W V' W' Y : Type*} [AddCommGroup U] [Module A U]
+    [AddCommGroup V] [Module A V] [AddCommGroup W] [Module A W] [AddCommGroup V'] [Module A V']
+    [AddCommGroup W'] [Module A W'] [AddCommGroup Y] [Module A Y] {ψ : V →ₗ[A] W}
+    {ψ' : V' →ₗ[A] W'} {a : V →ₗ[A] V'} {b : W →ₗ[A] W'} (h : b ∘ₗ ψ = ψ' ∘ₗ a)
+    {y : U →ₗ[A] V} {g : Y →ₗ[A] W} {q : U →ₗ[A] Y} (hy : ψ ∘ₗ y = g ∘ₗ q) :
+    ψ' ∘ₗ (a ∘ₗ y) = (b ∘ₗ g) ∘ₗ q := by
+  rw [← LinearMap.comp_assoc, ← h, LinearMap.comp_assoc, hy, LinearMap.comp_assoc]
 
 /-- **Naturality of the snake lemma for the defect.** A morphism `(a₁, a₂, a₃)` of exact sequences
 `0 → M₁ → M₂ → M₃ → 0` carries `δ^*(X) ≅ ker H(φ)` to `δ'^*(X) ≅ ker H(φ')`: postcomposition
@@ -222,11 +274,8 @@ theorem contravariantDefectEquivKer_naturality (hfp : Exact f p) (hp : Surjectiv
       hfp.linearMap_comp_eq_zero, LinearMap.comp_zero])
   rw [compRight_apply] at hz
   rw [contravariantDefectMap_mk, contravariantDefectEquivKer_mk hfp hp hφ hψ hφψ g y hy z hz,
-    contravariantDefectEquivKer_mk hfp hp hφ' hψ' hφψ' (a₃ ∘ₗ g) (a₂ ∘ₗ y)
-      (by rw [← LinearMap.comp_assoc, ← h₂, LinearMap.comp_assoc, hy, LinearMap.comp_assoc])
-      (a₁ ∘ₗ z)
-      (by rw [← LinearMap.comp_assoc, ← h₁, LinearMap.comp_assoc, hz, LinearMap.comp_assoc]),
-    homCokernelMap_mk]
+    contravariantDefectEquivKer_mk hfp hp hφ' hψ' hφψ' (a₃ ∘ₗ g) (a₂ ∘ₗ y) (comp_lift_eq h₂ hy)
+      (a₁ ∘ₗ z) (comp_lift_eq h₁ hz), homCokernelMap_mk]
 
 variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
   {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
