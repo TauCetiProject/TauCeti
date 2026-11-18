@@ -93,7 +93,7 @@ theorem tendsto_integral_log_norm_sub_semicircleReal (a x : ℝ) {v : ℝ≥0} (
       (𝓝 (∫ y : ℝ, Real.log |x - y| ∂semicircleReal a v)) := by
   let R : ℝ := |a| + 2 * Real.sqrt v
   let bound : ℝ → ℝ := fun y ↦ ‖Real.log |x - y|‖ + Real.log (|x| + R + 1)
-  have hR : 0 ≤ R := by positivity
+  have _hR : 0 ≤ R := by positivity
   have hbound_integrable : Integrable bound (semicircleReal a v) := by
     have hlog := (integrable_log_abs_sub_semicircleReal x a v).norm
     have hconst := integrable_const (Real.log (|x| + R + 1)) (μ := semicircleReal a v)
