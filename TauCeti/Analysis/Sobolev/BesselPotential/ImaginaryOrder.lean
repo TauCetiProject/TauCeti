@@ -57,7 +57,8 @@ holomorphy in `z`.
   on Schwartz functions (`BesselPotentialSpace.besselPotentialCLM_toBesselPotentialSpaceCLM`)
   and with Mathlib's `TemperedDistribution.besselPotential` at real orders
   (`BesselPotentialSpace.toDistr_besselPotentialCLM_ofReal`), with orders adding under composition
-  (`BesselPotentialSpace.besselPotentialCLM_besselPotentialCLM`), and
+  (`BesselPotentialSpace.besselPotentialCLM_besselPotentialCLM`) and order `0` acting as the
+  identity (`BesselPotentialSpace.besselPotentialCLM_zero`), and
   `BesselPotentialSpace.exists_norm_besselPotentialCLM_le` its norm bound `C (1 + |im z|) ^ N`.
 
 ## References
@@ -194,6 +195,16 @@ theorem toDistr_besselPotentialCLM_ofReal (hp : 1 < p) (hp_top : p ≠ ∞) (t :
   congr 2
   funext ξ
   exact TauCeti.japaneseBracketCpow_ofReal t ξ
+
+/-- The Bessel potential of order `0` on the Sobolev scale is the identity, after identifying
+`H^{s - re 0,p}` with `H^{s,p}`. -/
+theorem besselPotentialCLM_zero (hp : 1 < p) (hp_top : p ≠ ∞) (u : H^{s, p}(E, F)) :
+    besselPotentialCLM hp hp_top 0 u = u.copy (s - (0 : ℂ).re) (by simp) := by
+  ext1
+  have h : TauCeti.japaneseBracketCpow (0 : ℂ) = fun _ : E ↦ (1 : ℂ) :=
+    funext TauCeti.japaneseBracketCpow_zero
+  rw [toDistr_copy _ (by simp), toDistr_besselPotentialCLM, h, fourierMultiplierCLM_const,
+    one_smul, ContinuousLinearMap.id_apply]
 
 /-- The orders of Bessel potentials on the Sobolev scale add: `J^w (J^z u) = J^(z + w) u`, after
 identifying `H^{s - re (z + w),p}` with `H^{s - re z - re w,p}`. -/
