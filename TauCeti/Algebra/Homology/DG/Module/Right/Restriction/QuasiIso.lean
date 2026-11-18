@@ -7,14 +7,15 @@ module
 
 public import Mathlib.CategoryTheory.Localization.LocalizerMorphism
 public import TauCeti.Algebra.Homology.DG.Module.Right.QuasiIso
+public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Functor
 
 /-!
 # Quasi-isomorphisms and restriction of scalars
 
-Restriction along a DG algebra morphism preserves and reflects quasi-isomorphisms. We transport
-relative cycles and their primitives through the existing carrier equivalences; the elementwise
-criterion for quasi-isomorphisms then applies without flatness or splitting hypotheses.
+Restriction along a DG algebra morphism preserves and reflects quasi-isomorphisms, between
+modules in independent universes. Restriction does not change cohomology, and the identification
+of cohomology is natural, so no flatness or splitting hypothesis is needed.
 
 The resulting morphism of localizers is the input for restriction on derived categories.
 
@@ -27,9 +28,9 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti.DGRightModuleCat
+namespace TauCeti
 
-universe uR uA uB uM
+universe uR uA uB uM uN
 
 variable {R : Type uR} {A : Type uA} {B : Type uB}
   [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
@@ -38,55 +39,85 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B}
   {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB}
 
+namespace DGRightModuleHom
+
+variable {M : Type uM} {N : Type uN}
+  [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M]
+  [AddCommGroup N] [Module R N] [Module Bᵐᵒᵖ N] [IsScalarTower R Bᵐᵒᵖ N]
+  {ℳ : ℤ → Submodule R M} {𝒩 : ℤ → Submodule R N}
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece 𝒩]
+  {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
+  {hM : IsDGRightModule hB ℳ dM} {hN : IsDGRightModule hB 𝒩 dN}
+  (f : DGAlgHom hA hB)
+
+/-- The cohomology map of a restricted morphism is the original cohomology map, read through the
+identifications of the cohomology of restricted modules. -/
+private theorem coe_cohomologyMap_restrictScalars (g : DGRightModuleHom hM hN) :
+    ⇑(g.restrictScalars f).cohomologyMap =
+      (hN.restrictScalarsCohomologyEquiv f).symm ∘ g.cohomologyMap ∘
+        hM.restrictScalarsCohomologyEquiv f := by
+  funext c
+  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ c
+  rw [Function.comp_apply, Function.comp_apply, IsDGRightModule.restrictScalarsCohomologyEquiv_mk,
+    cohomologyMap_mk, cohomologyMap_mk, IsDGRightModule.restrictScalarsCohomologyEquiv_symm_mk]
+  congr 1
+  ext1
+  apply DGRightModule.RestrictScalars.ext
+  simp only [cyclesMap_apply_coe, val_restrictScalars]
+
 /-- Restriction of scalars preserves and reflects quasi-isomorphisms of DG right modules. -/
+@[simp]
+theorem isQuasiIso_restrictScalars_iff (g : DGRightModuleHom hM hN) :
+    (g.restrictScalars f).IsQuasiIso ↔ g.IsQuasiIso := by
+  rw [isQuasiIso_iff, isQuasiIso_iff, coe_cohomologyMap_restrictScalars, EquivLike.comp_bijective,
+    EquivLike.bijective_comp]
+
+end DGRightModuleHom
+
+namespace DGRightModuleCat
+
+/-- Restriction of scalars preserves and reflects quasi-isomorphisms of bundled DG right
+modules. -/
 @[simp]
 theorem isQuasiIso_restrictScalars_map_iff (f : DGAlgHom hA hB)
     {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
     IsQuasiIso ((restrictScalars f).map g) ↔ IsQuasiIso g := by
-  simp only [IsQuasiIso]
-  rw [DGRightModuleHom.isQuasiIso_iff_forall_exists,
-    DGRightModuleHom.isQuasiIso_iff_forall_exists]
-  constructor
-  · intro H x y hx hxy
-    let x' := (restrictScalarsEquiv f M).symm x
-    let y' := (restrictScalarsEquiv f N).symm y
-    have hx' : ((restrictScalars f).obj M).differential x' = 0 := by
-      apply (restrictScalarsEquiv f M).injective
-      simpa [x', restrictScalarsEquiv_differential] using hx
-    have hxy' : (restrictScalars f).map g x' =
-        ((restrictScalars f).obj N).differential y' := by
-      apply (restrictScalarsEquiv f N).injective
-      simpa [x', y', restrictScalarsEquiv_differential] using hxy
-    obtain ⟨u, v, hu, huv⟩ := H x' y' hx' hxy'
-    refine ⟨restrictScalarsEquiv f M u, restrictScalarsEquiv f N v, ?_, ?_⟩
-    · have := congrArg (restrictScalarsEquiv f M) hu
-      simpa [x', restrictScalarsEquiv_differential] using this
-    · have := congrArg (restrictScalarsEquiv f N) huv
-      simpa [y', restrictScalarsEquiv_differential, restrictScalars_map_apply f g] using this
-  · intro H x y hx hxy
-    have hx' := congrArg (restrictScalarsEquiv f M) hx
-    have hxy' := congrArg (restrictScalarsEquiv f N) hxy
-    simp only [restrictScalarsEquiv_differential, map_zero] at hx'
-    simp only [restrictScalars_map_apply f g, restrictScalarsEquiv_differential] at hxy'
-    obtain ⟨u, v, hu, huv⟩ := H _ _ hx' hxy'
-    refine ⟨(restrictScalarsEquiv f M).symm u, (restrictScalarsEquiv f N).symm v, ?_, ?_⟩
-    · apply (restrictScalarsEquiv f M).injective
-      simpa only [restrictScalarsEquiv_differential, LinearEquiv.apply_symm_apply] using hu
-    · apply (restrictScalarsEquiv f N).injective
-      simpa only [_root_.map_add, restrictScalars_map_apply f g, restrictScalarsEquiv_differential,
-        LinearEquiv.apply_symm_apply] using huv
+  rw [isQuasiIso_iff_isIso_cohomologyFunctor_map,
+    ← isIso_comp_right_iff _ (cohomologyFunctor.map (restrictScalarsObjIso f N).hom),
+    ← Functor.map_comp, restrictScalarsObjIso_hom_naturality, Functor.map_comp,
+    isIso_comp_left_iff, ← isQuasiIso_iff_isIso_cohomologyFunctor_map]
+  exact DGRightModuleHom.isQuasiIso_restrictScalars_iff f g
+
+/-- Restriction of scalars preserves and reflects membership in the quasi-isomorphisms. -/
+@[simp]
+theorem quasiIsos_restrictScalars_map_iff (f : DGAlgHom hA hB)
+    {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
+    quasiIsos hA ((restrictScalars f).map g) ↔ quasiIsos hB g := by
+  rw [quasiIsos_iff, quasiIsos_iff, isQuasiIso_restrictScalars_map_iff]
 
 /-- Ordinary restriction, regarded as a morphism of the localizers defined by
 quasi-isomorphisms. -/
+@[expose]
 noncomputable def restrictScalarsLocalizerMorphism (f : DGAlgHom hA hB) :
     LocalizerMorphism (quasiIsos.{uR, uB, uM} hB) (quasiIsos hA) where
   functor := restrictScalars f
-  map _ _ g hg := (quasiIsos_iff _).mpr
-    ((isQuasiIso_restrictScalars_map_iff f g).mpr ((quasiIsos_iff g).mp hg))
+  map _ _ g hg := (quasiIsos_restrictScalars_map_iff f g).mpr hg
 
 /-- The underlying functor of the restriction localizer morphism is ordinary restriction. -/
 @[simp]
 theorem restrictScalarsLocalizerMorphism_functor (f : DGAlgHom hA hB) :
     (restrictScalarsLocalizerMorphism.{uR, uA, uB, uM} f).functor = restrictScalars f := (rfl)
 
-end TauCeti.DGRightModuleCat
+/-- Quasi-isomorphisms of DG modules are exactly the maps whose restriction is a
+quasi-isomorphism. -/
+instance (f : DGAlgHom hA hB) :
+    (restrictScalarsLocalizerMorphism.{uR, uA, uB, uM} f).IsInduced where
+  inverseImage_eq := by
+    ext M N g
+    exact quasiIsos_restrictScalars_map_iff f g
+
+end DGRightModuleCat
+
+end TauCeti

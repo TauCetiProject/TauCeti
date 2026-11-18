@@ -52,32 +52,54 @@ abbrev Q : DGRightModuleCat.{uR, uA, uM} h ⥤ DerivedCategory h :=
 
 /-- Total cohomology on the derived category, retaining the right action of the cohomology
 algebra. -/
-noncomputable def cohomology : DerivedCategory.{uR, uA, uM} h ⥤ ModuleCat.{uM} h.Cohomologyᵐᵒᵖ :=
-  Localization.Construction.lift cohomologyFunctor (W := quasiIsos h) (by
-    intro M N f hf
-    rw [ConcreteCategory.isIso_iff_bijective]
-    exact (DGRightModuleHom.isQuasiIso_iff f).mp ((quasiIsos_iff f).mp hf))
+noncomputable def cohomologyFunctor :
+    DerivedCategory.{uR, uA, uM} h ⥤ ModuleCat.{uM} h.Cohomologyᵐᵒᵖ :=
+  Localization.Construction.lift DGRightModuleCat.cohomologyFunctor (W := quasiIsos h)
+    (fun _ _ f hf ↦ (isQuasiIso_iff_isIso_cohomologyFunctor_map f).mp ((quasiIsos_iff f).mp hf))
 
 /-- Computing derived cohomology on DG modules recovers ordinary total cohomology. -/
 @[simp]
-theorem Q_comp_cohomology : Q.{uR, uA, uM} h ⋙ cohomology h = cohomologyFunctor := by
-  unfold cohomology
+theorem Q_comp_cohomologyFunctor :
+    Q.{uR, uA, uM} h ⋙ cohomologyFunctor h = DGRightModuleCat.cohomologyFunctor := by
+  unfold cohomologyFunctor
   exact Localization.Construction.fac _ _
+
+/-- Derived cohomology lifts ordinary total cohomology along localization. -/
+noncomputable instance :
+    Localization.Lifting (Q.{uR, uA, uM} h) (quasiIsos h) DGRightModuleCat.cohomologyFunctor
+      (cohomologyFunctor h) :=
+  ⟨eqToIso (Q_comp_cohomologyFunctor h)⟩
+
+/-- Derived cohomology agrees with ordinary cohomology on DG modules, naturally in the module. -/
+noncomputable def cohomologyFunctorFactors :
+    Q.{uR, uA, uM} h ⋙ cohomologyFunctor h ≅ DGRightModuleCat.cohomologyFunctor :=
+  Localization.Lifting.iso (Q h) (quasiIsos h) _ _
+
+/-- The lifting isomorphism of derived cohomology is `cohomologyFunctorFactors`. -/
+@[simp]
+theorem liftingIso_cohomologyFunctor :
+    Localization.Lifting.iso (Q.{uR, uA, uM} h) (quasiIsos h) DGRightModuleCat.cohomologyFunctor
+      (cohomologyFunctor h) = cohomologyFunctorFactors h := (rfl)
+
+/-- The comparison of derived and ordinary cohomology is natural in maps of DG modules. -/
+@[reassoc (attr := simp)]
+theorem cohomologyFunctorFactors_hom_naturality {M N : DGRightModuleCat.{uR, uA, uM} h}
+    (f : M ⟶ N) :
+    (cohomologyFunctor h).map ((Q h).map f) ≫ (cohomologyFunctorFactors h).hom.app N =
+      (cohomologyFunctorFactors h).hom.app M ≫ DGRightModuleCat.cohomologyFunctor.map f :=
+  (cohomologyFunctorFactors h).hom.naturality f
 
 /-- A map of DG right modules becomes an isomorphism in the derived category exactly when
 it is a quasi-isomorphism. -/
 @[simp]
-theorem isIso_map_Q_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
+theorem isIso_Q_map_iff_isQuasiIso {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
     IsIso ((Q h).map f) ↔ IsQuasiIso f := by
   constructor
   · intro hf
-    have := hf
-    have hc : IsIso (((Q h) ⋙ cohomology h).map f) := by
-      dsimp only [Functor.comp_map]
-      infer_instance
-    rw [Q_comp_cohomology] at hc
-    exact (DGRightModuleHom.isQuasiIso_iff f).mpr
-      ((ConcreteCategory.isIso_iff_bijective _).mp hc)
+    have hc : IsIso ((Q h ⋙ cohomologyFunctor h).map f) :=
+      Functor.map_isIso (cohomologyFunctor h) ((Q h).map f)
+    rw [Q_comp_cohomologyFunctor] at hc
+    exact (isQuasiIso_iff_isIso_cohomologyFunctor_map f).mpr hc
   · intro hf
     exact Localization.inverts (Q h) (quasiIsos h) f ((quasiIsos_iff f).mpr hf)
 
