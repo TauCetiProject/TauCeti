@@ -76,6 +76,20 @@ def singularCohomologyTorusSnd :
       (𝟙_ (ModuleCat.{w} k)) 1 :=
   TopCat.singularCohomologyMap (snd _ _) 1 (singularCohomologyTopCatSphereGenerator k 0)
 
+/-- `α = pr₁^* θ`: the class `TauCeti.singularCohomologyTorusFst` is the pullback of the generator
+of `H¹(S¹; k)` along the first projection. -/
+theorem singularCohomologyTorusFst_def :
+    singularCohomologyTorusFst k =
+      TopCat.singularCohomologyMap (fst _ _) 1 (singularCohomologyTopCatSphereGenerator k 0) :=
+  (rfl)
+
+/-- `β = pr₂^* θ`: the class `TauCeti.singularCohomologyTorusSnd` is the pullback of the generator
+of `H¹(S¹; k)` along the second projection. -/
+theorem singularCohomologyTorusSnd_def :
+    singularCohomologyTorusSnd k =
+      TopCat.singularCohomologyMap (snd _ _) 1 (singularCohomologyTopCatSphereGenerator k 0) :=
+  (rfl)
+
 /-- `α ⌣ α = 0`, since `θ ⌣ θ = 0` on the circle. -/
 @[simp]
 theorem singularCup_singularCohomologyTorusFst_self :
@@ -98,6 +112,7 @@ theorem singularCup_singularCohomologyTorusSnd_self :
 
 /-- **The odd exchange on the torus**: `β ⌣ α = -(α ⌣ β)`, the graded commutativity of the cup
 product for two classes of degree one. -/
+@[simp]
 theorem singularCup_singularCohomologyTorusSnd_singularCohomologyTorusFst :
     (TopCat.sphere.{w} 1 ⊗ TopCat.sphere.{w} 1).singularCup k (λ_ _).inv (λ_ _).hom 1 1 2 rfl
         (singularCohomologyTorusSnd k) (singularCohomologyTorusFst k) =
