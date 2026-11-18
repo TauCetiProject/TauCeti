@@ -121,13 +121,25 @@ theorem coe_gl2PhiElement :
       !![(p : ℚ_[p]), 0; 0, 1] := by
   simp [GL2PhiElement]
 
+/-- `φ = diag(p, 1)` in the normal form `TauCeti.GL2Borel.mk` of upper-triangular matrices. -/
+theorem gl2PhiElement_eq_mk :
+    GL2PhiElement p =
+      GL2Borel.mk (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero)) 1 0 :=
+  (rfl)
+
+/-- The inverse of `φ = diag(p, 1)` is `diag(p⁻¹, 1)`. -/
+theorem inv_gl2PhiElement :
+    (GL2PhiElement p)⁻¹ =
+      GL2Borel.mk (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero))⁻¹ 1 0 := by
+  simp [gl2PhiElement_eq_mk]
+
 /-- The powers of `φ = diag(p, 1)` are the matrices `diag(pⁿ, 1)`. -/
 theorem gl2PhiElement_pow (n : ℕ) :
     GL2PhiElement p ^ n =
       GL2Borel.mk (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero) ^ n) 1 0 := by
   -- `φ` is the image of `(p, 1)` under the torus homomorphism, which commutes with powers.
-  rw [GL2PhiElement, ← GL2Borel.coe_torusHom (_, 1), ← Subgroup.coe_pow, ← map_pow, Prod.pow_mk,
-    one_pow, GL2Borel.coe_torusHom]
+  rw [gl2PhiElement_eq_mk, ← GL2Borel.coe_torusHom (_, 1), ← Subgroup.coe_pow, ← map_pow,
+    Prod.pow_mk, one_pow, GL2Borel.coe_torusHom]
 
 namespace GL2PadicInt
 
@@ -151,8 +163,8 @@ theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
     have hM : M.map PadicInt.Coe.ringHom = (g : Matrix (Fin 2) (Fin 2) ℚ_[p]) :=
       Matrix.ext fun _ _ => rfl
     have hMdet : IsUnit M.det := by
-      rw [PadicInt.isUnit_iff, ← PadicInt.norm_coe, ← PadicInt.Coe.ringHom_apply,
-        RingHom.map_det, RingHom.mapMatrix_apply, hM, hdet]
+      simpa [PadicInt.isUnit_iff, ← PadicInt.norm_coe, ← PadicInt.Coe.ringHom_apply,
+        RingHom.map_det, hM] using hdet
     refine ⟨Matrix.GeneralLinearGroup.mk'' M hMdet, Matrix.GeneralLinearGroup.ext fun i j => ?_⟩
     simp [Matrix.GeneralLinearGroup.map_apply, ← hM]
 
@@ -167,8 +179,7 @@ theorem mem_iff_inv {g : GL (Fin 2) ℚ_[p]} :
   -- `det g * det g⁻¹ = 1` with both factors integral forces `‖det g‖ = 1`.
   have h1 : ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ *
       ‖((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ = 1 := by
-    rw [← norm_mul, ← Matrix.det_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      Matrix.det_one, norm_one]
+    simp [(Matrix.isUnits_det_units g).ne_zero]
   -- By the ultrametric inequality an integral matrix has integral determinant.
   have h2 : ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ ≤ 1 := by
     simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ => 1) hg
@@ -238,10 +249,8 @@ theorem gl2WeylElement_mem_gl2PadicInt : GL2WeylElement ℚ_[p] ∈ GL2PadicInt 
 a unit: entrywise integrality alone does not characterise `GL₂(ℤ_p)`. -/
 theorem gl2PhiElement_notMem_gl2PadicInt : GL2PhiElement p ∉ GL2PadicInt p := by
   intro h
-  have := (GL2PadicInt.mem_iff.mp h).2
-  rw [coe_gl2PhiElement, Matrix.det_fin_two_of, mul_one, mul_zero, sub_zero,
-    Padic.norm_p] at this
-  exact (Nat.one_lt_cast.mpr hp.out.one_lt).ne' (inv_eq_one.mp this)
+  exact hp.out.ne_one <| by
+    simpa [Matrix.det_fin_two, Padic.norm_p] using (GL2PadicInt.mem_iff.mp h).2
 
 namespace GL2MirabolicPlus
 
@@ -271,14 +280,12 @@ end GL2MirabolicPlus
 
 /-- `φ = diag(p, 1)` lies in `P⁺`. -/
 theorem gl2PhiElement_mem_gl2MirabolicPlus : GL2PhiElement p ∈ GL2MirabolicPlus p := by
-  rw [GL2PhiElement, GL2MirabolicPlus.mk_mem_iff]
+  rw [gl2PhiElement_eq_mk, GL2MirabolicPlus.mk_mem_iff]
   simpa [Padic.norm_p] using inv_le_one_of_one_le₀ (Nat.one_le_cast.mpr hp.out.one_lt.le)
 
 /-- `φ⁻¹ = diag(p⁻¹, 1)` does not lie in `P⁺`, its upper-left entry not being integral. -/
 theorem inv_gl2PhiElement_notMem_gl2MirabolicPlus : (GL2PhiElement p)⁻¹ ∉ GL2MirabolicPlus p := by
-  rw [GL2PhiElement, GL2Borel.inv_mk, mul_zero, zero_mul, neg_zero, inv_one,
-    GL2MirabolicPlus.mk_mem_iff]
-  simp [Padic.norm_p, hp.out.one_lt]
+  simp [inv_gl2PhiElement, Padic.norm_p, hp.out.one_lt]
 
 namespace GL2MirabolicPadicInt
 
@@ -301,13 +308,10 @@ theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
     g ∈ GL2MirabolicPadicInt p ↔ g ∈ GL2Mirabolic ℚ_[p] ∧
       ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) 0 0‖ = 1 ∧
       ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) 0 1‖ ≤ 1 := by
-  rw [GL2MirabolicPadicInt, Subgroup.mem_inf, and_congr_right_iff]
+  rw [eq_inf, Subgroup.mem_inf, and_congr_right_iff]
   intro hg
   obtain ⟨hg₀, hg₁⟩ := GL2Mirabolic.mem_iff.mp hg
-  -- The determinant of a mirabolic matrix is its upper-left entry.
-  have hdet : (g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det = (g : Matrix (Fin 2) (Fin 2) ℚ_[p]) 0 0 := by
-    rw [Matrix.det_fin_two, hg₀, hg₁, mul_one, mul_zero, sub_zero]
-  rw [GL2PadicInt.mem_iff, hdet]
+  rw [GL2PadicInt.mem_iff, GL2Mirabolic.det_eq hg]
   refine ⟨fun h => ⟨h.2, h.1 0 1⟩, fun h => ⟨fun i j => ?_, h.1⟩⟩
   fin_cases i <;> fin_cases j <;> simp [h.1.le, h.2, hg₀, hg₁]
 
@@ -342,9 +346,8 @@ theorem exists_gl2PhiElement_pow_mul_mem {g : GL (Fin 2) ℚ_[p]} (hg : g ∈ GL
       inv_mul_le_iff₀ (pow_pos (Nat.cast_pos.mpr hp.out.pos) n), mul_one]
     exact hx.le
   refine ⟨n, ?_⟩
-  rw [gl2PhiElement_pow, GL2Borel.mk_mul_mk, one_mul, zero_mul, add_zero, mk_mem_iff, Units.val_mul,
-    Units.val_pow_eq_pow_val, Units.val_mk0]
-  exact ⟨hscale _ ((le_max_left _ _).trans_lt hn), hscale _ ((le_max_right _ _).trans_lt hn)⟩
+  simpa [gl2PhiElement_pow] using
+    And.intro (hscale _ ((le_max_left _ _).trans_lt hn)) (hscale _ ((le_max_right _ _).trans_lt hn))
 
 variable (p)
 

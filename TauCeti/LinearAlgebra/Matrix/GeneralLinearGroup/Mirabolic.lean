@@ -114,6 +114,11 @@ theorem mem_iff_exists_mk {g : GL (Fin 2) R} :
   · rintro ⟨a, b, rfl⟩
     exact mk_mem a b
 
+/-- The determinant of a mirabolic matrix `!![a, b; 0, 1]` is its upper-left entry `a`. -/
+theorem det_eq {g : GL (Fin 2) R} (hg : g ∈ GL2Mirabolic R) :
+    (g : Matrix (Fin 2) (Fin 2) R).det = (g : Matrix (Fin 2) (Fin 2) R) 0 0 := by
+  simp [Matrix.det_fin_two, hg.1, hg.2]
+
 variable (R) in
 /-- The upper unipotent matrices `!![1, b; 0, 1]` lie in the mirabolic subgroup. -/
 theorem upperRightHom_mem (b : R) :

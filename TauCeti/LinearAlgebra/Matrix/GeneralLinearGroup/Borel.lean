@@ -136,6 +136,7 @@ theorem coe_mk (a d : Rˣ) (b : R) :
 
 /-- Upper-triangular matrices multiply diagonal entry by diagonal entry, and the upper-right entry
 of the product is `a b' + b d'`. -/
+@[simp]
 theorem mk_mul_mk (a d a' d' : Rˣ) (b b' : R) :
     (mk a d b * mk a' d' b' : GL (Fin 2) R) = mk (a * a') (d * d') (a * b' + b * d') := by
   refine Units.ext (Matrix.ext fun i j => ?_)
@@ -148,10 +149,10 @@ theorem mk_one_one_zero : (mk 1 1 0 : GL (Fin 2) R) = 1 := by
   fin_cases i <;> fin_cases j <;> simp
 
 /-- The inverse of `!![a, b; 0, d]` is `!![a⁻¹, -a⁻¹ b d⁻¹; 0, d⁻¹]`. -/
+@[simp]
 theorem inv_mk (a d : Rˣ) (b : R) :
     (mk a d b : GL (Fin 2) R)⁻¹ = mk a⁻¹ d⁻¹ (-((a⁻¹ : Rˣ) * b * (d⁻¹ : Rˣ))) :=
-  inv_eq_of_mul_eq_one_right <| Units.ext (Matrix.ext fun i j => by
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, ← mul_assoc])
+  inv_eq_of_mul_eq_one_right <| by simp [← mul_assoc]
 
 end Ring
 
