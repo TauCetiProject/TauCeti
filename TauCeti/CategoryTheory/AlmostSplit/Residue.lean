@@ -50,8 +50,8 @@ valuation of `A → X` is the valuation of `X → C` with its two entries exchan
 
 * `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_self_τ₃_eq`: every endomorphism of
   `C` extends to an endomorphism of the sequence, and
-  `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_self_τ₁_eq_of_isIso`: so does every
-  automorphism of `A`.
+  `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_self_τ₁_eq`: so does every endomorphism
+  of `A`.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_τ₁_iff_isIso_τ₃`: an endomorphism of the
   sequence is invertible at `A` exactly when it is invertible at `C`.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.residueRingEquiv_mk`: the characterizing equation.
@@ -91,12 +91,19 @@ private theorem mk_τ₁_eq_mk_τ₁ (hS : S.IsAlmostSplit) {φ ψ : S ⟶ S} (h
   simpa [isUnit_iff_isIso] using ShortComplex.not_isIso_τ₁_of_τ₃_eq_zero hS.shortExact.fIsKernel
     hS.isLeftAlmostSplit_f.not_isSplitMono (φ - ψ) h0
 
-/-- **Every automorphism of the left-hand end of an almost-split sequence extends to an
+/-- **Every endomorphism of the left-hand end of an almost-split sequence extends to an
 endomorphism of the sequence.** -/
-theorem exists_hom_self_τ₁_eq_of_isIso (hS : S.IsAlmostSplit) (a : S.X₁ ⟶ S.X₁) [IsIso a] :
+theorem exists_hom_self_τ₁_eq (hS : S.IsAlmostSplit) (a : S.X₁ ⟶ S.X₁) :
     ∃ φ : S ⟶ S, φ.τ₁ = a := by
-  obtain ⟨β, hβ⟩ := hS.isLeftAlmostSplit_f.factors S.X₂ (a ≫ S.f)
-    (hS.isLeftAlmostSplit_f.iso_comp a).not_isSplitMono
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
+  have hf : ¬ IsSplitMono (a ≫ S.f) := fun h ↦ by
+    have : IsSplitMono a := isSplitMono_of_isSplitMono_comp a S.f
+    have : IsIso a := by
+      by_contra ha
+      exact (mem_jacobsonRadical_iff_not_isSplitMono.mp
+        (mem_jacobsonRadical_iff_not_isIso.mpr ha)) this
+    exact (hS.isLeftAlmostSplit_f.iso_comp a).not_isSplitMono h
+  obtain ⟨β, hβ⟩ := hS.isLeftAlmostSplit_f.factors S.X₂ (a ≫ S.f) hf
   obtain ⟨γ, hγ⟩ := CokernelCofork.IsColimit.desc' hS.shortExact.gIsCokernel (β ≫ S.g)
     (by rw [← Category.assoc, hβ, Category.assoc, S.zero, comp_zero])
   exact ⟨⟨a, β, γ, hβ.symm, hγ.symm⟩, rfl⟩
@@ -188,14 +195,10 @@ noncomputable def residueRingEquiv (hS : S.IsAlmostSplit) :
   .ofBijective (Ideal.Quotient.lift _ hS.residueEndHom fun _ ↦ hS.residueEndHom_eq_zero_of_mem)
     ⟨RingHom.injective _, fun x ↦ by
       obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-      by_cases ha : IsIso a.asHom
-      · obtain ⟨φ, hφ⟩ := hS.exists_hom_self_τ₁_eq_of_isIso a.asHom
-        refine ⟨Ideal.Quotient.mk _ (.of φ.τ₃), ?_⟩
-        rw [Ideal.Quotient.lift_mk, residueEndHom_of_τ₃]
-        exact congrArg _ (End.ext hφ)
-      · refine ⟨0, ?_⟩
-        rw [map_zero, eq_comm, IsLocalRing.mk_jacobson_eq_zero_iff, isUnit_iff_isIso]
-        exact ha⟩
+      obtain ⟨φ, hφ⟩ := hS.exists_hom_self_τ₁_eq a.asHom
+      refine ⟨Ideal.Quotient.mk _ (.of φ.τ₃), ?_⟩
+      rw [Ideal.Quotient.lift_mk, residueEndHom_of_τ₃]
+      exact congrArg _ (End.ext hφ)⟩
 
 /-- **The characterizing equation of the residue isomorphism**: for every endomorphism `φ` of the
 almost-split sequence, the class of `φ.τ₃` is sent to the class of `φ.τ₁`. -/
@@ -234,6 +237,13 @@ theorem residueAlgEquiv_apply (hS : S.IsAlmostSplit) (x : End S.X₃ ⧸ Ring.ja
     hS.residueAlgEquiv k x = hS.residueRingEquiv x :=
   (rfl)
 
+/-- **The residue division rings of the two end terms of an almost-split sequence have the same
+dimension** over the base ring of a linear category. -/
+theorem finrank_residue_X₁_eq_finrank_residue_X₃ (hS : S.IsAlmostSplit) :
+    finrank k (End S.X₁ ⧸ Ring.jacobson (End S.X₁)) =
+      finrank k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) :=
+  (hS.residueAlgEquiv k).toLinearEquiv.finrank_eq.symm
+
 end Linear
 
 /-! ### Over a field: the valued mesh relation -/
@@ -241,13 +251,6 @@ end Linear
 section Field
 
 variable (k : Type*) [Field k] [Linear k C]
-
-/-- Over a field, **the residue division rings of the two end terms of an almost-split sequence
-have the same dimension**. -/
-theorem finrank_residue_X₁_eq_finrank_residue_X₃ (hS : S.IsAlmostSplit) :
-    finrank k (End S.X₁ ⧸ Ring.jacobson (End S.X₁)) =
-      finrank k (End S.X₃ ⧸ Ring.jacobson (End S.X₃)) :=
-  (hS.residueAlgEquiv k).toLinearEquiv.finrank_eq.symm
 
 variable {J : Type*} [Finite J] (P : J → C) [HasBiproduct P] [∀ j, IsLocalRing (End (P j))]
 

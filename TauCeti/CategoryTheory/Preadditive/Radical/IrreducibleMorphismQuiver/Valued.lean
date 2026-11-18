@@ -15,10 +15,13 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Valuation
 Let `C` be a `k`-linear category with binary biproducts and `P` a property of its objects. The
 vertices of `TauCeti.IrreducibleMorphismQuiver k P` are the isomorphism classes of indecomposable
 objects satisfying `P`. This file equips them with the structure of a *valued* quiver in the sense
-of `TauCeti/Combinatorics/Quiver/ValuedTranslation.lean`: there is one arrow `[M] ⟶ [N]` exactly
-when the space `Irr(M, N)` of irreducible morphisms between representatives is nonzero, and it is
-valued by the pair `(a_{MN}, b_{MN})` of dimensions of `Irr(M, N)` over the residue division rings
-of `N` and of `M` (`TauCeti.irreducibleMorphismValuation`). This is the valued quiver
+of `TauCeti/Combinatorics/Quiver/ValuedTranslation.lean`: the pair `(a_{MN}, b_{MN})` of
+dimensions of the space `Irr(M, N)` of irreducible morphisms between representatives over the
+residue division rings of `N` and of `M` (`TauCeti.irreducibleMorphismValuation`) values one arrow
+`[M] ⟶ [N]` when both of its entries are positive, and there is no arrow otherwise. When the
+representatives have local endomorphism rings and `Irr(M, N)` is finite-dimensional, this means
+there is an arrow exactly when an irreducible morphism `M ⟶ N` exists
+(`TauCeti.IrreducibleMorphismQuiver.isSome_valuationMatrix_iff`). This is the valued quiver
 `TauCeti.ValuedQuiver (TauCeti.IrreducibleMorphismQuiver.valuationMatrix k P)`; the vertex of the
 valued quiver at a class `a` is `TauCeti.ValuedQuiver.of a`.
 
@@ -85,8 +88,8 @@ theorem valuationMatrix_eq_some_iff {a b : IrreducibleMorphismQuiver k P} {p : �
         ((p.1 : ℕ), (p.2 : ℕ)) := by
   unfold valuationMatrix
   split_ifs with h
-  · rw [Option.some_inj, Prod.ext_iff, Prod.ext_iff, ← PNat.coe_inj, ← PNat.coe_inj]
-    rfl
+  · rw [Option.some_inj, Prod.ext_iff, Prod.ext_iff, ← PNat.coe_inj, ← PNat.coe_inj, PNat.mk_coe,
+      PNat.mk_coe]
   · refine iff_of_false (by simp) fun hp ↦ h ?_
     rw [hp]
     exact ⟨p.1.pos, p.2.pos⟩
@@ -129,33 +132,6 @@ theorem isSome_valuationMatrix_iff {k : Type w} [CommRing k] [Linear k C]
   rw [← not_iff_not, Option.not_isSome_iff_eq_none, valuationMatrix_eq_none_iff,
     irreducibleMorphismValuation_fst_pos_iff, irreducibleMorphismValuation_snd_pos_iff, and_self]
 
-section Field
-
-variable {k : Type w} [Field k] [Linear k C] {P : ObjectProperty C}
-
-/-- **Arrow counts against valuations, through the target**: over a field, the number of arrows
-`a ⟶ b` of the quiver of irreducible morphisms, the `k`-dimension of `Irr(M, N)` between
-representatives, is the `k`-dimension of the residue division ring of `N` times the first entry
-of the valuation. -/
-theorem card_arrows_eq_finrank_residue_mul_fst (a b : IrreducibleMorphismQuiver k P)
-    [IsLocalRing (End b.representative)] :
-    Nat.card (a ⟶ b) =
-      Module.finrank k (End b.representative ⧸ Ring.jacobson (End b.representative)) *
-        (irreducibleMorphismValuation k a.representative b.representative).1 := by
-  rw [card_arrows, finrank_residue_mul_irreducibleMorphismValuation_fst]
-
-/-- **Arrow counts against valuations, through the source**: over a field, the number of arrows
-`a ⟶ b` of the quiver of irreducible morphisms is the `k`-dimension of the residue division ring
-of the representative `M` of `a` times the second entry of the valuation. -/
-theorem card_arrows_eq_finrank_residue_mul_snd (a b : IrreducibleMorphismQuiver k P)
-    [IsLocalRing (End a.representative)] :
-    Nat.card (a ⟶ b) =
-      Module.finrank k ((End a.representative)ᵐᵒᵖ ⧸ Ring.jacobson (End a.representative)ᵐᵒᵖ) *
-        (irreducibleMorphismValuation k a.representative b.representative).2 := by
-  rw [card_arrows, finrank_residueOp_mul_irreducibleMorphismValuation_snd]
-
-end Field
-
 end IrreducibleMorphismQuiver
 
 namespace ARTranslation
@@ -176,24 +152,29 @@ noncomputable def valuedTranslation :
   inv z x := by
     classical
     constructor
-    · intro (hz : _ = some z)
+    · -- `invFun x = some z` is an equation between a `dite` and `some z`; the ascription
+      -- unfolds the coercion of the structure field so that `split_ifs` can see the `dite`.
+      intro (hz : _ = some z)
       split_ifs at hz with h
-      · obtain rfl := Option.some_injective _ hz
-        rw [h.choose_spec]
-        rfl
+      obtain rfl := Option.some_injective _ hz
+      rw [h.choose_spec, Option.map_some]
     · intro hx
       simp only [Option.map_eq_some_iff] at hx ⊢
       obtain ⟨y, hy, rfl⟩ := hx
       have h : ∃ z', T.translate z' = some y := ⟨z.vertex, hy⟩
       rw [dite_eq_left_of_eq_true (eq_true h), T.eq_of_translate_eq_some h.choose_spec hy]
 
+/-- The translation of the valued quiver is the translation of the classes, read on vertices. -/
+theorem valuedTranslation_apply (z : ValuedQuiver (valuationMatrix k P)) :
+    T.valuedTranslation z = (T.translate z.vertex).map ValuedQuiver.of :=
+  (rfl)
+
 /-- The translation of the valued quiver sends `z` to `x` exactly when the Auslander-Reiten
 translation sends the class of `z` to that of `x`. -/
 @[simp]
 theorem valuedTranslation_eq_some_iff {z x : ValuedQuiver (valuationMatrix k P)} :
     T.valuedTranslation z = some x ↔ T.translate z.vertex = some x.vertex := by
-  change (T.translate z.vertex).map ValuedQuiver.of = some x ↔ _
-  rw [Option.map_eq_some_iff]
+  rw [valuedTranslation_apply, Option.map_eq_some_iff]
   exact ⟨fun ⟨_, hy, hyx⟩ ↦ hyx ▸ hy, fun h ↦ ⟨x.vertex, h, rfl⟩⟩
 
 /-- **The condition of a valued translation quiver for an Auslander-Reiten translation**: the

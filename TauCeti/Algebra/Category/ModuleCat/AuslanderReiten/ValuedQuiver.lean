@@ -37,8 +37,9 @@ through the multiplicity of `X` in a decomposition of `E` into indecomposables
 isomorphism of the residue division rings of `τ M` and `M`
 (`CategoryTheory.ShortComplex.IsAlmostSplit.irreducibleMorphismValuation_fst_eq_snd`).
 
-Over a field the arrows of the unvalued quiver of irreducible morphisms count `k`-dimensions, and
-`TauCeti.IrreducibleMorphismQuiver.card_arrows_eq_finrank_residue_mul_snd` compares them with the
+Over a field the arrows of the unvalued quiver of irreducible morphisms count `k`-dimensions
+(`TauCeti.IrreducibleMorphismQuiver.card_arrows`), and
+`TauCeti.finrank_residueOp_mul_irreducibleMorphismValuation_snd` compares these with the
 valuations; the `k`-dimensional mesh `ModuleCat.card_arrows_eq_card_arrows_of_translate_eq_some`
 is the shadow of the valued one. No algebraic closedness is assumed.
 
