@@ -525,6 +525,16 @@ theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hi
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hj
 
+/-- The determinant of `c·Id + d·T` for a symmetric `T` is `∏_i (c + d·λ_i(T))`, where `λ_i(T)`
+are the eigenvalues of `T`. -/
+theorem det_smul_id_add_smul (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (c d : 𝕜) :
+    LinearMap.det (c • LinearMap.id + d • T) = ∏ i, (c + d * (hT.eigenvalues hn i : 𝕜)) := by
+  let b := (hT.eigenvectorBasis hn).toBasis
+  rw [← LinearMap.det_toMatrix b, map_add, map_smul, map_smul, LinearMap.toMatrix_id,
+    hT.toMatrix_eigenvectorBasis hn, Matrix.smul_one_eq_diagonal, ← Matrix.diagonal_smul,
+    Matrix.diagonal_add, Matrix.det_diagonal]
+  simp [smul_eq_mul]
+
 end LinearMap.IsSymmetric
 
 namespace LinearMap.IsPositive
