@@ -50,6 +50,8 @@ its coefficients.
   vertical lines `y ↦ w ± i y`.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `Complex.verticalIntegrable_Gamma_mul_Gamma_add`: `Γ(s) Γ(s + a)` is integrable on every
+  vertical line `Re s = σ` with neither `σ` nor `σ + Re a` a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma_smul_of_norm_le`: `w ↦ Γ(w) • g(w)` is integrable on
   `Re w = σ` (`σ ≠ -n`) whenever `g` is measurable and almost everywhere polynomially bounded on
   that line.
@@ -248,6 +250,21 @@ theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     (continuous_Gamma_add_mul_I (by simpa using hσ)).aestronglyMeasurable
     (Eventually.of_forall fun t ↦ by simpa using hC t)
 
+/-- On every vertical line `Re t = σ` with neither `σ` nor `σ + Re a` a nonpositive integer, the
+product `Γ(t) Γ(t + a)` is integrable. -/
+theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
+    (haσ : ∀ n : ℕ, σ + a.re ≠ -n) :
+    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ := by
+  have hadd (y : ℝ) : σ + y * I + a = ↑(σ + a.re) + ↑(y + a.im) * I := by
+    apply Complex.ext <;> simp
+  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow haσ 0
+  have hcont : Continuous fun y : ℝ ↦ Gamma (σ + y * I + a) := by
+    simp_rw [hadd]
+    exact (continuous_Gamma_add_mul_I (w := ↑(σ + a.re)) (by simpa using haσ)).comp
+      (continuous_id.add continuous_const)
+  exact (verticalIntegrable_Gamma hσ).mul_bdd (c := C) hcont.aestronglyMeasurable
+    (Eventually.of_forall fun y ↦ by simpa [hadd] using hC (y + a.im))
+
 /-- Because `Γ(σ + i t)` decays faster than every power of `|t|`, multiplying any measurable
 function `g` that is almost everywhere polynomially bounded on `Re w = σ` (`σ` not a nonpositive
 integer) by `Γ` produces a vertically integrable function. -/
@@ -258,12 +275,9 @@ theorem verticalIntegrable_Gamma_smul_of_norm_le {E : Type*} [NormedAddCommGroup
     VerticalIntegrable (fun w ↦ Gamma w • g w) σ := by
   obtain ⟨A, hA⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσ (m + 1)
   have hA0 : 0 ≤ A := by simpa using (norm_nonneg (Gamma σ)).trans (by simpa using hA 0)
-  have hΓ_cont : Continuous fun t : ℝ ↦ Gamma (σ + t * I) :=
-    continuous_iff_continuousAt.mpr fun t ↦
-      (differentiableAt_Gamma _ fun n h ↦ hσ n (by simpa using congrArg re h)).continuousAt.comp
-        (by fun_prop)
   refine (integrable_inv_one_add_sq.const_mul (A * C)).mono'
-    (hΓ_cont.aestronglyMeasurable.smul hmeas) (hg.mono fun t hgt ↦ ?_)
+    ((continuous_Gamma_add_mul_I (by simpa using hσ)).aestronglyMeasurable.smul hmeas)
+    (hg.mono fun t hgt ↦ ?_)
   calc ‖Gamma (σ + t * I) • g (σ + t * I)‖
       = ‖Gamma (σ + t * I)‖ * ‖g (σ + t * I)‖ := norm_smul _ _
     _ ≤ (A * ((1 + t ^ 2) ^ (m + 1))⁻¹) * (C * (1 + t ^ 2) ^ m) :=

@@ -50,6 +50,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le`:
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
+* `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 -/
 
 public section
@@ -290,5 +291,22 @@ theorem inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le {a y : ℝ} (ha : 0 < 
           ≤ (2 * 2 ^ m) * 1 := mul_le_mul hym hexp1 (by positivity) (by positivity)
         _ ≤ 2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := by
             rw [mul_one]; gcongr; exact le_max_right _ _
+
+/-- For `0 < δ ≤ r`, `x e^{-r x} ≤ (2 / δ) e^{-(δ / 2) x}`, since `y ≤ e^y`: the weight
+`x e^{-r x}` is dominated uniformly in `r ≥ δ` by a single exponential, decaying as `x → ∞`. -/
+theorem exp_neg_mul_mul_le {r δ : ℝ} (hδ : 0 < δ) (hr : δ ≤ r) (x : ℝ) :
+    exp (-(r * x)) * x ≤ 2 / δ * exp (-(δ / 2 * x)) := by
+  rcases lt_or_ge x 0 with hx | hx
+  · exact (mul_nonpos_of_nonneg_of_nonpos (exp_pos _).le hx.le).trans (by positivity)
+  have hy := add_one_le_exp (δ / 2 * x)
+  have h1 : exp (-(r * x)) ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) := by
+    rw [← exp_add]
+    gcongr
+    nlinarith
+  have h2 : exp (-(δ / 2 * x)) * x ≤ 2 / δ := by
+    rw [le_div_iff₀ hδ, exp_neg, inv_mul_eq_div, div_mul_eq_mul_div, div_le_iff₀ (exp_pos _)]
+    nlinarith
+  calc _ ≤ exp (-(δ / 2 * x)) * exp (-(δ / 2 * x)) * x := by gcongr
+    _ ≤ _ := by rw [mul_assoc, mul_comm]; gcongr
 
 end TauCeti
