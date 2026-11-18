@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
@@ -18,6 +18,12 @@ turns the model Laplacian comparison into an elementary bound. The inequality al
 at negative parameters and at the totalized value at zero.
 
 The hyperbolic estimate follows from `1 + 2x ≤ exp (2x)`.
+
+Adapted from Otis Chodosh's formalization in
+`ForTauCeti/Analysis/SpecialFunctions/Trigonometric/Curvature/Bounds.lean` in
+[ColdingMinicozziTheory][source].
+
+[source]: https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/6966e539d9352a70e8cdeb9596f6cc098b2a18cb/ForTauCeti/Analysis/SpecialFunctions/Trigonometric/Curvature/Bounds.lean
 -/
 
 public noncomputable section
@@ -50,6 +56,7 @@ theorem curvatureCotangent_le_sqrt_neg_add_inv {κ : ℝ} (hκ : κ ≤ 0) (r : 
         (1 + a * r) * Real.sinh (a * r) := by
       rw [Real.cosh_eq, Real.sinh_eq]
       nlinarith
+    -- Fold the local abbreviation `a` so denominator clearing matches `hhyper` below.
     change a * (Real.cosh (a * r) / Real.sinh (a * r)) ≤ a + r⁻¹
     apply (mul_le_mul_iff_left₀ hrs).mp
     calc

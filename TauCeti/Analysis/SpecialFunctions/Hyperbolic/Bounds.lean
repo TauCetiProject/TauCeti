@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
@@ -18,6 +18,15 @@ import Mathlib.Tactic.Ring
 At a positive argument, the hyperbolic cotangent is strictly smaller than the reciprocal
 plus one third of the argument. Two derivative comparisons, each starting at zero, give
 the strict inequality. The radius sign is essential.
+
+This converts hyperbolic cotangent comparison terms into reciprocal-plus-linear bounds
+for distance-support estimates, comparing the matched hyperbolic and linear profiles.
+
+Adapted from Otis Chodosh's formalization in
+`ForTauCeti/Analysis/SpecialFunctions/Hyperbolic/Bounds.lean` in
+[ColdingMinicozziTheory][source].
+
+[source]: https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/6966e539d9352a70e8cdeb9596f6cc098b2a18cb/ForTauCeti/Analysis/SpecialFunctions/Hyperbolic/Bounds.lean
 -/
 
 public noncomputable section
@@ -64,7 +73,8 @@ plus one third of that argument. -/
 theorem cosh_div_sinh_lt_inv_add_div_three {x : ℝ} (hx : 0 < x) :
     cosh x / sinh x < x⁻¹ + x / 3 := by
   apply (div_lt_iff₀ (sinh_pos_iff.mpr hx)).mpr
-  apply (mul_lt_mul_iff_right₀ (show 0 < 3 * x by positivity)).mp
+  have hpos : 0 < 3 * x := by positivity
+  apply (mul_lt_mul_iff_right₀ hpos).mp
   have hfactor : 3 * x * ((x⁻¹ + x / 3) * sinh x) = (x ^ 2 + 3) * sinh x := by
     field_simp [hx.ne']
     ring
