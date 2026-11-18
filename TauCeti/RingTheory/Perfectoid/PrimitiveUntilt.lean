@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.WittVector.Primitive.Basic
 
 import Mathlib.Algebra.CharP.Subring
-import Mathlib.RingTheory.WittVector.Complete
 import TauCeti.RingTheory.Huber.Pair.Complete
 import TauCeti.RingTheory.Huber.Perfect
 import TauCeti.RingTheory.WittVector.Primitive.Quotient
@@ -395,7 +394,7 @@ theorem algebraMap_mem_untiltPlus (a : 𝕎 P.plus) :
 
 variable (p P) in
 /-- The *sharp map* `R⁺ → A`, `x ↦ x♯ = θ_J([x])`: the image of the Teichmüller representative.
-It is multiplicative and sends `0` to `0`, but it is not additive. -/
+It is multiplicative and sends `0` to `0`, but it is not additive in general. -/
 noncomputable def sharp : P.plus →*₀ untilt p P J where
   __ := (algebraMap (𝕎 P.plus) (untilt p P J) : 𝕎 P.plus →* untilt p P J).comp (teichmuller p)
   map_zero' := by
