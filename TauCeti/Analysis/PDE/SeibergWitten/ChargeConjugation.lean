@@ -39,7 +39,7 @@ the same oriented four-space `V`, and let `j : W → W'` be a conjugate-linear i
 equivalence commuting with Clifford multiplication, `j (c(v) w) = c(v) (j w)`. Such a `j`
 identifies `W'` with the conjugate of `W`; for the spinors of `Spinᶜ(4)` it is multiplication by
 the quaternion `j`, and `W'` is the spinor module of the conjugate `Spinᶜ` structure. Then `j`
-commutes with every Clifford element (`CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`), in
+commutes with every Clifford element (`CliffordAlgebra.map_apply_of_forall_ιₛₗ`), in
 particular with the chirality element, so it restricts to the positive half-spinors
 (`CliffordAlgebra.positiveHalfSpinorsConjEquiv`). Since `j` is conjugate-linear, it
 anticommutes with the Clifford map `C(iα) = i c₂(α)`:
@@ -158,18 +158,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   (ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W')
   (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
 
-omit [Fact (finrank ℝ V = 4)] in
-variable {ρ ρ' j} in
-include hj in
-/-- A conjugate-linear isometric equivalence commuting with the generators commutes with every
-Clifford element: `j (ρ x w) = ρ' x (j w)`. -/
-private theorem map_apply_of_forall_ι (x : CliffordAlgebra Q) (w : W) :
-    j (ρ x w) = ρ' x (j w) := by
-  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q)
-    (fun r ↦ Complex.conj_ofReal r) (U := j.toLinearEquiv.toLinearMap)
-    (fun v ↦ LinearMap.ext (hj v)) x
-  simpa [map_id] using LinearMap.congr_fun h w
-
 attribute [local instance] finiteDimensional_of_finrank_four
 
 variable [FiniteDimensional ℂ W] [FiniteDimensional ℂ W']
@@ -181,7 +169,10 @@ theorem cliffordRestriction_positiveHalfSpinorsConjEquiv (x : ⋀[ℝ]^2 V)
     cliffordRestriction o ρ' x (positiveHalfSpinorsConjEquiv o ρ ρ' j hj ψ) =
       -positiveHalfSpinorsConjEquiv o ρ ρ' j hj (cliffordRestriction o ρ x ψ) := by
   apply Subtype.ext
-  simp [map_smulₛₗ, map_apply_of_forall_ι hj]
+  have h (a : CliffordAlgebra Q) (w : W) : j (ρ a w) = ρ' a (j w) :=
+    map_apply_of_forall_ιₛₗ (fun r ↦ Complex.conj_ofReal r) (U := j.toLinearEquiv.toLinearMap)
+      hj a w
+  simp [map_smulₛₗ, h]
 
 /-- **Charge conjugation reverses the adjoint of the Clifford map**: if endomorphisms `T` of `W⁺`
 and `T'` of `W'⁺` are related by `T' (j ψ) = j (T ψ)`, then `τ(T') = -τ(T)`. -/
