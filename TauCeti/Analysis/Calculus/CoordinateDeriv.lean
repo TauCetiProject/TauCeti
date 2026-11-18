@@ -930,15 +930,6 @@ theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     mixedDeriv α β a x ξ = 0 :=
   (mixedDeriv_congr_of_eventually (b := 0) h α β ξ).trans (mixedDeriv_zero α β x ξ)
 
-/-- If a `C^(|α| + |β|)` function vanishes near `(x, ξ)`, then its mixed derivative
-`∂_x^α ∂_ξ^β` vanishes at `(x, ξ)`. Unlike `TauCeti.mixedDeriv_eq_zero_of_eventually`, only a
-neighbourhood of the point in `ℝⁿ × ℝⁿ` is needed, not of the position for all frequencies. -/
-theorem mixedDeriv_eq_zero_of_eventuallyEq_zero {α β : List (Fin n)}
-    (ha : ContDiff ℝ (α.length + β.length) a) {x ξ : CoordinateSpace n}
-    (h : a =ᶠ[nhds (x, ξ)] 0) : mixedDeriv α β a x ξ = 0 := by
-  rw [mixedDeriv_eq_iteratedFDeriv_append α β ha, (h.iteratedFDeriv ℝ _).eq_of_nhds,
-    iteratedFDeriv_zero, Pi.zero_apply, zero_apply]
-
 /-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
 at positions of `U`. -/
 theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU : IsOpen U)

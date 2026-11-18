@@ -95,18 +95,14 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
     (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) (hf.of_le (mod_cast le_top)) C m (α := α)
     (β := β)
   refine ⟨B * c ^ |m - β.length|, by positivity, fun x hC ξ => (hB' x hC ξ).trans ?_⟩
-  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ ((m - β.length) / 2) ≤
-      c ^ |m - β.length| * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-    refine one_add_norm_sq_rpow_le_of_norm_le_mul hc _ ?_ ?_
-    · calc ‖Q ξ‖ ≤ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖ξ‖ :=
-            (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ
-        _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
-    · calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
-            norm_le_norm_symm_mul Q ξ
-        _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
-  calc B * (1 + ‖Q ξ‖ ^ 2) ^ ((m - β.length) / 2)
-      ≤ B * (c ^ |m - β.length| * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by gcongr
-    _ = _ := by ring
+  rw [mul_assoc]
+  refine mul_le_mul_of_nonneg_left (one_add_norm_sq_rpow_le_of_norm_le_mul hc _ ?_ ?_) hB
+  · calc ‖Q ξ‖ ≤ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖ξ‖ :=
+          (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ
+      _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
+  · calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
+          norm_le_norm_symm_mul Q ξ
+      _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
 
 /-- **Linear change of variables in a symbol.** For a linear map `P` of positions and a linear
 isomorphism `Q` of frequencies, the symbol `(x, ξ) ↦ a(P x, Q ξ)` of order `m`, as a `ℂ`-linear map

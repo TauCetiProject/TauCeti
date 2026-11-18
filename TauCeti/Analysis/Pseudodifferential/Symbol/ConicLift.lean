@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Lifting a symbol to a product, cut off near an axis
@@ -40,8 +40,8 @@ The cutoff changes `p(P x, P ξ)` only where `‖ξ‖ > R` and `‖P ξ‖ < ε
 difference are controlled, and none are claimed: the difference is not a symbol uniformly in `ε`.
 
 The full symbols of the external product of two elliptic operators on the factors of a product
-have entries of the form `p(P x, P ξ)`, singular along an axis; their lifts are symbols of the
-classical calculus of the product, close to the original entries in the sense above. The
+have entries of the form `p(P x, P ξ)`, singular along an axis; their lifts are symbols of order
+`m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The
 homogeneous counterpart of the construction, for principal symbols, is
 `TauCeti.HomogeneousSymbol.conicCutoffFst`.
 
@@ -157,7 +157,7 @@ private theorem contDiffOn_angular (hε : ε ≠ 0) :
     contDiff_const.mul (contDiff_norm_sq ℝ)
   exact contDiffOn_const.sub (χ.contDiff.comp_contDiffOn
     (hnum.contDiffOn.div hden.contDiffOn fun ξ hξ ↦ by
-      have : ξ ≠ 0 := hξ
+      have : ξ ≠ 0 := Set.mem_compl_singleton_iff.1 hξ
       positivity))
 
 /-- The cutoff is smooth: near bounded frequencies it is constant, and away from `ξ = 0` all its
@@ -190,16 +190,20 @@ private theorem exists_norm_iteratedFDeriv_removed_le (hε : ε ≠ 0) (hR : 1 �
   obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq
     ((contDiffOn_angular P χ hε).of_le (mod_cast le_top) :
       ContDiffOn ℝ k g {0}ᶜ) fun t ht ξ ↦ angular_smul P χ ε ht ξ
-  refine ⟨∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * Cφ i * (A * 2 ^ (k - i)),
+  refine ⟨∑ i ∈ Finset.range (k + 1),
+      (k.choose i : ℝ) * Cφ i * (A * 2 ^ (((k - i : ℕ) : ℝ) / 2)),
     Finset.sum_nonneg fun i _ ↦ by have := hCφ0 i; positivity, fun ξ hξ ↦ ?_⟩
   have h1 : 1 ≤ ‖ξ‖ := hR.trans hξ
   -- The Leibniz rule on the open set `‖η‖ > 1 / 2`, where `g` is smooth.
   set U : Set (CoordinateSpace N) := {η | 1 / 2 < ‖η‖}
   have hU : IsOpen U := isOpen_lt continuous_const continuous_norm
-  have hξU : ξ ∈ U := show 1 / 2 < ‖ξ‖ by linarith
+  have hξU : ξ ∈ U := by
+    rw [Set.mem_ofPred_eq]
+    linarith
   have hgU : ContDiffOn ℝ k g U :=
-    ((contDiffOn_angular P χ hε).of_le (mod_cast le_top)).mono fun η (hη : 1 / 2 < ‖η‖) ↦
-      norm_pos_iff.1 (by linarith)
+    ((contDiffOn_angular P χ hε).of_le (mod_cast le_top)).mono fun η hη ↦ by
+      rw [Set.mem_ofPred_eq] at hη
+      exact Set.mem_compl_singleton_iff.2 (norm_pos_iff.1 (by linarith))
   have hL := norm_iteratedFDerivWithin_mul_le (hφ.of_le (mod_cast le_top)).contDiffOn hgU
     hU.uniqueDiffOn hξU le_rfl
   rw [iteratedFDerivWithin_of_isOpen k hU hξU] at hL
@@ -209,11 +213,12 @@ private theorem exists_norm_iteratedFDeriv_removed_le (hε : ε ≠ 0) (hR : 1 �
   have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
   rw [iteratedFDerivWithin_of_isOpen i hU hξU, iteratedFDerivWithin_of_isOpen (k - i) hU hξU]
   have hgk : ‖iteratedFDeriv ℝ (k - i) g ξ‖ ≤
-      A * 2 ^ (k - i) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2) := by
+      A * 2 ^ (((k - i : ℕ) : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2) := by
     refine (hA (k - i) (Nat.sub_le k i) ξ (norm_pos_iff.1 (one_pos.trans_le h1))).trans ?_
     rw [div_eq_mul_inv, mul_assoc]
     gcongr
-    exact inv_norm_pow_le_two_pow_mul_one_add_norm_sq_rpow_neg h1 (k - i)
+    have h := norm_rpow_le_one_add_norm_sq_rpow h1 (-((k - i : ℕ) : ℝ))
+    rwa [abs_neg, Nat.abs_cast, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast] at h
   have hw : (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2) =
       (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
     rw [← Real.rpow_add (by positivity), Nat.cast_sub hik]
@@ -221,10 +226,11 @@ private theorem exists_norm_iteratedFDeriv_removed_le (hε : ε ≠ 0) (hR : 1 �
   calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (fun η ↦ φ (R⁻¹ • η)) ξ‖ *
         ‖iteratedFDeriv ℝ (k - i) g ξ‖
       ≤ (k.choose i : ℝ) * (Cφ i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2)) *
-          (A * 2 ^ (k - i) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2)) := by
+          (A * 2 ^ (((k - i : ℕ) : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2)) := by
         gcongr
         exacts [by have := hCφ0 i; positivity, hCφ i R hR ξ]
-    _ = (k.choose i : ℝ) * Cφ i * (A * 2 ^ (k - i)) * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+    _ = (k.choose i : ℝ) * Cφ i * (A * 2 ^ (((k - i : ℕ) : ℝ) / 2)) *
+          (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
         rw [← hw]
         ring
 
@@ -292,16 +298,12 @@ private theorem exists_bound_mixedDeriv_comp_prodMap_of_cone (p : Symbol n V W m
   set c : ℝ := max 1 (max ‖P‖ δ⁻¹)
   have hc : 1 ≤ c := le_max_left _ _
   refine ⟨D * c ^ |m - β.length|, by positivity, fun x hx ξ hξ ↦ (hD x hx ξ).trans ?_⟩
-  have hweight : (1 + ‖P ξ‖ ^ 2) ^ ((m - β.length) / 2) ≤
-      c ^ |m - β.length| * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-    refine one_add_norm_sq_rpow_le_of_norm_le_mul hc _ ?_ ?_
-    · calc ‖P ξ‖ ≤ ‖P‖ * ‖ξ‖ := P.le_opNorm ξ
-        _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
-    · calc ‖ξ‖ = δ⁻¹ * (δ * ‖ξ‖) := by field_simp
-        _ ≤ c * ‖P ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
-  calc D * (1 + ‖P ξ‖ ^ 2) ^ ((m - β.length) / 2)
-      ≤ D * (c ^ |m - β.length| * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by gcongr
-    _ = _ := by ring
+  rw [mul_assoc]
+  refine mul_le_mul_of_nonneg_left (one_add_norm_sq_rpow_le_of_norm_le_mul hc _ ?_ ?_) hD0
+  · calc ‖P ξ‖ ≤ ‖P‖ * ‖ξ‖ := P.le_opNorm ξ
+      _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
+  · calc ‖ξ‖ = δ⁻¹ * (δ * ‖ξ‖) := by field_simp
+      _ ≤ c * ‖P ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
 
 variable {χ : ConicCutoff} {φ : FrequencyCutoff (CoordinateSpace N)} {ε R : ℝ}
 
@@ -324,9 +326,10 @@ private theorem exists_bound_mixedDeriv_conicLift_of_cone (hε : ε ≠ 0) (hR :
   have hfb : (fun q : CoordinateSpace N × CoordinateSpace N ↦
       (conicLiftCutoff P χ φ ε R q.2 : ℂ) • p.coefficient (P q.1, P q.2)) =
         fun q ↦ (b q.2).comp ((p.coefficient ∘ P.prodMap P) q) := by
-    funext q
-    simp [b, L]
-    rfl
+    funext ⟨x, ξ⟩
+    simp only [b, L, Function.comp_apply, ContinuousLinearMap.coe_prodMap', Prod.map_apply,
+      ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply,
+      ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp]
   choose D hD0 hD using fun s t : List (Fin N) ↦
     exists_bound_mixedDeriv_comp_prodMap_of_cone P p hK (by positivity : 0 < |ε| / 2) s t
   choose E hE0 hE using fun s t : List (Fin N) ↦ exists_bound_mixedDeriv_comp_snd (m := 0)
@@ -381,7 +384,7 @@ private theorem exists_bound_conicLift (hε : ε ≠ 0) (hR : 1 ≤ R) (p : Symb
         (conicLiftCutoff_eventuallyEq_zero hε hR0 hξ hPξ)] with q hq
       have hq' : conicLiftCutoff P χ φ ε R q.2 = 0 := hq
       simp [hq']
-    rw [mixedDeriv_eq_zero_of_eventuallyEq_zero (hf.of_le (mod_cast le_top)) hzero, norm_zero]
+    rw [(hzero.mixedDeriv_eq α β).trans (mixedDeriv_zero α β x ξ), norm_zero]
     positivity
   · -- On the cone.
     have hcone : |ε| / 2 * ‖ξ‖ ≤ ‖P ξ‖ :=
