@@ -17,10 +17,10 @@ import Mathlib.Analysis.MeanInequalitiesPow
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, `|t / √(1 + t²)| ≤ 1`, that the
-modular `√(1 + t²) - 1` is at most `|t|` and `t² / 2` and is locally Lipschitz, that `c √u` tends
-to `0` as
-`u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `1 ≤ √(1 + t²)`, that `0 < √(1 - v²)` for
+`v ∈ (-1, 1)`, `|t / √(1 + t²)| ≤ 1`, that the modular `√(1 + t²) - 1` is at most `|t|` and
+`t² / 2` and is locally Lipschitz, that `c √u` tends to `0` as `u → 0`, and through positive
+values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
 
@@ -32,6 +32,8 @@ to `0` as
   `|1 - (√μ)⁻¹| ≤ δ`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
+* `Real.one_sub_sq_pos`, `Real.sqrt_one_sub_sq_pos`: for `v ∈ (-1, 1)`, `0 < 1 - v²` and
+  `0 < √(1 - v²)`.
 * `Real.abs_div_sqrt_one_add_sq_le_one`: for every real `t`, `|t / √(1 + t²)| ≤ 1`.
 * `Real.sqrt_one_add_sq_sub_one_le_abs`: for every real `t`, `√(1 + t²) - 1 ≤ |t|`.
 * `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
@@ -141,6 +143,14 @@ theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
 /-- For every real `t`, `1 ≤ √(1 + t²)`. -/
 theorem one_le_sqrt_one_add_sq (t : ℝ) : 1 ≤ √(1 + t ^ 2) :=
   one_le_sqrt.mpr (by nlinarith [sq_nonneg t])
+
+/-- For `v ∈ (-1, 1)`, `0 < 1 - v²`. -/
+theorem one_sub_sq_pos {v : ℝ} (hv : v ∈ Set.Ioo (-1) 1) : 0 < 1 - v ^ 2 :=
+  sub_pos.2 ((sq_lt_one_iff_abs_lt_one v).2 (abs_lt.2 hv))
+
+/-- For `v ∈ (-1, 1)`, `0 < √(1 - v²)`. -/
+theorem sqrt_one_sub_sq_pos {v : ℝ} (hv : v ∈ Set.Ioo (-1) 1) : 0 < √(1 - v ^ 2) :=
+  sqrt_pos.2 (one_sub_sq_pos hv)
 
 /-- For every real `t`, `|t / √(1 + t²)| ≤ 1`. -/
 theorem abs_div_sqrt_one_add_sq_le_one (t : ℝ) : |t / √(1 + t ^ 2)| ≤ 1 := by
