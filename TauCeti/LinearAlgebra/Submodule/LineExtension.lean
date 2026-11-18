@@ -91,6 +91,7 @@ lemma extension_comp : s.extension ∘ₗ s.W'.subtype = s.φ :=
   (LinearMap.exists_extend s.φ).choose_spec
 
 /-- The chosen functional `Submodule.LineExtension.extension s` is one on the vector of `s`. -/
+@[simp]
 lemma extension_apply_v : s.extension s.v = 1 :=
   (LinearMap.congr_fun s.extension_comp s.v).trans s.apply_v
 

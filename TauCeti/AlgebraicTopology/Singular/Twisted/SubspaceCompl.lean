@@ -58,15 +58,15 @@ variable {W : Submodule ℝ F}
 half-subspace complements of a step. -/
 private def twistedHomologyUnionIso (s : W.LineExtension) (n : ℕ) :
     (subspaceComplPair q W).twistedHomology L n ≅
-      (TopPair.ofSubset (half q s.W' s.extension ∪ half q s.W' (-s.extension))).twistedHomology
-        L n :=
+      (TopPair.ofSubset
+        (halfCompl q s.W' s.extension ∪ halfCompl q s.W' (-s.extension))).twistedHomology L n :=
   eqToIso (by rw [← Set.preimage_union, s.compl_union_compl s.extension_comp])
 
 /-- The relative twisted homology of `X` modulo the intersection of the two half-subspace
 complements of a step is that of `(X, q⁻¹(F ∖ W'))`. -/
 private def twistedHomologyInterIso (s : W.LineExtension) (n : ℕ) :
-    (TopPair.ofSubset (half q s.W' s.extension ∩ half q s.W' (-s.extension))).twistedHomology
-        L n ≅
+    (TopPair.ofSubset
+        (halfCompl q s.W' s.extension ∩ halfCompl q s.W' (-s.extension))).twistedHomology L n ≅
       (subspaceComplPair q s.W').twistedHomology L n :=
   eqToIso (by rw [← Set.preimage_inter, s.compl_inter_compl])
 
@@ -74,27 +74,27 @@ variable (hq : ∀ (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F), v ∈
   IsZero ((TopPair.ofSubset (q ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).twistedHomology L n))
 include hq
 
-private lemma isZero_half (s : W.LineExtension) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (half q s.W' s.extension)).twistedHomology L n) :=
+private lemma isZero_halfCompl (s : W.LineExtension) (n : ℕ) :
+    IsZero ((TopPair.ofSubset (halfCompl q s.W' s.extension)).twistedHomology L n) :=
   hq _ _ _ s.v.2 s.extension_apply_v n
 
-private lemma isZero_half_neg (s : W.LineExtension) (n : ℕ) :
-    IsZero ((TopPair.ofSubset (half q s.W' (-s.extension))).twistedHomology L n) :=
-  hq _ _ _ (neg_mem s.v.2) (by simp [Submodule.LineExtension.extension_apply_v]) n
+private lemma isZero_halfCompl_neg (s : W.LineExtension) (n : ℕ) :
+    IsZero ((TopPair.ofSubset (halfCompl q s.W' (-s.extension))).twistedHomology L n) :=
+  hq _ _ _ (neg_mem s.v.2) (by simp) n
 
 /-- One step of the computation: `Hₙ₊₁(X, q⁻¹(F ∖ W); L) ≅ Hₙ(X, q⁻¹(F ∖ W'); L)`. -/
 private def twistedStepIso [FiniteDimensional ℝ F] (s : W.LineExtension) (n : ℕ) :
     (subspaceComplPair q W).twistedHomology L (n + 1) ≅
       (subspaceComplPair q s.W').twistedHomology L n :=
   twistedHomologyUnionIso q L s (n + 1) ≪≫
-    TopPair.twistedHomologyOfSubsetUnionIso (isZero_half q L hq s) (isOpen_half q _ _)
-      (isOpen_half q _ _) (isZero_half_neg q L hq s) n ≪≫
+    TopPair.twistedHomologyOfSubsetUnionIso (isZero_halfCompl q L hq s) (isOpen_halfCompl q _ _)
+      (isOpen_halfCompl q _ _) (isZero_halfCompl_neg q L hq s) n ≪≫
     twistedHomologyInterIso q L s n
 
 private lemma isZero_twistedHomology_zero (s : W.LineExtension) :
     IsZero ((subspaceComplPair q W).twistedHomology L 0) :=
-  (TopPair.isZero_twistedHomology_ofSubset_union_zero (V := half q s.W' (-s.extension))
-    (isZero_half q L hq s)).of_iso (twistedHomologyUnionIso q L s 0)
+  (TopPair.isZero_twistedHomology_ofSubset_union_zero (V := halfCompl q s.W' (-s.extension))
+    (isZero_halfCompl q L hq s)).of_iso (twistedHomologyUnionIso q L s 0)
 
 end SubspaceComplPair
 

@@ -110,6 +110,8 @@ along the zero section. -/
 def prodThomPairTwistedHomologyIso (n m : ℕ) (h : n + finrank ℝ F = m := by lia) :
     (prodThomPair B F).twistedHomology L m ≅
       ((LocalCoefficientSystem.pullback (prodZeroSection B F).hom).obj L).twistedHomology n :=
+  -- The global instance for `subspaceComplPair q ⊤` is not found here: its key keeps the carrier
+  -- of a general space, while the carrier of `TopCat.of (B × F)` reduces to `B × F`.
   have : IsEmpty (subspaceComplPair (proj (B := B) (F := F)) ⊤).snd :=
     ⟨fun p ↦ p.2 Submodule.mem_top⟩
   twistedHomologyBotIso L m ≪≫

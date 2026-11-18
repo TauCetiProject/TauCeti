@@ -16,15 +16,12 @@ This file collects criteria, read off the long exact sequences of pairs and trip
 relative singular homology `Hₙ(X, A; L)` with coefficients in a local system `L` to vanish or to
 agree with the homology of `X` or of another pair.
 
-* The twisted homology of an empty space vanishes, since it has no singular simplices
-  (`TauCeti.LocalCoefficientSystem.isZero_twistedHomology_of_isEmpty`). So for a pair with empty
-  subspace the quotient map `Hₙ(X; L) ⟶ Hₙ(X, ∅; L)` is an isomorphism
-  (`TopPair.isIso_twistedHomologyπ_of_isEmpty`).
-* If the inclusion `A ⟶ X` induces isomorphisms on twisted homology, the relative twisted homology
-  vanishes (`TopPair.isZero_twistedHomology_of_isIso`). In particular it vanishes modulo a set `S`
-  into which `X` deforms through maps keeping `S` inside `S`
-  (`TopPair.isZero_twistedHomology_ofSubset_of_homotopy`), the twisted counterpart of
-  `TopPair.isZero_singularHomology_ofSubset_of_homotopy`.
+* **Deformations.** The relative twisted homology vanishes modulo a set `S` into which `X` deforms
+  through maps keeping `S` inside `S` (`TopPair.isZero_twistedHomology_ofSubset_of_homotopy`), the
+  twisted counterpart of `TopPair.isZero_singularHomology_ofSubset_of_homotopy`. The inclusion of
+  `S` is then a homotopy equivalence, so this is an instance of the vanishing criterion
+  `TopPair.isZero_twistedHomology_of_isIso` of
+  `TauCeti.AlgebraicTopology.Singular.Twisted.Relative`.
 * **Acyclic open covers.** Let `U` and `V` be open subsets of `X` such that `X` is acyclic modulo
   `U` and modulo `V`: `Hₙ(X, U; L) = Hₙ(X, V; L) = 0` for all `n`. Then
   `Hₙ₊₁(X, U ∪ V; L) ≅ Hₙ(X, U ∩ V; L)` (`TopPair.twistedHomologyOfSubsetUnionIso`) and
@@ -48,60 +45,11 @@ open CategoryTheory Limits
 
 universe u v w
 
-namespace TauCeti.LocalCoefficientSystem
-
-variable {R : Type u} [Ring R]
-
-/-- The twisted homology of an empty space vanishes. -/
-theorem isZero_twistedHomology_of_isEmpty {Y : TopCat.{v}} [IsEmpty Y]
-    (L : LocalCoefficientSystem.{u, v, max v w} R Y) (k : ℕ) :
-    IsZero (L.twistedHomology k) := by
-  have : Subsingleton (L.twistedChainComplex.X k) :=
-    ⟨fun _ _ ↦ twistedChainComplex_ext_coeff L fun ρ ↦ isEmptyElim (initialVertex ρ).as⟩
-  exact (L.twistedChainComplex.sc k).isZero_homology_of_isZero_X₂
-    (ModuleCat.isZero_of_subsingleton (L.twistedChainComplex.X k))
-
-end TauCeti.LocalCoefficientSystem
-
 namespace TopPair
 
 open TauCeti
 
-variable {R : Type u} [Ring R] (P : TopPair.{v})
-  (L : LocalCoefficientSystem.{u, v, max v w} R P.fst)
-
-/-- For a pair with empty subspace, relative twisted homology is the twisted homology of the
-ambient space. -/
-instance isIso_twistedHomologyπ_of_isEmpty [IsEmpty P.snd] (k : ℕ) :
-    IsIso (P.twistedHomologyπ L k) := by
-  have hA (j : ℕ) :=
-    LocalCoefficientSystem.isZero_twistedHomology_of_isEmpty (P.subspaceSystem L) j
-  have : Mono (P.twistedHomologyπ L k) :=
-    (P.twistedHomology_exact_space L k).mono_g ((hA k).eq_of_src _ _)
-  cases k with
-  | zero => exact isIso_of_mono_of_epi _
-  | succ j =>
-    have : Epi (P.twistedHomologyπ L (j + 1)) :=
-      (P.twistedHomology_exact_relative L (j + 1) j).epi_f ((hA j).eq_of_tgt _ _)
-    exact isIso_of_mono_of_epi _
-
-/-- If the inclusion of the subspace induces isomorphisms on twisted homology in every degree, the
-relative twisted homology of the pair vanishes. -/
-theorem isZero_twistedHomology_of_isIso
-    (h : ∀ k, IsIso (LocalCoefficientSystem.twistedHomologyMap P.map L k)) (n : ℕ) :
-    IsZero (P.twistedHomology L n) := by
-  -- The map `Hₖ(A) ⟶ Hₖ(X)` is onto, so the quotient map `Hₖ(X) ⟶ Hₖ(X, A)` vanishes.
-  have hπ (k : ℕ) : P.twistedHomologyπ L k = 0 :=
-    (P.twistedHomology_exact_space L k).epi_f_iff.1 (by dsimp; infer_instance)
-  cases n with
-  | zero => exact IsZero.of_epi_eq_zero _ (hπ 0)
-  | succ m =>
-    -- The connecting map out of `Hₘ₊₁(X, A)` is then injective, and it vanishes since
-    -- `Hₘ(A) ⟶ Hₘ(X)` is injective.
-    have : Mono (P.twistedHomologyδ L (m + 1) m) :=
-      (P.twistedHomology_exact_relative L (m + 1) m).mono_g (hπ (m + 1))
-    exact IsZero.of_mono_eq_zero _
-      ((P.twistedHomology_exact_subspace L (m + 1) m).mono_g_iff.1 (by dsimp; infer_instance))
+variable {R : Type u} [Ring R]
 
 /-- **Relative twisted homology vanishes modulo a set into which the space deforms.** If a homotopy
 `H` from the identity of `X` to a map `ρ` with values in `S` keeps `S` inside `S`, then
