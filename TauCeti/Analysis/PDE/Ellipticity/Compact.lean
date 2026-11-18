@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -12,13 +12,18 @@ public import TauCeti.Analysis.PDE.Ellipticity.Basic
 
 A coefficient field `a : X → Matrix n n ℝ` that is continuous on a compact set `K` and positive
 definite at every point of `K` is uniformly elliptic on `K`
-(`TauCeti.PDE.exists_uniformlyEllipticOn_of_isCompact`). The lower constant is the minimum of
-the continuous positive function `(x, ξ) ↦ ξ ⬝ a(x) ξ` on the compact set `K × S`, with `S` the
-unit sphere, and the upper constant bounds the operator norms of the bilinear forms of `a(x)`,
-which vary continuously on `K`.
+(`TauCeti.PDE.exists_uniformlyEllipticOn_of_isCompact`). The lower constant is a positive uniform
+lower bound for the continuous function `(x, ξ) ↦ ξ ⬝ a(x) ξ` on the compact set `K × S`, with `S`
+the unit sphere. The upper constant bounds the operator norms of the bilinear forms of `a(x)`,
+which vary continuously on `K`. No nonemptiness assumption on `K × S` is needed.
 
 This is how a smooth coefficient field, such as a Riemannian metric read in a chart, gives a
 uniformly elliptic operator on every open set with compact closure in its domain.
+
+Adapted from Giada Franz's formalization in
+[`ColdingMinicozziTheory`](https://github.com/riccardobrasca/ColdingMinicozziTheory), module
+`ForTauCeti/Analysis/PDE/Ellipticity/Compact.lean`, revision
+`6b89bc4abbf989319947d24d776114611027f224`.
 -/
 
 public section
