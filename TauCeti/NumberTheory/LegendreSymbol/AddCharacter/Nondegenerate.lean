@@ -27,7 +27,8 @@ Nontriviality is the wrong condition outside local rings: on `ZMod 7 × ZMod 7` 
 ## Main definitions and results
 
 * `AddChar.IsNondegenerate`: `ψ 1 - 1` is a unit.
-* `AddChar.IsNondegenerate.isUnit_sub_one`: then `ψ a - 1` is a unit for every `a ≠ 0`.
+* `AddChar.IsNondegenerate.isUnit_sub_one`: then `ψ a - 1` is a unit for every `a ≠ 0`;
+  `AddChar.IsNondegenerate.apply_ne_one`: over a nontrivial ring, `ψ a ≠ 1` for every `a ≠ 0`.
 * `AddChar.IsNondegenerate.isUnit_natCast`, `AddChar.IsNondegenerate.isRoot_cyclotomic`: `p` is a
   unit of `Λ`, and `ψ 1` is a root of the `p`-th cyclotomic polynomial.
 * `AddChar.IsNondegenerate.isPrimitive`: over a nontrivial ring, a nondegenerate character is
@@ -41,6 +42,8 @@ Nontriviality is the wrong condition outside local rings: on `ZMod 7 × ZMod 7` 
   is nontrivial and `p` is a unit.
 * `AddChar.IsNondegenerate.coprime_ringChar`: the characteristic of `Λ`, when positive, is prime
   to `p`.
+* `AddChar.IsNondegenerate.sum_mulShift`: orthogonality on `ZMod p`, `∑ x, ψ (x * y)` is `p` at
+  `y = 0` and `0` elsewhere.
 * `AddChar.IsNondegenerate.sum_trace_mul`: orthogonality over a finite field `k` of characteristic
   `p`, `∑ x, ψ (Tr (x * y))` is `#k` at `y = 0` and `0` elsewhere.
 * `AddChar.IsNondegenerate.bijective_mulShift`: if `Spec Λ` is connected, every additive
@@ -94,15 +97,19 @@ theorem isNondegenerate_iff_forall_isUnit_sub_one :
     ψ.IsNondegenerate ↔ ∀ a : ZMod p, a ≠ 0 → IsUnit (ψ a - 1) :=
   ⟨fun hψ _ ↦ hψ.isUnit_sub_one, fun h ↦ h 1 one_ne_zero⟩
 
+/-- A nondegenerate character into a nontrivial ring takes the value `1` only at `0`. -/
+theorem IsNondegenerate.apply_ne_one [Nontrivial Λ] (hψ : ψ.IsNondegenerate) {a : ZMod p}
+    (ha : a ≠ 0) : ψ a ≠ 1 := fun h ↦ by
+  simpa [h] using hψ.isUnit_sub_one ha
+
 /-- A nondegenerate character into a nontrivial ring is injective. -/
 theorem IsNondegenerate.injective [Nontrivial Λ] (hψ : ψ.IsNondegenerate) :
     Function.Injective ψ := by
   intro a b hab
   by_contra h
-  have h1 : ψ (a - b) = 1 := (ψ.val_isUnit b).mul_left_injective <| by
-    dsimp only
-    rw [← map_add_eq_mul, sub_add_cancel, hab, one_mul]
-  simpa [h1] using hψ.isUnit_sub_one (sub_ne_zero.2 h)
+  refine hψ.apply_ne_one (sub_ne_zero.2 h) <| (ψ.val_isUnit b).mul_left_injective ?_
+  dsimp only
+  rw [← map_add_eq_mul, sub_add_cancel, hab, one_mul]
 
 /-- For every character `ψ` of `ZMod p`, the geometric sum of `ψ 1` is killed by `ψ 1 - 1`. -/
 private theorem geom_sum_mul_sub_one_eq_zero (ψ : AddChar (ZMod p) Λ) :
@@ -166,10 +173,19 @@ theorem IsNondegenerate.map (hψ : ψ.IsNondegenerate) (f : Λ →+* Λ') :
   simpa [IsNondegenerate] using IsUnit.map f hψ
 
 /-- A nondegenerate character into a nontrivial ring is primitive. -/
-theorem IsNondegenerate.isPrimitive [Nontrivial Λ] (hψ : ψ.IsNondegenerate) : ψ.IsPrimitive := by
-  intro a ha h
-  have h1 : ψ a = 1 := by simpa using DFunLike.congr_fun h 1
-  simpa [h1] using hψ.isUnit_sub_one ha
+theorem IsNondegenerate.isPrimitive [Nontrivial Λ] (hψ : ψ.IsNondegenerate) : ψ.IsPrimitive :=
+  fun _ ha h ↦ hψ.apply_ne_one ha (by simpa using DFunLike.congr_fun h 1)
+
+/-- **Orthogonality** on `ZMod p` for a nondegenerate character: `∑ x, ψ (x * y)` is `p` at
+`y = 0` and vanishes elsewhere. This is Mathlib's `AddChar.sum_mulShift` without the domain
+hypothesis. -/
+theorem IsNondegenerate.sum_mulShift (hψ : ψ.IsNondegenerate) (y : ZMod p) :
+    ∑ x, ψ (x * y) = if y = 0 then (p : Λ) else 0 := by
+  split_ifs with hy
+  · simp [hy, ZMod.card]
+  simp_rw [mul_comm _ y, ← mulShift_apply]
+  exact sum_eq_zero_of_sub_one_mem_nonZeroDivisors (b := 1)
+    (by simpa using (hψ.isUnit_sub_one hy).mem_nonZeroDivisors)
 
 /-- A character is nondegenerate if and only if its reduction modulo every maximal ideal is
 nontrivial. -/
@@ -237,8 +253,7 @@ theorem IsNondegenerate.isPrimitive_compAddMonoidHom_trace [Finite k] [Nontrivia
     (ψ.compAddMonoidHom (Algebra.trace (ZMod p) k).toAddMonoidHom).IsPrimitive := by
   intro c hc h
   obtain ⟨x, hx⟩ := TauCeti.Algebra.exists_trace_mul_ne_zero (F := ZMod p) hc
-  have h1 : ψ (Algebra.trace (ZMod p) k (c * x)) = 1 := by simpa using DFunLike.congr_fun h x
-  simpa [h1] using hψ.isUnit_sub_one hx
+  exact hψ.apply_ne_one hx (by simpa using DFunLike.congr_fun h x)
 
 /-- Every additive character of `ZMod p` with values in a ring with connected spectrum takes the
 value `ψ c` at `1` for some `c`. -/
@@ -260,7 +275,7 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
     ring
   -- The `e i` sum to `1`, by orthogonality on `ZMod p`.
   have horth (j : ZMod p) : ∑ i, ψ (-(i * j)) = if j = 0 then (p : Λ) else 0 := by
-    simpa [mul_neg, ZMod.card] using hψ.sum_trace_mul (ZMod p) (-j)
+    simpa [mul_neg] using hψ.sum_mulShift (-j)
   have hsum : ∑ i, e i = 1 := by
     simp only [he, ← mul_sum]
     rw [sum_comm]
