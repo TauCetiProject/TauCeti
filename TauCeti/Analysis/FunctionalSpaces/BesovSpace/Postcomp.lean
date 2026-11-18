@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
-import TauCeti.Analysis.Normed.Lp.MapCLM
-import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
 # Applying a continuous linear map to the values of Besov functions
@@ -66,50 +64,33 @@ namespace TauCeti.BesovSpace
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
 
-/-- The weighted blocks of `L u`: `L` applied to the weighted blocks of `u`. -/
-private def postcompWeightedBlocks (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
-    lp (fun _ : ℕ ↦ Lp G p (volume : Measure E)) q :=
-  lp.ampliation ℕ q (L.compLpL p (volume : Measure E)) u.weightedBlocks
-
-private theorem coe_postcompWeightedBlocks_apply (L : F →L[ℂ] G) (u : BesovSpace F φ s p q)
-    (j : ℕ) :
-    (postcompWeightedBlocks L u j : 𝓢'(E, G)) = (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) •
-      littlewoodPaleyBlock G φ j (PointwiseConvergenceCLM.postcomp _ L u.toDistr) := by
-  rw [postcompWeightedBlocks, lp.ampliation_apply_apply, ContinuousLinearMap.compLpL_apply,
-    Lp.toTemperedDistribution_compLp, u.coe_weightedBlocks_apply, map_smul,
-    littlewoodPaleyBlock_postcomp]
-
-/-- `L u` as an element of `B^s_{p,q}(E; G)`. -/
-private def postcompAux (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) : BesovSpace G φ s p q :=
-  ⟨PointwiseConvergenceCLM.postcomp _ L u.toDistr, postcompWeightedBlocks L u,
-    coe_postcompWeightedBlocks_apply L u⟩
-
-private theorem weightedBlocks_postcompAux (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
-    (postcompAux L u).weightedBlocks = postcompWeightedBlocks L u :=
-  (rfl)
-
-private theorem norm_postcompAux_le (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
-    ‖postcompAux L u‖ ≤ ‖L‖ * ‖u‖ := by
-  rw [← norm_weightedBlocks, ← norm_weightedBlocks, weightedBlocks_postcompAux,
-    postcompWeightedBlocks]
-  exact (lp.ampliation ℕ q (L.compLpL p (volume : Measure E))).le_of_opNorm_le
-    ((lp.norm_ampliation_le _).trans L.norm_compLpL_le) u.weightedBlocks
-
 variable (φ s p q) in
 /-- **Continuous linear maps on Besov spaces.** A continuous linear map `L : F →L[ℂ] G`, applied to
 the values, as a bounded operator `B^s_{p,q}(E; F) → B^s_{p,q}(E; G)`. It acts on the weighted
 blocks by `L`, so its norm is at most `‖L‖` (`TauCeti.BesovSpace.norm_postcomp_le`). -/
 def postcomp (L : F →L[ℂ] G) : BesovSpace F φ s p q →L[ℂ] BesovSpace G φ s p q :=
   LinearMap.mkContinuous
-    { toFun := postcompAux L
-      map_add' u v := ext (map_add (PointwiseConvergenceCLM.postcomp _ L) u.toDistr v.toDistr)
-      map_smul' c u := ext (map_smul (PointwiseConvergenceCLM.postcomp _ L) c u.toDistr) }
-    ‖L‖ (norm_postcompAux_le L)
+    { toFun u := (u.memBesov_toDistr.postcomp L).toBesovSpace
+      map_add' u v := ext <| by simp only [MemBesov.toDistr_toBesovSpace, toDistr_add, map_add]
+      map_smul' c u := ext <| by
+        simp only [MemBesov.toDistr_toBesovSpace, toDistr_smul, map_smul, RingHom.id_apply] }
+    ‖L‖ fun u ↦ by
+      obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_block (norm_nonneg L) u
+        (w := PointwiseConvergenceCLM.postcomp _ L u.toDistr) (fun j ↦ L.compLp (u.block j))
+        (fun j ↦ by rw [littlewoodPaleyBlock_postcomp, ← coe_block,
+          Lp.toTemperedDistribution_compLp])
+        fun j ↦ by
+          rw [mul_left_comm]
+          gcongr
+          exact L.norm_compLp_le _
+      have : (u.memBesov_toDistr.postcomp L).toBesovSpace = v :=
+        ext (by rw [MemBesov.toDistr_toBesovSpace, hv])
+      simpa only [LinearMap.coe_mk, AddHom.coe_mk, this] using hvn
 
 @[simp]
 theorem toDistr_postcomp (L : F →L[ℂ] G) (u : BesovSpace F φ s p q) :
     (postcomp φ s p q L u).toDistr = PointwiseConvergenceCLM.postcomp _ L u.toDistr :=
-  (rfl)
+  MemBesov.toDistr_toBesovSpace _
 
 /-- The norm of `TauCeti.BesovSpace.postcomp L` is at most `‖L‖`. -/
 theorem norm_postcomp_le (L : F →L[ℂ] G) : ‖postcomp (E := E) φ s p q L‖ ≤ ‖L‖ :=
