@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Annulus.TwistFactorization
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
@@ -21,7 +22,8 @@ public import Mathlib.Topology.VectorBundle.Riemannian
 
 The shear `S(q, p) = (q + p, p)` of `ℝ²` (`TauCeti.linearPlaneShear`), the transvection
 `x ↦ x + p(x) • (1, 0)` of Mathlib's `LinearEquiv.transvection`, preserves the standard symplectic
-form `ω = dq ∧ dp` (`TauCeti.isSymplectomorphism_linearPlaneShear`). It shows what goes wrong in the
+form `ω = dq ∧ dp` (`TauCeti.isSymplectomorphism_linearPlaneShear`); it is the shear of the strip
+with twist `1` (`TauCeti.stripShear_one`). It shows what goes wrong in the
 fixed-locus theorem for groups of symplectomorphisms when no invariant metric is assumed:
 
 * its fixed points form the line `p = 0` (`TauCeti.fixedSubmodule_linearPlaneShear`), which is
@@ -67,6 +69,10 @@ theorem linearPlaneShear_apply (x : ℝ × ℝ) : linearPlaneShear x = (x.1 + x.
 theorem linearPlaneShear_symm_apply (x : ℝ × ℝ) : linearPlaneShear.symm x = (x.1 - x.2, x.2) := by
   rw [ContinuousLinearEquiv.symm_apply_eq, linearPlaneShear_apply]
   simp
+
+/-- The shear is the shear of the strip with twist `1`. -/
+theorem stripShear_one : stripShear 1 = linearPlaneShear := by
+  ext x <;> simp
 
 /-- The shear preserves the standard symplectic form `ω = dq ∧ dp` of the plane. -/
 theorem isSymplectomorphism_linearPlaneShear :

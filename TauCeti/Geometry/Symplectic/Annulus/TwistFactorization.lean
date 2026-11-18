@@ -46,14 +46,16 @@ For `s, t ∈ [0, 1]` an *increment* is a map `H` with `H ∘ h_s = h_t` near a 
 instance `h_t ∘ h_s⁻¹`. Its derivative at `h_s(p)` is `Dh_t(p) Dh_s(p)⁻¹`, and uniform
 continuity on the compact set of times and points of the unit square makes it uniformly close to
 the identity when `|t - s|` is small (`TauCeti.exists_pos_forall_norm_fderiv_sub_one_lt`).
-Hence for every `c > 0` there is a mesh below which every increment is `R_c ∘ N` with `N` a
-negative twist map with `∂ₓ X > 0`, at every point of the strip
-(`TauCeti.exists_pos_forall_fderiv_stripShear_symm_comp_twist`), and in particular one uniform
-partition `t_j = j / K` of `[0, 1]` works for all its increments
-(`TauCeti.exists_forall_fderiv_stripShear_symm_comp_twist`). Composing the increments, the time-one
-map `h_1 ∘ h_0⁻¹` is a composition of `2K` twist maps alternating between negative and positive
-twist, every one with `∂ₓ X > 0`. These are the factors whose generating functions enter the
-finite-dimensional action of the generating-function proof of the Poincaré–Birkhoff theorem.
+Hence for every `c > 0` there is a mesh below which every increment `H` is `R_c ∘ N` where the
+first component of `N = R_c⁻¹ ∘ H` has `∂ₓ X > 0` and `∂_y X < 0` at every point `h_s(p)` with
+`p` in the strip (`TauCeti.exists_pos_forall_fderiv_stripShear_symm_comp_apply_fst_pos_and_neg`),
+and in particular one uniform partition `t_j = j / K` of `[0, 1]` works for all its increments
+(`TauCeti.exists_pos_forall_lt_fderiv_stripShear_symm_comp_div_apply_fst_pos_and_neg`). This is
+the intended use: when the maps `h_t` preserve the strip, composing the increments writes the
+time-one map `h_1 ∘ h_0⁻¹` as a composition of `2K` maps alternating between the factors `N_j`
+and the shear `R_c`, whose derivatives have these signs. Such factors are the ones whose generating
+functions enter the finite-dimensional action of the generating-function proof of the
+Poincaré–Birkhoff theorem.
 
 The shear `R_c` must be fixed relative to the size of the increments: for the increment
 `H(x, y) = (x + (2y - 1) / 8, y)`, the factor `R_c⁻¹ ∘ H` has `∂_y X = 1 / 4 - c`, which is
@@ -70,8 +72,9 @@ negative for `c = 1` but positive for `c = 1 / 8` (see the examples at the end o
   within `δ` of the identity in `C¹`.
 * `TauCeti.exists_pos_forall_norm_fderiv_sub_one_lt`: increments of a `C¹` path of maps of the
   strip over short time intervals are uniformly `C¹`-close to the identity.
-* `TauCeti.exists_pos_forall_fderiv_stripShear_symm_comp_twist`,
-  `TauCeti.exists_forall_fderiv_stripShear_symm_comp_twist`: the finite twist factorization.
+* `TauCeti.exists_pos_forall_fderiv_stripShear_symm_comp_apply_fst_pos_and_neg`,
+  `TauCeti.exists_pos_forall_lt_fderiv_stripShear_symm_comp_div_apply_fst_pos_and_neg`: the finite
+  twist factorization.
 
 ## References
 
@@ -138,39 +141,40 @@ theorem stripShear_add_fst (c a : ℝ) (p : ℝ × ℝ) :
 
 /-! ### Twist bounds for maps near the identity -/
 
+/-- If `‖L - 1‖ ≤ δ`, both coordinates of `L v - v` are at most `δ ‖v‖` in absolute value. -/
+private theorem abs_apply_fst_sub_le_and_abs_apply_snd_sub_le {L : ℝ × ℝ →L[ℝ] ℝ × ℝ} {δ : ℝ}
+    (hL : ‖L - 1‖ ≤ δ) (v : ℝ × ℝ) :
+    |(L v).1 - v.1| ≤ δ * ‖v‖ ∧ |(L v).2 - v.2| ≤ δ * ‖v‖ := by
+  have h := ((L - 1).le_opNorm v).trans (mul_le_mul_of_nonneg_right hL (norm_nonneg v))
+  exact ⟨(Real.norm_eq_abs _ ▸ norm_fst_le _).trans h, (Real.norm_eq_abs _ ▸ norm_snd_le _).trans h⟩
+
+/-- The first component of the derivative of `R_c⁻¹ ∘ H`. -/
+private theorem fderiv_stripShear_symm_comp_apply_fst (c : ℝ) (H : ℝ × ℝ → ℝ × ℝ) (q v : ℝ × ℝ) :
+    (fderiv ℝ ((stripShear c).symm ∘ H) q v).1 = (fderiv ℝ H q v).1 - c * (fderiv ℝ H q v).2 := by
+  rw [ContinuousLinearEquiv.comp_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, stripShear_symm_apply]
+
 /-- If `‖DH(q) - 1‖ ≤ δ`, the first component `X` of `R_c⁻¹ ∘ H` has
 `∂ₓ X ≥ 1 - δ (1 + c)` at `q`. -/
 theorem one_sub_mul_le_fderiv_stripShear_symm_comp_apply_fst {H : ℝ × ℝ → ℝ × ℝ} {q : ℝ × ℝ}
     {c δ : ℝ} (hc : 0 ≤ c) (hH : ‖fderiv ℝ H q - 1‖ ≤ δ) :
     1 - δ * (1 + c) ≤ (fderiv ℝ ((stripShear c).symm ∘ H) q (1, 0)).1 := by
-  -- Both coordinates of `(DH(q) - 1) (1, 0)` are at most `δ` in absolute value.
-  have h := ((fderiv ℝ H q - 1).le_opNorm (1, 0)).trans (by simpa using hH)
-  have h₁ := (norm_fst_le _).trans h
-  have h₂ := (norm_snd_le _).trans h
-  simp only [sub_apply, one_apply_eq_self, Prod.fst_sub, Prod.snd_sub, sub_zero, Real.norm_eq_abs]
+  obtain ⟨h₁, h₂⟩ := abs_apply_fst_sub_le_and_abs_apply_snd_sub_le hH (1, 0)
+  simp only [Prod.norm_mk, norm_one, norm_zero, zero_le_one, sup_of_le_left, mul_one, sub_zero]
     at h₁ h₂
-  rw [ContinuousLinearEquiv.comp_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, stripShear_symm_apply]
-  have := (abs_le.1 h₁).1
-  have := (abs_le.1 h₂).2
-  nlinarith
+  rw [fderiv_stripShear_symm_comp_apply_fst]
+  nlinarith [(abs_le.1 h₁).1, (abs_le.1 h₂).2]
 
 /-- If `‖DH(q) - 1‖ ≤ δ`, the first component `X` of `R_c⁻¹ ∘ H` has
 `∂_y X ≤ δ (1 + c) - c` at `q`. -/
 theorem fderiv_stripShear_symm_comp_apply_fst_le {H : ℝ × ℝ → ℝ × ℝ} {q : ℝ × ℝ} {c δ : ℝ}
     (hc : 0 ≤ c) (hH : ‖fderiv ℝ H q - 1‖ ≤ δ) :
     (fderiv ℝ ((stripShear c).symm ∘ H) q (0, 1)).1 ≤ δ * (1 + c) - c := by
-  -- Both coordinates of `(DH(q) - 1) (0, 1)` are at most `δ` in absolute value.
-  have h := ((fderiv ℝ H q - 1).le_opNorm (0, 1)).trans (by simpa using hH)
-  have h₁ := (norm_fst_le _).trans h
-  have h₂ := (norm_snd_le _).trans h
-  simp only [sub_apply, one_apply_eq_self, Prod.fst_sub, Prod.snd_sub, sub_zero, Real.norm_eq_abs]
+  obtain ⟨h₁, h₂⟩ := abs_apply_fst_sub_le_and_abs_apply_snd_sub_le hH (0, 1)
+  simp only [Prod.norm_mk, norm_one, norm_zero, zero_le_one, sup_of_le_right, mul_one, sub_zero]
     at h₁ h₂
-  rw [ContinuousLinearEquiv.comp_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, stripShear_symm_apply]
-  have := (abs_le.1 h₁).2
-  have := (abs_le.1 h₂).1
-  nlinarith
+  rw [fderiv_stripShear_symm_comp_apply_fst]
+  nlinarith [(abs_le.1 h₁).2, (abs_le.1 h₂).1]
 
 /-- The factor `R_c⁻¹ ∘ H` has the same Jacobian determinant as `H`; in particular it preserves
 area wherever `H` does. -/
@@ -272,7 +276,7 @@ theorem exists_pos_forall_norm_fderiv_sub_one_lt
 such that for `s, t ∈ [0, 1]` with `|t - s| < η` every increment `H`, with `H ∘ h_s = h_t` near a
 point `p` of the strip, is `R_c ∘ N` with `N = R_c⁻¹ ∘ H` a negative twist map with
 `∂ₓ X > 0` at `h_s(p)`. -/
-theorem exists_pos_forall_fderiv_stripShear_symm_comp_twist
+theorem exists_pos_forall_fderiv_stripShear_symm_comp_apply_fst_pos_and_neg
     (hD : ContinuousOn (fun q : ℝ × ℝ × ℝ ↦ fderiv ℝ (h q.1) q.2)
       (Icc 0 1 ×ˢ (Icc 0 1 ×ˢ Icc 0 1)))
     (hunit : ∀ t ∈ Icc (0 : ℝ) 1, ∀ p ∈ Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
@@ -305,7 +309,7 @@ theorem exists_pos_forall_fderiv_stripShear_symm_comp_twist
 such that for the partition `t_j = j / K` of `[0, 1]`, every increment `H_j`, with
 `H_j ∘ h_(t_j) = h_(t_(j+1))` near a point `p` of the strip, is `R_c ∘ N_j` with `N_j` a negative
 twist map with `∂ₓ X > 0` at `h_(t_j)(p)`. -/
-theorem exists_forall_fderiv_stripShear_symm_comp_twist
+theorem exists_pos_forall_lt_fderiv_stripShear_symm_comp_div_apply_fst_pos_and_neg
     (hD : ContinuousOn (fun q : ℝ × ℝ × ℝ ↦ fderiv ℝ (h q.1) q.2)
       (Icc 0 1 ×ˢ (Icc 0 1 ×ˢ Icc 0 1)))
     (hunit : ∀ t ∈ Icc (0 : ℝ) 1, ∀ p ∈ Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
@@ -317,7 +321,8 @@ theorem exists_forall_fderiv_stripShear_symm_comp_twist
       DifferentiableAt ℝ H (h (j / K) p) → H ∘ h (j / K) =ᶠ[𝓝 p] h ((j + 1) / K) →
         0 < (fderiv ℝ ((stripShear c).symm ∘ H) (h (j / K) p) (1, 0)).1 ∧
           (fderiv ℝ ((stripShear c).symm ∘ H) (h (j / K) p) (0, 1)).1 < 0 := by
-  obtain ⟨η, hη, htwist⟩ := exists_pos_forall_fderiv_stripShear_symm_comp_twist hD hunit hper hc
+  obtain ⟨η, hη, htwist⟩ :=
+    exists_pos_forall_fderiv_stripShear_symm_comp_apply_fst_pos_and_neg hD hunit hper hc
   obtain ⟨K, hK⟩ := exists_nat_one_div_lt hη
   refine ⟨K + 1, K.succ_pos, fun j hj p hp H hH hHp ↦ ?_⟩
   have hK0 : (0 : ℝ) < (K + 1 : ℕ) := by positivity
