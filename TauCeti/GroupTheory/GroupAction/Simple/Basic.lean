@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.GroupTheory.Subgroup.Simple
 public import TauCeti.GroupTheory.GroupAction.Primitive
 public import TauCeti.GroupTheory.GroupAction.Transitive
+public import TauCeti.GroupTheory.Subgroup.Simple
 
 /-!
 # Simplicity from primitive actions
@@ -18,9 +19,11 @@ divisible by a prime `p`, with `p²` not dividing the group order. If an element
 is one normally generates the group, then the group is simple. A faithful transitive action of
 prime degree is a special case.
 
-A nontrivial normal subgroup must act transitively, so its order is divisible by `p`. Its index
-is therefore coprime to `p`, forcing the chosen element into that subgroup. Normal generation
-then forces the subgroup to be the whole group.
+A nontrivial normal subgroup must act transitively, so its order is divisible by `p`. The
+group-theoretic criterion
+`TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard` then applies: the
+index of such a subgroup is coprime to `p`, forcing the chosen element into it, and normal
+generation forces the subgroup to be the whole group.
 -/
 
 public section
@@ -37,28 +40,12 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card
     {p : ℕ} (hp : p.Prime) (hdegree : p ∣ Nat.card X) (hcard : ¬ p ^ 2 ∣ Nat.card G)
     (a : G) (ha : a ^ p = 1)
     (hgen : Subgroup.normalClosure ({a} : Set G) = ⊤) : IsSimpleGroup G := by
-  refine ⟨fun N _ ↦ ?_⟩
-  by_cases hN : N = ⊥
-  · exact Or.inl hN
-  right
+  -- A nontrivial normal subgroup acts transitively, so its order is divisible by `p`.
+  refine isSimpleGroup_of_normalClosure_eq_top_of_forall_prime_dvd_natCard hp hcard
+    (fun N _ hN ↦ ?_) a ha hgen
   have : IsPretransitive N X := IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot N hN
   have : Nontrivial X := nontrivial_of_fixedPoints_ne_univ (fixedPoints_ne_univ_of_ne_bot hN)
-  have hdiv : p ∣ Nat.card N := hdegree.trans (natCard_dvd_natCard_of_isPretransitive N)
-  have hindex : ¬ p ∣ N.index := by
-    intro hi
-    apply hcard
-    rw [← N.card_mul_index, pow_two]
-    exact Nat.mul_dvd_mul hdiv hi
-  have hpow : (a : G ⧸ N) ^ p = 1 := by
-    rw [← QuotientGroup.mk_pow, ha, QuotientGroup.mk_one]
-  have horder : orderOf (a : G ⧸ N) = 1 := by
-    rcases hp.eq_one_or_self_of_dvd _ (orderOf_dvd_of_pow_eq_one hpow) with h | h
-    · exact h
-    · exact (hindex (by rw [N.index_eq_card, ← h]; exact orderOf_dvd_natCard _)).elim
-  have hmem : a ∈ N := (QuotientGroup.eq_one_iff a).mp (orderOf_eq_one_iff.mp horder)
-  apply top_unique
-  rw [← hgen]
-  exact Subgroup.normalClosure_le_normal (Set.singleton_subset_iff.mpr hmem)
+  exact hdegree.trans (natCard_dvd_natCard_of_isPretransitive N)
 
 /-- If `G` acts faithfully and transitively on a set of prime size `p` with `p ^ 2` not dividing
 `|G|`, and an element `a` with `a ^ p = 1` normally generates `G`, then `G` is simple. -/
@@ -68,12 +55,10 @@ theorem isSimpleGroup_of_normalClosure_eq_top_of_prime_card
     (a : G) (ha : a ^ Nat.card X = 1)
     (hgen : Subgroup.normalClosure ({a} : Set G) = ⊤) : IsSimpleGroup G := by
   have : IsPreprimitive G X := IsPreprimitive.of_prime_card hp
-  -- Two points of the prime-degree set are moved onto each other by a nonidentity element.
+  -- The group maps onto the prime-degree set, which has more than one point.
   have : Finite X := Nat.finite_of_card_ne_zero hp.ne_zero
   have : Nontrivial X := Finite.one_lt_card_iff_nontrivial.mp hp.one_lt
-  obtain ⟨x, y, hxy⟩ := exists_pair_ne X
-  obtain ⟨g, rfl⟩ := exists_smul_eq G x y
-  have : Nontrivial G := ⟨⟨g, 1, fun h ↦ hxy (by rw [h, one_smul])⟩⟩
+  have : Nontrivial G := (surjective_smul G (Classical.arbitrary X)).nontrivial
   exact isSimpleGroup_of_normalClosure_eq_top_of_prime_dvd_card hp (dvd_refl _) hcard a ha hgen
 
 end TauCeti

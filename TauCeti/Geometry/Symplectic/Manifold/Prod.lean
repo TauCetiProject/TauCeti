@@ -142,9 +142,7 @@ theorem mpullback_prodMap_prod {E₀ H₀ M₀ F₀ H₀' N₀ : Type*}
     (hg : ContMDiff J₀ J ∞ g) (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
     SmoothForm.mpullback (Prod.map f g) (hf.prodMap hg) (prod σ τ) =
       prod (SmoothForm.mpullback f hf σ) (SmoothForm.mpullback g hg τ) := by
-  simp only [prod_def, map_add, SmoothForm.mpullback_mpullback]
-  -- `Prod.fst ∘ Prod.map f g` is `f ∘ Prod.fst` by definition, and similarly for the second
-  -- factor; the smoothness proofs carried by `mpullback` agree by proof irrelevance.
-  rfl
+  rw [prod_def, prod_def, map_add, SmoothForm.mpullback_prodMap_mpullback_fst hf hg,
+    SmoothForm.mpullback_prodMap_mpullback_snd hf hg]
 
 end TauCeti.SmoothTwoForm
