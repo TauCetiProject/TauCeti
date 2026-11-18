@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.LocalPotentials
-public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -15,9 +14,10 @@ public import TauCeti.Topology.Homotopy.Path
 A covector field `φ` with local potentials (`TauCeti.HasLocalPotentials`) can be integrated along
 a merely continuous path, with no derivative of the path: near each time, the increments of the
 integral are the increments of a local potential evaluated along the path. No subdivision of the
-path enters the definition, so the integral is independent of the chosen discs, potentials and
-subdivisions by construction; subdivisions only appear in the proof that primitives along paths
-exist.
+path enters the definition. Independence from the chosen primitive, and hence from the local
+potentials, is `TauCeti.IsPrimitiveAlong.potentialIntegral_eq`, which follows from
+`TauCeti.IsPrimitiveAlong.sub_eq_sub`. Existence of primitives along paths is proved by a
+connectedness argument, using a clopen subset of `[0, 1]`.
 
 We formalize this through primitives along maps. For `f : X → E`, a function `G : X → F` is a
 primitive of `φ` along `f` (`TauCeti.IsPrimitiveAlong φ f G`) if near every `x`, the increments
@@ -57,31 +57,16 @@ variable {E F X Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace X] [TopologicalSpace Y]
   {φ : E → E →L[ℝ] F} {f : X → E} {G G₁ G₂ : X → F} {s : Set E}
 
+/-- The defining condition of `IsPrimitiveAlong` at a single point. -/
+def IsPrimitiveAlongAt (φ : E → E →L[ℝ] F) (f : X → E) (G : X → F) (x : X) : Prop :=
+  ∃ g : E → F, (∀ᶠ y in 𝓝 (f x), HasFDerivAt g (φ y) y) ∧
+    ∀ᶠ x' in 𝓝 x, G x' - G x = g (f x') - g (f x)
+
 /-- A function `G : X → F` is a primitive of the covector field `φ` along `f : X → E` if near
 every point `x`, the increments of `G` are the increments along `f` of a potential of `φ`
 defined near `f x`. -/
 def IsPrimitiveAlong (φ : E → E →L[ℝ] F) (f : X → E) (G : X → F) : Prop :=
-  ∀ x, ∃ g : E → F, (∀ᶠ y in 𝓝 (f x), HasFDerivAt g (φ y) y) ∧
-    ∀ᶠ x' in 𝓝 x, G x' - G x = g (f x') - g (f x)
-
-/-- The local criterion for primitives along a map. -/
-theorem isPrimitiveAlong_iff : IsPrimitiveAlong φ f G ↔
-    ∀ x, ∃ g : E → F, (∀ᶠ y in 𝓝 (f x), HasFDerivAt g (φ y) y) ∧
-      ∀ᶠ x' in 𝓝 x, G x' - G x = g (f x') - g (f x) := Iff.rfl
-
-/-- Two potentials of the same field near `z` have the same increments near `z`. -/
-private theorem eventually_sub_eq_sub_of_hasFDerivAt {g₁ g₂ : E → F} {z : E}
-    (h₁ : ∀ᶠ y in 𝓝 z, HasFDerivAt g₁ (φ y) y) (h₂ : ∀ᶠ y in 𝓝 z, HasFDerivAt g₂ (φ y) y) :
-    ∀ᶠ y in 𝓝 z, g₁ y - g₁ z = g₂ y - g₂ z := by
-  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp (h₁.and h₂)
-  have hd : ∀ w ∈ ball z r, HasFDerivAt (g₁ - g₂) 0 w := fun w hw ↦ by
-    simpa using (hball w hw).1.sub (hball w hw).2
-  filter_upwards [ball_mem_nhds z hr] with y hy
-  have := isOpen_ball.is_const_of_fderiv_eq_zero (convex_ball z r).isPreconnected
-    (fun w hw ↦ (hd w hw).differentiableAt.differentiableWithinAt)
-    (fun w hw ↦ (hd w hw).fderiv) hy (mem_ball_self hr)
-  rw [Pi.sub_apply, Pi.sub_apply] at this
-  rw [sub_eq_sub_iff_sub_eq_sub, this]
+  ∀ x, IsPrimitiveAlongAt φ f G x
 
 /-- A potential of `φ` on an open set containing the image of `f` gives the primitive `g ∘ f`
 along `f`. -/
@@ -137,14 +122,6 @@ theorem IsPrimitiveAlong.sub_eq_sub [PreconnectedSpace X] (hf : Continuous f)
 /-! ### Existence of primitives along paths -/
 
 section Existence
-
-/-- The defining condition of `IsPrimitiveAlong` at a single point. -/
-private def IsPrimitiveAlongAt (φ : E → E →L[ℝ] F) (f : X → E) (G : X → F) (x : X) : Prop :=
-  ∃ g : E → F, (∀ᶠ y in 𝓝 (f x), HasFDerivAt g (φ y) y) ∧
-    ∀ᶠ x' in 𝓝 x, G x' - G x = g (f x') - g (f x)
-
-private theorem isPrimitiveAlong_iff_forall_isPrimitiveAlongAt :
-    IsPrimitiveAlong φ f G ↔ ∀ x, IsPrimitiveAlongAt φ f G x := Iff.rfl
 
 /-- The pointwise condition only sees the increments of `G` near the point. -/
 private theorem IsPrimitiveAlongAt.congr {G' : X → F} {x : X}
@@ -213,7 +190,7 @@ theorem HasLocalPotentials.exists_isPrimitiveAlong (hφ : HasLocalPotentials s �
   obtain ⟨G, hG⟩ : (1 : I) ∈ S := by
     rw [IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨0, hzero⟩]
     exact mem_univ _
-  exact ⟨G, isPrimitiveAlong_iff_forall_isPrimitiveAlongAt.mpr fun t ↦ hG t le_one'⟩
+  exact ⟨G, fun t ↦ hG t le_one'⟩
 
 end Existence
 
@@ -326,8 +303,8 @@ theorem potentialIntegral_trans (hφ : HasLocalPotentials s φ) {δ : Path b c}
   have e₀ : h₁ 0 = 0 := by ext; simp [h₁]
   have e₁ : h₁ 1 = h₂ 0 := by ext; simp [h₁, h₂]
   have e₂ : h₂ 1 = 1 := by ext; simp [h₂]
-  rw [hG.potentialIntegral_eq, hG₁.potentialIntegral_eq, hG₂.potentialIntegral_eq,
-    Function.comp_apply, Function.comp_apply, Function.comp_apply, Function.comp_apply, e₀, e₁,
-    e₂, sub_add_sub_cancel']
+  rw [hG.potentialIntegral_eq, hG₁.potentialIntegral_eq, hG₂.potentialIntegral_eq]
+  simp only [Function.comp_apply, e₀, e₁, e₂]
+  abel
 
 end TauCeti
