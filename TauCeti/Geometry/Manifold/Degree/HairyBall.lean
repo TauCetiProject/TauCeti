@@ -12,7 +12,7 @@ import Mathlib.Topology.Homotopy.Path
 import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
 import TauCeti.Analysis.Normed.Module.Normalize
-import TauCeti.Geometry.Manifold.SmoothApprox
+import TauCeti.Geometry.Manifold.Degree.Continuous
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Sphere.Connected
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -31,9 +31,8 @@ continuous section of the tangent bundle of Mathlib's manifold `sphere (0 : E) 1
 (`TauCeti.exists_eq_zero_of_continuous_section`), which the derivative of the inclusion carries to
 a field of the first kind.
 
-For `n ≥ 2` the proof is by the mapping degree. Homotopic smooth maps into the compact manifold
-`Sⁿ` are smoothly homotopic (`ContinuousMap.Homotopic.exists_contMDiff_homotopy`), smoothly
-homotopic maps have the same degree (`TauCeti.degree_eq_of_homotopy`), the identity has degree `1`
+For `n ≥ 2` the proof is by the mapping degree. Continuously homotopic smooth maps into the compact
+manifold `Sⁿ` have the same degree (`TauCeti.degree_eq_of_homotopic`), the identity has degree `1`
 and the antipodal map has degree `(-1)^(n+1) = -1`
 (`TauCeti.Manifold.Orientation.degree_neg_sphere`).
 For `n = 0` the sphere is the two points `±x` of a line, and the path `t ↦ H (t, x)` of a homotopy
@@ -83,22 +82,15 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
-/-- For `n ≥ 1`, a homotopy from the identity of `Sⁿ` to the antipodal map can be taken smooth,
-so the two maps have the same degree; that forces `n` to be odd. -/
+/-- For `n ≥ 1`, continuously homotopic smooth maps of `Sⁿ` have the same degree, so a homotopy
+from the identity to the antipodal map forces `n` to be odd. -/
 private theorem not_homotopic_id_neg_sphere_of_neZero [NeZero n] (hn : Even n) :
     ¬ (ContinuousMap.id (sphere (0 : E) 1)).Homotopic (-ContinuousMap.id _) := fun h ↦ by
   have hE : finrank ℝ E = n + 1 := Fact.out
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have := connectedSpace_sphere (E := E) n
-  obtain ⟨K, hK, hK₀, hK₁⟩ := h.exists_contMDiff_homotopy (I := 𝓡 n) (J := 𝓡 n) ⊤ contMDiff_id
-    contMDiff_neg_sphere
-  -- Restrict the smooth homotopy `K : Sⁿ × ℝ → Sⁿ` to the times in `[0, 1]`.
-  have hF : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡 n) ∞
-      fun p : sphere (0 : E) 1 × Icc (0 : ℝ) 1 ↦ K (p.1, p.2) :=
-    hK.comp (contMDiff_fst.prodMk (contMDiff_subtypeVal_Icc.comp contMDiff_snd))
   let o := (finBasisOfFinrankEq ℝ E hE).orientation.sphereOrientation
-  have hdeg := degree_eq_of_homotopy o o contMDiff_id contMDiff_neg_sphere hF
-    (fun x ↦ by simpa using hK₀ x) (fun x ↦ by simpa using hK₁ x)
+  have hdeg := degree_eq_of_homotopic o o contMDiff_id contMDiff_neg_sphere h
   rw [degree_id, Manifold.Orientation.degree_neg_sphere, hn.add_one.neg_one_pow] at hdeg
   exact absurd hdeg (by decide)
 
