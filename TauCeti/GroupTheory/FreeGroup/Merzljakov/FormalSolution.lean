@@ -8,11 +8,11 @@ module
 public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.Basic
 public import TauCeti.GroupTheory.FreeGroup.Merzljakov.BlockInsertion
+public import TauCeti.GroupTheory.FreeGroup.Cancellation
 public import TauCeti.Logic.ForallExistsAlt
 import Mathlib.Algebra.Order.BigOperators.Group.List
 import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.FreeGroup.Basic
-import TauCeti.GroupTheory.FreeGroup.Cancellation
 
 /-!
 # Merzljakov's theorem for a single equation over a free group
@@ -58,6 +58,8 @@ Noetherian over itself—in particular when `G` is countable) is proved in
 
 ## Main results
 
+* `TauCeti.CancellationPieces.exists_mem_forall_isUnsplit_merzljakovBlock`: the choice of an
+  exponent whose block no factorisation into cancellation pieces splits.
 * `FreeGroup.forallExistsAlt_of_formalSolution`: a formal solution witnesses the sentence in every
   group receiving the generators `A`.
 * `FreeGroup.exists_formalSolution_of_skolem`: Merzljakov's theorem from explicit Skolem functions
@@ -79,6 +81,40 @@ Noetherian over itself—in particular when `G` is countable) is proved in
 -/
 
 public section
+
+namespace TauCeti.CancellationPieces
+
+open FreeGroup List
+
+/-- Over distinct letters `a ≠ b`, given cancellation pieces `P` of `L` words and more than `L²`
+distinct exponents, one of the exponents `m` gives a block `b a^m b` that, like its formal inverse
+`b⁻¹ a^{-m} b⁻¹`, is split by none of the factorisations of the words into the pieces. -/
+theorem exists_mem_forall_isUnsplit_merzljakovBlock {A Z : Type*} {a b : A} (hab : a ≠ b)
+    {ws : List (List (A × Bool))} (P : CancellationPieces ws Z) {ms : List ℕ} (hnd : ms.Nodup)
+    (hlen : ws.length * ws.length < ms.length) :
+    ∃ m ∈ ms, ∀ V ∈ P.patterns,
+      (merzljakovBlock a b m).IsUnsplit (V.map (substituteLetter P.piece)) ∧
+        (invRev (merzljakovBlock a b m)).IsUnsplit (V.map (substituteLetter P.piece)) := by
+  let Fs := P.patterns.map fun V ↦ V.map (substituteLetter P.piece)
+  suffices ∃ m ∈ ms, ∀ F ∈ Fs,
+      (merzljakovBlock a b m).IsUnsplit F ∧ (invRev (merzljakovBlock a b m)).IsUnsplit F by
+    obtain ⟨m, hm, hF⟩ := this
+    exact ⟨m, hm, fun V hV ↦ hF _ (mem_map_of_mem hV)⟩
+  refine FreeGroup.exists_mem_forall_isUnsplit_merzljakovBlock hab hnd ?_
+  -- each of the `L` factorisations has at most `L - 1` pieces
+  have hle : ∀ n ∈ Fs.map (fun F ↦ F.length - 1), n ≤ ws.length := by
+    intro n hn
+    obtain ⟨F, hF, rfl⟩ := mem_map.1 hn
+    obtain ⟨V, hV, rfl⟩ := mem_map.1 hF
+    have hVlen := P.length_le_of_mem_patterns hV
+    simp only [length_map] at hVlen ⊢
+    lia
+  calc (Fs.map fun F ↦ F.length - 1).sum
+    _ ≤ (Fs.map fun F ↦ F.length - 1).length • ws.length := sum_le_length_nsmul _ _ hle
+    _ = ws.length * ws.length := by simp [Fs]
+    _ < ms.length := hlen
+
+end TauCeti.CancellationPieces
 
 namespace FreeGroup
 
@@ -139,30 +175,6 @@ private theorem fst_ne_inl_merzljakovBlock_inr (a b : A) (m : ℕ) :
       ∀ i : Fin k, c.1 ≠ Sum.inl i := fun _ hc _ ↦ by
     rcases fst_eq_or_eq_of_mem_merzljakovBlock hc with heq | heq <;> simp [heq]
   exact ⟨h, fun c hc i ↦ h (c.1, !c.2) (mem_invRev_iff.1 hc) i⟩
-
-private theorem exists_mem_isUnsplit_patterns {a b : A} (hab : a ≠ b)
-    {ws : List (List (A × Bool))} {ι : Type*} (P : TauCeti.CancellationPieces ws ι)
-    {ms : List ℕ} (hnd : ms.Nodup) (hlen : ws.length * ws.length < ms.length) :
-    ∃ m ∈ ms, ∀ V ∈ P.patterns,
-      (merzljakovBlock a b m).IsUnsplit (V.map (substituteLetter P.piece)) ∧
-        (invRev (merzljakovBlock a b m)).IsUnsplit (V.map (substituteLetter P.piece)) := by
-  let Fs := P.patterns.map fun V ↦ V.map (substituteLetter P.piece)
-  suffices ∃ m ∈ ms, ∀ F ∈ Fs,
-      (merzljakovBlock a b m).IsUnsplit F ∧ (invRev (merzljakovBlock a b m)).IsUnsplit F by
-    obtain ⟨m, hm, hF⟩ := this
-    exact ⟨m, hm, fun V hV ↦ hF _ (mem_map_of_mem hV)⟩
-  refine exists_mem_forall_isUnsplit_merzljakovBlock hab hnd ?_
-  have hle : ∀ n ∈ Fs.map (fun F ↦ F.length - 1), n ≤ ws.length := by
-    intro n hn
-    obtain ⟨F, hF, rfl⟩ := mem_map.1 hn
-    obtain ⟨V, hV, rfl⟩ := mem_map.1 hF
-    have hVlen := P.length_le_of_mem_patterns hV
-    simp only [length_map] at hVlen ⊢
-    omega
-  calc (Fs.map fun F ↦ F.length - 1).sum
-    _ ≤ (Fs.map fun F ↦ F.length - 1).length • ws.length := sum_le_length_nsmul _ _ hle
-    _ = ws.length * ws.length := by simp [Fs]
-    _ < ms.length := hlen
 
 section Helpers
 
@@ -479,7 +491,7 @@ theorem exists_formalSolution_of_skolem {A : Type*} {k : ℕ} {a b : A} (hab : a
     exact hw g
   obtain ⟨p, ⟨P⟩⟩ := TauCeti.exists_cancellationPieces hws_red hws_one
   choose m hm_mem hm_unsplit using fun i ↦
-    exists_mem_isUnsplit_patterns hab P (hms.nodup i) (by simp [ws, L, hlen i])
+    P.exists_mem_forall_isUnsplit_merzljakovBlock hab (hms.nodup i) (by simp [ws, L, hlen i])
   let piece' (q : Fin p) : List ((Fin k ⊕ A) × Bool) :=
     blockInsertUpTo a b m k le_rfl ((P.piece q).map (Prod.map Sum.inr id))
   let U' (z : (Fin k ⊕ Fin k) ⊕ A) : List ((Fin k ⊕ A) × Bool) :=
