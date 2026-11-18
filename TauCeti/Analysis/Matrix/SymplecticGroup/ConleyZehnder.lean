@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SymplecticGroup.Graph
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
+public import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
@@ -61,6 +61,16 @@ rotation path `t ↦ e^{i α t}`, `0 < α < 2π`, has index `-1`, and a clockwis
 The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x² + y²) / 2` with
 `ι_{X_H} (dx ∧ dy) = dH` is clockwise, with index `1`.
 
+**Localization.** In real coordinates the straightening sends `(z, w)` to
+`(1/√2) ((z + w) + i J (z - w))`, so the straightened graph frame of `A` is
+`(1/√2) ((1 + A) + i J (1 - A))` (`TauCeti.diagonalStraightening_mul_graphFrame`). When `1 + A` is
+invertible, the straightened graph of a symplectic `A` is therefore the graph `{y + i B y}` of the
+real symmetric matrix `B = J (1 - A) (1 + A)⁻¹` (`Matrix.symplecticCayley`, `J` times the Cayley
+transform of `A`), which is degenerate exactly when `A` has the eigenvalue `1`. Along a path with
+`1 + γ t` invertible throughout, the index is minus half the change of the signature of `B`
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_sub`), by the localization axiom of
+the Maslov index.
+
 ## Main definitions
 
 * `TauCeti.diagonalStraightening`: the unitary matrix `(1/√2) [[1, 1], [i, -i]]` carrying the
@@ -68,6 +78,7 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 * `TauCeti.GLSymplectic.graphUnitaryFrame`: a continuous unitary frame of `T Γ(A)`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex`: the Conley–Zehnder index of a path of symplectic
   matrices.
+* `Matrix.symplecticCayley`: the symmetric matrix `J (1 - A) (1 + A)⁻¹`.
 
 ## Main results
 
@@ -81,6 +92,9 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
   path of diagonal unitary matrices.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`: the
   normalization on rotations, `CZ = -∑ j, sign α_j`.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_sub`: localization, the index of a
+  path avoiding the eigenvalue `-1` is minus half the change of the signature of
+  `J (1 - A) (1 + A)⁻¹`.
 
 ## References
 
@@ -96,6 +110,80 @@ public section
 
 open Matrix Matrix.GeneralLinearGroup Matrix.UnitaryGroup Complex
 open scoped unitInterval
+
+namespace Matrix
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-! ### The Cayley form of a symplectic matrix -/
+
+/-- The cross term `(1 + A)ᵀ J (1 - A)` is symmetric for a symplectic matrix `A`. -/
+private theorem transpose_one_add_mul_J_mul_one_sub {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A ∈ symplecticGroup n ℝ) :
+    (1 + A)ᵀ * (J n ℝ * (1 - A)) = (J n ℝ * (1 - A))ᵀ * (1 + A) := by
+  have hA' : Aᵀ * J n ℝ * A = J n ℝ := SymplecticGroup.mem_iff'.1 hA
+  rw [transpose_mul, transpose_add, transpose_sub, transpose_one, J_transpose]
+  -- Both sides expand to `J ± (Aᵀ J - J A) - Aᵀ J A`; the symplectic condition matches them.
+  have h : (1 + Aᵀ) * (J n ℝ * (1 - A)) - (1 - Aᵀ) * -J n ℝ * (1 + A) =
+      2 * (J n ℝ - Aᵀ * J n ℝ * A) := by noncomm_ring
+  rw [hA', sub_self, mul_zero] at h
+  exact sub_eq_zero.1 h
+
+/-- The **symplectic Cayley form** `J (1 - A) (1 + A)⁻¹` of a real matrix `A`: `J` times the
+Cayley transform of `A`. For a symplectic `A` it is symmetric
+(`Matrix.isHermitian_symplecticCayley`), and when `1 + A` is invertible the straightened graph of
+`A` is its graph `{y + i B y}` (`TauCeti.diagonalStraightening_mul_graphFrame_eq_mul`). -/
+noncomputable def symplecticCayley (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    Matrix (n ⊕ n) (n ⊕ n) ℝ :=
+  J n ℝ * (1 - A) * (1 + A)⁻¹
+
+/-- The defining equation of the symplectic Cayley form, valid for every matrix `A`. -/
+theorem symplecticCayley_def (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    symplecticCayley A = J n ℝ * (1 - A) * (1 + A)⁻¹ :=
+  (rfl)
+
+/-- When `1 + A` is not invertible, the symplectic Cayley form of `A` is `0`. -/
+theorem symplecticCayley_of_not_isUnit {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : ¬IsUnit (1 + A).det) :
+    symplecticCayley A = 0 := by
+  rw [symplecticCayley, nonsing_inv_apply_not_isUnit _ h, Matrix.mul_zero]
+
+/-- The defining equation of the symplectic Cayley form: `B (1 + A) = J (1 - A)`. -/
+theorem symplecticCayley_mul_one_add {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : IsUnit (1 + A).det) :
+    symplecticCayley A * (1 + A) = J n ℝ * (1 - A) := by
+  rw [symplecticCayley, Matrix.mul_assoc, nonsing_inv_mul _ h, Matrix.mul_one]
+
+/-- If `B (1 + A) = J (1 - A)`, then `1 + A` is invertible: `(1 - J B) / 2` is a left inverse. -/
+theorem isUnit_det_one_add_of_mul_one_add {A B : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hB : B * (1 + A) = J n ℝ * (1 - A)) : IsUnit (1 + A).det := by
+  have h2 : (1 - J n ℝ * B) * (1 + A) = 1 + 1 := by
+    rw [sub_mul, Matrix.one_mul, Matrix.mul_assoc, hB, ← Matrix.mul_assoc, J_squared]
+    noncomm_ring
+  refine isUnit_det_of_left_inverse (B := (2⁻¹ : ℝ) • (1 - J n ℝ * B)) ?_
+  rw [smul_mul_assoc, h2, ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+
+/-- The symplectic Cayley form is the unique solution `B` of `B (1 + A) = J (1 - A)`. -/
+theorem eq_symplecticCayley_of_mul_one_add {A B : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hB : B * (1 + A) = J n ℝ * (1 - A)) : B = symplecticCayley A := by
+  rw [symplecticCayley, ← hB, Matrix.mul_assoc,
+    mul_nonsing_inv _ (isUnit_det_one_add_of_mul_one_add hB), Matrix.mul_one]
+
+/-- The symplectic Cayley form of a symplectic matrix is symmetric. When `1 + A` is not
+invertible it is `0`. -/
+theorem isHermitian_symplecticCayley {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A ∈ symplecticGroup n ℝ) : (symplecticCayley A).IsHermitian := by
+  by_cases h : IsUnit (1 + A).det
+  swap
+  · rw [symplecticCayley_of_not_isUnit h]
+    exact isHermitian_zero
+  have hP : IsUnit (1 + A) := (isUnit_iff_isUnit_det _).2 h
+  have hPT : IsUnit (1 + A)ᵀ := (isUnit_iff_isUnit_det _).2 (by rwa [det_transpose])
+  rw [IsHermitian, conjTranspose_eq_transpose_of_trivial]
+  -- Conjugating by `1 + A` turns both sides into `(1 + A)ᵀ J (1 - A)`.
+  refine hP.mul_right_cancel (hPT.mul_left_cancel ?_)
+  rw [symplecticCayley_mul_one_add h, ← Matrix.mul_assoc (1 + A)ᵀ (symplecticCayley A)ᵀ,
+    ← transpose_mul, symplecticCayley_mul_one_add h, transpose_one_add_mul_J_mul_one_sub hA]
+
+end Matrix
 
 namespace TauCeti
 
@@ -173,6 +261,53 @@ of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
 theorem realImage_diagonalStraightening_mul_graphFrame_one :
     (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
   rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
+
+/-- **The straightened graph frame** of a real matrix `A` is `(1/√2) ((1 + A) + i J (1 - A))`: the
+straightening sends the point `(z, w)` of `ℝ^{n ⊕ n} × ℝ^{n ⊕ n}` to
+`(1/√2) ((z + w) + i J (z - w))`. -/
+theorem diagonalStraightening_mul_graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    diagonalStraightening n * graphFrame A = ((√2 : ℝ) : ℂ)⁻¹ •
+      ((1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ)) := by
+  rw [diagonalStraightening_def, Matrix.smul_mul]
+  congr 1
+  -- Both sides agree on real vectors, so on the real basis vectors.
+  have h (x : n ⊕ n → ℝ) :
+      (fromBlocks (1 : Matrix n n ℂ) 1 (Complex.I • 1) (-(Complex.I • 1)) * graphFrame A) *ᵥ
+        (fun k ↦ (x k : ℂ)) =
+        ((1 + A).map ((↑) : ℝ → ℂ) + Complex.I • (J n ℝ * (1 - A)).map ((↑) : ℝ → ℂ)) *ᵥ
+          (fun k ↦ (x k : ℂ)) := by
+    have hmap (M : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+        M.map ((↑) : ℝ → ℂ) *ᵥ (fun k ↦ (x k : ℂ)) = fun k ↦ ((M *ᵥ x) k : ℂ) :=
+      funext fun k ↦ (RingHom.map_mulVec Complex.ofRealHom M x k).symm
+    rw [← Matrix.mulVec_mulVec, graphFrame_mulVec, add_mulVec, smul_mulVec, hmap, hmap,
+      ← Matrix.mulVec_mulVec, sub_mulVec, add_mulVec, one_mulVec]
+    ext (i | i)
+    · simp [J, fromBlocks_mulVec, neg_mulVec, one_mulVec, Function.comp_def]
+      ring
+    · simp [J, fromBlocks_mulVec, neg_mulVec, smul_mulVec, one_mulVec, Function.comp_def]
+      linear_combination (-(x (.inr i) : ℂ) - ((A *ᵥ x) (.inr i) : ℂ)) * Complex.I_sq
+  ext i j
+  have hj : (fun k ↦ (((Pi.single j 1 : n ⊕ n → ℝ) k : ℝ) : ℂ)) = Pi.single j 1 := by
+    ext k
+    by_cases hk : k = j
+    · subst hk; simp
+    · simp [hk]
+  simpa [hj, mulVec_single_one] using congrFun (h (Pi.single j 1)) i
+
+/-- When `1 + A` is invertible, the straightened graph frame of `A` is the graph frame `1 + i B`
+of the symplectic Cayley form `B = J (1 - A) (1 + A)⁻¹`, followed by the real change of basis
+`(1/√2) (1 + A)`. -/
+theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (h : IsUnit (1 + A).det) :
+    diagonalStraightening n * graphFrame A =
+      (1 + Complex.I • (symplecticCayley A).map ((↑) : ℝ → ℂ)) *
+        ((√2 : ℝ)⁻¹ • (1 + A)).map ((↑) : ℝ → ℂ) := by
+  have hm : (symplecticCayley A * (1 + A)).map ((↑) : ℝ → ℂ) =
+      (symplecticCayley A).map (↑) * (1 + A).map ((↑) : ℝ → ℂ) :=
+    Matrix.map_mul (f := Complex.ofRealHom)
+  rw [diagonalStraightening_mul_graphFrame, ← symplecticCayley_mul_one_add h,
+    Matrix.map_smul' _ _ _ (by simp), Matrix.mul_smul, add_mul, Matrix.one_mul, smul_mul_assoc,
+    hm, Complex.ofReal_inv]
 
 namespace GLSymplectic
 
@@ -420,6 +555,50 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
   simp only [Set.Icc.coe_one, mul_one, Set.Icc.coe_zero, mul_zero, zero_div, Int.floor_zero,
     Int.ceil_zero, add_zero, Int.cast_zero, sub_zero]
   exact floor_add_ceil_div_eq_sign_of_abs_lt (hα j)
+
+/-! ### Localization -/
+
+open scoped MatrixOrder Matrix.Norms.L2Operator
+
+/-- **The Souriau map of the unitary graph frame is the Cayley transform of the symplectic Cayley
+form.** When `1 + A` is invertible, the straightened graph of `A` is the graph `{y + i B y}` of
+the symmetric matrix `B = J (1 - A) (1 + A)⁻¹`, so its unitary frames have Souriau map the Cayley
+transform `(1 + i B) (1 - i B)⁻¹`. -/
+theorem souriau_graphUnitaryFrame {A : GLSymplectic n ℝ}
+    (h : IsUnit (1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) :
+    (souriau (graphUnitaryFrame A) : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+      cayley ((symplecticCayley ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map (↑)) := by
+  refine souriau_eq_cayley_of_coe_eq_mul
+    (isHermitian_symplecticCayley (mem_iff_mem_symplecticGroup.1 A.2))
+    (M := ((√2 : ℝ)⁻¹ • (1 + ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))) *
+      (((graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᴴ * graphFrameUnit A).map Complex.re ^
+        (-(1 / 2) : ℝ))) ?_
+  rw [graphUnitaryFrame, Subtype.coe_mk, coe_realOrthonormalize, ← Matrix.mul_assoc,
+    coe_graphFrameUnit, diagonalStraightening_mul_graphFrame_eq_mul h, Matrix.mul_assoc]
+  exact congrArg _ (Matrix.map_mul (f := Complex.ofRealHom)).symm
+
+/-- **Localization.** Along a path `γ` of symplectic matrices with `1 + γ t` invertible for every
+`t`, the Conley–Zehnder index is minus half the change of the signature of the symplectic Cayley
+form `J (1 - γ t) (1 + γ t)⁻¹`. -/
+theorem conleyZehnderIndex_eq_neg_signature_sub {A B : GLSymplectic n ℝ} (γ : Path A B)
+    (h : ∀ t, IsUnit (1 + ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det) :
+    conleyZehnderIndex γ =
+      -((signature (symplecticCayley ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) -
+        signature (symplecticCayley ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) : ℝ) /
+          2) := by
+  have hγ : Continuous fun t ↦ ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
+    Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
+  have hc : Continuous fun t ↦
+      symplecticCayley ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
+    simp only [symplecticCayley]
+    exact continuous_iff_continuousAt.2 fun t ↦
+      (continuous_const.mul (continuous_const.sub hγ)).continuousAt.mul
+        ((continuous_const.add hγ).continuousAt.matrix_inv (h t).ne_zero)
+  have hloc := maslovIndex_eq_signature_sub_of_souriau_eq_cayley
+    (γ.map continuous_graphUnitaryFrame) hc
+    (fun t ↦ isHermitian_symplecticCayley (mem_iff_mem_symplecticGroup.1 (γ t).2))
+    fun t ↦ souriau_graphUnitaryFrame (h t)
+  rw [conleyZehnderIndex, hloc, γ.source, γ.target]
 
 end GLSymplectic
 
