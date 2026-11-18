@@ -33,7 +33,8 @@ In a real inner product space, `⟪univUnitBall a, (√(1 + ‖a‖²))⁻¹ •
 (`OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul`), which writes
 `(1 + ‖a‖²)⁻¹ ⟪a, x⟫` through `univUnitBall a` and a rescaling to which the estimates above apply.
 Under the hypotheses of the uniform closeness of rescalings, `(1 + ‖a‖²)⁻¹ ⟪a, a'⟫` and
-`(1 + ‖b‖²)⁻¹ ⟪b, b'⟫` are within `(24 C + 12) δ` (`TauCeti.abs_inv_one_add_sq_mul_inner_sub_le`).
+`(1 + ‖b‖²)⁻¹ ⟪b, b'⟫` are within `(24 C + 12) δ`
+(`TauCeti.abs_inv_one_add_norm_sq_mul_inner_sub_le`).
 
 For `f` a complex polynomial, `univUnitBall ∘ f` is the section `exp(u₀) f` of the background
 amplitude `u₀ = -log (1 + ‖f‖²) / 2` used to construct plane vortices with prescribed zeros.
@@ -79,13 +80,15 @@ theorem norm_inv_sqrt_smul_sub_inv_sqrt_smul_le (a b a' b' : E) :
 
 /-- **Uniform closeness of radial rescalings.** With `A = √(1 + ‖a‖²)` and `B = √(1 + ‖b‖²)`: if
 `‖a - b‖ ≤ δ (1 + ‖b‖)`, `‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with
-`0 ≤ δ ≤ 1 / 2`, then `‖A⁻¹ a' - B⁻¹ b'‖ ≤ (4 + 8 C) δ`. This is the companion of
+`δ ≤ 1 / 2`, then `‖A⁻¹ a' - B⁻¹ b'‖ ≤ (4 + 8 C) δ`. This is the companion of
 `OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le` for vectors `a'`, `b'`, such as
 derivatives, of at most the size of `b`. -/
 theorem norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le {a b a' b' : E} {δ C : ℝ}
-    (hδ0 : 0 ≤ δ) (hδ : δ ≤ 1 / 2) (hC : 0 ≤ C) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖))
-    (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖)) (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) :
+    (hδ : δ ≤ 1 / 2) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖)) (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖))
+    (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) :
     ‖(√(1 + ‖a‖ ^ 2))⁻¹ • a' - (√(1 + ‖b‖ ^ 2))⁻¹ • b'‖ ≤ (4 + 8 * C) * δ := by
+  have hδ0 : 0 ≤ δ := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans ha) (by positivity)
+  have hC : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hb') (by positivity)
   refine (norm_inv_sqrt_smul_sub_inv_sqrt_smul_le a b a' b').trans ?_
   set A := √(1 + ‖a‖ ^ 2)
   set B := √(1 + ‖b‖ ^ 2)
@@ -158,13 +161,15 @@ namespace TauCeti
 variable {F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- **Uniform closeness of normalized inner products.** If `‖a - b‖ ≤ δ (1 + ‖b‖)`,
-`‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with `0 ≤ δ ≤ 1 / 2`, then
+`‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with `δ ≤ 1 / 2`, then
 `(1 + ‖a‖²)⁻¹ ⟪a, a'⟫` and `(1 + ‖b‖²)⁻¹ ⟪b, b'⟫` differ by at most `(24 C + 12) δ`. This is the
 inner-product companion of `TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le`. -/
-theorem abs_inv_one_add_sq_mul_inner_sub_le {a b a' b' : F} {δ C : ℝ} (hδ0 : 0 ≤ δ)
-    (hδ : δ ≤ 1 / 2) (hC : 0 ≤ C) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖))
-    (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖)) (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) :
+theorem abs_inv_one_add_norm_sq_mul_inner_sub_le {a b a' b' : F} {δ C : ℝ}
+    (hδ : δ ≤ 1 / 2) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖)) (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖))
+    (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) :
     |(1 + ‖a‖ ^ 2)⁻¹ * ⟪a, a'⟫_ℝ - (1 + ‖b‖ ^ 2)⁻¹ * ⟪b, b'⟫_ℝ| ≤ (24 * C + 12) * δ := by
+  have hδ0 : 0 ≤ δ := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans ha) (by positivity)
+  have hC : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hb') (by positivity)
   set A := √(1 + ‖a‖ ^ 2)
   set B := √(1 + ‖b‖ ^ 2)
   set G := OpenPartialHomeomorph.univUnitBall (E := F)
@@ -178,7 +183,7 @@ theorem abs_inv_one_add_sq_mul_inner_sub_le {a b a' b' : F} {δ C : ℝ} (hδ0 :
     have := norm_le_norm_add_norm_sub' a' b'
     rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hA0, inv_mul_le_iff₀ hA0]
     nlinarith
-  have hk' := norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le hδ0 hδ hC ha ha' hb'
+  have hk' := norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le hδ ha ha' hb'
   -- Split the difference of inner products and estimate each term.
   rw [← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul,
     ← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul]

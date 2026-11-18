@@ -378,7 +378,7 @@ theorem tendstoUniformly_fderiv_backgroundAmplitude
     fderiv_backgroundAmplitude_apply (Q.differentiable z), Polynomial.deriv, Polynomial.deriv,
     Real.norm_eq_abs, neg_sub_neg, abs_sub_comm]
   -- Multiplying by a unit vector `v` preserves the hypotheses on the derivatives.
-  refine TauCeti.abs_inv_one_add_sq_mul_inner_sub_le (hδ0 i) hδ1 hC (hi z).1 ?_ ?_
+  refine TauCeti.abs_inv_one_add_norm_sq_mul_inner_sub_le hδ1 (hi z).1 ?_ ?_
   · rw [← mul_sub, norm_mul, hv, one_mul]
     exact (hi z).2
   · rw [norm_mul, hv, one_mul]
@@ -518,9 +518,19 @@ theorem tendstoUniformly_amplitudeField_backgroundAmplitude_add {w : ι → ℂ 
       simp
     · funext z
       simp
-  · convert ((2⁻¹ : ℝ) • Complex.reCLM).uniformContinuous.comp_tendstoUniformly hS using 1 <;>
-      funext <;> exact amplitudeField_add_apply_two _ _ _ _
-  · convert ((2⁻¹ : ℝ) • Complex.imCLM).uniformContinuous.comp_tendstoUniformly hS using 1 <;>
-      funext <;> exact amplitudeField_add_apply_three _ _ _ _
+  · convert ((2⁻¹ : ℝ) • Complex.reCLM).uniformContinuous.comp_tendstoUniformly hS using 1
+    · funext i z
+      simp only [Function.comp_apply, smul_apply, Complex.reCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_two]
+    · funext z
+      simp only [Function.comp_apply, smul_apply, Complex.reCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_two]
+  · convert ((2⁻¹ : ℝ) • Complex.imCLM).uniformContinuous.comp_tendstoUniformly hS using 1
+    · funext i z
+      simp only [Function.comp_apply, smul_apply, Complex.imCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_three]
+    · funext z
+      simp only [Function.comp_apply, smul_apply, Complex.imCLM_apply, Fin.reduceFinMk,
+        smul_eq_mul, amplitudeField_add_apply_three]
 
 end TauCeti.Vortex
