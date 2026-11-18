@@ -27,10 +27,10 @@ The bad tuples for a fixed set `S` of labels are contained in the image of the i
 whose source has dimension `d + #S * g + #Sᶜ * n`. When `d + #S * g < #S * n` this is smaller than
 the dimension `#P * n` of the target, and Sard's theorem for a source of smaller dimension
 (`MDifferentiable.isNullSet_range_of_finrank_lt_finrank`) shows that the image is null
-(`TauCeti.isNullSet_setOf_exists_forall_mem_range`). The union over the finitely many sets of
-labels is again null (`TauCeti.isNullSet_setOf_exists_finset_forall_mem_range`). Since null sets
-are closed under countable unions (`TauCeti.IsNullSet.iUnion`), a generic tuple is generic for any
-countable collection of such families simultaneously, and its complement is dense
+(`MDifferentiable.isNullSet_setOf_exists_forall_mem_range`). The union over the finitely many
+sets of labels is again null (`MDifferentiable.isNullSet_setOf_exists_finset_forall_mem_range`).
+Since null sets are closed under countable unions (`TauCeti.IsNullSet.iUnion`), a generic tuple is
+generic for any countable collection of such families simultaneously, and its complement is dense
 (`TauCeti.IsNullSet.dense_compl`).
 
 The main application is to pseudoholomorphic curves in a closed symplectic four-manifold `X`
@@ -41,7 +41,7 @@ class is a manifold whose dimension is the index of the curves; for a curve with
 covered by countably many coordinate slices `M` over which the curves have a fixed domain `D`, and
 there are countably many genera and classes. For generic points, a curve of index `d`
 contains at most `d / 2` of the points
-(`TauCeti.isNullSet_setOf_exists_finset_forall_mem_range_of_finrank_eq_four`), which is the
+(`MDifferentiable.isNullSet_setOf_exists_finset_forall_mem_range_of_finrank_eq_four`), which is the
 point-count inequality `2 k ≤ d(C) - 2 δ` that the numerical analysis of good cycles through
 generic points takes as input (`TauCeti.IsGoodCycle`). In particular generic points avoid
 every curve of index zero, for instance every embedded exceptional sphere and every embedded
@@ -51,13 +51,14 @@ constant maps parametrized by `X`.
 
 ## Main results
 
-* `TauCeti.isNullSet_setOf_exists_forall_mem_range`: for a fixed set `S` of labels with
+* `MDifferentiable.isNullSet_setOf_exists_forall_mem_range`: for a fixed set `S` of labels with
   `d + #S * g < #S * n`, the tuples whose points labelled by `S` all lie on one member of the family
   form a null set.
-* `TauCeti.isNullSet_setOf_exists_finset_forall_mem_range`: the tuples for which some member of the
-  family contains the points labelled by some set `S` with `d + #S * g < #S * n` form a null set.
-* `TauCeti.isNullSet_setOf_exists_finset_forall_mem_range_of_finrank_eq_four`: the case of surfaces
-  in a four-manifold, where the condition is `d < 2 * #S`.
+* `MDifferentiable.isNullSet_setOf_exists_finset_forall_mem_range`: the tuples for which some
+  member of the family contains the points labelled by some set `S` with `d + #S * g < #S * n` form
+  a null set.
+* `MDifferentiable.isNullSet_setOf_exists_finset_forall_mem_range_of_finrank_eq_four`: the case of
+  surfaces in a four-manifold, where the condition is `d < 2 * #S`.
 * `TauCeti.isNullSet_setOf_not_injective`: the tuples with two equal points form a null set.
 
 ## References
@@ -135,7 +136,7 @@ private theorem subset_range_incidenceMap [DecidableEq P] (S : Finset P) :
 a manifold `D` of dimension `g` to a manifold `X` of dimension `n`, parametrized by a manifold `M`
 of dimension `d`. For a set `S` of labels with `d + #S * g < #S * n`, the tuples `x : P → X` whose
 points labelled by `S` all lie in the image of a single member `u m` form a null set. -/
-theorem isNullSet_setOf_exists_forall_mem_range
+theorem _root_.MDifferentiable.isNullSet_setOf_exists_forall_mem_range
     (hu : MDifferentiable (IF.prod IG) I (uncurry u)) {S : Finset P}
     (hdim : finrank ℝ F + #S * finrank ℝ G < #S * finrank ℝ E) :
     IsNullSet (ModelWithCorners.pi fun _ : P ↦ I)
@@ -156,14 +157,14 @@ parametrized by a manifold `M` of dimension `d`. The tuples `x : P → X` for wh
 `u m` contains the points labelled by a set `S` with `d + #S * g < #S * n` form a null set. So for
 a generic tuple, any set `S` of labels whose points lie on one member satisfies
 `#S * n ≤ d + #S * g`. -/
-theorem isNullSet_setOf_exists_finset_forall_mem_range
+theorem _root_.MDifferentiable.isNullSet_setOf_exists_finset_forall_mem_range
     (hu : MDifferentiable (IF.prod IG) I (uncurry u)) :
     IsNullSet (ModelWithCorners.pi fun _ : P ↦ I)
       {x : P → X | ∃ m, ∃ S : Finset P, (∀ p ∈ S, x p ∈ range (u m)) ∧
         finrank ℝ F + #S * finrank ℝ G < #S * finrank ℝ E} := by
   refine IsNullSet.mono (IsNullSet.iUnion fun S : {S : Finset P //
     finrank ℝ F + #S * finrank ℝ G < #S * finrank ℝ E} ↦
-      isNullSet_setOf_exists_forall_mem_range hu S.2) ?_
+      hu.isNullSet_setOf_exists_forall_mem_range S.2) ?_
   rintro x ⟨m, S, hS, hdim⟩
   exact mem_iUnion.2 ⟨⟨S, hdim⟩, m, hS⟩
 
@@ -172,13 +173,13 @@ from a surface to a four-manifold `X`, parametrized by a manifold `M` of dimensi
 generic tuple of points of `X`, every member of the family contains at most `d / 2` of the points:
 the tuples for which some member contains the points labelled by a set `S` with `d < 2 * #S` form a
 null set. -/
-theorem isNullSet_setOf_exists_finset_forall_mem_range_of_finrank_eq_four
+theorem _root_.MDifferentiable.isNullSet_setOf_exists_finset_forall_mem_range_of_finrank_eq_four
     (hu : MDifferentiable (IF.prod IG) I (uncurry u)) (hE : finrank ℝ E = 4)
     (hG : finrank ℝ G = 2) :
     IsNullSet (ModelWithCorners.pi fun _ : P ↦ I)
       {x : P → X | ∃ m, ∃ S : Finset P, (∀ p ∈ S, x p ∈ range (u m)) ∧
         finrank ℝ F < 2 * #S} := by
-  refine (isNullSet_setOf_exists_finset_forall_mem_range hu).mono ?_
+  refine hu.isNullSet_setOf_exists_finset_forall_mem_range.mono ?_
   rintro x ⟨m, S, hS, hdim⟩
   exact ⟨m, S, hS, by rw [hE, hG]; omega⟩
 
@@ -189,8 +190,9 @@ theorem isNullSet_setOf_not_injective [Nontrivial E] :
   classical
   -- Two equal points `x p = x q` lie on one member of the family of constant maps parametrized
   -- by `X`, whose domain `Fin 0 → ℝ` has dimension zero.
-  refine (isNullSet_setOf_exists_finset_forall_mem_range (D := Fin 0 → ℝ) (IG := 𝓘(ℝ, Fin 0 → ℝ))
-    (u := fun (m : X) (_ : Fin 0 → ℝ) ↦ m) (IF := I) mdifferentiable_fst).mono ?_
+  refine (MDifferentiable.isNullSet_setOf_exists_finset_forall_mem_range (D := Fin 0 → ℝ)
+    (IG := 𝓘(ℝ, Fin 0 → ℝ)) (u := fun (m : X) (_ : Fin 0 → ℝ) ↦ m) (IF := I)
+    mdifferentiable_fst).mono ?_
   intro x hx
   obtain ⟨p, q, hpq, hne⟩ : ∃ p q, x p = x q ∧ p ≠ q := by
     simpa [Injective] using hx
