@@ -68,6 +68,9 @@ cut.
   band around an isolated critical value does not depend on the band; the identification is
   induced by inclusions of pairs
   (`TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom`).
+* `TauCeti.isIso_singularHomologyMap_ofInclusionMap_sublevelPair_iff`: an inclusion of pairs
+  `(K, L) ⟶ ({f ≤ b}, {f ≤ a})` is an isomorphism on relative homology exactly when it is one
+  after cutting off regular collars of the band.
 
 ## References
 
@@ -423,5 +426,59 @@ lemma singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_ho
   rw [← Category.assoc, Iso.comp_inv_eq,
     singularHomologyMap_comp_singularHomologySublevelPairIsoOfCollars_hom _ (min_le_left s s'),
     singularHomologyMap_comp_singularHomologySublevelPairIsoOfCollars_hom _ (min_le_right s s')]
+
+/-- **Regular collars around the target of an inclusion of pairs.** Let `a ≤ s ≤ t ≤ b` be such
+that the bands `f⁻¹[a, s]` and `f⁻¹[t, b]` are compact and contain no critical point of the smooth
+function `f`, and let `L ⊆ K` be subsets of `M` with `K ⊆ {f ≤ t}` and `L ⊆ {f ≤ a}`. Then the
+inclusion `(K, L) ⟶ ({f ≤ b}, {f ≤ a})` induces an isomorphism on relative singular homology in
+degree `n` exactly when the inclusion `(K, L) ⟶ ({f ≤ t}, {f ≤ s})` does: followed by the
+isomorphisms into `Hₙ({f ≤ b}, {f ≤ s})` given by the long exact sequences of the triples
+`{f ≤ a} ⊆ {f ≤ s} ⊆ {f ≤ b}` and `{f ≤ s} ⊆ {f ≤ t} ⊆ {f ≤ b}`, both become the same map. -/
+theorem isIso_singularHomologyMap_ofInclusionMap_sublevelPair_iff (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {s t : ℝ} (has : a ≤ s) (hst : s ≤ t) (htb : t ≤ b) (hcompact₁ : IsCompact (f ⁻¹' Icc a s))
+    (hcompact₂ : IsCompact (f ⁻¹' Icc t b))
+    (hreg₁ : ∀ x, a ≤ f x → f x ≤ s → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    (hreg₂ : ∀ x, t ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) {K L : Set M} (hLK : L ⊆ K)
+    (hK : K ⊆ {x | f x ≤ t}) (hL : L ⊆ {x | f x ≤ a}) (R : A) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (TopPair.ofInclusionMap (X := TopCat.of M)
+      (Y := TopCat.of M) hLK (sublevel_mono f (has.trans (hst.trans htb)))
+      (ContinuousMap.inclusion (hK.trans (sublevel_mono f htb))) fun _ hx ↦ hL hx) R n) ↔
+    IsIso (TopPair.singularHomologyMap (TopPair.ofInclusionMap (X := TopCat.of M)
+      (Y := TopCat.of M) hLK (sublevel_mono f hst) (ContinuousMap.inclusion hK)
+      fun _ hx ↦ sublevel_mono f has (hL hx)) R n) := by
+  have Z₁ := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf has hcompact₁ hreg₁ R
+  have Z₂ := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf htb hcompact₂ hreg₂ R
+  let T₁ := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f has)
+    (sublevel_mono f (hst.trans htb))
+  have hu := T₁.isIso_singularHomologyMap_totalToOuter_of_isZero R n (Z₁ n) fun m _ ↦ Z₁ m
+  let T₂ := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f hst) (sublevel_mono f htb)
+  have hv := T₂.isIso_singularHomologyMap_innerToTotal_of_isZero R n (Z₂ n) (Z₂ (n + 1))
+  -- Both inclusions, followed by the maps into `({f ≤ b}, {f ≤ s})`, send a point of `K` to itself.
+  have hK' (z : K) : Subtype.val (α := M) (TopPair.Hom.fst (TopPair.ofInclusionMap
+      (X := TopCat.of M) (Y := TopCat.of M) hLK (sublevel_mono f hst)
+      (ContinuousMap.inclusion hK) fun _ hx ↦ sublevel_mono f has (hL hx)) z) = z :=
+    Subtype.ext_iff.1 (TopPair.ofInclusionMap_fst_apply (X := TopCat.of M) (Y := TopCat.of M)
+      (s := L) (t := K) (s' := {x | f x ≤ s}) (t' := {x | f x ≤ t}) (hst := hLK)
+      (hst' := sublevel_mono f hst) (ContinuousMap.inclusion hK)
+      (fun _ hx ↦ sublevel_mono f has (hL hx)) z)
+  have hfac : TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M) hLK
+      (sublevel_mono f (has.trans (hst.trans htb)))
+      (ContinuousMap.inclusion (hK.trans (sublevel_mono f htb))) (fun _ hx ↦ hL hx) ≫
+      TopTriple.totalToOuter.app T₁ =
+      TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M) hLK (sublevel_mono f hst)
+        (ContinuousMap.inclusion hK) (fun _ hx ↦ sublevel_mono f has (hL hx)) ≫
+      TopTriple.innerToTotal.app T₂ :=
+    TopPair.hom_ext_of_fst _ (by
+      ext x
+      exact Subtype.ext ((congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)).trans
+        (hK' x).symm))
+  have hcomp := (TopPair.singularHomologyMap_comp _ R _ n).symm.trans
+    ((congrArg (TopPair.singularHomologyMap · R n) hfac).trans
+      (TopPair.singularHomologyMap_comp _ R _ n))
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hv
+      ((congrArg IsIso hcomp).mp (IsIso.comp_isIso' h hu))
+  · exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hu
+      ((congrArg IsIso hcomp).mpr (IsIso.comp_isIso' h hv))
 
 end TauCeti
