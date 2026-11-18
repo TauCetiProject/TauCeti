@@ -26,7 +26,8 @@ sheared metric
 
 where `h` is positive and `a` is a shear profile. This is the standard example in which the two
 critical circles do not depend on the shear, but the endpoint maps of the trajectories between
-them do: one family of trajectories is rotated by the shear and the other is not.
+them do: the two families of trajectories are rotated by different amounts, `∫₀^π a` and
+`-∫_{-π}^0 a`, so for a shear supported in the upper semicircle only the upper family is rotated.
 
 Everything is stated on the universal cover `ℝ × ℝ` of the torus, with `2π`-periodic data where
 needed. A point of the torus is represented by a pair `(θ, φ)` of real lifts, and the circle `C₀`
@@ -177,10 +178,6 @@ private theorem contDiff_sin_div (hh : ContDiff ℝ 1 h) (hpos : ∀ θ, 0 < h �
     ContDiff ℝ 1 fun θ ↦ sin θ / h θ :=
   contDiff_sin.div hh fun θ ↦ (hpos θ).ne'
 
-private theorem periodic_sin_div (hhp : Periodic h (2 * π)) :
-    Periodic (fun θ ↦ sin θ / h θ) (2 * π) := fun θ ↦ by
-  simp only [sin_add_two_pi, hhp θ]
-
 private theorem periodic_comp_neg (hhp : Periodic h (2 * π)) :
     Periodic (fun θ ↦ h (-θ)) (2 * π) := fun θ ↦ by
   simp only [neg_add', hhp.sub_eq]
@@ -188,10 +185,11 @@ private theorem periodic_comp_neg (hhp : Periodic h (2 * π)) :
 /-- The angular component `sin θ / h θ` of the field is Lipschitz. -/
 private theorem exists_lipschitzWith_sin_div (hh : ContDiff ℝ 1 h) (hhp : Periodic h (2 * π))
     (hpos : ∀ θ, 0 < h θ) : ∃ K, LipschitzWith K fun θ ↦ sin θ / h θ :=
-  (periodic_sin_div hhp).exists_lipschitzWith two_pi_pos.ne' (contDiff_sin_div hh hpos)
+  (Real.sin_periodic.div hhp).exists_lipschitzWith two_pi_pos.ne' (contDiff_sin_div hh hpos)
 
-/-- **The flow is complete.** For a `C¹`, `2π`-periodic `h > 0` and a continuous `a`, an integral
-curve of `shearedTorusField h a` defined for all times passes through every point. -/
+/-- **The flow is complete.** For a `C¹`, `2π`-periodic `h > 0` and a continuous `a`, through every
+point `x` there passes an integral curve `γ` of `shearedTorusField h a` defined for all times,
+with `γ 0 = x`. -/
 theorem exists_hasDerivAt_shearedTorusField (hh : ContDiff ℝ 1 h) (hhp : Periodic h (2 * π))
     (hpos : ∀ θ, 0 < h θ) (ha : Continuous a) (x : ℝ × ℝ) :
     ∃ γ : ℝ → ℝ × ℝ, γ 0 = x ∧ ∀ t, HasDerivAt γ (shearedTorusField h a (γ t)) t := by
@@ -206,6 +204,14 @@ theorem exists_hasDerivAt_shearedTorusField (hh : ContDiff ℝ 1 h) (hhp : Perio
     have hΦ := (ha.integral_hasStrictDerivAt 0 (θ t)).hasDerivAt.comp t hθ
     rw [shearedTorusField_apply]
     exact hθ.prodMk ((hΦ.sub_const (∫ s in (0 : ℝ)..x.1, a s)).const_add x.2)
+
+/-- Two solutions of `θ' = sin θ / h θ` that agree at one time agree everywhere. -/
+private theorem eq_of_hasDerivAt_sin_div (hh : ContDiff ℝ 1 h) (hhp : Periodic h (2 * π))
+    (hpos : ∀ θ, 0 < h θ) {f g : ℝ → ℝ} (hf : ∀ t, HasDerivAt f (sin (f t) / h (f t)) t)
+    (hg : ∀ t, HasDerivAt g (sin (g t) / h (g t)) t) {t₀ : ℝ} (heq : f t₀ = g t₀) : f = g := by
+  obtain ⟨K, hK⟩ := exists_lipschitzWith_sin_div hh hhp hpos
+  exact ODE_solution_unique_univ (v := fun _ θ ↦ sin θ / h θ) (s := fun _ ↦ univ)
+    (fun _ ↦ hK.lipschitzOnWith) (fun s ↦ ⟨hf s, trivial⟩) (fun s ↦ ⟨hg s, trivial⟩) heq
 
 variable {γ : ℝ → ℝ × ℝ}
 
@@ -252,11 +258,9 @@ theorem snd_sub_intervalIntegral_eq_of_hasDerivAt_shearedTorusField (ha : Contin
 private theorem fst_eq_of_sin_eq_zero (hh : ContDiff ℝ 1 h) (hhp : Periodic h (2 * π))
     (hpos : ∀ θ, 0 < h θ) (hγ : ∀ t, HasDerivAt γ (shearedTorusField h a (γ t)) t) {t₁ : ℝ}
     (h₁ : sin (γ t₁).1 = 0) (t : ℝ) : (γ t).1 = (γ t₁).1 := by
-  obtain ⟨K, hK⟩ := exists_lipschitzWith_sin_div hh hhp hpos
-  have heq := ODE_solution_unique_univ (v := fun _ θ ↦ sin θ / h θ) (s := fun _ ↦ univ)
-    (t₀ := t₁) (f := fun s ↦ (γ s).1) (g := fun _ ↦ (γ t₁).1) (fun _ ↦ hK.lipschitzOnWith)
-    (fun s ↦ ⟨hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ s, trivial⟩)
-    (fun _ ↦ ⟨by simpa [h₁] using hasDerivAt_const _ (γ t₁).1, trivial⟩) rfl
+  have heq := eq_of_hasDerivAt_sin_div hh hhp hpos (t₀ := t₁) (g := fun _ ↦ (γ t₁).1)
+    (hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ)
+    (fun _ ↦ by simpa [h₁] using hasDerivAt_const _ (γ t₁).1) rfl
   exact congrFun heq t
 
 /-- **Confinement.** The angle of an integral curve never reaches a zero of `sin`: if it starts
@@ -433,13 +437,9 @@ private theorem eq_comp_add_of_fst_eq (hh : ContDiff ℝ 1 h) (hhp : Periodic h 
     (hτ : (γ₁ τ).1 = (γ₂ 0).1)
     (hc : (γ₁ 0).2 - ∫ s in (0 : ℝ)..(γ₁ 0).1, a s = (γ₂ 0).2 - ∫ s in (0 : ℝ)..(γ₂ 0).1, a s)
     (t : ℝ) : γ₂ t = γ₁ (t + τ) := by
-  obtain ⟨K, hK⟩ := exists_lipschitzWith_sin_div hh hhp hpos
-  have hfst := ODE_solution_unique_univ (v := fun _ θ ↦ sin θ / h θ) (s := fun _ ↦ univ)
-    (t₀ := 0) (f := fun t ↦ (γ₂ t).1) (g := fun t ↦ (γ₁ (t + τ)).1)
-    (fun _ ↦ hK.lipschitzOnWith)
-    (fun s ↦ ⟨hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ₂ s, trivial⟩)
-    (fun s ↦ ⟨(hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ₁ (s + τ)).comp_add_const s τ,
-      trivial⟩)
+  have hfst := eq_of_hasDerivAt_sin_div hh hhp hpos (t₀ := 0) (g := fun t ↦ (γ₁ (t + τ)).1)
+    (hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ₂)
+    (fun s ↦ (hasDerivAt_fst_of_hasDerivAt_shearedTorusField hγ₁ (s + τ)).comp_add_const s τ)
     (by simp [hτ])
   have h1 : (γ₂ t).1 = (γ₁ (t + τ)).1 := congrFun hfst t
   have h₁ := snd_sub_intervalIntegral_eq_of_hasDerivAt_shearedTorusField ha hγ₁ (t + τ)
