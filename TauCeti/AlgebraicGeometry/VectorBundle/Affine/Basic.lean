@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Dual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
-import TauCeti.AlgebraicGeometry.Modules.Localization
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 
