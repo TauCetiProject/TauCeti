@@ -21,7 +21,7 @@ a continuous map `g : B' → B`, continuous on total spaces.
   Over the identity of the base, **isomorphic complex vector bundles have the same Euler class**
   (`TauCeti.complexEulerClass_eq_of_fiberwise`).
 * If every `φ b'` is conjugate linear, it multiplies the canonical orientation by `(-1) ^ (r + 1)`
-  (`TauCeti.VectorBundleOrientation.map_toRealLinearEquiv_complex`: it reverses one real direction
+  (`TauCeti.VectorBundleOrientation.map_restrictScalarsₛₗ_complex`: it reverses one real direction
   in each complex line), so the Euler class acquires the sign `(-1) ^ (r + 1)`
   (`TauCeti.complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugateFiberwise`,
   `TauCeti.complexEulerClass_eq_neg_one_pow_smul_of_conjugateFiberwise`). In rank one this is
@@ -129,12 +129,12 @@ theorem complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugate
   rw [complexEulerClass_def, complexEulerClass_def]
   -- The real-linear continuous isomorphisms underlying the `φ b'`.
   let ψ : ∀ b', E' b' ≃L[ℝ] E (g b') := fun b' ↦
-    { (φ b').toLinearEquiv.toRealLinearEquiv with
+    { (φ b').toLinearEquiv.restrictScalarsₛₗ ℝ with
       continuous_toFun := by simpa using (φ b').continuous
       continuous_invFun := by simpa using (φ b').symm.continuous }
   have hψ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (ψ v.proj v.2) := by
     have h : ∀ b' v, ψ b' v = φ b' v := fun b' v ↦
-      congrFun (LinearEquiv.coe_toRealLinearEquiv (φ b').toLinearEquiv) v
+      congrFun (LinearEquiv.coe_restrictScalarsₛₗ ℝ (φ b').toLinearEquiv) v
     simp only [h]
     exact hφ
   have ho : ∀ b',
@@ -142,7 +142,7 @@ theorem complexEulerClass_eq_neg_one_pow_smul_singularCohomologyMap_of_conjugate
         (-1 : ℝˣ) ^ (r + 1) • complexFin hF E (g b') := fun b' ↦ by
     rw [VectorBundleOrientation.reindex_apply, VectorBundleOrientation.reindex_apply,
       Orientation.map_reindex]
-    have h := VectorBundleOrientation.map_toRealLinearEquiv_complex (F := F) (E := E) (F' := F')
+    have h := VectorBundleOrientation.map_restrictScalarsₛₗ_complex (F := F) (E := E) (F' := F')
       (E' := E') (φ b').toLinearEquiv
     have hn : (-1 : ℝˣ) ^ finrank ℂ F' = (-1) ^ (r + 1) := by rw [hF']
     rw [hn] at h

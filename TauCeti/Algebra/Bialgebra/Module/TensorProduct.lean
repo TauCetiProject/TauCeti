@@ -47,10 +47,9 @@ Its base action agrees with the native tensor action under `tensorEquiv`. -/
 def Tensor (R _H M N : Type*) [CommSemiring R]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] := M ⊗[R] N
 
-variable (R H M N : Type*) [CommSemiring R]
-variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-
-instance : AddCommMonoid (Tensor R H M N) := inferInstanceAs (AddCommMonoid (M ⊗[R] N))
+instance (R H M N : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] : AddCommMonoid (Tensor R H M N) :=
+  inferInstanceAs (AddCommMonoid (M ⊗[R] N))
 
 instance (R H M N : Type*) [CommSemiring R] [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] : AddCommGroup (Tensor R H M N) :=
@@ -58,8 +57,13 @@ instance (R H M N : Type*) [CommSemiring R] [AddCommGroup M] [Module R M]
 
 section Action
 
-variable [Semiring H] [Bialgebra R H]
-variable [Module H M] [IsScalarTower R H M] [Module H N] [IsScalarTower R H N]
+variable (R H : Type*) [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+section AddCommMonoid
+
+variable (M N : Type*)
+  [AddCommMonoid M] [Module R M] [Module H M] [IsScalarTower R H M]
+  [AddCommMonoid N] [Module R N] [Module H N] [IsScalarTower R H N]
 
 /-- The representation of `H` on the native tensor product obtained from its coproduct. -/
 noncomputable def tensorAction : H →ₐ[R] Module.End R (M ⊗[R] N) :=
@@ -68,7 +72,7 @@ noncomputable def tensorAction : H →ₐ[R] Module.End R (M ⊗[R] N) :=
 /-- The coproduct action is the pair action applied to the coproduct. -/
 theorem tensorAction_apply (h : H) (x : M ⊗[R] N) :
     tensorAction R H M N h x =
-      tensorPairAction R M N (Coalgebra.comul h) x := (rfl)
+      tensorPairAction R M N (Coalgebra.comul h) x := by rfl
 
 /-- The coproduct module structure on the tensor carrier. -/
 @[no_expose] noncomputable instance : Module H (Tensor R H M N) :=
@@ -96,7 +100,14 @@ instance [Module.Finite R M] [Module.Finite R N] : Module.Finite R (Tensor R H M
   Module.Finite.of_surjective (tensorEquiv R H M N).symm.toLinearMap
     (tensorEquiv R H M N).symm.surjective
 
-variable {M N} in
+/-- The underlying equivalence expresses the action through the coproduct representation. -/
+@[simp]
+theorem tensorEquiv_smul (h : H) (x : Tensor R H M N) :
+    tensorEquiv R H M N (h • x) =
+      tensorAction R H M N h (tensorEquiv R H M N x) := by rfl
+
+variable {M N}
+
 /-- A pure tensor in the carrier with the coproduct action. -/
 noncomputable def tmul (m : M) (n : N) : Tensor R H M N :=
   (tensorEquiv R H M N).symm (m ⊗ₜ[R] n)
@@ -108,75 +119,50 @@ noncomputable def tmul (m : M) (n : N) : Tensor R H M N :=
 
 /-- The inverse underlying equivalence constructs pure tensors. -/
 @[simp] theorem tensorEquiv_symm_tmul (m : M) (n : N) :
-    (tensorEquiv R H M N).symm (m ⊗ₜ[R] n) = tmul R H m n := (rfl)
+    (tensorEquiv R H M N).symm (m ⊗ₜ[R] n) = tmul R H m n := by rfl
 
-variable {M N} in
 /-- Pure tensors are additive in the first factor. -/
 @[simp] theorem add_tmul (m m' : M) (n : N) :
-    tmul R H (m + m') n = tmul R H m n + tmul R H m' n := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.add_tmul]
+    tmul R H (m + m') n = tmul R H m n + tmul R H m' n :=
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.add_tmul])
 
-variable {M N} in
 /-- Pure tensors are additive in the second factor. -/
 @[simp] theorem tmul_add (m : M) (n n' : N) :
-    tmul R H m (n + n') = tmul R H m n + tmul R H m n' := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.tmul_add]
+    tmul R H m (n + n') = tmul R H m n + tmul R H m n' :=
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.tmul_add])
 
-variable {M N} in
 /-- A zero first factor gives the zero tensor. -/
-@[simp] theorem zero_tmul (n : N) : tmul R H (0 : M) n = 0 := by
-  apply (tensorEquiv R H M N).injective
-  simp
+@[simp] theorem zero_tmul (n : N) : tmul R H (0 : M) n = 0 :=
+  (tensorEquiv R H M N).injective (by simp)
 
-variable {M N} in
 /-- A zero second factor gives the zero tensor. -/
-@[simp] theorem tmul_zero (m : M) : tmul R H m (0 : N) = 0 := by
-  apply (tensorEquiv R H M N).injective
-  simp
+@[simp] theorem tmul_zero (m : M) : tmul R H m (0 : N) = 0 :=
+  (tensorEquiv R H M N).injective (by simp)
 
-variable {M N} in
 /-- Pure tensors distribute over finite sums in the first factor. -/
 theorem sum_tmul {ι : Type*} (s : Finset ι) (m : ι → M) (n : N) :
     tmul R H (∑ i ∈ s, m i) n = ∑ i ∈ s, tmul R H (m i) n :=
   (tensorEquiv R H M N).injective (by simp [TensorProduct.sum_tmul])
 
-variable {M N} in
 /-- Pure tensors distribute over finite sums in the second factor. -/
 theorem tmul_sum {ι : Type*} (s : Finset ι) (m : M) (n : ι → N) :
     tmul R H m (∑ i ∈ s, n i) = ∑ i ∈ s, tmul R H m (n i) :=
   (tensorEquiv R H M N).injective (by simp [TensorProduct.tmul_sum])
 
-variable {M N} in
 /-- Base scalars may be applied to the first factor. -/
 theorem smul_tmul' (r : R) (m : M) (n : N) :
-    r • tmul R H m n = tmul R H (r • m) n := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.smul_tmul']
+    r • tmul R H m n = tmul R H (r • m) n :=
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.smul_tmul'])
 
-variable {M N} in
 /-- Base scalars may be applied to the second factor. -/
 @[simp] theorem tmul_smul (r : R) (m : M) (n : N) :
-    tmul R H m (r • n) = r • tmul R H m n := by
-  apply (tensorEquiv R H M N).injective
-  simp
+    tmul R H m (r • n) = r • tmul R H m n :=
+  (tensorEquiv R H M N).injective (by simp)
 
-/-- Negating the first factor negates the pure tensor. -/
-@[simp] theorem neg_tmul {M N : Type*} [AddCommGroup M] [Module R M] [Module H M]
-    [IsScalarTower R H M] [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
-    (m : M) (n : N) : tmul R H (-m) n = -tmul R H m n := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.neg_tmul]
+section Induction
 
-/-- Negating the second factor negates the pure tensor. -/
-@[simp] theorem tmul_neg {M N : Type*} [AddCommGroup M] [Module R M] [Module H M]
-    [IsScalarTower R H M] [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
-    (m : M) (n : N) : tmul R H m (-n) = -tmul R H m n := by
-  apply (tensorEquiv R H M N).injective
-  simp [TensorProduct.tmul_neg]
+variable {R H}
 
-variable {R H M N} in
 /-- Prove a proposition about coproduct tensors by pure tensors and addition. -/
 @[elab_as_elim] theorem Tensor.inductionOn {P : Tensor R H M N → Prop}
     (x : Tensor R H M N) (htmul : ∀ m n, P (tmul R H m n))
@@ -188,7 +174,6 @@ variable {R H M N} in
     | add y z hy hz => simpa only [map_add] using hadd _ _ hy hz
   simpa using h (tensorEquiv R H M N x)
 
-variable {R H M N} in
 /-- Two `H`-linear maps from the coproduct tensor carrier agree if they agree on pure tensors. -/
 @[ext] theorem Tensor.ext {P : Type*} [AddCommMonoid P] [Module H P]
     {f g : Tensor R H M N →ₗ[H] P}
@@ -197,13 +182,6 @@ variable {R H M N} in
   intro x
   exact Tensor.inductionOn x h fun x y hx hy ↦ by simp only [map_add, hx, hy]
 
-/-- The underlying equivalence expresses the action through the coproduct representation. -/
-@[simp]
-theorem tensorEquiv_smul (h : H) (x : Tensor R H M N) :
-    tensorEquiv R H M N (h • x) =
-      tensorAction R H M N h (tensorEquiv R H M N x) := (rfl)
-
-variable {R H M N} in
 /-- An element with coproduct `a ⊗ a` acts on the coproduct tensor product as the tensor product
 of its actions on the two factors. -/
 theorem tensorEquiv_smul_of_comul_eq_tmul {a : H} (ha : Coalgebra.comul (R := R) a = a ⊗ₜ[R] a)
@@ -216,11 +194,16 @@ theorem tensorEquiv_smul_of_comul_eq_tmul {a : H} (ha : Coalgebra.comul (R := R)
   | tmul m n => simp
   | add y z hy hz => simp only [map_add, hy, hz]
 
-variable {M' N' : Type*}
-variable [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
-variable [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
+end Induction
 
-variable {M N} in
+section TensorMap
+
+variable {M' N' M'' N'' : Type*}
+  [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
+  [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
+  [AddCommMonoid M''] [Module R M''] [Module H M''] [IsScalarTower R H M'']
+  [AddCommMonoid N''] [Module R N''] [Module H N''] [IsScalarTower R H N'']
+
 /-- The tensor product of native `H`-linear intertwiners, for the coproduct actions. -/
 noncomputable def tensorMap (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
     Tensor R H M N →ₗ[H] Tensor R H M' N' where
@@ -232,32 +215,17 @@ noncomputable def tensorMap (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
     simpa [tensorAction_apply] using
       tensorPairAction_natural R f g (Coalgebra.comul h) (tensorEquiv R H M N x)
 
-variable {M N} in
 /-- The underlying map of a tensor intertwiner is the native tensor product of maps. -/
 @[simp] theorem tensorEquiv_tensorMap (f : M →ₗ[H] M') (g : N →ₗ[H] N')
     (x : Tensor R H M N) :
     tensorEquiv R H M' N' (tensorMap R H f g x) =
       TensorProduct.map (f.restrictScalars R) (g.restrictScalars R)
-        (tensorEquiv R H M N x) := (rfl)
+        (tensorEquiv R H M N x) := by rfl
 
-variable {M N} in
 /-- A tensor intertwiner acts on pure tensors by its two component maps. -/
 @[simp] theorem tensorMap_tmul (f : M →ₗ[H] M') (g : N →ₗ[H] N') (m : M) (n : N) :
-    tensorMap R H f g (tmul R H m n) = tmul R H (f m) (g n) := by
-  apply (tensorEquiv R H M' N').injective
-  simp
-
-/-- Tensoring the identity intertwiners gives the identity. -/
-@[simp] theorem tensorMap_id :
-    tensorMap R H (LinearMap.id : M →ₗ[H] M) (LinearMap.id : N →ₗ[H] N) =
-      LinearMap.id := by
-  apply Tensor.ext
-  intro m n
-  simp
-
-section TensorMapLinearity
-
-variable {M N}
+    tensorMap R H f g (tmul R H m n) = tmul R H (f m) (g n) :=
+  (tensorEquiv R H M' N').injective (by simp)
 
 /-- Tensoring with the zero intertwiner on the left gives zero. -/
 @[simp] theorem tensorMap_zero_left (g : N →ₗ[H] N') : tensorMap R H (0 : M →ₗ[H] M') g = 0 :=
@@ -279,37 +247,21 @@ variable {M N}
 
 /-- `tensorMap` commutes with finite sums in its left intertwiner argument. -/
 theorem tensorMap_sum_left {ι : Type*} (s : Finset ι) (f : ι → (M →ₗ[H] M')) (g : N →ₗ[H] N') :
-    tensorMap R H (∑ i ∈ s, f i) g = ∑ i ∈ s, tensorMap R H (f i) g := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert _ _ ha ih => rw [Finset.sum_insert ha, tensorMap_add_left, ih, Finset.sum_insert ha]
+    tensorMap R H (∑ i ∈ s, f i) g = ∑ i ∈ s, tensorMap R H (f i) g :=
+  Tensor.ext fun _ _ => by simp [sum_tmul]
 
 /-- `tensorMap` commutes with finite sums in its right intertwiner argument. -/
 theorem tensorMap_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[H] M') (g : ι → (N →ₗ[H] N')) :
-    tensorMap R H f (∑ i ∈ s, g i) = ∑ i ∈ s, tensorMap R H f (g i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert _ _ ha ih => rw [Finset.sum_insert ha, tensorMap_add_right, ih, Finset.sum_insert ha]
+    tensorMap R H f (∑ i ∈ s, g i) = ∑ i ∈ s, tensorMap R H f (g i) :=
+  Tensor.ext fun _ _ => by simp [tmul_sum]
 
-end TensorMapLinearity
-
-variable {M'' N'' : Type*}
-variable [AddCommMonoid M''] [Module R M''] [Module H M''] [IsScalarTower R H M'']
-variable [AddCommMonoid N''] [Module R N''] [Module H N''] [IsScalarTower R H N'']
-
-variable {M N} in
 /-- Tensor products of intertwiners preserve composition. -/
 @[simp] theorem tensorMap_comp (f : M →ₗ[H] M') (f' : M' →ₗ[H] M'')
     (g : N →ₗ[H] N') (g' : N' →ₗ[H] N'') :
     tensorMap R H (f'.comp f) (g'.comp g) =
-      (tensorMap R H f' g').comp (tensorMap R H f g) := by
-  apply Tensor.ext
-  intro m n
-  simp
+      (tensorMap R H f' g').comp (tensorMap R H f g) :=
+  Tensor.ext fun _ _ => by simp
 
-variable {M N} in
 /-- Tensor products of module isomorphisms, for the coproduct actions. -/
 noncomputable def tensorCongr (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
     Tensor R H M N ≃ₗ[H] Tensor R H M' N' :=
@@ -317,25 +269,14 @@ noncomputable def tensorCongr (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
     (tensorMap R H f.symm.toLinearMap g.symm.toLinearMap)
     (by ext m n; simp) (by ext m n; simp)
 
-variable {M N} in
 /-- The underlying linear map of a tensor isomorphism is the tensor product of the maps. -/
 @[simp] theorem toLinearMap_tensorCongr (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
-    (tensorCongr R H f g).toLinearMap = tensorMap R H f.toLinearMap g.toLinearMap := (rfl)
+    (tensorCongr R H f g).toLinearMap = tensorMap R H f.toLinearMap g.toLinearMap := by rfl
 
-variable {M N} in
 /-- Inverting a tensor isomorphism tensors the inverse isomorphisms. -/
 @[simp] theorem tensorCongr_symm (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') :
-    (tensorCongr R H f g).symm = tensorCongr R H f.symm g.symm := by
-  rfl
+    (tensorCongr R H f g).symm = tensorCongr R H f.symm g.symm := by rfl
 
-/-- Tensoring identity isomorphisms gives the identity isomorphism. -/
-@[simp] theorem tensorCongr_refl :
-    tensorCongr R H (LinearEquiv.refl H M) (LinearEquiv.refl H N) =
-      LinearEquiv.refl H (Tensor R H M N) := by
-  apply LinearEquiv.toLinearMap_injective
-  simp
-
-variable {M N} in
 /-- Tensor products of module isomorphisms preserve composition. -/
 theorem tensorCongr_trans (f : M ≃ₗ[H] M') (f' : M' ≃ₗ[H] M'')
     (g : N ≃ₗ[H] N') (g' : N' ≃ₗ[H] N'') :
@@ -344,26 +285,59 @@ theorem tensorCongr_trans (f : M ≃ₗ[H] M') (f' : M' ≃ₗ[H] M'')
   apply LinearEquiv.toLinearMap_injective
   simp only [toLinearMap_tensorCongr, LinearEquiv.coe_trans, tensorMap_comp]
 
-variable {M N} in
 /-- The tensor isomorphism has underlying map the tensor product of the two maps. -/
 theorem tensorCongr_apply (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (x : Tensor R H M N) :
-    tensorCongr R H f g x = tensorMap R H f.toLinearMap g.toLinearMap x := (rfl)
+    tensorCongr R H f g x = tensorMap R H f.toLinearMap g.toLinearMap x := by rfl
 
-variable {M N} in
 /-- Tensor products of isomorphisms act componentwise on pure tensors. -/
 @[simp] theorem tensorCongr_tmul (f : M ≃ₗ[H] M') (g : N ≃ₗ[H] N') (m : M) (n : N) :
     tensorCongr R H f g (tmul R H m n) = tmul R H (f m) (g n) := by
   simp [tensorCongr]
 
+variable (M N)
+
+/-- Tensoring the identity intertwiners gives the identity. -/
+@[simp] theorem tensorMap_id :
+    tensorMap R H (LinearMap.id : M →ₗ[H] M) (LinearMap.id : N →ₗ[H] N) =
+      LinearMap.id :=
+  Tensor.ext fun _ _ => by simp
+
+/-- Tensoring identity isomorphisms gives the identity isomorphism. -/
+@[simp] theorem tensorCongr_refl :
+    tensorCongr R H (LinearEquiv.refl H M) (LinearEquiv.refl H N) =
+      LinearEquiv.refl H (Tensor R H M N) := by
+  apply LinearEquiv.toLinearMap_injective
+  simp
+
+end TensorMap
+
+end AddCommMonoid
+
+section AddCommGroup
+
+variable {M N : Type*}
+  [AddCommGroup M] [Module R M] [Module H M] [IsScalarTower R H M]
+  [AddCommGroup N] [Module R N] [Module H N] [IsScalarTower R H N]
+
+/-- Negating the first factor negates the pure tensor. -/
+@[simp] theorem neg_tmul (m : M) (n : N) : tmul R H (-m) n = -tmul R H m n :=
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.neg_tmul])
+
+/-- Negating the second factor negates the pure tensor. -/
+@[simp] theorem tmul_neg (m : M) (n : N) : tmul R H m (-n) = -tmul R H m n :=
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.tmul_neg])
+
+end AddCommGroup
+
 end Action
 
 section Coherence
 
-variable [Semiring H] [Bialgebra R H]
-variable [Module H M] [IsScalarTower R H M] [Module H N] [IsScalarTower R H N]
-variable (P : Type*) [AddCommMonoid P] [Module R P] [Module H P] [IsScalarTower R H P]
+variable (R H M N P : Type*) [CommSemiring R] [Semiring H] [Bialgebra R H]
+  [AddCommMonoid M] [Module R M] [Module H M] [IsScalarTower R H M]
+  [AddCommMonoid N] [Module R N] [Module H N] [IsScalarTower R H N]
+  [AddCommMonoid P] [Module R P] [Module H P] [IsScalarTower R H P]
 
-variable {M N P} in
 /-- The left-nested coproduct action on a pure triple tensor, reassociated, is the action of
 the reassociated iterated coproduct. -/
 private theorem assoc_tensorPairAction_left (m : M) (n : N) (p : P) (t : H ⊗[R] H) :
@@ -383,7 +357,6 @@ private theorem assoc_tensorPairAction_left (m : M) (n : N) (p : P) (t : H ⊗[R
     | add s s' hs hs' => simp only [map_add, LinearMap.add_apply, TensorProduct.add_tmul, hs, hs']
     | tmul c d => simp
 
-variable {M N P} in
 /-- The right-nested coproduct action on a pure triple tensor is the action of the iterated
 coproduct. -/
 private theorem tensorPairAction_right (m : M) (n : N) (p : P) (t : H ⊗[R] H) :
@@ -427,8 +400,8 @@ private theorem assocAux_smul (h : H) (x : Tensor R H (Tensor R H M N) P) :
       rw [assocAux_tmul]
       apply (tensorEquiv R H M (Tensor R H N P)).injective
       apply (TensorProduct.congr (LinearEquiv.refl R M) (tensorEquiv R H N P)).injective
-      have hl := assoc_tensorPairAction_left (R := R) (H := H) m n p (Coalgebra.comul h)
-      have hr := tensorPairAction_right (R := R) (H := H) m n p (Coalgebra.comul h)
+      have hl := assoc_tensorPairAction_left R H M N P m n p (Coalgebra.comul h)
+      have hr := tensorPairAction_right R H M N P m n p (Coalgebra.comul h)
       simp only [Coalgebra.coassoc_apply] at hl
       simp only [assocAux, LinearEquiv.trans_apply, tensorEquiv_smul, tensorAction_apply,
         tensorEquiv_tmul, LinearEquiv.apply_symm_apply]
@@ -452,13 +425,13 @@ theorem tensorEquiv_assoc (x : Tensor R H (Tensor R H M N) P) :
             (tensorEquiv R H (Tensor R H M N) P x))) := by
   simp [assoc, assocAux, TensorProduct.congr]
 
-variable {M N P} in
+variable {M N P}
+
 /-- The associativity equivalence reassociates pure tensors. -/
 @[simp] theorem assoc_tmul (m : M) (n : N) (p : P) :
     assoc R H M N P (tmul R H (tmul R H m n) p) = tmul R H m (tmul R H n p) :=
   assocAux_tmul R H M N P m n p
 
-variable {M N P} in
 /-- The inverse associativity equivalence reassociates pure tensors. -/
 @[simp] theorem assoc_symm_tmul (m : M) (n : N) (p : P) :
     (assoc R H M N P).symm (tmul R H m (tmul R H n p)) = tmul R H (tmul R H m n) p := by
@@ -466,7 +439,7 @@ variable {M N P} in
 
 section Naturality
 
-variable {M N P} {M' N' P' : Type*}
+variable {M' N' P' : Type*}
   [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
   [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
   [AddCommMonoid P'] [Module R P'] [Module H P'] [IsScalarTower R H P']
@@ -507,7 +480,7 @@ end Naturality
 
 section Pentagon
 
-variable (Q : Type*) [AddCommMonoid Q] [Module R Q] [Module H Q] [IsScalarTower R H Q]
+variable (M N P) (Q : Type*) [AddCommMonoid Q] [Module R Q] [Module H Q] [IsScalarTower R H Q]
 
 /-- Mac Lane's pentagon identity for the coproduct tensor associativity equivalence: the two
 ways of reassociating `((M ⊗ N) ⊗ P) ⊗ Q` into `M ⊗ (N ⊗ (P ⊗ Q))` agree. -/
@@ -524,7 +497,8 @@ theorem assoc_pentagon :
     | hadd _ _ hy hz => simp only [add_tmul, map_add, hy, hz]
     | htmul m n => simp
 
-variable {M N P Q} in
+variable {M N P Q}
+
 /-- Pointwise form of Mac Lane's pentagon identity for `BialgebraModule.assoc`. -/
 theorem assoc_pentagon_apply (x : Tensor R H (Tensor R H (Tensor R H M N) P) Q) :
     assoc R H M N (Tensor R H P Q) (assoc R H (Tensor R H M N) P Q x) =
@@ -546,12 +520,13 @@ action is restriction of the `H`-action along the algebra map, and `trivialEquiv
 it with the native action of `R` on itself. -/
 def Trivial (R _H : Type*) := R
 
-noncomputable instance : AddCommMonoid (Trivial R H) := inferInstanceAs (AddCommMonoid R)
+noncomputable instance (R H : Type*) [CommSemiring R] : AddCommMonoid (Trivial R H) :=
+  inferInstanceAs (AddCommMonoid R)
 
 noncomputable instance (R H : Type*) [CommRing R] : AddCommGroup (Trivial R H) :=
   inferInstanceAs (AddCommGroup R)
 
-variable [Semiring H] [Bialgebra R H]
+variable (R H : Type*) [CommSemiring R] [Semiring H] [Bialgebra R H]
 
 /-- The action of `H` on the trivial module, through the counit. -/
 @[no_expose] noncomputable instance : Module H (Trivial R H) :=
@@ -577,16 +552,15 @@ noncomputable def trivialEquiv : Trivial R H ≃ₗ[R] R :=
 /-- An element of `H` acts on the trivial module by multiplication by its counit. -/
 @[simp]
 theorem trivialEquiv_smul (h : H) (x : Trivial R H) :
-    trivialEquiv R H (h • x) = Coalgebra.counit (R := R) h * trivialEquiv R H x := (rfl)
+    trivialEquiv R H (h • x) = Coalgebra.counit (R := R) h * trivialEquiv R H x := by rfl
 
 /-- The trivial module is finite over the base. -/
 instance : Module.Finite R (Trivial R H) :=
   Module.Finite.of_surjective (trivialEquiv R H).symm.toLinearMap
     (trivialEquiv R H).symm.surjective
 
-variable [Module H M] [IsScalarTower R H M]
+variable (M : Type*) [AddCommMonoid M] [Module R M] [Module H M] [IsScalarTower R H M]
 
-variable {M} in
 /-- On a pure tensor with a trivial factor, the coproduct action is the counit contraction
 followed by the action on the other factor. -/
 private theorem lid_tensorPairAction (r : Trivial R H) (m : M) (t : H ⊗[R] H) :
@@ -599,19 +573,6 @@ private theorem lid_tensorPairAction (r : Trivial R H) (m : M) (t : H ⊗[R] H) 
   | add t u ht hu => simp only [map_add, LinearMap.add_apply, ht, hu, add_smul, smul_add]
   | tmul a b => simp [mul_smul, smul_comm (Coalgebra.counit (R := R) a)]
 
-variable {M} in
-/-- On a pure tensor with a trivial factor on the right, the coproduct action is the counit
-contraction followed by the action on the other factor. -/
-private theorem rid_tensorPairAction (m : M) (r : Trivial R H) (t : H ⊗[R] H) :
-    TensorProduct.rid R M
-        (TensorProduct.congr (LinearEquiv.refl R M) (trivialEquiv R H)
-          (tensorPairAction R M (Trivial R H) t (m ⊗ₜ[R] r))) =
-      trivialEquiv R H r •
-        TensorProduct.rid R H (Coalgebra.counit.lTensor H t) • m := by
-  induction t using TensorProduct.inductionOn with
-  | add t u ht hu => simp only [map_add, LinearMap.add_apply, ht, hu, add_smul, smul_add]
-  | tmul a b => simp [mul_smul, smul_comm (Coalgebra.counit (R := R) b)]
-
 /-- The underlying `R`-linear left unit equivalence of the coproduct tensor product. -/
 private noncomputable def lidAux : Tensor R H (Trivial R H) M ≃ₗ[R] M :=
   (tensorEquiv R H (Trivial R H) M).trans <|
@@ -622,7 +583,7 @@ private theorem lidAux_smul (h : H) (x : Tensor R H (Trivial R H) M) :
   induction x using Tensor.inductionOn with
   | hadd x y hx hy => simp only [smul_add, map_add, hx, hy]
   | htmul r m =>
-    have := lid_tensorPairAction R H r m (Coalgebra.comul h)
+    have := lid_tensorPairAction R H M r m (Coalgebra.comul h)
     simp only [Coalgebra.rTensor_counit_comul, TensorProduct.lid_tmul, one_smul] at this
     simpa [lidAux, tensorAction_apply, smul_comm h] using this
 
@@ -639,17 +600,17 @@ theorem lid_apply (x : Tensor R H (Trivial R H) M) :
         (tensorEquiv R H (Trivial R H) M x)) := by
   simp [lid, lidAux, TensorProduct.congr]
 
-variable {M} in
-/-- The left unit equivalence scales by the trivial factor. -/
-@[simp] theorem lid_tmul (r : Trivial R H) (m : M) :
-    lid R H M (tmul R H r m) = trivialEquiv R H r • m := by
-  simp [lid, lidAux]
-
-variable {M} in
-/-- The inverse left unit equivalence inserts the unit of the trivial module. -/
-@[simp] theorem lid_symm_apply (m : M) :
-    (lid R H M).symm m = tmul R H ((trivialEquiv R H).symm 1) m := by
-  rw [LinearEquiv.symm_apply_eq, lid_tmul, LinearEquiv.apply_symm_apply, one_smul]
+/-- On a pure tensor with a trivial factor on the right, the coproduct action is the counit
+contraction followed by the action on the other factor. -/
+private theorem rid_tensorPairAction (m : M) (r : Trivial R H) (t : H ⊗[R] H) :
+    TensorProduct.rid R M
+        (TensorProduct.congr (LinearEquiv.refl R M) (trivialEquiv R H)
+          (tensorPairAction R M (Trivial R H) t (m ⊗ₜ[R] r))) =
+      trivialEquiv R H r •
+        TensorProduct.rid R H (Coalgebra.counit.lTensor H t) • m := by
+  induction t using TensorProduct.inductionOn with
+  | add t u ht hu => simp only [map_add, LinearMap.add_apply, ht, hu, add_smul, smul_add]
+  | tmul a b => simp [mul_smul, smul_comm (Coalgebra.counit (R := R) b)]
 
 /-- The underlying `R`-linear right unit equivalence of the coproduct tensor product. -/
 private noncomputable def ridAux : Tensor R H M (Trivial R H) ≃ₗ[R] M :=
@@ -661,7 +622,7 @@ private theorem ridAux_smul (h : H) (x : Tensor R H M (Trivial R H)) :
   induction x using Tensor.inductionOn with
   | hadd x y hx hy => simp only [smul_add, map_add, hx, hy]
   | htmul m r =>
-    have := rid_tensorPairAction R H m r (Coalgebra.comul h)
+    have := rid_tensorPairAction R H M m r (Coalgebra.comul h)
     simp only [Coalgebra.lTensor_counit_comul, TensorProduct.rid_tmul, one_smul] at this
     simpa [ridAux, tensorAction_apply, smul_comm h] using this
 
@@ -678,13 +639,23 @@ theorem rid_apply (x : Tensor R H M (Trivial R H)) :
         (tensorEquiv R H M (Trivial R H) x)) := by
   simp [rid, ridAux, TensorProduct.congr]
 
-variable {M} in
+variable {M}
+
+/-- The left unit equivalence scales by the trivial factor. -/
+@[simp] theorem lid_tmul (r : Trivial R H) (m : M) :
+    lid R H M (tmul R H r m) = trivialEquiv R H r • m := by
+  simp [lid, lidAux]
+
+/-- The inverse left unit equivalence inserts the unit of the trivial module. -/
+@[simp] theorem lid_symm_apply (m : M) :
+    (lid R H M).symm m = tmul R H ((trivialEquiv R H).symm 1) m := by
+  rw [LinearEquiv.symm_apply_eq, lid_tmul, LinearEquiv.apply_symm_apply, one_smul]
+
 /-- The right unit equivalence scales by the trivial factor. -/
 @[simp] theorem rid_tmul (m : M) (r : Trivial R H) :
     rid R H M (tmul R H m r) = trivialEquiv R H r • m := by
   simp [rid, ridAux]
 
-variable {M} in
 /-- The inverse right unit equivalence inserts the unit of the trivial module. -/
 @[simp] theorem rid_symm_apply (m : M) :
     (rid R H M).symm m = tmul R H m ((trivialEquiv R H).symm 1) := by
