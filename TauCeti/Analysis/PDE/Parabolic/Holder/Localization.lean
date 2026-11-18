@@ -15,7 +15,7 @@ For a scalar parabolic operator `P = ∂ₜ - A·D_x² - B·D_x - C` and a space
 the commutator `P(χu) - χ Pu` contains only the value and first spatial derivative of `u`.
 This file proves its product formula in bounded parabolic Hölder spaces and estimates it by
 `‖u‖_{α,par} + ‖D_x u‖_{α,par}`. In particular the zeroth-order coefficient cancels, and no
-ellipticity assumption is needed.
+ellipticity assumption is needed. For a cutoff constant in space the commutator is `(∂ₜ χ) u`.
 
 For `α < 1`, interpolation makes this error at most `η ‖u‖_{2+α,par} + K ‖u‖_∞`, for any
 `η > 0`. The constant is uniform over slabs, coefficients and cutoffs with the stated bound
@@ -100,6 +100,28 @@ theorem parabolicOperatorL_mul_sub_mul_parabolicOperatorL :
     simpa only [smul_eq_mul] using (C p).map_smul (χ p) (u p)
   rw [hc]
   ring
+
+/-- **The operator on a product with a spatially constant factor.** If `χ` does not depend on the
+spatial variable, `D_x χ = 0`, then `P (χ u) = χ P u + (∂ₜ χ) u`. -/
+theorem parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero (hχ : spatialFDerivL χ = 0) :
+    parabolicOperatorL hα A B C ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) =
+      (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
+          (parabolicOperatorL hα A B C u) +
+        (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (timeDerivL χ) (valueHolderL hα u) := by
+  -- A spatially constant `χ` also has vanishing Hessian.
+  have hχ₂ : spatialSecondFDerivL χ = 0 := by
+    ext p : 1
+    obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+    have h := χ.hasSpatialSecondFDerivAt t x
+    rw [hχ] at h
+    rw [HolderSpace.zero_apply]
+    exact h.unique (hasFDerivAt_const _ x)
+  have hχ₁ : spatialFDerivHolderL hα χ = 0 := HolderSpace.ext fun p ↦ by simp [hχ]
+  have hχA : spatialOperatorL hα A B 0 χ = 0 :=
+    HolderSpace.ext fun p ↦ by simp [spatialOperatorL_apply, hχ, hχ₂]
+  have h := parabolicOperatorL_mul_sub_mul_parabolicOperatorL hα A B C χ u
+  rw [hχ₁, hχA] at h
+  simpa [sub_eq_iff_eq_add, add_comm] using h
 
 /-- **The lower-order commutator bound.** Only the time derivative, spatial Hessian and
 spatial gradient of the cutoff enter the bound. In particular it is independent of `C` and
