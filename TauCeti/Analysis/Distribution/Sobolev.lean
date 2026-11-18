@@ -484,8 +484,8 @@ theorem memSobolev_smulLeftCLM_lineDerivOp (hp : 1 < p) (hp_top : p ≠ ∞) {r 
   exact ((hf ψ).lineDerivOp_of_one_lt hp hp_top).sub
     ((hf (∂_{w} ψ : 𝓢(E, ℂ))).mono_of_one_lt hp hp_top (by linarith))
 
-/-- If every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of
-`J² f = f - (2π)⁻² Δ f` lies in `H^{r - 2,p}`. -/
+/-- For `1 < p < ∞`, if every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz
+multiple of `J² f = f - (2π)⁻² Δ f` lies in `H^{r - 2,p}`. -/
 theorem memSobolev_smulLeftCLM_besselPotential_two (hp : 1 < p) (hp_top : p ≠ ∞)
     {r : ℝ} {f : 𝓢'(E, F)}
     (hf : ∀ ψ : 𝓢(E, ℂ), MemSobolev r p (smulLeftCLM F (ψ : E → ℂ) f)) (ψ : 𝓢(E, ℂ)) :
