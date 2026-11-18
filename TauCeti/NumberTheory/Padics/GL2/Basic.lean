@@ -13,10 +13,12 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 -- The topology of `GL (Fin 2) ℚ_[p]` as a unit group occurs in the statements below.
 public import Mathlib.Topology.Algebra.Group.Units
 -- Non-public: the topology on matrices and the compactness of `ℤ_[p]` are used only in the
--- compactness and openness proofs, and the ultrametric inequality only in integrality proofs.
+-- compactness and openness proofs, and the ultrametric inequality and the ultrametric determinant
+-- bound only in integrality proofs.
 import Mathlib.Topology.Instances.Matrix
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Matrix.Ultra
 
 /-!
 # The standard subgroups of `GL₂(ℚ_p)`
@@ -154,23 +156,16 @@ theorem mem_iff_inv {g : GL (Fin 2) ℚ_[p]} :
   refine ⟨fun hg => ⟨(mem_iff.mp hg).1, (mem_iff.mp (Subgroup.inv_mem _ hg)).1⟩, ?_⟩
   rintro ⟨hg, hg'⟩
   refine mem_iff.mpr ⟨hg, ?_⟩
-  -- By the ultrametric inequality an integral `2 × 2` matrix has integral determinant.
-  have norm_det_le_one : ∀ M : Matrix (Fin 2) (Fin 2) ℚ_[p], (∀ i j, ‖M i j‖ ≤ 1) →
-      ‖M.det‖ ≤ 1 := by
-    intro M hM
-    rw [Matrix.det_fin_two, sub_eq_add_neg]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-    · rw [norm_mul]
-      exact (mul_le_of_le_one_left (norm_nonneg _) (hM 0 0)).trans (hM 1 1)
-    · rw [norm_neg, norm_mul]
-      exact (mul_le_of_le_one_left (norm_nonneg _) (hM 0 1)).trans (hM 1 0)
   -- `det g * det g⁻¹ = 1` with both factors integral forces `‖det g‖ = 1`.
   have h1 : ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ *
       ‖((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ = 1 := by
     rw [← norm_mul, ← Matrix.det_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
       Matrix.det_one, norm_one]
-  have h2 := norm_det_le_one _ hg
-  have h3 := norm_det_le_one _ hg'
+  -- By the ultrametric inequality an integral matrix has integral determinant.
+  have h2 : ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ ≤ 1 := by
+    simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ => 1) hg
+  have h3 : ‖((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ ≤ 1 := by
+    simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ => 1) hg'
   nlinarith [norm_nonneg ((g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det),
     norm_nonneg (((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det)]
 
@@ -302,9 +297,11 @@ theorem exists_gl2PhiElement_pow_mul_mem {g : GL (Fin 2) ℚ_[p]} (hg : g ∈ GL
   have hpow : ∀ m : ℕ, GL2PhiElement p ^ m =
       GL2Borel.mk (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero) ^ m) 1 0 := by
     intro m
-    induction m with
-    | zero => simp
-    | succ m ih => rw [pow_succ, ih, GL2PhiElement, GL2Borel.mk_mul_mk, pow_succ]; simp
+    have hφ : GL2PhiElement p = ((GL2Borel.torusHom
+        (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero), 1) : GL2Borel ℚ_[p]) :
+          GL (Fin 2) ℚ_[p]) := by
+      rw [GL2PhiElement, GL2Borel.coe_torusHom]
+    rw [hφ, ← Subgroup.coe_pow, ← map_pow, Prod.pow_mk, one_pow, GL2Borel.coe_torusHom]
   -- Multiplying by `p ^ n` scales both coordinates by `p⁻ⁿ` in norm.
   have hscale : ∀ x : ℚ_[p], ‖x‖ < (p : ℝ) ^ n → ‖(p : ℚ_[p]) ^ n * x‖ ≤ 1 := by
     intro x hx

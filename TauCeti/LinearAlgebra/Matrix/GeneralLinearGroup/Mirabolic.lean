@@ -8,8 +8,8 @@ module
 -- `TauCeti.GL2Borel`, its normal form `TauCeti.GL2Borel.mk` and the Weyl element
 -- `TauCeti.GL2WeylElement` occur in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Bruhat
--- `SemidirectProduct` occurs in the statement of `TauCeti.GL2Mirabolic.semidirectProductEquiv`.
-public import Mathlib.GroupTheory.SemidirectProduct
+-- `TauCeti.AffineGroup` occurs in the statement of `TauCeti.GL2Mirabolic.semidirectProductEquiv`.
+public import TauCeti.GroupTheory.SpecificGroups.Affine.Basic
 -- Non-public: the description of the centre of `GL n R` as the scalar matrices is used only in
 -- proofs.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
@@ -20,7 +20,8 @@ import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 The **mirabolic subgroup** `P` of `GL₂(R)` consists of the invertible matrices whose lower row is
 `(0, 1)`, that is the matrices `!![a, b; 0, 1]` with `a` a unit. It is the affine group of the
 line: `!![a, b; 0, 1]` acts on `R` by `x ↦ a x + b`, and `P` is the semidirect product
-`R ⋊ Rˣ` of the translations by the scalings (`TauCeti.GL2Mirabolic.semidirectProductEquiv`).
+`R ⋊ Rˣ` of the translations by the scalings, that is the affine group `TauCeti.AffineGroup R`
+(`TauCeti.GL2Mirabolic.semidirectProductEquiv`).
 
 Over a field the mirabolic subgroup, the centre `Z` and the Weyl element `w = !![0, 1; 1, 0]`
 generate `GL₂` (`TauCeti.GL2Mirabolic.closure_insert_gl2WeylElement_union_center_eq_top`). Thus an
@@ -38,10 +39,8 @@ mirabolic one, and the scalar is unique because `P ∩ Z = 1`
 ## Main definitions
 
 * `TauCeti.GL2Mirabolic R`: the subgroup of `GL (Fin 2) R` of matrices with lower row `(0, 1)`.
-* `TauCeti.GL2Mirabolic.unitsMulAut`: the action of `Rˣ` on the additive group of `R` by
-  multiplication, as automorphisms of `Multiplicative R`.
-* `TauCeti.GL2Mirabolic.semidirectProductEquiv`: the isomorphism `R ⋊ Rˣ ≃* P` sending `(b, a)` to
-  `!![a, b; 0, 1]`.
+* `TauCeti.GL2Mirabolic.semidirectProductEquiv`: the isomorphism `TauCeti.AffineGroup R ≃* P`
+  from the affine group `R ⋊ Rˣ`, sending `(b, a)` to `!![a, b; 0, 1]`.
 
 ## Main results
 
@@ -159,22 +158,11 @@ theorem sup_center_eq_gl2Borel :
     rw [Matrix.GeneralLinearGroup.center_eq_range_scalar]
     exact ⟨d, rfl⟩
 
-/-- The action of `Rˣ` on the additive group of `R` by multiplication, written as automorphisms of
-`Multiplicative R`; it is the action by which the scalings of the mirabolic subgroup conjugate
-its translations. -/
-def unitsMulAut : Rˣ →* MulAut (Multiplicative R) :=
-  (MulAutMultiplicative R).symm.toMonoidHom.comp (DistribMulAction.toAddAut Rˣ R)
-
 variable {R}
-
-@[simp]
-theorem unitsMulAut_apply (a : Rˣ) (b : Multiplicative R) :
-    unitsMulAut R a b = Multiplicative.ofAdd ((a : R) * b.toAdd) :=
-  (rfl)
 
 /-- **The mirabolic subgroup is the affine group `R ⋊ Rˣ`**: the pair `(b, a)` of a translation and
 a scaling corresponds to the matrix `!![a, b; 0, 1]`. -/
-def semidirectProductEquiv : Multiplicative R ⋊[unitsMulAut R] Rˣ ≃* GL2Mirabolic R where
+def semidirectProductEquiv : AffineGroup R ≃* GL2Mirabolic R where
   toFun x := ⟨GL2Borel.mk x.right 1 x.left.toAdd, mk_mem _ _⟩
   invFun g := ⟨Multiplicative.ofAdd (((g : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) 0 1),
     (GL2Borel.diag ⟨g, le_gl2Borel g.2⟩).1⟩
@@ -190,12 +178,12 @@ def semidirectProductEquiv : Multiplicative R ⋊[unitsMulAut R] Rˣ ≃* GL2Mir
   map_mul' x y := by
     refine Subtype.ext ?_
     simp only [Subgroup.coe_mul, GL2Borel.mk_mul_mk, SemidirectProduct.mul_left,
-      SemidirectProduct.mul_right, toAdd_mul, unitsMulAut_apply, toAdd_ofAdd, mul_one,
+      SemidirectProduct.mul_right, toAdd_mul, affineAction_apply_toAdd, mul_one,
       Units.val_one]
     rw [add_comm]
 
 @[simp]
-theorem coe_semidirectProductEquiv_apply (x : Multiplicative R ⋊[unitsMulAut R] Rˣ) :
+theorem coe_semidirectProductEquiv_apply (x : AffineGroup R) :
     ((semidirectProductEquiv x : GL2Mirabolic R) : GL (Fin 2) R) =
       GL2Borel.mk x.right 1 x.left.toAdd :=
   (rfl)
