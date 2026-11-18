@@ -23,7 +23,7 @@ a family of maps splitting the *last* faces, such as the one a split counit give
 resolution, becomes such an extra degeneracy.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Opposite
 
@@ -35,7 +35,7 @@ variable {C : Type u} [Category.{v} C]
 
 /-- The reversal of augmented simplicial objects: precompose the simplicial part with
 `SimplexCategory.rev`, keeping the augmentation object and the augmentation maps. -/
-def opFunctor : Augmented C ⥤ Augmented C where
+@[expose] def opFunctor : Augmented C ⥤ Augmented C where
   obj X :=
     { left := SimplicialObject.opFunctor.obj X.left
       right := X.right
@@ -116,15 +116,26 @@ lemma opFunctorCompOpFunctorIso_inv_app_left (X : Augmented C) :
 lemma opFunctorCompOpFunctorIso_inv_app_right (X : Augmented C) :
     (opFunctorCompOpFunctorIso.inv.app X).right = 𝟙 X.right := (rfl)
 
+-- Exposed for `simps`: its projection lemmas hold by unfolding the body, and statements of
+-- `unitIso` and `counitIso` as the involution are ill-typed for an unexposed equivalence.
+
 /-- The reversal of augmented simplicial objects as an equivalence of categories. -/
-@[simps]
+@[expose, simps]
 def opEquivalence : Augmented C ≌ Augmented C where
   functor := opFunctor
   inverse := opFunctor
   unitIso := opFunctorCompOpFunctorIso.symm
   counitIso := opFunctorCompOpFunctorIso
   functor_unitIso_comp X := hom_ext _ _
-    (SimplicialObject.opEquivalence.functor_unitIso_comp X.left) (Category.id_comp _)
+    (by
+      rw [Comma.comp_left, opFunctor_map_left, Iso.symm_hom, opFunctorCompOpFunctorIso_inv_app_left,
+        opFunctorCompOpFunctorIso_hom_app_left, Comma.id_left]
+      exact SimplicialObject.opEquivalence.functor_unitIso_comp X.left)
+    (by
+      rw [Comma.comp_right, opFunctor_map_right, Iso.symm_hom,
+        opFunctorCompOpFunctorIso_inv_app_right, opFunctorCompOpFunctorIso_hom_app_right,
+        Comma.id_right]
+      exact Category.id_comp _)
 
 instance : (opFunctor (C := C)).IsEquivalence := opEquivalence.isEquivalence_functor
 
