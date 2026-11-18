@@ -73,7 +73,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
-  holomorphic map `φ`.
+  holomorphic map `φ`, and `TauCeti.conjWirtingerDeriv_comp_eq_comp_fderiv`, the chain rule
+  `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)` before a holomorphic map `g`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
@@ -430,6 +431,16 @@ theorem conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X] [NormedSpace 
   rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart,
     fderiv_comp x (hφ.restrictScalars ℝ) hg, hφ.fderiv_restrictScalars ℝ,
     ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp]
+
+/-- **The chain rule for the conjugate Wirtinger derivative** before a holomorphic map: if `g` is
+complex differentiable at `x`, then `\bar∂(φ ∘ g) = \bar∂φ(g x) ∘ Dg(x)`. -/
+theorem conjWirtingerDeriv_comp_eq_comp_fderiv {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] {φ : W → X} {g : V → W} {x : V} (hφ : DifferentiableAt ℝ φ (g x))
+    (hg : DifferentiableAt ℂ g x) :
+    conjWirtingerDeriv (φ ∘ g) x = (conjWirtingerDeriv φ (g x)).comp (fderiv ℂ g x) := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart,
+    fderiv_comp x hφ (hg.restrictScalars ℝ), hg.fderiv_restrictScalars ℝ,
+    ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
 
 section Mul
 

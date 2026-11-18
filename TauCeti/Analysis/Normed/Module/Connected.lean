@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Connected
+import TauCeti.Topology.MetricSpace.SeparatedBalls
 
 /-!
 # Connectedness of punctured balls
@@ -29,6 +30,11 @@ point of its source has arbitrarily small neighbourhoods whose punctured version
 * `TauCeti.exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source`: every point in the
   source of a partial homeomorphism to the affine space has arbitrarily small neighbourhoods whose
   punctured versions are connected.
+* `TauCeti.exists_mem_tendsto_of_forall_eventually_exists_dist_lt`: a map continuous on a punctured
+  ball whose values approach a finite set at the centre converges to one of its points. Near the
+  centre the values lie in disjoint small balls about the points, and the connected punctured ball
+  cannot be split between two of them. This is how a continuous root of a polynomial family over a
+  punctured disc acquires a value at a collision of roots.
 -/
 
 public section
@@ -87,5 +93,52 @@ theorem exists_mem_nhds_subset_isConnected_sdiff_singleton_of_mem_source
   rw [hsdiff]
   exact (isConnected_ball_sdiff_singleton h (φ x) hr).image _
     (φ.continuousOn_symm.mono (sdiff_subset.trans hbt))
+
+/-- **Limits at a puncture with finitely many candidate values.** In an affine space over a real
+seminormed space of dimension greater than one, let `f` be continuous on a punctured ball about
+`x`, with values in a metric space, and let `S` be a finite set such that for every `ε > 0` the
+values of `f` near `x` lie within `ε` of `S`. Then `f` converges at `x` to a point of `S`. -/
+theorem exists_mem_tendsto_of_forall_eventually_exists_dist_lt {Y : Type*} [MetricSpace Y]
+    (h : 1 < Module.rank ℝ E) {f : P → Y} {x : P} {δ : ℝ} (hδ : 0 < δ)
+    (hf : ContinuousOn f (ball x δ \ {x})) {S : Finset Y}
+    (hS : ∀ ε > 0, ∀ᶠ z in 𝓝[≠] x, ∃ s ∈ S, dist (f z) s < ε) :
+    ∃ s ∈ S, Filter.Tendsto f (𝓝[≠] x) (𝓝 s) := by
+  -- balls of radius `r` about the points of `S` are pairwise far apart
+  obtain ⟨r, hr, -, hsep⟩ :=
+    exists_pos_closedBall_subset_and_lt_dist (T := S) (U := fun _ ↦ univ) fun _ _ ↦
+      Filter.univ_mem
+  obtain ⟨ε₁, hε₁, hε₁S⟩ :=
+    Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 (hS r hr))
+  set δ' := min δ ε₁
+  have hδ' : 0 < δ' := lt_min hδ hε₁
+  have hball : ball x δ' \ {x} ⊆ ball x δ \ {x} :=
+    sdiff_subset_sdiff_left (ball_subset_ball (min_le_left _ _))
+  have hnear : ∀ z ∈ ball x δ' \ {x}, ∃ s ∈ S, dist (f z) s < r := fun z hz ↦
+    hε₁S (lt_of_lt_of_le hz.1 (min_le_right _ _)) hz.2
+  -- the image of the connected punctured ball lies in the ball about one point `s₁` of `S`
+  have hconn := isPathConnected_ball_sdiff_singleton h x hδ'
+  obtain ⟨z₁, hz₁⟩ := hconn.nonempty
+  obtain ⟨s₁, hs₁, hz₁s⟩ := hnear z₁ hz₁
+  have hsub : f '' (ball x δ' \ {x}) ⊆ ball s₁ r := by
+    refine hconn.isConnected.isPreconnected.image f (hf.mono hball)
+      |>.subset_left_of_subset_union (v := ⋃ s ∈ (S : Set Y) \ {s₁}, ball s r) isOpen_ball
+        (isOpen_biUnion fun s _ ↦ isOpen_ball) ?_ ?_
+        ⟨f z₁, mem_image_of_mem f hz₁, hz₁s⟩
+    · refine Set.disjoint_left.2 fun y hy hy' ↦ ?_
+      obtain ⟨s, hs, hys⟩ := mem_iUnion₂.1 hy'
+      exact hs.2 (eq_of_dist_lt_of_dist_lt (hsep s hs.1 s₁ hs₁) hys hy)
+    · rintro _ ⟨z, hz, rfl⟩
+      obtain ⟨s, hs, hzs⟩ := hnear z hz
+      by_cases hss : s = s₁
+      · exact Or.inl (hss ▸ hzs)
+      · exact Or.inr (mem_iUnion₂.2 ⟨s, ⟨hs, hss⟩, hzs⟩)
+  -- for smaller `ε` the nearby point of `S` is still `s₁`
+  refine ⟨s₁, hs₁, Metric.tendsto_nhds.2 fun ε hε ↦ ?_⟩
+  filter_upwards [hS (min ε r) (lt_min hε hr), self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (ball_mem_nhds x hδ')] with z ⟨s, hs, hzs⟩ hzx hzb
+  have hz₁' : dist (f z) s₁ < r := hsub (mem_image_of_mem f ⟨hzb, hzx⟩)
+  have hss : s = s₁ :=
+    eq_of_dist_lt_of_dist_lt (hsep s hs s₁ hs₁) (lt_of_lt_of_le hzs (min_le_right _ _)) hz₁'
+  exact hss ▸ lt_of_lt_of_le hzs (min_le_left _ _)
 
 end TauCeti
