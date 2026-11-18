@@ -114,21 +114,28 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
 
-end codRestrict
-
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-  {ρ : Representation A G V} {σ : Representation A G W}
-
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
 noncomputable def equivOfRange (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
     {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) :
     ρ.Equiv P.toRepresentation :=
-  (f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)).ofBijective
+  let f' := f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)
+  .mk (LinearEquiv.ofBijective f'.toLinearMap
     ⟨fun _ _ h => hf (by exact congrArg Subtype.val h), fun w => by
       obtain ⟨v, hv⟩ := hP.ge w.property
-      exact ⟨v, Subtype.ext (by exact hv)⟩⟩
+      exact ⟨v, Subtype.ext (by exact hv)⟩⟩) f'.isIntertwining'
+
+@[simp]
+theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
+    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
+    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
+  rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An intertwining map commutes with the action of the monoid algebra**, not only with that of
 the group elements. -/
@@ -136,12 +143,6 @@ the group elements. -/
 theorem apply_asAlgebraHom (f : IntertwiningMap ρ σ) (r : MonoidAlgebra A G) (v : V) :
     f (ρ.asAlgebraHom r v) = σ.asAlgebraHom r (f v) :=
   (equivLinearMapAsModule ρ σ f).map_smul r (ρ.asModuleEquiv.symm v)
-
-@[simp]
-theorem equivOfRange_apply_coe (f : IntertwiningMap ρ σ) (hf : Function.Injective f)
-    {P : Subrepresentation σ} (hP : LinearMap.range f.toLinearMap = P.toSubmodule) (v : V) :
-    ((f.equivOfRange hf hP v : P.toSubmodule) : W) = f v := by
-  rfl
 
 section lcomp
 
