@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
@@ -116,6 +115,7 @@ theorem selmerModule_eq_top (h : ∀ v, D.localCondition v = ⊤) : D.selmerModu
   simp [selmerModule, h]
 
 /-- With no places the Selmer module is the whole global module. -/
+@[simp]
 theorem selmerModule_of_isEmpty [IsEmpty ι] : D.selmerModule = ⊤ :=
   D.selmerModule_eq_top isEmptyElim
 
@@ -271,6 +271,7 @@ theorem singularLocalization_apply (c : H) (v : ι) :
 
 /-- **The Selmer module is the kernel of the singular localisation**
 `H → ∏_v Hloc v ⧸ L_v`. -/
+@[simp]
 theorem ker_singularLocalization : LinearMap.ker D.singularLocalization = D.selmerModule := by
   ext c
   simp [funext_iff, Submodule.Quotient.mk_eq_zero]
