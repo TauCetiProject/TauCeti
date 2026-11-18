@@ -160,15 +160,18 @@ theorem _root_.HasCompactSupport.mono_of_forall_gradient {M : Type*} [Zero M] {g
   hf.mono' fun y hy ↦ by_contra fun h ↦
     hy (hg y (image_eq_zero_of_notMem_tsupport h) (gradient_of_notMem_tsupport h))
 
+/-- The gradient is the Riesz representative of the Fréchet derivative, pointwise: `∇ f` is
+`(toDual 𝕜 F).symm ∘ fderiv 𝕜 f`. -/
+theorem gradient_eq_toDual_symm_comp_fderiv (f : F → 𝕜) :
+    ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f :=
+  rfl
+
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
 differentiable. -/
 @[fun_prop]
 theorem measurable_gradient [MeasurableSpace F] [BorelSpace F] (f : F → 𝕜) : Measurable (∇ f) := by
-  have h : ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f := by
-    ext1 x
-    rw [Function.comp_apply, ← toDual_gradient, LinearIsometryEquiv.symm_apply_apply]
-  rw [h]
+  rw [gradient_eq_toDual_symm_comp_fderiv]
   exact (toDual 𝕜 F).symm.continuous.measurable.comp (measurable_fderiv 𝕜 f)
 
 /-- Over `ℝ` the Riesz isomorphism is a linear isometry, so the gradient of a `C^{m+1}` function
