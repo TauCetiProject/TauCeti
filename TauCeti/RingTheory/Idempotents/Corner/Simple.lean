@@ -66,10 +66,8 @@ is nonzero, then `eV` is a simple module over the corner ring `eAe`. -/
 theorem isSimpleModule_corner_smul_top [IsSimpleModule A V]
     (h : e • (⊤ : Submodule S V) ≠ ⊥) :
     IsSimpleModule he.Corner ↥(e • (⊤ : Submodule S V)) := by
-  obtain ⟨w₀, hw₀, hw₀ne⟩ := (Submodule.ne_bot_iff _).mp h
-  have : Nontrivial ↥(e • (⊤ : Submodule S V)) :=
-    ⟨⟨⟨w₀, hw₀⟩, 0, fun h₀ ↦ hw₀ne (congrArg Subtype.val h₀)⟩⟩
-  refine isSimpleModule_iff_toSpanSingleton_surjective.mpr ⟨this, fun w hw u ↦ ?_⟩
+  refine isSimpleModule_iff_toSpanSingleton_surjective.mpr
+    ⟨Submodule.nontrivial_iff_ne_bot.mpr h, fun w hw u ↦ ?_⟩
   have hw' : (w : V) ≠ 0 := fun h₀ ↦ hw (Subtype.ext h₀)
   obtain ⟨a, ha⟩ := IsSimpleModule.toSpanSingleton_surjective A hw' (u : V)
   exact ⟨he.compress a, Subtype.ext (he.compress_smul_eq (he.smul_eq_self_of_mem_smul_top w.2)
@@ -78,11 +76,9 @@ theorem isSimpleModule_corner_smul_top [IsSimpleModule A V]
 /-- For a simple `A`-module `V`, the corner `eV` is a simple `eAe`-module exactly when it is
 nonzero. -/
 theorem isSimpleModule_corner_smul_top_iff [IsSimpleModule A V] :
-    IsSimpleModule he.Corner ↥(e • (⊤ : Submodule S V)) ↔ e • (⊤ : Submodule S V) ≠ ⊥ := by
-  refine ⟨fun hs hbot ↦ ?_, he.isSimpleModule_corner_smul_top⟩
-  have := IsSimpleModule.nontrivial he.Corner ↥(e • (⊤ : Submodule S V))
-  rw [hbot] at this
-  exact not_nontrivial _ this
+    IsSimpleModule he.Corner ↥(e • (⊤ : Submodule S V)) ↔ e • (⊤ : Submodule S V) ≠ ⊥ :=
+  ⟨fun _ ↦ Submodule.nontrivial_iff_ne_bot.mp (IsSimpleModule.nontrivial he.Corner _),
+    he.isSimpleModule_corner_smul_top⟩
 
 variable {V' : Type*} [AddCommGroup V'] [Module S V'] [Module A V'] [SMulCommClass A S V']
 
