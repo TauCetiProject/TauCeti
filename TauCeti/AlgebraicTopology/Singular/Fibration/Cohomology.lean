@@ -31,13 +31,14 @@ the same range (`TauCeti.TopCat.isZero_singularCohomology_preimageSkeleton`).
 
 * **Vanishing below the `s`-axis.** The object at `(s, t)` on the first page vanishes when `t < 0`
   (`TauCeti.TopCat.isZero_serreCohomologySpectralSequence_page_one_X`).
-* **Strong convergence.** Over a CW complex `K` containing the image of `f`, with no finiteness
-  or dimension bound on `K`, the filtration of the cochains is complete and separated in each
-  degree, since every singular simplex of `E` lies over a finite skeleton. The induced filtration
+* **Strong convergence.** When `C` contains the image of `f`, with no finiteness or dimension
+  bound on `C`, the filtration of the cochains is complete and separated in each degree, since
+  every singular simplex of `E` lies over a finite skeleton. The induced filtration
   `F^s Hⁿ(E; M)` of the abutment vanishes for `n < s`
-  (`TauCeti.TopCat.isZero_serreCohomologySpectralObject_abutmentFiltration`), and on every page
-  `r ≥ 1` with `s < r` and `t + 1 < r` the object at `(s, t)` is the graded piece
-  `F^s H^{s+t} / F^{s+1} H^{s+t}` (`TauCeti.TopCat.serreCohomologySpectralSequencePageXIsoGraded`).
+  (`TauCeti.TopCat.isZero_serreCohomologySpectralObject_abutmentFiltration`). Over a CW complex
+  `K` containing the image of `f`, on every page `r ≥ 1` with `s < r` and `t + 1 < r` the object
+  at `(s, t)` is the graded piece `F^s H^{s+t} / F^{s+1} H^{s+t}`
+  (`TauCeti.TopCat.serreCohomologySpectralSequencePageXIsoGraded`).
   Unlike the filtration of the singular chains, the stages of the filtration of the cochains
   need not vanish in any degree when `K` is infinite-dimensional, so the convergence uses the
   completeness of the filtration.
@@ -128,23 +129,24 @@ theorem isZero_serreCohomologySpectralSequence_page_one_X (s t : ℤ) (ht : t < 
     exact (isZero_singularCohomology_preimageSkeleton hf k M C s n (by lia)).of_iso
       (filteredSpaceCohomologySpectralSequenceFirstPageXIso _ _ _ _ s t (s - 1) s rfl rfl n hn)
 
+include hf in
+variable (C) in
+/-- **The filtration of the abutment of the cohomological Serre spectral sequence vanishes above
+the degree.** Let `f : E ⟶ B` be a Serre fibration with values in a relative CW complex `C ⊆ B`,
+with no finiteness or dimension bound on `C`. The piece `F^s Hⁿ(E; M)` of the filtration of the
+abutment, the image of `Hⁿ(E, E_{s-1}; M)`, vanishes for `n < s`. -/
+theorem isZero_serreCohomologySpectralObject_abutmentFiltration (hfC : range f ⊆ C) {s n : ℤ}
+    (hn : n < s) :
+    IsZero ((serreCohomologySpectralObject C f k M).abutmentFiltration (-s) n) :=
+  isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration (monotone_preimageSkeleton f)
+    (fun _ hS ↦ exists_subset_preimageSkeleton_of_isCompact f.hom.continuous hfC hS)
+    (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf k M C s n hn) hn
+
 end Relative
 
 section Absolute
 
 variable {K : Set B} [CWComplex K]
-
-include hf in
-/-- **The filtration of the abutment of the cohomological Serre spectral sequence vanishes above
-the degree.** Let `f : E ⟶ B` be a Serre fibration with values in a CW complex `K ⊆ B`, with no
-finiteness or dimension bound on `K`. The piece `F^s Hⁿ(E; M)` of the filtration of the abutment,
-the image of `Hⁿ(E, E_{s-1}; M)`, vanishes for `n < s`. -/
-theorem isZero_serreCohomologySpectralObject_abutmentFiltration (hfK : range f ⊆ K) {s n : ℤ}
-    (hn : n < s) :
-    IsZero ((serreCohomologySpectralObject K f k M).abutmentFiltration (-s) n) :=
-  isZero_filteredSpaceCohomologySpectralObject_abutmentFiltration (monotone_preimageSkeleton f)
-    (fun _ hS ↦ exists_subset_preimageSkeleton_of_isCompact f.hom.continuous hfK hS)
-    (fun s n hn ↦ isZero_singularCohomology_preimageSkeleton hf k M K s n hn) hn
 
 include hf in
 /-- **Strong convergence of the cohomological Serre spectral sequence over a CW complex.** Let
