@@ -14,6 +14,7 @@ import Mathlib.Analysis.Real.Cardinality
 import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.AddCircle
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
@@ -264,22 +265,6 @@ theorem mem_ker_facetTorusHom_iff_of_basis (hi : IsIntegralLattice i) {κ : Type
     rw [hx, ← hm, map_smul, Finsupp.smul_apply, hrepr, b.repr_sum_self]
     simp [zsmul_eq_mul, mul_comm]
 
-/-- Suppose that the normals `u j` with `j ∈ s` form a basis `b` of `N`. For `θ` vanishing
-outside `s`, the `k`-th coordinate `Σ_j b.repr (u j) k • θ j` of the combination of the `θ j` in
-the basis `b` is `θ k`. -/
-theorem sum_repr_smul_eq_of_forall_notMem {M : Type*} [AddCommGroup M] {s : Set ι}
-    (b : Module.Basis s ℤ N) (hb : ∀ j, b j = u j) {θ : ι → M} (hθ : ∀ j ∉ s, θ j = 0)
-    (k : s) : ∑ j, b.repr (u j) k • θ j = θ k := by
-  rw [Finset.sum_eq_single (k : ι)]
-  · rw [← hb k, b.repr_self, Finsupp.single_eq_same, one_smul]
-  · intro j _ hjk
-    by_cases hj : j ∈ s
-    · -- Distinct normals in `s` are distinct members of the basis.
-      have hne : (⟨j, hj⟩ : s) ≠ k := fun h ↦ hjk (by rw [← h])
-      rw [← hb ⟨j, hj⟩, b.repr_self, Finsupp.single_eq_of_ne' hne, zero_smul]
-    · rw [hθ j hj, smul_zero]
-  · simp
-
 /-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
 the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel
 of `(ℝ / pℤ)^ι → V / p i(N)` whose coordinates outside `s` vanish is zero. -/
@@ -291,7 +276,7 @@ theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
   funext j
   by_cases hj : j ∈ s
   · -- In the basis `b` of normals indexed by `s`, the `j`-th coordinate equation reads `θ j = 0`.
-    exact (sum_repr_smul_eq_of_forall_notMem b hb hθs ⟨j, hj⟩).symm.trans (hθ ⟨j, hj⟩)
+    exact (b.sum_repr_smul_eq_of_forall_notMem hb hθs ⟨j, hj⟩).symm.trans (hθ ⟨j, hj⟩)
   · exact hθs j hj
 
 /-- If the only element of the kernel of `(ℝ / pℤ)^ι → V / p i(N)` supported on `s` is zero, then
@@ -597,7 +582,7 @@ extension by zero of `φ : (ℝ / pℤ)^A` back to `φ`. -/
 theorem vertexTorusHom_extend (φ : activeSet (facetPairing i u) c x → AddCircle p) :
     hx.vertexTorusHom p (Function.extend Subtype.val φ 0) = φ := by
   ext k
-  rw [vertexTorusHom_apply, sum_repr_smul_eq_of_forall_notMem hx.basis hx.basis_apply
+  rw [vertexTorusHom_apply, hx.basis.sum_repr_smul_eq_of_forall_notMem hx.basis_apply
     (fun j hj ↦ by rw [Function.extend_val_apply' hj, Pi.zero_apply]),
     Subtype.val_injective.extend_apply]
 

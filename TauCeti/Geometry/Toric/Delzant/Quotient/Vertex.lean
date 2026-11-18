@@ -707,9 +707,8 @@ theorem vertexChart_symm_apply
 
 open Classical in
 /-- **The vertex chart on a normalized representative.** If the coordinates outside `A` of a point
-`x` of the level are positive reals, then the class of `x` lies in the source of the chart, and
-the chart sends it to the coordinates of `x` in `A`. Every point of the source has such a
-representative, in its orbit under the kernel torus. -/
+`x` of the level are positive reals, then the chart sends the class of `x` to the coordinates of
+`x` in `A`. That this class lies in the source of the chart is `mk_mem_vertexChart_source`. -/
 theorem vertexChart_mk {x : delzantLevel i u c}
     (hx : ∀ j ∉ activeSet (facetPairing i u) c v, 0 < x.1.1 j ∧ x.1.2 j = 0) :
     vertexChart hv hi hvP (mk x) =
