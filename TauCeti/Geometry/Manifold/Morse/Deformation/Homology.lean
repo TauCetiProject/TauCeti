@@ -456,11 +456,8 @@ theorem isIso_singularHomologyMap_ofInclusionMap_sublevelPair_iff (hf : ContMDif
   -- Both inclusions, followed by the maps into `({f ≤ b}, {f ≤ s})`, send a point of `K` to itself.
   have hK' (z : K) : Subtype.val (α := M) (TopPair.Hom.fst (TopPair.ofInclusionMap
       (X := TopCat.of M) (Y := TopCat.of M) hLK (sublevel_mono f hst)
-      (ContinuousMap.inclusion hK) fun _ hx ↦ sublevel_mono f has (hL hx)) z) = z :=
-    Subtype.ext_iff.1 (TopPair.ofInclusionMap_fst_apply (X := TopCat.of M) (Y := TopCat.of M)
-      (s := L) (t := K) (s' := {x | f x ≤ s}) (t' := {x | f x ≤ t}) (hst := hLK)
-      (hst' := sublevel_mono f hst) (ContinuousMap.inclusion hK)
-      (fun _ hx ↦ sublevel_mono f has (hL hx)) z)
+      (ContinuousMap.inclusion hK) fun _ hx ↦ sublevel_mono f has (hL hx)) z) = z := by
+    simp
   have hfac : TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M) hLK
       (sublevel_mono f (has.trans (hst.trans htb)))
       (ContinuousMap.inclusion (hK.trans (sublevel_mono f htb))) (fun _ hx ↦ hL hx) ≫
@@ -476,9 +473,9 @@ theorem isIso_singularHomologyMap_ofInclusionMap_sublevelPair_iff (hf : ContMDif
     ((congrArg (TopPair.singularHomologyMap · R n) hfac).trans
       (TopPair.singularHomologyMap_comp _ R _ n))
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hv
+  · exact (MorphismProperty.isomorphisms _).of_postcomp _ _ hv
       ((congrArg IsIso hcomp).mp (IsIso.comp_isIso' h hu))
-  · exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hu
+  · exact (MorphismProperty.isomorphisms _).of_postcomp _ _ hu
       ((congrArg IsIso hcomp).mpr (IsIso.comp_isIso' h hv))
 
 end TauCeti

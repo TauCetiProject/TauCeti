@@ -186,34 +186,12 @@ theorem exists_isIso_singularHomologyMap_range_of_manifoldMorseIndex_eq_zero [T2
       linarith) n
   -- The inclusion factors through `({f ≤ c - ε} ∪ i(S), {f ≤ c - ε})`. The inclusion `hsl` of
   -- sublevels is a local hypothesis, so that the maps of pairs built from it can be rewritten.
-  have hsl : {y | f y ≤ c - ε} ⊆ {y | f y ≤ c + ε} := fun y (hy : f y ≤ c - ε) ↦
-    (by linarith : f y ≤ c + ε)
-  have hφ (z : range i) : Subtype.val (α := M) (TopPair.Hom.fst (TopPair.ofInclusionMap
-      (X := TopCat.of M) (Y := TopCat.of M) (empty_subset (range i))
-      (subset_union_left : {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪ range i)
-      (ContinuousMap.inclusion subset_union_right) (fun _ hx ↦ hx.elim)) z) = z := by
-    simp
-  have hψ (z : ({y | f y ≤ c - ε} ∪ range i : Set M)) :
-      Subtype.val (α := M) (TopPair.Hom.fst (TopPair.ofInclusionMap (X := TopCat.of M)
-        (Y := TopCat.of M) (subset_union_left : {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪ range i)
-        hsl (ContinuousMap.inclusion hA) (fun _ hx ↦ hx)) z) = z :=
-    Subtype.ext_iff.1 (TopPair.ofInclusionMap_fst_apply (X := TopCat.of M) (Y := TopCat.of M)
-      (s := {y | f y ≤ c - ε}) (t := {y | f y ≤ c - ε} ∪ range i) (s' := {y | f y ≤ c - ε})
-      (t' := {y | f y ≤ c + ε}) (hst := subset_union_left) (hst' := hsl)
-      (ContinuousMap.inclusion hA) (fun _ hx ↦ hx) z)
-  have hfac : TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
-      (empty_subset (range i)) hsl (ContinuousMap.inclusion (subset_union_right.trans hA))
-      (fun _ hx ↦ hx.elim) =
-      TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M) (empty_subset (range i))
-        (subset_union_left : {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪ range i)
-        (ContinuousMap.inclusion subset_union_right) (fun _ hx ↦ hx.elim) ≫
-      TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
-        (subset_union_left : {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪ range i)
-        hsl (ContinuousMap.inclusion hA) (fun _ hx ↦ hx) :=
-    TopPair.hom_ext_of_fst _ (by
-      ext x
-      exact Subtype.ext ((congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)).trans
-        ((hψ _).trans (hφ x)).symm))
+  have hsl : {y | f y ≤ c - ε} ⊆ {y | f y ≤ c + ε} := sublevel_mono f (by linarith)
+  have hfac := TopPair.ofInclusionMap_comp (X := TopCat.of M) (Y := TopCat.of M)
+    (Z := TopCat.of M) (hst := empty_subset (range i))
+    (hst' := (subset_union_left : {y | f y ≤ c - ε} ⊆ {y | f y ≤ c - ε} ∪ range i)) hsl
+    (ContinuousMap.inclusion subset_union_right) (ContinuousMap.inclusion hA)
+    (fun _ hx ↦ hx.elim) fun _ hx ↦ hx
   exact (congrArg IsIso ((congrArg (TopPair.singularHomologyMap · R n) hfac).trans
     (TopPair.singularHomologyMap_comp _ R _ n))).mpr (IsIso.comp_isIso' hexc (hiso R n))
 
@@ -268,8 +246,7 @@ theorem isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_ze
 homology of the submanifold.** Under the hypotheses of
 `isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero`, for `S` in the
 universe of `M`, `Hₙ({f ≤ b}, {f ≤ a})` is isomorphic to `Hₙ(S)`, in every degree and for every
-coefficient object of an abelian category with coproducts. The isomorphism is induced by `i`,
-followed by the quotient map from absolute to relative homology. -/
+coefficient object of an abelian category with coproducts. -/
 theorem nonempty_singularHomology_sublevelPair_iso_of_manifoldMorseIndex_eq_zero {S : Type u}
     [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] {i : SmoothEmbedding J I ∞ S M}
     [T2Space M] [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
@@ -284,11 +261,13 @@ theorem nonempty_singularHomology_sublevelPair_iso_of_manifoldMorseIndex_eq_zero
     inferInstanceAs (IsEmpty (∅ : Set M))
   have hπ : IsIso ((TopPair.ofInclusion (X := TopCat.of M)
     (empty_subset (range i))).singularHomologyπ R n) := inferInstance
+  obtain ⟨p, hπp, hpπ⟩ := hπ.out
+  obtain ⟨g, hfg, hgf⟩ :=
+    (h.isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero hfs hc hidx hac
+      hcb hcompact hcrit R n).out
   exact ⟨((AlgebraicTopology.singularHomologyFunctor A n).obj R).mapIso
       (TopCat.isoOfHomeo i.isEmbedding.toHomeomorph) ≪≫
-    @asIso _ _ _ _ _ hπ ≪≫
-    @asIso _ _ _ _ _ (h.isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero
-      hfs hc hidx hac hcb hcompact hcrit R n)⟩
+    ⟨_, p, hπp, hpπ⟩ ≪≫ ⟨_, g, hfg, hgf⟩⟩
 
 end IsNondegenerateCriticalSubmanifold
 
