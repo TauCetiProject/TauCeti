@@ -34,13 +34,24 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 
 ## Main definitions
 
+* `VertexOperator.id`: the identity field `id_V · z^0`, whose `(-1)`-mode is `1` and all other
+  modes vanish.
 * `VertexOperator.IsLocalOfOrder`: mutual locality of order at most `N`.
 
 ## Main results
 
 * `VertexOperator.ext_ncoeff`: vertex operators with the same normalized coefficients are equal.
+* `VertexOperator.support_ncoeff_add_apply_subset`,
+  `VertexOperator.finite_support_ncoeff_add_apply`,
+  `VertexOperator.finite_support_ncoeff_natCast_apply`: finite support of shifted nonnegative mode
+  evaluations on a vector.
 * `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`: locality is
   monotone in the order and symmetric.
+* `VertexOperator.IsLocalOfOrder.of_commute`: fields with pairwise commuting modes are local of
+  order `0`.
+* `VertexOperator.IsLocalOfOrder.zero_left`, `VertexOperator.IsLocalOfOrder.id_left`,
+  `VertexOperator.IsLocalOfOrder.add_left`, `VertexOperator.IsLocalOfOrder.smul_left`,
+  `VertexOperator.IsLocalOfOrder.sub_left`: linear and unit closure of mutual locality.
 
 ## References
 
@@ -79,6 +90,70 @@ theorem exists_forall_ncoeff_apply_eq_zero (A : VertexOperator R V) (v : V) :
   apply ncoeff_eq_zero_of_lt_order
   omega
 
+/-- If `(B[[n + i]]) v = 0` for all `i ≥ P`, then `fun i : ℕ ↦ (B[[n + i]]) v` is supported in
+`range P`. -/
+theorem support_ncoeff_add_apply_subset (B : VertexOperator R V) (n : ℤ) (v : V) {P : ℕ}
+    (hP : ∀ i : ℕ, P ≤ i → (B[[n + i]]) v = 0) :
+    (Function.support fun i : ℕ ↦ (B[[n + i]]) v) ⊆ range P := by
+  intro i hi
+  simp only [mem_coe, mem_range]
+  by_contra! h
+  exact hi (hP i h)
+
+/-- For any integer shift `n` and vector `v`, only finitely many indices `i : ℕ` have
+`(B[[n + i]]) v ≠ 0`. -/
+theorem finite_support_ncoeff_add_apply (B : VertexOperator R V) (n : ℤ) (v : V) :
+    (Function.support fun i : ℕ ↦ (B[[n + i]]) v).Finite := by
+  obtain ⟨N, hN⟩ := B.exists_forall_ncoeff_apply_eq_zero v
+  exact (finite_toSet (range (N + n.natAbs))).subset
+    (B.support_ncoeff_add_apply_subset n v fun _ hi ↦ hN _ (by omega))
+
+/-- Only finitely many nonnegative modes `B[[(i : ℤ)]]` (`i : ℕ`) are nonzero on a vector `v`. -/
+theorem finite_support_ncoeff_natCast_apply (B : VertexOperator R V) (v : V) :
+    (Function.support fun i : ℕ ↦ (B[[(i : ℤ)]]) v).Finite := by
+  simpa using B.finite_support_ncoeff_add_apply 0 v
+
+private theorem bddBelow_id (v : V) :
+    BddBelow (Function.support fun k : ℤ ↦ (if k = 0 then (1 : Module.End R V) else 0) v) :=
+  ⟨0, fun k hk ↦ by
+    by_contra! hlt
+    exact hk (by
+      have h₀ : k ≠ 0 := by omega
+      simp [h₀])⟩
+
+/-- The identity field `id_V · z^0`, sending each vector `v` to the constant Laurent series `v z^0`,
+whose `(-1)`-mode is `1` and all other normalized modes vanish. -/
+protected def id : VertexOperator R V :=
+  of_coeff (fun k ↦ if k = 0 then 1 else 0) bddBelow_id
+
+/-- Applying the identity field to `v` gives the constant Laurent series `v z^0`. -/
+@[simp]
+theorem id_apply (v : V) :
+    (VertexOperator.id : VertexOperator R V) v = HahnModule.of R (HahnSeries.single 0 v) := by
+  apply (HahnModule.of R).symm.injective
+  ext k
+  simp only [VertexOperator.id, of_coeff_apply_coeff, Equiv.symm_apply_apply,
+    HahnSeries.coeff_single]
+  split_ifs <;> simp_all
+
+/-- The normalized modes of the identity field are `(VertexOperator.id)[[n]] = δ_{n,-1}`. -/
+theorem ncoeff_id (n : ℤ) :
+    (VertexOperator.id : VertexOperator R V)[[n]] = if n = -1 then 1 else 0 := by
+  rw [VertexOperator.id, ncoeff_of_coeff]
+  have h : (-n - 1 = 0) ↔ (n = -1) := by omega
+  simp [h]
+
+/-- The `(-1)`-mode of the identity field is `1`. -/
+@[simp]
+theorem ncoeff_neg_one_id : (VertexOperator.id : VertexOperator R V)[[-1]] = 1 := by
+  simp [ncoeff_id]
+
+/-- All normalized modes of the identity field other than `-1` vanish. -/
+@[simp]
+theorem ncoeff_id_of_ne {n : ℤ} (hn : n ≠ -1) :
+    (VertexOperator.id : VertexOperator R V)[[n]] = 0 := by
+  simp [ncoeff_id, hn]
+
 /-- `A` and `B` are **mutually local of order at most `N`**: `(z - w)ᴺ [A(z), B(w)] = 0`. In
 normalized coefficients, for all integers `m` and `n`,
 `∑_{i + j = N} (-1)ʲ (N choose i) [A₍ₘ₊ᵢ₎, B₍ₙ₊ⱼ₎] = 0`. -/
@@ -94,7 +169,12 @@ theorem isLocalOfOrder_iff {A B : VertexOperator R V} {N : ℕ} :
 
 namespace IsLocalOfOrder
 
-variable {A B : VertexOperator R V} {N : ℕ}
+variable {A B C : VertexOperator R V} {M N : ℕ}
+
+/-- Two fields whose modes pairwise commute are mutually local of order `0`. -/
+theorem of_commute (h : ∀ m n : ℤ, Commute (A[[m]]) (B[[n]])) : A.IsLocalOfOrder B 0 := by
+  intro m n
+  simp [sub_eq_zero.mpr (h m n).eq]
 
 /-- Locality of order `N` implies locality of order `N + 1`: the sum for `N + 1` at `(m, n)` is
 the sum for `N` at `(m + 1, n)` minus the sum for `N` at `(m, n + 1)`. -/
@@ -143,6 +223,102 @@ theorem symm (h : A.IsLocalOfOrder B N) : B.IsLocalOfOrder A N := by
     rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm, hN]
     module
   rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
+
+/-- The zero field is local of any order `N` to every field. -/
+@[simp]
+theorem zero_left (B : VertexOperator R V) (N : ℕ) :
+    (0 : VertexOperator R V).IsLocalOfOrder B N := by
+  intro m n
+  simp
+
+/-- Every field is local of any order `N` to the zero field. -/
+@[simp]
+theorem zero_right (A : VertexOperator R V) (N : ℕ) : A.IsLocalOfOrder 0 N :=
+  (zero_left A N).symm
+
+/-- The identity field is local of any order `N` to every field. -/
+@[simp]
+theorem id_left (B : VertexOperator R V) (N : ℕ) :
+    (VertexOperator.id : VertexOperator R V).IsLocalOfOrder B N :=
+  (of_commute fun m _ ↦ by
+    rw [ncoeff_id]
+    split_ifs
+    · exact Commute.one_left _
+    · exact Commute.zero_left _).mono (Nat.zero_le N)
+
+/-- Every field is local of any order `N` to the identity field. -/
+@[simp]
+theorem id_right (A : VertexOperator R V) (N : ℕ) :
+    A.IsLocalOfOrder VertexOperator.id N :=
+  (id_left A N).symm
+
+/-- Sums of fields local to `C` are local to `C`. -/
+theorem add_left (hA : A.IsLocalOfOrder C M) (hB : B.IsLocalOfOrder C N) :
+    (A + B).IsLocalOfOrder C (max M N) := by
+  have hA' := hA.mono (le_max_left M N)
+  have hB' := hB.mono (le_max_right M N)
+  intro m n
+  have e : ∀ ij ∈ antidiagonal (max M N),
+      (max M N).choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        ((A + B)[[m + ij.1]] * C[[n + ij.2]] - C[[n + ij.2]] * (A + B)[[m + ij.1]]) =
+      (max M N).choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A[[m + ij.1]] * C[[n + ij.2]] - C[[n + ij.2]] * A[[m + ij.1]]) +
+      (max M N).choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (B[[m + ij.1]] * C[[n + ij.2]] - C[[n + ij.2]] * B[[m + ij.1]]) := by
+    intro ij _
+    simp only [map_add, Pi.add_apply, add_mul, mul_add]
+    module
+  rw [sum_congr rfl e, sum_add_distrib, hA' m n, hB' m n, add_zero]
+
+/-- A field local to two fields is local to their sum. -/
+theorem add_right (hB : A.IsLocalOfOrder B M) (hC : A.IsLocalOfOrder C N) :
+    A.IsLocalOfOrder (B + C) (max M N) :=
+  (hB.symm.add_left hC.symm).symm
+
+/-- Scalar multiples preserve locality on the left. -/
+theorem smul_left (r : R) (h : A.IsLocalOfOrder B N) : (r • A).IsLocalOfOrder B N := by
+  intro m n
+  have e : ∀ ij ∈ antidiagonal N,
+      N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        ((r • A)[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * (r • A)[[m + ij.1]]) =
+      r • (N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]])) := by
+    intro ij _
+    simp only [map_smul, Pi.smul_apply, smul_mul_assoc, mul_smul_comm, smul_sub, smul_comm r]
+  rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
+
+/-- Scalar multiples preserve locality on the right. -/
+theorem smul_right (r : R) (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder (r • B) N :=
+  (h.symm.smul_left r).symm
+
+/-- Negation preserves locality on the left. -/
+theorem neg_left (h : A.IsLocalOfOrder B N) : (-A).IsLocalOfOrder B N :=
+  neg_one_smul R A ▸ h.smul_left (-1 : R)
+
+/-- Negating the left field does not change locality of order `N`. -/
+@[simp]
+theorem neg_left_iff : (-A).IsLocalOfOrder B N ↔ A.IsLocalOfOrder B N :=
+  ⟨fun h ↦ neg_neg A ▸ h.neg_left, neg_left⟩
+
+/-- Negation preserves locality on the right. -/
+theorem neg_right (h : A.IsLocalOfOrder B N) : A.IsLocalOfOrder (-B) N :=
+  h.symm.neg_left.symm
+
+/-- Negating the right field does not change locality of order `N`. -/
+@[simp]
+theorem neg_right_iff : A.IsLocalOfOrder (-B) N ↔ A.IsLocalOfOrder B N :=
+  ⟨fun h ↦ neg_neg B ▸ h.neg_right, neg_right⟩
+
+/-- Differences of fields local to `C` are local to `C`. -/
+theorem sub_left (hA : A.IsLocalOfOrder C M) (hB : B.IsLocalOfOrder C N) :
+    (A - B).IsLocalOfOrder C (max M N) := by
+  rw [sub_eq_add_neg]
+  exact hA.add_left hB.neg_left
+
+/-- A field local to two fields is local to their difference. -/
+theorem sub_right (hB : A.IsLocalOfOrder B M) (hC : A.IsLocalOfOrder C N) :
+    A.IsLocalOfOrder (B - C) (max M N) :=
+  (hB.symm.sub_left hC.symm).symm
 
 end IsLocalOfOrder
 

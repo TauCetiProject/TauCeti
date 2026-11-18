@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Vertex.Derivative
-public import Mathlib.Algebra.Lie.OfAssociative
 
 /-!
 # Formal vertex algebras
@@ -15,7 +14,7 @@ A formal vertex algebra on an `R`-module `V` (`TauCeti.FormalVertexAxioms`) cons
 linear state–field map `a ↦ Y(a,z) = ∑ₙ a₍ₙ₎ z^{-n-1}` into Mathlib's fields
 `VertexOperator R V`, a vacuum vector `|0⟩` and a translation operator `T`, subject to:
 
-* the vacuum axioms `T|0⟩ = 0` and `Y(|0⟩,z) = id`;
+* the vacuum axioms `T|0⟩ = 0` and `Y(|0⟩,z) = id` (`TauCeti.FormalVertexAxioms.field_vacuum`);
 * creation: `Y(a,z)|0⟩` has no negative powers of `z`, and its constant term is `a`;
 * the state-derivative identity `Y(Ta,z) = ∂_z Y(a,z)`;
 * translation covariance `[T, Y(a,z)] = ∂_z Y(a,z)`, that is `[T, a₍ₙ₎] = -n a₍ₙ₋₁₎`;
@@ -36,6 +35,7 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
 ## Main results
 
 * `TauCeti.FormalVertexAxioms.ext`: a formal vertex algebra is determined by its state–field map.
+* `TauCeti.FormalVertexAxioms.field_vacuum`: `Y(|0⟩, z) = VertexOperator.id`.
 * `TauCeti.FormalVertexAxioms.translation_apply`: `T a = a₍₋₂₎|0⟩`.
 * `TauCeti.FormalVertexAxioms.translation_ncoeff_apply`:
   `T (a₍ₙ₎ b) = (T a)₍ₙ₎ b + a₍ₙ₎ (T b)`.
@@ -115,6 +115,12 @@ theorem ncoeff_neg_one_field_vacuum : (A.field A.vacuum)[[-1]] = 1 := by
 theorem ncoeff_field_vacuum_of_ne {n : ℤ} (hn : n ≠ -1) : (A.field A.vacuum)[[n]] = 0 := by
   simp [A.ncoeff_field_vacuum, hn]
 
+-- `@[simp]` is omitted so `ncoeff_neg_one_field_vacuum` and `ncoeff_field_vacuum_of_ne` remain in
+-- simp normal form.
+/-- The field of the vacuum vector is the identity vertex operator `VertexOperator.id`. -/
+theorem field_vacuum : A.field A.vacuum = VertexOperator.id :=
+  ext_ncoeff fun n ↦ by rw [A.ncoeff_field_vacuum, ncoeff_id]
+
 /-- The state–field map is injective: `a` is recovered as `a₍₋₁₎|0⟩`. -/
 theorem field_injective : Function.Injective A.field := by
   intro a b h
@@ -149,15 +155,8 @@ theorem translation_apply (a : V) : A.translation a = ((A.field a)[[-2]]) A.vacu
 /-- The creation identity without division: `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`. -/
 theorem factorial_smul_ncoeff_field_apply_vacuum (a : V) (k : ℕ) :
     k.factorial • ((A.field a)[[-k - 1]]) A.vacuum = (A.translation ^ k) a := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have h := A.translation_ncoeff_apply_vacuum a (-k - 1)
-    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
-    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
-    rw [h₁, h₂, natCast_zsmul] at h
-    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
-      smul_comm]
+  simpa using factorial_smul_ncoeff_apply_of_lie_eq_derivative A.translation_vacuum
+    (A.lie_translation_ncoeff a) k
 
 /-- The creation identity `Y(a,z)|0⟩ = e^{zT} a`, in modes: `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!`. -/
 theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :

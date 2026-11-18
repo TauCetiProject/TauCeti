@@ -19,9 +19,12 @@ on each vector, truncation follows from truncation of `B` on that vector and on 
 finitely many vectors obtained by applying `A[[i]]`, for `0 ≤ i ≤ n`.
 
 The construction is bilinear. If the fields are local of order `N`, all products
-with index at least `N` vanish. These are the singular products used in the
-operator product expansion; negative residue products involve normal ordering
-and are not constructed here.
+with index at least `N` vanish. On a vector killed by all nonnegative modes of `A` and `B`,
+nonnegative residue products also vanish in all nonnegative modes, and their `(-1)`-mode acts as
+`A[[n]] ∘ B[[-1]]` (`VertexOperator.ncoeff_nonnegResidueProduct_apply_of_nonneg`,
+`VertexOperator.ncoeff_neg_one_nonnegResidueProduct_apply`). These are the singular products used
+in the operator product expansion; negative residue products involve normal ordering and are not
+constructed here.
 
 ## References
 
@@ -117,6 +120,29 @@ theorem ncoeff_nonnegResidueProduct (n : ℕ) (A B : VertexOperator R V) (m : �
       ∑ ij ∈ antidiagonal n, n.choose ij.1 • (-1 : ℤ) ^ ij.2 •
         (A[[(ij.1 : ℤ)]] * B[[m + ij.2]] - B[[m + ij.2]] * A[[(ij.1 : ℤ)]]) := by
   simp [nonnegResidueProduct]
+
+/-- Nonnegative residue products preserve annihilation of a vector by all nonnegative modes. -/
+theorem ncoeff_nonnegResidueProduct_apply_of_nonneg {A B : VertexOperator R V} {v : V}
+    (hA : ∀ m : ℤ, 0 ≤ m → (A[[m]]) v = 0)
+    (hB : ∀ m : ℤ, 0 ≤ m → (B[[m]]) v = 0) (n : ℕ) {m : ℤ} (hm : 0 ≤ m) :
+    ((nonnegResidueProduct n A B)[[m]]) v = 0 := by
+  rw [ncoeff_nonnegResidueProduct, LinearMap.sum_apply]
+  refine sum_eq_zero fun ij _ ↦ ?_
+  simp only [LinearMap.smul_apply, LinearMap.sub_apply, mul_apply_eq_comp,
+    hA ij.1 (Nat.cast_nonneg _), hB (m + ij.2) (by omega), map_zero, sub_zero, smul_zero]
+
+/-- On a vector killed by nonnegative modes of `A` and `B`, the `(-1)`-mode of
+`nonnegResidueProduct n A B` acts as `A[[n]] ∘ B[[-1]]`. -/
+theorem ncoeff_neg_one_nonnegResidueProduct_apply {A B : VertexOperator R V} {v : V}
+    (hA : ∀ m : ℤ, 0 ≤ m → (A[[m]]) v = 0)
+    (hB : ∀ m : ℤ, 0 ≤ m → (B[[m]]) v = 0) (n : ℕ) :
+    ((nonnegResidueProduct n A B)[[-1]]) v = (A[[(n : ℤ)]]) ((B[[-1]]) v) := by
+  rw [ncoeff_nonnegResidueProduct, LinearMap.sum_apply,
+    sum_eq_single (n, 0) (fun ij hij hne ↦ ?_) (by simp)]
+  · simp [hA n (Nat.cast_nonneg _)]
+  · have hj : ij.2 ≠ 0 := fun hj ↦ hne (Prod.ext (by simpa [hj] using mem_antidiagonal.1 hij) hj)
+    simp only [LinearMap.smul_apply, LinearMap.sub_apply, mul_apply_eq_comp,
+      hA ij.1 (Nat.cast_nonneg _), hB (-1 + ij.2) (by omega), map_zero, sub_zero, smul_zero]
 
 /-- Locality kills every nonnegative residue product at or above its order bound. -/
 theorem IsLocalOfOrder.nonnegResidueProduct_eq_zero {A B : VertexOperator R V} {N : ℕ}
