@@ -24,8 +24,9 @@ This file provides generic results about full submodules over fraction fields. I
 ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
 between full submodules to rational linear equivalences of their ambient spaces, and proves that
 surjective linear maps preserve full lattices over commutative-ring algebras, as do finite
-products. Finally, a free full lattice over an integral domain rationalizes to its ambient vector
-space over the fraction field.
+products. Injective linear maps pull back full lattices over localizations of Noetherian
+commutative rings. Finally, a free full lattice over an integral domain rationalizes to its ambient
+vector space over the fraction field.
 
 ## Main declarations
 
@@ -41,6 +42,9 @@ space over the fraction field.
   with restricting a submodule to another submodule.
 * `Submodule.isLattice_span`: the span of a finite set spanning the ambient module is a full
   lattice.
+* `Submodule.isLattice_comap_of_isLocalization`: pullback of a full lattice along an injective
+  linear map over a localization of a Noetherian commutative ring.
+* `Submodule.isLattice_comap`: the specialization to the total ring of fractions.
 * `Module.Finite.of_isLattice`: a module containing a full lattice is finite.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
   same finrank.
@@ -318,6 +322,35 @@ theorem isLattice_map (S : Submodule R V) [S.IsLattice A] (f : V →ₗ[A] W)
   span_eq_top := by
     simp [Submodule.map_coe, Submodule.span_image, _root_.Submodule.IsLattice.span_eq_top,
       LinearMap.range_eq_top.mpr hf]
+
+/-- Pulling back a full lattice along an injective linear map over a localization of a
+Noetherian commutative ring gives a full lattice. -/
+theorem isLattice_comap_of_isLocalization (M : Submonoid R) [IsLocalization M A]
+    [IsNoetherianRing R] (S : Submodule R V) [S.IsLattice A] (f : W →ₗ[A] V)
+    (hf : Function.Injective f) : (S.comap (f.restrictScalars R)).IsLattice A where
+  fg := Submodule.fg_of_fg_map_injective (f.restrictScalars R)
+    (fun _ _ h ↦ hf (by simpa using h))
+    (Submodule.FG.of_le _root_.Submodule.IsLattice.fg (Submodule.map_comap_le _ _))
+  span_eq_top := by
+    apply top_unique
+    intro w _
+    obtain ⟨r, hr⟩ := multiple_mem_span_of_mem_localization_span M A (S : Set V) (f w)
+      (by rw [_root_.Submodule.IsLattice.span_eq_top]; exact Submodule.mem_top)
+    have hmem : (r : R) • w ∈ S.comap (f.restrictScalars R) := by
+      simpa only [Submonoid.smul_def, Submodule.span_eq, Submodule.mem_comap,
+        LinearMap.restrictScalars_apply, LinearMap.map_smul_of_tower] using hr
+    have hspan : algebraMap R A (r : R) • w ∈
+        Submodule.span A (S.comap (f.restrictScalars R) : Set W) := by
+      rw [algebraMap_smul]
+      exact Submodule.subset_span hmem
+    exact (Submodule.smul_mem_iff_of_isUnit _ (IsLocalization.map_units A r)).mp hspan
+
+/-- Pulling back a full lattice along an injective linear map over the total ring of fractions
+of a Noetherian commutative ring gives a full lattice. -/
+theorem isLattice_comap [IsFractionRing R A] [IsNoetherianRing R]
+    (S : Submodule R V) [S.IsLattice A] (f : W →ₗ[A] V) (hf : Function.Injective f) :
+    (S.comap (f.restrictScalars R)).IsLattice A :=
+  isLattice_comap_of_isLocalization (nonZeroDivisors R) S f hf
 
 end Map
 

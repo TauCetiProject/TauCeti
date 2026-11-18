@@ -69,6 +69,8 @@ theorem pushforwardSymmetricPowerComparison_id (n : ℕ) (M : X.Modules) :
   -- wrappers.
   change ((SheafOfModules.pushforwardSymmetricPowerComparison (S := X.sheaf) (R := X.sheaf)
       (𝟙 X : X ⟶ X).toRingCatSheafHom n).app M).val.app U _ = _
+  -- The evaluation lemmas are stated with the sheaf of rings unfolded.
+  dsimp only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
   rw [_root_.SheafOfModules.symmetricPower_map_val_app_unit (R := X.sheaf) n
     ((Scheme.Modules.pushforwardId X).hom.app M) U x]
   -- `erw`: the evaluation lemma is stated for `SheafOfModules.pushforward`, which

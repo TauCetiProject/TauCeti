@@ -18,8 +18,9 @@ subgroup either contains the stabilizer, and is then the whole group, or meets i
 acts regularly. Ruling out regular normal subgroups is therefore a simplicity criterion.
 
 For degree `p + 1` with `p` prime, an element of order `p` in the stabilizer rules out a regular
-normal subgroup whenever two distinct primes divide the degree: the stabilizer acts faithfully by
-conjugation on such a subgroup, and the prime-order automorphism bound
+normal subgroup whenever two distinct primes divide the degree
+(`TauCeti.stabilizer_ne_bot_of_card_eq_succ`): the stabilizer acts faithfully by conjugation on
+such a subgroup, and the prime-order automorphism bound
 `MulAut.orderOf_ne_prime_of_card_eq_succ` applies.
 -/
 
@@ -55,6 +56,28 @@ theorem isSimpleGroup_of_isSimpleGroup_stabilizer_of_forall_stabilizer_ne_bot
     exact (stabilizer_orbit_eq (Subgroup.subgroupOf_eq_top.mp hi)).symm.trans
       (by rw [orbit_eq_univ, stabilizer_univ])
 
+/-- **No regular normal subgroup in degree `p + 1`.** Let a group act faithfully on `p + 1`
+points, `p` prime, with two distinct primes dividing `p + 1`, and let a point stabilizer contain an
+element of order `p`. Then no normal subgroup acts regularly: every transitive normal subgroup has
+a nontrivial point stabilizer. -/
+theorem stabilizer_ne_bot_of_card_eq_succ
+    {G X : Type*} [Group G] [MulAction G X] [FaithfulSMul G X] (x : X)
+    {p q r : ℕ} (hp : p.Prime) (hcard : Nat.card X = p + 1)
+    (hq : q.Prime) (hr : r.Prime) (hqr : q ≠ r)
+    (hqdvd : q ∣ Nat.card X) (hrdvd : r ∣ Nat.card X)
+    (a : stabilizer G x) (ha : orderOf a = p)
+    (N : Subgroup G) [N.Normal] [IsPretransitive N X] : stabilizer N x ≠ ⊥ := by
+  intro hN
+  -- A regular normal subgroup has `p + 1` elements, and the stabilizer acts faithfully on it by
+  -- conjugation: this gives an automorphism of order `p` of a group of order `p + 1`.
+  have hcardN : Nat.card N = Nat.card X := by
+    rw [← Subgroup.index_bot, ← hN, index_stabilizer_of_transitive]
+  let f := (MulAut.conjNormal (H := N)).comp (stabilizer G x).subtype
+  have hf : orderOf (f a) = p :=
+    (orderOf_injective f (N.stabilizer_conjNormal_injective x) a).trans ha
+  exact MulAut.orderOf_ne_prime_of_card_eq_succ (f a) hp (hcardN.trans hcard)
+    hq hr hqr (hcardN ▸ hqdvd) (hcardN ▸ hrdvd) hf
+
 /-- A group acting faithfully and quasi-primitively with degree `p + 1` for a prime `p` is simple
 if a point stabilizer is simple and contains an element of order `p`, and two distinct primes
 divide the degree: the stabilizer cannot act faithfully on a regular normal subgroup. -/
@@ -64,15 +87,8 @@ theorem isSimpleGroup_of_isSimpleGroup_stabilizer_of_card_eq_succ
     {p q r : ℕ} (hp : p.Prime) (hcard : Nat.card X = p + 1)
     (hq : q.Prime) (hr : r.Prime) (hqr : q ≠ r)
     (hqdvd : q ∣ Nat.card X) (hrdvd : r ∣ Nat.card X)
-    (a : stabilizer G x) (ha : orderOf a = p) : IsSimpleGroup G := by
-  refine isSimpleGroup_of_isSimpleGroup_stabilizer_of_forall_stabilizer_ne_bot x
-    fun N _ _ hN ↦ ?_
-  have hcardN : Nat.card N = Nat.card X := by
-    rw [← Subgroup.index_bot, ← hN, index_stabilizer_of_transitive]
-  let f := (MulAut.conjNormal (H := N)).comp (stabilizer G x).subtype
-  have hf : orderOf (f a) = p :=
-    (orderOf_injective f (N.stabilizer_conjNormal_injective x) a).trans ha
-  exact MulAut.orderOf_ne_prime_of_card_eq_succ (f a) hp (hcardN.trans hcard)
-    hq hr hqr (hcardN ▸ hqdvd) (hcardN ▸ hrdvd) hf
+    (a : stabilizer G x) (ha : orderOf a = p) : IsSimpleGroup G :=
+  isSimpleGroup_of_isSimpleGroup_stabilizer_of_forall_stabilizer_ne_bot x fun N _ _ ↦
+    stabilizer_ne_bot_of_card_eq_succ x hp hcard hq hr hqr hqdvd hrdvd a ha N
 
 end TauCeti

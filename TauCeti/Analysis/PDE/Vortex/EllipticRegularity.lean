@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Sobolev
 import Mathlib.MeasureTheory.SpecificCodomains.WithLp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.PDE.Vortex.Multiplier
@@ -290,14 +291,12 @@ private theorem contDiff_gaugeFixedZerothOrderMatrix_and_bounded {k : ℕ}
     have he : (fun z ↦ (x z - vacuumField z) a) = (fun z ↦ x z a) - fun _ ↦ vacuumField 0 a :=
       funext fun z ↦ by simp only [PiLp.sub_apply, Pi.sub_apply, vacuumField_apply]
     rw [he]
-    -- A single bound for the derivatives through order `k`, summing the bounds for each order.
-    choose! C hC using hbound a
-    refine ⟨hxa.sub contDiff_const, ∑ n ∈ Finset.range (k + 1), |C n| + ‖vacuumField 0 a‖,
-      by positivity, fun n hn z ↦ ?_⟩
+    -- A single bound for the derivatives through order `k`.
+    obtain ⟨M, hMx⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (hbound a)
+    have hM := (nonneg_and_norm_le_of_norm_iteratedFDeriv_le hMx).1
+    refine ⟨hxa.sub contDiff_const, M + ‖vacuumField 0 a‖, by positivity, fun n hn z ↦ ?_⟩
     rw [iteratedFDeriv_sub_apply (hxa.contDiffAt.of_le (mod_cast le_top)) contDiffAt_const]
-    refine (norm_sub_le _ _).trans (add_le_add ((hC n hn z).trans ((le_abs_self _).trans
-      (Finset.single_le_sum (f := fun n ↦ |C n|) (fun _ _ ↦ abs_nonneg _)
-        (Finset.mem_range.2 (Nat.lt_succ_of_le hn))))) ?_)
+    refine (norm_sub_le _ _).trans (add_le_add (hMx n hn z) ?_)
     rcases eq_or_ne n 0 with rfl | hn
     · simp
     · simp [iteratedFDeriv_const_of_ne hn]
@@ -580,7 +579,8 @@ private theorem gaugeFixedZerothOrder_mem_sobolevFields_of_mem_framedFieldSpace
   refine mem_sobolevFields.2 fun i ↦ ?_
   convert Submodule.sum_mem _ fun j (_ : j ∈ Finset.univ) ↦ hentry i j j using 1
   ext z
-  simp [gaugeFixedZerothOrder]
+  rw [gaugeFixedZerothOrder_apply]
+  simp
 
 /-- **Elliptic regularity at a field of `A_m^s`.** Let `x` be a smooth field of `A_m^s` with
 `s > 2`, and let `k ≤ s`. A square-integrable weak solution of `L_x y = g` with `g ∈ H^k` lies in
