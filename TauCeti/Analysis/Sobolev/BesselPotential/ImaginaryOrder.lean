@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+public import TauCeti.Analysis.Sobolev.BesselPotential.ComplexOrder
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Cpow
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
@@ -38,9 +39,10 @@ with
 `‖J^z‖_{H^{s,p} → H^{s - re z,p}} ≤ C (1 + |im z|) ^ N`
 
 for a constant `C` independent of `s` and `z`
-(`BesselPotentialSpace.exists_norm_besselPotentialCLM_le`). These are the analytic families of
-operators of admissible growth in Stein's interpolation theorem, which interpolates operators
-between the spaces `H^{s,p}` of different orders `s`.
+(`BesselPotentialSpace.exists_norm_besselPotentialCLM_le`). This polynomial bound is the
+admissible-growth estimate that Stein's interpolation theorem for analytic families of operators
+needs on the scale of spaces `H^{s,p}` of different orders `s`; this file does not prove
+holomorphy in `z`.
 
 ## Main declarations
 
@@ -51,7 +53,8 @@ between the spaces `H^{s,p}` of different orders `s`.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_japaneseBracketCpow`: `J^z` maps
   `H^{s,p}` into `H^{s - re z,p}`.
 * `BesselPotentialSpace.besselPotentialCLM`: `J^z` as a bounded operator
-  `H^{s,p}(E, F) →L[ℂ] H^{s - re z,p}(E, F)`, and
+  `H^{s,p}(E, F) →L[ℂ] H^{s - re z,p}(E, F)`, agreeing with `SchwartzMap.besselPotentialCLM z`
+  on Schwartz functions (`BesselPotentialSpace.besselPotentialCLM_toBesselPotentialSpaceCLM`), and
   `BesselPotentialSpace.exists_norm_besselPotentialCLM_le` its norm bound `C (1 + |im z|) ^ N`.
 
 ## References
@@ -87,9 +90,10 @@ theorem besselPotential_fourierMultiplierCLM_japaneseBracketCpow (s : ℝ) (z : 
         (besselPotential E F s u) := by
   have hr (r : ℝ) : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)).HasTemperateGrowth :=
     Complex.hasTemperateGrowth_ofReal.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _)
-  -- `besselPotential E F r` is by definition the Fourier multiplier with the real bracket power.
+  -- `besselPotential E F r` is the Fourier multiplier with the real bracket power.
   have hb (r : ℝ) (v : 𝓢'(E, F)) : besselPotential E F r v =
-      fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) v := rfl
+      fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) v := by
+    rw [besselPotential]
   rw [hb, hb, fourierMultiplierCLM_fourierMultiplierCLM_apply
       (TauCeti.hasTemperateGrowth_japaneseBracketCpow z) (hr _),
     fourierMultiplierCLM_fourierMultiplierCLM_apply (hr _)
@@ -177,6 +181,19 @@ theorem toDistr_besselPotentialCLM (hp : 1 < p) (hp_top : p ≠ ∞) (z : ℂ) (
     (besselPotentialCLM hp hp_top z u).toDistr =
       fourierMultiplierCLM F (TauCeti.japaneseBracketCpow z) u.toDistr :=
   toDistr_mapCLM _ _ u
+
+/-- On Schwartz functions, `besselPotentialCLM hp hp_top z` is the Bessel potential
+`SchwartzMap.besselPotentialCLM z` of complex order. -/
+@[simp]
+theorem besselPotentialCLM_toBesselPotentialSpaceCLM (hp : 1 < p) (hp_top : p ≠ ∞) (z : ℂ)
+    (u : 𝓢(E, F)) :
+    besselPotentialCLM hp hp_top z (SchwartzMap.toBesselPotentialSpaceCLM s p u) =
+      SchwartzMap.toBesselPotentialSpaceCLM (s - z.re) p (SchwartzMap.besselPotentialCLM z u) := by
+  ext1
+  rw [toDistr_besselPotentialCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+    SchwartzMap.toDistr_toBesselPotentialSpaceCLM, SchwartzMap.besselPotentialCLM_def,
+    fourierMultiplierCLM_toTemperedDistributionCLM_eq
+      (TauCeti.hasTemperateGrowth_japaneseBracketCpow z)]
 
 /-- **The norm of `J^z` on the Sobolev scale grows polynomially in the imaginary part of the
 order.** For `1 < p < ∞` there is a constant `C`, independent of `s` and `z`, such that

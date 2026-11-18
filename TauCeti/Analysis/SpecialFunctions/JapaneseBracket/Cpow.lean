@@ -242,8 +242,8 @@ theorem hasFDerivAt_japaneseBracketCpow (z : ℂ) (x : H) :
   have hmem : ((1 + ‖x‖ ^ 2 : ℝ) : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.2 (by positivity)
   have hg := ((hasStrictDerivAt_cpow_const (c := z / 2) hmem).hasDerivAt.hasFDerivAt.restrictScalars
     ℝ).comp x hq
-  -- `japaneseBracketCpow z` is by definition `w ↦ w ^ (z / 2)` after `y ↦ 1 + ‖y‖ ^ 2`.
-  refine (hg.congr_fderiv ?_ :)
+  rw [funext (japaneseBracketCpow_def z)]
+  refine hg.congr_fderiv ?_
   ext v
   simp [japaneseBracketCpow, show (z - 2) / 2 = z / 2 - 1 by ring]
   ring
@@ -324,9 +324,10 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le (k : ℕ) :
       fun z x ↦ ?_⟩
     have hfd : fderiv ℝ (japaneseBracketCpow z : H → ℂ) =
         fun y ↦ japaneseBracketCpow (z - 2) y • (z • Λ) y := by
-      -- `Λ y` is by definition `ofRealCLM.comp (innerSL ℝ y)`.
       rw [fderiv_japaneseBracketCpow]
-      rfl
+      funext y
+      ext v
+      simp [Λ]
     rw [← norm_iteratedFDeriv_fderiv, hfd]
     refine (norm_iteratedFDeriv_smul_le (contDiff_japaneseBracketCpow (z - 2)) (z • Λ).contDiff x
       (mod_cast le_top)).trans ?_
