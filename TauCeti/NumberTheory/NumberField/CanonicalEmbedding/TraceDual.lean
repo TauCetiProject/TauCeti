@@ -172,7 +172,7 @@ theorem comap_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
     refine ⟨∑ i, (n i : ℚ) • β.traceDual i, ?_, ?_⟩
     · have hspan : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) :
           Submodule (𝓞 K) K).restrictScalars ℤ = Submodule.span ℤ (Set.range β.traceDual) := by
-        rw [FractionalIdeal.coe_dual _ _ I.ne_zero]
+        rw [FractionalIdeal.coeToSubmodule_dual _ _ I.ne_zero]
         refine Submodule.traceDual_span_of_basis ℤ _ β ?_
         ext x
         simp [β, mem_span_basisOfFractionalIdeal]

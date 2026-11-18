@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 
 /-!
 # The finite-dimensional ℓ¹ unit ball

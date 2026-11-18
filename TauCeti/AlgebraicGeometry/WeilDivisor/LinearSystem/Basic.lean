@@ -150,7 +150,7 @@ lemma completeLinearSystem_eq_empty_of_weightedDegree_neg {w : X → ℤ} (hw : 
   have hEeff : 0 ≤ E := (S.mem_completeLinearSystem.mp hE).1
   have hdeg : weightedDegree w E = weightedDegree w D :=
     S.weightedDegree_eq_of_mem_completeLinearSystem h hE
-  have hpos : 0 ≤ weightedDegree w E := weightedDegree_nonneg hw hEeff
+  have hpos : 0 ≤ weightedDegree w E := weightedDegree_nonneg (fun x _ => hw x) hEeff
   rw [hdeg] at hpos
   exact absurd hD (not_lt.mpr hpos)
 

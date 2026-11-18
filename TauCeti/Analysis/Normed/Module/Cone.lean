@@ -30,16 +30,22 @@ variables: if `g` decays rapidly on a cone around `a ζ₀ ≠ 0`, then `g (a ζ
 on the cone of those `ζ` with `a ζ` in that cone and `‖b ζ‖ < c ‖a ζ‖`. This is how the localized
 Fourier transform of a tensor product inherits the decay of one of its factors.
 
+In a proper space, if every unit vector lies in an open cone, finitely many of these cones cover
+the nonzero vectors, by compactness of the unit sphere. This is how conditions imposed direction by
+direction combine into one condition on the whole frequency space.
+
 ## Main results
 
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
   superposition of translates of a function decaying at order `N` on `Γ`, with rapidly decreasing
-  coefficients.
+  coefficients, bounded by a weighted `ℓ¹` norm of the coefficients.
 * `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
   grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
+* `TauCeti.exists_finset_compl_singleton_subset_biUnion`: if every unit vector lies in an open
+  cone, finitely many of these cones cover the nonzero vectors.
 
 ## References
 
@@ -106,15 +112,17 @@ variable {E : Type*} [NormedAddCommGroup E]
 `∑ i, a i • F (η - v i)` of translates of a function `F` of polynomial growth, with coefficients
 `a i` rapidly decreasing in `‖v i‖`, decays on every set `Γ'` whose conic neighbourhoods
 `closedBall η (c ‖η‖)`, `c > 0`, lie in a set `Γ`, at every order `N` at which `F` decays on `Γ`:
-if `(1 + ‖η‖) ^ N ‖F η‖` is bounded on `Γ`, then `(1 + ‖η‖) ^ N ‖∑ i, a i • F (η - v i)‖` is
-bounded on `Γ'`. -/
+if `F` grows at most like `(1 + ‖ζ‖) ^ k` and `(1 + ‖η‖) ^ N ‖F η‖` is bounded on `Γ`, then
+`(1 + ‖η‖) ^ N ‖∑ i, a i • F (η - v i)‖` is bounded on `Γ'` by
+`D ∑ i, (1 + ‖v i‖) ^ (N + 2 k) ‖a i‖`, with a constant `D ≥ 0` independent of the coefficients. -/
 theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [NormedField 𝕜]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {v : ι → E} {a : ι → 𝕜}
-    (ha : ∀ j : ℕ, Summable fun i ↦ (1 + ‖v i‖) ^ j * ‖a i‖) {F : E → G} {C₀ : ℝ} {k : ℕ}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (v : ι → E) {F : E → G} {C₀ : ℝ} {k : ℕ}
     (hF : ∀ ζ, ‖F ζ‖ ≤ C₀ * (1 + ‖ζ‖) ^ k) {Γ Γ' : Set E} {c : ℝ} (hc : 0 < c)
     (hΓ' : ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ)
     {N : ℕ} (hdecay : ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖F η‖ ≤ C) :
-    ∃ C, ∀ η ∈ Γ', ∀ s, HasSum (fun i ↦ a i • F (η - v i)) s → (1 + ‖η‖) ^ N * ‖s‖ ≤ C := by
+    ∃ D, 0 ≤ D ∧ ∀ a : ι → 𝕜, Summable (fun i ↦ (1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖) →
+      ∀ η ∈ Γ', ∀ s, HasSum (fun i ↦ a i • F (η - v i)) s →
+        (1 + ‖η‖) ^ N * ‖s‖ ≤ D * ∑' i, (1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖ := by
   have hC₀ : 0 ≤ C₀ := (norm_nonneg (F 0)).trans (by simpa using hF 0)
   set c' := min c (1 / 2)
   have hc' : 0 < c' := lt_min hc (by norm_num)
@@ -122,7 +130,7 @@ theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [Norme
   obtain ⟨C₁, hC₁⟩ := hdecay
   set D := max (2 ^ N * C₁) (C₀ * c'⁻¹ ^ (N + k))
   have hD : 0 ≤ D := le_max_of_le_right (by positivity)
-  refine ⟨D * ∑' i, (1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖, fun η hη s hs ↦ ?_⟩
+  refine ⟨D, hD, fun a ha η hη s hs ↦ ?_⟩
   -- Each translate is bounded by `D (1 + ‖v i‖) ^ (N + 2 k) (1 + ‖η‖) ^ (-N)`.
   have hterm (i : ι) : (1 + ‖η‖) ^ N * ‖F (η - v i)‖ ≤ D * (1 + ‖v i‖) ^ (N + 2 * k) := by
     have h1 : 1 ≤ (1 + ‖v i‖) ^ (N + 2 * k) := one_le_pow₀ (by linarith [norm_nonneg (v i)])
@@ -158,13 +166,9 @@ theorem exists_one_add_norm_pow_mul_norm_le_of_hasSum {ι 𝕜 G : Type*} [Norme
         _ = C₀ * c'⁻¹ ^ (N + k) * (1 + ‖v i‖) ^ (N + 2 * k) := by rw [mul_pow]; ring
         _ ≤ D * (1 + ‖v i‖) ^ (N + 2 * k) := by gcongr; exact le_max_right _ _
   have hp : 0 < (1 + ‖η‖) ^ N := by positivity
-  have hbound := hs.norm_le_of_bounded (((ha (N + 2 * k)).hasSum.mul_left D).div_const _)
-    fun i ↦ by
-      rw [norm_smul, le_div_iff₀ hp]
-      calc ‖a i‖ * ‖F (η - v i)‖ * (1 + ‖η‖) ^ N
-          = ‖a i‖ * ((1 + ‖η‖) ^ N * ‖F (η - v i)‖) := by ring
-        _ ≤ ‖a i‖ * (D * (1 + ‖v i‖) ^ (N + 2 * k)) := by gcongr ‖a i‖ * ?_; exact hterm i
-        _ = D * ((1 + ‖v i‖) ^ (N + 2 * k) * ‖a i‖) := by ring
+  have hbound := hs.norm_le_of_bounded ((ha.hasSum.mul_left D).div_const _) fun i ↦ by
+    rw [norm_smul, le_div_iff₀ hp]
+    nlinarith [hterm i, norm_nonneg (a i)]
   rw [le_div_iff₀ hp] at hbound
   linarith
 
@@ -215,5 +219,23 @@ theorem exists_cone_decay_mul {X A B 𝕜 : Type*} [NormedField 𝕜] [NormedAdd
           rw [mul_pow, mul_pow, pow_add, pow_add]
           ring
       _ ≤ (1 + c) ^ (N + k) * C₀ * C := by gcongr; exact hC _ h₁
+
+
+/-- **Finitely many open cones cover the nonzero vectors.** If every unit vector `ξ` of a proper
+real normed space lies in an open set `Γ ξ` closed under multiplication by positive reals, then
+finitely many of these cones cover every nonzero vector: the unit sphere is compact. -/
+theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [ProperSpace E]
+    {Γ : sphere (0 : E) 1 → Set E} (hΓ : ∀ ξ, IsOpen (Γ ξ)) (hξΓ : ∀ ξ, (ξ : E) ∈ Γ ξ)
+    (hcone : ∀ ξ, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ ξ, t • η ∈ Γ ξ) :
+    ∃ t : Finset (sphere (0 : E) 1), {0}ᶜ ⊆ ⋃ ξ ∈ t, Γ ξ := by
+  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover Γ hΓ
+    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ⟩, hξΓ _⟩
+  refine ⟨t, fun η hη ↦ ?_⟩
+  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
+  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη
+  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 by
+    simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
+  exact mem_iUnion₂.2 ⟨ξ, hξt, by
+    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
 
 end TauCeti
