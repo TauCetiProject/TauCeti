@@ -63,7 +63,7 @@ open scoped Bundle ContDiff ENNReal Manifold
 namespace TauCeti
 
 /-- For the standard metric on `ℝ`, the negative gradient of `x ↦ x²` at `x` is `-2 x`. -/
-private theorem neg_mgradient_sq_real_apply (x : ℝ) :
+theorem neg_mgradient_sq_real_apply (x : ℝ) :
     (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x = (-(2 * x) : ℝ) := by
   rw [Pi.neg_apply, mgradient_eq_gradient_of_eq rfl, gradient_eq_deriv']
   simp only [differentiableAt_fun_id, deriv_fun_pow, deriv_id'', Nat.cast_ofNat, mul_one,
