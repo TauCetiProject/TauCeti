@@ -5,9 +5,11 @@ Authors: Bastiaan J Braams
 -/
 module
 
-public import TauCeti.Analysis.Contour.Residue.VerticalLineShift
-public import TauCeti.Analysis.MellinInversion
-public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+public import Mathlib.Analysis.MellinTransform
+public import TauCeti.Analysis.Contour.Residue.Basic
+import TauCeti.Analysis.Contour.Residue.VerticalLineShift
+import TauCeti.Analysis.MellinInversion
+import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
 /-!
 # Shifting the line of Mellin inversion (DLMF 2.5.6)
@@ -76,8 +78,8 @@ theorem mellinInv_eq_sum_residue_add {G : ℂ → ℂ} {c d x : ℝ} (hdc : d �
     refine mem_prod_principal.mpr (univ_mem' fun T σ hσ => ?_)
     simp only [hFdef, norm_mul, hnorm]
     exact mul_le_mul_of_nonneg_right (hX σ hσ) (norm_nonneg _)
-  have hhor := Contour.tendsto_intervalIntegral_horizontal hdc hdecayF
-  have hshift := Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue_of_meromorphicAt F hdc
+  have hhor := Contour.tendsto_intervalIntegral_horizontal (by rwa [uIcc_of_le hdc])
+  have hshift := Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue F hdc
     hU hstrip P hP hF hmF (hline hc) (hline hd) (hhor.mono_left atTop_le_cocompact)
     (hhor.mono_left atBot_le_cocompact)
   simp only [hFdef] at hshift
