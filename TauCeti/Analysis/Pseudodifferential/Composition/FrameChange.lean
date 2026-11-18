@@ -79,14 +79,6 @@ variable {n : ℕ} {m : ℝ} {V V' W W' : Type*} [NormedAddCommGroup V] [NormedS
   [NormedAddCommGroup W'] [NormedSpace ℂ W']
   {Φ : CoordinateSpace n → W →L[ℂ] W'} {Ψ : CoordinateSpace n → V' →L[ℂ] V}
 
-/-- The composition `a # b` only depends on `b`, not on the proof of its compact spatial
-support. -/
-private theorem sharp_congr {a : Symbol n V W m} {b b' : Symbol n V' V 0}
-    (hb : b.HasCompactSpatialSupport) (hb' : b'.HasCompactSpatialSupport) (h : b = b') :
-    a.sharp b hb = a.sharp b' hb' := by
-  subst h
-  rfl
-
 /-- The coefficient of the symbol `ofSpatial Ψ` of multiplication by `Ψ`. -/
 private theorem coefficient_ofSpatial_eq (hΨ : ContDiff ℝ ∞ Ψ) :
     (ofSpatial Ψ hΨ).coefficient = fun p ↦ Ψ p.1 :=
@@ -133,6 +125,34 @@ theorem smul_frameChange (c : ℂ) (a : Symbol n V W m) :
   funext p
   simp [smul_sharp]
 
+@[simp]
+theorem zero_frameChange : (0 : Symbol n V W m).frameChange Φ Ψ hΦ hΨ hΨc = 0 := by
+  simpa using smul_frameChange hΦ hΨ hΨc 0 (0 : Symbol n V W m)
+
+@[simp]
+theorem neg_frameChange (a : Symbol n V W m) :
+    (-a).frameChange Φ Ψ hΦ hΨ hΨc = -a.frameChange Φ Ψ hΦ hΨ hΨc := by
+  simpa using smul_frameChange hΦ hΨ hΨc (-1) a
+
+theorem sub_frameChange (a b : Symbol n V W m) :
+    (a - b).frameChange Φ Ψ hΦ hΨ hΨc = a.frameChange Φ Ψ hΦ hΨ hΨc - b.frameChange Φ Ψ hΦ hΨ hΨc
+    := by
+  rw [sub_eq_add_neg, add_frameChange, neg_frameChange, ← sub_eq_add_neg]
+
+theorem inclusion_frameChange {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
+    (inclusion h a).frameChange Φ Ψ hΦ hΨ hΨc = inclusion h (a.frameChange Φ Ψ hΦ hΨ hΨc) := by
+  ext1
+  funext p
+  simp [inclusion_sharp]
+
+/-- The frame change is additive in the output transition map. -/
+theorem frameChange_add_left {Φ' : CoordinateSpace n → W →L[ℂ] W'} (hΦ' : ContDiff ℝ ∞ Φ') :
+    a.frameChange (Φ + Φ') Ψ (hΦ.add hΦ') hΨ hΨc =
+      a.frameChange Φ Ψ hΦ hΨ hΨc + a.frameChange Φ' Ψ hΦ' hΨ hΨc := by
+  ext1
+  funext p
+  simp [ContinuousLinearMap.add_comp]
+
 /-- The frame change is additive in the input transition map. -/
 theorem frameChange_add_right {Ψ' : CoordinateSpace n → V' →L[ℂ] V} (hΨ' : ContDiff ℝ ∞ Ψ')
     (hΨ'c : HasCompactSupport Ψ') :
@@ -167,6 +187,28 @@ theorem frameChange_sub_right {Ψ' : CoordinateSpace n → V' →L[ℂ] V} (hΨ'
       ((hasCompactSpatialSupport_ofSpatial_iff hΨ').2 hΨ'c)]
   simp [ContinuousLinearMap.comp_sub]
 
+omit hΦ in
+@[simp]
+theorem frameChange_zero_left (hΦ : ContDiff ℝ ∞ (0 : CoordinateSpace n → W →L[ℂ] W')) :
+    a.frameChange 0 Ψ hΦ hΨ hΨc = 0 := by
+  ext1
+  funext p
+  simp
+
+omit hΨ hΨc in
+@[simp]
+theorem frameChange_zero_right (hΨ : ContDiff ℝ ∞ (0 : CoordinateSpace n → V' →L[ℂ] V))
+    (hΨc : HasCompactSupport (0 : CoordinateSpace n → V' →L[ℂ] V)) :
+    a.frameChange Φ 0 hΦ hΨ hΨc = 0 := by
+  have hs : ofSpatial (0 : CoordinateSpace n → V' →L[ℂ] V) hΨ = 0 := by
+    ext1
+    funext p
+    simp
+  ext1
+  funext p
+  rw [coefficient_frameChange, sharp_congr _ hasCompactSpatialSupport_zero hs, sharp_zero]
+  simp
+
 /-- The frame change of a symbol with compact spatial support has compact spatial support. -/
 theorem HasCompactSpatialSupport.frameChange (ha : a.HasCompactSpatialSupport) :
     (a.frameChange Φ Ψ hΦ hΨ hΨc).HasCompactSpatialSupport :=
@@ -183,24 +225,6 @@ theorem IsSmoothing.frameChange (ha : a.IsSmoothing) :
   ((ha.sharp_right _ _).comp_left _).inclusion _
 
 end Def
-
-section MulSchwartz
-
-variable (hΨ : ContDiff ℝ ∞ Ψ) (hΨc : HasCompactSupport Ψ)
-
-/-- The product `Ψ u` of a Schwartz function by a compactly supported smooth family of operators,
-as a Schwartz function. -/
-private def mulSchwartz (u : 𝓢(CoordinateSpace n, V')) : 𝓢(CoordinateSpace n, V) :=
-  HasCompactSupport.toSchwartzMap (f := fun y ↦ Ψ y (u y))
-    (hΨc.mono fun y hy h ↦ hy (by simp [h]))
-    ((((ContinuousLinearMap.apply ℂ V).flip.bilinearRestrictScalars ℝ).isBoundedBilinearMap.contDiff
-      (n := ∞)).comp (hΨ.prodMk (u.smooth ⊤)))
-
-private theorem mulSchwartz_apply (u : 𝓢(CoordinateSpace n, V')) (y : CoordinateSpace n) :
-    mulSchwartz hΨ hΨc u y = Ψ y (u y) :=
-  HasCompactSupport.toSchwartzMap_toFun _ _ _
-
-end MulSchwartz
 
 /-! ### The quantization of a frame change -/
 
@@ -251,13 +275,14 @@ theorem frameChange_frameChange (hΦ' : ContDiff ℝ ∞ Φ') (hΨ' : ContDiff �
         (hΨ'c.mono fun y hy h ↦ hy (by simp [h])) := by
   ext1
   refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦ funext fun x ↦ ?_
-  rw [quantizeSchwartzValue_frameChange hΦ' hΨ' hΨ'c u (mulSchwartz hΨ' hΨ'c u)
-      (mulSchwartz_apply hΨ' hΨ'c u),
-    quantizeSchwartzValue_frameChange hΦ hΨ hΨc _ (mulSchwartz hΨ hΨc (mulSchwartz hΨ' hΨ'c u))
-      (mulSchwartz_apply hΨ hΨc _)]
+  -- The products `Ψ' u` and `Ψ (Ψ' u)` as Schwartz functions.
+  set v := SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ V')
+    (hΨ'c.hasTemperateGrowth hΨ') u
+  set w := SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ V) (hΨc.hasTemperateGrowth hΨ) v
+  rw [quantizeSchwartzValue_frameChange hΦ' hΨ' hΨ'c u v fun _ ↦ rfl,
+    quantizeSchwartzValue_frameChange hΦ hΨ hΨc v w fun _ ↦ rfl]
   exact (quantizeSchwartzValue_frameChange (a := a) (Φ := fun x ↦ (Φ' x).comp (Φ x))
-    (Ψ := fun x ↦ (Ψ x).comp (Ψ' x)) _ _ _ u (mulSchwartz hΨ hΨc (mulSchwartz hΨ' hΨ'c u))
-    (fun y ↦ by simp [mulSchwartz_apply]) x).symm
+    (Ψ := fun x ↦ (Ψ x).comp (Ψ' x)) _ _ _ u w (fun _ ↦ rfl) x).symm
 
 end Operator
 
