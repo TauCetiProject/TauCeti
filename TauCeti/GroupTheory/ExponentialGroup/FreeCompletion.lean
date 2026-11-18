@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.ExponentialGroup.Completion
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # The tensor completion of a group over a ring of exponents
@@ -39,10 +40,12 @@ exponents in `A`, modulo the least congruence containing the group laws, the mul
 ## Implementation notes
 
 The last axiom of an `A`-group is conditional (`(g h)^a = g^a h^a` when `g` and `h` commute). Its
-rule in `Completion.Rel` has the premise `s t ~ t s`, which refers to the congruence being
-defined, so the rules of `Completion.Rel` include reflexivity, symmetry, transitivity and
-compatibility with the operations, and two expressions are equal in `Completion` exactly when
-they are related. `Completion` is exposed because the group structure is defined on the quotient.
+rule in the defining congruence has the premise `s t ~ t s`, which refers to the congruence being
+defined, so the congruence is an inductive relation whose rules include reflexivity, symmetry,
+transitivity and compatibility with the operations, and two expressions are equal in `Completion`
+exactly when they are related. The formal expressions and the congruence are private, and neither
+`Completion` nor its group structure and exponentiation are exposed: the completion is used
+through `of`, `eq_top_of_range_le` and the universal property `isCompletion_of`.
 
 The exponentiation of `Completion A G` by `A` and the resulting `A`-group structure are not global
 instances: for `A = ℕ` and `A = ℤ` the exponentiation would compete with the usual powers of the
@@ -73,7 +76,7 @@ namespace Completion
 
 /-- The formal expressions from which the tensor `A`-completion of `G` is built: elements of `G`,
 the identity, products, inverses, and exponents in `A`. -/
-inductive Term (A : Type uA) (G : Type uG) : Type (max uA uG)
+private inductive Term (A : Type uA) (G : Type uG) : Type (max uA uG)
   /-- An element of `G`. -/
   | of (g : G)
   /-- The identity. -/
@@ -89,7 +92,7 @@ open Term in
 /-- The least congruence on formal expressions containing the group laws, the multiplication of
 `G`, and the axioms of an `A`-group. The last rule, `(s t)^a ~ s^a t^a`, has the premise that
 `s t ~ t s`. -/
-inductive Rel : Term A G → Term A G → Prop
+private inductive Rel : Term A G → Term A G → Prop
   | refl (s) : Rel s s
   | symm {s t} : Rel s t → Rel t s
   | trans {s t r} : Rel s t → Rel t r → Rel s r
@@ -114,12 +117,12 @@ variable (A G) in
 /-- The tensor `A`-completion `G^A` of a group `G`: formal expressions in the elements of `G`,
 products, inverses and exponents in `A`, modulo the group laws, the multiplication of `G` and the
 axioms of an `A`-group. -/
-@[expose] def Completion : Type (max uA uG) :=
+def Completion : Type (max uA uG) :=
   Quot (Completion.Rel (A := A) (G := G))
 
 namespace Completion
 
-instance : Group (Completion A G) where
+@[no_expose] instance : Group (Completion A G) where
   mul := Quot.map₂ Term.mul (fun _ _ _ h => .mul_congr (.refl _) h)
     fun _ _ _ h => .mul_congr h (.refl _)
   one := Quot.mk _ .one
@@ -132,12 +135,8 @@ instance : Group (Completion A G) where
 /-- Exponentiation on the tensor completion. It is a scoped instance, activated by
 `open scoped TauCeti.ExponentialGroup.Completion`: for `A = ℕ` and `A = ℤ` it would compete with
 the usual powers of the group `Completion A G`. -/
-scoped instance instPow : Pow (Completion A G) A :=
+@[no_expose] scoped instance instPow : Pow (Completion A G) A :=
   ⟨fun x a => Quot.map (Term.pow · a) (fun _ _ h => .pow_congr a h) x⟩
-
-private theorem rel_of_mk_eq {s t : Term A G} (h : (Quot.mk _ s : Completion A G) = Quot.mk _ t) :
-    Rel s t :=
-  (Equivalence.eqvGen_iff ⟨.refl, .symm, .trans⟩).1 (Quot.eqvGen_exact h)
 
 /-- The tensor completion is an `A`-group. -/
 scoped instance instIsExponentialGroup : IsExponentialGroup A (Completion A G) where
@@ -146,7 +145,7 @@ scoped instance instIsExponentialGroup : IsExponentialGroup A (Completion A G) w
   pow_mul := Quot.ind fun s a b => Quot.sound (.pow_mul s a b)
   conj_pow x y a := Quot.induction_on₂ x y fun s t => Quot.sound (.conj_pow s t a)
   mul_pow {x y} := Quot.induction_on₂ x y fun _ _ hc a =>
-    Quot.sound (.mul_pow a (rel_of_mk_eq hc.eq))
+    Quot.sound (.mul_pow a ((Equivalence.quot_mk_eq_iff ⟨.refl, .symm, .trans⟩ _ _).1 hc.eq))
 
 /-- The completion map `G →* G^A`. -/
 def of : G →* Completion A G :=
@@ -193,13 +192,11 @@ private def lift [IsExponentialGroup A H] (φ : G →* H) : ExponentialHom A (Co
 
 private theorem exponentialHom_ext {ψ ψ' : ExponentialHom A (Completion A G) H}
     (h : ψ.toMonoidHom.comp of = ψ'.toMonoidHom.comp of) : ψ = ψ' := by
-  -- membership in `eqLocus` is equality of values, by definition
-  have mem (x) : x ∈ ψ.toMonoidHom.eqLocus ψ'.toMonoidHom ↔ ψ x = ψ' x := Iff.rfl
   have htop := eq_top_of_range_le (S := ψ.toMonoidHom.eqLocus ψ'.toMonoidHom)
-    (by rintro _ ⟨g, rfl⟩; exact (mem _).2 (DFunLike.congr_fun h g))
-    fun x hx a => (mem _).2 <| by rw [ψ.map_pow, ψ'.map_pow, (mem x).1 hx]
+    (by rintro _ ⟨g, rfl⟩; exact MonoidHom.mem_eqLocus.2 (DFunLike.congr_fun h g))
+    fun x hx a => by simpa using congrArg (· ^ a) (MonoidHom.mem_eqLocus.1 hx)
   ext x
-  exact (mem x).1 (htop ▸ Subgroup.mem_top x)
+  exact MonoidHom.mem_eqLocus.1 (htop ▸ Subgroup.mem_top x)
 
 end Lift
 
