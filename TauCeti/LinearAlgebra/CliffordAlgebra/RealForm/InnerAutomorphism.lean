@@ -50,8 +50,6 @@ on `filtration Q 1` would accept an automorphism that no isometry induces.
 
 ## Main results
 
-* `TauCeti.ι_range_map_realCliffordTwoZeroEquivPauli`: the Pauli model maps the vectors onto
-  `span ℝ {X, Z}`.
 * `TauCeti.realCliffordTwoZeroDiagConj_ι_single_one`: the automorphism fixes `e₂`.
 * `TauCeti.realCliffordTwoZeroDiagConj_ι_single_zero`: it sends `e₁` to `(5 e₁ - 3 e₁ e₂) / 4`.
 * `TauCeti.ι_range_map_realCliffordTwoZeroDiagConj_ne`: it does not preserve the vectors.
@@ -87,25 +85,6 @@ open CliffordAlgebra
 namespace TauCeti
 
 /-! ### The positive plane -/
-
-/-- The Pauli model maps the vectors of `Cliff(2, 0)` onto the plane spanned by
-`X = !![0, 1; 1, 0]` and `Z = !![1, 0; 0, -1]`. -/
-theorem ι_range_map_realCliffordTwoZeroEquivPauli :
-    (LinearMap.range (ι (realCliffordForm 2 0))).map
-        realCliffordTwoZeroEquivPauli.toLinearMap =
-      Submodule.span ℝ {!![0, 1; 1, 0], !![1, 0; 0, -1]} := by
-  apply le_antisymm
-  · rintro _ ⟨_, ⟨v, rfl⟩, rfl⟩
-    refine Submodule.mem_span_pair.mpr ⟨v 0, v 1, ?_⟩
-    rw [AlgEquiv.toLinearMap_apply, realCliffordTwoZeroEquivPauli_ι]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
-  · rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
-    refine ⟨⟨_, LinearMap.mem_range_self _ (Pi.single 0 1), ?_⟩,
-      ⟨_, LinearMap.mem_range_self _ (Pi.single 1 1), ?_⟩⟩ <;>
-    · rw [AlgEquiv.toLinearMap_apply, realCliffordTwoZeroEquivPauli_ι]
-      ext i j
-      fin_cases i <;> fin_cases j <;> simp
 
 /-- The invertible matrix `diag(2, 1)`. -/
 private noncomputable def diagTwoOne : Matrix.GeneralLinearGroup (Fin 2) ℝ where
