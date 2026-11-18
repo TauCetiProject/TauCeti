@@ -57,8 +57,10 @@ Hartogs' principle.
 
 * [Stacks Project, Lemma 10.157.4](https://stacks.math.columbia.edu/tag/031S)
 * [Stacks Project, Lemma 10.157.6](https://stacks.math.columbia.edu/tag/031T)
-* The proofs of `Module.SatisfiesSerreS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton`
-  and `TauCeti.isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two` adapt the proof
+* The proofs of `Module.SatisfiesSerreS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton`,
+  `Module.SatisfiesSerreS.mem_span_singleton_of_forall_height_eq_one`,
+  `TauCeti.isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two` and
+  `TauCeti.mem_range_algebraMap_of_forall_height_eq_one` adapt the proof
   that regular rings are integrally closed from T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
   `a39c3781b9850b9f3d5cbc9920322a3b8e365ef2` (Apache-2.0),

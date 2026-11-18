@@ -45,6 +45,9 @@ to check.
   function with nonnegative order at every codimension-one point of `U` is the germ at the generic
   point of a section of `𝒪_X` over `U`, when the local rings of `U` are integrally closed, and when
   `U` has dimension at most one with discrete valuation rings in codimension one;
+* `Scheme.isIntegrallyClosed_stalk_of_coheight_le_one`: on an open subset of dimension at most
+  one whose codimension-one local rings are discrete valuation rings, every local ring is
+  integrally closed;
 * `Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed` and
   `Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero`: under
   the same hypotheses, a nonzero rational function with *zero* order at every codimension-one point
@@ -131,8 +134,7 @@ theorem exists_algebraMap_stalk_eq_of_forall_ord_nonneg {x : X}
       ((IsLocalRing.maximalIdeal _).comap (X.presheaf.stalkSpecializes h).hom))
   have : IsDiscreteValuationRing (X.presheaf.stalk y) :=
     IsDiscreteValuationRing.of_ringKrullDim_eq_one <| by
-      rw [ringKrullDim_stalk_eq_coheight, hcoh]
-      rfl
+      rw [ringKrullDim_stalk_eq_coheight, hcoh, WithBot.coe_one]
   -- so `f = c` for some `c ∈ 𝒪_{X,y}`, and `c = r / s` with `s ∉ Q`
   obtain ⟨c, hc⟩ := exists_algebraMap_stalk_eq_of_ord_nonneg (hf ⟨y, hcoh⟩ h)
   obtain ⟨⟨r, s⟩, hrs⟩ := IsLocalization.surj
@@ -181,7 +183,7 @@ omit [IsLocallyNoetherian X] in
 /-- On an open subset of dimension at most one whose codimension-one local rings are discrete
 valuation rings, every local ring is integrally closed: it is a discrete valuation ring or the
 function field. -/
-private lemma isIntegrallyClosed_stalk_of_coheight_le_one {U : X.Opens}
+theorem isIntegrallyClosed_stalk_of_coheight_le_one {U : X.Opens}
     (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
       IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
     (hU : ∀ y ∈ U, coheight y ≤ 1) (y : X) (hy : y ∈ U) :

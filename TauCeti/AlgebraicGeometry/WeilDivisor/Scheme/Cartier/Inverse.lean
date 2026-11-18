@@ -309,12 +309,10 @@ theorem toWeilDivisor_eq_zero_iff [IsNormalScheme X] {D : CartierDivisor X} :
   have key : ∀ x : X, ∃ V : X.Opens, x ∈ V ∧ D |_ V = 0 := fun x ↦ by
     obtain ⟨V, -, hxV, g, hg⟩ := D.exists_localEquation_le ⊤ (Opens.mem_top x)
     have : Nonempty V := ⟨⟨x, hxV⟩⟩
-    obtain ⟨u, hu⟩ := exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed
-      (U := V) (fun _ _ ↦ inferInstance) (f := g) fun y hy ↦ by
-        rw [← coeff_toWeilDivisor_eq_ord D y hy g hg, hD, WeilDivisor.coeff_zero]
-    refine ⟨V, hxV, ?_⟩
-    rw [← hg, ← rationalUnitClass_germToFunctionField_eq_zero X V u]
-    exact congrArg (fun f ↦ rationalUnitClass X V (Additive.ofMul f)) (Units.ext hu.symm)
+    refine ⟨V, hxV, hg.symm.trans <| (SchemeWeilDivisor.rationalUnitClass_eq_of_forall_orderAt_eq
+      (fun _ _ ↦ inferInstance) (h := 0) fun y hy ↦ ?_).trans (map_zero _)⟩
+    rw [map_zero, SchemeWeilDivisor.orderAt_apply, toMul_ofMul,
+      ← coeff_toWeilDivisor_eq_ord D y hy g hg, hD, WeilDivisor.coeff_zero]
   choose V hxV hV using key
   refine (cartierDivisorSheaf X).eq_of_locally_eq' V ⊤ (fun _ ↦ homOfLE le_top)
     (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxV x⟩) _ _ fun x ↦ ?_
@@ -326,12 +324,6 @@ theorem toWeilDivisorHom_injective [IsNormalScheme X] :
     Function.Injective (toWeilDivisorHom (X := X)) :=
   (injective_iff_map_eq_zero _).mpr fun D hD ↦
     toWeilDivisor_eq_zero_iff.mp (by rwa [toWeilDivisorHom_apply] at hD)
-
-/-- On a Noetherian normal integral scheme, two Cartier divisors with the same Weil divisor are
-equal. -/
-theorem toWeilDivisor_injective [IsNormalScheme X] :
-    Function.Injective (toWeilDivisor (X := X)) := fun D E h ↦
-  toWeilDivisorHom_injective (by rwa [toWeilDivisorHom_apply, toWeilDivisorHom_apply])
 
 end Noetherian
 
