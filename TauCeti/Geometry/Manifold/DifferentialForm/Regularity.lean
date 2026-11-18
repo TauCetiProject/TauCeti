@@ -55,6 +55,22 @@ differentiation commutes with this extension.
   differentiable section.
 * `TauCeti.mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self`: a form whose
   coordinate expression in its own preferred chart is differentiable is a differentiable section.
+* `TauCeti.mextDeriv_sum`: exterior differentiation commutes with finite sums of `C¹` forms.
+* `TauCeti.isSmoothForm_zeroDim`, `TauCeti.isSmoothForm_modelSpace_iff`: over a zero-dimensional
+  model every form is smooth, and over the model space a form is a `C^n` section exactly when it
+  is a `C^n` function.
+* `TauCeti.SmoothForm.ofFunction`: the `0`-form of a smooth function as a smooth form;
+  `TauCeti.SmoothForm.mextDerivₗ_cast` shows `mextDerivₗ` commutes with casts of the degree and
+  `TauCeti.SmoothForm.mextDeriv_eq_bilinFormAt` identifies, for a real-valued smooth `1`-form `α`,
+  `mextDeriv α.1 x ![v, w]` with `(mextDerivₗ I 1 α).bilinFormAt x v w`.
+* `TauCeti.RoughForm.contDiffOn_indicator_inChartAt`,
+  `TauCeti.IsSmoothForm.extDerivWithin_indicator_inChartAt`,
+  `TauCeti.IsSmoothForm.contDiff_indicator_inChartAt`: extending the chart expression
+  `φ.inChartAt α` of a form with compact `tsupport` inside `(extChartAt I α).source` by zero
+  outside `(extChartAt I α).target` preserves `C^r` regularity on `range I`; on a `C²` manifold,
+  `extDerivWithin` on `range I` of this extension agrees with the extension of the chart
+  expression of `mextDeriv φ` for a `C¹` form `φ`; and the extension is `C¹` on all of `E` when
+  moreover `tsupport φ` is disjoint from `I.boundary M`.
 
 ## References
 
@@ -263,7 +279,7 @@ theorem IsSmoothForm.contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
 hypotheses ensure additivity of the coordinate derivatives. -/
 theorem mextDeriv_sum [IsManifold I 1 M] {ι : Type*}
     (φ : ι → RoughForm I M F k) (s : Finset ι) (hφ : ∀ i ∈ s, IsSmoothForm I 1 (φ i)) :
-    TauCeti.mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, TauCeti.mextDeriv (φ i) := by
+    mextDeriv (∑ i ∈ s, φ i) = ∑ i ∈ s, mextDeriv (φ i) := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
@@ -511,7 +527,7 @@ theorem exists_mextDeriv_eq_of_forall_eventuallyEq_add_const [IsManifold I 1 M]
 
 end Regularity
 
-/-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
+/-- Every zero-dimensional form is smooth: a manifold modelled on a singleton space is discrete. -/
 theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [Subsingleton E] [TopologicalSpace M] [ChartedSpace E M]
     [IsManifold 𝓘(ℝ, E) 1 M]
@@ -519,17 +535,8 @@ theorem isSmoothForm_zeroDim {E M : Type*} [NormedAddCommGroup E]
     (φ : RoughForm 𝓘(ℝ, E) M F k) :
     IsSmoothForm 𝓘(ℝ, E) n φ := by
   rw [isSmoothForm_def]
-  intro x
-  rw [Bundle.contMDiffAt_section_iff x, contMDiffAt_iff_source,
-    contMDiffWithinAt_iff_contDiffWithinAt]
-  have hflat (f : E →
-      E [⋀^Fin k]→L[ℝ] F)
-      (s : Set (E)) (z : E) :
-      ContDiffWithinAt ℝ n f s z := by
-    have he : f = fun _ ↦ f 0 := funext fun y ↦ congrArg f (Subsingleton.elim y 0)
-    rw [he]
-    exact contDiffWithinAt_const
-  exact hflat _ _ _
+  have : DiscreteTopology M := ChartedSpace.discreteTopology E M
+  exact contMDiff_of_discreteTopology
 
 /-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section exactly when it is a `C^n`
 function into the space of alternating maps. -/

@@ -6,6 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Joint regularity of all spatial derivatives
@@ -15,6 +16,12 @@ linear maps preserve fixed joint regularity of every spatial derivative of a
 parameter-dependent family. The parameter set is arbitrary and the spatial set is open.
 These operations support the coordinate jet bootstrap for smooth Ricci-flow restart
 (Morgan–Tian, Proposition 3.12).
+
+For a merely topological parameter space, joint continuity of every spatial derivative survives
+multiplication by a fixed smooth scalar function (`TauCeti.continuousOn_spatial_jets_smul`). This
+is the form of joint regularity in which integrals over compact parameter spaces may be
+differentiated under the integral sign (`TauCeti.contDiffOn_integral_of_continuous_jets`), for
+instance for cut-off homogeneous terms of symbols.
 
 Public formalization references:
 [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
@@ -185,5 +192,71 @@ theorem contDiffOn_spatial_jets_inverse
     (fun t ht x hx ↦ hInv t ht x hx) hjets
 
 end SpatialJets
+
+section ContinuousSpatialJets
+
+open Filter
+
+variable {Y E F : Type*} [TopologicalSpace Y] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {𝕜' : Type*} [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+
+/-- Multiplying a family by a fixed smooth scalar function preserves joint continuity of every
+spatial derivative, in the parameter and the point. The parameter space need only be a
+topological space; the spatial set is open. -/
+theorem continuousOn_spatial_jets_smul {U : Set E} (hU : IsOpen U) {c : E → 𝕜'}
+    (hc : ContDiffOn 𝕜 ∞ c U) {f : Y → E → F} (hf : ∀ y, ContDiffOn 𝕜 ∞ (f y) U)
+    (hjets : ∀ q : ℕ,
+      ContinuousOn (fun p : Y × E ↦ iteratedFDeriv 𝕜 q (f p.1) p.2) (univ ×ˢ U)) (k : ℕ) :
+    ContinuousOn (fun p : Y × E ↦ iteratedFDeriv 𝕜 k (fun x ↦ c x • f p.1 x) p.2)
+      (univ ×ˢ U) := by
+  rintro ⟨y₀, x₀⟩ ⟨-, hx₀⟩
+  have hat {g : E → F} (hg : ContDiffOn 𝕜 ∞ g U) {x : E} (hx : x ∈ U) (i : ℕ) :
+      ContDiffAt 𝕜 i g x :=
+    ((hg x hx).contDiffAt (hU.mem_nhds hx)).of_le (by exact_mod_cast le_top)
+  let g : Y → E → F := fun y x ↦ c x • f y x
+  have hg (y : Y) : ContDiffOn 𝕜 ∞ (g y) U := hc.smul (hf y)
+  -- Since `g y - g y₀ = c • (f y - f y₀)`, the Leibniz rule bounds the change of the jets of `g`.
+  have hbound : ∀ p ∈ (univ : Set Y) ×ˢ U,
+      ‖iteratedFDeriv 𝕜 k (g p.1) p.2 - iteratedFDeriv 𝕜 k (g y₀) x₀‖ ≤
+        (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i c p.2‖ *
+          ‖iteratedFDeriv 𝕜 (k - i) (f p.1) p.2 - iteratedFDeriv 𝕜 (k - i) (f y₀) p.2‖) +
+        ‖iteratedFDeriv 𝕜 k (g y₀) p.2 - iteratedFDeriv 𝕜 k (g y₀) x₀‖ := by
+    rintro ⟨y, x⟩ ⟨-, hx⟩
+    replace hx : x ∈ U := hx
+    have hsub : iteratedFDeriv 𝕜 k (g y) x - iteratedFDeriv 𝕜 k (g y₀) x =
+        iteratedFDeriv 𝕜 k (fun z ↦ c z • (f y - f y₀) z) x := by
+      rw [← iteratedFDeriv_sub_apply (hat (hg y) hx k) (hat (hg y₀) hx k)]
+      congr 1
+      funext z
+      simp [g, smul_sub]
+    have hleib := norm_iteratedFDeriv_smul_le_of_isOpen hU hc (f := f y - f y₀)
+      ((hf y).sub (hf y₀)) hx
+      (k := k) (by exact_mod_cast le_top)
+    refine (norm_sub_le_norm_sub_add_norm_sub _ (iteratedFDeriv 𝕜 k (g y₀) x) _).trans
+      (add_le_add_left (hsub ▸ hleib.trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)) _)
+    rw [iteratedFDeriv_sub_apply (hat (hf y) hx _) (hat (hf y₀) hx _)]
+  have hsnd : Tendsto Prod.snd (𝓝[(univ : Set Y) ×ˢ U] (y₀, x₀)) (𝓝 x₀) :=
+    continuous_snd.continuousWithinAt.tendsto
+  -- Every term of the bound tends to zero.
+  have hlim : Tendsto (fun p : Y × E ↦
+      (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i c p.2‖ *
+          ‖iteratedFDeriv 𝕜 (k - i) (f p.1) p.2 - iteratedFDeriv 𝕜 (k - i) (f y₀) p.2‖) +
+        ‖iteratedFDeriv 𝕜 k (g y₀) p.2 - iteratedFDeriv 𝕜 k (g y₀) x₀‖)
+      (𝓝[(univ : Set Y) ×ˢ U] (y₀, x₀)) (𝓝 0) := by
+    have hc' (i : ℕ) := ((hc x₀ hx₀).contDiffAt (hU.mem_nhds hx₀)).of_le
+      (by exact_mod_cast le_top) |>.continuousAt_iteratedFDeriv (k := i) le_rfl
+    simpa using (tendsto_finsetSum (Finset.range (k + 1)) fun i _ ↦
+      ((tendsto_const_nhds (x := (k.choose i : ℝ))).mul ((hc' i).tendsto.comp hsnd).norm).mul
+        (((hjets (k - i)) (y₀, x₀) ⟨mem_univ _, hx₀⟩).tendsto.sub
+          (((hat (hf y₀) hx₀ (k - i)).continuousAt_iteratedFDeriv le_rfl).tendsto.comp
+            hsnd)).norm).add
+      ((((hat (hg y₀) hx₀ k).continuousAt_iteratedFDeriv le_rfl).tendsto.comp hsnd).sub
+        (tendsto_const_nhds (x := iteratedFDeriv 𝕜 k (g y₀) x₀))).norm
+  rw [ContinuousWithinAt, tendsto_iff_norm_sub_tendsto_zero]
+  exact squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _)
+    (eventually_mem_nhdsWithin.mono hbound) hlim
+
+end ContinuousSpatialJets
 
 end TauCeti

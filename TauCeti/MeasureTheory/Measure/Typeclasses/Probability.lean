@@ -57,7 +57,6 @@ end MeasureTheory
 
 namespace MeasureTheory.Measure
 
-open MeasureTheory
 open scoped ENNReal
 
 /--
