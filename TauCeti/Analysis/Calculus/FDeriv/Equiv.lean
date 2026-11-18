@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
@@ -46,6 +47,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
+* `TauCeti.fderiv_comp_fderiv_eq_id_of_leftInvOn`: `DΨ(Φ y) ∘ DΦ(y) = id` for a left inverse `Ψ`,
+  with the lower bound `TauCeti.norm_le_mul_norm_fderiv_apply_of_leftInvOn`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
   `det Dφ⁻¹(y) · det Dφ(φ⁻¹ y) = 1`.
@@ -184,6 +187,33 @@ theorem fderiv_comp_fderiv_eq_id_of_invOn (hΦ : DifferentiableOn 𝕜 Φ U) (hm
   have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
     Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
   exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
+
+/-- **The derivative of a left inverse.** If `Φ` is differentiable on `U` and maps it into `V`, and
+`Ψ`, differentiable on `V`, satisfies `Ψ ∘ Φ = id` on `U`, then `DΨ(Φ y) ∘ DΦ(y) = id` at every
+`y ∈ U`. -/
+theorem fderiv_comp_fderiv_eq_id_of_leftInvOn (hΦ : DifferentiableOn 𝕜 Φ U)
+    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn 𝕜 Ψ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    fderiv 𝕜 Ψ (Φ y) ∘L fderiv 𝕜 Φ y = ContinuousLinearMap.id 𝕜 E := by
+  have hcomp : HasFDerivAt (Ψ ∘ Φ) (fderiv 𝕜 Ψ (Φ y) ∘L fderiv 𝕜 Φ y) y :=
+    ((hΨ _ (hmaps hy)).differentiableAt (V.isOpen.mem_nhds (hmaps hy))).hasFDerivAt.comp y
+      ((hΦ y hy).differentiableAt (U.isOpen.mem_nhds hy)).hasFDerivAt
+  have hid : Ψ ∘ Φ =ᶠ[𝓝 y] id :=
+    Filter.eventually_of_mem (U.isOpen.mem_nhds hy) fun x hxU => hΨΦ hxU
+  exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id y)
+
+/-- **A lower bound for the derivative of a map with a left inverse.** Under the hypotheses of
+`TauCeti.fderiv_comp_fderiv_eq_id_of_leftInvOn`, if `y ∈ U` and `‖DΨ(Φ y)‖ ≤ L'`, then
+`‖v‖ ≤ L' ‖DΦ(y) v‖` for every `v`. -/
+theorem norm_le_mul_norm_fderiv_apply_of_leftInvOn (hΦ : DifferentiableOn 𝕜 Φ U)
+    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn 𝕜 Ψ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : E}
+    (hy : y ∈ (U : Set E)) {L' : ℝ} (hL' : ‖fderiv 𝕜 Ψ (Φ y)‖ ≤ L') (v : E) :
+    ‖v‖ ≤ L' * ‖fderiv 𝕜 Φ y v‖ :=
+  calc ‖v‖ = ‖fderiv 𝕜 Ψ (Φ y) (fderiv 𝕜 Φ y v)‖ := by
+        rw [← ContinuousLinearMap.comp_apply,
+          fderiv_comp_fderiv_eq_id_of_leftInvOn hΦ hmaps hΨ hΨΦ hy, ContinuousLinearMap.id_apply]
+    _ ≤ L' * ‖fderiv 𝕜 Φ y v‖ := ((fderiv 𝕜 Ψ (Φ y)).le_opNorm _).trans
+        (mul_le_mul_of_nonneg_right hL' (norm_nonneg _))
 
 end TauCeti
 
