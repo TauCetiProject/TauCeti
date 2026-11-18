@@ -613,6 +613,13 @@ theorem W1p.toReal_eLpNorm_gradient_mono (u : W1p mu Omega p) {s t : Set E} (hst
       (Lp.eLpNorm_lt_top _)).ne
     (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))
 
+/-- The `Lᵖ` norm of the weak gradient on a subset of `Ω` is at most the norm of the weak
+gradient. -/
+theorem W1p.toReal_eLpNorm_gradient_le_norm (u : W1p mu Omega p) {s : Set E}
+    (hs : s ⊆ (Omega : Set E)) :
+    (eLpNorm (W1p.gradient u) p (mu.restrict s)).toReal ≤ ‖W1p.gradient u‖ :=
+  (W1p.toReal_eLpNorm_gradient_mono u hs subset_rfl).trans_eq (Lp.norm_def _).symm
+
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
 theorem W1p.norm_le_norm_value_add_norm_gradient (u : W1p mu Omega p) :

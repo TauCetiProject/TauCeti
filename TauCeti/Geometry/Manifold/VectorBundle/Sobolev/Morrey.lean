@@ -53,7 +53,7 @@ interior bounds for the scalar components,
 `TauCeti.W1p.exists_forall_holderOnWith_preciseRepresentative_of_isCompact`, since every component
 of `w` has norm at most `‖w‖` (`TauCeti.SectionChartData.norm_component_le`).
 
-The hypothesis `n < p` cannot be dropped: for `n ≥ 2` the space `W^{1,n}` contains unbounded
+For `n ≥ 2` the hypothesis `n < p` cannot be weakened to `p = n`: `W^{1,n}` contains unbounded
 functions, such as `log (log (e / ‖x‖))` near the origin.
 
 ## Main results

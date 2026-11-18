@@ -202,8 +202,7 @@ theorem W1p.exists_holderOnWith_preciseRepresentative (hp : (finrank ℝ E : ℝ
   refine (hdist u hxy).trans ?_
   rw [Real.coe_toNNReal _ (by positivity)]
   gcongr
-  exact (W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hxy)
-    subset_rfl).trans_eq (Lp.norm_def _).symm
+  exact W1p.toReal_eLpNorm_gradient_le_norm u (ball_subset_closedBall.trans hxy)
 
 /-- **Continuity of `W^{1,p}` functions for `p` above the dimension.** If `n < p ≤ ∞`, where `n`
 is the dimension, the precise representative of any `u ∈ W^{1,p}(Ω)`, which agrees with `u` almost
@@ -263,46 +262,46 @@ theorem W1p.exists_dist_preciseRepresentative_le_top :
     Real.rpow_one] at h
   refine h.trans ?_
   gcongr
-  exact (W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hxy)
-    subset_rfl).trans_eq (Lp.norm_def _).symm
+  exact W1p.toReal_eLpNorm_gradient_le_norm u (ball_subset_closedBall.trans hxy)
 
 /-- **The local Morrey sup bound.** Let `n < p ≤ ∞`, where `n` is the dimension, and let
 `α = 1 - n / p`. There is a constant `C > 0`, depending only on `n`, `p` and the Haar measure `μ`,
 such that the following holds. Let `u ∈ W^{1,p}(Ω)`, let `r > 0` and let `x` be a point with
 `closedBall x (2 r) ⊆ Ω`. Then the precise representative `u*` of `u` satisfies
 
-`|u*(x)| ≤ ‖u‖_{Lᵖ(B(x, r))} / μ(B(x, r))^(1/p) + C ‖∇u‖_{Lᵖ(Ω)} r^α`. -/
+`|u*(x)| ≤ ‖u‖_{Lᵖ(B(x, r))} / μ(B(x, r))^(1/p) + C ‖∇u‖_{Lᵖ(B(x, 2r))} r^α`. -/
 theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0∞) < p) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens E} (u : W1p mu Omega p) {x : E} {r : ℝ}, 0 < r →
       closedBall x (2 * r) ⊆ (Omega : Set E) →
         ‖preciseRepresentative mu (W1p.value u) x‖ ≤
           (eLpNorm (W1p.value u) p (mu.restrict (ball x r))).toReal /
               mu.real (ball x r) ^ (1 / p.toReal) +
-            C * ‖W1p.gradient u‖ * r ^ (((1 : ℝ≥0∞) - finrank ℝ E / p).toNNReal : ℝ) := by
+            C * (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * r)))).toReal *
+              r ^ (((1 : ℝ≥0∞) - finrank ℝ E / p).toNNReal : ℝ) := by
   obtain ⟨C, hC, hdist⟩ := W1p.exists_dist_preciseRepresentative_le (mu := mu) hp
   refine ⟨C, hC, fun {Omega} u x r hr hxr => ?_⟩
   set α : ℝ := (((1 : ℝ≥0∞) - finrank ℝ E / p).toNNReal : ℝ)
   set f := preciseRepresentative mu (W1p.value u)
   set B := ball x r
+  set G := (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * r)))).toReal
   have hBΩ : B ⊆ (Omega : Set E) :=
     ball_subset_closedBall.trans ((closedBall_subset_closedBall (by linarith)).trans hxr)
-  -- Pointwise: `|u*(x)| - C ‖∇u‖ r^α ≤ |u*(y)|` for `y ∈ B`.
-  have hpt : ∀ y ∈ B, ‖f x‖ - C * ‖W1p.gradient u‖ * r ^ α ≤ ‖f y‖ := by
+  -- Pointwise: `|u*(x)| - C ‖∇u‖_{Lᵖ(B(x, 2r))} r^α ≤ |u*(y)|` for `y ∈ B`.
+  have hpt : ∀ y ∈ B, ‖f x‖ - C * G * r ^ α ≤ ‖f y‖ := by
     intro y hy
     have hxy : dist x y ≤ r := (dist_comm x y ▸ mem_ball.1 hy).le
     have hsub : closedBall x (2 * dist x y) ⊆ (Omega : Set E) :=
       (closedBall_subset_closedBall (by linarith)).trans hxr
-    have hN : (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * dist x y)))).toReal ≤
-        ‖W1p.gradient u‖ :=
-      (W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hsub)
-        subset_rfl).trans_eq (Lp.norm_def _).symm
-    have h : dist (f x) (f y) ≤ C * ‖W1p.gradient u‖ * r ^ α :=
+    have hN : (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * dist x y)))).toReal ≤ G :=
+      W1p.toReal_eLpNorm_gradient_mono u (ball_subset_ball (by linarith))
+        (ball_subset_closedBall.trans hxr)
+    have h : dist (f x) (f y) ≤ C * G * r ^ α :=
       (hdist u hsub).trans (mul_le_mul (mul_le_mul_of_nonneg_left hN hC.le)
         (Real.rpow_le_rpow dist_nonneg hxy (NNReal.coe_nonneg _)) (by positivity)
         (by positivity))
     rw [dist_eq_norm] at h
     linarith [norm_le_norm_add_norm_sub' (f x) (f y)]
-  have hae : ∀ᵐ y ∂mu.restrict B, ‖f x‖ - C * ‖W1p.gradient u‖ * r ^ α ≤ ‖W1p.value u y‖ := by
+  have hae : ∀ᵐ y ∂mu.restrict B, ‖f x‖ - C * G * r ^ α ≤ ‖W1p.value u y‖ := by
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hBΩ (W1p.ae_eq_preciseRepresentative u),
       self_mem_ae_restrict measurableSet_ball] with y hy hyB
     rw [hy]
@@ -345,10 +344,12 @@ theorem W1p.exists_forall_norm_preciseRepresentative_le_of_isCompact
   refine (hsup u hr hxr).trans ?_
   rw [mu.addHaar_real_ball_center]
   calc (eLpNorm (W1p.value u) p (mu.restrict (ball x (R / 2)))).toReal / m +
-        C * ‖W1p.gradient u‖ * (R / 2) ^ α
+        C * (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * (R / 2))))).toReal *
+          (R / 2) ^ α
       ≤ ‖u‖ / m + C * ‖u‖ * (R / 2) ^ α := by
         gcongr
-        exact W1p.norm_gradient_le u
+        exact (W1p.toReal_eLpNorm_gradient_le_norm u (ball_subset_closedBall.trans hxr)).trans
+          (W1p.norm_gradient_le u)
     _ = (m⁻¹ + C * (R / 2) ^ α) * ‖u‖ := by
         field_simp
 
@@ -376,8 +377,8 @@ theorem W1p.exists_forall_holderOnWith_preciseRepresentative_of_isCompact
     have hxy : closedBall x (2 * dist x y) ⊆ (Omega : Set E) :=
       ((closedBall_subset_cthickening hx _).trans (cthickening_mono (by linarith) K)).trans hRK
     have hN : (eLpNorm (W1p.gradient u) p (mu.restrict (ball x (2 * dist x y)))).toReal ≤ ‖u‖ :=
-      ((W1p.toReal_eLpNorm_gradient_mono u (ball_subset_closedBall.trans hxy)
-        subset_rfl).trans_eq (Lp.norm_def _).symm).trans (W1p.norm_gradient_le u)
+      (W1p.toReal_eLpNorm_gradient_le_norm u (ball_subset_closedBall.trans hxy)).trans
+        (W1p.norm_gradient_le u)
     refine (hdist u hxy).trans ?_
     gcongr
     exact le_max_left _ _
