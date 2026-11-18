@@ -8,10 +8,12 @@ module
 public import Mathlib.Order.Filter.Extr
 
 /-!
-# Minima on sublevels
+# Minima on sublevels and images
 
-A minimum on a sublevel transfers to the full admissible set. At a minimizer, the
-sublevel at the minimum value is exactly the set of all minimizers.
+A minimum on a sublevel transfers to the full admissible set, and at a minimizer the sublevel at
+the minimum value is exactly the set of all minimizers. Pullback objectives along a map `p` also
+transfer `IsMinOn`, feasible minimizers, and attained-minimum existence identically between `s` and
+`p '' s`.
 -/
 
 public section
@@ -29,6 +31,27 @@ theorem isMinOn_sublevel_iff {X β : Type*} [LinearOrder β] {f : X → β}
   by_cases hb : f x ≤ b
   · exact h ⟨hx, hb⟩
   · exact hu.trans (le_of_not_ge hb)
+
+/-- A point `p z` minimizes `f` on `p '' s` if and only if `z` minimizes `f ∘ p` on `s`. -/
+theorem isMinOn_image_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
+    {s : Set X} {z : X} :
+    IsMinOn f (p '' s) (p z) ↔ IsMinOn (f ∘ p) s z := by
+  simp only [isMinOn_iff, forall_mem_image, Function.comp_apply]
+
+/-- A point `z` is a feasible minimizer of `f ∘ p` on `s` if and only if `z ∈ s` and `p z` is a
+feasible minimizer of `f` on `p '' s`. -/
+theorem mem_and_isMinOn_comp_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
+    {s : Set X} {z : X} :
+    (z ∈ s ∧ IsMinOn (f ∘ p) s z) ↔ z ∈ s ∧ p z ∈ p '' s ∧ IsMinOn f (p '' s) (p z) := by
+  rw [isMinOn_image_iff]
+  exact ⟨fun ⟨hz, hmin⟩ ↦ ⟨hz, mem_image_of_mem p hz, hmin⟩, fun ⟨hz, _, hmin⟩ ↦ ⟨hz, hmin⟩⟩
+
+/-- An attained minimum of `f` on `p '' s` exists if and only if an attained minimum of `f ∘ p`
+on `s` exists. -/
+theorem exists_mem_image_isMinOn_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
+    {s : Set X} :
+    (∃ y ∈ p '' s, IsMinOn f (p '' s) y) ↔ ∃ z ∈ s, IsMinOn (f ∘ p) s z := by
+  simp only [exists_mem_image, isMinOn_image_iff]
 
 end TauCeti
 
