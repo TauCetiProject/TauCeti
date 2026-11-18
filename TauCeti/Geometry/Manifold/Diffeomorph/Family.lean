@@ -86,18 +86,19 @@ theorem isLocalDiffeomorph_fst_prodMk {φ : P × M → N} (hφ : ContMDiff (I'.p
     rintro rfl
     exact absurd hn (by simp))
   -- The differential is the block triangular map `(u, v) ↦ (u, B v + A u)`, a `skewProd`.
+  -- `TangentSpace` is definitionally the model space, so `B` retypes as `E ≃L[𝕂] F`.
   obtain ⟨B, hB⟩ := hφ' z
   let A : E' →L[𝕂] F := mfderiv I' J (fun p ↦ φ (p, z.2)) z.1
   let B' : E ≃L[𝕂] F := B
-  have hφz (v : TangentSpace (I'.prod I) z) : mfderiv (I'.prod I) J φ z v = A v.1 + B' v.2 := by
-    rw [mfderiv_prod_eq_add_apply hdiff, ← hB]
-    rfl
   refine ⟨(ContinuousLinearEquiv.refl 𝕂 E').skewProd B' A, ?_⟩
   ext1 v
   rw [mfderiv_prodMk mdifferentiableAt_fst hdiff, mfderiv_fst]
-  have hL := ContinuousLinearEquiv.skewProd_apply (ContinuousLinearEquiv.refl 𝕂 E') B' A v
-  exact (congrFun (ContinuousLinearEquiv.coe_coe _) v).trans
-    (hL.trans (Prod.ext rfl ((add_comm _ _).trans (hφz v).symm)))
+  refine Prod.ext rfl ?_
+  -- By `skewProd_apply` and `prod_apply`, the second components are definitionally these.
+  change B' v.2 + A v.1 = mfderiv (I'.prod I) J φ z v
+  rw [mfderiv_prod_eq_add_apply hdiff, ← hB, add_comm]
+  -- The two sides now agree by unfolding the `let`s `A` and `B'`.
+  rfl
 
 end TauCeti
 
@@ -138,6 +139,10 @@ def prodCongrRight (f : P → M ≃ₘ^n⟮I, J⟯ N)
 variable (hf : ContMDiff (I'.prod I) J n fun z : P × M ↦ f z.1 z.2) (hn : 1 ≤ n)
 
 @[simp]
+theorem coe_prodCongrRight : ⇑(prodCongrRight f hf hn) = fun z ↦ (z.1, f z.1 z.2) :=
+  (rfl)
+
+@[simp]
 theorem prodCongrRight_apply (p : P) (x : M) : prodCongrRight f hf hn (p, x) = (p, f p x) :=
   (rfl)
 
@@ -168,6 +173,10 @@ def prodCongrLeft (f : P → M ≃ₘ^n⟮I, J⟯ N)
 variable (hf' : ContMDiff (I.prod I') J n fun z : M × P ↦ f z.2 z.1)
 
 @[simp]
+theorem coe_prodCongrLeft : ⇑(prodCongrLeft f hf' hn) = fun z ↦ (f z.2 z.1, z.2) :=
+  (rfl)
+
+@[simp]
 theorem prodCongrLeft_apply (x : M) (p : P) : prodCongrLeft f hf' hn (x, p) = (f p x, p) :=
   (rfl)
 
@@ -180,5 +189,42 @@ theorem toEquiv_prodCongrLeft :
 theorem prodCongrLeft_symm_apply (y : N) (p : P) :
     (prodCongrLeft f hf' hn).symm (y, p) = ((f p).symm y, p) :=
   (rfl)
+
+@[simp]
+theorem prodCongrLeft_trans_prodComm :
+    (prodCongrLeft f hf' hn).trans (prodComm J I' N P n) =
+      (prodComm I I' M P n).trans
+        (prodCongrRight f (hf'.comp (contMDiff_snd.prodMk contMDiff_fst)) hn) :=
+  Diffeomorph.ext fun _ ↦ rfl
+
+@[simp]
+theorem prodCongrRight_trans_prodComm :
+    (prodCongrRight f hf hn).trans (prodComm I' J P N n) =
+      (prodComm I' I P M n).trans
+        (prodCongrLeft f (hf.comp (contMDiff_snd.prodMk contMDiff_fst)) hn) :=
+  Diffeomorph.ext fun _ ↦ rfl
+
+section Symm
+
+/-! The inverse of a family diffeomorphism is the diffeomorphism of the inverse family; this
+needs the inverse family's hypotheses, a complete model and a boundaryless manifold `N`. -/
+
+variable [CompleteSpace F] [BoundarylessManifold J N]
+
+@[simp]
+theorem prodCongrRight_symm :
+    (prodCongrRight f hf hn).symm =
+      prodCongrRight (fun p ↦ (f p).symm) (contMDiff_symm_family hf hn) hn :=
+  (rfl)
+
+@[simp]
+theorem prodCongrLeft_symm :
+    (prodCongrLeft f hf' hn).symm =
+      prodCongrLeft (fun p ↦ (f p).symm)
+        ((contMDiff_symm_family (hf'.comp (contMDiff_snd.prodMk contMDiff_fst)) hn).comp
+          (contMDiff_snd.prodMk contMDiff_fst)) hn :=
+  (rfl)
+
+end Symm
 
 end Diffeomorph
