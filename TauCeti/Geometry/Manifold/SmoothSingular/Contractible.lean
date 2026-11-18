@@ -38,22 +38,25 @@ invariance alone already shows that the smooth singular homology of such a manif
 positive degrees (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`).
 
 The same holds for the empty manifold, where both complexes vanish
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`). For an open set `U` of
-the model space `H` of a model with corners `I : ModelWithCorners ℝ E H` whose image `I '' U` is
-star-convex about `c`, the map `(t, x) ↦ I.symm (c + (1 - ψ t) • (I x - c))`, with `ψ` the smooth
-transition function from `0` to `1`, is such a smooth contraction
-(`TauCeti.exists_contMDiff_contraction_of_starConvex`), so the inclusion is a quasi-isomorphism
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`), and the smooth
-singular homology of `U` vanishes in positive degrees
-(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`). The model may have boundary
-and corners: the contraction stays in `range I` because `I '' U` does. A star-convex open subset of
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`). Let `U` be an open
+subset of the source of the chart at a point `x` of a smooth manifold `M` whose image under the
+extended chart `φ` at `x` is star-convex about `c`. Then the map
+`(t, y) ↦ φ⁻¹ (c + (1 - ψ t) • (φ y - c))`, with `ψ` the smooth transition function from `0` to
+`1`, is such a smooth contraction (`TauCeti.exists_contMDiff_contraction_of_starConvex_extChartAt`),
+so the inclusion is a quasi-isomorphism on `U`
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex_extChartAt`). The
+model may have boundary and corners: the contraction stays in `φ '' U`, which lies in `range I`.
+The model space `H` of a model with corners `I : ModelWithCorners ℝ E H` is a manifold whose
+extended chart at every point is `I`, so this applies to an open set `U` of `H` whose image `I '' U`
+is star-convex (`TauCeti.exists_contMDiff_contraction_of_starConvex`,
+`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`), and the smooth
+singular homology of such a `U` vanishes in positive degrees
+(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`). A star-convex open subset of
 a normed space `V` is the case `I = 𝓘(ℝ, V)`.
 
-These are the base cases of the Mayer–Vietoris induction (`TauCeti.mayerVietoris_induction`) that
-compares smooth with continuous singular homology on manifolds with corners: the empty open set,
-and the open sets of the model space with convex image, which form a basis closed under
-intersection. The step for countable disjoint unions is
-`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`.
+These are the base cases of the Mayer–Vietoris induction over convex chart domains
+(`TauCeti.mayerVietoris_induction_extChartAt`) that compares smooth with continuous singular
+homology on manifolds with corners, in `TauCeti.Geometry.Manifold.SmoothSingular.Smoothing`.
 
 ## Main definitions and results
 
@@ -61,11 +64,15 @@ intersection. The step for countable disjoint unions is
   the inclusion of smooth singular chains into singular chains is a chain homotopy equivalence.
 * `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction`,
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`,
+  `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex_extChartAt`,
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`: the inclusion is a
-  quasi-isomorphism on a smoothly contractible manifold, on the empty manifold, and on an open set
-  of the model space with star-convex image.
-* `TauCeti.exists_contMDiff_contraction_of_starConvex`: an open set of the model space with
-  star-convex image is smoothly contractible.
+  quasi-isomorphism on a smoothly contractible manifold, on the empty manifold, on a chart domain
+  with star-convex image in the chart, and on an open set of the model space with star-convex
+  image.
+* `TauCeti.exists_contMDiff_contraction_of_starConvex_extChartAt`,
+  `TauCeti.exists_contMDiff_contraction_of_starConvex`: a chart domain with star-convex image in
+  the chart, and an open set of the model space with star-convex image, are smoothly
+  contractible.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
   has no smooth singular homology in positive degrees.
 * `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has an open set of
@@ -103,7 +110,47 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty [Categor
     (SSet.isZero_chainComplex _ R) (SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
   infer_instance
 
-/-! ### Open sets with star-convex image in the model -/
+/-! ### Chart domains with star-convex image -/
+
+/-- **The straight-line contraction of a chart domain with star-convex image.** Let `U` be an
+open subset of the source of the chart at `x` whose image under the extended chart `φ` at `x` is
+star-convex about `c`. Then `(t, y) ↦ φ⁻¹ (c + (1 - ψ t) • (φ y - c))`, with `ψ` the smooth
+transition function from `0` to `1`, is a smooth map `ℝ × U → U` joining the identity to the
+constant map with value `φ⁻¹ c`. -/
+theorem exists_contMDiff_contraction_of_starConvex_extChartAt [IsManifold I ∞ M] {x : M}
+    {U : TopologicalSpace.Opens M} (hUx : (U : Set M) ⊆ (chartAt H x).source) {c : E}
+    (hU : StarConvex ℝ c (extChartAt I x '' U)) :
+    ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ y, F (0, y) = y) ∧
+      ∀ y, (F (1, y) : M) = (extChartAt I x).symm c := by
+  set φ := extChartAt I x
+  -- The straight-line contraction of `φ '' U` towards `c`, read back in `M` through `φ.symm`.
+  let h : ℝ × U → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (φ p.2 - c)
+  have hmem : ∀ p, h p ∈ φ '' U := fun p ↦
+    hU.add_smul_sub_mem (mem_image_of_mem φ p.2.2)
+      (by linarith [Real.smoothTransition.le_one p.1])
+      (by linarith [Real.smoothTransition.nonneg p.1])
+  have hsource : ∀ {y}, y ∈ U → y ∈ φ.source := fun hy ↦ by
+    rw [extChartAt_source]
+    exact hUx hy
+  have htarget : ∀ p, h p ∈ φ.target := fun p ↦ by
+    obtain ⟨y, hy, hyp⟩ := hmem p
+    rw [← hyp]
+    exact φ.map_source (hsource hy)
+  have hU' : ∀ p, φ.symm (h p) ∈ U := fun p ↦ by
+    obtain ⟨y, hy, hyp⟩ := hmem p
+    rwa [← hyp, φ.left_inv (hsource hy)]
+  refine ⟨fun p ↦ ⟨φ.symm (h p), hU' p⟩, ?_, fun y ↦ Subtype.ext ?_, fun y ↦ ?_⟩
+  · rw [← ContMDiff.subtypeVal_comp_iff]
+    have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
+      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
+    have hy : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × U ↦ φ p.2 :=
+      ((contMDiffOn_extChartAt (x := x)).comp_contMDiff contMDiff_subtype_val
+        fun y ↦ hUx y.2).comp contMDiff_snd
+    have hh : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ h :=
+      contMDiff_const.add ((contMDiff_const.sub hψ).smul (hy.sub contMDiff_const))
+    exact (contMDiffOn_extChartAt_symm x).comp_contMDiff hh htarget
+  · simp [h, Real.smoothTransition.zero, φ.left_inv (hsource y.2)]
+  · simp [h, Real.smoothTransition.one]
 
 /-- **The straight-line contraction of an open set with star-convex image in the model.** Let `U`
 be an open set of the model space `H` of a model with corners `I` whose image `I '' U` is
@@ -114,26 +161,9 @@ theorem exists_contMDiff_contraction_of_starConvex {U : TopologicalSpace.Opens H
     (hU : StarConvex ℝ c (I '' U)) :
     ∃ F : ℝ × U → U, ContMDiff (𝓘(ℝ).prod I) I ∞ F ∧ (∀ x, F (0, x) = x) ∧
       ∀ x, (F (1, x) : H) = I.symm c := by
-  -- The straight-line contraction of `I '' U` towards `c`, read back in `H` through `I.symm`.
-  let h : ℝ × U → E := fun p ↦ c + (1 - Real.smoothTransition p.1) • (I p.2 - c)
-  have hmem : ∀ p, h p ∈ I '' U := fun p ↦
-    hU.add_smul_sub_mem (mem_image_of_mem I p.2.2)
-      (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  have hU' : ∀ p, I.symm (h p) ∈ U := fun p ↦ by
-    obtain ⟨y, hy, hyp⟩ := hmem p
-    rwa [← hyp, I.left_inv]
-  refine ⟨fun p ↦ ⟨I.symm (h p), hU' p⟩, ?_, fun x ↦ Subtype.ext ?_, fun x ↦ ?_⟩
-  · rw [← ContMDiff.subtypeVal_comp_iff]
-    have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    have hx : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × U ↦ I p.2 :=
-      (I.contMDiff.comp contMDiff_subtype_val).comp contMDiff_snd
-    have hh : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ h :=
-      contMDiff_const.add ((contMDiff_const.sub hψ).smul (hx.sub contMDiff_const))
-    exact I.contMDiffOn_symm.comp_contMDiff hh fun p ↦ image_subset_range I _ (hmem p)
-  · simp [h, Real.smoothTransition.zero]
-  · simp [h, Real.smoothTransition.one]
+  -- The model space is a manifold whose extended chart at every point is `I`.
+  rw [← extChartAt_self_eq (I := I) (x := I.symm c)] at hU
+  simpa using exists_contMDiff_contraction_of_starConvex_extChartAt (by simp) hU
 
 /-! ### Smoothly contractible manifolds -/
 
@@ -226,6 +256,21 @@ theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomol
   rw [smoothSingularSubcomplexMap_id, SSet.homologyMap_id, SSet.homologyMap_comp] at hid
   rw [IsZero.iff_id_eq_zero, hid, hpt.eq_of_src (SSet.homologyMap s R n) 0, comp_zero]
 
+/-- **The smoothing theorem for a chart domain with star-convex image.** Let `U` be an open subset
+of the source of the chart at `x` whose image under the extended chart at `x` is star-convex. Then
+the inclusion of smooth singular chains of `U` into singular chains is a quasi-isomorphism. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex_extChartAt
+    [CategoryWithHomology C] [IsManifold I ∞ M] {x : M} {U : TopologicalSpace.Opens M}
+    (hUx : (U : Set M) ⊆ (chartAt H x).source) {c : E}
+    (hU : StarConvex ℝ c (extChartAt I x '' U)) :
+    QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
+  rcases (U : Set M).eq_empty_or_nonempty with hempty | ⟨y₀, hy₀⟩
+  · have : IsEmpty U := ⟨fun y ↦ eq_empty_iff_forall_notMem.1 hempty y y.2⟩
+    exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty R
+  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex_extChartAt hUx hU
+  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction R hF (F (1, ⟨y₀, hy₀⟩))
+    h₀ fun y ↦ Subtype.ext ((h₁ y).trans (h₁ _).symm)
+
 /-- **The smoothing theorem for an open set with star-convex image in the model.** Let `U` be an
 open set of the model space `H` of a model with corners `I` whose image `I '' U` is star-convex.
 Then the inclusion of smooth singular chains of `U` into singular chains is a quasi-isomorphism. -/
@@ -233,12 +278,9 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex [Cate
     {H : Type u} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     {U : TopologicalSpace.Opens H} {c : E} (hU : StarConvex ℝ c (I '' U)) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
-  rcases (U : Set H).eq_empty_or_nonempty with hempty | ⟨x₀, hx₀⟩
-  · have : IsEmpty U := ⟨fun x ↦ eq_empty_iff_forall_notMem.1 hempty x x.2⟩
-    exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty R
-  obtain ⟨F, hF, h₀, h₁⟩ := exists_contMDiff_contraction_of_starConvex hU
-  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction R hF (F (1, ⟨x₀, hx₀⟩))
-    h₀ fun x ↦ Subtype.ext ((h₁ x).trans (h₁ _).symm)
+  -- The model space is a manifold whose extended chart at every point is `I`.
+  rw [← extChartAt_self_eq (I := I) (x := I.symm c)] at hU
+  exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex_extChartAt R (by simp) hU
 
 /-- **An open set with star-convex image in the model has vanishing positive-degree smooth
 singular homology.** Let `U` be an open set of the model space `H` of a model with corners `I` whose
