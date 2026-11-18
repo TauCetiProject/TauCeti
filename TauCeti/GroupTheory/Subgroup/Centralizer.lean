@@ -13,12 +13,16 @@ public import Mathlib.GroupTheory.Subgroup.Centralizer
 A homomorphism `f : G →* G'` maps the centralizer `C_G(s)` of a subset `s` into the centralizer
 `C_{G'}(f(s))`, hence into `C_{G'}(t)` for every `t ⊆ f(s)`. This file records the restriction of
 `f` as a homomorphism `C_G(s) →* C_{G'}(t)`; the case `s = {u}`, `t = {f u}` gives a homomorphism
-`C_G(u) →* C_{G'}(f u)`.
+`C_G(u) →* C_{G'}(f u)`. An isomorphism `e : G ≃* G'` restricts to an isomorphism
+`C_G(s) ≃* C_{G'}(e(s))`; for an inner automorphism this identifies the centralizers of conjugate
+elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
 
 ## Main definitions
 
 * `MonoidHom.centralizerMap`: the restriction `C_G(s) →* C_{G'}(t)` of `f : G →* G'`, for
   `t ⊆ f(s)`.
+* `MulEquiv.centralizerMap`: the restriction `C_G(s) ≃* C_{G'}(t)` of `e : G ≃* G'`, for
+  `t = e(s)`.
 -/
 
 public section
@@ -49,3 +53,29 @@ theorem centralizerMap_injective {f : G →* G'} (hf : Function.Injective f) {s 
   fun _ _ hc => Subtype.ext (hf (congrArg Subtype.val hc))
 
 end MonoidHom
+
+namespace MulEquiv
+
+variable {G G' : Type*} [Group G] [Group G']
+
+/-- The restriction of `e : G ≃* G'` to an isomorphism `C_G(s) ≃* C_{G'}(t)` of centralizers, for
+`t` the image `e(s)`. -/
+@[to_additive /-- The restriction of `e : G ≃+ G'` to an isomorphism of centralizers
+`C_G(s) ≃+ C_{G'}(t)`, for `t` the image `e(s)`. -/]
+def centralizerMap (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t) :
+    centralizer s ≃* centralizer t :=
+  (e.toMonoidHom.centralizerMap h.ge).toMulEquiv
+    (e.symm.toMonoidHom.centralizerMap (by simp [← h, Set.image_image]))
+    (by ext; simp) (by ext; simp)
+
+@[to_additive (attr := simp)]
+theorem centralizerMap_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t)
+    (c : centralizer s) : (e.centralizerMap h c : G') = e c :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem centralizerMap_symm_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t)
+    (c : centralizer t) : ((e.centralizerMap h).symm c : G) = e.symm c :=
+  (rfl)
+
+end MulEquiv
