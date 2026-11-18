@@ -13,6 +13,8 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.CompactSupport
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Sobolev.Dilation
+import TauCeti.Analysis.Distribution.TestFunction.Dilation
+import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -41,9 +43,9 @@ Consequently no continuous linear map from `W^{n+l,1}(Ω)` to bounded continuous
 sends a test function to its `l`-th derivative is a compact operator
 (`TauCeti.Wkp.not_isCompactOperator_of_apply_ofTestFunctionₗ_eq_iteratedFDeriv`). At `l = 0` this
 says that the critical embedding `W^{n,1}(Ω) → C⁰` is not compact
-(`TauCeti.Wkp.not_isCompactOperator_of_apply_ofTestFunctionₗ_eq`). Since the bumps live in an
-arbitrarily small ball, the statement is local: it applies on bounded domains, and through a chart
-on compact manifolds.
+(`TauCeti.Wkp.not_isCompactOperator_of_apply_ofTestFunctionₗ_eq`). The construction is local, as
+the bumps live in an arbitrarily small ball inside `Ω`, so it applies to bounded `Ω`; transport to
+compact manifolds is not done here.
 
 ## Main results
 
@@ -92,101 +94,90 @@ private theorem iteratedFDeriv_concentrate {φ : E → ℝ} (hφ : ContDiff ℝ 
 
 /-! ### The concentrating sequence -/
 
-/-- The rescaled profile `ε ^ l φ(ε⁻¹ (y - x₀))` vanishes off `closedBall x₀ R` when `φ` is
-supported in `closedBall 0 R` and `0 < ε ≤ 1`. -/
-private theorem concentrate_eq_zero {φ : E → ℝ} {R : ℝ} (hφR : tsupport φ ⊆ closedBall 0 R)
-    {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) {x₀ y : E} (hy : y ∉ closedBall x₀ R) :
-    ε ^ l * φ (ε⁻¹ • (y - x₀)) = 0 := by
-  refine mul_eq_zero_of_right _ (image_eq_zero_of_notMem_tsupport fun h => hy ?_)
-  have h := hφR h
-  rw [mem_closedBall, dist_zero_right, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 h0.le)] at h
-  rw [mem_closedBall, dist_eq_norm]
-  calc ‖y - x₀‖ ≤ ε⁻¹ * ‖y - x₀‖ :=
-        le_mul_of_one_le_left (norm_nonneg _) (one_le_inv₀ h0 |>.2 h1)
-    _ ≤ R := h
-
-variable [FiniteDimensional ℝ E]
-
-/-- A smooth compactly supported profile, supported in `closedBall 0 R`, whose `l`-th derivative
-does not vanish at some nonzero point `y` with `‖y‖ ≤ R`. -/
-private theorem exists_profile [Nontrivial E] {R : ℝ} (hR : 0 < R) (l : ℕ) :
-    ∃ φ : E → ℝ, ContDiff ℝ ∞ φ ∧ HasCompactSupport φ ∧ tsupport φ ⊆ closedBall 0 R ∧
-      ∃ y : E, 0 < ‖y‖ ∧ ‖y‖ ≤ R ∧ iteratedFDeriv ℝ l φ y ≠ 0 := by
-  -- A bump of outer radius `R / 4` centred at a point `a` with `‖a‖ = R / 2`.
+/-- A test function on `ball 0 r` whose `l`-th derivative does not vanish at some nonzero point
+`y` with `‖y‖ < r`. -/
+private theorem exists_profile [FiniteDimensional ℝ E] [Nontrivial E] {r : ℝ} (hr : 0 < r)
+    (l : ℕ) :
+    ∃ φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ), ∃ y : E, 0 < ‖y‖ ∧ ‖y‖ < r ∧
+      iteratedFDeriv ℝ l φ y ≠ 0 := by
+  -- A bump of outer radius `r / 4` centred at a point `a` with `‖a‖ = r / 2`.
   obtain ⟨v, hv⟩ := exists_ne (0 : E)
   have : 0 < ‖v‖ := norm_pos_iff.2 hv
-  set a : E := (R / (2 * ‖v‖)) • v
-  have ha : ‖a‖ = R / 2 := by
+  set a : E := (r / (2 * ‖v‖)) • v
+  have ha : ‖a‖ = r / 2 := by
     rw [norm_smul, Real.norm_of_nonneg (by positivity)]
     field_simp
-  let b : ContDiffBump a := ⟨R / 8, R / 4, by positivity, by linarith⟩
-  have hsupp : tsupport b = closedBall a (R / 4) := b.tsupport_eq
+  let b : ContDiffBump a := ⟨r / 8, r / 4, by positivity, by linarith⟩
+  have hsupp : tsupport b = closedBall a (r / 4) := b.tsupport_eq
   have hne : (b : E → ℝ) ≠ 0 := fun h => by
     simpa [h] using b.one_of_mem_closedBall (mem_closedBall_self b.rIn_pos.le)
   obtain ⟨y, hy⟩ := b.hasCompactSupport.exists_iteratedFDeriv_ne_zero (n := l)
     (b.contDiff.of_le (by exact_mod_cast le_top)) hne
-  have hyb : y ∈ closedBall a (R / 4) := by
+  have hyb : y ∈ closedBall a (r / 4) := by
     by_contra h
     exact hy (image_eq_zero_of_notMem_tsupport fun h' =>
       h (hsupp ▸ tsupport_iteratedFDeriv_subset l h'))
   rw [mem_closedBall, dist_eq_norm] at hyb
-  refine ⟨b, b.contDiff, b.hasCompactSupport, ?_, y, ?_, ?_, hy⟩
-  · intro z hz
-    rw [hsupp, mem_closedBall, dist_eq_norm] at hz
-    rw [mem_closedBall, dist_zero_right]
+  refine ⟨⟨b, b.contDiff, b.hasCompactSupport, fun z hz => ?_⟩, y, ?_, ?_, hy⟩
+  · rw [hsupp, mem_closedBall, dist_eq_norm] at hz
+    change z ∈ ball (0 : E) r
+    rw [mem_ball_zero_iff]
     linarith [norm_le_norm_add_norm_sub' z a]
   · linarith [norm_le_norm_add_norm_sub' a y, norm_sub_rev a y]
   · linarith [norm_le_norm_add_norm_sub' y a]
 
-/-- The rescaled profile `y ↦ ε ^ l φ(ε⁻¹ (y - x₀))` as a test function on `Ω`, for `φ` supported
-in `closedBall 0 R`, `closedBall x₀ R ⊆ Ω` and `0 < ε ≤ 1`. -/
-private def concentrate {Omega : Opens E} {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ) {R : ℝ}
-    (hφR : tsupport φ ⊆ closedBall 0 R) {x₀ : E} (hΩ : closedBall x₀ R ⊆ Omega) {ε : ℝ}
-    (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) : 𝓓(Omega, ℝ) where
-  toFun y := ε ^ l * φ (ε⁻¹ • (y - x₀))
-  contDiff' := contDiff_const.mul (hφ.comp ((contDiff_id.sub contDiff_const).const_smul _))
-  hasCompactSupport' := HasCompactSupport.intro (isCompact_closedBall x₀ R)
-    fun _ hy => concentrate_eq_zero hφR h0 h1 l hy
-  tsupport_subset' := (closure_minimal (Function.support_subset_iff'.2
-    fun _ hy => concentrate_eq_zero hφR h0 h1 l hy) isClosed_closedBall).trans hΩ
+/-- The rescaled profile `y ↦ ε ^ l φ(ε⁻¹ (y - x₀))` as a test function on `Ω`, for a test
+function `φ` on `ball 0 r`, `ball x₀ r ⊆ Ω` and `0 < ε ≤ 1`: the profile dilated by `ε` and
+translated by `x₀`. -/
+private def concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
+    (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
+    𝓓(Omega, ℝ) :=
+  ε ^ l • translateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) (h := x₀)
+    (show MapsTo (· + x₀) (ball (0 : E) r) Omega from fun z hz => hΩ <| by
+      rwa [mem_ball, dist_eq_norm, add_sub_cancel_right, ← mem_ball_zero_iff])
+    (dilateTestFunction (V := ⟨ball (0 : E) r, isOpen_ball⟩) h0.ne'
+      (show MapsTo (ε • ·) (ball (0 : E) r) (ball 0 r) from fun z hz => by
+        rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg h0.le]
+        exact (mul_le_of_le_one_left (norm_nonneg z) h1).trans_lt (mem_ball_zero_iff.1 hz)) φ)
 
-private theorem coe_concentrate {Omega : Opens E} {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ) {R : ℝ}
-    (hφR : tsupport φ ⊆ closedBall 0 R) {x₀ : E} (hΩ : closedBall x₀ R ⊆ Omega) {ε : ℝ}
-    (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
-    (concentrate hφ hφR hΩ h0 h1 l : E → ℝ) = fun y => ε ^ l * φ (ε⁻¹ • (y - x₀)) :=
-  rfl
+private theorem coe_concentrate {r : ℝ} {x₀ : E} {Omega : Opens E} (hΩ : ball x₀ r ⊆ Omega)
+    (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
+    (concentrate hΩ φ h0 h1 l : E → ℝ) = fun y => ε ^ l * φ (ε⁻¹ • (y - x₀)) := by
+  ext y
+  rw [concentrate, FunLike.coe_smul, Pi.smul_apply, translateTestFunction_apply,
+    dilateTestFunction_apply, smul_eq_mul]
 
 /-- The `l`-th derivative of the rescaled profile is `D^l φ(ε⁻¹ (y - x₀))`: the factor `ε ^ l`
 exactly compensates the rescaling. -/
-private theorem iteratedFDeriv_concentrate_self {Omega : Opens E} {φ : E → ℝ}
-    (hφ : ContDiff ℝ ∞ φ) {R : ℝ} (hφR : tsupport φ ⊆ closedBall 0 R) {x₀ : E}
-    (hΩ : closedBall x₀ R ⊆ Omega) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) (y : E) :
-    iteratedFDeriv ℝ l (concentrate hφ hφR hΩ h0 h1 l) y =
+private theorem iteratedFDeriv_concentrate_self {r : ℝ} {x₀ : E} {Omega : Opens E}
+    (hΩ : ball x₀ r ⊆ Omega) (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε)
+    (h1 : ε ≤ 1) (l : ℕ) (y : E) :
+    iteratedFDeriv ℝ l (concentrate hΩ φ h0 h1 l) y =
       iteratedFDeriv ℝ l φ (ε⁻¹ • (y - x₀)) := by
-  rw [coe_concentrate, iteratedFDeriv_concentrate hφ, Pi.smul_apply, Function.comp_apply,
-    iteratedFDeriv_comp_const_smul_apply, smul_smul, ← mul_pow, mul_inv_cancel₀ h0.ne', one_pow,
-    one_smul]
+  rw [coe_concentrate, iteratedFDeriv_concentrate φ.contDiff, Pi.smul_apply, Function.comp_apply,
+    iteratedFDeriv_comp_const_smul_apply]
+  simp [smul_smul, h0.ne']
 
 /-- Two rescaled profiles at scales `δ` and `ε` are separated at `x₀ + ε • y`: the first has
 `l`-th derivative `D^l φ(y)` there, and the second vanishes there as soon as `δ⁻¹ ε y` lies
-outside `closedBall 0 R`. -/
-private theorem norm_iteratedFDeriv_concentrate_sub {Omega : Opens E} {φ : E → ℝ}
-    (hφ : ContDiff ℝ ∞ φ) {R : ℝ} (hφR : tsupport φ ⊆ closedBall 0 R) {x₀ : E}
-    (hΩ : closedBall x₀ R ⊆ Omega) {ε δ : ℝ} (hε0 : 0 < ε) (hε1 : ε ≤ 1) (hδ0 : 0 < δ)
-    (hδ1 : δ ≤ 1) (l : ℕ) {y : E} (hy : R < δ⁻¹ * ε * ‖y‖) :
-    ‖iteratedFDeriv ℝ l (concentrate hφ hφR hΩ hε0 hε1 l) (x₀ + ε • y) -
-        iteratedFDeriv ℝ l (concentrate hφ hφR hΩ hδ0 hδ1 l) (x₀ + ε • y)‖ =
+outside `ball 0 r`. -/
+private theorem norm_iteratedFDeriv_concentrate_sub {r : ℝ} {x₀ : E} {Omega : Opens E}
+    (hΩ : ball x₀ r ⊆ Omega) (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε δ : ℝ} (hε0 : 0 < ε)
+    (hε1 : ε ≤ 1) (hδ0 : 0 < δ) (hδ1 : δ ≤ 1) (l : ℕ) {y : E} (hy : r ≤ δ⁻¹ * ε * ‖y‖) :
+    ‖iteratedFDeriv ℝ l (concentrate hΩ φ hε0 hε1 l) (x₀ + ε • y) -
+        iteratedFDeriv ℝ l (concentrate hΩ φ hδ0 hδ1 l) (x₀ + ε • y)‖ =
       ‖iteratedFDeriv ℝ l φ y‖ := by
   have hzero : iteratedFDeriv ℝ l φ (δ⁻¹ • (ε • y)) = 0 := by
     refine image_eq_zero_of_notMem_tsupport fun h => ?_
-    have h' := hφR (tsupport_iteratedFDeriv_subset l h)
-    rw [mem_closedBall, dist_zero_right, smul_smul, norm_smul,
-      Real.norm_of_nonneg (by positivity)] at h'
+    have h' : δ⁻¹ • (ε • y) ∈ ball (0 : E) r :=
+      φ.tsupport_subset (tsupport_iteratedFDeriv_subset l h)
+    rw [mem_ball_zero_iff, smul_smul, norm_smul, Real.norm_of_nonneg (by positivity)] at h'
     linarith
   simp only [iteratedFDeriv_concentrate_self, add_sub_cancel_left, inv_smul_smul₀ hε0.ne', hzero,
     sub_zero]
 
-variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
+  [mu.IsAddHaarMeasure]
 
 /-- The `L¹` norm of the `i`-th derivative of the rescaled profile `ε ^ l φ(ε⁻¹ (· - x₀))` is
 `ε ^ l ε ^ (n - i)` times that of `D^i φ`. -/
@@ -213,14 +204,14 @@ private theorem pow_mul_rpow_sub_le_one {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1)
 
 /-- The `W^{n+l,1}(Ω)` norm of the rescaled profile is at most the sum of the `L¹` norms of the
 derivatives of `φ` of orders `0` through `n + l`, uniformly in `0 < ε ≤ 1`. -/
-private theorem norm_ofTestFunctionₗ_concentrate_le {Omega : Opens E} {φ : E → ℝ}
-    (hφ : ContDiff ℝ ∞ φ) {R : ℝ} (hφR : tsupport φ ⊆ closedBall 0 R) {x₀ : E}
-    (hΩ : closedBall x₀ R ⊆ Omega) {ε : ℝ} (h0 : 0 < ε) (h1 : ε ≤ 1) (l : ℕ) :
-    ‖Wkp.ofTestFunctionₗ (mu := mu) (p := 1) (finrank ℝ E + l)
-        (concentrate hφ hφR hΩ h0 h1 l)‖ ≤
+private theorem norm_ofTestFunctionₗ_concentrate_le {r : ℝ} {x₀ : E} {Omega : Opens E}
+    (hΩ : ball x₀ r ⊆ Omega) (φ : 𝓓(⟨ball (0 : E) r, isOpen_ball⟩, ℝ)) {ε : ℝ} (h0 : 0 < ε)
+    (h1 : ε ≤ 1) (l : ℕ) :
+    ‖Wkp.ofTestFunctionₗ (mu := mu) (p := 1) (finrank ℝ E + l) (concentrate hΩ φ h0 h1 l)‖ ≤
       ∑ i ∈ Finset.range (finrank ℝ E + l + 1), lpNorm (iteratedFDeriv ℝ i φ) 1 mu := by
-  refine (Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm _ _).trans (Finset.sum_le_sum fun i hi => ?_)
-  rw [coe_concentrate, lpNorm_iteratedFDeriv_concentrate hφ h0]
+  refine (Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm_iteratedFDeriv _ _).trans
+    (Finset.sum_le_sum fun i hi => ?_)
+  rw [coe_concentrate, lpNorm_iteratedFDeriv_concentrate φ.contDiff h0]
   exact mul_le_of_le_one_left lpNorm_nonneg
     (pow_mul_rpow_sub_le_one h0 h1 (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)))
 
@@ -231,33 +222,29 @@ private theorem exists_seq_norm_ofTestFunctionₗ_le_and_le_norm_iteratedFDeriv_
     ∃ (w : ℕ → 𝓓(Omega, ℝ)) (C c : ℝ), 0 ≤ C ∧ 0 < c ∧
       (∀ j, ‖Wkp.ofTestFunctionₗ (mu := mu) (p := 1) (finrank ℝ E + l) (w j)‖ ≤ C) ∧
       ∀ i j, i < j → ∃ x, c ≤ ‖iteratedFDeriv ℝ l (w i) x - iteratedFDeriv ℝ l (w j) x‖ := by
-  -- A closed ball `closedBall x₀ (r / 2) ⊆ Ω` and a profile supported in `closedBall 0 (r / 2)`.
+  -- A ball `ball x₀ r ⊆ Ω` and a profile on `ball 0 r`.
   obtain ⟨x₀, hx₀⟩ := hΩ
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 Omega.isOpen x₀ hx₀
-  have hsub : closedBall x₀ (r / 2) ⊆ Omega :=
-    (closedBall_subset_ball (half_lt_self hr)).trans hball
-  obtain ⟨φ, hφ, -, hφR, y, hy0, hyR, hy⟩ := exists_profile (E := E) (half_pos hr) l
-  -- The scales `θ ^ j` with ratio `θ = ‖y‖ / r ≤ 1 / 2`.
+  obtain ⟨φ, y, hy0, hyr, hy⟩ := exists_profile (E := E) hr l
+  -- The scales `θ ^ j` with ratio `θ = ‖y‖ / r < 1`.
   set θ := ‖y‖ / r
   have hθ0 : 0 < θ := div_pos hy0 hr
-  have hθ1 : θ ≤ 1 := (div_le_one hr).2 (by linarith)
+  have hθ1 : θ ≤ 1 := (div_le_one hr).2 hyr.le
   have hε0 (j : ℕ) : 0 < θ ^ j := pow_pos hθ0 j
   have hε1 (j : ℕ) : θ ^ j ≤ 1 := pow_le_one₀ hθ0.le hθ1
-  refine ⟨fun j => concentrate hφ hφR hsub (hε0 j) (hε1 j) l, _,
+  refine ⟨fun j => concentrate hball φ (hε0 j) (hε1 j) l, _,
     ‖iteratedFDeriv ℝ l φ y‖, Finset.sum_nonneg fun _ _ => lpNorm_nonneg,
-    norm_pos_iff.2 hy, fun j => norm_ofTestFunctionₗ_concentrate_le hφ hφR hsub _ _ l,
+    norm_pos_iff.2 hy, fun j => norm_ofTestFunctionₗ_concentrate_le hball φ _ _ l,
     fun i j hij => ⟨x₀ + θ ^ i • y,
-      (norm_iteratedFDeriv_concentrate_sub hφ hφR hsub _ _ _ _ l ?_).ge⟩⟩
+      (norm_iteratedFDeriv_concentrate_sub hball φ _ _ _ _ l ?_).ge⟩⟩
   -- At `x₀ + θ ^ i • y` the `j`-th profile vanishes: `θ ^ j ≤ θ ^ i θ` and `r θ = ‖y‖` give
-  -- `(θ ^ j)⁻¹ θ ^ i ‖y‖ ≥ r > r / 2`.
+  -- `(θ ^ j)⁻¹ θ ^ i ‖y‖ ≥ r`.
   have hθj : θ ^ j ≤ θ ^ i * θ := by
     rw [← Nat.add_sub_cancel' hij.le, pow_add]
     exact mul_le_mul_of_nonneg_left (pow_le_of_le_one hθ0.le hθ1 (by omega)) (hε0 i).le
   have hrθ : r * θ = ‖y‖ := mul_div_cancel₀ _ hr.ne'
-  have hr' : r ≤ (θ ^ j)⁻¹ * θ ^ i * ‖y‖ := by
-    rw [inv_mul_eq_div, div_mul_eq_mul_div, le_div_iff₀ (hε0 j), ← hrθ]
-    nlinarith [hε0 i]
-  linarith
+  rw [inv_mul_eq_div, div_mul_eq_mul_div, le_div_iff₀ (hε0 j), ← hrθ]
+  nlinarith [hε0 i]
 
 namespace Wkp
 
@@ -282,15 +269,13 @@ theorem exists_seq_norm_ofTestFunctionₗ_le_and_le_norm_iteratedFDeriv_sub [Non
     fun i j hij => ?_⟩
   · rw [map_smul, norm_smul, Real.norm_of_nonneg hpos, inv_mul_le_iff₀ (by positivity), mul_one]
     exact (hw j).trans (le_add_of_nonneg_right zero_le_one)
-  · rcases lt_or_gt_of_ne hij with h | h
-    · obtain ⟨x, hx⟩ := hsep i j h
-      refine ⟨x, ?_⟩
-      rw [hsmul, hsmul, ← smul_sub, norm_smul, Real.norm_of_nonneg hpos]
-      exact mul_le_mul_of_nonneg_left hx hpos
-    · obtain ⟨x, hx⟩ := hsep j i h
-      refine ⟨x, ?_⟩
-      rw [hsmul, hsmul, ← smul_sub, norm_smul, Real.norm_of_nonneg hpos, norm_sub_rev]
-      exact mul_le_mul_of_nonneg_left hx hpos
+  · obtain ⟨x, hx⟩ : ∃ x, c ≤ ‖iteratedFDeriv ℝ l (w i) x - iteratedFDeriv ℝ l (w j) x‖ := by
+      rcases lt_or_gt_of_ne hij with h | h
+      · exact hsep i j h
+      · simpa only [norm_sub_rev] using hsep j i h
+    refine ⟨x, ?_⟩
+    rw [hsmul, hsmul, ← smul_sub, norm_smul, Real.norm_of_nonneg hpos]
+    exact mul_le_mul_of_nonneg_left hx hpos
 
 /-- **The critical embedding `W^{n+l,1}(Ω) → C^l` is not compact.** In a nonempty open set `Ω` of
 a space of dimension `n ≥ 1`, no continuous linear map from `W^{n+l,1}(Ω)` to bounded continuous
@@ -320,18 +305,13 @@ theorem not_isCompactOperator_of_apply_ofTestFunctionₗ_eq [Nontrivial E] {Omeg
     (hΩ : (Omega : Set E).Nonempty) (T : Wkp mu Omega 1 (finrank ℝ E) →L[ℝ] E →ᵇ ℝ)
     (hT : ∀ (ψ : 𝓓(Omega, ℝ)) (x : E), T (ofTestFunctionₗ (finrank ℝ E) ψ) x = ψ x) :
     ¬ IsCompactOperator T := by
-  intro hK
-  obtain ⟨u, c, hc, hu, hsep⟩ :=
-    exists_seq_norm_ofTestFunctionₗ_le_and_le_norm_iteratedFDeriv_sub (mu := mu) hΩ 0
-  obtain ⟨i, j, hij, hlt⟩ := hK.exists_dist_lt_of_norm_le hu hc
-  obtain ⟨x, hx⟩ := hsep i j hij.ne
-  have h := BoundedContinuousFunction.dist_coe_le_dist
-    (f := T (ofTestFunctionₗ (finrank ℝ E) (u i)))
-    (g := T (ofTestFunctionₗ (finrank ℝ E) (u j))) x
-  rw [hT, hT, dist_eq_norm] at h
-  simp only [iteratedFDeriv_zero_eq_comp, Function.comp_apply, ← map_sub,
-    LinearIsometryEquiv.norm_map] at hx
-  exact (hx.trans h).not_gt hlt
+  -- Identify `ℝ` with the `0`-multilinear maps and apply the `l = 0` case of the `C^l` statement.
+  let g : ℝ →L[ℝ] E [×0]→L[ℝ] ℝ := (continuousMultilinearCurryFin0 ℝ E ℝ).symm
+  refine fun hK => not_isCompactOperator_of_apply_ofTestFunctionₗ_eq_iteratedFDeriv (l := 0) hΩ
+    ((g.compLeftContinuousBounded E).comp T) (fun ψ x => ?_)
+    (by rw [ContinuousLinearMap.coe_comp]; exact hK.clm_comp _)
+  rw [iteratedFDeriv_zero_eq_comp]
+  exact congrArg g (hT ψ x)
 
 end Wkp
 

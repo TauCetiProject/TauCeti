@@ -37,8 +37,9 @@ Sobolev functions and density results comparing different domains are not proved
 * `TauCeti.Wkp.enorm_value_ofTestFunctionₗ`, `TauCeti.Wkp.enorm_iteratedGradient_ofTestFunctionₗ`:
   the Sobolev components of an embedded test function have the `Lᵖ` norms of its classical
   derivatives on the whole space.
-* `TauCeti.Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm`: the `W^{k,p}(Ω)` norm of an embedded test
-  function is at most the sum of the `Lᵖ` norms of its classical derivatives through order `k`.
+* `TauCeti.Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm_iteratedFDeriv`: the `W^{k,p}(Ω)` norm of an
+  embedded test function is at most the sum of the `Lᵖ` norms of its classical derivatives through
+  order `k`.
 * `TauCeti.wkp0Submodule` and `TauCeti.Wkp0`: the closure of the test functions in `W^{k,p}(Ω)`
   and its complete normed-space type.
 * `TauCeti.Wkp0.ofTestFunctionₗ` and `TauCeti.Wkp0.lowerOrderL`: the dense test-function
@@ -332,7 +333,7 @@ theorem Wkp.enorm_iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega
 
 /-- The norm of an embedded test function in `W^{k,p}(Ω)` is at most the sum of the `Lᵖ` norms,
 for the ambient measure, of its classical derivatives of orders `0` through `k`. -/
-theorem Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+theorem Wkp.norm_ofTestFunctionₗ_le_sum_lpNorm_iteratedFDeriv (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
     ‖Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi‖ ≤
       ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i (phi : E → ℝ)) p mu := by
   refine (Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k _
