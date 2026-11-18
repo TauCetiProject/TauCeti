@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.Comp
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # The determinant line of a map augmented by finitely many linear conditions
@@ -163,17 +164,6 @@ section Bijective
 
 variable (f : M →ₗ[K] N) (g : M →ₗ[K] V)
 
-/-- If `f.prod g` is injective, `g` is injective on the kernel of `f`. -/
-private theorem injective_domRestrict_of_injective_prod (h : Function.Injective (f.prod g)) :
-    Function.Injective (g.domRestrict (ker f)) := fun x y hxy ↦
-  Subtype.ext (h (Prod.ext ((mem_ker.mp x.2).trans (mem_ker.mp y.2).symm) hxy))
-
-/-- If `f.prod g` is onto, so is `f`. -/
-private theorem surjective_of_surjective_prod (h : Function.Surjective (f.prod g)) :
-    Function.Surjective f := fun n ↦
-  let ⟨m, hm⟩ := h (n, 0)
-  ⟨m, congrArg Prod.fst hm⟩
-
 /-- **The determinant line of a bijective augmented map.** When `f.prod g` is bijective, its
 determinant line is `K` (`LinearMap.detLineEquivOfBijective`), and `LinearMap.detLineProdEquiv`
 becomes an isomorphism `det f ≃ det V`. In this case `g` maps the kernel of `f` isomorphically
@@ -182,19 +172,11 @@ isomorphism sends `u₁ ∧ ⋯ ∧ uₙ ⊗ φ` to `g u₁ ∧ ⋯ ∧ g uₙ` 
 the zero cokernel (`LinearMap.coe_detLineEquivOfBijectiveProd_tmul`). -/
 def detLineEquivOfBijectiveProd [FiniteDimensional K V] (h : Function.Bijective (f.prod g)) :
     f.detLine ≃ₗ[K] TauCeti.detLine K V :=
-  have : FiniteDimensional K (ker f) :=
-    Module.Finite.of_injective _ (injective_domRestrict_of_injective_prod f g h.1)
-  have : Subsingleton (N ⧸ range f) := Submodule.Quotient.subsingleton_iff.mpr
-    (range_eq_top.mpr (surjective_of_surjective_prod f g h.2))
+  have := finite_ker_of_injective_prod h.1
+  have := subsingleton_quotient_range_of_surjective_prod h.2
   f.detLineProdEquiv g ≪≫ₗ
     TensorProduct.congr (detLineEquivOfBijective h) (LinearEquiv.refl K _) ≪≫ₗ
     TensorProduct.lid K _
-
-/-- An exterior product of an empty family is `1`, whatever the form of its length. -/
-private theorem ιMulti_eq_one {W : Type*} [AddCommGroup W] [Module K W] {n : ℕ} (hn : n = 0)
-    (b : Fin n → W) : ExteriorAlgebra.ιMulti K n b = 1 := by
-  subst hn
-  exact ExteriorAlgebra.ιMulti_zero_apply b
 
 /-- The computation behind `LinearMap.coe_detLineEquivOfBijectiveProd_tmul`, for a bijective map
 `F : M → N × V` and the composite `fst ∘ₗ F`, which for `F = f.prod g` is `f`. -/
@@ -245,18 +227,22 @@ private theorem coe_lid_detLineCompEquiv_fst_tmul (F : M →ₗ[K] N × V) [Fini
     have ha : (fun i ↦ (a i : N × V).2) = (snd K N V ∘ₗ (ker (fst K N V)).subtype) ∘
         Fin.append (F.kerCompToKer (fst K N V) ∘ u ∘ Fin.cast hv) w ∘ Fin.cast hK := (rfl)
     rw [ha, ← Function.comp_assoc, TauCeti.ExteriorAlgebra.ιMulti_comp_cast,
-      TauCeti.ExteriorAlgebra.ιMulti_comp_append, ιMulti_eq_one hw, mul_one]
+      TauCeti.ExteriorAlgebra.ιMulti_comp_append,
+      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hw, mul_one]
     simp only [← Function.comp_assoc, TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
     congr 2
     funext i
     simp
-  · rw [exteriorPower.ιMulti_apply_coe, ← ExteriorAlgebra.ιMulti_mul_ιMulti, ιMulti_eq_one hker,
-      one_mul, TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
+  · rw [exteriorPower.ιMulti_apply_coe, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
+      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hker, one_mul,
+      TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
   · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_comp_cast]
-  · rw [exteriorPower.ιMulti_apply_coe, ιMulti_eq_one hcoker, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ιMulti_eq_one hw, ιMulti_eq_one hx, one_mul]
-  · rw [exteriorPower.ιMulti_apply_coe, ιMulti_eq_one hcf, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ιMulti_eq_one hx, ιMulti_eq_one h₀, one_mul]
+  · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hcoker,
+      ← ExteriorAlgebra.ιMulti_mul_ιMulti, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hw,
+      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hx, one_mul]
+  · rw [exteriorPower.ιMulti_apply_coe, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hcf,
+      ← ExteriorAlgebra.ιMulti_mul_ιMulti, TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero hx,
+      TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero h₀, one_mul]
 
 variable [FiniteDimensional K V]
 
@@ -272,10 +258,8 @@ theorem coe_detLineEquivOfBijectiveProd_tmul (h : Function.Bijective (f.prod g))
     (f.detLineEquivOfBijectiveProd g h (exteriorPower.ιMulti K _ u ⊗ₜ φ) :
         ExteriorAlgebra K V) =
       φ (exteriorPower.ιMulti K _ e) • ExteriorAlgebra.ιMulti K _ (g.domRestrict (ker f) ∘ u) :=
-  have : FiniteDimensional K (ker f) :=
-    Module.Finite.of_injective _ (injective_domRestrict_of_injective_prod f g h.1)
-  have : Subsingleton (N ⧸ range f) := Submodule.Quotient.subsingleton_iff.mpr
-    (range_eq_top.mpr (surjective_of_surjective_prod f g h.2))
+  have := finite_ker_of_injective_prod h.1
+  have := subsingleton_quotient_range_of_surjective_prod h.2
   -- `fst ∘ₗ f.prod g` is `f` by definition (`LinearMap.fst_prod` is proved by `rfl`), and
   -- `((f.prod g) x).2` is `g x`.
   coe_lid_detLineCompEquiv_fst_tmul (f.prod g) h u φ e

@@ -63,13 +63,9 @@ theorem IsComplexPositiveDetLine.isComplexPositive_detLineEquivOfBijectiveProd
     IsComplexPositive
       ((f.restrictScalars ℝ).detLineEquivOfBijectiveProd (g.restrictScalars ℝ) h z) := by
   -- `f` is onto and `g` restricts to a complex-linear isomorphism `e : ker f ≃ V`.
-  have hf : Function.Surjective f := fun n ↦
-    let ⟨m, hm⟩ := h.2 (n, 0)
-    ⟨m, congrArg Prod.fst hm⟩
-  have hg : Function.Bijective (g.domRestrict (ker f)) :=
-    ⟨(injective_iff_map_eq_zero _).mpr fun y hy ↦
-      Subtype.ext (h.1 (by simpa [mem_ker.mp y.2] using hy)),
-      fun v ↦ let ⟨m, hm⟩ := h.2 (0, v); ⟨⟨m, congrArg Prod.fst hm⟩, congrArg Prod.snd hm⟩⟩
+  -- The complex augmented map `f.prod g` has the same underlying function as the real one.
+  have hC : Function.Bijective (f.prod g) := h
+  have hg : Function.Bijective (g.domRestrict (ker f)) := bijective_domRestrict_of_bijective_prod hC
   let e : ker f ≃ₗ[ℂ] V := LinearEquiv.ofBijective _ hg
   -- A complex basis `b` of `ker f`; the cokernel of `f` is zero.
   have : FiniteDimensional ℝ (ker f) :=
@@ -77,8 +73,7 @@ theorem IsComplexPositiveDetLine.isComplexPositive_detLineEquivOfBijectiveProd
   have : FiniteDimensional ℂ (ker f) := Module.Finite.of_restrictScalars_finite ℝ ℂ (ker f)
   let b := Module.finBasis ℂ (ker f)
   have hn : finrank ℝ (ker f) = 2 * finrank ℂ (ker f) := finrank_real_eq_two_mul_finrank_complex
-  have : Subsingleton (N ⧸ range f) :=
-    Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf)
+  have := subsingleton_quotient_range_of_surjective_prod hC.2
   have h₀ : finrank ℝ (N ⧸ range f) = 2 * 0 := finrank_zero_of_subsingleton
   -- The explicit complex positive element `z₀ = (b₀ ∧ I • b₀ ∧ ⋯) ⊗ φ₀` of the determinant line,
   -- with `φ₀` taking the value `1` on the empty exterior product of the zero cokernel.
