@@ -42,11 +42,8 @@ theorem eq_of_continuous_of_coord_ae_eq [T2Space F] [MeasurableSpace E] {μ : Me
     (h : ∀ i, A.coord i s =ᵐ[μ.restrict (A.image i)] A.coord i t) : s = t := by
   funext x
   obtain ⟨i, hx⟩ := A.exists_mem_dom x
-  have hy : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
-  have heq := Measure.eqOn_open_of_ae_eq (h i) (A.image i).isOpen (A.continuousOn_coord hs i)
-    (A.continuousOn_coord ht i) hy
-  rw [← (A.chart i).left_inv (A.dom_subset_chart_source i hx)]
-  exact (A.coord_eq_coord_iff hy).1 heq
+  exact A.eq_of_coord_chart_eq hx (Measure.eqOn_open_of_ae_eq (h i) (A.image i).isOpen
+    (A.continuousOn_coord hs i) (A.continuousOn_coord ht i) (A.mem_image.2 ⟨x, hx, rfl⟩))
 
 end FiniteBundleAtlas
 

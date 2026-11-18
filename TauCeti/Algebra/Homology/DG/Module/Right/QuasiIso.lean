@@ -38,10 +38,13 @@ roofs `M ← P → N` are Mathlib's right fractions for it.
   three.
 * `TauCeti.DGRightModuleHom.IsQuasiIso.cohomologyLinearEquiv`: the induced isomorphism of
   cohomology.
-* `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`: a morphism with a homotopy inverse
+* `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse`,
+  `TauCeti.DGRightModuleCat.isQuasiIso_of_homotopyInverse`: a morphism with a homotopy inverse
   over the ground ring is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_iff_forall_exists`: quasi-isomorphisms are the morphisms
   whose relative cycles are relative boundaries.
+* `TauCeti.DGRightModuleHom.isQuasiIso_of_subsingleton`: a morphism between modules without
+  nonzero elements is a quasi-isomorphism.
 * `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`: a morphism is a quasi-isomorphism
   when it is, compatibly, a homotopy retract of a map whose relative cycles are relative
   boundaries.
@@ -205,6 +208,12 @@ theorem isQuasiIso_iff_forall_exists (f : DGRightModuleHom hM hN) :
       rw [Submodule.coe_sub, cyclesMap_apply_coe, map_neg, ← huv]
       exact (sub_add_cancel_left _ _).symm
 
+/-- A morphism between DG right modules without nonzero elements is a quasi-isomorphism. -/
+theorem isQuasiIso_of_subsingleton [Subsingleton M] [Subsingleton N]
+    (f : DGRightModuleHom hM hN) : f.IsQuasiIso := by
+  rw [isQuasiIso_iff_forall_exists]
+  exact fun _ _ _ _ ↦ ⟨0, 0, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+
 /-- **Quasi-isomorphisms through homotopy retracts.** Let `f₀ : M₀ → N₀` be a map of complexes
 over the ground ring whose relative cycles are relative boundaries, as for a quasi-isomorphism
 (`isQuasiIso_iff_forall_exists`). If `M` and `N` are homotopy retracts of `M₀` and `N₀`, through
@@ -252,6 +261,18 @@ namespace DGRightModuleCat
 on cohomology. -/
 abbrev IsQuasiIso {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) : Prop :=
   DGRightModuleHom.IsQuasiIso f
+
+/-- **A morphism of bundled DG right modules with a homotopy inverse is a quasi-isomorphism.**
+The inverse `g` and the homotopies `K` and `L`, with `g ∘ f = 1 + d K + K d` and
+`f ∘ g = 1 + d L + L d`, need only be linear over the ground ring, and `g` must commute with the
+differentials. This is `TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyInverse` stated with the
+differentials of the bundled modules, so that no instance search on their carriers is needed. -/
+theorem isQuasiIso_of_homotopyInverse {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N)
+    (g : N →ₗ[R] M) (K : M →ₗ[R] M) (L : N →ₗ[R] N)
+    (hg : ∀ y, M.differential (g y) = g (N.differential y))
+    (hK : ∀ x, g (f x) = x + M.differential (K x) + K (M.differential x))
+    (hL : ∀ y, f (g y) = y + N.differential (L y) + L (N.differential y)) : IsQuasiIso f :=
+  DGRightModuleHom.isQuasiIso_of_homotopyInverse f g K L hg hK hL
 
 variable (h) in
 /-- The **quasi-isomorphisms** of DG right modules over `h`, as a morphism property: the morphisms

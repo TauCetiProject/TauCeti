@@ -12,6 +12,7 @@ public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.LocallyContractible
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Topology.ConnectedComponents
+import TauCeti.Topology.ContinuousMap.Glue.DisjointOpen
 
 /-!
 # Lusternik–Schnirelmann categorical covers
@@ -162,25 +163,13 @@ theorem nullhomotopic_subtypeVal_iUnion [PathConnectedSpace X] {ι : Type*} {U :
     obtain ⟨y, hy⟩ := h i
     exact hy.trans ⟨(PathConnectedSpace.somePath y x₀).toHomotopyConst⟩
   let G (i : ι) := (hG i).some
-  let S (i : ι) : Set (unitInterval × ↥(⋃ i, U i)) := {q | (q.2 : X) ∈ U i}
-  let φ (i : ι) : C(S i, X) :=
-    ⟨fun q ↦ G i (q.1.1, ⟨q.1.2, q.2⟩), (G i).continuous.comp (by fun_prop)⟩
-  have hφ (i j : ι) (q : unitInterval × ↥(⋃ i, U i)) (hi : q ∈ S i) (hj : q ∈ S j) :
-      φ i ⟨q, hi⟩ = φ j ⟨q, hj⟩ := by
-    obtain rfl : i = j := by_contra fun hij ↦ disjoint_left.1 (hd hij) hi hj
-    rfl
-  have hS (q : unitInterval × ↥(⋃ i, U i)) : ∃ i, S i ∈ 𝓝 q := by
-    obtain ⟨i, hi⟩ := mem_iUnion.1 q.2.2
-    exact ⟨i, ((hU i).preimage (by fun_prop)).mem_nhds hi⟩
+  obtain ⟨ψ, hglue⟩ := exists_continuousMap_prod_iUnion hU hd fun i ↦ (G i).toContinuousMap
   -- The glued homotopy starts at the inclusion and ends at the constant map at `x₀`.
-  have hglue (q : unitInterval × ↥(⋃ i, U i)) {i : ι} (hi : (q.2 : X) ∈ U i) :
-      liftCover S φ hφ hS q = G i (q.1, ⟨q.2, hi⟩) :=
-    liftCover_coe (i := i) ⟨q, hi⟩
-  refine ⟨x₀, ⟨⟨liftCover S φ hφ hS, fun x ↦ ?_, fun x ↦ ?_⟩⟩⟩
+  refine ⟨x₀, ⟨⟨ψ, fun x ↦ ?_, fun x ↦ ?_⟩⟩⟩
   · obtain ⟨i, hi⟩ := mem_iUnion.1 x.2
-    exact (hglue (0, x) hi).trans ((G i).apply_zero _)
+    exact (hglue i 0 x hi).trans ((G i).apply_zero _)
   · obtain ⟨i, hi⟩ := mem_iUnion.1 x.2
-    exact (hglue (1, x) hi).trans ((G i).apply_one _)
+    exact (hglue i 1 x hi).trans ((G i).apply_one _)
 
 namespace LSCategoricalCover
 
