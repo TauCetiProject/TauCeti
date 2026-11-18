@@ -32,8 +32,7 @@ public section
 namespace TauCeti.ExactStructure
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
-open HomotopyCategory.Bounded (mkMap mkMap_comp_assoc ι_map_mkMap singleFunctorObjIsoMk
-  mkSingleIsoShift)
+open HomotopyCategory.Bounded (mkMap mkMap_comp_assoc singleFunctorObjIsoMk mkSingleIsoShift)
 
 universe v₁ v₂ u₁ u₂
 
@@ -70,217 +69,50 @@ end Description
 
 section Complexes
 
-variable (F : C ⥤ D) [F.Additive]
-
-/-- The image in `Kᵇ(D)` of the class of a bounded complex is the class of its termwise image. -/
-private noncomputable def mapMkIso (K : CochainComplex C ℤ) (hK : CochainComplex.bounded C K) :
-    F.mapHomotopyCategoryBounded.obj (HomotopyCategory.Bounded.mk K hK) ≅
-      HomotopyCategory.Bounded.mk _ (F.bounded_mapHomologicalComplex hK) :=
-  (HomotopyCategory.Bounded.fullyFaithfulι D).preimageIso
-    (F.mapHomotopyCategoryBoundedCompι.app (HomotopyCategory.Bounded.mk K hK))
-
-private theorem ι_map_mapMkIso_inv (K : CochainComplex C ℤ) (hK : CochainComplex.bounded C K) :
-    (HomotopyCategory.Bounded.ι D).map (mapMkIso F K hK).inv =
-      F.mapHomotopyCategoryBoundedCompι.inv.app (HomotopyCategory.Bounded.mk K hK) :=
-  (HomotopyCategory.Bounded.fullyFaithfulι D).map_preimage _
-
-private theorem mkMap_comp_mapMkIso_inv {K L : CochainComplex C ℤ}
-    {hK : CochainComplex.bounded C K} {hL : CochainComplex.bounded C L} (φ : K ⟶ L) :
-    mkMap ((F.mapHomologicalComplex (.up ℤ)).map φ) ≫ (mapMkIso F L hL).inv =
-      (mapMkIso F K hK).inv ≫ F.mapHomotopyCategoryBounded.map (mkMap φ) := by
-  apply (HomotopyCategory.Bounded.ι D).map_injective
-  rw [Functor.map_comp, Functor.map_comp, ι_map_mapMkIso_inv, ι_map_mapMkIso_inv]
-  exact F.mapHomotopyCategoryBoundedCompι.inv.naturality
-    (mkMap φ : HomotopyCategory.Bounded.mk K hK ⟶ HomotopyCategory.Bounded.mk L hL)
-
-variable [HasZeroObject C] [HasZeroObject D]
-
-/-- The comparison `(F X₀ ⟶ F X₁) ⟶ F (X₀ ⟶ X₁)` of two-term complexes. -/
-private noncomputable def doubleComparison {X₀ X₁ : C} (g : X₀ ⟶ X₁) :
-    HomologicalComplex.double (F.map g) ComplexShape.up_rel_zero_one ⟶
-      (F.mapHomologicalComplex (.up ℤ)).obj
-        (HomologicalComplex.double g ComplexShape.up_rel_zero_one) :=
-  HomologicalComplex.mkHomFromDouble _ zero_ne_one
-    (F.map (HomologicalComplex.doubleXIso₀ g ComplexShape.up_rel_zero_one).inv)
-    (F.map (HomologicalComplex.doubleXIso₁ g ComplexShape.up_rel_zero_one zero_ne_one).inv)
-    (by
-      rw [Functor.mapHomologicalComplex_obj_d, HomologicalComplex.double_d g _ zero_ne_one,
-        ← F.map_comp, ← F.map_comp, Iso.inv_hom_id_assoc])
-    (fun k _ ↦ by
-      rw [Functor.mapHomologicalComplex_obj_d,
-        HomologicalComplex.double_d_eq_zero₀ g _ _ _ one_ne_zero, F.map_zero, comp_zero])
-
-private theorem doubleι_comp_doubleComparison (S : ShortComplex C) :
-    (S.map F).doubleι ≫ doubleComparison F S.g =
-      (HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) 0).inv.app S.X₁ ≫
-        (F.mapHomologicalComplex (.up ℤ)).map S.doubleι := by
-  apply HomologicalComplex.from_single_hom_ext
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, ShortComplex.doubleι_f_zero,
-    doubleComparison, HomologicalComplex.mkHomFromDouble_f₀,
-    HomologicalComplex.singleMapHomologicalComplex_inv_app_self,
-    Functor.mapHomologicalComplex_map_f, ShortComplex.doubleι_f_zero]
-  simp only [ShortComplex.map_f, ShortComplex.map_g, ShortComplex.map_X₁, Category.assoc,
-    Iso.inv_hom_id_assoc,
-    ← CategoryTheory.Functor.map_comp]
-
-private theorem doubleι₁_comp_doubleComparison {X₀ X₁ : C} (g : X₀ ⟶ X₁) :
-    HomologicalComplex.doubleι₁ (F.map g) ComplexShape.up_rel_zero_one zero_ne_one ≫
-        doubleComparison F g =
-      (HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) 1).inv.app X₁ ≫
-        (F.mapHomologicalComplex (.up ℤ)).map
-          (HomologicalComplex.doubleι₁ g ComplexShape.up_rel_zero_one zero_ne_one) := by
-  apply HomologicalComplex.from_single_hom_ext
-  rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, HomologicalComplex.doubleι₁_f₁,
-    doubleComparison, HomologicalComplex.mkHomFromDouble_f₁,
-    HomologicalComplex.singleMapHomologicalComplex_inv_app_self,
-    Functor.mapHomologicalComplex_map_f, HomologicalComplex.doubleι₁_f₁]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc, ← CategoryTheory.Functor.map_comp]
-
-private theorem singleMapHomologicalComplex_inv_app_comp_shiftIso (X : C) :
-    (HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) 0).inv.app X ≫
-        (F.mapHomologicalComplex (.up ℤ)).map
-          (((CochainComplex.singleFunctors C).shiftIso 1 0 1 (by simp)).inv.app X) ≫
-        ((F.mapHomologicalComplex (.up ℤ)).commShiftIso (1 : ℤ)).hom.app _ =
-      ((CochainComplex.singleFunctors D).shiftIso 1 0 1 (by simp)).inv.app (F.obj X) ≫
-        ((HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) 1).inv.app X)⟦(1 : ℤ)⟧' := by
-  apply HomologicalComplex.from_single_hom_ext
-  simp [CochainComplex.singleFunctors, HomologicalComplex.singleObjXSelf,
-    HomologicalComplex.singleObjXIsoOfEq, eqToHom_map]
-
-/-- The comparison `X[n] ⟶ F (X[n])` of single complexes, in `Kᵇ(D)`. -/
-private noncomputable def singleComparison (n : ℤ) (X : C) :
-    HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n (F.obj X)) ⟶
-      F.mapHomotopyCategoryBounded.obj
-        (HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single n X)) :=
-  mkMap ((HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) n).inv.app X) ≫
-    (mapMkIso F _ _).inv
-
-private theorem ι_map_singleComparison_comp (n : ℤ) (X : C) :
-    (HomotopyCategory.Bounded.ι D).map (singleComparison F n X) ≫
-        F.mapHomotopyCategoryBoundedCompι.hom.app _ =
-      (HomotopyCategory.quotient D (.up ℤ)).map
-        ((HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) n).inv.app X) := by
-  rw [singleComparison, Functor.map_comp, ι_map_mkMap, ι_map_mapMkIso_inv, Category.assoc,
-    Iso.inv_hom_id_app]
-  exact Category.comp_id _
-
-private theorem singleFunctorIso_hom_app_comp (X : C) :
-    (F.mapHomotopyCategoryBoundedSingleFunctorIso 0).hom.app X ≫
-        (singleFunctorObjIsoMk 0 (F.obj X)).hom ≫ singleComparison F 0 X =
-      F.mapHomotopyCategoryBounded.map (singleFunctorObjIsoMk 0 X).hom := by
-  apply (HomotopyCategory.Bounded.ι D).map_injective
-  rw [← cancel_mono (F.mapHomotopyCategoryBoundedCompι.hom.app _)]
-  have h := F.mapHomotopyCategoryBoundedCompι.hom.naturality (singleFunctorObjIsoMk 0 X).hom
-  simp only [Functor.comp_map, HomotopyCategory.Bounded.ι_map_singleFunctorObjIsoMk_hom] at h
-  rw [h, Functor.map_comp, Functor.map_comp, singleComparison, Functor.map_comp,
-    Functor.ι_map_mapHomotopyCategoryBoundedSingleFunctorIso_hom_app,
-    HomotopyCategory.Bounded.ι_map_singleFunctorObjIsoMk_hom, ι_map_mkMap, ι_map_mapMkIso_inv]
-  simp only [Category.assoc]
-  erw [Category.assoc, Category.assoc, Iso.inv_hom_id_app_assoc, Category.assoc,
-    ← Functor.map_comp_assoc, Iso.hom_inv_id_app, Iso.inv_hom_id_app,
-    CategoryTheory.Functor.map_id, Category.comp_id, Category.comp_id]
-  rfl
-
-private theorem ι_map_mkSingleIsoShift_hom_comp_shift_singleComparison (X : C) :
-    (HomotopyCategory.Bounded.ι D).map
-        ((mkSingleIsoShift 1 0 1 (by simp) (F.obj X)).hom ≫ (singleComparison F 1 X)⟦(1 : ℤ)⟧') ≫
-        ((HomotopyCategory.Bounded.ι D).commShiftIso (1 : ℤ)).hom.app _ ≫
-        (F.mapHomotopyCategoryBoundedCompι.hom.app
-          (HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 1 X)))⟦(1 : ℤ)⟧' =
-      (HomotopyCategory.quotient D (.up ℤ)).map
-        (((CochainComplex.singleFunctors D).shiftIso 1 0 1 (by simp)).inv.app (F.obj X) ≫
-          ((HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) 1).inv.app X)⟦(1 : ℤ)⟧') ≫
-        ((HomotopyCategory.quotient D (.up ℤ)).commShiftIso (1 : ℤ)).hom.app _ := by
-  rw [Functor.map_comp, Category.assoc, Functor.commShiftIso_hom_naturality_assoc,
-    HomotopyCategory.Bounded.ι_map_mkSingleIsoShift_hom]
-  -- `erw`: the objects of the composites agree only up to unfolding the composite functors.
-  erw [Category.assoc, Category.assoc, Iso.inv_hom_id_app_assoc, ← Functor.map_comp,
-    ι_map_singleComparison_comp, ← Functor.commShiftIso_hom_naturality, ← Functor.map_comp_assoc]
-  rfl
-
-private theorem ι_map_singleComparison_comp_map_mkSingleIsoShift_hom (X : C) :
-    (HomotopyCategory.Bounded.ι D).map (singleComparison F 0 X ≫
-        F.mapHomotopyCategoryBounded.map (mkSingleIsoShift 1 0 1 (by simp) X).hom ≫
-        (F.mapHomotopyCategoryBounded.commShiftIso (1 : ℤ)).hom.app _) ≫
-        ((HomotopyCategory.Bounded.ι D).commShiftIso (1 : ℤ)).hom.app _ ≫
-        (F.mapHomotopyCategoryBoundedCompι.hom.app
-          (HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 1 X)))⟦(1 : ℤ)⟧' =
-      (HomotopyCategory.quotient D (.up ℤ)).map
-        ((HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) 0).inv.app X ≫
-          (F.mapHomologicalComplex (.up ℤ)).map
-            (((CochainComplex.singleFunctors C).shiftIso 1 0 1 (by simp)).inv.app X) ≫
-          ((F.mapHomologicalComplex (.up ℤ)).commShiftIso (1 : ℤ)).hom.app _) ≫
-        ((HomotopyCategory.quotient D (.up ℤ)).commShiftIso (1 : ℤ)).hom.app _ := by
-  have h₂ := NatTrans.shift_app_comm (F.mapHomotopyCategoryFactors (.up ℤ)).hom (1 : ℤ)
-    ((HomologicalComplex.single C (.up ℤ) 1).obj X)
-  rw [Functor.commShiftIso_comp_hom_app, Functor.commShiftIso_comp_hom_app,
-    Functor.mapHomotopyCategoryFactors_hom_app, Functor.mapHomotopyCategoryFactors_hom_app] at h₂
-  -- `erw`: the identities sit on objects which agree with their neighbours only up to unfolding.
-  erw [CategoryTheory.Functor.map_id, Category.comp_id, Category.id_comp] at h₂
-  have h₃ := F.mapHomotopyCategoryBoundedCompι.hom.naturality
-    (mkSingleIsoShift 1 0 1 (by simp) X).hom
-  rw [Functor.comp_map, Functor.comp_map] at h₃
-  rw [Functor.map_comp (HomotopyCategory.Bounded.ι D) (singleComparison F 0 X),
-    Functor.map_comp (HomotopyCategory.Bounded.ι D)
-      (F.mapHomotopyCategoryBounded.map (mkSingleIsoShift 1 0 1 (by simp) X).hom),
-    Category.assoc, Category.assoc,
-    ← Category.assoc ((HomotopyCategory.Bounded.ι D).map
-      ((F.mapHomotopyCategoryBounded.commShiftIso (1 : ℤ)).hom.app _)),
-    ← Functor.commShiftIso_comp_hom_app, NatTrans.shift_app_comm, reassoc_of% h₃,
-    reassoc_of% ι_map_singleComparison_comp, Functor.commShiftIso_comp_hom_app,
-    HomotopyCategory.Bounded.ι_map_mkSingleIsoShift_hom]
-  erw [← Functor.map_comp_assoc, Category.assoc, Category.assoc, Iso.inv_hom_id_app,
-    Category.comp_id, Functor.map_comp, Category.assoc, h₂, Functor.mapHomotopyCategory_map,
-    ← Functor.map_comp_assoc, ← Functor.map_comp_assoc, Category.assoc]
-  rfl
-
-private theorem mkSingleIsoShift_hom_comp_shift_singleComparison (X : C) :
-    (mkSingleIsoShift 1 0 1 (by simp) (F.obj X)).hom ≫ (singleComparison F 1 X)⟦(1 : ℤ)⟧' =
-      singleComparison F 0 X ≫
-        F.mapHomotopyCategoryBounded.map (mkSingleIsoShift 1 0 1 (by simp) X).hom ≫
-        (F.mapHomotopyCategoryBounded.commShiftIso (1 : ℤ)).hom.app _ := by
-  apply (HomotopyCategory.Bounded.ι D).map_injective
-  rw [← cancel_mono (((HomotopyCategory.Bounded.ι D).commShiftIso (1 : ℤ)).hom.app _ ≫
-    (F.mapHomotopyCategoryBoundedCompι.hom.app
-      (HomotopyCategory.Bounded.mk _ (CochainComplex.bounded_single 1 X)))⟦(1 : ℤ)⟧')]
-  refine (ι_map_mkSingleIsoShift_hom_comp_shift_singleComparison F X).trans
-    (Eq.trans ?_ (ι_map_singleComparison_comp_map_mkSingleIsoShift_hom F X).symm)
-  rw [singleMapHomologicalComplex_inv_app_comp_shiftIso]
-  rfl
+variable (F : C ⥤ D) [F.Additive] [HasZeroObject C] [HasZeroObject D]
 
 /-- The comparison `(F X₀ ⟶ F X₁) ⟶ F (X₀ ⟶ X₁)` of two-term complexes, in `Kᵇ(D)`. -/
-private noncomputable def doubleComparisonMk {X₀ X₁ : C} (g : X₀ ⟶ X₁) :
+private noncomputable abbrev doubleComparisonMk {X₀ X₁ : C} (g : X₀ ⟶ X₁) :
     HomotopyCategory.Bounded.mk _
         (CochainComplex.bounded_double (F.map g) ComplexShape.up_rel_zero_one) ⟶
       F.mapHomotopyCategoryBounded.obj (HomotopyCategory.Bounded.mk _
         (CochainComplex.bounded_double g ComplexShape.up_rel_zero_one)) :=
-  mkMap (doubleComparison F g) ≫ (mapMkIso F _ _).inv
+  mkMap (HomologicalComplex.doubleToMapHomologicalComplex F g ComplexShape.up_rel_zero_one
+    zero_ne_one) ≫ (F.mapHomotopyCategoryBoundedMkIso _ _).inv
 
 private theorem singleFunctorIso_hom_app_comp_resolution (S : ShortComplex C) :
     (F.mapHomotopyCategoryBoundedSingleFunctorIso 0).hom.app S.X₁ ≫ resolution (S.map F) ≫
         doubleComparisonMk F S.g =
       F.mapHomotopyCategoryBounded.map (resolution S) := by
   have h : mkMap (S.map F).doubleι ≫ doubleComparisonMk F S.g =
-      singleComparison F 0 S.X₁ ≫ F.mapHomotopyCategoryBounded.map (mkMap S.doubleι) := by
-    rw [doubleComparisonMk, singleComparison, Category.assoc, ← mkMap_comp_mapMkIso_inv,
-      ← mkMap_comp_assoc, ← mkMap_comp_assoc, doubleι_comp_doubleComparison]
+      (F.mapHomotopyCategoryBoundedMkSingleIso 0 S.X₁).inv ≫
+        F.mapHomotopyCategoryBounded.map (mkMap S.doubleι) := by
+    rw [Functor.mapHomotopyCategoryBoundedMkSingleIso_inv, Category.assoc,
+      ← Functor.mkMap_comp_mapHomotopyCategoryBoundedMkIso_inv, ← mkMap_comp_assoc,
+      ← mkMap_comp_assoc, ShortComplex.map_doubleι_comp_doubleToMapHomologicalComplex]
   rw [resolution, resolution, Category.assoc, h, Functor.map_comp,
-    ← singleFunctorIso_hom_app_comp F S.X₁, Category.assoc, Category.assoc]
+    ← Functor.mapHomotopyCategoryBoundedSingleFunctorIso_hom_app_comp F 0 S.X₁, Category.assoc,
+    Category.assoc]
+  -- `(S.map F).X₁` is `F.obj S.X₁` by definition.
   rfl
 
 private theorem doubleInclusion_comp_doubleComparisonMk {X₀ X₁ : C} (g : X₀ ⟶ X₁) :
     doubleInclusion (F.map g) ≫ doubleComparisonMk F g =
-      singleComparison F 1 X₁ ≫ F.mapHomotopyCategoryBounded.map (doubleInclusion g) := by
-  rw [doubleComparisonMk, singleComparison, Category.assoc, ← mkMap_comp_mapMkIso_inv,
-    ← mkMap_comp_assoc, ← mkMap_comp_assoc, doubleι₁_comp_doubleComparison]
+      (F.mapHomotopyCategoryBoundedMkSingleIso 1 X₁).inv ≫
+        F.mapHomotopyCategoryBounded.map (doubleInclusion g) := by
+  rw [Functor.mapHomotopyCategoryBoundedMkSingleIso_inv, Category.assoc,
+    ← Functor.mkMap_comp_mapHomotopyCategoryBoundedMkIso_inv, ← mkMap_comp_assoc,
+    ← mkMap_comp_assoc, HomologicalComplex.doubleι₁_comp_doubleToMapHomologicalComplex]
 
 private theorem singleFunctorIso_hom_app_comp_singleShift (Z : C) :
     (F.mapHomotopyCategoryBoundedSingleFunctorIso 0).hom.app Z ≫ singleShift (F.obj Z) ≫
-        (singleComparison F 1 Z)⟦(1 : ℤ)⟧' =
+        (F.mapHomotopyCategoryBoundedMkSingleIso 1 Z).inv⟦(1 : ℤ)⟧' =
       F.mapHomotopyCategoryBounded.map (singleShift Z) ≫
         (F.mapHomotopyCategoryBounded.commShiftIso (1 : ℤ)).hom.app _ := by
-  rw [singleShift, singleShift, Category.assoc, mkSingleIsoShift_hom_comp_shift_singleComparison,
-    reassoc_of% singleFunctorIso_hom_app_comp, Functor.map_comp, Category.assoc]
+  rw [singleShift, singleShift, Category.assoc,
+    Functor.mkSingleIsoShift_hom_comp_shift_mapHomotopyCategoryBoundedMkSingleIso_inv,
+    Functor.mapHomotopyCategoryBoundedSingleFunctorIso_hom_app_comp_assoc, Functor.map_comp,
+    Category.assoc]
 
 end Complexes
 
@@ -324,7 +156,8 @@ omit [HasBinaryBiproducts C] in
 private theorem doubleInclusion_comp_doubleComparisonMk_shift {X₀ X₁ : C} (g : X₀ ⟶ X₁) :
     (-((BoundedDerivedCategory.Q E').map (doubleInclusion (F.map g)))⟦(1 : ℤ)⟧') ≫
       ((BoundedDerivedCategory.Q E').map (doubleComparisonMk F g))⟦(1 : ℤ)⟧' =
-      ((BoundedDerivedCategory.Q E').map (singleComparison F 1 X₁))⟦(1 : ℤ)⟧' ≫
+      ((BoundedDerivedCategory.Q E').map
+        (F.mapHomotopyCategoryBoundedMkSingleIso 1 X₁).inv)⟦(1 : ℤ)⟧' ≫
         (-((BoundedDerivedCategory.Q E').map
           (F.mapHomotopyCategoryBounded.map (doubleInclusion g)))⟦(1 : ℤ)⟧') := by
   rw [Preadditive.neg_comp, Preadditive.comp_neg, ← Functor.map_comp, ← Functor.map_comp,

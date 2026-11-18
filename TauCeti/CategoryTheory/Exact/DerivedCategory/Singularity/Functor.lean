@@ -54,20 +54,6 @@ variable {C : Type u₁} {D : Type u₂}
 
 namespace IsConflationExact
 
-/-- The image in `Kᵇ(D)` of the class of a bounded complex `K` is the class of the termwise image
-of `K`. -/
-private noncomputable def mapQuotientObjIso (K : CochainComplex.Bounded C) :
-    F.mapHomotopyCategoryBounded.obj ((HomotopyCategory.Bounded.quotient C).obj K) ≅
-      (HomotopyCategory.Bounded.quotient D).obj
-        ⟨_, F.bounded_mapHomologicalComplex K.property⟩ :=
-  (HomotopyCategory.Bounded.fullyFaithfulι D).preimageIso
-    (F.mapHomotopyCategoryBoundedCompι.app _ ≪≫
-      (F.mapHomotopyCategory (.up ℤ)).mapIso
-        ((HomotopyCategory.Bounded.quotientCompιIso C).app K) ≪≫
-      (F.mapHomotopyCategoryFactors (.up ℤ)).app K.obj ≪≫
-      ((HomotopyCategory.Bounded.quotientCompιIso D).app
-        ⟨_, F.bounded_mapHomologicalComplex K.property⟩).symm)
-
 variable (hF : E.IsConflationExact E' F)
   (hP : ∀ {X : C}, E.isProjective X → E'.isProjective (F.obj X))
 include hF hP
@@ -81,7 +67,7 @@ theorem boundedProjective_le_inverseImage :
   exact (E'.boundedProjective_iff _).2 ⟨⟨_, F.bounded_mapHomologicalComplex K.property⟩,
     fun n ↦ hP (hK n), ⟨hF.mapBoundedDerivedCategory.mapIso e ≪≫
       hF.mapBoundedDerivedCategoryFactors.app _ ≪≫
-      (BoundedDerivedCategory.Q E').mapIso (mapQuotientObjIso (F := F) K)⟩⟩
+      (BoundedDerivedCategory.Q E').mapIso (F.mapHomotopyCategoryBoundedQuotientObjIso K)⟩⟩
 
 /-- The functor `Dᵇ(E) ⥤ Dᵇ(E')` induced by a conflation-exact functor preserving projectives, as
 a morphism of localizers for the bounded complexes of projectives. -/

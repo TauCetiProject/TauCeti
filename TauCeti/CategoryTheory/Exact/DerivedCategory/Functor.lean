@@ -14,13 +14,13 @@ public import TauCeti.CategoryTheory.Localization.Triangulated
 # Conflation-exact functors on bounded derived categories
 
 Let `F : C ⥤ D` be a conflation-exact functor between exact categories `E` and `E'`. Applied
-termwise, `F` sends acyclic complexes to acyclic complexes, so the induced triangle functor
+termwise, `F` sends acyclic complexes to acyclic complexes
+(`TauCeti.ExactStructure.IsConflationExact.map_acyclic`), so the induced triangle functor
 `Kᵇ(C) ⥤ Kᵇ(D)` sends `E`-acyclic bounded complexes to `E'`-acyclic ones. It therefore descends
 to a triangle functor `Dᵇ(E) ⥤ Dᵇ(E')` between the bounded derived categories.
 
 ## Main definitions
 
-* `TauCeti.ExactStructure.AcyclicData.map`: acyclicity data mapped by a conflation-exact functor.
 * `TauCeti.ExactStructure.IsConflationExact.boundedDerivedLocalizerMorphism`: the functor
   `Kᵇ(C) ⥤ Kᵇ(D)` as a morphism of localizers for the bounded acyclic complexes.
 * `TauCeti.ExactStructure.IsConflationExact.mapBoundedDerivedCategory`: the induced triangle
@@ -33,10 +33,8 @@ to a triangle functor `Dᵇ(E) ⥤ Dᵇ(E')` between the bounded derived categor
 
 ## Main results
 
-* `TauCeti.ExactStructure.IsConflationExact.map_acyclic`: a conflation-exact functor preserves
-  acyclic complexes.
-* `TauCeti.ExactStructure.IsConflationExact.acyclicBounded_le_inverseImage`: it preserves bounded
-  acyclic complexes in the bounded homotopy category.
+* `TauCeti.ExactStructure.IsConflationExact.acyclicBounded_le_inverseImage`: a conflation-exact
+  functor preserves bounded acyclic complexes in the bounded homotopy category.
 
 ## References
 
@@ -57,26 +55,10 @@ variable {C : Type u₁} {D : Type u₂}
   [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
   {E : ExactStructure C} {E' : ExactStructure D} {F : C ⥤ D} [F.Additive]
 
-/-- Acyclicity data mapped by a conflation-exact functor: the cycles, inflations and deflations
-are the images under `F`. -/
-def AcyclicData.map (hF : E.IsConflationExact E' F) {K : CochainComplex C ℤ}
-    (h : E.AcyclicData K) : E'.AcyclicData ((F.mapHomologicalComplex (.up ℤ)).obj K) where
-  Z n := F.obj (h.Z n)
-  i n := F.map (h.i n)
-  p n := F.map (h.p n)
-  zero n := by rw [← F.map_comp, h.zero, F.map_zero]
-  conflation n := hF.map_conflation (h.conflation n)
-  fac n := by rw [← F.map_comp, h.fac]; rfl
-
 namespace IsConflationExact
 
 variable (hF : E.IsConflationExact E' F)
 include hF
-
-/-- **A conflation-exact functor preserves acyclic complexes.** -/
-theorem map_acyclic {K : CochainComplex C ℤ} (hK : E.acyclic K) :
-    E'.acyclic ((F.mapHomologicalComplex (.up ℤ)).obj K) :=
-  (((E.acyclic_iff K).1 hK).some.map hF).acyclic
 
 /-- A conflation-exact functor sends bounded acyclic complexes of `Kᵇ(C)` to bounded acyclic
 complexes of `Kᵇ(D)`. -/
