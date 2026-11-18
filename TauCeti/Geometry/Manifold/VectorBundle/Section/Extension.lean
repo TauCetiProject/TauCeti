@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.BumpFunction
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Global sections with a prescribed value
@@ -28,7 +29,10 @@ Equivalently, evaluation of global `C^n` sections at a point is surjective.
 Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
 prescribed neighbourhood of its base point
 (`ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset`): a global `C^n` section with that
-value, cut off by a smooth bump function.
+value, cut off by a smooth bump function. More generally, any section that is `C^n` (`n ≤ ∞`) on a
+neighbourhood `U` of a compact set `K` extends to a global compactly supported `C^n` section
+agreeing with it near `K` and supported in `U`
+(`ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset`).
 -/
 
 public section
@@ -300,5 +304,37 @@ theorem exists_apply_eq_isCompact_tsupport_subset (x₀ : M) (v : V x₀) {U : S
     ρ.hasCompactSupport.isCompact.of_isClosed_subset s.isClosed_tsupport hsρ, hsρ.trans hρ⟩
 
 end CompactSupport
+
+section LocalExtension
+
+open Set
+open scoped Topology
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M] [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞ω}
+  [ENat.LEInfty n] {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+
+/-- Every section `s` that is `C^n` (`n ≤ ∞`) on a neighbourhood `U` of a compact set `K`
+extends to a global compactly supported `C^n` section agreeing with `s` on a neighbourhood of `K`
+and with closed support contained in `U`. -/
+theorem exists_eventuallyEq_isCompact_tsupport_subset {K U : Set M} (hK : IsCompact K)
+    (hU : U ∈ 𝓝ˢ K) {s : ∀ x, V x} (hs : ContMDiffOn I (I.prod 𝓘(ℝ, F)) n (T% s) U) :
+    ∃ s' : Cₛ^n⟮I; F, V⟯,
+      (∀ᶠ x in 𝓝ˢ K, s' x = s x) ∧ IsCompact s'.tsupport ∧ s'.tsupport ⊆ U := by
+  obtain ⟨σ, hσ, hσ1, hσc, hσU, -⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I
+    isOpen_interior (subset_interior_iff_mem_nhdsSet.2 hU)
+  let s' : Cₛ^n⟮I; F, V⟯ :=
+    ⟨σ • s, (hσ.of_le ENat.LEInfty.out).contMDiffOn.smul_section_of_tsupport
+      isOpen_interior hσU (hs.mono interior_subset)⟩
+  have hs'σ : s'.tsupport ⊆ _root_.tsupport σ :=
+    (tsupport_subset_iff (_root_.isClosed_tsupport _)).2 fun x hx ↦ by
+      simp [s', image_eq_zero_of_notMem_tsupport hx]
+  exact ⟨s', hσ1.mono fun x hx ↦ by simp [s', hx],
+    hσc.isCompact.of_isClosed_subset s'.isClosed_tsupport hs'σ,
+    hs'σ.trans (hσU.trans interior_subset)⟩
+
+end LocalExtension
 
 end ContMDiffSection
