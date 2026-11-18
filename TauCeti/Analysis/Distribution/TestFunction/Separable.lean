@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ContDiffMapSupportedIn
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import TauCeti.Analysis.Normed.Module.Multilinear.Curry
+import TauCeti.Analysis.Normed.Module.Multilinear.SecondCountable
 import TauCeti.Topology.MetricSpace.Pseudo.Constructions
 
 /-!
@@ -30,7 +30,7 @@ Hence the same topology is induced by the restrictions `D^i f|_K ∈ C(K, E [×i
 `f ↦ (D^i f|_K)ᵢ` into the countable product `Π i, C(K, E [×i]→L[ℝ] F)` is a uniform
 embedding. When `E` is finite-dimensional, each factor is second countable because `K` is
 a compact metric space and `E [×i]→L[ℝ] F` is second countable
-(`ContinuousMultilinearMap.secondCountableTopology'`). When `E` is infinite-dimensional, every
+(`ContinuousMultilinearMap.secondCountableTopology`). When `E` is infinite-dimensional, every
 compactly supported continuous function on `E` vanishes, so `𝓓^{n}_{K}(E, F)` is trivial.
 
 ## Main definitions

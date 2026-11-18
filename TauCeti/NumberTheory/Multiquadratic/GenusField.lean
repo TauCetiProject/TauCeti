@@ -140,7 +140,7 @@ theorem isGenusField_candidateGenusField {d : ℤ} (hd : Squarefree d) (hneg : d
       (by
         rw [hz, IsScalarTower.algebraMap_apply ℤ ℚ M]
         norm_num)
-    exact nonempty_algHom_candidateGenusField hd hnsq hz hfinite
+    exact nonempty_algHom_candidateGenusField hd hz hfinite
 
 /-- **The maximal totally real subfield of the prime-discriminant compositum is the genus field
 in the real quadratic case.** For positive squarefree `d` whose image in `ℚ` is not a square, the
