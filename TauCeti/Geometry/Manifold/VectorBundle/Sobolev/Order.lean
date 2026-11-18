@@ -29,7 +29,11 @@ integrability exponent and with the Sobolev sections of `Cᵏ` sections.
   `TauCeti.SectionChartData.lowerOrderL_ofOrderLEL`,
   `TauCeti.SectionChartData.ofOrderLEL_ofOrderLEL`: the identity at `l = k`, compatibility with the
   one-step inclusions, and transitivity.
-* `TauCeti.SectionChartData.chartValueL_ofOrderLEL`: the chart data do not change.
+* `TauCeti.SectionChartData.ofOrderLEL_succ`: the one-step case is
+  `TauCeti.SectionChartData.lowerOrderL`.
+* `TauCeti.SectionChartData.chartValueL_ofOrderLEL`, `TauCeti.SectionChartData.value_ofOrderLEL`:
+  the chart data and the `Lᵖ` values of the components do not change.
+* `TauCeti.SectionChartData.ofOrderLEL_constMapL`: compatibility with constant fibre maps.
 * `TauCeti.SectionChartData.ofOrderLEL_injective`: the inclusion is injective.
 * `TauCeti.SectionChartData.ofOrderLEL_ofExponentLEL`: compatibility with lowering the exponent.
 * `TauCeti.SobolevSection.ofOrderLEL_ofContMDiffSection`: compatibility with the Sobolev sections
@@ -75,12 +79,17 @@ theorem ofOrderLEL_lowerOrderL (h : l ≤ k) (w : C.sobolevSections μ p (k + 1)
     C.ofOrderLEL μ p h (C.lowerOrderL μ p k w) = C.ofOrderLEL μ p (h.trans k.le_succ) w := by
   rw [ofOrderLEL, ofOrderLEL, Nat.leRec_succ _ _ h, ContinuousLinearMap.comp_apply]
 
+/-- Lowering the order by one step is the one-step inclusion
+`TauCeti.SectionChartData.lowerOrderL`. -/
+theorem ofOrderLEL_succ : C.ofOrderLEL μ p k.le_succ = C.lowerOrderL μ p k :=
+  ContinuousLinearMap.ext fun w ↦ by rw [← ofOrderLEL_lowerOrderL le_rfl, ofOrderLEL_self]
+
 /-- Lowering the order from `k` to `l + 1` and then forgetting the highest derivative is lowering
 the order from `k` to `l`. -/
 theorem lowerOrderL_ofOrderLEL (h : l + 1 ≤ k) (w : C.sobolevSections μ p k) :
     C.lowerOrderL μ p l (C.ofOrderLEL μ p h w) = C.ofOrderLEL μ p (l.le_succ.trans h) w := by
   induction k, h using Nat.le_induction with
-  | base => rw [ofOrderLEL_self, ← ofOrderLEL_lowerOrderL le_rfl, ofOrderLEL_self]
+  | base => rw [ofOrderLEL_self, ofOrderLEL_succ]
   | succ k hk ih =>
     rw [← ofOrderLEL_lowerOrderL hk, ih, ofOrderLEL_lowerOrderL]
 
@@ -92,6 +101,17 @@ theorem ofOrderLEL_ofOrderLEL (hlm : l ≤ m) (hmk : m ≤ k) (w : C.sobolevSect
   | base => rw [ofOrderLEL_self]
   | succ k hk ih =>
     rw [← ofOrderLEL_lowerOrderL hk, ih, ofOrderLEL_lowerOrderL]
+
+/-- Lowering the order does not change the `Lᵖ` values of the components. -/
+@[simp]
+theorem value_ofOrderLEL (h : l ≤ k) (w : C.sobolevSections μ p k) (i : Fin C.n)
+    (j : Fin (finrank ℝ F)) :
+    Wkp.value l ((C.ofOrderLEL μ p h w : C.SobolevData μ p l) i j) =
+      Wkp.value k ((w : C.SobolevData μ p k) i j) := by
+  induction k, h using Nat.le_induction with
+  | base => rw [ofOrderLEL_self]
+  | succ k hk ih =>
+    rw [← ofOrderLEL_lowerOrderL hk, ih, lowerOrderL_apply, Wkp.value_succ]
 
 /-- Lowering the order does not change the chart data. -/
 @[simp]
@@ -106,6 +126,18 @@ theorem chartValueL_ofOrderLEL (h : l ≤ k) (w : C.sobolevSections μ p k) (i :
 theorem ofOrderLEL_injective (h : l ≤ k) : Function.Injective (C.ofOrderLEL μ p h) :=
   fun w w' hw ↦ eq_of_chartValueL_ae_eq fun i ↦ .of_eq <| by
     rw [← chartValueL_ofOrderLEL h, hw, chartValueL_ofOrderLEL]
+
+/-- Lowering the order commutes with fibrewise maps given in every chart by a constant linear map
+of the model fibre. -/
+theorem ofOrderLEL_constMapL {L : F →L[ℝ] F} {Ψ : S → S}
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y)) (h : l ≤ k)
+    (w : C.sobolevSections μ p k) :
+    C.ofOrderLEL μ p h (constMapL μ p k L Ψ hΨ w) =
+      constMapL μ p l L Ψ hΨ (C.ofOrderLEL μ p h w) := by
+  induction k, h using Nat.le_induction with
+  | base => simp only [ofOrderLEL_self]
+  | succ k hk ih =>
+    rw [← ofOrderLEL_lowerOrderL hk, lowerOrderL_constMapL, ih, ofOrderLEL_lowerOrderL]
 
 /-- Lowering the order commutes with lowering the exponent. -/
 theorem ofOrderLEL_ofExponentLEL [∀ i, IsFiniteMeasure (μ.restrict (C.image i : Set E))]

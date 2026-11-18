@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Order
 public import TauCeti.Topology.VectorBundle.RestrictScalars
 
 /-!
@@ -45,6 +45,7 @@ which lifts the pointwise `(0,1)`-projection
   one-forms.
 * `TauCeti.zeroOnePartSobolevL`: the continuous `(0,1)`-projection onto it.
 * `TauCeti.zeroOneLowerOrderL`: the inclusion of order `k + 1` into order `k`.
+* `TauCeti.zeroOneOfOrderLEL`: the inclusion of order `k` into order `l ≤ k`.
 
 ## Main results
 
@@ -68,8 +69,11 @@ which lifts the pointwise `(0,1)`-projection
   `(0,1)`-projection of one-forms.
 * `TauCeti.mem_zeroOneSobolevSections_of_isZeroOneForm`: an element whose chart data are the
   readings of a `(0,1)`-form, for instance of a smooth one, is a Sobolev `(0,1)`-form.
-* `TauCeti.zeroOneLowerOrderL_zeroOnePartSobolevL`: the projection commutes with lowering the
-  order.
+* `TauCeti.zeroOneLowerOrderL_zeroOnePartSobolevL`, `TauCeti.zeroOneOfOrderLEL_zeroOnePartSobolevL`:
+  the projection commutes with lowering the order.
+* `TauCeti.zeroOneOfOrderLEL_self`, `TauCeti.zeroOneOfOrderLEL_zeroOneOfOrderLEL`,
+  `TauCeti.zeroOneOfOrderLEL_succ`, `TauCeti.zeroOneOfOrderLEL_injective`: identity,
+  transitivity, the one-step case and injectivity of the order inclusions.
 
 ## References
 
@@ -401,6 +405,86 @@ theorem zeroOneLowerOrderL_zeroOnePartSobolevL (w : SobolevSection A.tangentHom 
     zeroOneLowerOrderL A μ p k (zeroOnePartSobolevL A μ p (k + 1) w) =
       zeroOnePartSobolevL A μ p k (A.tangentHom.sectionChartData.lowerOrderL μ p k w) :=
   Subtype.ext (SectionChartData.lowerOrderL_constMapL μ p k _ w)
+
+variable {l m : ℕ}
+
+/-- Lowering the order of a `(0,1)`-form gives a `(0,1)`-form. -/
+theorem ofOrderLEL_mem_zeroOneSobolevSections (h : l ≤ k)
+    {w : SobolevSection A.tangentHom μ p k} (hw : w ∈ zeroOneSobolevSections A μ p k) :
+    A.tangentHom.sectionChartData.ofOrderLEL μ p h w ∈ zeroOneSobolevSections A μ p l := by
+  rw [mem_zeroOneSobolevSections_iff] at hw ⊢
+  intro i
+  rw [SectionChartData.chartValueL_ofOrderLEL]
+  exact hw i
+
+variable (A μ p) in
+/-- The continuous inclusion of the `(0,1)`-forms of order `k` into those of order `l ≤ k`. -/
+def zeroOneOfOrderLEL (h : l ≤ k) :
+    zeroOneSobolevSections A μ p k →L[ℝ] zeroOneSobolevSections A μ p l :=
+  ((A.tangentHom.sectionChartData.ofOrderLEL μ p h).comp
+    (zeroOneSobolevSections A μ p k).subtypeL).codRestrict _
+      fun w ↦ ofOrderLEL_mem_zeroOneSobolevSections h w.2
+
+/-- The inclusion of `(0,1)`-forms lowers the order of the underlying one-form. -/
+@[simp]
+theorem coe_zeroOneOfOrderLEL (h : l ≤ k) (w : zeroOneSobolevSections A μ p k) :
+    (zeroOneOfOrderLEL A μ p h w : SobolevSection A.tangentHom μ p l) =
+      A.tangentHom.sectionChartData.ofOrderLEL μ p h w :=
+  ContinuousLinearMap.coe_codRestrict_apply _ _ _ _
+
+/-- Lowering the order of `(0,1)`-forms from `l` to itself is the identity. -/
+@[simp]
+theorem zeroOneOfOrderLEL_self (w : zeroOneSobolevSections A μ p l) :
+    zeroOneOfOrderLEL A μ p le_rfl w = w :=
+  Subtype.ext <| by rw [coe_zeroOneOfOrderLEL, SectionChartData.ofOrderLEL_self]
+
+/-- Order inclusions of `(0,1)`-forms compose transitively. -/
+@[simp]
+theorem zeroOneOfOrderLEL_zeroOneOfOrderLEL (hlm : l ≤ m) (hmk : m ≤ k)
+    (w : zeroOneSobolevSections A μ p k) :
+    zeroOneOfOrderLEL A μ p hlm (zeroOneOfOrderLEL A μ p hmk w) =
+      zeroOneOfOrderLEL A μ p (hlm.trans hmk) w :=
+  Subtype.ext <| by
+    rw [coe_zeroOneOfOrderLEL, coe_zeroOneOfOrderLEL, coe_zeroOneOfOrderLEL,
+      SectionChartData.ofOrderLEL_ofOrderLEL]
+
+/-- The inclusion of `(0,1)`-forms of order `k + 1` into order `k` is the one-step inclusion
+`TauCeti.zeroOneLowerOrderL`. -/
+theorem zeroOneOfOrderLEL_succ : zeroOneOfOrderLEL A μ p k.le_succ = zeroOneLowerOrderL A μ p k :=
+  ContinuousLinearMap.ext fun w ↦ Subtype.ext <| by
+    rw [coe_zeroOneOfOrderLEL, coe_zeroOneLowerOrderL, SectionChartData.ofOrderLEL_succ]
+
+/-- Lowering the order of `(0,1)`-forms from `k + 1` to `l` first forgets the highest
+derivative. -/
+theorem zeroOneOfOrderLEL_zeroOneLowerOrderL (h : l ≤ k)
+    (w : zeroOneSobolevSections A μ p (k + 1)) :
+    zeroOneOfOrderLEL A μ p h (zeroOneLowerOrderL A μ p k w) =
+      zeroOneOfOrderLEL A μ p (h.trans k.le_succ) w :=
+  Subtype.ext <| by
+    rw [coe_zeroOneOfOrderLEL, coe_zeroOneLowerOrderL, coe_zeroOneOfOrderLEL,
+      SectionChartData.ofOrderLEL_lowerOrderL]
+
+/-- Lowering the order of `(0,1)`-forms from `k` to `l + 1` and then forgetting the highest
+derivative is lowering the order from `k` to `l`. -/
+theorem zeroOneLowerOrderL_zeroOneOfOrderLEL (h : l + 1 ≤ k) (w : zeroOneSobolevSections A μ p k) :
+    zeroOneLowerOrderL A μ p l (zeroOneOfOrderLEL A μ p h w) =
+      zeroOneOfOrderLEL A μ p (l.le_succ.trans h) w :=
+  Subtype.ext <| by
+    rw [coe_zeroOneLowerOrderL, coe_zeroOneOfOrderLEL, coe_zeroOneOfOrderLEL,
+      SectionChartData.lowerOrderL_ofOrderLEL]
+
+/-- Lowering the order of `(0,1)`-forms is injective. -/
+theorem zeroOneOfOrderLEL_injective (h : l ≤ k) :
+    Function.Injective (zeroOneOfOrderLEL A μ p h) := fun w w' hw ↦
+  Subtype.ext <| SectionChartData.ofOrderLEL_injective h <| by
+    rw [← coe_zeroOneOfOrderLEL, hw, coe_zeroOneOfOrderLEL]
+
+/-- The `(0,1)`-projection commutes with lowering the order. -/
+theorem zeroOneOfOrderLEL_zeroOnePartSobolevL (h : l ≤ k)
+    (w : SobolevSection A.tangentHom μ p k) :
+    zeroOneOfOrderLEL A μ p h (zeroOnePartSobolevL A μ p k w) =
+      zeroOnePartSobolevL A μ p l (A.tangentHom.sectionChartData.ofOrderLEL μ p h w) :=
+  Subtype.ext (SectionChartData.ofOrderLEL_constMapL _ h w)
 
 end ZeroOne
 
