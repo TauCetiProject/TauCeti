@@ -40,6 +40,8 @@ its coefficients.
   `Re s + n > 0`.
 * `Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow`: `‖Γ(σ + i t)‖ ≤ C (1 + t²)⁻ᵐ` for every
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
+* `Complex.continuous_Gamma_ofReal_add_mul_I`: `t ↦ Γ(σ + i t)` is continuous for `σ` not a
+  nonpositive integer.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_add`: `Γ(s) Γ(s + a)` is integrable on every
@@ -137,7 +139,7 @@ theorem exists_norm_Gamma_le_mul_inv_one_add_sq_pow {σ : ℝ} (hσ : ∀ n : �
 
 /-- The Gamma function is continuous along every vertical line `Re s = σ` which avoids its
 poles. -/
-private lemma continuous_Gamma_ofReal_add_mul_I {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
+theorem continuous_Gamma_ofReal_add_mul_I {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
     Continuous fun t : ℝ ↦ Gamma (σ + t * I) := by
   refine continuous_iff_continuousAt.mpr fun t ↦ ?_
   refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)

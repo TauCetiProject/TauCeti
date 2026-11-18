@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Convolution
+import TauCeti.Analysis.SpecialFunctions.Exp.Decay
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
@@ -205,11 +206,6 @@ private lemma exp_neg_mul_add_inv_exp_neg (ζ u : ℝ) :
   rw [Real.cosh_eq, ← Real.exp_neg, neg_neg, ofReal_exp]
   push_cast
   ring_nf
-
-/-- The norm of `e^{-ζ r}` for real `r` is `e^{-(Re ζ) r}`. -/
-private lemma norm_exp_neg_mul_ofReal (ζ : ℂ) (r : ℝ) :
-    ‖cexp (-(ζ * r))‖ = Real.exp (-(ζ.re * r)) := by
-  simp only [norm_exp, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
 
 /-- The real-`ζ` case of `integrable_exp_mul_mul_exp_neg_mul_cosh`, from the convergence of the
 Mellin transform of `x ↦ e^{-(ζ / 2)(x + x⁻¹)}` in logarithmic coordinates. -/
