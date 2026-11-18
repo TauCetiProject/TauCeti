@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.PartitionOfUnity
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
+import TauCeti.Topology.ContinuousMap.Glue.DisjointOpen
 import TauCeti.Topology.LocallyFinite.Basic
 import TauCeti.Topology.Order.Lattice
 import TauCeti.Topology.PartitionOfUnity.Gap
@@ -669,20 +670,8 @@ private theorem PartialLift.exists_of_pairwise_disjoint_isOpen {X : Type*} [Topo
     ∃ LO : PartialLift p (f.restrict (⋃ i, S i)) (restrictHomotopy H (⋃ i, S i))
         (τ.restrict (⋃ i, S i)),
       ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i), LO.map (t, x) = (LF i).map (t, ⟨x.1, hx⟩) := by
-  let T (i : κ) : Set (I × ⋃ i, S i) := {z | z.2.1 ∈ S i}
-  let φ (i : κ) : C(T i, E) :=
-    (LF i).map.comp ⟨fun z ↦ (z.1.1, ⟨z.1.2.1, z.2⟩), by fun_prop⟩
-  let onO : C(I × ⋃ i, S i, E) :=
-    ContinuousMap.liftCover T φ
-      (fun i j z hzi hzj ↦ by
-        cases hdisj i j z.2.1 hzi hzj
-        rfl)
-      fun z ↦ by
-        obtain ⟨i, hi⟩ := mem_iUnion.1 z.2.2
-        exact ⟨i, ((hS i).preimage continuous_subtype_val).preimage continuous_snd |>.mem_nhds hi⟩
-  have honO_stratum : ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i),
-      onO (t, x) = (LF i).map (t, ⟨x.1, hx⟩) :=
-    fun i t x hx ↦ ContinuousMap.liftCover_coe (φ := φ) (i := i) ⟨(t, x), hx⟩
+  obtain ⟨onO, honO_stratum⟩ := exists_continuousMap_prod_iUnion hS
+    (fun i j hij ↦ disjoint_left.2 fun x hi hj ↦ hij (hdisj i j x hi hj)) fun i ↦ (LF i).map
   refine ⟨{ map := onO
             proj_eq := fun t x ↦ ?_
             zero_eq := fun x ↦ ?_

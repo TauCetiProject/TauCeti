@@ -5,48 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Basic
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
-# Real elements of Bessel-potential spaces
+# The real elements of the Bessel-potential space `H^s`
 
-For an order `s ≥ 0` every element `u` of the complex Bessel-potential space `H^s(E) = H^{s,2}(E)`
-is an `L²` function (`BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`). Those whose
-`L²` function is real almost everywhere form a real subspace
-`BesselPotentialSpace.realSubmodule`, which is closed, hence a real Hilbert space with the norm of
-`H^s(E)`. This is the real Sobolev space `H^s(E; ℝ)` with the norm of `H^s(E)`, the natural model
-space for real fields such as the phases of gauge transformations. The real submodule
-`TemperedDistribution.realSobolevSubmodule` of `L²(E; ℝ)` has the same elements, read as real `L²`
-functions, but carries the `L²` norm rather than the `H^s` norm.
+For an order `s ≥ 0`, the elements of the complex Bessel-potential space `H^s(E) = H^{s,2}(E, ℂ)`
+are `L²` functions. This file studies those whose `L²` function is real almost everywhere. They
+form a closed real subspace `BesselPotentialSpace.realSubmodule E h` of `H^s(E)`
+(`BesselPotentialSpace.mem_realSubmodule_iff`, `BesselPotentialSpace.isClosed_realSubmodule`),
+which with the norm of `H^s(E)` is a real Hilbert space. Unlike
+`TemperedDistribution.realSobolevSubmodule E s 2`, a subspace of `Lp ℝ 2` with the `L²` norm, it
+carries the `H^s` norm, so it is a model space for spaces of real `H^s` functions, for instance
+the phases of Sobolev gauges.
 
-When `s > dim E / 2`, the Sobolev embedding gives every element of `H^s(E)` a continuous
-representative, and for a real element it is real valued. The real continuous representative
-`BesselPotentialSpace.realContinuousRep` is a real linear map from `realSubmodule` to `C(E, ℝ)`. Its
-values are exactly the continuous functions of `TemperedDistribution.realSobolevFunctions E s 2`
-(`BesselPotentialSpace.realContinuousRep_mem_realSobolevFunctions`,
-`BesselPotentialSpace.exists_realContinuousRep_eq`), and it is injective, so `realSubmodule`
-identifies the continuous real `H^s` functions with a real Hilbert space.
-
-## Main declarations
-
-* `BesselPotentialSpace.realSubmodule`: the real elements of `H^s(E)`, `s ≥ 0`;
-  `BesselPotentialSpace.isClosed_realSubmodule`: they form a closed subspace.
-* `BesselPotentialSpace.realContinuousRep`: for `s > dim E / 2`, the continuous real
-  representative of a real element, as a real linear map to `C(E, ℝ)`.
-* `BesselPotentialSpace.coeFn_toLp_inclusion_ae_eq_realContinuousRep` and
-  `BesselPotentialSpace.realContinuousRep_eq_of_ae_eq`: it represents the element, and is the only
-  continuous function that does.
-* `BesselPotentialSpace.exists_realContinuousRep_eq`: every continuous function of
-  `realSobolevFunctions E s 2` is the representative of a real element.
-
-## References
-
-* L. Grafakos, *Modern Fourier Analysis*, 3rd ed., Graduate Texts in Mathematics 250, Springer,
-  2014, Section 1.3 (Sobolev spaces and the Sobolev embedding theorem).
+Above the Sobolev threshold `s > dim E / 2`, every element `F` of this subspace has a unique
+continuous real representative `BesselPotentialSpace.continuousRep F`
+(`BesselPotentialSpace.coeFn_inclusionLp_ae_eq_continuousRep`,
+`BesselPotentialSpace.continuousRep_eq_of_ae_eq`), by the Sobolev embedding into continuous
+functions. It lies in the real `H^s` functions `TemperedDistribution.realSobolevFunctions E s 2`
+and is `ℝ`-linear in `F` (`BesselPotentialSpace.continuousRep` is a linear map), and it
+determines `F` (`BesselPotentialSpace.continuousRep_injective`).
 -/
 
 public section
@@ -54,140 +35,141 @@ public section
 noncomputable section
 
 open MeasureTheory Module TemperedDistribution
-open scoped BesselPotentialSpace
+open scoped SchwartzMap BesselPotentialSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {s : ℝ}
+  [MeasurableSpace E] [BorelSpace E]
 
 namespace BesselPotentialSpace
 
-/-- **The real elements of `H^s(E)`**, `s ≥ 0`: the elements whose `L²` function is real valued
-almost everywhere (`BesselPotentialSpace.mem_realSubmodule`), that is, the kernel of the imaginary
-part `H^s(E) → L²(E; ℝ)`. -/
+variable {s : ℝ}
+
+variable (E) in
+/-- **The real elements of `H^s(E)`**, `0 ≤ s`: the closed real subspace of the elements whose
+`L²` function is real almost everywhere (`mem_realSubmodule_iff`). It is the kernel of the
+imaginary part of the inclusion into `L²`. -/
 def realSubmodule (h : 0 ≤ s) : Submodule ℝ H^{s}(E) :=
-  (Complex.imCLM.compLpL 2 (volume : Measure E) ∘L
-    ((toLpₗᵢ E ℂ 0 2 : H^{0}(E) →L[ℂ] Lp ℂ 2 (volume : Measure E)) ∘L
-      inclusion h).restrictScalars ℝ).ker
+  LinearMap.ker (((Complex.imCLM.compLpL 2 (volume : Measure E)).comp
+    ((inclusionLp h).restrictScalars ℝ) : H^{s}(E) →L[ℝ] Lp ℝ 2 (volume : Measure E)) :
+      H^{s}(E) →ₗ[ℝ] Lp ℝ 2 (volume : Measure E))
 
-/-- Membership in `realSubmodule`: the `L²` function is real almost everywhere. -/
-theorem mem_realSubmodule {h : 0 ≤ s} {u : H^{s}(E)} :
-    u ∈ realSubmodule h ↔ ∀ᵐ x ∂volume, ((inclusion h u).toLp x).im = 0 := by
-  rw [realSubmodule, LinearMap.mem_ker, Lp.eq_zero_iff_ae_eq_zero]
-  refine Filter.eventually_congr ?_
-  filter_upwards [Complex.imCLM.coeFn_compLpL (inclusion h u).toLp] with x hx
-  simp [-toLp_inclusion, hx]
+/-- An element of `H^s(E)` is real exactly when its `L²` function is real almost everywhere. -/
+theorem mem_realSubmodule_iff (h : 0 ≤ s) {F : H^{s}(E)} :
+    F ∈ realSubmodule E h ↔ ∀ᵐ z ∂volume, (inclusionLp h F z).im = 0 := by
+  rw [realSubmodule, LinearMap.mem_ker]
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_restrictScalars', Lp.eq_zero_iff_ae_eq_zero]
+  have hc := Complex.imCLM.coeFn_compLpL (p := 2) (μ := volume) (inclusionLp h F)
+  constructor
+  · intro h0
+    filter_upwards [h0, hc] with z h₁ h₂
+    rw [← Complex.imCLM_apply, ← h₂, h₁, Pi.zero_apply]
+  · intro h0
+    filter_upwards [h0, hc] with z h₁ h₂
+    rw [h₂, Pi.zero_apply, Complex.imCLM_apply, h₁]
 
-/-- The real elements of `H^s(E)` form a closed subspace. -/
-theorem isClosed_realSubmodule (h : 0 ≤ s) :
-    IsClosed (realSubmodule (E := E) h : Set H^{s}(E)) :=
+/-- The real elements form a closed subspace of `H^s(E)`. -/
+theorem isClosed_realSubmodule (h : 0 ≤ s) : IsClosed (realSubmodule E h : Set H^{s}(E)) :=
   ContinuousLinearMap.isClosed_ker _
 
-instance (h : 0 ≤ s) : CompleteSpace (realSubmodule (E := E) h) :=
+instance (h : 0 ≤ s) : CompleteSpace (realSubmodule E h) :=
   (isClosed_realSubmodule h).completeSpace_coe
 
-/-- A real element of `H^s(E)`, `s > dim E / 2`, agrees almost everywhere with a continuous real
-function. -/
-private theorem exists_continuous_ae_eq (hs : finrank ℝ E < 2 * s)
-    (u : realSubmodule (E := E) (TauCeti.nonneg_of_finrank_lt_two_mul hs)) :
-    ∃ g : E → ℝ, Continuous g ∧
-      (inclusion (TauCeti.nonneg_of_finrank_lt_two_mul hs) (u : H^{s}(E))).toLp =ᵐ[volume]
-        fun x ↦ (g x : ℂ) := by
-  obtain ⟨g, hg⟩ := (memSobolev_toLp_inclusion (TauCeti.nonneg_of_finrank_lt_two_mul hs)
-    (u : H^{s}(E))).exists_zeroAtInftyContinuousMap_ae_eq hs
+/-- **The continuous representative of a real element.** Above the Sobolev threshold
+`s > dim E / 2`, the `L²` function of a real element `F ∈ H^s(E)` agrees almost everywhere with a
+continuous real function. -/
+theorem exists_continuous_ae_eq_of_mem_realSubmodule (hs : finrank ℝ E < 2 * s) {h : 0 ≤ s}
+    (F : realSubmodule E h) :
+    ∃ f : E → ℝ, Continuous f ∧ inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (f z : ℂ) := by
+  obtain ⟨g, hg⟩ :=
+    (memSobolev_toLp_inclusion h (F : H^{s}(E))).exists_zeroAtInftyContinuousMap_ae_eq hs
+  rw [toLp_inclusion] at hg
   -- The imaginary part of the continuous representative vanishes almost everywhere, hence
   -- everywhere.
-  have him : (fun x ↦ (g x).im) = fun _ ↦ (0 : ℝ) :=
-    (Continuous.ae_eq_iff_eq volume (Complex.continuous_im.comp g.continuous)
-      continuous_const).1 <| by
-        filter_upwards [hg, mem_realSubmodule.1 u.2] with x hx hux
-        have hgx : (g x).im = 0 := by rw [← hx, hux]
-        simpa using hgx
-  refine ⟨fun x ↦ (g x).re, Complex.continuous_re.comp g.continuous, ?_⟩
-  filter_upwards [hg] with x hx
-  rw [hx]
-  exact Complex.ext rfl (by simpa using congrFun him x)
+  have him : (fun z ↦ (g z).im) = fun _ ↦ (0 : ℝ) := by
+    refine (Continuous.ae_eq_iff_eq volume (by fun_prop) continuous_const).1 ?_
+    filter_upwards [(mem_realSubmodule_iff h).1 F.2, hg] with z hz hz'
+    rw [← hz', hz]
+  refine ⟨fun z ↦ (g z).re, by fun_prop, ?_⟩
+  filter_upwards [hg] with z hz
+  rw [hz]
+  exact Complex.ext rfl (by simpa using congrFun him z)
 
-/-- Two continuous functions representing the same `L²` class are equal. -/
-private theorem eq_of_ae_eq {f : Lp ℂ 2 (volume : Measure E)} {g g' : E → ℝ} (hg : Continuous g)
-    (hg' : Continuous g') (hfg : f =ᵐ[volume] fun x ↦ (g x : ℂ))
-    (hfg' : f =ᵐ[volume] fun x ↦ (g' x : ℂ)) : g = g' :=
-  (Continuous.ae_eq_iff_eq volume hg hg').1 <| by
-    filter_upwards [hfg, hfg'] with x hx hx'
-    exact Complex.ofReal_injective (hx.symm.trans hx')
+/-- Two continuous real representatives of the same element of `H^s(E)` agree. -/
+private theorem eq_of_ae_eq_of_ae_eq {h : 0 ≤ s} {F : H^{s}(E)} {f g : E → ℝ}
+    (hf : Continuous f) (hg : Continuous g)
+    (hFf : inclusionLp h F =ᵐ[volume] fun z ↦ (f z : ℂ))
+    (hFg : inclusionLp h F =ᵐ[volume] fun z ↦ (g z : ℂ)) : f = g := by
+  refine (Continuous.ae_eq_iff_eq volume hf hg).1 ?_
+  filter_upwards [hFf.symm.trans hFg] with z hz
+  exact_mod_cast hz
 
-/-- **The continuous real representative** of a real element of `H^s(E)`, `s > dim E / 2`, as a
-real linear map `realSubmodule → C(E, ℝ)`. -/
-def realContinuousRep (hs : finrank ℝ E < 2 * s) :
-    realSubmodule (E := E) (TauCeti.nonneg_of_finrank_lt_two_mul hs) →ₗ[ℝ] C(E, ℝ) where
-  toFun u := ⟨(exists_continuous_ae_eq hs u).choose, (exists_continuous_ae_eq hs u).choose_spec.1⟩
-  map_add' u v := by
-    have h := TauCeti.nonneg_of_finrank_lt_two_mul hs
-    obtain ⟨-, hu⟩ := (exists_continuous_ae_eq hs u).choose_spec
-    obtain ⟨-, hv⟩ := (exists_continuous_ae_eq hs v).choose_spec
-    obtain ⟨huv₀, huv⟩ := (exists_continuous_ae_eq hs (u + v)).choose_spec
-    refine DFunLike.coe_injective (eq_of_ae_eq huv₀ (ContinuousMap.continuous _) huv ?_)
-    filter_upwards [coeFn_toLp_inclusion_add h (u : H^{s}(E)) v, hu, hv] with x hx hux hvx
-    rw [Submodule.coe_add, hx, Pi.add_apply, hux, hvx]
-    simp [-toLp_inclusion]
-  map_smul' c u := by
-    have h := TauCeti.nonneg_of_finrank_lt_two_mul hs
-    obtain ⟨-, hu⟩ := (exists_continuous_ae_eq hs u).choose_spec
-    obtain ⟨hcu₀, hcu⟩ := (exists_continuous_ae_eq hs (c • u)).choose_spec
-    refine DFunLike.coe_injective (eq_of_ae_eq hcu₀ (ContinuousMap.continuous _) hcu ?_)
-    filter_upwards [coeFn_toLp_inclusion_smul h (c : ℂ) (u : H^{s}(E)), hu] with x hx hux
-    rw [Submodule.coe_smul, ← Complex.coe_smul, hx, Pi.smul_apply, hux]
-    simp [-toLp_inclusion]
+variable {h : 0 ≤ s}
 
-/-- The continuous real representative of `u` represents `u` almost everywhere. -/
-theorem coeFn_toLp_inclusion_ae_eq_realContinuousRep (hs : finrank ℝ E < 2 * s)
-    (u : realSubmodule (E := E) (TauCeti.nonneg_of_finrank_lt_two_mul hs)) {h : 0 ≤ s} :
-    (inclusion h (u : H^{s}(E))).toLp =ᵐ[volume] fun x ↦ (realContinuousRep hs u x : ℂ) :=
-  (exists_continuous_ae_eq hs u).choose_spec.2
+open Classical in
+/-- **The continuous representative of a real element** `F ∈ H^s(E)`, as an `ℝ`-linear map:
+above the Sobolev threshold `s > dim E / 2`, the continuous real function whose values agree
+almost everywhere with the `L²` function of `F` (`coeFn_inclusionLp_ae_eq_continuousRep`). It is
+unique (`continuousRep_eq_of_ae_eq`). Below the threshold, where `F` need not have a continuous
+representative, it is the junk value `0`. -/
+def continuousRep : realSubmodule E h →ₗ[ℝ] (E → ℝ) :=
+  if hs : finrank ℝ E < 2 * s then
+    { toFun F := (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose
+      map_add' F G := by
+        have hF := (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose_spec
+        have hG := (exists_continuous_ae_eq_of_mem_realSubmodule hs G).choose_spec
+        have hFG := (exists_continuous_ae_eq_of_mem_realSubmodule hs (F + G)).choose_spec
+        refine eq_of_ae_eq_of_ae_eq hFG.1 (hF.1.add hG.1) hFG.2 ?_
+        rw [Submodule.coe_add, map_add]
+        filter_upwards [Lp.coeFn_add (inclusionLp h (F : H^{s}(E))) (inclusionLp h (G : H^{s}(E))),
+          hF.2, hG.2] with z hz hFz hGz
+        rw [hz, Pi.add_apply, hFz, hGz, Pi.add_apply, Complex.ofReal_add]
+      map_smul' c F := by
+        have hF := (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose_spec
+        have hcF := (exists_continuous_ae_eq_of_mem_realSubmodule hs (c • F)).choose_spec
+        refine eq_of_ae_eq_of_ae_eq hcF.1 (hF.1.const_smul c) hcF.2 ?_
+        rw [Submodule.coe_smul, ← Complex.coe_smul, map_smul]
+        filter_upwards [Lp.coeFn_smul (c : ℂ) (inclusionLp h (F : H^{s}(E))), hF.2] with z hz hFz
+        rw [hz, Pi.smul_apply, hFz, RingHom.id_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul,
+          Complex.ofReal_mul] }
+  else 0
 
-/-- The continuous real representative is the only continuous function representing `u`. -/
-theorem realContinuousRep_eq_of_ae_eq (hs : finrank ℝ E < 2 * s)
-    {u : realSubmodule (E := E) (TauCeti.nonneg_of_finrank_lt_two_mul hs)} {h : 0 ≤ s} {g : E → ℝ}
-    (hg : Continuous g)
-    (hug : (inclusion h (u : H^{s}(E))).toLp =ᵐ[volume] fun x ↦ (g x : ℂ)) :
-    ⇑(realContinuousRep hs u) = g :=
-  eq_of_ae_eq (realContinuousRep hs u).continuous hg
-    (coeFn_toLp_inclusion_ae_eq_realContinuousRep hs u) hug
+private theorem continuousRep_spec (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
+    Continuous (continuousRep F) ∧
+      inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) := by
+  simp only [continuousRep, hs, ↓reduceDIte, LinearMap.coe_mk, AddHom.coe_mk]
+  exact (exists_continuous_ae_eq_of_mem_realSubmodule hs F).choose_spec
 
-/-- The continuous real representative is injective. -/
-theorem realContinuousRep_injective (hs : finrank ℝ E < 2 * s) :
-    Function.Injective (realContinuousRep (E := E) hs) := by
-  intro u v huv
-  have h := TauCeti.nonneg_of_finrank_lt_two_mul hs
-  refine Subtype.ext (toLp_inclusion_injective h (Lp.ext ?_))
-  filter_upwards [coeFn_toLp_inclusion_ae_eq_realContinuousRep hs u (h := h),
-    coeFn_toLp_inclusion_ae_eq_realContinuousRep hs v (h := h)] with x hx hx'
-  rw [hx, hx', huv]
+theorem continuous_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
+    Continuous (continuousRep F) :=
+  (continuousRep_spec hs F).1
 
-/-- The continuous real representative of a real element of `H^s(E)` is a real `H^s` function. -/
-theorem realContinuousRep_mem_realSobolevFunctions (hs : finrank ℝ E < 2 * s)
-    (u : realSubmodule (E := E) (TauCeti.nonneg_of_finrank_lt_two_mul hs)) :
-    ⇑(realContinuousRep hs u) ∈ realSobolevFunctions E s 2 :=
-  mem_realSobolevFunctions_of_ae_eq_ofReal
-    (memSobolev_toLp_inclusion (TauCeti.nonneg_of_finrank_lt_two_mul hs) (u : H^{s}(E)))
-    (coeFn_toLp_inclusion_ae_eq_realContinuousRep hs u)
+theorem coeFn_inclusionLp_ae_eq_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
+    inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) :=
+  (continuousRep_spec hs F).2
 
-/-- **Every continuous real `H^s` function is a continuous real representative**, for
-`s > dim E / 2`. -/
-theorem exists_realContinuousRep_eq (hs : finrank ℝ E < 2 * s) {g : E → ℝ} (hg : Continuous g)
-    (hgs : g ∈ realSobolevFunctions E s 2) :
-    ∃ u : realSubmodule (E := E) (TauCeti.nonneg_of_finrank_lt_two_mul hs),
-      ⇑(realContinuousRep hs u) = g := by
-  have h := TauCeti.nonneg_of_finrank_lt_two_mul hs
-  obtain ⟨v, hvg, hvs⟩ := mem_realSobolevFunctions.1 hgs
-  have hL := toLp_inclusion_toBesselPotentialSpace h hvs rfl
-  have hae : (inclusion h hvs.toBesselPotentialSpace).toLp =ᵐ[volume] fun x ↦ (g x : ℂ) := by
-    rw [hL]
-    filter_upwards [Complex.ofRealCLM.coeFn_compLp (p := 2) (μ := volume) v, hvg] with x hx hx'
-    rw [hx, Complex.ofRealCLM_apply, hx']
-  have hmem : hvs.toBesselPotentialSpace ∈ realSubmodule h := by
-    refine mem_realSubmodule.2 ?_
-    filter_upwards [hae] with x hx
-    rw [hx, Complex.ofReal_im]
-  exact ⟨⟨_, hmem⟩, realContinuousRep_eq_of_ae_eq hs hg hae⟩
+/-- The continuous representative is the only continuous function representing `F`. -/
+theorem continuousRep_eq_of_ae_eq (hs : finrank ℝ E < 2 * s) {F : realSubmodule E h}
+    {f : E → ℝ} (hf : Continuous f)
+    (hF : inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (f z : ℂ)) :
+    continuousRep F = f :=
+  eq_of_ae_eq_of_ae_eq (continuous_continuousRep hs F) hf
+    (coeFn_inclusionLp_ae_eq_continuousRep hs F) hF
+
+/-- Above the Sobolev threshold, a real element of `H^s(E)` is determined by its continuous
+representative. -/
+theorem continuousRep_injective (hs : finrank ℝ E < 2 * s) :
+    Function.Injective (continuousRep : realSubmodule E h → E → ℝ) := by
+  intro F G hFG
+  refine Subtype.ext (inclusionLp_injective h (Lp.ext ?_))
+  filter_upwards [coeFn_inclusionLp_ae_eq_continuousRep hs F,
+    coeFn_inclusionLp_ae_eq_continuousRep hs G] with z hF hG
+  rw [hF, hG, hFG]
+
+/-- The continuous representative lies in the real `H^s` functions. -/
+theorem continuousRep_mem_realSobolevFunctions (hs : finrank ℝ E < 2 * s)
+    (F : realSubmodule E h) : continuousRep F ∈ realSobolevFunctions E s 2 :=
+  mem_realSobolevFunctions_of_ae_eq_ofReal (memSobolev_toLp_inclusion h (F : H^{s}(E)))
+    (by simpa using coeFn_inclusionLp_ae_eq_continuousRep hs F)
 
 end BesselPotentialSpace

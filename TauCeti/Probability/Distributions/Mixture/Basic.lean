@@ -32,6 +32,8 @@ arbitrary measurable extension.
 
 * `MeasureTheory.Measure.cdf_bind` computes the cdf of a real-valued probability mixture whose
   components are probability measures almost everywhere.
+* `TauCeti.Probability.cdf_finiteMixtureMeasure` specializes it to a weighted sum for finite
+  mixtures.
 * `MeasureTheory.Measure.mem_integrableExpSet_bind_iff` characterizes the exact exponential
   integrability domain by an iterated nonnegative integral.
 * `MeasureTheory.Measure.mgf_bind`, `MeasureTheory.Measure.cgf_bind`, and
@@ -166,6 +168,19 @@ theorem finiteMixtureMeasure_eq_bind [MeasurableSpace I] [MeasurableSingletonCla
   rw [finiteMixtureMeasure_def, _root_.sum_apply,
     Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
   simp only [categoricalMeasure_singleton, _root_.smul_apply, smul_eq_mul, mul_comm]
+
+/-- The cdf of a finite probability mixture is the weighted sum of its component cdfs. Only the
+positive-weight components need to be probability measures. -/
+theorem cdf_finiteMixtureMeasure {p : StdSimplex NNReal I} {K : I → Measure ℝ}
+    (hK : ∀ i, 0 < p.weights i → IsProbabilityMeasure (K i)) (x : ℝ) :
+    cdf (finiteMixtureMeasure p K) x = ∑ i, (p.weights i : ℝ) * cdf (K i) x := by
+  let _ : MeasurableSpace I := ⊤
+  have hprob : ∀ᵐ i ∂categoricalMeasure p, IsProbabilityMeasure (K i) :=
+    ae_iff_of_countable.mpr fun i hi ↦
+      hK i (by simpa [pos_iff_ne_zero, categoricalMeasure_singleton] using hi)
+  rw [finiteMixtureMeasure_eq_bind,
+    Measure.cdf_bind _ K Measurable.of_discrete.aemeasurable hprob, integral_categoricalMeasure]
+  simp_rw [smul_eq_mul]
 
 /-- A finite mixture of identical components is that component. -/
 @[simp]
