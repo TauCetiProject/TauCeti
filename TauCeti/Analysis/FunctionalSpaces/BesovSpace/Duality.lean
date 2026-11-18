@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Normed.Lp.Reindex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Holder
 
@@ -96,30 +97,31 @@ omit [Fact (1 ≤ q)] in
 within `L` of `k`. -/
 private theorem norm_smul_enlargedBlock_le (w : BesovSpace G φ s p q) (k : ℕ) :
     ‖(((2 : ℝ) ^ (s * k) : ℝ) : ℂ) • enlargedBlock w k‖ ≤
-      2 ^ (|s| * φ.littlewoodPaleyOverlap) * windowNorms φ.littlewoodPaleyOverlap w k := by
-  rw [norm_smul, Complex.norm_of_nonneg (by positivity), windowNorms_apply, Finset.mul_sum]
+      2 ^ (|s| * φ.littlewoodPaleyOverlap) * ∑ j ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap)
+        (k + φ.littlewoodPaleyOverlap), w.weightedBlockNorms j := by
+  rw [norm_smul, Complex.norm_of_nonneg (by positivity), Finset.mul_sum]
   calc 2 ^ (s * k) * ‖enlargedBlock w k‖ ≤
         ∑ j ∈ Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap) (k + φ.littlewoodPaleyOverlap),
           2 ^ (s * k) * ‖w.block j‖ := by
         rw [← Finset.mul_sum]
         exact mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)
     _ ≤ ∑ j ∈ Finset.Ico (k + 1 - φ.littlewoodPaleyOverlap) (k + φ.littlewoodPaleyOverlap),
-          2 ^ (|s| * φ.littlewoodPaleyOverlap) * ‖w.weightedBlocks j‖ := by
+          2 ^ (|s| * φ.littlewoodPaleyOverlap) * w.weightedBlockNorms j := by
         refine Finset.sum_le_sum fun j hj ↦ ?_
-        rw [norm_weightedBlocks_apply, ← mul_assoc]
+        rw [weightedBlockNorms_apply, ← mul_assoc]
         refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
         rw [Finset.mem_Ico] at hj
         refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
         all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
     _ ≤ _ := Finset.sum_le_sum_of_subset_of_nonneg (Finset.Ico_subset_Ico (by omega) le_rfl)
-          fun _ _ _ ↦ by positivity
+          fun j _ _ ↦ by rw [weightedBlockNorms_apply]; positivity
 
 /-- The weighted enlarged blocks `(2^{ks} Δ⁺ₖ w)ₖ` of `w ∈ B^s_{p,q}`, an `ℓ^q` sequence of `Lᵖ`
 functions. -/
 private def enlargedWeightedBlocks (w : BesovSpace G φ s p q) :
     lp (fun _ : ℕ ↦ Lp G p (volume : Measure E)) q :=
   ⟨fun k ↦ (((2 : ℝ) ^ (s * k) : ℝ) : ℂ) • enlargedBlock w k,
-    ((lp.memℓp (windowNorms φ.littlewoodPaleyOverlap w)).const_mul
+    (((lp.memℓp w.weightedBlockNorms).sum_Ico_sub_add φ.littlewoodPaleyOverlap).const_mul
       (2 ^ (|s| * φ.littlewoodPaleyOverlap))).mono fun k ↦ norm_smul_enlargedBlock_le w k⟩
 
 omit [Fact (1 ≤ q)] in
@@ -131,16 +133,20 @@ private theorem norm_enlargedWeightedBlocks_le (w : BesovSpace G φ s p q) :
     ‖enlargedWeightedBlocks w‖ ≤
       2 * φ.littlewoodPaleyOverlap * 2 ^ (|s| * φ.littlewoodPaleyOverlap) * ‖w‖ := by
   have hq : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  calc ‖enlargedWeightedBlocks w‖ ≤
-        ‖(2 ^ (|s| * φ.littlewoodPaleyOverlap) : ℝ) • windowNorms φ.littlewoodPaleyOverlap w‖ :=
+  -- The window sums of the weighted block norms of `w`, as an element of `ℓ^q`.
+  obtain ⟨b, hb, hbn⟩ :=
+    lp.exists_eq_sum_Ico_sub_add_and_norm_le w.weightedBlockNorms φ.littlewoodPaleyOverlap
+  calc ‖enlargedWeightedBlocks w‖ ≤ ‖(2 ^ (|s| * φ.littlewoodPaleyOverlap) : ℝ) • b‖ :=
         lp.norm_mono hq fun k ↦ by
-          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, enlargedWeightedBlocks_apply,
-            Real.norm_of_nonneg (by rw [windowNorms_apply]; positivity)]
+          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, enlargedWeightedBlocks_apply, hb,
+            Real.norm_of_nonneg (mul_nonneg (by positivity) (Finset.sum_nonneg fun j _ ↦ by
+              rw [weightedBlockNorms_apply]; positivity))]
           exact norm_smul_enlargedBlock_le w k
-    _ = 2 ^ (|s| * φ.littlewoodPaleyOverlap) * ‖windowNorms φ.littlewoodPaleyOverlap w‖ := by
+    _ = 2 ^ (|s| * φ.littlewoodPaleyOverlap) * ‖b‖ := by
         rw [lp.norm_const_smul hq, Real.norm_of_nonneg (by positivity)]
-    _ ≤ 2 ^ (|s| * φ.littlewoodPaleyOverlap) * (2 * φ.littlewoodPaleyOverlap * ‖w‖) :=
-        mul_le_mul_of_nonneg_left (norm_windowNorms_le _ w) (by positivity)
+    _ ≤ 2 ^ (|s| * φ.littlewoodPaleyOverlap) * (2 * φ.littlewoodPaleyOverlap * ‖w‖) := by
+        rw [← norm_weightedBlockNorms w]
+        gcongr
     _ = _ := by ring
 
 variable (G φ s p q) in
