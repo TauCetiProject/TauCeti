@@ -15,7 +15,9 @@ operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le
 operators assembled from separate operators for each component of the data, for instance the
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
 has operator norm at most `‖f (1, 0)‖ + ‖f (0, 1)‖`
-(`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`).
+(`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). The map
+`(x, y) ↦ (x, c • y)` on a product with `‖c‖ ≤ 1` is a contraction
+(`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`).
 -/
 
 public section
@@ -45,5 +47,16 @@ theorem opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one (f : 𝕜 × 𝕜 
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, mul_comm]
   · exact mul_le_mul_of_nonneg_left (_root_.norm_fst_le p) (norm_nonneg _)
   · exact mul_le_mul_of_nonneg_left (_root_.norm_snd_le p) (norm_nonneg _)
+
+/-- The map `(x, y) ↦ (x, c • y)` on a product has operator norm at most `1` when `‖c‖ ≤ 1`. -/
+theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 1) :
+    ‖(inl 𝕜 E F).comp (fst 𝕜 E F) + c • (inr 𝕜 E F).comp (snd 𝕜 E F)‖ ≤ 1 := by
+  have h : (inl 𝕜 E F).comp (fst 𝕜 E F) + c • (inr 𝕜 E F).comp (snd 𝕜 E F) =
+      (fst 𝕜 E F).prod (c • snd 𝕜 E F) := by
+    ext <;> simp
+  rw [h, opNorm_prod, Prod.norm_def]
+  refine max_le (norm_fst_le _ _ _) ?_
+  rw [norm_smul]
+  exact (mul_le_of_le_one_left (norm_nonneg _) hc).trans (norm_snd_le _ _ _)
 
 end ContinuousLinearMap
