@@ -17,8 +17,6 @@ import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
-import Mathlib.MeasureTheory.Integral.Average
-import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -852,26 +850,6 @@ theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm
 
 variable {U : Set (ℝ × ℝ)} {s : ℝ}
 
-/-- The slice energies of `u` over `[s, s']` are integrable, and by Fubini's theorem their integral
-is the energy of the rectangle `[s, s'] × [0, 1]`. -/
-private theorem integrableOn_and_integral_setIntegral_floerEnergyDensity (ω : SymplecticForm V)
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
-    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {s' : ℝ}
-    (hR : Icc s s' ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
-    IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t))
-        (Icc s s') ∧
-      ∫ r in Icc s s', ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t) =
-        ∫ z in Icc s s' ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity Ks Kt u
-  have hRint : IntegrableOn e (Icc s s' ×ˢ Icc (0 : ℝ) 1) :=
-    ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hR).integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc)
-  rw [Measure.volume_eq_prod] at hRint ⊢
-  refine ⟨?_, (setIntegral_prod e hRint).symm⟩
-  have h : Integrable e ((volume.restrict (Icc s s')).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
-    rwa [Measure.prod_restrict]
-  exact h.integral_prod_left
-
 /-- **A slice of at most average energy.** Let `u` and the perturbation data `Ks`, `Kt` be `C¹`
 over an open set `U` containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`. Then some slice
 `σ ∈ [s, s + h]` has energy at most the average energy of the rectangle:
@@ -882,12 +860,9 @@ theorem exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le (ω : SymplecticFor
     (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
     ∃ σ ∈ Icc s (s + h), h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (σ, t) ≤
       ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
-  obtain ⟨hgint, heq⟩ :=
-    integrableOn_and_integral_setIntegral_floerEnergyDensity ω hU hu hKs hKt hR
-  obtain ⟨σ, hσ, hσle⟩ := exists_le_setAverage (by simpa using hh) (by simp) hgint
-  rw [setAverage_eq, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left, smul_eq_mul,
-    heq] at hσle
-  exact ⟨σ, hσ, (le_inv_mul_iff₀ hh).1 hσle⟩
+  simpa only [add_sub_cancel_left] using exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect
+    (lt_add_of_pos_right s hh) (((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono
+      hR).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
 
 /-- **A lower bound on every slice bounds the energy.** Let `u` and the perturbation data `Ks`,
 `Kt` be `C¹` over an open set `U` containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`. If
