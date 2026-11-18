@@ -246,13 +246,9 @@ theorem continuous_inner_bilinearComp (h : ContinuousRiemannianMetric F E)
     [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {f : X → B}
     (σ : ∀ x, V →L[ℝ] E (f x))
     (hσ : ∀ w, Continuous fun x ↦ TotalSpace.mk' F (f x) (σ x w)) :
-    Continuous fun x ↦ (h.inner (f x)).bilinearComp (σ x) (σ x) := by
-  have hf : Continuous f := (FiberBundle.continuous_proj F E).comp (hσ 0)
-  refine continuous_clm_apply.2 fun w ↦ continuous_clm_apply.2 fun w' ↦ ?_
-  have : Continuous fun x ↦
-      TotalSpace.mk' ℝ (E := Bundle.Trivial B ℝ) (f x) (h.inner (f x) (σ x w) (σ x w')) :=
-    (h.continuous.comp hf).clm_bundle_apply₂ (F₁ := F) (F₂ := F) (hσ w) (hσ w')
-  exact continuous_snd.comp ((Bundle.Trivial.homeomorphProd B ℝ).continuous.comp this)
+    Continuous fun x ↦ (h.inner (f x)).bilinearComp (σ x) (σ x) :=
+  continuous_clm_apply.2 fun w ↦ continuous_clm_apply.2 fun w' ↦
+    h.continuous_inner (hσ w) (hσ w')
 
 end BilinearComp
 

@@ -23,6 +23,7 @@ pointwise object for the manifold divergence and Stokes identities.
 
 The construction is total, as are the rough forms in the differential-form API.  Its defining
 characterization is that it evaluates to `1` on every positively oriented orthonormal basis.
+Reversing the orientation negates it (`TauCeti.riemannianVolumeForm_neg`).
 
 For a `C^n` metric on a `C^(n+1)` manifold the volume form is a `C^n` form
 (`TauCeti.isSmoothForm_riemannianVolumeForm`): in the frame of a tangent trivialization its value
@@ -78,6 +79,15 @@ theorem riemannianVolumeForm_apply
        (Manifold.Orientation.orientationAt o x).volumeForm v) := by
   let := o.fact_finrank_tangentSpace x
   simp [riemannianVolumeForm]
+
+/-- Reversing the orientation negates the Riemannian volume form. -/
+@[simp]
+theorem riemannianVolumeForm_neg (o : Manifold.Orientation I M (Fin m)) :
+    riemannianVolumeForm (-o) = -riemannianVolumeForm o := by
+  funext x
+  ext v
+  let := o.fact_finrank_tangentSpace x
+  simp [Manifold.Orientation.orientationAt_neg, Orientation.volumeForm_neg_orientation]
 
 /-- The volume form takes value `1` on a positively oriented orthonormal tangent basis. -/
 theorem riemannianVolumeForm_apply_orthonormal
