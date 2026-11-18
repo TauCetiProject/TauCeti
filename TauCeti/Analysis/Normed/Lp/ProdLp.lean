@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
+public import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -28,10 +29,12 @@ of the two factors.
 Finally, it bundles the componentwise action of two continuous linear maps `f` and `g` on
 `WithLp p (α × β)` as a continuous linear map `f.withLpProdMap p g`, the continuous counterpart of
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
-orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
-ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
-projections onto the factors and the inclusions of the factors are contractions, and fixing one
-coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
+orthogonal block sum `f ⊕ g`. It is linear in the pair `(f, g)`, composes and multiplies
+componentwise, identifies its range with `f.range × g.range` (`rangeWithLpProdMapEquiv`), has rank
+equal to the sum of the ranks of `f` and `g`, and has operator norm equal to the larger of the two
+operator norms. The projections onto the factors and the inclusions `WithLp.inlL`, `WithLp.inrL` of
+the factors are contractions, and fixing one coordinate embeds the other factor isometrically into
+`WithLp p (α × β)`.
 
 ## Main statements
 
@@ -49,14 +52,19 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
 * `TauCeti.isBounded_range_toLp` — `Set.range (fun i ↦ WithLp.toLp p (f i, g i))` is bounded if
   and only if `Set.range f` and `Set.range g` are bounded.
 * `TauCeti.toLp_prodMk_eq_add` — `x ↦ (f x, u x)` is `x ↦ ι₁ (f x) + ι₂ (u x)`.
-* `ContinuousLinearMap.withLpProdMap` — the block sum `f ⊕ g` on `WithLp p (α × β)`.
+* `ContinuousLinearMap.withLpProdMap`, `ContinuousLinearMap.withLpProdMap_comp`,
+  `ContinuousLinearMap.withLpProdMap_mul`, `ContinuousLinearMap.withLpProdMap_smul` — the block sum
+  `f ⊕ g` on `WithLp p (α × β)` and its algebraic operations.
+* `ContinuousLinearMap.rangeWithLpProdMapEquiv` — continuous linear equivalence
+  `(f.range × g.range) ≃L[𝕜] (f.withLpProdMap p g).range`.
 * `LinearMap.rank_withLpMap` — lifting a linear map to `WithLp` preserves its rank.
 * `ContinuousLinearMap.rank_withLpProdMap` — `rank (f ⊕ g) = rank f + rank g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
-* `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
-  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
-  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
-  inclusions of the factors are contractions.
+* `WithLp.inlL`, `WithLp.inrL` — continuous linear inclusions of the factors into
+  `WithLp p (α × β)`.
+* `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`, `WithLp.norm_inlL_le_one`,
+  `WithLp.norm_inrL_le_one` — the projections onto and the inclusions of the factors are
+  contractions.
 * `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
   embeds the other factor isometrically into `WithLp p (α × β)`.
 -/
@@ -280,6 +288,80 @@ theorem withLpProdMap_zero :
   ext x
   simp
 
+/-- The block sum of identity operators is the identity operator. -/
+@[simp]
+theorem withLpProdMap_id :
+    (ContinuousLinearMap.id 𝕜 α).withLpProdMap p (ContinuousLinearMap.id 𝕜 β) =
+      ContinuousLinearMap.id 𝕜 (WithLp p (α × β)) := by
+  ext ⟨a, b⟩
+  simp
+
+/-- The block sum of `1` and `1` is `1`. -/
+@[simp]
+theorem withLpProdMap_one :
+    (1 : α →L[𝕜] α).withLpProdMap p (1 : β →L[𝕜] β) = 1 :=
+  withLpProdMap_id
+
+/-- Block sums compose componentwise. -/
+theorem withLpProdMap_comp {α'' β'' : Type*}
+    [TopologicalSpace α''] [AddCommGroup α''] [Module 𝕜 α'']
+    [TopologicalSpace β''] [AddCommGroup β''] [Module 𝕜 β'']
+    (f₂ : α' →L[𝕜] α'') (g₂ : β' →L[𝕜] β'') (f₁ : α →L[𝕜] α') (g₁ : β →L[𝕜] β') :
+    (f₂.withLpProdMap p g₂).comp (f₁.withLpProdMap p g₁) =
+      (f₂.comp f₁).withLpProdMap p (g₂.comp g₁) := by
+  ext x
+  simp
+
+/-- Block sums of endomorphisms multiply componentwise. -/
+theorem withLpProdMap_mul (f₁ f₂ : α →L[𝕜] α) (g₁ g₂ : β →L[𝕜] β) :
+    f₁.withLpProdMap p g₁ * f₂.withLpProdMap p g₂ = (f₁ * f₂).withLpProdMap p (g₁ * g₂) :=
+  withLpProdMap_comp f₁ g₁ f₂ g₂
+
+/-- Continuous linear equivalence between `f.range × g.range` and the range of the block sum
+`f.withLpProdMap p g`. -/
+def rangeWithLpProdMapEquiv (p : ℝ≥0∞) (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
+    (f.range × g.range) ≃L[𝕜] (f.withLpProdMap p g).range :=
+  have hprod : (f.range × g.range) ≃L[𝕜] f.range.prod g.range :=
+    { toLinearEquiv := (Submodule.prodEquiv f.range g.range).symm
+      continuous_toFun :=
+        (continuous_subtype_val.prodMap continuous_subtype_val).subtype_mk fun x ↦ ⟨x.1.2, x.2.2⟩
+      continuous_invFun :=
+        ((continuous_fst.comp continuous_subtype_val).subtype_mk fun x ↦ x.2.1).prodMk
+          ((continuous_snd.comp continuous_subtype_val).subtype_mk fun x ↦ x.2.2) }
+  have hrange :
+      (f.range.prod g.range).map
+          (WithLp.prodContinuousLinearEquiv p 𝕜 α' β').symm.toLinearMap =
+        (f.withLpProdMap p g).range := by
+    symm
+    rw [withLpProdMap, toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
+      LinearMap.range_comp_of_range_eq_top]
+    · rw [coe_prodMap, LinearMap.range_prodMap]
+      rfl
+    · exact LinearMap.range_eq_top.mpr (WithLp.prodContinuousLinearEquiv p 𝕜 α β).surjective
+  hprod.trans ((WithLp.prodContinuousLinearEquiv p 𝕜 α' β').symm.ofSubmodules _ _ hrange)
+
+/-- `rangeWithLpProdMapEquiv` embeds `(u, v)` as `WithLp.toLp p (u, v)`. -/
+@[simp]
+theorem coe_rangeWithLpProdMapEquiv_apply (f : α →L[𝕜] α') (g : β →L[𝕜] β')
+    (w : f.range × g.range) :
+    (f.rangeWithLpProdMapEquiv p g w : WithLp p (α' × β')) =
+      WithLp.toLp p ((w.1 : α'), (w.2 : β')) :=
+  (rfl)
+
+/-- First coordinate of `(rangeWithLpProdMapEquiv p f g).symm`. -/
+@[simp]
+theorem coe_fst_rangeWithLpProdMapEquiv_symm_apply (f : α →L[𝕜] α') (g : β →L[𝕜] β')
+    (w : (f.withLpProdMap p g).range) :
+    (((f.rangeWithLpProdMapEquiv p g).symm w).1 : α') = (w : WithLp p (α' × β')).fst :=
+  (rfl)
+
+/-- Second coordinate of `(rangeWithLpProdMapEquiv p f g).symm`. -/
+@[simp]
+theorem coe_snd_rangeWithLpProdMapEquiv_symm_apply (f : α →L[𝕜] α') (g : β →L[𝕜] β')
+    (w : (f.withLpProdMap p g).range) :
+    (((f.rangeWithLpProdMapEquiv p g).symm w).2 : β') = (w : WithLp p (α' × β')).snd :=
+  (rfl)
+
 end Topological
 
 section Seminormed
@@ -298,6 +380,22 @@ theorem withLpProdMap_add (f f' : α →L[𝕜] α') (g g' : β →L[𝕜] β') 
   simp [← WithLp.toLp_add]
 
 end Seminormed
+
+section NormedSMul
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 α β α' β' : Type*} [NormedField 𝕜]
+  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
+  [SeminormedAddCommGroup α'] [NormedSpace 𝕜 α']
+  [SeminormedAddCommGroup β'] [NormedSpace 𝕜 β']
+
+/-- Block sums commute with scalar multiplication. -/
+theorem withLpProdMap_smul (c : 𝕜) (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
+    (c • f).withLpProdMap p (c • g) = c • f.withLpProdMap p g := by
+  ext x
+  simp [← WithLp.toLp_smul]
+
+end NormedSMul
 
 section SeminormedRing
 
@@ -364,6 +462,44 @@ end ContinuousLinearMap
 
 namespace WithLp
 
+section Inclusions
+
+variable (p : ℝ≥0∞) (𝕜 α β : Type*) [Semiring 𝕜]
+  [TopologicalSpace α] [AddCommGroup α] [Module 𝕜 α]
+  [TopologicalSpace β] [AddCommGroup β] [Module 𝕜 β]
+
+/-- Continuous linear inclusion `x ↦ WithLp.toLp p (x, 0)` of the first factor into
+`WithLp p (α × β)`. -/
+def inlL : α →L[𝕜] WithLp p (α × β) :=
+  (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L ContinuousLinearMap.inl 𝕜 α β
+
+theorem inlL_def :
+    inlL p 𝕜 α β =
+      (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
+        ContinuousLinearMap.inl 𝕜 α β :=
+  (rfl)
+
+@[simp]
+theorem inlL_apply (x : α) : inlL p 𝕜 α β x = toLp p (x, 0) :=
+  (rfl)
+
+/-- Continuous linear inclusion `y ↦ WithLp.toLp p (0, y)` of the second factor into
+`WithLp p (α × β)`. -/
+def inrL : β →L[𝕜] WithLp p (α × β) :=
+  (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L ContinuousLinearMap.inr 𝕜 α β
+
+theorem inrL_def :
+    inrL p 𝕜 α β =
+      (prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
+        ContinuousLinearMap.inr 𝕜 α β :=
+  (rfl)
+
+@[simp]
+theorem inrL_apply (y : β) : inrL p 𝕜 α β y = toLp p (0, y) :=
+  (rfl)
+
+end Inclusions
+
 section Contraction
 
 variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β : Type*) [NontriviallyNormedField 𝕜]
@@ -378,15 +514,11 @@ theorem norm_sndL_le_one : ‖sndL p 𝕜 α β‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simpa using norm_snd_le (x := x)
 
 /-- The inclusion of the first factor into `WithLp p (α × β)` is a contraction. -/
-theorem norm_prodContinuousLinearEquiv_symm_comp_inl_le_one :
-    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
-      ContinuousLinearMap.inl 𝕜 α β‖ ≤ 1 :=
+theorem norm_inlL_le_one : ‖inlL p 𝕜 α β‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
 
 /-- The inclusion of the second factor into `WithLp p (α × β)` is a contraction. -/
-theorem norm_prodContinuousLinearEquiv_symm_comp_inr_le_one :
-    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
-      ContinuousLinearMap.inr 𝕜 α β‖ ≤ 1 :=
+theorem norm_inrL_le_one : ‖inrL p 𝕜 α β‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
 
 end Contraction

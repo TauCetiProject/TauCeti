@@ -69,6 +69,8 @@ then shows that a parametrix of `T` has index `-index T`.
   index-zero Fredholm operator has an invertible compact perturbation.
 * `ContinuousLinearMap.IsFredholm.joinedIn_of_isCompactOperator_sub`: an affine compact
   perturbation stays in the Fredholm locus.
+* `ContinuousLinearMap.index_one_add_mul_eq`: the Fredholm index of `1 + P * X * P` depends on `P`
+  only modulo operators whose left and right products with `X` are compact.
 
 The finite-defect completion and affine path are adapted from
 [AtiyahSinger/Analysis/FredholmPaths.lean][fredholm-paths] in Lean-Atiyah-Singer.
@@ -329,6 +331,22 @@ theorem IsFredholm.joinedIn_of_isCompactOperator_sub
   refine ⟨γ, fun t ↦ ?_⟩
   simpa only [γ, Path.cast_coe, Path.map_coe, Function.comp_apply, Set.mem_ofPred_eq] using
     hT₀.add_of_isCompactOperator (hK.smul ((Path.segment (0 : 𝕜) 1) t))
+
+/-- The Fredholm index of a Toeplitz-type perturbation `1 + P * X * P` depends on `P` only up to
+operators whose left and right products with `X` are compact. -/
+theorem index_one_add_mul_eq (P P' X : E →L[𝕜] E)
+    (hF : (1 + P * X * P).IsFredholm)
+    (h1 : IsCompactOperator ⇑((P' - P) * X))
+    (h2 : IsCompactOperator ⇑(X * (P' - P))) :
+    (1 + P' * X * P').index = (1 + P * X * P).index := by
+  let C : E →L[𝕜] E := ((P' - P) * X) * P' + P * (X * (P' - P))
+  have hC : IsCompactOperator C := (h1.comp_clm P').add (h2.clm_comp P)
+  have halg : 1 + P' * X * P' = (1 + P * X * P) + C := by
+    ext x
+    simp only [C, add_apply, sub_apply, one_apply_eq_self, mul_def, comp_apply, map_sub]
+    rw [sub_add_sub_cancel, add_assoc, add_sub_cancel]
+  rw [halg]
+  exact index_add_of_isCompactOperator hF hC
 
 end ContinuousLinearMap
 

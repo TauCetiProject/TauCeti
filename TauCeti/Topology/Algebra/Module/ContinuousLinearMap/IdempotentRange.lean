@@ -19,9 +19,13 @@ carries the range of `p` isomorphically onto the range of `q`
 of projections; it is the local chart of the image bundle of a continuous family of projections,
 and it shows that nearby projections have isomorphic ranges.
 
+On a complete separated topological additive group, the closedness of `p.range` makes `p.range`
+itself complete (`ContinuousLinearMap.IsIdempotentElem.completeSpace_range`).
+
 For a retract `r ∘ i = id` of `M` through `N`, the extension `i ∘ e ∘ r` of an endomorphism `e`
 of `M` is idempotent when `e` is, and `i` identifies the range of `e` with the range of
-`i ∘ e ∘ r` (`ContinuousLinearMap.rangeEquivOfRetract`).
+`i ∘ e ∘ r` (`ContinuousLinearMap.rangeEquivOfRetract`, upgraded to a continuous linear equivalence
+in `ContinuousLinearMap.rangeRetractEquiv`).
 
 A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g ∘ f`
 (`ContinuousLinearMap.isIdempotentElem_comp_of_comp_comp_eq_self`).
@@ -30,13 +34,17 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
 
 * `ContinuousLinearMap.IsIdempotentElem.rangeEquiv`: the isomorphism of the ranges of `p` and
   `q` induced by `q * p + (1 - q) * (1 - p)`, when that operator is invertible.
-* `ContinuousLinearMap.rangeEquivOfRetract`: the identification of the range of `e` with the
-  range of its extension `i ∘ e ∘ r` along a retract.
+* `ContinuousLinearMap.rangeEquivOfRetract`: the linear identification of the range of `e` with
+  the range of its extension `i ∘ e ∘ r` along a retract.
+* `ContinuousLinearMap.rangeRetractEquiv`: the continuous linear equivalence upgrading
+  `rangeEquivOfRetract` when `i` and `r` are continuous linear maps.
 
 ## Main results
 
 * `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
   fixes every vector of its range.
+* `ContinuousLinearMap.IsIdempotentElem.completeSpace_range`: the range of an idempotent
+  continuous linear map on a complete `T1` topological additive group is complete.
 * `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
   `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
@@ -55,6 +63,13 @@ public section
 open scoped Ring
 
 namespace ContinuousLinearMap.IsIdempotentElem
+
+/-- The range of an idempotent continuous linear map on a complete T1 topological additive group
+is complete. -/
+theorem completeSpace_range {R M : Type*} [Ring R] [UniformSpace M] [T1Space M]
+    [CompleteSpace M] [AddCommGroup M] [IsTopologicalAddGroup M] [Module R M]
+    {p : M →L[R] M} (hp : IsIdempotentElem p) : CompleteSpace p.range :=
+  (isClosed_range hp).isComplete.completeSpace_coe
 
 variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
   {p q : M →L[R] M}
@@ -198,6 +213,34 @@ theorem coe_rangeEquivOfRetract_symm_apply (e : M →L[R] M) (hri : r.comp i = .
   obtain ⟨x, rfl⟩ := (rangeEquivOfRetract e hri).surjective y
   rw [LinearEquiv.symm_apply_apply, coe_rangeEquivOfRetract_apply]
   exact (DFunLike.congr_fun hri (x : M)).symm
+
+/-- Continuous linear equivalence between the range of `e : M →L[R] M` and the range of its
+extension `i ∘L e ∘L r` along a continuous linear retract `r ∘L i = id`. -/
+def rangeRetractEquiv (e : M →L[R] M) (hri : r.comp i = .id R M) :
+    e.range ≃L[R] (i ∘L e ∘L r).range :=
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  .equivOfInverse
+    ((i ∘L e.range.subtypeL).codRestrict _ fun w ↦
+      let ⟨x, hx⟩ := w.2
+      ⟨i x, (congrArg (fun z ↦ i (e z)) (hri' x)).trans (congrArg i hx)⟩)
+    ((r ∘L Submodule.subtypeL _).codRestrict _ fun w ↦
+      let ⟨y, hy⟩ := w.2
+      ⟨r y, (hri' (e (r y))).symm.trans (congrArg r hy)⟩)
+    (fun w ↦ Subtype.ext (hri' w))
+    (fun w ↦ Subtype.ext <|
+      let ⟨y, hy⟩ := w.2
+      (congrArg (fun z ↦ i (r z)) hy.symm).trans <| (congrArg i (hri' (e (r y)))).trans hy)
+
+/-- `rangeRetractEquiv` acts by the inclusion `i`. -/
+theorem coe_rangeRetractEquiv_apply (e : M →L[R] M) (hri : r.comp i = .id R M) (w : e.range) :
+    (rangeRetractEquiv e hri w : N) = i w :=
+  (rfl)
+
+/-- The inverse of `rangeRetractEquiv` acts by the retraction `r`. -/
+theorem coe_rangeRetractEquiv_symm_apply (e : M →L[R] M) (hri : r.comp i = .id R M)
+    (w : (i ∘L e ∘L r).range) :
+    ((rangeRetractEquiv e hri).symm w : M) = r w :=
+  (rfl)
 
 end Retract
 
