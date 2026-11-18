@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.Algebra.Homology.ModuleCat.ToMatrix
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 
 /-!
@@ -49,6 +51,15 @@ torsion by a sign, and rescaling the basis vectors by units multiplies it by a m
 units; these are the ambiguities of torsion invariants defined from bases chosen up to signs and
 deck transformations.
 
+If `D` is a two-periodic complex over a field `K` with bases in which the matrices of the
+differentials are the images of those of `C` under a homomorphism of fields `φ : F →+* K`, then
+`τ(D) = φ (τ(C))` (`HomologicalComplex.map_parityTorsion`). Thus the torsions of a based complex
+over a ring read in its residue or fraction fields can be compared along the field homomorphisms
+between them. In particular the torsion is invariant under isomorphisms of based complexes
+(`HomologicalComplex.parityTorsion_map`): if `Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in bases `c i`
+and `c' i`, then `τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`
+(`HomologicalComplex.parityTorsion_eq_mul_det_toMatrix`).
+
 Torsions of two-periodic complexes over Novikov rings, read in each field component of a total
 quotient ring, are the Floer analogues of the Reidemeister torsion of a closed manifold.
 
@@ -66,6 +77,12 @@ quotient ring, are the Floer analogues of the Reidemeister torsion of a closed m
 * `HomologicalComplex.parityTorsion_of_d_zero_one`,
   `HomologicalComplex.parityTorsion_of_d_one_zero`: the torsion when one differential vanishes.
 * `HomologicalComplex.parityTorsion_eq_one`: the zero complex has torsion `1`.
+* `HomologicalComplex.map_parityTorsion`: the torsion of the scalar extension of a based complex
+  along a homomorphism of fields is the image of its torsion.
+* `HomologicalComplex.parityTorsion_map`: the torsion is invariant under isomorphisms of based
+  complexes.
+* `HomologicalComplex.parityTorsion_eq_mul_det_toMatrix`: the change of the torsion under an
+  isomorphism of complexes with arbitrary bases.
 
 ## References
 
@@ -319,5 +336,82 @@ theorem parityTorsion_eq_one (h₀ : n 0 = 0) (h₁ : n 1 = 0) : C.parityTorsion
   simp [Basis.det_isEmpty]
 
 end TwoTerm
+
+section ScalarExtension
+
+/-! ### Scalar extension along a homomorphism of fields -/
+
+variable {c} {K : Type*} [Field K] (φ : F →+* K)
+  {D : HomologicalComplex (ModuleCat K) (ComplexShape.up (ZMod 2))}
+  {e : ∀ i, Basis (Fin (n i)) K (D.X i)}
+  (hd₀ : LinearMap.toMatrix (e 0) (e 1) (D.d 0 1).hom =
+    (LinearMap.toMatrix (c 0) (c 1) (C.d 0 1).hom).map φ)
+  (hd₁ : LinearMap.toMatrix (e 1) (e 0) (D.d 1 0).hom =
+    (LinearMap.toMatrix (c 1) (c 0) (C.d 1 0).hom).map φ)
+
+include hd₀ hd₁ in
+/-- **Scalar extension of the torsion.** Let `φ : F →+* K` be a homomorphism of fields, and let
+`D` be a two-periodic complex of vector spaces over `K` with bases `e i` in which the matrices of
+the two differentials are the images under `φ` of the matrices of the differentials of `C` in the
+bases `c i`. Then the torsion of `D` is the image under `φ` of the torsion of `C`. This holds for
+every complex: `D` is acyclic exactly when `C` is, and both torsions are `0` otherwise. -/
+theorem map_parityTorsion : φ (C.parityTorsion c) = D.parityTorsion e := by
+  have hDC : D.Acyclic ↔ C.Acyclic := acyclic_iff_of_toMatrix_eq φ fun i j hij ↦ by
+    obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ : (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 0) := by
+      revert i j
+      decide
+    exacts [hd₀, hd₁]
+  by_cases h : C.Acyclic
+  swap
+  · rw [parityTorsion_of_not_acyclic C c h, parityTorsion_of_not_acyclic D e (mt hDC.1 h),
+      map_zero]
+  have hD := hDC.2 h
+  -- The images of the chosen boundary bases and lifts of `C` are boundary bases and lifts of `D`.
+  rw [parityTorsion_eq h (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1)
+      (chosenBoundaryLift C c 0 1) (chosenBoundaryLift_spec C c 0 1)
+      (chosenBoundaryLift C c 1 0) (chosenBoundaryLift_spec C c 1 0),
+    parityTorsion_eq hD (semilinearMapChosenBoundaryBasis φ hd₁)
+      (semilinearMapChosenBoundaryBasis φ hd₀)
+      ((c 0).semilinearMap φ (e 0) ∘ chosenBoundaryLift C c 0 1)
+      (d_semilinearMap_chosenBoundaryLift φ hd₀)
+      ((c 1).semilinearMap φ (e 1) ∘ chosenBoundaryLift C c 1 0)
+      (d_semilinearMap_chosenBoundaryLift φ hd₁),
+    map_mul, map_inv₀,
+    torsionBracket_semilinearMap φ _ _ (h 1) (hD 1) _ _ _ _ _ _
+      (coe_semilinearMapChosenBoundaryBasis φ hd₀) (d_semilinearMap_chosenBoundaryLift φ hd₁),
+    torsionBracket_semilinearMap φ _ _ (h 0) (hD 0) _ _ _ _ _ _
+      (coe_semilinearMapChosenBoundaryBasis φ hd₁) (d_semilinearMap_chosenBoundaryLift φ hd₀)]
+
+end ScalarExtension
+
+section Iso
+
+variable {D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} (e : C ≅ D)
+
+/-- The torsion is invariant under isomorphisms of based complexes: transporting the bases `c i`
+of `C` along an isomorphism `e : C ≅ D` gives bases of `D` for which `D` has the same torsion as
+`C`. -/
+@[simp]
+theorem parityTorsion_map :
+    D.parityTorsion (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) = C.parityTorsion c :=
+  -- `D` with the transported bases is the scalar extension of `C` along the identity: the
+  -- matrices of the differentials agree.
+  (map_parityTorsion (RingHom.id F) (e := fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv)
+    ((toMatrix_map_isoApp_d e (c 0) (c 1)).trans (Matrix.map_id _).symm)
+    ((toMatrix_map_isoApp_d e (c 1) (c 0)).trans (Matrix.map_id _).symm)).symm
+
+/-- The torsion under an isomorphism `e : C ≅ D` of complexes with bases `c i` and `c' i`: if
+`Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · det (A₀) · det (A₁)⁻¹`. -/
+theorem parityTorsion_eq_mul_det_toMatrix (c' : ∀ i, Basis (Fin (n i)) F (D.X i)) :
+    C.parityTorsion c = D.parityTorsion c' *
+      ((LinearMap.toMatrix (c 0) (c' 0) (e.hom.f 0).hom).det *
+        ((LinearMap.toMatrix (c 1) (c' 1) (e.hom.f 1).hom).det)⁻¹) := by
+  rw [← parityTorsion_map c e,
+    parityTorsion_eq_mul_det c' fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv,
+    Basis.det_apply, Basis.det_apply]
+  congr 5 <;> ext k <;> simp
+
+end Iso
 
 end HomologicalComplex

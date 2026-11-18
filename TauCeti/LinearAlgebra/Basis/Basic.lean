@@ -40,6 +40,9 @@ vectors indexed by `ι`.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
+* `Module.Basis.linearIndependent_coord_restrict_iff`: a family whose coordinates are supported in
+  a set `t` of indices is linearly independent exactly when its coordinate vectors restricted to
+  `t` are.
 * `Module.Basis.apply_eq_sum_repr_zsmul`: an additive map evaluated at a vector is the sum of its
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
@@ -122,6 +125,28 @@ theorem linearIndependent_of_repr_eq_single {b : Module.Basis ι K V} {S : Finse
     · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
         Pi.single_eq_of_ne hst]
   exact LinearIndependent.of_comp π (hπ ▸ Pi.linearIndependent_single_one S K)
+
+/-- A family `w` whose coordinates in the basis `b` are supported in `t` is linearly independent
+exactly when its coordinate vectors restricted to `t` are. -/
+theorem linearIndependent_coord_restrict_iff {κ : Type*} (b : Module.Basis ι K V) (t : Set ι)
+    {w : κ → V} (hw : ∀ k, ↑(b.repr (w k)).support ⊆ t) :
+    LinearIndependent K (fun k (i : t) ↦ b.repr (w k) i) ↔ LinearIndependent K w := by
+  let π : V →ₗ[K] (t → K) := LinearMap.pi fun i ↦ b.coord i
+  have hπ : (fun k (i : t) ↦ b.repr (w k) i) = π ∘ w := by
+    funext k i
+    simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
+  -- Every vector in the span of `w` has its coordinates supported in `t`.
+  have hsupp {x : V} (hx : x ∈ Submodule.span K (Set.range w)) : ↑(b.repr x).support ⊆ t :=
+    (Finsupp.mem_supported K _).1 <| (Submodule.span_le (p := (Finsupp.supported K K t).comap
+      b.repr.toLinearMap)).2 (Set.range_subset_iff.2 fun k ↦ (Finsupp.mem_supported K _).2 (hw k))
+      hx
+  rw [hπ]
+  refine π.linearIndependent_iff_of_injOn fun x hx y hy h ↦
+    b.repr.injective <| Finsupp.ext fun i ↦ ?_
+  by_cases hi : i ∈ t
+  · simpa only [π, LinearMap.pi_apply, coord_apply] using congrFun h ⟨i, hi⟩
+  · rw [Finsupp.notMem_support_iff.1 fun h ↦ hi (hsupp hx h),
+      Finsupp.notMem_support_iff.1 fun h ↦ hi (hsupp hy h)]
 
 section Submodule
 
