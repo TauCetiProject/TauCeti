@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.ConstantCoefficientDecay
 public import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.MeanInequalities
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Mean oscillation of the gradient for divergence-form equations
@@ -194,13 +196,7 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
   have hK : 0 ≤ K :=
     (norm_nonneg (matrixBilinearForm (a x₀) - matrixBilinearForm A)).trans
       (haK x₀ (mem_ball_self hr))
-  have hθm : AEStronglyMeasurable θ μr := by
-    have h : Continuous
-        fun M : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ => matrixBilinearForm (M - A) :=
-      continuous_matrixBilinearForm.comp (continuous_sub_right A)
-    simpa only [θ, matrixBilinearForm_sub] using
-      (Continuous.norm (E := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ]
-        EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ) h).comp_aestronglyMeasurable ha
+  have hθm : AEStronglyMeasurable θ μr := aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   have hθ : ∀ᵐ x ∂μr, 0 ≤ θ x ∧ θ x ≤ K :=
     (ae_restrict_mem measurableSet_ball).mono fun x hx =>
       ⟨norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A), haK x hx⟩
@@ -217,10 +213,8 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
   set V : ℝ := volume.real (ball x₀ r)
   have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos volume x₀ hr).ne' measure_ball_lt_top.ne
   have hVρ : volume.real (ball x₀ ρ) = (ρ / r) ^ (n + 1) * V := by
-    simp only [V, measureReal_def, Measure.addHaar_ball_of_pos volume x₀ hρ,
-      Measure.addHaar_ball_of_pos volume x₀ hr, finrank_euclideanSpace_fin, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (pow_nonneg hρ.le _), ENNReal.toReal_ofReal (pow_nonneg hr.le _),
-      div_pow]
+    simp only [V, Measure.addHaar_real_ball_of_pos _ _ hρ, Measure.addHaar_real_ball_of_pos _ _ hr,
+      finrank_euclideanSpace_fin, div_pow]
     field_simp
   have havg : ∀ (t : ℝ) (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
       ⨍ x in ball x₀ t, f x = (volume.real (ball x₀ t))⁻¹ * ∫ x in ball x₀ t, f x :=
@@ -230,10 +224,10 @@ theorem setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinea
     havg r θ, havg r (fun x => ‖g x‖ ^ (2 * q)), hVρ]
   have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
       V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
-    rw [mul_left_comm, Real.mul_rpow (inv_nonneg.2 hV.le)
-        (mul_nonneg (Real.rpow_nonneg hK _) (integral_nonneg_of_ae (hθ.mono fun x hx => hx.1))),
-      Real.mul_rpow (inv_nonneg.2 hV.le) hIg, mul_mul_mul_comm, ← Real.rpow_add (inv_pos.2 hV),
-      hq.symm.inv_add_inv_eq_one, Real.rpow_one]
+    rw [mul_left_comm]
+    exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hV.le)
+      (mul_nonneg (Real.rpow_nonneg hK _) (integral_nonneg_of_ae (hθ.mono fun x hx => hx.1))) hIg
+      hq.symm.inv_add_inv_eq_one
   rw [hsplit]
   have hs : 0 < ρ / r := div_pos hρ hr
   refine (mul_le_mul_of_nonneg_left (key.trans (add_le_add le_rfl

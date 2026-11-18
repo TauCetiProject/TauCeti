@@ -154,7 +154,8 @@ private theorem pathChainPrepend_symm_concat (γ : MoorePathBetween B a b)
     (n : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
     cubicalChainModuleLinearMap R (γ.symm.prepend c)
         (pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) m n)) =
-      cubicalChainModuleEquiv _ _ R (cubicalChainModuleLinearMap R (retraceLoop γ) m) • n := by
+      cubicalChainModuleEquiv _ (MooreLoopSpace B b) R
+        (cubicalChainModuleLinearMap R (retraceLoop γ) m) • n := by
   rw [pathChainConcat_tmul, cubicalChainModuleLinearMap_cubicalChainPairing,
     cubicalChainModuleEquiv_smul_eq_cubicalChainPairing,
     cubicalChainPairing_cubicalChainModuleLinearMap_left]
@@ -165,7 +166,8 @@ private theorem pathChainPrepend_symm_concat (γ : MoorePathBetween B a b)
 /-- The loops `γ⁻¹ ⋆ m` act on the point `γ` by prepending `γ⁻¹` and then `γ` to `m`. -/
 private theorem op_smul_pathChainPoint (γ : MoorePathBetween B a b)
     (m : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
-    op (cubicalChainModuleEquiv _ _ R (cubicalChainModuleLinearMap R (retraceLoop γ) m)) •
+    op (cubicalChainModuleEquiv _ (MooreLoopSpace B b) R
+          (cubicalChainModuleLinearMap R (retraceLoop γ) m)) •
         pathChainPoint R γ =
       pathChainPrepend R γ b (pathChainPrepend R γ.symm b m) := by
   rw [op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing,
