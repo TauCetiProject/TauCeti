@@ -185,18 +185,12 @@ theorem inner_toLp_schrodingerDuhamel (hG : LocallyIntegrableOn G (Ici 0)) (φ :
       I * ((∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, schrodingerDuhamel f G s⟫_ℂ) -
         ∫ s in Ioc 0 t, ⟪φ.toLp 2, G s⟫_ℂ) := by
   refine inner_schrodingerDuhamel hG ?_ ht
-  have hT : (laplacianSymbol : E → ℝ).HasTemperateGrowth := by
-    have hl : (laplacianSymbol : E → ℝ) = fun ξ ↦ -(4 * Real.pi ^ 2) * ‖ξ‖ ^ 2 := by
-      ext ξ
-      rw [laplacianSymbol_apply, neg_mul]
-    rw [hl]
-    fun_prop
   rw [SchwartzMap.toLp_fourier_eq, SchwartzMap.toLp_fourier_eq,
     SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol,
     SchwartzMap.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq]
   filter_upwards [(𝓕 φ).coeFn_toLp 2, (SchwartzMap.smulLeftCLM F (laplacianSymbol : E → ℝ)
     (𝓕 φ)).coeFn_toLp 2] with ξ h₁ h₂
-  rw [h₂, h₁, SchwartzMap.smulLeftCLM_apply_apply hT,
+  rw [h₂, h₁, SchwartzMap.smulLeftCLM_apply_apply hasTemperateGrowth_laplacianSymbol,
     Complex.coe_smul]
 
 end TauCeti

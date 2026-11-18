@@ -130,8 +130,7 @@ private theorem exists_mem_domain_complexGenerator_eq (hU : U.IsUnitary)
   have hval := LinearPMap.adjoint_apply_eq hdense ⟨_, hmem⟩ hadj
   have hA : A† = -A := hU.complexGenerator_adjoint_eq_neg
   have hmem' : (∫ s in Ioc 0 t, u s) ∈ A.domain := by
-    have := hmem
-    rwa [hA, LinearPMap.neg_domain] at this
+    rwa [hA, LinearPMap.neg_domain] at hmem
   refine ⟨hmem', ?_⟩
   have hneg : (-A) ⟨_, by rwa [LinearPMap.neg_domain]⟩ = -w := by
     rw [← hval]
@@ -157,9 +156,8 @@ theorem isForcedMildSolution_of_forall_inner_eq (hU : U.IsUnitary)
   · -- At `t = 0` the time integrals vanish, so the identified value `u 0 - x` is `A 0 = 0`.
     obtain ⟨hv, hAv⟩ := key 0 le_rfl
     have hzero : (⟨_, hv⟩ : (U.complexGenerator hU).domain) = 0 := Subtype.ext (by simp)
-    rw [hzero, LinearPMap.map_zero, Ioc_self, Measure.restrict_empty, integral_zero_measure,
-      sub_zero, eq_comm, sub_eq_zero] at hAv
-    exact hAv
+    rw [hzero, LinearPMap.map_zero] at hAv
+    simpa [sub_eq_zero] using hAv.symm
   · obtain ⟨hv, hAv⟩ := key t ht
     exact ⟨(LinearPMap.mem_restrictScalars_domain ℝ _).mpr hv, by
       rw [LinearPMap.restrictScalars_apply]
