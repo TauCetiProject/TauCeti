@@ -9,6 +9,8 @@ public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Schwartz functions in the Bessel-potential spaces
@@ -37,13 +39,20 @@ normed complex `F`.
   the `Lᵖ` norm.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
+* `BesselPotentialSpace.smulLeftCLM_rpow_sub_smulLeftCLM`: the Bessel weights multiply,
+  `⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s f = ⟨ξ⟩ ^ r f`.
+* `BesselPotentialSpace.norm_one_add_norm_sq_rpow_sub_le`: `⟨ξ⟩ ^ (r - s) ≤ 1` for `r ≤ s`.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
   norm is the `L²` norm of the weighted Fourier transform.
+* `BesselPotentialSpace.smulLeftCLM_fourier_toDistr_eq`: for Hilbert-space values, the weighted
+  Fourier transform of `u ∈ H^s` is the Fourier transform of its `L²` part.
+* `BesselPotentialSpace.norm_sq_eq_integral_of_smulLeftCLM_fourier_eq`,
+  `BesselPotentialSpace.norm_le_mul_norm_of_smulLeftCLM_fourier_eq`: the norm of an element whose
+  weighted Fourier transform is a bounded multiplier `g` times that of `u`, as the integral
+  `∫ ‖g‖² ‖𝓕 u.toLp‖²`, and the bound `sup ‖g‖ ‖u‖`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
   Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`.
 * `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: the `H¹` norm of a Schwartz function in terms
-  of its first derivatives, `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
   norm of a Schwartz function.
 
@@ -140,55 +149,6 @@ theorem norm_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F] [Inner
   rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM,
     norm_toLp_fourierMultiplierCLM_eq (by fun_prop)]
 
-open scoped LineDeriv Real RealInnerProductSpace in
-/-- **The `H¹` norm of a Schwartz function** in terms of its first derivatives: for an orthonormal
-basis `b` of `E`,
-
-`‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
-
-The factor `(2π)⁻²` comes from the Fourier transform of `∂_v u` being `2πi ⟪ξ, v⟫ 𝓕 u`. -/
-theorem norm_toBesselPotentialSpaceCLM_one_sq {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [CompleteSpace F] {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) :
-    ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
-      (∫ x, ‖u x‖ ^ 2) + (2 * π)⁻¹ ^ 2 * ∑ i, ∫ x, ‖∂_{b i} u x‖ ^ 2 := by
-  have hint (g : 𝓢(E, F)) : Integrable (fun ξ ↦ ‖𝓕 g ξ‖ ^ 2) :=
-    ((𝓕 g).memLp 2).integrable_norm_pow two_ne_zero
-  have hw := memLp_one_add_norm_sq_rpow_smul_fourier (F := F) 1 u 2
-  have hL : ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
-      ∫ ξ, ‖(((1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2) : ℝ) : ℂ) • 𝓕 u ξ‖ ^ 2 := by
-    rw [norm_toBesselPotentialSpaceCLM, hw.eLpNorm_eq_integral_rpow_norm two_ne_zero
-      ENNReal.ofNat_ne_top, ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat]
-    simp_rw [Real.rpow_two]
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
-    norm_num
-  rw [hL, ← integral_norm_sq_fourier u]
-  simp_rw [← integral_norm_sq_fourier (∂_{b _} u)]
-  rw [← integral_finsetSum _ fun i _ ↦ hint _, ← integral_const_mul,
-    ← integral_add (hint u) ((integrable_finsetSum _ fun i _ ↦ hint _).const_mul _)]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun ξ ↦ ?_)
-  have hsum : ∑ i, ⟪ξ, b i⟫ ^ 2 = ‖ξ‖ ^ 2 := b.sum_sq_inner_left ξ
-  have hweight : |(1 + ‖ξ‖ ^ 2) ^ ((1 : ℝ) / 2)| ^ 2 = 1 + ‖ξ‖ ^ 2 := by
-    rw [sq_abs, ← Real.sqrt_eq_rpow, Real.sq_sqrt (by positivity)]
-  simp only [fourier_lineDerivOp_apply, norm_smul, mul_pow, Complex.norm_real, Real.norm_eq_abs,
-    hweight, norm_mul, Complex.norm_I, Complex.norm_ofNat, Real.abs_pi, mul_one, sq_abs]
-  rw [← Finset.sum_mul, ← Finset.mul_sum, hsum]
-  field_simp
-
-open scoped LineDeriv Real in
-/-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
-along an orthonormal basis `b`: `(2π)⁻² ∫ ‖∂_{bᵢ} u‖² ≤ ‖u‖²_{H¹}`. -/
-theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [CompleteSpace F] {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) (i : ι) :
-    (2 * π)⁻¹ ^ 2 * ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 := by
-  rw [norm_toBesselPotentialSpaceCLM_one_sq b]
-  have hi : ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ∑ j, ∫ x, ‖∂_{b j} u x‖ ^ 2 :=
-    Finset.single_le_sum (f := fun j ↦ ∫ x, ‖∂_{b j} u x‖ ^ 2)
-      (fun j _ ↦ integral_nonneg fun _ ↦ by positivity) (Finset.mem_univ i)
-  have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
-
 /-- **Translation is an isometry of `H^s`** on Schwartz functions with Hilbert-space values. -/
 @[simp]
 theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM {F : Type*} [NormedAddCommGroup F]
@@ -223,6 +183,30 @@ theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     ((toLpₗᵢ E F 0 p).symm f).toDistr = (f : 𝓢'(E, F)) := by
   rw [toLpₗᵢ_symm_apply, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+/-- The Bessel weights multiply: `⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s f = ⟨ξ⟩ ^ r f`. -/
+theorem smulLeftCLM_rpow_sub_smulLeftCLM (r s : ℝ) (f : 𝓢'(E, F)) :
+    smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ))
+        (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f) =
+      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) f := by
+  have hweight : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) *
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)) =
+      fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ) := by
+    ext x
+    simp only [Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity :
+      (0 : ℝ) < 1 + ‖x‖ ^ 2)]
+    congr 2
+    ring
+  rw [smulLeftCLM_smulLeftCLM_apply (by fun_prop) (by fun_prop), hweight]
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The Bessel weight `⟨ξ⟩ ^ (r - s)` is at most `1` for `r ≤ s`. -/
+theorem norm_one_add_norm_sq_rpow_sub_le {r s : ℝ} (h : r ≤ s) (x : E) :
+    ‖(((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)‖ ≤ 1 := by
+  rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
+  exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
+    (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
+
 /-- The `H^s` norm is the `L²` norm of the weighted Fourier transform: if `⟨ξ⟩ ^ s 𝓕 u` is the
 tempered distribution of `G ∈ L²`, then `‖u‖ = ‖G‖`. -/
 theorem norm_eq_of_smulLeftCLM_fourier_eq {F : Type*} [NormedAddCommGroup F]
@@ -237,5 +221,69 @@ theorem norm_eq_of_smulLeftCLM_fourier_eq {F : Type*} [NormedAddCommGroup F]
   simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
   rw [← Lp.fourier_toTemperedDistribution_eq, ← u.bessel_toDistr_eq_toLp,
     fourier_besselPotential_eq_smulLeftCLM_fourier_apply, h]
+
+section Hilbert
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s t : ℝ}
+
+/-- The weighted Fourier transform `⟨ξ⟩ ^ t 𝓕 u` of `u ∈ H^t` is the Fourier transform of its `L²`
+part `u.toLp`. -/
+theorem smulLeftCLM_fourier_toDistr_eq (u : H^{t}(E, F)) :
+    smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
+      (𝓕 u.toLp : Lp F 2 (volume : Measure E)) := by
+  rw [← fourier_besselPotential_eq_smulLeftCLM_fourier_apply, u.bessel_toDistr_eq_toLp,
+    Lp.fourier_toTemperedDistribution_eq]
+
+/-- If the weighted Fourier transform of `v ∈ H^s` is a bounded multiplier `g` of temperate growth
+times the weighted Fourier transform of `u ∈ H^t`, then it is the `L²` function `g • 𝓕 u.toLp`. -/
+private theorem exists_smulLeftCLM_fourier_eq_toLp {u : H^{t}(E, F)} {v : H^{s}(E, F)}
+    {g : E → ℂ} (hg : g.HasTemperateGrowth) {C : ℝ} (hC : ∀ x, ‖g x‖ ≤ C)
+    (h : TemperedDistribution.smulLeftCLM F
+        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 v.toDistr) =
+      TemperedDistribution.smulLeftCLM F g (TemperedDistribution.smulLeftCLM F
+        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u.toDistr))) :
+    ∃ hmem : MemLp (fun x ↦ g x • (𝓕 u.toLp : Lp F 2 (volume : Measure E)) x) 2 volume,
+      TemperedDistribution.smulLeftCLM F
+          (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 v.toDistr) =
+        hmem.toLp := by
+  set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
+  have hmem : MemLp (fun x ↦ g x • G₀ x) 2 (volume : Measure E) :=
+    (Lp.memLp G₀).of_le_mul (c := C) (hg.1.continuous.aestronglyMeasurable.smul
+      (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ by
+        rw [norm_smul]
+        exact mul_le_mul_of_nonneg_right (hC x) (norm_nonneg _))
+  refine ⟨hmem, ?_⟩
+  rw [h, smulLeftCLM_fourier_toDistr_eq]
+  ext φ
+  rw [Lp.smulLeftCLM_toTemperedDistribution_apply hg, Lp.toTemperedDistribution_apply]
+  exact integral_congr_ae (hmem.coeFn_toLp.mono fun x hx ↦ by simp only [hx, G₀])
+
+/-- If the weighted Fourier transform of `v ∈ H^s` is a bounded multiplier `g` of temperate growth
+times the weighted Fourier transform of `u ∈ H^t`, then `‖v‖² = ∫ ‖g ξ‖² ‖𝓕 u.toLp ξ‖² dξ`. -/
+theorem norm_sq_eq_integral_of_smulLeftCLM_fourier_eq {u : H^{t}(E, F)} {v : H^{s}(E, F)}
+    {g : E → ℂ} (hg : g.HasTemperateGrowth) {C : ℝ} (hC : ∀ x, ‖g x‖ ≤ C)
+    (h : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 v.toDistr) =
+      smulLeftCLM F g
+        (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u.toDistr))) :
+    ‖v‖ ^ 2 = ∫ x, ‖g x‖ ^ 2 * ‖(𝓕 u.toLp : Lp F 2 (volume : Measure E)) x‖ ^ 2 := by
+  obtain ⟨hmem, hv⟩ := exists_smulLeftCLM_fourier_eq_toLp hg hC h
+  rw [norm_eq_of_smulLeftCLM_fourier_eq hv, MemLp.norm_toLp_sq]
+  simp only [norm_smul, mul_pow]
+
+/-- If the weighted Fourier transform of `v ∈ H^s` is a multiplier `g` of temperate growth,
+bounded by `C`, times the weighted Fourier transform of `u ∈ H^t`, then `‖v‖ ≤ C ‖u‖`. -/
+theorem norm_le_mul_norm_of_smulLeftCLM_fourier_eq {u : H^{t}(E, F)} {v : H^{s}(E, F)}
+    {g : E → ℂ} (hg : g.HasTemperateGrowth) {C : ℝ} (hC : ∀ x, ‖g x‖ ≤ C)
+    (h : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 v.toDistr) =
+      smulLeftCLM F g
+        (smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u.toDistr))) :
+    ‖v‖ ≤ C * ‖u‖ := by
+  obtain ⟨hmem, hv⟩ := exists_smulLeftCLM_fourier_eq_toLp hg hC h
+  rw [norm_eq_of_smulLeftCLM_fourier_eq hv, ← norm_toLp_eq, ← Lp.norm_fourier_eq u.toLp]
+  refine Lp.norm_le_mul_norm_of_ae_le_mul (hmem.coeFn_toLp.mono fun x hx ↦ ?_)
+  rw [hx, norm_smul]
+  exact mul_le_mul_of_nonneg_right (hC x) (norm_nonneg _)
+
+end Hilbert
 
 end BesselPotentialSpace

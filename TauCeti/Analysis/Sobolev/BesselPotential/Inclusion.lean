@@ -33,7 +33,8 @@ inclusion `H^{s,p}(E, G) ⊆ H^{0,p}(E, G) = Lᵖ(E, G)` for `0 ≤ s`.
 For `p = 2` and a complex Hilbert space `F` the inclusion `H^s(E, F) ⊆ H^r(E, F)` has norm at most
 `1`. This is Plancherel's theorem: the `H^s` norm of `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`
 (`BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`), where `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`,
-and `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u` with `0 < ⟨ξ⟩ ^ (r - s) ≤ 1`.
+and `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u` with `0 < ⟨ξ⟩ ^ (r - s) ≤ 1`
+(`BesselPotentialSpace.norm_le_mul_norm_of_smulLeftCLM_fourier_eq`).
 
 Compactness properties of the inclusion, such as the Rellich theorem for distributions with a
 common compact support, are statements about this map.
@@ -74,6 +75,8 @@ common compact support, are statements about this map.
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
   of `u ∈ H^s` has norm at most `‖u‖`.
+* `BesselPotentialSpace.norm_inclusion_sq_eq_integral`: for `p = 2`, the norm of `inclusion h u` on
+  the Fourier side.
 -/
 
 public section
@@ -271,53 +274,26 @@ theorem toLp_inclusion_toBesselPotentialSpace (h : 0 ≤ s) {f : 𝓢'(E, G)} (h
 
 section Hilbert
 
-/-- The weighted Fourier transform of `u ∈ H^s` has, at every lower order `r ≤ s`, an `L²`
-representative of norm at most `‖u‖`. -/
-private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{s}(E, F)) :
-    ∃ G : Lp F 2 (volume : Measure E),
-      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G ∧
-        ‖G‖ ≤ ‖u‖ := by
-  set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth := by fun_prop
-  have hw_le (x : E) : ‖w x‖ ≤ 1 := by
-    rw [Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-    exact Real.rpow_le_one_of_one_le_of_nonpos (by simp)
-      (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
-  -- The weighted Fourier transform at order `s` is `𝓕 u.toLp`.
-  set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
-  have hG₀ : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
-      G₀ := by
-    rw [← fourier_besselPotential_eq_smulLeftCLM_fourier_apply, u.bessel_toDistr_eq_toLp,
-      Lp.fourier_toTemperedDistribution_eq]
-  have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
-    (Lp.memLp G₀).of_le ((hw.1.continuous.aestronglyMeasurable).smul
-      (Lp.aestronglyMeasurable G₀)) (.of_forall fun x ↦ by
-        rw [norm_smul]
-        exact mul_le_of_le_one_left (norm_nonneg _) (hw_le x))
-  refine ⟨hmem.toLp, ?_, ?_⟩
-  · -- `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u = w • G₀`.
-    have hweight : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) =
-        (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) * w := by
-      ext x
-      simp only [w, Pi.mul_apply, ← Complex.ofReal_mul, ← Real.rpow_add (by positivity :
-        (0 : ℝ) < 1 + ‖x‖ ^ 2)]
-      congr 2
-      ring
-    rw [hweight, ← smulLeftCLM_smulLeftCLM_apply
-      (g₁ := fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (by fun_prop) hw, hG₀]
-    ext φ
-    rw [Lp.smulLeftCLM_toTemperedDistribution_apply hw, Lp.toTemperedDistribution_apply]
-    exact integral_congr_ae (hmem.coeFn_toLp.mono fun x hx ↦ by simp only [hx])
-  · rw [← norm_toLp_eq, ← Lp.norm_fourier_eq u.toLp]
-    refine Lp.norm_le_norm_of_ae_le (hmem.coeFn_toLp.mono fun x hx ↦ ?_)
-    rw [hx, norm_smul]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hw_le x)
-
 /-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ H^r` does not increase norms. -/
 theorem norm_inclusion_apply_le (h : r ≤ s) (u : H^{s}(E, F)) : ‖inclusion h u‖ ≤ ‖u‖ := by
-  obtain ⟨g, hg, hle⟩ := exists_smulLeftCLM_fourier_eq_and_norm_le h u
-  refine (norm_eq_of_smulLeftCLM_fourier_eq ?_).trans_le hle
-  rwa [toDistr_inclusion]
+  simpa only [one_mul] using norm_le_mul_norm_of_smulLeftCLM_fourier_eq (u := u) (by fun_prop)
+    (norm_one_add_norm_sq_rpow_sub_le h)
+    (by rw [toDistr_inclusion, smulLeftCLM_rpow_sub_smulLeftCLM])
+
+/-- The `H^r` norm of `u ∈ H^s`, `r ≤ s`, on the Fourier side:
+`‖u‖²_{H^r} = ∫ ⟨ξ⟩ ^ (2 (r - s)) ‖𝓕 u.toLp ξ‖² dξ`, where `u.toLp = J^s u` has
+`L²` norm `‖u‖_{H^s}`. -/
+theorem norm_inclusion_sq_eq_integral (h : r ≤ s) (u : H^{s}(E, F)) :
+    ‖inclusion h u‖ ^ 2 =
+      ∫ x, (1 + ‖x‖ ^ 2) ^ (r - s) * ‖(𝓕 u.toLp : Lp F 2 (volume : Measure E)) x‖ ^ 2 := by
+  rw [norm_sq_eq_integral_of_smulLeftCLM_fourier_eq (u := u) (by fun_prop)
+    (norm_one_add_norm_sq_rpow_sub_le h)]
+  · refine integral_congr_ae (.of_forall fun x ↦ ?_)
+    dsimp only
+    rw [Complex.norm_real, Real.norm_of_nonneg (by positivity), ← Real.rpow_natCast,
+      ← Real.rpow_mul (by positivity)]
+    norm_num
+  · rw [toDistr_inclusion, smulLeftCLM_rpow_sub_smulLeftCLM]
 
 /-- For `p = 2` and a Hilbert space, the inclusion `H^s ⊆ H^r` has operator norm at most `1`. -/
 theorem norm_inclusion_le (h : r ≤ s) : ‖(inclusion h : H^{s}(E, F) →L[ℂ] H^{r}(E, F))‖ ≤ 1 :=

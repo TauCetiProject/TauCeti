@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
@@ -40,6 +41,8 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
 * `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`, `SchwartzMap.coe_gaussian_ofReal`:
   its values.
+* `SchwartzMap.norm_gaussian`, `SchwartzMap.lineDerivOp_gaussian_apply`: its modulus and its
+  directional derivatives.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 * `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
@@ -51,7 +54,7 @@ public section
 noncomputable section
 
 open Complex Function
-open scoped ContDiff FourierTransform Nat SchwartzMap
+open scoped ContDiff FourierTransform LineDeriv Nat SchwartzMap
 
 namespace SchwartzMap
 
@@ -126,6 +129,26 @@ theorem coe_gaussian_ofReal {c : ℝ} (hb : 0 < (c : ℂ).re) :
   rw [gaussian_apply, Complex.ofReal_exp]
   push_cast
   ring_nf
+
+/-- The modulus of the Schwartz Gaussian at `x` is `exp (-b.re ‖x‖²)`. -/
+theorem norm_gaussian {b : ℂ} (hb : 0 < b.re) (x : V) :
+    ‖gaussian hb x‖ = Real.exp (-b.re * ‖x‖ ^ 2) := by
+  rw [gaussian_apply, Complex.norm_exp, ← ofReal_pow, re_mul_ofReal, neg_re]
+
+/-- The directional derivative of the Schwartz Gaussian:
+`∂_m exp (-b ‖x‖²) = -2 b ⟪x, m⟫ exp (-b ‖x‖²)`. -/
+theorem lineDerivOp_gaussian_apply {b : ℂ} (hb : 0 < b.re) (m x : V) :
+    ∂_{m} (gaussian hb : 𝓢(V, ℂ)) x = -2 * b * (inner ℝ x m : ℂ) * gaussian hb x := by
+  have hsq : HasFDerivAt (fun y : V ↦ ((‖y‖ ^ 2 : ℝ) : ℂ))
+      (ofRealCLM.comp ((2 : ℕ) • innerSL ℝ x)) x :=
+    ofRealCLM.hasFDerivAt.comp x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
+  have hexp := (hsq.const_mul (-b)).cexp
+  have hfun : (gaussian hb : V → ℂ) = fun y ↦ cexp (-b * ((‖y‖ ^ 2 : ℝ) : ℂ)) := by
+    ext y
+    simp
+  rw [SchwartzMap.lineDerivOp_apply_eq_fderiv, hfun, hexp.fderiv]
+  simp [real_inner_comm]
+  ring
 
 /-- The inverse Fourier transform of the Schwartz Gaussian `exp (-b ‖ξ‖²)`, `0 < b.re`, on a
 real inner product space of dimension `n` is the Gaussian `(π / b)^(n/2) exp (-π² ‖x‖² / b)`. -/
