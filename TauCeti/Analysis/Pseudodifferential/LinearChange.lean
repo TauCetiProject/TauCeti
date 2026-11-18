@@ -46,8 +46,8 @@ The symbol estimates for `a ∘ (P × Q)` come from the chain rule: a mixed deri
 `a ∘ (P × Q)` is a derivative of `a` at `(P x, Q ξ)` along the directions `(P eⱼ, 0)` and
 `(0, Q eⱼ)` (`TauCeti.mixedDeriv_comp_prodMap`). Expanding these directions in the standard basis
 of each factor bounds it by mixed derivatives of `a` with the same numbers of position and
-frequency derivatives (`TauCeti.norm_iteratedFDeriv_append_le`), and the weights `⟨Q ξ⟩` and `⟨ξ⟩`
-are comparable since `Q` is invertible.
+frequency derivatives, with the weight `⟨Q ξ⟩` (`TauCeti.exists_bound_mixedDeriv_comp_prodMap`),
+and the weights `⟨Q ξ⟩` and `⟨ξ⟩` are comparable since `Q` is invertible.
 
 ## References
 
@@ -90,40 +90,22 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
         B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   set c : ℝ := max 1 (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
     ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖)
-  set s : ℝ := m - β.length
-  set D : ℝ := ∑ r : Fin (α.length + β.length) → Fin n,
-    max (C (List.ofFn fun i => r (Fin.castAdd β.length i))
-      (List.ofFn fun i => r (Fin.natAdd α.length i))) 0
-  have _ : 0 ≤ D := Finset.sum_nonneg fun _ _ => le_max_right _ _
-  refine ⟨(∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-    (∏ i, ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) (EuclideanSpace.single (β.get i) 1)‖) *
-      D * c ^ |s|, by positivity, fun x hC ξ => ?_⟩
   have hc : 1 ≤ c := le_max_left _ _
-  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
-    refine one_add_norm_sq_rpow_le_of_norm_le_mul hc s ?_ ?_
+  obtain ⟨B, hB, hB'⟩ := exists_bound_mixedDeriv_comp_prodMap P
+    (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) (hf.of_le (mod_cast le_top)) C m (α := α)
+    (β := β)
+  refine ⟨B * c ^ |m - β.length|, by positivity, fun x hC ξ => (hB' x hC ξ).trans ?_⟩
+  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ ((m - β.length) / 2) ≤
+      c ^ |m - β.length| * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+    refine one_add_norm_sq_rpow_le_of_norm_le_mul hc _ ?_ ?_
     · calc ‖Q ξ‖ ≤ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖ξ‖ :=
             (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ
         _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
     · calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
             norm_le_norm_symm_mul Q ξ
         _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
-  have hsum : ∑ r : Fin (α.length + β.length) → Fin n,
-      ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd β.length i))
-        (List.ofFn fun i => r (Fin.natAdd α.length i)) f (P x) (Q ξ)‖ ≤
-        D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) := by
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun r _ => (hC _ _ _).trans ?_
-    rw [List.length_ofFn]
-    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  rw [mixedDeriv_comp_prodMap P _ (hf.of_le (mod_cast le_top))]
-  refine (norm_iteratedFDeriv_append_le (hf.of_le (mod_cast le_top)) _ _ _ _).trans ?_
-  simp only [ContinuousLinearEquiv.coe_coe] at hsum ⊢
-  calc _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-        (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) * (D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2)) := by
-        gcongr
-    _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-        (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) *
-          (D * (c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))) := by gcongr
+  calc B * (1 + ‖Q ξ‖ ^ 2) ^ ((m - β.length) / 2)
+      ≤ B * (c ^ |m - β.length| * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by gcongr
     _ = _ := by ring
 
 /-- **Linear change of variables in a symbol.** For a linear map `P` of positions and a linear

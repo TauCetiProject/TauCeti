@@ -52,7 +52,9 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 * `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.one_add_norm_sq_rpow_neg_le_inv_norm_pow`: away from the origin,
-  `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
+  `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`, and conversely
+  `TauCeti.inv_norm_pow_le_two_pow_mul_one_add_norm_sq_rpow_neg`: `‖x‖ ^ (-k) ≤ 2 ^ k ⟨x⟩ ^ (-k)`
+  for `‖x‖ ≥ 1`.
 * `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
   `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
@@ -114,6 +116,25 @@ theorem one_add_norm_sq_rpow_neg_le_inv_norm_pow {E : Type*} [NormedAddCommGroup
       _ = _ := by rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]; ring_nf
   rw [neg_div, Real.rpow_neg (by positivity)]
   exact inv_anti₀ (pow_pos (norm_pos_iff.2 hx) k) hk
+
+/-- Away from the unit ball, a negative power of the norm is bounded by the corresponding bracket
+power: `‖x‖ ^ (-k) ≤ 2 ^ k ⟨x⟩ ^ (-k)` for `‖x‖ ≥ 1`. This is the converse of
+`TauCeti.one_add_norm_sq_rpow_neg_le_inv_norm_pow` there, and turns Mihlin-type bounds
+`‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` into symbol estimates of order `0` at large frequencies. -/
+theorem inv_norm_pow_le_two_pow_mul_one_add_norm_sq_rpow_neg {E : Type*} [NormedAddCommGroup E]
+    {x : E} (hx : 1 ≤ ‖x‖) (k : ℕ) :
+    (‖x‖ ^ k)⁻¹ ≤ 2 ^ k * (1 + ‖x‖ ^ 2) ^ (-(k : ℝ) / 2) := by
+  -- `⟨x⟩ ≤ 2 ‖x‖`, so `⟨x⟩ ^ k ≤ 2 ^ k ‖x‖ ^ k`.
+  have hw : (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) ≤ 2 ^ k * ‖x‖ ^ k := by
+    calc (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) ≤ ((2 * ‖x‖) ^ 2) ^ ((k : ℝ) / 2) := by
+          gcongr
+          nlinarith
+      _ = 2 ^ k * ‖x‖ ^ k := by
+          rw [← Real.rpow_natCast (2 * ‖x‖) 2, ← Real.rpow_mul (by positivity), Nat.cast_ofNat,
+            mul_div_cancel₀ _ two_ne_zero, Real.rpow_natCast, mul_pow]
+  rw [neg_div, Real.rpow_neg (by positivity), ← div_le_iff₀' (by positivity), div_eq_mul_inv,
+    ← mul_inv, mul_comm (‖x‖ ^ k)]
+  exact inv_anti₀ (by positivity) hw
 
 /-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
 `(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
