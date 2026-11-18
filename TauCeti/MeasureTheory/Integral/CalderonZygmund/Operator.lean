@@ -287,18 +287,12 @@ theorem exists_eLpNorm_le (h : HasStandardKernel T K C δ) {p : ℝ≥0∞} (hp 
       eLpNorm (T f) p volume ≤ A * eLpNorm f p volume := by
   -- The Calderón–Zygmund theorem is stated for real Hilbert spaces.
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hadj : ContinuousLinearMap.adjoint (T.restrictScalars ℝ) =
-      (ContinuousLinearMap.adjoint T).restrictScalars ℝ := by
-    refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-    rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner,
-      ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearMap.adjoint_inner_left]
   have h' := h.adjoint
   exact ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow (T.restrictScalars ℝ)
     h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel h.exponent_pos
     h'.exponent_pos h.norm_opKernel_le h'.norm_opKernel_le h.norm_opKernel_sub_le
     h'.norm_opKernel_sub_le h.ae_apply_eq_integral_opKernel
-    (hadj ▸ h'.ae_apply_eq_integral_opKernel) hp hp_top
+    (L2.adjoint_restrictScalars T ▸ h'.ae_apply_eq_integral_opKernel) hp hp_top
 
 end HasStandardKernel
 

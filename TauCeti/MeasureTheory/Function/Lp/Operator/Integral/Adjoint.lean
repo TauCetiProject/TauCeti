@@ -539,31 +539,34 @@ private theorem ae_adjoint_apply_eq_integral_of_disjoint (T : Lp H 2 μ →L[�
   have hφt : ∀ᵐ x ∂μ, x ∉ t → hφ.toLp _ x = 0 := by
     filter_upwards [hφ.coeFn_toLp] with x hx hxt
     rw [hx, indicator_of_notMem hxt]
+  -- Pairing against `φ`, which vanishes off `t`, only sees values on `t`.
+  have hpair {a b : V → H} (hab : ∀ᵐ x ∂μ, x ∈ t → a x = b x) :
+      ∫ x, ⟪a x, hφ.toLp _ x⟫_𝕜 ∂μ = ∫ x, ⟪b x, hφ.toLp _ x⟫_𝕜 ∂μ := by
+    refine integral_congr_ae ?_
+    filter_upwards [hab, hφt] with x hx hxφ
+    by_cases hxt : x ∈ t
+    · rw [hx hxt]
+    · rw [hxφ hxt, inner_zero_right, inner_zero_right]
   have hwφ : ⟪w, hφ.toLp _⟫_𝕜 = 0 := by
     rw [inner_sub_left, L2.inner_def, L2.inner_def,
       integral_inner_adjoint_apply_eq T hkm hrep hs ht hst hM hg hφt, sub_eq_zero]
-    refine integral_congr_ae ?_
-    filter_upwards [hψ.coeFn_toLp, hφt] with x hx hxφ
-    by_cases hxt : x ∈ t
-    · rw [hx, indicator_of_mem hxt]
-    · rw [hxφ hxt, inner_zero_right, inner_zero_right]
+    refine hpair ?_
+    filter_upwards [hψ.coeFn_toLp] with x hx hxt
+    rw [hx, indicator_of_mem hxt]
   have hφ0 : ∀ᵐ x ∂μ, hφ.toLp _ x = 0 := by
     have : hφ.toLp _ = 0 := by
       refine (inner_self_eq_zero (𝕜 := 𝕜)).1 ?_
       rw [← hwφ, L2.inner_def, L2.inner_def]
-      refine integral_congr_ae ?_
-      filter_upwards [hφ.coeFn_toLp] with x hx
-      by_cases hxt : x ∈ t
-      · rw [hx, indicator_of_mem hxt]
-      · rw [hx, indicator_of_notMem hxt, inner_zero_left, inner_zero_right]
+      refine hpair ?_
+      filter_upwards [hφ.coeFn_toLp] with x hx hxt
+      rw [hx, indicator_of_mem hxt]
     rw [this]
     filter_upwards [Lp.coeFn_zero H 2 μ] with x hx
     rw [hx, Pi.zero_apply]
-  filter_upwards [hφ.coeFn_toLp, hφ0, hψ.coeFn_toLp, Lp.coeFn_sub (adjoint T g) (hψ.toLp _)]
+  have hw : ∀ᵐ x ∂μ, w x = adjoint T g x - hψ.toLp _ x := Lp.coeFn_sub _ _
+  filter_upwards [hφ.coeFn_toLp, hφ0, hψ.coeFn_toLp, hw]
     with x hxφ hx0 hxψ hxw hxt
-  rw [hx0, indicator_of_mem hxt, hxw, Pi.sub_apply, hxψ, indicator_of_mem hxt, eq_comm,
-    sub_eq_zero] at hxφ
-  exact hxφ
+  simpa [hx0, hxw, hxψ, indicator_of_mem hxt, sub_eq_zero] using hxφ.symm
 
 /-- **The kernel of the adjoint.** Let `T` be a bounded operator `L²(V, H) → L²(V, K)` given by a
 kernel `k` away from the support of its argument: if `f` vanishes outside a compact set `s`, then

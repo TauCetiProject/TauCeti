@@ -326,12 +326,7 @@ theorem exists_eLpNorm_fourierMultiplierCLM_hessianSymbolLp_le (hn : 3 ≤ n)
   set T := (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)).restrictScalars ℝ
   -- The symbol is real, so `T` is self-adjoint, also for the real inner product of `L²`.
   have hT : adjoint T = T := by
-    have hT : adjoint (Lp.fourierMultiplierCLM F (hessianSymbolLp v w)) =
-        Lp.fourierMultiplierCLM F (hessianSymbolLp v w) := by
-      rw [Lp.adjoint_fourierMultiplierCLM, star_hessianSymbolLp]
-    exact ((eq_adjoint_iff _ _).2 fun f g => by
-      rw [L2.real_inner_eq_re_inner, L2.real_inner_eq_re_inner, coe_restrictScalars',
-        ← adjoint_inner_right, hT]).symm
+    rw [L2.adjoint_restrictScalars, Lp.adjoint_fourierMultiplierCLM, star_hessianSymbolLp]
   -- The kernel satisfies the size and smoothness estimates with exponent `δ = 1`.
   have hfin : (Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) = n := by
     rw [finrank_euclideanSpace_fin]
