@@ -45,12 +45,18 @@ interval test rejects inside an interval, both with randomization at the endpoin
   measure lies in `[0, 1]`.
 * `TauCeti.IsUniformlyMostPowerfulTest.hasTestLevel`,
   `TauCeti.IsUniformlyMostPowerfulUnbiasedTest.hasTestLevel`: optimal tests have the level.
+* `TauCeti.IsSimilarTest.hasTestLevel`, `TauCeti.isSimilarTest_const`: a similar test has the
+  level, and a constant in `[0, 1]` is similar of its own size under probability laws.
 * `TauCeti.isStatisticalTest_thresholdTest`, `TauCeti.isStatisticalTest_intervalTest`: threshold
   and interval tests in measurable statistics are tests.
 
 ## References
 
 * M. J. Schervish, *Theory of Statistics*, Springer (1995), Definitions 4.4, 4.34 and 4.91.
+
+The definitions and lemmas are adapted from the lean-CKSD project
+(<https://github.com/bjbraams/lean-CKSD>), files `CKSD/Inference/Basic.lean`,
+`CKSD/Inference/Model.lean` and `CKSD/Inference/Testing.lean`.
 -/
 
 public section
