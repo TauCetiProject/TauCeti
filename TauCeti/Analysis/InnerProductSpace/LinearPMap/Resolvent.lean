@@ -15,9 +15,11 @@ A scalar `z` at which the shift `x ↦ z • x - A x` of a self-adjoint partial 
 bounded below by `c‖x‖`, with `c > 0`, is a resolvent point, and `‖R(z)‖ ≤ c⁻¹`; at a real `z`
 this is the quantitative form of `z ∉ σ(A)`. Every nonreal scalar `z` is such a point with
 `c = |im z|`, which gives the sharp upper bound `‖R(z)‖ ≤ |im z|⁻¹`. The spectrum is therefore
-real. Taking the adjoint of a resolvent conjugates its scalar parameter; in particular, resolvents
-at real points are self-adjoint. These facts provide the bounded inverses used in Cayley
-transforms and imaginary-shift approximations of unbounded self-adjoint operators.
+real. When the quadratic form is nonnegative, every scalar in the open left half-plane `re z < 0`
+is likewise a resolvent point with `‖R(z)‖ ≤ (-re z)⁻¹`. Taking the adjoint of a resolvent
+conjugates its scalar parameter; in particular, resolvents at real points are self-adjoint. These
+facts provide the bounded inverses used in Cayley transforms, positive square roots, and
+imaginary-shift approximations of unbounded self-adjoint operators.
 
 The off-real estimates and surjectivity come from
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint`; the bounded inverse uses
@@ -83,6 +85,22 @@ theorem _root_.IsSelfAdjoint.spectrum_subset_im_eq_zero (hA : IsSelfAdjoint A) :
 theorem _root_.IsSelfAdjoint.norm_resolvent_le (hA : IsSelfAdjoint A)
     (him : RCLike.im z ≠ 0) : ‖A.resolvent z‖ ≤ |RCLike.im z|⁻¹ :=
   hA.isFormalAdjoint.norm_resolvent_le (hA.mem_resolventSet_of_im_ne_zero him) him
+
+/-- Every scalar with strictly negative real part lies in the resolvent set of a nonnegative
+self-adjoint partial linear map. -/
+theorem _root_.IsSelfAdjoint.mem_resolventSet_of_re_neg_of_re_inner_nonneg (hA : IsSelfAdjoint A)
+    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫_𝕜) (hz : RCLike.re z < 0) :
+    z ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_norm_le (neg_pos.mpr hz)
+    (neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg hpos z)
+
+/-- For a nonnegative self-adjoint partial linear map and `re z < 0`, the resolvent satisfies
+`‖R(z, A)‖ ≤ (-re z)⁻¹`. -/
+theorem _root_.IsSelfAdjoint.norm_resolvent_le_of_re_neg_of_re_inner_nonneg (hA : IsSelfAdjoint A)
+    (hpos : ∀ x : A.domain, 0 ≤ RCLike.re ⟪A x, (x : E)⟫_𝕜) (hz : RCLike.re z < 0) :
+    ‖A.resolvent z‖ ≤ (-RCLike.re z)⁻¹ :=
+  hA.norm_resolvent_le_of_norm_le (neg_pos.mpr hz)
+    (neg_re_mul_norm_le_norm_smul_sub_of_re_inner_nonneg hpos z)
 
 /-- Every nonzero imaginary shift is a resolvent point of a self-adjoint partial operator. -/
 theorem _root_.IsSelfAdjoint.mem_resolventSet_I_mul
