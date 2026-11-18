@@ -293,4 +293,11 @@ theorem le_scalarCurvature_of_dense {s : Set M} (hs : Dense s) {c : ℝ}
     (h : ∀ y ∈ s, c ≤ g.scalarCurvature y) (x : M) : c ≤ g.scalarCurvature x :=
   le_on_closure h continuous_const.continuousOn g.continuous_scalarCurvature.continuousOn (hs x)
 
+/-- A value taken by the scalar curvature at every point near `x`, except possibly `x` itself, is
+also taken at `x`, by continuity. -/
+theorem scalarCurvature_eq_of_eventually_nhdsNE {x : M} [(𝓝[≠] x).NeBot] {c : ℝ}
+    (h : ∀ᶠ y in 𝓝[≠] x, g.scalarCurvature y = c) : g.scalarCurvature x = c :=
+  ((g.continuous_scalarCurvature.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+    continuousAt_const).1 h).self_of_nhds
+
 end Bundle.ContMDiffRiemannianMetric

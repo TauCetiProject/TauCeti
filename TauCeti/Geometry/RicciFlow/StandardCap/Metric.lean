@@ -454,19 +454,6 @@ theorem exists_scalarCurvature_metric_eq_puncturedMetric {n : ℕ} [Fact (finran
   obtain ⟨p, rfl⟩ : x ∈ range (standardCapPolar V) := by rwa [range_standardCapPolar]
   exact ⟨p, (norm_standardCapPolar p).symm, hf.scalarCurvature_metric_standardCapPolar p⟩
 
-/-- A value taken by the scalar curvature at every point of a neighbourhood of the tip, except
-possibly the tip itself, is also taken at the tip, by continuity. -/
-private theorem scalarCurvature_metric_zero_eq [Nontrivial V] {c : ℝ} {s : Set V} (hs : s ∈ 𝓝 0)
-    (h : ∀ x ∈ s, x ≠ 0 → (hf.metric V).scalarCurvature x = c) :
-    (hf.metric V).scalarCurvature 0 = c := by
-  refine tendsto_nhds_unique
-    ((hf.metric V).continuous_scalarCurvature.continuousAt.tendsto.mono_left
-      (nhdsWithin_le_nhds (s := {0}ᶜ)))
-    (tendsto_const_nhds.congr' ?_)
-  filter_upwards [inter_mem_nhdsWithin {0}ᶜ hs,
-    (self_mem_nhdsWithin : ({0}ᶜ : Set V) ∈ 𝓝[≠] (0 : V))] with x hx hx0
-  exact (h x hx.2 hx0).symm
-
 /-- **The standard cap has nonnegative scalar curvature**, also at its tip. -/
 theorem scalarCurvature_metric_nonneg (x : V) : 0 ≤ (hf.metric V).scalarCurvature x := by
   rcases subsingleton_or_nontrivial V with hV | hV
@@ -513,8 +500,9 @@ theorem exists_scalarCurvature_metric_eq_round :
     ring
   refine ⟨r₀, hr₀, fun x hx ↦ ?_⟩
   rcases eq_or_ne x 0 with rfl | hx0
-  · exact hf.scalarCurvature_metric_zero_eq (Metric.ball_mem_nhds 0 hr₀)
-      fun y hy hy0 ↦ hne y (mem_ball_zero_iff.1 hy) hy0
+  · exact (hf.metric V).scalarCurvature_eq_of_eventually_nhdsNE <| eventually_nhdsWithin_iff.2 <|
+      Filter.eventually_of_mem (Metric.ball_mem_nhds 0 hr₀) fun y hy hy0 ↦
+        hne y (mem_ball_zero_iff.1 hy) hy0
   · exact hne x hx hx0
 
 end ScalarCurvature

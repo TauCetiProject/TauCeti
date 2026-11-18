@@ -217,6 +217,7 @@ theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
 
 /-- The standard Riemannian metric of a real inner product space pairs two tangent vectors by the
 inner product of the corresponding vectors of the space. -/
+@[simp]
 theorem riemannianMetricVectorSpace_inner {V : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
     (riemannianMetricVectorSpace V).inner x v w =
