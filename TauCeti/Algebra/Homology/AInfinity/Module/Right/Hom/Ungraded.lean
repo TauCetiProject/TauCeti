@@ -135,7 +135,7 @@ private theorem stasheffDiff_coneAct (n : ℕ) (a : Fin n → A) (p : M × M') :
       (ungradedStasheffDiff Mm.act d n a p.1,
         ungradedStasheffDiff Mm'.act d n a p.2 + ungradedStasheffDiff f.map d n a p.1) := by
   refine Prod.ext ?_ ?_ <;>
-    simp [ungradedStasheffDiff_def, coneAct_apply, Prod.fst_sum, Prod.snd_sum, sum_add_distrib]
+    simp [ungradedStasheffDiff_apply, coneAct_apply, Prod.fst_sum, Prod.snd_sum, sum_add_distrib]
 
 private theorem stasheffMul_coneAct (n : ℕ) (a : Fin n → A) (p : M × M') :
     ungradedStasheffMul f.coneAct n a p =
@@ -145,7 +145,8 @@ private theorem stasheffMul_coneAct (n : ℕ) (a : Fin n → A) (p : M × M') :
   | zero => simp [Prod.zero_eq_mk]
   | succ n =>
     refine Prod.ext ?_ ?_ <;>
-      simp [ungradedStasheffMul_succ, coneAct_apply, Prod.fst_sum, Prod.snd_sum, sum_add_distrib]
+      simp [ungradedStasheffMul_succ_apply, coneAct_apply, Prod.fst_sum, Prod.snd_sum,
+        sum_add_distrib]
 
 /-- The **mapping cone** of a morphism `f : M → M'`: the `A∞` module on `M × M'` with operations
 `(m, m') ↦ (m_{n+1}(m, a…), m'_{n+1}(m', a…) + f_{n+1}(m, a…))`. Its relation of length `n` is
@@ -243,13 +244,13 @@ noncomputable def ofLinearMap [CharP R 2] (L : M →ₗ[R] M')
     have h₂ := sum_strictMap L Mm'.act n a m
     have hdiff : ungradedStasheffDiff (strictMap L) d n a m = 0 := by
       cases n with
-      | zero => simp [ungradedStasheffDiff_def]
-      | succ n => simp [ungradedStasheffDiff_def, strictMap_eq_zero]
+      | zero => simp [ungradedStasheffDiff_apply]
+      | succ n => simp [ungradedStasheffDiff_apply, strictMap_eq_zero]
     have hmul : ungradedStasheffMul (strictMap L) n a m = 0 := by
       rcases n with _ | _ | n
       · simp
-      · simp [ungradedStasheffMul_succ]
-      · simp [ungradedStasheffMul_succ, strictMap_eq_zero]
+      · simp [ungradedStasheffMul_succ_apply]
+      · simp [ungradedStasheffMul_succ_apply, strictMap_eq_zero]
     rw [h₁, h₂, hdiff, hmul, hL, add_zero, add_zero, add_self_eq_zero_of_charTwo R]
 
 @[simp]

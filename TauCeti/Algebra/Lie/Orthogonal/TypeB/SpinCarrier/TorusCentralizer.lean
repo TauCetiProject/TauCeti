@@ -160,7 +160,7 @@ variable {k : Type u} [Field k] [Infinite k]
 theorem weightChar_comp_basisWeight_injective :
     Function.Injective (weightChar k ∘ basisWeight n) := by
   intro i j h
-  exact (Fintype.equivFin (Finset (Fin (n + 1)))).symm.injective
+  exact (signSet n).injective
     (DynkinType.typeBSpinWeight_injective (weightChar_injective h))
 
 /-- Over an infinite field in any characteristic, the spin weight-torus centralizer consists
