@@ -49,16 +49,6 @@ section Band
 
 variable {a b : ℝ} (hab : a < b)
 
-/-- The basis of the tangent line of `ℝ` at `x` given by the unit vector `1` is positively
-oriented for the standard orientation. -/
-private theorem orientation_map_fromTangentSpace_symm_singleton (x : ℝ) :
-    ((Basis.singleton (Fin 1) ℝ).map
-        (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm.toLinearEquiv).orientation =
-      Manifold.Orientation.real.orientationAt x := by
-  rw [Basis.orientation_map, ContinuousLinearEquiv.toLinearEquiv_symm, ← Orientation.map_symm,
-    Equiv.symm_apply_eq, Manifold.Orientation.real_eq_model,
-    Manifold.Orientation.map_orientationAt_model]
-
 /-- **The outgoing endpoint of an interval is positively oriented.** Orient the band `[a, b]` of
 the coordinate function on `ℝ` by the standard orientation of `ℝ`, and its boundary by the
 outward-first orientation. Then the endpoint `b` is positively oriented. -/
@@ -80,7 +70,7 @@ theorem orientationAt_boundaryOrientation_scalarRegularBand_id_of_eq_right :
   refine ((boundaryOrientation_scalarRegularBand_spec_of_eq_right _ _ _ _ _ hab x hx
     (v := e.symm 1) ?_ (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis
     ((Basis.singleton (Fin 1) ℝ).map e.symm.toLinearEquiv) ?_).2
-      (orientation_map_fromTangentSpace_symm_singleton _)).symm
+      (Manifold.Orientation.orientation_map_fromTangentSpace_symm_singleton _)).symm
   · simp [e]
   · funext i
     rw [Fin.fin_one_eq_zero i]
@@ -113,7 +103,8 @@ theorem orientationAt_boundaryOrientation_scalarRegularBand_id_of_eq_left :
       funext i
       rw [Fin.fin_one_eq_zero i]
       simp [e', e, Basis.unitsSMul_apply])
-  rw [Basis.orientation_neg_single, orientation_map_fromTangentSpace_symm_singleton] at hspec
+  rw [Basis.orientation_neg_single,
+    Manifold.Orientation.orientation_map_fromTangentSpace_symm_singleton] at hspec
   refine (Basis.orientation_ne_iff_eq_neg _ _).1 fun h ↦ ?_
   exact Module.Ray.ne_neg_self _ (hspec.1 h.symm).symm
 
