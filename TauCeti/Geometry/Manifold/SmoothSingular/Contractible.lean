@@ -52,14 +52,11 @@ a normed space `V` is the case `I = 𝓘(ℝ, V)`.
 On a smooth manifold the same straight-line contraction, read in the extended chart at a point
 `x`, contracts every nonempty convex chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`,
 for a convex `C` with `C ∩ range I` inside the chart target
-(`TauCeti.exists_contMDiff_contraction_of_convex_extChartAt`). These are the base cases of the
-Mayer–Vietoris induction proving the smoothing theorem on every manifold.
-
-These are the base cases of the Mayer–Vietoris induction (`TauCeti.mayerVietoris_induction`) that
-compares smooth with continuous singular homology on manifolds with corners: the empty open set,
-and the open sets of the model space with convex image, which form a basis closed under
-intersection. The step for countable disjoint unions is
-`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`.
+(`TauCeti.exists_contMDiff_contraction_of_convex_extChartAt`). The empty open set and these
+nonempty convex chart domains are the base cases of the Mayer–Vietoris induction
+(`TauCeti.mayerVietoris_induction_extChartAt`) proving the smoothing theorem, which compares smooth
+with continuous singular homology on manifolds with corners. The step for countable disjoint unions
+is `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`.
 
 ## Main definitions and results
 

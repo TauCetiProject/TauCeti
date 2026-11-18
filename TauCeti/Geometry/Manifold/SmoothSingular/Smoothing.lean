@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MayerVietoris
 public import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
 public import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
@@ -157,16 +158,8 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι :
     (fun s hs h ↦ quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup s C R
       (fun i j hij ↦ hs i j hij) h)
   -- The top open subset is diffeomorphic to `M`.
-  let top : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M :=
-    { toFun := Subtype.val
-      invFun y := ⟨y, trivial⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      contMDiff_toFun := contMDiff_subtype_val
-      contMDiff_invFun := by
-        rw [← ContMDiff.subtypeVal_comp_iff]
-        exact contMDiff_id }
-  exact (top.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff R).1 (hall ⊤)
+  exact (Diffeomorph.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff
+    (Diffeomorph.ofTop (⊤ : Opens M) rfl) R).1 (hall ⊤)
 
 variable (I M) in
 /-- **The smoothing theorem, as a chain homotopy equivalence.** On a Hausdorff σ-compact smooth
