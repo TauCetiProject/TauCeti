@@ -95,10 +95,13 @@ theorem eq_polynomialL_iff (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace 
     exact ext k (Lp.ext (hu.trans (value_polynomialL_ae hΩ k m q).symm))
 
 /-- Forgetting the highest weak derivative preserves a polynomial's Sobolev class. -/
+-- Avoid indexing through the reducible Sobolev type inside the class map, and rewrite
+-- polynomial classes before `lowerOrder_zero` unfolds the projection.
+@[simp high]
 theorem lowerOrder_polynomialL
     (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
     (k m : ℕ) (q : polynomialsDegLE ι m) :
-    lowerOrder k (polynomialL (μ := μ) (p := p) hΩ (k + 1) m q) =
+    lowerOrder k (no_index (polynomialL (μ := μ) (p := p) hΩ (k + 1) m q)) =
       polynomialL hΩ k m q := by
   apply (eq_polynomialL_iff hΩ k m _ q).2
   rw [← value_succ]
