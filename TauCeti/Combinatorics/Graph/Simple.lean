@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Subgraph
 public import TauCeti.Combinatorics.Graph.EdgeEnds
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 
 /-!
 # Simple multigraphs and their underlying simple graphs
