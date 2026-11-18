@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+import Mathlib.RingTheory.TensorProduct.Pi
 
 /-!
 # Pullback of schemes along `Spec.map`
@@ -27,6 +28,9 @@ The same pullback along `Spec.map` of a ring map `k → K` carries affine charts
 open subscheme of `X` over `Spec k`, then `Spec (A ⊗[k] K)` is an open subscheme of the base
 change `X ×_k Spec K`, over `Spec K`.
 
+A split scheme `Spec (ι → L)` stays split after base change to a commutative `L`-algebra `F`,
+with model `Spec (ι → F)` and compatibility with both pullback projections.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Over.pullbackSpecMapId`: pullback along `Spec.map (𝟙 R)` is the
@@ -37,6 +41,8 @@ change `X ×_k Spec K`, over `Spec K`.
   of an affine chart is an affine chart of the base change.
 * `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
   identifies an affine base change over its new base.
+* `CategoryTheory.IsPullback.exists_split`: a scheme split over a commutative ring stays split
+  after affine base change, with the same finite index type.
 * `TauCeti.AlgebraicGeometry.tensorProductChart`: affine charts `Spec A ⟶ X` and `Spec B ⟶ Y`
   over an affine chart `Spec C ⟶ Z` give an affine chart `Spec (A ⊗[C] B)` of a fibre product of
   `X ⟶ Z ⟵ Y`.
@@ -51,7 +57,7 @@ namespace TauCeti
 
 namespace AlgebraicGeometry
 
-universe u
+universe u v
 
 variable {R S T : CommRingCat.{u}}
 
@@ -113,6 +119,43 @@ theorem pullbackSpecIsoOfAlgEquiv_hom_left (R B T C : Type u)
       (pullbackSymmetry (Spec.algebraMap R B) (Spec.algebraMap R T)).hom ≫
         (pullbackSpecIso R T B).hom ≫ Spec.map (CommRingCat.ofHom e.symm.toRingHom) :=
   (rfl)
+
+/-- **A split scheme stays split after base change.** If `s : S ⟶ Spec L` is identified with
+`Spec (ι → L) ⟶ Spec L`, then every base change `s' : S' ⟶ Spec F` of `s` along
+`Spec F ⟶ Spec L` is identified with `Spec (ι → F) ⟶ Spec F`, compatibly with the projection
+to `S`. -/
+theorem _root_.CategoryTheory.IsPullback.exists_split {L F : Type (max u v)}
+    [CommRing L] [CommRing F] [Algebra L F] {ι : Type v} [Finite ι]
+    {S S' : Scheme.{max u v}} {s : S ⟶ Spec (.of L)} {s' : S' ⟶ Spec (.of F)} {p : S' ⟶ S}
+    (H : IsPullback p s' s (Spec.algebraMap L F)) (e : S ≅ Spec (.of (ι → L)))
+    (he : e.hom ≫ Spec.algebraMap L (ι → L) = s) :
+    ∃ e' : S' ≅ Spec (.of (ι → F)), e'.hom ≫ Spec.algebraMap F (ι → F) = s' ∧
+      e'.hom ≫ Spec.algebraMap (ι → L) (ι → F) = p ≫ e.hom := by
+  classical
+  let _ := Fintype.ofFinite ι
+  have H' : IsPullback (p ≫ e.hom) s' (Spec.algebraMap L (ι → L)) (Spec.algebraMap L F) := by
+    simpa using H.paste_horiz (IsPullback.of_horiz_isIso (snd := s)
+      (f := Spec.algebraMap L (ι → L)) (g := 𝟙 _) ⟨by rw [he, Category.comp_id]⟩)
+  let eP := TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv L (ι → L) F (ι → F)
+    (Algebra.TensorProduct.piScalarRight L F F ι)
+  refine ⟨H'.isoPullback ≪≫ (Over.forget _).mapIso eP, ?_, ?_⟩
+  · have := Over.w eP.hom
+    simp only [Over.mk_hom] at this
+    simp [this]
+  · have hpi : Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.piScalarRight L F F ι).symm.toRingHom) ≫
+        Spec.algebraMap (ι → L) (ι → F) =
+        Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) := by
+      rw [← Spec.map_comp]
+      refine congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_))
+      apply (Algebra.TensorProduct.piScalarRight L F F ι).injective
+      ext i
+      simp [Algebra.smul_def]
+      rfl
+    simp only [Iso.trans_hom, Functor.mapIso_hom, Over.forget_map, eP,
+      TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv_hom_left, Category.assoc]
+    rw [hpi]
+    simp
 
 section TensorProductChart
 
