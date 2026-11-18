@@ -18,11 +18,12 @@ non-defeq norms on one type.
 
 `TauCeti.WithFiberMetric g` is instead a copy of the fibres of `E`, with the same topology,
 addition, scalar action and bundle structure, on which `g` is the inner product, through
-Mathlib's `RiemannianBundle` mechanism. Distinct metrics give distinct copies. The copy is a
-continuous Riemannian bundle, so its fibre norm is continuous, and the analytic constructions
-over a Riemannian bundle, such as the Hilbert space of square-integrable sections, apply to the
-metric `g`. The identity `TauCeti.WithFiberMetric.toWithFiberMetric` transports vectors of `E`
-to the copy.
+Mathlib's `RiemannianBundle` mechanism. The metric `g` selects the inner product instance on
+the copy; the underlying type `WithFiberMetric g b` unfolds to `E b` definitionally, whatever
+the metric. The copy is a continuous Riemannian bundle, so its fibre norm is continuous, and
+the analytic constructions over a Riemannian bundle, such as the Hilbert space of
+square-integrable sections, apply to the metric `g`. The identity
+`TauCeti.WithFiberMetric.toWithFiberMetric` transports vectors of `E` to the copy.
 
 ## Main definitions
 
@@ -35,9 +36,7 @@ to the copy.
 * `TauCeti.WithFiberMetric.inner_toWithFiberMetric`: the inner product of the copy is `g`.
 -/
 
--- The copy must unfold to `E b` and its instances to those of `E`, so that sections of `E` are
--- sections of the copy and the inner product of the copy computes as `g`.
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -53,10 +52,12 @@ variable {B : Type*} [TopologicalSpace B]
   [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E]
 
+-- The copy must unfold to `E b` and its instances to those of `E`, so that sections of `E` are
+-- sections of the copy and the inner product of the copy computes as `g`.
 /-- The fibre at `b` of the vector bundle `E`, carrying the inner product of the continuous
 Riemannian metric `g`: a copy of `E b` with its topology, addition and scalar action, on which
 `g` does not compete with any norm already present on `E b`. -/
-def WithFiberMetric (_g : ContinuousRiemannianMetric F E) (b : B) : Type _ :=
+@[expose] def WithFiberMetric (_g : ContinuousRiemannianMetric F E) (b : B) : Type _ :=
   E b
 
 namespace WithFiberMetric

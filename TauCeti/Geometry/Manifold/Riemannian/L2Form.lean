@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
+public import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.AlternatingForm
 public import TauCeti.MeasureTheory.Function.LpSection.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.WithFiberMetric
-import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 
@@ -28,14 +28,14 @@ A compactly supported smooth form defines an element of `L²Ωᵏ(M)`
 (`TauCeti.compactlySupportedForms.toL2Form`); this embedding is injective since the Riemannian
 volume charges every nonempty open set. Through it, the integral identities for the
 codifferential on an oriented boundaryless Riemannian manifold become identities in `L²`: the
-codifferential `d*` is the `L²` adjoint of the exterior derivative `d` on compactly supported
-smooth forms, and the Hodge Laplacian `Δ = d*d + dd*` is symmetric and nonnegative there. These
-describe `d`, `d*` and `Δ` as unbounded operators on `L²Ωᵏ(M)` with the compactly supported
-smooth forms as domain, the starting point for their closed and self-adjoint extensions.
+codifferential `d*` is formally adjoint in `L²` to the exterior derivative `d` on compactly
+supported smooth forms, and the Hodge Laplacian `Δ = d*d + dd*` is symmetric and nonnegative
+there. These describe `d`, `d*` and `Δ` as unbounded operators on `L²Ωᵏ(M)` with the compactly
+supported smooth forms as domain, the starting point for their closed and self-adjoint
+extensions.
 
 ## Main definitions
 
-* `TauCeti.formMetric I M k`: the Gram inner product of `k`-forms as a continuous fibre metric.
 * `TauCeti.L2Form I M k`: the Hilbert space of square-integrable `k`-forms.
 * `TauCeti.compactlySupportedForms.toL2Form`: the class in `L²Ωᵏ(M)` of a compactly supported
   smooth form.
@@ -74,30 +74,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 section Continuous
 
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-variable (I M k) in
-/-- The Gram inner product `TauCeti.alternatingFormInner` of real `k`-forms on a manifold with a
-continuous Riemannian metric, as a continuous fibre metric on the bundle of `k`-forms. -/
-def formMetric : ContinuousRiemannianMetric (E [⋀^Fin k]→L[ℝ] ℝ)
-    (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) :=
-  haveI : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  letI : ContMDiffVectorBundle 0 E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  letI : IsContMDiffRiemannianBundle I 0 E (TangentSpace I : M → Type _) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
-  (alternatingFormRiemannianMetric E I (TangentSpace I : M → Type _) 0
-    k).toContinuousRiemannianMetric
-
-/-- The metric `TauCeti.formMetric` is the Gram inner product of forms. -/
-@[simp]
-theorem formMetric_inner (x : M) (v w : TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) :
-    (formMetric I M k).inner x v w = alternatingFormInner (TangentSpace I x) k v w := by
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  have : ContMDiffVectorBundle 0 E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  have : IsContMDiffRiemannianBundle I 0 E (TangentSpace I : M → Type _) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
-  exact alternatingFormRiemannianMetric_inner (I := I) (V := (TangentSpace I : M → Type _)) x v w
 
 /-- A smooth form, read in the fibres carrying the Gram metric, is a continuous section. -/
 private theorem continuous_toWithFiberMetric (α : SmoothForm I M ℝ k) :
@@ -207,9 +183,10 @@ theorem integralTopForm_inner_smul_riemannianVolumeForm_eq_inner_toL2Form
 
 variable [BoundarylessManifold I M] [T2Space M]
 
-/-- **The codifferential is the `L²` adjoint of the exterior derivative**: on an oriented
-boundaryless Riemannian manifold, `⟪dα, β⟫ = ⟪α, d*β⟫` in `L²` for compactly supported smooth
-forms `α` of degree `k` and `β` of degree `k + 1`. -/
+/-- **The codifferential is formally adjoint in `L²` to the exterior derivative on compactly
+supported smooth forms**: on an oriented boundaryless Riemannian manifold,
+`⟪dα, β⟫ = ⟪α, d*β⟫` in `L²` for compactly supported smooth forms `α` of degree `k` and `β` of
+degree `k + 1`. -/
 theorem inner_toL2Form_mextDerivₗ (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
     (α : compactlySupportedForms I M k) (β : compactlySupportedForms I M (k + 1)) :
     ⟪toL2Form I M (k + 1) (mextDerivₗ I M k α), toL2Form I M (k + 1) β⟫_ℝ =
