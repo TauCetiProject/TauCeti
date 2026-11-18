@@ -27,6 +27,8 @@ instance, so they are not restated here.
 
 ## Main definitions
 
+* `RootPairing.equivMap`: the canonical equivalence `P.Equiv (P.map e f g)` to a pushforward root
+  pairing.
 * `RootPairing.Equiv.autCongr`: conjugation by an equivalence, as a group isomorphism
   `P.Aut ≃* Q.Aut`.
 
@@ -42,8 +44,11 @@ instance, so they are not restated here.
   `RootPairing.Equiv.coweightEquiv_autCongr_apply` and
   `RootPairing.Equiv.indexEquiv_autCongr_apply`: the weight-space map, the coweight-space map and
   the index permutation of a conjugated automorphism are the conjugates of the originals.
-* `RootPairing.Equiv.smul_index_eq_indexEquiv`: an automorphism acts on root indices through its
-  index permutation.
+* `RootPairing.Equiv.smul_index_eq_indexEquiv` and `RootPairing.Equiv.smul_weight_eq_weightMap`: an
+  automorphism acts on root indices through `indexEquiv` and on weights through `weightMap`.
+* `RootPairing.Equiv.indexEquiv_pow`, `RootPairing.Equiv.weightMap_pow_apply`,
+  `RootPairing.Equiv.weightMap_pow_root` and `RootPairing.Equiv.indexEquiv_commute`: action of
+  natural powers and commuting automorphisms on root indices, weights, and roots.
 * `RootPairing.Equiv.autCongr_smul` and `RootPairing.Equiv.autCongr_smul_index`: conjugation
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
@@ -56,6 +61,46 @@ instance, so they are not restated here.
 
 public section
 
+namespace RootPairing
+
+variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+
+/-- **Canonical equivalence to a pushforward root pairing.** Pushing `P` forward along an index
+bijection `e` and linear equivalences `f` and `g` gives a root pairing `P.map e f g` canonically
+equivalent to `P`. -/
+def equivMap (P : RootPairing ι R M N)
+    (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂) (g : N ≃ₗ[R] N₂) : P.Equiv (P.map e f g) where
+  weightMap := f.toLinearMap
+  coweightMap := g.symm.toLinearMap
+  indexEquiv := e
+  weight_coweight_transpose := by ext; simp [RootPairing.map]
+  root_weightMap := by ext; simp [RootPairing.map]
+  coroot_coweightMap := by ext; simp [RootPairing.map]
+  bijective_weightMap := f.bijective
+  bijective_coweightMap := g.symm.bijective
+
+@[simp]
+theorem equivMap_weightMap (P : RootPairing ι R M N)
+    (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂) (g : N ≃ₗ[R] N₂) :
+    (P.equivMap e f g).weightMap = f.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem equivMap_coweightMap (P : RootPairing ι R M N)
+    (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂) (g : N ≃ₗ[R] N₂) :
+    (P.equivMap e f g).coweightMap = g.symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem equivMap_indexEquiv (P : RootPairing ι R M N)
+    (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂) (g : N ≃ₗ[R] N₂) :
+    (P.equivMap e f g).indexEquiv = e :=
+  (rfl)
+
+end RootPairing
+
 namespace RootPairing.Equiv
 
 variable {ι ι₂ ι₃ R M N M₂ N₂ M₃ N₃ : Type*} [CommRing R]
@@ -63,6 +108,20 @@ variable {ι ι₂ ι₃ R M N M₂ N₂ M₃ N₃ : Type*} [CommRing R]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   [AddCommGroup M₃] [Module R M₃] [AddCommGroup N₃] [Module R N₃]
   {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂} {S : RootPairing ι₃ R M₃ N₃}
+
+@[simp]
+theorem mk'_weightMap [IsDomain R] [CharZero R] [Finite ι₂]
+    (P : RootPairing ι R M N) [P.IsRootSystem] (Q : RootPairing ι₂ R M₂ N₂) [Q.IsRootSystem]
+    (f : M ≃ₗ[R] M₂) (e : ι ≃ ι₂) (hf : ∀ i, f (P.root i) = Q.root (e i)) :
+    (mk' P Q f e hf).weightMap = f.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem mk'_indexEquiv [IsDomain R] [CharZero R] [Finite ι₂]
+    (P : RootPairing ι R M N) [P.IsRootSystem] (Q : RootPairing ι₂ R M₂ N₂) [Q.IsRootSystem]
+    (f : M ≃ₗ[R] M₂) (e : ι ≃ ι₂) (hf : ∀ i, f (P.root i) = Q.root (e i)) :
+    (mk' P Q f e hf).indexEquiv = e :=
+  (rfl)
 
 /-- An equivalence of root pairings composed with its inverse is the identity of the target. -/
 @[simp]
@@ -107,6 +166,38 @@ Not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
 theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
     g • i = g.indexEquiv i :=
   (rfl)
+
+/-- The action of the automorphism group on weight vectors is through `weightMap`.
+
+Not a `simp` lemma: it would rewrite the left-hand side of `RootPairing.Equiv.autCongr_smul`,
+which is stated for the action. -/
+theorem smul_weight_eq_weightMap (g : Aut P) (x : M) :
+    g • x = g.weightMap x :=
+  (rfl)
+
+/-- The index permutation of a power of an automorphism is the power of its index permutation. -/
+@[simp]
+theorem indexEquiv_pow (g : Aut P) (n : ℕ) :
+    (g ^ n).indexEquiv = g.indexEquiv ^ n := by
+  rw [← indexHom_apply, map_pow, indexHom_apply]
+
+/-- Applying the weight map of `g ^ n` iterates `g.weightMap` `n` times. -/
+theorem weightMap_pow_apply (g : Aut P) (n : ℕ) (x : M) :
+    (g ^ n).weightMap x = (g.weightMap ^ n) x := by
+  have hhom := congrArg (fun e : M ≃ₗ[R] M ↦ e x) (map_pow (weightHom P) g n)
+  simp only [weightHom_apply, weightEquiv_apply] at hhom
+  rw [hhom, pow_apply_eq_iterate, pow_apply_eq_iterate]
+  exact congrArg (fun f : M → M ↦ f^[n] x) (funext (weightEquiv_apply g))
+
+/-- The weight map of `g ^ n` acts on `P.root j` via `g.indexEquiv ^ n`. -/
+theorem weightMap_pow_root (g : Aut P) (n : ℕ) (j : ι) :
+    (g ^ n).weightMap (P.root j) = P.root ((g.indexEquiv ^ n) j) := by
+  rw [Hom.root_weightMap_apply, indexEquiv_pow]
+
+/-- Commuting automorphisms commute on root indices. -/
+theorem indexEquiv_commute {g h : Aut P} (hc : Commute g h) (j : ι) :
+    g.indexEquiv (h.indexEquiv j) = h.indexEquiv (g.indexEquiv j) :=
+  Equiv.Perm.ext_iff.mp (hc.map (indexHom P)).eq j
 
 noncomputable section Conjugation
 
