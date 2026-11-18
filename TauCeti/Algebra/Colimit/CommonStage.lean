@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Data.Finset.Insert
 public import Mathlib.Order.DirectedInverseSystem
 
 /-!
-# Moving finitely many elements of a directed colimit of rings to a common stage
+# Moving finitely many elements of a directed colimit to a common stage
 
-Let `(Aᵢ, tᵢⱼ)` be a directed system of commutative rings over a directed preorder `ι`, and let
-`φᵢ : Aᵢ → L` be compatible ring homomorphisms (`φⱼ ∘ tᵢⱼ = φᵢ`). The colimit conditions are
-stated as hypotheses rather than for a particular construction, so the results apply to
-Mathlib's `Ring.DirectLimit` with its canonical maps as well as to any other cocone with these
-properties.
+Let `(Aᵢ, tᵢⱼ)` be a directed system of types over a directed preorder `ι`, and let `φᵢ : Aᵢ → L`
+be compatible maps (`φⱼ ∘ tᵢⱼ = φᵢ`). The colimit conditions are stated as hypotheses rather than
+for a particular construction, and only the underlying functions are used, so the results apply
+to Mathlib's `Ring.DirectLimit` with its canonical maps as well as to any other cocone of rings,
+modules or sets with these properties.
 
 If every element of `L` comes from some stage, then finitely many elements of `L` come from a
 common stage (`TauCeti.DirectLimit.exists_lift`), and finitely many images of elements of
@@ -39,20 +38,20 @@ public section
 
 namespace TauCeti.DirectLimit
 
-variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {A : ι → Type*} [∀ i, CommRing (A i)]
-  {t : ∀ i j, i ≤ j → A i →+* A j} {L : Type*} [CommRing L] {φ : ∀ i, A i →+* L}
+variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {A : ι → Type*}
+  {t : ∀ i j, i ≤ j → A i → A j} {L : Type*} {φ : ∀ i, A i → L}
   (hφt : ∀ i j (h : i ≤ j) a, φ j (t i j h a) = φ i a)
 
 include hφt in
 /-- Finitely many elements of the colimit, each the image of an element of a family of subsets
 `Sᵢ ⊆ Aᵢ` preserved by the transition maps, lift into `Sⱼ` at a common stage `j`. -/
-theorem exists_lift_mem [Nonempty ι] (S : ∀ i, Set (A i))
+theorem exists_lift_mem [Nonempty ι] [∀ i, Nonempty (A i)] (S : ∀ i, Set (A i))
     (hS : ∀ i j (h : i ≤ j), ∀ a ∈ S i, t i j h a ∈ S j) (X : Finset L)
     (hX : ∀ x ∈ X, ∃ i, ∃ a ∈ S i, φ i a = x) :
     ∃ i, ∃ g : L → A i, ∀ x ∈ X, g x ∈ S i ∧ φ i (g x) = x := by
   classical
   induction X using Finset.induction_on with
-  | empty => exact ⟨Classical.arbitrary ι, 0, by simp⟩
+  | empty => exact ⟨Classical.arbitrary ι, fun _ ↦ Classical.arbitrary _, by simp⟩
   | insert a X _ ih =>
     obtain ⟨i, g, hg⟩ := ih fun x hx ↦ hX x (Finset.mem_insert_of_mem hx)
     obtain ⟨j, b, hb, rfl⟩ := hX a (Finset.mem_insert_self a X)
@@ -65,9 +64,10 @@ theorem exists_lift_mem [Nonempty ι] (S : ∀ i, Set (A i))
 
 include hφt in
 /-- Finitely many elements of the colimit lift to a common stage. -/
-theorem exists_lift (hcover : ∀ x : L, ∃ i a, φ i a = x) (S : Finset L) :
+theorem exists_lift [Nonempty L] [∀ i, Nonempty (A i)] (hcover : ∀ x : L, ∃ i a, φ i a = x)
+    (S : Finset L) :
     ∃ i, ∃ g : L → A i, ∀ x ∈ S, φ i (g x) = x := by
-  have : Nonempty ι := ⟨(hcover 0).choose⟩
+  have : Nonempty ι := ⟨(hcover (Classical.arbitrary L)).choose⟩
   obtain ⟨i, g, hg⟩ := exists_lift_mem hφt (fun _ ↦ Set.univ) (fun _ _ _ _ _ ↦ trivial) S
     fun x _ ↦ (hcover x).imp fun _ ⟨a, ha⟩ ↦ ⟨a, trivial, ha⟩
   exact ⟨i, g, fun x hx ↦ (hg x hx).2⟩
