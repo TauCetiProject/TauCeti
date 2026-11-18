@@ -50,18 +50,18 @@ from the special point, shows that the two dimensions agree.
 
 ## Main results
 
-* `IsOpen.image_of_continuousOn_of_injOn_of_mapsTo`: invariance of domain for maps into an open
-  subset of an arbitrary space which is homeomorphic to a manifold of the same dimension.
 * `TauCeti.isEmpty_homeomorph_of_mem_sphere`: a boundary point of a closed ball has no open
   neighbourhood in the ball homeomorphic to a finite-dimensional real normed space.
 * `TauCeti.not_exists_two_euclidean_opens_closedBall`: a closed ball of positive radius in a space
-  of positive dimension is not the union of two open sets homeomorphic to a real normed space.
+  of positive dimension is not the union of two open sets homeomorphic to a finite-dimensional real
+  normed space.
 * `TauCeti.WedgeSum.isEmpty_homeomorph_of_base_mem`: the wedge point of a wedge of at least two
   manifolds of positive dimension has no open neighbourhood homeomorphic to a finite-dimensional
   real normed space.
 * `TauCeti.WedgeSum.not_exists_two_euclidean_opens`,
   `TauCeti.WedgeSum.not_exists_two_euclidean_opens_sphere`: such a wedge, for instance `Sᵐ ∨ Sᵐ`
-  with `m > 0`, is not the union of two open sets homeomorphic to a real normed space.
+  with `m > 0`, is not the union of two open sets homeomorphic to a finite-dimensional real normed
+  space.
 
 ## References
 
@@ -76,45 +76,21 @@ public section
 
 open Function Metric Module Set Topology
 
-variable {E F M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 
-section InvarianceOfDomain
-
-variable [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace F N]
-  {X : Type*} [TopologicalSpace X]
-
-omit [FiniteDimensional ℝ E] in
-/-- **Invariance of domain into an open copy of a manifold.** Let `U` be an open subset of a
-topological space `X` which is homeomorphic to a topological manifold `N` without boundary, and
-let `f` map an open set `W` of a topological manifold `M` without boundary into `U`, continuously
-and injectively, where `M` and `N` are charted on real normed spaces of the same `finrank`, the
-second finite dimensional. Then `f '' W` is open in `X`. Nothing is assumed about `X` away from
-`U`. -/
-theorem IsOpen.image_of_continuousOn_of_injOn_of_mapsTo {U : Set X} (hU : IsOpen U) (e : U ≃ₜ N)
-    {f : M → X} {W : Set M} (hW : IsOpen W) (hf : ContinuousOn f W) (hinj : InjOn f W)
-    (hfW : MapsTo f W U) (hEF : finrank ℝ E = finrank ℝ F) : IsOpen (f '' W) := by
-  -- Read `f` on the open submanifold `W` through `e`, as a continuous injection into `N`.
-  let W' : TopologicalSpace.Opens M := ⟨W, hW⟩
-  let g : W' → N := fun y ↦ e ⟨f y, hfW y.2⟩
-  have hg : Continuous g :=
-    e.continuous.comp ((continuousOn_iff_continuous_domRestrict.1 hf).subtype_mk fun y ↦ hfW y.2)
-  have hginj : Injective g := fun y z h ↦
-    Subtype.ext (hinj y.2 z.2 (congrArg Subtype.val (e.injective h)))
-  have himage : f '' W = Subtype.val '' (e ⁻¹' range g) := by
-    ext p
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨⟨f y, hfW hy⟩, ⟨⟨y, hy⟩, rfl⟩, rfl⟩
-    · rintro ⟨u, ⟨y, hy⟩, rfl⟩
-      exact ⟨y, y.2, congrArg Subtype.val (e.injective hy)⟩
-  rw [himage]
-  exact hU.isOpenMap_subtype_val _
-    ((hg.isOpenEmbedding_of_injective hginj hEF).isOpen_range.preimage e.continuous)
-
-end InvarianceOfDomain
-
 namespace TauCeti
+
+/-- A space has no cover by two open sets homeomorphic to `F` when some point `p` has no open
+neighbourhood homeomorphic to `F`: `p` lies in one of the two sets. -/
+private theorem not_exists_two_opens_of_isEmpty_homeomorph {X G : Type*} [TopologicalSpace X]
+    [TopologicalSpace G] (p : X) (h : ∀ U : Set X, IsOpen U → p ∈ U → IsEmpty (U ≃ₜ G)) :
+    ¬∃ U V : Set X, IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧ Nonempty (U ≃ₜ G) ∧
+      Nonempty (V ≃ₜ G) := by
+  rintro ⟨U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩
+  rcases (hUV ▸ mem_univ p : p ∈ U ∪ V) with hp | hp
+  · exact (h U hU hp).false eU
+  · exact (h V hV hp).false eV
 
 /-! ### The closed ball -/
 
@@ -173,14 +149,11 @@ theorem not_exists_two_euclidean_opens_closedBall (hE : 0 < finrank ℝ E) (c : 
     (hr : 0 < r) :
     ¬∃ U V : Set (closedBall c r), IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧ Nonempty (U ≃ₜ F) ∧
       Nonempty (V ≃ₜ F) := by
-  rintro ⟨U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos hE
   have : Nontrivial E := Module.nontrivial_of_finrank_pos hE
   obtain ⟨y, hy⟩ := (NormedSpace.sphere_nonempty (x := c)).2 hr.le
-  have hz : (⟨y, sphere_subset_closedBall hy⟩ : closedBall c r) ∈ U ∪ V := hUV ▸ mem_univ _
-  rcases hz with hz | hz
-  · exact (isEmpty_homeomorph_of_mem_sphere hr.ne' hU hz hy).false eU
-  · exact (isEmpty_homeomorph_of_mem_sphere hr.ne' hV hz hy).false eV
+  exact not_exists_two_opens_of_isEmpty_homeomorph ⟨y, sphere_subset_closedBall hy⟩
+    fun _ hU hz ↦ isEmpty_homeomorph_of_mem_sphere hr.ne' hU hz hy
 
 /-! ### The wedge of manifolds -/
 
@@ -267,7 +240,7 @@ theorem isEmpty_homeomorph_of_base_mem (hE : 0 < finrank ℝ E) {i j : ι} (hij 
   -- onto a neighbourhood of the wedge point inside that summand.
   have hnhds (k : ι) : ∃ S ∈ 𝓝 (base x), S ⊆ range (incl x k) := by
     obtain ⟨W, hW, -, hpW, hφc, hφinj, hmaps⟩ := exists_chart (E := E) k hU hb
-    refine ⟨_, (hU.image_of_continuousOn_of_injOn_of_mapsTo e hW hφc hφinj hmaps hEF).mem_nhds
+    refine ⟨_, (hW.image_of_continuousOn_of_injOn_of_mapsTo hU e hφc hφinj hmaps hEF).mem_nhds
       ⟨_, hpW, ?_⟩, image_subset_range _ _ |>.trans (range_comp_subset_range _ _)⟩
     simp [(chartAt E (x k)).left_inv (mem_chart_source E (x k))]
   -- The neighbourhoods of the summands `i` and `j` meet only in the wedge point, which is
@@ -301,12 +274,9 @@ not the union of two open sets homeomorphic to a finite-dimensional real normed 
 wedge point lies in one of them. -/
 theorem not_exists_two_euclidean_opens (hE : 0 < finrank ℝ E) {i j : ι} (hij : i ≠ j) :
     ¬∃ U V : Set (WedgeSum x), IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧ Nonempty (U ≃ₜ F) ∧
-      Nonempty (V ≃ₜ F) := by
-  rintro ⟨U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩
-  have hb : base x ∈ U ∪ V := hUV ▸ mem_univ _
-  rcases hb with hb | hb
-  · exact (isEmpty_homeomorph_of_base_mem hE hij hU hb).false eU
-  · exact (isEmpty_homeomorph_of_base_mem hE hij hV hb).false eV
+      Nonempty (V ≃ₜ F) :=
+  not_exists_two_opens_of_isEmpty_homeomorph (base x) fun _ hU hb ↦
+    isEmpty_homeomorph_of_base_mem hE hij hU hb
 
 omit [FiniteDimensional ℝ E] in
 /-- **The wedge `Sᵐ ∨ Sᵐ` of two spheres is not covered by two Euclidean open sets**, for `m > 0`.
