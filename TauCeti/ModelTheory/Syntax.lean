@@ -32,6 +32,15 @@ injective on function symbols acts injectively on terms. Constructor equations f
 * `FirstOrder.Language.LHom.onTerm_injective`: a language map that is injective on function
   symbols acts injectively on terms; `FirstOrder.Language.LHom.Injective.onTerm_injective`
   specializes it to injective language maps.
+* `FirstOrder.Language.LHom.onBoundedFormula_not`, `FirstOrder.Language.LHom.onFormula_not`,
+  `FirstOrder.Language.LHom.onSentence_not`, `FirstOrder.Language.LHom.id_onSentence`,
+  `FirstOrder.Language.LHom.comp_onSentence`: language maps commute with negation and act
+  functorially on sentences.
+* `FirstOrder.Language.LHom.onTheory_empty`, `FirstOrder.Language.LHom.onTheory_singleton`,
+  `FirstOrder.Language.LHom.onTheory_insert`, `FirstOrder.Language.LHom.onTheory_union`,
+  `FirstOrder.Language.LHom.onTheory_mono`, `FirstOrder.Language.LHom.id_onTheory`,
+  `FirstOrder.Language.LHom.comp_onTheory`: set-operation and functoriality laws for
+  `LHom.onTheory`.
 -/
 
 public section
@@ -129,6 +138,81 @@ theorem onTerm_injective {g : L →ᴸ L'}
 theorem Injective.onTerm_injective {g : L →ᴸ L'} (hg : g.Injective) {β : Type*} :
     Function.Injective (g.onTerm : L.Term β → L'.Term β) :=
   LHom.onTerm_injective fun {_} => hg.onFunction
+
+section FormulasAndTheories
+
+variable {L'' : Language} {α : Type*} {n : ℕ}
+
+/-- A language homomorphism commutes with negation on bounded formulas. -/
+theorem onBoundedFormula_not (g : L →ᴸ L') (φ : L.BoundedFormula α n) :
+    g.onBoundedFormula φ.not = (g.onBoundedFormula φ).not :=
+  (rfl)
+
+/-- A language homomorphism commutes with negation on formulas. -/
+@[simp]
+theorem onFormula_not (g : L →ᴸ L') (φ : L.Formula α) :
+    g.onFormula φ.not = (g.onFormula φ).not :=
+  (rfl)
+
+/-- A language homomorphism commutes with negation on sentences. -/
+@[simp]
+theorem onSentence_not (g : L →ᴸ L') (φ : L.Sentence) :
+    g.onSentence φ.not = (g.onSentence φ).not :=
+  (rfl)
+
+/-- The identity language homomorphism fixes every sentence. -/
+@[simp]
+theorem id_onSentence (φ : L.Sentence) : (LHom.id L).onSentence φ = φ :=
+  congrFun id_onBoundedFormula φ
+
+/-- Composition of language homomorphisms acts by composition on sentences. -/
+@[simp]
+theorem comp_onSentence (h : L' →ᴸ L'') (g : L →ᴸ L') (φ : L.Sentence) :
+    (h.comp g).onSentence φ = h.onSentence (g.onSentence φ) :=
+  congrFun (comp_onBoundedFormula h g) φ
+
+/-- Mapping the empty theory along a language homomorphism gives the empty theory. -/
+@[simp]
+theorem onTheory_empty (g : L →ᴸ L') : g.onTheory ∅ = ∅ :=
+  Set.image_empty _
+
+/-- Mapping a singleton theory along a language homomorphism maps its single sentence. -/
+@[simp]
+theorem onTheory_singleton (g : L →ᴸ L') (φ : L.Sentence) :
+    g.onTheory {φ} = {g.onSentence φ} :=
+  Set.image_singleton
+
+/-- Mapping `insert φ T` along a language homomorphism inserts `g.onSentence φ` into
+`g.onTheory T`. -/
+@[simp]
+theorem onTheory_insert (g : L →ᴸ L') (φ : L.Sentence) (T : L.Theory) :
+    g.onTheory (insert φ T) = insert (g.onSentence φ) (g.onTheory T) :=
+  Set.image_insert_eq
+
+/-- Mapping a union of theories along a language homomorphism distributes over the union. -/
+@[simp]
+theorem onTheory_union (g : L →ᴸ L') (T₁ T₂ : L.Theory) :
+    g.onTheory (T₁ ∪ T₂) = g.onTheory T₁ ∪ g.onTheory T₂ :=
+  Set.image_union _ _ _
+
+/-- `LHom.onTheory` is monotone with respect to inclusion of theories. -/
+theorem onTheory_mono (g : L →ᴸ L') {T₁ T₂ : L.Theory} (h : T₁ ⊆ T₂) :
+    g.onTheory T₁ ⊆ g.onTheory T₂ :=
+  Set.image_mono h
+
+/-- The identity language homomorphism acts as the identity on theories. -/
+@[simp]
+theorem id_onTheory (T : L.Theory) : (LHom.id L).onTheory T = T := by
+  ext φ
+  simp
+
+/-- Composition of language homomorphisms acts by composition on theories. -/
+theorem comp_onTheory (h : L' →ᴸ L'') (g : L →ᴸ L') (T : L.Theory) :
+    (h.comp g).onTheory T = h.onTheory (g.onTheory T) := by
+  ext φ
+  simp [onTheory, Set.mem_image]
+
+end FormulasAndTheories
 
 end LHom
 

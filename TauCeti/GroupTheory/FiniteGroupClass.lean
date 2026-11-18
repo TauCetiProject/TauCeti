@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.PUnit
 public import Mathlib.Algebra.Group.Shrink
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.GroupTheory.Solvable
+import TauCeti.Algebra.Group.Equiv.Pi
 import TauCeti.GroupTheory.PGroup
 
 /-!
@@ -225,9 +226,7 @@ theorem MemFinite.pi {ι : Type*} [Finite ι] {K : ι → Type v} [∀ i, Group 
         { (Fin.consEquiv L).symm with map_mul' := fun _ _ ↦ rfl }
       exact (memFinite_congr e).mpr ((hL 0).prod (ih _ fun i ↦ hL i.succ))
   obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
-  let f : (∀ i, K i) ≃* ∀ j : Fin n, K (e.symm j) :=
-    { Equiv.piCongrLeft' K e with map_mul' := fun _ _ ↦ rfl }
-  exact (memFinite_congr f).mpr (key n _ fun j ↦ hK _)
+  exact (memFinite_congr (MulEquiv.piCongrLeft K e.symm).symm).mpr (key n _ fun j ↦ hK _)
 
 /-- **The normal subgroups with quotient in `C` are closed under binary intersection**, because
 `G ⧸ (M ⊓ N)` embeds in `(G ⧸ M) × (G ⧸ N)`. This is what makes that family downward directed.
