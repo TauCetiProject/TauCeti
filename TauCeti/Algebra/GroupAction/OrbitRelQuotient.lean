@@ -675,7 +675,7 @@ lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff
 quotient of `X` by `H`-orbits is free. This packages
 `normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff` as the cancellativity of the descended
 action. -/
-theorem MulAction.normalizerQuotientOrbitRelQuotientIsCancelSMul
+theorem _root_.Subgroup.isCancelSMul_normalizerQuotient_orbitRelQuotient
     (H : Subgroup G) [IsCancelSMul (Subgroup.normalizer (H : Set G)) X] :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
     IsCancelSMul (Subgroup.normalizerQuotient H) (MulAction.orbitRel.Quotient H X) :=
