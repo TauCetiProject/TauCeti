@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproxProd
 public import TauCeti.NumberTheory.Height.Primitive
 
-import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
-
 /-!
 # The affine product of a system of linear forms
 
@@ -107,18 +105,6 @@ private theorem prod_apply_smul {v : AbsoluteValue K ℝ} {w : AbsoluteValue F �
   simp only [h, map_smul, smul_eq_mul, map_mul, AbsoluteValue.LiesOver.apply_algebraMap v,
     prod_mul_distrib, prod_const, card_univ, mul_comm]
 
-/-- Collecting the `n`-th powers out of a product of local factors carrying exponents `m v`. -/
-private theorem prod_mul_pow_pow {α : Type*} (T : Finset α) (A s : α → ℝ) (m : α → ℕ) (n : ℕ) :
-    ∏ v ∈ T, (A v * s v ^ n) ^ m v = (∏ v ∈ T, A v ^ m v) * (∏ v ∈ T, s v ^ m v) ^ n := by
-  rw [← prod_pow, ← prod_mul_distrib]
-  exact prod_congr rfl fun v _ ↦ by ring
-
-/-- An inequality against `H ^ (-n - ε)` is one against `H ^ (-ε)` after multiplying by `H ^ n`. -/
-private theorem le_rpow_neg_sub_iff {a H ε : ℝ} (n : ℕ) (hH : 0 < H) :
-    a ≤ H ^ (-(n : ℝ) - ε) ↔ a * H ^ n ≤ H ^ (-ε) := by
-  rw [sub_eq_add_neg, Real.rpow_add hH, Real.rpow_neg hH.le, Real.rpow_natCast, ← div_eq_inv_mul,
-    le_div_iff₀ (pow_pos hH _)]
-
 end Local
 
 variable [NumberField K]
@@ -183,7 +169,8 @@ theorem affineProd_smul (hwInf : ∀ v : InfinitePlace K, (w v.1).LiesOver v.1)
     prod_apply_smul (v := (FinitePlace.mk v).1) (w := w (FinitePlace.mk v).1)
       (L (FinitePlace.mk v).1) c x
   simp only [hI]
-  rw [prod_congr rfl hF, prod_mul_pow_pow, prod_mul_distrib, prod_pow]
+  rw [prod_congr rfl hF]
+  simp only [mul_pow, prod_mul_distrib, pow_right_comm _ (Fintype.card ι), prod_pow]
   ring
 
 /-- **Invariance under `S`-units.** When each `w v` lies over `v`, the affine product does not
@@ -211,7 +198,7 @@ theorem affineProd_eq_approxProd_mul (S : Finset (HeightOneSpectrum (𝓞 K)))
   simp only [fun v : InfinitePlace K ↦ prod_apply_eq_prod_div_iSup_mul_pow v (w v.1) (L v.1) x,
     fun v : HeightOneSpectrum (𝓞 K) ↦ prod_apply_eq_prod_div_iSup_mul_pow (FinitePlace.mk v)
       (w (FinitePlace.mk v).1) (L (FinitePlace.mk v).1) x]
-  rw [prod_mul_pow_pow, prod_mul_distrib, prod_pow]
+  simp only [mul_pow, prod_mul_distrib, pow_right_comm _ (Fintype.card ι), prod_pow]
   ring
 
 /-- **The affine product of an `S`-primitive point.** For a point whose coordinates are
@@ -256,7 +243,9 @@ theorem approxProd_le_of_affineProd_le (S : Finset (HeightOneSpectrum (𝓞 K)))
     (h : affineProd S w L x ≤ mulHeight x ^ (-ε)) :
     approxProd univ (S.image FinitePlace.mk) w L x ≤
       mulHeight x ^ (-(Fintype.card ι : ℝ) - ε) := by
-  rw [le_rpow_neg_sub_iff _ (mulHeight_pos x)]
+  have hH := mulHeight_pos x
+  rw [sub_eq_add_neg, Real.rpow_add hH, Real.rpow_neg hH.le (Fintype.card ι : ℝ),
+    Real.rpow_natCast, ← div_eq_inv_mul, le_div_iff₀ (pow_pos hH _)]
   exact (approxProd_mul_mulHeight_pow_le_affineProd S w L hxS).trans h
 
 /-- **For an `S`-primitive point the two forms of the inequality of the Subspace Theorem agree.**
@@ -269,6 +258,9 @@ theorem affineProd_le_iff_approxProd_le (S : Finset (HeightOneSpectrum (𝓞 K))
     affineProd S w L x ≤ mulHeight x ^ (-ε) ↔
       approxProd univ (S.image FinitePlace.mk) w L x ≤
         mulHeight x ^ (-(Fintype.card ι : ℝ) - ε) := by
-  rw [le_rpow_neg_sub_iff _ (mulHeight_pos x), affineProd_eq_approxProd_mul_mulHeight_pow S w L hx]
+  have hH := mulHeight_pos x
+  rw [sub_eq_add_neg, Real.rpow_add hH, Real.rpow_neg hH.le (Fintype.card ι : ℝ),
+    Real.rpow_natCast, ← div_eq_inv_mul, le_div_iff₀ (pow_pos hH _),
+    affineProd_eq_approxProd_mul_mulHeight_pow S w L hx]
 
 end TauCeti.NumberField
