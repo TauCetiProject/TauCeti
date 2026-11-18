@@ -30,8 +30,10 @@ of them vanishes, so an action coordinate has no critical point
 or minimum on a boundaryless base
 (`IsLagrangianTorusFibration.not_isLocalExtr_of_periodLattice_le_closure`).
 
-Every function on a nonempty compact boundaryless manifold has a critical point
-(`TauCeti.criticalPoints_nonempty`). Hence **a regular Lagrangian torus fibration over a nonempty
+Every function on a nonempty compact boundaryless manifold has a critical point in the sense of
+`TauCeti.criticalPoints` (`TauCeti.criticalPoints_nonempty`): a point where it attains its
+minimum if it is continuous, and otherwise a point where it is not differentiable, at which its
+`mfderiv` is zero by convention. Hence **a regular Lagrangian torus fibration over a nonempty
 compact boundaryless base of positive dimension has no global action coordinates**
 (`IsLagrangianTorusFibration.not_forall_periodLattice_le_closure_of_compactSpace`): its
 period lattice is never spanned over `ℤ` by the differentials of at most `dim B` functions,
