@@ -50,15 +50,11 @@ theorem exists_linearIndependent_pair_companion
       intro sum_mem
       have first_mem : first ∈ Submodule.span baseField {second} := by
         simpa using (Submodule.span baseField {second}).sub_mem sum_mem mem_second
-      obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp first_mem
-      have ha₀ : a ≠ 0 := by
-        rintro rfl
-        exact first_nonzero (by simpa using ha.symm)
-      apply outside_first
-      have hsecond : second ∈ Submodule.span baseField {first} :=
-        (Submodule.span baseField {first}).smul_mem_iff ha₀ |>.mp
-          (ha.symm ▸ Submodule.mem_span_singleton_self first)
-      exact Submodule.mem_span_singleton_trans mem_second hsecond
+      have hsecond : second ∈ Submodule.span baseField {first} := by
+        simpa using
+          (mem_span_insert_exchange (s := ∅) (x := first) (y := second)
+            (by simpa using first_mem) (by simpa using first_nonzero))
+      exact outside_first (Submodule.mem_span_singleton_trans mem_second hsecond)
   · exact ⟨independentVector, independent,
       (pair_iff second_nonzero).mpr mem_second⟩
 
