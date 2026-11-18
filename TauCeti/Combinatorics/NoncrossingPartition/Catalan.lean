@@ -122,7 +122,10 @@ private theorem glueKey_eq_of_lt_self (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNonc
   · have hmL := L.part_nonempty.1 (hbx ▸ L.part_nonempty.2 (mem_filter.2 ⟨hb, hbx'⟩))
     exact (hL.part_eq_part hmL (mem_filter.2 ⟨ha, hax⟩) hbx.symm hac hma hab hbc).symm
 
-/-- The glued partition is noncrossing when its two pieces are. -/
+/-- The glued partition is noncrossing when its two pieces are, for `m` the first position of `s`
+(`hm`). Without `hm` the statement fails: for `s = {1, 2, 3, 4}`, `m = 2` and `x = 4`, the pieces
+`{{1, 3}, {2}}` and `⊥` are noncrossing, but the glue adjoins `4` to the part of `2` and gives the
+crossing partition `{{1, 3}, {2, 4}}`. -/
 private theorem isNoncrossing_glue (hm : ∀ y ∈ s, m ≤ y) (hL : L.IsNoncrossing)
     (hR : R.IsNoncrossing) : (glue s m x L R).IsNoncrossing := by
   rw [Finpartition.isNoncrossing_iff_part]
