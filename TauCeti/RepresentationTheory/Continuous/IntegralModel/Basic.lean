@@ -22,8 +22,8 @@ This file develops the elementary theory of integral models.
 
 * `Γ` acts on `Λ` by restriction (`TauCeti.GaloisLattice.IntegralModel.toContinuousRep`), jointly
   continuously for the subspace topology.
-* Scalar extension recovers the given representation: for a domain `O` with fraction field `E`
-  and `Λ` free, `E ⊗[O] Λ ≅ V` equivariantly through the rationalization equivalence
+* Scalar extension recovers the given representation: for a commutative ring `O` with fraction
+  field `E` and `Λ` free, `E ⊗[O] Λ ≅ V` equivariantly through the rationalization equivalence
   `Submodule.rationalizationEquiv` (`TauCeti.GaloisLattice.IntegralModel.genericFiberIso`). This
   is stated for `Λ` with its `O`-module topology; over the valuation ring of a field with a
   valuative topology, such as a nonarchimedean local field, the subspace topology on a lattice is
@@ -165,19 +165,20 @@ end Basic
 
 section Inf
 
-variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O] [IsDomain O]
+variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
   [IsPrincipalIdealRing O] {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V] [TopologicalSpace V]
   {ρ : ContinuousRep Γ E V}
 
 namespace IntegralModel
 
-/-- The intersection `Λ ∩ Λ'` of two integral models over a principal ideal domain with fraction
+/-- The intersection `Λ ∩ Λ'` of two integral models over a principal ideal ring with fraction
 field `E`. -/
 instance : Min (IntegralModel O ρ) where
   min Λ Λ' :=
     { lattice := Λ.lattice ⊓ Λ'.lattice
       isLattice :=
+        have := IsDomain.of_faithfulSMul O E
         have := Module.Finite.of_isLattice (A := E) Λ.lattice
         inferInstance
       stable g x hx := ⟨Λ.stable g x hx.1, Λ'.stable g x hx.2⟩ }
@@ -195,7 +196,7 @@ end Inf
 
 section GenericFiber
 
-variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O] [IsDomain O]
+variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
   [TopologicalSpace O] {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
   [TopologicalSpace E] [IsTopologicalSemiring E] [ContinuousSMul O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V] [TopologicalSpace V]
@@ -213,13 +214,11 @@ noncomputable def genericFiberIso : ContinuousRep.Iso (Λ.toContinuousRep.baseCh
     ext x
     simp)
 
-omit [IsDomain O] in
 @[simp]
 theorem genericFiberIso_tmul (a : E) (x : Λ.lattice) :
     Λ.genericFiberIso (a ⊗ₜ x) = a • (x : V) := by
   simp [genericFiberIso]
 
-omit [IsDomain O] in
 @[simp]
 theorem genericFiberIso_symm_coe (x : Λ.lattice) :
     Λ.genericFiberIso.symm (x : V) = 1 ⊗ₜ x :=
