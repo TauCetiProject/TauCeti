@@ -40,9 +40,9 @@ either inner-product core.
   compatible metrics.
 * `TauCeti.SymplecticForm.prodL2` and `TauCeti.AlmostComplexStructure.prodL2`: the direct sums
   on the Euclidean product `WithLp 2 (V × W)` of two inner product spaces.
-* `TauCeti.SymplecticForm.prodL2_apply_prodL2`: if the inner products of `V` and `W` are the
-  metrics `ω₁(·, J₁ ·)` and `ω₂(·, J₂ ·)`, the inner product of `WithLp 2 (V × W)` is the metric
-  of the direct sums.
+* `TauCeti.SymplecticForm.prodL2_apply_prodL2_eq_inner`: if the inner products of `V` and `W`
+  are the metrics `ω₁(·, J₁ ·)` and `ω₂(·, J₂ ·)`, the inner product of `WithLp 2 (V × W)` is
+  the metric of the direct sums.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: products of compatible triples carry the product metric.
@@ -208,8 +208,8 @@ theorem SymplecticForm.prodL2_apply (ω₁ : SymplecticForm V) (ω₂ : Symplect
 
 /-- If the inner products of `V` and `W` are the metrics `ω₁(·, J₁ ·)` and `ω₂(·, J₂ ·)`, the
 inner product of the Euclidean product `WithLp 2 (V × W)` is the metric of the direct sums. -/
-theorem SymplecticForm.prodL2_apply_prodL2 {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
-    {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
+theorem SymplecticForm.prodL2_apply_prodL2_eq_inner {ω₁ : SymplecticForm V}
+    {ω₂ : SymplecticForm W} {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
     (h₁ : ∀ v v', ω₁ v (J₁ v') = inner ℝ v v') (h₂ : ∀ w w', ω₂ w (J₂ w') = inner ℝ w w')
     (p q : WithLp 2 (V × W)) : ω₁.prodL2 ω₂ p (J₁.prodL2 J₂ q) = inner ℝ p q := by
   simp [h₁, h₂, WithLp.prod_inner_apply]

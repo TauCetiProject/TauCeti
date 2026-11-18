@@ -161,8 +161,8 @@ theorem exists_continuousOn_update_of_finite_energy
     (stdComplexSymplecticForm.prodL2 ω).exists_continuousOn_update_of_finite_energy
       (J₀ := (AlmostComplexStructure.ofComplexModule ℂ).prodL2 J₀)
       (u := fun w ↦ WithLp.toLp 2 (μ • w, u w)) (K := e '' (closedBall z₀ R ×ˢ K))
-      (SymplecticForm.prodL2_apply_prodL2 stdComplexSymplecticForm_apply_ofComplexModule_eq_inner
-        hg) (by positivity) hR
+      (SymplecticForm.prodL2_apply_prodL2_eq_inner
+        stdComplexSymplecticForm_apply_ofComplexModule_eq_inner hg) (by positivity) hR
       ((hW.preimage hgc.continuous).preimage (WithLp.prod_continuous_ofLp 2 ℂ V))
       (contDiffOn_graphStructure (hJ.comp (hgc.of_le le_top).contDiffOn (mapsTo_preimage _ _))
         ((hX.comp (hgc.of_le le_top).contDiffOn (mapsTo_preimage _ _)).const_smul _))
