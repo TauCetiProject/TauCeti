@@ -15,7 +15,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
-import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence
+import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
 
 /-!
 # The codifferential and the Hodge Laplacian of an oriented Riemannian manifold

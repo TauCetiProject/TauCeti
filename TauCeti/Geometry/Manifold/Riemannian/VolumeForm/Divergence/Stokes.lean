@@ -1,12 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Riccardo Brasca, The Tau Ceti contributors
 -/
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 
 /-!
@@ -29,6 +29,8 @@ the induced boundary volume form; the statement here keeps the flux-form side.
 * `TauCeti.integral_divergence_eq_integralTopForm_boundaryRestriction`: the divergence theorem
   `∫_M div X dV = ∫_{∂M} ι_X dV`.
 
+This module is ported from Riccardo Brasca’s ForTauCeti formalization of the divergence theorem.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Chapter 16,
@@ -45,19 +47,6 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
-
-/-- The flux form `ι_X dV` of a vector field `X` is supported in the topological support of `X`. -/
-theorem tsupport_interior_riemannianVolumeForm_subset [IsManifold (𝓡∂ (n + 1)) 1 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-    (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1)))
-    (X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x) :
-    _root_.tsupport (α := EuclideanSpace ℝ (Fin (n + 1)) [⋀^Fin n]→L[ℝ] ℝ)
-        ((riemannianVolumeForm o).interior X) ⊆
-      tsupport (α := EuclideanSpace ℝ (Fin (n + 1))) X := by
-  refine closure_mono fun x hx ↦ Function.mem_support.2 fun h ↦ hx ?_
-  ext v
-  simp only [RoughForm.interior_apply, h]
-  exact (riemannianVolumeForm o x).map_coord_zero 0 rfl
 
 variable [IsManifold (𝓡∂ (n + 1)) ∞ M] [T2Space M] [SigmaCompactSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
@@ -81,7 +70,7 @@ theorem integral_divergence_eq_integralTopForm_boundaryRestriction
   have : IsManifold (𝓡∂ (n + 1)) (1 + 1) M := by norm_num; infer_instance
   have hφ := (isSmoothForm_riemannianVolumeForm (n := 1) o).interior hX
   have hcφ := hc.of_isClosed_subset (isClosed_tsupport _)
-    (tsupport_interior_riemannianVolumeForm_subset o X)
+    ((riemannianVolumeForm o).tsupport_interior_subset X)
   rw [← integralTopForm_mextDeriv o hφ hcφ,
     mextDeriv_interior_riemannianVolumeForm o (hX.mdifferentiable one_ne_zero),
     integralTopForm_smul_riemannianVolumeForm o
