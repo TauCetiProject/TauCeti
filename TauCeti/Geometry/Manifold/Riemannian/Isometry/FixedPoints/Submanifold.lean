@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints
 public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
 
+import TauCeti.Topology.Algebra.ConstMulAction
+
 /-!
 # The fixed set of a group of isometries is an embedded submanifold
 
@@ -154,10 +156,9 @@ part of it on which the fixed tangent subspace has dimension `d` is a fiber of a
 function on it. -/
 theorem isClosed_fixedPointsOfFinrank (d : ℕ) :
     IsClosed (fixedPointsOfFinrank 𝓘(ℝ, E) K M d) := by
-  have hcl : IsClosed (MulAction.fixedPoints K M) := by
-    rw [MulAction.fixed_eq_iInter_fixedBy]
-    exact isClosed_iInter fun k ↦
-      isClosed_eq (contMDiff_const_smul (I := 𝓘(ℝ, E)) (n := ∞) k).continuous continuous_id
+  have : ContinuousConstSMul K M :=
+    ⟨fun k ↦ (contMDiff_const_smul (I := 𝓘(ℝ, E)) (n := ∞) k).continuous⟩
+  have hcl : IsClosed (MulAction.fixedPoints K M) := isClosed_fixedPoints_of_continuousConstSMul
   convert hcl.isClosedEmbedding_subtypeVal.isClosedMap _
     ((isLocallyConstant_finrank_fixedTangentSubspace hK).isClosed_fiber d) using 1
   ext z
