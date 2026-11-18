@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Data.List.Flatten
 import TauCeti.Data.List.Infix
 
 /-!
