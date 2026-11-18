@@ -126,6 +126,14 @@ theorem noOppositeCovectorsOn_of_forall_notMem_waveFrontSet_left
     (hS : ∀ x ∈ K, ∀ ξ : E, (x, ξ) ∉ S.waveFrontSet) : NoOppositeCovectorsOn S T K :=
   (noOppositeCovectorsOn_of_forall_notMem_waveFrontSet_right hS).symm
 
+/-- If `(x, ν)` and `(y, -ν)` are not both in the wave front sets of `S` and `T` and `S` is not
+microlocally smooth at `(x, ν)`, then `T` is microlocally smooth at `(y, -ν)`. -/
+private theorem isMicrolocallySmoothAt_neg_of_not_isMicrolocallySmoothAt {x y ν : E} (hx : x ∈ Ω)
+    (hy : y ∈ Ω) (hν : ν ≠ 0) (h : (x, ν) ∈ S.waveFrontSet → (y, -ν) ∉ T.waveFrontSet)
+    (hS : ¬ S.IsMicrolocallySmoothAt x ν) : T.IsMicrolocallySmoothAt y (-ν) := by
+  by_contra hT
+  exact h (mem_waveFrontSet_iff.2 ⟨hx, hν, hS⟩) (mem_waveFrontSet_iff.2 ⟨hy, neg_ne_zero.2 hν, hT⟩)
+
 variable [FiniteDimensional ℝ E]
 
 theorem NoOppositeCovectorsOn.add_left (h : NoOppositeCovectorsOn S T K)
@@ -156,11 +164,8 @@ theorem exists_mem_nhds_noOppositeCovectorsOn {x : E} (hx : x ∈ Ω)
       exact ⟨{y | φ y ≠ 0}, (isOpen_ne_fun φ.continuous continuous_const).mem_nhds hφ, Γ, hΓ, hνΓ,
         hcone, Or.inl fun y hy ζ hζ ↦
           isMicrolocallySmoothAt_iff.2 ⟨φ, hy, Γ, hΓ, hζ, hcone, hdecay⟩⟩
-    · have hT : T.IsMicrolocallySmoothAt x (-ν) := by
-        by_contra hT
-        exact h ν (mem_waveFrontSet_iff.2 ⟨hx, hν0, hS⟩)
-          (mem_waveFrontSet_iff.2 ⟨hx, neg_ne_zero.2 hν0, hT⟩)
-      obtain ⟨φ, hφ, Γ, hΓ, hνΓ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hT
+    · obtain ⟨φ, hφ, Γ, hΓ, hνΓ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1
+        (isMicrolocallySmoothAt_neg_of_not_isMicrolocallySmoothAt hx hx hν0 (h ν) hS)
       exact ⟨{y | φ y ≠ 0}, (isOpen_ne_fun φ.continuous continuous_const).mem_nhds hφ, -Γ,
         hΓ.neg, Set.mem_neg.2 hνΓ, TauCeti.forall_smul_mem_neg hcone,
         Or.inr fun y hy ζ hζ ↦
@@ -210,19 +215,20 @@ theorem noOppositeCovectorsOn_of_apply_eq_integral_left {U : Set E} (hU : IsOpen
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Near a nonzero covector `ν`, one of the two factors `S (φ e_η)` and `T (φ' e_(-η))` decays
 rapidly in a cone and the other grows at most polynomially, uniformly over the cutoffs `φ'`
-supported in the support of `φ` with bounded derivatives. -/
+supported in the support of `φ` with bounded derivatives. The polynomial growth of both factors,
+uniform in `φ'` for `T`, is given by `hS` and `hT`. -/
 private theorem NoOppositeCovectorsOn.exists_isOpen_cone_forall_one_add_norm_pow_mul_le
-    {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ)) (N : ℕ) {ν : E} (hν0 : ν ≠ 0) :
+    {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ)) {CS : ℝ} {kS : ℕ}
+    (hCS0 : 0 ≤ CS) (hS : ∀ η, ‖S.localFourier φ η‖ ≤ CS * (1 + ‖η‖) ^ kS) {kT : ℕ} {CT : ℝ}
+    (hCT0 : 0 ≤ CT) (hT : ∀ φ' : 𝓓(Ω, ℂ), tsupport φ' ⊆ tsupport φ → ∀ B : ℝ,
+      (∀ i ≤ kT, ∀ y, ‖iteratedFDeriv ℝ i φ' y‖ ≤ B) →
+        ∀ η, ‖T.localFourier φ' η‖ ≤ CT * B * (1 + ‖η‖) ^ kT)
+    (N : ℕ) {ν : E} (hν0 : ν ≠ 0) :
     ∃ Γ : Set E, IsOpen Γ ∧ ν ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
       ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ φ' : 𝓓(Ω, ℂ), tsupport φ' ⊆ tsupport φ → ∀ B : ℝ,
         (∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i φ' y‖ ≤ B) → ∀ η ∈ Γ,
           (1 + ‖η‖) ^ N * (‖S.localFourier φ η‖ * ‖T.localFourier φ' (-η)‖) ≤ C * B := by
   have hK : IsCompact (tsupport (φ : E → ℂ)) := φ.hasCompactSupport
-  -- Polynomial growth of both localized Fourier transforms, uniform in `φ'` for `T`.
-  obtain ⟨CS, kS, hS⟩ := exists_norm_localFourier_le S φ
-  obtain ⟨kT, CT, hCT0, hT⟩ := exists_forall_norm_localFourier_le T
-    (K := ⟨tsupport φ, φ.hasCompactSupport⟩) φ.tsupport_subset
-  have hCS0 : 0 ≤ CS := by simpa using (norm_nonneg _).trans (hS 0)
   by_cases hSν : ∀ x ∈ tsupport φ, S.IsMicrolocallySmoothAt x ν
   · -- `S (φ e_η)` decays near `ν`, and `T (φ' e_(-η))` grows at most polynomially.
     obtain ⟨W, -, hKW, Γ, hΓ, hνΓ, hcone, hdecay⟩ :=
@@ -243,10 +249,9 @@ private theorem NoOppositeCovectorsOn.exists_isOpen_cone_forall_one_add_norm_pow
     -- smooth at every `(y, -ν)` there, uniformly in the cutoff.
     push Not at hSν
     obtain ⟨x, hx, hSx⟩ := hSν
-    have hTν : ∀ y ∈ tsupport φ, T.IsMicrolocallySmoothAt y (-ν) := fun y hy ↦ by
-      by_contra hTy
-      exact h x hx y hy ν (mem_waveFrontSet_iff.2 ⟨φ.tsupport_subset hx, hν0, hSx⟩)
-        (mem_waveFrontSet_iff.2 ⟨φ.tsupport_subset hy, neg_ne_zero.2 hν0, hTy⟩)
+    have hTν : ∀ y ∈ tsupport φ, T.IsMicrolocallySmoothAt y (-ν) := fun y hy ↦
+      isMicrolocallySmoothAt_neg_of_not_isMicrolocallySmoothAt (φ.tsupport_subset hx)
+        (φ.tsupport_subset hy) hν0 (h x hx y hy ν) hSx
     obtain ⟨Γ, hΓ, hνΓ, hcone, hdecay⟩ :=
       exists_isOpen_cone_forall_one_add_norm_pow_mul_norm_localFourier_le_of_isCompact hK hTν
     obtain ⟨r, C, hC0, hC⟩ := hdecay (N + kS)
@@ -273,7 +278,8 @@ theorem NoOppositeCovectorsOn.exists_forall_one_add_norm_pow_mul_le {φ : 𝓓(�
     ∃ (r : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ φ' : 𝓓(Ω, ℂ), tsupport φ' ⊆ tsupport φ → ∀ B : ℝ,
       (∀ i ≤ r, ∀ y, ‖iteratedFDeriv ℝ i φ' y‖ ≤ B) →
         ∀ η, (1 + ‖η‖) ^ N * (‖S.localFourier φ η‖ * ‖T.localFourier φ' (-η)‖) ≤ C * B := by
-  -- At the zero frequency both factors are bounded.
+  -- Polynomial growth of both localized Fourier transforms, uniform in `φ'` for `T`; in particular
+  -- both factors are bounded at the zero frequency.
   obtain ⟨CS, kS, hS⟩ := exists_norm_localFourier_le S φ
   obtain ⟨kT, CT, hCT0, hT⟩ := exists_forall_norm_localFourier_le T
     (K := ⟨tsupport φ, φ.hasCompactSupport⟩) φ.tsupport_subset
@@ -281,7 +287,8 @@ theorem NoOppositeCovectorsOn.exists_forall_one_add_norm_pow_mul_le {φ : 𝓓(�
   -- Finitely many cones given by `exists_isOpen_cone_forall_one_add_norm_pow_mul_le` cover the
   -- unit sphere, hence every nonzero frequency.
   choose! Γ hΓ hνΓ hcone r C hC0 hC using fun ν (hν : ν ∈ sphere (0 : E) 1) ↦
-    h.exists_isOpen_cone_forall_one_add_norm_pow_mul_le N (ne_of_mem_sphere hν one_ne_zero)
+    h.exists_isOpen_cone_forall_one_add_norm_pow_mul_le hCS0 hS hCT0 hT N
+      (ne_of_mem_sphere hν one_ne_zero)
   obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion
     (Γ := fun ν : sphere (0 : E) 1 ↦ Γ ν) (fun ν ↦ hΓ ν ν.2) (fun ν ↦ hνΓ ν ν.2)
     fun ν ↦ hcone ν ν.2
@@ -371,8 +378,8 @@ private theorem NoOppositeCovectorsOn.exists_norm_integral_le_seminorm {φ : �
   -- bounded by `2 ^ r M A`.
   have hM : ∀ i ≤ r, ∀ y ∈ tsupport φ,
       ‖iteratedFDeriv ℝ i (fun z ↦ ((ofSupportedIn hK f z : ℝ) : ℂ)) y‖ ≤ M := fun i hi y _ ↦ by
-    rw [show (fun z ↦ ((ofSupportedIn hK f z : ℝ) : ℂ)) = ofRealLI ∘ f by
-        rw [coe_ofSupportedIn]; rfl,
+    rw [show (fun z ↦ ((ofSupportedIn hK f z : ℝ) : ℂ)) = ofRealLI ∘ f from
+        funext fun z ↦ by simp [coe_ofSupportedIn],
       ofRealLI.norm_iteratedFDeriv_comp_left f.contDiff.contDiffAt (mod_cast le_top)]
     exact (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
       (Seminorm.le_finset_sup_apply (Finset.mem_Iic.2 hi))
@@ -396,12 +403,12 @@ def cutoffProduct (S T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (h : NoOppositeCov
     { toFun ψ := ∫ η, S.localFourier φ η *
         T.localFourier (TestFunction.smulLeftCLM ψ.contDiff φ) (-η)
       map_add' ψ₁ ψ₂ := by
-        rw [TestFunction.smulLeftCLM_add ψ₁.contDiff ψ₂.contDiff (ψ₁ + ψ₂).contDiff]
+        rw [TestFunction.smulLeftCLM_add ψ₁.contDiff ψ₂.contDiff]
         simp only [_root_.add_apply, localFourier_add_cutoff, mul_add]
         exact integral_add (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ₁)
           (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ₂)
       map_smul' c ψ := by
-        rw [TestFunction.smulLeftCLM_smul ψ.contDiff c (c • ψ).contDiff]
+        rw [TestFunction.smulLeftCLM_smul ψ.contDiff c]
         simp only [_root_.smul_apply, ← Complex.coe_smul, localFourier_smul_cutoff,
           RingHom.id_apply, mul_left_comm _ (c : ℂ)]
         exact integral_const_mul _ _ }

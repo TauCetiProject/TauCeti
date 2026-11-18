@@ -411,6 +411,21 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm
         exact (hC₁ φK).trans (by gcongr)
     _ = ‖(ZLattice.covolume L : ℂ)⁻¹‖ * C₁ * B := by ring
 
+omit [FiniteDimensional ℝ E] in
+/-- Given at each point `x` of a compact set `K` a neighbourhood `U x` and an open cone `Γ x`
+containing `ξ`, finitely many of the interiors of the `U x` cover `K`, and the intersection of the
+corresponding cones is an open cone containing `ξ`. -/
+private theorem exists_finset_subset_biUnion_interior_and_isOpen_cone {K : Set E} {ξ : E}
+    (hK : IsCompact K) {U Γ : K → Set E} (hU : ∀ x : K, U x ∈ 𝓝 (x : E)) (hΓ : ∀ x, IsOpen (Γ x))
+    (hξΓ : ∀ x, ξ ∈ Γ x) (hcone : ∀ x, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ x, t • η ∈ Γ x) :
+    ∃ t : Finset K, K ⊆ ⋃ x ∈ t, interior (U x) ∧ IsOpen (⋂ x ∈ t, Γ x) ∧ ξ ∈ ⋂ x ∈ t, Γ x ∧
+      ∀ c : ℝ, 0 < c → ∀ η ∈ ⋂ x ∈ t, Γ x, c • η ∈ ⋂ x ∈ t, Γ x := by
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K ↦ interior (U x))
+    (fun _ ↦ isOpen_interior) fun x hx ↦
+      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  exact ⟨t, ht, isOpen_biInter_finset fun x _ ↦ hΓ x, mem_iInter₂.2 fun x _ ↦ hξΓ x,
+    fun c hc η hη ↦ mem_iInter₂.2 fun x hx ↦ hcone x c hc η (mem_iInter₂.1 hη x hx)⟩
+
 /-- **Uniform decay over a compact set.** If `T` is microlocally smooth at `(x, ξ)` for every `x` in
 a compact set `K`, then there are an open set `W` containing `K` and an open cone `Γ` containing
 `ξ` such that every cutoff `ψ` supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the
@@ -423,13 +438,10 @@ theorem exists_isOpen_cone_forall_decay_of_isCompact {T : 𝓓'(Ω, ℂ)} {K : S
         ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
   -- Finitely many of the neighbourhoods given by `exists_nhds_cone` cover `K`.
   choose U hU Γ hΓ hξΓ hcone hdecay using fun x : K ↦ (h x x.2).exists_nhds_cone
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  obtain ⟨t, ht, hΓt, hξΓt, hconet⟩ :=
+    exists_finset_subset_biUnion_interior_and_isOpen_cone hK hU hΓ hξΓ hcone
   refine ⟨⋃ x ∈ t, interior (U x), isOpen_biUnion fun _ _ ↦ isOpen_interior, ht, ⋂ x ∈ t, Γ x,
-    isOpen_biInter_finset fun x _ ↦ hΓ x, mem_iInter₂.2 fun x _ ↦ hξΓ x,
-    fun s hs η hη ↦ mem_iInter₂.2 fun x hx ↦ hcone x s hs η (mem_iInter₂.1 hη x hx),
-    fun ψ hψ N ↦ ?_⟩
+    hΓt, hξΓt, hconet, fun ψ hψ N ↦ ?_⟩
   -- Split `ψ` into pieces supported in these neighbourhoods and one piece off the support of `T`.
   let V : Option t → Set E := fun i ↦ i.elim (dsupport T)ᶜ fun x ↦ interior (U x)
   have hV : ∀ i, IsOpen (V i) := by
@@ -479,9 +491,8 @@ theorem exists_isOpen_cone_forall_one_add_norm_pow_mul_norm_localFourier_le_of_i
   -- Finitely many of the neighbourhoods given at the points of `K` cover `K`.
   choose U hU Γ hΓ hξΓ hcone hdecay using fun x : K ↦
     (h x x.2).exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover (fun x : K ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
+  obtain ⟨t, ht, hΓt, hξΓt, hconet⟩ :=
+    exists_finset_subset_biUnion_interior_and_isOpen_cone hK hU hΓ hξΓ hcone
   -- A cutoff equal to one near `K`, split into pieces supported in these neighbourhoods.
   obtain ⟨χ, -, hχ1, hχW⟩ := exists_cutoff_tsupport_subset (n := ⊤) hK
     ((isOpen_biUnion fun x _ ↦ isOpen_interior).inter Ω.isOpen) (subset_inter ht hKΩ)
@@ -490,9 +501,7 @@ theorem exists_isOpen_cone_forall_one_add_norm_pow_mul_norm_localFourier_le_of_i
     (fun _ ↦ isOpen_interior) fun z hz ↦ by
       obtain ⟨x, hx, hzx⟩ := mem_iUnion₂.1 (hχW hz).1
       exact mem_iUnion.2 ⟨⟨x, hx⟩, hzx⟩
-  refine ⟨⋂ x ∈ t, Γ x, isOpen_biInter_finset fun x _ ↦ hΓ x, mem_iInter₂.2 fun x _ ↦ hξΓ x,
-    fun c hc η hη ↦ mem_iInter₂.2 fun x hx ↦ hcone x c hc η (mem_iInter₂.1 hη x hx),
-    fun N ↦ ?_⟩
+  refine ⟨⋂ x ∈ t, Γ x, hΓt, hξΓt, hconet, fun N ↦ ?_⟩
   choose r C hC0 hC using fun i : s ↦ hdecay i.1.1 N
   set R := Finset.univ.sup r
   choose A hA0 hA using fun i : s ↦
