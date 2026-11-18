@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
@@ -23,6 +24,8 @@ For functions in `Lᵖ`, with finite positive `p` and values in a seminormed gro
 values above increasing real norm levels makes the integral of the `p`-th power of the error
 norm tend to zero. This supplies bounded approximations without requiring the underlying measure
 to be finite.
+
+The integral of a norm cutoff also tends to the original integral for any integrable function.
 -/
 
 public section
@@ -68,6 +71,20 @@ theorem AEStronglyMeasurable.ite_norm_le
     AEStronglyMeasurable (fun x ↦ if ‖f x‖ ≤ R then f x else 0) P := by
   exact (hf.indicator₀ (hf.norm.nullMeasurableSet_le aestronglyMeasurable_const)).congr
     (Filter.Eventually.of_forall fun x ↦ Set.indicator_apply _ _ x)
+
+/-- The integrals of the norm cutoffs of an integrable function converge to its integral
+as the cutoff radius tends to infinity. -/
+theorem Integrable.tendsto_integral_ite_norm_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : Ω → E} (hf : Integrable f P) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ x, (if ‖f x‖ ≤ R then f x else 0) ∂P) Filter.atTop
+      (𝓝 (∫ x, f x ∂P)) := by
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖f x‖)
+    (.of_forall fun R ↦ hf.aestronglyMeasurable.ite_norm_le R)
+    (.of_forall fun R ↦ .of_forall fun x ↦ ?_) hf.norm (.of_forall fun x ↦ ?_)
+  · split_ifs <;> simp
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Filter.eventually_ge_atTop ‖f x‖] with R hR
+    simp [hR]
 
 /-- Cutting off an `Lᵖ` function at a real norm level preserves `Lᵖ` membership,
 including for infinite measures and arbitrary exponents. -/
