@@ -43,6 +43,9 @@ every finite slope of `P` equals `σ`, giving the first-segment pure-polynomial 
   most `σ`.
 * `PowerSeries.isDistinguished_of_isFiniteFace`: a series whose Newton polygon has a finite face
   of slope `σ` ending at `j` is distinguished of degree `j` at `b ^ σ`.
+* `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace`: over a complete
+  ultrametric normed field, a finite face of slope `σ` ending at `j` gives unique factorisation
+  into a restricted unit at `b ^ σ` times a monic polynomial of degree `j`.
 * `PowerSeries.newtonPolygon_eq_add_of_isUnit_mul` and
   `PowerSeries.newtonPolygon_eq_of_mul_isUnit`: `f.newtonPolygon v n = P.newtonPolygon v n +
   v (u.coeff 0)` for `n ≤ j`, reducing to equality when `v (u.coeff 0) = 0`.
@@ -465,6 +468,21 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
 
 include hb hv
+
+/-- **Factorisation at a finite face.** Over a complete ultrametric normed field, suppose the Newton
+polygon of `f` has a finite face of slope `σ` ending at `j`. Then `f` is in exactly one way a unit
+of the ring of series restricted at `b ^ σ` times a monic polynomial of degree `j`. The series is
+automatically restricted at `b ^ σ`, since its polygon has a supporting line of strictly larger
+slope through `j`. -/
+theorem existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace [CompleteSpace K]
+    {f : K⟦X⟧} {σ : ℝ} {l j : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l j) :
+    ∃! p : IsRestricted.subring (R := K) (b ^ σ) × Polynomial K,
+      IsUnit p.1 ∧ p.2.IsMonicOfDegree j ∧ (p.1 : K⟦X⟧) * (p.2 : K⟦X⟧) = f := by
+  have hfd := isDistinguished_of_isFiniteFace v hb hv hface
+  exact hfd.existsUnique_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)
+    (isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface)
 
 /-- **Newton polygon of a constant-normalised disc polynomial.** When `P * u = f` with `u` a unit of
 the ring of series restricted at `b ^ σ` satisfying `v (u.coeff 0) = 0` (for instance

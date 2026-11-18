@@ -48,10 +48,8 @@ polynomial of degree `j`. At a first break that polynomial is pure of slope `m`.
 * `PowerSeries.isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished`: with bounded
   weighted coefficients at a larger radius, a first break at `j` is exactly this pair of active
   indices together with `a < j` for the order of vanishing `a`.
-* `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace` and
-  `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak`: unique factorisation
-  by Weierstrass preparation at the right endpoint of a finite face, and in particular at a first
-  break.
+* `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak`: unique factorisation
+  by Weierstrass preparation at a first break.
 * `PowerSeries.forall_mem_newtonSlopes_eq_of_isFirstBreak`: the polynomial factor is pure of
   the first slope, even without completeness.
 
@@ -183,20 +181,6 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {f 
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
 
 include hb hv
-
-/-- **Factorisation at a finite face.** Over a complete ultrametric normed field, suppose the Newton
-polygon of `f` has a finite face of slope `σ` ending at `j`. Then `f` is in exactly one way a unit
-of the ring of series restricted at `b ^ σ` times a monic polynomial of degree `j`. The series is
-automatically restricted at `b ^ σ`, since its polygon has a supporting line of strictly larger
-slope through `j`. -/
-theorem existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace {σ : ℝ} {l j : ℕ}
-    (hface : IsFiniteFace (f.newtonPolygon v) σ l j) :
-    ∃! p : IsRestricted.subring (R := K) (b ^ σ) × Polynomial K,
-      IsUnit p.1 ∧ p.2.IsMonicOfDegree j ∧ (p.1 : K⟦X⟧) * (p.2 : K⟦X⟧) = f := by
-  have hfd := isDistinguished_of_isFiniteFace v hb hv hface
-  exact hfd.existsUnique_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit
-    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)
-    (isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface)
 
 /-- **First-segment factorisation.** Over a complete ultrametric normed field, suppose the Newton
 polygon of `f` has its first break at `j` with slope `m`. Then `f` is in exactly one way a unit of
