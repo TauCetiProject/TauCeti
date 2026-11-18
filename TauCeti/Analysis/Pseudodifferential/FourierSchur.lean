@@ -147,27 +147,6 @@ theorem fourier_integral_fourierChar_smul_apply (hp : Continuous p) (hK : IsComp
         rw [Real.fourier_eq, ContinuousLinearMap.integral_apply hint]
         simp only [hF, Circle.smul_def, smul_apply]
 
-/-- A coefficient with a growth bound in the frequency on a set `K`, vanishing at positions outside
-`K`, has the growth bound `max C 0` at every position. -/
-private theorem norm_le_max_mul_of_forall_mem {C : ℝ}
-    (hC : ∀ x ∈ K, ∀ ξ, ‖p (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (hKp : ∀ x ∉ K, ∀ ξ, p (x, ξ) = 0) (x ξ : CoordinateSpace n) :
-    ‖p (x, ξ)‖ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  by_cases hx : x ∈ K
-  · exact (hC x hx ξ).trans (by gcongr; exact le_max_left C 0)
-  · rw [hKp x hx, norm_zero]
-    positivity
-
-/-- The quantization of a continuous coefficient vanishing at positions outside a compact set,
-with a growth bound in the frequency, is integrable. -/
-private theorem integrable_quantizeSchwartzValue (hp : Continuous p) (hK : IsCompact K)
-    {C : ℝ} (hC : ∀ x ∈ K, ∀ ξ, ‖p (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (hKp : ∀ x ∉ K, ∀ ξ, p (x, ξ) = 0) (u : 𝓢(CoordinateSpace n, V)) :
-    Integrable (quantizeSchwartzValue p u) :=
-  (continuous_quantizeSchwartzValue hp (fun _ _ ↦ ⟨max C 0, fun x _ ξ ↦
-    norm_le_max_mul_of_forall_mem hC hKp x ξ⟩) u).integrable_of_hasCompactSupport
-      (HasCompactSupport.intro hK fun x hx ↦ by simp [quantizeSchwartzValue_def, hKp x hx])
-
 /-- **The Fourier transform of the quantization.** For a continuous coefficient `p` that vanishes
 at positions outside a compact set `K`, with `‖p(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` on `K`,
 `𝓕 (Op(p) u) ξ = ∫ p̂(ξ - ζ, 2πζ) (𝓕 u ζ) dζ`, where `p̂(η, ξ)` is the Fourier transform of the
@@ -373,6 +352,8 @@ theorem exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_norm_iteratedFDe
   obtain ⟨C, hC0, hC⟩ := exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay
     (V := V) (W := W) n m s
   refine ⟨C * 2 ^ N * volume.real K, by positivity, fun p A hp hsmooth hKp hA u ↦ ?_⟩
+  -- For nonempty `K`, the bound at a point `x₀ ∈ K` gives `0 ≤ A`, which the bound on the
+  -- derivatives off `K` needs.
   rcases K.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
   · -- For empty `K` the coefficient vanishes, and so does its quantization.
     have h0 : quantizeSchwartzValue p u = 0 := funext fun x ↦ by
@@ -389,7 +370,7 @@ theorem exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_norm_iteratedFDe
     · exact hA l hl x hx ξ
     · rw [Function.notMem_support.mp fun h ↦ hx (hts ξ (support_iteratedFDeriv_subset l h)),
         norm_zero]
-      positivity
+      exact mul_nonneg hA0 (by positivity)
   -- Integration by parts `N` times in the position gives the decay of `p̂`.
   have hdecay (η ξ : CoordinateSpace n) : (1 + ‖η‖) ^ N * ‖𝓕 (fun x ↦ p (x, ξ)) η‖ ≤
       2 ^ N * A * volume.real K * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
