@@ -17,7 +17,8 @@ Two functions test the regular-level and boundary-face API of
 
 **A coordinate function.** Every value `c` of the first coordinate `(x, y) ↦ x` on `ℝ × ℝ` is
 regular (`TauCeti.isRegularValue_fst`), so the level `{p | p.1 = c}` carries the atlas
-`TauCeti.regularLevelChartedSpace`, modelled on `Fin 1 → ℝ`. For this atlas the level is a copy
+`TauCeti.regularLevelChartedSpace`, modelled on `Fin 1 → ℝ`
+(`TauCeti.regularLevelFstChartedSpace`). For this atlas the level is a copy
 of `ℝ`: the second coordinate is a diffeomorphism onto `ℝ`
 (`TauCeti.regularLevelFstDiffeomorph`). Its tangent space at every point, the range of the
 derivative of the inclusion, is the line spanned by `e₂ = (0, 1)`, which is the kernel of the
@@ -47,12 +48,19 @@ section Coordinate
 
 variable (c : ℝ)
 
+/-- The regular-level atlas `TauCeti.regularLevelChartedSpace` on the level `{p | p.1 = c}` of the
+first coordinate on `ℝ × ℝ`, modelled on `Fin 1 → ℝ`. -/
+noncomputable abbrev regularLevelFstChartedSpace :
+    ChartedSpace (Fin 1 → ℝ) {p : ℝ × ℝ // p.1 = c} :=
+  regularLevelChartedSpace (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt) (isRegularValue_fst c)
+    (by simp)
+
+attribute [local instance] regularLevelFstChartedSpace
+
 /-- **The tangent line of a coordinate level.** At every point of the level `{p | p.1 = c}` of the
 first coordinate on `ℝ × ℝ`, the derivative of the inclusion, for the regular-level atlas, has
 range the line spanned by `(0, 1)`. -/
 theorem range_mfderiv_coe_regularLevel_fst (x : {p : ℝ × ℝ // p.1 = c}) :
-    letI := regularLevelChartedSpace (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt)
-      (isRegularValue_fst c) (by simp : finrank ℝ (ℝ × ℝ) - finrank ℝ ℝ = 1)
     (mfderiv 𝓘(ℝ, Fin 1 → ℝ) 𝓘(ℝ, ℝ × ℝ) (Subtype.val : {p : ℝ × ℝ // p.1 = c} → ℝ × ℝ)
         x).range =
       LinearMap.range (LinearMap.inr ℝ ℝ ℝ) := by
@@ -63,14 +71,9 @@ theorem range_mfderiv_coe_regularLevel_fst (x : {p : ℝ × ℝ // p.1 = c}) :
 smooth diffeomorphism from the level `{p | p.1 = c}` of the first coordinate on `ℝ × ℝ` onto `ℝ`,
 with inverse `y ↦ (c, y)`. -/
 noncomputable def regularLevelFstDiffeomorph :
-    letI := regularLevelChartedSpace (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt)
-      (isRegularValue_fst c) (by simp : finrank ℝ (ℝ × ℝ) - finrank ℝ ℝ = 1)
     {p : ℝ × ℝ // p.1 = c} ≃ₘ⟮𝓘(ℝ, Fin 1 → ℝ), 𝓘(ℝ)⟯ ℝ :=
-  letI := regularLevelChartedSpace (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt)
-    (isRegularValue_fst c) (by simp : finrank ℝ (ℝ × ℝ) - finrank ℝ ℝ = 1)
-  have hi := (isSmoothEmbedding_coe_regularLevel (m := ∞) (by simp)
-    (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt) (isRegularValue_fst c)
-      (by simp : finrank ℝ (ℝ × ℝ) - finrank ℝ ℝ = 1)).isImmersion
+  have hi := (isSmoothEmbedding_coe_regularLevel (n := 1) (m := ∞) (by simp)
+    (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt) (isRegularValue_fst c) (by simp)).isImmersion
   { toFun p := p.1.2
     invFun y := ⟨(c, y), rfl⟩
     left_inv p := Subtype.ext (Prod.ext p.2.symm rfl)
@@ -89,8 +92,6 @@ theorem regularLevelFstDiffeomorph_apply (p : {p : ℝ × ℝ // p.1 = c}) :
 /-- The inverse of the diffeomorphism of the level `{p | p.1 = c}` with `ℝ` is `y ↦ (c, y)`. -/
 @[simp]
 theorem coe_regularLevelFstDiffeomorph_symm_apply (y : ℝ) :
-    letI := regularLevelChartedSpace (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt)
-      (isRegularValue_fst c) (by simp : finrank ℝ (ℝ × ℝ) - finrank ℝ ℝ = 1)
     ((regularLevelFstDiffeomorph c).symm y : ℝ × ℝ) = (c, y) :=
   (rfl)
 
@@ -98,8 +99,6 @@ theorem coe_regularLevelFstDiffeomorph_symm_apply (y : ℝ) :
 the level `{p | p.1 = c}` with `ℝ`, the inclusion into `ℝ × ℝ` is `y ↦ (c, y)`, whose derivative is
 `v ↦ (0, v)`. -/
 theorem fderiv_coe_regularLevelFstDiffeomorph_symm (y : ℝ) :
-    letI := regularLevelChartedSpace (fun _ _ ↦ contDiff_fst.contMDiff.contMDiffAt)
-      (isRegularValue_fst c) (by simp : finrank ℝ (ℝ × ℝ) - finrank ℝ ℝ = 1)
     fderiv ℝ (fun y ↦ ((regularLevelFstDiffeomorph c).symm y : ℝ × ℝ)) y =
       ContinuousLinearMap.inr ℝ ℝ ℝ := by
   simp only [coe_regularLevelFstDiffeomorph_symm_apply]
