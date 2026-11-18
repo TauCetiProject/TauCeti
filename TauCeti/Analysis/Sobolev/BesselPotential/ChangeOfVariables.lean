@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
@@ -46,7 +47,8 @@ The bound `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` is first proved on Schwartz
 
 * **Nonnegative integer orders**, by induction. At order `0` it is the `L²` bound for precomposition
   with a map whose Jacobian determinant is bounded away from zero
-  (`MeasureTheory.eLpNorm_comp_restrict_le`). Raising the order by one adds the first derivatives,
+  (`TemperedDistribution.exists_compCLM_toTemperedDistribution_eq_and_norm_le`). Raising the order
+  by one adds the first derivatives,
   `‖v‖²_{H^{k+1}} = ‖v‖²_{H^k} + (2π)⁻² ∑ᵢ ‖∂ᵢ v‖²_{H^k}`
   (`SchwartzMap.norm_toBesselPotentialSpaceCLM_add_one_sq`), and by the chain rule
   `∂ᵢ (u ∘ φ) = ∑ⱼ cᵢⱼ (∂ⱼ u) ∘ φ`, where `Dφ bᵢ = ∑ⱼ cᵢⱼ bⱼ`
@@ -253,22 +255,17 @@ theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast
   induction k with
   | zero =>
     refine ⟨c⁻¹, inv_nonneg.2 hc.le, fun u ↦ ?_⟩
-    have hle := eLpNorm_comp_restrict_le (μ := volume) (p := 2) isOpen_univ
-      (hφ.1.differentiable (by simp)).differentiableOn φ.injective.injOn subset_rfl
-      MeasurableSet.univ hc (fun x _ ↦ hdet x) u
-    rw [Set.image_univ_of_surjective φ.surjective, Measure.restrict_univ] at hle
-    have hle' := ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
-      ENNReal.toReal_nonneg (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne'))
-        (u.memLp 2).eLpNorm_ne_top) hle
-    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_inv,
-      ENNReal.toReal_ofReal hc.le] at hle'
+    obtain ⟨v, hv, -, hvn⟩ :=
+      exists_compCLM_toTemperedDistribution_eq_and_norm_le volume hφ hψ hc hdet (u.toLp 2)
+    have hPv : (P u).toLp 2 = v := Lp.toTemperedDistribution_injective <| by
+      beta_reduce
+      rw [← hv, Lp.toTemperedDistribution_toLp_eq, Lp.toTemperedDistribution_toLp_eq,
+        TemperedDistribution.compCLM_toTemperedDistributionCLM]
     rw [Nat.cast_zero, norm_toBesselPotentialSpaceCLM_zero, norm_toBesselPotentialSpaceCLM_zero,
-      compCLM_apply]
-    calc _ ≤ (c⁻¹ ^ (1 / 2 : ENNReal).toReal * (eLpNorm u 2 volume).toReal) ^ 2 :=
-          pow_le_pow_left₀ ENNReal.toReal_nonneg hle' 2
-      _ = c⁻¹ * (eLpNorm u 2 volume).toReal ^ 2 := by
-          rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
-          norm_num
+      ← SchwartzMap.norm_toLp (f := P u), ← SchwartzMap.norm_toLp (f := u), hPv]
+    refine (pow_le_pow_left₀ (norm_nonneg _) hvn 2).trans_eq ?_
+    rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+    norm_num
   | succ k ih =>
     obtain ⟨C, hC0, hC⟩ := ih
     exact exists_sq_bound_compCLM_succ hφ hψ hb k hC0 hC
