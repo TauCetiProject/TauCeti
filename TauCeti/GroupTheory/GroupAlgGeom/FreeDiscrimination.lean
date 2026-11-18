@@ -37,6 +37,9 @@ embedding.
   powers property, `G[X]` is discriminated by `G` over `G`.
 * `TauCeti.GroupAlgGeom.GX.isDiscriminatedBy_of_isFreeGroup`: for a nonabelian free group `F`,
   `F[X]` is discriminated by `F` over `F`.
+* `TauCeti.GroupAlgGeom.isDiscriminatedBy_freeGroupMap`: a free group `F(A)` is discriminated by
+  a free factor `F(s)` of rank at least two over `F(s)`, being the free `F(s)`-group on the
+  letters outside `s`.
 
 ## Implementation notes
 
@@ -307,5 +310,25 @@ theorem isDiscriminatedBy_of_isFreeGroup {F : Type u} [Group F] [IsFreeGroup F]
   isDiscriminatedBy IsFreeGroup.isBP IsFreeGroup.isCSA hF
 
 end GX
+
+/-- **A free group is discriminated by a free factor of rank at least two.** For a set `s` of at
+least two letters of `A`, the free group `F(A)` is discriminated by its free factor `F(s)` over
+`F(s)`. Rank two is needed: for `A = {a, b}` and `s = {a}`, the commutator `[a, b]` dies under
+every homomorphism to `F(s) ≅ ℤ`. -/
+theorem isDiscriminatedBy_freeGroupMap {A : Type*} {s : Set A} (hs : s.Nontrivial) :
+    IsDiscriminatedBy (FreeGroup.map ((↑) : s → A)) (.id (FreeGroup s)) := by
+  classical
+  -- `F(A)` embeds, over `F(s)`, in the free `F(s)`-group on the letters outside `s`
+  let φ : FreeGroup A →* GX (FreeGroup s) ↥sᶜ := FreeGroup.lift fun a =>
+    if h : a ∈ s then Coprod.inl (FreeGroup.of ⟨a, h⟩) else Coprod.inr (FreeGroup.of ⟨a, h⟩)
+  let ρ : GX (FreeGroup s) ↥sᶜ →* FreeGroup A := Coprod.lift (FreeGroup.map (↑)) (FreeGroup.map (↑))
+  have hρφ : ρ.comp φ = .id _ :=
+    FreeGroup.ext_hom _ _ fun a => by by_cases h : a ∈ s <;> simp [φ, ρ, h]
+  have hφ : φ.comp (FreeGroup.map (↑)) = Coprod.inl :=
+    FreeGroup.ext_hom _ _ fun a => by simp [φ]
+  refine (GX.isDiscriminatedBy_of_isFreeGroup ?_).of_injective ⟨φ, DFunLike.congr_fun hφ⟩
+    (Function.LeftInverse.injective (g := ρ) (DFunLike.congr_fun hρφ))
+  rw [FreeGroup.isMulCommutative_iff_subsingleton, not_subsingleton_iff_nontrivial]
+  exact hs.coe_sort
 
 end TauCeti.GroupAlgGeom
