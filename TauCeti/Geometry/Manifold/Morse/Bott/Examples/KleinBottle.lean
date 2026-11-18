@@ -154,29 +154,6 @@ theorem criticalPoints_height :
   rw [uncurry_apply_pair, ← mk, mk_mem_criticalPoints_height_iff, mem_union,
     mk_mem_range_criticalCircle_iff, mk_mem_range_criticalCircle_iff]
 
-/-- The differential of the critical circle through `z` at `t` sends `b` to the image of the
-vector `(b, 0)` of the cylinder at `(t, z)`, tangent to the `t`-direction, under the differential
-of the quotient map. -/
-private theorem mfderiv_criticalCircle_coe_apply {z : sphere (0 : ℂ) 1} (hz : z = 1 ∨ z = -1)
-    (t b : ℝ) :
-    mfderiv 𝓘(ℝ) (𝓘(ℝ).prod (𝓡 1)) (criticalCircle z hz) (t : AddCircle ((1 : ℕ) : ℝ)) b =
-      mfderiv (𝓘(ℝ).prod (𝓡 1)) (𝓘(ℝ).prod (𝓡 1))
-        (uncurry (SmoothMappingTorus.mk conjCircleDiffeomorph)) (t, z) (b, 0) := by
-  have hcomp : criticalCircle z hz ∘ ((↑) : ℝ → AddCircle ((1 : ℕ) : ℝ)) =
-      uncurry (SmoothMappingTorus.mk conjCircleDiffeomorph) ∘ fun s : ℝ ↦ (s, z) :=
-    funext fun s ↦ criticalCircle_coe hz s
-  have hpair : HasMFDerivAt 𝓘(ℝ) (𝓘(ℝ).prod (𝓡 1)) (fun s : ℝ ↦ (s, z)) t
-      ((ContinuousLinearMap.id ℝ ℝ).prod 0) :=
-    (hasMFDerivAt_id t).prodMk (hasMFDerivAt_const z t)
-  have h₁ := mfderiv_comp t (((criticalCircle z hz).contMDiff _).mdifferentiableAt (by simp))
-    (AddCircle.hasMFDerivAt_coe ((1 : ℕ) : ℝ) t).mdifferentiableAt
-  have h₂ := mfderiv_comp t
-    ((SmoothMappingTorus.contMDiff_uncurry_mk conjCircleDiffeomorph _).mdifferentiableAt
-      (by simp)) hpair.mdifferentiableAt
-  rw [hcomp, h₂, AddCircle.mfderiv_coe, hpair.mfderiv] at h₁
-  -- Both sides of `h₁` are evaluated at `b`; the tangent lines at `t` and `↑t` are `ℝ`.
-  exact (congr($h₁ b)).symm
-
 /-- The points `±1` are nondegenerate critical points of the height of the circle. -/
 private theorem isManifoldNondegenerateCriticalPoint_sphereHeight_one {z : sphere (0 : ℂ) 1}
     (hz : z = 1 ∨ z = -1) : IsManifoldNondegenerateCriticalPoint (𝓡 1) (sphereHeight 1) z := by
@@ -217,9 +194,15 @@ theorem isNondegenerateCriticalSubmanifold_criticalCircle {z : sphere (0 : ℂ) 
         contMDiffAt_snd hnd.mem_criticalPoints u ((0 : ℝ), w), mfderiv_snd] at h
       exact h.trans
         (DFunLike.congr_fun (map_zero (criticalHessian (𝓡 1) (sphereHeight 1) z)) w).symm
+    -- The critical circle is a closed orbit, whose velocity is the time vector field, the image
+    -- of the `t`-direction `(1, 0)` of the cylinder.
     refine LinearMap.mem_range.2 ⟨u.1, ?_⟩
-    rw [ContinuousLinearMap.coe_coe, mfderiv_criticalCircle_coe_apply]
-    exact DFunLike.congr_arg _ (Prod.ext rfl hu₂.symm)
+    rw [ContinuousLinearMap.coe_coe, criticalCircle, SmoothEmbedding.coe_ofIsSmoothEmbedding,
+      SmoothMappingTorus.mfderiv_closedOrbit, SmoothMappingTorus.closedOrbit_coe,
+      SmoothMappingTorus.timeVectorField_mk, Manifold.tangentSpaceProdEquiv_symm_apply]
+    -- `smulRight 1 v` sends `u.1` to `u.1 • v`.
+    exact (map_smul _ u.1 _).symm.trans
+      (DFunLike.congr_arg _ (Prod.ext (mul_one u.1) ((smul_zero u.1).trans hu₂.symm)))
 
 /-- At a point `[t, z]` of a critical circle, the Morse index of the height function is that of
 the height of the circle at `z`. -/

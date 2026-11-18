@@ -77,11 +77,6 @@ namespace KleinBottle
 abbrev mk (t : ℝ) (z : sphere (0 : ℂ) 1) : KleinBottle :=
   SmoothMappingTorus.mk _ t z
 
-/-- The identification defining the Klein bottle: `[t + 1, z] = [t, conj z]`. -/
-theorem mk_add_one (t : ℝ) (z : sphere (0 : ℂ) 1) :
-    mk (t + 1) z = mk t (conjCircleDiffeomorph z) :=
-  SmoothMappingTorus.mk_add_one _ t z
-
 end KleinBottle
 
 end TauCeti
