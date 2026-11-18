@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Calculus.MeanValue
 
 For solutions `f`, `g` of the hypergeometric equation (DLMF 15.10.1)
 
-`z (1 − z) w″ + (c − (a + b + 1) z) w′ − a b w = 0`
+`z (1 − z) w′′ + (c − (a + b + 1) z) w′ − a b w = 0`
 
 on an open set avoiding `0` and `1`, the Wronskian `𝒲{f, g} = f g′ − f′ g` satisfies Abel's
 identity `𝒲′ = −((c − (a + b + 1) z)/(z (1 − z))) 𝒲`. Consequently, on a connected open subset of
