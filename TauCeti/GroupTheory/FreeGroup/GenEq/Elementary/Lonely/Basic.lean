@@ -40,6 +40,9 @@ its items could be sent. Finally the source moves a constant base of an item of 
 matching place of `Δ(μ)` without asking that this place be a single item; formal consistency
 guarantees it only for items strictly inside `μ`, so it is part of `TauCeti.GenEq.IsLonely`.
 
+The transfer of solutions along ET4 is developed in
+`TauCeti.GroupTheory.FreeGroup.GenEq.Elementary.Lonely.Solution`.
+
 ## Main definitions
 
 * `TauCeti.GenEq.IsLonely`: a lonely base.

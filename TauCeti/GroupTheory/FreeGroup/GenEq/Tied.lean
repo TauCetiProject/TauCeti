@@ -49,6 +49,11 @@ segments.
 * `TauCeti.GenEq.Solution.substituteVars_segment_eq_of_isTiedTo_of_sign_eq`,
   `TauCeti.GenEq.Solution.substituteVars_segment_eq_invRev_of_isTiedTo_of_sign_ne`: the same
   identification as reduced words under a graphical solution.
+* `TauCeti.GenEq.Solution.prefixLength_of_isTiedTo`: a tie `(p, q)` of `μ` as an identity between
+  the positions of `p` and `q` in the words of a solution.
+* `TauCeti.GenEq.Solution.adjacent_of_mem_constBases`: under a solution, the boundaries to which
+  the two end-points of a constant item are tied through the same base are adjacent. For ties by
+  boundary connections this is condition 5 of formal consistency (Definition 10(5)).
 
 ## References
 
@@ -435,6 +440,51 @@ theorem Solution.substituteVars_segment_eq_invRev_of_isTiedTo_of_sign_ne (U : Ω
     (fun hc' => U.lift_mk_eq_of_mem_equations (Ω.boundaryEquation_mem_equations hc'))
 
 end Segments
+
+/-! ### Ties under a solution -/
+
+/-- The tie of a boundary `p` of `μ` to a boundary `q` of `Δ(μ)`, as an identity between the
+positions of `p` and `q` in the words of a solution: `p` lies as far from the left end of the word
+of `μ` as `q` from the left end of the word of `Δ(μ)` when `ε(μ) = ε(Δμ)`, and from its right end
+otherwise. -/
+theorem Solution.prefixLength_of_isTiedTo (U : Ω.Solution) (h : Ω.IsTiedTo μ p q) :
+    if Ω.sign μ = Ω.sign (Ω.dual μ) then
+      U.prefixLength p + U.prefixLength (Ω.left (Ω.dual μ)) =
+        U.prefixLength q + U.prefixLength (Ω.left μ)
+    else
+      U.prefixLength p + U.prefixLength q =
+        U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ) := by
+  have e := U.prefixLength_right_add_prefixLength_left_dual μ
+  rcases Ω.isTiedTo_iff.1 h with h | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · exact U.prefixLength_boundary h
+  all_goals split_ifs <;> lia
+
+/-- Two boundaries whose positions in the words of a solution differ by one are adjacent: every
+item carries a nonempty word. -/
+private theorem Solution.eq_add_one_of_prefixLength_eq (U : Ω.Solution) {i j : ℕ}
+    (hj : j ≤ Ω.numItems) (h : U.prefixLength j = U.prefixLength i + 1) : j = i + 1 := by
+  have hlt : i < j := by
+    by_contra hc
+    have := U.prefixLength_mono (not_lt.1 hc)
+    lia
+  have := U.prefixLength_add_le hlt.le hj
+  lia
+
+/-- In a generalised equation with a solution, the boundaries to which the two end-points of a
+constant item are tied through the same base are adjacent: the item carries a word of one letter.
+For ties by boundary connections this is condition 5 of formal consistency; here the end-points of
+the base are allowed as well. -/
+theorem Solution.adjacent_of_mem_constBases (U : Ω.Solution) {b : Fin Ω.numItems × (A × Bool)}
+    (hb : b ∈ Ω.constBases) (hq : Ω.IsTiedTo μ b.1.castSucc q)
+    (hq' : Ω.IsTiedTo μ b.1.succ q') : (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q := by
+  have h₁ := U.prefixLength_of_isTiedTo hq
+  have h₂ := U.prefixLength_of_isTiedTo hq'
+  have hP := U.prefixLength_succ_of_mem_constBases hb
+  simp only [Fin.val_castSucc, Fin.val_succ] at h₁ h₂
+  -- The prefix lengths at `q` and `q'` differ by one, which forces adjacent boundaries.
+  split_ifs at h₁ h₂
+  · exact Or.inl (U.eq_add_one_of_prefixLength_eq q'.is_le (by lia)).symm
+  · exact Or.inr (U.eq_add_one_of_prefixLength_eq q.is_le (by lia)).symm
 
 /-! ### Examples -/
 
