@@ -96,9 +96,7 @@ theorem map_centralizer (e : G ≃* G') (s : Set G) :
 `C_G(s) ≃+ C_{G'}(t)`, for `t` the image `e(s)`. -/]
 def centralizerMap (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t) :
     centralizer s ≃* centralizer t :=
-  (e.toMonoidHom.centralizerMap h.ge).toMulEquiv
-    (e.symm.toMonoidHom.centralizerMap (by simp [← h, Set.image_image]))
-    (by ext; simp) (by ext; simp)
+  (e.subgroupMap _).trans (.subgroupCongr (h ▸ e.map_centralizer s))
 
 @[to_additive (attr := simp)]
 theorem centralizerMap_apply_coe (e : G ≃* G') {s : Set G} {t : Set G'} (h : e '' s = t)
