@@ -19,10 +19,10 @@ is built along the filtration of `C_*(P_b B; R)` by the chains over the skeleta
 zero-cells, the first stage, where the generators are attached to nothing.
 
 For each zero-cell `q`, with point `x_q`, choose a Moore path `τ_q` from `b` to `x_q`. The free
-generator of `q` goes to the `0`-chain `[τ_q]` of `τ_q`, read in `C_*(P_b B; R)` through
-`TauCeti.pathChainToPathFromChain`. So the free module on the zero-cells maps to the chains over
-the zero-skeleton by `(α_q)_q ↦ ∑_q α_q · [τ_q]`, linearly over `C_*(Ω_b B; R)`, and this map is
-a quasi-isomorphism
+generator of `q` goes to the `0`-chain `[τ_q]` of `τ_q`, read in `C_*(P_b B; R)` by pushing it
+forward along `TauCeti.MoorePathBetween.toMoorePathFrom`. So the free module on the zero-cells maps
+to the chains over the zero-skeleton by `(α_q)_q ↦ ∑_q α_q · [τ_q]`, linearly over
+`C_*(Ω_b B; R)`, and this map is a quasi-isomorphism
 (`TauCeti.exists_mapRange_eq_and_linearCombination_add_differential_sub_mem_pathFromChainSkeleton`).
 The statement is written as the relative cycles of the map being relative boundaries, modulo the
 stage below the zero-skeleton, which is zero. In this form it is the hypothesis on the new
@@ -34,16 +34,18 @@ The chains over the zero-skeleton split over the zero-cells. A cube of paths end
 zero-skeleton ends at a single zero-cell, since the cube is connected and the zero-skeleton is
 discrete; so these chains are the sums of chains over the fibres `P_{b→x_q} B` of the end point
 map (`TauCeti.restrictScalars_pathFromChainSkeleton_zero`), and the sum is direct, since the
-fibres are disjoint (`TauCeti.eq_zero_of_sum_pathChainToPathFromChain_eq_zero`). Over the fibre of
-a single zero-cell, appending `τ_q` is a quasi-isomorphism `C_*(Ω_b B) → C_*(P_{b→x_q} B)` of left
-modules (`TauCeti.exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq`).
+fibres are disjoint
+(`TauCeti.eq_zero_of_sum_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_eq_zero`).
+Over the fibre of a single zero-cell, appending `τ_q` is a quasi-isomorphism
+`C_*(Ω_b B) → C_*(P_{b→x_q} B)` of left modules
+(`TauCeti.exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq`).
 
 ## Main results
 
 * `TauCeti.restrictScalars_pathFromChainSkeleton_zero`: the chains over the zero-skeleton are the
   sums of chains over the fibres of the zero-cells.
-* `TauCeti.eq_zero_of_sum_pathChainToPathFromChain_eq_zero`: chains over distinct fibres are
-  independent.
+* `TauCeti.eq_zero_of_sum_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_eq_zero`:
+  chains over distinct fibres are independent.
 * `TauCeti.exists_mapRange_eq_and_linearCombination_add_differential_sub_mem_pathFromChainSkeleton`:
   the free module on the zero-cells is quasi-isomorphic to the chains over the zero-skeleton.
 
@@ -61,6 +63,8 @@ noncomputable section
 open Set Topology Topology.RelCWComplex Finsupp
 
 namespace TauCeti
+
+open MoorePathBetween (toMoorePathFrom toMoorePathFrom_smul)
 
 universe u
 
@@ -94,12 +98,15 @@ private theorem pairwise_disjoint_preimage_zeroCellPoint :
     exact Subtype.ext h
 
 /-- The chains over the fibre of a zero-cell lie over the zero-skeleton. -/
-theorem pathChainToPathFromChain_mem_pathFromChainSkeleton_zero (q : cell C 0)
+theorem cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_mem_pathFromChainSkeleton_zero
+    (q : cell C 0)
     (x : cubicalChainModule (MoorePathBetween B b (zeroCellPoint C q))
       (MooreLoopSpace B (zeroCellPoint C q)) R) :
-    pathChainToPathFromChain H R _ x ∈ pathFromChainSkeleton b C H R 0 := by
+    cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _) x ∈
+      pathFromChainSkeleton b C H R 0 := by
   refine mem_pathFromChainSkeleton.2 <| cubicalChainModuleSupportedIn_mono ?_
-    ((range_pathChainToPathFromChain (H := H) (R := R) _).le (LinearMap.mem_range_self _ x))
+    ((range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom (H := H) (R := R) _).le
+      (LinearMap.mem_range_self _ x))
   intro γ hγ
   rw [mem_preimage, mem_singleton_iff] at hγ
   refine (mem_preimageSkeleton_iff _ _ _).2 ?_
@@ -119,39 +126,50 @@ theorem restrictScalars_pathFromChainSkeleton_zero :
     obtain ⟨q, hq⟩ := exists_range_subset_preimage_zeroCellPoint hσ
     exact Submodule.mem_iSup_of_mem q
       (cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn hq)
-  · rw [← range_pathChainToPathFromChain (H := H) (R := R)]
+  · rw [← range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom
+      (G := MooreLoopSpace B (zeroCellPoint C q)) (H := H) (R := R)]
     rintro _ ⟨x, rfl⟩
-    exact pathChainToPathFromChain_mem_pathFromChainSkeleton_zero q x
+    exact cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_mem_pathFromChainSkeleton_zero
+      q x
 
 /-- **Chains over distinct zero-cells are independent**: if a finite sum of chains over the fibres
 of distinct zero-cells vanishes, every term vanishes. -/
-theorem eq_zero_of_sum_pathChainToPathFromChain_eq_zero {s : Finset (cell C 0)}
+theorem eq_zero_of_sum_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_eq_zero
+    {s : Finset (cell C 0)}
     {x : ∀ q : cell C 0, cubicalChainModule (MoorePathBetween B b (zeroCellPoint C q))
       (MooreLoopSpace B (zeroCellPoint C q)) R}
-    (hx : ∑ q ∈ s, pathChainToPathFromChain H R _ (x q) = 0) {q : cell C 0} (hq : q ∈ s) :
+    (hx : ∑ q ∈ s,
+      cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _) (x q) = 0)
+    {q : cell C 0} (hq : q ∈ s) :
     x q = 0 :=
-  pathChainToPathFromChain_injective (H := H) (R := R) _ <| by
+  cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_injective (H := H) (R := R) _ <| by
     rw [map_zero]
     exact (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1
       (iSupIndep_cubicalChainModuleSupportedIn pairwise_disjoint_preimage_zeroCellPoint) s _
-      (fun q _ ↦ (range_pathChainToPathFromChain (H := H) (R := R) _).le
-        (LinearMap.mem_range_self _ (x q)))
+      (fun q _ ↦
+        (range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom (H := H) (R := R) _).le
+          (LinearMap.mem_range_self _ (x q)))
       hx q hq
 
 /-- A chain over the zero-skeleton is a finite sum of chains over the fibres of the zero-cells,
 and the chains over the fibres vanish off the finite set. -/
-private theorem exists_eq_sum_pathChainToPathFromChain
+private theorem exists_eq_sum_of_mem_pathFromChainSkeleton_zero
     {w : cubicalChainModule (MoorePathFrom B b) H R} (hw : w ∈ pathFromChainSkeleton b C H R 0) :
     ∃ (W : ∀ q : cell C 0, cubicalChainModule (MoorePathBetween B b (zeroCellPoint C q))
         (MooreLoopSpace B (zeroCellPoint C q)) R) (t : Finset (cell C 0)),
-      (∀ q ∉ t, W q = 0) ∧ w = ∑ q ∈ t, pathChainToPathFromChain H R _ (W q) := by
+      (∀ q ∉ t, W q = 0) ∧ w = ∑ q ∈ t,
+        cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _) (W q) := by
   have hw' : w ∈ ⨆ q : cell C 0, cubicalChainModuleSupportedIn H R
       (MoorePathFrom.endpoint B b ⁻¹' {(zeroCellPoint C q : B)}) := by
     rw [← restrictScalars_pathFromChainSkeleton_zero]
     exact hw
   obtain ⟨f, hf, rfl⟩ := (Submodule.mem_iSup_iff_exists_finsupp _ _).1 hw'
-  choose W hW using fun q ↦ (range_pathChainToPathFromChain (H := H) (R := R) _).ge (hf q)
-  refine ⟨W, f.support, fun q hq ↦ pathChainToPathFromChain_injective (H := H) (R := R) _ ?_, ?_⟩
+  choose W hW using fun q ↦
+    (range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom
+      (G := MooreLoopSpace B (zeroCellPoint C q)) (H := H) (R := R) _).ge (hf q)
+  refine ⟨W, f.support, fun q hq ↦
+    cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_injective (H := H) (R := R) _ ?_,
+    ?_⟩
   · rw [hW, map_zero, ← notMem_support_iff.1 hq]
   · simp only [Finsupp.sum, hW]
 
@@ -171,14 +189,16 @@ theorem exists_mapRange_eq_and_linearCombination_add_differential_sub_mem_pathFr
     (hy : mapRange.linearMap (cubicalChainDifferential (MooreLoopSpace B b) R) y = 0)
     (hw : w ∈ pathFromChainSkeleton b C H R 0)
     (hyw : linearCombination (loopChainAlgebra B b R)
-        (fun q ↦ pathChainToPathFromChain H R _ (pathChainPoint R (τ q))) y -
+        (fun q ↦ cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _)
+          (pathChainPoint R (τ q))) y -
       cubicalChainModuleDifferential (MoorePathFrom B b) H R w ∈
         pathFromChainSkeleton b C H R (-1)) :
     ∃ (y' : cell C 0 →₀ loopChainAlgebra B b R) (w' : cubicalChainModule (MoorePathFrom B b) H R),
       w' ∈ pathFromChainSkeleton b C H R 0 ∧
         mapRange.linearMap (cubicalChainDifferential (MooreLoopSpace B b) R) y' = y ∧
           linearCombination (loopChainAlgebra B b R)
-              (fun q ↦ pathChainToPathFromChain H R _ (pathChainPoint R (τ q))) y' +
+              (fun q ↦ cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _)
+                (pathChainPoint R (τ q))) y' +
             cubicalChainModuleDifferential (MoorePathFrom B b) H R w' - w ∈
               pathFromChainSkeleton b C H R (-1) := by
   classical
@@ -187,34 +207,38 @@ theorem exists_mapRange_eq_and_linearCombination_add_differential_sub_mem_pathFr
   rw [hbot, Submodule.mem_bot, sub_eq_zero] at hyw
   rw [hbot]
   -- Split `w` over the zero-cells, on a finite set `s` that also carries `y`.
-  obtain ⟨W, t, hWt, rfl⟩ := exists_eq_sum_pathChainToPathFromChain hw
+  obtain ⟨W, t, hWt, rfl⟩ := exists_eq_sum_of_mem_pathFromChainSkeleton_zero hw
   set s := t ∪ y.support
-  have hws : ∑ q ∈ t, pathChainToPathFromChain H R _ (W q) =
-      ∑ q ∈ s, pathChainToPathFromChain H R _ (W q) :=
+  have hws : ∑ q ∈ t, cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _) (W q) =
+      ∑ q ∈ s, cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _) (W q) :=
     Finset.sum_subset Finset.subset_union_left fun q _ hq ↦ by rw [hWt q hq, map_zero]
   have hys : linearCombination (loopChainAlgebra B b R)
-      (fun q ↦ pathChainToPathFromChain H R _ (pathChainPoint R (τ q))) y =
-        ∑ q ∈ s, pathChainToPathFromChain H R _ (y q • pathChainPoint R (τ q)) := by
+      (fun q ↦ cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _)
+        (pathChainPoint R (τ q))) y =
+        ∑ q ∈ s, cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _)
+          (y q • pathChainPoint R (τ q)) := by
     rw [linearCombination_apply]
-    simp_rw [← pathChainToPathFromChain_smul]
-    exact sum_of_support_subset _ Finset.subset_union_right _ fun q _ ↦ by
-      rw [zero_smul, map_zero]
+    simp_rw [← cubicalChainModuleLinearMap_smul _ toMoorePathFrom_smul]
+    exact sum_of_support_subset _ Finset.subset_union_right _ fun q _ ↦ by rw [zero_smul, map_zero]
   -- Over each zero-cell, `y q · [τ q]` bounds `W q`, since chains over distinct fibres are
   -- independent.
   have heq (q : cell C 0) (hq : q ∈ s) : y q • pathChainPoint R (τ q) =
       cubicalChainModuleDifferential _ _ R (W q) := by
-    refine sub_eq_zero.1 (eq_zero_of_sum_pathChainToPathFromChain_eq_zero (H := H)
-      (x := fun q ↦ y q • pathChainPoint R (τ q) - cubicalChainModuleDifferential _ _ R (W q))
-      ?_ hq)
-    simp only [map_sub, Finset.sum_sub_distrib, ← hys,
-      ← cubicalChainModuleDifferential_pathChainToPathFromChain, ← map_sum, ← hws, hyw, sub_self]
-  have hy' (q : cell C 0) : cubicalChainDifferential (MooreLoopSpace B b) R (y q) = 0 := by
-    simpa using DFunLike.congr_fun hy q
+    refine sub_eq_zero.1
+      (eq_zero_of_sum_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_eq_zero (H := H)
+        (x := fun q ↦ y q • pathChainPoint R (τ q) - cubicalChainModuleDifferential _ _ R (W q))
+        ?_ hq)
+    simp only [map_sub, Finset.sum_sub_distrib, ← hys, ← cubicalChainModuleDifferential_linearMap,
+      ← map_sum, ← hws, hyw, sub_self]
   -- Over each zero-cell, appending `τ q` is a quasi-isomorphism.
   choose! α' W' hα' hW' using fun q hq ↦
-    exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq (τ q) (hy' q) (heq q hq)
-  refine ⟨∑ q ∈ s, single q (α' q), ∑ q ∈ s, pathChainToPathFromChain H R _ (W' q),
-    Submodule.sum_mem _ fun q _ ↦ pathChainToPathFromChain_mem_pathFromChainSkeleton_zero q _,
+    exists_cubicalChainDifferential_eq_and_smul_pathChainPoint_add_eq (τ q)
+      (by simpa using DFunLike.congr_fun hy q) (heq q hq)
+  refine ⟨∑ q ∈ s, single q (α' q),
+    ∑ q ∈ s, cubicalChainModuleLinearMap (G' := H) R (toMoorePathFrom b _) (W' q),
+    Submodule.sum_mem _ fun q _ ↦
+      cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom_mem_pathFromChainSkeleton_zero
+        q _,
     ?_, ?_⟩
   · refine Finsupp.ext fun q ↦ ?_
     simp only [map_sum, mapRange.linearMap_apply, mapRange_single, Finset.sum_apply',
@@ -225,7 +249,7 @@ theorem exists_mapRange_eq_and_linearCombination_add_differential_sub_mem_pathFr
   · rw [Submodule.mem_bot, map_sum, map_sum, hws, ← Finset.sum_add_distrib,
       ← Finset.sum_sub_distrib]
     refine Finset.sum_eq_zero fun q hq ↦ ?_
-    rw [linearCombination_single, ← pathChainToPathFromChain_smul,
-      cubicalChainModuleDifferential_pathChainToPathFromChain, ← map_add, hW' q hq, sub_self]
+    rw [linearCombination_single, ← cubicalChainModuleLinearMap_smul _ toMoorePathFrom_smul,
+      cubicalChainModuleDifferential_linearMap, ← map_add, hW' q hq, sub_self]
 
 end TauCeti
