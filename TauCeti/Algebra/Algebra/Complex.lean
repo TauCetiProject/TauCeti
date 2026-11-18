@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Basic.Complex.Basic
+public import Mathlib.RingTheory.AlgebraTower
 
 /-!
 # The inverse of two in a complex algebra
@@ -24,7 +24,7 @@ namespace TauCeti.ComplexAlgebra
 /-- The inverse of two in a complex algebra, transported from the scalar inverse. -/
 noncomputable scoped instance invertibleTwoOfAlgebraComplex
     (A : Type*) [Semiring A] [Algebra ℂ A] : Invertible (2 : A) :=
-  (Invertible.map (algebraMap ℂ A) (2 : ℂ)).copy 2 ((map_ofNat (algebraMap ℂ A) 2).symm)
+  IsScalarTower.invertibleAlgebraCoeNat ℂ A 2
 
 /-- The inverse of two in a complex algebra is induced by the scalar inverse. -/
 theorem invOf_two_eq {A : Type*} [Semiring A] [Algebra ℂ A] [Invertible (2 : A)] :
