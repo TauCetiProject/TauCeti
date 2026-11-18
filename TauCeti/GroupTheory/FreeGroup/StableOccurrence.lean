@@ -9,23 +9,21 @@ public import Mathlib.Order.Lattice.Nat
 public import Mathlib.Data.Nat.ModEq
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.ProperPower
-import Mathlib.Tactic.Group
 import TauCeti.Data.List.Infix
 import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
 import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
-import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
 # Periods and stable occurrences of powers in free groups
 
 A *period* of the free group `F(α)` is a cyclically reduced element that is not a proper power
-(in particular `A ≠ 1`, since `1 = 1 ^ 2`). The reduced word of an element that is not a proper
-power is fixed by no nontrivial rotation. A power `A ^ q`, `q ≥ 1`, has a *stable occurrence* in
+(in particular `A ≠ 1`, since `1 = 1 ^ 2`). A power `A ^ q`, `q ≥ 1`, has a *stable occurrence* in
 an element `W` when the reduced word of `W` contains the word of `A` repeated `q + 2` times: the
 occurrence of `A ^ q` is flanked by a copy of `A` on each side. Two stable occurrences of powers
 of a period whose blocks share at least `|A|` letters overlap correctly: they start at positions
-congruent modulo `|A|` ([IFT], Lemma 57, for powers of the same sign). In [IFT] this is what makes
+congruent modulo `|A|` ([IFT], Lemma 57, for powers of the same sign), since the reduced word of an
+element that is not a proper power is fixed by no nontrivial rotation. In [IFT] this is what makes
 the maximal stable occurrences of powers of `A` in `W` pairwise disjoint, so that they cut `W` into
 its canonical `A`-decomposition `W = B₁ ∘ A ^ q₁ ∘ B₂ ∘ ⋯ ∘ A ^ q_k ∘ B_{k+1}`; the upper bound,
 the size and the rank defined here are read off the stable occurrences.
@@ -48,8 +46,6 @@ them, in the proof of the implicit function theorem over free groups.
 
 ## Main results
 
-* `FreeGroup.rotate_toWord_eq_self_iff`: the reduced word of an element that is not a proper
-  power is fixed only by the rotations by multiples of its length.
 * `FreeGroup.modEq_of_isStableOccurrence`: two stable occurrences of powers of a period that
   overlap in at least the length of the period, in particular two whose powers share a letter,
   overlap correctly.
@@ -74,6 +70,11 @@ the elements of the coefficient group; there is no coefficient group here.) -/
 def IsPeriod (A : FreeGroup α) : Prop :=
   IsCyclicallyReduced A.toWord ∧ ¬Group.IsProperPower A
 
+/-- An element is a period exactly when it is cyclically reduced and not a proper power. -/
+theorem isPeriod_iff {A : FreeGroup α} :
+    A.IsPeriod ↔ IsCyclicallyReduced A.toWord ∧ ¬Group.IsProperPower A :=
+  Iff.rfl
+
 /-- A period is cyclically reduced. -/
 theorem IsPeriod.isCyclicallyReduced {A : FreeGroup α} (hA : A.IsPeriod) :
     IsCyclicallyReduced A.toWord :=
@@ -92,37 +93,6 @@ theorem IsPeriod.ne_one {A : FreeGroup α} (hA : A.IsPeriod) : A ≠ 1 :=
 theorem isPeriod_of (a : α) : (of a).IsPeriod :=
   ⟨by simp [toWord_of], not_isProperPower_of a⟩
 
-/-- The reduced word of an element `A` that is not a proper power is fixed by no nontrivial
-rotation: rotating it by `k` gives it back exactly when the length of `A` divides `k`. -/
-theorem rotate_toWord_eq_self_iff {A : FreeGroup α} (hA : ¬Group.IsProperPower A) {k : ℕ} :
-    A.toWord.rotate k = A.toWord ↔ A.toWord.length ∣ k := by
-  refine ⟨fun h => ?_, fun ⟨c, hc⟩ => by rw [hc, List.rotate_length_mul]⟩
-  set p := A.toWord.take (k % A.toWord.length)
-  have hn : 0 < A.toWord.length :=
-    List.length_pos_iff.2 (toWord_eq_nil_iff.not.2 (Group.ne_one_of_not_isProperPower hA))
-  -- the prefix `p` is reduced, so its length is `k % |A|`
-  have hp : norm (mk p) = k % A.toWord.length := by
-    rw [norm, toWord_mk, (isReduced_toWord.infix (List.take_prefix _ _).isInfix).reduce_eq,
-      List.length_take, Nat.min_eq_left (Nat.mod_lt k hn).le]
-  -- rotating by `k` is conjugation by `mk p`, so `mk p` centralises `A` and is a power of `A`
-  have hconj : (mk p)⁻¹ * A * mk p = A := by
-    simpa only [h, mk_toWord] using conj_mk_rotate A.toWord k
-  have hc : mk p ∈ Subgroup.centralizer {A} := by
-    rw [Subgroup.mem_centralizer_singleton_iff]
-    nth_rw 1 [← hconj]
-    group
-  rw [IsFreeGroup.centralizer_singleton_eq_zpowers_self hA] at hc
-  obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.1 hc
-  rw [Nat.dvd_iff_mod_eq_zero]
-  by_contra hk
-  -- a nonzero power of `A` is at least as long as `A`, but `p` is shorter
-  have hm0 : m ≠ 0 := by
-    rintro rfl
-    exact hk (by simpa [← hm] using hp.symm)
-  have := norm_le_norm_zpow A hm0
-  rw [hm, hp] at this
-  exact (Nat.mod_lt k hn).not_ge this
-
 /-! ### Stable occurrences -/
 
 /-- The power `A ^ q`, `q ≥ 1`, has a stable occurrence in `W` at position `i` ([IFT], §7.1,
@@ -133,6 +103,13 @@ every `q ≥ 1`. -/
 def IsStableOccurrence (W A : FreeGroup α) (i q : ℕ) : Prop :=
   1 ≤ q ∧ ∃ u v : List (α × Bool),
     W.toWord = u ++ (List.replicate (q + 2) A.toWord).flatten ++ v ∧ u.length = i
+
+/-- The power `A ^ q` has a stable occurrence in `W` at position `i` exactly when `q ≥ 1` and the
+reduced word of `W` splits as `u ++ A ^ (q + 2) ++ v` with `u` of length `i`. -/
+theorem isStableOccurrence_iff {W A : FreeGroup α} {i q : ℕ} :
+    W.IsStableOccurrence A i q ↔ 1 ≤ q ∧ ∃ u v : List (α × Bool),
+      W.toWord = u ++ (List.replicate (q + 2) A.toWord).flatten ++ v ∧ u.length = i :=
+  Iff.rfl
 
 /-- The exponent of a stable occurrence is positive. -/
 theorem IsStableOccurrence.one_le {W A : FreeGroup α} {i q : ℕ} (h : W.IsStableOccurrence A i q) :
@@ -201,6 +178,14 @@ def IsMaxStableOccurrence (W A : FreeGroup α) (i q : ℕ) : Prop :=
   W.IsStableOccurrence A i q ∧ ∀ j r, W.IsStableOccurrence A j r → j ≤ i →
     i + q * A.toWord.length ≤ j + r * A.toWord.length → j = i ∧ r = q
 
+/-- A stable occurrence `(i, q)` of a power of `A` is maximal exactly when every stable occurrence
+`(j, r)` whose power `A ^ r` contains the power `A ^ q` is `(i, q)` itself. -/
+theorem isMaxStableOccurrence_iff {W A : FreeGroup α} {i q : ℕ} :
+    W.IsMaxStableOccurrence A i q ↔ W.IsStableOccurrence A i q ∧ ∀ j r,
+      W.IsStableOccurrence A j r → j ≤ i →
+        i + q * A.toWord.length ≤ j + r * A.toWord.length → j = i ∧ r = q :=
+  Iff.rfl
+
 /-- A maximal stable occurrence is a stable occurrence. -/
 theorem IsMaxStableOccurrence.isStableOccurrence {W A : FreeGroup α} {i q : ℕ}
     (h : W.IsMaxStableOccurrence A i q) : W.IsStableOccurrence A i q :=
@@ -240,6 +225,13 @@ theorem maxExp_le {W A : FreeGroup α} {r : ℕ}
     maxExp W A ≤ r :=
   csSup_le' fun q ⟨i, hq⟩ => h i q hq
 
+/-- A positive upper `A`-bound is attained: it is the exponent of a stable occurrence of a power
+of `A` or of `A⁻¹` in `W`. -/
+theorem exists_isStableOccurrence_maxExp {W A : FreeGroup α} (h : maxExp W A ≠ 0) :
+    ∃ i, W.IsStableOccurrence A i (maxExp W A) ∨ W.IsStableOccurrence A⁻¹ i (maxExp W A) :=
+  Nat.sSup_mem (Set.nonempty_iff_ne_empty.2 fun he => h (by simp [maxExp, he]))
+    (by_contra fun hb => h (Nat.sSup_of_not_bddAbove hb))
+
 /-- The canonical `N`-large `A`-decomposition of `W` has size `(N, r)` ([IFT], Definition 34, in
 the form used in Definition 38): every maximal stable occurrence of a power of `A` or of `A⁻¹` in
 `W` has exponent at least `N` or at most `r`, so that the words between the `N`-large powers have
@@ -249,12 +241,19 @@ cyclically reduced, no power of `A` has a stable occurrence and the condition ho
 def HasLargeSize (W A : FreeGroup α) (N r : ℕ) : Prop :=
   ∀ B ∈ ({A, A⁻¹} : Set (FreeGroup α)), ∀ i q, W.IsMaxStableOccurrence B i q → N ≤ q ∨ q ≤ r
 
+/-- The canonical `N`-large `A`-decomposition of `W` has size `(N, r)` exactly when every maximal
+stable occurrence of a power of `A` or of `A⁻¹` in `W` has exponent at least `N` or at most `r`. -/
+theorem hasLargeSize_iff {W A : FreeGroup α} {N r : ℕ} :
+    W.HasLargeSize A N r ↔ ∀ i q,
+      W.IsMaxStableOccurrence A i q ∨ W.IsMaxStableOccurrence A⁻¹ i q → N ≤ q ∨ q ≤ r := by
+  simp only [HasLargeSize, Set.forall_mem_insert, Set.mem_singleton_iff, forall_eq, or_imp,
+    forall_and]
+
 /-- The size condition treats the powers of `A` and of `A⁻¹` alike. -/
 @[simp]
 theorem hasLargeSize_inv {W A : FreeGroup α} {N r : ℕ} :
     W.HasLargeSize A⁻¹ N r ↔ W.HasLargeSize A N r := by
-  simp only [HasLargeSize, inv_inv, Set.forall_mem_insert, Set.mem_singleton_iff, forall_eq]
-  exact and_comm
+  simp only [hasLargeSize_iff, inv_inv, or_comm]
 
 /-- If no stable occurrence of a power of `A` or of `A⁻¹` in `W` has exponent above `r`, then the
 canonical `N`-large decomposition has size `(N, r)` for every `N`. -/
@@ -304,6 +303,21 @@ theorem largeRank_le {𝒜 : List (FreeGroup α)} {N : ℕ} {W : FreeGroup α} {
 theorem largeRank_le_length (𝒜 : List (FreeGroup α)) (N : ℕ) (W : FreeGroup α) :
     largeRank 𝒜 N W ≤ 𝒜.length :=
   largeRank_le fun _ hj _ _ _ _ => hj
+
+/-- A positive `N`-large rank is attained: if it is `j + 1`, then `𝒜[j] ^ q` or `𝒜[j]⁻¹ ^ q` has a
+stable occurrence in `W` for some `q ≥ N`. -/
+theorem exists_isStableOccurrence_of_largeRank_eq_add_one {𝒜 : List (FreeGroup α)} {N : ℕ}
+    {W : FreeGroup α} {j : ℕ} (h : largeRank 𝒜 N W = j + 1) :
+    ∃ (hj : j < 𝒜.length) (i q : ℕ), N ≤ q ∧
+      (W.IsStableOccurrence 𝒜[j] i q ∨ W.IsStableOccurrence 𝒜[j]⁻¹ i q) := by
+  by_contra hne
+  -- otherwise every index `k` with an `N`-large stable occurrence satisfies `k < j`
+  have : largeRank 𝒜 N W ≤ j := largeRank_le fun k hk i q hq hs => by
+    have := le_largeRank hk hq hs
+    rcases eq_or_ne k j with rfl | hkj
+    · exact absurd ⟨hk, i, q, hq, hs⟩ hne
+    · lia
+  lia
 
 /-! ### Examples -/
 
