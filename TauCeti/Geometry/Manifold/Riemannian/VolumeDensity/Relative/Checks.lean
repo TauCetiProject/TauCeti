@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
-public import TauCeti.Analysis.Calculus.Deriv.TranslatedPower
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 
 /-!
-# Dimension and homothety checks for relative volume density
+# Dimension-zero check for relative volume density
 
-The relative density of any two metrics is one in dimension zero. Multiplying a metric by
-the square of a positive constant multiplies its density by that constant to the dimension.
-The associated homothety polynomial has the expected first two derivatives at the identity.
+The relative density of any two metrics is one in dimension zero, so both parameter
+derivatives vanish for every family of metrics.
 -/
 
 public noncomputable section

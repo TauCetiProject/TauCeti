@@ -117,17 +117,6 @@ theorem relativeVolumeDensity_homothety
   congr 1
   ring
 
-/-- Along positive homothety factors `1+t`, the relative density is the dimension-th
-power of `1+t`. -/
-theorem relativeVolumeDensity_homothety_parameter
-    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
-    {t : ℝ} (ht : -1 < t) (x : M) :
-    relativeVolumeDensity g
-      (g.rescale (fun _ : M ↦ (1 + t) ^ 2) contMDiff_const
-        (fun _ ↦ pow_pos (by linarith : 0 < 1 + t) 2)) x =
-      (1 + t) ^ Module.finrank ℝ E :=
-  relativeVolumeDensity_homothety g (by linarith) x
-
 end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti.WithMetric
