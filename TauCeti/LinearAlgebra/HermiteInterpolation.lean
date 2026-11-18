@@ -194,14 +194,18 @@ noncomputable def hermiteQuotientEquiv :
       (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow).symm).trans <|
       Ideal.quotientInfRingEquivPiQuotient _ fun _ _ hij =>
         (Ideal.isCoprime_span_singleton_iff _ _).2
-          (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow) fun _ => rfl
+          (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow) fun r => by
+    ext i
+    simp only [← Ideal.Quotient.mk_algebraMap, algebraMap_eq, RingEquiv.trans_apply,
+      Ideal.quotEquivOfEq_mk, Pi.algebraMap_apply]
+    exact Ideal.quotientInfRingEquivPiQuotient_mk_apply _ _ _
 
 @[simp]
 theorem hermiteQuotientEquiv_mk (f : R[X]) (i : ι) :
     hermiteQuotientEquiv ha m (Ideal.Quotient.mk _ f) i = Ideal.Quotient.mk _ f := by
-  -- The quotient-identification map, CRT map and `AlgEquiv.ofRingEquiv` act on representatives
-  -- by definition, as in `Ideal.quotientInfRingEquivPiQuotient_mk_apply`.
-  rfl
+  rw [hermiteQuotientEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply,
+    Ideal.quotEquivOfEq_mk]
+  exact Ideal.quotientInfRingEquivPiQuotient_mk_apply _ _ _
 
 /-- The jet coordinates of `R[X] ⧸ (∏ i, (X - a i) ^ m i)` at the node `a i` are the local Taylor
 coordinates `TauCeti.taylorJetQuotientEquiv` of its image under the Chinese remainder isomorphism:
