@@ -52,9 +52,9 @@ The two steps are glued by the locality of the planar equation,
   it suffices to test the atlases of `X` and `M`.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_chartAt`, `TauCeti.isWeakPseudoholomorphic_iff_chartAt`:
   it suffices to test the preferred charts of `X` and `M`.
-* `TauCeti.isWeakPseudoholomorphicOn_iff_isWeakCauchyRiemannOn`: for maps from the plane into a
-  normed space it suffices to test the identity charts, so the predicate is the planar weak
-  equation `∂ₛu + J(z, u) ∂ₜu = 2ν(z, u)(1)` together with continuity.
+* `TauCeti.isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn_self`: for maps from
+  the plane into a normed space it suffices to test the identity charts, so the predicate is the
+  planar weak equation `∂ₛu + J(z, u) ∂ₜu = 2ν(z, u)(1)` together with continuity.
 
 ## References
 
@@ -320,7 +320,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
 /-- **Maps from the plane into a normed space.** For `X = ℂ` and `M = F`, it suffices to test the
 identity charts: a map `u` is weakly pseudoholomorphic on `s` exactly when it is continuous on `s`
 and solves the planar weak equation `∂ₛu + J(z, u) ∂ₜu = 2ν(z, u)(1)` on `s`. -/
-theorem isWeakPseudoholomorphicOn_iff_isWeakCauchyRiemannOn :
+theorem isWeakPseudoholomorphicOn_iff_continuousOn_isWeakCauchyRiemannOn_self :
     IsWeakPseudoholomorphicOn J ν p u s ↔ ContinuousOn u s ∧
       IsWeakCauchyRiemannOn p s (fun z v ↦ J.toEndomorphism (z, v))
         (fun z v ↦ (2 : ℝ) • (ν.val.tangentHom (z, v) (1 : ℂ) : F)) u := by
