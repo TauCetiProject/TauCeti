@@ -45,14 +45,15 @@ induction and an open embedding
 arrow is retained as a label of this action, including arrows acting trivially on `U`; the coarse
 diffeology does not see this ineffective part of the isotropy.
 
-Full functors with local-diffeomorphism object maps induce inductions on these coarse
-diffeologies (`CategoryTheory.Functor.isInduction_isomorphismClasses_map_of_isLocalDiffeomorph`).
-An essentially surjective such functor also induces a subduction
-(`CategoryTheory.Functor.isSubduction_isomorphismClasses_map_of_isLocalDiffeomorph`), hence
-identifies the coarse diffeologies and their smooth maps. This includes étale refinements and
-does not require faithfulness, properness or effective isotropy. The argument lifts plots through
-local object inverses after smooth transport along arrows; no dimension or separation assumption
-is needed.
+Full functors between groupoids with local-diffeomorphism object maps induce inductions on these
+coarse diffeologies
+(`CategoryTheory.Functor.isInduction_isomorphismClasses_map_of_isLocalDiffeomorph`).
+Essentially surjective functors with local-diffeomorphism object maps, full or not, induce
+subductions (`CategoryTheory.Functor.isSubduction_isomorphismClasses_map_of_isLocalDiffeomorph`).
+So full essentially surjective ones identify the coarse diffeologies and their smooth maps. This
+includes étale refinements and does not require faithfulness, properness or effective isotropy.
+The argument lifts plots through local object inverses after smooth transport along arrows; no
+dimension or separation assumption is needed.
 
 ## Main results
 
@@ -64,9 +65,9 @@ is needed.
 * `CategoryTheory.Functor.dSmooth_isomorphismClasses_map`: functors smooth on objects induce
   smooth coarse maps.
 * `CategoryTheory.Functor.isInduction_isomorphismClasses_map_of_isLocalDiffeomorph`: full functors
-  with local-diffeomorphism object maps induce coarse inductions.
+  between groupoids with local-diffeomorphism object maps induce coarse inductions.
 * `CategoryTheory.Functor.isSubduction_isomorphismClasses_map_of_isLocalDiffeomorph`: essentially
-  surjective such functors induce coarse subductions.
+  surjective functors with local-diffeomorphism object maps induce coarse subductions.
 
 ## References
 
@@ -171,21 +172,20 @@ theorem isOpen_range_of_mk_eq_isomorphismClassesMk
 
 end Transport
 
-section Manifold
+section LocalTransport
 
-variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  {C : Type*} [Groupoid C] [TopologicalSpace C] [ChartedSpace E C] [IsManifold 𝓘(ℝ, E) ∞ C]
+variable {E E' H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H] {J : ModelWithCorners ℝ E' H}
+  {C : Type*} [Quiver C] [TopologicalSpace C] [ChartedSpace E C]
   [DiffeologicalSpace C] [IsContMDiffCompatible E C]
-  [TopologicalSpace (Quiver.Total C)] [ChartedSpace E' (Quiver.Total C)]
+  [TopologicalSpace (Quiver.Total C)] [ChartedSpace H (Quiver.Total C)]
 
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ C] in
 /-- If the source is a smooth local diffeomorphism and the target is smooth, then following a
 local inverse of the source through an arrow `y ⟶ u` and then the target is a smooth local
 transport from `y` to `u`. -/
 private theorem exists_transport
-    (hs : IsLocalDiffeomorph 𝓘(ℝ, E') 𝓘(ℝ, E) ∞ (Quiver.Total.left : Quiver.Total C → C))
-    (ht : ContMDiff 𝓘(ℝ, E') 𝓘(ℝ, E) ∞ (Quiver.Total.right : Quiver.Total C → C))
+    (hs : IsLocalDiffeomorph J 𝓘(ℝ, E) ∞ (Quiver.Total.left : Quiver.Total C → C))
+    (ht : ContMDiff J 𝓘(ℝ, E) ∞ (Quiver.Total.right : Quiver.Total C → C))
     ⦃y u : C⦄ (f : y ⟶ u) :
     ∃ V : Set C, IsOpen[_root_.Diffeology.dTopology] V ∧ y ∈ V ∧ ∃ τ : C → C, τ y = u ∧
       _root_.Diffeology.DSmooth (V.domRestrict τ) ∧ ∀ z ∈ V, Nonempty (z ⟶ τ z) := by
@@ -194,11 +194,21 @@ private theorem exists_transport
   have harrow (z : C) (b : Quiver.Total C) (hb : b.left = z) : Nonempty (z ⟶ b.right) := by
     obtain ⟨_, _, g⟩ := b
     exact hb ▸ ⟨g⟩
-  refine ⟨ha.localInverse.source, ha.localInverse_open_source.isOpen_dTopology,
+  refine ⟨ha.localInverse.source, ha.localInverse_open_source.mono dTopology_le,
     ha.localInverse_mem_source, fun z ↦ (ha.localInverse z).right,
     congrArg Quiver.Total.right (ha.localInverse_left_inv ha.localInverse_mem_target),
     (ht.comp_contMDiffOn ha.contMDiffOn_localInverse).dSmooth_domRestrict,
     fun z hz ↦ harrow z _ (ha.localInverse_right_inv hz)⟩
+
+end LocalTransport
+
+section Manifold
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {C : Type*} [Groupoid C] [TopologicalSpace C] [ChartedSpace E C] [IsManifold 𝓘(ℝ, E) ∞ C]
+  [DiffeologicalSpace C] [IsContMDiffCompatible E C]
+  [TopologicalSpace (Quiver.Total C)] [ChartedSpace E' (Quiver.Total C)]
 
 /-- **Finite quotient charts of the coarse diffeology of a proper étale groupoid.** Let `C` be a
 groupoid whose objects and total arrows are smooth manifolds, with source and target smooth local
@@ -271,23 +281,23 @@ end Smooth
 
 section Refinement
 
-variable {E E' A : Type*}
+variable {E E' A H : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  [NormedAddCommGroup A] [NormedSpace ℝ A]
-  {C D : Type u} [Groupoid.{v} C] [Groupoid.{v} D]
+  [NormedAddCommGroup A] [NormedSpace ℝ A] [TopologicalSpace H] {J : ModelWithCorners ℝ A H}
+  {C D : Type u} [Category.{v} C] [Category.{v} D] [IsGroupoid D]
   [TopologicalSpace C] [ChartedSpace E C]
   [DiffeologicalSpace C] [IsContMDiffCompatible E C]
   [TopologicalSpace D] [ChartedSpace E' D]
   [DiffeologicalSpace D] [IsContMDiffCompatible E' D]
-  [TopologicalSpace (Quiver.Total D)] [ChartedSpace A (Quiver.Total D)]
+  [TopologicalSpace (Quiver.Total D)] [ChartedSpace H (Quiver.Total D)]
 
 /-- Lift an object plot locally through the object map, after transport along a chosen arrow.
 The equality is only on coarse classes, so ineffective arrows are immaterial. -/
 private theorem exists_coarse_plot_lift (F : C ⥤ D)
     (hF : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ F.obj)
-    (hs : IsLocalDiffeomorph 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (ht : ContMDiff 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D))
+    (hs : IsLocalDiffeomorph J 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
+    (ht : ContMDiff J 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D))
     {n : ℕ} {v : Set (EuclideanSpace ℝ (Fin n))} (hv : IsOpen v)
     {ℓ : EuclideanSpace ℝ (Fin n) → D} (hℓ : IsPlotOn v ℓ)
     {z : EuclideanSpace ℝ (Fin n)} (hzv : z ∈ v) (x : C) (e : ℓ z ≅ F.obj x) :
@@ -301,7 +311,7 @@ private theorem exists_coarse_plot_lift (F : C ⥤ D)
   have hτℓ := hℓ.comp_inter_preimage hτs
   have hlift := hτℓ.comp_inter_preimage k.contMDiffOn_localInverse.dSmooth_domRestrict
   have hW : IsOpen[_root_.Diffeology.dTopology] k.localInverse.source :=
-    k.localInverse_open_source.isOpen_dTopology
+    k.localInverse_open_source.mono dTopology_le
   -- Use the D-topology for plot continuity, retaining the original manifold topology in `k`.
   have hw : IsOpen (v ∩ ℓ ⁻¹' V) :=
     @ContinuousOn.isOpen_inter_preimage _ _ _ _root_.Diffeology.dTopology _ _ _
@@ -319,14 +329,15 @@ private theorem exists_coarse_plot_lift (F : C ⥤ D)
     (k.localInverse_right_inv hy.2)).trans <|
     _root_.Quotient.sound ⟨(asIso (hτV (ℓ y) hy.1.2).some).symm⟩
 
-/-- A full functor with local-diffeomorphism object map into an étale smooth groupoid induces
-an induction on coarse diffeologies. It need not be faithful or essentially surjective.
-Thus its coarse image has exactly the subspace diffeology, even when distinct isotropy
+/-- A full functor from a groupoid with local-diffeomorphism object map into an étale smooth
+groupoid induces an induction on coarse diffeologies. It need not be faithful or essentially
+surjective. Thus its coarse image has exactly the subspace diffeology, even when distinct isotropy
 arrows have the same image. -/
-theorem isInduction_isomorphismClasses_map_of_isLocalDiffeomorph (F : C ⥤ D) [F.Full]
+theorem isInduction_isomorphismClasses_map_of_isLocalDiffeomorph [IsGroupoid C] (F : C ⥤ D)
+    [F.Full]
     (hF : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ F.obj)
-    (hs : IsLocalDiffeomorph 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (ht : ContMDiff 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D)) :
+    (hs : IsLocalDiffeomorph J 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
+    (ht : ContMDiff J 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D)) :
     IsInduction (X := _root_.Quotient (isIsomorphicSetoid D))
       (Y := _root_.Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map F.toCatHom :
       _root_.Quotient (isIsomorphicSetoid C) → _root_.Quotient (isIsomorphicSetoid D)) := by
@@ -355,15 +366,12 @@ target coarse space descend along this map by `TauCeti.Diffeology.IsSubduction.d
 Neither fullness nor faithfulness is required. -/
 theorem isSubduction_isomorphismClasses_map_of_isLocalDiffeomorph (F : C ⥤ D) [F.EssSurj]
     (hF : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E') ∞ F.obj)
-    (hs : IsLocalDiffeomorph 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
-    (ht : ContMDiff 𝓘(ℝ, A) 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D)) :
+    (hs : IsLocalDiffeomorph J 𝓘(ℝ, E') ∞ (Quiver.Total.left : Quiver.Total D → D))
+    (ht : ContMDiff J 𝓘(ℝ, E') ∞ (Quiver.Total.right : Quiver.Total D → D)) :
     IsSubduction (X := _root_.Quotient (isIsomorphicSetoid C))
       (Q := _root_.Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom :
       _root_.Quotient (isIsomorphicSetoid C) → _root_.Quotient (isIsomorphicSetoid D)) where
-  surjective q := by
-    induction q using _root_.Quotient.inductionOn with
-    | h y =>
-      exact ⟨_root_.Quotient.mk _ (F.objPreimage y), _root_.Quotient.sound ⟨F.objObjPreimageIso y⟩⟩
+  surjective := F.isomorphismClasses_map_surjective
   dSmooth := F.dSmooth_isomorphismClasses_map hF.contMDiff.dSmooth
   locallyLifts {n p} hp := by
     refine locallyLifts_iff.mpr fun z _ ↦ ?_

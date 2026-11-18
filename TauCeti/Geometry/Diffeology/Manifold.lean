@@ -132,11 +132,12 @@ protected theorem _root_.ContMDiffOn.dSmooth_domRestrict
 
 -- The model space `E` is determined by the compatibility instance, not by the statement.
 include E in
-/-- An open set of a compatible manifold is open in the D-topology. This direction needs neither
-finite-dimensionality nor smooth atlas assumptions. -/
-protected theorem _root_.IsOpen.isOpen_dTopology {s : Set M} (hs : IsOpen s) :
-    IsOpen[dTopology] s :=
-  isOpen_iff_preimages_plots.mpr fun _ _ hp => hs.preimage hp.contMDiff.continuous
+/-- The D-topology of a compatible manifold is finer than its manifold topology: open sets of the
+manifold are D-open. This direction needs neither finite-dimensionality nor smooth atlas
+assumptions. -/
+theorem dTopology_le : (dTopology : TopologicalSpace M) ≤ tM :=
+  TopologicalSpace.le_def.mpr fun _ hs =>
+    isOpen_iff_preimages_plots.mpr fun _ _ hp => hs.preimage hp.contMDiff.continuous
 
 end
 
