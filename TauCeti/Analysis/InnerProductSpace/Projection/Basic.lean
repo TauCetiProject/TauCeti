@@ -19,7 +19,8 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
+same dimension. The orthogonal complement of a nonzero vector has codimension one, that of the
+span of a finite linearly independent family has codimension its cardinality, and fewer than
 `dim E` vectors have a common nonzero orthogonal vector, which may be taken of norm one. A nonzero
 vector followed by a linearly independent family in its orthogonal complement is linearly
 independent.
@@ -75,6 +76,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
   continuously varying family of subspaces stay linearly independent, and stay bases under a
   complementary dimension count.
+* `LinearIndependent.finrank_orthogonal_span`: `dim (span v)ᗮ = dim E - card ι` for a finite
+  linearly independent family `v`.
 * `LinearIndependent.finCons_orthogonal_span_singleton`: a nonzero vector `p` followed by a
   linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
 * `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
@@ -111,6 +114,18 @@ open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+
+/-- The inner product with the orthogonal-complement projection is squared distance, embedded
+in the scalar field. In particular, this inner product is real even for complex scalars. -/
+theorem inner_starProjection_orthogonal_eq_infDist_sq (x : E) :
+    inner 𝕜 x (Uᗮ.starProjection x) = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
+  have hfix : Uᗮ.starProjection (Uᗮ.starProjection x) = Uᗮ.starProjection x :=
+    starProjection_eq_self_iff.mpr (Uᗮ.starProjection_apply_mem x)
+  calc
+    inner 𝕜 x (Uᗮ.starProjection x) = inner 𝕜 (Uᗮ.starProjection x) (Uᗮ.starProjection x) := by
+      rw [Uᗮ.inner_starProjection_left_eq_right, hfix]
+    _ = (Metric.infDist x (U : Set E) : 𝕜) ^ 2 := by
+      rw [inner_self_eq_norm_sq_to_K, Uᗮ.norm_starProjection_eq_infDist, orthogonal_orthogonal]
 
 /-- One half of `norm_starProjection_comp_starProjection_comm`. -/
 private theorem norm_starProjection_comp_starProjection_le :
@@ -473,6 +488,16 @@ end TauCeti
 namespace LinearIndependent
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {m : ℕ}
+
+/-- The orthogonal complement of the span of a finite linearly independent family `v` has
+dimension `dim E - card ι`. -/
+theorem finrank_orthogonal_span [FiniteDimensional 𝕜 E] {ι : Type*} [Fintype ι] {v : ι → E}
+    (hv : LinearIndependent 𝕜 v) :
+    Module.finrank 𝕜 (Submodule.span 𝕜 (Set.range v))ᗮ =
+      Module.finrank 𝕜 E - Fintype.card ι := by
+  have h := (Submodule.span 𝕜 (Set.range v)).finrank_add_finrank_orthogonal
+  rw [finrank_span_eq_card hv] at h
+  omega
 
 /-- A nonzero vector followed by a linearly independent family in its orthogonal complement is
 linearly independent. -/

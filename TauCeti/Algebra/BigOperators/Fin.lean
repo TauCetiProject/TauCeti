@@ -33,7 +33,8 @@ A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a ca
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
 
-A product over the pairs `Fin 2 → α` is the double product over their two entries. A double sum
+A product over the pairs `Fin 2 → α` is the double product over their two entries, and a
+product over the triples `Fin 3 → α` is the triple product over their three entries. A double sum
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
 the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum over the pairs
 `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
@@ -58,6 +59,15 @@ says for blocks of equal length.
 public section
 
 namespace Fin
+
+/-- Reindex the product omitting an index by the order-preserving map `Fin.succAbove`. -/
+@[to_additive /-- Reindex the sum omitting an index by the order-preserving map
+`Fin.succAbove`. -/]
+theorem prod_univ_succAbove_eq_erase {M : Type*} [CommMonoid M] {n : ℕ}
+    (f : Fin (n + 1) → M) (j : Fin (n + 1)) :
+    (∏ i : Fin n, f (j.succAbove i)) = ∏ i ∈ Finset.univ.erase j, f i := by
+  classical
+  simp only [univ_succAbove n j, Finset.erase_cons, Finset.prod_map, coe_succAboveEmb]
 
 /-- Successive differences telescope to the endpoint difference. -/
 theorem sum_univ_succ_sub_castSucc {G : Type*} [AddCommGroup G] {n : ℕ}
@@ -202,6 +212,14 @@ theorem prod_finTwoArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 2 
     ∏ w, f w = ∏ p, ∏ q, f ![p, q] := by
   rw [← (finTwoArrowEquiv α).symm.prod_comp, prod_prod_type]
   rfl
+
+/-- **A product over the triples `Fin 3 → α`** is the triple product over their three entries. -/
+@[to_additive /-- **A sum over the triples `Fin 3 → α`** is the triple sum over their three
+entries. -/]
+theorem prod_finThreeArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 3 → α) → M) :
+    ∏ w, f w = ∏ p, ∏ q, ∏ r, f ![p, q, r] := by
+  rw [← (Fin.consEquiv fun _ ↦ α).prod_comp, prod_prod_type]
+  exact Finset.prod_congr rfl fun p _ ↦ prod_finTwoArrow fun v ↦ f (Fin.cons p v)
 
 end Fintype
 
