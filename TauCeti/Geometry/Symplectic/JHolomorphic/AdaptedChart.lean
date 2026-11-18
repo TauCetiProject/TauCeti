@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import TauCeti.Analysis.Calculus.AdaptedChart
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 public import TauCeti.Analysis.Calculus.NormalExtension
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Complex.Module
+import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 
 /-!
 # Coordinates adapted to a pseudoholomorphic disc
@@ -28,15 +31,17 @@ The coordinates are the inverse of the map
 `Φ (a, w) = u a + Θ_a w`,  `Θ_a w = ½ (W w - J(u a) W (i w))`
 
 (`TauCeti.holomorphicNormalExtension`), where `W : N →L[ℝ] V` is a real-linear frame of normal
-directions which is complex-linear at the base point, `J(u a₀) W = W i`, and spans a complement
-of the tangent line of `u` there. The frame `Θ_a` (`TauCeti.holomorphicNormalFrame`) is the
-complex-linear part of `W` for the structures `i` on `N` and `J(u a)` on `V`: wherever
-`J(u a)² = -1` it satisfies `J(u a) Θ_a = Θ_a i`, and it equals `W` at `a₀`; the same
-projection, applied to automorphisms of `V` rather than to normal frames, is
-`TauCeti.standardFrame`. So `Φ` is affine in the normal variable, and its
-derivative along the zero section, `(α, ω) ↦ du_a α + Θ_a ω`, intertwines `i` with `J(u a)`
-as soon as `u` is `J`-holomorphic at `a`. Only `u` and `J ∘ u` enter `Φ`, not the derivative of
-`u`, so for `u` and `J` of class `C^ℓ` the coordinates are of class `C^ℓ`.
+directions which is complex-linear at the base point, `J(u a₀) W = W i`, and spans a complement of
+the tangent line of `u` there. When `V` is finite-dimensional and `u` is immersed at `a₀`, such a
+frame exists with `N = ℂⁿ`: in a complex frame of `J(u a₀)` it is the orthogonal complement of the
+complex tangent line (`TauCeti.exists_complexLinear_and_bijective_coprod`). The frame `Θ_a`
+(`TauCeti.holomorphicNormalFrame`) is the complex-linear part of `W` for the structures `i` on `N`
+and `J(u a)` on `V`: wherever `J(u a)² = -1` it satisfies `J(u a) Θ_a = Θ_a i`, and it equals `W` at
+`a₀`; the same projection, applied to automorphisms of `V` rather than to normal frames, is
+`TauCeti.standardFrame`. So `Φ` is affine in the normal variable, and its derivative along the zero
+section, `(α, ω) ↦ du_a α + Θ_a ω`, intertwines `i` with `J(u a)` as soon as `u` is `J`-holomorphic
+at `a`. Only `u` and `J ∘ u` enter `Φ`, not the derivative of `u`, so for `u` and `J` of class `C^ℓ`
+the coordinates are of class `C^ℓ`.
 
 * **Existence.** By the inverse function theorem `Φ` restricts to a `C^ℓ` partial homeomorphism
   around `(a₀, 0)` with `C^ℓ` inverse (`TauCeti.exists_holomorphicAdaptedChart`). Flattening and
@@ -71,6 +76,8 @@ In the integrable model, `V = ℂ × N` with the structure `i`, the disc `a ↦ 
 * `TauCeti.hasFDerivAt_holomorphicNormalExtension_zero` and
   `TauCeti.coprod_holomorphicNormalFrame_apply_I_smul`: the derivative along the zero section and
   its complex linearity.
+* `TauCeti.exists_complexLinear_and_bijective_coprod`: a normal frame meeting the hypotheses of
+  the adapted chart.
 * `TauCeti.exists_holomorphicAdaptedChart`: the adapted chart, obtained from
   `TauCeti.exists_openPartialHomeomorph_normalExtension`.
 * `OpenPartialHomeomorph.pullbackEnd_of_coe_eq_holomorphicNormalExtension`: in the chart, the
@@ -216,6 +223,90 @@ theorem coprod_holomorphicNormalFrame_apply_I_smul {Du : ℂ →L[ℝ] V}
   simp only [ContinuousLinearMap.coe_coe] at hDu
   rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.coprod_apply, Prod.smul_fst,
     Prod.smul_snd, smul_eq_mul, hDu, ← apply_holomorphicNormalFrame_apply hsq, map_add]
+
+/-! ### Normal frames -/
+
+/-- **A normal frame in a complex frame.** Let `Ψ : ℂⁿ → V` be a real-linear isomorphism
+turning a complex structure `A` into multiplication by `i`, and `D : ℂ → V` a nonzero
+complex-linear map, `D i = A (D 1)`, so that `D α = Ψ (α w)` with `w = Ψ⁻¹ (D 1) ≠ 0`. Then
+`Ψ`, restricted to the orthogonal complement of the line `ℂ w`, is a normal frame `W` which is
+complex-linear for `i` and `A`, and `(α, v) ↦ D α + W v` is bijective. -/
+private theorem complexLinear_and_bijective_coprod_orthogonal {n : ℕ} {A : V →L[ℝ] V}
+    (Ψ : EuclideanSpace ℂ (Fin n) ≃L[ℝ] V) (hΨ : ∀ x, A (Ψ x) = Ψ (I • x)) {D : ℂ →L[ℝ] V}
+    (hDI : D I = A (D 1)) (hD : D ≠ 0) {w : EuclideanSpace ℂ (Fin n)} (hD1 : D 1 = Ψ w) :
+    (∀ v : (ℂ ∙ w)ᗮ, A (Ψ v) = Ψ ↑(I • v)) ∧ Function.Bijective
+      (D.coprod ((Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] V).comp
+        ((ℂ ∙ w)ᗮ.subtypeL.restrictScalars ℝ))) := by
+  have hDα (α : ℂ) : D α = Ψ (α • w) := by
+    have hα : α = α.re • (1 : ℂ) + α.im • I := by simp
+    calc D α = D (α.re • (1 : ℂ) + α.im • I) := by rw [← hα]
+      _ = α.re • Ψ w + α.im • Ψ (I • w) := by
+        rw [map_add, map_smul, map_smul, hDI, hD1, hΨ]
+      _ = Ψ ((α.re • (1 : ℂ) + α.im • I) • w) := by
+        rw [add_smul, smul_assoc, smul_assoc, one_smul, map_add, map_smul Ψ α.re w,
+          map_smul Ψ α.im (I • w)]
+      _ = Ψ (α • w) := by rw [← hα]
+  have hw0 : w ≠ 0 := fun h ↦ hD (ContinuousLinearMap.ext fun α ↦ by simp [hDα, h])
+  have hcoprod (p : ℂ × (ℂ ∙ w)ᗮ) : D.coprod ((Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] V).comp
+      ((ℂ ∙ w)ᗮ.subtypeL.restrictScalars ℝ)) p = Ψ (p.1 • w + p.2) := by
+    rw [ContinuousLinearMap.coprod_apply, hDα, map_add]
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+      Submodule.subtypeL_apply, ContinuousLinearEquiv.coe_coe]
+  refine ⟨fun v ↦ (hΨ v).trans (congrArg Ψ (Submodule.coe_smul I v).symm), fun p q hpq ↦ ?_,
+    fun x ↦ ?_⟩
+  · -- `α w + v` determines `α` and `v`, since `ℂ w` meets its orthogonal complement only in `0`.
+    rw [hcoprod, hcoprod] at hpq
+    have h := Ψ.injective hpq
+    have hmem : (p.1 - q.1) • w ∈ (ℂ ∙ w) ⊓ (ℂ ∙ w)ᗮ := by
+      refine ⟨Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self w), ?_⟩
+      have : (p.1 - q.1) • w = (q.2 : EuclideanSpace ℂ (Fin n)) - p.2 := by
+        rw [sub_smul]
+        linear_combination (norm := module) h
+      rw [this]
+      exact Submodule.sub_mem _ q.2.2 p.2.2
+    rw [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot, smul_eq_zero, sub_eq_zero] at hmem
+    have h1 : p.1 = q.1 := hmem.resolve_right hw0
+    rw [h1, add_right_inj] at h
+    exact Prod.ext h1 (Subtype.ext h)
+  · -- Every vector is `α w + v` with `v ⊥ w`.
+    obtain ⟨y, hy, z, hz, hyz⟩ := (ℂ ∙ w).exists_add_mem_mem_orthogonal (Ψ.symm x)
+    obtain ⟨α, rfl⟩ := Submodule.mem_span_singleton.1 hy
+    refine ⟨(α, ⟨z, hz⟩), ?_⟩
+    rw [hcoprod, ← hyz, Ψ.apply_symm_apply]
+
+/-- **Normal frames exist.** Let `A` be a complex structure on a finite-dimensional real normed
+space `V`, `A² = -1`, and `D : ℂ →L[ℝ] V` a nonzero map satisfying the Cauchy–Riemann equation
+`D 1 + A (D i) = 0`, that is complex-linear for `i` and `A`. Then there is a frame
+`W : ℂⁿ →L[ℝ] V`, complex-linear for `i` and `A`, whose image is a complement of the image of
+`D`: `(α, w) ↦ D α + W w` is bijective. For `A = J(u a₀)` and `D = du(a₀)` of a `J`-holomorphic
+disc `u` immersed at `a₀`, this is the frame required by `TauCeti.exists_holomorphicAdaptedChart`
+and `TauCeti.exists_holomorphicAdaptedChart_norm_pullbackEnd_sub_le`. -/
+theorem exists_complexLinear_and_bijective_coprod [FiniteDimensional ℝ V] {A : V →L[ℝ] V}
+    (hA : ∀ v, A (A v) = -v) {D : ℂ →L[ℝ] V} (hCR : D 1 + A (D I) = 0) (hD : D ≠ 0) :
+    ∃ (n : ℕ) (W : EuclideanSpace ℂ (Fin n) →L[ℝ] V),
+      (∀ w, A (W w) = W (I • w)) ∧ Function.Bijective (D.coprod W) := by
+  -- A complex frame `Ψ : ℂᵐ → V` of the structure `A`.
+  obtain ⟨m, Ψ, hΨ⟩ :=
+    ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul A
+      (ContinuousLinearMap.ext fun v ↦ by simpa using hA v)
+  have hΨI (x : EuclideanSpace ℂ (Fin m)) : A (Ψ x) = Ψ (I • x) := by simpa using congr($hΨ x)
+  have hDI : D I = A (D 1) := by
+    have h := congrArg A hCR
+    rw [map_add, hA, map_zero] at h
+    exact (add_neg_eq_zero.1 h).symm
+  obtain ⟨hW, hbij⟩ := complexLinear_and_bijective_coprod_orthogonal Ψ hΨI hDI hD
+    (Ψ.apply_symm_apply (D 1)).symm
+  -- Identify the orthogonal complement of the tangent line with a coordinate space.
+  set K := (ℂ ∙ Ψ.symm (D 1))ᗮ
+  let b := stdOrthonormalBasis ℂ K
+  refine ⟨Module.finrank ℂ K, (Ψ : EuclideanSpace ℂ (Fin m) →L[ℝ] V).comp
+    ((K.subtypeL.restrictScalars ℝ).comp
+      ((b.repr.symm.toContinuousLinearEquiv : _ →L[ℂ] K).restrictScalars ℝ)),
+    fun x ↦ ?_, ?_⟩
+  · simpa using hW (b.repr.symm x)
+  · convert hbij.comp (Function.bijective_id.prodMap b.repr.symm.bijective) using 1
+    funext p
+    simp
 
 /-! ### The adapted chart -/
 

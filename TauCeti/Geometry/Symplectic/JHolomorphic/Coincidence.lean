@@ -8,9 +8,7 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Geometry.Symplectic.JHolomorphic.AdaptedChart
-import Mathlib.Analysis.Complex.Conformal
-import Mathlib.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
+import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
 /-!
 # Accumulating coincidences of pseudoholomorphic discs
@@ -42,7 +40,8 @@ and differs from `i` by at most `C ‖w‖` at `(a, w)`. Write `u₁ = (φ, b)` 
   the Cauchy–Riemann equation of `u₁` makes `φ` holomorphic.
 
 The normal frame of the adapted coordinates is the orthogonal complement, in a complex frame of
-`J(u₀ a₀)`, of the complex tangent line of `u₀` at `a₀`. The disc `u₀` is assumed of class `C²`,
+`J(u₀ a₀)`, of the complex tangent line of `u₀` at `a₀`
+(`TauCeti.exists_complexLinear_and_bijective_coprod`). The disc `u₀` is assumed of class `C²`,
 the regularity of the adapted coordinates; for `J` of class `C²` this follows from elliptic
 regularity, which is not used here.
 
@@ -70,40 +69,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {J : V → V →L[ℝ] V}
   {u₀ u₁ : ℂ → V} {U U₁ : Set ℂ} {Ω : Set V} {a₀ b₀ : ℂ}
-
-/-- **A disc read in a chart.** If `u₁` satisfies `∂ₛu₁ + J(u₁) ∂ₜu₁ = 0` at `ζ` and `u₁ ζ` lies in
-the target of an open partial homeomorphism `e`, differentiable with its inverse there, then
-`e⁻¹ ∘ u₁` satisfies the Cauchy–Riemann equation for the structure `e.pullbackEnd J` read in
-the chart. -/
-private theorem fderiv_add_pullbackEnd_fderiv_eq_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {e : OpenPartialHomeomorph E V} {ζ : ℂ} (hζ : u₁ ζ ∈ e.target)
-    (hu : DifferentiableAt ℝ u₁ ζ) (he : DifferentiableAt ℝ e (e.symm (u₁ ζ)))
-    (hes : DifferentiableAt ℝ e.symm (u₁ ζ))
-    (hCR : fderiv ℝ u₁ ζ 1 + J (u₁ ζ) (fderiv ℝ u₁ ζ I) = 0) :
-    fderiv ℝ (e.symm ∘ u₁) ζ 1 +
-      e.pullbackEnd J ((e.symm ∘ u₁) ζ) (fderiv ℝ (e.symm ∘ u₁) ζ I) = 0 := by
-  -- The derivative of `e⁻¹` intertwines `J` with the structure read in the chart.
-  have h := e.symm.symm_pullbackEnd_comp_fderiv J (e.symm_source ▸ hζ) hes he
-  rw [e.symm_symm] at h
-  rw [(hes.hasFDerivAt.comp ζ hu.hasFDerivAt).fderiv, Function.comp_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ← ContinuousLinearMap.comp_apply (e.pullbackEnd J _), h, ContinuousLinearMap.comp_apply,
-    ← map_add, hCR, map_zero]
-
-/-- The first component of a map `ψ : ℂ → ℂ × N` with `∂ₛψ + i ∂ₜψ = 0` at `ζ` is complex
-differentiable at `ζ`. -/
-private theorem differentiableAt_fst_of_fderiv_add_I_smul_eq_zero {N : Type*}
-    [NormedAddCommGroup N] [NormedSpace ℂ N] {ψ : ℂ → ℂ × N} {ζ : ℂ}
-    (hψ : DifferentiableAt ℝ ψ ζ) (hCR : fderiv ℝ ψ ζ 1 + I • fderiv ℝ ψ ζ I = 0) :
-    DifferentiableAt ℂ (fun ζ ↦ (ψ ζ).1) ζ := by
-  have hφ : HasFDerivAt (fun ζ ↦ (ψ ζ).1) ((ContinuousLinearMap.fst ℝ ℂ N).comp (fderiv ℝ ψ ζ))
-      ζ :=
-    hψ.hasFDerivAt.fst
-  have h1 : (fderiv ℝ ψ ζ 1).1 + I * (fderiv ℝ ψ ζ I).1 = 0 := by
-    simpa using congrArg Prod.fst hCR
-  refine differentiableAt_complex_iff_differentiableAt_real.2 ⟨hφ.differentiableAt, ?_⟩
-  simp only [hφ.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', smul_eq_mul]
-  linear_combination (-I) * h1 + (fderiv ℝ ψ ζ I).1 * I_sq
 
 section NormalComponent
 
@@ -137,7 +102,8 @@ theorem hasSimilarityFactorizationAt_snd_of_norm_sub_le {ψ : ℂ → ℂ × N}
 /-- **Accumulating coincidences in a prescribed normal frame.** The form of
 `TauCeti.exists_analyticAt_eventuallyEq_comp_of_frequently_mem_image` in which the normal frame
 `W` of the adapted coordinates is given. -/
-private theorem exists_analyticAt_eventuallyEq_comp_of_frame [CompleteSpace V] {W : N →L[ℝ] V}
+private theorem exists_analyticAt_eventuallyEq_comp_of_frame [CompleteSpace V] [CompleteSpace N]
+    {W : N →L[ℝ] V}
     (hU : IsOpen U) (hΩ : IsOpen Ω) (ha₀ : a₀ ∈ U) (hu₀ : ContDiffOn ℝ 2 u₀ U)
     (hJ : ContDiffOn ℝ 2 J Ω) (hu₀Ω : MapsTo u₀ U Ω)
     (hsq : ∀ a ∈ U, ∀ v, J (u₀ a) (J (u₀ a) v) = -v)
@@ -169,7 +135,7 @@ private theorem exists_analyticAt_eventuallyEq_comp_of_frame [CompleteSpace V] {
   have hCRψ {ζ : ℂ} (hζ : ζ ∈ Ω₁) :
       fderiv ℝ ψ ζ 1 + e.pullbackEnd J (ψ ζ) (fderiv ℝ ψ ζ I) = 0 := by
     have hζs : e.symm (u₁ ζ) ∈ e.source := e.map_target hζ.2.1
-    exact fderiv_add_pullbackEnd_fderiv_eq_zero hζ.2.1
+    exact e.fderiv_add_pullbackEnd_fderiv_eq_zero hζ.2.1
       ((hu₁.differentiableOn one_ne_zero ζ hζ.1).differentiableAt (hU₁.mem_nhds hζ.1))
       ((hc.differentiableOn two_ne_zero _ hζs).differentiableAt (e.open_source.mem_nhds hζs))
       ((hcs.differentiableOn two_ne_zero _ hζ.2.1).differentiableAt
@@ -191,13 +157,13 @@ private theorem exists_analyticAt_eventuallyEq_comp_of_frame [CompleteSpace V] {
     (hev.mono fun ζ ⟨hζ, hψeq⟩ ↦ ?_), ?_, hev.mono fun ζ ⟨hζ, hψeq⟩ ↦ ?_⟩
   · have hCR := hCRψ hζ
     rw [hψeq, hstd _ (hψeq ▸ e.map_target hζ.2.1)] at hCR
-    exact differentiableAt_fst_of_fderiv_add_I_smul_eq_zero
-      ((hψc.differentiableOn one_ne_zero ζ hζ).differentiableAt (hΩ₁o.mem_nhds hζ))
-      (by simpa using hCR)
-  · beta_reduce
-    rw [hψ, Function.comp_apply, hub, hsymm0 a₀ h₀]
-  · rw [Function.comp_apply, ← he0 (ψ ζ).1, ← hψeq]
-    exact (e.right_inv hζ.2.1).symm
+    refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
+      ((hψc.differentiableOn one_ne_zero ζ hζ).differentiableAt (hΩ₁o.mem_nhds hζ))).2
+      ((smul_eq_zero_iff_right (two_ne_zero' ℂ)).1 ?_)).fst
+    rw [← fderiv_apply_one_add_I_smul_fderiv_apply_I]
+    simpa using hCR
+  · simp only [hψ, Function.comp_apply, hub, hsymm0 a₀ h₀]
+  · rw [Function.comp_apply, ← he0 (ψ ζ).1, ← hψeq, hψ, Function.comp_apply, e.right_inv hζ.2.1]
 
 end NormalComponent
 
@@ -220,53 +186,6 @@ private theorem eq_of_frequently_mem_image (hu₀ : ContinuousAt u₀ a₀) (hu�
           exact (mem_ball.1 ha).le
     _ = ε := add_halves ε
 
-/-- **A normal frame for the adapted coordinates.** Let `Ψ : ℂⁿ → V` be a real-linear isomorphism
-turning a complex structure `A` into multiplication by `i`, and `D : ℂ → V` a nonzero
-complex-linear map, `D i = A (D 1)`, so that `D α = Ψ (α w)` with `w = Ψ⁻¹ (D 1) ≠ 0`. Then
-`Ψ`, restricted to the orthogonal complement of the line `ℂ w`, is a normal frame `W` which is
-complex-linear for `i` and `A`, and `(α, v) ↦ D α + W v` is bijective. -/
-private theorem complexLinear_and_bijective_coprod_orthogonal {n : ℕ} {A : V →L[ℝ] V}
-    (Ψ : EuclideanSpace ℂ (Fin n) ≃L[ℝ] V) (hΨ : ∀ x, A (Ψ x) = Ψ (I • x)) {D : ℂ →L[ℝ] V}
-    (hDI : D I = A (D 1)) (hD : D ≠ 0) {w : EuclideanSpace ℂ (Fin n)} (hD1 : D 1 = Ψ w) :
-    (∀ v : (ℂ ∙ w)ᗮ, A (Ψ v) = Ψ ↑(I • v)) ∧ Function.Bijective
-      (D.coprod ((Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] V).comp
-        ((ℂ ∙ w)ᗮ.subtypeL.restrictScalars ℝ))) := by
-  have hDα (α : ℂ) : D α = Ψ (α • w) := by
-    have hα : α = α.re • (1 : ℂ) + α.im • I := by simp
-    calc D α = D (α.re • (1 : ℂ) + α.im • I) := by rw [← hα]
-      _ = α.re • Ψ w + α.im • Ψ (I • w) := by
-        rw [map_add, map_smul, map_smul, hDI, hD1, hΨ]
-      _ = Ψ ((α.re • (1 : ℂ) + α.im • I) • w) := by
-        rw [add_smul, smul_assoc, smul_assoc, one_smul, map_add, map_smul Ψ α.re w,
-          map_smul Ψ α.im (I • w)]
-      _ = Ψ (α • w) := by rw [← hα]
-  have hw0 : w ≠ 0 := fun h ↦ hD (ContinuousLinearMap.ext fun α ↦ by simp [hDα, h])
-  have hcoprod (p : ℂ × (ℂ ∙ w)ᗮ) : D.coprod ((Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] V).comp
-      ((ℂ ∙ w)ᗮ.subtypeL.restrictScalars ℝ)) p = Ψ (p.1 • w + p.2) := by
-    rw [ContinuousLinearMap.coprod_apply, hDα, map_add]
-    rfl
-  refine ⟨fun v ↦ (hΨ v).trans (congrArg Ψ (Submodule.coe_smul I v).symm), fun p q hpq ↦ ?_,
-    fun x ↦ ?_⟩
-  · -- `α w + v` determines `α` and `v`, since `ℂ w` meets its orthogonal complement only in `0`.
-    rw [hcoprod, hcoprod] at hpq
-    have h := Ψ.injective hpq
-    have hmem : (p.1 - q.1) • w ∈ (ℂ ∙ w) ⊓ (ℂ ∙ w)ᗮ := by
-      refine ⟨Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self w), ?_⟩
-      have : (p.1 - q.1) • w = (q.2 : EuclideanSpace ℂ (Fin n)) - p.2 := by
-        rw [sub_smul]
-        linear_combination (norm := module) h
-      rw [this]
-      exact Submodule.sub_mem _ q.2.2 p.2.2
-    rw [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot, smul_eq_zero, sub_eq_zero] at hmem
-    have h1 : p.1 = q.1 := hmem.resolve_right hw0
-    rw [h1, add_right_inj] at h
-    exact Prod.ext h1 (Subtype.ext h)
-  · -- Every vector is `α w + v` with `v ⊥ w`.
-    obtain ⟨y, hy, z, hz, hyz⟩ := (ℂ ∙ w).exists_add_mem_mem_orthogonal (Ψ.symm x)
-    obtain ⟨α, rfl⟩ := Submodule.mem_span_singleton.1 hy
-    refine ⟨(α, ⟨z, hz⟩), ?_⟩
-    rw [hcoprod, ← hyz, Ψ.apply_symm_apply]
-
 /-- **Accumulating coincidences factor a pseudoholomorphic disc** (McDuff–Salamon, Lemma 2.4.3).
 Let `J` be of class `C²` on an open set `Ω` of a finite-dimensional real normed space `V`, and let
 `u₀` be a `J`-holomorphic disc of class `C²` on an open `U ∋ a₀` with values in `Ω`, where
@@ -287,19 +206,8 @@ theorem exists_analyticAt_eventuallyEq_comp_of_frequently_mem_image [FiniteDimen
   have hub : u₁ b₀ = u₀ a₀ := eq_of_frequently_mem_image
     (hu₀.continuousOn.continuousAt (hU.mem_nhds ha₀))
     (hu₁.continuousOn.continuousAt (hU₁.mem_nhds hb₀)) hacc
-  -- A complex frame `Ψ : ℂⁿ → V` of the structure `J(u₀ a₀)`.
-  have hJ₀ : J (u₀ a₀) ∘L J (u₀ a₀) = -ContinuousLinearMap.id ℝ V :=
-    ContinuousLinearMap.ext fun v ↦ by simpa using hsq a₀ ha₀ v
-  obtain ⟨n, Ψ, hΨ⟩ :=
-    ContinuousLinearMap.exists_continuousLinearEquiv_euclideanSpace_comp_eq_comp_I_smul _ hJ₀
-  have hΨI (x : EuclideanSpace ℂ (Fin n)) : J (u₀ a₀) (Ψ x) = Ψ (I • x) := by
-    simpa using congr($hΨ x)
-  have hDI : fderiv ℝ u₀ a₀ I = J (u₀ a₀) (fderiv ℝ u₀ a₀ 1) := by
-    have h := congrArg (J (u₀ a₀)) (hCR₀ a₀ ha₀)
-    rw [map_add, hsq a₀ ha₀, map_zero] at h
-    exact (add_neg_eq_zero.1 h).symm
-  obtain ⟨hW, hbij⟩ := complexLinear_and_bijective_coprod_orthogonal Ψ hΨI hDI hdu₀
-    (Ψ.apply_symm_apply (fderiv ℝ u₀ a₀ 1)).symm
+  obtain ⟨n, W, hW, hbij⟩ :=
+    exists_complexLinear_and_bijective_coprod (hsq a₀ ha₀) (hCR₀ a₀ ha₀) hdu₀
   exact exists_analyticAt_eventuallyEq_comp_of_frame hU hΩ ha₀ hu₀ hJ hu₀Ω hsq hCR₀ hW hbij hU₁
     hb₀ hu₁ hCR₁ hub hacc
 
@@ -319,9 +227,8 @@ theorem exists_analyticAt_eventuallyEq_comp_of_tendsto [FiniteDimensional ℝ V]
     (hzζ : ∀ k, u₀ (z k) = u₁ (ζ k)) :
     ∃ φ : ℂ → ℂ, AnalyticAt ℂ φ b₀ ∧ φ b₀ = a₀ ∧ u₁ =ᶠ[𝓝 b₀] u₀ ∘ φ := by
   refine exists_analyticAt_eventuallyEq_comp_of_frequently_mem_image hU hΩ ha₀ hu₀ hJ hu₀Ω hsq
-    hCR₀ hdu₀ hU₁ hb₀ hu₁ hCR₁ fun S hS hnot ↦ ?_
+    hCR₀ hdu₀ hU₁ hb₀ hu₁ hCR₁ fun S hS ↦ ?_
   have hζ' : Tendsto ζ atTop (𝓝[≠] b₀) := tendsto_nhdsWithin_iff.2 ⟨hζ, .of_forall hζb₀⟩
-  obtain ⟨k, hk, hkS⟩ := ((hζ'.eventually hnot).and (hz.eventually hS)).exists
-  exact hk ⟨z k, hkS, hzζ k⟩
+  exact hζ'.frequently ((hz.eventually hS).frequently.mono fun k hk ↦ ⟨z k, hk, hzζ k⟩)
 
 end TauCeti
