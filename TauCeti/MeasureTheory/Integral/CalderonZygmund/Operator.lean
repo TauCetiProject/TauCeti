@@ -32,7 +32,8 @@ basic theorems about this class.
   only on `p`, `C`, `δ`, a bound for `‖T‖` and the dimension of `V`
   (`TauCeti.exists_mul_volume_lt_enorm_le_of_hasStandardKernel`,
   `TauCeti.exists_eLpNorm_le_of_hasStandardKernel`). A standard kernel satisfies Hörmander's
-  condition with a bound depending only on `C`, `δ` and `V`, so these are the real
+  condition with a bound depending only on `C`, `δ` and `V`
+  (`TauCeti.HasStandardKernel.setLIntegral_enorm_sub_le`), so these are the real
   Calderón–Zygmund theorems under Hörmander's condition on `V`
   (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`, `TauCeti.exists_eLpNorm_le_of_hormander`),
   whose hypotheses on the adjoint the adjoint theorem supplies.
@@ -190,18 +191,34 @@ private theorem norm_offDiag_le (h : HasStandardKernel T K C δ) {x y : V} (hxy 
   rw [offDiag_of_ne hxy, Real.rpow_neg dist_nonneg, Real.rpow_natCast, ← div_eq_mul_inv]
   exact h.norm_le x y hxy
 
-private theorem norm_offDiag_sub_le (h : HasStandardKernel T K C δ) {x y y' : V}
-    (hy : 2 * dist y y' < dist x y') :
-    ‖offDiag K x y - offDiag K x y'‖ ≤
-      C * (dist y y' ^ δ * dist x y' ^ (-(Module.finrank ℝ V + δ))) := by
+omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
+/-- Changing a kernel on the diagonal does not change its differences on the set where Hörmander's
+condition integrates. -/
+private theorem offDiag_sub_offDiag {x y y' : V} (hy : 2 * dist y y' < dist x y') :
+    offDiag K x y - offDiag K x y' = K x y - K x y' := by
   have hxy' : x ≠ y' := dist_pos.1 ((mul_nonneg zero_le_two dist_nonneg).trans_lt hy)
   have hxy : x ≠ y := by
     rintro rfl
     linarith [dist_nonneg (x := x) (y := y')]
-  rw [offDiag_of_ne hxy, offDiag_of_ne hxy', norm_sub_rev, Real.rpow_neg dist_nonneg,
-    ← mul_assoc, ← div_eq_mul_inv, dist_comm y y']
+  rw [offDiag_of_ne hxy, offDiag_of_ne hxy']
+
+/-- The smoothness estimate in the second variable, in the form taken by Hörmander's condition. -/
+private theorem norm_sub_le_mul_rpow (h : HasStandardKernel T K C δ) {x y y' : V}
+    (hy : 2 * dist y y' < dist x y') :
+    ‖K x y - K x y'‖ ≤ C * (dist y y' ^ δ * dist x y' ^ (-(Module.finrank ℝ V + δ))) := by
+  rw [norm_sub_rev, Real.rpow_neg dist_nonneg, ← mul_assoc, ← div_eq_mul_inv, dist_comm y y']
   exact (le_add_of_nonneg_right (norm_nonneg _)).trans
     (h.norm_sub_add_norm_sub_le x y' y (by rwa [dist_comm y' y]))
+
+/-- **Hörmander's condition.** A standard kernel satisfies Hörmander's integral condition, with a
+bound depending only on `C`, `δ` and `V`. -/
+theorem setLIntegral_enorm_sub_le (h : HasStandardKernel T K C δ) (y y' : V) :
+    ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖K x y - K x y'‖ₑ ≤
+      C * volume (ball (0 : V) 1) *
+        ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) :=
+  setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow
+    (fun r hr ↦ by rw [Measure.addHaar_closedBall _ _ hr.le, Real.rpow_natCast, mul_comm])
+    h.exponent_pos fun _ hx ↦ h.norm_sub_le_mul_rpow hx
 
 section OpKernel
 
@@ -222,22 +239,21 @@ private theorem norm_opKernel_le (h : HasStandardKernel T K C δ) (x y : V) (hxy
     ‖opKernel F 𝕜 K x y‖ ≤ C * dist x y ^ (-(Module.finrank ℝ V : ℝ)) :=
   (ContinuousLinearMap.norm_smul_id_le _).trans (h.norm_offDiag_le hxy)
 
-private theorem norm_opKernel_sub_le (h : HasStandardKernel T K C δ) (x y y' : V)
-    (hy : 2 * dist y y' < dist x y') :
-    ‖opKernel F 𝕜 K x y - opKernel F 𝕜 K x y'‖ ≤
-      C * (dist y y' ^ δ * dist x y' ^ (-(Module.finrank ℝ V + δ))) := by
-  rw [opKernel, opKernel, ← sub_smul]
-  exact (ContinuousLinearMap.norm_smul_id_le _).trans (h.norm_offDiag_sub_le hy)
+omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
+private theorem norm_opKernel_sub_le {x y y' : V} (hy : 2 * dist y y' < dist x y') :
+    ‖opKernel F 𝕜 K x y - opKernel F 𝕜 K x y'‖ ≤ ‖K x y - K x y'‖ := by
+  rw [opKernel, opKernel, ← sub_smul, offDiag_sub_offDiag hy]
+  exact ContinuousLinearMap.norm_smul_id_le _
 
-/-- A standard kernel satisfies Hörmander's condition, with a bound depending only on `C`, `δ`
-and `V`. -/
+/-- Hörmander's condition (`TauCeti.HasStandardKernel.setLIntegral_enorm_sub_le`) for the
+operator-valued kernel. -/
 private theorem setLIntegral_enorm_opKernel_sub_le (h : HasStandardKernel T K C δ) (y y' : V) :
     ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖opKernel F 𝕜 K x y - opKernel F 𝕜 K x y'‖ₑ ≤
       C * volume (ball (0 : V) 1) *
         ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) :=
-  setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow
-    (fun r hr ↦ by rw [Measure.addHaar_closedBall _ _ hr.le, Real.rpow_natCast, mul_comm])
-    h.exponent_pos fun x hx ↦ h.norm_opKernel_sub_le x y y' hx
+  (setLIntegral_mono' (measurableSet_lt measurable_const (by fun_prop))
+    fun _ hx ↦ eNorm_le_iff_norm_le.2 (norm_opKernel_sub_le hx)).trans
+    (h.setLIntegral_enorm_sub_le y y')
 
 private theorem ae_apply_eq_integral_opKernel (h : HasStandardKernel T K C δ)
     (f : Lp F 2 (volume : Measure V)) (s : Set V) (hs : IsCompact s)
