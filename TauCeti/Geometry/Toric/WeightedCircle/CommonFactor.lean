@@ -164,7 +164,14 @@ theorem forall_weightedHopf_eq_imp_mem_orbit_iff (ha : 0 < a) (hb : 0 < b) (hε 
   obtain ⟨t, ht, hz⟩ := exists_pos_mem_weightedEllipsoid ha hb hε
     (r := (1, 1)) (by simp [Prod.ext_iff])
   set ζ : Circle := Circle.exp (2 * π / a)
-  have hζ : ζ ^ a = 1 := (Circle.exp_pow_eq_one_iff ha.ne').2 ⟨1, by ring⟩
+  have hprim : IsPrimitiveRoot ζ a := by
+    refine IsPrimitiveRoot.of_map_of_injective (f := Circle.coeHom) ?_ Circle.coe_injective
+    convert Complex.isPrimitiveRoot_exp a ha.ne' using 2
+    change Complex.exp _ = Complex.exp _
+    congr 1
+    push_cast
+    ring
+  have hζ : ζ ^ a = 1 := hprim.pow_eq_one
   have hw : ((t : ℂ) ^ a * 1, (ζ : ℂ) * ((t : ℂ) ^ b * 1)) ∈ weightedEllipsoid a b ε := by
     simpa using hz
   have hhopf : weightedHopf hε ⟨_, hz⟩ = weightedHopf hε ⟨_, hw⟩ := by
@@ -187,20 +194,12 @@ theorem forall_weightedHopf_eq_imp_mem_orbit_iff (ha : 0 < a) (hb : 0 < b) (hε 
     have h₂ := congrArg Prod.snd hu
     simp only [weightedRotation_snd, mul_one] at h₂
     exact Circle.coe_injective (by rw [Circle.coe_pow]; exact mul_right_cancel₀ htb h₂)
-  -- `ζ ^ (a / g) = 1` would make `2π / a` a multiple of `2π g / a`.
+  -- `ζ` has order `a`, but `ζ ^ (a / g) = 1` with `0 < a / g < a`.
   have hζg : ζ ^ (a / a.gcd b) = 1 := by
     rw [← hub, ← pow_mul, ← Nat.mul_div_assoc _ (a.gcd_dvd_left b), mul_comm b a,
       Nat.mul_div_assoc _ (a.gcd_dvd_right b), pow_mul, hua, one_pow]
-  obtain ⟨m, hm⟩ := (Circle.exp_pow_eq_one_iff hag).1 hζg
-  have hg' : ((a.gcd b : ℕ) : ℝ) ≠ 0 := by positivity
-  rw [Nat.cast_div (a.gcd_dvd_left b) hg'] at hm
-  have ha' : (a : ℝ) ≠ 0 := by positivity
-  have hmg : (m : ℝ) * a.gcd b = 1 := by
-    field_simp at hm
-    nlinarith [Real.pi_pos]
-  have hdvd : (a.gcd b : ℤ) ∣ 1 := ⟨m, by rw [mul_comm]; exact_mod_cast hmg.symm⟩
-  have := Int.eq_one_of_dvd_one (by positivity) hdvd
-  omega
+  exact (Nat.div_lt_self ha hg).not_ge
+    (Nat.le_of_dvd (Nat.pos_of_ne_zero hag) (hprim.dvd_of_pow_eq_one _ hζg))
 
 /-- The ellipsoid for the weights `(a, b)` at level `ε` is the ellipsoid for the reduced weights
 `(a / gcd(a, b), b / gcd(a, b))` at level `ε / gcd(a, b)`. -/
