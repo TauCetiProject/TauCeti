@@ -168,9 +168,8 @@ theorem IsNondegenerate.map (hψ : ψ.IsNondegenerate) (f : Λ →+* Λ') :
 /-- A nondegenerate character into a nontrivial ring is primitive. -/
 theorem IsNondegenerate.isPrimitive [Nontrivial Λ] (hψ : ψ.IsNondegenerate) : ψ.IsPrimitive := by
   intro a ha h
-  have := hψ.isUnit_sub_one ha
-  rw [← mul_one a, ← mulShift_apply, h, one_apply, sub_self] at this
-  exact not_isUnit_zero this
+  have h1 : ψ a = 1 := by simpa using DFunLike.congr_fun h 1
+  simpa [h1] using hψ.isUnit_sub_one ha
 
 /-- A character is nondegenerate if and only if its reduction modulo every maximal ideal is
 nontrivial. -/
@@ -212,6 +211,12 @@ section FiniteField
 
 variable (k : Type*) [Field k] [Algebra (ZMod p) k]
 
+/-- A ring with connected, hence nonempty, prime spectrum is nontrivial. -/
+private theorem nontrivial_of_connectedSpace [ConnectedSpace (PrimeSpectrum Λ)] : Nontrivial Λ :=
+  PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
+
+attribute [local instance] nontrivial_of_connectedSpace
+
 /-- **Orthogonality** for a nondegenerate character over a finite field `k` of characteristic `p`:
 `∑ x, ψ (Tr (x * y))` is `#k` at `y = 0` and vanishes elsewhere. -/
 theorem IsNondegenerate.sum_trace_mul [Fintype k] [DecidableEq k] (hψ : ψ.IsNondegenerate) (y : k) :
@@ -241,7 +246,6 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
     (hψ : ψ.IsNondegenerate) (χ : AddChar (ZMod p) Λ) : ∃ c, ψ c = χ 1 := by
   -- Split `1` into the orthogonal idempotents `e i = p⁻¹ ∑ⱼ ψ (-(i * j)) χ j`, on which `χ 1`
   -- acts by `ψ i`; connectedness makes one of them equal to `1`.
-  have : Nontrivial Λ := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
   obtain ⟨v, hv⟩ := hψ.isUnit_natCast.exists_left_inv
   obtain ⟨e, he⟩ : ∃ e : ZMod p → Λ, ∀ i, e i = v * ∑ j, ψ (-(i * j)) * χ j := ⟨_, fun _ ↦ rfl⟩
   -- `χ a` acts on `e i` by `ψ (i * a)`.
@@ -252,7 +256,8 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
         have hij : -(i * j) = i * a + -(i * (a + j)) := by ring
         simp only [Equiv.coe_addLeft, hij, map_add_eq_mul]
         ring
-    rw [he, mul_left_comm, mul_sum, hs, ← mul_sum, mul_left_comm]
+    rw [he, mul_left_comm, mul_sum, hs, ← mul_sum]
+    ring
   -- The `e i` sum to `1`, by orthogonality on `ZMod p`.
   have horth (j : ZMod p) : ∑ i, ψ (-(i * j)) = if j = 0 then (p : Λ) else 0 := by
     simpa [mul_neg, ZMod.card] using hψ.sum_trace_mul (ZMod p) (-j)
@@ -279,13 +284,13 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
 additive character of `ZMod p` with values in `Λ` is `a ↦ ψ (c * a)` for a unique `c`. -/
 theorem IsNondegenerate.bijective_mulShift [ConnectedSpace (PrimeSpectrum Λ)]
     (hψ : ψ.IsNondegenerate) : Function.Bijective ψ.mulShift := by
-  have : Nontrivial Λ := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
   refine ⟨to_mulShift_inj_of_isPrimitive hψ.isPrimitive, fun χ ↦ ?_⟩
   obtain ⟨c, hc⟩ := hψ.exists_apply_eq χ
   refine ⟨c, ext _ _ fun a ↦ ?_⟩
   obtain ⟨n, rfl⟩ := ZMod.natCast_zmod_surjective a
   have hχ : χ n = χ 1 ^ n := by simpa using map_nsmul_eq_pow χ n 1
-  simpa [nsmul_eq_mul, mul_comm, hc, hχ] using map_nsmul_eq_pow ψ n c
+  rw [mulShift_apply, mul_comm]
+  simpa [nsmul_eq_mul, hc, hχ] using map_nsmul_eq_pow ψ n c
 
 /-- **Classification of additive characters of a finite field.** If `Spec Λ` is connected, every
 additive character of a finite field `k` of characteristic `p` with values in `Λ` is
@@ -293,7 +298,6 @@ additive character of a finite field `k` of characteristic `p` with values in `�
 theorem IsNondegenerate.bijective_mulShift_compAddMonoidHom_trace [Finite k]
     [ConnectedSpace (PrimeSpectrum Λ)] (hψ : ψ.IsNondegenerate) :
     Function.Bijective (ψ.compAddMonoidHom (Algebra.trace (ZMod p) k).toAddMonoidHom).mulShift := by
-  have : Nontrivial Λ := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
   refine ⟨to_mulShift_inj_of_isPrimitive (hψ.isPrimitive_compAddMonoidHom_trace k), fun χ ↦ ?_⟩
   -- Write `χ = ψ ∘ f` for an additive `f : k → ZMod p`, and represent `f` by the trace form.
   have hf (x : k) : ∃ c, ψ c = χ x := by
@@ -309,7 +313,7 @@ theorem IsNondegenerate.bijective_mulShift_compAddMonoidHom_trace [Finite k]
   ext y
   have := LinearMap.BilinForm.apply_toDual_symm_apply (hB := traceForm_nondegenerate (ZMod p) k)
     (F.toZModLinearMap p) y
-  have hF : ⇑F = f := rfl
+  have hF : ⇑F = f := by simp only [F, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
   rw [Algebra.traceForm_apply, AddMonoidHom.coe_toZModLinearMap, hF] at this
   rw [mulShift_apply, compAddMonoidHom_apply, LinearMap.toAddMonoidHom_coe, this]
   exact hf y
