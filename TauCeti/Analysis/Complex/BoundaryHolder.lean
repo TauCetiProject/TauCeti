@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Schwarz
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 public import TauCeti.Analysis.Complex.AbsMax
+public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 public import TauCeti.Topology.MetricSpace.Holder
 
@@ -86,22 +87,25 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E}
 
 namespace DiffContOnCl
 
-/-- For `‖w₀‖ = 1`, `1 - conj w₀ * z` has the norm of `z - w₀`. -/
-private theorem norm_one_sub_conj_mul {w₀ z : ℂ} (hw₀ : ‖w₀‖ = 1) :
-    ‖1 - conj w₀ * z‖ = ‖z - w₀‖ := by
-  have h : w₀ * (1 - conj w₀ * z) = w₀ - z := by
-    rw [mul_sub, mul_one, ← mul_assoc, mul_conj, normSq_eq_norm_sq, hw₀]
-    simp
-  rw [norm_sub_rev z w₀, ← h, norm_mul, hw₀, one_mul]
+/-- For `0 ≤ α < 1`, the constant `cos (α π / 2)` is positive. -/
+private theorem cos_mul_pi_div_two_pos {α : ℝ} (hα0 : 0 ≤ α) (hα1 : α < 1) :
+    0 < Real.cos (α * π / 2) :=
+  Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
 
-/-- For `‖w₀‖ = 1` and `z` in the closed unit disc, `1 - conj w₀ * z` has nonnegative real
-part. -/
-private theorem re_one_sub_conj_mul_nonneg {w₀ z : ℂ} (hw₀ : ‖w₀‖ = 1)
-    (hz : z ∈ closedBall (0 : ℂ) 1) : 0 ≤ (1 - conj w₀ * z).re := by
-  have h := re_le_norm (conj w₀ * z)
-  rw [norm_mul, RCLike.norm_conj, hw₀, one_mul] at h
-  rw [sub_re, one_re, sub_nonneg]
-  exact h.trans (mem_closedBall_zero_iff.mp hz)
+/-- For `0 < α`, `|s| ^ α` tends to `0` as `s` tends to `0`. -/
+private theorem tendsto_abs_rpow_nhds_zero {α : ℝ} (hα0 : 0 < α) :
+    Tendsto (fun s : ℝ ↦ |s| ^ α) (𝓝 0) (𝓝 0) := by
+  simpa [Real.zero_rpow hα0.ne'] using
+    (continuous_abs.tendsto (0 : ℝ)).rpow_const (Or.inr hα0.le)
+
+/-- Precomposing with multiplication by `a`, for `‖a‖ ≤ 1`, preserves being differentiable on the
+open unit disc and continuous on the closed one. -/
+private theorem comp_const_mul (hf : DiffContOnCl ℂ f (ball 0 1)) {a : ℂ} (ha : ‖a‖ ≤ 1) :
+    DiffContOnCl ℂ (fun z ↦ f (a * z)) (ball 0 1) :=
+  hf.comp ((differentiable_id.const_mul a).diffContOnCl) fun z hz ↦ by
+    rw [mem_ball_zero_iff] at hz ⊢
+    rw [norm_mul]
+    nlinarith [norm_nonneg a, norm_nonneg z]
 
 /-- The comparison function `(C / k) (1 - conj w₀ * z) ^ α` is differentiable on the open unit
 disc and continuous on the closed one. -/
@@ -110,16 +114,13 @@ private theorem diffContOnCl_cpow (w₀ : ℂ) (hw₀ : ‖w₀‖ = 1) {α : �
   rcases hα0.eq_or_lt with rfl | hα
   · simpa using diffContOnCl_const
   refine DiffContOnCl.mk_ball (fun z hz ↦ ?_) (fun z hz ↦ ?_)
-  · have hre : 0 < (1 - conj w₀ * z).re := by
-      have h := re_le_norm (conj w₀ * z)
-      rw [norm_mul, RCLike.norm_conj, hw₀, one_mul] at h
-      rw [sub_re, one_re, sub_pos]
-      exact h.trans_lt (mem_ball_zero_iff.mp hz)
+  · have hre := re_one_sub_conj_mul_pos hw₀ (mem_ball_zero_iff.mp hz)
     exact (((differentiableAt_const _).sub ((differentiableAt_const _).mul
       differentiableAt_id)).cpow_const (mem_slitPlane_iff.mpr (Or.inl hre))).const_mul _
       |>.differentiableWithinAt
   · have hcont : ContinuousAt (fun z : ℂ ↦ (1 - conj w₀ * z) ^ (α : ℂ)) z :=
-      (continuousAt_cpow_const_of_re_pos (Or.inl (re_one_sub_conj_mul_nonneg hw₀ hz))
+      (continuousAt_cpow_const_of_re_pos
+        (Or.inl (re_one_sub_conj_mul_nonneg hw₀ (mem_closedBall_zero_iff.mp hz)))
         (show 0 < (α : ℂ).re by simpa using hα)).comp
         (f := fun z : ℂ ↦ 1 - conj w₀ * z) (by fun_prop)
     exact (continuousAt_const.mul hcont).continuousWithinAt
@@ -134,14 +135,13 @@ private theorem cos_mul_norm_sub_le_of_mem_sphere (hf : DiffContOnCl ℂ f (ball
     (hz : z ∈ closedBall (0 : ℂ) 1) :
     Real.cos (α * π / 2) * ‖f z - f w₀‖ ≤ C * ‖z - w₀‖ ^ α := by
   set k := Real.cos (α * π / 2)
-  have hk : 0 < k :=
-    Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
+  have hk : 0 < k := cos_mul_pi_div_two_pos hα0 hα1
   -- The real part of `G` is a harmonic majorant of `‖f - f w₀‖` on the circle.
   set G : ℂ → ℂ := fun z ↦ ((C / k : ℝ) : ℂ) * (1 - conj w₀ * z) ^ (α : ℂ)
   have hre (z : ℂ) (hz : z ∈ closedBall (0 : ℂ) 1) :
       C * ‖z - w₀‖ ^ α ≤ (G z).re ∧ (G z).re ≤ C / k * ‖z - w₀‖ ^ α := by
     have hcos := TauCeti.cos_mul_norm_le_re_cpow hα0 (by linarith)
-      (re_one_sub_conj_mul_nonneg hw₀ hz)
+      (re_one_sub_conj_mul_nonneg hw₀ (mem_closedBall_zero_iff.mp hz))
     have hnorm := (re_le_norm ((1 - conj w₀ * z) ^ (α : ℂ))).trans_eq (norm_cpow_real _ _)
     rw [norm_cpow_real, norm_one_sub_conj_mul hw₀] at hcos
     rw [norm_one_sub_conj_mul hw₀] at hnorm
@@ -166,10 +166,8 @@ one, `‖u‖ = 1`, and `‖f (u w) - f w‖ ≤ M` for `w` on the unit circle, 
 private theorem norm_sub_le_mul_norm_of_mem_sphere (hf : DiffContOnCl ℂ f (ball 0 1)) {u : ℂ}
     (hu : ‖u‖ = 1) {M : ℝ} (h : ∀ w ∈ sphere (0 : ℂ) 1, ‖f (u * w) - f w‖ ≤ M) {z : ℂ}
     (hz : z ∈ closedBall (0 : ℂ) 1) : ‖f (u * z) - f z‖ ≤ M * ‖z‖ := by
-  have hmaps : MapsTo (u * ·) (ball (0 : ℂ) 1) (ball 0 1) := fun w hw ↦ by
-    simpa [norm_mul, hu] using hw
   have hg : DiffContOnCl ℂ (fun w ↦ f (u * w) - f w) (ball 0 1) :=
-    (hf.comp ((differentiable_id.const_mul u).diffContOnCl) hmaps).sub hf
+    (hf.comp_const_mul hu.le).sub hf
   rcases (mem_closedBall_zero_iff.mp hz).lt_or_eq with hz1 | hz1
   · have hbound : MapsTo (fun w ↦ f (u * w) - f w) (ball (0 : ℂ) 1)
         (closedBall (f (u * 0) - f 0) M) := fun w hw ↦ by
@@ -196,8 +194,8 @@ private theorem norm_sub_le_of_mem_sphere_mul (hf : DiffContOnCl ℂ f (ball 0 1
   set u := w₀ / w
   have hu : ‖u‖ = 1 := by rw [norm_div, hw₀, hw1, div_one]
   have hu1 : ‖u - 1‖ = ‖w - w₀‖ := by
-    rw [norm_sub_rev w, ← mul_one ‖u - 1‖, ← hw1, ← norm_mul, sub_mul, one_mul,
-      div_mul_cancel₀ w₀ hw0]
+    have : u - 1 = (w₀ - w) / w := by rw [sub_div, div_self hw0]
+    simp [this, hw1, norm_sub_rev]
   have hrot := norm_sub_le_mul_norm_of_mem_sphere hf hu (M := C * ‖w - w₀‖ ^ α)
     (fun v hv ↦ by
       have hv1 : ‖v‖ = 1 := mem_sphere_zero_iff_norm.mp hv
@@ -241,12 +239,8 @@ private theorem cos_mul_norm_sub_le (hf : DiffContOnCl ℂ f (ball 0 1)) {α : �
   have hw₀ : ‖w₀‖ = 1 := by
     rw [norm_div, norm_real, Real.norm_of_nonneg hr.le, div_self hr.ne']
   have hrw₀ : (r : ℂ) * w₀ = z := mul_div_cancel₀ z hr0
-  have hmaps : MapsTo ((r : ℂ) * ·) (ball (0 : ℂ) 1) (ball 0 1) := fun w hw ↦ by
-    rw [mem_ball_zero_iff] at hw ⊢
-    rw [norm_mul, norm_real, Real.norm_of_nonneg hr.le]
-    nlinarith [norm_nonneg w]
   have hfr : DiffContOnCl ℂ (fun ξ ↦ f (r * ξ)) (ball 0 1) :=
-    hf.comp ((differentiable_id.const_mul (r : ℂ)).diffContOnCl) hmaps
+    hf.comp_const_mul (by rwa [norm_real, Real.norm_of_nonneg hr.le])
   -- The rescaled function has `α`-Hölder boundary values with constant `C r ^ α`.
   have hbd (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 1) :=
     norm_sub_le_of_mem_sphere_mul hf hα1.le h hr hr1 hw hw₀
@@ -274,8 +268,7 @@ theorem holderOnWith_closedBall {c : ℂ} {R : ℝ} {C α : ℝ≥0} (hf : DiffC
   rcases le_or_gt R 0 with hR | hR
   · exact (subsingleton_closedBall c hR).holderOnWith _ _ _
   have hα1 : (α : ℝ) < 1 := by exact_mod_cast hα
-  have hk : 0 < Real.cos (α * π / 2) :=
-    Real.cos_pos_of_mem_Ioo ⟨by nlinarith [Real.pi_pos, α.coe_nonneg], by nlinarith [Real.pi_pos]⟩
+  have hk : 0 < Real.cos (α * π / 2) := cos_mul_pi_div_two_pos α.coe_nonneg hα1
   -- Transport `f` to the unit disc by the affine map `ξ ↦ c + R ξ`.
   have hR0 : (R : ℂ) ≠ 0 := ofReal_ne_zero.mpr hR.ne'
   set A : ℂ → ℂ := fun ξ ↦ c + R * ξ
@@ -310,13 +303,14 @@ theorem holderOnWith_closedBall {c : ℂ} {R : ℝ} {C α : ℝ≥0} (hf : DiffC
   obtain ⟨hξ, hAξ⟩ := hpull hz
   obtain ⟨hξ', hAξ'⟩ := hpull hz'
   have key := cos_mul_norm_sub_le hg α.coe_nonneg hα1 hgbd hξ hξ'
-  simp only [Function.comp_apply, hAξ, hAξ'] at key
-  push_cast at key
-  rw [Real.coe_toNNReal _ hR.le, mul_assoc, ← Real.mul_rpow hR.le (norm_nonneg _), ← hA, hAξ,
-    hAξ'] at key
-  rw [dist_eq_norm, dist_eq_norm, NNReal.coe_div, Real.coe_toNNReal _ hk.le, div_mul_eq_mul_div,
-    le_div_iff₀ hk, mul_comm]
-  exact key
+  have hpow : (R.toNNReal : ℝ) ^ (α : ℝ) * ‖(z - c) / R - (z' - c) / R‖ ^ (α : ℝ) =
+      ‖z - z'‖ ^ (α : ℝ) := by
+    rw [Real.coe_toNNReal _ hR.le, ← Real.mul_rpow hR.le (norm_nonneg _), ← hA, hAξ, hAξ']
+  simp only [Function.comp_apply, hAξ, hAξ', NNReal.coe_mul, NNReal.coe_rpow, mul_assoc,
+    hpow] at key
+  calc dist (f z) (f z') = ‖f z - f z'‖ := dist_eq_norm _ _
+    _ ≤ C * ‖z - z'‖ ^ (α : ℝ) / Real.cos (α * π / 2) := by rw [le_div_iff₀ hk]; linarith
+    _ = _ := by rw [dist_eq_norm, NNReal.coe_div, Real.coe_toNNReal _ hk.le]; ring
 
 /-! ### Hölder derivatives up to the boundary -/
 
@@ -370,9 +364,7 @@ private theorem norm_sub_sub_smul_le
 open unit disc and continuous on the closed one. -/
 private theorem diffContOnCl_slope (hf : DiffContOnCl ℂ f (ball 0 1)) (t : ℝ) :
     DiffContOnCl ℂ (fun z ↦ (t : ℂ)⁻¹ • (f (exp (I * t) * z) - f z)) (ball 0 1) := by
-  have hmaps : MapsTo (exp (I * t) * ·) (ball (0 : ℂ) 1) (ball 0 1) := fun z hz ↦ by
-    simpa [norm_mul, norm_exp_I_mul_ofReal] using hz
-  exact ((hf.comp ((differentiable_id.const_mul _).diffContOnCl) hmaps).sub hf).const_smul _
+  exact ((hf.comp_const_mul (norm_exp_I_mul_ofReal t).le).sub hf).const_smul _
 
 /-- On the circle, the difference quotients along the rotations are within `C |t| ^ α` of `v`. -/
 private theorem norm_slope_sub_le
@@ -420,12 +412,10 @@ private theorem norm_slope_sub_smul_deriv_le (hf : DiffContOnCl ℂ f (ball 0 1)
   have hlim : Tendsto (fun s : ℝ ↦ ‖S t z - S s z‖) (𝓝[≠] 0)
       (𝓝 ‖S t z - (I * z) • deriv f z‖) :=
     ((tendsto_slope hf hz).const_sub (S t z)).norm
-  have hpow : Tendsto (fun s : ℝ ↦ |s| ^ (α : ℝ)) (𝓝 0) (𝓝 0) := by
-    simpa [Real.zero_rpow (NNReal.coe_ne_zero.mpr hα0.ne')] using
-      (continuous_abs.tendsto (0 : ℝ)).rpow_const (Or.inr α.coe_nonneg)
   have hlim' : Tendsto (fun s : ℝ ↦ C * |t| ^ (α : ℝ) + C * |s| ^ (α : ℝ)) (𝓝[≠] 0)
       (𝓝 (C * |t| ^ (α : ℝ))) := by
-    simpa using (tendsto_const_nhds.add (hpow.const_mul (C : ℝ))).mono_left nhdsWithin_le_nhds
+    simpa using (tendsto_const_nhds.add ((tendsto_abs_rpow_nhds_zero
+      (NNReal.coe_pos.mpr hα0)).const_mul (C : ℝ))).mono_left nhdsWithin_le_nhds
   exact le_of_tendsto_of_tendsto hlim hlim' (eventually_nhdsWithin_of_forall hcomp)
 
 /-- A function equal to `(I z) • f' z` on the open disc and to `v` on the circle is
@@ -440,9 +430,8 @@ private theorem diffContOnCl_of_eqOn [CompleteSpace E] (hf : DiffContOnCl ℂ f 
     (hf.differentiableOn.deriv isOpen_ball)).congr hgb, ?_⟩
   rw [closure_ball (0 : ℂ) one_ne_zero]
   have hpow : Tendsto (fun s : ℝ ↦ (C : ℝ) * |s| ^ (α : ℝ)) (𝓝[≠] 0) (𝓝 0) := by
-    have := ((continuous_abs.tendsto (0 : ℝ)).rpow_const (Or.inr α.coe_nonneg)).const_mul
-      (C : ℝ)
-    simpa [Real.zero_rpow (NNReal.coe_ne_zero.mpr hα0.ne')] using this.mono_left nhdsWithin_le_nhds
+    simpa using ((tendsto_abs_rpow_nhds_zero (NNReal.coe_pos.mpr hα0)).const_mul
+      (C : ℝ)).mono_left nhdsWithin_le_nhds
   have hunif : TendstoUniformlyOn (fun s : ℝ ↦ fun z ↦ (s : ℂ)⁻¹ • (f (exp (I * s) * z) - f z))
       g (𝓝[≠] 0) (closedBall 0 1) := by
     refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
@@ -518,10 +507,12 @@ private theorem norm_inv_smul_sub_inv_smul_le {g : ℂ → E} {K : ℝ≥0}
     rw [norm_inv, norm_mul, norm_I, one_mul]
     exact inv_le_of_inv_le₀ (by norm_num) (by linarith)
   have hinv : ‖(I * x)⁻¹ - (I * y)⁻¹‖ ≤ 4 * ‖x - y‖ := by
-    rw [inv_sub_inv hx0 hy0, norm_div, norm_mul, norm_mul, norm_mul, ← mul_sub, norm_mul,
-      norm_I, one_mul, one_mul, one_mul, norm_sub_rev y x, div_le_iff₀ (by positivity)]
     have hxy4 : 1 / 2 * (1 / 2) ≤ ‖x‖ * ‖y‖ := mul_le_mul hx2 hy2 (by norm_num) (norm_nonneg _)
-    nlinarith [norm_nonneg (x - y)]
+    calc ‖(I * x)⁻¹ - (I * y)⁻¹‖ = ‖x - y‖ / (‖x‖ * ‖y‖) := by
+          rw [inv_sub_inv hx0 hy0, ← mul_sub]
+          simp [norm_sub_rev]
+      _ ≤ ‖x - y‖ / (1 / 2 * (1 / 2)) := by gcongr
+      _ = 4 * ‖x - y‖ := by ring
   have hd : ‖x - y‖ ≤ ‖x - y‖ ^ (α : ℝ) :=
     Real.self_le_rpow_of_le_one (norm_nonneg _) hxy (by exact_mod_cast hα1)
   have hgxy : ‖g x - g y‖ ≤ K * ‖x - y‖ ^ (α : ℝ) := by
