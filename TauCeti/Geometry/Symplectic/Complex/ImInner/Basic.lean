@@ -218,15 +218,8 @@ vectors is Lagrangian for the standard symplectic form. -/
 theorem isLagrangian_imInnerSymplecticForm_iff_map {W : Submodule ℝ (EuclideanSpace ℂ ι)} :
     (imInnerSymplecticForm (EuclideanSpace ℂ ι)).IsLagrangian W ↔
       stdSymplecticForm.IsLagrangian
-        (W.map (complexEuclideanEquivRealProd ι).toLinearEquiv.toLinearMap) := by
-  set e := (complexEuclideanEquivRealProd ι).toLinearEquiv
-  have h : stdSymplecticForm.transport e.symm = imInnerSymplecticForm (EuclideanSpace ℂ ι) :=
-    SymplecticForm.isSymplectomorphism_iff_transport_eq.1
-      isSymplectomorphism_complexEuclideanEquivRealProd_symm
-  have hW : (W.map e.toLinearMap).map e.symm.toLinearMap = W := by
-    ext x
-    simp
-  rw [← SymplecticForm.isLagrangian_map_transport_iff (e := e.symm), h, hW]
+        (W.map (complexEuclideanEquivRealProd ι).toLinearEquiv.toLinearMap) :=
+  (isSymplectomorphism_complexEuclideanEquivRealProd_symm.symm.isLagrangian_map_iff).symm
 
 end EuclideanSpace
 
