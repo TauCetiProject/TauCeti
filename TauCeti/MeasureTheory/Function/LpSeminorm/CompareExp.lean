@@ -28,7 +28,7 @@ This comparison is useful for embeddings of real interpolation spaces.
 ## Main declarations
 
 * `TauCeti.eLpNorm_le_eLpNorm_rpow`: if `‖u‖ ≤ ‖f‖ ^ r`, then `‖u‖_s ≤ ‖f‖_p ^ r` when
-  `1 / s = r / p`.
+  `1 / s = r / p`; `TauCeti.eLpNorm_le_mul_eLpNorm_rpow` allows a constant factor `K`.
 * `TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one`: its form for Hölder conjugate exponents.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
   for `1 ≤ p` implies convergence to zero in `L¹`.
@@ -43,7 +43,7 @@ This comparison is useful for embeddings of real interpolation spaces.
 public section
 
 open Filter MeasureTheory
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -74,6 +74,30 @@ theorem eLpNorm_le_eLpNorm_rpow {f : α → E} {u : α → F} {p s : ℝ≥0∞}
             one_mul]
     · rw [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.top_rpow_of_pos hr]
       exact le_top
+
+/-- If `‖u‖ ≤ K ‖f‖ ^ r` almost everywhere with `r ≥ 0`, then `‖u‖_s ≤ K ‖f‖_p ^ r` for the
+exponent `1 / s = r / p`. -/
+theorem eLpNorm_le_mul_eLpNorm_rpow {f : α → E} {u : α → F} {p s : ℝ≥0∞} {r : ℝ} {K : ℝ≥0}
+    (hr : 0 ≤ r) (hu : AEStronglyMeasurable u μ) (hs : s⁻¹ = ENNReal.ofReal r * p⁻¹)
+    (hle : ∀ᵐ x ∂μ, ‖u x‖ ≤ K * ‖f x‖ ^ r) :
+    eLpNorm u s μ ≤ K * eLpNorm f p μ ^ r := by
+  rcases eq_or_ne K 0 with rfl | hK
+  · have : u =ᵐ[μ] 0 := hle.mono fun x hx => by simpa using hx
+    simp [eLpNorm_congr_ae this]
+  -- Apply `eLpNorm_le_eLpNorm_rpow` to the real function `K⁻¹ ‖u‖`.
+  have hK' : (0 : ℝ) < K := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hK)
+  have h := eLpNorm_le_eLpNorm_rpow (f := f) (u := fun x => (K : ℝ)⁻¹ * ‖u x‖) hr
+    (hu.norm.const_mul _) hs (hle.mono fun x hx => by
+      rw [norm_mul, norm_inv, NNReal.norm_eq, norm_norm, inv_mul_le_iff₀ hK']
+      exact hx)
+  have heq : eLpNorm (fun x => (K : ℝ)⁻¹ * ‖u x‖) s μ = (K : ℝ≥0∞)⁻¹ * eLpNorm u s μ := by
+    rw [show (fun x => (K : ℝ)⁻¹ * ‖u x‖) = (K : ℝ)⁻¹ • fun x => ‖u x‖ from rfl,
+      eLpNorm_const_smul, eLpNorm_norm u hu, Real.eNorm_eq_ofReal (inv_nonneg.2 hK'.le),
+      ENNReal.ofReal_inv_of_pos hK', ENNReal.ofReal_coe_nnreal]
+  rw [heq] at h
+  calc eLpNorm u s μ = K * ((K : ℝ≥0∞)⁻¹ * eLpNorm u s μ) := by
+        rw [← mul_assoc, ENNReal.mul_inv_cancel (by simpa using hK) ENNReal.coe_ne_top, one_mul]
+    _ ≤ K * eLpNorm f p μ ^ r := by gcongr
 
 /-- If `‖g‖ ≤ ‖f‖ ^ (q - 1)` almost everywhere, then `‖g‖_{q'} ≤ ‖f‖_q ^ (q - 1)` for Hölder
 conjugate exponents `q < ∞` and `q'`. -/
