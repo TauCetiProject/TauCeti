@@ -10,7 +10,6 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.Shift
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
-import TauCeti.LinearAlgebra.Alternating.Append
 
 /-!
 # The torsion of a based two-periodic complex over a field
@@ -105,25 +104,12 @@ public section
 noncomputable section
 
 open CategoryTheory Module
+open CochainComplex (prev_zmod_two_zero next_zmod_two_zero prev_zmod_two_one next_zmod_two_one)
 
 namespace HomologicalComplex
 
 variable {F : Type*} [Field F] {C : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))}
   {n : ZMod 2 → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
-
-/-! The previous and next degrees of `0` and `1` for the shape `ComplexShape.up (ZMod 2)`. -/
-
-private theorem up_zmod_two_prev_zero : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
-  (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
-
-private theorem up_zmod_two_next_zero : (ComplexShape.up (ZMod 2)).next 0 = 1 :=
-  (ComplexShape.up _).next_eq' (zero_add 1)
-
-private theorem up_zmod_two_prev_one : (ComplexShape.up (ZMod 2)).prev 1 = 0 :=
-  (ComplexShape.up _).prev_eq' (zero_add 1)
-
-private theorem up_zmod_two_next_one : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
-  (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
 
 section Torsion
 
@@ -137,10 +123,10 @@ lifts `s₀`, `s₁`, and `0` otherwise. The quotient does not depend on these c
 def parityTorsion : F := by
   classical
   exact if h : C.Acyclic then
-    torsionBracket c up_zmod_two_prev_one up_zmod_two_next_one (h 1)
+    torsionBracket c prev_zmod_two_one next_zmod_two_one (h 1)
         (chosenBoundaryBasis C c 0 1) (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
         (chosenBoundaryLift_spec C c 1 0) *
-      (torsionBracket c up_zmod_two_prev_zero up_zmod_two_next_zero (h 0)
+      (torsionBracket c prev_zmod_two_zero next_zmod_two_zero (h 0)
         (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
         (chosenBoundaryLift_spec C c 0 1))⁻¹
   else 0
@@ -162,10 +148,8 @@ theorem parityTorsion_eq (h : C.Acyclic) {p q : ℕ}
     (s₀ : Fin q → C.X 0) (hs₀ : ∀ l, (C.d 0 1).hom (s₀ l) = b₁ l)
     (s₁ : Fin p → C.X 1) (hs₁ : ∀ l, (C.d 1 0).hom (s₁ l) = b₀ l) :
     C.parityTorsion c =
-      torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
-          ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1) b₁ b₀ s₁ hs₁ *
-        (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-          ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
+      torsionBracket c prev_zmod_two_one next_zmod_two_one (h 1) b₁ b₀ s₁ hs₁ *
+        (torsionBracket c prev_zmod_two_zero next_zmod_two_zero (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
   have hp : finrank F (LinearMap.range (C.d 1 0).hom) = p := by
     rw [finrank_eq_card_basis b₀, Fintype.card_fin]
   have hq : finrank F (LinearMap.range (C.d 0 1).hom) = q := by
@@ -363,64 +347,6 @@ section Transport
 variable {c} {D : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))} {m : ZMod 2 → ℕ}
   {d : ∀ i, Basis (Fin (m i)) F (D.X i)}
 
-/-- If `D.d k' j' ∘ e_k = u • (e_j ∘ C.d k j)` for linear equivalences `e_j`, `e_k` and `u ≠ 0`,
-the boundaries of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
-private theorem range_d_eq_map {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
-    (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)
-    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
-    LinearMap.range (D.d k' j').hom =
-      (LinearMap.range (C.d k j).hom).map (eⱼ : C.X j →ₗ[F] D.X j') := by
-  have hd : (D.d k' j').hom =
-      (u • ((eⱼ : C.X j →ₗ[F] D.X j') ∘ₗ (C.d k j).hom)) ∘ₗ (eₖ.symm : D.X k' →ₗ[F] C.X k) := by
-    ext x
-    simpa using h (eₖ.symm x)
-  rw [hd, LinearMap.range_comp_of_range_eq_top _ eₖ.symm.range, LinearMap.range_smul _ _ hu,
-    LinearMap.range_comp]
-
-/-- If `D.d j' k' ∘ e_j = u • (e_k ∘ C.d j k)` for linear equivalences `e_j`, `e_k` and `u ≠ 0`,
-the cycles of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
-private theorem ker_d_eq_map {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
-    (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)
-    (h : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x)) :
-    LinearMap.ker (D.d j' k').hom =
-      (LinearMap.ker (C.d j k).hom).map (eⱼ : C.X j →ₗ[F] D.X j') := by
-  have hd : (D.d j' k').hom =
-      (u • ((eₖ : C.X k →ₗ[F] D.X k') ∘ₗ (C.d j k).hom)) ∘ₗ (eⱼ.symm : D.X j' →ₗ[F] C.X j) := by
-    ext x
-    simpa using h (eⱼ.symm x)
-  rw [hd, LinearMap.ker_comp, LinearMap.ker_smul _ _ hu, LinearEquiv.ker_comp,
-    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
-
-/-- Linear equivalences intertwining the differentials of `C` and `D` up to a nonzero scalar
-preserve exactness. -/
-private theorem exactAt_iff_of_linearEquiv {j k j' k' : ZMod 2} (hjk : j + 1 = k)
-    (hjk' : j' + 1 = k') (eⱼ : C.X j ≃ₗ[F] D.X j') (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)
-    (hj : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x))
-    (hk : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
-    D.ExactAt j' ↔ C.ExactAt j := by
-  rw [D.exactAt_iff_range_eq_ker_zmod_two hjk', C.exactAt_iff_range_eq_ker_zmod_two hjk,
-    range_d_eq_map eⱼ eₖ hu hk, ker_d_eq_map eⱼ eₖ hu hj]
-  exact (Submodule.map_injective_of_injective eⱼ.injective).eq_iff
-
-/-- Linear equivalences `e₀ : Cⱼ ≃ D₀` and `e₁ : Cₖ ≃ D₁`, for `{j, k} = {0, 1}`, intertwining the
-differentials of `C` and `D` up to a nonzero scalar make `D` acyclic exactly when `C` is. -/
-private theorem acyclic_iff_of_linearEquiv {j k : ZMod 2} (hjk : j + 1 = k)
-    (e₀ : C.X j ≃ₗ[F] D.X 0) (e₁ : C.X k ≃ₗ[F] D.X 1) {u : F} (hu : u ≠ 0)
-    (h₀₁ : ∀ x, (D.d 0 1).hom (e₀ x) = u • e₁ ((C.d j k).hom x))
-    (h₁₀ : ∀ x, (D.d 1 0).hom (e₁ x) = u • e₀ ((C.d k j).hom x)) :
-    D.Acyclic ↔ C.Acyclic := by
-  have hkj : k + 1 = j := by rw [← hjk, add_assoc, CharTwo.add_self_eq_zero, add_zero]
-  have h₀ := exactAt_iff_of_linearEquiv hjk (zero_add 1) e₀ e₁ hu h₀₁ h₁₀
-  have h₁ := exactAt_iff_of_linearEquiv hkj (CharTwo.add_self_eq_zero 1) e₁ e₀ hu h₁₀ h₀₁
-  have hi (i : ZMod 2) : i = j ∨ i = k := by
-    rw [← hjk]
-    exact (by decide : ∀ i j : ZMod 2, i = j ∨ i = j + 1) i j
-  refine ⟨fun h i ↦ ?_, fun h i ↦ ?_⟩
-  · rcases hi i with rfl | rfl
-    exacts [h₀.1 (h 0), h₁.1 (h 1)]
-  · fin_cases i
-    exacts [h₀.2 (h j), h₁.2 (h k)]
-
 /-- The basis of the boundaries of `D` in degree `j'` transported along `e_j` from a basis `b` of
 the boundaries of `C` in degree `j`. -/
 private def mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
@@ -428,7 +354,8 @@ private def mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
     (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) {p : ℕ}
     (b : Basis (Fin p) F (LinearMap.range (C.d k j).hom)) :
     Basis (Fin p) F (LinearMap.range (D.d k' j').hom) :=
-  b.map ((eⱼ.submoduleMap _).trans (LinearEquiv.ofEq _ _ (range_d_eq_map eⱼ eₖ hu h).symm))
+  b.map ((eⱼ.submoduleMap _).trans
+    (LinearEquiv.ofEq _ _ (range_d_eq_map_of_linearEquiv eⱼ eₖ hu.isUnit h).symm))
 
 private theorem coe_mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
     (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)
@@ -461,7 +388,7 @@ theorem parityTorsion_eq_mul_of_linearEquiv (e₀ : C.X 0 ≃ₗ[F] D.X 0) (e₁
     D.parityTorsion d = C.parityTorsion c *
       (u ^ finrank F (LinearMap.range (C.d 0 1).hom) /
         u ^ finrank F (LinearMap.range (C.d 1 0).hom)) := by
-  have hDC := acyclic_iff_of_linearEquiv (zero_add 1) e₀ e₁ hu h₀₁ h₁₀
+  have hDC := acyclic_iff_of_linearEquiv_zmod_two (zero_add 1) e₀ e₁ hu.isUnit h₀₁ h₁₀
   by_cases hC : C.Acyclic
   swap
   · rw [parityTorsion_of_not_acyclic C c hC, parityTorsion_of_not_acyclic D d (mt hDC.1 hC),
@@ -477,13 +404,13 @@ theorem parityTorsion_eq_mul_of_linearEquiv (e₀ : C.X 0 ≃ₗ[F] D.X 0) (e₁
   rw [parityTorsion_eq hC b₀ b₁ s₀ (chosenBoundaryLift_spec C c 0 1) s₁
       (chosenBoundaryLift_spec C c 1 0),
     parityTorsion_eq hD _ _ _ hs₀ _ hs₁,
-    torsionBracket_eq_pow_mul c up_zmod_two_prev_one up_zmod_two_next_one (hC 1) b₁ b₀ s₁
-      (chosenBoundaryLift_spec C c 1 0) up_zmod_two_prev_one up_zmod_two_next_one (hD 1) _ _ _ hs₁
+    torsionBracket_eq_pow_mul c prev_zmod_two_one next_zmod_two_one (hC 1) b₁ b₀ s₁
+      (chosenBoundaryLift_spec C c 1 0) prev_zmod_two_one next_zmod_two_one (hD 1) _ _ _ hs₁
       e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₁) u⁻¹ fun _ ↦ rfl,
-    torsionBracket_eq_pow_mul c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0) b₀ b₁ s₀
-      (chosenBoundaryLift_spec C c 0 1) up_zmod_two_prev_zero up_zmod_two_next_zero (hD 0) _ _ _ hs₀
+    torsionBracket_eq_pow_mul c prev_zmod_two_zero next_zmod_two_zero (hC 0) b₀ b₁ s₀
+      (chosenBoundaryLift_spec C c 0 1) prev_zmod_two_zero next_zmod_two_zero (hD 0) _ _ _ hs₀
       e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₀) u⁻¹ fun _ ↦ rfl]
-  have := torsionBracket_ne_zero c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0) b₀ b₁ s₀
+  have := torsionBracket_ne_zero c prev_zmod_two_zero next_zmod_two_zero (hC 0) b₀ b₁ s₀
     (chosenBoundaryLift_spec C c 0 1)
   simp only [inv_pow]
   field_simp
@@ -504,7 +431,8 @@ theorem parityTorsion_eq_inv_mul_of_linearEquiv (e₀ : C.X 1 ≃ₗ[F] D.X 0)
     D.parityTorsion d = (C.parityTorsion c)⁻¹ *
       (u ^ finrank F (LinearMap.range (C.d 1 0).hom) /
         u ^ finrank F (LinearMap.range (C.d 0 1).hom)) := by
-  have hDC := acyclic_iff_of_linearEquiv (CharTwo.add_self_eq_zero 1) e₀ e₁ hu h₀₁ h₁₀
+  have hDC :=
+    acyclic_iff_of_linearEquiv_zmod_two (CharTwo.add_self_eq_zero 1) e₀ e₁ hu.isUnit h₀₁ h₁₀
   by_cases hC : C.Acyclic
   swap
   · rw [parityTorsion_of_not_acyclic C c hC, parityTorsion_of_not_acyclic D d (mt hDC.1 hC),
@@ -521,13 +449,13 @@ theorem parityTorsion_eq_inv_mul_of_linearEquiv (e₀ : C.X 1 ≃ₗ[F] D.X 0)
   rw [parityTorsion_eq hC b₀ b₁ s₀ (chosenBoundaryLift_spec C c 0 1) s₁
       (chosenBoundaryLift_spec C c 1 0),
     parityTorsion_eq hD _ _ _ hs₀ _ hs₁,
-    torsionBracket_eq_pow_mul c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0) b₀ b₁ s₀
-      (chosenBoundaryLift_spec C c 0 1) up_zmod_two_prev_one up_zmod_two_next_one (hD 1) _ _ _ hs₁
+    torsionBracket_eq_pow_mul c prev_zmod_two_zero next_zmod_two_zero (hC 0) b₀ b₁ s₀
+      (chosenBoundaryLift_spec C c 0 1) prev_zmod_two_one next_zmod_two_one (hD 1) _ _ _ hs₁
       e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₀) u⁻¹ fun _ ↦ rfl,
-    torsionBracket_eq_pow_mul c up_zmod_two_prev_one up_zmod_two_next_one (hC 1) b₁ b₀ s₁
-      (chosenBoundaryLift_spec C c 1 0) up_zmod_two_prev_zero up_zmod_two_next_zero (hD 0) _ _ _ hs₀
+    torsionBracket_eq_pow_mul c prev_zmod_two_one next_zmod_two_one (hC 1) b₁ b₀ s₁
+      (chosenBoundaryLift_spec C c 1 0) prev_zmod_two_zero next_zmod_two_zero (hD 0) _ _ _ hs₀
       e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₁) u⁻¹ fun _ ↦ rfl]
-  have := torsionBracket_ne_zero c up_zmod_two_prev_one up_zmod_two_next_one (hC 1) b₁ b₀ s₁
+  have := torsionBracket_ne_zero c prev_zmod_two_one next_zmod_two_one (hC 1) b₁ b₀ s₁
     (chosenBoundaryLift_spec C c 1 0)
   simp only [inv_pow, mul_inv]
   field_simp
@@ -603,7 +531,7 @@ theorem parityTorsion_shift_of_odd {k : ℤ} (hk : Odd k) :
   swap
   · simp [parityTorsion_of_not_acyclic C c hC]
   -- For an acyclic complex `n₀ = p + q`, the sum of the ranks of the two differentials.
-  rw [eq_add_of_exactAt c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0)
+  rw [eq_add_of_exactAt c prev_zmod_two_zero next_zmod_two_zero (hC 0)
     (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1)]
   simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, div_eq_mul_inv, ← inv_pow,
     inv_neg, inv_one]

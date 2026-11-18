@@ -23,11 +23,37 @@ both involving the same other degree.
 * `HomologicalComplex.exactAt_iff_range_eq_ker_zmod_two`: exactness in a degree.
 * `HomologicalComplex.acyclic_iff_range_eq_ker_zmod_two`: a two-periodic complex of modules is
   acyclic exactly when the image of each differential is the kernel of the other.
+* `HomologicalComplex.exactAt_iff_of_linearEquiv_zmod_two`,
+  `HomologicalComplex.acyclic_iff_of_linearEquiv_zmod_two`: linear equivalences intertwining the
+  differentials of two two-periodic complexes up to a unit, preserving or exchanging the parities,
+  preserve exactness and acyclicity.
+* `CochainComplex.prev_zmod_two_zero` and its variants: the previous and next degrees of `0` and
+  `1` in the shape `ComplexShape.up (ZMod 2)`.
 -/
 
 public section
 
 open CategoryTheory
+
+namespace CochainComplex
+
+/-- In the shape `ComplexShape.up (ZMod 2)`, the degree preceding `0` is `1`. -/
+theorem prev_zmod_two_zero : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
+  (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
+
+/-- In the shape `ComplexShape.up (ZMod 2)`, the degree following `0` is `1`. -/
+theorem next_zmod_two_zero : (ComplexShape.up (ZMod 2)).next 0 = 1 :=
+  (ComplexShape.up _).next_eq' (zero_add 1)
+
+/-- In the shape `ComplexShape.up (ZMod 2)`, the degree preceding `1` is `0`. -/
+theorem prev_zmod_two_one : (ComplexShape.up (ZMod 2)).prev 1 = 0 :=
+  (ComplexShape.up _).prev_eq' (zero_add 1)
+
+/-- In the shape `ComplexShape.up (ZMod 2)`, the degree following `1` is `0`. -/
+theorem next_zmod_two_one : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
+  (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
+
+end CochainComplex
 
 namespace HomologicalComplex
 
@@ -66,5 +92,77 @@ theorem acyclic_iff_bijective_of_d_eq_zero {i i' : ZMod 2} (hii' : i + 1 = i')
   have hm : ∀ a b : ZMod 2, b = a ∨ b = a + 1 := by decide
   obtain rfl | rfl : m = i ∨ m = i' := hii' ▸ hm i m
   exacts [h.2, h.1]
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+/-! ### Linear equivalences intertwining the differentials up to a unit -/
+
+variable {R : Type*} [CommRing R]
+  {C D : HomologicalComplex (ModuleCat R) (ComplexShape.up (ZMod 2))}
+
+/-- If `D.d k' j' ∘ e_k = u • (e_j ∘ C.d k j)` for linear equivalences `e_j`, `e_k` and a unit `u`,
+the boundaries of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
+theorem range_d_eq_map_of_linearEquiv {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
+    LinearMap.range (D.d k' j').hom =
+      (LinearMap.range (C.d k j).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
+  have hd : (D.d k' j').hom =
+      ((eⱼ : C.X j →ₗ[R] D.X j') ∘ₗ (C.d k j).hom) ∘ₗ (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) := by
+    ext x
+    simpa using h (eₖ.symm x)
+  have htop : LinearMap.range (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) = ⊤ :=
+    LinearMap.range_eq_top.2 fun x ↦ ⟨eₖ (hu.unit⁻¹.val • x), by simp [smul_smul]⟩
+  rw [hd, LinearMap.range_comp_of_range_eq_top _ htop, LinearMap.range_comp]
+
+/-- If `D.d j' k' ∘ e_j = u • (e_k ∘ C.d j k)` for linear equivalences `e_j`, `e_k` and a unit `u`,
+the cycles of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
+theorem ker_d_eq_map_of_linearEquiv {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x)) :
+    LinearMap.ker (D.d j' k').hom =
+      (LinearMap.ker (C.d j k).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
+  have hd : (D.d j' k').hom =
+      (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) ∘ₗ (eⱼ.symm : D.X j' →ₗ[R] C.X j) := by
+    ext x
+    simpa using h (eⱼ.symm x)
+  have hker : LinearMap.ker (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) =
+      LinearMap.ker (C.d j k).hom := by
+    ext x
+    simp [hu.smul_eq_zero]
+  rw [hd, LinearMap.ker_comp, hker, Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+
+/-- Linear equivalences intertwining the differentials of two-periodic complexes `C` and `D` up to
+a unit preserve exactness. -/
+theorem exactAt_iff_of_linearEquiv_zmod_two {j k j' k' : ZMod 2} (hjk : j + 1 = k)
+    (hjk' : j' + 1 = k') (eⱼ : C.X j ≃ₗ[R] D.X j') (eₖ : C.X k ≃ₗ[R] D.X k') {u : R}
+    (hu : IsUnit u) (hj : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x))
+    (hk : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
+    D.ExactAt j' ↔ C.ExactAt j := by
+  rw [D.exactAt_iff_range_eq_ker_zmod_two hjk', C.exactAt_iff_range_eq_ker_zmod_two hjk,
+    range_d_eq_map_of_linearEquiv eⱼ eₖ hu hk, ker_d_eq_map_of_linearEquiv eⱼ eₖ hu hj]
+  exact (Submodule.map_injective_of_injective eⱼ.injective).eq_iff
+
+/-- Linear equivalences `e₀ : Cⱼ ≃ D₀` and `e₁ : Cₖ ≃ D₁`, for `{j, k} = {0, 1}`, intertwining the
+differentials of two-periodic complexes `C` and `D` up to a unit make `D` acyclic exactly when `C`
+is. -/
+theorem acyclic_iff_of_linearEquiv_zmod_two {j k : ZMod 2} (hjk : j + 1 = k)
+    (e₀ : C.X j ≃ₗ[R] D.X 0) (e₁ : C.X k ≃ₗ[R] D.X 1) {u : R} (hu : IsUnit u)
+    (h₀₁ : ∀ x, (D.d 0 1).hom (e₀ x) = u • e₁ ((C.d j k).hom x))
+    (h₁₀ : ∀ x, (D.d 1 0).hom (e₁ x) = u • e₀ ((C.d k j).hom x)) :
+    D.Acyclic ↔ C.Acyclic := by
+  have hkj : k + 1 = j := by rw [← hjk, add_assoc, CharTwo.add_self_eq_zero, add_zero]
+  have h₀ := exactAt_iff_of_linearEquiv_zmod_two hjk (zero_add 1) e₀ e₁ hu h₀₁ h₁₀
+  have h₁ := exactAt_iff_of_linearEquiv_zmod_two hkj (CharTwo.add_self_eq_zero 1) e₁ e₀ hu h₁₀ h₀₁
+  have hi (i : ZMod 2) : i = j ∨ i = k := by
+    rw [← hjk]
+    exact (by decide : ∀ i j : ZMod 2, i = j ∨ i = j + 1) i j
+  refine ⟨fun h i ↦ ?_, fun h i ↦ ?_⟩
+  · rcases hi i with rfl | rfl
+    exacts [h₀.1 (h 0), h₁.1 (h 1)]
+  · fin_cases i
+    exacts [h₀.2 (h j), h₁.2 (h k)]
 
 end HomologicalComplex
