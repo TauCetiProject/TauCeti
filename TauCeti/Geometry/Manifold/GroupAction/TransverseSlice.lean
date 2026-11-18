@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.LinearAlgebra.LinearMap.Coprod
+import TauCeti.Topology.Algebra.ProperAction.TransverseSlice
 
 /-!
 # Transverse slices of Lie group actions
@@ -25,8 +27,9 @@ At a locally free point `x`, every complement `W` of `𝔤 · x` gives such a sl
 preimage of the affine subspace `φ x + W` under the extended chart `φ` at `x`.
 
 These are the transverse local charts from which quotient charts of free proper actions are
-built: properness of the action makes the slice map injective after shrinking the slice, and the
-slice then parametrises the orbits near `x`.
+built: properness of the action makes the slice map injective after shrinking the slice
+(`IsLocalDiffeomorphAt.exists_isOpen_smul_slice`), and the slice then parametrises the orbits near
+`x`.
 
 ## Main results
 
@@ -35,8 +38,11 @@ slice then parametrises the orbits near `x`.
 * `TauCeti.isLocalDiffeomorphAt_smul_slice_iff`: the slice map is a local diffeomorphism at
   `(1, s₀)` exactly when `𝔤_{σ s₀} = 0`, `dσ` is injective at `s₀` and its range is a complement
   of `𝔤 · σ s₀`.
-* `TauCeti.IsLocalDiffeomorphAt.eventually_forall_smul_slice`: a slice map which is a local
+* `IsLocalDiffeomorphAt.eventually_forall_smul_slice`: a slice map which is a local
   diffeomorphism at `(1, s₀)` is one at `(g, s)` for all `g` and all `s` near `s₀`.
+* `IsLocalDiffeomorphAt.exists_isOpen_smul_slice`: for a proper action at a point with trivial
+  stabilizer, a slice map which is a `C^n` local diffeomorphism at `(1, s₀)` is injective and a
+  `C^n` local diffeomorphism on `G × U` for some open neighbourhood `U` of `s₀`.
 * `TauCeti.isLocalDiffeomorphAt_smul_extChartAt_symm`: at a locally free point `x`, the chart
   slice `w ↦ φ.symm (φ x + w)` along a complement `W` of `𝔤 · x` gives a slice map which is a
   local diffeomorphism at `(1, 0)`.
@@ -115,6 +121,29 @@ theorem _root_.IsLocalDiffeomorphAt.eventually_forall_smul_slice {n : ℕ∞ω} 
     exact IsLocalDiffeomorphAt.comp (hf := hs)
       (hg := (Diffeomorph.smul I I' n g).isLocalDiffeomorph _)
   simpa [T] using hcomp.of_comp_right (T.isLocalDiffeomorph _)
+
+/-- **Shrinking a transverse slice of a proper action.** If the slice map `(g, s) ↦ g • σ s` is a
+`C^n` local diffeomorphism at `(1, s₀)` and `σ s₀` has trivial stabilizer under a proper action of
+`G`, then on some open neighbourhood `U` of `s₀` the slice map is both injective and a `C^n` local
+diffeomorphism on the whole tube `G × U`. -/
+theorem _root_.IsLocalDiffeomorphAt.exists_isOpen_smul_slice {n : ℕ∞ω} [LieGroup I n G]
+    [ContMDiffSMul I I' n G M] [ProperSMul G M]
+    (h : IsLocalDiffeomorphAt (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (1, s₀))
+    (hfree : MulAction.stabilizer G (σ s₀) = ⊥) :
+    ∃ U : Set S, IsOpen U ∧ s₀ ∈ U ∧
+      InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) ∧
+      IsLocalDiffeomorphOn (I.prod J) I' n (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U) := by
+  have hσ : ContinuousAt σ s₀ := by
+    have hcomp : ContinuousAt (fun s : S ↦ (1 : G) • σ s) s₀ :=
+      h.contMDiffAt.continuousAt.comp_of_eq
+        (continuous_const.prodMk continuous_id).continuousAt rfl
+    simpa [one_smul] using hcomp
+  obtain ⟨N, hN, hinjN⟩ := h.exists_mem_nhds_injOn
+  obtain ⟨V, hV, hinjV⟩ := ProperSMul.exists_mem_nhds_injOn_smul_slice hσ hfree hN hinjN
+  obtain ⟨U, hU_sub, hU_open, hs₀U⟩ :=
+    mem_nhds_iff.1 (inter_mem h.eventually_forall_smul_slice hV)
+  exact ⟨U, hU_open, hs₀U, hinjV.mono (prod_mono_right fun _ hu ↦ (hU_sub hu).2),
+    fun ⟨⟨g, _⟩, _, hu⟩ ↦ (hU_sub hu).1 g⟩
 
 end Differential
 
