@@ -34,6 +34,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `TauCeti.hasFiniteMulSupport_sum_type`: a family on `α ⊕ β` has finite multiplicative support as
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
+* `TauCeti.exists_ne_one_of_finprod_ne_one`, `TauCeti.exists_ne_zero_of_finsum_ne_zero`: a
+  product that is not `1` has a factor that is not `1`, and likewise for sums.
 * `TauCeti.finprod_comp_eq_of_injective` and `TauCeti.finsum_comp_eq_of_injective`: reindex
   along an injection when the family is trivial outside its range.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
@@ -112,6 +114,15 @@ theorem finprod_sum_type (f : α ⊕ β → M) (hl : HasFiniteMulSupport (f ∘ 
   rw [← finprod_mem_univ, ← range_inl_union_range_inr,
     finprod_mem_union' isCompl_range_inl_range_inr.disjoint hfl hfr,
     finprod_mem_range Sum.inl_injective, finprod_mem_range Sum.inr_injective]
+
+/-- If a product is not `1`, then one of its factors is not `1`. This is the case `s = univ` of
+`exists_ne_one_of_finprod_mem_ne_one`. -/
+@[to_additive /-- If a sum is not `0`, then one of its terms is not `0`. This is the case
+`s = univ` of `exists_ne_zero_of_finsum_mem_ne_zero`. -/]
+theorem exists_ne_one_of_finprod_ne_one {f : α → M} (h : ∏ᶠ a, f a ≠ 1) : ∃ a, f a ≠ 1 := by
+  obtain ⟨a, -, ha⟩ := exists_ne_one_of_finprod_mem_ne_one (s := univ) (f := f)
+    (by rwa [finprod_mem_univ])
+  exact ⟨a, ha⟩
 
 /-- Reindex a product along an injection when every factor outside its range is `1`. -/
 @[to_additive /-- Reindex a sum along an injection when every term outside its range is `0`. -/]

@@ -35,7 +35,8 @@ chain maps is the product of their matrices (`TauCeti.gradedMatrixComplexHom_com
 identity matrix gives the identity (`TauCeti.gradedMatrixComplexHom_one`). A matrix `K` lowering
 degrees by one with `Φ - Ψ = D * K + K * D'` gives a chain homotopy between the maps of `Φ` and
 `Ψ` (`TauCeti.gradedMatrixComplexHomotopy`), so two matrices inverse to each other up to such
-homotopies give a homotopy equivalence (`TauCeti.gradedMatrixComplexHomotopyEquiv`).
+homotopies give a homotopy equivalence (`TauCeti.gradedMatrixComplexHomotopyEquiv`), whose maps
+are the chain maps of the two matrices.
 
 Over a field and with finitely many degrees, the total dimension of the homology of a complex
 homotopy equivalent to `gradedMatrixComplex e D` is at most the number of generators
@@ -195,6 +196,8 @@ def gradedMatrixComplexHom (Φ : Matrix ι κ R) (hΦ : ∀ i k, Φ i k ≠ 0 �
     gradedMatrixComplex e D hD hDD ⟶ gradedMatrixComplex e' D' hD' hDD' where
   f a := blockMap e e' a a Φ
   comm' a b hab := by
+    -- The differentials and the chain maps of these complexes are blocks of matrices by
+    -- definition.
     change blockMap e e' a a Φ ≫ blockMap e' e' a b D' = blockMap e e a b D ≫ blockMap e e' b b Φ
     rw [blockMap_comp e e' e' a a b Φ D' fun i j h hi ↦ by rw [hΦ i j h, hi],
       blockMap_comp e e e' a b b D Φ fun i j h hi ↦ by rw [hD i j h, hi]; exact hab, hΦD]
@@ -269,9 +272,24 @@ def gradedMatrixComplexHomotopy {Φ Ψ : Matrix ι κ R} {hΦ : ∀ i k, Φ i k 
     rw [sub_eq_iff_eq_add.mp hΦΨ]
     congr 1
 
+/-- The chain homotopy of a matrix `K` sends the generator `i` of degree `a` to `∑ₖ K i k • k`,
+over the generators `k` of degree `b`. -/
+@[simp]
+theorem gradedMatrixComplexHomotopy_hom_basis {Φ Ψ : Matrix ι κ R}
+    {hΦ : ∀ i k, Φ i k ≠ 0 → e' k = e i} {hΦD : D * Φ = Φ * D'}
+    {hΨ : ∀ i k, Ψ i k ≠ 0 → e' k = e i} {hΨD : D * Ψ = Ψ * D'} {K : Matrix ι κ R}
+    {hK : ∀ i k, K i k ≠ 0 → e' k + 1 = e i} {hΦΨ : Φ - Ψ = D * K + K * D'} (a b : A)
+    (i : {i // e i = a}) :
+    ((gradedMatrixComplexHomotopy (hΦ := hΦ) (hΦD := hΦD) (hΨ := hΨ) (hΨD := hΨD) K hK
+        hΦΨ).hom a b).hom (gradedMatrixComplexBasis e D hD hDD a i) =
+      ∑ k : {k // e' k = b}, K i k • gradedMatrixComplexBasis e' D' hD' hDD' b k :=
+  blockMap_basisFun e e' a b K i
+
 /-- Matrices `Φ` and `Ψ` inverse to each other up to homotopies `K` and `K'`,
 `Φ * Ψ - 1 = D * K + K * D` and `Ψ * Φ - 1 = D' * K' + K' * D'`, give a homotopy equivalence
-between the complexes of `D` and `D'`. -/
+between the complexes of `D` and `D'`. Its maps are the chain maps of `Φ` and `Ψ`
+(`TauCeti.gradedMatrixComplexHomotopyEquiv_hom`, `TauCeti.gradedMatrixComplexHomotopyEquiv_inv`).
+-/
 def gradedMatrixComplexHomotopyEquiv [DecidableEq ι] [DecidableEq κ] (Φ : Matrix ι κ R)
     (Ψ : Matrix κ ι R) (hΦ : ∀ i k, Φ i k ≠ 0 → e' k = e i) (hΦD : D * Φ = Φ * D')
     (hΨ : ∀ i k, Ψ i k ≠ 0 → e k = e' i) (hΨD : D' * Ψ = Ψ * D) (K : Matrix ι ι R)
@@ -289,6 +307,32 @@ def gradedMatrixComplexHomotopyEquiv [DecidableEq ι] [DecidableEq κ] (Φ : Mat
     rw [gradedMatrixComplexHom_comp hΨ hΨD hΦ hΦD (degree_mul hΨ hΦ) (commute_mul hΨD hΦD),
       ← gradedMatrixComplexHom_one degree_one (by rw [Matrix.mul_one, Matrix.one_mul])]
     exact gradedMatrixComplexHomotopy K' hK' hΨΦ
+
+section HomotopyEquiv
+
+variable [DecidableEq ι] [DecidableEq κ] {Φ : Matrix ι κ R} {Ψ : Matrix κ ι R}
+  {hΦ : ∀ i k, Φ i k ≠ 0 → e' k = e i} {hΦD : D * Φ = Φ * D'} {hΨ : ∀ i k, Ψ i k ≠ 0 → e k = e' i}
+  {hΨD : D' * Ψ = Ψ * D} {K : Matrix ι ι R} {hK : ∀ i k, K i k ≠ 0 → e k + 1 = e i}
+  {hΦΨ : Φ * Ψ - 1 = D * K + K * D} {K' : Matrix κ κ R}
+  {hK' : ∀ i k, K' i k ≠ 0 → e' k + 1 = e' i} {hΨΦ : Ψ * Φ - 1 = D' * K' + K' * D'}
+
+/-- The forward map of the homotopy equivalence of `Φ` and `Ψ` is the chain map of `Φ`. -/
+@[simp]
+theorem gradedMatrixComplexHomotopyEquiv_hom :
+    (gradedMatrixComplexHomotopyEquiv (hD := hD) (hDD := hDD) (hD' := hD') (hDD' := hDD') Φ Ψ hΦ
+        hΦD hΨ hΨD K hK hΦΨ K' hK' hΨΦ).hom =
+      gradedMatrixComplexHom Φ hΦ hΦD :=
+  (rfl)
+
+/-- The backward map of the homotopy equivalence of `Φ` and `Ψ` is the chain map of `Ψ`. -/
+@[simp]
+theorem gradedMatrixComplexHomotopyEquiv_inv :
+    (gradedMatrixComplexHomotopyEquiv (hD := hD) (hDD := hDD) (hD' := hD') (hDD' := hDD') Φ Ψ hΦ
+        hΦD hΨ hΨD K hK hΦΨ K' hK' hΨΦ).inv =
+      gradedMatrixComplexHom Ψ hΨ hΨD :=
+  (rfl)
+
+end HomotopyEquiv
 
 end Homotopy
 

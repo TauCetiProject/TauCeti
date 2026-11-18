@@ -39,9 +39,13 @@ each orbit (`TauCeti.NovikovModule.orbitDegree`). A kernel of degree `c`, one wi
 
 Specialization turns kernel identities into matrix identities. A kernel commuting with two
 differentials specializes to a matrix commuting with their cyclic matrices
-(`TauCeti.NovikovModule.cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq`), and a kernel homotopy
+(`TauCeti.NovikovModule.cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq`), a kernel homotopy
 `m - m' = k δ₀ + δ₁ k` specializes to a matrix homotopy
-(`TauCeti.NovikovModule.cyclicMatrix_sub_cyclicMatrix`).
+(`TauCeti.NovikovModule.cyclicMatrix_sub_cyclicMatrix`), in particular kernels inverse to each
+other up to homotopy specialize to matrices inverse to each other up to homotopy
+(`TauCeti.NovikovModule.cyclicMatrix_mul_cyclicMatrix_sub_one`), and a differential with
+`δ ∘ δ = 0` specializes to a matrix squaring to zero
+(`TauCeti.NovikovModule.cyclicMatrix_mul_self_eq_zero`).
 
 The invariant kernels with finite outputs and a fixed degree
 (`TauCeti.NovikovModule.IsLaurentKernel`) are the homogeneous matrices of the finite Laurent model.
@@ -49,7 +53,8 @@ A Laurent differential of degree `1` with `δ ∘ δ = 0` specializes to the *cy
 (`TauCeti.NovikovModule.cyclicComplex`), with one generator for each orbit, graded by the orbit
 degrees, for instance modulo `n`. Laurent chain maps
 `Φ`, `Ψ` inverse to each other up to Laurent homotopies of degree `-1` specialize to a homotopy
-equivalence of cyclic complexes (`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv`). Over a field
+equivalence of cyclic complexes (`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv`), whose maps
+are the chain maps of the cyclic matrices of `Φ` and `Ψ`. Over a field
 and with finitely many degrees, the number of orbits on one side is then at least the total
 dimension of the homology of the cyclic complex on the other side
 (`TauCeti.NovikovModule.sum_finrank_homology_cyclicComplex_le_card`).
@@ -272,34 +277,36 @@ theorem orbitDegree_apply {d : (Σ i, P i) → A}
 end Degree
 
 /-- The identity kernel has finite outputs. -/
-private theorem finite_support_ite_one {R S : Type*} [Zero R] [One R] [DecidableEq S] (p : S) :
-    (support fun q ↦ if p = q then (1 : R) else 0).Finite :=
+private theorem finite_support_diagonal_one {R S : Type*} [Zero R] [One R] [DecidableEq S]
+    (p : S) : (support fun q ↦ if p = q then (1 : R) else 0).Finite :=
   (Set.finite_singleton p).subset fun q hq ↦ by
     by_contra h
     exact hq (by simp [Ne.symm (Set.mem_singleton_iff.not.mp h)])
 
 section LaurentKernel
 
-variable {R H A ι₁ ι₀ : Type*} [Semiring R] [AddGroup H] {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
+variable {R H A ι₁ ι₀ : Type*} [AddGroup H] {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
   [∀ i, AddTorsor H (P₁ i)] [∀ k, AddTorsor H (P₀ k)]
 
 /-- A kernel `m` from `Σ i, P₁ i` to `Σ k, P₀ k` is a *Laurent kernel of degree `c`* for degrees
 `d₁` and `d₀` on the generators if it is invariant under translating input and output by the same
 period, its outputs are finite combinations, and it raises degrees by `c`. These are the
 homogeneous matrices of the finite Laurent model. -/
-structure IsLaurentKernel [Add A] (d₁ : (Σ i, P₁ i) → A) (d₀ : (Σ k, P₀ k) → A) (c : A)
+structure IsLaurentKernel [Zero R] [Add A] (d₁ : (Σ i, P₁ i) → A) (d₀ : (Σ k, P₀ k) → A) (c : A)
     (m : (Σ i, P₁ i) → (Σ k, P₀ k) → R) : Prop where
   /-- The kernel is invariant under translating input and output by the same period. -/
-  vadd_vadd : ∀ (g : H) i (p : P₁ i) k (q : P₀ k), m ⟨i, g +ᵥ p⟩ ⟨k, g +ᵥ q⟩ = m ⟨i, p⟩ ⟨k, q⟩
+  apply_vadd_vadd :
+    ∀ (g : H) i (p : P₁ i) k (q : P₀ k), m ⟨i, g +ᵥ p⟩ ⟨k, g +ᵥ q⟩ = m ⟨i, p⟩ ⟨k, q⟩
   /-- The outputs of the kernel are finite combinations. -/
   finite_support : ∀ p, (support (m p)).Finite
   /-- The kernel raises degrees by `c`. -/
   degree_eq : ∀ p q, m p q ≠ 0 → d₀ q = d₁ p + c
 
 /-- The identity kernel is a Laurent kernel of degree `0` for every degree on the generators. -/
-theorem isLaurentKernel_ite_one [AddZeroClass A] [DecidableEq (Σ i, P₁ i)] (d : (Σ i, P₁ i) → A) :
+theorem isLaurentKernel_diagonal_one [Zero R] [One R] [AddZeroClass A] [DecidableEq (Σ i, P₁ i)]
+    (d : (Σ i, P₁ i) → A) :
     IsLaurentKernel (H := H) d d 0 fun p q : Σ i, P₁ i ↦ if p = q then (1 : R) else 0 where
-  vadd_vadd g i p k q := by
+  apply_vadd_vadd g i p k q := by
     by_cases hik : i = k
     · subst hik
       have h : ((⟨i, g +ᵥ p⟩ : Σ i, P₁ i) = ⟨i, g +ᵥ q⟩) ↔ ((⟨i, p⟩ : Σ i, P₁ i) = ⟨i, q⟩) := by
@@ -308,7 +315,7 @@ theorem isLaurentKernel_ite_one [AddZeroClass A] [DecidableEq (Σ i, P₁ i)] (d
     · have h₁ : (⟨i, g +ᵥ p⟩ : Σ i, P₁ i) ≠ ⟨k, g +ᵥ q⟩ := fun h ↦ hik (congrArg Sigma.fst h)
       have h₂ : (⟨i, p⟩ : Σ i, P₁ i) ≠ ⟨k, q⟩ := fun h ↦ hik (congrArg Sigma.fst h)
       simp [h₁, h₂]
-  finite_support := finite_support_ite_one
+  finite_support := finite_support_diagonal_one
   degree_eq p q h := by
     obtain rfl : p = q := by
       by_contra hpq
@@ -316,21 +323,13 @@ theorem isLaurentKernel_ite_one [AddZeroClass A] [DecidableEq (Σ i, P₁ i)] (d
     exact (add_zero _).symm
 
 /-- The cyclic matrix of a Laurent kernel of degree `c` raises the orbit degrees by `c`. -/
-theorem orbitDegree_eq_of_cyclicMatrix_ne_zero [Add A] {d₁ : (Σ i, P₁ i) → A}
+theorem orbitDegree_eq_of_cyclicMatrix_ne_zero [AddCommMonoid R] [Add A] {d₁ : (Σ i, P₁ i) → A}
     {d₀ : (Σ k, P₀ k) → A} (hd₀ : ∀ k (g : H) (q : P₀ k), d₀ ⟨k, g +ᵥ q⟩ = d₀ ⟨k, q⟩) {c : A}
     {m : (Σ i, P₁ i) → (Σ k, P₀ k) → R} (hm : ∀ p q, m p q ≠ 0 → d₀ q = d₁ p + c) {i : ι₁}
     {k : ι₀} (h : cyclicMatrix m i k ≠ 0) : orbitDegree d₀ k = orbitDegree d₁ i + c := by
-  obtain ⟨q, hq⟩ : ∃ q : P₀ k, m ⟨i, Classical.arbitrary (P₁ i)⟩ ⟨k, q⟩ ≠ 0 := by
-    by_contra! h'
-    exact h (finsum_eq_zero_of_forall_eq_zero h')
+  obtain ⟨q, hq⟩ : ∃ q : P₀ k, m ⟨i, Classical.arbitrary (P₁ i)⟩ ⟨k, q⟩ ≠ 0 :=
+    exists_ne_zero_of_finsum_ne_zero h
   rw [orbitDegree_apply hd₀ q, hm _ _ hq, orbitDegree]
-
-/-- A Laurent differential squaring to zero has a cyclic matrix squaring to zero. -/
-theorem IsLaurentKernel.cyclicMatrix_mul_self [Add A] [One A] [Fintype ι₁]
-    {d : (Σ i, P₁ i) → A} {δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R} (hδ : IsLaurentKernel d d 1 δ)
-    (hδδ : ∀ p q, kernelComp δ δ p q = 0) : cyclicMatrix δ * cyclicMatrix δ = 0 := by
-  rw [← cyclicMatrix_kernelComp hδ.finite_support hδ.vadd_vadd hδ.finite_support,
-    show kernelComp δ δ = 0 from funext fun p ↦ funext (hδδ p), cyclicMatrix_zero]
 
 end LaurentKernel
 
@@ -338,6 +337,15 @@ section KernelIdentity
 
 variable {R H ι₁ ι₀ : Type*} [AddGroup H] {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
   [∀ i, AddTorsor H (P₁ i)] [∀ k, AddTorsor H (P₀ k)] [Fintype ι₁] [Fintype ι₀]
+
+/-- **Specialization of differentials.** An invariant kernel `δ` with finite outputs and
+`δ ∘ δ = 0` as a composite kernel has a cyclic matrix squaring to zero. -/
+theorem cyclicMatrix_mul_self_eq_zero [Semiring R] {δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R}
+    (hδinv : ∀ (g : H) i (p : P₁ i) k (q : P₁ k), δ ⟨i, g +ᵥ p⟩ ⟨k, g +ᵥ q⟩ = δ ⟨i, p⟩ ⟨k, q⟩)
+    (hδfin : ∀ p, (support (δ p)).Finite) (hδδ : ∀ p q, kernelComp δ δ p q = 0) :
+    cyclicMatrix δ * cyclicMatrix δ = 0 := by
+  rw [← cyclicMatrix_kernelComp hδfin hδinv hδfin,
+    show kernelComp δ δ = 0 from funext fun p ↦ funext (hδδ p), cyclicMatrix_zero]
 
 /-- **Specialization of chain maps.** If a kernel `Φ` commutes with kernels `δ₁` and `δ₀` as
 composite kernels, `δ₁ Φ = Φ δ₀`, then its cyclic matrix commutes with theirs. The outputs of all
@@ -375,13 +383,35 @@ theorem cyclicMatrix_sub_cyclicMatrix [Ring R] {m m' k : (Σ i, P₁ i) → (Σ 
       (fun p ↦ finite_support_kernelComp (hδ₁fin p) hkfin)]
   exact congrArg cyclicMatrix (funext fun p ↦ funext (hmk p))
 
+/-- **Specialization of homotopy inverses.** If kernels `Φ` and `Ψ` are inverse to each other up
+to a kernel homotopy `K` for a differential `δ`, `Φ Ψ - 1 = K δ + δ K` as composite kernels, then
+their cyclic matrices are inverse to each other up to the homotopy given by the cyclic matrix of
+`K`. The outputs of all four kernels are finite combinations, and `Ψ`, `K` and `δ` are
+invariant. -/
+theorem cyclicMatrix_mul_cyclicMatrix_sub_one [Ring R] [DecidableEq ι₁] [DecidableEq (Σ i, P₁ i)]
+    {Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R} {Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R}
+    {K δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R} (hΦfin : ∀ p, (support (Φ p)).Finite)
+    (hΨinv : ∀ (g : H) k (q : P₀ k) i (p : P₁ i), Ψ ⟨k, g +ᵥ q⟩ ⟨i, g +ᵥ p⟩ = Ψ ⟨k, q⟩ ⟨i, p⟩)
+    (hΨfin : ∀ q, (support (Ψ q)).Finite)
+    (hKinv : ∀ (g : H) i (p : P₁ i) k (q : P₁ k), K ⟨i, g +ᵥ p⟩ ⟨k, g +ᵥ q⟩ = K ⟨i, p⟩ ⟨k, q⟩)
+    (hKfin : ∀ p, (support (K p)).Finite)
+    (hδinv : ∀ (g : H) i (p : P₁ i) k (q : P₁ k), δ ⟨i, g +ᵥ p⟩ ⟨k, g +ᵥ q⟩ = δ ⟨i, p⟩ ⟨k, q⟩)
+    (hδfin : ∀ p, (support (δ p)).Finite)
+    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
+      kernelComp K δ p q + kernelComp δ K p q) :
+    cyclicMatrix Φ * cyclicMatrix Ψ - 1 =
+      cyclicMatrix δ * cyclicMatrix K + cyclicMatrix K * cyclicMatrix δ := by
+  rw [← cyclicMatrix_kernelComp hΦfin hΨinv hΨfin, ← cyclicMatrix_one (P₁ := P₁), add_comm]
+  exact cyclicMatrix_sub_cyclicMatrix (fun p ↦ finite_support_kernelComp (hΦfin p) hΨfin)
+    finite_support_diagonal_one hKinv hKfin hδfin hδinv hδfin hΦΨ
+
 end KernelIdentity
 
 section CyclicComplex
 
 universe u v
 
-variable {R : Type u} [CommRing R] {H A : Type*} [AddGroup H] [AddGroup A] [One A]
+variable {R : Type u} [CommRing R] {H A : Type*} [AddGroup H] [AddRightCancelSemigroup A] [One A]
   [DecidableEq A] {ι₁ ι₀ : Type v} [Fintype ι₁] [Fintype ι₀] {P₁ : ι₁ → Type*}
   {P₀ : ι₀ → Type*} [∀ i, AddTorsor H (P₁ i)] [∀ k, AddTorsor H (P₀ k)]
 
@@ -390,24 +420,34 @@ variable (R) in
 `d` invariant under the periods: the complex of free `R`-modules with one generator for each orbit,
 graded by the orbit degrees, whose differential is the cyclic matrix of `δ`. It is the
 specialization `t ↦ 1` of the finite Laurent complex of `δ`. -/
-def cyclicComplex (d : (Σ i, P₁ i) → A) (hd : ∀ i (g : H) (p : P₁ i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩)
+@[expose] def cyclicComplex (d : (Σ i, P₁ i) → A)
+    (hd : ∀ i (g : H) (p : P₁ i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩)
     (δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R) (hδ : IsLaurentKernel d d 1 δ)
     (hδδ : ∀ p q, kernelComp δ δ p q = 0) :
     HomologicalComplex (ModuleCat.{max u v} R) (ComplexShape.up A) :=
   gradedMatrixComplex (orbitDegree d) (cyclicMatrix δ)
     (fun _ _ h ↦ orbitDegree_eq_of_cyclicMatrix_ne_zero hd hδ.degree_eq h)
-    (hδ.cyclicMatrix_mul_self hδδ)
+    (cyclicMatrix_mul_self_eq_zero hδ.apply_vadd_vadd hδ.finite_support hδδ)
 
 /-- The cyclic complex is the complex of the graded cyclic matrix of its differential. -/
-theorem cyclicComplex_eq (d : (Σ i, P₁ i) → A)
+theorem cyclicComplex_def (d : (Σ i, P₁ i) → A)
     (hd : ∀ i (g : H) (p : P₁ i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩) (δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
     (hδ : IsLaurentKernel d d 1 δ) (hδδ : ∀ p q, kernelComp δ δ p q = 0) :
     cyclicComplex R d hd δ hδ hδδ = gradedMatrixComplex (orbitDegree d) (cyclicMatrix δ)
       (fun _ _ h ↦ orbitDegree_eq_of_cyclicMatrix_ne_zero hd hδ.degree_eq h)
-      (hδ.cyclicMatrix_mul_self hδδ) :=
+      (cyclicMatrix_mul_self_eq_zero hδ.apply_vadd_vadd hδ.finite_support hδδ) :=
   (rfl)
 
-variable [DecidableEq (Σ i, P₁ i)] [DecidableEq (Σ k, P₀ k)] [DecidableEq ι₁] [DecidableEq ι₀]
+end CyclicComplex
+
+section CyclicComplexHomotopyEquiv
+
+universe u v
+
+variable {R : Type u} [CommRing R] {H A : Type*} [AddGroup H] [AddGroup A] [One A]
+  [DecidableEq A] {ι₁ ι₀ : Type v} [Fintype ι₁] [Fintype ι₀] {P₁ : ι₁ → Type*}
+  {P₀ : ι₀ → Type*} [∀ i, AddTorsor H (P₁ i)] [∀ k, AddTorsor H (P₀ k)]
+  [DecidableEq (Σ i, P₁ i)] [DecidableEq (Σ k, P₀ k)] [DecidableEq ι₁] [DecidableEq ι₀]
   {d₁ : (Σ i, P₁ i) → A} {hd₁ : ∀ i (g : H) (p : P₁ i), d₁ ⟨i, g +ᵥ p⟩ = d₁ ⟨i, p⟩}
   {δ₁ : (Σ i, P₁ i) → (Σ i, P₁ i) → R} {hδ₁ : IsLaurentKernel d₁ d₁ 1 δ₁}
   {hδδ₁ : ∀ p q, kernelComp δ₁ δ₁ p q = 0} {d₀ : (Σ k, P₀ k) → A}
@@ -418,7 +458,9 @@ variable [DecidableEq (Σ i, P₁ i)] [DecidableEq (Σ k, P₀ k)] [DecidableEq 
 /-- **The cyclic specialization of a Laurent homotopy equivalence.** Laurent chain maps `Φ` and
 `Ψ` of degree `0` between Laurent differentials `δ₁` and `δ₀`, inverse to each other up to Laurent
 homotopies `K` and `K'` of degree `-1`, specialize to a homotopy equivalence between the cyclic
-complexes of `δ₁` and `δ₀`. -/
+complexes of `δ₁` and `δ₀`. Its maps are the chain maps of the cyclic matrices of `Φ` and `Ψ`
+(`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_hom`,
+`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_inv`). -/
 def cyclicComplexHomotopyEquiv (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
     (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
     (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
@@ -433,35 +475,64 @@ def cyclicComplexHomotopyEquiv (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
     HomotopyEquiv (cyclicComplex R d₁ hd₁ δ₁ hδ₁ hδδ₁) (cyclicComplex R d₀ hd₀ δ₀ hδ₀ hδδ₀) :=
   gradedMatrixComplexHomotopyEquiv (cyclicMatrix Φ) (cyclicMatrix Ψ)
     (fun _ _ h ↦ (orbitDegree_eq_of_cyclicMatrix_ne_zero hd₀ hΦ.degree_eq h).trans (add_zero _))
-    (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₁.finite_support hΦ.vadd_vadd
-      hΦ.finite_support hδ₀.vadd_vadd hδ₀.finite_support hΦδ)
+    (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₁.finite_support hΦ.apply_vadd_vadd
+      hΦ.finite_support hδ₀.apply_vadd_vadd hδ₀.finite_support hΦδ)
     (fun _ _ h ↦ (orbitDegree_eq_of_cyclicMatrix_ne_zero hd₁ hΨ.degree_eq h).trans (add_zero _))
-    (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₀.finite_support hΨ.vadd_vadd
-      hΨ.finite_support hδ₁.vadd_vadd hδ₁.finite_support hΨδ)
+    (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₀.finite_support hΨ.apply_vadd_vadd
+      hΨ.finite_support hδ₁.apply_vadd_vadd hδ₁.finite_support hΨδ)
     (cyclicMatrix K)
     (fun _ _ h ↦ by
       rw [orbitDegree_eq_of_cyclicMatrix_ne_zero hd₁ hK.degree_eq h, neg_add_cancel_right])
-    (by
-      rw [← cyclicMatrix_kernelComp hΦ.finite_support hΨ.vadd_vadd hΨ.finite_support,
-        ← cyclicMatrix_one (P₁ := P₁), add_comm]
-      exact cyclicMatrix_sub_cyclicMatrix
-        (fun p ↦ finite_support_kernelComp (hΦ.finite_support p) hΨ.finite_support)
-        (isLaurentKernel_ite_one (H := H) d₁).finite_support hK.vadd_vadd hK.finite_support
-        hδ₁.finite_support hδ₁.vadd_vadd
-        hδ₁.finite_support hΦΨ)
+    (cyclicMatrix_mul_cyclicMatrix_sub_one hΦ.finite_support hΨ.apply_vadd_vadd
+      hΨ.finite_support hK.apply_vadd_vadd hK.finite_support hδ₁.apply_vadd_vadd
+      hδ₁.finite_support hΦΨ)
     (cyclicMatrix K')
     (fun _ _ h ↦ by
       rw [orbitDegree_eq_of_cyclicMatrix_ne_zero hd₀ hK'.degree_eq h, neg_add_cancel_right])
-    (by
-      rw [← cyclicMatrix_kernelComp hΨ.finite_support hΦ.vadd_vadd hΦ.finite_support,
-        ← cyclicMatrix_one (P₁ := P₀), add_comm]
-      exact cyclicMatrix_sub_cyclicMatrix
-        (fun p ↦ finite_support_kernelComp (hΨ.finite_support p) hΦ.finite_support)
-        (isLaurentKernel_ite_one (H := H) d₀).finite_support hK'.vadd_vadd hK'.finite_support
-        hδ₀.finite_support hδ₀.vadd_vadd
-        hδ₀.finite_support hΨΦ)
+    (cyclicMatrix_mul_cyclicMatrix_sub_one hΨ.finite_support hΦ.apply_vadd_vadd
+      hΦ.finite_support hK'.apply_vadd_vadd hK'.finite_support hδ₀.apply_vadd_vadd
+      hδ₀.finite_support hΨΦ)
 
-end CyclicComplex
+section Maps
+
+variable {Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R} {Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R}
+  {K : (Σ i, P₁ i) → (Σ i, P₁ i) → R} {K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R}
+  {hΦ : IsLaurentKernel d₁ d₀ 0 Φ} {hΨ : IsLaurentKernel d₀ d₁ 0 Ψ}
+  {hK : IsLaurentKernel d₁ d₁ (-1) K} {hK' : IsLaurentKernel d₀ d₀ (-1) K'}
+  {hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q}
+  {hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q}
+  {hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
+    kernelComp K δ₁ p q + kernelComp δ₁ K p q}
+  {hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
+    kernelComp K' δ₀ p q + kernelComp δ₀ K' p q}
+
+/-- The forward map of the cyclic specialization of a Laurent homotopy equivalence is the chain map
+of the cyclic matrix of `Φ`. -/
+@[simp]
+theorem cyclicComplexHomotopyEquiv_hom :
+    (cyclicComplexHomotopyEquiv (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁) (hd₀ := hd₀)
+        (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ hΨΦ).hom =
+      gradedMatrixComplexHom (cyclicMatrix Φ)
+        (fun _ _ h ↦ (orbitDegree_eq_of_cyclicMatrix_ne_zero hd₀ hΦ.degree_eq h).trans (add_zero _))
+        (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₁.finite_support hΦ.apply_vadd_vadd
+          hΦ.finite_support hδ₀.apply_vadd_vadd hδ₀.finite_support hΦδ) :=
+  gradedMatrixComplexHomotopyEquiv_hom
+
+/-- The backward map of the cyclic specialization of a Laurent homotopy equivalence is the chain
+map of the cyclic matrix of `Ψ`. -/
+@[simp]
+theorem cyclicComplexHomotopyEquiv_inv :
+    (cyclicComplexHomotopyEquiv (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁) (hd₀ := hd₀)
+        (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ hΨΦ).inv =
+      gradedMatrixComplexHom (cyclicMatrix Ψ)
+        (fun _ _ h ↦ (orbitDegree_eq_of_cyclicMatrix_ne_zero hd₁ hΨ.degree_eq h).trans (add_zero _))
+        (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₀.finite_support hΨ.apply_vadd_vadd
+          hΨ.finite_support hδ₁.apply_vadd_vadd hδ₁.finite_support hΨδ) :=
+  gradedMatrixComplexHomotopyEquiv_inv
+
+end Maps
+
+end CyclicComplexHomotopyEquiv
 
 section Finrank
 

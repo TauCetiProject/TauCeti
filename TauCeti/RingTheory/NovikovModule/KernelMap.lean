@@ -319,9 +319,7 @@ most `D` and `m'` raises potentials by at most `C'`, then the outputs of the com
 theorem potential_le_of_kernelComp_ne_zero {D : ℝ} {p₁ : S₁} {p₂ : S₂}
     (hm : ∀ p₀, m p₁ p₀ ≠ 0 → F₀ p₀ ≤ D) (hm' : ∀ p₀, m' p₀ p₂ ≠ 0 → F₂ p₂ ≤ F₀ p₀ + C')
     (h : kernelComp m m' p₁ p₂ ≠ 0) : F₂ p₂ ≤ D + C' := by
-  obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := by
-    by_contra! h'
-    exact h (finsum_eq_zero_of_forall_eq_zero h')
+  obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
   linarith [hm p₀ (left_ne_zero_of_mul hp₀), hm' p₀ (right_ne_zero_of_mul hp₀)]
 
 /-- **Finite outputs of a composite kernel.** If the output of `m` at `p₁` and every output of
@@ -329,9 +327,7 @@ theorem potential_le_of_kernelComp_ne_zero {D : ℝ} {p₁ : S₁} {p₂ : S₂}
 theorem finite_support_kernelComp {p₁ : S₁} (hm : (support (m p₁)).Finite)
     (hm' : ∀ p₀, (support (m' p₀)).Finite) : (support (kernelComp m m' p₁)).Finite :=
   (hm.biUnion fun p₀ _ => hm' p₀).subset fun p₂ h => by
-    obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := by
-      by_contra! h'
-      exact h (finsum_eq_zero_of_forall_eq_zero h')
+    obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
     exact Set.mem_biUnion (left_ne_zero_of_mul hp₀) (right_ne_zero_of_mul hp₀)
 
 /-- **Completed outputs of a composite kernel.** If the output of `m` at `p₁` is a completed
