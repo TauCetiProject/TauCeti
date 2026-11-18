@@ -232,7 +232,11 @@ theorem associatedBilinFormInChartAt_apply (ω : SmoothTwoForm I M)
   congr 1
   funext i
   fin_cases i
-  · rfl
+  · simp only [Fin.zero_eta, Matrix.cons_val_zero]
+    rw [extChartAt_coe_symm, Function.comp_apply]
+    -- `T` abbreviates `trivializationAt E (TangentSpace I) α`, which an instance argument of
+    -- `symmL` also mentions, so it cannot be rewritten; `rfl` unfolds the local definition.
+    rfl
   · exact (congrArg (T.symmL ℝ ((extChartAt I α).symm y))
       (Floer.almostComplexInChartAt_apply z y b)).trans
       (Trivialization.symmL_continuousLinearMapAt _ hx _)

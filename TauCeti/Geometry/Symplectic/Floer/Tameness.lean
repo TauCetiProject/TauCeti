@@ -34,10 +34,10 @@ compact set `K`, then a single constant `c > 0` works on `D × K`
 injectivity of `d e` is needed, and tameness is only assumed on `D × K`, not on a neighbourhood:
 it is an open condition. The constant is found chart by chart. In the chart at a point `α` of `K`
 the form `ω(·, J ·)` is a continuous family of bilinear forms on the model space
-(`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt`), positive at `α` and so, by uniform
-continuity on a compact neighbourhood, at least half its minimum at `α` on a smaller neighbourhood,
-where `d e` is bounded in the chart coordinates. Compactness of `K` then needs finitely many charts
-(`IsCompact.induction_on`).
+(`TauCeti.SmoothTwoForm.associatedBilinFormInChartAt`), positive at `α` and so, by continuity
+and compactness of `D`, at least half its minimum at `α` on a neighbourhood of `α`
+(`IsCompact.eventually_forall_mul_norm_sq_le`), where `d e` is bounded in the chart coordinates.
+Compactness of `K` then needs finitely many charts (`IsCompact.induction_on`).
 
 For a jointly continuous family of structures
 (`TauCeti.ContMDiffAlmostComplexStructureFamily`), continuity in the charts is automatic
@@ -87,14 +87,13 @@ theorem IsNondegenerate.exists_mem_nhds_forall_mul_norm_mvfderiv_sq_le (hω : ω
   have hL : IsCompact L := (isCompact_closedBall y₀ _).inter_right I.isClosed_range
   have hLt : L ⊆ φ.target := fun y hy ↦
     hr₀t ⟨mem_ball.2 ((mem_closedBall.1 hy.1).trans_lt (half_lt_self hr₀)), hy.2⟩
-  have hy₀L : y₀ ∈ L := ⟨mem_closedBall_self (half_pos hr₀).le, mem_range_self _⟩
-  have hbc : ContinuousOn b (D ×ˢ L) :=
-    continuousOn_associatedBilinFormInChartAt (fun p hp ↦ hLt hp.2)
-      (hJ.mono (prod_mono subset_rfl hLt))
+  have hbc : ContinuousOn b (D ×ˢ φ.target) :=
+    continuousOn_associatedBilinFormInChartAt (fun _ hp ↦ hp.2) hJ
   -- By tameness at `α` the form is coercive at `y₀`, with a constant `c₀`, and stays coercive with
-  -- the constant `c₀ / 2` within `δ` of `y₀`.
+  -- the constant `c₀ / 2` near `y₀`.
   obtain ⟨c₀, hc₀, hc₀b⟩ := hD.exists_pos_forall_mul_norm_sq_le (b := fun z ↦ b (z, y₀))
-    (hbc.comp (continuousOn_id.prodMk continuousOn_const) fun z hz ↦ ⟨hz, hy₀L⟩)
+    (hbc.comp (continuousOn_id.prodMk continuousOn_const) fun z hz ↦
+      ⟨hz, mem_extChartAt_target α⟩)
     fun z hz a ha ↦ by
       obtain ⟨v, rfl⟩ : ∃ v : TangentSpace I α, T.continuousLinearMapAt ℝ α v = a :=
         ⟨T.symmL ℝ α a, Trivialization.continuousLinearMapAt_symmL _
@@ -102,20 +101,23 @@ theorem IsNondegenerate.exists_mem_nhds_forall_mul_norm_mvfderiv_sq_le (hω : ω
       rw [ω.associatedBilinFormInChartAt_extChartAt J z (mem_extChartAt_source α), ←
         IsNondegenerate.symplecticFormAt_apply hω]
       exact hJt z hz v fun hv ↦ ha (by rw [hv, map_zero])
-  obtain ⟨δ, hδ, hcoer⟩ := hD.exists_pos_forall_dist_lt_forall_mul_norm_sq_le hL hbc hy₀L
-    (half_lt_self hc₀) hc₀b
+  have hφ : Tendsto φ (𝓝 α) (𝓝[φ.target] y₀) :=
+    tendsto_nhdsWithin_iff.2 ⟨continuousAt_extChartAt α,
+      eventually_of_mem (extChartAt_source_mem_nhds α) fun _ hx ↦ φ.map_source hx⟩
+  have hcoer := hφ.eventually (hD.eventually_forall_mul_norm_sq_le hbc
+    (mem_extChartAt_target α) (half_lt_self hc₀) hc₀b)
   -- The differential of `e` is bounded by `B` times the chart coordinates over `L`.
   obtain ⟨B, hB⟩ := exists_forall_norm_mvfderiv_le_mul_norm he hL hLt
-  refine ⟨φ.source ∩ φ ⁻¹' ball y₀ (min (r₀ / 2) δ),
-    inter_mem (extChartAt_source_mem_nhds α)
-      ((continuousAt_extChartAt α).preimage_mem_nhds
-        (ball_mem_nhds _ (lt_min (half_pos hr₀) hδ))),
+  refine ⟨φ.source ∩ φ ⁻¹' ball y₀ (r₀ / 2) ∩ {x | ∀ z ∈ D, ∀ a,
+      c₀ / 2 * ‖a‖ ^ 2 ≤ b (z, φ x) a a},
+    inter_mem (inter_mem (extChartAt_source_mem_nhds α)
+      ((continuousAt_extChartAt α).preimage_mem_nhds (ball_mem_nhds _ (half_pos hr₀)))) hcoer,
     c₀ / (2 * (B ^ 2 + 1)), by positivity, fun z hz x hx v ↦ ?_⟩
-  have hyL : φ x ∈ L := ⟨mem_closedBall.2 ((mem_ball.1 hx.2).trans_le (min_le_left _ _)).le,
-    extChartAt_target_subset_range α (φ.map_source hx.1)⟩
+  have hyL : φ x ∈ L := ⟨mem_closedBall.2 (mem_ball.1 hx.1.2).le,
+    extChartAt_target_subset_range α (φ.map_source hx.1.1)⟩
   set a := T.continuousLinearMapAt ℝ x v
-  have hlow := hcoer z hz _ hyL ((mem_ball.1 hx.2).trans_le (min_le_right _ _)) a
-  rw [ω.associatedBilinFormInChartAt_extChartAt J z hx.1,
+  have hlow := hx.2 z hz a
+  rw [ω.associatedBilinFormInChartAt_extChartAt J z hx.1.1,
     ← IsNondegenerate.symplecticFormAt_apply hω] at hlow
   -- Since `‖d e v‖ ≤ B ‖a‖`, the constant `c₀ / (2 (B² + 1))` works.
   have hq : c₀ / (2 * (B ^ 2 + 1)) * B ^ 2 ≤ c₀ / 2 := by
@@ -123,7 +125,7 @@ theorem IsNondegenerate.exists_mem_nhds_forall_mul_norm_mvfderiv_sq_le (hω : ω
     nlinarith [sq_nonneg B]
   calc c₀ / (2 * (B ^ 2 + 1)) * ‖mvfderiv I e x v‖ ^ 2
       ≤ c₀ / (2 * (B ^ 2 + 1)) * B ^ 2 * ‖a‖ ^ 2 := by
-        rw [mul_assoc, ← mul_pow]; gcongr; exact hB x hx.1 hyL v
+        rw [mul_assoc, ← mul_pow]; gcongr; exact hB x hx.1.1 hyL v
     _ ≤ _ := by gcongr
     _ ≤ _ := hlow
 

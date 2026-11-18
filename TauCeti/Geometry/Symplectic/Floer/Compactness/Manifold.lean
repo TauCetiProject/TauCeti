@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Chart
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
-import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
