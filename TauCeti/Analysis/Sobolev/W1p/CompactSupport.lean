@@ -150,30 +150,31 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
     (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
     u ∈ w1p0Submodule mu Omega p := by
   have hmeas : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
+  have hnull : NullMeasurableSet (Omega : Set E) mu := hmeas.nullMeasurableSet
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := by simp
   have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
     (ae_restrict_iff' hmeas).1 hu
   have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK.isClosed hu
   -- the zero-extension of `u` to the whole space is again a Sobolev function
   have hweak : HasWeakFDerivOn mu ⊤
-      ((extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.value u) : E → ℝ))
-      (fun x => innerSL ℝ (extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.gradient u) x)) := by
+      ((extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.value u) : E → ℝ))
+      (fun x => innerSL ℝ (extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.gradient u) x)) := by
     have hU : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K →
         innerSL ℝ (W1p.gradient u x) = 0 := by
       filter_upwards [hgrad] with x hx hxK
       rw [hx hxK, map_zero]
     refine (((W1p.hasWeakFDerivOn u).indicator_of_isCompact hK hKO hu hU).congr_ae
-      (coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)).symm).congr_ae_deriv ?_
-    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.gradient u)] with x hx
+      (coeFn_extendByZeroLpₗᵢ ℝ hnull hsub (W1p.value u)).symm).congr_ae_deriv ?_
+    filter_upwards [coeFn_extendByZeroLpₗᵢ ℝ hnull hsub (W1p.gradient u)] with x hx
     rw [hx]
     by_cases hxO : x ∈ (Omega : Set E) <;> simp [hxO]
   set w : W1p mu (⊤ : Opens E) p :=
-    W1p.mk (extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.value u))
-      (extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.gradient u)) hweak with hwdef
+    W1p.mk (extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.value u))
+      (extendByZeroLpₗᵢ ℝ mu hnull hsub (W1p.gradient u)) hweak with hwdef
   have hvalw : ⇑(W1p.value w) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
       (Omega : Set E).indicator (W1p.value u : E → ℝ) := by
     rw [hwdef, W1p.value_mk]
-    exact coeFn_extendByZeroLpₗᵢ ℝ hmeas hsub (W1p.value u)
+    exact coeFn_extendByZeroLpₗᵢ ℝ hnull hsub (W1p.value u)
   -- a smooth cutoff, equal to one on `K` and compactly supported inside `Ω`
   obtain ⟨chi, M, hchi, -, hchi_one_nhds, _, hchi_ts, hM0, hchiM_all,
     hchigradM_all⟩ := hK.exists_contDiff_cutoff_with_bounds Omega.isOpen hKO
@@ -286,7 +287,8 @@ theorem W1p.value_extendByZeroL_contDiffSMul_ae (hsub : Omega ≤ Omega') {psi :
     ∀ᵐ x ∂mu.restrict Omega', W1p.value (W1p0.extendByZeroL hsub ⟨_, hw⟩ : W1p mu Omega' p) x =
       (Omega : Set E).indicator (fun y => psi y * W1p.value u y) x := by
   have hOmega := Omega.isOpen.measurableSet
-  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega (SetLike.coe_subset_coe.mpr hsub)
+  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega.nullMeasurableSet
+    (SetLike.coe_subset_coe.mpr hsub)
     (W1p.value (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u))
   have h3 := (ae_restrict_iff' hOmega).1 (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u)
   filter_upwards [h2, ae_restrict_of_ae h3] with x hx2 hx3
@@ -307,7 +309,8 @@ theorem W1p.gradient_extendByZeroL_contDiffSMul_ae (hsub : Omega ≤ Omega') {ps
       (Omega : Set E).indicator
         (fun y => psi y • W1p.gradient u y + W1p.value u y • ∇ psi y) x := by
   have hOmega := Omega.isOpen.measurableSet
-  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega (SetLike.coe_subset_coe.mpr hsub)
+  have h2 := coeFn_extendByZeroLpₗᵢ ℝ (μ := mu) hOmega.nullMeasurableSet
+    (SetLike.coe_subset_coe.mpr hsub)
     (W1p.gradient (W1p.contDiffSMul psi hpsi hM hpsiM hgradM u))
   have h3 := (ae_restrict_iff' hOmega).1 (W1p.gradient_contDiffSMul_ae hpsi hM hpsiM hgradM u)
   filter_upwards [h2, ae_restrict_of_ae h3] with x hx2 hx3
