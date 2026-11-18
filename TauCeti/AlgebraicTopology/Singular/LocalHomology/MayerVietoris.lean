@@ -23,6 +23,9 @@ groups (`TauCeti.localHomology`).
 * `TauCeti.localHomology_hom_ext_of_union`: for closed `S` and `T` with
   `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, maps into `Hₖ(M, M ∖ (S ∪ T))` are determined by their
   restrictions to `S` and to `T`.
+* `TauCeti.isPullback_localHomologyRestriction`: for closed `S` and `T` with
+  `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, the square of restriction maps from `Hₖ(M, M ∖ (S ∪ T))` through
+  `Hₖ(M, M ∖ S)` and `Hₖ(M, M ∖ T)` to `Hₖ(M, M ∖ (S ∩ T))` is a pullback square.
 * `TauCeti.exists_localHomologyRestriction_union_eq`: with coefficients in a module, classes along
   closed sets `S` and `T` with the same restriction to `S ∩ T` are the restrictions of a single
   class along `S ∪ T`.
@@ -84,6 +87,31 @@ theorem localHomology_hom_ext_of_union {S T : Set M} (hS : IsClosed S) (hT : IsC
   ext
   · simpa using hS
   · simpa using hT
+
+/-- **Local homology of a union is a pullback.** Let `S` and `T` be closed and let
+`Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Then the square of restriction maps from `Hₖ(M, M ∖ (S ∪ T))` to
+`Hₖ(M, M ∖ S)` and `Hₖ(M, M ∖ T)`, and from these to `Hₖ(M, M ∖ (S ∩ T))`, is a pullback square:
+this is the pullback square `TopCat.relativeMayerVietoris_isPullback` of the open sets `M ∖ S`
+and `M ∖ T`. -/
+theorem isPullback_localHomologyRestriction {S T : Set M} (hS : IsClosed S) (hT : IsClosed T)
+    {k : ℕ} (h : IsZero (localHomology R (S ∩ T) (k + 1))) :
+    IsPullback (localHomologyRestriction R (subset_union_left : S ⊆ S ∪ T) k)
+      (localHomologyRestriction R subset_union_right k)
+      (localHomologyRestriction R (inter_subset_left : S ∩ T ⊆ S) k)
+      (localHomologyRestriction R inter_subset_right k) := by
+  simp only [localHomologyRestriction_def]
+  -- As in `TauCeti.localHomology_hom_ext_of_union`, the sequence is stated for `Sᶜ ∩ Tᶜ` and
+  -- `Sᶜ ∪ Tᶜ`, which are `(S ∪ T)ᶜ` and `(S ∩ T)ᶜ` only propositionally, so generalize them.
+  suffices key : ∀ (W₁ W₂ : Set (TopCat.of M)) (_ : W₁ = Sᶜ ∩ Tᶜ) (_ : W₂ = Sᶜ ∪ Tᶜ)
+      (hW₁S : W₁ ⊆ Sᶜ) (hW₁T : W₁ ⊆ Tᶜ) (hSW₂ : Sᶜ ⊆ W₂) (hTW₂ : Tᶜ ⊆ W₂),
+      IsZero ((TopPair.ofSubset W₂).singularHomology R (k + 1)) →
+      IsPullback (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hW₁S) R k)
+        (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hW₁T) R k)
+        (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hSW₂) R k)
+        (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) hTW₂) R k) from
+    key _ _ (compl_union S T) (compl_inter S T) _ _ _ _ h
+  rintro W₁ W₂ rfl rfl - - - - h
+  exact TopCat.relativeMayerVietoris_isPullback R hS.isOpen_compl hT.isOpen_compl h
 
 section Module
 
