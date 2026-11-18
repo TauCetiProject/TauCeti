@@ -8,6 +8,8 @@ module
 public import TauCeti.GroupTheory.PushoutI.Reduced
 public import TauCeti.GroupTheory.TrivialIntersection
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+import TauCeti.Data.Int.DivMod
+import TauCeti.Data.Int.UnitStep
 
 /-!
 # Centralizers of hyperbolic elements of an amalgamated product
@@ -507,51 +509,6 @@ private theorem exists_P_inv_mul_mul_P_mem (hφ : ∀ b, Injective (φ b)) (A : 
   nth_rw 2 [← hconj]
   group
 
-end Axis
-
-/-- A map `σ : ℤ → ℤ` with constant increments `σ (m + 1) - σ m = d` is `m ↦ σ 0 + d * m`. -/
-private theorem eq_add_mul_of_forall_add_one {σ : ℤ → ℤ} {d : ℤ} (h : ∀ m, σ (m + 1) = σ m + d)
-    (m : ℤ) : σ m = σ 0 + d * m := by
-  induction m using Int.induction_on with
-  | zero => simp
-  | succ m ih => rw [h, ih, mul_add, mul_one, add_assoc]
-  | pred m ih =>
-    have := h (-m - 1)
-    rw [show -(m : ℤ) - 1 + 1 = -m by ring] at this
-    rw [mul_sub, mul_one]
-    omega
-
-/-- An injective map `σ : ℤ → ℤ` that moves consecutive integers to adjacent ones and commutes
-with a nonzero translation is a translation. -/
-private theorem eq_add_of_injective_of_step {σ : ℤ → ℤ} (hinj : Injective σ)
-    (hstep : ∀ m, σ (m + 1) = σ m + 1 ∨ σ (m + 1) = σ m - 1) {r : ℤ} (hr : r ≠ 0)
-    (hper : ∀ m, σ (m + r) = σ m + r) (m : ℤ) : σ m = σ 0 + m := by
-  -- An injective sequence of steps `±1` never turns back, so its increments are constant.
-  have hne (m : ℤ) : σ (m + 1 + 1) ≠ σ m := fun h => by
-    have := hinj h
-    omega
-  have hd (m : ℤ) : σ (m + 1) = σ m + (σ 1 - σ 0) := by
-    induction m using Int.induction_on with
-    | zero => simp
-    | succ m ih =>
-      have := hne m
-      rcases hstep m with h | h <;> rcases hstep (m + 1) with h' | h' <;> omega
-    | pred m ih =>
-      have := hne (-m - 1)
-      rw [show -(m : ℤ) - 1 + 1 = -m by ring] at this ⊢
-      rcases hstep (-m - 1) with h | h <;> rcases hstep (-m) with h' | h' <;>
-        simp only [show -(m : ℤ) - 1 + 1 = -m by ring] at h h' <;> omega
-  -- The period excludes the decreasing case.
-  have h0 := hper 0
-  rw [zero_add, eq_add_mul_of_forall_add_one hd r] at h0
-  rw [eq_add_mul_of_forall_add_one hd m]
-  rcases hstep 0 with h | h <;> rw [zero_add] at h <;> rw [h] at h0 ⊢
-  · simp
-  · simp only [sub_sub_cancel_left, neg_mul, one_mul] at h0
-    omega
-
-namespace Axis
-
 /-- **An element commuting with `P r` translates the axis**: there is `τ` with
 `y * P m ∈ P (m + τ) C` for all `m`. -/
 private theorem exists_translation (hφ : ∀ b, Injective (φ b)) (A : Axis φ) {y : PushoutI φ}
@@ -574,9 +531,15 @@ private theorem exists_translation (hφ : ∀ b, Injective (φ b)) (A : Axis φ)
       rw [A.P_add_r, A.P_add_r, ← mul_assoc y, hy.eq]
       group
     exact h ▸ hσ m
+  -- The period excludes a reflection of the axis.
+  have htr : ∀ m, σ m = σ 0 + m :=
+    (Int.forall_eq_add_or_forall_eq_sub_of_injective_of_step hinj hstep).resolve_right fun h => by
+      have h0 := hper 0
+      rw [h (0 + A.r)] at h0
+      have := A.r_pos
+      omega
   refine ⟨σ 0, fun m => ?_⟩
-  rw [add_comm, ← eq_add_of_injective_of_step hinj hstep (r := A.r)
-    (by have := A.r_pos; omega) hper m]
+  rw [add_comm, ← htr m]
   exact hσ m
 
 /-- **The pointwise stabilizer of the axis is trivial** when the amalgamated subgroup is
@@ -626,26 +589,6 @@ private theorem isCyclic_centralizer (hφ : ∀ b, Injective (φ b)) (A : Axis �
 
 end Axis
 
-/-- The index arithmetic of the periodic extension of a word of length `n > 0`: passing from `m`
-to `m + 1` either moves to the next position of the period or starts a new period. -/
-private theorem ediv_emod_add_one (n : ℕ) (hn : 0 < n) (m : ℤ) :
-    ((m + 1) / n = m / n ∧ ((m + 1) % n).toNat = (m % n).toNat + 1 ∧ (m % n).toNat + 1 < n) ∨
-    ((m + 1) / n = m / n + 1 ∧ ((m + 1) % n).toNat = 0 ∧ (m % n).toNat + 1 = n) := by
-  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
-  have h1 := Int.emod_add_mul_ediv m n
-  have h2 := Int.emod_nonneg m hn'.ne'
-  have h3 := Int.emod_lt_of_pos m hn'
-  by_cases h : m % n + 1 < n
-  · obtain ⟨hq, hr⟩ := (Int.ediv_emod_unique hn').2
-      (show m % n + 1 + n * (m / n) = m + 1 ∧ 0 ≤ m % n + 1 ∧ m % n + 1 < n by omega)
-    exact Or.inl ⟨hq, by rw [hr]; omega, by omega⟩
-  · obtain ⟨hq, hr⟩ := (Int.ediv_emod_unique hn').2
-      (show 0 + n * (m / n + 1) = m + 1 ∧ (0 : ℤ) ≤ 0 ∧ (0 : ℤ) < n by
-        refine ⟨?_, le_rfl, hn'⟩
-        rw [mul_add, mul_one]
-        omega)
-    exact Or.inr ⟨hq, by rw [hr]; rfl, by omega⟩
-
 private theorem lprod_take_add_one (Z : List (Bool × PushoutI φ)) (j : ℕ) (hj : j < Z.length) :
     lprod (Z.take (j + 1)) = lprod (Z.take j) * Z[j].2 := by
   rw [List.take_add_one, List.getElem?_eq_getElem hj, Option.toList_some, lprod_append,
@@ -668,11 +611,17 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
   ne m := by
     have hn := List.length_pos_of_ne_nil hne
     have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt hn.ne'
+    have h0 := Int.emod_nonneg m (b := Z.length) (by omega)
+    have h1 := Int.emod_lt_of_pos m (b := Z.length) (by omega)
     simp only [List.getD_eq_getElem?_getD]
-    rcases ediv_emod_add_one _ hn m with ⟨-, hj, hj'⟩ | ⟨-, hj, hj'⟩ <;> rw [hj]
-    · rw [List.getElem?_eq_getElem hj', List.getElem?_eq_getElem hlt]
-      exact (hZ.1.getElem _ hj').symm
-    · rw [List.getElem?_eq_getElem hn, List.getElem?_eq_getElem hlt]
+    obtain h | h : m % Z.length + 1 < Z.length ∨ m % Z.length + 1 = Z.length := by omega
+    · have hj : (m % Z.length).toNat + 1 < Z.length := by omega
+      rw [Int.add_one_emod_of_emod_add_one_lt h,
+        show (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 by omega,
+        List.getElem?_eq_getElem hj, List.getElem?_eq_getElem hlt]
+      exact (hZ.1.getElem _ hj).symm
+    · rw [Int.add_one_emod_of_emod_add_one_eq h, Int.toNat_zero, List.getElem?_eq_getElem hn,
+        List.getElem?_eq_getElem hlt]
       have hidx : (m % (Z.length : ℤ)).toNat = Z.length - 1 := by omega
       rw [List.head_eq_getElem, List.getLast_eq_getElem] at hcyc
       simpa [hidx] using hcyc
@@ -681,12 +630,17 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
   P_succ m := by
     have hn := List.length_pos_of_ne_nil hne
     have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt hn.ne'
+    have h0 := Int.emod_nonneg m (b := Z.length) (by omega)
+    have h1 := Int.emod_lt_of_pos m (b := Z.length) (by omega)
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, Option.getD_some]
-    rcases ediv_emod_add_one _ hn m with ⟨hq, hj, -⟩ | ⟨hq, hj, hj'⟩ <;> rw [hq, hj]
-    · rw [lprod_take_add_one _ _ hlt, mul_assoc]
+    obtain h | h : m % Z.length + 1 < Z.length ∨ m % Z.length + 1 = Z.length := by omega
+    · rw [Int.add_one_ediv_of_emod_add_one_lt h, Int.add_one_emod_of_emod_add_one_lt h,
+        show (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 by omega,
+        lprod_take_add_one _ _ hlt, mul_assoc]
     · have hZ : lprod Z = lprod (Z.take ((m % Z.length).toNat + 1)) := by
-        rw [List.take_of_length_le hj'.ge]
-      rw [List.take_zero, lprod_nil, mul_one, zpow_add_one, mul_assoc]
+        rw [List.take_of_length_le (by omega)]
+      rw [Int.add_one_ediv_of_emod_add_one_eq (by omega) h, Int.add_one_emod_of_emod_add_one_eq h,
+        Int.toNat_zero, List.take_zero, lprod_nil, mul_one, zpow_add_one, mul_assoc]
       nth_rw 2 [hZ]
       rw [lprod_take_add_one _ _ hlt]
 
