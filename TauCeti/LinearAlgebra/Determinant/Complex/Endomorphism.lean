@@ -26,9 +26,9 @@ They agree: the canonical trivialization is positive exactly on the complex posi
 (`LinearMap.detLineEndEquiv_pos_iff_isComplexPositiveDetLine`). Indeed the normalized generator
 `LinearMap.detLineEndGenerator` is complex positive
 (`LinearMap.isComplexPositiveDetLine_detLineEndGenerator`), and the canonical trivialization
-takes the value `1` on it because the kernel of `T` has even real dimension. For bijective `T` this is the positivity of `det T` over `ℝ`, which is
-`|det T|²` over `ℂ`; the statement also covers the case where `T` has a kernel, which the
-determinant does not see.
+takes the value `1` on it because the kernel of `T` has even real dimension. For bijective `T`
+this is the positivity of `det T` over `ℝ`, which is `|det T|²` over `ℂ`; the statement also
+covers the case where `T` has a kernel, which the determinant does not see.
 
 This is the normalization by which the canonical trivialization serves as an orientation of a
 family of determinant lines whose members at complex-linear points carry their complex
