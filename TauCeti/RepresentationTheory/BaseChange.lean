@@ -868,8 +868,12 @@ noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
 theorem baseChangeFDRep_obj (V : FDRep k G) :
     (baseChangeFDRep k').obj V = FDRep.of (Representation.baseChange k' V.ρ) := (rfl)
 
+-- Deliberately not a `simp` lemma, for two independent reasons. At default priority it pre-empts
+-- `Functor.map_id`, `Functor.map_comp` and `Functor.map_add`. And even at low priority, rewriting
+-- with it leaves the surrounding implicit object arguments as `(baseChangeFDRep k').obj _`, while
+-- the right-hand side has objects `FDRep.of _`; these agree only above reducible transparency, so
+-- `eq_self` and `baseChangeFDRepHom_hom_hom_hom` no longer match.
 /-- The functor takes an equivariant map to its base change. -/
-@[simp]
 theorem baseChangeFDRep_map {V W : FDRep k G} (φ : V ⟶ W) :
     (baseChangeFDRep k').map φ = baseChangeFDRepHom k' φ := (rfl)
 
