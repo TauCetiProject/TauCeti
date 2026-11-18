@@ -123,6 +123,15 @@ theorem stripGeneratingSource_add_intCast (hS : Function.Periodic S (1, 1)) (x X
   simp only [Prod.smul_mk, zsmul_eq_mul, mul_one, Prod.mk_add_mk] at h
   exact Prod.ext (stripGeneratingSource_fst _) (by simp only [stripGeneratingSource_snd, h])
 
+/-- If `S` is invariant under the diagonal translation `(x, X) ↦ (x + 1, X + 1)`, then translating
+both positions by an integer `k` translates the target point by `k` horizontally and leaves its
+momentum unchanged. -/
+theorem stripGeneratingTarget_add_intCast (hS : Function.Periodic S (1, 1)) (x X : ℝ) (k : ℤ) :
+    stripGeneratingTarget S (x + k, X + k) = (X + k, (stripGeneratingTarget S (x, X)).2) := by
+  have h := (hS.zsmul k).fderiv (𝕜 := ℝ) (x, X)
+  simp only [Prod.smul_mk, zsmul_eq_mul, mul_one, Prod.mk_add_mk] at h
+  exact Prod.ext (stripGeneratingTarget_fst _) (by simp only [stripGeneratingTarget_snd, h])
+
 /-! ### The derivative of the cyclic action -/
 
 variable {N : ℕ} [NeZero N]
@@ -212,6 +221,31 @@ structure IsStripGenerating (S : ℝ × ℝ → ℝ) (F : ℝ × ℝ → ℝ × 
   and `(X, Y) = F p`. -/
   hasFDerivAt : ∀ p ∈ D, HasFDerivAt S ((F p).2 • snd ℝ ℝ ℝ - p.2 • fst ℝ ℝ ℝ) (p.1, (F p).1)
 
+namespace IsStripGenerating
+
+variable {S : ℝ × ℝ → ℝ} {F : ℝ × ℝ → ℝ × ℝ} {D W : Set (ℝ × ℝ)} {x : ℝ × ℝ}
+
+/-- A generating function is differentiable at every pair of positions in `W`. -/
+theorem differentiableAt (h : IsStripGenerating S F D W) (hx : x ∈ W) :
+    DifferentiableAt ℝ S x := by
+  obtain ⟨p, hp, rfl⟩ := h.surjOn hx
+  exact (h.hasFDerivAt p hp).differentiableAt
+
+/-- Over each pair of positions in `W`, the source point lies in `D`. -/
+theorem stripGeneratingSource_mem (h : IsStripGenerating S F D W) (hx : x ∈ W) :
+    stripGeneratingSource S x ∈ D := by
+  obtain ⟨p, hp, rfl⟩ := h.surjOn hx
+  rwa [stripGeneratingSource_eq_of_hasFDerivAt (h.hasFDerivAt p hp)]
+
+/-- Over each pair of positions in `W`, the map sends the source point to the target point. -/
+theorem apply_stripGeneratingSource (h : IsStripGenerating S F D W) (hx : x ∈ W) :
+    F (stripGeneratingSource S x) = stripGeneratingTarget S x := by
+  obtain ⟨p, hp, rfl⟩ := h.surjOn hx
+  rw [stripGeneratingSource_eq_of_hasFDerivAt (h.hasFDerivAt p hp),
+    stripGeneratingTarget_eq_of_hasFDerivAt (h.hasFDerivAt p hp)]
+
+end IsStripGenerating
+
 variable {S : ZMod N → ℝ × ℝ → ℝ} {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {D W : ZMod N → Set (ℝ × ℝ)}
 
 omit [NeZero N] in
@@ -240,33 +274,24 @@ theorem exists_equiv_periodic_of_isStripGenerating
       (∀ z i, (e z : ZMod N → ℝ) i = (z.1 i).1) ∧
         ∀ q i, (e.symm q : ZMod N → ℝ × ℝ) i =
           stripGeneratingSource (S i) (q.1 i, q.1 (i + 1)) := by
-  have hdiff (i : ZMod N) (x : ℝ × ℝ) (hx : x ∈ W i) : DifferentiableAt ℝ (S i) x := by
-    obtain ⟨p, hp, rfl⟩ := (hgen i).surjOn hx
-    exact ((hgen i).hasFDerivAt p hp).differentiableAt
   -- Along a periodic chain the edges lie in the `W_i`.
   have hmem (z : ZMod N → ℝ × ℝ) (hz : ∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1)) (i : ZMod N) :
       ((z i).1, (z (i + 1)).1) ∈ W i := by
     rw [← (hz i).2]
     exact (hgen i).mapsTo (hz i).1
-  -- Over each pair of positions in `W_i`, the source point lies in `D_i` and `F_i` sends it to
-  -- the target point.
-  have hedge (i : ZMod N) (x : ℝ × ℝ) (hx : x ∈ W i) :
-      stripGeneratingSource (S i) x ∈ D i ∧
-        F i (stripGeneratingSource (S i) x) = stripGeneratingTarget (S i) x := by
-    obtain ⟨p, hp, rfl⟩ := (hgen i).surjOn hx
-    rw [stripGeneratingSource_eq_of_hasFDerivAt ((hgen i).hasFDerivAt p hp),
-      stripGeneratingTarget_eq_of_hasFDerivAt ((hgen i).hasFDerivAt p hp)]
-    exact ⟨hp, rfl⟩
   refine ⟨
     { toFun := fun z ↦ ⟨fun i ↦ (z.1 i).1, hmem z.1 z.2,
-        (fderiv_cyclicAction_eq_zero_iff fun i ↦ hdiff i _ (hmem z.1 z.2 i)).2 fun i ↦ by
-          have h := stripGeneratingTarget_eq_of_hasFDerivAt
-            ((hgen _).hasFDerivAt _ (z.2 (i - 1)).1)
-          rw [(z.2 (i - 1)).2, sub_add_cancel] at h
-          rw [h, stripGeneratingSource_eq_of_chain hgen z.2]⟩
+        (fderiv_cyclicAction_eq_zero_iff fun i ↦ (hgen i).differentiableAt (hmem z.1 z.2 i)).2
+          fun i ↦ by
+            have h := stripGeneratingTarget_eq_of_hasFDerivAt
+              ((hgen _).hasFDerivAt _ (z.2 (i - 1)).1)
+            rw [(z.2 (i - 1)).2, sub_add_cancel] at h
+            rw [h, stripGeneratingSource_eq_of_chain hgen z.2]⟩
       invFun := fun q ↦ ⟨fun i ↦ stripGeneratingSource (S i) (q.1 i, q.1 (i + 1)), fun i ↦ by
-        refine ⟨(hedge i _ (q.2.1 i)).1, (hedge i _ (q.2.1 i)).2.trans ?_⟩
-        have h := (fderiv_cyclicAction_eq_zero_iff fun i ↦ hdiff i _ (q.2.1 i)).1 q.2.2 (i + 1)
+        refine ⟨(hgen i).stripGeneratingSource_mem (q.2.1 i),
+          ((hgen i).apply_stripGeneratingSource (q.2.1 i)).trans ?_⟩
+        have h := (fderiv_cyclicAction_eq_zero_iff fun i ↦ (hgen i).differentiableAt (q.2.1 i)).1
+          q.2.2 (i + 1)
         rwa [add_sub_cancel_right] at h⟩
       left_inv := fun z ↦ Subtype.ext <| funext fun i ↦
         stripGeneratingSource_eq_of_chain hgen z.2 i
