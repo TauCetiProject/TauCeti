@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
 public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 public import TauCeti.Geometry.Symplectic.Lagrangian.CompatibleMetric
@@ -43,9 +43,11 @@ These are the conventions in which holomorphic discs in `ℂⁿ` with boundary o
 submanifold are studied; the corresponding statements for maps are in
 `TauCeti.Geometry.Symplectic.Complex.ImInner.Manifold`.
 
-The statements about Lagrangian subspaces specialise, through `TauCeti.imInnerSymplecticForm_def`,
-those for an orthogonal almost complex structure `J` on a real inner product space
-(`TauCeti.AlmostComplexStructure.orthogonal_symplecticForm` and
+The statements about compatibility and Lagrangian subspaces specialise, through
+`TauCeti.imInnerSymplecticForm_def`, those for an orthogonal almost complex structure `J` on a real
+inner product space (`TauCeti.AlmostComplexStructure.symplecticForm_compatible`,
+`TauCeti.AlmostComplexStructure.symplecticForm_associatedBilinForm_apply`,
+`TauCeti.AlmostComplexStructure.orthogonal_symplecticForm` and
 `TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff_orthogonal_eq`).
 
 ## Main declarations
@@ -56,11 +58,11 @@ those for an orthogonal almost complex structure `J` on a real inner product spa
   `TauCeti.imInnerSymplecticForm_associatedBilinForm_apply`.
 * `TauCeti.isLagrangian_imInnerSymplecticForm_iff` and
   `TauCeti.isLagrangian_imInnerSymplecticForm_iff_orthogonal_eq`: its Lagrangian subspaces.
-* `TauCeti.complexEuclideanEquivRealProd`: the real and imaginary parts `ℂⁿ ≃L[ℝ] ℝⁿ × ℝⁿ`.
-* `TauCeti.isSymplectomorphism_complexEuclideanEquivRealProd_symm`,
-  `TauCeti.isComplexLinearMap_complexEuclideanEquivRealProd_symm` and
-  `TauCeti.real_inner_complexEuclideanEquivRealProd_symm`: `(x, y) ↦ x + i y` carries the standard
-  compatible triple of `ℝⁿ × ℝⁿ` to that of `ℂⁿ`.
+* `TauCeti.isSymplectomorphism_complexEuclideanEquivRealProd_symm` and
+  `TauCeti.isComplexLinearMap_complexEuclideanEquivRealProd_symm`: `(x, y) ↦ x + i y` carries the
+  standard symplectic form and complex structure of `ℝⁿ × ℝⁿ` to those of `ℂⁿ`; with
+  `TauCeti.real_inner_complexEuclideanEquivRealProd_symm`, it carries the standard compatible
+  triple.
 * `TauCeti.isLagrangian_imInnerSymplecticForm_iff_map`: Lagrangian subspaces of `ℂⁿ` in real
   coordinates.
 
@@ -120,17 +122,13 @@ theorem imInnerSymplecticForm_apply_eq_real_inner (v w : E) :
 inner product `Re ⟪·, ·⟫_ℂ`. -/
 theorem imInnerSymplecticForm_associatedBilinForm_apply (v w : E) :
     (imInnerSymplecticForm E).associatedBilinForm (AlmostComplexStructure.ofComplexModule E) v w =
-      ⟪v, w⟫_ℝ := by
-  simp [real_inner_eq_re_inner, inner_smul_right]
+      ⟪v, w⟫_ℝ :=
+  AlmostComplexStructure.symplecticForm_associatedBilinForm_apply _ v w
 
 /-- The symplectic form `Im ⟪·, ·⟫_ℂ` is compatible with multiplication by `i`. -/
 theorem imInnerSymplecticForm_compatible :
-    (imInnerSymplecticForm E).Compatible (AlmostComplexStructure.ofComplexModule E) := by
-  refine .of_tames ((SymplecticForm.invariant_iff _ _).2 fun v w ↦ ?_) fun v hv ↦ ?_
-  · simp [inner_smul_left, inner_smul_right, ← mul_assoc]
-  · have h := (imInnerSymplecticForm_associatedBilinForm_apply v v).symm ▸
-      real_inner_self_pos.2 hv
-    simpa using h
+    (imInnerSymplecticForm E).Compatible (AlmostComplexStructure.ofComplexModule E) :=
+  AlmostComplexStructure.symplecticForm_compatible _
 
 /-- The symplectic complement of a real subspace `W` for `Im ⟪·, ·⟫_ℂ` is the real orthogonal
 complement of `i W`. -/
@@ -176,41 +174,7 @@ end InnerProductSpace
 
 section EuclideanSpace
 
-variable (ι : Type*) [Fintype ι]
-
-/-- The real and imaginary parts `z ↦ (Re z, Im z)` of complex Euclidean space, as a continuous
-real-linear equivalence with the doubled real Euclidean space. Its inverse is the identification
-`(x, y) ↦ x + i y`. -/
-noncomputable def complexEuclideanEquivRealProd :
-    EuclideanSpace ℂ ι ≃L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι :=
-  LinearEquiv.toContinuousLinearEquiv
-    { toFun z := (WithLp.toLp 2 fun i ↦ (z i).re, WithLp.toLp 2 fun i ↦ (z i).im)
-      map_add' z w := by ext <;> simp
-      map_smul' c z := by ext <;> simp
-      invFun p := WithLp.toLp 2 fun i ↦ (p.1 i : ℂ) + p.2 i * Complex.I
-      left_inv z := by ext i; apply Complex.ext <;> simp
-      right_inv p := by ext <;> simp }
-
-variable {ι}
-
-/-- The first component of `TauCeti.complexEuclideanEquivRealProd` is the real part. -/
-@[simp]
-theorem complexEuclideanEquivRealProd_apply_fst (z : EuclideanSpace ℂ ι) (i : ι) :
-    (complexEuclideanEquivRealProd ι z).1 i = (z i).re :=
-  (rfl)
-
-/-- The second component of `TauCeti.complexEuclideanEquivRealProd` is the imaginary part. -/
-@[simp]
-theorem complexEuclideanEquivRealProd_apply_snd (z : EuclideanSpace ℂ ι) (i : ι) :
-    (complexEuclideanEquivRealProd ι z).2 i = (z i).im :=
-  (rfl)
-
-/-- The inverse of `TauCeti.complexEuclideanEquivRealProd` is `(x, y) ↦ x + i y`. -/
-@[simp]
-theorem complexEuclideanEquivRealProd_symm_apply
-    (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
-    (complexEuclideanEquivRealProd ι).symm p i = p.1 i + p.2 i * Complex.I :=
-  (rfl)
+variable {ι : Type*} [Fintype ι]
 
 /-- **The standard symplectic form of `ℂⁿ`.** The identification `(x, y) ↦ x + i y` carries the
 standard symplectic form `⟪x₁, y₂⟫ - ⟪y₁, x₂⟫` of the doubled real space to `Im ⟪·, ·⟫_ℂ`:
@@ -236,16 +200,6 @@ theorem isComplexLinearMap_complexEuclideanEquivRealProd_symm :
   refine LinearMap.ext fun p ↦ ?_
   ext i
   apply Complex.ext <;> simp
-
-/-- The identification `(x, y) ↦ x + i y` carries the sum of the real inner products of the two
-factors to the real inner product `Re ⟪·, ·⟫_ℂ`. -/
-theorem real_inner_complexEuclideanEquivRealProd_symm
-    (u w : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    ⟪(complexEuclideanEquivRealProd ι).symm u, (complexEuclideanEquivRealProd ι).symm w⟫_ℝ =
-      ⟪u.1, w.1⟫_ℝ + ⟪u.2, w.2⟫_ℝ := by
-  simp only [PiLp.inner_apply, complexEuclideanEquivRealProd_symm_apply, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp [Complex.inner, Complex.mul_re]
 
 /-- On `ℂⁿ`, the symplectic form `Im ⟪·, ·⟫_ℂ` agrees with the coordinate form
 `TauCeti.stdComplexPiSymplecticForm` of `ι → ℂ`. -/
