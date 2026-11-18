@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Subobject.Lattice
 public import TauCeti.Algebra.Homology.HomotopyCategory.Triangulated
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 
 /-!
 # The spectral object and the spectral sequence of a filtered complex
@@ -64,6 +65,9 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
   cones.
 * `CochainComplex.spectralObjectMap_hom_app_hIso`: on `H^n(f)`, `spectralObjectMap α` is the map
   in cohomology of the induced morphism of mapping cones.
+* `CochainComplex.spectralObjectMap_eq_of_homotopy`: natural transformations which are homotopic
+  through homotopies compatible with the transition maps induce the same morphism of spectral
+  objects.
 
 ## References
 
@@ -136,6 +140,20 @@ lemma triangulatedSpectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
   simp [triangulatedSpectralObjectMap]
   rfl
 
+/-- Natural transformations `α` and `β` which are homotopic through homotopies `h i` compatible
+with the transition maps, `F.map f ≫ h j = h i ≫ G.map f` in each degree, induce the same
+morphism of triangulated spectral objects in the homotopy category: the induced maps of mapping
+cones are homotopic (`CochainComplex.mappingCone.mapHomotopy`). -/
+theorem triangulatedSpectralObjectMap_eq_of_homotopy {α β : F ⟶ G}
+    (h : ∀ i, Homotopy (α.app i) (β.app i))
+    (hh : ∀ ⦃i j : ι⦄ (f : i ⟶ j) (p q : ℤ),
+      (F.map f).f p ≫ (h j).hom p q = (h i).hom p q ≫ (G.map f).f q) :
+    triangulatedSpectralObjectMap α = triangulatedSpectralObjectMap β := by
+  ext : 1
+  ext D
+  exact HomotopyCategory.eq_of_homotopy _ _ (mappingCone.mapHomotopy _ _ (α.naturality _)
+    (β.naturality _) (h (D.obj 0)) (h (D.obj 1)) (hh (D.map' 0 1)))
+
 end Triangulated
 
 section SpectralObject
@@ -205,6 +223,16 @@ lemma spectralObjectMap_comp (α : F ⟶ G) (β : G ⟶ H) :
     spectralObjectMap (α ≫ β) = spectralObjectMap α ≫ spectralObjectMap β := by
   simp [spectralObjectMap]
   rfl
+
+/-- **Homotopy invariance of the spectral object.** Natural transformations `α` and `β` which are
+homotopic through homotopies `h i` compatible with the transition maps,
+`F.map f ≫ h j = h i ≫ G.map f` in each degree, induce the same morphism of spectral objects. -/
+theorem spectralObjectMap_eq_of_homotopy {α β : F ⟶ G}
+    (h : ∀ i, Homotopy (α.app i) (β.app i))
+    (hh : ∀ ⦃i j : ι⦄ (f : i ⟶ j) (p q : ℤ),
+      (F.map f).f p ≫ (h j).hom p q = (h i).hom p q ≫ (G.map f).f q) :
+    spectralObjectMap α = spectralObjectMap β := by
+  rw [spectralObjectMap, spectralObjectMap, triangulatedSpectralObjectMap_eq_of_homotopy h hh]
 
 /-- On `H^n(f)`, the morphism of spectral objects induced by `α` is the map in cohomology of the
 morphism of mapping cones of `F.map f` and `G.map f`. -/
