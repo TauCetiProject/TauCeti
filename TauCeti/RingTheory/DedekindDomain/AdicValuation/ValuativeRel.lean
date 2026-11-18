@@ -183,13 +183,10 @@ theorem algebraMap_mem_integer_adicCompletion (a : R) :
 /-- A natural number is a unit in the ring of integers of `K_v` exactly when it lies outside `v`. -/
 theorem isUnit_natCast_integer_adicCompletion_iff (n : ℕ) :
     IsUnit (n : 𝒪[v.adicCompletion K]) ↔ (n : R) ∉ v.asIdeal := by
-  have hequiv := ValuativeRel.isEquiv (ValuativeRel.valuation (v.adicCompletion K))
-    (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰)
-  rw [(Valuation.integer.integers _).isUnit_iff_valuation_eq_one, hequiv.eq_one_iff_eq_one]
-  push_cast
-  rw [← map_natCast (algebraMap K (v.adicCompletion K)) n, algebraMap_adicCompletion,
-    Function.comp_apply, valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply,
-    ← map_natCast (algebraMap R K), valuation_of_algebraMap, intValuation_eq_one_iff]
+  rw [← MulEquiv.isUnit_map
+    (f := (v.integerEquivAdicCompletionIntegers (K := K)).toMulEquiv)]
+  simpa only [RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, map_natCast] using
+    v.isUnit_algebraMap_adicCompletionIntegers_iff (K := K) (n : R)
 
 /-- The residue field of the valuative relation on `K_v` is the residue field `R ⧸ v` of `v`. -/
 noncomputable def residueFieldEquivAdicCompletion :
