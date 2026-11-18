@@ -52,7 +52,8 @@ localization arguments need.
 * `TauCeti.W1p.norm_gradient_contDiffSMul_sq_le`: at exponent two, the weighted bound
   `‖∇(ψ u)‖₂² ≤ 2 ∫ ψ² ‖∇u‖² + 2 ∫ ‖∇ψ‖² u²`.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule`: it preserves `W^{1,p}_0(Ω)`, the closure of
-  `C_c^∞(Ω)`.
+  `C_c^∞(Ω)`; `TauCeti.W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule` is the form for a
+  compactly supported cutoff, with no bounds to supply.
 * `TauCeti.W1p.testFunctionSMulComp`: for `p < ∞`, a test function `φ` and a `C¹` function `G`
   with bounded derivative, the product `φ G(u)`, with weak gradient `φ G'(u) ∇u + G(u) ∇φ`.
   Unlike `TauCeti.W1p.contDiffComp`, it does not require `G(0) = 0`.
@@ -338,6 +339,17 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule (hpsi : ContDiff ℝ ∞ psi) (hM : 0
     exact W1p.ofTestFunctionₗ_mem_w1p0Submodule Phi
   have := w1p0Submodule_subset_of_isClosed hclosed htest hu
   simpa using this
+
+/-- If `u ∈ W^{1,p}_0(Ω)` and `ψ` is smooth and compactly supported, then `ψ u` is the value of an
+element of `W^{1,p}_0(Ω)`. The bounds on `ψ` and `∇ψ` come from the compact support. -/
+theorem W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule (hpsi : ContDiff ℝ ∞ psi)
+    (hpsic : HasCompactSupport psi) {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
+    ∃ v : W1p0 mu Omega p,
+      W1p.value (v : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => psi x * W1p.value u x := by
+  obtain ⟨M, hM, hpsiM, hgradM⟩ := (hpsi.of_le (by simp)).exists_abs_le_and_norm_gradient_le hpsic
+  exact ⟨⟨_, W1p.contDiffSMul_mem_w1p0Submodule hpsi hM (fun x _ => hpsiM x)
+    (fun x _ => hgradM x) hu⟩, (W1p.value_contDiffSMul_ae hpsi hM (fun x _ => hpsiM x)
+      (fun x _ => hgradM x) u).mono fun x hx => by rw [hx, smul_eq_mul]⟩
 
 /-- The operator norm of multiplication by `ψ` is at most `2 M`. -/
 theorem W1p.norm_contDiffSMulL_le (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)

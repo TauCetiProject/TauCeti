@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
 import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.CategoryTheory.ObjectProperty.ColimitsOfShape
 
 /-!
 # The base row of the second page of the Serre spectral sequence
@@ -130,14 +131,18 @@ theorem isIso_serreSpectralSequenceProj_hom_two_f (hp : serreFibrations p)
   -- The step is the map of the pairs of preimages of the `n`-skeleton and the `(n - 1)`-skeleton,
   -- which the comparison of Serre fibrations computes cell by cell.
   let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
-  have key := isIso_singularHomologyMap_preimagePairMap hp (MorphismProperty.id_mem _ B) R sq n n
-    fun j q hq ↦ by
+  -- This is the case of the Serre class of zero modules.
+  have key := (ObjectProperty.isoModSerre_isZero_iff _).1 <|
+    isoModSerre_singularHomologyMap_preimagePairMap hp (MorphismProperty.id_mem _ B) R IsZero IsZero
+      le_rfl sq n n fun j q hq ↦ by
       obtain rfl : q = 0 := by lia
       have := hconn _ (closedCell_subset_complex n j ⟨0, Metric.mem_closedBall_self zero_le_one,
         rfl⟩)
-      -- The map from a path-connected fibre to a point is an isomorphism on `H₀`, since both
-      -- augmentations are.
-      exact (isIso_singularHomologyMap_fiberMap_id_iff sq R 0 _).2 (IsIso.of_isIso_fac_right
+      -- The fibre of the identity is a point, so the map of fibres is one between path-connected
+      -- spaces, an isomorphism on `H₀` since both augmentations are.
+      have : Unique ((𝟙 B : B ⟶ B).fiber ((𝟙 B) (map n j 0))) :=
+        ⟨⟨⟨map n j 0, rfl⟩⟩, fun x ↦ Subtype.ext x.2⟩
+      exact (ObjectProperty.isoModSerre_isZero_iff _).2 (IsIso.of_isIso_fac_right
         (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _))
   have hb : (pq.2 + 1).toNat = n := by lia
   have hb' : (pq.2 + 1 + 1).toNat = n + 1 := by lia
