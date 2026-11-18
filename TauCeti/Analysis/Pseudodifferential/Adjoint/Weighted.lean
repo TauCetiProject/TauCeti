@@ -46,7 +46,8 @@ the weight `k`:
 `-i ∑ⱼ g(x)⁻¹ ((∂_{xⱼ} ∂_{ξⱼ} a)(x, ξ)† k(x) + (∂_{ξⱼ} a)(x, ξ)† ∂ⱼ k(x))`
 
 (`TauCeti.Symbol.coefficient_weightedAdjointTerm_one`), so with a density `ρ` that is not constant
-the weighted adjoint differs from the flat one already at order `m - 1`.
+the weighted adjoint can differ from the flat one already at order `m - 1`, through the term
+`(∂_{ξⱼ} a)† ∂ⱼ k`.
 
 For a classical symbol `a` the weighted adjoint symbol is classical, with principal symbol
 `g(x)⁻¹ a_m(x, ξ)† k(x)`, and it is elliptic exactly when `a` is, if `k(x)` is invertible.
