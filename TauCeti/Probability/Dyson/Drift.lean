@@ -46,6 +46,9 @@ bounded by `δ⁻¹` and globally Lipschitz with constant `2 / δ²`.
   `i < j`.
 * `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub`: monotonicity identity on injective
   configurations.
+* `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos_of_pairwise` and
+  `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos_of_pairwise`: monotone-test
+  and `ℓ²` dissipativity on any common open Weyl chamber.
 * `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos`: monotone-test
   dissipativity on the open chamber, specializing to
   `TauCeti.Probability.sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos` (`id`) and
@@ -194,6 +197,38 @@ theorem sum_dysonDrift_sub_dysonDrift_mul_sub {n : ℕ} {x y : Fin n → ℝ} (h
   field_simp
   ring
 
+/-- **Monotone-test dissipativity on a common open Weyl chamber.** If `x` and `y` order their
+particles in the same way, that is `(xᵢ - xⱼ) (yᵢ - yⱼ) > 0` whenever `i ≠ j`, then for any monotone
+test function `φ : ℝ → ℝ`, testing `dysonDrift n x - dysonDrift n y` against `i ↦ φ (x i - y i)` is
+nonpositive. -/
+theorem sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos_of_pairwise {n : ℕ} {x y : Fin n → ℝ}
+    {φ : ℝ → ℝ} (hφ : Monotone φ) (h : Pairwise fun i j ↦ 0 < (x i - x j) * (y i - y j)) :
+    ∑ i, (dysonDrift n x i - dysonDrift n y i) * φ (x i - y i) ≤ 0 := by
+  rw [sum_dysonDrift_sub_dysonDrift_mul n x y (fun k ↦ φ (x k - y k))]
+  refine mul_nonpos_of_nonneg_of_nonpos (by positivity)
+    (sum_nonpos fun i _ ↦ sum_nonpos fun j hj ↦ ?_)
+  have hab : 0 < (x i - x j) * (y i - y j) := h (mem_Ioi.1 hj).ne
+  have ha : x i - x j ≠ 0 := left_ne_zero_of_mul hab.ne'
+  have hb : y i - y j ≠ 0 := right_ne_zero_of_mul hab.ne'
+  have hfrac : (φ (x i - y i) - φ (x j - y j)) * ((x i - x j)⁻¹ - (y i - y j)⁻¹) =
+      (φ (x i - y i) - φ (x j - y j)) * ((x j - y j) - (x i - y i)) /
+        ((x i - x j) * (y i - y j)) := by
+    field_simp
+    ring
+  rw [hfrac]
+  refine div_nonpos_of_nonpos_of_nonneg ?_ hab.le
+  rcases le_total (x i - y i) (x j - y j) with hle | hge
+  · exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 (hφ hle)) (sub_nonneg.2 hle)
+  · exact mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.2 (hφ hge)) (sub_nonpos.2 hge)
+
+/-- **Dissipativity of the Dyson drift on a common open Weyl chamber.** If `x` and `y` order their
+particles in the same way, that is `(xᵢ - xⱼ) (yᵢ - yⱼ) > 0` whenever `i ≠ j`, then
+`∑ᵢ (dysonDrift n x i - dysonDrift n y i) (xᵢ - yᵢ) ≤ 0`. -/
+theorem sum_dysonDrift_sub_dysonDrift_mul_sub_nonpos_of_pairwise {n : ℕ} {x y : Fin n → ℝ}
+    (h : Pairwise fun i j ↦ 0 < (x i - x j) * (y i - y j)) :
+    ∑ i, (dysonDrift n x i - dysonDrift n y i) * (x i - y i) ≤ 0 :=
+  sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos_of_pairwise monotone_id h
+
 /-- **Monotone-test dissipativity on the open chamber.** For `StrictAnti x`, `StrictAnti y`, and
 any monotone test function `φ : ℝ → ℝ`, testing `dysonDrift n x - dysonDrift n y` against
 `i ↦ φ (x i - y i)` is nonpositive. This simultaneously covers the `ℓ²`-dissipativity case
@@ -202,22 +237,10 @@ any monotone test function `φ : ℝ → ℝ`, testing `dysonDrift n x - dysonDr
 theorem sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos {n : ℕ} {x y : Fin n → ℝ}
     {φ : ℝ → ℝ} (hφ : Monotone φ) (hx : StrictAnti x) (hy : StrictAnti y) :
     ∑ i, (dysonDrift n x i - dysonDrift n y i) * φ (x i - y i) ≤ 0 := by
-  rw [sum_dysonDrift_sub_dysonDrift_mul n x y (fun k ↦ φ (x k - y k))]
-  refine mul_nonpos_of_nonneg_of_nonpos (by positivity)
-    (sum_nonpos fun i _ ↦ sum_nonpos fun j hj ↦ ?_)
-  have hij : i < j := mem_Ioi.1 hj
-  have ha : 0 < x i - x j := sub_pos.2 (hx hij)
-  have hb : 0 < y i - y j := sub_pos.2 (hy hij)
-  have hfrac : (φ (x i - y i) - φ (x j - y j)) * ((x i - x j)⁻¹ - (y i - y j)⁻¹) =
-      (φ (x i - y i) - φ (x j - y j)) * ((x j - y j) - (x i - y i)) /
-        ((x i - x j) * (y i - y j)) := by
-    field_simp
-    ring
-  rw [hfrac]
-  refine div_nonpos_of_nonpos_of_nonneg ?_ (mul_pos ha hb).le
-  rcases le_total (x i - y i) (x j - y j) with hle | hge
-  · exact mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 (hφ hle)) (sub_nonneg.2 hle)
-  · exact mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.2 (hφ hge)) (sub_nonpos.2 hge)
+  refine sum_dysonDrift_sub_dysonDrift_mul_comp_sub_nonpos_of_pairwise hφ fun i j hij ↦ ?_
+  rcases hij.lt_or_gt with h | h
+  · exact mul_pos (sub_pos.2 (hx h)) (sub_pos.2 (hy h))
+  · exact mul_pos_of_neg_of_neg (sub_neg.2 (hx h)) (sub_neg.2 (hy h))
 
 /-- **Dissipativity of the Dyson drift on the open chamber.** For `StrictAnti x` and `StrictAnti y`,
 `∑ᵢ (dysonDrift n x i - dysonDrift n y i) (xᵢ - yᵢ) ≤ 0`. -/
