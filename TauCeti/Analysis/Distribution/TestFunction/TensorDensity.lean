@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
+import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Fourier.Torus.Decay
@@ -51,6 +52,8 @@ Real-valued test functions are the ones on which Mathlib's distributions `𝓓'(
 * `TestFunction.ext_prodSMulCLM`: a continuous linear map on the test functions on a product, with
   Hausdorff target, is determined by its values on tensor products. In particular this applies to
   distributions on a product.
+* `TestFunction.continuous_prodSMulCLM_apply`: the tensor product `(x, t) ↦ ψ t • φ x` of real
+  test functions is continuous in `ψ`.
 
 ## References
 
@@ -243,5 +246,20 @@ theorem ext_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] {G �
   have hT : B T₁ = B T₂ :=
     ContinuousLinearMap.ext_on (dense_span_prodSMulCLM hV) <| by rintro _ ⟨p, rfl⟩; exact h p.1 p.2
   exact DFunLike.coe_injective congr($hT)
+
+/-- The tensor product `(x, y) ↦ ψ y • φ x` of real test functions is continuous in `ψ`, for the
+LF topologies. -/
+theorem continuous_prodSMulCLM_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) (φ : 𝓓(Ω, ℝ)) :
+    Continuous fun ψ : 𝓓(O, ℝ) ↦ prodSMulCLM ψ hV φ := by
+  -- It is the tensor product with `φ` in the first factor of `O × Ω`, transported along the swap.
+  let W : Opens (D × E) := ⟨(O : Set D) ×ˢ (Ω : Set E), O.isOpen.prod Ω.isOpen⟩
+  have hW : MapsTo (ContinuousLinearEquiv.prodComm ℝ D E) W V := fun p hp ↦ hV ⟨hp.2, hp.1⟩
+  have h : (fun ψ : 𝓓(O, ℝ) ↦ prodSMulCLM ψ hV φ) =
+      (ContinuousLinearEquiv.prodComm ℝ D E).transportTestFunction hW ∘
+        prodSMulCLM (V := W) φ Subset.rfl := by
+    ext ψ p
+    simp [mul_comm]
+  rw [h]
+  exact (ContinuousLinearMap.continuous _).comp (ContinuousLinearMap.continuous _)
 
 end TestFunction
