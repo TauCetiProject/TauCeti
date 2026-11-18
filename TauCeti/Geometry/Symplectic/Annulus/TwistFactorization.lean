@@ -17,15 +17,16 @@ import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
-# Factoring near-identity maps of the strip into twist maps
+# Twist factorization of maps of the strip with near-identity derivative
 
 Let `R_c(x, y) = (x + c y, y)` be the shear of the plane `ℝ × ℝ` with twist `c`
 (`TauCeti.stripShear c`). For `c > 0` it is a positive twist map: writing `X` for the first
 component of a map, `R_c` has `∂ₓ X = 1 > 0` and `∂_y X = c > 0`.
 
-Every map `H` of the strip is `R_c ∘ N` for `N = R_c⁻¹ ∘ H`. This file shows that when `H` is
-`C¹`-close to the identity, `N` is a *negative* twist map with `∂ₓ X > 0`. Precisely, if
-`‖DH(q) - 1‖ ≤ δ` then the first component of `N` satisfies
+Every map `H` of the strip is `R_c ∘ N` for `N = R_c⁻¹ ∘ H`. This file shows that where the
+derivative of `H` is close to the identity, the first component `X` of `N` has the derivative
+signs of a *negative* twist map, `∂ₓ X > 0` and `∂_y X < 0`. Precisely, if `‖DH(q) - 1‖ ≤ δ` then
+the first component of `N` satisfies
 
 `∂ₓ X ≥ 1 - δ (1 + c)` and `∂_y X ≤ δ (1 + c) - c`
 
@@ -67,13 +68,14 @@ negative for `c = 1` but positive for `c = 1 / 8` (see the examples at the end o
 * `TauCeti.fderiv_stripShear_symm_comp_apply_fst`: the first component of the derivative of
   `R_c⁻¹ ∘ H`.
 * `TauCeti.one_sub_mul_le_fderiv_stripShear_symm_comp_apply_fst`,
-  `TauCeti.fderiv_stripShear_symm_comp_apply_fst_le`: the twist bounds of `R_c⁻¹ ∘ H` for `H`
-  within `δ` of the identity in `C¹`.
+  `TauCeti.fderiv_stripShear_symm_comp_apply_fst_le`: the twist bounds of `R_c⁻¹ ∘ H` at a point
+  where the derivative of `H` is within `δ` of the identity.
 * `TauCeti.exists_pos_forall_norm_fderiv_sub_one_lt`: increments of a `C¹` path of maps of the
-  strip over short time intervals are uniformly `C¹`-close to the identity.
+  strip over short time intervals have derivative uniformly close to the identity.
 * `TauCeti.exists_pos_forall_fderiv_stripShear_symm_comp_apply_fst_pos_and_neg`,
   `TauCeti.exists_pos_forall_lt_fderiv_stripShear_symm_comp_div_apply_fst_pos_and_neg`: the finite
-  twist factorization.
+  twist factorization: the first component of each factor `R_c⁻¹ ∘ H` has `∂ₓ X > 0` and
+  `∂_y X < 0` at `h_s(p)`.
 
 ## References
 
@@ -181,7 +183,7 @@ private theorem exists_pos_forall_norm_mul_inverse_sub_one_lt
   have := hG _ ⟨hs, ht, hp⟩ _ ⟨hs, hs, hp⟩ hd
   rwa [Ring.mul_inverse_cancel _ (hunit s hs p hp), dist_eq_norm] at this
 
-/-- **Increments of a path of maps of the strip are uniformly `C¹`-close to the identity.**
+/-- **Increments of a path of maps of the strip have derivative uniformly close to the identity.**
 Let `t ↦ h_t` be a path of maps of the plane whose derivatives `Dh_t(p)` depend continuously on
 `(t, p)` and are invertible for `t ∈ [0, 1]` and `p` in the unit square, and are invariant under
 the deck translation `(x, y) ↦ (x + 1, y)` of the strip `ℝ × [0, 1]`. Then for every `δ > 0`
@@ -229,8 +231,8 @@ theorem exists_pos_forall_norm_fderiv_sub_one_lt
 /-- **The finite twist factorization.** Under the hypotheses of
 `TauCeti.exists_pos_forall_norm_fderiv_sub_one_lt` and for a twist `c > 0`, there is `η > 0`
 such that for `s, t ∈ [0, 1]` with `|t - s| < η` every increment `H`, with `H ∘ h_s = h_t` near a
-point `p` of the strip, is `R_c ∘ N` with `N = R_c⁻¹ ∘ H` a negative twist map with
-`∂ₓ X > 0` at `h_s(p)`. -/
+point `p` of the strip, is `R_c ∘ N` where the first component `X` of `N = R_c⁻¹ ∘ H` has
+`∂ₓ X > 0` and `∂_y X < 0` at `h_s(p)`. -/
 theorem exists_pos_forall_fderiv_stripShear_symm_comp_apply_fst_pos_and_neg
     (hD : ContinuousOn (fun q : ℝ × ℝ × ℝ ↦ fderiv ℝ (h q.1) q.2)
       (Icc 0 1 ×ˢ (Icc 0 1 ×ˢ Icc 0 1)))
@@ -262,8 +264,8 @@ theorem exists_pos_forall_fderiv_stripShear_symm_comp_apply_fst_pos_and_neg
 /-- **The finite twist factorization along a uniform partition.** Under the hypotheses of
 `TauCeti.exists_pos_forall_norm_fderiv_sub_one_lt` and for a twist `c > 0`, there is `K > 0`
 such that for the partition `t_j = j / K` of `[0, 1]`, every increment `H_j`, with
-`H_j ∘ h_(t_j) = h_(t_(j+1))` near a point `p` of the strip, is `R_c ∘ N_j` with `N_j` a negative
-twist map with `∂ₓ X > 0` at `h_(t_j)(p)`. -/
+`H_j ∘ h_(t_j) = h_(t_(j+1))` near a point `p` of the strip, is `R_c ∘ N_j` where the first
+component `X` of `N_j = R_c⁻¹ ∘ H_j` has `∂ₓ X > 0` and `∂_y X < 0` at `h_(t_j)(p)`. -/
 theorem exists_pos_forall_lt_fderiv_stripShear_symm_comp_div_apply_fst_pos_and_neg
     (hD : ContinuousOn (fun q : ℝ × ℝ × ℝ ↦ fderiv ℝ (h q.1) q.2)
       (Icc 0 1 ×ˢ (Icc 0 1 ×ˢ Icc 0 1)))
