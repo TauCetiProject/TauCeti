@@ -74,7 +74,7 @@ variable (n : ℕ) (ht : (DynkinType.B (n + 1)).Valid)
 /-- The exterior basis of the type-`Bₙ₊₁` spin module renumbered by decreasing simple-root height
 of its weights. Indices of equal height are ordered by an arbitrary finite numbering. -/
 def weightOrderEquiv : Fin (dimension n) ≃ Fin (dimension n) :=
-  (Fintype.equivFin (Finset (Fin (n + 1)))).symm.trans
+  (signSet n).trans
     (orderedWeightIndexEquiv (κ := Fin (n + 1)) ((DynkinType.B (n + 1)).weightDegree ht)
       DynkinType.typeBSpinWeight)
 
@@ -88,7 +88,7 @@ theorem latticeBasis_reindex_weightOrderEquiv :
   refine Eq.trans ?_ (congrArg _ (orderedWeightBasis_apply _ _ _ x).symm)
   rw [Module.Basis.reindex_apply, coe_latticeBasis,
     TauCeti.ExteriorAlgebra.coe_integralLatticeBasis]
-  simp [weightOrderEquiv, signSet]
+  simp [weightOrderEquiv]
 
 /-- After renumbering by decreasing weight height, every positive numbered root-subgroup matrix
 of the spin carrier is upper unitriangular, over every commutative ring. -/

@@ -9,9 +9,9 @@ public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.Homotopy.Extension.Basic
-import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Configuration
 import TauCeti.Topology.Homotopy.Extension.Segment
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # An embedded arc through finitely many points of a manifold
@@ -134,7 +134,6 @@ theorem exists_isClosedEmbedding_hasHomotopyExtensionProperty_range [Nonempty M]
     exact Ψ.symm_apply_apply z
   · rw [show range γ = Ψ.symm '' range α from range_comp (⇑Ψ.symm) (⇑α)]
     exact hαhep.image Ψ.symm
-  · have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-    exact hemb.isEmbedding.toHomeomorph.symm.contractibleSpace
+  · exact hemb.isEmbedding.toHomeomorph.symm.contractibleSpace
 
 end TauCeti

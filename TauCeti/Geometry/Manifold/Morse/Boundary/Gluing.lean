@@ -77,7 +77,8 @@ theorem morseBrokenTrajectoryPairs_subset_closure (p r : M) (c₁ c₂ : ℝ) :
   simp only [mem_morseBrokenTrajectoryPairs] at hw
   obtain ⟨q, -, hpq, hqr, hy₁, rfl, hy₂, rfl⟩ := hw
   exact closure_mono (fun w hw ↦ hX.mem_morseTrajectoryPairs.2 hw)
-    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf hpq hqr hy₁ hy₂)
+    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf (by rintro rfl; omega)
+      (by rintro rfl; omega) hy₁ hy₂)
 
 include h hf in
 /-- **The compactified space of index-two trajectories.** Let `p` and `r` be critical points with
