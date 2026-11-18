@@ -39,8 +39,9 @@ contraction of `M` need not close up.
 ## Main declarations
 
 * `Matrix.GeneralLinearGroup.realOrthonormalize`: the frame `M Re (Mᴴ M) ^ (-1/2)`, with the same
-  real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`; it is unitary when
-  `Mᴴ M` is real (`Matrix.GeneralLinearGroup.realOrthonormalize_mem_unitaryGroup`).
+  real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`.
+* `Matrix.GeneralLinearGroup.realOrthonormalize_mem_unitaryGroup`: when `M ℝⁿ` is Lagrangian,
+  the real orthonormalization is a unitary frame of it.
 * `TauCeti.exists_realImage_homotopy_unitaryGroup`: a closed frame deforms through closed frames
   to a path of unitary matrices.
 
@@ -123,6 +124,24 @@ theorem map_re_conjTranspose_mul_self_realOrthonormalize (M : GL n ℂ) :
   rw [coe_realOrthonormalize, map_re_conjTranspose_mul_self_mul_map_ofReal,
     gramNormalizer_mul_realGram_mul]
 
+/-- **Orthonormalizing a Lagrangian frame gives a unitary frame.** If the columns of `M` are
+pairwise orthogonal for the symplectic form `Im ⟪·, ·⟫`, that is, `M ℝⁿ` is Lagrangian, then its
+real orthonormalization is unitary: the real change of basis keeps `Im (Mᴴ M) = 0` and makes
+`Re (Mᴴ M) = 1`. -/
+theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ}
+    (hM : ((M : Matrix n n ℂ)ᴴ * M).map Complex.im = 0) :
+    (realOrthonormalize M : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
+  have hre := map_re_conjTranspose_mul_self_realOrthonormalize M
+  have him : (((realOrthonormalize M : Matrix n n ℂ))ᴴ * realOrthonormalize M).map Complex.im =
+      0 := by
+    rw [coe_realOrthonormalize, map_im_conjTranspose_mul_self_mul_map_ofReal, hM, Matrix.mul_zero,
+      Matrix.zero_mul]
+  rw [mem_unitaryGroup_iff', star_eq_conjTranspose]
+  ext i j
+  have h₁ := congrFun (congrFun hre i) j
+  have h₂ := congrFun (congrFun him i) j
+  apply Complex.ext <;> by_cases hij : i = j <;> simp_all [Matrix.one_apply]
+
 /-- The real orthonormalization of a continuous family of frames is continuous. -/
 theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X → GL n ℂ}
     (hM : Continuous M) : Continuous fun x ↦ realOrthonormalize (M x) := by
@@ -134,28 +153,6 @@ theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X �
     (Matrix.contDiffOn_rpow (𝕜 := ℝ) (n := n) (-(1 / 2)) (k := 0)).continuousOn.comp_continuous
       hG fun x ↦ isStrictlyPositive_iff_posDef.1 (isStrictlyPositive_map_re (M x))
   exact hval.mul (hQ.matrix_map Complex.continuous_ofReal)
-
-/-- If the Gram matrix `Mᴴ M` of a frame is real, as it is for a frame of a Lagrangian subspace,
-the real orthonormalization of `M` is unitary. -/
-theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ}
-    (hM : ((M : Matrix n n ℂ)ᴴ * M).map Complex.im = 0) :
-    (realOrthonormalize M : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
-  have hmap (X Y : Matrix n n ℝ) :
-      (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  have hG : (M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ) =
-      (((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)).map Complex.re).map ((↑) : ℝ → ℂ) :=
-    Matrix.ext fun i j => Complex.ext (by simp) (by simpa using congrFun (congrFun hM i) j)
-  -- `Uᴴ U = Nᵀ (Mᴴ M) N` for the real normalizer `N`, and `Mᴴ M` is real.
-  have key : ((gramNormalizer M)ᵀ * ((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)).map Complex.re *
-      gramNormalizer M).map ((↑) : ℝ → ℂ) = (gramNormalizer M)ᵀ.map (↑) *
-        ((M : Matrix n n ℂ)ᴴ * (M : Matrix n n ℂ)) * (gramNormalizer M).map (↑) := by
-    rw [hmap, hmap, ← hG]
-  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, coe_realOrthonormalize, conjTranspose_mul,
-    ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
-    conjTranspose_eq_transpose_of_trivial, Matrix.mul_assoc, ← Matrix.mul_assoc (M : Matrix n n ℂ)ᴴ,
-    ← Matrix.mul_assoc, ← key, gramNormalizer_mul_realGram_mul]
-  exact Matrix.map_one _ (by simp) (by simp)
 
 end Matrix.GeneralLinearGroup
 

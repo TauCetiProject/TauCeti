@@ -17,16 +17,20 @@ A real matrix `N` is viewed as a complex matrix through the entrywise coercion
 `N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary and a real
 symmetric matrix Hermitian as a complex matrix, and how the real Gram matrix `Re (Mᴴ M)` of the
 columns of a complex matrix `M` behaves: it transforms by congruence under a real change of basis,
-and it is positive definite when `Mᴴ M` is, in particular when `M` has independent columns.
+and it is positive definite when `Mᴴ M` is, in particular when `M` has independent columns. The
+imaginary part `Im (Mᴴ M)`, the matrix of the symplectic form `Im ⟪·, ·⟫` on the columns, transforms
+by the same congruence.
 
 ## Main results
 
+* `Matrix.map_ofReal_mul_transpose_map_ofReal_eq_one`: an orthogonal real matrix `O` satisfies
+  `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
-* `Matrix.conjTranspose_mul_self_map_ofReal_add_I_smul`: the Gram matrix of `P + i Q` for real
-  matrices `P` and `Q`.
+* `Matrix.map_im_conjTranspose_mul_self_mul_map_ofReal`: likewise, the imaginary part of the Gram
+  matrix of `M N` is `Nᵀ Im (Mᴴ M) N`.
 * `Matrix.PosDef.map_re`: the real part of a positive definite complex matrix is positive
   definite.
 * `Matrix.PosDef.map_re_conjTranspose_mul_self`: the real Gram matrix of a complex matrix with
@@ -41,14 +45,21 @@ namespace Matrix
 
 variable {l m n : Type*}
 
+/-- The complex image `O` of an orthogonal real matrix `O` satisfies `O Oᵀ = 1`. -/
+theorem map_ofReal_mul_transpose_map_ofReal_eq_one [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
+    (hO : O ∈ orthogonalGroup n ℝ) : O.map ((↑) : ℝ → ℂ) * (O.map ((↑) : ℝ → ℂ))ᵀ = 1 := by
+  rw [← transpose_map]
+  -- `N.map (↑)` is `Complex.ofRealHom.mapMatrix N`, which is multiplicative.
+  exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans
+    ((congrArg _ ((mem_orthogonalGroup_iff _ _).1 hO)).trans (map_one _))
+
 /-- An orthogonal real matrix is unitary as a complex matrix. -/
 theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
     (hO : O ∈ orthogonalGroup n ℝ) : O.map ((↑) : ℝ → ℂ) ∈ unitaryGroup n ℂ := by
-  rw [mem_orthogonalGroup_iff'] at hO
-  rw [mem_unitaryGroup_iff', star_eq_conjTranspose,
+  rw [mem_unitaryGroup_iff, star_eq_conjTranspose,
     ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
-    conjTranspose_eq_transpose_of_trivial]
-  exact (map_mul Complex.ofRealHom.mapMatrix _ _).symm.trans ((congrArg _ hO).trans (map_one _))
+    conjTranspose_eq_transpose_of_trivial, transpose_map]
+  exact map_ofReal_mul_transpose_map_ofReal_eq_one hO
 
 /-- A real symmetric matrix is Hermitian as a complex matrix. -/
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
@@ -67,17 +78,17 @@ theorem map_re_conjTranspose_mul_self_mul_map_ofReal [Fintype m] [Fintype n] (M 
     (congrArg (Nᵀ * ·) (map_mul_algebraMap Complex.reLm N (Mᴴ * M)))).trans
       (Matrix.mul_assoc _ _ _).symm
 
-/-- The Gram matrix of the complex matrix `P + i Q`, with `P` and `Q` real, is
-`(Pᵀ P + Qᵀ Q) + i (Pᵀ Q - Qᵀ P)`. -/
-theorem conjTranspose_mul_self_map_ofReal_add_I_smul [Fintype m] (P Q : Matrix m n ℝ) :
-    (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map (↑))ᴴ * (P.map (↑) + Complex.I • Q.map (↑)) =
-      (Pᵀ * P + Qᵀ * Q).map (↑) + Complex.I • (Pᵀ * Q - Qᵀ * P).map (↑) := by
-  refine Matrix.ext fun i j => ?_
-  rw [Matrix.mul_apply]
-  apply Complex.ext
-  · simp [Complex.re_sum, Finset.sum_add_distrib, Complex.mul_re, Matrix.mul_apply]
-  · simp [Complex.im_sum, Complex.mul_im, Matrix.mul_apply, ← sub_eq_add_neg,
-      Finset.sum_sub_distrib]
+/-- The imaginary part `Im ((M N)ᴴ (M N))` of the Gram matrix of the columns of `M N`, for a real
+matrix `N`, is `Nᵀ Im (Mᴴ M) N`. -/
+theorem map_im_conjTranspose_mul_self_mul_map_ofReal [Fintype m] [Fintype n] (M : Matrix m n ℂ)
+    (N : Matrix n l ℝ) :
+    ((M * N.map ((↑) : ℝ → ℂ))ᴴ * (M * N.map ((↑) : ℝ → ℂ))).map Complex.im =
+      Nᵀ * (Mᴴ * M).map Complex.im * N := by
+  rw [conjTranspose_mul, ← conjTranspose_map _ fun _ ↦ (Complex.conj_ofReal _).symm,
+    conjTranspose_eq_transpose_of_trivial, Matrix.mul_assoc, ← Matrix.mul_assoc Mᴴ]
+  exact ((map_algebraMap_mul Complex.imLm Nᵀ _).trans
+    (congrArg (Nᵀ * ·) (map_mul_algebraMap Complex.imLm N (Mᴴ * M)))).trans
+      (Matrix.mul_assoc _ _ _).symm
 
 /-- The real part of a positive definite complex matrix is positive definite. -/
 theorem PosDef.map_re [Finite n] {K : Matrix n n ℂ} (hK : K.PosDef) :
