@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
-import Mathlib.RingTheory.RootsOfUnity.Minpoly
 import TauCeti.Algebra.GroupWithZero.Basic
 import TauCeti.Data.Int.LinearCongruence
 import TauCeti.NumberTheory.NumberField.Units.Basic
@@ -230,8 +229,7 @@ theorem neg_one_mem_cyclotomicUnits (ζ : K) (N : ℕ) : -1 ∈ cyclotomicUnits 
 /-- Every integral unit that is an integer power of `ζ` in `K` is a circular unit. -/
 theorem mem_cyclotomicUnits_of_val_eq_zpow {ζ : K} (N : ℕ) {u : (𝓞 K)ˣ} {k : ℤ}
     (hu : ((u : 𝓞 K) : K) = ζ ^ k) : u ∈ cyclotomicUnits K ζ N :=
-  mem_cyclotomicNumbers_of_val_eq_zpow N
-    ((NumberField.Units.val_unitsMap_algebraMap_ringOfIntegers u).trans hu)
+  mem_cyclotomicNumbers_of_val_eq_zpow N ((Units.coe_map _ u).trans hu)
 
 /-- An `N`-th root of unity `ζ` with `N ≠ 0` is the value of a circular unit. -/
 theorem exists_mem_cyclotomicUnits_val_eq_self {ζ : K} {N : ℕ} [NeZero N] (hζ : ζ ^ N = 1) :
@@ -503,7 +501,7 @@ theorem smoothedCyclotomicUnit_inv {ζ : K} {N : ℕ} (hζ : ζ ^ N = 1) (hN : O
 real subfield. -/
 theorem smoothedCyclotomicUnit_mem_maximalRealSubfield {ζ : K} {N : ℕ} (hζ : ζ ^ N = 1)
     (hN : Odd N) (b : ℕ) : smoothedCyclotomicUnit ζ N b ∈ maximalRealSubfield K := by
-  intro φ
+  refine (mem_maximalRealSubfield_iff _).2 fun φ ↦ ?_
   have hφ : φ ζ ^ N = 1 := by rw [← map_pow, hζ, map_one]
   rw [map_smoothedCyclotomicUnit, Complex.star_def, map_smoothedCyclotomicUnit,
     ← Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hφ hN.pos.ne')]
