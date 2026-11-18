@@ -34,9 +34,11 @@ data of the slice theorem at `x`:
   `H` with the Lie group structure of Cartan's closed-subgroup theorem.
 
 The slice through `x` is then `v ↦ e.symm v` on the `H`-invariant open set of `v ∈ V` with
-`v ∈ e.target`; its derivative at `0` is the inclusion of `V`. It is `H`-equivariant, so the slice
-map `(g, v) ↦ g • e.symm v : G × V → M` satisfies `(g h⁻¹) • e.symm (dh_x v) = g • e.symm v` and
-descends to `G ×_H V`. Its differential at `(1, 0)` is `(ξ, v) ↦ ξ_M(x) + v`
+`v ∈ e.target`; its derivative at `0` is the inclusion of `V`. It is `H`-equivariant on the
+`H`-invariant set `U = {v ∈ V | v ∈ e.target}`, so the slice map
+`(g, v) ↦ g • e.symm v : G × V → M` satisfies `(g h⁻¹) • e.symm (dh_x v) = g • e.symm v` for
+`v ∈ U`, and its restriction to `G × U` descends to `G ×_H U`. Outside `e.target` the values of
+`e.symm` need not respect the action of `H`. Its differential at `(1, 0)` is `(ξ, v) ↦ ξ_M(x) + v`
 (`TauCeti.mfderiv_smul_slice_apply`), which is onto `T_x M` with kernel `𝔤_x × 0` for any slice
 along a complement of `𝔤 · x` (`TauCeti.surjective_mfderiv_smul_slice`,
 `TauCeti.mfderiv_smul_slice_eq_zero_iff`). These are the inputs of the slice
@@ -224,8 +226,9 @@ that:
 * the slice map `Ψ (g, v) = g • e.symm v` on `G × V` has differential `(ξ, v) ↦ ξ_M(x) + v` at
   `(1, 0)`, which is onto `T_x M` and vanishes exactly on `𝔤_x × 0`.
 
-Equivariance gives `Ψ (g * h⁻¹, dh_x v) = Ψ (g, v)` for `h ∈ G_x`, so `Ψ` descends to
-`G ×_{G_x} V`, where its differential at the class of `(1, 0)` is bijective. -/
+Equivariance gives `Ψ (g * h⁻¹, dh_x v) = Ψ (g, v)` for `h ∈ G_x` and `v` in the `G_x`-invariant
+set `U = {v ∈ V | v ∈ e.target}`, so `Ψ` restricted to `G × U` descends to `G ×_{G_x} U`, where its
+differential at the class of `(1, 0)` is bijective. -/
 theorem exists_equivariant_slice_of_isCompact_stabilizer [FiniteDimensional ℝ E]
     [FiniteDimensional ℝ E'] [I'.Boundaryless] {x : M} (hx : IsCompact (stabilizer G x : Set G)) :
     ∃ (V : Submodule ℝ E') (e : OpenPartialHomeomorph M E'),
