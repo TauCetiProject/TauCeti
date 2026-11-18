@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Function.UniformIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.Topology.UniformSpace.UniformApproximation
 
 /-!
 # Pointwise bounds for the Cauchy transform of supercritical data
@@ -21,8 +23,10 @@ These bounds are useful for Cauchy integral equations with rough zeroth-order co
 The exponent hypotheses are expressed by a Hölder conjugate pair, allowing `p = ∞`, `q = 1`.
 For bounded data the transform is moreover continuous on the whole plane
 (`TauCeti.continuous_cauchyTransform_of_norm_le`), since moving the pole moves the reciprocal
-kernel continuously in `L¹` on the support disc. On supercritical data supported in discs the
-transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`).
+kernel continuously in `L¹` on the support disc. So is the transform of supercritical data
+(`TauCeti.continuous_cauchyTransform_of_memLp`): the pointwise bound makes it a locally uniform
+limit of the transforms of the bounded truncations of the data. On supercritical data supported in
+discs the transform is subtractive (`TauCeti.cauchyTransform_sub_of_memLp`).
 
 The normalization is `T f = π⁻¹ ∫ (w - z)⁻¹ • f z`, inverting
 `bar∂ = (∂ₛ + i ∂ₜ)/2`.
@@ -152,5 +156,50 @@ theorem continuous_cauchyTransform_of_norm_le (hf : AEStronglyMeasurable f volum
     (tendsto_id (x := 𝓝 w)) c r).const_mul M |>.const_mul Real.pi⁻¹
   simp only [mul_zero] at hlim
   exact squeeze_zero (fun _ ↦ norm_nonneg _) (fun w' ↦ hbound w w') hlim
+
+
+/-- **Continuity of the Cauchy transform of supercritical data.** For `p` whose conjugate exponent
+is `q < 2`, the Cauchy transform of `f ∈ Lᵖ` supported in a closed disc is continuous on the whole
+plane. Removing the part of `f` where `‖f‖ ≥ M` leaves bounded data, whose transform is continuous,
+and by the pointwise bound changes the transform uniformly on each disc by at most a constant
+times the `Lᵖ` norm of the removed part, which is small for large `M`. -/
+theorem continuous_cauchyTransform_of_memLp [p.HolderConjugate q] (hq : q < 2)
+    (hf : MemLp f p volume) (hs : support f ⊆ closedBall c r) :
+    Continuous (cauchyTransform f) := by
+  refine continuous_of_locally_uniform_approx_of_continuousAt fun w u hu ↦ ?_
+  obtain ⟨ε, hε, hεu⟩ := mem_uniformity_dist.1 hu
+  set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (r + (dist w c + 1))) q volume).toReal
+  have hK : 0 ≤ K := by positivity
+  obtain ⟨M, hM⟩ := hf.eLpNorm_indicator_norm_ge_le
+    (ENNReal.ofReal_pos.2 (div_pos hε (by positivity : (0 : ℝ) < 2 * (K + 1))))
+  -- the large part `g` of `f` and the bounded rest `f - g`
+  set g := {x | M ≤ ‖f x‖₊}.indicator f
+  have hgm : AEStronglyMeasurable g volume := hf.aestronglyMeasurable.indicator₀
+    (nullMeasurableSet_le aemeasurable_const
+      hf.aestronglyMeasurable.nnNorm.aemeasurable.coe_nnreal_real)
+  have hg : MemLp g p volume :=
+    hf.of_le hgm (Eventually.of_forall fun x ↦ norm_indicator_le_norm_self _ _)
+  have hgs : support g ⊆ closedBall c r := fun x hx ↦ hs fun h ↦ hx (by simp [g, h])
+  have hfg : ∀ x, ‖(f - g) x‖ ≤ max M 0 := fun x ↦ by
+    by_cases hx : x ∈ {x | M ≤ ‖f x‖₊}
+    · rw [Pi.sub_apply, show g x = f x from indicator_of_mem hx _, sub_self, norm_zero]
+      exact le_max_right _ _
+    · rw [Pi.sub_apply, show g x = 0 from indicator_of_notMem hx _, sub_zero]
+      exact (le_of_lt (not_le.1 hx)).trans (le_max_left _ _)
+  have hcont : Continuous (cauchyTransform (f - g)) :=
+    continuous_cauchyTransform_of_norm_le (hf.aestronglyMeasurable.sub hgm)
+      ((support_sub _ _).trans (union_subset hs hgs)) (Eventually.of_forall hfg)
+  refine ⟨ball w 1, ball_mem_nhds _ one_pos, _, hcont.continuousAt, fun y hy ↦ hεu ?_⟩
+  have hy' : y ∈ closedBall c (dist w c + 1) := by
+    rw [mem_closedBall]
+    linarith [dist_triangle y w c, mem_ball.1 hy]
+  rw [cauchyTransform_sub_of_memLp hq hf hs hg hgs, Pi.sub_apply, dist_eq_norm, sub_sub_cancel]
+  have hgε : (eLpNorm g p volume).toReal ≤ ε / (2 * (K + 1)) :=
+    ENNReal.toReal_le_of_le_ofReal (by positivity) hM
+  calc ‖cauchyTransform g y‖ ≤ K * (eLpNorm g p volume).toReal :=
+        norm_cauchyTransform_le hq hg hgs hy'
+    _ ≤ (K + 1) * (ε / (2 * (K + 1))) := by gcongr; linarith
+    _ = ε / 2 := by field_simp
+    _ < ε := half_lt_self hε
 
 end TauCeti
