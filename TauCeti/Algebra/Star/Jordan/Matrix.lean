@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Star.Jordan.Basic
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
-import Mathlib.Data.Matrix.Basis
+import TauCeti.Data.Matrix.Basis
 
 /-!
 # Transpose as a Jordan star automorphism
@@ -43,12 +43,6 @@ def transpose (n R : Type*) [Fintype n] [NonUnitalNonAssocCommSemiring R]
     [NonUnitalNonAssocCommSemiring R] [Star R] [Module ℂ R] :
     (transpose n R).toLinearEquiv = Matrix.transposeLinearEquiv n n ℂ R := (rfl)
 
-@[simp] theorem transpose_trans_transpose (n R : Type*) [Fintype n]
-    [NonUnitalNonAssocCommSemiring R] [Star R] [Module ℂ R] :
-    (transpose n R).trans (transpose n R) = refl := by
-  ext x
-  simp
-
 -- Transposition fixes the identity matrix.
 example : transpose (Fin 2) ℂ 1 = 1 := map_one _
 
@@ -56,15 +50,9 @@ example : transpose (Fin 2) ℂ 1 = 1 := map_one _
 type with at least two elements, is not multiplicative. -/
 theorem not_forall_transpose_mul (n R : Type*) [Fintype n] [Nontrivial n]
     [NonAssocCommSemiring R] [Star R] [Module ℂ R] [Nontrivial R] :
-    ¬ ∀ x y : Matrix n n R, transpose n R (x * y) = transpose n R x * transpose n R y := by
-  classical
-  obtain ⟨i, j, hij⟩ := exists_pair_ne n
-  intro h
-  -- The matrix units at `(i, j)` and `(j, i)` multiply to the unit at `(i, i)` in one order and
-  -- to the unit at `(j, j)` in the other, so the `(i, i)` entries differ.
-  have hii := congrArg (fun m : Matrix n n R ↦ m i i)
-    (h (Matrix.single i j 1) (Matrix.single j i 1))
-  simp [Matrix.transpose_single, hij] at hii
+    ¬ ∀ x y : Matrix n n R, transpose n R (x * y) = transpose n R x * transpose n R y :=
+  fun h ↦ Matrix.not_forall_transpose_mul n R fun x y ↦ by
+    simpa only [transpose_apply] using h x y
 
 -- The two by two complex instance.
 example : ¬ ∀ x y : Matrix (Fin 2) (Fin 2) ℂ,
