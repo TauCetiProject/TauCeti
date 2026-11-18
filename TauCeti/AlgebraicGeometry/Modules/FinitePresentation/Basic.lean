@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Instances
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Finsupp
@@ -53,20 +54,6 @@ namespace TauCeti.AlgebraicGeometry
 universe u
 
 noncomputable section
-
--- Scheme modules need these specializations because typeclass search does not unfold
--- `Scheme.Modules` to match the corresponding sheaf-of-modules instances.
-/-- A finitely presented scheme module is quasi-coherent. -/
-instance (priority := 100)
-    _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isFinitePresentation
-    {X : Scheme.{u}} (M : X.Modules) [M.IsFinitePresentation] : M.IsQuasicoherent :=
-  SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
-
-/-- A finitely presented scheme module is of finite type. -/
-instance (priority := 100)
-    _root_.AlgebraicGeometry.Scheme.Modules.isFiniteType_of_isFinitePresentation
-    {X : Scheme.{u}} (M : X.Modules) [M.IsFinitePresentation] : M.IsFiniteType :=
-  SheafOfModules.instIsFiniteTypeOfIsFinitePresentation M
 
 variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
 
