@@ -43,11 +43,15 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   sums of two roots.
 * `RootPairing.weylGroup.ofIdx_mul_self` says a simple reflection is an involution.
 * `RootPairing.weylGroup.ofIdx_ne_one` says a simple reflection is not the identity over a
-  ring of characteristic zero.
+  ring with no zero divisors in which `2 ≠ 0`.
+* `RootPairing.weylGroup.smul_sub_mem_rootSpan` says every Weyl-group element moves each weight by
+  an element of the root span.
 * `RootPairing.weylGroup.eq_one_of_smul_eq_self` says a Weyl-group element acting trivially
   on the weight space is the identity.
 * `RootPairing.weylGroup.ext` says two Weyl-group elements agreeing on the weight space are
   equal.
+* `RootPairing.weylGroupRootRep_apply` and `RootPairing.weylGroupRootRep_injective` identify the
+  action of `P.weylGroupRootRep` with scalar multiplication and record its faithfulness.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
   of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
   span.
@@ -257,14 +261,34 @@ lemma weylGroup.ofIdx_mul_self (i : ι) :
     weylGroup.ofIdx P i * weylGroup.ofIdx P i = 1 := by
   rw [mul_eq_one_iff_eq_inv, weylGroup.ofIdx_inv_eq]
 
-/-- **A simple reflection is not the identity** over a ring of characteristic zero. -/
-theorem weylGroup.ofIdx_ne_one [CharZero R] (i : ι) :
+/-- **A simple reflection is not the identity** over a ring with no zero divisors in which
+`2 ≠ 0`. -/
+theorem weylGroup.ofIdx_ne_one [NoZeroDivisors R] [NeZero (2 : R)] (i : ι) :
     weylGroup.ofIdx P i ≠ 1 := by
   intro h
   have hi := congrArg (fun w : P.weylGroup => P.coroot' i (w • P.root i)) h
-  simp only [one_smul, root_coroot'_eq_pairing,
-    pairing_same] at hi
-  norm_num at hi
+  simp only [weylGroup.ofIdx_smul, Equiv.reflection_smul, reflection_apply_self, map_neg,
+    one_smul, root_coroot'_eq_pairing, pairing_same] at hi
+  have h4 : (2 : R) * 2 = 0 := by
+    rw [two_mul]
+    exact neg_eq_iff_add_eq_zero.mp hi
+  exact mul_ne_zero (NeZero.ne (2 : R)) (NeZero.ne (2 : R)) h4
+
+variable {P} in
+/-- Every element of the Weyl group moves each weight by an element of the root span. -/
+theorem weylGroup.smul_sub_mem_rootSpan (w : P.weylGroup) (x : M) :
+    w • x - x ∈ P.rootSpan R := by
+  obtain ⟨g, hg⟩ := w
+  induction hg using weylGroup.induction generalizing x with
+  | mem i =>
+    rw [Subgroup.smul_def, Equiv.reflection_smul, reflection_apply, sub_sub_cancel_left]
+    exact neg_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
+  | one => simp
+  | mul a b ha hb iha ihb =>
+    rw [← Submonoid.mk_mul_mk _ _ _ ha hb, mul_smul,
+      ← sub_add_sub_cancel ((⟨a, ha⟩ : P.weylGroup) • ((⟨b, hb⟩ : P.weylGroup) • x))
+        ((⟨b, hb⟩ : P.weylGroup) • x) x]
+    exact add_mem (iha _) (ihb x)
 
 variable {P} in
 /-- A Weyl-group element acting trivially on the weight space is the identity: the weight-space
@@ -288,26 +312,14 @@ theorem weylGroup.eq_one_of_forall_smul_root_eq [Fintype ι] [IsDomain R] [P.IsA
     have := Equiv.coroot'_weightEquiv (w : P.Aut) i x
     rw [hidx] at this
     exact this
-  have hspan : ∀ g ∈ P.weylGroup, ∀ x : M, g • x - x ∈ P.rootSpan R := by
-    intro g hg
-    induction hg using weylGroup.induction with
-    | mem i =>
-      intro x
-      rw [Equiv.reflection_smul, reflection_apply, sub_sub_cancel_left]
-      exact neg_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
-    | one => intro x; simp
-    | mul g h _ _ hg hh =>
-      intro x
-      rw [mul_smul, show g • h • x - x = (g • (h • x) - h • x) + (h • x - x) by abel]
-      exact add_mem (hg _) (hh x)
   refine weylGroup.eq_one_of_smul_eq_self fun x => ?_
-  have hker : (w : P.Aut) • x - x ∈ LinearMap.ker P.RootForm := by
+  have hker : w • x - x ∈ LinearMap.ker P.RootForm := by
     rw [LinearMap.mem_ker]
     ext z
-    simp [rootForm_apply_apply, map_sub, hcor]
-  rw [Subgroup.smul_def]
+    simp [rootForm_apply_apply, map_sub, Subgroup.smul_def, hcor]
   exact sub_eq_zero.1
-    (Submodule.disjoint_def.1 P.disjoint_rootSpan_ker_rootForm _ (hspan _ w.2 x) hker)
+    (Submodule.disjoint_def.1 P.disjoint_rootSpan_ker_rootForm _
+      (weylGroup.smul_sub_mem_rootSpan w x) hker)
 
 variable {P} in
 /-- Two Weyl-group elements agreeing on the weight space are equal. -/
@@ -317,6 +329,17 @@ theorem weylGroup.ext
   rw [← mul_inv_eq_one]
   refine weylGroup.eq_one_of_smul_eq_self fun x ↦ ?_
   rw [mul_smul, h, smul_inv_smul]
+
+/-- The weight-space representation `P.weylGroupRootRep` acts by the Weyl-group scalar
+multiplication on `M`. -/
+@[simp]
+theorem weylGroupRootRep_apply (w : P.weylGroup) (x : M) :
+    P.weylGroupRootRep w x = w • x :=
+  (rfl)
+
+/-- The weight-space representation of the Weyl group is faithful over every commutative ring. -/
+theorem weylGroupRootRep_injective : Function.Injective P.weylGroupRootRep :=
+  fun _ _ h ↦ weylGroup.ext fun x ↦ congr($h x)
 
 /-- **Conjugating a simple reflection transports it along the permutation action**: the reflection
 in the image of a root index is the conjugate of the reflection in that root index. -/
