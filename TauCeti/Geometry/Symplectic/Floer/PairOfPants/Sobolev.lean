@@ -35,7 +35,7 @@ The comparison with the cylindrical metric on the ends is exact up to constants.
 `±s ≥ 0` of each end the product of the weight and the Jacobian lies between `4π²` and `20π²`
 (`TauCeti.Floer.cylindricalWeight_endChart_mul_det_fderiv_mem_Icc`). Since the Dirichlet density
 changes by the Jacobian under a holomorphic change of coordinates, up to a factor `2` in a normed
-space (`TauCeti.ConformalSobolev.norm_sq_add_norm_sq_le_two_mul`), the `W^{1,2}` density
+space (`TauCeti.norm_sq_add_norm_sq_le_two_mul`), the `W^{1,2}` density
 `‖∂s ζ‖² + ‖∂t ζ‖² + ‖ζ‖²` of `ζ = ξ ∘ φ_q` in the end coordinates and the weighted density of `ξ`
 times the Jacobian agree up to the factors `2` and `20π²`
 (`TauCeti.Floer.norm_fderiv_comp_endChart_sq_add_le`,
@@ -197,7 +197,7 @@ theorem norm_fderiv_comp_endChart_sq_add_le (q : Puncture) {ξ : ℝ × ℝ → 
           ‖fderiv ℝ ξ (endChart q z) (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ (endChart q z) (0, 1)‖ ^ 2)) := by
   obtain ⟨a, b, hdet, h₁, h₂⟩ := exists_fderiv_comp_endChart q hξ
   have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hz).1
-  have hconf := ConformalSobolev.norm_sq_add_norm_sq_le_two_mul a b
+  have hconf := norm_sq_add_norm_sq_le_two_mul a b
     (fderiv ℝ ξ (endChart q z) (1, 0)) (fderiv ℝ ξ (endChart q z) (0, 1))
   rw [h₁, h₂]
   rw [hdet] at hρ ⊢
@@ -216,7 +216,7 @@ theorem det_fderiv_endChart_mul_le (q : Puncture) {ξ : ℝ × ℝ → V} {z : �
         ‖fderiv ℝ (ξ ∘ endChart q) z (0, 1)‖ ^ 2 + ‖ξ (endChart q z)‖ ^ 2) := by
   obtain ⟨a, b, hdet, h₁, h₂⟩ := exists_fderiv_comp_endChart q hξ
   have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hz).2
-  have hconf := ConformalSobolev.mul_norm_sq_add_norm_sq_le_two_mul a b
+  have hconf := mul_norm_sq_add_norm_sq_le_two_mul a b
     (fderiv ℝ ξ (endChart q z) (1, 0)) (fderiv ℝ ξ (endChart q z) (0, 1))
   rw [h₁, h₂]
   rw [hdet] at hρ ⊢
@@ -236,11 +236,12 @@ private theorem lintegral_image_endChart (q : Puncture) {P : Set ℝ} (hP : Meas
     ((injOn_endChart_univ_prod_Ico q 0).mono (prod_mono (subset_univ _) (by norm_num))) g
 
 /-- **The `W^{1,2}` energy on a band of an end, from the weighted energy.** For a band
-`P × [0, 1)` of the part `±s ≥ 0` of the end `q` and a differentiable `ξ`, the `W^{1,2}` energy of
-`ζ = ξ ∘ φ_q` over the band is at most twice the weighted energy
+`P × [0, 1)` of the part `±s ≥ 0` of the end `q` and a `ξ` differentiable on the image of the
+band, the `W^{1,2}` energy of `ζ = ξ ∘ φ_q` over the band is at most twice the weighted energy
 `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ` over the image of the band. -/
 theorem lintegral_comp_endChart_le (q : Puncture) {P : Set ℝ} (hP : MeasurableSet P)
-    (hP0 : ∀ s ∈ P, 0 ≤ q.endSign * s) {ξ : ℝ × ℝ → V} (hξ : Differentiable ℝ ξ) :
+    (hP0 : ∀ s ∈ P, 0 ≤ q.endSign * s) {ξ : ℝ × ℝ → V}
+    (hξ : ∀ z ∈ P ×ˢ Ico 0 1, DifferentiableAt ℝ ξ (endChart q z)) :
     ∫⁻ z in P ×ˢ Ico 0 1, ENNReal.ofReal (‖fderiv ℝ (ξ ∘ endChart q) z (1, 0)‖ ^ 2 +
         ‖fderiv ℝ (ξ ∘ endChart q) z (0, 1)‖ ^ 2 + ‖ξ (endChart q z)‖ ^ 2) ≤
       2 * ∫⁻ w in endChart q '' (P ×ˢ Ico 0 1), ENNReal.ofReal (cylindricalWeight w * ‖ξ w‖ ^ 2 +
@@ -249,14 +250,15 @@ theorem lintegral_comp_endChart_le (q : Puncture) {P : Set ℝ} (hP : Measurable
   refine setLIntegral_mono' (hP.prod measurableSet_Ico) fun z hz ↦ ?_
   rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_ofNat 2,
     ← ENNReal.ofReal_mul (by norm_num), abs_of_pos (det_fderiv_endChart_pos q z)]
-  exact ENNReal.ofReal_le_ofReal (norm_fderiv_comp_endChart_sq_add_le q (hP0 z.1 hz.1) (hξ _))
+  exact ENNReal.ofReal_le_ofReal (norm_fderiv_comp_endChart_sq_add_le q (hP0 z.1 hz.1) (hξ z hz))
 
 /-- **The weighted energy on the image of a band of an end, from the `W^{1,2}` energy.** For a
-band `P × [0, 1)` of the part `±s ≥ 0` of the end `q` and a differentiable `ξ`, the weighted
-energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ` over the image of the band is at most `20π²` times
-the `W^{1,2}` energy of `ζ = ξ ∘ φ_q` over the band. -/
+band `P × [0, 1)` of the part `±s ≥ 0` of the end `q` and a `ξ` differentiable on the image of
+the band, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ` over the image of the band
+is at most `20π²` times the `W^{1,2}` energy of `ζ = ξ ∘ φ_q` over the band. -/
 theorem lintegral_image_endChart_le (q : Puncture) {P : Set ℝ} (hP : MeasurableSet P)
-    (hP0 : ∀ s ∈ P, 0 ≤ q.endSign * s) {ξ : ℝ × ℝ → V} (hξ : Differentiable ℝ ξ) :
+    (hP0 : ∀ s ∈ P, 0 ≤ q.endSign * s) {ξ : ℝ × ℝ → V}
+    (hξ : ∀ z ∈ P ×ˢ Ico 0 1, DifferentiableAt ℝ ξ (endChart q z)) :
     ∫⁻ w in endChart q '' (P ×ˢ Ico 0 1), ENNReal.ofReal (cylindricalWeight w * ‖ξ w‖ ^ 2 +
         ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) ≤
       ENNReal.ofReal (20 * π ^ 2) * ∫⁻ z in P ×ˢ Ico 0 1,
@@ -266,6 +268,6 @@ theorem lintegral_image_endChart_le (q : Puncture) {P : Set ℝ} (hP : Measurabl
   refine setLIntegral_mono' (hP.prod measurableSet_Ico) fun z hz ↦ ?_
   rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (by positivity),
     abs_of_pos (det_fderiv_endChart_pos q z)]
-  exact ENNReal.ofReal_le_ofReal (det_fderiv_endChart_mul_le q (hP0 z.1 hz.1) (hξ _))
+  exact ENNReal.ofReal_le_ofReal (det_fderiv_endChart_mul_le q (hP0 z.1 hz.1) (hξ z hz))
 
 end TauCeti.Floer

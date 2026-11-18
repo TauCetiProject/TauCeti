@@ -46,10 +46,10 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   most the squared `W^{1,2}` norm above (`TauCeti.ConformalSobolev.sq_norm_le_integral`). The jets
   of test sections are square integrable (`TauCeti.ConformalSobolev.memLp_jet`), and their classes
   form the subspace `TauCeti.ConformalSobolev.jetSubmodule` of `L²(U, V × V × V)`.
-* `TauCeti.ConformalSobolev.H1` is its closure, the completion of the test sections in the
-  `W^{1,2}` norm, that is, the Sobolev space `W^{1,2}_0(U, V)`; it is a closed subspace of `L²`
-  and hence complete. An element is an `L²` jet
-  `(η, ξ_s, ξ_t)` whose **weighted value** `η = √ρ ξ` determines it
+* `TauCeti.ConformalSobolev.H1` is its closure, the completion of the test sections in a norm
+  equivalent to the `W^{1,2}` norm, that is, the Sobolev space `W^{1,2}_0(U, V)`; it is a
+  closed subspace of `L²` and hence complete. An element is an `L²` jet `(η, ξ_s, ξ_t)` whose
+  **weighted value** `η = √ρ ξ` determines it
   (`TauCeti.ConformalSobolev.weightedValueL_injective`): the derivative components are the weak
   derivatives of `ξ = η / √ρ` on `U`, which vanish where `η` does.
 * **Rellich's theorem.** On a compact set `K ⊆ U` the weighted value is a compact operator from
@@ -63,12 +63,6 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   kernel (`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`) and closed range
   (`TauCeti.ConformalSobolev.isClosed_range_of_estimate`), by Rellich's theorem and
   `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`.
-
-Finally, the comparison of the `W^{1,2}` densities under a conformal change of coordinates is
-recorded for later use on cylindrical ends: if `φ` has complex-linear derivative `a + i b`, then
-`‖∂s (ξ ∘ φ)‖² + ‖∂t (ξ ∘ φ)‖²` and `(a² + b²) (‖∂s ξ‖² + ‖∂t ξ‖²) ∘ φ` agree up to a factor `2`
-(`TauCeti.ConformalSobolev.norm_sq_add_norm_sq_le_two_mul`,
-`TauCeti.ConformalSobolev.mul_norm_sq_add_norm_sq_le_two_mul`).
 
 ## References
 
@@ -223,8 +217,8 @@ theorem toLp_jet_mem_jetSubmodule (hρ : IsWeight U ρ) (hξ : ξ ∈ testSectio
 variable (V U ρ) in
 /-- The Sobolev space `W^{1,2}_0(U, V)` of the conformal metric `ρ (ds² + dt²)`: the closure in
 `L²(U, V × V × V)` of the jets `(√ρ ξ, ∂s ξ, ∂t ξ)` of test sections, that is, the completion of the
-test sections in the norm `∫_U (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)`. An element is determined by its
-weighted value (`TauCeti.ConformalSobolev.weightedValueL_injective`). -/
+test sections in a norm equivalent to `(∫_U (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²))^{1/2}`. An element is
+determined by its weighted value (`TauCeti.ConformalSobolev.weightedValueL_injective`). -/
 def H1 : Submodule ℝ (Lp (V × V × V) 2 (volume.restrict U)) :=
   (jetSubmodule V U ρ).topologicalClosure
 
@@ -664,60 +658,5 @@ theorem isClosed_range_of_estimate [FiniteDimensional ℝ V] (hρ : IsWeight U �
   exact ContinuousLinearMap.isClosed_range_of_compact_estimate D hc hb
 
 end Peetre
-
-/-! ### Conformal changes of coordinates -/
-
-/-- The elementary inequality behind the comparison of `W^{1,2}` densities under conformal
-changes of coordinates. -/
-private theorem add_sq_add_add_sq_le (a b x y : ℝ) :
-    (|a| * x + |b| * y) ^ 2 + (|b| * x + |a| * y) ^ 2 ≤
-      2 * ((a ^ 2 + b ^ 2) * (x ^ 2 + y ^ 2)) := by
-  nlinarith [mul_nonneg (sq_nonneg (|a| - |b|)) (add_nonneg (sq_nonneg x) (sq_nonneg y)),
-    mul_nonneg (mul_nonneg (abs_nonneg a) (abs_nonneg b)) (sq_nonneg (x - y)), sq_abs a, sq_abs b]
-
-/-- Under the conformal linear map `(1, 0) ↦ (a, b)`, `(0, 1) ↦ (-b, a)` of the plane, the sum of
-the squared norms of the two partial derivatives `X`, `Y` of a map grows at most by twice the
-conformal factor `a² + b²`. -/
-theorem norm_sq_add_norm_sq_le_two_mul (a b : ℝ) (X Y : V) :
-    ‖a • X + b • Y‖ ^ 2 + ‖(-b) • X + a • Y‖ ^ 2 ≤
-      2 * ((a ^ 2 + b ^ 2) * (‖X‖ ^ 2 + ‖Y‖ ^ 2)) := by
-  have h₁ : ‖a • X + b • Y‖ ≤ |a| * ‖X‖ + |b| * ‖Y‖ :=
-    (norm_add_le _ _).trans_eq (by rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs])
-  have h₂ : ‖(-b) • X + a • Y‖ ≤ |b| * ‖X‖ + |a| * ‖Y‖ :=
-    (norm_add_le _ _).trans_eq (by
-      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_neg])
-  have h₁' := pow_le_pow_left₀ (norm_nonneg _) h₁ 2
-  have h₂' := pow_le_pow_left₀ (norm_nonneg _) h₂ 2
-  linarith [add_sq_add_add_sq_le a b ‖X‖ ‖Y‖]
-
-/-- Conversely, under the conformal linear map `(1, 0) ↦ (a, b)`, `(0, 1) ↦ (-b, a)`, the sum of
-the squared norms of the two partial derivatives of a map, times the conformal factor `a² + b²`, is
-at most twice the sum after the change of coordinates. -/
-theorem mul_norm_sq_add_norm_sq_le_two_mul (a b : ℝ) (X Y : V) :
-    (a ^ 2 + b ^ 2) * (‖X‖ ^ 2 + ‖Y‖ ^ 2) ≤
-      2 * (‖a • X + b • Y‖ ^ 2 + ‖(-b) • X + a • Y‖ ^ 2) := by
-  set P := a • X + b • Y
-  set Q := (-b) • X + a • Y
-  set d := a ^ 2 + b ^ 2
-  have hd : 0 ≤ d := by positivity
-  -- Inverting the conformal map: `d X = a P - b Q` and `d Y = b P + a Q`.
-  have hX : d * ‖X‖ ≤ |a| * ‖P‖ + |b| * ‖Q‖ := by
-    have h : d • X = a • P - b • Q := by simp only [P, Q, d]; module
-    rw [← Real.norm_of_nonneg hd, ← norm_smul, h]
-    exact (norm_sub_le _ _).trans_eq (by rw [norm_smul, norm_smul, Real.norm_eq_abs,
-      Real.norm_eq_abs])
-  have hY : d * ‖Y‖ ≤ |b| * ‖P‖ + |a| * ‖Q‖ := by
-    have h : d • Y = b • P + a • Q := by simp only [P, Q, d]; module
-    rw [← Real.norm_of_nonneg hd, ← norm_smul, h]
-    exact (norm_add_le _ _).trans_eq (by rw [norm_smul, norm_smul, Real.norm_eq_abs,
-      Real.norm_eq_abs])
-  have hX' := pow_le_pow_left₀ (by positivity) hX 2
-  have hY' := pow_le_pow_left₀ (by positivity) hY 2
-  have key := add_sq_add_add_sq_le a b ‖P‖ ‖Q‖
-  rcases hd.eq_or_lt with h0 | hpos
-  · rw [← h0, zero_mul]
-    positivity
-  · refine le_of_mul_le_mul_left ?_ hpos
-    nlinarith
 
 end TauCeti.ConformalSobolev

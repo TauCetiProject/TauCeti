@@ -623,8 +623,8 @@ theorem det_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
       4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm (endChart q z) - q.endCenter‖ ^ 2 := by
   rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
     (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, deriv_cylindricalEndLift,
-    ← endChart_eq_realChart, equivRealProdCLM_symm_endChart, Complex.normSq_eq_norm_sq, norm_neg,
-    norm_mul, norm_mul, Complex.norm_real, Complex.norm_ofNat, Real.norm_of_nonneg pi_pos.le]
+    ← endChart_eq_realChart, equivRealProdCLM_symm_endChart, Complex.normSq_eq_norm_sq]
+  simp [abs_of_pos pi_pos]
   ring
 
 /-- The three end strips have disjoint images. -/

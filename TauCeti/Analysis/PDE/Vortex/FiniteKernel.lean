@@ -41,8 +41,8 @@ The proof is the classical one, combining an estimate at infinity with compactne
   errors that vanish in the limit.
 * **Compactness.** For kernel elements `y` bounded in `L²`, the localizations `b y` by a fixed
   cutoff `b` equal to one on that disc are bounded in `H¹` by the interior estimate, and so form a
-  totally bounded family in `L²` by the Fréchet–Kolmogorov criterion
-  (`TauCeti.totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl`). The estimate at
+  totally bounded family in `L²` by the Fréchet–Kolmogorov criterion for `C¹` families
+  (`TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`). The estimate at
   infinity turns closeness of `b y` and `b y'` into closeness of `y` and `y'`. So bounded sets of
   the kernel are totally bounded in `L²`, which by Riesz's lemma forces finite dimension.
 
