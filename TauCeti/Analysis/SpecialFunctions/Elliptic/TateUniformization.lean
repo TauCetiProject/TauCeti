@@ -53,7 +53,8 @@ Tate curve `E_q : y² + x y = x³ - 5 s₃(q) x - (5 s₃(q) + 7 s₅(q)) / 12`
 Tate curve over `ℤ⟦q⟧`, is obtained from the Weierstrass model `y² = x³ - (g₂ / 4) x - g₃ / 4` of
 `ℂ / (ℤ z + ℤ)` by the change of variables `(u, r, s, t) = (2π i, (2π i)² / 12, π i, 0)`
 (`TauCeti.complexTateVariableChange`); its discriminant is the modular discriminant `Δ(z)`.
-Composing the exponential isomorphism `ℂ / (ℤ z + ℤ) ≃ ℂˣ / q^ℤ`, the `℘`-uniformisation
+Composing the exponential isomorphism `ℂ / (ℤ z + ℤ) ≃ ℂˣ / q^ℤ`
+(`UpperHalfPlane.latticeQuotientEquivZPowers`), the `℘`-uniformisation
 `ℂ / (ℤ z + ℤ) ≃ E_z(ℂ)` (`PeriodPair.weierstrassPointEquiv`) and this change of variables gives
 the complex Tate uniformisation `ℂˣ / q^ℤ ≃ E_q(ℂ)`, a group isomorphism which sends the class of
 every `t ∉ q^ℤ` to the point `(X(t), Y(t))`. Under it the root of unity `e^(2π i / N)` corresponds
@@ -64,8 +65,6 @@ level structure of `UpperHalfPlane.pointedWeierstrassCurve`.
 
 * `TauCeti.complexTateCurve`: the Tate curve `y² + x y = x³ + a₄(q) x + a₆(q)` at `q ∈ ℂ`.
 * `TauCeti.complexTateVariableChange`: the change of variables from `E_z` to the Tate curve.
-* `UpperHalfPlane.latticeQuotientEquivZPowers`: `ℂ / (ℤ z + ℤ) ≃ ℂˣ / q^ℤ`, induced by
-  `x ↦ e^(2π i x)`.
 * `UpperHalfPlane.complexTateUniformization`: the complex Tate uniformisation
   `ℂˣ / q^ℤ ≃ E_q(ℂ)`.
 
@@ -341,9 +340,7 @@ theorem complexTateVariableChange_smul_weierstrassCurve (z : ℍ) {q : ℂ}
   have hE₆ := ModularForm.E₆_apply_eq_divisorSumAt z
   rw [← hq] at hE₄ hE₆
   have hπ : (π : ℂ) ≠ 0 := by exact_mod_cast Real.pi_ne_zero
-  have hI₆ : Complex.I ^ 6 = -1 := by
-    rw [show 6 = 2 * 3 by rfl, pow_mul, I_sq]
-    norm_num
+  have hI₆ : Complex.I ^ 6 = -1 := by norm_num [pow_succ]
   ext <;> simp only [variableChange_a₁, variableChange_a₂, variableChange_a₃, variableChange_a₄,
     variableChange_a₆, Units.val_inv_eq_inv_val, coe_complexTateVariableChange_u,
     complexTateVariableChange_r, complexTateVariableChange_s, complexTateVariableChange_t,
@@ -364,78 +361,10 @@ theorem complexTateCurve_Δ (z : ℍ) {q : ℂ} (hq : q = cexp (2 * π * Complex
   rw [← complexTateVariableChange_smul_weierstrassCurve z hq, variableChange_Δ,
     weierstrassCurve_Δ_periodPair]
   rw [Units.val_inv_eq_inv_val, coe_complexTateVariableChange_u]
-  have hI : Complex.I ^ 12 = 1 := by
-    rw [show 12 = 4 * 3 by rfl, pow_mul, I_pow_four, one_pow]
+  have hI : Complex.I ^ 12 = 1 := by norm_num [pow_succ]
   have hπ : (2 * π : ℂ) ^ 12 ≠ 0 := pow_ne_zero _ (mul_ne_zero two_ne_zero
     (by exact_mod_cast Real.pi_ne_zero))
   rw [inv_pow, mul_pow (2 * (π : ℂ)), hI, mul_one, inv_mul_cancel_left₀ hπ]
-
-/-- The exponential `x ↦ e^(2π i x)` as a homomorphism from `ℂ` to the multiplicative group. -/
-private def cexpHom : ℂ →+ Additive ℂˣ where
-  toFun x := .ofMul (Units.mk0 (cexp (2 * π * Complex.I * x)) (Complex.exp_ne_zero _))
-  map_zero' := by
-    rw [ofMul_eq_zero]
-    ext
-    simp
-  map_add' x y := by
-    rw [← ofMul_mul]
-    congr 1
-    ext
-    simp [mul_add, Complex.exp_add]
-
-private lemma cexpHom_apply (x : ℂ) : cexpHom x =
-    .ofMul (Units.mk0 (cexp (2 * π * Complex.I * x)) (Complex.exp_ne_zero _)) := (rfl)
-
-/-- Every class of `ℂˣ / q^ℤ` is represented by an exponential `e^(2π i x)`. -/
-private lemma surjective_cexpHom (q : ℂˣ) :
-    Function.Surjective ((QuotientGroup.mk' (Subgroup.zpowers q)).toAdditive.comp cexpHom) := by
-  intro x
-  obtain ⟨t, ht⟩ := QuotientGroup.mk'_surjective _ x.toMul
-  refine ⟨Function.Periodic.invQParam 1 t, ?_⟩
-  rw [AddMonoidHom.comp_apply, cexpHom_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul,
-    ← ofMul_toMul x, ← ht]
-  congr 2
-  ext
-  simpa [Function.Periodic.qParam] using Function.Periodic.qParam_right_inv one_ne_zero t.ne_zero
-
-/-- The exponential `e^(2π i x)` is a power of `q = e^(2π i z)` exactly when `x ∈ ℤ z + ℤ`. -/
-private lemma lattice_eq_ker_cexpHom (z : ℍ) {q : ℂˣ}
-    (hq : (q : ℂ) = cexp (2 * π * Complex.I * z)) :
-    z.periodPair.lattice.toAddSubgroup =
-      ((QuotientGroup.mk' (Subgroup.zpowers q)).toAdditive.comp cexpHom).ker := by
-  ext x
-  rw [AddMonoidHom.mem_ker, AddMonoidHom.comp_apply, cexpHom_apply,
-    MonoidHom.toAdditive_apply_apply, toMul_ofMul, ofMul_eq_zero, QuotientGroup.mk'_apply,
-    QuotientGroup.eq_one_iff, mem_zpowers_iff_mem_lattice_periodPair z hq rfl]
-  rfl
-
-/-- **The exponential uniformisation `ℂ / (ℤ z + ℤ) ≃ ℂˣ / q^ℤ`.** For `z ∈ ℍ` and
-`q = e^(2π i z)`, the map `x ↦ e^(2π i x)` induces an isomorphism from the quotient of `ℂ` by the
-lattice `ℤ z + ℤ` onto the quotient of `ℂˣ` by the powers of `q`, written additively. -/
-def latticeQuotientEquivZPowers (z : ℍ) {q : ℂˣ} (hq : (q : ℂ) = cexp (2 * π * Complex.I * z)) :
-    (ℂ ⧸ z.periodPair.lattice.toAddSubgroup) ≃+ Additive (ℂˣ ⧸ Subgroup.zpowers q) :=
-  -- naming the codomain lets the additive structure of `Additive (ℂˣ ⧸ q^ℤ)` unify directly
-  QuotientAddGroup.liftEquiv (H := Additive (ℂˣ ⧸ Subgroup.zpowers q)) _ (surjective_cexpHom q)
-    (lattice_eq_ker_cexpHom z hq)
-
-/-- `UpperHalfPlane.latticeQuotientEquivZPowers` sends the class of `x` to the class of
-`e^(2π i x)`. -/
-@[simp]
-theorem latticeQuotientEquivZPowers_mk (z : ℍ) {q : ℂˣ}
-    (hq : (q : ℂ) = cexp (2 * π * Complex.I * z)) (x : ℂ) :
-    latticeQuotientEquivZPowers z hq x =
-      .ofMul ↑(Units.mk0 (cexp (2 * π * Complex.I * x)) (Complex.exp_ne_zero _)) := by
-  rw [latticeQuotientEquivZPowers, QuotientAddGroup.liftEquiv_mk, AddMonoidHom.comp_apply,
-    cexpHom_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul, QuotientGroup.mk'_apply]
-
-/-- The inverse of `UpperHalfPlane.latticeQuotientEquivZPowers` sends the class of `e^(2π i x)` to
-the class of `x`. -/
-@[simp]
-theorem latticeQuotientEquivZPowers_symm_ofMul (z : ℍ) {q : ℂˣ}
-    (hq : (q : ℂ) = cexp (2 * π * Complex.I * z)) (x : ℂ) :
-    (latticeQuotientEquivZPowers z hq).symm
-        (.ofMul ↑(Units.mk0 (cexp (2 * π * Complex.I * x)) (Complex.exp_ne_zero _))) = x := by
-  rw [AddEquiv.symm_apply_eq, latticeQuotientEquivZPowers_mk]
 
 /-- **The complex Tate uniformisation** `ℂˣ / q^ℤ ≃ E_q(ℂ)` onto the points of the complex Tate
 curve at `q = e^(2π i z)`, written additively on the source. It is the exponential uniformisation
@@ -525,8 +454,9 @@ theorem complexTateUniformization_mk_of_notMem_zpowers (z : ℍ) {q : ℂˣ}
   have hx : x ∉ z.periodPair.lattice :=
     (mem_zpowers_iff_mem_lattice_periodPair z hq htx).not.mp ht
   have hpt := complexTateVariableChange_smul_mk_weierstrassPoint z hq x
-  rw [show Units.mk0 (cexp (2 * π * Complex.I * x)) (Complex.exp_ne_zero _) = t from
-    Units.ext htx.symm, z.periodPair.weierstrassPoint_of_notMem hx] at hpt
+  have hxt : Units.mk0 (cexp (2 * π * Complex.I * x)) (Complex.exp_ne_zero _) = t :=
+    Units.ext htx.symm
+  rw [hxt, z.periodPair.weierstrassPoint_of_notMem hx] at hpt
   -- in Tate coordinates, `℘ = (2π i)² (X + 1 / 12)` and `℘' / 2 = (2π i)³ (2 Y + X) / 2`
   have hcoord := (PointedWeierstrassCurve.smul_mk_some_eq_mk_some_iff
     complexTateVariableChange (z.periodPair.nonsingular_weierstrassP hx) h).mpr
