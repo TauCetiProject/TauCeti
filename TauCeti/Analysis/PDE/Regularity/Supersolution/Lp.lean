@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Regularity.Supersolution.Basic
 import TauCeti.Analysis.PDE.Regularity.Supersolution.LowerOrder
 
 /-!
-# Lower bounds from small negative powers of supersolutions
+# Lower bounds from negative powers of supersolutions
 
 A positive weak supersolution of `-div(a ∇u) ≥ 0` satisfies the local estimate
 
@@ -76,7 +76,7 @@ theorem exists_ae_inv_value_le_mul_rpow_mul_setIntegral_rpow_of_forall_eLpNorm_l
   exact h.ae_inv_value_le_mul_setIntegral_rpow ha hu hm hum hR hball (by positivity) hp
     fun w hw => by simpa only [sub_zero, zero_add] using hbound (u := w) (k := 0) h ha hS hw hball
 
-/-- **Moser's lower bound from small negative powers.** For every `p > 0` and every
+/-- **Moser's lower bound from negative powers.** For every `p > 0` and every
 positive weak supersolution in any dimension `n ≥ 1`,
 `u⁻¹ ≤ D R^{-n/p} (∫_{B(x₀, R)} u⁻ᵖ)^{1/p}` almost everywhere on `B(x₀, R/2)`.
 The constant depends only on `λ`, `Λ`, `p`, the dimension and Haar normalization, not on the
