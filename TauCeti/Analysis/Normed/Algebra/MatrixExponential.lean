@@ -36,7 +36,8 @@ arbitrary factor, for an arbitrary matrix over any complete normed entry ring; t
 the trace under conjugation by the two exponential weights in either order, which needs
 commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
 Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
-criterion `det (exp K) = 1 ↔ trace K = 0`.
+criterion `det (exp K) = 1 ↔ trace K = 0`. Differentiating entrywise at `t = 0`, the entries of
+the exponential line `t ↦ exp (t • X)` determine those of `X`.
 
 ## The argument
 
@@ -61,6 +62,10 @@ exponentials whenever all their powers agree at those entries.
 * `Matrix.IsUpperTriangular.exp_apply_diag_pos`: real diagonal entries exponentiate to positive
   real diagonal entries.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
+* `Matrix.hasDerivAt_exp_smul_apply`: an entry of `X` is the derivative at `0` of that entry of
+  the exponential line `t ↦ exp (t • X)`.
+* `Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero`: an entry of `X` vanishes if that entry
+  of `exp (t • X)` vanishes for every real `t`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
   in both orientations.
@@ -201,6 +206,32 @@ theorem det_exp (A : Matrix n n 𝕂) : det (exp A) = exp (trace A) := by
         rw [← NormedSpace.exp_add_of_commute ((Commute.refl _).neg_left), neg_add_cancel,
           exp_zero, mul_one]
     _ = exp (trace A) := by rw [← mul_assoc, hconst, one_mul]
+
+section EntryDerivative
+
+variable {m 𝕜 : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕜]
+
+/-- An entry of `X` is the derivative at `0` of that entry of the exponential line
+`t ↦ exp (t • X)`. -/
+theorem hasDerivAt_exp_smul_apply (X : Matrix m m 𝕜) (i j : m) :
+    HasDerivAt (fun t : ℝ ↦ exp (t • X) i j) (X i j) 0 := by
+  have h := (LinearMap.toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j)).hasFDerivAt.comp_hasDerivAt
+    0 (hasDerivAt_exp_smul_const X (0 : ℝ))
+  rw [zero_smul, exp_zero, one_mul] at h
+  -- `h` is about `entryLinearMap ℝ 𝕜 i j ∘ fun t ↦ exp (t • X)` with derivative
+  -- `entryLinearMap ℝ 𝕜 i j X`; both unfold definitionally to the `(i, j)` entry, so `exact`
+  -- closes the goal by that unfolding (`simpa [entryLinearMap_apply]` leaves the derivative
+  -- `toContinuousLinearMap (entryLinearMap ℝ 𝕜 i j) X` unrewritten).
+  exact h
+
+/-- An entry of `X` vanishes if that entry of `exp (t • X)` vanishes for every real `t`. -/
+theorem apply_eq_zero_of_forall_exp_smul_apply_eq_zero {X : Matrix m m 𝕜} {i j : m}
+    (h : ∀ t : ℝ, exp (t • X) i j = 0) : X i j = 0 := by
+  have hX := hasDerivAt_exp_smul_apply X i j
+  simp only [h] at hX
+  exact hX.unique (hasDerivAt_const 0 0)
+
+end EntryDerivative
 
 end Matrix
 
