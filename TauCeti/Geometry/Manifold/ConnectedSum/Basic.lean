@@ -102,6 +102,10 @@ def puncture (e : E → M) : Opens M :=
 theorem mem_puncture {e : E → M} {x : M} : x ∈ puncture e ↔ x ≠ e 0 :=
   Iff.rfl
 
+/-- A vector whose image under `e` lies in the punctured summand `M ∖ {e 0}` is nonzero. -/
+theorem ne_zero_of_apply_mem_puncture {e : E → M} {w : E} (h : e w ∈ puncture e) : w ≠ 0 :=
+  fun hw ↦ mem_puncture.1 h (congrArg e hw)
+
 @[simp]
 theorem coe_puncture (e : E → M) : (puncture e : Set M) = {e 0}ᶜ :=
   (rfl)
@@ -325,17 +329,18 @@ theorem inl_eq_inr_iff (he₁ : Injective e₁) (he₂ : Injective e₂) {x : pu
   simp
 
 /-- The glued points determined by a nonzero vector `v`. -/
-theorem inl_eq_inr (v : E) (hv : v ≠ 0) (hx : e₁ v ∈ puncture e₁)
+theorem inl_eq_inr (v : E) (hx : e₁ v ∈ puncture e₁)
     (hy : e₂ (inversion 0 1 v) ∈ puncture e₂) :
     inl e₁ e₂ ⟨e₁ v, hx⟩ = inr e₁ e₂ ⟨e₂ (inversion 0 1 v), hy⟩ :=
-  Quot.sound ⟨v, hv, rfl, rfl⟩
+  Quot.sound ⟨v, ne_zero_of_apply_mem_puncture hx, rfl, rfl⟩
 
 /-- The glued points determined by a nonzero vector `w`, read from the second ball: `e₂ w` is glued
 to `e₁ (inversion 0 1 w)`, as the inversion is an involution. -/
-theorem inl_inversion_eq_inr {w : E} (hw : w ≠ 0) (hx : e₁ (inversion 0 1 w) ∈ puncture e₁)
+theorem inl_inversion_eq_inr {w : E} (hx : e₁ (inversion 0 1 w) ∈ puncture e₁)
     (hy : e₂ w ∈ puncture e₂) :
     inl e₁ e₂ ⟨e₁ (inversion 0 1 w), hx⟩ = inr e₁ e₂ ⟨e₂ w, hy⟩ :=
-  Quot.sound ⟨inversion 0 1 w, by simpa [inversion_eq_center one_ne_zero] using hw, rfl,
+  Quot.sound ⟨inversion 0 1 w, by
+    simpa [inversion_eq_center one_ne_zero] using ne_zero_of_apply_mem_puncture hy, rfl,
     by rw [inversion_inversion (0 : E) one_ne_zero]⟩
 
 section lift
@@ -499,21 +504,35 @@ variable {e₁ e₂}
 
 /-- If moreover `f 0 ∉ range e₁`, the centre of the ball `f` of the connected sum is not a point
 of the second summand. -/
-theorem inr_ne_inlBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₁ 0 ∉ range f)
+theorem inr_ne_inlBall_zero (h : e₁ 0 ∉ range f)
     (hf : f 0 ∉ range e₁) (y : puncture e₂) : inr e₁ e₂ y ≠ inlBall e₁ e₂ f h 0 := by
   intro hy
-  rw [inlBall_apply, eq_comm, inl_eq_inr_iff he₁ he₂] at hy
-  obtain ⟨v, -, hv, -⟩ := hy
-  exact hf ⟨v, by simpa using hv⟩
+  rw [inlBall_apply] at hy
+  have hy := (Quot.eqvGen_exact hy).symm
+  rw [← Relation.EqvGen.reflTransGen_symmGen] at hy
+  refine Sum.inr_ne_inl ((Relation.reflTransGen_iff_eq ?_).1 hy)
+  rintro (x | x) (hx | hx)
+  · exact not_rel_inl_inl hx
+  · exact not_rel_inl_inl hx
+  · obtain ⟨v, -, hv, -⟩ := rel_inl_inr.1 hx
+    exact hf ⟨v, by simpa using hv⟩
+  · exact not_rel_inr_inl hx
 
 /-- If moreover `g 0 ∉ range e₂`, the centre of the ball `g` of the connected sum is not a point
 of the first summand. -/
-theorem inl_ne_inrBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₂ 0 ∉ range g)
+theorem inl_ne_inrBall_zero (h : e₂ 0 ∉ range g)
     (hg : g 0 ∉ range e₂) (x : puncture e₁) : inl e₁ e₂ x ≠ inrBall e₁ e₂ g h 0 := by
   intro hx
-  rw [inrBall_apply, inl_eq_inr_iff he₁ he₂] at hx
-  obtain ⟨v, -, -, hv⟩ := hx
-  exact hg ⟨_, by simpa using hv⟩
+  rw [inrBall_apply] at hx
+  have hx := (Quot.eqvGen_exact hx).symm
+  rw [← Relation.EqvGen.reflTransGen_symmGen] at hx
+  refine Sum.inl_ne_inr ((Relation.reflTransGen_iff_eq ?_).1 hx)
+  rintro (x | x) (hx | hx)
+  · exact not_rel_inr_inl hx
+  · obtain ⟨v, -, -, hv⟩ := rel_inl_inr.1 hx
+    exact hg ⟨_, by simpa using hv⟩
+  · exact not_rel_inr_inr hx
+  · exact not_rel_inr_inr hx
 
 theorem isOpenEmbedding_inlBall (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
     (h : e₁ 0 ∉ range f) (hf : IsOpenEmbedding f) : IsOpenEmbedding (inlBall e₁ e₂ f h) :=

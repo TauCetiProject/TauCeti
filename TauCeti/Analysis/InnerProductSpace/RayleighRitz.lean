@@ -147,14 +147,14 @@ theorem sq_frobenius_sylvester_eq_sq_frobenius_sylvester_compression_add [Finite
     norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _ horth,
     AddMonoidHomClass.isometry_iff_norm _ |>.1 hX]
 
-variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-
 /-- **Minimality of the Ritz residual.** For an isometric trial map `X`, the compression
 `X† A X` is the best model operator: the Ritz residual is smallest among all residuals
 `A X - X M` in every unitarily invariant seminorm. -/
 theorem map_sylvester_compression_le_map_sylvester (N : UnitarilyInvariantSeminorm 𝕜 F E)
     (hX : Isometry X) (M : F →L[𝕜] F) :
     N (A.sylvester (A.compression X) X) ≤ N (A.sylvester M X) := by
+  have : CompleteSpace (X : F →ₗ[𝕜] E).range :=
+    hX.isUniformInducing.isComplete_range.completeSpace_coe
   rw [← starProjection_orthogonal_range_comp_sylvester A hX M]
   exact N.map_starProjection_comp_le _ _
 

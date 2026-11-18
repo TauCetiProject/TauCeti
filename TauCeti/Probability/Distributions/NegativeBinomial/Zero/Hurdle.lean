@@ -79,8 +79,7 @@ theorem integral_id_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture
     ∫ x, x ∂(((negativeBinomialMeasure r p)[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (r * (1 - p) / p) / (1 - p ^ r) := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
-  rw [Measure.integral_id_map_natCast_cond_compl_zero_atomMixture_zero _ _
-      ((memLp_id_map_cast_negativeBinomialMeasure 1).integrable le_rfl),
+  rw [Measure.integral_id_map_natCast_cond_compl_zero_atomMixture_zero,
     integral_id_map_cast_negativeBinomialMeasure hr hp hp1,
     negativeBinomialMeasure_real_singleton_zero hr hp hp1]
 

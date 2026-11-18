@@ -32,6 +32,10 @@ the transposed diagonal by `TauCeti.NatChainComplex.cup_koszulBraidingHom`.
 * `TopCat.singularCup_left_comm_tensorUnit`: `b ⌣ (a ⌣ c) = (-1)^(p * q) a ⌣ (b ⌣ c)` for a
   commutative and associative pairing, combining graded commutativity with associativity.
 
+* `TopCat.two_smul_singularCup_self_eq_zero_of_odd` and
+  `TopCat.singularCup_self_eq_zero_of_odd`: for cocommutative `u` and commutative `μ`,
+  `2 • (a ⌣ a) = 0` for `a` of odd degree, so `a ⌣ a = 0` when `2` is invertible in `k`.
+
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
@@ -102,5 +106,30 @@ theorem singularCup_left_comm_tensorUnit (X : TopCat.{w}) (k : Type*) [CommRing 
   rw [← singularCup_assoc_tensorUnit X k hμ' rfl (by omega) hm' hn',
     singularCup_gradedComm_tensorUnit X k hμ (add_comm p q), map_zsmul, LinearMap.smul_apply,
     singularCup_assoc_tensorUnit X k hμ' (add_comm p q) (by omega) hm hn]
+
+/-- **Twice an odd cup square vanishes**: for a cocommutative coefficient morphism
+`u : T ⟶ R ⊗ R` and a commutative pairing `μ : M ⊗ M ⟶ P`, graded commutativity gives
+`a ⌣ a = -(a ⌣ a)` for `a` of odd degree, so `2 • (a ⌣ a) = 0`. -/
+theorem two_smul_singularCup_self_eq_zero_of_odd (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] {u : T ⟶ R ⊗ R} (hu : u ≫ (β_ R R).hom = u)
+    {μ : M ⊗ M ⟶ P} (hμ : (β_ M M).hom ≫ μ = μ) {p n : ℕ} (hp : Odd p) (h : p + p = n)
+    (a : X.singularCohomology R k M p) :
+    (2 : k) • X.singularCup k u μ p p n h a a = 0 := by
+  have hcomm := X.singularCup_gradedComm k hu hμ h a a
+  rw [(hp.mul hp).neg_one_pow, neg_one_smul] at hcomm
+  rw [two_smul]
+  nth_rw 1 [hcomm]
+  exact neg_add_cancel _
+
+/-- **Cup squares of odd classes vanish** when `2` is invertible in `k`: for a cocommutative
+coefficient morphism `u : T ⟶ R ⊗ R` and a commutative pairing `μ : M ⊗ M ⟶ P`, `a ⌣ a = 0` for
+`a` of odd degree. -/
+theorem singularCup_self_eq_zero_of_odd (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Invertible (2 : k)] [Linear k C] [MonoidalLinear k C] {u : T ⟶ R ⊗ R}
+    (hu : u ≫ (β_ R R).hom = u) {μ : M ⊗ M ⟶ P} (hμ : (β_ M M).hom ≫ μ = μ) {p n : ℕ}
+    (hp : Odd p) (h : p + p = n) (a : X.singularCohomology R k M p) :
+    X.singularCup k u μ p p n h a a = 0 := by
+  rw [← one_smul k (X.singularCup k u μ p p n h a a), ← invOf_mul_self (2 : k),
+    mul_smul, X.two_smul_singularCup_self_eq_zero_of_odd k hu hμ hp h a, smul_zero]
 
 end TopCat

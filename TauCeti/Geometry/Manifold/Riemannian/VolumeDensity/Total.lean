@@ -12,8 +12,9 @@ public import Mathlib.MeasureTheory.Measure.Real
 # Total Riemannian volume
 
 The Riemannian volume measure of a compact manifold has finite mass. Its total mass is
-therefore a real number, `TauCeti.riemannianTotalVolume`. This is the volume associated
-to the chosen Riemannian metric, and is preserved by differentiable isometries. The
+therefore a real number, `TauCeti.riemannianTotalVolume`, and the integral of a constant `c` is
+`c * riemannianTotalVolume I M` (`TauCeti.integral_const_riemannianVolume`). This is the volume
+associated to the chosen Riemannian metric, and is preserved by isometries. The
 construction also applies to compact manifolds with boundary or corners.
 
 The volume is the total mass of the Riemannian density of J. M. Lee, *Introduction to
@@ -59,6 +60,12 @@ theorem ofReal_riemannianTotalVolume :
   rw [riemannianTotalVolume_def]
   exact ofReal_measureReal (by finiteness)
 
+/-- The integral of a constant against the Riemannian volume is the constant times the total
+volume. -/
+theorem integral_const_riemannianVolume (c : ℝ) :
+    ∫ _ : M, c ∂riemannianVolume I M = c * riemannianTotalVolume I M := by
+  rw [integral_const, smul_eq_mul, mul_comm, riemannianTotalVolume_def]
+
 /-- Total Riemannian volume is nonnegative. -/
 theorem riemannianTotalVolume_nonneg : 0 ≤ riemannianTotalVolume I M :=
   measureReal_nonneg
@@ -83,14 +90,14 @@ variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
-/-- A differentiable isometry between compact Riemannian manifolds preserves total volume. -/
+/-- A homeomorphism between compact Riemannian manifolds whose tangent maps preserve the inner
+products preserves total volume. -/
 theorem _root_.Homeomorph.riemannianTotalVolume_eq (Φ : M ≃ₜ N)
-    (hΦ : MDifferentiable I I' Φ)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     riemannianTotalVolume I M = riemannianTotalVolume I' N := by
   rw [riemannianTotalVolume_def, riemannianTotalVolume_def]
-  have h := Φ.measurePreserving_riemannianVolume hΦ hinner
+  have h := Φ.measurePreserving_riemannianVolume hinner
   apply congrArg ENNReal.toReal
   calc
     (riemannianVolume I M) univ = ((riemannianVolume I M).map Φ) univ := by
@@ -109,10 +116,8 @@ variable {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'}
 theorem riemannianTotalVolume_eq
     (Φ : RiemannianIsometry I J M N) :
     riemannianTotalVolume I M = riemannianTotalVolume J N := by
-  apply Homeomorph.riemannianTotalVolume_eq Φ.toDiffeomorph.toHomeomorph Φ.mdifferentiable
-  intro x v w
-  -- See `measurePreserving_riemannianVolume` for the coercion normalization.
-  change ⟪mfderiv I J Φ x v, mfderiv I J Φ x w⟫_ℝ = ⟪v, w⟫_ℝ
+  refine Φ.toDiffeomorph.toHomeomorph.riemannianTotalVolume_eq fun x v w ↦ ?_
+  rw [Diffeomorph.coe_toHomeomorph, coe_toDiffeomorph]
   exact Φ.inner_mfderiv x v w
 
 end RiemannianIsometry
