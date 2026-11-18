@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.End
+public import Mathlib.Data.Nat.Prime.Basic
+public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
@@ -16,13 +18,17 @@ multiplicative equivalence `e : M ≃* N` carries them bijectively onto the squa
 (`MulEquiv.squareRootMap`). Applied to conjugation in a group, this shows that the number of
 square roots depends only on the conjugacy class of `x` (`TauCeti.card_squareRoot_conj`). That is
 what makes the square-root count a class function, and hence expandable in the basis of
-irreducible characters.
+irreducible characters. In a group of odd order squaring is a bijection
+(`Nat.Coprime.pow_left_bijective`), so every element has exactly one square root
+(`TauCeti.card_squareRoot_of_odd_card`).
 
 ## Main statements
 
 * `MulEquiv.squareRootMap`: a multiplicative equivalence `e` is a bijection between the square
   roots of `x` and those of `e x`.
 * `TauCeti.card_squareRoot_conj`: conjugate elements of a group have equally many square roots.
+* `TauCeti.mul_self_eq_one_iff_of_odd_card` and `TauCeti.card_squareRoot_of_odd_card`: in a group
+  of odd order, `g * g = 1` only for `g = 1`, and every element has exactly one square root.
 
 ## Implementation notes
 
@@ -77,5 +83,22 @@ theorem card_squareRoot_conj (x h : G) :
     Nat.card {g : G // g * g = h * x * h⁻¹} = Nat.card {g : G // g * g = x} := by
   rw [← MulAut.conj_apply]
   exact (Nat.card_congr ((MulAut.conj h).squareRootMap x)).symm
+
+/-- In a group of odd order, `g * g = 1` only for `g = 1`: squaring is a bijection, since `2` is
+coprime to the order. -/
+theorem mul_self_eq_one_iff_of_odd_card (hG : Odd (Nat.card G)) {g : G} :
+    g * g = 1 ↔ g = 1 := by
+  refine ⟨fun h => hG.coprime_two_right.pow_left_bijective.1 ?_, fun h => by simp [h]⟩
+  simp only [pow_two, h, mul_one]
+
+/-- **In a group of odd order every element has exactly one square root**: squaring is a
+bijection, since `2` is coprime to the order. -/
+theorem card_squareRoot_of_odd_card (hG : Odd (Nat.card G)) (x : G) :
+    Nat.card {g : G // g * g = x} = 1 := by
+  have hbij := hG.coprime_two_right.pow_left_bijective (G := G)
+  obtain ⟨g, hg⟩ := hbij.2 x
+  rw [Nat.card_eq_one_iff_unique]
+  exact ⟨⟨fun a b => Subtype.ext <| hbij.1 <| by simp only [pow_two, a.2, b.2]⟩,
+    ⟨⟨g, by rw [← pow_two]; exact hg⟩⟩⟩
 
 end TauCeti
