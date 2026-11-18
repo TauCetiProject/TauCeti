@@ -31,18 +31,19 @@ Hence neither space is the union of two open sets homeomorphic to `ℝᵐ`
 `Sᵐ ∨ Sᵐ` of two spheres (`TauCeti.WedgeSum.not_exists_two_euclidean_opens_sphere`), for `m > 0`,
 are compact Hausdorff spaces which are not spheres, and what they lack is exactly such a cover.
 
-Both proofs rest on invariance of domain, in a form for maps into a space which is only known to
-be Euclidean near the image (`IsOpen.image_of_continuousOn_of_injOn_of_mapsTo`): if an open subset
-`U` of a space `X` is homeomorphic to a manifold of dimension `m`, then a continuous injection of
-an open subset of another manifold of dimension `m` into `U` has open image in `X`.
+Both proofs rest on invariance of domain.
 
 * If a boundary point `x` of the closed ball had a neighbourhood `U` homeomorphic to `ℝᵐ`, then
-  `U`, as the image of `ℝᵐ` in `E`, would be open in `E`, so `x` would lie in the interior of the
-  ball, which is the open ball.
-* If the wedge point had a neighbourhood `U` homeomorphic to `ℝᵐ`, then the charts of two distinct
-  summands at their base points would carry open subsets of `ℝᵐ` onto two neighbourhoods of the
-  wedge point. These meet only in the wedge point, which would be isolated, while no point of `ℝᵐ`
-  is isolated for `m > 0`.
+  `U`, as the image of `ℝᵐ` in `E`, would be open in `E` by the global form of invariance of domain
+  (`Continuous.isOpenEmbedding_of_injective`), so `x` would lie in the interior of the ball, which
+  is the open ball.
+* The wedge argument uses a form for maps into a space which is only known to be Euclidean near
+  the image (`IsOpen.image_of_continuousOn_of_injOn_of_mapsTo`): if an open subset `U` of a space
+  `X` is homeomorphic to a manifold of dimension `m`, then a continuous injection of an open subset
+  of another manifold of dimension `m` into `U` has open image in `X`. If the wedge point had a
+  neighbourhood `U` homeomorphic to `ℝᵐ`, then the charts of two distinct summands at their base
+  points would carry open subsets of `ℝᵐ` onto two neighbourhoods of the wedge point. These meet
+  only in the wedge point, which would be isolated, while no point of `ℝᵐ` is isolated for `m > 0`.
 
 When the dimension of the neighbourhood might differ from that of the ball or of the summands,
 invariance of dimension (`Topology.IsOpenEmbedding.finrank_eq`), applied to an open set away
