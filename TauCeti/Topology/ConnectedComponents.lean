@@ -56,6 +56,9 @@ space by them.
   `IsClosed.frontier_connectedComponentIn_sdiff_subset`: a connected component of `Ω \ K` has its
   frontier in `(interior Ω)ᶜ ∪ closure K` (hence in `closure K`, or in `K` for closed `K`, when
   its frontier lies in `interior Ω`).
+* `IsOpen.exists_subset_forall_connectedComponentIn_inter_nonempty`: in a locally connected
+  space, an open set `U ⊇ K` contains an open neighbourhood `U'` of `K` all of whose
+  connected components meet `K`.
 * `IsOpen.joinedIn_of_mem_connectedComponentIn`: in a locally path-connected space, a point of an
   open set is joined to each point of its component by a path inside that component.
 * `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
@@ -472,6 +475,21 @@ theorem _root_.IsClosed.frontier_connectedComponentIn_sdiff_subset [LocallyConne
     (hfr : frontier (connectedComponentIn (Ω \ K) x) ⊆ interior Ω) :
     frontier (connectedComponentIn (Ω \ K) x) ⊆ K :=
   (frontier_connectedComponentIn_sdiff_subset_closure hfr).trans hK.closure_subset
+
+/-- In a locally connected space, every open set `U` containing `K` has an open subset
+`U' ⊆ U` containing `K`, each of whose connected components meets `K`. -/
+theorem _root_.IsOpen.exists_subset_forall_connectedComponentIn_inter_nonempty
+    [LocallyConnectedSpace X] {K U : Set X} (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ U' ⊆ U, IsOpen U' ∧ K ⊆ U' ∧ ∀ x ∈ U', (connectedComponentIn U' x ∩ K).Nonempty := by
+  refine ⟨⋃ y ∈ K, connectedComponentIn U y,
+    iUnion₂_subset fun y _ => connectedComponentIn_subset U y,
+    isOpen_biUnion fun y _ => hU.connectedComponentIn,
+    fun y hy => mem_biUnion hy (mem_connectedComponentIn (hKU hy)), fun x hx => ?_⟩
+  obtain ⟨y, hyK, hxy⟩ := mem_iUnion₂.1 hx
+  -- The component of `y` in `U` is a preconnected subset of the union through `x`.
+  exact ⟨y, isPreconnected_connectedComponentIn.subset_connectedComponentIn hxy
+    (subset_biUnion_of_mem (u := fun y => connectedComponentIn U y) hyK)
+    (mem_connectedComponentIn (hKU hyK)), hyK⟩
 
 /-- **Points of a component of an open set are joined inside it.** In a locally path-connected
 space, the connected component of `x` in an open set `U` is open and connected, hence path
