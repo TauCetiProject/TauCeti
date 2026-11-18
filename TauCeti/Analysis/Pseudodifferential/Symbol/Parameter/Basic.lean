@@ -42,6 +42,10 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
   structure of each class;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
   order `m' + m`;
+* `TauCeti.ParameterSymbol.spatialDeriv`, `TauCeti.ParameterSymbol.frequencyDeriv`: a position
+  derivative `∂_{x_j}` keeps the order and a frequency derivative `∂_{ξ_j}` lowers it by one,
+  uniformly in the spectral parameter;
+* `TauCeti.ParameterSymbol.const`: a constant symbol has order `0`;
 * `TauCeti.ParameterSymbol.inverse`: **uniform inverse estimates**. If `a` has order `m` and is
   elliptic with parameter (`TauCeti.ParameterSymbol.IsElliptic`: it is invertible, with
   `‖a⁻¹‖ ≤ C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (-m)`), its pointwise inverse has order `-m`;
@@ -402,6 +406,54 @@ private theorem bounds_continuousLinearMap
     · simpa using (h₁ ξ z hz).trans hC
     · simpa [iteratedFDeriv_const_of_ne] using mul_nonneg (le_max_right C 0) hw
 
+/-- A derivative in the direction `u` of a function of order `m` has order `m + e`, if for every
+`t ≥ 1` the direction `u` is the dilation by `t` of a direction of norm at most `c * t ^ e`. A
+position direction is fixed by the dilations (`e = 0`), and a frequency direction is the dilation
+by `t` of its multiple by `t⁻¹` (`e = -1`). -/
+private theorem Bounds.fderiv_apply (hΛ : IsOpen Λ) (hf : ContDiffOn ℝ ∞ f (univ ×ˢ Λ))
+    (hb : Bounds Λ m f) (u : (CoordinateSpace n × CoordinateSpace n) × ℂ) {c e : ℝ}
+    (hu : ∀ t : ℝ, 1 ≤ t → ∃ u', parameterDilation n t u' = u ∧ ‖u'‖ ≤ c * t ^ e) :
+    Bounds Λ (m + e) (fun p => fderiv ℝ f p u) := fun K hK k => by
+  obtain ⟨C, hC, hf'⟩ := hb K hK (k + 1)
+  refine ⟨max c 0 * C, mul_nonneg (le_max_right _ _) hC, fun x hx ξ z hz => ?_⟩
+  obtain ⟨u', rfl, hu'⟩ := hu _ (one_le_parameterWeight ξ z)
+  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_dilation hΛ hf (p := ((x, ξ), z)) hz
+    (parameterWeight ξ z)
+  set T := parameterDilation n (parameterWeight ξ z)
+  have hT0 : ContDiffAt ℝ ∞ (fun v => f (((x, ξ), z) + T v)) 0 :=
+    (hfT 0 h0).contDiffAt (hU.mem_nhds h0)
+  -- Near `0`, the pulled-back derivative in the direction `T u'` is the derivative of the
+  -- pullback in the direction `u'`.
+  have heq : (fun v => fderiv ℝ f (((x, ξ), z) + T v) (T u')) =ᶠ[𝓝 0]
+      fun v => fderiv ℝ (fun w => f (((x, ξ), z) + T w)) v u' := by
+    filter_upwards [hU.mem_nhds h0] with v hv
+    have hfd : DifferentiableAt ℝ f (((x, ξ), z) + T v) :=
+      ((hf _ hv).contDiffAt ((isOpen_univ.prod hΛ).mem_nhds hv)).differentiableAt (by simp)
+    have hd : HasFDerivAt (fun w => f (((x, ξ), z) + T w)) ((fderiv ℝ f (((x, ξ), z) + T v)).comp T)
+        v := hfd.hasFDerivAt.comp v (T.hasFDerivAt.const_add _)
+    rw [hd.fderiv, ContinuousLinearMap.comp_apply]
+  have hk : ((k : ℕ∞ω)) + 1 ≤ ∞ := by exact_mod_cast le_top
+  have happ : ‖ContinuousLinearMap.apply ℝ A u'‖ ≤ ‖u'‖ :=
+    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg u') fun L => by
+      rw [ContinuousLinearMap.apply_apply, mul_comm]
+      exact L.le_opNorm u'
+  have hnorm := hf' x hx ξ z hz
+  rw [parameterIteratedFDeriv_mk_eq] at hnorm ⊢
+  rw [(heq.iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds]
+  calc ‖iteratedFDeriv ℝ k
+        (ContinuousLinearMap.apply ℝ A u' ∘ fderiv ℝ (fun w => f (((x, ξ), z) + T w))) 0‖
+      ≤ ‖ContinuousLinearMap.apply ℝ A u'‖ *
+          ‖iteratedFDeriv ℝ k (fderiv ℝ (fun w => f (((x, ξ), z) + T w))) 0‖ :=
+        ContinuousLinearMap.norm_iteratedFDeriv_comp_left _ (hT0.fderiv_right hk) le_rfl
+    _ ≤ (max c 0 * parameterWeight ξ z ^ e) * (C * parameterWeight ξ z ^ m) := by
+        rw [norm_iteratedFDeriv_fderiv]
+        exact mul_le_mul (happ.trans (hu'.trans (mul_le_mul_of_nonneg_right (le_max_left _ _)
+          (rpow_parameterWeight_pos ξ z e).le))) hnorm (norm_nonneg _)
+          (mul_nonneg (le_max_right _ _) (rpow_parameterWeight_pos ξ z e).le)
+    _ = max c 0 * C * parameterWeight ξ z ^ (m + e) := by
+        rw [Real.rpow_add (parameterWeight_pos ξ z)]
+        ring
+
 end Estimates
 
 /-! ### Strongly parameter-dependent symbols -/
@@ -531,6 +583,12 @@ instance : Module ℂ (ParameterSymbol n Λ V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → ParameterSymbol n Λ V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ :
+    ParameterSymbol n Λ V W m →+ _) a s
+
 end Module
 
 /-- A parameter-dependent symbol of order `m` has every order `m' ≥ m`, since the weight is at
@@ -571,6 +629,190 @@ def comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) :
 theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
     (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) := (rfl)
+
+/-- The coefficient of a parameter-dependent symbol is smooth near every point with spectral
+parameter in `Λ`. -/
+theorem contDiffAt_coefficient (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    ContDiffAt ℝ ∞ a.coefficient p :=
+  a.contDiffOn_coefficient.contDiffAt ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)
+
+theorem differentiableAt_coefficient (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    DifferentiableAt ℝ a.coefficient p :=
+  (a.contDiffAt_coefficient hp).differentiableAt (by simp)
+
+/-! ### Constant symbols -/
+
+section Const
+
+open scoped Classical in
+/-- The constant parameter-dependent symbol `T`, of order `0`. Its coefficient is `T` at every
+spectral parameter in `Λ` and `0` outside. -/
+def const (T : V →L[ℂ] W) : ParameterSymbol n Λ V W 0 where
+  coefficient p := if p.2 ∈ Λ then T else 0
+  contDiffOn_coefficient := contDiffOn_const.congr fun _ hp => ite_eq_left hp.2
+  coefficient_of_notMem _ hp := ite_eq_right hp
+  exists_bound := by
+    refine (bounds_const (Λ := (Λ : Set ℂ)) T).congr fun p hp => ?_
+    filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp] with q hq
+    exact ite_eq_left hq
+
+@[simp]
+theorem coefficient_const (T : V →L[ℂ] W) (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (const T : ParameterSymbol n Λ V W 0).coefficient ((x, ξ), z) = T :=
+  ite_eq_left hz
+
+end Const
+
+/-! ### Derivatives
+
+The position and frequency derivatives of a parameter-dependent symbol are the derivatives of its
+coefficient along the coordinate directions `((eⱼ, 0), 0)` and `((0, eⱼ), 0)` of
+`ℝⁿ × ℝⁿ × ℂ`. A position derivative keeps the order, while a frequency derivative lowers it by
+one: in the dilated derivatives `parameterIteratedFDeriv`, a frequency direction carries the
+factor `parameterWeight ξ z`. -/
+
+section Deriv
+
+open scoped Classical in
+/-- The derivative of the coefficient of `a` in a direction `u`, set to `0` outside `Λ`, is smooth
+on `ℝⁿ × ℝⁿ × Λ`. -/
+private theorem contDiffOn_ite_fderiv (a : ParameterSymbol n Λ V W m)
+    (u : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    ContDiffOn ℝ ∞ (fun p => if p.2 ∈ Λ then fderiv ℝ a.coefficient p u else 0)
+      (univ ×ˢ (Λ : Set ℂ)) :=
+  (((contDiffOn_infty_iff_fderiv_of_isOpen (isOpen_univ.prod Λ.isOpen)).1
+    a.contDiffOn_coefficient).2.clm_apply contDiffOn_const).congr fun _ hp => ite_eq_left hp.2
+
+open scoped Classical in
+/-- The derivative of the coefficient of `a` in a direction `u`, set to `0` outside `Λ`, has order
+`m'` if `u` is, for every `t ≥ 1`, the dilation by `t` of a direction of norm at most `c * t ^ e`,
+where `m + e ≤ m'`. -/
+private theorem bounds_ite_fderiv (a : ParameterSymbol n Λ V W m)
+    (u : (CoordinateSpace n × CoordinateSpace n) × ℂ) {c e m' : ℝ} (hm : m + e ≤ m')
+    (hu : ∀ t : ℝ, 1 ≤ t → ∃ u', parameterDilation n t u' = u ∧ ‖u'‖ ≤ c * t ^ e) :
+    Bounds (Λ : Set ℂ) m' (fun p => if p.2 ∈ Λ then fderiv ℝ a.coefficient p u else 0) := by
+  refine ((Bounds.fderiv_apply Λ.isOpen a.contDiffOn_coefficient a.exists_bound u hu).mono
+    hm).congr fun p hp => ?_
+  filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp] with q hq
+  exact ite_eq_left hq
+
+open scoped Classical in
+/-- The derivative of the coefficient in a fixed direction is additive, also for symbols of
+different orders. -/
+private theorem ite_fderiv_eq_add {μ₁ μ₂ : ℝ} {a₀ : ParameterSymbol n Λ V W m}
+    {a₁ : ParameterSymbol n Λ V W μ₁} {a₂ : ParameterSymbol n Λ V W μ₂}
+    (h : a₀.coefficient = a₁.coefficient + a₂.coefficient)
+    (u : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    (fun p => if p.2 ∈ Λ then fderiv ℝ a₀.coefficient p u else 0) =
+      (fun p => if p.2 ∈ Λ then fderiv ℝ a₁.coefficient p u else 0) +
+        fun p => if p.2 ∈ Λ then fderiv ℝ a₂.coefficient p u else 0 := by
+  funext p
+  by_cases hp : p.2 ∈ Λ
+  · simp only [Pi.add_apply, ite_eq_left hp, h]
+    rw [fderiv_add (a₁.differentiableAt_coefficient hp) (a₂.differentiableAt_coefficient hp)]
+    rfl
+  · simp [hp]
+
+open scoped Classical in
+/-- The derivative of the coefficient in a fixed direction is `ℂ`-homogeneous. -/
+private theorem ite_fderiv_smul (c : ℂ) (a : ParameterSymbol n Λ V W m)
+    (u : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    (fun p => if p.2 ∈ Λ then fderiv ℝ (c • a).coefficient p u else 0) =
+      c • fun p => if p.2 ∈ Λ then fderiv ℝ a.coefficient p u else 0 := by
+  funext p
+  by_cases hp : p.2 ∈ Λ
+  · simp only [Pi.smul_apply, ite_eq_left hp, coefficient_smul]
+    rw [fderiv_const_smul (a.differentiableAt_coefficient hp)]
+    rfl
+  · simp [hp]
+
+open scoped Classical in
+/-- The position derivative `∂_{x_j} a` of a parameter-dependent symbol `a` of order `m`, a
+parameter-dependent symbol of the same order. -/
+def spatialDeriv (j : Fin n) : ParameterSymbol n Λ V W m →ₗ[ℂ] ParameterSymbol n Λ V W m where
+  toFun a :=
+    { coefficient := fun p => if p.2 ∈ Λ then
+        fderiv ℝ a.coefficient p ((EuclideanSpace.single j 1, 0), 0) else 0
+      contDiffOn_coefficient := contDiffOn_ite_fderiv a _
+      coefficient_of_notMem := fun _ hp => ite_eq_right hp
+      exists_bound := bounds_ite_fderiv a _ (c := 1) (e := 0) (by simp) fun t _ =>
+        ⟨((EuclideanSpace.single j 1, 0), 0), by simp, by simp⟩ }
+  map_add' a b := by
+    ext1
+    exact ite_fderiv_eq_add rfl _
+  map_smul' c a := by
+    ext1
+    exact ite_fderiv_smul c a _
+
+open scoped Classical in
+/-- The frequency derivative `∂_{ξ_j} a` of a parameter-dependent symbol `a` of order `m`, a
+parameter-dependent symbol of order `m - 1`. -/
+def frequencyDeriv (j : Fin n) :
+    ParameterSymbol n Λ V W m →ₗ[ℂ] ParameterSymbol n Λ V W (m - 1) where
+  toFun a :=
+    { coefficient := fun p => if p.2 ∈ Λ then
+        fderiv ℝ a.coefficient p ((0, EuclideanSpace.single j 1), 0) else 0
+      contDiffOn_coefficient := contDiffOn_ite_fderiv a _
+      coefficient_of_notMem := fun _ hp => ite_eq_right hp
+      exists_bound := bounds_ite_fderiv a _ (c := 1) (e := -1) (by rw [sub_eq_add_neg])
+        fun t ht => ⟨((0, t⁻¹ • EuclideanSpace.single j 1), 0), by
+          simp [smul_smul, (zero_lt_one.trans_le ht).ne'], by
+          simp [norm_smul, Real.rpow_neg_one, abs_of_pos (zero_lt_one.trans_le ht),
+            (zero_lt_one.trans_le ht).le]⟩ }
+  map_add' a b := by
+    ext1
+    exact ite_fderiv_eq_add rfl _
+  map_smul' c a := by
+    ext1
+    exact ite_fderiv_smul c a _
+
+@[simp]
+theorem coefficient_spatialDeriv (j : Fin n) (a : ParameterSymbol n Λ V W m)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (spatialDeriv j a).coefficient ((x, ξ), z) =
+      fderiv ℝ a.coefficient ((x, ξ), z) ((EuclideanSpace.single j 1, 0), 0) :=
+  ite_eq_left hz
+
+@[simp]
+theorem coefficient_frequencyDeriv (j : Fin n) (a : ParameterSymbol n Λ V W m)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (frequencyDeriv j a).coefficient ((x, ξ), z) =
+      fderiv ℝ a.coefficient ((x, ξ), z) ((0, EuclideanSpace.single j 1), 0) :=
+  ite_eq_left hz
+
+/-- The position derivative depends only on the coefficient. -/
+theorem coefficient_spatialDeriv_congr {μ : ℝ} {a : ParameterSymbol n Λ V W m}
+    {a' : ParameterSymbol n Λ V W μ} (h : a.coefficient = a'.coefficient) (j : Fin n) :
+    (spatialDeriv j a).coefficient = (spatialDeriv j a').coefficient := by
+  simp only [spatialDeriv, LinearMap.coe_mk, AddHom.coe_mk, h]
+
+/-- The frequency derivative depends only on the coefficient. -/
+theorem coefficient_frequencyDeriv_congr {μ : ℝ} {a : ParameterSymbol n Λ V W m}
+    {a' : ParameterSymbol n Λ V W μ} (h : a.coefficient = a'.coefficient) (j : Fin n) :
+    (frequencyDeriv j a).coefficient = (frequencyDeriv j a').coefficient := by
+  simp only [frequencyDeriv, LinearMap.coe_mk, AddHom.coe_mk, h]
+
+/-- The position derivative is additive, also for symbols of different orders: if `a₀ = a₁ + a₂`
+coefficientwise, then `∂_{x_j} a₀ = ∂_{x_j} a₁ + ∂_{x_j} a₂` coefficientwise. -/
+theorem coefficient_spatialDeriv_eq_add {μ₁ μ₂ : ℝ} {a₀ : ParameterSymbol n Λ V W m}
+    {a₁ : ParameterSymbol n Λ V W μ₁} {a₂ : ParameterSymbol n Λ V W μ₂}
+    (h : a₀.coefficient = a₁.coefficient + a₂.coefficient) (j : Fin n) :
+    (spatialDeriv j a₀).coefficient =
+      (spatialDeriv j a₁).coefficient + (spatialDeriv j a₂).coefficient :=
+  ite_fderiv_eq_add h _
+
+/-- The frequency derivative is additive, also for symbols of different orders: if
+`a₀ = a₁ + a₂` coefficientwise, then `∂_{ξ_j} a₀ = ∂_{ξ_j} a₁ + ∂_{ξ_j} a₂` coefficientwise. -/
+theorem coefficient_frequencyDeriv_eq_add {μ₁ μ₂ : ℝ} {a₀ : ParameterSymbol n Λ V W m}
+    {a₁ : ParameterSymbol n Λ V W μ₁} {a₂ : ParameterSymbol n Λ V W μ₂}
+    (h : a₀.coefficient = a₁.coefficient + a₂.coefficient) (j : Fin n) :
+    (frequencyDeriv j a₀).coefficient =
+      (frequencyDeriv j a₁).coefficient + (frequencyDeriv j a₂).coefficient :=
+  ite_fderiv_eq_add h _
+
+end Deriv
 
 /-! ### Parameter-ellipticity and the inverse -/
 
