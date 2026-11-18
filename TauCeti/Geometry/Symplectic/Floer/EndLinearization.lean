@@ -197,7 +197,7 @@ theorem eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le
     (hK.comp_tendstoUniformlyOn (fun _ _ ↦ (hJ.continuous.clm_comp hdX).continuousAt) hpair)
     (ε / 2) (half_pos hε)
   -- `dJ` is eventually bounded along `u`.
-  obtain ⟨C, hC⟩ := exists_eventually_forall_norm_le_of_tendstoUniformlyOn hT hx hdJ hu
+  obtain ⟨C, hC⟩ := hT.exists_eventually_forall_norm_le_of_tendstoUniformlyOn hx hdJ hu
   have h₄ := Metric.tendstoUniformlyOn_iff.1 hδ (ε / 2 / (|C| + 1)) (by positivity)
   filter_upwards [h₁, h₂, hC, h₄] with s hs₁ hs₂ hsC hs₄ t ht ξ
   refine (norm_floerLinearization_sub_stationaryCylinderOperator_le ω J H u ξ x (s, t)).trans ?_
@@ -256,7 +256,7 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
     (hs : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) stdComplexLineReal) 0 l T) :
     TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l T := by
-  obtain ⟨C, hC⟩ := exists_eventually_forall_norm_le_of_tendstoUniformlyOn hT hx hJ hu
+  obtain ⟨C, hC⟩ := hT.exists_eventually_forall_norm_le_of_tendstoUniformlyOn hx hJ hu
   have hM : 0 < |C| + 1 := by positivity
   rw [Metric.tendstoUniformlyOn_iff] at hs ⊢
   intro ε hε

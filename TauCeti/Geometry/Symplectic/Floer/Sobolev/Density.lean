@@ -48,6 +48,11 @@ theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ s
   rw [sobolevDensity_apply]
   positivity
 
+/-- The zero map has zero energy density. -/
+@[simp]
+theorem sobolevDensity_zero (z : ℝ × ℝ) : sobolevDensity (0 : ℝ × ℝ → V) z = 0 := by
+  simp [sobolevDensity_apply]
+
 /-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
 theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
     Continuous (sobolevDensity ξ) := by

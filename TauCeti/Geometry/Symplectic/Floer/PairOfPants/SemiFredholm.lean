@@ -285,8 +285,7 @@ private theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × �
   have hζN : N < ζ.1 := by
     by_contra! h
     exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  rw [sobolevDensity_congr (hzero ζ hζN), sobolevDensity_apply]
-  simp
+  rw [sobolevDensity_congr (hzero ζ hζN), sobolevDensity_zero]
 
 omit [FiniteDimensional ℝ V] in
 /-- **The end piece.** Beyond `R₀ + 1` on the end `q`, a section agrees with its cut-off `β_q ξ`,

@@ -281,7 +281,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
       hx hnd hJe hJex (u := u ∘ positiveEndChart q)
       ((eventually_gt_atTop 0).mono fun s hs t _ ↦ huφ (s, t) hs) hux hδ
   obtain ⟨R₂, hR₂⟩ := mem_atTop_sets.1 hU
-  obtain ⟨B, R₃, hR₃⟩ := (exists_eventually_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc
+  obtain ⟨B, R₃, hR₃⟩ := (isCompact_Icc.exists_eventually_forall_norm_le_of_tendstoUniformlyOn
     (fun t _ ↦ (hx t).continuousAt.continuousWithinAt) hJe.continuous hux).imp
       fun _ ↦ eventually_atTop.1
   set R := max (max R₂ R₃) (max R₁ 2)
@@ -297,8 +297,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
           (prod_mono (fun s hs ↦ lt_of_lt_of_le (by linarith) hs.1) subset_rfl) fun ζ hζ ↦ ?_
         have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan
           fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
-        rw [sobolevDensity_congr h, sobolevDensity_apply]
-        simp
+        rw [sobolevDensity_congr h, sobolevDensity_zero]
     -- The cylinder estimate `hest` is stated with the density written out.
     _ ≤ C₁ * ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
           (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)

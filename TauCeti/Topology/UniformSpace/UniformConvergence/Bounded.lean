@@ -27,8 +27,8 @@ uniformly at both ends, are shown to be bounded.
 
 Along a single end, a map `g` continuous on `α × β` is eventually bounded along the graphs
 `x ↦ (x, F i x)` of a family converging uniformly on a compact set `s` to a limit continuous on `s`
-(`TauCeti.exists_eventually_forall_norm_le_of_tendstoUniformlyOn`): the graphs converge uniformly to
-the compact graph of the limit, near which `g` is bounded.
+(`IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn`): the graphs converge uniformly
+to the compact graph of the limit, near which `g` is bounded.
 -/
 
 public section
@@ -64,9 +64,11 @@ theorem exists_forall_norm_le_of_tendstoUniformlyOn {β E : Type*} [TopologicalS
       (hRp R (le_max_right _ _) t ht)
   · linarith [hC (s, t) ⟨⟨hs.le, hs'.le⟩, ht⟩]
 
+end TauCeti
+
 /-- If `F i → f` uniformly on a compact set `s`, with `f` continuous on `s`, then a continuous map
 `g` is eventually bounded along the graphs `x ↦ (x, F i x)` over `s`. -/
-theorem exists_eventually_forall_norm_le_of_tendstoUniformlyOn {ι α β E : Type*}
+theorem IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn {ι α β E : Type*}
     [UniformSpace α] [UniformSpace β] [SeminormedAddCommGroup E] {F : ι → α → β} {f : α → β}
     {s : Set α} {p : Filter ι} (hs : IsCompact s) (hf : ContinuousOn f s) {g : α × β → E}
     (hg : Continuous g) (h : TendstoUniformlyOn F f p s) :
@@ -79,5 +81,3 @@ theorem exists_eventually_forall_norm_le_of_tendstoUniformlyOn {ι α β E : Typ
   have h₁ := hi x hx
   rw [dist_eq_norm'] at h₁
   linarith [hC _ (mem_image_of_mem _ hx), norm_le_insert' (g (x, F i x)) (g (x, f x))]
-
-end TauCeti
