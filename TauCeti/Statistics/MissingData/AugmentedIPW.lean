@@ -165,23 +165,24 @@ theorem integral_aipwScore_sub (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure
   rw [integral_add hm hitei, h1, h2, hrhs, h3]
   ring
 
-/-- **Double robustness.** Let `Q` be missing at random with propensity `π₀ ≥ δ > 0`, let `Y`
-be integrable, and let `m₀(X)` be an integrable version of `E[Y | X]`. The augmented estimating
-function is unbiased for `E Y` when the propensity is correct, for every measurable `m` with
-`m(X)` integrable, and when the regression is correct, for every measurable propensity bounded
-below by a positive constant. -/
+/-- **Double robustness.** Let `Q` be missing at random with propensity `π₀`, let `Y` be
+integrable, and let `m₀(X)` be an integrable version of `E[Y | X]`. The augmented estimating
+function is unbiased for `E Y` when the propensity is correct and bounded below by a positive
+constant, for every measurable `m` with `m(X)` integrable, and when the regression is correct, for
+every measurable propensity bounded below by a positive constant; the second case needs no lower
+bound on `π₀`. -/
 theorem integral_aipwScore_eq (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure Q]
     (π₀ m₀ : X → ℝ) (hmar : IsMissingAtRandom Q π₀)
     (hY : Integrable (fun w : Bool × X × ℝ ↦ w.2.2) Q) (hm₀ : Measurable m₀)
     (hreg : ∀ A : Set X, MeasurableSet A →
       ∫ w in {w | w.2.1 ∈ A}, w.2.2 ∂Q = ∫ w in {w | w.2.1 ∈ A}, m₀ w.2.1 ∂Q)
-    (hm₀i : Integrable (fun w : Bool × X × ℝ ↦ m₀ w.2.1) Q) (δ : ℝ) (hδ : 0 < δ)
-    (hπ₀ : ∀ x, δ ≤ π₀ x) :
-    (∀ m : X → ℝ, Measurable m → Integrable (fun w : Bool × X × ℝ ↦ m w.2.1) Q →
-      ∫ w, aipwScore m π₀ (observe w) ∂Q = ∫ w, w.2.2 ∂Q) ∧
+    (hm₀i : Integrable (fun w : Bool × X × ℝ ↦ m₀ w.2.1) Q) :
+    (∀ δ > 0, (∀ x, δ ≤ π₀ x) → ∀ m : X → ℝ, Measurable m →
+      Integrable (fun w : Bool × X × ℝ ↦ m w.2.1) Q →
+        ∫ w, aipwScore m π₀ (observe w) ∂Q = ∫ w, w.2.2 ∂Q) ∧
     ∀ π : X → ℝ, Measurable π → ∀ δ' > 0, (∀ x, δ' ≤ π x) →
       ∫ w, aipwScore m₀ π (observe w) ∂Q = ∫ w, w.2.2 ∂Q := by
-  refine ⟨fun m hmm hm ↦ ?_, fun π hπm δ' hδ' hπ ↦ ?_⟩
+  refine ⟨fun δ hδ hπ₀ m hmm hm ↦ ?_, fun π hπm δ' hδ' hπ ↦ ?_⟩
   · have := integral_aipwScore_sub Q π₀ m₀ m π₀ hmar hY hm₀ hreg hm hmm hmar.measurable δ hδ
       hπ₀ hm₀i
     simpa [sub_eq_zero] using this
