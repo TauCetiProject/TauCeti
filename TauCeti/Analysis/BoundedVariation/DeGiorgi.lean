@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Dilation
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # The perimeter measure is Hausdorff measure on the reduced boundary
@@ -133,6 +134,15 @@ private theorem variationMeasure_preimage_singleton_eq_zero (hn : 2 ≤ finrank 
 
 /-! ### Rescaled sets near a point of the reduced boundary -/
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- For `r > 0`, the rescaled copy `{z | r⁻¹ • (z - x) ∈ ball 0 R}` of `ball 0 R` is
+`ball x (r * R)`. -/
+private theorem preimage_inv_smul_sub_ball_zero {r : ℝ} (hr : 0 < r) (R : ℝ) :
+    (fun z => r⁻¹ • (z - x)) ⁻¹' ball (0 : E) R = ball x (r * R) := by
+  ext z
+  rw [mem_preimage, mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hr.le,
+    inv_mul_lt_iff₀ hr, mem_ball, dist_eq_norm]
+
 /-- At a point `x` of the reduced boundary, let `r > 0` with `ball x (r * R) ⊆ Ω`. For an open set
 `V ⊆ ball 0 R`, the perimeter measure of the rescaled copy `{z | r⁻¹ • (z - x) ∈ V}` of `V` is
 `r ^ (n - 1)` times the perimeter in `V` of the blow-up `(fun y => x + r • y) ⁻¹' s`. -/
@@ -149,14 +159,13 @@ private theorem variationMeasure_preimage_eq_mul_perimeter (hx : x ∈ reducedBo
   -- The rescaled copy `W` of `V` lies in `ball x (r * R) ⊆ Ω`, and the blow-up map pulls it
   -- back to `V`.
   let W : Opens E := Opens.comap ⟨fun z => r⁻¹ • (z - x), by fun_prop⟩ V
-  have hW : (W : Set E) = (fun z => r⁻¹ • (z - x)) ⁻¹' (V : Set E) := rfl
+  have hW : (W : Set E) = (fun z => r⁻¹ • (z - x)) ⁻¹' (V : Set E) := Opens.coe_comap _ _
   have hWΩ : W ≤ Ω := fun z hz => hrR <| by
-    have h : ‖r⁻¹ • (z - x)‖ < R := mem_ball_zero_iff.1 (hV hz)
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg hr.le, inv_mul_lt_iff₀ hr] at h
-    rwa [mem_ball, dist_eq_norm]
+    rw [← preimage_inv_smul_sub_ball_zero hr R]
+    exact preimage_mono hV (by rwa [← hW])
   have hVW : Opens.comap ⟨fun y => x + r • y, by fun_prop⟩ W = V := by
     ext y
-    simp [W, hr.ne']
+    simp [hW, hr.ne']
   have h := perimeter_comap_add_smul (μ := volume) (Ω := W) (r := r) (s := s) x
   rw [hVW] at h
   rw [← hW, variationMeasure_preimage_coe hu hfin hWΩ, ← perimeter_def, h, ← mul_assoc,
@@ -239,11 +248,8 @@ private theorem eventually_variationMeasure_preimage_ball_le (hn : 2 ≤ finrank
   -- `c ω_{n-1} (r R) ^ (n - 1) = c a r ^ (n - 1)`.
   have hball : ((↑) : Ω → E) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' ball 0 R) ⊆
       (↑) ⁻¹' closedBall x (r * R) := by
-    refine preimage_mono fun z hz => ?_
-    have h : ‖r⁻¹ • (z - x)‖ < R := mem_ball_zero_iff.1 hz
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg hr.le, inv_mul_lt_iff₀ hr] at h
-    rw [mem_closedBall, dist_eq_norm]
-    exact h.le
+    rw [preimage_inv_smul_sub_ball_zero hr R]
+    exact preimage_mono ball_subset_closedBall
   have hvol : volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) (r * R)) =
       ENNReal.ofReal (r ^ k) * a := by
     rw [Measure.addHaar_closedBall _ _ (by positivity), finrank_euclideanSpace_fin, ha, mul_pow,
@@ -320,42 +326,6 @@ private theorem eventually_variationMeasure_preimage_le (hn : 2 ≤ finrank ℝ 
         _ = m + δ + b' := by rw [ENNReal.add_halves]
     _ = _ := by rw [mul_add]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- If the balls `ball p η`, `p ∈ J`, cover a set `T`, then `T` lies in the union of the closed
-balls `closedBall p η` about the centres `p ∈ J` whose balls meet `T`, and this union has diameter
-at most `diam T + 4 η`. -/
-private theorem exists_subset_biUnion_closedBall_and_ediam_le {J : Finset E} {η : ℝ}
-    (hη : 0 ≤ η) {T : Set E} (hT : T ⊆ ⋃ p ∈ J, ball p η) :
-    ∃ I ⊆ J, T ⊆ ⋃ p ∈ I, closedBall p η ∧
-      ediam (⋃ p ∈ I, closedBall p η) ≤ ediam T + ENNReal.ofReal (4 * η) := by
-  classical
-  refine ⟨J.filter fun p => (closedBall p η ∩ T).Nonempty, Finset.filter_subset _ _,
-    fun y hy => ?_, ediam_le fun z hz w hw => ?_⟩
-  · obtain ⟨p, hpJ, hyp⟩ := mem_iUnion₂.1 (hT hy)
-    exact mem_iUnion₂.2 ⟨p, Finset.mem_filter.2 ⟨hpJ, ⟨y, ball_subset_closedBall hyp, hy⟩⟩,
-      ball_subset_closedBall hyp⟩
-  -- Each point of the union is within `2 η` of a point of `T`.
-  have hnear (z : E) (hz : z ∈ ⋃ p ∈ J.filter fun p => (closedBall p η ∩ T).Nonempty,
-      closedBall p η) : ∃ t ∈ T, edist z t ≤ ENNReal.ofReal (2 * η) := by
-    obtain ⟨p, hpI, hzp⟩ := mem_iUnion₂.1 hz
-    obtain ⟨t, htp, htT⟩ := (Finset.mem_filter.1 hpI).2
-    refine ⟨t, htT, ?_⟩
-    rw [edist_dist]
-    refine ENNReal.ofReal_le_ofReal ((dist_triangle z p t).trans ?_)
-    rw [dist_comm p t]
-    linarith [mem_closedBall.1 hzp, mem_closedBall.1 htp]
-  obtain ⟨t, htT, hzt⟩ := hnear z hz
-  obtain ⟨t', ht'T, hwt'⟩ := hnear w hw
-  calc edist z w ≤ edist z t + edist t t' + edist t' w := edist_triangle4 z t t' w
-    _ ≤ ENNReal.ofReal (2 * η) + ediam T + ENNReal.ofReal (2 * η) := by
-      gcongr
-      · exact edist_le_ediam_of_mem htT ht'T
-      · rwa [edist_comm]
-    _ = ediam T + ENNReal.ofReal (4 * η) := by
-      rw [add_comm (ENNReal.ofReal _), add_assoc, ← ENNReal.ofReal_add (by positivity)
-        (by positivity)]
-      ring_nf
-
 /-- **Uniform upper bound near a point of the reduced boundary.** At a point `x` of the reduced
 boundary, in dimension `n ≥ 2`, for every `η > 0` and every small `r > 0`, every subset `T` of the
 unit ball satisfies
@@ -374,27 +344,28 @@ private theorem eventually_forall_variationMeasure_preimage_le (hn : 2 ≤ finra
   obtain ⟨J, hJ1, hJfin, hJcov⟩ :=
     finite_cover_balls_of_compact (isCompact_closedBall (0 : E) 1) hη
   -- The closed unions `C I` of the closed balls of radius `η` about the points of `I ⊆ J`.
-  set C : Finset E → Set E := fun I => ⋃ p ∈ I, closedBall p η
-  have hCball (I : Finset E) (hI : I ⊆ hJfin.toFinset) : C I ⊆ ball 0 (1 + 2 * η) :=
+  set C : Set E → Set E := fun I => ⋃ p ∈ I, closedBall p η
+  have hCball (I : Set E) (hI : I ⊆ J) : C I ⊆ ball 0 (1 + 2 * η) :=
     iUnion₂_subset fun p hp => closedBall_subset_ball' <| by
-      have h := mem_closedBall_zero_iff.1 (hJ1 (hJfin.mem_toFinset.1 (hI hp)))
+      have h := mem_closedBall_zero_iff.1 (hJ1 (hI hp))
       rw [dist_zero_right]
       linarith
-  have hev : ∀ᶠ r in 𝓝[>] 0, ∀ I ∈ hJfin.toFinset.powerset,
+  have hev : ∀ᶠ r in 𝓝[>] 0, ∀ I ∈ 𝒫 J,
       variationMeasure volume Ω (s.indicator 1) ((↑) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' C I)) ≤
         ENNReal.ofReal (r ^ (finrank ℝ E - 1)) *
           (μHE[finrank ℝ E - 1] (C I ∩ {y | ⟪y, outerNormal volume Ω s x⟫ = 0}) +
             ENNReal.ofReal η) :=
-    (eventually_all_finset _).2 fun I hI => eventually_variationMeasure_preimage_le hn hx
-      (isClosed_biUnion_finset fun p _ => isClosed_closedBall) (by positivity)
-      (hCball I (Finset.mem_powerset.1 hI)) (ENNReal.ofReal_pos.2 hη)
+    (eventually_all_finite hJfin.finite_subsets).2 fun I hI =>
+      eventually_variationMeasure_preimage_le hn hx
+        ((hJfin.subset hI).isClosed_biUnion fun p _ => isClosed_closedBall) (by positivity)
+        (hCball I hI) (ENNReal.ofReal_pos.2 hη)
   filter_upwards [hev] with r hr T hT
-  obtain ⟨I, hIJ, hTI, hdiam⟩ := exists_subset_biUnion_closedBall_and_ediam_le
-    (J := hJfin.toFinset) hη.le (fun y hy => by simpa using hJcov (hT hy))
+  obtain ⟨I, hIJ, hTI, hdiam⟩ := exists_subset_biUnion_closedBall_and_ediam_le hη.le
+    (hT.trans hJcov)
   calc _ ≤ variationMeasure volume Ω (s.indicator 1)
         ((↑) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' C I)) :=
         measure_mono (preimage_mono (preimage_mono hTI))
-    _ ≤ _ := hr I (Finset.mem_powerset.2 hIJ)
+    _ ≤ _ := hr I hIJ
     _ ≤ _ := by
         gcongr
         exact (euclideanHausdorffMeasure_inter_setOf_inner_eq_le (norm_outerNormal hx) 0 _).trans

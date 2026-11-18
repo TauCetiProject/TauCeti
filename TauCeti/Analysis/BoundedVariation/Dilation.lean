@@ -198,20 +198,12 @@ theorem perimeter_ball_zero_preimage_add_smul {x : E} (R : ℝ) :
         perimeter μ ⟨Metric.ball x (|r| * R), Metric.isOpen_ball⟩ s := by
   rcases eq_or_ne r 0 with rfl | hr
   · by_cases hx : x ∈ s <;> simp [hx]
-  have hr' : 0 < |r| := abs_pos.mpr hr
-  have h : (fun y => x + r • y) ⁻¹' s = (r • ·) ⁻¹' ((· + x) ⁻¹' s) := by
+  have hΩ : (⟨Metric.ball 0 R, Metric.isOpen_ball⟩ : Opens E) =
+      Opens.comap ⟨fun y => x + r • y, by fun_prop⟩
+        ⟨Metric.ball x (|r| * R), Metric.isOpen_ball⟩ := by
     ext y
-    simp [add_comm]
-  rw [h, perimeter_preimage_smul (Ω := ⟨Metric.ball 0 (|r| * R), Metric.isOpen_ball⟩) ?_ ?_,
-    perimeter_preimage_add_right (Ω := ⟨Metric.ball x (|r| * R), Metric.isOpen_ball⟩) ?_ ?_]
-  · intro y hy
-    simpa using hy
-  · intro y hy
-    simpa [dist_eq_norm] using hy
-  · intro y hy
-    simpa [norm_smul, mul_lt_mul_iff_right₀ hr'] using hy
-  · intro y hy
-    simpa [norm_smul, inv_mul_lt_iff₀ hr'] using hy
+    simp [dist_eq_norm, norm_smul, mul_lt_mul_iff_right₀ (abs_pos.mpr hr)]
+  rw [hΩ, perimeter_comap_add_smul]
 
 /-- **The perimeter of a blow-up in a ball, normalized.** Against an additive Haar measure on a
 space of dimension `n`, the perimeter in `ball 0 R` of the blow-up `(fun y => x + r • y) ⁻¹' s` is
