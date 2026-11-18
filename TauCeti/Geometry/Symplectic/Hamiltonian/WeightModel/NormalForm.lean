@@ -17,7 +17,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Symplectic.Darboux.EuclideanBasis
 import TauCeti.Geometry.Symplectic.Manifold.EquivariantDarboux
-import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
+import TauCeti.Geometry.Symplectic.Manifold.Invariants
 import TauCeti.Geometry.Symplectic.WeightDecomposition
 
 /-!
@@ -172,12 +172,10 @@ private theorem IsNondegenerate.exists_continuousLinearEquiv_mfderiv_smul
   have hρ (g : G) : ρ g = mfderiv I' I' (fun y : M ↦ g • y) p := tangentRepresentation_apply hd _
   -- `σ_p`, as a symplectic form on the model space `E' = T_p M`.
   let ωₚ : SymplecticForm E' := hσ.symplecticFormAt p
-  have hω (g : G) (u v : TangentSpace I' p) : ωₚ (ρ g u) (ρ g v) = ωₚ u v := by
-    have h := (isIsometry_fixedPointDerivative (ContMDiffSMul.contMDiff_const_smul (I := I) g)
-      (hG g) ⟨p, hp g⟩).apply u v
-    rw [fixedPointDerivative_apply, fixedPointDerivative_apply] at h
-    simp only [ωₚ, IsNondegenerate.toBilinForm_symplecticFormAt, hρ]
-    exact h
+  have hω (g : G) (u v : TangentSpace I' p) : ωₚ (ρ g u) (ρ g v) = ωₚ u v :=
+    -- The invariance lemma is stated for actions by individually smooth maps.
+    have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+    hσ.symplecticFormAt_tangentRepresentation (fun g _ ↦ hG g) hd ⟨g, hp g⟩ u v
   obtain ⟨n, χ, L, hL, hLρ⟩ := SymplecticForm.exists_continuousLinearEquiv_weightRotation ωₚ ρ
     ((continuous_tangentRepresentation I hd).comp (continuous_id.subtype_mk _)) hω
   exact ⟨n, χ, L, hL, fun g v ↦ (congrArg L (DFunLike.congr_fun (hρ g) v)).symm.trans (hLρ g v)⟩
@@ -400,12 +398,10 @@ theorem exists_weightModelChart (hμ : σ.IsMomentMap (InfinitesimalAction.funda
     rwa [lieExp_eq_mulInvariantExp, LinearEquiv.apply_symm_apply] at h
   refine ⟨n, χ, α, chart, r, hα, fun k ξ hξ ↦ ?_, hpchart, hchartp, hr, htarget, hequiv, hform,
     fun x hx ξ ↦ ?_⟩
-  · -- Integrality: `e^{2πi αₖ(ξ)} = χₖ (exp (2π ξ)) = 1`.
-    have h := hα k ((2 * π) • ξ)
-    rw [hξ, map_one, eq_comm, Circle.exp_eq_one] at h
-    obtain ⟨m, hm⟩ := h
-    have hs : α k ((2 * π) • ξ) = 2 * π * α k ξ := (α k).map_smul (2 * π) ξ
-    exact ⟨m, mul_left_cancel₀ (by positivity) ((hs.symm.trans hm).trans (mul_comm _ _))⟩
+  · -- Integrality: `ε⁻¹ ξ` lies in the period lattice, where weights take integer values.
+    exact (χ k).exists_lieWeight_apply_eq_intCast_of_mem_periodLattice (X := ε.symm ξ)
+      (mem_periodLattice.2 (by rwa [← map_smul, lieExp_eq_mulInvariantExp,
+        LinearEquiv.apply_symm_apply]))
   -- In the chart, `ξ_M` is the generator of the rotation by the angles `αₖ(ξ)`, so `μ^ξ` minus
   -- the model component `-½ Σₖ αₖ(ξ) (qₖ² + pₖ²)` has zero differential on the source.
   set F : M → ℝ := (fun y ↦ μ y ξ) - fun y ↦ weightMomentMap α (chart y) ξ
@@ -429,7 +425,7 @@ theorem exists_weightModelChart (hμ : σ.IsMomentMap (InfinitesimalAction.funda
           (fun y hy ↦ (hF hy).1.mdifferentiableWithinAt) chart.open_source
           (fun y hy ↦ (hF hy).2) z.2)
   have hFx := hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨p, hpchart⟩
-  have h0 : (0 : StrongDual ℝ E) ξ = 0 := (rfl)
+  have h0 : (0 : StrongDual ℝ E) ξ = 0 := zero_apply _
   simp only [Set.domRestrict, F, Pi.sub_apply, hchartp, weightMomentMap_zero, h0,
     sub_zero] at hFx
   linarith
