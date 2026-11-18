@@ -47,6 +47,8 @@ in the variable `1 - z` (DLMF 15.6.7).
 
 * `Complex.hasMellin_one_add_cpow_neg`: the Mellin transform of `(1 + t)^{-a}` converges at every
   `s` with `0 < Re s < Re a` and equals `Γ(s) Γ(a - s) / Γ(a)` there.
+* `Complex.integrableOn_cpow_mul_one_add_cpow_neg`, `Complex.integral_cpow_mul_one_add_cpow_neg`:
+  the same Beta integral as an integrable function and a set integral on `(0, ∞)`.
 * `Complex.verticalIntegrable_Gamma_mul_Gamma_sub`: `s ↦ Γ(s) Γ(a - s)` is integrable on every
   vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer.
 * `Complex.mellinInv_Gamma_mul_Gamma_sub`: Mellin inversion of `Γ(s) Γ(a - s)` on a vertical line
@@ -138,6 +140,19 @@ theorem hasMellin_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.r
       setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       ← betaIntegral, betaIntegral_eq_Gamma_mul_div _ _ hs has, add_sub_cancel]
 
+/-- For `0 < Re s < Re a`, the integrand `u^{s - 1} (1 + u)^{-a}` of Euler's Beta integral of the
+second kind is integrable on `(0, ∞)`. -/
+theorem integrableOn_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a)) (Ioi 0) := by
+  simpa [MellinConvergent] using (hasMellin_one_add_cpow_neg hs hsa).1
+
+/-- **Euler's Beta integral of the second kind** (DLMF 5.12.3), as a set integral: for
+`0 < Re s < Re a`, `∫₀^∞ u^{s - 1} (1 + u)^{-a} du = Γ(s) Γ(a - s) / Γ(a)`. -/
+theorem integral_cpow_mul_one_add_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re) :
+    ∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * (1 + (u : ℂ)) ^ (-a) =
+      Gamma s * Gamma (a - s) / Gamma a := by
+  simpa [mellin] using (hasMellin_one_add_cpow_neg hs hsa).2
+
 /-- On every vertical line `Re s = σ` with neither `σ` nor `Re a - σ` a nonpositive integer, the
 product `Γ(s) Γ(a - s)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
@@ -194,22 +209,25 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_sub {a : ℂ} {σ : ℝ} (hσ : 0 
 
 /-! ### Barnes's first lemma -/
 
+/-- A complex number with positive real part does not have a nonpositive integer as real part. -/
+private lemma re_ne_neg_natCast {b : ℂ} (hb : 0 < b.re) (n : ℕ) : b.re ≠ -n := by
+  linarith [n.cast_nonneg' (α := ℝ)]
+
 /-- The line `Re s = Re b`, parametrised from `Re b` and shifted by `Im b`, is the line
 parametrised from `b`. -/
 private lemma re_add_add_im_mul_I (b : ℂ) (y : ℝ) :
     (b.re : ℂ) + ((y + b.im : ℝ) : ℂ) * I = b + y * I := by
   apply Complex.ext <;> simp [add_comm]
 
-/-- On the imaginary axis, `y ↦ Γ(b + i y) Γ(d - i y)` is integrable when `b` and `d` have positive
-real parts. -/
-theorem integrable_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : 0 < b.re) (hd : 0 < d.re) :
+/-- On the imaginary axis, `y ↦ Γ(b + i y) Γ(d - i y)` is integrable when neither `Re b` nor `Re d`
+is a nonpositive integer. -/
+theorem integrable_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : ∀ n : ℕ, b.re ≠ -n)
+    (hd : ∀ n : ℕ, d.re ≠ -n) :
     Integrable fun y : ℝ ↦ Gamma (b + y * I) * Gamma (d - y * I) := by
-  have h := (verticalIntegrable_Gamma_mul_Gamma_sub (a := b + d) (σ := b.re)
-    (fun n h ↦ by linarith [n.cast_nonneg' (α := ℝ)])
-    (fun n h ↦ by simp at h; linarith [n.cast_nonneg' (α := ℝ)])).comp_add_right b.im
+  have h := (verticalIntegrable_Gamma_mul_Gamma_sub (a := b + d) (σ := b.re) hb
+    (by simpa using hd)).comp_add_right b.im
   refine h.congr (Eventually.of_forall fun y ↦ ?_)
-  simp only [re_add_add_im_mul_I]
-  ring_nf
+  simp only [re_add_add_im_mul_I, add_sub_add_left_eq_sub]
 
 /-- **The Mellin–Barnes integral of `(1 + u)^{-(b + d)}`** along the line `Re s = Re b`,
 parametrised from `b`: for `0 < Re b`, `0 < Re d` and `u > 0`,
@@ -222,8 +240,7 @@ theorem integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub {b d : ℂ} (hb : 0 < b.re
   calc
     _ = ∫ y : ℝ, φ (b.re + ((y + b.im : ℝ) : ℂ) * I) := by
       refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-      simp only [φ, re_add_add_im_mul_I]
-      ring_nf
+      simp only [φ, re_add_add_im_mul_I, add_sub_add_left_eq_sub]
     _ = ∫ y : ℝ, φ (b.re + y * I) := integral_add_right_eq_self (fun y : ℝ ↦ φ (b.re + y * I)) b.im
     _ = _ := integral_cpow_neg_mul_Gamma_mul_Gamma_sub hb (by simp; linarith) hu
 
@@ -233,8 +250,9 @@ theorem integrable_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 <
     (hb : 0 < b.re) (hc : 0 < c.re) (hd : 0 < d.re) :
     Integrable fun y : ℝ ↦
       Gamma (a + y * I) * Gamma (b + y * I) * Gamma (c - y * I) * Gamma (d - y * I) := by
-  refine ((integrable_Gamma_add_mul_Gamma_sub ha hd).mul_bdd (c := Real.Gamma b.re *
-    Real.Gamma c.re) (integrable_Gamma_add_mul_Gamma_sub hb hc).aestronglyMeasurable
+  refine ((integrable_Gamma_add_mul_Gamma_sub (re_ne_neg_natCast ha) (re_ne_neg_natCast hd)).mul_bdd
+    (c := Real.Gamma b.re * Real.Gamma c.re) (integrable_Gamma_add_mul_Gamma_sub
+      (re_ne_neg_natCast hb) (re_ne_neg_natCast hc)).aestronglyMeasurable
     (Eventually.of_forall fun y ↦ ?_)).congr (Eventually.of_forall fun y ↦ by ring)
   have h1 : ‖Gamma (b + y * I)‖ ≤ Real.Gamma b.re := by
     simpa using norm_Gamma_le_Gamma_re (s := b + y * I) (by simpa using hb)
@@ -251,10 +269,8 @@ private lemma integrable_barnesKernel {a b c d : ℂ} (ha : 0 < a.re) (hb : 0 < 
     Integrable (fun z : ℝ × ℝ ↦ (z.1 : ℂ) ^ (c - 1) * (1 + (z.1 : ℂ)) ^ (-(a + c)) *
       ((z.1 : ℂ) ^ (-(z.2 * I)) * (Gamma (b + z.2 * I) * Gamma (d - z.2 * I))))
       ((volume.restrict (Ioi 0)).prod volume) := by
-  have hh : IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (c - 1) * (1 + (u : ℂ)) ^ (-(a + c))) (Ioi 0) := by
-    simpa [MellinConvergent] using
-      (hasMellin_one_add_cpow_neg (s := c) (a := a + c) hc (by simp; linarith)).1
-  have hg := integrable_Gamma_add_mul_Gamma_sub hb hd
+  have hh := integrableOn_cpow_mul_one_add_cpow_neg (s := c) (a := a + c) hc (by simp; linarith)
+  have hg := integrable_Gamma_add_mul_Gamma_sub (re_ne_neg_natCast hb) (re_ne_neg_natCast hd)
   have hpos : ∀ᵐ z ∂((volume.restrict (Ioi (0 : ℝ))).prod (volume : Measure ℝ)), 0 < z.1 := by
     rw [← Measure.restrict_univ (μ := (volume : Measure ℝ)), Measure.prod_restrict]
     filter_upwards [ae_restrict_mem (measurableSet_Ioi.prod MeasurableSet.univ)] with z hz
@@ -277,7 +293,8 @@ private lemma integral_barnesKernel_im {a b c d : ℂ} (hb : 0 < b.re) (hd : 0 <
     exact ofReal_ne_zero.mpr (by linarith)
   have hshift (y : ℝ) : (u : ℂ) ^ (-(y * I)) = (u : ℂ) ^ b * (u : ℂ) ^ (-(b + y * I)) := by
     rw [← cpow_add _ _ hu0]
-    ring_nf
+    congr 1
+    ring
   simp_rw [hshift, mul_assoc ((u : ℂ) ^ b)]
   rw [integral_const_mul, integral_const_mul,
     integral_cpow_neg_mul_Gamma_add_mul_Gamma_sub hb hd hu, show b + c - 1 = c - 1 + b by ring,
@@ -292,9 +309,9 @@ private lemma integral_barnesKernel_Ioi {a b c d : ℂ} (ha : 0 < a.re) (hc : 0 
       ((u : ℂ) ^ (-(y * I)) * (Gamma (b + y * I) * Gamma (d - y * I))) =
       Gamma (c - y * I) * Gamma (a + y * I) / Gamma (a + c) *
         (Gamma (b + y * I) * Gamma (d - y * I)) := by
-  have hm := (hasMellin_one_add_cpow_neg (s := c - y * I) (a := a + c) (by simpa using hc)
-    (by simpa using ha)).2
-  simp only [mellin, smul_eq_mul, show a + c - (c - y * I) = a + y * I by ring] at hm
+  have hm := integral_cpow_mul_one_add_cpow_neg (s := c - y * I) (a := a + c) (by simpa using hc)
+    (by simpa using ha)
+  rw [show a + c - (c - y * I) = a + y * I by ring] at hm
   rw [← hm, ← integral_mul_const]
   refine setIntegral_congr_fun measurableSet_Ioi fun u (hu : 0 < u) ↦ ?_
   rw [show c - y * I - 1 = c - 1 + -(y * I) by ring, cpow_add _ _ (ofReal_ne_zero.mpr hu.ne')]
@@ -309,9 +326,9 @@ theorem integral_Gamma_mul_Gamma_mul_Gamma_mul_Gamma {a b c d : ℂ} (ha : 0 < a
       2 * π * (Gamma (a + c) * Gamma (a + d) * Gamma (b + c) * Gamma (b + d) /
         Gamma (a + b + c + d)) := by
   have hac : Gamma (a + c) ≠ 0 := Gamma_ne_zero_of_re_pos (by simp; linarith)
-  have hm := (hasMellin_one_add_cpow_neg (s := b + c) (a := a + b + c + d) (by simp; linarith)
-    (by simp; linarith)).2
-  simp only [mellin, smul_eq_mul, show a + b + c + d - (b + c) = a + d by ring] at hm
+  have hm := integral_cpow_mul_one_add_cpow_neg (s := b + c) (a := a + b + c + d)
+    (by simp; linarith) (by simp; linarith)
+  rw [show a + b + c + d - (b + c) = a + d by ring] at hm
   -- integrate the kernel first in `u`, then in `y`, and swap the order by Fubini
   calc
     _ = Gamma (a + c) * ∫ y : ℝ, ∫ u in Ioi (0 : ℝ),
