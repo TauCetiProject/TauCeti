@@ -44,6 +44,12 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
 * `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
   is restricted at `c`.
+* `PowerSeries.IsRestricted.map` and `PowerSeries.IsRestricted.map_algebraMap`: mapping the
+  coefficients of a restricted series along a bounded ring homomorphism or `algebraMap` preserves
+  restrictedness.
+* `PowerSeries.IsRestricted.mul_polynomial` and `PowerSeries.IsRestricted.polynomial_mul`: over
+  any normed ring, the product of a restricted series and a polynomial is restricted at the same
+  radius.
 * `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
@@ -284,6 +290,66 @@ theorem IsRestricted.subring_abs (c : ℝ) :
   Subring.ext fun f ↦ by simp only [IsRestricted.mem_subring, isRestricted_abs_iff]
 
 end Subring
+
+/-- Over any normed ring, multiplying a restricted power series on the right by a polynomial
+preserves restrictedness at the same radius. No ultrametric hypothesis is needed. -/
+theorem IsRestricted.mul_polynomial (hf : f.IsRestricted c) (p : Polynomial R) :
+    (f * p).IsRestricted c := by
+  induction p using Polynomial.induction_on with
+  | C a =>
+    rw [Polynomial.coe_C, ← isRestricted_abs_iff, isRestricted_iff']
+    rw [← isRestricted_abs_iff, isRestricted_iff'] at hf
+    refine squeeze_zero (fun _ ↦ by positivity) (fun n ↦ ?_) (by simpa using hf.mul_const ‖a‖)
+    rw [coeff_mul_C]
+    exact (mul_le_mul_of_nonneg_right (norm_mul_le _ _) (by positivity)).trans_eq
+      (by ring)
+  | add p q hp hq =>
+    rw [Polynomial.coe_add, mul_add]
+    exact hp.add hq
+  | monomial n a ih =>
+    have heq : f * ((Polynomial.C a * Polynomial.X ^ (n + 1) : Polynomial R) : PowerSeries R) =
+        f * ((Polynomial.C a * Polynomial.X ^ n : Polynomial R) : PowerSeries R) * X := by
+      simp [pow_succ, mul_assoc]
+    rw [heq, isRestricted_iff', ← tendsto_add_atTop_iff_nat 1]
+    rw [isRestricted_iff'] at ih
+    simp_rw [coeff_succ_mul_X, pow_succ, ← mul_assoc]
+    simpa using ih.mul_const c
+
+/-- Over any normed ring, multiplying a restricted power series on the left by a polynomial
+preserves restrictedness at the same radius. No ultrametric hypothesis is needed. -/
+theorem IsRestricted.polynomial_mul (hf : f.IsRestricted c) (p : Polynomial R) :
+    ((p : PowerSeries R) * f).IsRestricted c := by
+  induction p using Polynomial.induction_on with
+  | C a =>
+    rw [Polynomial.coe_C, ← smul_eq_C_mul]
+    exact hf.smul a
+  | add p q hp hq =>
+    rw [Polynomial.coe_add, add_mul]
+    exact hp.add hq
+  | monomial n a ih =>
+    have hX : Polynomial.C a * Polynomial.X ^ (n + 1) =
+        Polynomial.X * (Polynomial.C a * Polynomial.X ^ n) := by
+      rw [pow_succ', ← mul_assoc, ← (Polynomial.commute_X (Polynomial.C a)).eq, mul_assoc]
+    rw [hX, Polynomial.coe_mul, Polynomial.coe_X, mul_assoc, isRestricted_iff',
+      ← tendsto_add_atTop_iff_nat 1]
+    rw [isRestricted_iff'] at ih
+    simp_rw [coeff_succ_X_mul, pow_succ, ← mul_assoc]
+    simpa using ih.mul_const c
+
+/-- Mapping the coefficients of a restricted power series along a bounded ring homomorphism
+preserves restrictedness at every radius. -/
+theorem IsRestricted.map {S : Type*} [NormedRing S] (hf : f.IsRestricted c) (φ : R →+* S)
+    {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖) : (PowerSeries.map φ f).IsRestricted c :=
+  MvPowerSeries.isRestricted_map _ φ hφ hf
+
+/-- Mapping the coefficients of a restricted power series along `algebraMap R S` into an `R`-algebra
+with bounded scalar multiplication preserves restrictedness at every radius. -/
+theorem IsRestricted.map_algebraMap {R S : Type*} [NormedCommRing R] [NormedRing S]
+    [Algebra R S] [IsBoundedSMul R S] {c : ℝ} {f : PowerSeries R} (hf : f.IsRestricted c) :
+    (PowerSeries.map (algebraMap R S) f).IsRestricted c :=
+  hf.map (algebraMap R S) (C := ‖(1 : S)‖) fun a ↦ by
+    rw [Algebra.algebraMap_eq_smul_one, mul_comm]
+    exact norm_smul_le a (1 : S)
 
 /-- The weighted coefficient norms of a restricted series are summable at every strictly
 smaller radius. No completeness or ultrametric hypothesis is needed. -/

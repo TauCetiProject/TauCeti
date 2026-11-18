@@ -11,13 +11,14 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.ZeroCount
 /-!
 # Factorisation of entire series by their zeros
 
-Let `K` be a complete ultrametric normed field and `f` an entire power series over `K`. In every
-complete normed field extension of `K`, the zeros of a nonzero `f` in each closed disc form a
-finite multiset `PowerSeries.zeroMultiset`, so the zeros of `f` form a countable set.
+Let `K` be an ultrametric normed field and `f` an entire power series over `K`. In every complete
+normed field extension of `K`, the zeros of a nonzero `f` in each closed disc form a finite
+multiset `PowerSeries.zeroMultiset`, so the zeros of `f` form a countable set.
 
-Suppose now that `K` is algebraically closed and `f(0) = 1`. The polynomial factor `P_r` of the
-normalised preparation of `f` on the closed disc of radius `r` is then the product of the factors
-`1 - α⁻¹ X` over the zeros `α` of `f` with `‖α‖ ≤ r`, counted with multiplicity, and these
+Suppose now that `K` is complete and algebraically closed and `f(0) = 1`. The polynomial factor
+`P_r` of the normalised preparation of `f` on the closed disc of radius `r` is then the product of
+the factors `1 - α⁻¹ X` over the zeros `α` of `f` with `‖α‖ ≤ r`, counted with multiplicity, and
+these
 polynomials converge to `f` in every Gauss norm as `r → ∞`. This is the product expansion
 
 ```text
@@ -61,11 +62,11 @@ namespace PowerSeries.IsEntire
 
 open TauCeti.PowerSeries
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {f g : PowerSeries K}
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] {f g : PowerSeries K}
 
-/-- **Countably many zeros.** A nonzero entire series over a complete ultrametric normed field `K`
-has only countably many zeros in any complete normed field extension `L` of `K`: those in each
-closed disc form the finite zero multiset of `f` on that disc. -/
+/-- **Countably many zeros.** A nonzero entire series over an ultrametric normed field `K` has only
+countably many zeros in any complete normed field extension `L` of `K`: those in each closed disc
+form the finite zero multiset of `f` on that disc. -/
 theorem countable_setOf_evalAt_eq_zero {L : Type*} [NormedField L] [NormedAlgebra K L]
     [CompleteSpace L] (hf : f.IsEntire) (hf0 : f ≠ 0) :
     {x : L | (_root_.PowerSeries.map (algebraMap K L) f).evalAt x = 0}.Countable := by
@@ -78,7 +79,7 @@ theorem countable_setOf_evalAt_eq_zero {L : Type*} [NormedField L] [NormedAlgebr
   exact (Set.countable_iUnion fun n : ℕ ↦
     (Multiset.finite_toSet (f.zeroMultiset (n + 1) L)).countable).mono hset
 
-variable [IsAlgClosed K]
+variable [CompleteSpace K] [IsAlgClosed K]
 
 /-- The products over the zeros in closed discs are the polynomial factors of a family of
 normalised disc preparations at every positive radius. -/
