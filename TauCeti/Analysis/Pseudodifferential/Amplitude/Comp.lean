@@ -87,36 +87,6 @@ private theorem contDiff_term (hκ : ContDiff ℝ ∞ κ) (hM : ContDiff ℝ ∞
   exact (hh.comp hw).smul (b.contDiff_coefficient.comp
     ((hκ.comp contDiff_fst).prodMk ((hM.comp hw).clm_apply (contDiff_snd.comp contDiff_snd))))
 
-/-- The derivative of a symbol at `q` in the direction `(u, v)`, expanded in the coordinate
-derivatives `∂_{z_k} b` and `∂_{η_k} b`. -/
-private theorem fderiv_coefficient_apply {m : ℝ} (b : Symbol n V W m)
-    (q : CoordinateSpace n × CoordinateSpace n) (u v : CoordinateSpace n) :
-    fderiv ℝ b.coefficient q (u, v) =
-      ∑ k, u k • (spatialDeriv k b).coefficient q +
-        ∑ k, v k • (frequencyDeriv k b).coefficient q := by
-  have hb : DifferentiableAt ℝ b.coefficient q := b.contDiff_coefficient.differentiable (by simp) q
-  have hx : fderiv ℝ (fun y ↦ b.coefficient (y, q.2)) q.1 =
-      (fderiv ℝ b.coefficient q).comp (ContinuousLinearMap.inl ℝ _ _) := by
-    have := hb.hasFDerivAt.comp q.1 (hasFDerivAt_prodMk_left (𝕜 := ℝ) q.1 q.2)
-    exact this.fderiv
-  have hξ : fderiv ℝ (fun η ↦ b.coefficient (q.1, η)) q.2 =
-      (fderiv ℝ b.coefficient q).comp (ContinuousLinearMap.inr ℝ _ _) := by
-    have := hb.hasFDerivAt.comp q.2 (hasFDerivAt_prodMk_right (𝕜 := ℝ) q.1 q.2)
-    exact this.fderiv
-  have e : (u, v) = ((u, 0) : CoordinateSpace n × CoordinateSpace n) + (0, v) := by simp
-  rw [e, map_add]
-  congr 1
-  · have h1 := congrArg (fun L ↦ L u) hx
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply] at h1
-    rw [← h1, ContinuousLinearMap.apply_eq_sum_single]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [fderiv_coefficient_single]
-  · have h1 := congrArg (fun L ↦ L v) hξ
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply] at h1
-    rw [← h1, ContinuousLinearMap.apply_eq_sum_single]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [fderiv_coefficient_slice_single]
-
 /-- The chain rule for a term. -/
 private theorem fderiv_term (hκ : ContDiff ℝ ∞ κ) (hM : ContDiff ℝ ∞ M)
     {h : CoordinateSpace n × CoordinateSpace n → ℝ} (hh : ContDiff ℝ ∞ h) {m : ℝ}
@@ -233,27 +203,6 @@ private theorem contDiff_coeffInv (hM : ContDiff ℝ ∞ M)
 
 /-! ### The estimates -/
 
-/-- If `M(w)` is invertible for `w` in a compact set `S`, the norms `‖ξ‖` and `‖M(w) ξ‖` are
-comparable, uniformly for `w ∈ S`. -/
-private theorem exists_norm_le_mul_norm (hM : Continuous M)
-    {S : Set (CoordinateSpace n × CoordinateSpace n)} (hS : IsCompact S)
-    (hSM : ∀ w ∈ S, IsUnit (M w)) :
-    ∃ c, 1 ≤ c ∧ ∀ w ∈ S, ∀ ξ, ‖M w ξ‖ ≤ c * ‖ξ‖ ∧ ‖ξ‖ ≤ c * ‖M w ξ‖ := by
-  obtain ⟨A, hA⟩ := hS.exists_bound_of_continuousOn hM.continuousOn
-  have hinv : ContinuousOn (fun w ↦ Ring.inverse (M w)) S := fun w hw ↦
-    (hM.continuousAt.ringInverse (hSM w hw)).continuousWithinAt
-  obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn hinv
-  refine ⟨max 1 (max A B), le_max_left _ _, fun w hw ξ ↦ ⟨?_, ?_⟩⟩
-  · calc ‖M w ξ‖ ≤ ‖M w‖ * ‖ξ‖ := (M w).le_opNorm ξ
-      _ ≤ max 1 (max A B) * ‖ξ‖ := by
-        gcongr
-        exact (hA w hw).trans ((le_max_left _ _).trans (le_max_right _ _))
-  · calc ‖ξ‖ ≤ ‖Ring.inverse (M w)‖ * ‖M w ξ‖ :=
-          ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply (hSM w hw) ξ
-      _ ≤ max 1 (max A B) * ‖M w ξ‖ := by
-        gcongr
-        exact (hB w hw).trans ((le_max_right _ _).trans (le_max_right _ _))
-
 /-- A term is bounded by `C ⟨ξ⟩ ^ m`. -/
 private theorem exists_norm_term_le (hκ : Continuous κ)
     {S : Set (CoordinateSpace n × CoordinateSpace n)} (hS : IsCompact S) {c : ℝ} (hc : 1 ≤ c)
@@ -296,7 +245,8 @@ private theorem exists_norm_iteratedFDerivAlong_term_le (hκ : ContDiff ℝ ∞ 
         α.length + γ.length + β.length = D → ∃ C, ∀ p,
           ‖iteratedFDerivAlong ℝ (amplitudeDirections α γ β) (term κ M h b) p‖ ≤
             C * (1 + ‖p.2.2‖ ^ 2) ^ ((m - β.length) / 2) := by
-  obtain ⟨c, hc, hcS⟩ := exists_norm_le_mul_norm hM.continuous hS hSM
+  obtain ⟨c, hc, hcS⟩ :=
+    exists_norm_clm_apply_le_and_norm_le_of_isUnit hS hM.continuous.continuousOn hSM
   have hhU : ∀ {h : CoordinateSpace n × CoordinateSpace n → ℝ}, tsupport h ⊆ S →
       tsupport h ⊆ {w | IsUnit (M w)} := fun hhS w hw ↦ hSM w (hhS hw)
   have hne : ∀ {h : CoordinateSpace n × CoordinateSpace n → ℝ}, tsupport h ⊆ S →

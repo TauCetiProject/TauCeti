@@ -18,10 +18,8 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Normed.Operator.Basic
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Fourier.Parametric
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Changes of coordinates for pseudodifferential operators
@@ -277,43 +275,6 @@ private theorem exists_norm_iteratedFDeriv_smul_apply_le {c : Amplitude n V W m}
       ≤ (k.choose i : ℝ) * R i * (G (k - i) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by gcongr
     _ = (k.choose i : ℝ) * R i * G (k - i) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
 
-omit [CompleteSpace W] in
-/-- **Fourier decay of the rescaled input slices.** If `g` vanishes outside a compact set `L` and
-its derivatives up to order `N` are bounded by `B ⟨2π ζ⟩ ^ m`, then `‖𝓕 g ζ‖` is at most a
-constant times `⟨ζ⟩ ^ (|m| - N)`, where the constant depends only on `N`, `B`, `L` and `m`. -/
-private theorem norm_fourier_le_of_tsupport_subset {g : CoordinateSpace n → W} {N : ℕ}
-    (hg : ContDiff ℝ N g) {L : Set (CoordinateSpace n)} (hL : IsCompact L) (hgL : tsupport g ⊆ L)
-    {B : ℝ} (ζ : CoordinateSpace n)
-    (hgB : ∀ p ≤ N, ∀ y, ‖iteratedFDeriv ℝ p g y‖ ≤ B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2)) :
-    ‖𝓕 g ζ‖ ≤ 2 ^ N * B * volume.real L * (2 * π) ^ |m| *
-      (1 + ‖ζ‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
-  have hB : 0 ≤ B := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hgB 0 (Nat.zero_le N) 0))
-    (by positivity)
-  have h := one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset hg hL.measure_lt_top.ne hgL
-    hgB ζ
-  have hw : (1 + ‖ζ‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖ζ‖) ^ N := by
-    simpa using one_add_norm_sq_rpow_half_le_one_add_norm_rpow ζ (Nat.cast_nonneg (α := ℝ) N)
-  have h2π : (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) ≤ (2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (|m| / 2) := by
-    refine (one_add_norm_smul_sq_rpow_le (by nlinarith [Real.two_le_pi]) m ζ).trans ?_
-    gcongr
-    · nlinarith [sq_nonneg ‖ζ‖]
-    · linarith [le_abs_self m]
-  have hsplit : (1 + ‖ζ‖ ^ 2) ^ (|m| / 2) * (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) =
-      (1 + ‖ζ‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
-  have hF : ‖𝓕 g ζ‖ ≤
-      2 ^ N * (B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * volume.real L) *
-        (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) := by
-    rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
-    exact (mul_le_mul_of_nonneg_left hw (norm_nonneg _)).trans (by rw [mul_comm]; exact h)
-  calc ‖𝓕 g ζ‖
-      ≤ 2 ^ N * (B * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (|m| / 2)) * volume.real L) *
-          (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) := hF.trans (by gcongr)
-    _ = 2 ^ N * B * volume.real L * (2 * π) ^ |m| *
-          ((1 + ‖ζ‖ ^ 2) ^ (|m| / 2) * (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2)) := by ring
-    _ = _ := by rw [hsplit]
-
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Removing a uniformly bounded regularization.** Let `c` be an amplitude vanishing for input
 positions outside a compact set `L`, and let `r t (y, ξ)` be smooth in `y`, with derivatives
@@ -437,8 +398,8 @@ private theorem tendsto_quantizeAmplitudeValue_smul {c : Amplitude n V W m}
   · filter_upwards [eventually_ge_atTop 1] with t ht
     refine .of_forall fun ζ ↦ ?_
     rw [Circle.smul_def, norm_smul, Circle.norm_coe, one_mul]
-    exact norm_fourier_le_of_tsupport_subset ((hgs t ζ).of_le (by exact_mod_cast le_top)) hL
-      (hgT t ζ) ζ (hgB t ht ζ)
+    exact norm_fourier_le_of_tsupport_subset ((hgs t ζ).of_le (by exact_mod_cast le_top))
+      hL.measure_lt_top.ne (hgT t ζ) ζ (hgB t ht ζ)
 
 end Limit
 
