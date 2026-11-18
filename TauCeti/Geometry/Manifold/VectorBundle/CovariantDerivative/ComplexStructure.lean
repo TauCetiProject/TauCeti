@@ -102,6 +102,12 @@ theorem complexLinearPart_apply (σ : Π x : M, V x) (x : M) (v : TangentSpace I
 
 variable {cov J}
 
+/-- An endomorphism squaring to `-1` sends `T (T w)` to `-w`. -/
+private theorem apply_apply_eq_neg_of_comp_eq_neg_id {W : Type*} [AddCommGroup W] [Module ℝ W]
+    [TopologicalSpace W] [IsTopologicalAddGroup W] {T : W →L[ℝ] W}
+    (h : T.comp T = -ContinuousLinearMap.id ℝ W) (w : W) : T (T w) = -w := by
+  simpa using DFunLike.congr_fun h w
+
 /-- The induced connection on `End(V)` differentiates `J² = -1` to `(∇J) J = -J (∇J)`. -/
 theorem hom_apply_apply_anticomm {x : M}
     (hJ : MDiffAt (fun y ↦ TotalSpace.mk' (F →L[ℝ] F)
@@ -112,13 +118,12 @@ theorem hom_apply_apply_anticomm {x : M}
   have hs : MDiffAt (T% (extend F u)) x := mdifferentiableAt_extend ..
   have hJJs : (fun y ↦ J y (J y (extend F u y))) = -extend F u := by
     funext y
-    simpa using congrArg (fun T ↦ T (extend F u y)) (hJ2 y)
+    exact apply_apply_eq_neg_of_comp_eq_neg_id (hJ2 y) _
   have h₁ := hom_apply cov cov hJ (hJ.clm_bundle_apply hs) v
   have h₂ := hom_apply cov cov hJ hs v
-  have hx (w : V x) : J x (J x w) = -w := by simpa using congrArg (fun T ↦ T w) (hJ2 x)
   simp only [extend_apply_self] at h₁ h₂
-  rw [h₁, h₂, hJJs, cov.isCovariantDerivativeOnUniv.neg hs, (J x).map_sub, hx,
-    neg_apply]
+  rw [h₁, h₂, hJJs, cov.isCovariantDerivativeOnUniv.neg hs, (J x).map_sub,
+    apply_apply_eq_neg_of_comp_eq_neg_id (hJ2 x), neg_apply]
   abel
 
 /-- Where `J` is a complex structure differentiable at `x`, the complex-linear part of `∇` is the
@@ -130,9 +135,8 @@ theorem complexLinearPart_apply_eq {x : M}
     {σ : Π x : M, V x} (hσ : MDiffAt (T% σ) x) (v : TangentSpace I x) :
     cov.complexLinearPart J σ x v =
       (2⁻¹ : ℝ) • (cov σ x v - J x (cov (fun y ↦ J y (σ y)) x v)) := by
-  have hx : J x (J x (cov σ x v)) = -cov σ x v := by
-    simpa using congrArg (fun T ↦ T (cov σ x v)) hJ2
-  rw [complexLinearPart_apply, hom_apply cov cov hJ hσ, (J x).map_sub, hx]
+  rw [complexLinearPart_apply, hom_apply cov cov hJ hσ, (J x).map_sub,
+    apply_apply_eq_neg_of_comp_eq_neg_id hJ2]
   module
 
 /-- **The complex-linear part is complex linear.** If `J` is a complex structure differentiable
@@ -143,10 +147,9 @@ theorem complexLinearPart_apply_comm {x : M}
     (hJ2 : ∀ y, (J y).comp (J y) = -ContinuousLinearMap.id ℝ (V y))
     {σ : Π x : M, V x} (hσ : MDiffAt (T% σ) x) (v : TangentSpace I x) :
     cov.complexLinearPart J (fun y ↦ J y (σ y)) x v = J x (cov.complexLinearPart J σ x v) := by
-  have hx (w : V x) : J x (J x w) = -w := by simpa using congrArg (fun T ↦ T w) (hJ2 x)
   have h := hom_apply cov cov hJ hσ v
   rw [complexLinearPart_apply, complexLinearPart_apply, hom_apply_apply_anticomm hJ hJ2]
-  simp only [map_sub, map_smul, map_neg, hx, neg_neg]
+  simp only [map_sub, map_smul, map_neg, apply_apply_eq_neg_of_comp_eq_neg_id (hJ2 x), neg_neg]
   rw [h]
   module
 
@@ -171,7 +174,7 @@ theorem complexLinearPart_eq_self_iff
     have hσ := congrArg (fun c : CovariantDerivative I F V ↦ c (extend F u) x v) h
     simp only [complexLinearPart_apply, extend_apply_self, sub_eq_self, smul_eq_zero,
       inv_eq_zero, OfNat.ofNat_ne_zero, false_or] at hσ
-    simpa [hσ] using congrArg (fun T ↦ T (cov.hom cov J x v u)) (hJ2 x)
+    simpa [hσ] using (apply_apply_eq_neg_of_comp_eq_neg_id (hJ2 x) (cov.hom cov J x v u)).symm
   · ext σ x v
     simp [h]
 
@@ -209,7 +212,6 @@ theorem apply_eq_complexLinearPart_apply {cov' : CovariantDerivative I F V} {x :
     {σ : Π x : M, V x} (hσ : MDiffAt (T% σ) x) :
     cov' σ x = cov.complexLinearPart J σ x := by
   ext v
-  have hx (w : V x) : J x (J x w) = -w := by simpa using congrArg (fun T ↦ T w) hJ2
   have hJσ := hJ.clm_bundle_apply hσ
   -- `J` parallel for `∇'` gives `∇'_v (J σ) = J ∇'_v σ`.
   have h' := hom_apply cov' cov' hJ hσ v
@@ -232,7 +234,7 @@ theorem apply_eq_complexLinearPart_apply {cov' : CovariantDerivative I F V} {x :
   have hE := h'.symm
   rw [sub_eq_zero, sub_eq_iff_eq_add'] at hE
   rw [hB, hE]
-  simp only [map_add, map_sub, hx]
+  simp only [map_add, map_sub, apply_apply_eq_neg_of_comp_eq_neg_id hJ2]
   module
 
 end General
