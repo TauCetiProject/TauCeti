@@ -54,7 +54,8 @@ fibre inclusions over points joined by a path agree
 The same construction over every subset `W` of the base gives maps
 `H₀(W; o(E)) ⟶ Hᵣ(E|_W, E₀|_W; ℤ)` commuting with the restrictions. Over a subset of the base set
 of a trivialization of the atlas, the orientation of the fibres read as a fixed orientation of the
-model fibre trivializes `o(E)` (`TauCeti.VectorBundleOrientationCover.mem_sheet_of_continuous`,
+model fibre trivializes `o(E)`
+(`TauCeti.VectorBundleOrientationCover.mem_sheet_of_forall_proj_mem_baseSet`,
 `TauCeti.VectorBundleOrientationCover.signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm`), and
 the map becomes the computation `Hᵣ(W × F, W × (F ∖ {0})) ≅ H₀(W)` of the product bundle, with
 the model orientation chosen to select the class of the point

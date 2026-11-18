@@ -278,7 +278,7 @@ theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (e : Trivializatio
   have hm : cov.monodromy (inv q) c₀ = ⟨⟨x, (e.mapOrientation ι hx).symm ω⟩, rfl⟩ := by
     have hmon : ((cov.monodromy (inv q) c₀ : _) : VectorBundleOrientationCover F E ι) = Γ 1 :=
       cov.coe_monodromy_inv_mk γ c₀
-    have hsheet := mem_sheet_of_continuous hι e ω hΓ h₀ 1
+    have hsheet := mem_sheet_of_forall_proj_mem_baseSet hι e ω hΓ h₀ 1
     rw [← hmon] at hsheet
     obtain ⟨hm, hω⟩ := mem_sheet_iff.1 hsheet
     generalize cov.monodromy (inv q) c₀ = m at hm hω ⊢

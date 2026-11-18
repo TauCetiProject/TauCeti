@@ -60,8 +60,8 @@ in a trivialization have locally constant determinant sign.
   bases of the fibres give a continuous map to the cover.
 * `TauCeti.VectorBundleOrientationCover.exists_section_of_isClopen`: over a preconnected base, a
   nonempty proper clopen subset of the cover is the image of a continuous section.
-* `TauCeti.VectorBundleOrientationCover.mem_sheet_of_continuous`: a path in the cover over the base
-  set of a trivialization stays in the sheet through its starting point.
+* `TauCeti.VectorBundleOrientationCover.mem_sheet_of_forall_proj_mem_baseSet`: a path in the
+  cover over the base set of a trivialization stays in the sheet through its starting point.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`: a bundle is orientable if and
   only if its orientation double cover has a continuous section.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`: a bundle is orientable if
@@ -458,7 +458,7 @@ theorem exists_section_of_isClopen [PreconnectedSpace B] (hι : Fintype.card ι 
 /-- **Paths over a trivializing set stay in a sheet**: a path in the orientation double cover over
 the base set of a trivialization `e` of the atlas, starting in the sheet read as `ω`, stays in that
 sheet, provided `ι` has cardinality the rank of the bundle. -/
-theorem mem_sheet_of_continuous (hι : Fintype.card ι = finrank ℝ F)
+theorem mem_sheet_of_forall_proj_mem_baseSet (hι : Fintype.card ι = finrank ℝ F)
     (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
     (ω : Orientation ℝ F ι) {Γ : C(unitInterval, VectorBundleOrientationCover F E ι)}
     (hΓ : ∀ t, (Γ t).proj ∈ e.baseSet) (h₀ : Γ 0 ∈ sheet e ω) (t : unitInterval) :
