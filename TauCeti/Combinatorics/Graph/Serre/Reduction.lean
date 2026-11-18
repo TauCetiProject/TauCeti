@@ -194,6 +194,25 @@ theorem darts_reduce_sublist {a b : Γ.V} (p : Γ.Path a b) :
   | nil => exact isReduced_nil Γ _
   | cons p e ih => exact isReduced_reduceSnoc Γ (reduce Γ p) ih e
 
+/-- Appending a dart to a path and reducing keeps every dart of the reduced path other than the
+reverse of the appended dart. -/
+theorem mem_darts_reduce_cons {a b c : Γ.V} (p : Γ.Path a b) (d : Quiver.Hom b c) {e : Γ.E}
+    (he : e ∈ darts Γ (reduce Γ p)) (hne : e ≠ Γ.rev d.1) :
+    e ∈ darts Γ (reduce Γ (p.cons d)) := by
+  rw [reduce_cons]
+  generalize reduce Γ p = q at he
+  cases q with
+  | nil => simp at he
+  | @cons x _ q f =>
+    by_cases h : d.1 = Γ.rev f.1
+    · cases Γ.tgt_eq_src_of_val_eq_rev h
+      obtain rfl := Γ.eq_reverse_of_val_eq_rev h
+      have hef : e ≠ f.1 := by rintro rfl; simp [Γ.reverse_val] at hne
+      simpa [hef] using he
+    · simp only [reduceSnoc_cons_of_ne Γ q f d h, darts_cons, List.mem_append,
+        List.mem_singleton] at he ⊢
+      tauto
+
 /-- A reduced path is fixed by appending a dart and reducing just that append. -/
 private theorem reduceSnoc_eq_cons {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c)
     (h : IsReduced Γ (p.cons e)) : reduceSnoc Γ p e = p.cons e := by
@@ -400,13 +419,14 @@ theorem Homotopic.mapPath {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} {p q : 
     reduce Δ (f.toPrefunctor.mapPath (reduce Γ p)) = reduce Δ (f.toPrefunctor.mapPath p) :=
   (((homotopic_reduce Γ p).mapPath Γ f).reduce_eq Δ).symm
 
-/-- A morphism injective on darts commutes with reduction of paths. -/
+/-- A morphism that is injective on the darts issuing from each vertex commutes with reduction of
+paths. -/
 theorem reduce_mapPath_of_injective {Δ : SerreGraph} (f : Γ.Hom Δ)
-    (hf : Function.Injective f.mapE) {a b : Γ.V} (p : Γ.Path a b) :
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e')
+    {a b : Γ.V} (p : Γ.Path a b) :
     reduce Δ (f.toPrefunctor.mapPath p) = f.toPrefunctor.mapPath (reduce Γ p) := by
   rw [← reduce_mapPath_reduce]
-  exact reduce_eq_self_of_isReduced Δ _
-    ((f.isReduced_mapPath_iff Γ hf _).mpr (isReduced_reduce Γ p))
+  exact reduce_eq_self_of_isReduced Δ _ (f.isReduced_mapPath hf _ (isReduced_reduce Γ p))
 
 /-- Opposite directions of a rose petal remain distinct under path homotopy. -/
 theorem rose_not_homotopic_reverse {α : Type*} (a : α) :
