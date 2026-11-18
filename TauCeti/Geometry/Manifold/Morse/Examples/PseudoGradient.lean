@@ -29,11 +29,11 @@ This file tests the definition on the two simplest Morse functions.
   (`TauCeti.isMIntegralCurve_mul_exp_neg_neg`), and along it `df = -2 x²`
   (`TauCeti.mvfderiv_sq_real_apply`). The Euclidean negative
   gradient `x ↦ -2 x`, which reads `z ↦ -2 z` in the Morse chart, is not adapted
-  (`TauCeti.not_isAdaptedPseudoGradient_neg_mgradient_sq_real`).
+  (`TauCeti.not_isAdaptedPseudoGradient_sq_real_neg_mgradient`).
 * **The saddle `f(u, v) = -u² + v²` on `ℝ²`.** In the Morse chart `z = √2 (u, v)` with weights
   `(-1, 1)` the field `(u, v) ↦ (u, -v)` reads `(z₁, -z₂)`, and it is adapted
-  (`TauCeti.isAdaptedPseudoGradient_neg_sq_add_sq`), as the product of the adapted fields of
-  `-u²` and `v²`; its trajectories are `t ↦ (u₀ eᵗ, v₀ e⁻ᵗ)`
+  (`TauCeti.isAdaptedPseudoGradient_neg_sq_add_sq_prodMk_neg`), as the product of the adapted
+  fields of `-u²` and `v²`; its trajectories are `t ↦ (u₀ eᵗ, v₀ e⁻ᵗ)`
   (`TauCeti.isMIntegralCurve_mul_exp_prodMk_mul_exp_neg`). The field `(u, v) ↦ (-u, -v)`,
   which reads `(-z₁, -z₂)`, is not adapted
   (`TauCeti.not_isAdaptedPseudoGradient_neg_sq_add_sq_neg`): along it `df = 2 u² - 2 v²`, which
@@ -160,7 +160,7 @@ theorem isMIntegralCurve_mul_exp_neg_neg (x₀ : ℝ) :
 
 /-- The Euclidean negative gradient `x ↦ -2 x` of `x ↦ x²` is not an adapted pseudo-gradient:
 near `0` an adapted pseudo-gradient is `x ↦ -x`. -/
-theorem not_isAdaptedPseudoGradient_neg_mgradient_sq_real :
+theorem not_isAdaptedPseudoGradient_sq_real_neg_mgradient :
     ¬ IsAdaptedPseudoGradient (fun x : ℝ ↦ x ^ 2) (-mgradient 𝓘(ℝ, ℝ) fun x : ℝ ↦ x ^ 2) := by
   intro hX
   obtain ⟨y, hy, hy0⟩ := ((hX.eventually_eq_neg_sq_real.filter_mono nhdsWithin_le_nhds).and
@@ -172,7 +172,7 @@ theorem not_isAdaptedPseudoGradient_neg_mgradient_sq_real :
 
 /-- **The field `(u, v) ↦ (u, -v)` is a pseudo-gradient adapted to the saddle `-u² + v²`** on
 `ℝ²`. In the Morse chart `z = √2 (u, v)` with weights `(-1, 1)` it reads `(z₁, -z₂)`. -/
-theorem isAdaptedPseudoGradient_neg_sq_add_sq :
+theorem isAdaptedPseudoGradient_neg_sq_add_sq_prodMk_neg :
     IsAdaptedPseudoGradient (fun p : ℝ × ℝ ↦ -p.1 ^ 2 + p.2 ^ 2) fun p ↦ ((p.1, -p.2) : ℝ × ℝ) := by
   have h := (isAdaptedPseudoGradient_sq_real_neg.neg isMorse_sq_real).prod_chartedSpaceSelf
     isAdaptedPseudoGradient_sq_real_neg
