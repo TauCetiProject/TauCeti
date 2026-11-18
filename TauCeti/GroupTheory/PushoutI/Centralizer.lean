@@ -646,12 +646,6 @@ private theorem ediv_emod_add_one (n : ℕ) (hn : 0 < n) (m : ℤ) :
         omega)
     exact Or.inr ⟨hq, by rw [hr]; rfl, by omega⟩
 
-private theorem toNat_emod_lt (n : ℕ) (hn : 0 < n) (m : ℤ) : (m % n).toNat < n := by
-  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
-  have := Int.emod_lt_of_pos m hn'
-  have := Int.emod_nonneg m hn'.ne'
-  omega
-
 private theorem lprod_take_add_one (Z : List (Bool × PushoutI φ)) (j : ℕ) (hj : j < Z.length) :
     lprod (Z.take (j + 1)) = lprod (Z.take j) * Z[j].2 := by
   rw [List.take_add_one, List.getElem?_eq_getElem hj, Option.toList_some, lprod_append,
@@ -668,12 +662,12 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
   r := Z.length
   r_pos := List.length_pos_of_ne_nil hne
   isLetter m := by
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem
-      (toNat_emod_lt _ (List.length_pos_of_ne_nil hne) m)]
+    have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt (List.length_pos_of_ne_nil hne).ne'
+    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt]
     exact hZ.2 _ (List.getElem_mem _)
   ne m := by
     have hn := List.length_pos_of_ne_nil hne
-    have hlt := toNat_emod_lt _ hn m
+    have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt hn.ne'
     simp only [List.getD_eq_getElem?_getD]
     rcases ediv_emod_add_one _ hn m with ⟨-, hj, hj'⟩ | ⟨-, hj, hj'⟩ <;> rw [hj]
     · rw [List.getElem?_eq_getElem hj', List.getElem?_eq_getElem hlt]
@@ -686,7 +680,7 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
   P_zero := by simp
   P_succ m := by
     have hn := List.length_pos_of_ne_nil hne
-    have hlt := toNat_emod_lt _ hn m
+    have hlt : (m % Z.length).toNat < Z.length := Int.natMod_lt hn.ne'
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, Option.getD_some]
     rcases ediv_emod_add_one _ hn m with ⟨hq, hj, -⟩ | ⟨hq, hj, hj'⟩ <;> rw [hq, hj]
     · rw [lprod_take_add_one _ _ hlt, mul_assoc]
