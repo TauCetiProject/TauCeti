@@ -21,9 +21,9 @@ import TauCeti.Algebra.Module.LocalizedModule.Submodule
 # Full submodule lattices
 
 This file provides generic results about full submodules over commutative algebras. It relates
-bases and ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
-between full submodules to linear equivalences of their ambient modules, and proves that
-surjective linear maps preserve full lattices over fraction fields, as do finite
+bases and ranks of full submodules to their ambient spaces. It also extends integral linear
+equivalences between full submodules to linear equivalences of their ambient modules, and proves
+that surjective linear maps preserve full lattices over fraction fields, as do finite
 products. Injective linear maps pull back full lattices over localizations of Noetherian
 commutative rings. Finally, scalar extension of a free full lattice recovers its ambient module.
 
