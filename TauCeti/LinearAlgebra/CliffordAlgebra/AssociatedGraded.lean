@@ -54,12 +54,6 @@ variable {R : Type*} {M₁ M₂ M₃ : Type*} [CommRing R]
   [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂] [AddCommGroup M₃] [Module R M₃]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q₃ : QuadraticForm R M₃}
 
-/-- The Clifford map of an isometry sends every generator into the first filtration step. -/
-theorem map_apply_ι_mem_filtration_one (φ : Q₁ →qᵢ Q₂) (m : M₁) :
-    map φ (ι Q₁ m) ∈ filtration Q₂ 1 := by
-  rw [map_apply_ι]
-  exact ι_mem_filtration_one Q₂ (φ m)
-
 /-- The algebra homomorphism of Clifford associated gradeds induced by an isometry. -/
 noncomputable def mapAssociatedGraded (φ : Q₁ →qᵢ Q₂) :
     AssociatedGraded (ι Q₁) →ₐ[R] AssociatedGraded (ι Q₂) :=
@@ -78,19 +72,17 @@ theorem mapAssociatedGraded_of (φ : Q₁ →qᵢ Q₂) (k : ℕ) (x : GradedPie
 @[simp]
 theorem mapAssociatedGraded_id :
     mapAssociatedGraded (QuadraticMap.Isometry.id Q₁) = AlgHom.id R _ := by
-  apply DirectSum.algHom_ext
-  intro k x
-  induction x using Submodule.Quotient.induction_on with
-  | _ x => simp [map_id]
+  rw [mapAssociatedGraded]
+  simp_rw [map_id]
+  exact wordFiltration.mapAssociatedGraded_id (ι Q₁) _
 
 /-- A composite of isometries induces the composite of the induced maps. -/
 theorem mapAssociatedGraded_comp (φ₂ : Q₂ →qᵢ Q₃) (φ₁ : Q₁ →qᵢ Q₂) :
     mapAssociatedGraded (φ₂.comp φ₁) =
       (mapAssociatedGraded φ₂).comp (mapAssociatedGraded φ₁) := by
-  apply DirectSum.algHom_ext
-  intro k x
-  induction x using Submodule.Quotient.induction_on with
-  | _ x => simp [← map_comp_map]
+  rw [mapAssociatedGraded, mapAssociatedGraded, mapAssociatedGraded]
+  simp_rw [← map_comp_map]
+  exact wordFiltration.mapAssociatedGraded_comp (ι Q₁) (ι Q₂) (ι Q₃) _ _ _ _ _
 
 variable [Invertible (2 : R)]
 

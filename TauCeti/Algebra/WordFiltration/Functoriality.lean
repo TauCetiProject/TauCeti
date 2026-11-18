@@ -13,13 +13,19 @@ public import TauCeti.Algebra.WordFiltration.AssociatedGraded
 Let `f : M →ₗ[R] A` and `f' : N →ₗ[R] B` generate word filtrations of two `R`-algebras. An algebra
 homomorphism `g : A →ₐ[R] B` sending every generator `f m` into the first target step
 `wordFiltration f' 1` preserves every filtration step (`TauCeti.Algebra.map_mem_wordFiltration`),
-and also every preceding step. It therefore induces linear maps of the successive quotients and an
-algebra homomorphism of associated gradeds. This file constructs them and proves that they respect
-identities, composition and the graded multiplication.
+and also every preceding step (`TauCeti.Algebra.map_mem_wordFiltrationPrevious`). It therefore
+induces linear maps of the successive quotients and an algebra homomorphism of associated gradeds.
+This file constructs them and proves that they respect identities, composition and the graded
+multiplication.
 
 The hypothesis on `g` is the one of `TauCeti.Algebra.map_wordFiltration_le`. Two instances are an
 isometry of quadratic forms acting on Clifford algebras, and a Lie algebra homomorphism acting on
 universal enveloping algebras.
+
+The construction generalizes the one first written for universal enveloping algebras in
+`TauCeti/Algebra/Lie/UniversalEnveloping/PBW/Functoriality.lean`;
+`TauCeti.UniversalEnvelopingAlgebra.mapGradedPiece` and
+`TauCeti.UniversalEnvelopingAlgebra.mapAssociatedGraded` are now its specializations.
 
 ## Main definitions
 
@@ -30,8 +36,6 @@ universal enveloping algebras.
 
 ## Main results
 
-* `TauCeti.Algebra.map_mem_wordFiltrationPrevious`: such a homomorphism preserves the preceding
-  filtration steps.
 * `TauCeti.Algebra.wordFiltration.mapGradedPiece_mk`: on representatives the induced map is `g`.
 * `TauCeti.Algebra.wordFiltration.mapGradedPiece_gradedMul` and
   `TauCeti.Algebra.wordFiltration.mapGradedPiece_gradedOne`: the piece maps respect the graded
@@ -52,20 +56,6 @@ variable [CommRing R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R
 variable [Ring A] [Algebra R A] [Ring B] [Algebra R B] [Ring C] [Algebra R C]
 variable (f : M →ₗ[R] A) (f' : N →ₗ[R] B) (f'' : P →ₗ[R] C)
 
-/-- An algebra homomorphism that sends each source generator into target filtration degree one
-preserves the preceding word-filtration steps. -/
-theorem map_mem_wordFiltrationPrevious (g : A →ₐ[R] B) (h : ∀ m, g (f m) ∈ wordFiltration f' 1)
-    {k : ℕ} {x : A} (hx : x ∈ wordFiltrationPrevious f k) :
-    g x ∈ wordFiltrationPrevious f' k := by
-  cases k with
-  | zero =>
-      rw [wordFiltrationPrevious_zero, Submodule.mem_bot] at hx
-      rw [hx, map_zero]
-      exact Submodule.zero_mem _
-  | succ k =>
-      rw [wordFiltrationPrevious_succ] at hx ⊢
-      exact map_mem_wordFiltration f g f' h hx
-
 namespace wordFiltration
 
 /-- The linear map on degree-`k` graded pieces induced by an algebra homomorphism that sends each
@@ -77,7 +67,7 @@ noncomputable def mapGradedPiece (g : A →ₐ[R] B) (h : ∀ m, g (f m) ∈ wor
       simpa only [AlgHom.toLinearMap_apply] using map_mem_wordFiltration f g f' h hx)
     fun _ hx => by
       rw [Submodule.mem_comap, mem_previousRestricted_iff]
-      exact map_mem_wordFiltrationPrevious f f' g h hx
+      exact map_mem_wordFiltrationPrevious f g f' h hx
 
 /-- On quotient representatives, the induced map on a graded piece is the algebra homomorphism. -/
 @[simp]
