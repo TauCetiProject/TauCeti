@@ -56,7 +56,9 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 * `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
   `W ⊆ W'`.
 * `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
-  `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`.
+  `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`; over a
+  subsingleton base, `fiberThomPairMap` is an isomorphism
+  (`TauCeti.isIso_fiberThomPairMap_of_subsingleton`).
 * `TauCeti.thomPairMapOfNeZero`: a continuous map `f : X → E` taking nonzero values off a set `S`,
   as a map of pairs `(X, X ∖ S) ⟶ (E, E₀)`.
 * `TauCeti.thomPairProj`, `TauCeti.thomPairOverProj`: the projection of the total space to the base,
@@ -309,6 +311,23 @@ theorem fiberThomPairMap_eq_ofSubsetMap (b : B) :
       (TopCat.ofHom ⟨TotalSpace.mk b, FiberBundle.continuous_totalSpaceMk F E b⟩)
       (fun _ hx ↦ mem_zeroSectionCompl.2 hx) :=
   (rfl)
+
+/-- Over a subsingleton base `B`, the inclusion `(E_b, E_b ∖ {0}) ⟶ (E, E₀)` of the fibre over `b`
+into the Thom pair is an isomorphism in `TopPair`. -/
+instance isIso_fiberThomPairMap_of_subsingleton [Subsingleton B] (b : B) :
+    IsIso (fiberThomPairMap F E b) := by
+  let e : E b ≃ₜ TotalSpace F E :=
+    (Equiv.ofBijective (TotalSpace.mk b) ⟨TotalSpace.mk_injective b,
+      fun ⟨b', x⟩ ↦ by cases Subsingleton.elim b b'; exact ⟨x, rfl⟩⟩).toHomeomorphOfIsInducing
+        (FiberBundle.totalSpaceMk_isInducing F E b)
+  have : IsIso (TopPair.Hom.fst (fiberThomPairMap F E b)) := by
+    rw [fiberThomPairMap_fst]
+    exact (TopCat.isoOfHomeo (X := TopCat.of (E b)) (Y := TopCat.of (TotalSpace F E)) e).isIso_hom
+  exact TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun ⟨⟨b', x⟩, hx⟩ ↦ by
+    cases Subsingleton.elim b b'
+    refine ⟨⟨x, mem_zeroSectionCompl.1 hx⟩, ?_⟩
+    rw [fiberThomPairMap_eq_ofSubsetMap]
+    exact Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)
 
 /-- The projection `π : E ⟶ B` of a fibre bundle, as a morphism of topological spaces out of the
 ambient space of its Thom pair. -/
