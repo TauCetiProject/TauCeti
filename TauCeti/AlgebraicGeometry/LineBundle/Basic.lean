@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Instances
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
@@ -30,6 +32,9 @@ over an arbitrary site. This file only packages it over a scheme:
   `InvertibleSheaf.trivial X` is the globally free rank-one sheaf;
 * `SheafOfModules.isInvertible_unit` records that the structure sheaf `𝒪_X`, as a sheaf of
   modules over itself, is invertible;
+* `Scheme.Modules.isLocallyFree_of_isInvertible` and
+  `Scheme.Modules.isFinitePresentation_of_isInvertible` record that an invertible `𝒪_X`-module is
+  locally free and finitely presented;
 * `SheafOfModules.isInvertible_iff_exists_isOpenCover` characterizes invertible sheaves on a
   scheme as those whose restrictions to the open subschemes of some open cover are isomorphic to
   the structure sheaves of those open subschemes;
@@ -120,6 +125,22 @@ open MonoidalCategory in
 does not identify it with `SheafOfModules.unit X.ringCatSheaf` of `isInvertible_unit`. -/
 instance isInvertible_tensorUnit : isInvertible X (𝟙_ X.Modules) :=
   isInvertible_unit X
+
+-- Scheme modules need these specializations because typeclass search does not unfold
+-- `Scheme.Modules` to match the corresponding sheaf-of-modules instances.
+/-- An invertible scheme module is locally free. -/
+instance (priority := 100) _root_.AlgebraicGeometry.Scheme.Modules.isLocallyFree_of_isInvertible
+    {X : Scheme.{u}} (M : X.Modules) [hM : isInvertible X M] : M.IsLocallyFree :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
+  let F : _root_.SheafOfModules X.ringCatSheaf := M
+  inferInstanceAs F.IsLocallyFree
+
+/-- An invertible scheme module is finitely presented. -/
+instance (priority := 100)
+    _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_of_isInvertible
+    {X : Scheme.{u}} (M : X.Modules) [hM : isInvertible X M] : M.IsFinitePresentation :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
+  TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := M)
 
 end SheafOfModules
 
