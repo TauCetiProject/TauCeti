@@ -58,7 +58,9 @@ polynomials the degree estimate is Mathlib's `Polynomial.natDegree_wronskian_lt_
 * `Polynomial.prod_factorial_mul_hasseWronskian`: `(∏ k, k!) W(g)` is the classical Wronskian
   `derivative'.wronskian g`.
 * `Polynomial.hasseWronskian_comp_perm`: permuting the family multiplies `W(g)` by the sign.
-* `Polynomial.hasseWronskian_map`: `W(g)` commutes with maps of coefficient rings.
+* `Polynomial.hasseWronskian_map`: `W(g)` commutes with maps of coefficient rings, and
+  `Polynomial.rootMultiplicity_hasseWronskian_map`: an injective map preserves its root
+  multiplicities.
 * `Polynomial.hasseWronskian_eq_zero_of_not_linearIndependent`: over an integral domain,
   dependent families have vanishing Hasse Wronskian.
 * `Polynomial.linearIndependent_iff_hasseWronskian_ne_zero`: over a field of characteristic
@@ -144,6 +146,15 @@ theorem hasseWronskian_map (f : R →+* S) (g : Fin m → R[X]) :
   congr 1
   ext1 k l
   simp
+
+/-- An injective map of coefficient rings preserves the root multiplicities of the Hasse
+Wronskian: the Hasse Wronskian of the mapped family vanishes at `f a` to the same order as the
+Hasse Wronskian of the family at `a`. -/
+theorem rootMultiplicity_hasseWronskian_map {f : R →+* S} (hf : Function.Injective f)
+    (g : Fin m → R[X]) (a : R) :
+    (hasseWronskian fun l ↦ (g l).map f).rootMultiplicity (f a) =
+      (hasseWronskian g).rootMultiplicity a := by
+  rw [hasseWronskian_map, ← eq_rootMultiplicity_map hf]
 
 /-- Adding a multiple of one member of the family to another does not change the Hasse
 Wronskian. -/
