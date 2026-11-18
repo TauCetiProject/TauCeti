@@ -58,6 +58,10 @@ isometry of `Lᵖ` spaces, so the extension operator is an isometry of Sobolev s
   open set `V ⊆ Ω'` gives `1_Ω u` and `1_Ω ∇u` on `V`.
 * `TauCeti.W1p0.setIntegral_gradient_restrictL_extendByZeroL`: integrating a density, vanishing at
   `0`, of the gradient of that restriction over `V` is integrating it over `V ∩ Ω`.
+* `TauCeti.W1p0.value_extendByZeroL_ae`, `TauCeti.W1p0.gradient_extendByZeroL_ae`: the two
+  components of the extension are almost everywhere the indicators of those of `u`.
+* `TauCeti.W1p0.value_extendByZeroL_top_ae`, `TauCeti.W1p0.gradient_extendByZeroL_top_ae`: the
+  same identities for the whole-space extension, almost everywhere for `mu` itself.
 * `TauCeti.W1p0.hasWeakFDerivOn_indicator`: the analytic content, that the
   zero-extension of `u` is weakly differentiable on `Ω'` with the zero-extension of `∇u` as its
   weak gradient.
@@ -367,6 +371,36 @@ theorem W1p0.setIntegral_gradient_restrictL_extendByZeroL {V : Opens E} (hsub : 
   · rw [indicator_of_mem hxO, indicator_of_mem hxO]
   · rw [indicator_of_notMem hxO, indicator_of_notMem hxO, hφ]
 
+/-- The value component of the extension agrees almost everywhere on `Ω'` with the indicator of
+`Ω` applied to the value component of `u`. -/
+theorem W1p0.value_extendByZeroL_ae (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    (W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) : E → ℝ) =ᵐ[mu.restrict Omega']
+      (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) := by
+  rw [W1p0.value_extendByZeroL]
+  exact coeFn_extendByZeroLpₗᵢ _ _ _ _
+
+/-- The gradient component of the extension agrees almost everywhere on `Ω'` with the indicator
+of `Ω` applied to the weak gradient of `u`. -/
+theorem W1p0.gradient_extendByZeroL_ae (hsub : Omega ≤ Omega') (u : W1p0 mu Omega p) :
+    (W1p.gradient (W1p0.extendByZeroL hsub u : W1p mu Omega' p) : E → E) =ᵐ[mu.restrict Omega']
+      (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) := by
+  rw [W1p0.gradient_extendByZeroL]
+  exact coeFn_extendByZeroLpₗᵢ _ _ _ _
+
+/-- The value component of the whole-space extension is almost everywhere the indicator of `Ω`
+applied to the value component of `u`. -/
+theorem W1p0.value_extendByZeroL_top_ae (u : W1p0 mu Omega p) :
+    (W1p.value (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) : E → ℝ) =ᵐ[mu]
+      (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using W1p0.value_extendByZeroL_ae le_top u
+
+/-- The gradient component of the whole-space extension is almost everywhere the indicator of `Ω`
+applied to the weak gradient of `u`. -/
+theorem W1p0.gradient_extendByZeroL_top_ae (u : W1p0 mu Omega p) :
+    (W1p.gradient (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) : E → E) =ᵐ[mu]
+      (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using W1p0.gradient_extendByZeroL_ae le_top u
+
 /-- **The analytic content of the extension theorem.**  The zero-extension of `u ∈ W^{1,p}_0(Ω)`
 is weakly differentiable on the larger open set `Ω'`, with weak gradient the zero-extension of the
 weak gradient of `u`.  This is the statement that can *fail* for a general `u ∈ W^{1,p}(Ω)`: with
@@ -384,18 +418,8 @@ theorem W1p0.hasWeakFDerivOn_indicator (hsub : Omega ≤ Omega')
     ((W1p0.extendByZeroL hsub u : W1p mu Omega' p) : Sobolev1JetLp mu Omega' p)).mp
       (W1p0.extendByZeroL hsub u : W1p mu Omega' p).property
   rw [hbridge] at hmem
-  have hvalue : (W1p.value (W1p0.extendByZeroL hsub u : W1p mu Omega' p) : E → ℝ)
-      =ᵐ[mu.restrict Omega']
-      (Omega : Set E).indicator (W1p.value (u : W1p mu Omega p) : E → ℝ) := by
-    rw [W1p0.value_extendByZeroL]
-    exact coeFn_extendByZeroLpₗᵢ _ _ _ _
-  have hgradient : (W1p.gradient (W1p0.extendByZeroL hsub u : W1p mu Omega' p) : E → E)
-      =ᵐ[mu.restrict Omega']
-      (Omega : Set E).indicator (W1p.gradient (u : W1p mu Omega p) : E → E) := by
-    rw [W1p0.gradient_extendByZeroL]
-    exact coeFn_extendByZeroLpₗᵢ _ _ _ _
-  refine (hmem.congr_ae hvalue).congr_ae_deriv ?_
-  filter_upwards [hgradient] with x hx
+  refine (hmem.congr_ae (W1p0.value_extendByZeroL_ae hsub u)).congr_ae_deriv ?_
+  filter_upwards [W1p0.gradient_extendByZeroL_ae hsub u] with x hx
   rw [Sobolev1JetLp.candidateWeakFDeriv_def, ← W1p.gradient_coe, hx]
 
 /-- **The weak gradient of a `W^{1,p}_0` function on a bounded set has integral zero.** If `Ω` is
