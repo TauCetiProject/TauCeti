@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Multiplicity
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.IntervalCases
 
 /-!
 # Exact `p`-adic valuations of differences of powers
@@ -34,6 +35,11 @@ valuation of two-variable cyclotomic values and for the nonprimitive prime divis
 `emultiplicity_pow_sub_pow_of_prime`, `Nat.multiplicity_pow_sub_pow` and
 `Nat.multiplicity_pow_two_sub_pow`.
 
+## A power divisibility obstruction
+
+The divisibility `2 ^ r ∣ 3 ^ r - 1` holds precisely for `r = 0, 1, 2, 4`.
+This is the arithmetic obstruction used in the Adams–Atiyah exclusion of odd Hopf invariant.
+
 ## Lifting a residue so that `b ^ n - 1` has exact `p`-adic valuation
 
 Let `p` be a prime and `n` a natural number prime to `p`. If `b₀ ^ n ≡ 1 (mod p ^ k)`, then `b₀`
@@ -55,6 +61,7 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
   `v₂(x ^ n - y ^ n) = v₂(x - y)`.
 * `Nat.multiplicity_pow_two_sub_pow_of_even`: for odd `y < x` and even `n ≠ 0`,
   `v₂(x ^ n - y ^ n) + 1 = v₂(x ^ 2 - y ^ 2) + v₂(n)`.
+* `TauCeti.two_pow_dvd_three_pow_sub_one_iff`: `2 ^ r ∣ 3 ^ r - 1` exactly for `r = 0, 1, 2, 4`.
 * `TauCeti.exists_modEq_pow_sub_one_eq_mul`: the lift with `b ^ n - 1 = p ^ k * c`, `p ∤ c`.
 
 ## References
@@ -63,6 +70,8 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
   Math. (2) 5 (1904), 173–180, Theorem III, p. 175.
 * Ö. Avcı, *Large Zsigmondy primes*, arXiv:2011.06136v2 (2023), Lemma 2.2.
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, proof of (7.4.1).
+* J. F. Adams and M. F. Atiyah, *K-theory and the Hopf invariant*,
+  Quart. J. Math. Oxford (2) 17 (1966), 31–38.
 -/
 
 public section
@@ -120,6 +129,41 @@ theorem multiplicity_pow_two_sub_pow_of_even {x y n : ℕ} (hyx : y < x) (hx : O
 end Nat
 
 namespace TauCeti
+
+/-- The only natural exponents satisfying `2 ^ r ∣ 3 ^ r - 1` are `0, 1, 2, 4`. -/
+theorem two_pow_dvd_three_pow_sub_one_iff {r : ℕ} :
+    2 ^ r ∣ 3 ^ r - 1 ↔ r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 4 := by
+  constructor
+  · intro h
+    by_cases hr : r = 0
+    · exact Or.inl hr
+    right
+    have hpos : 0 < 3 ^ r - 1 := by
+      have := Nat.one_lt_pow hr (by decide : 1 < (3 : ℕ))
+      omega
+    have hfin : FiniteMultiplicity 2 (3 ^ r - 1) :=
+      Nat.finiteMultiplicity_iff.mpr ⟨by decide, hpos⟩
+    have hle : r ≤ multiplicity 2 (3 ^ r - 1) :=
+      hfin.pow_dvd_iff_le_multiplicity.mp h
+    have htwo : multiplicity (2 : ℕ) 2 = 1 :=
+      multiplicity_eq_of_dvd_of_not_dvd (by norm_num) (by norm_num)
+    rcases Nat.even_or_odd r with heven | hodd
+    · -- Lifting the exponent gives ν₂(3ʳ − 1) = 2 + ν₂(r).
+      have hval := Nat.multiplicity_pow_two_sub_one
+        (by decide : 1 < (3 : ℕ)) (by decide) hr heven
+      have hfour : multiplicity (2 : ℕ) 4 = 2 :=
+        multiplicity_eq_of_dvd_of_not_dvd (by norm_num) (by norm_num)
+      simp only [Nat.reduceAdd, Nat.reduceSub, htwo, hfour] at hval
+      -- The elementary bound 2ν₂(r) ≤ r now forces r ≤ 4.
+      have hbound : 2 * multiplicity 2 r ≤ r := mul_multiplicity_le
+      have hrle : r ≤ 4 := by omega
+      interval_cases r <;> simp_all
+    · -- For odd r, lifting the exponent gives valuation one.
+      have hval := Nat.multiplicity_pow_two_sub_pow_of_odd
+        (by decide : Odd (3 : ℕ)) (by decide : Odd (1 : ℕ)) hodd
+      simp only [one_pow, Nat.reduceSub, htwo] at hval
+      omega
+  · rintro (rfl | rfl | rfl | rfl) <;> norm_num
 
 variable {p : ℕ} [Fact p.Prime]
 
