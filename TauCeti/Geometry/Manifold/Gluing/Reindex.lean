@@ -58,6 +58,8 @@ theorem IsCompatible.isLocalDiffeomorph_reindexMap (h : D.IsCompatible I n) (r :
   let := (D.reindex r).chartedSpace H
   rw [reindexMap_eq_gluedMap]
   refine ((h.reindex r).isLocalDiffeomorph_gluedMap_iff h _ _).2 fun i ↦ ?_
+  -- Specialize the piece family at i, whose domain (D.reindex r).U i is D.U (r i)
+  -- by definition. The public coercion lemmas below identify the two bundled identities.
   change IsLocalDiffeomorph I I n (ContinuousMap.id (D.U (r i)))
   simpa only [ContinuousMap.coe_id, Diffeomorph.coe_refl] using
     (Diffeomorph.refl I (D.U (r i)) n).isLocalDiffeomorph

@@ -78,6 +78,8 @@ theorem reindexMap_ι (r : K → D.J) (i : K) (x : D.U (r i)) :
     D.reindexMap r ((D.reindex r).toGlueData.ι i x) = D.toGlueData.ι (r i) x := by
   rw [reindexMap_eq_gluedMap]
   refine (gluedMap_ι (D := D.reindex r) i x).trans ?_
+  -- Specialize the piece family to its value at i, using (D.reindex r).U i = D.U (r i)
+  -- by definition. Keep ContinuousMap.id bundled so its public evaluation lemma applies.
   change D.toGlueData.ι (r i) (ContinuousMap.id (D.U (r i)) x) = D.toGlueData.ι (r i) x
   rw [ContinuousMap.id_apply]
 
@@ -86,6 +88,8 @@ theorem range_reindexMap (r : K → D.J) :
     range (D.reindexMap r) = ⋃ i, range (D.toGlueData.ι (r i)) := by
   rw [reindexMap_eq_gluedMap]
   refine (range_gluedMap _ _ _).trans ?_
+  -- Expose the identity piece family over (D.reindex r).U i = D.U (r i) by definition;
+  -- the range computation then uses the public coercion lemma for ContinuousMap.id.
   change (⋃ i, D.toGlueData.ι (r i) '' range (ContinuousMap.id (D.U (r i)))) = _
   simp only [ContinuousMap.coe_id, range_id, image_univ]
 
@@ -93,8 +97,12 @@ theorem range_reindexMap (r : K → D.J) :
 theorem isOpenEmbedding_reindexMap (r : K → D.J) : IsOpenEmbedding (D.reindexMap r) := by
   rw [reindexMap_eq_gluedMap]
   refine isOpenEmbedding_gluedMap_iff.2 ⟨fun i ↦ ?_, fun i j x y hxy ↦ ?_⟩
-  · change IsOpenMap (ContinuousMap.id (D.U (r i)))
+  · -- Specialize the piece family at i and identify (D.reindex r).U i with D.U (r i)
+    -- by definition, leaving the identity-map coercion to ContinuousMap.coe_id.
+    change IsOpenMap (ContinuousMap.id (D.U (r i)))
     simpa only [ContinuousMap.coe_id] using (IsOpenMap.id : IsOpenMap (id : D.U (r i) → _))
+  -- Evaluate the piece family at i and j, whose reindexed domains are definitionally
+  -- D.U (r i) and D.U (r j); reduce the bundled identities with their public lemma below.
   change D.toGlueData.ι (r i) (ContinuousMap.id _ x) =
     D.toGlueData.ι (r j) (ContinuousMap.id _ y) at hxy
   simp only [ContinuousMap.id_apply] at hxy
