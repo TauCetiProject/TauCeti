@@ -573,8 +573,8 @@ theorem coeFn_inclusionLp_sobolevReferenceDefect_ae_eq (i : Fin 3) :
   rw [sobolevReferenceDefect, inclusionLp_toBesselPotentialSpaceCLM]
   exact SchwartzMap.coeFn_toLp _ 2 volume
 
-/-- If the coordinates of `y` are almost everywhere the real functions `y_a`, and `v` is almost
-everywhere the real function `g`, then `fieldMulOrderPreservingCLM f m hk y a v` is almost
+/-- If the coordinates of `u` are almost everywhere those of the real field `y`, and `v` is
+almost everywhere the real function `g`, then `fieldMulOrderPreservingCLM f m hk u a v` is almost
 everywhere the product `(x_m + y)_a g`. -/
 theorem coeFn_inclusionLp_fieldMulOrderPreservingCLM_ae_eq (hk : 1 ≤ k)
     {u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)}
@@ -598,8 +598,8 @@ theorem coeFn_inclusionLp_fieldMulOrderPreservingCLM_ae_eq (hk : 1 ≤ k)
   simp only [PiLp.add_apply, Pi.add_apply, Complex.ofReal_mul, Complex.ofReal_add]
   ring
 
-/-- If the coordinates of `y` are almost everywhere the real functions `y_a`, and `v` is almost
-everywhere the real function `g`, then `fieldMulCLM f m hk y a v` is almost everywhere the
+/-- If the coordinates of `u` are almost everywhere those of the real field `y`, and `v` is
+almost everywhere the real function `g`, then `fieldMulCLM f m hk u a v` is almost everywhere the
 product `(x_m + y)_a g`. -/
 theorem coeFn_inclusionLp_fieldMulCLM_ae_eq (hk : 1 ≤ k) {u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)}
     {y : ℂ → EuclideanSpace ℝ (Fin 4)}
