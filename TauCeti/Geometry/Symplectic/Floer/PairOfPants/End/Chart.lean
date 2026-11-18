@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 
 /-!
@@ -58,9 +57,7 @@ apply to all three ends.
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians, and in particular
   differentiable in the target point for `C¹` Hamiltonians.
 * `TauCeti.Floer.contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt`: a datum
-  which is `Cⁿ` on `S × M` has `Cⁿ` components in the real coordinates of `S`.
-* `TauCeti.Floer.contDiffOn_pairOfPantsPerturbation_comp_symm`: read in a chart `φ` of a manifold,
-  the components of the perturbation of `Cⁿ` Hamiltonians are `Cⁿ` on `S × φ.target`.
+  which is `C¹` on `S × M` has `C¹` components in the real coordinates of `S`.
 * `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation_domain`,
   `TauCeti.Floer.mdifferentiableAt_pairOfPantsPerturbation_target`: for `C¹` Hamiltonians on a
   manifold, the components of the perturbation are differentiable at points of `S` in the domain
@@ -260,41 +257,22 @@ section Manifold
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
-/-- A perturbation one-form `K` on `ℂ` which is `Cⁿ` at every point of `S × M` has components
-`(z, x) ↦ K(z, x)(v)`, in the real coordinates of `S`, that are `Cⁿ` jointly on `S × M`. -/
+/-- A perturbation one-form `K` on `ℂ` which is `C¹` at every point of `S × M` has components
+`(z, x) ↦ K(z, x)(v)`, in the real coordinates of `S`, that are `C¹` jointly on `S × M`. -/
 theorem contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
-    {n : WithTop ℕ∞} {K : ℂ → M → ℂ →L[ℝ] ℝ}
-    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+    {K : ℂ → M → ℂ →L[ℝ] ℝ}
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
       (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x)) (v : ℂ) :
-    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
       (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v)
       (thricePuncturedSphereReal ×ˢ univ) := by
   rintro ⟨z, x⟩ ⟨hz, -⟩
-  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) n
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
       (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
     (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
       contMDiffAt_snd
   exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
     contMDiffAt_const).contMDiffWithinAt
-
-/-- Read in a chart `φ` from `M` onto an open subset of a normed space `V`, the components of the
-pair-of-pants perturbation of period-one `Cⁿ` Hamiltonians on `M` are `Cⁿ` jointly in the domain
-point of `S`, in real coordinates, and the chart coordinate. -/
-theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞}
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {H : Puncture → ℝ → M → ℝ}
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (v : ℂ) :
-    ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
-      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm p.1) (φ.symm p.2) v)
-      (thricePuncturedSphereReal ×ˢ φ.target) := by
-  have hg : ContMDiffOn 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℝ × ℝ).prod I) n
-      (fun p : (ℝ × ℝ) × V ↦ (p.1, φ.symm p.2)) (thricePuncturedSphereReal ×ˢ φ.target) :=
-    contDiff_fst.contMDiff.contMDiffOn.prodMk
-      ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
-        contDiff_snd.contMDiff.contMDiffOn fun _ hp ↦ hp.2)
-  have hK := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
-    (fun w x ↦ contMDiffAt_pairOfPantsPerturbation hH hHs w x) v
-  exact contMDiffOn_iff_contDiffOn.1 (hK.comp hg fun _ hp ↦ ⟨hp.1, mem_univ _⟩)
 
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`, for `C¹` Hamiltonians on a manifold. -/

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Energy
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Manifold
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -480,8 +481,10 @@ private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pa
   hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ
     (W := W ∩ thricePuncturedSphereReal ×ˢ φ.target) hφ hJJ
     (hW.inter (isOpen_thricePuncturedSphereReal.prod φ.open_target))
-    ((contDiffOn_pairOfPantsPerturbation_comp_symm φ hH hHs 1).mono inter_subset_right)
-    ((contDiffOn_pairOfPantsPerturbation_comp_symm φ hH hHs Complex.I).mono inter_subset_right)
+    ((contDiffOn_pairOfPantsPerturbation_comp_symm hH hHs φ (WithTop.coe_le_coe.2 le_top)
+      1).mono inter_subset_right)
+    ((contDiffOn_pairOfPantsPerturbation_comp_symm hH hHs φ (WithTop.coe_le_coe.2 le_top)
+      Complex.I).mono inter_subset_right)
     (hJφ.mono inter_subset_left) hD hK hKφ
     (fun p hp ↦ ⟨hDKW hp, hDS hp.1, by
       obtain ⟨x, hx, hxp⟩ := hp.2
