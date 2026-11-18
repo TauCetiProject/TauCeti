@@ -404,4 +404,13 @@ lemma cubicalHurewiczHom_apply (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) 
     cubicalHurewiczHom R n a = cubicalHurewicz R n a.toMul :=
   (rfl)
 
+/-- The cubical Hurewicz homomorphism sends the class of a generalized loop to the cubical
+Hurewicz class of that loop. -/
+theorem cubicalHurewiczHom_ofMul_mk (p : Ω^ (Fin (n + 1)) X x) :
+    cubicalHurewiczHom R n (Additive.ofMul (α := HomotopyGroup (Fin (n + 1)) X x) ⟦p⟧) =
+      GenLoop.cubicalHurewicz R p :=
+  -- `toMul_ofMul` cannot be used by `rw` here: `⟦p⟧` is elaborated at the quotient type
+  -- underlying `HomotopyGroup`, so the step is the definitional equation `toMul (ofMul a) = a`.
+  (cubicalHurewiczHom_apply R n _).trans (cubicalHurewicz_mk R n p)
+
 end HomotopyGroup

@@ -332,8 +332,7 @@ theorem cubicalFreeLoopTorusClassHom_mk {γ : C(Circle, Q)} (Λ : Ω^ (Fin 1) C(
   -- By definition, the torus class is the torus map applied to the cubical Hurewicz class.
   calc cubicalFreeLoopTorusClassHom Q R γ (Additive.ofMul ⟦Λ⟧)
       = freeLoopTorusHomology Q R 1 (GenLoop.cubicalHurewicz R Λ) :=
-        congrArg (freeLoopTorusHomology Q R 1) ((HomotopyGroup.cubicalHurewiczHom_apply R 0 _).trans
-          (HomotopyGroup.cubicalHurewicz_mk R 0 Λ))
+        congrArg (freeLoopTorusHomology Q R 1) (HomotopyGroup.cubicalHurewiczHom_ofMul_mk R 0 Λ)
     _ = freeLoopTorusHomology Q R 1 (K.homologyπ 1 w) := by
       rw [GenLoop.homologyπ_eq_cubicalHurewicz R Λ hw]
     _ = _ := freeLoopTorusHomology_homologyπ R 1 w z (by
@@ -434,8 +433,7 @@ private theorem cubicalFreeLoopTorusClassHom_map_val_mem_range {x : Q}
       (HomotopyGroup.cubicalHurewiczHom R 1 : Additive (HomotopyGroup (Fin 2) Q x) →+ _).range := by
   rw [HomotopyGroup.map_mk, cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz R _ fun t ↦ by
     rw [GenLoop.map_apply]; exact (β t).2]
-  exact ⟨_, (HomotopyGroup.cubicalHurewiczHom_apply R 1 _).trans
-    (HomotopyGroup.cubicalHurewicz_mk R 1 _)⟩
+  exact ⟨_, HomotopyGroup.cubicalHurewiczHom_ofMul_mk R 1 _⟩
 
 /-- The torus class of a loop of constant loops vanishes. -/
 private theorem cubicalFreeLoopTorusClassHom_map_const' {x : Q}
@@ -467,9 +465,9 @@ theorem range_cubicalFreeLoopTorusClassHom_const (x : Q) :
       (leftInverse_mappingSpaceEval_const 1 x) a.toMul with hh
     set s := HomotopyGroup.map ContinuousMap.const' hc h with hs
     have hes : HomotopyGroup.mapHom (mappingSpaceEval (B := Circle) (X := Q) 1)
-        (leftInverse_mappingSpaceEval_const 1 x) s = h := by
-      rw [HomotopyGroup.mapHom_apply]
-      exact HomotopyGroup.map_map_of_comp_eq_id _ _ hc _ (mappingSpaceEval_comp_const' 1) _
+        (leftInverse_mappingSpaceEval_const 1 x) s = h :=
+      DFunLike.congr_fun (mapHom_mappingSpaceEval_comp_mapHom_const (Q := Q) (B := Circle)
+        (N := Fin 1) 1 x) h
     have hker : a.toMul * s⁻¹ ∈ (freeLoopHomotopyGroupHom x 0).range := by
       rw [range_freeLoopHomotopyGroupHom, MonoidHom.mem_ker, _root_.map_mul, _root_.map_inv, hes,
         ← hh, mul_inv_cancel]
@@ -485,8 +483,7 @@ theorem range_cubicalFreeLoopTorusClassHom_const (x : Q) :
     induction a using Quotient.inductionOn with | h p => ?_
     obtain ⟨Λ, hΛ, rfl⟩ := exists_freeLoopTorus_eq p
     exact ⟨_, (cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz R Λ hΛ).trans
-      ((HomotopyGroup.cubicalHurewiczHom_apply R 1 _).trans
-        (HomotopyGroup.cubicalHurewicz_mk R 1 _)).symm⟩
+      (HomotopyGroup.cubicalHurewiczHom_ofMul_mk R 1 _).symm⟩
 
 end FundamentalGroup
 
