@@ -255,15 +255,14 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
   have h1 : symmetrize ∘ₗ L ∘ₗ (sp l K).incl.toLinearMap =
       (2 : K) • (ad K (sp l K) X ∘ₗ ad K (sp l K) Y) := by
     ext1 W
-    have hW : jConj (L W) = L W := by
-      rw [jConj_apply, ← mem_sp_iff_J_mul_transpose_mul_J_eq]
-      exact (sp l K).lie_mem X.2 ((sp l K).lie_mem Y.2 W.2)
+    have hW : jConj (L W) = L W :=
+      (mem_sp_iff_jConj_eq _).mp ((sp l K).lie_mem X.2 ((sp l K).lie_mem Y.2 W.2))
     apply Subtype.ext
     simp only [LinearMap.comp_apply, coe_symmetrize_apply, LinearMap.smul_apply,
       LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, hW]
     simp [hL, two_smul]
   have h2 : (sp l K).incl.toLinearMap ∘ₗ symmetrize = LinearMap.id + jConj := by
-    ext1 Z; simp [coe_symmetrize_apply]
+    ext1 Z; simp
   -- Cycling the trace moves the computation to the matrices.
   have htrace : LinearMap.trace K _ (symmetrize ∘ₗ L ∘ₗ (sp l K).incl.toLinearMap) =
       LinearMap.trace K _ L + LinearMap.trace K _ (jConj ∘ₗ L) := by

@@ -38,8 +38,9 @@ matrix past `J`.
 * `LieAlgebra.Symplectic.J_conj_eq_neg_transpose`: on symplectic Lie matrices, conjugation by `J`
   is negative transpose.
 * `LieAlgebra.Symplectic.jConj` and `LieAlgebra.Symplectic.symmetrize`: the linear involution
-  `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`, and the symmetrization
-  `Z ↦ Z + J Zᵀ J` into `sp l R`.
+  `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`
+  (`LieAlgebra.Symplectic.mem_sp_iff_jConj_eq`), and the symmetrization `Z ↦ Z + J Zᵀ J`
+  into `sp l R`.
 * `LieAlgebra.Symplectic.lie_symmetrize_symmetrize`: the bracket of two symmetrizations is a
   symmetrization.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
@@ -149,6 +150,10 @@ theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z) = Z := 
     neg_neg, ← mul_assoc]
   simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
 
+/-- The fixed points of `Z ↦ J Zᵀ J` are exactly the symplectic Lie algebra. -/
+theorem mem_sp_iff_jConj_eq (A : Matrix (l ⊕ l) (l ⊕ l) R) : A ∈ sp l R ↔ jConj A = A := by
+  rw [jConj_apply, mem_sp_iff_J_mul_transpose_mul_J_eq]
+
 /-- `Z ↦ J Zᵀ J` reverses products up to sign. -/
 theorem jConj_mul (A B : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (A * B) = -(jConj B * jConj A) := by
   simp only [jConj_apply]
@@ -161,10 +166,11 @@ theorem jConj_mul (A B : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (A * B) = -(jConj
 `sp l R`. -/
 noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
   toFun Z := ⟨Z + jConj Z, by
-    rw [mem_sp_iff_J_mul_transpose_mul_J_eq, ← jConj_apply, map_add, jConj_jConj, add_comm]⟩
+    rw [mem_sp_iff_jConj_eq, map_add, jConj_jConj, add_comm]⟩
   map_add' Z W := by ext1; simp only [map_add, AddMemClass.coe_add]; abel
   map_smul' c Z := by ext1; simp
 
+@[simp]
 theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
     (symmetrize Z : Matrix (l ⊕ l) (l ⊕ l) R) = Z + jConj Z :=
   (rfl)

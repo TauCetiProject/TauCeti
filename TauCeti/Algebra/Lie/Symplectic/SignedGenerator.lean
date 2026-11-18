@@ -145,7 +145,7 @@ private noncomputable def symmetrizeJ [Fintype l] :
 
 private theorem symmetrizeJ_apply [Fintype l] (X : Matrix (l ⊕ l) (l ⊕ l) R) :
     symmetrizeJ X = X + J l R * Xᵀ * J l R := by
-  simp [symmetrizeJ, coe_symmetrize_apply, jConj_apply]
+  simp [symmetrizeJ, jConj_apply]
 
 private theorem symmetrizeJ_single [Fintype l] (a b : l ⊕ l) :
     symmetrizeJ (single a b (1 : R)) = spGenerator R a b := by
