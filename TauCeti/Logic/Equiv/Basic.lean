@@ -23,7 +23,8 @@ from `j`, since its value at `j` is its value at `i`. The equivalence
 functions identifying two given points, as in collision bounds for uniform sampling.
 
 The file also records that the transposition of two points of a linear order is the transposition
-of their minimum and maximum (`Equiv.swap_min_max`).
+of their minimum and maximum (`Equiv.swap_min_max`), and that an equivalence and an injective map
+intertwining two functions transport preimage witnesses (`Equiv.exists_eq_and_iff_of_injective`).
 -/
 
 public section
@@ -97,5 +98,15 @@ theorem swap_min_max {α : Type*} [LinearOrder α] (a b : α) :
   rcases le_total a b with h | h
   · rw [min_eq_left h, max_eq_right h]
   · rw [min_eq_right h, max_eq_left h, swap_comm]
+
+/-- Transporting a preimage witness along an equivalence `eA : α ≃ α₀` and an injective map
+`eB : β → β₀` that intertwine `F : α → β` with `F₀ : α₀ → β₀`: a preimage of `b` under `F`
+satisfying `P (eA a)` exists if and only if a preimage of `eB b` under `F₀` satisfying `P a₀`
+exists. -/
+theorem exists_eq_and_iff_of_injective {α β α₀ β₀ : Sort*} {F : α → β} {F₀ : α₀ → β₀}
+    (eA : α ≃ α₀) {eB : β → β₀} (heB : Function.Injective eB)
+    (hF : ∀ a, eB (F a) = F₀ (eA a)) {P : α₀ → Prop} {b : β} :
+    (∃ a, F a = b ∧ P (eA a)) ↔ ∃ a₀, F₀ a₀ = eB b ∧ P a₀ :=
+  eA.exists_congr fun a ↦ by rw [← heB.eq_iff, hF]
 
 end Equiv
