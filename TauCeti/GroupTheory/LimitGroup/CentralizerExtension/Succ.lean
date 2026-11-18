@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
+public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Centralizer
 
 /-!
 # Splitting off the last letter of an extension of a centralizer
@@ -41,67 +41,6 @@ open Subgroup
 namespace TauCeti.LimitGroup.CentralizerExt
 
 variable {G : Type*} [Group G] {u : G} {n : ℕ}
-
-/-- If `k * a₁ * ⋯ * aᵣ` commutes with `u` in `G(u, ℤⁿ)`, for `k ∈ G` and a reduced word
-`a₁ * ⋯ * aᵣ` starting in the factor `C_G(u) × ℤⁿ`, then `k` centralizes `u`. -/
-private theorem mem_centralizer_of_commute_of_mul_prod
-    (hu : ∀ g : G, g⁻¹ * u * g ∈ centralizer {u} → g ∈ centralizer {u})
-    {L : List (Σ b, CentralizerExtFactor u n b)} (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
-    (hred : ∀ l ∈ L, l.2 ∉ (centralizerExtMap u n l.1).range) (hhead : ∀ l ∈ L.head?, l.1 = true)
-    {k : G} (h : Commute (of k *
-      (L.map fun l => Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod) (of u)) :
-    k ∈ centralizer {u} := by
-  by_contra hk
-  have huu : u ∈ centralizer {u} := mem_centralizer_singleton_iff.2 rfl
-  refine Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_base
-    (centralizerExtMap_injective u n) hc hred (i := false) (g := k⁻¹ * u * k) ?_
-    (fun l hl => by simp [hhead l hl]) ⟨⟨u, huu⟩, ?_⟩
-  · rintro ⟨c, hcu⟩
-    rw [centralizerExtMap_false] at hcu
-    exact hk (hu k (hcu ▸ c.2))
-  · rw [← Monoid.PushoutI.of_apply_eq_base _ false, ← of_def, centralizerExtMap_false]
-    simpa [mul_assoc] using h.inv_mul_cancel.symm
-
-/-- A reduced word `a₁ * ⋯ * aᵣ` of `G(u, ℤⁿ)` that starts in the factor `C_G(u) × ℤⁿ` and
-commutes with `u` lies in that factor. -/
-private theorem prod_mem_range_ofProd
-    (hu : ∀ g : G, g⁻¹ * u * g ∈ centralizer {u} → g ∈ centralizer {u})
-    {L : List (Σ b, CentralizerExtFactor u n b)} (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
-    (hred : ∀ l ∈ L, l.2 ∉ (centralizerExtMap u n l.1).range) (hhead : ∀ l ∈ L.head?, l.1 = true)
-    (h : Commute (L.map fun l => Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod
-      (of u)) :
-    (L.map fun l => Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod ∈
-      (ofProd : _ →* CentralizerExt u n).range := by
-  rcases L with _ | ⟨⟨_ | _, p⟩, L⟩
-  · exact one_mem _
-  · exact absurd (hhead _ rfl) (by simp)
-  rcases L with _ | ⟨⟨_ | _, a⟩, L⟩
-  · exact ⟨p, by simp [ofProd_def]⟩
-  · -- The word continues with `a ∈ G ∖ C_G(u)`; as `p` commutes with `u`, so does the rest.
-    simp only [List.map_cons, List.prod_cons, ← ofProd_def, ← of_def] at h
-    have ha := mem_centralizer_of_commute_of_mul_prod hu hc.tail.tail
-      (fun l hl => hred l (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hl)))
-      (fun l hl => by simpa using ((List.isChain_cons.1 hc.tail).1 l hl).symm) (k := a)
-      (by simpa using (commute_ofProd_of p).inv_left.mul_left h)
-    exact absurd ⟨⟨a, ha⟩, by simp⟩
-      (hred _ (List.mem_cons_of_mem _ List.mem_cons_self))
-  · exact absurd (List.isChain_cons_cons.1 hc).1 (by simp)
-
-/-- If every conjugate of `u` commuting with `u` is `u`, the centralizer of `u` in `G(u, ℤⁿ)` lies
-in the factor `C_G(u) × ℤⁿ`. -/
-private theorem centralizer_of_le_range_ofProd
-    (hu : ∀ g : G, g⁻¹ * u * g ∈ centralizer {u} → g ∈ centralizer {u}) :
-    centralizer {(of u : CentralizerExt u n)} ≤ (ofProd : _ →* CentralizerExt u n).range := by
-  intro x hx
-  obtain ⟨k, L, hc, hred, hhead, rfl⟩ := exists_eq_of_mul_list_prod x
-  have hx' : Commute (of k * (L.map fun l =>
-      Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod) (of u) :=
-    (commute_iff_eq _ _).2 (mem_centralizer_singleton_iff.1 hx)
-  have hk := mem_centralizer_of_commute_of_mul_prod hu hc hred hhead hx'
-  have hku : Commute (of k : CentralizerExt u n) (of u) :=
-    ((commute_iff_eq _ _).2 (mem_centralizer_singleton_iff.1 hk)).map of
-  exact mul_mem ⟨(⟨k, hk⟩, 1), ofProd_inl _⟩
-    (prod_mem_range_ofProd hu hc hred hhead (by simpa using hku.inv_left.mul_left hx'))
 
 /-- The letters `tᵢ` lie in the centralizer of `u` in `G(u, ℤⁿ)`. -/
 private theorem t_mem_centralizer (i : Fin n) : (t i : CentralizerExt u n) ∈ centralizer {of u} :=
@@ -142,7 +81,7 @@ private def castSuccHom : CentralizerExt u n →* CentralizerExt u (n + 1) :=
 private def ofSucc (hu : ∀ g : G, g⁻¹ * u * g ∈ centralizer {u} → g ∈ centralizer {u}) :
     CentralizerExt (of u : CentralizerExt u n) 1 →* CentralizerExt u (n + 1) :=
   lift castSuccHom (fun _ => t (Fin.last n)) (fun _ _ => .refl _) fun x hx _ => by
-    obtain ⟨p, rfl⟩ := centralizer_of_le_range_ofProd hu hx
+    obtain ⟨p, rfl⟩ := (centralizer_of_eq_range_ofProd hu).le hx
     rw [castSuccHom, lift_ofProd]
     exact (commute_of_t p.1.2 _).mul_left
       (commute_zpowersPiHom (fun _ => commute_t_t _ _) p.2).symm
