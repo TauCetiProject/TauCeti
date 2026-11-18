@@ -247,10 +247,12 @@ theorem integral_exp_neg_mul_cosh_mul_cosh_Ioi {ζ : ℝ} (hζ : 0 < ζ) (p : �
     simp only [hF, ofReal_neg, Real.cosh_neg, mul_neg, neg_mul, neg_neg]
     rw [mul_left_comm, two_cosh]
     ring
+  -- the two scale factors cancel; the product is formed in `ℝ`, where both factors are
+  -- nonnegative, so that `mul_cpow_ofReal_nonneg` merges the two powers
+  have hcancel : ζ / 2 * (2 / ζ) = 1 := by field_simp
   have hunit : (ζ / 2 : ℂ) ^ (-p) * ((2 / ζ : ℝ) : ℂ) ^ (-p) = 1 := by
-    rw [show (ζ / 2 : ℂ) = ((ζ / 2 : ℝ) : ℂ) by push_cast; rfl,
-      ← mul_cpow_ofReal_nonneg (by positivity) hk.le, ← ofReal_mul,
-      show ζ / 2 * (2 / ζ) = 1 by field_simp, ofReal_one, one_cpow]
+    rw [← ofReal_ofNat 2, ← ofReal_div, ← mul_cpow_ofReal_nonneg (by positivity) hk.le,
+      ← ofReal_mul, hcancel, ofReal_one, one_cpow]
   rw [setIntegral_congr_fun measurableSet_Ioi (integrand_eq_comp_mul_left hζ p), ← mellin,
     mellin_comp_mul_left (fun x : ℝ ↦ ((Real.exp (-(ζ / 2 * (x + x⁻¹))) : ℝ) : ℂ)) p hk,
     hmellin, hsplit, smul_eq_mul]
