@@ -352,10 +352,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ex
     have habs := hω.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le hH
       (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
       ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
-    refine (setIntegral_mono_set (hint k) ((ae_restrict_mem
-      isOpen_thricePuncturedSphereReal.measurableSet).mono fun z hz ↦
-        floerEnergyDensity_nonneg hω (hJt _ (hcC k) z hz _) (hfl k z hz))
-      (Eventually.of_forall hΩS)).trans ?_
+    refine (hω.setIntegral_floerEnergyDensity_mono_set hΩS
+      isOpen_thricePuncturedSphereReal.measurableSet (hint k) (fun z hz ↦ hJt _ (hcC k) z hz _)
+      (hfl k)).trans ?_
     linarith [(abs_sub_le_iff.1 habs).1, htop k]
   exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
     (fun k ↦ (hint k).mono_set hΩS) hE

@@ -106,6 +106,9 @@ form they recover the vector-space definitions.
   `SymplecticForm.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`.
 * `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity`: over a compact set where `u`
   and `K` are `C¹`, the energy density is integrable whenever the curvature is.
+* `SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_mono_set`: on a solution for
+  tamed structures the energy over a region is at most the energy over any larger region; the
+  vector-space case is `SymplecticForm.setIntegral_floerEnergyDensity_mono_set`.
 * `SmoothTwoForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: where the
   perturbation data vanish the energy is the area, so energy minus area plus integrated curvature
   does not change when a region is shrunk to the part where the data live.
@@ -1146,6 +1149,23 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E
   rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt
     one_ne_zero) (hmd hKs) (hmd hKt)]
   rfl
+
+/-- **Monotonicity of the energy in the domain, for a manifold target.** If `u` solves the Floer
+equation on a measurable set `t` for structures `J z` on the tangent fibers at `u z` tamed by `ω`,
+and the Floer energy density is integrable on `t`, then the energy over every subset `s` of `t` is
+at most the energy over `t`. The vector-space case is
+`SymplecticForm.setIntegral_floerEnergyDensity_mono_set`. -/
+theorem IsNondegenerate.setIntegral_floerEnergyDensity_mono_set (hω : ω.IsNondegenerate)
+    {s t : Set (ℝ × ℝ)} (hst : s ⊆ t) (ht : MeasurableSet t)
+    (hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) t)
+    {J : (z : ℝ × ℝ) → AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ t, (hω.symplecticFormAt (u z)).Tames (J z))
+    (h : ∀ z ∈ t, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
+    ∫ z in s, ω.floerEnergyDensity Ks Kt u z ≤ ∫ z in t, ω.floerEnergyDensity Ks Kt u z :=
+  setIntegral_mono_set hint
+    (ae_restrict_of_forall_mem ht fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (h z hz))
+    (Filter.Eventually.of_forall hst)
 
 /-- **Changing the perturbation inside a compact region, for a manifold target.** Let `u` and two
 perturbation data `K = K_s ds + K_t dt` and `K' = K'_s ds + K'_t dt` be `C¹` over an open set `U`
