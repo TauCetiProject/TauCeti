@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.TwoVariable
+public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
 # Gaussian lattice sums
@@ -24,6 +26,9 @@ centre `c`.
 ## Main declarations
 
 * `Real.gaussianLatticeSum` — the Gaussian lattice sum `Z(c, s)`.
+* `Real.hasSumUniformlyOn_gaussianLatticeSum` and
+  `Real.hasSumLocallyUniformly_gaussianLatticeSum` — uniform convergence of the direct series on
+  bounded sets of centres, and locally uniform convergence.
 * `Real.hasSum_gaussianLatticeSum` and `Real.gaussianLatticeSum_pos` — convergence and positivity
   for `s ≠ 0`; `Real.gaussianLatticeSum_zero_right` records the totalized value `0` at `s = 0`.
 * `Real.summable_pow_mul_exp_neg_sub_sq` — convergence of the lattice sums with polynomial weights;
@@ -37,9 +42,12 @@ centre `c`.
   through Mathlib's two-variable Jacobi theta function `jacobiTheta₂`.
 * `Real.hasDerivAt_tsum_pow_mul_exp_neg_sub_sq` and `Real.hasDerivAt_gaussianLatticeSum` —
   termwise differentiation in the centre of the lattice sums with weight `n ^ k`.
-* `Real.contDiff_gaussianLatticeSum`, `Real.continuousAt_gaussianLatticeSum` and
-  `Real.measurable_gaussianLatticeSum` — analyticity in the centre, joint continuity on `s ≠ 0`,
-  and joint measurability.
+* `Real.contDiff_gaussianLatticeSum` — analyticity in the centre, including width zero.
+* `Real.contDiffAt_gaussianLatticeSum` and `Real.contDiffOn_gaussianLatticeSum` — joint real
+  analyticity in the centre and width on `s ≠ 0`, so mixed parameter derivatives exist to every
+  order.
+* `Real.continuousAt_gaussianLatticeSum` and `Real.measurable_gaussianLatticeSum` — joint
+  continuity on `s ≠ 0` and joint measurability.
 
 ## References
 
@@ -94,6 +102,54 @@ theorem summable_pow_mul_exp_neg_sub_sq (k : ℕ) (c : ℝ) {s : ℝ} (hs : s �
 theorem hasSum_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
     HasSum (fun n : ℤ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2))) (gaussianLatticeSum c s) := by
   simpa [gaussianLatticeSum_def] using (summable_pow_mul_exp_neg_sub_sq 0 c hs).hasSum
+
+/-- A wider Gaussian bounds lattice terms uniformly over centres within distance `R` of `c`. -/
+private theorem exp_neg_sub_sq_le (n : ℤ) {c s x R : ℝ} (hs : s ≠ 0)
+    (hx : |x - c| ≤ R) :
+    rexp (-((n : ℝ) - x) ^ 2 / (2 * s ^ 2)) ≤
+      rexp (R ^ 2 / (2 * s ^ 2)) * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)) := by
+  have hs2 : 0 < s ^ 2 := sq_pos_of_ne_zero hs
+  have hx2 : (x - c) ^ 2 ≤ R ^ 2 := by
+    simpa only [sq_abs] using
+      (sq_le_sq₀ (abs_nonneg (x - c)) ((abs_nonneg _).trans hx)).mpr hx
+  have hquad : ((n : ℝ) - c) ^ 2 ≤ 2 * ((n : ℝ) - x) ^ 2 + 2 * R ^ 2 := by
+    nlinarith [sq_nonneg ((n : ℝ) - 2 * x + c)]
+  rw [← exp_add, exp_le_exp]
+  calc
+    -((n : ℝ) - x) ^ 2 / (2 * s ^ 2) =
+        (-2 * ((n : ℝ) - x) ^ 2) / (4 * s ^ 2) := by ring
+    _ ≤ (2 * R ^ 2 - ((n : ℝ) - c) ^ 2) / (4 * s ^ 2) :=
+      div_le_div_of_nonneg_right (by linarith) (mul_pos four_pos hs2).le
+    _ = _ := by ring
+
+/-- The direct Gaussian lattice series converges uniformly in the centre on every bounded set,
+for each nonzero width. -/
+theorem hasSumUniformlyOn_gaussianLatticeSum {s : ℝ} (hs : s ≠ 0)
+    {S : Set ℝ} (hS : Bornology.IsBounded S) :
+    HasSumUniformlyOn
+      (fun n : ℤ => fun c : ℝ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))
+      (fun c => gaussianLatticeSum c s) S := by
+  obtain ⟨R, _, hR⟩ := hS.exists_pos_norm_le
+  have hs2 : 0 < s ^ 2 := sq_pos_of_ne_zero hs
+  -- A wider Gaussian supplies a summable majorant for every centre in S.
+  have hu : Summable fun n : ℤ =>
+      rexp (R ^ 2 / (2 * s ^ 2)) * rexp (-(n : ℝ) ^ 2 / (4 * s ^ 2)) := by
+    simpa using (summable_abs_pow_mul_exp_neg_sub_sq_div 0 0
+      (mul_pos four_pos hs2)).mul_left (rexp (R ^ 2 / (2 * s ^ 2)))
+  simp_rw [gaussianLatticeSum_def]
+  refine .of_norm_le_summable hu fun n c hc => ?_
+  rw [norm_of_nonneg (exp_nonneg _)]
+  simpa only [sub_zero] using
+    exp_neg_sub_sq_le n hs (c := 0) (by simpa only [sub_zero, norm_eq_abs] using hR c hc)
+
+/-- The direct Gaussian lattice series converges locally uniformly in the centre for every
+nonzero width. In particular, its partial sums converge uniformly on compact intervals. -/
+theorem hasSumLocallyUniformly_gaussianLatticeSum {s : ℝ} (hs : s ≠ 0) :
+    HasSumLocallyUniformly
+      (fun n : ℤ => fun c : ℝ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))
+      (fun c => gaussianLatticeSum c s) := by
+  exact hasSumLocallyUniformly_of_forall_compact fun _ hK =>
+    hasSumUniformlyOn_gaussianLatticeSum hs hK.isBounded
 
 /-- At width zero every term of the Gaussian lattice series is `1`, so the totalized sum is `0`. -/
 @[simp]
@@ -190,7 +246,6 @@ private theorem norm_deriv_pow_mul_exp_neg_sub_sq_le (k : ℕ) (n : ℤ) {c s x 
       (|(n : ℝ)| ^ (k + 1) * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)) +
         (|c| + 1) * (|(n : ℝ)| ^ k * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)))) *
         (rexp (1 / (2 * s ^ 2)) / s ^ 2) := by
-  have hs2 : 0 < s ^ 2 := sq_pos_of_ne_zero hs
   have hxc : |x - c| < 1 := abs_sub_lt_iff.2 ⟨by linarith [hx.2], by linarith [hx.1]⟩
   have hnx : |(n : ℝ) - x| ≤ |(n : ℝ)| + (|c| + 1) := by
     calc |(n : ℝ) - x| ≤ |(n : ℝ)| + |x| := abs_sub _ _
@@ -199,11 +254,7 @@ private theorem norm_deriv_pow_mul_exp_neg_sub_sq_le (k : ℕ) (n : ℤ) {c s x 
         linarith [abs_sub_abs_le_abs_sub x c]
   have hexp : rexp (-((n : ℝ) - x) ^ 2 / (2 * s ^ 2)) ≤
       rexp (1 / (2 * s ^ 2)) * rexp (-((n : ℝ) - c) ^ 2 / (4 * s ^ 2)) := by
-    rw [← exp_add, exp_le_exp, div_add_div _ _ (by positivity) (by positivity),
-      div_le_div_iff₀ (by positivity) (by positivity)]
-    have : ((n : ℝ) - c) ^ 2 ≤ 2 * ((n : ℝ) - x) ^ 2 + 2 := by
-      nlinarith [abs_lt.1 hxc, sq_nonneg ((n : ℝ) - x + (x - c)), sq_nonneg ((n : ℝ) - x - (x - c))]
-    nlinarith [mul_pos hs2 hs2]
+    simpa only [one_pow] using exp_neg_sub_sq_le n hs hxc.le
   simp only [norm_mul, norm_div, norm_pow, norm_eq_abs, sq_abs, abs_exp]
   calc |(n : ℝ)| ^ k * (|(n : ℝ) - x| / s ^ 2 * rexp (-((n : ℝ) - x) ^ 2 / (2 * s ^ 2)))
       ≤ |(n : ℝ)| ^ k * ((|(n : ℝ)| + (|c| + 1)) / s ^ 2 *
@@ -258,26 +309,45 @@ theorem contDiff_gaussianLatticeSum (s : ℝ) {n : WithTop ℕ∞} :
   exact (contDiff_exp.comp ((contDiff_id.pow 2).neg.div_const _)).mul
     (reCLM.contDiff.comp (hθ.comp hz))
 
+/-- The Gaussian lattice sum is jointly smooth in its centre and width at every nonzero width.
+The order may also be `ω`, giving joint real analyticity. -/
+theorem contDiffAt_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) {n : WithTop ℕ∞} :
+    ContDiffAt ℝ n (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) (c, s) := by
+  simp_rw [gaussianLatticeSum_eq_jacobiTheta₂]
+  have hopen : IsOpen {q : ℂ × ℂ | 0 < q.2.im} :=
+    isOpen_lt continuous_const (continuous_im.comp continuous_snd)
+  have hθ : ContDiffAt ℝ n (fun q : ℂ × ℂ => jacobiTheta₂ q.1 q.2)
+      (-I * c / (2 * π * s ^ 2), I / (2 * π * s ^ 2)) := by
+    have hd : DifferentiableOn ℂ (fun q : ℂ × ℂ => jacobiTheta₂ q.1 q.2)
+        {q | 0 < q.2.im} := fun q hq =>
+      (hasFDerivAt_jacobiTheta₂ q.1 hq).differentiableAt.differentiableWithinAt
+    exact ((hd.contDiffOn_of_finiteDimensional hopen).contDiffAt
+      (hopen.mem_nhds (im_I_div_pos hs))).restrict_scalars ℝ
+  have hden : ((2 * π * s ^ 2 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (by positivity)
+  have hd : ContDiffAt ℝ n (fun p : ℝ × ℝ => ((2 * π * p.2 ^ 2 : ℝ) : ℂ)) (c, s) := by
+    exact ofRealCLM.contDiff.contDiffAt.comp (c, s)
+      (contDiffAt_const.mul (contDiffAt_snd.pow 2))
+  have hφ : ContDiffAt ℝ n (fun p : ℝ × ℝ =>
+      ((-I * p.1 / (2 * π * p.2 ^ 2), I / (2 * π * p.2 ^ 2)) : ℂ × ℂ)) (c, s) := by
+    push_cast at hd hden
+    simp only [div_eq_mul_inv]
+    exact ((contDiffAt_const.mul (ofRealCLM.contDiff.contDiffAt.comp (c, s) contDiffAt_fst)).mul
+      (hd.inv hden)).prodMk (contDiffAt_const.mul (hd.inv hden))
+  have hθφ := hθ.comp (c, s) hφ
+  exact (((contDiffAt_fst.pow 2).neg.div (contDiffAt_const.mul (contDiffAt_snd.pow 2))
+    (by positivity)).exp).mul (reCLM.contDiff.contDiffAt.comp (c, s) hθφ)
+
+/-- The Gaussian lattice sum is jointly smooth and real analytic on the open set of
+nonzero widths. -/
+theorem contDiffOn_gaussianLatticeSum {n : WithTop ℕ∞} :
+    ContDiffOn ℝ n (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) {p | p.2 ≠ 0} :=
+  fun p hp => (contDiffAt_gaussianLatticeSum p.1 hp).contDiffWithinAt
+
 /-- The Gaussian lattice sum is jointly continuous in the centre and the width at every nonzero
 width. -/
 theorem continuousAt_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
-    ContinuousAt (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) (c, s) := by
-  simp_rw [gaussianLatticeSum_eq_jacobiTheta₂]
-  have hden : ((2 * π * s ^ 2 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (by positivity)
-  have hd : ContinuousAt (fun p : ℝ × ℝ => ((2 * π * p.2 ^ 2 : ℝ) : ℂ)) (c, s) := by fun_prop
-  have hφ : ContinuousAt (fun p : ℝ × ℝ =>
-      ((-I * p.1 / (2 * π * p.2 ^ 2), I / (2 * π * p.2 ^ 2)) : ℂ × ℂ)) (c, s) := by
-    push_cast at hd hden
-    exact ((continuousAt_const.mul (continuous_ofReal.continuousAt.comp continuousAt_fst)).div
-      hd hden).prodMk (continuousAt_const.div hd hden)
-  refine ContinuousAt.mul ?_ (continuous_re.continuousAt.comp ?_)
-  · exact continuous_exp.continuousAt.comp
-      ((continuousAt_fst.pow 2).neg.div (continuousAt_const.mul (continuousAt_snd.pow 2))
-        (by positivity))
-  · have hθ : ContinuousAt (fun q : ℂ × ℂ => jacobiTheta₂ q.1 q.2)
-        (-I * c / (2 * π * s ^ 2), I / (2 * π * s ^ 2)) :=
-      continuousAt_jacobiTheta₂ _ (im_I_div_pos hs)
-    exact hθ.comp_of_eq hφ rfl
+    ContinuousAt (fun p : ℝ × ℝ => gaussianLatticeSum p.1 p.2) (c, s) :=
+  (contDiffAt_gaussianLatticeSum c hs (n := 0)).continuousAt
 
 /-- The Gaussian lattice sum is jointly measurable in the centre and the width. -/
 theorem measurable_gaussianLatticeSum :

@@ -174,7 +174,7 @@ private theorem ae_norm_energyFormH1_le :
 /-- Under the standing hypotheses on the coefficients, the energy forms of `L(t)` satisfy
 Gårding's inequality on `H¹₀(Ω)` with the constants `λ/2` and `λ/2 + |γ| + β²/(2λ)` for almost
 every `t`. -/
-private theorem ae_garding_energyFormH1 :
+theorem ae_garding_energyFormH1 :
     ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
       lam / 2 * ‖v‖ ^ 2 - (lam / 2 + |gamma| + beta ^ 2 / (2 * lam)) * ‖W1p0.valueL v‖ ^ 2 ≤
         energyFormH1 (a t) (b t) (c t) (v : W1p mu Omega 2) (v : W1p mu Omega 2) := by
@@ -188,7 +188,7 @@ include ht in
 /-- Under the standing hypotheses on the coefficients on a nondegenerate interval, the ellipticity
 constants satisfy `0 < λ` and `0 ≤ Λ`, and the energy forms of `L(t)` are the values of a single
 family of bounded operators `H¹₀(Ω) → H⁻¹(Ω)` for almost every `t`. -/
-private theorem exists_ae_apply_eq_energyFormH1_of_lt :
+theorem exists_ae_apply_eq_energyFormH1_of_lt :
     0 < lam ∧ 0 ≤ Lam ∧ ∃ A : ℝ → W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
       ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ u v : W1p0 mu Omega 2,
         A t u v = energyFormH1 (a t) (b t) (c t) (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
@@ -222,12 +222,11 @@ theorem exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner
   -- The energy form of `L(t)`, as a bounded operator `H¹₀(Ω) → H⁻¹(Ω)` for almost every `t`.
   -- `have` then `obtain`: destructuring the application directly times out in elaboration.
   have hA := exists_ae_apply_eq_energyFormH1_of_lt ht ha hb hc hell hb_bound hc_bound
-  obtain ⟨hlam, hLam, A, hA_apply⟩ := hA
+  obtain ⟨hlam, -, A, hA_apply⟩ := hA
   -- `by exact` postpones Gårding's inequality until the other arguments have fixed `B`, `α`
   -- and `ι`; elaborated eagerly as a plain term, it times out in unification.
   exact exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq W1p0.valueL ht.le hA_apply
     (fun u v => aestronglyMeasurable_energyFormH1 ha hb hc _ _)
-    (add_nonneg (add_nonneg hLam (abs_nonneg _)) (abs_nonneg _))
     (ae_norm_energyFormH1_le (mu := mu) hell hb_bound hc_bound)
     (half_pos hlam) (by exact ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound) hf u₀
 
@@ -260,13 +259,12 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_energyFormH1
       (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Ioo t₀ t₁)] w ∧ w t₀ = u₀ := by
   -- `have` then `obtain`: destructuring the application directly times out in elaboration.
   have hA := exists_ae_apply_eq_energyFormH1_of_lt ht ha hb hc hell hb_bound hc_bound
-  obtain ⟨hlam, hLam, A, hA_apply⟩ := hA
+  obtain ⟨hlam, -, A, hA_apply⟩ := hA
   -- With `2 ≠ ∞` registered, instance search finds that `H¹₀(Ω)` is separable, as a subspace
   -- of a second-countable `L²` space; this makes `t ↦ A(t) u(t)` strongly measurable.
   have : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
   exact exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq W1p0.denseRange_valueL_two ht.le hA_apply
     (fun u v => aestronglyMeasurable_energyFormH1 ha hb hc _ _)
-    (add_nonneg (add_nonneg hLam (abs_nonneg _)) (abs_nonneg _))
     (ae_norm_energyFormH1_le (mu := mu) hell hb_bound hc_bound)
     (half_pos hlam)
     (ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound) hf u₀

@@ -28,10 +28,10 @@ local notation "E" => EuclideanSpace ℝ (Fin 1)
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) 1 N]
 
-/-- A positively oriented closed path covering an actual compact one-dimensional manifold
-once gives its canonical planar circulation integral. The path may have a seam at its base
+/-- A positively oriented closed path covering an actual one-dimensional manifold once (which is
+then compact) gives its canonical planar circulation integral. The path may have a seam at its base
 point; all derivatives and orientation conditions concern the open parameter interval. -/
-theorem integralTopForm_mpullback_eq_curveIntegral [CompactSpace N]
+theorem integralTopForm_mpullback_eq_curveIntegral
     (o : Manifold.Orientation 𝓘(ℝ, E) N (Fin 1)) {p : N} (q : Path p p)
     (f : N → ℂ) (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, ℂ) 1 f)
     (P Q : ℂ → ℝ) (U : Set ℂ) (hU : IsOpen U) (hrange : range f ⊆ U)
@@ -65,7 +65,7 @@ variable {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (1 + 1)) ∞ M] [T2Space M] [CompactSpace M]
 
 local instance boundaryLoopIsManifold : IsManifold 𝓘(ℝ, E) ∞ ((𝓡∂ (1 + 1)).boundary M) :=
-  isManifold_boundary M (by simp)
+  isManifold_boundary M
 
 local instance boundaryLoopCompactSpace : CompactSpace ((𝓡∂ (1 + 1)).boundary M) :=
   isCompact_iff_compactSpace.mp

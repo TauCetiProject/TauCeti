@@ -28,6 +28,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
   multivariate
   Gaussian law.
+* `TauCeti.Probability.eq_multivariateGaussian_covMatrix` writes every Gaussian measure on a
+  Euclidean space as the multivariate Gaussian with its mean and covariance matrix.
 * `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
   random variable with a multivariate Gaussian law.
 * `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
@@ -35,6 +37,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
   of the standard Gaussian.
 * `TauCeti.Probability.multivariateGaussian_zero_right` identifies the zero-covariance law with
   the point mass at its mean.
+* `TauCeti.Probability.multivariateGaussian_eq_dirac_iff` shows that this is the only
+  positive-semidefinite Gaussian law equal to that point mass.
 * `TauCeti.Probability.measurable_multivariateGaussian_inv_smul` shows that the family
   `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`.
 * `TauCeti.Probability.measurable_multivariateGaussian_prodMk_left_apply` shows that the Gaussian
@@ -46,11 +50,6 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.indepFun_sumEquivProd_multivariateGaussian_iff` characterizes independence of
   two
   complementary coordinate blocks.
-
-## References
-
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 1,
-  **Covariance matrices**.
 -/
 
 public section
@@ -74,6 +73,18 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
 
+/-- A Gaussian measure on a finite-dimensional Euclidean space is the multivariate Gaussian with
+its own mean and covariance matrix. No nondegeneracy is required. -/
+theorem eq_multivariateGaussian_covMatrix [Fintype ι] [DecidableEq ι]
+    (ν : Measure (EuclideanSpace ℝ ι)) [IsGaussian ν] :
+    ν = multivariateGaussian (∫ x, x ∂ν) (covMatrix ν) := by
+  apply IsGaussian.ext
+  · simp
+  · ext x y
+    rw [covarianceBilin_multivariateGaussian (posSemidef_covMatrix ν IsGaussian.memLp_two_id),
+      covarianceBilin_eq_covMatrix ν IsGaussian.memLp_two_id]
+    simp [PiLp.inner_apply, dotProduct, Matrix.mulVec, Finset.mul_sum, mul_comm]
+
 /-- Each coordinate of a multivariate Gaussian has as mean the corresponding coordinate of the
 mean parameter. No hypothesis on the covariance parameter is needed. -/
 @[simp]
@@ -90,6 +101,18 @@ theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
     ∫ ω, X ω ∂P = m := by
   rw [hX.integral_eq, integral_id_multivariateGaussian]
 
+/-- A multivariate Gaussian is the affine image of independent standard real Gaussians
+under the square root of its covariance parameter. This includes singular and invalid parameters. -/
+theorem multivariateGaussian_eq_map_pi [Fintype ι] [DecidableEq ι]
+    (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
+    multivariateGaussian m S =
+      (Measure.pi fun _ : ι ↦ gaussianReal 0 1).map
+        (fun y ↦ m + Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)
+          ((EuclideanSpace.equiv ι ℝ).symm y)) := by
+  rw [multivariateGaussian, ← map_pi_eq_stdGaussian,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  simp only [Function.comp_def, PiLp.continuousLinearEquiv_symm_apply]
+
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
 root of its matrix parameter. No hypothesis on that parameter is needed. -/
 theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [DecidableEq ι]
@@ -104,6 +127,15 @@ theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [Decidabl
 theorem multivariateGaussian_zero_right [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι) :
     multivariateGaussian m (0 : Matrix ι ι ℝ) = Measure.dirac m := by
   simp [multivariateGaussian]
+
+/-- A positive-semidefinite multivariate Gaussian is the point mass at its mean exactly when its
+covariance parameter vanishes. -/
+theorem multivariateGaussian_eq_dirac_iff [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) :
+    multivariateGaussian m S = Measure.dirac m ↔ S = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ multivariateGaussian_zero_right m⟩
+  rw [← covMatrix_multivariateGaussian m hS, h, ← multivariateGaussian_zero_right m,
+    covMatrix_multivariateGaussian m Matrix.PosSemidef.zero]
 
 /-- The Gaussian family `τ ↦ N(m, τ⁻¹ • S)` is measurable in the precision `τ`. -/
 theorem measurable_multivariateGaussian_inv_smul [Fintype ι] [DecidableEq ι]

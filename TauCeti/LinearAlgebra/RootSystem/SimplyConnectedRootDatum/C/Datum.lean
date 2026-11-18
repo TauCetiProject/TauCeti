@@ -265,21 +265,21 @@ private lemma typeCReflectionIdx_pair_ne (i j : TypeCIndex n) :
     signedReflection (typeCFst i) (typeCSnd i) (typeCSnd j) ≠
       signedNeg (signedReflection (typeCFst i) (typeCSnd i) (typeCFst j)) := by
   intro hc
-  rw [← signedReflection_signedNeg (typeCSnd_ne_signedNeg_typeCFst i)] at hc
+  rw [← signedReflection_signedNeg] at hc
   exact typeCSnd_ne_signedNeg_typeCFst j
-    (signedReflection_injective (typeCSnd_ne_signedNeg_typeCFst i) hc)
+    (signedReflection_injective _ _ hc)
 
 private lemma typeCRoot_typeCReflectionIdx (i j : TypeCIndex n) :
     typeCRoot j - (typeCRoot j ⬝ᵥ typeCCoroot i) • typeCRoot i
       = typeCRoot (typeCReflectionIdx i j) := by
   rw [typeCReflectionIdx, typeCRoot_typeCMk (typeCReflectionIdx_pair_ne i j)]
-  exact pairRoot_reflection (typeCSnd_ne_signedNeg_typeCFst i) (typeCFst j) (typeCSnd j)
+  exact pairRoot_reflection (typeCFst i) (typeCSnd i) (typeCFst j) (typeCSnd j)
 
 private lemma typeCCoroot_typeCReflectionIdx (i j : TypeCIndex n) :
     typeCCoroot j - (typeCRoot i ⬝ᵥ typeCCoroot j) • typeCCoroot i
       = typeCCoroot (typeCReflectionIdx i j) := by
   rw [typeCReflectionIdx, typeCCoroot_typeCMk (typeCReflectionIdx_pair_ne i j)]
-  exact pairCoroot_reflection (typeCSnd_ne_signedNeg_typeCFst i) (typeCFst j) (typeCSnd j)
+  exact pairCoroot_reflection (typeCFst i) (typeCSnd i) (typeCFst j) (typeCSnd j)
 
 private lemma typeCReflectionIdx_involutive (i : TypeCIndex n) :
     Involutive (typeCReflectionIdx i) := by
@@ -365,7 +365,7 @@ theorem abs_pairing_typeCSimplyConnectedRootDatum_le_two (k l : Fin (2 * n ^ 2))
     |(typeCSimplyConnectedRootDatum n).pairing k l| ≤ 2 := by
   rw [pairing_typeCSimplyConnectedRootDatum, root_typeCSimplyConnectedRootDatum,
     coroot_typeCSimplyConnectedRootDatum]
-  exact abs_pairRoot_dotProduct_pairCoroot_le_two (typeCSnd_ne_signedNeg_typeCFst _)
+  exact abs_pairRoot_dotProduct_pairCoroot_le_two
 
 /-! ## The root and the coroot at an arbitrary index
 
@@ -428,7 +428,9 @@ def typeCSimpleIndex (n : ℕ) (i : Fin n) : Fin (2 * n ^ 2) :=
 lemma typeCSimpleIndex_injective : Injective (typeCSimpleIndex n) :=
   Fin.castLE_injective (typeC_le_two_mul_sq n)
 
-private lemma typeCIndexEquiv_symm_typeCSimpleIndex (i : Fin n) :
+/-- The numbered simple root is encoded by consecutive classical coordinates, with the
+successor clamped at the last node. -/
+@[simp] lemma typeCIndexEquiv_symm_typeCSimpleIndex (i : Fin n) :
     (typeCIndexEquiv n).symm (typeCSimpleIndex n i) = (i, Order.succ i, false) := by
   have hi : (i : ℕ) < n := i.isLt
   simp [typeCIndexEquiv, typeCShapeEquiv, finProdFinEquiv, Fin.divNat, Fin.modNat,
@@ -560,7 +562,8 @@ private lemma linearIndependent_typeCSimpleRoot (n : ℕ) :
   rw [h]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact linearIndependent_empty_type
-  · exact Matrix.linearIndependent_rows_of_det_ne_zero (by rw [CartanMatrix.C_det hn]; norm_num)
+  · exact Matrix.linearIndependent_rows_of_det_ne_zero (A := CartanMatrix.C n)
+      (by rw [CartanMatrix.C_det hn]; norm_num)
 
 private lemma linearIndependent_typeCSimpleCoroot (n : ℕ) :
     LinearIndependent ℤ (typeCSimpleCoroot (n := n)) := by

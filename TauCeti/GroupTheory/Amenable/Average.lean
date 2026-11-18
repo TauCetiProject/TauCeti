@@ -185,18 +185,20 @@ theorem Amenable.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {ι : Ty
 
 /-- A topological group is amenable when it has a Følner family for counting measure, along a
 nontrivial filter. -/
-theorem Amenable.of_isFoelner [MeasurableSpace G] [MeasurableSingletonClass G] {ι : Type*}
+theorem Amenable.of_isFoelner [MeasurableSpace G] {ι : Type*}
     {l : Filter ι} [l.NeBot] {F : ι → Set G}
     (hF : IsFoelner G MeasureTheory.Measure.count l F) : Amenable G := by
   classical
   -- Restrict to the indices where `F i` is finite and nonempty, and view those sets as finsets.
-  let s := {i | MeasureTheory.Measure.count (F i) ≠ 0 ∧ MeasureTheory.Measure.count (F i) ≠ ⊤}
+  let s := {i | MeasurableSet (F i) ∧ MeasureTheory.Measure.count (F i) ≠ 0 ∧
+    MeasureTheory.Measure.count (F i) ≠ ⊤}
   have : (comap ((↑) : s → ι) l).NeBot := comap_coe_neBot_of_le_principal <| le_principal_iff.2 <|
-    hF.eventually_meas_ne_zero.and hF.eventually_meas_ne_top
+    hF.eventually_measurableSet.and (hF.eventually_meas_ne_zero.and hF.eventually_meas_ne_top)
   obtain ⟨F', hF'⟩ : ∃ F' : s → Finset G, ∀ i, (F' i : Set G) = F i := ⟨fun i =>
-    (MeasureTheory.Measure.count_apply_lt_top.1 (lt_top_iff_ne_top.2 i.2.2)).toFinset, by simp⟩
+    ((MeasureTheory.Measure.count_apply_lt_top' i.2.1).1
+      (lt_top_iff_ne_top.2 i.2.2.2)).toFinset, by simp⟩
   have hne (i : s) : (F' i).Nonempty := by
-    simpa [← coe_nonempty, hF', Set.nonempty_iff_ne_empty] using i.2.1
+    simpa [← coe_nonempty, hF', Set.nonempty_iff_ne_empty] using i.2.2.1
   refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) hne fun g => ?_
   have hF's : IsFoelner G MeasureTheory.Measure.count (comap ((↑) : s → ι) l)
       (fun i => (F' i : Set G)) := by

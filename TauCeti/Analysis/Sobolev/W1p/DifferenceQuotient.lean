@@ -189,7 +189,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     (LpToLpRestrictCLM E ℝ ℝ nu p T).comp (((innerSL ℝ h).compLpL p nu).comp W1p.gradientL)
   have hA : ∀ v : W1p mu ⊤ p, ‖A v‖ₑ =
       eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K) := fun v ↦ by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
     filter_upwards [LpToLpRestrictCLM_coeFn ℝ K (nu.translateLp p h (W1p.valueL v) -
         W1p.valueL v), ae_restrict_of_ae (Lp.coeFn_sub (nu.translateLp p h (W1p.valueL v))
@@ -202,7 +202,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     rw [h1, h2, Pi.sub_apply, h3, Function.comp_apply]
   have hB : ∀ v : W1p mu ⊤ p, ‖B v‖ₑ =
       eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T) := fun v ↦ by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
     filter_upwards [LpToLpRestrictCLM_coeFn ℝ T ((innerSL ℝ h).compLpL p nu (W1p.gradientL v)),
       ae_restrict_of_ae ((innerSL ℝ h).coeFn_compLpL (W1p.gradientL v))] with x h1 h2
@@ -212,7 +212,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
       eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K)
         ≤ eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T)} := by
     simp only [← hA, ← hB]
-    exact isClosed_le A.continuous.enorm B.continuous.enorm
+    exact isClosed_le A.continuous.eNorm B.continuous.eNorm
   -- Pass the smooth estimate to all of `W^{1,p}(ℝⁿ)` by density of test functions.
   refine w1p0Submodule_subset_of_isClosed hclosed (fun phi ↦ ?_) (W1p.mem_w1p0Submodule_top hp w)
   exact eLpNorm_value_ofTestFunctionₗ_comp_add_sub_le phi h hT hKT
@@ -287,7 +287,7 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ ∞) (u : W1p
       ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T)) := by
         gcongr
     _ = eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T) := by
-        rw [← mul_assoc, ← enorm_mul, inv_mul_cancel₀ ht, enorm_one, one_mul]
+        rw [← mul_assoc, ← eNorm_mul, inv_mul_cancel₀ ht, eNorm_one, one_mul]
 
 /-- **Uniform bound on difference quotients near a compact set.** Let `u ∈ W^{1,p}(Ω)`,
 `1 ≤ p < ∞`, and let `K ⊆ Ω` be compact. Then for all sufficiently small `t`,
@@ -331,7 +331,7 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
             rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm]
             exact abs_real_inner_le_norm v _)
       _ = ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
-          rw [eLpNorm_const_smul, enorm_norm]
+          rw [eLpNorm_const_smul, eNorm_norm]
   -- The difference quotient itself, through the whole-space translation estimate.
   have hquot : eLpNorm (W1p.value q : E → ℝ) p nu
       ≤ ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
@@ -354,7 +354,7 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
     calc ‖t⁻¹‖ₑ * eLpNorm (fun x ↦ W1p.value u (x + t • v) - W1p.value u x) p nu
         ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu) := by gcongr
       _ = eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu := by
-          rw [← mul_assoc, ← enorm_mul, inv_mul_cancel₀ ht, enorm_one, one_mul]
+          rw [← mul_assoc, ← eNorm_mul, inv_mul_cancel₀ ht, eNorm_one, one_mul]
   have hfin : ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu ≠ ∞ :=
     ENNReal.mul_ne_top (by simp) (Lp.eLpNorm_ne_top _)
   calc ‖W1p.value q‖ = (eLpNorm (W1p.value q : E → ℝ) p nu).toReal := Lp.norm_def _
@@ -387,7 +387,7 @@ theorem W1p0.extendByZeroL_eq_differenceQuotient {w : E} {t : ℝ}
     (W1p0.extendByZeroL le_top g : W1p mu ⊤ p) =
       W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _)
         (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) := by
-  have hm := Omega.isOpen.measurableSet
+  have hm := Omega.isOpen.nullMeasurableSet (μ := mu)
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := subset_univ _
   -- Both sides vanish off `Ω`, and on `Ω` they are the difference quotient of `u`.
   have hext : ∀ v : Lp ℝ p (mu.restrict Omega),
@@ -400,7 +400,7 @@ theorem W1p0.extendByZeroL_eq_differenceQuotient {w : E} {t : ℝ}
     ae_restrict_of_ae (hext (W1p.value (u : W1p mu Omega p))),
     ae_restrict_of_ae ((measurePreserving_add_right mu (t • w)).quasiMeasurePreserving.ae_eq_comp
       (hext (W1p.value (u : W1p mu Omega p)))),
-    ae_restrict_of_ae ((ae_restrict_iff' hm).1
+    ae_restrict_of_ae ((ae_restrict_iff'₀ hm).1
       (W1p.value_differenceQuotient_ae le_rfl w t hVO (u : W1p mu Omega p)))]
     with x h1 h2 h3 h4 h5
   simp only [Function.comp_apply] at h4

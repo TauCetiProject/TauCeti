@@ -122,8 +122,8 @@ theorem integrable_covariantDerivative_norm_sq
   let s := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
   have hs : ContDiff ℝ 2 s := contDiff_normSq hp hq
   have hsi : Integrable (fun z ↦ 1 - s z) μ :=
-    integrable_one_sub_normSq μ hb₁ hb₂ hp hq hsol hlim
-  have hs1 : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim
+    integrable_one_sub_normSq μ hp hq hsol hlim
+  have hs1 : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim
   have hid (z : ℂ) := laplacian_normSq_of_equation_eq_zero (hb₁ z) (hb₂ z)
     hp.contDiffAt hq.contDiffAt (Eventually.of_forall hsol)
   have hΔ : Integrable (Δ (fun z ↦ s z - 1)) μ :=
@@ -161,9 +161,9 @@ theorem integrable_energyDensity
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable (energyDensity x) μ := by
-  have hs1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim
+  have hs1 := normSq_le_one_of_tendsto hp hq hsol hlim
   have hpot : Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ^ 2) μ := by
-    apply (integrable_one_sub_normSq μ hb₁ hb₂ hp hq hsol hlim).mono'
+    apply (integrable_one_sub_normSq μ hp hq hsol hlim).mono'
       ((continuous_const.sub (continuous_const.mul
         ((hp.continuous.pow 2).add (hq.continuous.pow 2)))).pow 2).aestronglyMeasurable
     apply ae_of_all

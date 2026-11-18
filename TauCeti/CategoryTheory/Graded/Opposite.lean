@@ -154,15 +154,15 @@ variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R 
 `(x₀, …, xₙ₋₁) ↦ f (xₙ₋₁, …, x₀)`, along the identification of the total modules of
 morphisms. -/
 noncomputable def reverseOperation {n : ℕ}
-    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)) :
-    MultilinearMap R (fun _ : Fin n ↦ TotalHom R Cᵒᵖ) (TotalHom R Cᵒᵖ) :=
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R Cᵒᵖ) (TotalHom R Cᵒᵖ) :=
   (opTotalHomEquiv R C).toLinearMap.compMultilinearMap
     ((f.domDomCongr Fin.revPerm).compLinearMap fun _ ↦ (opTotalHomEquiv R C).symm.toLinearMap)
 
 /-- The reversed operation evaluates the original operation on the reversed inputs. -/
 @[simp]
 theorem reverseOperation_apply {n : ℕ}
-    (f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C))
+    (f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C))
     (x : Fin n → TotalHom R Cᵒᵖ) :
     reverseOperation f x = opTotalHomEquiv R C (f fun i ↦ (opTotalHomEquiv R C).symm (x i.rev)) :=
   (rfl)
@@ -170,7 +170,7 @@ theorem reverseOperation_apply {n : ℕ}
 /-- **The reverse of a path-compatible operation is path-compatible.**  A composable string of
 `Cᵒᵖ`, read backwards, is a composable string of `C` between the same endpoints. -/
 theorem IsPathCompatible.reverse {n : ℕ}
-    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
+    {f : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C)}
     (hf : IsPathCompatible id f) : IsPathCompatible id (reverseOperation f) where
   mem_range_homInclusion X x := by
     rcases n with _ | n

@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.Resolution.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Relative projectives in an exact category, and the horseshoe lemma
@@ -319,15 +320,22 @@ def map (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
     (P.map hF hPP').P = F.obj P.P := by
   simp [map]
 
+/-- After identifying the kernel and projective terms, the image presentation starts with the
+image of the inflation. -/
 @[simp] theorem map_i (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
     (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
-    HEq (P.map hF hPP').i (F.map P.i) := by
-  simp [map]
+    eqToHom (P.map_K hF hPP').symm ≫ (P.map hF hPP').i ≫ eqToHom (P.map_P hF hPP') =
+      F.map P.i := by
+  simp only [map, eqToHom_naturality, eqToHom_refl, Category.id_comp]
+  exact eqToHom_self_comp _ _
 
+/-- After identifying the projective term, the image presentation ends with the image of the
+deflation. -/
 @[simp] theorem map_p (P : E.ProjectivePresentation X) (hF : E.IsConflationExact E' F)
     (hPP' : E.isProjective ≤ E'.isProjective.inverseImage F) :
-    HEq (P.map hF hPP').p (F.map P.p) := by
-  simp [map]
+    eqToHom (P.map_P hF hPP').symm ≫ (P.map hF hPP').p = F.map P.p := by
+  simp only [map]
+  exact eqToHom_self_comp _ _
 
 end Functor
 
@@ -345,9 +353,17 @@ noncomputable def split (X : C) : (ExactStructure.split C).ProjectivePresentatio
 
 @[simp] theorem split_P (X : C) : (split X).P = X := (rfl)
 
-@[simp] theorem split_i (X : C) : HEq (split X).i (0 : (0 : C) ⟶ X) := (HEq.rfl)
+/-- After identifying the terms, the tautological presentation starts with the zero map. -/
+@[simp] theorem split_i (X : C) :
+    eqToHom (split_K X).symm ≫ (split X).i ≫ eqToHom (split_P X) = 0 := by
+  simp [split]
 
-@[simp] theorem split_p (X : C) : HEq (split X).p (𝟙 X) := (HEq.rfl)
+/-- After identifying the projective term, the tautological presentation ends with the
+identity. -/
+@[simp] theorem split_p (X : C) : eqToHom (split_P X).symm ≫ (split X).p = 𝟙 X := by
+  simp only [split, Category.comp_id]
+  -- the remaining `eqToHom` is between the definitionally equal objects `(split X).P` and `X`
+  exact eqToHom_refl _ _
 
 /-- Mathlib's projective presentation gives a relative projective presentation for the canonical
 exact structure of an abelian category. -/
@@ -370,13 +386,21 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughProjectives A] (X : A) :
     (abelian X).P = Projective.over X := (rfl)
 
+/-- After identifying the terms, the presentation starts with the kernel inclusion. -/
 @[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughProjectives A] (X : A) :
-    HEq (abelian X).i (kernel.ι (Projective.π X)) := (HEq.rfl)
+    eqToHom (abelian_K X).symm ≫ (abelian X).i ≫ eqToHom (abelian_P X) =
+      kernel.ι (Projective.π X) := by
+  simp only [abelian, eqToHom_naturality, eqToHom_refl, Category.id_comp]
+  exact eqToHom_self_comp _ _
 
+/-- After identifying the projective term, the presentation ends with Mathlib's chosen
+epimorphism from a projective object. -/
 @[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughProjectives A] (X : A) :
-    HEq (abelian X).p (Projective.π X) := (HEq.rfl)
+    eqToHom (abelian_P X).symm ≫ (abelian X).p = Projective.π X := by
+  simp only [abelian]
+  exact eqToHom_self_comp _ _
 
 section Comparison
 

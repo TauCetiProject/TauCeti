@@ -25,6 +25,9 @@ Under an injective map, the image of `v` lies outside the image of the closed ba
 centred at zero exactly when `r < ‖v‖`
 (`Function.Injective.apply_notMem_image_closedBall_zero_iff`).
 
+Translating by `-h` maps `{x | s < ‖x‖}` into `{x | r < ‖x‖}` whenever `r + ‖h‖ ≤ s`
+(`TauCeti.image_sub_const_setOf_lt_norm_subset`).
+
 A bijection of the closed unit ball preserving the unit sphere restricts to a bijection of the
 unit sphere (`Equiv.restrictUnitSphere`).
 -/
@@ -84,6 +87,13 @@ theorem _root_.Function.Injective.apply_notMem_image_closedBall_zero_iff {E X : 
     [SeminormedAddGroup E] {e : E → X} (he : Function.Injective e) {r : ℝ} {v : E} :
     e v ∉ e '' closedBall 0 r ↔ r < ‖v‖ := by
   rw [he.mem_set_image, mem_closedBall_zero_iff, not_le]
+
+/-- Translating by `-h` maps `{x | s < ‖x‖}` into `{x | r < ‖x‖}` when `r + ‖h‖ ≤ s`. -/
+theorem image_sub_const_setOf_lt_norm_subset {E : Type*} [SeminormedAddGroup E] {h : E}
+    {r s : ℝ} (hrs : r + ‖h‖ ≤ s) : (· - h) '' {x : E | s < ‖x‖} ⊆ {x | r < ‖x‖} := by
+  rintro _ ⟨x, hx, rfl⟩
+  have := norm_le_norm_sub_add x h
+  grind
 
 /-! ### Bijections of the closed ball preserving the unit sphere -/
 

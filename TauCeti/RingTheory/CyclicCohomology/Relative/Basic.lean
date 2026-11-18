@@ -40,6 +40,20 @@ along the induced map of forced unitizations.
 * `TauCeti.relativeCyclicCochainComplex`: the relative cyclic cochain complex.
 * `TauCeti.relativeCyclicCohomology`: the relative cyclic cohomology of a nonunital algebra.
 * `TauCeti.relativeCyclicCohomology.map`: pullback along a homomorphism of nonunital algebras.
+* `TauCeti.unitizationAugmentationPullbackComplexMap`: pullback of cyclic cochain complexes along
+  the augmentation.
+
+## Main results
+
+* `TauCeti.scalarCyclicRestriction_comp_unitizationAugmentationPullback`: pullback along the
+  augmentation is a right inverse of scalar restriction on the forced unitization.
+* `TauCeti.scalarCyclicRestriction_unitization_surjective`: scalar restriction on the forced
+  unitization is surjective.
+* `TauCeti.unitizationAugmentationPullbackComplexMap_comp_scalarCyclicRestrictionComplexMap`: the
+  same splitting as a morphism of cochain complexes.
+* `TauCeti.relativeCyclicCohomology.map_mk`, `TauCeti.relativeCyclicCohomology.map_id` and
+  `TauCeti.relativeCyclicCohomology.map_comp`: the effect of pullback on classes, and its
+  functoriality.
 * `TauCeti.relativeCyclicCohomology.toCyclic_map_unitization`: naturality of the map to the cyclic
   cohomology of the forced unitization.
 
@@ -75,8 +89,8 @@ def unitizationAugmentationPullback (n : ℕ) :
 theorem unitizationAugmentationPullback_apply (n : ℕ) (phi : cyclicCochains R R M n)
     (a : Fin (n + 1) → Unitization R A) :
     (unitizationAugmentationPullback R A M n phi :
-        MultilinearMap R (fun _ : Fin (n + 1) ↦ Unitization R A) M) a =
-      (phi : MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) (fun i ↦ (a i).fst) := by
+        MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ Unitization R A) M) a =
+      (phi : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ R) M) (fun i ↦ (a i).fst) := by
   simp only [unitizationAugmentationPullback, coe_cyclicCochainsMap_apply,
     MultilinearMap.compLinearMap_apply]
   -- The linear map underlying `Unitization.fstHom` evaluates as the first projection.

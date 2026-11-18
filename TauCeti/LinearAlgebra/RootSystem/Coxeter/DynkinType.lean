@@ -20,7 +20,7 @@ carries a *named* Coxeter matrix, and identifies the outcome with the finite-typ
 `CoxeterMatrix.A`, `.B`, `.E₆`, `.E₇`, `.E₈`, `.F₄` and `.G₂` that Mathlib already pins.
 
 The identifications are worth spelling out one type at a time because they supply the matrix-level
-part of the classification's acceptance criteria: in the Bourbaki numbering, type `Aₙ` gives
+part of the classification: in the Bourbaki numbering, type `Aₙ` gives
 `CoxeterMatrix.A n`. The `Bₙ`/`Cₙ` pair collapses here: transposing a Cartan matrix leaves every
 Cartan product fixed, so the two types, which are distinct root systems with transposed Cartan
 matrices, share the single Coxeter matrix `CoxeterMatrix.B n`. That collapse is exactly the
@@ -57,14 +57,13 @@ Bourbaki numbering, at that pair of fork nodes.
   `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq`, its existential form for a base of Cartan
   type `t`. Its corollaries
   `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq_A` and
-  `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq_G2` are the two the roadmap names.
+  `TauCeti.HasCartanType.exists_coxeterMatrixOfBase_eq_G2` specialize it to types `Aₙ` and `G₂`.
 
 ## References
 
-This file supplies the clause "recovering `CoxeterMatrix.A n` as `coxeterMatrixOfBase b`" of the
-`Aₙ` worked example, and its `G₂` counterpart, in
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`, bridging the `coxeterMatrixOfBase` of
-Layer 2 and the `DynkinType` enumeration of Layer 5. The translation of a Cartan product into a
+This file bridges `TauCeti.coxeterMatrixOfBase` and the `TauCeti.DynkinType` enumeration,
+recovering `CoxeterMatrix.A n` as `coxeterMatrixOfBase b` for a base of type `Aₙ`, and its `G₂`
+counterpart. The translation of a Cartan product into a
 Coxeter order is Bourbaki, *Lie Groups and Lie Algebras, Chapters 4-6*, Ch. VI, §1.3, and
 Humphreys, *Introduction to Lie Algebras and Representation Theory*, §9.4 and §11.4.
 -/
@@ -109,29 +108,29 @@ lemma cartanMatrix_mul_cartanMatrix_mem_of_ne (t : DynkinType) {i j : Fin t.rank
 /-! ## The Coxeter matrix of a type -/
 
 /-- **The standard Coxeter matrix of a Dynkin type**, indexed by `Fin t.rank` in the Bourbaki node
-numbering of `TauCeti.DynkinType.cartanMatrix`: it is `TauCeti.coxeterMatrixOfCartanMatrix` applied
-to the standard Cartan matrix, so the entry at a pair of nodes is `TauCeti.coxeterOrder` of their
-Cartan product.
+numbering of `TauCeti.DynkinType.cartanMatrix`: it is
+`TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` applied to the standard Cartan matrix, so the
+entry at a pair of nodes is `TauCeti.coxeterOrder` of their Cartan product.
 
 The body is not exposed: `TauCeti.DynkinType.coxeterMatrix_apply` is the entry API. -/
 def coxeterMatrix (t : DynkinType) : CoxeterMatrix (Fin t.rank) :=
-  coxeterMatrixOfCartanMatrix t.cartanMatrix t.cartanMatrix_apply_same
-    fun _ _ hij ↦ t.cartanMatrix_mul_cartanMatrix_mem_of_ne hij
+  coxeterMatrixOfGeneralizedCartanMatrix t.cartanMatrix
 
 /-- The entry of the standard Coxeter matrix of a type at a pair of nodes is `TauCeti.coxeterOrder`
 applied to the product of the two Cartan entries. -/
 @[simp]
 lemma coxeterMatrix_apply (t : DynkinType) (i j : Fin t.rank) :
     t.coxeterMatrix i j = coxeterOrder (t.cartanMatrix i j * t.cartanMatrix j i) :=
-  coxeterMatrixOfCartanMatrix_apply ..
+  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder _ i j (t.cartanMatrix_apply_same i)
+    fun hij ↦ (mem_zero_one_two_three_iff.mp (t.cartanMatrix_mul_cartanMatrix_mem_of_ne hij)).2
 
 /-- **Two nodes carry the Coxeter entry `2` exactly when they are not joined**: the two simple
 reflections commute exactly when the two simple roots are orthogonal. On the diagonal both sides
 fail. -/
 lemma coxeterMatrix_apply_eq_two_iff (t : DynkinType) {i j : Fin t.rank} :
     t.coxeterMatrix i j = 2 ↔ t.cartanMatrix i j = 0 :=
-  coxeterMatrixOfCartanMatrix_apply_eq_two_iff _ _ _
-    (fun i j h ↦ (t.cartanMatrix_apply_eq_zero_iff_symm i j).mp h)
+  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff _ (t.cartanMatrix_apply_same i)
+    (t.cartanMatrix_apply_eq_zero_iff_symm j i).mp
 
 /-- **On a simply-laced type the Coxeter matrix is the diagram**: distinct nodes carry the entry `2`
 when they are not joined and `3` when they are, there being no multiple edge to raise an entry to

@@ -47,9 +47,6 @@ not reduced, and with a character of order `p`.
 
 * J. S. Milne, *Algebraic Groups* (2017), Definitions 12.14 and 12.17.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 2.
-
-This is the character-group calculation used in Layer 4, "Tori: split and non-split", of the
-ReductiveGroups roadmap.
 -/
 
 public section

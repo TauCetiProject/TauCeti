@@ -56,12 +56,6 @@ namespace Ideal
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
   [Algebra K L]
 
--- Source. The count is specified by the Chebotarev roadmap:
--- `TauCetiRoadmap/Chebotarev/README.md` §8.2, which displays the fibre size as
--- `#G / (#C * f) = #Centralizer_G(σ) / f` with `f = orderOf σ`. The theorems below count the
--- primes of `𝓞 L`; the roadmap's own statement counts primes of the fixed field `L ^ ⟨σ⟩`, and
--- reaches this one through the residue degree of a fixed-field prime.
-
 /-- **The Frobenius fiber is an orbit of the centralizer.** Let `Q` be a prime of `𝓞 L` above an
 ideal `𝔭` of `𝓞 K`, unramified over `𝓞 K`, with `σ` an arithmetic Frobenius at `Q`. Then
 the primes above `𝔭` admitting `σ` as a Frobenius are exactly the translates of `Q` by elements

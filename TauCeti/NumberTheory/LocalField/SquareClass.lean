@@ -211,8 +211,7 @@ theorem eq_zero_or_eq_squareClass_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π 
 For a uniformizer `π` and a nonsquare `u` of even valuation, every element of `Kˣ` becomes a
 square after multiplication by one of `1`, `u`, `π`, `u π`. Together with
 `TauCeti.natCard_squareClassGroup_of_isUnit_two` this says that the four listed elements
-represent the four square classes. The choice of representatives follows
-`TauCetiRoadmap/QuadraticFormInvariants/README.md`. -/
+represent the four square classes. -/
 theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : Kˣ}
     (hπ : IsUniformizer K π) (hu : Even (normalizedValuation K u).toAdd) (hu' : ¬IsSquare u)
     (a : Kˣ) :

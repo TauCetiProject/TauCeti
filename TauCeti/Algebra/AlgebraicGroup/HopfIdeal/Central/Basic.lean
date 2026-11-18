@@ -65,9 +65,8 @@ producing a Hopf ideal from the cocommutativity defect of `H`.
 
 The coordinate condition is the conjugation-triviality criterion for a central closed subgroup,
 and mirrors the normality criterion of
-`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic`. This is
-a prerequisite for the center `Z(G)` in Layer 6, "Reductive and semisimple groups", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic`. The center `Z(G)`, constructed in
+`TauCeti.Algebra.AlgebraicGroup.Center.Basic`, is central in this sense.
 -/
 
 public section

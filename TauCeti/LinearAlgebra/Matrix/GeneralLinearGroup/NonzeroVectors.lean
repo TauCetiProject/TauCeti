@@ -11,10 +11,10 @@ public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `SubMulAction` carries the action on the nonzero vectors.
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
--- `Nat.card` occurs in the count below, and `Nat.card_fun` and `Finite.card_option` prove it.
+-- `Nat.card` occurs in the count below.
 public import Mathlib.SetTheory.Cardinal.Finite
--- Non-public: `Equiv.optionSubtypeNe` splits off the zero vector, inside the count only.
-import Mathlib.Logic.Equiv.Option
+-- Non-public: `Set.ncard_compl` removes the zero vector, inside the count only.
+import Mathlib.Data.Set.Card
 -- Non-public: extending an isomorphism of lines to the whole space, inside the transitivity proof.
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
@@ -86,21 +86,19 @@ instance faithfulSMulNonzeroVectors [Nontrivial R] :
       Matrix.mulVec_single_one] at hcol
     exact congrFun hcol i
 
-/-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. -/
-theorem natCard_nonzeroVectors [Finite R] :
+/-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. Over an infinite semiring both sides are
+`0`: `Nat.card R = 0`, and `nonzeroVectors n R` is empty (when `n` is empty) or infinite. -/
+theorem natCard_nonzeroVectors :
     Nat.card (nonzeroVectors n R) = Nat.card R ^ Nat.card n - 1 := by
-  classical
-  have e : ↥(nonzeroVectors n R) ≃ {v : n → R // v ≠ 0} :=
-    Equiv.subtypeEquivRight fun _ ↦ mem_nonzeroVectors
-  have key := Nat.card_congr (Equiv.optionSubtypeNe (0 : n → R))
-  rw [Finite.card_option, Nat.card_fun] at key
-  rw [Nat.card_congr e]
-  omega
+  rw [← Nat.card_fun, ← Set.ncard_singleton (0 : n → R), ← Set.ncard_compl {0}]
+  have h : (nonzeroVectors n R : Set (n → R)) = {0}ᶜ := by
+    ext v
+    simp [mem_nonzeroVectors]
+  rw [← SetLike.coe_sort_coe, h, Nat.card_coe_set_eq]
 
 /-- **A plane over a semiring with two elements has three nonzero vectors.** -/
 theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hR : Nat.card R = 2) :
     Nat.card (nonzeroVectors (Fin 2) R) = 3 := by
-  have : Finite R := Nat.finite_of_card_ne_zero (by omega)
   rw [natCard_nonzeroVectors, hR, Nat.card_fin]
   decide
 

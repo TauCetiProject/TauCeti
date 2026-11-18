@@ -14,12 +14,15 @@ public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
+import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.UnitInterval.OpenSquare
 
 /-!
 # Euclidean disks and their boundaries
 
-The closed Euclidean disk is contractible, and its boundary is path-connected when the disk has
+The closed Euclidean disk is contractible, explicitly by the straight-line contraction
+`TauCeti.diskContraction` onto its centre `TauCeti.diskCenter`, and its boundary is
+path-connected when the disk has
 dimension at least two, so `TopCat.sphere (n + 1)` is path-connected
 (`TauCeti.TopCat.pathConnectedSpace_sphere`).  The disk is a `T₃` space, in particular Hausdorff,
 so the inclusion of its boundary sphere is a closed embedding
@@ -53,7 +56,9 @@ with the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube ont
 identifies the disk pair with the pair `TauCeti.cubeBoundaryPair n = (Iⁿ, ∂Iⁿ)` formed by the cube
 and its boundary (`TauCeti.diskBoundaryPairIsoCube`).  A singular cube of a pair sending the
 boundary of the cube into the subspace is a map of pairs out of the cube pair
-(`TauCeti.cubeBoundaryPairHom`).
+(`TauCeti.cubeBoundaryPairHom`). The product `Y × (Iᵐ, ∂Iᵐ)` of a space with the cube pair is the
+pair of `Y × Iᵐ` over the preimage of the boundary of the cube
+(`TauCeti.cubeBoundaryPairProdLeftIso`).
 -/
 
 public section
@@ -67,14 +72,12 @@ namespace TauCeti.TopCat
 /-- The `n`-dimensional Euclidean disk is contractible. -/
 instance contractibleSpace_disk (n : ℕ) :
     ContractibleSpace (TopCat.disk n) := by
-  -- `TopCat.disk` stores its metric closed ball inside a `ULift`; expose that carrier so the
-  -- closed-ball contractibility instance can be transported through the lift equivalence.
-  change ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
-  let hX : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
+  -- `TopCat.disk` stores its metric closed ball inside a `ULift`; the lift of the contractible
+  -- closed ball is contractible by `ULift.contractibleSpace`.
+  have : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
     Metric.contractibleSpace_closedBall (x := 0) (r := 1) (by norm_num)
-  have h : (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)) ≃ₜ
-      Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 := Homeomorph.ulift
-  exact h.contractibleSpace_iff.mpr hX
+  exact inferInstanceAs
+    (ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
 /-- The boundary of the `n`-dimensional disk is path-connected when `n ≥ 2`. -/
 lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
@@ -103,6 +106,11 @@ instance t3Space_disk (n : ℕ) : T3Space (TopCat.disk.{u} n) :=
   -- The `TopCat` carrier of `TopCat.disk n` is, by definition, the lift of the metric closed
   -- ball; instance synthesis does not unfold the `TopCat.disk` wrapper on its own.
   inferInstanceAs (T3Space (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
+/-- The `n`-dimensional disk is compact, being homeomorphic to a closed ball in Euclidean space. -/
+instance compactSpace_disk (n : ℕ) : CompactSpace (TopCat.disk.{u} n) :=
+  -- As for `TauCeti.TopCat.t3Space_disk`, the carrier is the lift of the metric closed ball.
+  inferInstanceAs (CompactSpace (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk is a closed embedding, being an
 injective map from a compact space to a Hausdorff one. -/
@@ -264,6 +272,34 @@ lemma diskCenter_notMem_range_diskBoundaryInclusion (n : ℕ) :
   rw [mem_range_diskBoundaryInclusion_iff, coe_diskCenter_down]
   simp
 
+/-- The straight-line contraction of the disk `TopCat.disk n` onto its centre: at time `t` it
+sends `x` to `(1 - t) • x`. -/
+def diskContraction (n : ℕ) :
+    (ContinuousMap.id (TopCat.disk.{u} n)).Homotopy
+      (ContinuousMap.const (TopCat.disk.{u} n) (diskCenter n)) where
+  toFun p := (ULift.up ⟨(unitInterval.symm p.1 : ℝ) •
+      ((p.2 : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)),
+      (convex_closedBall _ _).smul_mem_of_zero_mem (Metric.mem_closedBall_self zero_le_one)
+        (p.2 : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
+        (unitInterval.symm p.1).2⟩ :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
+  continuous_toFun := continuous_uliftUp.comp <| Continuous.subtype_mk
+    ((continuous_subtype_val.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
+      (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))) _
+  map_zero_left _ := ULift.ext (Subtype.ext (by simp))
+  map_one_left _ := ULift.ext (Subtype.ext (by simp))
+
+/-- The straight-line contraction sends `x` at time `t` to `(1 - t) • x`. -/
+@[simp]
+lemma coe_diskContraction_apply_down (n : ℕ) (t : unitInterval) (x : TopCat.disk.{u} n) :
+    (((diskContraction n (t, x) : TopCat.disk.{u} n) :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) =
+      (1 - (t : ℝ)) • ((x : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+        EuclideanSpace ℝ (Fin n)) :=
+  (rfl)
+
 /-- A point of the disk is sent to the unit sphere of the sup norm by
 `TauCeti.diskHomeomorphClosedBall` exactly when it lies on the boundary sphere. -/
 lemma norm_diskHomeomorphClosedBall_eq_one_iff {n : ℕ} (z : TopCat.disk.{u} n) :
@@ -373,6 +409,37 @@ lemma cubeBoundaryPairHom_fst_apply {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m)
 lemma cubeBoundaryPairHom_fst_hom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
     (hc : Set.MapsTo c (Cube.boundary (Fin m)) (Set.range P.map)) :
     (TopPair.Hom.fst (cubeBoundaryPairHom c hc)).hom = c.comp ⟨ULift.down, continuous_uliftDown⟩ :=
+  (rfl)
+
+/-- The pair `Y × (Iᵐ, ∂Iᵐ)`, whose cube is lifted to the universe of `Y`, is the pair of
+`Y × Iᵐ` over the boundary of the cube, the preimage of `∂Iᵐ` under the projection
+`Y × Iᵐ → Iᵐ`. This identifies the relative homology of `Y × (Iᵐ, ∂Iᵐ)` with the relative
+homology of a space over the cube restricted to the boundary. -/
+def cubeBoundaryPairProdLeftIso (Y : TopCat.{u}) (m : ℕ) :
+    (cubeBoundaryPair.{u} m).prodLeft Y ≅
+      TopPair.ofSubset (X := TopCat.of (Y × (Fin m → I)))
+        (ContinuousMap.snd ⁻¹' Cube.boundary (Fin m)) where
+  hom := TopPair.ofHom
+    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.down, continuous_uliftDown⟩))
+    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1.down), x.2.2⟩, by fun_prop⟩) rfl
+  inv := TopPair.ofHom
+    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.up, continuous_uliftUp⟩))
+    (TopCat.ofHom ⟨fun x ↦ (x.1.1, ⟨ULift.up x.1.2, x.2⟩), by fun_prop⟩) rfl
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+/-- `TauCeti.cubeBoundaryPairProdLeftIso` lowers the cube coordinate out of `ULift`. -/
+@[simp]
+theorem cubeBoundaryPairProdLeftIso_hom_fst_apply (Y : TopCat.{u}) (m : ℕ)
+    (z : Y × ULift.{u} (Fin m → I)) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).hom z = (z.1, z.2.down) :=
+  (rfl)
+
+/-- The inverse of `TauCeti.cubeBoundaryPairProdLeftIso` lifts the cube coordinate to `ULift`. -/
+@[simp]
+theorem cubeBoundaryPairProdLeftIso_inv_fst_apply (Y : TopCat.{u}) (m : ℕ)
+    (z : Y × (Fin m → I)) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).inv z = (z.1, ULift.up z.2) :=
   (rfl)
 
 /-- The homeomorphism from the Euclidean disk `Dⁿ` onto the cube `Iⁿ`: the radial rescaling of the

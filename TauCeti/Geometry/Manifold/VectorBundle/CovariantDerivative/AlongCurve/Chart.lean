@@ -67,12 +67,16 @@ chart at an arbitrary point `x` whose base set contains `γ t`, transported back
 field along the curve is arbitrary: only differentiability of its moving-chart reading is
 assumed. -/
 theorem symmL_alongCurveInChartWithin {x : M} {s : Set 𝕜} {t : 𝕜}
-    (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) (hu : UniqueDiffWithinAt 𝕜 s t)
+    (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) s t) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 (γ t)
         (alongCurveInChartWithin cov γ V s x t) =
       alongCurveWithin cov γ V s t := by
+  by_cases hu : UniqueDiffWithinAt 𝕜 s t
+  swap
+  · simp only [alongCurveWithin_apply, alongCurveInChartWithin_apply,
+      derivWithin_zero_of_not_uniqueDiffWithinAt hu, map_zero, add_zero]
   -- The proof compares the two readings of `V` term by term: `derivWithin_sectionCoord_eq`
   -- differentiates the reading in the chart at `x` by the product rule, producing an
   -- inhomogeneous term, and `hchris` rewrites its Christoffel term, producing the opposite one.
@@ -90,8 +94,8 @@ theorem symmL_alongCurveInChartWithin {x : M} {s : Set 𝕜} {t : 𝕜}
         = tangentCoordChange I (γ t) x (γ t) u := fun u => by
     rw [← continuousLinearMapAt_symmL_coordChange (I := I) (x := γ t) (x₀ := x) hc0 hx u,
       symmL_trivializationAt_self]
-  have hpointx : sectionCoord (F := E) γ V x t
-      = tangentCoordChange I (γ t) x (γ t) (sectionCoord (F := E) γ V (γ t) t) :=
+  have hpointx : sectionCoord 𝕜 (F := E) γ V x t
+      = tangentCoordChange I (γ t) x (γ t) (sectionCoord 𝕜 (F := E) γ V (γ t) t) :=
     sectionCoord_coordChange γ V hc0 hx
   -- The velocity of the curve, read in the two charts.
   have hvel : derivWithin (extChartAt I x ∘ γ) s t
@@ -101,7 +105,7 @@ theorem symmL_alongCurveInChartWithin {x : M} {s : Set 𝕜} {t : 𝕜}
   have hvel₀ : derivWithin (extChartAt I (γ t) ∘ γ) s t = curveVelocityWithin I γ s t := by
     rw [derivWithin_extChartAt_comp γ hc0 hu hγ', continuousLinearMapAt_trivializationAt_self]
   have hchris := christoffelMap_coordChange (I := I) (M := M) (finBasis 𝕜 E) (x := γ t) (x₀ := x)
-    hxsrc (curveVelocityWithin I γ s t) (sectionCoord (F := E) γ V (γ t) t)
+    hxsrc (curveVelocityWithin I γ s t) (sectionCoord 𝕜 (F := E) γ V (γ t) t)
     (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) x).baseSet))
     (cov.isCovariantDerivativeOn (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet))
   -- The two inhomogeneous terms cancel.
@@ -119,13 +123,13 @@ coordinate change. -/
 theorem alongCurveInChartWithin_coordChange {x y : M} {s : Set 𝕜} {t : 𝕜}
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hy : γ t ∈ (trivializationAt E (TangentSpace I) y).baseSet)
-    (hu : UniqueDiffWithinAt 𝕜 s t) (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
-    (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
+    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
+    (hV : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) γ V (γ t)) s t) :
     alongCurveInChartWithin cov γ V s y t =
       tangentCoordChange I x y (γ t) (alongCurveInChartWithin cov γ V s x t) := by
   rw [← continuousLinearMapAt_symmL_coordChange hx hy,
-    symmL_alongCurveInChartWithin cov γ V hx hu hγ hV,
-    ← symmL_alongCurveInChartWithin cov γ V hy hu hγ hV,
+    symmL_alongCurveInChartWithin cov γ V hx hγ hV,
+    ← symmL_alongCurveInChartWithin cov γ V hy hγ hV,
     (trivializationAt E (TangentSpace I) y).continuousLinearMapAt_symmL (R := 𝕜) hy]
 
 end CovariantDerivative

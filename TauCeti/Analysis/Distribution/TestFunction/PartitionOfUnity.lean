@@ -89,6 +89,13 @@ theorem cutoffCLM_apply (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆
   -- definitional unfolding happens inside the proof.
   exact rfl
 
+/-- Multiplying by a cutoff does not enlarge the support of a test function. -/
+theorem tsupport_cutoffCLM_subset (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆ U)
+    (φ : 𝓓^{n}(Ω, F)) : tsupport (cutoffCLM hχ hχU φ : E → F) ⊆ tsupport χ ∩ tsupport φ := by
+  have h : (cutoffCLM hχ hχU φ : E → F) = χ • ⇑φ := funext (cutoffCLM_apply hχ hχU φ)
+  rw [h]
+  exact subset_inter (tsupport_smul_subset_left _ _) (tsupport_smul_subset_right _ _)
+
 end Cutoff
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -135,6 +142,15 @@ theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsO
   obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχW⟩ := hK.exists_contDiff_cutoff hW hKW
   exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
     subset_interior_iff_mem_nhdsSet.1 hχ1, hχW⟩
+
+/-- A compact subset `K` of an open set `W` contained in the domain has a complex test function
+equal to one on a neighbourhood of `K` whose topological support lies in `W`. -/
+theorem exists_complex_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℂ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ tsupport χ ⊆ W := by
+  obtain ⟨χ, -, hχ1, hχW⟩ := exists_cutoff_tsupport_subset (n := n) hK hW hKW hWΩ
+  refine ⟨postcompCLM (𝕜 := ℝ) Complex.ofRealCLM χ, hχ1.mono fun x hx ↦ by simp [hx], ?_⟩
+  exact (tsupport_comp_subset (g := Complex.ofRealCLM) (by simp) χ).trans hχW
 
 /-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
 to one on a neighbourhood of it. -/
