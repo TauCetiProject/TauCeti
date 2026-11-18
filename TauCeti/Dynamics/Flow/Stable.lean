@@ -196,16 +196,6 @@ theorem disjoint_unstableSet [T2Space α] {φ : _root_.Flow ℝ α} {x y : α} (
   disjoint_left.2 fun _ hx hy ↦
     hxy (tendsto_nhds_unique (mem_unstableSet.1 hx) (mem_unstableSet.1 hy))
 
-/-- A fixed point of the flow lies on no stable set but its own. -/
-theorem eq_of_mem_stableSet [T2Space α] {φ : _root_.Flow ℝ α} {x c : α} (hx : ∀ t, φ t x = x)
-    (h : x ∈ stableSet φ c) : x = c :=
-  by_contra fun hne ↦ disjoint_left.1 (disjoint_stableSet hne) (self_mem_stableSet_iff.2 hx) h
-
-/-- A fixed point of the flow lies on no unstable set but its own. -/
-theorem eq_of_mem_unstableSet [T2Space α] {φ : _root_.Flow ℝ α} {x c : α} (hx : ∀ t, φ t x = x)
-    (h : x ∈ unstableSet φ c) : x = c :=
-  by_contra fun hne ↦ disjoint_left.1 (disjoint_unstableSet hne) (self_mem_unstableSet_iff.2 hx) h
-
 /-- Time reversal is an involution. -/
 @[simp]
 theorem reverse_reverse {τ : Type*} [TopologicalSpace τ] [SubtractionCommMonoid τ]
@@ -349,6 +339,14 @@ theorem eq_of_mem_unstableSet_of_periodic (hx : x ∈ unstableSet φ q) {T : ℝ
   apply eq_of_mem_stableSet_of_periodic (φ := φ.reverse) (by simpa using hx) hT
   intro t
   simpa only [_root_.Flow.reverse_apply, neg_add_rev, add_comm] using (hper.neg (-t))
+
+/-- A fixed point of the flow lies on no stable set but its own. -/
+theorem eq_of_mem_stableSet {c : α} (hx : ∀ t, φ t x = x) (h : x ∈ stableSet φ c) : x = c :=
+  eq_of_mem_stableSet_of_periodic h one_ne_zero fun t ↦ by simp only [hx]
+
+/-- A fixed point of the flow lies on no unstable set but its own. -/
+theorem eq_of_mem_unstableSet {c : α} (hx : ∀ t, φ t x = x) (h : x ∈ unstableSet φ c) : x = c :=
+  eq_of_mem_unstableSet_of_periodic h one_ne_zero fun t ↦ by simp only [hx]
 
 /-- A nonconstant orbit that converges in forward time is injectively parametrized by time. -/
 theorem orbit_injective_of_mem_stableSet_of_ne
