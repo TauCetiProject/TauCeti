@@ -8,17 +8,10 @@ module
 -- `TauCeti.GL2Mirabolic`, `TauCeti.GL2Borel.mk` and `TauCeti.GL2WeylElement` occur in the
 -- statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Mirabolic
--- `ℚ_[p]`, `ℤ_[p]` and the inclusion `PadicInt.Coe.ringHom` occur in the statements below.
-public import Mathlib.NumberTheory.Padics.PadicIntegers
--- The topology of `GL (Fin 2) ℚ_[p]` as a unit group occurs in the statements below.
-public import Mathlib.Topology.Algebra.Group.Units
--- Non-public: the topology on matrices and the compactness of `ℤ_[p]` are used only in the
--- compactness and openness proofs, and the ultrametric inequality and the ultrametric determinant
--- bound only in integrality proofs.
-import Mathlib.Topology.Instances.Matrix
-import Mathlib.NumberTheory.Padics.ProperSpace
+-- `ℚ_[p]` and the subgroup `TauCeti.GLPadicInt` occur in the statements below.
+public import TauCeti.NumberTheory.Padics.GeneralLinearGroup
+-- Non-public: the ultrametric inequality is used only in the proof that `P⁺` is a submonoid.
 import Mathlib.Analysis.Normed.Group.Ultra
-import TauCeti.Analysis.Matrix.Ultra
 
 /-!
 # The standard subgroups of `GL₂(ℚ_p)`
@@ -26,10 +19,10 @@ import TauCeti.Analysis.Matrix.Ultra
 For a prime `p` this file names the subgroups and the submonoid of `G = GL₂(ℚ_p)` from which
 Colmez's construction of representations of `G` from `(φ, Γ)`-modules starts:
 
-* `K = GL₂(ℤ_p)`, the image of `GL₂(ℤ_p)` under the inclusion `ℤ_p ⊂ ℚ_p`
-  (`TauCeti.GL2PadicInt`). Its elements are the matrices with integral entries and unit
-  determinant, equivalently with `g` and `g⁻¹` both integral. Entrywise integrality alone does not
-  suffice: `diag(p, 1)` is integral but not in `K`. The subgroup `K` is compact and open.
+* `K = GL₂(ℤ_p)`, the case `n = Fin 2` of the subgroup `TauCeti.GLPadicInt p n` of `GLₙ(ℚ_p)`,
+  which is compact and open. Its elements are the matrices with integral entries and unit
+  determinant; entrywise integrality alone does not suffice: `diag(p, 1)` is integral but not in
+  `K` (`TauCeti.gl2PhiElement_notMem_glPadicInt`).
 * `P⁺`, the submonoid of the mirabolic subgroup `P = GL2Mirabolic ℚ_[p]` of matrices
   `!![a, b; 0, 1]` with `a, b ∈ ℤ_p` (`TauCeti.GL2MirabolicPlus`). The invertibility of the
   matrix forces `a ≠ 0`.
@@ -47,16 +40,12 @@ centre and the Weyl element generate `G`, this is the group-theoretic input of t
 
 ## Main definitions
 
-* `TauCeti.GL2PadicInt p`: the subgroup `GL₂(ℤ_p)` of `GL₂(ℚ_p)`.
 * `TauCeti.GL2MirabolicPlus p`: the submonoid `P⁺` of `GL₂(ℚ_p)`.
 * `TauCeti.GL2MirabolicPadicInt p`: the subgroup `P(ℤ_p) = P ∩ GL₂(ℤ_p)`.
 * `TauCeti.GL2PhiElement p`: the matrix `diag(p, 1)`.
 
 ## Main results
 
-* `TauCeti.GL2PadicInt.mem_iff`: `g ∈ GL₂(ℤ_p)` iff the entries of `g` are integral and its
-  determinant is a unit.
-* `TauCeti.GL2PadicInt.isOpen`, `TauCeti.GL2PadicInt.isCompact`: `GL₂(ℤ_p)` is open and compact.
 * `TauCeti.GL2MirabolicPlus.mk_mem_iff`: `!![a, b; 0, 1] ∈ P⁺` iff `a` and `b` are integral.
 * `TauCeti.GL2MirabolicPadicInt.mem_iff`: `P(ℤ_p)` consists of the mirabolic matrices with
   upper-left entry a `p`-adic unit and integral upper-right entry.
@@ -80,11 +69,6 @@ open Matrix
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
-/-- The subgroup `GL₂(ℤ_p)` of `GL₂(ℚ_p)`: the image of `GL₂(ℤ_p)` under the inclusion
-`ℤ_p ⊂ ℚ_p`. -/
-noncomputable def GL2PadicInt : Subgroup (GL (Fin 2) ℚ_[p]) :=
-  (Matrix.GeneralLinearGroup.map (PadicInt.Coe.ringHom (p := p))).range
-
 /-- The positive mirabolic monoid `P⁺`: the matrices `!![a, b; 0, 1]` with `a` and `b` in `ℤ_p`.
 Invertibility forces `a ≠ 0`. -/
 noncomputable def GL2MirabolicPlus : Submonoid (GL (Fin 2) ℚ_[p]) where
@@ -106,7 +90,7 @@ noncomputable def GL2MirabolicPlus : Submonoid (GL (Fin 2) ℚ_[p]) where
 /-- The integral mirabolic subgroup `P(ℤ_p) = P ∩ GL₂(ℤ_p)`: the matrices `!![a, b; 0, 1]` with
 `a ∈ ℤ_p^×` and `b ∈ ℤ_p`. -/
 noncomputable def GL2MirabolicPadicInt : Subgroup (GL (Fin 2) ℚ_[p]) :=
-  GL2Mirabolic ℚ_[p] ⊓ GL2PadicInt p
+  GL2Mirabolic ℚ_[p] ⊓ GLPadicInt p (Fin 2)
 
 /-- The matrix `φ = diag(p, 1)`, which acts on étale `(φ, Γ)`-modules as the Frobenius. -/
 noncomputable def GL2PhiElement : GL (Fin 2) ℚ_[p] :=
@@ -141,116 +125,18 @@ theorem gl2PhiElement_pow (n : ℕ) :
   simpa [gl2PhiElement_eq_mk] using
     congrArg Subtype.val (map_pow GL2Borel.torusHom (Units.mk0 (p : ℚ_[p]) _, 1) n).symm
 
-namespace GL2PadicInt
-
-/-- **Membership in `GL₂(ℤ_p)`**: an element of `GL₂(ℚ_p)` lies in `GL₂(ℤ_p)` exactly when its
-entries are integral and its determinant is a `p`-adic unit. -/
-theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
-    g ∈ GL2PadicInt p ↔ (∀ i j, ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) i j‖ ≤ 1) ∧
-      ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ = 1 := by
-  constructor
-  · rintro ⟨h, rfl⟩
-    refine ⟨fun i j => ?_, ?_⟩
-    · rw [Matrix.GeneralLinearGroup.map_apply, PadicInt.Coe.ringHom_apply, PadicInt.norm_coe]
-      exact PadicInt.norm_le_one _
-    · simpa [← RingHom.mapMatrix_apply, ← RingHom.map_det] using
-        PadicInt.isUnit_iff.mp (Matrix.GeneralLinearGroup.det h).isUnit
-  · rintro ⟨hint, hdet⟩
-    -- The entries of `g` lift to a matrix over `ℤ_p`, whose determinant is the unit `det g`.
-    set M : Matrix (Fin 2) (Fin 2) ℤ_[p] := fun i j => ⟨_, hint i j⟩
-    -- `ℤ_[p]` is a type synonym for a subtype of `ℚ_[p]`, so the value of `⟨x, hx⟩ : ℤ_[p]` is `x`
-    -- by `rfl`; Mathlib states no simp lemma for it (compare `PadicInt.mk_coe`).
-    have hM : M.map PadicInt.Coe.ringHom = (g : Matrix (Fin 2) (Fin 2) ℚ_[p]) :=
-      Matrix.ext fun _ _ => rfl
-    have hMdet : IsUnit M.det := by
-      simpa [PadicInt.isUnit_iff, ← PadicInt.norm_coe, ← PadicInt.Coe.ringHom_apply,
-        RingHom.map_det, hM] using hdet
-    refine ⟨Matrix.GeneralLinearGroup.mk'' M hMdet, Matrix.GeneralLinearGroup.ext fun i j => ?_⟩
-    simp [Matrix.GeneralLinearGroup.map_apply, ← hM]
-
-/-- **`GL₂(ℤ_p)` is the stabiliser of the standard lattice**: an element of `GL₂(ℚ_p)` lies in
-`GL₂(ℤ_p)` exactly when it and its inverse have integral entries. -/
-theorem mem_iff_inv {g : GL (Fin 2) ℚ_[p]} :
-    g ∈ GL2PadicInt p ↔ (∀ i j, ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]) i j‖ ≤ 1) ∧
-      ∀ i j, ‖((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]) i j‖ ≤ 1 := by
-  refine ⟨fun hg => ⟨(mem_iff.mp hg).1, (mem_iff.mp (Subgroup.inv_mem _ hg)).1⟩, ?_⟩
-  rintro ⟨hg, hg'⟩
-  refine mem_iff.mpr ⟨hg, ?_⟩
-  -- `det g * det g⁻¹ = 1` with both factors integral forces `‖det g‖ = 1`.
-  have h1 : ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ *
-      ‖((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ = 1 := by
-    simp [(Matrix.isUnits_det_units g).ne_zero]
-  -- By the ultrametric inequality an integral matrix has integral determinant.
-  have h2 : ‖(g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ ≤ 1 := by
-    simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ => 1) hg
-  have h3 : ‖((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det‖ ≤ 1 := by
-    simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ => 1) hg'
-  nlinarith [norm_nonneg ((g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det),
-    norm_nonneg (((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det)]
-
-/-- An element of `GL₂(ℚ_p)` lies in `GL₂(ℤ_p)` exactly when it is the image of an element of
-`GL₂(ℤ_p)` under the inclusion `ℤ_p ⊂ ℚ_p`. -/
-theorem mem_iff_exists_map {g : GL (Fin 2) ℚ_[p]} :
-    g ∈ GL2PadicInt p ↔
-      ∃ h : GL (Fin 2) ℤ_[p], Matrix.GeneralLinearGroup.map PadicInt.Coe.ringHom h = g :=
-  MonoidHom.mem_range
-
-/-- The image of an element of `GL₂(ℤ_p)` under the inclusion `ℤ_p ⊂ ℚ_p` lies in `GL₂(ℤ_p)`. -/
-@[simp]
-theorem map_mem (h : GL (Fin 2) ℤ_[p]) :
-    Matrix.GeneralLinearGroup.map PadicInt.Coe.ringHom h ∈ GL2PadicInt p :=
-  MonoidHom.mem_range.mpr ⟨h, rfl⟩
-
-variable (p)
-
-/-- `GL₂(ℤ_p)` is open in `GL₂(ℚ_p)`. -/
-theorem isOpen : IsOpen (GL2PadicInt p : Set (GL (Fin 2) ℚ_[p])) := by
-  have hball : IsOpen (Metric.closedBall (0 : ℚ_[p]) 1) :=
-    IsUltrametricDist.isOpen_closedBall _ one_ne_zero
-  have hset : (GL2PadicInt p : Set (GL (Fin 2) ℚ_[p])) =
-      (⋂ (i : Fin 2) (j : Fin 2), (fun g : GL (Fin 2) ℚ_[p] =>
-        (g : Matrix (Fin 2) (Fin 2) ℚ_[p]) i j) ⁻¹' Metric.closedBall 0 1) ∩
-      ⋂ (i : Fin 2) (j : Fin 2), (fun g : GL (Fin 2) ℚ_[p] =>
-        ((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]) i j) ⁻¹'
-          Metric.closedBall 0 1 := by
-    ext g
-    simp [mem_iff_inv]
-  rw [hset]
-  refine IsOpen.inter
-    (isOpen_iInter_of_finite (ι := Fin 2) fun i => isOpen_iInter_of_finite (ι := Fin 2) fun j =>
-      hball.preimage ?_)
-    (isOpen_iInter_of_finite (ι := Fin 2) fun i => isOpen_iInter_of_finite (ι := Fin 2) fun j =>
-      hball.preimage ?_)
-  · exact Units.continuous_val.matrix_elem i j
-  · exact (Units.continuous_val.comp continuous_inv).matrix_elem i j
-
-/-- `GL₂(ℤ_p)` is compact: it is the continuous image of the compact group `GL₂(ℤ_p)`. -/
-theorem isCompact : IsCompact (GL2PadicInt p : Set (GL (Fin 2) ℚ_[p])) := by
-  have hcont : Continuous
-      (Matrix.GeneralLinearGroup.map (n := Fin 2) (PadicInt.Coe.ringHom (p := p))) := by
-    refine Units.continuous_iff.mpr ⟨?_, ?_⟩
-    · exact Units.continuous_val.matrix_map continuous_subtype_val
-    · exact Units.continuous_coe_inv.matrix_map continuous_subtype_val
-  -- `Matrix` is a type synonym for a function type, so instance search does not find its
-  -- compactness, which the compactness instance of the unit group `GL (Fin 2) ℤ_[p]` needs.
-  have : CompactSpace (Matrix (Fin 2) (Fin 2) ℤ_[p]) :=
-    inferInstanceAs (CompactSpace (Fin 2 → Fin 2 → ℤ_[p]))
-  exact isCompact_range hcont
-
-end GL2PadicInt
-
 /-- The Weyl element lies in `GL₂(ℤ_p)`. -/
-theorem gl2WeylElement_mem_gl2PadicInt : GL2WeylElement ℚ_[p] ∈ GL2PadicInt p := by
-  refine GL2PadicInt.mem_iff.mpr ⟨fun i j => ?_, ?_⟩
+theorem gl2WeylElement_mem_glPadicInt : GL2WeylElement ℚ_[p] ∈ GLPadicInt p (Fin 2) := by
+  refine GLPadicInt.mem_iff.mpr ⟨fun i j => ?_, ?_⟩
   · fin_cases i <;> fin_cases j <;> simp
   · simp [Matrix.det_fin_two]
 
 /-- The integral matrix `φ = diag(p, 1)` does not lie in `GL₂(ℤ_p)`, its determinant `p` not being
 a unit: entrywise integrality alone does not characterise `GL₂(ℤ_p)`. -/
-theorem gl2PhiElement_notMem_gl2PadicInt : GL2PhiElement p ∉ GL2PadicInt p := by
+theorem gl2PhiElement_notMem_glPadicInt : GL2PhiElement p ∉ GLPadicInt p (Fin 2) := by
   intro h
   exact hp.out.ne_one <| by
-    simpa [Matrix.det_fin_two, Padic.norm_p] using (GL2PadicInt.mem_iff.mp h).2
+    simpa [Matrix.det_fin_two, Padic.norm_p] using (GLPadicInt.mem_iff.mp h).2
 
 namespace GL2MirabolicPlus
 
@@ -291,7 +177,7 @@ namespace GL2MirabolicPadicInt
 
 variable (p) in
 /-- `P(ℤ_p)` is the intersection of the mirabolic subgroup with `GL₂(ℤ_p)`. -/
-theorem eq_inf : GL2MirabolicPadicInt p = GL2Mirabolic ℚ_[p] ⊓ GL2PadicInt p :=
+theorem eq_inf : GL2MirabolicPadicInt p = GL2Mirabolic ℚ_[p] ⊓ GLPadicInt p (Fin 2) :=
   (rfl)
 
 /-- `P(ℤ_p) ⊆ P`. -/
@@ -299,7 +185,7 @@ theorem le_gl2Mirabolic : GL2MirabolicPadicInt p ≤ GL2Mirabolic ℚ_[p] :=
   inf_le_left
 
 /-- `P(ℤ_p) ⊆ GL₂(ℤ_p)`. -/
-theorem le_gl2PadicInt : GL2MirabolicPadicInt p ≤ GL2PadicInt p :=
+theorem le_glPadicInt : GL2MirabolicPadicInt p ≤ GLPadicInt p (Fin 2) :=
   inf_le_right
 
 /-- **Membership in `P(ℤ_p)`**: a mirabolic matrix `!![a, b; 0, 1]` lies in `GL₂(ℤ_p)` exactly when
@@ -311,7 +197,7 @@ theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
   rw [eq_inf, Subgroup.mem_inf, and_congr_right_iff]
   intro hg
   obtain ⟨hg₀, hg₁⟩ := GL2Mirabolic.mem_iff.mp hg
-  rw [GL2PadicInt.mem_iff, GL2Mirabolic.det_eq hg]
+  rw [GLPadicInt.mem_iff, GL2Mirabolic.det_eq hg]
   refine ⟨fun h => ⟨h.2, h.1 0 1⟩, fun h => ⟨fun i j => ?_, h.1⟩⟩
   fin_cases i <;> fin_cases j <;> simp [h.1.le, h.2, hg₀, hg₁]
 
