@@ -41,7 +41,8 @@ itself could be constant.
 * `TauCeti.WellOrdersOfBoundedType.realize_boundedTypeSentence_iff_type_lt`: the countable linear
   models of `boundedTypeSentence α` are the well-orders of type below `α`.
 * `TauCeti.WellOrdersOfBoundedType.exists_countable_realize_not_wellFoundedLT`: a sentence true in
-  arbitrarily large ordinals is true in a countable linear order that is not well-founded.
+  some ordinal `β ≥ α` for every countable ordinal `α` is true in a countable linear order that is
+  not well-founded.
 * `TauCeti.WellOrdersOfBoundedType.not_exists_sentenceω_realize_iff_wellFoundedLT`: no sentence
   defines the countable well-orders among the countable linear orders.
 
@@ -229,7 +230,8 @@ private theorem realize_chainSentence_iff (φ : Language.order.Sentenceω) (M : 
     Theoryω.realize_conjunction_iff, Theoryω.model_image_toOmega_iff, Sentence.realize_toInf,
     realize_ltAxiom, hle]
 
-/-- **A sentence true in arbitrarily large ordinals has a non-well-ordered countable model.** A
+/-- **A sentence true in ordinals above every countable ordinal has a non-well-ordered countable
+model.** A
 sentence of the language of orders that, for every countable ordinal `α`, holds in some ordinal
 `β ≥ α` also holds in a countable linear order, in any universe, that is not well-founded. -/
 theorem exists_countable_realize_not_wellFoundedLT (φ : Language.order.Sentenceω)
