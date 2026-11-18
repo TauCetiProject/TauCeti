@@ -155,6 +155,7 @@ theorem signedChecked_star_mul_single_apply [Fintype ι] (x y : TypeAHeckeAlgebr
   simp only [RingHom.id_apply, signedChecked_star_single_apply, mul_comm]
 
 /-- For self-adjoint weights, the atomic trace commutes with the real-parameter involution. -/
+@[simp]
 theorem atomicTrace_star [Finite ι] (hp : ∀ a, IsSelfAdjoint (p a)) (x : TypeAHeckeAlgebra R q n) :
     atomicTrace pos q p n (star x) = star (atomicTrace pos q p n x) := by
   have := Fintype.ofFinite ι
