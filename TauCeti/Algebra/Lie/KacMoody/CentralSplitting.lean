@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.Abelian
+public import TauCeti.Algebra.Lie.Hom
 public import TauCeti.Algebra.Lie.KacMoody.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.CentralSplitting
 
@@ -153,11 +154,10 @@ private theorem splittingHom_comp_splittingInv :
 presented Lie algebra. The first factor uses the actual restricted roots and coroots. -/
 noncomputable def centralSplitting : PresentedLieAlgebra R ≃ₗ⁅K⁆
     PresentedLieAlgebra (R.restrict M hc (R.sup_cartanCenter_eq_top_of_isCompl h hz)) ×
-      AbelianLieAlgebra Z where
-  toLieHom := splittingHom R M Z hc _ h hz
-  invFun := splittingInv R M Z hc _ hz
-  left_inv x := DFunLike.congr_fun (splittingInv_comp_splittingHom R M Z hc _ h hz) x
-  right_inv x := DFunLike.congr_fun (splittingHom_comp_splittingInv R M Z hc _ h hz) x
+      AbelianLieAlgebra Z :=
+  LieEquiv.ofLieHoms (splittingHom R M Z hc _ h hz) (splittingInv R M Z hc _ hz)
+    (splittingInv_comp_splittingHom R M Z hc _ h hz)
+    (splittingHom_comp_splittingInv R M Z hc _ h hz)
 
 /-- The splitting records the two projections of a Cartan vector. -/
 @[simp]
