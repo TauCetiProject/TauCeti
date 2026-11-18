@@ -68,9 +68,9 @@ private def ofExponentLEAux (hpq : p ≤ q) : (k : ℕ) → (u : Wkp mu Omega q 
       iteratedGradient k v =ᵐ[mu.restrict Omega] iteratedGradient k u}
   | 0, u => ⟨W1p.ofExponentLE hpq u, by
       simpa only [Nat.reduceAdd, value_one, value_one (W1p.ofExponentLE hpq u)] using
-        W1p.value_ofExponentLE_ae hpq u, by
+        (W1p.coeFn_value_ofExponentLE hpq u).eventuallyEq, by
       simpa only [iteratedGradient_zero, iteratedGradient_zero (W1p.ofExponentLE hpq u)] using
-        W1p.gradient_ofExponentLE_ae hpq u⟩
+        (W1p.coeFn_gradient_ofExponentLE hpq u).eventuallyEq⟩
   | k + 1, u =>
       let v := ofExponentLEAux hpq k (lowerOrder (k + 1) u)
       ⟨mk k v.1 (Lp.ofExponentLEL ℝ _ hpq (iteratedGradient (k + 1) u))
