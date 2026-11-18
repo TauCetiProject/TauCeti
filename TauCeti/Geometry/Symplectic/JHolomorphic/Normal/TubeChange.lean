@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.Rescaling
-import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.Calculus.IteratedFDeriv.SliceLimit
 
@@ -49,12 +47,12 @@ zero set of a Seiberg–Witten section, is asymptotically the same in both tubes
 * `TauCeti.tendstoUniformlyOn_iteratedFDeriv_normalDilationMap_of_isOpen`: if `g` is `C^(i+1)`
   on an open set `Ω` and maps the zero section into itself, the `i`-th derivatives of the
   dilations converge to those of `g_N`, uniformly on compact sets over the zero section in `Ω`.
-* `TauCeti.tendstoUniformlyOn_iteratedFDeriv_normalDilationMap_id_of_isOpen`: for a
-  first-jet identical change of tube they converge to the identity in `Cⁱ`; with `i = 1`, this is
+* `TauCeti.tendstoUniformlyOn_iteratedFDeriv_normalDilationMap_of_isOpen_of_firstJet_eq_id`: for
+  a first-jet identical change of tube they converge to the identity in `Cⁱ`; with `i = 1`, this is
   rescaled `C¹` convergence to the identity.
-* `TauCeti.exists_forall_norm_sub_le_mul_norm_sq`: a change of tube that is `C²` and first-jet
+* `TauCeti.exists_pos_forall_norm_sub_le_mul_norm_sq`: a change of tube that is `C²` and first-jet
   identical over a compact set of base points satisfies `‖g(z, ξ) - (z, ξ)‖ ≤ C ‖ξ‖²` there.
-* `TauCeti.exists_forall_abs_norm_snd_sub_norm_le_mul`,
+* `TauCeti.exists_pos_forall_abs_norm_snd_sub_norm_le_mul`,
   `TauCeti.tendsto_sSup_norm_snd_div_sSup_norm_snd`: the normal distances `‖ξ‖` and `‖g₂(z, ξ)‖`
   of a point in the two tubes have ratio tending to one, uniformly; hence the largest normal
   distances of sets shrinking to the zero section have ratio tending to one.
@@ -153,28 +151,26 @@ private def hadamardMap (g : E × N → E × N) (q : ℝ × (E × N)) : E × N :
   ((g (q.2.1, q.1 • q.2.2)).1,
     ∫ t in (0 : ℝ)..1, (fderiv ℝ g (q.2.1, t • q.1 • q.2.2) (0, q.2.2)).2)
 
+/-- On `normalSegmentDomain Ω`, the normal component of the average normal derivative of `g` is the
+average normal derivative of the normal component `g₂` of `g`. -/
+private theorem integral_fderiv_snd_eq {g : E × N → E × N} {Ω : Set (E × N)} (hΩ : IsOpen Ω)
+    (hg : ContDiffOn ℝ 1 g Ω) {q : ℝ × (E × N)} (hq : q ∈ normalSegmentDomain Ω) :
+    ∫ t in (0 : ℝ)..1, (fderiv ℝ g (q.2.1, t • q.1 • q.2.2) (0, q.2.2)).2 =
+      ∫ t in (0 : ℝ)..1, fderiv ℝ (fun x ↦ (g x).2) (q.2.1, t • q.1 • q.2.2) (0, q.2.2) := by
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  rw [uIcc_of_le zero_le_one] at ht
+  have h := ((hg.contDiffAt (hΩ.mem_nhds (mem_normalSegmentDomain.1 hq t ht))).differentiableAt
+    one_ne_zero).hasFDerivAt.snd
+  simp [h.fderiv]
+
 /-- The Hadamard form of the normal dilation is `Cⁿ` in `(a, z, W)` where the normal segments lie
 in an open set on which `g` is `C^(n+1)`. -/
 private theorem contDiffOn_hadamardMap {g : E × N → E × N} {Ω : Set (E × N)} (hΩ : IsOpen Ω)
     {n : ℕ∞} (hg : ContDiffOn ℝ ((n : WithTop ℕ∞) + 1) g Ω) :
-    ContDiffOn ℝ n (hadamardMap g) (normalSegmentDomain Ω) := by
-  have hg' : ContDiffOn ℝ n (fderiv ℝ g) Ω := hg.fderiv_of_isOpen hΩ le_rfl
-  have h₁ : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ (g (q.2.1, q.1 • q.2.2)).1)
-      (normalSegmentDomain Ω) :=
-    contDiff_fst.comp_contDiffOn ((hg.of_le le_self_add).comp
-      (by fun_prop : ContDiff ℝ n fun q : ℝ × (E × N) ↦ ((q.2.1, q.1 • q.2.2) : E × N)).contDiffOn
-      fun q hq ↦ by simpa using mem_normalSegmentDomain.1 hq 1 (right_mem_Icc.2 zero_le_one))
-  have h₂ : ContDiffOn ℝ n (fun q : ℝ × (E × N) ↦ ∫ t in (0 : ℝ)..1,
-      (fderiv ℝ g (q.2.1, t • q.1 • q.2.2) (0, q.2.2)).2) (normalSegmentDomain Ω) := by
-    refine ContDiffOn.parametric_intervalIntegral (isOpen_normalSegmentDomain hΩ) ?_
-    have hpt : ContDiffOn ℝ n (fun y : (ℝ × (E × N)) × ℝ ↦
-        fderiv ℝ g (y.1.2.1, y.2 • y.1.1 • y.1.2.2)) (normalSegmentDomain Ω ×ˢ uIcc 0 1) :=
-      hg'.comp (by fun_prop : ContDiff ℝ n fun y : (ℝ × (E × N)) × ℝ ↦
-        ((y.1.2.1, y.2 • y.1.1 • y.1.2.2) : E × N)).contDiffOn fun y hy ↦ by
-        rw [uIcc_of_le zero_le_one] at hy
-        exact mem_normalSegmentDomain.1 hy.1 y.2 hy.2
-    exact contDiff_snd.comp_contDiffOn (hpt.clm_apply (by fun_prop))
-  exact h₁.prodMk h₂
+    ContDiffOn ℝ n (hadamardMap g) (normalSegmentDomain Ω) :=
+  (hg.of_le le_self_add).comp_normalSegmentDomain.fst.prodMk
+    ((contDiffOn_integral_fderiv_normalSegmentDomain hΩ hg.snd).congr fun _ hq ↦
+      integral_fderiv_snd_eq hΩ (hg.of_le le_add_self) hq)
 
 variable [CompleteSpace N]
 
@@ -190,31 +186,10 @@ private theorem hadamardMap_of_ne_zero {g : E × N → E × N} {Ω : Set (E × N
     (hg : ContDiffOn ℝ 1 g Ω) {a : ℝ} {p : E × N} (hg₀ : (g (p.1, 0)).2 = 0) (ha : a ≠ 0)
     (hq : (a, p) ∈ normalSegmentDomain Ω) :
     hadamardMap g (a, p) = normalDilationMap g a p := by
-  -- Along the normal segment, `t ↦ g₂(z, t a W)` has derivative `a ∂_W g₂(z, t a W) W`.
-  have hd : ∀ t ∈ uIcc (0 : ℝ) 1, HasDerivAt (fun t : ℝ ↦ (g (p.1, t • a • p.2)).2)
-      (a • (fderiv ℝ g (p.1, t • a • p.2) (0, p.2)).2) t := by
-    intro t ht
-    rw [uIcc_of_le zero_le_one] at ht
-    have hgt : HasFDerivAt g (fderiv ℝ g (p.1, t • a • p.2)) (p.1, t • a • p.2) :=
-      ((hg.contDiffAt (hΩ.mem_nhds (mem_normalSegmentDomain.1 hq t ht))).differentiableAt
-        one_ne_zero).hasFDerivAt
-    have hγ : HasDerivAt (fun t : ℝ ↦ ((p.1, t • a • p.2) : E × N)) ((0 : E), a • p.2) t := by
-      simpa using (hasDerivAt_const t p.1).prodMk ((hasDerivAt_id t).smul_const (a • p.2))
-    have hv : ((0 : E), a • p.2) = a • ((0 : E), p.2) := by simp
-    have h := (ContinuousLinearMap.snd ℝ E N).hasFDerivAt.comp_hasDerivAt t
-      (hgt.comp_hasDerivAt t hγ)
-    rwa [hv, map_smul] at h
-  have hc : ContinuousOn (fun t : ℝ ↦ a • (fderiv ℝ g (p.1, t • a • p.2) (0, p.2)).2)
-      (uIcc 0 1) := by
-    refine continuousOn_const.smul (continuous_snd.comp_continuousOn
-      (((hg.continuousOn_fderiv_of_isOpen hΩ le_rfl).comp
-        (by fun_prop : Continuous fun t : ℝ ↦ ((p.1, t • a • p.2) : E × N)).continuousOn
-        fun t ht ↦ ?_).clm_apply continuousOn_const))
-    rw [uIcc_of_le zero_le_one] at ht
-    exact mem_normalSegmentDomain.1 hq t ht
-  have hI := intervalIntegral.integral_eq_sub_of_hasDerivAt hd hc.intervalIntegrable
-  simp only [one_smul, zero_smul, hg₀, sub_zero, intervalIntegral.integral_smul] at hI
-  rw [hadamardMap, normalDilationMap_apply, ← hI, inv_smul_smul₀ ha]
+  have h := inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain
+    (f := fun x ↦ (g x).2) hΩ hg.snd ha hq
+  rw [hg₀, sub_zero, ← integral_fderiv_snd_eq hΩ hg hq] at h
+  rw [hadamardMap, normalDilationMap_apply, h]
 
 variable {g : E × N → E × N}
 
@@ -259,8 +234,8 @@ an open set `Ω`, with `i + 1 ≤ n`, and let `g(z, 0) = (z, 0)` and `dg(z, 0) (
 the first jet of the identity there. Then the `i`-th derivatives of `δ_a⁻¹ ∘ g ∘ δ_a` converge to
 those of the identity uniformly on every compact set `K` with `(z, 0) ∈ Ω` for `(z, W) ∈ K`, as
 `a → 0`, `a ≠ 0`. -/
-theorem tendstoUniformlyOn_iteratedFDeriv_normalDilationMap_id_of_isOpen {Ω K : Set (E × N)}
-    {n : WithTop ℕ∞} {i : ℕ} (hΩ : IsOpen Ω) (hg : ContDiffOn ℝ n g Ω)
+theorem tendstoUniformlyOn_iteratedFDeriv_normalDilationMap_of_isOpen_of_firstJet_eq_id
+    {Ω K : Set (E × N)} {n : WithTop ℕ∞} {i : ℕ} (hΩ : IsOpen Ω) (hg : ContDiffOn ℝ n g Ω)
     (hg₀ : ∀ z, (z, 0) ∈ Ω → g (z, 0) = (z, 0))
     (hg₁ : ∀ z, (z, 0) ∈ Ω → ∀ ξ, fderiv ℝ g (z, 0) (0, ξ) = (0, ξ))
     (hi : (i + 1 : WithTop ℕ∞) ≤ n) (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
@@ -282,7 +257,7 @@ omit [CompleteSpace N]
 such that `g` is `C²` at `(z, 0)` with `g(z, 0) = (z, 0)` and `dg(z, 0) (0, ξ) = (0, ξ)` for
 `z ∈ K`. Then there are `r > 0` and `C` such that `‖g(z, ξ) - (z, ξ)‖ ≤ C ‖ξ‖²` for `z ∈ K`
 and `‖ξ‖ ≤ r`. -/
-theorem exists_forall_norm_sub_le_mul_norm_sq {K : Set E} (hK : IsCompact K)
+theorem exists_pos_forall_norm_sub_le_mul_norm_sq {K : Set E} (hK : IsCompact K)
     (hg : ∀ z ∈ K, ContDiffAt ℝ 2 g (z, 0)) (hg₀ : ∀ z ∈ K, g (z, 0) = (z, 0))
     (hg₁ : ∀ z ∈ K, ∀ ξ, fderiv ℝ g (z, 0) (0, ξ) = (0, ξ)) :
     ∃ r > 0, ∃ C, ∀ z ∈ K, ∀ ξ : N, ‖ξ‖ ≤ r → ‖g (z, ξ) - (z, ξ)‖ ≤ C * ‖ξ‖ ^ 2 := by
@@ -291,22 +266,28 @@ theorem exists_forall_norm_sub_le_mul_norm_sq {K : Set E} (hK : IsCompact K)
     (F := fun z ξ ↦ g (z, ξ)) (x := fun _ ↦ (0 : N)) hg continuousOn_const
   refine ⟨r, hr, C, fun z hz ξ hξ ↦ ?_⟩
   -- The slice at `z` has derivative `ξ ↦ (0, ξ)` at `0`.
-  have hd : HasFDerivAt (fun ξ ↦ g (z, ξ)) (fderiv ℝ g (z, 0) ∘L ContinuousLinearMap.inr ℝ E N)
-      0 :=
-    ((hg z hz).differentiableAt (by norm_num)).hasFDerivAt.comp (0 : N)
-      (hasFDerivAt_prodMk_right z 0)
-  simpa [hd.fderiv, hg₀ z hz, hg₁ z hz, max_eq_left (norm_nonneg ξ), sq, mul_assoc,
-    sub_sub] using
-    hC z hz ξ 0 hξ (by simpa using hr.le)
+  have hd : fderiv ℝ (fun ξ ↦ g (z, ξ)) 0 ξ = (0, ξ) := by
+    have h : HasFDerivAt (fun ξ ↦ g (z, ξ))
+        (fderiv ℝ g (z, 0) ∘L ContinuousLinearMap.inr ℝ E N) 0 :=
+      ((hg z hz).differentiableAt (by norm_num)).hasFDerivAt.comp (0 : N)
+        (hasFDerivAt_prodMk_right z 0)
+    rw [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply, hg₁ z hz]
+  -- Since `g(z, 0) = (z, 0)`, the first-order remainder is `g(z, ξ) - (z, ξ)`.
+  have hsub : g (z, ξ) - g (z, 0) - (0, ξ) = g (z, ξ) - (z, ξ) := by
+    rw [hg₀ z hz, sub_sub, Prod.mk_add_mk, add_zero, zero_add]
+  have hT : ‖g (z, ξ) - g (z, 0) - fderiv ℝ (fun ξ ↦ g (z, ξ)) 0 ξ‖ ≤
+      C * max ‖ξ‖ 0 * ‖ξ‖ := by
+    simpa only [zero_add, sub_zero, norm_zero] using hC z hz ξ 0 hξ (by simpa using hr.le)
+  rwa [hd, hsub, max_eq_left (norm_nonneg ξ), mul_assoc, ← sq] at hT
 
 /-- **Normal distances in first-jet identical tubes are asymptotic.** Under the hypotheses of
-`TauCeti.exists_forall_norm_sub_le_mul_norm_sq`, for every `ε > 0` there is `δ > 0` such that for
-`z ∈ K` and `‖ξ‖ < δ` the normal coordinate of `g(z, ξ)` has norm within `ε ‖ξ‖` of `‖ξ‖`. -/
-theorem exists_forall_abs_norm_snd_sub_norm_le_mul {K : Set E} (hK : IsCompact K)
+`TauCeti.exists_pos_forall_norm_sub_le_mul_norm_sq`, for every `ε > 0` there is `δ > 0` such that
+for `z ∈ K` and `‖ξ‖ < δ` the normal coordinate of `g(z, ξ)` has norm within `ε ‖ξ‖` of `‖ξ‖`. -/
+theorem exists_pos_forall_abs_norm_snd_sub_norm_le_mul {K : Set E} (hK : IsCompact K)
     (hg : ∀ z ∈ K, ContDiffAt ℝ 2 g (z, 0)) (hg₀ : ∀ z ∈ K, g (z, 0) = (z, 0))
     (hg₁ : ∀ z ∈ K, ∀ ξ, fderiv ℝ g (z, 0) (0, ξ) = (0, ξ)) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ z ∈ K, ∀ ξ : N, ‖ξ‖ < δ → |‖(g (z, ξ)).2‖ - ‖ξ‖| ≤ ε * ‖ξ‖ := by
-  obtain ⟨r, hr, C, hC⟩ := exists_forall_norm_sub_le_mul_norm_sq hK hg hg₀ hg₁
+  obtain ⟨r, hr, C, hC⟩ := exists_pos_forall_norm_sub_le_mul_norm_sq hK hg hg₀ hg₁
   refine ⟨min r (ε / (|C| + 1)), by positivity, fun z hz ξ hξ ↦ ?_⟩
   have hξε : (|C| + 1) * ‖ξ‖ ≤ ε :=
     ((lt_div_iff₀' (by positivity)).1 (hξ.trans_le (min_le_right _ _))).le
@@ -320,7 +301,7 @@ theorem exists_forall_abs_norm_snd_sub_norm_le_mul {K : Set E} (hK : IsCompact K
     _ ≤ ε * ‖ξ‖ := by gcongr
 
 /-- **The largest normal distances in first-jet identical tubes have ratio tending to one.** Under
-the hypotheses of `TauCeti.exists_forall_norm_sub_le_mul_norm_sq`, let `S i` be sets of points
+the hypotheses of `TauCeti.exists_pos_forall_norm_sub_le_mul_norm_sq`, let `S i` be sets of points
 over `K` whose largest normal distance `a i = sup_{(z, ξ) ∈ S i} ‖ξ‖` is eventually positive and
 tends to zero. Then the largest normal distance of `g (S i)` divided by `a i` tends to one. -/
 theorem tendsto_sSup_norm_snd_div_sSup_norm_snd {K : Set E} (hK : IsCompact K)
@@ -334,7 +315,7 @@ theorem tendsto_sSup_norm_snd_div_sSup_norm_snd {K : Set E} (hK : IsCompact K)
   rw [Metric.tendsto_nhds]
   intro ε hε
   obtain ⟨δ, hδ, hgδ⟩ :=
-    exists_forall_abs_norm_snd_sub_norm_le_mul hK hg hg₀ hg₁ (half_pos hε)
+    exists_pos_forall_abs_norm_snd_sub_norm_le_mul hK hg hg₀ hg₁ (half_pos hε)
   filter_upwards [hpos, hS.eventually (gt_mem_nhds hδ)] with i hi hiδ
   set a := sSup ((fun p ↦ ‖p.2‖) '' S i)
   set b := sSup ((fun p ↦ ‖(g p).2‖) '' S i)
