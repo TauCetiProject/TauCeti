@@ -37,15 +37,13 @@ theorem invOf_two_eq {A : Type*} [Semiring A] [Algebra ℂ A] [Invertible (2 : A
 
 end TauCeti.JordanStarMap
 
-namespace LinearMap
+namespace AddMonoidHom
 
-/-- A semilinear map preserving self-adjoint squares preserves anticommutators of
-self-adjoint elements. Only cancellative addition in the codomain is used. -/
+/-- An additive homomorphism preserving self-adjoint squares preserves anticommutators of
+self-adjoint elements when addition in the codomain is cancellative. -/
 theorem map_mul_add_mul_of_isSelfAdjoint
-    {R S A B : Type*} [Semiring R] [Semiring S] {σ : R →+* S}
-    [NonUnitalNonAssocSemiring A] [StarAddMonoid A] [Module R A]
-    [NonUnitalNonAssocSemiring B] [IsCancelAdd B] [Module S B]
-    (f : A →ₛₗ[σ] B)
+    {A B : Type*} [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
+    [NonUnitalNonAssocSemiring B] [IsCancelAdd B] (f : A →+ B)
     (hf : ∀ x, IsSelfAdjoint x → f (x * x) = f x * f x)
     {x y : A} (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) :
     f (x * y + y * x) = f x * f y + f y * f x := by
@@ -57,6 +55,10 @@ theorem map_mul_add_mul_of_isSelfAdjoint
   rw [← add_assoc, ← add_assoc] at h'
   rw [add_comm (f (x * y)), add_comm (f x * f y)]
   exact add_right_cancel h'
+
+end AddMonoidHom
+
+namespace LinearMap
 
 /-- A complex linear map on a complex star module that preserves self-adjoint squares
 preserves anticommutators. No involution on the codomain is required. -/
@@ -73,7 +75,7 @@ theorem map_mul_add_mul_of_map_mul_self_of_isSelfAdjoint
     (f := symMulA.compr₂ f) (g := (symMulB ∘ₗ f).compl₂ f)
     (LinearMap.ext_on span_selfAdjoint fun a ha ↦
       LinearMap.ext_on span_selfAdjoint fun b hb ↦
-        f.map_mul_add_mul_of_isSelfAdjoint hf ha hb) x y
+        f.toAddMonoidHom.map_mul_add_mul_of_isSelfAdjoint hf ha hb) x y
 
 /-- For a complex linear map on a complex star module, preserving self-adjoint squares
 is equivalent to preserving multiplication in the symmetrized algebra.
@@ -263,9 +265,9 @@ theorem map_one_of_mem_range
     infer_instance
   have hy : f (x + star x) = (2 : ℂ) • (1 : B) := by
     simp [map_star, hx, two_smul]
-  have h := f.toLinearMap.map_mul_add_mul_of_isSelfAdjoint
+  have h := f.toLinearMap.toAddMonoidHom.map_mul_add_mul_of_isSelfAdjoint
     f.map_mul_self_of_isSelfAdjoint' (IsSelfAdjoint.add_star_self x) (.one A)
-  simp only [mul_one, one_mul, toLinearMap_apply] at h
+  simp only [mul_one, one_mul, LinearMap.toAddMonoidHom_coe, toLinearMap_apply] at h
   rw [map_add, hy] at h
   have h' : (2 : ℂ) • (2 : ℂ) • (1 : B) = (2 : ℂ) • (2 : ℂ) • f 1 := by
     simpa [two_smul, add_mul, mul_add] using h
