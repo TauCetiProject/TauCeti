@@ -128,6 +128,16 @@ theorem detLineChartEquiv_detLineStabilizationEquiv [FiniteDimensional 𝕜 T.ke
       LinearEquiv.rTensor _ (kerEquivOfProd _ q h).toLinearEquiv.symm.detLineCongr z := by
   simp [detLineChartEquiv]
 
+/-- Kernel charts `ContinuousLinearMap.detLineChartEquiv` commute with `LinearMap.detLineOfEq`. -/
+theorem detLineChartEquiv_detLineOfEq {T₀ T₁ : E →L[𝕜] F} (hT : T₀ = T₁) (D₂ : Λ →L[𝕜] F)
+    (q : E × Λ →L[𝕜] G) (h₀ : ((T₀.coprod D₂).prod q).IsInvertible)
+    (h₁ : ((T₁.coprod D₂).prod q).IsInvertible) (v : (T₀ : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv T₁ D₂ q h₁
+        (LinearMap.detLineOfEq (congrArg ContinuousLinearMap.toLinearMap hT) v) =
+      detLineChartEquiv T₀ D₂ q h₀ v := by
+  subst hT
+  simp
+
 section Nested
 
 variable {Λ' G' : Type*} [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ']

@@ -365,6 +365,21 @@ theorem trivialization_symm_apply {T : {T : E →L[𝕜] F // T.IsFredholm}}
     (trivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c :=
   pretrivialization_symm_apply h c
 
+/-- Membership in the base set of `trivialization D₂ q` is invertibility of the bordered operator
+`((T.1.coprod D₂).prod q)`. -/
+theorem mem_trivialization_baseSet_iff {T : {T : E →L[𝕜] F // T.IsFredholm}} :
+    T ∈ (trivialization D₂ q).baseSet ↔ ((T.1.coprod D₂).prod q).IsInvertible := by
+  simp
+
+/-- Over its base set, the fibrewise linear equivalence of `trivialization D₂ q` is
+`chartCoord D₂ q`. -/
+theorem linearEquivAt_trivialization {T : {T : E →L[𝕜] F // T.IsFredholm}}
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) :
+    (trivialization D₂ q).linearEquivAt 𝕜 T ((mem_trivialization_baseSet_iff D₂ q).2 h) =
+      chartCoord D₂ q h := by
+  ext v
+  simp [Trivialization.linearEquivAt_apply, trivialization_apply_mk D₂ q h]
+
 end FredholmDetLine
 
 end TauCeti
