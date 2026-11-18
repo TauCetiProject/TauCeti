@@ -52,16 +52,12 @@ private theorem airy_term_eq (A B z : ℂ) (k : ℕ) :
   have h43 : Gamma (4 / 3 : ℂ) = Gamma (1 / 3) / 3 := by
     rw [show (4 / 3 : ℂ) = 1 / 3 + 1 by norm_num, Gamma_add_one _ (by norm_num)]
     ring
-  have hoff : ∀ c : ℂ, 0 < c.re → ∀ m : ℕ, c ≠ -m := fun c hc m h => by
-    have := congrArg re h
-    simp only [neg_re, natCast_re] at this
-    linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
-  rw [Gamma_add_natCast_eq_ascPochhammer_eval_mul (hoff _ (by norm_num)) k,
-    Gamma_add_natCast_eq_ascPochhammer_eval_mul (hoff _ (by norm_num)) k, h43,
-    factorial_three_mul (K := ℂ), factorial_three_mul_add_one (K := ℂ)]
-  have p1 := ascPochhammer_eval_ne_zero (hoff (1 / 3) (by norm_num)) k
-  have p2 := ascPochhammer_eval_ne_zero (hoff (2 / 3) (by norm_num)) k
-  have p4 := ascPochhammer_eval_ne_zero (hoff (4 / 3) (by norm_num)) k
+  rw [Gamma_add_natCast_eq_ascPochhammer_eval_mul (ne_neg_natCast_of_re_pos (by norm_num)) k,
+    Gamma_add_natCast_eq_ascPochhammer_eval_mul (ne_neg_natCast_of_re_pos (by norm_num)) k, h43,
+    Nat.factorial_three_mul (K := ℂ), Nat.factorial_three_mul_add_one (K := ℂ)]
+  have p1 := ascPochhammer_eval_ne_zero (ne_neg_natCast_of_re_pos (b := 1 / 3) (by norm_num)) k
+  have p2 := ascPochhammer_eval_ne_zero (ne_neg_natCast_of_re_pos (b := 2 / 3) (by norm_num)) k
+  have p4 := ascPochhammer_eval_ne_zero (ne_neg_natCast_of_re_pos (b := 4 / 3) (by norm_num)) k
   have g1 : Gamma (1 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have g2 : Gamma (2 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have hk : (k ! : ℂ) ≠ 0 := by exact_mod_cast k.factorial_ne_zero

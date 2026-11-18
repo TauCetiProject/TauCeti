@@ -20,8 +20,8 @@ Gamma-denominator power series in `z³` into hypergeometric form.
 
 ## Main results
 
-* `TauCeti.factorial_three_mul`: `(3k)! = 27^k k! (⅓)_k (⅔)_k`.
-* `TauCeti.factorial_three_mul_add_one`: `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`.
+* `Nat.factorial_three_mul`: `(3k)! = 27^k k! (⅓)_k (⅔)_k`.
+* `Nat.factorial_three_mul_add_one`: `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/Airy/Basic/Maclaurin.lean`.
@@ -32,7 +32,7 @@ public section
 open Polynomial
 open scoped Nat
 
-namespace TauCeti
+namespace Nat
 
 variable {K : Type*} [Field K] [CharZero K]
 
@@ -64,4 +64,4 @@ theorem factorial_three_mul_add_one (k : ℕ) :
     push_cast
     ring
 
-end TauCeti
+end Nat
