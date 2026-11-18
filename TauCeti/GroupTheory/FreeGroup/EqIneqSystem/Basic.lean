@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.Data.List.ProdSigma
+public import TauCeti.GroupTheory.FreeGroup.Substitution
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 
 /-!
@@ -23,7 +24,9 @@ this way when the coefficients generate `G` (`TauCeti.EqIneqSystem.toGX_surjecti
 
 A system is presented as finite syntax by two lists of possibly unreduced words
 (`TauCeti.EqIneqSystem.ofWords`); whether an assignment solves it depends only on the variables
-occurring in the words (`TauCeti.EqIneqSystem.isSolution_ofWords_congr`).
+occurring in the words (`TauCeti.EqIneqSystem.isSolution_ofWords_congr`). Over `F(A)`, evaluating
+a word at the elements represented by words is substituting these words and freely reducing
+(`TauCeti.EqIneqSystem.eval_mk_eq_mk_substituteVars`).
 
 The equation–inequation viewpoint follows Kharlampovich and Myasnikov, *Implicit function
 theorem over free groups*, §2.3.
@@ -69,6 +72,13 @@ theorem eval_mk_congr {v v' : X → G} (c : A → G) {w : List ((X ⊕ A) × Boo
   obtain ⟨x | a, b⟩ := y
   · simp [h x b hy]
   · simp
+
+/-- Evaluating a word at the elements of `F(A)` represented by words `U`, the letters of `A`
+standing for themselves, is substituting `U` into the word and freely reducing. -/
+theorem eval_mk_eq_mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
+    eval (fun x => FreeGroup.mk (U x)) FreeGroup.of (FreeGroup.mk w) =
+      FreeGroup.mk (FreeGroup.substituteVars U w) := by
+  rw [FreeGroup.mk_substituteVars, eval_eq_lift]
 
 variable (X) in
 /-- Words in variables `X` and letters of `A`, read as elements of `G[X] = G ∗ F(X)` through the
