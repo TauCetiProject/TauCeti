@@ -14,9 +14,11 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 
 The positive right-angle rotation in each tangent plane defines a smooth almost complex
 structure. This construction needs only smoothness of the metric and orientation.
+
+Ported from Riccardo Brasca's `ForTauCeti` formalization.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -57,7 +59,7 @@ theorem rightAngleAlmostComplexStructure_apply
     o.rightAngleAlmostComplexStructure x v =
       (letI := o.fact_finrank_tangentSpace x
        (o.orientationAt x).rightAngleRotation v) :=
-  rfl
+  (rfl)
 
 /-- The metric-induced complex structure is orthogonal in each tangent plane. -/
 theorem inner_rightAngleAlmostComplexStructure
