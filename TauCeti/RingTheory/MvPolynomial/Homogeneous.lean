@@ -25,7 +25,8 @@ expanding the polynomial.
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
 notation such as `hp.eval₂_const_mul` and `hp.aeval_smul_of_algebra`, the latter for a scalar
 algebra that may differ from the coefficient algebra; Mathlib supplies `hp.aeval_smul` and
-`hp.eval_smul` themselves. In the same way
+`hp.eval_smul` themselves. For `a = -1` this gives `hp.eval_neg`, and `hp.eval_neg_of_even` in
+even degree. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
@@ -94,6 +95,18 @@ theorem aeval_smul_of_algebra {σ R S A : Type*}
   rw [Pi.smul_def]
   simpa only [_root_.MvPolynomial.aeval_def, Algebra.smul_def, map_pow] using
     hp.eval₂_const_mul (algebraMap R A) g (algebraMap S A a)
+
+/-- At `-x`, a homogeneous polynomial of degree `n` takes `(-1) ^ n` times its value at `x`. -/
+theorem eval_neg {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (x : σ → R) :
+    _root_.MvPolynomial.eval (-x) p = (-1) ^ n * _root_.MvPolynomial.eval x p := by
+  simpa using hp.eval_smul (-1) x
+
+/-- A homogeneous polynomial of even degree takes the same value at `x` and `-x`. -/
+theorem eval_neg_of_even {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (hn : Even n) (x : σ → R) :
+    _root_.MvPolynomial.eval (-x) p = _root_.MvPolynomial.eval x p := by
+  rw [hp.eval_neg, hn.neg_one_pow, one_mul]
 
 /-- The coefficient of `X_j ^ n` in a homogeneous polynomial of degree `n` is its value at the
 `j`-th basis vector: every other monomial involves a variable other than `X_j`. -/
