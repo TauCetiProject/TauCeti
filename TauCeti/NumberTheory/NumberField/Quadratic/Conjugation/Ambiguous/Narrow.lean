@@ -173,7 +173,7 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one
     mul_ringOfIntegersQuadraticConj_eq_of_span_mul_map_eq hmin hgen hJ0
       (norm_pos_of_isTotallyPositive (mul_ne_zero hxK hyK) hpos) hxy
   -- Hilbert 90 produces the twisting element.
-  obtain ⟨ε, hε0, hε⟩ := exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hx hnorm
+  obtain ⟨ε, hε0, hε⟩ := exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hnorm
   have hspanε : Ideal.span ({ε} : Set (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]; exact hε0
   have hI0 : Ideal.span {ε} * (J : Ideal (𝓞 K)) ≠ 0 := mul_ne_zero hspanε hJ0

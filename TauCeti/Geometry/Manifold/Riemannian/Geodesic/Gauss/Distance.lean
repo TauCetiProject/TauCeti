@@ -48,6 +48,8 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 * `image_riemannianExp_ball` and `image_riemannianExp_closedBall`: geodesic balls are metric
   balls, with `image_riemannianExp_ball_eq_ball` and
   `image_riemannianExp_closedBall_eq_closedBall` for ordinary metrics.
+* `isCompact_closedEBall` and `isCompact_closedBall`: a closed metric ball whose tangent ball
+  lies in a normal domain is compact, without any completeness assumption.
 * `contMDiffOn_dist_sq`: the squared distance from the centre is smooth on a metric normal ball.
 * `edist_eq_ofReal_add_infEDist`: the distance to a point outside a geodesic ball is its radius
   plus the distance to the geodesic sphere.
@@ -61,6 +63,10 @@ In the namespace `TauCeti.Manifold`:
 
 ## References
 
+* Giada Franz's Apache-2.0 `riccardobrasca/ColdingMinicozziTheory` formalization, revision
+  `853c7c106211a2ed003aacdd6192abe0f363256b`,
+  `ForTauCeti/Geometry/Manifold/Riemannian/Geodesic/Normal/Compact.lean`, for
+  `IsNormalDomain.isCompact_closedBall`; the nonnegative-radius hypothesis is dropped here.
 * The Apache-2.0 `frenzymath/Poincare-Conjecture` formalization, revision
   `24f32e4d600878bfaac6bc2f2f9324175571c321`, especially
   `DoCarmoLib/Riemannian/Exponential/NormalBallEDist.lean`.
@@ -255,6 +261,15 @@ theorem image_riemannianExp_closedBall (h : IsNormalDomain I M p U) (hU : closed
         (sphere_subset_closedBall.trans (hU.trans h.subset_expDomain))).isClosed
     exact image_mono sphere_subset_closedBall ((mem_iff_infEDist_zero_of_closed hS).2 hzero)
 
+/-- A closed extended metric ball whose tangent ball lies in a normal domain is compact.
+No completeness is assumed. -/
+theorem isCompact_closedEBall (h : IsNormalDomain I M p U) (hU : closedBall 0 r ⊆ U) :
+    IsCompact (closedEBall p (ENNReal.ofReal r)) := by
+  by_cases hr : 0 ≤ r
+  · rw [← h.image_riemannianExp_closedBall hU hr]
+    exact isCompact_riemannianExp_image_closedBall p (hU.trans h.subset_expDomain)
+  · simp [ENNReal.ofReal_of_nonpos (le_of_not_ge hr)]
+
 /-- **Geodesic balls are metric balls.** If the open tangent ball of radius `r` lies in a normal
 domain at `p`, then its exponential image is the open metric ball of radius `r` about `p`. -/
 theorem image_riemannianExp_ball (h : IsNormalDomain I M p U)
@@ -303,6 +318,14 @@ theorem IsNormalDomain.image_riemannianExp_closedBall_eq_closedBall
     riemannianExp I M p '' closedBall 0 r = closedBall p r := by
   by_cases hr : 0 ≤ r
   · rw [h.image_riemannianExp_closedBall hU hr, Metric.closedEBall_ofReal hr]
+  · simp [Metric.closedBall_of_neg (lt_of_not_ge hr)]
+
+/-- A closed metric ball whose tangent ball lies in a normal domain is compact.
+No completeness is assumed. -/
+theorem IsNormalDomain.isCompact_closedBall (h : IsNormalDomain I M p U)
+    (hU : closedBall 0 r ⊆ U) : IsCompact (closedBall p r) := by
+  by_cases hr : 0 ≤ r
+  · simpa only [Metric.closedEBall_ofReal hr] using h.isCompact_closedEBall hU
   · simp [Metric.closedBall_of_neg (lt_of_not_ge hr)]
 
 /-- On a closed normal ball, the distance from the centre is the norm of the logarithm. -/

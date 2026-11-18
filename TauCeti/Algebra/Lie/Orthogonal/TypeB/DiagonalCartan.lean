@@ -129,11 +129,7 @@ theorem typeBDiagonalMatrix_mem_diagonalCartan (d : ι → K) :
 /-- Every `diag(0, d, -d)` is skew-adjoint for the split type-`B` form. -/
 theorem typeBDiagonalMatrix_mem_typeB (d : ι → K) :
     typeBDiagonalMatrix d ∈ LieAlgebra.Orthogonal.typeB ι K := by
-  rw [LieAlgebra.Orthogonal.typeB, mem_skewAdjointMatricesLieSubalgebra,
-    mem_skewAdjointMatricesSubmodule]
-  -- Unfold the skew-adjoint submodule predicate to the matrix equation defining `typeB`.
-  change (typeBDiagonalMatrix d)ᵀ * LieAlgebra.Orthogonal.JB ι K =
-    LieAlgebra.Orthogonal.JB ι K * (-typeBDiagonalMatrix d)
+  rw [LieAlgebra.Orthogonal.typeB.mem_iff]
   ext a b
   rcases a with a | (a | a)
   · rcases b with b | (b | b)
