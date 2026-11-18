@@ -251,7 +251,7 @@ theorem finiteDimensional_divisorCechCohomology_one_add_point_iff :
       FiniteDimensional ℂ (divisorCechCohomology D 1) := by
   constructor
   · intro h
-    exact finiteDimensional_of_exact (exact_pointTwist_connecting_cohomologyMap D x)
+    exact (exact_pointTwist_connecting_cohomologyMap D x).moduleFinite
   · intro h
     exact FiniteDimensional.of_surjective (pointTwistCohomologyMap D x 1)
       (pointTwistCohomologyMap_one_surjective D x)
