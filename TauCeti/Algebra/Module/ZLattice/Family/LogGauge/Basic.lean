@@ -608,9 +608,7 @@ private theorem continuousAt_torusFamilyLogGauge_out
       torusFamilyLogGauge_mk_of_exp_eq P l (hL hp)]
 
 include hcont in
-/-- The inverse of the logarithmic gauge is continuous on the punctured family. Near `t₀ ≠ 0`
-it is computed with a local `m`-th root of `t` and a logarithm of it, both continuous at `t₀`
-(`TauCeti.rootsOfUnityBall.exists_contMDiffAt_root_and_log`). -/
+/-- The inverse of the logarithmic gauge is continuous on the punctured family. -/
 private theorem continuousAt_torusFamilyLogGaugeInv
     {y₀ : letI := periodAddAction P
       AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E)}
@@ -628,7 +626,8 @@ private theorem continuousAt_torusFamilyLogGaugeInv
   rw [← hq.continuousAt_comp_iff]
   have ht₀ : (t₀ : ℂ) ≠ 0 := by rwa [torusFamilyProjection_mk] at hy₀
   -- Near `t₀`, use a continuous local `m`-th root `w t` of `t` and a continuous logarithm `L t`.
-  obtain ⟨L, w, hL, hw, hLw⟩ := rootsOfUnityBall.exists_contMDiffAt_root_and_log (n := 0) hr ht₀
+  obtain ⟨w, L, hw, hL, hLw⟩ :=
+    rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq (n := 0) hr ht₀
   have hopen : IsOpen {p : Metric.ball (0 : ℂ) (r ^ m) × E | (p.1 : ℂ) ≠ 0} :=
     isOpen_ne_fun (continuous_subtype_val.comp continuous_fst) continuous_const
   have hΨ := isOpenQuotientMap_logTranslationQuotient_mk P l hcont

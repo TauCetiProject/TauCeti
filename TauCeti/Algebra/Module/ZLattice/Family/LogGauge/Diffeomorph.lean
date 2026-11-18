@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.ContMDiff
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
@@ -136,9 +135,7 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv
   rw [Function.comp_apply, hF _ hq, torusFamilyLogGaugeEquiv_mk]
 
 /-- A map out of the family `Y` which agrees with the inverse of the logarithmic gauge on the
-punctured part is `C^n` at the class of every point over `t ≠ 0`. Near `t₀`, the inverse is
-computed with a holomorphic local `m`-th root of `t` and a holomorphic logarithm of it
-(`TauCeti.rootsOfUnityBall.exists_contMDiffAt_root_and_log`). -/
+punctured part is `C^n` at the class of every point over `t ≠ 0`. -/
 private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv_symm
     (F : letI := periodAddAction P
       letI := periodAddAction (powPullbackPeriod m r P)
@@ -181,8 +178,9 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv_symm
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
     (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
   rw [← (isLocalDiffeomorph_torusFamily_mk P hinj hP (t₀, e₀)).contMDiffAt_comp_iff le_rfl]
-  -- Near `t₀`, use a holomorphic local `m`-th root `w t` of `t` and a holomorphic logarithm `L t`.
-  obtain ⟨L, w, hL, hw, hLw⟩ := rootsOfUnityBall.exists_contMDiffAt_root_and_log (n := n) hr ht₀
+  -- Near `t₀`, use a `C^n` local `m`-th root `w t` of `t` and a `C^n` logarithm `L t`.
+  obtain ⟨w, L, hw, hL, hLw⟩ :=
+    rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq (n := n) hr ht₀
   have hπ := ((isLocalDiffeomorph_torusFamilyAffineQuotient_mk (powPullbackPeriod m r P)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (fun _ _ ↦ AddMonoidHom.id E)
