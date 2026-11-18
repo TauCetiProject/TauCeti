@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.ReducedWord
-public import TauCeti.GroupTheory.GroupAlgGeom.Automorphism
-import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
 # Spellings in which every variable occurs twice
@@ -30,7 +28,6 @@ reduced.
 ## Main results
 
 * `GX.exists_crossCap_or_handle_or_boundary`: the three patterns.
-* `GX.prod_map_letter_mem_avoiding`: a variable that is not spelled does not occur in the product.
 
 ## References
 
@@ -114,7 +111,7 @@ theorem exists_crossCap_or_handle_or_boundary {l : List (G ⊕ X × Bool)}
           q ++ p = .inr (x, ε) :: (L.map .inl ++ .inr (x, !ε) :: B)) := by
   obtain ⟨x₀, hx₀⟩ := hne
   obtain ⟨p₀, A₀, q₀, e₀, d₀, rfl⟩ :=
-    exists_eq_append_cons_append_cons (show 2 ≤ countVar x₀ l by have := hl x₀; omega)
+    exists_eq_append_cons_append_cons (x := x₀) (l := l) (by have := hl x₀; omega)
   -- an innermost pair `x^e A x^d` of `l = p ++ x^e A x^d q`
   obtain ⟨x, e, d, p, A, q, hpq, hxA, hA⟩ := exists_innermost_pair p₀ A₀ q₀ x₀ e₀ d₀
   rw [hpq] at hl ⊢
@@ -142,18 +139,5 @@ theorem exists_crossCap_or_handle_or_boundary {l : List (G ⊕ X × Bool)}
     exact ⟨p ++ .inr (x, e) :: A₁, .inr (z, η) :: (A₂ ++ .inr (x, !e) :: q), by simp,
       .inl ⟨z, η, A₂ ++ .inr (x, !e) :: B₁, B₂ ++ .inr (x, e) :: A₁, by simp [hB']⟩⟩
   · exact ⟨p, _, rfl, .inr (.inl ⟨x, z, e, η, A₁, A₂, B₁, B₂, hxz, by simp [hB]⟩)⟩
-
-/-! ### Products of spellings -/
-
-variable [Group G]
-
-/-- A variable that is not spelled in a word does not occur in its product. -/
-theorem prod_map_letter_mem_avoiding [DecidableEq X] {x : X} {l : List (G ⊕ X × Bool)}
-    (h : countVar x l = 0) : (l.map letter).prod ∈ avoiding x :=
-  list_prod_mem <| List.forall_mem_map.2 fun
-    | .inl g, _ => by simp
-    | .inr (y, b), hm => by
-      have hy : y ≠ x := by rintro rfl; exact countVar_eq_zero.1 h b hm
-      cases b <;> simp [hy]
 
 end TauCeti.GroupAlgGeom.GX
