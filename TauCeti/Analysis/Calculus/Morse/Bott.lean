@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Calculus.Lojasiewicz
+import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Algebra.Module.BilinearForm
 

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.GradientFlow
 -- Private: the normed-space Łojasiewicz inequality and its comparison lemma, Grönwall's
 -- inequality, the continuity of a `C¹` metric and the comparison of length with energy are used
 -- only inside proofs; no declaration below exposes their APIs.
-import TauCeti.Analysis.Calculus.Lojasiewicz
+import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 import TauCeti.Analysis.Calculus.Morse.Basic
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength

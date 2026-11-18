@@ -45,8 +45,6 @@ with speed at most `g`.
 * `TauCeti.integral_le_rpow_sub_rpow_of_lojasiewicz`: the scalar finite-length bound.
 * `TauCeti.norm_sub_le_rpow_sub_rpow_of_lojasiewicz`: the scalar displacement bound for a curve
   whose speed is at most `g`.
-* `TauCeti.exists_mul_le_sq_of_eventually_le_mul`: a Łojasiewicz inequality with exponent `1 / 2`
-  survives a bounded comparison of the quantities on its right-hand side.
 
 ## References
 
@@ -189,22 +187,5 @@ theorem norm_sub_le_rpow_sub_rpow_of_lojasiewicz {F : Type*} [NormedAddCommGroup
   simp only [hΦ]
   ring
 
-/-- **Łojasiewicz's inequality with exponent `1 / 2` survives a bounded comparison of slopes.** If
-`lam * u y ≤ g y ^ 2` eventually along `l`, for some `lam > 0`, and `0 ≤ g y ≤ K * h y`
-eventually, then `lam' * u y ≤ h y ^ 2` eventually, for some `lam' > 0`. This carries the
-inequality between coordinate systems, or from a differential to a gradient, whose norms are
-comparable. -/
-theorem exists_mul_le_sq_of_eventually_le_mul {α : Type*} {l : Filter α} {u g h : α → ℝ} {K : ℝ}
-    (hu : ∃ lam > 0, ∀ᶠ y in l, lam * u y ≤ g y ^ 2) (hg : ∀ᶠ y in l, 0 ≤ g y)
-    (hgh : ∀ᶠ y in l, g y ≤ K * h y) :
-    ∃ lam > 0, ∀ᶠ y in l, lam * u y ≤ h y ^ 2 := by
-  obtain ⟨lam, hlam, hu⟩ := hu
-  refine ⟨lam / (K ^ 2 + 1), by positivity, ?_⟩
-  filter_upwards [hu, hg, hgh] with y hy hgy hghy
-  have hK : 0 < K ^ 2 + 1 := by positivity
-  rw [div_mul_eq_mul_div, div_le_iff₀ hK]
-  calc lam * u y ≤ g y ^ 2 := hy
-    _ ≤ (K * h y) ^ 2 := pow_le_pow_left₀ hgy hghy 2
-    _ ≤ h y ^ 2 * (K ^ 2 + 1) := by nlinarith [sq_nonneg (h y)]
 
 end TauCeti

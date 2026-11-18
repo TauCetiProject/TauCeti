@@ -20,7 +20,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 -- Private: the comparison of Łojasiewicz inequalities is used only inside the proof of
 -- `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`.
-import TauCeti.Analysis.Calculus.Lojasiewicz
+import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 
 /-!
 # Nondegenerate critical points
