@@ -14,6 +14,8 @@ import TauCeti.Probability.Independence.DisjointBlocks
 
 The coordinates of a product sample are independent, and those of a countable power of one
 probability law are moreover identically distributed: they realize an i.i.d. sequence with that law.
+The same coordinate laws and independence hold after extending another probability space by the
+product.
 
 The restrictions of a product sample to disjoint index sets are independent, and so are its
 selections along maps with disjoint ranges.  The resulting joint-law identities are useful when a
@@ -48,6 +50,22 @@ variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 theorem iIndepFun_eval_infinitePi (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)] :
     iIndepFun (fun i (x : ∀ j, α j) => x i) (Measure.infinitePi P) :=
   iIndepFun_infinitePi (X := fun i : ι => (id : α i → α i)) fun _ => measurable_id
+
+/-- Every added coordinate has its prescribed law on the extended product probability space. -/
+theorem hasLaw_eval_prod_infinitePi {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P] (ν : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (ν i)]
+    (i : ι) :
+    HasLaw (fun z : Ω × (∀ i, α i) => z.2 i) (ν i)
+      (P.prod (Measure.infinitePi ν)) :=
+  ((measurePreserving_eval_infinitePi ν i).comp measurePreserving_snd).hasLaw
+
+/-- The added coordinates remain mutually independent on the extended product probability space. -/
+theorem iIndepFun_eval_prod_infinitePi {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [IsProbabilityMeasure P] (ν : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (ν i)] :
+    iIndepFun (fun i (z : Ω × (∀ j, α j)) => z.2 i)
+      (P.prod (Measure.infinitePi ν)) :=
+  (iIndepFun_iff_hasLaw_Pi_infinitePi (fun i => hasLaw_eval_prod_infinitePi ν i)
+    measurable_snd.aemeasurable).2 measurePreserving_snd.hasLaw
 
 /-- Restrictions to disjoint coordinate sets are independent under a product probability law. -/
 theorem indepFun_domRestrict_infinitePi (P : ∀ i, Measure (α i))
