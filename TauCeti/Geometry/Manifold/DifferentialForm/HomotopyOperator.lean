@@ -509,6 +509,12 @@ theorem IsSmoothForm.homotopyOperator_apply_apply [IsManifold I 1 M] [CompleteSp
     TauCeti.homotopyOperator φ x v = ∫ t in (0 : ℝ)..1, φ (x, projIcc 0 1 zero_le_one t)
       (Fin.cons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
         fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- Evaluation at `v` is a continuous linear map, so it commutes with the time integral. The rest
+  -- holds by definition: `homotopyOperator φ x` is the integral of `homotopyIntegrand φ x`, whose
+  -- value on `v` is the right-hand integrand by `ContinuousAlternatingMap.curryLeft_apply_apply`
+  -- and `compContinuousLinearMap_apply`. Those lemmas cannot be applied by `rw` or `simp` here:
+  -- `homotopyIntegrand` reads `TangentSpace (I.prod (𝓡∂ 1)) _` as `E × EuclideanSpace ℝ (Fin 1)`,
+  -- so its unfolding is not type-correct at the transparency these tactics match at.
   ((ContinuousAlternatingMap.apply ℝ E F v).intervalIntegral_comp_comm
     (intervalIntegrable_homotopyIntegrand hφ x)).symm
 
