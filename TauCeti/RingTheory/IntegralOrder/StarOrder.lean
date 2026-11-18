@@ -125,26 +125,14 @@ theorem ext {O O' : StarOrder B} (h : ∀ x, x ∈ O ↔ x ∈ O') : O = O' :=
 theorem toSubalgebra_le_toSubalgebra : O.toSubalgebra ≤ O'.toSubalgebra ↔ O ≤ O' :=
   Iff.rfl
 
-/-- A star-order is closed under the involution. -/
-theorem star_mem_iff {x : B} : star x ∈ O ↔ x ∈ O :=
-  ⟨fun h => star_star x ▸ star_mem h, star_mem⟩
-
 /-- The underlying subalgebra of a star-order is star-stable. -/
 @[simp]
 theorem star_toSubalgebra : star O.toSubalgebra = O.toSubalgebra :=
-  SetLike.ext fun _ => (Subalgebra.mem_star_iff _ _).trans (O.star_mem_iff)
+  SetLike.ext fun _ => (Subalgebra.mem_star_iff _ _).trans (_root_.star_mem_iff (s := O))
 
 /-- A star-order inherits the involution of the ambient algebra. -/
 instance instStarRing : StarRing O :=
-  { StarMemClass.instStar O with
-    star_involutive := fun x => Subtype.ext (star_star (x : B))
-    star_mul := fun x y => Subtype.ext (star_mul (x : B) (y : B))
-    star_add := fun x y => Subtype.ext (star_add (x : B) (y : B)) }
-
-/-- The involution of a star-order is the restriction of the involution of `B`. -/
-@[simp, norm_cast]
-theorem coe_star (x : O) : ((star x : O) : B) = star (x : B) :=
-  rfl
+  StarSubalgebra.starRing O.toStarSubalgebra
 
 /-- A star-stable `ℤ`-subalgebra which is an order is a star-order. -/
 @[expose]
