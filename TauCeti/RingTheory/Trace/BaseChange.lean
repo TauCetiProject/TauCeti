@@ -20,10 +20,12 @@ then taking its trace dual gives the span of the original trace dual.
 The scalar-extended algebra `K' ⊗[K] L` is allowed to split into several fields. In
 particular, the result applies before projecting a semilocal completion to one factor;
 it requires no separability of residue fields. The final theorem applies directly to
-an integral basis of a finite free algebra whose generic fiber is `L / K`.
+a finite free algebra whose generic fiber is `L / K`, without choosing an integral basis.
 
-The proof uses Mathlib's `Submodule.traceDual`, localization of bases, and the
-dual-basis description `LinearMap.BilinForm.dualSubmodule_span_of_basis`.
+`TauCeti.Algebra.traceForm_baseChange` identifies the trace form after scalar extension
+with the scalar extension of the trace form, for any free algebra over a commutative ring.
+The lattice results are expressed using Mathlib's `Submodule.traceDual` and specialize
+the bilinear scalar-extension theorem using Mathlib's localization of bases.
 
 ## References
 
@@ -42,7 +44,6 @@ variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
 
 /-- The trace form of a scalar-extended free algebra is the scalar extension
 of its trace form. -/
-@[simp]
 theorem Algebra.traceForm_baseChange :
     Algebra.traceForm T (T ⊗[R] S) = (Algebra.traceForm R S).baseChange T := by
   ext x y
@@ -61,9 +62,9 @@ variable {A A' K K' B L ι : Type*}
   [IsScalarTower A K L] [IsScalarTower A B L]
   [Algebra.IsSeparable K L] [Finite ι]
 
-/-- A trace-dual lattice commutes with scalar extension, including when the generic
-scalar extension is a product of fields. The hypothesis presents the lattice by a
-basis of the original field extension. -/
+/-- A trace-dual lattice commutes with extension to a field `K'`, including when
+the scalar-extended algebra `K' ⊗[K] L` is a product of fields. The hypothesis presents
+the lattice by a basis of the original field extension. -/
 theorem traceDual_baseChange_of_basis (I : Submodule B L) (b : Basis ι K L)
     (hb : I.restrictScalars A = span A (Set.range b)) :
     (Algebra.traceForm K' (K' ⊗[K] L)).dualSubmodule
@@ -76,29 +77,20 @@ theorem traceDual_baseChange_of_basis (I : Submodule B L) (b : Basis ι K L)
     LinearMap.BilinForm.dualSubmodule_baseChange_of_basis
       (Algebra.traceForm K L) (traceForm_nondegenerate K L) (I.restrictScalars A) b hb
 
-end Submodule
-
-namespace Module.Basis
-
-variable {A A' K K' B L ι : Type*}
-  [CommRing A] [CommRing A'] [Field K] [Field K'] [CommRing B] [Field L]
-  [Algebra A K] [Algebra A A'] [Algebra A K'] [Algebra A' K'] [Algebra K K']
-  [IsScalarTower A K K'] [IsScalarTower A A' K']
-  [Algebra A B] [Algebra A L] [Algebra B L] [Algebra K L]
-  [IsScalarTower A K L] [IsScalarTower A B L]
-  [IsFractionRing A K] [IsLocalization (Algebra.algebraMapSubmonoid B A⁰) L]
-  [Algebra.IsSeparable K L] [Finite ι]
-
-/-- For an integral basis of a finite free algebra with finite separable generic
+variable (A) in
+/-- For a finite free algebra with finite separable generic
 fiber, extending its complementary module gives the trace dual of the extended
 algebra lattice. The scalar-extended generic algebra need not be a field. -/
-theorem traceDual_one_baseChange (b : Basis ι A B) :
+theorem traceDual_one_baseChange [IsFractionRing A K]
+    [IsLocalization (Algebra.algebraMapSubmonoid B A⁰) L]
+    [Module.Free A B] [Module.Finite A B] :
     (Algebra.traceForm K' (K' ⊗[K] L)).dualSubmodule
         (Submodule.span A' (Set.range (fun x : B ↦
           (1 : K') ⊗ₜ[K] algebraMap B L x))) =
       Submodule.span A' ((fun x : L ↦ (1 : K') ⊗ₜ[K] x) ''
         (Submodule.traceDual A K (1 : Submodule B L) : Set L)) := by
   classical
+  let b := Module.Free.chooseBasis A B
   have hb : (1 : Submodule B L).restrictScalars A =
       Submodule.span A (Set.range (b.localizationLocalization K A⁰ L)) := by
     rw [Basis.localizationLocalization_span]
@@ -109,4 +101,4 @@ theorem traceDual_one_baseChange (b : Basis ι A B) :
     Submodule.traceDual_baseChange_of_basis (A' := A') (K' := K')
       (1 : Submodule B L) (b.localizationLocalization K A⁰ L) hb
 
-end Module.Basis
+end Submodule
