@@ -434,6 +434,15 @@ derivative coordinate. -/
 @[simp]
 theorem smul_snd (c : 𝕜) (j : FirstJetBundle I F V x) : (c • j).2 = c • j.2 := (rfl)
 
+/-- The fibres of `J¹V` are topological additive groups, as their model fibre is. This makes the
+bundle of continuous linear maps between first-jet bundles available. -/
+instance (x : M) : IsTopologicalAddGroup (FirstJetBundle I F V x) :=
+  inferInstanceAs (IsTopologicalAddGroup (F × (E →L[𝕜] F)))
+
+/-- Scalar multiplication on the fibres of `J¹V` is continuous, as it is on their model fibre. -/
+instance (x : M) : ContinuousSMul 𝕜 (FirstJetBundle I F V x) :=
+  inferInstanceAs (ContinuousSMul 𝕜 (F × (E →L[𝕜] F)))
+
 end FirstJetBundle
 
 end
