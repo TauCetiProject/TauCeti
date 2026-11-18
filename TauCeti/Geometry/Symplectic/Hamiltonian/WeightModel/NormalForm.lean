@@ -40,7 +40,8 @@ is a round ball `‖q‖² + ‖p‖² < r²`, such that
   `μ = μ(p) - ½ Σₖ (qₖ² + pₖ²) αₖ`.
 
 So near `p` the image of `μ` lies in `μ(p) - cone{αₖ}`, and the component `μ^ξ` is, in these
-symplectic coordinates, the quadratic form `-½ Σₖ αₖ(ξ) (qₖ² + pₖ²)`. This is the chart through
+symplectic coordinates, the constant `μ^ξ(p)` plus the quadratic form
+`-½ Σₖ αₖ(ξ) (qₖ² + pₖ²)`. This is the chart through
 which the results on the model, such as `TauCeti.range_weightMomentMap`,
 `TauCeti.weightRotation_apply_eq_self_iff` and `TauCeti.morseIndex_weightMomentMap_apply`, are
 read on `M`. The weights are integral on the period lattice: `αₖ(ξ) ∈ ℤ` whenever
