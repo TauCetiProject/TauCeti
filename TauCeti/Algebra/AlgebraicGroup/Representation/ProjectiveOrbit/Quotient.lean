@@ -74,6 +74,13 @@ theorem projectiveOrbitPointsSheaf_obj (m : M) (hm : Module.IsUnimodular k m) :
           uliftFunctor.{u + 1, u} :=
   (rfl)
 
+/-- The sheaf of points of the projective orbit scheme is the fppf sheaf of points of the orbit
+scheme over the base field. -/
+theorem projectiveOrbitPointsSheaf_eq (m : M) (hm : Module.IsUnimodular k m) :
+    projectiveOrbitPointsSheaf (H := H) m hm =
+      CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm)) :=
+  (rfl)
+
 /-- An algebra-valued group point followed by the orbit map lies over the base field. -/
 theorem SpecMap_toProjectiveOrbit_projectiveOrbitToSpec (m : M)
     (hm : Module.IsUnimodular k m) {A : Type u} [CommRing A] [Algebra k A] (g : H →ₐ[k] A) :

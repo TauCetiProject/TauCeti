@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Variation
 public import TauCeti.Geometry.Symplectic.Floer.CovariantLinearization
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Variation
 
 /-!
