@@ -40,10 +40,10 @@ Hölder time slices one order below are carried along in the same way.
 ## Main declarations
 
 * `TauCeti.ParabolicCkHolderSpace.spatialFDerivL`: the spatial derivative, with
-  `TauCeti.ParabolicCkHolderSpace.spatialFDerivL_slabMk` identifying its values with the Fréchet
+  `TauCeti.ParabolicCkHolderSpace.hasSpatialFDerivAt` identifying its values as the Fréchet
   derivative on each time slice.
 * `TauCeti.ParabolicCkHolderSpace.timeDerivL`: the time derivative, with
-  `TauCeti.ParabolicCkHolderSpace.timeDerivL_slabMk` identifying its values with the derivative
+  `TauCeti.ParabolicCkHolderSpace.hasTimeDerivWithinAt` identifying its values as the derivative
   within `[a, b]`.
 * `TauCeti.ParabolicCkHolderSpace.norm_spatialFDerivL_le_one` and
   `TauCeti.ParabolicCkHolderSpace.norm_timeDerivL_le_one`: both have operator norm at most one.
@@ -190,6 +190,20 @@ theorem timeDerivL_slabMk (u : ParabolicCkHolderSpace (k + 2) α E F hab) (x : E
   rw [← iteratedDerivWithin_one, ← curry0_mixedDerivL_slabMk u (by omega),
     ContinuousMultilinearMap.curry0_apply]
   exact timeDerivL_apply u _
+
+/-- The time slices of `u` have derivative `∂ₜu` within `[a, b]`, one-sided at the endpoints. -/
+theorem hasTimeDerivWithinAt (u : ParabolicCkHolderSpace (k + 2) α E F hab) (x : E)
+    (t : Icc a b) :
+    HasDerivWithinAt (ParabolicC2HolderSpace.timeExtension hab.le u x)
+      (timeDerivL k α E F hab u (slabMk x t)) (Icc a b) t := by
+  have hd := HasFDerivAt.comp_hasDerivWithinAt (x := (t : ℝ))
+    (continuousMultilinearCurryFin0 ℝ E F).hasFDerivAt
+    (hasDerivWithinAt_mixedDerivL u (r := 0) (m := 0) (by omega) x t)
+  rw [timeDerivL_slabMk]
+  refine DifferentiableWithinAt.hasDerivWithinAt ?_
+  simpa only [ParabolicC2HolderSpace.timeExtension_def, Function.comp_def,
+    continuousMultilinearCurryFin0_apply, mixedDerivL_zero_zero_apply]
+    using hd.differentiableWithinAt
 
 /-- The time derivative has operator norm at most one. -/
 theorem norm_timeDerivL_le_one : ‖timeDerivL k α E F hab‖ ≤ 1 :=
@@ -406,6 +420,17 @@ theorem spatialFDerivL_slabMk (u : ParabolicCkHolderSpace (k + 1) α E F hab) (x
     mixedDerivL_zero_slabMk u (by omega)]
   ext w
   simp [iteratedFDeriv_one_apply]
+
+/-- The time slices of `u` have Fréchet derivative `D_x u`. -/
+theorem hasSpatialFDerivAt (u : ParabolicCkHolderSpace (k + 1) α E F hab) (t : Icc a b)
+    (x : E) :
+    HasFDerivAt (fun y ↦ u (slabMk y t)) (spatialFDerivL k α E F hab u (slabMk x t)) x := by
+  have hd := (continuousMultilinearCurryFin0 ℝ E F).hasFDerivAt.comp x
+    (hasFDerivAt_mixedDerivL u (r := 0) (m := 0) (by omega) t x)
+  rw [spatialFDerivL_slabMk]
+  refine DifferentiableAt.hasFDerivAt ?_
+  simpa only [Function.comp_def, continuousMultilinearCurryFin0_apply,
+    mixedDerivL_zero_zero_apply] using hd.differentiableAt
 
 /-- The spatial derivative has operator norm at most one. -/
 theorem norm_spatialFDerivL_le_one : ‖spatialFDerivL k α E F hab‖ ≤ 1 :=
