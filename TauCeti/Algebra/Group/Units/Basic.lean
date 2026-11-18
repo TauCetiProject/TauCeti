@@ -8,8 +8,6 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Algebra.Group.Units.Hom
 
-import Mathlib.Algebra.Group.Commute.Units
-
 /-!
 # Units in monoids
 
