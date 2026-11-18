@@ -33,6 +33,12 @@ built:
   proved for C⋆-algebras), so the rank of its range is locally constant, and it
   is constant along a continuous path of self-adjoint operators over a preconnected parameter space
   as long as the frontier of `Ω` avoids every spectrum along the path.
+* **Nested and disjoint sets.** Spectral projections grow with the set, those for disjoint sets are
+  orthogonal, and the rank of the projection for a disjoint union is the sum of the two ranks.
+* **The spectral gap.** At an operator with closed range, `0` is isolated in the spectrum, so the
+  indicator of `Ω` is continuous on the spectrum as soon as the frontier of `Ω` meets the spectrum
+  at most in `0`; the spectral projection for `[0, c)` is then defined even when `0` is an
+  eigenvalue.
 
 The real functional calculus on `H →L[𝕜] H` is taken as an assumption, as is its isometry for the
 stability results. Mathlib provides both over `ℂ`, and
@@ -50,6 +56,13 @@ with closed range (`IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClos
 * `IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq` and
   `IsPreconnected.rank_range_cfc_indicator_eq`: the rank of the spectral projection is locally
   constant, and constant along paths.
+* `ContinuousLinearMap.range_cfc_indicator_mono`,
+  `ContinuousLinearMap.cfc_indicator_mul_cfc_indicator_eq_zero`,
+  `ContinuousLinearMap.range_cfc_indicator_union` and
+  `ContinuousLinearMap.finrank_range_cfc_indicator_union`: spectral projections for nested and
+  disjoint sets.
+* `IsSelfAdjoint.continuousOn_indicator_spectrum_of_isClosed_range`: indicators across the spectral
+  gap at `0`.
 
 ## References
 
@@ -136,7 +149,128 @@ theorem IsSelfAdjoint.cfc_indicator_eq_starProjection_ker {T : H →L[𝕜] H} (
       exact (sub_eq_zero.1 h).symm
   exact (T.cfc_indicator_eq_starProjection_range Ω).trans (Submodule.starProjection_inj.2 hrange)
 
+/-! ### Spectral projections for nested and disjoint sets -/
+
+namespace ContinuousLinearMap
+
+variable {T : H →L[𝕜] H} {Ω Ω' : Set ℝ}
+
+/-- The range of a spectral projection grows with the set. -/
+theorem range_cfc_indicator_mono (h : Ω ⊆ Ω')
+    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
+    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
+    (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range ≤ (cfc (Ω'.indicator (1 : ℝ → ℝ)) T).range := by
+  have hmul : cfc (Ω.indicator (1 : ℝ → ℝ)) T =
+      cfc (Ω'.indicator (1 : ℝ → ℝ)) T * cfc (Ω.indicator (1 : ℝ → ℝ)) T := by
+    rw [← cfc_mul _ _ T hΩ' hΩ]
+    refine cfc_congr fun x _ ↦ ?_
+    by_cases hx : x ∈ Ω
+    · simp [hx, h hx]
+    · simp [hx]
+  rintro _ ⟨v, rfl⟩
+  exact ⟨cfc (Ω.indicator (1 : ℝ → ℝ)) T v, (congrArg (fun S ↦ S v) hmul).symm⟩
+
+/-- Spectral projections for disjoint sets are orthogonal: their product vanishes. -/
+theorem cfc_indicator_mul_cfc_indicator_eq_zero (hd : Disjoint Ω Ω')
+    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
+    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
+    cfc (Ω.indicator (1 : ℝ → ℝ)) T * cfc (Ω'.indicator (1 : ℝ → ℝ)) T = 0 := by
+  rw [← cfc_mul _ _ T hΩ hΩ', ← cfc_zero ℝ T]
+  refine cfc_congr fun x _ ↦ ?_
+  by_cases hx : x ∈ Ω
+  · simp [hx, hd.notMem_of_mem_left hx]
+  · simp [hx]
+
+/-- Spectral projections for disjoint sets have disjoint ranges. -/
+theorem disjoint_range_cfc_indicator (hd : Disjoint Ω Ω')
+    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
+    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
+    Disjoint (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range
+      (cfc (Ω'.indicator (1 : ℝ → ℝ)) T).range := by
+  set P := cfc (Ω.indicator (1 : ℝ → ℝ)) T
+  set Q := cfc (Ω'.indicator (1 : ℝ → ℝ)) T
+  have hPQ : P * Q = 0 := cfc_indicator_mul_cfc_indicator_eq_zero hd hΩ hΩ'
+  have hP : P * P = P := (TauCeti.isStarProjection_cfc_indicator T Ω).isIdempotentElem
+  rw [Submodule.disjoint_def]
+  rintro _ ⟨v, rfl⟩ ⟨w, hw⟩
+  rw [coe_coe] at hw ⊢
+  -- A vector `P v = Q w` in both ranges satisfies `P v = P (P v) = P (Q w) = 0`.
+  have hPP : P (P v) = P v := congrArg (fun S ↦ S v) hP
+  have hPQw : P (Q w) = 0 := by simpa using congrArg (fun S ↦ S w) hPQ
+  calc P v = P (P v) := hPP.symm
+    _ = P (Q w) := congrArg P hw.symm
+    _ = 0 := hPQw
+
+/-- The spectral projection for a union of two disjoint sets has the sum of the two ranges as its
+range. -/
+theorem range_cfc_indicator_union (hd : Disjoint Ω Ω')
+    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
+    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
+    (cfc ((Ω ∪ Ω').indicator (1 : ℝ → ℝ)) T).range =
+      (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range ⊔ (cfc (Ω'.indicator (1 : ℝ → ℝ)) T).range := by
+  set P := cfc (Ω.indicator (1 : ℝ → ℝ)) T
+  set Q := cfc (Ω'.indicator (1 : ℝ → ℝ)) T
+  have hsum : cfc ((Ω ∪ Ω').indicator (1 : ℝ → ℝ)) T = P + Q := by
+    rw [indicator_union_of_disjoint hd, cfc_add (hf := hΩ) (hg := hΩ')]
+  have hPQ : ∀ v, Q (P v) = 0 := fun v ↦ by
+    simpa using congrArg (fun S ↦ S v) (cfc_indicator_mul_cfc_indicator_eq_zero hd.symm hΩ' hΩ)
+  have hQP : ∀ v, P (Q v) = 0 := fun v ↦ by
+    simpa using congrArg (fun S ↦ S v) (cfc_indicator_mul_cfc_indicator_eq_zero hd hΩ hΩ')
+  have hP : ∀ v, P (P v) = P v := fun v ↦
+    congrArg (fun S ↦ S v) (TauCeti.isStarProjection_cfc_indicator T Ω).isIdempotentElem
+  have hQ : ∀ v, Q (Q v) = Q v := fun v ↦
+    congrArg (fun S ↦ S v) (TauCeti.isStarProjection_cfc_indicator T Ω').isIdempotentElem
+  rw [hsum]
+  refine le_antisymm ?_ (sup_le ?_ ?_)
+  · rintro _ ⟨v, rfl⟩
+    exact Submodule.add_mem_sup ⟨v, rfl⟩ ⟨v, rfl⟩
+  · rintro _ ⟨v, rfl⟩
+    exact ⟨P v, by rw [coe_coe, coe_coe, add_apply, hP, hPQ, add_zero]⟩
+  · rintro _ ⟨v, rfl⟩
+    exact ⟨Q v, by rw [coe_coe, coe_coe, add_apply, hQ, hQP, zero_add]⟩
+
+/-- For disjoint sets with finite-rank spectral projections, the rank of the spectral projection
+for their union is the sum of the two ranks. -/
+theorem finrank_range_cfc_indicator_union (hd : Disjoint Ω Ω')
+    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
+    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
+    [FiniteDimensional 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range]
+    [FiniteDimensional 𝕜 (cfc (Ω'.indicator (1 : ℝ → ℝ)) T).range] :
+    Module.finrank 𝕜 (cfc ((Ω ∪ Ω').indicator (1 : ℝ → ℝ)) T).range =
+      Module.finrank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range +
+        Module.finrank 𝕜 (cfc (Ω'.indicator (1 : ℝ → ℝ)) T).range := by
+  rw [range_cfc_indicator_union hd hΩ hΩ', ← Submodule.finrank_sup_add_finrank_inf_eq,
+    (disjoint_range_cfc_indicator hd hΩ hΩ').eq_bot, finrank_bot, add_zero]
+
+end ContinuousLinearMap
+
 end Projection
+
+/-! ### Indicators across the spectral gap at `0` -/
+
+section Gap
+
+variable [Algebra ℝ (H →L[𝕜] H)] [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
+
+/-- At a self-adjoint operator with closed range, such as a self-adjoint Fredholm operator, the
+indicator of a set `Ω` is continuous on the spectrum as soon as the frontier of `Ω` meets the
+spectrum at most in `0`: by the spectral gap, `0` is isolated in the spectrum if it lies there. -/
+theorem IsSelfAdjoint.continuousOn_indicator_spectrum_of_isClosed_range {T : H →L[𝕜] H}
+    (hT : IsSelfAdjoint T) (hR : IsClosed (T.range : Set H)) {Ω : Set ℝ}
+    (hΩ : frontier Ω ∩ spectrum ℝ T ⊆ {0}) :
+    ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T) := by
+  obtain ⟨ε, hε, hgap⟩ := hT.exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range hR
+  rw [spectrum.preimage_algebraMap] at hgap
+  intro x hx
+  by_cases hfx : x ∈ frontier Ω
+  · obtain rfl : x = 0 := hΩ ⟨hfx, hx⟩
+    refine continuousWithinAt_const.congr_of_eventuallyEq ?_ rfl
+    filter_upwards [nhdsWithin_le_nhds (Ioo_mem_nhds (neg_neg_iff_pos.2 hε) hε),
+      self_mem_nhdsWithin] with y hy hys
+    rw [mem_singleton_iff.1 (hgap ⟨hys, hy⟩)]
+  · exact (continuousOn_const.continuousAt_indicator hfx).continuousWithinAt
+
+end Gap
 
 /-! ### Continuity and rank of spectral projections -/
 
