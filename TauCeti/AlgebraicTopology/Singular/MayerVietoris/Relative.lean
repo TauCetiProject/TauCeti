@@ -508,7 +508,10 @@ lemma relativeMayerVietoris_isPullback {k : ℕ}
       (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_right) R k)
       (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_left) R k)
       (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) :=
-  IsPullback.of_exact_biprod_lift_neg (relativeMayerVietorisToBiprod_fromBiprod R U V k)
+  IsPullback.of_exact_shortComplex ⟨by
+      simpa [relativeMayerVietorisToBiprod, relativeMayerVietorisFromBiprod, add_neg_eq_zero,
+        -relativeMayerVietorisToBiprod_fromBiprod] using
+        relativeMayerVietorisToBiprod_fromBiprod R U V k⟩
     (relativeMayerVietoris_exact₂ R hU hV k) (mono_relativeMayerVietorisToBiprod R hU hV h)
 
 /-- The map `H₀(X, U) ⊞ H₀(X, V) ⟶ H₀(X, U ∪ V)` at the end of the relative Mayer–Vietoris

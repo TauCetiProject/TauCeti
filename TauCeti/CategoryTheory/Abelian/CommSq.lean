@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.Exact
 /-!
 # Pullback squares from exact Mayer–Vietoris sequences
 
-In an abelian category, a commutative square
+For a commutative square
 ```
 P --a--> B
 |        |
@@ -19,48 +19,60 @@ b        c
 v        v
 D --d--> Z
 ```
-is a pullback square exactly when `P` is the kernel of `(c, -d) : B ⊞ D ⟶ Z` through
-`(a, b) : P ⟶ B ⊞ D` (`CategoryTheory.CommSq.isLimitEquivIsLimitKernelFork`). Mayer–Vietoris
-sequences put the sign on the other map: they read `P ⟶ B ⊞ D ⟶ Z` with maps `(a, -b)` and
-`(c, d)`. This file records that exactness of this sequence, together with injectivity of its
-first map, also makes the square a pullback
-(`CategoryTheory.IsPullback.of_exact_biprod_lift_neg`): changing the sign of the summand `D`
-identifies the two sequences.
+in a preadditive category, Mathlib attaches two short complexes `P ⟶ B ⊞ D ⟶ Z`:
+`CategoryTheory.CommSq.shortComplex`, with maps `(a, -b)` and `(c, d)`, whose cokernel property
+is the pushout property, and `CategoryTheory.CommSq.shortComplex'`, with maps `(a, b)` and
+`(c, -d)`, whose kernel property is the pullback property
+(`CategoryTheory.CommSq.isLimitEquivIsLimitKernelFork`). Changing the sign of the summand `D`
+identifies them (`CategoryTheory.CommSq.shortComplexIsoShortComplex'`).
+
+Mayer–Vietoris sequences have the shape of `CategoryTheory.CommSq.shortComplex`. In an abelian
+category, exactness of this short complex, together with injectivity of its first map, makes the
+square a pullback (`CategoryTheory.IsPullback.of_exact_shortComplex`).
 -/
 
 public section
 
-namespace CategoryTheory.IsPullback
+namespace CategoryTheory
 
 open Limits
 
+section Preadditive
+
+variable {C : Type*} [Category* C] [Preadditive C]
+
+/-- The two short complexes `P ⟶ B ⊞ D ⟶ Z` of a commutative square, with maps `(a, -b)`,
+`(c, d)` and with maps `(a, b)`, `(c, -d)`, are isomorphic through the sign change of the summand
+`D`. -/
+noncomputable def CommSq.shortComplexIsoShortComplex' {P B D Z : C} {a : P ⟶ B} {b : P ⟶ D}
+    {c : B ⟶ Z} {d : D ⟶ Z} [HasBinaryBiproduct B D] (sq : CommSq a b c d) :
+    sq.shortComplex ≅ sq.shortComplex' :=
+  ShortComplex.isoMk (Iso.refl _)
+    (show B ⊞ D ≅ B ⊞ D from
+      { hom := biprod.map (𝟙 B) (-𝟙 D)
+        inv := biprod.map (𝟙 B) (-𝟙 D)
+        hom_inv_id := by apply biprod.hom_ext' <;> simp
+        inv_hom_id := by apply biprod.hom_ext' <;> simp })
+    (Iso.refl _)
+    (by dsimp [CommSq.shortComplex, CommSq.shortComplex']; apply biprod.hom_ext <;> simp)
+    (by dsimp [CommSq.shortComplex, CommSq.shortComplex']; apply biprod.hom_ext' <;> simp)
+
+end Preadditive
+
+namespace IsPullback
+
 variable {C : Type*} [Category* C] [Abelian C]
 
-/-- **A pullback square from an exact Mayer–Vietoris sequence.** For maps `a : P ⟶ B`,
-`b : P ⟶ D`, `c : B ⟶ Z` and `d : D ⟶ Z` such that the sequence `P ⟶ B ⊞ D ⟶ Z` with maps
-`(a, -b)` and `(c, d)` is exact and begins with a monomorphism, the square with sides `a`, `b`,
-`c` and `d` is a pullback square. -/
-theorem of_exact_biprod_lift_neg {P B D Z : C} {a : P ⟶ B} {b : P ⟶ D} {c : B ⟶ Z}
-    {d : D ⟶ Z} (w : biprod.lift a (-b) ≫ biprod.desc c d = 0)
-    (hex : (ShortComplex.mk _ _ w).Exact) (hmono : Mono (biprod.lift a (-b))) :
+/-- **A pullback square from an exact Mayer–Vietoris sequence.** A commutative square with sides
+`a`, `b`, `c` and `d` is a pullback square if the sequence `P ⟶ B ⊞ D ⟶ Z` with maps `(a, -b)` and
+`(c, d)` (`CategoryTheory.CommSq.shortComplex`) is exact and begins with a monomorphism. -/
+theorem of_exact_shortComplex {P B D Z : C} {a : P ⟶ B} {b : P ⟶ D} {c : B ⟶ Z} {d : D ⟶ Z}
+    (sq : CommSq a b c d) (hex : sq.shortComplex.Exact) (hmono : Mono sq.shortComplex.f) :
     IsPullback a b c d := by
-  have sq : CommSq a b c d := ⟨by simpa [add_neg_eq_zero] using w⟩
-  -- Changing the sign of the summand `D` identifies the sequence with that of the square, whose
-  -- maps are `(a, b)` and `(c, -d)`.
-  let τ : B ⊞ D ⟶ B ⊞ D := biprod.map (𝟙 B) (-𝟙 D)
-  have hτ : τ ≫ τ = 𝟙 _ := by apply biprod.hom_ext' <;> simp [τ]
-  have hf : biprod.lift a b = biprod.lift a (-b) ≫ τ := by apply biprod.hom_ext <;> simp [τ]
-  let S : ShortComplex C := ShortComplex.mk (biprod.lift a b) (biprod.desc c (-d)) (by simp [sq.w])
-  let e : ShortComplex.mk _ _ w ≅ S :=
-    ShortComplex.isoMk (Iso.refl _) ⟨τ, τ, hτ, hτ⟩ (Iso.refl _) (by simp [S, hf])
-      (by apply biprod.hom_ext' <;> simp [S, τ])
-  have : IsIso τ := ⟨τ, hτ, hτ⟩
-  have : Mono (biprod.lift a b) := by
-    rw [hf]
-    infer_instance
-  -- `S` is the short complex `sq.shortComplex'` of the square, whose kernel property is the
-  -- pullback property.
-  exact IsPullback.of_isLimit
-    (sq.isLimitEquivIsLimitKernelFork.symm ((ShortComplex.exact_iff_of_iso e).1 hex).fIsKernel)
+  obtain ⟨hex', _⟩ :=
+    (ShortComplex.exact_and_mono_f_iff_of_iso sq.shortComplexIsoShortComplex').1 ⟨hex, hmono⟩
+  exact IsPullback.of_isLimit (sq.isLimitEquivIsLimitKernelFork.symm hex'.fIsKernel)
 
-end CategoryTheory.IsPullback
+end IsPullback
+
+end CategoryTheory
