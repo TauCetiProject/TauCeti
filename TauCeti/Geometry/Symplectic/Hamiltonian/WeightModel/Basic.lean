@@ -113,7 +113,7 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
   rotation by the arguments of `e^{i θ_j}` is the rotation by `θ`
   (`TauCeti.weightRotation_arg_circleExp`).
 * `TauCeti.exists_weightRotation_apply_eq_iff`: the orbits of the full rotation torus, which
-  preserve the squared radius `‖q‖² + ‖p‖²` (`TauCeti.norm_sq_add_norm_sq_weightRotation`).
+  preserve the squared radius `‖q‖² + ‖p‖²` (`TauCeti.norm_fst_sq_add_norm_snd_sq_weightRotation`).
 * `TauCeti.torusRotation_add`, `TauCeti.torusRotation_apply_eq_self_iff`,
   `TauCeti.continuous_torusRotation`: `(ℝ / 2πℤ)^ι` acts continuously on `ℂ^ι` by rotations, and
   `θ` fixes `z` exactly when `θ_i = 0` for every `i` with `z_i ≠ 0`.
@@ -699,7 +699,7 @@ theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × Eucli
 
 /-- Rotations preserve the squared radius `‖q‖² + ‖p‖²` of `ℂ^ι`. -/
 @[simp]
-theorem norm_sq_add_norm_sq_weightRotation (θ : ι → ℝ)
+theorem norm_fst_sq_add_norm_snd_sq_weightRotation (θ : ι → ℝ)
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     ‖(weightRotation θ x).1‖ ^ 2 + ‖(weightRotation θ x).2‖ ^ 2 = ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 := by
   have h := (exists_weightRotation_apply_eq_iff x (weightRotation θ x)).1 ⟨θ, rfl⟩

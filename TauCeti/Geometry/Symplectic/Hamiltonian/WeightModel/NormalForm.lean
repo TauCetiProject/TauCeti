@@ -110,8 +110,9 @@ theorem exists_continuousLinearEquiv_weightRotation {V G : Type*} [NormedAddComm
       (∀ u v, stdSymplecticForm (L u) (L v) = ω u v) ∧
       ∀ g v, L (ρ g v) = weightRotation (fun k ↦ Complex.arg (χ k g)) (L v) := by
   obtain ⟨n, b, χ, hb, hbχ⟩ := exists_isDarbouxBasis_forall_apply_eq ω ρ hρ hω
-  refine ⟨n, χ, LinearEquiv.toContinuousLinearEquiv b.darbouxBasisEquiv,
-    hb.isSymplectomorphism_darbouxBasisEquiv.apply, fun g v ↦ ?_⟩
+  refine ⟨n, χ, b.darbouxBasisContinuousLinearEquiv, fun u v ↦ ?_, fun g v ↦ ?_⟩
+  · rw [Module.Basis.coe_darbouxBasisContinuousLinearEquiv]
+    exact hb.isSymplectomorphism_darbouxBasisEquiv.apply u v
   have hcos (k : Fin n) : cos (Complex.arg (χ k g)) = (χ k g : ℂ).re := by
     rw [Complex.cos_arg (Circle.coe_ne_zero _), Circle.norm_coe, div_one]
   have hsin (k : Fin n) : sin (Complex.arg (χ k g)) = (χ k g : ℂ).im := by
@@ -126,6 +127,7 @@ theorem exists_continuousLinearEquiv_weightRotation {V G : Type*} [NormedAddComm
         (hbχ g k).1, (hbχ g k).2, map_add, map_smul, Module.Basis.darbouxBasisEquiv_apply_zero,
         Module.Basis.darbouxBasisEquiv_apply_one] <;>
       ext m <;> by_cases hm : m = k <;> simp [hm, hcos, hsin]
+  rw [Module.Basis.coe_darbouxBasisContinuousLinearEquiv]
   exact LinearMap.congr_fun key v
 
 end SymplecticForm
@@ -240,7 +242,7 @@ theorem IsSymplectic.exists_weightRotation_darbouxChart (hσ : σ.IsSymplectic)
       exact hLd g _
     rw [hchart, Function.comp_apply, Function.comp_apply, hrot]
     refine ⟨hmem.2 ⟨hgx, ?_⟩, rfl⟩
-    rw [hrot, hB, Set.mem_ofPred_eq, norm_sq_add_norm_sq_weightRotation]
+    rw [hrot, hB, Set.mem_ofPred_eq, norm_fst_sq_add_norm_snd_sq_weightRotation]
     exact hxB
   · -- The chart is `L ∘ c₀`, and `L` carries `σ_p` to the standard form.
     have hdchart (u : TangentSpace I' x) : mvfderiv I' chart x u = L (mvfderiv I' c₀ x u) := by
