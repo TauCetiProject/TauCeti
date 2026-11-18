@@ -739,14 +739,13 @@ theorem hasStandardKernel_rieszTransform (v : E) :
       show (finrank ℝ E : ℝ) + 1 = ((finrank ℝ E + 1 : ℕ) : ℝ) by push_cast; ring,
       Real.rpow_natCast]
     simp only [dist_eq_norm] at hy ⊢
-    have h₁ : 2 * ‖(x - y') - (x - y)‖ < ‖x - y‖ := by
-      rwa [show (x - y') - (x - y) = y - y' by abel]
-    have h₂ : 2 * ‖(y' - x) - (y - x)‖ < ‖y - x‖ := by
-      rwa [show (y' - x) - (y - x) = -(y - y') by abel, norm_neg, norm_sub_rev y x]
-    have b₁ := abs_rieszKernel_sub_le v h₁
-    have b₂ := abs_rieszKernel_sub_le v h₂
-    rw [show (x - y') - (x - y) = y - y' by abel] at b₁
-    rw [show (y' - x) - (y - x) = -(y - y') by abel, norm_neg, norm_sub_rev y x] at b₂
+    have e₁ : ‖(x - y') - (x - y)‖ = ‖y - y'‖ := by rw [show (x - y') - (x - y) = y - y' by abel]
+    have e₂ : ‖(y' - x) - (y - x)‖ = ‖y - y'‖ := by
+      rw [show (y' - x) - (y - x) = -(y - y') by abel, norm_neg]
+    have b₁ := abs_rieszKernel_sub_le v (a := x - y') (b := x - y) (by rwa [e₁])
+    have b₂ := abs_rieszKernel_sub_le v (a := y' - x) (b := y - x) (by rwa [e₂, norm_sub_rev y x])
+    rw [e₁] at b₁
+    rw [e₂, norm_sub_rev y x] at b₂
     rw [abs_sub_comm] at b₁ b₂
     calc |rieszKernel v (x - y) - rieszKernel v (x - y')| +
           |rieszKernel v (y - x) - rieszKernel v (y' - x)|
