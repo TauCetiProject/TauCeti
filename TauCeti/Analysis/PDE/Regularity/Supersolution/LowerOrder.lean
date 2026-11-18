@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Caccioppoli.Power
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.PDE.Regularity.ReverseHolder
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
@@ -46,9 +46,11 @@ Theorem 8.18). For `P > 0` the power `w = u^{-P/2} = (u⁻¹)^{P/2}` satisfies t
 inequality for powers with lower-order terms
 (`TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow_lowerOrder`)
 at the exponent `-P`, whose constants stay bounded as `P` grows except for a factor `P γ / λ` in the
-mass term. A cutoff and the Sobolev inequality of `W^{1,2}_0(B(x₀, R))` at an exponent `2χ`,
-`χ > 1` (`TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball`), give the reverse
-Hölder step on concentric balls `B(x₀, r) ⊂ B(x₀, ρ) ⊆ B(x₀, R)`:
+mass term. The reverse Hölder inequality for powers with lower-order terms
+(`TauCeti.PDE.exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder`) at the exponent `-P`, with the
+Sobolev inequality of `W^{1,2}_0(B(x₀, R))` at an exponent `2χ`, `χ > 1`
+(`TauCeti.W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball`), gives the step on
+concentric balls `B(x₀, r) ⊂ B(x₀, ρ) ⊆ B(x₀, R)`:
 
 `‖u⁻¹‖_{L^{χP}(B(x₀, r))} ≤ (C R^{1 - nδ} A)^{2/P} ‖u⁻¹‖_{L^P(B(x₀, ρ))}`,
 `A = (1 + Λ/λ)/(ρ - r) + β/λ + √(Pγ/λ)`,
@@ -83,99 +85,46 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The arithmetic of the gradient bound in the reverse Hölder step. If `g² ≤ 2 X + 2 Y`, where
-`X` is bounded by the Caccioppoli inequality for the power `-P` with lower-order terms, and the
-cutoff and zeroth-order integrals satisfy `Y ≤ G² I` and `Z ≤ I`, then
-`g ≤ (2 (1 + Λ/λ) G + 2 (β/λ + √(Pγ/λ))) √I`. -/
-private theorem le_mul_sqrt_of_sq_le_lowerOrder {g X Y Z I G P lam Lam beta gamma : ℝ}
-    (hg : 0 ≤ g) (hlam : 0 < lam) (hLam : 0 ≤ Lam) (hP : 0 < P) (hβ : 0 ≤ beta)
-    (hγ : 0 ≤ gamma) (hG : 0 ≤ G) (hI : 0 ≤ I) (hY0 : 0 ≤ Y) (hZ0 : 0 ≤ Z) (hY : Y ≤ G ^ 2 * I)
-    (hZ : Z ≤ I)
-    (hX : X ≤ (P / ((1 + P) * lam)) ^ 2 *
-      (2 * Lam ^ 2 * Y + (beta ^ 2 + (1 + P) * lam * gamma) * Z))
-    (hg2 : g ^ 2 ≤ 2 * X + 2 * Y) :
-    g ≤ (2 * (1 + Lam / lam) * G + 2 * (beta / lam + √(P * gamma / lam))) * √I := by
-  set κ := P / ((1 + P) * lam)
-  set L := Lam / lam
-  set B := beta / lam
-  set Q := √(P * gamma / lam)
-  have : 0 ≤ κ := by positivity
-  -- `κ λ (1 + P) = P`, so `κ ≤ λ⁻¹` and `κ² (1 + P) λ γ = κ P γ ≤ P γ / λ`.
-  have hκP : κ * ((1 + P) * lam) = P := div_mul_cancel₀ P (by positivity)
-  have hκlam : κ * lam ≤ 1 := by nlinarith
-  have hκL : κ * Lam ≤ L := by
-    rw [le_div_iff₀ hlam]
-    nlinarith
-  have hκB : κ * beta ≤ B := by
-    rw [le_div_iff₀ hlam]
-    nlinarith
-  have hQ : Q ^ 2 = P * gamma / lam := Real.sq_sqrt (by positivity)
-  have hκγ : κ ^ 2 * ((1 + P) * lam * gamma) ≤ Q ^ 2 := by
-    rw [hQ, le_div_iff₀ hlam,
-      show κ ^ 2 * ((1 + P) * lam * gamma) * lam = κ * ((1 + P) * lam) * (κ * lam) * gamma by ring,
-      hκP]
-    nlinarith [mul_nonneg hP.le hγ]
-  have hL0 : 0 ≤ L := by positivity
-  have hB0 : 0 ≤ B := by positivity
-  have hQ0 : 0 ≤ Q := Real.sqrt_nonneg _
-  have hXb : X ≤ (2 * L ^ 2 * G ^ 2 + (B ^ 2 + Q ^ 2)) * I := by
-    calc X ≤ 2 * (κ * Lam) ^ 2 * Y + ((κ * beta) ^ 2 + κ ^ 2 * ((1 + P) * lam * gamma)) * Z := by
-          nlinarith
-      _ ≤ 2 * L ^ 2 * (G ^ 2 * I) + (B ^ 2 + Q ^ 2) * I := by
-          gcongr
-      _ = _ := by ring
-  have hsq : g ^ 2 ≤ ((2 * (1 + L) * G + 2 * (B + Q)) * √I) ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt hI]
-    nlinarith [mul_nonneg (mul_nonneg hL0 (sq_nonneg G)) hI, mul_nonneg (sq_nonneg G) hI,
-      mul_nonneg (mul_nonneg hB0 hQ0) hI, mul_nonneg (mul_nonneg hL0 hG) hI,
-      mul_nonneg (mul_nonneg (mul_nonneg hG hB0) hL0) hI, mul_nonneg (mul_nonneg hG hB0) hI,
-      mul_nonneg (mul_nonneg hG hQ0) hI, mul_nonneg (mul_nonneg (mul_nonneg hG hQ0) hL0) hI]
-  exact (pow_le_pow_iff_left₀ hg (by positivity) two_ne_zero).1 hsq
-
-/-- The gradient bound of the reverse Hölder step. Let `u ≥ m > 0` be a weak supersolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` with `‖b‖ ≤ β` and `|c| ≤ γ`, let `w ∈ H¹(Ω)` have value
-`u^{-P/2}` for some `P > 0`, and let `ψ` be a smooth cutoff with values in `[0, 1]`, gradient at
-most `G` and support in a set `B ⊆ Ω`. Then
-`‖∇(ψ w)‖₂ ≤ (2 (1 + Λ/λ) G + 2 (β/λ + √(Pγ/λ))) (∫_B w²)^{1/2}`. -/
-private theorem norm_gradient_contDiffSMul_le_lowerOrder {mu : Measure (EuclideanSpace ℝ ι)}
-    [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {c : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma : ℝ}
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hb : AEStronglyMeasurable b (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) (hβ : 0 ≤ beta)
-    (hγ : 0 ≤ gamma) {u : W1p mu Omega 2}
-    (hu : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        0 ≤ energyFormH1 a b c u (v : W1p mu Omega 2))
-    {m : ℝ} (hm : 0 < m) (hmu : ∀ᵐ x ∂mu.restrict Omega, m ≤ W1p.value u x) {P : ℝ} (hP : 0 < P)
-    {w : W1p mu Omega 2}
-    (hwv : W1p.value w =ᵐ[mu.restrict Omega] fun x => W1p.value u x ^ (-P / 2))
-    {B : Set (EuclideanSpace ℝ ι)} (hB : B ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψr : range ψ ⊆ Icc 0 1)
-    (hcpt : HasCompactSupport ψ) (hψB : tsupport ψ ⊆ B) {G : ℝ} (hψg : ∀ x, ‖∇ ψ x‖ ≤ G)
-    {M : ℝ} (hM : 0 ≤ M) (hψM : ∀ x ∈ Omega, |ψ x| ≤ M) (hgradM : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M) :
-    ‖W1p.gradient (W1p.contDiffSMul ψ hψ hM hψM hgradM w)‖ ≤
-      (2 * (1 + Lam / lam) * G + 2 * (beta / lam + √(P * gamma / lam))) *
-        √(∫ x in B, W1p.value w x ^ 2 ∂mu) := by
-  -- The Caccioppoli inequality for the power `-P`, and the bounds of its two integrals.
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow_lowerOrder ha hb hc
-    hb_bound hc_bound hu hm hmu (by linarith : -P < 1) hwv hψ hcpt (hψB.trans hB)
-  rw [abs_neg, abs_of_pos hP, sub_neg_eq_add] at hcacc
-  have hwI := (Lp.memLp (W1p.value w)).integrable_sq
-  have hY := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hψg hψB hwI
-    (Filter.Eventually.of_forall fun x => le_rfl)
-  have hZ := W1p.setIntegral_sq_mul_value_sq_le w (fun x => by
-      obtain ⟨h0, h1⟩ := hψr (mem_range_self x)
-      nlinarith) hψB hwI (Filter.Eventually.of_forall fun x => le_rfl)
-  rw [inter_eq_right.2 hB] at hY hZ
-  exact le_mul_sqrt_of_sq_le_lowerOrder (norm_nonneg _) h.pos h.upper_nonneg hP hβ hγ
-    ((norm_nonneg _).trans (hψg 0)) (integral_nonneg fun x => sq_nonneg _)
-    (integral_nonneg fun x => by positivity) (integral_nonneg fun x => by positivity) hY hZ hcacc
-    (W1p.norm_gradient_contDiffSMul_sq_le hψ hM hψM hgradM w)
+/-- At the exponent `-P`, `P > 0`, the factor
+`(1 + P Λ / ((1 + P) λ)) / d + P / ((1 + P) λ) · √(β² + (1 + P) λ γ)` of the reverse Hölder
+inequality with lower-order terms is at most `(1 + Λ/λ) / d + β/λ + √(Pγ/λ)`. -/
+private theorem add_div_mul_sqrt_le {P lam Lam beta gamma d : ℝ} (hP : 0 < P) (hlam : 0 < lam)
+    (hLam : 0 ≤ Lam) (hβ : 0 ≤ beta) (hγ : 0 ≤ gamma) (hd : 0 < d) :
+    (1 + P * Lam / ((1 + P) * lam)) / d +
+        P / ((1 + P) * lam) * √(beta ^ 2 + (1 + P) * lam * gamma) ≤
+      (1 + Lam / lam) / d + beta / lam + √(P * gamma / lam) := by
+  set k := (1 + P) * lam
+  have hk : 0 < k := by positivity
+  have hX : 0 ≤ k * gamma := by positivity
+  -- The principal term: `P / (1 + P) ≤ 1`.
+  have hA : (1 + P * Lam / k) / d ≤ (1 + Lam / lam) / d := by
+    have : P * Lam / k ≤ Lam / lam := by
+      rw [div_le_div_iff₀ hk hlam]
+      nlinarith [mul_nonneg (mul_nonneg hP.le hLam) hlam.le]
+    exact div_le_div_of_nonneg_right (by linarith) hd.le
+  -- The lower-order term: `√(β² + X) ≤ β + √X`, then `P β / k ≤ β / λ` and
+  -- `P √(k γ) / k ≤ √(P γ / λ)`.
+  have hs : √(beta ^ 2 + k * gamma) ≤ beta + √(k * gamma) := by
+    rw [Real.sqrt_le_iff]
+    refine ⟨by positivity, ?_⟩
+    nlinarith [Real.sq_sqrt hX, Real.sqrt_nonneg (k * gamma)]
+  have hβk : P / k * beta ≤ beta / lam := by
+    rw [div_mul_eq_mul_div, div_le_div_iff₀ hk hlam]
+    nlinarith [mul_nonneg (mul_nonneg hP.le hβ) hlam.le]
+  have hγk : P / k * √(k * gamma) ≤ √(P * gamma / lam) := by
+    refine Real.le_sqrt_of_sq_le ?_
+    rw [mul_pow, Real.sq_sqrt hX, div_pow, div_mul_eq_mul_div,
+      div_le_div_iff₀ (by positivity) hlam]
+    have : P * gamma * k ^ 2 = P ^ 2 * (k * gamma) * lam + P * gamma * k * lam := by
+      simp only [k]; ring
+    rw [this]
+    nlinarith [mul_nonneg (mul_nonneg (mul_nonneg hP.le hγ) hk.le) hlam.le]
+  calc (1 + P * Lam / k) / d + P / k * √(beta ^ 2 + k * gamma)
+      ≤ (1 + Lam / lam) / d + P / k * (beta + √(k * gamma)) := by
+        gcongr
+    _ ≤ _ := by
+        rw [mul_add]
+        linarith
 
 /-- **Moser's reverse Hölder step for negative powers, with lower-order terms.** There is a
 constant `C ≥ 0`, depending only on the dimension, with the following property. Suppose that
@@ -183,7 +132,10 @@ constant `C ≥ 0`, depending only on the dimension, with the following property
 supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` with `‖b‖ ≤ β` and `|c| ≤ γ`. Then for every
 `P > 0` and all concentric balls `B(x₀, r) ⊂ B(x₀, ρ) ⊆ Ω`,
 
-`‖u^{-P/2}‖_{L^q(B(x₀, r))} ≤ S C ((1 + Λ/λ)/(ρ - r) + β/λ + √(Pγ/λ)) ‖u^{-P/2}‖_{L²(B(x₀, ρ))}`. -/
+`‖u^{-P/2}‖_{L^q(B(x₀, r))} ≤ S C ((1 + Λ/λ)/(ρ - r) + β/λ + √(Pγ/λ)) ‖u^{-P/2}‖_{L²(B(x₀, ρ))}`.
+
+This is `TauCeti.PDE.exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder` at the exponent `-P`, with
+its factor bounded uniformly in `P` except for the mass term. -/
 private theorem exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
       {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -206,51 +158,19 @@ private theorem exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder :
         ENNReal.ofReal S *
           ENNReal.ofReal (C * ((1 + Lam / lam) / (ρ - r) + beta / lam + √(P * gamma / lam))) *
           eLpNorm (fun x => W1p.value u x ^ (-P / 2)) 2 (mu.restrict (ball x₀ ρ)) := by
-  obtain ⟨c₀, hc₀, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
-  refine ⟨4 * c₀ + 2, by positivity, ?_⟩
+  obtain ⟨C, hC, hrev⟩ := exists_eLpNorm_rpow_le_mul_eLpNorm_rpow_lowerOrder (ι := ι)
+  refine ⟨C, hC, ?_⟩
   intro mu _ Omega a b c lam Lam beta gamma q S u m P x₀ r ρ h ha hb hc hb_bound hc_bound hS hu hm
     hmu hP hr hrρ hball
   have hβ : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self (hr.trans hrρ))))
   have hγ : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x₀ (hball (mem_ball_self (hr.trans hrρ))))
-  -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ ρ'` with `ρ' = (r + ρ)/2`.
-  set ρ' := (r + ρ) / 2
-  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le (by simp only [ρ']; linarith : r < ρ')
-  have hρ'B : closedBall x₀ ρ' ⊆ ball x₀ ρ := closedBall_subset_ball (by simp only [ρ']; linarith)
-  have hcpt : HasCompactSupport ψ :=
-    (isCompact_closedBall x₀ ρ').of_isClosed_subset (isClosed_tsupport ψ) hψts
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
-  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
-  -- The power `w = u^{-P/2}` and the product `z = ψ w ∈ H¹₀(Ω)`, with its gradient bound.
-  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hm
-    (by linarith : -P / 2 ≤ 1) hmu
-  set z := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
-  have hz : z ∈ w1p0Submodule mu Omega 2 :=
-    W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM' hgradM' hcpt
-      ((hψts.trans hρ'B).trans hball) w
-  have hgradz := norm_gradient_contDiffSMul_le_lowerOrder h ha hb hc hb_bound hc_bound hβ hγ hu hm
-    hmu hP hwv hball hψ hψr hcpt (hψts.trans hρ'B) hψg hM hψM' hgradM'
-  -- The norms of `u^{-P/2}` on the two balls, through `w` and `z`.
-  have hwB := W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral hwv hball
-  have hzr := W1p.eLpNorm_le_eLpNorm_value_contDiffSMul hψ hM hψM' hgradM' hwv
-    ((ball_subset_ball hrρ.le).trans hball) measurableSet_ball
-    (hψ1.mono ball_subset_closedBall) q
-  have h1 : 0 ≤ (1 + Lam / lam) / (ρ - r) := by
-    have := h.upper_nonneg; have := h.pos; have := sub_pos.2 hrρ; positivity
-  have h2 : 0 ≤ beta / lam + √(P * gamma / lam) := by have := h.pos; positivity
-  have h12 : 0 ≤ (4 * c₀ + 2) * ((1 + Lam / lam) / (ρ - r) + beta / lam + √(P * gamma / lam)) :=
-    mul_nonneg (by positivity) (by linarith)
-  calc eLpNorm (fun x => W1p.value u x ^ (-P / 2)) q (mu.restrict (ball x₀ r))
-      ≤ ENNReal.ofReal S * ‖W1p.gradient z‖ₑ := hzr.trans (hS z hz)
-    _ ≤ ENNReal.ofReal S * ENNReal.ofReal ((4 * c₀ + 2) * ((1 + Lam / lam) / (ρ - r) +
-          beta / lam + √(P * gamma / lam)) * √(∫ x in ball x₀ ρ, W1p.value w x ^ 2 ∂mu)) := by
-        rw [← ofReal_norm]
-        gcongr
-        refine hgradz.trans (mul_le_mul_of_nonneg_right ?_ (Real.sqrt_nonneg _))
-        rw [show 2 * (1 + Lam / lam) * (c₀ / (ρ' - r)) = 4 * c₀ * ((1 + Lam / lam) / (ρ - r)) by
-          rw [show ρ' - r = (ρ - r) / 2 by simp only [ρ']; ring]; field_simp; ring]
-        nlinarith
-    _ = _ := by rw [hwB, mul_assoc (ENNReal.ofReal S), ← ENNReal.ofReal_mul h12]
+  have hstep := hrev mu (S := S.toNNReal) h ha hb hc hb_bound hc_bound hS hu hm hmu
+    (by linarith : -P < 1) hr hrρ hball
+  rw [abs_neg, abs_of_pos hP, sub_neg_eq_add] at hstep
+  change _ ≤ ENNReal.ofReal S * _ * _ at hstep
+  refine hstep.trans ?_
+  gcongr ENNReal.ofReal S * ENNReal.ofReal (C * ?_) * _
+  exact add_div_mul_sqrt_le hP h.pos h.upper_nonneg hβ hγ (sub_pos.2 hrρ)
 
 /-- The step constants of Moser's iteration multiply to a bound independent of the number of
 steps: for `E ≥ 0`, `P > 0` and `χ > 1`, the products `∏_{j < k} (E (2χ)^j)^{2/(P χ^j)}` are

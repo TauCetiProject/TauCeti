@@ -409,7 +409,7 @@ private theorem exists_uniformlyEllipticOn_top_extendByZeroL_posPart
   -- The values of the extension: `u⁺` on `Ω` and `0` off `Ω`.
   have hval : ∀ᵐ x ∂mu, W1p.value ub x =
       (Omega : Set (EuclideanSpace ℝ ι)).indicator (fun y => max (W1p.value u y) 0) x := by
-    have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm
+    have hext := coeFn_extendByZeroLpₗᵢ ℝ hOm.nullMeasurableSet
       (SetLike.coe_subset_coe.mpr (le_top : Omega ≤ ⊤)) (W1p.value (W1p.posPart (p := 2)
         (mu := mu) (Omega := Omega) (by norm_num) u))
     simp only [Opens.coe_top, Measure.restrict_univ] at hext
@@ -450,7 +450,7 @@ private theorem energyFormH1_restrictL_sub_nonpos [Nonempty ι] {U : Opens (Eucl
     (fun _x hx eta xi => h'.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
   -- The zero extension `v₀` of `v` is a nonnegative test function on the whole space, and
   -- `g v₀` is integrable.
-  have hext := coeFn_extendByZeroLpₗᵢ ℝ hUm (SetLike.coe_subset_coe.mpr hU)
+  have hext := coeFn_extendByZeroLpₗᵢ ℝ hUm.nullMeasurableSet (SetLike.coe_subset_coe.mpr hU)
     (W1p.value (v : W1p mu U 2))
   have hvt : ∀ᵐ x ∂mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)),
       0 ≤ W1p.value (W1p0.extendByZeroL hU v : W1p mu ⊤ 2) x := by
