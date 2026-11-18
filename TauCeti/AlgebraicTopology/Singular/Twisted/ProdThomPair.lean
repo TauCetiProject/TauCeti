@@ -50,34 +50,10 @@ universe u v w
 
 namespace TauCeti
 
-variable {R : Type u} [Ring R] (B : Type v) [TopologicalSpace B]
-  (F : Type v) [NormedAddCommGroup F]
-
-/-- The zero section `b ↦ (b, 0)` of the product bundle `B × F → B`. -/
-def prodZeroSection : TopCat.of B ⟶ TopCat.of (B × F) :=
-  TopCat.ofHom ⟨fun b ↦ (b, 0), by fun_prop⟩
-
-@[simp]
-lemma prodZeroSection_apply (b : B) : prodZeroSection B F b = (b, 0) :=
-  (rfl)
-
-variable [NormedSpace ℝ F]
-
-/-- The zero section of the product bundle is a homotopy equivalence, with homotopy inverse the
-projection: `(b, x) ↦ (b, t • x)` contracts `B × F` onto the zero section. -/
-def prodZeroSectionHomotopyEquiv : ContinuousMap.HomotopyEquiv B (B × F) where
-  toFun := (prodZeroSection B F).hom
-  invFun := ContinuousMap.fst
-  left_inv := ContinuousMap.Homotopic.refl _
-  right_inv := ⟨{
-    toFun := fun p ↦ (p.2.1, (p.1 : ℝ) • p.2.2)
-    continuous_toFun := by fun_prop
-    map_zero_left := fun p ↦ by simp [prodZeroSection]
-    map_one_left := fun p ↦ by simp }⟩
+variable {R : Type u} [Ring R] {B : Type v} [TopologicalSpace B]
+  {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 namespace ProdThomPair
-
-variable {B F}
 
 /-- The projection `B × F → F`. -/
 private abbrev proj : C(TopCat.of (B × F), F) :=
@@ -111,7 +87,7 @@ end ProdThomPair
 
 open ProdThomPair
 
-variable {B F} [FiniteDimensional ℝ F]
+variable [FiniteDimensional ℝ F]
   (L : LocalCoefficientSystem.{u, v, max v w} R (prodThomPair B F).fst)
 
 /-- **The Thom pair of a product bundle has no homology with local coefficients below the rank**:
@@ -144,6 +120,8 @@ def prodThomPairTwistedHomologyIso (n m : ℕ) (h : n + finrank ℝ F = m := by 
       (TopPair.isIso_twistedHomologyπ_of_isEmpty (subspaceComplPair (proj (B := B) (F := F)) ⊤)
         L n)).symm ≪≫
     (@asIso _ _ _ _ (LocalCoefficientSystem.twistedHomologyMap (prodZeroSection B F) L n)
-      ((prodZeroSectionHomotopyEquiv B F).isIso_twistedHomologyMap L n)).symm
+      (by
+        have h := (prodZeroSectionHomotopyEquiv B F).isIso_twistedHomologyMap L n
+        rwa [prodZeroSectionHomotopyEquiv_toFun, TopCat.ofHom_hom] at h)).symm
 
 end TauCeti

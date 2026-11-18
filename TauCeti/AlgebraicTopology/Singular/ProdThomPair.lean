@@ -60,6 +60,8 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 
 * `TauCeti.prodThomPairProj`, `TauCeti.prodThomPairPuncturedProj`: the projections
   `B × F → B` and `B × (F ∖ {0}) → B`.
+* `TauCeti.prodZeroSection`: the zero section `B → B × F`, a homotopy equivalence
+  (`TauCeti.prodZeroSectionHomotopyEquiv`).
 * `TauCeti.prodThomPairPuncturedHomotopyEquiv`: for `e : F ≃L[ℝ] ℝᵈ⁺¹`, the punctured product
   `B × (F ∖ {0})` is homotopy equivalent to `Sᵈ × B` by `(b, x) ↦ (e x / ‖e x‖, b)`.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
@@ -188,6 +190,15 @@ lemma prodThomPairProj_apply (p : B × F) : prodThomPairProj B F p = p.1 :=
   (rfl)
 
 variable (B) in
+/-- The zero section `b ↦ (b, 0)` of the product bundle `B × F → B`. -/
+def prodZeroSection : TopCat.of B ⟶ TopCat.of (B × F) :=
+  TopCat.ofHom ⟨fun b ↦ (b, 0), by fun_prop⟩
+
+@[simp]
+lemma prodZeroSection_apply (b : B) : prodZeroSection B F b = (b, 0) :=
+  (rfl)
+
+variable (B) in
 /-- The projection `B × (F ∖ {0}) → B` of the punctured product bundle onto its base. -/
 def prodThomPairPuncturedProj : (prodThomPair B F).snd ⟶ TopCat.of B :=
   (prodThomPair B F).map ≫ prodThomPairProj B F
@@ -271,6 +282,36 @@ theorem coe_prodThomPairPuncturedHomotopyEquiv_symm_apply
 
 end Punctured
 
+section ZeroSection
+
+variable (B : Type w) [TopologicalSpace B] (F : Type w) [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The zero section of the product bundle is a homotopy equivalence, with homotopy inverse the
+projection: `(b, x) ↦ (b, t • x)` contracts `B × F` onto the zero section. -/
+def prodZeroSectionHomotopyEquiv : ContinuousMap.HomotopyEquiv B (B × F) where
+  toFun := (prodZeroSection B F).hom
+  invFun := ContinuousMap.fst
+  left_inv := ContinuousMap.Homotopic.refl _
+  right_inv := ⟨{
+    toFun := fun p ↦ (p.2.1, (p.1 : ℝ) • p.2.2)
+    continuous_toFun := by fun_prop
+    map_zero_left := fun p ↦ by simp [prodZeroSection]
+    map_one_left := fun p ↦ by simp }⟩
+
+/-- The underlying map of `TauCeti.prodZeroSectionHomotopyEquiv` is the zero section. -/
+@[simp]
+theorem prodZeroSectionHomotopyEquiv_toFun :
+    (prodZeroSectionHomotopyEquiv B F).toFun = (prodZeroSection B F).hom :=
+  (rfl)
+
+/-- The homotopy inverse of `TauCeti.prodZeroSectionHomotopyEquiv` is the projection. -/
+@[simp]
+theorem prodZeroSectionHomotopyEquiv_invFun :
+    (prodZeroSectionHomotopyEquiv B F).invFun = ContinuousMap.fst :=
+  (rfl)
+
+end ZeroSection
+
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {B : Type w} [TopologicalSpace B] {B' : Type w} [TopologicalSpace B']
   {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -303,8 +344,9 @@ theorem exists_homotopy_halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ)
     ∃ (ρ : TopCat.of (B × F) ⟶ TopCat.of (B × F))
       (H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy ρ.hom),
       (∀ (τ : unitInterval) (p : TopCat.of (B × F)),
-        p ∈ Prod.snd ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ → H (τ, p) ∈ Prod.snd ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ) ∧
-      ∀ p, ρ p ∈ Prod.snd ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ :=
+        p ∈ (ContinuousMap.snd : C(TopCat.of (B × F), F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ →
+          H (τ, p) ∈ (ContinuousMap.snd : C(TopCat.of (B × F), F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ) ∧
+      ∀ p, ρ p ∈ (ContinuousMap.snd : C(TopCat.of (B × F), F)) ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ :=
   ⟨TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩,
     { toFun q := (q.2.1, (q.1 : ℝ) • v + (1 - (q.1 : ℝ)) • q.2.2)
       continuous_toFun := by fun_prop

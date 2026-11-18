@@ -223,7 +223,7 @@ lemma twistedHomologyTotalToOuter_naturality_coefficient
       (HomologicalComplex.homologyMap_comp _ _ _))
 
 /-- The triple sequence ends with a surjection on degree-zero relative homology. -/
-instance : Epi (T.twistedHomologyTotalToOuter L 0) :=
+instance epi_twistedHomologyTotalToOuter_zero : Epi (T.twistedHomologyTotalToOuter L 0) :=
   HomologicalComplex.epi_homologyMap_of_epi_of_not_rel _ _ (by simp)
 
 /-- The connecting map `Hₙ(X,A;L) ⟶ Hₘ(A,B;L|A)` of the triple, for `m+1=n`. -/
