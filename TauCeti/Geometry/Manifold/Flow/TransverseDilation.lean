@@ -131,13 +131,13 @@ theorem transverseDilationField_smul (hu : ℓ u = 1) (s : ℝ) :
     transverseDilationField u ℓ Ψ (s • u) = u := by
   simp [transverseDilationField_apply, hu]
 
-/-- The fields of the multiples `s ↦ a * Ψ s` of a differentiable profile form the family
-`u + a • (V z - u)` for the field `V` of `Ψ`, affine in `a`. -/
-theorem transverseDilationField_const_mul {z : E} (hΨ : DifferentiableAt ℝ Ψ (ℓ z)) (a : ℝ) :
+/-- The fields of the multiples `s ↦ a * Ψ s` of a profile form the family `u + a • (V z - u)`
+for the field `V` of `Ψ`, affine in `a`. -/
+theorem transverseDilationField_const_mul (a : ℝ) (z : E) :
     transverseDilationField u ℓ (fun s ↦ a * Ψ s) z =
       u + a • (transverseDilationField u ℓ Ψ z - u) := by
-  rw [transverseDilationField_apply, transverseDilationField_apply, deriv_const_mul a hΨ, mul_smul,
-    add_sub_cancel_left]
+  rw [transverseDilationField_apply, transverseDilationField_apply, deriv_const_mul_field,
+    mul_smul, add_sub_cancel_left]
 
 /-- A `C^(n+1)` profile gives a `C^n` transverse dilation field. -/
 theorem contDiff_transverseDilationField {n : WithTop ℕ∞} (hΨ : ContDiff ℝ (n + 1) Ψ) :
@@ -329,7 +329,7 @@ theorem exists_contDiff_hasFDerivAt_flowOf_add_smul (hu : ℓ u = 1) {s₀ s₁ 
     fun s ↦ by simp [hu], fun a ↦ ?_⟩
   have hV : (fun z ↦ u + a • (transverseDilationField u ℓ Ψ z - u)) =
       transverseDilationField u ℓ (fun s ↦ a * Ψ s) :=
-    funext fun z ↦ (transverseDilationField_const_mul (hΨ.differentiable (by simp) _) a).symm
+    funext fun z ↦ (transverseDilationField_const_mul a z).symm
   have haΨ : ContDiff ℝ 2 fun s ↦ a * Ψ s := contDiff_const.mul (hΨ.of_le (by simp))
   refine ⟨hV, ?_, ?_⟩ <;> rw [hV]
   · simp [hu, haΨ]
