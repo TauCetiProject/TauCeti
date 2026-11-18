@@ -182,7 +182,7 @@ theorem toSection_add (hp : 2 < p) (w v : SobolevSection A volume p 1) :
   · exact contMDiff_zero_iff.1 (ContMDiff.add_section (I := 𝓘(ℝ, ℂ))
       (contMDiff_zero_iff.2 (continuous_toSection hp w))
       (contMDiff_zero_iff.2 (continuous_toSection hp v)))
-  · exact chartValueL_add_ae (chartValueL_ae_eq_coord_toSection hp w i)
+  · exact chartValueL_add_ae_coord (chartValueL_ae_eq_coord_toSection hp w i)
       (chartValueL_ae_eq_coord_toSection hp v i)
 
 /-- Taking continuous representatives commutes with real scalar multiplication. -/
@@ -192,7 +192,7 @@ theorem toSection_smul (hp : 2 < p) (c : ℝ) (w : SobolevSection A volume p 1) 
   refine (eq_toSection hp ?_ fun i ↦ ?_).symm
   · exact contMDiff_zero_iff.1 (ContMDiff.const_smul_section (I := 𝓘(ℝ, ℂ)) (a := c)
       (contMDiff_zero_iff.2 (continuous_toSection hp w)))
-  · exact chartValueL_smul_ae c (chartValueL_ae_eq_coord_toSection hp w i)
+  · exact chartValueL_smul_ae_coord c (chartValueL_ae_eq_coord_toSection hp w i)
 
 /-- Taking continuous representatives, as a real-linear map from `W^{1,p}(V)` to sections. -/
 def toSectionₗ (hp : 2 < p) : SobolevSection A volume p 1 →ₗ[ℝ] ∀ x, V x where

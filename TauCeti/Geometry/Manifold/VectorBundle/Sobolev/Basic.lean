@@ -86,8 +86,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   section whose coordinates its chart data are.
 * `TauCeti.SobolevSection.exists_ae_eq_coord`: every element of `W^{k,p}(V)` consists of the
   coordinates of a section.
-* `TauCeti.SobolevSection.chartValueL_add_ae`, `TauCeti.SobolevSection.chartValueL_smul_ae`: the
-  chart data of a sum or a multiple are the coordinates of the sum or the multiple of the sections.
+* `TauCeti.SobolevSection.chartValueL_add_ae_coord`,
+  `TauCeti.SobolevSection.chartValueL_smul_ae_coord`: the chart data of a sum or a multiple are the
+  coordinates of the sum or the multiple of the sections.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
 * `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
@@ -353,7 +354,7 @@ theorem chartValueL_lowerOrderL (i : Fin C.n) (w : C.SobolevData μ p (k + 1)) :
 variable {C μ p k} in
 /-- The chart data of a sum of tuples are almost everywhere the reading of the sum of the
 sections whose readings the chart data of the summands are. -/
-theorem chartValueL_add_ae {w w' : C.SobolevData μ p k} {s t : S} {i : Fin C.n}
+theorem chartValueL_add_ae_coord {w w' : C.SobolevData μ p k} {s t : S} {i : Fin C.n}
     (hs : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s)
     (ht : C.chartValueL μ p k i w' =ᵐ[μ.restrict (C.image i)] C.coord i t) :
     C.chartValueL μ p k i (w + w') =ᵐ[μ.restrict (C.image i)] C.coord i (s + t) := by
@@ -364,7 +365,7 @@ theorem chartValueL_add_ae {w w' : C.SobolevData μ p k} {s t : S} {i : Fin C.n}
 variable {C μ p k} in
 /-- The chart data of a multiple of a tuple are almost everywhere the reading of the multiple of
 the section whose reading the chart data of the tuple are. -/
-theorem chartValueL_smul_ae (c : ℝ) {w : C.SobolevData μ p k} {s : S} {i : Fin C.n}
+theorem chartValueL_smul_ae_coord (c : ℝ) {w : C.SobolevData μ p k} {s : S} {i : Fin C.n}
     (hs : C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s) :
     C.chartValueL μ p k i (c • w) =ᵐ[μ.restrict (C.image i)] C.coord i (c • s) := by
   filter_upwards [hs, ae_restrict_mem (C.image i).isOpen.measurableSet,
@@ -387,12 +388,13 @@ section `s` has, in every chart `i`, reading equal almost everywhere on `C.image
 assembled from the chart-`i` components of `w`. -/
 def sobolevSections : Submodule ℝ (C.SobolevData μ p k) where
   carrier := {w | ∃ s : S, ∀ i, C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s}
-  add_mem' := fun ⟨s, hs⟩ ⟨t, ht⟩ ↦ ⟨s + t, fun i ↦ chartValueL_add_ae (hs i) (ht i)⟩
+  add_mem' := fun ⟨s, hs⟩ ⟨t, ht⟩ ↦
+    ⟨s + t, fun i ↦ chartValueL_add_ae_coord (hs i) (ht i)⟩
   zero_mem' := ⟨0, fun i ↦ by
     filter_upwards [ae_restrict_mem (C.image i).isOpen.measurableSet,
       Lp.coeFn_zero F p (μ.restrict (C.image i))] with y hyU h0
     rw [map_zero, h0, Pi.zero_apply, C.coord_zero i hyU]⟩
-  smul_mem' c _ := fun ⟨s, hs⟩ ↦ ⟨c • s, fun i ↦ chartValueL_smul_ae c (hs i)⟩
+  smul_mem' c _ := fun ⟨s, hs⟩ ↦ ⟨c • s, fun i ↦ chartValueL_smul_ae_coord c (hs i)⟩
 
 theorem mem_sobolevSections_iff {w : C.SobolevData μ p k} :
     w ∈ C.sobolevSections μ p k ↔
@@ -973,25 +975,25 @@ theorem SobolevSection.exists_ae_eq_coord (w : SobolevSection A μ p k) :
 
 variable {A μ p k} in
 /-- The chart data of a sum are almost everywhere the readings of the sum of the sections. -/
-theorem SobolevSection.chartValueL_add_ae {w w' : SobolevSection A μ p k} {s t : ∀ x, V x}
-    {i : Fin A.n}
+theorem SobolevSection.chartValueL_add_ae_coord {w w' : SobolevSection A μ p k}
+    {s t : ∀ x, V x} {i : Fin A.n}
     (hs : A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
     (ht : A.sectionChartData.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)] A.coord i t) :
     A.sectionChartData.chartValueL μ p k i (w + w' : SobolevSection A μ p k)
       =ᵐ[μ.restrict (A.image i)] A.coord i (s + t) :=
-  (SectionChartData.chartValueL_add_ae (hs.trans (A.sectionChartData_coord_ae_eq μ i s).symm)
+  (SectionChartData.chartValueL_add_ae_coord (hs.trans (A.sectionChartData_coord_ae_eq μ i s).symm)
     (ht.trans (A.sectionChartData_coord_ae_eq μ i t).symm)).trans
       (A.sectionChartData_coord_ae_eq μ i (s + t))
 
 variable {A μ p k} in
 /-- The chart data of a multiple are almost everywhere the readings of the multiple of the
 section. -/
-theorem SobolevSection.chartValueL_smul_ae (c : ℝ) {w : SobolevSection A μ p k} {s : ∀ x, V x}
-    {i : Fin A.n}
+theorem SobolevSection.chartValueL_smul_ae_coord (c : ℝ) {w : SobolevSection A μ p k}
+    {s : ∀ x, V x} {i : Fin A.n}
     (hs : A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) :
     A.sectionChartData.chartValueL μ p k i (c • w : SobolevSection A μ p k)
       =ᵐ[μ.restrict (A.image i)] A.coord i (c • s) :=
-  (SectionChartData.chartValueL_smul_ae c
+  (SectionChartData.chartValueL_smul_ae_coord c
     (hs.trans (A.sectionChartData_coord_ae_eq μ i s).symm)).trans
       (A.sectionChartData_coord_ae_eq μ i (c • s))
 

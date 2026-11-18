@@ -37,11 +37,10 @@ on the overlap of a chart of `A` and a chart of `A'` the readings are related by
 changes of the bundle, which are continuous, so the chart data of `v` are the readings in `A'` of
 the section of `w`.
 
-For surfaces, `M` modelled on `ℂ` with the Lebesgue measure, and a `C¹` bundle, the transfer
-property holds at orders `k ≤ 1` (`TauCeti.SobolevSection.transfersTo_of_le_one`), by the
-localization of Sobolev sections in arbitrary charts and trivializations of
-`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`. Every localization result at a higher order
-gives the corresponding transfer property and hence the atlas independence at that order.
+For surfaces, `M` modelled on `ℂ` with the Lebesgue measure, and a `Cⁿ` bundle, `n ≠ 0`, the
+transfer property holds at every order `k ≤ n` with `k ≤ 1` or `p ≠ ∞`
+(`TauCeti.SobolevSection.transfersTo`), by the localization of Sobolev sections in arbitrary charts
+and trivializations of `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart`.
 
 ## Main definitions
 
@@ -57,10 +56,10 @@ gives the corresponding transfer property and hence the atlas independence at th
   readings in `A'` of any section of `w`.
 * `TauCeti.SobolevSection.exists_norm_changeAtlas_le`: when sections transfer in both directions the
   norms of the two atlases are equivalent.
-* `TauCeti.SobolevSection.transfersTo_of_le_one`: the transfer property for surfaces at orders
-  `k ≤ 1`.
-* `TauCeti.SobolevSection.exists_norm_changeAtlas_le_of_le_one`: for surfaces and orders `k ≤ 1`
-  the norms of two finite bundle atlases are equivalent.
+* `TauCeti.SobolevSection.transfersTo`: the transfer property for `Cⁿ` bundles over surfaces at
+  orders `k ≤ n` with `k ≤ 1` or `p ≠ ∞`.
+* `TauCeti.SobolevSection.exists_norm_changeAtlas_le_of_surface`: for such bundles and orders the
+  norms of two finite bundle atlases are equivalent.
 
 ## References
 
@@ -95,8 +94,8 @@ variable (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ)
 
 /-- **Transfer of Sobolev sections between atlases.** Every section whose chart data in the charts
 of `A` are those of an element of `W^{k,p}(V)` for `A` also has chart data in the charts of `A'`
-that are those of an element of `W^{k,p}(V)` for `A'`. For surfaces this holds at orders `k ≤ 1`
-(`TauCeti.SobolevSection.transfersTo_of_le_one`). -/
+that are those of an element of `W^{k,p}(V)` for `A'`. For `Cⁿ` bundles over surfaces this holds
+at orders `k ≤ n` with `k ≤ 1` or `p ≠ ∞` (`TauCeti.SobolevSection.transfersTo`). -/
 def TransfersTo : Prop :=
   ∀ (w : SobolevSection A μ p k) (s : ∀ x, V x),
     (∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s) →
@@ -150,14 +149,14 @@ private def changeAtlasₗ (h : TransfersTo A A' μ p k) :
     obtain ⟨s, hs⟩ := exists_ae_eq_coord w
     obtain ⟨t, ht⟩ := exists_ae_eq_coord w'
     exact eq_of_ae_eq_coord
-      (chartValueL_changeAtlasAux_ae h fun i ↦ chartValueL_add_ae (hs i) (ht i))
-      fun i' ↦ chartValueL_add_ae (chartValueL_changeAtlasAux_ae h hs i')
+      (chartValueL_changeAtlasAux_ae h fun i ↦ chartValueL_add_ae_coord (hs i) (ht i))
+      fun i' ↦ chartValueL_add_ae_coord (chartValueL_changeAtlasAux_ae h hs i')
         (chartValueL_changeAtlasAux_ae h ht i')
   map_smul' c w := by
     obtain ⟨s, hs⟩ := exists_ae_eq_coord w
     exact eq_of_ae_eq_coord
-      (chartValueL_changeAtlasAux_ae h fun i ↦ chartValueL_smul_ae c (hs i))
-      fun i' ↦ chartValueL_smul_ae c (chartValueL_changeAtlasAux_ae h hs i')
+      (chartValueL_changeAtlasAux_ae h fun i ↦ chartValueL_smul_ae_coord c (hs i))
+      fun i' ↦ chartValueL_smul_ae_coord c (chartValueL_changeAtlasAux_ae h hs i')
 
 /-- **The graph of the change of atlas is closed.** If `w m → w` in `W^{k,p}(V)` for `A` and the
 corresponding elements for `A'` converge to `v`, then in each chart of `A'` the chart data of `v`
@@ -305,6 +304,12 @@ def atlasEquiv (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k) :
     (fun w ↦ (changeAtlas_changeAtlas h' h w).trans (changeAtlas_refl_apply w))
 
 @[simp]
+theorem toContinuousLinearMap_atlasEquiv (h : TransfersTo A A' μ p k)
+    (h' : TransfersTo A' A μ p k) :
+    (atlasEquiv h h' : SobolevSection A μ p k →L[ℝ] SobolevSection A' μ p k) = changeAtlas h :=
+  (rfl)
+
+@[simp]
 theorem atlasEquiv_apply (h : TransfersTo A A' μ p k) (h' : TransfersTo A' A μ p k)
     (w : SobolevSection A μ p k) : atlasEquiv h h' w = changeAtlas h w :=
   (rfl)
@@ -353,35 +358,37 @@ end Sobolev
 
 namespace SobolevSection
 
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) 1 M]
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] {n : WithTop ℕ∞}
+  [IsManifold 𝓘(ℝ, ℂ) n M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle 1 F V 𝓘(ℝ, ℂ)] {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
+  [ContMDiffVectorBundle n F V 𝓘(ℝ, ℂ)] {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 
-/-- **Transfer at orders at most one over surfaces.** For a `C¹` bundle over a `C¹` surface, every
-element of `W^{k,p}(V)` for one finite bundle atlas, `k ≤ 1`, defines an element for any other: its
-expressions in the charts and trivializations of the first atlas are in the local Sobolev classes,
-and these determine an element for the second. -/
-theorem transfersTo_of_le_one (hk : k ≤ 1) (A A' : FiniteBundleAtlas ℂ M F V) :
-    TransfersTo A A' volume p k := fun w s hs ↦
+/-- **Transfer over surfaces.** For a `Cⁿ` bundle over a `Cⁿ` surface, `n ≠ 0`, and an order
+`k ≤ n` with `k ≤ 1` or `p ≠ ∞`, every element of `W^{k,p}(V)` for one finite bundle atlas defines
+an element for any other: its expressions in the charts and trivializations of the first atlas are
+in the local Sobolev classes, and these determine an element for the second. -/
+theorem transfersTo (hkp : k ≤ 1 ∨ p ≠ ⊤) (hn : n ≠ 0) (hkn : (k : WithTop ℕ∞) ≤ n)
+    (A A' : FiniteBundleAtlas ℂ M F V) : TransfersTo A A' volume p k := fun w s hs ↦
+  haveI : IsManifold 𝓘(ℝ, ℂ) 1 M := IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hn)
   exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm A.chart
     (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) A.triv (fun i ↦ A.image i)
     (fun i ↦ (A.image i).isOpen)
     (fun x ↦ let ⟨i, hi⟩ := A.exists_mem_dom x
       ⟨i, A.dom_subset_chart_source i hi, A.dom_subset_baseSet i hi, A.mem_image.2 ⟨_, hi, rfl⟩⟩)
-    (fun i ↦ by simpa only [funext (A.coord_def i s)] using memWkpLoc_coord w hs i)
-    (Or.inl hk) one_ne_zero (by exact_mod_cast hk)
+    (fun i ↦ by simpa only [funext (A.coord_def i s)] using memWkpLoc_coord w hs i) hkp hn hkn
 
-/-- **Equivalence of norms at orders at most one over surfaces.** The norms of `W^{k,p}(V)`,
-`k ≤ 1`, for two finite bundle atlases are equivalent: there is a positive constant `C` bounding
-the norm of each element by `C` times the norm of the element of the other atlas with the same
-section. -/
-theorem exists_norm_changeAtlas_le_of_le_one (hk : k ≤ 1) (A A' : FiniteBundleAtlas ℂ M F V) :
+/-- **Equivalence of norms over surfaces.** For a `Cⁿ` bundle over a `Cⁿ` surface, `n ≠ 0`, and an
+order `k ≤ n` with `k ≤ 1` or `p ≠ ∞`, the norms of `W^{k,p}(V)` for two finite bundle atlases are
+equivalent: there is a positive constant `C` bounding the norm of each element by `C` times the
+norm of the element of the other atlas with the same section. -/
+theorem exists_norm_changeAtlas_le_of_surface [IsManifold 𝓘(ℝ, ℂ) 1 M] (hkp : k ≤ 1 ∨ p ≠ ⊤)
+    (hn : n ≠ 0) (hkn : (k : WithTop ℕ∞) ≤ n) (A A' : FiniteBundleAtlas ℂ M F V) :
     ∃ C : ℝ, 0 < C ∧ ∀ w : SobolevSection A volume p k,
-      ‖changeAtlas (transfersTo_of_le_one hk A A') w‖ ≤ C * ‖w‖ ∧
-        ‖w‖ ≤ C * ‖changeAtlas (transfersTo_of_le_one hk A A') w‖ :=
-  exists_norm_changeAtlas_le (transfersTo_of_le_one hk A A') (transfersTo_of_le_one hk A' A)
+      ‖changeAtlas (transfersTo hkp hn hkn A A') w‖ ≤ C * ‖w‖ ∧
+        ‖w‖ ≤ C * ‖changeAtlas (transfersTo hkp hn hkn A A') w‖ :=
+  exists_norm_changeAtlas_le (transfersTo hkp hn hkn A A') (transfersTo hkp hn hkn A' A)
 
 end SobolevSection
 

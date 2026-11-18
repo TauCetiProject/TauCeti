@@ -7,7 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Group.Measure
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
-import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.MeasureTheory.Function.Jacobian
 
 /-!
 # Null sets and finite bundle atlases
@@ -62,33 +63,24 @@ theorem ae_restrict_image_chart_symm (A' : FiniteBundleAtlas E M F' V') {i : Fin
     (h : ∀ᵐ z ∂μ.restrict (A.image i), P z) :
     ∀ᵐ y ∂μ.restrict (A'.image i'), (A'.chart i').symm y ∈ A.dom i →
       P (A.chart i ((A'.chart i').symm y)) := by
-  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet] at h
-  have hN : μ ({z | ¬P z} ∩ A.image i) = 0 := by
-    rw [ae_iff] at h
-    exact measure_mono_null (fun z hz ↦ fun h' ↦ hz.1 (h' hz.2)) h
-  -- The chart transition from `A` to `A'` is differentiable on its source.
-  have hd := ((contDiffOn_ext_coord_change (I := 𝓘(ℝ, E)) (A'.center i')
-    (A.center i)).differentiableOn one_ne_zero).mono
-      (inter_subset_right (s := {z | ¬P z} ∩ A.image i))
-  have himage := addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ hd
-    (measure_mono_null inter_subset_left hN)
-  rw [ae_iff, Measure.restrict_apply' (A'.image i').isOpen.measurableSet]
-  refine measure_mono_null (fun y hy ↦ ?_) himage
-  simp only [not_imp, mem_inter_iff, mem_ofPred_eq] at hy
-  obtain ⟨⟨hdom, hP⟩, hy'⟩ := hy
-  set x := (A'.chart i').symm y
-  have hx : x ∈ (A.chart i).source := A.dom_subset_chart_source i hdom
-  have hx' : x ∈ (A'.chart i').source := A'.dom_subset_chart_source i' (A'.symm_mem_dom hy')
-  refine ⟨A.chart i x, ⟨⟨hP, A.mem_image.2 ⟨x, hdom, rfl⟩⟩, ?_⟩, ?_⟩
-  · simp only [PartialEquiv.trans_source, PartialEquiv.symm_source, mem_inter_iff, mem_preimage,
-      extChartAt_target, extChartAt_source, extChartAt_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq, range_id, inter_univ,
-      preimage_id_eq]
-    exact ⟨(A.chart i).map_source hx, by rwa [(A.chart i).left_inv hx]⟩
-  · simp only [Function.comp_apply, extChartAt_coe_symm, extChartAt_coe,
-      modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_apply, id_eq]
-    rw [(A.chart i).left_inv hx,
-      (A'.chart i').right_inv (A'.closure_image_subset_target i' (subset_closure hy'))]
+  -- The chart transition `τ` from chart `i'` of `A'` to chart `i` of `A`, on the open set `s` of
+  -- points of the image of chart `i'` lying over the domain of chart `i`.
+  set τ := (A'.chart i').symm.trans (A.chart i)
+  set s : Set E := (A'.image i' : Set E) ∩ (A'.chart i').symm ⁻¹' A.dom i
+  have hs : IsOpen s :=
+    (A'.continuousOn_chart_symm i').isOpen_inter_preimage (A'.image i').isOpen (A.isOpen_dom i)
+  have hsub : s ⊆ τ.source := fun y hy ↦
+    ⟨A'.closure_image_subset_target i' (subset_closure hy.1), A.dom_subset_chart_source i hy.2⟩
+  have hφ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, E)) (n := 1) (A'.center i')
+  have hψ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, E)) (n := 1) (A.center i)
+  have hτ := ae_restrict_comp_of_differentiableOn μ hs
+    (((contDiffOn_symm_trans_of_mem_maximalAtlas hφ hψ).differentiableOn one_ne_zero).mono hsub)
+    (τ.injOn.mono hsub) (fun y hy ↦ det_fderiv_symm_trans_ne_zero one_ne_zero hφ hψ (hsub hy))
+    (fun y hy ↦ A.mem_image.2 ⟨_, hy.2, rfl⟩) h
+  rw [ae_restrict_iff' hs.measurableSet] at hτ
+  rw [ae_restrict_iff' (A'.image i').isOpen.measurableSet]
+  filter_upwards [hτ] with y hy hyU hdom
+  exact hy ⟨hyU, hdom⟩
 
 /-- **Almost everywhere statements on `M` do not depend on the atlas.** A property of points of `M`
 that holds almost everywhere in every chart of `A` holds almost everywhere in every chart of
