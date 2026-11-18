@@ -82,6 +82,9 @@ when they are incoming.
   given by local models, counting the points whose model is `[0, ε)`.
 * `TauCeti.IsOrientingCoordinates.isLocalMax_iff_not_isLocalMin`: at a boundary point an
   orientation points either out or in.
+* `TauCeti.IsOrientingCoordinates.isLocalMax_iff_of_mem` and
+  `TauCeti.IsOrientingCoordinates.isLocalMin_iff_of_mem`: whether it points out or in can be read
+  in any orienting coordinate defined at the boundary point.
 * `TauCeti.ModelWithCorners.ncard_setOf_isLocalMax_eq_ncard_setOf_isLocalMin`: a compact oriented
   one-dimensional manifold has as many outgoing as incoming boundary points.
 * `TauCeti.ncard_setOf_isLocalMax_eq_ncard_setOf_isLocalMin_of_forall_exists_homeomorph_Ico`: the
@@ -280,6 +283,17 @@ private theorem exists_strictMonoOn_of_increasesAt {V : Set M} (hV : IsOpen V) {
     simpa only [hyt] using hm htI hs.1 hs.2
   · exact ha
 
+/-- A function strictly monotone on `S` when `P` holds, and strictly antitone otherwise, increases
+from `s` to `s' > s` in `S` exactly when `P` holds, and decreases exactly when it does not. -/
+private theorem lt_iff_of_strictMonoOn_of_strictAntiOn {f : ℝ → ℝ} {S : Set ℝ} {P : Prop}
+    (hmono : P → StrictMonoOn f S) (hanti : ¬P → StrictAntiOn f S) {s s' : ℝ} (hs : s ∈ S)
+    (hs' : s' ∈ S) (hss' : s < s') : (f s < f s' ↔ P) ∧ (f s' < f s ↔ ¬P) := by
+  by_cases hP : P
+  · have := hmono hP hs hs' hss'
+    exact ⟨iff_of_true this hP, iff_of_false (lt_asymm this) (not_not.2 hP)⟩
+  · have := hanti hP hs hs' hss'
+    exact ⟨iff_of_false (lt_asymm this) hP, iff_of_true this hP⟩
+
 /-- **Sides of a point and the direction of a coordinate.** Let `ψ` be continuous and injective on
 an open neighbourhood of a point `p` of a chart domain, and let `S` accumulate at `p`, with all its
 points in the chart domain, read above `p` if `a` holds and below `p` otherwise. Then `ψ` exceeds
@@ -302,13 +316,11 @@ private theorem eventually_lt_iff_increasesAt {V : Set M} (hV : IsOpen V) {ψ : 
     have hp : ψ p = ψ (e.symm (normalRay t)) := by rw [symm_normalRay_coord hpe]
     have hw' : ψ w = ψ (e.symm (normalRay ((e w).1 0))) := by rw [symm_normalRay_coord hwe]
     rw [hp, hw']
-    by_cases hinc : IncreasesAt e ψ p
-    · rcases hw with ⟨hlt, ha⟩ | ⟨hlt, ha⟩
-      · exact iff_of_true (hmono hinc htI hwI hlt) (iff_of_true hinc ha)
-      · exact iff_of_false (lt_asymm (hmono hinc hwI htI hlt)) fun h ↦ ha (h.1 hinc)
-    · rcases hw with ⟨hlt, ha⟩ | ⟨hlt, ha⟩
-      · exact iff_of_false (lt_asymm (hanti hinc htI hwI hlt)) fun h ↦ hinc (h.2 ha)
-      · exact iff_of_true (hanti hinc hwI htI hlt) (iff_of_false hinc ha)
+    rcases hw with ⟨hlt, ha⟩ | ⟨hlt, ha⟩
+    · rw [(lt_iff_of_strictMonoOn_of_strictAntiOn hmono hanti htI hwI hlt).1, iff_true_intro ha,
+        iff_true]
+    · rw [(lt_iff_of_strictMonoOn_of_strictAntiOn hmono hanti hwI htI hlt).2, iff_false_intro ha,
+        iff_false]
   constructor
   · intro h
     by_contra hne
@@ -775,14 +787,6 @@ private theorem IsArcIn.coord_eq_sInf_of_mem_boundary
   rw [(ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff (h.mem y hyK).1).1 hyB]
   exact le_csInf (h.nonempty.image _) (by rintro _ ⟨z, -, rfl⟩; exact (e z).2)
 
-/-- The coordinate `0` of a boundary point in an arc is a coordinate of the arc. -/
-private theorem IsArcIn.sInf_mem_of_mem_boundary
-    {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)} {α β : ℝ} {K : Set M}
-    (h : IsArcIn e α β K) {y : M} (hyK : y ∈ K) (hyB : y ∈ (𝓡∂ 1).boundary M) :
-    sInf ((fun z ↦ (e z).1 0) '' K) ∈ (fun z ↦ (e z).1 0) '' K := by
-  rw [← (h.coord_eq_sInf_of_mem_boundary hyK hyB).2]
-  exact (h.coord_eq_sInf_of_mem_boundary hyK hyB).1
-
 /-- Each endpoint of the interval of coordinates of a component `K` of the complement of `P` is
 the coordinate of a boundary point in `K`, or of a point of `P` one of whose sides has arc `K`. -/
 private theorem CutData.exists_of_endpoint [T2Space M] (D : CutData M) {y : M}
@@ -839,9 +843,10 @@ of the coordinates of `K`. -/
 private theorem CutData.inr_end (D : CutData M)
     {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)} {α β : ℝ} {K : Set M}
     (h : IsArcIn e α β K) {y : M} (hy : y ∈ (𝓡∂ 1).boundary M) (hK : D.arcOf (.inr y) = K) :
-    y ∈ K ∧ (e y).1 0 = sInf ((fun z ↦ (e z).1 0) '' K) := by
+    y ∈ K ∧ (e y).1 0 ∈ (fun z ↦ (e z).1 0) '' K ∧
+      (e y).1 0 = sInf ((fun z ↦ (e z).1 0) '' K) := by
   have hyK : y ∈ K := by rw [← hK]; exact mem_connectedComponentIn (disjoint_right.1 D.disjoint hy)
-  exact ⟨hyK, (h.coord_eq_sInf_of_mem_boundary hyK hy).2⟩
+  exact ⟨hyK, h.coord_eq_sInf_of_mem_boundary hyK hy⟩
 
 /-- **The ends of an arc.** Among the sides of the points of `P` and the boundary points, read the
 ones lying in a given component of the complement of `P` by the coordinate of their point. This is
@@ -868,7 +873,8 @@ private theorem CutData.injOn_image_ends [T2Space M] (D : CutData M)
     simpa [Ω] using hω
   have hinj : Set.InjOn v (Ω.filter fun ω ↦ D.arcOf ω = K) := by
     rintro (⟨p, c⟩ | y) hω (⟨p', c'⟩ | y') hω' hvv <;>
-      rw [Finset.coe_filter, mem_ofPred_eq] at hω hω'
+      rw [Finset.coe_filter, mem_ofPred_eq] at hω hω' <;>
+      simp only [v, Sum.elim_inl, Sum.elim_inr, id_eq] at hvv
     · obtain ⟨hJ, hpe, -, -⟩ := D.inl_end h hKP (hP p c hω.1) hω.2
       obtain ⟨hJ', hpe', -, -⟩ := D.inl_end h hKP (hP p' c' hω'.1) hω'.2
       obtain rfl : p = p' := injOn_coord hpe hpe' hvv
@@ -876,14 +882,10 @@ private theorem CutData.injOn_image_ends [T2Space M] (D : CutData M)
       cases c <;> cases c'
       exacts [rfl, (D.not_subset_and_subset (hP p _ hω.1) h hpK hJ' hJ).elim,
         (D.not_subset_and_subset (hP p _ hω.1) h hpK hJ hJ').elim, rfl]
-    · exact ((D.inl_end h hKP (hP p c hω.1) hω.2).2.2.1 (by
-        rw [show (e p).1 0 = (e y').1 0 from hvv, (D.inr_end h (hB' y' hω'.1) hω'.2).2]
-        exact h.sInf_mem_of_mem_boundary (D.inr_end h (hB' y' hω'.1) hω'.2).1
-          (hB' y' hω'.1))).elim
-    · exact ((D.inl_end h hKP (hP p' c' hω'.1) hω'.2).2.2.1 (by
-        rw [show (e p').1 0 = (e y).1 0 from hvv.symm, (D.inr_end h (hB' y hω.1) hω.2).2]
-        exact h.sInf_mem_of_mem_boundary (D.inr_end h (hB' y hω.1) hω.2).1
-          (hB' y hω.1))).elim
+    · exact ((D.inl_end h hKP (hP p c hω.1) hω.2).2.2.1
+        (hvv ▸ (D.inr_end h (hB' y' hω'.1) hω'.2).2.1)).elim
+    · exact ((D.inl_end h hKP (hP p' c' hω'.1) hω'.2).2.2.1
+        (hvv ▸ (D.inr_end h (hB' y hω.1) hω.2).2.1)).elim
     · rw [injOn_coord (h.mem y (D.inr_end h (hB' y hω.1) hω.2).1).1
         (h.mem y' (D.inr_end h (hB' y' hω'.1) hω'.2).1).1 hvv]
   refine ⟨hinj, ?_⟩
@@ -892,7 +894,7 @@ private theorem CutData.injOn_image_ends [T2Space M] (D : CutData M)
   constructor
   · rintro ⟨(⟨p, c'⟩ | y), hω, rfl⟩ <;> rw [Finset.mem_filter] at hω
     · exact (D.inl_end h hKP (hP p c' hω.1) hω.2).2.2.2
-    · exact Or.inl (D.inr_end h (hB' y hω.1) hω.2).2
+    · exact Or.inl (D.inr_end h (hB' y hω.1) hω.2).2.2
   · intro hc
     rcases D.exists_of_endpoint h hc with ⟨z, hzK, hzB, hzc⟩ | ⟨p, hp, b, hpb, hpc⟩
     · exact ⟨.inr z, Finset.mem_filter.2 ⟨Finset.inr_mem_disjSum.2 (hB.mem_toFinset.2 hzB),
@@ -943,6 +945,13 @@ structure IsOrientingCoordinates {X : Type*} [TopologicalSpace X] (U : X → Set
 variable {M : Type*} [TopologicalSpace M] {U : M → Set M} {φ : M → M → ℝ}
   {e : OpenPartialHomeomorph M (EuclideanHalfSpace 1)}
 
+/-- Two orienting coordinates defined at a point `z` of a chart domain increase along the chart at
+`z` together. -/
+private theorem IsOrientingCoordinates.increasesAt_iff_increasesAt
+    (hφ : IsOrientingCoordinates U φ) {x y z : M} (hz : z ∈ U x ∩ U y) (hze : z ∈ e.source) :
+    IncreasesAt e (φ x) z ↔ IncreasesAt e (φ y) z :=
+  Filter.eventually_congr ((tendsto_symm_normalRay hze).eventually (hφ.coherent x y z hz))
+
 /-- Along a chart, whether the orienting coordinate `φ z` increases at `z` is locally constant in
 the coordinate of `z`. -/
 private theorem IsOrientingCoordinates.exists_increasesAt_iff (hφ : IsOrientingCoordinates U φ)
@@ -972,19 +981,11 @@ private theorem IsOrientingCoordinates.exists_increasesAt_iff (hφ : IsOrienting
       by linarith [le_abs_self (t' - t)]⟩
   have hI' : ∀ r, t' ≤ r → r ≤ s → r ∈ Icc (max (t' - η') 0) (t' + η') := fun r h₁ h₂ ↦
     ⟨max_le (by linarith) (by linarith), by linarith⟩
-  have h₁ : φ y (e.symm (normalRay t')) < φ y (e.symm (normalRay s)) ↔
-      IncreasesAt e (φ y) y := by
-    by_cases hinc : IncreasesAt e (φ y) y
-    · exact iff_of_true (hmono hinc (hI t' le_rfl hts.le) (hI s hts.le le_rfl) hts) hinc
-    · exact iff_of_false (lt_asymm (hanti hinc (hI t' le_rfl hts.le) (hI s hts.le le_rfl) hts))
-        hinc
-  have h₂ : φ z (e.symm (normalRay t')) < φ z (e.symm (normalRay s)) ↔
-      IncreasesAt e (φ z) z := by
-    by_cases hinc : IncreasesAt e (φ z) z
-    · exact iff_of_true (hmono' hinc (hI' t' le_rfl hts.le) (hI' s hts.le le_rfl) hts) hinc
-    · exact iff_of_false
-        (lt_asymm (hanti' hinc (hI' t' le_rfl hts.le) (hI' s hts.le le_rfl) hts)) hinc
-  rw [hzt] at h₁ h₂
+  have h₁ := (lt_iff_of_strictMonoOn_of_strictAntiOn hmono hanti (hI t' le_rfl hts.le)
+    (hI s hts.le le_rfl) hts).1
+  have h₂ := (lt_iff_of_strictMonoOn_of_strictAntiOn hmono' hanti' (hI' t' le_rfl hts.le)
+    (hI' s hts.le le_rfl) hts).1
+  simp only [hzt] at h₁ h₂
   exact h₂.symm.trans (hcoh.symm.trans h₁)
 
 /-- Along a chart, whether the orienting coordinate `φ z` increases at `z` is the same at all
@@ -1068,7 +1069,7 @@ private theorem CutData.isTail_iff [T2Space M] (D : CutData M) (hB : ((𝓡∂ 1
     D.IsTail φ ω ↔ (IncreasesAt e (φ z₀) z₀ ↔
       (e (Sum.elim Prod.fst id ω)).1 0 = sInf ((fun z ↦ (e z).1 0) '' D.arcOf ω₀)) := by
   set K := D.arcOf ω₀
-  set I := (fun z ↦ (e z).1 0) '' K
+  set I := (fun z ↦ (e z).1 0) '' K with hI
   have hKe : K ⊆ e.source := fun z hz ↦ (h.mem z hz).1
   rcases ω with ⟨p, c⟩ | y <;> rw [Finset.mem_filter] at hω
   · have hp : p ∈ D.P := by simpa using hω.1
@@ -1090,19 +1091,24 @@ private theorem CutData.isTail_iff [T2Space M] (D : CutData M) (hB : ((𝓡∂ 1
     obtain ⟨η, hη, hloc⟩ := hφ.exists_increasesAt_iff hpe
     obtain ⟨z, ⟨hze, hzη⟩, hzK⟩ :=
       mem_closure_iff_nhds.1 (closure_mono hJ hpcl) _ (coord_mem_nhds hpe hη)
-    rw [show D.IsTail φ (.inl (p, c)) ↔ _ from eventually_lt_iff_increasesAt (hφ.isOpen p)
-      (hφ.continuousOn p) (hφ.injOn p) (hφ.mem p) hpe hpcl hS, ← hloc z hze hzη,
-      hφ.increasesAt_iff_of_isPreconnected h.isPreconnected hKe hzK hz₀]
-    exact Iff.rfl
+    rw [CutData.IsTail, eventually_lt_iff_increasesAt (hφ.isOpen p) (hφ.continuousOn p)
+      (hφ.injOn p) (hφ.mem p) hpe hpcl hS, ← hloc z hze hzη,
+      hφ.increasesAt_iff_of_isPreconnected h.isPreconnected hKe hzK hz₀, Sum.elim_inl]
   · have hy : y ∈ (𝓡∂ 1).boundary M := by simpa using hω.1
-    obtain ⟨hyK, hyI⟩ := D.inr_end h hy hω.2
+    obtain ⟨hyK, -, hyI⟩ := D.inr_end h hy hω.2
+    rw [← hI] at hyI
     have hye := hKe hyK
-    rw [show D.IsTail φ (.inr y) ↔ _ from (isLocalMin_iff_increasesAt (hφ.isOpen y)
-      (hφ.continuousOn y) (hφ.injOn y) (hφ.mem y) hye
+    rw [CutData.IsTail, (isLocalMin_iff_increasesAt (hφ.isOpen y) (hφ.continuousOn y)
+      (hφ.injOn y) (hφ.mem y) hye
       ((ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hye).1 hy)).1,
-      hφ.increasesAt_iff_of_isPreconnected h.isPreconnected hKe hyK hz₀]
-    rw [show (e (Sum.elim Prod.fst id (.inr y : M × Bool ⊕ M))).1 0 = sInf I from hyI,
-      eq_self_iff_true, iff_true]
+      hφ.increasesAt_iff_of_isPreconnected h.isPreconnected hKe hyK hz₀, Sum.elim_inr, id_eq,
+      hyI, eq_self_iff_true, iff_true]
+
+/-- Two signs `±1`, positive exactly when the corresponding one of two exclusive and exhaustive
+propositions holds, add up to `0`. -/
+private theorem ite_add_ite_eq_zero {P Q : Prop} [Decidable P] [Decidable Q] (h : P ↔ ¬Q) :
+    ((if P then 1 else -1 : ℤ) + if Q then 1 else -1) = 0 := by
+  by_cases hQ : Q <;> simp [hQ, h]
 
 open scoped Classical in
 /-- **Every arc has one tail and one head.** For the orientation given by the coordinates `φ`,
@@ -1121,9 +1127,7 @@ private theorem CutData.sum_filter_arcOf_isTail [T2Space M] (D : CutData M)
   set F := ((D.finite.toFinset ×ˢ (Finset.univ : Finset Bool)).disjSum hB.toFinset).filter
     (fun ω ↦ D.arcOf ω = D.arcOf ω₀)
   -- The arc has two ends, one at each end of its interval of coordinates.
-  have hcard : F.card = 2 := by
-    rw [← Finset.card_image_of_injOn hinj, himage]
-    exact Finset.card_pair h.sInf_lt_sSup.ne
+  have hcard : F.card = 2 := D.card_filter_arcOf_eq_two hB hω₀
   obtain ⟨a, b, hab, hF⟩ := Finset.card_eq_two.1 hcard
   have ha : a ∈ F := by rw [hF]; exact Finset.mem_insert_self a {b}
   have hb : b ∈ F := by rw [hF]; exact Finset.mem_insert_of_mem (Finset.mem_singleton_self b)
@@ -1141,15 +1145,11 @@ private theorem CutData.sum_filter_arcOf_isTail [T2Space M] (D : CutData M)
     · exact absurd (hva.trans hvb.symm) hvab
   -- Exactly one of the two ends is a tail.
   have htail : D.IsTail φ a ↔ ¬D.IsTail φ b := by
-    rw [D.isTail_iff hB hφ h hz₀ ha, D.isTail_iff hB hφ h hz₀ hb]
-    -- Restate the coordinates of the points of `a` and `b` through the abbreviation `v`.
-    change (_ ↔ v a = sInf I) ↔ ¬(_ ↔ v b = sInf I)
-    rw [hxor]
+    simp only [v] at hxor
+    rw [D.isTail_iff hB hφ h hz₀ ha, D.isTail_iff hB hφ h hz₀ hb, hxor]
     tauto
   rw [hF, Finset.sum_pair hab]
-  by_cases hTa : D.IsTail φ a
-  · simp [hTa, htail.1 hTa]
-  · simp [hTa, not_not.1 (mt htail.2 hTa)]
+  exact ite_add_ite_eq_zero htail
 
 end OrientedParity
 
@@ -1193,6 +1193,30 @@ theorem IsOrientingCoordinates.isLocalMax_iff_not_isLocalMin {U : M → Set M} {
     ((ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hxe).1 hx)
   rw [hmax, hmin]
 
+/-- **Whether an orientation points out does not depend on the coordinate.** At a boundary point
+`x` of a one-dimensional manifold oriented by coordinates `φ`, every coordinate `φ y` defined at `x`
+has a local maximum there exactly when `φ x` does. -/
+theorem IsOrientingCoordinates.isLocalMax_iff_of_mem {U : M → Set M} {φ : M → M → ℝ}
+    (hφ : IsOrientingCoordinates U φ) {x y : M} (hx : x ∈ (𝓡∂ 1).boundary M) (hxy : x ∈ U y) :
+    IsLocalMax (φ x) x ↔ IsLocalMax (φ y) x := by
+  have hxe := mem_chart_source (EuclideanHalfSpace 1) x
+  have hx0 := (ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hxe).1 hx
+  rw [(isLocalMin_iff_increasesAt (hφ.isOpen x) (hφ.continuousOn x) (hφ.injOn x) (hφ.mem x) hxe
+      hx0).2, (isLocalMin_iff_increasesAt (hφ.isOpen y) (hφ.continuousOn y) (hφ.injOn y) hxy hxe
+      hx0).2, hφ.increasesAt_iff_increasesAt ⟨hφ.mem x, hxy⟩ hxe]
+
+/-- **Whether an orientation points in does not depend on the coordinate.** At a boundary point
+`x` of a one-dimensional manifold oriented by coordinates `φ`, every coordinate `φ y` defined at `x`
+has a local minimum there exactly when `φ x` does. -/
+theorem IsOrientingCoordinates.isLocalMin_iff_of_mem {U : M → Set M} {φ : M → M → ℝ}
+    (hφ : IsOrientingCoordinates U φ) {x y : M} (hx : x ∈ (𝓡∂ 1).boundary M) (hxy : x ∈ U y) :
+    IsLocalMin (φ x) x ↔ IsLocalMin (φ y) x := by
+  have hxe := mem_chart_source (EuclideanHalfSpace 1) x
+  have hx0 := (ModelWithCorners.mem_boundary_euclideanHalfSpace_one_iff hxe).1 hx
+  rw [(isLocalMin_iff_increasesAt (hφ.isOpen x) (hφ.continuousOn x) (hφ.injOn x) (hφ.mem x) hxe
+      hx0).1, (isLocalMin_iff_increasesAt (hφ.isOpen y) (hφ.continuousOn y) (hφ.injOn y) hxy hxe
+      hx0).1, hφ.increasesAt_iff_increasesAt ⟨hφ.mem x, hxy⟩ hxe]
+
 /-- **A compact oriented one-dimensional manifold has as many outgoing as incoming boundary
 points.** Let `M` be a compact Hausdorff topological manifold modelled on the half-line
 `EuclideanHalfSpace 1`, oriented by local coordinates `φ`. The boundary points at which the
@@ -1215,23 +1239,25 @@ theorem ModelWithCorners.ncard_setOf_isLocalMax_eq_ncard_setOf_isLocalMin [Compa
     rw [← Finset.sum_fiberwise_of_maps_to (fun ω hω ↦ Finset.mem_image_of_mem D.arcOf hω)]
     refine Finset.sum_eq_zero fun K hK ↦ ?_
     obtain ⟨ω₀, hω₀, rfl⟩ := Finset.mem_image.1 hK
+    simp only [g]
     exact D.sum_filter_arcOf_isTail hB hφ hω₀
   -- The two sides of each point of `P` have opposite signs.
   have hP : ∑ pc ∈ D.finite.toFinset ×ˢ (Finset.univ : Finset Bool), g (.inl pc) = 0 := by
     rw [Finset.sum_product]
     refine Finset.sum_eq_zero fun p hp ↦ ?_
-    have hopp : D.IsTail φ (.inl (p, true)) ↔ ¬D.IsTail φ (.inl (p, false)) :=
-      (D.sides p (D.finite.mem_toFinset.1 hp)).opposite (φ p) (U p) (hφ.isOpen p) (hφ.mem p)
-        (hφ.continuousOn p) (hφ.injOn p)
-    rw [Fintype.sum_bool]
-    by_cases ht : D.IsTail φ (.inl (p, true))
-    · simp [g, ht, hopp.1 ht]
-    · simp [g, ht, not_not.1 (mt hopp.2 ht)]
+    have hopp : D.IsTail φ (.inl (p, true)) ↔ ¬D.IsTail φ (.inl (p, false)) := by
+      simp only [CutData.IsTail]
+      exact (D.sides p (D.finite.mem_toFinset.1 hp)).opposite (φ p) (U p) (hφ.isOpen p)
+        (hφ.mem p) (hφ.continuousOn p) (hφ.injOn p)
+    simp only [g, Fintype.sum_bool]
+    exact ite_add_ite_eq_zero hopp
   -- So on the boundary the local minima, of sign `1`, cancel the other points, of sign `-1`.
   rw [Finset.sum_disjSum, hP, zero_add] at hsum
   have hcount : (hB.toFinset.filter fun x ↦ IsLocalMin (φ x) x).card =
       (hB.toFinset.filter fun x ↦ ¬IsLocalMin (φ x) x).card := by
-    have h' : ∑ y ∈ hB.toFinset, (if IsLocalMin (φ y) y then (1 : ℤ) else -1) = 0 := hsum
+    simp only [g] at hsum
+    have h' : ∑ y ∈ hB.toFinset, (if IsLocalMin (φ y) y then (1 : ℤ) else -1) = 0 :=
+      (Finset.sum_congr rfl fun y _ ↦ if_congr (by rw [CutData.IsTail]) rfl rfl).trans hsum
     rw [Finset.sum_ite, Finset.sum_const, Finset.sum_const] at h'
     simp only [nsmul_eq_mul, mul_one, mul_neg] at h'
     omega
@@ -1338,6 +1364,38 @@ theorem IsOrientingCoordinates.isLocalMax_iff_not_isLocalMin_of_forall_exists_ho
     IsLocalMax (φ x) x ↔ ¬IsLocalMin (φ x) x := by
   obtain ⟨C, hC⟩ := exists_chartedSpace_euclideanHalfSpace_one_boundary_eq hF hB hX
   exact hφ.isLocalMax_iff_not_isLocalMin (hC ▸ hx)
+
+/-- **At an endpoint, whether an orientation points out does not depend on the coordinate.** For a
+space `X` described by local models as in
+`TauCeti.exists_chartedSpace_euclideanHalfSpace_one_boundary_eq` and oriented by local coordinates
+`φ`, at each point `x ∈ B` every coordinate `φ y` defined at `x` has a local maximum there exactly
+when `φ x` does. -/
+theorem
+    IsOrientingCoordinates.isLocalMax_iff_of_mem_of_forall_exists_homeomorph_Ico
+    (hF : Module.finrank ℝ F = 1)
+    (hB : ∀ x ∈ B, ∃ N ∈ 𝓝 x, ∃ (ε : ℝ) (hε : 0 < ε) (e : Ico (0 : ℝ) ε ≃ₜ N),
+      (e ⟨0, left_mem_Ico.2 hε⟩ : X) = x)
+    (hX : ∀ x ∉ B, ∃ N ∈ 𝓝 x, ∃ V : Set F, IsOpen V ∧ Nonempty (V ≃ₜ N)) {U : X → Set X}
+    {φ : X → X → ℝ} (hφ : IsOrientingCoordinates U φ) {x y : X} (hx : x ∈ B) (hxy : x ∈ U y) :
+    IsLocalMax (φ x) x ↔ IsLocalMax (φ y) x := by
+  obtain ⟨C, hC⟩ := exists_chartedSpace_euclideanHalfSpace_one_boundary_eq hF hB hX
+  exact hφ.isLocalMax_iff_of_mem (hC ▸ hx) hxy
+
+/-- **At an endpoint, whether an orientation points in does not depend on the coordinate.** For a
+space `X` described by local models as in
+`TauCeti.exists_chartedSpace_euclideanHalfSpace_one_boundary_eq` and oriented by local coordinates
+`φ`, at each point `x ∈ B` every coordinate `φ y` defined at `x` has a local minimum there exactly
+when `φ x` does. -/
+theorem
+    IsOrientingCoordinates.isLocalMin_iff_of_mem_of_forall_exists_homeomorph_Ico
+    (hF : Module.finrank ℝ F = 1)
+    (hB : ∀ x ∈ B, ∃ N ∈ 𝓝 x, ∃ (ε : ℝ) (hε : 0 < ε) (e : Ico (0 : ℝ) ε ≃ₜ N),
+      (e ⟨0, left_mem_Ico.2 hε⟩ : X) = x)
+    (hX : ∀ x ∉ B, ∃ N ∈ 𝓝 x, ∃ V : Set F, IsOpen V ∧ Nonempty (V ≃ₜ N)) {U : X → Set X}
+    {φ : X → X → ℝ} (hφ : IsOrientingCoordinates U φ) {x y : X} (hx : x ∈ B) (hxy : x ∈ U y) :
+    IsLocalMin (φ x) x ↔ IsLocalMin (φ y) x := by
+  obtain ⟨C, hC⟩ := exists_chartedSpace_euclideanHalfSpace_one_boundary_eq hF hB hX
+  exact hφ.isLocalMin_iff_of_mem (hC ▸ hx) hxy
 
 variable [CompactSpace X]
 
