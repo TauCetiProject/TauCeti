@@ -17,7 +17,9 @@ acts diagonally on the Hilbert sum `PiLp 2 (fun _ : ι => H)` of copies of `H`, 
 `PiLp.diagStarAlgHom`. Conversely, every operator `T` on the Hilbert sum has matrix entries
 `ContinuousLinearMap.piLpEntry T i j : H →L[𝕜] H`, and `T` acts through them
 (`ContinuousLinearMap.apply_eq_sum_piLpEntry`). The amplification of `s` has `s` on the diagonal
-and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`).
+and `0` off it (`ContinuousLinearMap.piLpEntry_diagStarAlgHom`), so an operator on the Hilbert sum
+commutes with it if and only if each matrix entry commutes with `s`
+(`ContinuousLinearMap.commute_diagStarAlgHom_iff`).
 
 Amplification turns statements about finitely many vectors of `H` into statements about a single
 vector of the Hilbert sum; this is how the von Neumann density theorem passes from one vector to
@@ -108,5 +110,27 @@ theorem piLpEntry_diagStarAlgHom (s : H →L[𝕜] H) (i j : ι) :
   by_cases hij : i = j
   · subst hij; simp
   · simp [hij]
+
+/-- An operator `T` on the finite Hilbert sum commutes with the diagonal amplification
+`PiLp.diagStarAlgHom 𝕜 H ι s` if and only if each of its matrix entries commutes with `s`. -/
+theorem commute_diagStarAlgHom_iff
+    (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) (s : H →L[𝕜] H) :
+    Commute T (PiLp.diagStarAlgHom 𝕜 H ι s) ↔ ∀ i j, Commute (T.piLpEntry i j) s := by
+  constructor
+  · intro h i j
+    rw [commute_iff_eq]
+    ext x
+    have h' := congr_arg (fun w => w i) (DFunLike.congr_fun h.eq (PiLp.single 2 j x))
+    simp only [mul_apply_eq_comp, PiLp.diagStarAlgHom_apply, PiLp.diagStarAlgHom_apply_single]
+      at h'
+    simpa [mul_apply_eq_comp] using h'
+  · intro h
+    rw [commute_iff_eq]
+    ext w i
+    simp only [mul_apply_eq_comp]
+    rw [T.apply_eq_sum_piLpEntry, PiLp.diagStarAlgHom_apply, T.apply_eq_sum_piLpEntry, map_sum]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [PiLp.diagStarAlgHom_apply]
+    simpa [mul_apply_eq_comp] using DFunLike.congr_fun (h i j).eq (w j)
 
 end ContinuousLinearMap

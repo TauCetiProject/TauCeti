@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
+public import TauCeti.Analysis.InnerProductSpace.Compression
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.LocallyConvex.UltrastrongTopology
 
@@ -22,8 +23,8 @@ transported along the ampliation. A net `Tᵢ` converges ultraweakly to `T` exac
 
 The topology lives on the type copy `TauCeti.ContinuousLinearMapUltraweak 𝕜 E F`, in the manner of
 Mathlib's `E →WOT[𝕜] F`. The copy is a Hausdorff locally convex topological vector space, with the
-seminorms `‖⟪η, (⊕ T) ξ⟫‖` (`withSeminorms`). On operators of a Hilbert space the adjoint is
-ultraweakly continuous and multiplication is separately continuous.
+seminorms `‖⟪η, (⊕ T) ξ⟫‖` (`withSeminorms`). On operators of a Hilbert space the adjoint and
+compression are ultraweakly continuous and multiplication is separately continuous.
 
 The ultraweak topology sits between the others: it is coarser than the ultrastrong topology of
 `TauCeti.ContinuousLinearMapUltrastrong` and finer than the weak operator topology
@@ -365,6 +366,17 @@ theorem isInducing_restrict_toWOT {s : Set (ContinuousLinearMapUltraweak 𝕜 E 
     (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
 
 end Comparison
+
+/-- Compression along a bounded operator between Hilbert spaces is ultraweakly continuous. -/
+@[fun_prop]
+theorem continuous_compression {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    [CompleteSpace E] [CompleteSpace G] (X : G →L[𝕜] E) :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E E ↦
+      ofCLM (A.toCLM.compression X) := by
+  refine continuous_of_continuous_inner_ampliation_apply fun ξ η ↦ ?_
+  refine (continuous_inner_ampliation_apply (lp.ampliation ℕ 2 X ξ)
+    (lp.ampliation ℕ 2 X η)).congr fun A ↦ ?_
+  simp [lp.inner_ampliation_apply, ContinuousLinearMap.adjoint_inner_right]
 
 end ContinuousLinearMapUltraweak
 

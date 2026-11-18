@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.CStarAlgebra.ProjectionDilation
+public import TauCeti.Analysis.InnerProductSpace.Compression
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 
 /-!
@@ -47,6 +48,8 @@ continuous linear maps is continuous because the operator space is finite-dimens
 * `ContinuousLinearMapWOT.isClosed_setOf_isPositive`: the positive operators form a weak
   operator closed set.
 * `ContinuousLinearMapWOT.isClosed_image_ofCLM_Icc`: order intervals are weak operator closed.
+* `ContinuousLinearMapWOT.continuous_compression`: compression along a bounded operator between
+  Hilbert spaces is continuous in the weak operator topology.
 * `ContinuousLinearMapWOT.closure_isStarProjection_eq_positive_contractions`: on an
   infinite-dimensional complex Hilbert space, the weak operator closure of the projections is the
   set of positive contractions.
@@ -122,6 +125,16 @@ theorem isClosed_image_ofCLM_Icc {a b : E →L[𝕜] E} :
     IsClosed (ofCLM '' Set.Icc a b) := by
   rw [← Set.Ici_inter_Iic, Set.image_inter ofCLM_injective]
   exact isClosed_image_ofCLM_Ici.inter isClosed_image_ofCLM_Iic
+
+/-- Compression along a bounded operator between Hilbert spaces is continuous in the weak operator
+topology. -/
+@[fun_prop]
+theorem continuous_compression {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] (X : F →L[𝕜] E) :
+    Continuous fun T : E →WOT[𝕜] E => ofCLM (T.toCLM.compression X) := by
+  refine continuous_iff.2 fun x y => ?_
+  refine (continuous_inner_apply continuous_id (X x) (X y)).congr fun T => ?_
+  exact (T.toCLM.inner_compression_apply X y x).symm
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
