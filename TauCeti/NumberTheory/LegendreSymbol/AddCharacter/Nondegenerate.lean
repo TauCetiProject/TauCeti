@@ -42,6 +42,8 @@ Nontriviality is the wrong condition outside local rings: on `ZMod 7 × ZMod 7` 
   to `p`.
 * `AddChar.IsNondegenerate.sum_trace_mul`: orthogonality over a finite field `k` of characteristic
   `p`, `∑ x, ψ (Tr (x * y))` is `#k` at `y = 0` and `0` elsewhere.
+* `AddChar.IsNondegenerate.bijective_mulShift`: if `Spec Λ` is connected, every additive
+  character of `ZMod p` with values in `Λ` is `a ↦ ψ (c * a)` for a unique `c`.
 * `AddChar.IsNondegenerate.bijective_mulShift_compAddMonoidHom_trace`: if `Spec Λ` is connected,
   every additive character of `k` with values in `Λ` is `x ↦ ψ (Tr (c * x))` for a unique `c`.
 
@@ -101,10 +103,15 @@ theorem IsNondegenerate.injective [Nontrivial Λ] (hψ : ψ.IsNondegenerate) :
     rw [← map_add_eq_mul, sub_add_cancel, hab, one_mul]
   simpa [h1] using hψ.isUnit_sub_one (sub_ne_zero.2 h)
 
+/-- For every character `ψ` of `ZMod p`, the geometric sum of `ψ 1` is killed by `ψ 1 - 1`. -/
+private theorem geom_sum_mul_sub_one_eq_zero (ψ : AddChar (ZMod p) Λ) :
+    (∑ i ∈ range p, ψ 1 ^ i) * (ψ 1 - 1) = 0 := by
+  rw [geom_sum_mul, AddChar.pow_char_eq_one, sub_self]
+
 /-- The powers `ψ 1 ^ i`, `i < p`, of a nondegenerate character sum to zero. -/
 theorem IsNondegenerate.geom_sum_eq_zero (hψ : ψ.IsNondegenerate) :
-    ∑ i ∈ range p, ψ 1 ^ i = 0 := by
-  rw [← hψ.mul_left_eq_zero, geom_sum_mul, AddChar.pow_char_eq_one, sub_self]
+    ∑ i ∈ range p, ψ 1 ^ i = 0 :=
+  hψ.mul_left_eq_zero.1 (geom_sum_mul_sub_one_eq_zero ψ)
 
 /-- The value at `1` of a nondegenerate character is a root of the `p`-th cyclotomic polynomial. -/
 theorem IsNondegenerate.isRoot_cyclotomic (hψ : ψ.IsNondegenerate) :
@@ -174,8 +181,9 @@ theorem isNondegenerate_iff_forall_isMaximal_ne_one :
     let := Ideal.Quotient.field m
     simpa [h1] using IsUnit.map (Ideal.Quotient.mk m) hψ
   · obtain ⟨m, hm, hmem⟩ := exists_max_ideal_of_mem_nonunits hψ
-    refine h m hm (not_not.1 fun hne ↦ (zmod_char_ne_one_iff p _).1 hne ?_)
-    simpa [sub_eq_zero] using Ideal.Quotient.eq_zero_iff_mem.2 hmem
+    have h1 : Ideal.Quotient.mk m (ψ 1) = 1 := by
+      simpa [sub_eq_zero] using Ideal.Quotient.eq_zero_iff_mem.2 hmem
+    exact (zmod_char_ne_one_iff p _).1 (h m hm) (by simpa using h1)
 
 /-- Over a local ring, a character is nondegenerate if and only if it is nontrivial and `p` is a
 unit, that is, the residue characteristic is not `p`. In residue characteristic `p` no character
@@ -197,12 +205,18 @@ theorem isNondegenerate_iff_ne_one_and_isUnit_natCast [IsLocalRing Λ] :
       simpa using sub_dvd_pow_sub_pow (ψ 1) 1 i
     have hpm : (p : Λ) ∈ IsLocalRing.maximalIdeal Λ := by simpa using Ideal.sub_mem _ hs h1
     exact (IsLocalRing.mem_maximalIdeal _).1 hpm hp
-  refine hne (sub_eq_zero.1 <| hsum.mul_right_eq_zero.1 ?_)
-  rw [geom_sum_mul, AddChar.pow_char_eq_one, sub_self]
+  exact hne (sub_eq_zero.1 <| hsum.mul_right_eq_zero.1 (geom_sum_mul_sub_one_eq_zero ψ))
 
 section FiniteField
 
 variable (k : Type*) [Field k] [Algebra (ZMod p) k]
+
+/-- A nonzero `c` in a finite field `k` of characteristic `p` has some `x` with `Tr (c * x) ≠ 0`,
+by nondegeneracy of the trace form. -/
+private theorem exists_trace_mul_ne_zero [Finite k] {c : k} (hc : c ≠ 0) :
+    ∃ x, Algebra.trace (ZMod p) k (c * x) ≠ 0 := by
+  by_contra! h
+  exact hc ((traceForm_nondegenerate (ZMod p) k).1 c fun x ↦ by simpa using h x)
 
 /-- **Orthogonality** for a nondegenerate character over a finite field `k` of characteristic `p`:
 `∑ x, ψ (Tr (x * y))` is `#k` at `y = 0` and vanishes elsewhere. -/
@@ -211,9 +225,7 @@ theorem IsNondegenerate.sum_trace_mul [Fintype k] [DecidableEq k] (hψ : ψ.IsNo
       if y = 0 then (Fintype.card k : Λ) else 0 := by
   split_ifs with hy
   · simp [hy]
-  obtain ⟨x₀, hx₀⟩ : ∃ x₀, Algebra.trace (ZMod p) k (y * x₀) ≠ 0 := by
-    by_contra! h
-    exact hy ((traceForm_nondegenerate (ZMod p) k).1 y fun x ↦ by simpa using h x)
+  obtain ⟨x₀, hx₀⟩ := exists_trace_mul_ne_zero (p := p) k hy
   rw [mul_comm] at hx₀
   exact sum_eq_zero_of_sub_one_mem_nonZeroDivisors
     (φ := ψ.compAddMonoidHom ((Algebra.trace (ZMod p) k).toAddMonoidHom.comp
@@ -225,9 +237,7 @@ theorem IsNondegenerate.isPrimitive_compAddMonoidHom_trace [Finite k] [Nontrivia
     (hψ : ψ.IsNondegenerate) :
     (ψ.compAddMonoidHom (Algebra.trace (ZMod p) k).toAddMonoidHom).IsPrimitive := by
   intro c hc h
-  obtain ⟨x, hx⟩ : ∃ x, Algebra.trace (ZMod p) k (c * x) ≠ 0 := by
-    by_contra! h
-    exact hc ((traceForm_nondegenerate (ZMod p) k).1 c fun x ↦ by simpa using h x)
+  obtain ⟨x, hx⟩ := exists_trace_mul_ne_zero (p := p) k hc
   have h1 : ψ (Algebra.trace (ZMod p) k (c * x)) = 1 := by simpa using DFunLike.congr_fun h x
   simpa [h1] using hψ.isUnit_sub_one hx
 
@@ -245,8 +255,7 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
     have hs : ∑ j, χ a * (ψ (-(i * j)) * χ j) = ∑ j, ψ (i * a) * (ψ (-(i * j)) * χ j) :=
       Fintype.sum_equiv (Equiv.addLeft a) _ _ fun j ↦ by
         rw [Equiv.coe_addLeft, mul_left_comm (χ a), ← map_add_eq_mul χ, ← mul_assoc (ψ _),
-          ← map_add_eq_mul ψ (i * a)]
-        ring_nf
+          ← map_add_eq_mul ψ (i * a), show i * a + -(i * (a + j)) = -(i * j) by ring]
     rw [he, mul_left_comm, mul_sum, hs, ← mul_sum, mul_left_comm]
   -- The `e i` sum to `1`, by orthogonality on `ZMod p`.
   have horth (j : ZMod p) : ∑ i, ψ (-(i * j)) = if j = 0 then (p : Λ) else 0 := by
@@ -254,8 +263,7 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
   have hsum : ∑ i, e i = 1 := by
     simp only [he, ← mul_sum]
     rw [sum_comm]
-    simp_rw [← sum_mul, horth, ite_mul, zero_mul, sum_ite_eq', mem_univ, ite_true, map_zero_eq_one,
-      mul_one, hv]
+    simp [← sum_mul, horth, hv]
   -- Each `e i` is idempotent.
   have hidem (i : ZMod p) : IsIdempotentElem (e i) := by
     have h (j : ZMod p) : ψ (-(i * j)) * χ j * e i = e i := by
@@ -270,6 +278,17 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
     simp [h] at hsum
   have hi1 : e i = 1 := (hidem i).eq_zero_or_eq_one_of_preconnectedSpace.resolve_left hi
   exact ⟨i, by simpa [hi1] using (hshift 1 i).symm⟩
+
+/-- **Classification of additive characters of `ZMod p`.** If `Spec Λ` is connected, every
+additive character of `ZMod p` with values in `Λ` is `a ↦ ψ (c * a)` for a unique `c`. -/
+theorem IsNondegenerate.bijective_mulShift [ConnectedSpace (PrimeSpectrum Λ)]
+    (hψ : ψ.IsNondegenerate) : Function.Bijective ψ.mulShift := by
+  have : Nontrivial Λ := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
+  refine ⟨to_mulShift_inj_of_isPrimitive hψ.isPrimitive, fun χ ↦ ?_⟩
+  obtain ⟨c, hc⟩ := hψ.exists_apply_eq χ
+  refine ⟨c, ext _ _ fun a ↦ ?_⟩
+  rw [mulShift_apply, ← ZMod.natCast_zmod_val a, mul_comm, ← nsmul_eq_mul, map_nsmul_eq_pow, hc,
+    ← map_nsmul_eq_pow, nsmul_one]
 
 /-- **Classification of additive characters of a finite field.** If `Spec Λ` is connected, every
 additive character of a finite field `k` of characteristic `p` with values in `Λ` is
