@@ -120,6 +120,15 @@ theorem continuous_frameJet_apply (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n) :
   let _ := frameTopology (I := I) (n := n) e U hU
   exact (continuous_frameTopology_iff (I := I) (n := n) e U hU).mp continuous_id i x m hm
 
+/-- A frame-coordinate jet at a chosen coordinate point depends continuously on the section. -/
+theorem continuous_frameJetAt (i : ι) (x : U i) (m : ℕ) (hm : m ≤ n)
+    (z : (extChartAt I x).target) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous ((e i).frameJetAt (hU i) x m hm z) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  rw [funext ((e i).frameJetAt_apply (hU i) x m hm z)]
+  exact (continuous_eval_const z).comp (continuous_frameJet_apply e U hU i x m hm)
+
 /-- Addition and subtraction are continuous for the frame topology. -/
 theorem isTopologicalAddGroup_frameTopology :
     let _ := frameTopology (I := I) (n := n) e U hU
