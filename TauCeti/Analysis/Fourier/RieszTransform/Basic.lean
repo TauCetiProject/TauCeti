@@ -122,8 +122,7 @@ theorem norm_rieszSymbol_le (v ξ : E) : ‖rieszSymbol v ξ‖ ≤ ‖v‖ := b
 theorem norm_rieszSymbol_self (v : E) : ‖rieszSymbol v v‖ = ‖v‖ := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp
-  rw [rieszSymbol, norm_mul, norm_neg, Complex.norm_I, one_mul, Complex.norm_real,
-    real_inner_self_eq_norm_sq, sq, mul_div_cancel_right₀ _ (norm_ne_zero_iff.2 hv), norm_norm]
+  simp [rieszSymbol, sq, hv]
 
 /-- The symbol is purely imaginary. -/
 @[simp]

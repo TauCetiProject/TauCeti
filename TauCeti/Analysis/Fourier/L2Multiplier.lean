@@ -197,8 +197,7 @@ theorem fourierMultiplierCLM_compL_fourierMultiplierCLM :
     coeFn_lpSMul (r := 2) m₂ (𝓕 f),
     coeFn_lpSMul (r := 2) (m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) (𝓕 f),
     coeFn_lpSMul (r := ∞) m₁ m₂] with x h₁ h₂ h₃ h₄
-  rw [h₁, h₃, Pi.smul_apply', Pi.smul_apply', h₂, h₄, Pi.smul_apply', Pi.smul_apply', smul_smul,
-    smul_eq_mul]
+  simp [h₁, h₂, h₃, h₄, smul_smul, -smul_eq_mul, -Lp.smul_eq_mul]
 
 theorem fourierMultiplierCLM_fourierMultiplierCLM_apply :
     fourierMultiplierCLM F m₁ (fourierMultiplierCLM F m₂ f) =
