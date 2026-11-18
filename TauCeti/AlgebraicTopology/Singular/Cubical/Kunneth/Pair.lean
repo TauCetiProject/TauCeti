@@ -38,9 +38,12 @@ a product of pairs**. Consequently the Künneth map
 pairs.
 
 No hypothesis is placed on the subspaces. When the interiors of `A × Y` and `X × B` cover
-`A × Y ∪ X × B`, for instance when `A` and `B` are open, the small-chain theorem identifies the
-homology of `N(P × Q)` with the relative homology of `(X × Y, A × Y ∪ X × B)`; that comparison is
-not made here. For compact manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair
+`A × Y ∪ X × B`, for instance when `A` and `B` are open, the homology of `N(P × Q)` is the relative
+homology of `(X × Y, A × Y ∪ X × B)` (`TopPair.quasiIso_cubicalChainComplexProdToOfSubset`), so
+the Künneth map followed by that comparison is the **relative Künneth theorem**
+`⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ≅ Hₙ(X × Y, A × Y ∪ X × B; k)` over a field
+(`TauCeti.isIso_cubicalHomologyKunnethPair_comp_homologyMap_cubicalChainComplexProdToOfSubset`).
+For compact manifolds `M` and `N` with boundary, `(M, ∂M) × (N, ∂N)` is the pair
 `(M × N, ∂M × N ∪ M × ∂N)`, and `N(P × Q)` is the complex in which cross products of fundamental
 chains rel boundary are relative cycles.
 
@@ -61,6 +64,8 @@ chains rel boundary are relative cycles.
 * `TauCeti.isIso_cubicalHomologyKunnethPair`,
   `TauCeti.isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing`: the Künneth theorem for a
   product of pairs.
+* `TauCeti.isIso_cubicalHomologyKunnethPair_comp_homologyMap_cubicalChainComplexProdToOfSubset`:
+  the relative Künneth theorem for `(X × Y, A × Y ∪ X × B)` over a semisimple ring.
 
 ## References
 
@@ -292,5 +297,20 @@ theorem isIso_cubicalHomologyKunnethPair
 instance isIso_cubicalHomologyKunnethPair_of_isSemisimpleRing [IsSemisimpleRing k] (n : ℕ) :
     IsIso (cubicalHomologyKunnethPair k P Q n) :=
   isIso_cubicalHomologyKunnethPair k P Q n
+
+/-- **The relative Künneth theorem for a product of pairs** over a semisimple ring, for instance a
+field: when the interiors of `A × Y` and `X × B` cover their union, for instance when `A` and `B`
+are open (`TopPair.prodSubspace_subset_interior_union_interior`), the Künneth map of the pairs
+followed by the comparison of `N(P × Q)` with the relative chains of `(X × Y, A × Y ∪ X × B)` is an
+isomorphism `⨁_{p + q = n} Hₚ(X, A; k) ⊗ H_q(Y, B; k) ≅ Hₙ(X × Y, A × Y ∪ X × B; k)`. -/
+theorem isIso_cubicalHomologyKunnethPair_comp_homologyMap_cubicalChainComplexProdToOfSubset
+    [IsSemisimpleRing k]
+    (h : TopPair.prodSubspace P Q ⊆
+      interior (CartesianMonoidalCategory.fst P.fst Q.fst ⁻¹' Set.range P.map) ∪
+        interior (CartesianMonoidalCategory.snd P.fst Q.fst ⁻¹' Set.range Q.map)) (n : ℕ) :
+    IsIso (cubicalHomologyKunnethPair k P Q n ≫
+      homologyMap (P.cubicalChainComplexProdToOfSubset k Q) n) :=
+  have := TopPair.quasiIso_cubicalChainComplexProdToOfSubset k P Q h
+  inferInstance
 
 end TauCeti
