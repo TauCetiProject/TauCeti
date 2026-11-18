@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.Algebra.Homology.Periodic.Basic
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.Shift
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
@@ -490,10 +491,9 @@ private theorem shift_d_apply (k : ℤ) {i j i' j' : ZMod 2} (hi : i' = i + k) (
     (x : C.X i') :
     ((C⟦k⟧).d i j).hom ((C.XIsoOfEq hi).toLinearEquiv x) =
       ((k.negOnePow : ℤ) : F) • (C.XIsoOfEq hj).toLinearEquiv ((C.d i' j').hom x) := by
-  subst hi hj
-  simp only [XIsoOfEq_rfl, TauCeti.PeriodicComplex.shiftFunctor_obj_d', Iso.toLinearEquiv_apply,
-    Iso.refl_hom, ModuleCat.id_apply]
-  rw [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, Int.cast_smul_eq_zsmul]
+  have h := congr(($(TauCeti.PeriodicComplex.XIsoOfEq_hom_comp_shiftFunctor_obj_d C k hi hj)).hom x)
+  rw [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ← Int.cast_smul_eq_zsmul F] at h
+  exact h
 
 /-- The basis `c b` is the image of `c a` under the identification `Cₐ ≅ C_b` for `a = b`. -/
 private theorem apply_eq_XIsoOfEq {a b : ZMod 2} (h : a = b) (hn : n b = n a) (l : Fin (n b)) :

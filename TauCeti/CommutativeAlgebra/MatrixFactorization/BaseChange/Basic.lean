@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Basic
 public import TauCeti.Algebra.Homology.Periodic.Duplex.Basic
-import TauCeti.Algebra.Homology.Periodic.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 public import TauCeti.Algebra.Category.FGModuleCat.Basic

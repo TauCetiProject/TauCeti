@@ -27,33 +27,11 @@ both involving the same other degree.
   `HomologicalComplex.acyclic_iff_of_linearEquiv_zmod_two`: linear equivalences intertwining the
   differentials of two two-periodic complexes up to a unit, preserving or exchanging the parities,
   preserve exactness and acyclicity.
-* `CochainComplex.prev_zmod_two_zero` and its variants: the previous and next degrees of `0` and
-  `1` in the shape `ComplexShape.up (ZMod 2)`.
 -/
 
 public section
 
 open CategoryTheory
-
-namespace CochainComplex
-
-/-- In the shape `ComplexShape.up (ZMod 2)`, the degree preceding `0` is `1`. -/
-theorem prev_zmod_two_zero : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
-  (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
-
-/-- In the shape `ComplexShape.up (ZMod 2)`, the degree following `0` is `1`. -/
-theorem next_zmod_two_zero : (ComplexShape.up (ZMod 2)).next 0 = 1 :=
-  (ComplexShape.up _).next_eq' (zero_add 1)
-
-/-- In the shape `ComplexShape.up (ZMod 2)`, the degree preceding `1` is `0`. -/
-theorem prev_zmod_two_one : (ComplexShape.up (ZMod 2)).prev 1 = 0 :=
-  (ComplexShape.up _).prev_eq' (zero_add 1)
-
-/-- In the shape `ComplexShape.up (ZMod 2)`, the degree following `1` is `0`. -/
-theorem next_zmod_two_one : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
-  (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
-
-end CochainComplex
 
 namespace HomologicalComplex
 
@@ -101,38 +79,6 @@ namespace HomologicalComplex
 
 variable {R : Type*} [CommRing R]
   {C D : HomologicalComplex (ModuleCat R) (ComplexShape.up (ZMod 2))}
-
-/-- If `D.d k' j' ∘ e_k = u • (e_j ∘ C.d k j)` for linear equivalences `e_j`, `e_k` and a unit `u`,
-the boundaries of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
-theorem range_d_eq_map_of_linearEquiv {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[R] D.X j')
-    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
-    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
-    LinearMap.range (D.d k' j').hom =
-      (LinearMap.range (C.d k j).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
-  have hd : (D.d k' j').hom =
-      ((eⱼ : C.X j →ₗ[R] D.X j') ∘ₗ (C.d k j).hom) ∘ₗ (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) := by
-    ext x
-    simpa using h (eₖ.symm x)
-  have htop : LinearMap.range (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) = ⊤ :=
-    LinearMap.range_eq_top.2 fun x ↦ ⟨eₖ (hu.unit⁻¹.val • x), by simp [smul_smul]⟩
-  rw [hd, LinearMap.range_comp_of_range_eq_top _ htop, LinearMap.range_comp]
-
-/-- If `D.d j' k' ∘ e_j = u • (e_k ∘ C.d j k)` for linear equivalences `e_j`, `e_k` and a unit `u`,
-the cycles of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
-theorem ker_d_eq_map_of_linearEquiv {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[R] D.X j')
-    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
-    (h : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x)) :
-    LinearMap.ker (D.d j' k').hom =
-      (LinearMap.ker (C.d j k).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
-  have hd : (D.d j' k').hom =
-      (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) ∘ₗ (eⱼ.symm : D.X j' →ₗ[R] C.X j) := by
-    ext x
-    simpa using h (eⱼ.symm x)
-  have hker : LinearMap.ker (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) =
-      LinearMap.ker (C.d j k).hom := by
-    ext x
-    simp [hu.smul_eq_zero]
-  rw [hd, LinearMap.ker_comp, hker, Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
 
 /-- Linear equivalences intertwining the differentials of two-periodic complexes `C` and `D` up to
 a unit preserve exactness. -/

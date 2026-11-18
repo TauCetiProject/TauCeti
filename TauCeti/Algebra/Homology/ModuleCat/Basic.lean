@@ -61,7 +61,10 @@ satisfy the hypotheses of this construction (`HomologicalComplex.moduleCat_d_inv
 in a degree exactly when the image of the incoming differential is the kernel of the outgoing one
 (`HomologicalComplex.exactAt_iff_range_eq_ker`). At a degree where the complex is exact, the
 image of the incoming differential, the term and the image of the outgoing differential form a
-short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
+short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`). Linear equivalences
+intertwining two differentials up to a unit identify their images and kernels
+(`HomologicalComplex.range_d_eq_map_of_linearEquiv`,
+`HomologicalComplex.ker_d_eq_map_of_linearEquiv`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
@@ -672,6 +675,47 @@ theorem iSup_wordKer_homologyMap_eq_top {κ : Type*} (φ : κ → (K ⟶ K))
   exact Module.End.iSup_wordKer_eq_top_of_injective
     (fun i ↦ by rw [← ModuleCat.hom_comp, cyclesMap_i, ModuleCat.hom_comp])
     (K.moduleCat_iCycles_injective n) h
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+/-! ### Linear equivalences intertwining the differentials up to a unit -/
+
+variable {R : Type*} [CommRing R] {ι : Type*} {c : ComplexShape ι}
+  {C D : HomologicalComplex (ModuleCat R) c}
+
+/-- If `D.d k' j' ∘ e_k = u • (e_j ∘ C.d k j)` for linear equivalences `e_j`, `e_k` and a unit `u`,
+the boundaries of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
+theorem range_d_eq_map_of_linearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
+    LinearMap.range (D.d k' j').hom =
+      (LinearMap.range (C.d k j).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
+  have hd : (D.d k' j').hom =
+      ((eⱼ : C.X j →ₗ[R] D.X j') ∘ₗ (C.d k j).hom) ∘ₗ (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) := by
+    ext x
+    simpa using h (eₖ.symm x)
+  have htop : LinearMap.range (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) = ⊤ :=
+    LinearMap.range_eq_top.2 fun x ↦ ⟨eₖ (hu.unit⁻¹.val • x), by simp [smul_smul]⟩
+  rw [hd, LinearMap.range_comp_of_range_eq_top _ htop, LinearMap.range_comp]
+
+/-- If `D.d j' k' ∘ e_j = u • (e_k ∘ C.d j k)` for linear equivalences `e_j`, `e_k` and a unit `u`,
+the cycles of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
+theorem ker_d_eq_map_of_linearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x)) :
+    LinearMap.ker (D.d j' k').hom =
+      (LinearMap.ker (C.d j k).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
+  have hd : (D.d j' k').hom =
+      (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) ∘ₗ (eⱼ.symm : D.X j' →ₗ[R] C.X j) := by
+    ext x
+    simpa using h (eⱼ.symm x)
+  have hker : LinearMap.ker (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) =
+      LinearMap.ker (C.d j k).hom := by
+    ext x
+    simp [hu.smul_eq_zero]
+  rw [hd, LinearMap.ker_comp, hker, Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
 
 end HomologicalComplex
 
