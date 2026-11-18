@@ -54,15 +54,13 @@ elliptic curve over a field `F` that is complete with respect to `v`, or more ge
 with perfect residue field, this is the local Tamagawa number `c_v`. Over other fields it is the
 index over `F` itself, which can be smaller than `c_v`; for a global field, apply it to the
 completion, as `WeierstrassCurve.tamagawaNumberAt` does. -/
-noncomputable def tamagawaNumber (E : WeierstrassCurve F)
-    (v : Valuation F Γ₀) [IsDiscreteValuationRing v.valuationSubring] : ℕ :=
+noncomputable def tamagawaNumber : ℕ :=
   ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index
 
 open scoped Classical in
 /-- The chosen minimal equation computes the Tamagawa number. -/
 theorem tamagawaNumber_def : E.tamagawaNumber v =
     ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index := by
-  classical
   rfl
 
 variable [E.IsElliptic]
@@ -113,7 +111,7 @@ theorem tamagawaNumber_eq_one_of_hasGoodReduction [E.HasGoodReduction v.valuatio
     (inferInstance : E.HasGoodReduction v.valuationSubring)
   rw [Affine.nonsingularReduction_eq_top_of_Δ_notMem v fun h ↦
     (IsLocalRing.notMem_maximalIdeal.mpr hΔ)
-      (Ideal.pow_le_self (by norm_num : 2 ≠ 0) h), AddSubgroup.index_top]
+      (Ideal.pow_le_self two_ne_zero h), AddSubgroup.index_top]
 
 /-- Over a Henselian DVR with perfect residue field the Tamagawa number is positive. -/
 theorem tamagawaNumber_pos [HenselianLocalRing v.valuationSubring]

@@ -7,12 +7,12 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Group.Integral
@@ -69,10 +69,6 @@ gives a set of measure one.
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
-* `MeasureTheory.Measure.withDensity_ofReal_real_closedBall_eq_setIntegral_ball`: a closed ball
-  has measure `∫_{ball x r} f` under the density `ENNReal.ofReal ∘ f`.
-* `MeasureTheory.Integrable.continuous_setIntegral_ball`: the integral of an integrable function
-  over `ball c r` is continuous in `r`.
 * `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball`,
   `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
   ball or to the open ball of the same radius gives the same measure.
@@ -113,6 +109,9 @@ gives a set of measure one.
   empty).
 * `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le`: the same in scale-invariant form,
   `R^(-n/p₀) ‖f‖_{L^{p₀}(B(x₀, R))} ≤ |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B(x₀, R))}`.
+* `MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow`: Hölder's inequality
+  bounding the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` by
+  `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
@@ -222,6 +221,23 @@ theorem rpow_neg_mul_toReal_eLpNorm_ball_le
         gcongr
     _ = _ := by rw [mul_left_comm, hRpow]; ring
 
+/-- Hölder's inequality for the `L²` mass on a ball: for `2 ≤ q` and a function `g` in `L^q(t)`,
+the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` of radius `r > 0` is at most
+`‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {g : E → F} {t : Set E} {q : ENNReal}
+    (hg : MemLp g q (mu.restrict t)) (hq : 2 ≤ q) {x : E} {r : ℝ} (hr : 0 < r)
+    (hsub : ball x r ⊆ t) :
+    ∫ y in ball x r, ‖g y‖ ^ 2 ∂mu ≤ (eLpNorm g q (mu.restrict t)).toReal ^ 2 *
+      (mu.real (ball (0 : E) 1) ^ (1 - 2 / q.toReal) *
+        r ^ ((finrank ℝ E : ℝ) * (1 - 2 / q.toReal))) := by
+  have h := hg.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow hq hsub
+    measure_ball_lt_top.ne
+  rwa [addHaar_real_ball_of_pos mu x hr, Real.mul_rpow (by positivity) measureReal_nonneg,
+    ← Real.rpow_natCast r, ← Real.rpow_mul hr.le, mul_comm (r ^ _)] at h
+
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/
 theorem finrank_div_mul_addHaar_real_ball
@@ -306,42 +322,6 @@ theorem addHaar_closedBall_ae_eq_ball
   (ae_eq_of_subset_of_measure_ge ball_subset_closedBall
     (mu.addHaar_closedBall_eq_addHaar_ball x r).le
     measurableSet_ball.nullMeasurableSet measure_closedBall_lt_top.ne).symm
-
-/-- The integrals of an integrable function over the balls `ball c r` depend continuously on the
-radius `r`, since every sphere is null in a nontrivial finite-dimensional space. -/
-theorem _root_.MeasureTheory.Integrable.continuous_setIntegral_ball
-    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {mu : Measure E} [mu.IsAddHaarMeasure] {f : E → F} (hf : Integrable f mu) (c : E) :
-    Continuous fun r ↦ ∫ y in ball c r, f y ∂mu := by
-  simp_rw [← integral_indicator measurableSet_ball]
-  refine continuous_iff_continuousAt.2 fun r₀ ↦ continuousAt_of_dominated (bound := (‖f ·‖))
-    (Filter.Eventually.of_forall fun r ↦ (hf.indicator measurableSet_ball).aestronglyMeasurable)
-    (Filter.Eventually.of_forall fun r ↦ Filter.Eventually.of_forall fun y ↦
-      norm_indicator_le_norm_self f y) hf.norm ?_
-  -- Off the null sphere `sphere c r₀`, the indicator of `ball c r` is locally constant in `r`.
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 (mu.addHaar_sphere c r₀)] with y hy
-  rcases lt_or_gt_of_ne (fun h ↦ hy (mem_sphere.2 h) : dist y c ≠ r₀) with h | h
-  · exact continuousAt_const.congr ((eventually_gt_nhds h).mono fun r hr ↦
-      (Set.indicator_of_mem (mem_ball.2 hr) f).symm)
-  · exact continuousAt_const.congr ((eventually_lt_nhds h).mono fun r hr ↦
-      (Set.indicator_of_notMem (fun hy ↦ (mem_ball.1 hy).not_ge hr.le) f).symm)
-
-/-- For `f` integrable and nonnegative on `ball x r`, the closed ball `closedBall x r` has real
-measure `∫_{ball x r} f` under the density `ENNReal.ofReal ∘ f`, since its boundary sphere is
-null. -/
-theorem withDensity_ofReal_real_closedBall_eq_setIntegral_ball
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
-    (mu : Measure E) [mu.IsAddHaarMeasure] {f : E → ℝ} {x : E} {r : ℝ}
-    (hf : IntegrableOn f (ball x r) mu) (hf0 : ∀ y ∈ ball x r, 0 ≤ f y) :
-    (mu.withDensity fun y ↦ ENNReal.ofReal (f y)).real (closedBall x r) =
-      ∫ y in ball x r, f y ∂mu := by
-  rw [measureReal_def, withDensity_apply _ measurableSet_closedBall,
-    setLIntegral_congr (mu.addHaar_closedBall_ae_eq_ball x r),
-    ← ofReal_integral_eq_lintegral_ofReal hf
-      ((ae_restrict_iff' measurableSet_ball).2 (Filter.Eventually.of_forall hf0)),
-    ENNReal.toReal_ofReal (setIntegral_nonneg measurableSet_ball hf0)]
 
 /-- At nonzero radius, closed and open balls agree up to a null set even in a trivial space. -/
 theorem addHaar_closedBall_ae_eq_ball_of_ne_zero

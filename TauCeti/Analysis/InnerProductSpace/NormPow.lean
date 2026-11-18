@@ -45,8 +45,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
-* `DifferentiableAt.hasFDerivAt_comp_norm_sub`, `ContDiff.comp_norm_sub`: the derivative and the
-  smoothness of a radial function `y ↦ H ‖y - x‖` with `H` constant near `0`.
+* `DifferentiableAt.hasFDerivAt_comp_norm`, `ContDiff.comp_norm`: the derivative and the
+  smoothness of a radial function `x ↦ ψ ‖x‖` when `ψ` vanishes near `0`.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
@@ -256,30 +256,36 @@ theorem hasFDerivAt_norm_of_ne {x : E} (hx : x ≠ 0) :
   · simp
   · norm_num [Real.rpow_neg_one]
 
-/-- **The derivative of a radial function about a point.** If `H` is constant near `0` and
-differentiable at `‖y - x‖`, then `z ↦ H ‖z - x‖` has derivative
-`(H' ‖y - x‖ / ‖y - x‖) ⟪y - x, ·⟫` at `y`; at `y = x` both sides vanish. -/
-theorem _root_.DifferentiableAt.hasFDerivAt_comp_norm_sub {H : ℝ → ℝ} {x y : E}
-    (hH : DifferentiableAt ℝ H ‖y - x‖) (hH₀ : ∀ᶠ t in 𝓝 0, H t = H 0) :
-    HasFDerivAt (fun z ↦ H ‖z - x‖) ((deriv H ‖y - x‖ / ‖y - x‖) • innerSL ℝ (y - x)) y := by
-  rcases eq_or_ne y x with rfl | hyx
-  · simpa using (hasFDerivAt_const (H 0) y).congr_of_eventuallyEq
-      ((tendsto_norm_sub_self y).eventually hH₀)
-  · have hnorm := (hasFDerivAt_norm_of_ne (sub_ne_zero.2 hyx)).comp y
-      ((hasFDerivAt_id y).sub_const x)
-    convert hH.hasDerivAt.comp_hasFDerivAt y hnorm using 1
-    · rfl
-    · ext a
-      simp [div_eq_mul_inv, mul_assoc]
+omit [InnerProductSpace ℝ E] in
+/-- A function `ψ` on the line vanishing near `0` gives a radial function `x ↦ ψ ‖x‖` vanishing
+near the origin. -/
+private theorem comp_norm_eventuallyEq_zero {F : Type*} [Zero F] {ψ : ℝ → F}
+    (hψ0 : 0 ∉ tsupport ψ) :
+    (fun y : E ↦ ψ ‖y‖) =ᶠ[𝓝 0] fun _ ↦ 0 :=
+  (continuous_norm.tendsto' (0 : E) 0 norm_zero).eventually
+    (notMem_tsupport_iff_eventuallyEq.mp hψ0)
 
-/-- A radial function `z ↦ H ‖z - x‖` is `C^n` when `H` is `C^n` and constant near `0`. -/
-theorem _root_.ContDiff.comp_norm_sub {H : ℝ → ℝ} {n : WithTop ℕ∞} (hH : ContDiff ℝ n H)
-    (hH₀ : ∀ᶠ t in 𝓝 0, H t = H 0) (x : E) : ContDiff ℝ n fun z ↦ H ‖z - x‖ := by
-  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-  rcases eq_or_ne y x with rfl | hyx
-  · exact contDiffAt_const.congr_of_eventuallyEq ((tendsto_norm_sub_self y).eventually hH₀)
-  · exact hH.contDiffAt.comp y ((contDiffAt_norm ℝ (sub_ne_zero.2 hyx)).comp y
-      (contDiffAt_id.sub contDiffAt_const))
+/-- **The gradient of a radial function.** If `ψ` vanishes near `0` and is differentiable at
+`‖x‖`, the radial function `y ↦ ψ ‖y‖` has derivative `(ψ' (‖x‖) / ‖x‖) ⟪x, ·⟫` at `x`, also
+when `x` is the origin. -/
+theorem _root_.DifferentiableAt.hasFDerivAt_comp_norm {ψ : ℝ → ℝ} {x : E}
+    (hψ : DifferentiableAt ℝ ψ ‖x‖) (hψ0 : 0 ∉ tsupport ψ) :
+    HasFDerivAt (fun y : E ↦ ψ ‖y‖) ((deriv ψ ‖x‖ / ‖x‖) • innerSL ℝ x) x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simpa using (hasFDerivAt_const (0 : ℝ) (0 : E)).congr_of_eventuallyEq
+      (comp_norm_eventuallyEq_zero hψ0)
+  · have h := hψ.hasDerivAt.comp_hasFDerivAt x (hasFDerivAt_norm_of_ne hx)
+    rwa [div_eq_mul_inv, mul_smul]
+
+/-- The radial function `x ↦ ψ ‖x‖` of a `Cⁿ` function `ψ` on the line vanishing near `0` is
+`Cⁿ`, including at the origin. -/
+theorem _root_.ContDiff.comp_norm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : WithTop ℕ∞} {ψ : ℝ → F} (hψ : ContDiff ℝ n ψ) (hψ0 : 0 ∉ tsupport ψ) :
+    ContDiff ℝ n fun x : E ↦ ψ ‖x‖ := by
+  refine contDiff_iff_contDiffAt.mpr fun x ↦ ?_
+  rcases eq_or_ne x 0 with rfl | hx
+  · exact contDiffAt_const.congr_of_eventuallyEq (comp_norm_eventuallyEq_zero hψ0)
+  · exact hψ.contDiffAt.comp x (contDiffAt_norm ℝ hx)
 
 /-- The Hessian of `x ↦ ‖x‖ ^ p` away from the origin, evaluated on two directions. -/
 theorem iteratedFDeriv_two_norm_rpow_apply (p : ℝ) {x : E} (hx : x ≠ 0) (v w : E) :

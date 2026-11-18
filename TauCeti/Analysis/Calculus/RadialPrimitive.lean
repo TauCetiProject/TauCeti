@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.SpecialFunctions.Sqrt
-import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Topology.Instances.Real.TSupport
 
 /-!
@@ -21,8 +20,6 @@ import TauCeti.Topology.Instances.Real.TSupport
 Computations behind radial test functions on `ℝⁿ`: the radial Laplacian weight of
 `s ↦ ρ (s ^ 2)` is twice the derivative of `s ↦ s ^ n ρ' (s ^ 2)`, and every smooth test
 function `ψ` supported in `(0, R)` is of the form `s ↦ s ^ n ρ' (s ^ 2)` for a smooth `ρ`.
-Likewise a continuous compactly supported `ϕ` supported in `(0, ∞)` is `-H'` for its tail integral
-`H t = ∫_t^∞ ϕ`, so `H (‖· - x‖)` is a radial cutoff constant near `x`.
 
 ## Main results
 
@@ -31,16 +28,13 @@ Likewise a continuous compactly supported `ϕ` supported in `(0, ∞)` is `-H'` 
 * `TauCeti.exists_contDiff_eq_pow_mul_deriv`: every smooth `ψ` supported in `(0, R)` is
   `s ↦ s ^ n ρ' (s ^ 2)` for a smooth `ρ` vanishing for large arguments, nonpositive when `ψ` is
   nonnegative.
-* `Continuous.exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi`: the tail integral
-  `H t = ∫_t^∞ ϕ` of a continuous compactly supported `ϕ` supported in `(0, ∞)` is a `C¹`
-  primitive of `-ϕ`, constant near `0` and vanishing far out.
 -/
 
 public section
 
 namespace TauCeti
 
-open Filter MeasureTheory Set Topology
+open Filter Set Topology
 open scoped ContDiff
 
 variable {R : ℝ}
@@ -104,28 +98,5 @@ lemma exists_contDiff_eq_pow_mul_deriv (n : ℕ) (hR : 0 < R) {ψ : ℝ → ℝ}
   · rw [hρ', hσ_def]
     simp only [Real.sqrt_sq hs.le]
     rw [mul_div_cancel₀ _ (pow_ne_zero _ hs.ne')]
-
-/-- A primitive `H` of `-ϕ` for a continuous compactly supported `ϕ` supported in `(0, ∞)`,
-constant near `0` and vanishing far out: `H t = ∫ s in Ioi t, ϕ s`. -/
-theorem _root_.Continuous.exists_contDiff_deriv_eq_neg_of_tsupport_subset_Ioi {ϕ : ℝ → ℝ}
-    (hϕc : Continuous ϕ) (hc : HasCompactSupport ϕ) (hϕ : tsupport ϕ ⊆ Ioi 0) :
-    ∃ H : ℝ → ℝ, ContDiff ℝ 1 H ∧ (∀ t, deriv H t = -ϕ t) ∧ (∀ᶠ t in 𝓝 0, H t = H 0) ∧
-      (∃ R, ∀ t, R ≤ t → H t = 0) ∧ ∀ t, H t = ∫ s in Ioi t, ϕ s := by
-  obtain ⟨ε, hε, R, hlow, hhigh⟩ := hc.exists_pos_forall_eq_zero_of_tsupport_subset_Ioi hϕ
-  have hderiv (t : ℝ) : HasDerivAt (fun u ↦ ∫ s in Ioi u, ϕ s) (-ϕ t) t :=
-    (hϕc.integrable_of_hasCompactSupport hc).integrableOn.hasDerivAt_integral_Ioi
-      hϕc.continuousAt (sub_lt_self t zero_lt_one)
-  -- Below `ε` the tail integral is the whole integral of `ϕ`.
-  have hlowI (t : ℝ) (ht : t < ε) : ∫ s in Ioi t, ϕ s = ∫ s, ϕ s :=
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦
-      hlow s ((not_lt.1 hs).trans_lt ht)
-  refine ⟨_, contDiff_one_iff_deriv.2 ⟨fun t ↦ (hderiv t).differentiableAt, ?_⟩,
-    fun t ↦ (hderiv t).deriv, ?_, ⟨R, fun t ht ↦ ?_⟩, fun t ↦ rfl⟩
-  · rw [show deriv (fun u ↦ ∫ s in Ioi u, ϕ s) = fun t ↦ -ϕ t from
-      funext fun t ↦ (hderiv t).deriv]
-    exact hϕc.neg
-  · filter_upwards [Iio_mem_nhds hε] with t ht
-    rw [hlowI t ht, hlowI 0 hε]
-  · exact setIntegral_eq_zero_of_forall_eq_zero fun s hs ↦ hhigh s (ht.trans (le_of_lt hs))
 
 end TauCeti

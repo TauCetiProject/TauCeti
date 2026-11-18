@@ -5,272 +5,457 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameterCurvature
-public import TauCeti.Geometry.Euclidean.Volume.Polar
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
-import TauCeti.Analysis.Calculus.DifferentialForm.KahlerFlux
-import TauCeti.Geometry.Euclidean.Volume.Sphere
+public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
+public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Ball
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # Taubes's monotonicity inequality for the defect energy
 
 In the large-parameter analysis of the Seiberg–Witten equations on a symplectic four-manifold, a
-solution at parameter `r` has normalized spinor `ψ = φ + β`, with `φ` in the canonical line and `β`
-in its complement, and curvature `F = i F_a` of the connection on the twisting line. Its **defect
-energy** on a ball is
+solution at parameter `r` has normalized spinor `χ = α u₀ + β`, and its **defect energy** on a ball
+is `E(σ) = (r / 4) ∫_{B_σ} |1 - |χ|²|`. Taubes's monotonicity inequality
 
-`E(σ) = μ(closedBall x σ)`,  `μ = (r / 4) |1 - |φ|² - |β|²| dvol`.
+`E(σ) ≤ (σ / 2) (1 + C σ) (1 + C r^(-1/2)) E'(σ) + C σ⁴`
 
-This file derives Taubes's differential inequality
+is what turns the smallest-scale lower bound at a zero of `α` into the quadratic lower bound
+`E(σ) ≥ c σ²` (`TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`), and gives the
+quadratic upper bound at every centre (`TauCeti.exists_forall_measure_closedBall_le_of_ae_le`).
+This file derives it in a flat chart, the four-dimensional real inner product space `E` with an
+orthogonal complex structure `J` and a unitary frame `e` (`J e₀ = e₁`, `J e₂ = e₃`), whose Kähler
+form is `ω = e⁰ ∧ e¹ + e² ∧ e³`. The curvature geometry of the manifold, which contributes the
+factor `1 + C σ`, is not treated here.
 
-`E(σ) ≤ (σ / 2) (1 + C r^(-1/2)) E'(σ) + K σ⁴`  for almost every `σ ∈ (0, R)`
+The argument is Stokes's theorem for a closed two-form `F`, in the application the curvature
+`i F_a` of the connection on the twisting line. The Liouville form `λ = ι_{x - c} ω / 2` about the
+centre `c` has `dλ = ω`, so `F ∧ ω = d(F ∧ λ)` and the Kähler component `⟨F, ω⟩` of `F` integrates
+over a ball to the integral of `F ∧ λ` over its boundary sphere. In vector form `F ∧ λ` is the flux
+of the field `V(x) = (⋆F)(·, J (x - c))♯ / 2`, whose divergence is `⟨F, ω⟩` because `F` is closed,
+and at `x = c + y` the outward component of `V` is
 
-in a flat chart, from the curvature equation `F + ⋆F = (r / 4) ω - q(√r ψ) - η` and the coarse
-bounds `|φ|² + |β|² ≤ 1 + C / r`, `|β|² ≤ (C / r) w₊ + C / r²` and
-`|F⁻| ≤ (r / (4 √2)) (1 + C r^(-1/2)) w₊ + C`, `w₊ = max (1 - |φ|²) 0`, taken as hypotheses on the
-ball `ball x R`. The constant `K` is chosen before `r`, `R`, the centre and the solution, so it is
-independent of them; it depends only on `C`, the bound `N` on the forcing `η` and the ambient space,
-through the volume of its unit ball
-(`TauCeti.SeibergWitten.exists_ae_measure_closedBall_le_mul_deriv_add`). This is the hypothesis of
-the quadratic lower bound `E(σ) ≥ c σ²` at a zero of `φ` and of the covering bound for the zero set
-(`TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le`,
-`TauCeti.exists_forall_coveringNumber_le_of_ae_le`), with no curvature correction `C σ` since the
-chart is flat.
+`⟪V (c + y), y⟫ = F_{c+y}(w, J w) / 2`,
 
-The argument is Taubes's. The flux identity for the `ω`-component of the closed form `F`
-(`TauCeti.AlmostComplexStructure.ae_setIntegral_ball_inner_kahlerForm_eq`) expresses
-`∫_{ball x σ} ⟪ω, F⟫` as `(σ / 2)` times the integral over the sphere of `B(w, w)`, the Hermitian
-part of `F` on a unit vector `w` orthogonal to the radial direction and its `J`-image. Two pointwise
-consequences of the curvature equation and the coarse bounds, from
-`TauCeti.Analysis.PDE.SeibergWitten.LargeParameterCurvature`, then compare both sides with the
-defect density:
+where `w` is a vector of length `‖y‖` spanning, with `J w`, the complex line orthogonal to `y` and
+`J y`. Taubes's curvature estimates bound the Hermitian part `B(v, v) = F(v, J v)` of `F` above by
+the defect density `δ = (r / 4) |1 - |χ|²|`, as `F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²` (with `κ = 0`
+after his refined bound on the anti-self-dual part, and `κ = C r^(-1/2)` after the coarse one), and
+his formula for the `ω`-component gives `δ ≤ ⟨F, ω⟩ + K`. With the divergence theorem on a ball
+(`TauCeti.setIntegral_ball_trace_fderiv`) these two pointwise inequalities give
 
-* in the interior, `(r / 4) |1 - |φ|² - |β|²| ≤ ⟪ω, F⟫ + (√2 N + C) / 2`, because
-  `⟪ω, F⟫ = (r / 4) (1 - |φ|² + |β|²) - ⟪ω, η⟫ / 2`
-  (`TauCeti.SeibergWitten.mul_abs_one_sub_sub_le_inner_add`);
-* on the sphere, `B(w, w) ≤ ⟪ω, F⟫ / 2 + |F⁻| / √2`, the largest value of the Hermitian part, is at
-  most `(1 + C r^(-1/2))` times the defect density plus a constant
-  (`TauCeti.SeibergWitten.mul_inner_kahlerForm_sub_hermitianForm_le`).
+`∫_{B_σ} δ ≤ (σ / 2) (1 + κ) σ³ ∫_S δ (c + σ θ) dθ + K (|S| / 2 + |B₁|) σ⁴`
 
-The sphere integral of the defect density is the derivative `E'(σ)` for almost every `σ`
-(`TauCeti.ae_hasDerivAt_setIntegral_ball`), and the Hausdorff measure of the sphere is `4 |B₁| σ³`
-(`TauCeti.euclideanHausdorffMeasure_sphere`).
+(`TauCeti.SeibergWitten.setIntegral_ball_le_mul_integral_toSphere_add`), whose sphere integral is
+the derivative of the ball integrals (`ContinuousOn.hasDerivAt_setIntegral_ball`). For the defect
+measure `δ dμ` this is the differential inequality hypothesis of the covering and density
+arguments above with `C = 0` and `C r^(-1/2)` replaced by `κ`
+(`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`).
 
-The fields only need to be defined on the ball: the curvature `F` is a closed `C¹` two-form on
-`ball x R`, the input of the flux identity, such as `F = -db` for a `C²` connection form `b` as in
-`TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent`, and `φ`, `β` are continuous on `ball x R`.
-Deriving the coarse bounds from the equations, and the curvature corrections `(1 + C σ)` on a curved
-four-manifold, are not done here.
+For a solution of the large-parameter curvature equation
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` with `|η| ≤ N` and Taubes's coarse bounds
+`|φ|² + |β|² ≤ 1 + C / r`, `|β|² ≤ (C / r) w₊ + C / r²` and
+`|F⁻| ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, `w₊ = max (1 - |φ|²) 0`, the two pointwise inequalities
+hold for the defect density `δ = (r / 4) |1 - |φ|² - |β|²|` with `κ = C / √r` and a constant `K`
+depending only on `C` and `N` (`TauCeti.SeibergWitten.mul_abs_one_sub_sub_le_inner_add`,
+`TauCeti.SeibergWitten.hermitianForm_apply_self_le`). This gives Taubes's inequality
+`E(σ) ≤ (σ / 2) (1 + C r^(-1/2)) E'(σ) + K σ⁴` for the defect energy of the solution, with `K`
+chosen before `r`, the ball and the solution
+(`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_mul_deriv_add`).
 
 ## Main results
 
-* `TauCeti.SeibergWitten.exists_ae_measure_closedBall_le_mul_deriv_add`: the monotonicity
-  inequality for the defect energy.
+* `TauCeti.SeibergWitten.setIntegral_ball_le_mul_integral_toSphere_add`: the monotonicity
+  inequality, with the sphere integral.
+* `TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`: the monotonicity inequality for the
+  measure `δ dμ`, with the derivative of the radial function `σ ↦ ∫_{B_σ} δ`.
+* `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_mul_deriv_add`: the monotonicity
+  inequality for the defect energy of a solution of the large-parameter curvature equation.
 
 ## References
 
 * C. H. Taubes, *SW ⇒ Gr: from the Seiberg–Witten equations to pseudo-holomorphic curves*,
   J. Amer. Math. Soc. 9 (1996), 845–918.
-* C. H. Taubes, *Seiberg–Witten invariants and pseudo-holomorphic subvarieties for self-dual,
-  harmonic 2-forms*, Geom. Topol. 3 (1999), 167–210.
 -/
 
 public section
 
 noncomputable section
 
-open CliffordAlgebra Module Metric MeasureTheory Filter Set exteriorPower
-open scoped RealInnerProductSpace Topology
-
 namespace TauCeti.SeibergWitten
 
-section Integrated
+open MeasureTheory Metric Set Filter Topology Module
+open scoped RealInnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
-  [MeasurableSpace V] [BorelSpace V]
-  {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-! ### The flux field -/
+
+/-- The product of the component `F(e_a, e_b)` of a two-form field and the coordinate
+`⟪e_k, x - c⟫` about the centre `c`. -/
+private def fluxTerm (e : OrthonormalBasis (Fin 4) ℝ E) (c : E) (F : E → E [⋀^Fin 2]→L[ℝ] ℝ)
+    (a b k : Fin 4) (x : E) : ℝ :=
+  F x ![e a, e b] * ⟪e k, x - c⟫
+
+/-- The flux field `V(x) = (⋆F)(·, J (x - c))♯ / 2` of a two-form field `F` about `c`, written in
+the frame `e`, for the complex structure `J` with `J e₀ = e₁` and `J e₂ = e₃`. Its divergence is
+the Kähler component `F(e₀, e₁) + F(e₂, e₃)` of a closed `F` (`trace_fderiv_fluxField`). -/
+private def fluxField (e : OrthonormalBasis (Fin 4) ℝ E) (c : E) (F : E → E [⋀^Fin 2]→L[ℝ] ℝ)
+    (x : E) : E :=
+  (2 : ℝ)⁻¹ •
+    ((fluxTerm e c F 2 3 0 x + fluxTerm e c F 1 3 3 x + fluxTerm e c F 1 2 2 x) • e 0 +
+      (fluxTerm e c F 2 3 1 x - fluxTerm e c F 0 3 3 x - fluxTerm e c F 0 2 2 x) • e 1 +
+      (fluxTerm e c F 0 1 2 x - fluxTerm e c F 1 3 1 x - fluxTerm e c F 0 3 0 x) • e 2 +
+      (fluxTerm e c F 1 2 1 x + fluxTerm e c F 0 2 0 x + fluxTerm e c F 0 1 3 x) • e 3)
+
+variable {e : OrthonormalBasis (Fin 4) ℝ E} {c : E} {F : E → E [⋀^Fin 2]→L[ℝ] ℝ} {x : E}
+
+private lemma hasFDerivAt_fluxTerm (hF : DifferentiableAt ℝ F x) (a b k : Fin 4) :
+    HasFDerivAt (fluxTerm e c F a b k)
+      (F x ![e a, e b] • innerSL ℝ (e k) +
+        ⟪e k, x - c⟫ • (fderiv ℝ F x).flipAlternating ![e a, e b]) x := by
+  have h₁ := hF.hasFDerivAt.continuousAlternatingMap_apply_const ![e a, e b]
+  have h₂ : HasFDerivAt (fun y : E ↦ ⟪e k, y - c⟫) (innerSL ℝ (e k)) x := by
+    simpa [inner_sub_right] using ((innerSL ℝ (e k)).hasFDerivAt).sub_const ⟪e k, c⟫
+  exact h₁.mul h₂
+
+private lemma contDiffAt_fluxTerm (hF : ContDiffAt ℝ 1 F x) (a b k : Fin 4) :
+    ContDiffAt ℝ 1 (fluxTerm e c F a b k) x :=
+  ((ContinuousAlternatingMap.apply ℝ E ℝ ![e a, e b]).contDiff.contDiffAt.comp x hF).mul
+    (contDiffAt_const.inner ℝ (contDiffAt_id.sub contDiffAt_const))
+
+private lemma contDiffAt_fluxField (hF : ContDiffAt ℝ 1 F x) :
+    ContDiffAt ℝ 1 (fluxField e c F) x := by
+  have h := fun a b k ↦ contDiffAt_fluxTerm (e := e) (c := c) hF a b k
+  unfold fluxField
+  exact (((((h 2 3 0).add (h 1 3 3)).add (h 1 2 2)).smul contDiffAt_const).add
+    ((((h 2 3 1).sub (h 0 3 3)).sub (h 0 2 2)).smul contDiffAt_const) |>.add
+    ((((h 0 1 2).sub (h 1 3 1)).sub (h 0 3 0)).smul contDiffAt_const) |>.add
+    ((((h 1 2 1).add (h 0 2 0)).add (h 0 1 3)).smul contDiffAt_const)).const_smul _
+
+variable [FiniteDimensional ℝ E] in
+/-- **The divergence of the flux field is the Kähler component of `F`.** If the two-form field `F`
+is differentiable and closed at `x`, then `tr (DV(x)) = F_x(e₀, e₁) + F_x(e₂, e₃)`. -/
+private lemma trace_fderiv_fluxField (hF : DifferentiableAt ℝ F x) (hdF : extDeriv F x = 0) :
+    LinearMap.trace ℝ E (fderiv ℝ (fluxField e c F) x : E →ₗ[ℝ] E) =
+      F x ![e 0, e 1] + F x ![e 2, e 3] := by
+  have h := fun a b k ↦ hasFDerivAt_fluxTerm (e := e) (c := c) hF a b k
+  have hV : HasFDerivAt (fluxField e c F) _ x :=
+    (((((h 2 3 0).add (h 1 3 3)).add (h 1 2 2)).smul_const (e 0)).add
+      ((((h 2 3 1).sub (h 0 3 3)).sub (h 0 2 2)).smul_const (e 1)) |>.add
+      ((((h 0 1 2).sub (h 1 3 1)).sub (h 0 3 0)).smul_const (e 2)) |>.add
+      ((((h 1 2 1).add (h 0 2 0)).add (h 0 1 3)).smul_const (e 3))).const_smul (2 : ℝ)⁻¹
+  have hd : ∀ i j k, fderiv ℝ F x (e i) ![e j, e k] - fderiv ℝ F x (e j) ![e i, e k] +
+      fderiv ℝ F x (e k) ![e i, e j] = 0 := fun i j k ↦ by
+    rw [← extDeriv_apply_triple, hdF, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  rw [hV.fderiv]
+  simp only [ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.toLinearMap_add,
+    ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.coe_smulRight, map_smul, map_add,
+    LinearMap.trace_smulRight]
+  simp only [ContinuousLinearMap.toLinearMap_innerSL_apply, LinearMap.add_apply,
+    LinearMap.smul_apply, LinearMap.sub_apply, innerₛₗ_apply_apply, inner_self_eq_norm_sq_to_K,
+    OrthonormalBasis.norm_eq_one, RCLike.ofReal_real_eq_id, id_eq, one_pow, smul_eq_mul, mul_one,
+    ContinuousLinearMap.coe_coe, ContinuousLinearMap.flipAlternating_apply_apply, e.inner_eq_ite,
+    Fin.reduceEq, ↓reduceIte, mul_zero, zero_add]
+  linear_combination (⟪e 0, x - c⟫ / 2) * hd 0 2 3 + (⟪e 1, x - c⟫ / 2) * hd 1 2 3 +
+    (⟪e 2, x - c⟫ / 2) * hd 0 1 2 + (⟪e 3, x - c⟫ / 2) * hd 0 1 3
+
+/-! ### The boundary flux -/
+
+/-- For `y ∈ E`, the vector `w = -y₂ e₀ + y₃ e₁ + y₀ e₂ - y₁ e₃`, of the same length as `y`. With
+`J w` it spans the complex line orthogonal to `y` and `J y`. -/
+private def tangentVector (e : OrthonormalBasis (Fin 4) ℝ E) (y : E) : E :=
+  -(e.repr y 2 • e 0) + e.repr y 3 • e 1 + e.repr y 0 • e 2 - e.repr y 1 • e 3
+
+private lemma repr_tangentVector (y : E) (i : Fin 4) :
+    e.repr (tangentVector e y) i =
+      ![-e.repr y 2, e.repr y 3, e.repr y 0, -e.repr y 1] i := by
+  simp only [tangentVector, e.repr_apply_apply, inner_add_right, inner_sub_right, inner_neg_right,
+    inner_smul_right, e.inner_eq_ite]
+  fin_cases i <;> simp
+
+private lemma norm_tangentVector (y : E) : ‖tangentVector e y‖ = ‖y‖ := by
+  rw [← e.repr.norm_map, ← e.repr.norm_map y, EuclideanSpace.norm_eq, EuclideanSpace.norm_eq]
+  congr 1
+  simp only [repr_tangentVector, Real.norm_eq_abs, sq_abs, Fin.sum_univ_four, Matrix.cons_val_zero,
+    even_two, Even.neg_pow, Matrix.cons_val_one, Matrix.cons_val]
+  ring
+
+/-- **The outward flux density of the flux field.** At `c + y`, the component of `V` along `y`
+is half the value of `F` on the complex line orthogonal to `y`:
+`⟪V (c + y), y⟫ = F_{c+y}(w, J w) / 2`. -/
+private lemma inner_fluxField_add {J : AlmostComplexStructure E} (h₀ : J (e 0) = e 1)
+    (h₂ : J (e 2) = e 3) (y : E) :
+    ⟪fluxField e c F (c + y), y⟫ =
+      F (c + y) ![tangentVector e y, J (tangentVector e y)] / 2 := by
+  rw [ContinuousAlternatingMap.apply_vecCons_eq_sum_repr_fin_four e.toBasis]
+  simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.coe_toBasis_repr_apply,
+    AlmostComplexStructure.repr_apply h₀ h₂, repr_tangentVector, smul_eq_mul]
+  simp only [fluxField, fluxTerm, add_sub_cancel_left, inner_smul_left, inner_add_left,
+    ← e.repr_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
+    RCLike.conj_to_real, Fin.isValue]
+  ring
+
+/-! ### The monotonicity inequality -/
+
+/-- A space with an orthonormal frame indexed by `Fin 4` is four-dimensional. -/
+private lemma finrank_eq_four (e : OrthonormalBasis (Fin 4) ℝ E) :
+    finrank ℝ E = 4 := by
+  simpa using finrank_eq_card_basis e.toBasis
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+  [μ.IsAddHaarMeasure]
+
+/-- **Stokes's theorem for the Kähler component.** For a two-form field `F` that is `C¹` near
+`closedBall c σ` and closed on `ball c σ`, the Kähler component `F(e₀, e₁) + F(e₂, e₃)` integrates
+over the ball to the flux of `V` through the sphere. -/
+private lemma setIntegral_ball_eq_integral_inner_fluxField {σ : ℝ} (hσ : 0 ≤ σ)
+    (hF : ∀ x ∈ closedBall c σ, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c σ, extDeriv F x = 0) :
+    ∫ x in ball c σ, (F x ![e 0, e 1] + F x ![e 2, e 3]) ∂μ =
+      σ ^ 3 * ∫ θ : sphere (0 : E) 1, ⟪fluxField e c F (c + σ • (θ : E)), θ⟫ ∂μ.toSphere := by
+  have hn := finrank_eq_four e
+  have h := setIntegral_ball_trace_fderiv (μ := μ) (V := fluxField e c F) c hσ
+    fun x hx ↦ contDiffAt_fluxField (hF x hx)
+  rw [hn] at h
+  rw [← h]
+  refine setIntegral_congr_fun measurableSet_ball fun x hx ↦ ?_
+  exact (trace_fderiv_fluxField ((hF x (ball_subset_closedBall hx)).differentiableAt
+    one_ne_zero) (hdF x hx)).symm
+
+/-- **The flux bound.** If the Hermitian part of `F` is bounded by `δ` on the sphere of radius
+`σ > 0` about `c`, `F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²`, then the flux of `V` through that sphere is
+at most `(σ / 2) ((1 + κ) ∫ δ + K |S|)`. -/
+private lemma integral_inner_fluxField_le {J : AlmostComplexStructure E}
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) {δ : E → ℝ} {σ κ K : ℝ} (hσ : 0 < σ)
+    (hF : ∀ x ∈ closedBall c σ, ContDiffAt ℝ 1 F x) (hδ : ContinuousOn δ (closedBall c σ))
+    (hB : ∀ x ∈ sphere c σ, ∀ v, F x ![v, J v] ≤ ((1 + κ) * δ x + K) * ‖v‖ ^ 2) :
+    ∫ θ : sphere (0 : E) 1, ⟪fluxField e c F (c + σ • (θ : E)), θ⟫ ∂μ.toSphere ≤
+      σ / 2 * (1 + κ) * ∫ θ : sphere (0 : E) 1, δ (c + σ • (θ : E)) ∂μ.toSphere +
+        σ / 2 * K * μ.toSphere.real univ := by
+  have hnorm : ∀ θ : sphere (0 : E) 1, ‖σ • (θ : E)‖ = σ := fun θ ↦ by
+    rw [norm_smul, norm_eq_of_mem_sphere θ, mul_one, Real.norm_of_nonneg hσ.le]
+  -- Pointwise, `σ ⟪V (c + σ θ), θ⟫ = F(w, J w) / 2` with `‖w‖ = σ`.
+  have hbdry : ∀ θ : sphere (0 : E) 1, ⟪fluxField e c F (c + σ • (θ : E)), θ⟫ ≤
+      σ / 2 * ((1 + κ) * δ (c + σ • (θ : E)) + K) := fun θ ↦ by
+    have hmem : c + σ • (θ : E) ∈ sphere c σ := by
+      rw [mem_sphere, dist_eq_norm, add_sub_cancel_left, hnorm]
+    have key := inner_fluxField_add (c := c) (F := F) h₀ h₂ (σ • (θ : E))
+    rw [inner_smul_right] at key
+    have hb := hB _ hmem (tangentVector e (σ • (θ : E)))
+    rw [norm_tangentVector, hnorm] at hb
+    refine le_of_mul_le_mul_left ?_ hσ
+    rw [key]
+    linear_combination hb / 2
+  have hmemB : ∀ θ : sphere (0 : E) 1, c + σ • (θ : E) ∈ closedBall c σ := fun θ ↦ by
+    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, hnorm]
+  have hcont : Continuous fun θ : sphere (0 : E) 1 ↦ c + σ • (θ : E) :=
+    continuous_const.add (continuous_const.smul continuous_subtype_val)
+  have hintV : Integrable (fun θ : sphere (0 : E) 1 ↦
+      ⟪fluxField e c F (c + σ • (θ : E)), θ⟫) μ.toSphere :=
+    ((ContinuousOn.comp_continuous (fun x hx ↦
+      (contDiffAt_fluxField (hF x hx)).continuousAt.continuousWithinAt) hcont hmemB).inner
+        continuous_subtype_val).integrable_of_hasCompactSupport
+          (HasCompactSupport.of_compactSpace _)
+  have hintδ : Integrable (fun θ : sphere (0 : E) 1 ↦ δ (c + σ • (θ : E))) μ.toSphere :=
+    (hδ.comp_continuous hcont hmemB).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  calc ∫ θ : sphere (0 : E) 1, ⟪fluxField e c F (c + σ • (θ : E)), θ⟫ ∂μ.toSphere
+      ≤ ∫ θ : sphere (0 : E) 1, σ / 2 * ((1 + κ) * δ (c + σ • (θ : E)) + K) ∂μ.toSphere :=
+        integral_mono hintV ((hintδ.const_mul _).add (integrable_const K) |>.const_mul _) hbdry
+    _ = _ := by
+        rw [integral_const_mul, integral_add (hintδ.const_mul _) (integrable_const K),
+          integral_const_mul, integral_const, smul_eq_mul]
+        ring
+
+/-- **Taubes's monotonicity inequality in a flat chart.** Let `J` be an orthogonal complex
+structure with unitary frame `e` (`J e₀ = e₁`, `J e₂ = e₃`), let `F` be a two-form field that is
+`C¹` at the points of the closed ball `closedBall c σ` and closed on the open ball, and let `δ` be
+continuous on the closed ball. Suppose that `δ` is
+bounded by the Kähler component of `F` on the ball, `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`, and that the
+Hermitian part of `F` is bounded by `δ` on the boundary sphere,
+`F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²`. Then
+
+`∫_{B_σ} δ ≤ (σ / 2) (1 + κ) σ³ ∫_S δ (c + σ θ) dθ + K (|S| / 2 + |B₁|) σ⁴`,
+
+where `S` is the unit sphere with its surface measure `μ.toSphere` and `B₁` the unit ball. -/
+theorem setIntegral_ball_le_mul_integral_toSphere_add {J : AlmostComplexStructure E}
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) {δ : E → ℝ} {σ κ K : ℝ} (hσ : 0 ≤ σ)
+    (hF : ∀ x ∈ closedBall c σ, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c σ, extDeriv F x = 0)
+    (hδ : ContinuousOn δ (closedBall c σ))
+    (hω : ∀ x ∈ ball c σ, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
+    (hB : ∀ x ∈ sphere c σ, ∀ v, F x ![v, J v] ≤ ((1 + κ) * δ x + K) * ‖v‖ ^ 2) :
+    ∫ x in ball c σ, δ x ∂μ ≤
+      σ / 2 * (1 + κ) * (σ ^ 3 * ∫ θ : sphere (0 : E) 1, δ (c + σ • (θ : E)) ∂μ.toSphere) +
+        K * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
+  have hn := finrank_eq_four e
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hn
+  rcases hσ.eq_or_lt with rfl | hσ
+  · simp [Metric.ball_eq_empty.mpr le_rfl]
+  -- The Kähler component bounds `δ` on the ball.
+  have hFc : ContinuousOn (fun x ↦ F x ![e 0, e 1] + F x ![e 2, e 3]) (closedBall c σ) :=
+    fun x hx ↦ ((((ContinuousAlternatingMap.apply ℝ E ℝ ![e 0, e 1]).continuous.continuousAt.comp
+      (hF x hx).continuousAt).add
+      ((ContinuousAlternatingMap.apply ℝ E ℝ ![e 2, e 3]).continuous.continuousAt.comp
+        (hF x hx).continuousAt))).continuousWithinAt
+  have hintδ : IntegrableOn δ (ball c σ) μ :=
+    (hδ.integrableOn_compact (isCompact_closedBall c σ)).mono_set ball_subset_closedBall
+  have hintω : IntegrableOn (fun x ↦ F x ![e 0, e 1] + F x ![e 2, e 3]) (ball c σ) μ :=
+    (hFc.integrableOn_compact (isCompact_closedBall c σ)).mono_set ball_subset_closedBall
+  have hintK : IntegrableOn (fun _ ↦ K) (ball c σ) μ := integrableOn_const measure_ball_lt_top.ne
+  have hball : ∫ x in ball c σ, δ x ∂μ ≤
+      ∫ x in ball c σ, (F x ![e 0, e 1] + F x ![e 2, e 3]) ∂μ + K * μ.real (ball c σ) := by
+    calc ∫ x in ball c σ, δ x ∂μ
+        ≤ ∫ x in ball c σ, (F x ![e 0, e 1] + F x ![e 2, e 3] + K) ∂μ :=
+          setIntegral_mono_on hintδ (hintω.add hintK) measurableSet_ball hω
+      _ = _ := by
+          rw [integral_add hintω hintK, setIntegral_const, smul_eq_mul, mul_comm K]
+  -- By Stokes, the Kähler component integrates to the flux, which `δ` bounds on the sphere.
+  have hsphere := mul_le_mul_of_nonneg_left
+    (integral_inner_fluxField_le (μ := μ) h₀ h₂ hσ hF hδ hB) (by positivity : 0 ≤ σ ^ 3)
+  have hvol : μ.real (ball c σ) = σ ^ 4 * μ.real (ball (0 : E) 1) := by
+    rw [measureReal_def, Measure.addHaar_ball μ c hσ.le, hn, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (by positivity), measureReal_def]
+  rw [setIntegral_ball_eq_integral_inner_fluxField hσ.le hF hdF, hvol] at hball
+  linear_combination hball + hsphere
+
+/-- **Taubes's monotonicity inequality for the defect measure.** Let `J`, `e` and the closed
+two-form field `F` be as in `setIntegral_ball_le_mul_integral_toSphere_add`, on the open ball
+`ball c R`, and let `δ ≥ 0` be a continuous density on that ball bounded by the Kähler component of
+`F`, `δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`, which bounds the Hermitian part of `F`,
+`F(v, J v) ≤ ((1 + κ) δ + K) ‖v‖²`. Then the measure `ν = δ dμ` satisfies, at
+every radius `0 < σ < R`, the differential inequality
+
+`ν(B_σ) ≤ (σ / 2) (1 + κ) d/dσ ν(B_σ) + K (|S| / 2 + |B₁|) σ⁴`
+
+for the closed balls `B_σ = closedBall c σ`. -/
+theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
+    (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) {δ : E → ℝ} {R κ K σ : ℝ}
+    (hF : ∀ x ∈ ball c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
+    (hδ : ContinuousOn δ (ball c R)) (hδ₀ : ∀ x ∈ ball c R, 0 ≤ δ x)
+    (hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
+    (hB : ∀ x ∈ ball c R, ∀ v, F x ![v, J v] ≤ ((1 + κ) * δ x + K) * ‖v‖ ^ 2)
+    (hσ : σ ∈ Ioo 0 R) :
+    ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c σ)).toReal ≤
+      σ / 2 * (1 + κ) * deriv (fun s ↦
+        ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c s)).toReal) σ +
+        K * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)) * σ ^ 4 := by
+  have hn := finrank_eq_four e
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hn
+  set ν := μ.withDensity fun x ↦ ENNReal.ofReal (δ x)
+  -- Work inside the closed ball of an intermediate radius `σ < R' < R`.
+  obtain ⟨R', hσR', hR'R⟩ := exists_between hσ.2
+  have hσ' : σ ∈ Ioo 0 R' := ⟨hσ.1, hσR'⟩
+  have hR' : closedBall c R' ⊆ ball c R := closedBall_subset_ball hR'R
+  -- On radii in `[0, R']`, the measure of the closed ball is the integral of `δ` over the ball.
+  have hνball : ∀ s ∈ Icc 0 R', (ν (closedBall c s)).toReal = ∫ x in ball c s, δ x ∂μ := by
+    intro s hs
+    have hsub : closedBall c s ⊆ ball c R := (closedBall_subset_closedBall hs.2).trans hR'
+    rw [withDensity_apply _ measurableSet_closedBall, ← integral_eq_lintegral_of_nonneg_ae
+      ((ae_restrict_iff' measurableSet_closedBall).mpr (ae_of_all _ fun x hx ↦ hδ₀ x (hsub hx)))
+      ((hδ.mono hsub).aestronglyMeasurable measurableSet_closedBall),
+      setIntegral_congr_set (Measure.addHaar_closedBall_ae_eq_ball μ c s)]
+  have hderiv := (hδ.mono hR').hasDerivAt_setIntegral_ball (μ := μ) hσ'
+  rw [hn, smul_eq_mul] at hderiv
+  have hderiv' : deriv (fun s ↦ (ν (closedBall c s)).toReal) σ =
+      σ ^ 3 * ∫ θ : sphere (0 : E) 1, δ (c + σ • (θ : E)) ∂μ.toSphere := by
+    refine (hderiv.congr_of_eventuallyEq ?_).deriv
+    filter_upwards [isOpen_Ioo.mem_nhds hσ'] with s hs
+    exact hνball s (Ioo_subset_Icc_self hs)
+  rw [hderiv', hνball σ (Ioo_subset_Icc_self hσ')]
+  have hsubo : closedBall c σ ⊆ ball c R := closedBall_subset_ball hσ.2
+  exact setIntegral_ball_le_mul_integral_toSphere_add h₀ h₂ hσ.1.le (fun x hx ↦ hF x (hsubo hx))
+    (fun x hx ↦ hdF x (hsubo (ball_subset_closedBall hx))) (hδ.mono hsubo)
+    (fun x hx ↦ hω x (hsubo (ball_subset_closedBall hx)))
+    (fun x hx ↦ hB x (hsubo (sphere_subset_closedBall hx)))
+
+/-! ### The defect energy of a large-parameter solution -/
+
+section LargeParameter
+
+open CliffordAlgebra
+
+variable [Fact (finrank ℝ E = 4)] {Q : QuadraticForm ℝ E} {o : Orientation ℝ E (Fin 4)}
   {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
-  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W}
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W} {J : AlmostComplexStructure E}
 
-attribute [local instance] finiteDimensional_of_finrank_four
-
-variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
-  (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-  (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
-
-include h₀ h₂₃ hQ he
-
-/-- **Taubes's monotonicity inequality for the defect energy**, in a flat chart. Work in an
-oriented four-dimensional inner product space with a constant unitary frame `e`, `J e₀ = e₁`,
-`J e₂ = e₃`, and Kähler two-vector `ω`. Fix constants `C, N ≥ 0`. There is `K ≥ 0` such that for
-every `r ≥ 1`, every ball `ball x R` and every solution on it of the large-parameter curvature
-equation `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η`, with `φ` in the canonical line and `β` in its
-complement, `|η| ≤ N` and the coarse bounds `|φ|² + |β|² ≤ 1 + C / r`,
+/-- **Taubes's monotonicity inequality for the defect energy of a large-parameter solution**, in
+a flat chart. Work in an oriented four-dimensional inner product space with a unitary frame `e`,
+`J e₀ = e₁`, `J e₂ = e₃`, and Kähler two-vector `ω`. Fix constants `C, N ≥ 0`. There is `K ≥ 0`
+such that for every `r ≥ 1`, every ball `ball c R` and every solution on it of the large-parameter
+curvature equation `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η`, with `φ` in the canonical line and
+`β` in its complement, `|η| ≤ N` and the coarse bounds `|φ|² + |β|² ≤ 1 + C / r`,
 `|β|² ≤ (C / r) w₊ + C / r²` and `|F⁻| ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, where
-`w₊ = max (1 - |φ|²) 0`, the defect energy `E(σ) = μ(closedBall x σ)` of
-`μ = (r / 4) |1 - |φ|² - |β|²| dvol` satisfies
+`w₊ = max (1 - |φ|²) 0`, the defect energy `E(σ) = ν(closedBall c σ)` of
+`ν = (r / 4) |1 - |φ|² - |β|²| dμ` satisfies
 
 `E(σ) ≤ (σ / 2) (1 + C / √r) E'(σ) + K σ⁴`
 
-for almost every `σ ∈ (0, R)`. Here `F` is the curvature `i F_a`, read as a two-vector, which is
-`C¹` and closed on `ball x R` (for instance `-db` for a `C²` connection form `b`), and `φ`, `β`
-are continuous on `ball x R`. -/
-theorem exists_ae_measure_closedBall_le_mul_deriv_add {C N : ℝ} (hC : 0 ≤ C) (hN : 0 ≤ N) :
-    ∃ K, 0 ≤ K ∧ ∀ ⦃r : ℝ⦄ ⦃F η : V → ⋀[ℝ]^2 V⦄ ⦃φ β : V → positiveHalfSpinors o ρ⦄ ⦃x : V⦄
-      ⦃R : ℝ⦄, 1 ≤ r → ContDiffOn ℝ 1 F (ball x R) →
-      (∀ y ∈ ball x R, extDeriv (fun z ↦ alternatingFormEquiv V 2 (F z)) y = 0) →
-      ContinuousOn φ (ball x R) → ContinuousOn β (ball x R) →
-      (∀ y ∈ ball x R, cliffordProjection o ρ J.kahlerForm (φ y) = φ y) →
-      (∀ y ∈ ball x R, cliffordProjection o ρ J.kahlerForm (β y) = 0) →
-      (∀ y ∈ ball x R, F y + o.hodgeStar hkl (F y) = (r / 4) • J.kahlerForm -
-        (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ y + β y)) : ⋀[ℝ]^2 V) - η y) →
-      (∀ y ∈ ball x R, ‖η y‖ ≤ N) →
-      (∀ y ∈ ball x R, ‖(2⁻¹ : ℝ) • (F y - o.hodgeStar hkl (F y))‖ ≤
+for every `σ ∈ (0, R)`. Here `F` is the curvature `i F_a`, read as a two-vector, which is `C¹` and
+closed on `ball c R`, and `φ`, `β` are continuous on `ball c R`. -/
+theorem exists_forall_measure_closedBall_le_mul_deriv_add (h₀ : J (e 0) = e 1)
+    (h₂₃ : J (e 2) = e 3) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ E)
+    (he : e.toBasis.orientation = o) {C N : ℝ} (hC : 0 ≤ C) (hN : 0 ≤ N) :
+    ∃ K, 0 ≤ K ∧ ∀ ⦃r : ℝ⦄ ⦃F η : E → ⋀[ℝ]^2 E⦄ ⦃φ β : E → positiveHalfSpinors o ρ⦄ ⦃c : E⦄
+      ⦃R : ℝ⦄, 1 ≤ r → ContDiffOn ℝ 1 F (ball c R) →
+      (∀ y ∈ ball c R, extDeriv (fun z ↦ alternatingFormEquiv E 2 (F z)) y = 0) →
+      ContinuousOn φ (ball c R) → ContinuousOn β (ball c R) →
+      (∀ y ∈ ball c R, cliffordProjection o ρ J.kahlerForm (φ y) = φ y) →
+      (∀ y ∈ ball c R, cliffordProjection o ρ J.kahlerForm (β y) = 0) →
+      (∀ y ∈ ball c R, F y + o.hodgeStar hkl (F y) = (r / 4) • J.kahlerForm -
+        (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ y + β y)) : ⋀[ℝ]^2 E) - η y) →
+      (∀ y ∈ ball c R, ‖η y‖ ≤ N) →
+      (∀ y ∈ ball c R, ‖(2⁻¹ : ℝ) • (F y - o.hodgeStar hkl (F y))‖ ≤
         r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ y‖ ^ 2) 0 + C) →
-      (∀ y ∈ ball x R, ‖φ y‖ ^ 2 + ‖β y‖ ^ 2 ≤ 1 + C / r) →
-      (∀ y ∈ ball x R, ‖β y‖ ^ 2 ≤ C / r * max (1 - ‖φ y‖ ^ 2) 0 + C / r ^ 2) →
-      ∀ᵐ σ, σ ∈ Ioo 0 R →
-        ((volume : Measure V).withDensity (fun y ↦ ENNReal.ofReal
-            (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|)) (closedBall x σ)).toReal ≤
-          σ / 2 * (1 + C / √r) * deriv (fun σ ↦ ((volume : Measure V).withDensity
-            (fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|))
-              (closedBall x σ)).toReal) σ + K * σ ^ 4 := by
-  set N₁ := (√2 * N + C) / 2
-  set K₂ := (1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2
-  set V₁ := (volume : Measure V).real (ball 0 1)
-  refine ⟨V₁ * (N₁ + 2 * K₂), by positivity, ?_⟩
-  intro r F η φ β x R hr hF hdF hφc hβc hφ hβ hFeq hη hFm hφβ hβK
-  -- Writing `E(σ) = ∫_{ball x σ} d` for the defect density `d`, the flux identity gives
-  -- `∫_{ball x σ} ⟪ω, F⟫ = (2 σ)⁻¹ ∫_{sphere x σ} Q` for almost every `σ`. The interior bound
-  -- `d ≤ ⟪ω, F⟫ + N₁` and the sphere bound `Q ≤ σ² ((1 + δ) d + K₂)` combine with
-  -- `∫_{sphere x σ} d = E'(σ)` and `μH(sphere x σ) = 4 V₁ σ³` at almost every radius.
-  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  have hr0 : 0 < r := by linarith
+      (∀ y ∈ ball c R, ‖φ y‖ ^ 2 + ‖β y‖ ^ 2 ≤ 1 + C / r) →
+      (∀ y ∈ ball c R, ‖β y‖ ^ 2 ≤ C / r * max (1 - ‖φ y‖ ^ 2) 0 + C / r ^ 2) →
+      ∀ σ ∈ Ioo 0 R,
+        ((μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|))
+            (closedBall c σ)).toReal ≤
+          σ / 2 * (1 + C / √r) * deriv (fun s ↦ ((μ.withDensity fun y ↦
+            ENNReal.ofReal (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|)) (closedBall c s)).toReal) σ +
+            K * σ ^ 4 := by
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
   have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
-  set δ := C / √r
-  set d : V → ℝ := fun y ↦ r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|
-  have hdc : ContinuousOn d (ball x R) :=
+  -- The constant of both pointwise inequalities: `(√2 N + C) / 2` from the `ω`-component and the
+  -- constant of `hermitianForm_apply_self_le` for the Hermitian part.
+  set K₀ := (√2 * N + C) / 2 + ((1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2) with hK₀
+  refine ⟨K₀ * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)), by positivity, ?_⟩
+  intro r F η φ β c R hr hF hdF hφc hβc hφ hβ hFeq hη hFm hφβ hβK σ hσ
+  have hr0 : 0 < r := by linarith
+  have hG : ∀ y ∈ ball c R, ContDiffAt ℝ 1 (fun z ↦ alternatingFormEquiv E 2 (F z)) y :=
+    fun y hy ↦ ((alternatingFormEquiv E 2).toContinuousLinearEquiv.contDiff.comp_contDiffOn
+      hF).contDiffAt (isOpen_ball.mem_nhds hy)
+  have hδ : ContinuousOn (fun y ↦ r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|) (ball c R) :=
     continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
-  have hd0 (y : V) : 0 ≤ d y := by positivity
-  have hFc : ContinuousOn F (ball x R) := hF.continuousOn
-  set g : V → ℝ := fun y ↦ ⟪J.kahlerForm, F y⟫
-  set Qf : V → ℝ := fun y ↦ ‖y - x‖ ^ 2 * g y - J.hermitianForm (F y) (y - x) (y - x)
-  have hg : ContinuousOn g (ball x R) := by fun_prop
-  have hQc : ContinuousOn Qf (ball x R) := by fun_prop
-  have hballI {f : V → ℝ} (hf : ContinuousOn f (ball x R)) {s : ℝ} (hs : s < R) :
-      IntegrableOn f (ball x s) :=
-    ((hf.mono (closedBall_subset_ball hs)).integrableOn_compact
-      (isCompact_closedBall x s)).mono_set ball_subset_closedBall
-  -- On `ball x R` the density is bounded, so its cutoff `dR` outside the ball is integrable.
-  set dR := (ball x R).indicator d
-  have hdR : Integrable dR := by
-    have : IsFiniteMeasure ((volume : Measure V).restrict (ball x R)) :=
-      isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-    refine (integrable_indicator_iff measurableSet_ball).2
-      ⟨hdc.aestronglyMeasurable measurableSet_ball, HasFiniteIntegral.of_bounded
-        (C := r / 4 * (1 + C / r)) ((ae_restrict_iff' measurableSet_ball).2
-          (Eventually.of_forall fun y hy ↦ ?_))⟩
-    have hCr : 0 ≤ C / r := by positivity
-    have h1 := hφβ y hy
-    have h2 := sq_nonneg ‖φ y‖
-    have h3 := sq_nonneg ‖β y‖
-    rw [Real.norm_of_nonneg (hd0 y)]
-    exact mul_le_mul_of_nonneg_left (abs_le.2 ⟨by linarith, by linarith⟩) (by positivity)
-  -- The defect energy of a ball inside `ball x R` is the integral of `d` over the open ball.
-  have hE (s : ℝ) (hs : s < R) : ((volume : Measure V).withDensity
-      (fun y ↦ ENNReal.ofReal (d y)) (closedBall x s)).toReal = ∫ y in ball x s, d y :=
-    (volume : Measure V).withDensity_ofReal_real_closedBall_eq_setIntegral_ball (hballI hdc hs)
-      fun y _ ↦ hd0 y
-  -- The two pointwise bounds on the ball.
-  have hint (y : V) (hy : y ∈ ball x R) : d y ≤ g y + N₁ := by
+  -- The defect density is bounded by the Kähler component of `F`.
+  have hkω (y : E) (hy : y ∈ ball c R) : r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2| ≤
+      alternatingFormEquiv E 2 (F y) ![e 0, e 1] + alternatingFormEquiv E 2 (F y) ![e 2, e 3] +
+        K₀ := by
+    rw [alternatingFormEquiv_apply, alternatingFormEquiv_apply, ← inner_add_right,
+      ← J.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂₃, real_inner_comm]
     have h := mul_abs_one_sub_sub_le_inner_add hQ hkl hω hω₂ (hφ y hy) (hβ y hy) hr0 hC
       (hFeq y hy) (hφβ y hy)
     have hηN := mul_le_mul_of_nonneg_left (hη y hy) (Real.sqrt_nonneg 2)
-    simp only [d, g, N₁]
-    linarith
-  have hbd (y : V) (hy : y ∈ ball x R) : Qf y ≤ ‖y - x‖ ^ 2 * ((1 + δ) * d y + K₂) := by
-    refine (mul_inner_kahlerForm_sub_hermitianForm_le h₀ h₂₃ hQ hkl he (hφ y hy) (hβ y hy) hr hC
-      (hFeq y hy) (hFm y hy) (hβK y hy) (y - x)).trans
-      (mul_le_mul_of_nonneg_left ?_ (sq_nonneg _))
+    have : 0 ≤ (1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2 := by positivity
+    linarith [hK₀]
+  -- The Hermitian part of `F` is bounded by the defect density.
+  have hB (y : E) (hy : y ∈ ball c R) (v : E) : alternatingFormEquiv E 2 (F y) ![v, J v] ≤
+      ((1 + C / √r) * (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|) + K₀) * ‖v‖ ^ 2 := by
+    rw [alternatingFormEquiv_apply, ← AlmostComplexStructure.hermitianForm_apply_self]
+    refine (hermitianForm_apply_self_le h₀ h₂₃ hQ hkl he (hφ y hy) (hβ y hy) hr hC (hFeq y hy)
+      (hFm y hy) (hβK y hy) v).trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
     have hηN := mul_le_mul_of_nonneg_left (hη y hy) (Real.sqrt_nonneg 2)
-    simp only [d, K₂, δ]
-    linarith
-  filter_upwards [AlmostComplexStructure.ae_setIntegral_ball_inner_kahlerForm_eq h₀ h₂₃ hkl he
-      hF hdF, ae_hasDerivAt_setIntegral_ball x hdR.locallyIntegrable] with σ h1 h2 hσ
-  obtain ⟨hσ0, hσR⟩ := hσ
-  have hsph : sphere x σ ⊆ ball x R := fun y hy ↦ by rw [mem_ball, mem_sphere.1 hy]; exact hσR
-  have hsub : ball x σ ⊆ ball x R := ball_subset_ball hσR.le
-  have hμS : μHE[finrank ℝ V - 1] (sphere x σ) ≠ ⊤ := by
-    rw [euclideanHausdorffMeasure_sphere x hσ0]
-    exact ENNReal.mul_ne_top (ENNReal.mul_ne_top (by simp) measure_ball_lt_top.ne) (by simp)
-  have hsphI {f : V → ℝ} (hf : ContinuousOn f (ball x R)) :
-      IntegrableOn f (sphere x σ) μHE[finrank ℝ V - 1] :=
-    (hf.mono hsph).integrableOn_of_subset_isCompact (isCompact_sphere x σ)
-      isClosed_sphere.measurableSet subset_rfl hμS
-  have h1' : ∫ y in ball x σ, g y =
-      (2 * σ)⁻¹ * ∫ y in sphere x σ, Qf y ∂μHE[finrank ℝ V - 1] := h1 ⟨hσ0, hσR⟩
-  have hderiv : deriv (fun s ↦ ((volume : Measure V).withDensity
-      (fun y ↦ ENNReal.ofReal (d y)) (closedBall x s)).toReal) σ =
-      ∫ y in sphere x σ, d y ∂μHE[finrank ℝ V - 1] := by
-    rw [(h2.congr_of_eventuallyEq ((eventually_lt_nhds hσR).mono fun s hs ↦
-      (hE s hs).trans (setIntegral_congr_fun measurableSet_ball fun y hy ↦
-        (indicator_of_mem (ball_subset_ball hs.le hy) d).symm))).deriv]
-    exact setIntegral_congr_fun isClosed_sphere.measurableSet fun y hy ↦
-      indicator_of_mem (hsph hy) d
-  rw [hE σ hσR, hderiv]
-  have hS1 : ∫ _ in sphere x σ, (1 : ℝ) ∂μHE[finrank ℝ V - 1] = V₁ * (4 * σ ^ 3) := by
-    rw [setIntegral_const, smul_eq_mul, mul_one, euclideanHausdorffMeasure_real_sphere x hσ0,
-      (Fact.out : finrank ℝ V = 4)]
-    norm_num
-    ring
-  have hvol : ∫ _ in ball x σ, (1 : ℝ) = V₁ * σ ^ 4 := by
-    rw [setIntegral_const, smul_eq_mul, mul_one,
-      (volume : Measure V).addHaar_real_ball_of_pos x hσ0, (Fact.out : finrank ℝ V = 4)]
-    ring
-  -- The defect energy of the ball is at most the `ω`-component of the curvature, plus an error.
-  have hball : ∫ y in ball x σ, d y ≤ (∫ y in ball x σ, g y) + N₁ * (V₁ * σ ^ 4) := by
-    have hgi : IntegrableOn g (ball x σ) := hballI hg hσR
-    have h1i : IntegrableOn (fun _ ↦ (1 : ℝ)) (ball x σ) := hballI continuousOn_const hσR
-    calc ∫ y in ball x σ, d y ≤ ∫ y in ball x σ, (g y + N₁ * 1) :=
-          setIntegral_mono_on (hballI hdc hσR) (hgi.add (h1i.const_mul N₁)) measurableSet_ball
-            fun y hy ↦ by simpa using hint y (hsub hy)
-      _ = (∫ y in ball x σ, g y) + N₁ * (V₁ * σ ^ 4) := by
-          rw [integral_add hgi (h1i.const_mul N₁), integral_const_mul, hvol]
-  -- The flux through the sphere is controlled by the derivative of the defect energy.
-  have hsphere : ∫ y in sphere x σ, Qf y ∂μHE[finrank ℝ V - 1] ≤
-      σ ^ 2 * ((1 + δ) * ∫ y in sphere x σ, d y ∂μHE[finrank ℝ V - 1] +
-        K₂ * (V₁ * (4 * σ ^ 3))) := by
-    have hds := hsphI hdc
-    have h1s : IntegrableOn (fun _ ↦ (1 : ℝ)) (sphere x σ) μHE[finrank ℝ V - 1] :=
-      hsphI continuousOn_const
-    have hki : IntegrableOn (fun y ↦ σ ^ 2 * ((1 + δ) * d y + K₂ * 1)) (sphere x σ)
-        μHE[finrank ℝ V - 1] :=
-      ((hds.const_mul (1 + δ)).add (h1s.const_mul K₂)).const_mul (σ ^ 2)
-    calc ∫ y in sphere x σ, Qf y ∂μHE[finrank ℝ V - 1]
-        ≤ ∫ y in sphere x σ, σ ^ 2 * ((1 + δ) * d y + K₂ * 1) ∂μHE[finrank ℝ V - 1] :=
-          setIntegral_mono_on (hsphI hQc) hki isClosed_sphere.measurableSet fun y hy ↦ by
-            have h := hbd y (hsph hy)
-            rw [mem_sphere, dist_eq_norm] at hy
-            rw [hy] at h
-            simpa using h
-      _ = σ ^ 2 * ((1 + δ) * ∫ y in sphere x σ, d y ∂μHE[finrank ℝ V - 1] +
-            K₂ * (V₁ * (4 * σ ^ 3))) := by
-          rw [integral_const_mul, integral_add (hds.const_mul (1 + δ)) (h1s.const_mul K₂),
-            integral_const_mul (1 + δ), integral_const_mul K₂, hS1]
-  rw [h1'] at hball
-  have hmul := mul_le_mul_of_nonneg_left hsphere (by positivity : (0 : ℝ) ≤ (2 * σ)⁻¹)
-  have e1 : (2 * σ)⁻¹ * (σ ^ 2 * ((1 + δ) * ∫ y in sphere x σ, d y ∂μHE[finrank ℝ V - 1] +
-      K₂ * (V₁ * (4 * σ ^ 3)))) = σ / 2 * (1 + δ) *
-        ∫ y in sphere x σ, d y ∂μHE[finrank ℝ V - 1] + 2 * K₂ * V₁ * σ ^ 4 := by
-    field_simp
-    ring
-  rw [e1] at hmul
-  linarith
+    have : 0 ≤ (√2 * N + C) / 2 := by positivity
+    linarith [hK₀]
+  exact measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂₃ hG hdF hδ (fun y _ ↦ by positivity)
+    hkω hB hσ
 
-end Integrated
+end LargeParameter
 
 end TauCeti.SeibergWitten
