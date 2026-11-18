@@ -24,7 +24,9 @@ to the normalized chains, and it is a morphism of DG algebras of `C^□_*(G; R)`
   cube being path connected.
 
 Twisting is multiplicative in the character (`TauCeti.cubicalChainTwist_mul`), so a
-character with values in the units `Rˣ` gives an automorphism.  For the Moore loop space this is
+character with values in the units `Rˣ` gives an automorphism. Twisting is natural: pushing
+chains forward along a map `f` turns the twist by `w ∘ f` into the twist by `w`
+(`TauCeti.NormalizedCubicalChain.map_comp_twist`).  For the Moore loop space this is
 the map `Φ^L` of the source's §2.3, attached to a rank-one local system `L`.
 
 ## Main definitions
@@ -121,6 +123,11 @@ theorem twist_comp (w w' : G → R) (n : ℕ) :
 /-- The twist by the constant weight `1` is the identity. -/
 @[simp]
 theorem twist_one (n : ℕ) : twist (1 : G → R) n = LinearMap.id :=
+  linearMap_ext fun c ↦ by simp
+
+/-- Pushing chains forward along `f` turns the twist by the weight `w ∘ f` into the twist by `w`. -/
+theorem map_comp_twist {G' : Type*} [TopologicalSpace G'] (f : C(G, G')) (w : G' → R) (n : ℕ) :
+    map R f n ∘ₗ twist (w ∘ f) n = twist w n ∘ₗ map R f n :=
   linearMap_ext fun c ↦ by simp
 
 variable {w}
