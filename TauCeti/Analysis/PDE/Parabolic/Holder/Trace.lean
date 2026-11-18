@@ -285,10 +285,7 @@ variable {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
 time `T - t`. -/
 @[simp]
 theorem spatialTrace_timeReverseLIE (f : ParabolicC2HolderSpace α E F hab) (t : Icc a' b') :
-    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace ⟨T - t, by
-      obtain ⟨h₁, h₂⟩ := t.2
-      subst ha hb
-      constructor <;> linarith⟩ := by
+    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace (iccTimeReverse T ha hb t) := by
   ext x
   simp
 
@@ -299,7 +296,8 @@ theorem spatialTrace_timeReverseLIE_left (f : ParabolicC2HolderSpace α E F hab)
         ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩ =
       f.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
   rw [spatialTrace_timeReverseLIE]
-  congr
+  congr 1
+  ext
   simp [ha]
 
 end TimeReversal
@@ -461,10 +459,7 @@ variable {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
 time `T - t`. -/
 @[simp]
 theorem spatialTrace_timeReverseLIE (f : ParabolicC1HolderSpace α E F a b) (t : Icc a' b') :
-    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace ⟨T - t, by
-      obtain ⟨h₁, h₂⟩ := t.2
-      subst ha hb
-      constructor <;> linarith⟩ := by
+    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace (iccTimeReverse T ha hb t) := by
   ext x
   simp
 
@@ -475,7 +470,8 @@ theorem spatialTrace_timeReverseLIE_left (hab : a ≤ b) (f : ParabolicC1HolderS
         ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_le_sub_left hab T)⟩ =
       f.spatialTrace ⟨b, right_mem_Icc.2 hab⟩ := by
   rw [spatialTrace_timeReverseLIE]
-  congr
+  congr 1
+  ext
   simp [ha]
 
 end TimeReversal
