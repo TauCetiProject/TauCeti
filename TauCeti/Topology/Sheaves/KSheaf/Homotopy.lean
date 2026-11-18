@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.CommSq
-public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HomologyFunctorAccessible
-public import Mathlib.Topology.Sheaves.KSheaf
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
+public import TauCeti.Algebra.Homology.ShortComplex.Colimit
+public import TauCeti.Topology.Sheaves.KSheaf.Basic
 
 /-!
 # Homotopy K-sheaves
@@ -49,6 +49,8 @@ that every compact set has a compact neighbourhood.
 
 ## Main results
 
+* `TopCat.KPresheaf.IsHomotopyKSheaf.quasiIso_desc`: in a homotopy K-sheaf, the map to `F(K)`
+  from any colimit over the compact neighbourhoods of `K` is a quasi-isomorphism.
 * `TopCat.KPresheaf.isPullback_homologyMap`: where `mayerVietorisDesc` is a quasi-isomorphism,
   the cohomology squares are pullbacks in the degree above a degree where `F(K₂ ∩ K₃)` has no
   cohomology.
@@ -73,19 +75,6 @@ universe w v u
 namespace TopCat.KPresheaf
 
 variable {X : TopCat.{w}} [T2Space X]
-
-section CommSq
-
-variable {A : Type*} [Category* A] (F : KPresheaf A X)
-
-/-- The restriction maps of a K-presheaf along a bicartesian square `K₁ = K₂ ⊓ K₃`,
-`K₄ = K₂ ⊔ K₃` of compact sets form a commutative square. -/
-theorem commSq_map {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) :
-    CommSq (F.map (opHomOfLE h.le₂₄)) (F.map (opHomOfLE h.le₃₄)) (F.map (opHomOfLE h.le₁₂))
-      (F.map (opHomOfLE h.le₁₃)) :=
-  ⟨by simp only [← F.map_comp]; rfl⟩
-
-end CommSq
 
 variable {C : Type u} [Category.{v} C] [Abelian C] (F : KPresheaf (CochainComplex C ℤ) X)
 
@@ -123,6 +112,15 @@ structure IsHomotopyKSheaf : Prop where
   exists_isColimit_quasiIso_desc (K : Compacts X) :
     ∃ (c : Cocone ((Set.mono_coe K.compactNhds).functor.op ⋙ F)) (hc : IsColimit c),
       QuasiIso (hc.desc (F.coconeOfCompacts K))
+
+/-- In a homotopy K-sheaf, the map to `F(K)` from any colimit of the `F(K')` over the compact
+neighbourhoods `K'` of `K` is a quasi-isomorphism. -/
+theorem IsHomotopyKSheaf.quasiIso_desc (hF : F.IsHomotopyKSheaf) (K : Compacts X)
+    {c : Cocone ((Set.mono_coe K.compactNhds).functor.op ⋙ F)} (hc : IsColimit c) :
+    QuasiIso (hc.desc (F.coconeOfCompacts K)) := by
+  obtain ⟨c', hc', _⟩ := hF.exists_isColimit_quasiIso_desc K
+  rw [← hc.coconePointUniqueUpToIso_hom_desc hc']
+  infer_instance
 
 /-- If the map `mappingCone φ ⟶ F(K₁)` of a bicartesian square is a quasi-isomorphism and `F(K₁)`
 has vanishing cohomology in degree `i`, then the square of cohomology groups in degree `i + 1` is
@@ -167,14 +165,12 @@ theorem isPullback_homologyMap {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.B
     (homologyFunctor C (ComplexShape.up ℤ) j).mapBiprod _ _
   have he : e₂.hom = biprod.lift (homologyMap biprod.fst j) (homologyMap biprod.snd j) :=
     Functor.mapBiprod_hom ..
-  let S' := ShortComplex.mk (biprod.lift (homologyMap (F.map (opHomOfLE h.le₂₄)) j)
-      (homologyMap (F.map (opHomOfLE h.le₃₄)) j))
-    (biprod.desc (homologyMap (F.map (opHomOfLE h.le₁₂)) j)
-      (-homologyMap (F.map (opHomOfLE h.le₁₃)) j)) (by simp [sq.w])
   obtain ⟨hS, _⟩ := (ShortComplex.exact_and_mono_f_iff_of_iso (ShortComplex.isoMk (S₁ := S)
-    (S₂ := S') (Iso.refl _) e₂ (Iso.refl _)
-      (by ext <;> simp [S, S', he, φ, ← homologyMap_comp])
-      (by simp [S, S', he, ψ, ← homologyMap_comp, biprod.desc_eq, homologyMap_add]))).1
+    (S₂ := sq.shortComplex') (Iso.refl _) e₂ (Iso.refl _)
+      (by dsimp [CommSq.shortComplex']; ext <;> simp [S, he, φ, ← homologyMap_comp])
+      (by
+        dsimp [CommSq.shortComplex']
+        simp [S, he, ψ, ← homologyMap_comp, biprod.desc_eq, homologyMap_add]))).1
     ⟨hex, hφ⟩
   exact IsPullback.of_isLimit (sq.isLimitEquivIsLimitKernelFork.symm hS.fIsKernel)
 
@@ -193,9 +189,6 @@ theorem nonempty_isColimit_coconeOfCompacts_homology (K : Compacts X)
   have : Nonempty K.compactNhds :=
     let ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
     ⟨⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.2)⟩⟩
-  have : PreservesColimitsOfShape (↑K.compactNhds)ᵒᵖ (homologyFunctor C (ComplexShape.up ℤ) n) :=
-    inferInstanceAs (PreservesColimitsOfShape _
-      (shortComplexFunctor C (ComplexShape.up ℤ) n ⋙ ShortComplex.homologyFunctor C))
   let e := asIso (homologyMap (hc.desc (F.coconeOfCompacts K)) n)
   exact ⟨(isColimitOfPreserves (homologyFunctor C (ComplexShape.up ℤ) n) hc).ofIsoColimit
       (Cocone.ext (c' := (homologyFunctor C (ComplexShape.up ℤ) n).mapCocone
