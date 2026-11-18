@@ -30,6 +30,9 @@ the value of the word for a suitable `ρ`.
 ## Main results
 
 * `FreeGroup.starVal_invRev`: the value of the formal inverse is the `star` of the value.
+* `FreeGroup.starVal_unique`: `starVal ρ` is the only map on signed words respecting the empty
+  word, concatenation and formal inverses that sends each positive letter to the value of its
+  generator.
 * `FreeGroup.starVal_flatMap_substituteLetter`: values are compatible with substitution.
 * `FreeGroup.starVal_eq_lift_mk`: in a group, for values whose `star` is their inverse, the
   value of a signed word is the image of the element of the free group it represents.
@@ -84,6 +87,22 @@ theorem starVal_cons (p : α × Bool) (w : List (α × Bool)) :
 /-- A negative letter has the `star` of the value of its generator. -/
 @[simp] theorem starVal_singleton_false (a : α) : starVal ρ [(a, false)] = star (ρ a) := by
   simp [starVal]
+
+variable {ρ} in
+/-- Uniqueness of the value map: a map on signed words that sends the empty word to `1`,
+concatenations to products, formal inverses to `star`s and each positive letter to the value of
+its generator is `starVal ρ`. -/
+theorem starVal_unique (f : List (α × Bool) → N) (hnil : f [] = 1)
+    (happend : ∀ u w, f (u ++ w) = f u * f w) (hinvRev : ∀ w, f (invRev w) = star (f w))
+    (htrue : ∀ a, f [(a, true)] = ρ a) : f = starVal ρ := by
+  funext w
+  induction w with
+  | nil => simp [hnil]
+  | cons p w ih =>
+    rw [← List.singleton_append, happend, ih, starVal_append]
+    obtain ⟨a, _ | _⟩ := p
+    · simpa [invRev, htrue] using congrArg (· * starVal ρ w) (hinvRev [(a, true)])
+    · simp [htrue]
 
 end Monoid
 
