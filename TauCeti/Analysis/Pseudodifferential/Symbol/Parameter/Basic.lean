@@ -261,11 +261,54 @@ theorem norm_parameterIteratedFDeriv_zero (f : (CoordinateSpace n × CoordinateS
     ‖parameterIteratedFDeriv 0 f p‖ = ‖f p‖ := by
   simp [parameterIteratedFDeriv_eq_iteratedFDeriv_comp, Prod.mk_zero_zero]
 
-private theorem parameterIteratedFDeriv_mk_eq
+/-- `TauCeti.parameterIteratedFDeriv_eq_iteratedFDeriv_comp` at a point `((x, ξ), z)`, with the
+weight written as `parameterWeight ξ z`. -/
+theorem parameterIteratedFDeriv_mk_eq
     (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A) (x ξ : CoordinateSpace n) (z : ℂ)
     (k : ℕ) : parameterIteratedFDeriv k f ((x, ξ), z) = iteratedFDeriv ℝ k
       (fun v => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v)) 0 :=
   parameterIteratedFDeriv_eq_iteratedFDeriv_comp f _ k
+
+/-- Functions that agree near `p` have the same dilated derivatives at `p`. -/
+theorem _root_.Filter.EventuallyEq.parameterIteratedFDeriv_eq
+    {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (h : f =ᶠ[𝓝 p] g) (k : ℕ) :
+    parameterIteratedFDeriv k f p = parameterIteratedFDeriv k g p := by
+  ext v
+  rw [parameterIteratedFDeriv_apply, parameterIteratedFDeriv_apply,
+    (h.iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds]
+
+/-- The dilated derivatives of the zero function vanish. -/
+@[simp]
+theorem parameterIteratedFDeriv_fun_zero (k : ℕ)
+    (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    parameterIteratedFDeriv k (fun _ : (CoordinateSpace n × CoordinateSpace n) × ℂ => (0 : A)) p =
+      0 := by
+  ext v
+  simp [parameterIteratedFDeriv_apply]
+
+/-- The dilated derivative of a difference of functions `C^k` at `p` is the difference of their
+dilated derivatives. -/
+theorem parameterIteratedFDeriv_fun_sub {f g : (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} {k : ℕ} (hf : ContDiffAt ℝ k f p)
+    (hg : ContDiffAt ℝ k g p) :
+    parameterIteratedFDeriv k (fun q => f q - g q) p =
+      parameterIteratedFDeriv k f p - parameterIteratedFDeriv k g p := by
+  ext v
+  rw [parameterIteratedFDeriv_apply, ← Pi.sub_def, iteratedFDeriv_sub_apply hf hg]
+  simp [parameterIteratedFDeriv_apply]
+
+/-- The dilated derivative of a finite sum of functions `C^k` at `p` is the sum of their dilated
+derivatives. -/
+theorem parameterIteratedFDeriv_fun_sum {ι : Type*} (s : Finset ι)
+    {f : ι → (CoordinateSpace n × CoordinateSpace n) × ℂ → A}
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} {k : ℕ}
+    (hf : ∀ j ∈ s, ContDiffAt ℝ k (f j) p) :
+    parameterIteratedFDeriv k (fun q => ∑ j ∈ s, f j q) p =
+      ∑ j ∈ s, parameterIteratedFDeriv k (f j) p := by
+  ext v
+  rw [parameterIteratedFDeriv_apply, iteratedFDeriv_fun_sum_apply hf]
+  simp [parameterIteratedFDeriv_apply]
 
 /-- The pullback of a function smooth on `univ ×ˢ Λ` is smooth on an open neighbourhood of `0`. -/
 private theorem contDiffOn_comp_dilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
@@ -551,6 +594,13 @@ theorem ext_of_mem {a b : ParameterSymbol n Λ V W m}
   by_cases hz : z ∈ Λ
   · exact h x ξ z hz
   · rw [a.coefficient_of_notMem _ hz, b.coefficient_of_notMem _ hz]
+
+/-- One constant serves for the estimates of all dilated derivatives of order at most `k`. -/
+theorem exists_forall_le_norm_parameterIteratedFDeriv_le (a : ParameterSymbol n Λ V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (k : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ i ≤ k, ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
+      ‖parameterIteratedFDeriv i a.coefficient ((x, ξ), z)‖ ≤ C * parameterWeight ξ z ^ m :=
+  Bounds.exists_forall_le a.exists_bound hK k
 
 section Module
 
