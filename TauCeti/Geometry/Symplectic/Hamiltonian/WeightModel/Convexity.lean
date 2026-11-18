@@ -18,36 +18,36 @@ Let `α : ι → 𝔱*` be a finite family of weights and let
 This file proves the two local properties of `μ` from which the local-to-global principle of
 Condevaux–Dazord–Molino and Hilgert–Neeb–Plank deduces convexity of the image and connectedness of
 the fibres of a proper moment map: `μ` is open onto its image cone, and its fibres, also inside
-small invariant balls, are connected.
+small invariant balls, are preconnected.
 
-Both reduce to the map `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of half squared radii, onto the closed
-orthant of `ℝ^ι`, since `μ = L ∘ Φ` for the linear map `L a = Σ_i a_i (-α_i)`
-(`TauCeti.weightMomentMap_eq_linearCombination`).
+Both reduce to the map `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of half squared radii
+(`TauCeti.halfSqRadii`), onto the closed orthant of `ℝ^ι`, since `μ = L ∘ Φ` for the linear map
+`L a = Σ_i a_i (-α_i)` (`TauCeti.weightMomentMap_eq_linearCombination`).
 
 * Polar coordinates `z_i = √(2 s_i) e^{i θ_i}` exhibit `Φ⁻¹(S)`, for a convex set `S`, as the image
-  of the connected set `ℝ^ι × (S ∩ [0, ∞)^ι)`; so `Φ⁻¹(S)` is preconnected
-  (`TauCeti.isPreconnected_preimage_pi_half_sq_add_sq`). The preimage of a convex set under `L` is
+  of the preconnected set `ℝ^ι × (S ∩ [0, ∞)^ι)`; so `Φ⁻¹(S)` is preconnected
+  (`TauCeti.isPreconnected_preimage_halfSqRadii`). The preimage of a convex set under `L` is
   convex, so every preimage `μ⁻¹(S)` of a convex set is preconnected
   (`TauCeti.isPreconnected_preimage_weightMomentMap`); in particular every fibre of `μ` is. The
   same holds inside each invariant ball `‖q‖² + ‖p‖² < r`, which is the preimage under `Φ` of a
   half-space (`TauCeti.isPreconnected_preimage_weightMomentMap_inter`).
 * Rescaling each coordinate `z_i` by `√(s_i / Φ_i(z))`, or replacing a vanishing one by `√(2 s_i)`,
   gives a continuous local section of `Φ` through any point, so `Φ` is open onto the orthant
-  (`TauCeti.image_pi_half_sq_add_sq_mem_nhdsWithin`). A linear map is relatively open from the
+  (`TauCeti.image_halfSqRadii_mem_nhdsWithin`). A linear map is relatively open from the
   orthant onto its image (`LinearMap.image_inter_Ici_mem_nhdsWithin`), so `μ` sends every
   neighbourhood of a point `z` onto a neighbourhood of `μ(z)` in the moment cone
   (`TauCeti.image_mem_nhdsWithin_range_weightMomentMap`).
 
 No hypothesis on the weights is needed: they may be zero, repeated or linearly dependent. For
 dependent weights the fibres of `μ` are no longer single orbits of the torus, but they remain
-connected.
+preconnected.
 
 ## Main results
 
-* `TauCeti.isPreconnected_preimage_pi_half_sq_add_sq`: the preimage of a convex set under the half
+* `TauCeti.isPreconnected_preimage_halfSqRadii`: the preimage of a convex set under the half
   squared radii is preconnected.
-* `TauCeti.image_pi_half_sq_add_sq_mem_nhdsWithin`: the half squared radii are open onto the
-  closed orthant.
+* `TauCeti.image_halfSqRadii_mem_nhdsWithin`: the half squared radii are open onto the closed
+  orthant.
 * `TauCeti.convex_range_weightMomentMap`: the image of `μ` is convex.
 * `TauCeti.isPreconnected_preimage_weightMomentMap`,
   `TauCeti.isPreconnected_preimage_singleton_weightMomentMap`: preimages of convex sets, and in
@@ -77,19 +77,31 @@ variable {ι : Type*}
 
 /-! ### The half squared radii -/
 
+/-- The half squared radii `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of a point `(q, p)` of `ℂ^ι`, that
+is, the halved squared moduli `|z_i|² / 2` of its coordinates `z_i = q_i + i p_i`. -/
+noncomputable def halfSqRadii (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : ι → ℝ :=
+  fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2
+
+@[simp]
+theorem halfSqRadii_apply (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    halfSqRadii x i = (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
+  (rfl)
+
+/-- The half squared radii lie in the closed orthant. -/
+theorem halfSqRadii_nonneg (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : 0 ≤ halfSqRadii x :=
+  fun i ↦ by rw [Pi.zero_apply, halfSqRadii_apply]; positivity
+
 /-- **Preimages of convex sets under the half squared radii are preconnected.** For a convex set
 `S ⊆ ℝ^ι`, the points of `ℂ^ι` whose half squared radii `(q_i² + p_i²) / 2` lie in `S` form a
 preconnected set. -/
-theorem isPreconnected_preimage_pi_half_sq_add_sq {S : Set (ι → ℝ)} (hS : Convex ℝ S) :
-    IsPreconnected ((fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
-      fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) ⁻¹' S) := by
+theorem isPreconnected_preimage_halfSqRadii {S : Set (ι → ℝ)} (hS : Convex ℝ S) :
+    IsPreconnected (halfSqRadii ⁻¹' S) := by
   -- Polar coordinates `z_i = √(2 s_i) e^{i θ_i}`, with angles `θ` and half squared radii `s`.
   let P : (ι → ℝ) × (ι → ℝ) → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι := fun y ↦
     (WithLp.toLp 2 fun i ↦ √(2 * y.2 i) * cos (y.1 i),
       WithLp.toLp 2 fun i ↦ √(2 * y.2 i) * sin (y.1 i))
   have hP : Continuous P := by fun_prop
-  have himage : P '' (univ ×ˢ (S ∩ Ici 0)) = (fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
-      fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) ⁻¹' S := by
+  have himage : P '' (univ ×ˢ (S ∩ Ici 0)) = halfSqRadii ⁻¹' S := by
     ext x
     constructor
     · rintro ⟨y, ⟨-, hyS, hy0⟩, rfl⟩
@@ -97,14 +109,14 @@ theorem isPreconnected_preimage_pi_half_sq_add_sq {S : Set (ι → ℝ)} (hS : C
       convert hyS using 1
       ext i
       have h2 : √(2 * y.2 i) ^ 2 = 2 * y.2 i := sq_sqrt (mul_nonneg zero_le_two (hy0 i))
-      simp only [P]
+      simp only [P, halfSqRadii_apply]
       linear_combination (√(2 * y.2 i) ^ 2 / 2) * sin_sq_add_cos_sq (y.1 i) + h2 / 2
     · intro hx
       -- The angles are the arguments of the coordinates `q_i + i p_i`.
-      refine ⟨(fun i ↦ Complex.arg ⟨x.1 i, x.2 i⟩, fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2),
-        ⟨mem_univ _, hx, fun i ↦ by positivity⟩, ?_⟩
-      have hnorm (i : ι) : √(2 * ((x.1 i ^ 2 + x.2 i ^ 2) / 2)) = ‖(⟨x.1 i, x.2 i⟩ : ℂ)‖ := by
-        rw [Complex.norm_def, Complex.normSq_mk]
+      refine ⟨(fun i ↦ Complex.arg ⟨x.1 i, x.2 i⟩, halfSqRadii x),
+        ⟨mem_univ _, hx, halfSqRadii_nonneg x⟩, ?_⟩
+      have hnorm (i : ι) : √(2 * halfSqRadii x i) = ‖(⟨x.1 i, x.2 i⟩ : ℂ)‖ := by
+        rw [halfSqRadii_apply, Complex.norm_def, Complex.normSq_mk]
         congr 1
         ring
       ext i
@@ -117,56 +129,52 @@ theorem isPreconnected_preimage_pi_half_sq_add_sq {S : Set (ι → ℝ)} (hS : C
 /-- **The half squared radii are open onto the orthant.** The map
 `(q, p) ↦ ((q_i² + p_i²) / 2)_i` sends every neighbourhood of a point of `ℂ^ι` onto a
 neighbourhood of its image in the closed orthant `Ici 0` of `ℝ^ι`. -/
-theorem image_pi_half_sq_add_sq_mem_nhdsWithin (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
+theorem image_halfSqRadii_mem_nhdsWithin (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
     {N : Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (hN : N ∈ 𝓝 x) :
-    (fun y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ fun i ↦ (y.1 i ^ 2 + y.2 i ^ 2) / 2) '' N ∈
-      𝓝[Ici 0] fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by
-  set Φ := fun y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ fun i ↦ (y.1 i ^ 2 + y.2 i ^ 2) / 2
-  -- A continuous section `σ` of `Φ` over the orthant through `x`: rescale the nonzero
+    halfSqRadii '' N ∈ 𝓝[Ici 0] halfSqRadii x := by
+  set r := halfSqRadii x with hr
+  -- A continuous section `σ` of `halfSqRadii` over the orthant through `x`: rescale the nonzero
   -- coordinates of `x`, and fill in the vanishing ones along the real axis.
   let σ : (ι → ℝ) → EuclideanSpace ℝ ι × EuclideanSpace ℝ ι := fun s ↦
-    (WithLp.toLp 2 fun i ↦ if Φ x i = 0 then √(2 * s i) else x.1 i * √(s i / Φ x i),
-      WithLp.toLp 2 fun i ↦ if Φ x i = 0 then 0 else x.2 i * √(s i / Φ x i))
+    (WithLp.toLp 2 fun i ↦ if r i = 0 then √(2 * s i) else x.1 i * √(s i / r i),
+      WithLp.toLp 2 fun i ↦ if r i = 0 then 0 else x.2 i * √(s i / r i))
   have hσ : Continuous σ := by
     refine .prodMk ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_))
       ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)) <;>
       split_ifs <;> fun_prop
-  have hσx : σ (Φ x) = x := by
-    ext i
-    · by_cases h : Φ x i = 0
-      · simp only [σ, h, ite_true, mul_zero, sqrt_zero]
-        simp only [Φ] at h
-        nlinarith [sq_nonneg (x.1 i), sq_nonneg (x.2 i)]
-      · simp [σ, h]
-    · by_cases h : Φ x i = 0
-      · simp only [σ, h, ite_true]
-        simp only [Φ] at h
-        nlinarith [sq_nonneg (x.1 i), sq_nonneg (x.2 i)]
-      · simp [σ, h]
-  have hΦσ : ∀ s : ι → ℝ, 0 ≤ s → Φ (σ s) = s := fun s hs ↦ by
+  -- A vanishing half squared radius forces both coordinates to vanish.
+  have hz (i : ι) (h : r i = 0) : x.1 i = 0 ∧ x.2 i = 0 := by
+    rw [hr, halfSqRadii_apply] at h
+    constructor <;> nlinarith [sq_nonneg (x.1 i), sq_nonneg (x.2 i)]
+  have hσx : σ r = x := by
+    ext i <;> by_cases h : r i = 0
+    · simp [σ, h, (hz i h).1]
+    · simp [σ, h]
+    · simp [σ, h, (hz i h).2]
+    · simp [σ, h]
+  have hΦσ : ∀ s : ι → ℝ, 0 ≤ s → halfSqRadii (σ s) = s := fun s hs ↦ by
     ext i
     have hsi : 0 ≤ s i := hs i
-    by_cases h : Φ x i = 0
-    · simp only [Φ, σ, h, ite_true]
+    by_cases h : r i = 0
+    · simp only [halfSqRadii_apply, σ, h, ite_true]
       rw [sq_sqrt (by linarith)]
       ring
-    · have hpos : 0 < Φ x i := lt_of_le_of_ne (by positivity) (Ne.symm h)
-      simp only [Φ, σ, h, ite_false, mul_pow,
+    · have hpos : 0 < r i := lt_of_le_of_ne (halfSqRadii_nonneg x i) (Ne.symm h)
+      simp only [halfSqRadii_apply, σ, h, ite_false, mul_pow,
         sq_sqrt (div_nonneg hsi hpos.le)]
-      field_simp
-      exact mul_div_cancel_right₀ _ (ne_of_gt (by simp only [Φ] at hpos; linarith))
-  have hpre : σ ⁻¹' N ∈ 𝓝 (Φ x) := hσ.continuousAt.preimage_mem_nhds (by rwa [hσx])
+      field_simp [hpos.ne']
+      simp only [hr, halfSqRadii_apply]
+      ring
+  have hpre : σ ⁻¹' N ∈ 𝓝 r := hσ.continuousAt.preimage_mem_nhds (by rwa [hσx])
   exact mem_of_superset (inter_mem_nhdsWithin (Ici 0) hpre) fun s ⟨hs, hsN⟩ ↦
     ⟨σ s, hsN, hΦσ s hs⟩
 
 /-- The half squared radii take every value in the closed orthant. -/
-theorem range_pi_half_sq_add_sq :
-    range (fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦
-      fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) = Ici 0 := by
-  refine Subset.antisymm (range_subset_iff.2 fun x i ↦ by positivity) fun s hs ↦
+theorem range_halfSqRadii : range (halfSqRadii (ι := ι)) = Ici 0 := by
+  refine Subset.antisymm (range_subset_iff.2 halfSqRadii_nonneg) fun s hs ↦
     ⟨(WithLp.toLp 2 fun i ↦ √(2 * s i), 0), ?_⟩
   ext i
-  simp only [PiLp.zero_apply]
+  simp only [halfSqRadii_apply, PiLp.zero_apply]
   rw [sq_sqrt (mul_nonneg zero_le_two (hs i))]
   ring
 
@@ -177,8 +185,7 @@ variable [Fintype ι] {𝔱 : Type*} [NormedAddCommGroup 𝔱] [NormedSpace ℝ 
 /-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` composed with the
 half squared radii. -/
 private theorem weightMomentMap_eq_comp (α : ι → StrongDual ℝ 𝔱) :
-    weightMomentMap α = Fintype.linearCombination ℝ (-α) ∘
-      fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
+    weightMomentMap α = Fintype.linearCombination ℝ (-α) ∘ halfSqRadii :=
   funext (weightMomentMap_eq_linearCombination α)
 
 /-- The image of the moment map of the weight model is convex. -/
@@ -193,14 +200,14 @@ convex set `S ⊆ 𝔱*`, the set of points of `ℂ^ι` mapped into `S` by
 theorem isPreconnected_preimage_weightMomentMap (α : ι → StrongDual ℝ 𝔱)
     {S : Set (StrongDual ℝ 𝔱)} (hS : Convex ℝ S) : IsPreconnected (weightMomentMap α ⁻¹' S) := by
   rw [weightMomentMap_eq_comp, preimage_comp]
-  exact isPreconnected_preimage_pi_half_sq_add_sq (hS.linear_preimage _)
+  exact isPreconnected_preimage_halfSqRadii (hS.linear_preimage _)
 
 /-- **The fibres of the weight model moment map are preconnected**, for arbitrary weights. -/
 theorem isPreconnected_preimage_singleton_weightMomentMap (α : ι → StrongDual ℝ 𝔱)
     (ν : StrongDual ℝ 𝔱) : IsPreconnected (weightMomentMap α ⁻¹' {ν}) :=
   isPreconnected_preimage_weightMomentMap α (convex_singleton ν)
 
-/-- **Local connectedness of the weight model moment map.** Inside every invariant ball
+/-- **Preconnected preimages in invariant balls.** Inside every invariant ball
 `‖q‖² + ‖p‖² < r` of `ℂ^ι`, the points mapped into a convex set `S ⊆ 𝔱*`, in particular the points
 of a fibre, form a preconnected set. -/
 theorem isPreconnected_preimage_weightMomentMap_inter (α : ι → StrongDual ℝ 𝔱)
@@ -208,10 +215,9 @@ theorem isPreconnected_preimage_weightMomentMap_inter (α : ι → StrongDual �
     IsPreconnected (weightMomentMap α ⁻¹' S ∩ {x | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r}) := by
   -- The ball is the preimage of a half-space under the half squared radii.
   have hball : {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι | ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 < r} =
-      (fun x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι ↦ fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2) ⁻¹'
-        {s | ∑ i, s i < r / 2} := by
+      halfSqRadii ⁻¹' {s | ∑ i, s i < r / 2} := by
     ext x
-    simp only [mem_ofPred_eq, mem_preimage]
+    simp only [mem_ofPred_eq, mem_preimage, halfSqRadii_apply]
     rw [EuclideanSpace.real_norm_sq_eq, EuclideanSpace.real_norm_sq_eq, ← Finset.sum_div,
       Finset.sum_add_distrib]
     constructor <;> intro h <;> linarith
@@ -219,7 +225,7 @@ theorem isPreconnected_preimage_weightMomentMap_inter (α : ι → StrongDual �
     convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
       fun c a ↦ by simp [Finset.mul_sum]⟩ _
   rw [hball, weightMomentMap_eq_comp, preimage_comp, ← preimage_inter]
-  exact isPreconnected_preimage_pi_half_sq_add_sq ((hS.linear_preimage _).inter hhalf)
+  exact isPreconnected_preimage_halfSqRadii ((hS.linear_preimage _).inter hhalf)
 
 /-- **The weight model moment map is open onto its image.** The moment map
 `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i` sends every neighbourhood of a point `z` of `ℂ^ι` onto a
@@ -228,12 +234,12 @@ theorem image_mem_nhdsWithin_range_weightMomentMap (α : ι → StrongDual ℝ �
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
     {N : Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (hN : N ∈ 𝓝 x) :
     weightMomentMap α '' N ∈ 𝓝[range (weightMomentMap α)] (weightMomentMap α x) := by
-  rw [weightMomentMap_eq_comp, range_comp, range_pi_half_sq_add_sq, image_comp]
+  rw [weightMomentMap_eq_comp, range_comp, range_halfSqRadii, image_comp]
   obtain ⟨N', hN', hN'N⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1
-    (image_pi_half_sq_add_sq_mem_nhdsWithin x hN)
+    (image_halfSqRadii_mem_nhdsWithin x hN)
   exact mem_of_superset
     ((Fintype.linearCombination ℝ (-α)).image_inter_Ici_mem_nhdsWithin
-      (range_pi_half_sq_add_sq.subset (mem_range_self x)) hN')
+      (range_halfSqRadii.subset (mem_range_self x)) hN')
     (image_mono hN'N)
 
 end TauCeti

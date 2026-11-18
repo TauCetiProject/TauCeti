@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.LinearAlgebra.LinearIndependent.Basic
+import TauCeti.Analysis.Normed.Module.LinearIndependent
 
 /-!
 # Carathéodory's theorem for cones, bounded coefficients and relative openness
@@ -19,10 +20,10 @@ cones: if the vectors with nonzero coefficients satisfy a linear relation, subtr
 multiple of it kills one more coefficient while keeping all of them nonnegative.
 
 Over `ℝ`, with the `g k` in a normed space, coordinates with respect to a linearly independent
-family are bounded by a multiple of the norm, and there are finitely many subfamilies. Hence there
-is one constant `M` such that every nonnegative combination `w` of the `g k` is a nonnegative
-combination with coefficients at most `M ‖w‖`
-(`TauCeti.exists_forall_exists_nonneg_sum_smul_eq_and_le`).
+family are bounded by a multiple of the norm (`LinearIndepOn.exists_norm_le_mul_norm_sum_smul`),
+and there are finitely many subfamilies. Hence there is one constant `M` such that every
+nonnegative combination `w` of the `g k` is a nonnegative combination with coefficients at most
+`M ‖w‖` (`TauCeti.exists_forall_exists_nonneg_sum_smul_eq_and_le`).
 
 This bound makes a linear map `L` on `ℝ^κ` relatively open on the closed nonnegative orthant
 `O = Ici 0`: for `s ∈ O`, the image of every neighbourhood of `s` in `O` is a neighbourhood of
@@ -124,34 +125,6 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- On a linearly independent subfamily of a finite family, coefficients are bounded by a multiple
-of the norm of the combination they give. -/
-private theorem exists_forall_norm_le_mul_norm_sum_smul (g : κ → E) (s : Set κ) :
-    ∃ K : ℝ, 0 ≤ K ∧ (LinearIndepOn ℝ g s → ∀ a : κ → ℝ, (∀ k ∉ s, a k = 0) →
-      ‖a‖ ≤ K * ‖∑ k, a k • g k‖) := by
-  classical
-  by_cases hs : LinearIndepOn ℝ g s
-  swap
-  · exact ⟨0, le_rfl, fun h ↦ absurd h hs⟩
-  -- The combination map is injective on the coefficient functions vanishing off `s`, a
-  -- finite-dimensional space, so it is antilipschitz there.
-  let D : Submodule ℝ (κ → ℝ) :=
-    { carrier := {a | ∀ k ∉ s, a k = 0}
-      add_mem' := fun ha hb k hk ↦ by simp [ha k hk, hb k hk]
-      zero_mem' := fun _ _ ↦ rfl
-      smul_mem' := fun r a ha k hk ↦ by simp [ha k hk] }
-  let f : D →ₗ[ℝ] E := (Fintype.linearCombination ℝ g).comp D.subtype
-  have hf : Injective f := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro a ha
-    have h0 := (Fintype.linearIndepOn_iff.1 hs) a a.2
-      (by simpa [f, Fintype.linearCombination_apply] using ha)
-    exact Subtype.ext (funext h0)
-  obtain ⟨K, -, hK⟩ := (LinearMap.injective_iff_antilipschitz f).1 hf
-  refine ⟨K, K.2, fun _ a ha ↦ ?_⟩
-  have := hK.le_mul_dist ⟨a, ha⟩ 0
-  simpa [dist_eq_norm, f, Fintype.linearCombination_apply] using this
-
 /-- **Bounded coefficients in a finitely generated cone.** For finitely many vectors `g k` in a
 normed space there is a constant `M ≥ 0` such that every nonnegative combination
 `w = ∑ k, c k • g k` is also a nonnegative combination `∑ k, c' k • g k` with every `c' k ≤ M ‖w‖`.
@@ -160,7 +133,14 @@ theorem exists_forall_exists_nonneg_sum_smul_eq_and_le (g : κ → E) :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ c : κ → ℝ, 0 ≤ c → ∃ c' : κ → ℝ, 0 ≤ c' ∧
       ∑ k, c' k • g k = ∑ k, c k • g k ∧ ∀ k, c' k ≤ M * ‖∑ k, c k • g k‖ := by
   classical
-  choose K hK0 hK using exists_forall_norm_le_mul_norm_sum_smul g
+  -- A bound for each linearly independent subfamily, and the junk value `0` for the others.
+  have hbound (s : Set κ) : ∃ K : ℝ, 0 ≤ K ∧ (LinearIndepOn ℝ g s → ∀ a : κ → ℝ,
+      (∀ k ∉ s, a k = 0) → ‖a‖ ≤ K * ‖∑ k, a k • g k‖) := by
+    by_cases hs : LinearIndepOn ℝ g s
+    · obtain ⟨K, hK0, hK⟩ := hs.exists_norm_le_mul_norm_sum_smul
+      exact ⟨K, hK0, fun _ ↦ hK⟩
+    · exact ⟨0, le_rfl, fun h ↦ absurd h hs⟩
+  choose K hK0 hK using hbound
   refine ⟨∑ s : Set κ, K s, Finset.sum_nonneg fun s _ ↦ hK0 s, fun c hc ↦ ?_⟩
   obtain ⟨c', hc', -, hsum, hli⟩ := exists_nonneg_sum_smul_eq_and_linearIndepOn g hc
   refine ⟨c', hc', hsum, fun k ↦ ?_⟩
