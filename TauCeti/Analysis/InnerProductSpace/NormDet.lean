@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Parseval
+import TauCeti.Analysis.InnerProductSpace.SingularValues
 
 /-!
 # Continuity, adjoints, one-dimensional values, and orthogonal extensions of the Jacobian `normDet`
@@ -38,6 +39,7 @@ identity.
 
 * `ContinuousLinearMap.continuous_normDet`, `ContinuousLinearMap.continuous_normDet_adjoint`:
   the Jacobian `normDet` and the coarea Jacobian `A ↦ A†.normDet` are continuous.
+* `ContinuousLinearMap.normDet_le_opNorm_pow`: `T.toLinearMap.normDet ≤ ‖T‖ ^ dim U`.
 * `LinearMap.normDet_eq_norm_apply_one`: for a map from `ℝ`, the Jacobian is the norm of the
   image of `1`.
 * `LinearMap.normDet_adjoint`: between spaces of equal dimension, the adjoint has the same
@@ -305,3 +307,18 @@ theorem ContinuousLinearMap.normDet_adjoint_eq_norm [CompleteSpace U] (A : U →
   rw [LinearMap.normDet_eq_norm_apply_one, ContinuousLinearMap.coe_coe,
     ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply ℝ U, LinearIsometryEquiv.norm_map,
     LinearIsometryEquiv.norm_map]
+
+/-- The `m`-dimensional Jacobian of a continuous linear map from an `m`-dimensional inner product
+space is at most `‖T‖ ^ m`. -/
+theorem ContinuousLinearMap.normDet_le_opNorm_pow {𝕜 U W : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup U] [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+    [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] (T : U →L[𝕜] W) :
+    T.toLinearMap.normDet ≤ ‖T‖ ^ Module.finrank 𝕜 U := by
+  let T' : U →ₗ[𝕜] LinearMap.range T.toLinearMap := T.toLinearMap.rangeRestrict
+  rw [← LinearMap.normDet_codRestrict (f := T.toLinearMap) (p := LinearMap.range T.toLinearMap)
+      (LinearMap.mem_range_self _), LinearMap.normDet_eq_prod_singularValues]
+  calc ∏ i ∈ Finset.range (Module.finrank 𝕜 U), T'.singularValues i
+      ≤ ∏ _i ∈ Finset.range (Module.finrank 𝕜 U), ‖T‖ :=
+        Finset.prod_le_prod₀ (fun i _ => T'.singularValues_nonneg i) fun i _ =>
+          T'.singularValues_le_of_norm_apply_le (norm_nonneg T) (fun u => T.le_opNorm u) i
+    _ = ‖T‖ ^ Module.finrank 𝕜 U := by rw [Finset.prod_const, Finset.card_range]

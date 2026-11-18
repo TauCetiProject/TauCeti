@@ -23,7 +23,9 @@ either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite
 inner product space `E` and Hausdorff measure decreases with the dimension parameter, every
 Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ E`
 (`TauCeti.hausdorffMeasure_eq_zero_of_volume_eq_zero`,
-`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`). In dimension zero, Hausdorff
+`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`), and closed balls in `E` have the
+same volume as closed balls of the same radius in `EuclideanSpace ℝ (Fin (finrank ℝ E))`
+(`TauCeti.volume_closedBall_eq_euclidean`). In dimension zero, Hausdorff
 measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
 normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
 `μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
@@ -143,6 +145,19 @@ theorem euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedA
     μHE[d] s = 0 :=
   Measure.euclideanHausdorffMeasure_eq_zero_iff.2
     (hausdorffMeasure_eq_zero_of_volume_eq_zero hs (Nat.cast_le.2 hd))
+
+/-- The volume of a closed ball in a finite-dimensional real inner product space agrees with the
+volume of the closed ball of the same radius in `EuclideanSpace ℝ (Fin (finrank ℝ U))`. -/
+theorem volume_closedBall_eq_euclidean {U : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U]
+    [FiniteDimensional ℝ U] [MeasurableSpace U] [BorelSpace U] (x : U) (r : ℝ) :
+    volume (Metric.closedBall x r) =
+      volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ U))) r) := by
+  let e : U ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ U)) := (stdOrthonormalBasis ℝ U).repr
+  have himg : e '' Metric.closedBall x r = Metric.closedBall (e x) r :=
+    e.toIsometryEquiv.image_closedBall x r
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    ← e.isometry.euclideanHausdorffMeasure_image, himg,
+    EuclideanSpace.euclideanHausdorffMeasure_eq_volume, Measure.addHaar_closedBall_center]
 
 end TauCeti
 

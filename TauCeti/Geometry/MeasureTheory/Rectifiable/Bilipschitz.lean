@@ -25,6 +25,10 @@ The discarded image is null by
 `LipschitzWith.euclideanHausdorffMeasure_image_compl_setOf_regular`, which combines Rademacher's
 theorem and the zero-Jacobian image theorem.
 
+When `s` is `μHE[k]`-null-measurable,
+`CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover` refines the cover to pairwise
+disjoint Borel bi-Lipschitz images inside `s`.
+
 ## References
 
 * L. Simon, *Lectures on Geometric Measure Theory*, §11 (rectifiable sets).
@@ -106,5 +110,33 @@ theorem countablyRectifiable_iff_exists_bilipschitz_cover {k : ℕ} {s : Set V} 
   exact countablyRectifiable_iff.mpr
     ⟨A, fun n ↦ (A n).domRestrict (f n), fun n ↦ ⟨K n, (hLip n).restrict _⟩,
       by simpa only [range_domRestrict] using hnull⟩
+
+/-- **Disjoint Borel bi-Lipschitz patch decomposition** up to a `μHE[k]`-null set. -/
+theorem CountablyRectifiable.exists_disjoint_measurable_bilipschitz_cover {k : ℕ} {s : Set V}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k]) :
+    ∃ (B : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V)
+      (K_f L_f : ℕ → ℝ≥0), (∀ n, MeasurableSet (B n)) ∧ (∀ n, MeasurableSet (f n '' B n)) ∧
+      (∀ n, LipschitzWith (K_f n) (f n) ∧ AntilipschitzWith (L_f n) ((B n).domRestrict (f n))) ∧
+      Pairwise (Disjoint on fun n ↦ f n '' B n) ∧ (⋃ n, f n '' B n) ⊆ s ∧
+      (⋃ n, f n '' B n : Set V) =ᵐ[μHE[k]] s := by
+  classical
+  obtain ⟨s₀, hs₀_sub, hs₀m, hs₀_ae⟩ := hsm.exists_measurable_subset_ae_eq
+  obtain ⟨A, f, hAm, hbi, hc⟩ := hs.exists_bilipschitz_cover; choose K_f L_f hLip hAnti using hbi
+  let S (n : ℕ) : Set V := (f n '' A n) ∩ s₀
+  have hSm (n : ℕ) := ((hAm n).image_of_continuousOn_injOn (hLip n).continuous.continuousOn
+    (injOn_iff_injective.mpr (hAnti n).injective)).inter hs₀m
+  let B (n : ℕ) : Set (EuclideanSpace ℝ (Fin k)) := A n ∩ (f n) ⁻¹' disjointed S n
+  have hBm (n : ℕ) := (hAm n).inter ((MeasurableSet.disjointed hSm n).preimage
+    (hLip n).continuous.measurable)
+  have himg (n : ℕ) : f n '' B n = disjointed S n := (image_inter_preimage _ _ _).trans <|
+    inter_eq_self_of_subset_right ((disjointed_subset S n).trans inter_subset_left)
+  have hUnion : (⋃ n, f n '' B n) = (⋃ n, f n '' A n) ∩ s₀ := by
+    simp_rw [himg]; rw [iUnion_disjointed, ← iUnion_inter]
+  have hsub_s : (⋃ n, f n '' B n) ⊆ s := hUnion ▸ inter_subset_right.trans hs₀_sub
+  refine ⟨B, f, K_f, L_f, hBm, fun n ↦ (himg n).symm ▸ MeasurableSet.disjointed hSm n,
+    fun n ↦ ⟨hLip n, fun u v ↦ (hAnti n) ⟨u, u.2.1⟩ ⟨v, v.2.1⟩⟩,
+    fun m n hmn ↦ by simpa only [Function.onFun, himg] using disjoint_disjointed S hmn, hsub_s, ?_⟩
+  refine Filter.EventuallySubset.antisymm (Filter.Eventually.of_forall fun _ hx ↦ hsub_s hx) ?_
+  simpa only [inter_self, hUnion] using (ae_subset.mpr hc).inter hs₀_ae.symm.subset
 
 end TauCeti

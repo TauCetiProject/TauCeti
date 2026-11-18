@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.Geometry.Euclidean.Volume.Measure
+public import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
 # Lipschitz images of Haar-null sets
@@ -19,7 +20,8 @@ measure, so every additive Haar measure is mutually absolutely continuous with i
 increase the Hausdorff `d`-measure by at most the factor `K ^ d`
 (`LipschitzOnWith.hausdorffMeasure_image_le`), and a set of zero Hausdorff `d`-measure has zero
 Hausdorff `d'`-measure for every `d' ≥ d`. The same factor `K ^ d` bounds the growth of the
-normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]`.
+normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]`, and on a
+second-countable extended metric space locally Lipschitz maps preserve `μHE[d]`-null subsets.
 
 ## Main statements
 
@@ -27,6 +29,8 @@ normalized Euclidean Hausdorff measure `μHE[d]`, a constant multiple of `μH[d]
   image, from a finite-dimensional real normed space to one of at least the same dimension.
 * `LipschitzOnWith.euclideanHausdorffMeasure_image_le` — a `K`-Lipschitz map increases `μHE[d]`
   by at most the factor `K ^ d`.
+* `LocallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_subset` — a map locally Lipschitz
+  on `s` sends every `μHE[d]`-null subset `t ⊆ s` to a `μHE[d]`-null set.
 -/
 
 public section
@@ -69,3 +73,18 @@ theorem euclideanHausdorffMeasure_image_le {K : ℝ≥0} {f : X → Y} {s : Set 
   exact hf.hausdorffMeasure_image_le d.cast_nonneg
 
 end LipschitzOnWith
+
+/-- A map locally Lipschitz on `s` maps every `μHE[d]`-null subset `t ⊆ s` to a `μHE[d]`-null
+set. -/
+theorem LocallyLipschitzOn.euclideanHausdorffMeasure_image_eq_zero_of_subset {X Y : Type*}
+    [EMetricSpace X] [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X]
+    [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] {s t : Set X} {f : X → Y}
+    (hf : LocallyLipschitzOn s f) (hts : t ⊆ s) (d : ℕ) (ht0 : μHE[d] t = 0) :
+    μHE[d] (f '' t) = 0 := by
+  obtain ⟨U, _, _, hcov, hLip⟩ := hf.exists_open_cover_lipschitzOnWith
+  have ht : t = ⋃ n, t ∩ U n := by
+    rw [← Set.inter_iUnion, Set.inter_eq_self_of_subset_left (hts.trans hcov)]
+  rw [ht, Set.image_iUnion]
+  refine measure_iUnion_null fun n => nonpos_iff_eq_zero.mp <|
+    (((hLip n).mono (Set.inter_subset_inter_left _ hts)).euclideanHausdorffMeasure_image_le d)
+      |>.trans_eq (by rw [measure_mono_null Set.inter_subset_left ht0, mul_zero])
