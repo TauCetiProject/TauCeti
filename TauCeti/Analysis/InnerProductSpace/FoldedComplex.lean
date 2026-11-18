@@ -25,8 +25,8 @@ The *folded operator* of the complex is `a + b† : V → W`; for the de Rham co
 space facts behind that statement, by the Hodge theory of the complex.
 
 * `ContinuousLinearMap.ker_add_adjoint`: the kernel of `a + b†` is the space `ker a ⊓ ker b†` of
-  harmonic elements of `V`, because `a v` and `b† v` are orthogonal
-  (`ContinuousLinearMap.norm_add_adjoint_apply_sq`).
+  harmonic elements of `V`, because it is the kernel of `(a + b†)† (a + b†)`, the Laplacian of
+  the complex at `V` (`ContinuousLinearMap.ker_add_adjoint_eq_ker_hodgeLaplacian`).
 * `ContinuousLinearMap.adjoint_add_adjoint`: the adjoint of `a + b†` is the folded operator `b + a†`
   of the complex `W → V → W`, so its kernel is the space `ker b ⊓ ker a†` of harmonic elements of
   `W`.
@@ -86,30 +86,6 @@ theorem isOrtho_range_range_adjoint (hba : b ∘L a = 0) : a.range ⟂ (adjoint 
   rintro _ ⟨v, rfl⟩ _ ⟨w, rfl⟩
   rw [coe_coe, coe_coe, adjoint_inner_right, ← comp_apply, hba, zero_apply, inner_zero_left]
 
-/-- If `b a = 0`, then `‖(a + b†) v‖² = ‖a v‖² + ‖b† v‖²`, since `a v` and `b† v` are
-orthogonal. -/
-theorem norm_add_adjoint_apply_sq (hba : b ∘L a = 0) (v : V) :
-    ‖(a + adjoint b) v‖ ^ 2 = ‖a v‖ ^ 2 + ‖adjoint b v‖ ^ 2 := by
-  rw [add_apply, sq, sq, sq,
-    norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (𝕜 := 𝕜) _ _ ?_]
-  exact (isOrtho_range_range_adjoint hba).inner_eq ⟨v, rfl⟩ ⟨v, rfl⟩
-
-/-- **The kernel of the folded operator.** If `b a = 0`, the kernel of `a + b†` is the space
-`ker a ⊓ ker b†` of harmonic elements of `V`. -/
-theorem ker_add_adjoint (hba : b ∘L a = 0) : (a + adjoint b).ker = a.ker ⊓ (adjoint b).ker := by
-  ext v
-  simp only [Submodule.mem_inf, LinearMap.mem_ker, coe_coe]
-  refine ⟨fun hv ↦ ?_, fun hv ↦ by rw [add_apply, hv.1, hv.2, add_zero]⟩
-  have h := (add_eq_zero_iff_of_nonneg (sq_nonneg ‖a v‖) (sq_nonneg ‖adjoint b v‖)).1 <| by
-    rw [← norm_add_adjoint_apply_sq hba, hv, norm_zero, zero_pow two_ne_zero]
-  simpa using h
-
-/-- If `b a = 0`, the kernel of the folded operator `a + b†` is the kernel of the Laplacian
-`b b† + a† a` of the complex at `V`. -/
-theorem ker_add_adjoint_eq_ker_hodgeLaplacian (hba : b ∘L a = 0) :
-    (a + adjoint b).ker = (b.hodgeLaplacian a).ker := by
-  rw [ker_add_adjoint hba, ker_hodgeLaplacian, inf_comm]
-
 /-- If `b a = 0`, then `(a + b†)† (a + b†)` is the Laplacian `b b† + a† a` of the complex at
 `V`. -/
 theorem adjoint_add_adjoint_comp_add_adjoint (hba : b ∘L a = 0) :
@@ -117,6 +93,17 @@ theorem adjoint_add_adjoint_comp_add_adjoint (hba : b ∘L a = 0) :
   rw [adjoint_add_adjoint, add_comp, comp_add, comp_add, hba, ← adjoint_comp, hba, map_zero,
     hodgeLaplacian_def]
   abel
+
+/-- If `b a = 0`, the kernel of the folded operator `a + b†` is the kernel of the Laplacian
+`b b† + a† a` of the complex at `V`. -/
+theorem ker_add_adjoint_eq_ker_hodgeLaplacian (hba : b ∘L a = 0) :
+    (a + adjoint b).ker = (b.hodgeLaplacian a).ker := by
+  rw [← adjoint_add_adjoint_comp_add_adjoint hba, ker_adjoint_comp_self]
+
+/-- **The kernel of the folded operator.** If `b a = 0`, the kernel of `a + b†` is the space
+`ker a ⊓ ker b†` of harmonic elements of `V`. -/
+theorem ker_add_adjoint (hba : b ∘L a = 0) : (a + adjoint b).ker = a.ker ⊓ (adjoint b).ker := by
+  rw [ker_add_adjoint_eq_ker_hodgeLaplacian hba, ker_hodgeLaplacian, inf_comm]
 
 /-- If `a b = 0`, then `(a + b†) (a + b†)†` is the Laplacian `a a† + b† b` of the complex at
 `W`. -/
