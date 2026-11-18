@@ -65,10 +65,10 @@ jobs:
           cp tauceti.toml staging-contracts/tauceti.toml
 
       - name: Prepare the deployed staging tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e478fc2279875adecd63bda947bd3cb558f4a2ed
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e478fc2279875adecd63bda947bd3cb558f4a2ed
+          tools-ref: b120f0cb0e96c64b21e6b1206c50afd0e52d2f01
           project-directory: staging-contracts
 
       - name: Check staging lint scope with the deployed implementation
