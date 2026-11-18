@@ -49,6 +49,8 @@ differs from the one given by invertibility of `L` by the sign of `det T`. This 
 * `LinearMap.detLineEndEquiv_tmul`: its value on exterior products.
 * `LinearMap.detLineEndEquiv_eq_inv_det_mul`: for bijective `T`, comparison with
   `LinearMap.detLineEquivOfBijective` through the factor `(det T)⁻¹`.
+* `LinearMap.detLineEquivOfBijective_symm_one_eq_inv_det_smul`: the same comparison on the
+  elements sent to `1`.
 * `LinearMap.sign_detLineEndEquiv`: over an ordered field, the two trivializations of a bijective
   `T` induce orientations that differ by the sign of `det T`.
 
@@ -147,6 +149,14 @@ theorem detLineEndEquiv_eq_inv_det_mul (hT : Function.Bijective T) (x : T.detLin
     fun h ↦ by rw [h, map_zero] at hbij; exact zero_ne_one hbij).mp T.finrank_detLine x
   rw [map_smul, map_smul, hbij, eq_inv_of_mul_eq_one_right key, smul_eq_mul, smul_eq_mul,
     mul_one, mul_comm]
+
+/-- For a bijective endomorphism `T`, the element of its determinant line which the trivialization
+`LinearMap.detLineEquivOfBijective` sends to `1` is `(det T)⁻¹` times the element which the
+canonical trivialization sends to `1`. -/
+theorem detLineEquivOfBijective_symm_one_eq_inv_det_smul (hT : Function.Bijective T) :
+    (T.detLineEquivOfBijective hT).symm 1 = (LinearMap.det T)⁻¹ • T.detLineEndEquiv.symm 1 := by
+  rw [← map_smul, LinearEquiv.eq_symm_apply, detLineEndEquiv_eq_inv_det_mul T hT,
+    LinearEquiv.apply_symm_apply, smul_eq_mul]
 
 /-- **The canonical and the bijective orientations differ by the sign of the determinant.** Over an
 ordered field, for a bijective endomorphism `T`, the sign of the canonical trivialization of its
