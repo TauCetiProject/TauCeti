@@ -568,7 +568,7 @@ end Plane
 
 /-- The weak form `∫ h (-f + P φ) = ∫ g φ` of `-Δh + P h = g`, with `f = Δφ`, rearranged into the
 weak form `∫ f h = ∫ φ (P h - g)` of `Δh = P h - g`. -/
-private theorem integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq {α : Type*}
+theorem integral_mul_eq_integral_mul_sub_of_integral_mul_neg_add_mul_eq {α : Type*}
     [MeasurableSpace α] {μ : Measure α} {f φ P h g : α → ℝ}
     (i₁ : Integrable (fun z ↦ f z * h z) μ) (i₂ : Integrable (fun z ↦ φ z * (P z * h z)) μ)
     (i₃ : Integrable (fun z ↦ φ z * g z) μ)

@@ -179,6 +179,21 @@ theorem measurePreserving_piCurry {ι : Type*} {κ : ι → Type*} [Fintype ι] 
     ← Finset.univ_sigma_univ, Finset.prod_sigma]
   exact Finset.prod_congr rfl fun i _ => Measure.pi_pi _ _
 
+/-- Currying a finite product indexed by pairs preserves the product measure for arbitrary
+sigma-finite coordinate measures. -/
+theorem measurePreserving_curry {ι κ α : Type*} [Fintype ι] [Fintype κ]
+    [MeasurableSpace α] (μ : ι → κ → Measure α) [∀ i j, SigmaFinite (μ i j)] :
+    MeasurePreserving (MeasurableEquiv.curry ι κ α)
+      (Measure.pi fun p : ι × κ ↦ μ p.1 p.2) (Measure.pi fun i ↦ Measure.pi (μ i)) := by
+  convert (measurePreserving_piCurry μ).comp
+    ((measurePreserving_piCongrLeft
+      (fun p : ι × κ ↦ μ p.1 p.2) (Equiv.sigmaEquivProd ι κ)).symm) using 1
+  ext z i j
+  simp only [MeasurableEquiv.coe_curry, MeasurableEquiv.coe_piCurry, Function.comp_apply,
+    Function.curry, Sigma.curry]
+  exact (Equiv.piCongrLeft_symm_apply (fun _ : ι × κ ↦ α)
+    (Equiv.sigmaEquivProd ι κ) z ⟨i, j⟩).symm
+
 /-- Applying a measure-preserving map to each fibre of a finite coordinate map gives the product
 of the fibre laws. The coordinate measures and the fibre laws need only be σ-finite. -/
 theorem measurePreserving_pi_fiberwise {ι κ : Type*} [Fintype ι] [Fintype κ]
