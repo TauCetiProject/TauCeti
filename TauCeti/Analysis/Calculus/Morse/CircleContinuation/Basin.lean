@@ -484,7 +484,7 @@ is constant on `(0, a]`, and one arriving at the target maximum `r₁ + k π` is
 `1` for the parameter field, and such a connection would be the failure of transversality
 exhibited by `TauCeti.exists_circleContinuationField_connection` for large `δ`. -/
 theorem not_tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope
-    (hδ : 0 < δ) (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀)
+    (hδ : 0 ≤ δ) (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr₀ : ∀ t ∈ Ioc 0 a, r t = r₀)
     (hr₁ : ∀ t ∈ Ico b 1, r t = r₁)
     (hΘ : ∀ t ∈ Ioo 0 1, HasDerivAt Θ (circleContinuationSlope δ r t (Θ t)) t) {j k : ℤ}
     (hjk : 2 * δ * ∫ t in a..b, (t * (1 - t ^ 2))⁻¹ < |r₁ + k * π - (r₀ + π / 2 + j * π)|)
@@ -492,16 +492,16 @@ theorem not_tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_of_hasDerivAt_circleContin
     ¬Tendsto Θ (𝓝[<] 1) (𝓝 (r₁ + k * π)) := by
   intro h
   have hΘa : Θ a = r₀ + π / 2 + j * π :=
-    eq_of_tendsto_nhdsGT_zero_of_hasDerivWithinAt_circleContinuationSlope hδ.le (hab.trans_lt hb)
+    eq_of_tendsto_nhdsGT_zero_of_hasDerivWithinAt_circleContinuationSlope hδ (hab.trans_lt hb)
       hr₀ (fun t ht ↦ (hΘ t ⟨ht.1, ht.2.trans_lt (hab.trans_lt hb)⟩).hasDerivWithinAt) hlim a
       ⟨ha, le_rfl⟩
   have hΘb : Θ b = r₁ + k * π :=
-    eq_of_tendsto_nhdsLT_one_of_hasDerivWithinAt_circleContinuationSlope hδ.le (ha.trans_le hab)
+    eq_of_tendsto_nhdsLT_one_of_hasDerivWithinAt_circleContinuationSlope hδ (ha.trans_le hab)
       hr₁ (fun t ht ↦ (hΘ t ⟨(ha.trans_le hab).trans_le ht.1, ht.2⟩).hasDerivWithinAt) h b
       ⟨le_rfl, hb⟩
   have hdrift := abs_sub_le_integral_of_hasDerivWithinAt_circleContinuationSlope ha hab hb
     fun t ht ↦ (hΘ t ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩).hasDerivWithinAt
-  rw [abs_of_pos hδ, hΘa, hΘb] at hdrift
+  rw [abs_of_nonneg hδ, hΘa, hΘb] at hdrift
   exact hdrift.not_gt hjk
 
 /-- **There is at most one trajectory leaving a source minimum.** -/
