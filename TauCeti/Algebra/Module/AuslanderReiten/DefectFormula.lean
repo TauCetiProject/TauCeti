@@ -218,12 +218,15 @@ theorem contravariantDefectEquivKer_naturality (hfp : Exact f p) (hp : Surjectiv
   obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   obtain ⟨y, hy⟩ := Module.projective_lifting_property ψ (g ∘ₗ p) hψ
   obtain ⟨z, hz⟩ := (hφψ.compRight_of_injective (T := k) P₁ hφ (y ∘ₗ f)).mp (by
-    rw [compRight_apply, ← LinearMap.comp_assoc, hy, LinearMap.comp_assoc, hfp.linearMap_comp_eq_zero, LinearMap.comp_zero])
+    rw [compRight_apply, ← LinearMap.comp_assoc, hy, LinearMap.comp_assoc,
+      hfp.linearMap_comp_eq_zero, LinearMap.comp_zero])
   rw [compRight_apply] at hz
   rw [contravariantDefectMap_mk, contravariantDefectEquivKer_mk hfp hp hφ hψ hφψ g y hy z hz,
     contravariantDefectEquivKer_mk hfp hp hφ' hψ' hφψ' (a₃ ∘ₗ g) (a₂ ∘ₗ y)
-      (by rw [← LinearMap.comp_assoc, ← h₂, LinearMap.comp_assoc, hy, LinearMap.comp_assoc]) (a₁ ∘ₗ z)
-      (by rw [← LinearMap.comp_assoc, ← h₁, LinearMap.comp_assoc, hz, LinearMap.comp_assoc]), homCokernelMap_mk]
+      (by rw [← LinearMap.comp_assoc, ← h₂, LinearMap.comp_assoc, hy, LinearMap.comp_assoc])
+      (a₁ ∘ₗ z)
+      (by rw [← LinearMap.comp_assoc, ← h₁, LinearMap.comp_assoc, hz, LinearMap.comp_assoc]),
+    homCokernelMap_mk]
 
 variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
   {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
