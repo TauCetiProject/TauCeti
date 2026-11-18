@@ -98,6 +98,18 @@ theorem tsupport_smulLeftCLM_subset_right (hf : ContDiff ℝ n f) (φ : 𝓓^{n}
     tsupport (smulLeftCLM hf φ : E → F) ⊆ tsupport φ :=
   (tsupport_smulLeftCLM_subset hf φ).trans Set.inter_subset_right
 
+/-- Multiplication by a smooth function is additive in the multiplier. -/
+theorem smulLeftCLM_add (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g) (hfg : ContDiff ℝ n (f + g)) :
+    (smulLeftCLM hfg : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = smulLeftCLM hf + smulLeftCLM hg := by
+  ext φ x
+  simp [add_smul]
+
+/-- Multiplication by a smooth function is homogeneous in the multiplier. -/
+theorem smulLeftCLM_smul (hf : ContDiff ℝ n f) (c : ℝ) (hcf : ContDiff ℝ n (c • f)) :
+    (smulLeftCLM hcf : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = c • smulLeftCLM hf := by
+  ext φ x
+  simp [smul_smul]
+
 /-- Multiplying by two smooth functions in turn is multiplying by their product. -/
 @[simp]
 theorem smulLeftCLM_smulLeftCLM (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)

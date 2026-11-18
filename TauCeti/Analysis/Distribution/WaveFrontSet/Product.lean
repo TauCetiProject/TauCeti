@@ -348,6 +348,13 @@ theorem NoOppositeCovectorsOn.integrable_localFourier_mul_localFourier {φ φ' :
 
 /-! ### The product -/
 
+/-- The integrand `η ↦ S (φ e_η) T (ψ φ e_(-η))` of the product `φ² S T` is integrable. -/
+private theorem NoOppositeCovectorsOn.integrable_localFourier_mul_localFourier_smulLeftCLM
+    {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ)) (ψ : 𝓓(Ω, ℝ)) :
+    Integrable fun η ↦
+      S.localFourier φ η * T.localFourier (TestFunction.smulLeftCLM ψ.contDiff φ) (-η) :=
+  h.integrable_localFourier_mul_localFourier (tsupport_smulLeftCLM_subset_right _ φ)
+
 /-- On real test functions `ψ` supported in a compact set `K`, the integral
 `∫ S (φ e_η) T (ψ φ e_(-η)) dη` defining `φ² S T` is bounded by finitely many of the seminorms
 of `ψ`. -/
@@ -389,21 +396,14 @@ def cutoffProduct (S T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (h : NoOppositeCov
     { toFun ψ := ∫ η, S.localFourier φ η *
         T.localFourier (TestFunction.smulLeftCLM ψ.contDiff φ) (-η)
       map_add' ψ₁ ψ₂ := by
-        have hsum : TestFunction.smulLeftCLM (ψ₁ + ψ₂).contDiff φ =
-            TestFunction.smulLeftCLM ψ₁.contDiff φ + TestFunction.smulLeftCLM ψ₂.contDiff φ := by
-          ext x
-          simp [add_smul]
-        simp only [hsum, localFourier_add_cutoff, mul_add]
-        exact integral_add
-          (h.integrable_localFourier_mul_localFourier (tsupport_smulLeftCLM_subset_right _ φ))
-          (h.integrable_localFourier_mul_localFourier (tsupport_smulLeftCLM_subset_right _ φ))
+        rw [TestFunction.smulLeftCLM_add ψ₁.contDiff ψ₂.contDiff (ψ₁ + ψ₂).contDiff]
+        simp only [_root_.add_apply, localFourier_add_cutoff, mul_add]
+        exact integral_add (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ₁)
+          (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ₂)
       map_smul' c ψ := by
-        have hsmul : TestFunction.smulLeftCLM (c • ψ).contDiff φ =
-            (c : ℂ) • TestFunction.smulLeftCLM ψ.contDiff φ := by
-          ext x
-          simp [Complex.real_smul, mul_assoc]
-        simp only [hsmul, localFourier_smul_cutoff, RingHom.id_apply, Complex.real_smul,
-          mul_left_comm _ (c : ℂ)]
+        rw [TestFunction.smulLeftCLM_smul ψ.contDiff c (c • ψ).contDiff]
+        simp only [_root_.smul_apply, ← Complex.coe_smul, localFourier_smul_cutoff,
+          RingHom.id_apply, mul_left_comm _ (c : ℂ)]
         exact integral_const_mul _ _ }
   TestFunction.mkCLM ℝ Λ (map_add Λ) (map_smul Λ) fun K hK ↦ by
     obtain ⟨r, C, hC⟩ := h.exists_norm_integral_le_seminorm hK
@@ -427,9 +427,8 @@ theorem cutoffProduct_add_left {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S
       S.cutoffProduct T φ h + S'.cutoffProduct T φ h' := by
   ext ψ
   simp only [cutoffProduct_apply, add_apply, localFourier_add, add_mul]
-  exact integral_add
-    (h.integrable_localFourier_mul_localFourier (tsupport_smulLeftCLM_subset_right _ φ))
-    (h'.integrable_localFourier_mul_localFourier (tsupport_smulLeftCLM_subset_right _ φ))
+  exact integral_add (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ)
+    (h'.integrable_localFourier_mul_localFourier_smulLeftCLM ψ)
 
 /-- The product `φ² S T` is complex-linear in `S`. -/
 theorem cutoffProduct_smul_left {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ))
@@ -446,9 +445,8 @@ theorem cutoffProduct_add_right {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn 
       S.cutoffProduct T φ h + S.cutoffProduct T' φ h' := by
   ext ψ
   simp only [cutoffProduct_apply, add_apply, localFourier_add, mul_add]
-  exact integral_add
-    (h.integrable_localFourier_mul_localFourier (tsupport_smulLeftCLM_subset_right _ φ))
-    (h'.integrable_localFourier_mul_localFourier (tsupport_smulLeftCLM_subset_right _ φ))
+  exact integral_add (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ)
+    (h'.integrable_localFourier_mul_localFourier_smulLeftCLM ψ)
 
 /-- The product `φ² S T` is complex-linear in `T`. -/
 theorem cutoffProduct_smul_right {φ : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ))
