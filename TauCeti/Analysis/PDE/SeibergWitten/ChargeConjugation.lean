@@ -100,6 +100,8 @@ namespace TauCeti.SeibergWitten
 open InnerProductSpace ContinuousLinearMap
 open scoped ComplexConjugate InnerProductSpace
 
+section QuadraticEnd
+
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [NormedAddCommGroup F]
   [InnerProductSpace ℂ F]
 
@@ -143,6 +145,8 @@ theorem map_quadraticEnd_apply_eq_neg (hj : ∀ ψ, j (j ψ) = -ψ) (h₂ : Modu
     (ψ v : E) : j (quadraticEnd ψ v) = -quadraticEnd ψ (j v) := by
   rw [map_quadraticEnd_apply, quadraticEnd_map hj h₂, neg_apply]
 
+end QuadraticEnd
+
 /-! ### Conjugate-linear Clifford intertwiners -/
 
 section Clifford
@@ -157,22 +161,9 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {W' : Type*} [NormedAddCommGroup W'] [InnerProductSpace ℂ W']
   (ρ' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W')
   (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ (ι Q v) w) = ρ' (ι Q v) (j w))
-
-omit [Fact (finrank ℝ V = 4)] in
-variable {ρ ρ' j} in
-include hj in
-/-- A conjugate-linear isometric equivalence commuting with the generators commutes with every
-Clifford element: `j (ρ x w) = ρ' x (j w)`. -/
-private theorem map_apply_of_forall_ι (x : CliffordAlgebra Q) (w : W) :
-    j (ρ x w) = ρ' x (j w) := by
-  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q)
-    (fun r ↦ Complex.conj_ofReal r) (U := j.toLinearEquiv.toLinearMap)
-    (fun v ↦ LinearMap.ext (hj v)) x
-  simpa [map_id] using LinearMap.congr_fun h w
+  [FiniteDimensional ℂ W] [FiniteDimensional ℂ W']
 
 attribute [local instance] finiteDimensional_of_finrank_four
-
-variable [FiniteDimensional ℂ W] [FiniteDimensional ℂ W']
 
 /-- **Charge conjugation anticommutes with the Clifford map**: `C(iα) (j ψ) = -j (C(iα) ψ)` on
 positive half-spinors, since `j` commutes with `c₂(α)` and conjugates the scalar `i`. -/
@@ -180,8 +171,13 @@ theorem cliffordRestriction_positiveHalfSpinorsConjEquiv (x : ⋀[ℝ]^2 V)
     (ψ : positiveHalfSpinors o ρ) :
     cliffordRestriction o ρ' x (positiveHalfSpinorsConjEquiv o ρ ρ' j hj ψ) =
       -positiveHalfSpinorsConjEquiv o ρ ρ' j hj (cliffordRestriction o ρ x ψ) := by
+  have h := comp_eq_map_comp_of_forall_ιₛₗ (f := QuadraticMap.Isometry.id Q)
+    (fun r ↦ Complex.conj_ofReal r) (U := j.toLinearEquiv.toLinearMap)
+    (fun v ↦ LinearMap.ext (hj v)) (bivectorExterior Q x)
+  have hψ : j (ρ (bivectorExterior Q x) ψ) = ρ' (bivectorExterior Q x) (j ψ) := by
+    simpa [map_id] using LinearMap.congr_fun h ψ
   apply Subtype.ext
-  simp [map_smulₛₗ, map_apply_of_forall_ι hj]
+  simp [map_smulₛₗ, hψ]
 
 /-- **Charge conjugation reverses the adjoint of the Clifford map**: if endomorphisms `T` of `W⁺`
 and `T'` of `W'⁺` are related by `T' (j ψ) = j (T ψ)`, then `τ(T') = -τ(T)`. -/
