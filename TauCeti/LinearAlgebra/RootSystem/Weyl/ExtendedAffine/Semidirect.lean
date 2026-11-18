@@ -113,6 +113,14 @@ theorem latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup :
     P.latticeFundamentalAlcoveStabilizer b Y hQ hP ≤ P.latticeAffineWeylGroup Y hQ hP :=
   inf_le_right
 
+/-- `Ω_Y` normalizes the affine Weyl group, since `W_aff` is normal in `W_Y`. -/
+theorem latticeFundamentalAlcoveStabilizer_le_normalizer_affineWeylGroup :
+    P.latticeFundamentalAlcoveStabilizer b Y hQ hP ≤
+      Subgroup.normalizer (P.affineWeylGroup : Set (N ≃ᵃ[R] N)) :=
+  (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP).trans
+    (Subgroup.le_normalizer_of_normal_subgroupOf
+      (P.affineWeylGroup_le_latticeAffineWeylGroup hQ hP))
+
 /-- The homomorphism from `Ω_Y` to `Y / Q∨` taking an element to the class of its translation part
 `ω 0` modulo the coroot lattice: the restriction of `RootPairing.latticeAffineWeylGroupToQuotient`
 to `Ω_Y`. -/
@@ -144,13 +152,6 @@ theorem fundamentalAlcoveStabilizer_le_normalizer_affineWeylGroup :
 section Lattice
 
 variable {Y : Submodule ℤ N} (hQ : P.corootSpan ℤ ≤ Y) (hP : Y ≤ P.coweightLattice)
-
-/-- `Ω_Y` normalizes the affine Weyl group. -/
-theorem latticeFundamentalAlcoveStabilizer_le_normalizer_affineWeylGroup :
-    P.latticeFundamentalAlcoveStabilizer b Y hQ hP ≤
-      Subgroup.normalizer (P.affineWeylGroup : Set (N ≃ᵃ[R] N)) :=
-  (latticeFundamentalAlcoveStabilizer_le_fundamentalAlcoveStabilizer b hQ hP).trans
-    (fundamentalAlcoveStabilizer_le_normalizer_affineWeylGroup b)
 
 /-- For the coweight lattice, `Ω_{P∨}` is the stabilizer `Ω` of the fundamental alcove. -/
 theorem latticeFundamentalAlcoveStabilizer_coweightLattice :
