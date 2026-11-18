@@ -123,8 +123,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   turn a nonzero invariant vector of an irreducible representation into triviality and into
   dimension one.
 * `Rep.quotientToInvariantsFunctor` is additive.
-* `TauCeti.Rep.shortExact_map_invariantsFunctor`: under Maschke's hypothesis, taking invariants
-  preserves short exact sequences.
+* `TauCeti.Rep.shortExact_map_invariantsFunctor`: when the group order is invertible, taking
+  invariants preserves short exact sequences.
 * `CategoryTheory.Functor.mapRepresentation`: the representation `g ↦ F(σ g)` on `F(M)`.
 * `CategoryTheory.Functor.invariants_mapRepresentation` and
   `CategoryTheory.Functor.map_ofHom_subtype_invariants_injective`: when `#G` is invertible, an
@@ -622,18 +622,21 @@ universe u v w
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
 
-/-- Under Maschke's hypothesis, taking invariants preserves short exact sequences of
-representations. -/
-theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep.{w} k G)} (hS : S.ShortExact) :
-    (S.map (Rep.invariantsFunctor k G)).ShortExact := by
-  -- A nonzero cardinality in `k` forces `G` to be finite (`Maschke` needs `Finite G`).
-  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
+/-- When the order of a finite group is invertible in the coefficient ring, taking invariants
+preserves short exact sequences of representations. -/
+theorem Rep.shortExact_map_invariantsFunctor {k : Type u} {G : Type v} [CommRing k] [Group G]
+    [Fintype G] [Invertible (Fintype.card G : k)] {S : ShortComplex (Rep.{w} k G)}
+    (hS : S.ShortExact) : (S.map (Rep.invariantsFunctor k G)).ShortExact := by
+  -- A preimage of an invariant vector averages to an invariant preimage.
   have : (Rep.invariantsFunctor k G).PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
-      have : Module.Projective k[G] Y.ρ.asModule :=
-        Module.projective_of_isSemisimpleRing k[G] Y.ρ.asModule
-      exact (ModuleCat.epi_iff_surjective _).2
-        (Rep.invariantsFunctor_map_surjective_of_projective f
-          ((Rep.epi_iff_surjective f).1 hf))⟩
+      refine (ModuleCat.epi_iff_surjective _).2 fun y ↦ ?_
+      obtain ⟨x, hx⟩ := (Rep.epi_iff_surjective f).1 hf (y.1 : Y)
+      refine ⟨⟨X.ρ.averageMap x, X.ρ.averageMap_invariant x⟩, Subtype.ext ?_⟩
+      have := Representation.IntertwiningMap.map_averageMap (ρ := X.ρ) (σ := Y.ρ) f.hom x
+      simp only [Rep.invariantsFunctor_map_hom]
+      change f.hom (X.ρ.averageMap x) = y.1
+      rw [this, hx]
+      exact Y.ρ.averageMap_id _ y.2⟩
   have : (Rep.invariantsFunctor k G).PreservesHomology :=
     Functor.preservesHomology_of_preservesEpis_and_kernels _
   have : Mono S.f := hS.mono_f
@@ -647,6 +650,11 @@ theorem FDRep.finrank_invariants_add_of_shortExact {S : ShortComplex (FDRep k G)
     Module.finrank k (Representation.invariants S.X₂.ρ) =
       Module.finrank k (Representation.invariants S.X₁.ρ) +
         Module.finrank k (Representation.invariants S.X₃.ρ) := by
+  -- A nonzero cardinality in `k` forces `G` to be finite and its order to be invertible.
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
+  have : Fintype G := Fintype.ofFinite G
+  have : Invertible (Fintype.card G : k) :=
+    invertibleOfNonzero (by simpa [Nat.card_eq_fintype_card] using NeZero.ne (Nat.card G : k))
   have hInv := Rep.shortExact_map_invariantsFunctor
     (hS.map_of_exact (forget₂ (FDRep k G) (Rep k G)))
   -- `Rep.invariantsFunctor` sends `forget₂ V` to the invariant subspace of `V.ρ`
