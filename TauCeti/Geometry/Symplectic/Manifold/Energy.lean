@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
 # Pointwise and integrated energy for curves into almost complex manifolds
@@ -72,6 +73,8 @@ $J$-holomorphic curves.
   energy--area identity for the within-set derivative of a pseudoholomorphic curve.
 * `TauCeti.SmoothTwoForm.Tames.eval₂_mfderiv_nonneg`: under tameness, the symplectic area density
   of a curve satisfying the Cauchy--Riemann equation is nonnegative.
+* `TauCeti.SmoothTwoForm.continuous_eval₂_mfderiv`: continuity of the symplectic area density
+  of a `C¹` curve.
 * `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm`: the Wirtinger
   identity on manifolds.
 * `TauCeti.SmoothTwoForm.Compatible.two_mul_twoForm_le_stdComplexLineEnergyDensity`: the Wirtinger
@@ -327,6 +330,15 @@ lemma Tames.eval₂_mfderiv_nonneg (htame : form.Tames J) {u : ℝ × ℝ → M}
   rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq hCR)
     |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm] at h
   exact (mul_nonneg_iff_of_pos_left two_pos).1 h
+
+/-- For a `C¹` map `u`, the area density `ω(∂ₛu, ∂ₜu)` is continuous. -/
+theorem continuous_eval₂_mfderiv (form : SmoothTwoForm I M) {u : ℝ × ℝ → M}
+    (hu : ContMDiff (modelWithCornersSelf ℝ (ℝ × ℝ)) I 1 u) :
+    Continuous fun z ↦ SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) :=
+  ((form.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
+    simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 /-- **Wirtinger identity on manifolds.** For an invariant pair `(form, J)`, the standard energy
 density minus twice the symplectic area density is the Cauchy--Riemann defect square:

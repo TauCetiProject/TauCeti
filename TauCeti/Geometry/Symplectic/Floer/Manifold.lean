@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.MFDeriv.Translation
+import TauCeti.Geometry.Symplectic.Manifold.Energy
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -93,8 +94,6 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`: for a perturbation
   `K = K_t dt`, the energy density `ω(η, J η)` of a solution, with `η = ∂_t u - X_{K_t}(u)`, its
   nonnegativity, and continuity of the curvature and of the energy density.
-* `SmoothTwoForm.continuous_eval₂_mfderiv`: continuity of the area density `ω(∂ₛu, ∂ₜu)` of a
-  `C¹` map.
 * `SmoothTwoForm.tendsto_perturbedMFDeriv` and `SmoothTwoForm.continuousOn_floerEnergyDensity`:
   convergence of perturbed derivatives in the tangent bundle, and continuity of the energy density
   of a `C¹` map when the Hamiltonian vector fields are continuous into the tangent bundle.
@@ -473,15 +472,6 @@ theorem continuous_hamiltonianCurvature_zero_left_comp
   have h : ContDiff ℝ 1 (uncurry fun z w ↦ Kt w (u z)) := contMDiff_iff_contDiff.mp <|
     hKt.comp (contDiff_snd.contMDiff.prodMk (hu.comp contDiff_fst.contMDiff))
   exact (h.fderiv (n := 0) contDiff_id (by norm_num)).continuous.clm_apply continuous_const
-
-/-- For a `C¹` map `u`, the area density `ω(∂ₛu, ∂ₜu)` is continuous. -/
-theorem continuous_eval₂_mfderiv (ω : SmoothTwoForm I M)
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
-    Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) :=
-  ((ω.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-    simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
 
 /-- For a `C¹` map `u` and a `C¹` family of Hamiltonians `K_t`, the Floer energy density of the
 perturbation `K = K_t dt` is continuous. -/
