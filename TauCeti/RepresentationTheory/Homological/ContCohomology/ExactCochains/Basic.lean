@@ -64,8 +64,9 @@ in `ShortExact.lean`.
 * `CategoryTheory.ShortComplex.TopShortExact.cochains_shortExact_moduleCat`: after forgetting
   topologies, the cochains of a topologically short exact sequence form a short exact sequence of
   cochain complexes of modules.
-* `CategoryTheory.ShortComplex.TopShortExact.of_compactSpace`: a short exact sequence of
-  profinite coefficients, with an embedding as first map, is topologically short exact.
+* `CategoryTheory.ShortComplex.TopShortExact.of_compactSpace`: a short complex with profinite
+  middle term, Hausdorff last term, an embedding as first map, a surjective second map, exact in
+  the middle, and a jointly continuous action on the middle term, is topologically short exact.
 * `TauCeti.ContCohomology.DiscreteShortExact.topShortExact`: a short exact sequence of discrete
   modules, with a continuous action on the middle term, is topologically short exact.
 * `TauCeti.ContCohomology.DiscreteShortExact.continuousCochainsShortExact_f_injective`,
@@ -80,8 +81,9 @@ in `ShortExact.lean`.
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
   Chapter I §2 (homogeneous continuous cochains), (1.3.2) (the long exact sequence, whose proof
-  starts from the exactness of cochains proved here) and Chapter II §7, Lemma 2.7.2 (the
-  continuous section for compact coefficients).
+  starts from the exactness of cochains proved here), Chapter I §1, Exercise 4 (the continuous
+  section for compact coefficients) and Chapter II §7, Lemma 2.7.2 (the cochain sequence and the
+  long exact sequence for topological coefficients).
 * K. Rubin, *Euler Systems*, Annals of Mathematics Studies 147, Princeton University Press (2000),
   Appendix B, §2, Definition 2.1.
 -/
@@ -389,11 +391,8 @@ theorem cochainsMap_g_f_surjective [LocallyCompactSpace G] (n : ℕ) :
       hs.comp <| hS.continuous_ρ₃.comp (continuous_fst.inv.prodMk continuous_snd)⟩
   have hσ (h : G) (z : S.X₃) : σ (h, z) = S.X₂.ρ h (s (S.X₃.ρ h⁻¹ z)) := rfl
   refine cochainsMap_id_f_surjective_of_section S.g σ (fun h z ↦ ?_) (fun k h z ↦ ?_) n
-  · rw [hσ, S.g.hom.isIntertwining, hgs, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one,
-      one_apply_eq_self]
-  · rw [hσ, hσ, ← mul_apply_eq_comp, ← map_mul, mul_inv_rev, map_mul S.X₃.ρ h⁻¹,
-      mul_apply_eq_comp (S.X₃.ρ h⁻¹), ← mul_apply_eq_comp (S.X₃.ρ k⁻¹), ← map_mul, inv_mul_cancel,
-      map_one, one_apply_eq_self]
+  · simp [hσ, S.g.hom.isIntertwining, hgs, ← mul_apply_eq_comp, ← map_mul]
+  · simp [hσ, ← mul_apply_eq_comp, ← map_mul, mul_assoc]
 
 /-- **The cochain sequence of a topologically short exact sequence is short exact.** After
 forgetting topologies, `0 → C•(G, X₁) → C•(G, X₂) → C•(G, X₃) → 0` is a short exact sequence of

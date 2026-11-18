@@ -176,30 +176,8 @@ theorem exists_delta_witness [LocallyCompactSpace G] (m : ℕ)
           (TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles m z ∧
         (S.continuousCochainsShortExact.f.f (m + 1)).hom
             ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).iCycles (m + 1) z₁) =
-          ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).d m (m + 1)).hom x₂ := by
-  obtain ⟨x₂, hx₂⟩ := S.continuousCochainsShortExact_g_surjective m
-    ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles m z)
-  have hg : (S.continuousCochainsShortExact.g.f (m + 1)).hom
-      ((S.continuousCochainsShortExact.X₂.d m (m + 1)).hom x₂) = 0 := by
-    rw [← ConcreteCategory.comp_apply, ← S.continuousCochainsShortExact.g.comm,
-      ConcreteCategory.comp_apply, hx₂]
-    exact ConcreteCategory.congr_hom
-      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles_d m (m + 1)) z
-  obtain ⟨w, hw⟩ := (S.continuousCochainsShortExact_exact (m + 1) _).1 hg
-  have hdw : ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).d (m + 1) (m + 1 + 1)).hom w
-      = 0 := by
-    have h₁ := ConcreteCategory.congr_hom
-      (S.continuousCochainsShortExact.f.comm (m + 1) (m + 1 + 1)) w
-    have h₂ := ConcreteCategory.congr_hom
-      (S.continuousCochainsShortExact.X₂.d_comp_d m (m + 1) (m + 1 + 1)) x₂
-    simp only [ConcreteCategory.comp_apply] at h₁ h₂
-    rw [hw] at h₁
-    apply S.continuousCochainsShortExact_f_injective (m + 1 + 1)
-    exact h₁.symm.trans (h₂.trans (_root_.map_zero _).symm)
-  refine ⟨x₂, (TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).cyclesMkOfEq w (m + 1 + 1)
-    (CochainComplex.next ℕ (m + 1)) hdw, hx₂, ?_⟩
-  exact (congrArg (S.continuousCochainsShortExact.f.f (m + 1)).hom
-    (HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _)).trans hw
+          ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).d m (m + 1)).hom x₂ :=
+  S.topShortExact.exists_delta_witness m z
 
 /-- **The connecting map is an isomorphism when the middle term is acyclic in the two adjacent
 degrees**: if `Hⁿ(G, B)` and `Hⁿ⁺¹(G, B)` vanish, then `δ : Hⁿ(G, C) ⟶ Hⁿ⁺¹(G, A)` is an

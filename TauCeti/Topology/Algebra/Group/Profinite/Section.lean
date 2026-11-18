@@ -14,6 +14,7 @@ import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Topology.Algebra.ProperAction.Basic
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.QuotientKerEquiv
 
 /-!
 # Continuous sections of profinite quotients
@@ -59,6 +60,8 @@ general quotient section module.
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Proposition 2.2.2.
+* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, 2nd ed., Springer (2008),
+  Chapter I, §1, Exercise 4 (continuous sections of continuous surjections of profinite groups).
 -/
 
 public section
@@ -275,27 +278,25 @@ theorem exists_continuous_rightCosetFactorization [CompactSpace G] [TotallyDisco
   obtain ⟨s, hs_cont, hs_sec, -⟩ := exists_continuous_section H hH
   exact H.exists_continuous_rightCosetFactorization_of_section s hs_cont hs_sec
 
-/-- **Continuous sections of surjections of profinite groups.** A continuous surjective
-homomorphism `f` from a profinite group onto a Hausdorff topological group has a continuous
-set-theoretic section `s` with `s 1 = 1`. The section is in general not a homomorphism: the
-reduction `ℤ/4 → ℤ/2` has no additive section. -/
+/-- **Continuous sections of surjections of profinite groups** (Neukirch-Schmidt-Wingberg,
+Chapter I, §1, Exercise 4). A continuous surjective homomorphism `f` from a profinite group onto a
+Hausdorff topological group has a continuous set-theoretic section `s` with `s 1 = 1`. The section
+is in general not a homomorphism: the reduction `ℤ/4 → ℤ/2` has no additive section. -/
 theorem _root_.MonoidHom.exists_continuous_section_of_surjective [CompactSpace G]
     [TotallyDisconnectedSpace G] {H : Type*} [Group H] [TopologicalSpace H] [T2Space H]
     (f : G →* H) (hf : Continuous f) (hsurj : Function.Surjective f) :
     ∃ s : H → G, Continuous s ∧ (∀ h, f (s h) = h) ∧ s 1 = 1 := by
-  -- The kernel is closed; the continuous bijection `G ⧸ ker f → H` from a compact space to a
-  -- Hausdorff space is a homeomorphism, and the section of `G → G ⧸ ker f` is transported along it.
-  obtain ⟨t, ht, hts, ht1⟩ := exists_continuous_section f.ker (isClosed_singleton.preimage hf)
-  let e : G ⧸ f.ker ≃ₜ H := Continuous.homeoOfEquivCompactToT2
-    (f := (QuotientGroup.quotientKerEquivOfSurjective f hsurj).toEquiv)
-    ((QuotientGroup.isQuotientMap_mk f.ker).continuous_iff.mpr hf)
-  have he (q : G ⧸ f.ker) : f (t q) = e q := by
-    conv_rhs => rw [← hts q]
-    exact (QuotientGroup.kerLift_mk f (t q)).symm
-  have he1 : e.symm 1 = QuotientGroup.mk 1 :=
-    e.symm_apply_eq.mpr ((QuotientGroup.kerLift_mk f 1).trans f.map_one).symm
-  exact ⟨t ∘ e.symm, ht.comp e.symm.continuous, fun h => (he _).trans (e.apply_symm_apply h),
-    by simp only [Function.comp_apply, he1, ht1]⟩
+  -- Transport the section of `G → G ⧸ ker f` along the topological first isomorphism theorem
+  -- `G ⧸ ker f ≃ₜ* H`.
+  let f' : G →ₜ* H := ⟨f, hf⟩
+  let e := f'.quotientKerEquivOfSurjective hsurj
+  obtain ⟨t, ht, hts, ht1⟩ := exists_continuous_section f.ker f'.isClosed_ker
+  refine ⟨t ∘ e.symm, ht.comp e.symm.continuous, fun h => ?_, ?_⟩
+  · change f' (t (e.symm h)) = h
+    rw [← f'.quotientKerEquivOfSurjective_apply_mk hsurj, hts, e.apply_symm_apply]
+  · change t (e.symm 1) = 1
+    rw [← map_one f', f'.quotientKerEquivOfSurjective_symm_apply]
+    exact ht1
 
 /-- **Continuous sections of surjections of profinite additive groups.** A continuous surjective
 additive homomorphism `f` from a profinite additive group onto a Hausdorff topological additive
