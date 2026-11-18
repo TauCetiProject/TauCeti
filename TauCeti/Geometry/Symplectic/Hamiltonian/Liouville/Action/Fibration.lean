@@ -70,31 +70,6 @@ variable {E H M F H' B : Type*}
 
 variable (h : hσ.IsLagrangianTorusFibration J π) (hσc : σ.IsClosed)
 
-/-- **Periods of pulled-back coordinates.** Let `κ : B → ℝ^ι` be smooth, so that the components of
-`κ ∘ π` are Poisson-commuting functions with complete Hamiltonian vector fields, and let `y` be a
-point of the fibre over `b`. Then the covector `α = d(v ⬝ᵥ κ)_b` lies in the period lattice at `b`
-exactly when `v` lies in the stabilizer of `y` for the Hamiltonian flow action of `κ ∘ π`. -/
-private theorem mvfderiv_dotProduct_mem_periodLattice_iff {ι : Type*} [Fintype ι] {κ : B → ι → ℝ}
-    (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ)
-    (hcomm : ∀ i j x, σ.poissonBracket ((κ ∘ π) · i) ((κ ∘ π) · j) x = 0)
-    (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField ((κ ∘ π) · i)))
-    {b : B} (y : π ⁻¹' {b}) (v : ι → ℝ) {α : F →L[ℝ] ℝ}
-    (hα : mvfderiv J (fun c ↦ v ⬝ᵥ κ c) b = α) :
-    α ∈ h.periodLattice hσc b ↔
-      v ∈ (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (hκ.comp h.contMDiff) hcomm hc y
-    := by
-  classical
-  have hg : ContMDiff J 𝓘(ℝ) 2 fun c ↦ v ⬝ᵥ κ c :=
-    ((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)).contMDiff.comp hκ).of_le
-      (by simp)
-  rw [h.mem_periodLattice_iff_flowOf_eq hσc b hg hα y,
-    IsSymplectic.mem_hamiltonianFlowStabilizer]
-  -- The time-one map of the flow of `v ⬝ᵥ (κ ∘ π)` is the action of `v`.
-  have hflow := (⟨hσc, hσ⟩ : σ.IsSymplectic).flowOf_hamiltonianVectorField_dotProduct
-    (hκ.comp h.contMDiff) hcomm hc v 1 y
-  rw [one_smul] at hflow
-  exact iff_of_eq (congrArg (· = (y : M)) hflow)
-
 /-- **The period lattice in action coordinates, at one point.** Let `κ : B → ℝ^ι` be smooth with
 invertible differential `D` at `b`, let `y` be a point of the fibre over `b`, and suppose that the
 periods of `y` for the Hamiltonian flows of `κ ∘ π` are the integral combinations of vectors `p i`,
@@ -120,30 +95,30 @@ private theorem periodLattice_eq_closure_mvfderiv_comp {ι : Type*} [Fintype ι]
       (D.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)).toLinearEquiv
   have hLw (v : ι → ℝ) (w : F) : L v w = v ⬝ᵥ D w := by
     simp [L]
+  -- The chain rule for a function of `κ`, with `dκ_b = D`.
+  have hchain {φ : (ι → ℝ) → ℝ} (hφ : DifferentiableAt ℝ φ (κ b)) (w : TangentSpace J b) :
+      mvfderiv J (fun c ↦ φ (κ c)) b w = fderiv ℝ φ (κ b) (D w) := by
+    refine (mvfderiv_comp_apply_of_differentiableAt hφ ((hκ b).mdifferentiableAt (by simp))
+      w).trans ?_
+    rw [mvfderiv_apply_eq_mfderiv_apply, ← hD]
+    rfl
   have hLv (v : ι → ℝ) : mvfderiv J (fun c ↦ v ⬝ᵥ κ c) b = L v := by
-    refine ContinuousLinearMap.ext fun w ↦ ?_
-    have hφ : HasMFDerivAt 𝓘(ℝ, ι → ℝ) 𝓘(ℝ) (fun z : ι → ℝ ↦ v ⬝ᵥ z) (κ b)
-        (LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)) :=
-      (LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)).hasMFDerivAt
-    have hcomp := hφ.comp b ((hκ b).mdifferentiableAt (by simp)).hasMFDerivAt
-    simp only [Function.comp_def] at hcomp
-    rw [mvfderiv_apply_eq_mfderiv_apply, hcomp.mfderiv, ← hD]
+    let φ := LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)
+    refine ContinuousLinearMap.ext fun w ↦ (hchain (φ := φ) φ.differentiableAt w).trans ?_
+    rw [φ.fderiv]
     exact (hLw v w).symm
   -- `2π daᵢ = L (p i)`, by the chain rule and the formula for `dAᵢ`.
   have hLp (i : ι) : (2 * Real.pi) • mvfderiv J (fun c ↦ A (κ c) i) b = L (p i) := by
     refine ContinuousLinearMap.ext fun w ↦ ?_
-    have hcomp := (hA i).differentiableAt.hasFDerivAt.hasMFDerivAt.comp b
-      ((hκ b).mdifferentiableAt (by simp)).hasMFDerivAt
-    simp only [Function.comp_def] at hcomp
-    have h1 : mvfderiv J (fun c ↦ A (κ c) i) b w = (2 * Real.pi)⁻¹ * (p i ⬝ᵥ D w) := by
-      rw [mvfderiv_apply_eq_mfderiv_apply, hcomp.mfderiv, ← hD]
-      exact fderiv_apply_eq_of_hasFDerivAt_action (hA i) (D w)
+    have h1 : mvfderiv J (fun c ↦ A (κ c) i) b w = (2 * Real.pi)⁻¹ * (p i ⬝ᵥ D w) :=
+      (hchain (hA i).differentiableAt w).trans (fderiv_apply_eq_of_hasFDerivAt_action (hA i) _)
     refine Eq.trans ?_ (hLw _ _).symm
-    rw [smul_apply, h1, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul]
+    rw [smul_apply, h1, smul_eq_mul]
+    field_simp
   -- Both lattices are images under `L` of the lattice of periods of `y`.
   simp only [hLp]
   ext α
-  rw [h.mvfderiv_dotProduct_mem_periodLattice_iff hσc hκ hcomm hc y (L.symm α)
+  rw [h.mem_periodLattice_iff_mem_hamiltonianFlowStabilizer hσc b hκ hcomm hc y (L.symm α)
       ((hLv _).trans (L.apply_symm_apply α)), hstab, AddSubgroup.mem_closure_range_iff_of_fintype]
   refine (exists_congr fun n ↦ ?_).trans
     (AddSubgroup.mem_closure_range_iff_of_fintype (f := fun i ↦ L (p i))).symm
