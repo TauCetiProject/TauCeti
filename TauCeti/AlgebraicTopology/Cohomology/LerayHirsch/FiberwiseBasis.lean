@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Product
-public import TauCeti.AlgebraicTopology.Cohomology.Point
+public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.Restriction
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.Topology.Category.TopCat.Monoidal
 
@@ -18,7 +18,7 @@ public import TauCeti.Topology.Category.TopCat.Monoidal
 Let `k` be a commutative ring and let `F` be a space whose homology `Hₚ(F; k)` is projective in
 every degree and finitely generated in degrees `p ≤ n`. Let `X` be a space and, for every degree
 `p`, let `c p : ι p → Hᵖ(X × F; k)` be a family of classes on the product. Suppose that for
-`p ≤ n` it is finite and its restrictions `c p i |_{x} ∈ Hᵖ(F; k)` along the inclusion
+`p ≤ n` its restrictions `c p i |_{x} ∈ Hᵖ(F; k)` along the inclusion
 `f ↦ (x, f)` of the fibre over `x` (`TopCat.prodFiberInclusion`) form a basis of `Hᵖ(F; k)` for
 every point `x : X`. Then the
 **Leray–Hirsch map** of the classes `c` in degree `n`,
@@ -26,12 +26,10 @@ every point `x : X`. Then the
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, `(a_{p,i}) ↦ ∑ pr₁^* a_{p,i} ⌣ c_{p,i}`,
 
 (`TopCat.lerayHirsch` of the projection `X × F ⟶ X`) is bijective
-(`TopCat.lerayHirsch_fst_bijective_of_fibrewise_basis`). This is the trivial-bundle case of the
+(`TopCat.lerayHirsch_fst_bijective_of_fiberwise_basis`). This is the trivial-bundle case of the
 Leray–Hirsch theorem with the hypothesis of the general theorem: the classes are global classes on
 the total space restricting to a basis of the cohomology of every fibre, not pullbacks
 `pr₂^* b_{p,i}` of a basis `b` of the cohomology of `F` as in `TopCat.lerayHirsch_fst_bijective`.
-The Leray–Hirsch map is natural for maps of total spaces covering a map of the bases
-(`TopCat.singularCohomologyMap_lerayHirsch`).
 
 The proof reduces to `TopCat.lerayHirsch_fst_bijective` for the basis `b` of `Hᵖ(F; k)` given by
 the restrictions of the classes to the fibre over a chosen point. Expanding every class
@@ -354,83 +352,25 @@ private lemma lerayHirsch_eq_comp_coeffMap {E : TopCat.{w}} (π : E ⟶ X) (n : 
     rw [lerayHirsch_lof, shiftCup_lof, lerayHirsch_lof, ← singularCup_naturality,
       E.singularCup_assoc_unit k (m' := p) rfl (by omega) (by omega) (by omega)]
 
-/-- **The restriction of the Leray–Hirsch map to a fibre**: if `f : F ⟶ E` lands in the fibre of
-`π : E ⟶ B` over `x`, restricting the image of `g` along `f` gives the combination of the
-restricted classes `f^* e p i'` with coefficients the values at `x` of the base-degree-zero
-components of `g`. -/
-theorem singularCohomologyMap_lerayHirsch_of_comp_eq_const {E B : TopCat.{w}} (π : E ⟶ B)
-    (f : F ⟶ E) (x : B) (hf : f ≫ π = TopCat.const (X := F) x) (p : ℕ)
-    [Fintype (ι p)]
-    (e : ∀ d, ι d → E.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d)
-    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1,
-      B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
-    TopCat.singularCohomologyMap f p (lerayHirsch π p e g) =
-      ∑ i', TauCeti.singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) •
-        TopCat.singularCohomologyMap f p (e p i') := by
-  -- In positive degrees the constant map induces zero.
-  have hpos {q : ℕ} (hq : q ≠ 0) :
-      TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-        (M := 𝟙_ (ModuleCat.{w} k)) (TopCat.const (X := F) x) q = 0 :=
-    singularCohomologyMap_eq_zero_of_nullhomotopic (by
-      rw [show (TopCat.const (X := F) x).hom = ContinuousMap.const F x from
-        ContinuousMap.ext fun _ ↦ TopCat.const_apply _ _]
-      exact ContinuousMap.nullhomotopic_of_constant x) hq
-  have hlof (q' p' : ℕ) (h' : p' + q' = p) (i : ι p')
-      (β : B.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q') :
-      TopCat.singularCohomologyMap f p (lerayHirsch π p e (lhLof p p' q' h' i β)) =
-        F.singularCup k (λ_ _).inv (λ_ _).hom q' p' p (by omega)
-          (TopCat.singularCohomologyMap (TopCat.const (X := F) x) q' β)
-          (TopCat.singularCohomologyMap f p' (e p' i)) := by
-    rw [lerayHirsch_lof, ← singularCup_naturality, ← ConcreteCategory.comp_apply,
-      ← singularCohomologyMap_comp, hf]
-  induction g using lhSource_induction with
-  | zero => simp
-  | add g g' hg hg' =>
-    simp only [map_add, hg, hg', DirectSum.add_apply, add_smul, Finset.sum_add_distrib]
-  | lof p' q' h' i β =>
-    rw [hlof]
-    by_cases hq : q' = 0
-    · subst hq
-      obtain rfl : p' = p := by omega
-      rw [TauCeti.singularCohomologyMap_const_eq_singularCohomologyZeroEval_smul,
-        LinearMap.map_smul₂,
-        singularCup_singularCohomologyZeroOne_left, Finset.sum_eq_single i]
-      · rw [lhLof_apply_self]
-      · intro l _ hl
-        rw [lhLof_apply_of_ne _ _ hl, map_zero, zero_smul]
-      · simp
-    · simp only [hpos hq, ModuleCat.hom_zero, LinearMap.zero_apply, map_zero]
-      refine (Finset.sum_eq_zero fun l _ ↦ ?_).symm
-      rw [lhLof_apply_of_ne_zero _ _ _ _ hq, map_zero, zero_smul]
-
-/-- **The restriction of the Leray–Hirsch map of the product to a fibre**: for the pullbacks
-`pr₂^* b` of classes `b` on `F`, restricting the image of `g` to the fibre over `x` gives the
-combination of the classes `b` with coefficients the values at `x` of the base-degree-zero
-components of `g`. -/
-theorem singularCohomologyMap_prodFiberInclusion_lerayHirsch (x : X) (p : ℕ) [Fintype (ι p)]
-    (b : ∀ p, ι p → F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1,
-      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
-    TopCat.singularCohomologyMap (prodFiberInclusion X F x) p
-        (lerayHirsch (fst X F) p (fun p i ↦ TopCat.singularCohomologyMap (snd X F) p (b p i)) g) =
-      ∑ i', TauCeti.singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) • b p i' := by
-  rw [singularCohomologyMap_lerayHirsch_of_comp_eq_const _ _ x (prodFiberInclusion_fst X F x)]
-  refine Finset.sum_congr rfl fun i' _ ↦ ?_
-  rw [← ConcreteCategory.comp_apply, ← singularCohomologyMap_comp, prodFiberInclusion_snd,
-    singularCohomologyMap_id, ConcreteCategory.id_apply]
-
 variable (X) [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
     (𝟙_ (ModuleCat.{w} k))).obj F)]
 
+/-- If the homology `Hₚ(F; k)` is projective and finitely generated, so is its dual `Hᵖ(F; k)`. -/
+private lemma finite_singularCohomology_of_projective_homology {p : ℕ}
+    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
+      (𝟙_ (ModuleCat.{w} k))).obj F)] :
+    Module.Finite k (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :=
+  Module.Finite.equiv ((F.singularKroneckerEquivOfProjectiveHomology _ _ p).trans
+    ModuleCat.homLinearEquiv).symm
+
 /-- **The Leray–Hirsch theorem for a product with fibrewise basis classes**: over a commutative ring
 `k`, if the homology `Hₚ(F; k)` is projective in every degree and finitely generated in degrees
-`p ≤ n`, and for `p ≤ n` the classes `c p : ι p → Hᵖ(X × F; k)` are finite and restrict to a basis
-of `Hᵖ(F; k)` on the fibre over every point of `X`, then the Leray–Hirsch map
+`p ≤ n`, and for `p ≤ n` the classes `c p : ι p → Hᵖ(X × F; k)` restrict to a basis of `Hᵖ(F; k)`
+on the fibre over every point of `X`, then the Leray–Hirsch map
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, `(a_{p,i}) ↦ ∑ pr₁^* a_{p,i} ⌣ c_{p,i}`,
 is bijective. -/
-theorem lerayHirsch_fst_bijective_of_fibrewise_basis (n : ℕ)
+theorem lerayHirsch_fst_bijective_of_fiberwise_basis (n : ℕ)
     (c : ∀ p, ι p → (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (hι : ∀ p ≤ n, Finite (ι p))
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ (x : X), ∀ p ≤ n,
@@ -441,15 +381,26 @@ theorem lerayHirsch_fst_bijective_of_fibrewise_basis (n : ℕ)
     Function.Bijective (lerayHirsch (fst X F) n c) := by
   rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
   · exact lerayHirsch_bijective_of_isEmpty _ n c
-  -- The index types in degrees `p ≤ n`, the only ones in the source, are finite.
-  have hfin (p : ℕ) (hp : p ≤ n) : Fintype (ι p) := have := hι p hp; Fintype.ofFinite _
-  let s (p : ℕ) : Finset (ι p) := if hp : p ≤ n then @Finset.univ _ (hfin p hp) else ∅
-  have hs (p : ℕ) (hp : p ≤ n) (i : ι p) : i ∈ s p := by simp [s, hp]
+  rcases subsingleton_or_nontrivial k with hk | hk
+  · -- Over the zero ring both sides vanish.
+    have := Module.subsingleton k (LHSource k X ι n)
+    have := Module.subsingleton k
+      ((X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n)
+    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
   -- The bases of the cohomology of the fibres in degrees `p ≤ n`, and the restrictions `b` of the
   -- classes to the fibre over the point `x₀`.
   let bx (x : X) (p : ℕ) (hp : p ≤ n) : Module.Basis (ι p) k
       (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :=
     Module.Basis.mk (hc x p hp).1 (hc x p hp).2
+  -- The index types in degrees `p ≤ n`, the only ones in the source, are finite: they index bases
+  -- of the finitely generated modules `Hᵖ(F; k)`.
+  have hfin (p : ℕ) (hp : p ≤ n) : Fintype (ι p) :=
+    have := hF p hp
+    have := finite_singularCohomology_of_projective_homology (F := F) (k := k) (p := p)
+    have := Module.Finite.finite_basis (bx x₀ p hp)
+    Fintype.ofFinite _
+  let s (p : ℕ) : Finset (ι p) := if hp : p ≤ n then @Finset.univ _ (hfin p hp) else ∅
+  have hs (p : ℕ) (hp : p ≤ n) (i : ι p) : i ∈ s p := by simp [s, hp]
   let b (p : ℕ) (i : ι p) :
       F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p :=
     TopCat.singularCohomologyMap (prodFiberInclusion X F x₀) p (c p i)
@@ -501,10 +452,9 @@ theorem lerayHirsch_fst_bijective_of_fibrewise_basis (n : ℕ)
 /-- **The Leray–Hirsch isomorphism for a product with fibrewise basis classes**
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ≃ Hⁿ(X × F; k)`, the linear equivalence given by the
 Leray–Hirsch map `TopCat.lerayHirsch` of the projection `X × F ⟶ X` under the hypotheses of
-`TopCat.lerayHirsch_fst_bijective_of_fibrewise_basis`. -/
+`TopCat.lerayHirsch_fst_bijective_of_fiberwise_basis`. -/
 def lerayHirschProdOfClassesEquiv (n : ℕ)
     (c : ∀ p, ι p → (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (hι : ∀ p ≤ n, Finite (ι p))
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ (x : X), ∀ p ≤ n,
@@ -516,12 +466,11 @@ def lerayHirschProdOfClassesEquiv (n : ℕ)
         X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ≃ₗ[k]
       (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
   LinearEquiv.ofBijective (lerayHirsch (fst X F) n c)
-    (lerayHirsch_fst_bijective_of_fibrewise_basis X n c hι hF hc)
+    (lerayHirsch_fst_bijective_of_fiberwise_basis X n c hF hc)
 
 @[simp]
 lemma lerayHirschProdOfClassesEquiv_apply (n : ℕ)
     (c : ∀ p, ι p → (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (hι : ∀ p ≤ n, Finite (ι p))
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
     (hc : ∀ (x : X), ∀ p ≤ n,
@@ -531,7 +480,7 @@ lemma lerayHirschProdOfClassesEquiv_apply (n : ℕ)
         TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i)))
     (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
         X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
-    lerayHirschProdOfClassesEquiv X n c hι hF hc a = lerayHirsch (fst X F) n c a :=
+    lerayHirschProdOfClassesEquiv X n c hF hc a = lerayHirsch (fst X F) n c a :=
   (rfl)
 
 end Bijective
