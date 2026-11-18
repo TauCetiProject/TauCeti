@@ -393,15 +393,6 @@ theorem pairedConnection_zero : pairedConnection e (0 : ℂ → EuclideanSpace �
   ext v
   simp [pairedConnection]
 
-private theorem fderiv_comp_normalCoord_apply {c : ℂ → ℝ} {y : V}
-    (hc : DifferentiableAt ℝ c (normalCoord e y)) (v : V) :
-    fderiv ℝ (fun y' ↦ c (normalCoord e y')) y v =
-      fderiv ℝ c (normalCoord e y) (normalCoord e v) := by
-  have h : HasFDerivAt (fun y' ↦ c (normalCoord e y'))
-      ((fderiv ℝ c (normalCoord e y)).comp (normalCoord e)) y :=
-    hc.hasFDerivAt.comp y (normalCoord e).hasFDerivAt
-  rw [h.fderiv, ContinuousLinearMap.comp_apply]
-
 end Pullback
 
 /-! ### The normal model of a pair of plane fields -/
