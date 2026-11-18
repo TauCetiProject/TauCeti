@@ -30,8 +30,10 @@ the `W^{1,r}(U)` norm of `ξ` is bounded by
 `‖ξ‖_{W^{1,r}(U)} ≤ C (‖f‖_{Lʳ(Ω)} + ‖g‖_{Lʳ(Ω)} + ‖ξ‖_{L^q(Ω)})`
 
 (`TauCeti.exists_eLpNormWkp_one_le_of_integral_laplacian_smul_eq`). The constant depends only on
-`r`, `q`, `U`, `Ω` and `V`. The case `q = 1` is the strongest, and the case `r ≤ q` is the form in
-which the estimate is used for a solution `ξ ∈ L^q_loc`. The membership `ξ ∈ W^{1,r}_loc(Ω)` is
+`r`, `q`, `U`, `Ω` and `V`. For bounded `Ω` the case `q = 1` is the strongest, since then
+`‖ξ‖_{L¹(Ω)}` is bounded by a multiple of `‖ξ‖_{L^q(Ω)}`; for unbounded `Ω` one first shrinks `Ω`
+to a bounded open neighbourhood of the closure of `U`. The case `r ≤ q` is the form in which the
+estimate is used for a solution `ξ ∈ L^q_loc`. The membership `ξ ∈ W^{1,r}_loc(Ω)` is
 `TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq`; this file adds the estimate. The same
 bound holds for the `Lʳ(U)` norm of every weak derivative of `ξ` on `Ω`
 (`TauCeti.exists_eLpNorm_le_of_integral_laplacian_smul_eq_of_hasWeakFDerivOn`).
@@ -45,12 +47,13 @@ equation with `f = g = 0`, and has positive `W^{1,r}` norm on every set of posit
 Coordinates in a basis reduce to `V = ℝ`. Cover the closure of `U` by finitely many discs
 `B(c, ρ)` whose concentric closed discs `D = closedBall c R`, `ρ < R`, lie in `Ω`. On each, with
 `h = 1_D (f + I g)`, the particular solution `ξ₀ = ½ Re T h` solves `Δξ₀ = ∂ₛf + ∂ₜg` on `B(c, R)`
-(`TauCeti.weaklyHarmonicOn_sub_half_re_cauchyTransform`), and the boundedness of the Cauchy and
+(`TauCeti.integral_laplacian_smul_half_re_cauchyTransform`), and the boundedness of the Cauchy and
 Beurling transforms bounds `‖ξ₀‖_{W^{1,r}(D)}` by a multiple of `‖h‖_{Lʳ}`
 (`TauCeti.eLpNorm_cauchyTransform_add_eLpNorm_wirtingerPartsCLM_beurlingLp_le`). The remainder
-`ξ - ξ₀` is weakly harmonic on `B(c, R)`, so by Weyl's lemma it agrees almost everywhere with a
-harmonic `v` (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`), and by the mean value
-property the `Lʳ(B(c, ρ))` norms of `v` and its derivative are bounded by a multiple of
+`ξ - ξ₀` is weakly harmonic on `B(c, R)`
+(`TauCeti.weaklyHarmonicOn_sub_half_re_cauchyTransform`), so by Weyl's lemma it agrees almost
+everywhere with a harmonic `v` (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`), and by the
+mean value property the `Lʳ(B(c, ρ))` norms of `v` and its derivative are bounded by a multiple of
 `‖ξ - ξ₀‖_{L¹(B(c, R))}`
 (`TauCeti.exists_eLpNorm_and_eLpNorm_fderiv_le_integral_norm_of_harmonicOnNhd`), which Hölder's
 inequality on `D` bounds by `‖ξ‖_{L^q(D)}` and `‖ξ₀‖_{Lʳ(D)}`. Summing over the discs gives the
@@ -254,7 +257,9 @@ private theorem exists_eLpNormWkp_one_ball_le {V : Type*} [NormedAddCommGroup V]
   have hgloc := hg.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed
   have hcoord (i) : eLpNormWkp r (ball c ρ) 1 (fun z ↦ L i (ξ z)) ≤ C * (‖L i‖ₑ * X) := by
     refine (hCb _ _ _ ((L i).locallyIntegrableOn_comp hξ) (hf.clm_comp (L i))
-      (hg.clm_comp (L i)) ((L i).integral_laplacian_smul_comp_eq hξ hfloc hgloc hdiv)).trans ?_
+      (hg.clm_comp (L i)) fun φ ↦
+        (L i).integral_laplacian_smul_comp_eq_neg_integral_fderiv_smul_add hξ hfloc hgloc
+          (hdiv φ)).trans ?_
     gcongr
     calc _ ≤ ‖L i‖ₑ * eLpNorm f r (volume.restrict Ω) + ‖L i‖ₑ * eLpNorm g r (volume.restrict Ω) +
           ‖L i‖ₑ * eLpNorm ξ q (volume.restrict Ω) := by
