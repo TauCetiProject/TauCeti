@@ -178,6 +178,18 @@ section HessianSymmetry
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+/-- A pure-trace Hessian identifies the covariant derivative of the gradient pointwise. -/
+theorem leviCivitaConnection_mgradient_of_hessian_eq_mul_inner [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M} {a : ℝ}
+    (h : ∀ u v : TangentSpace I x, hessian I f x u v = a * inner ℝ u v)
+    (u : TangentSpace I x) :
+    CovariantDerivative.leviCivitaConnection I M (mgradient I f) x u = a • u := by
+  apply ext_inner_right ℝ
+  intro v
+  rw [← hessian_def, h, real_inner_smul_left]
+
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
 direction. -/
