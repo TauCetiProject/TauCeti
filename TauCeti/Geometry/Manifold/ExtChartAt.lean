@@ -1206,6 +1206,11 @@ theorem tendsto_extChartAt_restrict (U : Opens M) (x : M) (y : U) {z : E}
   change U.carrier.Mem ((extChartAt I x).symm w)
   exact hwU
 
+/-- Every inherited chart on an open subset of a normed space reads off ambient coordinates. -/
+theorem extChartAt_opens_apply (U : Opens E) (p q : U) :
+    extChartAt 𝓘(𝕜, E) p q = q.val := by
+  simp [extChartAt, Opens.chartAt_eq]
+
 /-- Every inherited source chart of an open subset of a normed space has that open subset as
 its extended target. -/
 theorem extChartAt_opens_target (U : Opens E) (x : U) :
