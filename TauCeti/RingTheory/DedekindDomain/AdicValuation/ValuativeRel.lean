@@ -374,22 +374,19 @@ vanishing `1` is written `WithZero.exp (-1)`, the value of a generator of `v.asI
 between the two conventions is `neg_log_valuation_eq_one_iff` in
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic`. -/
 theorem not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even
-    (v : HeightOneSpectrum R) (a : K) (n : ℤ) (hn : ¬ Even n)
-    (ha : v.valuation K a = (WithZero.exp n : WithZero (Multiplicative ℤ))) :
+    (a : K) (n : ℤ) (hn : ¬ Even n) (ha : v.valuation K a = WithZero.exp n) :
     ¬IsSquare (algebraMap K (v.adicCompletion K) a) := by
   rintro ⟨y, hy⟩
-  have hval : Valued.v (algebraMap K (v.adicCompletion K) a)
-      = (WithZero.exp n : WithZero (Multiplicative ℤ)) := by
+  have hval : Valued.v (algebraMap K (v.adicCompletion K) a) = WithZero.exp n := by
     rw [algebraMap_adicCompletion, Function.comp_apply, valuedAdicCompletion_eq_valuation']
     exact ha
   -- The adic value of a square is the square of the adic value of its root, and here it is nonzero.
-  have hprod : (Valued.v y : WithZero (Multiplicative ℤ)) * Valued.v y
-      = (WithZero.exp n : WithZero (Multiplicative ℤ)) := by
+  have hprod : Valued.v y * Valued.v y = WithZero.exp n := by
     rw [← hval, hy, Valued.v.map_mul]
-  have hvy : (Valued.v y : WithZero (Multiplicative ℤ)) ≠ 0 := by
+  have hvy : Valued.v y ≠ 0 := by
     rintro h
     rw [h, zero_mul] at hprod
-    exact (WithZero.exp_ne_zero : (WithZero.exp n) ≠ 0) hprod.symm
+    exact WithZero.exp_ne_zero hprod.symm
   -- Taking logarithms, the order of vanishing is a sum of two equal integers, so it is even.
   have hlog : n = WithZero.log (Valued.v y) + WithZero.log (Valued.v y) := by
     have h := WithZero.log_mul hvy hvy
