@@ -23,6 +23,7 @@ by the same congruence.
 
 ## Main results
 
+* `Matrix.map_ofReal_mul`: the coercion is multiplicative.
 * `Matrix.map_ofReal_mul_transpose_map_ofReal_eq_one`: an orthogonal real matrix `O` satisfies
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
@@ -44,6 +45,11 @@ open scoped ComplexOrder
 namespace Matrix
 
 variable {l m n : Type*}
+
+/-- Viewing real matrices as complex matrices is multiplicative. -/
+theorem map_ofReal_mul [Fintype m] (M : Matrix l m ℝ) (N : Matrix m n ℝ) :
+    (M * N).map ((↑) : ℝ → ℂ) = M.map ((↑) : ℝ → ℂ) * N.map ((↑) : ℝ → ℂ) :=
+  Matrix.map_mul (f := Complex.ofRealHom)
 
 /-- The complex image `O` of an orthogonal real matrix `O` satisfies `O Oᵀ = 1`. -/
 theorem map_ofReal_mul_transpose_map_ofReal_eq_one [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
