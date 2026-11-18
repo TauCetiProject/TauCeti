@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 Michail Karatarakis, The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Michail Karatarakis, The Tau Ceti contributors
 -/
 module
 
@@ -19,9 +19,16 @@ These estimates are useful when successively dividing an analytic function by it
 zeros in interpolation arguments.
 
 The special case of a power of a coordinate retains the sharper ratio `r / R`, rather than
-the ratio `2 * r / (R - r)` needed for arbitrary roots in the smaller disc.
+the ratio `2 * r / (R - r)` obtained from the triangle inequality for arbitrary roots in the
+smaller disc.
 
 The argument uses Mathlib's `Complex.norm_le_of_forall_mem_frontier_norm_le` on each slice.
+
+## References
+
+These estimates follow Michail Karatarakis's formalization of Baker's theorem
+(`mkaratarakis/mathlib4`, branch `baker`, commit `1d51891b5be7ceeca95b4583cad39e0681c5e453`,
+`Mathlib/NumberTheory/Transcendental/Baker/Polydisc.lean`, Apache 2.0).
 -/
 
 public section
@@ -90,12 +97,13 @@ theorem norm_le_of_eq_prod_smul (i : ι) (S : Finset ℂ) (m : ℕ)
 analytic cofactor is bounded on the small polydisc by `M * (2 * r / (R - r)) ^ (m * S.card)`,
 where `M` bounds the product on the large polydisc. -/
 theorem norm_le_mul_pow_of_eq_prod_smul (i : ι) (S : Finset ℂ) (m : ℕ)
-    (hr : 0 ≤ r) (hrR : r < R) (hg : AnalyticOnNhd ℂ g (closedBall 0 R))
+    (hrR : r < R) (hg : AnalyticOnNhd ℂ g (closedBall 0 R))
     (hS : ∀ ζ ∈ S, ‖ζ‖ ≤ r)
     (hfg : ∀ z ∈ closedBall 0 R, f z = (∏ ζ ∈ S, (z i - ζ) ^ m) • g z)
     (hf : ∀ z ∈ closedBall 0 R, ‖f z‖ ≤ M)
     {z : ι → ℂ} (hz : z ∈ closedBall 0 r) :
     ‖f z‖ ≤ M * (2 * r / (R - r)) ^ (m * S.card) := by
+  have hr : 0 ≤ r := (norm_nonneg z).trans (by simpa using hz)
   have hzR := closedBall_subset_closedBall hrR.le hz
   have hgz := norm_le_of_eq_prod_smul i S m hrR hg hS hfg hf hzR
   have hprod : ‖∏ ζ ∈ S, (z i - ζ) ^ m‖ ≤ (2 * r) ^ (m * S.card) := by
@@ -126,13 +134,21 @@ theorem norm_le_of_eq_pow_smul (i : ι) (m : ℕ) (hR : 0 < R)
     (by simpa using hfg) hf hz
 
 /-- For a pure coordinate power the small-polydisc bound has the sharp ratio `r / R`.
-The two radii may be equal. -/
-theorem norm_le_mul_pow_of_eq_pow_smul (i : ι) (m : ℕ) (hr : 0 ≤ r) (hrR : r ≤ R)
-    (hR : 0 < R) (hg : AnalyticOnNhd ℂ g (closedBall 0 R))
+The two radii may be equal, including when both are zero. -/
+theorem norm_le_mul_pow_of_eq_pow_smul (i : ι) (m : ℕ) (hrR : r ≤ R)
+    (hg : AnalyticOnNhd ℂ g (closedBall 0 R))
     (hfg : ∀ z ∈ closedBall 0 R, f z = z i ^ m • g z)
     (hf : ∀ z ∈ closedBall 0 R, ‖f z‖ ≤ M)
     {z : ι → ℂ} (hz : z ∈ closedBall 0 r) : ‖f z‖ ≤ M * (r / R) ^ m := by
+  have hr : 0 ≤ r := (norm_nonneg z).trans (by simpa using hz)
   have hzR := closedBall_subset_closedBall hrR hz
+  rcases le_or_gt R 0 with hR | hR
+  · have hR0 : R = 0 := le_antisymm hR (hr.trans hrR)
+    have hz0 : z = 0 := by simpa [hR0] using hzR
+    subst z
+    rcases m with _ | m
+    · simpa using hf 0 hzR
+    · simp [hfg 0 hzR, hR0]
   have hgz := norm_le_of_eq_pow_smul i m hR hg hfg hf hzR
   rw [hfg z hzR, norm_smul, norm_pow]
   calc

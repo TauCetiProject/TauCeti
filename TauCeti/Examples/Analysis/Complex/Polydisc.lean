@@ -25,7 +25,7 @@ example {z : Fin 1 → ℂ} (hz : z ∈ closedBall 0 1) : ‖z 0 ^ 2‖ ≤ 1 :=
     have hwi : ‖w 0‖ ≤ 2 := (norm_le_pi_norm w 0).trans (by simpa using hw)
     nlinarith [norm_nonneg (w 0)]
   have h := TauCeti.norm_le_mul_pow_of_eq_pow_smul (f := fun z : Fin 1 → ℂ => z 0 ^ 2)
-    (g := fun _ => (1 : ℂ)) 0 2 (by norm_num) (by norm_num) (by norm_num)
+    (g := fun _ => (1 : ℂ)) 0 2 (by norm_num)
     (fun _ _ => analyticAt_const) (by simp) hbound hz
   norm_num at h ⊢
   exact h
@@ -38,13 +38,13 @@ example {z : Fin 1 → ℂ} (hz : z ∈ closedBall 0 1) : ‖z 0 - 1‖ ≤ 4 :=
       ‖w 0 - 1‖ ≤ ‖w 0‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
       _ ≤ 4 := by simp only [norm_one]; linarith
   have h := TauCeti.norm_le_mul_pow_of_eq_prod_smul (f := fun z : Fin 1 → ℂ => z 0 - 1)
-    (g := fun _ => (1 : ℂ)) 0 {1} 1 (by norm_num) (by norm_num)
+    (g := fun _ => (1 : ℂ)) 0 {1} 1 (by norm_num)
     (fun _ _ => analyticAt_const) (by simp) (by simp) hbound hz
   norm_num at h
   exact h
 
 -- Division works for vector-valued functions without assuming completeness.
-example (v : ℂ × ℂ) {M : ℝ}
+example {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] (v : F) {M : ℝ}
     (hbound : ∀ z : Fin 2 → ℂ, z ∈ closedBall 0 2 → ‖z 0 • v‖ ≤ M) : ‖v‖ ≤ M / 2 := by
   simpa using TauCeti.norm_le_of_eq_pow_smul (f := fun z : Fin 2 → ℂ => z 0 • v)
     (g := fun _ => v) 0 1 (by norm_num : (0 : ℝ) < 2)
