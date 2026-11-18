@@ -51,7 +51,8 @@ holomorphic on `R` by zero).
   holomorphic with bounded derivatives on `R`, is a symbol of order `0`.
 * `TauCeti.WeakParameterSymbol.comp`: the pointwise composition `b ∘ a` of symbols `b` of order
   `m'` and `a` of order `m` has order `m' + m`. Its slices are given by Leibniz's rule in `r`
-  (`TauCeti.WeakParameterSymbol.slice_comp`, from `TauCeti.iteratedDeriv_clm_comp`), and each term
+  (`TauCeti.WeakParameterSymbol.slice_comp`, from `ContinuousLinearMap.iteratedDeriv_of_bilinear`
+  applied to `ContinuousLinearMap.compL`), and each term
   `∂_r^i b ∘ ∂_r^(j - i) a` has order `m' + d i + m + d (j - i) = m' + m + d j`.
 
 ## References
@@ -459,9 +460,9 @@ theorem add_mul_add_add_mul_sub_eq {j : ℕ} (i : Fin (j + 1)) :
 
 /-- **Composition.** The pointwise composition `(x, ξ, r) ↦ b(x, ξ, r) ∘ a(x, ξ, r)` of weakly
 parameter-dependent symbols `b` of frequency order `m'` and `a` of frequency order `m` has
-frequency order `m' + m`. By Leibniz's rule in `r` (`TauCeti.iteratedDeriv_clm_comp`,
-`TauCeti.WeakParameterSymbol.slice_comp`) its `j`-th slice is a sum of the
-compositions `∂_r^i b ∘ ∂_r^(j - i) a` of slices, each of order
+frequency order `m' + m`. By Leibniz's rule in `r`
+(`ContinuousLinearMap.iteratedDeriv_of_bilinear`, `TauCeti.WeakParameterSymbol.slice_comp`) its
+`j`-th slice is a sum of the compositions `∂_r^i b ∘ ∂_r^(j - i) a` of slices, each of order
 `m' + d i + m + d (j - i) = m' + m + d j`. -/
 def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
     WeakParameterSymbol n R V U d (m' + m) :=
@@ -473,8 +474,10 @@ def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W
         Symbol.inclusion (add_mul_add_add_mul_sub_eq i).le
           ((b.slice i r).comp (a.slice (j - i) r)))
     (fun j r p ↦ by
-      rw [iteratedDeriv_clm_comp (b.contDiffAt_coefficient p r) (a.contDiffAt_coefficient p r),
-        Symbol.coefficient_sum, Finset.sum_apply,
+      have hL := (ContinuousLinearMap.compL ℂ V W U).iteratedDeriv_of_bilinear
+        (b.contDiffAt_coefficient p r) (a.contDiffAt_coefficient p r) (n := j)
+      simp only [ContinuousLinearMap.compL_apply] at hL
+      rw [hL, Symbol.coefficient_sum, Finset.sum_apply,
         ← Fin.sum_univ_eq_sum_range (fun i ↦ j.choose i •
           (iteratedDeriv i (b.coefficient p) r).comp (iteratedDeriv (j - i) (a.coefficient p) r))]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
