@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Uniform local properties and norm bounds over compact parameter sets
@@ -23,6 +24,8 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
   fiber.
 * `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
   `V`, the coordinates of the points of `U` outside `V` are bounded.
+* `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a family whose values at
+  one point of `S` have norms tending to infinity has images of `S` in no fixed compact set.
 -/
 
 public section
@@ -65,5 +68,14 @@ theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] {U V : Set X} (hV :
     exact hV.isClosed_compl.isCompact
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
   exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
+
+/-- **Unbounded values violate every image bound.** If the norms of the values `u i z` at one point
+`z ∈ S` tend to infinity, then no compact set contains the images `u i '' S` for every `i`. -/
+theorem not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop {ι α E : Type*}
+    [SeminormedAddCommGroup E] {l : Filter ι} [l.NeBot] {u : ι → α → E} {S : Set α} {z : α}
+    (hz : z ∈ S) (hu : Tendsto (fun i ↦ ‖u i z‖) l atTop) :
+    ¬ ∃ K : Set E, IsCompact K ∧ ∀ i, MapsTo (u i) S K :=
+  not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact hz
+    ((tendsto_norm_atTop_iff_cobounded.1 hu).mono_right Metric.cobounded_le_cocompact)
 
 end TauCeti
