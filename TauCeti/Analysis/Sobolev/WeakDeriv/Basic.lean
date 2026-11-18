@@ -31,6 +31,9 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 -- This import is private: the standard orthonormal basis is used only inside the proof of
 -- `HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`.
 import Mathlib.Analysis.InnerProductSpace.PiL2
+-- This import is private: uniqueness of additive Haar measure is used only inside the proof of
+-- `hasWeakLineDerivOn_iff_of_isAddHaarMeasure`.
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Weak derivatives on an open set
@@ -169,6 +172,12 @@ weaken them for no gain.
   weak derivative `0`.
 * `TauCeti.HasWeakLineDerivOn.add`, `.neg`, `.sub`, `.const_smul`, `.sum` and their
   `TauCeti.HasWeakFDerivOn` counterparts: linearity in the function.
+* `TauCeti.HasWeakLineDerivOn.smul_measure_nnreal` and
+  `TauCeti.HasWeakFDerivOn.smul_measure_nnreal`: scaling the reference measure by `c : ℝ≥0`
+  preserves weak derivatives.
+* `TauCeti.hasWeakLineDerivOn_iff_of_isAddHaarMeasure` and
+  `TauCeti.hasWeakFDerivOn_iff_of_isAddHaarMeasure`: on a finite-dimensional real normed space,
+  weak differentiability does not depend on the choice of additive Haar measure.
 * `TauCeti.HasWeakFDerivOn.prodMk`: the pair of two weakly differentiable maps is weakly
   differentiable, with the paired derivative.
 * `TauCeti.HasWeakLineDerivOn.clm_comp` and `TauCeti.HasWeakFDerivOn.clm_comp`: a continuous
@@ -225,7 +234,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace
-open scoped ContDiff Distributions
+open scoped ContDiff Distributions ENNReal NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {v : E}
@@ -422,6 +431,40 @@ theorem HasWeakFDerivOn.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Mod
     [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] {U : E → E →L[ℝ] F}
     (h : HasWeakFDerivOn μ Ω u U) (c : 𝕜) :
     HasWeakFDerivOn μ Ω (c • u) (c • U) := fun v => (h v).const_smul c
+
+/-- Scaling the reference measure by a finite constant `c : ℝ≥0` preserves weak directional
+derivatives (for `c = 0` both integrals vanish). -/
+theorem HasWeakLineDerivOn.smul_measure_nnreal (h : HasWeakLineDerivOn μ Ω u u' v) (c : ℝ≥0) :
+    HasWeakLineDerivOn ((c : ℝ≥0∞) • μ) Ω u u' v := by
+  have := h.completeSpace
+  refine hasWeakLineDerivOn_iff_testFunction.2
+    ⟨inferInstance, h.locallyIntegrableOn.smul_measure ENNReal.coe_ne_top,
+      h.locallyIntegrableOn_deriv.smul_measure ENNReal.coe_ne_top, fun φ => ?_⟩
+  rw [integral_smul_measure, integral_smul_measure,
+    h.integral_lineDeriv_smul_eq_neg_integral_smul φ, smul_neg]
+
+/-- Scaling the reference measure by `c : ℝ≥0` preserves weak Fréchet derivatives. -/
+theorem HasWeakFDerivOn.smul_measure_nnreal {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
+    (c : ℝ≥0) : HasWeakFDerivOn ((c : ℝ≥0∞) • μ) Ω u U :=
+  fun v => (h v).smul_measure_nnreal c
+
+/-- **Haar-measure independence of `HasWeakLineDerivOn`.** On a finite-dimensional real normed
+space, weak directional differentiability does not depend on the choice of additive Haar measure. -/
+theorem hasWeakLineDerivOn_iff_of_isAddHaarMeasure [FiniteDimensional ℝ E] [BorelSpace E]
+    (μ₁ μ₂ : Measure E) [μ₁.IsAddHaarMeasure] [μ₂.IsAddHaarMeasure] :
+    HasWeakLineDerivOn μ₁ Ω u u' v ↔ HasWeakLineDerivOn μ₂ Ω u u' v := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [Measure.isAddLeftInvariant_eq_smul μ₂ μ₁]
+    exact h.smul_measure_nnreal (Measure.addHaarScalarFactor μ₂ μ₁)
+  · rw [Measure.isAddLeftInvariant_eq_smul μ₁ μ₂]
+    exact h.smul_measure_nnreal (Measure.addHaarScalarFactor μ₁ μ₂)
+
+/-- **Haar-measure independence of `HasWeakFDerivOn`.** On a finite-dimensional real normed space,
+weak Fréchet differentiability does not depend on the choice of additive Haar measure. -/
+theorem hasWeakFDerivOn_iff_of_isAddHaarMeasure [FiniteDimensional ℝ E] [BorelSpace E]
+    (μ₁ μ₂ : Measure E) [μ₁.IsAddHaarMeasure] [μ₂.IsAddHaarMeasure] {U : E → E →L[ℝ] F} :
+    HasWeakFDerivOn μ₁ Ω u U ↔ HasWeakFDerivOn μ₂ Ω u U :=
+  forall_congr' fun _ => hasWeakLineDerivOn_iff_of_isAddHaarMeasure μ₁ μ₂
 
 end Defs
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
@@ -25,6 +26,11 @@ sum of the squared partial derivatives of its components along `1` and `I`
 The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
 derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
 origin.
+
+On a finite product `ι → ℝ` equipped with the supremum norm, `‖·‖` is Fréchet differentiable at
+any point `x` where a single nonzero coordinate strictly dominates (`|x j| < |x i|` for all
+`j ≠ i`), with derivative `(SignType.sign (x i) : ℝ) • ContinuousLinearMap.proj i`
+(`TauCeti.hasFDerivAt_pi_norm_of_abs_lt`).
 -/
 
 public section
@@ -100,5 +106,31 @@ theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠
 theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :
     HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
   simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
+
+/-- On a finite product `ι → ℝ` equipped with the supremum norm, if `x i ≠ 0` and
+`|x j| < |x i|` for every `j ≠ i`, then `‖·‖` is Fréchet differentiable at `x` with derivative
+`(SignType.sign (x i) : ℝ) • ContinuousLinearMap.proj i`. -/
+theorem hasFDerivAt_pi_norm_of_abs_lt {ι : Type*} [Fintype ι] {x : ι → ℝ} {i : ι}
+    (hi : x i ≠ 0) (hx : ∀ j ≠ i, |x j| < |x i|) :
+    HasFDerivAt (‖·‖ : (ι → ℝ) → ℝ)
+      ((SignType.sign (x i) : ℝ) • ContinuousLinearMap.proj (R := ℝ) i) x := by
+  let p : (ι → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj i
+  have heq : (‖·‖ : (ι → ℝ) → ℝ) =ᶠ[𝓝 x] fun y => |p y| := by
+    have hdom : ∀ᶠ y : ι → ℝ in 𝓝 x, ∀ j, j ≠ i → |y j| < |y i| :=
+      eventually_all.2 fun j => by
+        by_cases hj : j = i
+        · exact Eventually.of_forall fun _ h => (h hj).elim
+        · have hopen : IsOpen {y : ι → ℝ | |y j| < |y i|} :=
+            isOpen_lt (continuous_abs.comp (continuous_apply j))
+              (continuous_abs.comp (continuous_apply i))
+          filter_upwards [hopen.mem_nhds (hx j hj)] with _ hy _
+          exact hy
+    filter_upwards [hdom] with y hy
+    refine le_antisymm ((pi_norm_le_iff_of_nonneg (abs_nonneg _)).2 fun j => ?_) ?_
+    · rcases eq_or_ne j i with rfl | hj
+      · rfl
+      · exact (hy j hj).le
+    · simpa [p, Real.norm_eq_abs] using norm_le_pi_norm y i
+  exact (p.hasFDerivAt.abs hi).congr_of_eventuallyEq heq
 
 end TauCeti

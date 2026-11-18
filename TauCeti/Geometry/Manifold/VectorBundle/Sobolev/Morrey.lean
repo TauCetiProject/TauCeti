@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.AEEq
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
+import TauCeti.MeasureTheory.Function.MemLpLoc.PreciseRepresentative
 
 /-!
 # Morrey's embedding for Sobolev sections over surfaces

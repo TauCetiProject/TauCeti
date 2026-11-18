@@ -46,6 +46,7 @@ kernels are tested. On an open subset `W` of the `L^p` product `WithLp p (E × D
 * `TestFunction.prodSMulCLM`: the continuous linear map `φ ↦ ((x, t) ↦ ψ t • φ x)`.
 * `TestFunction.prodSMulCLM_apply`: its values.
 * `TestFunction.tsupport_prodSMulCLM_subset`: its support lies in `tsupport φ ×ˢ tsupport ψ`.
+* `TestFunction.lineDerivOp_prodSMulCLM`: the product rule for its directional derivatives.
 * `TestFunction.sliceRight`: the slice `y ↦ φ (x, y)` of a test function on a product, with its
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
@@ -146,6 +147,22 @@ theorem prodSMulCLM_apply (φ : 𝓓(Ω, F)) (p : E × D) :
 theorem tsupport_prodSMulCLM_subset (φ : 𝓓(Ω, F)) :
     tsupport (prodSMulCLM ψ hV φ) ⊆ tsupport φ ×ˢ tsupport ψ :=
   tsupport_snd_smul_fst_subset _ _
+
+/-- **Product rule for `TestFunction.prodSMulCLM`.** Differentiating the tensor product
+`p ↦ ψ p.2 • φ p.1` in direction `v : E × D` differentiates both factors:
+`∂_{v} (prodSMulCLM ψ hV φ) = prodSMulCLM ψ hV (∂_{v.1} φ) + prodSMulCLM (∂_{v.2} ψ) hV φ`. -/
+theorem lineDerivOp_prodSMulCLM (φ : 𝓓(Ω, F)) (v : E × D) :
+    ∂_{v} (prodSMulCLM ψ hV φ) =
+      prodSMulCLM ψ hV (∂_{v.1} φ) + prodSMulCLM (∂_{v.2} ψ) hV φ := by
+  ext p
+  have hψ := (ψ.contDiff.differentiable (by simp) p.2).hasFDerivAt.comp p
+    (ContinuousLinearMap.snd ℝ E D).hasFDerivAt
+  have hφ := (φ.contDiff.differentiable (by simp) p.1).hasFDerivAt.comp p
+    (ContinuousLinearMap.fst ℝ E D).hasFDerivAt
+  have hsmul : HasFDerivAt (prodSMulCLM ψ hV φ : E × D → F) _ p := hψ.smul hφ
+  rw [lineDerivOp_apply_eq_fderiv, add_apply, prodSMulCLM_apply, prodSMulCLM_apply,
+    lineDerivOp_apply_eq_fderiv, lineDerivOp_apply_eq_fderiv, hsmul.fderiv]
+  simp [add_comm]
 
 /-! ### Slices -/
 

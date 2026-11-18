@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Weak
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
-public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Complex.Pompeiu.Lp
 import TauCeti.Analysis.Complex.Wirtinger.Laplacian

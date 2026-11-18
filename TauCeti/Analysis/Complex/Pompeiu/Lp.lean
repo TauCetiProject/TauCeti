@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.CauchyKernel
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
-public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
 import TauCeti.MeasureTheory.Integral.SchurTest
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 

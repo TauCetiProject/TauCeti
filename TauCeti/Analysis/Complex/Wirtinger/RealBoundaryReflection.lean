@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Weyl
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.Star
-public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.MeasureTheory.Function.MemLpLoc.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
