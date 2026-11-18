@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.ExponentialGroup.Completion
+import Mathlib.Tactic.DeriveCountable
 import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
@@ -36,6 +38,11 @@ exponents in `A`, modulo the least congruence containing the group laws, the mul
   has a ring homomorphism to `ℤ`, for instance `ℤ[t] → ℤ`, `t ↦ 1`. More generally it is injective
   as soon as `G` embeds in some `A`-group: apply
   `TauCeti.IsExponentialGroup.IsCompletion.injective_of_injective` to `isCompletion_of`.
+* `TauCeti.ExponentialGroup.Completion.of_pow_ne_one`: with a ring homomorphism `f : A →+* ℤ`,
+  the power `g ^ a` of an element of infinite order of `G` is not the identity when `f a ≠ 0`.
+* `TauCeti.ExponentialGroup.Completion.instCountable`, `instSubsingleton`: the completion of a
+  countable group over a countable semiring is countable, and that of the trivial group is
+  trivial.
 
 ## Implementation notes
 
@@ -110,6 +117,8 @@ private inductive Rel : Term A G → Term A G → Prop
   | conj_pow (s t) (a : A) : Rel (pow (mul (mul s t) (inv s)) a) (mul (mul s (pow t a)) (inv s))
   | mul_pow {s t} (a : A) :
       Rel (mul s t) (mul t s) → Rel (pow (mul s t) a) (mul (pow s a) (pow t a))
+
+deriving instance Countable for Term
 
 end Completion
 
@@ -205,9 +214,10 @@ end Lift
 theorem isCompletion_of : IsExponentialGroup.IsCompletion.{w} A (of : G →* Completion A G) :=
   ⟨fun _ _ _ _ φ => ⟨lift φ, rfl, fun _ hψ => exponentialHom_ext hψ⟩⟩
 
-/-- If the semiring `A` has a ring homomorphism to `ℤ`, every group embeds in its tensor
-`A`-completion. For `A = ℤ[t]`, take the evaluation at `1`. -/
-theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Completion A G) := by
+/-- If the semiring `A` has a ring homomorphism `f` to `ℤ`, the completion retracts onto `G` by a
+homomorphism `r` with `r (x ^ a) = r x ^ f a`. -/
+private theorem exists_retraction (f : A →+* ℤ) :
+    ∃ r : Completion A G →* G, (∀ g, r (of g) = g) ∧ ∀ x (a : A), r (x ^ a) = r x ^ f a := by
   -- `G` is an `A`-group with `g ^ a = g ^ f a`
   let : Pow G A := ⟨fun g a => g ^ f a⟩
   have : IsExponentialGroup A G :=
@@ -216,7 +226,32 @@ theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Complet
       pow_mul g a b := (congrArg (g ^ ·) (map_mul f a b)).trans (zpow_mul g _ _)
       conj_pow _ _ _ := conj_zpow
       mul_pow hc a := hc.mul_zpow (f a) }
-  exact isCompletion_of.injective_of_injective (φ := .id G) Function.injective_id
+  exact ⟨(lift (.id G)).toMonoidHom, fun _ => rfl, (lift (.id G)).map_pow⟩
+
+/-- If the semiring `A` has a ring homomorphism to `ℤ`, every group embeds in its tensor
+`A`-completion. For `A = ℤ[t]`, take the evaluation at `1`. -/
+theorem of_injective (f : A →+* ℤ) : Function.Injective (of : G →* Completion A G) := by
+  obtain ⟨r, hr, -⟩ := exists_retraction (G := G) f
+  exact Function.LeftInverse.injective hr
+
+/-- If the semiring `A` has a ring homomorphism `f` to `ℤ`, the power `g ^ a` in the completion of
+an element `g` of infinite order of `G` is not the identity when `f a ≠ 0`. For `A = ℤ[t]` and a
+nonzero polynomial `a`, take for `f` the evaluation at an integer that is not a root of `a`. -/
+theorem of_pow_ne_one (f : A →+* ℤ) {g : G} (hg : ¬IsOfFinOrder g) {a : A} (ha : f a ≠ 0) :
+    (of g : Completion A G) ^ a ≠ 1 := by
+  obtain ⟨r, hr, hpow⟩ := exists_retraction (G := G) f
+  refine fun h => hg (isOfFinOrder_iff_zpow_eq_one.2 ⟨f a, ha, ?_⟩)
+  simpa [hpow, hr] using congrArg r h
+
+/-- The tensor completion of a countable group over a countable semiring is countable. -/
+instance instCountable [Countable A] [Countable G] : Countable (Completion A G) :=
+  inferInstanceAs (Countable (Quot _))
+
+/-- The tensor completion of the trivial group is trivial. -/
+instance instSubsingleton [Subsingleton G] : Subsingleton (Completion A G) :=
+  Subgroup.subsingleton_iff.1 <| subsingleton_of_bot_eq_top <| eq_top_of_range_le
+    (by rintro _ ⟨g, rfl⟩; simp [Subsingleton.elim g 1])
+    fun x hx a => by simp [Subgroup.mem_bot.1 hx]
 
 end Completion
 
