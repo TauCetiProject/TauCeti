@@ -17,7 +17,8 @@ import Mathlib.Topology.MetricSpace.Bounded
 In a seminormed additive group, the squared distance between two points is at most twice the sum
 of their squared distances to any third point: the triangle inequality through `c`, squared with
 `(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`; likewise the squared norm of a sum of three vectors is at most
-three times the sum of their squared norms. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
+three times the sum of their squared norms. The extended norm satisfies the triangle inequality
+`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
 `c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a
 squared distance is at most `1`.
 
@@ -38,11 +39,14 @@ A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
 contains `0`.
 
+The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to these centres.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
 * `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
+* `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
 * `TauCeti.norm_sq_le_of_mul_norm_sub_sq_le` -- `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by
   `2 / c * r + 2 ‖b‖²`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
@@ -60,6 +64,7 @@ contains `0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
+* `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
 -/
 
 public section
@@ -83,6 +88,12 @@ theorem norm_add_add_sq_le_three_mul {E : Type*} [SeminormedAddCommGroup E] (a b
     ‖a + b + c‖ ^ 2 ≤ 3 * (‖a‖ ^ 2 + ‖b‖ ^ 2 + ‖c‖ ^ 2) :=
   (pow_le_pow_left₀ (norm_nonneg _) norm_add₃_le 2).trans <| by
     nlinarith [sq_nonneg (‖a‖ - ‖b‖), sq_nonneg (‖b‖ - ‖c‖), sq_nonneg (‖a‖ - ‖c‖)]
+
+/-- **Triangle inequality for the extended norm.** `‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, the
+extended-norm form of `norm_sub_le_norm_sub_add_norm_sub`. -/
+theorem eNorm_sub_le_eNorm_sub_add_eNorm_sub {G : Type*} [SeminormedAddCommGroup G] (u v w : G) :
+    ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
+  simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
 
 /-- If `c ‖a - b‖² ≤ r` with `c > 0`, then `‖a‖² ≤ 2 / c * r + 2 ‖b‖²`: the squared triangle
 inequality through `b`. -/
@@ -168,5 +179,11 @@ theorem nonneg_of_forall_norm_lt {E F 𝓕 : Type*} [SeminormedAddGroup E] [Semi
     [FunLike 𝓕 E F] (f : 𝓕) {δ B : ℝ} (hδ : 0 < δ) (hf : ∀ x : E, ‖x‖ < δ → ‖f x‖ ≤ B) :
     0 ≤ B :=
   (norm_nonneg _).trans <| hf 0 (by simpa using hδ)
+
+/-- The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances: the distance from
+`x + (c - c₀)` to `c` is the distance from `x` to `c₀`. -/
+theorem dist_add_sub_eq {E : Type*} [SeminormedAddCommGroup E] (x c c₀ : E) :
+    dist (x + (c - c₀)) c = dist x c₀ := by
+  rw [← dist_add_right x c₀ (c - c₀), add_sub_cancel]
 
 end TauCeti
