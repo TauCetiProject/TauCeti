@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
+public import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # First jets of vector bundle morphisms
@@ -136,9 +137,8 @@ theorem localRep_comp [∀ x, IsTopologicalAddGroup (W' x)] [∀ x, ContinuousSM
     (hW : (extChartAt I i).symm z ∈ (trivializationAt G W i).baseSet) :
     localRep I (F →L[𝕜] G') (fun y ↦ (Ψ y).comp (Φ y)) i z =
       (localRep I (G →L[𝕜] G') Ψ i z).comp (localRep I (F →L[𝕜] G) Φ i z) := by
-  ext v
-  simp only [localRep_apply, hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
-    ContinuousLinearMap.comp_apply, Trivialization.symmL_continuousLinearMapAt _ hW]
+  simp only [localRep_apply, hom_trivializationAt_apply]
+  exact ContinuousLinearMap.inCoordinates_comp _ _ hW
 
 section
 
@@ -286,10 +286,8 @@ theorem map_id [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 
   have hrep : ∀ z, (extChartAt I x).symm z ∈ (trivializationAt F V x).baseSet →
       localRep I (F →L[𝕜] F) (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x z =
         ContinuousLinearMap.id 𝕜 F := fun z hz ↦ by
-    ext w
-    simp only [localRep_apply, hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
-      Trivialization.continuousLinearMapAt_symmL _ hz]
+    simp only [localRep_apply, hom_trivializationAt_apply]
+    exact ContinuousLinearMap.inCoordinates_id hz
   have hderiv : fderivWithin 𝕜 (localRep I (F →L[𝕜] F) (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x)
       (range I) (extChartAt I x x) = 0 := by
     refine ((hasFDerivWithinAt_const (ContinuousLinearMap.id 𝕜 F) _ _).congr_of_eventuallyEq

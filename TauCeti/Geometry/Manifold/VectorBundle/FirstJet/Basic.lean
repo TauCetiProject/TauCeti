@@ -383,16 +383,6 @@ section in the preferred chart of `M` and the preferred trivialization of `V` at
 abbrev FirstJetBundle : M → Type _ :=
   (firstJetBundleCore I F V).Fiber
 
-/-- The fibres of `J¹V` are topological groups, as their model `F × (E →L[𝕜] F)` is; this gives
-the bundles of continuous linear maps between first-jet bundles. -/
-instance (x : M) : IsTopologicalAddGroup (FirstJetBundle I F V x) :=
-  inferInstanceAs (IsTopologicalAddGroup (F × (E →L[𝕜] F)))
-
-/-- The scalar action on the fibres of `J¹V` is continuous, as it is on their model
-`F × (E →L[𝕜] F)`. -/
-instance (x : M) : ContinuousSMul 𝕜 (FirstJetBundle I F V x) :=
-  inferInstanceAs (ContinuousSMul 𝕜 (F × (E →L[𝕜] F)))
-
 namespace FirstJetBundle
 
 variable {I F V} {x : M}
