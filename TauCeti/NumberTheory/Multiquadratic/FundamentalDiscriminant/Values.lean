@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
 
 /-!
@@ -15,6 +16,10 @@ The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker char
 `TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
 zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
 character.
+
+For a squarefree integer `d`, `fundamentalDiscriminant d` and `d` have the same Legendre symbol at
+every odd prime `p` (`legendreSym_fundamentalDiscriminant`), so the character of
+`fundamentalDiscriminant d` evaluates at `p` to `legendreSym p d`.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -33,6 +38,16 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
+
+/-- At an odd prime `p`, the character of `fundamentalDiscriminant d` (for squarefree `d`) takes
+the value `legendreSym p d`, including `0` when `p ∣ d`. -/
+theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast {d : ℤ} (hd : Squarefree d)
+    {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) :
+    fundamentalDiscriminantChar (fundamentalDiscriminant d)
+      (isFundamentalDiscr_fundamentalDiscriminant hd) p = legendreSym p d := by
+  simpa [legendreSym_fundamentalDiscriminant d hp] using
+    fundamentalDiscriminantChar_natCast_eq_legendreSym
+      (isFundamentalDiscr_fundamentalDiscriminant hd) hp
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/
