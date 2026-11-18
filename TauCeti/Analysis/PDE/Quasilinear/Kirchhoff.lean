@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Analysis.Calculus.IntervalIntegral.Inverse
+import TauCeti.Analysis.PDE.DirichletProblem.Interval
 import TauCeti.Analysis.PDE.Regularity.Interval
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
@@ -66,14 +67,6 @@ namespace TauCeti.PDE
 
 variable {x₀ x₁ : ℝ} {p : ENNReal} [Fact (1 ≤ p)] {A f F : ℝ → ℝ}
 
-/-- The primitive `G(r) = ∫_{x₀}^r f + F(r)` of the data is interval integrable on `[x₀, x₁]`. -/
-private theorem intervalIntegrable_intervalIntegral_add (hx : x₀ < x₁)
-    (hf : IntegrableOn f (Ioo x₀ x₁)) (hF : IntegrableOn F (Ioo x₀ x₁)) :
-    IntervalIntegrable (fun r ↦ (∫ s in x₀..r, f s) + F r) volume x₀ x₁ :=
-  ((TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hf
-    (left_mem_Icc.2 hx.le)).intervalIntegrable_of_Icc hx.le).add
-    ((intervalIntegrable_iff_integrableOn_Ioo_of_le hx.le).2 hF)
-
 /-- **Kirchhoff's transformation of a solution.** Let `A` be continuous and let `f` and `F` be
 integrable on `(x₀, x₁)`. If `u ∈ W^{1,p}(x₀, x₁)` solves `-(A(u) u')' = f + F'` against test
 functions, then `Ψ(y) = ∫_0^y A` turns its continuous representative `ū` into a solution of the
@@ -117,7 +110,8 @@ theorem exists_forall_intervalIntegral_intervalRepresentativeL_eq (hx : x₀ < x
     rw [((hA.integral_hasStrictDerivAt 0 (v r)).hasDerivAt.comp r
       (hr (uIoc_of_le hx.le ▸ Ioo_subset_Ioc_self hrI))).deriv]
     linarith [hkr hrI]
-  have hG := (intervalIntegrable_intervalIntegral_add hx hf hF).mono_set
+  have hG := ((intervalIntegrable_iff_integrableOn_Ioo_of_le hx.le).2
+    (integrableOn_intervalIntegral_add hx hf hF)).mono_set
     (uIcc_subset_uIcc left_mem_uIcc htI)
   have h := hac.integral_deriv_eq_sub
   rw [intervalIntegral.integral_congr_ae hderiv,
@@ -177,7 +171,8 @@ private theorem exists_absolutelyContinuousOnInterval_and_ae_hasDerivAt (hx : x�
   obtain ⟨g, -, hglip, hgΨ, -, hgd⟩ :=
     TauCeti.exists_orderIso_contDiff_inverse_intervalIntegral hA hlam hAlam 0
   set G : ℝ → ℝ := fun r ↦ (∫ s in x₀..r, f s) + F r
-  have hGi := intervalIntegrable_intervalIntegral_add hx hf hF
+  have hGi := (intervalIntegrable_iff_integrableOn_Ioo_of_le hx.le).2
+    (integrableOn_intervalIntegral_add hx hf hF)
   -- The solution `w` of the linear problem, `-w'' = f + F'` with boundary values `Ψ(g₀), Ψ(g₁)`.
   set k : ℝ := ((∫ s in 0..g₁, A s) - (∫ s in 0..g₀, A s) + ∫ r in x₀..x₁, G r) / (x₁ - x₀)
     with hk_def
