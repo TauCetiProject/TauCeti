@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Basic
 public import TauCeti.Geometry.Symplectic.Prod.Skew
-public import TauCeti.Geometry.Symplectic.Floer.Graph
+public import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 
 /-!
 # The native skew graph construction for finite-regularity forcing data

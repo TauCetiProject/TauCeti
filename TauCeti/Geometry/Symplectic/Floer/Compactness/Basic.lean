@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
-import TauCeti.Geometry.Symplectic.Floer.Graph
+import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -32,7 +32,7 @@ where `J(z, x)` is an almost complex structure on `V` depending on the domain po
 `TauCeti.SymplecticForm.hamiltonianOneForm`. The equation says that the perturbed derivative
 `du - X(z, u)` is complex linear.
 
-Gromov's graph construction (`TauCeti.Geometry.Symplectic.Floer.Graph`) turns solutions into
+Gromov's graph construction (`TauCeti.Geometry.Symplectic.Floer.Graph.Basic`) turns solutions into
 pseudoholomorphic curves: the graph `U y = (y, u y)` solves the autonomous equation
 `∂ₜU = J'(U) ∂ₛU` for the structure
 
