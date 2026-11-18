@@ -13,6 +13,7 @@ public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The cube modulo its boundary is a sphere
@@ -390,30 +391,18 @@ theorem exists_genLoop_sphere {V : Type*} [NormedAddCommGroup V] [InnerProductSp
   have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
   let e₀ : EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] V :=
     ((stdOrthonormalBasis ℝ V).reindex (finCongr hV)).repr.symm
-  obtain ⟨b, hb⟩ : ∃ b : EuclideanSpace ℝ (Fin (n + 1)), b = sphereNorthPole n := ⟨_, rfl⟩
-  have hab : ‖b‖ = ‖e₀.symm u₀‖ := by
-    rw [LinearIsometryEquiv.norm_map, hb]
-    simp [norm_eq_of_mem_sphere]
-  -- Rotate the north pole onto the preimage of `u₀` by a reflection.
-  let e := (ℝ ∙ (b - e₀.symm u₀))ᗮ.reflection.trans e₀
-  let F : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, sphere (0 : V) 1) :=
-    ⟨fun s ↦ ⟨e s, by rw [mem_sphere_zero_iff_norm, e.norm_map, norm_eq_of_mem_sphere]⟩,
-      by fun_prop⟩
-  have hF (s) : (F s : V) = e s := rfl
-  have hFinj : Function.Injective F := fun s t h ↦
-    Subtype.ext (e.injective (by rw [← hF, ← hF, h]))
+  -- Rotate the image of the north pole onto `u₀`: the linear isometries act transitively.
+  obtain ⟨r, hr⟩ := MulAction.exists_smul_eq (V ≃ₗᵢ[ℝ] V)
+    (e₀.unitSphereIsometryEquiv (sphereNorthPole n)) u₀
+  let F := (e₀.trans r).unitSphereIsometryEquiv.toHomeomorph
   have he : F (sphereNorthPole n) = u₀ := by
-    refine Subtype.ext ?_
-    rw [hF, ← hb]
-    simp [e, Submodule.reflection_sub hab]
+    simpa [F, LinearIsometryEquiv.unitSphereIsometryEquiv_trans] using hr
   refine ⟨GenLoop.map F he (sphereGenLoop n), fun q hq ↦ ?_, fun y z h ↦ ?_⟩
-  · let s : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 :=
-      ⟨e.symm q, by rw [mem_sphere_zero_iff_norm, e.symm.norm_map, norm_eq_of_mem_sphere]⟩
-    have hs : F s = q := Subtype.ext (by rw [hF]; exact e.apply_symm_apply _)
-    obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := s) fun h ↦ hq (by rw [← hs, h, he])
-    exact ⟨y, by rw [GenLoop.map_apply, sphereGenLoop_apply, hy, hs]⟩
+  · obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := F.symm q) fun h ↦
+      hq (by rw [← F.apply_symm_apply q, h, he])
+    exact ⟨y, by rw [GenLoop.map_apply, sphereGenLoop_apply, hy]; exact F.apply_symm_apply q⟩
   · rw [GenLoop.map_apply, GenLoop.map_apply, sphereGenLoop_apply, sphereGenLoop_apply] at h
-    exact cubeToSphere_eq_cubeToSphere_iff.1 (hFinj h)
+    exact cubeToSphere_eq_cubeToSphere_iff.1 (F.injective h)
 
 variable (n) in
 /-- `TauCeti.cubeToSphere` is a quotient map in positive dimension: it is a continuous surjection

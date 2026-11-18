@@ -88,8 +88,8 @@ def sphereMeridian (w : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) : Path p (-p) where
   toFun t := sphereRotationFamily p (w, Circle.homeomorphSphere (Circle.exp (π * t)))
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
-    simp only [coe_sphereRotationFamily, Circle.coe_homeomorphSphere_apply, Circle.coe_exp,
-      Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+    simp only [coe_sphereRotationFamily, Circle.coe_homeomorphSphere_exp_re,
+      Circle.coe_homeomorphSphere_exp_im]
     fun_prop
   source' := by
     apply Subtype.ext

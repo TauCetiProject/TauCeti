@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LocalDegree
-public import TauCeti.AlgebraicTopology.Sphere.Equator
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.Stiefel.DoubleLoop
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
