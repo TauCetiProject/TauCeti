@@ -198,10 +198,12 @@ theorem seminormalOffDiag_of_one_lt {d : ℤ} (hd : 1 < d) :
 
 /-- The factored form `Q [d + 1]_Q [d - 1]_Q / [d]_Q ^ 2` of the product of the off-diagonal
 coefficients at opposite axial distances. At `Q = 1` it is `1 - 1 / d ^ 2`. -/
-theorem add_seminormalDiag_mul_seminormalDiag_neg (hQ : Q ≠ 0) {d : ℤ}
-    (hd : additiveContent Q d ≠ 0) :
+theorem add_seminormalDiag_mul_seminormalDiag_neg {d : ℤ} (hd : additiveContent Q d ≠ 0) :
     Q + seminormalDiag Q d * seminormalDiag Q (-d) =
       Q * additiveContent Q (d + 1) * additiveContent Q (d - 1) / additiveContent Q d ^ 2 := by
+  rcases eq_or_ne Q 0 with rfl | hQ
+  · -- at `Q = 0` both sides vanish, since `0 ^ d = 0` for `d ≠ 0`
+    simp [seminormalDiag, zero_zpow _ (ne_zero_of_additiveContent_ne_zero hd)]
   have h₁ := additiveContent_add_one Q d
   have h₂ := additiveContent_add_one Q (d - 1)
   rw [sub_add_cancel] at h₂
