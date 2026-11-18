@@ -220,14 +220,9 @@ nonzero vector of every subspace of rank `n + 1`. -/
 theorem bernsteinNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.rank ≤ n) :
     T.bernsteinNumber n = 0 := by
   refine le_antisymm (bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_) bot_le
-  obtain ⟨x, hxM, hTx, hx0⟩ : ∃ x ∈ M, T x = 0 ∧ x ≠ 0 := by
-    by_contra! h
-    have hle := (Submodule.lift_rank_le_of_disjoint_ker (f := (T : E →ₗ[𝕜] F))
-      (Submodule.disjoint_def.mpr h)).trans (Cardinal.lift_le.mpr hT)
-    rw [hM, Cardinal.lift_natCast, ← Nat.cast_add_one, Cardinal.lift_natCast,
-      Nat.cast_le] at hle
-    omega
-  exact ⟨x, hxM, hx0, by simp [hTx]⟩
+  obtain ⟨x, hxM, hTx, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt
+    (f := (T : E →ₗ[𝕜] F)) (by rw [hM]; exact_mod_cast n.lt_succ_self) hT
+  exact ⟨x, hxM, hx0, by simp [show T x = 0 from hTx]⟩
 
 /-- **Perturbative triangle bound.** `bₙ(S + T) ≤ bₙ(S) + ‖T‖`. -/
 theorem bernsteinNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
@@ -279,15 +274,9 @@ a subspace of codimension at most `n` meet in a nonzero vector. -/
 theorem bernsteinNumber_le_gelfandNumber (T : E →L[𝕜] F) (n : ℕ) :
     T.bernsteinNumber n ≤ T.gelfandNumber n := by
   refine le_gelfandNumber_iff.mpr fun N _ hN ↦ bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_
-  obtain ⟨x, hxM, hxN, hx0⟩ : ∃ x ∈ M, x ∈ N ∧ x ≠ 0 := by
-    by_contra! h
-    have hdisj : Disjoint M (LinearMap.ker N.mkQ) := by
-      rw [Submodule.ker_mkQ]
-      exact Submodule.disjoint_def.mpr h
-    have hle := (Cardinal.lift_le.mp (Submodule.lift_rank_le_of_disjoint_ker hdisj)).trans
-      ((Submodule.rank_le _).trans hN)
-    rw [hM, ← Nat.cast_add_one, Nat.cast_le] at hle
-    omega
+  obtain ⟨x, hxM, hxN, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt (f := N.mkQ)
+    (by rw [hM]; exact_mod_cast n.lt_succ_self) ((Submodule.rank_le _).trans hN)
+  rw [Submodule.ker_mkQ] at hxN
   exact ⟨x, hxM, hx0, (T ∘L N.subtypeL).le_opNNNorm ⟨x, hxN⟩⟩
 
 end ContinuousLinearMap
