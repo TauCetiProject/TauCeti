@@ -186,20 +186,16 @@ private lemma smallTwistedMayerVietorisToBiprod_fst_inv :
         (subspaceTwistedChainComplexIso L U).inv =
       (subspaceTwistedChainComplexIso L (U ∩ V)).inv ≫
         subsetTwistedChainComplexMap L Set.inter_subset_left := by
-  rw [← smallTwistedChainComplexSubsetInclusion_comp_subspaceTwistedChainComplexIso_inv,
-    ← Category.assoc]
-  congr 1
-  exact (cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ U))).1 (by simp)
+  rw [smallTwistedMayerVietorisToBiprod_comp_fst_assoc,
+    smallTwistedChainComplexSubsetInclusion_comp_subspaceTwistedChainComplexIso_inv]
 
 private lemma smallTwistedMayerVietorisToBiprod_snd_inv :
     smallTwistedMayerVietorisToBiprod L U V ≫ biprod.snd ≫
         (subspaceTwistedChainComplexIso L V).inv =
       -((subspaceTwistedChainComplexIso L (U ∩ V)).inv ≫
         subsetTwistedChainComplexMap L Set.inter_subset_right) := by
-  rw [← smallTwistedChainComplexSubsetInclusion_comp_subspaceTwistedChainComplexIso_inv,
-    ← Preadditive.neg_comp, ← Category.assoc]
-  congr 1
-  exact (cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ V))).1 (by simp)
+  rw [smallTwistedMayerVietorisToBiprod_comp_snd_assoc, Preadditive.neg_comp,
+    smallTwistedChainComplexSubsetInclusion_comp_subspaceTwistedChainComplexIso_inv]
 
 private lemma homologyMap_toBiprod_comp_homologyIsoBiprod_hom (n : ℕ) :
     HomologicalComplex.homologyMap (smallTwistedMayerVietorisToBiprod L U V) n ≫

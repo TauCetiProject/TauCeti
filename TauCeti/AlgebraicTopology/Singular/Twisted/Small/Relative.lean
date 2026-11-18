@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 
 /-!
@@ -126,21 +126,8 @@ equations by `Eq.trans`, which unifies up to unfolding. -/
 @[simp, reassoc]
 lemma subsetTwistedChainComplexMap_comp_twistedChainComplexπ (h : C ⊆ A) :
     subsetTwistedChainComplexMap L h ≫ (TopPair.ofInclusion h).twistedChainComplexπ
-      ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) = 0 := by
-  have : Mono (TopCat.ofHom (ContinuousMap.subtypeVal A)) :=
-    (TopCat.mono_iff_injective _).2 Subtype.val_injective
-  -- The map induced by `C ⊆ A` is a change of coefficients followed by the map of the embedding
-  -- of the pair `(A, C)`.
-  have hmap : subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
-        ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
-          (TopCat.ofHom (ContinuousMap.subtypeVal A)).hom).hom.app L) ≫
-      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
-        ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) :=
-    (cancel_mono (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L)).1
-      ((subsetTwistedChainComplexMap_twistedChainComplexMap L h).trans
-        ((twistedChainComplexMap_comp (TopCat.ofHom (ContinuousMap.inclusion h))
-          (TopCat.ofHom (ContinuousMap.subtypeVal A)) L).trans (Category.assoc _ _ _).symm))
-  exact (congrArg (· ≫ _) hmap).trans <| (Category.assoc _ _ _).trans <|
+      ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) = 0 :=
+  (congrArg (· ≫ _) (subsetTwistedChainComplexMap_def L h)).trans <| (Category.assoc _ _ _).trans <|
     (congrArg (_ ≫ ·) ((TopPair.ofInclusion h).twistedChainComplexMap_comp_twistedChainComplexπ
       ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L))).trans comp_zero
 
@@ -223,32 +210,22 @@ section SubsetPair
 variable {A₁ C₁ A₂ C₂ A₃ C₃ : Set X} (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hC₃ : C₃ ⊆ A₃)
 
 /-- The map of relative twisted chains `C(A₁, C₁; L) ⟶ C(A₂, C₂; L)` induced by an inclusion of
-pairs of subsets of `X`, `A₁ ⊆ A₂` and `C₁ ⊆ C₂`, with `L` restricted to `A₁` and to `A₂`. It is
-characterized by
+pairs of subsets of `X`, `A₁ ⊆ A₂` and `C₁ ⊆ C₂`, with `L` restricted to `A₁` and to `A₂`: the
+change of coefficients identifying the two restrictions of `L` to `A₁`, followed by the map
+`TopPair.twistedChainComplexMap` of the inclusion of pairs. It is characterized by
 `TauCeti.LocalCoefficientSystem.twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap`. -/
 def subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
     (TopPair.ofInclusion hC₁).twistedChainComplex
         ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) ⟶
       (TopPair.ofInclusion hC₂).twistedChainComplex
         ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) :=
-  (isColimitSubsetPairTwistedChainComplexπ L hC₁).desc (CokernelCofork.ofπ
-    (smallTwistedChainComplexSubsetInclusion L hA ≫ subsetPairTwistedChainComplexπ L hC₂) (by
-      rw [← Category.assoc, show smallTwistedChainComplexSubsetInclusion L hC₁ ≫
-          smallTwistedChainComplexSubsetInclusion L hA =
-            smallTwistedChainComplexSubsetInclusion L hC ≫
-              smallTwistedChainComplexSubsetInclusion L hC₂ by
-          simp only [smallTwistedChainComplexInclusion_comp],
-        Category.assoc, smallTwistedChainComplexSubsetInclusion_comp_subsetPairTwistedChainComplexπ,
-        comp_zero]))
-
-/-- The map of relative twisted chains induced by an inclusion of pairs of subsets is induced by
-the inclusion of the chains of `X` supported in `A₁` into those supported in `A₂`. -/
-@[reassoc (attr := simp)]
-lemma subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂)
-    (hC : C₁ ⊆ C₂) :
-    subsetPairTwistedChainComplexπ L hC₁ ≫ subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC =
-      smallTwistedChainComplexSubsetInclusion L hA ≫ subsetPairTwistedChainComplexπ L hC₂ :=
-  (isColimitSubsetPairTwistedChainComplexπ L hC₁).fac _ WalkingParallelPair.one
+  (TopPair.ofInclusion hC₁).twistedChainComplexCoefficientMap
+      ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion hA)).hom
+        (TopCat.ofHom (ContinuousMap.subtypeVal A₂)).hom).hom.app L) ≫
+    TopPair.twistedChainComplexMap
+      (TopPair.ofHom (X := TopPair.ofInclusion hC₁) (Y := TopPair.ofInclusion hC₂)
+        (TopCat.ofHom (ContinuousMap.inclusion hA)) (TopCat.ofHom (ContinuousMap.inclusion hC)) rfl)
+      ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L)
 
 /-- The map of relative twisted chains induced by an inclusion of pairs of subsets is induced by
 the map `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap` of absolute twisted
@@ -257,13 +234,26 @@ chains. -/
 lemma twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
     (TopPair.ofInclusion hC₁).twistedChainComplexπ _ ≫
         subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC =
-      subsetTwistedChainComplexMap L hA ≫ (TopPair.ofInclusion hC₂).twistedChainComplexπ _ := by
-  refine (cancel_epi (subspaceTwistedChainComplexIso L A₁).inv).1 ?_
-  exact (Category.assoc _ _ _).symm.trans <|
-    (subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC).trans <|
+      subsetTwistedChainComplexMap L hA ≫ (TopPair.ofInclusion hC₂).twistedChainComplexπ _ :=
+  (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
+    ((TopPair.ofInclusion hC₁).twistedChainComplexπ_comp_twistedChainComplexCoefficientMap
+      _)).trans <| (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·)
+        (TopPair.twistedChainComplexπ_comp_twistedChainComplexMap _ _)).trans <|
+          (Category.assoc _ _ _).symm.trans
+            (congrArg (· ≫ _) (subsetTwistedChainComplexMap_def L hA).symm)
+
+/-- The map of relative twisted chains induced by an inclusion of pairs of subsets is induced by
+the inclusion of the chains of `X` supported in `A₁` into those supported in `A₂`. -/
+@[reassoc (attr := simp)]
+lemma subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂)
+    (hC : C₁ ⊆ C₂) :
+    subsetPairTwistedChainComplexπ L hC₁ ≫ subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC =
+      smallTwistedChainComplexSubsetInclusion L hA ≫ subsetPairTwistedChainComplexπ L hC₂ :=
+  (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·)
+    (twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC)).trans <|
       (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
         (smallTwistedChainComplexSubsetInclusion_comp_subspaceTwistedChainComplexIso_inv
-          L hA)).trans (Category.assoc _ _ _)
+          L hA).symm).trans (Category.assoc _ _ _)
 
 /-- The map of relative twisted chains induced by the identity inclusion of a pair of subsets is
 the identity. -/
