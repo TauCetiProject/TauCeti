@@ -17,8 +17,9 @@ import Mathlib.LinearAlgebra.Dimension.RankNullity
 
 The degree-`k` jet of a polynomial at `a` consists of its Taylor coefficients of total degree
 at most `k`. For generators `f i`, the Samuel matrix has these exponents as rows and pairs
-`(i, β)` as columns. Its column is the jet of `X^β f i` in Taylor coordinates, rather than
-just the jet of `f i`. These extra columns retain all polynomial multiples of the generators.
+`(i, β)` as columns. Its column holds the truncated coefficients of `X^β * taylor a (f i)`,
+where `X` denotes the centered Taylor variables, rather than just the jet of `f i`. These extra
+columns retain all polynomial multiples of the generators.
 
 The column space is the image of the entire ideal in the space of jets. In particular, both
 its rank and its ideals of minors are independent of the generating family. For finite variable
@@ -59,7 +60,8 @@ theorem jetCoeffs_eq_zero_iff (k : ℕ) (p : MvPolynomial σ R) :
   simp only [funext_iff, jetCoeffs_apply, Pi.zero_apply, Subtype.forall]
   exact forall_congr' fun d ↦ by rw [Nat.lt_succ_iff]
 
-/-- The Samuel jet matrix: column `(i, β)` is the jet of `X^β f i` in Taylor coordinates. -/
+/-- The Samuel jet matrix: column `(i, β)` holds the truncated coefficients of
+`X^β * taylor a (f i)`, where `X` denotes the centered Taylor variables. -/
 noncomputable def samuelJetMatrix (f : ι → MvPolynomial σ R) (a : σ → R) (k : ℕ) :
     Matrix {d : σ →₀ ℕ // d.degree ≤ k} (ι × {d : σ →₀ ℕ // d.degree ≤ k}) R :=
   fun α iβ ↦ (monomial iβ.2.val 1 * taylor a (f iβ.1)).coeff α.val
