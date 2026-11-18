@@ -79,6 +79,8 @@ operator of interest.
 
 * `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
+* `TauCeti.isDetLineCoherentOn_of_detLineChartEquiv_eq`: a family with constant reading in a
+  kernel chart is coherent.
 * `TauCeti.exists_isDetLineCoherentOn_Icc`: existence along a compact interval.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero`: orientation transport follows coherent
   families.
@@ -272,6 +274,33 @@ theorem isDetLineCoherentOn_const {T₀ : E →L[ℝ] F} (hT₀ : IsFredholm T�
   intro x _
   obtain ⟨S, hS, G, hG, q, U, -, hxU, hinv⟩ := hT₀.exists_isOpen_kernelChart
   exact ⟨hv₀, S, hS, G, hG, q, hinv _ hxU, Eventually.of_forall fun _ ↦ ⟨hinv _ hxU, SameRay.rfl⟩⟩
+
+/-- A family of elements of the determinant lines which a kernel chart reads as one fixed nonzero
+element `u` at every point of `s` is coherent on `s`. -/
+theorem isDetLineCoherentOn_of_detLineChartEquiv_eq {Λ G : Type*} [NormedAddCommGroup Λ]
+    [NormedSpace ℝ Λ] [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G} (hT : ContinuousOn T s)
+    (hF : ∀ x ∈ s, IsFredholm (T x)) {u : TauCeti.detLine ℝ G ⊗[ℝ] Dual ℝ (TauCeti.detLine ℝ Λ)}
+    (hu : u ≠ 0)
+    (hv : ∀ x ∈ s, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
+      detLineChartEquiv (T x) D₂ q h (v x) = u) :
+    IsDetLineCoherentOn T v s := by
+  intro x hx
+  obtain ⟨hx', hxv⟩ := hv x hx
+  obtain ⟨S, hS, G₁, hG₁, q₁, U, -, hxU, hinv⟩ := (hF x hx).exists_isOpen_kernelChart
+  refine ⟨fun h0 ↦ hu (by rw [← hxv, h0, LinearEquiv.map_zero]), S, hS, G₁, hG₁, q₁, hinv _ hxU,
+    ?_⟩
+  -- Near `x`, the transition from the given chart to the kernel chart of `x` is a positive
+  -- multiple of the transition at `x`.
+  filter_upwards [(hT x hx).tendsto.eventually
+      (eventually_detLineChartEquiv_symm_eq_smul (hinv _ hxU) hx'), self_mem_nhdsWithin]
+    with y hcy hy
+  obtain ⟨h, h', c, hc, hcu⟩ := hcy
+  obtain ⟨_, hyv⟩ := hv y hy
+  refine ⟨h, ?_⟩
+  rw [(LinearEquiv.eq_symm_apply (detLineChartEquiv (T y) D₂ q h')).2 hyv,
+    (LinearEquiv.eq_symm_apply (detLineChartEquiv (T x) D₂ q hx')).2 hxv, hcu u]
+  exact SameRay.sameRay_pos_smul_left _ hc
 
 /-- A family which is nonzero at a parameter with Fredholm operator is coherent on the singleton
 of that parameter. -/

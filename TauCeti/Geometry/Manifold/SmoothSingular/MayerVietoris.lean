@@ -5,132 +5,145 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
-public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
-public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex
 public import TauCeti.Geometry.Manifold.SmoothSingular.Subdivision
 
 /-!
 # The Mayer–Vietoris step of the comparison of smooth and singular chains
 
-Let `U` and `V` be open subsets of a manifold `M`. If smooth singular chains include into singular
-chains by a quasi-isomorphism on `U`, on `V` and on `U ⊓ V`, then they do so on `U ⊔ V`
-(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup`). Together with the
-disjoint-union step `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`, this is
-the inductive step of the comparison of smooth with continuous singular homology by a
-Mayer–Vietoris induction over open sets (`TauCeti.mayerVietoris_induction`).
+Let `M` be a manifold and let `U` and `V` be open subsets. This file proves that if the inclusion
+of smooth singular chains into singular chains is a quasi-isomorphism on `U`, on `V` and on
+`U ∩ V`, then it is one on `U ∪ V`
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup`). This is the binary-union
+hypothesis of Mayer–Vietoris induction (`TauCeti.mayerVietoris_induction`) for the comparison of
+smooth with singular homology; the disjoint-union hypothesis is
+`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`.
 
-The proof takes place in the singular simplicial set of `W = U ⊔ V`. There the singular simplices
-of `U`, of `V` and of `U ⊓ V` are the subcomplexes of simplices with image in the corresponding
-subset, and they form a bicartesian square with the subcomplex of simplices subordinate to the
-cover of `W` by `U` and `V` (`TopCat.bicartSq_range_toSSet_map_inclusion`). A singular simplex of
-the open set `U` is smooth exactly when it is smooth in `W`
-(`TauCeti.smoothSingularSubcomplex_preimage_inclusion`), so the hypothesis on `U` is the statement
-that the smooth simplices of `W` lying in `U` include into all simplices of `W` lying in `U` by a
-quasi-isomorphism (`SSet.Subcomplex.morphismProperty_ι_preimage_iff`).
-Comparing the Mayer–Vietoris sequences of these two bicartesian squares gives the same for the
-simplices subordinate to the cover (`SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq`), and
-the small-chain theorems for singular chains
-(`TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι`) and for smooth singular chains
-(`TauCeti.quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex`) remove the restriction to
-the cover.
+Write `W = U ∪ V` and `S` for the smooth singular simplices of `W`. Inside the singular simplicial
+set of `W`, the simplices lying in `U ∩ V`, in `U` and in `V` and the simplices lying in `U` or in
+`V` form a bicartesian square of subcomplexes (`TopCat.bicartSq_range_toSSet_map_inclusion`), and
+intersecting it with `S` gives the bicartesian square of the corresponding smooth simplices
+(`Lattice.BicartSq.inf_left`). Its corners are the smooth simplices of `U ∩ V`, of
+`U` and of `V`: a singular simplex of `W` lying in `U` is smooth exactly when it is smooth as a
+simplex of `U` (`TauCeti.range_smoothSingularSubcomplexMap_inclusion_ι`). The inclusion of the
+smooth square into the singular square is a map of Mayer–Vietoris short exact sequences of chain
+complexes. By hypothesis it is a quasi-isomorphism on the first two terms
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE`), hence on the third,
+the chains of simplices lying in `U` or in `V`
+(`SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq`). The small-chain theorems, for singular
+chains and for the affinely stable subcomplex `S`, identify the homology of those chains with the
+singular and the smooth singular homology of `W`
+(`TauCeti.quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex`), which gives the
+conclusion.
 
-No hypothesis on the manifold beyond its charted space structure is needed, and the coefficients
-are an arbitrary object of an abelian category with coproducts.
+No `IsManifold` hypothesis on `M`, Hausdorff property or finite-dimensionality is used.
 
 ## Main results
 
-* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup`: the inclusion of smooth
-  singular chains into singular chains is a quasi-isomorphism on `U ⊔ V` if it is one on `U`, on
-  `V` and on `U ⊓ V`.
+* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE`: for open sets
+  `U ≤ W`, the inclusion of smooth into singular chains of `U` is a quasi-isomorphism exactly when
+  that of the smooth simplices of `W` lying in `U` into all singular simplices of `W` lying in `U`
+  is.
+* `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup`: the Mayer–Vietoris step of the
+  comparison of smooth and singular chains.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 18, proof of Theorem 18.7 (the
   Mayer–Vietoris step of the comparison of smooth and singular homology).
-* A. Hatcher, *Algebraic Topology*, Section 2.2, the Mayer–Vietoris sequences.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Limits
+open CategoryTheory Limits TopologicalSpace Topology
+open scoped Manifold ContDiff
 
-universe w v u
-
+universe u v w
 
 namespace TauCeti
-
-open TopologicalSpace
-open SSet.Subcomplex (range homOfLE_ι)
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
-variable {C : Type v} [Category.{w} C] [Abelian C] [HasCoproducts.{u} C] (R : C)
+section Inclusion
 
-/-- For open sets `U ≤ V`, smooth singular chains include into singular chains of `U` by a
-quasi-isomorphism exactly when, in the singular simplicial set of `V`, the smooth simplices with
-image in `U` include into all simplices with image in `U` by a quasi-isomorphism. -/
-private lemma quasiIso_smoothSingularSubcomplex_ι_iff {U V : Opens M} (h : U ≤ V) :
+variable {U W : Opens M} (h : U ≤ W)
+
+variable {C : Type v} [Category.{w} C] [Preadditive C] [HasCoproducts.{u} C]
+  [CategoryWithHomology C] (R : C)
+
+variable (I) in
+/-- For open sets `U ≤ W` of `M`, the inclusion of smooth singular chains into singular chains of
+`U` is a quasi-isomorphism exactly when the inclusion of the chains of the smooth singular
+simplices of `W` lying in `U` into the chains of all singular simplices of `W` lying in `U` is
+one. The two inclusions are isomorphic as arrows. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) ↔
       QuasiIso (SSet.chainComplexMap (SSet.Subcomplex.homOfLE (inf_le_right :
-        smoothSingularSubcomplex I V ⊓ range (TopCat.toSSet.map
-          (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩)) ≤ _)) R) := by
-  have := SSet.Subcomplex.morphismProperty_ι_preimage_iff
-    (TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))
-    (smoothSingularSubcomplex I V)
-    ((HomologicalComplex.quasiIso C _).inverseImage ((SSet.chainComplexFunctor C).obj R))
-  rw [smoothSingularSubcomplex_preimage_inclusion, MorphismProperty.inverseImage_iff,
-    MorphismProperty.inverseImage_iff, HomologicalComplex.mem_quasiIso_iff,
-    HomologicalComplex.mem_quasiIso_iff] at this
-  -- `SSet.chainComplexMap f R` is an abbreviation for `((SSet.chainComplexFunctor C).obj R).map f`.
-  exact this
+        smoothSingularSubcomplex I W ⊓ SSet.Subcomplex.range
+            (TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩)) ≤
+          SSet.Subcomplex.range
+            (TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))))
+        R) := by
+  set f := TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩)
+  have : Mono (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩) :=
+    (TopCat.mono_iff_injective _).2 (Set.inclusion_injective h)
+  have : Mono f := Functor.map_mono _ _
+  have : Mono (smoothSingularSubcomplexMap (Opens.inclusion h) (contMDiff_inclusion h) ≫
+      (smoothSingularSubcomplex I W).ι) := by
+    rw [smoothSingularSubcomplexMap_ι]
+    exact mono_comp _ _
+  let e₁ := asIso (SSet.Subcomplex.toRange (smoothSingularSubcomplexMap (Opens.inclusion h)
+    (contMDiff_inclusion h) ≫ (smoothSingularSubcomplex I W).ι)) ≪≫
+      SSet.Subcomplex.eqToIso (range_smoothSingularSubcomplexMap_inclusion_ι h)
+  let e₂ := asIso (SSet.Subcomplex.toRange f)
+  have hcomm : e₁.hom ≫ SSet.Subcomplex.homOfLE inf_le_right =
+      (smoothSingularSubcomplex I U).ι ≫ e₂.hom := by
+    rw [← cancel_mono (SSet.Subcomplex.range f).ι]
+    simp [e₁, e₂, f]
+  have hchain : SSet.chainComplexMap e₁.hom R ≫
+        SSet.chainComplexMap (SSet.Subcomplex.homOfLE inf_le_right) R =
+      SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R ≫ SSet.chainComplexMap e₂.hom R := by
+    rw [← Functor.map_comp, ← Functor.map_comp, hcomm]
+  rw [← quasiIso_iff_comp_right _ (SSet.chainComplexMap e₂.hom R), ← hchain,
+    quasiIso_iff_comp_left]
 
-variable {U V : Opens M}
+end Inclusion
 
-/-- **The Mayer–Vietoris step of the comparison of smooth and singular chains.** For open subsets
-`U` and `V` of a manifold, if the inclusion of smooth singular chains into singular chains with
-coefficients in `R` is a quasi-isomorphism on `U`, on `V` and on `U ⊓ V`, then it is a
-quasi-isomorphism on `U ⊔ V`. -/
-theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup
+section MayerVietoris
+
+variable (I) {C : Type v} [Category.{w} C] [Abelian C] [HasCoproducts.{u} C] (R : C)
+
+/-- **The Mayer–Vietoris step of the comparison of smooth and singular chains.** If the inclusion
+of smooth singular chains into singular chains, with coefficients in `R`, is a quasi-isomorphism on
+the open sets `U`, `V` and `U ∩ V` of `M`, then it is a quasi-isomorphism on `U ∪ V`. -/
+theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup (U V : Opens M)
     (hU : QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R))
     (hV : QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I V).ι R))
     (hUV : QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I ↥(U ⊓ V)).ι R)) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I ↥(U ⊔ V)).ι R) := by
   let S := smoothSingularSubcomplex I ↥(U ⊔ V)
-  let cover : Fin 2 → Set (TopCat.of ↥(U ⊔ V)) := ![{x | (x : M) ∈ U}, {x | (x : M) ∈ V}]
-  have hcover : ∀ i, IsOpen (cover i) :=
-    (continuous_subtype_val.isOpen_preimage _ U.isOpen).vecCons
-      (continuous_subtype_val.isOpen_preimage _ V.isOpen)
-  have hcover' : ⋃ i, cover i = Set.univ := (Set.iUnion_vecCons_pair _ _).trans
-    (Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.2)
-  let Q := (TopCat.of ↥(U ⊔ V)).smallSingularSubcomplex cover
-  rw [quasiIso_smoothSingularSubcomplex_ι_iff R (le_sup_left : U ≤ U ⊔ V)] at hU
-  rw [quasiIso_smoothSingularSubcomplex_ι_iff R (le_sup_right : V ≤ U ⊔ V)] at hV
-  rw [quasiIso_smoothSingularSubcomplex_ι_iff R
-    (inf_le_left.trans le_sup_left : U ⊓ V ≤ U ⊔ V)] at hUV
-  -- Comparing the Mayer–Vietoris sequences of the smooth and the singular simplices.
-  have hSQ := SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq R
-    (TopCat.bicartSq_range_toSSet_map_inclusion U V) hUV hU hV
-  -- The small-chain theorem for singular and for smooth singular chains.
-  have hQ := quasiIso_chainComplexMap_smallSingularSubcomplex_ι R cover hcover hcover'
-  have hS := quasiIso_chainComplexMap_homOfLE_inf_smallSingularSubcomplex R S cover hcover
-    hcover'
-  -- Both composites are the inclusion of the small smooth singular simplices.
-  have hcomp : SSet.chainComplexMap (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ Q ≤ S)) R ≫
-      SSet.chainComplexMap S.ι R =
-      SSet.chainComplexMap (SSet.Subcomplex.homOfLE (inf_le_right : S ⊓ Q ≤ Q)) R ≫
-        SSet.chainComplexMap Q.ι R := by
-    rw [← Functor.map_comp, ← Functor.map_comp, homOfLE_ι, homOfLE_ι]
-  have : QuasiIso (SSet.chainComplexMap (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ Q ≤ S)) R ≫
-      SSet.chainComplexMap S.ι R) := by
-    rw [hcomp]
-    exact quasiIso_comp (hφ := hSQ) (hφ' := hQ) _ _
-  exact quasiIso_of_comp_left
-    (SSet.chainComplexMap (SSet.Subcomplex.homOfLE (inf_le_left : S ⊓ Q ≤ S)) R) _
+  -- Intersecting the bicartesian square of singular simplices lying in `U ∩ V`, `U`, `V` and
+  -- `U` or `V` with `S` gives the square of smooth simplices, and comparing their Mayer–Vietoris
+  -- sequences gives a quasi-isomorphism on the chains of simplices lying in `U` or in `V`.
+  have h₃ := SSet.quasiIso_chainComplexMap_homOfLE_inf_of_bicartSq (S := S) R
+    (TopCat.bicartSq_range_toSSet_map_inclusion U V)
+    ((quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I _ R).1 hUV)
+    ((quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I
+      (le_sup_left : U ≤ U ⊔ V) R).1 hU)
+    ((quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_homOfLE I
+      (le_sup_right : V ≤ U ⊔ V) R).1 hV)
+  -- By the small-chain theorems, this is the conclusion.
+  have hcov : ⋃ i, ![{x : ↥(U ⊔ V) | (x : M) ∈ U}, {x | (x : M) ∈ V}] i = Set.univ := by
+    rw [Set.iUnion_vecCons_pair]
+    exact Set.eq_univ_of_forall fun x ↦ Opens.mem_sup.1 x.2
+  exact (quasiIso_chainComplexMap_ι_iff_homOfLE_inf_smallSingularSubcomplex R S _
+    (IsOpen.vecCons (U.isOpen.preimage continuous_subtype_val)
+      (V.isOpen.preimage continuous_subtype_val)) hcov).2 h₃
+
+end MayerVietoris
 
 end TauCeti

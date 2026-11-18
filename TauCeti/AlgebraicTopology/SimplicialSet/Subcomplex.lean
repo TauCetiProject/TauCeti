@@ -9,18 +9,12 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
 public import Mathlib.CategoryTheory.MorphismProperty.Basic
 
 /-!
-# Subcomplexes transported along isomorphisms and monomorphisms
+# Subcomplexes transported along isomorphisms
 
 An isomorphism `e : X ≅ Y` of simplicial sets carries a subcomplex `A` of `X` to the subcomplex
 `A.preimage e.inv` of `Y`, and the inclusions of the two subcomplexes are isomorphic arrows. Hence
 any class of morphisms that respects isomorphisms, such as the (inner) anodyne extensions, contains
 one inclusion exactly when it contains the other.
-
-More generally, a monomorphism `g : X ⟶ Y` identifies `X` with `range g`, and the preimage of a
-subcomplex `B` of `Y` with `B ⊓ range g`. So the inclusion of `B.preimage g` into `X` is
-isomorphic, as an arrow, to the inclusion of `B ⊓ range g` into `range g`. This lets a statement
-about a subcomplex of `X` be read inside `Y`, for instance for the singular simplicial set of an
-open subspace inside that of the ambient space.
 
 ## Main results
 
@@ -28,11 +22,6 @@ open subspace inside that of the ambient space.
   isomorphism `(A : SSet) ≅ B`, compatible with the inclusions.
 * `SSet.Subcomplex.morphismProperty_ι_iff_of_preimage_eq`: for `A.preimage e.inv = B` and a class
   `W` of morphisms respecting isomorphisms, `W A.ι ↔ W B.ι`.
-* `SSet.Subcomplex.preimageToInfRange`: the map from the preimage of a subcomplex `B` of `Y` along
-  `g : X ⟶ Y` to `B ⊓ range g`, an isomorphism when `g` is a monomorphism.
-* `SSet.Subcomplex.morphismProperty_ι_preimage_iff`: for a monomorphism `g` and a class `W` of
-  morphisms respecting isomorphisms, `W` contains the inclusion of `B.preimage g` exactly when it
-  contains the inclusion of `B ⊓ range g` into `range g`.
 -/
 
 public section
@@ -81,40 +70,5 @@ lemma morphismProperty_ι_iff_of_preimage_eq (W : MorphismProperty SSet.{u}) [W.
     (e : X ≅ Y) {A : X.Subcomplex} {B : Y.Subcomplex} (h : A.preimage e.inv = B) :
     W A.ι ↔ W B.ι :=
   W.arrow_mk_iso_iff (Arrow.isoMk (isoOfPreimageEq e h) e (isoOfPreimageEq_hom_ι e h))
-
-section Mono
-
-variable (g : X ⟶ Y) (B : Y.Subcomplex)
-
-/-- The map from the preimage of a subcomplex `B` of `Y` along `g : X ⟶ Y` to `B ⊓ range g`
-induced by `g`. It is an isomorphism when `g` is a monomorphism. -/
-def preimageToInfRange : (B.preimage g : SSet) ⟶ ((B ⊓ range g : Y.Subcomplex) : SSet) :=
-  lift ((B.preimage g).ι ≫ g) (by
-    rintro n _ ⟨x, rfl⟩
-    exact ⟨x.2, x.1, rfl⟩)
-
-@[reassoc (attr := simp)]
-lemma preimageToInfRange_ι : preimageToInfRange g B ≫ (B ⊓ range g).ι = (B.preimage g).ι ≫ g :=
-  lift_ι _ _
-
-instance [Mono g] : IsIso (preimageToInfRange g B) := by
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro n
-  rw [isIso_iff_bijective]
-  have hg : Function.Injective (g.app n) := (mono_iff_injective _).1 inferInstance
-  refine ⟨fun x y h ↦ Subtype.ext (hg (congrArg Subtype.val h)), fun y ↦ ?_⟩
-  obtain ⟨hyB, x, hx⟩ := y.2
-  exact ⟨⟨x, by simpa [hx] using hyB⟩, Subtype.ext hx⟩
-
-/-- Along a monomorphism `g : X ⟶ Y`, a class of morphisms respecting isomorphisms contains the
-inclusion of the preimage of a subcomplex `B` of `Y` exactly when it contains the inclusion of
-`B ⊓ range g` into `range g`. -/
-lemma morphismProperty_ι_preimage_iff (W : MorphismProperty SSet.{u}) [W.RespectsIso] [Mono g] :
-    W (B.preimage g).ι ↔ W (homOfLE (inf_le_right : B ⊓ range g ≤ range g)) :=
-  W.arrow_mk_iso_iff (Arrow.isoMk (asIso (preimageToInfRange g B)) (asIso (toRange g)) (by
-    rw [← cancel_mono (range g).ι]
-    simp))
-
-end Mono
 
 end SSet.Subcomplex

@@ -10,13 +10,8 @@ public import Mathlib.Order.CompleteLattice.MulticoequalizerDiagram
 /-!
 # Bicartesian squares in distributive lattices
 
-In a distributive lattice, intersecting the four corners of a bicartesian square
-(`Lattice.BicartSq`) with a fixed element gives a bicartesian square again.
-
-## Main results
-
-* `Lattice.BicartSq.inf_left`: for a bicartesian square `x₁, x₂, x₃, x₄` and an element `s`,
-  the elements `s ⊓ x₁, s ⊓ x₂, s ⊓ x₃, s ⊓ x₄` form a bicartesian square.
+In a distributive lattice, meeting each corner of a bicartesian square (`Lattice.BicartSq`) with a
+fixed element gives a bicartesian square again (`Lattice.BicartSq.inf_left`).
 -/
 
 public section
@@ -25,11 +20,11 @@ namespace Lattice.BicartSq
 
 variable {T : Type*} [DistribLattice T] {x₁ x₂ x₃ x₄ : T}
 
-/-- Intersecting a bicartesian square in a distributive lattice with a further element `s` gives a
+/-- In a distributive lattice, meeting each corner of a bicartesian square with `y` gives a
 bicartesian square. -/
-lemma inf_left (sq : BicartSq x₁ x₂ x₃ x₄) (s : T) :
-    BicartSq (s ⊓ x₁) (s ⊓ x₂) (s ⊓ x₃) (s ⊓ x₄) where
-  sup_eq := by rw [← sq.sup_eq, inf_sup_left]
-  inf_eq := by rw [← sq.inf_eq, ← inf_inf_distrib_left]
+theorem inf_left (sq : BicartSq x₁ x₂ x₃ x₄) (y : T) :
+    BicartSq (y ⊓ x₁) (y ⊓ x₂) (y ⊓ x₃) (y ⊓ x₄) where
+  sup_eq := by rw [← inf_sup_left, sq.sup_eq]
+  inf_eq := by rw [← inf_inf_distrib_left, sq.inf_eq]
 
 end Lattice.BicartSq

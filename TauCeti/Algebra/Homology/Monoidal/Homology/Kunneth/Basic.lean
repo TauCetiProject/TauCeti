@@ -503,4 +503,37 @@ theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKu
 
 end FlatZeroDifferential
 
+section ModuleCatCross
+
+/-! ### The cross product on classes of cycles of complexes of modules -/
+
+universe u
+
+open scoped TensorProduct
+
+variable {R : Type u} [CommRing R] {I : Type*} [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] (K L : HomologicalComplex (ModuleCat.{u} R) c)
+  {M : HomologicalComplex (ModuleCat.{u} R) c} [HasTensor K L] (p q n : I) (h : p + q = n)
+  [K.HasHomology p] [L.HasHomology q] [(tensorObj K L).HasHomology n] [M.HasHomology n]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
+
+/-- Element-wise form of `HomologicalComplex.homologyπ_tensorHom_homologyCross`, followed by a
+chain map `φ` out of the tensor product: `φ` sends the cross product of the classes of cycles `z`
+and `w` to the class of the image under `φ` of the cycle `z ⊗ w`. -/
+theorem moduleCat_homologyMap_homologyCross_tmul (φ : tensorObj K L ⟶ M) (z : K.cycles p)
+    (w : L.cycles q) :
+    (homologyMap φ n).hom
+        ((homologyCross K L p q n h).hom (K.homologyπ p z ⊗ₜ L.homologyπ q w)) =
+      M.homologyπ n ((cyclesMap φ n).hom ((cyclesCross K L p q n h).hom (z ⊗ₜ w))) := by
+  have h' := congrArg (fun f ↦ f.hom (z ⊗ₜ w))
+    (homologyπ_tensorHom_homologyCross_assoc K L p q n h (homologyMap φ n))
+  rw [homologyπ_naturality] at h'
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul] at h'
+  exact h'
+
+end ModuleCatCross
+
 end HomologicalComplex

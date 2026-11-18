@@ -14,9 +14,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 The singular simplices of a subspace are characterized by the image of their underlying maps.
 This identifies the range subcomplex of a subspace inclusion in a singular simplicial set. A
 singular simplex whose image lies in an open set `V` corestricts to a singular simplex of `V`
-(`TopCat.toSSetObjCodRestrict`), inverse to the map induced by the inclusion of `V`. For open
-sets `U ≤ V`, the singular simplices of `V` coming from `U` are those with image in `U`
-(`TopCat.mem_range_toSSet_map_inclusion_iff`).
+(`TopCat.toSSetObjCodRestrict`), inverse to the map induced by the inclusion of `V`.
 -/
 
 public section
@@ -41,6 +39,17 @@ lemma mem_range_toSSet_subtypeVal_iff (S : Set X) (n : SimplexCategoryᵒᵖ)
       (ofHom (ContinuousMap.subtypeVal S))).mem_range_toSSet_map_app_iff n σ]
   rw [ConcreteCategory.hom_ofHom,
     show Set.range (⇑(ContinuousMap.subtypeVal S)) = S from Subtype.range_coe]
+
+/-- A singular simplex of an open set `W` comes from the open subset `V ≤ W` exactly when its image
+lies in `V`. -/
+lemma mem_range_toSSet_map_inclusion_iff {M : Type*} [TopologicalSpace M] {V W : Opens M}
+    (h : V ≤ W) (n : SimplexCategoryᵒᵖ) (σ : (toSSet.obj (of W)).obj n) :
+    σ ∈ (SSet.Subcomplex.range
+      (toSSet.map (ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))).obj n ↔
+      Set.range ((of W).toSSetObjEquiv n σ) ⊆ {x | (x : M) ∈ V} := by
+  rw [Subfunctor.range_obj,
+    IsInducing.mem_range_toSSet_map_app_iff (IsEmbedding.inclusion h).isInducing n σ]
+  exact Iff.of_eq (congrArg _ (Set.range_inclusion h))
 
 section Opens
 
@@ -107,23 +116,5 @@ lemma toSSet_map_homOfLE_toSSetObjCodRestrict {W : Opens X} (hVW : V ≤ W)
   exact coe_toSSetObjEquiv_toSSetObjCodRestrict σ h z
 
 end Opens
-
-section Inclusion
-
-variable {Y : Type u} [TopologicalSpace Y] {U V : Opens Y}
-
-/-- A singular simplex of an open set `V` comes from an open set `U ≤ V` exactly when its image
-consists of points of `U`. -/
-lemma mem_range_toSSet_map_inclusion_iff (h : U ≤ V) (n : SimplexCategoryᵒᵖ)
-    (σ : (toSSet.obj (of V)).obj n) :
-    σ ∈ (SSet.Subcomplex.range
-      (toSSet.map (ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))).obj n ↔
-      Set.range ((of V).toSSetObjEquiv n σ) ⊆ {x | (x : Y) ∈ U} := by
-  rw [Subfunctor.range_obj,
-    (IsEmbedding.inclusion h).isInducing.mem_range_toSSet_map_app_iff n σ,
-    ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk]
-  exact Iff.of_eq (congrArg _ (Set.range_inclusion h))
-
-end Inclusion
 
 end TopCat

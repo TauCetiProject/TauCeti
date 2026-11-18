@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coproduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
-public import TauCeti.CategoryTheory.Subfunctor.Lattice
+public import TauCeti.CategoryTheory.Subfunctor.Basic
 public import TauCeti.Order.CompleteLattice.MulticoequalizerDiagram
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 
