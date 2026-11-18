@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.Prod
 
 /-!
@@ -30,7 +31,8 @@ orthogonal sum along an equivalence of its index types is isometric; and so is d
 summands of an orthogonal sum that are carried by trivial modules.
 
 For a quadratic form over a commutative ring, it also records the isometry associated to a
-direct-sum decomposition of the underlying module that is orthogonal for the polar form.
+direct-sum decomposition of the underlying module that is orthogonal for the polar form, and the
+componentwise characterization of polar nondegeneracy on `QuadraticMap.prod` and `QuadraticMap.pi`.
 
 Finally, it embeds the product of the orthogonal groups of two quadratic maps with a common
 codomain into the orthogonal group of their orthogonal sum, acting componentwise, and identifies
@@ -62,6 +64,9 @@ the two summands gives an orthogonal family of the orthogonal sum.
 
 ## Main results
 
+* `QuadraticMap.nondegenerate_polarBilin_prod_iff` and
+  `QuadraticMap.nondegenerate_polarBilin_pi_iff`: polar nondegeneracy of an orthogonal product or
+  finite orthogonal sum is componentwise.
 * `QuadraticMap.orthogonalGroupProd_injective` and
   `QuadraticMap.specialOrthogonalGroupProd_injective`: both maps are injective.
 * `QuadraticMap.mem_range_orthogonalGroupProd_iff`: the image of `orthogonalGroupProd` is exactly
@@ -296,6 +301,14 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
 
+/-- The inverse map of `QuadraticMap.IsometryEquiv.consPi`. -/
+@[simp]
+theorem IsometryEquiv.consPi_symm_apply {n : ℕ} {M : Fin (n + 1) → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (x : ∀ i : Fin (n + 1), M i) :
+    (IsometryEquiv.consPi Q).symm x = (x 0, Fin.tail x) :=
+  (IsometryEquiv.consPi Q).symm_apply_eq.mpr (Fin.cons_self_tail x).symm
+
 /-- `LinearEquiv.piCongrLeft` is isometric: reindexing an orthogonal sum along an equivalence of
 its finite index types does not change it. -/
 def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : ι → Type*}
@@ -401,6 +414,57 @@ theorem IsometryEquiv.prodRestrictOrthogonal_symm_apply (Q : QuadraticForm R V)
   Submodule.prodEquivOfIsCompl_symm_apply hW v
 
 end OrthogonalDecomposition
+
+section PolarNondegenerate
+
+/-- The polar bilinear form of an orthogonal product `Q₁.prod Q₂` is nondegenerate if and only if
+both factor polar forms are nondegenerate. -/
+@[grind =]
+theorem nondegenerate_polarBilin_prod_iff
+    {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} :
+    (Q₁.prod Q₂).polarBilin.Nondegenerate ↔
+      Q₁.polarBilin.Nondegenerate ∧ Q₂.polarBilin.Nondegenerate := by
+  have heq : (Q₁.prod Q₂).polarBilin = LinearMap.BilinForm.prod Q₁.polarBilin Q₂.polarBilin :=
+    LinearMap.ext fun ⟨_, _⟩ ↦ LinearMap.ext fun ⟨_, _⟩ ↦ by simp
+  rw [heq]
+  exact LinearMap.BilinForm.nondegenerate_prod_iff
+
+/-- The polar bilinear form of a finite orthogonal family `QuadraticMap.pi Q` is nondegenerate if
+and only if every component polar form is nondegenerate. -/
+theorem nondegenerate_polarBilin_pi_iff {R ι : Type*} [CommRing R] [Fintype ι]
+    {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
+    {Q : ∀ i, QuadraticForm R (M i)} :
+    (QuadraticMap.pi Q).polarBilin.Nondegenerate ↔ ∀ i, (Q i).polarBilin.Nondegenerate := by
+  have hsymm : LinearMap.BilinForm.IsSymm (QuadraticMap.pi Q).polarBilin :=
+    ⟨fun x y ↦ polar_comm (QuadraticMap.pi Q) x y⟩
+  have hsymm_i (i : ι) : LinearMap.BilinForm.IsSymm (Q i).polarBilin :=
+    ⟨fun x y ↦ polar_comm (Q i) x y⟩
+  simp only [LinearMap.IsRefl.nondegenerate_iff_separatingLeft hsymm.isRefl,
+    fun i ↦ LinearMap.IsRefl.nondegenerate_iff_separatingLeft (hsymm_i i).isRefl,
+    LinearMap.SeparatingLeft, polarBilin_apply_apply]
+  constructor
+  · intro h i xi hxi
+    classical
+    have h0 : Pi.single i xi = 0 := h (Pi.single i xi) fun y ↦ by
+      rw [QuadraticMap.Ring.polar_pi, Finset.sum_eq_single i]
+      · simpa using hxi (y i)
+      · intro j _ hji
+        simp [Pi.single_eq_of_ne hji]
+      · simp
+    simpa using congrFun h0 i
+  · intro h x hx
+    classical
+    ext i
+    exact h i (x i) fun yi ↦ by
+      have hsum := hx (Pi.single i yi)
+      rw [QuadraticMap.Ring.polar_pi, Finset.sum_eq_single i] at hsum
+      · simpa using hsum
+      · intro j _ hji
+        simp [Pi.single_eq_of_ne hji]
+      · simp
+
+end PolarNondegenerate
 
 end QuadraticMap
 

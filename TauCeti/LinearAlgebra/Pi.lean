@@ -47,6 +47,8 @@ weights.
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
+* `LinearEquiv.piFinTwoEquivSumArrow`: the linear equivalence `(ι → Fin 2 → M) ≃ₗ[R] (ι ⊕ ι → M)`
+  combining the two coordinates of a family of pairs via `Sum.elim`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
@@ -233,6 +235,36 @@ public theorem piEquivPiSubtypeProd_apply (f : (i : ι) → M i) :
 public theorem piEquivPiSubtypeProd_symm_apply
     (f : ((i : {x : ι // p x}) → M i) × ((i : {x : ι // ¬p x}) → M i)) (i : ι) :
     (piEquivPiSubtypeProd R p M).symm f i = if h : p i then f.1 ⟨i, h⟩ else f.2 ⟨i, h⟩ := (rfl)
+
+section FinTwoSum
+
+variable (R ι M : Type*) [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- Identifies families `ι → Fin 2 → M` of pairs with functions `ι ⊕ ι → M` on the doubled index
+type, sending the `0`-coordinates to the left summand and the `1`-coordinates to the right
+summand. -/
+public def piFinTwoEquivSumArrow : (ι → Fin 2 → M) ≃ₗ[R] (ι ⊕ ι → M) where
+  toEquiv := (Equiv.arrowCongr (.refl ι) (finTwoArrowEquiv M)).trans
+    ((Equiv.arrowProdEquivProdArrow ι (fun _ ↦ M) (fun _ ↦ M)).trans
+      (Equiv.sumArrowEquivProdArrow ι ι M).symm)
+  map_add' _ _ := by ext (_ | _) <;> rfl
+  map_smul' _ _ := by ext (_ | _) <;> rfl
+
+/-- Evaluating `LinearEquiv.piFinTwoEquivSumArrow` combines the two coordinate functions via
+`Sum.elim`. -/
+@[simp]
+public theorem piFinTwoEquivSumArrow_apply (x : ι → Fin 2 → M) :
+    piFinTwoEquivSumArrow R ι M x = Sum.elim (fun i ↦ x i 0) (fun i ↦ x i 1) :=
+  (rfl)
+
+/-- The inverse of `LinearEquiv.piFinTwoEquivSumArrow` pairs `f (inl i)` and `f (inr i)` at each
+index `i`. -/
+@[simp]
+public theorem piFinTwoEquivSumArrow_symm_apply (f : ι ⊕ ι → M) (i : ι) :
+    (piFinTwoEquivSumArrow R ι M).symm f i = ![f (.inl i), f (.inr i)] :=
+  (rfl)
+
+end FinTwoSum
 
 end LinearEquiv
 
