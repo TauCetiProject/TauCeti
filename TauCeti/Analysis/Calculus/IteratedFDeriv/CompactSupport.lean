@@ -45,7 +45,7 @@ theorem HasCompactSupport.eq_zero_of_iteratedFDeriv_eq_zero [Nontrivial E] :
           rw [norm_fderiv_iteratedFDeriv, h, Pi.zero_apply, norm_zero]
       exact funext ((hc.iteratedFDeriv n).eq_zero_of_fderiv_apply_eq_zero
         (hf.differentiable_iteratedFDeriv (m := n) (by exact_mod_cast n.lt_succ_self)) hv
-        fun w => by rw [hfd]; rfl)
+        fun w => by rw [hfd, zero_apply])
     exact hc.eq_zero_of_iteratedFDeriv_eq_zero (hf.of_le (by exact_mod_cast n.le_succ)) hd
 
 /-- A nonzero compactly supported `Cⁿ` function on a nontrivial space has a point at which its

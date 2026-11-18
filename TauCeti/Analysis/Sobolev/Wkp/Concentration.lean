@@ -309,7 +309,10 @@ theorem not_isCompactOperator_of_apply_ofTestFunctionₗ_eq [Nontrivial E] {Omeg
   refine fun hK => not_isCompactOperator_of_apply_ofTestFunctionₗ_eq_iteratedFDeriv (l := 0) hΩ
     ((g.compLeftContinuousBounded E).comp T) (fun ψ x => ?_)
     (by rw [ContinuousLinearMap.coe_comp]; exact hK.clm_comp _)
-  rw [iteratedFDeriv_zero_eq_comp]
+  rw [iteratedFDeriv_zero_eq_comp, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.compLeftContinuousBounded_apply, Function.comp_apply]
+  -- The order `finrank ℝ E + 0` must match the domain of `T`, so `rw [Nat.add_zero]` gives an
+  -- ill-typed motive; `hT` applies up to the definitional equality `finrank ℝ E + 0 = finrank ℝ E`.
   exact congrArg g (hT ψ x)
 
 end Wkp
