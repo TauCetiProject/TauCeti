@@ -23,6 +23,13 @@ morphisms, and they make `F` commute with the shifts. The image of the standard 
 conflation `S` is then the image in `D_sg(E)` of the triangle of `S` in `Dᵇ(E)`: the connecting
 map `Z ⟶ ΣX` of `S` is a morphism from `S` to the suspension presentation of `X`.
 
+The construction and the proofs adapt the abelian case of Gorenstein-projective objects, Chen's
+functor in `TauCeti/Algebra/Homology/TotallyAcyclic/Abelian/Triangulated.lean`
+(`CategoryTheory.GorensteinProjective.stableSuspensionCompToSingularityCategoryIso`,
+`CategoryTheory.GorensteinProjective.toSingularityCategoryCommShift` and
+`CategoryTheory.GorensteinProjective.toSingularityCategory_isTriangulated`), to a Frobenius exact
+structure.
+
 ## Main definitions
 
 * `TauCeti.ExactStructure.IsFrobenius.stableToSingularitySuspensionMap`: the comparison
@@ -132,20 +139,20 @@ noncomputable def stableSuspensionCompStableToSingularityIso :
         (hF.stableSuspension_obj_projectiveStableFunctor_obj A)) ≪≫
       asIso (hF.stableToSingularitySuspensionMap A))
     (fun {A B} f ↦ by
-      change E.stableToSingularity.map (hF.stableSuspension.map
-          (E.projectiveStableFunctor.map f)) ≫ _ =
-        _ ≫ (E.stableToSingularity.map (E.projectiveStableFunctor.map f))⟦(1 : ℤ)⟧'
-      rw [hF.stableSuspension_map_projectiveStableFunctor_map, Functor.map_comp,
-        Functor.map_comp, eqToHom_map, eqToHom_map]
-      simp only [Iso.trans_hom, eqToIso.hom, asIso_hom, Category.assoc, eqToHom_trans_assoc,
-        eqToHom_refl, Category.id_comp, stableToSingularitySuspensionMap_naturality]))
+      simp only [Functor.comp_map, hF.stableSuspension_map_projectiveStableFunctor_map,
+        Functor.map_comp, eqToHom_map, Iso.trans_hom, eqToIso.hom, asIso_hom, Category.assoc,
+        eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+        stableToSingularitySuspensionMap_naturality]))
 
-private theorem stableSuspensionCompStableToSingularityIso_hom_app (A : C) :
+/-- On the class of an object `A`, the comparison is the connecting morphism `F(ΣA) ⟶ F(A)⟦1⟧` of
+its suspension presentation. -/
+@[simp]
+theorem stableSuspensionCompStableToSingularityIso_hom_app (A : C) :
     hF.stableSuspensionCompStableToSingularityIso.hom.app (E.projectiveStableFunctor.obj A) =
       eqToHom (congrArg E.stableToSingularity.obj
         (hF.stableSuspension_obj_projectiveStableFunctor_obj A)) ≫
         hF.stableToSingularitySuspensionMap A :=
-  rfl
+  (rfl)
 
 /-- The commutation of `F : stable(E) ⥤ D_sg(E)` with the shifts. -/
 @[instance_reducible]
