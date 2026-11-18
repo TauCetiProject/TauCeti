@@ -22,6 +22,9 @@ For `α < 1`, interpolation makes this error at most `η ‖u‖_{2+α,par} + K 
 on their derivative norms. This is the lower-order error estimate used when localizing a
 parabolic Schauder estimate; it does not assert the principal-part estimate itself.
 
+When the cutoff depends on time alone, its spatial derivatives vanish and the commutator is
+just `(∂ₜχ) u` (`parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero`); this localizes in time.
+
 The Hessian cross terms are kept separately, so the formula also applies to nonsymmetric
 second-order coefficients. Time derivatives include the one-sided derivatives at both endpoints
 of the closed slab.
@@ -100,6 +103,22 @@ theorem parabolicOperatorL_mul_sub_mul_parabolicOperatorL :
     simpa only [smul_eq_mul] using (C p).map_smul (χ p) (u p)
   rw [hc]
   ring
+
+/-- **Localization in time.** If the cutoff `χ` has vanishing spatial gradient, as for a function
+of time alone, then `P (χ u) = χ P u + (∂ₜχ) u`. -/
+theorem parabolicOperatorL_mul_eq_of_spatialFDerivL_eq_zero (h₁ : spatialFDerivL χ = 0) :
+    parabolicOperatorL hα A B C ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) =
+      (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
+          (parabolicOperatorL hα A B C u) +
+        (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (timeDerivL χ) (valueHolderL hα u) := by
+  -- The Hessian is the spatial derivative of the gradient, so it vanishes as well.
+  have h₂ : spatialSecondFDerivL χ = 0 := HolderSpace.ext fun p ↦ by
+    obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+    simp [← χ.fderiv_spatialFDeriv_eq, h₁]
+  have hD : spatialFDerivHolderL hα χ = 0 := HolderSpace.ext fun p ↦ by simp [h₁]
+  have hL : spatialOperatorL hα A B 0 χ = 0 := HolderSpace.ext fun p ↦ by simp [h₁, h₂]
+  rw [← sub_eq_iff_eq_add', parabolicOperatorL_mul_sub_mul_parabolicOperatorL, hD, hL, sub_zero]
+  simp
 
 /-- **The lower-order commutator bound.** Only the time derivative, spatial Hessian and
 spatial gradient of the cutoff enter the bound. In particular it is independent of `C` and

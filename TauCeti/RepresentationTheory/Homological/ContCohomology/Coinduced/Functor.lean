@@ -166,6 +166,7 @@ noncomputable def coindTraceHom [U.FiniteIndex]
         ext f
         exact map_smul (DiscreteCoind.trace G U A.obj.V) g f }
 
+/-- The trace morphism `coindTraceHom` acts on underlying functions as `DiscreteCoind.trace`. -/
 @[simp]
 theorem coindTraceHom_apply [U.FiniteIndex]
     (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (f : DiscreteCoind G U A.obj.V) :
@@ -227,13 +228,9 @@ theorem coindFunctor_map_apply {A B : SmoothDiscreteTopRep.{u, v, w} R U}
 
 private noncomputable def coindCounitApp (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
     (coindFunctor.{u, v, max v w} R G U ⋙ smoothDiscreteResFunctor R G U).obj A ⟶ (𝟭 _).obj A :=
-  ObjectProperty.homMk
-    (eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-      TopRep.ofHom (coindCounit R G U A))
+  ObjectProperty.homMk (TopRep.ofHom (coindCounit R G U A))
 
--- The explicit universes in `coindCounitApp.{u, v, w}` and `coindCounitNatTrans.{u, v, w}` below
+-- The explicit universes in `coindCounitApp.{u, v, w}` below
 -- fix `w`, which the arguments determine only through `max v w`. Without them, elaborating these
 -- statements compares types in which `w` is still unsolved, and each comparison unfolds
 -- `smoothDiscreteResFunctor`.
@@ -243,8 +240,7 @@ private theorem coindCounitApp_naturality {A B : SmoothDiscreteTopRep.{u, v, max
         coindCounitApp.{u, v, w} R G U B =
       coindCounitApp.{u, v, w} R G U A ≫ (𝟭 (SmoothDiscreteTopRep.{u, v, max v w} R U)).map f := by
   ext a
-  -- Both composites send `a` to `f (a 1)` by definition: the transports in `coindCounitApp` are
-  -- identities, and the counit evaluates at `1`.
+  -- Both composites send `a` to `f (a 1)` by definition: the counit evaluates at `1`.
   rfl
 
 /-- Evaluation at `1`, natural in the smooth discrete coefficient representation. -/
@@ -255,13 +251,6 @@ noncomputable def coindCounitNatTrans :
   -- `(… :)` elaborates the lemma before unifying it with the field's type; propagating that type
   -- into it first is about ten times slower.
   naturality _ _ f := (coindCounitApp_naturality R G U f :)
-
-private theorem coindCounitNatTrans_app_hom_impl (A : SmoothDiscreteTopRep.{u, v, max v w} R U) :
-    ((coindCounitNatTrans.{u, v, w} R G U).app A).hom =
-      eqToHom (congrArg (fun X : SmoothDiscreteTopRep.{u, v, max v w} R U ↦ X.obj)
-        ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
-          (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A)))) ≫
-        TopRep.ofHom (coindCounit R G U A) := rfl
 
 -- A pre-lemma (`simp↓`): otherwise `Functor.comp_obj` and `Functor.id_obj` rewrite the implicit
 -- source and target of the component first, and the left-hand side no longer matches. `dsimp%` does
@@ -277,8 +266,9 @@ theorem coindCounitNatTrans_app_apply (A : SmoothDiscreteTopRep.{u, v, max v w} 
           ((congrArg (smoothDiscreteResFunctor R G U).obj (coindFunctor_obj R G U A)).trans
             (smoothDiscreteResFunctor_obj R G U (coindTopRep R G U A))).symm)).hom) f =
       f 1 := by
-  rw [← TopRep.hom_comp, coindCounitNatTrans_app_hom_impl, eqToHom_trans_assoc, eqToHom_refl,
-    Category.id_comp, TopRep.hom_ofHom, coindCounit_apply]
+  -- The object equations in the `eqToHom` transport hold by definition in this module, so the
+  -- transport reduces to the identity and the claim is the evaluation formula `coindCounit_apply`.
+  exact coindCounit_apply R G U A f
 
 end Bundled
 
@@ -550,38 +540,43 @@ section DiscreteAlgebraicComparison
 universe u v
 
 variable (G : Type u) (M : Type v) [Group G] [TopologicalSpace G] [DiscreteTopology G]
-  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
+  [AddCommGroup M] (U : Subgroup G) [DistribMulAction U M]
 
 /-- For a discrete group `G`, a subgroup `U`, and an arbitrary `DistribMulAction U M`, the
 additive equivalence `DiscreteCoind G U M ≃+ Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)`.
-The coefficient action need not be restricted from `G`. -/
+The coefficient action need not be restricted from `G`, and `M` needs no topology: every function
+on the discrete group `G` is locally constant. -/
 noncomputable def discreteCoindAddEquivAlgebraic :
     DiscreteCoind G U M ≃+ Rep.coind U.subtype
       (Rep.ofDistribMulAction ℤ U M) :=
+  -- The topologically-flavoured comparison needs some topology on `M`; the discrete one is used.
+  letI : TopologicalSpace M := ⊥
+  haveI : DiscreteTopology M := ⟨rfl⟩
+  haveI : ContinuousSMul U M := ⟨continuous_of_discreteTopology⟩
   (discreteCoindEquivAlgebraic ℤ G ⟨U, isOpen_discrete _⟩ M).toAddEquiv
 
 /-- The additive coinduction comparison preserves every value of the underlying function. -/
 theorem discreteCoindAddEquivAlgebraic_apply (f : DiscreteCoind G U M) (g : G) :
-    (discreteCoindAddEquivAlgebraic G M U f).1 g = f g :=
-  discreteCoindEquivAlgebraic_apply ℤ G ⟨U, isOpen_discrete _⟩ M f g
+    (discreteCoindAddEquivAlgebraic G M U f).1 g = f g := by
+  rfl
 
 /-- The inverse additive coinduction comparison preserves every value of the underlying
 algebraically coinduced function. -/
 theorem discreteCoindAddEquivAlgebraic_symm_apply
     (f : Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)) (g : G) :
     (discreteCoindAddEquivAlgebraic G M U).symm f g = f.1 g := by
-  -- Name the unbundled carrier so inference preserves the caller's coefficient action.
-  let f' : Representation.coindV U.subtype (Representation.ofDistribMulAction ℤ U M) := f
-  exact discreteCoindEquivAlgebraic_symm_apply ℤ G ⟨U, isOpen_discrete _⟩ M f' g
+  rfl
 
 /-- The additive coinduction comparison intertwines right translation. -/
 @[simp↓]
 theorem discreteCoindAddEquivAlgebraic_smul (g : G) (f : DiscreteCoind G U M) :
     discreteCoindAddEquivAlgebraic G M U (g • f) =
       (Rep.coind U.subtype (Rep.ofDistribMulAction ℤ U M)).ρ g
-        (discreteCoindAddEquivAlgebraic G M U f) :=
-  discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩ M g f
+        (discreteCoindAddEquivAlgebraic G M U f) := by
+  let : TopologicalSpace M := ⊥
+  have : DiscreteTopology M := ⟨rfl⟩
+  have : ContinuousSMul U M := ⟨continuous_of_discreteTopology⟩
+  exact discreteCoindEquivAlgebraic_smul ℤ G ⟨U, isOpen_discrete _⟩ M g f
 
 end DiscreteAlgebraicComparison
 
@@ -590,8 +585,7 @@ section DiscreteAlgebraicCounit
 universe u v
 
 variable (G : Type u) (M : Type (max u v)) [Group G] [TopologicalSpace G] [DiscreteTopology G]
-  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  (U : Subgroup G) [DistribMulAction U M] [ContinuousSMul U M]
+  [AddCommGroup M] (U : Subgroup G) [DistribMulAction U M]
 
 /-- The algebraic restriction–coinduction counit evaluates at the identity after the additive
 coinduction comparison. The coefficient universe contains the group universe, as required by
