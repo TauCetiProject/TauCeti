@@ -213,7 +213,7 @@ def mono (c : TowerCover S P) {P' : Set (X → G)} (h : P' ⊆ P) : TowerCover S
 
 /-- The tower cover of `V(S)` with one tower, given by an isomorphism of the coordinate group of
 `S` with the top carrier of a tower. -/
-noncomputable def ofBijective {T : Type u} [Group T] {ι : G →* T} (t : Tower G T ι)
+def ofBijective {T : Type u} [Group T] {ι : G →* T} (t : Tower G T ι)
     (θ : GHom (CoordGroup.coeff (MonoidHom.id G) S) ι) (hθ : Function.Bijective θ) :
     TowerCover S (V (MonoidHom.id G) S) where
   n := 1
