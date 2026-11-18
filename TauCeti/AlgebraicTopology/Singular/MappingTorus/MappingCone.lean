@@ -78,6 +78,15 @@ private lemma cylinderMonodromyHomotopy_apply (t : unitInterval) (x : F) :
     cylinderMonodromyHomotopy φ (t, x) = (φ x, (t : ℝ)) :=
   (rfl)
 
+/-- The lifted monodromy homotopy as a homotopy in `TopCat`. A `TopCat.Homotopy` between
+composites of `TopCat.ofHom` maps unfolds to a homotopy between the underlying continuous maps,
+which is the type of `cylinderMonodromyHomotopy φ`. -/
+private def cylinderMonodromyTopHomotopy :
+    TopCat.Homotopy
+      (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫ TopCat.ofHom (cylinderHomotopyEquiv F).invFun)
+      (TopCat.ofHom (cylinderHomotopyEquiv F).invFun ≫ TopCat.ofHom (deck φ : C(F × ℝ, F × ℝ))) :=
+  cylinderMonodromyHomotopy φ
+
 section Preadditive
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] (R : C)
@@ -136,14 +145,7 @@ private def cylinderSingularChainHomotopy :
       (((singularChainComplexFunctor C).obj R).map
         (TopCat.ofHom (cylinderHomotopyEquiv F).invFun ≫
           TopCat.ofHom (deck φ : C(F × ℝ, F × ℝ)))) :=
-  -- `TopCat.Homotopy` between composites of `TopCat.ofHom` maps unfolds to a homotopy between the
-  -- underlying continuous maps, which is the type of `cylinderMonodromyHomotopy φ`.
-  (show TopCat.Homotopy
-      (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
-        TopCat.ofHom (cylinderHomotopyEquiv F).invFun)
-      (TopCat.ofHom (cylinderHomotopyEquiv F).invFun ≫
-        TopCat.ofHom (deck φ : C(F × ℝ, F × ℝ))) from
-    cylinderMonodromyHomotopy φ).singularChainComplexFunctorObjMap R
+  (cylinderMonodromyTopHomotopy φ).singularChainComplexFunctorObjMap R
 
 /-- The chain homotopy on the cylinder from `s ∘ φ` to `τ ∘ s` induced by the lifted monodromy
 homotopy, where `s` is the inclusion at height zero. -/
@@ -164,11 +166,7 @@ chain homotopy of the monodromy homotopy of the mapping torus. -/
 private lemma cylinderChainHomotopy_hom_comp_coverChainMap (i j : ℕ) :
     (cylinderChainHomotopy φ R).hom i j ≫ (coverChainMap φ R).f j =
       (singularChainHomotopy φ R).hom i j := by
-  let H : TopCat.Homotopy
-      (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫
-        TopCat.ofHom (cylinderHomotopyEquiv F).invFun)
-      (TopCat.ofHom (cylinderHomotopyEquiv F).invFun ≫
-        TopCat.ofHom (deck φ : C(F × ℝ, F × ℝ))) := cylinderMonodromyHomotopy φ
+  let H := cylinderMonodromyTopHomotopy φ
   let H' : TopCat.Homotopy
       (TopCat.ofHom (⟨φ, φ.continuous⟩ : C(F, F)) ≫ TopCat.ofHom (incl φ))
       (TopCat.ofHom (incl φ)) := monodromyHomotopy φ
@@ -187,6 +185,13 @@ private lemma cylinderChainHomotopy_hom_comp_coverChainMap (i j : ℕ) :
   simp only [CategoryTheory.Functor.map_id, HomologicalComplex.id_f, Category.id_comp] at h
   rw [cylinderChainHomotopy_hom, singularChainHomotopy_hom, coverChainMap_def]
   exact h.symm
+
+omit [HasCoproducts.{w} C] in
+/-- The components of the homotopy from `g - f` to `0` obtained from a homotopy from `f` to `g`
+are the negatives of its components. -/
+private lemma equivSubZero_symm_hom {K L : ChainComplex C ℕ} {f g : K ⟶ L} (h : Homotopy f g)
+    (i j : ℕ) : (Homotopy.equivSubZero h.symm).hom i j = -h.hom i j := by
+  simp [Homotopy.equivSubZero, Homotopy.symm]
 
 variable [HasBinaryBiproducts C]
 
@@ -212,10 +217,9 @@ private lemma coneComparisonHomotopy_hom (n : ℕ) :
           (by simp) -
         (cylinderChainHomotopy φ R).hom n (n + 1) ≫
           homotopyCofiber.inrX (𝟙 _ - deckChainMap φ R) (n + 1) := by
-  have he : (Homotopy.equivSubZero (cylinderChainHomotopy φ R).symm).hom n (n + 1) =
-      -(cylinderChainHomotopy φ R).hom n (n + 1) := rfl
   simp only [coneComparisonHomotopy, Homotopy.trans_hom, Homotopy.add_hom,
-    Homotopy.ofEq_hom, Pi.zero_apply, Homotopy.compLeft_hom, Homotopy.compRight_hom, he,
+    Homotopy.ofEq_hom, Pi.zero_apply, Homotopy.compLeft_hom, Homotopy.compRight_hom,
+    equivSubZero_symm_hom,
     homotopyCofiber.inrCompHomotopy_hom (𝟙 _ - deckChainMap φ R) _ n (n + 1) (by simp),
     zero_add, add_zero, Preadditive.neg_comp, homotopyCofiber.inr_f, sub_eq_add_neg]
 
@@ -250,6 +254,15 @@ private lemma inlX_coneComparison_f (n : ℕ) :
           homotopyCofiber.inrX (𝟙 _ - deckChainMap φ R) (n + 1) := by
   rw [coneComparison, homotopyCofiber.inlX_desc_f, coneComparisonHomotopy_hom]
 
+/-- In degree `n`, the Wang mapping-cone map restricts to the fibre inclusion on the unsuspended
+summand. -/
+@[reassoc]
+private lemma inrX_wangMappingConeMap_f (n : ℕ) :
+    homotopyCofiber.inrX (wangEndomorphism φ R) n ≫ (wangMappingConeMap φ R).f n =
+      (fibreInclusionChainMap φ R).f n := by
+  simpa only [HomologicalComplex.comp_f, homotopyCofiber.inr_f] using
+    congrArg (fun k ↦ k.f n) (homotopyCofiber_inr_comp_wangMappingConeMap φ R)
+
 /-- The map from the mapping cone of `𝟙 - τ_*` to the chains of the mapping torus induced by the
 covering map. -/
 private abbrev coverConeMap :
@@ -266,9 +279,8 @@ private lemma coneComparison_comp_coverConeMap :
   ext (_ | n) : 1
   · apply homotopyCofiber.ext_from_X' (wangEndomorphism φ R) 0 (by simp)
     rw [HomologicalComplex.comp_f, reassoc_of% inrX_coneComparison_f,
-      homotopyCofiber.inrX_desc_f, ← HomologicalComplex.comp_f, sectionChainMap_comp_coverChainMap]
-    simpa only [HomologicalComplex.comp_f, homotopyCofiber.inr_f] using
-      (congrArg (fun k ↦ k.f 0) (homotopyCofiber_inr_comp_wangMappingConeMap φ R)).symm
+      homotopyCofiber.inrX_desc_f, ← HomologicalComplex.comp_f, sectionChainMap_comp_coverChainMap,
+      inrX_wangMappingConeMap_f]
   · apply homotopyCofiber.ext_from_X (wangEndomorphism φ R) n (n + 1) (by simp)
     · rw [HomologicalComplex.comp_f, reassoc_of% inlX_coneComparison_f,
         homotopyCofiber_inlX_comp_wangMappingConeMap_f, Preadditive.sub_comp, Category.assoc,
@@ -277,9 +289,7 @@ private lemma coneComparison_comp_coverConeMap :
       simp
     · rw [HomologicalComplex.comp_f, reassoc_of% inrX_coneComparison_f,
         homotopyCofiber.inrX_desc_f, ← HomologicalComplex.comp_f,
-        sectionChainMap_comp_coverChainMap]
-      simpa only [HomologicalComplex.comp_f, homotopyCofiber.inr_f] using
-        (congrArg (fun k ↦ k.f (n + 1)) (homotopyCofiber_inr_comp_wangMappingConeMap φ R)).symm
+        sectionChainMap_comp_coverChainMap, inrX_wangMappingConeMap_f]
 
 /-- The projection `F × ℝ → F` as a morphism of arrows from `𝟙 - τ_*` to `id - φ_*`. -/
 private def projArrowHom :
