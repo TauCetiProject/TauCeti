@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cohomologi
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Universe
 
 /-!
-# Cohomological dimension does not depend on the extra coefficient universe
+# Cohomological dimension depends on the extra universe only through `max u v`
 
 For a topological group `G : Type u`, the invariants `cd_p G = cohomologicalDimensionAt.{v} p G`,
 `scd_p G = strictCohomologicalDimensionAt.{v} p G` and `cd G = cohomologicalDimension.{v} G`
@@ -21,7 +21,9 @@ same coefficient universe, such as `v = u` and `v = 0`, are not definitionally e
 This file shows that they are equal: `v` matters only through `max u v`. The cohomology objects
 at the parameters `v` and `max u v` coincide (`TauCeti.continuousCohomology_universe_eq`), so the
 vanishing predicates agree degree by degree. In particular the invariants at `v = u` and at
-`v = 0` agree, so theorems proved at either instantiation apply at the other.
+`v = 0` agree, so theorems proved at either instantiation apply at the other. The file does not
+compare different coefficient universes: for `v > u` the invariants quantify over modules in
+`Type v`, strictly above `Type u`, and are not related here to those at `v = 0`.
 
 ## Main results
 
@@ -69,7 +71,7 @@ theorem strictCohomologicalDimensionLE_universe_iff {n : ℕ} :
 
 variable (p G)
 
-/-- **`cd_p` does not depend on the extra coefficient universe** beyond `max u v`:
+/-- **`cd_p` depends on the extra universe `v` only through `max u v`**:
 `cohomologicalDimensionAt.{max u v} p G = cohomologicalDimensionAt.{v} p G`. At `v = 0` this
 says that `cd_p G` is the same at the parameters `u` and `0`. -/
 theorem cohomologicalDimensionAt_universe_eq :
@@ -81,7 +83,7 @@ theorem cohomologicalDimensionAt_universe_eq :
     exact (cohomologicalDimensionAt_le_iff p G n).trans
       (cohomologicalDimensionLE_universe_iff.trans (cohomologicalDimensionAt_le_iff p G n).symm)
 
-/-- **`scd_p` does not depend on the extra coefficient universe** beyond `max u v`:
+/-- **`scd_p` depends on the extra universe `v` only through `max u v`**:
 `strictCohomologicalDimensionAt.{max u v} p G = strictCohomologicalDimensionAt.{v} p G`. At
 `v = 0` this says that `scd_p G` is the same at the parameters `u` and `0`. -/
 theorem strictCohomologicalDimensionAt_universe_eq :
@@ -94,7 +96,7 @@ theorem strictCohomologicalDimensionAt_universe_eq :
       (strictCohomologicalDimensionLE_universe_iff.trans
         (strictCohomologicalDimensionAt_le_iff p G n).symm)
 
-/-- `cd` does not depend on the extra coefficient universe beyond `max u v`:
+/-- `cd` depends on the extra universe `v` only through `max u v`:
 `cohomologicalDimension.{max u v} G = cohomologicalDimension.{v} G`. -/
 theorem cohomologicalDimension_universe_eq :
     cohomologicalDimension.{max u v} G = cohomologicalDimension.{v} G := by
