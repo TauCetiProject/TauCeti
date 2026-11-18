@@ -7,15 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Topology.MetricSpace.InjectiveNeighborhood
-import all Mathlib.Geometry.Manifold.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Assembling local diffeomorphisms near a section
-
-A map which is a local diffeomorphism at a point `x` agrees with a single partial
-diffeomorphism near `x`, whose source can be kept inside any prescribed open set containing `x`
-(`IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`).
 
 A map which is locally invertible near a retraction section, and induces the topology
 on that section, identifies a smaller neighbourhood with its image by a single partial
@@ -39,33 +33,6 @@ public section
 
 open Set Function
 open scoped Manifold ContDiff
-
-namespace IsLocalDiffeomorphAt
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {H G : Type*} [TopologicalSpace H] [TopologicalSpace G]
-  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
-  {M N : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [TopologicalSpace N] [ChartedSpace G N] {n : ℕ∞ω} {f : M → N} {x : M}
-
-/-- A `C^n` local diffeomorphism at `x` agrees with a partial diffeomorphism on its source, which
-contains `x` and lies inside any prescribed open set containing `x`. -/
-theorem exists_partialDiffeomorph_eqOn (hf : IsLocalDiffeomorphAt I J n f x) {s : Set M}
-    (hs : IsOpen s) (hxs : x ∈ s) :
-    ∃ Φ : PartialDiffeomorph I J M N n, x ∈ Φ.source ∧ Φ.source ⊆ s ∧ EqOn f Φ Φ.source := by
-  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
-  refine ⟨Φ.restrOpen s hs, ?_, ?_, fun y hy ↦ ?_⟩
-  · rw [PartialDiffeomorph.restrOpen_source]
-    exact ⟨hxΦ, hxs⟩
-  · rw [PartialDiffeomorph.restrOpen_source]
-    exact inter_subset_right
-  · rw [PartialDiffeomorph.restrOpen_source] at hy
-    rw [PartialDiffeomorph.coe_restrOpen]
-    exact hfΦ hy.1
-
-end IsLocalDiffeomorphAt
 
 namespace IsLocalDiffeomorphOn
 

@@ -11,7 +11,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.PartialDiffeomorph
 import TauCeti.Geometry.Manifold.Flow.Straightening
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Darboux.Momenta
 import TauCeti.Geometry.Symplectic.Hamiltonian.Bracket
