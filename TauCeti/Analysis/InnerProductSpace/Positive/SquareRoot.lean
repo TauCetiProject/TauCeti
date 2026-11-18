@@ -102,6 +102,15 @@ theorem norm_sqrt_apply_sq (hT : T.IsPositive) (x : E) :
   rw [@InnerProductSpace.norm_sq_eq_re_inner 𝕜 E, ← hT.sqrt_isSymmetric (hT.sqrt x) x,
     ← comp_apply, hT.sqrt_sq]
 
+/-- The squared norm of the positive square root at a vector of the ordered eigenbasis is the
+corresponding eigenvalue. -/
+theorem norm_sqrt_eigenvectorBasis_sq (hT : T.IsPositive) {n : ℕ}
+    (hn : Module.finrank 𝕜 E = n) (i : Fin n) :
+    ‖hT.sqrt (hT.isSymmetric.eigenvectorBasis hn i)‖ ^ 2 = hT.isSymmetric.eigenvalues hn i := by
+  rw [hT.norm_sqrt_apply_sq, hT.isSymmetric.apply_eigenvectorBasis, inner_smul_left,
+    inner_self_eq_norm_sq_to_K, OrthonormalBasis.norm_eq_one]
+  simp
+
 /-- The positive square root has the same kernel as the original endomorphism. -/
 @[simp]
 theorem ker_sqrt (hT : T.IsPositive) : hT.sqrt.ker = T.ker := by
