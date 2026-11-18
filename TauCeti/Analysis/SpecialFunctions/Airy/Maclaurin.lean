@@ -50,7 +50,9 @@ private theorem airy_term_eq (A B z : ℂ) (k : ℕ) :
         3 * B / Gamma (1 / 3) *
           (3 ^ k * (ascPochhammer ℂ k).eval (2 / 3) * z ^ (3 * k + 1) / (3 * k + 1)!) := by
   have h43 : Gamma (4 / 3 : ℂ) = Gamma (1 / 3) / 3 := by
-    rw [show (4 / 3 : ℂ) = 1 / 3 + 1 by norm_num, Gamma_add_one _ (by norm_num)]
+    -- Write `4/3` as `1/3 + 1`, to apply the recurrence `Γ(s + 1) = s Γ(s)`.
+    have h : (4 / 3 : ℂ) = 1 / 3 + 1 := by norm_num
+    rw [h, Gamma_add_one _ (by norm_num)]
     ring
   rw [Gamma_add_natCast_eq_ascPochhammer_eval_mul (ne_neg_natCast_of_re_pos (by norm_num)) k,
     Gamma_add_natCast_eq_ascPochhammer_eval_mul (ne_neg_natCast_of_re_pos (by norm_num)) k, h43,
@@ -61,7 +63,10 @@ private theorem airy_term_eq (A B z : ℂ) (k : ℕ) :
   have g1 : Gamma (1 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have g2 : Gamma (2 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have hk : (k ! : ℂ) ≠ 0 := by exact_mod_cast k.factorial_ne_zero
-  rw [pow_succ z (3 * k), pow_mul z 3 k, div_pow, show (27 : ℂ) = 3 * 9 by norm_num, mul_pow]
+  -- The triplication formulas carry `27 ^ k` and the series `9 ^ k`; split `27 = 3 * 9` so
+  -- that `field_simp` can match the powers.
+  have h27 : (27 : ℂ) = 3 * 9 := by norm_num
+  rw [pow_succ z (3 * k), pow_mul z 3 k, div_pow, h27, mul_pow]
   field_simp
 
 /-- **The Maclaurin series of `Ai`** (DLMF 9.4.1). -/
@@ -72,9 +77,11 @@ theorem hasSum_airyAi (z : ℂ) :
           (3 ^ k * (ascPochhammer ℂ k).eval (2 / 3) * z ^ (3 * k + 1) / (3 * k + 1)!))
       (airyAi z) := by
   refine (hasSum_airyAi_gamma z).congr_fun fun k => ?_
+  -- Write the exponent `−1/3` of `Ai′(0)` as `−4/3 + 1`, so that `cpow_add` relates it to the
+  -- exponent `−4/3` of the series.
+  have h : (-1 / 3 : ℂ) = -4 / 3 + 1 := by norm_num
   rw [airyAi_zero, deriv_airyAi_zero, sub_eq_add_neg, ← neg_mul, ← neg_mul,
-    airy_term_eq, show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num,
-    cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
+    airy_term_eq, h, cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
   ring
 
 /-- **The Maclaurin series of `Bi`** (DLMF 9.4.3). -/
@@ -85,9 +92,11 @@ theorem hasSum_airyBi (z : ℂ) :
           (3 ^ k * (ascPochhammer ℂ k).eval (2 / 3) * z ^ (3 * k + 1) / (3 * k + 1)!))
       (airyBi z) := by
   refine (hasSum_airyBi_gamma z).congr_fun fun k => ?_
-  rw [airyBi_zero, deriv_airyBi_zero, airy_term_eq,
-    show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num, cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0),
-    cpow_one]
+  -- Write the exponent `1/6` of `Bi′(0)` as `−5/6 + 1`, so that `cpow_add` relates it to the
+  -- exponent `−5/6` of the series.
+  have h : (1 / 6 : ℂ) = -5 / 6 + 1 := by norm_num
+  rw [airyBi_zero, deriv_airyBi_zero, airy_term_eq, h,
+    cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
   ring
 
 end TauCeti

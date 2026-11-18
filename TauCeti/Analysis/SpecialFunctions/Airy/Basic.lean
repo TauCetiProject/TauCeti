@@ -161,8 +161,10 @@ theorem airyBi_zero_eq : airyBi 0 = (3 : ℂ) ^ (1 / 2 : ℂ) * airyAi 0 := by
 
 /-- `Bi′(0) = −√3 Ai′(0)`. -/
 theorem deriv_airyBi_zero_eq : deriv airyBi 0 = -(3 : ℂ) ^ (1 / 2 : ℂ) * deriv airyAi 0 := by
-  rw [deriv_airyAi_zero, deriv_airyBi_zero,
-    show (1 / 6 : ℂ) = 1 / 2 + -1 / 3 by norm_num, cpow_add _ _ (by norm_num)]
+  -- Split the exponent `1/6` of `Bi′(0)` as `1/2 + (−1/3)`, the exponents of `√3` and of
+  -- `Ai′(0)`, so that `cpow_add` factors `3 ^ (1/6)`.
+  have h : (1 / 6 : ℂ) = 1 / 2 + -1 / 3 := by norm_num
+  rw [deriv_airyAi_zero, deriv_airyBi_zero, h, cpow_add _ _ (by norm_num)]
   ring
 
 end TauCeti

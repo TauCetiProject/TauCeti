@@ -323,7 +323,7 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (
   simpa [hD] using congrArg (aeval x) hP
 
 /-- The Pochhammer symbol `(c)ₖ` does not vanish when `c` is not a nonpositive integer. -/
-theorem ascPochhammer_eval_ne_zero {R : Type*} [CommRing R] [IsDomain R] {c : R}
+theorem ascPochhammer_eval_ne_zero {R : Type*} [Ring R] [IsDomain R] {c : R}
     (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) : (ascPochhammer R k).eval c ≠ 0 := by
   rw [Ne, ascPochhammer_eval_eq_zero_iff]
   rintro ⟨m, -, hm⟩

@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Triplication of factorials
 
-In a field of characteristic zero, the factorials `(3k)!` and `(3k + 1)!` factor through
-Pochhammer symbols at thirds:
+In any field, the factorials `(3k)!` and `(3k + 1)!` factor through Pochhammer symbols at thirds
+(in characteristic three, `1/3 = 0` and both sides vanish for `k ≥ 1`):
 
 `(3k)! = 27^k k! (⅓)_k (⅔)_k`, `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`.
 
@@ -34,34 +35,55 @@ open scoped Nat
 
 namespace Nat
 
-variable {K : Type*} [Field K] [CharZero K]
+variable {K : Type*} [Field K]
+
+/-- In a field where `3 = 0`, the factorial `n!` vanishes for `n ≥ 3`. -/
+private theorem cast_factorial_eq_zero_of_three_eq_zero (h3 : (3 : K) = 0) {n : ℕ}
+    (hn : 3 ≤ n) : ((n ! : ℕ) : K) = 0 := by
+  obtain ⟨m, hm⟩ := Nat.dvd_factorial (by norm_num : 0 < 3) hn
+  rw [hm]
+  push_cast
+  rw [h3, zero_mul]
 
 /-- Triplication of factorials: `(3k)! = 27^k k! (⅓)_k (⅔)_k`. -/
 theorem factorial_three_mul (k : ℕ) :
     (((3 * k)! : ℕ) : K) =
       27 ^ k * k ! * (ascPochhammer K k).eval (1 / 3) * (ascPochhammer K k).eval (2 / 3) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [show 3 * (k + 1) = 3 * k + 2 + 1 by ring, Nat.factorial_succ, Nat.factorial_succ,
-      Nat.factorial_succ]
-    push_cast
-    rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
-    push_cast
-    ring
+  rcases eq_or_ne (3 : K) 0 with h3 | h3
+  · -- If `3 = 0`, then `1/3 = 2/3 = 0`, and both sides vanish for `k ≥ 1`.
+    cases k with
+    | zero => simp
+    | succ k =>
+      simp [cast_factorial_eq_zero_of_three_eq_zero h3 (by omega : 3 ≤ 3 * (k + 1)), h3]
+  · induction k with
+    | zero => simp
+    | succ k ih =>
+      have h : 3 * (k + 1) = 3 * k + 2 + 1 := by ring
+      rw [h, Nat.factorial_succ, Nat.factorial_succ, Nat.factorial_succ]
+      push_cast
+      rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
+      push_cast
+      field_simp
+      ring
 
 /-- Triplication of factorials: `(3k + 1)! = 27^k k! (⅔)_k (4/3)_k`. -/
 theorem factorial_three_mul_add_one (k : ℕ) :
     (((3 * k + 1)! : ℕ) : K) =
       27 ^ k * k ! * (ascPochhammer K k).eval (2 / 3) * (ascPochhammer K k).eval (4 / 3) := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [show 3 * (k + 1) + 1 = 3 * k + 1 + 2 + 1 by ring, Nat.factorial_succ, Nat.factorial_succ,
-      Nat.factorial_succ]
-    push_cast
-    rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
-    push_cast
-    ring
+  rcases eq_or_ne (3 : K) 0 with h3 | h3
+  · cases k with
+    | zero => simp
+    | succ k =>
+      simp [cast_factorial_eq_zero_of_three_eq_zero h3 (by omega : 3 ≤ 3 * (k + 1) + 1), h3]
+  · induction k with
+    | zero => simp
+    | succ k ih =>
+      have h : 3 * (k + 1) + 1 = 3 * k + 1 + 2 + 1 := by ring
+      rw [h, Nat.factorial_succ, Nat.factorial_succ, Nat.factorial_succ]
+      push_cast
+      rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
+      push_cast
+      field_simp
+      ring
 
 end Nat
