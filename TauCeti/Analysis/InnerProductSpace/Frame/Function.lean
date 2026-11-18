@@ -205,7 +205,8 @@ open _root_.LinearMap (quadraticFrameFunction)
 
 /-- The quadratic frame function commutes with multiplication by a real scalar. -/
 @[simp] theorem _root_.LinearMap.quadraticFrameFunction_smul (c : ℝ) (T : E →ₗ[ℂ] E) :
-    quadraticFrameFunction ((c : ℂ) • T) = c • quadraticFrameFunction T := by
+    quadraticFrameFunction (c • T) = c • quadraticFrameFunction T := by
+  rw [← Complex.coe_smul c T]
   funext v
   simp only [LinearMap.quadraticFrameFunction_apply, LinearMap.smul_apply, inner_smul_right,
     ← RCLike.ofReal_eq_complex_ofReal, RCLike.re_ofReal_mul, Pi.smul_apply, smul_eq_mul]
