@@ -13,8 +13,9 @@ public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 Composing restriction maps along inclusions of opens in both directions gives the identity after
 any morphism into the starting section object, since the inclusions force the opens to be equal;
-in particular restriction from an open to itself is the identity on sections, and any two
-composites of restriction maps with the same source and target agree on sections.
+in particular restriction from an open to itself is the identity on sections. Because the category
+of opens is thin, two successive restrictions of a section agree with the single restriction between
+the same opens.
 A family of sections over opens is compatible as soon as any two of its sections are restrictions
 of a common section in the family, and two sections of a sheaf of types that agree on the
 intersection of their domains glue to a section over the union.
