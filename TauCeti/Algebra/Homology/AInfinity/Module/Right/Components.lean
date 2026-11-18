@@ -314,8 +314,7 @@ theorem isHomogeneous_gradedCoderiv (G : InternalGrading R M ℤ)
     ((InternalGrading.isHomogeneous_assoc_symm (G.shift 1) W W).comp
       (hid.tensorProduct (isHomogeneous_deconcatenation (AA.grading.shift 1))))
   have htw : LinearMap.IsHomogeneous ((G.shift 1).koszulTwist 1) (G.shift 1).piece
-      (G.shift 1).piece 0 := LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-    simpa only [add_zero] using (G.shift 1).koszulTwist_mem_piece hx 1
+      (G.shift 1).piece 0 := (G.shift 1).isHomogeneous_koszulTwist 1
   have hb : LinearMap.IsHomogeneous AA.coaugmentedBarDifferential W.piece W.piece 1 := by
     simpa only [W, grading_piece] using AA.isHomogeneous_coaugmentedBarDifferential
   have hH := (hid.tensorProduct hb).comp (htw.tensorProduct hwid)

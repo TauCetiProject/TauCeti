@@ -58,6 +58,10 @@ bar constructions.
   cofree left comodule.
 * `IsLeftGradedCoderivationOver.comp_square_eq_zero_iff_counit_of_negOnePow_eq_neg_one` (in
   `TauCeti.Comodule`): the square-zero law can be checked on the counit component.
+* `TauCeti.Comodule.comp_comp_eq_lTensor_comp_of_comp_self_eq_id`: two maps intertwining left
+  coactions up to the same involution of the coalgebra factor compose to a map of left comodules.
+* `TauCeti.Comodule.comp_ringInverse_eq_lTensor_comp`: the inverse of an invertible map of left
+  comodules is a map of left comodules.
 * `TauCeti.Comodule.leftCofreeCoact_comp_leftCofreeCoact` and
   `TauCeti.Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact`: the cofree left
   coaction, and its extension to the cofree bicomodule `(C ⊗ P) ⊗ N`, are coassociative.
@@ -145,6 +149,44 @@ theorem leftCoactRTensor_comp_rTensor {X : Type*} [AddCommMonoid X] [Module R X]
       (TensorProduct.assoc R C Y N).toLinearMap ∘ₗ (δ ∘ₗ g).rTensor N := by
   refine TensorProduct.ext' fun x n ↦ ?_
   simp
+
+/-! ### Maps intertwining left coactions up to a twist -/
+
+/-- If `f` intertwines left coactions `δX` and `δY` up to a map `τ` of the coalgebra factor, and
+`g` intertwines `δY` and `δZ` up to `σ`, then `g ∘ f` intertwines `δX` and `δZ` up to `σ ∘ τ`. -/
+theorem comp_comp_eq_map_comp_comp {X Z : Type*} [AddCommMonoid X] [Module R X]
+    [AddCommMonoid Z] [Module R Z] {δX : X →ₗ[R] C ⊗[R] X} {δY : Y →ₗ[R] C ⊗[R] Y}
+    {δZ : Z →ₗ[R] C ⊗[R] Z} {τ σ : C →ₗ[R] C} {f : X →ₗ[R] Y} {g : Y →ₗ[R] Z}
+    (hf : δY ∘ₗ f = TensorProduct.map τ f ∘ₗ δX) (hg : δZ ∘ₗ g = TensorProduct.map σ g ∘ₗ δY) :
+    δZ ∘ₗ g ∘ₗ f = TensorProduct.map (σ ∘ₗ τ) (g ∘ₗ f) ∘ₗ δX := by
+  rw [← LinearMap.comp_assoc, hg, LinearMap.comp_assoc, hf, ← LinearMap.comp_assoc,
+    TensorProduct.map_comp]
+
+/-- Two maps intertwining left coactions up to the same involution `τ` of the coalgebra factor
+compose to a map of left comodules.  For `τ` a Koszul twist: two odd maps compose to an even
+one. -/
+theorem comp_comp_eq_lTensor_comp_of_comp_self_eq_id {X Z : Type*} [AddCommMonoid X]
+    [Module R X] [AddCommMonoid Z] [Module R Z] {δX : X →ₗ[R] C ⊗[R] X}
+    {δY : Y →ₗ[R] C ⊗[R] Y} {δZ : Z →ₗ[R] C ⊗[R] Z} {τ : C →ₗ[R] C} {f : X →ₗ[R] Y}
+    {g : Y →ₗ[R] Z} (hτ : τ ∘ₗ τ = LinearMap.id) (hf : δY ∘ₗ f = TensorProduct.map τ f ∘ₗ δX)
+    (hg : δZ ∘ₗ g = TensorProduct.map τ g ∘ₗ δY) :
+    δZ ∘ₗ g ∘ₗ f = (g ∘ₗ f).lTensor C ∘ₗ δX := by
+  rw [comp_comp_eq_map_comp_comp hf hg, hτ, LinearMap.lTensor_def]
+
+/-- If an invertible endomorphism `U` is a map of left comodules, so is its inverse. -/
+theorem comp_ringInverse_eq_lTensor_comp {δY : Y →ₗ[R] C ⊗[R] Y} {U : Module.End R Y}
+    (hUnit : IsUnit U) (hU : δY ∘ₗ U = U.lTensor C ∘ₗ δY) :
+    δY ∘ₗ Ring.inverse U = (Ring.inverse U).lTensor C ∘ₗ δY := by
+  calc δY ∘ₗ Ring.inverse U
+      = (Ring.inverse U * U).lTensor C ∘ₗ δY ∘ₗ Ring.inverse U := by
+        rw [Ring.inverse_mul_cancel _ hUnit, Module.End.one_eq_id, LinearMap.lTensor_id,
+          LinearMap.id_comp]
+    _ = (Ring.inverse U).lTensor C ∘ₗ δY ∘ₗ (U * Ring.inverse U) := by
+        rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, LinearMap.lTensor_comp,
+          LinearMap.comp_assoc, ← LinearMap.comp_assoc (Ring.inverse U) U δY, hU,
+          LinearMap.comp_assoc]
+    _ = (Ring.inverse U).lTensor C ∘ₗ δY := by
+        rw [Ring.mul_inverse_cancel _ hUnit, Module.End.one_eq_id, LinearMap.comp_id]
 
 section Bicomodule
 
