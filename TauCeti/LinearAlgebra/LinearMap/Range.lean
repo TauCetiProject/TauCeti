@@ -12,7 +12,8 @@ public import Mathlib.Algebra.Module.Submodule.Range
 
 In a commuting square `g ∘ e₁ = e₂ ∘ f` of linear maps whose left side `e₁` is surjective, the
 right side `e₂` carries the range of `f` onto the range of `g`. Transporting cokernels along a
-commuting square of linear isomorphisms uses this.
+commuting square of linear isomorphisms uses this. In any commuting square `g ∘ i = i' ∘ f`, the
+map `g` sends the range of `i` into the range of `i'`, so it induces a map of cokernels.
 -/
 
 public section
@@ -29,5 +30,17 @@ theorem map_range_eq_range_of_comp_eq
     (he₁ : Function.Surjective e₁) (h : g ∘ₗ e₁ = e₂ ∘ₗ f) :
     (range f).map e₂ = range g := by
   rw [← range_comp, ← h, range_comp_of_range_eq_top _ (range_eq_top.2 he₁)]
+
+/-- In a commuting square `g ∘ i = i' ∘ f` of linear maps, `g` sends the range of `i` into the
+range of `i'`. -/
+theorem range_le_comap_range_of_comp_eq
+    {R M N M' N' : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+    {f : M →ₗ[R] M'} {g : N →ₗ[R] N'} {i : M →ₗ[R] N} {i' : M' →ₗ[R] N'}
+    (h : g ∘ₗ i = i' ∘ₗ f) :
+    range i ≤ (range i').comap g := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨f x, (LinearMap.congr_fun h x).symm⟩
 
 end LinearMap
