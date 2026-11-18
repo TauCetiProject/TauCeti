@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.Flat.Tensor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.Ideal.Colon
+import Mathlib.RingTheory.OrderOfVanishing.Basic
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Flat.Extensions
 
 /-!
@@ -68,9 +71,14 @@ sums of relative effective Cartier divisors: if `B ⧸ (a)` and `B ⧸ (b)` are 
 is a nonzerodivisor, then `B ⧸ (a * b)` is flat over `R`. Neither flatness of `B` nor regularity of
 `a` is required.
 
+The colon sequence gives two companion criteria without regularity: if the last quotient
+`B/(J + (b))` is flat, flatness of either `B/J` or `B/(J : b)` implies that of the other.
+These criteria supply flatness of residual closed subschemes.
+
 ## References
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemma 8.31.
+
 -/
 
 public section
@@ -175,7 +183,47 @@ theorem quotient_span_singleton_iff_forall_isSMulRegular_one_tmul [Flat R B] (g 
 
 end Module.Flat
 
+namespace Ideal
+
+open scoped Pointwise
+
+variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
+
+/-- Multiplying an arbitrary ideal by a regular element preserves flatness of the quotient
+when the quotients by the ideal and by the element are flat over the coefficient ring. -/
+theorem flat_quotient_smul (J : Ideal B) {b : B} (hb : IsSMulRegular B b)
+    [Module.Flat R (B ⧸ J)] [Module.Flat R (B ⧸ Ideal.span {b})] :
+    Module.Flat R (B ⧸ (b • J)) := by
+  have hb' : b ∈ nonZeroDivisors B :=
+    (isLeftRegular_iff_isRegular.mp hb.isLeftRegular).mem_nonZeroDivisors
+  -- Restricting scalars changes only the linear structure, leaving the underlying functions
+  -- unchanged. The annotation selects R as the coefficient ring for the flatness criterion.
+  exact (show Function.Exact ((Ideal.mulQuot b J).restrictScalars R)
+      ((Ideal.quotOfMul b J).restrictScalars R) from
+    Ideal.exact_mulQuot_quotOfMul J).flat_of_injective_of_surjective
+      (Ideal.mulQuot_injective _ hb') (Ideal.quotOfMul_surjective _)
+
+/-- If `B/(J : b)` and `B/(J + (b))` are flat over `R`, then `B/J` is flat.
+Neither regularity of `b` nor flatness of `B` is required. -/
+theorem flat_quotient_of_colon_span_singleton (J : Ideal B) (b : B)
+    [Module.Flat R (B ⧸ J.colon {b})]
+    [Module.Flat R (B ⧸ (J ⊔ Ideal.span {b}))] : Module.Flat R (B ⧸ J) :=
+  (TauCeti.ColonQuotient.exact_mulColon_factorₐ R J b).flat_of_injective_of_surjective
+    (TauCeti.ColonQuotient.mulColon_injective R J b) (Ideal.Quotient.factor_surjective le_sup_left)
+
+/-- If `B/J` and `B/(J + (b))` are flat over `R`, then `B/(J : b)` is flat.
+The ideal `J` is arbitrary and the multiplier `b` need not be regular. -/
+theorem flat_quotient_colon_span_singleton (J : Ideal B) (b : B)
+    [Module.Flat R (B ⧸ J)] [Module.Flat R (B ⧸ (J ⊔ Ideal.span {b}))] :
+    Module.Flat R (B ⧸ J.colon {b}) :=
+  (TauCeti.ColonQuotient.exact_mulColon_factorₐ R J b).flat_left_of_injective_of_surjective
+    (TauCeti.ColonQuotient.mulColon_injective R J b) (Ideal.Quotient.factor_surjective le_sup_left)
+
+end Ideal
+
 namespace TauCeti
+
+open scoped Pointwise
 
 variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
 
@@ -185,45 +233,10 @@ divisors under sums over an arbitrary base, without flatness of the ambient sche
 theorem flat_quotient_span_singleton_mul {a b : B} (hb : IsSMulRegular B b)
     [Module.Flat R (B ⧸ Ideal.span {a})] [Module.Flat R (B ⧸ Ideal.span {b})] :
     Module.Flat R (B ⧸ Ideal.span {a * b}) := by
-  -- Multiplication by `b` and the quotient map give `0 → B/(a) → B/(a*b) → B/(b) → 0`.
-  have hab : Ideal.span {a * b} ≤ Ideal.span {b} := by
-    rw [Ideal.span_singleton_le_iff_mem, Ideal.mem_span_singleton]
-    exact ⟨a, mul_comm _ _⟩
-  have hi : Ideal.span {a} ≤ Submodule.comap (LinearMap.mulLeft B b) (Ideal.span {a * b}) := by
-    intro x hx
-    obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hx
-    exact Ideal.mem_span_singleton'.mpr ⟨c, by simp [mul_comm, mul_left_comm]⟩
-  let i := (Submodule.mapQ (Ideal.span {a}) (Ideal.span {a * b})
-    (LinearMap.mulLeft B b) hi).restrictScalars R
-  let j := (Ideal.Quotient.factorₐ R hab).toLinearMap
-  have hi_apply (x : B) : i (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (b * x) := by
-    simpa only [i, LinearMap.restrictScalars_apply, Ideal.Quotient.mk_eq_mk,
-      LinearMap.mulLeft_apply] using
-      (Submodule.mapQ_apply (Ideal.span {a}) (Ideal.span {a * b}) (LinearMap.mulLeft B b)
-        (h := hi) x)
-  have hinj : Function.Injective i := by
-    rw [injective_iff_map_eq_zero]
-    intro x hx
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [hi_apply, Ideal.Quotient.eq_zero_iff_mem] at hx
-    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp hx
-    have heq : b * (c * a) = b * x := by
-      simpa [mul_comm, mul_left_comm, mul_assoc] using hc
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton'.mpr ⟨c, hb heq⟩)
-  have hexact : Function.Exact i j := by
-    intro x
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-    simp only [j, AlgHom.toLinearMap_apply, Ideal.Quotient.factorₐ_apply_mk,
-      Ideal.Quotient.eq_zero_iff_mem]
-    constructor
-    · intro hx
-      obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hx
-      exact ⟨Ideal.Quotient.mk _ c, by simp only [hi_apply, mul_comm]⟩
-    · rintro ⟨y, hy⟩
-      obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-      have h := congrArg j hy
-      rw [hi_apply] at h
-      simpa [j, ← Ideal.Quotient.eq_zero_iff_mem] using h.symm
-  exact hexact.flat_of_injective_of_surjective hinj (Ideal.Quotient.factor_surjective hab)
+  have hab : b • Ideal.span {a} = Ideal.span {a * b} := by
+    rw [← Submodule.ideal_span_singleton_smul, Ideal.smul_eq_mul,
+      Ideal.span_singleton_mul_span_singleton, mul_comm]
+  have := Ideal.flat_quotient_smul (R := R) (Ideal.span {a}) hb
+  exact Module.Flat.of_linearEquiv (Ideal.quotientEquivAlgOfEq R hab).symm.toLinearEquiv
 
 end TauCeti

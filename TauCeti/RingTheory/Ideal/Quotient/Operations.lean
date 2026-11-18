@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Colon
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Module.SpanRank
@@ -47,6 +48,10 @@ map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleto
 
 A linear endomorphism commuting with multiplication by each element of a set `s` induces an
 endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
+
+Multiplication by `b` gives the exact sequence `B/(J : b) → B/J → B/(J + (b))` for any ideal
+`J`, without regularity of `b`. The first map `TauCeti.ColonQuotient.mulColon` is injective.
+
 -/
 
 public section
@@ -196,11 +201,13 @@ def quotientRingAut : H →* RingAut (A ⧸ I) where
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
     simp [RingAut.mul_apply]
 
+/-- The descended action sends a residue class to the class of its image under `a h`. -/
 @[simp]
 theorem quotientRingAut_apply_mk (h : H) (x : A) :
     a.quotientRingAut I hI h (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (a h x) :=
   (rfl)
 
+/-- The inverse descended action sends a residue class to the class of the inverse image. -/
 @[simp]
 theorem quotientRingAut_symm_apply_mk (h : H) (x : A) :
     (a.quotientRingAut I hI h).symm (Ideal.Quotient.mk I x) =
@@ -219,3 +226,56 @@ theorem mk_span_singleton_one_sub_self {R : Type*} [CommRing R] (e : R) :
   exact Ideal.mem_span_singleton'.mpr ⟨-1, by ring⟩
 
 end TauCeti.Ideal.Quotient
+
+namespace TauCeti.ColonQuotient
+
+variable (R : Type*) {B : Type*} [CommSemiring R] [CommRing B] [Algebra R B]
+
+/-- Multiplication by `b` embeds the quotient by `(J : b)` into the quotient by `J`. -/
+def mulColon (J : Ideal B) (b : B) : (B ⧸ J.colon {b}) →ₗ[R] B ⧸ J :=
+  (Submodule.mapQ (J.colon {b}) J (LinearMap.mulLeft B b) (by
+    intro x hx
+    -- Membership in the comap is evaluation of the multiplication map.
+    change b * x ∈ J
+    simpa only [Submodule.mem_colon_singleton, smul_eq_mul, mul_comm] using hx)).restrictScalars R
+
+/-- On residue classes, `mulColon R J b` is multiplication by `b`. -/
+@[simp]
+theorem mulColon_mk (J : Ideal B) (b x : B) :
+    mulColon R J b (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (b * x) := by
+  rw [mulColon, LinearMap.restrictScalars_apply, ← Ideal.Quotient.mk_eq_mk,
+    Submodule.mapQ_apply, LinearMap.mulLeft_apply, Ideal.Quotient.mk_eq_mk]
+
+/-- Multiplication from the quotient by a colon ideal is injective without regularity. -/
+theorem mulColon_injective (J : Ideal B) (b : B) : Function.Injective (mulColon R J b) := by
+  rw [injective_iff_map_eq_zero]
+  intro x
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  intro hx
+  rw [mulColon_mk, Ideal.Quotient.eq_zero_iff_mem] at hx
+  apply Ideal.Quotient.eq_zero_iff_mem.mpr
+  simpa only [Submodule.mem_colon_singleton, smul_eq_mul, mul_comm] using hx
+
+/-- Multiplication followed by quotienting is the exact sequence
+`B/(J : b) → B/J → B/(J + (b))`. -/
+theorem exact_mulColon_factorₐ (J : Ideal B) (b : B) :
+    Function.Exact (mulColon R J b)
+      (Ideal.Quotient.factorₐ R (show J ≤ J ⊔ Ideal.span {b} from le_sup_left)).toLinearMap := by
+  intro x
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp only [AlgHom.toLinearMap_apply, Ideal.Quotient.factorₐ_apply_mk,
+    Ideal.Quotient.eq_zero_iff_mem]
+  constructor
+  · intro hx
+    obtain ⟨j, hj, z, hz, rfl⟩ := Submodule.mem_sup.mp hx
+    obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp hz
+    refine ⟨Ideal.Quotient.mk _ c, ?_⟩
+    rw [mulColon_mk, map_add, Ideal.Quotient.eq_zero_iff_mem.mpr hj, zero_add, mul_comm]
+  · rintro ⟨y, hy⟩
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [mulColon_mk, Ideal.Quotient.eq] at hy
+    have hby : b * y ∈ J ⊔ Ideal.span {b} :=
+      Submodule.mem_sup_right (Ideal.mul_mem_right y _ (Ideal.mem_span_singleton_self b))
+    exact (Submodule.sub_mem_iff_right _ hby).mp (Submodule.mem_sup_left hy)
+
+end TauCeti.ColonQuotient
