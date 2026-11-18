@@ -120,6 +120,15 @@ lemma singularKronecker_singularCohomologyTopCatSphereGenerator (n : ℕ) :
         (singularHomologyTopCatSphereGenerator k n) = (1 : k) :=
   singularKronecker_singularCohomologyTopCatSphereEquiv_symm k _ n 1
 
+/-- The dual `θ` of the sphere generator spans `Hⁿ⁺¹(TopCat.sphere (n + 1); k)`: the inverse of
+evaluation on the standard generator sends `c` to `c θ`. -/
+theorem singularCohomologyTopCatSphereEquiv_symm_eq_smul (n : ℕ) (c : k) :
+    (singularCohomologyTopCatSphereEquiv k (𝟙_ (ModuleCat.{w} k)) n).symm c =
+      c • singularCohomologyTopCatSphereGenerator k n := by
+  rw [LinearEquiv.symm_apply_eq, map_smul, singularCohomologyTopCatSphereEquiv_apply,
+    singularKronecker_singularCohomologyTopCatSphereGenerator]
+  exact (mul_one c).symm
+
 /-- Positive-degree singular cohomology of a sphere vanishes away from its dimension,
 with arbitrary module coefficients over any commutative ring. -/
 theorem isZero_singularCohomology_topCatSphere_of_ne (d q : ℕ) (h : q + 1 ≠ d) :
