@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.TypeAHeckeAlgebra.BaseChange
 public import TauCeti.Algebra.TypeAHeckeAlgebra.CosetBasis
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 
@@ -45,6 +46,10 @@ stages.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_eq_indexCharacter` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_eq_signCharacter`: at `z = q` and `z = -q⁻¹`
   the Ocneanu trace is the corresponding character.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_map` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.pow_mul_ocneanuTrace_map_mem`: the Ocneanu trace commutes with
+  change of coefficients, and scaling by `C ^ n` cancels poles on the stage `n + 1` whenever both
+  `C` and `C * z` lie in a coefficient subalgebra.
 * `TauCeti.TypeAHeckeAlgebra.eq_ocneanuTrace_toInfinite`: a normalized, tracial family of
   functionals on the finite Hecke algebras, compatible with the tower maps and satisfying the
   Markov rule, is the Ocneanu trace restricted to each finite algebra.
@@ -520,6 +525,76 @@ theorem ocneanuTrace_eq_indexCharacter :
 theorem ocneanuTrace_eq_signCharacter :
     ocneanuTrace R q (-↑q⁻¹) = (signCharacter R q).toLinearMap :=
   isMarkovTrace_signCharacter.eq_ocneanuTrace.symm
+
+/-- **Naturality of the Ocneanu trace under change of coefficients.** Along an `R`-algebra `S`
+taking `q` to `q'`, the Ocneanu trace with parameter `algebraMap R S z` restricts along
+`InfiniteTypeAHeckeAlgebra.map` to `algebraMap R S ∘ ocneanuTrace R q z`. -/
+@[simp]
+theorem ocneanuTrace_map {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
+    (h : algebraMap R S q = q') (z : R) (x : InfiniteTypeAHeckeAlgebra R q) :
+    ocneanuTrace S q' (algebraMap R S z) (map h x) = algebraMap R S (ocneanuTrace R q z x) := by
+  let ψ₁ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] S :=
+    ((ocneanuTrace S q' (algebraMap R S z)).restrictScalars R).comp (map h).toLinearMap
+  let ψ₂ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] S :=
+    (Algebra.linearMap R S).comp (ocneanuTrace R q z)
+  have hτR := isMarkovTrace_ocneanuTrace (R := R) (q := q) z
+  have hτS := isMarkovTrace_ocneanuTrace (R := S) (q := q') (algebraMap R S z)
+  suffices hmem : x ∈ LinearMap.eqLocus ψ₁ ψ₂ by
+    simpa [ψ₁, ψ₂] using LinearMap.mem_eqLocus.1 hmem
+  refine Submodule.eq_top_iff'.1
+    (eq_top_of_algebraMap_mem_of_mul_T_mul_mem (P := LinearMap.eqLocus ψ₁ ψ₂)
+      (fun r ↦ LinearMap.mem_eqLocus.2 ?_) (fun n ih a ha b hb ↦ LinearMap.mem_eqLocus.2 ?_)) x
+  · simp [ψ₁, ψ₂, AlgHom.commutes,
+      IsScalarTower.algebraMap_apply R S (InfiniteTypeAHeckeAlgebra S q'),
+      hτR.map_algebraMap, hτS.map_algebraMap]
+  · have hba : ψ₁ (b * a) = ψ₂ (b * a) :=
+      LinearMap.mem_eqLocus.1 (ih ((Subalgebra.mem_toSubmodule _).2 (mul_mem hb ha)))
+    simp only [ψ₁, ψ₂, LinearMap.comp_apply, LinearMap.coe_restrictScalars,
+      AlgHom.toLinearMap_apply, Algebra.linearMap_apply, map_mul, map_T] at hba ⊢
+    rw [hτS.map_mul_T_mul (map_mem_stage h ha) (map_mem_stage h hb), hba, hτR.map_mul_T_mul ha hb,
+      _root_.map_mul (algebraMap R S)]
+
+/-- On braids, the Ocneanu trace commutes with `algebraMap R S`. -/
+theorem ocneanuTrace_braidHom_algebraMap {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
+    (h : algebraMap R S q = q') (z : R) (n : ℕ) (b : BraidGroup n) :
+    ocneanuTrace S q' (algebraMap R S z) (braidHom S q' n b) =
+      algebraMap R S (ocneanuTrace R q z (braidHom R q n b)) := by
+  rw [← map_braidHom h, ocneanuTrace_map]
+
+/-- **Pole cancellation for the Ocneanu trace on finite stages.** If `A` is an `R`-subalgebra of
+`S` containing `C` and `C * z` (even when `z` itself does not lie in `A`), then for every
+`x ∈ stage R q (n + 1)` the scaled trace `C ^ n * ocneanuTrace S q' z (map h x)` lies in `A`. -/
+theorem pow_mul_ocneanuTrace_map_mem {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
+    (h : algebraMap R S q = q') (A : Subalgebra R S) {C z : S}
+    (hC : C ∈ A) (hCz : C * z ∈ A) {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
+    (hx : x ∈ stage R q (n + 1)) :
+    C ^ n * ocneanuTrace S q' z (map h x) ∈ A := by
+  let L (m : ℕ) : InfiniteTypeAHeckeAlgebra R q →ₗ[R] S :=
+    ((LinearMap.mulLeft S (C ^ m)).comp (ocneanuTrace S q' z)).restrictScalars R ∘ₗ
+      (map h).toLinearMap
+  have hmem (m : ℕ) (y : InfiniteTypeAHeckeAlgebra R q) :
+      y ∈ (Subalgebra.toSubmodule A).comap (L m) ↔ C ^ m * ocneanuTrace S q' z (map h y) ∈ A := by
+    simp [L]
+  have hτS := isMarkovTrace_ocneanuTrace (R := S) (q := q') z
+  refine (hmem n x).1 <| toSubmodule_stage_le_of_algebraMap_mem_of_mul_T_mul_mem
+    (P := fun m ↦ (Subalgebra.toSubmodule A).comap (L m))
+    (fun r ↦ (hmem 0 _).2 ?_) (fun m ih y hy ↦ (hmem (m + 1) _).2 ?_)
+    (fun m ih a ha b hb ↦ (hmem (m + 1) _).2 ?_) n ((Subalgebra.mem_toSubmodule _).2 hx)
+  · simp only [AlgHom.commutes,
+      IsScalarTower.algebraMap_apply R S (InfiniteTypeAHeckeAlgebra S q'),
+      hτS.map_algebraMap, pow_zero, one_mul]
+    exact A.algebraMap_mem r
+  · have hy' : C ^ m * ocneanuTrace S q' z (map h y) ∈ A := (hmem m y).1 (ih hy)
+    rw [pow_succ', mul_assoc]
+    exact A.mul_mem hC hy'
+  · have hba : C ^ m * ocneanuTrace S q' z (map h (b * a)) ∈ A :=
+      (hmem m (b * a)).1 (ih ((Subalgebra.mem_toSubmodule _).2 (mul_mem hb ha)))
+    simp only [map_mul, map_T, pow_succ']
+    rw [hτS.map_mul_T_mul (map_mem_stage h ha) (map_mem_stage h hb), ← map_mul]
+    have hmul : C * C ^ m * (z * ocneanuTrace S q' z (map h (b * a))) =
+        C * z * (C ^ m * ocneanuTrace S q' z (map h (b * a))) := by ring
+    rw [hmul]
+    exact A.mul_mem hCz hba
 
 end InfiniteTypeAHeckeAlgebra
 
