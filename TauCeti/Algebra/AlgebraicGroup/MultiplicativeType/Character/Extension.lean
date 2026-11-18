@@ -14,8 +14,12 @@ public import TauCeti.Algebra.Bialgebra.GroupLike.Lift
 
 A Galois-equivariant map on geometric characters, with multiplicative-type source
 coordinate algebra, extends uniquely to a Galois-equivariant bialgebra map over the
-algebraic closure. This supplies the map to which descent applies in the character
-classification of groups of multiplicative type and, in particular, of tori.
+algebraic closure. This supplies the map to which Galois descent applies over a perfect
+field, for an arbitrary target coordinate algebra
+(`TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.Descent`). Descent between two
+groups of multiplicative type over an arbitrary field does not use this extension: it lifts
+character maps over the separable closure
+(`TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.SeparableDescent`).
 
 The extension is over the algebraic closure; descent to the original field is a
 separate assertion. The target coordinate algebra need not be of multiplicative type
