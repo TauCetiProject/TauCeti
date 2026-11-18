@@ -6,26 +6,47 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.Probability.Process.Indistinguishable
 
 /-!
-# Continuous processes and time-product almost-everywhere identities
+# Continuous processes, indistinguishability, and time-product identities
 
-A time-product almost-everywhere identity between processes with almost surely continuous
-paths holds simultaneously at all times of a half-open interval. The left endpoint is
-included, even though it has zero Lebesgue measure. No continuity at the excluded right
-endpoint is needed.
-
-For continuous fields evaluated along a process with a deterministic starting point, this
-recovers equality of the fields at that point. This is useful when an identity first obtained
-almost everywhere along trajectories must be evaluated at the initial state.
-
-The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
-`Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
+On a separable index space with values in a Hausdorff space, two processes with almost-surely
+continuous paths that agree almost everywhere at each fixed time are indistinguishable
+(`ProbabilityTheory.Indistinguishable.of_ae_eq_eval`). Finite sums and products of processes with
+almost-surely continuous paths remain almost-surely continuous (`Finset.ae_continuous_sum`,
+`Finset.ae_continuous_prod`). Similarly, a time-product almost-everywhere identity between processes
+with almost surely continuous paths holds simultaneously on `[a, b)`, including the left endpoint,
+and recovers equality of continuous fields at a deterministic initial state (`ae_ae_of_ae_prod`,
+`Measure.eqOn_Ico_of_ae_eq`).
 -/
 
 public section
 
 open MeasureTheory Set
+
+/-- Two processes on a separable index space into a Hausdorff space with almost-surely continuous
+paths are indistinguishable if they agree almost everywhere at every fixed index. -/
+theorem ProbabilityTheory.Indistinguishable.of_ae_eq_eval
+    {ι Ω E : Type*} [TopologicalSpace ι] [TopologicalSpace.SeparableSpace ι]
+    {_ : MeasurableSpace Ω} {P : Measure Ω} [TopologicalSpace E] [T2Space E] {X Y : ι → Ω → E}
+    (hcX : ∀ᵐ ω ∂P, Continuous (X · ω)) (hcY : ∀ᵐ ω ∂P, Continuous (Y · ω))
+    (h : ∀ t, X t =ᵐ[P] Y t) : X ≡ᵐ[P] Y := by
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense ι
+  have : Countable D := hDc.to_subtype
+  filter_upwards [hcX, hcY, ae_all_iff.2 fun q : D ↦ h q] with ω hXω hYω hω
+  exact funext_iff.1 (hDd.denseRange_val.equalizer hXω hYω (funext fun q ↦ hω q))
+
+/-- A finite product of processes with almost-surely continuous paths has almost-surely continuous
+paths. -/
+@[to_additive /-- A finite sum of processes with almost-surely continuous paths has almost-surely
+continuous paths. -/]
+theorem Finset.ae_continuous_prod {ι τ Ω E : Type*} [TopologicalSpace τ] {_ : MeasurableSpace Ω}
+    {P : Measure Ω} [CommMonoid E] [TopologicalSpace E] [ContinuousMul E]
+    (s : Finset ι) {U : ι → τ → Ω → E} (hc : ∀ i ∈ s, ∀ᵐ ω ∂P, Continuous (U i · ω)) :
+    ∀ᵐ ω ∂P, Continuous (fun t ↦ ∏ i ∈ s, U i t ω) :=
+  ((ae_ball_iff s.countable_toSet).2 hc).mono fun _ hω ↦
+    continuous_finsetProd s fun i hi ↦ hω i hi
 
 namespace TauCeti
 
