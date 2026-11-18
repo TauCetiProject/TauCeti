@@ -24,8 +24,10 @@ the start (resp. end) with respect to every monomorphism `i : A ⟶ B`
 `SSet.exists_lift_cylinder_ι₁_of_mono`): a homotopy `B ⊗ Δ[1] ⟶ Y` lifts, extending a lift of
 one of its ends `B ⊗ {k}` and a compatible lift of its restriction to `A ⊗ Δ[1]`. This is lifting
 against the pushout-product of `i` with `Λ[1, k] ⟶ Δ[1]`, the inclusion of
-`B ⊗ {k} ∪ A ⊗ Δ[1]` into `B ⊗ Δ[1]`, which is anodyne by the theorem of Joël Riou and Jack
-McKoen in Mathlib (`SSet.anodyneExtensions_pushoutObjObjι`).
+`B ⊗ {k} ∪ A ⊗ Δ[1]` into `B ⊗ Δ[1]`. It is left anodyne for `k = 0` and right anodyne for
+`k = 1` (`SSet.leftAnodyneExtensions_pushoutObjObjι`, `SSet.rightAnodyneExtensions_pushoutObjObjι`
+in Tau Ceti), following the proof by Joël Riou and Jack McKoen in Mathlib that it is anodyne
+(`SSet.anodyneExtensions_pushoutObjObjι`).
 
 ## References
 
