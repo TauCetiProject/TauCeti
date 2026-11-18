@@ -138,7 +138,7 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
         (ae_mono (Measure.restrict_coe_opens_top _).ge)
     rw [← hpair, ← integral_inner_value_eq_sum hLj,
       integral_congr_ae (hT.mono fun z hz ↦ by rw [hz]),
-      integral_inner_gaugeFixedOperator hx hY hη (.inl hYc)]
+      integral_inner_gaugeFixedOperator hY hη (.inl hYc)]
     refine integral_congr_ae ?_
     filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge (hvalue j)]
       with z hz
