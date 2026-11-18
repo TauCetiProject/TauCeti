@@ -162,6 +162,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ≥ 0` tending to `0`.
 * `TauCeti.enorm_sub_setAverage_eq_zero_of_subsingleton`: the deviation from the mean vanishes on a
   subsingleton domain.
+* `TauCeti.dotProduct_mulVec_setAverage`: the bilinear form of the entrywise average of a
+  matrix field is the average of its bilinear forms.
 -/
 
 public section
@@ -1185,6 +1187,31 @@ theorem enorm_sub_setAverage_eq_zero_of_subsingleton [Subsingleton X] (x : X)
   rw [hu, setAverage_const hS₀ hS_top, sub_self, eNorm_zero]
 
 end Subsingleton
+
+section Matrix
+
+open _root_.Matrix
+
+variable {X n : Type*} [MeasurableSpace X] [Fintype n] {μ : Measure X} {s : Set X}
+  {a : X → Matrix n n ℝ}
+
+/-- The bilinear form of the entrywise average of a matrix field is the average of its bilinear
+forms: `η ⬝ (⨍_s a) ξ = ⨍_s η ⬝ a ξ`. -/
+theorem dotProduct_mulVec_setAverage (ha : ∀ i j, IntegrableOn (fun x => a x i j) s μ)
+    (η ξ : n → ℝ) :
+    η ⬝ᵥ ((Matrix.of fun i j => ⨍ x in s, a x i j ∂μ) *ᵥ ξ) = ⨍ x in s, η ⬝ᵥ (a x *ᵥ ξ) ∂μ := by
+  have hrow : ∀ i, IntegrableOn (fun x => ∑ j, a x i j * ξ j) s μ := fun i =>
+    integrable_finsetSum _ fun j _ => (ha i j).mul_const _
+  simp only [dotProduct, Matrix.mulVec, Matrix.of_apply, setAverage_eq, smul_eq_mul]
+  rw [integral_finsetSum _ fun i _ => (hrow i).const_mul _, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [integral_const_mul, integral_finsetSum _ fun j _ => (ha i j).mul_const _, Finset.mul_sum,
+    Finset.mul_sum, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [integral_mul_const]
+  ring
+
+end Matrix
 
 end TauCeti
 

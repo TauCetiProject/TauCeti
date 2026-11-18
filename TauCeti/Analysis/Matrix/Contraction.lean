@@ -28,6 +28,9 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
   `∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ` of a continuous bilinear form `B`, such as a second derivative.
 * `Matrix.abs_sum_sum_mul_apply_single_le`: the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ` of an
   endomorphism `T` is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in absolute value.
+* `Matrix.abs_contraction_le_sum_sum_abs_mul`: the same bound for `Matrix.contraction`.
+* `Matrix.sum_sum_abs_le`: if every entry of `M` is at most `ε` in absolute value, then
+  `∑ᵢⱼ |Mᵢⱼ|` is at most `ε` times the number of entries.
 -/
 
 public section
@@ -142,5 +145,25 @@ theorem abs_sum_sum_mul_apply_single_le {ι : Type*} [Fintype ι] [DecidableEq �
         simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le (T (EuclideanSpace.single j 1)) i
     _ ≤ ‖T‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ := T.le_opNorm _
     _ = ‖T‖ := by simp
+
+/-- The contraction of `H` with `M` is at most `(∑ᵢⱼ |Mᵢⱼ|) ‖H‖` in absolute value. This is
+`Matrix.abs_sum_sum_mul_apply_single_le` for the transpose of `M`, since
+`⟪H eᵢ, eⱼ⟫ = (H eᵢ)ⱼ`. -/
+theorem abs_contraction_le_sum_sum_abs_mul (M : Matrix (Fin n) (Fin n) ℝ)
+    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
+    |contraction M H| ≤ (∑ i, ∑ j, |M i j|) * ‖H‖ := by
+  have h := abs_sum_sum_mul_apply_single_le Mᵀ H
+  -- Exchange the order of summation on both sides to match `contraction_apply`.
+  rw [Finset.sum_comm, Finset.sum_comm (f := fun i j => |Mᵀ i j|)] at h
+  simpa only [contraction_apply, EuclideanSpace.inner_single_right, transpose_apply, conj_trivial,
+    one_mul] using h
+
+/-- If every entry of `M` is at most `ε` in absolute value, then `∑ᵢⱼ |Mᵢⱼ|` is at most
+`ε` times the number of entries. -/
+theorem sum_sum_abs_le {m n R : Type*} [Fintype m] [Fintype n] [Ring R] [LinearOrder R]
+    [IsOrderedRing R] {M : Matrix m n R} {ε : R} (hM : ∀ i j, |M i j| ≤ ε) :
+    ∑ i, ∑ j, |M i j| ≤ Fintype.card m * Fintype.card n * ε := by
+  refine (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hM i j).trans_eq ?_
+  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_assoc]
 
 end Matrix

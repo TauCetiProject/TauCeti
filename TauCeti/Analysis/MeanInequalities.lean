@@ -62,6 +62,8 @@ of a higher-order Sobolev space.
   by positive scalars, with the strict form.
 * `Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`: the triangle inequality in the plane for finite
   sums of coordinate pairs.
+* `Real.mul_rpow_inv_mul_mul_rpow_inv`: a common factor `c ≥ 0` comes out of
+  `(c x)^(1/p) (c y)^(1/q)` when `1 / p + 1 / q = 1`.
 * `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
   in a bound `M ≤ A + B M^θ N^(1 - θ)`.
 * `Real.pow_mul_le_rpow_mul_rpow`: `s^(a + b) u ≤ M` gives
@@ -160,6 +162,13 @@ theorem sqrt_sum_sq_add_sum_sq_le_sum_sqrt {ι : Type*} (s : Finset ι) (a b : �
   have hsum : (⟨∑ i ∈ s, a i, ∑ i ∈ s, b i⟩ : ℂ) = ∑ i ∈ s, ⟨a i, b i⟩ :=
     Complex.ext (by rw [Complex.re_sum]) (by rw [Complex.im_sum])
   simpa only [h, hsum] using norm_sum_le s fun i => (⟨a i, b i⟩ : ℂ)
+
+/-- For exponents with `1 / p + 1 / q = 1`, such as Hölder conjugate ones, a common factor
+`c ≥ 0` comes out of the Hölder product: `(c x)^(1/p) (c y)^(1/q) = c x^(1/p) y^(1/q)`. -/
+theorem mul_rpow_inv_mul_mul_rpow_inv {p q c : ℝ} (h : p⁻¹ + q⁻¹ = 1) (hc : 0 ≤ c) (x y : ℝ) :
+    (c * x) ^ p⁻¹ * (c * y) ^ q⁻¹ = c * (x ^ p⁻¹ * y ^ q⁻¹) := by
+  rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
+    ← rpow_add' hc (by rw [h]; exact one_ne_zero), h, rpow_one]
 
 /-- **Absorption.** If `M ≤ A + B M^θ N^(1 - θ)` with `0 ≤ θ < 1` and `M, B, N ≥ 0`, then
 `M ≤ A / (1 - θ) + B^(1 / (1 - θ)) N`, by Young's inequality
