@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
@@ -46,6 +47,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_mul_log`:
+  `∫ x in a..b, x * log x = (b ^ 2 / 2 * log b - b ^ 2 / 4) - (a ^ 2 / 2 * log a - a ^ 2 / 4)`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
@@ -286,6 +289,26 @@ theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC
   · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
     have := hpos σ hσ
     positivity
+
+/-- The interval integral of `x ↦ x * log x` over any real interval `[a, b]`:
+`∫ x in a..b, x * log x = (b ^ 2 / 2 * log b - b ^ 2 / 4) - (a ^ 2 / 2 * log a - a ^ 2 / 4)`. -/
+@[simp]
+theorem integral_mul_log (a b : ℝ) :
+    ∫ x in a..b, x * Real.log x =
+      (b ^ 2 / 2 * Real.log b - b ^ 2 / 4) - (a ^ 2 / 2 * Real.log a - a ^ 2 / 4) := by
+  have hcont : Continuous fun x : ℝ => x ^ 2 / 2 * Real.log x - x ^ 2 / 4 :=
+    (((continuous_id.div_const 2).mul Real.continuous_mul_log).sub
+      ((continuous_pow 2).div_const 4)).congr fun x => by
+        simp only [Pi.sub_apply, Pi.mul_apply, id_eq]; ring
+  refine MeasureTheory.integral_eq_of_hasDerivAt_off_countable _ _ (s := {0}) (by simp)
+    hcont.continuousOn (fun x hx => ?_) (Real.continuous_mul_log.intervalIntegrable a b)
+  have hx0 : x ≠ 0 := hx.2
+  have hd1 := (((hasDerivAt_id' x).pow 2).div_const 2).fun_mul (Real.hasDerivAt_log hx0)
+  have hd2 := ((hasDerivAt_id' x).pow 2).div_const 4
+  refine (hd1.sub hd2).congr_deriv ?_
+  simp only [Pi.pow_apply]
+  field_simp
+  ring
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
