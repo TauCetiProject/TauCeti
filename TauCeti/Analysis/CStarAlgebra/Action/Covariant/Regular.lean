@@ -224,10 +224,7 @@ theorem isNondegenerate_regular_coefficient (hρ : ρ.IsNondegenerate) :
   -- by density of the span of the vectors `ρ(b) w`.
   have hcompact {t : Set G} (ht : MeasurableSet t) (htc : IsCompact t) (hμt : μ t ≠ ∞) (v : H) :
       indicatorConstLp 2 ht hμt v ∈ M := by
-    let L : H →L[ℂ] Lp H 2 μ := LinearMap.mkContinuous
-      { toFun := indicatorConstLp 2 ht hμt
-        map_add' _ _ := indicatorConstLp_add.symm
-        map_smul' := indicatorConstLp_smul ht hμt }
+    let L : H →L[ℂ] Lp H 2 μ := LinearMap.mkContinuous (indicatorConstLpₗ ℂ 2 ht hμt)
       (μ.real t ^ (1 / (2 : ℝ≥0∞).toReal))
       fun v => by simp [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, mul_comm]
     have hspan : Submodule.span ℂ (⋃ a, Set.range (ρ a)) ≤ M.comap (L : H →ₗ[ℂ] Lp H 2 μ) := by

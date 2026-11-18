@@ -24,6 +24,9 @@ filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 Convergence in mean square also implies convergence in measure, with integrability of the
 squared deviations required only eventually along the filter.
 
+Convergence in `Lᵖ` implies convergence in measure, hence almost everywhere convergence of a
+subsequence; so the `Lᵖ` classes vanishing almost everywhere off a fixed set form a closed set.
+
 Pairing preserves convergence in measure along arbitrary filters and for arbitrary measures.
 On finite measure spaces, continuous transformations preserve convergence along arbitrary
 filters whenever the transformed functions are eventually almost everywhere strongly
@@ -48,6 +51,8 @@ measurable.
   finite measure spaces along arbitrary filters.
 * `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
   theorem, obtained by pairing and unary composition.
+* `MeasureTheory.Lp.isClosed_setOf_ae_notMem_imp_eq_zero`: the `Lᵖ` classes vanishing off a set
+  form a closed set.
 
 ## Source
 
@@ -222,3 +227,21 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
   exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
 
 end MeasureTheory
+
+namespace MeasureTheory.Lp
+
+open Filter Topology
+open scoped ENNReal
+
+variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup F] {p : ℝ≥0∞}
+  [Fact (1 ≤ p)]
+
+/-- The `Lᵖ` classes vanishing almost everywhere off a set `s` form a closed set. -/
+theorem isClosed_setOf_ae_notMem_imp_eq_zero (s : Set α) :
+    IsClosed {f : Lp F p μ | ∀ᵐ x ∂μ, x ∉ s → f x = 0} := by
+  refine IsSeqClosed.isClosed fun g h hgs hg ↦ ?_
+  obtain ⟨ns, -, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hg).exists_seq_tendsto_ae
+  filter_upwards [hns, ae_all_iff.2 hgs] with x hx hgx hxs
+  exact tendsto_nhds_unique hx (tendsto_const_nhds.congr fun i ↦ (hgx (ns i) hxs).symm)
+
+end MeasureTheory.Lp

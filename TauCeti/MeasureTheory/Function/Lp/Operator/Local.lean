@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Measure.Regular
@@ -46,17 +46,20 @@ the primitive datum.
 
 ## Main declarations
 
-* `MeasureTheory.Lp.isClosed_setOf_ae_notMem_imp_eq_zero`: the `Lᵖ` classes vanishing off a set
-  form a closed set.
 * `ContinuousLinearMap.ae_eq_indicator_apply_of_forall_ae_eq_zero`: a local operator commutes with
   restriction to measurable sets.
+* `ContinuousLinearMap.ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq`: an operator agreeing on
+  indicator classes with multiplication by `m` bounds `‖m x‖` almost everywhere by its norm.
 * `ContinuousLinearMap.exists_forall_ae_eq_apply_of_forall_ae_eq_zero`: a local operator is the
   multiplication operator of an operator-valued symbol of essential supremum at most `‖S‖`.
 * `ContinuousLinearMap.ae_apply_eq_zero_of_forall_isCompact`,
   `ContinuousLinearMap.exists_forall_ae_eq_apply_of_forall_isCompact`: for a measure inner regular
   with respect to compact sets, locality only has to be checked on compact sets.
-* `ContinuousLinearMap.exists_forall_ae_eq_add_of_ae_eq_integral`: two operators given off the
-  support of their argument by the same kernel differ by a bounded multiplication operator.
+* `ContinuousLinearMap.exists_forall_ae_eq_add_of_forall_isCompact`: two operators agreeing off
+  the compact support of their argument differ by a bounded multiplication operator.
+* `ContinuousLinearMap.exists_forall_ae_eq_add_of_ae_eq_integral`: in particular, two operators
+  given off the support of their argument by the same kernel differ by a bounded multiplication
+  operator.
 
 ## References
 
@@ -68,21 +71,6 @@ public section
 
 open MeasureTheory Filter Set Topology
 open scoped ENNReal
-
-namespace MeasureTheory.Lp
-
-variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup F] {p : ℝ≥0∞}
-  [Fact (1 ≤ p)]
-
-/-- The `Lᵖ` classes vanishing almost everywhere off a set `s` form a closed set. -/
-theorem isClosed_setOf_ae_notMem_imp_eq_zero (s : Set α) :
-    IsClosed {f : Lp F p μ | ∀ᵐ x ∂μ, x ∉ s → f x = 0} := by
-  refine IsSeqClosed.isClosed fun g h hgs hg ↦ ?_
-  obtain ⟨ns, -, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hg).exists_seq_tendsto_ae
-  filter_upwards [hns, ae_all_iff.2 hgs] with x hx hgx hxs
-  exact tendsto_nhds_unique hx (tendsto_const_nhds.congr fun i ↦ (hgx (ns i) hxs).symm)
-
-end MeasureTheory.Lp
 
 namespace ContinuousLinearMap
 
@@ -121,27 +109,25 @@ private theorem ae_restrict_apply_indicatorConstLp_eq (S : Lp E p μ →L[𝕜] 
     S (indicatorConstLp p hs hμs v) =ᵐ[μ.restrict t]
       s.indicator (S (indicatorConstLp p ht hμt v)) := by
   have hμst : μ (s ∩ t) ≠ ∞ := (measure_mono inter_subset_left).trans_lt hμs.lt_top |>.ne
-  have hk₁ : S (indicatorConstLp p (hs.inter ht) hμst v) =ᵐ[μ]
-      t.indicator (S (indicatorConstLp p hs hμs v)) := by
-    refine S.ae_eq_indicator_apply_of_forall_ae_eq_zero hS ht ?_
+  -- `S (1_{s ∩ t} v)` is the restriction of `S (1_w v)` to `r`, for `{w, r} = {s, t}`.
+  have hk {w r : Set α} (hw : MeasurableSet w) (hμw : μ w ≠ ∞) (hr : MeasurableSet r)
+      (hwr : s ∩ t = w ∩ r) :
+      S (indicatorConstLp p (hs.inter ht) hμst v) =ᵐ[μ]
+        r.indicator (S (indicatorConstLp p hw hμw v)) := by
+    refine S.ae_eq_indicator_apply_of_forall_ae_eq_zero hS hr ?_
     filter_upwards [indicatorConstLp_coeFn (p := p) (hs := hs.inter ht) (hμs := hμst) (c := v),
-      indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := v)] with x hx hx'
-    rw [hx]
-    by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp [hxs, hxt, hx']
-  have hk₂ : S (indicatorConstLp p (hs.inter ht) hμst v) =ᵐ[μ]
-      s.indicator (S (indicatorConstLp p ht hμt v)) := by
-    refine S.ae_eq_indicator_apply_of_forall_ae_eq_zero hS hs ?_
-    filter_upwards [indicatorConstLp_coeFn (p := p) (hs := hs.inter ht) (hμs := hμst) (c := v),
-      indicatorConstLp_coeFn (p := p) (hs := ht) (hμs := hμt) (c := v)] with x hx hx'
-    rw [hx]
-    by_cases hxs : x ∈ s <;> by_cases hxt : x ∈ t <;> simp [hxs, hxt, hx']
-  filter_upwards [ae_restrict_mem ht, ae_restrict_of_ae hk₁, ae_restrict_of_ae hk₂]
-    with x hxt hx₁ hx₂
+      indicatorConstLp_coeFn (p := p) (hs := hw) (hμs := hμw) (c := v)] with x hx hx'
+    rw [hx, hwr]
+    by_cases hxw : x ∈ w <;> by_cases hxr : x ∈ r <;> simp [hxw, hxr, hx']
+  filter_upwards [ae_restrict_mem ht, ae_restrict_of_ae (hk hs hμs ht rfl),
+    ae_restrict_of_ae (hk ht hμt hs (inter_comm s t))] with x hxt hx₁ hx₂
   rw [← hx₂, hx₁, indicator_of_mem hxt]
 
-/-- The symbol of a local operator is bounded by its norm, when it is tested on indicator
-classes. -/
-private theorem ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq [SigmaFinite μ]
+/-- **A multiplication operator bounds its symbol.** Let `1 ≤ p < ∞`, let `μ` be σ-finite and let
+`E` be separable. If a bounded operator `S` from `Lᵖ(α, E)` to `Lᵖ(α, F)` acts on every indicator
+class `1_s v` as multiplication by a strongly measurable operator-valued function `m`, then
+`‖m x‖ ≤ ‖S‖` for almost every `x`. -/
+theorem ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq [SigmaFinite μ]
     [TopologicalSpace.SeparableSpace E] (hp : p ≠ ∞) (S : Lp E p μ →L[𝕜] Lp F p μ)
     {m : α → E →L[𝕜] F} (hm : StronglyMeasurable m)
     (hmS : ∀ (s : Set α) (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (v : E),
@@ -197,26 +183,17 @@ private theorem coeFn_apply_indicatorConstLp_ae_eq {ι : Type*} [Fintype ι]
     S (indicatorConstLp p ht hμt v) =ᵐ[μ] fun x ↦
       (∑ i, (b.coord i).toContinuousLinearMap.smulRight (S (indicatorConstLp p ht hμt (b i)) x))
         v := by
-  classical
-  refine Submodule.span_induction (p := fun v _ ↦ S (indicatorConstLp p ht hμt v) =ᵐ[μ] fun x ↦
-      (∑ i, (b.coord i).toContinuousLinearMap.smulRight (S (indicatorConstLp p ht hμt (b i)) x))
-        v) ?_ ?_ ?_ ?_ (b.mem_span v)
-  · rintro _ ⟨j, rfl⟩
-    refine .of_forall fun x ↦ ?_
-    simp [Finsupp.single_apply]
-  · have h0 : indicatorConstLp p ht hμt (0 : E) = 0 := by
-      simpa using TauCeti.indicatorConstLp_smul (p := p) ht hμt (0 : 𝕜) (0 : E)
-    filter_upwards [Lp.coeFn_zero F p μ] with x hx
-    rw [h0, map_zero, hx, map_zero, Pi.zero_apply]
-  · intro v w _ _ hv hw
-    rw [← indicatorConstLp_add, map_add]
-    filter_upwards [Lp.coeFn_add (S (indicatorConstLp p ht hμt v))
-      (S (indicatorConstLp p ht hμt w)), hv, hw] with x hx hxv hxw
-    rw [hx, Pi.add_apply, hxv, hxw, map_add]
-  · intro c v _ hv
-    rw [TauCeti.indicatorConstLp_smul, map_smul]
-    filter_upwards [Lp.coeFn_smul c (S (indicatorConstLp p ht hμt v)), hv] with x hx hxv
-    rw [hx, Pi.smul_apply, hxv, map_smul]
+  have h : S (indicatorConstLp p ht hμt v) =
+      ∑ i, b.repr v i • S (indicatorConstLp p ht hμt (b i)) := by
+    conv_lhs => rw [← b.sum_repr v, ← TauCeti.indicatorConstLpₗ_apply 𝕜, map_sum, map_sum]
+    simp
+  rw [h]
+  filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ
+      fun i ↦ b.repr v i • S (indicatorConstLp p ht hμt (b i)),
+    ae_all_iff.2 fun i ↦ Lp.coeFn_smul (b.repr v i) (S (indicatorConstLp p ht hμt (b i)))]
+    with x h₁ h₂
+  rw [h₁]
+  simp [h₂]
 
 /-- A local operator acts on indicator classes `1_s v` as multiplication by a strongly measurable
 operator-valued function. -/
@@ -346,6 +323,26 @@ theorem exists_forall_ae_eq_apply_of_forall_isCompact (hp : p ≠ ∞)
   S.exists_forall_ae_eq_apply_of_forall_ae_eq_zero hp fun f _ hs hf ↦
     S.ae_apply_eq_zero_of_forall_isCompact hp hS f hs hf
 
+/-- **Operators agreeing off supports differ by a multiplication operator.** Let `μ` be σ-finite
+and inner regular with respect to compact sets on sets of finite measure, let `1 ≤ p < ∞` and let
+`E` be finite-dimensional and separable. Let `T` and `T'` be bounded operators from `Lᵖ(α, E)` to
+`Lᵖ(α, F)` that agree off the support of their argument: whenever `f` vanishes almost everywhere
+off a compact set `K`, `T f x = T' f x` for almost every `x ∉ K`. Then `T = T' + m` for a strongly
+measurable operator-valued function `m` of essential supremum at most `‖T - T'‖`. -/
+theorem exists_forall_ae_eq_add_of_forall_isCompact (hp : p ≠ ∞)
+    (T T' : Lp E p μ →L[𝕜] Lp F p μ)
+    (hTT' : ∀ (f : Lp E p μ) (K : Set α), IsCompact K → (∀ᵐ x ∂μ, x ∉ K → f x = 0) →
+      ∀ᵐ x ∂μ, x ∉ K → T f x = T' f x) :
+    ∃ m : α → E →L[𝕜] F, StronglyMeasurable m ∧ (∀ᵐ x ∂μ, ‖m x‖ ≤ ‖T - T'‖) ∧
+      ∀ f : Lp E p μ, T f =ᵐ[μ] fun x ↦ T' f x + m x (f x) := by
+  obtain ⟨m, hm, hmT, hTm⟩ := (T - T').exists_forall_ae_eq_apply_of_forall_isCompact hp
+    fun f K hK hf ↦ by
+      filter_upwards [hTT' f K hK hf, Lp.coeFn_sub (T f) (T' f)] with x hx hsub hxK
+      rw [sub_apply, hsub, Pi.sub_apply, hx hxK, sub_self]
+  refine ⟨m, hm, hmT, fun f ↦ ?_⟩
+  filter_upwards [hTm f, Lp.coeFn_sub (T f) (T' f)] with x hx hsub
+  rw [← hx, sub_apply, hsub, Pi.sub_apply, add_sub_cancel]
+
 /-- **Operators with the same kernel differ by a multiplication operator.** Let `μ` be σ-finite
 and inner regular with respect to compact sets on sets of finite measure, let `1 ≤ p < ∞` and let
 `E` be finite-dimensional and separable. Let `T` and `T'` be bounded operators from `Lᵖ(α, E)` to
@@ -361,15 +358,10 @@ theorem exists_forall_ae_eq_add_of_ae_eq_integral [NormedSpace ℝ F] (hp : p �
     (hT' : ∀ (f : Lp E p μ) (K : Set α), IsCompact K → (∀ᵐ x ∂μ, x ∉ K → f x = 0) →
       ∀ᵐ x ∂μ, x ∉ K → T' f x = ∫ y, k x y (f y) ∂μ) :
     ∃ m : α → E →L[𝕜] F, StronglyMeasurable m ∧ (∀ᵐ x ∂μ, ‖m x‖ ≤ ‖T - T'‖) ∧
-      ∀ f : Lp E p μ, T f =ᵐ[μ] fun x ↦ T' f x + m x (f x) := by
-  obtain ⟨m, hm, hmT, hTm⟩ := (T - T').exists_forall_ae_eq_apply_of_forall_isCompact hp
-    fun f K hK hf ↦ by
-      filter_upwards [hT f K hK hf, hT' f K hK hf, Lp.coeFn_sub (T f) (T' f)]
-        with x hx hx' hsub hxK
-      rw [sub_apply, hsub, Pi.sub_apply, hx hxK, hx' hxK, sub_self]
-  refine ⟨m, hm, hmT, fun f ↦ ?_⟩
-  filter_upwards [hTm f, Lp.coeFn_sub (T f) (T' f)] with x hx hsub
-  rw [← hx, sub_apply, hsub, Pi.sub_apply, add_sub_cancel]
+      ∀ f : Lp E p μ, T f =ᵐ[μ] fun x ↦ T' f x + m x (f x) :=
+  T.exists_forall_ae_eq_add_of_forall_isCompact hp T' fun f K hK hf ↦ by
+    filter_upwards [hT f K hK hf, hT' f K hK hf] with x hx hx' hxK
+    rw [hx hxK, hx' hxK]
 
 end Compact
 
