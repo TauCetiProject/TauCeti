@@ -114,7 +114,7 @@ theorem IsConnectedSumPosition.boostConcordance
     {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)} (hK : IsConnectedSumPosition ι K)
     {a : ℝ} (ha : 0 ≤ a) :
     (SmoothCircleEmbedding.boostConcordance ι a K).IsConnectedSumPosition ι := by
-  set τ := SmoothEmbedding.Concordance.collaredSmoothTransitionUnit
+  set τ := collaredSmoothTransitionUnit
   set Ψ := circleBoostDiffeotopy (m := ∞) (-a)
   set g : Circle × ℝ → Circle := fun q => Ψ (τ q.2, q.1)
   have hg : Continuous g := Ψ.contMDiff.continuous.comp (by fun_prop)

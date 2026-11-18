@@ -54,6 +54,8 @@ vector space.
   continuously on the orbit near `y`.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
   so does the point at which it crosses that level.
+* `TauCeti.IsAdaptedPseudoGradient.tendsto_flow_of_tendsto_flow_of_mem_unstableSet_inter_stableSet`
+  is the same for orbits passing, at some times, through points tending to that point.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_flow_levelCrossingTime`: the point where an orbit
   crosses a level depends continuously on the orbit near a connecting trajectory.
 * `TauCeti.IsAdaptedPseudoGradient.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top`:
@@ -263,6 +265,22 @@ theorem tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} 
     (h0.prodMk_nhds hw')
   rw [Function.comp_def, Flow.map_zero_apply] at hlim
   exact hlim.congr fun i ↦ by rw [← Flow.map_add, sub_add_cancel]
+
+/-- **Level points of orbits passing near a trajectory.** Let `y` lie on a trajectory from a
+critical point `a` to a different critical point `b`, whose orbit meets the level `c` at the time
+`σ`, and let the orbits of points `w i` pass, at the times `s i`, through points tending to `y`. If
+the orbit of each `w i` meets the level `c` at the time `τ i`, then these level points tend to the
+level point of the orbit of `y`. -/
+theorem tendsto_flow_of_tendsto_flow_of_mem_unstableSet_inter_stableSet {ι : Type*}
+    {l : Filter ι} (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {σ : ℝ}
+    (hσ : f (hX.flow σ y) = c) {w : ι → M} {s τ : ι → ℝ}
+    (hw : Tendsto (fun i ↦ hX.flow (s i) (w i)) l (𝓝 y))
+    (hτ : ∀ i, f (hX.flow (τ i) (w i)) = c) :
+    Tendsto (fun i ↦ hX.flow (τ i) (w i)) l (𝓝 (hX.flow σ y)) := by
+  have hshift (i : ι) : hX.flow (τ i - s i) (hX.flow (s i) (w i)) = hX.flow (τ i) (w i) := by
+    rw [← Flow.map_add, sub_add_cancel]
+  simpa only [hshift] using hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hab hy
+    hσ hw (s := fun i ↦ τ i - s i) fun i ↦ by rw [hshift]; exact hτ i
 
 /-- Orbits through points near a point `y` of a trajectory between distinct critical points cross
 the level of `y` at times in `[-δ, δ]`. -/
