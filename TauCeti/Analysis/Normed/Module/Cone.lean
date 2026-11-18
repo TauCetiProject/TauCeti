@@ -46,6 +46,8 @@ direction combine into one condition on the whole frequency space.
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
 * `TauCeti.exists_finset_compl_singleton_subset_biUnion`: if every unit vector lies in an open
   cone, finitely many of these cones cover the nonzero vectors.
+* `TauCeti.forall_smul_mem_neg`: the negative of a set closed under multiplication by positive
+  reals is closed under multiplication by positive reals.
 
 ## References
 
@@ -237,5 +239,14 @@ theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [Proper
     simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
   exact mem_iUnion₂.2 ⟨ξ, hξt, by
     simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
+
+open Pointwise in
+/-- The negative `-Γ` of a set closed under multiplication by positive reals is again closed under
+multiplication by positive reals. -/
+theorem forall_smul_mem_neg [Module ℝ E] {Γ : Set E}
+    (hcone : ∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) :
+    ∀ t : ℝ, 0 < t → ∀ η ∈ -Γ, t • η ∈ -Γ := fun t ht η hη ↦ by
+  rw [Set.mem_neg, ← smul_neg]
+  exact hcone t ht _ (Set.mem_neg.1 hη)
 
 end TauCeti

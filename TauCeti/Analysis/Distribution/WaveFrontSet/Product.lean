@@ -161,12 +161,10 @@ theorem exists_mem_nhds_noOppositeCovectorsOn {x : E} (hx : x ∈ Ω)
         exact h ν (mem_waveFrontSet_iff.2 ⟨hx, hν0, hS⟩)
           (mem_waveFrontSet_iff.2 ⟨hx, neg_ne_zero.2 hν0, hT⟩)
       obtain ⟨φ, hφ, Γ, hΓ, hνΓ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hT
-      refine ⟨{y | φ y ≠ 0}, (isOpen_ne_fun φ.continuous continuous_const).mem_nhds hφ, -Γ,
-        hΓ.neg, Set.mem_neg.2 hνΓ, fun t ht ζ hζ ↦ ?_,
+      exact ⟨{y | φ y ≠ 0}, (isOpen_ne_fun φ.continuous continuous_const).mem_nhds hφ, -Γ,
+        hΓ.neg, Set.mem_neg.2 hνΓ, TauCeti.forall_smul_mem_neg hcone,
         Or.inr fun y hy ζ hζ ↦
           isMicrolocallySmoothAt_iff.2 ⟨φ, hy, Γ, hΓ, Set.mem_neg.1 hζ, hcone, hdecay⟩⟩
-      rw [Set.mem_neg, ← smul_neg]
-      exact hcone t ht _ (Set.mem_neg.1 hζ)
   choose! V hV G hG hνG hcone hVG using hloc
   obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion
     (Γ := fun ν : sphere (0 : E) 1 ↦ G ν) (fun ν ↦ hG ν ν.2) (fun ν ↦ hνG ν ν.2)
@@ -252,10 +250,8 @@ private theorem NoOppositeCovectorsOn.exists_isOpen_cone_forall_one_add_norm_pow
     obtain ⟨Γ, hΓ, hνΓ, hcone, hdecay⟩ :=
       exists_isOpen_cone_forall_one_add_norm_pow_mul_norm_localFourier_le_of_isCompact hK hTν
     obtain ⟨r, C, hC0, hC⟩ := hdecay (N + kS)
-    refine ⟨-Γ, hΓ.neg, Set.mem_neg.2 hνΓ, fun t ht η hη ↦ ?_, r, CS * C, by positivity,
-      fun φ' hφ' B hB η hη ↦ ?_⟩
-    · rw [Set.mem_neg, ← smul_neg]
-      exact hcone t ht _ (Set.mem_neg.1 hη)
+    refine ⟨-Γ, hΓ.neg, Set.mem_neg.2 hνΓ, TauCeti.forall_smul_mem_neg hcone, r, CS * C,
+      by positivity, fun φ' hφ' B hB η hη ↦ ?_⟩
     have hT' := hC φ' hφ' B hB (-η) (Set.mem_neg.1 hη)
     rw [norm_neg] at hT'
     calc (1 + ‖η‖) ^ N * (‖S.localFourier φ η‖ * ‖T.localFourier φ' (-η)‖)
@@ -513,7 +509,7 @@ theorem cutoffProduct_apply_of_apply_eq_integral_right {U : Set E} (hU : IsOpen 
   rw [integral_fourierInv_mul_localFourier, cutoffTempered_apply]
   intro x
   rw [hχ, hf]
-  simp [φ', TestFunction.smulLeftCLM_apply, Complex.real_smul]
+  simp only [φ', TestFunction.smulLeftCLM_apply, Complex.real_smul]
   ring
 
 /-- **The product with a smooth function, on the left.** If `S` coincides with a function `g`
@@ -534,7 +530,7 @@ theorem cutoffProduct_apply_of_apply_eq_integral_left {U : Set E} (hU : IsOpen U
   rw [integral_fourierInv_mul_localFourier, cutoffTempered_apply]
   · intro x
     rw [hχ, hf]
-    simp [TestFunction.smulLeftCLM_apply, Complex.real_smul]
+    simp only [TestFunction.smulLeftCLM_apply, Complex.real_smul]
     ring
 
 end Distribution
