@@ -23,6 +23,9 @@ central subalgebra provides. Transport of the center along an algebra equivalenc
 
 * `Subalgebra.map_center_val` identifies the center of a subalgebra with its intersection
   with its centralizer in the ambient algebra.
+* `TauCeti.isField_center`: the center of a division algebra is a field.
+* `TauCeti.bijective_algebraMap_center_of_bijective`: an algebra whose structure map is bijective
+  has the same property for its center.
 * `TauCeti.centerPiAlgEquiv` splits the center of a product of algebras as the product of the
   centers, upgrading Mathlib's `Subalgebra.center_pi` from an equality of subalgebras of
   `Π i, S i` to an algebra equivalence with `Π i, Subalgebra.center R (S i)`.
@@ -124,6 +127,23 @@ end Subalgebra
 namespace TauCeti
 
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+
+/-- The center of a division algebra is a field. Applied to the commutant `End_A M` of a simple
+module (Mathlib's `Module.End.instDivisionRing`), this is the field through which the centre of
+`A` acts (`TauCeti.centerToCenterEnd`).
+
+This is stated with `IsField`, like Mathlib's `IsSimpleRing.isField_center`, rather than as a
+`Field` instance: a global instance transported from `Subring.center D` would carry rational
+scalar actions not definitionally equal to those `Subalgebra.center R D` already has. -/
+theorem isField_center {D : Type*} [DivisionRing D] [Algebra R D] :
+    IsField (Subalgebra.center R D) :=
+  Field.toIsField (Subring.center D)
+
+/-- If the structure map of an algebra is bijective, so is the structure map into its center. -/
+theorem bijective_algebraMap_center_of_bijective (h : Function.Bijective (algebraMap R A)) :
+    Function.Bijective (algebraMap R (Subalgebra.center R A)) :=
+  ⟨fun _ _ hab => h.1 (congrArg Subtype.val hab), fun z =>
+    (h.2 z).imp fun _ hc => Subtype.ext hc⟩
 
 section Pi
 
