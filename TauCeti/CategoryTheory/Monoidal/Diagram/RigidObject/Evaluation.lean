@@ -7,6 +7,8 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Substitution
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.IteratedDual
+public import TauCeti.CategoryTheory.Monoidal.Rigid.LeftDualFunctor
 
 /-!
 # Evaluating rigid objects and the normalization comparison
@@ -14,11 +16,12 @@ public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 Let `C` be a rigid monoidal category and `f : α → C` an assignment of objects to generators.
 A formal rigid object `X : RigidObject α` evaluates to `RigidObject.eval f X`, reading the
 formal tensor, unit and duals as those of `C`, with the duals chosen by its rigid structure.
-A winding word evaluates letterwise: the letter `(a, n)` becomes `TauCeti.iteratedDual n (f a)`,
-the `n`-fold right dual of `f a` when `n ≥ 0` and the `-n`-fold left dual when `n < 0`, and
-a word is the right-associated tensor product of its letters, closed by the unit
-(`WindingWord.eval`). The canonical expression `RigidObject.ofWord L` of a word evaluates to
-`WindingWord.eval f L` (`RigidObject.eval_ofWord`).
+A winding word evaluates letterwise: the letter `(a, n)` becomes `TauCeti.iteratedDual n (f a)`
+(from `TauCeti.CategoryTheory.Monoidal.Rigid.IteratedDual`), the `n`-fold right dual of `f a`
+when `n ≥ 0` and the `-n`-fold left dual when `n < 0`, and a word is the right-associated
+tensor product of its letters, closed by the unit (`WindingWord.eval`). The canonical
+expression `RigidObject.ofWord L` of a word evaluates to `WindingWord.eval f L`
+(`RigidObject.eval_ofWord`).
 
 This file constructs the comparison isomorphism
 `RigidObject.normalizeIso f X : RigidObject.eval f X ≅ WindingWord.eval f X.normalize`
@@ -56,108 +59,7 @@ universe v u w w'
 
 namespace TauCeti
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-
-section Right
-
-variable [RightRigidCategory C]
-
-/-- The `n`-fold iterated right dual `X ↦ Xᘁ` of an object of a right rigid monoidal category. -/
-@[expose]
-def iteratedRightDual : ℕ → C → C
-  | 0, X => X
-  | n + 1, X => (iteratedRightDual n X)ᘁ
-
-@[simp] theorem iteratedRightDual_zero (X : C) : iteratedRightDual 0 X = X := rfl
-
-@[simp] theorem iteratedRightDual_succ (n : ℕ) (X : C) :
-    iteratedRightDual (n + 1) X = (iteratedRightDual n X)ᘁ := rfl
-
-end Right
-
-section Left
-
-variable [LeftRigidCategory C]
-
-/-- The `n`-fold iterated left dual `X ↦ ᘁX` of an object of a left rigid monoidal category. -/
-@[expose]
-def iteratedLeftDual : ℕ → C → C
-  | 0, X => X
-  | n + 1, X => (ᘁ(iteratedLeftDual n X) : C)
-
-@[simp] theorem iteratedLeftDual_zero (X : C) : iteratedLeftDual 0 X = X := rfl
-
-@[simp] theorem iteratedLeftDual_succ (n : ℕ) (X : C) :
-    iteratedLeftDual (n + 1) X = (ᘁ(iteratedLeftDual n X) : C) := rfl
-
-end Left
-
-variable [RigidCategory C]
-
-/-- The iterated dual of `X` at integer level `n`: the `n`-fold right dual for `n ≥ 0` and the
-`-n`-fold left dual for `n < 0`. This is the object assigned to a letter at level `n` of a
-winding word. -/
-@[expose]
-def iteratedDual : ℤ → C → C
-  | .ofNat n, X => iteratedRightDual n X
-  | .negSucc n, X => iteratedLeftDual (n + 1) X
-
-@[simp] theorem iteratedDual_natCast (n : ℕ) (X : C) :
-    iteratedDual (n : ℤ) X = iteratedRightDual n X := rfl
-
-@[simp] theorem iteratedDual_negSucc (n : ℕ) (X : C) :
-    iteratedDual (.negSucc n) X = iteratedLeftDual (n + 1) X := rfl
-
-@[simp] theorem iteratedDual_zero (X : C) : iteratedDual 0 X = X := rfl
-
-@[simp] theorem iteratedDual_neg_natCast (n : ℕ) (X : C) :
-    iteratedDual (-(n : ℤ)) X = iteratedLeftDual n X := by
-  cases n with
-  | zero => rfl
-  | succ n => rfl
-
-/-- Raising the level by one takes a right dual. For negative levels this cancels a left dual,
-through the comparison `(ᘁY)ᘁ ≅ Y` between two right duals of `ᘁY`. -/
-noncomputable def iteratedDualRightDualIso :
-    (n : ℤ) → (X : C) → (iteratedDual n X)ᘁ ≅ iteratedDual (n + 1) X
-  | .ofNat _, _ => Iso.refl _
-  | .negSucc 0, X => rightDualIso (RightRigidCategory.rightDual (ᘁX)).exact HasLeftDual.exact
-  | .negSucc (n + 1), X =>
-    rightDualIso (RightRigidCategory.rightDual (ᘁ(iteratedLeftDual (n + 1) X))).exact
-      HasLeftDual.exact
-
-/-- Lowering the level by one takes a left dual. For positive levels this cancels a right dual,
-through the comparison `ᘁ(Yᘁ) ≅ Y` between two left duals of `Yᘁ`. -/
-noncomputable def iteratedDualLeftDualIso :
-    (n : ℤ) → (X : C) → (ᘁ(iteratedDual n X) : C) ≅ iteratedDual (n - 1) X
-  | .ofNat 0, _ => Iso.refl _
-  | .ofNat (n + 1), X =>
-    leftDualIso (LeftRigidCategory.leftDual (iteratedRightDual n X)ᘁ).exact HasRightDual.exact ≪≫
-      eqToIso (by simp)
-  | .negSucc _, _ => Iso.refl _
-
-@[simp] theorem iteratedDualRightDualIso_natCast (n : ℕ) (X : C) :
-    iteratedDualRightDualIso (n : ℤ) X = Iso.refl _ := (rfl)
-
-@[simp] theorem iteratedDualRightDualIso_negSucc_zero (X : C) :
-    iteratedDualRightDualIso (.negSucc 0) X =
-      rightDualIso (RightRigidCategory.rightDual (ᘁX)).exact HasLeftDual.exact := (rfl)
-
-@[simp] theorem iteratedDualRightDualIso_negSucc_succ (n : ℕ) (X : C) :
-    iteratedDualRightDualIso (.negSucc (n + 1)) X =
-      rightDualIso (RightRigidCategory.rightDual (ᘁ(iteratedLeftDual (n + 1) X))).exact
-        HasLeftDual.exact := (rfl)
-
-@[simp] theorem iteratedDualLeftDualIso_zero (X : C) :
-    iteratedDualLeftDualIso 0 X = Iso.refl _ := (rfl)
-
-@[simp] theorem iteratedDualLeftDualIso_natCast_add_one (n : ℕ) (X : C) :
-    iteratedDualLeftDualIso ((n : ℤ) + 1) X =
-      leftDualIso (LeftRigidCategory.leftDual (iteratedRightDual n X)ᘁ).exact HasRightDual.exact ≪≫
-        eqToIso (by simp) := (rfl)
-
-@[simp] theorem iteratedDualLeftDualIso_negSucc (n : ℕ) (X : C) :
-    iteratedDualLeftDualIso (.negSucc n) X = Iso.refl _ := (rfl)
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C]
 
 namespace WindingWord
 
@@ -203,8 +105,7 @@ noncomputable def evalRightDualIso (f : α → C) :
 tensor order is reversed, the dual of the unit is the unit, and each level falls by one. -/
 noncomputable def evalLeftDualIso (f : α → C) :
     (L : WindingWord α) → (ᘁ(eval f L) : C) ≅ eval f (leftDual L)
-  | [] =>
-    leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit ≪≫ eqToIso (by simp)
+  | [] => leftDualUnitIso C ≪≫ eqToIso (by simp)
   | p :: L =>
     leftDualTensorIso _ _ ≪≫
       (evalLeftDualIso f L ⊗ᵢ (iteratedDualLeftDualIso p.2 (f p.1) ≪≫ (ρ_ _).symm)) ≪≫
@@ -224,8 +125,7 @@ noncomputable def evalLeftDualIso (f : α → C) :
 
 @[simp] theorem evalLeftDualIso_nil (f : α → C) :
     evalLeftDualIso f [] =
-      leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit ≪≫
-        eqToIso (by simp) := (rfl)
+      leftDualUnitIso C ≪≫ eqToIso (by simp) := (rfl)
 
 @[simp] theorem evalLeftDualIso_cons (f : α → C) (p : α × ℤ) (L : WindingWord α) :
     evalLeftDualIso f (p :: L) =
@@ -429,6 +329,13 @@ noncomputable def evalIsoOfNormalizeEq (f : α → C) {X Y : RigidObject α}
     (evalIsoOfNormalizeEq f h).hom =
       (normalizeIso f X).hom ≫ eqToHom (congrArg (WindingWord.eval f) h) ≫
         (normalizeIso f Y).inv := (rfl)
+
+@[simp] theorem evalIsoOfNormalizeEq_inv (f : α → C) {X Y : RigidObject α}
+    (h : X.normalize = Y.normalize) :
+    (evalIsoOfNormalizeEq f h).inv =
+      (normalizeIso f Y).hom ≫ eqToHom (congrArg (WindingWord.eval f) h.symm) ≫
+        (normalizeIso f X).inv :=
+  Category.assoc _ _ _
 
 @[simp] theorem evalIsoOfNormalizeEq_refl (f : α → C) (X : RigidObject α) :
     evalIsoOfNormalizeEq f (rfl : X.normalize = X.normalize) = Iso.refl _ := by

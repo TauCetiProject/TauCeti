@@ -43,6 +43,7 @@ but in general neither need be isomorphic to the identity.
 * `TauCeti.leftDualTensorIso_associativity`, `TauCeti.leftDualTensorIso_leftUnitality` and
   `TauCeti.leftDualTensorIso_rightUnitality`: its compatibility with the associator and the
   unitors;
+* `TauCeti.leftDualUnitIso`: the chosen left dual of `𝟙_ C` is isomorphic to `𝟙_ C`;
 * `TauCeti.leftDualFunctorCoreMonoidal` and the instance `TauCeti.leftDualFunctorMonoidal`: the
   strong monoidal structure on `leftDualFunctor C`, with structure morphisms given by
   `TauCeti.leftDualFunctor_ε`, `TauCeti.leftDualFunctor_η`, `TauCeti.leftDualFunctor_μ` and
@@ -125,6 +126,27 @@ theorem leftDualTensorIso_rightUnitality (X : C) [HasLeftDual X] [HasLeftDual (�
 
 variable (C) [LeftRigidCategory C]
 
+/-- In a left rigid monoidal category, the left dual
+`(LeftRigidCategory.leftDual (𝟙_ C)).leftDual` assigned to `𝟙_ C` by the rigid structure (unlike
+`CategoryTheory.hasLeftDualUnit`, which fixes the dual of `𝟙_ C` to `𝟙_ C`) is canonically
+isomorphic to `𝟙_ C` via `CategoryTheory.exactPairingUnit`. -/
+noncomputable def leftDualUnitIso :
+    (LeftRigidCategory.leftDual (𝟙_ C)).leftDual ≅ 𝟙_ C :=
+  leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit
+
+/-- The forward morphism of `TauCeti.leftDualUnitIso` is the dual comparison `leftDualIso`. -/
+theorem leftDualUnitIso_hom :
+    (leftDualUnitIso C).hom =
+      (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).hom :=
+  (rfl)
+
+/-- The inverse morphism of `TauCeti.leftDualUnitIso` is the inverse dual comparison
+`leftDualIso`. -/
+theorem leftDualUnitIso_inv :
+    (leftDualUnitIso C).inv =
+      (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).inv :=
+  (rfl)
+
 /-! In `(Cᵒᵖ)ᴹᵒᵖ`, composition and tensor products are those of `C` in the reverse order, by
 definition. So after `Quiver.Hom.unmop_inj` and `Quiver.Hom.unop_inj`, each coherence condition
 for `leftDualFunctor C` is definitionally the corresponding identity in `C` proved above, up to
@@ -134,8 +156,7 @@ reassociating the composites. -/
 monoidal: the tensor comparison is `leftDualTensorIso` and the unit comparison identifies the
 left dual of the unit with the unit. -/
 noncomputable def leftDualFunctorCoreMonoidal : (leftDualFunctor C).CoreMonoidal where
-  εIso := (mopFunctor _).mapIso
-    (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).op
+  εIso := (mopFunctor _).mapIso (leftDualUnitIso C).op
   μIso X Y := (mopFunctor _).mapIso (leftDualTensorIso X Y).op
   μIso_hom_natural_left f X' := by
     apply Quiver.Hom.unmop_inj
