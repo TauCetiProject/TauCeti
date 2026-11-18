@@ -810,9 +810,9 @@ theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearO
   have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
   exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
-/-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
-`(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`, for any `t₂`
-that is not before `s`. -/
+/-- If `c` is the first element of a finite set `S` after `s`, and every element of `S` strictly
+above `c` is strictly above `t₂`, then the elements of `S` after `s` are `c` and the elements after
+`t₂`, for any `t₂` with `s ≤ t₂`. -/
 theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [PartialOrder α] [DecidableEq α]
     [DecidableLT α] {S : Finset α} {s c t₂ : α}
     (hc : c ∈ S) (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hst : s ≤ t₂)
