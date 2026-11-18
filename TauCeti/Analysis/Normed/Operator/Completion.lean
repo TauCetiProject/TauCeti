@@ -84,6 +84,10 @@ space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling 
 * `LinearIsometryEquiv.completion_symm`, `LinearIsometryEquiv.completion_refl`,
   `LinearIsometryEquiv.completion_trans`: extension to completions is compatible with inverses,
   identities and composites.
+* `UniformSpace.Completion.separationQuotientEquiv`: the canonical linear isometric equivalence
+  `Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E`, together with its equivariance
+  (`separationQuotientEquiv_smul`, `separationQuotientEquiv_symm_smul`) for uniformly continuous
+  scalar actions.
 -/
 
 public section
@@ -438,3 +442,54 @@ theorem toLinearIsometry_completionEquivOfDenseRange (f : E →ₛₗᵢ[σ₁�
   (rfl)
 
 end LinearIsometry
+
+namespace UniformSpace.Completion
+
+variable (𝕜 E : Type*) [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- The completion of the separation quotient of a seminormed space is canonically linearly
+isometrically equivalent to the completion of the space itself. -/
+noncomputable def separationQuotientEquiv : Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E :=
+  (LinearEquiv.refl 𝕜 E).extendOfIsometry
+    (toComplₗᵢ.toLinearMap.comp (SeparationQuotient.mkCLM 𝕜 E).toLinearMap) toComplₗᵢ.toLinearMap
+    (denseRange_coe.comp SeparationQuotient.surjective_mk.denseRange (continuous_coe _))
+    denseRange_coe fun x ↦ by simp
+
+variable {𝕜 E}
+
+/-- On classes from `E`, `separationQuotientEquiv` sends `(mk x : Completion _)` to `↑x`. -/
+@[simp] theorem separationQuotientEquiv_coe_mk (x : E) :
+    separationQuotientEquiv 𝕜 E
+        ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) =
+      (x : Completion E) :=
+  LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ x
+
+/-- The inverse of `separationQuotientEquiv` sends `↑x` to `(mk x : Completion _)`. -/
+@[simp] theorem separationQuotientEquiv_symm_coe (x : E) :
+    (separationQuotientEquiv 𝕜 E).symm (x : Completion E) =
+      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) :=
+  LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ x
+
+/-- `separationQuotientEquiv 𝕜 E` commutes with any uniformly continuous scalar action on `E`. -/
+@[simp] theorem separationQuotientEquiv_smul {M : Type*} [SMul M E] [UniformContinuousConstSMul M E]
+    (a : M) (x : Completion (SeparationQuotient E)) :
+    separationQuotientEquiv 𝕜 E (a • x) = a • separationQuotientEquiv 𝕜 E x := by
+  have : UniformContinuousConstSMul M (SeparationQuotient E) :=
+    ⟨fun m ↦ SeparationQuotient.uniformContinuous_dom.mpr <|
+      SeparationQuotient.uniformContinuous_mk.comp (uniformContinuous_const_smul m)⟩
+  refine Completion.induction_on x
+    (isClosed_eq ((separationQuotientEquiv 𝕜 E).continuous.comp (continuous_const_smul a))
+      ((continuous_const_smul a).comp (separationQuotientEquiv 𝕜 E).continuous))
+    (SeparationQuotient.surjective_mk.forall.2 fun u ↦ by
+      rw [← Completion.coe_smul, ← SeparationQuotient.mk_smul, separationQuotientEquiv_coe_mk,
+        separationQuotientEquiv_coe_mk, Completion.coe_smul])
+
+/-- The inverse of `separationQuotientEquiv 𝕜 E` commutes with any uniformly continuous action. -/
+@[simp] theorem separationQuotientEquiv_symm_smul {M : Type*} [SMul M E]
+    [UniformContinuousConstSMul M E] (a : M) (x : Completion E) :
+    (separationQuotientEquiv 𝕜 E).symm (a • x) = a • (separationQuotientEquiv 𝕜 E).symm x :=
+  (separationQuotientEquiv 𝕜 E).injective <| by
+    rw [LinearIsometryEquiv.apply_symm_apply, separationQuotientEquiv_smul,
+      LinearIsometryEquiv.apply_symm_apply]
+
+end UniformSpace.Completion
