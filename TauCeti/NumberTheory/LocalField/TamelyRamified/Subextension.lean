@@ -22,7 +22,7 @@ hypothesis on `L/K` is needed.
 
 The lower bound on the ramification index comes from a radical: for every uniformizer `π` of `K`,
 some `α ∈ L` satisfies `α ^ e' = ω π` with `ω` a root of unity of order prime to `p`
-(`TauCeti.exists_pow_ordCompl_ramificationIndex_eq_mul`), and such an `α` lies in `Kᵗ`.
+(`TauCeti.exists_pow_tameRamificationIndex_eq_mul`), and such an `α` lies in `Kᵗ`.
 
 When `L/K` is Galois, `Kᵗ ⊓ L` is also the fixed field of the first lower ramification group
 `G₁(L/K)`. These statements accept any compatible local-field structures on `L` and on `Kᵗ ⊓ L`.
@@ -57,8 +57,7 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 `[L : K] / p ^ (v_p e(L/K))`. -/
 theorem finrank_fixedField_lowerRamificationGroup_one :
     Module.finrank K (IntermediateField.fixedField (lowerRamificationGroup K L 1)) =
-      Module.finrank K L /
-        ringChar 𝓀[K] ^ (ramificationIndex K L).factorization (ringChar 𝓀[K]) := by
+      Module.finrank K L / ringChar 𝓀[K] ^ wildRamificationExponent K L := by
   rw [IntermediateField.finrank_eq_fixingSubgroup_index,
     IntermediateField.fixingSubgroup_fixedField, Subgroup.index_eq_card_div]
   rw [IsGalois.card_aut_eq_finrank, natCard_lowerRamificationGroup_one]
@@ -123,7 +122,8 @@ private theorem ordCompl_ramificationIndex_dvd
       (isUnit_natCast_natCard_pow_sub_one K inertiaDegree_pos.ne')
   -- Some `α ∈ L` has `α ^ e' = ω π`, for `π` a uniformizer of `K` and `ω` a root of unity.
   obtain ⟨π, hπ⟩ := exists_isUniformizer (K := K)
-  obtain ⟨α, ω, hω, hα⟩ := exists_pow_ordCompl_ramificationIndex_eq_mul (L := L) hπ
+  obtain ⟨α, ω, hω, hα⟩ := exists_pow_tameRamificationIndex_eq_mul (L := L) hπ
+  rw [tameRamificationIndex_def, wildRamificationExponent_def] at hα
   have hω1 : ω ^ (Nat.card 𝓀[L] - 1) = 1 := (mem_rootsOfUnity _ _).1 hω
   -- Both `ω` and `α` have powers, of exponent prime to `p`, in `Kˣ`, so they lie in `T`.
   have hω' : (ω : L) ^ (Nat.card 𝓀[L] - 1) = algebraMap K L ((1 : Kˣ) : K) := by
@@ -211,9 +211,9 @@ part `e(L/K) / p ^ (v_p e(L/K))` of `e(L/K)`, where `p` is the residue character
 @[simp]
 theorem ramificationIndex_maximalTameExtension_inf :
     ramificationIndex K ↥(maximalTameExtension K (AlgebraicClosure K) ⊓ L) =
-      ramificationIndex K L /
-        ringChar 𝓀[K] ^ (ramificationIndex K L).factorization (ringChar 𝓀[K]) :=
-  (ramificationIndex_eq_and_inertiaDegree_eq L _ rfl).1
+      tameRamificationIndex K L := by
+  rw [tameRamificationIndex_def, wildRamificationExponent_def]
+  exact (ramificationIndex_eq_and_inertiaDegree_eq L _ rfl).1
 
 /-- **The residue degree of the maximal tamely ramified subextension.** For a finite subextension
 `L` of `K^{alg}/K`, the residue degree of `Kᵗ ⊓ L` over `K` is that of `L`. -/
@@ -230,8 +230,8 @@ end Structure
 @[simp]
 theorem finrank_maximalTameExtension_inf :
     Module.finrank K ↥(maximalTameExtension K (AlgebraicClosure K) ⊓ L) =
-      Module.finrank K L /
-        ringChar 𝓀[K] ^ (ramificationIndex K L).factorization (ringChar 𝓀[K]) := by
+      Module.finrank K L / ringChar 𝓀[K] ^ wildRamificationExponent K L := by
+  rw [wildRamificationExponent_def]
   obtain ⟨T, hT⟩ : ∃ T, maximalTameExtension K (AlgebraicClosure K) ⊓ L = T := ⟨_, rfl⟩
   rw [hT]
   have := finite_of_valuativeExtension K L

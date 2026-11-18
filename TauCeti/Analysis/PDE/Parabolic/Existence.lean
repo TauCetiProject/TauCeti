@@ -150,21 +150,17 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
   have hC₂ : ∀ᵐ t ∂μ, ‖deriv φ t‖ ≤ C₂ := ae_le_lpNorm_exponent_top <|
     hφ'.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioo
       Ioo_subset_Icc_self
-  set K := |Λ| * C₁ + ‖ι‖ * ‖ι‖ * C₂
+  set K := Λ * C₁ + ‖ι‖ * ‖ι‖ * C₂
   -- The integrand is dominated by `K ‖u‖`.
   have hdom : ∀ u : Lp V 2 μ,
       ∀ᵐ t ∂μ, ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ ≤ K * ‖u t‖ := by
     intro u
     filter_upwards [hA_bound, hC₁, hC₂] with t hAt h₁ h₂
     calc ‖A t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ‖
-        ≤ ‖A t (u t) (φ t)‖ + ‖⟪ι (u t), ι (deriv φ t)⟫_ℝ‖ := norm_sub_le _ _
-      _ ≤ ‖A t‖ * ‖u t‖ * ‖φ t‖ + ‖ι (u t)‖ * ‖ι (deriv φ t)‖ :=
-          add_le_add ((A t).le_opNorm₂ _ _) (norm_inner_le_norm _ _)
-      _ ≤ |Λ| * ‖u t‖ * C₁ + ‖ι‖ * ‖u t‖ * (‖ι‖ * C₂) := by
-          gcongr
-          · exact hAt.trans (le_abs_self Λ)
-          · exact ι.le_opNorm _
-          · exact (ι.le_opNorm _).trans (by gcongr)
+        ≤ Λ * ‖u t‖ * C₁ + ‖ι‖ * ‖u t‖ * (‖ι‖ * C₂) :=
+          (norm_sub_le _ _).trans <| add_le_add ((A t).le_of_opNorm₂_le_of_le hAt le_rfl h₁) <|
+            (norm_inner_le_norm _ _).trans <|
+              mul_le_mul (ι.le_opNorm _) (ι.le_opNorm_of_le h₂) (norm_nonneg _) (by positivity)
       _ = K * ‖u t‖ := by ring
   refine ⟨K * (μ univ ^ (1 - 1 / (2 : ℝ≥0∞).toReal)).toReal, fun u => ⟨?_, ?_⟩⟩
   · refine (((Lp.memLp u).integrable one_le_two).norm.const_mul K).mono' ?_ (hdom u)
@@ -202,28 +198,21 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
     rw [hφb, map_zero, norm_zero, intervalIntegral.integral_const_mul,
       intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo] at h
     linarith
-  -- `t ↦ A(t) φ(t) φ(t)` is bounded and strongly measurable, hence integrable.
-  have hAφφ : Integrable (fun t => A t (φ t) (φ t)) (volume.restrict (Ioo a b)) := by
-    set C := lpNorm φ ∞ (volume.restrict (Ioo a b))
-    have hC : ∀ᵐ t ∂volume.restrict (Ioo a b), ‖φ t‖ ≤ C := ae_le_lpNorm_exponent_top <|
-      hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
-        measurableSet_Ioo Ioo_subset_Icc_self
-    refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
-      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuousAt
-        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2)
-        (ae_of_all _ fun t => (A t).continuous₂.continuousAt))
-      (Λ * C * C) ?_).integrable le_rfl
-    filter_upwards [hA_bound, hC] with t hAt hφt
-    have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt
-    have hC0 : 0 ≤ C := (norm_nonneg _).trans hφt
-    calc ‖A t (φ t) (φ t)‖ ≤ ‖A t‖ * ‖φ t‖ * ‖φ t‖ := (A t).le_opNorm₂ _ _
-      _ ≤ Λ * C * C := by gcongr
+  -- The integrand on the right is integrable, as the integrand of the variational formulation at
+  -- `u = φ ∈ L²(a, b; V)`.
+  have hφL2 : MemLp φ 2 (volume.restrict (Ioo a b)) :=
+    (hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
+      measurableSet_Ioo Ioo_subset_Icc_self).mono_exponent le_top
+  obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound hφ
+  have hEφ : Integrable (fun t => A t (φ t) (φ t) - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ)
+      (volume.restrict (Ioo a b)) :=
+    (hK (hφL2.toLp φ)).1.congr <| by filter_upwards [hφL2.coeFn_toLp] with t ht; rw [ht]
   calc α * (∫ t in Ioo a b, ‖φ t‖ ^ 2) + ‖ι (φ a)‖ ^ 2 / 2
       = ∫ t in Ioo a b, (α * ‖φ t‖ ^ 2 - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ) := by
         rw [integral_sub (hint hcont₁) (hint hcont₂), integral_const_mul, hftc]
         ring
     _ ≤ ∫ t in Ioo a b, (A t (φ t) (φ t) - ⟪ι (φ t), ι (deriv φ t)⟫_ℝ) := by
-        refine integral_mono_ae (hint (hcont₁.sub hcont₂)) (hAφφ.sub (hint hcont₂)) ?_
+        refine integral_mono_ae (hint (hcont₁.sub hcont₂)) hEφ ?_
         filter_upwards [hA_coercive] with t ht
         linarith [ht (φ t)]
 
@@ -486,7 +475,6 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq [CompleteSpace V]
     (ι : V →L[ℝ] H) (hab : a ≤ b) {B : ℝ → V → V → ℝ}
     (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
     (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
-    (hΛ : 0 ≤ Λ)
     (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
     (hα : 0 < α)
     (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
@@ -495,13 +483,13 @@ theorem exists_memLp_forall_setIntegral_eq_add_inner_of_ae_eq [CompleteSpace V]
       ∀ φ : ℝ → V, ContDiff ℝ 1 φ → φ b = 0 →
         ∫ t in Ioo a b, (B t (u t) (φ t) - ⟪ι (u t), ι (deriv φ t)⟫_ℝ) =
           (∫ t in Ioo a b, f t (φ t)) + ⟪u₀, ι (φ a)⟫_ℝ := by
-  obtain ⟨u, hu, hueq⟩ := exists_memLp_forall_setIntegral_eq_add_inner (A := A) hab
+  obtain ⟨u, hu, hueq⟩ := exists_memLp_forall_setIntegral_eq_add_inner (A := A) (Λ := max Λ 0) hab
     (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
     (by
       filter_upwards [hAB, hB_bound] with t hABt hBt
-      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      refine (A t).opNorm_le_bound₂ (le_max_right Λ 0) fun u v => ?_
       rw [hABt, mul_assoc]
-      exact hBt u v)
+      exact (hBt u v).trans (by gcongr; exact le_max_left _ _))
     hα (by
       filter_upwards [hAB, hB_garding] with t hABt hBt v
       rw [hABt]
@@ -692,7 +680,6 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq [CompleteSpace V]
     [TopologicalSpace.SeparableSpace V] [CompleteSpace H] (hι : DenseRange ι) (hab : a ≤ b)
     {B : ℝ → V → V → ℝ} (hAB : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, A t u v = B t u v)
     (hB : ∀ u v, AEStronglyMeasurable (fun t => B t u v) (volume.restrict (Ioo a b)))
-    (hΛ : 0 ≤ Λ)
     (hB_bound : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ u v, ‖B t u v‖ ≤ Λ * (‖u‖ * ‖v‖))
     (hα : 0 < α)
     (hB_garding : ∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, α * ‖v‖ ^ 2 - β * ‖ι v‖ ^ 2 ≤ B t v v)
@@ -703,13 +690,14 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_of_ae_eq [CompleteSpace V]
       (∀ᵐ t ∂volume.restrict (Ioo a b), ∀ v, u' t v + B t (u t) v = f t v) ∧
       ContinuousOn w (Icc a b) ∧ (fun t => ι (u t)) =ᵐ[volume.restrict (Ioo a b)] w ∧
       w a = u₀ := by
-  obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ := exists_hasWeakLineDerivOn_gelfandDual (A := A) hι hab
+  obtain ⟨u, w, hu, hu', hd, hw, hae, hw₀⟩ :=
+    exists_hasWeakLineDerivOn_gelfandDual (A := A) (Λ := max Λ 0) hι hab
     (fun u v => (hB u v).congr (hAB.mono fun t ht => (ht u v).symm))
     (by
       filter_upwards [hAB, hB_bound] with t hABt hBt
-      refine (A t).opNorm_le_bound₂ hΛ fun u v => ?_
+      refine (A t).opNorm_le_bound₂ (le_max_right Λ 0) fun u v => ?_
       rw [hABt, mul_assoc]
-      exact hBt u v)
+      exact (hBt u v).trans (by gcongr; exact le_max_left _ _))
     hα (by
       filter_upwards [hAB, hB_garding] with t hABt hBt v
       rw [hABt]

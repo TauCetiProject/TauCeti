@@ -18,6 +18,10 @@ of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J 
 nonzero exactly when `x` is nonzero and `y` is not a multiple of `x`
 (`Orientation.areaForm_ne_zero_iff`).
 
+For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
+the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ ∈ (-1, 1)` whenever
+`ω(a, b) ≠ 0`.
+
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
 
@@ -75,6 +79,23 @@ theorem areaForm_ne_zero_iff {x y : E} :
   rw [← TauCeti.abs_real_inner_lt_norm_iff,
     ← pow_lt_pow_iff_left₀ (abs_nonneg _) (by positivity) two_ne_zero, sq_abs, mul_pow,
     ← o.inner_sq_add_areaForm_sq x y, lt_add_iff_pos_right, sq_pos_iff]
+
+/-- For unit vectors `a`, `b` of an oriented plane, `√(1 - ⟪a, b⟫²) = |ω(a, b)|`: the inner
+product and the area form are the cosine and the sine of the angle from `a` to `b`. -/
+theorem sqrt_one_sub_inner_sq_eq_abs_areaForm {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1) :
+    √(1 - inner ℝ a b ^ 2) = |o.areaForm a b| := by
+  have h := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at h
+  rw [← Real.sqrt_sq_eq_abs, ← h, add_sub_cancel_left]
+
+/-- Two unit vectors of an oriented plane with nonzero area form are not parallel, so their inner
+product lies in `(-1, 1)`. -/
+theorem inner_mem_Ioo_of_areaForm_ne_zero {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1)
+    (h : o.areaForm a b ≠ 0) : inner ℝ a b ∈ Set.Ioo (-1) 1 := by
+  have hsq := o.inner_sq_add_areaForm_sq a b
+  rw [ha, hb, one_pow, one_mul] at hsq
+  have hlt : inner ℝ a b ^ 2 < 1 := by nlinarith [sq_pos_of_ne_zero h]
+  exact abs_lt.1 ((sq_lt_one_iff_abs_lt_one _).1 hlt)
 
 end Orientation
 
