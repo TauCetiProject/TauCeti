@@ -10,9 +10,8 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.NewtonPolygon.Irreducible
 public import TauCeti.NumberTheory.Padics.LogGauge
-import Mathlib.Analysis.Normed.Algebra.Ultra
-import Mathlib.Analysis.Normed.Ring.Finite
-import TauCeti.RingTheory.Valuation.LinearIndependent
+import TauCeti.NumberTheory.Padics.NormedAlgebra
+import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Valuation.NormNormalization
 
 /-!
@@ -42,13 +41,11 @@ The Newton polygon depends on the chosen normalisation of the valuation of `K`.
   `w 2 = 2`, so the slope is `-1` with multiplicity two.
 
 In a quadratic extension `K` of `ℚ_[2]`, such as `ℚ_[2](i)`, every nonzero element has squared
-norm in `2 ^ ℤ`: for an element `x` of squared norm outside `2 ^ ℤ`, the norms of `1`, `x` and
-`x ^ 2` would lie in three distinct classes of `ℝ>0 / 2 ^ ℤ`, and these three elements would be
-linearly independent over `ℚ_[2]`. Hence the normalisation at `i - 1` is integer valued: it is the
-integral normalisation of `K`, and `i - 1` is a uniformiser of the valuation ring of `K`. The
-slope `-1` in that normalisation is integral, so the irreducibility criterion for pure polynomials
-of slope `a / d` with `gcd(a, d) = 1` does not apply over `K`; it must be read in the base
-normalisation of `ℚ_[2]`, where the slope `-1 / 2` has denominator two.
+norm in `2 ^ ℤ` (`Padic.exists_norm_pow_finrank_eq_zpow`). Hence the normalisation at `i - 1` is
+integer valued: it is the integral normalisation of `K`, and `i - 1` is a uniformiser of the
+valuation ring of `K`. The slope `-1` in that normalisation is integral, so the irreducibility
+criterion for pure polynomials of slope `a / d` with `gcd(a, d) = 1` does not apply over `K`; it
+must be read in the base normalisation of `ℚ_[2]`, where the slope `-1 / 2` has denominator two.
 
 ## Main results
 
@@ -65,7 +62,6 @@ normalisation of `ℚ_[2]`, where the slope `-1 / 2` has denominator two.
 * `newtonSlopes_X_sq_add_two_mul_X_add_two_of_norm_eq_sqrt_two_rpow`,
   `map_sub_one_of_norm_eq_sqrt_two_rpow`, `map_two_of_norm_eq_sqrt_two_rpow`: in the
   normalisation at `i - 1` the slope is `-1`, with `w (i - 1) = 1` and `w 2 = 2`.
-* `exists_norm_sq_eq_zpow`: in a quadratic extension of `ℚ_[p]`, squared norms lie in `p ^ ℤ`.
 * `irreducible_sub_one` and `exists_int_of_norm_eq_sqrt_two_rpow`: in `ℚ_[2](i)`, `i - 1` is a
   uniformiser of the valuation ring and the normalisation at `i - 1` is integer valued.
 
@@ -115,20 +111,8 @@ theorem isEisensteinAt_X_sq_add_two_mul_X_add_two :
   have h2 : (2 : ℤ_[2]) ∈ IsLocalRing.maximalIdeal ℤ_[2] := by
     rw [PadicInt.maximalIdeal_eq_span_p]
     exact Ideal.subset_span (by simp)
-  refine ⟨?_, fun {n} hn => ?_, ?_⟩
-  · rw [monic_X_sq_add_two_mul_X_add_two.leadingCoeff]
-    exact Ideal.ne_top_iff_one _ |>.mp (IsLocalRing.maximalIdeal.isMaximal ℤ_[2]).ne_top
-  · rw [natDegree_X_sq_add_two_mul_X_add_two] at hn
-    interval_cases n
-    · rwa [coeff_zero_X_sq_add_two_mul_X_add_two]
-    · rwa [coeff_one_X_sq_add_two_mul_X_add_two]
-  · rw [coeff_zero_X_sq_add_two_mul_X_add_two, PadicInt.maximalIdeal_eq_span_p,
-      Ideal.span_singleton_pow, Ideal.mem_span_singleton]
-    rintro ⟨c, hc⟩
-    have h2' : ‖(2 : ℤ_[2])‖ = 2⁻¹ := by simpa using PadicInt.norm_p (p := 2)
-    have hnorm := congrArg norm hc
-    rw [norm_mul, norm_pow, Nat.cast_ofNat, h2'] at hnorm
-    nlinarith [c.norm_le_one]
+  simpa only [C_ofNat] using isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible (ϖ := 2) h2
+    (by simpa using PadicInt.irreducible_p (p := 2)) le_rfl
 
 /-- **`X ^ 2 + 2 X + 2` is pure of slope `-1 / 2` over `ℚ_[2]`.** With `v(2) = 1`, its Newton
 polygon is the Eisenstein segment from `(0, 1)` to `(2, 0)`. -/
@@ -192,17 +176,27 @@ section Extension
 
 variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[2] K] {i : K}
 
+omit [NormedAlgebra ℚ_[2] K] in
+/-- A square root `i` of `-1` in a normed field has norm one. -/
+private theorem norm_eq_one_of_sq_eq_neg_one (hi : i ^ 2 = -1) : ‖i‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg i) two_ne_zero).mp (by rw [← norm_pow, hi, norm_neg,
+    norm_one])
+
+omit [NormedAlgebra ℚ_[2] K] in
+/-- A square root `i` of `-1` in a nonarchimedean normed field lies in its valuation ring. -/
+private theorem mem_integer_of_sq_eq_neg_one [IsUltrametricDist K] (hi : i ^ 2 = -1) :
+    i ∈ (NormedField.valuation (K := K)).integer := by
+  rw [Valuation.mem_integer_iff, NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
+    norm_eq_one_of_sq_eq_neg_one hi]
+
 /-- If `i ^ 2 = -1`, then `‖i - 1‖ = 1 / √2`, because `(i - 1) ^ 2 = -2 i`. -/
 theorem norm_sub_one_eq_inv_sqrt_two (hi : i ^ 2 = -1) : ‖i - 1‖ = (√2)⁻¹ := by
   have hsq : (i - 1) ^ 2 = -(2 * i) := by linear_combination hi
-  -- `i` has finite order, so norm one
-  have hi1 : ‖i‖ = 1 := (isOfFinOrder_iff_pow_eq_one.2
-      ⟨4, four_pos, by rw [show 4 = 2 * 2 from rfl, pow_mul, hi, neg_one_sq]⟩).norm_eq_one
   have h2 : ‖(2 : K)‖ = 2⁻¹ := by
     rw [← map_ofNat (algebraMap ℚ_[2] K) 2, norm_algebraMap']
     simpa using Padic.norm_p (p := 2)
   have h : ‖i - 1‖ ^ 2 = 2⁻¹ := by
-    rw [← norm_pow, hsq, norm_neg, norm_mul, h2, hi1, mul_one]
+    rw [← norm_pow, hsq, norm_neg, norm_mul, h2, norm_eq_one_of_sq_eq_neg_one hi, mul_one]
   rw [← Real.sqrt_inv, ← h, Real.sqrt_sq (norm_nonneg _)]
 
 omit [NormedAlgebra ℚ_[2] K] in
@@ -211,14 +205,9 @@ for instance a normed extension of `ℚ_[2]` containing `i`, the polynomial `X ^
 reducible: `i` has norm one, so `X ^ 2 + 2 X + 2 = (X - (i - 1)) * (X - (-i - 1))` there. -/
 theorem not_irreducible_X_sq_add_two_mul_X_add_two_integer [IsUltrametricDist K]
     (hi : i ^ 2 = -1) :
-    ¬Irreducible (X ^ 2 + 2 * X + 2 : (NormedField.valuation (K := K)).integer[X]) := by
-  -- `i` has finite order, so norm one
-  have hi1 : ‖i‖ = 1 := (isOfFinOrder_iff_pow_eq_one.2
-      ⟨4, four_pos, by rw [show 4 = 2 * 2 from rfl, pow_mul, hi, neg_one_sq]⟩).norm_eq_one
-  have hmem : i ∈ (NormedField.valuation (K := K)).integer := by
-    rw [Valuation.mem_integer_iff, NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
-      hi1]
-  exact not_irreducible_X_sq_add_two_mul_X_add_two (i := ⟨i, hmem⟩) (Subtype.ext hi)
+    ¬Irreducible (X ^ 2 + 2 * X + 2 : (NormedField.valuation (K := K)).integer[X]) :=
+  not_irreducible_X_sq_add_two_mul_X_add_two (i := ⟨i, mem_integer_of_sq_eq_neg_one hi⟩)
+    (Subtype.ext hi)
 
 /-- **Base-`2` normalisation.** For an additive valuation `w` on `K` with `‖x‖ = 2 ^ (-w x)`, the
 image in `K` of `x : ℚ_[2]` has the value of `x` for `padicRealValuation 2`. -/
@@ -298,63 +287,20 @@ end Extension
 
 section QuadraticExtension
 
-/-- **Squared norms in a quadratic extension of `ℚ_[p]`.** If `K` has degree two over `ℚ_[p]`,
-every nonzero element of `K` has squared norm an integer power of `p`. Otherwise `1`, `x` and
-`x ^ 2` would have norms in three distinct classes modulo the norms `p ^ ℤ` of `ℚ_[p]`, and so
-would be linearly independent over `ℚ_[p]`. -/
-theorem exists_norm_sq_eq_zpow {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K]
-    [NormedAlgebra ℚ_[p] K] (hK : Module.finrank ℚ_[p] K = 2) {x : K} (hx : x ≠ 0) :
-    ∃ m : ℤ, ‖x‖ ^ 2 = (p : ℝ) ^ m := by
-  by_contra H
-  simp only [not_exists] at H
-  have : IsUltrametricDist K := IsUltrametricDist.of_normedAlgebra ℚ_[p]
-  have : Module.Finite ℚ_[p] K := Module.finite_of_finrank_eq_succ hK
-  have hp : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
-  have hx0 : 0 < ‖x‖ := norm_pos_iff.mpr hx
-  -- neither `‖x‖` nor `‖x‖ ^ 2` lies in `p ^ ℤ`
-  have H' {d : ℕ} (hd0 : 0 < d) (hd2 : d ≤ 2) (m : ℤ) : ‖x‖ ^ d ≠ (p : ℝ) ^ m := by
-    obtain rfl | rfl : d = 1 ∨ d = 2 := by omega
-    · refine fun h => H (2 * m) ?_
-      rw [pow_one] at h
-      rw [h, ← zpow_natCast, ← zpow_mul, mul_comm, Nat.cast_ofNat]
-    · exact H m
-  -- so nonzero multiples of `x ^ j` and `x ^ k`, for `j < k ≤ 2`, have different norms
-  have key {j k : ℕ} (hjk : j < k) (hk : k ≤ 2) {a b : ℚ_[p]} (ha : a ≠ 0) (hb : b ≠ 0) :
-      ‖a‖ * ‖x‖ ^ j ≠ ‖b‖ * ‖x‖ ^ k := by
-    intro h
-    obtain ⟨m, hm⟩ : ∃ m : ℤ, ‖a‖ = (p : ℝ) ^ m := ⟨_, Padic.norm_eq_zpow_neg_valuation ha⟩
-    obtain ⟨n, hn⟩ : ∃ n : ℤ, ‖b‖ = (p : ℝ) ^ n := ⟨_, Padic.norm_eq_zpow_neg_valuation hb⟩
-    refine H' (d := k - j) (by omega) (by omega) (m - n) ?_
-    rw [zpow_sub₀ (by positivity), ← hm, ← hn, eq_div_iff (norm_ne_zero_iff.mpr hb)]
-    refine mul_right_cancel₀ (pow_ne_zero j hx0.ne') ?_
-    rw [h, ← Nat.sub_add_cancel hjk.le, pow_add, Nat.add_sub_cancel]
-    ring
-  let f : Fin 3 → K := fun j => x ^ (j : ℕ)
-  have hli : LinearIndependent ℚ_[p] f := by
-    refine (NormedField.valuation (K := K)).linearIndependent_of_map_smul_ne
-      (fun j a ha => Valuation.ne_zero_iff _ |>.mpr (smul_ne_zero ha (pow_ne_zero _ hx)))
-      fun j k hjk a b ha hb h => ?_
-    have h' : ‖a‖ * ‖x‖ ^ (j : ℕ) = ‖b‖ * ‖x‖ ^ (k : ℕ) := by
-      simpa [f, NormedField.valuation_apply, norm_smul] using congrArg NNReal.toReal h
-    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hjk) with hlt | hlt
-    · exact key hlt (by omega) ha hb h'
-    · exact key hlt (by omega) hb ha h'.symm
-  simpa [hK] using hli.fintype_card_le_finrank
-
 variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[2] K] {i : K}
 
+omit [NormedAlgebra ℚ_[2] K] in
 /-- If `i ^ 2 = -1`, then `i - 1` lies in the valuation ring of `K`. -/
 theorem sub_one_mem_integer [IsUltrametricDist K] (hi : i ^ 2 = -1) :
-    i - 1 ∈ (NormedField.valuation (K := K)).integer := by
-  rw [Valuation.mem_integer_iff, NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
-    norm_sub_one_eq_inv_sqrt_two hi]
-  exact inv_le_one_of_one_le₀ Real.one_lt_sqrt_two.le
+    i - 1 ∈ (NormedField.valuation (K := K)).integer :=
+  sub_mem (mem_integer_of_sq_eq_neg_one hi) (one_mem _)
 
 /-- **`i - 1` is a uniformiser of `ℚ_[2](i)`.** If `K` has degree two over `ℚ_[2]` and contains a
 square root `i` of `-1`, then `i - 1` is irreducible in the valuation ring of `K`. -/
 theorem irreducible_sub_one [IsUltrametricDist K] (hK : Module.finrank ℚ_[2] K = 2)
     (hi : i ^ 2 = -1) :
     Irreducible (⟨i - 1, sub_one_mem_integer hi⟩ : (NormedField.valuation (K := K)).integer) := by
+  have : FiniteDimensional ℚ_[2] K := Module.finite_of_finrank_eq_succ hK
   have hi1 : ‖i - 1‖ ^ 2 = 2⁻¹ := by
     rw [norm_sub_one_eq_inv_sqrt_two hi, inv_pow, Real.sq_sqrt zero_le_two]
   -- a non-unit of the valuation ring has squared norm at most `1 / 2`
@@ -362,7 +308,8 @@ theorem irreducible_sub_one [IsUltrametricDist K] (hK : Module.finrank ℚ_[2] K
       ‖(a : K)‖ ^ 2 ≤ 2⁻¹ := by
     rw [Valuation.Integer.not_isUnit_iff_valuation_lt_one, NormedField.valuation_apply,
       ← NNReal.coe_lt_one, coe_nnNorm] at hu
-    obtain ⟨m, hm⟩ := exists_norm_sq_eq_zpow hK (Subtype.coe_ne_coe.mpr ha)
+    obtain ⟨m, hm⟩ := Padic.exists_norm_pow_finrank_eq_zpow (p := 2) (Subtype.coe_ne_coe.mpr ha)
+    rw [hK] at hm
     have hm0 : m < 0 := by
       rw [← zpow_lt_one_iff_right₀ (one_lt_two (α := ℝ)), ← Nat.cast_ofNat (R := ℝ), ← hm]
       exact pow_lt_one₀ (norm_nonneg _) hu two_ne_zero
@@ -389,7 +336,9 @@ nonzero elements of `K`. When `K` contains a square root `i` of `-1`, it is norm
 theorem exists_int_of_norm_eq_sqrt_two_rpow (hK : Module.finrank ℚ_[2] K = 2)
     {w : AddValuation K (WithTop ℝ)} (hw : ∀ x ≠ 0, ‖x‖ = √2 ^ (-(w x).untop₀)) {x : K}
     (hx : x ≠ 0) : ∃ n : ℤ, w x = ((n : ℝ) : WithTop ℝ) := by
-  obtain ⟨m, hm⟩ := exists_norm_sq_eq_zpow hK hx
+  have : FiniteDimensional ℚ_[2] K := Module.finite_of_finrank_eq_succ hK
+  obtain ⟨m, hm⟩ := Padic.exists_norm_pow_finrank_eq_zpow (p := 2) hx
+  rw [hK] at hm
   refine ⟨-m, ?_⟩
   rw [Int.cast_neg, ← w.norm_eq_rpow_iff Real.one_lt_sqrt_two hw, Real.rpow_intCast]
   refine (pow_left_inj₀ (norm_nonneg x) (by positivity) two_ne_zero).mp ?_
