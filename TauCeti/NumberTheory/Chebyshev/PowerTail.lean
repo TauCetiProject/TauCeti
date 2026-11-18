@@ -106,8 +106,7 @@ theorem sum_prime_log_mul_rpow_le {P : Finset ℕ} {a s : ℝ} (ha : 0 < a) (hs 
       have hap := haP p hp
       have hp0 : 0 < (p : ℝ) := ha.trans_le hap
       rw [setIntegral_indicator measurableSet_Ioi, Ioi_inter_Ioi, max_eq_right hap,
-        integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) hp0]
-      rw [show -s - 1 + 1 = -s by ring]
+        integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) hp0, sub_add_cancel]
       field_simp
     _ ≤ ∫ t in Ioi a, s * Real.log 4 * t ^ (-s) := by
       refine setIntegral_mono_on (integrable_finsetSum _ (fun p _ ↦ hi p))
@@ -117,9 +116,8 @@ theorem sum_prime_log_mul_rpow_le {P : Finset ℕ} {a s : ℝ} (ha : 0 < a) (hs 
       have ht0 : 0 < t := ha.trans ht
       exact sum_prime_power_kernel_le (by linarith) ht0 hP
     _ = _ := by
-      rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) ha]
-      rw [show -s + 1 = 1 - s by ring]
-      field_simp [show 1 - s ≠ 0 by linarith]
+      rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) ha, neg_add_eq_sub]
+      field_simp [sub_ne_zero.2 hs.ne]
       ring
 
 /-- The logarithmically improved power-tail bound over any finite set of primes,
@@ -170,11 +168,12 @@ theorem sum_primesLE_filter_gt_div_pow_le {M r : ℝ} (hM : 1 < M) (hr : 0 ≤ r
     (fun p hp ↦ (Nat.mem_primesLE.mp (mem_filter.mp hp).1).2)
     (fun p hp ↦ (mem_filter.mp hp).2.le)
   simp only [Real.rpow_neg_natCast, zpow_neg, zpow_natCast] at hbound
+  have hk1 : 1 - (k : ℝ) = -((k - 1 : ℕ) : ℝ) := by
+    rw [Nat.cast_sub (by omega : 1 ≤ k)]
+    push_cast
+    ring
   have hexp : M ^ (1 - (k : ℝ)) = (M ^ (k - 1))⁻¹ := by
-    rw [show 1 - (k : ℝ) = -((k - 1 : ℕ) : ℝ) by
-      rw [Nat.cast_sub (by omega : 1 ≤ k)]
-      push_cast
-      ring, Real.rpow_neg (by linarith : 0 ≤ M), Real.rpow_natCast]
+    rw [hk1, Real.rpow_neg (by linarith : 0 ≤ M), Real.rpow_natCast]
   rw [hexp] at hbound
   calc
     _ = r ^ n * ∑ p ∈ (Nat.primesLE ⌊r⌋₊).filter (fun p : ℕ ↦ M < (p : ℝ)),
