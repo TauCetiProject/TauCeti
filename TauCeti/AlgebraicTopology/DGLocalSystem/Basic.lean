@@ -32,7 +32,9 @@ such families back component by component (`DGLocalSystemFamily.pullback`), agai
 to the canonical isomorphisms.  The pullback along maps that do not preserve the chosen basepoints
 changes basepoints by tensoring with chains on Moore paths; it is
 `TauCeti.DGLocalSystemFamily.pullbackBasepointChange` in
-`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Family`.
+`TauCeti.AlgebraicTopology.DGLocalSystem.Path.Family`.  Changing the basepoint
+commutes with this pullback up to a natural quasi-isomorphism
+(`TauCeti.AlgebraicTopology.DGLocalSystem.Path.FamilyPullback`).
 
 ## Main definitions
 
