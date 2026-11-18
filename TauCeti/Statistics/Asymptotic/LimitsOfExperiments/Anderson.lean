@@ -7,15 +7,17 @@ module
 
 public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+import Mathlib.Analysis.Convex.Quasiconvex
 import Mathlib.MeasureTheory.Integral.Layercake
 import TauCeti.Probability.Distributions.Gaussian.PrekopaLeindler
 
 /-!
 # Anderson's lemma
 
-A loss `ℓ : EuclideanSpace ℝ (Fin m) → ℝ≥0∞` is bowl-shaped when its sublevel sets are convex and
-symmetric about the origin. Anderson's lemma says that for a bowl-shaped loss, the risk under a
-centered Gaussian law is no larger than under its convolution with any probability law.
+A loss `ℓ : EuclideanSpace ℝ ι → ℝ≥0∞`, for a finite index type `ι`, is bowl-shaped when its
+sublevel sets are convex and symmetric about the origin. Anderson's lemma says that for a
+bowl-shaped loss, the risk under a centered Gaussian law is no larger than under its convolution
+with any probability law.
 
 The proof applies Anderson's inequality for sets,
 `TauCeti.Probability.multivariateGaussian_preimage_add_le`, to the strict sublevel sets of the
@@ -34,6 +36,9 @@ degenerate.
 * T. W. Anderson, *The integral of a symmetric unimodal function over a symmetric convex set and
   some probability inequalities*, Proc. Amer. Math. Soc. **6** (1955), 170–176.
 * A. W. van der Vaart, *Asymptotic Statistics*, Cambridge University Press, 1998, Lemma 8.5.
+
+The proofs are adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>),
+file `CKSD/Asymptotics/LAN/GaussianAnderson.lean`.
 -/
 
 public section
@@ -59,9 +64,8 @@ theorem lintegral_multivariateGaussian_le_lintegral_add (S : Matrix ι ι ℝ)
   -- The strict sublevel set below `t` is measurable, convex and symmetric.
   set C := {x | ℓ x < ENNReal.ofReal t}
   have hC : MeasurableSet C := measurableSet_lt hℓ measurable_const
-  have hCc : Convex ℝ C := fun x hx y hy b c hb hc hbc ↦ show ℓ _ < _ from
-    (hconv (max (ℓ x) (ℓ y)) (le_max_left _ (ℓ y)) (le_max_right (ℓ x) _) hb hc hbc).trans_lt
-      (max_lt hx hy)
+  have hCc : Convex ℝ C := by
+    simpa [C] using (convex_univ.quasiconvexOn_of_convex_le hconv).convex_lt (ENNReal.ofReal t)
   have hCa : MeasurableSet ((a + ·) ⁻¹' C) := measurable_const_add a hC
   have h := multivariateGaussian_preimage_add_le S hC hCc
     (fun x hx ↦ by simpa [C, hsymm] using hx) a
@@ -75,10 +79,10 @@ are convex and symmetric about the origin, a matrix `S` and a probability measur
 under `N(0, S)` is at most the risk under the convolution `N(0, S) ∗ M`. The loss may be
 unbounded or take the value `∞`. No positive semidefiniteness of `S` is needed: otherwise
 `multivariateGaussian 0 S` is the Dirac mass at `0`, for which the statement still holds. -/
-theorem lintegral_multivariateGaussian_le_conv {m : ℕ} (S : Matrix (Fin m) (Fin m) ℝ)
-    (ℓ : EuclideanSpace ℝ (Fin m) → ℝ≥0∞) (hℓ : Measurable ℓ)
+theorem lintegral_multivariateGaussian_le_conv (S : Matrix ι ι ℝ)
+    (ℓ : EuclideanSpace ℝ ι → ℝ≥0∞) (hℓ : Measurable ℓ)
     (hsymm : ∀ x, ℓ (-x) = ℓ x) (hconv : ∀ c, Convex ℝ {x | ℓ x ≤ c})
-    (M : Measure (EuclideanSpace ℝ (Fin m))) [IsProbabilityMeasure M] :
+    (M : Measure (EuclideanSpace ℝ ι)) [IsProbabilityMeasure M] :
     ∫⁻ x, ℓ x ∂(multivariateGaussian 0 S) ≤
       ∫⁻ x, ℓ x ∂((multivariateGaussian 0 S).conv M) := by
   rw [Measure.conv_comm, Measure.lintegral_conv hℓ]

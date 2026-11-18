@@ -36,6 +36,9 @@ least the Gaussian mass of each of its translates.
 * T. W. Anderson, *The integral of a symmetric unimodal function over a symmetric convex set and
   some probability inequalities*, Proc. Amer. Math. Soc. **6** (1955), 170–176.
 * A. W. van der Vaart, *Asymptotic Statistics*, Cambridge University Press, 1998, Lemma 8.5.
+
+The proofs are adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>),
+file `CKSD/Asymptotics/LAN/GaussianAnderson.lean`.
 -/
 
 public section
@@ -68,8 +71,10 @@ theorem hasPrekopaLeindler_multivariateGaussian {ι : Type*} [Fintype ι] [Decid
     (μ : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
     (multivariateGaussian μ S).HasPrekopaLeindler θ := by
   let A := Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)
-  refine (hasPrekopaLeindler_stdGaussian _ hθ₀ hθ₁).map (fun x ↦ μ + A x)
-    ⟨by fun_prop, rfl⟩ fun x y ↦ ?_
+  have hA : MeasurePreserving (fun x ↦ μ + A x) (stdGaussian (EuclideanSpace ℝ ι))
+      (multivariateGaussian μ S) :=
+    ⟨by fun_prop, by simp only [multivariateGaussian, A]⟩
+  refine (hasPrekopaLeindler_stdGaussian _ hθ₀ hθ₁).map (fun x ↦ μ + A x) hA fun x y ↦ ?_
   simp only [map_add, map_smul, smul_add]
   module
 
