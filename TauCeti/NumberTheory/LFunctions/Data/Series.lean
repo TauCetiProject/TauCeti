@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Data.Basic
+public import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
 public import TauCeti.Analysis.Meromorphic.Continuation
+public import TauCeti.NumberTheory.LSeries.Meromorphic
 
 /-!
 # Canonical analytic cards from Dirichlet series
+
+`HasDirichletAgreement.analyticAt_LSeries` recovers analyticity at a point of `Re s > 1` from
+Dirichlet agreement and local meromorphy of the completion, without assuming coefficient growth.
 
 `AnalyticLFunctionData.ofSeries` constructs a card from coefficients, a conductor, gamma shifts
 and a proposed polar divisor. Its completed function is the canonical meromorphic continuation
@@ -33,7 +37,7 @@ through `TauCeti.meromorphicContinuation`.
 
 public section
 
-open Complex ComplexConjugate Set
+open Complex ComplexConjugate Filter Set Topology
 
 namespace TauCeti.LFunctions.AnalyticLFunctionData
 
@@ -103,6 +107,26 @@ theorem hasDirichletAgreement_ofSeries (ha : a 1 = 1) (hdeg : 0 < μ.card + 2 * 
     exact meromorphicContinuation_eqOn h hs
 
 variable {d : AnalyticLFunctionData}
+
+/-- Dirichlet agreement transports local meromorphy of the completion to the totalized
+Dirichlet series at points of `Re s > 1`. -/
+theorem HasDirichletAgreement.meromorphicAt_LSeries (hD : d.HasDirichletAgreement)
+    {s : ℂ} (hm : MeromorphicAt d.completed s) (hs : 1 < s.re) :
+    MeromorphicAt (LSeries d.coeff) s := by
+  have hN := d.analyticAt_conductor_cpow (s := s) (g := fun z ↦ z / 2) (by fun_prop)
+  apply (hm.div (hN.meromorphicAt.mul (d.meromorphic_gammaFactor s))).congr
+  filter_upwards [d.eventually_gammaFactor_ne_zero s,
+    nhdsWithin_le_nhds (continuous_re.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hs))]
+    with z hzγ hz
+  simp only [Pi.div_apply, Pi.mul_apply, hD.completed_eq z hz, mul_div_cancel_left₀ _
+    (mul_ne_zero (d.conductor_cpow_ne_zero _) hzγ)]
+
+/-- Dirichlet agreement and local meromorphy of the completion at a point of `Re s > 1`
+make the Dirichlet series analytic there, without a coefficient-growth hypothesis. -/
+theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)
+    {s : ℂ} (hm : MeromorphicAt d.completed s) (hs : 1 < s.re) :
+    AnalyticAt ℂ (LSeries d.coeff) s :=
+  (hD.meromorphicAt_LSeries hm hs).analyticAt_LSeries
 
 /-- Dirichlet agreement identifies the completion with the series defining its series card
 on `Re s > 1`. -/
