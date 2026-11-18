@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Group.Integral
@@ -108,6 +109,9 @@ gives a set of measure one.
   empty).
 * `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le`: the same in scale-invariant form,
   `R^(-n/p₀) ‖f‖_{L^{p₀}(B(x₀, R))} ≤ |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B(x₀, R))}`.
+* `MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow`: Hölder's inequality
+  bounding the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` by
+  `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
@@ -216,6 +220,23 @@ theorem rpow_neg_mul_toReal_eLpNorm_ball_le
             (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
         gcongr
     _ = _ := by rw [mul_left_comm, hRpow]; ring
+
+/-- Hölder's inequality for the `L²` mass on a ball: for `2 ≤ q` and a function `g` in `L^q(t)`,
+the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` of radius `r > 0` is at most
+`‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {g : E → F} {t : Set E} {q : ENNReal}
+    (hg : MemLp g q (mu.restrict t)) (hq : 2 ≤ q) {x : E} {r : ℝ} (hr : 0 < r)
+    (hsub : ball x r ⊆ t) :
+    ∫ y in ball x r, ‖g y‖ ^ 2 ∂mu ≤ (eLpNorm g q (mu.restrict t)).toReal ^ 2 *
+      (mu.real (ball (0 : E) 1) ^ (1 - 2 / q.toReal) *
+        r ^ ((finrank ℝ E : ℝ) * (1 - 2 / q.toReal))) := by
+  have h := hg.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow hq hsub
+    measure_ball_lt_top.ne
+  rwa [addHaar_real_ball_of_pos mu x hr, Real.mul_rpow (by positivity) measureReal_nonneg,
+    ← Real.rpow_natCast r, ← Real.rpow_mul hr.le, mul_comm (r ^ _)] at h
 
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/

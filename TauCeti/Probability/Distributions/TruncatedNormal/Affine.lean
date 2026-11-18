@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.TruncatedNormal.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Affine
+import TauCeti.Probability.Distributions.Affine
 
 /-!
 # Affine transport of truncated Gaussian laws
@@ -17,8 +18,9 @@ well as bounded ones, and retains endpoint atoms when the variance is zero. For 
 intervals, positive slopes preserve endpoint flags, whereas negative slopes reverse them.
 No positive-mass assumption is needed: a zero conditional measure stays zero.
 
-The transport uses `ProbabilityTheory.map_cond_preimage` and Mathlib's Gaussian translation
-and scaling identities. For background on the truncated normal distribution, see
+The transport uses `TauCeti.Probability.map_affine_cond`,
+`ProbabilityTheory.map_cond_preimage`, and Mathlib's Gaussian translation and scaling identities.
+For background on the truncated normal distribution, see
 Johnson, Kotz and Balakrishnan, *Continuous Univariate Distributions*, volume 1, chapter 13.
 -/
 
@@ -44,16 +46,12 @@ theorem map_affine_truncatedNormalMeasure_preimage (m : ℝ) (v : ℝ≥0) (a b 
 /-- An invertible affine image of a truncated Gaussian transforms the underlying Gaussian's
 location and variance parameters and the truncation event, including zero-mass cases. -/
 theorem map_affine_truncatedNormalMeasure (m : ℝ) (v : ℝ≥0) (a : ℝ) {b : ℝ}
-    (hb : b ≠ 0) {s : Set ℝ} (hs : MeasurableSet s) :
+    (hb : b ≠ 0) {s : Set ℝ} :
     (truncatedNormalMeasure m v s).map (fun x ↦ a + b * x) =
       truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
         ((fun x ↦ a + b * x) '' s) := by
-  have hf : MeasurableEmbedding (fun x : ℝ ↦ a + b * x) := by
-    convert (affineHomeomorph b a hb).measurableEmbedding using 1
-    ext x
-    simp [affineHomeomorph, add_comm]
-  simpa only [preimage_image_eq s hf.injective] using
-    map_affine_truncatedNormalMeasure_preimage m v a b (hf.measurableSet_image.mpr hs)
+  simp only [truncatedNormalMeasure_def]
+  rw [map_affine_cond a hb, gaussianReal_map_const_add_const_mul]
 
 /-- Positive affine transport preserves both closed endpoints. -/
 theorem map_affine_truncatedNormalMeasure_Icc_pos (m : ℝ) (v : ℝ≥0) (a : ℝ) {b : ℝ}
@@ -162,14 +160,14 @@ truncated Gaussian law, with the truncation event transported as well. -/
 theorem affine_truncatedNormalMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0} {s : Set ℝ}
     (hX : HasLaw X (truncatedNormalMeasure m v s) P) (a : ℝ) {b : ℝ}
-    (hb : b ≠ 0) (hs : MeasurableSet s) :
+    (hb : b ≠ 0) :
     HasLaw (fun ω ↦ a + b * X ω)
       (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
         ((fun x ↦ a + b * x) '' s)) P := by
   have hf : HasLaw (fun x : ℝ ↦ a + b * x)
       (truncatedNormalMeasure (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v)
         ((fun x ↦ a + b * x) '' s)) (truncatedNormalMeasure m v s) :=
-    ⟨by fun_prop, map_affine_truncatedNormalMeasure m v a hb hs⟩
+    ⟨by fun_prop, map_affine_truncatedNormalMeasure m v a hb⟩
   exact hf.comp hX
 
 end ProbabilityTheory.HasLaw

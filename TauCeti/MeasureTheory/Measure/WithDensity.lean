@@ -321,7 +321,8 @@ theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α
     μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
   withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
 
-/-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
+/-- Continuous nonnegative real densities that present the same measure are equal pointwise, with
+respect to a σ-finite reference measure that is positive on nonempty open sets. -/
 theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
     [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [SigmaFinite ν]
     [ν.IsOpenPosMeasure] {p q : X → ℝ} (hp : Continuous p) (hq : Continuous q)

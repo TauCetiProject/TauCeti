@@ -10,9 +10,9 @@ public import Mathlib.Logic.Equiv.Set
 /-!
 # Fibres of a map over a base
 
-For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file collects the two
-elementary constructions on such fibres that the covering-space development uses. Neither needs a
-topology, so both are stated for a bare function and a bare equivalence; a `ContinuousMap` or a
+For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file collects the
+elementary constructions on such fibres that the covering-space development uses. None needs a
+topology, so they are stated for bare functions and equivalences; a `ContinuousMap` or a
 `Homeomorph` is applied through its underlying function or equivalence.
 
 * `Function.fiberMap`: a map `f : E → F` commuting with the projections to `X` restricts to the
@@ -26,6 +26,9 @@ topology, so both are stated for a bare function and a bare equivalence; a `Cont
 * `Function.mapsTo_fiber`: a map over `X` sends each fibre into the corresponding fibre.
 * `Function.fiberMap`: the restriction of a map over `X` to the fibre over `x`.
 * `Equiv.compFiberEquiv`: the relabelling of fibres under an equivalence of bases.
+* `Equiv.fiberEquivOfPreimage`: an equivalence onto the preimage of a subset, commuting with
+  projections, identifies the fibres over points of that subset. This transfers sheet counts
+  from local models to a map defined by gluing.
 -/
 
 public section
@@ -69,6 +72,34 @@ theorem fiberMap_comp_apply (f : E → F) (g : F → G) (hf : q ∘ f = p) (hg :
 end Function
 
 namespace Equiv
+
+/-- An equivalence onto `p ⁻¹' U` that commutes with the projections identifies the fibres over
+each `y ∈ U`. No topology or finiteness assumption is needed. -/
+def fiberEquivOfPreimage {A X Y : Type*} {p : X → Y} {q : A → Y} {U : Set Y}
+    (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y} (hy : y ∈ U) :
+    q ⁻¹' {y} ≃ p ⁻¹' {y} :=
+  (k.subtypeEquiv (p := fun a ↦ q a = y) (q := fun x ↦ p x.1 = y)
+    (fun a ↦ by rw [hk a])).trans
+    (subtypeSubtypeEquivSubtype (p := fun x ↦ p x ∈ U) (q := fun x ↦ p x = y)
+      fun hx ↦ hx.symm ▸ hy)
+
+@[simp]
+theorem fiberEquivOfPreimage_apply_coe {A X Y : Type*} {p : X → Y} {q : A → Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y}
+    (hy : y ∈ U) (a : q ⁻¹' {y}) :
+    (k.fiberEquivOfPreimage hk hy a : X) = (k a).1 :=
+  (rfl)
+
+@[simp]
+theorem fiberEquivOfPreimage_symm_apply_coe {A X Y : Type*} {p : X → Y} {q : A → Y}
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y}
+    (hy : y ∈ U) (x : p ⁻¹' {y}) :
+    ((k.fiberEquivOfPreimage hk hy).symm x : A) =
+      k.symm ⟨x, by
+        have hx : p x = y := x.2
+        rw [Set.mem_preimage, hx]
+        exact hy⟩ :=
+  (rfl)
 
 variable {E X Y : Type*} {p : E → X}
 
