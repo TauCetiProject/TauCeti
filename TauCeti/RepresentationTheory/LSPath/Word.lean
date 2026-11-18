@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.OrbitStable
 public import TauCeti.RepresentationTheory.LSPath.PartialInverse
+public import TauCeti.RepresentationTheory.LSPath.StringLength
 import TauCeti.LinearAlgebra.RootSystem.Height
 import Mathlib.Algebra.Order.Archimedean.Basic
 
@@ -76,6 +77,22 @@ theorem lowerWord_singleton (i : ι) (π : PLPath 𝕜 V) :
 theorem raiseWord_singleton (i : ι) (π : PLPath 𝕜 V) :
     raiseWord F x [i] π = raise (F i) (x i) π := by
   simp [raiseWord_cons]
+
+/-- Lowering along the constant word `List.replicate n i` is `lowerIter (F i) (x i) n`. -/
+@[simp]
+theorem lowerWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    lowerWord F x (List.replicate n i) π = lowerIter (F i) (x i) n π := by
+  induction n generalizing π with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, lowerWord_cons, lowerIter_succ, ih]
+
+/-- Raising along the constant word `List.replicate n i` is `raiseIter (F i) (x i) n`. -/
+@[simp]
+theorem raiseWord_replicate (n : ℕ) (i : ι) (π : PLPath 𝕜 V) :
+    raiseWord F x (List.replicate n i) π = raiseIter (F i) (x i) n π := by
+  induction n generalizing π with
+  | zero => simp
+  | succ n ih => simp only [List.replicate_succ, raiseWord_cons, raiseIter_succ, ih]
 
 /-- Concatenating words composes their partial lowering actions. -/
 theorem lowerWord_append (v w : List ι) (π : PLPath 𝕜 V) :

@@ -179,14 +179,14 @@ theorem two_mul_card_connectedComponents_le_minCriticalCount [Nontrivial E] :
   le_minCriticalCount_iff.2 fun _ hf ↦
     two_mul_card_connectedComponents_le_totalCriticalCount hf.continuous
 
-variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
-
-omit [FiniteDimensional ℝ E] in
+variable [T2Space M] [IsManifold I ∞ M] in
 /-- On a compact boundaryless manifold the minimal number of critical points is finite: a Morse
 function exists, and it has finitely many critical points. -/
 theorem minCriticalCount_ne_top : minCriticalCount I M ≠ ⊤ := by
   obtain ⟨f, hf⟩ := exists_isMorse (I := I) (M := M)
   exact ne_top_of_le_ne_top hf.totalCriticalCount_ne_top (minCriticalCount_le hf.contMDiff)
+
+variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
 /-- **The Lusternik–Schnirelmann lower bound for `c(M)`.** On a compact boundaryless manifold,
 every smooth function has at least as many critical points as the Lusternik–Schnirelmann count of
