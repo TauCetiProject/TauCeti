@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
-public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
+public import TauCeti.Analysis.Pseudodifferential.Composition.FrameChange
 import TauCeti.Analysis.Calculus.FDeriv.SumSq
 
 /-!
@@ -15,8 +15,10 @@ import TauCeti.Analysis.Calculus.FDeriv.SumSq
 For smooth real functions `φ` and `ψ` on `ℝⁿ`, with `ψ` compactly supported, the operator
 `u ↦ φ · Op(a) (ψ u)` is again a quantization: it is `Op(φ (a # ψ))`, where `a # ψ` is the
 composition symbol of `Op(a) ∘ Op(ψ)` (`TauCeti.Symbol.sharp`). This file calls `φ (a # ψ)` the
-*compression* `TauCeti.Symbol.compress` of `a` by the cutoffs `φ` and `ψ`. Compressions are the
-building blocks for patching local quantizations: with charts and cutoffs, a global operator is
+*compression* `TauCeti.Symbol.compress` of `a` by the cutoffs `φ` and `ψ`; it is the frame change
+`TauCeti.Symbol.frameChange` by the scalar operators `φ id` and `ψ id`, from which it inherits its
+quantization and its locality modulo smoothing symbols. Compressions are the building blocks
+for patching local quantizations: with charts and cutoffs, a global operator is
 assembled as a locally finite sum of compressions. There are two standard ways to do this. This
 file treats both in a single chart, for finite sums of cutoffs `ψᵢ` (or `χᵢ`) with compact support
 whose partition identity holds on a set `U` outside which `a` vanishes.
@@ -161,11 +163,13 @@ variable {φ ψ : CoordinateSpace n → ℝ}
 
 /-- The **compression** of a symbol `a` of order `m` by smooth real cutoffs `φ` and `ψ`, with `ψ`
 compactly supported: the symbol `φ(x) (a # ψ)(x, ξ)` of order `m`, whose quantization is
-`u ↦ φ · Op(a) (ψ u)` (`TauCeti.Symbol.quantizeSchwartzValue_compress`). -/
+`u ↦ φ · Op(a) (ψ u)` (`TauCeti.Symbol.quantizeSchwartzValue_compress`). It is the frame change
+(`TauCeti.Symbol.frameChange`) by the scalar multiples `φ id` and `ψ id` of the identity. -/
 def compress (a : Symbol n V W m) (φ ψ : CoordinateSpace n → ℝ) (hφ : ContDiff ℝ ∞ φ)
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) : Symbol n V W m :=
-  inclusion (by simp)
-    ((cutoff W hφ).comp (a.sharp (cutoff V hψ) (hasCompactSpatialSupport_cutoff hψ hψc)))
+  a.frameChange (fun x ↦ φ x • ContinuousLinearMap.id ℂ W)
+    (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
+    (hφ.smul contDiff_const) (hψ.smul contDiff_const) hψc.smul_right
 
 variable {a : Symbol n V W m}
 
@@ -174,7 +178,9 @@ private theorem coefficient_compress_eq_cutoff (hφ : ContDiff ℝ ∞ φ) (hψ 
     (hψc : HasCompactSupport ψ) (p : CoordinateSpace n × CoordinateSpace n) :
     (a.compress φ ψ hφ hψ hψc).coefficient p = φ p.1 •
       (a.sharp (cutoff V hψ) (hasCompactSpatialSupport_cutoff hψ hψc)).coefficient p := by
-  simp [compress, coefficient_cutoff]
+  rw [compress, coefficient_frameChange, ContinuousLinearMap.smul_comp,
+    ContinuousLinearMap.id_comp]
+  rfl
 
 /-- The coefficient of the compression `φ (a # ψ)`. -/
 @[simp]
@@ -275,18 +281,18 @@ end Linear
 theorem hasCompactSpatialSupport_compress (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ)
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) :
     (a.compress φ ψ hφ hψ hψc).HasCompactSpatialSupport :=
-  ((hasCompactSpatialSupport_cutoff hφ hφc).comp_right _).inclusion _
+  hasCompactSpatialSupport_frameChange _ _ _ hφc.smul_right
 
 /-- A compression of a symbol with compact spatial support has compact spatial support. -/
 theorem HasCompactSpatialSupport.compress (ha : a.HasCompactSpatialSupport)
     (hφ : ContDiff ℝ ∞ φ) (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) :
     (a.compress φ ψ hφ hψ hψc).HasCompactSpatialSupport :=
-  ((ha.sharp _).comp_left _).inclusion _
+  ha.frameChange _ _ _
 
 /-- A compression of a smoothing symbol is smoothing. -/
 theorem IsSmoothing.compress (ha : a.IsSmoothing) (hφ : ContDiff ℝ ∞ φ) (hψ : ContDiff ℝ ∞ ψ)
     (hψc : HasCompactSupport ψ) : (a.compress φ ψ hφ hψ hψc).IsSmoothing :=
-  ((ha.sharp_right _ _).comp_left _).inclusion _
+  ha.frameChange _ _ _
 
 /-- The remainder `φ r` of a compression, for a remainder symbol `r` of order `m - N`. -/
 private def remainder (hφ : ContDiff ℝ ∞ φ) (N : ℕ) (r : Symbol n V W (m + 0 - N)) :
@@ -387,26 +393,20 @@ theorem exists_isSmoothing_coefficient_compress_eq (hφ : ContDiff ℝ ∞ φ) (
     ∃ r : Symbol n V W m, r.IsSmoothing ∧ ∀ x ξ,
       (a.compress φ ψ hφ hψ hψc).coefficient (x, ξ) = φ x • a.coefficient (x, ξ) +
         r.coefficient (x, ξ) := by
-  have h := coefficient_compress_eq_of_eventuallyEq (a := a) hφ hψ hψc hψφ
-  refine ⟨inclusion (by push_cast; linarith) (remainder hφ (0 + 1) (a.sharpRemainder (cutoff V hψ)
-    (hasCompactSpatialSupport_cutoff hψ hψc) (0 + 1))), isSmoothing_iff_forall_nat.2 fun N ↦
-      ⟨inclusion (by push_cast; linarith) (remainder hφ (N + 1) (a.sharpRemainder (cutoff V hψ)
-        (hasCompactSpatialSupport_cutoff hψ hψc) (N + 1))), funext fun ⟨x, ξ⟩ ↦ ?_⟩,
-    fun x ξ ↦ ?_⟩
-  · rw [coefficient_inclusion, coefficient_inclusion]
-    exact add_left_cancel ((h N x ξ).symm.trans (h 0 x ξ))
-  · rw [h 0 x ξ, coefficient_inclusion, one_mul]
+  obtain ⟨r, hr, h⟩ := exists_isSmoothing_coefficient_frameChange_eq (a := a)
+    (Φ := fun x ↦ φ x • ContinuousLinearMap.id ℂ W) (Ψ := fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
+    (hφ.smul contDiff_const) (hψ.smul contDiff_const) hψc.smul_right
+    (T := ContinuousLinearMap.id ℂ V) fun x hx ↦ by
+      filter_upwards [hψφ x fun h ↦ hx (by simp [h])] with y hy using by simp [hy]
+  exact ⟨r, hr, fun x ξ ↦ by simpa [compress] using h x ξ⟩
 
 /-- **Compressions by a cutoff vanishing near the support of the left one.** If `ψ = 0` near every
 point where `φ ≠ 0`, the compression `φ (a # ψ)` is smoothing. -/
 theorem isSmoothing_compress_of_eventuallyEq_zero (hφ : ContDiff ℝ ∞ φ) (hψ : ContDiff ℝ ∞ ψ)
     (hψc : HasCompactSupport ψ) (hψφ : ∀ x ∈ Function.support φ, ψ =ᶠ[𝓝 x] 0) :
     (a.compress φ ψ hφ hψ hψc).IsSmoothing :=
-  isSmoothing_iff_forall_nat.2 fun N ↦ ⟨inclusion (by push_cast; linarith)
-    (remainder hφ (N + 1) (a.sharpRemainder (cutoff V hψ) (hasCompactSpatialSupport_cutoff hψ hψc)
-      (N + 1))), funext fun ⟨x, ξ⟩ ↦ by
-    rw [coefficient_inclusion, coefficient_compress_eq_of_eventuallyEq (c := 0) hφ hψ hψc hψφ N,
-      zero_mul, zero_smul, zero_add]⟩
+  isSmoothing_frameChange_of_eventuallyEq_zero _ _ _ fun x hx ↦ by
+    filter_upwards [hψφ x fun h ↦ hx (by simp [h])] with y hy using by simp [hy]
 
 /-- **The quantization of a compression** is the compressed quantization:
 `Op(φ (a # ψ)) u = φ · Op(a) (ψ u)`. -/
@@ -414,20 +414,8 @@ theorem quantizeSchwartzValue_compress (hφ : ContDiff ℝ ∞ φ) (hψ : ContDi
     (hψc : HasCompactSupport ψ) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (a.compress φ ψ hφ hψ hψc).coefficient u x =
       φ x • quantizeSchwartzValue a.coefficient (SchwartzMap.smulLeftCLM V ψ u) x := by
-  have hc := hasCompactSpatialSupport_cutoff (V := V) hψ hψc
-  have h : quantizeSchwartzValue (a.compress φ ψ hφ hψ hψc).coefficient u x =
-      quantizeSchwartzValue ((φ x : ℂ) • (a.sharp (cutoff V hψ) hc).coefficient) u x :=
-    quantizeSchwartzValue_congr_left (fun ξ ↦ by
-      simp only [coefficient_compress_eq_cutoff, Pi.smul_apply, Complex.coe_smul]) u
-  rw [h, quantizeSchwartzValue_smul_left, Complex.coe_smul,
-    quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
-  congr 2
-  ext y
-  rw [HasCompactSupport.toSchwartzMap_toFun,
-    SchwartzMap.smulLeftCLM_apply_apply (hψc.hasTemperateGrowth hψ),
-    show (cutoff V hψ).coefficient = fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V from
-      funext (coefficient_cutoff hψ),
-    quantizeSchwartzValue_comp_fst (fun y ↦ ψ y • ContinuousLinearMap.id ℂ V)]
+  rw [compress, quantizeSchwartzValue_frameChange _ _ _ u (SchwartzMap.smulLeftCLM V ψ u)
+    fun y ↦ by simp [SchwartzMap.smulLeftCLM_apply_apply (hψc.hasTemperateGrowth hψ)]]
   simp
 
 /-- **Independence of the input cutoff.** If `ψ` and `ψ'` agree near every point where `φ ≠ 0`,
