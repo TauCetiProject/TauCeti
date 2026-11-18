@@ -67,6 +67,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
+* `AddCircle.range_nsmul_coe_rat` and `AddCircle.ncard_range_nsmul_coe_rat`: for a positive
+  period in a linearly ordered field, the `ℕ`-multiples of the class of a rational multiple
+  `q * p` of the period form the `q.den`-torsion, so there are exactly `q.den` of them.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
   class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`; when `n` is nonzero
   in `𝕜` these are the canonical generators of the `n`- and the `n / d`-torsion.
@@ -369,6 +372,31 @@ theorem torsionBy_inj : (AddCircle p)[(m : ℤ)] = (AddCircle p)[(n : ℤ)] ↔ 
   exact ⟨fun h ↦ Nat.dvd_antisymm h.1 h.2, fun h ↦ h ▸ ⟨dvd_rfl, dvd_rfl⟩⟩
 
 end ExactOrder
+
+section RationalMultiple
+
+variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {p : 𝕜} [Fact (0 < p)]
+
+/-- The `ℕ`-orbit of the class of a rational multiple `q * p` of the period is the
+`q.den`-torsion of the circle. -/
+theorem range_nsmul_coe_rat (q : ℚ) :
+    Set.range (· • ((q * p : 𝕜) : AddCircle p) : ℕ → AddCircle p) =
+      ((AddCircle p)[(q.den : ℤ)] : Set (AddCircle p)) := by
+  have hfin : IsOfFinAddOrder ((q * p : 𝕜) : AddCircle p) := by
+    rw [← addOrderOf_pos_iff, addOrderOf_coe_rat]
+    exact q.pos
+  rw [← AddSubmonoid.coe_multiples, hfin.multiples_eq_zmultiples,
+    eq_torsionBy_of_natCard_eq p (Nat.cast_ne_zero.mpr q.den_nz)
+      (H := AddSubgroup.zmultiples _) (by rw [Nat.card_zmultiples, addOrderOf_coe_rat])]
+
+/-- The `ℕ`-orbit of the class of a rational multiple `q * p` of the period has exactly `q.den`
+points: a pulse of period `q * p` against a cycle of length `p` resolves after `q.den` beats. -/
+theorem ncard_range_nsmul_coe_rat (q : ℚ) :
+    (Set.range (· • ((q * p : 𝕜) : AddCircle p) : ℕ → AddCircle p)).ncard = q.den := by
+  rw [← AddSubmonoid.coe_multiples, ← Nat.card_coe_set_eq, SetLike.coe_sort_coe,
+    Nat.card_addSubmonoidMultiples, addOrderOf_coe_rat]
+
+end RationalMultiple
 
 section PeriodDiv
 

@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.Topology.Algebra.Group.SubmonoidClosure
 public import Mathlib.Topology.Instances.AddCircle.DenseSubgroup
 public import Mathlib.Topology.Instances.AddCircle.Real
-
-import TauCeti.Algebra.AddCircle
 
 /-!
 # The orbit of a rotation of the circle
@@ -21,10 +18,12 @@ dichotomy for these orbits:
 
 * if `a` has infinite additive order, every forward orbit is dense, and the rotation is minimal:
   a nonempty closed set mapped into itself by `(a + ·)` is the whole circle;
-* if `a` has finite additive order, the orbit of `0` is finite; when `a` is the class of a
+* if `a` has finite additive order, the orbit of `0` is finite. When `a` is the class of a
   rational multiple `q * p` of the period, the orbit of `0` is exactly the `q.den`-torsion of the
-  circle, so it has `q.den` points. These two counting statements hold for a positive period in
-  any linearly ordered field, as does Mathlib's `AddCircle.addOrderOf_coe_rat`.
+  circle, so it has `q.den` points; these purely algebraic counting statements,
+  `AddCircle.range_nsmul_coe_rat` and `AddCircle.ncard_range_nsmul_coe_rat`, hold for a positive
+  period in any linearly ordered field and live in `TauCeti.Algebra.AddCircle`, beside the
+  torsion API they use.
 
 In the language of rhythm, a pulse of period `q * p` played against a cycle of length `p`
 resolves after `q.den` beats, while a pulse of irrational ratio to the cycle comes arbitrarily
@@ -39,8 +38,6 @@ point are dense exactly when all of its integer multiples are.
 * `AddCircle.denseRange_nsmul_iff`: the `ℕ`-orbit of `a` is dense iff `addOrderOf a = 0`.
 * `AddCircle.denseRange_add_nsmul_iff`: the same for the forward orbit of any point.
 * `AddCircle.eq_univ_of_isClosed_of_mapsTo_add`: minimality of a rotation of infinite order.
-* `AddCircle.range_nsmul_coe_rat`: the orbit of the class of `q * p` is the `q.den`-torsion.
-* `AddCircle.ncard_range_nsmul_coe_rat`: that orbit has exactly `q.den` points.
 * `AddCircle.denseRange_nsmul_xor_finite_range`: every `ℕ`-orbit is dense or finite, and never
   both.
 
@@ -102,30 +99,5 @@ theorem denseRange_nsmul_xor_finite_range (a : AddCircle p) :
   exact xor_not_left.mpr Iff.rfl
 
 end Real
-
-section Rational
-
-variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {p : 𝕜} [Fact (0 < p)]
-
-/-- The `ℕ`-orbit of the class of a rational multiple `q * p` of the period is the
-`q.den`-torsion of the circle. -/
-theorem range_nsmul_coe_rat (q : ℚ) :
-    range (· • ((q * p : 𝕜) : AddCircle p) : ℕ → AddCircle p) =
-      ((AddCircle p)[(q.den : ℤ)] : Set (AddCircle p)) := by
-  have hfin : IsOfFinAddOrder ((q * p : 𝕜) : AddCircle p) := by
-    rw [← addOrderOf_pos_iff, addOrderOf_coe_rat]
-    exact q.pos
-  rw [← AddSubmonoid.coe_multiples, hfin.multiples_eq_zmultiples,
-    eq_torsionBy_of_natCard_eq p (Nat.cast_ne_zero.mpr q.den_nz)
-      (H := AddSubgroup.zmultiples _) (by rw [Nat.card_zmultiples, addOrderOf_coe_rat])]
-
-/-- The `ℕ`-orbit of the class of a rational multiple `q * p` of the period has exactly `q.den`
-points: a pulse of period `q * p` against a cycle of length `p` resolves after `q.den` beats. -/
-theorem ncard_range_nsmul_coe_rat (q : ℚ) :
-    (range (· • ((q * p : 𝕜) : AddCircle p) : ℕ → AddCircle p)).ncard = q.den := by
-  rw [← AddSubmonoid.coe_multiples, ← Nat.card_coe_set_eq, SetLike.coe_sort_coe,
-    Nat.card_addSubmonoidMultiples, addOrderOf_coe_rat]
-
-end Rational
 
 end AddCircle
