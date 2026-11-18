@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Dual.GeneralPosition
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproxProd
 
 import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
+import TauCeti.Analysis.AbsoluteValue.LinearForms
 import TauCeti.Data.Finset.Max
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
@@ -62,7 +63,9 @@ section Local
 variable [Fintype ι]
 
 /-- At an absolute value `w`, `card ι` linearly independent forms `l k`, `k ∈ t`, bound every
-coordinate of a point by a constant times any common bound on their values. -/
+coordinate of a point by a constant times any common bound on their values. The constant comes from
+`AbsoluteValue.exists_one_le_forall_apply_le_mul`; the hypotheses sit inside the existential so
+that the constant can be chosen for every `t` at once. -/
 private theorem exists_one_le_forall_apply_le_mul (w : AbsoluteValue F ℝ)
     (l : κ → Dual F (ι → F)) (t : Finset κ) :
     ∃ D : ℝ, 1 ≤ D ∧ (LinearIndepOn F l (t : Set κ) → #t = Fintype.card ι →
@@ -70,26 +73,12 @@ private theorem exists_one_le_forall_apply_le_mul (w : AbsoluteValue F ℝ)
   by_cases ht : LinearIndepOn F l (t : Set κ) ∧ #t = Fintype.card ι
   swap
   · exact ⟨1, le_rfl, fun h₁ h₂ ↦ (ht ⟨h₁, h₂⟩).elim⟩
-  -- Write each coordinate form as a combination of the forms `l k`, `k ∈ t`.
   let e : ι ≃ t := Fintype.equivOfCardEq (by rw [Fintype.card_coe, ht.2])
-  obtain ⟨a, ha⟩ := (ht.1.comp e e.injective).exists_sum_smul_eq_proj
-  refine ⟨1 + ∑ j, ∑ i, w (a j i),
-    le_add_of_nonneg_right (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ apply_nonneg _ _),
-    fun _ _ y j M hM ↦ ?_⟩
-  have hM0 : 0 ≤ M := (apply_nonneg _ _).trans (hM _ (e j).2)
-  have hy : y j = ∑ i, a j i * l (e i) y := by
-    simpa using (LinearMap.congr_fun (ha j) y).symm
-  calc w (y j) ≤ ∑ i, w (a j i) * w (l (e i) y) := by
-        rw [hy]
-        exact (w.sum_le _ _).trans_eq (by simp only [map_mul])
-    _ ≤ ∑ i, w (a j i) * M :=
-        sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_left (hM _ (e i).2) (apply_nonneg _ _)
-    _ = (∑ i, w (a j i)) * M := (sum_mul _ _ _).symm
-    _ ≤ (1 + ∑ j, ∑ i, w (a j i)) * M := by
-        refine mul_le_mul_of_nonneg_right ?_ hM0
-        refine (single_le_sum (f := fun j ↦ ∑ i, w (a j i))
-          (fun _ _ ↦ sum_nonneg fun _ _ ↦ apply_nonneg _ _) (mem_univ j)).trans ?_
-        exact le_add_of_nonneg_left zero_le_one
+  obtain ⟨D, hD1, hD⟩ := w.exists_one_le_forall_apply_le_mul (l := fun i ↦ l (e i))
+    ((ht.1.comp e e.injective).span_eq_top_of_card_eq_finrank'
+      (by simp [Subspace.dual_finrank_eq]))
+  exact ⟨D, hD1, fun _ _ y j M hM ↦
+    hD ((apply_nonneg _ _).trans (hM _ (e j).2)) (fun i ↦ hM _ (e i).2) j⟩
 
 /-- Completing forms `l k`, `k ∈ t`, by coordinate forms does not increase the local factor at an
 absolute value `w` lying over `v`: the factor of a coordinate form is at most `1`. -/
