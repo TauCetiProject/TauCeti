@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
-public import TauCeti.Analysis.Sobolev.Local.Reflection
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Locality
+import TauCeti.Analysis.Sobolev.Local.Reflection
+import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
 
 /-!
 # Composition of local Sobolev maps on half-discs at every order
@@ -22,14 +24,16 @@ form of `TauCeti.MemWkpLoc.contDiffOn_comp_succ`.
 Near a boundary point of a pseudoholomorphic curve with boundary on a totally real submanifold,
 the curve is modelled on a half-disc, and the boundary bootstrap needs the coefficients
 `J(z, u)` of the Cauchy-Riemann operator in the same local Sobolev class as `u`, up to the real
-axis. That is the domain-dependent form `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane`.
+axis. That is the domain-dependent form `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane`,
+in which `g(z, y)` need only be `C^{k+1}` for `z` in the closed upper half-plane, as the
+coefficients in a boundary chart are.
 
 ## Main declarations
 
 * `TauCeti.MemWkpLoc.contDiffOn_comp_succ_halfPlane`: composition with maps that are `C^{k+1}`
   on an open neighbourhood of the image, on half-discs.
 * `TauCeti.MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane`: the domain-dependent composition
-  `z ↦ g(z, u z)` on half-discs.
+  `z ↦ g(z, u z)` on half-discs, for `g` that is `C^{k+1}` on `{q | 0 ≤ q.1.im}` near the graph.
 
 ## References
 
@@ -62,53 +66,112 @@ theorem MemWkpLoc.contDiffOn_comp_succ_halfPlane (hp : 2 < p) {k : ℕ} {u : ℂ
     (hg : ContDiffOn ℝ (k + 1) g W) (huW : MapsTo u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) W) :
     MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) (fun z => g (u z)) := by
   have hp1 : (1 : ℝ≥0∞) ≤ p := by exact_mod_cast one_lt_two.le.trans hp.le
-  refine memWkpLoc_iff_locally.2 fun z hz => ?_
-  rcases (mem_ofPred.1 hz.2).lt_or_eq with hz0 | hz0
-  · -- Off the axis, the interior theorem applies on the upper half of `Ω`.
-    refine ⟨Ω.upperHalf, mem_nhdsWithin_of_mem_nhds (Ω.upperHalf.isOpen.mem_nhds
-      (Opens.mem_upperHalf.2 ⟨hz.1, hz0⟩)), ?_⟩
-    exact (hu.mono Ω.coe_upperHalf_subset).contDiffOn_comp_succ hp
-      (huc.mono Ω.coe_upperHalf_subset) hW hg (huW.mono_left Ω.coe_upperHalf_subset)
-  · -- On the axis, extend `u` by reflection to a disc about `x = z.re`, on which it is
-    -- continuous, and shrink the disc so that the extension takes values in `W`.
-    set x := z.re
-    have hzx : ((x : ℝ) : ℂ) = z := Complex.ext (by simp [x]) (by simp [hz0])
-    obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen _ hz.1
-    rw [← hzx] at hrΩ
-    set v := TauCeti.planarReflection (higherReflectionCoeff (k + 1)) u
-    have hv : MemWkpLoc p (ball (x : ℂ) r) (k + 1) v :=
-      MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp1 x r
-        (hu.mono (inter_subset_inter_left _ hrΩ))
-    have hvc : ContinuousOn v (ball (x : ℂ) r) :=
-      continuousOn_planarReflection (sum_higherReflectionCoeff k.succ_pos)
-        (fun _ hw _ j => imDilation_higherReflectionNode_mem_ball x r j hw)
-        (huc.mono (inter_subset_inter_left _ hrΩ))
-    have hvx : v x ∈ W := by
-      simp only [v]
-      rw [planarReflection_of_nonneg _ _ (by simp)]
-      exact huW ⟨hrΩ (mem_ball_self hr), by simp⟩
-    obtain ⟨ε, hε, hεr⟩ := Metric.mem_nhds_iff.1 (inter_mem (ball_mem_nhds _ hr)
-      ((hvc.continuousAt (ball_mem_nhds _ hr)).preimage_mem_nhds (hW.mem_nhds hvx)))
-    refine ⟨ball (x : ℂ) ε ∩ {w | 0 ≤ w.im}, ?_, ?_⟩
-    · rw [← hzx]
-      exact mem_nhdsWithin.2 ⟨ball (x : ℂ) ε, isOpen_ball, mem_ball_self hε,
-        fun w hw => ⟨hw.1, hw.2.2⟩⟩
-    exact (MemWkpLoc.contDiffOn_comp_succ (Ω := ⟨_, isOpen_ball⟩) hp
-        (hv.mono fun w hw => (hεr hw).1) (hvc.mono fun w hw => (hεr hw).1) hW hg
-        (fun w hw => (hεr hw).2)).congr_mono
-      (fun w hw => by simp only [v, planarReflection_of_nonneg _ _ hw.2]) inter_subset_left
+  refine inter_setOf_im_nonneg_induction (MemWkpLoc p · (k + 1) fun z => g (u z))
+    memWkpLoc_iff_locally.2
+    ((hu.mono Ω.coe_upperHalf_subset).contDiffOn_comp_succ hp (huc.mono Ω.coe_upperHalf_subset)
+      hW hg (huW.mono_left Ω.coe_upperHalf_subset))
+    fun x r _ hrΩ => ?_
+  -- On a half-disc centred on the axis, extend `u` by reflection to the disc, on which it is
+  -- continuous, and restrict to the open part of the disc where the extension takes values in `W`.
+  set v := TauCeti.planarReflection (higherReflectionCoeff (k + 1)) u
+  have hv : MemWkpLoc p (ball (x : ℂ) r) (k + 1) v :=
+    MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp1 x r
+      (hu.mono (inter_subset_inter_left _ hrΩ))
+  have hvc : ContinuousOn v (ball (x : ℂ) r) :=
+    continuousOn_planarReflection (sum_higherReflectionCoeff k.succ_pos)
+      (fun _ hw _ j => imDilation_higherReflectionNode_mem_ball x r j hw)
+      (huc.mono (inter_subset_inter_left _ hrΩ))
+  let O : Opens ℂ := ⟨ball (x : ℂ) r ∩ v ⁻¹' W, hvc.isOpen_inter_preimage isOpen_ball hW⟩
+  refine (MemWkpLoc.contDiffOn_comp_succ (Ω := O) hp (hv.mono inter_subset_left)
+      (hvc.mono inter_subset_left) hW hg fun w hw => hw.2).congr_mono
+    (fun w hw => by simp only [v, planarReflection_of_nonneg _ _ hw.2]) fun w hw => ⟨hw.1, ?_⟩
+  simp only [mem_preimage, v, planarReflection_of_nonneg _ _ hw.2]
+  exact huW ⟨hrΩ hw.1, hw.2⟩
+
+variable (F) in
+/-- The real coordinates `(im z, (re z, y))` of `ℂ × F`, with the normal coordinate first, as used
+by the half-space extension. -/
+private def imReProdEquiv : (ℂ × F) ≃L[ℝ] (ℝ × (ℝ × F)) :=
+  ((Complex.equivRealProdCLM.trans (ContinuousLinearEquiv.prodComm ℝ ℝ ℝ)).prodCongr
+    (ContinuousLinearEquiv.refl ℝ F)).trans (ContinuousLinearEquiv.prodAssoc ℝ ℝ ℝ F)
+
+omit [FiniteDimensional ℝ F] in
+private theorem imReProdEquiv_apply (q : ℂ × F) :
+    imReProdEquiv F q = (q.1.im, (q.1.re, q.2)) :=
+  rfl
+
+omit [FiniteDimensional ℝ F] in
+private theorem im_fst_imReProdEquiv_symm (w : ℝ × (ℝ × F)) :
+    ((imReProdEquiv F).symm w).1.im = w.1 := by
+  obtain ⟨q, rfl⟩ := (imReProdEquiv F).surjective w
+  rw [ContinuousLinearEquiv.symm_apply_apply, imReProdEquiv_apply]
+
+omit [FiniteDimensional ℝ H] in
+/-- Near a point of `{q | 0 ≤ q.1.im}`, a map that is `C^{k+1}` on `W ∩ {q | 0 ≤ q.1.im}` for an
+open `W` agrees on `{q | 0 ≤ q.1.im}` with a map that is `C^{k+1}` on an open neighbourhood of the
+point. At a point with `q.1.im = 0` the extension reflects across `{q | q.1.im = 0}`. -/
+private theorem exists_contDiffOn_eq_of_im_nonneg {k : ℕ} {g : ℂ × F → H} {W : Set (ℂ × F)}
+    (hW : IsOpen W) (hg : ContDiffOn ℝ k g (W ∩ {q | 0 ≤ q.1.im})) {q₀ : ℂ × F} (hq₀ : q₀ ∈ W)
+    (hq₀0 : 0 ≤ q₀.1.im) :
+    ∃ T : Set (ℂ × F), IsOpen T ∧ q₀ ∈ T ∧ ∃ G : ℂ × F → H, ContDiffOn ℝ k G T ∧
+      ∀ q ∈ T, 0 ≤ q.1.im → G q = g q := by
+  rcases hq₀0.lt_or_eq with hpos | hzero
+  · exact ⟨W ∩ {q | 0 < q.1.im},
+      hW.inter (isOpen_lt continuous_const (Complex.continuous_im.comp continuous_fst)),
+      ⟨hq₀, hpos⟩, g, hg.mono fun q hq => ⟨hq.1, (show 0 < q.1.im from hq.2).le⟩,
+      fun _ _ _ => rfl⟩
+  · have hge : ContDiffOn ℝ k (g ∘ (imReProdEquiv F).symm)
+        (HalfSpaceExtension.upperHalfSpace (ℝ × F) ∩ (imReProdEquiv F).symm ⁻¹' W) := by
+      refine hg.comp (imReProdEquiv F).symm.contDiff.contDiffOn fun w hw => ⟨hw.2, ?_⟩
+      simpa only [mem_ofPred_eq, im_fst_imReProdEquiv_symm] using
+        HalfSpaceExtension.mem_upperHalfSpace.1 hw.1
+    have hq₀W : ((0 : ℝ), (q₀.1.re, q₀.2)) ∈ (imReProdEquiv F).symm ⁻¹' W := by
+      rw [mem_preimage, hzero, ← imReProdEquiv_apply, ContinuousLinearEquiv.symm_apply_apply]
+      exact hq₀
+    obtain ⟨G, hG, hGg⟩ := HalfSpaceExtension.exists_local_contDiff_extension_halfSpace k
+      (g ∘ (imReProdEquiv F).symm) (hW.preimage (imReProdEquiv F).symm.continuous) hge _ hq₀W
+    obtain ⟨T, hT, hTo, hq₀T⟩ := _root_.eventually_nhds_iff.1 hGg
+    refine ⟨imReProdEquiv F ⁻¹' T, hTo.preimage (imReProdEquiv F).continuous, ?_,
+      G ∘ imReProdEquiv F, (hG.comp (imReProdEquiv F).contDiff).contDiffOn, fun q hq hq0 => ?_⟩
+    · rw [mem_preimage, imReProdEquiv_apply, ← hzero]
+      exact hq₀T
+    · simpa only [Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply] using
+        hT _ hq (by simpa only [imReProdEquiv_apply] using hq0)
 
 /-- **Composition with domain dependence on half-discs at every order.** For `p > 2`, if `u` is
 continuous on `Ω ∩ {0 ≤ im}` and belongs to `W^{k+1,p}_loc(Ω ∩ {0 ≤ im})`, and `g : ℂ × F → H` is
-`C^{k+1}` on an open set containing the graph of `u` over `Ω ∩ {0 ≤ im}`, then `z ↦ g (z, u z)`
-belongs to `W^{k+1,p}_loc(Ω ∩ {0 ≤ im})`. -/
+`C^{k+1}` on `W ∩ {q | 0 ≤ q.1.im}` for an open set `W` containing the graph of `u` over
+`Ω ∩ {0 ≤ im}`, then `z ↦ g (z, u z)` belongs to `W^{k+1,p}_loc(Ω ∩ {0 ≤ im})`. The map `g` need
+only be defined for `z` in the closed upper half-plane, as for the coefficients of a
+Cauchy-Riemann operator in a boundary chart. -/
 theorem MemWkpLoc.contDiffOn_comp_graph_succ_halfPlane (hp : 2 < p) {k : ℕ} {u : ℂ → F}
     {g : ℂ × F → H} {W : Set (ℂ × F)}
     (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u)
     (huc : ContinuousOn u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) (hW : IsOpen W)
-    (hg : ContDiffOn ℝ (k + 1) g W) (huW : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, (z, u z) ∈ W) :
-    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) (fun z => g (z, u z)) :=
-  ((contDiff_id.memWkpLoc).prodMk hu).contDiffOn_comp_succ_halfPlane hp
-    (continuousOn_id.prodMk huc) hW hg huW
+    (hg : ContDiffOn ℝ (k + 1) g (W ∩ {q | 0 ≤ q.1.im}))
+    (huW : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, (z, u z) ∈ W) :
+    MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) (fun z => g (z, u z)) := by
+  have hgrc : ContinuousOn (fun z => (z, u z)) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
+    continuousOn_id.prodMk huc
+  refine memWkpLoc_iff_locally.2 fun z hz => ?_
+  obtain ⟨T, hTo, hzT, G, hG, hGg⟩ :=
+    exists_contDiffOn_eq_of_im_nonneg hW hg (huW z hz) (mem_ofPred.1 hz.2)
+  obtain ⟨O, hO, hOeq⟩ := continuousOn_iff'.1 hgrc T hTo
+  have hzO : z ∈ O := by
+    have h : z ∈ (fun z => (z, u z)) ⁻¹' T ∩ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := ⟨hzT, hz⟩
+    rw [hOeq] at h
+    exact h.1
+  let Ω' : Opens ℂ := Ω ⊓ ⟨O, hO⟩
+  have hsub : (Ω' : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
+    inter_subset_inter_left _ inter_subset_left
+  have hmaps : MapsTo (fun z => (z, u z)) ((Ω' : Set ℂ) ∩ {z | 0 ≤ z.im}) T := fun w hw => by
+    have h : w ∈ O ∩ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := ⟨hw.1.2, hw.1.1, hw.2⟩
+    rw [← hOeq] at h
+    exact h.1
+  refine ⟨(Ω' : Set ℂ) ∩ {z | 0 ≤ z.im}, ?_, ?_⟩
+  · refine mem_of_superset (inter_mem_nhdsWithin _ (hO.mem_nhds hzO)) fun w hw => ?_
+    exact ⟨⟨hw.1.1, hw.2⟩, hw.1.2⟩
+  refine (((contDiff_id.memWkpLoc).prodMk (hu.mono hsub)).contDiffOn_comp_succ_halfPlane hp
+    (hgrc.mono hsub) hTo hG hmaps).congr_mono (fun w hw => (hGg _ (hmaps hw) hw.2).symm) subset_rfl
 
 end TauCeti
