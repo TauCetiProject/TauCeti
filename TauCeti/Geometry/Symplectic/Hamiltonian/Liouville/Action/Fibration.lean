@@ -95,23 +95,22 @@ private theorem periodLattice_eq_closure_mvfderiv_comp {ι : Type*} [Fintype ι]
       (D.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)).toLinearEquiv
   have hLw (v : ι → ℝ) (w : F) : L v w = v ⬝ᵥ D w := by
     simp [L]
-  -- The chain rule for a function of `κ`, with `dκ_b = D`.
-  have hchain {φ : (ι → ℝ) → ℝ} (hφ : DifferentiableAt ℝ φ (κ b)) (w : TangentSpace J b) :
-      mvfderiv J (fun c ↦ φ (κ c)) b w = fderiv ℝ φ (κ b) (D w) := by
-    refine (mvfderiv_comp_apply_of_differentiableAt hφ ((hκ b).mdifferentiableAt (by simp))
-      w).trans ?_
+  have hκb : MDifferentiableAt J 𝓘(ℝ, ι → ℝ) κ b := (hκ b).mdifferentiableAt (by simp)
+  -- `dκ_b = D` on tangent vectors.
+  have hdκ (w : TangentSpace J b) : mvfderiv J κ b w = D w := by
     rw [mvfderiv_apply_eq_mfderiv_apply, ← hD]
-    rfl
-  have hLv (v : ι → ℝ) : mvfderiv J (fun c ↦ v ⬝ᵥ κ c) b = L v := by
-    let φ := LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)
-    refine ContinuousLinearMap.ext fun w ↦ (hchain (φ := φ) φ.differentiableAt w).trans ?_
-    rw [φ.fderiv]
-    exact (hLw v w).symm
+    exact congrFun D.coe_coe w
+  -- `d(v ⬝ᵥ κ)_b = L v`, by the chain rule for the linear map `v ⬝ᵥ ·`.
+  have hLv (v : ι → ℝ) : mvfderiv J (fun c ↦ v ⬝ᵥ κ c) b = L v :=
+    ContinuousLinearMap.ext fun w ↦
+      ((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)).mvfderiv_comp_apply hκb w).trans
+        ((congrArg _ (hdκ w)).trans (hLw v w).symm)
   -- `2π daᵢ = L (p i)`, by the chain rule and the formula for `dAᵢ`.
   have hLp (i : ι) : (2 * Real.pi) • mvfderiv J (fun c ↦ A (κ c) i) b = L (p i) := by
     refine ContinuousLinearMap.ext fun w ↦ ?_
-    have h1 : mvfderiv J (fun c ↦ A (κ c) i) b w = (2 * Real.pi)⁻¹ * (p i ⬝ᵥ D w) :=
-      (hchain (hA i).differentiableAt w).trans (fderiv_apply_eq_of_hasFDerivAt_action (hA i) _)
+    have h1 : mvfderiv J (fun c ↦ A (κ c) i) b w = (2 * Real.pi)⁻¹ * (p i ⬝ᵥ D w) := by
+      rw [← fderiv_apply_eq_of_hasFDerivAt_action (hA i), ← hdκ]
+      exact mvfderiv_comp_apply_of_differentiableAt (hA i).differentiableAt hκb w
     refine Eq.trans ?_ (hLw _ _).symm
     rw [smul_apply, h1, smul_eq_mul]
     field_simp

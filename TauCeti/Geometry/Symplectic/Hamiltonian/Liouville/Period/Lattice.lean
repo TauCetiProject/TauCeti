@@ -222,16 +222,13 @@ private theorem mvfderiv_dualCoord_dotProduct_coord (α : F →L[ℝ] ℝ) :
   classical
   let φ : (Fin (finrank ℝ F) → ℝ) →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
     (dotProductEquiv ℝ (Fin (finrank ℝ F)) (h.dualCoord b α))
-  have h1 (w : TangentSpace J b) : mvfderiv J (φ ∘ h.coord b) b w = φ (h.coordEquiv b w) := by
-    rw [mvfderiv_apply_eq_mfderiv_apply,
-      mfderiv_comp b φ.mdifferentiableAt (((h.coord_spec b).1 b).mdifferentiableAt (by simp)),
-      φ.mfderiv_eq, (h.coord_spec b).2.1]
-    -- This is `ContinuousLinearMap.comp_apply`, which does not rewrite here because `w` is
-    -- typed as a tangent vector rather than as an element of the model space `F`.
-    rfl
   have h2 : φ.comp (h.coordEquiv b : F →L[ℝ] Fin (finrank ℝ F) → ℝ) = α :=
     (h.dualCoord b).injective (funext fun i ↦ by simp [φ, dualCoord_apply])
-  exact ContinuousLinearMap.ext fun w ↦ (h1 w).trans (congrArg (· w) h2)
+  -- The chain rule for the linear map `φ`, with `d(coord)_b = coordEquiv`.
+  refine ContinuousLinearMap.ext fun w ↦
+    (φ.mvfderiv_comp_apply (((h.coord_spec b).1 b).mdifferentiableAt (by simp)) w).trans ?_
+  rw [mvfderiv_apply_eq_mfderiv_apply, (h.coord_spec b).2.1]
+  exact (φ.comp_apply _ w).symm.trans (DFunLike.congr_fun h2 w)
 
 /-- **A covector `dg_b` acts by the time-one map of the Hamiltonian flow of `g ∘ π`.** For every
 `C²` function `g` on `B` with differential `α` at `b`, the action of `α` moves each point `x` of
