@@ -41,10 +41,14 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero`: over a division ring in
   which `2 = 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero above.
+* `TauCeti.RealProjectiveSpace.finrank_range_cellularChainComplex_d_of_two_ne_zero`: over a
+  division ring in which `2 ≠ 0`, the cellular differential from degree `k + 1` to degree `k` has
+  rank `1` for odd `k < N` and `0` otherwise.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring in
   which `2 ≠ 0`, `Hₖ(RPᴺ; R)` is one-dimensional only in degree `0` and, for odd `N`, in degree
   `N`.
 * `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero`,
+  `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero`,
   `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationLinearEquivOfOdd`,
   `TauCeti.RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even`: the same
@@ -154,6 +158,25 @@ private lemma map_ker_d_eq_ker_two (hk : Odd k) (hkN : k + 1 ≤ N) :
     exact (key x).1 hx
   · intro hy
     exact ⟨(cellularChainCoord _ R (theCell hkN)).symm y, (key _).2 (by simpa using hy), by simp⟩
+
+/-- **Ranks of the cellular differentials of `RPᴺ` away from characteristic two.** If `2 ≠ 0` in
+the division ring `F`, the differential of the cellular chain complex of `RPᴺ` from degree `k + 1`
+to degree `k` has rank `1` for odd `k < N`, where it is multiplication by twice a unit, and rank
+`0` otherwise. For `RP²` the differentials `d₁` and `d₂` have ranks `0` and `1`. -/
+theorem finrank_range_cellularChainComplex_d_of_two_ne_zero {F : Type} [DivisionRing F]
+    (h2 : (2 : F) ≠ 0) :
+    Module.finrank F (LinearMap.range ((cellularChainComplex (univ : Set (RealProjectiveSpace N))
+      (ModuleCat.of F F)).d (k + 1) k).hom) = if Odd k ∧ k < N then 1 else 0 := by
+  split_ifs with hk
+  · rw [← LinearEquiv.finrank_map_eq (cellularChainCoord _ F (theCell hk.2.le)),
+      map_range_d_eq_span_two F hk.1 hk.2, IsSimpleModule.span_singleton_eq_top F h2,
+      finrank_top, Module.finrank_self]
+  · have hd : (cellularChainComplex (univ : Set (RealProjectiveSpace N))
+        (ModuleCat.of F F)).d (k + 1) k = 0 := by
+      rcases Nat.even_or_odd k with hke | hko
+      · exact d_eq_zero_of_even F hke
+      · exact d_eq_zero_of_le F (by grind)
+    rw [hd, ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot]
 
 /-- The cellular homology of `RPᴺ` in a degree `k ≤ N` where both adjacent differentials vanish
 is `R`. -/
@@ -327,6 +350,19 @@ theorem finrank_singularHomology_projectivization_of_two_eq_zero {R : Type} [Div
     (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
       (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm.trans
     (finrank_singularHomology_of_two_eq_zero h2 k)
+
+/-- **Homology of `ℙ ℝ (Fin (N + 1) → ℝ)` away from characteristic two.** If `2 ≠ 0` in the
+division ring `F`, for instance `F = ℚ`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); F)` is one-dimensional in
+degree `0` and, for odd `N`, in degree `N`, and vanishes in every other degree. -/
+theorem finrank_singularHomology_projectivization_of_two_ne_zero {F : Type} [DivisionRing F]
+    (h2 : (2 : F) ≠ 0) (k : ℕ) :
+    Module.finrank F (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} F) k).obj
+      (ModuleCat.of F F)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
+      if k = 0 ∨ k = N ∧ Odd N then 1 else 0 :=
+  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} F) k).obj
+    (ModuleCat.of F F)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+      (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm.trans
+    (finrank_singularHomology_of_two_ne_zero h2 k)
 
 /-- For odd `k < N`, `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R) ≅ R / 2R`. -/
 def singularHomologyProjectivizationLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :

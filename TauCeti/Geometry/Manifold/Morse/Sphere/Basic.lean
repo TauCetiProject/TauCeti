@@ -53,6 +53,8 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.criticalCount_sphereHeight`: it has one critical point of index `n` and one of index
+  `0`.
 * `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
@@ -413,6 +415,22 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
   ext x
   simp
+
+/-- The height function on `Sⁿ` has one critical point of index `n`, the north pole, and one of
+index `0`, the south pole. For `n = 0` these are the two points of `S⁰`, both of index `0`. -/
+theorem criticalCount_sphereHeight (v : sphere (0 : E) 1) (j : ℕ) :
+    criticalCount (𝓡 n) (sphereHeight v) j = (if j = n then 1 else 0) + if j = 0 then 1 else 0 := by
+  have hv : v ≠ -v := ne_neg_of_mem_unit_sphere ℝ v
+  have hset : {x ∈ criticalPoints (𝓡 n) (sphereHeight v) |
+      manifoldMorseIndex (𝓡 n) (sphereHeight v) x = j} =
+      (if j = n then {v} else ∅) ∪ if j = 0 then {-v} else ∅ := by
+    ext x
+    simp only [criticalPoints_sphereHeight, mem_insert_iff, mem_singleton_iff, mem_union]
+    constructor
+    · rintro ⟨rfl | rfl, rfl⟩ <;> simp
+    · rintro (h | h) <;> split_ifs at h with hj <;> simp_all
+  rw [criticalCount_def, hset, encard_union_eq (by split_ifs <;> simp [hv])]
+  split_ifs <;> simp
 
 /-- **Every level of the height except the poles is regular.** The only critical points of the
 height function are the poles, where its values are `1` and `-1`. -/
