@@ -213,6 +213,33 @@ theorem norm_curveVelocity_eq_one_of_dist_eq_abs {γ : ℝ → M} {ε : ℝ} (h�
   -- transports the fibre norm back to `T_{γ 0} M`.
   rw [zero_smul, riemannianExp_zero, hv]
 
+-- The degenerate case of the local constant-speed identity is locally constant.
+private theorem eventuallyEq_const_of_dist_eq_mul_zero {γ : ℝ → M} {ε t₀ : ℝ}
+    (hε : 0 < ε)
+    (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
+      dist (γ s) (γ t) = |s - t| * 0) : γ =ᶠ[𝓝 t₀] fun _ ↦ γ t₀ := by
+  have ht₀ : t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := ⟨by linarith, by linarith⟩
+  filter_upwards [Icc_mem_nhds (by linarith : t₀ - ε < t₀)
+    (by linarith : t₀ < t₀ + ε)] with t ht
+  rw [← dist_eq_zero, hdist t ht t₀ ht₀, mul_zero]
+
+-- Normalize the local constant-speed identity to the zero-centred unit-speed identity.
+private theorem dist_reparam_eq_abs_of_dist_eq_mul_abs {γ : ℝ → M} {ε c t₀ : ℝ}
+    (hc : 0 < c)
+    (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
+      dist (γ s) (γ t) = |s - t| * c) :
+    ∀ s ∈ Icc (-(ε * c)) (ε * c), ∀ t ∈ Icc (-(ε * c)) (ε * c),
+      dist (γ (s / c + t₀)) (γ (t / c + t₀)) = |s - t| := by
+  have hmaps : ∀ s ∈ Icc (-(ε * c)) (ε * c), s / c + t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := by
+    intro s hs
+    have hleft : -ε ≤ s / c := (le_div_iff₀ hc).mpr (by nlinarith [hs.1])
+    have hright : s / c ≤ ε := (div_le_iff₀ hc).mpr hs.2
+    exact ⟨by linarith, by linarith⟩
+  intro s hs t ht
+  have hsub : s / c + t₀ - (t / c + t₀) = (s - t) / c := by ring
+  rw [hdist _ (hmaps s hs) _ (hmaps t ht), hsub, abs_div, abs_of_pos hc,
+    div_mul_cancel₀ _ hc.ne']
+
 /-- **A curve realizing distances at constant speed is smooth.** If
 `dist (γ s) (γ t) = |s - t| * c` for all `s, t` in `[t₀ - ε, t₀ + ε]`, with `c ≥ 0`, then `γ` is
 smooth at `t₀`. -/
@@ -220,32 +247,20 @@ theorem contMDiffAt_of_dist_eq_mul_abs {γ : ℝ → M} {ε c t₀ : ℝ} (hε :
     (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
       dist (γ s) (γ t) = |s - t| * c) :
     ContMDiffAt 𝓘(ℝ, ℝ) I ∞ γ t₀ := by
-  have ht₀ : t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := ⟨by linarith, by linarith⟩
   rcases hc.eq_or_lt with rfl | hc
-  · refine (contMDiffAt_const (c := γ t₀)).congr_of_eventuallyEq ?_
-    filter_upwards [Icc_mem_nhds (by linarith : t₀ - ε < t₀) (by linarith : t₀ < t₀ + ε)]
-      with t ht
-    rw [← dist_eq_zero, hdist t ht t₀ ht₀, mul_zero]
-  set η : ℝ → M := fun s ↦ γ (t₀ + s / c)
-  have hb : ∀ s ∈ Icc (-(ε * c)) (ε * c), t₀ + s / c ∈ Icc (t₀ - ε) (t₀ + ε) := by
-    intro s hs
-    constructor
-    · have h : -ε ≤ s / c := (le_div_iff₀ hc).mpr (by nlinarith [hs.1])
-      linarith
-    · have h : s / c ≤ ε := (div_le_iff₀ hc).mpr hs.2
-      linarith
-  have hη : ∀ s ∈ Icc (-(ε * c)) (ε * c), ∀ t ∈ Icc (-(ε * c)) (ε * c),
-      dist (η s) (η t) = |s - t| := by
-    intro s hs t ht
-    rw [hdist _ (hb s hs) _ (hb t ht), show t₀ + s / c - (t₀ + t / c) = (s - t) / c by ring,
-      abs_div, abs_of_pos hc, div_mul_cancel₀ _ hc.ne']
+  · exact (contMDiffAt_const (c := γ t₀)).congr_of_eventuallyEq
+      (eventuallyEq_const_of_dist_eq_mul_zero hε hdist)
+  let η : ℝ → M := γ ∘ (fun s : ℝ ↦ s / c + t₀)
+  have hη := dist_reparam_eq_abs_of_dist_eq_mul_abs hc hdist
   have hηsmooth : ContMDiffAt 𝓘(ℝ, ℝ) I ∞ η (c * (t₀ - t₀)) := by
-    simpa only [sub_self, mul_zero] using contMDiffAt_of_dist_eq_abs (mul_pos hε hc) hη
+    simpa only [sub_self, mul_zero] using
+      contMDiffAt_of_dist_eq_abs (γ := η) (mul_pos hε hc) hη
   have hψ : ContMDiffAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ (fun t : ℝ ↦ c * (t - t₀)) t₀ :=
     contMDiffAt_iff_contDiffAt.mpr (by fun_prop)
   have heq : (fun t : ℝ ↦ η (c * (t - t₀))) = γ := by
     funext t
-    simp only [η, mul_div_cancel_left₀ (t - t₀) hc.ne', add_sub_cancel]
+    simp only [η, Function.comp_apply, mul_div_cancel_left₀ (t - t₀) hc.ne',
+      sub_add_cancel]
   simpa only [Function.comp_def, heq] using hηsmooth.comp t₀ hψ
 
 /-- A curve with `dist (γ s) (γ t) = |s - t| * c` near `t₀`, with `c ≥ 0`, has Riemannian
@@ -255,26 +270,11 @@ theorem norm_curveVelocity_eq_of_dist_eq_mul_abs {γ : ℝ → M} {ε c t₀ : �
     (hdist : ∀ s ∈ Icc (t₀ - ε) (t₀ + ε), ∀ t ∈ Icc (t₀ - ε) (t₀ + ε),
       dist (γ s) (γ t) = |s - t| * c) : ‖curveVelocity I γ t₀‖ = c := by
   rcases hc.eq_or_lt with rfl | hc
-  · have ht₀ : t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := ⟨by linarith, by linarith⟩
-    have heq : γ =ᶠ[𝓝 t₀] fun _ ↦ γ t₀ := by
-      filter_upwards [Icc_mem_nhds (by linarith : t₀ - ε < t₀)
-        (by linarith : t₀ < t₀ + ε)] with t ht
-      rw [← dist_eq_zero, hdist t ht t₀ ht₀, mul_zero]
-    rw [heq.norm_curveVelocity_eq (I := I), curveVelocity_const, norm_zero]
+  · rw [(eventuallyEq_const_of_dist_eq_mul_zero hε hdist).norm_curveVelocity_eq (I := I),
+      curveVelocity_const, norm_zero]
   let η : ℝ → M := γ ∘ (fun s : ℝ ↦ s / c + t₀)
-  have hmaps : ∀ s ∈ Icc (-(ε * c)) (ε * c), s / c + t₀ ∈ Icc (t₀ - ε) (t₀ + ε) := by
-    intro s hs
-    have hleft : -ε ≤ s / c := (le_div_iff₀ hc).mpr (by nlinarith [hs.1])
-    have hright : s / c ≤ ε := (div_le_iff₀ hc).mpr hs.2
-    exact ⟨by linarith, by linarith⟩
-  have hηdist : ∀ s ∈ Icc (-(ε * c)) (ε * c), ∀ t ∈ Icc (-(ε * c)) (ε * c),
-      dist (η s) (η t) = |s - t| := by
-    intro s hs t ht
-    have hsub : s / c + t₀ - (t / c + t₀) = (s - t) / c := by ring
-    dsimp only [η, Function.comp_apply]
-    rw [hdist _ (hmaps s hs) _ (hmaps t ht), hsub, abs_div, abs_of_pos hc,
-      div_mul_cancel₀ _ hc.ne']
-  have hnorm := norm_curveVelocity_eq_one_of_dist_eq_abs (I := I) (mul_pos hε hc) hηdist
+  have hηdist := dist_reparam_eq_abs_of_dist_eq_mul_abs hc hdist
+  have hnorm := norm_curveVelocity_eq_one_of_dist_eq_abs (I := I) (γ := η) (mul_pos hε hc) hηdist
   have hmd : MDifferentiableAt 𝓘(ℝ, ℝ) I γ (0 / c + t₀) := by
     simpa only [zero_div, zero_add] using
       (contMDiffAt_of_dist_eq_mul_abs (I := I) hε hc.le hdist).mdifferentiableAt (by simp)
