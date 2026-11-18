@@ -291,7 +291,7 @@ theorem toBridgeForest_mapWalk (f : Iso G H) {x y : V(G)} (p : G.Walk x y) :
   exact toBridgeForest_mapWalk_edges f p x.2 y.2
 
 /-- Forest edge-set transport is original edge-set transport restricted to bridges. -/
-theorem bridgeForestIso_mapEdgeSet (f : Iso G H) (F : Set β) :
+theorem mapEdgeSet_bridgeForestIso (f : Iso G H) (F : Set β) :
     f.bridgeForestIso.mapEdgeSet F = f.mapEdgeSet F ∩ H.bridgeSet := by
   ext e
   by_cases he : H.IsBridge e
@@ -305,9 +305,9 @@ theorem bridgeForestIso_mapEdgeSet (f : Iso G H) (F : Set β) :
       (fun h ↦ he (Graph.mem_bridgeSet.mp h.2))
 
 /-- A set of bridges has the same transported identities in the graph and its bridge forest. -/
-theorem bridgeForestIso_mapEdgeSet_of_subset (f : Iso G H) {F : Set β}
+theorem mapEdgeSet_bridgeForestIso_of_subset (f : Iso G H) {F : Set β}
     (hF : F ⊆ G.bridgeSet) : f.bridgeForestIso.mapEdgeSet F = f.mapEdgeSet F := by
-  rw [bridgeForestIso_mapEdgeSet, inter_eq_left.mpr
+  rw [mapEdgeSet_bridgeForestIso, inter_eq_left.mpr
     ((f.mapEdgeSet_mono hF).trans_eq f.mapEdgeSet_bridgeSet)]
 
 end Graph.Iso
