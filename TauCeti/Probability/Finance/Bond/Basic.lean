@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Topology.Order.ProjIcc
@@ -64,6 +65,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real Set
+open scoped NNReal
 
 namespace TauCeti.Finance
 
@@ -180,6 +182,19 @@ theorem hasDerivWithinAt_bondPrice (hr : ContinuousOn r (Icc 0 T)) (β₀ : ℝ)
 theorem continuousOn_bondPrice (hr : ContinuousOn r (Icc 0 T)) (β₀ : ℝ) :
     ContinuousOn (bondPrice r β₀) (Icc 0 T) :=
   fun _ ht ↦ (hasDerivWithinAt_bondPrice hr β₀ ht).continuousWithinAt
+
+/-- The bond's interest-income density is integrable on the finite horizon `[0, T]`
+when the short rate is continuous there. -/
+theorem integrable_mul_bondPrice_timeMeasure {T : ℝ≥0}
+    (hr : ContinuousOn r (Icc 0 (T : ℝ))) (β₀ : ℝ) :
+    Integrable (fun t : ℝ≥0 ↦ r t * bondPrice r β₀ t)
+      (TauCeti.Probability.timeMeasure T) := by
+  have hc : ContinuousOn (fun t : ℝ≥0 ↦ r t * bondPrice r β₀ t) (Icc 0 T) :=
+    (hr.mul (continuousOn_bondPrice hr β₀)).comp NNReal.continuous_coe.continuousOn
+      (fun t ht ↦ ⟨t.coe_nonneg, by exact_mod_cast ht.2⟩)
+  have h := (hc.integrableOn_Icc (μ := TauCeti.Probability.timeMeasure T)).mono_set
+    Ioc_subset_Icc_self
+  simpa only [IntegrableOn, TauCeti.Probability.timeMeasure_restrict, min_self] using h
 
 /-- **The account in integral form.** On a horizon `[0, T]` on which the short rate is
 continuous, the interest accrued between two dates of the horizon is the change in the account:

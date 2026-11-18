@@ -27,12 +27,13 @@ the energy `E(r)` of `u` on the disc of radius `r` about a point obeys the power
 of `u` across the centre needed. This file draws the two consequences for the bubbling analysis of
 Gromov compactness.
 
-* **Liouville theorem.** If `u` has finite energy on the whole plane, possibly punctured at one
-  point, then letting `b → ∞` in the power law gives `E(r) = 0` for every `r`, so `u` is
-  constant (`TauCeti.SymplecticForm.apply_eq_apply_of_integrable_of_ne`,
-  `TauCeti.SymplecticForm.apply_eq_apply_of_integrable`). Thus a symplectic vector space
-  contains no nonconstant finite-energy pseudoholomorphic planes or cylinders (the plane
-  punctured at the origin); a sphere restricts to such a plane off one point.
+* **Liouville theorem.** If `u` has finite energy on the plane punctured at one point, then
+  letting `b → ∞` in the power law gives `E(r) = 0` for every `r`, so `u` is constant
+  (`TauCeti.SymplecticForm.apply_eq_apply_of_integrable_of_ne`). Thus a symplectic vector space
+  contains no nonconstant finite-energy pseudoholomorphic cylinders (the plane punctured at the
+  origin). For maps on the whole plane, constancy is
+  `TauCeti.SymplecticForm.exists_eq_const_of_isJHolomorphicAt_of_integrable_norm_fderiv_sq`,
+  proved there from the vanishing of the symplectic area.
 * **No bubbling.** If `ω` tames `J` uniformly on a set `K` on which `‖J‖ ≤ M`, the power law
   makes the energy of small discs uniformly small among curves with image in `K` and bounded energy
   (`TauCeti.SymplecticForm.exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt`). For a
@@ -49,7 +50,7 @@ Gromov compactness.
 
 The bubbles of Floer solutions are pseudoholomorphic planes for the almost complex structure
 frozen at the bubbling point (`TauCeti.SymplecticForm.isComplexLinearMap_of_tendsto_rescale`), with
-image in the compact set containing the solutions. The Liouville theorem shows that such a bubble
+image in the compact set containing the solutions. The Liouville theorems show that such a bubble
 is constant when the target is a symplectic vector space, or more generally when the image of the
 bubble lies in a compact subset of a Darboux chart.
 
@@ -62,9 +63,8 @@ the Cauchy--Riemann equation makes the two comparable.
 
 * `TauCeti.SymplecticForm.fderiv_eq_zero_of_integrable`: a finite-energy pseudoholomorphic map on
   the plane punctured at a point has vanishing derivative.
-* `TauCeti.SymplecticForm.apply_eq_apply_of_integrable_of_ne`,
-  `TauCeti.SymplecticForm.apply_eq_apply_of_integrable`: such maps, on the punctured or the whole
-  plane, are constant.
+* `TauCeti.SymplecticForm.apply_eq_apply_of_integrable_of_ne`: such maps are constant off the
+  puncture.
 * `TauCeti.SymplecticForm.exists_pos_lt_forall_setIntegral_norm_fderiv_one_sq_ball_lt`: energy
   does not concentrate at points.
 * `TauCeti.SymplecticForm.exists_forall_norm_fderiv_le_of_setIntegral_le`: an a priori bound on the
@@ -169,22 +169,6 @@ theorem apply_eq_apply_of_integrable_of_ne
       (by simp [Complex.rank_real_complex]) z₀).isPreconnected
     (hu.differentiableOn two_ne_zero)
     (fun _ hy ↦ fderiv_eq_zero_of_integrable hg hc hu hCR htame hJ henergy hy) hz hw
-
-/-- **Liouville theorem for finite-energy pseudoholomorphic planes.** A `C²` solution of
-`∂ₜu = J(u) ∂ₛu` on the whole plane of finite energy, uniformly tamed by `ω` with `‖J(u)‖ ≤ M`, is
-constant. In particular a symplectic vector space contains no nonconstant pseudoholomorphic
-sphere: its restriction to the complement of a point is such a plane. -/
-theorem apply_eq_apply_of_integrable
-    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hc : 0 < c) (hu : ContDiff ℝ 2 u)
-    (hCR : ∀ z, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
-    (htame : ∀ z, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (u z) v)) (hJ : ∀ z, ‖J (u z)‖ ≤ M)
-    (henergy : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (z w : ℂ) : u z = u w := by
-  classical
-  obtain ⟨z₀, hz₀⟩ := Infinite.exists_notMem_finset ({z, w} : Finset ℂ)
-  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hz₀
-  exact apply_eq_apply_of_integrable_of_ne (z₀ := z₀) hg hc hu.contDiffOn
-    (fun z _ ↦ hCR z) (fun z _ ↦ htame z) (fun z _ ↦ hJ z) henergy (Ne.symm hz₀.1)
-    (Ne.symm hz₀.2)
 
 section NoBubbling
 

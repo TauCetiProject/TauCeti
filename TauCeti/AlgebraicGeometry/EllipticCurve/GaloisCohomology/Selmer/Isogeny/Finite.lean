@@ -17,6 +17,9 @@ For a separable isogeny `φ : E₁ → E₂`, the descent sequence gives
 
 `#Sel_φ = [E₂(K) : φ(E₁(K))] · #Sha(E₁)[φ]`.
 
+When `φ` induces the zero map on Sha, the kernel is all of `Sha(E₁)` and the formula reads
+`#Sel_φ = [E₂(K) : φ(E₁(K))] · #Sha(E₁)`.
+
 The kernel `Sha(E₁)[φ]` lies in `Sha(E₁)[deg φ]`, by composition with the dual. Thus finite
 `deg φ`-torsion in Sha and finite generation of `E₂(K)` imply finiteness of `Sel_φ`.
 Over a number field these hypotheses hold unconditionally, with local conditions imposed at
@@ -31,6 +34,8 @@ Cassels' isogeny formula.
 ## Main results
 
 * `TauCeti.Isogeny.card_selmerGroup`: the order formula from the descent sequence.
+* `TauCeti.Isogeny.card_selmerGroup_of_shafarevichTateMap_eq_zero`: the order formula when `φ`
+  induces the zero map on Sha.
 * `TauCeti.Isogeny.finite_selmerGroup_of_finite_torsionBy`: finiteness from the degree-torsion
   of Sha and finite generation of the target point group.
 * `TauCeti.Isogeny.finite_selmerGroup_place`: unconditional finiteness over a number field.
@@ -84,6 +89,15 @@ theorem card_selmerGroup :
     exact Nat.card_congr (Equiv.ofInjective _ (φ.kummerSelmerMap_injective τ)).symm
   rw [← AddSubgroup.card_ker_mul_card_of_surjective (φ.selmerShaMap_surjective τ), hker,
     AddSubgroup.index_eq_card]
+
+/-- If a separable isogeny `φ` induces the zero map on Sha, the order of its Selmer group is the
+rational point cokernel index times the order of the whole Shafarevich–Tate group of `W₁`. -/
+theorem card_selmerGroup_of_shafarevichTateMap_eq_zero
+    (h : (ofIsogeny φ).shafarevichTateMap τ = 0) :
+    Nat.card (φ.selmerGroup τ) =
+      (ofIsogeny φ).pointMapHom.range.index * Nat.card (W₁.shafarevichTateGroup τ) := by
+  rw [card_selmerGroup, shafarevichTateGroupKer_eq_ker_shafarevichTateMap,
+    AddMonoidHom.ker_eq_top_iff.2 h, AddSubgroup.card_top]
 
 /-- Finite degree-torsion in Sha and finite generation of the target point group suffice for
 finiteness of the isogeny Selmer group. The local conditions may be any family of extensions. -/

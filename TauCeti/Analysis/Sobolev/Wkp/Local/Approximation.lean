@@ -29,7 +29,11 @@ zero (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). For a `W^{2,p}(Ω)` functi
 representative `ū`, a single mollification is then a smooth function close to `ū` uniformly on a
 given compact subset `K` of `Ω` and with Hessian close to the weak Hessian in `Lᵖ(K)`
 (`TauCeti.Wkp.exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le`). This is how
-estimates for classical solutions of second-order equations pass to strong solutions.
+estimates for classical solutions of second-order equations pass to strong solutions. For
+restrictions of test functions from a larger open set, `TauCeti.Wkp.restrictTestFunctionClosure`
+packages their Sobolev-norm closure as a submodule and
+`TauCeti.Wkp.range_restrictL_ofTestFunctionₗ_top` identifies the range of restricted whole-space
+test functions with smooth compactly supported representatives.
 
 ## References
 
@@ -81,22 +85,11 @@ private theorem iteratedGradient_localTest (chi : 𝓓(Omega, ℝ))
     ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)) (x : E), x ∈ U →
       iteratedGradientTestFunction (localTest chi phi (k + 1) u) k x =
         smoothField phi (iteratedGradient k u) x := by
-  intro k
-  induction k with
-  | zero =>
-      intro u x hx
-      simp only [iteratedGradientTestFunction_zero]
-      rw [(localTest_eventuallyEq chi hchi phi 1 u x hx).gradient_eq]
-      exact gradient_smoothField u phi x (hphi x hx)
-  | succ k ih =>
-      intro u x hx
-      rw [iteratedGradientTestFunction_succ, ← localTest_lowerOrder chi phi (k + 1) u]
-      have heq : iteratedGradientTestFunction
-          (localTest chi phi (k + 1) (lowerOrder (k + 1) u)) k =ᶠ[𝓝 x]
-          smoothField phi (iteratedGradient k (lowerOrder (k + 1) u)) := by
-        filter_upwards [U.isOpen.mem_nhds hx] with y hy using ih _ y hy
-      rw [heq.fderiv_eq]
-      exact fderiv_smoothField k u phi x (hphi x hx)
+  intro k u x hx
+  -- Near `x ∈ U` the test function is the mollified value, and so are its derivatives.
+  rw [iteratedGradientTestFunction_def,
+    ((localTest_eventuallyEq chi hchi phi (k + 1) u x hx).iteratedGradientChain k).eq_of_nhds]
+  exact iteratedGradientChain_smoothField_value k u phi x (hphi x hx)
 
 /-- The restricted `Lᵖ` class of a mollified zero extension used in the approximation. -/
 private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -105,13 +98,13 @@ private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
     simpa only [one_smul] using Measure.restrict_mono_set mu (subset_univ (U : Set E)))
       (normedBumpLp hp phi (mu.restrict univ)
-        (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (subset_univ _) f))
+        (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _) f))
 
 private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p (mu.restrict Omega)) :
     localAverage (U := U) hp phi f =ᵐ[mu.restrict U] smoothField phi f := by
-  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.measurableSet f
+  have he := normedBumpLp_extendByZero_ae_eq_convolution hp phi Omega.isOpen.nullMeasurableSet f
   have he' := he.filter_mono
     (ae_mono (Measure.restrict_mono_set mu (subset_univ (U : Set E))))
   exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
@@ -125,7 +118,7 @@ theorem tendsto_eLpNorm_smoothField_sub {F : Type*} [NormedAddCommGroup F] [Norm
     Tendsto (fun i => eLpNorm (smoothField (phi i) f - (f : E → F)) p (mu.restrict Omega)) l
       (𝓝 0) := by
   have h := (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
-    (tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet subset_rfl hphi f)
+    (tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.nullMeasurableSet subset_rfl hphi f)
   refine h.congr fun i => eLpNorm_congr_ae ?_
   filter_upwards [localAverage_ae (U := Omega) hp (phi i) f,
     Lp.coeFn_LpToLpOfMeasureLeSMul (μ := mu.restrict (Omega : Set E))
@@ -142,6 +135,41 @@ theorem value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (k : ℕ) (phi :
   filter_upwards [value_restrictL_ae hU k (ofTestFunctionₗ (mu := mu) (p := p) k phi),
     (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono hmono] with x h1 h2
   rw [h1, value_ofTestFunctionₗ, h2]
+
+/-- An element of `W^{k,p}(Ω)` is the restriction of a test function on the whole space if and only
+if its value is represented almost everywhere on `Ω` by a smooth compactly supported function on
+`E`. -/
+theorem range_restrictL_ofTestFunctionₗ_top (k : ℕ) :
+    (range fun psi : 𝓓((⊤ : Opens E), ℝ) =>
+      restrictL (le_top : Omega ≤ ⊤) k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) =
+    {u : Wkp mu Omega p k | ∃ f : E → ℝ, ContDiff ℝ (⊤ : ℕ∞) f ∧ HasCompactSupport f ∧
+      (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f} := by
+  ext u
+  constructor
+  · rintro ⟨psi, rfl⟩
+    exact ⟨psi, psi.contDiff, psi.hasCompactSupport,
+      value_restrictL_ofTestFunctionₗ_ae (le_top : Omega ≤ ⊤) k psi⟩
+  · rintro ⟨f, hf, hsupp, hu⟩
+    let psi : 𝓓((⊤ : Opens E), ℝ) := ⟨f, hf, hsupp, subset_univ _⟩
+    exact ⟨psi, ext k (Lp.ext
+      ((value_restrictL_ofTestFunctionₗ_ae (le_top : Omega ≤ ⊤) k psi).trans hu.symm))⟩
+
+/-- The closure in `W^{k,p}(U)` of the restrictions to `U` of test functions on `Ω`, as an
+`ℝ`-submodule of `W^{k,p}(U)`. -/
+def restrictTestFunctionClosure (mu : Measure E) [mu.IsAddHaarMeasure] {Omega U : Opens E}
+    (hU : U ≤ Omega) (p : ENNReal) [Fact (1 ≤ p)] (k : ℕ) : Submodule ℝ (Wkp mu U p k) :=
+  (LinearMap.range ((restrictL hU k).toLinearMap ∘ₗ
+    ofTestFunctionₗ (mu := mu) (p := p) k)).topologicalClosure
+
+/-- Membership in `TauCeti.Wkp.restrictTestFunctionClosure` is membership in the Sobolev-norm
+closure of the restrictions to `U` of test functions on `Ω`. -/
+theorem mem_restrictTestFunctionClosure_iff (hU : U ≤ Omega) {k : ℕ} {u : Wkp mu U p k} :
+    u ∈ restrictTestFunctionClosure mu hU p k ↔
+      u ∈ closure (range fun psi : 𝓓(Omega, ℝ) =>
+        restrictL hU k (ofTestFunctionₗ (mu := mu) (p := p) k psi)) := by
+  rw [restrictTestFunctionClosure, ← SetLike.mem_coe, Submodule.topologicalClosure_coe,
+    LinearMap.coe_range]
+  simp only [LinearMap.coe_comp, ContinuousLinearMap.coe_coe, Function.comp_def]
 
 private theorem value_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
     (chi : 𝓓(Omega, ℝ)) (hchi : ∀ x ∈ U, chi x = 1)
@@ -311,6 +339,6 @@ theorem exists_contDiff_abs_sub_le_and_eLpNorm_fderiv_gradient_sub_le (hp : p �
       ((eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ le_rfl)).trans hj)
     filter_upwards [ae_restrict_mem hK.measurableSet] with y hy
     rw [Pi.sub_apply, fderiv_gradient_smoothField_value u (phi j)
-      (Filter.eventually_of_mem (Metric.ball_mem_nhds y (hrδ j)) fun z hz => hball j hy hz)]
+      (hball j hy (Metric.mem_ball_self (hrδ j)))]
 
 end TauCeti.Wkp
