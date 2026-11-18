@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Basic
 public import TauCeti.ModelTheory.Term.Symbols
 
 /-!
@@ -23,12 +24,22 @@ inclusion factors through `g`; no injectivity of `g` is needed, since a preimage
 symbol. The restriction of infinitary formulas lives in
 `TauCeti.ModelTheory.Infinitary.Sublanguage`.
 
+Conversely, a structure of the sublanguage expands to an `L`-structure on the same carrier
+(`expandSymbStructure`), interpreting the symbols outside `F` and `R` as some `L`-structure on the
+carrier does. Such a structure exists on every nonempty carrier, and on every carrier at all when
+`L` is relational, so the expansion needs no nonemptiness for relational languages. The inclusion is
+an expansion on it, so a formula whose symbols lie in `F` and `R` has the same truth value in the
+expansion as its restriction has in the sublanguage structure. This is how a model found for a
+sublanguage becomes a model of the original language.
+
 ## Main definitions
 
 * `FirstOrder.Language.symbSublang`: the sublanguage with the given symbols.
 * `FirstOrder.Language.symbSublangIncl`: its inclusion, which is injective.
 * `FirstOrder.Language.Term.restrictSymbols`: the restriction of a term to a sublanguage
   containing its function symbols.
+* `FirstOrder.Language.expandSymbStructure`: the expansion of a structure of the sublanguage to
+  an `L`-structure on the same carrier.
 
 ## Main results
 
@@ -36,6 +47,8 @@ symbol. The restriction of infinitary formulas lives in
   the term.
 * `FirstOrder.Language.LHom.exists_comp_eq_symbSublangIncl`: the inclusion factors through any
   language map whose range contains the symbols.
+* `FirstOrder.Language.isExpansionOn_expandSymbStructure`: the inclusion is an expansion on the
+  expanded structure.
 
 ## References
 
@@ -45,11 +58,16 @@ symbol. The restriction of infinitary formulas lives in
   `InfinitaryLogic/Methods/GeneratedSublanguage.lean`.
   Divergences from that source: the sublanguage lives in the universes of `L` rather than in
   `Language.{0, 0}`, and the factorization through a language map is new.
+* `expandSymbStructure` is modelled on Mathlib's `LHom.defaultExpansion`; the corresponding
+  expansion of `cameronfreer/infinitary-logic` at the same commit is in
+  `InfinitaryLogic/Methods/SymbSublangExpansion.lean`. Divergence: the symbols outside the
+  sublanguage are interpreted through an arbitrary `L`-structure on the carrier rather than by a
+  default element, so that no element is needed for relational languages.
 -/
 
 public section
 
-universe u v u' v' uα
+universe u v u' v' uα w
 
 namespace FirstOrder
 
@@ -117,6 +135,35 @@ instance isRelational_symbSublang [L.IsRelational] : (symbSublang F R).IsRelatio
 /-- A symbol sublanguage with an empty set of function symbols is relational. -/
 instance isRelational_symbSublang_of_isEmpty [IsEmpty F] : (symbSublang F R).IsRelational :=
   fun n => ⟨fun f => isEmptyElim (⟨⟨n, f.1⟩, f.2⟩ : F)⟩
+
+section Expansion
+
+variable (F R) (M : Type w) [(symbSublang F R).Structure M] [Nonempty (L.Structure M)]
+
+open scoped Classical in
+/-- **The expansion of a structure of a symbol sublanguage.** On a carrier `M` carrying some
+`L`-structure, a structure of `symbSublang F R` expands to the `L`-structure that interprets the
+symbols of `F` and `R` as the sublanguage does and every other symbol as an arbitrarily chosen
+`L`-structure on `M` does. Some `L`-structure exists on every nonempty carrier
+(`nonempty_structure_of_nonempty`) and, for relational `L`, on every carrier
+(`nonempty_structure_of_isRelational`). The inclusion `symbSublangIncl F R` is an expansion on the
+result (`isExpansionOn_expandSymbStructure`). -/
+@[instance_reducible]
+noncomputable def expandSymbStructure : L.Structure M :=
+  let S : L.Structure M := Classical.choice ‹_›
+  { funMap := fun {n} f xs =>
+      if h : ⟨n, f⟩ ∈ F then Structure.funMap (L := symbSublang F R) ⟨f, h⟩ xs else S.funMap f xs
+    RelMap := fun {n} r xs =>
+      if h : ⟨n, r⟩ ∈ R then Structure.RelMap (L := symbSublang F R) ⟨r, h⟩ xs else S.RelMap r xs }
+
+/-- The inclusion of a symbol sublanguage is an expansion on the expansion of any structure of the
+sublanguage. -/
+instance isExpansionOn_expandSymbStructure :
+    @LHom.IsExpansionOn _ _ (symbSublangIncl F R) M _ (expandSymbStructure F R M) :=
+  letI := expandSymbStructure F R M
+  ⟨fun f _ => dite_eq_left f.2, fun r _ => dite_eq_left r.2⟩
+
+end Expansion
 
 namespace Term
 

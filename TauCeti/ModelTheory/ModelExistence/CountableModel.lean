@@ -98,7 +98,6 @@ universe `w'`. The language may have any number of symbols. -/
 theorem Model.exists_countable_model (hT : T.Countable) {M : Type w} [L.Structure M] [Nonempty M]
     (h : T.Model M) :
     ∃ (N : Type w') (_ : L.Structure N), Countable N ∧ Nonempty N ∧ T.Model N := by
-  classical
   -- `T` is the image of a theory `T₀` of the sublanguage of its function symbols
   let F : Set (Σ n, L.Functions n) := ⋃ φ ∈ T, φ.functionsIn
   let R : Set (Σ n, L.Relations n) := Set.univ
@@ -115,9 +114,7 @@ theorem Model.exists_countable_model (hT : T.Countable) {M : Type w} [L.Structur
   obtain ⟨N, _, hNc, hN, hNT₀⟩ := Model.exists_countable_model_of_countable_functions.{u, v, w, w'}
     (Set.countable_range _) ((ι.onTheoryω_model T₀).1 (hT₀ ▸ h))
   -- expand the countable model back to `L`, interpreting the missing symbols arbitrarily
-  have : Inhabited N := Classical.inhabited_of_nonempty hN
-  let : L.Structure N := ι.defaultExpansion N
-  have : ι.IsExpansionOn N := (symbSublangIncl_injective F R).isExpansionOn_default N
+  let : L.Structure N := expandSymbStructure F R N
   exact ⟨N, inferInstance, hNc, hN, hT₀ ▸ (ι.onTheoryω_model T₀).2 hNT₀⟩
 
 /-- **Countable models of satisfiable countable theories.** A satisfiable countable theory has a
