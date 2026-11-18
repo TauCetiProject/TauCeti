@@ -11,6 +11,10 @@ public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import Mathlib.Topology.Order.IntermediateValue
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 
 /-!
@@ -211,6 +215,23 @@ noncomputable def sphericalPendulumEffectivePotential (j z : ℝ) : ℝ :=
 theorem sphericalPendulumEffectivePotential_def (j z : ℝ) :
     sphericalPendulumEffectivePotential j z = j ^ 2 / (2 * (1 - z ^ 2)) + z :=
   (rfl)
+
+/-- The effective potential is even in the angular momentum. -/
+@[simp]
+theorem sphericalPendulumEffectivePotential_neg_left (j z : ℝ) :
+    sphericalPendulumEffectivePotential (-j) z = sphericalPendulumEffectivePotential j z := by
+  simp only [sphericalPendulumEffectivePotential_def, neg_sq]
+
+/-- Away from the poles, the effective potential `V_j(z) = j² / (2 (1 - z²)) + z` has derivative
+`V_j'(z) = j² z / (1 - z²)² + 1`. -/
+theorem hasDerivAt_sphericalPendulumEffectivePotential (j : ℝ) {z : ℝ} (hz : z ^ 2 ≠ 1) :
+    HasDerivAt (sphericalPendulumEffectivePotential j) (j ^ 2 * z / (1 - z ^ 2) ^ 2 + 1) z := by
+  have hz' : 1 - z ^ 2 ≠ 0 := sub_ne_zero.2 hz.symm
+  rw [funext (sphericalPendulumEffectivePotential_def j)]
+  refine (((hasDerivAt_const z (j ^ 2)).fun_div (((hasDerivAt_pow 2 z).const_sub 1).const_mul 2)
+    (mul_ne_zero two_ne_zero hz')).fun_add (hasDerivAt_id' z)).congr_deriv ?_
+  field_simp
+  ring
 
 /-! ### The phase space in coordinates -/
 
