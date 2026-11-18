@@ -14,7 +14,7 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.Triple
 
 This file collects criteria, read off the long exact sequences of pairs and triples, for the
 relative singular homology `Hₙ(X, A; L)` with coefficients in a local system `L` to vanish or to
-agree with the homology of `X` or of another pair.
+agree with the relative homology of another pair.
 
 * **Deformations.** The relative twisted homology vanishes modulo a set `S` into which `X` deforms
   through maps keeping `S` inside `S` (`TopPair.isZero_twistedHomology_ofSubset_of_homotopy`), the
