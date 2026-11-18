@@ -17,7 +17,10 @@ A simple function `u : SimpleFunc α β` is the finite sum, over the values `c` 
 constant `c` restricted to the fibre `u ⁻¹' {c}`. More generally, for any `ψ : β → M` into an
 additive commutative monoid, `u.map ψ` is the sum of the constants `ψ c` restricted to the same
 fibres. This is the form in which an operator defined on simple functions is evaluated by
-linearity, as in the Riesz–Thorin theorem.
+linearity, as in the Riesz–Thorin theorem. For `ψ` with values in a semiring `R`, the same
+decomposition reads `u.map ψ = ∑ c ∈ u.range, ψ c • 1_{u = c}`
+(`MeasureTheory.SimpleFunc.map_eq_sum_smul_fiberIndicator`), in terms of the fibre indicators
+`MeasureTheory.SimpleFunc.fiberIndicator`.
 
 A finite family of simple functions is one simple function into the product,
 `MeasureTheory.SimpleFunc.pi`.
@@ -53,6 +56,37 @@ theorem map_eq_sum_restrict_const (u : SimpleFunc α β) (ψ : β → M) :
 theorem eq_sum_restrict_const [AddCommMonoid β] (u : SimpleFunc α β) :
     u = ∑ c ∈ u.range, (const α c).restrict (u ⁻¹' {c}) := by
   exact map_eq_sum_restrict_const u id
+
+/-- The indicator `1_{u = c}` of the fibre `u ⁻¹' {c}` of a simple function, with values in `R`. -/
+noncomputable def fiberIndicator (R : Type*) [Zero R] [One R] (u : SimpleFunc α β) (c : β) :
+    SimpleFunc α R :=
+  (const α (1 : R)).restrict (u ⁻¹' {c})
+
+/-- The fibre indicator `1_{u = c}` is `1` on the fibre and `0` off it. -/
+theorem fiberIndicator_apply (R : Type*) [Zero R] [One R] [DecidableEq β] (u : SimpleFunc α β)
+    (c : β) (x : α) : fiberIndicator R u c x = if u x = c then 1 else 0 := by
+  simp only [fiberIndicator, restrict_apply _ (u.measurableSet_fiber c), coe_const]
+  by_cases h : u x = c <;> simp [h]
+
+/-- A multiple `a • 1_{u = c}` of a fibre indicator is the constant `a` restricted to the fibre. -/
+theorem smul_fiberIndicator {R : Type*} [MulZeroOneClass R] (u : SimpleFunc α β) (a : R) (c : β) :
+    a • fiberIndicator R u c = (const α a).restrict (u ⁻¹' {c}) := by
+  classical
+  ext x
+  simp [fiberIndicator_apply, restrict_apply _ (u.measurableSet_fiber c), Set.indicator]
+
+/-- `u.map ψ` is the combination `∑ c ∈ u.range, ψ c • 1_{u = c}` of the fibre indicators of
+`u`. -/
+theorem map_eq_sum_smul_fiberIndicator {R : Type*} [Semiring R] (u : SimpleFunc α β)
+    (ψ : β → R) : u.map ψ = ∑ c ∈ u.range, ψ c • fiberIndicator R u c := by
+  simp_rw [smul_fiberIndicator]
+  exact u.map_eq_sum_restrict_const ψ
+
+/-- Pointwise form of `MeasureTheory.SimpleFunc.map_eq_sum_smul_fiberIndicator`. -/
+theorem map_apply_eq_sum_mul_fiberIndicator {R : Type*} [Semiring R] (u : SimpleFunc α β)
+    (ψ : β → R) (x : α) : u.map ψ x = ∑ c ∈ u.range, ψ c * fiberIndicator R u c x := by
+  rw [u.map_apply_eq_sum_restrict_const]
+  simp_rw [← smul_fiberIndicator, _root_.smul_apply, smul_eq_mul]
 
 /-- The product of two simple functions constant on measurable sets `A` and `B` and zero
 elsewhere is constant on `A ∩ B` and zero elsewhere. -/
