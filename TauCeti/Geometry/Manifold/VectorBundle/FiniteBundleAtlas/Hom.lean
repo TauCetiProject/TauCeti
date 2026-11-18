@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Finite bundle atlases of derived bundles
@@ -49,6 +50,11 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
 * `TauCeti.FiniteBundleAtlas.coord_prod`, `TauCeti.FiniteBundleAtlas.coord_hom`,
   `TauCeti.FiniteBundleAtlas.coord_hom_apply`, `TauCeti.FiniteBundleAtlas.coord_tangentHom`: the
   chart readings of sections of the derived bundles.
+* `TauCeti.FiniteBundleAtlas.coord_hom_eq_coordChange`,
+  `TauCeti.FiniteBundleAtlas.coord_tangentHom_eq_coordChange`: on an overlap, the readings of a
+  section of the hom bundle in two charts differ by the coordinate changes of both bundles, which
+  for a `V`-valued one-form are the derivative of the chart transition and the coordinate change
+  of `V` (`TauCeti.FiniteBundleAtlas.fderiv_transition`).
 -/
 
 public section
@@ -186,6 +192,23 @@ theorem coord_hom_apply (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (s 
     Trivialization.continuousLinearEquivAt_apply]
   rfl
 
+/-- **Change of chart for hom sections.** On the overlap of charts `i` and `i'`, the reading in
+chart `i'` of a section of the hom bundle is its reading in chart `i` at the transition point,
+precomposed with the coordinate change of `V₁` and followed by the coordinate change of `V₂`. -/
+theorem coord_hom_eq_coordChange {i i' : Fin A.n} (φ : ∀ x, V₁ x →L[𝕜] V₂ x) {y : E}
+    (hy : y ∈ A.overlap i i') :
+    (A.hom h).coord i' φ y =
+      ((trivializationAt F₂ V₂ (A.center i)).coordChangeL 𝕜 (trivializationAt F₂ V₂ (A.center i'))
+          ((A.chart i').symm y) : F₂ →L[𝕜] F₂).comp
+        (((A.hom h).coord i φ (A.transition i i' y)).comp
+          ((A.triv i').coordChangeL 𝕜 (A.triv i) ((A.chart i').symm y) : F₁ →L[𝕜] F₁)) := by
+  obtain ⟨x, ⟨hx, hx'⟩, rfl⟩ := A.mem_overlap.1 hy
+  rw [transition_chart A hx', coord_hom, coord_hom,
+    (A.chart i').left_inv (A.dom_subset_chart_source i' hx'),
+    (A.chart i).left_inv (A.dom_subset_chart_source i hx)]
+  exact ContinuousLinearMap.inCoordinates_eq_coordChangeL_comp _ (A.dom_subset_baseSet i' hx')
+    (A.dom_subset_baseSet i hx) (h i' (subset_closure hx')) (h i (subset_closure hx))
+
 end Hom
 
 section Tangent
@@ -202,6 +225,35 @@ variable (A : FiniteBundleAtlas E M F V)
 the source of the preferred chart as its base set (`TangentBundle.trivializationAt_baseSet`). -/
 abbrev tangent : FiniteBundleAtlas E M E (TangentSpace 𝓘(ℝ, E)) :=
   A.ofBaseSet A.closure_dom_subset_source
+
+/-- On the overlap of charts `i` and `i'`, the derivative of the chart transition is the
+coordinate change of the tangent bundle between the trivializations of the two charts. -/
+theorem fderiv_transition {i i' : Fin A.n} {y : E} (hy : y ∈ A.overlap i i') :
+    fderiv ℝ (A.transition i i') y =
+      ((trivializationAt E (TangentSpace 𝓘(ℝ, E)) (A.center i')).coordChangeL ℝ
+        (trivializationAt E (TangentSpace 𝓘(ℝ, E)) (A.center i)) ((A.chart i').symm y) :
+          E →L[ℝ] E) := by
+  obtain ⟨x, ⟨hx, hx'⟩, rfl⟩ := A.mem_overlap.1 hy
+  have hs : x ∈ (A.chart i).source := A.dom_subset_chart_source i hx
+  have hs' : x ∈ (A.chart i').source := A.dom_subset_chart_source i' hx'
+  -- Near the point, the chart transition is the transition of the preferred extended charts, so
+  -- its derivative is the coordinate change of the tangent bundle.
+  have heq : A.transition i i' =ᶠ[nhds (A.chart i' x)]
+      extChartAt 𝓘(ℝ, E) (A.center i) ∘ (extChartAt 𝓘(ℝ, E) (A.center i')).symm := by
+    filter_upwards [(A.image i').isOpen.mem_nhds (A.mem_image.2 ⟨x, hx', rfl⟩)] with y hy
+    obtain ⟨x', hx'', rfl⟩ := A.mem_image.1 hy
+    rw [transition_chart A hx'']
+    simp [(A.chart i').left_inv (A.dom_subset_chart_source i' hx'')]
+  have hT : x ∈ (trivializationAt E (TangentSpace 𝓘(ℝ, E)) (A.center i')).baseSet ∩
+      (trivializationAt E (TangentSpace 𝓘(ℝ, E)) (A.center i)).baseSet := by
+    simpa using ⟨hs', hs⟩
+  have hcoord : ((trivializationAt E (TangentSpace 𝓘(ℝ, E)) (A.center i')).coordChangeL ℝ
+      (trivializationAt E (TangentSpace 𝓘(ℝ, E)) (A.center i)) x : E →L[ℝ] E) =
+        tangentCoordChange 𝓘(ℝ, E) (A.center i') (A.center i) x :=
+    (tangentBundleCore 𝓘(ℝ, E) M).trivializationAt_coordChangeL hT
+  rw [(A.chart i').left_inv hs', hcoord, heq.fderiv_eq, tangentCoordChange_def]
+  simp only [modelWithCornersSelf_coe, range_id, fderivWithin_univ, extChartAt_coe,
+    Function.id_comp]
 
 end Tangent
 
@@ -238,6 +290,20 @@ theorem coord_tangentHom_apply (i : Fin A.n) (ω : ∀ x, TangentSpace 𝓘(ℝ,
     A.tangentHom.coord i ω y (A.tangent.coord i v y) = A.coord i (fun x ↦ ω x (v x)) y :=
   A.tangent.coord_hom_apply A.closure_dom_subset_baseSet i ω v
     (A.tangent.mem_image.2 (A.mem_image.1 hy))
+
+/-- **Change of chart for one-forms.** On the overlap of charts `i` and `i'`, the reading in chart
+`i'` of a `V`-valued one-form is its reading in chart `i` at the transition point, precomposed with
+the derivative of the chart transition and followed by the coordinate change of `V`. -/
+theorem coord_tangentHom_eq_coordChange {i i' : Fin A.n}
+    (ω : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) {y : E} (hy : y ∈ A.overlap i i') :
+    A.tangentHom.coord i' ω y =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        ((A.tangentHom.coord i ω (A.transition i i' y)).comp
+          (fderiv ℝ (A.transition i i') y)) := by
+  rw [A.fderiv_transition hy, ← transition_ofBaseSet (F' := E) (V' := TangentSpace 𝓘(ℝ, E))
+    (h := A.closure_dom_subset_source)]
+  exact A.tangent.coord_hom_eq_coordChange A.closure_dom_subset_baseSet ω
+    (A.tangent.mem_overlap.2 (A.mem_overlap.1 hy))
 
 end TangentHom
 

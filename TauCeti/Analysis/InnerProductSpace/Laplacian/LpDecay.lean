@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MeanValueInequality
 import TauCeti.MeasureTheory.Function.Lp.BallAverage
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
@@ -32,12 +33,21 @@ This is how a solution of a semilinear elliptic equation, known to be square int
 variational construction, is shown to satisfy a boundary condition at infinity: the equation
 bounds the Laplacian once the solution is bounded, and this file turns that bound into decay.
 
+The same mean-value inequality, with the Cauchy–Schwarz bound
+`∫_B f ≤ √(μ B) (∫ f²)^(1/2)` in place of the decay of ball averages, bounds a square-integrable
+`C²` function with `Δ f ≥ -K` everywhere from above by its `L²` norm:
+`f x ≤ (∫ f²)^(1/2) / √(μ (ball 0 r)) + K r² / (2 (n + 2))` for every `x` and `r > 0`
+(`TauCeti.le_sqrt_integral_sq_div_add_of_neg_le_laplacian`). The bound depends on `f` only
+through `∫ f²` and `K`, so it is uniform over families with bounded `L²` norms.
+
 ## Main results
 
 * `TauCeti.eventually_le_of_memLp_of_neg_le_laplacian`: `Δ f ≥ -K` near infinity gives
   `f ≤ ε` near infinity, for every `ε > 0`.
 * `TauCeti.tendsto_cocompact_of_memLp_of_abs_laplacian_le`: `|Δ f| ≤ K` near infinity gives
   `f → 0` at infinity.
+* `TauCeti.le_sqrt_integral_sq_div_add_of_neg_le_laplacian`: `Δ f ≥ -K` everywhere bounds `f`
+  above by its `L²` norm.
 
 ## References
 
@@ -115,5 +125,46 @@ theorem tendsto_cocompact_of_memLp_of_abs_laplacian_le
   · filter_upwards [eventually_le_of_memLp_of_neg_le_laplacian (μ := μ) hf hfp hp hp'
       (hΔ.mono fun x hx => neg_le_of_abs_le hx) (half_pos ha)] with x hx
     linarith
+
+/-- **A pointwise upper bound from the `L²` norm.** If `f` is `C²` and square integrable with
+`Δ f ≥ -K` everywhere, then for every `r > 0` and every point `x`,
+`f x ≤ (∫ f²)^(1/2) / √(μ (ball 0 r)) + K r² / (2 (n + 2))`, where `n` is the dimension. -/
+theorem le_sqrt_integral_sq_div_add_of_neg_le_laplacian (hf : ContDiff ℝ 2 f)
+    (hf2 : MemLp f 2 μ) (hΔ : ∀ x, -K ≤ Δ f x) {r : ℝ} (hr : 0 < r) (x : E) :
+    f x ≤ √(∫ y, f y ^ 2 ∂μ) / √(μ.real (ball 0 r)) +
+      K * r ^ 2 / (2 * (Module.finrank ℝ E + 2)) := by
+  have hmv := mul_le_setIntegral_ball_add_of_neg_le_laplacian (μ := μ) (x₀ := x) (R := r)
+    (K := K) hf.contDiffOn hf.continuous.continuousOn fun y _ ↦ hΔ y
+  rw [Measure.addHaar_real_ball_center] at hmv
+  set V := μ.real (ball (0 : E) r) with hVdef
+  have hV : 0 < V := by
+    rw [hVdef, measureReal_def]
+    exact ENNReal.toReal_pos (measure_ball_pos μ 0 hr).ne' measure_ball_lt_top.ne
+  -- Cauchy–Schwarz on the ball: `(∫_B f)² ≤ μ(B) ∫_B f² ≤ V ∫ f²`.
+  have hcs : (∫ y in ball x r, f y ∂μ) ^ 2 ≤ V * ∫ y, f y ^ 2 ∂μ := by
+    have hfin : IsFiniteMeasure (μ.restrict (ball x r)) :=
+      isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+    have h := sq_integral_mul_le_integral_sq_mul_integral_sq (μ := μ.restrict (ball x r))
+      (memLp_const (1 : ℝ)) (hf2.restrict (ball x r))
+    simp only [one_mul, one_pow, integral_const, smul_eq_mul, mul_one,
+      measureReal_restrict_apply_univ, Measure.addHaar_real_ball_center] at h
+    refine h.trans (mul_le_mul_of_nonneg_left ?_ hV.le)
+    exact setIntegral_le_integral hf2.integrable_sq (Eventually.of_forall fun y ↦ sq_nonneg _)
+  have hint : ∫ y in ball x r, f y ∂μ ≤ √V * √(∫ y, f y ^ 2 ∂μ) := by
+    rw [← Real.sqrt_mul hV.le]
+    exact Real.le_sqrt_of_sq_le hcs
+  have hsV : √V * √V = V := Real.mul_self_sqrt hV.le
+  have hsV0 : 0 < √V := Real.sqrt_pos.2 hV
+  have h1 : f x ≤ (∫ y in ball x r, f y ∂μ) / V +
+      K * r ^ 2 / (2 * (Module.finrank ℝ E + 2)) := by
+    rw [div_add' _ _ _ hV.ne', le_div_iff₀ hV]
+    linarith
+  have h2 : (∫ y in ball x r, f y ∂μ) / V ≤ √(∫ y, f y ^ 2 ∂μ) / √V := by
+    rw [div_le_div_iff₀ hV hsV0]
+    calc (∫ y in ball x r, f y ∂μ) * √V ≤ √V * √(∫ y, f y ^ 2 ∂μ) * √V :=
+          mul_le_mul_of_nonneg_right hint hsV0.le
+      _ = √(∫ y, f y ^ 2 ∂μ) * (√V * √V) := by ring
+      _ = √(∫ y, f y ^ 2 ∂μ) * V := by rw [hsV]
+  linarith
 
 end TauCeti

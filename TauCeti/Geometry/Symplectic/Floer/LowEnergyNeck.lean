@@ -102,8 +102,9 @@ theorem exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt_of_floer
   -- Nondegenerate orbits are isolated among the periodic orbits.
   obtain ⟨δ₀, hδ₀, η, hη, hneck⟩ :=
     exists_pos_forall_exists_periodic_hasDerivAt_forall_dist_lt hK hX hXper
-      (fun x hxper hx hxK ↦ (exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx
-        (hnd x hxper hx hxK)).imp fun _ ⟨hε, h⟩ ↦ ⟨hε, fun y hyper hy _ ↦ h y hyper hy⟩) B hε
+      (fun x hxper hx hxK ↦ (ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hL hx
+        (hnd x hxper hx hxK)).imp fun _ ⟨hε, h⟩ ↦
+          ⟨hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩) B hε
   refine ⟨min ε₁ (δ₀ * c / (1 + M ^ 2)), by positivity, r + η, by positivity,
     fun u a b hab hu hper huK hfloer hE ↦ ?_⟩
   -- On the window shrunk by `r` the derivative is bounded by `B`.
