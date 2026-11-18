@@ -181,15 +181,16 @@ theorem IsEffectiveCartier.finrank_mul_subschemeι_comp_of_field {K : Type u} [F
   exact hI.exists_map_ker_inclusion_appTop_eq_span_singleton_and_annihilator hIle hJle
     (hZ.fromSpec q)
 
-/-- **The degree of a sum of relative effective Cartier divisors is the sum of the degrees.** If
-`I` and `J` are relative effective Cartier divisors on `X` over `S` and the closed subscheme of
-`I * J`, the divisor `D + E`, is finite over `S`, then its rank over `S` is the sum of the ranks of
-the closed subschemes of `I` and `J`. -/
-theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u}} {f : X ⟶ S}
-    {I J : X.IdealSheafData} (hI : I.IsRelativeEffectiveCartier f)
-    (hJ : J.IsRelativeEffectiveCartier f) [IsFinite ((I * J).subschemeι ≫ f)] :
+/-- Ranks add for the product of a relative effective Cartier ideal and any ideal whose
+closed subscheme is flat, provided the product subscheme is finite over the base. -/
+theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp_of_flat
+    {S X : Scheme.{u}} {f : X ⟶ S}
+    {I : X.IdealSheafData} (hI : I.IsRelativeEffectiveCartier f)
+    (J : X.IdealSheafData) [Flat (J.subschemeι ≫ f)]
+    [IsFinite ((I * J).subschemeι ≫ f)] :
     ((I * J).subschemeι ≫ f).finrank =
       (I.subschemeι ≫ f).finrank + (J.subschemeι ≫ f).finrank := by
+  have := hI.flat_mul_subschemeι_comp J
   have hIle : I * J ≤ I := mul_le_of_le_one_right bot_le le_top
   have hJle : I * J ≤ J := mul_le_of_le_one_left bot_le le_top
   have : IsFinite (I.subschemeι ≫ f) := by
@@ -197,8 +198,6 @@ theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u
   have : IsFinite (J.subschemeι ≫ f) := by
     rw [← inclusion_subschemeι hJle, Category.assoc]; infer_instance
   have := hI.flat
-  have := hJ.flat
-  have := (TauCeti.isRelativeEffectiveCartier_mul hI hJ).flat
   -- Compute the ranks at `t` on the fibre over the residue field of `t`.
   funext t
   let h := S.fromSpecResidueField t
@@ -212,6 +211,18 @@ theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u
   rw [comap_mul] at this ⊢
   exact IsEffectiveCartier.finrank_mul_subschemeι_comp_of_field (K := S.residueField t)
     (pullback.snd f h) (hI.comap h).isEffectiveCartier _ s
+
+/-- **The degree of a sum of relative effective Cartier divisors is the sum of the degrees.** If
+`I` and `J` are relative effective Cartier divisors on `X` over `S` and the closed subscheme of
+`I * J`, the divisor `D + E`, is finite over `S`, then its rank over `S` is the sum of the ranks of
+the closed subschemes of `I` and `J`. -/
+theorem IsRelativeEffectiveCartier.finrank_mul_subschemeι_comp {S X : Scheme.{u}} {f : X ⟶ S}
+    {I J : X.IdealSheafData} (hI : I.IsRelativeEffectiveCartier f)
+    (hJ : J.IsRelativeEffectiveCartier f) [IsFinite ((I * J).subschemeι ≫ f)] :
+    ((I * J).subschemeι ≫ f).finrank =
+      (I.subschemeι ≫ f).finrank + (J.subschemeι ≫ f).finrank := by
+  have := hJ.flat
+  exact hI.finrank_mul_subschemeι_comp_of_flat J
 
 end AlgebraicGeometry.Scheme.IdealSheafData
 
