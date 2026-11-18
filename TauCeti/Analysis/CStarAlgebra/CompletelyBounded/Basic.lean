@@ -37,6 +37,8 @@ This file treats C⋆-algebras only, with the operator-space structure they carr
   homomorphisms are complete contractions.
 * `CStarMatrix.isCompletelyBounded_transposeₗ`, `CStarMatrix.cbNorm_transposeₗ`: the transpose on
   `M_n(ℂ)` is completely bounded with cb norm `n`.
+* `ContinuousLinearMap.isCompletelyBounded_toLinearMap`, `ContinuousLinearMap.cbNorm_toLinearMap`:
+  a bounded functional `u : A → ℂ` is completely bounded with `‖u‖_cb = ‖u‖`.
 
 ## Implementation notes
 
@@ -45,6 +47,10 @@ from writing the transpose as `y ↦ ∑ E i j * y * E i j` and applying
 `Finset.norm_sum_mul_mul_sq_le`. For `n ≥ 1`, the lower bound comes from level `n`: the
 amplification sends the flip unitary `[E l k]_{k l}`, of norm `1`, to `[E k l]_{k l}`, which is
 `n` times a rank-one projection.
+
+For a bounded functional `u` and `x ∈ M_k(A)`, the scalar matrix `uₖ(x)` is tested against vectors
+`v, w ∈ ℂᵏ`: `⟪w, v uₖ(x)⟫ = u(∑ i j, (vᵢ wⱼ*) xᵢⱼ)`, and `CStarMatrix.norm_sum_smul_le` bounds
+the compressed element.
 
 ## References
 
@@ -448,3 +454,41 @@ theorem cbNorm_transposeₗ (n : Type*) [Fintype n] :
 end Transpose
 
 end CStarMatrix
+
+namespace ContinuousLinearMap
+
+open WithCStarModule CStarModule
+open scoped InnerProductSpace
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+private theorem norm_map_le_opNorm_mul (u : A →L[ℂ] ℂ) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
+    ‖x.map (u : A →ₗ[ℂ] ℂ)‖ ≤ ‖u‖ * ‖x‖ := by
+  refine CStarMatrix.norm_le_of_forall_inner_le (C := ‖u‖₊ * ‖x‖₊) fun v w => ?_
+  have h : ⟪w, CStarMatrix.toCLM (x.map (u : A →ₗ[ℂ] ℂ)) v⟫_ℂ =
+      u (∑ i, ∑ j, (v i * star (w j)) • x i j) := by
+    simp only [pi_inner, CStarMatrix.toCLM_apply_eq_sum, equiv_symm_pi_apply, inner_def,
+      CStarMatrix.map_apply, map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    rw [Finset.sum_comm]
+    simp only [coe_coe]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  rw [h]
+  calc ‖u (∑ i, ∑ j, (v i * star (w j)) • x i j)‖
+      ≤ ‖u‖ * ‖∑ i, ∑ j, (v i * star (w j)) • x i j‖ := u.le_opNorm _
+    _ ≤ ‖u‖ * (‖v‖ * ‖x‖ * ‖w‖) := by gcongr; exact CStarMatrix.norm_sum_smul_le x v w
+    _ = _ := by simp only [NNReal.coe_mul, coe_nnNorm]; ring
+
+/-- A bounded functional on a C⋆-algebra is completely bounded. -/
+theorem isCompletelyBounded_toLinearMap (u : A →L[ℂ] ℂ) :
+    (u : A →ₗ[ℂ] ℂ).IsCompletelyBounded :=
+  ⟨‖u‖, norm_nonneg u, fun _ x => norm_map_le_opNorm_mul u x⟩
+
+/-- **A bounded functional on a C⋆-algebra has cb norm equal to its norm** (Smith's lemma at
+level one). -/
+theorem cbNorm_toLinearMap (u : A →L[ℂ] ℂ) : (u : A →ₗ[ℂ] ℂ).cbNorm = ‖u‖ :=
+  le_antisymm
+    (LinearMap.cbNorm_le_of_bound (norm_nonneg u) fun _ x => norm_map_le_opNorm_mul u x) <|
+    u.opNorm_le_bound (LinearMap.cbNorm_nonneg _) fun a =>
+      LinearMap.norm_apply_le_cbNorm_mul (isCompletelyBounded_toLinearMap u) a
+
+end ContinuousLinearMap
