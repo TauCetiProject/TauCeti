@@ -66,8 +66,8 @@ classification follows from the splitting `L ≅ I_k ⊕ L₀`.
   at most nine a vector of norm two is orthogonal to a nonzero vector of norm at most two.
 * `TauCeti.IntegralLattice.IsPosDef.subsingleton_of_vectorsOfNorm_one_eq_empty_of_finrank_le_seven`:
   without vectors of norm one, a lattice of rank at most seven is zero.
-* `IsPosDef.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty`: without vectors
-  of norm one, a nonzero lattice of rank at most nine is `E₈`.
+* `IntegralLattice.IsPosDef.nonempty_isometry_typeE₈RootLattice_of_vectorsOfNorm_one_eq_empty`:
+  without vectors of norm one, a nonzero lattice of rank at most nine is `E₈`.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_of_isUnimodular_of_finrank_le_nine`: a
   lattice of rank at most nine is `Iₙ`, `E₈` or `I₁ ⊕ E₈`.
 * `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_typeE₈RootLattice_of_isEven`: an even

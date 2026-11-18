@@ -429,9 +429,9 @@ theorem not_exists_isComplement'_center [NeZero (2 : R)] :
     (Subgroup.disjoint_def.mp hD.disjoint hnegZ (hd2 ▸ pow_mem hd 2))
 
 /-- **The centre of `SL₂` has exactly two elements** once `-I ≠ I`. `card_center_le_two` is the
-unconditional bound; this is the value, and it is what a consumer evaluating the centre factor of
-a stabiliser splitting needs. In characteristic `2` the hypothesis fails and the centre is the
-singleton `{I}`. -/
+bound that does not assume `-I ≠ I`; this is the value, and it is what a consumer evaluating the
+centre factor of a stabiliser splitting needs. In characteristic `2` the hypothesis fails and the
+centre is the singleton `{I}`. -/
 theorem card_center_eq_two [NoZeroDivisors R]
     (hne : (-1 : SpecialLinearGroup (Fin 2) R) ≠ 1) :
     Nat.card (Subgroup.center (SpecialLinearGroup (Fin 2) R)) = 2 := by
