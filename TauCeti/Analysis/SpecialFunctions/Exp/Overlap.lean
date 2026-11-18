@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Algebra.BigOperators.Group.Multiset.Defs
 import Mathlib.Algebra.Order.BigOperators.Group.Multiset
 import Mathlib.Analysis.SpecialFunctions.Exp
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
 # Pointwise overlap of exponentially decaying functions
@@ -44,6 +45,23 @@ namespace TauCeti
 variable {E F G : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
   [SeminormedAddCommGroup G] {f : E → F} {g : E → G} {K L c : ℝ}
 
+/-- Two values bounded by `K exp (-(b₁ r))` and `L exp (-(b₂ r'))` with `δ ≤ r + r'` have product
+at most `K L exp (-(c δ)) exp (-((b₁ - c) r))`, for `0 ≤ c ≤ b₂` and `0 ≤ r'`. -/
+private theorem mul_le_mul_exp_mul_exp_of_le_add {u v b₁ b₂ δ r r' : ℝ} (hc : 0 ≤ c)
+    (hcb : c ≤ b₂) (hr' : 0 ≤ r') (hv : 0 ≤ v) (hu : u ≤ K * Real.exp (-(b₁ * r)))
+    (hvL : v ≤ L * Real.exp (-(b₂ * r'))) (hδ : δ ≤ r + r') (hK : 0 ≤ K) (hL : 0 ≤ L) :
+    u * v ≤ K * L * Real.exp (-(c * δ)) * Real.exp (-((b₁ - c) * r)) := by
+  have hexp : Real.exp (-(b₁ * r)) * Real.exp (-(b₂ * r')) ≤
+      Real.exp (-(c * δ)) * Real.exp (-((b₁ - c) * r)) := by
+    rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
+    nlinarith [mul_le_mul_of_nonneg_left hδ hc, mul_le_mul_of_nonneg_right hcb hr']
+  calc u * v ≤ K * Real.exp (-(b₁ * r)) * (L * Real.exp (-(b₂ * r'))) :=
+        mul_le_mul hu hvL hv (by positivity)
+    _ = K * L * (Real.exp (-(b₁ * r)) * Real.exp (-(b₂ * r'))) := by ring
+    _ ≤ K * L * (Real.exp (-(c * δ)) * Real.exp (-((b₁ - c) * r))) :=
+        mul_le_mul_of_nonneg_left hexp (by positivity)
+    _ = _ := by ring
+
 /-- **Overlap of exponentially decaying functions, splitting the rate.** If
 `‖f z‖ ≤ K exp (-(c₁ ‖z‖))` and `‖g z‖ ≤ L exp (-(c₂ ‖z‖))`, then for every `0 ≤ b ≤ c₂` the
 product of `f` and of the translate `g (· + a)` is at most
@@ -53,27 +71,13 @@ theorem norm_mul_norm_le_mul_exp_mul_exp {c₁ c₂ b : ℝ} (hb : 0 ≤ b) (hbc
     (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c₁ * ‖z‖)))
     (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c₂ * ‖z‖))) (z a : E) :
     ‖f z‖ * ‖g (z + a)‖ ≤ K * L * Real.exp (-(b * ‖a‖)) * Real.exp (-((c₁ - b) * ‖z‖)) := by
-  have hK : 0 ≤ K * Real.exp (-(c₁ * ‖z‖)) := (norm_nonneg _).trans (hf z)
   -- `‖a‖ ≤ ‖z‖ + ‖z + a‖`, so the two decay factors together beat `exp (-(b ‖a‖))`.
   have ha : ‖a‖ ≤ ‖z‖ + ‖z + a‖ := by
     simpa [add_comm ‖z‖] using norm_sub_le (z + a) z
-  have hexp : Real.exp (-(c₁ * ‖z‖)) * Real.exp (-(c₂ * ‖z + a‖)) ≤
-      Real.exp (-(b * ‖a‖)) * Real.exp (-((c₁ - b) * ‖z‖)) := by
-    rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
-    nlinarith [mul_le_mul_of_nonneg_left ha hb,
-      mul_le_mul_of_nonneg_right hbc (norm_nonneg (z + a))]
-  have hKL : 0 ≤ K * L := by
-    have hK' : 0 ≤ K := nonneg_of_mul_nonneg_left hK (Real.exp_pos _)
-    have hL' : 0 ≤ L :=
-      nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hg z)) (Real.exp_pos _)
-    positivity
-  calc ‖f z‖ * ‖g (z + a)‖
-      ≤ K * Real.exp (-(c₁ * ‖z‖)) * (L * Real.exp (-(c₂ * ‖z + a‖))) :=
-        mul_le_mul (hf z) (hg _) (norm_nonneg _) hK
-    _ = K * L * (Real.exp (-(c₁ * ‖z‖)) * Real.exp (-(c₂ * ‖z + a‖))) := by ring
-    _ ≤ K * L * (Real.exp (-(b * ‖a‖)) * Real.exp (-((c₁ - b) * ‖z‖))) :=
-        mul_le_mul_of_nonneg_left hexp hKL
-    _ = _ := by ring
+  have hK : 0 ≤ K := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hf z)) (Real.exp_pos _)
+  have hL : 0 ≤ L := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hg z)) (Real.exp_pos _)
+  exact mul_le_mul_exp_mul_exp_of_le_add hb hbc (norm_nonneg _) (norm_nonneg _) (hf z) (hg _) ha
+    hK hL
 
 /-- **Overlap of exponentially decaying functions, pointwise.** If `‖f z‖ ≤ K exp (-(c ‖z‖))`
 and `‖g z‖ ≤ L exp (-(c ‖z‖))` with `0 ≤ c`, then the product of `f` and of the translate
@@ -104,30 +108,6 @@ theorem exists_mul_le_mul_exp_neg_mul_norm_of_forall_lt {f g : E → ℝ} {r : �
   refine h.trans (mul_le_mul_of_nonneg_left ?_ hKfg)
   exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
     (norm_nonneg a)))
-
-/-- Two values bounded by `K exp (-(b r))` and `L exp (-(b r'))` with `δ ≤ r + r'` have product at
-most `K L exp (-(c δ)) exp (-((b - c) r))`, for `0 ≤ c ≤ b` and `0 ≤ r'`. -/
-private theorem mul_le_mul_exp_mul_exp_of_le_add {u v b δ r r' : ℝ} (hc : 0 ≤ c) (hcb : c ≤ b)
-    (hr' : 0 ≤ r') (hv : 0 ≤ v) (hu : u ≤ K * Real.exp (-(b * r)))
-    (hvL : v ≤ L * Real.exp (-(b * r'))) (hδ : δ ≤ r + r') (hK : 0 ≤ K) (hL : 0 ≤ L) :
-    u * v ≤ K * L * Real.exp (-(c * δ)) * Real.exp (-((b - c) * r)) := by
-  have hexp : Real.exp (-(b * r)) * Real.exp (-(b * r')) ≤
-      Real.exp (-(c * δ)) * Real.exp (-((b - c) * r)) := by
-    rw [← Real.exp_add, ← Real.exp_add, Real.exp_le_exp]
-    nlinarith [mul_le_mul_of_nonneg_left hδ hc, mul_nonneg (sub_nonneg.2 hcb) hr']
-  calc u * v ≤ K * Real.exp (-(b * r)) * (L * Real.exp (-(b * r'))) :=
-        mul_le_mul hu hvL hv (by positivity)
-    _ = K * L * (Real.exp (-(b * r)) * Real.exp (-(b * r'))) := by ring
-    _ ≤ K * L * (Real.exp (-(c * δ)) * Real.exp (-((b - c) * r))) :=
-        mul_le_mul_of_nonneg_left hexp (by positivity)
-    _ = _ := by ring
-
-/-- A value bounded by `M exp (-(b ρ))` for every `ρ`, with `0 < b`, is nonpositive. -/
-private theorem nonpos_of_forall_le_mul_exp {y M b : ℝ} (hb : 0 < b)
-    (h : ∀ ρ, y ≤ M * Real.exp (-(b * ρ))) : y ≤ 0 := by
-  refine ge_of_tendsto (x := Filter.atTop) ?_ (Filter.Eventually.of_forall h)
-  simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-    (Filter.tendsto_id.const_mul_atTop hb)).const_mul M
 
 /-- **Overlap of functions decaying away from separated finite sets of centres.** Let
 `0 ≤ c < b`. Suppose that `0 ≤ f z ≤ K exp (-(b ρ))` whenever every point of the multiset `S` is

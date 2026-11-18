@@ -61,8 +61,8 @@ zero as `a → ∞`
 
 **Uniform separation estimates.** The overlap is in fact exponentially small in the separation,
 uniformly over all divisors of given degrees. A smooth framed vortex of degree `m` satisfies
-`1 - |α(z)|² ≤ K exp (-b ρ)` wherever every zero is at distance at least `ρ` from `z`, with `K`
-depending only on `m` and the rate `b < 1 / 2`
+`1 - |α(z)|² ≤ K exp (-c ρ)` wherever every zero is at distance at least `ρ` from `z`, with `K`
+depending only on `m` and the rate `0 ≤ c < 1 / 2`
 (`TauCeti.Vortex.exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub`). By the triangle
 inequality the two defects then overlap by `exp (-(c δ))` times radial exponentials about the
 zeros of `D₁`, whenever every zero of `D₁` is at distance at least `δ` from every zero of `D₂`

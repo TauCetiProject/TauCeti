@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Multiset
 import TauCeti.Algebra.Order.BigOperators.Ring.Multiset
 import TauCeti.Analysis.Complex.LogOneAddNormSq
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
 # A lower bound for the modulus of a plane vortex in terms of its zeros
@@ -29,7 +30,9 @@ are drawn.
   (`TauCeti.Vortex.one_sub_normSq_le_sum`), by `1 - ∏ (1 - tₐ) ≤ ∑ tₐ`.
 * **Zero localization.** A point where `|α|² ≤ θ < 1` lies near the divisor:
   `(1 - θ) ‖z - a‖² < m C` for some `a ∈ D`
-  (`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`).
+  (`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`). Equivalently, `|α(z)|² > 1 - δ` at every
+  point at distance at least `√(m C / δ)` from every zero, uniformly over all divisors of degree
+  `m` (`TauCeti.Vortex.one_sub_lt_normSq_of_forall_le_norm_sub`).
 * **Uniform exponential decay away from the zeros.** For every rate `0 ≤ c < 1 / 2` there is one
   constant `K`, depending only on `m` and `c`, with `1 - |α(z)|² ≤ K exp (-c ρ)` for every such
   vortex and every point `z` at distance at least `ρ` from all of its zeros
@@ -321,8 +324,9 @@ theorem exists_mem_mul_norm_sub_sq_lt {x : ℂ → EuclideanSpace ℝ (Fin 4)} (
 
 /-- **The modulus near one away from the zeros.** Let `0 < δ` and `C > 16 m`. For a smooth plane
 vortex with the degree-`m` end framing and zero divisor `D`, `|α(z)|² > 1 - δ` at every point `z`
-at distance at least `√(m C / δ)` from every zero. -/
-private theorem one_sub_lt_normSq_of_forall_le_norm_sub {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+at distance at least `√(m C / δ)` from every zero. The distance depends only on `m`, `C` and `δ`,
+so the bound is uniform over all vortices and all divisors of degree `m`. -/
+theorem one_sub_lt_normSq_of_forall_le_norm_sub {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0) {m : ℕ}
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
     {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {C δ : ℝ}
@@ -372,11 +376,7 @@ theorem exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : �
   have hp : ContDiff ℝ 2 fun w ↦ x w 2 := (hxi 2).of_le (by simp)
   have hq : ContDiff ℝ 2 fun w ↦ x w 3 := (hxi 3).of_le (by simp)
   have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe
-  have hK : max 1 M * Real.exp (c * (L + A)) * Real.exp (-(c * ρ)) =
-      max 1 M * Real.exp (-(c * (ρ - L - A))) := by
-    rw [mul_assoc, ← Real.exp_add]
-    ring_nf
-  rw [hK]
+  rw [mul_assoc, ← exp_neg_mul_sub, ← sub_sub]
   by_cases hρL : ρ ≤ L
   · -- Near the zeros, `1 - |α|² ≤ 1 ≤ exp (-c (ρ - L - A))`.
     have hexp : 1 ≤ Real.exp (-(c * (ρ - L - A))) := Real.one_le_exp (by nlinarith)
