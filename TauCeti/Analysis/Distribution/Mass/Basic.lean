@@ -46,6 +46,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.HasLocallyFiniteMass` and
   `Distribution.hasLocallyFiniteMass_iff_localMass_ne_top`: local finiteness of mass by order-zero
   bounds and its variational characterization.
+* `Distribution.exists_tendsto_of_mass_le`: a sequence of continuous linear maps with a common
+  finite mass bound which is Cauchy on each test has a continuous linear limit with the same bound.
 * `Distribution.mass_apply_apply`: the point evaluation `φ ↦ ℓ (φ x)` has mass `‖ℓ‖`; in particular
   the degree-zero point current has mass one (`Distribution.mass_apply_finZero`).
 * `Distribution.mass_integral_apply`: integration against a locally integrable field `G` has mass
@@ -502,6 +504,23 @@ theorem HasLocallyFiniteMass.continuous {L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V}
     simpa [LK] using hC (TestFunction.ofSupportedIn hK ψ) (by simpa using ψ.tsupport_subset)
   exact (ContDiffMapSupportedIn.withSeminorms ℝ E F n K).continuous_normedSpace_rng V LK
     ⟨{0}, ⟨C, hC0⟩, hLK⟩
+
+/-- **Limits under a mass bound.** If continuous linear maps `Sⱼ` on test functions have masses
+bounded by a finite constant `C` and `Sⱼ φ` is a Cauchy sequence for every test `φ`, then the
+pointwise limit is again a continuous linear map, and its mass is at most `C`. -/
+theorem exists_tendsto_of_mass_le [CompleteSpace V] (S : ℕ → 𝓓^{n}(Ω, F) →L[ℝ] V)
+    {C : ℝ≥0∞} (hC : C ≠ ⊤) (hS : ∀ j, mass (S j) ≤ C) (h : ∀ φ, CauchySeq fun j => S j φ) :
+    ∃ S' : 𝓓^{n}(Ω, F) →L[ℝ] V, mass S' ≤ C ∧ ∀ φ, Tendsto (fun j => S j φ) atTop (𝓝 (S' φ)) := by
+  have hs (φ : 𝓓^{n}(Ω, F)) := (h φ).tendsto_limUnder
+  let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V :=
+    { toFun := fun φ => limUnder atTop fun j => S j φ
+      map_add' := fun φ ψ => tendsto_nhds_unique (hs (φ + ψ)) (by simpa using (hs φ).add (hs ψ))
+      map_smul' := fun c φ => tendsto_nhds_unique (hs (c • φ)) (by
+        simpa using (hs φ).const_smul c) }
+  have hL : mass L ≤ C :=
+    (mass_le_liminf (f := L) hs).trans (liminf_le_of_frequently_le' (Frequently.of_forall hS))
+  exact ⟨⟨L, (hasLocallyFiniteMass_of_mass_ne_top L (ne_top_of_le_ne_top hC hL)).continuous⟩,
+    hL, hs⟩
 
 end LocallyFinite
 

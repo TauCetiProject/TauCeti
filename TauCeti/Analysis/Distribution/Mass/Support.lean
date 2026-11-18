@@ -16,8 +16,10 @@ import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 For a real-linear functional of locally finite mass, the support of its mass measure on the
 open domain is exactly its distributional support intersected with that domain. In particular,
 the complement of the distributional support is mass-null, and a test supported in a mass-null
-set has zero evaluation. The comparison is on the open domain: the ambient distributional
-support may also contain frontier points, where the mass measure need not be locally finite.
+set has zero evaluation. Hence only the values of a test on the support matter for the mass
+bound: a test bounded by `c` on the support is evaluated to at most `c` times the mass. The
+comparison is on the open domain: the ambient distributional support may also contain frontier
+points, where the mass measure need not be locally finite.
 
 A linear functional with compact distributional support contained in its domain has finite
 mass if and only if it has locally finite mass. This last statement also holds for normed
@@ -35,7 +37,7 @@ without enlarging their supremum norm. Local finiteness alone does not imply fin
 public section
 
 open Set MeasureTheory TopologicalSpace Filter
-open scoped Distributions Topology BoundedContinuousFunction
+open scoped Distributions Topology BoundedContinuousFunction ENNReal
 
 namespace Distribution
 
@@ -152,6 +154,31 @@ theorem map_eq_zero_of_massMeasure_tsupport_eq_zero (hT : HasLocallyFiniteMass T
     filter_upwards [measure_eq_zero_iff_ae_notMem.1 hφ] with x hx
     simp [image_eq_zero_of_notMem_tsupport hx]
   simpa [hzero] using enorm_apply_le_lintegral_massMeasure hT φ
+
+/-- **The mass bound on the support**: a test bounded by `c` at the points of the support of `T`
+has evaluation at most `c` times the mass of `T`. Values of the test off the support do not
+matter, since the mass measure does not charge the complement of the support. -/
+theorem enorm_apply_le_mul_mass_of_forall_mem_dsupport (hT : HasLocallyFiniteMass T)
+    {φ : 𝓓^{n}(Ω, F)} {c : ℝ≥0∞} (hφ : ∀ x ∈ dsupport T, ‖φ x‖ₑ ≤ c) : ‖T φ‖ₑ ≤ c * mass T := by
+  calc ‖T φ‖ₑ ≤ ∫⁻ x, ‖φ x‖ₑ ∂massMeasure T := enorm_apply_le_lintegral_massMeasure hT φ
+    _ ≤ ∫⁻ _, c ∂massMeasure T := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [measure_eq_zero_iff_ae_notMem.1 (massMeasure_compl_dsupport hT)]
+          with x hx
+        exact hφ x (not_not.1 hx)
+    _ = c * mass T := by rw [lintegral_const, massMeasure_univ hT]
+
+/-- **The mass bound on the support**, for a functional of finite mass: a test bounded by `c ≥ 0`
+at the points of the support of `T` has evaluation at most `c` times the mass of `T`. -/
+theorem norm_apply_le_mul_toReal_mass_of_forall_mem_dsupport (hT : mass T ≠ ⊤)
+    {φ : 𝓓^{n}(Ω, F)} {c : ℝ} (hc : 0 ≤ c) (hφ : ∀ x ∈ dsupport T, ‖φ x‖ ≤ c) :
+    ‖T φ‖ ≤ c * (mass T).toReal := by
+  have hb := enorm_apply_le_mul_mass_of_forall_mem_dsupport
+    (hasLocallyFiniteMass_of_mass_ne_top T hT) (c := ENNReal.ofReal c) fun x hx => by
+      rw [← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal (hφ x hx)
+  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hT) hb
+  rwa [toReal_eNorm, ENNReal.toReal_mul, ENNReal.toReal_ofReal hc] at h
 
 end Measure
 
