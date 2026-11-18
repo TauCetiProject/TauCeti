@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
 Let `Ω` be an open subset of a finite-dimensional real inner product space `E` and `Γ` a subset
 of `E × E`, typically a closed cone in `Ω × (E \ {0})`. Hörmander's space `𝓓'_Γ(Ω)` consists of
 the complex distributions `T` on `Ω` whose wave front set lies in `Γ`
-(`Distribution.WaveFrontSpace Ω Γ`). It is the natural carrier of the operations of microlocal
+(`TauCeti.WaveFrontSpace Ω Γ`). It is the natural carrier of the operations of microlocal
 analysis whose existence depends on the position of the wave front set: pullback along a map
 whose normal set misses `Γ`, and products of distributions whose wave front sets contain no
 opposite covectors. Brouder, Dang and Hélein prove these operations continuous for the *normal
@@ -48,26 +48,26 @@ restriction to an open subset are continuous linear maps of these spaces.
 
 ## Main declarations
 
-* `Distribution.waveFrontSubmodule Ω Γ`: the distributions whose wave front set lies in `Γ`.
-* `Distribution.WaveFrontSeminormIndex Ω Γ`: the data `(φ, V, N)` of a seminorm.
-* `Distribution.WaveFrontSpace Ω Γ`: the space `𝓓'_Γ(Ω)` with the normal topology.
-* `Distribution.WaveFrontSpace.seminorm`: the seminorm `‖T‖_{φ,V,N}`, the best constant in the
-  decay estimate (`Distribution.WaveFrontSpace.seminorm_le_iff`).
-* `Distribution.WaveFrontSpace.tendsto_nhds_iff`,
-  `Distribution.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of linear
+* `TauCeti.waveFrontSubmodule Ω Γ`: the distributions whose wave front set lies in `Γ`.
+* `TauCeti.WaveFrontSeminormIndex Ω Γ`: the data `(φ, V, N)` of a seminorm.
+* `TauCeti.WaveFrontSpace Ω Γ`: the space `𝓓'_Γ(Ω)` with the normal topology.
+* `TauCeti.WaveFrontSpace.seminorm`: the seminorm `‖T‖_{φ,V,N}`, the best constant in the
+  decay estimate (`TauCeti.WaveFrontSpace.seminorm_le_iff`).
+* `TauCeti.WaveFrontSpace.tendsto_nhds_iff`,
+  `TauCeti.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of linear
   maps into `𝓓'_Γ(Ω)`.
-* `Distribution.WaveFrontSpace.inclusionCLM`, `Distribution.WaveFrontSpace.smulLeftCLM`,
-  `Distribution.WaveFrontSpace.lineDerivOpCLM`, `Distribution.WaveFrontSpace.restrictCLM`: the
+* `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
+  `TauCeti.WaveFrontSpace.lineDerivOpCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
   inclusion for a larger cone, multiplication by a smooth function, differentiation and
   restriction as continuous linear maps.
-* `Distribution.WaveFrontSpace.seminorm_inclusionCLM`,
-  `Distribution.WaveFrontSpace.seminorm_smulLeftCLM`,
-  `Distribution.WaveFrontSpace.seminorm_lineDerivOpCLM_le`,
-  `Distribution.WaveFrontSpace.seminorm_restrictCLM`: the seminorm estimates behind their
-  continuity, in terms of the transported data `Distribution.WaveFrontSeminormIndex.mono`,
-  `Distribution.WaveFrontSeminormIndex.smulLeft`, `Distribution.WaveFrontSeminormIndex.withOrder`,
-  `Distribution.WaveFrontSeminormIndex.lineDeriv` and
-  `Distribution.WaveFrontSeminormIndex.restrict`.
+* `TauCeti.WaveFrontSpace.seminorm_inclusionCLM`,
+  `TauCeti.WaveFrontSpace.seminorm_smulLeftCLM`,
+  `TauCeti.WaveFrontSpace.seminorm_lineDerivOpCLM_le`,
+  `TauCeti.WaveFrontSpace.seminorm_restrictCLM`: the seminorm estimates behind their
+  continuity, in terms of the transported data `TauCeti.WaveFrontSeminormIndex.mono`,
+  `TauCeti.WaveFrontSeminormIndex.smulLeft`, `TauCeti.WaveFrontSeminormIndex.withOrder`,
+  `TauCeti.WaveFrontSeminormIndex.lineDeriv` and
+  `TauCeti.WaveFrontSeminormIndex.restrict`.
 
 ## References
 
@@ -85,7 +85,9 @@ noncomputable section
 open Complex Filter Metric Real Set TopologicalSpace LineDeriv
 open scoped Distributions Topology RealInnerProductSpace ContDiff
 
-namespace Distribution
+namespace TauCeti
+
+open Distribution
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Opens E}
@@ -128,7 +130,7 @@ variable (Ω) in
 /-- **Hörmander's space `𝓓'_Γ(Ω)`**: the complex distributions on `Ω` whose wave front set lies
 in `Γ`, with the *normal topology*, the coarsest topology finer than both the topology of
 `𝓓'(Ω)` and the locally convex topology defined by the seminorms
-`Distribution.WaveFrontSpace.seminorm`. -/
+`TauCeti.WaveFrontSpace.seminorm`. -/
 def WaveFrontSpace (Γ : Set (E × E)) : Type _ :=
   waveFrontSubmodule Ω Γ
 
@@ -365,7 +367,7 @@ end Topology
 section Operations
 
 /-- The data of a seminorm of `𝓓'_Γ'(Ω)` is that of a seminorm of `𝓓'_Γ(Ω)` when `Γ ⊆ Γ'`. -/
-def _root_.Distribution.WaveFrontSeminormIndex.mono (h : Γ ⊆ Γ')
+def _root_.TauCeti.WaveFrontSeminormIndex.mono (h : Γ ⊆ Γ')
     (i : WaveFrontSeminormIndex Ω Γ') : WaveFrontSeminormIndex Ω Γ where
   cutoff := i.cutoff
   cone := i.cone
@@ -374,15 +376,23 @@ def _root_.Distribution.WaveFrontSeminormIndex.mono (h : Γ ⊆ Γ')
   smul_mem_cone := i.smul_mem_cone
   disjoint := i.disjoint.mono_right h
 
-/-- The seminorm `‖·‖_{φ,V,N}` evaluated at a distribution depends only on the distribution, not
-on the set `Γ` containing its wave front set. -/
-private theorem seminorm_eq_of_toDistribution_eq (h : Γ ⊆ Γ') (i : WaveFrontSeminormIndex Ω Γ')
-    {u : WaveFrontSpace Ω Γ} {v : WaveFrontSpace Ω Γ'}
-    (huv : u.toDistribution = v.toDistribution) :
-    WaveFrontSpace.seminorm i v = WaveFrontSpace.seminorm (i.mono h) u :=
-  le_antisymm
-    (seminorm_le_bound i v (apply_nonneg _ _) fun _ hη ↦ huv ▸ le_seminorm (i.mono h) u hη)
-    (seminorm_le_bound (i.mono h) u (apply_nonneg _ _) fun _ hη ↦ huv ▸ le_seminorm i v hη)
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.mono_cutoff (h : Γ ⊆ Γ')
+    (i : WaveFrontSeminormIndex Ω Γ') : (i.mono h).cutoff = i.cutoff :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.mono_cone (h : Γ ⊆ Γ')
+    (i : WaveFrontSeminormIndex Ω Γ') : (i.mono h).cone = i.cone :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.mono_order (h : Γ ⊆ Γ')
+    (i : WaveFrontSeminormIndex Ω Γ') : (i.mono h).order = i.order :=
+  (rfl)
 
 /-- Two seminorms `‖·‖_{φ,V,N}` agree when their cones and orders agree and the two localized
 Fourier transforms agree on the cone. -/
@@ -408,7 +418,8 @@ def inclusionCLM (h : Γ ⊆ Γ') : WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpac
       map_smul' _ _ := ext (by simp) }
   ⟨A, continuous_linearMap_of_le A continuous_toDistribution fun i ↦
     ⟨WaveFrontSpace.seminorm (i.mono h), continuous_seminorm _, fun u ↦
-      (seminorm_eq_of_toDistribution_eq h i rfl).le⟩⟩
+      (seminorm_eq_of_localFourier_eq (i := i) (j := i.mono h) (v := u) rfl rfl
+        fun _ _ ↦ rfl).le⟩⟩
 
 @[simp]
 theorem toDistribution_inclusionCLM (h : Γ ⊆ Γ') (u : WaveFrontSpace Ω Γ) :
@@ -420,7 +431,7 @@ theorem toDistribution_inclusionCLM (h : Γ ⊆ Γ') (u : WaveFrontSpace Ω Γ) 
 theorem seminorm_inclusionCLM (h : Γ ⊆ Γ') (i : WaveFrontSeminormIndex Ω Γ')
     (u : WaveFrontSpace Ω Γ) :
     WaveFrontSpace.seminorm i (inclusionCLM h u) = WaveFrontSpace.seminorm (i.mono h) u :=
-  seminorm_eq_of_toDistribution_eq h i (rfl)
+  seminorm_eq_of_localFourier_eq rfl rfl fun _ _ ↦ rfl
 
 section SmulLeft
 
@@ -428,7 +439,7 @@ variable {g : E → ℝ}
 
 /-- The data `(g φ, V, N)` of the seminorm `‖g ·‖_{φ,V,N}` for the data `i = (φ, V, N)`: the
 cutoff `g φ` has support in that of `φ`. -/
-def _root_.Distribution.WaveFrontSeminormIndex.smulLeft (hg : ContDiff ℝ ∞ g)
+def _root_.TauCeti.WaveFrontSeminormIndex.smulLeft (hg : ContDiff ℝ ∞ g)
     (i : WaveFrontSeminormIndex Ω Γ) : WaveFrontSeminormIndex Ω Γ where
   cutoff := TestFunction.smulLeftCLM hg i.cutoff
   cone := i.cone
@@ -438,6 +449,25 @@ def _root_.Distribution.WaveFrontSeminormIndex.smulLeft (hg : ContDiff ℝ ∞ g
   disjoint := i.disjoint.mono_left
     (prod_mono ((TestFunction.tsupport_smulLeftCLM_subset hg _).trans inter_subset_right)
       subset_rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.smulLeft_cutoff (hg : ContDiff ℝ ∞ g)
+    (i : WaveFrontSeminormIndex Ω Γ) :
+    (i.smulLeft hg).cutoff = TestFunction.smulLeftCLM hg i.cutoff :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.smulLeft_cone (hg : ContDiff ℝ ∞ g)
+    (i : WaveFrontSeminormIndex Ω Γ) : (i.smulLeft hg).cone = i.cone :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.smulLeft_order (hg : ContDiff ℝ ∞ g)
+    (i : WaveFrontSeminormIndex Ω Γ) : (i.smulLeft hg).order = i.order :=
+  (rfl)
 
 /-- Multiplication `T ↦ g T` by a smooth real function on `𝓓'_Γ(Ω)`, a continuous linear map:
 the seminorm `‖g T‖_{φ,V,N}` is the seminorm `‖T‖_{gφ,V,N}`. -/
@@ -475,13 +505,31 @@ section LineDeriv
 
 /-- The data `(φ, V, M)` of the seminorm `‖·‖_{φ,V,M}` for the data `i = (φ, V, N)`: the order
 of decay replaced by `M`. -/
-def _root_.Distribution.WaveFrontSeminormIndex.withOrder (i : WaveFrontSeminormIndex Ω Γ)
+def _root_.TauCeti.WaveFrontSeminormIndex.withOrder (i : WaveFrontSeminormIndex Ω Γ)
     (M : ℕ) : WaveFrontSeminormIndex Ω Γ :=
   { i with order := M }
 
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.withOrder_cutoff (i : WaveFrontSeminormIndex Ω Γ)
+    (M : ℕ) : (i.withOrder M).cutoff = i.cutoff :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.withOrder_cone (i : WaveFrontSeminormIndex Ω Γ)
+    (M : ℕ) : (i.withOrder M).cone = i.cone :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.withOrder_order (i : WaveFrontSeminormIndex Ω Γ)
+    (M : ℕ) : (i.withOrder M).order = M :=
+  (rfl)
+
 /-- The data `(∂_v φ, V, N)` of the seminorm `‖·‖_{∂_v φ,V,N}` for the data `i = (φ, V, N)`: the
 derivative `∂_v φ` has support in that of `φ`. -/
-def _root_.Distribution.WaveFrontSeminormIndex.lineDeriv (v : E)
+def _root_.TauCeti.WaveFrontSeminormIndex.lineDeriv (v : E)
     (i : WaveFrontSeminormIndex Ω Γ) : WaveFrontSeminormIndex Ω Γ where
   cutoff := ∂_{v} i.cutoff
   cone := i.cone
@@ -490,8 +538,26 @@ def _root_.Distribution.WaveFrontSeminormIndex.lineDeriv (v : E)
   smul_mem_cone := i.smul_mem_cone
   disjoint := i.disjoint.mono_left (prod_mono (tsupport_fderiv_apply_subset ℝ v) subset_rfl)
 
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.lineDeriv_cutoff (v : E)
+    (i : WaveFrontSeminormIndex Ω Γ) : (i.lineDeriv v).cutoff = ∂_{v} i.cutoff :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.lineDeriv_cone (v : E)
+    (i : WaveFrontSeminormIndex Ω Γ) : (i.lineDeriv v).cone = i.cone :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.lineDeriv_order (v : E)
+    (i : WaveFrontSeminormIndex Ω Γ) : (i.lineDeriv v).order = i.order :=
+  (rfl)
+
 /-- The bound `‖∂_v T‖_{φ,V,N} ≤ 2π ‖v‖ ‖T‖_{φ,V,N+1} + ‖T‖_{∂_v φ,V,N}` for any `u'` whose
-underlying distribution is `∂_v T`, before `Distribution.WaveFrontSpace.lineDerivOpCLM` is
+underlying distribution is `∂_v T`, before `TauCeti.WaveFrontSpace.lineDerivOpCLM` is
 defined. -/
 private theorem seminorm_lineDerivOp_le (v : E) (i : WaveFrontSeminormIndex Ω Γ)
     (u : WaveFrontSpace Ω Γ) (u' : WaveFrontSpace Ω Γ)
@@ -559,7 +625,7 @@ variable {Ω' : Opens E}
 /-- The data of the seminorm `‖T|_{Ω'}‖_{φ,V,N}` for the data `i = (φ, V, N)` on `Ω'`, as data
 on `Ω`: the cutoff `φ` extended by zero, which is admissible for `Γ` when the part of `Γ` over
 `Ω'` lies in `Γ'`. -/
-def _root_.Distribution.WaveFrontSeminormIndex.restrict (h : Ω' ≤ Ω)
+def _root_.TauCeti.WaveFrontSeminormIndex.restrict (h : Ω' ≤ Ω)
     (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆ Γ') (i : WaveFrontSeminormIndex Ω' Γ') :
     WaveFrontSeminormIndex Ω Γ where
   cutoff := TestFunction.monoCLM ℝ i.cutoff
@@ -575,6 +641,27 @@ def _root_.Distribution.WaveFrontSeminormIndex.restrict (h : Ω' ≤ Ω)
     have hp' : p ∈ tsupport i.cutoff ×ˢ i.cone := ⟨hφ ▸ hp.1, hp.2⟩
     exact disjoint_left.1 i.disjoint hp'
       (hΓ ⟨hpΓ, i.cutoff.tsupport_subset hp'.1, mem_univ _⟩)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.restrict_cutoff (h : Ω' ≤ Ω)
+    (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆ Γ') (i : WaveFrontSeminormIndex Ω' Γ') :
+    (i.restrict h hΓ).cutoff = TestFunction.monoCLM ℝ i.cutoff :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.restrict_cone (h : Ω' ≤ Ω)
+    (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆ Γ') (i : WaveFrontSeminormIndex Ω' Γ') :
+    (i.restrict h hΓ).cone = i.cone :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
+@[simp]
+theorem _root_.TauCeti.WaveFrontSeminormIndex.restrict_order (h : Ω' ≤ Ω)
+    (hΓ : Γ ∩ (Ω' : Set E) ×ˢ univ ⊆ Γ') (i : WaveFrontSeminormIndex Ω' Γ') :
+    (i.restrict h hΓ).order = i.order :=
+  (rfl)
 
 /-- Restriction `T ↦ T|_{Ω'}` from `𝓓'_Γ(Ω)` to `𝓓'_Γ'(Ω')` for an open `Ω' ⊆ Ω`, when the part
 of `Γ` over `Ω'` lies in `Γ'`, a continuous linear map: the seminorm `‖T|_{Ω'}‖_{φ,V,N}` is the
@@ -616,4 +703,4 @@ end Operations
 
 end WaveFrontSpace
 
-end Distribution
+end TauCeti
