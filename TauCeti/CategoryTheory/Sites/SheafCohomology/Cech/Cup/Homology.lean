@@ -132,6 +132,7 @@ section Naturality
 
 /-- **Naturality under refinement.** The map on Čech cohomology `Hⁿ(V, F) ⟶ Hⁿ(U, F)` induced by a
 morphism of families `φ : U ⟶ V`, such as a refinement of open covers, preserves cup products. -/
+@[simp]
 theorem homologyMap_cechComplexMap_cechCupHomology {κ : Type w} {V : κ → C}
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) {p q n : ℕ} (h : p + q = n)
     (α : (cechAlgebraComplex V F).homology p) (β : (cechAlgebraComplex V F).homology q) :
@@ -158,6 +159,7 @@ theorem homologyMap_cechComplexMap_cechOneHomology {κ : Type w} {V : κ → C}
 
 /-- **Naturality in the coefficients.** The map on Čech cohomology induced by a morphism of
 presheaves of algebras `α : F ⟶ G` preserves cup products. -/
+@[simp]
 theorem homologyMap_cechComplexFunctor_map_cechCupHomology {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G)
     {p q n : ℕ} (h : p + q = n) (x : (cechAlgebraComplex U F).homology p)
     (y : (cechAlgebraComplex U F).homology q) :
