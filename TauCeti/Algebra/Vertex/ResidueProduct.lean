@@ -10,8 +10,6 @@ public import TauCeti.Algebra.Vertex.FormalDistribution
 public import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Order.Filter.Finite
 import Mathlib.Order.Filter.AtTopBot.Group
-import Mathlib.Tactic.Module
-import Mathlib.Tactic.NoncommRing
 
 /-!
 # Nonnegative residue products of fields
@@ -31,8 +29,8 @@ For local fields the residue products are the coefficients of the delta expansio
 the commutator, which gives the commutator formula
 `[A₍ₘ₎, B₍ₙ₎] = ∑_{j < N} (m choose j) (A₍ⱼ₎B)₍ₘ₊ₙ₋ⱼ₎`. Residue products of translation
 covariant fields are translation covariant, and by Dong's lemma a residue product of two
-fields is local with every field local with both. These are the closure properties used to
-identify the fields of a vertex algebra with residue products.
+mutually local fields is local with every field local with both. These are the closure
+properties used to identify the fields of a vertex algebra with residue products.
 
 ## Main results
 
@@ -167,6 +165,9 @@ theorem IsLocalOfOrder.lie_ncoeff_eq_sum {A B : VertexOperator R V} {N : ℕ}
     Finset.sum_apply, Finset.sum_apply]
   simp only [deltaTerm_apply, residue_mulSub_pow_commutatorDistribution]
 
+-- The commutator Lie ring on `Module.End R V`, for Mathlib's adjoint map `LieAlgebra.ad`.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 /-- **Translation covariance of residue products.** If `[T, A₍ₖ₎] = (∂A)₍ₖ₎` and
 `[T, B₍ₖ₎] = (∂B)₍ₖ₎` for all `k`, the same holds for every residue product `A₍ₙ₎B`. -/
 theorem lie_ncoeff_nonnegResidueProduct {T : Module.End R V} {A B : VertexOperator R V}
@@ -176,26 +177,19 @@ theorem lie_ncoeff_nonnegResidueProduct {T : Module.End R V} {A B : VertexOperat
   -- Commuting with `T` is the total derivative `∂_z + ∂_w` of the commutator distribution,
   -- which commutes with `(z - w)ⁿ` and whose residue in `z` is `∂_w` of the residue.
   set c := A.commutatorDistribution B
-  let g : Module.End R V →+ Module.End R V := AddMonoidHom.mk' (fun X ↦ ⁅T, X⁆) fun X Y ↦ by
-    simp only [Ring.lie_def, mul_add, add_mul]
-    abel
+  let g := (LieAlgebra.ad R (Module.End R V) T).toAddMonoidHom
   have hT : (fun i j ↦ g (c i j)) = totalDerivative c := by
     funext i j
-    have hAi := hA i
-    have hBj := hB j
-    simp only [Ring.lie_def, ncoeff_derivative] at hAi hBj
-    have key : T * (A[[i]] * B[[j]] - B[[j]] * A[[i]]) - (A[[i]] * B[[j]] - B[[j]] * A[[i]]) * T =
-        (T * A[[i]] - A[[i]] * T) * B[[j]] + A[[i]] * (T * B[[j]] - B[[j]] * T) -
-          ((T * B[[j]] - B[[j]] * T) * A[[i]] + B[[j]] * (T * A[[i]] - A[[i]] * T)) := by
-      noncomm_ring
-    simp only [g, c, AddMonoidHom.mk'_apply, commutatorDistribution_apply, totalDerivative_apply,
-      Ring.lie_def, key, hAi, hBj, smul_mul_assoc, mul_smul_comm]
-    module
+    simp only [g, c, LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply,
+      commutatorDistribution_apply]
+    rw [← Ring.lie_def, leibniz_lie, hA, hB, ncoeff_derivative, ncoeff_derivative, smul_lie,
+      lie_smul]
+    simp only [totalDerivative_apply, commutatorDistribution_apply, Ring.lie_def]
   rw [ncoeff_derivative, ← residue_mulSub_pow_commutatorDistribution,
     ← residue_mulSub_pow_commutatorDistribution, ← residue_totalDerivative]
   calc ⁅T, residue ((mulSub ^ n) c) k⁆ = residue ((mulSub ^ n) (fun i j ↦ g (c i j))) k := by
         rw [mulSub_pow_map]
-        simp only [residue_apply, g, AddMonoidHom.mk'_apply]
+        simp only [residue_apply, g, LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply]
     _ = residue (totalDerivative ((mulSub ^ n) c)) k := by
         rw [hT]
         exact congrArg (fun d ↦ residue d k)
@@ -209,34 +203,31 @@ theorem isLocalOfOrder_nonnegResidueProduct {A B C : VertexOperator R V} {Nab Na
     (hab : A.IsLocalOfOrder B Nab) (hac : A.IsLocalOfOrder C Nac)
     (hbc : B.IsLocalOfOrder C Nbc) (n : ℕ) :
     (nonnegResidueProduct n A B).IsLocalOfOrder C (Nab - n + Nac + Nbc - 1) := by
-  -- Right and left commutators with a fixed endomorphism, as additive maps.
-  let adR : Module.End R V → Module.End R V →+ Module.End R V :=
-    fun Y ↦ AddMonoidHom.mulRight Y - AddMonoidHom.mulLeft Y
-  let adL : Module.End R V → Module.End R V →+ Module.End R V :=
-    fun Y ↦ AddMonoidHom.mulLeft Y - AddMonoidHom.mulRight Y
+  -- The commutator `⁅Y, -⁆` with a fixed endomorphism, as an additive map.
+  let ad : Module.End R V → Module.End R V →+ Module.End R V :=
+    fun Y ↦ (LieAlgebra.ad R (Module.End R V) Y).toAddMonoidHom
   -- The three-variable distribution `[[A(z), B(w)], C(x)]`, split by the Jacobi identity
   -- as `[A(z), [B(w), C(x)]] + [[A(z), C(x)], B(w)]`.
   let t : ℤ → ℤ → ℤ → Module.End R V :=
-    fun i j k ↦ adR (C[[k]]) (A.commutatorDistribution B i j)
+    fun i j k ↦ (-ad (C[[k]])) (A.commutatorDistribution B i j)
   let u : ℤ → ℤ → ℤ → Module.End R V :=
-    fun i j k ↦ adL (A[[i]]) (B.commutatorDistribution C j k)
+    fun i j k ↦ ad (A[[i]]) (B.commutatorDistribution C j k)
   let w : ℤ → ℤ → ℤ → Module.End R V :=
-    fun i j k ↦ adR (B[[j]]) (A.commutatorDistribution C i k)
+    fun i j k ↦ (-ad (B[[j]])) (A.commutatorDistribution C i k)
   have htuw : t = u + w := by
     ext i j k : 3
-    simp only [t, u, w, adR, adL, commutatorDistribution_apply, Pi.add_apply,
-      AddMonoidHom.sub_apply, AddMonoidHom.coe_mulLeft, AddMonoidHom.coe_mulRight]
-    noncomm_ring
+    simp only [t, u, w, ad, commutatorDistribution_apply, Pi.add_apply, AddMonoidHom.neg_apply,
+      LinearMap.toAddMonoidHom_coe, LieAlgebra.ad_apply, ← Ring.lie_def]
+    rw [lie_skew, lie_lie, sub_eq_add_neg]
   -- The commutator of `A₍ₙ₎B` with `C` is the slice of `(z - w)ⁿ t` at `z`-index `0`.
   have hP : (nonnegResidueProduct n A B).commutatorDistribution C = (mulSub₁₂ ^ n) t 0 := by
     ext p q : 2
     rw [mulSub₁₂_pow_map, commutatorDistribution_apply,
       ← residue_mulSub_pow_commutatorDistribution]
-    simp [adR]
+    simp [ad, Ring.lie_def]
   -- `(z - w)^Nab` kills `t`, while `(z - x)^Nac (w - x)^Nbc` kills each of `u` and `w`.
   have ha : (mulSub₁₂ ^ (Nab - n)) ((mulSub₁₂ ^ n) t) = 0 := by
-    rw [← Function.comp_apply (f := ⇑(mulSub₁₂ ^ (Nab - n))), ← AddMonoid.End.coe_mul,
-      ← pow_add, mulSub₁₂_pow_map,
+    rw [← AddMonoid.End.mul_apply, ← pow_add, mulSub₁₂_pow_map,
       (isLocalOfOrder_iff_mulSub_pow_eq_zero A B _).mp (hab.mono (by omega))]
     funext i j k
     simp

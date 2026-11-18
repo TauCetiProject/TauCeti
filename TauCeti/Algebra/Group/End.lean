@@ -24,6 +24,9 @@ and `f b`, is an additive character `AddChar ℕ (Monoid.End M)`. Thus multiplic
 corresponds to powers in the endomorphism monoid: the `m`-th power of `f k` is `f (k * m)`.
 No associativity or identity laws for multiplication on `M` are needed.
 
+Multiplication of additive endomorphisms is composition (`AddMonoid.End.mul_apply`), so commuting
+additive endomorphisms commute on each element (`Commute.addMonoidEnd_apply_apply`).
+
 This is the shape of the iteration laws of an iterated Frobenius, `Frob_0 = id` and
 `Frob_(a + b) = Frob_a ∘ Frob_b`, and the lemma packages Mathlib's `AddChar.map_nsmul_eq_pow`
 for that shape once, so that each Chevalley carrier only supplies its two iteration laws.
@@ -37,6 +40,8 @@ for that shape once, so that each Chevalley carrier only supplies its two iterat
 
 * `MulAut.toPerm_apply`: the permutation underlying an automorphism applies as the automorphism.
 * `TauCeti.Monoid.End.pow_eq_of_add_eq_comp`: `f k ^ m = f (k * m)` in `Monoid.End M`.
+* `Commute.addMonoidEnd_apply_apply`: if `f * g = g * f` in `AddMonoid.End M`, then
+  `f (g x) = g (f x)`.
 -/
 
 public section
@@ -72,6 +77,20 @@ theorem subtypePerm_apply_coe (ρ : Γ →* Perm α) (p : α → Prop) (h : ∀ 
   (rfl)
 
 end MonoidHom
+
+namespace AddMonoid.End
+
+variable {M : Type*} [AddZeroClass M]
+
+/-- Multiplication of additive endomorphisms is composition. -/
+theorem mul_apply (f g : AddMonoid.End M) (x : M) : (f * g) x = f (g x) := rfl
+
+end AddMonoid.End
+
+/-- Commuting additive endomorphisms commute on each element. -/
+theorem Commute.addMonoidEnd_apply_apply {M : Type*} [AddZeroClass M] {f g : AddMonoid.End M}
+    (h : Commute f g) (x : M) : f (g x) = g (f x) :=
+  DFunLike.congr_fun h.eq x
 
 namespace TauCeti
 

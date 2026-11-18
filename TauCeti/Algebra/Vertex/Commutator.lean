@@ -28,15 +28,12 @@ acts as a derivation of all products: `[a₍₀₎, b₍ₙ₎] = (a₍₀₎ b)
 
 The proof follows Kac. By Dong's lemma (`VertexOperator.isLocalOfOrder_nonnegResidueProduct`)
 the residue product is local with every field, and it is translation covariant
-(`VertexOperator.lie_ncoeff_nonnegResidueProduct`). A covariant field local with every field is
-the field of its value on the vacuum (`TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`);
-here torsion-freeness recovers its creation series from the recursion
-`T (B₍ₖ₎|0⟩) = -k B₍ₖ₋₁₎|0⟩`.
+(`VertexOperator.lie_ncoeff_nonnegResidueProduct`). A covariant field local with every field and
+with no negative powers of `z` on the vacuum is the field of `B₍₋₁₎|0⟩`
+(`TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`, in `TauCeti.Algebra.Vertex.Axioms`).
 
 ## Main results
 
-* `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: a translation covariant field local
-  with every `Y(a,z)` and with no negative powers on the vacuum is `Y(B₍₋₁₎|0⟩, z)`.
 * `TauCeti.FormalVertexAxioms.field_ncoeff_apply`: `Y(a₍ₙ₎ b) = Y(a)₍ₙ₎ Y(b)` for `n ≥ 0`.
 * `TauCeti.FormalVertexAxioms.lie_ncoeff_field_eq_sum`: the commutator formula.
 * `TauCeti.FormalVertexAxioms.lie_ncoeff_zero_field`: `[a₍₀₎, b₍ₙ₎] = (a₍₀₎ b)₍ₙ₎`.
@@ -62,38 +59,6 @@ namespace FormalVertexAxioms
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 variable (A : FormalVertexAxioms R V)
 
-/-- A translation covariant field `B` that is local with every field `Y(a,z)` and has no
-negative powers of `z` on the vacuum is the field of the state `B₍₋₁₎|0⟩`. -/
-theorem eq_field_of_lie_translation [IsAddTorsionFree V] {B : VertexOperator R V}
-    (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
-    (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]])
-    (hvac : ∀ n : ℤ, 0 ≤ n → (B[[n]]) A.vacuum = 0) :
-    B = A.field ((B[[-1]]) A.vacuum) := by
-  set b := (B[[-1]]) A.vacuum
-  refine A.eq_field_of_ncoeff_apply_vacuum_eq hB ?_
-  -- Both creation series satisfy `T x₍ₖ₎ = -k x₍ₖ₋₁₎` and agree in degrees `k ≥ -1`.
-  have hrec (n : ℤ) : A.translation ((B[[n]]) A.vacuum) = (-n) • (B[[n - 1]]) A.vacuum := by
-    have h := LinearMap.congr_fun (hT n) A.vacuum
-    rwa [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-      A.translation_vacuum, map_zero, sub_zero, ncoeff_derivative, LinearMap.smul_apply] at h
-  have hneg (l : ℕ) : (B[[-l - 1]]) A.vacuum = ((A.field b)[[-l - 1]]) A.vacuum := by
-    induction l with
-    | zero => simp [b]
-    | succ l ih =>
-      have h₁ := hrec (-l - 1)
-      have h₂ := A.translation_ncoeff_apply_vacuum b (-l - 1)
-      rw [ih, h₂, show -(-(l : ℤ) - 1) = ((l + 1 : ℕ) : ℤ) by push_cast; ring, natCast_zsmul,
-        natCast_zsmul] at h₁
-      rw [show -((l + 1 : ℕ) : ℤ) - 1 = -l - 1 - 1 by push_cast; ring]
-      exact (eq_of_nsmul_eq_nsmul_of_addCommute (Nat.succ_ne_zero l) (.all _ _) h₁).symm
-  intro n
-  obtain ⟨k, rfl⟩ | ⟨l, rfl⟩ : (∃ k : ℕ, n = k) ∨ ∃ l : ℕ, n = -l - 1 := by
-    rcases le_or_gt 0 n with h | h
-    · exact .inl ⟨n.toNat, by omega⟩
-    · exact .inr ⟨(-n - 1).toNat, by omega⟩
-  · rw [hvac _ (by positivity), A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by positivity)]
-  · exact hneg l
-
 /-- The **`n`-th product identity** for `n ≥ 0`: the field of `a₍ₙ₎ b` is the residue product
 `Res_z (z - w)ⁿ [Y(a,z), Y(b,w)]` of the fields of `a` and `b`. -/
 theorem field_ncoeff_apply [IsAddTorsionFree V] (a b : V) (n : ℕ) :
@@ -104,9 +69,8 @@ theorem field_ncoeff_apply [IsAddTorsionFree V] (a b : V) (n : ℕ) :
         ((A.field a)[[(ij.1 : ℤ)]]) (((A.field b)[[k + ij.2]]) A.vacuum) := by
     rw [ncoeff_nonnegResidueProduct, LinearMap.sum_apply]
     refine sum_congr rfl fun ij _ ↦ ?_
-    rw [LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.sub_apply, mul_apply_eq_comp,
-      mul_apply_eq_comp, A.ncoeff_field_apply_vacuum_of_nonneg a ij.1 (by positivity), map_zero,
-      sub_zero]
+    simp [A.ncoeff_field_apply_vacuum_of_nonneg a ij.1 (by positivity), -zsmul_eq_mul,
+      -nsmul_eq_mul]
   have hP : P = A.field ((P[[-1]]) A.vacuum) := by
     refine A.eq_field_of_lie_translation (fun c ↦ ?_)
       (lie_ncoeff_nonnegResidueProduct (A.lie_translation_ncoeff a)
