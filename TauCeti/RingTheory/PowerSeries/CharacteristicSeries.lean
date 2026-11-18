@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Bernoulli
 public import TauCeti.Algebra.Algebra.NatCast
-public import TauCeti.RingTheory.PowerSeries.Exp
+public import TauCeti.RingTheory.PowerSeries.Exp.Basic
 
 /-!
 # The characteristic power series of the Todd, Â and L genera
