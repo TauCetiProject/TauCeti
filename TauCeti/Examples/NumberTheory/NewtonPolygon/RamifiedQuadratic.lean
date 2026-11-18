@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import TauCeti.NumberTheory.NewtonPolygon.Irreducible
 public import TauCeti.NumberTheory.Padics.LogGauge
+import TauCeti.Analysis.Normed.Field.RootsOfUnity
 import TauCeti.NumberTheory.Padics.NormedAlgebra
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Valuation.NormNormalization
@@ -41,7 +42,7 @@ The Newton polygon depends on the chosen normalisation of the valuation of `K`.
   `w 2 = 2`, so the slope is `-1` with multiplicity two.
 
 In a quadratic extension `K` of `ℚ_[2]`, such as `ℚ_[2](i)`, every nonzero element has squared
-norm in `2 ^ ℤ` (`Padic.exists_norm_pow_finrank_eq_zpow`). Hence the normalisation at `i - 1` is
+norm in `2 ^ ℤ` (`TauCeti.exists_norm_pow_finrank_eq_zpow`). Hence the normalisation at `i - 1` is
 integer valued: it is the integral normalisation of `K`, and `i - 1` is a uniformiser of the
 valuation ring of `K`. The slope `-1` in that normalisation is integral, so the irreducibility
 criterion for pure polynomials of slope `a / d` with `gcd(a, d) = 1` does not apply over `K`; it
@@ -176,19 +177,6 @@ section Extension
 
 variable {K : Type*} [NormedField K] [NormedAlgebra ℚ_[2] K] {i : K}
 
-omit [NormedAlgebra ℚ_[2] K] in
-/-- A square root `i` of `-1` in a normed field has norm one. -/
-private theorem norm_eq_one_of_sq_eq_neg_one (hi : i ^ 2 = -1) : ‖i‖ = 1 :=
-  (pow_eq_one_iff_of_nonneg (norm_nonneg i) two_ne_zero).mp (by rw [← norm_pow, hi, norm_neg,
-    norm_one])
-
-omit [NormedAlgebra ℚ_[2] K] in
-/-- A square root `i` of `-1` in a nonarchimedean normed field lies in its valuation ring. -/
-private theorem mem_integer_of_sq_eq_neg_one [IsUltrametricDist K] (hi : i ^ 2 = -1) :
-    i ∈ (NormedField.valuation (K := K)).integer := by
-  rw [Valuation.mem_integer_iff, NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnNorm,
-    norm_eq_one_of_sq_eq_neg_one hi]
-
 /-- If `i ^ 2 = -1`, then `‖i - 1‖ = 1 / √2`, because `(i - 1) ^ 2 = -2 i`. -/
 theorem norm_sub_one_eq_inv_sqrt_two (hi : i ^ 2 = -1) : ‖i - 1‖ = (√2)⁻¹ := by
   have hsq : (i - 1) ^ 2 = -(2 * i) := by linear_combination hi
@@ -308,7 +296,7 @@ theorem irreducible_sub_one [IsUltrametricDist K] (hK : Module.finrank ℚ_[2] K
       ‖(a : K)‖ ^ 2 ≤ 2⁻¹ := by
     rw [Valuation.Integer.not_isUnit_iff_valuation_lt_one, NormedField.valuation_apply,
       ← NNReal.coe_lt_one, coe_nnNorm] at hu
-    obtain ⟨m, hm⟩ := Padic.exists_norm_pow_finrank_eq_zpow (p := 2) (Subtype.coe_ne_coe.mpr ha)
+    obtain ⟨m, hm⟩ := exists_norm_pow_finrank_eq_zpow (p := 2) (Subtype.coe_ne_coe.mpr ha)
     rw [hK] at hm
     have hm0 : m < 0 := by
       rw [← zpow_lt_one_iff_right₀ (one_lt_two (α := ℝ)), ← Nat.cast_ofNat (R := ℝ), ← hm]
@@ -337,7 +325,7 @@ theorem exists_int_of_norm_eq_sqrt_two_rpow (hK : Module.finrank ℚ_[2] K = 2)
     {w : AddValuation K (WithTop ℝ)} (hw : ∀ x ≠ 0, ‖x‖ = √2 ^ (-(w x).untop₀)) {x : K}
     (hx : x ≠ 0) : ∃ n : ℤ, w x = ((n : ℝ) : WithTop ℝ) := by
   have : FiniteDimensional ℚ_[2] K := Module.finite_of_finrank_eq_succ hK
-  obtain ⟨m, hm⟩ := Padic.exists_norm_pow_finrank_eq_zpow (p := 2) hx
+  obtain ⟨m, hm⟩ := exists_norm_pow_finrank_eq_zpow (p := 2) hx
   rw [hK] at hm
   refine ⟨-m, ?_⟩
   rw [Int.cast_neg, ← w.norm_eq_rpow_iff Real.one_lt_sqrt_two hw, Real.rpow_intCast]

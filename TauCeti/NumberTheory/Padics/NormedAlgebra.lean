@@ -21,7 +21,7 @@ spectral norm, so an element `x` whose minimal polynomial has degree `d` and con
 
 ## Main results
 
-* `Padic.exists_norm_pow_finrank_eq_zpow`: in an extension of `ℚ_[p]` of degree `n`, the `n`-th
+* `TauCeti.exists_norm_pow_finrank_eq_zpow`: in an extension of `ℚ_[p]` of degree `n`, the `n`-th
   powers of the nonzero norms lie in `p ^ ℤ`.
 
 ## References
@@ -31,7 +31,7 @@ spectral norm, so an element `x` whose minimal polynomial has degree `d` and con
 
 public section
 
-namespace Padic
+namespace TauCeti
 
 /-- **Norms in a finite extension of `ℚ_[p]`.** If `K` is a normed field extension of `ℚ_[p]` of
 finite degree `n`, then the `n`-th power of the norm of every nonzero element of `K` is an integer
@@ -46,4 +46,4 @@ theorem exists_norm_pow_finrank_eq_zpow {p : ℕ} [Fact p.Prime] {K : Type*} [No
     Padic.norm_eq_zpow_neg_valuation (minpoly.coeff_zero_ne_zero hint hx), zpow_mul,
     zpow_natCast]
 
-end Padic
+end TauCeti
