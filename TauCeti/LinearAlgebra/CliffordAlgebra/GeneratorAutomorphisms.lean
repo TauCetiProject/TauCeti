@@ -28,7 +28,8 @@ vectors under the pointwise action), and `equivOfIsometry` identifies it with th
 group of `Q`.
 
 The condition can be read on the degree filtration `CliffordAlgebra.filtration`. Preserving the
-vectors is equivalent to preserving its first step `R ⊕ M`, and to preserving every step. The
+vectors is equivalent to preserving its first step `R ⊕ M`, and so, by
+`CliffordAlgebra.forall_filtration_map_eq_iff`, to preserving every step. The
 first equivalence needs the scalars not to leak into the vectors: if `φ (ι v) = r + ι t`, the
 vector part of the generator square is `2 r • t`, and when `R` is reduced this forces `r = 0`.
 
@@ -50,8 +51,6 @@ vector part of the generator square is `2 r • t`, and when `R` is reduced this
 * `CliffordAlgebra.filtration_one_map_eq_iff`: an algebra equivalence maps the first filtration
   step onto the first filtration step if and only if it maps the vectors onto the vectors, when
   `R` is reduced.
-* `CliffordAlgebra.forall_filtration_map_eq_iff`: an algebra map preserves every filtration step
-  if and only if it preserves the first one.
 
 ## References
 
@@ -73,11 +72,6 @@ variable {R : Type u} [CommRing R]
   {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
   {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
-
-/-- Two algebra equivalences out of a Clifford algebra agree when they agree on the generators. -/
-private theorem algEquiv_ext_ι {φ ψ : CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂}
-    (h : ∀ v, φ (ι Q₁ v) = ψ (ι Q₁ v)) : φ = ψ :=
-  AlgEquiv.coe_toAlgHom_injective <| hom_ext <| LinearMap.ext h
 
 /-! ### The vector stabilizer -/
 
@@ -108,23 +102,6 @@ theorem mem_vectorStabilizer_iff {φ : CliffordAlgebra Q ≃ₐ[R] CliffordAlgeb
 end VectorStabilizer
 
 /-! ### The filtration criteria -/
-
-/-- **An algebra map preserves every step of the degree filtration as soon as it preserves the
-first.** Each step `filtration Q k` is the `k`-th power of the first one. -/
-theorem forall_filtration_map_eq_iff (g : CliffordAlgebra Q₁ →ₐ[R] CliffordAlgebra Q₂) :
-    (∀ k, (filtration Q₁ k).map g.toLinearMap = filtration Q₂ k) ↔
-      (filtration Q₁ 1).map g.toLinearMap = filtration Q₂ 1 := by
-  refine ⟨fun h ↦ h 1, fun h k ↦ TauCeti.Algebra.map_wordFiltration_eq (ι Q₁) g (ι Q₂) ?_ k⟩
-  rwa [← TauCeti.Algebra.wordFiltration_one, ← TauCeti.Algebra.wordFiltration_one]
-
-/-- The square of an element `r + ι Q t` of the first filtration step: its vector part is
-`ι Q ((2 * r) • t)`. -/
-theorem algebraMap_add_ι_mul_self (Q : QuadraticForm R M₂) (r : R) (t : M₂) :
-    (algebraMap R (CliffordAlgebra Q) r + ι Q t) * (algebraMap R _ r + ι Q t) =
-      algebraMap R _ (r * r + Q t) + ι Q ((2 * r) • t) := by
-  rw [add_mul, mul_add, mul_add, ι_sq_scalar, ← map_mul, ← Algebra.commutes r (ι Q t),
-    ← Algebra.smul_def, map_add, map_smul, mul_smul, two_smul]
-  abel
 
 variable [Invertible (2 : R)]
 
@@ -195,16 +172,15 @@ private noncomputable def ιRangeMapLinearEquiv
     (φ : CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂)
     (h : (LinearMap.range (ι Q₁)).map φ.toLinearMap = LinearMap.range (ι Q₂)) : M₁ ≃ₗ[R] M₂ :=
   (ιRangeEquiv Q₁).trans <|
-    (φ.toLinearEquiv.submoduleMap _).trans <|
-      (LinearEquiv.ofEq _ _ (by rw [AlgEquiv.toLinearEquiv_toLinearMap, h])).trans
-        (ιRangeEquiv Q₂).symm
+    (φ.toLinearEquiv.ofSubmodules _ _ (by rw [AlgEquiv.toLinearEquiv_toLinearMap, h])).trans
+      (ιRangeEquiv Q₂).symm
 
 private theorem ι_ιRangeMapLinearEquiv (φ : CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂)
     (h : (LinearMap.range (ι Q₁)).map φ.toLinearMap = LinearMap.range (ι Q₂)) (v : M₁) :
     ι Q₂ (ιRangeMapLinearEquiv φ h v) = φ (ι Q₁ v) := by
   rw [ιRangeMapLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.trans_apply, ι_ιRangeEquiv_symm_apply, LinearEquiv.coe_ofEq_apply,
-    LinearEquiv.submoduleMap_apply, coe_ιRangeEquiv_apply, AlgEquiv.toLinearEquiv_apply]
+    ι_ιRangeEquiv_symm_apply, LinearEquiv.ofSubmodules_apply, coe_ιRangeEquiv_apply,
+    AlgEquiv.toLinearEquiv_apply]
 
 private theorem map_app_ιRangeMapLinearEquiv
     (φ : CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂)
