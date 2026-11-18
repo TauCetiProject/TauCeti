@@ -22,14 +22,14 @@ multiplication by a function with bounded derivatives as a bounded operator on `
 are the linear building blocks of differential operators with nondecaying smooth coefficients on
 the Sobolev scale.
 
-For a natural order `k`, the norm of `H^{k+1,p}` is controlled by the `Lᵖ` norm and the `H^{k,p}`
+For an order `s ≥ -1`, the norm of `H^{s+1,p}` is controlled by the `Lᵖ` norm and the `H^{s,p}`
 norms of the first derivatives along an orthonormal basis
 (`BesselPotentialSpace.exists_norm_le_mul_norm_inclusionLp_add_sum_norm_lineDerivCLM`). The map
-`u ↦ (u, (∂_{b i} u)ᵢ)` into `H^{0,p} × ∏ᵢ H^{k,p}` is injective with closed range, because a
-distribution in `H^{0,p}` whose derivatives lie in `H^{k,p}` lies in `H^{k+1,p}`
-(`TemperedDistribution.memSobolev_add_one_of_lineDerivOp`); the open mapping theorem bounds its
-inverse. In particular elements of `H^{k+1,p}` converge as soon as they converge in `Lᵖ` and their
-first derivatives converge in `H^{k,p}`
+`u ↦ (u, (∂_{b i} u)ᵢ)` into `H^{0,p} × ∏ᵢ H^{s,p}` is injective with closed range, because a
+distribution in `H^{0,p}` whose derivatives lie in `H^{s,p}` lies in `H^{s+1,p}`
+(`TemperedDistribution.memSobolev_add_one_of_lineDerivOp`, applied one order at a time); the open
+mapping theorem bounds its inverse. In particular elements of `H^{s+1,p}` converge as soon as they
+converge in `Lᵖ` and their first derivatives converge in `H^{s,p}`
 (`BesselPotentialSpace.tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM`).
 
 For `s ≥ 0` an element `u` of `H^{s,p}(E)` is an `Lᵖ` function, `BesselPotentialSpace.inclusionLp`.
@@ -51,7 +51,7 @@ The second part of the file describes the operators on these functions when `u` 
   `H^{s+1,p}(E, F) →L[ℂ] H^{s,p}(E, F)` for `1 < p < ∞`.
 * `BesselPotentialSpace.exists_norm_le_mul_norm_inclusionLp_add_sum_norm_lineDerivCLM` and
   `BesselPotentialSpace.tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM`: the norm of
-  `H^{k+1,p}` is controlled by the `Lᵖ` norm and the first derivatives.
+  `H^{s+1,p}` is controlled by the `Lᵖ` norm and the first derivatives.
 -/
 
 public section
@@ -89,64 +89,64 @@ end lineDerivCLM
 
 section Gradient
 
-variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {p : ℝ≥0∞}
+variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ} {p : ℝ≥0∞}
   [Fact (1 ≤ p)] {ι : Type*} [Fintype ι]
 
-/-- The map `u ↦ (u, (∂_{b i} u)ᵢ)` from `H^{k+1,p}` to `H^{0,p} × ∏ᵢ H^{k,p}`. -/
-private def gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞) (b : OrthonormalBasis ι ℝ E) (k : ℕ) :
-    H^{(k : ℝ) + 1, p}(E, F) →L[ℂ] H^{0, p}(E, F) × (ι → H^{(k : ℝ), p}(E, F)) :=
-  (inclusion (by positivity)).prod (ContinuousLinearMap.pi fun i ↦ lineDerivCLM hp hp_top (b i))
+/-- The map `u ↦ (u, (∂_{b i} u)ᵢ)` from `H^{s+1,p}` to `H^{0,p} × ∏ᵢ H^{s,p}`. -/
+private def gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞) (hs : 0 ≤ s + 1)
+    (b : OrthonormalBasis ι ℝ E) :
+    H^{s + 1, p}(E, F) →L[ℂ] H^{0, p}(E, F) × (ι → H^{s, p}(E, F)) :=
+  (inclusion hs).prod (ContinuousLinearMap.pi fun i ↦ lineDerivCLM hp hp_top (b i))
 
-private theorem injective_gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞) (b : OrthonormalBasis ι ℝ E)
-    (k : ℕ) : Function.Injective (gradientCLM (F := F) hp hp_top b k) :=
+private theorem injective_gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞) (hs : 0 ≤ s + 1)
+    (b : OrthonormalBasis ι ℝ E) : Function.Injective (gradientCLM (F := F) hp hp_top hs b) :=
   fun _ _ h ↦ inclusion_injective _ (congrArg Prod.fst h)
 
 /-- The range of `u ↦ (u, (∂_{b i} u)ᵢ)` consists of the pairs whose second entry is the
 distributional gradient of the first: a distribution in `H^{0,p}` whose derivatives along an
-orthonormal basis lie in `H^{k,p}` lies in `H^{k+1,p}`. -/
-private theorem range_gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞) (b : OrthonormalBasis ι ℝ E)
-    (k : ℕ) : Set.range (gradientCLM (F := F) hp hp_top b k) =
+orthonormal basis lie in `H^{s,p}` lies in `H^{s+1,p}`. -/
+private theorem range_gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞) (hs : 0 ≤ s + 1)
+    (b : OrthonormalBasis ι ℝ E) : Set.range (gradientCLM (F := F) hp hp_top hs b) =
       {q | ∀ i, ∂_{b i} q.1.toDistr = (q.2 i).toDistr} := by
   ext q
   refine ⟨?_, fun hq ↦ ?_⟩
   · rintro ⟨u, rfl⟩ i
     simp [gradientCLM, toDistr_inclusion]
-  -- Raise the order of `q.1` one step at a time, up to `k + 1`.
-  have hd (i : ι) (j : ℕ) (hj : j ≤ k) : MemSobolev j p (∂_{b i} q.1.toDistr) := by
-    rw [hq i]
-    exact (q.2 i).memSobolev_toDistr.mono_of_one_lt hp hp_top (by exact_mod_cast hj)
-  have hmem (j : ℕ) (hj : j ≤ k + 1) : MemSobolev j p q.1.toDistr := by
-    induction j with
-    | zero => simpa using q.1.memSobolev_toDistr
-    | succ j ih =>
-      push_cast
-      exact memSobolev_add_one_of_lineDerivOp hp hp_top b (ih (by omega))
-        fun i ↦ hd i j (by omega)
-  have hk := hmem (k + 1) le_rfl
-  push_cast at hk
+  -- Raise the order of `q.1` one step at a time, through `min (s + 1) n` for `n = 0, 1, …`.
+  have hmem (n : ℕ) : MemSobolev (min (s + 1) n) p q.1.toDistr := by
+    induction n with
+    | zero => exact q.1.memSobolev_toDistr.mono_of_one_lt hp hp_top (by simp)
+    | succ n ih =>
+      have h := memSobolev_add_one_of_lineDerivOp hp hp_top b
+        (ih.mono_of_one_lt hp hp_top (min_le_min (by linarith) le_rfl)) fun i ↦ by
+          rw [hq i]
+          exact (q.2 i).memSobolev_toDistr.mono_of_one_lt hp hp_top (min_le_left s n)
+      rwa [← min_add_add_right, ← Nat.cast_succ] at h
+  have hk := hmem ⌈s + 1⌉₊
+  rw [min_eq_left (Nat.le_ceil _)] at hk
   refine ⟨hk.toBesselPotentialSpace, Prod.ext (ext ?_) (funext fun i ↦ ext ?_)⟩
   · simp [gradientCLM, toDistr_inclusion, MemSobolev.toBesselPotentialSpace_toDistr]
   · simp [gradientCLM, MemSobolev.toBesselPotentialSpace_toDistr, hq i]
 
-private theorem isClosed_range_gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞)
-    (b : OrthonormalBasis ι ℝ E) (k : ℕ) :
-    IsClosed (Set.range (gradientCLM (F := F) hp hp_top b k)) := by
+private theorem isClosed_range_gradientCLM (hp : 1 < p) (hp_top : p ≠ ∞) (hs : 0 ≤ s + 1)
+    (b : OrthonormalBasis ι ℝ E) :
+    IsClosed (Set.range (gradientCLM (F := F) hp hp_top hs b)) := by
   rw [range_gradientCLM, Set.ofPred_forall]
   exact isClosed_iInter fun i ↦ isClosed_eq
     ((LineDeriv.lineDerivOpCLM ℂ 𝓢'(E, F) (b i)).continuous.comp
       (continuous_toDistr.comp continuous_fst))
     (continuous_toDistr.comp ((continuous_apply i).comp continuous_snd))
 
-/-- **The `H^{k+1,p}` norm is controlled by the `Lᵖ` norm and the first derivatives.** For
-`1 < p < ∞`, a natural order `k` and an orthonormal basis `b`, there is a constant `C` with
-`‖u‖_{H^{k+1,p}} ≤ C (‖u‖_{Lᵖ} + ∑ᵢ ‖∂_{b i} u‖_{H^{k,p}})` for every `u ∈ H^{k+1,p}(E, F)`. -/
+/-- **The `H^{s+1,p}` norm is controlled by the `Lᵖ` norm and the first derivatives.** For
+`1 < p < ∞`, an order `s ≥ -1` and an orthonormal basis `b`, there is a constant `C` with
+`‖u‖_{H^{s+1,p}} ≤ C (‖u‖_{Lᵖ} + ∑ᵢ ‖∂_{b i} u‖_{H^{s,p}})` for every `u ∈ H^{s+1,p}(E, F)`. -/
 theorem exists_norm_le_mul_norm_inclusionLp_add_sum_norm_lineDerivCLM (hp : 1 < p)
-    (hp_top : p ≠ ∞) (b : OrthonormalBasis ι ℝ E) (k : ℕ) :
-    ∃ C, ∀ u : H^{(k : ℝ) + 1, p}(E, F), ‖u‖ ≤ C * (‖inclusionLp (by positivity) u‖ +
+    (hp_top : p ≠ ∞) (hs : 0 ≤ s + 1) (b : OrthonormalBasis ι ℝ E) :
+    ∃ C, ∀ u : H^{s + 1, p}(E, F), ‖u‖ ≤ C * (‖inclusionLp hs u‖ +
       ∑ i, ‖lineDerivCLM hp hp_top (b i) u‖) := by
   obtain ⟨K, hK⟩ :=
-    (gradientCLM (F := F) hp hp_top b k).antilipschitz_of_injective_of_isClosed_range
-      (injective_gradientCLM hp hp_top b k) (isClosed_range_gradientCLM hp hp_top b k)
+    (gradientCLM (F := F) hp hp_top hs b).antilipschitz_of_injective_of_isClosed_range
+      (injective_gradientCLM hp hp_top hs b) (isClosed_range_gradientCLM hp hp_top hs b)
   refine ⟨K, fun u ↦ ?_⟩
   have h := hK.le_mul_dist u 0
   rw [dist_zero_right, map_zero, dist_zero_right] at h
@@ -158,19 +158,18 @@ theorem exists_norm_le_mul_norm_inclusionLp_add_sum_norm_lineDerivCLM (hp : 1 < 
   · exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg _) (Finset.mem_univ i)).trans
       (le_add_of_nonneg_left (norm_nonneg _))
 
-/-- **Convergence in `H^{k+1,p}` from convergence of the function and its first derivatives.**
-For `1 < p < ∞`, elements `u a` of `H^{k+1,p}(E, F)` converge to `u₀` as soon as they converge in
-`Lᵖ` and their derivatives along an orthonormal basis converge in `H^{k,p}`. -/
+/-- **Convergence in `H^{s+1,p}` from convergence of the function and its first derivatives.**
+For `1 < p < ∞` and `s ≥ -1`, elements `u a` of `H^{s+1,p}(E, F)` converge to `u₀` as soon as they
+converge in `Lᵖ` and their derivatives along an orthonormal basis converge in `H^{s,p}`. -/
 theorem tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM (hp : 1 < p) (hp_top : p ≠ ∞)
-    (b : OrthonormalBasis ι ℝ E) {k : ℕ} {α : Type*} {l : Filter α}
-    {u : α → H^{(k : ℝ) + 1, p}(E, F)} {u₀ : H^{(k : ℝ) + 1, p}(E, F)}
-    (h₀ : Tendsto (fun a ↦ inclusionLp (by positivity) (u a)) l
-      (𝓝 (inclusionLp (by positivity) u₀)))
+    (hs : 0 ≤ s + 1) (b : OrthonormalBasis ι ℝ E) {α : Type*} {l : Filter α}
+    {u : α → H^{s + 1, p}(E, F)} {u₀ : H^{s + 1, p}(E, F)}
+    (h₀ : Tendsto (fun a ↦ inclusionLp hs (u a)) l (𝓝 (inclusionLp hs u₀)))
     (hd : ∀ i, Tendsto (fun a ↦ lineDerivCLM hp hp_top (b i) (u a)) l
       (𝓝 (lineDerivCLM hp hp_top (b i) u₀))) :
     Tendsto u l (𝓝 u₀) := by
   obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_inclusionLp_add_sum_norm_lineDerivCLM (F := F)
-    hp hp_top b k
+    hp hp_top hs b
   rw [tendsto_iff_norm_sub_tendsto_zero] at h₀ ⊢
   have hd' (i : ι) := tendsto_iff_norm_sub_tendsto_zero.1 (hd i)
   refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun a ↦ ?_) (by

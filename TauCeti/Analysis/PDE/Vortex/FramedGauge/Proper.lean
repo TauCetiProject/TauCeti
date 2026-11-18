@@ -221,7 +221,7 @@ theorem tendsto_one_of_tendsto_gaugeForm (hk : 1 < k) {ι : Type*} {l : Filter �
   have hF0 : Tendsto F l (𝓝 0) := by
     rw [tendsto_subtype_rng]
     refine tendsto_of_tendsto_inclusionLp_of_tendsto_lineDerivCLM (by norm_num)
-      (by norm_num) Complex.orthonormalBasisOneI (u₀ := 0) ?_ fun j ↦ ?_
+      (by norm_num) h0 Complex.orthonormalBasisOneI (u₀ := 0) ?_ fun j ↦ ?_
     · simpa using hFL2
     · simpa using hFd _
   have hexp := ((continuous_expGauge hs).tendsto 0).comp hF0
@@ -229,6 +229,12 @@ theorem tendsto_one_of_tendsto_gaugeForm (hk : 1 < k) {ι : Type*} {l : Filter �
   refine hexp.congr' ?_
   filter_upwards [hF] with i hi
   exact hi.1
+
+/-- The pointwise form of the quotient `a⁻¹ b` of two Sobolev gauges. -/
+private theorem coe_toSubgroup_inv_mul (a b : SobolevTopologicalGaugeGroup hs) :
+    (toSubgroup hs (a⁻¹ * b) : ℂ → Circle) =
+      (toSubgroup hs a : ℂ → Circle)⁻¹ * toSubgroup hs b := by
+  rw [map_mul, map_inv, Subgroup.coe_mul, Subgroup.coe_inv]
 
 end SobolevTopologicalGaugeGroup
 
@@ -304,7 +310,8 @@ private theorem tendstoLocallyUniformly_of_gaugeTransform_eq (hk : 2 < k) [l.NeB
   -- The limit is `u`, since the action of `G_(k+1)` on `A_m^k` is free.
   have : Fact (1 < k) := ⟨by omega⟩
   have hvu : (⟨v, hvG⟩ : sobolevGaugeGroup hs) = toSubgroup hs u :=
-    IsCancelSMul.right_cancel _ _ x.toFramedFieldSpace (Subtype.ext (hv.trans huxy.symm))
+    IsCancelSMul.right_cancel _ _ x.toFramedFieldSpace (Subtype.ext (by
+      simpa only [coe_sobolevGaugeGroup_smul, coe_toFramedFieldSpace] using hv.trans huxy.symm))
   rwa [show v = (toSubgroup hs u : ℂ → Circle) from congrArg Subtype.val hvu] at hconv
 
 /-- Off the compact set where `|α| ≤ 1 / 2`, the gauges differ by at most four times the
@@ -470,9 +477,9 @@ private theorem exists_tendsto_gaugeForm_inv_mul (hk : 2 < k)
     have hinv : DifferentiableAt ℝ
         (fun z ↦ (((toSubgroup hs u : ℂ → Circle)⁻¹ : ℂ → Circle) z : ℂ)) z :=
       Circle.differentiableAt_coe_inv (hdiff u z)
-    rw [map_mul, map_inv, Subgroup.coe_mul, Subgroup.coe_inv,
-      gaugeForm_mul hinv (hdiff (us i) z), gaugeForm_inv (hdiff u z), add_apply, neg_apply,
-      ((gaugeTransform_eq_iff.1 (hxy i)) z).1, ((gaugeTransform_eq_iff.1 huxy) z).1]
+    rw [coe_toSubgroup_inv_mul, gaugeForm_mul hinv (hdiff (us i) z), gaugeForm_inv (hdiff u z),
+      add_apply, neg_apply, ((gaugeTransform_eq_iff.1 (hxy i)) z).1,
+      ((gaugeTransform_eq_iff.1 huxy) z).1]
     simp only [add_apply, smul_apply, reCLM_apply, imCLM_apply, smul_eq_mul]
     ring
   refine ⟨fun i v ↦ (v.re : ℂ) • G i 0 + (v.im : ℂ) • G i 1, fun i v ↦ ?_, fun v ↦ ?_⟩
@@ -505,8 +512,7 @@ theorem tendsto_of_gaugeTransform_eq (hk : 2 < k)
   have hwn (i : ι) (z : ℂ) : ((toSubgroup hs (u⁻¹ * us i) : ℂ → Circle) z : ℂ) - 1 =
       ((((toSubgroup hs u : ℂ → Circle) z)⁻¹ : Circle) : ℂ) *
         (((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z) := by
-    rw [map_mul, map_inv, Subgroup.coe_mul, Subgroup.coe_inv, Pi.mul_apply, Pi.inv_apply,
-      Circle.coe_inv_mul_sub_one]
+    rw [coe_toSubgroup_inv_mul, Pi.mul_apply, Pi.inv_apply, Circle.coe_inv_mul_sub_one]
   have hunif := tendstoUniformly_of_gaugeTransform_eq hk hxy huxy hx hy
   have hL2 := tendsto_eLpNorm_of_gaugeTransform_eq hk hxy huxy hx hy
   obtain ⟨g, hg, hg₀⟩ := exists_tendsto_gaugeForm_inv_mul hk hxy huxy hx hy
