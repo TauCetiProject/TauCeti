@@ -12,11 +12,12 @@ public import TauCeti.RingTheory.LaurentSeries.Substitution.Coordinate
 # Coordinate substitution and the `X`-adic topology
 
 Over a commutative ring `R`, the substitution automorphism `TauCeti.LaurentSeries.substAlgEquiv φ`
-of a formal coordinate `φ = X v`, with `v` a unit power series, multiplies `Xᵃ p` by `vᵃ`. Hence
-it preserves every lattice `Xᵃ R⟦X⟧` of Laurent series, in particular the power series (`a = 0`),
-and so does its inverse, the substitution of `φ⁻¹`. As these lattices form a basis of
-neighbourhoods of zero for the `X`-adic topology on `R⸨X⸩ = HahnModule ℤ R R`, with the
-coefficients discrete, each substitution is continuous for this topology.
+of a formal coordinate `φ = X v`, with `v` a unit power series, sends `Xᵃ p` to `Xᵃ (vᵃ p(φ))`,
+with `vᵃ p(φ)` again a power series. Hence it preserves every lattice `Xᵃ R⟦X⟧` of Laurent
+series, in particular the power series (`a = 0`), and so does its inverse, the substitution of
+`φ⁻¹`. As these lattices form a basis of neighbourhoods of zero for the `X`-adic topology on
+`R⸨X⸩ = HahnModule ℤ R R`, with the coefficients discrete, each substitution is continuous for
+this topology.
 
 ## Main results
 

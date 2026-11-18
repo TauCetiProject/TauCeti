@@ -133,16 +133,12 @@ theorem algHom_eq_substAlgEquiv (φ : FormalCoordinate R) (σ : R⸨X⸩ →ₐ[
     σ = (substAlgEquiv φ).toAlgHom :=
   algHom_ext fun f ↦ by simp [h]
 
-/-- Substitution fixes the constants. -/
-theorem substAlgEquiv_C (φ : FormalCoordinate R) (a : R) :
-    substAlgEquiv φ (HahnSeries.C a) = HahnSeries.C a := by
-  rw [← ofPowerSeries_C, substAlgEquiv_coe, ← PowerSeries.algebraMap_eq, AlgEquiv.commutes]
-
 /-- Substitution fixes the constants, in the simp-normal form `single 0 a` of `C a`. -/
 @[simp]
 theorem substAlgEquiv_single_zero (φ : FormalCoordinate R) (a : R) :
-    substAlgEquiv φ (single 0 a) = single 0 a :=
-  substAlgEquiv_C φ a
+    substAlgEquiv φ (single 0 a) = single 0 a := by
+  rw [← HahnSeries.C_apply, ← ofPowerSeries_C, substAlgEquiv_coe, ← PowerSeries.algebraMap_eq,
+    AlgEquiv.commutes]
 
 /-- Write `φ = X v` with `v` a unit power series. Substitution sends the monomial `a X ^ n`, for
 every integer `n`, to `a φ ^ n = a X ^ n v ^ n`. -/
@@ -166,9 +162,9 @@ theorem substAlgEquiv_single_of_eq_X_mul (φ : FormalCoordinate R) {v : R⟦X⟧
       rw [hnat, mul_mul_mul_comm, single_mul_single, ← PowerSeries.coe_mul, ← Units.val_mul, hv]
       simp
     exact (IsUnit.of_mul_eq_one_right _ h₁).mul_left_injective (h₁.trans h₂.symm)
-  have hC : (single n a : R⸨X⸩) = HahnSeries.C a * single n 1 := by
-    rw [HahnSeries.C_apply, single_mul_single, zero_add, mul_one]
-  rw [hC, map_mul, substAlgEquiv_C, hone, mul_assoc]
+  have hC : (single n a : R⸨X⸩) = single 0 a * single n 1 := by
+    rw [single_mul_single, zero_add, mul_one]
+  rw [hC, map_mul, substAlgEquiv_single_zero, hone, mul_assoc]
 
 /-- Substitution automorphisms reverse composition: `σ_(φ ∘ ψ) = σ_ψ ∘ σ_φ`. -/
 @[simp]
