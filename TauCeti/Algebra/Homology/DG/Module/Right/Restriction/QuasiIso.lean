@@ -78,18 +78,6 @@ end DGRightModuleHom
 
 namespace DGRightModuleCat
 
-/-- Restriction of scalars preserves and reflects quasi-isomorphisms of bundled DG right
-modules. -/
-@[simp]
-theorem isQuasiIso_restrictScalars_map_iff (f : DGAlgHom hA hB)
-    {M N : DGRightModuleCat.{uR, uB, uM} hB} (g : M ⟶ N) :
-    IsQuasiIso ((restrictScalars f).map g) ↔ IsQuasiIso g := by
-  rw [isQuasiIso_iff_isIso_cohomologyFunctor_map,
-    ← isIso_comp_right_iff _ (cohomologyFunctor.map (restrictScalarsObjIso f N).hom),
-    ← Functor.map_comp, restrictScalarsObjIso_hom_naturality, Functor.map_comp,
-    isIso_comp_left_iff, ← isQuasiIso_iff_isIso_cohomologyFunctor_map]
-  exact DGRightModuleHom.isQuasiIso_restrictScalars_iff f g
-
 /-- Restriction of scalars preserves and reflects membership in the quasi-isomorphisms. -/
 @[simp]
 theorem quasiIsos_restrictScalars_map_iff (f : DGAlgHom hA hB)
