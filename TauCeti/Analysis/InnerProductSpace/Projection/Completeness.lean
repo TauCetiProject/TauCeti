@@ -14,6 +14,10 @@ A subspace that admits an orthogonal projection is the range of a continuous ide
 therefore closed. In a complete ambient inner-product space, such a subspace is itself complete.
 Closedness, completeness and existence of an orthogonal projection are equivalent there.
 
+The sum `U ⊔ V` of two orthogonal subspaces admitting orthogonal projections equals
+`(Uᗮ ⊓ Vᗮ)ᗮ` and is therefore closed (`Submodule.IsOrtho.sup_eq_orthogonal_inf_orthogonal`,
+`Submodule.IsOrtho.isClosed_sup`).
+
 The completeness observation also appears in
 `ForTauCeti/Analysis/InnerProductSpace/ReducingSubspace.lean` of the
 [AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization)
