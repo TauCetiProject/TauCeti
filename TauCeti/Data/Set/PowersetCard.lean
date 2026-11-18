@@ -23,6 +23,8 @@ embedding to disjointness and `disjUnion`, `Set.powersetCard.le_card` and
 `Set.powersetCard.sub_add_eq_card` record the cardinality bound witnessed by an `r`-element subset
 of a finite type, and `Set.powersetCard.subsingleton_of_card_eq` together with the
 `Unique`/`Subsingleton` instances witness uniqueness at cardinalities `0` and `Fintype.card α`.
+For `p + 1 = Fintype.card α`, `Set.powersetCard.omitOne` is the equivalence sending `a : α` to the
+`p`-element subset `Finset.univ.erase a` omitting `a`.
 
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
@@ -140,6 +142,60 @@ theorem subsingleton_of_card_eq {α : Type*} [Fintype α] {d : ℕ} (hd : d = Fi
 instance instSubsingletonCard {α : Type*} [Fintype α] :
     Subsingleton (powersetCard α (Fintype.card α)) :=
   subsingleton_of_card_eq rfl
+
+section OmitOne
+
+variable {α : Type*} [DecidableEq α] [Fintype α] {p : ℕ}
+
+/-- The equivalence sending `a : α` to the `p`-element subset `Finset.univ.erase a` omitting `a`,
+where `p + 1 = Fintype.card α`. -/
+noncomputable def omitOne (hm : p + 1 = Fintype.card α) : α ≃ powersetCard α p :=
+  ofSingleton.trans (compl hm)
+
+/-- `omitOne hm a` is the complement of the singleton `{a}`. -/
+theorem omitOne_apply (hm : p + 1 = Fintype.card α) (a : α) :
+    omitOne hm a = compl hm (ofSingleton a) :=
+  (rfl)
+
+/-- The finite set underlying `omitOne hm a` is `Finset.univ.erase a`. -/
+@[simp]
+theorem coe_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
+    ((omitOne hm a : powersetCard α p) : Finset α) = Finset.univ.erase a := by
+  ext b
+  simp [omitOne_apply, Finset.mem_erase]
+
+/-- An element belongs to `omitOne hm a` precisely when it differs from `a`. -/
+@[simp, grind =]
+theorem mem_omitOne {hm : p + 1 = Fintype.card α} {a b : α} :
+    b ∈ omitOne hm a ↔ b ≠ a := by
+  rw [← mem_coe_iff, coe_omitOne, Finset.mem_erase]
+  simp
+
+/-- Taking the complement of `omitOne hm a` recovers the singleton `{a}`. -/
+@[simp]
+theorem compl_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
+    compl ((Nat.add_comm 1 p).trans hm) (omitOne hm a) = ofSingleton a := by
+  rw [omitOne_apply, ← compl_symm (hm := hm), Equiv.symm_apply_apply]
+
+/-- `(omitOne hm).symm s` recovers the unique element outside `s` via `compl` and
+`ofSingleton.symm`. -/
+theorem omitOne_symm_apply (hm : p + 1 = Fintype.card α) (s : powersetCard α p) :
+    (omitOne hm).symm s = ofSingleton.symm (compl ((Nat.add_comm 1 p).trans hm) s) := by
+  simp [omitOne, compl_symm]
+
+/-- `(omitOne hm).symm s` equals `a` precisely when `a` does not belong to `s`. -/
+theorem omitOne_symm_apply_eq_iff {hm : p + 1 = Fintype.card α} {s : powersetCard α p} {a : α} :
+    (omitOne hm).symm s = a ↔ a ∉ s := by
+  rw [Equiv.symm_apply_eq, eq_iff_subset, coe_omitOne, Finset.subset_erase]
+  simp [mem_coe_iff]
+
+/-- The element `(omitOne hm).symm s` omitted by `s` does not belong to `s`. -/
+@[simp, grind .]
+theorem omitOne_symm_notMem (hm : p + 1 = Fintype.card α) (s : powersetCard α p) :
+    (omitOne hm).symm s ∉ s :=
+  omitOne_symm_apply_eq_iff.mp rfl
+
+end OmitOne
 
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
