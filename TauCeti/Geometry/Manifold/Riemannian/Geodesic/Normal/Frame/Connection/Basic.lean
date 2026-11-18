@@ -116,6 +116,32 @@ theorem normalFrameConnectionOperator_zero (b : OrthonormalBasis ι ℝ (Tangent
     (q : M) : normalFrameConnectionOperator (U := U) b 0 q = 0 := by
   simp [normalFrameConnectionOperator_apply]
 
+/-- The normal-frame connection matrix at a fixed point, as a linear function of the
+initial tangent direction. -/
+def normalFrameConnectionLinearMap
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) :
+    TangentSpace I p →ₗ[ℝ] (TangentSpace I p →L[ℝ] TangentSpace I p) where
+  toFun v := b.normalFrameConnectionOperator (U := U) v q
+  map_add' v w := b.normalFrameConnectionOperator_add (U := U) v w q
+  map_smul' c v := b.normalFrameConnectionOperator_smul (U := U) c v q
+
+/-- Applying the linear map recovers the normal-frame connection operator. -/
+@[simp]
+theorem normalFrameConnectionLinearMap_apply
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) (v : TangentSpace I p) :
+    b.normalFrameConnectionLinearMap (U := U) q v =
+      b.normalFrameConnectionOperator (U := U) v q := (rfl)
+
+/-- Every normal-frame connection matrix is a finite sum of the matrices in the initial
+orthonormal basis directions. -/
+theorem normalFrameConnectionOperator_eq_sum
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v : TangentSpace I p) (q : M) :
+    b.normalFrameConnectionOperator (U := U) v q =
+      ∑ i, ⟪b i, v⟫_ℝ • b.normalFrameConnectionOperator (U := U) (b i) q := by
+  simpa only [map_sum, map_smul, normalFrameConnectionLinearMap_apply] using
+    congrArg (b.normalFrameConnectionLinearMap (U := U) q) (b.sum_repr' v).symm
+
 /-- The components of the connection operator recover the connection matrix acting on components. -/
 theorem inner_normalFrameConnectionOperator (b : OrthonormalBasis ι ℝ (TangentSpace I p))
     (v : TangentSpace I p) (q : M) (k : ι) (a : TangentSpace I p) :
@@ -163,19 +189,6 @@ theorem contMDiffOn_normalFrameConnectionOperator (h : IsNormalDomain I M p U)
   rw [funext (b.normalFrameConnectionOperator_apply (U := U) v)]
   exact contMDiffOn_finsetSum fun i _ ↦ contMDiffOn_finsetSum fun j _ ↦
     (h.contMDiffOn_normalFrameConnectionCoefficient b v i j).smul contMDiffOn_const
-
-/-- Along a radial geodesic, the normal-frame connection operator has smooth coefficients. -/
-theorem contDiffOn_normalFrameConnectionOperator_radial (h : IsNormalDomain I M p U)
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) :
-    ContDiffOn ℝ ∞
-      (fun t : ℝ ↦ b.normalFrameConnectionOperator (U := U) v (riemannianExp I M p (t • v)))
-      {t | t • v ∈ U} := by
-  rw [← contMDiffOn_iff_contDiffOn]
-  have hlin : ContMDiff 𝓘(ℝ) 𝓘(ℝ, TangentSpace I p) ∞ (fun t : ℝ ↦ t • v) :=
-    (contDiff_id.smul contDiff_const).contMDiff
-  exact (h.contMDiffOn_normalFrameConnectionOperator b v).comp
-    ((contMDiffOn_riemannianExp p).comp hlin.contMDiffOn
-      (fun t ht ↦ h.subset_expDomain ht)) (fun t ht ↦ mem_image_of_mem _ ht)
 
 /-- The normal-frame connection operator vanishes at the centre. -/
 @[simp]
