@@ -20,11 +20,10 @@ These are the sub-gamma tail bounds of Boucheron, Lugosi and Massart, *Concentra
 Inequalities*, §2.4, pp. 28–29, and Example 2.7, p. 33: `χ²ₖ` is sub-gamma on the right with
 variance factor `2k` and scale `2`, and on the left with variance factor `2k` and scale `0`.
 
-The proof is the Cramér–Chernoff bound with the cumulant-generating function
-`-(k / 2) log (1 - 2s)` of `TauCeti.Probability.cgf_id_chiSquaredMeasure`, evaluated at an
-explicit rate. Writing `q = √k` and `r = √t`, the upper tail uses the rate `s = r / (q + 2r)`
-and the inequality `log y ≤ (y - y⁻¹) / 2` for `y ≥ 1`; the lower tail uses the rate
-`-r / q` and the inequality `2x / (x + 2) ≤ log (1 + x)` for `x ≥ 0`.
+Together they control the deviation of a chi-squared variable from its mean `k`: with
+probability at least `1 - 2e^{-t}`, `|Z - k| ≤ 2√(kt) + 2t`. So the fluctuations are of order
+`√k`, Gaussian-like for `t ≲ k` and exponential for larger `t`. They are the basic input for
+the norm concentration of Gaussian vectors, `‖g‖² ~ χ²ₙ` for `g` standard Gaussian in `ℝⁿ`.
 
 Both bounds are stated for every real `k` and `t`: for `k < 0` the measure `chiSquaredMeasure k`
 is zero, and for `t < 0` the right-hand side `e^{-t}` exceeds `1`.
@@ -56,6 +55,8 @@ theorem chiSquared_tail_upper (k t : ℝ) :
     · rw [chiSquaredMeasure_zero, measureReal_def, Measure.dirac_apply,
         indicator_of_notMem (by simpa using ht)]
       positivity
+  -- Cramér–Chernoff with the cumulant-generating function `-(k / 2) log (1 - 2s)` at the rate
+  -- `s = r / (q + 2r)`, where `q = √k` and `r = √t`, and `log y ≤ (y - y⁻¹) / 2` for `y ≥ 1`.
   set q := √k
   set r := √t
   have hq : 0 < q := sqrt_pos.2 hk
@@ -107,6 +108,8 @@ theorem chiSquared_tail_lower (k t : ℝ) :
   · rw [chiSquaredMeasure_zero, measureReal_def, Measure.dirac_apply,
       indicator_of_notMem (by simp)]
     positivity
+  -- Cramér–Chernoff with the cumulant-generating function `-(k / 2) log (1 - 2s)` at the rate
+  -- `s = -r / q`, where `q = √k` and `r = √t`, and `2x / (x + 2) ≤ log (1 + x)` for `x ≥ 0`.
   set q := √k
   set r := √t
   have hq : 0 < q := sqrt_pos.2 hk
@@ -127,7 +130,9 @@ theorem chiSquared_tail_lower (k t : ℝ) :
   have hlog : 2 * (2 * l) / (2 * l + 2) ≤ log (1 + 2 * l) :=
     le_log_one_add_of_nonneg (by positivity)
   have hkt : √(k * t) = q * r := sqrt_mul (hk0) t
-  rw [hkt, hkq, htr, show 1 - 2 * -l = 1 + 2 * l by ring]
+  -- At the rate `-l` the logarithm in the cgf is `log (1 + 2l)`, matching `hlog`.
+  have hrate : 1 - 2 * -l = 1 + 2 * l := by ring
+  rw [hkt, hkq, htr, hrate]
   have key : - -l * (q ^ 2 - 2 * (q * r)) + -(q ^ 2 / 2) * (2 * (2 * l) / (2 * l + 2)) =
       -r ^ 2 - r ^ 3 / (q + r) := by
     simp only [l]
