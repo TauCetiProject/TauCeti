@@ -62,11 +62,11 @@ acts through `G`. -/
 type `T.V` or `T.E`, on which `G` acts. -/
 
 /-- An element of `H` acts on the restricted tree through its image in `G`. -/
-theorem comap_smul_vertex (f : H →* G) (h : H) (v : (T.comap f).V) :
+@[simp] theorem comap_smul_vertex (f : H →* G) (h : H) (v : (T.comap f).V) :
     h • v = f h • (show T.V from v) := (rfl)
 
 /-- An element of `H` acts on the darts of the restricted tree through its image in `G`. -/
-theorem comap_smul_dart (f : H →* G) (h : H) (e : (T.comap f).E) :
+@[simp] theorem comap_smul_dart (f : H →* G) (h : H) (e : (T.comap f).E) :
     h • e = f h • (show T.E from e) := (rfl)
 
 /-- The stabilizer of a vertex for the restricted action is the preimage of its stabilizer. -/
@@ -161,7 +161,7 @@ variable {C} (hC : T.IsConvex C) (hne : C.Nonempty) (hinv : ∀ g : G, ∀ v ∈
   exact Subtype.val_injective.eq_iff.symm
 
 /-- The distance in an invariant subtree is the distance in the tree. -/
-theorem subtree_dist (a b : (T.subtree C hC hne hinv).V) :
+@[simp] theorem subtree_dist (a b : (T.subtree C hC hne hinv).V) :
     (T.subtree C hC hne hinv).dist a b = T.dist (Subtype.val a) (Subtype.val b) :=
   hC.dist_induce a b
 
