@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.OpenPos
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
@@ -30,7 +31,9 @@ every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the inte
 
 In the other direction, for a measure that charges every nonempty open set
 (`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
-point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`).
+point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`). For such a measure, for
+instance Lebesgue measure, the `L^∞` seminorm of a continuous function is therefore its supremum
+norm `⨆ x, ‖f x‖ₑ` (`Continuous.eLpNorm_top_eq_iSup`).
 -/
 
 public section
@@ -93,3 +96,13 @@ theorem Continuous.eLpNorm_eq_integral_rpow_norm {F : Type*} [NormedAddCommGroup
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hpt : p ≠ ∞) :
     eLpNorm f p μ = ENNReal.ofReal ((∫ x, ‖f x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹) :=
   (hf.memLp_of_hasCompactSupport (.of_compactSpace f)).eLpNorm_eq_integral_rpow_norm hp0 hpt
+
+/-- For a measure positive on nonempty open sets, the `L^∞` seminorm of a continuous function is
+its supremum norm. -/
+theorem Continuous.eLpNorm_top_eq_iSup {F : Type*} [TopologicalSpace F] [ContinuousENorm F]
+    [TopologicalSpace.PseudoMetrizableSpace F] [SecondCountableTopologyEither X F]
+    {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → F} (hf : Continuous f) :
+    eLpNorm f ∞ μ = ⨆ x, ‖f x‖ₑ := by
+  rw [eLpNorm_exponent_top hf.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
+  exact (iSup_eq_essSup fun x _ ha ↦
+    (isOpen_lt continuous_const hf.eNorm).measure_ne_zero μ ⟨x, ha⟩).symm
