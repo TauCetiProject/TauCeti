@@ -23,6 +23,8 @@ the symmetries of their multiplicities.
   `ord_{conj s} Λ₀(χ⁻¹) = ord_s Λ₀(χ)`. Hence `ρ ↦ 1 - conj ρ` preserves the zero orders of
   `Λ₀(χ)`, and for a real character the orders are invariant under `conj` and under `s ↦ 1 - s`
   separately.
+* On `0 < Re ρ` the multiplicity read from the divisor of `Λ₀(χ)` is the analytic order of
+  `L(χ, ·)` at `ρ`.
 * For a zero `ρ` and `1 ≤ Re s`, the summand `Re (1 / (s - ρ))` of the partial-fraction
   expansion of `Λ₀'/Λ₀` is positive.
 
@@ -80,6 +82,17 @@ theorem re_mem_Ioo_of_divisor_dirichletData_entireCompletion_pos (hne : χ ≠ 1
     (h.analyticAt_entireCompletion ρ) (Set.mem_univ ρ), analyticOrderNatAt,
     (h.analyticAt_entireCompletion ρ).analyticOrderAt_eq_zero.mpr h0] at hρ
   simp at hρ
+
+/-- On the positive half-plane the multiplicity read from the divisor of the entire completion is
+the analytic order of `L(χ, ·)`. -/
+theorem divisor_dirichletData_entireCompletion_toNat_eq_analyticOrderNatAt (hne : χ ≠ 1)
+    {ρ : ℂ} (hρ : 0 < ρ.re) :
+    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat =
+      analyticOrderNatAt χ.LFunction ρ := by
+  have h := dirichletData_hasMeromorphicContinuation χ hχ
+  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt h.meromorphicOn_entireCompletion
+    (h.analyticAt_entireCompletion ρ) (Set.mem_univ ρ), Int.toNat_natCast, analyticOrderNatAt,
+    analyticOrderNatAt, analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hρ]
 
 /-- For a zero `ρ` of a nonprincipal primitive Dirichlet entire completion and `1 ≤ Re s`,
 the summand `Re (1 / (s - ρ))` is positive. -/

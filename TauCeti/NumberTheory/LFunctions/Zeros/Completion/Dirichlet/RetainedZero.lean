@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Bound
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Hadamard
 
 /-!
@@ -53,38 +52,11 @@ public section
 
 open Complex
 
-namespace DirichletCharacter
-
-variable {N : ℕ} (χ : DirichletCharacter ℂ N)
-
-/-- For real `1 ≤ σ ≤ 2` the archimedean term `Γℝ'/Γℝ (σ + κ)` of a Dirichlet character of either
-parity `κ` has norm at most `C_Γ`. -/
-theorem norm_logDeriv_gammaFactor_ofReal_le {σ : ℝ} (hσ₁ : 1 ≤ σ) (hσ₂ : σ ≤ 2) :
-    ‖logDeriv χ.gammaFactor σ‖ ≤ TauCeti.gammaLogDerivBound := by
-  rcases χ.even_or_odd with he | ho
-  · rw [he.logDeriv_gammaFactor]
-    exact norm_logDeriv_Gammaℝ_ofReal_le ⟨hσ₁, by linarith⟩
-  · rw [ho.logDeriv_gammaFactor, ← ofReal_one, ← ofReal_add]
-    exact norm_logDeriv_Gammaℝ_ofReal_le ⟨by linarith, by linarith⟩
-
-end DirichletCharacter
-
 namespace TauCeti.LFunctions
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
 include hχ
-
-/-- On the positive half-plane the multiplicity read from the divisor of the entire completion is
-the analytic order of `L(χ, ·)`. -/
-theorem divisor_dirichletData_entireCompletion_toNat_eq_analyticOrderNatAt (hne : χ ≠ 1)
-    {ρ : ℂ} (hρ : 0 < ρ.re) :
-    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat =
-      analyticOrderNatAt χ.LFunction ρ := by
-  have h := dirichletData_hasMeromorphicContinuation χ hχ
-  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt h.meromorphicOn_entireCompletion
-    (h.analyticAt_entireCompletion ρ) (Set.mem_univ ρ), Int.toNat_natCast, analyticOrderNatAt,
-    analyticOrderNatAt, analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hρ]
 
 /-- **The sum over zeros through `L'/L`.** On the positive half-plane, away from the zeros of
 `L(χ, ·)`, `∑_ρ m_ρ Re (1 / (s - ρ)) = Re (L'/L)(s, χ) + ½ log q + Re (Γℝ'/Γℝ)(s + κ)`, the sum
