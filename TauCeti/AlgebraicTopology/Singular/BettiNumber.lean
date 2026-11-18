@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import Mathlib.Algebra.Category.ModuleCat.Products
 import Mathlib.Algebra.DirectSum.Finsupp
+import TauCeti.Algebra.Category.ModuleCat.Products
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
 /-!
@@ -33,14 +34,14 @@ again with the junk value `0` when there are infinitely many, and the positive-d
 of a contractible space vanish (`TauCeti.bettiNumber_eq_zero_of_contractibleSpace`). So a point has
 Betti numbers `1, 0, 0, …` over every division ring. A totally disconnected space, such as a
 discrete one, has zeroth homology free on its points
-(`TauCeti.rank_singularHomology_zero_of_totallyDisconnectedSpace`) and no homology in positive
-degrees (`TauCeti.bettiNumber_eq_zero_of_totallyDisconnectedSpace`); so `r` points have Betti
-numbers `r, 0, 0, …`, while for the discrete space `ℕ` the rank of `H₀` is `ℵ₀` and the Betti
-number `b₀(ℕ)` is the junk value `0` (`TauCeti.bettiNumber_zero_nat`). These rest on Andrew Yang's
-calculation of the singular homology of totally disconnected spaces in Mathlib
-(`AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace`). The Betti numbers do
-depend on the coefficients: for example, the real projective plane has first Betti number `0` over
-`ℚ` and `1` over `𝔽₂`.
+(`TauCeti.singularHomologyZeroLinearEquivFinsuppOfTotallyDisconnectedSpace`) and no homology in
+positive degrees (`TauCeti.subsingleton_singularHomology_of_totallyDisconnectedSpace`); so `r`
+points have Betti numbers `r, 0, 0, …`, while for the discrete space `ℕ` the rank of `H₀` is
+`ℵ₀` and the Betti number `b₀(ℕ)` is the junk value `0` (`TauCeti.bettiNumber_zero_nat`). These
+rest on Andrew Yang's calculation of the singular homology of totally disconnected spaces in
+Mathlib (`AlgebraicTopology.singularHomologyFunctorZeroOfTotallyDisconnectedSpace`). The Betti
+numbers do depend on the coefficients: for example, the real projective plane has first Betti
+number `0` over `ℚ` and `1` over `𝔽₂`.
 
 These are the numbers `bⱼ` of the Morse inequalities: on a compact manifold with a Morse function
 having `cⱼ` critical points of index `j`, `∑ cⱼ tʲ = ∑ bⱼ tʲ + (1 + t) Q(t)` with `Q` having
@@ -53,7 +54,9 @@ natural number coefficients.
 * `TauCeti.bettiNumber_zero`: the zeroth Betti number is the number of path components.
 * `TauCeti.bettiNumber_eq_zero_of_contractibleSpace`: the positive-degree Betti numbers of a
   contractible space vanish.
-* `TauCeti.rank_singularHomology_zero_of_totallyDisconnectedSpace`,
+* `TauCeti.singularHomologyZeroLinearEquivFinsuppOfTotallyDisconnectedSpace`,
+  `TauCeti.subsingleton_singularHomology_of_totallyDisconnectedSpace`,
+  `TauCeti.rank_singularHomology_zero_of_totallyDisconnectedSpace`,
   `TauCeti.bettiNumber_zero_of_totallyDisconnectedSpace` and
   `TauCeti.bettiNumber_eq_zero_of_totallyDisconnectedSpace`: the homology of a totally
   disconnected space.
@@ -126,15 +129,26 @@ variable (k : Type u) [Ring k] (X : Type u) [TopologicalSpace X] [TotallyDisconn
 
 /-- The zeroth singular homology of a totally disconnected space is linearly equivalent to the
 free module on its points. -/
-private def singularHomologyZeroLinearEquivFinsuppOfTotallyDisconnectedSpace :
+def singularHomologyZeroLinearEquivFinsuppOfTotallyDisconnectedSpace :
     ((singularHomologyFunctor (ModuleCat.{u} k) 0).obj (ModuleCat.of k k)).obj (TopCat.of X) ≃ₗ[k]
-      (X →₀ k) := by
-  classical
+      (X →₀ k) :=
   -- The carrier of `TopCat.of X` is `X` itself.
   have : TotallyDisconnectedSpace (TopCat.of X) := ‹TotallyDisconnectedSpace X›
-  exact (singularHomologyFunctorZeroOfTotallyDisconnectedSpace (ModuleCat.{u} k) (ModuleCat.of k k)
-      (TopCat.of X) ≪≫ ModuleCat.coprodIsoDirectSum _).toLinearEquiv ≪≫ₗ
-    (finsuppLEquivDirectSum k k X).symm
+  (singularHomologyFunctorZeroOfTotallyDisconnectedSpace (ModuleCat.{u} k) (ModuleCat.of k k)
+      (TopCat.of X)).toLinearEquiv ≪≫ₗ ModuleCat.coprodLinearEquivFinsupp (ModuleCat.of k k) X
+
+/-- **The positive-degree homology of a totally disconnected space vanishes.** Every singular
+simplex in `X` is constant, so the singular chain complex is the constant complex on the free
+module on `X`, with differentials alternately zero and the identity. -/
+theorem subsingleton_singularHomology_of_totallyDisconnectedSpace {j : ℕ} (hj : j ≠ 0) :
+    Subsingleton
+      (((singularHomologyFunctor (ModuleCat.{u} k) j).obj (ModuleCat.of k k)).obj
+        (TopCat.of X)) :=
+  -- The carrier of `TopCat.of X` is `X` itself.
+  have : TotallyDisconnectedSpace (TopCat.of X) := ‹TotallyDisconnectedSpace X›
+  ModuleCat.isZero_iff_subsingleton.1
+    (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace _ j (ModuleCat.of k k)
+      (TopCat.of X) hj)
 
 /-- **The zeroth homology of a totally disconnected space has rank its number of points.** Over a
 ring with the strong rank condition, `H₀(X; k)` is free on the points of `X`, so its rank is the
@@ -166,16 +180,11 @@ theorem bettiNumber_zero_of_totallyDisconnectedSpace [StrongRankCondition k] :
   rw [bettiNumber_def, Module.finrank, rank_singularHomology_zero_of_totallyDisconnectedSpace,
     Cardinal.toNat_mk]
 
-/-- **The positive-degree Betti numbers of a totally disconnected space vanish.** Every singular
-simplex in `X` is constant, so the singular chain complex is the constant complex on the free
-module on `X`, with differentials alternately zero and the identity. -/
+/-- **The positive-degree Betti numbers of a totally disconnected space vanish**, since the
+homology itself vanishes (`TauCeti.subsingleton_singularHomology_of_totallyDisconnectedSpace`). -/
 theorem bettiNumber_eq_zero_of_totallyDisconnectedSpace [Nontrivial k] {j : ℕ} (hj : j ≠ 0) :
     bettiNumber k X j = 0 := by
-  -- The carrier of `TopCat.of X` is `X` itself.
-  have : TotallyDisconnectedSpace (TopCat.of X) := ‹TotallyDisconnectedSpace X›
-  have := ModuleCat.isZero_iff_subsingleton.1
-    (isZero_singularHomologyFunctor_of_totallyDisconnectedSpace _ j (ModuleCat.of k k)
-      (TopCat.of X) hj)
+  have := subsingleton_singularHomology_of_totallyDisconnectedSpace k X hj
   rw [bettiNumber_def, Module.finrank_zero_of_subsingleton]
 
 end TotallyDisconnected

@@ -168,11 +168,7 @@ private theorem isPerfectMorse_of_discreteTopology [DiscreteTopology M] [Finite 
   refine ⟨hf, fun n ↦ ?_, fun n ↦ ?_⟩
   · rcases eq_or_ne n 0 with rfl | hn
     · exact (finite_singularHomology_zero_iff_of_totallyDisconnectedSpace k M).2 ‹_›
-    · -- The carrier of `TopCat.of M` is `M` itself.
-      have : TotallyDisconnectedSpace (TopCat.of M) := inferInstanceAs (TotallyDisconnectedSpace M)
-      have := ModuleCat.isZero_iff_subsingleton.1
-        (AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace _ n
-          (ModuleCat.of k k) (TopCat.of M) hn)
+    · have := subsingleton_singularHomology_of_totallyDisconnectedSpace k M hn
       infer_instance
   · rw [← bettiNumber_def]
     rcases eq_or_ne n 0 with rfl | hn
