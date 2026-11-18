@@ -139,6 +139,19 @@ both sides vanish. -/
 theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvGlue x) x := by
   simpa using hasDerivAt_polynomial_eval_inv_mul 1 x
 
+/-- The second derivative of the glued exponential profile, including the joining point. -/
+theorem deriv_deriv (s : ℝ) :
+    deriv (deriv expNegInvGlue) s =
+      (s⁻¹ ^ 4 - 2 * s⁻¹ ^ 3) * expNegInvGlue s := by
+  -- Function extensionality packages the existing pointwise first-derivative formula.
+  rw [show deriv expNegInvGlue = (fun x ↦ x⁻¹ ^ 2 * expNegInvGlue x) by
+    funext x; exact (hasDerivAt x).deriv]
+  have h := (expNegInvGlue.hasDerivAt_polynomial_eval_inv_mul
+    (Polynomial.X ^ 2 : Polynomial ℝ) s).deriv
+  simp only [Polynomial.eval_X_pow, Polynomial.eval_mul, Polynomial.eval_sub,
+    Polynomial.derivative_X_pow, Polynomial.eval_C] at h
+  convert h using 1; ring
+
 /-- On a real inner product space, the derivative of `x ↦ expNegInvGlue (‖x‖ ^ 2)` at `x` is
 `‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`, also at `x = 0`, where it vanishes. -/
 theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (x : E) :
@@ -147,6 +160,49 @@ theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpac
   (hasDerivAt _).comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
 
 end expNegInvGlue
+
+namespace TauCeti
+
+/-- The time derivative of an exponentially damped translating glued exponential profile. -/
+public theorem hasDerivAt_exp_mul_expNegInvGlue (c A b epsilon t : ℝ) :
+    HasDerivAt
+      (fun s : ℝ ↦ epsilon * Real.exp (-A * s) * expNegInvGlue (c + b * s))
+      (epsilon * Real.exp (-A * t) *
+        (-A * expNegInvGlue (c + b * t) + b * deriv expNegInvGlue (c + b * t))) t := by
+  have harg : HasDerivAt (fun s : ℝ ↦ c + b * s) b t := by
+    have hlin : HasDerivAt (fun s : ℝ ↦ b * s) b t := by
+      simpa only [id_eq, mul_one] using (hasDerivAt_id t).const_mul b
+    simpa only [Pi.add_apply, zero_add] using! (hasDerivAt_const t (c)).add hlin
+  have hψ : HasDerivAt (fun s : ℝ ↦ expNegInvGlue (c + b * s))
+      (deriv expNegInvGlue (c + b * t) * b) t := by
+    have hbase : HasDerivAt expNegInvGlue
+        (deriv expNegInvGlue (c + b * t)) (c + b * t) := by
+      exact ((contDiff_infty_iff_deriv.mp expNegInvGlue.contDiff).1
+        (c + b * t)).hasDerivAt
+    exact hbase.comp t harg
+  have he : HasDerivAt (fun s : ℝ ↦ Real.exp (-A * s))
+      (-A * Real.exp (-A * t)) t := by
+    simpa only [id_eq, mul_one, mul_comm] using ((hasDerivAt_id t).const_mul (-A)).exp
+  have hc : HasDerivAt (fun s : ℝ ↦ epsilon * Real.exp (-A * s))
+      (epsilon * (-A * Real.exp (-A * t))) t := by
+    have hfun : (fun s : ℝ ↦ epsilon * Real.exp (-A * s)) =
+        (fun _ : ℝ ↦ epsilon) * (fun s : ℝ ↦ Real.exp (-A * s)) := by
+      funext s
+      rfl
+    rw [hfun]
+    simpa only [zero_mul, zero_add] using (hasDerivAt_const t epsilon).mul he
+  have hfun : (fun s : ℝ ↦ epsilon * Real.exp (-A * s) *
+      expNegInvGlue (c + b * s)) =
+      (fun s : ℝ ↦ epsilon * Real.exp (-A * s)) *
+        (fun s : ℝ ↦ expNegInvGlue (c + b * s)) := by
+    funext s
+    rfl
+  rw [hfun]
+  convert! hc.mul hψ using 1
+  ring
+
+
+end TauCeti
 
 namespace Real.smoothTransition
 
