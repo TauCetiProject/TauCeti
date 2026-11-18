@@ -158,8 +158,7 @@ theorem map_signEquiv (htr : IsMarkovTrace R δ tr) (htr' : IsMarkovTrace R δ' 
     (h : δ' = -δ) (x : TemperleyLieb R δ n) :
     tr' n (signEquiv h x) = (-1) ^ n * tr n x := by
   have hx := LinearMap.congr_fun (congrFun (htr.unique (htr'.comp_signEquiv h)) n) x
-  simp only [hx, LinearMap.smul_apply, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-    smul_eq_mul, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+  simp [hx, ← mul_assoc, ← mul_pow]
 
 /-- The sign isomorphism identifies the normalised traces `(δ ^ n)⁻¹ * tr n` at `δ` and `-δ`. -/
 theorem inv_pow_mul_map_signEquiv {K : Type*} [Field K] {δ δ' : K}
