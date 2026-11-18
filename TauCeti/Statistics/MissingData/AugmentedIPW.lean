@@ -34,9 +34,14 @@ Cauchy–Schwarz inequality the bias is at most `δ⁻¹ ‖π - π₀‖₂ ‖
 ## References
 
 * R. J. A. Little and D. B. Rubin, *Statistical Analysis with Missing Data*, 3rd ed., Wiley, 2019.
+
+The proofs are adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
+`CKSD/Asymptotics/CrossFitting/FoldBounds.lean` (`enorm_integral_missingMeanScore_sub_le` and its
+helpers `integral_mul_response_eq`, `enorm_integral_comp_mul_div_le` and
+`integrable_ite_observed_of_norm_le`).
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -52,13 +57,29 @@ variable {X : Type*}
 def aipwScore (m π : X → ℝ) (o : Bool × X × ℝ) : ℝ :=
   m o.2.1 + if o.1 then (o.2.2 - m o.2.1) / π o.2.1 else 0
 
+/-- The defining formula of `aipwScore`. -/
+theorem aipwScore_def (m π : X → ℝ) (o : Bool × X × ℝ) :
+    aipwScore m π o = m o.2.1 + if o.1 then (o.2.2 - m o.2.1) / π o.2.1 else 0 := by
+  rw [aipwScore]
+
+/-- At an observed response, the augmented estimating function is `m(x) + (y - m(x)) / π(x)`. -/
+@[simp]
+theorem aipwScore_true (m π : X → ℝ) (x : X) (y : ℝ) :
+    aipwScore m π (true, x, y) = m x + (y - m x) / π x := by
+  simp [aipwScore_def]
+
+/-- At a missing response, the augmented estimating function is `m(x)`. -/
+@[simp]
+theorem aipwScore_false (m π : X → ℝ) (x : X) (y : ℝ) : aipwScore m π (false, x, y) = m x := by
+  simp [aipwScore_def]
+
 /-- At a full observation, the augmented estimating function of the observed part is
 `m(X) + 1{R = 1} (Y - m(X)) / π(X)`. -/
 theorem aipwScore_observe (m π : X → ℝ) (w : Bool × X × ℝ) :
     aipwScore m π (observe w) =
       m w.2.1 + if w.1 then (w.2.2 - m w.2.1) / π w.2.1 else 0 := by
   obtain ⟨r, x, y⟩ := w
-  cases r <;> rfl
+  cases r <;> simp
 
 variable [MeasurableSpace X]
 
@@ -95,28 +116,11 @@ private theorem integrable_div_mul {Q : Measure (Bool × X × ℝ)} {π₀ π : 
     _ = δ⁻¹ * δ := (inv_mul_cancel₀ hδ.ne').symm
     _ ≤ δ⁻¹ * π w.2.1 := by gcongr; exact hπ _
 
-/-- **The regression identity.** If `m₀(X)` is an integrable version of `E[Y | X]`, given by its
-set integrals over covariate events, then `E[f(X) Y] = E[f(X) m₀(X)]` for every measurable `f`
-with `f(X) Y` integrable. -/
-private theorem integral_mul_response_eq {Q : Measure (Bool × X × ℝ)} [IsFiniteMeasure Q]
-    {m₀ : X → ℝ} (hY : Integrable (fun w : Bool × X × ℝ ↦ w.2.2) Q) (hm₀ : Measurable m₀)
-    (hreg : ∀ A : Set X, MeasurableSet A →
-      ∫ w in {w | w.2.1 ∈ A}, w.2.2 ∂Q = ∫ w in {w | w.2.1 ∈ A}, m₀ w.2.1 ∂Q)
-    (hm₀i : Integrable (fun w : Bool × X × ℝ ↦ m₀ w.2.1) Q) {f : X → ℝ} (hf : Measurable f)
-    (hfY : Integrable (fun w : Bool × X × ℝ ↦ f w.2.1 * w.2.2) Q) :
-    ∫ w, f w.2.1 * w.2.2 ∂Q = ∫ w, f w.2.1 * m₀ w.2.1 ∂Q := by
-  have hXc : Measurable[MeasurableSpace.comap (fun w : Bool × X × ℝ ↦ w.2.1) inferInstance]
-      fun w : Bool × X × ℝ ↦ w.2.1 := comap_measurable _
-  refine integral_mul_eq_of_forall_setIntegral_eq (measurable_fst.comp measurable_snd).comap_le
-    hY hm₀i (hm₀.comp hXc).stronglyMeasurable ?_ (hf.comp hXc).stronglyMeasurable hfY
-  rintro _ ⟨A, hA, rfl⟩
-  exact (hreg A hA).symm
-
 /-- **The mixed-bias identity.** Let `Q` be missing at random with propensity `π₀`, let `Y` be
 integrable, and let `m₀(X)` be an integrable version of `E[Y | X]`. For every measurable `m`
 with `m(X)` integrable and every measurable `π ≥ δ > 0`,
 `E φ_{m,π} - E Y = E[(π₀ - π)(m₀ - m) / π]`. -/
-theorem integral_aipwScore_sub (Q : Measure (Bool × X × ℝ)) [IsProbabilityMeasure Q]
+theorem integral_aipwScore_sub (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure Q]
     (π₀ m₀ m π : X → ℝ) (hmar : IsMissingAtRandom Q π₀)
     (hY : Integrable (fun w : Bool × X × ℝ ↦ w.2.2) Q) (hm₀ : Measurable m₀)
     (hreg : ∀ A : Set X, MeasurableSet A →
@@ -138,11 +142,12 @@ theorem integral_aipwScore_sub (Q : Measure (Bool × X × ℝ)) [IsProbabilityMe
     refine integral_congr_ae (ae_of_all _ fun w ↦ ?_)
     field_simp [(hπ0 w.2.1).ne']
   -- The regression identities: `E[π₀(X) Y / π(X)] = E[π₀(X) m₀(X) / π(X)]` and `E Y = E m₀(X)`.
-  have h2 := integral_mul_response_eq hY hm₀ hreg hm₀i (f := fun x ↦ π₀ x / π x)
-    (hmar.measurable.div hπm) (hkb hY)
+  have hX : Measurable fun w : Bool × X × ℝ ↦ w.2.1 := by fun_prop
+  have h2 := MeasureTheory.integral_comp_mul_eq_of_forall_setIntegral_preimage_eq hX hY hm₀ hm₀i
+    hreg (f := fun x ↦ π₀ x / π x) (hmar.measurable.div hπm) (hkb hY)
   have h3 : ∫ w, w.2.2 ∂Q = ∫ w, m₀ w.2.1 ∂Q := by
-    simpa using integral_mul_response_eq hY hm₀ hreg hm₀i (f := fun _ ↦ 1) measurable_const
-      (by simpa using hY)
+    simpa using MeasureTheory.integral_comp_mul_eq_of_forall_setIntegral_preimage_eq hX hY hm₀
+      hm₀i hreg (f := fun _ ↦ 1) measurable_const (by simpa using hY)
   have hrhs : ∫ w, (π₀ w.2.1 - π w.2.1) * (m₀ w.2.1 - m w.2.1) / π w.2.1 ∂Q =
       ∫ w, π₀ w.2.1 / π w.2.1 * m₀ w.2.1 ∂Q - ∫ w, π₀ w.2.1 / π w.2.1 * m w.2.1 ∂Q -
         ∫ w, m₀ w.2.1 ∂Q + ∫ w, m w.2.1 ∂Q := by
@@ -165,7 +170,7 @@ be integrable, and let `m₀(X)` be an integrable version of `E[Y | X]`. The aug
 function is unbiased for `E Y` when the propensity is correct, for every measurable `m` with
 `m(X)` integrable, and when the regression is correct, for every measurable propensity bounded
 below by a positive constant. -/
-theorem integral_aipwScore_eq (Q : Measure (Bool × X × ℝ)) [IsProbabilityMeasure Q]
+theorem integral_aipwScore_eq (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure Q]
     (π₀ m₀ : X → ℝ) (hmar : IsMissingAtRandom Q π₀)
     (hY : Integrable (fun w : Bool × X × ℝ ↦ w.2.2) Q) (hm₀ : Measurable m₀)
     (hreg : ∀ A : Set X, MeasurableSet A →
@@ -186,7 +191,7 @@ theorem integral_aipwScore_eq (Q : Measure (Bool × X × ℝ)) [IsProbabilityMea
 /-- **The product bound on the bias.** Under the hypotheses of the mixed-bias identity,
 `|E φ_{m,π} - E Y| ≤ δ⁻¹ ‖π - π₀‖₂ ‖m - m₀‖₂`, with the `L²(Q)` norms of `π(X) - π₀(X)` and
 `m(X) - m₀(X)` in `ℝ≥0∞`. -/
-theorem abs_integral_aipwScore_sub_le (Q : Measure (Bool × X × ℝ)) [IsProbabilityMeasure Q]
+theorem abs_integral_aipwScore_sub_le (Q : Measure (Bool × X × ℝ)) [IsFiniteMeasure Q]
     (π₀ m₀ m π : X → ℝ) (hmar : IsMissingAtRandom Q π₀)
     (hY : Integrable (fun w : Bool × X × ℝ ↦ w.2.2) Q) (hm₀ : Measurable m₀)
     (hreg : ∀ A : Set X, MeasurableSet A →
