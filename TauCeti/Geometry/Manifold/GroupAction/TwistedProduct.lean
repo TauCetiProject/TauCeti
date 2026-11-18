@@ -7,20 +7,23 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
+public import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Geometry.Lie.AutomaticSmoothness
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Twisted products `G ×_K B`
 
-Let `K` be a closed subgroup of a finite-dimensional real Lie group `G`, itself a Lie group for
-the subspace topology, and let `K` act smoothly on a boundaryless Hausdorff manifold `B`, for
-instance on a `K`-invariant open subset of a representation. The **twisted product** `G ×_K B`
-is the orbit space of the action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on `G × B`. This action
-is free and proper, so the quotient manifold theorem (`ProperSMul.instIsManifoldOrbitRelQuotient`)
-makes `G ×_K B` a smooth manifold of dimension `dim G + dim B - dim K` for which the projection
-`(g, b) ↦ [g, b]` is a smooth submersion. The group `G` acts on it smoothly from the left by
-`g • [g', b] = [g * g', b]`.
+Let `K` be a subgroup of a finite-dimensional real Lie group `G` which is a finite-dimensional
+Lie group for the subspace topology, such as a compact or, by Cartan's theorem
+(`TauCeti.Lie.isEmbeddedLieSubgroup_of_isClosed`), any closed subgroup; it is then closed
+(`TauCeti.Lie.isClosed_of_lieGroup`). Let `K` act smoothly on a boundaryless Hausdorff manifold
+`B`, for instance on a `K`-invariant open subset of a representation. The **twisted product**
+`G ×_K B` is the orbit space of the action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on `G × B`.
+This action is free and proper, so the quotient manifold theorem
+(`ProperSMul.instIsManifoldOrbitRelQuotient`) makes `G ×_K B` a smooth manifold of dimension
+`dim G + dim B - dim K` for which the projection `(g, b) ↦ [g, b]` is a smooth submersion. The
+group `G` acts on it smoothly from the left by `g • [g', b] = [g * g', b]`.
 
 Taking for `B` the one-point space `Unit` gives the orbit space `G ×_K pt` of the right action
 of `K` on `G` by multiplication, the space of cosets `gK`; we use this orbit space for `G ⧸ K`.
@@ -41,7 +44,9 @@ that it does not clash with the diagonal action of `K` on `G × B`.
 * `TauCeti.TwistedProduct K B`: the twisted product `G ×_K B`, with classes
   `TauCeti.TwistedProduct.mk K g b`.
 * `TauCeti.TwistedProduct.instProperSMulPairs`, `TauCeti.TwistedProduct.instIsCancelSMulPairs`:
-  the action of `K` on `G × B` is proper and free.
+  the action of a closed subgroup `K` on `G × B` is proper and free.
+* `TauCeti.Lie.isClosed_of_lieGroup`: a subgroup of a Lie group which is a finite-dimensional
+  manifold for the subspace topology is closed.
 * `TauCeti.TwistedProduct.chartedSpace`: the smooth structure of `G ×_K B` from the quotient
   manifold theorem, for which `TauCeti.TwistedProduct.isSubmersion_mk` makes the projection
   from `G × B` a smooth submersion.
@@ -341,7 +346,20 @@ instance instContMDiffSMulPairs [FiniteDimensional ℝ EG] [FiniteDimensional �
       (contMDiff_snd.fst.mul (hι.comp contMDiff_fst).inv).prodMk
         (contMDiff_fst.smul contMDiff_snd.snd)
 
-variable [FiniteDimensional ℝ EK] [LieGroup IK ∞ K] [IsClosed (K : Set G)]
+variable (IK IG) in
+include IK in
+/-- A subgroup of a Lie group which, for the subspace topology, is a manifold modelled on a
+finite-dimensional space is closed, being locally compact. This applies to a subgroup which is a
+finite-dimensional Lie group for the subspace topology. -/
+theorem _root_.TauCeti.Lie.isClosed_of_lieGroup [FiniteDimensional ℝ EK] [LieGroup IG ∞ G] :
+    IsClosed (K : Set G) :=
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
+  let _ : T2Space G := IG.t2Space_of_lieGroup ∞
+  let _ : LocallyCompactSpace HK := IK.locallyCompactSpace
+  let _ : LocallyCompactSpace K := ChartedSpace.locallyCompactSpace HK K
+  K.isClosed_of_weaklyLocallyCompactSpace
+
+variable [FiniteDimensional ℝ EK] [LieGroup IK ∞ K]
   [FiniteDimensional ℝ EG] [IG.Boundaryless] [LieGroup IG ∞ G]
   [FiniteDimensional ℝ EB] [IB.Boundaryless] [IsManifold IB ∞ B] [T2Space B]
   [ContMDiffSMul IK IB ∞ K B]
@@ -355,6 +373,7 @@ abbrev chartedSpace :
     ChartedSpace (ProperSMul.QuotientModelSpace EK (EG × EB)) (TwistedProduct K B) :=
   letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
   letI : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
+  haveI : IsClosed (K : Set G) := Lie.isClosed_of_lieGroup IK IG
   ProperSMul.orbitRelQuotientChartedSpace IK K (IG.prod IB) (Pairs K B)
 
 /-- **The twisted product `G ×_K B` is a smooth manifold.** -/
@@ -363,6 +382,7 @@ instance instIsManifold :
     IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞ (TwistedProduct K B) :=
   letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
   letI : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
+  haveI : IsClosed (K : Set G) := Lie.isClosed_of_lieGroup IK IG
   ProperSMul.instIsManifoldOrbitRelQuotient
 
 /-- **The projection `G × B → G ×_K B` is a smooth submersion.** -/
@@ -372,6 +392,7 @@ theorem isSubmersion_mk :
       fun p : G × B ↦ mk K p.1 p.2 :=
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
   let _ : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
+  have : IsClosed (K : Set G) := Lie.isClosed_of_lieGroup IK IG
   have h := ProperSMul.isSubmersion_quotientMk (I := IK) (G := K) (I' := IG.prod IB)
     (M := Pairs K B)
   h
