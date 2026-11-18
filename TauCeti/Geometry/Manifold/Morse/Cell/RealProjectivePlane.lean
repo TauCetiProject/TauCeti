@@ -8,12 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
-public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Algebra.Projectivization
 public import TauCeti.Topology.Sphere.StandardCircle
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Circle
-import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 import TauCeti.Geometry.Manifold.Projectivization.Map
 
 /-!
