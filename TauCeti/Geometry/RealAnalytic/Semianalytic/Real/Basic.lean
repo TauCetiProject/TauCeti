@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Analytic.Sign
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Basic
 public import Mathlib.Topology.DiscreteSubset
+import Mathlib.Topology.Order.IntermediateValue
 
 /-!
 # Semianalytic subsets of the real line
@@ -31,6 +32,54 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
+
+/-- An open upper ray of the real line is semianalytic. -/
+@[simp]
+theorem isSemianalytic_Ioi (a : ℝ) : IsSemianalytic (Ioi a) := by
+  simpa only [Pi.sub_apply, sub_pos, Ioi] using
+    (analyticOnNhd_id.sub (analyticOnNhd_const (v := a))).isSemianalytic_setOf_pos
+
+/-- An open lower ray of the real line is semianalytic. -/
+@[simp]
+theorem isSemianalytic_Iio (a : ℝ) : IsSemianalytic (Iio a) := by
+  simpa only [Pi.sub_apply, sub_pos, Iio] using
+    ((analyticOnNhd_const (v := a)).sub analyticOnNhd_id).isSemianalytic_setOf_pos
+
+/-- An open interval of the real line is semianalytic, including an empty interval. -/
+@[simp]
+theorem isSemianalytic_Ioo (a b : ℝ) : IsSemianalytic (Ioo a b) :=
+  (isSemianalytic_Ioi a).inter (isSemianalytic_Iio b)
+
+/-- A closed upper ray of the real line is semianalytic. -/
+@[simp]
+theorem isSemianalytic_Ici (a : ℝ) : IsSemianalytic (Ici a) := by
+  simpa only [compl_Iio] using (isSemianalytic_Iio a).compl
+
+/-- A closed lower ray of the real line is semianalytic. -/
+@[simp]
+theorem isSemianalytic_Iic (a : ℝ) : IsSemianalytic (Iic a) := by
+  simpa only [compl_Ioi] using (isSemianalytic_Ioi a).compl
+
+/-- A closed interval of the real line is semianalytic, including an empty interval. -/
+@[simp]
+theorem isSemianalytic_Icc (a b : ℝ) : IsSemianalytic (Icc a b) :=
+  (isSemianalytic_Ici a).inter (isSemianalytic_Iic b)
+
+/-- A right-open interval of the real line is semianalytic, including an empty interval. -/
+@[simp]
+theorem isSemianalytic_Ico (a b : ℝ) : IsSemianalytic (Ico a b) :=
+  (isSemianalytic_Ici a).inter (isSemianalytic_Iio b)
+
+/-- A left-open interval of the real line is semianalytic, including an empty interval. -/
+@[simp]
+theorem isSemianalytic_Ioc (a b : ℝ) : IsSemianalytic (Ioc a b) :=
+  (isSemianalytic_Ioi a).inter (isSemianalytic_Iic b)
+
+/-- Every preconnected subset of the real line is semianalytic. -/
+theorem _root_.IsPreconnected.isSemianalytic {s : Set ℝ} (hs : IsPreconnected s) :
+    IsSemianalytic s := by
+  rcases hs.mem_intervals with (hs | hs | hs | hs | hs | hs | hs | hs | hs | hs) <;>
+    rw [hs] <;> simp
 
 /-- In any prescribed neighborhood of the center, a semianalytic subset of the real line
 is a union of some of the left interval, the center, and the right interval. -/
