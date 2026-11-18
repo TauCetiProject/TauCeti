@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Topology.Order.RegionBetween
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # The volume of a closed region between two functions
@@ -21,6 +22,8 @@ also contains the two graphs.
 * `TauCeti.measurableSet_closedRegionBetween`: the closed region between two measurable functions
   on a measurable set is measurable.
 * `TauCeti.volume_closedRegionBetween_eq_lintegral`: its volume is `∫⁻ y in s, ofReal (g y - f y)`.
+* `TauCeti.volume_closedRegionBetween_zero_sub_mul`: the trapezoid under `t ↦ a - k t` over
+  `[0, b]` has area `a b - k b² / 2`.
 -/
 
 public section
@@ -55,5 +58,35 @@ theorem volume_closedRegionBetween_eq_lintegral (hf : Measurable f) (hg : Measur
   · have hpre : Prod.mk x ⁻¹' closedRegionBetween f g s = ∅ :=
       eq_empty_of_forall_notMem fun t ht ↦ hx (mem_closedRegionBetween.1 ht).1
     rw [hpre, measure_empty, indicator_of_notMem hx]
+
+/-- **The area of a trapezoid.** For `0 ≤ a` and `k b ≤ a`, the closed region under
+`t ↦ a - k t` over `[0, b]` has area `ENNReal.ofReal (a b - k b² / 2)`: this is `a b - k b² / 2`
+when `0 ≤ b`, while for `b < 0` the region is empty and has area zero. -/
+theorem volume_closedRegionBetween_zero_sub_mul {a b k : ℝ} (ha : 0 ≤ a) (hkb : k * b ≤ a) :
+    volume (closedRegionBetween 0 (fun t ↦ a - k * t) (Icc 0 b)) =
+      ENNReal.ofReal (a * b - k * b ^ 2 / 2) := by
+  rw [Measure.volume_eq_prod,
+    volume_closedRegionBetween_eq_lintegral measurable_zero (by fun_prop) measurableSet_Icc,
+    sub_zero]
+  rcases lt_or_ge b 0 with hb | hb
+  · -- For `b < 0` the region is empty, and `a b - k b² / 2 ≤ a b / 2 ≤ 0`.
+    rw [Icc_eq_empty_of_lt hb, Measure.restrict_empty, lintegral_zero_measure, eq_comm,
+      ENNReal.ofReal_eq_zero]
+    nlinarith
+  have hpos : ∀ t ∈ Icc 0 b, 0 ≤ a - k * t := by
+    rintro t ⟨ht₀, htb⟩
+    rcases le_total 0 k with hk | hk
+    · nlinarith
+    · nlinarith
+  have hint : ∫ t in (0)..b, (a - k * t) = a * b - k * b ^ 2 / 2 := by
+    rw [intervalIntegral.integral_sub intervalIntegrable_const
+      ((by fun_prop : Continuous fun t : ℝ ↦ k * t).intervalIntegrable 0 b),
+      intervalIntegral.integral_const_mul, intervalIntegral.integral_const, integral_id]
+    simp only [sub_zero, smul_eq_mul]
+    ring
+  rw [← ofReal_integral_eq_lintegral_ofReal
+    ((by fun_prop : Continuous fun t : ℝ ↦ a - k * t).integrableOn_Icc)
+    ((ae_restrict_iff' measurableSet_Icc).2 (Filter.Eventually.of_forall hpos)),
+    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hb, hint]
 
 end TauCeti

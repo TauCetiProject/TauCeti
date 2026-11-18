@@ -19,7 +19,7 @@ integral cocharacters of a torus in its Lie algebra `𝔱 = V`. Moment maps take
 `V* = StrongDual ℝ V`, and volumes there are measured by the Lebesgue measure for which the
 *weight lattice*
 
-`Λ* = {x ∈ V* | x (i n) ∈ ℤ for every n ∈ N}`
+`Λ* = {x ∈ V* | x (i n) ∈ ℤ for every n ∈ N}` (`TauCeti.Toric.weightLattice`)
 
 has covolume one. This file constructs that measure,
 `TauCeti.Toric.IsIntegralLattice.dualMeasure`, and proves that it is canonical.
@@ -27,11 +27,11 @@ has covolume one. This file constructs that measure,
 Every integral basis `b` of `N` gives a real basis `i ∘ b` of `V`, and hence a dual basis of
 `V*` (`TauCeti.Toric.IsIntegralLattice.dualBasis`), whose coordinates are `x ↦ x (i (b j))`. The
 `ℤ`-span of this dual basis is the weight lattice, whatever `b` is
-(`TauCeti.Toric.IsIntegralLattice.span_dualBasis_eq`). The Haar measure normalized by the
+(`TauCeti.Toric.IsIntegralLattice.span_dualBasis`). The Haar measure normalized by the
 dual basis therefore gives measure one to a fundamental domain of `Λ*`, and so does not depend on
 `b` (`TauCeti.Toric.IsIntegralLattice.addHaar_dualBasis`): two fundamental domains of the same
 lattice have the same measure. This is the measure `dualMeasure`; the weight lattice has covolume
-one for it (`TauCeti.Toric.IsIntegralLattice.covolume_span_dualBasis`), and the coordinates of any
+one for it (`TauCeti.Toric.IsIntegralLattice.covolume_weightLattice`), and the coordinates of any
 dual basis carry it to Lebesgue measure on `ℝ^κ`
 (`TauCeti.Toric.IsIntegralLattice.measurePreserving_dualBasis_equivFun`).
 
@@ -54,7 +54,7 @@ and the volume formula `vol(M) = (2π)^n vol(Δ)` for a symplectic toric manifol
 
 * `TauCeti.Toric.IsIntegralLattice.addHaar_dualBasis`: the Haar measure of any dual basis is
   `dualMeasure`.
-* `TauCeti.Toric.IsIntegralLattice.covolume_span_dualBasis`: the weight lattice has covolume one.
+* `TauCeti.Toric.IsIntegralLattice.covolume_weightLattice`: the weight lattice has covolume one.
 * `TauCeti.Toric.IsIntegralLattice.measurePreserving_dualBasis_equivFun`: dual coordinates carry
   `dualMeasure` to Lebesgue measure.
 * `TauCeti.Toric.IsIntegralLattice.map_comp_dualMeasure`: naturality under lattice isomorphisms.
@@ -93,7 +93,7 @@ private theorem addHaar_dualBasis_eq {κ' : Type*} [Fintype κ'] (b : Basis κ �
   have := B.finiteDimensional_of_finite
   have hB := ZSpan.isAddFundamentalDomain B B'.addHaar
   have hB' := ZSpan.isAddFundamentalDomain B' B'.addHaar
-  rw [h.span_dualBasis_eq b b'] at hB
+  rw [h.span_dualBasis b, ← h.span_dualBasis b'] at hB
   have : VAddInvariantMeasure (span ℤ (range B')) (StrongDual ℝ V) B'.addHaar :=
     inferInstanceAs (VAddInvariantMeasure (span ℤ (range B')).toAddSubgroup _ _)
   rw [B.addHaar_eq_iff, Basis.coe_parallelepiped,
@@ -129,11 +129,12 @@ theorem dualMeasure_parallelepiped (b : Basis κ ℤ N) :
   rw [← h.addHaar_dualBasis b, Basis.addHaar_self]
 
 /-- **The weight lattice has covolume one** for the lattice-normalized measure. -/
-theorem covolume_span_dualBasis {κ : Type*} [Finite κ] (b : Basis κ ℤ N) :
-    ZLattice.covolume (span ℤ (range (h.dualBasis b))) h.dualMeasure = 1 := by
-  have := Fintype.ofFinite κ
+theorem covolume_weightLattice : ZLattice.covolume (weightLattice i) h.dualMeasure = 1 := by
+  have := h.free
+  have := h.finite
+  let b := Free.chooseBasis ℤ N
   have := (h.dualBasis b).finiteDimensional_of_finite
-  rw [ZLattice.covolume_eq_measure_fundamentalDomain _ _
+  rw [← h.span_dualBasis b, ZLattice.covolume_eq_measure_fundamentalDomain _ _
       (ZSpan.isAddFundamentalDomain (h.dualBasis b) h.dualMeasure),
     measureReal_def, measure_congr (ZSpan.fundamentalDomain_ae_parallelepiped _ _),
     h.dualMeasure_parallelepiped, ENNReal.toReal_one]

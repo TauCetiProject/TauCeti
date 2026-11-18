@@ -73,8 +73,8 @@ forcing the integral and real ranks to agree.
   standard lattices `ℤ ⊆ ℝ` and `ℤ^n ⊆ ℝ^n`.
 * `TauCeti.Toric.IsIntegralLattice.dualBasis`: in a normed space, the basis of the continuous dual
   `V*` dual to the real basis `i ∘ b` of an integral basis `b`, with coordinates `x ↦ x (i (b j))`.
-  Its `ℤ`-span is the weight lattice of functionals taking integer values on the lattice
-  (`TauCeti.Toric.IsIntegralLattice.mem_span_dualBasis_iff`), whatever `b` is.
+  Its `ℤ`-span is the weight lattice `TauCeti.Toric.weightLattice` of functionals taking integer
+  values on the lattice (`TauCeti.Toric.IsIntegralLattice.span_dualBasis`), whatever `b` is.
 
 ## Implementation notes
 
@@ -418,6 +418,26 @@ open Module Set Submodule
 variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
   (h : IsIntegralLattice i) {κ : Type*} [Finite κ]
 
+variable (i) in
+/-- The weight lattice `{x ∈ V* | x (i n) ∈ ℤ for every n ∈ N}` of `i`: the functionals taking
+integer values on the lattice. -/
+def weightLattice : Submodule ℤ (StrongDual ℝ V) where
+  carrier := {x | ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ)}
+  add_mem' {x y} hx hy n := by
+    obtain ⟨p, hp⟩ := hx n
+    obtain ⟨q, hq⟩ := hy n
+    exact ⟨p + q, by simp [hp, hq]⟩
+  zero_mem' _ := ⟨0, by simp⟩
+  smul_mem' m x hx n := by
+    obtain ⟨p, hp⟩ := hx n
+    exact ⟨m * p, by simp [hp, zsmul_eq_mul]⟩
+
+/-- A functional lies in the weight lattice when it takes integer values on the lattice. -/
+@[simp]
+theorem mem_weightLattice {x : StrongDual ℝ V} :
+    x ∈ weightLattice i ↔ ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ) :=
+  Iff.rfl
+
 namespace IsIntegralLattice
 
 /-- The basis of `V* = StrongDual ℝ V` dual to the real basis `i ∘ b` of `V` attached to an
@@ -450,10 +470,10 @@ theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
 
 /-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
 it takes integer values on the lattice. In particular this span does not depend on `b`. -/
-theorem mem_span_dualBasis_iff (b : Basis κ ℤ N) {x : StrongDual ℝ V} :
-    x ∈ span ℤ (range (h.dualBasis b)) ↔ ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ) := by
+theorem span_dualBasis (b : Basis κ ℤ N) : span ℤ (range (h.dualBasis b)) = weightLattice i := by
   have := Fintype.ofFinite κ
-  rw [Basis.mem_span_iff_repr_mem]
+  ext x
+  rw [Basis.mem_span_iff_repr_mem, mem_weightLattice]
   simp only [dualBasis_repr, algebraMap_int_eq, Int.coe_castRingHom]
   refine ⟨fun hx n ↦ ?_, fun hx j ↦ hx (b j)⟩
   choose m hm using hx
@@ -461,13 +481,6 @@ theorem mem_span_dualBasis_iff (b : Basis κ ℤ N) {x : StrongDual ℝ V} :
   conv_rhs => rw [← b.sum_repr n, map_sum, map_sum]
   push_cast
   simp only [map_zsmul, zsmul_eq_mul, ← hm]
-
-/-- The dual bases of any two integral bases span the same lattice, the weight lattice. -/
-theorem span_dualBasis_eq {κ' : Type*} [Finite κ'] (b : Basis κ ℤ N)
-    (b' : Basis κ' ℤ N) :
-    span ℤ (range (h.dualBasis b)) = span ℤ (range (h.dualBasis b')) := by
-  ext x
-  rw [mem_span_dualBasis_iff, mem_span_dualBasis_iff]
 
 end IsIntegralLattice
 

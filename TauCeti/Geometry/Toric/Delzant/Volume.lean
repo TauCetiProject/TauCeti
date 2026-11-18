@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Toric.Delzant.Equiv
 public import TauCeti.Geometry.Toric.Delzant.Hirzebruch
 public import TauCeti.Geometry.Toric.Delzant.Interval
 public import TauCeti.Geometry.Toric.Delzant.Prod
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
@@ -190,46 +189,23 @@ theorem dualMeasure_facetPolyhedron_hirzebruch {k : ℤ} {a b : ℝ} (ha : 0 ≤
     ext l
     simp [Pi.single_apply, apply_ite]
   -- In the coordinates `(x(e₂), x(e₁))` the trapezoid is the region below `t ↦ a - k t`.
-  set R := closedRegionBetween 0 (fun t ↦ a - k * t) (Icc 0 b) with hRdef
-  have hR : MeasurableSet R :=
-    measurableSet_closedRegionBetween measurable_zero (by fun_prop) measurableSet_Icc
+  have hmp : MeasurePreserving (Prod.swap ∘ MeasurableEquiv.finTwoArrow ∘ e.equivFun)
+      (isIntegralLattice_intCast 2).dualMeasure volume :=
+    (Measure.measurePreserving_swap.comp (volume_preserving_finTwoArrow ℝ)).comp
+      ((isIntegralLattice_intCast 2).measurePreserving_dualBasis_equivFun _)
   have hpre : facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
-      (hirzebruchSupport a b) =
-        e.equivFun ⁻¹' (MeasurableEquiv.finTwoArrow ⁻¹' (Prod.swap ⁻¹' R)) := by
+      (hirzebruchSupport a b) = (Prod.swap ∘ MeasurableEquiv.finTwoArrow ∘ e.equivFun) ⁻¹'
+        closedRegionBetween 0 (fun t ↦ a - k * t) (Icc 0 b) := by
     ext x
-    simp only [mem_facetPolyhedron_hirzebruch_iff, mem_preimage, MeasurableEquiv.finTwoArrow_apply,
-      he, hRdef, Prod.fst_swap, Prod.snd_swap, mem_closedRegionBetween, Pi.zero_apply, mem_Icc]
+    simp only [mem_facetPolyhedron_hirzebruch_iff, mem_preimage, Function.comp_apply,
+      MeasurableEquiv.finTwoArrow_apply, he, Prod.fst_swap, Prod.snd_swap,
+      mem_closedRegionBetween, Pi.zero_apply, mem_Icc]
     constructor
     · rintro ⟨h₀, h₁, h₂, h₃⟩
       exact ⟨⟨h₁, h₂⟩, h₀, by linarith⟩
     · rintro ⟨⟨h₁, h₂⟩, h₀, h₃⟩
       exact ⟨h₀, h₁, h₂, by linarith⟩
-  rw [hpre, ((isIntegralLattice_intCast 2).measurePreserving_dualBasis_equivFun
-      (Pi.basisFun ℤ (Fin 2))).measure_preimage
-      (MeasurableEquiv.finTwoArrow.measurable (measurable_swap hR)).nullMeasurableSet,
-    (volume_preserving_finTwoArrow ℝ).measure_preimage (measurable_swap hR).nullMeasurableSet,
-    Measure.volume_eq_prod, Measure.measurePreserving_swap.measure_preimage hR.nullMeasurableSet,
-    hRdef, volume_closedRegionBetween_eq_lintegral measurable_zero (by fun_prop) measurableSet_Icc,
-    sub_zero]
-  rcases lt_or_ge b 0 with hb | hb
-  · -- For `b < 0` the region is empty, and `a b - k b² / 2 ≤ a b / 2 ≤ 0`.
-    rw [Icc_eq_empty_of_lt hb, Measure.restrict_empty, lintegral_zero_measure, eq_comm,
-      ENNReal.ofReal_eq_zero]
-    nlinarith
-  have hpos : ∀ t ∈ Icc 0 b, 0 ≤ a - k * t := by
-    rintro t ⟨ht₀, htb⟩
-    rcases le_total 0 (k : ℝ) with hk | hk
-    · nlinarith
-    · nlinarith
-  have hint : ∫ t in (0)..b, (a - k * t) = a * b - k * b ^ 2 / 2 := by
-    rw [intervalIntegral.integral_sub intervalIntegrable_const
-      ((by fun_prop : Continuous fun t : ℝ ↦ k * t).intervalIntegrable 0 b),
-      intervalIntegral.integral_const_mul, intervalIntegral.integral_const, integral_id]
-    simp only [sub_zero, smul_eq_mul]
-    ring
-  rw [← ofReal_integral_eq_lintegral_ofReal
-    ((by fun_prop : Continuous fun t : ℝ ↦ a - k * t).integrableOn_Icc)
-    ((ae_restrict_iff' measurableSet_Icc).2 (Filter.Eventually.of_forall hpos)),
-    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hb, hint]
+  rw [hpre, hmp.measure_preimage (measurableSet_closedRegionBetween measurable_zero (by fun_prop)
+    measurableSet_Icc).nullMeasurableSet, volume_closedRegionBetween_zero_sub_mul ha hkb]
 
 end TauCeti.Toric
