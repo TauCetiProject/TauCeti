@@ -29,8 +29,8 @@ null-measurable form of Mathlib's `MeasureTheory.ae_eq_restrict_iff_indicator_ae
 
 Splitting a restriction along a second set `E` bounds it by the restriction to `s ∩ E` plus the
 mass of `Eᶜ` under the restriction to `s`, with no measurability assumption
-(`MeasureTheory.Measure.restrict_le_restrict_inter_add_compl`); this is the counting step of the
-comparison between conditioning on `s` and on `s ∩ E`.
+(`MeasureTheory.Measure.restrict_apply_le_restrict_inter_add_compl`); this is the counting step of
+the comparison between conditioning on `s` and on `s ∩ E`.
 -/
 
 public section
@@ -48,8 +48,9 @@ theorem restrict_coe_opens_top {α : Type*} {_ : MeasurableSpace α} [Topologica
 
 /-- Restricting `μ` to `s` gives an event `A` at most the mass that the restriction to `s ∩ E`
 gives `A`, plus the mass that the restriction to `s` gives `Eᶜ`. No set needs to be measurable. -/
-theorem restrict_le_restrict_inter_add_compl {α : Type*} [MeasurableSpace α] (μ : Measure α)
-    (s E A : Set α) : μ.restrict s A ≤ μ.restrict (s ∩ E) A + μ.restrict s Eᶜ := calc
+theorem restrict_apply_le_restrict_inter_add_compl {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) (s E A : Set α) :
+    μ.restrict s A ≤ μ.restrict (s ∩ E) A + μ.restrict s Eᶜ := calc
   μ.restrict s A ≤ μ.restrict (s ∩ E) A + μ.restrict (s \ E) A := by
     conv_lhs => rw [← Set.inter_union_sdiff s E]
     exact (le_iff'.1 (restrict_union_le _ _) A).trans_eq (_root_.add_apply _ _ _)
