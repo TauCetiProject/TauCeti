@@ -10,6 +10,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The Riemannian exponential map
@@ -218,6 +219,22 @@ theorem isGeodesicCurveOn_riemannianExp_smul_Icc [T2Space M]
     IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc a b) :=
   (isGeodesicCurveOnFrom_riemannianExp_smul p v).isGeodesicCurveOn.mono (uniqueDiffOn_Icc hab)
     (ordConnected_geodesicInterval.out ha hb)
+
+/-- A geodesic is the radial geodesic from any parameter `τ` to any parameter `t` whose
+whole connecting segment lies in the interior of its domain. -/
+theorem IsGeodesicCurveOn.eq_riemannianExp_sub_smul [T2Space M] {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn I γ s) {τ t : ℝ} (hsub : uIcc τ t ⊆ interior s) :
+    γ t = riemannianExp I M (γ τ) ((t - τ) • curveVelocity I γ τ) := by
+  obtain ⟨c, d, hcd, hs⟩ := isOpen_interior.exists_Ioo_subset_of_uIcc_subset hsub
+  rw [riemannianExp_smul,
+    (hγ.mono (uniqueDiffOn_Ioo c d) (hs.trans interior_subset)).maximalGeodesic_sub_eq
+      (hcd left_mem_uIcc) (hcd right_mem_uIcc)]
+
+/-- An all-time geodesic is the radial geodesic from any of its points. -/
+theorem IsGeodesicCurve.eq_riemannianExp_sub_smul [T2Space M] {γ : ℝ → M}
+    (hγ : IsGeodesicCurve I γ) (τ t : ℝ) :
+    γ t = riemannianExp I M (γ τ) ((t - τ) • curveVelocity I γ τ) :=
+  (isGeodesicCurveOn_univ.mpr hγ).eq_riemannianExp_sub_smul (by simp)
 
 omit [I.Boundaryless] in
 /-- The domain of the exponential map is star-shaped at the zero vector. -/
