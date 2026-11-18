@@ -256,19 +256,6 @@ theorem contMDiff_fubiniStudyHeight {n : WithTop ℕ∞} :
     rw [fubiniStudyHeight_comp_extChartAt_coe_symm]
     exact (contDiff_const.sub h).contDiffAt
 
-/-- The differential of the height read in the preferred chart of its base point, whose target is
-all of `ℂ`. -/
-private theorem mvfderiv_fubiniStudyHeight_eq_fderiv (x : OnePoint ℂ) :
-    mvfderiv 𝓘(ℝ, ℂ) fubiniStudyHeight x =
-      fderiv ℝ (fubiniStudyHeight ∘ (extChartAt 𝓘(ℝ, ℂ) x).symm) (extChartAt 𝓘(ℝ, ℂ) x x) := by
-  have htarget : (extChartAt 𝓘(ℝ, ℂ) x).target = univ := by
-    induction x using OnePoint.rec with
-    | infty => simp [chartAt_infty, invChart_target]
-    | coe z => simp [chartAt_coe, affineChart_target]
-  rw [mvfderiv_eq_fderivWithin_extChartAt_target
-    ((contMDiff_fubiniStudyHeight (n := 1)).mdifferentiableAt one_ne_zero), htarget,
-    fderivWithin_univ]
-
 /-- The differential of the height at a finite point `z`: `dh(v) = 2 ⟪z, v⟫ / (1 + |z|²)²`. -/
 @[simp]
 theorem mvfderiv_fubiniStudyHeight_coe (z v : ℂ) :
@@ -282,7 +269,8 @@ theorem mvfderiv_fubiniStudyHeight_coe (z v : ℂ) :
     rw [h.fderiv]
     simp
     ring
-  rw [mvfderiv_fubiniStudyHeight_eq_fderiv, fubiniStudyHeight_comp_extChartAt_coe_symm, hz]
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, fubiniStudyHeight_comp_extChartAt_coe_symm,
+    hz]
   -- A tangent vector at `z` is read in the affine chart as the complex number `v`.
   exact hd
 
@@ -293,7 +281,8 @@ theorem mvfderiv_fubiniStudyHeight_infty :
   have h0 : extChartAt 𝓘(ℝ, ℂ) (∞ : OnePoint ℂ) ∞ = 0 := by simp [chartAt_infty, invChart_infty]
   have hd : fderiv ℝ (fun w : ℂ ↦ (1 + ‖w‖ ^ 2)⁻¹) 0 = 0 := by
     simpa [Real.rpow_neg_one] using (hasFDerivAt_one_add_norm_sq_rpow (E := ℂ) (-1) 0).fderiv
-  rw [mvfderiv_fubiniStudyHeight_eq_fderiv, fubiniStudyHeight_comp_extChartAt_infty_symm, h0]
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, fubiniStudyHeight_comp_extChartAt_infty_symm,
+    h0]
   -- The differential at `∞` is read in the inverted chart, whose model space is `ℂ`.
   exact hd
 
