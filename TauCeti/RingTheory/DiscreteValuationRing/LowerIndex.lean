@@ -20,7 +20,7 @@ Mathlib makes `G ⧸ H` act on the fixed ring `B^H = FixedPoints.subalgebra A B 
 `A`; this is the integer ring of the fixed field `L^H` of a finite Galois extension `L/K`, with
 `Gal(L^H/K) = G ⧸ H`. The ring `B^H` is again a discrete valuation ring
 (`TauCeti.FixedPoints.isDiscreteValuationRing_subalgebra`), on which `G ⧸ H` acts faithfully
-(`TauCeti.FixedPoints.faithfulSMul_quotient_subalgebra`). This file proves Serre's formula
+(`Subgroup.faithfulSMul_quotient_subalgebra`). This file proves Serre's formula
 comparing Serre's lower index `i_G(σ) = min_x v_B(σ x - x)` (`TauCeti.IsLocalRing.lowerIndex`) on
 `B` and on `B^H`: when the residue extension of `B` over `A` is separable,
 
@@ -144,7 +144,7 @@ theorem ramificationIdx_mul_lowerIndex_mk_eq_finsum [IsLocalHom (algebraMap A B)
   obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
   obtain ⟨y, hy⟩ := FixedPoints.exists_adjoin_eq_top A B H
   exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top hx hy
-    (fun c ↦ (FixedPoints.coe_mk_smul H σ c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
+    (fun c ↦ (H.coe_mk_smul σ c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
 
 variable (A) in
 /-- **Serre's lemma on the lower index of a quotient**, in counting form. Let a finite group `G`
