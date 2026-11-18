@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
@@ -35,7 +38,8 @@ only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, 
 field pointing out of a domain `{f ≤ c}` along its boundary are shown never to re-enter it.
 
 Finally, an integral curve along which the vector field vanishes does not move at all: it is a
-constant curve.
+constant curve. For a `C¹` field on a Hausdorff boundaryless manifold it suffices that the field
+vanishes at one point of the curve, by uniqueness of integral curves.
 
 ## Main declarations
 
@@ -50,6 +54,8 @@ constant curve.
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
   vanishes is constant.
+* `IsMIntegralCurve.apply_eq_of_eq_zero`: an integral curve of a `C¹` field through a zero of the
+  field is constant.
 -/
 
 public section
@@ -99,6 +105,15 @@ theorem apply_eq_of_forall_eq_zero [IsManifold I 1 M] (hγ : IsMIntegralCurve γ
       rw [(hγ u).mfderiv, hv u, ContinuousLinearMap.smulRight_zero]
       -- The two zeros live in the tangent-space and the model-space spelling of one type.
       rfl) t s
+
+/-- **An integral curve through a zero of the field is constant.** On a Hausdorff boundaryless
+manifold, if the `C¹` field `v` vanishes at the point `γ t₀` of a global integral curve `γ`, then
+`γ` is the constant curve at that point, by uniqueness of integral curves. -/
+theorem apply_eq_of_eq_zero [IsManifold I 1 M] [T2Space M] [BoundarylessManifold I M]
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hγ : IsMIntegralCurve γ v) {t₀ : ℝ} (h : v (γ t₀) = 0) (t : ℝ) : γ t = γ t₀ :=
+  congrFun (isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless hv hγ (isMIntegralCurve_const h)
+    (t₀ := t₀) rfl) t
 
 end IsMIntegralCurve
 

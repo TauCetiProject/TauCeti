@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 
 /-!
@@ -34,6 +35,8 @@ manifold. With `E = EuclideanSpace ℝ (Fin 4)` this is the spherical model geom
 * `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction
   to the spheres, read in the ambient space, is the linear isometry itself. Use
   `LinearIsometryEquiv.coe_unitSphereRiemannianIsometry` to apply it to the Riemannian isometry.
+* `LinearIsometryEquiv.isLocalRiemannianIsometry_unitSphereEquiv`: the restriction of a linear
+  isometry to the spheres is a local Riemannian isometry for the round metrics.
 * `LinearIsometryEquiv.unitSphereIsomHom_injective`: the homomorphism `O(E) →* Isom(S(E))` is
   injective.
 * `TauCeti.isPretransitive_isom_sphere`: the isometry group of the round sphere acts transitively
@@ -97,6 +100,13 @@ theorem coe_unitSphereRiemannianIsometry (e : E ≃ₗᵢ[ℝ] F) :
 theorem unitSphereRiemannianIsometry_apply (e : E ≃ₗᵢ[ℝ] E) (x : sphere (0 : E) 1) :
     unitSphereRiemannianIsometry (n := n) (k := n) e x = e • x :=
   Subtype.ext (by simp)
+
+/-- The restriction of a linear isometry to the unit spheres is a local Riemannian isometry for the
+round metrics. -/
+theorem isLocalRiemannianIsometry_unitSphereEquiv (e : E ≃ₗᵢ[ℝ] F) :
+    TauCeti.IsLocalRiemannianIsometry (𝓡 n) (𝓡 k) (unitSphereEquiv e) := by
+  rw [← coe_unitSphereRiemannianIsometry (n := n) (k := k)]
+  exact (unitSphereRiemannianIsometry e).isLocalRiemannianIsometry
 
 /-- The inverse of the isometry induced by `e` is the isometry induced by `e.symm`. -/
 @[simp]
