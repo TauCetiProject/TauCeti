@@ -104,7 +104,7 @@ Other users follow the existing review policy. See the
 [bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
 
 Stacked PRs are prohibited, including drafts: land prerequisites first, then rebase and
-submit a standalone diff. The trusted [no-stacking policy](scripts/stack-policy.md)
+submit a standalone diff. The trusted [no-stacking policy](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/stack-policy.md)
 checks current source evidence, comments and closes confirmed stacks, and blocks their
 bors admission. Keep/hold/human labels do not exempt stacks. Reviewers should follow
 the same policy; shared files, imports and roadmap areas alone do not establish stacking.
