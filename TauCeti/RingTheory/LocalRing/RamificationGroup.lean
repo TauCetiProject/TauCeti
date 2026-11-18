@@ -438,13 +438,6 @@ theorem lowerIndex_mul_eq_min_of_le {σ τ : G} (h : lowerIndex S (σ * τ) ≤ 
   rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right h] at h₂
   exact le_antisymm (le_min h₂ h) (min_comm (lowerIndex S τ) _ ▸ min_le_lowerIndex_mul σ τ)
 
-/-- Every coset `σ H` of a finite subgroup contains an element `σ τ₀` of largest lower index. -/
-theorem exists_mem_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G) :
-    ∃ τ₀ ∈ H, ∀ τ ∈ H, lowerIndex S (σ * τ₀ * τ) ≤ lowerIndex S (σ * τ₀) := by
-  obtain ⟨τ₀, hτ₀⟩ := Finite.exists_max fun τ : H ↦ lowerIndex S (σ * τ)
-  refine ⟨τ₀, τ₀.2, fun τ hτ ↦ ?_⟩
-  simpa only [Subgroup.coe_mul, mul_assoc] using hτ₀ (τ₀ * ⟨τ, hτ⟩)
-
 variable (S) in
 /-- The identity has lower index `⊤`. -/
 @[simp]
@@ -807,3 +800,19 @@ end RealDiscreteValuationRing
 end IsLocalRing
 
 end TauCeti
+
+namespace Subgroup
+
+open TauCeti.IsLocalRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+  [MulSemiringAction G S]
+
+/-- Every coset `σ H` of a finite subgroup contains an element `σ τ₀` of largest lower index. -/
+theorem exists_mem_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (σ : G) :
+    ∃ τ₀ ∈ H, ∀ τ ∈ H, lowerIndex S (σ * τ₀ * τ) ≤ lowerIndex S (σ * τ₀) := by
+  obtain ⟨τ₀, hτ₀⟩ := Finite.exists_max fun τ : H ↦ lowerIndex S (σ * τ)
+  refine ⟨τ₀, τ₀.2, fun τ hτ ↦ ?_⟩
+  simpa only [coe_mul, mul_assoc] using hτ₀ (τ₀ * ⟨τ, hτ⟩)
+
+end Subgroup

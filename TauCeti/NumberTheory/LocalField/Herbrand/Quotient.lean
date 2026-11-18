@@ -79,7 +79,7 @@ theorem exists_forall_lowerIndex_mul_restrictScalars_le (σ : M ≃ₐ[K] M) :
     ∃ τ₀ : M ≃ₐ[L] M, ∀ τ : M ≃ₐ[L] M,
       lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K * τ.restrictScalars K) ≤
         lowerIndex 𝒪[M] (σ * τ₀.restrictScalars K) := by
-  obtain ⟨_, ⟨τ₀, rfl⟩, hτ₀⟩ := TauCeti.IsLocalRing.exists_mem_forall_lowerIndex_mul_le
+  obtain ⟨_, ⟨τ₀, rfl⟩, hτ₀⟩ := Subgroup.exists_mem_forall_lowerIndex_mul_le
     (S := 𝒪[M]) (AlgEquiv.restrictScalarsHom K : (M ≃ₐ[L] M) →* (M ≃ₐ[K] M)).range σ
   refine ⟨τ₀, fun τ ↦ ?_⟩
   simpa only [AlgEquiv.restrictScalarsHom_apply] using hτ₀ _ ⟨τ, rfl⟩
