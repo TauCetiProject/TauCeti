@@ -62,6 +62,9 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
+The adjoint commutes with real scalars whenever these act on operators through `𝕜`
+(`ContinuousLinearMap.starModule_real`).
+
 ## Further results
 
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
@@ -112,6 +115,12 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+/-- Real scalars act on operators through `𝕜`, so they commute with adjoints. Mathlib records
+only `StarModule 𝕜` here. -/
+instance starModule_real [CompleteSpace E] [SMul ℝ (E →L[𝕜] E)]
+    [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] : StarModule ℝ (E →L[𝕜] E) :=
+  ⟨fun r a ↦ by rw [← smul_one_smul 𝕜 r a, star_smul, star_smul, star_one, smul_one_smul]⟩
 
 /-- The Gram operator `B† B` of an operator out of a finite-dimensional space is invertible
 exactly when `B` is injective. -/
