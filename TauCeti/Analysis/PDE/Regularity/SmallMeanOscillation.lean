@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.MeanOscillation
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
@@ -373,12 +374,8 @@ private theorem exists_one_le_and_pos_of_ne_top (lam Lam : ℝ) {q q' s : ℝ} (
     tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
   have h0 := h1.mul_const ((2 : ℝ) ^ (n + 1))
   rw [zero_mul] at h0
-  have h0' : Tendsto (fun κ : ℝ => ENNReal.ofReal (decayConst n lam Lam / κ ^ 2 * 2 ^ (n + 1)))
-      atTop (𝓝 0) := by
-    simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal h0
   obtain ⟨κ, hκ, hκ1⟩ := ((eventually_ge_atTop 1).and
-    (((ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hK₁ hs2).comp h0').eventually
-      (gt_mem_nhds hquarter))).exists
+    (h0.eventually_mul_ofReal_rpow_lt hK₁ hs2 hquarter)).exists
   refine ⟨κ, hκ, hκ1.le, ?_⟩
   have hq'' : 0 < q'⁻¹ := inv_pos.2 hq'
   set c₃ : ℝ → ℝ := fun δ => forcingConst n lam Lam * κ ^ (n + 1) *
@@ -390,10 +387,8 @@ private theorem exists_one_le_and_pos_of_ne_top (lam Lam : ℝ) {q q' s : ℝ} (
     have h := hc.tendsto.mono_left (nhdsWithin_le_nhds (s := Ioi 0))
     have hc0 : c₃ 0 = 0 := by simp [c₃, Real.zero_rpow hq''.ne']
     rwa [hc0] at h
-  have hc0'' : Tendsto (fun δ => ENNReal.ofReal (c₃ δ)) (𝓝[>] 0) (𝓝 0) := by
-    simpa only [ENNReal.ofReal_zero] using ENNReal.tendsto_ofReal hc0'
-  obtain ⟨δ, hδ1, hδ⟩ := ((((ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hK₃ hs2).comp
-    hc0'').eventually (gt_mem_nhds hquarter)).and self_mem_nhdsWithin).exists
+  obtain ⟨δ, hδ1, hδ⟩ :=
+    ((hc0'.eventually_mul_ofReal_rpow_lt hK₃ hs2 hquarter).and self_mem_nhdsWithin).exists
   exact ⟨δ, hδ, hδ1.le⟩
 
 /-- The estimate for fixed parameters `κ` and `δ` small enough for the absorption. -/

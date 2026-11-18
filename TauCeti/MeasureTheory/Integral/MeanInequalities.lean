@@ -43,7 +43,9 @@ On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g�
 
 for Hölder conjugate exponents `q, q'`, so the weighted integral is small when the mean of `θ` is
 small. This is how the mean oscillation of the coefficients enters regularity estimates for
-divergence-form equations.
+divergence-form equations. The same bound holds in `ℝ≥0∞` for any measure, with no integrability
+hypotheses, for a weight `θ ≤ K` and a function `g`; there it controls the error made by freezing
+the coefficients of a non-divergence-form equation.
 
 For a product of `k` functions, the norm of its integral is at most the average of their `k`th
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
@@ -55,6 +57,7 @@ expected products without any independence assumption.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
+* `TauCeti.lintegral_sq_mul_sq_le_of_ae_le`: Hölder's inequality with a bounded weight in `ℝ≥0∞`.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -207,6 +210,36 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
   rw [hgq, one_div, one_div]
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
     hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
+
+/-- **Hölder's inequality with a bounded weight, in `ℝ≥0∞`.** Let `θ ≤ K` almost everywhere, and
+let `q, q'` be Hölder conjugate exponents. Then
+`∫⁻ θ² g² ≤ (K^(2q' - 1) ∫⁻ θ)^(1/q') (∫⁻ g^(2q))^(1/q)`.
+Unlike `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`, this needs neither a finite measure nor any
+integrability. -/
+theorem lintegral_sq_mul_sq_le_of_ae_le {θ g : β → ℝ≥0∞} {K : ℝ≥0∞} {q q' : ℝ}
+    (hq : q.HolderConjugate q') (hθm : AEMeasurable θ ν) (hgm : AEMeasurable g ν)
+    (hθ : ∀ᵐ x ∂ν, θ x ≤ K) :
+    ∫⁻ x, θ x ^ 2 * g x ^ 2 ∂ν ≤
+      (K ^ (2 * q' - 1) * ∫⁻ x, θ x ∂ν) ^ q'⁻¹ * (∫⁻ x, g x ^ (2 * q) ∂ν) ^ q⁻¹ := by
+  have hq' : 1 < q' := hq.symm.lt
+  -- Since `θ ≤ K`, `(θ²)^q' = θ^(2q' - 1) θ ≤ K^(2q' - 1) θ`.
+  have hθq : ∀ᵐ x ∂ν, (θ x ^ 2) ^ q' ≤ K ^ (2 * q' - 1) * θ x := by
+    filter_upwards [hθ] with x hx
+    rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, Nat.cast_ofNat]
+    conv_lhs => rw [show 2 * q' = (2 * q' - 1) + 1 by ring]
+    rw [ENNReal.rpow_add_of_nonneg _ _ (by linarith) zero_le_one, ENNReal.rpow_one]
+    gcongr
+    linarith
+  have hgq : ∀ x, (g x ^ 2) ^ q = g x ^ (2 * q) := fun x => by
+    rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul, Nat.cast_ofNat]
+  calc ∫⁻ x, θ x ^ 2 * g x ^ 2 ∂ν
+      ≤ (∫⁻ x, (θ x ^ 2) ^ q' ∂ν) ^ (1 / q') * (∫⁻ x, (g x ^ 2) ^ q ∂ν) ^ (1 / q) :=
+        ENNReal.lintegral_mul_le_Lp_mul_Lq ν hq.symm (hθm.pow_const 2) (hgm.pow_const 2)
+    _ ≤ _ := by
+        simp_rw [hgq, one_div]
+        gcongr ?_ * _
+        exact ENNReal.rpow_le_rpow ((lintegral_mono_ae hθq).trans_eq
+          (lintegral_const_mul'' _ hθm)) (inv_nonneg.2 (zero_le_one.trans hq'.le))
 
 end TauCeti
 

@@ -78,6 +78,9 @@ For a base in `ℝ≥0` greater than one, power comparisons also express rationa
 closed intervals for a reciprocal radius parameter `α / r`.
 
 On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
+In the same way, if a real parameter `g` tends to `0`, then `K * ofReal g ^ e` is eventually
+smaller than any `ε > 0` for finite `K` and `e > 0`; this is the form in which a vanishing parameter
+makes a term small enough to be absorbed.
 
 ## Main declarations
 
@@ -120,6 +123,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 * `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
+* `Filter.Tendsto.eventually_mul_ofReal_rpow_lt`: if `g → 0`, then eventually
+  `K * ofReal (g x) ^ e < ε` for finite `K`, `e > 0` and `ε > 0`.
 -/
 
 public section
@@ -491,6 +496,17 @@ lemma max_two_mul_le_toNNReal {α C M ρ : ℝ≥0} {C₀ D N R : ℝ} (hα1 : (
         exact le_max_right _ _
 
 end NNReal
+
+/-- If `g → 0` along `l`, then eventually `K * ENNReal.ofReal (g x) ^ e < ε` for finite `K`,
+`e > 0` and `ε > 0`. This is the form in which a vanishing real parameter makes a term small
+enough to be absorbed. -/
+theorem Filter.Tendsto.eventually_mul_ofReal_rpow_lt {α : Type*} {l : Filter α} {g : α → ℝ}
+    (hg : Filter.Tendsto g l (𝓝 0)) {K : ℝ≥0∞} (hK : K ≠ ∞) {e : ℝ} (he : 0 < e) {ε : ℝ≥0∞}
+    (hε : 0 < ε) : ∀ᶠ x in l, K * ENNReal.ofReal (g x) ^ e < ε := by
+  have hg' := ENNReal.tendsto_ofReal hg
+  rw [ENNReal.ofReal_zero] at hg'
+  exact ((ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hK he).comp hg').eventually
+    (gt_mem_nhds hε)
 
 namespace TauCeti
 
