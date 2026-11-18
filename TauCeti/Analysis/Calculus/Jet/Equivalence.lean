@@ -326,6 +326,19 @@ theorem sameJetAt_one_iff {f g : E → F} {x : E} :
     SameJetAt 𝕜 1 x f g ↔ f x = g x ∧ fderiv 𝕜 f x = fderiv 𝕜 g x := by
   rw [sameJetAt_succ_iff_fderiv, sameJetAt_zero_iff]
 
+/-- A fibre change `a` over a base change `k`, followed by a fibre change `b` which is its
+left-inverse germ near `(x, s x)`, recovers a section `s` continuous at `x` near `x`, when the
+base change `h` composed with `k` is the identity germ at `x`. -/
+theorem eventuallyEq_of_inverse_germ {B B' V W : Type*} [TopologicalSpace B]
+    [TopologicalSpace V] {h : B' → B} {k : B → B'} {a : B' × V → W} {b : B × W → V}
+    {s : B → V} {x : B} (hbase : h ∘ k =ᶠ[𝓝 x] id) (hs : ContinuousAt s x)
+    (hfibre : (fun p : B × V ↦ b (p.1, a (k p.1, p.2))) =ᶠ[𝓝 (x, s x)] Prod.snd) :
+    (fun z ↦ b (z, a (k z, s (h (k z))))) =ᶠ[𝓝 x] s := by
+  have hsbase : (fun z ↦ s (h (k z))) =ᶠ[𝓝 x] s := hbase.mono fun z hz ↦ congrArg s hz
+  have hinv := (continuousAt_id.prodMk hs).eventually hfibre
+  filter_upwards [hsbase, hinv] with z hz hzi
+  simpa only [hz, id_eq] using hzi
+
 /-- Equality of finite jets is independent of smooth bundle coordinates. Assume
 `C^n` regularity at the displayed points, `k (h y) = y`, and the base inverse germ
 `h ∘ k =ᶠ[𝓝 (h y)] id`. The same `b` is a left-inverse germ near
@@ -356,15 +369,8 @@ theorem sameJetAt_coordChange_iff {n : ℕ} {h : E' → E} {k : E → E'}
       (by simpa only [hpoint, Function.comp_def, id_eq] using
         ha'.comp y (contDiffAt_id.prodMk (hcf'.comp y hh)))
       hk (by simpa only [hpoint] using hb)
-    have recover (s : E → F) (hs : ContDiffAt 𝕜 n s (h y))
-        (hinv : (fun p : E × F ↦ b (p.1, a (k p.1, p.2))) =ᶠ[𝓝 (h y, s (h y))] Prod.snd) :
-        (fun z ↦ b (z, a (k z, s (h (k z))))) =ᶠ[𝓝 (h y)] s := by
-      have hsbase : (fun z ↦ s (h (k z))) =ᶠ[𝓝 (h y)] s :=
-        hbase.mono fun z hz ↦ congrArg s hz
-      have hinv' := (continuousAt_id.prodMk hs.continuousAt).eventually hinv
-      filter_upwards [hsbase, hinv'] with z hz hzi
-      simpa only [hz, id_eq] using hzi
-    exact hback.congr (recover f hcf hfibre) (recover f' hcf' hfibre')
+    exact hback.congr (eventuallyEq_of_inverse_germ hbase hcf.continuousAt hfibre)
+      (eventuallyEq_of_inverse_germ hbase hcf'.continuousAt hfibre')
   · intro hj
     exact hj.coordChange hcf hcf' hh ha
 
