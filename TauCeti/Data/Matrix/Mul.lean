@@ -22,6 +22,9 @@ zero.
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
+By associativity of rectangular matrix multiplication, a left inverse and a right inverse of the
+same matrix are equal.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -31,6 +34,8 @@ out to the left without any commutativity, since the left factor has entries `0`
   is nonempty and neither factor is zero.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
+* `Matrix.left_inv_eq_right_inv`: a left inverse and a right inverse of a rectangular matrix are
+  equal.
 -/
 
 public section
@@ -104,5 +109,17 @@ theorem vecMulVec_single_one_smul (r : R) (i : m) (v : p → α) :
   · simp [vecMulVec_apply, h]
 
 end MulZeroOneClass
+
+section Semiring
+
+variable {R : Type*} [Semiring R] {m p : Type*} [Fintype m] [Fintype p]
+  [DecidableEq m] [DecidableEq p]
+
+/-- A left inverse and a right inverse of a rectangular matrix are equal. -/
+theorem left_inv_eq_right_inv {A : Matrix m p R} {B C : Matrix p m R}
+    (hBA : B * A = 1) (hAC : A * C = 1) : B = C := by
+  rw [← Matrix.mul_one B, ← hAC, ← Matrix.mul_assoc, hBA, Matrix.one_mul]
+
+end Semiring
 
 end Matrix
