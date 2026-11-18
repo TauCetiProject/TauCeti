@@ -69,7 +69,7 @@ in the `C^n` groupoid for every `n`: a holomorphic open partial homeomorphism is
 private theorem contDiffGroupoid_one_le : contDiffGroupoid 1 I ≤ contDiffGroupoid n I := by
   have key {g : E → E} {u : Set H} (hu : IsOpen u) (hg : ContDiffOn ℂ 1 g (I.symm ⁻¹' u)) :
       ContDiffOn ℂ n g (I.symm ⁻¹' u) :=
-    have := FiniteDimensional.complete ℂ E
+    have := FiniteDimensional.completeSpace ℂ E
     (hg.differentiableOn one_ne_zero).contDiffOn_of_finiteDimensional
       (hu.preimage I.continuous_symm)
   refine StructureGroupoid.le_iff.2 fun e he ↦ ?_

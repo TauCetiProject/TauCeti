@@ -227,12 +227,12 @@ theorem isLocallyBicollaredWithSides_of_range_subset_closure [LocallyConnectedSp
 
 /-- **The image of a separating map lies in the closure of each side.** Let `f` be a locally
 bicollared embedding of a preconnected, locally connected space into a preconnected space, and
-write the complement of its image as the union of disjoint nonempty open sets `A` and `B`. Then
-every point of the image lies in the closure of `A`. -/
+write the complement of its image as the union of disjoint open sets `A` and `B`, with `A`
+nonempty. Then every point of the image lies in the closure of `A`. -/
 theorem range_subset_closure [PreconnectedSpace N] [LocallyConnectedSpace N]
     [PreconnectedSpace M] (h : IsLocallyBicollared f) (hf : IsEmbedding f) (hA : IsOpen A)
-    (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) (hA₀ : A.Nonempty)
-    (hB₀ : B.Nonempty) : range f ⊆ closure A := by
+    (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) (hA₀ : A.Nonempty) :
+    range f ⊆ closure A := by
   have hAf : Disjoint A (range f) := by
     rw [disjoint_comm, ← subset_compl_iff_disjoint_left, hcompl]
     exact subset_union_left
@@ -256,7 +256,7 @@ theorem range_subset_closure [PreconnectedSpace N] [LocallyConnectedSpace N]
         (hb.apply_mem_closure_image (by simp) ⟨y, hy⟩)
   rcases isClopen_iff.1 ⟨isClosed_closure.preimage hf.continuous, hopen⟩ with h0 | h1
   · -- If the set is empty, `A` is closed, as its closure misses `B` and the image of `f`. Then
-    -- `A` is clopen in the preconnected space `M`, which `B` rules out.
+    -- `A` is clopen in the preconnected space `M`, hence `A` is `univ`, and then `N` is empty.
     have hcl : closure A = A := by
       refine Subset.antisymm (fun p hp => ?_) subset_closure
       have hpB : p ∉ B := disjoint_left.1 (hAB.closure_left hB) hp
@@ -267,8 +267,8 @@ theorem range_subset_closure [PreconnectedSpace N] [LocallyConnectedSpace N]
       exact hp'.resolve_right hpB
     rcases isClopen_iff.1 ⟨hcl ▸ isClosed_closure, hA⟩ with hA' | hA'
     · exact absurd hA' hA₀.ne_empty
-    · obtain ⟨p, hp⟩ := hB₀
-      exact absurd (hA' ▸ mem_univ p) (disjoint_right.1 hAB hp)
+    · rintro _ ⟨y, rfl⟩
+      exact absurd (by rw [mem_preimage, hcl, hA']; trivial) (eq_empty_iff_forall_notMem.1 h0 y)
   · rintro _ ⟨y, rfl⟩
     exact (h1 ▸ mem_univ y : y ∈ f ⁻¹' closure A)
 
@@ -281,8 +281,8 @@ theorem isLocallyBicollaredWithSides [PreconnectedSpace N] [LocallyConnectedSpac
     (hB : IsOpen B) (hAB : Disjoint A B) (hcompl : (range f)ᶜ = A ∪ B) (hA₀ : A.Nonempty)
     (hB₀ : B.Nonempty) : IsLocallyBicollaredWithSides f A B :=
   h.isLocallyBicollaredWithSides_of_range_subset_closure hf hA hB hAB hcompl
-    (h.range_subset_closure hf hA hB hAB hcompl hA₀ hB₀)
-    (h.range_subset_closure hf hB hA hAB.symm (hcompl.trans (union_comm _ _)) hB₀ hA₀)
+    (h.range_subset_closure hf hA hB hAB hcompl hA₀)
+    (h.range_subset_closure hf hB hA hAB.symm (hcompl.trans (union_comm _ _)) hB₀)
 
 /-- **Brown's bicollaring theorem for separating maps.** Let `f` be an injective locally
 bicollared map from a compact, preconnected, locally connected space into a preconnected

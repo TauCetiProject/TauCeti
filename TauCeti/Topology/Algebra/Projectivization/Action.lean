@@ -26,12 +26,18 @@ as well, because `SL(n, K) → PSL(n, K)` is an open quotient map. Over `ℂ` an
 the continuous Möbius actions on `ℂℙ¹`, which transport to the Riemann sphere `OnePoint ℂ`
 (`OnePoint.instContinuousSMulGL` and `OnePoint.instContinuousSMulPSL`).
 
+When rescaled invertible matrices converge to a possibly singular matrix `B`, their action on
+lines converges to the map `[v] ↦ [B v]` (`Projectivization.linearProjection`) away from the
+kernel of `B`.
+
 ## Main results
 
 * `Projectivization.instContinuousSMul`: a jointly continuous linear action on `V` induces a jointly
   continuous action on `ℙ K V`; for instance by `GL n K` or `SL(n, K)` on `ℙ K (n → K)`.
 * `Projectivization.instContinuousSMulPSL`: `PSL(n, K)` acts jointly continuously on
   `ℙ K (n → K)`.
+* `Projectivization.tendsto_smul_of_tendsto_smul_coe`: invertible matrices converging projectively
+  to a possibly singular matrix `B` act, in the limit, as `[v] ↦ [B v]` away from the kernel of `B`.
 -/
 
 public section
@@ -73,6 +79,37 @@ instance instContinuousSMulPSL :
     -- The class of `g ∈ SL(n, K)` acts as `g` does.
     exact continuous_smul.congr fun p ↦
       (Matrix.ProjectiveSpecialLinearGroup.smul_proj_mk p.1 p.2).symm
+
+open Filter Matrix in
+/-- **Limits of projectively convergent matrices.** Let `C a` be invertible matrices which
+converge projectively to a possibly singular matrix `B`: for some scalars `c a`, the matrices
+`c a • C a` converge to `B`. Then the projective transformations `C a` converge to the map
+`[v] ↦ [B v]` (`Projectivization.linearProjection`) away from the kernel of `B`: if lines `x a`
+converge to a line `x₀` not killed by `B`, the lines `C a • x a` converge to the line of `B x₀`.
+When `B` is invertible this is the continuity of the action; when `B` has rank one the limit map
+is constant off the kernel of `B`. -/
+theorem tendsto_smul_of_tendsto_smul_coe [T1Space K] [Nonempty n] {α : Type*} {l : Filter α}
+    {C : α → GL n K} {c : α → K} {B : Matrix n n K} {x : α → ℙ K (n → K)} {x₀ : ℙ K (n → K)}
+    (hC : Tendsto (fun a ↦ c a • (C a : Matrix n n K)) l (𝓝 B)) (hx : Tendsto x l (𝓝 x₀))
+    (hx₀ : x₀ ∈ linearProjectionDomain B.mulVecLin) :
+    Tendsto (fun a ↦ C a • x a) l (𝓝 (linearProjection B.mulVecLin x₀)) := by
+  have hB0 : B ≠ 0 := by
+    rintro rfl
+    simp [mem_linearProjectionDomain_iff] at hx₀
+  refine ((continuousAt_linearProjection (G := fun D : Matrix n n K ↦ D.mulVecLin)
+    (continuous_fst.matrix_mulVec continuous_snd) hx₀).tendsto.comp
+      (hC.prodMk_nhds hx)).congr' ?_
+  -- Eventually `c a ≠ 0`, since the limit `B` is nonzero, and then `[c a • C a (x a)]` is
+  -- `C a • x a`.
+  filter_upwards [hC.eventually_ne hB0] with a ha
+  have hca : c a ≠ 0 := fun h ↦ ha (by simp [h])
+  have hCx : (c a • (C a : Matrix n n K)).mulVecLin (x a).rep ≠ 0 := by
+    simpa [smul_mulVec, hca, Units.smul_def] using (smul_ne_zero_iff_ne (C a)).2 (x a).rep_ne_zero
+  conv_rhs => rw [← mk_rep (x a), smul_mk]
+  simp only [Function.comp_apply]
+  conv_lhs => rw [← mk_rep (x a)]
+  rw [linearProjection_mk _ _ hCx]
+  exact (mk_eq_mk_iff' K _ _ _ _).2 ⟨c a, by simp [Units.smul_def]⟩
 
 end Field
 

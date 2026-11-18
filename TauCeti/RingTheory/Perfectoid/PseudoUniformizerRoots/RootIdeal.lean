@@ -38,7 +38,7 @@ open TauCeti.Huber
 
 namespace TauCeti.Perfectoid.PseudoUniformizerRoots
 
-variable {p : ℕ} {R : Type*} [CommRing R] [TopologicalSpace R] [NonarchimedeanRing R] [NeZero p]
+variable {p : ℕ} {R : Type*} [CommRing R] [TopologicalSpace R] [NonarchimedeanRing R]
   (ϖ : PseudoUniformizerRoots p R)
 
 /-- The roots `ϖ ^ (1 / p ^ n)` as a compatible system in a ring of integral elements `R⁺`. -/

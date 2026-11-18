@@ -24,6 +24,8 @@ Marcinkiewicz). This file records its elementary arithmetic.
 
 * `TauCeti.inv_eq_ofReal_of_inv_eq`: `1 / s` is the real convex combination of `1 / s₀` and
   `1 / s₁`.
+* `TauCeti.exists_inv_eq_ofReal_mul_inv_of_inv_eq`: for `s < ∞`, `1 / s₀ = r(0) / s` and
+  `1 / s₁ = r(1) / s` for an affine `r ≥ 0` on `[0, 1]` with `r(θ) = 1`.
 * `TauCeti.mem_uIcc_of_inv_eq`: `s` lies between `s₀` and `s₁`.
 * `TauCeti.exists_inv_eq_of_mem_Ioo`: conversely, every `s` strictly between `s₀` and `s₁` is
   interpolated with some `0 < θ < 1`.
@@ -53,6 +55,44 @@ theorem inv_eq_ofReal_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hθ :
   rw [ENNReal.ofReal_add (mul_nonneg hθ1 ENNReal.toReal_nonneg)
     (mul_nonneg hθ.1 ENNReal.toReal_nonneg), ENNReal.ofReal_mul hθ1, ENNReal.ofReal_mul hθ.1,
     ENNReal.ofReal_toReal h₀, ENNReal.ofReal_toReal h₁, hs]
+
+/-- For a finite interpolated exponent `1 / s = (1 - θ) / s₀ + θ / s₁`, there is a slope `k` with
+`1 / s₀ = (1 - θ k) / s` and `1 / s₁ = (1 + (1 - θ) k) / s`, both factors nonnegative. These are
+the exponents on the boundary lines of the analytic family `|f| ^ (1 + (z - θ) k)` through
+`f ∈ Lˢ` used in complex interpolation. -/
+theorem exists_inv_eq_ofReal_mul_inv_of_inv_eq (hs₀ : s₀ ≠ 0) (hs₁ : s₁ ≠ 0) (hs_top : s ≠ ∞)
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hs : s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹) :
+    ∃ k : ℝ, 0 ≤ 1 - θ * k ∧ 0 ≤ 1 + (1 - θ) * k ∧
+      s₀⁻¹ = ENNReal.ofReal (1 - θ * k) * s⁻¹ ∧ s₁⁻¹ = ENNReal.ofReal (1 + (1 - θ) * k) * s⁻¹ := by
+  have hs' := inv_eq_ofReal_of_inv_eq hs₀ hs₁ hθ hs
+  have hs_inv : s⁻¹ ≠ ∞ := hs' ▸ ENNReal.ofReal_ne_top
+  -- with `a₀ = 1 / s₀`, `a₁ = 1 / s₁` and `a = 1 / s = (1 - θ) a₀ + θ a₁ > 0`, take
+  -- `k = (a₁ - a₀) / a`, so that `1 - θ k = a₀ / a` and `1 + (1 - θ) k = a₁ / a`
+  set a := (s⁻¹).toReal with ha_def
+  have ha₀ : 0 ≤ (s₀⁻¹).toReal := ENNReal.toReal_nonneg
+  have ha₁ : 0 ≤ (s₁⁻¹).toReal := ENNReal.toReal_nonneg
+  have ha : a = (1 - θ) * (s₀⁻¹).toReal + θ * (s₁⁻¹).toReal := by
+    rw [ha_def, hs', ENNReal.toReal_ofReal (by nlinarith [hθ.1, hθ.2])]
+  have hapos : 0 < a := ENNReal.toReal_pos (ENNReal.inv_ne_zero.2 hs_top) hs_inv
+  have hq (q : ℝ≥0∞) (hq0 : q ≠ 0) : q⁻¹ = ENNReal.ofReal ((q⁻¹).toReal / a) * s⁻¹ := by
+    rw [← ENNReal.ofReal_toReal hs_inv, ← ENNReal.ofReal_mul (by positivity),
+      div_mul_cancel₀ _ hapos.ne', ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 hq0)]
+  have hr₀ : 1 - θ * (((s₁⁻¹).toReal - (s₀⁻¹).toReal) / a) = (s₀⁻¹).toReal / a := by
+    field_simp
+    linarith
+  have hr₁ : 1 + (1 - θ) * (((s₁⁻¹).toReal - (s₀⁻¹).toReal) / a) = (s₁⁻¹).toReal / a := by
+    field_simp
+    linarith
+  refine ⟨((s₁⁻¹).toReal - (s₀⁻¹).toReal) / a, ?_, ?_, ?_, ?_⟩
+  · rw [hr₀]
+    positivity
+  · rw [hr₁]
+    positivity
+  · rw [hr₀]
+    exact hq s₀ hs₀
+  · rw [hr₁]
+    exact hq s₁ hs₁
 
 /-- An interpolated exponent lies between the two endpoint exponents. -/
 theorem mem_uIcc_of_inv_eq (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
@@ -118,11 +158,11 @@ theorem inv_conjExponent_eq_of_inv_eq (hs₀ : 1 ≤ s₀) (hs₁ : 1 ≤ s₁)
           ofReal_sub_add_ofReal hθ.1 hθ.2, ENNReal.ofReal_one]
     _ = _ := by rw [hs]; ring
 
-/-- Let `p ≤ q` with `1 ≤ q < ∞`, and let `ν < ∞` with `1/p - 1/q < ν`. Then `q` is interpolated
+/-- Let `p ≤ q` with `1 ≤ q < ∞`, and let `ν` with `1/p - 1/q < ν`. Then `q` is interpolated
 between `p` and a larger finite exponent still in this range: there are a finite `s ≥ 1` with
 `1/p - 1/s < ν` and `0 ≤ θ < 1` with `1/q = (1 - θ)/p + θ/s`. With `ν = 1/n` this chooses the
 auxiliary exponent for compactness of subcritical Sobolev embeddings by interpolation. -/
-theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) (hq : q ≠ ∞) (hν : ν ≠ ∞)
+theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) (hq : q ≠ ∞)
     (hpq : p ≤ q) (h : p⁻¹ < q⁻¹ + ν) :
     ∃ s : ℝ≥0∞, ∃ θ : ℝ, 1 ≤ s ∧ s ≠ ∞ ∧ p⁻¹ < s⁻¹ + ν ∧ 0 ≤ θ ∧ θ < 1 ∧
       q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * s⁻¹ := by
@@ -132,6 +172,12 @@ theorem exists_inv_eq_of_inv_lt_inv_add {p q ν : ℝ≥0∞} (hq₁ : 1 ≤ q) 
   have hp₀ : p ≠ 0 := by
     rintro rfl
     simp at h
+  wlog hν : ν ≠ ∞ generalizing ν
+  · have hp' : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hp₀
+    have hq' : q⁻¹ ≠ 0 := (ENNReal.inv_pos.2 hq).ne'
+    obtain ⟨s, θ, hs₁, hs, -, hθ₀, hθ₁, hsθ⟩ :=
+      this (ν := p⁻¹) (add_comm p⁻¹ q⁻¹ ▸ ENNReal.lt_add_right hp' hq') hp'
+    exact ⟨s, θ, hs₁, hs, by rw [not_not.1 hν, add_top]; exact hp'.lt_top, hθ₀, hθ₁, hsθ⟩
   -- Work with the real reciprocals `a = 1/p`, `b = 1/q` and `ν`.
   have hinv {r : ℝ≥0∞} (hr : r ≠ 0) (hr' : r ≠ ∞) : r⁻¹ = ENNReal.ofReal r.toReal⁻¹ := by
     rw [ENNReal.ofReal_inv_of_pos (ENNReal.toReal_pos hr hr'), ENNReal.ofReal_toReal hr']

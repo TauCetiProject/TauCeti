@@ -75,7 +75,7 @@ end Terms
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
   [Module.Finite k A] [HasExt.{uA} (GradedModuleCat.{uA} 𝒜)]
-  {I : Type uI} [Finite I]
+  {I : Type uI}
   (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e : I → A}
   (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
   (hI : ∀ i, (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜)
@@ -139,7 +139,6 @@ theorem IsLinear.repr_finiteProjectiveTerm (hr : r.IsLinear)
     hr.smulGradedDimension_mul_repr_finiteProjectiveTerm
       S he he₀ hI hne bP hbP hconc n i
 
-omit [Finite I] in
 include he₀ hne hbP in
 /-- The class of a finite term of a linear resolution is the sum of its projective basis
 classes with coefficients given by diagonal Ext dimensions and the internal shift `qⁿ`. -/

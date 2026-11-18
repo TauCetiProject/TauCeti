@@ -30,7 +30,7 @@ local notation "D" => closedBall (0 : ℂ) 1
 local notation "B" => ModelWithCorners.boundary (I := (𝓡∂ (1 + 1))) D
 local notation "E₁" => EuclideanSpace ℝ (Fin 1)
 
-local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D (by simp)
+local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D
 
 local instance : CompactSpace B :=
   isCompact_iff_compactSpace.mp
@@ -151,8 +151,7 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
     (sphereDiffeomorphBoundaryClosedBall (n := 1) (Circle.exp (-Real.pi)))
   have hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) 1 f := by
     have h := (contMDiff_subtypeVal_closedBall (n := 2) (k := 1)).comp
-      (isSmoothEmbedding_subtypeVal_boundary (n := 1) D
-        (by simp : (1 : ℕ∞ω) ≠ 0)).contMDiff
+      (isSmoothEmbedding_subtypeVal_boundary (n := 1) (k := 1) D).contMDiff
     exact h.sumElim h
   have hqext (i : Bool) (t : ℝ) : (q i).extend t =
       componentInclusion i (unitDiskBoundaryLoop.extend t) := rfl
@@ -180,7 +179,7 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
     cases i <;> cases j <;> try contradiction
     all_goals
       rw [Set.disjoint_left]
-      rintro x ⟨s, hs, rfl⟩ ⟨t, ht, he⟩
+      rintro x ⟨s, _, rfl⟩ ⟨t, _, he⟩
       contradiction
   have hinj (i : Bool) : InjOn (q i).extend (Ioo (0 : ℝ) 1) := by
     intro s hs t ht he
@@ -189,7 +188,7 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
     · exact Sum.inl_injective he
     · exact Sum.inr_injective he
   have he (i : Bool) (z : E₁) : ∃ e : E₁ ≃L[ℝ] TangentSpace (𝓡 1) ((q i).extend (z 0)),
-      ∀ hz : z 0 ∈ Ioo (0 : ℝ) 1,
+      ∀ _ : z 0 ∈ Ioo (0 : ℝ) 1,
       HasMFDerivAt (𝓡 1) (𝓡 1) (fun w : E₁ ↦ (q i).extend (w 0)) z
         (e.toContinuousLinearMap.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap) ∧
       Orientation.map (Fin 1) e.toLinearEquiv

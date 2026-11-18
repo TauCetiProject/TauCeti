@@ -83,7 +83,7 @@ instance simplicialCategory : SimplicialCategory PointedSSet.{u} where
   homEquiv {X Y} :=
     { toFun f :=
         { app n := ↾fun _ ↦ ⟨Functor.HomObj.ofNatTrans f.right,
-            (mem_basedMaps_iff _).2 (by intro m g; exact app_point f m)⟩ }
+            (mem_basedMaps_iff _).2 (by intro m _; exact app_point f m)⟩ }
       invFun φ := Under.homMk (Functor.natTransEquiv (φ ≫ (basedMaps X Y).ι)) (by
         ext n a
         have h := basedMaps_app_point (φ.app n PUnit.unit) (𝟙 n)

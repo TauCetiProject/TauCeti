@@ -504,7 +504,6 @@ theorem exists_isCoprime_and_mul_mul_add_eq_pow {n : ℕ} (hn : 5 ≤ n) {a b c 
     ∃ A B : ℤ, IsCoprime A B ∧ 4 ∣ A + 1 ∧ 32 ∣ B ∧ A * B * (A + B) = (a * b * c) ^ n := by
   have h32 {x : ℤ} (hx : 2 ∣ x) : (32 : ℤ) ∣ x ^ n := by
     simpa using (pow_dvd_pow_of_dvd hx 5).trans (pow_dvd_pow x hn)
-  have hn₀ : n ≠ 0 := by omega
   by_cases hb : 2 ∣ b
   · obtain ⟨A, B, h₁, h₂, h₃, h₄⟩ := exists_pair_of_isCoprime hab.pow (h32 hb)
     exact ⟨A, B, h₁, h₂, h₃, by rw [h₄, h]; ring⟩

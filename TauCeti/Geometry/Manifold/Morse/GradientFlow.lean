@@ -55,6 +55,8 @@ arbitrary: it need not be adapted to the Morse charts of `f`.
   trajectory along which `f` has a limit is finite, and equals the drop of `f`.
 * `TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic`: a forward trajectory stays in
   the sublevel of its initial point.
+* `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto`: a forward
+  trajectory converging to a critical point exists for all positive time.
 * `TauCeti.Ici_subset_maximalIntegralCurveInterval_neg_mgradient`: a trapped forward trajectory
   exists for all positive time.
 * `TauCeti.mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient`: the ω-limit
@@ -131,7 +133,7 @@ maximal integral curve of `-grad f` through `x` lies in the sublevel `{y | f y �
 theorem mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     MapsTo (maximalIntegralCurve (-mgradient I f) x)
       (maximalIntegralCurveInterval (-mgradient I f) x ∩ Ici 0) (f ⁻¹' Iic (f x)) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   rintro s ⟨hs, hs0⟩
   have h0 := zero_mem_maximalIntegralCurveInterval (x := x)
     (contMDiff_neg_mgradient_one hf).contMDiffAt
@@ -211,6 +213,18 @@ theorem integral_Ioi_norm_mgradient_sq_maximalIntegralCurve (hf : ContMDiff I �
 
 omit hx hc
 
+omit [T2Space M] [IsManifold I 2 M] [BoundarylessManifold I M]
+  [IsContMDiffRiemannianBundle I 1 E fun x : M ↦ TangentSpace I x] in
+/-- **A forward trajectory converging to a critical point exists for all positive time.** If the
+maximal integral curve of `-grad f` through `x` converges to a critical point `p` of `f`, it is
+defined on `[0, ∞)`, since `p` is a zero of `-grad f`. -/
+theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto [IsManifold I 1 M]
+    {p : M} (hp : p ∈ criticalPoints I f)
+    (hconv : Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p)) :
+    Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
+  Ici_subset_maximalIntegralCurveInterval_of_tendsto
+    (by rwa [Pi.neg_apply, neg_eq_zero, mgradient_eq_zero_iff, ← mem_criticalPoints]) hconv
+
 /-! ### Trapped trajectories -/
 
 variable (hK : IsCompact K)
@@ -223,7 +237,7 @@ maximal integral curve of `-grad f` through `x` stays in a compact set, it is de
 -/
 theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo
     (contMDiff_neg_mgradient_one hf) hK hmem
 
@@ -251,7 +265,7 @@ theorem mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient
     (hf : ContMDiff I 𝓘(ℝ) 2 f) {z : M}
     (hz : MapClusterPt z atTop (maximalIntegralCurve (-mgradient I f) x)) :
     z ∈ criticalPoints I f := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient hK hmem hf
   have hlim := tendsto_comp_maximalIntegralCurve_neg_mgradient hK hmem hf hz
   -- The ω-limit set is invariant under the local flow and `f` is constant on it, so `f` is

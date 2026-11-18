@@ -22,12 +22,15 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 
 ## Main results
 
+* `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
 * `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
   factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
-* `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
+* `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
+* `TauCeti.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
+  unit-valued sign and the power `(-1) ^ n` act as involutions.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
   `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
@@ -83,6 +86,11 @@ theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
 theorem negOnePowCast_odd {e : ℤ} (he : Odd e) : negOnePowCast R e = -1 := by
   simp [negOnePowCast, Int.negOnePow_odd _ he]
 
+/-- Two exponents of the same parity give the same ground-ring sign. -/
+theorem negOnePowCast_eq_of_even_sub {a b : ℤ} (h : Even (a - b)) :
+    negOnePowCast R a = negOnePowCast R b := by
+  rw [negOnePowCast, negOnePowCast, (Int.negOnePow_eq_iff _ _).2 h]
+
 section
 
 variable {A : Type uA} [AddCommGroup A] [Module R A]
@@ -91,6 +99,12 @@ variable {A : Type uA} [AddCommGroup A] [Module R A]
 theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
     e.negOnePow • a = negOnePowCast R e • a := by
   rw [negOnePowCast, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
+
+/-- Additive homomorphisms between modules commute with the ground-ring signs `(-1) ^ e`. -/
+theorem map_negOnePowCast_smul {B F : Type*} [AddCommGroup B] [Module R B] [FunLike F A B]
+    [AddMonoidHomClass F A B] (f : F) (e : ℤ) (a : A) :
+    f (negOnePowCast R e • a) = negOnePowCast R e • f a := by
+  simp only [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def, map_zsmul]
 
 end
 
@@ -118,6 +132,14 @@ variable {A : Type uA} [AddGroup A]
 @[simp]
 theorem negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) : e.negOnePow • e.negOnePow • a = a := by
   rw [smul_smul, Int.units_mul_self, one_smul]
+
+/-- The sign `(-1) ^ n`, acting through any monoid with a distributive negation, acts as an
+involution. -/
+@[simp]
+theorem neg_one_pow_smul_neg_one_pow_smul {R : Type uR} [Monoid R] [HasDistribNeg R]
+    {B : Type uA} [MulAction R B] (n : ℕ) (b : B) :
+    (-1 : R) ^ n • (-1 : R) ^ n • b = b := by
+  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_smul]
 
 end NegOnePowSMul
 

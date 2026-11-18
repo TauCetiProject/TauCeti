@@ -19,10 +19,12 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import Mathlib.LinearAlgebra.Complex.Determinant
-import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # The canonical orientation of a complex manifold
@@ -193,10 +195,8 @@ theorem _root_.OpenPartialHomeomorph.orientationPreservingOn_of_differentiableOn
     (he : DifferentiableOn ℂ e e.source) (he' : DifferentiableOn ℂ e.symm e.target) :
     OrientationPreservingOn 𝓘(ℝ, E) e e.source := by
   refine (orientationPreservingOn_iff_det_fderiv_ne_zero e.open_source he).2 fun x hx ↦ ?_
-  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hx (he.differentiableAt (e.open_source.mem_nhds hx))
+  exact e.det_fderiv_ne_zero hx (he.differentiableAt (e.open_source.mem_nhds hx))
     (he'.differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
-  rw [← hA]
-  exact A.toLinearEquiv.isUnit_det'.ne_zero
 
 /-- Holomorphic coordinate changes preserve orientation: for `n ≠ 0`, the `C^n` groupoid of the
 complex model `𝓘(ℂ, E)` is contained in the orientation-preserving groupoid of the underlying real
@@ -406,10 +406,13 @@ variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(�
 biholomorphism at `x`, for `n ≠ 0`, its derivative at `x` carries the canonical orientation of `M`
 at `x` to that of `N` at `f x`. -/
 theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOrientation
-    (n : ℕ∞ω) [NeZero n] [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N] {f : M → N} {x : M}
+    (n : ℕ∞ω) [NeZero n] {f : M → N} {x : M}
     (hf : IsLocalDiffeomorphAt 𝓘(ℂ, E) 𝓘(ℂ, E) n f x) :
     Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
       (complexManifoldOrientation E N) f x := by
+  -- Only the `C^1` structure is needed, so we lower the regularity of `f` to `1`.
+  have hf : IsLocalDiffeomorphAt 𝓘(ℂ, E) 𝓘(ℂ, E) 1 f x :=
+    hf.of_le (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne n))
   -- Read both orientations through the holomorphic chart `e` of `N` at `f x` and a holomorphic
   -- chart `e'` of `M` at `x` agreeing with `e ∘ f` near `x`, whose derivative at `x` is that of
   -- `e` after that of `f`.
@@ -418,8 +421,8 @@ theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOri
     (IsManifold.chart_mem_maximalAtlas (f x)) (mem_chart_source E (f x))
   obtain ⟨L, hL, hmap⟩ :=
     (eq_complexManifoldOrientation_iff (complexManifoldOrientation E N)).1 rfl (f x)
-  have hn : n ≠ 0 := NeZero.ne n
-  have hfR : IsLocalDiffeomorphAt 𝓘(ℝ, E) 𝓘(ℝ, E) n f x := hf.restrictScalars ℝ
+  have hn : (1 : ℕ∞ω) ≠ 0 := one_ne_zero
+  have hfR : IsLocalDiffeomorphAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 f x := hf.restrictScalars ℝ
   let D := hfR.mfderivToContinuousLinearEquiv hn
   have hD : (D : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) (f x)) =
       mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) f x :=
@@ -430,7 +433,7 @@ theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOri
       (mem_chart_source E (f x))) (hfR.mdifferentiableAt hn), ← hL, ← hD]
     exact (ContinuousLinearEquiv.comp_coe D L).symm
   refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).2 ?_
-  have hM := map_orientationAt_complexManifoldOrientation n he' hx (D.trans L) hDL
+  have hM := map_orientationAt_complexManifoldOrientation 1 he' hx (D.trans L) hDL
   rw [ContinuousLinearEquiv.trans_toLinearEquiv, Orientation.map_trans] at hM
   exact (Orientation.map _ L.toLinearEquiv).injective (hM.trans hmap.symm)
 
@@ -438,7 +441,7 @@ theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOri
 `C^n` biholomorphism `Φ : M → N`, for `n ≠ 0`, carries the canonical orientation of `M` at `x` to
 that of `N` at `Φ x`. -/
 theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation (n : ℕ∞ω)
-    [NeZero n] [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N]
+    [NeZero n]
     (Φ : M ≃ₘ^n⟮𝓘(ℂ, E), 𝓘(ℂ, E)⟯ N) (x : M) :
     Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
       (complexManifoldOrientation E N) Φ x :=
@@ -448,7 +451,7 @@ theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation 
 of `N` along any `C^n` local biholomorphism `f : M → N`, for `n ≠ 0`. The arguments `hf'`, `hdf`
 and `hι` are the data that `Manifold.Orientation.pullback` requires; they all follow from `hf`. -/
 theorem _root_.IsLocalDiffeomorph.complexManifoldOrientation_eq_pullback (n : ℕ∞ω) [NeZero n]
-    [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N] {f : M → N}
+    {f : M → N}
     (hf : IsLocalDiffeomorph 𝓘(ℂ, E) 𝓘(ℂ, E) n f) (hf' : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) 1 f)
     (hdf : ∀ x, (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) f x).IsInvertible)
     (hι : Fintype.card (Fin (2 * finrank ℂ E)) = finrank ℝ E) :
@@ -516,10 +519,8 @@ theorem map_orientationAt_prod_complexManifoldOrientation (n : ℕ∞ω) [NeZero
       (((complexManifoldOrientation E M).prod (complexManifoldOrientation E' M')).orientationAt
         x) = Orientation.reindex ℝ (E × E') (finCongr (by rw [finrank_prod]; ring))
           (complexOrientation (E × E')) := by
-    -- `ContinuousLinearEquiv.prodCongr` is built from `LinearEquiv.prodCongr`.
-    have hprod : (L₁.prodCongr L₂).toLinearEquiv =
-        L₁.toLinearEquiv.prodCongr L₂.toLinearEquiv := rfl
-    rw [Manifold.Orientation.orientationAt_prod, hprod, Orientation.map_prod, h₁, h₂]
+    rw [Manifold.Orientation.orientationAt_prod, ContinuousLinearEquiv.prodCongr_toLinearEquiv,
+      Orientation.map_prod, h₁, h₂]
     exact prod_complexOrientation
   rw [hLeq]
   exact key

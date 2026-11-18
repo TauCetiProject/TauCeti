@@ -136,7 +136,6 @@ private lemma contractGenusNumerator_spec_of_halves {i : T.Component} (hi : i �
       -(2 * (T.contractWeight e ⟨i, hi⟩ : ℤ)) ≤
         2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) := by
     have hwe := weight_pos e
-    have hwi := weight_pos i
     have hw := two_mul_contractWeight h
     set w' := (T.contractWeight e ⟨i, hi⟩ : ℤ)
     have hdodd : ¬ 2 ∣ d := fun ⟨k, hk⟩ ↦ h.2 ⟨k, by rw [hd, hk]; ring⟩
@@ -170,7 +169,6 @@ private lemma contractGenusNumerator_spec_of_not_halves {i : T.Component} (hi : 
         2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) ∧
       -(2 * (T.contractWeight e ⟨i, hi⟩ : ℤ)) ≤
         2 * T.weight i * ((T.genus i : ℤ) - 1) + T.intersection i e * (c - 1) := by
-    have hwe := weight_pos e
     have hwi := weight_pos i
     rw [contractWeight_of_not h]
     have heven : 2 ∣ d * (c - 1) := by

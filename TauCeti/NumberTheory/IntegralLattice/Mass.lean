@@ -42,6 +42,13 @@ proper mass. The relation fails in rank zero, where the only lattice is the zero
 `m⁺ = m = 1`. In rank one the genus of `L` is the class of `L` and `O(L) = {±1}`, so `m = 1/2` and
 `m⁺ = 1`.
 
+Scaling the form by a nonzero integer `n` changes neither the mass nor the proper mass
+(`TauCeti.IntegralLattice.mass_smul`, `TauCeti.IntegralLattice.properMass_smul`). The lattices in
+the genus of `n • L` are exactly the scalings by `n` of the lattices in the genus of `L`, because
+the genus fixes the scale ideal, and a lattice and its scaling have the same isometries, proper
+and improper. In particular the twist `L(a)` of `L` by an integer `a > 0` has the masses of `L`;
+for `a < 0` the twist exchanges positive and negative definite genera, and the equalities persist.
+
 There is no product formula for the mass of an orthogonal sum: the genus of `L ⊕ M` can contain
 classes that are not orthogonal sums of classes from the genera of `L` and `M`, such as `D₁₆⁺` in
 the genus of `E₈ ⊕ E₈`.
@@ -54,6 +61,8 @@ the genus of `E₈ ⊕ E₈`.
 ## Main results
 
 * `TauCeti.IntegralLattice.properMass_eq_two_mul_mass`: in positive rank, `m⁺ = 2m`.
+* `TauCeti.IntegralLattice.mass_smul` and `TauCeti.IntegralLattice.properMass_smul`: the twist
+  `n • L` by a nonzero integer has the mass and the proper mass of `L`.
 * `TauCeti.IntegralLattice.sum_inv_natCard_isometry_le_mass` and
   `TauCeti.IntegralLattice.sum_inv_natCard_isometry_eq_mass_iff`: pairwise non-isometric lattices
   in a genus carry at most its mass, and, when every class has a finite isometry group, they carry
@@ -134,6 +143,36 @@ theorem SameGenus.properMass_eq {M : IntegralLattice W} (h : L.SameGenus M) :
       Equiv.apply_symm_apply]
   · obtain ⟨e, -⟩ := d.exists_isProper_transport_out f
     rw [((d.out.transportIsometry f).trans e).natCard_specialOrthogonalGroup_eq]
+
+open scoped Pointwise in
+/-- **The mass of a twist.** Scaling the form by a nonzero integer does not change the mass: the
+classes in the genus of `n • L` are the scalings of the classes in the genus of `L`, and a lattice
+and its scaling have the same isometries. -/
+@[simp]
+theorem mass_smul {n : ℤ} (hn : n ≠ 0) (L : IntegralLattice V) : (n • L).mass = L.mass := by
+  rw [mass_def, mass_def, genusClasses_smul hn, ← Set.image_smul,
+    finsum_mem_image (smul_isometryQuotient_injective hn).injOn]
+  refine finsum_mem_congr rfl fun c _ ↦ ?_
+  have hc : n • c = (n • c.out).isometryClass := by
+    rw [← smul_isometryClass, isometryClass_out]
+  obtain ⟨e⟩ := isometryClass_eq_isometryClass_iff.mp ((isometryClass_out (n • c)).trans hc)
+  rw [e.natCard_isometry_eq, natCard_isometry_smul hn]
+
+open scoped Pointwise in
+/-- **The proper mass of a twist.** Scaling the form by a nonzero integer does not change the
+proper mass: the proper classes in the genus of `n • L` are the scalings of the proper classes in
+the genus of `L`, and a lattice and its scaling have the same proper isometries. -/
+@[simp]
+theorem properMass_smul {n : ℤ} (hn : n ≠ 0) (L : IntegralLattice V) :
+    (n • L).properMass = L.properMass := by
+  rw [properMass_def, properMass_def, genusProperClasses_smul hn, ← Set.image_smul,
+    finsum_mem_image (smul_properIsometryQuotient_injective hn).injOn]
+  refine finsum_mem_congr rfl fun d _ ↦ ?_
+  have hd : n • d = (n • d.out).properIsometryClass := by
+    rw [← smul_properIsometryClass, properIsometryClass_out]
+  obtain ⟨e, -⟩ := properIsometryClass_eq_properIsometryClass_iff.mp
+    ((properIsometryClass_out (n • d)).trans hd)
+  rw [e.natCard_specialOrthogonalGroup_eq, natCard_specialOrthogonalGroup_smul hn]
 
 /-- A class of the genus contributes `2 / |O(M)|` to the proper mass: it splits into
 `2 / [O(M) : SO(M)]` proper classes, each contributing `1 / |SO(M)|`. -/

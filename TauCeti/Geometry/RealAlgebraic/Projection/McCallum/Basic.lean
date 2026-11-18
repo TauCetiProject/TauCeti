@@ -150,14 +150,19 @@ theorem mcCallumProjection_mono (hF : F ⊆ F') (hB : B ⊆ B') :
 
 namespace IsIrreducibleBasis
 
-variable [IsDomain R]
-
 /-- **Independence of the basis.** For two irreducible bases `B` and `B'` of the same family,
 every element of the McCallum projection with respect to `B'` is associated to an element of the
 McCallum projection with respect to `B`. -/
 theorem exists_associated_mem_mcCallumProjection (hB : F.IsIrreducibleBasis B)
     (hB' : F.IsIrreducibleBasis B') {a : R} (ha : a ∈ F.mcCallumProjection B') :
     ∃ a' ∈ F.mcCallumProjection B, Associated a a' := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · -- Over the trivial ring no polynomial is irreducible, so only the contents can occur.
+    rcases mem_mcCallumProjection.1 ha with ⟨f, hf, rfl⟩ | ⟨b', hb', -⟩ | ⟨b', hb', -⟩ |
+      ⟨b', hb', -⟩
+    · exact ⟨_, content_mem_mcCallumProjection hf, .refl _⟩
+    all_goals exact absurd (isUnit_of_subsingleton b') (hB'.irreducible b' hb').not_isUnit
+  have : IsDomain R := { }
   rcases mem_mcCallumProjection.1 ha with ⟨f, hf, rfl⟩ | ⟨b', hb', i, hi, rfl⟩ | ⟨b', hb', rfl⟩ |
     ⟨b₁', hb₁', b₂', hb₂', hne, rfl⟩
   · exact ⟨_, content_mem_mcCallumProjection hf, .refl _⟩

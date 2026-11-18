@@ -98,7 +98,6 @@ private theorem logHeight_det_hasseDeriv_le_mul {n m : ℕ} {r : Fin (n + 1) →
           gcongr
           linarith [Real.log_le_sub_one_of_pos hm0']
   have hlog : Real.log 2 < 0.6931471808 := Real.log_two_lt_d9
-  have hlog0 : 0 < Real.log 2 := Real.log_pos one_lt_two
   have hm0 : (0 : ℝ) ≤ m := Nat.cast_nonneg _
   have hr0 : (0 : ℝ) ≤ r 0 := Nat.cast_nonneg _
   have hkey : Real.log (m ! : ℝ) + 2 * m * ((∑ j, (r j : ℝ)) * Real.log 2) ≤ 4 * m * r 0 := by
@@ -112,10 +111,8 @@ and `t > 2 (n + 2) θ`, then `2 (n + 1) θ ^ 2 + σ < min ((t - σ) / 2) ((t - �
 private theorem lt_min_of_mul_lt {n : ℕ} {θ σ t : ℝ} (hθ : 0 < θ) (hθ' : θ < 1 / 2)
     (hσθ : σ ≤ θ ^ 2) (ht : 2 * (n + 2) * θ < t) :
     2 * (n + 1) * θ ^ 2 + σ < min ((t - σ) / 2) ((t - σ) ^ 2 / 2) := by
-  have hn : (0 : ℝ) ≤ n := Nat.cast_nonneg n
   have hθ2 : θ ^ 2 < θ / 2 := by nlinarith
   have hδ : (2 * n + 7 / 2) * θ < t - σ := by nlinarith
-  have hA : 2 * (n + 1) * θ ^ 2 + σ ≤ (2 * n + 3) * θ ^ 2 := by nlinarith
   refine lt_min ?_ ?_
   · nlinarith
   · have hδ0 : 0 < (2 * n + 7 / 2) * θ := by positivity
@@ -328,7 +325,7 @@ private theorem false_of_index_bounds {n m : ℕ} {θ σ t : ℝ} {a b : ℝ≥0
 /-- The inductive step of Roth's lemma. -/
 private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (n + 1) := by
   intro θ hθ hθσ r hr hratio P hP hdeg β hβ
-  set σ := θ ^ 2 ^ (n + 1) with hσ
+  set σ := θ ^ 2 ^ (n + 1)
   have hσ0 : 0 < σ := by positivity
   have hanti : Antitone r := Fin.antitone_iff_succ_le.2 fun i ↦ by
     have h := hratio i

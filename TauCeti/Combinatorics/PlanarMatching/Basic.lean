@@ -73,8 +73,9 @@ variable {k : ℕ}
 
 /-- Two planar matchings are equal when they match every point with the same partner. -/
 @[ext]
-theorem ext {x y : PlanarMatching k} (h : ∀ a, x.1.val a = y.1.val a) : x = y :=
-  Subtype.ext <| Subtype.ext <| Equiv.ext h
+theorem ext {x y : PlanarMatching k} (h : ∀ a, x.1.val a = y.1.val a) : x = y := by
+  ext a : 2
+  exact h a
 
 /-- There is no planar matching of an odd number of points. -/
 theorem isEmpty_of_not_even (hk : ¬ Even k) : IsEmpty (PlanarMatching k) :=
@@ -305,6 +306,17 @@ def nested (n : ℕ) : PlanarMatching (n + n) :=
 /-- The fully nested planar matching joins each point to its order reversal. -/
 @[simp]
 theorem nested_val (n : ℕ) : (nested n).1.val = Fin.revPerm := (rfl)
+
+/-- There is a planar matching of `k` points exactly when `k` is even: an odd number of points
+has none, and an even number `j + j` has the nested one. -/
+theorem nonempty_iff : Nonempty (PlanarMatching k) ↔ Even k :=
+  ⟨fun ⟨x⟩ => by_contra fun hk => (isEmpty_of_not_even hk).false x,
+    fun ⟨j, hj⟩ => ⟨cast hj.symm (nested j)⟩⟩
+
+/-- The empty matching is the only planar matching of no points. -/
+instance : Unique (PlanarMatching 0) where
+  default := nested 0
+  uniq _ := ext fun a => a.elim0
 
 end PlanarMatching
 

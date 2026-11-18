@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Injective
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
+public import TauCeti.CategoryTheory.Exact.Resolution.ConflationRow
 
 /-!
 # The horseshoe lemma for complete resolutions
@@ -54,13 +55,8 @@ namespace CompleteResolution
 
 variable (r₁ r₃ : E.CompleteResolution)
 
-/-- A conflation `Z₁ⁿ ↪ Z₂ⁿ ↠ Z₃ⁿ` of cycles of two complete resolutions in degree `n`. -/
-private structure Row (n : ℤ) where
-  Z : C
-  v : r₁.Z n ⟶ Z
-  w : Z ⟶ r₃.Z n
-  zero : v ≫ w = 0
-  conflation : E.Conflation (ShortComplex.mk v w zero)
+/-- The shared conflation row, specialized to cycles in degree `n`. -/
+private abbrev Row (n : ℤ) := ConflationRow E (r₁.Z n) (r₃.Z n)
 
 /-- The step from a row in degree `n` to a row in degree `n + 1`: a conflation
 `Z₂ⁿ ↪ M ↠ Z₂ⁿ⁺¹` whose middle term splits as an extension of `X₃ⁿ` by `X₁ⁿ`, compatibly with
@@ -93,11 +89,11 @@ private theorem nonempty_forward {n : ℤ} (R : Row r₁ r₃ n) :
 /-- A row in degree `n + 1` extends to the previous degree, by the projective horseshoe lemma. -/
 private theorem nonempty_backward {n : ℤ} (R' : Row r₁ r₃ (n + 1)) :
     Nonempty (Σ R : Row r₁ r₃ n, Block r₁ r₃ n R R') := by
-  obtain ⟨K, u, a, hua, v, w, hvw, hu, hv, ha₁, ha₃, hu₁, hu₃⟩ :=
-    E.exists_conflation_biprod_of_conflation_of_projective R'.conflation (r₁.conflation n)
-      (r₃.conflation n) (r₃.isProjective_X n)
-  exact ⟨⟨⟨K, v, w, hvw, hv⟩, ⟨_, biprod.inl, biprod.snd, by simp,
-    ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩, u, a, hua, hu, hu₁, hu₃, ha₁, ha₃⟩⟩⟩
+  obtain ⟨R, b⟩ := (R'.nonempty_projectiveStep (r₁.conflation n)
+    (r₃.conflation n) (r₃.isProjective_X n)).some
+  exact ⟨⟨R, ⟨_, biprod.inl, biprod.snd, by simp,
+    ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩,
+    b.ι, b.π, b.zero, b.conflation, b.v_ι, b.ι_snd, b.inl_π, b.π_w⟩⟩⟩
 
 variable (r₁ r₃) {X₂ : C} (f : r₁.Z 0 ⟶ X₂) (g : X₂ ⟶ r₃.Z 0) (hfg : f ≫ g = 0)
   (hS : E.Conflation (ShortComplex.mk f g hfg))

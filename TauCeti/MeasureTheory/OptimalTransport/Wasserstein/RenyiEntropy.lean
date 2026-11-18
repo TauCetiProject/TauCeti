@@ -415,7 +415,7 @@ private theorem tendsto_lintegral_renyiGap {g : X → ℝ} (hg : Measurable g) :
     Tendsto (fun N ↦ ∫⁻ x, ENNReal.ofReal (renyiGap N (μ.rnDeriv m x).toReal + g x) ∂m) atTop
       (𝓝 (∫⁻ x, ENNReal.ofReal
         ((μ.rnDeriv m x).toReal * Real.log (μ.rnDeriv m x).toReal + g x) ∂m)) := by
-  have hρm : Measurable fun x ↦ (μ.rnDeriv m x).toReal :=
+  have _ : Measurable fun x ↦ (μ.rnDeriv m x).toReal :=
     (Measure.measurable_rnDeriv μ m).ennreal_toReal
   -- Read the integrals along `max N 1`, where they are monotone in `N`.
   set Φ : ℝ → ℝ≥0∞ :=
@@ -527,7 +527,6 @@ theorem tendsto_mul_renyiEntropy_add_measureReal_univ_nhds_boltzmannEntropy [IsF
     have hent : boltzmannEntropy m μ =
         ((∫⁻ x, ENNReal.ofReal ((μ.rnDeriv m x).toReal * Real.log (μ.rnDeriv m x).toReal
           + B.indicator 1 x) ∂m : ℝ≥0∞) : EReal) - (m.real B : EReal) := by
-      have hρm := (Measure.measurable_rnDeriv μ m).ennreal_toReal
       rw [boltzmannEntropy_of_absolutelyContinuous hμm,
         ← potentialEnergy_of_nonneg_ae hent_nonneg,
         potentialEnergy_add_of_integrable (W := B.indicator 1) (by fun_prop)

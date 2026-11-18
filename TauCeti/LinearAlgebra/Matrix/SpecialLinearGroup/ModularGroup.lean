@@ -33,6 +33,10 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 * `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
   `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
   `r T = (r₁, r₁ + r₂)`.
+* `TauCeti.ModularGroup.mul_T_zpow_apply_apply_zero`,
+  `TauCeti.ModularGroup.mul_T_zpow_apply_apply_one`, `TauCeti.ModularGroup.mul_S_apply_apply_zero`,
+  `TauCeti.ModularGroup.mul_S_apply_apply_one`: the columns of `γ Tⁿ` and `γ S` in terms of those
+  of `γ`.
 -/
 
 public section
@@ -105,3 +109,38 @@ theorem vecMul_map_modularGroup_T {R : Type u} [Ring R] (r : Fin 2 → R) :
   fin_cases i <;> simp [ModularGroup.coe_T, vecMul, dotProduct, Fin.sum_univ_two]
 
 end TauCeti.Matrix.SpecialLinearGroup
+
+namespace TauCeti.ModularGroup
+
+open _root_.ModularGroup
+
+/-- `S² = -I` in the integral modular group. -/
+@[simp]
+theorem S_sq : S ^ 2 = (-1 : SL(2, ℤ)) :=
+  Subtype.ext (by simpa [pow_two] using S_mul_S_eq)
+
+/-- `S⁴ = I` in the integral modular group. -/
+theorem S_pow_four : S ^ 4 = (1 : SL(2, ℤ)) := by
+  calc
+    S ^ 4 = (S ^ 2) ^ 2 := pow_mul S 2 2
+    _ = 1 := by rw [S_sq]; decide
+
+/-- The first column of `γ Tⁿ` is that of `γ`. -/
+theorem mul_T_zpow_apply_apply_zero (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
+    (γ * T ^ n) i 0 = γ i 0 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The second column of `γ Tⁿ` is `n` times the first column of `γ` plus its second column. -/
+theorem mul_T_zpow_apply_apply_one (γ : SL(2, ℤ)) (n : ℤ) (i : Fin 2) :
+    (γ * T ^ n) i 1 = γ i 0 * n + γ i 1 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The first column of `γ S` is the second column of `γ`. -/
+theorem mul_S_apply_apply_zero (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 0 = γ i 1 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+/-- The second column of `γ S` is minus the first column of `γ`. -/
+theorem mul_S_apply_apply_one (γ : SL(2, ℤ)) (i : Fin 2) : (γ * S) i 1 = -γ i 0 := by
+  simp [Matrix.SpecialLinearGroup.coe_mul, coe_S, Matrix.mul_apply, Fin.sum_univ_two]
+
+end TauCeti.ModularGroup

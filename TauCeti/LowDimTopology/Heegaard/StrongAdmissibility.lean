@@ -165,7 +165,7 @@ of `m Σ - P` is a nonzero nonnegative domain of index zero from `y` to itself. 
 theorem stronglyAdmissible_iff_forall_isDomainBetween_self [Nonempty Basepoint] :
     H.StronglyAdmissible χ y ↔ ∀ E, H.IsDomainBetween y y E → 0 ≤ E →
       H.maslovIndex χ y y E = 0 → E = 0 := by
-  refine ⟨fun hH E => hH.eq_zero_of_isDomainBetween_self hχ, fun h P hP hne hidx => ?_⟩
+  refine ⟨fun hH E => hH.eq_zero_of_isDomainBetween_self hχ, fun h P hP hne _ => ?_⟩
   obtain ⟨z⟩ := ‹Nonempty Basepoint›
   by_contra hcon
   push Not at hcon

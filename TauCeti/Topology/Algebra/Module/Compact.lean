@@ -10,8 +10,8 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 public import TauCeti.Topology.Algebra.Module.Quotient
-public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import Mathlib.Topology.Separation.Connected
 
@@ -284,8 +284,6 @@ end Compact
 variable [TopologicalSpace R]
 
 variable (R M) in
--- The predicate and API are adapted from `IsCompactModule` in
--- `TauCetiRoadmap/ProfiniteProPGroups/Suggested.lean` (`CompactModules`).
 /-- A **compact module** over a topological ring `R`: a topological `R`-module that is a compact,
 totally disconnected topological additive group with continuous scalar action. Over a compact ring
 these are the modules that are inverse limits of finite modules with surjective transition maps.

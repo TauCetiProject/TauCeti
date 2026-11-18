@@ -49,7 +49,7 @@ theorem quantile_kumaraswamyMeasure (ha : 0 < a) (hb : 0 < b) (hu : u ∈ Ioo 0 
   · rw [cdf_kumaraswamyMeasure_of_nonpos ha hb hx]
     exact iff_of_false (not_le.mpr hu.1) (not_le.mpr (hx.trans_lt hq0))
   rcases le_or_gt 1 x with hx₁ | hx₁
-  · rw [cdf_kumaraswamyMeasure_of_one_le ha hb hx₁]
+  · rw [cdf_kumaraswamyMeasure_of_one_le hx₁]
     exact iff_of_true hu.2.le (hq1.le.trans hx₁)
   have hxa : x ^ a ≤ 1 := rpow_le_one hx.le hx₁.le ha.le
   rw [cdf_kumaraswamyMeasure_of_mem_Icc ha hb ⟨hx.le, hx₁.le⟩, le_sub_comm,

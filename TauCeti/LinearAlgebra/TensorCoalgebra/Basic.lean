@@ -24,8 +24,8 @@ empty word are the separate type `TauCeti.TensorWords`, built in
 `TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic`.
 
 The construction uses Mathlib's `TensorPower` and direct-sum/tensor-product equivalences, together
-with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended bar construction in
-the `DGAInfinity` roadmap.
+with `TensorPower.splitAt`.  It is the coalgebra-side input for the suspended bar construction of
+`A∞` algebras (`TauCeti.AInfinityAlgebra`).
 
 ## Main definitions
 

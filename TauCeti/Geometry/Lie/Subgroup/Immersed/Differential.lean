@@ -62,7 +62,7 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
   ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.finiteDimensional
   ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
-  ImmersedLieSubgroupData.isManifold ImmersedLieSubgroupData.lieGroup
+  ImmersedLieSubgroupData.lieGroup
 
 /-- The homomorphism presenting an immersed Lie subgroup, packaged as a smooth monoid morphism. -/
 def toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :
@@ -136,8 +136,7 @@ attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
   ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.finiteDimensional
   ImmersedLieSubgroupData.modelTopology ImmersedLieSubgroupData.chartedSpace
-  ImmersedLieSubgroupData.isManifold ImmersedLieSubgroupData.lieGroup
-  ImmersedLieSubgroupData.connectedSpace
+  ImmersedLieSubgroupData.lieGroup ImmersedLieSubgroupData.connectedSpace
 
 /-- The presenting injection intertwines the Lie-group exponentials. -/
 @[simp]

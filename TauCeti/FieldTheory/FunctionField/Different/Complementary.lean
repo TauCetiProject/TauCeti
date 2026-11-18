@@ -234,7 +234,7 @@ private lemma exists_valuation_eq_and_one_lt_valuation_trace (hF' : IsFunctionFi
           WithZero.exp ((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0)) ∧
       1 < (P'.restrict k F).valuation (Algebra.trace F F' (z₀ * algebraMap _ F' b)) := by
   classical
-  set P := P'.restrict k F with hP
+  set P := P'.restrict k F
   obtain ⟨z₀, hz₀0, hz₀⟩ := exists_ne_zero_forall_mem_ord_eq
     (finite_setOf_restrict_eq (k' := k') (F' := F') k F P).toFinset
     fun Q' ↦ -((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0)

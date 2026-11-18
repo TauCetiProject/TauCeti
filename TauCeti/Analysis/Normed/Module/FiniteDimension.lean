@@ -16,9 +16,10 @@ public import TauCeti.Topology.Algebra.Module.FiniteDimension
 Over a complete nontrivially normed field every linear functional on a finite-dimensional normed
 space is continuous, so the continuous dual `E →L[𝕜] 𝕜` coincides with the algebraic dual
 `Module.Dual 𝕜 E`. Mathlib records that coincidence as the linear equivalence
-`LinearMap.toContinuousLinearMap`; this file reads off two consequences of it that dimension
-counts need: the continuous dual has the same dimension as the space, and every continuous
-functional on a space injecting into it extends to it.
+`LinearMap.toContinuousLinearMap`; this file reads off a consequence of it: every continuous
+functional on a space injecting into it extends to it. That the continuous dual has the same
+dimension as the space, `ContinuousLinearMap.dual_finrank_eq`, holds for any finite-dimensional
+Hausdorff topological vector space and is in `TauCeti.Topology.Algebra.Module.FiniteDimension`.
 
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
@@ -38,10 +39,10 @@ vectors span those subspaces.
 
 ## Main results
 
-* `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
-  dimension as the space.
 * `ContinuousLinearMap.surjective_compL_flip_of_injective`: precomposition with an injective map
   into a finite-dimensional space is surjective on continuous duals.
+* `TauCeti.finiteDimensional_of_finite_sphere`: a real normed space with a finite unit sphere is
+  finite-dimensional.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
 * `TauCeti.exists_isOpen_linearIndependent_span_range_eq`: a continuous family of vectors in
@@ -65,15 +66,6 @@ namespace TauCeti
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-
-/-- In finite dimensions the continuous dual `E →L[𝕜] 𝕜` has the same dimension as `E`: every
-linear functional on a finite-dimensional space is continuous, so the continuous dual coincides
-with the algebraic one. -/
-theorem _root_.ContinuousLinearMap.dual_finrank_eq :
-    Module.finrank 𝕜 (E →L[𝕜] 𝕜) = Module.finrank 𝕜 E := by
-  rw [← LinearEquiv.finrank_eq
-    (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
-  exact Subspace.dual_finrank_eq
 
 /-- Precomposition with an injective continuous linear map `L : F →L[𝕜] E` into a
 finite-dimensional space is surjective on continuous duals: every continuous functional on `F`
@@ -140,6 +132,20 @@ theorem exists_isOpen_linearIndependent_span_range_eq {X : Type*} [TopologicalSp
   refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr
     (Set.range_subset_iff.mpr (hYW y hy.1))) ?_
   rw [finrank_span_eq_card hy.2, Fintype.card_fin, hW y hy.1]
+
+/-- A real normed space whose unit sphere is finite is finite-dimensional: the sphere spans the
+space, since every nonzero vector is a multiple of a unit vector. -/
+theorem finiteDimensional_of_finite_sphere {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (h : Finite (Metric.sphere (0 : V) 1)) : FiniteDimensional ℝ V := by
+  have hspan : Submodule.span ℝ (Metric.sphere (0 : V) 1) = ⊤ := by
+    refine eq_top_iff.2 fun x _ ↦ ?_
+    by_cases hx : x = 0
+    · simp [hx]
+    have hx' : x = ‖x‖ • (‖x‖⁻¹ • x) := by
+      rw [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx), one_smul]
+    rw [hx']
+    exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp [norm_smul, hx]))
+  exact Module.finite_def.2 (hspan ▸ Submodule.fg_span (Set.toFinite _))
 
 section Star
 
@@ -215,7 +221,7 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
   rw [h', continuous_iff_continuousAt]
   intro y
   have := (B y).finiteDimensional_of_finite
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
     (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
     (continuous_equivFunL_symm_of_continuous h).continuousAt

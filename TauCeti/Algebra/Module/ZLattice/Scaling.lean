@@ -37,7 +37,8 @@ first statement does not extend to `|c| < 1`.
 
 ## Main statements
 
-* `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`.
+* `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`, for real
+  scalars and for any division ring of scalars commuting with them, such as `ℂ`.
 * `ZLattice.basisSmul`: for `c ≠ 0`, a `ℤ`-basis `b` of `L` gives the `ℤ`-basis `c • b` of `c • L`.
 * `ZLattice.exists_forall_ne_zero_lt_norm`: scaling up the integer span of a basis gives full
   lattices all of whose nonzero vectors are longer than a prescribed bound.
@@ -53,7 +54,8 @@ first statement does not extend to `|c| < 1`.
   `ZLattice.IsIntegral.isEven_sqrt_smul`: `√m • L` is integral when `L` is, and even when `L` is
   even or when `L` is integral and `m` is even.
 * `ZLattice.det_sqrt_smul`, `ZLattice.IsIntegral.card_discriminantGroup_sqrt_smul`:
-  `det (√m • L) = mⁿ det L` (and `|A_{√m • L}| = mⁿ |A_L|` for integral `L` and `m ≠ 0`), and
+  `det (√m • L) = mⁿ det L` (and `|A_{√m • L}| = mⁿ |A_L|` for any integral submodule `L`, where
+  `Nat.card` is `0` for an infinite group), and
   `ZLattice.det_sqrt_smul_span_orthonormalBasis`: `det (√m • ℤⁿ) = mⁿ`.
 * `ZLattice.IsIntegral.not_isUnimodular_smul`, `ZLattice.IsIntegral.not_isUnimodular_sqrt_smul`,
   `ZLattice.IsUnimodular.not_isUnimodular_smul`: in positive dimension, scaling an integral lattice
@@ -107,9 +109,14 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (L : Submodule ℤ E)
 
-/-- For `c ≠ 0`, the scaled lattice `c • L` is the pullback of `L` along the linear automorphism
-`x ↦ c⁻¹ • x`. -/
-theorem smul_eq_comap {c : ℝ} (hc : c ≠ 0) :
+section Scalar
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] [Module 𝕜 E] [ContinuousConstSMul 𝕜 E] [SMulCommClass 𝕜 ℝ E]
+
+/-- For `c ≠ 0`, the scaled lattice `c • L` is the pullback of `L` along the real-linear
+automorphism `x ↦ c⁻¹ • x`. The scalar `c` may lie in any division ring acting continuously on `E`
+and commuting with the real scalars, such as `ℝ` itself or `ℂ` acting on a complex space. -/
+theorem smul_eq_comap {c : 𝕜} (hc : c ≠ 0) :
     c • L = ZLattice.comap ℝ L
       (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)⁻¹ : E ≃L[ℝ] E).toLinearMap := by
   ext x
@@ -118,15 +125,18 @@ theorem smul_eq_comap {c : ℝ} (hc : c ≠ 0) :
   simp [Units.smul_def]
 
 /-- Scaling a discrete lattice by a nonzero scalar gives a discrete lattice. -/
-instance [DiscreteTopology L] (c : ℝ) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ E) := by
+instance [DiscreteTopology L] (c : 𝕜) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ E) := by
   rw [smul_eq_comap L (NeZero.ne c)]
   infer_instance
 
 /-- Scaling a full lattice by a nonzero scalar gives a full lattice. -/
-instance [DiscreteTopology L] [IsZLattice ℝ L] (c : ℝ) [NeZero c] : IsZLattice ℝ (c • L) where
+instance [DiscreteTopology L] [IsZLattice ℝ L] (c : 𝕜) [NeZero c] :
+    IsZLattice ℝ (c • L : Submodule ℤ E) where
   span_top := by
     rw [smul_eq_comap L (NeZero.ne c)]
     exact IsZLattice.span_top
+
+end Scalar
 
 section Basis
 
@@ -291,50 +301,75 @@ theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Ortho
   rw [← b.coe_toBasis] at hu ⊢
   rw [det_sqrt_smul, hu.det_eq_one, mul_one]
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
-  [IsZLattice ℝ L] in
-/-- For an orthonormal basis `b` and a nonzero natural number `m`, the discriminant group of the
-scaled cubic lattice `√m • ℤ b` has order `det (√m • ℤ b) = mⁿ`, where `n` is the dimension of the
-space. For instance the discriminant group `(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
-theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {m : ℕ} (hm : m ≠ 0) :
-    Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
-  have := b.toBasis.finiteDimensional_of_finite
-  borelize E
-  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (by positivity)⟩
-  have h :=
-    ((isUnimodular_span_orthonormalBasis b).isIntegral.sqrt_smul m).det_eq_card_discriminantGroup
-  rw [det_sqrt_smul_span_orthonormalBasis b] at h
-  exact_mod_cast h.symm
-
 variable {L}
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies the order of its
-discriminant group by `mⁿ`. -/
-theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- Scaling an integral lattice `L` in a space of dimension `n` by `√m` multiplies the order of its
+discriminant group by `mⁿ`, where the order is the junk value `0` if the group is infinite. For
+`m = 0` both sides vanish when the space is nontrivial, and equal `1` otherwise; if `L` does not
+span the space, both sides vanish. -/
+theorem IsIntegral.card_discriminantGroup_sqrt_smul (h : IsIntegral L) {m : ℕ} :
     Nat.card (DiscriminantGroup (√(m : ℝ) • L)) =
       m ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
-  borelize E
-  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
-  refine Nat.cast_injective (R := ℝ) ?_
-  rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L,
-    h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, Submodule.zero_eq_bot]
+    rcases subsingleton_or_nontrivial E with _ | _
+    · simp [Module.finrank_zero_of_subsingleton]
+    · rw [Nat.card_eq_zero_of_infinite, zero_pow Module.finrank_pos.ne', zero_mul]
+  by_cases hfull : span ℝ (L : Set E) = ⊤
+  · borelize E
+    have := h.discreteTopology
+    have : IsZLattice ℝ L := ⟨hfull⟩
+    have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm))⟩
+    refine Nat.cast_injective (R := ℝ) ?_
+    rw [← (h.sqrt_smul m).det_eq_card_discriminantGroup, det_sqrt_smul L,
+      h.det_eq_card_discriminantGroup, Nat.cast_mul, Nat.cast_pow]
+  · have hne : span ℝ ((√(m : ℝ) • L : Submodule ℤ E) : Set E) ≠ ⊤ := fun hc ↦
+      hfull <| top_unique <| by
+        rw [← hc, coe_pointwise_smul]
+        exact Submodule.span_smul_le _ _
+    have := infinite_discriminantGroup_of_span_ne_top hne
+    have := infinite_discriminantGroup_of_span_ne_top hfull
+    rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite, mul_zero]
 
-/-- In positive dimension, scaling a full integral lattice by `c` with `1 < |c|` never gives a
-unimodular lattice: the determinant becomes `c²ⁿ det L > 1`. -/
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
+  [IsZLattice ℝ L] in
+/-- For an orthonormal basis `b` and a natural number `m`, the discriminant group of the scaled
+cubic lattice `√m • ℤ b` has `Nat.card` equal to `mⁿ`, where `n` is the dimension of the space,
+which for `m ≠ 0` is `det (√m • ℤ b)`. For `m = 0` the lattice is `0` and its discriminant group is
+the whole space: for `n > 0` it is infinite, so `Nat.card` returns the junk value `0 = 0 ^ n`, and
+for `n = 0` it is trivial and `Nat.card` returns `1 = 0 ^ 0`. For instance the discriminant group
+`(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
+theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
+    Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
+  have := b.toBasis.finiteDimensional_of_finite
+  have hu := isUnimodular_span_orthonormalBasis b
+  rw [hu.isIntegral.card_discriminantGroup_sqrt_smul, hu.card_discriminantGroup_eq_one, mul_one]
+
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, scaling an integral lattice by `c` with `1 < |c|` never gives a
+unimodular lattice: if `c • L` is unimodular then `L` is full, and the determinant becomes
+`c²ⁿ det L > 1`. -/
 theorem IsIntegral.not_isUnimodular_smul [Nontrivial E] (h : IsIntegral L) {c : ℝ}
     (hc : 1 < |c|) : ¬ IsUnimodular (c • L) := by
+  borelize E
+  have := h.discreteTopology
   have hc0 : c ≠ 0 := abs_pos.mp (one_pos.trans hc)
   have : NeZero c := ⟨hc0⟩
   intro hu
+  -- A unimodular lattice spans the space, and `c • L` spans no more than `L` does.
+  have : IsZLattice ℝ L := ⟨top_unique <| by
+    rw [← hu.span_eq_top, coe_pointwise_smul]
+    exact Submodule.span_smul_le _ c⟩
   have hdet := hu.det_eq_one
   rw [det_smul L, pow_mul, ← sq_abs, ← pow_mul] at hdet
   have hlt : 1 < |c| ^ (2 * finrank ℝ E) :=
     one_lt_pow₀ hc (mul_ne_zero two_ne_zero finrank_pos.ne')
   nlinarith [h.one_le_det]
 
-/-- In positive dimension, scaling a full integral lattice by `√m` for a natural number `m > 1`
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
+/-- In positive dimension, scaling an integral lattice by `√m` for a natural number `m > 1`
 never gives a unimodular lattice. For instance `√2 • E₈` is even and integral but not
 unimodular. -/
 theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) {m : ℕ}
@@ -343,10 +378,14 @@ theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) 
     rw [abs_of_nonneg (Real.sqrt_nonneg _), Real.lt_sqrt zero_le_one, one_pow]
     exact_mod_cast hm
 
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In positive dimension, scaling a unimodular lattice by `c` with `|c| ≠ 1` never gives a
 unimodular lattice. -/
 theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {c : ℝ}
     (hc : |c| ≠ 1) : ¬ IsUnimodular (c • L) := by
+  borelize E
+  have := h.isIntegral.discreteTopology
+  have : IsZLattice ℝ L := ⟨h.span_eq_top⟩
   intro hu
   rcases eq_or_ne c 0 with rfl | hc0
   · -- The lattice `0 • L` is zero, and the dual of the zero lattice is the whole space.

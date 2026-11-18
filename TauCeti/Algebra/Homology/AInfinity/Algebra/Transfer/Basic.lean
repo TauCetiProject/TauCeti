@@ -87,7 +87,7 @@ open ReducedTensorWords
 variable {R : Type uR} {A : Type uA} {H : Type uH} [CommRing R] [AddCommGroup A] [Module R A]
   [AddCommGroup H] [Module R H]
 
-variable (𝒜 : AInfinityAlgebra R A) {GH : InternalGrading R H} {dH : Module.End R H}
+variable (𝒜 : AInfinityAlgebra R A) {GH : InternalGrading R H ℤ} {dH : Module.End R H}
   (c : LinearSpecialContraction 𝒜.differential dH)
   (hh : LinearMap.IsHomogeneous c.homotopy 𝒜.grading.piece 𝒜.grading.piece (-1))
   (hincl : LinearMap.IsHomogeneous c.incl GH.piece 𝒜.grading.piece 0)
@@ -254,7 +254,6 @@ theorem isGradedCoderivation_transferBarDifferential :
     IsGradedCoderivation (GH.shift 1) 1 (𝒜.transferBarDifferential c hh hincl hproj) :=
   c.isGradedCoderivation_reducedTensorWords_perturbedDifferential _ _ _ _
     (𝒜.gradedCoderiv_differential_add_higherBarDifferential_comp_self)
-    (𝒜.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj)
     𝒜.isGradedCoderivation_higherBarDifferential 𝒜.isHomogeneous_higherBarDifferential
     𝒜.higherBarDifferential_filtration
 

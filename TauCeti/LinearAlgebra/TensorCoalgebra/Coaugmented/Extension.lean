@@ -172,7 +172,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The extension of a homogeneous endomorphism of the reduced words is homogeneous of the same
 degree in the total letter degree of the coaugmented words. -/
-theorem isHomogeneous_extendReduced {G : InternalGrading R M} {r : ℤ}
+theorem isHomogeneous_extendReduced {G : InternalGrading R M ℤ} {r : ℤ}
     {f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hf : LinearMap.IsHomogeneous f (ReducedTensorWords.gradedPiece G)
       (ReducedTensorWords.gradedPiece G) r) :
@@ -224,7 +224,7 @@ private theorem lTensor_comp_extend_map (f : ReducedTensorWords R M →ₗ[R] Re
 
 /-- Twisting the left factor of an included tensor and then including it is the inclusion of the
 twisted tensor, as a map. -/
-private theorem rTensor_map_comp_reducedInclusion_map (G : InternalGrading R M) (q : ℤ) :
+private theorem rTensor_map_comp_reducedInclusion_map (G : InternalGrading R M ℤ) (q : ℤ) :
     LinearMap.rTensor (TensorWords R M) (map (InternalGrading.koszulTwist G q)) ∘ₗ
         TensorProduct.map (reducedInclusion R M) (reducedInclusion R M)
       = TensorProduct.map (reducedInclusion R M) (reducedInclusion R M) ∘ₗ
@@ -241,7 +241,7 @@ private theorem rTensor_map_comp_reducedInclusion_map (G : InternalGrading R M) 
 
 /-- The extension of a `q`-twisted graded coderivation of the reduced tensor words is a `q`-twisted
 graded coderivation of the coaugmented ones. -/
-theorem isGradedCoderivation_extendReduced {G : InternalGrading R M} {q : ℤ}
+theorem isGradedCoderivation_extendReduced {G : InternalGrading R M ℤ} {q : ℤ}
     {f : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hf : ReducedTensorWords.IsGradedCoderivation G q f) :
     IsGradedCoderivation G q (extendReduced f) := by

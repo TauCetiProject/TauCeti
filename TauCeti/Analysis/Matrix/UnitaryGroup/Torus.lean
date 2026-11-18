@@ -43,6 +43,9 @@ the union of the conjugates of a maximal torus; for `SU(2)` the same statement i
 
 * `TauCeti.unitaryTorusHom`: the homomorphism `(n → Circle) →* U(n)` onto the diagonal matrices.
 * `TauCeti.unitaryTorus`: the diagonal torus of `U(n)`, its range.
+* `Matrix.UnitaryGroup.detCircleEquivOfUnique`: for a one-element index type, the determinant is
+  an isomorphism of topological groups `U(1) ≃ₜ* Circle`, whose inverse is
+  `TauCeti.unitaryTorusHom`, sending `z` to the `1 × 1` matrix `(z)`.
 
 ## Main results
 
@@ -87,6 +90,12 @@ variable {n}
 theorem coe_unitaryTorusHom (z : n → Circle) :
     (unitaryTorusHom n z : Matrix n n ℂ) = diagonal fun i => (z i : ℂ) :=
   (rfl)
+
+/-- The diagonal unitary matrix with all diagonal entries equal to `a` is the scalar matrix
+`a • 1`, so it lies in the centre of `U(n)`. -/
+theorem coe_unitaryTorusHom_const (a : Circle) :
+    (unitaryTorusHom n (fun _ ↦ a) : Matrix n n ℂ) = (a : ℂ) • 1 := by
+  rw [coe_unitaryTorusHom, smul_one_eq_diagonal]
 
 /-- As an invertible matrix, the diagonal unitary matrix with entries `z i` is the diagonal element
 of the general linear group with the entries `z i` viewed as units of `ℂ`. -/
@@ -192,3 +201,39 @@ theorem exists_isConj_unitaryTorusHom (g : unitaryGroup n ℂ) :
   exact ⟨z, isConj_iff.mpr ⟨u, hz.symm⟩⟩
 
 end TauCeti
+
+namespace Matrix.UnitaryGroup
+
+variable (n : Type*) [Fintype n] [DecidableEq n] [Unique n]
+
+/-- For a one-element index type, the determinant is an isomorphism of topological groups from
+the unitary group `U(1)` onto the unit circle. Its inverse is `TauCeti.unitaryTorusHom`, sending
+`z` to the `1 × 1` matrix `(z)` (`Matrix.UnitaryGroup.coe_detCircleEquivOfUnique_symm_apply`). -/
+noncomputable def detCircleEquivOfUnique : unitaryGroup n ℂ ≃ₜ* Circle where
+  toFun := detCircle
+  invFun z := TauCeti.unitaryTorusHom n fun _ ↦ z
+  left_inv U := Subtype.ext <| by
+    ext i j
+    rw [Subsingleton.elim i default, Subsingleton.elim j default, TauCeti.coe_unitaryTorusHom,
+      diagonal_apply_eq, coe_detCircle, det_unique]
+  right_inv z := Circle.ext (by simp [det_unique])
+  map_mul' := map_mul detCircle
+  continuous_toFun := continuous_detCircle
+  continuous_invFun := by fun_prop
+
+variable {n}
+
+@[simp]
+theorem detCircleEquivOfUnique_apply (U : unitaryGroup n ℂ) :
+    detCircleEquivOfUnique n U = detCircle U :=
+  (rfl)
+
+/-- The inverse of `Matrix.UnitaryGroup.detCircleEquivOfUnique` sends `z` to the diagonal
+`1 × 1` matrix `(z)`. -/
+@[simp]
+theorem coe_detCircleEquivOfUnique_symm_apply (z : Circle) :
+    (((detCircleEquivOfUnique n).symm z : unitaryGroup n ℂ) : Matrix n n ℂ) =
+      diagonal fun _ ↦ (z : ℂ) :=
+  TauCeti.coe_unitaryTorusHom _
+
+end Matrix.UnitaryGroup

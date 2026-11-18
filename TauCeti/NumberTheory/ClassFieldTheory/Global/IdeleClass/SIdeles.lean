@@ -78,7 +78,7 @@ namespace TauCeti.ClassFieldTheory
 
 open GlobalNumberFields
 
-variable {K : Type} [Field K] [NumberField K] (L : Type) [Field L] [NumberField L] [Algebra K L]
+variable {K : Type} [Field K] (L : Type) [Field L] [NumberField L] [Algebra K L]
   (S : Set (HeightOneSpectrum (𝓞 K)))
 
 /-! ### The representations -/
@@ -103,7 +103,6 @@ variable (K) in
 abbrev ideleClassRep : Rep ℤ (L ≃ₐ[K] L) :=
   Rep.ofMulDistribMulAction (L ≃ₐ[K] L) (IdeleClassGroup (𝓞 L) L)
 
-omit [NumberField K] in
 /-- `σ ∈ Aut(L/K)` acts on the class of an idele `a` in `ideleClassRep K L` as the class of the
 image of `a` under the ring automorphism `adeleEquiv L L σ` of the adele ring of `L`. -/
 theorem ideleClassRep_ρ_mk (σ : L ≃ₐ[K] L) (a : IdeleGroup (𝓞 L) L) :
@@ -150,7 +149,6 @@ def unitsToIdeles : Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ ⟶ idelesRep 
     (IdeleGroup.unitEmbedding (𝓞 L) L).toAdditive.toIntLinearMap fun σ a ↦
       congrArg Additive.ofMul (smul_unitEmbedding σ a.toMul).symm
 
-omit [NumberField K] in
 /-- `unitsToIdeles` sends a unit of `L` to its principal idele. -/
 @[simp]
 theorem unitsToIdeles_hom_apply (a : Additive Lˣ) :
@@ -183,7 +181,6 @@ def idelesToIdeleClass : idelesRep K L ⟶ ideleClassRep K L :=
       fun σ x ↦ congrArg Additive.ofMul <| by
         simp
 
-omit [NumberField K] in
 /-- `idelesToIdeleClass` sends an idele to its idele class. -/
 @[simp]
 theorem idelesToIdeleClass_hom_apply (x : Additive (IdeleGroup (𝓞 L) L)) :
@@ -254,7 +251,6 @@ def principalIdeleShortComplex : ShortComplex (Rep ℤ (L ≃ₐ[K] L)) :=
     ext a
     exact congrArg Additive.ofMul (QuotientGroup.eq_one_iff _ |>.2 ⟨a.toMul, rfl⟩)
 
-omit [NumberField K] in
 variable (K) in
 /-- **The sequence `0 → Lˣ → I_L → C_L → 0` is exact**: the idele classes are the quotient of the
 ideles by the principal ideles, and a unit of `L` is determined by its principal idele. -/
@@ -285,7 +281,7 @@ variable {S} in
 the Herbrand quotients of the `S`-ideles and of the `S`-units, when the classes of the primes above
 `S` generate the ideal class group of `L` and the relevant Tate groups are finite:
 `h(C_L) = h(I_{L,S}) / h(U_{L,S})`. -/
-theorem herbrandQuotient_ideleClassRep [IsCyclic (L ≃ₐ[K] L)]
+theorem herbrandQuotient_ideleClassRep [NumberField K] [IsCyclic (L ≃ₐ[K] L)]
     (hS : Subgroup.closure (classGroupMk '' (primesAbove (𝓞 K) (𝓞 L) S)) = ⊤)
     [Finite (tateCohomology (sUnitsRep L S) 0)] [Finite (tateCohomology (sUnitsRep L S) (-1))] :
     TateCohomology.herbrandQuotient (ideleClassRep K L) =

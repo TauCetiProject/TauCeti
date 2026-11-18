@@ -64,7 +64,6 @@ theorem exists_forall_contDiff_cutoff_ball_norm_laplacian_le :
     refine b.zero_of_le_dist ?_
     rw [dist_zero_right, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR,
       le_inv_mul_iff₀ hR]
-    have hy' : 2 * R < ‖y‖ := hy
     linarith
   · have h : HasFDerivAt (fun x => b (R⁻¹ • x)) _ x :=
       ((hb.differentiable (by simp)) (R⁻¹ • x)).hasFDerivAt.comp x

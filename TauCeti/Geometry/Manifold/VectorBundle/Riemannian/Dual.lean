@@ -45,7 +45,7 @@ theorem ContMDiffWithinAt.innerSL_bundle {n : ℕ∞ω}
         (E := fun x ↦ V x →L[ℝ] ℝ) (b q) (innerSL ℝ (σ q))) s p := by
   obtain ⟨g, hg, heq⟩ := h.exists_contMDiff
   have hb : ContMDiffWithinAt IP I n b s p :=
-    (contMDiffWithinAt_totalSpace.mp hσ).1
+    (contMDiffWithinAt_totalSpace_iff.mp hσ).1
   have hgb : ContMDiffWithinAt IP (I.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
       (fun q ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
         (E := fun x ↦ V x →L[ℝ] V x →L[ℝ] ℝ) (b q) (g (b q))) s p := by

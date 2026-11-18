@@ -17,9 +17,10 @@ intermediate grid state and a second rectangle from that state to `z`. This file
 factorization as `GridRectangleDecomposition`, the shared object on which the disjoint,
 overlapping and annular cases of the square-zero argument all operate.
 
-Such a factorization is determined by the ordered side columns of its two rectangles: the
-intermediate state is the source with the first pair of columns swapped, and an oriented rectangle
-between two given states is determined by its side columns.
+Such a factorization is determined by the ordered side columns of its first rectangle and the
+initial side column of its second rectangle: the intermediate state is the source with the first
+pair of columns swapped, and an oriented rectangle between two given states is determined by its
+initial side column.
 
 ## Main definitions
 
@@ -29,9 +30,9 @@ between two given states is determined by its side columns.
 ## Main results
 
 * `TauCeti.GridRectangleDecomposition.ext`: a decomposition is determined by the ordered side
-  columns of its two rectangles.
-* `TauCeti.GridRectangleDecomposition.sides_injective`: the same statement as
-  injectivity of the ordered quadruple of side columns.
+  columns of its first rectangle and the initial side column of its second rectangle.
+* `TauCeti.GridRectangleDecomposition.sides_injective`: the ordered quadruple of side columns
+  determines the decomposition, a corollary of `ext`.
 * `TauCeti.GridRectangleDecomposition.target_apply_of_notMem_sideColumns`: away from the four
   side columns the target of a decomposition agrees with its source.
 * `TauCeti.GridRectangleDecomposition.transpose` and `transposeEquiv`: diagonal reflection of
@@ -62,14 +63,14 @@ namespace GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
-/-- Two rectangle decompositions are equal when their ordered side columns agree: the first pair
-already determines the intermediate state. -/
+/-- Two rectangle decompositions are equal when the side columns of their first rectangles and
+the initial side columns of their second rectangles agree: the first pair already determines the
+intermediate state, and the initial side column then determines the second rectangle. -/
 @[ext]
 theorem ext {D E : GridRectangleDecomposition x z}
     (hfirstLeft : D.first.left = E.first.left)
     (hfirstRight : D.first.right = E.first.right)
-    (hsecondLeft : D.second.left = E.second.left)
-    (hsecondRight : D.second.right = E.second.right) : D = E := by
+    (hsecondLeft : D.second.left = E.second.left) : D = E := by
   have hmiddle : D.middle = E.middle := by
     rw [D.first.target_eq_swapColumns, hfirstLeft, hfirstRight,
       ← E.first.target_eq_swapColumns]
@@ -83,7 +84,7 @@ theorem ext {D E : GridRectangleDecomposition x z}
             GridRectangleBetween.ext hfirstLeft hfirstRight
           subst Efirst
           have hsecond : Dsecond = Esecond :=
-            GridRectangleBetween.ext hsecondLeft hsecondRight
+            GridRectangleBetween.left_injective hsecondLeft
           subst Esecond
           rfl
 
@@ -94,7 +95,7 @@ theorem sides_injective (x z : GridState n) :
       (D.first.left, D.first.right, D.second.left, D.second.right) := by
   intro D E h
   simp only [Prod.mk.injEq] at h
-  exact ext h.1 h.2.1 h.2.2.1 h.2.2.2
+  exact ext h.1 h.2.1 h.2.2.1
 
 /-- Two-step rectangle decompositions between fixed states have decidable equality: such a
 decomposition is determined by its four side columns. -/

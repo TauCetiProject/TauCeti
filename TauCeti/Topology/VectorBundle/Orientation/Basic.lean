@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
+import Mathlib.Topology.LocallyConstant.Basic
+
 /-!
 # Orientations of real vector bundles
 
@@ -397,9 +399,10 @@ theorem isOpen_setOf_eq (o o' : VectorBundleOrientation F E ι) :
         (FiberBundle.mem_baseSet_trivializationAt' b)) hb
       _ = _ := (hx' hxs).symm
 
-variable [Fintype ι] [FiniteDimensional ℝ F]
+section Fintype
 
-omit [FiniteDimensional ℝ F] in
+variable [Fintype ι]
+
 /-- An orientation is locally constant when read in any trivialization of the atlas. -/
 theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F E ι) (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
@@ -408,7 +411,6 @@ theorem eventually_mapOrientation_eq (hι : Fintype.card ι = finrank ℝ F)
   (trivializationAt F E b).eventually_mapOrientation_eq_of_eventually hι e
     (FiberBundle.mem_baseSet_trivializationAt' b) hb (o.eventually_mapOrientation_eq' b)
 
-omit [FiniteDimensional ℝ F] in
 /-- An orientation of the bundle from fibre orientations that are locally constant near each
 point `b` when read in some trivialization `e b` of the atlas whose base set contains `b`. -/
 def ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Orientation ℝ (E b) ι)
@@ -422,7 +424,6 @@ def ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Orientation
     (e b).eventually_mapOrientation_eq_of_eventually hι (trivializationAt F E b) (he b)
       (FiberBundle.mem_baseSet_trivializationAt' b) (ho b)
 
-omit [FiniteDimensional ℝ F] in
 @[simp]
 theorem coe_ofEventually (hι : Fintype.card ι = finrank ℝ F) (o : ∀ b, Orientation ℝ (E b) ι)
     (e : B → Trivialization F (π F E)) [∀ b, MemTrivializationAtlas (e b)]
@@ -438,8 +439,9 @@ theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ 
   have hfib (b : B) : o b = o' b ∨ o b = -o' b := by
     have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
     have hinj := ((trivializationAt F E b).mapOrientation ι hb).injective
-    rcases Orientation.eq_or_eq_neg (((trivializationAt F E b).mapOrientation ι hb) (o b))
-      (((trivializationAt F E b).mapOrientation ι hb) (o' b)) hι with h | h
+    rcases Orientation.eq_or_eq_neg_of_card_eq_finrank
+        (((trivializationAt F E b).mapOrientation ι hb) (o b))
+        (((trivializationAt F E b).mapOrientation ι hb) (o' b)) hι with h | h
     · exact .inl (hinj h)
     · exact .inr (hinj (by rwa [Trivialization.mapOrientation_neg]))
   have hcompl : {b | o b = o' b}ᶜ = {b | o b = (-o') b} := by
@@ -457,13 +459,23 @@ theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ 
     ext b
     exact (h.symm.subset (mem_univ b) : o b = o' b)
 
-/-- Over a preconnected base, an orientation of a trivial bundle of rank `card ι` is the constant
-orientation given by its value at any point. -/
-theorem eq_trivial [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ F)
+end Fintype
+
+/-- Over a preconnected base, an orientation of a trivial bundle is the constant orientation given
+by its value at any point. -/
+theorem eq_trivial [PreconnectedSpace B]
     (o : VectorBundleOrientation F (Bundle.Trivial B F) ι) (b : B) : o = trivial B (o b) := by
-  refine (eq_or_eq_neg hι o (trivial B (o b))).resolve_right fun h ↦ ?_
-  have hb : o b = -o b := by simpa using congr($h b)
-  exact Module.Ray.ne_neg_self (o b) hb
+  -- The fibre `Bundle.Trivial B F x` is `F` only by unfolding, so the type ascription retypes
+  -- the values `o x` as orientations of `F` in order to speak of local constancy.
+  have hlc : IsLocallyConstant fun x ↦ show Orientation ℝ F ι from o x :=
+    (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦
+      Filter.mem_of_superset
+        ((isOpen_setOf_eq o (trivial B (o x))).mem_nhds (trivial_apply _ x).symm) fun y hy ↦ by
+          rw [mem_ofPred_eq, trivial_apply] at hy
+          exact hy
+  ext x
+  exact (hlc.apply_eq_of_isPreconnected isPreconnected_univ (mem_univ x) (mem_univ b)).trans
+    (trivial_apply _ x).symm
 
 end VectorBundleOrientation
 

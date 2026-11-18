@@ -17,10 +17,10 @@ public import TauCeti.Probability.Cdf
 This file develops uniform probability measures on finite discrete spaces.  It identifies the
 conditional counting measure `ProbabilityTheory.uniformOn` with Mathlib's finite Dirac-sum
 measure, computes its masses and Bochner integrals, and shows that embeddings transport finite
-uniform measures to uniform measures on their images. For labels in a measurable space, it
-computes masses by counting inputs, retaining multiplicities of repeated labels; for real labels,
-it also computes the cdf. Quantile formulas and endpoint limits are in
-`TauCeti.Probability.Distributions.Uniform.Quantile`.
+uniform measures to uniform measures on their images, including uniform `n`-element subsets. For
+labels in a measurable space, it computes masses by counting inputs, retaining multiplicities of
+repeated labels; for real labels, it also computes the cdf. Quantile formulas and endpoint limits
+are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
 
 ## Main results
 
@@ -55,7 +55,7 @@ finite sum of Dirac measures.  This includes the common zero-measure convention 
 set. -/
 theorem uniformOn_coe_finset_eq_uniformOfFinset (s : Finset α) :
     uniformOn (s : Set α) = Measure.uniformOfFinset s := by
-  ext t ht
+  ext t _
   rw [uniformOn, cond_apply s.measurableSet, Measure.uniformOfFinset_apply]
   rw [Measure.count_apply_finset]
   rw [Measure.count_apply_finite _ (s.finite_toSet.inter_of_left t)]
@@ -198,6 +198,22 @@ theorem map_uniformOn_finset (e : α ↪ β) (s : Finset α) :
   simpa only [Finset.coe_map] using
     e.injective.injOn.bijOn_image.map_uniformOn
 
+section PowersetCard
+
+variable {γ δ : Type*}
+    [MeasurableSpace (Finset γ)] [MeasurableSingletonClass (Finset γ)]
+    [MeasurableSpace (Finset δ)] [MeasurableSingletonClass (Finset δ)]
+
+/-- An embedding sends a uniform `n`-element subset of a finset `s` to a uniform `n`-element
+subset of the image of `s`. This moves positions indexed by `Fin N` into `ℕ`. -/
+theorem map_finsetMap_uniformOn_powersetCard (f : γ ↪ δ) (s : Finset γ) (n : ℕ) :
+    (uniformOn (s.powersetCard n : Set (Finset γ))).map (Finset.map f) =
+      uniformOn ((s.map f).powersetCard n : Set (Finset δ)) := by
+  rw [Finset.powersetCard_map]
+  exact (Finset.mapEmbedding f).toEmbedding.map_uniformOn_finset _
+
+end PowersetCard
+
 end Function.Embedding
 
 namespace Equiv
@@ -262,6 +278,28 @@ theorem measureReal_map_uniformOn_finset_apply (s : Finset α) (f : α → β)
   rw [← integral_indicator_one ht,
     integral_map (s.aemeasurable_uniformOn_finset f) (by fun_prop), integral_uniformOn_finset]
   simp [Set.indicator, sum_boole, div_eq_mul_inv, mul_comm]
+
+/-- Every function of the labels is integrable against a labelled finite uniform law. Neither
+the labelling nor the observable needs to be measurable. -/
+@[simp]
+theorem integrable_map_uniformOn_finset [MeasurableSingletonClass β] {E : Type*}
+    [SeminormedAddGroup E] (s : Finset α) (label : α → β) (f : β → E) :
+    Integrable f ((uniformOn (s : Set α)).map label) := by
+  have hlabel := s.aemeasurable_uniformOn_finset label
+  rw [uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset] at hlabel ⊢
+  rw [Measure.map_finset_sum hlabel]
+  refine integrable_finsetSum_measure.2 fun i hi ↦ ?_
+  rw [Measure.map_smul _ (by fun_prop), Measure.map_dirac]
+  exact (integrable_dirac (by simp)).smul_measure (by simp [s.ne_empty_of_mem hi])
+
+/-- Integration against a labelled finite uniform law is the normalized finite sum over the
+sampling set, with repeated labels counted with their multiplicities. -/
+theorem integral_map_uniformOn_finset [MeasurableSingletonClass β] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] (s : Finset α) (label : α → β)
+    (f : β → E) :
+    ∫ x, f x ∂(uniformOn (s : Set α)).map label = (s.card : ℝ)⁻¹ • ∑ i ∈ s, f (label i) := by
+  rw [integral_map (s.aemeasurable_uniformOn_finset label)
+    (s.integrable_map_uniformOn_finset label f).aestronglyMeasurable, integral_uniformOn_finset]
 
 open Classical in
 /-- The cdf of a finitely labeled uniform sample counts inputs with label at most the argument. -/

@@ -64,7 +64,6 @@ variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {s u : Set ℝ} {p : M} {v : TangentSpace I p}
@@ -85,7 +84,7 @@ theorem IsGeodesicCurveOn.comp_affine (h : IsGeodesicCurveOn I γ s) (a b : ℝ)
       ((hasDerivAt_const_mul a).add_const b).hasDerivWithinAt
     have hderiv : EqOn (derivWithin φ u) (fun _ ↦ a) u := fun r hr ↦ (hφ r).derivWithin (hu r hr)
     have hsection : DifferentiableWithinAt ℝ
-        (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) :=
+        (sectionCoord ℝ (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t) :=
       differentiableWithinAt_sectionCoord_curveVelocityWithin γ h.uniqueDiffOn h.contMDiffOn
         (hmaps ht) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ (φ t)))
     -- By the chain rule for the acceleration, the reparametrized acceleration is `a²` times the

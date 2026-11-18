@@ -133,6 +133,24 @@ theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
   exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
     (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
 
+/-- When the inner series has zero constant coefficient, composing the truncation of the outer
+series below degree `M` with the truncation of the inner series below degree `N` computes the
+substitution below both truncation degrees. -/
+theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) {M N k : ℕ} (hM : k < M) (hN : k < N) :
+    ((trunc M f).comp (trunc N g)).coeff k = coeff k (f.subst g) := by
+  -- Below degree `N`, powers of the truncation of `g` agree with powers of `g`.
+  have hpow (n : ℕ) : ((trunc N g) ^ n).coeff k = coeff k (g ^ n) := by
+    rw [← Polynomial.coeff_coe, Polynomial.coe_pow, ← coeff_coe_trunc_of_lt hN, trunc_trunc_pow,
+      coeff_coe_trunc_of_lt hN]
+  rw [coeff_subst_eq_sum_range f hg, Polynomial.comp, eval₂_trunc_eq_sum_range,
+    Polynomial.finsetSum_coeff]
+  simp only [Polynomial.coeff_C_mul, hpow, smul_eq_mul]
+  -- The coefficient of `X ^ k` in `g ^ n` vanishes for `n > k`.
+  refine (Finset.sum_subset (Finset.range_subset_range.mpr hM) fun n _ hn ↦ ?_).symm
+  rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by grind : k < n)).trans_le
+    (le_order_pow_of_constantCoeff_eq_zero n hg)), mul_zero]
+
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
     HasSubst (C x) := by
@@ -463,19 +481,11 @@ theorem homogeneousComponent_subst_right_eq_C_mul_X_pow {f : S⟦X⟧} {φ : R�
       MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
     rw [subst_sub hS, subst_sub hS, subst_X hS, X_subst, hCs]
     ring
-  have hC : MvPowerSeries.homogeneousComponent n
-      (MvPowerSeries.C (algebraMap R S (constantCoeff φ)) : MvPowerSeries Unit S) = 0 := by
-    refine MvPowerSeries.ext fun d ↦ ?_
-    simp only [MvPowerSeries.coeff_homogeneousComponent, MvPowerSeries.coeff_C, map_zero]
-    split_ifs with h₁ h₂
-    · subst h₂
-      simp at h₁
-      exact absurd h₁.symm hn₀
-    all_goals rfl
   rw [hsplit, map_add, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
     ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
     homogeneousComponent_subst_left_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
-    Algebra.algebraMap_self, RingHom.id_apply, hC, add_zero]
+    Algebra.algebraMap_self, RingHom.id_apply,
+    MvPowerSeries.homogeneousComponent_C_of_ne_zero hn₀, add_zero]
 
 end Algebra
 

@@ -138,7 +138,7 @@ theorem psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   clear_value g
   have hgp : g ∣ p := hg ▸ EuclideanDomain.gcd_dvd_left p q
   have hgq : g ∣ q := hg ▸ EuclideanDomain.gcd_dvd_right p q
-  set d := g.natDegree with hd
+  set d := g.natDegree
   rw [psc_def, Ne, ← Matrix.exists_mulVec_eq_zero_iff]
   rintro ⟨v, hv, hMv⟩
   -- The kernel vector encodes a relation `A * q + B * p` with no coefficients in degrees
@@ -151,7 +151,7 @@ theorem psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   generalize hB : ofFn (n - d) (fun k => v (Fin.natAdd (m - d) k)) = B at hwin
   have hAdeg : A.degree < (m - d : ℕ) := hA ▸ ofFn_degree_lt _
   have hBdeg : B.degree < (n - d : ℕ) := hB ▸ ofFn_degree_lt _
-  have hzero := Polynomial.mul_add_mul_eq_zero_of_coeff_window hp hm.le hn hgp hgq hAdeg hBdeg hwin
+  have hzero := Polynomial.mul_add_mul_eq_zero_of_coeff_window hm.le hn hgp hgq hAdeg hBdeg hwin
   -- Bézout for the gcd forces `A = 0`, and then `B = 0`.
   have hA0 : A = 0 :=
     eq_zero_of_mul_add_mul_eq_zero_of_degree_lt hzero (by rw [hm, ← hg]; exact hAdeg)

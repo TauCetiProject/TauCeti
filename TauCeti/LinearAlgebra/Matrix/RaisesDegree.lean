@@ -220,7 +220,6 @@ private theorem raisesDegree_list_prod_sub (n : ℤ) (u : ι → A) :
   | cons j l ih =>
     have hj := raisesDegree_sub_one hX hx List.mem_cons_self (u j)
     have hjpos := hpos j List.mem_cons_self
-    have hXj := hX j List.mem_cons_self
     have hxj := hx j List.mem_cons_self
     simp only [List.mem_cons, forall_eq_or_imp] at hpos hX hx
     have hP := raisesDegree_list_prod_sub_one hpos.2 hX.2 hx.2 u

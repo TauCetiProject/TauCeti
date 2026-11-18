@@ -259,11 +259,6 @@ theorem not_splits_one_sub_inv_p_X_sq :
 theorem splits_map_one_sub_inv_p_X_sq_of_sq_eq {L : Type*} [Field L] [Algebra ℚ_[p] L]
     {π : L} (hπ : π ^ 2 = algebraMap ℚ_[p] L p) :
     ((1 - C (p : ℚ_[p])⁻¹ * X ^ 2 : ℚ_[p][X]).map (algebraMap ℚ_[p] L)).Splits := by
-  have hp_ne : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  have hπ_ne : π ≠ 0 := by
-    rintro rfl
-    have h0 : algebraMap ℚ_[p] L p = 0 := by simpa using hπ.symm
-    exact hp_ne ((injective_iff_map_eq_zero _).mp (algebraMap ℚ_[p] L).injective _ h0)
   have hinv : C (algebraMap ℚ_[p] L p)⁻¹ = (C π⁻¹ : L[X]) * C π⁻¹ := by
     rw [← map_mul, ← mul_inv, ← sq, hπ]
   have hfact : (1 - C (p : ℚ_[p])⁻¹ * X ^ 2 : ℚ_[p][X]).map (algebraMap ℚ_[p] L) =

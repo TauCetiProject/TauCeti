@@ -43,7 +43,7 @@ at once, through compactness.
 * `TauCeti.Peripheral.forall_mem_level_iff`: conjugators lie in every peripheral level exactly
   when their defect is trivial.
 * `TauCeti.Peripheral.level_one_eq_univ`: every choice of conjugators has defect in `γ₁`.
-* `TauCeti.Peripheral.exists_mem_level_succ`: a positive-level solution can be corrected to the
+* `TauCeti.Peripheral.exists_mem_level_succ`: a solution at any level can be corrected to the
   next level while keeping the correction at the first basis element trivial.
 * `TauCeti.Peripheral.closedLowerCentralSeries_ne_bot`: in rank at least two, no term of the
   closed lower central series is trivial.
@@ -337,12 +337,12 @@ private theorem exists_mem_level_succ_of_succ {k : ℕ} (hF : IsProP p F)
     have hmem := (QuotientGroup.eq_one_iff _).mp hqone
     simpa only [Nat.zero_add] using hmem
 
-/-- A pair of conjugators whose defect lies in `γ_n`, for positive `n`, can be corrected so that
-its defect lies in `γ_{n+1}`. The corrections lie in `γ_{n-1}`, and the correction at the first
-basis element is trivial. The unit hypothesis on `u` is used to rescale the required graded
-correction. -/
+/-- A pair of conjugators whose defect lies in `γ_n` can be corrected so that
+its defect lies in `γ_{n+1}`. The corrections lie in `γ_{n-1}` (truncated subtraction), and the
+correction at the first basis element is trivial. The unit hypothesis on `u` is used to rescale the
+required graded correction. -/
 theorem exists_mem_level_succ (hF : IsProP p F)
-    (e : F ≃ₜ* freeProP p (Fin r)) (u : ℤ_[p]ˣ) (n : ℕ) (hn : 1 ≤ n)
+    (e : F ≃ₜ* freeProP p (Fin r)) (u : ℤ_[p]ˣ) (n : ℕ)
     (c : Fin r → F) (d : F) (h : (c, d) ∈ level hF (basis e) (u : ℤ_[p]) n) :
     ∃ (c' : Fin r → F) (d' : F),
       (∀ i, c' i ∈ closedLowerCentralSeries F (n - 1)) ∧
@@ -350,7 +350,10 @@ theorem exists_mem_level_succ (hF : IsProP p F)
       (∀ h0 : 0 < r, c' ⟨0, h0⟩ = 1) ∧
       ((fun i ↦ c i * c' i), d * d') ∈ level hF (basis e) (u : ℤ_[p]) (n + 1) := by
   cases n with
-  | zero => omega
+  | zero =>
+    refine ⟨1, 1, fun _ ↦ ?_, one_mem _, fun _ ↦ rfl, ?_⟩
+    · simp [closedLowerCentralSeries_zero]
+    · simp
   | succ m =>
     cases r with
     | zero =>

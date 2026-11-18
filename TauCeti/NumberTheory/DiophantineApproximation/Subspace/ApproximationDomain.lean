@@ -46,7 +46,7 @@ of `S₀` are linearly independent the module is finitely generated
 in `ι → mixedSpace K` (`TauCeti.NumberField.isZLattice_mixedImage_approxModule`), so an
 approximation domain is the set of points of a lattice in a convex body.
 
-With independent forms at every relevant place, a domain of nonnegative level contains only
+With independent forms at every relevant place, a domain contains only
 finitely many points (`TauCeti.NumberField.finite_approxDomain`). More uniformly, the union over
 levels in an interval bounded away from zero is finite
 (`TauCeti.NumberField.finite_biUnion_approxDomain`): every such domain lies in one fixed domain
@@ -83,6 +83,7 @@ public section
 noncomputable section
 
 open Module NumberField NumberField.mixedEmbedding NumberField.InfinitePlace
+open scoped Pointwise
 
 namespace TauCeti.NumberField
 
@@ -166,6 +167,17 @@ theorem mixedEmbedding_mem_approxBody_iff {L : AbsoluteValue K ℝ → ι → Du
     (fun j ↦ mixedEmbedding K (x j)) ∈ approxBody L c Q ↔
       ∀ (w : InfinitePlace K) (i : ι), w (L w.1 i x) ≤ Q ^ c w.1 i := by
   simp only [mem_approxBody, sum_mixedEmbedding_mul_mixedEmbedding, normAtPlace_apply]
+
+/-- The coordinatewise mixed embedding of a point `x` of `Kⁱ` lies in the dilate `t • B` of the
+infinite part `B` of an approximation domain, for `t > 0`, exactly when
+`w (L w i x) ≤ t * Q ^ c w i` at every infinite place `w`. -/
+theorem mixedEmbedding_mem_smul_approxBody_iff {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    {c : AbsoluteValue K ℝ → ι → ℝ} {Q t : ℝ} (ht : 0 < t) {x : ι → K} :
+    (fun j ↦ mixedEmbedding K (x j)) ∈ t • approxBody L c Q ↔
+      ∀ (w : InfinitePlace K) (i : ι), w (L w.1 i x) ≤ t * Q ^ c w.1 i := by
+  simp only [Set.mem_smul_set_iff_inv_smul_mem₀ ht.ne', mem_approxBody, Pi.smul_apply,
+    mul_smul_comm, ← Finset.smul_sum, normAtPlace_smul, sum_mixedEmbedding_mul_mixedEmbedding,
+    normAtPlace_apply, abs_inv, abs_of_pos ht, inv_mul_le_iff₀ ht]
 
 /-- **An approximation domain is the set of points of a module whose mixed embedding lies in a
 body**: `x` lies in it exactly when it lies in the finite part and its coordinatewise mixed
@@ -374,7 +386,7 @@ theorem span_approxModule_eq_top [Finite ι] [NumberField K] (S₀ : Finset (Fin
   obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_mul_apply_le S₀ fun v _ ↦ hS0 v
   have hdK : (d : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.2 hd0
   have hmem (j : ι) : (d : K) • Pi.basisFun K ι j ∈ approxModule S₀ L c Q := by
-    refine mem_approxModule.2 ⟨fun v hv i ↦ ?_, fun v hv k ↦ ?_⟩
+    refine mem_approxModule.2 ⟨fun v hv i ↦ ?_, fun v _ k ↦ ?_⟩
     · rw [map_smul, smul_eq_mul, map_mul]
       calc v (d : K) * v (L v.1 i (Pi.basisFun K ι j))
           ≤ v (d : K) * (S v * |Q| ^ c v.1 i) :=
@@ -412,13 +424,13 @@ open Set
 
 variable [NumberField K] [Finite ι]
 
-/-- With independent forms at every relevant place, an approximation domain of nonnegative
-level contains finitely many points. -/
+/-- With independent forms at every relevant place, an approximation domain contains finitely
+many points. -/
 theorem finite_approxDomain {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
     (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 ≤ Q) :
+    (c : AbsoluteValue K ℝ → ι → ℝ) (Q : ℝ) :
     (approxDomain S₀ L c Q).Finite := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
@@ -430,8 +442,10 @@ theorem finite_approxDomain {S₀ : Finset (FinitePlace K)}
     Function.Injective.piMap fun _ ↦ mixedEmbedding_injective K
   refine (hfinite.preimage hinj.injOn).subset ?_
   intro x hx
-  rw [approxDomain_eq S₀ L c hQ] at hx
-  exact ⟨hx.2, Submodule.mem_mixedImage.mpr ⟨x, hx.1, rfl⟩⟩
+  obtain ⟨hinf, hfin, hout⟩ := mem_approxDomain.mp hx
+  refine ⟨(mixedEmbedding_mem_approxBody_iff).2 hinf,
+    Submodule.mem_mixedImage.mpr ⟨x, mem_approxModule.2 ⟨fun v hv i ↦ ?_, hout⟩, rfl⟩⟩
+  exact (hfin v hv i).trans ((le_abs_self _).trans (Real.abs_rpow_le_abs_rpow _ _))
 
 omit [Finite ι] in
 /-- A domain at a level between two positive bounds is contained in one fixed domain with
@@ -457,8 +471,7 @@ theorem finite_biUnion_approxDomain {S₀ : Finset (FinitePlace K)}
     (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.1))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q₁ Q₂ : ℝ} (hQ₁ : 0 < Q₁) :
     (⋃ Q ∈ Icc Q₁ Q₂, approxDomain S₀ L c Q).Finite := by
-  refine (finite_approxDomain hLinf hLfin (fun v i ↦ |c v i|)
-    (le_trans (inv_pos.mpr hQ₁).le (le_max_right Q₂ Q₁⁻¹))).subset ?_
+  refine (finite_approxDomain hLinf hLfin (fun v i ↦ |c v i|) (max Q₂ Q₁⁻¹)).subset ?_
   intro x hx
   rcases mem_iUnion₂.mp hx with ⟨Q, hQ, hx⟩
   exact approxDomain_subset_abs hQ₁ hQ hx

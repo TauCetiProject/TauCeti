@@ -25,11 +25,20 @@ pseudo-hyperbolic expression.
 Inversion preserves the open right half-plane: `z⁻¹` has positive real part exactly when `z`
 does (`Complex.inv_re_pos`).
 
+The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
+`‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
+
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
 
 Two integers whose images in `ℂ` are at distance less than `1` are equal.
+
+The canonical embedding of an `RCLike` field into `ℂ` is bundled as
+`TauCeti.toComplexStarAlgHom`, so real star-algebra constructions can be transported to `ℂ`.
+
+Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
+whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
 -/
 
 public section
@@ -57,6 +66,67 @@ theorem Complex.norm_one_add_sub_conj_mul_inv_ofReal_sub (z : ℂ) (r : ℝ) :
   rw [heq, norm_div, hnorm, div_self (norm_ne_zero_iff.mpr hne)]
 
 namespace TauCeti
+
+/-- The canonical real star-algebra embedding of an `RCLike` field into `ℂ`. -/
+noncomputable def toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] : 𝕜 →⋆ₐ[ℝ] ℂ where
+  toFun x := (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I
+  map_zero' := by simp
+  map_one' := by simp
+  map_add' := by intros; simp only [map_add, Complex.ofReal_add]; ring
+  map_mul' := by
+    intro x y
+    simp only [RCLike.mul_re, RCLike.mul_im, Complex.ofReal_sub, Complex.ofReal_mul,
+      Complex.ofReal_add]
+    ring_nf
+    rw [Complex.I_sq]
+    ring
+  commutes' := by intro r; simp
+  map_star' := by intro x; simp [RCLike.star_def, mul_comm]
+
+/-- The canonical complex embedding sends a scalar to its real and imaginary components. -/
+@[simp]
+theorem toComplexStarAlgHom_apply {𝕜 : Type*} [RCLike 𝕜] (x : 𝕜) :
+    toComplexStarAlgHom 𝕜 x = (RCLike.re x : ℂ) + (RCLike.im x : ℂ) * Complex.I :=
+  (rfl)
+
+/-- The canonical complex embedding is the identity on `ℂ`. -/
+@[simp]
+theorem toComplexStarAlgHom_complex : toComplexStarAlgHom ℂ = .id ℝ ℂ := by
+  ext z
+  simp
+
+/-- The canonical complex embedding of `ℝ` is the real scalar inclusion. -/
+@[simp]
+theorem toComplexStarAlgHom_real : toComplexStarAlgHom ℝ = RCLike.ofRealStarAlgHom ℂ := by
+  ext r
+  simp
+
+/-- The canonical complex embedding preserves the real scalar inclusion. -/
+@[simp]
+theorem toComplexStarAlgHom_comp_ofRealStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
+    (toComplexStarAlgHom 𝕜).comp (RCLike.ofRealStarAlgHom 𝕜) =
+      RCLike.ofRealStarAlgHom ℂ := by
+  ext r
+  simp
+
+/-- The canonical complex embedding has the same underlying function as `RCLike.map`. -/
+theorem coe_toComplexStarAlgHom_eq_map (𝕜 : Type*) [RCLike 𝕜] :
+    (toComplexStarAlgHom 𝕜 : 𝕜 → ℂ) = RCLike.map 𝕜 ℂ :=
+  (rfl)
+
+/-- The canonical complex embedding preserves distances. -/
+theorem isometry_toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
+    Isometry (toComplexStarAlgHom 𝕜) := by
+  apply Isometry.of_dist_eq
+  intro x y
+  rw [dist_eq_norm, ← map_sub, toComplexStarAlgHom_apply, RCLike.norm_to_complex,
+    dist_eq_norm]
+
+/-- The canonical complex embedding is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
+    Continuous (toComplexStarAlgHom 𝕜) :=
+  (isometry_toComplexStarAlgHom 𝕜).continuous
 
 open ComplexConjugate Metric
 
@@ -111,10 +181,55 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
+theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
+  simpa [norm_mul] using abs_im_le_norm (conj u * e)
+
 /-- The norm of `1 - conj w * z` is symmetric in `z` and `w`: conjugation swaps the two
 expressions and preserves norms. -/
 theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - conj z * w‖ := by
   rw [← norm_conj]
   simp [mul_comm]
+
+
+/-- For a point `x` of the closed disc of radius `r` and a point `y` outside the open disc, the
+conjugate `conj x` is within `3 ‖x - y‖` of the point `r² / y`, the inversion of `y` in the circle
+of radius `r` followed by conjugation. -/
+theorem norm_conj_sub_sq_div_le {r : ℝ} (x y : ℂ)
+    (hx : ‖x‖ ≤ r) (hy : r ≤ ‖y‖) :
+    ‖conj x - (r : ℂ)^2/y‖ ≤ 3*‖x - y‖ := by
+  have hr : 0 ≤ r := (norm_nonneg x).trans hx
+  rcases eq_or_ne y 0 with rfl | hyne
+  · have hr0 : r = 0 := le_antisymm (by simpa using hy) hr
+    have hx0 : x = 0 := norm_le_zero_iff.mp (hr0 ▸ hx)
+    simp [hr0, hx0]
+  have hy0 : 0 < ‖y‖ := norm_pos_iff.mpr hyne
+  have heq : conj y - (r : ℂ)^2/y = (((‖y‖^2 - r^2 : ℝ) : ℂ))/y := by
+    apply (eq_div_iff hyne).mpr
+    rw [sub_mul, div_mul_cancel₀ _ hyne, conj_mul', ofReal_sub, ofReal_pow, ofReal_pow]
+  have hgap : ‖y‖-r ≤ ‖x - y‖ := by
+    have h := norm_le_norm_add_norm_sub x y
+    linarith
+  have htail : ‖conj y - (r : ℂ)^2/y‖ ≤ 2 * (‖y‖-r) := by
+    rw [heq, norm_div, norm_real, Real.norm_eq_abs,
+      abs_of_nonneg (by nlinarith : 0 ≤ ‖y‖^2 - r^2)]
+    apply (div_le_iff₀ hy0).mpr
+    nlinarith
+  calc
+    _ ≤ ‖conj x - conj y‖ + ‖conj y - (r : ℂ)^2/y‖ := by
+      simpa only [dist_eq_norm] using dist_triangle (conj x) (conj y) ((r : ℂ)^2/y)
+    _ ≤ ‖x - y‖ + 2 * (‖y‖-r) := by
+      rw [← map_sub, norm_conj]
+      exact add_le_add le_rfl htail
+    _ ≤ _ := by linarith
+
+/-- Dividing by a natural number does not increase the norm, so the point `(a z + b) / M` has
+norm at most `‖a‖ C + ‖b‖` when `‖z‖ ≤ C`. For `M = 0` the quotient is `0` by Lean's convention
+`x / 0 = 0`. -/
+theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (hz : ‖z‖ ≤ C) :
+    ‖(a * z + b) / M‖ ≤ ‖a‖ * C + ‖b‖ := by
+  rw [norm_div, Complex.norm_natCast]
+  exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
+    (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
 
 end Complex
