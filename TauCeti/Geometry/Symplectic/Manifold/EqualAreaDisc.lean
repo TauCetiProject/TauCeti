@@ -148,7 +148,8 @@ theorem eval₂_mfderiv_discToSphere {a : ℝ} {z : ℂ} (hz : z ∈ ball (0 : �
   have hs : 0 < r ^ 2 - ‖x‖ ^ 2 := sub_pos.2 (pow_lt_pow_left₀ hx (norm_nonneg x) two_ne_zero)
   have hnu : ‖(OpenPartialHomeomorph.univBall (0 : ℝ²) r).symm x‖ ^ 2 =
       ‖x‖ ^ 2 / (r ^ 2 - ‖x‖ ^ 2) := by
-    rw [OpenPartialHomeomorph.univBall_zero_symm_apply hr0, norm_smul, mul_pow, norm_inv,
+    rw [OpenPartialHomeomorph.univBall_symm_apply hr0, dist_zero_right, vsub_eq_sub, sub_zero,
+      norm_smul, mul_pow, norm_inv,
       Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_pow, Real.sq_sqrt hs.le, inv_mul_eq_div]
   set u := (OpenPartialHomeomorph.univBall (0 : ℝ²) r).symm x
   have hu : 1 + u 0 ^ 2 + u 1 ^ 2 = r ^ 2 / (r ^ 2 - ‖x‖ ^ 2) := by

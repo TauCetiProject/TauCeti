@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 
 Mathlib's `OpenPartialHomeomorph.univBall 0 r` maps a real normed space onto its open ball of
 radius `r > 0`, and its inverse is `y ↦ y / √(r² - ‖y‖²)` on that ball
-(`OpenPartialHomeomorph.univBall_zero_symm_apply`). In a real inner product space this file
+(`OpenPartialHomeomorph.univBall_symm_apply`). In a real inner product space this file
 computes the derivative of the inverse,
 
 `D(y / √(r² - ‖y‖²)) v = v / √(r² - ‖y‖²) + ⟪y, v⟫ y / √(r² - ‖y‖²)³`
@@ -56,7 +56,7 @@ theorem fderiv_univBall_zero_symm_apply {r : ℝ} {y : E} (hy : ‖y‖ < r) (v 
   -- By the explicit formula, the inverse is the product of a scalar function and the identity.
   have hfun : ⇑(univBall (0 : E) r).symm =
       ((fun t : ℝ ↦ (√t)⁻¹) ∘ fun x : E ↦ r ^ 2 - ‖x‖ ^ 2) • id :=
-    funext (univBall_zero_symm_apply hr)
+    funext fun x ↦ by rw [univBall_symm_apply hr, dist_zero_right, vsub_eq_sub, sub_zero]; rfl
   rw [hfun, h.fderiv]
   simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
     ContinuousLinearMap.smulRight_apply, neg_apply, innerSL_apply_apply, Function.comp_apply, id_eq,
