@@ -212,6 +212,17 @@ theorem lift_rank_le_of_disjoint_ker [Ring 𝕜] {M : Type u} {N : Type v}
   apply (f.rangeRestrict.domRestrict V).lift_rank_le_of_injective
   simpa only [LinearMap.injective_domRestrict_iff, LinearMap.ker_rangeRestrict] using h
 
+/-- A submodule of rank greater than `n` contains a nonzero vector of the kernel of every linear
+map `f` of rank at most `n`. -/
+theorem exists_mem_ker_ne_zero_of_rank_lt [Ring 𝕜] {M : Type u} {N : Type v}
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    {V : Submodule 𝕜 M} {f : M →ₗ[𝕜] N} {n : ℕ} (hV : n < Module.rank 𝕜 V) (hf : f.rank ≤ n) :
+    ∃ x ∈ V, x ∈ LinearMap.ker f ∧ x ≠ 0 := by
+  by_contra! h
+  have hle := (lift_rank_le_of_disjoint_ker (disjoint_def.mpr h)).trans (Cardinal.lift_le.mpr hf)
+  rw [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] at hle
+  exact hle.not_gt hV
+
 /-- The rank of a product of free submodules is the sum of their ranks. -/
 theorem rank_prod [Semiring 𝕜] [StrongRankCondition 𝕜] {M : Type u} {N : Type v}
     [AddCommMonoid M] [Module 𝕜 M] [AddCommMonoid N] [Module 𝕜 N]
