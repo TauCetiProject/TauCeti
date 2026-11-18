@@ -271,10 +271,11 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
           map_add_left_eq_self, neg_add_eq_sub]
 
 /-- **Radon–Nikodym derivative under an invertible affine map.** The derivative of the image of
-an s-finite measure under `x ↦ c + A x`, relative to an additive Haar measure, is obtained by
-substituting the inverse affine map and multiplying by the reciprocal absolute determinant. -/
+a measure with a Lebesgue decomposition under `x ↦ c + A x`, relative to an additive Haar measure,
+is obtained by substituting the inverse affine map and multiplying by the reciprocal absolute
+determinant. -/
 theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[ℝ] E) (c : E)
-    (ν : Measure E) [SFinite ν] :
+    (ν : Measure E) [ν.HaveLebesgueDecomposition μ] :
     (ν.map fun x ↦ c + A x).rnDeriv μ =ᵐ[μ]
       fun y ↦ ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| *
         ν.rnDeriv μ (A.symm (y - c)) := by
