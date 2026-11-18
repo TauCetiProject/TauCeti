@@ -238,12 +238,12 @@ product of the canonical generators of the `det (f i)` (`LinearMap.detLineEquivO
 theorem detLinePiMapEquiv_detLineEquivOfBijective_symm_one
     (h : ∀ i, Even (finrank K (ker (f i)) + finrank K (N i ⧸ range (f i))))
     (hf : ∀ i, Function.Bijective (f i)) :
-    detLinePiMapEquiv f h ((detLineEquivOfBijective (bijective_piMap f hf)).symm 1) =
+    detLinePiMapEquiv f h ((detLineEquivOfBijective (Function.Bijective.piMap hf)).symm 1) =
       ⨂ₜ[K] i, (detLineEquivOfBijective (hf i)).symm 1 := by
   rw [← LinearEquiv.eq_symm_apply]
   refine (piMap f).detLineEquivProdDual.injective (Subtype.ext ?_)
   rw [coe_detLineEquivProdDual_detLinePiMapEquiv_symm_tprod f h _ (Fintype.equivFin ι).symm,
-    coe_detLineEquivProdDual_detLineEquivOfBijective_symm_one]
+    coe_detLineEquivProdDual_detLineEquivOfBijective_symm_one (piMap f) (.piMap hf)]
   simp [coe_detLineEquivProdDual_detLineEquivOfBijective_symm_one]
 
 end Pi

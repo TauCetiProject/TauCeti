@@ -52,11 +52,6 @@ theorem range_piMap : range (piMap f) = Submodule.pi Set.univ fun i ↦ range (f
   SetLike.coe_injective <| by
     simpa only [coe_range, coe_piMap, Submodule.coe_pi] using Set.range_piMap fun i ↦ ⇑(f i)
 
-/-- A coordinatewise map of bijective maps is bijective. -/
-theorem bijective_piMap (hf : ∀ i, Function.Bijective (f i)) : Function.Bijective (piMap f) := by
-  rw [coe_piMap]
-  exact Function.Bijective.piMap hf
-
 /-- **The kernel of a coordinatewise map** is the product of the kernels of its components. -/
 def kerPiMapEquiv : ker (piMap f) ≃ₗ[R] ∀ i, ker (f i) where
   toFun x i := ⟨x.1 i, (mem_ker_piMap f).1 x.2 i⟩
