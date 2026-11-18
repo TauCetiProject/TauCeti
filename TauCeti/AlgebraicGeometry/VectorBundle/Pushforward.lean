@@ -187,13 +187,6 @@ lemma pushforwardComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z)
         eqToHom (pushforward_obj_obj g ((pushforward f).obj E)).symm :=
   by rfl
 
-/-- Pullback of finite locally free sheaves commutes with inclusion into module sheaves. -/
-private noncomputable def pullbackCompιIso (f : X ⟶ Y) :
-    pullback f ⋙ (Scheme.Modules.isFiniteLocallyFree X).ι ≅
-      (Scheme.Modules.isFiniteLocallyFree Y).ι ⋙ Scheme.Modules.pullback f :=
-  NatIso.ofComponents (fun E ↦ eqToIso (pullback_obj_obj f E)) (fun φ ↦ by
-    simp [pullback_map_hom])
-
 /-- Pullback and finite-flat pushforward remain adjoint after restricting to finite locally free
 sheaves. -/
 noncomputable def pullbackPushforwardAdjunction (f : X ⟶ Y) [IsFinite f] [Flat f]
@@ -212,7 +205,9 @@ lemma pullbackPushforwardAdjunction_unit_app_hom (f : X ⟶ Y) [IsFinite f] [Fla
         (Scheme.Modules.pushforward f).map (eqToHom (pullback_obj_obj f E).symm) ≫
         eqToHom (pushforward_obj_obj f ((pullback f).obj E)).symm := by
   dsimp only [pullbackPushforwardAdjunction]
-  exact Adjunction.map_restrictFullyFaithful_unit_app
+  simpa only [Iso.symm_hom, pullbackCompιIso_inv_app, pushforwardCompιIso_inv_app,
+    ObjectProperty.ι_map, ObjectProperty.ι_obj] using
+    Adjunction.map_restrictFullyFaithful_unit_app
     (Scheme.Modules.pullbackPushforwardAdjunction f)
     (Scheme.Modules.isFiniteLocallyFree Y).fullyFaithfulι
     (Scheme.Modules.isFiniteLocallyFree X).fullyFaithfulι
@@ -227,7 +222,9 @@ lemma pullbackPushforwardAdjunction_counit_app_hom (f : X ⟶ Y) [IsFinite f] [F
         (Scheme.Modules.pullback f).map (eqToHom (pushforward_obj_obj f E)) ≫
         (Scheme.Modules.pullbackPushforwardAdjunction f).counit.app E.obj := by
   dsimp only [pullbackPushforwardAdjunction]
-  exact Adjunction.map_restrictFullyFaithful_counit_app
+  simpa only [Iso.symm_inv, pullbackCompιIso_hom_app, pushforwardCompιIso_hom_app,
+    ObjectProperty.ι_map, ObjectProperty.ι_obj] using
+    Adjunction.map_restrictFullyFaithful_counit_app
     (Scheme.Modules.pullbackPushforwardAdjunction f)
     (Scheme.Modules.isFiniteLocallyFree Y).fullyFaithfulι
     (Scheme.Modules.isFiniteLocallyFree X).fullyFaithfulι
