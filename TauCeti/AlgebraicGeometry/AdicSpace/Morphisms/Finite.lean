@@ -20,9 +20,11 @@ finite morphism of Huber pairs `φ : (A, A⁺) → (B, B⁺)` (`TauCeti.Huber.Pa
 
 Unlike the chart-local finiteness conditions (`TauCeti.PreAdicSpace.chartLocally`), which are
 local on the source, finiteness is local on the target: the whole preimage of `V` is required to be
-affinoid, and finiteness descends along open covers of the target. Huber states that the preimage
-of every open affinoid of `Y` is then affinoid and finite over it; that global form is not proved
-here.
+affinoid, and finiteness descends along open covers of the target. That the preimage of every open
+affinoid of `Y` is then affinoid and finite over it needs hypotheses on `Y`: Huber's standing class
+(1.1.1) (`TauCeti.Huber.IsHuberStandard`), or strongly noetherian complete Tate affinoids
+(Zavyalov, Theorem B.2.18). This is why, on general adic spaces, `IsFinite` is defined locally on
+the target.
 
 Over each such `V` a finite morphism is in particular the morphism induced by a morphism of Huber
 pairs topologically of finite type, so finite morphisms are locally of finite type. The preimage of
@@ -53,12 +55,20 @@ under isomorphisms of the source and of the target; so isomorphisms are finite
   identities are finite, and finiteness is invariant under isomorphisms of the source and of the
   target.
 
+## Implementation notes
+
+The definition, its descent along open covers (`IsFinite.of_iSup_eq_top`), the affinoid case and
+the isomorphism-invariance proofs are adapted from the target-local predicate
+`TauCeti.PreAdicSpace.IsClosedImmersion` (`PreAdicSpace/ClosedImmersion/Basic.lean`, including
+`IsClosedImmersion.respectsIso`, and `PreAdicSpace/ClosedImmersion/Local.lean`, including
+`IsClosedImmersion.of_iSup_eq_top`).
+
 ## References
 
 * R. Huber, *Étale cohomology of rigid analytic varieties and adic spaces*, Aspects of
   Mathematics E30 (1996), §1.4, (1.4.2) and (1.4.4).
 * B. Zavyalov, *Quotients of admissible formal schemes and adic spaces by finite groups*,
-  Appendix B.2, Definition B.2.12.
+  Appendix B.2, Definition B.2.12 and Theorem B.2.18.
 -/
 
 public section
@@ -240,20 +250,16 @@ theorem IsFinite.of_iSup_eq_top {f : X ⟶ Y} {ι : Type*} (V : ι → Opens Y.o
   have hr : Set.range ((X.obj.restrict U.isOpenEmbedding).ofRestrict U'.isOpenEmbedding ≫
       X.obj.ofRestrict U.isOpenEmbedding).base =
       Set.range (X.obj.ofRestrict ((Opens.map f.hom.base).obj V').isOpenEmbedding).base := by
+    have h := range_restrictPreimage_comp_eq_preimage_range (eV := Iso.refl _)
+      (eU := Iso.refl _) (q := f.hom.restrictPreimage (V i)) (by simp) W
+    simp only [Iso.refl_inv, Category.id_comp, IsOpenImmersion.range_ofRestrict_comp_base] at h ⊢
+    rw [h]
     ext x
     constructor
-    · rintro ⟨⟨z, hz⟩, rfl⟩
-      have hzW : (⟨f.hom.base z.1, z.2⟩ : Y.obj.restrict (V i).isOpenEmbedding) ∈ W := by
-        rw [← Hom.restrictPreimage_base_apply]
-        exact Opens.mem_map.mp hz
-      exact ⟨⟨z.1, ⟨⟨f.hom.base z.1, z.2⟩, hzW, rfl⟩⟩, rfl⟩
-    · rintro ⟨⟨x, z, hz, hzx⟩, rfl⟩
-      have hxV : f.hom.base x ∈ V i := hzx ▸ z.2
-      let x' : X.obj.restrict U.isOpenEmbedding := ⟨x, Opens.mem_map.mpr hxV⟩
-      refine ⟨⟨x', ?_⟩, rfl⟩
-      have heq : (f.hom.restrictPreimage (V i)).base x' = z :=
-        (f.hom.restrictPreimage_base_apply (V i) x').trans (Subtype.ext hzx.symm)
-      exact Opens.mem_map.mpr (heq.symm ▸ hz)
+    · rintro ⟨z, hz⟩
+      exact ⟨⟨x, show f.hom.base x ∈ V' from hz ▸ z.2⟩, rfl⟩
+    · rintro ⟨z, rfl⟩
+      exact ⟨⟨_, z.2⟩, rfl⟩
   let e := IsOpenImmersion.isoOfRangeEq
     ((X.obj.restrict U.isOpenEmbedding).ofRestrict U'.isOpenEmbedding ≫
       X.obj.ofRestrict U.isOpenEmbedding)
@@ -305,8 +311,9 @@ theorem isFinite_presentationLimitPreAdicSpaceComap {A : Type u} [CommRing A] [U
     hsheaf, restrictTopIso _,
     restrictIsoOfRangeEq _ _ (Opens.isOpenEmbedding ⊤) ?_ ≪≫ restrictTopIso _, ?_⟩
   · rw [Opens.map_top]
-  · rw [← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id, Iso.trans_hom, restrictTopIso_hom,
-      Category.assoc, restrictIsoOfRangeEq_hom_ofRestrict_assoc, ObjectProperty.homMk_hom]
+  · simp only [Iso.trans_hom, Category.assoc, restrictIsoOfRangeEq_hom_ofRestrict_assoc,
+      restrictTopIso_hom, ObjectProperty.homMk_hom]
+    simp [← restrictTopIso_hom]
 
 /-- Precomposing a finite morphism with an isomorphism gives a finite morphism: over the same
 neighbourhoods, `e` identifies the restrictions of the two sources. -/
@@ -329,8 +336,8 @@ private theorem IsFinite.iso_hom_comp {X' : AdicSpace.{u}} (e : X' ≅ X) {f : X
     inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ, hsheaf, eV,
     restrictIso e' _ ≪≫
       restrictIsoOfRangeEq _ (Opens.isOpenEmbedding _) (Opens.isOpenEmbedding _) hr ≪≫ eU, ?_⟩
-  rw [Iso.trans_hom, Iso.trans_hom, Category.assoc, Category.assoc, ← hfac,
-    restrictIsoOfRangeEq_hom_ofRestrict_assoc, restrictIso_hom_ofRestrict_assoc]
+  simp only [Iso.trans_hom, Category.assoc, ← hfac, restrictIsoOfRangeEq_hom_ofRestrict_assoc,
+    restrictIso_hom_ofRestrict_assoc]
   simp [e']
 
 /-- Postcomposing a finite morphism with an isomorphism `e : Y ≅ Y'` gives a finite morphism: `e`
