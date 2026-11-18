@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.List.Rotate
-
 import Mathlib.Data.List.Flatten
 import TauCeti.Data.List.Infix
 
@@ -25,9 +23,6 @@ group rests. Write `wⁿ` for the concatenation `(replicate n w).flatten` of `n`
   commute (`List.append_comm_of_prefix_flatten_replicate`); this is a weak form of the
   periodicity lemma of Fine and Wilf (`List.HasPeriod.gcd`). In particular `aᵐ = bⁿ` with
   `m ≠ 0` forces `a` and `b` to commute (`List.append_comm_of_flatten_replicate_eq`).
-* Rotating a power `wⁿ` gives the `n`-th power of the same rotation of `w`
-  (`List.rotate_flatten_replicate`), so a cyclic conjugate of a power is a power of a cyclic
-  conjugate (`List.exists_isRotated_flatten_replicate_of_append_eq`).
 
 ## References
 
@@ -109,29 +104,5 @@ theorem append_comm_of_flatten_replicate_eq {a b : List α} {m n : ℕ} (hm : m 
     have := Nat.le_mul_of_pos_left a.length (Nat.pos_of_ne_zero hm)
     have := Nat.le_mul_of_pos_left b.length hn
     lia
-
-/-- Rotating the power `wⁿ` by `k` gives the `n`-th power of the rotation of `w` by `k`. -/
-@[simp]
-theorem rotate_flatten_replicate (w : List α) (n k : ℕ) :
-    (replicate n w).flatten.rotate k = (replicate n (w.rotate k)).flatten := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [← rotate_rotate, ih, ← rotate_rotate]
-    -- It remains to rotate a power of `v := w.rotate k` by one letter.
-    rcases n with _ | n
-    · simp
-    obtain _ | ⟨c, v⟩ := w.rotate k
-    · simp
-    -- This is the identity `(c v)ⁿ c = c (v c)ⁿ`.
-    simpa [replicate_succ] using (append_flatten_map_append (replicate n v) [c]).symm
-
-/-- A cyclic rotation of a power is a power of a cyclic rotation: if `wⁿ = s ++ t`, then
-`t ++ s = w'ⁿ` for a cyclic rotation `w'` of `w`. -/
-theorem exists_isRotated_flatten_replicate_of_append_eq {w s t : List α} {n : ℕ}
-    (h : (replicate n w).flatten = s ++ t) : ∃ w' : List α, w' ~r w ∧
-      t ++ s = (replicate n w').flatten :=
-  ⟨w.rotate s.length, IsRotated.forall w _,
-    by rw [← rotate_append_length_eq, ← h, rotate_flatten_replicate]⟩
 
 end List
