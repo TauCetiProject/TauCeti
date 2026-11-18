@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+public import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Tactic.Module
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
@@ -28,13 +29,17 @@ on `‖A⁻¹ a' - B⁻¹ b'‖`, with `A = √(1 + ‖a‖²)` and `B = √(1 +
 The estimate rests on the fact that `t ↦ √(1 + t²)` is `1`-Lipschitz on the real line
 (`Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`).
 
+In a real inner product space, `⟪univUnitBall a, (√(1 + ‖a‖²))⁻¹ • x⟫ = (1 + ‖a‖²)⁻¹ ⟪a, x⟫`
+(`OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul`), which writes
+`(1 + ‖a‖²)⁻¹ ⟪a, x⟫` through `univUnitBall a` and a rescaling to which the estimates above apply.
+
 For `f` a complex polynomial, `univUnitBall ∘ f` is the section `exp(u₀) f` of the background
 amplitude `u₀ = -log (1 + ‖f‖²) / 2` used to construct plane vortices with prescribed zeros.
 -/
 
 public section
 
-open Metric
+open Metric InnerProductSpace
 
 namespace TauCeti
 
@@ -135,5 +140,13 @@ theorem norm_univUnitBall_sub_le_of_norm_sub_le {x y : E} {δ : ℝ}
   have hy := Real.one_add_div_two_le_sqrt_one_add_sq ‖y‖
   rw [div_le_iff₀ hB, norm_sub_rev]
   nlinarith
+
+/-- Pairing with `univUnitBall a` and rescaling the second vector by the same factor
+`(√(1 + ‖a‖²))⁻¹` turns the inner product with `a` into `(1 + ‖a‖²)⁻¹ ⟪a, x⟫`. -/
+theorem inner_univUnitBall_inv_sqrt_smul {F : Type*} [SeminormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (a x : F) :
+    ⟪univUnitBall a, (√(1 + ‖a‖ ^ 2))⁻¹ • x⟫_ℝ = (1 + ‖a‖ ^ 2)⁻¹ * ⟪a, x⟫_ℝ := by
+  rw [univUnitBall_apply, real_inner_smul_left, real_inner_smul_right, ← mul_assoc, ← mul_inv,
+    Real.mul_self_sqrt (by positivity)]
 
 end OpenPartialHomeomorph

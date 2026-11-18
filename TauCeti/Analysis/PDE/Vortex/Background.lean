@@ -290,6 +290,7 @@ theorem integrable_laplacian_backgroundAmplitude (P : Polynomial ℂ) :
 /-! ### The background section and the derivative of the background amplitude -/
 
 /-- `exp u₀ = (√(1 + ‖f‖²))⁻¹`. -/
+@[simp]
 theorem exp_backgroundAmplitude (f : ℂ → ℂ) (z : ℂ) :
     Real.exp (backgroundAmplitude f z) = (√(1 + ‖f z‖ ^ 2))⁻¹ := by
   rw [← Real.sqrt_inv, eq_comm, Real.sqrt_eq_iff_mul_self_eq_of_pos (Real.exp_pos _),
@@ -311,11 +312,7 @@ theorem hasFDerivAt_backgroundAmplitude {f' : ℂ →L[ℝ] ℂ} (hf : HasFDeriv
   · funext x
     rw [backgroundAmplitude_apply]
     ring
-  ext v
-  simp only [neg_smul, neg_apply, smul_apply, ContinuousLinearMap.comp_apply, coe_innerSL_apply,
-    Complex.inner, mul_re, conj_re, conj_im, mul_neg, sub_neg_eq_add, smul_eq_mul, one_div,
-    smul_add, nsmul_eq_mul, Nat.cast_ofNat, neg_inj]
-  ring
+  module
 
 /-- The derivative of the background amplitude of a real-differentiable `f`. -/
 theorem fderiv_backgroundAmplitude (hf : DifferentiableAt ℝ f z) :
@@ -331,13 +328,6 @@ theorem fderiv_backgroundAmplitude_apply (hf : DifferentiableAt ℂ f z) (v : �
   simp [smul_eq_mul]
 
 /-! ### Uniform convergence along converging polynomials -/
-
-/-- `(1 + ‖a‖²)⁻¹ ⟪a, x⟫ = ⟪univUnitBall a, (√(1 + ‖a‖²))⁻¹ • x⟫`. -/
-private theorem inv_one_add_sq_mul_inner_eq (a x : ℂ) :
-    (1 + ‖a‖ ^ 2)⁻¹ * ⟪a, x⟫_ℝ =
-      ⟪OpenPartialHomeomorph.univUnitBall a, (√(1 + ‖a‖ ^ 2))⁻¹ • x⟫_ℝ := by
-  rw [OpenPartialHomeomorph.univUnitBall_apply, real_inner_smul_left, real_inner_smul_right,
-    ← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by positivity)]
 
 /-- **The pointwise estimate behind the convergence of `Du₀`.** If `‖a - b‖ ≤ δ (1 + ‖b‖)`,
 `‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with `0 ≤ δ ≤ 1 / 2`, then the values
@@ -364,12 +354,12 @@ private theorem abs_inv_one_add_sq_mul_inner_sub_le {a b a' b' : ℂ} {δ C : �
     nlinarith
   have hk' := TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le hδ0 hδ hC ha ha' hb'
   -- Split the difference of inner products and estimate each term.
-  rw [inv_one_add_sq_mul_inner_eq, inv_one_add_sq_mul_inner_eq]
+  rw [← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul,
+    ← OpenPartialHomeomorph.inner_univUnitBall_inv_sqrt_smul]
   have hsplit : ⟪F a, A⁻¹ • (v * a')⟫_ℝ - ⟪F b, B⁻¹ • (v * b')⟫_ℝ =
       ⟪F a - F b, v * (A⁻¹ • a')⟫_ℝ + ⟪F b, v * (A⁻¹ • a' - B⁻¹ • b')⟫_ℝ := by
-    rw [inner_sub_left, mul_sub, inner_sub_right]
-    simp only [Complex.real_smul, F, A, B]
-    ring_nf
+    rw [inner_sub_left, mul_sub, inner_sub_right, mul_smul_comm, mul_smul_comm]
+    abel
   rw [hsplit]
   have e₁ := abs_real_inner_le_norm (F a - F b) (v * (A⁻¹ • a'))
   have e₂ := abs_real_inner_le_norm (F b) (v * (A⁻¹ • a' - B⁻¹ • b'))
@@ -529,6 +519,22 @@ private theorem tendstoUniformly_exp_smul_exp_backgroundAmplitude_smul {w : ι �
   rw [Real.norm_eq_abs] at hE'
   nlinarith [Real.exp_pos M]
 
+/-- The second section coordinate of the field reconstructed from `u + w` is
+`(exp w • exp u • f).re / 2`. -/
+private theorem amplitudeField_add_apply_two (u w : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
+    amplitudeField (fun z ↦ u z + w z) f z 2 =
+      2⁻¹ * (Real.exp (w z) • Real.exp (u z) • f z).re := by
+  rw [amplitudeField_apply_two, Real.exp_add, smul_re, smul_re, smul_eq_mul, smul_eq_mul]
+  ring
+
+/-- The third section coordinate of the field reconstructed from `u + w` is
+`(exp w • exp u • f).im / 2`. -/
+private theorem amplitudeField_add_apply_three (u w : ℂ → ℝ) (f : ℂ → ℂ) (z : ℂ) :
+    amplitudeField (fun z ↦ u z + w z) f z 3 =
+      2⁻¹ * (Real.exp (w z) • Real.exp (u z) • f z).im := by
+  rw [amplitudeField_apply_three, Real.exp_add, smul_im, smul_im, smul_eq_mul, smul_eq_mul]
+  ring
+
 /-- **Uniform convergence of the reconstructed fields.** Let the coefficients of the polynomials
 `P i` converge to those of `Q`, with eventually `deg P i ≤ deg Q`, and let `w i`, `w₀` be
 differentiable corrections such that `w i → w₀` and `D (w i) → D w₀` uniformly on the plane, with
@@ -562,23 +568,9 @@ theorem tendstoUniformly_amplitudeField_backgroundAmplitude_add {w : ι → ℂ 
       simp
     · funext z
       simp
-  · convert ((2⁻¹ : ℝ) • Complex.reCLM).uniformContinuous.comp_tendstoUniformly hS using 1
-    · funext i z
-      simp only [Fin.reduceFinMk, amplitudeField_apply_two, Fin.isValue, Real.exp_add,
-        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, reCLM_apply, smul_eq_mul]
-      ring
-    · funext z
-      simp only [Fin.reduceFinMk, amplitudeField_apply_two, Fin.isValue, Real.exp_add,
-        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, reCLM_apply, smul_eq_mul]
-      ring
-  · convert ((2⁻¹ : ℝ) • Complex.imCLM).uniformContinuous.comp_tendstoUniformly hS using 1
-    · funext i z
-      simp only [Fin.reduceFinMk, amplitudeField_apply_three, Fin.isValue, Real.exp_add,
-        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, imCLM_apply, smul_eq_mul]
-      ring
-    · funext z
-      simp only [Fin.reduceFinMk, amplitudeField_apply_three, Fin.isValue, Real.exp_add,
-        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, imCLM_apply, smul_eq_mul]
-      ring
+  · convert ((2⁻¹ : ℝ) • Complex.reCLM).uniformContinuous.comp_tendstoUniformly hS using 1 <;>
+      funext <;> exact amplitudeField_add_apply_two _ _ _ _
+  · convert ((2⁻¹ : ℝ) • Complex.imCLM).uniformContinuous.comp_tendstoUniformly hS using 1 <;>
+      funext <;> exact amplitudeField_add_apply_three _ _ _ _
 
 end TauCeti.Vortex
