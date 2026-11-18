@@ -221,7 +221,7 @@ quotient of that fibre by `H`-orbits is free. -/
 noncomputable instance instNormalizerQuotientSubgroupFiberOrbitIsCancelSMul
     [IsCancelSMul (deck p) (p ⁻¹' {b})] (H : Subgroup (deck p)) :
     IsCancelSMul (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
-  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsCancelSMul (X := p ⁻¹' {b}) H
+  Subgroup.isCancelSMul_normalizerQuotient_orbitRelQuotient (X := p ⁻¹' {b}) H
 
 /-- For a preconnected covering map, the descended `N(H) / H` action on every `H`-fibre
 quotient is free. -/
