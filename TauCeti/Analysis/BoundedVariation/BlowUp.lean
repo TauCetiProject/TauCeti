@@ -95,6 +95,8 @@ perimeter measure `|Dχ_s|` at `x`.
   and the limit is always the same half-space.
 * `TauCeti.hasDensityAt_of_mem_reducedBoundary`: in dimension `n ≥ 2`, `s` has density one half at
   every point of its reduced boundary, the density of the half-space at the origin.
+* `TauCeti.perimeter_setOf_inner_lt_le_liminf`: in dimension `n ≥ 2`, by lower semicontinuity,
+  `P({y | ⟪y, ν⟫ < 0}; V) ≤ liminf_{r → 0⁺} P(s_{x,r}; V)` in every bounded open set `V`.
 
 * `TauCeti.tendsto_variationMeasure_closedBall_div` and `TauCeti.tendsto_perimeter_ball_div`:
   **the density of the perimeter measure.** In dimension `n ≥ 2`,
@@ -762,6 +764,19 @@ theorem hasDensityAt_of_mem_reducedBoundary (hn : 2 ≤ finrank ℝ E)
 
 /-! ### The density of the perimeter measure at the reduced boundary -/
 
+/-- **Lower semicontinuity of the perimeter at the tangent half-space.** At a point `x` of the
+reduced boundary, in dimension `n ≥ 2`, the blow-ups `s_{x,r}` converge to the half-space
+`{y | ⟪y, ν⟫ < 0}`, where `ν = ν_s x`, so in every bounded open set `V`,
+
+`P({y | ⟪y, ν⟫ < 0}; V) ≤ liminf_{r → 0⁺} P(s_{x,r}; V)`. -/
+theorem perimeter_setOf_inner_lt_le_liminf (hn : 2 ≤ finrank ℝ E)
+    (hx : x ∈ reducedBoundary μ Ω s) {V : Opens E} (hV : Bornology.IsBounded (V : Set E)) :
+    perimeter μ V {y | ⟪y, outerNormal μ Ω s x⟫ < 0} ≤
+      liminf (fun r : ℝ => perimeter μ V ((fun y => x + r • y) ⁻¹' s)) (𝓝[>] 0) :=
+  perimeter_le_liminf_of_tendsto_measure_symmDiff_inter hx (r := fun r => r)
+    tendsto_id (measurableSet_lt (by fun_prop) measurable_const).nullMeasurableSet
+    (fun _ hK => tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter hn hx hK) hV
+
 /-- The lower bound in the density of the perimeter: by lower semicontinuity of the perimeter
 along the blow-ups, which converge to the half-space `{y | ⟪y, ν⟫ < 0}`,
 
@@ -771,10 +786,8 @@ private theorem perimeter_ball_setOf_inner_lt_le_liminf (hn : 2 ≤ finrank ℝ 
     perimeter μ ⟨ball 0 1, isOpen_ball⟩ {y | ⟪y, outerNormal μ Ω s x⟫ < 0} ≤
       liminf (fun r => perimeter μ ⟨ball x r, isOpen_ball⟩ s /
         ENNReal.ofReal (r ^ (finrank ℝ E - 1))) (𝓝[>] 0) :=
-  (perimeter_le_liminf_of_tendsto_measure_symmDiff_inter hx (r := fun r => r)
-    tendsto_id (measurableSet_lt (by fun_prop) measurable_const).nullMeasurableSet
-    (fun _ hK => tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter hn hx hK)
-    isBounded_ball).trans_eq (liminf_congr (eventually_nhdsWithin_of_forall fun _ hr => by
+  (perimeter_setOf_inner_lt_le_liminf hn hx isBounded_ball).trans_eq
+    (liminf_congr (eventually_nhdsWithin_of_forall fun _ hr => by
       rw [perimeter_ball_zero_preimage_add_smul_eq_div, abs_of_pos hr, mul_one]))
 
 /-- **The perimeter measure of small balls is bounded by the blow-up pairings.** Let `φ` be a test

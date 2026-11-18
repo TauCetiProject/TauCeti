@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.BlowUp
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 import TauCeti.Analysis.BoundedVariation.Dilation
 import TauCeti.Analysis.BoundedVariation.Hyperplane
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.Topology.MetricSpace.Thickening
@@ -134,15 +135,6 @@ private theorem variationMeasure_preimage_singleton_eq_zero (hn : 2 ≤ finrank 
 
 /-! ### Rescaled sets near a point of the reduced boundary -/
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- For `r > 0`, the rescaled copy `{z | r⁻¹ • (z - x) ∈ ball 0 R}` of `ball 0 R` is
-`ball x (r * R)`. -/
-private theorem preimage_inv_smul_sub_ball_zero {r : ℝ} (hr : 0 < r) (R : ℝ) :
-    (fun z => r⁻¹ • (z - x)) ⁻¹' ball (0 : E) R = ball x (r * R) := by
-  ext z
-  rw [mem_preimage, mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hr.le,
-    inv_mul_lt_iff₀ hr, mem_ball, dist_eq_norm]
-
 /-- At a point `x` of the reduced boundary, let `r > 0` with `ball x (r * R) ⊆ Ω`. For an open set
 `V ⊆ ball 0 R`, the perimeter measure of the rescaled copy `{z | r⁻¹ • (z - x) ∈ V}` of `V` is
 `r ^ (n - 1)` times the perimeter in `V` of the blow-up `(fun y => x + r • y) ⁻¹' s`. -/
@@ -161,7 +153,7 @@ private theorem variationMeasure_preimage_eq_mul_perimeter (hx : x ∈ reducedBo
   let W : Opens E := Opens.comap ⟨fun z => r⁻¹ • (z - x), by fun_prop⟩ V
   have hW : (W : Set E) = (fun z => r⁻¹ • (z - x)) ⁻¹' (V : Set E) := Opens.coe_comap _ _
   have hWΩ : W ≤ Ω := fun z hz => hrR <| by
-    rw [← preimage_inv_smul_sub_ball_zero hr R]
+    rw [← preimage_inv_smul_sub_ball_zero hr x R]
     exact preimage_mono hV (by rwa [← hW])
   have hVW : Opens.comap ⟨fun y => x + r • y, by fun_prop⟩ W = V := by
     ext y
@@ -188,9 +180,7 @@ private theorem eventually_mul_le_variationMeasure_preimage (hn : 2 ≤ finrank 
   obtain ⟨R, hR, hVR⟩ := hV.subset_ball_lt 0 0
   obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
   -- The perimeter of the limiting half-space in `V` is `Hⁿ⁻¹(V ∩ ν⊥)`.
-  have hlim := perimeter_le_liminf_of_tendsto_measure_symmDiff_inter hx (r := fun r => r)
-    tendsto_id (measurableSet_lt (by fun_prop) measurable_const).nullMeasurableSet
-    (fun _ hK => tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter hn hx hK) hV
+  have hlim := perimeter_setOf_inner_lt_le_liminf hn hx hV
   rw [perimeter_setOf_inner_lt (norm_outerNormal hx) 0] at hlim
   filter_upwards [eventually_lt_of_lt_liminf (hb.trans_le hlim),
     Ioo_mem_nhdsGT (div_pos hε hR)] with r hb' hr
@@ -204,17 +194,6 @@ private theorem measurableSet_preimage_inv_smul_sub {U : Set E} (hU : Measurable
     MeasurableSet (((↑) : Ω → E) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' U)) :=
   (hU.preimage (by fun_prop)).preimage measurable_subtype_coe
 
-/-- The part of the hyperplane `ν⊥` in `ball 0 R`, for a unit vector `ν` and `R > 0`, has
-`Hⁿ⁻¹` measure `ω_{n-1} R ^ (n - 1)`. -/
-private theorem euclideanHausdorffMeasure_ball_inter_setOf_inner_eq_zero {ν : E} (hν : ‖ν‖ = 1)
-    {R : ℝ} (hR : 0 < R) :
-    μHE[finrank ℝ E - 1] (ball (0 : E) R ∩ {y | ⟪y, ν⟫ = 0}) =
-      ENNReal.ofReal (R ^ (finrank ℝ E - 1)) *
-        volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ E - 1))) 1) := by
-  have h := perimeter_ball_setOf_inner_lt hν (0 : E) hR
-  simp only [inner_zero_left] at h
-  rwa [perimeter_setOf_inner_lt hν 0, ← ENNReal.ofReal_pow hR.le] at h
-
 /-- At a point `x` of the reduced boundary with outer normal `ν`, in dimension `n ≥ 2`, for `R > 0`
 and `δ > 0`, the rescaled ball `{z | r⁻¹ • (z - x) ∈ ball 0 R}` has perimeter measure at most
 `(Hⁿ⁻¹(ball 0 R ∩ ν⊥) + δ) r ^ (n - 1)` for all small `r > 0`, by the density of the perimeter
@@ -225,7 +204,8 @@ private theorem eventually_variationMeasure_preimage_ball_le (hn : 2 ≤ finrank
         ((↑) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' ball 0 R)) ≤
       ENNReal.ofReal (r ^ (finrank ℝ E - 1)) *
         (μHE[finrank ℝ E - 1] (ball 0 R ∩ {y | ⟪y, outerNormal volume Ω s x⟫ = 0}) + δ) := by
-  have ha := euclideanHausdorffMeasure_ball_inter_setOf_inner_eq_zero (norm_outerNormal hx) hR
+  have ha := euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (norm_outerNormal hx) (0 : E) hR
+  rw [inner_zero_left, ← ENNReal.ofReal_pow hR.le] at ha
   set k := finrank ℝ E - 1
   set a := μHE[k] (ball (0 : E) R ∩ {y | ⟪y, outerNormal volume Ω s x⟫ = 0})
   have hatop : a ≠ ∞ := by
@@ -248,7 +228,7 @@ private theorem eventually_variationMeasure_preimage_ball_le (hn : 2 ≤ finrank
   -- `c ω_{n-1} (r R) ^ (n - 1) = c a r ^ (n - 1)`.
   have hball : ((↑) : Ω → E) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' ball 0 R) ⊆
       (↑) ⁻¹' closedBall x (r * R) := by
-    rw [preimage_inv_smul_sub_ball_zero hr R]
+    rw [preimage_inv_smul_sub_ball_zero hr x R]
     exact preimage_mono ball_subset_closedBall
   have hvol : volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) (r * R)) =
       ENNReal.ofReal (r ^ k) * a := by
@@ -288,8 +268,10 @@ private theorem eventually_variationMeasure_preimage_le (hn : 2 ≤ finrank ℝ 
       disjoint_sdiff_left.mono inter_subset_left inter_subset_left
     rw [← hVC, measure_union hdisj (hC.measurableSet.inter hP)]
   have hatop : μHE[k] (ball (0 : E) R ∩ P) ≠ ∞ := by
-    rw [euclideanHausdorffMeasure_ball_inter_setOf_inner_eq_zero (norm_outerNormal hx) hR]
-    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne
+    have h := euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (norm_outerNormal hx) (0 : E) hR
+    rw [inner_zero_left] at h
+    rw [h]
+    exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.ofReal_ne_top) measure_ball_lt_top.ne
   set b := μHE[k] ((V : Set E) ∩ P)
   set m := μHE[k] (C ∩ P)
   -- A lower bound `b'` for the rescaled `V`, within `δ / 2` of `b`.

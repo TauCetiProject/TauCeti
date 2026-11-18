@@ -58,7 +58,9 @@ vector `ν` of a finite-dimensional real inner product space of dimension `n`, t
 `μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of the
 orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
 (`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
-are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`), and the isodiametric
+are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`), the disc cut from the
+hyperplane by a ball of radius `r` centred on it has measure `ω_{n-1} r ^ (n - 1)`
+(`TauCeti.euclideanHausdorffMeasure_ball_inter_setOf_inner_eq`), and the isodiametric
 inequality holds on the hyperplane (`TauCeti.euclideanHausdorffMeasure_inter_setOf_inner_eq_le`).
 
 ## References
@@ -466,6 +468,44 @@ theorem euclideanHausdorffMeasure_inter_setOf_inner_eq_le (hν : ‖ν‖ = 1) (
       Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0]
   have h := S.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul t
   rwa [hS, hdim] at h
+
+/-- **Hausdorff measure of a disc in a hyperplane.** For a unit vector `ν` of a space of dimension
+`n` and `r > 0`, the part of the hyperplane `{y | ⟪y, ν⟫ = ⟪x, ν⟫}` through `x` lying in the ball
+`B(x, r)` has `μHE[n - 1]` measure `ω_{n-1} r ^ (n - 1)`, where `ω_{n-1}` is the volume of the unit
+ball of `EuclideanSpace ℝ (Fin (n - 1))`. -/
+theorem euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (hν : ‖ν‖ = 1) (x : F) {r : ℝ}
+    (hr : 0 < r) :
+    μHE[finrank ℝ F - 1] (Metric.ball x r ∩ {y | ⟪y, ν⟫ = ⟪x, ν⟫}) =
+      ENNReal.ofReal r ^ (finrank ℝ F - 1) *
+        volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
+  set c := ⟪x, ν⟫
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
+  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
+  -- The point `x` is `c • ν + x₀` with `x₀ ∈ (ℝ ∙ ν)ᗮ`, so the part of the hyperplane in the
+  -- ball is the image of the ball of radius `r` about `x₀` in `(ℝ ∙ ν)ᗮ`.
+  have hx₀ : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
+    rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
+      real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
+    ring
+  have hι := isometry_smul_add_coe (ν := ν) c
+  have hpre : (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) ⁻¹' Metric.ball x r =
+      Metric.ball ⟨x - c • ν, hx₀⟩ r := by
+    convert hι.preimage_ball ⟨x - c • ν, hx₀⟩ r
+    simp
+  -- An orthonormal basis identifies `(ℝ ∙ ν)ᗮ` with `ℝ^(n-1)`, preserving volume and unit balls.
+  have hball : volume (Metric.ball (0 : (ℝ ∙ ν)ᗮ) 1) =
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
+    let e := ((stdOrthonormalBasis ℝ (ℝ ∙ ν)ᗮ).reindex (finCongr
+      (Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0))).repr
+    rw [← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
+      e.preimage_ball, map_zero]
+  rw [← Measure.restrict_apply' (measurableSet_eq_fun (by fun_prop) measurable_const),
+    euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    Measure.map_apply hι.continuous.measurable measurableSet_ball, hpre,
+    Measure.addHaar_ball_of_pos _ _ hr,
+    Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
+    ENNReal.ofReal_pow hr.le, hball]
 
 /-- Integrals over the hyperplane `{x | ⟪x, ν⟫ = c}` against Hausdorff measure are integrals over
 `(ℝ ∙ ν)ᗮ` against Lebesgue measure. -/
