@@ -41,9 +41,10 @@ the product of its local sup norms over the infinite places and `S₀`.
 
 In the proof of the Subspace Theorem this bound holds at every level, without any hypothesis on
 the weight of `c`. It is the upper half of the two-sided estimate for the height of a hyperplane
-`V(Q)` (`dim V(Q) = #ι - 1`), and, together with Northcott's theorem for subspaces, it leaves only
-finitely many candidate subspaces `V(Q)` at bounded levels. The constant does not depend on `c`,
-so the bound is uniform over families of exponents moving with the level.
+`V(Q)` (`dim V(Q) = #ι - 1`). For exponent families whose weight `W` stays bounded (for instance a
+fixed `c`), together with Northcott's theorem for subspaces, it leaves only finitely many candidate
+subspaces `V(Q)` at bounded levels. The constant does not depend on `c`, so the bound is uniform
+over families of exponents moving with the level.
 
 ## Main results
 
