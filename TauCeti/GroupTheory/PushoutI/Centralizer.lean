@@ -257,18 +257,22 @@ private def reverse (A : Axis φ) : Axis φ where
   r_pos := A.r_pos
   isLetter m := (A.isLetter _).inv
   ne m := by
+    have hm : -1 - (m + 1) + 1 = -1 - m := by ring
     have := A.ne (-1 - (m + 1))
-    rw [show -1 - (m + 1) + 1 = -1 - m by ring] at this
+    rw [hm] at this
     exact this.symm
   periodic m := by
+    have hm : -1 - (m + A.r) + A.r = -1 - m := by ring
     have := A.periodic (-1 - (m + A.r))
-    rw [show -1 - (m + A.r) + A.r = -1 - m by ring] at this
+    rw [hm] at this
     simp [this]
   P_zero := by simp [A.P_zero]
   P_succ m := by
+    have hm : -1 - m + 1 = -m := by ring
+    have hm' : -(m + 1) = -1 - m := by ring
     have := A.P_succ (-1 - m)
-    rw [show -1 - m + 1 = -m by ring] at this
-    rw [this, show -(m + 1) = -1 - m by ring, mul_inv_cancel_right]
+    rw [hm] at this
+    rw [this, hm', mul_inv_cancel_right]
 
 /-- The letters `ℓ a, …, ℓ (a + k - 1)`. -/
 private def seg (A : Axis φ) (a : ℤ) : ℕ → List (Bool × PushoutI φ)
@@ -321,10 +325,12 @@ private theorem P_add_r (A : Axis φ) (m : ℤ) : A.P (m + A.r) = A.P A.r * A.P 
   | succ m ih =>
     rw [add_right_comm, A.P_succ, ih, A.P_succ, A.periodic, mul_assoc]
   | pred m ih =>
+    have hm : -(m : ℤ) - 1 + A.r + 1 = -m + A.r := by ring
+    have hm' : -(m : ℤ) - 1 + 1 = -m := by ring
     have h1 := A.P_succ (-(m : ℤ) - 1 + A.r)
     have h2 := A.P_succ (-(m : ℤ) - 1)
-    rw [show -(m : ℤ) - 1 + A.r + 1 = -m + A.r by ring, A.periodic] at h1
-    rw [show -(m : ℤ) - 1 + 1 = -m by ring] at h2
+    rw [hm, A.periodic] at h1
+    rw [hm'] at h2
     rw [ih, h2, ← mul_assoc] at h1
     exact (mul_right_cancel h1).symm
 
@@ -355,8 +361,9 @@ private theorem isRed_conj_seg (A : Axis φ) {j : Bool} {e : PushoutI φ} (he : 
   have hlast : (A.ℓ (1 + r')).1 ≠ j := by
     have h1 := A.ne (1 + r')
     have h2 := A.periodic 0
+    have hr : (1 : ℤ) + r' + 1 = ((r' + 2 : ℕ) : ℤ) := by push_cast; ring
     rw [zero_add, hr'] at h2
-    rw [show (1 : ℤ) + r' + 1 = ((r' + 2 : ℕ) : ℤ) by push_cast; ring, h2] at h1
+    rw [hr, h2] at h1
     exact hj ▸ h1.symm
   refine isRed_cons.2 ⟨⟨mul_mem (inv_mem he.1) (hj ▸ (A.isLetter 0).1), fun h => hd ?_⟩, ?_, ?_⟩
   · simpa using inv_mem h
@@ -616,9 +623,9 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
     simp only [List.getD_eq_getElem?_getD]
     obtain h | h : m % Z.length + 1 < Z.length ∨ m % Z.length + 1 = Z.length := by omega
     · have hj : (m % Z.length).toNat + 1 < Z.length := by omega
-      rw [Int.add_one_emod_of_emod_add_one_lt h,
-        show (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 by omega,
-        List.getElem?_eq_getElem hj, List.getElem?_eq_getElem hlt]
+      have hk : (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 := by omega
+      rw [Int.add_one_emod_of_emod_add_one_lt h, hk, List.getElem?_eq_getElem hj,
+        List.getElem?_eq_getElem hlt]
       exact (hZ.1.getElem _ hj).symm
     · rw [Int.add_one_emod_of_emod_add_one_eq h, Int.toNat_zero, List.getElem?_eq_getElem hn,
         List.getElem?_eq_getElem hlt]
@@ -634,8 +641,8 @@ private def ofList (Z : List (Bool × PushoutI φ)) (hZ : IsRed Z) (hne : Z ≠ 
     have h1 := Int.emod_lt_of_pos m (b := Z.length) (by omega)
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt, Option.getD_some]
     obtain h | h : m % Z.length + 1 < Z.length ∨ m % Z.length + 1 = Z.length := by omega
-    · rw [Int.add_one_ediv_of_emod_add_one_lt h, Int.add_one_emod_of_emod_add_one_lt h,
-        show (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 by omega,
+    · have hk : (m % Z.length + 1).toNat = (m % Z.length).toNat + 1 := by omega
+      rw [Int.add_one_ediv_of_emod_add_one_lt h, Int.add_one_emod_of_emod_add_one_lt h, hk,
         lprod_take_add_one _ _ hlt, mul_assoc]
     · have hZ : lprod Z = lprod (Z.take ((m % Z.length).toNat + 1)) := by
         rw [List.take_of_length_le (by omega)]

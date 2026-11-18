@@ -38,7 +38,8 @@ theorem forall_eq_add_or_forall_eq_sub_of_injective_of_step {σ : ℤ → ℤ} (
     (∀ m, σ m = σ 0 + m) ∨ ∀ m, σ m = σ 0 - m := by
   -- An injective sequence of steps `±1` never turns back, so its increments are constant.
   have hper : Periodic (fun m => σ (m + 1) - σ m) 1 := fun m => by
-    have := hinj.ne (show m + 1 + 1 ≠ m by omega)
+    have hm : m + 1 + 1 ≠ m := by omega
+    have := hinj.ne hm
     rcases hstep m with h | h <;> rcases hstep (m + 1) with h' | h' <;> dsimp only <;> omega
   have hd (m : ℤ) : σ (m + 1) = σ m + (σ 1 - σ 0) := by
     have := hper.int_mul_eq m
