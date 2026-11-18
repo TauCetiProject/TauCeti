@@ -129,6 +129,7 @@ private lemma isStrictlyLE_orderedCechComplex [LinearOrder ι] [Finite ι] :
 variable [Finite ι] (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U))
   (hcover : ⨆ i, U i = ⊤)
 
+omit [Finite ι] in
 include hU hcover in
 /-- The cohomology of the ordered Čech complex of a quasi-coherent sheaf, for a finite cover with
 affine nonempty finite intersections, is the cohomology of the sheaf. -/
