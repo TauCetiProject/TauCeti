@@ -77,7 +77,8 @@ gives a set of measure one.
   `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
   ball or to the open ball of the same radius gives the same measure.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
-  with the measure of a closed ball of the same radius, agrees with it up to a null set.
+  with the measure of a closed ball of the same radius, agrees with the containing closed ball up
+  to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
   measure as by radius.
 * `MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq`: every finite nonnegative value is the
@@ -420,7 +421,8 @@ theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_
   Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr)
 
 /-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
-of radius `r`, agrees up to a null set with the ball containing it. -/
+of radius `r`, agrees up to a null set with the closed ball of radius `r` about `c` containing
+it. -/
 theorem ae_eq_closedBall_of_subset_of_measure_eq
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure] {s : Set E}

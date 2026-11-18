@@ -119,7 +119,8 @@ for set and probability integrals.
   `((f - l)⁺)²` of a function `f ≤ M` by `(M - l)²` times the measure of `{l ≤ f}`, which is
   assumed to be finite.
 * `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
-  within `δ` of `M`, then `f` comes within `δ / μ B` of `M` on every set `B` of positive mass.
+  within `δ` of `M`, then every set `B` of positive mass contains a point where `f` exceeds
+  `M - δ / μ B`.
 
 ## Uniformly bounded centers
 
@@ -563,8 +564,9 @@ theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω]
     _ = (M - l) ^ 2 * μ.real (toMeasurable μ {x | l ≤ f x}) := by
         rw [integral_indicator_const _ hT, smul_eq_mul, mul_comm]
 
-/-- On a probability space, let `f ≤ M` almost everywhere have integral within `δ` of `M`. Then on
-every set `B` of positive mass, `f` comes within `δ / μ B` of `M` somewhere. -/
+/-- On a probability space, let `f ≤ M` almost everywhere have integral within `δ` of `M`. Then
+every set `B` of positive mass contains a point `x` with `M - δ / μ B < f x`. Only this lower bound
+is stated: the point may lie in the null set where `f > M`. -/
 theorem exists_mem_sub_div_lt_of_sub_lt_integral {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → ℝ} {M δ : ℝ} (hf : Integrable f μ)
     (hfM : ∀ᵐ x ∂μ, f x ≤ M) (hδ : M - δ < ∫ x, f x ∂μ) {B : Set Ω}
