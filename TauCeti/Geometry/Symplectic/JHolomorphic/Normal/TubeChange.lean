@@ -157,11 +157,9 @@ private theorem integral_fderiv_snd_eq {g : E × N → E × N} {Ω : Set (E × N
     (hg : ContDiffOn ℝ 1 g Ω) {q : ℝ × (E × N)} (hq : q ∈ normalSegmentDomain Ω) :
     ∫ t in (0 : ℝ)..1, (fderiv ℝ g (q.2.1, t • q.1 • q.2.2) (0, q.2.2)).2 =
       ∫ t in (0 : ℝ)..1, fderiv ℝ (fun x ↦ (g x).2) (q.2.1, t • q.1 • q.2.2) (0, q.2.2) := by
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [uIcc_of_le zero_le_one] at ht
-  have h := ((hg.contDiffAt (hΩ.mem_nhds (mem_normalSegmentDomain.1 hq t ht))).differentiableAt
-    one_ne_zero).hasFDerivAt.snd
-  simp [h.fderiv]
+  simpa only [ContinuousLinearMap.coe_snd'] using
+    integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain
+      (ContinuousLinearMap.snd ℝ E N) hΩ hg hq
 
 /-- The Hadamard form of the normal dilation is `Cⁿ` in `(a, z, W)` where the normal segments lie
 in an open set on which `g` is `C^(n+1)`. -/
@@ -332,14 +330,11 @@ theorem tendsto_sSup_norm_snd_div_sSup_norm_snd {K : Set E} (hK : IsCompact K)
     (hgδ p.1 (hSK i p hp) p.2 ((hle p hp).trans_lt hiδ)).trans
       (mul_le_mul_of_nonneg_left (hle p hp) (by positivity))
   -- Each normal distance in one tube is within `ε a / 2` of that in the other.
-  have hb : b ≤ a + ε / 2 * a := csSup_le (hne.image _) fun _ ⟨p, hp, hbp⟩ ↦ by
-    rw [← hbp]
+  have hup : ∀ p ∈ S i, ‖(g p).2‖ ≤ a + ε / 2 * a := fun p hp ↦ by
     linarith [(abs_le.1 (hpt p hp)).2, hle p hp]
+  have hbdd' : BddAbove ((fun p ↦ ‖(g p).2‖) '' S i) := ⟨_, forall_mem_image.2 hup⟩
+  have hb : b ≤ a + ε / 2 * a := csSup_le (hne.image _) (forall_mem_image.2 hup)
   have ha : a ≤ b + ε / 2 * a := csSup_le (hne.image _) fun _ ⟨p, hp, hap⟩ ↦ by
-    have hbdd' : BddAbove ((fun p ↦ ‖(g p).2‖) '' S i) :=
-      ⟨a + ε / 2 * a, fun _ ⟨q, hq, hbq⟩ ↦ by
-        rw [← hbq]
-        linarith [(abs_le.1 (hpt q hq)).2, hle q hq]⟩
     rw [← hap]
     linarith [(abs_le.1 (hpt p hp)).1, le_csSup hbdd' (mem_image_of_mem _ hp)]
   rw [Real.dist_eq, div_sub_one hi.ne', abs_div, abs_of_pos hi, div_lt_iff₀ hi, abs_lt]

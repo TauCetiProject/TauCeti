@@ -62,8 +62,10 @@ tubular map defined on a disk bundle. This file proves:
   `TauCeti.normalSegmentDomain Ω` of parameters whose normal segments from `(z, 0)` to `(z, a W)`
   lie in `Ω`. Hadamard's lemma along these segments is stated for any function on `Ω`
   (`TauCeti.contDiffOn_integral_fderiv_normalSegmentDomain`,
-  `TauCeti.inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain`), so that it also serves
-  the normal dilations of maps. These statements take `N` complete, so that the average in
+  `TauCeti.inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain`, and
+  `TauCeti.integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain` to pass a fixed
+  linear map such as a block projection through the average), so that it also serves the normal
+  dilations of maps. These statements take `N` complete, so that the average in
   Hadamard's lemma is a Bochner integral;
 * `J_N(z, W)` squares to `-1` when `J` is differentiable at `(z, 0)`, squares to `-1` near
   `(z, 0)`, and `J(z, 0)` preserves `E × {0}`
@@ -457,6 +459,18 @@ theorem inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain [CompleteSpac
   simp only [one_smul, zero_smul, intervalIntegral.integral_smul] at hI
   rw [← hI, inv_smul_smul₀ ha]
 
+/-- On `normalSegmentDomain Ω`, a fixed continuous linear map `L` commutes with the average normal
+derivative of a function `f` that is `C¹` on the open set `Ω`. -/
+theorem integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain {H : Type*}
+    [NormedAddCommGroup H] [NormedSpace ℝ H] (L : G →L[ℝ] H) {f : E × N → G} {Ω : Set (E × N)}
+    (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 f Ω) {q : ℝ × (E × N)} (hq : q ∈ normalSegmentDomain Ω) :
+    ∫ t in (0 : ℝ)..1, L (fderiv ℝ f (q.2.1, t • q.1 • q.2.2) (0, q.2.2)) =
+      ∫ t in (0 : ℝ)..1, fderiv ℝ (fun x ↦ L (f x)) (q.2.1, t • q.1 • q.2.2) (0, q.2.2) := by
+  refine intervalIntegral.integral_congr fun t ht ↦ ?_
+  rw [uIcc_of_le zero_le_one] at ht
+  have hd := (hf.contDiffAt (hΩ.mem_nhds (hq t ht))).differentiableAt one_ne_zero
+  rw [← Function.comp_def, L.fderiv_comp_left hd, ContinuousLinearMap.comp_apply]
+
 end HadamardNormalSegment
 
 /-- The normal dilation of `J` at `(a, p)`, written with Hadamard's lemma so that it is defined
@@ -495,12 +509,12 @@ private theorem integral_fderiv_blockNE_eq {J : E × N → E × N →L[ℝ] E ×
         fderiv ℝ J (q.2.1, t • q.1 • q.2.2) (0, q.2.2) ∘L ContinuousLinearMap.inl ℝ E N =
       ∫ t in (0 : ℝ)..1, fderiv ℝ (fun x ↦ ContinuousLinearMap.snd ℝ E N ∘L J x ∘L
         ContinuousLinearMap.inl ℝ E N) (q.2.1, t • q.1 • q.2.2) (0, q.2.2) := by
-  refine intervalIntegral.integral_congr fun t ht ↦ ?_
-  rw [uIcc_of_le zero_le_one] at ht
-  have hd := ((hJ.contDiffAt (hΩ.mem_nhds (hq t ht))).differentiableAt one_ne_zero).hasFDerivAt
-  have h := (hasFDerivAt_const (ContinuousLinearMap.snd ℝ E N) _).clm_comp
-    (hd.clm_comp (hasFDerivAt_const (ContinuousLinearMap.inl ℝ E N) _))
-  simp [h.fderiv]
+  have h := integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain
+    ((ContinuousLinearMap.compL ℝ E (E × N) N (ContinuousLinearMap.snd ℝ E N)).comp
+      ((ContinuousLinearMap.compL ℝ E (E × N) (E × N)).flip (ContinuousLinearMap.inl ℝ E N)))
+    hΩ hJ hq
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.compL_apply] using h
 
 /-- The Hadamard form of the normal dilation is `Cⁿ` in `(a, z, W)` where the segments lie in an
 open set on which `J` is `C^(n+1)`. -/
