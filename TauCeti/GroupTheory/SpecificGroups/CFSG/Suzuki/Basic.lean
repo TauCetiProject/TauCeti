@@ -39,7 +39,7 @@ than on a separately tabulated field order.
 
 ## The simple-root-subgroup action
 
-What is recorded of `τ` is its action on the numbered simple root subgroups:
+What is recorded of `τ` is its action on both signs of the numbered simple root subgroups:
 
 ```text
 τ (x_{α i}(t)) = x_{α (σ i)}(t ^ e i),
@@ -50,7 +50,10 @@ for `σ` the permutation exchanging the long and short simple roots and `e` the 
 `TauCeti.SuzukiReeIndex.lengthPerm` and `TauCeti.SuzukiReeIndex.exponent`. On the `B₂` diagram the
 long simple root is Bourbaki node zero, which `TauCeti.RankTwoBLieIndex.carrierNode` carries to the
 final carrier node, so the indexed equation is proved from the two equations at the carrier nodes
-and that numbering correspondence.
+and that numbering correspondence. The negative-root formulas use
+`TauCeti.RankTwoBLieIndex.negSimpleRootSubgroup`, the `.inr` summand of
+`TauCeti.SpStd.rootSubgroupPoints` transported through `carrierNode`. They complement the
+positive-root formulas for comparisons determined by both signs of the simple roots.
 
 ## Main definitions
 
@@ -66,6 +69,10 @@ and that numbering correspondence.
   `p ^ m * exponent i`.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the action formula at every numbered
   simple root, against the index's own length permutation and exponent.
+* `TauCeti.SuzukiLieIndex.halfFrobenius_negSimpleRootSubgroup` and
+  `TauCeti.SuzukiLieIndex.steinberg_negSimpleRootSubgroup`: the corresponding negative-root
+  formulas, with source-root exponents `1`, `2` for the half-Frobenius and `2^m`, `2^(m+1)`
+  for the Steinberg map on long and short roots, respectively.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_halfFrobenius`: the square of the half-Frobenius is the
   prime-field Frobenius.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
@@ -88,11 +95,11 @@ simple-root-subgroup action equations below are stated against it.
 
 ## References
 
-* R. W. Carter, *Simple Groups of Lie Type*, §13.
+* R. W. Carter, *Simple Groups of Lie Type*, §§12.3 and 13.4.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
-* *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
-  [arXiv:2108.06291](https://arxiv.org/abs/2108.06291), for the formulation `τ ^ 2 = Frob_p` and
-  its odd powers.
+* A.-C. Radu, *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
+  [arXiv:2108.06291v2](https://arxiv.org/abs/2108.06291v2), §2.2, for the formulation
+  `τ ^ 2 = Frob_p` and its odd powers.
 -/
 
 -- Reinstates, unchanged, the half-Frobenius, its odd power and the two square relations first
@@ -214,7 +221,7 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
   decide
 
 /-- The exponent of the index is one at the final carrier node and two at the other. -/
-private theorem exponent_eq (i : Fin d.1.rank) :
+private theorem exponent_eq_ite_carrierNode (i : Fin d.1.rank) :
     SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
       if d.toRankTwoBLieIndex.carrierNode i = 1 then 1 else 2 := by
   have hnode := d.toRankTwoBLieIndex.carrierNode_eq_one_iff i
@@ -248,7 +255,7 @@ theorem halfFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative 
         (d.toRankTwoBLieIndex.carrierNode.symm c) =
       d.toRankTwoBLieIndex.carrierNode.symm (Equiv.swap 0 1 c) := by
     rw [Equiv.eq_symm_apply, d.carrierNode_lengthPerm, Equiv.apply_symm_apply]
-  rw [hj, d.exponent_eq, Equiv.apply_symm_apply]
+  rw [hj, d.exponent_eq_ite_carrierNode, Equiv.apply_symm_apply]
   fin_cases c
   · simpa using d.halfFrobenius_simpleRootSubgroup_short u
   · simpa using d.halfFrobenius_simpleRootSubgroup_long u
@@ -273,6 +280,44 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
   d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
     (x := fun j t => d.toRankTwoBLieIndex.simpleRootSubgroup j t)
     (fun j t => d.halfFrobenius_simpleRootSubgroup j t) i u
+
+-- Normalize subtype projections in the implicit carrier types before simp indexes these
+-- left-hand sides, as in TypeB2LieIndex.spinEquivCarrier_simpleRootSubgroup.
+/-- The half-Frobenius exchanges negative simple roots by the native length permutation;
+the parameter exponent is 1 on a long source root and 2 on a short source root. -/
+@[simp]
+theorem halfFrobenius_negSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    (dsimp% only (d.halfFrobenius (d.toRankTwoBLieIndex.negSimpleRootSubgroup i u))) =
+      d.toRankTwoBLieIndex.negSimpleRootSubgroup
+        (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd u ^ SuzukiReeIndex.exponent d.toSuzukiReeIndex i)) := by
+  rw [RankTwoBLieIndex.negSimpleRootSubgroup_def, RankTwoBLieIndex.negSimpleRootSubgroup_def,
+    d.carrierNode_lengthPerm, d.exponent_eq_ite_carrierNode, halfFrobenius_def]
+  generalize d.toRankTwoBLieIndex.carrierNode i = c
+  fin_cases c
+  · simpa using SpStd.specialIsogeny_rootSubgroupPoints_inr_zero d.1.Closure
+      (Multiplicative.toAdd u)
+  · simpa using SpStd.specialIsogeny_rootSubgroupPoints_inr_last d.1.Closure
+      (Multiplicative.toAdd u)
+
+/-- The Suzuki Steinberg map exchanges negative simple roots and raises their parameters to
+`p^m * aᵢ`, where `aᵢ` is the native source-root exponent of the half-Frobenius. -/
+@[simp]
+theorem steinberg_negSimpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    (dsimp% only (d.steinberg (d.toRankTwoBLieIndex.negSimpleRootSubgroup i u))) =
+      d.toRankTwoBLieIndex.negSimpleRootSubgroup
+        (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd u ^
+            (d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
+              SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) := by
+  rw [steinberg_def]
+  exact d.toSuzukiReeIndex.pow_fieldExponent_apply_lengthPerm
+    (x := fun j t => d.toRankTwoBLieIndex.negSimpleRootSubgroup j t)
+    (fun j t => d.halfFrobenius_negSimpleRootSubgroup j t) i u
 
 /-! ## The finite-group candidate -/
 

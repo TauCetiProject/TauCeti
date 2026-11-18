@@ -184,7 +184,7 @@ private theorem mem_rightLeftOverlapPartners_of_inverse
       second := GridPentagonBetween.ofRightEq D.second hside hturn }
   have hFrect : F.toRectangleDecomposition = D := by
     apply GridRectangleDecomposition.ext <;>
-      simp [F, GridRectanglePentagonDecomposition.pentagon, hside]
+      simp [F, GridRectanglePentagonDecomposition.pentagon]
   rw [← hFrect] at hrecut
   have hFc : F.rectangle.right = F.pentagon.left := by
     simpa [F, GridRectanglePentagonDecomposition.rectangle,

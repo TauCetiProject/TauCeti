@@ -17,9 +17,8 @@ This file computes the centered moments of Mathlib's real Gaussian measure.  The
 centered moment is evaluated first from the Gaussian density and Euler's Gamma integral; the
 ordinary even and odd centered moments then follow from this formula and symmetry.
 
-The formulas follow the real-Gaussian entry in the StandardDistributions roadmap and the standard
-calculation in, for example, Johnson, Kotz, and Balakrishnan, *Continuous Univariate
-Distributions*, volume 1, Chapter 13.
+The formulas follow the standard calculation in, for example, Johnson, Kotz, and Balakrishnan,
+*Continuous Univariate Distributions*, volume 1, Chapter 13.
 
 ## Main results
 

@@ -6,91 +6,105 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Bordered.TypeA
+import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
-# Type `DA` bimodules and their box tensor products with type `D` structures
+# Type `DA` bimodules and associativity of the box tensor product
 
-A three-manifold with two boundary components, such as a mapping cylinder, has a type `DA`
-bimodule `^A M_B` in bordered Heegaard Floer homology: a type `D` structure over the algebra `A` of
-one boundary which is at the same time an `A∞` module over the algebra `B` of the other. Gluing it
-to a manifold with a type `D` structure `^B N` gives the box tensor product `M ⊠ N`, a type `D`
-structure over `A`. This is how bimodules act on type `D` structures; the associativity of the
-box tensor product compares `P ⊠ (M ⊠ N)` with `(P ⊠ M) ⊠ N` for a type `A` module `P` over `A`.
+Bordered Heegaard Floer homology attaches to a three-manifold with two parametrized boundary
+components a type `DA` bimodule, and gluing along one boundary component is a box tensor product.
+This file sets up type `DA` bimodules over ungraded differential algebras
+(`TauCeti.IsUngradedDGAlgebra`) over a ring of characteristic two, their box tensor products with
+differential modules on one side and with type `D` structures on the other, and the associativity
+`(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)` relating the two.
 
-Over a ring of characteristic two, a type `DA` bimodule has structure maps
-`δ¹_{n+1} : M ⊗ B^{⊗ n} → A ⊗ M` for every `n ≥ 0`. In a basis of generators `y : Y`, each with a
-left idempotent of `A` and a right idempotent of `B`, the map `δ¹_{n+1}` is a matrix of
-coefficients `δ_{n+1}(b₁, …, bₙ) : Matrix Y Y A`, multilinear in the inputs `bᵢ`
-(`TauCeti.TypeDABimodule`). The structure relation of length `n` is
+A type `DA` bimodule `P = ^B P_A`, of type `D` over `(B, dB)` on the left and of type `A` over
+`(A, dA)` on the right, has operations `δ¹_{n+1} : P ⊗ A^{⊗ n} → B ⊗ P` for every `n ≥ 0`. As for
+type `D` structures (`TauCeti.TypeDStructure`), we describe it in a basis of generators `y : Y`,
+each lying in the summand of an idempotent `ιB (idem y)` of `B`:
+`δ¹_{n+1}(y, a₁, …, aₙ) = ∑ y', δₙ(a) y y' ⊗ y'`, with coefficient matrices `δₙ(a₁, …, aₙ)`
+multilinear in the inputs (`TauCeti.TypeDAStructure`). The structure relation of length `n` is
 
-`d δ_{n+1}(b) + ∑_{i + j = n} δ_{i+1}(b₁, …, bᵢ) δ_{j+1}(bᵢ₊₁, …, bₙ)`
-`  + ∑_l δ_{n+1}(b₁, …, d bₗ, …, bₙ) + ∑_l δ_n(b₁, …, bₗ bₗ₊₁, …, bₙ) = 0`,
+`∑_{i + j = n} δᵢ(a₁, …, aᵢ) * δⱼ(aᵢ₊₁, …, aₙ) + dB δₙ(a)`
+`  + ∑_l δₙ(a₁, …, dA aₗ, …, aₙ) + ∑_l δₙ₋₁(a₁, …, aₗ aₗ₊₁, …, aₙ) = 0`,
 
-the differential `d` of `A` acting on matrices entrywise. For `n = 0` this is the type `D`
-structure equation `d δ₁ + δ₁ δ₁ = 0`, and when `A` is the ground ring these are the relations of
-an `A∞` module over `B`.
+the matrix form of `(μ₂ ⊗ 1) ∘ (1 ⊗ δ¹) ∘ δ¹ + (μ₁ ⊗ 1) ∘ δ¹ + δ¹ ∘ (1 ⊗ d) + δ¹ ∘ (1 ⊗ μ₂) = 0`,
+with no signs over a ring of characteristic two. Only the idempotents of `B` are recorded; the
+idempotents of `A` at the generators, and strict unitality, are not needed below.
 
-* **The induced module.** The row vectors `φ : Y → A`, a model of `A ⊠ M`, form an ungraded `A∞`
-  right module over `B` (`TauCeti.TypeDABimodule.inducedModule`), with
-  `m₁(φ) = d φ + φ ⬝ δ₁` and `m_{n+1}(φ, b₁, …, bₙ) = φ ⬝ δ_{n+1}(b₁, …, bₙ)`. Its `A∞` relation
-  of length `n` is the structure relation of length `n` applied to `φ`: the terms `d φ ⬝ δ_{n+1}`
-  coming from the two ends of the composite terms cancel in characteristic two, by the Leibniz
-  rule of `d`.
-* **The box tensor product.** For a type `D` structure `N` over `B` with generators `X` and
-  coefficient matrix `ε`, the box tensor product `M ⊠ N` has the generators `y ⊗ x` with matching
-  idempotents, `idemRight y = idem x`, and the structure map
-  `δ¹(y ⊗ x) = ∑_n (δ¹_{n+1} ⊗ 1)(y ⊗ δⁿ(x))`. Its coefficient from `y ⊗ x` to `y' ⊗ z`
-  (`TauCeti.TypeDABimodule.boxCoeff`) is the sum, over the paths `x = x₀ → ⋯ → xₙ = z` in `X`, of
-  the `(y, y')` entry of `δ_{n+1}(ε x₀ x₁, …, ε xₙ₋₁ xₙ)`. The sum is finite when `N` is bounded
-  (`TauCeti.TypeDStructure.IsBounded`) or when `δ_{n+1}` vanishes for large `n`.
+* **The type `A` module `M ⊠ P`.** For a differential right `B`-module `(M, dM)`, the row vectors
+  `Y → M`, standing for `∑ y, ψ y ⊗ y`, form an `A∞` right module over `A`
+  (`TauCeti.TypeDAStructure.boxModule`) with `m₁ ψ = dM ψ + ψ ⬝ δ₀` and
+  `m_{n+1}(ψ, a) = ψ ⬝ δₙ(a)` for `n ≥ 1`, where `ψ ⬝ F = TauCeti.continuationMap R M F ψ`. Its
+  `A∞` relations are the structure relations of `P`.
+* **The type `D` structure `P ⊠ N`.** For a type `D` structure `N` over `A` with generators `X`,
+  `P ⊠ N` is the type `D` structure over `B` on the generators `y ⊗ x`, written `(y, x)`, with
+  `δ¹ (y ⊗ x) = ∑_k (δ¹_{k+1} ⊗ 1) (y ⊗ δᵏ x)` (`TauCeti.TypeDAStructure.boxTypeD`), where
+  `δᵏ` is the iterate `TauCeti.TypeDStructure.iteratedCoeff`. The sum is finite when `N` is
+  bounded or the operations of `P` vanish from some arity on.
+* **Associativity.** The box tensor differential of the type `A` module `M ⊠ P` with `N`
+  (`TauCeti.TypeDStructure.typeABoxDifferential`) is the box tensor differential
+  `∂ φ = dM φ + φ ⬝ δ` of `M` with `P ⊠ N` (`TauCeti.TypeDStructure.boxDifferential`)
+  (`TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_apply`, and
+  `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule` when `dB` is a differential, so that
+  `P ⊠ N` is a type `D` structure). This is also how the structure
+  equation of `P ⊠ N` is proved: for `M = B`, the row of `dB δ + δ * δ` at a generator `p` is the
+  square of the box tensor differential at `1 ⊗ p`, which vanishes because the box tensor
+  differential of the type `A` module `B ⊠ P` with `N` squares to zero.
+* **The identity bimodule.** When the idempotents `ι s` of `A` are cycles summing to `1`, the
+  identity bimodule `[I]` (`TauCeti.TypeDAStructure.identity`) has one generator at each
+  idempotent and the single operation `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t`. If the idempotents are
+  moreover orthogonal, the coefficients of `[I] ⊠ N` restricted to the generators `(idem x, x)` are
+  those of `N`, and the other generators carry zero coefficients
+  (`TauCeti.TypeDAStructure.boxCoeff_identity`).
 
-The structure equation of `M ⊠ N` comes from the box tensor product of the induced module with
-`N` (`TauCeti.TypeDStructure.typeABoxDifferential`), which squares to zero under either
-boundedness hypothesis: on row vectors `Φ : X → Y → A` that differential is `d Φ + Φ ⬝ C`, with
-`C` the coefficient matrix of `M ⊠ N`, and its square is `Φ ⬝ (d C + C C)`. So the coefficients
-satisfy `d C + C C = 0` on all pairs `y ⊗ x`
-(`TauCeti.TypeDABimodule.map_boxCoeff_add_boxCoeff_mul_boxCoeff`).
-The pairs with mismatched idempotents vanish in the tensor product over the idempotents of `B`;
-since `δ¹` respects the right idempotents and those of `B` are orthogonal, no coefficient leads from
-a matched pair to a mismatched one (`TauCeti.TypeDABimodule.boxCoeff_eq_zero_of_ne`), and the
-restriction of `C` to the matched pairs is the coefficient matrix of a type `D` structure
-(`TauCeti.TypeDABimodule.boxTensor`).
+The tensor products here are taken over `R` on the generators, as for the box tensor differential
+of `TauCeti.LowDimTopology.Bordered.TypeA`; the elementary tensors `y ⊗ x` whose idempotents do not
+match are among the generators of `P ⊠ N`, and they vanish in the tensor product over the
+idempotents. When `P` also carries idempotents of `A` on the right that its operations respect
+(`TauCeti.TypeDAStructure.RespectsRightIdem`) and the idempotents of `A` are orthogonal, no
+coefficient of `P ⊠ N` leads from a generator `(y, x)` with matching idempotents to one without
+(`TauCeti.TypeDAStructure.boxCoeff_eq_zero_of_ne`), so the coefficients restrict to the matched
+generators as a type `D` structure, the box tensor product over the idempotents
+(`TauCeti.TypeDAStructure.boxTypeDMatched`). The type `A` module `M ⊠ P` is built here from a
+differential module `M`; the box tensor product of a general `A∞` module with a type `DA`
+bimodule, and the associativity for it, are not treated.
 
 ## Main definitions
 
-* `TauCeti.TypeDABimodule`: a type `DA` bimodule, given by its generators, their left and right
-  idempotents and its coefficient matrices.
-* `TauCeti.TypeDABimodule.inducedModule`: the `A∞` right module `A ⊠ M` over `B`.
-* `TauCeti.TypeDABimodule.boxCoeff`: the coefficients of the box tensor product with a type `D`
-  structure.
-* `TauCeti.TypeDABimodule.boxTensor`: the box tensor product `M ⊠ N`, a type `D` structure over
-  `A`.
+* `TauCeti.TypeDAStructure`: a type `DA` bimodule, given by its generators, their idempotents and
+  its coefficient matrices.
+* `TauCeti.TypeDAStructure.boxModule`: the type `A` module `M ⊠ P`.
+* `TauCeti.TypeDAStructure.boxCoeff` and `TauCeti.TypeDAStructure.boxTypeD`: the coefficient
+  matrix of `P ⊠ N`, and `P ⊠ N` as a type `D` structure.
+* `TauCeti.TypeDAStructure.RespectsRightIdem` and `TauCeti.TypeDAStructure.boxTypeDMatched`:
+  right idempotents of a type `DA` bimodule, and `P ⊠ N` on the generators with matching
+  idempotents.
+* `TauCeti.TypeDAStructure.identity`: the identity bimodule `[I]`.
 
 ## Main results
 
-* `TauCeti.TypeDABimodule.typeABoxDifferential_inducedModule_apply`: the box tensor differential
-  of the induced module with `N` is `Φ ↦ d Φ + Φ ⬝ C`.
-* `TauCeti.TypeDABimodule.map_boxCoeff_add_boxCoeff_mul_boxCoeff`: the structure equation
-  `d C + C C = 0` on all pairs of generators.
-* `TauCeti.TypeDABimodule.boxCoeff_eq_zero_of_ne`: no coefficient leads from a pair with matching
-  idempotents to a pair without.
-* `TauCeti.TypeDABimodule.boxCoeff_eq_sum_of_coeff_eq_zero` and
-  `TauCeti.TypeDABimodule.boxCoeff_eq_sum_lift_iteratedCoeff`: the coefficients as finite sums,
-  over the paths of length less than `K` when `δ_{n+1}` vanishes for `n ≥ K`, and as
-  `∑_{n < K} δ_{n+1}(δⁿ(x))` when the iterates `δⁿ` of `N` vanish for `n ≥ K`
-  (`TauCeti.TypeDABimodule.pathCoeff_def`).
-* `TauCeti.TypeDABimodule.boxCoeff_eq_add_of_coeff_eq_zero`: for a bimodule with `δ_{n+1} = 0`
-  for `n ≥ 2`, `δ¹(y ⊗ x) = δ¹₁(y) ⊗ x + ∑_z δ¹₂(y, ε x z) ⊗ z`.
+* `TauCeti.TypeDAStructure.map_boxCoeff_add_boxCoeff_mul_boxCoeff`: the structure equation of
+  `P ⊠ N`.
+* `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule_apply` and
+  `TauCeti.TypeDAStructure.typeABoxDifferential_boxModule`: associativity,
+  `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`, on row vectors and through the type `D` structure `P ⊠ N`.
+* `TauCeti.TypeDAStructure.boxCoeff_eq_add_of_coeff_eq_zero`: for a bimodule whose operations
+  vanish from arity three on, `δ¹(y ⊗ x) = δ¹₁(y) ⊗ x + ∑_z δ¹₂(y, δ x z) ⊗ z`.
+* `TauCeti.TypeDAStructure.boxCoeff_eq_zero_of_ne`: no coefficient of `P ⊠ N` leads from a
+  generator with matching idempotents to one without.
+* `TauCeti.TypeDAStructure.boxCoeff_identity`: the coefficients of `[I] ⊠ N` are those of `N` on
+  the generators `(idem x, x)` and zero on the others.
 
 ## References
 
-* R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bimodules in bordered Heegaard Floer homology*,
-  Geom. Topol. **19** (2015), 525–724, [arXiv:1003.0598](https://arxiv.org/abs/1003.0598), §2.2
-  (type `DA` structures and their structure relation) and §2.3 (the box tensor product of a type
-  `DA` structure with a type `D` structure, and its boundedness hypotheses).
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  Chapter 2 (type `D` structures, `A∞` modules and the box tensor product over `𝔽₂`).
+  Chapter 2 (type `DA` bimodules over `𝔽₂`, the identity bimodule, and box tensor products of
+  bimodules with modules and type `D` structures).
+* R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bimodules in bordered Heegaard Floer homology*,
+  Geom. Topol. **19** (2015), [arXiv:1003.0598](https://arxiv.org/abs/1003.0598), Section 2
+  (type `DA` bimodules and the associativity of box tensor products).
 -/
 
 public section
@@ -101,445 +115,257 @@ namespace TauCeti
 
 variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
 
-/-! ### The structure relation -/
+/-! ### The structure relations -/
 
-section Relation
+section Relations
 
 variable {Y : Type*}
-  (δ : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => B) (Matrix Y Y A))
+  (coeff : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (Matrix Y Y B))
 
 /-- The **composite terms** of the type `DA` structure relation of length `n`:
-`∑_{i + j = n} δ_{i+1}(b₁, …, bᵢ) δ_{j+1}(bᵢ₊₁, …, bₙ)`, where `δ i` is `δ_{i+1}`. -/
-noncomputable def typeDAStasheffComp [Fintype Y] (n : ℕ) (b : Fin n → B) : Matrix Y Y A :=
-  ∑ k : Fin (n + 1), δ k (fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) *
-    δ (n - k) (fun l => b ⟨k + l, by have := l.isLt; omega⟩)
+`∑_{i + j = n} δ_i(a₁, …, aᵢ) * δ_j(aᵢ₊₁, …, aₙ)`, the product of coefficient matrices. -/
+noncomputable def typeDAComp [Fintype Y] (n : ℕ) (a : Fin n → A) : Matrix Y Y B :=
+  ∑ k : Fin (n + 1), coeff k (fun l => a ⟨l, l.isLt.trans_le k.is_le⟩) *
+    coeff (n - k) (fun l => a ⟨k + l, lt_tsub_iff_left.mp l.isLt⟩)
 
-theorem typeDAStasheffComp_def [Fintype Y] (n : ℕ) (b : Fin n → B) :
-    typeDAStasheffComp δ n b =
-      ∑ k : Fin (n + 1), δ k (fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) *
-        δ (n - k) (fun l => b ⟨k + l, by have := l.isLt; omega⟩) :=
+theorem typeDAComp_def [Fintype Y] (n : ℕ) (a : Fin n → A) :
+    typeDAComp coeff n a =
+      ∑ k : Fin (n + 1), coeff k (fun l => a ⟨l, l.isLt.trans_le k.is_le⟩) *
+        coeff (n - k) (fun l => a ⟨k + l, lt_tsub_iff_left.mp l.isLt⟩) :=
   (rfl)
 
-/-- The **differential terms** of the type `DA` structure relation of length `n`:
-`∑_l δ_{n+1}(b₁, …, d bₗ, …, bₙ)`. -/
-noncomputable def typeDAStasheffDiff (dB : B →ₗ[R] B) (n : ℕ) (b : Fin n → B) : Matrix Y Y A :=
-  ∑ l : Fin n, δ n (Function.update b l (dB (b l)))
+end Relations
 
-theorem typeDAStasheffDiff_def (dB : B →ₗ[R] B) (n : ℕ) (b : Fin n → B) :
-    typeDAStasheffDiff δ dB n b = ∑ l : Fin n, δ n (Function.update b l (dB (b l))) :=
-  (rfl)
+variable (dA : A →ₗ[R] A) (dB : B →ₗ[R] B) {S : Type*} (ιB : S → B) (Y : Type*) [Fintype Y]
 
-/-- The **product terms** of the type `DA` structure relation of length `n`:
-`∑_l δ_n(b₁, …, bₗ bₗ₊₁, …, bₙ)`, over the `n - 1` adjacent pairs. -/
-noncomputable def typeDAStasheffMul : (n : ℕ) → (Fin n → B) → Matrix Y Y A
-  | 0, _ => 0
-  | n + 1, b => ∑ l : Fin n, δ n (Fin.contractNth l.castSucc (· * ·) b)
-
-@[simp]
-theorem typeDAStasheffMul_zero (b : Fin 0 → B) : typeDAStasheffMul δ 0 b = 0 :=
-  (rfl)
-
-theorem typeDAStasheffMul_succ (n : ℕ) (b : Fin (n + 1) → B) :
-    typeDAStasheffMul δ (n + 1) b = ∑ l : Fin n, δ n (Fin.contractNth l.castSucc (· * ·) b) :=
-  (rfl)
-
-end Relation
-
-variable (dA : A →ₗ[R] A) (dB : B →ₗ[R] B) {S T : Type*} (ιA : S → A) (ιB : T → B)
-  (Y : Type*) [Fintype Y]
-
-/-- A **type `DA` bimodule** `^A M_B` over the differential algebras `(A, dA)` and `(B, dB)`, with
-idempotents `ιA` and `ιB`, in a basis of generators `Y`. Each generator `y` lies in the summand
-`ιA (idemLeft y) * M * ιB (idemRight y)`, and the structure map `δ¹_{n+1}` sends `y ⊗ b₁ ⊗ ⋯ ⊗ bₙ`
-to `∑ y', coeff n b y y' ⊗ y'`. The coefficients lie in the summands of the left idempotents, and
-`δ¹` respects the right idempotents: `δ¹₁` keeps them, and the coefficient of `y'` in
-`δ¹_{n+1}(y, b₁, …, bₙ)` only sees `bₙ * ιB (idemRight y')`. The inputs are balanced over the
-idempotents of `B`: the coefficient from `y` only sees `ιB (idemRight y) * b₁`, and
-`δ¹_{n+1}(…, bₗ * ιB t, bₗ₊₁, …) = δ¹_{n+1}(…, bₗ, ιB t * bₗ₊₁, …)`, so `δ¹_{n+1}` is defined on
-`M ⊗ B ⊗ ⋯ ⊗ B` with the tensor products taken over the idempotents. The structure relation of
-length `n` is `d δ_{n+1}(b) + TauCeti.typeDAStasheffComp + TauCeti.typeDAStasheffDiff +
-TauCeti.typeDAStasheffMul = 0`, with no signs: over a ring of characteristic two these are the
-relations of Lipshitz, Ozsváth and Thurston, and no characteristic is imposed by the definition
-itself. -/
+/-- A **type `DA` bimodule** `^B P_A`, of type `D` over the differential algebra `(B, dB)` with
+idempotents `ιB` and of type `A` over the differential algebra `(A, dA)`, in a basis of generators
+`Y`. Each generator `y` lies in the summand of the idempotent `ιB (idem y)`, and the operation
+`δ¹_{n+1}(y, a₁, …, aₙ) = ∑ y', coeff n a y y' ⊗ y'` has coefficient matrix `coeff n a`,
+multilinear in `a`. The structure relations say that the composite terms `TauCeti.typeDAComp`,
+the entrywise differential `dB` of `coeff n a`, the differential terms
+`TauCeti.ungradedStasheffDiff` and the product terms `TauCeti.ungradedStasheffMul` sum to zero;
+over a ring of characteristic two they need no signs. -/
 @[ext]
-structure TypeDABimodule where
-  /-- The idempotent of `A` of each generator. -/
-  idemLeft : Y → S
+structure TypeDAStructure where
   /-- The idempotent of `B` of each generator. -/
-  idemRight : Y → T
-  /-- The coefficient matrices: `δ¹_{n+1}(y, b₁, …, bₙ) = ∑ y', coeff n b y y' ⊗ y'`. -/
-  coeff : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => B) (Matrix Y Y A)
+  idem : Y → S
+  /-- The coefficient matrices: `δ¹_{n+1}(y, a₁, …, aₙ) = ∑ y', coeff n a y y' ⊗ y'`. -/
+  coeff : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (Matrix Y Y B)
   /-- The coefficients from `y` lie in the summand of the idempotent of `y` on the left. -/
-  idem_mul_coeff (n : ℕ) (b : Fin n → B) (y y' : Y) :
-    ιA (idemLeft y) * coeff n b y y' = coeff n b y y'
+  idem_mul_coeff (n : ℕ) (a : Fin n → A) (y y' : Y) : ιB (idem y) * coeff n a y y' = coeff n a y y'
   /-- The coefficients to `y'` lie in the summand of the idempotent of `y'` on the right. -/
-  coeff_mul_idem (n : ℕ) (b : Fin n → B) (y y' : Y) :
-    coeff n b y y' * ιA (idemLeft y') = coeff n b y y'
-  /-- The map `δ¹₁` keeps the idempotents of `B`. -/
-  coeff_zero_eq_zero_of_ne (b : Fin 0 → B) {y y' : Y} (h : idemRight y ≠ idemRight y') :
-    coeff 0 b y y' = 0
-  /-- The coefficient of `y'` in `δ¹_{n+2}(y, b₁, …, bₙ₊₁)` only depends on
-  `bₙ₊₁ * ιB (idemRight y')`. -/
-  coeff_succ_update_mul_idem (n : ℕ) (b : Fin (n + 1) → B) (y y' : Y) :
-    coeff (n + 1) (Function.update b (Fin.last n) (b (Fin.last n) * ιB (idemRight y'))) y y' =
-      coeff (n + 1) b y y'
-  /-- The coefficient from `y` in `δ¹_{n+2}(y, b₁, …, bₙ₊₁)` only depends on
-  `ιB (idemRight y) * b₁`. -/
-  coeff_succ_update_idem_mul (n : ℕ) (b : Fin (n + 1) → B) (y y' : Y) :
-    coeff (n + 1) (Function.update b 0 (ιB (idemRight y) * b 0)) y y' = coeff (n + 1) b y y'
-  /-- Adjacent inputs are balanced over the idempotents of `B`:
-  `δ¹_{n+3}(…, bₗ * ιB t, bₗ₊₁, …) = δ¹_{n+3}(…, bₗ, ιB t * bₗ₊₁, …)`. -/
-  coeff_update_mul_idem_eq_update_idem_mul (n : ℕ) (b : Fin (n + 2) → B) (l : Fin (n + 1))
-      (t : T) :
-    coeff (n + 2) (Function.update b l.castSucc (b l.castSucc * ιB t)) =
-      coeff (n + 2) (Function.update b l.succ (ιB t * b l.succ))
-  /-- The structure relation of length `n`. -/
-  stasheff (n : ℕ) (b : Fin n → B) :
-    (coeff n b).map dA + typeDAStasheffComp coeff n b + typeDAStasheffDiff coeff dB n b +
-      typeDAStasheffMul coeff n b = 0
+  coeff_mul_idem (n : ℕ) (a : Fin n → A) (y y' : Y) :
+    coeff n a y y' * ιB (idem y') = coeff n a y y'
+  /-- The type `DA` structure relation of length `n`. -/
+  stasheff (n : ℕ) (a : Fin n → A) :
+    typeDAComp coeff n a + (coeff n a).map dB + ungradedStasheffDiff coeff dA n a +
+      ungradedStasheffMul coeff n a = 0
 
-namespace TypeDABimodule
+namespace TypeDAStructure
 
-variable {dA dB ιA ιB Y}
+variable {dA dB ιB Y}
 
-/-! ### The induced `A∞` module -/
+/-! ### The type `A` module `M ⊠ P` -/
 
-section Induced
+section BoxModule
 
-variable (dA) in
-/-- The differential term of the induced operations: `d` on `m₁`, and nothing on the higher
-operations. -/
-private noncomputable def diffAct :
-    (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => B) ((Y → A) →ₗ[R] Y → A)
-  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _
-    (LinearMap.pi fun y => dA ∘ₗ LinearMap.proj y)
+variable {M : Type*} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
+  [IsScalarTower R Bᵐᵒᵖ M]
+
+/-- The differential part of the operations of `M ⊠ P`: `m₁` contributes `dM` on each entry. -/
+private noncomputable def diffAct (dM : M →ₗ[R] M) :
+    (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) ((Y → M) →ₗ[R] Y → M)
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _ (dM.compLeft Y)
   | _ + 1 => 0
 
 omit [Fintype Y] in
-private theorem diffAct_apply_of_eq_zero {n : ℕ} (hn : n = 0) (b : Fin n → B) (φ : Y → A) :
-    diffAct dA n b φ = fun y => dA (φ y) := by
-  subst hn
-  rfl
+private theorem diffAct_apply (dM : M →ₗ[R] M) (n : ℕ) (a : Fin n → A) (ψ : Y → M) :
+    diffAct (Y := Y) dM n a ψ = if n = 0 then fun y => dM (ψ y) else 0 := by
+  cases n <;> rfl
 
 omit [Fintype Y] in
-private theorem diffAct_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
-    diffAct (Y := Y) (B := B) dA n = 0 := by
-  cases n with
-  | zero => exact absurd rfl hn
-  | succ n => rfl
+private theorem diffAct_succ (dM : M →ₗ[R] M) (n : ℕ) : diffAct (A := A) (Y := Y) dM (n + 1) = 0 :=
+  MultilinearMap.ext fun a => LinearMap.ext fun ψ => by
+    rw [diffAct_apply, ite_eq_right n.succ_ne_zero, zero_apply, LinearMap.zero_apply]
 
-/-- The first factor of the composite term with all the inputs is `δ_{n+1}(b)`. -/
-private theorem coeff_init (M : TypeDABimodule dA dB ιA ιB Y) {n : ℕ} (b : Fin n → B)
-    (k : Fin (n + 1)) (hk : (k : ℕ) = n) :
-    (M.coeff k fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) = M.coeff n b := by
-  obtain ⟨k, hk'⟩ := k
-  simp only at hk
-  subst hk
-  rfl
+variable (P : TypeDAStructure dA dB ιB Y)
 
-/-- The second factor of the composite term with all the inputs is `δ_{n+1}(b)`. -/
-private theorem coeff_tail (M : TypeDABimodule dA dB ιA ιB Y) {n : ℕ} (b : Fin n → B)
-    (k : Fin (n + 1)) (hk : (k : ℕ) = 0) :
-    (M.coeff (n - k) fun l => b ⟨k + l, by have := l.isLt; omega⟩) = M.coeff n b := by
-  obtain ⟨k, hk'⟩ := k
-  simp only at hk
-  subst hk
-  congr
-  funext l
-  exact congrArg b (Fin.ext (by simp))
+/-- The operations of `M ⊠ P`. -/
+private noncomputable def boxAct (dM : M →ₗ[R] M) (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) ((Y → M) →ₗ[R] Y → M) :=
+  diffAct dM n + (continuationMapₗ R M Y Y).compMultilinearMap (P.coeff n)
 
-/-- The operations of the induced module: `m_{n+1}(φ, b) = φ ⬝ δ_{n+1}(b)`, plus `d φ` for
-`n = 0`. -/
-private noncomputable def inducedAct (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n => B) ((Y → A) →ₗ[R] Y → A) :=
-  (continuationMapLinear R A).compMultilinearMap (M.coeff n) + diffAct dA n
+private theorem boxAct_apply (dM : M →ₗ[R] M) (n : ℕ) (a : Fin n → A) (ψ : Y → M) :
+    P.boxAct dM n a ψ =
+      (if n = 0 then fun y => dM (ψ y) else 0) + continuationMap R M (P.coeff n a) ψ := by
+  rw [boxAct, add_apply, LinearMap.add_apply, diffAct_apply, LinearMap.compMultilinearMap_apply,
+    continuationMapₗ_apply]
 
-private theorem inducedAct_apply (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) (b : Fin n → B)
-    (φ : Y → A) :
-    M.inducedAct n b φ = continuationMapLinear R A (M.coeff n b) φ + diffAct dA n b φ :=
-  (rfl)
+/-- The operation `m_{n+1}` of `M ⊠ P`, `n ≥ 1`, is right multiplication by `δₙ`. -/
+private theorem boxAct_apply_of_ne_zero (dM : M →ₗ[R] M) {n : ℕ} (hn : n ≠ 0) (a : Fin n → A)
+    (ψ : Y → M) : P.boxAct dM n a ψ = continuationMap R M (P.coeff n a) ψ := by
+  rw [boxAct_apply, ite_eq_right hn, zero_add]
 
-/-- The composite terms of the induced module: the composite terms of the structure relation and
-the derivative of `δ_{n+1}`, the two copies of `d φ ⬝ δ_{n+1}` cancelling. -/
-private theorem ungradedStasheffComp_inducedAct [CharP R 2] (hdA : IsUngradedDGAlgebra dA)
-    (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) (b : Fin n → B) (φ : Y → A) :
-    ungradedStasheffComp M.inducedAct n b φ =
-      continuationMapLinear R A (typeDAStasheffComp M.coeff n b) φ +
-        continuationMapLinear R A ((M.coeff n b).map dA) φ := by
-  simp only [ungradedStasheffComp_def, inducedAct_apply, map_add, Finset.sum_add_distrib]
-  -- The four kinds of terms: `φ ⬝ δ ⬝ δ`, `d φ ⬝ δ` from the left end, `d (φ ⬝ δ)` from the right
-  -- end, and `d d φ`.
-  have h1 : ∑ k : Fin (n + 1),
-      continuationMapLinear R A (M.coeff (n - k) fun l => b ⟨k + l, by have := l.isLt; omega⟩)
-        (continuationMapLinear R A
-          (M.coeff k fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
-      continuationMapLinear R A (typeDAStasheffComp M.coeff n b) φ := by
-    rw [typeDAStasheffComp_def, map_sum, LinearMap.sum_apply]
-    exact Finset.sum_congr rfl fun k _ => by
-      simp only [continuationMapLinear_apply, continuationMap_matMul, LinearMap.comp_apply]
-  have h2 : ∑ k : Fin (n + 1),
-      continuationMapLinear R A (M.coeff (n - k) fun l => b ⟨k + l, by have := l.isLt; omega⟩)
-        (diffAct dA k (fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
-      continuationMapLinear R A (M.coeff n b) fun y => dA (φ y) := by
+/-- A coefficient matrix only depends on the length and the entries of its tuple of inputs. -/
+private theorem coeff_eq_of_eq {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
+    (hab : ∀ l, b l = a (Fin.cast h l)) : P.coeff m b = P.coeff n a := by
+  subst h
+  congr 1
+  exact funext hab
+
+/-- The composite terms of the `A∞` relations of `M ⊠ P`: the composites of the products with
+`δᵢ` and `δⱼ` give the composite terms of the type `DA` relation, the differential of `M` after
+`m_{n+1}` gives `dM ψ ⬝ δₙ + ψ ⬝ dB δₙ` by the Leibniz rule, and the differential before `m_{n+1}`
+gives `dM ψ ⬝ δₙ` once more. -/
+private theorem ungradedStasheffComp_boxAct {dM : M →ₗ[R] M} (hM : IsUngradedDGRightModule dB dM)
+    (n : ℕ) (a : Fin n → A) (φ : Y → M) :
+    ungradedStasheffComp (P.boxAct dM) n a φ =
+      continuationMap R M (typeDAComp P.coeff n a) φ +
+        continuationMap R M ((P.coeff n a).map dB) φ +
+        (continuationMap R M (P.coeff n a) (fun y => dM (φ y)) +
+          continuationMap R M (P.coeff n a) (fun y => dM (φ y))) := by
+  -- The composite of `m_{k+1}` followed by `m_{n-k+1}`, split into its three parts.
+  have hterm (k : ℕ) (b : Fin k → A) (c : Fin (n - k) → A) :
+      P.boxAct dM (n - k) c (P.boxAct dM k b φ) =
+        (if n - k = 0 then fun y => dM (P.boxAct dM k b φ y) else 0) +
+        (continuationMap R M (P.coeff (n - k) c) (if k = 0 then fun y => dM (φ y) else 0) +
+          continuationMap R M (P.coeff k b * P.coeff (n - k) c) φ) := by
+    rw [boxAct_apply P dM (n - k)]
+    congr 1
+    rw [boxAct_apply P dM k, map_add, continuationMap_matMul, LinearMap.comp_apply]
+  -- Only the last composite has `m₁` outside.
+  have hlast : ∑ k : Fin (n + 1), (if n - (k : ℕ) = 0 then
+        fun y => dM (P.boxAct dM k (fun l => a ⟨l, l.isLt.trans_le k.is_le⟩) φ y) else 0) =
+      fun y => dM (P.boxAct dM n a φ y) := by
+    rw [Finset.sum_eq_single (Fin.last n) (fun k _ hk => ite_eq_right (by
+      have := Fin.val_lt_last hk; omega)) (by simp),
+      ite_eq_left (by simp), boxAct_apply, boxAct_apply, P.coeff_eq_of_eq (Fin.val_last n),
+      Fin.val_last]
+    exact fun l => congrArg a (Fin.ext (by simp))
+  -- Only the first composite has `m₁` inside.
+  have hfirst : ∑ k : Fin (n + 1),
+      continuationMap R M (P.coeff (n - k) fun l => a ⟨k + l, lt_tsub_iff_left.mp l.isLt⟩)
+        (if (k : ℕ) = 0 then fun y => dM (φ y) else 0) =
+      continuationMap R M (P.coeff n a) (fun y => dM (φ y)) := by
     rw [Finset.sum_eq_single 0 (fun k _ hk => by
-      rw [diffAct_of_ne_zero (Fin.val_ne_iff.mpr hk), zero_apply, LinearMap.zero_apply,
-        map_zero]) (by simp), diffAct_apply_of_eq_zero (by simp)]
-    rw [M.coeff_tail b 0 (by simp)]
-  have h3 : ∑ k : Fin (n + 1),
-      diffAct dA (n - k) (fun l => b ⟨k + l, by have := l.isLt; omega⟩)
-        (continuationMapLinear R A
-          (M.coeff k fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) =
-      continuationMapLinear R A (M.coeff n b) (fun y => dA (φ y)) +
-        continuationMapLinear R A ((M.coeff n b).map dA) φ := by
-    rw [Finset.sum_eq_single (Fin.last n) (fun k _ hk => by
-      rw [diffAct_of_ne_zero (by
-          have h := Fin.val_ne_iff.mpr hk
-          rw [Fin.val_last] at h
-          have := k.isLt
-          omega), zero_apply, LinearMap.zero_apply]) (by simp),
-      diffAct_apply_of_eq_zero (by simp), M.coeff_init b (Fin.last n) (by simp)]
-    simp only [continuationMapLinear_apply]
-    exact funext fun y => hdA.isUngradedDGRightModule.map_continuationMap φ (M.coeff n b) y
-  have h4 : ∑ k : Fin (n + 1),
-      diffAct dA (n - k) (fun l => b ⟨k + l, by have := l.isLt; omega⟩)
-        (diffAct dA k (fun l => b ⟨l, by have := l.isLt; have := k.isLt; omega⟩) φ) = 0 := by
-    refine Finset.sum_eq_zero fun k _ => ?_
-    by_cases hk : (k : ℕ) = 0
-    · by_cases hnk : n - k = 0
-      · rw [diffAct_apply_of_eq_zero hk, diffAct_apply_of_eq_zero hnk]
-        funext y
-        exact hdA.map_map (φ y)
-      · rw [diffAct_of_ne_zero hnk, zero_apply, LinearMap.zero_apply]
-    · rw [diffAct_of_ne_zero hk, zero_apply, LinearMap.zero_apply, map_zero]
-  rw [h1, h2, h3, h4, add_zero]
-  have key (C X D : Y → A) : C + (X + D) + X = C + D := by
-    rw [add_comm X D, add_assoc, add_assoc, add_self_eq_zero_of_charTwo R, add_zero]
-  exact key _ _ _
-
-/-- The differential terms of the induced module are those of the structure relation. -/
-private theorem ungradedStasheffDiff_inducedAct (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ)
-    (b : Fin n → B) (φ : Y → A) :
-    ungradedStasheffDiff M.inducedAct dB n b φ =
-      continuationMapLinear R A (typeDAStasheffDiff M.coeff dB n b) φ := by
-  rw [ungradedStasheffDiff_def, typeDAStasheffDiff_def, map_sum, LinearMap.sum_apply]
-  refine Finset.sum_congr rfl fun l _ => ?_
-  rw [inducedAct_apply, diffAct_of_ne_zero (by have := l.isLt; omega), zero_apply,
-    LinearMap.zero_apply, add_zero]
-
-/-- The product terms of the induced module are those of the structure relation. -/
-private theorem ungradedStasheffMul_inducedAct (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ)
-    (b : Fin n → B) (φ : Y → A) :
-    ungradedStasheffMul M.inducedAct n b φ =
-      continuationMapLinear R A (typeDAStasheffMul M.coeff n b) φ := by
-  cases n with
-  | zero => simp
-  | succ n =>
-    rw [ungradedStasheffMul_succ, typeDAStasheffMul_succ, map_sum, LinearMap.sum_apply]
-    refine Finset.sum_congr rfl fun l _ => ?_
-    rw [inducedAct_apply, diffAct_of_ne_zero (by have := l.isLt; omega), zero_apply,
-      LinearMap.zero_apply, add_zero]
+      rw [ite_eq_right (Fin.val_ne_zero_iff.mpr hk), map_zero]) (by simp),
+      ite_eq_left (Fin.val_zero _), P.coeff_eq_of_eq (n := n) (by simp)]
+    exact fun l => congrArg a (Fin.ext (by rw [Fin.val_cast]; simp))
+  -- The Leibniz rule for `dM (ψ ⬝ δₙ)`.
+  have hdM : (fun y => dM (P.boxAct dM n a φ y)) =
+      continuationMap R M (P.coeff n a) (fun y => dM (φ y)) +
+        continuationMap R M ((P.coeff n a).map dB) φ := by
+    funext y
+    rw [boxAct_apply, Pi.add_apply, map_add, hM.map_continuationMap, Pi.add_apply]
+    split_ifs
+    · rw [hM.map_map, zero_add]
+    · rw [Pi.zero_apply, map_zero, zero_add]
+  rw [ungradedStasheffComp_def, Finset.sum_congr rfl fun (k : Fin (n + 1)) _ => hterm k _ _,
+    Finset.sum_add_distrib, Finset.sum_add_distrib, hlast, hfirst, hdM, typeDAComp_def,
+    continuationMap_sum, LinearMap.sum_apply]
+  abel
 
 variable [CharP R 2]
 
-/-- The **induced module** `A ⊠ M` of a type `DA` bimodule, over a ring of characteristic two:
-the row vectors `φ : Y → A` with the operations `m₁(φ) = d φ + φ ⬝ δ₁` and
-`m_{n+1}(φ, b₁, …, bₙ) = φ ⬝ δ_{n+1}(b₁, …, bₙ)` form an ungraded `A∞` right module over `B`. Its
-`A∞` relation of length `n` is the structure relation of length `n` acting on `φ`. -/
-noncomputable def inducedModule (hdA : IsUngradedDGAlgebra dA) (M : TypeDABimodule dA dB ιA ιB Y) :
-    UngradedAInfinityRightModule dB (Y → A) where
-  act := M.inducedAct
-  stasheff n b φ := by
-    rw [ungradedStasheffComp_inducedAct hdA, ungradedStasheffDiff_inducedAct,
-      ungradedStasheffMul_inducedAct, add_comm (continuationMapLinear R A _ φ),
-      ← LinearMap.add_apply, ← map_add, ← LinearMap.add_apply, ← map_add, ← LinearMap.add_apply,
-      ← map_add, M.stasheff n b, map_zero, LinearMap.zero_apply]
+/-- **The box tensor product `M ⊠ P` of a differential module with a type `DA` bimodule.** For a
+differential right `B`-module `(M, dM)` and a type `DA` bimodule `P = ^B P_A`, the row
+vectors `Y → M`, standing for `∑ y, ψ y ⊗ y`, form an `A∞` right module over `A` with operations
+`m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a₁, …, aₙ) = ψ ⬝ δₙ(a₁, …, aₙ)` for `n ≥ 1`, over a ring
+of characteristic two. -/
+noncomputable def boxModule {dM : M →ₗ[R] M} (hM : IsUngradedDGRightModule dB dM) :
+    UngradedAInfinityRightModule dA (Y → M) where
+  act := P.boxAct dM
+  stasheff n a φ := by
+    -- The `A∞` relations are the type `DA` structure relations, multiplied on the left by `φ`:
+    -- the two terms `dM φ ⬝ δₙ` from `m₁` acting before and after `m_{n+1}` cancel, and the
+    -- Leibniz rule turns `dM (φ ⬝ δₙ)` into the differential term `φ ⬝ dB δₙ`.
+    have hcomp := P.ungradedStasheffComp_boxAct hM n a φ
+    have hdiff : ungradedStasheffDiff (P.boxAct dM) dA n a φ =
+        continuationMap R M (ungradedStasheffDiff P.coeff dA n a : Matrix Y Y B) φ := by
+      rw [ungradedStasheffDiff_apply, ungradedStasheffDiff_def, continuationMap_sum,
+        LinearMap.sum_apply]
+      exact Finset.sum_congr rfl fun l _ => P.boxAct_apply_of_ne_zero dM l.pos.ne' _ _
+    have hmul : ungradedStasheffMul (P.boxAct dM) n a φ =
+        continuationMap R M (ungradedStasheffMul P.coeff n a : Matrix Y Y B) φ := by
+      cases n with
+      | zero => simp
+      | succ n =>
+        rw [ungradedStasheffMul_succ_apply, ungradedStasheffMul_succ, continuationMap_sum,
+          LinearMap.sum_apply]
+        exact Finset.sum_congr rfl fun l _ => P.boxAct_apply_of_ne_zero dM l.pos.ne' _ _
+    rw [hcomp, hdiff, hmul, add_self_eq_zero_of_charTwo R, add_zero]
+    calc _ = continuationMap R M (typeDAComp P.coeff n a + (P.coeff n a).map dB +
+          ungradedStasheffDiff P.coeff dA n a + ungradedStasheffMul P.coeff n a) φ := by
+          simp only [continuationMap_add, LinearMap.add_apply]
+      _ = 0 := by rw [P.stasheff, continuationMap_zero, LinearMap.zero_apply]
 
-private theorem inducedModule_act (hdA : IsUngradedDGAlgebra dA)
-    (M : TypeDABimodule dA dB ιA ιB Y) : (M.inducedModule hdA).act = M.inducedAct :=
+end BoxModule
+
+/-! ### The type `D` structure `P ⊠ N` -/
+
+section BoxTypeD
+
+variable {T : Type*} {ιA : T → A} {X : Type*} [Fintype X] [DecidableEq X]
+  (P : TypeDAStructure dA dB ιB Y) (N : TypeDStructure dA ιA X)
+
+/-- The **coefficient matrix of the box tensor product** `P ⊠ N` of a type `DA` bimodule with a
+type `D` structure, on the generators `y ⊗ x` written `(y, x)`:
+`δ¹ (y ⊗ x) = ∑_k (δ¹_{k+1} ⊗ 1) (y ⊗ δᵏ x)`, so the coefficient from `(y, x)` to `(y', x')` is the
+sum over `k` of the coefficient `y → y'` of `δ¹_{k+1}` evaluated on the iterate `δᵏ` from `x` to
+`x'`. The sum is finite when `N` is bounded or the operations of `P` vanish from some arity on;
+otherwise this `finsum` is `0` by convention. -/
+noncomputable def boxCoeff : Matrix (Y × X) (Y × X) B :=
+  fun p q => ∑ᶠ k, PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k p.2 q.2) p.1 q.1
+
+theorem boxCoeff_apply (p q : Y × X) :
+    P.boxCoeff N p q = ∑ᶠ k, PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k p.2 q.2) p.1 q.1 :=
   (rfl)
 
-/-- The operation `m₁` of the induced module is `φ ↦ d φ + φ ⬝ δ₁`. -/
-@[simp]
-theorem inducedModule_act_zero (hdA : IsUngradedDGAlgebra dA) (M : TypeDABimodule dA dB ιA ιB Y)
-    (b : Fin 0 → B) (φ : Y → A) :
-    (M.inducedModule hdA).act 0 b φ =
-      (fun y => dA (φ y)) + continuationMap R A (M.coeff 0 b) φ := by
-  rw [inducedModule_act, inducedAct_apply, diffAct_apply_of_eq_zero rfl,
-    continuationMapLinear_apply, add_comm]
-
-/-- The higher operations of the induced module are `φ ↦ φ ⬝ δ_{n+2}(b)`. -/
-@[simp]
-theorem inducedModule_act_succ (hdA : IsUngradedDGAlgebra dA) (M : TypeDABimodule dA dB ιA ιB Y)
-    (n : ℕ) (b : Fin (n + 1) → B) (φ : Y → A) :
-    (M.inducedModule hdA).act (n + 1) b φ = continuationMap R A (M.coeff (n + 1) b) φ := by
-  rw [inducedModule_act, inducedAct_apply, diffAct_of_ne_zero n.succ_ne_zero, zero_apply,
-    LinearMap.zero_apply, add_zero, continuationMapLinear_apply]
-
-/-- The `y'`-component of an operation of the induced module. -/
-theorem inducedModule_act_apply (hdA : IsUngradedDGAlgebra dA)
-    (M : TypeDABimodule dA dB ιA ιB Y) (n : ℕ) (b : Fin n → B) (φ : Y → A) (y' : Y) :
-    (M.inducedModule hdA).act n b φ y' =
-      ∑ y, φ y * M.coeff n b y y' + if n = 0 then dA (φ y') else 0 := by
-  cases n with
-  | zero =>
-    rw [inducedModule_act_zero, Pi.add_apply, add_comm]
-    simp only [↓reduceIte, continuationMap_apply (R := R) (M := A) (M.coeff 0 b), op_smul_eq_mul]
-  | succ n =>
-    rw [inducedModule_act_succ]
-    simp only [Nat.succ_ne_zero, ↓reduceIte, add_zero,
-      continuationMap_apply (R := R) (M := A) (M.coeff (n + 1) b), op_smul_eq_mul]
-
-end Induced
-
-/-! ### The box tensor product with a type `D` structure -/
-
-section BoxTensor
-
-variable {X : Type*} [Fintype X] [DecidableEq X]
-
-/-- The sum over the paths `x = x₀ → ⋯ → xₙ = z` in `X` of `δ_{n+1}(ε x₀ x₁, …, ε xₙ₋₁ xₙ)`, for
-the coefficient matrix `ε` of a type `D` structure: the part of the box tensor coefficients coming
-from `δ¹_{n+1}`. -/
-noncomputable def pathCoeff (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X)
-    (n : ℕ) (x z : X) : Matrix Y Y A :=
-  PiTensorProduct.lift (M.coeff n) (N.iteratedCoeff n x z)
-
-/-- **The path coefficients in terms of the iterates of `N`**: `δ_{n+1}` evaluated on the iterate
-`δⁿ`, the coefficient of `z` in `δⁿ(x)`. -/
-theorem pathCoeff_def (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X) (n : ℕ)
-    (x z : X) : M.pathCoeff N n x z = PiTensorProduct.lift (M.coeff n) (N.iteratedCoeff n x z) :=
-  (rfl)
-
-/-- The entries of the path coefficients. -/
-theorem pathCoeff_apply (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X)
-    (n : ℕ) (x z : X) (y y' : Y) :
-    M.pathCoeff N n x z y y' = ∑ r : Fin (n + 1) → X,
-      if r 0 = x ∧ r (Fin.last n) = z then
-        M.coeff n (fun l => N.coeff (r l.castSucc) (r l.succ)) y y'
-      else 0 := by
-  rw [pathCoeff_def, N.lift_iteratedCoeff, Matrix.sum_apply, Finset.sum_filter]
-
-/-- The **coefficients of the box tensor product** `M ⊠ N`: the coefficient of `y' ⊗ z` in
-`δ¹(y ⊗ x)` is the sum over the paths `x = x₀ → ⋯ → xₙ = z` of the `(y, y')` entry of
-`δ_{n+1}(ε x₀ x₁, …, ε xₙ₋₁ xₙ)`. The sum over `n` is finite when `N` is bounded or when `δ_{n+1}`
-vanishes for large `n`. When the sequence of these entries has infinite support, this `finsum` is
-`0` by convention. -/
-noncomputable def boxCoeff (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X) :
-    Matrix (Y × X) (Y × X) A :=
-  fun p q => ∑ᶠ n, M.pathCoeff N n p.2 q.2 p.1 q.1
-
-/-- The box tensor coefficients as the `finsum` of the path coefficients. -/
-theorem boxCoeff_apply (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X)
-    (p q : Y × X) : M.boxCoeff N p q = ∑ᶠ n, M.pathCoeff N n p.2 q.2 p.1 q.1 :=
-  (rfl)
-
-/-- An additive map fixing every path coefficient entry fixes the box tensor coefficient. -/
-private theorem map_boxCoeff_eq_of_map_pathCoeff_eq (M : TypeDABimodule dA dB ιA ιB Y)
-    (N : TypeDStructure dB ιB X) (f : A →+ A) (p q : Y × X)
-    (h : ∀ n, f (M.pathCoeff N n p.2 q.2 p.1 q.1) = M.pathCoeff N n p.2 q.2 p.1 q.1) :
-    f (M.boxCoeff N p q) = M.boxCoeff N p q := by
-  rw [boxCoeff_apply]
-  by_cases hfin : Function.HasFiniteSupport fun n => M.pathCoeff N n p.2 q.2 p.1 q.1
-  · rw [map_finsum f hfin]
-    exact finsum_congr h
-  · rw [finsum_of_not_hasFiniteSupport hfin, map_zero]
-
-/-- The box tensor coefficients lie in the summands of the left idempotents on the left. -/
-theorem idem_mul_boxCoeff (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X)
-    (p q : Y × X) : ιA (M.idemLeft p.1) * M.boxCoeff N p q = M.boxCoeff N p q := by
-  refine M.map_boxCoeff_eq_of_map_pathCoeff_eq N (AddMonoidHom.mulLeft _) p q fun n => ?_
-  simp only [AddMonoidHom.coe_mulLeft, pathCoeff_apply, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  split_ifs
-  · exact M.idem_mul_coeff _ _ _ _
-  · simp
-
-/-- The box tensor coefficients lie in the summands of the left idempotents on the right. -/
-theorem boxCoeff_mul_idem (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X)
-    (p q : Y × X) : M.boxCoeff N p q * ιA (M.idemLeft q.1) = M.boxCoeff N p q := by
-  refine M.map_boxCoeff_eq_of_map_pathCoeff_eq N (AddMonoidHom.mulRight _) p q fun n => ?_
-  simp only [AddMonoidHom.coe_mulRight, pathCoeff_apply, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  split_ifs
-  · exact M.coeff_mul_idem _ _ _ _
-  · simp
-
-/-- **No coefficient leaves the matched pairs.** If the idempotents of `B` are orthogonal, the
-coefficient from a pair `y ⊗ x` with `idemRight y = idem x` to a pair `y' ⊗ z` with
-`idemRight y' ≠ idem z` vanishes. -/
-theorem boxCoeff_eq_zero_of_ne (hιB : ∀ t t', t ≠ t' → ιB t * ιB t' = 0)
-    (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X) {p q : Y × X}
-    (hp : M.idemRight p.1 = N.idem p.2) (hq : M.idemRight q.1 ≠ N.idem q.2) :
-    M.boxCoeff N p q = 0 := by
-  rw [boxCoeff_apply]
-  refine (finsum_congr fun n => ?_).trans finsum_zero
-  rw [pathCoeff_apply]
-  refine Finset.sum_eq_zero fun r _ => ?_
-  split_ifs with hr
-  · obtain ⟨hr0, hrz⟩ := hr
-    cases n with
-    | zero =>
-      have hpq : p.2 = q.2 := by rw [← hr0, ← hrz]; rfl
-      exact M.coeff_zero_eq_zero_of_ne _ (by rw [hp, hpq]; exact Ne.symm hq)
-    | succ n =>
-      rw [← M.coeff_succ_update_mul_idem]
-      refine congrFun (congrFun ((M.coeff (n + 1)).map_coord_zero (Fin.last n) ?_) _) _
-      rw [Function.update_self, Fin.succ_last, hrz, ← N.coeff_mul_idem, mul_assoc,
-        hιB _ _ (Ne.symm hq), mul_zero]
-  · rfl
-
-/-- Some `K` bounds the lengths of the paths with nonzero path coefficients, when `N` is bounded
-or `δ_{n+1}` vanishes for large `n`. -/
-private theorem exists_forall_pathCoeff_eq_zero (M : TypeDABimodule dA dB ιA ιB Y)
-    (N : TypeDStructure dB ιB X) (hMN : N.IsBounded ∨ ∃ K, ∀ n, K ≤ n → M.coeff n = 0) :
-    ∃ K, ∀ n, K ≤ n → ∀ x z, M.pathCoeff N n x z = 0 := by
-  rcases hMN with hN | ⟨K, hK⟩
-  · obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
-    exact ⟨K, fun n hn x z => by rw [pathCoeff_def, hK n hn, map_zero]⟩
-  · refine ⟨K, fun n hn x z => ?_⟩
-    simp [pathCoeff_def, hK n hn]
-
-/-- **The box tensor coefficients as a finite sum.** If the path coefficients vanish for paths of
-length at least `K`, the box tensor coefficients are the sums of the path coefficients of length
-less than `K`. -/
-theorem boxCoeff_eq_sum (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X) {K : ℕ}
-    (hK : ∀ n, K ≤ n → ∀ x z, M.pathCoeff N n x z = 0) (p q : Y × X) :
-    M.boxCoeff N p q = ∑ n ∈ range K, M.pathCoeff N n p.2 q.2 p.1 q.1 := by
-  refine finsum_eq_sum_of_support_subset _ fun n hn => ?_
-  rw [Function.mem_support] at hn
-  simp only [coe_range, Set.mem_Iio]
-  by_contra h
-  exact hn (by rw [hK n (not_lt.mp h)]; rfl)
-
-/-- **The box tensor coefficients of a bounded bimodule.** If `δ_{n+1}` vanishes for `n ≥ K`, the
-coefficient of `y' ⊗ z` in `δ¹(y ⊗ x)` is the sum over the paths `x = x₀ → ⋯ → xₙ = z` of length
-`n < K` of the `(y, y')` entry of `δ_{n+1}(ε x₀ x₁, …, ε xₙ₋₁ xₙ)`. -/
-theorem boxCoeff_eq_sum_of_coeff_eq_zero (M : TypeDABimodule dA dB ιA ιB Y)
-    (N : TypeDStructure dB ιB X) {K : ℕ} (hK : ∀ n, K ≤ n → M.coeff n = 0) (p q : Y × X) :
-    M.boxCoeff N p q = ∑ n ∈ range K, M.pathCoeff N n p.2 q.2 p.1 q.1 :=
-  M.boxCoeff_eq_sum N (fun n hn x z => by simp [pathCoeff_def, hK n hn]) p q
-
-/-- **The box tensor coefficients with a bounded type `D` structure.** If the iterates `δⁿ` of `N`
-vanish for `n ≥ K`, the coefficient of `y' ⊗ z` in `δ¹(y ⊗ x)` is the `(y, y')` entry of
-`∑_{n < K} δ_{n+1}(δⁿ(x))`, the iterate taken at `z`. -/
-theorem boxCoeff_eq_sum_lift_iteratedCoeff (M : TypeDABimodule dA dB ιA ιB Y)
-    (N : TypeDStructure dB ιB X) {K : ℕ} (hK : ∀ n, K ≤ n → ∀ x z, N.iteratedCoeff n x z = 0)
+/-- When the terms of length at least `K` vanish, the coefficients of `P ⊠ N` are the sums over the
+lengths `k < K`. -/
+theorem boxCoeff_eq_sum {K : ℕ}
+    (hK : ∀ k, K ≤ k → ∀ x x', PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k x x') = 0)
     (p q : Y × X) :
-    M.boxCoeff N p q =
-      ∑ n ∈ range K, PiTensorProduct.lift (M.coeff n) (N.iteratedCoeff n p.2 q.2) p.1 q.1 := by
-  rw [M.boxCoeff_eq_sum N (K := K) (fun n hn x z => by rw [pathCoeff_def, hK n hn, map_zero])]
-  simp only [pathCoeff_def]
+    P.boxCoeff N p q =
+      ∑ k ∈ range K, PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k p.2 q.2) p.1 q.1 := by
+  refine finsum_eq_sum_of_support_subset _ fun k hk => ?_
+  rw [Function.mem_support] at hk
+  simp only [coe_range, Set.mem_Iio]
+  by_contra hlt
+  exact hk (by simp only [hK k (not_lt.mp hlt), Matrix.zero_apply])
 
-/-- **The box tensor product with a differential bimodule.** If `δ_{n+1}` vanishes for `n ≥ 2`,
-the coefficient of `y' ⊗ z` in `δ¹(y ⊗ x)` is the `(y, y')` entry of `δ₁` if `x = z`, plus that of
-`δ₂(ε x z)`: `δ¹(y ⊗ x) = δ¹₁(y) ⊗ x + ∑_z δ¹₂(y, ε x z) ⊗ z`. -/
-theorem boxCoeff_eq_add_of_coeff_eq_zero (M : TypeDABimodule dA dB ιA ιB Y)
-    (N : TypeDStructure dB ιB X) (hM : ∀ n, 2 ≤ n → M.coeff n = 0) (y y' : Y) (x z : X) :
-    M.boxCoeff N (y, x) (y', z) =
-      (if x = z then M.coeff 0 ![] y y' else 0) + M.coeff 1 ![N.coeff x z] y y' := by
-  rw [M.boxCoeff_eq_sum_of_coeff_eq_zero N hM, Finset.sum_range_succ, Finset.sum_range_one,
-    pathCoeff_def, pathCoeff_def, N.iteratedCoeff_zero,
-    N.iteratedCoeff_one, PiTensorProduct.lift.tprod]
+/-- A coefficient of `δ¹_{k+1}` evaluated on a tensor lies in the summand of the idempotent of its
+source on the left and of its target on the right. -/
+private theorem idem_mul_lift_coeff_mul_idem (k : ℕ) (t : PiTensorProduct R fun _ : Fin k => A)
+    (y y' : Y) :
+    ιB (P.idem y) * PiTensorProduct.lift (P.coeff k) t y y' =
+        PiTensorProduct.lift (P.coeff k) t y y' ∧
+      PiTensorProduct.lift (P.coeff k) t y y' * ιB (P.idem y') =
+        PiTensorProduct.lift (P.coeff k) t y y' := by
+  induction t using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    simp only [map_smul, PiTensorProduct.lift.tprod, Matrix.smul_apply, mul_smul_comm,
+      smul_mul_assoc, P.idem_mul_coeff, P.coeff_mul_idem, and_self]
+  | add t t' ht ht' =>
+    simp only [map_add, Matrix.add_apply, mul_add, add_mul, ht.1, ht.2, ht'.1, ht'.2, and_self]
+
+theorem idem_mul_boxCoeff (p q : Y × X) : ιB (P.idem p.1) * P.boxCoeff N p q = P.boxCoeff N p q :=
+  mul_finsum_of_forall fun k => (P.idem_mul_lift_coeff_mul_idem k _ p.1 q.1).1
+
+theorem boxCoeff_mul_idem (p q : Y × X) : P.boxCoeff N p q * ιB (P.idem q.1) = P.boxCoeff N p q :=
+  finsum_mul_of_forall fun k => (P.idem_mul_lift_coeff_mul_idem k _ p.1 q.1).2
+
+/-- **The coefficients of `P ⊠ N` for a differential bimodule.** If `δ¹_{k+1}` vanishes for
+`k ≥ 2`, the coefficient from `(y, x)` to `(y', z)` is the `(y, y')` entry of `δ₀` if `x = z`, plus
+that of `δ₁(δ x z)`: `δ¹(y ⊗ x) = δ¹₁(y) ⊗ x + ∑_z δ¹₂(y, δ x z) ⊗ z`. -/
+theorem boxCoeff_eq_add_of_coeff_eq_zero (hP : ∀ k, 2 ≤ k → P.coeff k = 0) (y y' : Y) (x z : X) :
+    P.boxCoeff N (y, x) (y', z) =
+      (if x = z then P.coeff 0 ![] y y' else 0) + P.coeff 1 ![N.coeff x z] y y' := by
+  rw [P.boxCoeff_eq_sum N (K := 2) (fun k hk x x' => by
+      rw [hP k hk, map_zero, LinearMap.zero_apply]),
+    Finset.sum_range_succ, Finset.sum_range_one, N.iteratedCoeff_zero, N.iteratedCoeff_one,
+    PiTensorProduct.lift.tprod]
   congr 1
   · split_ifs
     · rw [PiTensorProduct.lift.tprod, Subsingleton.elim Fin.elim0 ![]]
@@ -547,147 +373,463 @@ theorem boxCoeff_eq_add_of_coeff_eq_zero (M : TypeDABimodule dA dB ιA ιB Y)
   · rw [show (fun _ : Fin 1 => N.coeff x z) = ![N.coeff x z] from
       funext fun l => by rw [Fin.fin_one_eq_zero l]; rfl]
 
-variable [CharP R 2]
+end BoxTypeD
 
-/-- The operations of the matrix module of the induced module along the coefficient matrix of
-`N` are given by the path coefficients, together with `d Φ` for `n = 0`. -/
-theorem matrixAct_inducedModule_apply (hdA : IsUngradedDGAlgebra dA)
-    (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X) (n : ℕ) (Φ : X → Y → A)
-    (z : X) (y' : Y) :
-    (M.inducedModule hdA).matrixAct X n (fun _ => N.coeff) Φ z y' =
-      ∑ x, ∑ y, Φ x y * M.pathCoeff N n x z y y' + if n = 0 then dA (Φ z y') else 0 := by
-  rw [UngradedAInfinityRightModule.matrixAct_apply, Finset.sum_apply]
-  simp only [apply_ite (fun f : Y → A => f y'), Pi.zero_apply, inducedModule_act_apply]
-  have ha : ∑ x, ∑ y, Φ x y * M.pathCoeff N n x z y y' =
-      ∑ r : Fin (n + 1) → X with r (Fin.last n) = z,
-        ∑ y, Φ (r 0) y * M.coeff n (fun l => N.coeff (r l.castSucc) (r l.succ)) y y' := by
-    refine (Finset.sum_congr rfl fun x _ => ?_).trans (N.sum_lift_iteratedCoeff n
-      (fun x => (∑ y, LinearMap.mulLeft R (Φ x y) ∘ₗ
-        Matrix.entryLinearMap R A y y').compMultilinearMap (M.coeff n)) z |>.trans ?_)
-    · simp only [pathCoeff_def, N.lift_iteratedCoeff, Matrix.sum_apply, Finset.mul_sum,
-        LinearMap.compMultilinearMap_apply, LinearMap.sum_apply, LinearMap.comp_apply,
-        Matrix.entryLinearMap_apply, LinearMap.mulLeft_apply]
-      exact Finset.sum_comm
-    · simp
-  have hb : ∑ r : Fin (n + 1) → X,
-      (if r (Fin.last n) = z then (if n = 0 then dA (Φ (r 0) y') else 0) else 0) =
-      if n = 0 then dA (Φ z y') else 0 := by
-    by_cases hn : n = 0
-    · subst hn
-      rw [← (Equiv.funUnique (Fin 1) X).symm.sum_comp]
-      simp
-    · simp [hn]
-  rw [ha, Finset.sum_filter, ← hb, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun r _ => ?_
-  split_ifs <;> simp
+/-! ### Associativity -/
 
-/-- **The box tensor differential of the induced module.** When `N` is bounded or `δ_{n+1}`
-vanishes for large `n`, the box tensor differential of the induced module `A ⊠ M` with `N`, on the
-row vectors `Φ : X → Y → A`, is `Φ ↦ d Φ + Φ ⬝ C` for the box tensor coefficients `C`. -/
-theorem typeABoxDifferential_inducedModule_apply (hdA : IsUngradedDGAlgebra dA)
-    (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X)
-    (hMN : N.IsBounded ∨ ∃ K, ∀ n, K ≤ n → M.coeff n = 0) (Φ : X → Y → A) (z : X) (y' : Y) :
-    N.typeABoxDifferential (M.inducedModule hdA) Φ z y' =
-      dA (Φ z y') + ∑ x, ∑ y, Φ x y * M.boxCoeff N (y, x) (y', z) := by
-  obtain ⟨K, hK⟩ := M.exists_forall_pathCoeff_eq_zero N hMN
-  have hK' : ∀ n, K + 1 ≤ n →
-      ((M.inducedModule hdA).matrixAct X n fun _ => N.coeff) = 0 := fun n hn =>
-    LinearMap.ext fun Φ => funext fun z => funext fun y' => by
-      have hn0 : n ≠ 0 := by omega
-      simp [matrixAct_inducedModule_apply, hn0, hK n (by omega)]
-  rw [TypeDStructure.typeABoxDifferential_def,
-    UngradedAInfinityRightModule.twistedDifferential_eq_sum _
-    (by simpa only [UngradedAInfinityRightModule.matrix_act] using hK')]
-  simp only [LinearMap.sum_apply, Finset.sum_apply, UngradedAInfinityRightModule.matrix_act,
-    matrixAct_inducedModule_apply, Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_range,
-    Nat.zero_lt_succ, ↓reduceIte]
-  rw [add_comm]
+section Associativity
+
+variable {T : Type*} {ιA : T → A} {X : Type*} [Fintype X] [DecidableEq X]
+  {M : Type*} [AddCommGroup M] [Module R M] [Module Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M]
+  [IsScalarTower R Bᵐᵒᵖ M] [CharP R 2] {dM : M →ₗ[R] M}
+  (P : TypeDAStructure dA dB ιB Y) (N : TypeDStructure dA ιA X)
+
+private theorem boxModule_act (hM : IsUngradedDGRightModule dB dM) (n : ℕ) :
+    (P.boxModule hM).act n = P.boxAct dM n :=
+  (rfl)
+
+/-- The operations of `M ⊠ P`: `m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a) = ψ ⬝ δₙ(a)`, `n ≥ 1`. -/
+@[simp]
+theorem boxModule_act_apply (hM : IsUngradedDGRightModule dB dM) (n : ℕ) (a : Fin n → A)
+    (ψ : Y → M) :
+    (P.boxModule hM).act n a ψ =
+      (if n = 0 then fun y => dM (ψ y) else 0) + continuationMap R M (P.coeff n a) ψ :=
+  P.boxAct_apply dM n a ψ
+
+/-- The operation `m_{n+1}` of `M ⊠ P`, `n ≥ 1`, vanishes when `δ¹_{n+1}` does. -/
+theorem boxModule_act_eq_zero (hM : IsUngradedDGRightModule dB dM) {n : ℕ} (hn : n ≠ 0)
+    (hP : P.coeff n = 0) : (P.boxModule hM).act n = 0 :=
+  MultilinearMap.ext fun a => LinearMap.ext fun ψ => by
+    simp only [boxModule_act, P.boxAct_apply_of_ne_zero dM hn, hP, zero_apply,
+      continuationMap_zero, LinearMap.zero_apply]
+
+/-- Evaluating the operations of `M ⊠ P` on a tensor: the differential of `M` on the empty tensor,
+and the action of `δ¹_{n+1}` evaluated on the tensor. -/
+private theorem lift_boxModule_act (hM : IsUngradedDGRightModule dB dM) (n : ℕ) (x z : X)
+    (ψ : Y → M) :
+    PiTensorProduct.lift ((P.boxModule hM).act n) (N.iteratedCoeff n x z) ψ =
+      (if n = 0 ∧ x = z then fun y => dM (ψ y) else 0) +
+        continuationMap R M (PiTensorProduct.lift (P.coeff n) (N.iteratedCoeff n x z)) ψ := by
+  have hL : PiTensorProduct.lift ((continuationMapₗ R M Y Y).compMultilinearMap (P.coeff n)) =
+      continuationMapₗ R M Y Y ∘ₗ PiTensorProduct.lift (P.coeff n) :=
+    PiTensorProduct.ext (MultilinearMap.ext fun a => by simp)
+  rw [boxModule_act, boxAct, map_add, hL, LinearMap.add_apply, LinearMap.add_apply,
+    LinearMap.comp_apply, continuationMapₗ_apply]
   congr 1
-  simp only [M.boxCoeff_eq_sum N (K := K + 1) (fun n hn => hK n (by omega)), Finset.mul_sum]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun x _ => Finset.sum_comm
+  cases n with
+  | zero =>
+    rw [N.iteratedCoeff_zero]
+    by_cases hxz : x = z
+    · rw [ite_eq_left hxz, PiTensorProduct.lift.tprod, ite_eq_left ⟨rfl, hxz⟩, diffAct_apply,
+        ite_eq_left rfl]
+    · rw [ite_eq_right hxz, map_zero, ite_eq_right fun h => hxz h.2, LinearMap.zero_apply]
+  | succ n =>
+    rw [ite_eq_right fun h => Nat.succ_ne_zero n h.1, diffAct_succ, map_zero,
+      LinearMap.zero_apply, LinearMap.zero_apply]
 
-/-- **The structure equation of the box tensor product** on all pairs of generators. If `N` is
-bounded or `δ_{n+1}` vanishes for large `n`, the box tensor coefficients satisfy
-`d C + C C = 0`, over a ring of characteristic two. -/
-theorem map_boxCoeff_add_boxCoeff_mul_boxCoeff (hdA : IsUngradedDGAlgebra dA)
-    (M : TypeDABimodule dA dB ιA ιB Y) (N : TypeDStructure dB ιB X)
-    (hMN : N.IsBounded ∨ ∃ K, ∀ n, K ≤ n → M.coeff n = 0) :
-    (M.boxCoeff N).map dA + M.boxCoeff N * M.boxCoeff N = 0 := by
+/-- Under either boundedness hypothesis, a single length `K ≥ 1` bounds both the nonzero operations
+of the matrix module of `M ⊠ P` along the coefficients of `N` and the nonzero terms of the
+coefficients of `P ⊠ N`. -/
+private theorem exists_bound (hM : IsUngradedDGRightModule dB dM)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) :
+    ∃ K, 1 ≤ K ∧
+      (∀ n, K ≤ n → ((P.boxModule hM).matrixAct X n fun _ => N.coeff) = 0) ∧
+      ∀ k, K ≤ k → ∀ x x', PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k x x') = 0 := by
+  rcases h with hN | ⟨K, hK⟩
+  · obtain ⟨K, hK⟩ := N.isBounded_iff.mp hN
+    refine ⟨K + 1, by omega, fun n hn => ?_, fun k hk x x' => by rw [hK k (by omega), map_zero]⟩
+    exact N.matrixAct_eq_zero_of_iteratedCoeff_eq_zero _ (hK n (by omega)) fun _ => Or.inl rfl
+  · refine ⟨K + 1, by omega, fun n hn => ?_, fun k hk x x' => by
+      rw [hK k (by omega), map_zero, LinearMap.zero_apply]⟩
+    rw [(P.boxModule hM).matrixAct_eq_zero_of_act_eq_zero X
+      (P.boxModule_act_eq_zero hM (by omega) (hK n (by omega))), zero_apply]
+
+/-- **Associativity of the box tensor product, on row vectors.** For a differential right
+`B`-module `(M, dM)`, a type `DA` bimodule `P = ^B P_A` and a type `D` structure `N` over
+`A`, one of `N` and `P` bounded, the box tensor differential of the type `A` module `M ⊠ P` with
+`N` is the box tensor differential `∂ = dM + · ⬝ δ` of `M` with `P ⊠ N`: on a row vector `φ`,
+standing for `∑ m ⊗ y ⊗ x` with coefficients `φ x y`,
+`∂ φ = dM φ + φ ⬝ (P ⊠ N)` at the generator `y' ⊗ z`. -/
+theorem typeABoxDifferential_boxModule_apply (hM : IsUngradedDGRightModule dB dM)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (φ : X → Y → M) (z : X) (y' : Y) :
+    N.typeABoxDifferential (P.boxModule hM) φ z y' =
+      dM (φ z y') + continuationMap R M (P.boxCoeff N) (fun p => φ p.2 p.1) (y', z) := by
+  obtain ⟨K, hK1, hKm, hKl⟩ := P.exists_bound N hM h
+  rw [N.typeABoxDifferential_apply_eq_sum_lift_iteratedCoeff _ hKm, Finset.sum_apply]
+  simp only [Finset.sum_apply, P.lift_boxModule_act N hM, Pi.add_apply, Finset.sum_add_distrib]
+  congr 1
+  · -- Only the empty path from `z` to itself contributes the differential of `M`.
+    rw [Finset.sum_eq_single 0 (fun n _ hn => Finset.sum_eq_zero fun x _ => by
+      rw [ite_eq_right fun h => hn h.1, Pi.zero_apply])
+        (fun h => (h (Finset.mem_range.mpr hK1)).elim),
+      Finset.sum_eq_single z (fun x _ hx => by
+        rw [ite_eq_right fun h => hx h.2, Pi.zero_apply])
+        (by simp), ite_eq_left ⟨rfl, rfl⟩]
+  · rw [continuationMap_apply (R := R) (M := M) (P.boxCoeff N), Fintype.sum_prod_type]
+    have hL (k : ℕ) (x : X) :
+        continuationMap R M (PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k x z)) (φ x) y' =
+          ∑ y, op (PiTensorProduct.lift (P.coeff k) (N.iteratedCoeff k x z) y y') • φ x y :=
+      continuationMap_apply (R := R) (M := M) _ _ _
+    simp only [P.boxCoeff_eq_sum N hKl, Finset.op_sum, Finset.sum_smul, hL]
+    -- Reorder the sum `∑ k, ∑ x, ∑ y` over lengths `k`, sources `x` and generators `y` of `P` into
+    -- `∑ y, ∑ x, ∑ k`: swap the outer `k` and `x`, then `k` and `y` under `x`, then the outer
+    -- `x` and `y`.
+    exact (Finset.sum_comm.trans (Finset.sum_congr rfl fun x _ => Finset.sum_comm)).trans
+      Finset.sum_comm
+
+/-- **The structure equation of `P ⊠ N`.** If `dB` is a differential, over a ring of characteristic
+two, and `N` is bounded or the operations of `P` vanish from some arity on, the coefficient matrix
+`δ` of `P ⊠ N` satisfies `dB δ + δ * δ = 0`. -/
+theorem map_boxCoeff_add_boxCoeff_mul_boxCoeff (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) :
+    (P.boxCoeff N).map dB + P.boxCoeff N * P.boxCoeff N = 0 := by
   classical
-  have hDD (Φ : X → Y → A) : N.typeABoxDifferential (M.inducedModule hdA)
-      (N.typeABoxDifferential (M.inducedModule hdA) Φ) = 0 := by
-    rcases hMN with hN | ⟨K, hK⟩
-    · exact N.typeABoxDifferential_typeABoxDifferential_of_isBounded _ hN Φ
-    · refine N.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero _ (K := K + 1)
-        (fun n hn => ?_) Φ
-      obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-      refine MultilinearMap.ext fun b => LinearMap.ext fun φ => ?_
-      rw [inducedModule_act_succ, hK (m + 1) (by omega)]
-      simp
-  ext p q
-  obtain ⟨y, x⟩ := p
-  obtain ⟨y'', z'⟩ := q
-  -- The box tensor differential of the elementary row vector `y ⊗ x` is the row of `C` at `y ⊗ x`.
-  have hΦ (z : X) (y' : Y) : N.typeABoxDifferential (M.inducedModule hdA)
-      (Pi.single x (Pi.single y 1)) z y' = M.boxCoeff N (y, x) (y', z) := by
-    rw [typeABoxDifferential_inducedModule_apply hdA M N hMN]
-    simp [Pi.single_apply, ite_apply, apply_ite dA, hdA.map_one, ite_mul]
-  have h := congrFun (congrFun (hDD (Pi.single x (Pi.single y 1))) z') y''
-  rw [typeABoxDifferential_inducedModule_apply hdA M N hMN] at h
-  simp only [hΦ] at h
-  rw [Matrix.add_apply, Matrix.map_apply, Matrix.mul_apply, Fintype.sum_prod_type,
-    Finset.sum_comm]
-  simpa using h
+  -- The row of `δ` at `p` is the box tensor differential of the generator `1 ⊗ p` of
+  -- `B ⊠ (P ⊠ N)`, which by associativity is the box tensor differential of the type `A` module
+  -- `B ⊠ P` with `N`. That differential squares to zero, and its square at `1 ⊗ p` is the row at
+  -- `p` of `dB δ + δ * δ`.
+  have hB := hdB.isUngradedDGRightModule
+  have hsq (φ : X → Y → B) : N.typeABoxDifferential (P.boxModule hB)
+      (N.typeABoxDifferential (P.boxModule hB) φ) = 0 := by
+    rcases h with hN | ⟨K, hK⟩
+    · exact N.typeABoxDifferential_typeABoxDifferential_of_isBounded _ hN φ
+    · exact N.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero _ (K := K + 1)
+        (fun n hn => P.boxModule_act_eq_zero hB (by omega) (hK n (by omega))) φ
+  ext p₀ q₀
+  -- The box tensor differential of the generator `1 ⊗ p₀` is the row of `δ` at `p₀`.
+  set e : X → Y → B := fun x y => Pi.single (M := fun _ : Y × X => B) p₀ 1 (y, x) with he
+  have hrow : N.typeABoxDifferential (P.boxModule hB) e =
+      fun x y => P.boxCoeff N p₀ (y, x) := by
+    funext x y
+    rw [P.typeABoxDifferential_boxModule_apply N hB h]
+    simp only [he, Prod.mk.eta]
+    rw [continuationMap_single_apply (R := R) (M := B) (P.boxCoeff N), op_smul_eq_mul, one_mul]
+    rcases eq_or_ne (y, x) p₀ with hp | hp
+    · rw [hp, Pi.single_eq_same, hdB.map_one, zero_add]
+    · rw [Pi.single_eq_of_ne hp, map_zero, zero_add]
+  have h₀ := congrFun (congrFun (hsq e) q₀.2) q₀.1
+  rw [hrow, P.typeABoxDifferential_boxModule_apply N hB h,
+    continuationMap_apply (R := R) (M := B) (P.boxCoeff N)] at h₀
+  -- Its square at `1 ⊗ p₀` is the entry of `dB δ + δ * δ`.
+  have hentry : ((P.boxCoeff N).map dB + P.boxCoeff N * P.boxCoeff N) p₀ q₀ =
+      dB (P.boxCoeff N p₀ (q₀.1, q₀.2)) +
+        ∑ p, op (P.boxCoeff N p (q₀.1, q₀.2)) • P.boxCoeff N p₀ (p.1, p.2) := by
+    simp only [Matrix.add_apply, Matrix.map_apply, Matrix.mul_apply, op_smul_eq_mul, Prod.mk.eta]
+  rw [hentry, Matrix.zero_apply]
+  exact h₀
 
-/-- The **box tensor product** `M ⊠ N` of a type `DA` bimodule with a type `D` structure, over a
-ring of characteristic two: the type `D` structure over `A` on the pairs `y ⊗ x` of generators with
-matching idempotents `idemRight y = idem x`, with the box tensor coefficients
-`TauCeti.TypeDABimodule.boxCoeff`. The idempotents of `B` are orthogonal, and either `N` is
-bounded or `δ_{n+1}` vanishes for large `n`. -/
-noncomputable def boxTensor [DecidableEq T] (hdA : IsUngradedDGAlgebra dA)
-    (hιB : ∀ t t', t ≠ t' → ιB t * ιB t' = 0) (M : TypeDABimodule dA dB ιA ιB Y)
-    (N : TypeDStructure dB ιB X) (hMN : N.IsBounded ∨ ∃ K, ∀ n, K ≤ n → M.coeff n = 0) :
-    TypeDStructure dA ιA {p : Y × X // M.idemRight p.1 = N.idem p.2} where
-  idem p := M.idemLeft p.1.1
-  coeff p q := M.boxCoeff N p.1 q.1
-  idem_mul_coeff p q := M.idem_mul_boxCoeff N p.1 q.1
-  coeff_mul_idem p q := M.boxCoeff_mul_idem N p.1 q.1
+/-- **The box tensor product `P ⊠ N`** of a type `DA` bimodule `^B P_A` with a type `D`
+structure over `A`, a type `D` structure over `B` on the generators `y ⊗ x`, written `(y, x)`, with
+the idempotent of `y` and the coefficients `TauCeti.TypeDAStructure.boxCoeff`. It is defined when
+`N` is bounded or the operations of `P` vanish from some arity on, over a ring of characteristic
+two. -/
+noncomputable def boxTypeD (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) : TypeDStructure dB ιB (Y × X) where
+  idem p := P.idem p.1
+  coeff := P.boxCoeff N
+  idem_mul_coeff := P.idem_mul_boxCoeff N
+  coeff_mul_idem := P.boxCoeff_mul_idem N
+  map_coeff_add_coeff_mul_coeff := P.map_boxCoeff_add_boxCoeff_mul_boxCoeff N hdB h
+
+@[simp]
+theorem boxTypeD_idem (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) (p : Y × X) :
+    (P.boxTypeD N hdB h).idem p = P.idem p.1 :=
+  (rfl)
+
+@[simp]
+theorem boxTypeD_coeff (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0) :
+    (P.boxTypeD N hdB h).coeff = P.boxCoeff N :=
+  (rfl)
+
+/-- **Associativity of the box tensor product**, `(M ⊠ P) ⊠ N = M ⊠ (P ⊠ N)`: the box tensor
+differential of the type `A` module `M ⊠ P` with `N` is the box tensor differential of the
+differential module `M` with the type `D` structure `P ⊠ N`, under the identification of the row
+vectors `X → Y → M` with the row vectors `Y × X → M`. -/
+theorem typeABoxDifferential_boxModule (hM : IsUngradedDGRightModule dB dM)
+    (hdB : IsUngradedDGAlgebra dB) (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0)
+    (φ : X → Y → M) (z : X) (y' : Y) :
+    N.typeABoxDifferential (P.boxModule hM) φ z y' =
+      (P.boxTypeD N hdB h).boxDifferential dM (fun p => φ p.2 p.1) (y', z) := by
+  rw [P.typeABoxDifferential_boxModule_apply N hM h, TypeDStructure.boxDifferential_apply,
+    Pi.add_apply, boxTypeD_coeff]
+
+end Associativity
+
+/-! ### The generators with matching idempotents -/
+
+section Matched
+
+variable {T : Type*} {X : Type*} [Fintype X] [DecidableEq X]
+
+variable (ιA : T → A) in
+/-- **Right idempotents** of a type `DA` bimodule `^B P_A`: each generator `y` lies in the summand
+`ιB (idem y) * P * ιA (idemRight y)`, and the operations respect these idempotents. The operation
+`δ¹₁` keeps them, the coefficient of `y'` in `δ¹_{n+1}(y, a₁, …, aₙ)` only depends on
+`aₙ * ιA (idemRight y')`, the coefficient from `y` only depends on `ιA (idemRight y) * a₁`, and
+adjacent inputs are balanced over the idempotents of `A`, so that `δ¹_{n+1}` is defined on
+`P ⊗ A ⊗ ⋯ ⊗ A` with the tensor products taken over the idempotents. -/
+structure RespectsRightIdem (P : TypeDAStructure dA dB ιB Y) (idemRight : Y → T) : Prop where
+  /-- The operation `δ¹₁` keeps the right idempotents. -/
+  coeff_zero_eq_zero_of_ne (a : Fin 0 → A) {y y' : Y} (h : idemRight y ≠ idemRight y') :
+    P.coeff 0 a y y' = 0
+  /-- The coefficient of `y'` in `δ¹_{n+2}(y, a₁, …, aₙ₊₁)` only depends on
+  `aₙ₊₁ * ιA (idemRight y')`. -/
+  coeff_succ_update_mul_idem (n : ℕ) (a : Fin (n + 1) → A) (y y' : Y) :
+    P.coeff (n + 1) (Function.update a (Fin.last n) (a (Fin.last n) * ιA (idemRight y'))) y y' =
+      P.coeff (n + 1) a y y'
+  /-- The coefficient from `y` in `δ¹_{n+2}(y, a₁, …, aₙ₊₁)` only depends on
+  `ιA (idemRight y) * a₁`. -/
+  coeff_succ_update_idem_mul (n : ℕ) (a : Fin (n + 1) → A) (y y' : Y) :
+    P.coeff (n + 1) (Function.update a 0 (ιA (idemRight y) * a 0)) y y' = P.coeff (n + 1) a y y'
+  /-- Adjacent inputs are balanced over the idempotents of `A`:
+  `δ¹_{n+3}(…, aₗ * ιA t, aₗ₊₁, …) = δ¹_{n+3}(…, aₗ, ιA t * aₗ₊₁, …)`. -/
+  coeff_update_mul_idem_eq_update_idem_mul (n : ℕ) (a : Fin (n + 2) → A) (l : Fin (n + 1))
+      (t : T) :
+    P.coeff (n + 2) (Function.update a l.castSucc (a l.castSucc * ιA t)) =
+      P.coeff (n + 2) (Function.update a l.succ (ιA t * a l.succ))
+
+variable {ιA : T → A} (P : TypeDAStructure dA dB ιB Y) (N : TypeDStructure dA ιA X)
+  {idemRight : Y → T}
+
+/-- **No coefficient of `P ⊠ N` leaves the matched generators.** If the idempotents of `A` are
+orthogonal and `P` respects the right idempotents `idemRight`, the coefficient from a generator
+`(y, x)` with `idemRight y = idem x` to a generator `(y', z)` with `idemRight y' ≠ idem z`
+vanishes. -/
+theorem boxCoeff_eq_zero_of_ne (hιA : ∀ t t', t ≠ t' → ιA t * ιA t' = 0)
+    (hP : P.RespectsRightIdem ιA idemRight) {p q : Y × X} (hp : idemRight p.1 = N.idem p.2)
+    (hq : idemRight q.1 ≠ N.idem q.2) : P.boxCoeff N p q = 0 := by
+  rw [boxCoeff_apply]
+  refine (finsum_congr fun k => ?_).trans finsum_zero
+  rw [N.lift_iteratedCoeff, Matrix.sum_apply]
+  refine Finset.sum_eq_zero fun r hr => ?_
+  obtain ⟨hr0, hrz⟩ := (Finset.mem_filter.mp hr).2
+  cases k with
+  | zero =>
+    have hpq : p.2 = q.2 := by rw [← hr0, ← hrz]; rfl
+    exact hP.coeff_zero_eq_zero_of_ne _ (by rw [hp, hpq]; exact Ne.symm hq)
+  | succ k =>
+    rw [← hP.coeff_succ_update_mul_idem]
+    refine congrFun (congrFun ((P.coeff (k + 1)).map_coord_zero (Fin.last k) ?_) _) _
+    rw [Function.update_self, Fin.succ_last, hrz, ← N.coeff_mul_idem, mul_assoc,
+      hιA _ _ (Ne.symm hq), mul_zero]
+
+variable [DecidableEq T] [CharP R 2]
+
+/-- **The box tensor product `P ⊠ N` over the idempotents of `A`**: the type `D` structure over
+`B` on the generators `(y, x)` with matching idempotents `idemRight y = idem x`, with the
+coefficients `TauCeti.TypeDAStructure.boxCoeff`. The idempotents of `A` are orthogonal, `P`
+respects the right idempotents `idemRight`, and `N` is bounded or the operations of `P` vanish
+from some arity on, over a ring of characteristic two. -/
+noncomputable def boxTypeDMatched (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0)
+    (hιA : ∀ t t', t ≠ t' → ιA t * ιA t' = 0) (hP : P.RespectsRightIdem ιA idemRight) :
+    TypeDStructure dB ιB {p : Y × X // idemRight p.1 = N.idem p.2} where
+  idem p := P.idem p.1.1
+  coeff p q := P.boxCoeff N p.1 q.1
+  idem_mul_coeff p q := P.idem_mul_boxCoeff N p.1 q.1
+  coeff_mul_idem p q := P.boxCoeff_mul_idem N p.1 q.1
   map_coeff_add_coeff_mul_coeff := by
     ext p q
-    have h := congrFun (congrFun (M.map_boxCoeff_add_boxCoeff_mul_boxCoeff hdA N hMN) p.1) q.1
-    have h0 : ∑ r : {r : Y × X // ¬M.idemRight r.1 = N.idem r.2},
-        M.boxCoeff N p.1 r.1 * M.boxCoeff N r.1 q.1 = 0 :=
-      Finset.sum_eq_zero fun r _ => by rw [M.boxCoeff_eq_zero_of_ne hιB N p.2 r.2, zero_mul]
+    have he := congrFun (congrFun (P.map_boxCoeff_add_boxCoeff_mul_boxCoeff N hdB h) p.1) q.1
+    have h0 : ∑ r : {r : Y × X // ¬idemRight r.1 = N.idem r.2},
+        P.boxCoeff N p.1 r.1 * P.boxCoeff N r.1 q.1 = 0 :=
+      Finset.sum_eq_zero fun r _ => by rw [P.boxCoeff_eq_zero_of_ne N hιA hP p.2 r.2, zero_mul]
     rw [Matrix.add_apply, Matrix.mul_apply, ← Fintype.sum_subtype_add_sum_subtype
-      (fun r : Y × X => M.idemRight r.1 = N.idem r.2), h0, add_zero] at h
-    rw [Matrix.map_apply, Matrix.zero_apply] at h
-    -- The coefficients are the plain function `fun p q => M.boxCoeff N p.1 q.1` rather than a
-    -- `Matrix`-typed term, so `Matrix.map_apply` and `Matrix.mul_apply` do not rewrite them; the
-    -- remaining goal is `h` after unfolding `Matrix.map` and the matrix product.
+      (fun r : Y × X => idemRight r.1 = N.idem r.2), h0, add_zero, Matrix.map_apply,
+      Matrix.zero_apply] at he
     rw [Matrix.add_apply, Matrix.zero_apply]
-    exact h
-
-section BoxTensorStructure
-
-variable [DecidableEq T] {hdA : IsUngradedDGAlgebra dA} {hιB : ∀ t t', t ≠ t' → ιB t * ιB t' = 0}
-  {M : TypeDABimodule dA dB ιA ιB Y} {N : TypeDStructure dB ιB X}
-  {hMN : N.IsBounded ∨ ∃ K, ∀ n, K ≤ n → M.coeff n = 0}
+    exact he
 
 @[simp]
-theorem boxTensor_idem (p : {p : Y × X // M.idemRight p.1 = N.idem p.2}) :
-    (boxTensor hdA hιB M N hMN).idem p = M.idemLeft p.1.1 :=
+theorem boxTypeDMatched_idem (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0)
+    (hιA : ∀ t t', t ≠ t' → ιA t * ιA t' = 0) (hP : P.RespectsRightIdem ιA idemRight)
+    (p : {p : Y × X // idemRight p.1 = N.idem p.2}) :
+    (P.boxTypeDMatched N hdB h hιA hP).idem p = P.idem p.1.1 :=
   (rfl)
 
 @[simp]
-theorem boxTensor_coeff (p q : {p : Y × X // M.idemRight p.1 = N.idem p.2}) :
-    (boxTensor hdA hιB M N hMN).coeff p q = M.boxCoeff N p.1 q.1 :=
+theorem boxTypeDMatched_coeff (hdB : IsUngradedDGAlgebra dB)
+    (h : N.IsBounded ∨ ∃ K, ∀ k, K ≤ k → P.coeff k = 0)
+    (hιA : ∀ t t', t ≠ t' → ιA t * ιA t' = 0) (hP : P.RespectsRightIdem ιA idemRight)
+    (p q : {p : Y × X // idemRight p.1 = N.idem p.2}) :
+    (P.boxTypeDMatched N hdB h hιA hP).coeff p q = P.boxCoeff N p.1 q.1 :=
   (rfl)
 
-end BoxTensorStructure
+end Matched
 
-end BoxTensor
+/-! ### The identity bimodule -/
 
-end TypeDABimodule
+section Identity
+
+variable {d : A →ₗ[R] A} {ι : S → A}
+
+variable (ι) in
+/-- The map `a ↦ (ι s * a * ι t)_{s, t}` cutting an element of `A` into its idempotent blocks. -/
+private noncomputable def blockLinear : A →ₗ[R] Matrix S S A where
+  toFun a := Matrix.of fun s t => ι s * a * ι t
+  map_add' a b := by ext; simp [mul_add, add_mul]
+  map_smul' r a := by ext; simp
+
+variable (ι) in
+/-- The operations of the identity bimodule: `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t`, all others
+zero. -/
+private noncomputable def identityCoeff :
+    (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (Matrix S S A)
+  | 0 => 0
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A (Matrix S S A) 0 (blockLinear ι)
+  | _ + 2 => 0
+
+private theorem identityCoeff_one_apply (a : Fin 1 → A) (s t : S) :
+    identityCoeff (R := R) ι 1 a s t = ι s * a 0 * ι t :=
+  (rfl)
+
+private theorem identityCoeff_apply_of_eq_one {n : ℕ} (hn : n = 1) (a : Fin n → A) (s t : S) :
+    identityCoeff (R := R) ι n a s t = ι s * a ⟨0, by omega⟩ * ι t := by
+  subst hn
+  rfl
+
+private theorem identityCoeff_eq_zero {n : ℕ} (hn : n ≠ 1) :
+    identityCoeff (R := R) ι n = 0 := by
+  match n, hn with
+  | 0, _ => rfl
+  | _ + 2, _ => rfl
+
+private theorem identityCoeff_apply_eq_zero {n : ℕ} (hn : n ≠ 1) (a : Fin n → A) :
+    identityCoeff (R := R) ι n a = 0 := by
+  rw [identityCoeff_eq_zero hn, zero_apply]
+
+/-- The relation of length two of the identity bimodule:
+`∑ u, ι s * a₀ * ι u * ι u * a₁ * ι t = ι s * a₀ * a₁ * ι t` cancels the product term. -/
+private theorem identityCoeff_stasheff_two [Fintype S] [CharP R 2] (hιι : ∀ s, ι s * ι s = ι s)
+    (hsum : ∑ s, ι s = 1) (a : Fin 2 → A) :
+    typeDAComp (identityCoeff (R := R) ι) 2 a + (identityCoeff (R := R) ι 2 a).map d +
+      ungradedStasheffDiff (identityCoeff (R := R) ι) d 2 a +
+        ungradedStasheffMul (identityCoeff (R := R) ι) 2 a = 0 := by
+  -- `∑ u, ι s * a₀ * ι u * ι u * a₁ * ι t = ι s * a₀ * a₁ * ι t`, the product term.
+  have hmid : (identityCoeff (R := R) ι ((1 : Fin 3) : ℕ) fun l => a ⟨l, by omega⟩) *
+      (identityCoeff (R := R) ι (2 - ((1 : Fin 3) : ℕ)) fun l =>
+        a ⟨((1 : Fin 3) : ℕ) + l, by omega⟩) =
+      identityCoeff (R := R) ι 1 fun _ => a 0 * a 1 := by
+    ext s t
+    simp only [Matrix.mul_apply, identityCoeff_apply_of_eq_one rfl]
+    calc ∑ u, ι s * a 0 * ι u * (ι u * a 1 * ι t)
+        = ι s * a 0 * (∑ u, ι u * ι u) * a 1 * ι t := by
+          simp only [Finset.mul_sum, Finset.sum_mul, mul_assoc]
+      _ = ι s * (a 0 * a 1) * ι t := by
+          simp only [hιι, hsum, mul_one, mul_assoc]
+  have hmul : Fin.contractNth (0 : Fin 1).castSucc (· * ·) a = fun _ => a 0 * a 1 :=
+    funext fun l => by
+      rw [Fin.fin_one_eq_zero l, Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.castSucc_zero,
+        Fin.succ_zero_eq_one]
+  -- Only the composite `δ₁ * δ₁` and the product term survive, and they cancel.
+  rw [typeDAComp_def, Fin.sum_univ_three, hmid, ungradedStasheffDiff_def,
+    ungradedStasheffMul_succ, Fin.sum_univ_one, hmul]
+  simp only [ne_eq, identityCoeff_apply_eq_zero, Fin.val_zero, Fin.val_two, Nat.sub_zero,
+    Nat.sub_self, zero_ne_one, OfNat.ofNat_ne_one, not_false_eq_true, Matrix.mul_zero,
+    Matrix.map_zero _ (map_zero d), Finset.sum_const_zero, zero_add, add_zero]
+  exact add_self_eq_zero_of_charTwo R _
+
+variable [Fintype S] [CharP R 2]
+
+variable (ι) in
+/-- **The identity type `DA` bimodule** `[I]` of a differential algebra `(A, d)` whose idempotents
+`ι s` are cycles and sum to `1`, over a ring of characteristic two: one generator `s` at each
+idempotent, with `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t` and all other operations zero. -/
+noncomputable def identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) : TypeDAStructure d d ι S where
+  idem s := s
+  coeff := identityCoeff ι
+  idem_mul_coeff n a s t := by
+    rcases eq_or_ne n 1 with rfl | hn
+    · rw [identityCoeff_one_apply, ← mul_assoc, ← mul_assoc, hιι]
+    · rw [identityCoeff_apply_eq_zero hn, Matrix.zero_apply, mul_zero]
+  coeff_mul_idem n a s t := by
+    rcases eq_or_ne n 1 with rfl | hn
+    · rw [identityCoeff_one_apply, mul_assoc, hιι]
+    · rw [identityCoeff_apply_eq_zero hn, Matrix.zero_apply, zero_mul]
+  stasheff n a := by
+    -- The relation of length one is the Leibniz rule for `ι s * a * ι t`, and that of length two
+    -- is `∑ u, ι s * a * ι u * ι u * b * ι t = ι s * a * b * ι t`.
+    -- The only nonzero operation has one algebra input, so composites vanish except in length two.
+    have hcomp (n : ℕ) (hn : n ≠ 2) (a : Fin n → A) :
+        typeDAComp (identityCoeff (R := R) ι) n a = 0 :=
+      Finset.sum_eq_zero fun k _ => by
+        rcases eq_or_ne (k : ℕ) 1 with hk | hk
+        · rw [identityCoeff_apply_eq_zero (n := n - k) (by omega), Matrix.mul_zero]
+        · rw [identityCoeff_apply_eq_zero hk, Matrix.zero_mul]
+    match n with
+    | 0 =>
+      simp [hcomp 0 (by decide), ungradedStasheffDiff_def,
+        identityCoeff_apply_eq_zero (n := 0) (by decide)]
+    | 1 =>
+      have hmap : (identityCoeff (R := R) ι 1 a).map d =
+          identityCoeff (R := R) ι 1 fun _ => d (a 0) := by
+        ext s t
+        simp only [Matrix.map_apply, identityCoeff_one_apply, hd.map_mul, hι, mul_zero, zero_mul,
+          add_zero, zero_add]
+      have hupd : Function.update a 0 (d (a 0)) = fun _ => d (a 0) :=
+        funext fun l => by rw [Fin.fin_one_eq_zero l, Function.update_self]
+      simp only [hcomp 1 (by decide), hmap, ungradedStasheffDiff_def, Fin.sum_univ_one, hupd,
+        ungradedStasheffMul_succ, identityCoeff_apply_eq_zero (n := 0) (by decide),
+        Finset.sum_const_zero, zero_add, add_zero]
+      exact add_self_eq_zero_of_charTwo R _
+    | 2 => exact identityCoeff_stasheff_two hιι hsum a
+    | n + 3 =>
+      simp [hcomp (n + 3) (by omega), ungradedStasheffDiff_def, ungradedStasheffMul_succ,
+        identityCoeff_apply_eq_zero]
+
+@[simp]
+theorem identity_idem (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (s : S) :
+    (identity ι hd hι hιι hsum).idem s = s :=
+  (rfl)
+
+/-- The operation `δ¹₂(s, a) = ∑ t, ι s * a * ι t ⊗ t` of the identity bimodule. -/
+@[simp]
+theorem identity_coeff_one_apply (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (a : Fin 1 → A) (s t : S) :
+    (identity ι hd hι hιι hsum).coeff 1 a s t = ι s * a 0 * ι t :=
+  (rfl)
+
+/-- The operations of the identity bimodule other than `δ¹₂` vanish. -/
+theorem identity_coeff_eq_zero (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) {n : ℕ} (hn : n ≠ 1) :
+    (identity ι hd hι hιι hsum).coeff n = 0 :=
+  identityCoeff_eq_zero hn
+
+/-- **The coefficients of `[I] ⊠ N`.** If moreover the idempotents are orthogonal, the coefficient
+of `[I] ⊠ N` from `(s, x)` to `(t, x')` is the coefficient of `N` from `x` to `x'` when `s` and `t`
+are the idempotents of `x` and `x'`, and zero otherwise. So the coefficients restricted to the
+generators `(idem x, x)` are those of `N`, and the other generators, the elementary tensors
+`s ⊗ x` with `ι s * ι (idem x) = 0` that vanish over the idempotents, carry zero coefficients. -/
+theorem boxCoeff_identity (hd : IsUngradedDGAlgebra d) (hι : ∀ s, d (ι s) = 0)
+    (hιι : ∀ s, ι s * ι s = ι s) (hsum : ∑ s, ι s = 1) (hιo : ∀ s t, s ≠ t → ι s * ι t = 0)
+    [DecidableEq S] {X : Type*} [Fintype X] [DecidableEq X] (N : TypeDStructure d ι X)
+    (p q : S × X) :
+    (identity ι hd hι hιι hsum).boxCoeff N p q =
+      if p.1 = N.idem p.2 ∧ q.1 = N.idem q.2 then N.coeff p.2 q.2 else 0 := by
+  have hzero {k : ℕ} (hk : k ≠ 1) (t : PiTensorProduct R fun _ : Fin k => A) :
+      PiTensorProduct.lift ((identity ι hd hι hιι hsum).coeff k) t = 0 := by
+    rw [identity_coeff_eq_zero hd hι hιι hsum hk, map_zero, LinearMap.zero_apply]
+  simp only [boxCoeff_eq_sum _ N (K := 2) fun k hk x x' => hzero (by omega) _,
+    Finset.sum_range_succ, Finset.sum_range_zero, hzero zero_ne_one, Matrix.zero_apply, zero_add,
+    N.iteratedCoeff_one, PiTensorProduct.lift.tprod, identity_coeff_one_apply]
+  -- `ι s * δ * ι t` with `δ = ι (idem x) * δ * ι (idem x')`.
+  by_cases h₁ : p.1 = N.idem p.2
+  · by_cases h₂ : q.1 = N.idem q.2
+    · rw [ite_eq_left ⟨h₁, h₂⟩, h₁, h₂, N.idem_mul_coeff, N.coeff_mul_idem]
+    · -- `δ = δ * ι (idem x')` and `ι (idem x') * ι t = 0`.
+      rw [ite_eq_right fun h => h₂ h.2, ← N.coeff_mul_idem]
+      simp only [mul_assoc, hιo _ _ (Ne.symm h₂), mul_zero]
+  · -- `δ = ι (idem x) * δ` and `ι s * ι (idem x) = 0`.
+    rw [ite_eq_right fun h => h₁ h.1, ← N.idem_mul_coeff]
+    simp only [← mul_assoc, hιo _ _ h₁, zero_mul]
+
+end Identity
+
+end TypeDAStructure
 
 end TauCeti

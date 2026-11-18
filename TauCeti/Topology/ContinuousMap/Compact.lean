@@ -22,10 +22,18 @@ nonpositive on them, since they form a cone, and hence nonpositive on every nonn
 adding a small positive constant to a nonnegative function makes it uniformly positive. This is the
 positivity of the functional produced by separating the uniformly positive functions from a cone.
 
+A continuous map from a compact space into a metric space (or normed additive group) stays at a
+uniform positive distance from every point outside its range.
+
 ## Main results
 
 * `ContinuousMap.convex_uniformlyPositive`: the uniformly positive functions form a convex set.
 * `ContinuousMap.isOpen_uniformlyPositive`: on a compact space they form an open set.
+* `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
+  metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
+* `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
+* `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: operator norm of point
+  evaluation on `C(K, E)` for compact `K`.
 * `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a functional bounded above on the
   uniformly positive functions is nonpositive on the nonnegative functions.
 -/
@@ -59,6 +67,48 @@ theorem isOpen_uniformlyPositive {X : Type*} [TopologicalSpace X] [CompactSpace 
   have := (ContinuousMap.dist_apply_le_dist (f := h') (g := h) f).trans (mem_ball.1 hh').le
   rw [Real.dist_eq] at this
   linarith [hhδ f, (abs_le.1 this).1]
+
+/-- A continuous map from a compact space into a metric space stays at a uniform positive distance
+from every point outside its range. -/
+theorem exists_pos_le_dist_of_notMem_range {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
+    [MetricSpace Y] (f : C(X, Y)) {y : Y} (hy : y ∉ Set.range f) :
+    ∃ δ > 0, ∀ x, δ ≤ dist (f x) y := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact ⟨1, zero_lt_one, isEmptyElim⟩
+  · obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty
+      (f.continuous.dist continuous_const).continuousOn
+    exact ⟨dist (f x₀) y, dist_pos.2 fun h ↦ hy ⟨x₀, h⟩, fun x ↦ hx₀ trivial⟩
+
+/-- A continuous map from a compact space into a normed additive group has `‖f x - y‖` uniformly
+bounded below by a positive constant whenever `y ∉ Set.range f`. -/
+theorem exists_pos_le_norm_sub_of_notMem_range {X E : Type*} [TopologicalSpace X] [CompactSpace X]
+    [NormedAddCommGroup E] (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
+    ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
+  simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
+
+/-- Point evaluation on `C(K, E)` has operator norm at most `1`. -/
+theorem norm_evalCLM_le_one {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
+    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] (x : K) :
+    ‖evalCLM 𝕜 (M := E) x‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa only [evalCLM_apply, one_mul] using f.norm_coe_le_norm x
+
+/-- Point evaluation on `C(K, E)` has operator norm `1` when `E` has nontrivial topology. -/
+@[simp]
+theorem norm_evalCLM {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
+    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NontrivialTopology E] (x : K) :
+    ‖evalCLM 𝕜 (M := E) x‖ = 1 := by
+  refine le_antisymm (norm_evalCLM_le_one x) ?_
+  obtain ⟨v, hv⟩ := exists_norm_ne_zero E
+  have hv0 : 0 < ‖v‖ := hv.symm.lt_of_le (norm_nonneg v)
+  have hc : ‖ContinuousMap.const K v‖ ≤ ‖v‖ :=
+    (ContinuousMap.norm_le _ hv0.le).2 fun _ ↦ le_rfl
+  have hle := (evalCLM 𝕜 (M := E) x).le_opNorm (ContinuousMap.const K v)
+  rw [evalCLM_apply, const_apply] at hle
+  have hmul : 1 * ‖v‖ ≤ ‖evalCLM 𝕜 (M := E) x‖ * ‖v‖ := by
+    simpa only [one_mul] using hle.trans (mul_le_mul_of_nonneg_left hc (norm_nonneg _))
+  exact le_of_mul_le_mul_right hmul hv0
 
 end ContinuousMap
 

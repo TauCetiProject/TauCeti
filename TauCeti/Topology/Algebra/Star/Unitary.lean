@@ -30,7 +30,7 @@ It needs only `ContinuousStar M` beyond a topological star monoid, with no separ
 continuity-of-multiplication assumption.
 
 This is the closedness hypothesis that the Lie algebra of a closed subgroup of `Mˣ` is computed
-from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
+from; see `TauCeti/Geometry/Lie/Subgroup/Unitary/Basic.lean`.
 
 ## Main results
 
