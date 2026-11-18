@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.GradedMatrix
 public import TauCeti.RingTheory.NovikovModule.KernelMap
 
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
@@ -283,13 +284,6 @@ theorem orbitDegree_apply {d : (Σ i, P i) → A}
 
 end Degree
 
-/-- The identity kernel has finite outputs. -/
-private theorem finite_support_diagonal_one {R S : Type*} [Zero R] [One R] [DecidableEq S]
-    (p : S) : (support fun q ↦ if p = q then (1 : R) else 0).Finite :=
-  (Set.finite_singleton p).subset fun q hq ↦ by
-    by_contra h
-    exact hq (by simp [Ne.symm (Set.mem_singleton_iff.not.mp h)])
-
 section LaurentKernel
 
 variable {R H A ι₁ ι₀ : Type*} [AddGroup H] {P₁ : ι₁ → Type*} {P₀ : ι₀ → Type*}
@@ -322,7 +316,7 @@ theorem isLaurentKernel_diagonal_one [Zero R] [One R] [AddZeroClass A] [Decidabl
     · have h₁ : (⟨i, g +ᵥ p⟩ : Σ i, P₁ i) ≠ ⟨k, g +ᵥ q⟩ := fun h ↦ hik (congrArg Sigma.fst h)
       have h₂ : (⟨i, p⟩ : Σ i, P₁ i) ≠ ⟨k, q⟩ := fun h ↦ hik (congrArg Sigma.fst h)
       simp [h₁, h₂]
-  finite_support := finite_support_diagonal_one
+  finite_support := finite_support_diagonal fun _ ↦ 1
   degree_eq p q h := by
     obtain rfl : p = q := by
       by_contra hpq
@@ -410,7 +404,7 @@ theorem cyclicMatrix_mul_cyclicMatrix_sub_one [Ring R] [DecidableEq ι₁] [Deci
       cyclicMatrix δ * cyclicMatrix K + cyclicMatrix K * cyclicMatrix δ := by
   rw [← cyclicMatrix_kernelComp hΦfin hΨinv hΨfin, ← cyclicMatrix_one (P₁ := P₁), add_comm]
   exact cyclicMatrix_sub_cyclicMatrix (fun p ↦ finite_support_kernelComp (hΦfin p) hΨfin)
-    finite_support_diagonal_one hKinv hKfin hδfin hδinv hδfin hΦΨ
+    (finite_support_diagonal fun _ ↦ 1) hKinv hKfin hδfin hδinv hδfin hΦΨ
 
 end KernelIdentity
 
@@ -446,6 +440,12 @@ variable (R d hd δ hδ hδδ) in
 def cyclicComplexBasis (a : A) :
     Module.Basis {i // orbitDegree d i = a} R ((cyclicComplex R d hd δ hδ hδδ).X a) :=
   gradedMatrixComplexBasis _ _ _ _ a
+
+instance (a : A) : Module.Free R ((cyclicComplex R d hd δ hδ hδδ).X a) :=
+  Module.Free.of_basis (cyclicComplexBasis R d hd δ hδ hδδ a)
+
+instance (a : A) : Module.Finite R ((cyclicComplex R d hd δ hδ hδδ).X a) :=
+  Module.Finite.of_basis (cyclicComplexBasis R d hd δ hδ hδδ a)
 
 /-- The differential of the cyclic complex sends the orbit `i` to `∑ₖ cyclicMatrix δ i k • k`. -/
 @[simp]

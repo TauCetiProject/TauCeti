@@ -106,12 +106,6 @@ private theorem blockMap_eq_zero (e : ι → A) (f : κ → A) (a b : A) {M : Ma
 
 end Block
 
-/-- The identity matrix preserves every grading. -/
-private theorem degree_one {R A ν : Type*} [Semiring R] [DecidableEq ν] {g : ν → A} (i k : ν)
-    (h : (1 : Matrix ν ν R) i k ≠ 0) : g k = g i := by
-  obtain rfl : i = k := by_contra fun hik ↦ h (one_apply_ne hik)
-  rfl
-
 section Complex
 
 variable {R : Type u} [CommRing R] {A : Type*} [AddRightCancelSemigroup A] [One A]
@@ -276,11 +270,11 @@ def gradedMatrixComplexHomotopyEquiv [DecidableEq ι] [DecidableEq κ] (Φ : Mat
   hom := gradedMatrixComplexHom Φ hΦ hΦD
   inv := gradedMatrixComplexHom Ψ hΨ hΨD
   homotopyHomInvId := by
-    rw [gradedMatrixComplexHom_comp, ← gradedMatrixComplexHom_one (h₁ := degree_one)
+    rw [gradedMatrixComplexHom_comp, ← gradedMatrixComplexHom_one (h₁ := eq_of_one_apply_ne_zero)
       (h₁D := by rw [Matrix.mul_one, Matrix.one_mul])]
     exact gradedMatrixComplexHomotopy K hK hΦΨ
   homotopyInvHomId := by
-    rw [gradedMatrixComplexHom_comp, ← gradedMatrixComplexHom_one (h₁ := degree_one)
+    rw [gradedMatrixComplexHom_comp, ← gradedMatrixComplexHom_one (h₁ := eq_of_one_apply_ne_zero)
       (h₁D := by rw [Matrix.mul_one, Matrix.one_mul])]
     exact gradedMatrixComplexHomotopy K' hK' hΨΦ
 

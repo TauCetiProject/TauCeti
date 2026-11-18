@@ -61,6 +61,7 @@ the periods is assumed.
   chain homotopy between their maps.
 * `TauCeti.NovikovModule.kernelMap_eq_id`: the identity kernel gives the identity map, as the
   special case of a diagonal kernel (`TauCeti.NovikovModule.kernelMap_diagonal_apply_val`).
+* `TauCeti.NovikovModule.finite_support_diagonal`: a diagonal kernel has finite outputs.
 * `TauCeti.NovikovModule.kernelMap_inj`: a kernel map determines its kernel, through
   the images of point masses (`TauCeti.NovikovModule.kernelMap_single_apply_val`).
 * `TauCeti.NovikovModule.coordinates_kernelMap`: the matrix formula in lift coordinates.
@@ -213,13 +214,19 @@ theorem potential_le_of_diagonal_ne_zero {S : Type*} [DecidableEq S] {F : S → 
   · simp [hpq]
   · simp [hpq] at h
 
-/-- A diagonal kernel has completed outputs. -/
-theorem diagonal_mem {S : Type*} [DecidableEq S] {F : S → ℝ} (s : S → R) (p : S) :
-    (fun q => if p = q then s p else 0) ∈ NovikovModule R F :=
-  mem_of_finite_support <| (Set.finite_singleton p).subset fun q hq => by
+/-- A diagonal kernel, with coefficient `s p` from `p` to itself and `0` off the diagonal, has
+finite outputs. -/
+theorem finite_support_diagonal {M S : Type*} [Zero M] [DecidableEq S] (s : S → M) (p : S) :
+    (support fun q => if p = q then s p else 0).Finite :=
+  (Set.finite_singleton p).subset fun q hq => by
     by_contra h
     have hpq : ¬p = q := fun e => h e.symm
     simp [hpq] at hq
+
+/-- A diagonal kernel has completed outputs. -/
+theorem diagonal_mem {S : Type*} [DecidableEq S] {F : S → ℝ} (s : S → R) (p : S) :
+    (fun q => if p = q then s p else 0) ∈ NovikovModule R F :=
+  mem_of_finite_support (finite_support_diagonal s p)
 
 /-- A diagonal kernel, with coefficient `s p` from `p` to itself and `0` off the diagonal,
 multiplies each coefficient by `s`. -/

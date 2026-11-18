@@ -19,8 +19,8 @@ matrix.
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero. A submatrix of a product can be computed through part of the inner index, provided the
 relevant rows of the left factor vanish off that part. Products of matrices respect gradings of
-their indices: a product of degree-preserving matrices is degree-preserving, and a product of
-matrices intertwining square matrices intertwines them.
+their indices: the identity matrix and a product of degree-preserving matrices are
+degree-preserving, and a product of matrices intertwining square matrices intertwines them.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
@@ -35,6 +35,7 @@ out to the left without any commutativity, since the left factor has entries `0`
 * `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
   through an injective inner reindexing whose range carries the relevant rows of the left factor.
 * `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
+* `Matrix.eq_of_one_apply_ne_zero`: the identity matrix is degree-preserving.
 * `Matrix.mul_mul_eq_mul_mul_of_mul_eq_mul`: if `D₁ * X = X * D₂` and `D₂ * Y = Y * D₃`, then
   `D₁ * (X * Y) = X * Y * D₃`.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
@@ -113,6 +114,19 @@ theorem eq_of_mul_apply_ne_zero {G : Type*} {g₁ : m → G} {g₂ : n → G} {g
   rw [hB j k (right_ne_zero_of_mul hj), hA i j (left_ne_zero_of_mul hj)]
 
 end NonUnitalNonAssocSemiring
+
+section ZeroOne
+
+variable {R m : Type*} [Zero R] [One R] [DecidableEq m]
+
+/-- **The identity matrix preserves degrees.** The nonzero entries of `1` only join indices of the
+same degree. -/
+theorem eq_of_one_apply_ne_zero {G : Type*} {g : m → G} (i k : m)
+    (h : (1 : Matrix m m R) i k ≠ 0) : g k = g i := by
+  obtain rfl : i = k := by_contra fun hik ↦ h (one_apply_ne hik)
+  rfl
+
+end ZeroOne
 
 section NonUnitalSemiring
 
