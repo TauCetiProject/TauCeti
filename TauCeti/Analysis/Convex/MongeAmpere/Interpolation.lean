@@ -31,8 +31,8 @@ formula therefore applies with no degenerate part:
 
   `∫_{Tₜ(s)} g dρ = ∫_s det (Jₜ x) g (Tₜ x) dρ`.
 
-Consequently, for `0 ≤ t < 1` and every measure `μ ≪ ρ` carried by `D` (s-finite for the last
-two statements):
+Consequently, for `0 ≤ t < 1` and every measure `μ ≪ ρ` carried by `D` (such a measure is
+s-finite, since `ρ` is):
 
 * `μₜ` is absolutely continuous with respect to `ρ`, even when `μ₁` is not;
 * the densities satisfy the **Jacobian equation** `dμ/dρ (x) = det (Jₜ x) * dμₜ/dρ (Tₜ x)` for
@@ -234,7 +234,7 @@ theorem map_smul_add_smul_gradient_absolutelyContinuous (hf : Convex ℝ {p : E 
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
 effective domain, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the
 subdifferential of `f` at `x` (the Alexandrov Hessian, see
-`rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Let `μ` be an s-finite measure, absolutely
+`rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Let `μ` be a measure, absolutely
 continuous with respect to an additive Haar measure `ρ` and carried by `D`, and let `0 ≤ t < 1`.
 Then the density of `μ` and the density of its interpolant `μₜ = (Tₜ)₊ μ`, with
 `Tₜ x = (1 - t) • x + t • ∇F x`, satisfy
@@ -244,12 +244,13 @@ theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradien
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
     {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
     μ.rnDeriv ρ =ᵐ[ρ] (interior {x | f x ≠ ⊤}).indicator fun x =>
       ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det *
         (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x).rnDeriv ρ
           ((1 - t) • x + t • (∇ fun x' => (f x').toReal) x) := by
+  have : SFinite μ := sfinite_of_absolutelyContinuous hμ
   set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
   set g := (μ.map T).rnDeriv ρ
   have hT : Measurable T := measurable_smul_add_smul_gradient t
@@ -287,13 +288,14 @@ theorem lintegral_comp_rnDeriv_map_smul_add_smul_gradient
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
     {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) {Φ : ℝ≥0∞ → ℝ≥0∞} (hΦ : Φ 0 = 0) :
     ∫⁻ y, Φ ((μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x).rnDeriv ρ y) ∂ρ =
       ∫⁻ x in interior {x | f x ≠ ⊤},
         ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det *
           Φ (μ.rnDeriv ρ x /
             ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det) ∂ρ := by
+  have : SFinite μ := sfinite_of_absolutelyContinuous hμ
   set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
   have hT : Measurable T := measurable_smul_add_smul_gradient t
   obtain ⟨S, hSm, -, hDS, hμS, H', hH'm, hHS, hS⟩ :=
@@ -339,7 +341,7 @@ private theorem map_restrict_gradient_mutuallySingular
   exact measure_mono_null (fun x hx =>
     (hx.1 (subset_toMeasurable _ _ (mem_image_of_mem G hx.2))).elim) measure_empty
 
-/-- The decomposition behind the endpoint `t = 1`. If `μ ≪ ρ` is s-finite and carried by the
+/-- The decomposition behind the endpoint `t = 1`. If `μ ≪ ρ` is carried by the
 interior `D` of the effective domain, there is a measurable `Z ⊆ D` on which `det (H x) > 0` and
 `∇F` is injective with measurable images of measurable sets, on which `H` agrees with a measurable
 `H'` giving the change of variables along `∇F` with Jacobian `det (H' x)`, and such that
@@ -404,7 +406,7 @@ private theorem exists_map_gradient_restrict_decomposition
 real epigraph, never `⊥`), with real representative `F` and `D` the interior of its effective
 domain, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the subdifferential
 of `f` at `x` (the Alexandrov Hessian, see `rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Let `μ`
-be an s-finite measure, absolutely continuous with respect to an additive Haar measure `ρ` and
+be a measure, absolutely continuous with respect to an additive Haar measure `ρ` and
 carried by `D`. Then the singular part of the endpoint `μ₁ = (∇F)₊ μ` of the interpolation with
 respect to `ρ` has total mass `μ {x | det (H x) = 0}`: the gradient collapses the degenerate set,
 and only it, to a null set. -/
@@ -412,8 +414,9 @@ theorem singularPart_map_gradient_apply_univ (hf : Convex ℝ {p : E × ℝ | f 
     (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) :
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤}) :
     (μ.map (∇ fun x' => (f x').toReal)).singularPart ρ univ = μ {x | (H x).det = 0} := by
+  have : SFinite μ := sfinite_of_absolutelyContinuous hμ
   set G := ∇ fun x' => (f x').toReal
   have hG : Measurable G := measurable_gradient _
   obtain ⟨Z, hZm, -, -, -, -, -, -, hZc, hac, hsing⟩ :=
@@ -437,11 +440,12 @@ theorem lintegral_comp_rnDeriv_map_gradient (hf : Convex ℝ {p : E × ℝ | f p
     (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
     {Φ : ℝ≥0∞ → ℝ≥0∞} (hΦ : Φ 0 = 0) :
     ∫⁻ y, Φ ((μ.map (∇ fun x' => (f x').toReal)).rnDeriv ρ y) ∂ρ =
       ∫⁻ x in interior {x | f x ≠ ⊤},
         ENNReal.ofReal (H x).det * Φ (μ.rnDeriv ρ x / ENNReal.ofReal (H x).det) ∂ρ := by
+  have : SFinite μ := sfinite_of_absolutelyContinuous hμ
   set G := ∇ fun x' => (f x').toReal
   set D := interior {x | f x ≠ ⊤}
   have hG : Measurable G := measurable_gradient _
