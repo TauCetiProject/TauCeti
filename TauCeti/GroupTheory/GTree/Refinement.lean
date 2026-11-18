@@ -85,7 +85,7 @@ theorem IsCollapseMap.isConvex_preimage {f : T.V →[G] T'.V} (hf : IsCollapseMa
 
 variable (T) in
 /-- The identity of a `G`-tree is a collapse map. -/
-theorem isCollapseMap_id : IsCollapseMap (MulActionHom.id G : T.V →[G] T.V) :=
+@[simp] theorem isCollapseMap_id : IsCollapseMap (MulActionHom.id G : T.V →[G] T.V) :=
   ⟨Function.surjective_id, fun _ hS => hS⟩
 
 /-- A composite of collapse maps is a collapse map. -/
@@ -94,7 +94,7 @@ theorem IsCollapseMap.comp {g : T'.V →[G] T''.V} {f : T.V →[G] T'.V} (hg : I
   ⟨hg.surjective.comp hf.surjective, fun _ hS => hf.isConvex_preimage (hg.isConvex_preimage hS)⟩
 
 /-- The collapse of a `G`-tree along an invariant set of edges is a collapse map. -/
-theorem isCollapseMap_collapseHom (S : Set T.E) (hS : ∀ e ∈ S, T.rev e ∈ S)
+@[simp] theorem isCollapseMap_collapseHom (S : Set T.E) (hS : ∀ e ∈ S, T.rev e ∈ S)
     (hG : ∀ g : G, ∀ e ∈ S, g • e ∈ S) : IsCollapseMap (T.collapseHom S hS hG) :=
   ⟨T.collapseHom_surjective S hS hG, fun _ => isConvex_collapseHom_preimage hS hG⟩
 
@@ -110,7 +110,7 @@ theorem refines_iff : T.Refines T' ↔ ∃ f : T.V →[G] T'.V, IsCollapseMap f 
 
 variable (T) in
 /-- Every `G`-tree refines itself. -/
-theorem Refines.refl : T.Refines T :=
+@[simp] theorem Refines.refl : T.Refines T :=
   ⟨MulActionHom.id G, isCollapseMap_id T⟩
 
 /-- Refinement is transitive. -/
@@ -126,7 +126,7 @@ theorem Refines.dominates (h : T.Refines T') : T.Dominates T' :=
 
 variable (T) in
 /-- A `G`-tree refines its collapse along an invariant set of edges. -/
-theorem refines_collapse (S : Set T.E) (hS : ∀ e ∈ S, T.rev e ∈ S)
+@[simp] theorem refines_collapse (S : Set T.E) (hS : ∀ e ∈ S, T.rev e ∈ S)
     (hG : ∀ g : G, ∀ e ∈ S, g • e ∈ S) : T.Refines (T.collapse S hS hG) :=
   ⟨T.collapseHom S hS hG, isCollapseMap_collapseHom S hS hG⟩
 
@@ -152,7 +152,7 @@ theorem IsGeodesicMorphism.of_injective {f : T.V →[G] T'.V} (hf : Function.Inj
 
 variable (T) in
 /-- The identity of a `G`-tree is a geodesic morphism. -/
-theorem isGeodesicMorphism_id : IsGeodesicMorphism (MulActionHom.id G : T.V →[G] T.V) :=
+@[simp] theorem isGeodesicMorphism_id : IsGeodesicMorphism (MulActionHom.id G : T.V →[G] T.V) :=
   .of_injective Function.injective_id
 
 /-- A collapse map is a geodesic morphism exactly when it is injective: a collapse map that is
@@ -172,7 +172,7 @@ theorem IsCollapseMap.isGeodesicMorphism_iff_injective {f : T.V →[G] T'.V}
 
 /-- The map from a `G`-tree to its collapse along an invariant set of edges is a geodesic morphism
 exactly when no edge is collapsed. -/
-theorem isGeodesicMorphism_collapseHom_iff {S : Set T.E} (hS : ∀ e ∈ S, T.rev e ∈ S)
+@[simp] theorem isGeodesicMorphism_collapseHom_iff {S : Set T.E} (hS : ∀ e ∈ S, T.rev e ∈ S)
     (hG : ∀ g : G, ∀ e ∈ S, g • e ∈ S) :
     IsGeodesicMorphism (T.collapseHom S hS hG) ↔ S = ∅ := by
   rw [(isCollapseMap_collapseHom S hS hG).isGeodesicMorphism_iff_injective,
