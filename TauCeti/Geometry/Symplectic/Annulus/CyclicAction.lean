@@ -114,22 +114,22 @@ theorem stripGeneratingTarget_eq_of_hasFDerivAt {x X y Y : ℝ}
     stripGeneratingTarget S (x, X) = (X, Y) := by
   simp [stripGeneratingTarget, h.fderiv]
 
-/-- If `S` is invariant under the diagonal translation `(x, X) ↦ (x + 1, X + 1)`, then translating
-both positions by an integer `k` translates the source point by `k` horizontally and leaves its
+/-- If `S` is invariant under the diagonal translation `(x, X) ↦ (x + c, X + c)`, then
+translating both positions by `c` translates the source point by `c` horizontally and leaves its
 momentum unchanged. -/
-theorem stripGeneratingSource_add_intCast (hS : Function.Periodic S (1, 1)) (x X : ℝ) (k : ℤ) :
-    stripGeneratingSource S (x + k, X + k) = (x + k, (stripGeneratingSource S (x, X)).2) := by
-  have h := (hS.zsmul k).fderiv (𝕜 := ℝ) (x, X)
-  simp only [Prod.smul_mk, zsmul_eq_mul, mul_one, Prod.mk_add_mk] at h
+theorem stripGeneratingSource_add {c : ℝ} (hS : Function.Periodic S (c, c)) (x X : ℝ) :
+    stripGeneratingSource S (x + c, X + c) = (x + c, (stripGeneratingSource S (x, X)).2) := by
+  have h := hS.fderiv (𝕜 := ℝ) (x, X)
+  rw [Prod.mk_add_mk] at h
   exact Prod.ext (stripGeneratingSource_fst _) (by simp only [stripGeneratingSource_snd, h])
 
-/-- If `S` is invariant under the diagonal translation `(x, X) ↦ (x + 1, X + 1)`, then translating
-both positions by an integer `k` translates the target point by `k` horizontally and leaves its
+/-- If `S` is invariant under the diagonal translation `(x, X) ↦ (x + c, X + c)`, then
+translating both positions by `c` translates the target point by `c` horizontally and leaves its
 momentum unchanged. -/
-theorem stripGeneratingTarget_add_intCast (hS : Function.Periodic S (1, 1)) (x X : ℝ) (k : ℤ) :
-    stripGeneratingTarget S (x + k, X + k) = (X + k, (stripGeneratingTarget S (x, X)).2) := by
-  have h := (hS.zsmul k).fderiv (𝕜 := ℝ) (x, X)
-  simp only [Prod.smul_mk, zsmul_eq_mul, mul_one, Prod.mk_add_mk] at h
+theorem stripGeneratingTarget_add {c : ℝ} (hS : Function.Periodic S (c, c)) (x X : ℝ) :
+    stripGeneratingTarget S (x + c, X + c) = (X + c, (stripGeneratingTarget S (x, X)).2) := by
+  have h := hS.fderiv (𝕜 := ℝ) (x, X)
+  rw [Prod.mk_add_mk] at h
   exact Prod.ext (stripGeneratingTarget_fst _) (by simp only [stripGeneratingTarget_snd, h])
 
 /-! ### The derivative of the cyclic action -/
@@ -315,7 +315,8 @@ private theorem chain_fst_eq_add_of_eq_add
     refine ZMod.eq_of_forall_add_one (G := F) (fun i ↦ ((e.symm r).2 i).2) (fun i ↦ (hz' i).2) ?_
     rw [he' r 0, h0]
     simp only [r, add_zsmul_one_apply, he]
-    rw [stripGeneratingSource_add_intCast (hS 0), stripGeneratingSource_eq_of_chain hgen hz 0]
+    rw [stripGeneratingSource_add (by simpa using (hS 0).zsmul k),
+      stripGeneratingSource_eq_of_chain hgen hz 0]
     ext <;> simp
   have h := he (e.symm r) i
   rw [Equiv.apply_symm_apply, hr] at h
@@ -356,7 +357,8 @@ theorem prodMap_coe_eq_prodMap_coe_iff_mk_eq_mk_of_isStripGenerating
       linarith
     -- The initial state of a chain is the source point over its first two positions.
     rw [← stripGeneratingSource_eq_of_chain hgen hz' 0, hi, hi,
-      stripGeneratingSource_add_intCast (hS 0), stripGeneratingSource_eq_of_chain hgen hz 0]
+      stripGeneratingSource_add (by simpa using (hS 0).zsmul k),
+      stripGeneratingSource_eq_of_chain hgen hz 0]
     refine Prod.ext ?_ rfl
     simp only [Prod.map_fst]
     rw [QuotientAddGroup.eq, AddSubgroup.mem_zmultiples_iff]
