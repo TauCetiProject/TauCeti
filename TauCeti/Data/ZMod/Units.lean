@@ -95,7 +95,7 @@ variable {d : ℕ}
 what consumers of `Nat.Coprime` want; `ZMod.isUnit_intCast_iff_isCoprime` states the same
 equivalence with `IsCoprime` over `ℤ` on the right, in the opposite argument order. -/
 theorem Int.isUnit_intCast_iff_gcd_eq_one {a : ℤ} :
-    IsUnit ((a : ℤ) : ZMod d) ↔ Int.gcd a d = 1 :=
+    IsUnit (a : ZMod d) ↔ Int.gcd a d = 1 :=
   (ZMod.isUnit_intCast_iff_isCoprime _ _).trans
     (isCoprime_comm.trans Int.isCoprime_iff_gcd_eq_one)
 
