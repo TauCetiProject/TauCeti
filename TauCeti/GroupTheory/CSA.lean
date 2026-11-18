@@ -465,8 +465,7 @@ private theorem IsCSA.exists_conj_not_commute_conj (hG : IsCSA G) {b c d : G} (h
   have hsc' : ¬Commute s (s⁻¹ * c * s) := fun h' =>
     hsc (by simpa [mul_assoc] using (Commute.conj_iff s).2 h')
   have := hG.not_commute_conj_of_commute hd h hsc'
-  rwa [show s⁻¹ * (s⁻¹ * c * s) * s = (s ^ 2)⁻¹ * c * s ^ 2 by
-    simp only [sq, mul_inv_rev, mul_assoc]] at this
+  simpa only [sq, mul_inv_rev, mul_assoc] using this
 
 /-- [VAR-I], Lemma 10, case (5): in a CSA group, if no two consecutive entries of `b :: c :: r`
 commute and `a ≠ 1`, then `b` and `c` have conjugates `b'` and `c'` with `b' * c' = b * c` such
@@ -493,7 +492,8 @@ private theorem IsCSA.exists_isConj_isChain_cons (hG : IsCSA G) {a b c : G} {r :
     exact ⟨t, ht, hts, by simpa using htd⟩
   refine ⟨t⁻¹ * b * t, t⁻¹ * c * t, isConj_iff.2 ⟨t⁻¹, by rw [inv_inv]⟩,
     isConj_iff.2 ⟨t⁻¹, by rw [inv_inv]⟩, ?_, ?_⟩
-  · rw [show t⁻¹ * b * t * (t⁻¹ * c * t) = t⁻¹ * (b * c) * t by group, hts.inv_mul_cancel]
+  · rw [← hts.inv_mul_cancel]
+    group
   rw [List.isChain_cons_cons, List.isChain_cons_cons, List.isChain_cons]
   -- `t` does not commute with `b`, so the new first entry does not commute with `a`.
   exact ⟨fun h => hG.not_commute_conj_of_commute ha hab.symm
