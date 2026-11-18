@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Topology.Order.MonotoneConvergence
-import TauCeti.Dynamics.Flow.Periodic.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
@@ -34,7 +33,8 @@ half-cylinder is bounded by `(1 + M²) / c` times the energy
 * there are `s_n → ∞`, with `s_n > a`, such that the loops `t ↦ u(s_n, t)` converge uniformly to
   a `1`-periodic orbit `x` of the Hamiltonian vector field, `x' = X_{H_t}(x)`
   (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer`);
-* if `u` is `C²`, the actions `A_H(u(s, ·))` of the loops increase with `s`
+* if `u` is `C²`, the actions `A_H(u(s, ·))` of the loops increase with `s` on any open interval
+  where `u` solves the equation
   (`TauCeti.SymplecticForm.monotoneOn_hamiltonianAction_of_floer`), and they tend to the action
   `A_H(x)` of such an orbit as `s → ∞`
   (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer`), since
@@ -65,9 +65,21 @@ asymptotic condition `u(s, ·) → x` at the ends of the Floer trajectories and 
 are counted in the Floer complex and its product. Nondegenerate fixed points of the time-one map
 are isolated (`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`), and periodic solutions
 through isolated fixed points are isolated among the periodic solutions
-(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`). So the statement is an
+(`TauCeti.exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt`), so periodic orbits through
+nondegenerate fixed points are isolated
+(`TauCeti.SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt`). So the statement is an
 instance of the convergence theorem `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`
 for loops with square-integrable defect.
+
+**The negative end.** Under the same two assumptions, the loops of a solution on a half-cylinder
+`s < a` converge uniformly to a single `1`-periodic orbit as `s → -∞`
+(`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_atBot_of_floer`), the negative
+end of a Floer trajectory and the output end of a pair of pants; without them they accumulate at
+a periodic orbit along a sequence
+(`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer_Iio`). Both follow
+from the reflected convergence theorems for loops with square-integrable defect. If the actions
+tend to `L` as `s → -∞`, the energy of `u` over `(-∞, b] × [0, 1]` is `A_H(u(b, ·)) - L`
+(`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_Iic_eq_of_tendsto_hamiltonianAction`).
 
 ## References
 
@@ -288,6 +300,107 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
   refine (tendsto_congr' hAeq).1 ((tendsto_iff_tendsto_subseq_of_monotone hAmono hφ).2 ?_)
   exact hseq.congr' (hφ.eventually hAeq.symm)
 
+/-- **Convergence of a finite-energy Floer half-cylinder to a nondegenerate orbit.** Under the
+hypotheses of `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer`, suppose
+moreover that the derivative of `u` is bounded on the half-cylinder, that the suspension of the
+Hamiltonian vector field is globally Lipschitz, so that its evolution `φ` is defined, and that every
+`1`-periodic orbit `x` of the Hamiltonian vector field in `K` is nondegenerate: `x(0)` is a
+nondegenerate fixed point of the time-one map `φ(0, 1)`. Then the loops `t ↦ u(s, t)` converge
+uniformly, as `s → ∞`, to a single `1`-periodic orbit. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
+    (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1)
+    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
+    (hK : IsCompact K) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hc : 0 < c)
+    (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
+    (hJM : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
+    {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
+    {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H))
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
+      TendstoUniformly (fun s t ↦ u (s, t)) x atTop := by
+  refine exists_periodic_hasDerivAt_tendstoUniformly_atTop hu hper hK huK
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
+    (fun v t ↦ by simp only [hHper t])
+    (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
+      hfloer hE) hC fun x hxper hx hxK ↦ ?_
+  obtain ⟨ε, hε, h⟩ := ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hx (hnd x hxper hx hxK)
+  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
+
+/-! ### The negative end
+
+On the half-cylinder `s < a`, the negative end of a Floer trajectory or the output end of a pair
+of pants, the loops of a finite-energy solution approach periodic orbits as `s → -∞`. The defect
+`∂_t u - X_{H_t}(u)` does not see the direction of `s`, so the accumulation and convergence of the
+loops follow from the reflected statements for loops with square-integrable defect; the actions
+of the loops decrease to the action of the limiting orbit. -/
+
+/-- **Periodic orbits at the negative end of a finite-energy Floer half-cylinder.** Let `H` be a
+`C¹` Hamiltonian, `1`-periodic in time, and let `u` be `C¹` on the half-cylinder `s < a`, with
+`1`-periodic loops `t ↦ u(s, t)` in a compact set `K`, solving the Floer equation
+`∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `(-∞, a) × [0, 1]` for uniformly tame almost complex
+structures `J z`. If the energy of `u` over `(-∞, a) × [0, 1]` is finite, then there are
+`s_n → -∞`, with `s_n < a`, such that the loops `t ↦ u(s_n, t)` converge uniformly to a
+`1`-periodic orbit `x` of the Hamiltonian vector field. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_of_floer_Iio (hH : ContDiff ℝ 1 (uncurry H))
+    (hHper : Periodic H 1) (hu : ContDiffOn ℝ 1 u (Iio a ×ˢ univ))
+    (hper : ∀ s, s < a → Periodic (fun t ↦ u (s, t)) 1) (hK : IsCompact K)
+    (huK : ∀ s, s < a → ∀ t, u (s, t) ∈ K) (hc : 0 < c)
+    (hJc : ∀ z ∈ Iio a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
+    (hJM : ∀ z ∈ Iio a ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hfloer : ∀ z ∈ Iio a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in Iio a ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
+      ∃ φ : ℕ → ℝ, (∀ n, φ n < a) ∧ Tendsto φ atTop atBot ∧
+        TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop := by
+  obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, -⟩ :=
+    exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_Iio_ne_top hu hper hK huK
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
+      (fun v t ↦ by simp only [hHper t])
+      (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Iio.prod measurableSet_Icc) hc hJc
+        hJM hfloer hE)
+  exact ⟨x, hxper, hx, φ, hφa, hφ, hux⟩
+
+/-- **The energy of a Floer half-cylinder at the negative end.** Let `u` be a `C²` solution of
+the Floer equation on `(-∞, a) × [0, 1]` with `1`-periodic loops and tame almost complex
+structures. If the actions `A_H(u(s, ·))` tend to `L` as `s → -∞`, then for `b < a` the energy of
+`u` over `(-∞, b] × [0, 1]` is `A_H(u(b, ·)) - L`. -/
+theorem setLIntegral_floerEnergyDensity_Iic_eq_of_tendsto_hamiltonianAction
+    (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiffOn ℝ 2 u (Iio a ×ˢ univ))
+    (hper : ∀ s, s < a → Periodic (fun t ↦ u (s, t)) 1)
+    (hJ : ∀ z ∈ Iio a ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ Iio a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    {b L : ℝ} (hb : b < a)
+    (hL : Tendsto (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) atBot (𝓝 L)) :
+    ∫⁻ z in Iic b ×ˢ Icc 0 1,
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
+      ENNReal.ofReal (ω.hamiltonianAction H (fun t ↦ u (b, t)) - L) := by
+  have hRsub (n : ℕ) : Icc (b - n) b ×ˢ Icc (0 : ℝ) 1 ⊆ Iio a ×ˢ Icc 0 1 :=
+    Set.prod_mono (fun s h ↦ h.2.trans_lt hb) le_rfl
+  have hRU (n : ℕ) : Icc (b - n) b ×ˢ Icc (0 : ℝ) 1 ⊆ Iio a ×ˢ univ :=
+    (hRsub n).trans (Set.prod_mono le_rfl (subset_univ _))
+  have hEcont := ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
+    (isOpen_Iio.prod isOpen_univ) (hu.of_le one_le_two) contDiffOn_const
+    (contDiff_uncurry_cylindrical hH).contDiffOn
+  -- Exhaust the half-cylinder by the rectangles `[b - n, b] × [0, 1]`, on which the energy is the
+  -- change of action.
+  refine setLIntegral_Iic_prod_eq_ofReal_of_tendsto (fun n ↦ ?_) hL
+  rw [← ofReal_integral_eq_lintegral_ofReal
+      ((hEcont.mono (hRU n)).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
+      ((ae_restrict_iff' (measurableSet_Icc.prod measurableSet_Icc)).2 (Eventually.of_forall
+        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hRsub n hz)) (hfloer z (hRsub n hz)))),
+    ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH (isOpen_Iio.prod isOpen_univ) hu
+      (sub_le_self b n.cast_nonneg) (hRU n)
+      fun s h ↦ by simpa using hper s (h.2.trans_lt hb) 0]
+
 /-- **The negative end of a finite-energy Floer half-cylinder.** The counterpart of
 `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer` for the
 half-cylinder `s < a`: if `u` is a `C²` solution of the Floer equation on `(-∞, a) × [0, 1]` with
@@ -322,8 +435,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer
     (hu.of_le one_le_two).comp (contDiff_fst.neg.prodMk contDiff_snd).contDiffOn hmaps
   have hura : ∀ s, -a < s → -s < a := fun s hs ↦ neg_lt.1 hs
   have hfin : ∫⁻ z in Ioi (-a) ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X ur z‖ ^ 2) ≠ ⊤ := by
-    rw [setLIntegral_norm_sq_sliceDefect_comp_neg_fst
-      ((hu.of_le one_le_two).differentiableOn one_ne_zero)]
+    rw [setLIntegral_norm_sq_sliceDefect_comp_neg_fst]
     exact lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Iio.prod measurableSet_Icc) hc hJc
       hJM hfloer hE
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
@@ -350,39 +462,36 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer
       (hseq.congr' (hφ.eventually hAeq.symm)))
   simpa [Function.comp_def] using htop.comp tendsto_neg_atBot_atTop
 
-/-- **Convergence of a finite-energy Floer half-cylinder to a nondegenerate orbit.** Under the
-hypotheses of `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer`, suppose
-moreover that the derivative of `u` is bounded on the half-cylinder, that the suspension of the
-Hamiltonian vector field is globally Lipschitz, so that its evolution `φ` is defined, and that every
-`1`-periodic orbit `x` of the Hamiltonian vector field in `K` is nondegenerate: `x(0)` is a
-nondegenerate fixed point of the time-one map `φ(0, 1)`. Then the loops `t ↦ u(s, t)` converge
-uniformly, as `s → ∞`, to a single `1`-periodic orbit. -/
-theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_floer
+/-- **Convergence at the negative end of a finite-energy Floer half-cylinder.** Under the
+hypotheses of `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendstoUniformly_of_floer_Iio`,
+suppose moreover that the derivative of `u` is bounded on the half-cylinder, that the suspension
+of the Hamiltonian vector field is globally Lipschitz, so that its evolution `φ` is defined, and
+that every `1`-periodic orbit `x` of the Hamiltonian vector field in `K` is nondegenerate: `x(0)`
+is a nondegenerate fixed point of the time-one map `φ(0, 1)`. Then the loops `t ↦ u(s, t)`
+converge uniformly, as `s → -∞`, to a single `1`-periodic orbit. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_atBot_of_floer
     (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1)
-    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) (hper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) 1)
-    (hK : IsCompact K) (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K) (hc : 0 < c)
-    (hJc : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
-    (hfloer : ∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+    (hu : ContDiffOn ℝ 1 u (Iio a ×ˢ univ)) (hper : ∀ s, s < a → Periodic (fun t ↦ u (s, t)) 1)
+    (hK : IsCompact K) (huK : ∀ s, s < a → ∀ t, u (s, t) ∈ K) (hc : 0 < c)
+    (hJc : ∀ z ∈ Iio a ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
+    (hJM : ∀ z ∈ Iio a ×ˢ Icc 0 1, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (hfloer : ∀ z ∈ Iio a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hE : ∫⁻ z in Ioi a ×ˢ Icc 0 1,
+    (hE : ∫⁻ z in Iio a ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
-    {C : ℝ} (hC : ∀ z ∈ Ioi a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
+    {C : ℝ} (hC : ∀ z ∈ Iio a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
     {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H))
     (hnd : ∀ x : ℝ → V, Periodic x 1 →
       (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
-      TendstoUniformly (fun s t ↦ u (s, t)) x atTop := by
-  refine exists_periodic_hasDerivAt_tendstoUniformly_atTop hu hper hK huK
+      TendstoUniformly (fun s t ↦ u (s, t)) x atBot := by
+  refine exists_periodic_hasDerivAt_tendstoUniformly_atBot hu hper hK huK
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
     (fun v t ↦ by simp only [hHper t])
-    (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc hJM
+    (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Iio.prod measurableSet_Icc) hc hJc hJM
       hfloer hE) hC fun x hxper hx hxK ↦ ?_
-  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map.
-  have hiso := (hnd x hxper hx hxK).eventually_not_isFixedPt
-  rw [timeDependentHamiltonianFlow_eq, ← zero_add (1 : ℝ)] at hiso
-  obtain ⟨ε, hε, h⟩ := exists_pos_forall_periodic_eq_of_eventually_not_isFixedPt _ hx hiso
-  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hy hyper (hyx 0)⟩
+  obtain ⟨ε, hε, h⟩ := ω.exists_pos_forall_eq_of_isNondegenerateFixedPt hx (hnd x hxper hx hxK)
+  exact ⟨ε, hε, fun y hyper hy _ hyx ↦ h y hyper hy (hyx 0)⟩
 
 end TauCeti.SymplecticForm
