@@ -29,6 +29,8 @@ particular algebraic spaces and representable functors, are viewed as stacks in 
 ## Main declarations
 
 * `CategoryTheory.Functor.discretePseudofunctor`: the discrete pseudofunctor of `P`.
+* `CategoryTheory.Functor.discretePseudofunctor.objEquiv`: the objects of the fibre over `X` are
+  the elements of `P(X)`.
 * `CategoryTheory.Functor.discretePseudofunctorMap`: the strong transformation induced by a
   morphism of presheaves, with `discretePseudofunctorMapId` and `discretePseudofunctorMapComp`
   comparing it with identities and composites.
@@ -46,7 +48,7 @@ particular algebraic spaces and representable functors, are viewed as stacks in 
 * [Stacks Project, Section 8.6 (Stacks in setoids) and Lemma 8.6.3](https://stacks.math.columbia.edu/tag/0432)
 -/
 
-@[expose] public section
+public section
 
 universe w' w t v u
 
@@ -61,7 +63,7 @@ variable {C : Type u} [Category.{v} C] (P : Cᵒᵖ ⥤ Type w)
 /-- The discrete pseudofunctor of a presheaf of types `P`: its fibre over `X` is the discrete
 category on `P(X)`, with objects lifted to the universe `max w w'`, and pullback along `f` is
 `P.map f`. -/
-def discretePseudofunctor : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{w, max w w'} :=
+@[expose] def discretePseudofunctor : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{w, max w w'} :=
   Functor.toPseudofunctor' (P ⋙
     { obj X := Cat.of (InducedCategory (Discrete X) (fun x : ULift.{w'} X ↦ Discrete.mk x.down))
       map f := Functor.toCatHom
@@ -79,28 +81,39 @@ def discretePseudofunctor : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{w, max w w'} :=
         exact Functor.ext (fun _ ↦ rfl)
           (fun _ _ _ ↦ InducedCategory.hom_ext (Subsingleton.elim _ _)) })
 
-/-- Pulling back an object of the discrete pseudofunctor of `P` applies `P.map`. -/
-@[simp]
-lemma discretePseudofunctor_map_toFunctor_obj_down {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b)
-    (M : P.discretePseudofunctor.{w'}.obj a) :
-    ((P.discretePseudofunctor.{w'}.map f).toFunctor.obj M).down = P.map f.as M.down :=
-  rfl
-
 namespace discretePseudofunctor
 
-variable {P} {a : LocallyDiscrete Cᵒᵖ}
+variable {P}
 
-instance (M N : P.discretePseudofunctor.{w'}.obj a) : Subsingleton (M ⟶ N) :=
+/-- The objects of the fibre of the discrete pseudofunctor of `P` over `X` are the elements of
+`P(X)`. -/
+def objEquiv (X : Cᵒᵖ) : P.discretePseudofunctor.{w'}.obj (.mk X) ≃ P.obj X :=
+  Equiv.ulift
+
+/-- Pulling back an object of the discrete pseudofunctor of `P` applies `P.map`. -/
+@[simp]
+lemma objEquiv_map_toFunctor_obj {X Y : Cᵒᵖ} (f : X ⟶ Y)
+    (M : P.discretePseudofunctor.{w'}.obj (.mk X)) :
+    objEquiv Y ((P.discretePseudofunctor.{w'}.map f.toLoc).toFunctor.obj M) =
+      P.map f (objEquiv X M) :=
+  (rfl)
+
+instance {a : LocallyDiscrete Cᵒᵖ} (M N : P.discretePseudofunctor.{w'}.obj a) :
+    Subsingleton (M ⟶ N) :=
   ⟨fun _ _ ↦ InducedCategory.hom_ext (Subsingleton.elim _ _)⟩
+
+variable {X : Cᵒᵖ}
 
 /-- The morphism between two objects of a fibre of the discrete pseudofunctor with the same
 underlying element. -/
-def homMk {M N : P.discretePseudofunctor.{w'}.obj a} (h : M.down = N.down) : M ⟶ N :=
+def homMk {M N : P.discretePseudofunctor.{w'}.obj (.mk X)} (h : objEquiv X M = objEquiv X N) :
+    M ⟶ N :=
   InducedCategory.homMk (Discrete.eqToHom h)
 
 /-- The isomorphism between two objects of a fibre of the discrete pseudofunctor with the same
 underlying element. -/
-def isoMk {M N : P.discretePseudofunctor.{w'}.obj a} (h : M.down = N.down) : M ≅ N where
+def isoMk {M N : P.discretePseudofunctor.{w'}.obj (.mk X)} (h : objEquiv X M = objEquiv X N) :
+    M ≅ N where
   hom := homMk h
   inv := homMk h.symm
   hom_inv_id := Subsingleton.elim _ _
@@ -108,17 +121,19 @@ def isoMk {M N : P.discretePseudofunctor.{w'}.obj a} (h : M.down = N.down) : M �
 
 /-- Two objects of a fibre of the discrete pseudofunctor related by a morphism have the same
 underlying element. -/
-lemma eq_of_hom {M N : P.discretePseudofunctor.{w'}.obj a} (φ : M ⟶ N) : M.down = N.down :=
+lemma eq_of_hom {M N : P.discretePseudofunctor.{w'}.obj (.mk X)} (φ : M ⟶ N) :
+    objEquiv X M = objEquiv X N :=
   Discrete.eq_of_hom φ.hom
 
 /-- Two objects of a fibre of the discrete pseudofunctor are related by a morphism iff they have
 the same underlying element. -/
-lemma nonempty_hom_iff (M N : P.discretePseudofunctor.{w'}.obj a) :
-    Nonempty (M ⟶ N) ↔ M.down = N.down :=
+lemma nonempty_hom_iff (M N : P.discretePseudofunctor.{w'}.obj (.mk X)) :
+    Nonempty (M ⟶ N) ↔ objEquiv X M = objEquiv X N :=
   ⟨fun ⟨φ⟩ ↦ eq_of_hom φ, fun h ↦ ⟨homMk h⟩⟩
 
-instance : IsGroupoid (P.discretePseudofunctor.{w'}.obj a) where
-  all_isIso φ := ⟨homMk (eq_of_hom φ).symm, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+instance {a : LocallyDiscrete Cᵒᵖ} : IsGroupoid (P.discretePseudofunctor.{w'}.obj a) where
+  all_isIso φ := ⟨homMk (X := a.as) (eq_of_hom (X := a.as) φ).symm, Subsingleton.elim _ _,
+    Subsingleton.elim _ _⟩
 
 end discretePseudofunctor
 
@@ -146,10 +161,11 @@ def discretePseudofunctorMap {Q : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) :
 
 /-- The strong transformation induced by `α` applies `α` to the underlying elements. -/
 @[simp]
-lemma discretePseudofunctorMap_app_toFunctor_obj_down {Q : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q)
-    {a : LocallyDiscrete Cᵒᵖ} (M : P.discretePseudofunctor.{w'}.obj a) :
-    (((discretePseudofunctorMap α).app a).toFunctor.obj M).down = α.app a.as M.down :=
-  rfl
+lemma discretePseudofunctor.objEquiv_discretePseudofunctorMap_app_toFunctor_obj
+    {Q : Cᵒᵖ ⥤ Type w} (α : P ⟶ Q) {X : Cᵒᵖ} (M : P.discretePseudofunctor.{w'}.obj (.mk X)) :
+    discretePseudofunctor.objEquiv X (((discretePseudofunctorMap α).app (.mk X)).toFunctor.obj M) =
+      α.app X (discretePseudofunctor.objEquiv X M) :=
+  (rfl)
 
 open scoped Pseudofunctor.StrongTrans in
 /-- The strong transformation induced by the identity of `P` is isomorphic to the identity. -/
@@ -189,11 +205,11 @@ and the morphisms of the descent datum exist exactly when the family is compatib
 def descentDataEquivCompatible (R : Presieve S) :
     P.discretePseudofunctor.{w'}.DescentData (fun (g : R.category) ↦ g.obj.hom) ≃
       {x : Presieve.FamilyOfElements P R // x.Compatible} where
-  toFun D := ⟨fun _ f hf ↦ (D.obj (R.categoryMk f hf)).down,
+  toFun D := ⟨fun _ f hf ↦ discretePseudofunctor.objEquiv _ (D.obj (R.categoryMk f hf)),
     fun _ _ _ g₁ g₂ f₁ f₂ h₁ h₂ w ↦ eq_of_hom
       (D.hom (g₁ ≫ f₁) (i₁ := R.categoryMk f₁ h₁) (i₂ := R.categoryMk f₂ h₂) g₁ g₂ rfl w.symm)⟩
   invFun x :=
-    { obj g := ⟨x.1 g.obj.hom g.property⟩
+    { obj g := (discretePseudofunctor.objEquiv _).symm (x.1 g.obj.hom g.property)
       hom _ _ _ _ f₁ f₂ hf₁ hf₂ := homMk (x.2 f₁ f₂ _ _ (hf₁.trans hf₂.symm))
       pullHom_hom := by intros; exact Subsingleton.elim _ _
       hom_self := by intros; exact Subsingleton.elim _ _
@@ -211,22 +227,25 @@ def descentDataEquivCompatible (R : Presieve S) :
 lemma descentDataEquivCompatible_apply_coe {R : Presieve S}
     (D : P.discretePseudofunctor.{w'}.DescentData (fun (g : R.category) ↦ g.obj.hom))
     {Y : C} (f : Y ⟶ S) (hf : R f) :
-    (descentDataEquivCompatible R D).1 f hf = (D.obj (R.categoryMk f hf)).down :=
-  rfl
+    (descentDataEquivCompatible R D).1 f hf =
+      discretePseudofunctor.objEquiv _ (D.obj (R.categoryMk f hf)) :=
+  (rfl)
 
 /-- The descent datum attached to a compatible family has the elements of the family as its
 objects. -/
 @[simp]
-lemma descentDataEquivCompatible_symm_apply_obj_down {R : Presieve S}
+lemma descentDataEquivCompatible_symm_apply_obj {R : Presieve S}
     (x : {x : Presieve.FamilyOfElements P R // x.Compatible}) (g : R.category) :
-    (((descentDataEquivCompatible.{w'} R).symm x).obj g).down = x.1 g.obj.hom g.property :=
-  rfl
+    ((descentDataEquivCompatible.{w'} R).symm x).obj g =
+      (discretePseudofunctor.objEquiv _).symm (x.1 g.obj.hom g.property) :=
+  (rfl)
 
 private lemma nonempty_hom_toDescentData_obj_iff {R : Presieve S}
     (M N : P.discretePseudofunctor.{w'}.obj (.mk (op S))) :
     Nonempty ((P.discretePseudofunctor.toDescentData (fun (g : R.category) ↦ g.obj.hom)).obj M ⟶
       (P.discretePseudofunctor.toDescentData (fun (g : R.category) ↦ g.obj.hom)).obj N) ↔
-      ∀ ⦃Y : C⦄ ⦃f : Y ⟶ S⦄, R f → P.map f.op M.down = P.map f.op N.down := by
+      ∀ ⦃Y : C⦄ ⦃f : Y ⟶ S⦄, R f → P.map f.op (discretePseudofunctor.objEquiv _ M) =
+        P.map f.op (discretePseudofunctor.objEquiv _ N) := by
   refine ⟨fun ⟨φ⟩ Y f hf ↦ eq_of_hom (φ.hom (R.categoryMk f hf)), fun h ↦ ⟨?_⟩⟩
   exact { hom g := homMk (h g.property), comm := fun _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _ }
 
@@ -234,8 +253,9 @@ private lemma toDescentData_full_iff (R : Presieve S) :
     (P.discretePseudofunctor.{w'}.toDescentData (fun (g : R.category) ↦ g.obj.hom)).Full ↔
       Presieve.IsSeparatedFor P R := by
   refine ⟨fun h x t₁ t₂ ht₁ ht₂ ↦ ?_, fun h ↦ ⟨fun {M N} φ ↦ ?_⟩⟩
-  · obtain ⟨φ⟩ := (nonempty_hom_toDescentData_obj_iff (R := R) (ULift.up t₁)
-      (ULift.up t₂)).2 (fun _ f hf ↦ (ht₁ f hf).trans (ht₂ f hf).symm)
+  · obtain ⟨φ⟩ := (nonempty_hom_toDescentData_obj_iff (R := R)
+      ((discretePseudofunctor.objEquiv _).symm t₁) ((discretePseudofunctor.objEquiv _).symm t₂)).2
+      (fun _ f hf ↦ (ht₁ f hf).trans (ht₂ f hf).symm)
     exact eq_of_hom ((P.discretePseudofunctor.{w'}.toDescentData _).preimage φ)
   · exact ⟨homMk (h.ext fun _ _ hf ↦ (nonempty_hom_toDescentData_obj_iff M N).1 ⟨φ⟩ hf),
       Subsingleton.elim _ _⟩
@@ -256,10 +276,11 @@ lemma isStackFor_discretePseudofunctor_iff (R : Presieve S) :
   refine ⟨fun h ↦ ⟨h.full, fun x hx ↦ ?_⟩, fun ⟨hfull, hx⟩ ↦ ⟨inferInstance, hfull, ⟨fun D ↦ ?_⟩⟩⟩
   · obtain ⟨M, ⟨e⟩⟩ :=
       h.essSurj.mem_essImage ((descentDataEquivCompatible.{w'} R).symm ⟨x, hx⟩)
-    exact ⟨M.down, fun _ f hf ↦ eq_of_hom (e.hom.hom (R.categoryMk f hf))⟩
+    exact ⟨discretePseudofunctor.objEquiv _ M,
+      fun _ f hf ↦ eq_of_hom (e.hom.hom (R.categoryMk f hf))⟩
   · obtain ⟨t, ht⟩ := hx _ (descentDataEquivCompatible R D).2
-    exact ⟨ULift.up t, ⟨Pseudofunctor.DescentData.isoMk (fun g ↦ isoMk (ht g.obj.hom g.property))
-      (fun _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _)⟩⟩
+    exact ⟨(discretePseudofunctor.objEquiv _).symm t, ⟨Pseudofunctor.DescentData.isoMk
+      (fun g ↦ isoMk (ht g.obj.hom g.property)) (fun _ _ _ _ _ _ _ _ ↦ Subsingleton.elim _ _)⟩⟩
 
 /-- The discrete pseudofunctor of `P` is a prestack for `J` iff `P` is separated for `J`. -/
 lemma isPrestack_discretePseudofunctor_iff (J : GrothendieckTopology C) :

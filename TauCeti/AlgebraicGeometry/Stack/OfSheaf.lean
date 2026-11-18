@@ -37,9 +37,11 @@ the set of morphisms `T ⟶ X`.
 * [Stacks Project, Lemma 8.6.3](https://stacks.math.columbia.edu/tag/0432)
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Opposite
+
+open CategoryTheory.Functor.discretePseudofunctor (objEquiv)
 
 namespace TauCeti.AlgebraicGeometry.StackInGroupoids
 
@@ -49,12 +51,21 @@ universe u
 
 /-- The stack in setoids of an fppf sheaf of sets `F` on schemes: the fibre over `T` is the
 discrete groupoid on `F(T)`, and pullback along `f : T' ⟶ T` is `F.map f.op`. -/
-@[simps toSchPseudofunctor, stacks 0432]
+@[expose, simps toSchPseudofunctor, stacks 0432]
 def ofSheaf (F : Sheaf Scheme.fppfTopology (Type u)) : StackInGroupoids.{u} where
   toSchPseudofunctor := F.obj.discretePseudofunctor.{u + 1}
   isGroupoid _ := inferInstance
   isStack := (F.obj.isStack_discretePseudofunctor_iff _).2
     ((isSheaf_iff_isSheaf_of_type _ _).1 F.property)
+
+/-- Pulling back an object of the stack in setoids of `F` along `f` applies the restriction map
+`F.map f.op`. -/
+@[simp]
+lemma objEquiv_ofSheaf_map_toFunctor_obj (F : Sheaf Scheme.fppfTopology (Type u))
+    {T T' : Scheme.{u}} (f : T' ⟶ T) (M : (ofSheaf F).toSchPseudofunctor.obj (.mk (op T))) :
+    objEquiv _ (((ofSheaf F).toSchPseudofunctor.map f.op.toLoc).toFunctor.obj M) =
+      F.obj.map f.op (objEquiv _ M) :=
+  Functor.discretePseudofunctor.objEquiv_map_toFunctor_obj f.op M
 
 /-- The morphism of stacks in setoids induced by a morphism of fppf sheaves: on the fibre over
 `T` it applies `α` at `T`. -/
@@ -64,10 +75,11 @@ def ofSheafMap {F G : Sheaf Scheme.fppfTopology (Type u)} (α : F ⟶ G) :
 
 /-- The morphism of stacks induced by `α` applies `α` to the underlying elements. -/
 @[simp]
-lemma ofSheafMap_app_toFunctor_obj_down {F G : Sheaf Scheme.fppfTopology (Type u)} (α : F ⟶ G)
-    (T : Scheme.{u}) (M : (ofSheaf F).toSchPseudofunctor.obj (.mk (op T))) :
-    (((ofSheafMap α).app (.mk (op T))).toFunctor.obj M).down = α.hom.app (op T) M.down :=
-  rfl
+lemma objEquiv_ofSheafMap_app_toFunctor_obj {F G : Sheaf Scheme.fppfTopology (Type u)}
+    (α : F ⟶ G) (T : Scheme.{u}) (M : (ofSheaf F).toSchPseudofunctor.obj (.mk (op T))) :
+    objEquiv _ (((ofSheafMap α).app (.mk (op T))).toFunctor.obj M) =
+      α.hom.app (op T) (objEquiv _ M) :=
+  Functor.discretePseudofunctor.objEquiv_discretePseudofunctorMap_app_toFunctor_obj α.hom M
 
 open scoped Pseudofunctor.StrongTrans in
 /-- The morphism of stacks induced by the identity of an fppf sheaf is isomorphic to the
@@ -87,15 +99,18 @@ def ofSheafMapComp {F G H : Sheaf Scheme.fppfTopology (Type u)} (α : F ⟶ G) (
 
 /-- The stack represented by a scheme `X`: the stack in setoids of the fppf sheaf
 `T ↦ (T ⟶ X)`, which is a sheaf because the fppf topology is subcanonical. -/
+@[expose, simps! toSchPseudofunctor]
 def ofScheme (X : Scheme.{u}) : StackInGroupoids.{u} :=
   ofSheaf (Scheme.fppfTopology.yoneda.obj X)
 
 /-- Pulling back an object `T ⟶ X` of the stack represented by `X` along `f` is composition with
 `f`. -/
 @[simp]
-lemma ofScheme_map_toFunctor_obj_down (X : Scheme.{u}) {T T' : Scheme.{u}} (f : T' ⟶ T)
+lemma objEquiv_ofScheme_map_toFunctor_obj (X : Scheme.{u}) {T T' : Scheme.{u}} (f : T' ⟶ T)
     (M : (ofScheme X).toSchPseudofunctor.obj (.mk (op T))) :
-    (((ofScheme X).toSchPseudofunctor.map f.op.toLoc).toFunctor.obj M).down = f ≫ M.down :=
-  rfl
+    objEquiv (P := yoneda.obj X) _
+        (((ofScheme X).toSchPseudofunctor.map f.op.toLoc).toFunctor.obj M) =
+      f ≫ objEquiv (P := yoneda.obj X) _ M :=
+  Functor.discretePseudofunctor.objEquiv_map_toFunctor_obj f.op M
 
 end TauCeti.AlgebraicGeometry.StackInGroupoids
