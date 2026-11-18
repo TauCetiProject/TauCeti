@@ -112,7 +112,7 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq
     rw [← sub_add_cancel (Wkp.iteratedGradient 1 (Wkp.compL h hp u) x)
         (M.adjoint ∘L Wkp.iteratedGradient 1 u (Φ x) ∘L M), ContinuousLinearMap.comp_add,
       map_add, hA'def, ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id hMN,
-      ContinuousLinearMap.traceCLM_comp_eq_inner_sum _ e _ g hH, add_comm]
+      ContinuousLinearMap.traceCLM_comp_eq_sum_inner _ e _ g hH, add_comm]
   -- The drift: `⟪N z, M† g⟫ = ⟪z, g⟫` since `M N = 1`.
   have hdrift (z : E) : ⟪N x z, M.adjoint g⟫_ℝ = ⟪z, g⟫_ℝ := by
     rw [ContinuousLinearMap.adjoint_inner_right]

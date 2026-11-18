@@ -48,7 +48,7 @@ pairing `tr (T* U) = tr (T U)` is real.
   the trace pairing `tr (A M)` with a self-adjoint `M`.
 * `ContinuousLinearMap.traceCLM_comp_adjoint_comp_comp_of_comp_eq_id`: if `M N = 1`, then
   `tr ((N A N†) (M† D M)) = tr (A D)`.
-* `ContinuousLinearMap.traceCLM_comp_eq_inner_sum`: if `H f = (T f)† g`, then
+* `ContinuousLinearMap.traceCLM_comp_eq_sum_inner`: if `H f = (T f)† g`, then
   `tr (A H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫` for any orthonormal basis `(eᵢ)`.
 * `InnerProductSpace.trace_rankOne_mul`, `InnerProductSpace.trace_mul_rankOne`: the trace pairing
   of `T` with a rank-one endomorphism, `tr (x y* T) = tr (T x y*) = ⟪y, T x⟫`.
@@ -152,7 +152,7 @@ theorem traceCLM_comp_adjoint_comp_comp_of_comp_eq_id [CompleteSpace E] {W : Typ
 open TauCeti in
 /-- The trace of `A ∘ H` for an endomorphism of the form `H f = (T f)† g`: in any orthonormal
 basis `(eᵢ)`, `tr (A ∘ H) = ⟪∑ᵢ T eᵢ (A† eᵢ), g⟫`. -/
-theorem traceCLM_comp_eq_inner_sum [CompleteSpace E] (A : E →L[𝕜] E) {H : E →L[𝕜] E}
+theorem traceCLM_comp_eq_sum_inner [CompleteSpace E] (A : E →L[𝕜] E) {H : E →L[𝕜] E}
     {ι : Type*} [Fintype ι] (e : OrthonormalBasis ι 𝕜 E) (T : E →L[𝕜] E →L[𝕜] E) (g : E)
     (hH : ∀ f, H f = (T f).adjoint g) :
     traceCLM 𝕜 E (A ∘L H) = ⟪∑ i, T (e i) (A.adjoint (e i)), g⟫_𝕜 := by
