@@ -18,7 +18,11 @@ The result is a cylinder whose ends are the remaining input at `0` and the outpu
 the perturbation `K_L` with components `TauCeti.Floer.cappedCylinderComponent H L v` on the
 standard cylinder `ℝ × ℝ/ℤ` (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder`).
 This file proves the interior part of Gromov–Floer compactness for this family over a compact
-window `C ⊆ (4, ∞)` of neck lengths, for a symplectic vector space target `(V, ω)`.
+window `C ⊆ (4, ∞)` of neck lengths, for a symplectic vector space target `(V, ω)`, in the
+coordinates of the cylinder. The same family on the capped plane `ℂ ∖ {0}`, for structures defined
+there, is treated in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capping`; here the
+structures `J_L(z, x)` are arbitrary functions of the cylinder point, and the windows may span
+several periods of the cylinder.
 
 The inputs are the following.
 
@@ -140,7 +144,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       ENNReal.ofReal (N * (A + Bb one + ∑ r, Bb r)) :=
     (setLIntegral_floerEnergyDensity_cappedCylinderComponent_le ω hHb hHbs₁ (hL k) hBb isOpen_univ
       ((hu k).contDiffOn.of_le (by norm_num)) (subset_univ _) (hper k) (fun z _ ↦ hJt _ (hL k) _ _)
-      (fun z _ ↦ hfl k z) (hinf k) (h₀ k) (hΩD.trans hDN)).trans
+      (fun z _ ↦ hfl k z) (h₀ k) (hinf k) (hΩD.trans hDN)).trans
       (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (by linarith [hA k])
         (Nat.cast_nonneg N)))
   have hint (k : ℕ) : IntegrableOn (ω.floerEnergyDensity (cappedCylinderComponent Hb (L k) 1)
