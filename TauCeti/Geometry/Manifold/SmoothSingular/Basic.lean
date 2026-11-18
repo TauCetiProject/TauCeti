@@ -41,6 +41,8 @@ singular cohomology. Only a charted space is required for the definitions.
 ## Main definitions and results
 
 * `TauCeti.smoothSingularSubcomplex`: the subcomplex of smooth singular simplices.
+* `TauCeti.smoothSingularSubcomplex_eq_top`: on a totally disconnected manifold every singular
+  simplex is smooth; its inclusion is an isomorphism, also found by instance resolution.
 * `TauCeti.smoothSingularSubcomplex_le_preimage`: smooth maps preserve smooth simplices.
 * `TauCeti.smoothSingularSubcomplex_preimage_inclusion`: a simplex of an open subset is smooth
   exactly when it is smooth in a larger open subset.
@@ -110,6 +112,24 @@ theorem mem_smoothSingularSubcomplex_iff {k : SimplexCategoryᵒᵖ}
     σ ∈ (smoothSingularSubcomplex I M).obj k ↔ ContMDiffOnSubset I ∞
       ((TopCat.of M).toSSetObjEquiv k σ ∘ fullSimplexEquivStdSimplex k.unop.len) :=
   Iff.rfl
+
+/-- Every singular simplex of a totally disconnected manifold is constant, hence smooth. -/
+@[simp]
+theorem smoothSingularSubcomplex_eq_top [TotallyDisconnectedSpace M] :
+    smoothSingularSubcomplex I M = ⊤ := by
+  apply top_unique
+  intro k σ _
+  rw [mem_smoothSingularSubcomplex_iff]
+  let f := (TopCat.of M).toSSetObjEquiv k σ
+  have hf : (f ∘ fullSimplexEquivStdSimplex k.unop.len) = fun _ ↦ f (StdSimplex.single 0) :=
+    funext fun x ↦ TotallyDisconnectedSpace.eq_of_continuous f f.continuous _ _
+  rw [hf]
+  exact contMDiffOnSubset_const I ∞ _
+
+/-- Smooth and continuous singular simplices coincide on a totally disconnected manifold. -/
+instance isIso_smoothSingularSubcomplex_ι [TotallyDisconnectedSpace M] :
+    IsIso (smoothSingularSubcomplex I M).ι :=
+  (Subfunctor.eq_top_iff_isIso _).mp smoothSingularSubcomplex_eq_top
 
 /-- A singular simplex which, read on the full-dimensional standard simplex, is the restriction of
 a map that is smooth on a neighbourhood of the simplex in `ℝᵏ` is smooth. -/
@@ -430,6 +450,17 @@ theorem smoothSingularSubcomplexMap_comp {E'' H'' : Type*} [NormedAddCommGroup E
   -- Both sides postcompose the underlying singular simplex with `ψ ∘ φ`.
   ext k σ
   rfl
+
+/-- A constant map at `y` induces the constant map of smooth singular subcomplexes at the smooth
+`0`-simplex of `y`. -/
+@[simp]
+theorem smoothSingularSubcomplexMap_const (y : N) (hφ : ContMDiff I J ∞ fun _ : M ↦ y) :
+    smoothSingularSubcomplexMap (fun _ ↦ y) hφ =
+      SSet.const ((SmoothSimplex.equiv₀ J N).symm y) := by
+  have hconst : TopCat.ofHom ⟨fun _ : M ↦ y, hφ.continuous⟩ = TopCat.const y :=
+    TopCat.ext fun x ↦ (TopCat.const_apply (X := TopCat.of M) (Y := TopCat.of N) y x).symm
+  rw [← cancel_mono (smoothSingularSubcomplex J N).ι, smoothSingularSubcomplexMap_ι, hconst]
+  simp
 
 /-- The image of a smooth simplex under a smooth map, read on `Δᵖ`, is the composite. -/
 theorem SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app {p : ℕ}
