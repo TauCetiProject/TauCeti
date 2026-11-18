@@ -49,6 +49,8 @@ dimension two that kernel vanishes identically, so the planar case is instead
 
 * `TauCeti.ballGreenCorrector`: the reflected Newtonian kernel correcting the boundary values.
 * `TauCeti.harmonicOnNhd_ballGreenCorrector`: harmonicity of the corrector inside the ball.
+* `TauCeti.continuousAt_ballGreenCorrector`, `TauCeti.measurable_ballGreenCorrector`: joint
+  continuity off the reflection locus `‖x‖ ‖y‖ = 1`, and joint measurability.
 * `TauCeti.ballGreenKernel`: the Dirichlet Green kernel of the unit ball.
 * `TauCeti.ballGreenKernel_comm`: symmetry of the Green kernel in its two arguments.
 * `TauCeti.harmonicAt_ballGreenKernel`: harmonicity in `y` away from the pole.
@@ -268,6 +270,22 @@ theorem hasFDerivAt_ballGreenCorrector (hn : n ≠ 2) {x y : EuclideanSpace ℝ 
     ((‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1) ^ (-(n : ℝ) / 2) *
       (‖x‖ ^ 2 * ⟪y, v⟫_ℝ - ⟪x, v⟫_ℝ)) * this
 
+/-- The corrector is jointly continuous wherever the reflection polynomial does not vanish. -/
+theorem continuousAt_ballGreenCorrector {x y : EuclideanSpace ℝ (Fin n)} (h : ‖x‖ * ‖y‖ ≠ 1) :
+    ContinuousAt (fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
+      ballGreenCorrector n p.1 p.2) (x, y) := by
+  simp_rw [ballGreenCorrector_def]
+  exact continuousAt_const.mul (ContinuousAt.rpow_const (by fun_prop)
+    (Or.inl (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos h).ne'))
+
+/-- The corrector is jointly measurable. -/
+@[fun_prop]
+theorem measurable_ballGreenCorrector (n : ℕ) :
+    Measurable (Function.uncurry (ballGreenCorrector n)) := by
+  unfold Function.uncurry
+  simp_rw [ballGreenCorrector_def]
+  fun_prop
+
 /-! ### The Green kernel -/
 
 /-- The Dirichlet Green kernel of the Euclidean unit ball with pole `x`: the Newtonian kernel
@@ -374,13 +392,16 @@ theorem ballGreenKernel_le_newtonianKernel_sub (hn : 3 ≤ n) (x y : EuclideanSp
   rw [ballGreenKernel_def]
   exact sub_le_self _ (ballGreenCorrector_nonneg hn x y)
 
-/-- Outside dimension two, the corrector is bounded below by the value of the Newtonian kernel at
-distance `2`, for a pole in the closed unit ball and a variable in the open one: the corrector is
-the radially decreasing profile of `Φ` at the square root of the reflection polynomial
-`‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1`, which lies in `(0, 4]`. -/
-theorem newtonianKernel_le_ballGreenCorrector (hn : n ≠ 2) (hn0 : 0 < n)
-    {x y z : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≤ 1) (hy : ‖y‖ < 1) (hz : ‖z‖ = 2) :
+/-- The corrector is bounded below by the value of the Newtonian kernel at distance `2`, for a
+pole in the closed unit ball and a variable in the open one: outside dimension two the corrector
+is the radially decreasing profile of `Φ` at the square root of the reflection polynomial
+`‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1`, which lies in `(0, 4]`, and in dimension two both sides vanish. -/
+theorem newtonianKernel_le_ballGreenCorrector {x y z : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≤ 1)
+    (hy : ‖y‖ < 1) (hz : ‖z‖ = 2) :
     newtonianKernel n z ≤ ballGreenCorrector n x y := by
+  obtain rfl | hn := eq_or_ne n 2
+  · simp [newtonianKernel_def, ballGreenCorrector_def]
+  have hn0 : 0 < n := pos_of_ne_euclideanSpace (x := z) (y := 0) (by rintro rfl; norm_num at hz)
   have hxy : ‖x‖ * ‖y‖ < 1 := (mul_le_of_le_one_left (norm_nonneg y) hx).trans_lt hy
   have hpos := norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos hxy.ne
   have hle : ‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1 ≤ (2 : ℝ) ^ 2 := by
@@ -391,32 +412,27 @@ theorem newtonianKernel_le_ballGreenCorrector (hn : n ≠ 2) (hn0 : 0 < n)
   · exact (newtonianKernel_rpow_sq_lt n hn hn0 hpos hlt).le
   · rw [heq]
 
-/-- Outside dimension two, the Green kernel of the unit ball is bounded off the diagonal by
+/-- The Green kernel of the unit ball is bounded off the diagonal by
 `|G(x, y)| ≤ |Φ(y - x)| + |Φ(z)|` for any `z` with `‖z‖ = 2`; so `|G(x, ·)|` is integrable over the
 ball, uniformly in `x`. -/
-theorem abs_ballGreenKernel_le (hn : n ≠ 2) (hn0 : 0 < n)
-    {x y z : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) (hy : ‖y‖ < 1) (hxy : y ≠ x)
-    (hz : ‖z‖ = 2) :
+theorem abs_ballGreenKernel_le {x y z : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < 1) (hy : ‖y‖ < 1)
+    (hxy : y ≠ x) (hz : ‖z‖ = 2) :
     |ballGreenKernel n x y| ≤ |newtonianKernel n (y - x)| + |newtonianKernel n z| := by
+  obtain rfl | hn := eq_or_ne n 2
+  · simp [ballGreenKernel_def, newtonianKernel_def, ballGreenCorrector_def]
   have hG := ballGreenKernel_pos hn hx hy hxy
-  have hφ := newtonianKernel_le_ballGreenCorrector hn hn0 hx.le hy hz
+  have hφ := newtonianKernel_le_ballGreenCorrector hx.le hy hz
   rw [abs_of_pos hG]
   rw [ballGreenKernel_def] at hG ⊢
   linarith [le_abs_self (newtonianKernel n (y - x)), neg_abs_le (newtonianKernel n z)]
 
 /-- The Green kernel of the unit ball is jointly measurable. -/
+@[fun_prop]
 theorem measurable_ballGreenKernel (n : ℕ) :
     Measurable (Function.uncurry (ballGreenKernel n)) := by
-  have hP : Continuous fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
-      ‖p.1‖ ^ 2 * ‖p.2‖ ^ 2 - 2 * ⟪p.1, p.2⟫_ℝ + 1 := by fun_prop
-  have hfun : Function.uncurry (ballGreenKernel n) = fun p =>
-      newtonianKernel n (p.2 - p.1) -
-        ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-          (‖p.1‖ ^ 2 * ‖p.2‖ ^ 2 - 2 * ⟪p.1, p.2⟫_ℝ + 1) ^ ((2 - (n : ℝ)) / 2) :=
-    funext fun p => by rw [Function.uncurry_apply_pair, ballGreenKernel_def, ballGreenCorrector_def]
-  rw [hfun]
-  exact ((measurable_newtonianKernel n).comp (measurable_snd.sub measurable_fst)).sub
-    ((hP.measurable.pow_const _).const_mul _)
+  unfold Function.uncurry
+  simp_rw [ballGreenKernel_def]
+  fun_prop
 
 /-! ### The Poisson kernel -/
 
