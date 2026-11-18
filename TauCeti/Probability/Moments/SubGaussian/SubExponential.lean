@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Moments.SubExponential
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
-import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import TauCeti.Probability.Moments.SubGaussian
 
 /-!
@@ -75,36 +74,23 @@ private theorem mgf_sq_sub_sq_centered_le {Ω : Type*} [MeasurableSpace Ω]
   intro Z
   have hX₂ := (hX.memLp 2).integrable_sq
   have hY₂ := (hY.memLp 2).integrable_sq
-  have hZ : Integrable Z μ := hX₂.sub hY₂
   have hmean : μ[Z] = μ[fun ω ↦ X ω ^ 2] - μ[fun ω ↦ Y ω ^ 2] :=
     integral_sub hX₂ hY₂
   obtain ⟨hXi, hXm⟩ := hX.mgf_sq_sub_integral_le ht
   obtain ⟨hYi, hYm⟩ := hY.mgf_sq_sub_integral_le (by rwa [abs_neg] : (c : ℝ) * |-(2 * t)| ≤ _)
-  let a := fun ω ↦ 2 * t * (X ω ^ 2 - μ[fun z ↦ X z ^ 2])
-  let b := fun ω ↦ -(2 * t) * (Y ω ^ 2 - μ[fun z ↦ Y z ^ 2])
-  have hdom : Integrable (fun ω ↦ 1 / 2 * exp (a ω) + 1 / 2 * exp (b ω)) μ :=
-    (hXi.const_mul _).add (hYi.const_mul _)
-  have hpoint (ω : Ω) : exp (t * (Z ω - μ[Z])) ≤ 1 / 2 * exp (a ω) + 1 / 2 * exp (b ω) := by
-    have hab : t * (Z ω - μ[Z]) = 1 / 2 * a ω + 1 / 2 * b ω := by
-      rw [hmean]
-      dsimp [Z, a, b]
-      ring
-    rw [hab]
-    simpa only [smul_eq_mul] using convexOn_exp.2 (Set.mem_univ (a ω)) (Set.mem_univ (b ω))
-      (by norm_num : 0 ≤ (1 / 2 : ℝ)) (by norm_num : 0 ≤ (1 / 2 : ℝ)) (by norm_num)
-  have hint := hdom.mono' (((hZ.aemeasurable.sub_const _).const_mul t).exp.aestronglyMeasurable)
-    (Filter.Eventually.of_forall fun ω ↦ (Real.norm_of_nonneg (exp_pos _).le).trans_le (hpoint ω))
-  refine ⟨hint, (integral_mono hint hdom hpoint).trans ?_⟩
-  rw [integral_add (hXi.const_mul _) (hYi.const_mul _), integral_const_mul, integral_const_mul]
-  calc
-    _ ≤ 1 / 2 * exp (384 * (c : ℝ) ^ 2 * (2 * t) ^ 2) +
-        1 / 2 * exp (384 * (c : ℝ) ^ 2 * (-(2 * t)) ^ 2) := add_le_add
-          (mul_le_mul_of_nonneg_left hXm (by norm_num))
-          (mul_le_mul_of_nonneg_left hYm (by norm_num))
-    _ = _ := by
-      rw [even_two.neg_pow, ← add_mul]
-      norm_num
-      ring
+  let Yc : Ω → ℝ := fun ω ↦ Y ω ^ 2 - μ[fun z ↦ Y z ^ 2]
+  have hYneg : Integrable (fun ω ↦ exp (2 * t * (-Yc) ω)) μ := by
+    simpa only [Yc, Pi.neg_apply, mul_neg, neg_mul] using hYi
+  have hYmgf : mgf (-Yc) μ (2 * t) ≤ exp (384 * (c : ℝ) ^ 2 * (2 * t) ^ 2) := by
+    simpa only [Yc, mgf_neg, even_two.neg_pow] using hYm
+  have hcenter (ω : Ω) : Z ω - μ[Z] =
+      (X ω ^ 2 - μ[fun z ↦ X z ^ 2]) + (-Yc) ω := by
+    rw [hmean]
+    simp only [Z, Yc, Pi.neg_apply]
+    ring
+  simp only [hcenter]
+  obtain ⟨hint, hle⟩ := TauCeti.mgf_add_le_of_mgf_two_mul_le hXi hYneg hXm hYmgf
+  exact ⟨hint, hle.trans_eq (by rw [add_self_div_two]; congr 1; ring)⟩
 
 /-- The product of two random variables with common positive sub-Gaussian proxy `c` is
 sub-exponential with parameter `40 * c`. The factors may be dependent. -/
