@@ -252,27 +252,15 @@ private theorem complexLinear_and_bijective_coprod_orthogonal {n : ℕ} {A : V �
     rw [ContinuousLinearMap.coprod_apply, hDα, map_add]
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
       Submodule.subtypeL_apply, ContinuousLinearEquiv.coe_coe]
-  refine ⟨fun v ↦ (hΨ v).trans (congrArg Ψ (Submodule.coe_smul I v).symm), fun p q hpq ↦ ?_,
-    fun x ↦ ?_⟩
-  · -- `α w + v` determines `α` and `v`, since `ℂ w` meets its orthogonal complement only in `0`.
-    rw [hcoprod, hcoprod] at hpq
-    have h := Ψ.injective hpq
-    have hmem : (p.1 - q.1) • w ∈ (ℂ ∙ w) ⊓ (ℂ ∙ w)ᗮ := by
-      refine ⟨Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self w), ?_⟩
-      have : (p.1 - q.1) • w = (q.2 : EuclideanSpace ℂ (Fin n)) - p.2 := by
-        rw [sub_smul]
-        linear_combination (norm := module) h
-      rw [this]
-      exact Submodule.sub_mem _ q.2.2 p.2.2
-    rw [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot, smul_eq_zero, sub_eq_zero] at hmem
-    have h1 : p.1 = q.1 := hmem.resolve_right hw0
-    rw [h1, add_right_inj] at h
-    exact Prod.ext h1 (Subtype.ext h)
-  · -- Every vector is `α w + v` with `v ⊥ w`.
-    obtain ⟨y, hy, z, hz, hyz⟩ := (ℂ ∙ w).exists_add_mem_mem_orthogonal (Ψ.symm x)
-    obtain ⟨α, rfl⟩ := Submodule.mem_span_singleton.1 hy
-    refine ⟨(α, ⟨z, hz⟩), ?_⟩
-    rw [hcoprod, ← hyz, Ψ.apply_symm_apply]
+  refine ⟨fun v ↦ (hΨ v).trans (congrArg Ψ (Submodule.coe_smul I v).symm), ?_⟩
+  -- `(α, v) ↦ α w + v` is the decomposition along the line `ℂ w` and its orthogonal complement.
+  let E := ((LinearEquiv.toSpanNonzeroSingleton ℂ _ w hw0).prodCongr
+    (LinearEquiv.refl ℂ (ℂ ∙ w)ᗮ)).trans (Submodule.prodEquivOfIsCompl _ _
+      (ℂ ∙ w).isCompl_orthogonal)
+  convert Ψ.bijective.comp E.bijective using 1
+  funext p
+  rw [Function.comp_apply, hcoprod]
+  rfl
 
 /-- **Normal frames exist.** Let `A` be a complex structure on a finite-dimensional real normed
 space `V`, `A² = -1`, and `D : ℂ →L[ℝ] V` a nonzero map satisfying the Cauchy–Riemann equation
