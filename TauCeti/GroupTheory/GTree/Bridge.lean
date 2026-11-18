@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GTree.Axis
-public import TauCeti.Combinatorics.Graph.Serre.Convex.Hull
 
 /-!
 # Products of tree automorphisms with disjoint characteristic sets
