@@ -198,8 +198,7 @@ private theorem ae_eq_adjoint_of_ae_eq_smul_id [FiniteDimensional ℝ E] {c : �
       fun s ↦ c s • ContinuousLinearMap.id ℝ E) :
     ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), AL s = ContinuousLinearMap.adjoint (AL s) := by
   filter_upwards [hAL] with s hs
-  rw [hs, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 fun x y ↦ by
-    simp [real_inner_smul_left, real_inner_smul_right]).adjoint_eq]
+  simp [hs, ContinuousLinearMap.adjoint_id]
 
 /-- **The cokernel of `d/ds - tanh s`.** For the `L∞` class `AL` of `s ↦ -tanh(s) • id`, a path
 `v ∈ L²(ℝ, E)` is orthogonal to the range of `u ↦ u' + AL u` exactly when it is almost
@@ -293,8 +292,7 @@ private theorem ae_eq_adjoint_neg_tanh_smul_id_neg
     AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ ContinuousLinearMap.adjoint ((-Real.tanh (-s)) • ContinuousLinearMap.id ℝ E) := by
   filter_upwards [hAL] with s hs
-  rw [hs, Real.tanh_neg, neg_neg, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 fun x y ↦ by
-    simp [real_inner_smul_left, real_inner_smul_right]).adjoint_eq]
+  simp [hs, ContinuousLinearMap.adjoint_id]
 
 /-- **The trajectory operator `d/ds + tanh s` is Fredholm.** For the `L∞` class `AL` of
 `s ↦ tanh(s) • id` on a finite-dimensional real inner product space `E`, the operator

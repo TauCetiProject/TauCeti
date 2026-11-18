@@ -11,13 +11,11 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 /-!
 # Time reversal of trajectory operators
 
-Let `A` be a continuous family of operators on a real Banach space. Reflecting time, `s ↦ -s`,
-turns a solution `v` of `v' + A(s) v = 0` into the solution `s ↦ v (-s)` of
-`w' - A(-s) w = 0`, and preserves square integrability
-(`TauCeti.squareIntegrableSolutions_neg_comp_neg`). So the trajectory operator
-`D_A u = u' + A u` and the trajectory operator of the reflected coefficient `s ↦ -A(-s)`, which is
-`d/ds - A(-s)`, have kernels of the same dimension on `W^{1,2}(ℝ, F)`
-(`TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_neg_comp_neg`).
+Let `A` be a continuous family of operators. Reflecting time, `s ↦ -s`, shows that the trajectory
+operator `D_A u = u' + A u` and the trajectory operator `d/ds - A(-s)` of the reflected coefficient
+`s ↦ -A(-s)` have kernels of the same dimension
+(`TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_neg_comp_neg`, which holds on any real
+Banach space).
 
 On a finite-dimensional real inner product space `E`, the cokernel of `D_A` is the kernel of its
 formal adjoint `-d/ds + A†`, which is `-D_{-A†}`. Reflecting time in that kernel gives the kernel
@@ -40,8 +38,6 @@ has index `dim E`, the negative of the index `-dim E` of `d/ds - tanh s`
 
 ## Main results
 
-* `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_neg_comp_neg`: the kernels of `D_A` and of
-  `D_{-A(-·)}` have the same dimension.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_adjoint_comp_neg`: the trajectory operator
   of the reversed coefficient `s ↦ A(-s)†` is Fredholm when the limits of `A` are hyperbolic.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_adjoint_comp_neg`: its index is minus that of
@@ -62,27 +58,6 @@ open MeasureTheory TopologicalSpace Filter ContinuousLinearMap
 open scoped ENNReal Topology
 
 namespace TauCeti.WeakDerivStep
-
-section Banach
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {A : ℝ → F →L[ℝ] F}
-
-/-- **Time reversal preserves the kernel of the trajectory operator.** For a continuous family `A`
-of operators on a real Banach space `F`, the kernels of `D_A u = u' + A u` and of the trajectory
-operator `u ↦ u' - A(-s) u` of the reflected coefficient on `W^{1,2}(ℝ, F)` have the same
-dimension: `u ↦ u (-·)` exchanges their solutions. -/
-theorem finrank_ker_trajectoryOperator_neg_comp_neg (hA : Continuous A)
-    (AL RL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
-    (hRL : RL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ -A (-s)) :
-    Module.finrank ℝ (trajectoryOperator (p := 2) RL).ker =
-      Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker := by
-  have hR : Continuous fun s ↦ -A (-s) := (hA.comp continuous_neg).neg
-  rw [finrank_ker_trajectoryOperator hR RL hRL, finrank_ker_trajectoryOperator hA AL hAL,
-    squareIntegrableSolutions_neg_comp_neg]
-
-end Banach
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E}
