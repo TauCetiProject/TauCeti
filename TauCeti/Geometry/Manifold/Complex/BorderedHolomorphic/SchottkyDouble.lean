@@ -414,9 +414,7 @@ private theorem doubleChart_symm_trans_mem_contDiffGroupoid
 the `C^n` maximal atlas of the double for every `n`, the holomorphic one included. -/
 theorem doubleChart_mem_maximalAtlas {n : ℕ∞ω} {e : OpenPartialHomeomorph M ClosedUpperHalfPlane}
     (he : e ∈ borderedHolomorphicGroupoid.maximalAtlas M) :
-    doubleChart e (StructureGroupoid.maximalAtlas_mono
-        (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
-          (contDiffGroupoid_le ENat.LEInfty.out)) he) ∈
+    doubleChart e (borderedHolomorphicGroupoid_maximalAtlas_subset ENat.LEInfty.out he) ∈
       IsManifold.maximalAtlas 𝓘(ℂ) n (SchottkyDouble M) := by
   refine IsManifold.maximalAtlas_subset_of_le le_top ?_
   rintro _ ⟨e', he', rfl⟩
