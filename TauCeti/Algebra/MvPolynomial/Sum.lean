@@ -8,13 +8,14 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 
 /-!
-# Evaluation after separating two families of variables
+# Separating two families of variables
 
 `MvPolynomial.eval₂_sumAlgEquiv` evaluates a polynomial after one family of variables
 has been moved into the coefficient ring by Mathlib's `MvPolynomial.sumAlgEquiv`.
 This permits coefficient extraction with respect to one family while retaining polynomial
 dependence on the other. `MvPolynomial.sumAlgEquiv_map` shows that this separation commutes with
-mapping coefficients along a ring homomorphism.
+mapping coefficients along a ring homomorphism, and `MvPolynomial.mem_support_sumAlgEquiv_iff`
+describes its outer support.
 -/
 
 public section
@@ -40,5 +41,11 @@ theorem sumAlgEquiv_map (f : R →+* S) (p : MvPolynomial (σ ⊕ τ) R) :
   | C r => simp
   | add p q hp hq => simp [hp, hq]
   | mul_X p i hp => cases i <;> simp [hp]
+
+/-- An outer exponent `m` lies in the support of `sumAlgEquiv R σ τ p` if and only if some
+inner exponent `m'` makes `m.sumElim m'` lie in the support of `p`. -/
+theorem mem_support_sumAlgEquiv_iff (p : MvPolynomial (σ ⊕ τ) R) (m : σ →₀ ℕ) :
+    m ∈ (sumAlgEquiv R σ τ p).support ↔ ∃ m' : τ →₀ ℕ, m.sumElim m' ∈ p.support := by
+  simp [mem_support_iff, MvPolynomial.ext_iff]
 
 end MvPolynomial
