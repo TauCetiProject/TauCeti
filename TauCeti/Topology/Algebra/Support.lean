@@ -37,6 +37,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `TauCeti.hasCompactSupport_pi_iff`: a function with values in a finite product is compactly
   supported exactly when every coordinate is, with multiplicative version
   `TauCeti.hasCompactMulSupport_pi_iff`.
+* `TauCeti.sum_eventuallyEq_of_notMem_tsupport`: near a point outside the topological supports
+  of all summands but one, a finite sum agrees with that summand, with multiplicative version
+  `TauCeti.prod_eventuallyEq_of_notMem_mulTSupport`.
 -/
 
 public section
@@ -146,5 +149,20 @@ theorem hasCompactMulSupport_pi_iff {X ι : Type*} [TopologicalSpace X] [Finite 
     {M : ι → Type*} [∀ i, One (M i)] {f : X → ∀ i, M i} :
     HasCompactMulSupport f ↔ ∀ i, HasCompactMulSupport (f · i) := by
   simp [hasCompactMulSupport_iff_eventuallyEq, Filter.EventuallyEq, funext_iff]
+
+open scoped Topology in
+/-- Near a point outside the topological multiplicative supports of all `f j` with `j ∈ s` and
+`j ≠ i`, the product `∏ j ∈ s, f j` agrees with `f i`. -/
+@[to_additive /-- Near a point outside the topological supports of all `f j` with `j ∈ s` and
+`j ≠ i`, the sum `∑ j ∈ s, f j` agrees with `f i`. -/]
+theorem prod_eventuallyEq_of_notMem_mulTSupport {X M κ : Type*} [TopologicalSpace X]
+    [CommMonoid M] {s : Finset κ} {f : κ → X → M} {x : X} {i : κ} (hi : i ∈ s)
+    (h : ∀ j ∈ s, j ≠ i → x ∉ mulTSupport (f j)) : (∏ j ∈ s, f j) =ᶠ[𝓝 x] f i := by
+  classical
+  have h₁ : ∀ᶠ y in 𝓝 x, ∀ j ∈ s.erase i, f j y = 1 := (Filter.eventually_all_finset _).2
+    fun j hj ↦ notMem_mulTSupport_iff_eventuallyEq.1 (h j (Finset.mem_of_mem_erase hj)
+      (Finset.ne_of_mem_erase hj))
+  filter_upwards [h₁] with y hy
+  rw [Finset.prod_apply, ← Finset.mul_prod_erase s _ hi, Finset.prod_eq_one hy, mul_one]
 
 end TauCeti

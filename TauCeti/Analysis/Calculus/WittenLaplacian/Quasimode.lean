@@ -9,17 +9,21 @@ public import TauCeti.Analysis.Calculus.WittenLaplacian.Localization
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Quadratic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.LinearAlgebra.LinearIndependent.Lemmas
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Quasimodes of the Witten Laplacian at the critical points
 
 Witten's analytic proof of the Morse inequalities compares, for large `t`, the number of
 low-lying eigenvalues of the Witten Laplacian `Δ_t` (`TauCeti.euclideanWittenLaplacian`) in each
-degree with the number of critical points of that Morse index. One half of this comparison is the
-gap in degrees that are no Morse index (`TauCeti.Analysis.Calculus.WittenLaplacian.Gap`). This
-file proves the other half: in degree `m`, the quadratic form of `Δ_t` is small on a space of
-test forms whose dimension is the number of critical points of index `m`.
+degree with the number of critical points of that Morse index. The gap in degrees that are no
+Morse index (`TauCeti.Analysis.Calculus.WittenLaplacian.Gap`) shows that there are no low-lying
+eigenvalues there. This file proves the lower bound in every degree: in degree `m`, the quadratic
+form of `Δ_t` is small on a space of test forms whose dimension is the number of critical points
+of index `m`. The matching upper bound in degrees that are Morse indices needs, in addition, a gap
+above the ground state in the degree of the index, which is not proved here.
 
 The test forms are the ground states of the harmonic-oscillator models, cut off near their
 critical points. Suppose that near `p` the function `f` is the quadratic model
@@ -116,9 +120,8 @@ private theorem hasFDerivAt_gauss (a p : ι → ℝ) (t : ℝ) (x : ι → ℝ) 
         ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).comp
           (ContinuousLinearMap.id ℝ (ι → ℝ)))) x := by
   rw [gauss_eq]
-  have h := (((hasFDerivAt_diagonalQuadratic (fun i ↦ |a i|) (x - p)).comp x
+  exact (((hasFDerivAt_diagonalQuadratic (fun i ↦ |a i|) (x - p)).comp x
     ((hasFDerivAt_id x).sub_const p)).const_mul (-t)).exp
-  exact h
 
 /-- The partial derivatives of the Gaussian: `∂ᵢ gauss = -t |aᵢ| (xᵢ - pᵢ) gauss`. -/
 private theorem fderiv_gauss_apply_single [DecidableEq ι] (a p : ι → ℝ) (t : ℝ) (x : ι → ℝ)
@@ -135,6 +138,18 @@ private theorem contDiff_gauss (a p : ι → ℝ) (t : ℝ) {n : WithTop ℕ∞}
   exact Real.contDiff_exp.comp
     (((contDiff_diagonalQuadratic _).comp (contDiff_id.sub contDiff_const)).const_smul (-t))
 
+/-- The squared Gaussian is `e^{-t ∑ᵢ |aᵢ| (xᵢ - pᵢ)²}`. -/
+private theorem gauss_sq (a p : ι → ℝ) (t : ℝ) (x : ι → ℝ) :
+    gauss a p t x ^ 2 = Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) := by
+  rw [gauss, ← Real.exp_nat_mul]
+  congr 1
+  ring
+
+/-- The quadratic model `y ↦ b + ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` is smooth. -/
+private theorem contDiff_quadraticModel (a p : ι → ℝ) (b : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun y ↦ b + diagonalQuadratic a (y - p) :=
+  contDiff_const.add ((contDiff_diagonalQuadratic a).comp (contDiff_id.sub contDiff_const))
+
 variable [LinearOrder ι]
 
 /-- The translated ground state is the Gaussian `gauss` times `dx^{s}`, up to normalization. -/
@@ -143,7 +158,17 @@ private theorem wittenGroundState_eq (a p : ι → ℝ) (ht : 0 ≤ t) (s : Fins
       fun x ↦ ((gaussConst ι)⁻¹ * gauss a p t x) • Pi.single s (1 : ℝ) := by
   funext x
   rw [diagonalQuadraticWittenEigenform_zero_apply a ht, div_eq_inv_mul]
-  rfl
+  simp only [gauss, gaussConst, Pi.sub_apply]
+
+/-- The squared norm of the translated ground state is `κ⁻² e^{-t ∑ᵢ |aᵢ| (xᵢ - pᵢ)²}`. -/
+private theorem sum_sq_wittenGroundState {a p : ι → ℝ} {t : ℝ} (ht : 0 ≤ t) (x : ι → ℝ) :
+    ∑ s, diagonalQuadraticWittenEigenform a t 0 (Finset.univ.filter fun i ↦ a i < 0) (x - p) s ^ 2 =
+      (gaussConst ι)⁻¹ ^ 2 * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) := by
+  have h : diagonalQuadraticWittenEigenform a t 0 (Finset.univ.filter fun i ↦ a i < 0) (x - p) =
+      ((gaussConst ι)⁻¹ * gauss a p t x) •
+        (Pi.single (Finset.univ.filter fun i ↦ a i < 0) 1 : Finset ι → ℝ) :=
+    congrFun (wittenGroundState_eq a p ht _) x
+  simp [h, Pi.single_apply, mul_pow, gauss_sq]
 
 /-- The model `y ↦ b + ∑ᵢ aᵢ (yᵢ - pᵢ)² / 2` annihilates its translated ground state. -/
 private theorem euclideanWittenLaplacian_wittenGroundState (a p : ι → ℝ) (b : ℝ) (ht : 0 ≤ t) :
@@ -156,7 +181,8 @@ private theorem euclideanWittenLaplacian_wittenGroundState (a p : ι → ℝ) (b
   simp only [← sub_eq_add_neg] at h
   rw [h, euclideanWittenLaplacian_diagonalQuadraticWittenEigenform a ht,
     diagonalQuadraticWittenEigenvalue_zero_filter_neg, zero_smul]
-  rfl
+  funext _
+  simp only [Pi.zero_apply]
 
 end GroundState
 
@@ -183,6 +209,7 @@ theorem sum_euclideanWittenLaplacian_smul_diagonalQuadraticWittenEigenform_mul {
         ∑ i, fderiv ℝ (fderiv ℝ θ) x (Pi.single i 1) (Pi.single i 1)) *
         ∑ s, diagonalQuadraticWittenEigenform a t 0
           (Finset.univ.filter fun i ↦ a i < 0) (x - p) s ^ 2 := by
+  rw [sum_sq_wittenGroundState ht x, ← gauss_sq]
   set s₀ : Finset ι := Finset.univ.filter fun i ↦ a i < 0
   set Ψ : (ι → ℝ) → Finset ι → ℝ := fun y ↦ diagonalQuadraticWittenEigenform a t 0 s₀ (y - p)
     with hΨ_def
@@ -192,12 +219,10 @@ theorem sum_euclideanWittenLaplacian_smul_diagonalQuadraticWittenEigenform_mul {
   · simp [hx]
   have hfx := hf x hx
   have hfC : ContDiffAt ℝ 2 f x :=
-    ((contDiff_const.add ((contDiff_diagonalQuadratic a).comp
-      (contDiff_id.sub contDiff_const))).contDiffAt).congr_of_eventuallyEq hfx
+    (contDiff_quadraticModel a p b).contDiffAt.congr_of_eventuallyEq hfx
   have hΔΨ : euclideanWittenLaplacian f t Ψ x = 0 := by
     rw [(hfx.euclideanWittenLaplacian (EventuallyEq.refl _ Ψ) t).eq_of_nhds,
-      euclideanWittenLaplacian_wittenGroundState a p b ht]
-    rfl
+      euclideanWittenLaplacian_wittenGroundState a p b ht, Pi.zero_apply]
   have hG := wittenGroundState_eq a p ht s₀
   set κ := gaussConst ι
   have hdΨ : ∀ v, fderiv ℝ Ψ x v =
@@ -208,20 +233,14 @@ theorem sum_euclideanWittenLaplacian_smul_diagonalQuadraticWittenEigenform_mul {
     rw [hΨ_def, hG, h₁.fderiv]
     simp
   have hΨx : Ψ x = (κ⁻¹ * gauss a p t x) • (Pi.single s₀ 1 : Finset ι → ℝ) := congrFun hG x
-  have hsq : ∑ s, diagonalQuadraticWittenEigenform a t 0 s₀ (x - p) s ^ 2 =
-      (κ⁻¹ * gauss a p t x) ^ 2 := by
-    change ∑ s, Ψ x s ^ 2 = _
-    simp [hΨx, Pi.single_apply]
-  have hsum : ∑ i, fderiv ℝ θ x (Pi.single i 1) * κ⁻¹ * -(t * |a i| * (x i - p i)) *
-      gauss a p t x =
-      -(t * κ⁻¹ * gauss a p t x) * ∑ i, |a i| * (x i - p i) * fderiv ℝ θ x (Pi.single i 1) := by
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  rw [euclideanWittenLaplacian_smul_apply hfC hθ.contDiffAt hΨ.contDiffAt, hΔΨ, hsq]
-  simp only [hdΨ, fderiv_gauss_apply_single, hΨx, Pi.smul_apply', Pi.sub_apply, Pi.smul_apply,
-    Finset.sum_apply, smul_eq_mul, Pi.single_apply, mul_ite, mul_one, mul_zero, smul_zero,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true, Pi.zero_apply, ← mul_assoc]
-  rw [hsum]
+  -- The cross term of the Leibniz rule is a multiple of `Ψ x`.
+  have hcross : ∑ i, fderiv ℝ θ x (Pi.single i 1) • fderiv ℝ Ψ x (Pi.single i 1) =
+      (-(t * ∑ i, |a i| * (x i - p i) * fderiv ℝ θ x (Pi.single i 1))) • Ψ x := by
+    simp only [hdΨ, fderiv_gauss_apply_single, hΨx, smul_smul, ← Finset.sum_smul]
+    rw [Finset.mul_sum, ← Finset.sum_neg_distrib, Finset.sum_mul]
+    exact congrArg (· • _) (Finset.sum_congr rfl fun i _ ↦ by ring)
+  rw [euclideanWittenLaplacian_smul_apply hfC hθ.contDiffAt hΨ.contDiffAt, hΔΨ, hcross]
+  simp [hΨx, Pi.single_apply]
   ring
 
 /-! ### The Gaussian away from and near its centre -/
@@ -230,12 +249,11 @@ section Gauss
 
 omit [LinearOrder ι]
 
-/-- The squared Gaussian is `e^{-t ∑ᵢ |aᵢ| (xᵢ - pᵢ)²}`. -/
-private theorem gauss_sq (a p : ι → ℝ) (t : ℝ) (x : ι → ℝ) :
-    gauss a p t x ^ 2 = Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) := by
-  rw [gauss, ← Real.exp_nat_mul]
-  congr 1
-  ring
+/-- The weighted Gaussian `K e^{-t ∑ᵢ |aᵢ| (xᵢ - pᵢ)²}` is continuous. -/
+private theorem continuous_mul_exp_neg_sum (a p : ι → ℝ) (t K : ℝ) :
+    Continuous fun x : ι → ℝ ↦ K * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) :=
+  continuous_const.mul (Real.continuous_exp.comp (continuous_const.mul (continuous_finsetSum _
+    fun i _ ↦ continuous_const.mul (((continuous_apply i).sub continuous_const).pow 2))).neg)
 
 /-- Outside the ball of radius `ρ` around `p`, the quadratic form `∑ᵢ |aᵢ| (xᵢ - pᵢ)²` is at
 least `c ρ²` when every `|aᵢ| ≥ c`. -/
@@ -315,15 +333,12 @@ private theorem integral_sub_mul_exp_le {a p : ι → ℝ} {c ρ t K : ℝ} (hρ
     (hw₁ρ : ∀ x ∈ ball p ρ, w₁ x = 0) (hw₀ρ : ∀ x ∈ ball p ρ, w₀ x = 0) :
     ∫ x, (t * w₁ x - w₀ x) * (K * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2))) ≤
       (t * (∫ x, |w₁ x|) + ∫ x, |w₀ x|) * (K * Real.exp (-(t * (c * ρ ^ 2)))) := by
-  have hQ : Continuous fun x : ι → ℝ ↦ ∑ i, |a i| * (x i - p i) ^ 2 := continuous_finsetSum _
-    fun i _ ↦ continuous_const.mul (((continuous_apply i).sub continuous_const).pow 2)
   have hA : Integrable fun x ↦ |w₁ x| := (hw₁.integrable_of_hasCompactSupport hw₁c).abs
   have hB : Integrable fun x ↦ |w₀ x| := (hw₀.integrable_of_hasCompactSupport hw₀c).abs
   have hint : Integrable fun x ↦
       (t * w₁ x - w₀ x) * (K * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2))) :=
-    ((continuous_const.mul hw₁).sub hw₀).mul (continuous_const.mul
-      (Real.continuous_exp.comp (continuous_const.mul hQ).neg)) |>.integrable_of_hasCompactSupport
-      (hw₁c.mul_left.sub hw₀c).mul_right
+    ((continuous_const.mul hw₁).sub hw₀).mul (continuous_mul_exp_neg_sum a p t K)
+      |>.integrable_of_hasCompactSupport (hw₁c.mul_left.sub hw₀c).mul_right
   have hR : (t * (∫ x, |w₁ x|) + ∫ x, |w₀ x|) * (K * Real.exp (-(t * (c * ρ ^ 2)))) =
       ∫ x, (t * |w₁ x| + |w₀ x|) * (K * Real.exp (-(t * (c * ρ ^ 2)))) := by
     rw [integral_mul_const, integral_add (hA.const_mul t) hB, integral_const_mul]
@@ -350,15 +365,12 @@ private theorem mul_le_integral_sq_mul_exp {a p : ι → ℝ} {δ ρ t K : ℝ} 
     (hθ1 : ∀ x ∈ ball p ρ, θ x = 1) :
     volume.real (ball p δ) * (K * Real.exp (-(t * ((∑ i, |a i|) * δ ^ 2)))) ≤
       ∫ x, θ x ^ 2 * (K * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2))) := by
-  have hQ : Continuous fun x : ι → ℝ ↦ ∑ i, |a i| * (x i - p i) ^ 2 := continuous_finsetSum _
-    fun i _ ↦ continuous_const.mul (((continuous_apply i).sub continuous_const).pow 2)
   have hθ2c : HasCompactSupport fun x ↦ θ x ^ 2 := by
     refine hθc.mono fun x hx ↦ ?_
     simp only [Function.mem_support, ne_eq, pow_eq_zero_iff two_ne_zero] at hx ⊢
     exact hx
   have hint : Integrable fun x ↦ θ x ^ 2 * (K * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2))) :=
-    ((hθ.pow 2).mul (continuous_const.mul
-      (Real.continuous_exp.comp (continuous_const.mul hQ).neg))).integrable_of_hasCompactSupport
+    ((hθ.pow 2).mul (continuous_mul_exp_neg_sum a p t K)).integrable_of_hasCompactSupport
       hθ2c.mul_right
   refine (setIntegral_ge_of_const_le measurableSet_ball measure_ball_lt_top.ne
     (fun x hx ↦ ?_) hint.integrableOn).trans
@@ -395,16 +407,6 @@ private theorem weights_spec {a p : ι → ℝ} {ρ : ℝ} {θ : (ι → ℝ) �
     hθ.continuous.mul (continuous_finsetSum _ fun i _ ↦
       (hθdd.clm_apply continuous_const).clm_apply continuous_const),
     fun x hx ↦ by simp [weight₁, hθ' x hx], fun x hx ↦ by simp [weight₀, hθ'' x hx]⟩
-
-/-- The squared norm of the translated ground state is `κ⁻² e^{-t ∑ᵢ |aᵢ| (xᵢ - pᵢ)²}`. -/
-private theorem sum_sq_wittenGroundState {a p : ι → ℝ} {t : ℝ} (ht : 0 ≤ t) (x : ι → ℝ) :
-    ∑ s, diagonalQuadraticWittenEigenform a t 0 (Finset.univ.filter fun i ↦ a i < 0) (x - p) s ^ 2 =
-      (gaussConst ι)⁻¹ ^ 2 * Real.exp (-(t * ∑ i, |a i| * (x i - p i) ^ 2)) := by
-  have h : diagonalQuadraticWittenEigenform a t 0 (Finset.univ.filter fun i ↦ a i < 0) (x - p) =
-      ((gaussConst ι)⁻¹ * gauss a p t x) •
-        (Pi.single (Finset.univ.filter fun i ↦ a i < 0) 1 : Finset ι → ℝ) :=
-    congrFun (wittenGroundState_eq a p ht _) x
-  simp [h, Pi.single_apply, mul_pow, gauss_sq]
 
 /-- The pointwise energy of a cut-off ground state, in terms of the weights. -/
 private theorem energy_eq {f θ : (ι → ℝ) → ℝ} {a p : ι → ℝ} {b t : ℝ} (ht : 0 ≤ t)
@@ -489,19 +491,6 @@ section Disjoint
 
 variable {κ : Type*} [Fintype κ] {v : κ → (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ}
 
-omit [Fintype ι] [LinearOrder ι] in
-/-- Near a point outside the supports of all `v j` with `j ≠ i`, a combination of the `v j` is
-the multiple of `v i`. -/
-private theorem eventuallyEq_sum_smul (c : κ → ℝ) {i : κ}
-    (hi : ∀ j ≠ i, x ∉ tsupport (v j)) : (∑ j, c j • v j) =ᶠ[𝓝 x] c i • v i := by
-  classical
-  have h : ∀ᶠ y in 𝓝 x, ∀ j, j ≠ i → v j y = 0 := eventually_all.2 fun j ↦ by
-    by_cases hj : j = i
-    · exact Eventually.of_forall fun _ h ↦ absurd hj h
-    · exact (notMem_tsupport_iff_eventuallyEq.1 (hi j hj)).mono fun y hy _ ↦ hy
-  filter_upwards [h] with y hy
-  rw [Finset.sum_apply, Finset.sum_eq_single i (fun j _ hj ↦ by simp [hy j hj]) (by simp)]
-
 /-- **The energy of a combination of forms with disjoint supports.** If at most one of the forms
 `v j` has `x` in its support, the pointwise energy of `∑ⱼ cⱼ vⱼ` at `x` is `∑ⱼ cⱼ²` times the
 energies of the `v j`, and so is its squared norm: the Witten Laplacian is a local operator. -/
@@ -516,7 +505,9 @@ private theorem sum_euclideanWittenLaplacian_sum_smul_mul (f : (ι → ℝ) → 
   by_cases hx : ∃ i, x ∈ tsupport (v i)
   · obtain ⟨i, hi⟩ := hx
     have hi' : ∀ j ≠ i, x ∉ tsupport (v j) := fun j hj ↦ hv i j (Ne.symm hj) hi
-    have hφ := eventuallyEq_sum_smul c hi'
+    have hφ : (∑ j, c j • v j) =ᶠ[𝓝 x] c i • v i :=
+      sum_eventuallyEq_of_notMem_tsupport (Finset.mem_univ i) fun j _ hj hx ↦
+        hi' j hj (tsupport_smul_subset_right (fun _ ↦ c j) (v j) hx)
     have hrest : ∀ (F : (Finset ι → ℝ) → ℝ), F 0 = 0 →
         ∑ j, c j ^ 2 * F (v j x) = c i ^ 2 * F (v i x) := fun F hF ↦
       Finset.sum_eq_single i (fun j _ hj ↦ by rw [hzero j (hi' j hj), hF, mul_zero]) (by simp)
@@ -533,21 +524,6 @@ private theorem sum_euclideanWittenLaplacian_sum_smul_mul (f : (ι → ℝ) → 
     have h₀ : (∑ j, c j • v j) x = 0 := by
       simp [Finset.sum_apply, hzero _ (hx _)]
     simp [h₀, hzero _ (hx _)]
-
-omit [Fintype ι] [LinearOrder ι] [Fintype κ] in
-/-- Forms each of which vanishes at the marked points of the others, but not at its own marked
-point and multi-index, are linearly independent. -/
-private theorem linearIndependent_of_apply_eq_zero [Finite κ] (z : κ → ι → ℝ) (σ : κ → Finset ι)
-    (hz : ∀ i j, i ≠ j → v i (z j) = 0) (hne : ∀ j, v j (z j) (σ j) ≠ 0) :
-    LinearIndependent ℝ v := by
-  classical
-  have := Fintype.ofFinite κ
-  rw [Fintype.linearIndependent_iff]
-  intro g hg q
-  have h := congrFun (congrFun hg (z q)) (σ q)
-  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at h
-  rw [Finset.sum_eq_single q (fun p _ hpq ↦ by simp [hz p q hpq]) (by simp)] at h
-  exact (mul_eq_zero.1 h).resolve_right (hne q)
 
 /-- **The span of quasimodes with disjoint supports.** Let `v j` be linearly independent smooth
 compactly supported forms of degree `m` with pairwise disjoint supports, on each of which the
@@ -618,9 +594,8 @@ private theorem integrable_energy_of_eqOn {f : (ι → ℝ) → ℝ} {φ : (ι �
     (hfa : EqOn f (fun y ↦ b + diagonalQuadratic a (y - p)) (ball p r)) (t : ℝ) :
     Integrable fun x ↦ ∑ s, euclideanWittenLaplacian f t φ x s * φ x s :=
   hφ.continuous.integrable_sum_mul_of_continuousOn hφc hφr fun _ hx ↦
-    (continuousAt_euclideanWittenLaplacian (((contDiff_const.add
-      ((contDiff_diagonalQuadratic _).comp (contDiff_id.sub contDiff_const))).contDiffAt
-        ).congr_of_eventuallyEq (eventuallyEq_of_mem (isOpen_ball.mem_nhds hx) hfa))
+    (continuousAt_euclideanWittenLaplacian ((contDiff_quadraticModel a p b).contDiffAt
+      |>.congr_of_eventuallyEq (eventuallyEq_of_mem (isOpen_ball.mem_nhds hx) hfa))
       hφ.contDiffAt t).continuousWithinAt
 
 omit [LinearOrder ι] in
@@ -643,10 +618,12 @@ whose dimension is the number of points of `P` of index `m`, on which the quadra
 Witten Laplacian `Δ_t` of `f` is at most `ε` times the squared norm.
 
 The space is spanned by the Gaussian ground states of the quadratic models, cut off near the
-points of `P` of index `m`. Together with the gap of
-`TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul` in degrees
-that are no Morse index, this is the comparison of the low-lying spectrum of `Δ_t` with the
-critical points in Witten's proof of the Morse inequalities. -/
+points of `P` of index `m`. By min-max this bounds the number of low-lying eigenvalues of `Δ_t` in
+degree `m` from below by the number of critical points of index `m`. Together with the gap of
+`TauCeti.exists_forall_mul_integral_le_integral_sum_euclideanWittenLaplacian_mul`, it gives this
+lower bound in every degree and the vanishing of the low-lying spectrum in degrees that are no
+Morse index; the full comparison with the critical points in Witten's proof of the Morse
+inequalities also needs a gap above the ground state in degrees that are Morse indices. -/
 theorem exists_forall_exists_finrank_eq_forall_integral_sum_euclideanWittenLaplacian_mul_le
     {f : (ι → ℝ) → ℝ} {P : Finset (ι → ℝ)} {r : ℝ} (hr : 0 < r)
     (hP : ∀ p ∈ P, ∀ q ∈ P, p ≠ q → 2 * r ≤ dist p q) {a : (ι → ℝ) → ι → ℝ}
@@ -688,11 +665,11 @@ theorem exists_forall_exists_finrank_eq_forall_integral_sum_euclideanWittenLapla
   have hvs : ∀ p, tsupport (v p) ⊆ closedBall (p : ι → ℝ) (r / 2) := fun p ↦
     (tsupport_smul_subset_left _ _).trans (hJs p).le
   -- `v p` vanishes at the other points of `P`, and not at `p` on the multi-index `s₀ p`.
-  have hli : LinearIndependent ℝ v := linearIndependent_of_apply_eq_zero (fun p ↦ p)
-    (fun p ↦ s₀ p) (fun p q hpq ↦ by
+  have hli : LinearIndependent ℝ v := .of_pairwise_dual_eq_zero_ne_zero v
+    (fun q ↦ LinearMap.proj (s₀ q) ∘ₗ LinearMap.proj (q : ι → ℝ)) (fun q p hqp ↦ by
       have : (q : ι → ℝ) ∉ tsupport (J p) := by
         rw [hJs]
-        exact hdisj q p hpq.symm _ (mem_closedBall_self (by positivity))
+        exact hdisj q p hqp _ (mem_closedBall_self (by positivity))
       simp [v, image_eq_zero_of_notMem_tsupport this]) fun q ↦ by
     obtain ⟨gq, hgq, hΨq⟩ : ∃ g : ℝ, 0 < g ∧ Ψ t q q = g • (Pi.single (s₀ q) 1 : Finset ι → ℝ) :=
       exists_pos_wittenGroundState_eq_smul (a q) q ht₀ (s₀ q) q
