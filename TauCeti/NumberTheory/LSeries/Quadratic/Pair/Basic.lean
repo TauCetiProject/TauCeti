@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Nat.GCD
-public import TauCeti.NumberTheory.LSeries.ZetaMul
+public import TauCeti.NumberTheory.LSeries.Zeta.Mul
 public import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 
 /-!
