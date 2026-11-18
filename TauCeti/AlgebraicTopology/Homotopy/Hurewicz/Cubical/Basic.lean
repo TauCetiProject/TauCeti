@@ -46,6 +46,7 @@ the singular chains of an `(n - 1)`-connected space into combinations of general
 
 ## Main definitions
 
+* `GenLoop.cubicalCycle R p`: a generalized loop as a cycle of the normalized cubical chains.
 * `GenLoop.cubicalHurewicz R p`: the class of a generalized loop in normalized cubical homology,
   characterized by `GenLoop.homologyπ_eq_cubicalHurewicz`.
 * `HomotopyGroup.cubicalHurewicz R n`: the induced map on `π_{n+1}(X, x)`.
@@ -259,13 +260,14 @@ variable {X Y : Type u} [TopologicalSpace X] [TopologicalSpace Y] {x : X} {y : Y
   (R : Type u) [Ring R]
 
 /-- A generalized loop as a cycle of the normalized cubical chains. -/
-private def cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
+def cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
     ((normalizedCubicalChainComplex R).obj (TopCat.of X)).cycles (n + 1) :=
   ((normalizedCubicalChainComplex R).obj (TopCat.of X)).moduleCatCyclesMk
     (NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1))) n (by simp)
     (by rw [normalizedCubicalChainComplex_obj_d_apply]; exact boundary_ofCube_eq_zero R p)
 
-private lemma iCycles_cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
+/-- The underlying chain of the cycle of a generalized loop is the loop itself. -/
+theorem iCycles_cubicalCycle (p : Ω^ (Fin (n + 1)) X x) :
     ((normalizedCubicalChainComplex R).obj (TopCat.of X)).iCycles (n + 1) (cubicalCycle R p) =
       NormalizedCubicalChain.ofCube X R (p : SingularCube X (n + 1)) :=
   HomologicalComplex.iCycles_moduleCatCyclesMk ..
