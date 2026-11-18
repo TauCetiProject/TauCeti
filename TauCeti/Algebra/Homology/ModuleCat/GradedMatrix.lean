@@ -11,11 +11,11 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Finiteness.Defs
+public import TauCeti.Data.Matrix.Mul
 
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
-import TauCeti.Data.Matrix.Mul
 
 /-!
 # Complexes of free modules given by graded matrices
@@ -61,17 +61,6 @@ namespace TauCeti
 
 universe u v
 
-/-- A product of blocks `X_{ab} * Y_{bc}` of two graded matrices is the block `(X * Y)_{ac}` of
-their product, when the rows of degree `a` of `X` only meet columns of degree `b`. -/
-private theorem submatrix_mul_submatrix {R A ι κ ν : Type*} [NonUnitalNonAssocSemiring R]
-    [Fintype κ] [DecidableEq A] (e : ι → A) (f : κ → A) (g : ν → A) (a b c : A)
-    (X : Matrix ι κ R) (Y : Matrix κ ν R) (hX : ∀ i j, X i j ≠ 0 → e i = a → f j = b) :
-    X.submatrix (Subtype.val : {i // e i = a} → ι) (Subtype.val : {j // f j = b} → κ) *
-        Y.submatrix Subtype.val (Subtype.val : {k // g k = c} → ν) =
-      (X * Y).submatrix Subtype.val Subtype.val :=
-  (submatrix_mul_of_injective X Y Subtype.val Subtype.val Subtype.val Subtype.val_injective
-    fun i j h ↦ ⟨⟨j, hX i j h i.2⟩, rfl⟩).symm
-
 section Block
 
 variable {R : Type u} [CommRing R] {A : Type*} [DecidableEq A] {ι κ ν : Type v} [Fintype ι]
@@ -97,7 +86,9 @@ private theorem blockMap_comp (e : ι → A) (f : κ → A) (g : ν → A) (a b 
   ext x : 2
   simp only [blockMap, ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp,
     Function.comp_apply, vecMulLinear_apply, vecMul_vecMul,
-    submatrix_mul_submatrix e f g a b c M N hM]
+    ← submatrix_mul_of_injective M N (Subtype.val : {i // e i = a} → ι)
+      (Subtype.val : {j // f j = b} → κ) (Subtype.val : {k // g k = c} → ν)
+      Subtype.val_injective fun i j h ↦ ⟨⟨j, hM i j h i.2⟩, rfl⟩]
 
 private theorem blockMap_one [DecidableEq ι] (e : ι → A) (a : A) :
     blockMap e e a a (1 : Matrix ι ι R) = 𝟙 _ :=
@@ -120,21 +111,6 @@ private theorem degree_one {R A ν : Type*} [Semiring R] [DecidableEq ν] {g : �
     (h : (1 : Matrix ν ν R) i k ≠ 0) : g k = g i := by
   obtain rfl : i = k := by_contra fun hik ↦ h (one_apply_ne hik)
   rfl
-
-/-- A product of degree-preserving matrices is degree-preserving. -/
-private theorem degree_mul {R A ν₁ ν₂ ν₃ : Type*} [Semiring R] [Fintype ν₂] {g₁ : ν₁ → A}
-    {g₂ : ν₂ → A} {g₃ : ν₃ → A} {X : Matrix ν₁ ν₂ R} {Y : Matrix ν₂ ν₃ R}
-    (hX : ∀ i k, X i k ≠ 0 → g₂ k = g₁ i) (hY : ∀ i k, Y i k ≠ 0 → g₃ k = g₂ i) (i : ν₁)
-    (k : ν₃) (h : (X * Y) i k ≠ 0) : g₃ k = g₁ i := by
-  obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
-  rw [hY j k (right_ne_zero_of_mul hj), hX i j (left_ne_zero_of_mul hj)]
-
-/-- A product of matrices commuting with the differentials commutes with them. -/
-private theorem commute_mul {R ν₁ ν₂ ν₃ : Type*} [Semiring R] [Fintype ν₁] [Fintype ν₂]
-    [Fintype ν₃] {D₁ : Matrix ν₁ ν₁ R} {D₂ : Matrix ν₂ ν₂ R} {D₃ : Matrix ν₃ ν₃ R}
-    {X : Matrix ν₁ ν₂ R} {Y : Matrix ν₂ ν₃ R} (hX : D₁ * X = X * D₂) (hY : D₂ * Y = Y * D₃) :
-    D₁ * (X * Y) = X * Y * D₃ := by
-  rw [← Matrix.mul_assoc, hX, Matrix.mul_assoc, hY, Matrix.mul_assoc]
 
 section Complex
 
@@ -213,18 +189,18 @@ theorem gradedMatrixComplexHom_f_basis {Φ : Matrix ι κ R} {hΦ : ∀ i k, Φ 
 
 /-- The composite of the chain maps of two matrices is the chain map of their product. -/
 theorem gradedMatrixComplexHom_comp {Φ : Matrix ι κ R} {Ψ : Matrix κ ν R}
-    (hΦ : ∀ i k, Φ i k ≠ 0 → e' k = e i) (hΦD : D * Φ = Φ * D')
-    (hΨ : ∀ i k, Ψ i k ≠ 0 → e'' k = e' i) (hΨD : D' * Ψ = Ψ * D'')
-    (hΦΨ : ∀ i k, (Φ * Ψ) i k ≠ 0 → e'' k = e i) (hΦΨD : D * (Φ * Ψ) = Φ * Ψ * D'') :
+    {hΦ : ∀ i k, Φ i k ≠ 0 → e' k = e i} {hΦD : D * Φ = Φ * D'}
+    {hΨ : ∀ i k, Ψ i k ≠ 0 → e'' k = e' i} {hΨD : D' * Ψ = Ψ * D''} :
     gradedMatrixComplexHom (hD' := hD') (hDD' := hDD') Φ hΦ hΦD ≫
         gradedMatrixComplexHom (hD' := hD'') (hDD' := hDD'') Ψ hΨ hΨD =
-      gradedMatrixComplexHom (hD := hD) (hDD := hDD) (Φ * Ψ) hΦΨ hΦΨD := by
+      gradedMatrixComplexHom (hD := hD) (hDD := hDD) (Φ * Ψ) (eq_of_mul_apply_ne_zero hΦ hΨ)
+        (mul_mul_eq_mul_mul_of_mul_eq_mul hΦD hΨD) := by
   refine HomologicalComplex.hom_ext _ _ fun a ↦ ?_
   exact blockMap_comp e e' e'' a a a Φ Ψ fun i j h hi ↦ by rw [hΦ i j h, hi]
 
 /-- The identity matrix gives the identity chain map. -/
 theorem gradedMatrixComplexHom_one [DecidableEq ι]
-    (h₁ : ∀ i k, (1 : Matrix ι ι R) i k ≠ 0 → e k = e i) (h₁D : D * 1 = 1 * D) :
+    {h₁ : ∀ i k, (1 : Matrix ι ι R) i k ≠ 0 → e k = e i} {h₁D : D * 1 = 1 * D} :
     gradedMatrixComplexHom (hD := hD) (hDD := hDD) (hD' := hD) (hDD' := hDD) 1 h₁ h₁D =
       𝟙 _ := by
   refine HomologicalComplex.hom_ext _ _ fun a ↦ ?_
@@ -270,7 +246,7 @@ def gradedMatrixComplexHomotopy {Φ Ψ : Matrix ι κ R} {hΦ : ∀ i k, Φ i k 
     simp only [blockMap, ModuleCat.hom_add, ModuleCat.hom_ofHom, LinearMap.add_apply,
       vecMulLinear_apply, ← vecMul_add]
     rw [sub_eq_iff_eq_add.mp hΦΨ]
-    congr 1
+    simp only [submatrix_add, Pi.add_apply]
 
 /-- The chain homotopy of a matrix `K` sends the generator `i` of degree `a` to `∑ₖ K i k • k`,
 over the generators `k` of degree `b`. -/
@@ -300,12 +276,12 @@ def gradedMatrixComplexHomotopyEquiv [DecidableEq ι] [DecidableEq κ] (Φ : Mat
   hom := gradedMatrixComplexHom Φ hΦ hΦD
   inv := gradedMatrixComplexHom Ψ hΨ hΨD
   homotopyHomInvId := by
-    rw [gradedMatrixComplexHom_comp hΦ hΦD hΨ hΨD (degree_mul hΦ hΨ) (commute_mul hΦD hΨD),
-      ← gradedMatrixComplexHom_one degree_one (by rw [Matrix.mul_one, Matrix.one_mul])]
+    rw [gradedMatrixComplexHom_comp, ← gradedMatrixComplexHom_one (h₁ := degree_one)
+      (h₁D := by rw [Matrix.mul_one, Matrix.one_mul])]
     exact gradedMatrixComplexHomotopy K hK hΦΨ
   homotopyInvHomId := by
-    rw [gradedMatrixComplexHom_comp hΨ hΨD hΦ hΦD (degree_mul hΨ hΦ) (commute_mul hΨD hΦD),
-      ← gradedMatrixComplexHom_one degree_one (by rw [Matrix.mul_one, Matrix.one_mul])]
+    rw [gradedMatrixComplexHom_comp, ← gradedMatrixComplexHom_one (h₁ := degree_one)
+      (h₁D := by rw [Matrix.mul_one, Matrix.one_mul])]
     exact gradedMatrixComplexHomotopy K' hK' hΨΦ
 
 section HomotopyEquiv

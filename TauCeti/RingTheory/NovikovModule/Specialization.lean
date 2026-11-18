@@ -8,6 +8,9 @@ module
 public import TauCeti.Algebra.Homology.ModuleCat.GradedMatrix
 public import TauCeti.RingTheory.NovikovModule.KernelMap
 
+import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+
 /-!
 # The cyclic specialization of invariant kernels
 
@@ -51,10 +54,14 @@ The invariant kernels with finite outputs and a fixed degree
 (`TauCeti.NovikovModule.IsLaurentKernel`) are the homogeneous matrices of the finite Laurent model.
 A Laurent differential of degree `1` with `δ ∘ δ = 0` specializes to the *cyclic complex*
 (`TauCeti.NovikovModule.cyclicComplex`), with one generator for each orbit, graded by the orbit
-degrees, for instance modulo `n`. Laurent chain maps
+degrees, for instance modulo `n` (`TauCeti.NovikovModule.cyclicComplexBasis`,
+`TauCeti.NovikovModule.finrank_cyclicComplex_X`), whose differential is given by the rows of the
+cyclic matrix of `δ` (`TauCeti.NovikovModule.cyclicComplex_d_basis`). Laurent chain maps
 `Φ`, `Ψ` inverse to each other up to Laurent homotopies of degree `-1` specialize to a homotopy
 equivalence of cyclic complexes (`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv`), whose maps
-are the chain maps of the cyclic matrices of `Φ` and `Ψ`. Over a field
+are given by the rows of the cyclic matrices of `Φ` and `Ψ`
+(`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_hom_f_basis`,
+`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_inv_f_basis`). Over a field
 and with finitely many degrees, the number of orbits on one side is then at least the total
 dimension of the homology of the cyclic complex on the other side
 (`TauCeti.NovikovModule.sum_finrank_homology_cyclicComplex_le_card`).
@@ -418,9 +425,10 @@ variable {R : Type u} [CommRing R] {H A : Type*} [AddGroup H] [AddRightCancelSem
 variable (R) in
 /-- The *cyclic complex* of a Laurent differential `δ` of degree `1` with `δ ∘ δ = 0`, for a degree
 `d` invariant under the periods: the complex of free `R`-modules with one generator for each orbit,
-graded by the orbit degrees, whose differential is the cyclic matrix of `δ`. It is the
-specialization `t ↦ 1` of the finite Laurent complex of `δ`. -/
-@[expose] def cyclicComplex (d : (Σ i, P₁ i) → A)
+graded by the orbit degrees (`TauCeti.NovikovModule.cyclicComplexBasis`), whose differential is the
+cyclic matrix of `δ` (`TauCeti.NovikovModule.cyclicComplex_d_basis`). It is the specialization
+`t ↦ 1` of the finite Laurent complex of `δ`. -/
+def cyclicComplex (d : (Σ i, P₁ i) → A)
     (hd : ∀ i (g : H) (p : P₁ i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩)
     (δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R) (hδ : IsLaurentKernel d d 1 δ)
     (hδδ : ∀ p q, kernelComp δ δ p q = 0) :
@@ -429,14 +437,29 @@ specialization `t ↦ 1` of the finite Laurent complex of `δ`. -/
     (fun _ _ h ↦ orbitDegree_eq_of_cyclicMatrix_ne_zero hd hδ.degree_eq h)
     (cyclicMatrix_mul_self_eq_zero hδ.apply_vadd_vadd hδ.finite_support hδδ)
 
-/-- The cyclic complex is the complex of the graded cyclic matrix of its differential. -/
-theorem cyclicComplex_def (d : (Σ i, P₁ i) → A)
-    (hd : ∀ i (g : H) (p : P₁ i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩) (δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
-    (hδ : IsLaurentKernel d d 1 δ) (hδδ : ∀ p q, kernelComp δ δ p q = 0) :
-    cyclicComplex R d hd δ hδ hδδ = gradedMatrixComplex (orbitDegree d) (cyclicMatrix δ)
-      (fun _ _ h ↦ orbitDegree_eq_of_cyclicMatrix_ne_zero hd hδ.degree_eq h)
-      (cyclicMatrix_mul_self_eq_zero hδ.apply_vadd_vadd hδ.finite_support hδδ) :=
-  (rfl)
+variable {d : (Σ i, P₁ i) → A} {hd : ∀ i (g : H) (p : P₁ i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩}
+  {δ : (Σ i, P₁ i) → (Σ i, P₁ i) → R} {hδ : IsLaurentKernel d d 1 δ}
+  {hδδ : ∀ p q, kernelComp δ δ p q = 0}
+
+variable (R d hd δ hδ hδδ) in
+/-- The basis of the term of degree `a` of the cyclic complex given by the orbits of degree `a`. -/
+def cyclicComplexBasis (a : A) :
+    Module.Basis {i // orbitDegree d i = a} R ((cyclicComplex R d hd δ hδ hδδ).X a) :=
+  gradedMatrixComplexBasis _ _ _ _ a
+
+/-- The differential of the cyclic complex sends the orbit `i` to `∑ₖ cyclicMatrix δ i k • k`. -/
+@[simp]
+theorem cyclicComplex_d_basis (a b : A) (i : {i // orbitDegree d i = a}) :
+    ((cyclicComplex R d hd δ hδ hδδ).d a b).hom (cyclicComplexBasis R d hd δ hδ hδδ a i) =
+      ∑ k : {k // orbitDegree d k = b},
+        cyclicMatrix δ i k • cyclicComplexBasis R d hd δ hδ hδδ b k :=
+  gradedMatrixComplex_d_basis a b i
+
+/-- The term of degree `a` of the cyclic complex is free on the orbits of degree `a`. -/
+theorem finrank_cyclicComplex_X [Nontrivial R] (a : A) :
+    Module.finrank R ((cyclicComplex R d hd δ hδ hδδ).X a) =
+      Fintype.card {i // orbitDegree d i = a} :=
+  Module.finrank_eq_card_basis (cyclicComplexBasis R d hd δ hδ hδδ a)
 
 end CyclicComplex
 
@@ -459,8 +482,8 @@ variable {R : Type u} [CommRing R] {H A : Type*} [AddGroup H] [AddGroup A] [One 
 `Ψ` of degree `0` between Laurent differentials `δ₁` and `δ₀`, inverse to each other up to Laurent
 homotopies `K` and `K'` of degree `-1`, specialize to a homotopy equivalence between the cyclic
 complexes of `δ₁` and `δ₀`. Its maps are the chain maps of the cyclic matrices of `Φ` and `Ψ`
-(`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_hom`,
-`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_inv`). -/
+(`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_hom_f_basis`,
+`TauCeti.NovikovModule.cyclicComplexHomotopyEquiv_inv_f_basis`). -/
 def cyclicComplexHomotopyEquiv (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
     (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
     (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
@@ -506,29 +529,27 @@ variable {Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R} {Ψ : (Σ k, P₀ k) →
   {hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
     kernelComp K' δ₀ p q + kernelComp δ₀ K' p q}
 
-/-- The forward map of the cyclic specialization of a Laurent homotopy equivalence is the chain map
-of the cyclic matrix of `Φ`. -/
+/-- The forward map of the cyclic specialization of a Laurent homotopy equivalence sends the orbit
+`i` to `∑ₖ cyclicMatrix Φ i k • k`. -/
 @[simp]
-theorem cyclicComplexHomotopyEquiv_hom :
-    (cyclicComplexHomotopyEquiv (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁) (hd₀ := hd₀)
-        (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ hΨΦ).hom =
-      gradedMatrixComplexHom (cyclicMatrix Φ)
-        (fun _ _ h ↦ (orbitDegree_eq_of_cyclicMatrix_ne_zero hd₀ hΦ.degree_eq h).trans (add_zero _))
-        (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₁.finite_support hΦ.apply_vadd_vadd
-          hΦ.finite_support hδ₀.apply_vadd_vadd hδ₀.finite_support hΦδ) :=
-  gradedMatrixComplexHomotopyEquiv_hom
+theorem cyclicComplexHomotopyEquiv_hom_f_basis (a : A) (i : {i // orbitDegree d₁ i = a}) :
+    ((cyclicComplexHomotopyEquiv (hδδ₁ := hδδ₁) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
+        hΨΦ).hom.f a).hom (cyclicComplexBasis R d₁ hd₁ δ₁ hδ₁ hδδ₁ a i) =
+      ∑ k : {k // orbitDegree d₀ k = a},
+        cyclicMatrix Φ i k • cyclicComplexBasis R d₀ hd₀ δ₀ hδ₀ hδδ₀ a k := by
+  rw [cyclicComplexHomotopyEquiv, gradedMatrixComplexHomotopyEquiv_hom]
+  exact gradedMatrixComplexHom_f_basis a i
 
-/-- The backward map of the cyclic specialization of a Laurent homotopy equivalence is the chain
-map of the cyclic matrix of `Ψ`. -/
+/-- The backward map of the cyclic specialization of a Laurent homotopy equivalence sends the orbit
+`k` to `∑ᵢ cyclicMatrix Ψ k i • i`. -/
 @[simp]
-theorem cyclicComplexHomotopyEquiv_inv :
-    (cyclicComplexHomotopyEquiv (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁) (hd₀ := hd₀)
-        (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ hΨΦ).inv =
-      gradedMatrixComplexHom (cyclicMatrix Ψ)
-        (fun _ _ h ↦ (orbitDegree_eq_of_cyclicMatrix_ne_zero hd₁ hΨ.degree_eq h).trans (add_zero _))
-        (cyclicMatrix_mul_cyclicMatrix_of_kernelComp_eq hδ₀.finite_support hΨ.apply_vadd_vadd
-          hΨ.finite_support hδ₁.apply_vadd_vadd hδ₁.finite_support hΨδ) :=
-  gradedMatrixComplexHomotopyEquiv_inv
+theorem cyclicComplexHomotopyEquiv_inv_f_basis (a : A) (k : {k // orbitDegree d₀ k = a}) :
+    ((cyclicComplexHomotopyEquiv (hδδ₁ := hδδ₁) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
+        hΨΦ).inv.f a).hom (cyclicComplexBasis R d₀ hd₀ δ₀ hδ₀ hδδ₀ a k) =
+      ∑ i : {i // orbitDegree d₁ i = a},
+        cyclicMatrix Ψ k i • cyclicComplexBasis R d₁ hd₁ δ₁ hδ₁ hδδ₁ a i := by
+  rw [cyclicComplexHomotopyEquiv, gradedMatrixComplexHomotopyEquiv_inv]
+  exact gradedMatrixComplexHom_f_basis a k
 
 end Maps
 

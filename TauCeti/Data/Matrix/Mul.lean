@@ -18,7 +18,9 @@ matrix.
 
 If a product of matrices is nonzero, then the inner index type is nonempty and neither factor is
 zero. A submatrix of a product can be computed through part of the inner index, provided the
-relevant rows of the left factor vanish off that part.
+relevant rows of the left factor vanish off that part. Products of matrices respect gradings of
+their indices: a product of degree-preserving matrices is degree-preserving, and a product of
+matrices intertwining square matrices intertwines them.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
@@ -32,6 +34,9 @@ out to the left without any commutativity, since the left factor has entries `0`
   is nonempty and neither factor is zero.
 * `Matrix.submatrix_mul_of_injective`: a submatrix of a product is the product of submatrices
   through an injective inner reindexing whose range carries the relevant rows of the left factor.
+* `Matrix.eq_of_mul_apply_ne_zero`: a product of degree-preserving matrices is degree-preserving.
+* `Matrix.mul_mul_eq_mul_mul_of_mul_eq_mul`: if `D₁ * X = X * D₂` and `D₂ * Y = Y * D₃`, then
+  `D₁ * (X * Y) = X * Y * D₃`.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 -/
@@ -98,7 +103,31 @@ theorem submatrix_mul_of_injective {l o q : Type*} [Fintype o] (A : Matrix m n K
   ext fun i k ↦ (Fintype.sum_of_injective e₂ he₂ _ _
     (fun j hj ↦ by simp [not_ne_iff.mp (mt (hA i j) hj)]) fun _ ↦ rfl).symm
 
+/-- **Products preserve degrees.** If the nonzero entries `A i j` and `B j k` of two matrices
+only join indices of the same degree, so do the nonzero entries of `A * B`. -/
+theorem eq_of_mul_apply_ne_zero {G : Type*} {g₁ : m → G} {g₂ : n → G} {g₃ : p → G}
+    {A : Matrix m n K} {B : Matrix n p K} (hA : ∀ i j, A i j ≠ 0 → g₂ j = g₁ i)
+    (hB : ∀ j k, B j k ≠ 0 → g₃ k = g₂ j) (i : m) (k : p) (h : (A * B) i k ≠ 0) :
+    g₃ k = g₁ i := by
+  obtain ⟨j, -, hj⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
+  rw [hB j k (right_ne_zero_of_mul hj), hA i j (left_ne_zero_of_mul hj)]
+
 end NonUnitalNonAssocSemiring
+
+section NonUnitalSemiring
+
+variable {R ν₁ ν₂ ν₃ : Type*} [NonUnitalSemiring R]
+
+/-- A product of matrices intertwining square matrices intertwines them: if `D₁ * X = X * D₂` and
+`D₂ * Y = Y * D₃`, then `D₁ * (X * Y) = X * Y * D₃`. This is the analogue of `SemiconjBy.mul_left`
+for rectangular matrices. -/
+theorem mul_mul_eq_mul_mul_of_mul_eq_mul [Fintype ν₁] [Fintype ν₂] [Fintype ν₃]
+    {D₁ : Matrix ν₁ ν₁ R} {D₂ : Matrix ν₂ ν₂ R} {D₃ : Matrix ν₃ ν₃ R} {X : Matrix ν₁ ν₂ R}
+    {Y : Matrix ν₂ ν₃ R} (hX : D₁ * X = X * D₂) (hY : D₂ * Y = Y * D₃) :
+    D₁ * (X * Y) = X * Y * D₃ := by
+  rw [← Matrix.mul_assoc, hX, Matrix.mul_assoc, hY, Matrix.mul_assoc]
+
+end NonUnitalSemiring
 
 section MulZeroOneClass
 
