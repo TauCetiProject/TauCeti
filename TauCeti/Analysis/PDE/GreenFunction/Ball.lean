@@ -271,7 +271,8 @@ theorem hasFDerivAt_ballGreenCorrector (hn : n ≠ 2) {x y : EuclideanSpace ℝ 
     ((‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1) ^ (-(n : ℝ) / 2) *
       (‖x‖ ^ 2 * ⟪y, v⟫_ℝ - ⟪x, v⟫_ℝ)) * this
 
-/-- The corrector is jointly continuous wherever the reflection polynomial does not vanish. -/
+/-- The corrector is jointly continuous wherever `‖x‖ ‖y‖ ≠ 1`, that is, off the reflection
+locus. -/
 theorem continuousAt_ballGreenCorrector {x y : EuclideanSpace ℝ (Fin n)} (h : ‖x‖ * ‖y‖ ≠ 1) :
     ContinuousAt (fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
       ballGreenCorrector n p.1 p.2) (x, y) := by
@@ -279,7 +280,8 @@ theorem continuousAt_ballGreenCorrector {x y : EuclideanSpace ℝ (Fin n)} (h : 
   exact continuousAt_const.mul (ContinuousAt.rpow_const (by fun_prop)
     (Or.inl (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos h).ne'))
 
-/-- The corrector is jointly smooth wherever the reflection polynomial does not vanish. -/
+/-- The corrector is jointly smooth on the set where `‖x‖ ‖y‖ ≠ 1`, that is, off the reflection
+locus. -/
 theorem contDiffOn_ballGreenCorrector {k : WithTop ℕ∞} :
     ContDiffOn ℝ k (fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
       ballGreenCorrector n p.1 p.2) {p | ‖p.1‖ * ‖p.2‖ ≠ 1} := by
