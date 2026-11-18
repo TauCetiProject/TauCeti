@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Topology.Instances.Real.EventuallyConst
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
@@ -43,6 +44,19 @@ range: the Fredholm property of `D_u` minus the finiteness of its cokernel.
   `TauCeti.CylinderSobolev.isClosed_range_jetOperator_comp_subtypeL`) gives finite-dimensional
   kernel (`TauCeti.SymplecticForm.finiteDimensional_ker_floerSobolevOperator`) and closed range
   (`TauCeti.SymplecticForm.isClosed_range_floerSobolevOperator`).
+
+The same holds on Sobolev spaces with an exponential weight `e^{κ(s)}` whose slope `c = κ'` is
+continuous and equal to constants `δ±` near `±∞`. Multiplication by `e^{κ}` identifies them with the
+unweighted spaces, and turns `D_u` into `D_u - c(s)`
+(`TauCeti.SymplecticForm.floerLinearization_exp_neg_smul`), realized on `W^{1,2}` as
+`TauCeti.SymplecticForm.floerWeightedSobolevOperator`. The weights need not be small: if `δ±` are
+not eigenvalues of the asymptotic operators at `x±`, that is, if the fields
+`dX_{H_t}(x±(t)) - δ± J_t(x±(t))` have nondegenerate return maps, the weighted operator has
+finite-dimensional kernel
+(`TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator`) and closed range
+(`TauCeti.SymplecticForm.isClosed_range_floerWeightedSobolevOperator`). Here the asymptotic loops
+need only be continuous, and their nondegeneracy as Hamiltonian orbits is replaced by that of the
+shifted fields.
 
 The finiteness of the cokernel, hence the Fredholm property and the index, needs the same estimate
 for the formal adjoint of `D_u`.
@@ -340,5 +354,181 @@ theorem isClosed_range_floerSobolevOperator (ω : SymplecticForm V) {H : ℝ →
     hJu huxm huxp hδm hδp
   exact isClosed_range_jetOperator_comp_subtypeL
     (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp) hest
+
+/-! ### The operator on exponentially weighted Sobolev spaces -/
+
+/-- The linearized Floer operator `D_u` along `u`, conjugated by an exponential weight `e^{κ(s)}`
+of slope `c = κ'`, as an operator from `W^{1,2}(ℝ × S¹, V)` to `L²(ℝ × S¹, V)`: the first-order
+operator `ξ ↦ D_u ξ - c(s) ξ`. Since `D_u (e^{-κ} ξ) = e^{-κ} (D_u ξ - κ' ξ)`
+(`TauCeti.SymplecticForm.floerLinearization_exp_neg_smul`), it is `D_u` acting between the
+Sobolev spaces with weight `e^{κ(s)}`, read through multiplication by `e^{κ(s)}`. It is `0` by
+convention when its coefficients are not essentially bounded on the cylinder. -/
+def floerWeightedSobolevOperator (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (c : ℝ → ℝ) : H1 V →L[ℝ] Lp V 2 stripMeasure :=
+  (jetOperator fun z ↦ ω.floerJetCoeff J Ks Kt u z - c z.1 • fst ℝ V (V × V)).comp
+    (H1 V).subtypeL
+
+/-- The definition of `TauCeti.SymplecticForm.floerWeightedSobolevOperator`: the first-order
+operator `TauCeti.CylinderSobolev.jetOperator` of the coefficient field of `D_u - c(s)` on jets,
+restricted to `TauCeti.CylinderSobolev.H1`. -/
+theorem floerWeightedSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (c : ℝ → ℝ) :
+    ω.floerWeightedSobolevOperator J Ks Kt u c =
+      (jetOperator fun z ↦ ω.floerJetCoeff J Ks Kt u z - c z.1 • fst ℝ V (V × V)).comp
+        (H1 V).subtypeL :=
+  (rfl)
+
+/-- Without weight, the weighted operator is the Sobolev realization of `D_u`. -/
+@[simp]
+theorem floerWeightedSobolevOperator_zero (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) :
+    ω.floerWeightedSobolevOperator J Ks Kt u 0 = ω.floerSobolevOperator J Ks Kt u := by
+  simp only [floerWeightedSobolevOperator_def, floerSobolevOperator_def, Pi.zero_apply, zero_smul,
+    sub_zero]
+
+/-- On the jet of a test section `ξ`, the weighted operator is `D_u ξ - c(s) ξ`, when its
+coefficients are essentially bounded on the cylinder. -/
+theorem floerWeightedSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {c : ℝ → ℝ}
+    (hM : MemLp (fun z ↦ ω.floerJetCoeff J Ks Kt u z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure)
+    (ξ : testSection V) :
+    ω.floerWeightedSobolevOperator J Ks Kt u c ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩ =ᵐ[stripMeasure]
+      fun z ↦ ω.floerLinearization J Ks Kt u ξ z - c z.1 • (ξ : ℝ × ℝ → V) z := by
+  filter_upwards [jetOperator_jetₗ_ae_eq hM ξ] with z hz
+  rw [floerWeightedSobolevOperator_def, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+    hz]
+  simp only [sub_apply, smul_apply, coe_fst', floerJetCoeff_jet]
+  simp only [jet_apply]
+
+/-- Along a Floer trajectory, the coefficients of `D_u - c(s)` are essentially bounded for a
+continuous `c` that is constant near both ends. -/
+private theorem memLp_floerWeightedJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
+    {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u)
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    {c : ℝ → ℝ} (hc : Continuous c) {R δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp) :
+    MemLp (fun z ↦ ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ H w.2) u z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure := by
+  obtain ⟨B, hB⟩ := hc.exists_forall_norm_le_of_eq_of_eq hcm hcp
+  refine (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp).sub
+    (memLp_top_of_bound ((hc.comp continuous_fst).smul continuous_const).aestronglyMeasurable B
+      (Eventually.of_forall fun z ↦ ?_))
+  rw [norm_smul]
+  exact (mul_le_mul_of_nonneg_left (norm_fst_le ℝ V (V × V)) (norm_nonneg _)).trans
+    ((mul_one _).trans_le (hB z.1))
+
+/-- The weighted semi-Fredholm estimate along a Floer trajectory, in the form consumed by
+Peetre's argument on the cylinder. -/
+private theorem exists_estimate_floerWeightedJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V} (hxm : Continuous xm)
+    (hxp : Continuous xp) {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (J t (xm t))) (hJxp : ∀ t, ω.Compatible (J t (xp t)))
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hJu : ∀ z, ω.Compatible (J z.2 (u z)))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    {c : ℝ → ℝ} (hc : Continuous c) {R δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xm t) -
+        δm • (J t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xp t) -
+        δp • (J t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+    ∃ C T : ℝ, HasSemiFredholmEstimate (fun z ↦ ω.floerJetCoeff
+      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u z -
+        c z.1 • fst ℝ V (V × V)) C T := by
+  obtain ⟨C, -, T, hest⟩ :=
+    ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add hH hxm hxp hJ
+      hJxm hJxp hu hJu huxm huxp hδm hδp hc hcm hcp hdetm hdetp
+  refine ⟨C, T, hasSemiFredholmEstimate_iff.2 fun ξ hξ hper a b hab hvan ↦ ?_⟩
+  simp only [sub_apply, smul_apply, coe_fst', floerJetCoeff_jet]
+  simpa only [jet_apply, stdComplexLineReal_eq, stdComplexLineImag_eq] using
+    hest hξ hper hab hvan
+
+/-- **The weighted linearized Floer operator along a Floer trajectory has finite-dimensional
+kernel.** Let `u` be a Floer trajectory of `K = H_t dt`, with loops converging uniformly to
+continuous loops `xm` at `-∞` and `xp` at `+∞` and slice defect tending to zero at both ends, as
+in `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add`, and let the
+slope `c` of the weight be continuous and equal to `δm` near `-∞` and to `δp` near `+∞`, where
+`δ±` are not eigenvalues of the asymptotic operators at `x±`: the shifted fields
+`dX_{H_t}(x±(t)) - δ± J_t(x±(t))` have nondegenerate return maps. Then the realization
+`D_u - c(s) : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of `D_u` conjugated by the weight `e^{κ(s)}`,
+`κ' = c`, has finite-dimensional kernel. -/
+theorem finiteDimensional_ker_floerWeightedSobolevOperator (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V} (hxm : Continuous xm)
+    (hxp : Continuous xp) {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (J t (xm t))) (hJxp : ∀ t, ω.Compatible (J t (xp t)))
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hJu : ∀ z, ω.Compatible (J z.2 (u z)))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    {c : ℝ → ℝ} (hc : Continuous c) {R δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xm t) -
+        δm • (J t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xp t) -
+        δp • (J t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+    FiniteDimensional ℝ (ω.floerWeightedSobolevOperator
+      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
+        u c).ker := by
+  obtain ⟨C, T, hest⟩ := exists_estimate_floerWeightedJetCoeff ω hH hxm hxp hJ hJxm hJxp hu hJu
+    huxm huxp hδm hδp hc hcm hcp hdetm hdetp
+  exact finiteDimensional_ker_jetOperator_comp_subtypeL
+    (memLp_floerWeightedJetCoeff ω hH hJ hu huxm huxp hδm hδp hc hcm hcp) hest
+
+/-- **The weighted linearized Floer operator along a Floer trajectory has closed range.** Under
+the hypotheses of `TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator`,
+the realization `D_u - c(s) : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of `D_u` conjugated by the
+weight `e^{κ(s)}`, `κ' = c`, has closed range. -/
+theorem isClosed_range_floerWeightedSobolevOperator (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V} (hxm : Continuous xm)
+    (hxp : Continuous xp) {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJxm : ∀ t, ω.Compatible (J t (xm t))) (hJxp : ∀ t, ω.Compatible (J t (xp t)))
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hJu : ∀ z, ω.Compatible (J z.2 (u z)))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atBot (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    {c : ℝ → ℝ} (hc : Continuous c) {R δm δp : ℝ} (hcm : ∀ s ≤ -R, c s = δm)
+    (hcp : ∀ s, R ≤ s → c s = δp)
+    (hdetm : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xm t) -
+        δm • (J t (xm t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    (hdetp : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (xp t) -
+        δp • (J t (xp t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0) :
+    IsClosed ((ω.floerWeightedSobolevOperator
+      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
+        u c).range : Set (Lp V 2 stripMeasure)) := by
+  obtain ⟨C, T, hest⟩ := exists_estimate_floerWeightedJetCoeff ω hH hxm hxp hJ hJxm hJxp hu hJu
+    huxm huxp hδm hδp hc hcm hcp hdetm hdetp
+  exact isClosed_range_jetOperator_comp_subtypeL
+    (memLp_floerWeightedJetCoeff ω hH hJ hu huxm huxp hδm hδp hc hcm hcp) hest
 
 end TauCeti.SymplecticForm
