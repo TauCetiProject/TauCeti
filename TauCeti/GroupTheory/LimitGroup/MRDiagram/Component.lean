@@ -21,17 +21,18 @@ through this edge. If the diagram is complete, these finitely many sets cover th
 of `S`; if moreover they are Zariski irreducible, the irreducible components of the solution set
 are among their Zariski closures.
 
+The sets of solutions obtained through the edges at the root (`MRDiagram.edgeImage`) and their
+covering of the solution set (`MRDiagram.iUnion_edgeImage_eq_V_of_isComplete`) are in
+`TauCeti.GroupTheory.LimitGroup.MRDiagram.Basic`.
+
 ## Main definitions
 
-* `MRDiagram.edgeImage`: the set of solutions obtained through an edge at the root.
 * `MRDiagram.IsComponentNormalized`: the Zariski closures of the sets of solutions obtained
   through the individual edges at the root are pairwise distinct and are exactly the irreducible
   components of the solution set of `S`.
 
 ## Main results
 
-* `MRDiagram.iUnion_edgeImage_eq_V_of_isComplete`: the sets of solutions obtained through the
-  edges at the root of a complete diagram cover the solution set.
 * `MRDiagram.maximal_isIrreducible_iff_exists_closure_edgeImage`: for a complete diagram whose
   edges at the root have Zariski irreducible sets of solutions, the irreducible components of the
   solution set are the inclusion-maximal Zariski closures of these sets.
@@ -75,64 +76,13 @@ namespace MRDiagram
 variable {A : Type v} [Group A] {H : Type u} [Group H] {ι : A →* H} {L : Type w} [Group L]
   {ιL : A →* L}
 
-/-! ### The solutions obtained through an edge at the root -/
-
-section edgeImage
-
-variable {X : Type*} {K : Type u} [Group K] {κ : A →* K}
-
-variable (ιL) in
-/-- The values at the tuple `x` of the root group of the branch composites through an edge at
-the root: the edge is labelled `π`, the root has modular group `M`, and `D` is the subdiagram at
-the end of the edge. -/
-def edgeImage (x : X → H) (M : Subgroup (MulAut H)) (π : GHom ι κ) (D : MRDiagram κ) :
-    Set (X → L) :=
-  {v | ∃ σ ∈ M, ∃ ψ ∈ D.branchHoms ιL, ∀ j, v j = ψ (π (σ (x j)))}
-
-@[simp]
-theorem mem_edgeImage {x : X → H} {M : Subgroup (MulAut H)} {π : GHom ι κ} {D : MRDiagram κ}
-    {v : X → L} :
-    v ∈ edgeImage ιL x M π D ↔ ∃ σ ∈ M, ∃ ψ ∈ D.branchHoms ιL, ∀ j, v j = ψ (π (σ (x j))) :=
-  Iff.rfl
-
-end edgeImage
-
-/-- If the values at the tuple `x` of the homomorphisms from the root group to the target fixing
-the coefficients are the solutions of the system `S`, then the values at `x` of the branch
-composites of a complete diagram are all the solutions of `S`. -/
-theorem image_branchHoms_eq_V_of_isComplete {X : Type*} {S : Set (GX A X)} {x : X → H}
-    {D : MRDiagram ι} (hx : Set.range (fun (φ : GHom ι ιL) (j : X) => φ (x j)) = V ιL S)
-    (hc : D.IsComplete ιL) :
-    (fun (φ : GHom ι ιL) (j : X) => φ (x j)) '' D.branchHoms ιL = V ιL S := by
-  rw [isComplete_iff_branchHoms_eq_univ.1 hc, Set.image_univ, hx]
+/-! ### The components of a complete diagram -/
 
 section node
 
 variable {X : Type*} {M : Subgroup (MulAut H)} {hM : M ≤ fixingSubgroup (MulAut H) (Set.range ι)}
   {n : ℕ} {K : Fin n → Type u} [∀ i, Group (K i)] {κ : ∀ i, A →* K i} {π : ∀ i, GHom ι (κ i)}
   {child : ∀ i, MRDiagram (κ i)}
-
-/-- The values at a tuple of the branch composites of a vertex are those obtained through its
-edges. -/
-theorem iUnion_edgeImage (x : X → H) :
-    ⋃ i, edgeImage ιL x M (π i) (child i) =
-      (fun (φ : GHom ι ιL) (j : X) => φ (x j)) '' (node M hM π child).branchHoms ιL := by
-  ext v
-  simp only [Set.mem_iUnion, mem_edgeImage, Set.mem_image]
-  refine ⟨fun ⟨i, σ, hσ, ψ, hψ, hv⟩ => ?_, fun ⟨φ, hφ, hv⟩ => ?_⟩
-  · obtain ⟨φ, hφ, hφx⟩ := exists_mem_branchHoms_node hM π child i hσ hψ
-    exact ⟨φ, hφ, funext fun j => (hφx _).trans (hv j).symm⟩
-  · obtain ⟨i, σ, hσ, ψ, hψ, h⟩ := mem_branchHoms_node.1 hφ
-    exact ⟨i, σ, hσ, ψ, hψ, fun j => hv ▸ h _⟩
-
-/-- If the values at the tuple `x` of the homomorphisms from the root group to the target fixing
-the coefficients are the solutions of the system `S`, then the solutions obtained through the
-edges at the root of a complete diagram are all the solutions of `S`. -/
-theorem iUnion_edgeImage_eq_V_of_isComplete {S : Set (GX A X)} {x : X → H}
-    (hx : Set.range (fun (φ : GHom ι ιL) (j : X) => φ (x j)) = V ιL S)
-    (hc : (node M hM π child).IsComplete ιL) :
-    ⋃ i, edgeImage ιL x M (π i) (child i) = V ιL S :=
-  (iUnion_edgeImage x).trans (image_branchHoms_eq_V_of_isComplete hx hc)
 
 /-- **Components of a complete diagram.** Suppose that the values at the tuple `x` of the
 homomorphisms from the root group to the target fixing the coefficients are the solutions of
