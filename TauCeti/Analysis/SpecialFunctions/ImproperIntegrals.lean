@@ -18,7 +18,7 @@ This file extends Mathlib's improper-integral estimates with an asymptotic estim
 integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
 `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
 closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
-Lebesgue integrals.
+Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` as a Bochner integral.
 
 It also evaluates the power-weighted sine integral on the positive half-line for exponents between
 zero and one.
@@ -34,6 +34,8 @@ zero and one.
   integrand being the density of the hyperbolic area measure.
 * `TauCeti.lintegral_Iic_ofReal_exp_mul`, `TauCeti.lintegral_Ioi_ofReal_exp_neg_mul`:
   `∫⁻ s in Iic 0, ofReal (exp (a s)) = ∫⁻ s in Ioi 0, ofReal (exp (-a s)) = ofReal a⁻¹`
+  for `0 < a`.
+* `TauCeti.integral_Ioi_exp_neg_mul`: the Bochner integral `∫ s in Ioi 0, exp (-a s) = a⁻¹`
   for `0 < a`.
 
 * `TauCeti.integrableAtFilter_inv_mul_one_add_log_sq`: the function
@@ -344,6 +346,12 @@ theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
     ∫⁻ s in Ioi 0, ENNReal.ofReal (Real.exp (-a * s)) = ENNReal.ofReal a⁻¹ := by
   rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
     (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
+  simp
+
+/-- `∫_0^∞ e^{-a s} ds = 1 / a` for `0 < a`, as a Bochner integral. -/
+theorem integral_Ioi_exp_neg_mul {a : ℝ} (ha : 0 < a) :
+    ∫ s in Ioi 0, Real.exp (-a * s) = a⁻¹ := by
+  rw [integral_exp_mul_Ioi (neg_neg_of_pos ha)]
   simp
 
 end TauCeti

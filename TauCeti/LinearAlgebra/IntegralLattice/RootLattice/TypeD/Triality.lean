@@ -51,7 +51,8 @@ act on a lattice glued from copies of `D₄`.
   permuting the simple-root coordinates by `trialityPermD4` (`typeD4Triality_single`).
 * `TauCeti.DynkinType.discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry`: on the `D₄` glue
   alphabet, read in `F₄`, it is multiplication by `ω²`; its powers give every nonzero scaling
-  (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`).
+  (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`). In the Conway--Sloane
+  labels it cycles `[1] ↦ [2] ↦ [3] ↦ [1]` (`discriminantGroupEquiv_typeD4Triality_glueLabelEquiv`).
 * `TauCeti.DynkinType.typeD4ScalarIsometry`: the power of triality realizing a given unit of
   `F₄` on the glue alphabet (`typeD4ScalarIsometry_eq_pow`), compatible with
   `checkerboardScalarIsometry` under `rootLatticeIsometryCheckerboard`
@@ -399,6 +400,24 @@ theorem discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry (k : ℕ)
     discriminantGroupEquiv_checkerboardTriality_pow_typeD4QuaternaryDiscriminantQuadraticIsometry
       hF hω k _).trans ?_))
   rw [QuadraticMap.IsometryEquiv.apply_symm_apply]
+
+/-- **Triality cycles the Conway--Sloane labels of `D₄`** as `[1] ↦ [2] ↦ [3] ↦ [1]`, fixing
+`[0]`: on the discriminant classes it is `s ↦ v ↦ c ↦ s`. -/
+theorem discriminantGroupEquiv_typeD4Triality_glueLabelEquiv (i : Fin 4) :
+    (typeD4Triality ht).discriminantGroupEquiv
+        ((D 4).glueAlphabetIsometry hv ht ((D 4).glueLabelEquiv ht i)) =
+      (D 4).glueAlphabetIsometry hv ht ((D 4).glueLabelEquiv ht (![0, 2, 3, 1] i)) := by
+  -- Read the labels in a field of four elements, where triality is multiplication by `ω²`.
+  have hF : Nat.card (GaloisField 2 2) = 4 := GaloisField.card 2 2 two_ne_zero
+  obtain ⟨ω, hω⟩ := exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four hF
+  rw [discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry ht hv hF hω]
+  congr 1
+  refine (typeD4GlueAlphabetQuaternaryIsometry hF hω).symm_apply_eq.mpr ?_
+  rw [typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv hF hω (![0, 2, 3, 1] i),
+    typeD4GlueAlphabetQuaternaryIsometry_glueLabelEquiv hF hω i]
+  have hω3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
+  have hω4 : ω ^ 4 = ω := by linear_combination ω * hω3
+  fin_cases i <;> simp [← pow_succ, ← pow_add, hω3, hω4]
 
 /-- **Triality realizes every nonzero scalar of `F₄` on the `D₄` glue alphabet.** For a unit `a`
 of a field `F` of four elements, this is the power of `typeD4Triality` acting on the glue

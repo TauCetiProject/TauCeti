@@ -123,19 +123,27 @@ end StellarEquivalent
 theorem IsStellarMove.stellarEquivalent (h : IsStellarMove K L) : StellarEquivalent K L :=
   Relation.EqvGen.rel _ _ h
 
+/-- A vertex map injective on the vertices of both sides carries a stellar move to a stellar
+move. -/
+theorem IsStellarMove.map_of_injOn {κ : Type*} [DecidableEq κ] {f : ι → κ}
+    (h : IsStellarMove K L)
+    (hf : {x | ({x} : Finset ι) ∈ K ∨ ({x} : Finset ι) ∈ L}.InjOn f) :
+    IsStellarMove (K.map f) (L.map f) := by
+  obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
+  have hvL : ({v} : Finset ι) ∈ stellarSubdivision K σ v :=
+    singleton_mem_stellarSubdivision_iff.mpr hσ
+  refine isStellarMove_iff.mpr ⟨σ.image f, f v, mem_map_iff.mpr ⟨σ, hσ, rfl⟩, fun hfv => ?_,
+    map_stellarSubdivision_of_injOn hf (fun x hx => Or.inl hx)
+      (fun x hx => Or.inl (singleton_mem_of_mem hσ hx)) (Or.inr hvL)⟩
+  obtain ⟨x, hx, hxv⟩ := singleton_mem_map_iff.mp hfv
+  rw [hf (Or.inl hx) (Or.inr hvL) hxv] at hx
+  exact hv hx
+
 /-- An injective relabeling carries a stellar move to the corresponding stellar move between the
 image complexes. -/
 theorem IsStellarMove.map {κ : Type*} [DecidableEq κ] (h : IsStellarMove K L)
-    (f : ι → κ) (hf : Function.Injective f) : IsStellarMove (K.map f) (L.map f) := by
-  obtain ⟨σ, v, hσ, hv, rfl⟩ := h
-  refine ⟨σ.image f, f v, mem_map_iff.mpr ⟨σ, hσ, rfl⟩, ?_,
-    map_stellarSubdivision f hf⟩
-  intro hfv
-  rw [mem_map_iff] at hfv
-  obtain ⟨τ, hτ, hτf⟩ := hfv
-  have hvτ : v ∈ τ := hf.mem_finset_image.mp
-    (hτf ▸ Finset.mem_singleton_self (f v))
-  exact hv (singleton_mem_of_mem hτ hvτ)
+    (f : ι → κ) (hf : Function.Injective f) : IsStellarMove (K.map f) (L.map f) :=
+  h.map_of_injOn hf.injOn
 
 /-- A complex is stellar equivalent to any of its starrings at a fresh vertex. -/
 theorem stellarEquivalent_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
