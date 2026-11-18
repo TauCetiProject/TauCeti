@@ -177,19 +177,8 @@ private theorem exists_eq_comp_tendsto_of_tendstoLocallyUniformlyOn {K : Set M}
   -- Inside `K`, convergence and continuity are measured by `e`.
   refine ⟨x, hxK, hvx, fun z hz ↦ ?_, continuous_subtype_val.comp_continuousOn
     (f := fun t ↦ (⟨x t, hxK t⟩ : K)) ?_⟩
-  · classical
-    -- A sequence in `K` agreeing eventually with the translates.
-    let q : ℕ → K := fun k ↦
-      if h : u k (z + (s k, 0)) ∈ K then ⟨u k (z + (s k, 0)), h⟩ else ⟨x z.2, hxK z.2⟩
-    have hq : ∀ᶠ k in atTop, (q k : M) = u k (z + (s k, 0)) :=
-      (hzK z hz).mono fun k hk ↦ by simp [q, hk]
-    have h : Tendsto q atTop (𝓝 ⟨x z.2, hxK z.2⟩) := by
-      refine hemb.isEmbedding.tendsto_nhds_iff.2 ?_
-      simp only [comp_def, ← hvx z hz]
-      refine (hv.tendsto_at hz).congr' ?_
-      filter_upwards [hq] with k hk
-      rw [hk]
-    exact ((continuous_subtype_val.tendsto _).comp h).congr' hq
+  · refine hK.tendsto_nhds_of_tendsto_comp he.continuousOn he_inj (hzK z hz) (hxK z.2) ?_
+    simpa only [comp_def, ← hvx z hz] using hv.tendsto_at hz
   · exact hemb.isEmbedding.continuousOn_iff.2 (hyc.congr fun t ht ↦ hx t ht)
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
