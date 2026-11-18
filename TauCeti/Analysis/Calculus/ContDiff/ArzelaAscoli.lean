@@ -19,11 +19,12 @@ public import Mathlib.Topology.MetricSpace.Equicontinuity
 
 Let `f_i` be smooth functions on a ball `B_R(p)` of a finite-dimensional normed space, with values
 in a finite-dimensional normed space, such that for every order `k` and every `r < R` the `k`-th
-derivatives `D^k f_i` are bounded on `closed ball B_r(p)` uniformly in `i`. Then a subsequence converges
+derivatives `D^k f_i` are bounded on `closedBall p r` uniformly in `i`. Then a subsequence converges
 smoothly on compact subsets of the ball: there is a smooth `g` on `B_R(p)` such that, for every
-`k` and every `r < R`, `D^k f_(φ i) → D^k g` uniformly on `closed ball B_r(p)`.
+`k` and every `r < R`, `D^k f_(φ i) → D^k g` uniformly on `closedBall p r`.
 
-On each closed ball `closed ball B_r(p)` the bound on `D^(k+1) f_i` makes the `D^k f_i` uniformly Lipschitz,
+On each closed ball `closedBall p r` the bound on `D^(k+1) f_i` makes the `D^k f_i`
+uniformly Lipschitz,
 so by the Arzelà–Ascoli theorem they lie in a compact set of bounded continuous functions. The
 countable product over orders `k` and radii `r_m ↑ R` of these compact sets is compact and first
 countable, which gives one subsequence converging in every factor. The limits of the derivatives
@@ -69,9 +70,10 @@ private theorem norm_iteratedFDeriv_sub_le {f : E → F} {p : E} {R r C : ℝ}
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
 /-- **Arzelà–Ascoli for smooth functions on a ball.** If smooth functions `f_i` on `B_R(p)` have,
-for every order `k` and every `r < R`, `k`-th derivatives bounded on `closed ball B_r(p)` uniformly in `i`,
+for every order `k` and every `r < R`, `k`-th derivatives bounded on `closedBall p r`
+uniformly in `i`,
 then a subsequence converges smoothly on compact subsets of the ball to a smooth function `g`:
-`D^k f_(φ i) → D^k g` uniformly on every `closed ball B_r(p)` with `r < R`, for every `k`. -/
+`D^k f_(φ i) → D^k g` uniformly on every `closedBall p r` with `r < R`, for every `k`. -/
 theorem exists_subseq_tendstoUniformlyOn_iteratedFDeriv {f : ℕ → E → F} {p : E} {R : ℝ}
     (hf : ∀ i, ContDiffOn ℝ ∞ (f i) (ball p R))
     (hbd : ∀ k : ℕ, ∀ r < R, ∃ C, ∀ i, ∀ x ∈ closedBall p r,
