@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Hyperplane
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # A lower bound for the dimension of holomorphic local rings
@@ -92,7 +93,8 @@ theorem finrank_le_ringKrullDim_stalk_modelSpace (a : E) :
       (add_le_add (ih (Fin n → ℂ) (by simp) (e v).1) (le_refl (1 : WithBot ℕ∞))).trans
         (ringKrullDim_stalk_add_one_le_prod (e v).1 (e v).2)
 
-variable {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
   {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
 
 /-- The Krull dimension of the holomorphic local ring at a point of a complex manifold
@@ -102,24 +104,11 @@ theorem finrank_le_ringKrullDim_stalk (x : X) :
     (Module.finrank ℂ E : WithBot ℕ∞) ≤
       ringKrullDim ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
   let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  let e := extChartAt I x
-  have he : ∀ᶠ z in 𝓝 (e x), ContMDiffAt 𝓘(ℂ, E) I ω e.symm z := by
-    filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
-    exact (contMDiffOn_extChartAt_symm x z hz).contMDiffAt
-      ((isOpen_extChartAt_target x).mem_nhds hz)
-  have hx : e.symm (e x) = x := extChartAt_to_inv x
-  -- Restriction to the inverse chart is onto: extend a model germ using the chart.
-  have hsurj : Function.Surjective (stalkPullback he) := by
-    apply stalkPullback_surjective_of_eventually_leftInverse he (g := e)
-    · rw [hx]
-      filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
-      exact contMDiffAt_extChartAt' hy
-    · filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
-      exact e.right_inv hz
-  have hdim := ringKrullDim_le_of_surjective (stalkPullback he) hsurj
-  exact (finrank_le_ringKrullDim_stalk_modelSpace (e x)).trans <|
-    hdim.trans_eq (congrArg (fun y ↦ ringKrullDim
-      ((holomorphicStructureSheaf I X).presheaf.stalk y)) hx)
+  rw [(stalkEquivModelSpace (I := I) (V := Fin (Module.finrank ℂ E) → ℂ) x
+    (ContinuousLinearEquiv.ofFinrankEq (by simp))).ringKrullDim]
+  calc
+    _ = (Module.finrank ℂ (Fin (Module.finrank ℂ E) → ℂ) : WithBot ℕ∞) := by simp
+    _ ≤ _ := finrank_le_ringKrullDim_stalk_modelSpace _
 
 /-- The same dimension lower bound on Mathlib's native complex-smooth structure-sheaf stalk,
 via the canonical holomorphic/complex-smooth comparison. -/
