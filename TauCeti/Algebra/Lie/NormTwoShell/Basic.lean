@@ -516,10 +516,12 @@ private theorem jacobi_terms_of_add_add_eq_zero {a b c : B.normTwoShell}
   have hc : (c : I → ℤ) = -(a + b) := eq_neg_of_add_eq_zero_right hd
   have hab : (a : I → ℤ) + b ∈ B.normTwoShell := by
     rw [← neg_mem_normTwoShell, ← hc]; exact c.2
+  have hbc_eq : (b : I → ℤ) + c = -a := by rw [hc]; abel
+  have hca_eq : (c : I → ℤ) + a = -b := by rw [hc]; abel
   have hbc : (b : I → ℤ) + c ∈ B.normTwoShell := by
-    rw [hc, show (b : I → ℤ) + -(a + b) = -a by abel, neg_mem_normTwoShell]; exact a.2
+    rw [hbc_eq, neg_mem_normTwoShell]; exact a.2
   have hca : (c : I → ℤ) + a ∈ B.normTwoShell := by
-    rw [hc, show -((a : I → ℤ) + b) + a = -b by abel, neg_mem_normTwoShell]; exact b.2
+    rw [hca_eq, neg_mem_normTwoShell]; exact b.2
   have e2 : B.orderedSignForm c a + (B.orderedSignForm b c + B.orderedSignForm b a) =
       B.orderedSignForm b c + (B.orderedSignForm a b + B.orderedSignForm a c) := by
     simp only [hc, map_add, map_neg, LinearMap.add_apply, LinearMap.neg_apply]; ring
@@ -541,7 +543,8 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
   have ha := a.2
   have hb := b.2
   have hc := c.2
-  -- The three pairings lie in `{-1, 0, 1}`, and decide which pairwise sums are roots.
+  -- The three pairings are at least `-1` (equal roots pair to `2`), and a pairing is `-1` exactly
+  -- when the corresponding pairwise sum is a root.
   have hp1 := hB.neg_one_le_dotProduct_mulVec ha hb fun h ↦ hab' (by rw [h, neg_add_cancel])
   have hq1 := hB.neg_one_le_dotProduct_mulVec hb hc fun h ↦ hbc' (by rw [h, neg_add_cancel])
   have hr1 := hB.neg_one_le_dotProduct_mulVec hc ha fun h ↦ hca' (by rw [h, neg_add_cancel])
