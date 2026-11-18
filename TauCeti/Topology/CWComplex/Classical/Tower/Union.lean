@@ -32,7 +32,8 @@ is born. No separation axiom is needed for the CW structure itself.
 
 Every cell of `W k` is the image of a unique new cell of a stage `k' ≤ k`
 (`TauCeti.towerOrigin`), so the `n`-cells of `W k` are exactly the `n`-cells of the union born at
-the stages up to `k` (`TauCeti.towerStageCellEquiv`). In a Hausdorff space each stage is therefore
+the stages up to `k` (`TauCeti.towerStageCellEquiv`), and `W k` is the union of their open cells
+(`TauCeti.iUnion_openCell_towerNewCell_of_le`). In a Hausdorff space each stage is therefore
 a subcomplex of the union (`TauCeti.cwSubcomplexTowerUnionSubcomplex`).
 
 ## Main definitions
@@ -169,6 +170,17 @@ theorem monotone_of_forall_map_eq : Monotone W := by
   rw [← CWComplex.union (C := W k)]
   refine iUnion₂_subset fun n i ↦ ?_
   exact closedCell_ι hι i ▸ closedCell_subset_complex n (ι k n i)
+
+/-- The stage `W k` of a tower of CW complexes is the union of the open cells of the new cells
+born at the stages up to `k`. -/
+theorem iUnion_openCell_towerNewCell_of_le (k : ℕ) :
+    ⋃ (n : ℕ) (c : {c : TowerNewCell ι n // c.1 ≤ k}), openCell n c.1.2.1 = W k := by
+  refine Subset.antisymm (iUnion₂_subset fun n c ↦ ?_) ?_
+  · exact (openCell_subset_complex n _).trans (monotone_of_forall_map_eq hι c.2)
+  · conv_lhs => rw [← CWComplex.iUnion_openCell_eq_complex (C := W k)]
+    refine iUnion₂_subset fun n j ↦ ?_
+    exact subset_iUnion₂_of_subset n ⟨towerOrigin ι k j, towerOrigin_fst_le ι k j⟩
+      (openCell_towerOrigin hι k j).ge
 
 /-- The open cell of a new cell of `W (k + 1)` does not meet the previous stage `W k`. -/
 theorem disjoint_openCell_of_notMem_range {k n : ℕ} {i : cell (W (k + 1)) n}
@@ -342,23 +354,8 @@ def cwSubcomplexTowerUnionSubcomplex [T2Space X] (k : ℕ) :
     @Subcomplex X _ (⋃ k, W k) ∅
       (@CWComplex.instRelCWComplex X _ _ (cwSubcomplexTowerUnion hι hW)) :=
   CWComplex.Subcomplex.mk'' (h := cwSubcomplexTowerUnion hι hW) (⋃ k, W k) (W k)
-    (fun n ↦ {c | (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k}) <| by
-    refine Subset.antisymm (iUnion₂_subset fun n c ↦ ?_) ?_
-    · have hc : (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k := c.2
-      rw [← (cwSubcomplexTowerUnionCellEquiv hι hW n).symm_apply_apply c,
-        openCell_cwSubcomplexTowerUnionCellEquiv_symm]
-      exact (openCell_subset_complex n _).trans (monotone_of_forall_map_eq hι hc)
-    · conv_lhs => rw [← CWComplex.iUnion_openCell_eq_complex (C := W k)]
-      refine iUnion₂_subset fun n j ↦ ?_
-      rw [← openCell_towerOrigin hι k j]
-      have hj : (cwSubcomplexTowerUnionCellEquiv hι hW n
-          ((cwSubcomplexTowerUnionCellEquiv hι hW n).symm (towerOrigin ι k j))).1 ≤ k := by
-        rw [Equiv.apply_symm_apply]
-        exact towerOrigin_fst_le ι k j
-      exact subset_iUnion₂_of_subset n
-        (⟨(cwSubcomplexTowerUnionCellEquiv hι hW n).symm (towerOrigin ι k j), hj⟩ :
-          {c | (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k})
-        (openCell_cwSubcomplexTowerUnionCellEquiv_symm hι hW _).ge
+    (fun n ↦ {c | (cwSubcomplexTowerUnionCellEquiv hι hW n c).1 ≤ k})
+    (iUnion_openCell_towerNewCell_of_le hι k)
 
 /-- The subcomplex of the union given by a stage is that stage. -/
 @[simp]

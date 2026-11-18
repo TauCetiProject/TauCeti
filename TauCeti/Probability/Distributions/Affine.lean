@@ -13,10 +13,12 @@ public import TauCeti.MeasureTheory.Group.Convolution.Translation
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Probability.CDF
+public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Dirac
 import TauCeti.Probability.Independence.ConvolutionPower
 
@@ -44,16 +46,19 @@ which is Mathlib's `MeasureTheory.Measure.map_const`.
 The variance, moment-generating function and characteristic function computations follow
 Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const_add` and
 `ProbabilityTheory.variance_const_mul`, `ProbabilityTheory.mgf_const_add` and
-`ProbabilityTheory.mgf_const_mul`, and `MeasureTheory.charFun_apply_real`, which they reduce to.
+`ProbabilityTheory.mgf_const_mul`, and `MeasureTheory.charFun_map_const_add` and
+`MeasureTheory.charFun_map_mul`, which they reduce to.
 
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose, and
   `TauCeti.Probability.neg_map_affine` reflects an affine image;
-* `TauCeti.Probability.support_map_affine` — a nonconstant affine pushforward transports the
+* `TauCeti.Probability.support_map_affine` — an affine pushforward transports the
   topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
   probability law, intercept, and slope;
+* `TauCeti.Probability.map_affine_cond` — a nonconstant affine pushforward commutes with
+  conditioning when the conditioning event is transported by the affine map;
 * `TauCeti.Probability.affineDensity`,
   `TauCeti.Probability.map_affine_withDensity_volume` — the transformed density and the
   measure-level change of variables;
@@ -118,16 +123,13 @@ theorem neg_map_affine (a b : ℝ) :
   simp only [Function.comp_apply]
   ring
 
-/-- **Support of an affine image.** A nonconstant affine pushforward has support equal to the
-affine image of the original support. -/
-theorem support_map_affine (hb : b ≠ 0) :
+/-- **Support of an affine image.** An affine pushforward has support equal to the affine image of
+the original support. For the slope `0` the pushforward is a multiple of a Dirac mass, and both
+sides are `{a}` (or empty for the zero measure). -/
+theorem support_map_affine :
     (μ.map fun x ↦ a + b * x).support = (fun x ↦ a + b * x) '' μ.support := by
-  let e : ℝ ≃ₜ ℝ := (Homeomorph.smulOfNeZero b hb).trans (Homeomorph.addLeft a)
-  have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
-    funext x
-    simp [e, smul_eq_mul]
-  rw [← he]
-  exact μ.support_map_homeomorph e
+  rw [μ.support_map_eq_closure_image Measure.support_mem_ae (by fun_prop)]
+  exact ((isClosedMap_add_left a).comp (isClosedMap_smul₀ b) _ Measure.isClosed_support).closure_eq
 
 /-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
 @[fun_prop]
@@ -137,6 +139,18 @@ theorem measurable_map_affine :
   exact measurable_subtype_coe.comp
     (TauCeti.MeasureTheory.measurable_probabilityMeasure_map_of_measurable_uncurry
       (f := fun p : ℝ × ℝ => fun x => p.1 + p.2 * x) (by fun_prop))
+
+/-- **Affine transport of a conditional law.** A nonconstant affine pushforward commutes with
+conditioning when the conditioning event is carried to its affine image. This includes null
+events, for which both conditional measures are zero. -/
+theorem map_affine_cond (a : ℝ) {b : ℝ} (hb : b ≠ 0) {s : Set ℝ} :
+    (cond μ s).map (fun x ↦ a + b * x) =
+      cond (μ.map fun x ↦ a + b * x) ((fun x ↦ a + b * x) '' s) := by
+  have hf : MeasurableEmbedding (fun x : ℝ ↦ a + b * x) := by
+    convert (affineHomeomorph b a hb).measurableEmbedding using 1
+    ext x
+    simp [affineHomeomorph, add_comm]
+  exact hf.map_cond s
 
 /-! ### Densities -/
 
@@ -525,13 +539,10 @@ theorem cgf_id_neg (t : ℝ) : cgf id μ.neg t = cgf id μ (-t) := by
 theorem charFun_map_affine (t : ℝ) :
     charFun (μ.map fun x => a + b * x) t =
       Complex.exp (a * t * Complex.I) * charFun μ (b * t) := by
-  rw [charFun_apply_real, charFun_apply_real,
-    integral_map (measurable_affine a b).aemeasurable (by fun_prop), ← integral_const_mul]
-  refine integral_congr_ae (ae_of_all _ fun x => ?_)
-  dsimp only
-  rw [← Complex.exp_add]
-  push_cast
-  ring_nf
+  rw [show (fun x => a + b * x) = (a + ·) ∘ (b * ·) from rfl,
+    ← Measure.map_map (by fun_prop) (by fun_prop), charFun_map_const_add, charFun_map_mul,
+    mul_comm]
+  simp [mul_comm]
 
 end TauCeti.Probability
 

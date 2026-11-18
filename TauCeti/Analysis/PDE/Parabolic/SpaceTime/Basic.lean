@@ -33,10 +33,13 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.spatialSlice`, `TauCeti.ParabolicSpaceTime.timeSlice`: the
   continuous inclusions of a fixed-time spatial slice and of a fixed-position time slice.
-* `TauCeti.ParabolicSpaceTime.slabTimeReverse`: the time reversal `t ↦ T - t`, as an isometry from
-  the slab `E × [T - b, T - a]` onto `E × [a, b]`.
+* `TauCeti.ParabolicSpaceTime.iccTimeReverse` and `TauCeti.ParabolicSpaceTime.slabTimeReverse`:
+  the time reversal `t ↦ T - t`, as an isometry from the interval `[T - b, T - a]` onto `[a, b]`
+  and from the slab `E × [T - b, T - a]` onto `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
-  `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
+  `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is, and
+  `TauCeti.ParabolicSpaceTime.slabSpaceIsometryEquiv`, the same action of an isometric equivalence
+  of space, as an isometric equivalence of slabs.
 * `TauCeti.ParabolicSpaceTime.lipschitzWith_slabSpace`: the spatial position of a point of a slab
   is `1`-Lipschitz for the parabolic distance.
 
@@ -50,7 +53,7 @@ public section
 noncomputable section
 
 open Set Metric
-open scoped ENNReal NNReal
+open scoped NNReal
 
 namespace TauCeti
 
@@ -155,6 +158,21 @@ theorem slabSpaceMap_slabMk {E' : Type*} {a b : ℝ} (f : E → E') (x : E) (t :
   (rfl)
 
 @[simp]
+theorem slabTime_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    slabTime (slabSpaceMap f p) = slabTime p :=
+  (rfl)
+
+@[simp]
+theorem space_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    (slabSpaceMap f p : ParabolicSpaceTime E').space = f (p : ParabolicSpaceTime E).space :=
+  (rfl)
+
+@[simp]
+theorem time_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    (slabSpaceMap f p : ParabolicSpaceTime E').time = (p : ParabolicSpaceTime E).time :=
+  (rfl)
+
+@[simp]
 theorem slabSpaceMap_id {a b : ℝ} : slabSpaceMap (a := a) (b := b) (id : E → E) = id :=
   (rfl)
 
@@ -217,6 +235,31 @@ theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : �
   gcongr
   · exact (hf _ _).trans (mul_le_mul_left (by exact_mod_cast le_max_left K 1) _)
   · exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast le_max_right K 1)
+
+/-- An isometric equivalence `e` of space acts on the slab `E × [a, b]` by `(x, t) ↦ (e x, t)`, an
+isometric equivalence for the parabolic distance. -/
+def slabSpaceIsometryEquiv {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ} (e : E ≃ᵢ E') :
+    slab (E := E) a b ≃ᵢ slab (E := E') a b where
+  toFun := slabSpaceMap e
+  invFun := slabSpaceMap e.symm
+  left_inv p := by
+    rw [← slabMk_space_slabTime p, slabSpaceMap_slabMk, slabSpaceMap_slabMk, e.symm_apply_apply]
+  right_inv q := by
+    rw [← slabMk_space_slabTime q, slabSpaceMap_slabMk, slabSpaceMap_slabMk, e.apply_symm_apply]
+  isometry_toFun p q := by
+    rw [← slabMk_space_slabTime p, ← slabMk_space_slabTime q, slabSpaceMap_slabMk,
+      slabSpaceMap_slabMk, edist_slabMk, edist_slabMk, e.edist_eq]
+
+@[simp]
+theorem slabSpaceIsometryEquiv_apply {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ}
+    (e : E ≃ᵢ E') (p : slab (E := E) a b) : slabSpaceIsometryEquiv e p = slabSpaceMap e p :=
+  (rfl)
+
+@[simp]
+theorem slabSpaceIsometryEquiv_symm {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ}
+    (e : E ≃ᵢ E') :
+    (slabSpaceIsometryEquiv (a := a) (b := b) e).symm = slabSpaceIsometryEquiv e.symm :=
+  (rfl)
 
 end PseudoEMetricSpace
 
@@ -286,11 +329,11 @@ theorem coordsHomeomorph_symm_apply (z : E × ℝ) :
 
 @[fun_prop]
 theorem continuous_space : Continuous (space : ParabolicSpaceTime E → E) :=
-  (continuous_fst.comp coordsHomeomorph.continuous).congr fun _ => by simp
+  WithLp.continuous_fst 1 E ParabolicTime
 
 @[fun_prop]
 theorem continuous_time : Continuous (time : ParabolicSpaceTime E → ℝ) :=
-  (continuous_snd.comp coordsHomeomorph.continuous).congr fun _ => by simp
+  Snowflaking.continuous_ofSnowflaking.comp (WithLp.continuous_snd 1 E ParabolicTime)
 
 /-- Building a point from its coordinates is jointly continuous in `(x, t)`. -/
 @[fun_prop]
@@ -368,8 +411,44 @@ theorem timeReverse_symm (T : ℝ) :
 theorem preimage_timeReverse_slab (T a b : ℝ) :
     timeReverse T ⁻¹' slab (E := E) a b = slab (T - b) (T - a) := by
   ext p
-  simp only [mem_preimage, mem_slab, time_timeReverse, mem_Icc]
-  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+  simp only [mem_preimage, mem_slab, time_timeReverse,
+    ← Set.mem_preimage (f := (T - ·)) (a := p.time), Set.preimage_const_sub_Icc]
+
+/-- Time reversal `t ↦ T - t` maps the time interval `[a', b']` into `[a, b]`, where
+`a' = T - b` and `b' = T - a`. -/
+theorem sub_mem_Icc_of_eq_sub {a b a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
+    {s : ℝ} (hs : s ∈ Icc a' b') : T - s ∈ Icc a b := by
+  subst ha hb
+  constructor <;> linarith [hs.1, hs.2]
+
+/-- Time reversal `t ↦ T - t`, as an isometry from the time interval `[a', b']` onto `[a, b]`,
+where `a' = T - b` and `b' = T - a`. It is the time component of `slabTimeReverse`. -/
+def iccTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
+    Icc a' b' ≃ᵢ Icc a b where
+  toFun t := ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩
+  invFun s := ⟨T - s,
+    sub_mem_Icc_of_eq_sub T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) s.2⟩
+  left_inv t := Subtype.ext (sub_sub_cancel T t)
+  right_inv s := Subtype.ext (sub_sub_cancel T s)
+  isometry_toFun := Isometry.of_dist_eq fun t s ↦ by
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_sub_left]
+
+/-- Time reversal between intervals sends `t` to `T - t`. -/
+theorem iccTimeReverse_apply (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (t : Icc a' b') :
+    iccTimeReverse T ha hb t = ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ :=
+  (rfl)
+
+/-- The underlying real number of `iccTimeReverse T ha hb t` is `T - t`. -/
+@[simp]
+theorem coe_iccTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (t : Icc a' b') : (iccTimeReverse T ha hb t : ℝ) = T - t := (rfl)
+
+/-- The inverse of time reversal between intervals is time reversal in the opposite direction. -/
+@[simp]
+theorem iccTimeReverse_symm (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
+    (iccTimeReverse T ha hb).symm =
+      iccTimeReverse T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := (rfl)
 
 /-- Time reversal `t ↦ T - t`, as an isometry from the slab `E × [a', b']` onto the slab
 `E × [a, b]`, where `a' = T - b` and `b' = T - a`. -/
@@ -388,10 +467,14 @@ def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T -
 @[simp]
 theorem slabTimeReverse_slabMk (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
     (x : E) (t : Icc a' b') :
-    slabTimeReverse T ha hb (slabMk x t) = slabMk x ⟨T - t, by
-      obtain ⟨h₁, h₂⟩ := t.2
-      subst ha hb
-      constructor <;> linarith⟩ :=
+    slabTimeReverse T ha hb (slabMk x t) = slabMk x (iccTimeReverse T ha hb t) :=
+  (rfl)
+
+/-- The time component of time reversal between slabs is time reversal between intervals. -/
+@[simp]
+theorem slabTime_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (p : slab (E := E) a' b') :
+    slabTime (slabTimeReverse T ha hb p) = iccTimeReverse T ha hb (slabTime p) :=
   (rfl)
 
 @[simp]

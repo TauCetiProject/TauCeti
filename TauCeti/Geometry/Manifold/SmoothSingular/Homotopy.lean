@@ -6,15 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
-public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
-public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
-public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Topology.Homotopy.RealProd
 
 /-!
 # Homotopy invariance of smooth singular homology
@@ -39,18 +35,14 @@ object of a preadditive category with coproducts
 restriction of the homotopy of singular simplicial sets
 (`TauCeti.smoothSingularSubcomplexHomotopy_h_ι`).
 
-Consequently a smoothly contractible manifold has the smooth singular homology of a point: if the
-identity of `M` is smoothly homotopic to a constant map, the positive-degree smooth singular
-homology of `M` vanishes (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`). This
-applies to every star-convex open subset of a real normed space
-(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`), the contraction being
-`(t, x) ↦ c + (1 - ψ t) • (x - c)` for a smooth `ψ : ℝ → [0, 1]` with `ψ 0 = 0` and `ψ 1 = 1`. The
-homotopy is required to be smooth on all of `ℝ × M`, not merely on `[0, 1] × M`: a smooth simplex is
-locally the restriction of a smooth map on an open subset of `ℝⁿ`, and the affine coordinate `t_α`
-takes values outside `[0, 1]` off the simplex.
+The homotopy is required to be the restriction of a smooth map on all of `ℝ × M`
+(`TauCeti.homotopyOfRealProd`), not merely smooth on `[0, 1] × M`: a smooth simplex is locally the
+restriction of a smooth map on an open subset of `ℝⁿ`, and the affine coordinate `t_α` takes values
+outside `[0, 1]` off the simplex.
 
-These are the inputs, homotopy invariance and the acyclicity of convex coordinate domains, of the
-comparison of smooth with continuous singular homology by a Mayer–Vietoris induction.
+Homotopy invariance is an input of the comparison of smooth with continuous singular homology by a
+Mayer–Vietoris induction; its consequences for smoothly contractible manifolds are in
+`TauCeti.Geometry.Manifold.SmoothSingular.Contractible`.
 
 ## Main definitions and results
 
@@ -59,10 +51,6 @@ comparison of smooth with continuous singular homology by a Mayer–Vietoris ind
 * `TauCeti.smoothSingularChainHomotopy`: the induced chain homotopy of smooth singular chains.
 * `TauCeti.homologyMap_smoothSingularSubcomplexMap_eq`: smoothly homotopic maps induce the same map
   on smooth singular homology.
-* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`: a smoothly contractible manifold
-  has no smooth singular homology in positive degrees.
-* `TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`: neither has a star-convex open
-  subset of a normed space.
 
 ## References
 
@@ -183,83 +171,7 @@ theorem homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff [CategoryWithHom
     (h₀ : ∀ x, F (0, x) = f x) (h₁ : ∀ x, F (1, x) = g x) (n : ℕ) :
     SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n =
       SSet.homologyMap (smoothSingularSubcomplexMap g hg) R n :=
-  homologyMap_smoothSingularSubcomplexMap_eq hf hg
-    { toFun := fun p ↦ F (p.1, p.2)
-      continuous_toFun := hF.continuous.comp (continuous_subtype_val.prodMap continuous_id)
-      map_zero_left := h₀
-      map_one_left := h₁ } hF (fun _ ↦ rfl) R n
-
-/-! ### Smoothly contractible manifolds -/
-
-omit hf hg in
-/-- **A smoothly contractible manifold has the smooth singular homology of a point.** If a smooth
-map `F : ℝ × M → M` joins the identity `F (0, ·) = id` to a constant map `F (1, ·) = c`, then the
-smooth singular homology of `M` vanishes in every positive degree. -/
-theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomology C]
-    {F : ℝ × M → M} (hF : ContMDiff (𝓘(ℝ).prod I) I ∞ F) (c : M) (h₀ : ∀ x, F (0, x) = x)
-    (h₁ : ∀ x, F (1, x) = c) {n : ℕ} (hn : n ≠ 0) :
-    IsZero ((smoothSingularSubcomplex I M : SSet).homology R n) := by
-  let pt : TopCat.{u} := TopCat.of PUnit
-  -- The constant map factors through the singular simplicial set of a point.
-  let a : TopCat.of M ⟶ pt := TopCat.ofHom (ContinuousMap.const M PUnit.unit)
-  let b : pt ⟶ TopCat.of M := TopCat.ofHom (ContinuousMap.const pt c)
-  have hab : a ≫ b = TopCat.ofHom ⟨fun _ ↦ c, continuous_const⟩ := by
-    ext
-    rfl
-  let p : (smoothSingularSubcomplex I M : SSet) ⟶ TopCat.toSSet.obj pt :=
-    (smoothSingularSubcomplex I M).ι ≫ TopCat.toSSet.map a
-  let s : TopCat.toSSet.obj pt ⟶ (smoothSingularSubcomplex I M : SSet) :=
-    SSet.Subcomplex.lift (TopCat.toSSet.map b) (by
-      rintro k _ ⟨σ, rfl⟩
-      rw [mem_smoothSingularSubcomplex_iff]
-      exact contMDiffOnSubset_const I ∞ c)
-  have hs : s ≫ (smoothSingularSubcomplex I M).ι = TopCat.toSSet.map b :=
-    SSet.Subcomplex.lift_ι _ _
-  have hps : smoothSingularSubcomplexMap (fun _ ↦ c) (contMDiff_const : ContMDiff I I ∞ _) =
-      p ≫ s := by
-    rw [← cancel_mono (smoothSingularSubcomplex I M).ι, smoothSingularSubcomplexMap_ι,
-      Category.assoc, hs, Category.assoc, ← Functor.map_comp, hab]
-  have hpt : IsZero ((TopCat.toSSet.obj pt).homology R n) :=
-    AlgebraicTopology.isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R pt hn
-  have hid : SSet.homologyMap (smoothSingularSubcomplexMap id (contMDiff_id (I := I))) R n =
-      SSet.homologyMap (p ≫ s) R n := by
-    rw [← hps]
-    exact homologyMap_smoothSingularSubcomplexMap_eq_of_contMDiff R contMDiff_id contMDiff_const hF
-      h₀ h₁ n
-  rw [smoothSingularSubcomplexMap_id, SSet.homologyMap_id, SSet.homologyMap_comp] at hid
-  rw [IsZero.iff_id_eq_zero, hid, hpt.eq_of_src (SSet.homologyMap s R n) 0, comp_zero]
-
-/-- **A star-convex open subset has vanishing positive-degree smooth singular homology.**
-The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
-smooth transition function from `0` to `1`, stays in the subset, so its smooth singular homology
-vanishes in every positive degree. -/
-theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomology C]
-    {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : TopologicalSpace.Opens V} {c : V}
-    (hU : StarConvex ℝ c (U : Set V)) {n : ℕ} (hn : n ≠ 0) :
-    IsZero ((smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).homology R n) := by
-  rcases (U : Set V).eq_empty_or_nonempty with hempty | hne
-  · -- An empty open set has no smooth simplices at all.
-    have : (smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).HasDimensionLT 0 := by
-      refine (SSet.notNonempty_iff_hasDimensionLT_zero _).1 fun ⟨σ⟩ ↦ ?_
-      have hx : ((TopCat.of U).toSSetObjEquiv _ σ.1 (StdSimplex.single 0) : V) ∈ (U : Set V) :=
-        ((TopCat.of U).toSSetObjEquiv _ σ.1 (StdSimplex.single 0)).2
-      rw [hempty] at hx
-      exact hx
-    exact (HomologicalComplex.homologyFunctor C _ n).map_isZero (SSet.isZero_chainComplex _ R)
-  have hmem : ∀ p : ℝ × U, c + (1 - Real.smoothTransition p.1) • ((p.2 : V) - c) ∈ U :=
-    fun p ↦ hU.add_smul_sub_mem p.2.2 (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  let F : ℝ × U → U := fun p ↦ ⟨_, hmem p⟩
-  have hF : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ F := by
-    rw [← ContMDiff.subtypeVal_comp_iff]
-    have hψ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    have hx : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ fun p : ℝ × U ↦ (p.2 : V) :=
-      contMDiff_subtype_val.comp contMDiff_snd
-    exact ContMDiff.add contMDiff_const
-      (ContMDiff.smul (ContMDiff.sub contMDiff_const hψ) (hx.sub contMDiff_const))
-  exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF ⟨c, hU.mem hne⟩
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.zero]))
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.one])) hn
+  homologyMap_smoothSingularSubcomplexMap_eq hf hg (homotopyOfRealProd hF.continuous h₀ h₁) hF
+    (fun p ↦ (homotopyOfRealProd_apply hF.continuous h₀ h₁ p).symm) R n
 
 end TauCeti
