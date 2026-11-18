@@ -80,6 +80,11 @@ theorem dysonDrift_apply (n : ℕ) (x : Fin n → ℝ) (i : Fin n) :
     dysonDrift n x i = (n : ℝ)⁻¹ * ∑ j ∈ univ.erase i, (x i - x j)⁻¹ :=
   (rfl)
 
+/-- The diagonal term `(xᵢ - xᵢ)⁻¹` vanishes, so the Dyson drift is also a sum over all `j`. -/
+theorem dysonDrift_eq_sum (n : ℕ) (x : Fin n → ℝ) (i : Fin n) :
+    dysonDrift n x i = (n : ℝ)⁻¹ * ∑ j, (x i - x j)⁻¹ := by
+  rw [dysonDrift_apply, sum_erase _ (by simp)]
+
 /-- For at most one particle (`n ≤ 1`), the Dyson drift vanishes identically. -/
 @[simp]
 theorem dysonDrift_of_subsingleton {n : ℕ} [Subsingleton (Fin n)] (x : Fin n → ℝ) :
