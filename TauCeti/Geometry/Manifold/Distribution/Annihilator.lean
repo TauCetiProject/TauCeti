@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
@@ -125,12 +124,12 @@ theorem IsContMDiffDistribution.exists_local_annihilator_apply_ne_zero
   have ha' : a' ≠ 0 := fun hz ↦ ha (by simpa [a'] using congr($hz (e ⟨x, u⟩).2))
   -- Project the covector `a` at x to the annihilators of the nearby frame images.
   obtain ⟨U, hU, hxU, hUS, hc, hUc⟩ :=
-    hA.exists_isOpen_contMDiffOn_sub_comp_inverse_comp (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hP
+    hA.exists_isOpen_contMDiffOn_sub_comp_leftInverseAlong (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hP
       ha' ha'A
-  let c : M → E →L[𝕜] 𝕜 := fun y ↦ a' - a' ∘L A y ∘L (P ∘L A y).inverse ∘L P
+  let c : M → E →L[𝕜] 𝕜 := fun y ↦ a' - a' ∘L A y ∘L (A y).leftInverseAlong P
   have hcx : c x = a' := by
     dsimp only [c]
-    rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc, ha'A]
+    rw [← ContinuousLinearMap.comp_assoc, ha'A]
     simp
   let α : Π y : M, TangentSpace I y →L[𝕜] 𝕜 :=
     fun y ↦ c y ∘L e.continuousLinearMapAt 𝕜 y
@@ -155,8 +154,10 @@ theorem IsContMDiffDistribution.exists_local_annihilator_apply_ne_zero
     rw [← hX.span_eq (hUS hy).1]
     apply Submodule.span_le.mpr
     rintro _ ⟨i, rfl⟩
-    have hzero : c y ∘L A y = 0 :=
-      a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hUc y hy).1
+    have hinv : (P ∘L A y).IsInvertible := (hUc y hy).1
+    have hzero : c y ∘L A y = 0 := by
+      simp [c, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc,
+        ContinuousLinearMap.leftInverseAlong_comp_self hinv]
     have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) (hUS hy).2
       (Pi.single i (1 : 𝕜))
     have heval : α y (X i y) = c y (e ⟨y, X i y⟩).2 :=

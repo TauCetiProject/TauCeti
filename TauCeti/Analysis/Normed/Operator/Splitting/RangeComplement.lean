@@ -85,7 +85,7 @@ variable {R E F Y : Type*} [Ring R]
 
 /-- The left inverse `(P ∘ L)⁻¹ ∘ P` of `L` along the kernel of `P`. It is a left inverse of
 `L` with kernel `ker P` whenever `P ∘ L` is invertible
-(`ContinuousLinearMap.leftInverseAlong_comp`,
+(`ContinuousLinearMap.leftInverseAlong_comp_self`,
 `ContinuousLinearMap.ker_leftInverseAlong`), and otherwise a junk value built from the total
 inverse `ContinuousLinearMap.inverse`. -/
 noncomputable def leftInverseAlong (L : E →L[R] F) (P : F →L[R] Y) : F →L[R] E :=
@@ -102,13 +102,13 @@ theorem leftInverseAlong_apply (L : E →L[R] F) (P : F →L[R] Y) (f : F) :
   (rfl)
 
 /-- `(P ∘ L)⁻¹ P` is a left inverse of `L`. -/
-theorem leftInverseAlong_comp (h : (P ∘L L).IsInvertible) :
+theorem leftInverseAlong_comp_self (h : (P ∘L L).IsInvertible) :
     leftInverseAlong L P ∘L L = .id R E := by
   rw [leftInverseAlong_def, comp_assoc, h.inverse_comp_self]
 
 /-- `(P ∘ L)⁻¹ P` is a left inverse of `L`. -/
 @[simp]
-theorem leftInverseAlong_apply_apply (h : (P ∘L L).IsInvertible) (x : E) :
+theorem leftInverseAlong_apply_self (h : (P ∘L L).IsInvertible) (x : E) :
     leftInverseAlong L P (L x) = x := by
   simpa [leftInverseAlong_apply] using h.inverse_apply_self x
 
@@ -145,7 +145,7 @@ theorem eq_leftInverseAlong (h : (P ∘L L).IsInvertible) {K : F →L[R] E}
 theorem leftInverseAlong_congr {Y' : Type*} [AddCommGroup Y'] [TopologicalSpace Y'] [Module R Y']
     {P' : F →L[R] Y'} (h : (P ∘L L).IsInvertible) (h' : (P' ∘L L).IsInvertible)
     (hker : P.ker = P'.ker) : leftInverseAlong L P = leftInverseAlong L P' :=
-  eq_leftInverseAlong h' (leftInverseAlong_comp h) (by rw [← hker, ker_leftInverseAlong h])
+  eq_leftInverseAlong h' (leftInverseAlong_comp_self h) (by rw [← hker, ker_leftInverseAlong h])
 
 /-- If `P ∘ L` is invertible, the kernel of `P` is a topological complement of the range of
 `L`. -/
@@ -196,7 +196,7 @@ theorem apply_add_mem_ker_iff (h : (P ∘L L).IsInvertible) {S : F} {x : E} :
     have hK : leftInverseAlong L P (L x + S) = 0 := by
       have hx' : L x + S ∈ (leftInverseAlong L P).ker := by rwa [ker_leftInverseAlong h]
       exact LinearMap.mem_ker.mp hx'
-    rw [map_add, leftInverseAlong_apply_apply h] at hK
+    rw [map_add, leftInverseAlong_apply_self h] at hK
     exact eq_neg_of_add_eq_zero_left hK
   · rintro rfl
     simp [LinearMap.mem_ker, h]
