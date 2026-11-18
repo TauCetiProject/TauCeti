@@ -132,6 +132,10 @@ theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
     have hKC : (K · μ) = (C · μ) := funext hK
     refine ⟨by simp [hK, C], hKC ▸ Measure.monotone_nat_count,
       hKC ▸ hint.isRightContinuous_nat_count, fun t ht => ?_⟩
-    simpa only [hK] using hint.exists_nat_count_le_add_one ht (hsimple t)
+    obtain ⟨s, hst, hle⟩ := hint.exists_nat_count_le_add_floor ht
+    have hfloor : ⌊(μ {t}).toNNReal⌋₊ ≤ 1 :=
+      Nat.floor_le_one_of_le_one <| by
+        simpa using ENNReal.toNNReal_mono ENNReal.one_ne_top (hsimple t)
+    exact ⟨s, hst, by simpa only [hK] using hle.trans (Nat.add_le_add_left hfloor _)⟩
 
 end TauCeti.Probability
