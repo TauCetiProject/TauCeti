@@ -84,6 +84,9 @@ use.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
+* `IsCompact.exists_pos_forall_dist_lt_forall_mul_norm_sq_le`: coercivity of such a family at a
+  point persists, with any smaller constant, on a neighbourhood of the point, uniformly over a
+  compact family.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le_compRight`: the same for the forms `b(·, B ·)` with
   `B` in a compact set of endomorphisms, which gives uniform tameness constants.
 * `IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add`: the case of Finsler's
@@ -426,6 +429,45 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
+
+/-- **Coercivity persists near a point, uniformly over a compact family.** On a finite-dimensional
+real normed space, let `b (x, y)` be continuous bilinear forms, continuous on `D × L` for compact
+sets `D` and `L` of pseudometric spaces, and let `y₀ ∈ L` with `c ‖v‖² ≤ b (x, y₀) v v` for every
+`x ∈ D`. Then for every `c' < c` there is `δ > 0` with `c' ‖v‖² ≤ b (x, y) v v` for every
+`x ∈ D` and every `y ∈ L` within `δ` of `y₀`. -/
+theorem _root_.IsCompact.exists_pos_forall_dist_lt_forall_mul_norm_sq_le
+    {X Y E : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {D : Set X} {L : Set Y} (hD : IsCompact D)
+    (hL : IsCompact L) {b : X × Y → E →L[ℝ] E →L[ℝ] ℝ} (hb : ContinuousOn b (D ×ˢ L)) {y₀ : Y}
+    (hy₀ : y₀ ∈ L) {c c' : ℝ} (hc' : c' < c) (hcb : ∀ x ∈ D, ∀ v, c * ‖v‖ ^ 2 ≤ b (x, y₀) v v) :
+    ∃ δ > 0, ∀ x ∈ D, ∀ y ∈ L, dist y y₀ < δ → ∀ v, c' * ‖v‖ ^ 2 ≤ b (x, y) v v := by
+  -- The diagonal on unit vectors is uniformly continuous on the compact set `D × L × S`.
+  set S := (D ×ˢ L) ×ˢ Metric.sphere (0 : E) 1
+  have hψ : ContinuousOn (fun q : (X × Y) × E ↦ b q.1 q.2 q.2) S :=
+    ((hb.comp continuousOn_fst fun _ (hq : _ ∈ S) ↦ hq.1).clm_apply continuousOn_snd).clm_apply
+      continuousOn_snd
+  have hψu : UniformContinuousOn (fun q : (X × Y) × E ↦ b q.1 q.2 q.2) S :=
+    ((hD.prod hL).prod (isCompact_sphere 0 1)).uniformContinuousOn_of_continuous hψ
+  obtain ⟨δ, hδ, hψδ⟩ := Metric.uniformContinuousOn_iff.1 hψu (c - c') (sub_pos.2 hc')
+  refine ⟨δ, hδ, fun x hx y hy hyδ v ↦ ?_⟩
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  -- On the unit vector `u = v / ‖v‖` the diagonal at `y` is within `c - c'` of that at `y₀`.
+  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
+  set u := ‖v‖⁻¹ • v with hu_def
+  have hu : u ∈ Metric.sphere (0 : E) 1 := by simp [hu_def, norm_smul, hn.ne']
+  have hd := hψδ ((x, y), u) ⟨⟨hx, hy⟩, hu⟩ ((x, y₀), u) ⟨⟨hx, hy₀⟩, hu⟩
+    (by rw [Prod.dist_eq, Prod.dist_eq, dist_self, dist_self]; exact max_lt (max_lt hδ hyδ) hδ)
+  rw [Real.dist_eq] at hd
+  have h₀ := hcb x hx u
+  rw [mem_sphere_zero_iff_norm.1 hu, one_pow, mul_one] at h₀
+  have heq (z : Y) : b (x, z) v v = ‖v‖ ^ 2 * b (x, z) u u := by
+    rw [hu_def]
+    simp only [map_smul, _root_.smul_apply, smul_eq_mul]
+    field_simp
+  rw [heq]
+  have hpos : c' ≤ b (x, y) u u := by linarith [(abs_lt.1 hd).1]
+  nlinarith [sq_nonneg ‖v‖]
 
 /-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
 space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms

@@ -45,6 +45,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `TauCeti.fderiv_comp_extChartAt_symm_injective`: for a map into a normed space, the manifold
   derivative at any point of a chart's source, in terms of the Fréchet derivative of the
   coordinate expression, and the resulting transfer of injectivity.
+* `TauCeti.mvfderiv_symmL_trivializationAt` and `TauCeti.exists_forall_norm_mvfderiv_le_mul_norm`:
+  for a map into a normed space, the differential on a tangent vector given by its coordinates in
+  any chart containing the point, and a bound for a `C¹` map on a compact set of coordinates.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
 * `TauCeti.isInvertible_mvfderiv_extend`: the derivative of an extended chart of the maximal
@@ -265,6 +268,52 @@ theorem mfderiv_eq_fderiv_comp_mfderiv_extChartAt (hy : y ∈ (extChartAt I x).s
     filter_upwards [(isOpen_extChartAt_source x).mem_nhds hy] with z hz
     rw [Function.comp_apply, Function.comp_apply, (extChartAt I x).left_inv hz]
   exact ((hg.hasFDerivAt.hasMFDerivAt.comp y he).congr_of_eventuallyEq_abuse hfeq).mfderiv
+
+/-- At a point `y` of the source of the extended chart at `x`, the vector-valued manifold derivative
+of a map into a normed space, on the tangent vector with coordinates `a` in the chart at `x`, is the
+Fréchet derivative within `range I` of the coordinate expression `f ∘ (extChartAt I x).symm` at the
+chart image of `y`, applied to `a`. The chart need not be centred at `y`, and no differentiability
+of the coordinate expression is assumed beyond that of `f` at `y`. -/
+theorem mvfderiv_symmL_trivializationAt (hy : y ∈ (extChartAt I x).source)
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f y) (a : E) :
+    mvfderiv I f y ((trivializationAt E (TangentSpace I) x).symmL 𝕜 y a) =
+      fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (range I) (extChartAt I x y) a := by
+  have hyt := (extChartAt I x).map_source hy
+  rw [TangentBundle.symmL_trivializationAt (by rwa [← extChartAt_source (I := I)])]
+  have hcomp := mvfderiv_comp_mfderivWithin_of_eq (s := range I) hf
+    (mdifferentiableWithinAt_extChartAt_symm hyt)
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2
+      (I.uniqueDiffOn _ (extChartAt_target_subset_range x hyt)))
+    ((extChartAt I x).left_inv hy)
+  have h := congrArg (fun L ↦ L a) hcomp
+  simp only [mvfderivWithin_eq_fderivWithin] at h
+  exact h.symm
+
+/-- **The differential in chart coordinates is bounded on compact sets.** For a `C¹` map into a
+normed space and a compact set `L` of coordinates in the target of the extended chart at `x`, there
+is a constant `B` with `‖d f_y v‖ ≤ B ‖a‖` for every point `y` of the chart source with coordinate
+in `L` and every tangent vector `v` at `y` with coordinates `a` in the chart at `x`. -/
+theorem exists_forall_norm_mvfderiv_le_mul_norm (hf : ContMDiff I 𝓘(𝕜, F) 1 f) {L : Set E}
+    (hL : IsCompact L) (hLt : L ⊆ (extChartAt I x).target) :
+    ∃ B, ∀ y ∈ (extChartAt I x).source, extChartAt I x y ∈ L → ∀ v : TangentSpace I y,
+      ‖mvfderiv I f y v‖ ≤
+        B * ‖(trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y v‖ := by
+  -- The derivative of the coordinate expression is continuous on the chart target.
+  set g := f ∘ (extChartAt I x).symm
+  have hg : ContDiffOn 𝕜 1 g (extChartAt I x).target :=
+    contMDiffOn_iff_contDiffOn.1 (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm x))
+  have hdg : ContinuousOn (fderivWithin 𝕜 g (range I)) (extChartAt I x).target :=
+    (hg.continuousOn_fderivWithin (uniqueDiffOn_extChartAt_target x) le_rfl).congr fun z hz ↦
+      fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin_of_mem hz)
+        (I.uniqueDiffOn _ (extChartAt_target_subset_range x hz))
+        ((hg.differentiableOn one_ne_zero) z hz)
+  obtain ⟨B, hB⟩ := hL.exists_bound_of_continuousOn (hdg.mono hLt)
+  refine ⟨B, fun y hy hyL v ↦ ?_⟩
+  have hyT : y ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  conv_lhs => rw [← Bundle.Trivialization.symmL_continuousLinearMapAt (R := 𝕜) _ hyT v,
+    mvfderiv_symmL_trivializationAt hy (hf.mdifferentiableAt one_ne_zero)]
+  exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact hB _ hyL)
 
 /-- Read in a chart, a map into a normed space whose manifold derivative at `y` is injective has
 injective Fréchet derivative at the chart image of `y`, provided the coordinate expression is
