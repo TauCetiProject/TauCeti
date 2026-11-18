@@ -43,6 +43,8 @@ Small rectangles are combined by the concatenation and reversal laws of transpor
   fixes the reading in the chart.
 * `TauCeti.detLineOrientationTransport_eq_map_of_forall_eq`: transport along a path which is
   constant on the interval of transport is the identification of the determinant lines.
+* `TauCeti.detLineOrientationTransport_map_detLineCongrOfEq`: transport along pointwise equal paths
+  commutes with the identifications of the determinant lines of equal operators.
 * `TauCeti.detLineOrientationTransport_comm`: transport around a rectangle commutes.
 * `TauCeti.detLineOrientationTransport_eq_of_homotopy`: transport is invariant under homotopies
   relative to the endpoints.
@@ -147,6 +149,20 @@ theorem detLineOrientationTransport_eq_map_of_forall_eq {T : ℝ → E →L[ℝ]
     rw [hv a left_mem_uIcc, LinearMap.detLineCongr_refl, LinearEquiv.refl_apply]
   simp only [ha, hv b right_mem_uIcc] at key
   rw [Module.Ray.map_apply, key]
+
+/-- **Transport along pointwise equal paths.** Transport along two pointwise equal paths agrees,
+once the determinant lines of the equal operators at the endpoints are identified by
+`LinearMap.detLineCongrOfEq`. -/
+theorem detLineOrientationTransport_map_detLineCongrOfEq {T₁ T₂ : ℝ → E →L[ℝ] F}
+    (h : ∀ t, T₁ t = T₂ t) {a b : ℝ} (hT₁ : ContinuousOn T₁ (uIcc a b))
+    (hF₁ : ∀ t ∈ uIcc a b, IsFredholm (T₁ t)) (hT₂ : ContinuousOn T₂ (uIcc a b))
+    (hF₂ : ∀ t ∈ uIcc a b, IsFredholm (T₂ t)) (o : Module.Ray ℝ (T₁ a : E →ₗ[ℝ] F).detLine) :
+    detLineOrientationTransport a b hT₂ hF₂
+        (Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (h a))) o) =
+      Module.Ray.map (LinearMap.detLineCongrOfEq (congrArg _ (h b)))
+        (detLineOrientationTransport a b hT₁ hF₁ o) := by
+  obtain rfl : T₁ = T₂ := funext h
+  simp only [LinearMap.detLineCongrOfEq_rfl, Module.Ray.map_refl, Equiv.refl_apply]
 
 end Constant
 

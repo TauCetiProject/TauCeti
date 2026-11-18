@@ -34,7 +34,8 @@ rescaling by positive functions, that is, a continuous orientation of the determ
 of the same transition at `x₀`, with a coefficient which depends continuously on `x` and equals `1`
 at `x₀`, hence is positive nearby (`ContinuousLinearMap.eventually_detLineChartEquiv_symm_eq_smul`).
 So the condition holds for every kernel chart valid at `x₀` as soon as it holds for one
-(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`).
+(`TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`), and conversely coherence may be checked in
+any kernel chart valid at `x₀` (`TauCeti.isDetLineCoherentWithinAt_iff_eventually_sameRay`).
 
 * **Uniqueness.** Two coherent families on a preconnected set that lie on the same ray at one point
   lie on the same ray everywhere (`TauCeti.IsDetLineCoherentOn.sameRay`). The set where they agree
@@ -78,6 +79,8 @@ operator of interest.
 ## Main results
 
 * `TauCeti.IsDetLineCoherentWithinAt.eventually_sameRay`: coherence holds in every kernel chart.
+* `TauCeti.isDetLineCoherentWithinAt_iff_eventually_sameRay`: coherence may be checked in any
+  kernel chart.
 * `TauCeti.IsDetLineCoherentOn.sameRay`: uniqueness on preconnected sets.
 * `TauCeti.isDetLineCoherentOn_of_detLineChartEquiv_eq`: a family with constant reading in a
   kernel chart is coherent.
@@ -233,6 +236,36 @@ theorem IsDetLineCoherentWithinAt.eventually_sameRay (hT : ContinuousWithinAt T 
   -- transition is `c` times that one.
   have := (hsr.map ((detLineChartEquiv (T x₀) S.subtypeL q₁ h₁).symm.trans
     (detLineChartEquiv (T x₀) D₂ q h₀)).toLinearMap).pos_smul_left hc
+  simpa only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hcu]
+    using this
+
+variable [CompleteSpace F] in
+/-- **Coherence in an arbitrary kernel chart.** For a family continuous within `s` at `x₀` with
+`T x₀` Fredholm, and any kernel chart `(D₂, q)` valid at `x₀`, a family of elements of the
+determinant lines is coherent within `s` at `x₀` exactly when it is nonzero at `x₀` and the chart
+reads it, for `x ∈ s` near `x₀`, as nonnegative multiples of its reading at `x₀`. The chart may be
+stabilized by any finite-dimensional space, for instance by a complex subspace of the target
+regarded as a real one. -/
+theorem isDetLineCoherentWithinAt_iff_eventually_sameRay (hT : ContinuousWithinAt T s x₀)
+    (hF : IsFredholm (T x₀)) {Λ G : Type*} [NormedAddCommGroup Λ] [NormedSpace ℝ Λ]
+    [FiniteDimensional ℝ Λ] [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {D₂ : Λ →L[ℝ] F} {q : E × Λ →L[ℝ] G} (h₀ : (((T x₀).coprod D₂).prod q).IsInvertible) :
+    IsDetLineCoherentWithinAt T v s x₀ ↔ v x₀ ≠ 0 ∧
+      ∀ᶠ x in 𝓝[s] x₀, ∃ h : (((T x).coprod D₂).prod q).IsInvertible,
+        SameRay ℝ (detLineChartEquiv (T x) D₂ q h (v x))
+          (detLineChartEquiv (T x₀) D₂ q h₀ (v x₀)) := by
+  refine ⟨fun hv ↦ ⟨hv.ne_zero, hv.eventually_sameRay hT h₀⟩, fun ⟨hv0, hev⟩ ↦ ?_⟩
+  obtain ⟨S, hS, G₁, hG₁, q₁, U, -, hxU, hinv⟩ := hF.exists_isOpen_kernelChart
+  refine isDetLineCoherentWithinAt_iff.2 ⟨hv0, S, hS, G₁, hG₁, q₁, hinv _ hxU, ?_⟩
+  filter_upwards [hev, hT.tendsto.eventually
+      (eventually_detLineChartEquiv_symm_eq_smul (hinv _ hxU) h₀)] with x hx hcx
+  obtain ⟨h, hsr⟩ := hx
+  obtain ⟨h₁, _, c, hc, hcu⟩ := hcx
+  refine ⟨h₁, ?_⟩
+  -- Map the readings in the given chart to the kernel chart by the transition at `x₀`; at `x`
+  -- the transition is `c` times that one.
+  have := (hsr.map ((detLineChartEquiv (T x₀) D₂ q h₀).symm.trans
+    (detLineChartEquiv (T x₀) S.subtypeL q₁ (hinv _ hxU))).toLinearMap).pos_smul_left hc
   simpa only [LinearEquiv.coe_coe, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hcu]
     using this
 
