@@ -44,8 +44,10 @@ derivations, where closed subgroups have their Lie subalgebras.
   adjoint action fixes `x`.
 * `TauCeti.mem_quotientPointsSubgroup_centralizerHopfIdeal_iff`: a base-field point lies
   in the centralizer exactly when its adjoint Lie automorphism fixes `x`.
-* `TauCeti.mem_lieSubalgebra_centralizerHopfIdeal_iff` and
-  `TauCeti.lieSubalgebra_centralizerHopfIdeal`: its Lie algebra is the kernel of `ad x`.
+* `TauCeti.mem_lieSubalgebra_centralizerHopfIdeal_iff`,
+  `TauCeti.lieSubalgebra_centralizerHopfIdeal`, and
+  `TauCeti.cotangentDualLieEquiv_mem_lieSubalgebra_centralizerHopfIdeal_of_mem_ker`: its Lie
+  algebra is the kernel of `ad x`.
 * `TauCeti.centralizerHopfIdeal_eq_bot_iff_mem_center`: for a connected group over an
   algebraically closed field of characteristic zero, the centralizer is the whole group exactly
   when `x` is central.
@@ -183,6 +185,16 @@ theorem cotangentDualLieEquiv_mem_lieSubalgebra_centralizerHopfIdeal
     Derivation.cotangentDualLieEquiv (R := k) (H := H) x ∈
       (centralizerHopfIdeal H x).lieSubalgebra (B := k) :=
   (mem_lieSubalgebra_centralizerHopfIdeal_iff x _).mpr (lie_self _)
+
+/-- Every element in `ker (ad e)` maps into the Lie algebra of the centralizer `C_G(e)`. -/
+theorem cotangentDualLieEquiv_mem_lieSubalgebra_centralizerHopfIdeal_of_mem_ker
+    {e y : Module.Dual k (Bialgebra.CotangentSpace k H)}
+    (hy : y ∈ LinearMap.ker
+      (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)) :
+    Derivation.cotangentDualLieEquiv (R := k) (H := H) y ∈
+      (centralizerHopfIdeal H e).lieSubalgebra (B := k) := by
+  rw [mem_lieSubalgebra_centralizerHopfIdeal_iff, ← LieEquiv.map_lie,
+    ← LieAlgebra.ad_apply (R := k), LinearMap.mem_ker.mp hy, map_zero]
 
 end Basic
 
