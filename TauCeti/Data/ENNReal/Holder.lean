@@ -12,8 +12,10 @@ public import Mathlib.Basic.Real.ConjExponents
 # Hölder exponent triples in `ℝ≥0∞`
 
 Elementary facts about Hölder exponents: the missing exponent `r` of a triple with
-`1/p + 1/r = 1/q` exists once `q ≤ p`, and the Hölder condition `1/p + 1/q ≤ 1` bounds both
-exponents below by `1` and the conjugate exponent of `p` above by `q`.
+`1/p + 1/r = 1/q` exists once `q ≤ p`; the Hölder condition `1/p + 1/q ≤ 1` bounds both
+exponents below by `1` and the conjugate exponent of `p` above by `q`; and the exponent
+conjugate to `p > 2` is less than `2`, as for the supercritical exponents of planar Sobolev and
+Cauchy-transform estimates.
 
 ## Main declarations
 
@@ -22,6 +24,7 @@ exponents below by `1` and the conjugate exponent of `p` above by `q`.
   `1/p + 1/q ≤ 1` forces `1 ≤ p` and `1 ≤ q`.
 * `ENNReal.conjExponent_le_of_inv_add_inv_le_one`: `1/p + 1/q ≤ 1` forces `p' ≤ q` for the
   conjugate exponent `p'` of `p`.
+* `ENNReal.HolderConjugate.lt_two`: the conjugate of an exponent `p > 2` is less than `2`.
 -/
 
 public section
@@ -58,3 +61,15 @@ theorem conjExponent_le_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : p.
     (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp1).ne') (h1 ▸ hpq))
 
 end ENNReal
+
+namespace ENNReal.HolderConjugate
+
+/-- The exponent conjugate to `p > 2` is less than `2`. -/
+theorem lt_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 < p) : q < 2 := by
+  by_contra hq
+  have h := ENNReal.add_lt_add_of_lt_of_le (ENNReal.inv_ne_top.2 (ne_zero q p))
+    (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_le_inv.2 (not_lt.1 hq))
+  rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
+  exact lt_irrefl _ h
+
+end ENNReal.HolderConjugate

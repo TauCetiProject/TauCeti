@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.MeasureTheory.Integral.ChristKiselev
 
@@ -176,12 +177,8 @@ private theorem eLpNorm_schrodingerPropagator_adjoint_le (hq : 2 < q)
   have hst' : s - t ≠ 0 := sub_ne_zero.2 hst
   have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
   -- Admissibility with `2 < q` forces `n > 0`, hence `1 / r < 1 / 2`, so `2 ≤ r`.
-  have hr : 2 ≤ r := by
-    have hlt : (r⁻¹).toReal < 2⁻¹ := by nlinarith
-    rw [← ENNReal.inv_le_inv,
-      ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')),
-      ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
-    exact ENNReal.ofReal_le_ofReal (hlt.le.trans_eq (by simp))
+  have hr : 2 ≤ r :=
+    ENNReal.two_le_of_toReal_inv_le (ENNReal.HolderConjugate.ne_zero r r') (by nlinarith)
   have hk : ENNReal.ofReal ((4 * Real.pi) ^ (-(2 / q : ℝ))) * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) =
       ENNReal.ofReal ((4 * Real.pi * |s - t|) ^
         (-(Module.finrank ℝ E : ℝ) * (1 / 2 - (r⁻¹).toReal))) := by
