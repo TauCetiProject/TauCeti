@@ -148,7 +148,9 @@ private theorem norm_discTerm_le (i : ZMod (p ^ h) × ℕ) (e : E) : ‖discTerm
 
 variable [IsUltrametricDist E] [CompleteSpace E]
 
-private theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) {r : ℕ → ℤ_[p]}
+/-- On a single disc, the coefficients of a vector in `LA_h(E)` multiplied by integral scalars are
+summable. -/
+theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) {r : ℕ → ℤ_[p]}
     (hr : ∀ n, ‖r n‖ ≤ 1) : Summable fun n ↦ r n • c (a, n) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
     rw [Nat.cofinite_eq_atTop]
