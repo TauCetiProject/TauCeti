@@ -133,6 +133,21 @@ theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
     traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
   simp [traceL]
 
+/-- Transposing the arguments of a bilinear map preserves its trace. -/
+@[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
+  simp [traceL_apply]
+
+/-- The trace of the real inner product is the dimension of the space. -/
+@[simp] theorem traceL_innerSL :
+    traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
+  rw [traceL_apply]
+  have hterm (i : Fin (Module.finrank ℝ E)) :
+      (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
+    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
+      (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
+  simp_rw [hterm]
+  simp
+
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
 continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
