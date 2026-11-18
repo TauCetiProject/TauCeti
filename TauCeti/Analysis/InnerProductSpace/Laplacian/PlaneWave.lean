@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
-# Second derivatives of plane waves
+# Plane-wave derivatives and Laplacian eigenvalues
 
 A plane wave on a real inner product space `F` is a function `x ↦ g ⟪w, x⟫` of one linear
 coordinate. Its second derivative is `g''(⟪w, x⟫) ⟪w, v⟫ ⟪w, v'⟫`, and on a finite-dimensional
