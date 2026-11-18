@@ -689,7 +689,7 @@ theorem sobolevEquation_eq_zero_iff (hk : 1 ≤ k) {u : Fin 4 → H^{(k : ℝ) +
     simpa using congrFun (Measure.eq_of_ae_eq h0 (hc i) continuous_zero) z
   · intro h
     funext i
-    refine inclusionLp_injective (k.cast_nonneg : (0 : ℝ) ≤ k) (Lp.ext ?_)
+    refine ext_of_ae_eq_inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) ?_
     rw [Pi.zero_apply, map_zero]
     exact (he i).trans ((Filter.EventuallyEq.of_eq (funext fun z ↦ by simp [h])).trans
       (Lp.coeFn_zero _ _ _).symm)

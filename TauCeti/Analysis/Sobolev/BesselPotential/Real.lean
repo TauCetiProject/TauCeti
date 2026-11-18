@@ -174,7 +174,7 @@ representative. -/
 theorem continuousRep_injective (hs : finrank ℝ E < 2 * s) :
     Function.Injective (continuousRep : realSubmodule E h → E → ℝ) := by
   intro F G hFG
-  refine Subtype.ext (inclusionLp_injective h (Lp.ext ?_))
+  refine Subtype.ext (ext_of_ae_eq_inclusionLp h ?_)
   filter_upwards [coeFn_inclusionLp_ae_eq_continuousRep hs F,
     coeFn_inclusionLp_ae_eq_continuousRep hs G] with z hF hG
   rw [hF, hG, hFG]
@@ -205,12 +205,6 @@ private theorem coeFn_inclusionLp_conjAux (F : H^{s}(E)) :
     inclusionLp h (conjAux h F) =ᵐ[volume] fun z ↦ conj (inclusionLp h F z) := by
   rw [conjAux, ← toLp_inclusion, toLp_inclusion_toBesselPotentialSpace h _ rfl, toLp_inclusion]
   exact Lp.coeFn_star _
-
-variable (h) in
-/-- Two elements of `H^s(E)` with a.e. equal `L²` functions are equal. -/
-private theorem ext_of_ae_eq_inclusionLp {F G : H^{s}(E)}
-    (hFG : inclusionLp h F =ᵐ[volume] inclusionLp h G) : F = G :=
-  inclusionLp_injective h (Lp.ext hFG)
 
 private theorem conjAux_smul (c : ℂ) (F : H^{s}(E)) :
     conjAux h (c • F) = conj c • conjAux h F :=
