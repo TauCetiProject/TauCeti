@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.VectorBundle.Orientation.Comap
 public import TauCeti.Topology.VectorBundle.Orientation.EulerClass
 public import TauCeti.Topology.VectorBundle.Thom.FiberwiseEquiv
 
@@ -26,6 +27,15 @@ Over the identity of the base this says that **isomorphic oriented bundles have 
 class** (`TauCeti.VectorBundleOrientation.eulerClass_eq_of_fiberwise`), and the opposite one when
 the isomorphism reverses the orientations
 (`TauCeti.VectorBundleOrientation.eulerClass_eq_neg_of_fiberwise`).
+
+Every fibrewise isomorphism `φ` is orientation preserving for the orientation `φ^* o` of `E'`
+transported from `o` (`TauCeti.VectorBundleOrientation.comap`), so with that orientation the
+statements need no hypothesis on `φ`: the map of Thom pairs of `φ` pulls the Thom class of `(E, o)`
+back to that of `(E', φ^* o)`
+(`TauCeti.VectorBundleOrientation.singularCohomologyMap_thomPairMapOfFiberwise_thomClass_comap`),
+and `e(E', φ^* o) = g^* e(E, o)` (`TauCeti.VectorBundleOrientation.eulerClass_comap`), which over
+the identity of the base reads `e(E', φ^* o) = e(E, o)`
+(`TauCeti.VectorBundleOrientation.eulerClass_comap_id`).
 
 The proof compares fibre restrictions: on the fibre over `b'` the pulled-back class is the
 generator selected by `o (g b')`, pulled back along `φ b'` followed by a linear trivialization at
@@ -125,6 +135,22 @@ theorem eulerClass_eq_neg_singularCohomologyMap_of_fiberwise
   rw [← map_neg, ← eulerClass_neg]
   exact (-o).eulerClass_eq_singularCohomologyMap_of_fiberwise hF o' hF' hφ ho
 
+/-- **The Thom class of a transported orientation.** For a fibrewise isomorphism
+`φ b' : E'_{b'} ≃ E_{g b'}` over `g`, the map of Thom pairs of `φ` pulls the Thom class of `(E, o)`
+back to the Thom class of `E'` with the transported orientation `φ^* o`. -/
+theorem singularCohomologyMap_thomPairMapOfFiberwise_thomClass_comap :
+    TopPair.singularCohomologyMap (thomPairMapOfFiberwise hφ) (n + 1) (o.thomClass hF) =
+      (o.comap ((Fintype.card_fin _).trans hF'.symm) hφ).thomClass hF' :=
+  o.singularCohomologyMap_thomPairMapOfFiberwise_thomClass hF _ hF' hφ (map_comap_apply _ o hφ)
+
+/-- **Naturality of the Euler class under bundle maps, with the transported orientation.** For a
+fibrewise isomorphism `φ b' : E'_{b'} ≃ E_{g b'}` over `g`, the Euler class of `E'` with the
+transported orientation `φ^* o` is the pull-back along `g` of the Euler class of `(E, o)`. -/
+theorem eulerClass_comap :
+    (o.comap ((Fintype.card_fin _).trans hF'.symm) hφ).eulerClass hF' =
+      TopCat.singularCohomologyMap (TopCat.ofHom g) (n + 1) (o.eulerClass hF) :=
+  o.eulerClass_eq_singularCohomologyMap_of_fiberwise hF _ hF' hφ (map_comap_apply _ o hφ)
+
 end BaseMap
 
 section Isomorphism
@@ -156,6 +182,14 @@ theorem eulerClass_eq_neg_of_fiberwise
     o'.eulerClass hF' = -o.eulerClass hF := by
   rw [← eulerClass_neg]
   exact (-o).eulerClass_eq_of_fiberwise hF o' hF' hφ ho
+
+/-- **Isomorphic bundles with the transported orientation have the same Euler class.** For an
+isomorphism of real vector bundles `φ b : E'_b ≃ E_b` over the same base, the Euler class of `E'`
+with the transported orientation `φ^* o` is that of `(E, o)`. -/
+theorem eulerClass_comap_id :
+    (o.comap (g := ContinuousMap.id B) ((Fintype.card_fin _).trans hF'.symm) hφ).eulerClass hF' =
+      o.eulerClass hF :=
+  o.eulerClass_eq_of_fiberwise hF _ hF' hφ (map_comap_apply (g := ContinuousMap.id B) _ o hφ)
 
 end Isomorphism
 
