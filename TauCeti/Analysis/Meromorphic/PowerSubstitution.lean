@@ -105,14 +105,7 @@ theorem pullbackPow_mul (d e : ℕ+) :
 The identity includes principal parts, rather than only holomorphic germs. -/
 theorem laurentSeries_pullbackPow (d : ℕ+) (φ : meromorphicGerms 𝕜 0) :
     laurentSeries 0 (pullbackPow d φ) = LaurentSeries.expand 𝕜 d (laurentSeries 0 φ) := by
-  obtain ⟨f, ⟨N, hN⟩, hφ⟩ := mem_meromorphicGerms_iff.mp φ.2
-  let h : 𝕜 → 𝕜 := fun z ↦ z ^ N • f z
-  have hh : AnalyticAt 𝕜 h 0 := by simpa only [sub_zero] using hN
-  have hrep : (φ : Germ (𝓝[≠] (0 : 𝕜)) 𝕜) =
-      (fun z ↦ ((z - 0) ^ N)⁻¹ * h z : 𝕜 → 𝕜) := by
-    rw [← hφ, Germ.coe_eq]
-    filter_upwards [self_mem_nhdsWithin] with z (hz : z ≠ 0)
-    simp [h, smul_eq_mul, hz]
+  obtain ⟨N, h, hh, hrep⟩ := exists_eq_inv_pow_mul φ
   have hp : (pullbackPow d φ : Germ (𝓝[≠] (0 : 𝕜)) 𝕜) =
       (fun z ↦ ((z - 0) ^ ((d : ℕ) * N))⁻¹ * h (z ^ (d : ℕ)) : 𝕜 → 𝕜) := by
     rw [coe_pullbackPow, hrep, Germ.coe_compTendsto]

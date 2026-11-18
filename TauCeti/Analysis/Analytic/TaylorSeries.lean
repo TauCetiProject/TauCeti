@@ -196,12 +196,12 @@ theorem taylorSeries_sub_const : taylorSeries (fun z : 𝕜 ↦ z - a) a = Power
 
 /-- The Taylor series is its constant term plus `X` times the Taylor series of the
 divided difference at the same centre. -/
-theorem taylorSeries_eq_C_add_X_mul {f : 𝕜 → 𝕜} {a : 𝕜} (hf : AnalyticAt 𝕜 f a) :
+theorem taylorSeries_eq_C_add_X_mul :
     taylorSeries f a = PowerSeries.C (f a) +
       PowerSeries.X * taylorSeries (dslope f a) a := by
-  have hc : AnalyticAt 𝕜 (fun z : 𝕜 ↦ z - a) a := by fun_prop
-  conv_lhs => rw [eq_const_add_sub_smul_dslope f a, smul_eq_mul]
-  rw [taylorSeries_add analyticAt_const (hc.mul (hf.dslope a)),
-    taylorSeries_const, taylorSeries_mul hc (hf.dslope a), taylorSeries_sub_const]
+  ext (_ | n)
+  · simp
+  · simp only [map_add, PowerSeries.coeff_C, Nat.succ_ne_zero, ↓reduceIte,
+      PowerSeries.coeff_succ_X_mul, zero_add, coeff_taylorSeries, iterate_succ_apply]
 
 end TauCeti

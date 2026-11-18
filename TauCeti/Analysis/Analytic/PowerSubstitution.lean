@@ -52,7 +52,7 @@ theorem taylorSeries_comp_pow (hf : AnalyticAt 𝕜 f 0) (d : ℕ) (hd : d ≠ 0
   ext n
   induction n using Nat.strong_induction_on generalizing f with
   | ind n ih =>
-    rw [recurrence f hf, taylorSeries_eq_C_add_X_mul hf, map_add (PowerSeries.expand d hd),
+    rw [recurrence f hf, taylorSeries_eq_C_add_X_mul (f := f), map_add (PowerSeries.expand d hd),
       map_mul (PowerSeries.expand d hd),
       PowerSeries.expand_C, PowerSeries.expand_X]
     simp only [map_add, PowerSeries.coeff_X_pow_mul']
