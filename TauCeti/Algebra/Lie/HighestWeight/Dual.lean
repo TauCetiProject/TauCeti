@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.HighestWeight.Irreducible
 public import TauCeti.Algebra.Lie.HighestWeight.LowestWeight
 public import TauCeti.Algebra.Lie.HighestWeight.Verma
 public import TauCeti.Algebra.Lie.Weights.Diagonalizable
+import TauCeti.Algebra.Lie.HighestWeight.Existence
 
 /-!
 # Self-duality of a finite-dimensional irreducible highest weight module
@@ -49,6 +50,15 @@ At the named carrier `L(lam)` the criterion needs only dominance of `lam`: `L(la
 irreducible with a highest weight vector of weight `lam`, because the Verma module `M(lam)` is
 nonzero (`TauCeti.vermaGenerator_ne_zero`), and dominance makes it finite-dimensional.
 
+## Self-duality and the opposition involution
+
+The equation `-(w₀ • lam) = lam` is read on the simple coroots through the opposition involution
+`δ` of the base (`TauCeti.neg_longestElement_smul_eq_self_iff`): it says that the coordinates
+`lam (αᵢ^∨)` of `lam` are constant on the `δ`-orbits of the simple roots. In particular, when `δ`
+fixes every simple root, every finite-dimensional irreducible module is self-dual; conversely, the
+fundamental weight `ϖᵢ` gives a module `L(ϖᵢ)` that is self-dual only if `δ` fixes `αᵢ`. So every
+`L(lam)` is self-dual exactly when `δ` is trivial.
+
 ## Main results
 
 * `TauCeti.exists_isHighestWeightVector_dual`: **the dual module has a highest weight vector of
@@ -58,6 +68,12 @@ nonzero (`TauCeti.vermaGenerator_ne_zero`), and dominance makes it finite-dimens
   criterion**, in its module and its bilinear-form form.
 * `TauCeti.exists_ne_zero_lieInvariant_irreducibleQuotient_iff`: the same criterion at the named
   carrier `L(lam)`.
+* `TauCeti.nonempty_lieModuleEquiv_dual_iff_forall_opposition`: **self-duality read on the simple
+  coroots**, as constancy of `lam (αᵢ^∨)` on the orbits of the opposition involution.
+* `TauCeti.nonempty_lieModuleEquiv_dual_of_forall_opposition_eq` and
+  `TauCeti.forall_nonempty_lieModuleEquiv_dual_irreducibleQuotient_iff`: every finite-dimensional
+  irreducible module is self-dual when the opposition involution is trivial, and every `L(lam)` is
+  self-dual only then.
 
 ## References
 
@@ -172,5 +188,55 @@ theorem exists_ne_zero_lieInvariant_irreducibleQuotient_iff (hlam : IsDominantIn
   have hgen := isHighestWeightVector_irreducibleQuotientGenerator b lam
   have _j := finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral hgen hlam
   exact exists_ne_zero_lieInvariant_iff_neg_longestElement_smul_eq hgen
+
+/-! ### Self-duality and the opposition involution -/
+
+/-- **Self-duality read on the simple coroots.** A finite-dimensional irreducible module with
+highest weight `lam` is self-dual exactly when the values of `lam` on the simple coroots are
+constant on the orbits of the opposition involution `δ = -w₀`: `lam (α_{δ i}^∨) = lam (αᵢ^∨)` for
+every simple root `αᵢ`. -/
+theorem nonempty_lieModuleEquiv_dual_iff_forall_opposition (hv : IsHighestWeightVector b lam v) :
+    Nonempty (M ≃ₗ⁅K,L⁆ Dual K M) ↔ ∀ i ∈ b.support,
+      lam ((IsKilling.rootSystem H).coroot (opposition (IsKilling.rootSystem H) b i)) =
+        lam ((IsKilling.rootSystem H).coroot i) := by
+  rw [nonempty_lieModuleEquiv_dual_iff hv,
+    neg_longestElement_smul_eq_self_iff RootPairing.IsRootSystem.span_coroot_eq_top]
+  simp only [rootSystem_coroot'_apply]
+
+/-- **If the opposition involution fixes every simple root, every finite-dimensional irreducible
+module is self-dual**, over an algebraically closed field. -/
+theorem nonempty_lieModuleEquiv_dual_of_forall_opposition_eq [IsAlgClosed K]
+    (h : ∀ i ∈ b.support, opposition (IsKilling.rootSystem H) b i = i) :
+    Nonempty (M ≃ₗ⁅K,L⁆ Dual K M) := by
+  -- The module has a highest weight vector, and its weight satisfies the coroot criterion.
+  obtain ⟨lam, v, hv, -⟩ := exists_isHighestWeightVector_and_lieSpan_eq_top (M := M) b
+  exact (nonempty_lieModuleEquiv_dual_iff_forall_opposition hv).mpr fun i hi ↦ by rw [h i hi]
+
+/-- **Every `L(lam)`, for `lam` dominant integral, is self-dual exactly when the opposition
+involution fixes every simple root.** -/
+theorem forall_nonempty_lieModuleEquiv_dual_irreducibleQuotient_iff :
+    (∀ lam : Dual K H, IsDominantIntegral b lam →
+      Nonempty (irreducibleQuotient b lam ≃ₗ⁅K,L⁆ Dual K (irreducibleQuotient b lam))) ↔
+      ∀ i ∈ b.support, opposition (IsKilling.rootSystem H) b i = i := by
+  classical
+  refine ⟨fun h i hi ↦ ?_, fun h lam hlam ↦ ?_⟩
+  · -- The fundamental weight `ϖᵢ`, with `ϖᵢ (αⱼ^∨) = δᵢⱼ` on the simple coroots, is dominant
+    -- integral, and `L(ϖᵢ)` is self-dual only if `δ i = i`.
+    let ϖ := b.toCoweightBasis.dualBasis ⟨i, hi⟩
+    have hϖ (j : b.support) :
+        ϖ ((IsKilling.rootSystem H).coroot j) = if j = ⟨i, hi⟩ then 1 else 0 := by
+      rw [← RootPairing.Base.toCoweightBasis_apply, Basis.dualBasis_apply_self]
+    have hdom : IsDominantIntegral b ϖ := isDominantIntegral_iff.mpr fun j hj ↦
+      ⟨if (⟨j, hj⟩ : b.support) = ⟨i, hi⟩ then 1 else 0, by rw [hϖ ⟨j, hj⟩]; split_ifs <;> simp⟩
+    have hgen := isHighestWeightVector_irreducibleQuotientGenerator b ϖ
+    have _j := finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral hgen hdom
+    have hopp := (nonempty_lieModuleEquiv_dual_iff_forall_opposition hgen).mp (h ϖ hdom) i hi
+    have hmem := opposition_mem_support (IsKilling.rootSystem H) b hi
+    rw [hϖ ⟨_, hmem⟩, hϖ ⟨i, hi⟩] at hopp
+    by_contra hne
+    simp [hne] at hopp
+  · have hgen := isHighestWeightVector_irreducibleQuotientGenerator b lam
+    have _j := finiteDimensional_of_isHighestWeightVector_of_isDominantIntegral hgen hlam
+    exact (nonempty_lieModuleEquiv_dual_iff_forall_opposition hgen).mpr fun i hi ↦ by rw [h i hi]
 
 end TauCeti
