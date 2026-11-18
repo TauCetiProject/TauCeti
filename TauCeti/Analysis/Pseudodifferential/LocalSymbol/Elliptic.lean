@@ -130,8 +130,8 @@ def inverse (a : LocalHomogeneousSymbol U V W m) (ha : a.IsElliptic) :
   zero_covector x := by simp
   contDiffOn_coefficient := a.contDiffOn_coefficient.clm_inverse fun p hp => ha p.1 hp.1 p.2 hp.2
   homogeneous x ξ t ht := by
-    rw [a.homogeneous x ξ t ht, ← Complex.coe_smul, ContinuousLinearMap.inverse_smul,
-      ← Complex.ofReal_inv, Complex.coe_smul, Real.rpow_neg ht.le]
+    rw [a.homogeneous x ξ t ht, ContinuousLinearMap.inverse_smul_of_isScalarTower,
+      Real.rpow_neg ht.le]
 
 @[simp]
 theorem coefficient_inverse (p : CoordinateSpace n × CoordinateSpace n) :
@@ -159,26 +159,16 @@ theorem isElliptic_inverse : (a.inverse ha).IsElliptic :=
 theorem eq_inverse_of_comp_eq_id_left {b : LocalHomogeneousSymbol U W V (-m)}
     (h : ∀ x ∈ U, ∀ ξ, ξ ≠ 0 →
       b.coefficient (x, ξ) ∘L a.coefficient (x, ξ) = ContinuousLinearMap.id ℂ V) :
-    b = a.inverse ha := by
-  refine ext_of_mem fun x hx ξ hξ => ?_
-  calc b.coefficient (x, ξ)
-      = (b.coefficient (x, ξ) ∘L a.coefficient (x, ξ)) ∘L (a.inverse ha).coefficient (x, ξ) := by
-        rw [ContinuousLinearMap.comp_assoc, coefficient_comp_coefficient_inverse a ha hx hξ,
-          ContinuousLinearMap.comp_id]
-    _ = (a.inverse ha).coefficient (x, ξ) := by rw [h x hx ξ hξ, ContinuousLinearMap.id_comp]
+    b = a.inverse ha :=
+  ext_of_mem fun x hx ξ hξ => (ha x hx ξ hξ).eq_inverse_of_comp_eq_id_left (h x hx ξ hξ)
 
 /-- A homogeneous symbol of degree `-m` on `U` that is a right inverse of `a` at every position of
 `U` and every nonzero frequency is the inverse of `a`. -/
 theorem eq_inverse_of_comp_eq_id_right {b : LocalHomogeneousSymbol U W V (-m)}
     (h : ∀ x ∈ U, ∀ ξ, ξ ≠ 0 →
       a.coefficient (x, ξ) ∘L b.coefficient (x, ξ) = ContinuousLinearMap.id ℂ W) :
-    b = a.inverse ha := by
-  refine ext_of_mem fun x hx ξ hξ => ?_
-  calc b.coefficient (x, ξ)
-      = (a.inverse ha).coefficient (x, ξ) ∘L (a.coefficient (x, ξ) ∘L b.coefficient (x, ξ)) := by
-        rw [← ContinuousLinearMap.comp_assoc, coefficient_inverse_comp_coefficient a ha hx hξ,
-          ContinuousLinearMap.id_comp]
-    _ = (a.inverse ha).coefficient (x, ξ) := by rw [h x hx ξ hξ, ContinuousLinearMap.comp_id]
+    b = a.inverse ha :=
+  ext_of_mem fun x hx ξ hξ => (ha x hx ξ hξ).eq_inverse_of_comp_eq_id_right (h x hx ξ hξ)
 
 /-- The inverse of the inverse is the original symbol. -/
 @[simp]
