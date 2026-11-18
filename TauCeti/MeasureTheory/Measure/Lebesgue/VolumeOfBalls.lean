@@ -17,8 +17,10 @@ extended nonnegative real (`InnerProductSpace.volume_ball`). This file records t
 the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimension, which is the
 form used in normalizing constants. It also shows that every finite-dimensional real inner
 product space has a closed ball of volume one about the origin, that a closed ball of
-radius `r` in a one-dimensional space has volume `2 * r`, and that a disc of radius `r` in `ℂ` has
-real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
+radius `r` in a one-dimensional space has volume `2 * r`, that balls of the same radius in two
+real inner product spaces of the same dimension have the same volume
+(`TauCeti.volume_ball_eq_of_finrank_eq`), and that a disc of radius `r` in `ℂ` has real volume
+`π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
 -/
 
 public section
@@ -67,6 +69,17 @@ theorem volume_real_closedBall_of_finrank_eq_one (h : finrank ℝ V = 1) (x : V)
     (hr : 0 ≤ r) : volume.real (closedBall x r) = 2 * r := by
   rw [measureReal_def, InnerProductSpace.volume_closedBall_of_dim_odd (k := 0) h, h]
   simp [ENNReal.toReal_ofReal hr, mul_comm]
+
+/-- Balls of the same radius in two finite-dimensional real inner product spaces of the same
+dimension `k` have the same volume; here the second space is `EuclideanSpace ℝ (Fin k)`. -/
+theorem volume_ball_eq_of_finrank_eq {k : ℕ} (hk : finrank ℝ V = k) (x : V)
+    (y : EuclideanSpace ℝ (Fin k)) (r : ℝ) : volume (ball x r) = volume (ball y r) := by
+  subst hk
+  -- An orthonormal basis identifies `V` with `ℝ^k`, preserving volume and balls about `0`.
+  let e := (stdOrthonormalBasis ℝ V).repr
+  rw [Measure.addHaar_ball_center, Measure.addHaar_ball_center volume y,
+    ← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet, e.preimage_ball,
+    map_zero]
 
 end TauCeti
 

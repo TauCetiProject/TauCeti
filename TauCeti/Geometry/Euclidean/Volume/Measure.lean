@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.Hausdorff
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.MeasureTheory.Measure.Lebesgue.Isodiametric
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Comparing Euclidean and raw Hausdorff measures
@@ -348,23 +349,6 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFi
 end TauCeti
 
 end Normalization
-
-namespace TauCeti
-
-/-- Balls of the same radius in two finite-dimensional real inner product spaces of the same
-dimension `k` have the same volume; here the second space is `EuclideanSpace ℝ (Fin k)`. -/
-theorem volume_ball_eq_of_finrank_eq {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {k : ℕ} (hk : finrank ℝ V = k)
-    (x : V) (y : EuclideanSpace ℝ (Fin k)) (r : ℝ) :
-    volume (Metric.ball x r) = volume (Metric.ball y r) := by
-  subst hk
-  -- An orthonormal basis identifies `V` with `ℝ^k`, preserving volume and balls about `0`.
-  let e := (stdOrthonormalBasis ℝ V).repr
-  rw [Measure.addHaar_ball_center, Measure.addHaar_ball_center volume y,
-    ← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet, e.preimage_ball,
-    map_zero]
-
-end TauCeti
 
 namespace AffineSubspace
 
