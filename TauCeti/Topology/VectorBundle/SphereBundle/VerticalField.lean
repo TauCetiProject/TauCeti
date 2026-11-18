@@ -14,33 +14,72 @@ public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 Let `E → B` be a real vector bundle whose fibres are inner product spaces, with continuous fibre
 norm, and let `S(E)` be its unit sphere bundle. A **vertical vector field** on `S(E)` assigns to
 each unit vector `x ∈ E_b` a vector `u x ∈ E_b` of the same fibre; it is tangent to the sphere
-fibre through `x` when `u x ⊥ x`. Two continuous vertical fields that are tangent to the sphere
-fibres and linearly independent at every point can be normalized by Gram–Schmidt to fields `u'`,
-`v'` with `x`, `u' x`, `v' x` orthonormal for every `x`, cutting out the same equators
-(`TauCeti.exists_orthonormal_sphereBundle_fields`).
+fibre through `x` when `u x ⊥ x`. Restricted to the sphere fibre `S(E_b)` over `b`, a vertical
+field is a vector field on the unit sphere `S(E_b)` (`TauCeti.sphereBundleFiberField`), continuous
+when the vertical field is (`TauCeti.continuous_sphereBundleFiberField`). Two continuous vertical
+fields that are tangent to the sphere fibres and linearly independent at every point can be
+normalized by Gram–Schmidt to fields `u'`, `v'` with `x`, `u' x`, `v' x` orthonormal for every `x`,
+cutting out the same equators (`TauCeti.exists_orthonormal_sphereBundle_fields`).
 -/
 
 public section
 
-open Bundle
+open Bundle Metric
 open scoped RealInnerProductSpace
 
 namespace TauCeti
 
 universe w
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type w} [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
-  [ContinuousFiberNorm F E] {u v : ∀ x : sphereBundle F E, E (x : TotalSpace F E).proj}
+variable {B : Type w} {F : Type*} {E : B → Type w} [∀ b, NormedAddCommGroup (E b)]
+  {u v : ∀ x : sphereBundle F E, E (x : TotalSpace F E).proj}
+
+/-! ### Restricting vertical fields to a sphere fibre -/
+
+section Fiber
+
+variable (u) in
+/-- A vertical field `u` of `S(E)`, restricted to the sphere fibre over `b`: a vector field on the
+unit sphere `S(E_b)`. -/
+@[expose] def sphereBundleFiberField (b : B) (z : sphere (0 : E b) 1) : E b :=
+  u ⟨⟨b, z⟩, mem_sphereBundle.2 (norm_eq_of_mem_sphere z)⟩
+
+/-- At a point `x` of the sphere bundle, the field `u` restricted to the sphere fibre through `x`
+is `u x`. -/
+@[simp]
+theorem sphereBundleFiberField_apply (x : sphereBundle F E)
+    (hx : (x : TotalSpace F E).2 ∈ sphere (0 : E (x : TotalSpace F E).proj) 1) :
+    sphereBundleFiberField u (x : TotalSpace F E).proj ⟨(x : TotalSpace F E).2, hx⟩ = u x :=
+  (rfl)
+
+/-- A point `z` of the sphere fibre over `b` and the restricted fields at `z` are orthonormal. -/
+theorem orthonormal_sphereBundleFiberField [∀ b, InnerProductSpace ℝ (E b)]
+    (h : ∀ x : sphereBundle F E, Orthonormal ℝ ![(x : TotalSpace F E).2, u x, v x]) (b : B)
+    (z : sphere (0 : E b) 1) :
+    Orthonormal ℝ ![(z : E b), sphereBundleFiberField u b z, sphereBundleFiberField v b z] :=
+  h ⟨⟨b, z⟩, mem_sphereBundle.2 (norm_eq_of_mem_sphere z)⟩
+
+/-- The restriction of a continuous vertical field to a sphere fibre is continuous. -/
+theorem continuous_sphereBundleFiberField [TopologicalSpace B] [NormedAddCommGroup F]
+    [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+    (hu : Continuous fun x : sphereBundle F E ↦ TotalSpace.mk' F (x : TotalSpace F E).proj (u x))
+    (b : B) : Continuous (sphereBundleFiberField u b) :=
+  (FiberBundle.totalSpaceMk_isInducing F E b).continuous_iff.2 <| hu.comp <|
+    ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _
+
+end Fiber
+
+/-! ### Normalizing two independent vertical fields -/
+
+variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [∀ b, InnerProductSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+  [VectorBundle ℝ F E] [ContinuousFiberNorm F E]
 
 /-- **Normalizing two independent vertical fields.** Let `u`, `v` be continuous vertical fields of
 the unit sphere bundle, tangent to the sphere fibres (`u x ⊥ x`, `v x ⊥ x`) and linearly
-independent at every point. Their Gram–Schmidt normalizations `u' x`, `v' x`
-(`InnerProductSpace.gramSchmidtNormed` of the pair `(u x, v x)`) are continuous vertical fields
-with `x`, `u' x`, `v' x` orthonormal, and they cut out the same equators: a vector of the fibre
-through `x` is orthogonal to `u' x` and `v' x` exactly when it is orthogonal to `u x` and
-`v x`. -/
+independent at every point. Then there are continuous vertical fields `u'`, `v'` with `x`, `u' x`,
+`v' x` orthonormal for every `x`, cutting out the same equators: a vector of the fibre through `x`
+is orthogonal to `u' x` and `v' x` exactly when it is orthogonal to `u x` and `v x`. -/
 theorem exists_orthonormal_sphereBundle_fields
     (hu : Continuous fun x : sphereBundle F E ↦ TotalSpace.mk' F (x : TotalSpace F E).proj (u x))
     (hv : Continuous fun x : sphereBundle F E ↦ TotalSpace.mk' F (x : TotalSpace F E).proj (v x))
