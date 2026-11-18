@@ -8,10 +8,8 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.SpecialFunctions.Sqrt
-public import Mathlib.Analysis.Calculus.Deriv.MeanValue
-public import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 public import Mathlib.Analysis.Real.Pi.Bounds
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Exp.Chord
 
 /-!
 # Inequalities for the error functions
@@ -27,13 +25,13 @@ to `erfc`.
   (DLMF 7.8.1).
 * `TauCeti.Real.millsRatio_bounds`: `1/(x + √(x² + 2)) < M(x) ≤ 1/(x + √(x² + 4/π))` for `x ≥ 0`
   (DLMF 7.8.2).
-* `TauCeti.Real.millsRatio_bounds_affine`: `√π/(2√π x + 2) ≤ M(x) < 1/(x + 1)` for `x ≥ 0`
+* `TauCeti.Real.millsRatio_bounds_inv_affine`: `√π/(2√π x + 2) ≤ M(x) < 1/(x + 1)` for `x ≥ 0`
   (DLMF 7.8.3).
 * `TauCeti.Real.millsRatio_lt_two_div`: `M(x) < 2/(3x + √(x² + 4))` for `x > −√2/2`
   (DLMF 7.8.4).
 * `TauCeti.Real.mul_millsRatio_bounds`: the rational bounds for `x M(x)` (DLMF 7.8.5).
 * `TauCeti.Real.integral_exp_mul_sq_lt`: `∫₀ˣ e^{at²} dt < (2e^{ax²} + ax² − 2)/(3ax)` for
-  `a, x > 0` (DLMF 7.8.6).
+  `x > 0` and `a ≠ 0` (DLMF 7.8.6, stated there for `a > 0`).
 * `TauCeti.Real.erf_lt_sqrt_one_sub_exp`: `erf x < √(1 − e^{−4x²/π})` for `x > 0` (DLMF 7.8.8).
 
 ## Implementation notes
@@ -41,11 +39,12 @@ to `erfc`.
 The bounds on Mills' ratio come from a comparison principle. If a candidate `g` satisfies
 `g′ − 2yg + 1 < 0` beyond `x` and `g → 0`, then `M(x) < g(x)`, and symmetrically for lower
 bounds: the function `e^{−y²} g(y) − ∫_y^∞ e^{−t²} dt` is monotone and tends to `0`. Bound 7.8.8
-compares `erf` with `c y e^{(1 − k) y²}`, `k = 4/π`, using convexity of `exp`. Where the
-derivative of the comparison function changes sign once (the upper bound of 7.8.2, the lower
-bound of 7.8.3, and 7.8.8), the sign-change lemmas
-`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos_stable` and
-`TauCeti.pos_of_tendsto_atTop_of_deriv_nonpos_stable` conclude.
+compares `erf` with `c y e^{(1 − k) y²}`, where `c = 2/√π` and `k = c² = 4/π`, using strict
+convexity of `exp` (`Real.exp_mul_sub_one_lt_div_mul`). Where the derivative of the comparison
+function changes sign once (the upper bound of 7.8.2, the lower bound of 7.8.3, and 7.8.8), the
+sign-change lemmas `TauCeti.le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos` and
+`TauCeti.lt_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_neg` conclude. The upper bound of 7.8.3
+follows from the upper bound of 7.8.2.
 
 DLMF 7.8.7, the bounds for Dawson's integral, is not in this file.
 
@@ -76,7 +75,7 @@ theorem millsRatio_eq_integral (x : ℝ) :
   have hd (t : ℝ) : HasDerivAt (fun t => -(Real.sqrt π / 2 * TauCeti.Real.erfc t))
       (Real.exp (-t ^ 2)) t := by
     have hπ : Real.sqrt π ≠ 0 := (Real.sqrt_pos.mpr Real.pi_pos).ne'
-    convert ((TauCeti.Real.hasDerivAt_erfc t).const_mul (Real.sqrt π / 2)).neg using 1
+    refine ((TauCeti.Real.hasDerivAt_erfc t).const_mul (Real.sqrt π / 2)).neg.congr_deriv ?_
     field_simp
   have hi := integral_Ioi_of_hasDerivAt_of_tendsto
       (f := fun t => -(Real.sqrt π / 2 * TauCeti.Real.erfc t))
@@ -98,7 +97,8 @@ private theorem exp_sq_mul_comparison (g : ℝ → ℝ) (x : ℝ) :
   rw [millsRatio_def]
   linear_combination (g x) * h1
 
-/-- The comparison function `E = e^{-y²} g − ∫_y^∞ e^{-t²}` of a candidate bound `g`. -/
+/-- The derivative of the comparison function `E(y) = e^{−y²} g(y) − ∫_y^∞ e^{−t²} dt` of a
+candidate bound `g` is `e^{−y²} (g′ − 2y g(y) + 1)`. -/
 private theorem hasDerivAt_comparison {g : ℝ → ℝ} {g' y : ℝ} (hg : HasDerivAt g g' y) :
     HasDerivAt (fun y => Real.exp (-y ^ 2) * g y - Real.sqrt π / 2 * TauCeti.Real.erfc y)
       (Real.exp (-y ^ 2) * (g' - 2 * y * g y + 1)) y := by
@@ -125,8 +125,9 @@ private theorem millsRatio_lt {g g' : ℝ → ℝ} {x : ℝ}
     (hg : ∀ y, x ≤ y → HasDerivAt g (g' y) y)
     (hlim : Tendsto g atTop (𝓝 0)) (hP : ∀ y, x < y → g' y - 2 * y * g y + 1 < 0) :
     millsRatio x < g x := by
-  have h := pos_of_tendsto_atTop_of_deriv_neg (fun y hy => hasDerivAt_comparison (hg y hy))
-      (tendsto_comparison hlim)
+  have h := lt_of_tendsto_atTop_of_hasDerivAt_neg
+    (fun y hy => (hasDerivAt_comparison (hg y hy)).continuousAt.continuousWithinAt)
+    (fun y hy => hasDerivAt_comparison (hg y hy.le)) (tendsto_comparison hlim)
     (fun y hy => mul_neg_of_pos_of_neg (Real.exp_pos _) (hP y hy))
   rw [← sub_pos, ← exp_sq_mul_comparison]
   exact mul_pos (Real.exp_pos _) h
@@ -137,9 +138,10 @@ private theorem lt_millsRatio {g g' : ℝ → ℝ} {x : ℝ}
     (hg : ∀ y, x ≤ y → HasDerivAt g (g' y) y)
     (hlim : Tendsto g atTop (𝓝 0)) (hP : ∀ y, x < y → 0 < g' y - 2 * y * g y + 1) :
     g x < millsRatio x := by
-  have h := pos_of_tendsto_atTop_of_deriv_neg
+  have h := lt_of_tendsto_atTop_of_hasDerivAt_neg
       (f := fun y => -(Real.exp (-y ^ 2) * g y - Real.sqrt π / 2 * TauCeti.Real.erfc y))
-    (fun y hy => (hasDerivAt_comparison (hg y hy)).neg)
+    (fun y hy => (hasDerivAt_comparison (hg y hy)).neg.continuousAt.continuousWithinAt)
+    (fun y hy => (hasDerivAt_comparison (hg y hy.le)).neg)
         (by simpa using (tendsto_comparison hlim).neg)
     (fun y hy => neg_neg_of_pos (mul_pos (Real.exp_pos _) (hP y hy)))
   rw [← sub_neg, ← exp_sq_mul_comparison]
@@ -161,33 +163,34 @@ private theorem le_millsRatio_of {g : ℝ → ℝ} {x : ℝ}
 
 /-- The derivative identity for the candidates `1/(y + √(y² + c))` of DLMF 7.8.2:
 `g′ − 2yg + 1 = (c − 1 − y(√(y² + c) − y))/(√(y² + c)(y + √(y² + c)))`. -/
-private theorem comparison_sqrt_candidate_eq {c y : ℝ} (hc : 0 < c) (hy : 0 ≤ y) :
+private theorem comparison_sqrt_candidate_eq {c : ℝ} (hc : 0 < c) (y : ℝ) :
     -1 * (1 + y / Real.sqrt (y ^ 2 + c)) / (1 * y + Real.sqrt (y ^ 2 + c)) ^ 2 -
         2 * y * (1 / (1 * y + Real.sqrt (y ^ 2 + c))) + 1 =
       (c - 1 - y * (Real.sqrt (y ^ 2 + c) - y)) /
         (Real.sqrt (y ^ 2 + c) * (y + Real.sqrt (y ^ 2 + c))) := by
-  have h2 : y + Real.sqrt (y ^ 2 + c) ≠ 0 := by positivity
+  have h2 : y + Real.sqrt (y ^ 2 + c) ≠ 0 := (Real.add_sqrt_sq_add_pos hc y).ne'
   have h3 : Real.sqrt (y ^ 2 + c) ^ 2 = y ^ 2 + c := Real.sq_sqrt (by positivity)
   rw [show c - 1 - y * (Real.sqrt (y ^ 2 + c) - y) =
       Real.sqrt (y ^ 2 + c) ^ 2 - y * Real.sqrt (y ^ 2 + c) - 1 by rw [h3]; ring]
   field_simp
   ring
 
-/-- `1 * y + √(y² + c) ≠ 0` for `c > 0` and `y ≥ 0`. -/
-private theorem one_mul_add_sqrt_ne_zero {c y : ℝ} (hc : 0 < c) (hy : 0 ≤ y) :
-    1 * y + Real.sqrt (y ^ 2 + c) ≠ 0 := by
-  have : 0 < Real.sqrt (y ^ 2 + c) := Real.sqrt_pos.mpr (by positivity)
-  positivity
+/-- The derivative of the candidate `1/(y + √(y² + c))` of DLMF 7.8.2, `c > 0`, in the form of
+`Real.hasDerivAt_div_mul_add_sqrt_sq_add`. -/
+private theorem hasDerivAt_sqrt_candidate {c : ℝ} (hc : 0 < c) (y : ℝ) :
+    HasDerivAt (fun y => 1 / (1 * y + Real.sqrt (y ^ 2 + c)))
+      (-1 * (1 + y / Real.sqrt (y ^ 2 + c)) / (1 * y + Real.sqrt (y ^ 2 + c)) ^ 2) y :=
+  Real.hasDerivAt_div_mul_add_sqrt_sq_add 1 1 c (by positivity)
+    (by simpa only [one_mul] using (Real.add_sqrt_sq_add_pos hc y).ne')
 
 /-- The lower bound of DLMF 7.8.2: `1/(x + √(x² + 2)) < M(x)` for `x ≥ 0`. -/
 private theorem one_div_add_sqrt_two_lt_millsRatio {x : ℝ} (hx : 0 ≤ x) :
     1 / (x + Real.sqrt (x ^ 2 + 2)) < millsRatio x := by
   have := lt_millsRatio (x := x) (g := fun y => 1 / (1 * y + Real.sqrt (y ^ 2 + 2)))
-    (fun y hy => Real.hasDerivAt_div_mul_add_sqrt_sq_add 1 1 two_pos
-      (one_mul_add_sqrt_ne_zero two_pos (hx.trans hy)))
-    (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 1 zero_le_one zero_le_two) fun y hy => by
+    (fun y _ => hasDerivAt_sqrt_candidate two_pos y)
+    (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 1 (by norm_num) 2) fun y hy => by
       have hy0 : 0 ≤ y := hx.trans hy.le
-      rw [comparison_sqrt_candidate_eq two_pos hy0]
+      rw [comparison_sqrt_candidate_eq two_pos y]
       have h1 : 0 < Real.sqrt (y ^ 2 + 2) := Real.sqrt_pos.mpr (by positivity)
       have h3 : Real.sqrt (y ^ 2 + 2) ^ 2 = y ^ 2 + 2 := Real.sq_sqrt (by positivity)
       have hlt : y < Real.sqrt (y ^ 2 + 2) := by nlinarith
@@ -195,11 +198,11 @@ private theorem one_div_add_sqrt_two_lt_millsRatio {x : ℝ} (hx : 0 ≤ x) :
       nlinarith [sq_pos_of_pos (sub_pos.mpr hlt)]
   simpa only [one_mul] using this
 
-/-- The upper bound of DLMF 7.8.2: `M(x) ≤ 1/(x + √(x² + 4/π))` for `x ≥ 0`. The comparison
-function vanishes at `0` and at `+∞`, and its derivative changes sign at most once, from
-positive to negative. -/
+/-- The upper bound of DLMF 7.8.2: `M(x) ≤ 1/(x + √(x² + 4/π))` for `x ≥ 0`. -/
 private theorem millsRatio_le_one_div_add_sqrt {x : ℝ} (hx : 0 ≤ x) :
     millsRatio x ≤ 1 / (x + Real.sqrt (x ^ 2 + 4 / π)) := by
+  -- The comparison function vanishes at `0` and at `+∞`, and its derivative changes sign at most
+  -- once, from positive to negative.
   have hc : (0 : ℝ) < 4 / π := by positivity
   set c : ℝ := 4 / π with hcdef
   set N : ℝ → ℝ := fun y => c - 1 - y * (Real.sqrt (y ^ 2 + c) - y) with hN
@@ -208,23 +211,23 @@ private theorem millsRatio_le_one_div_add_sqrt {x : ℝ} (hx : 0 ≤ x) :
     have : 0 < Real.sqrt (y ^ 2 + c) := Real.sqrt_pos.mpr (by positivity)
     simp only [hq]
     positivity
-  have hEd : ∀ y, 0 ≤ y → HasDerivAt (fun y => Real.exp (-y ^ 2) *
+  have hEd : ∀ y, HasDerivAt (fun y => Real.exp (-y ^ 2) *
       (1 / (1 * y + Real.sqrt (y ^ 2 + c))) - Real.sqrt π / 2 * TauCeti.Real.erfc y)
-      (Real.exp (-y ^ 2) * (N y / q y)) y := fun y hy => by
-    have := hasDerivAt_comparison
-      (Real.hasDerivAt_div_mul_add_sqrt_sq_add 1 1 hc (one_mul_add_sqrt_ne_zero hc hy))
-    rwa [comparison_sqrt_candidate_eq hc hy] at this
+      (Real.exp (-y ^ 2) * (N y / q y)) y := fun y => by
+    have := hasDerivAt_comparison (hasDerivAt_sqrt_candidate hc y)
+    rwa [comparison_sqrt_candidate_eq hc y] at this
   have hs4 : Real.sqrt (4 / π) = 2 / Real.sqrt π := by
     rw [Real.sqrt_div' _ Real.pi_pos.le, show (4 : ℝ) = 2 ^ 2 by norm_num,
       Real.sqrt_sq zero_le_two]
-  have hE0 := nonneg_of_tendsto_atTop_of_deriv_nonpos_stable hx hEd
+  have hE0 := le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos hx
+    (fun y _ => (hEd y).continuousAt.continuousWithinAt) (fun y _ => hEd y)
     (by simp only [hcdef]; norm_num [TauCeti.Real.erfc_zero, hs4])
-    (tendsto_comparison (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 1 zero_le_one hc.le))
+    (tendsto_comparison (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 1 (by norm_num) c))
     fun y z hy hyz h => by
       have hNy : N y ≤ 0 := by
         by_contra! hpos
         exact h.not_gt (mul_pos (Real.exp_pos _) (div_pos hpos (hq0 y hy.le)))
-      have hmono := Real.monotoneOn_mul_sqrt_sq_add_sub hc (mem_Ici.mpr hy.le)
+      have hmono := (Real.strictMonoOn_mul_sqrt_sq_add_sub hc).monotoneOn (mem_Ici.mpr hy.le)
         (mem_Ici.mpr (hy.le.trans hyz)) hyz
       have hNz : N z ≤ N y := by
         beta_reduce at hmono
@@ -243,10 +246,11 @@ theorem millsRatio_bounds {x : ℝ} (hx : 0 ≤ x) :
   rw [← millsRatio_def]
   exact ⟨one_div_add_sqrt_two_lt_millsRatio hx, millsRatio_le_one_div_add_sqrt hx⟩
 
-/-- The lower bound of DLMF 7.8.3: `√π/(2√π x + 2) ≤ M(x)` for `x ≥ 0`. The comparison function
-vanishes at `0` and at `+∞`, and its derivative changes sign at most once. -/
+/-- The lower bound of DLMF 7.8.3: `√π/(2√π x + 2) ≤ M(x)` for `x ≥ 0`. -/
 private theorem sqrt_pi_div_le_millsRatio {x : ℝ} (hx : 0 ≤ x) :
     Real.sqrt π / (2 * Real.sqrt π * x + 2) ≤ millsRatio x := by
+  -- The comparison function vanishes at `0` and at `+∞`, and its derivative changes sign at most
+  -- once.
   set k := Real.sqrt π
   have hk0 : 0 < k := Real.sqrt_pos.mpr Real.pi_pos
   set N : ℝ → ℝ := fun y => 4 - 2 * k ^ 2 + 4 * k * y with hN
@@ -266,7 +270,8 @@ private theorem sqrt_pi_div_le_millsRatio {x : ℝ} (hx : 0 ≤ x) :
   have hlim : Tendsto (fun y => k / (2 * k * y + 2)) atTop (𝓝 0) :=
     tendsto_const_nhds.div_atTop
       (tendsto_atTop_add_const_right _ 2 (tendsto_id.const_mul_atTop (by positivity)))
-  have hF0 := nonneg_of_tendsto_atTop_of_deriv_nonpos_stable hx hFd
+  have hF0 := le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos (L := 0) hx
+    (fun y hy => (hFd y hy).continuousAt.continuousWithinAt) (fun y hy => hFd y hy.le)
     (by norm_num [TauCeti.Real.erfc_zero]) (by simpa using (tendsto_comparison hlim).neg)
     fun y z hy hyz h => by
       have hz : 0 ≤ z := hy.le.trans hyz
@@ -285,22 +290,16 @@ private theorem sqrt_pi_div_le_millsRatio {x : ℝ} (hx : 0 ≤ x) :
 /-- The upper bound of DLMF 7.8.3: `M(x) < 1/(x + 1)` for `x ≥ 0`. -/
 private theorem millsRatio_lt_one_div_add_one {x : ℝ} (hx : 0 ≤ x) :
     millsRatio x < 1 / (x + 1) := by
-  have hg : ∀ y : ℝ, 0 ≤ y → HasDerivAt (fun y : ℝ => 1 / (y + 1)) (-1 / (y + 1) ^ 2) y :=
-    fun y hy => ((hasDerivAt_const y (1 : ℝ)).div ((hasDerivAt_id y).add_const 1)
-      (by simp only [id]; positivity)).congr_deriv (by simp)
-  refine millsRatio_lt (fun y hy => hg y (hx.trans hy))
-    (tendsto_const_nhds.div_atTop (tendsto_atTop_add_const_right _ 1 tendsto_id)) fun y hy => ?_
-  have hy0 : 0 < y := lt_of_le_of_lt hx hy
-  have : -1 / (y + 1) ^ 2 - 2 * y * (1 / (y + 1)) + 1 = -(y ^ 2 / (y + 1) ^ 2) := by
-    field_simp
-    ring
-  rw [this]
-  have : 0 < y ^ 2 / (y + 1) ^ 2 := by positivity
-  linarith
+  -- `4/π > 1`, so this is weaker than the upper bound of 7.8.2.
+  have h1 : 1 < Real.sqrt (x ^ 2 + 4 / π) := by
+    have : 1 < 4 / π := (one_lt_div Real.pi_pos).mpr Real.pi_lt_four
+    exact Real.lt_sqrt_of_sq_lt (by nlinarith [sq_nonneg x])
+  exact (millsRatio_le_one_div_add_sqrt hx).trans_lt
+    (one_div_lt_one_div_of_lt (by positivity) (by linarith))
 
 /-- **DLMF 7.8.3**, with Mills' ratio written out: for `x ≥ 0`,
 `√π/(2√π x + 2) ≤ M(x) < 1/(x + 1)`. -/
-theorem millsRatio_bounds_affine {x : ℝ} (hx : 0 ≤ x) :
+theorem millsRatio_bounds_inv_affine {x : ℝ} (hx : 0 ≤ x) :
     Real.sqrt π / (2 * Real.sqrt π * x + 2) ≤ Real.sqrt π / 2 * Real.exp (x ^ 2) * erfc x ∧
       Real.sqrt π / 2 * Real.exp (x ^ 2) * erfc x < 1 / (x + 1) := by
   rw [← millsRatio_def]
@@ -321,8 +320,8 @@ theorem millsRatio_lt_two_div {x : ℝ} (hx : -Real.sqrt 2 / 2 < x) :
     · have := hsp y; linarith
     · nlinarith [hsq y, hsp y]
   refine millsRatio_lt (g := fun y => 2 / (3 * y + Real.sqrt (y ^ 2 + 4)))
-    (fun y hy => Real.hasDerivAt_div_mul_add_sqrt_sq_add 2 3 (by norm_num) (hD y hy).ne')
-    (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 2 (by norm_num) (by norm_num)) ?_
+    (fun y hy => Real.hasDerivAt_div_mul_add_sqrt_sq_add 2 3 4 (by positivity) (hD y hy).ne')
+    (Real.tendsto_div_mul_add_sqrt_sq_add_atTop 2 (by norm_num) 4) ?_
   intro y hy
   have hDy := hD y hy.le
   have h1 := hsp y
@@ -342,23 +341,17 @@ theorem millsRatio_lt_two_div {x : ℝ} (hx : -Real.sqrt 2 / 2 < x) :
         1 + y ^ 2),
       mul_pos hy0 (by positivity : (0:ℝ) < 3 + y ^ 2)]
 
-/-- A function eventually between `0` and `C/y` tends to `0` at `+∞`. -/
-private theorem tendsto_zero_of_nonneg_of_le_div (C : ℝ) {g : ℝ → ℝ}
-    (h0 : ∀ᶠ y in atTop, 0 ≤ g y) (hC : ∀ᶠ y in atTop, g y ≤ C / y) :
-    Tendsto g atTop (𝓝 0) :=
-  tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_const_nhds.div_atTop tendsto_id) h0 hC
-
 /-- The first inequality of DLMF 7.8.5: `x²/(2x² + 1) ≤ x²(2x² + 5)/(4x⁴ + 12x² + 3)`. -/
 private theorem sq_div_le_rat (x : ℝ) :
     x ^ 2 / (2 * x ^ 2 + 1) ≤ x ^ 2 * (2 * x ^ 2 + 5) / (4 * x ^ 4 + 12 * x ^ 2 + 3) := by
   rw [div_le_div_iff₀ (by positivity) (by positivity)]
   nlinarith [sq_nonneg x, pow_nonneg (sq_nonneg x) 2]
 
-/-- The second inequality of DLMF 7.8.5: `x²(2x² + 5)/(4x⁴ + 12x² + 3) ≤ x M(x)` for `x ≥ 0`,
-from the candidate `g = y(2y² + 5)/(4y⁴ + 12y² + 3)`, for which `q²(g′ − 2yg + 1) = 24`. -/
+/-- The second inequality of DLMF 7.8.5: `x²(2x² + 5)/(4x⁴ + 12x² + 3) ≤ x M(x)` for
+`x ≥ 0`. -/
 private theorem rat_le_mul_millsRatio {x : ℝ} (hx : 0 ≤ x) :
     x ^ 2 * (2 * x ^ 2 + 5) / (4 * x ^ 4 + 12 * x ^ 2 + 3) ≤ x * millsRatio x := by
+  -- The candidate `g = y(2y² + 5)/q`, `q = 4y⁴ + 12y² + 3`, has `q²(g′ − 2yg + 1) = 24`.
   have hq : ∀ y : ℝ, 0 < 4 * y ^ 4 + 12 * y ^ 2 + 3 := fun y => by positivity
   have hg : ∀ y : ℝ, HasDerivAt (fun y : ℝ => y * (2 * y ^ 2 + 5) / (4 * y ^ 4 + 12 * y ^ 2 + 3))
       (((6 * y ^ 2 + 5) * (4 * y ^ 4 + 12 * y ^ 2 + 3) -
@@ -373,7 +366,8 @@ private theorem rat_le_mul_millsRatio {x : ℝ} (hx : 0 ≤ x) :
     exact hp.div hd (hq y).ne'
   have hlim : Tendsto (fun y : ℝ => y * (2 * y ^ 2 + 5) / (4 * y ^ 4 + 12 * y ^ 2 + 3))
       atTop (𝓝 0) := by
-    refine tendsto_zero_of_nonneg_of_le_div 2 ?_ ?_
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      (tendsto_const_nhds.div_atTop tendsto_id : Tendsto (fun y : ℝ => 2 / y) atTop (𝓝 0)) ?_ ?_
     · filter_upwards [eventually_ge_atTop 0] with y hy
       exact div_nonneg (by positivity) (hq y).le
     · filter_upwards [eventually_ge_atTop 1] with y hy
@@ -392,10 +386,11 @@ private theorem rat_le_mul_millsRatio {x : ℝ} (hx : 0 ≤ x) :
   exact mul_le_mul_of_nonneg_left h.le hx
 
 /-- The third inequality of DLMF 7.8.5: `x M(x) < (2x⁴ + 9x² + 4)/(4x⁴ + 20x² + 15)` for
-`x ≥ 0`, from the candidate `g = (2y⁴ + 9y² + 4)/(y(4y⁴ + 20y² + 15))`, for which
-`q²(g′ − 2yg + 1) = −60`. -/
+`x ≥ 0`. -/
 private theorem mul_millsRatio_lt_rat {x : ℝ} (hx : 0 ≤ x) :
     x * millsRatio x < (2 * x ^ 4 + 9 * x ^ 2 + 4) / (4 * x ^ 4 + 20 * x ^ 2 + 15) := by
+  -- The candidate `g = (2y⁴ + 9y² + 4)/q`, `q = y(4y⁴ + 20y² + 15)`, has
+  -- `q²(g′ − 2yg + 1) = −60`.
   rcases hx.eq_or_lt with rfl | hx0
   · norm_num
   have hq : ∀ y : ℝ, 0 < y → 0 < y * (4 * y ^ 4 + 20 * y ^ 2 + 15) := fun y hy => by positivity
@@ -416,7 +411,8 @@ private theorem mul_millsRatio_lt_rat {x : ℝ} (hx : 0 ≤ x) :
   have hlim : Tendsto
       (fun y : ℝ => (2 * y ^ 4 + 9 * y ^ 2 + 4) / (y * (4 * y ^ 4 + 20 * y ^ 2 + 15)))
       atTop (𝓝 0) := by
-    refine tendsto_zero_of_nonneg_of_le_div 4 ?_ ?_
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+      (tendsto_const_nhds.div_atTop tendsto_id : Tendsto (fun y : ℝ => 4 / y) atTop (𝓝 0)) ?_ ?_
     · filter_upwards [eventually_gt_atTop 0] with y hy
       exact div_nonneg (by positivity) (hq y hy).le
     · filter_upwards [eventually_ge_atTop 1] with y hy
@@ -458,9 +454,9 @@ theorem mul_millsRatio_bounds {x : ℝ} (hx : 0 ≤ x) :
   rw [← millsRatio_def]
   exact ⟨sq_div_le_rat x, rat_le_mul_millsRatio hx, mul_millsRatio_lt_rat hx, rat_lt_rat x⟩
 
-/-- **DLMF 7.8.6.** For `a > 0` and `x > 0`,
-`∫₀ˣ e^{at²} dt < (2e^{ax²} + ax² − 2)/(3ax)`. -/
-theorem integral_exp_mul_sq_lt {a x : ℝ} (ha : 0 < a) (hx : 0 < x) :
+/-- **DLMF 7.8.6.** For `a ≠ 0` and `x > 0`,
+`∫₀ˣ e^{at²} dt < (2e^{ax²} + ax² − 2)/(3ax)`. DLMF states it for `a > 0`. -/
+theorem integral_exp_mul_sq_lt {a x : ℝ} (ha : a ≠ 0) (hx : 0 < x) :
     (∫ t in (0 : ℝ)..x, Real.exp (a * t ^ 2)) <
       (2 * Real.exp (a * x ^ 2) + a * x ^ 2 - 2) / (3 * a * x) := by
   set I : ℝ → ℝ := fun x => ∫ t in (0:ℝ)..x, Real.exp (a * t ^ 2) with hI
@@ -471,98 +467,35 @@ theorem integral_exp_mul_sq_lt {a x : ℝ} (ha : 0 < a) (hx : 0 < x) :
   have he : ∀ y, HasDerivAt (fun y => Real.exp (a * y ^ 2))
       (Real.exp (a * y ^ 2) * (a * (2 * y))) y := fun y =>
     ((hasDerivAt_pow 2 y).const_mul a).exp.congr_deriv (by norm_num)
-  -- A function vanishing at `0` with positive derivative on `(0, ∞)` is positive there.
-  have hpos : ∀ {F F' : ℝ → ℝ}, (∀ y, HasDerivAt F (F' y) y) → F 0 = 0 →
-      (∀ y, 0 < y → 0 < F' y) → ∀ y, 0 < y → 0 < F y := by
-    intro F F' hF h0 hF' y hy
-    have := strictMonoOn_of_hasDerivWithinAt_pos (convex_Ici 0)
-      (fun y _ => (hF y).continuousAt.continuousWithinAt) (fun y _ => (hF y).hasDerivWithinAt)
-      (fun y hy => hF' y (by simpa using hy)) (mem_Ici.mpr le_rfl) (mem_Ici.mpr hy.le) hy
-    rwa [h0] at this
-  -- ψ = (x e^{ax²} + 2x)/3 − I
+  -- ψ = (y e^{ay²} + 2y)/3 − I vanishes at `0` and increases on `(0, ∞)`.
   have hψ : ∀ y, HasDerivAt (fun y => (y * Real.exp (a * y ^ 2) + 2 * y) / 3 - I y)
       ((2 / 3) * (1 + (a * y ^ 2 - 1) * Real.exp (a * y ^ 2))) y := fun y =>
     ((((hasDerivAt_id y).mul (he y)).add ((hasDerivAt_id y).const_mul 2)).div_const 3
       |>.sub (hId y)).congr_deriv (by simp only [id_eq]; ring)
   have hψpos : ∀ y, 0 < y → 0 < (2 / 3) * (1 + (a * y ^ 2 - 1) * Real.exp (a * y ^ 2)) := by
     intro y hy
-    have hu : 0 < a * y ^ 2 := by positivity
-    have hlt := Real.add_one_lt_exp (by linarith : -(a * y ^ 2) < 0).ne
+    have hlt := Real.add_one_lt_exp (neg_ne_zero.mpr (mul_ne_zero ha (pow_ne_zero 2 hy.ne')))
     have : 1 + (a * y ^ 2 - 1) * Real.exp (a * y ^ 2) =
         Real.exp (a * y ^ 2) * (Real.exp (-(a * y ^ 2)) - (1 - a * y ^ 2)) := by
       rw [mul_sub, ← Real.exp_add, add_neg_cancel, Real.exp_zero]
       ring
     rw [this]
     exact mul_pos (by norm_num) (mul_pos (Real.exp_pos _) (by linarith))
+  have hψx : ∀ y, 0 < y → 0 < (y * Real.exp (a * y ^ 2) + 2 * y) / 3 - I y := fun y hy => by
+    have := lt_of_hasDerivAt_pos hy (fun s _ => (hψ s).continuousAt.continuousWithinAt)
+      (fun s _ => hψ s) fun s hs => hψpos s hs.1
+    simpa [hI0] using this
+  -- φ = (2e^{ay²} + ay² − 2)/(3a) − y I vanishes at `0` and has derivative ψ.
   have hφ : ∀ y, HasDerivAt
       (fun y => (2 * Real.exp (a * y ^ 2) + a * y ^ 2 - 2) / (3 * a) - y * I y)
       ((y * Real.exp (a * y ^ 2) + 2 * y) / 3 - I y) y := fun y =>
     (((((he y).const_mul 2).add ((hasDerivAt_pow 2 y).const_mul a)).sub_const 2).div_const
       (3 * a) |>.sub ((hasDerivAt_id y).mul (hId y))).congr_deriv
       (by simp only [id_eq]; field_simp; ring)
-  have hφx := hpos hφ (by simp [hI0]) (hpos hψ (by simp [hI0]) hψpos) x hx
-  rw [lt_div_iff₀ (by positivity)]
-  have : 2 * Real.exp (a * x ^ 2) + a * x ^ 2 - 2 =
-      3 * a * ((2 * Real.exp (a * x ^ 2) + a * x ^ 2 - 2) / (3 * a)) := by
-    field_simp
-  nlinarith
-
-/-- The secant bound behind DLMF 7.8.8. For `b > 0`, the function
-`φ(u) = e^{−bu} − 1 + mu` is strictly convex and vanishes at `0`, so `φ(t) < (t/s) φ(s)` for
-`0 < t < s`. -/
-private theorem exp_neg_mul_sub_one_add_lt {b m t s : ℝ} (hb : 0 < b) (ht : 0 < t)
-    (hts : t < s) :
-    Real.exp (-(b * t)) - 1 + m * t < t / s * (Real.exp (-(b * s)) - 1 + m * s) := by
-  have hs : 0 < s := ht.trans hts
-  set θ := t / s with hθ
-  have hθ0 : 0 < θ := div_pos ht hs
-  have hθ1 : θ < 1 := (div_lt_one hs).mpr hts
-  have h := strictConvexOn_exp.2 (mem_univ 0) (mem_univ (-(b * s)))
-    (neg_neg_of_pos (mul_pos hb hs)).ne' (by linarith : 0 < 1 - θ) hθ0 (by ring)
-  simp only [smul_eq_mul, mul_zero, zero_add, Real.exp_zero, mul_one] at h
-  have ht' : t = θ * s := by simp only [hθ]; field_simp
-  rw [ht', show -(b * (θ * s)) = θ * -(b * s) by ring]
-  nlinarith
-
-/-- **Sign propagation for a secant-convex derivative.** Let `D(0) = 0` and
-`D′(y) = w(y) φ(y²)` with `w > 0`, where `φ(t) < (t/s) φ(s)` for `0 < t < s`. If `D(y) ≥ 0` at
-some `y > 0`, then `D > 0` on `(y, ∞)`. -/
-private theorem pos_of_hasDerivAt_mul_secant {D w φ : ℝ → ℝ} (hw : ∀ y, 0 < w y)
-    (hD : ∀ y, HasDerivAt D (w y * φ (y ^ 2)) y) (hD0 : D 0 = 0)
-    (hsec : ∀ t s, 0 < t → t < s → φ t < t / s * φ s) {y : ℝ} (hy : 0 < y) (hDy : 0 ≤ D y)
-    {t : ℝ} (hyt : y < t) : 0 < D t := by
-  have hφy : 0 < φ (y ^ 2) := by
-    by_contra! hcon
-    have hanti : StrictAntiOn D (Icc 0 y) :=
-      strictAntiOn_of_hasDerivWithinAt_neg (convex_Icc 0 y)
-        (fun s _ => (hD s).continuousAt.continuousWithinAt)
-        (fun s _ => (hD s).hasDerivWithinAt) fun s hs => by
-          rw [interior_Icc] at hs
-          have hs0 : 0 < s := hs.1
-          have h1 := hsec _ _ (by positivity : 0 < s ^ 2) (by nlinarith [hs.2] : s ^ 2 < y ^ 2)
-          have h2 : s ^ 2 / y ^ 2 * φ (y ^ 2) ≤ 0 :=
-            mul_nonpos_of_nonneg_of_nonpos (by positivity) hcon
-          exact mul_neg_of_pos_of_neg (hw s) (by linarith)
-    have := hanti ⟨le_rfl, hy.le⟩ ⟨hy.le, le_rfl⟩ hy
-    linarith
-  have hpos : ∀ s, y ≤ s → 0 < w s * φ (s ^ 2) := by
-    intro s hs
-    rcases hs.eq_or_lt with rfl | h
-    · exact mul_pos (hw _) hφy
-    · have h1 := hsec _ _ (by positivity : 0 < y ^ 2) (by nlinarith : y ^ 2 < s ^ 2)
-      have h2 : 0 < φ (s ^ 2) := by
-        by_contra! hcon
-        have : y ^ 2 / s ^ 2 * φ (s ^ 2) ≤ 0 :=
-          mul_nonpos_of_nonneg_of_nonpos (by positivity) hcon
-        linarith
-      exact mul_pos (hw s) h2
-  have hmono : StrictMonoOn D (Ici y) :=
-    strictMonoOn_of_hasDerivWithinAt_pos (convex_Ici y)
-      (fun s _ => (hD s).continuousAt.continuousWithinAt)
-      (fun s _ => (hD s).hasDerivWithinAt) fun s hs => by
-        rw [interior_Ici] at hs
-        exact hpos s (le_of_lt hs)
-  have := hmono (mem_Ici.mpr le_rfl) (mem_Ici.mpr hyt.le) hyt
+  have hφx := lt_of_hasDerivAt_pos hx (fun s _ => (hφ s).continuousAt.continuousWithinAt)
+    (fun s _ => hφ s) fun s hs => hψx s hs.1
+  norm_num [hI0] at hφx
+  rw [← div_div, lt_div_iff₀ hx]
   linarith
 
 /-- The derivative of `D(y) = erf y − c y e^{(1 − k) y²}` with `c = 2/√π`. -/
@@ -602,14 +535,13 @@ private theorem hasDerivAt_one_sub_exp_sub_erf_sq {k : ℝ} (hk : (2 / Real.sqrt
   push_cast
   linear_combination (-(2 * y * Real.exp (-y ^ 2) * Real.exp ((1 - k) * y ^ 2))) * hk
 
-/-- **DLMF 7.8.8.** For `x > 0`, `erf x < √(1 − e^{−4x²/π})`.
-
-With `k = 4/π` and `c = 2/√π`, the function `h(y) = 1 − e^{−ky²} − erf² y` vanishes at `0` and at
-`+∞`, and `h′ = −2c e^{−y²} D` with `D(y) = erf y − c y e^{(1 − k) y²}`. Once `D ≥ 0` at a
-positive point it stays positive (`pos_of_hasDerivAt_mul_secant`), so `h′` changes sign at most
-once, and `h > 0` on `(0, ∞)`. -/
+/-- **DLMF 7.8.8.** For `x > 0`, `erf x < √(1 − e^{−4x²/π})`. -/
 theorem erf_lt_sqrt_one_sub_exp {x : ℝ} (hx : 0 < x) :
     erf x < Real.sqrt (1 - Real.exp (-4 * x ^ 2 / π)) := by
+  -- With `k = 4/π` and `c = 2/√π`, the function `h(y) = 1 − e^{−ky²} − erf² y` vanishes at `0`
+  -- and at `+∞`, and `h′ = −2c e^{−y²} D` with `D(y) = erf y − c y e^{(1 − k) y²}`. Once `D ≥ 0`
+  -- at a positive point it stays positive, so `h′` changes sign at most once, and `h > 0` on
+  -- `(0, ∞)`.
   set k : ℝ := 4 / π with hkdef
   have hπ := Real.pi_pos
   have hk0 : 0 < k := by positivity
@@ -626,7 +558,12 @@ theorem erf_lt_sqrt_one_sub_exp {x : ℝ} (hx : 0 < x) :
       (w := fun y => 2 / Real.sqrt π * Real.exp ((1 - k) * y ^ 2))
       (φ := fun u => Real.exp (-((2 - k) * u)) - 1 + 2 * (k - 1) * u)
       (fun y => by positivity) (hasDerivAt_erf_sub_mul_exp k)
-      (by simp [TauCeti.Real.erf_zero]) (fun t s ht hts => exp_neg_mul_sub_one_add_lt hk2 ht hts)
+      (by simp [TauCeti.Real.erf_zero]) (fun t s ht hts => by
+        have h := Real.exp_mul_sub_one_lt_div_mul (neg_ne_zero.mpr hk2.ne') ht hts
+        have hs : 0 < s := ht.trans hts
+        simp only [neg_mul] at h
+        have he : t / s * (2 * (k - 1) * s) = 2 * (k - 1) * t := by field_simp
+        linarith)
       hy hDy hyt
   have hlim : Tendsto (fun y => 1 - Real.exp (-(k * y ^ 2)) - TauCeti.Real.erf y ^ 2)
       atTop (𝓝 0) := by
@@ -634,7 +571,8 @@ theorem erf_lt_sqrt_one_sub_exp {x : ℝ} (hx : 0 < x) :
       Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
         ((tendsto_pow_atTop two_ne_zero).const_mul_atTop hk0))
     simpa using (h1.const_sub 1).sub (TauCeti.Real.tendsto_erf_atTop.pow 2)
-  have hhx := pos_of_tendsto_atTop_of_deriv_nonpos_stable hx
+  have hhx := lt_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_neg hx
+    (fun y _ => (hasDerivAt_one_sub_exp_sub_erf_sq hck y).continuousAt.continuousWithinAt)
     (fun y _ => hasDerivAt_one_sub_exp_sub_erf_sq hck y) (by simp [TauCeti.Real.erf_zero]) hlim
     fun y z hy hyz h => by
       have hw : ∀ s, 0 < 2 * (2 / Real.sqrt π) * Real.exp (-s ^ 2) := fun s => by positivity

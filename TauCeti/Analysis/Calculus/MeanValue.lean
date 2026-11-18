@@ -109,13 +109,23 @@ compactly supported differentiable map whose derivative kills a nonzero `v` ever
 
 ## Signs from monotonicity on the real line
 
-A real function on `[x, ∞)` with nonpositive (negative) derivative beyond `x` that tends to `0`
-at `+∞` is nonnegative (positive) at `x` (`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos`,
-`TauCeti.pos_of_tendsto_atTop_of_deriv_neg`). If such a function also vanishes at `a` and its
-derivative, once nonpositive at a point of `(a, ∞)`, stays nonpositive (negative) afterwards, then
-it is nonnegative on `[a, ∞)` (positive on `(a, ∞)`)
-(`TauCeti.nonneg_of_tendsto_atTop_of_deriv_nonpos_stable`,
-`TauCeti.pos_of_tendsto_atTop_of_deriv_nonpos_stable`).
+A real function continuous on `[x, ∞)`, with nonpositive (negative) derivative on `(x, ∞)` and
+limit `L` at `+∞`, satisfies `L ≤ f x` (`L < f x`)
+(`TauCeti.le_of_tendsto_atTop_of_hasDerivAt_nonpos`,
+`TauCeti.lt_of_tendsto_atTop_of_hasDerivAt_neg`). A real function continuous on `[a, x]` with
+positive (negative) derivative on `(a, x)` satisfies `f a < f x` (`f x < f a`)
+(`TauCeti.lt_of_hasDerivAt_pos`, `TauCeti.lt_of_hasDerivAt_neg`). If a real function continuous on
+`[a, ∞)` with limit `L` at `+∞` satisfies `L ≤ f a`, and its derivative, once nonpositive at a
+point of `(a, ∞)`, stays nonpositive (negative) afterwards, then `L ≤ f x` on `[a, ∞)` (`L < f x`
+on `(a, ∞)`) (`TauCeti.le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos`,
+`TauCeti.lt_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_neg`).
+`TauCeti.pos_of_hasDerivAt_mul_secant` propagates the sign of a function whose derivative is a
+positive weight times a function with the strict secant property `φ t < (t / s) φ s`.
+
+The first two statements are adapted from `tail_nonneg` and `tail_pos` of the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`; the sign-change and secant
+lemmas are factored out of the proofs in that file.
 -/
 
 public section
@@ -596,73 +606,119 @@ namespace TauCeti
 open Filter Set
 open scoped Topology
 
-/-- A real function that has a nonpositive derivative beyond `x` and tends to `0` at `+∞` is
-nonnegative at `x`. -/
-theorem nonneg_of_tendsto_atTop_of_deriv_nonpos {f f' : ℝ → ℝ} {x : ℝ}
-    (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
-    (hf' : ∀ y, x < y → f' y ≤ 0) : 0 ≤ f x := by
+variable {f f' : ℝ → ℝ} {a x L : ℝ}
+
+/-- A real function continuous on `[x, ∞)`, with a nonpositive derivative on `(x, ∞)` and limit
+`L` at `+∞`, satisfies `L ≤ f x`. -/
+theorem le_of_tendsto_atTop_of_hasDerivAt_nonpos (hfc : ContinuousOn f (Ici x))
+    (hf : ∀ y, x < y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 L))
+    (hf' : ∀ y, x < y → f' y ≤ 0) : L ≤ f x := by
   have hanti : AntitoneOn f (Ici x) :=
-    antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici x)
-      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
-      (fun y hy => (hf y (interior_subset hy)).hasDerivWithinAt)
+    antitoneOn_of_hasDerivWithinAt_nonpos (convex_Ici x) hfc
+      (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
       (fun y hy => hf' y (by simpa using hy))
   refine le_of_tendsto hlim ?_
   filter_upwards [eventually_ge_atTop x] with t ht
   exact hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr ht) ht
 
-/-- A real function that has a negative derivative beyond `x` and tends to `0` at `+∞` is
-positive at `x`. -/
-theorem pos_of_tendsto_atTop_of_deriv_neg {f f' : ℝ → ℝ} {x : ℝ}
-    (hf : ∀ y, x ≤ y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 0))
-    (hf' : ∀ y, x < y → f' y < 0) : 0 < f x := by
+/-- A real function continuous on `[x, ∞)`, with a negative derivative on `(x, ∞)` and limit `L`
+at `+∞`, satisfies `L < f x`. -/
+theorem lt_of_tendsto_atTop_of_hasDerivAt_neg (hfc : ContinuousOn f (Ici x))
+    (hf : ∀ y, x < y → HasDerivAt f (f' y) y) (hlim : Tendsto f atTop (𝓝 L))
+    (hf' : ∀ y, x < y → f' y < 0) : L < f x := by
   have hanti : StrictAntiOn f (Ici x) :=
-    strictAntiOn_of_hasDerivWithinAt_neg (convex_Ici x)
-      (fun y hy => (hf y hy).continuousAt.continuousWithinAt)
-      (fun y hy => (hf y (interior_subset hy)).hasDerivWithinAt)
+    strictAntiOn_of_hasDerivWithinAt_neg (convex_Ici x) hfc
+      (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
       (fun y hy => hf' y (by simpa using hy))
-  have h1 : 0 ≤ f (x + 1) := nonneg_of_tendsto_atTop_of_deriv_nonpos
-    (fun y hy => hf y (by linarith)) hlim (fun y hy => (hf' y (by linarith)).le)
-  have := hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr (by linarith : x ≤ x + 1)) (by linarith)
-  linarith
+  have h1 : L ≤ f (x + 1) := le_of_tendsto_atTop_of_hasDerivAt_nonpos
+    (hfc.mono (Ici_subset_Ici.mpr (by linarith))) (fun y hy => hf y (by linarith)) hlim
+    (fun y hy => (hf' y (by linarith)).le)
+  exact h1.trans_lt (hanti (mem_Ici.mpr le_rfl) (mem_Ici.mpr (by linarith)) (by linarith))
 
-/-- **Sign change of the derivative, nonstrict form.** Let `f` vanish at `a` and tend to `0` at
-`+∞`, and let its derivative stay nonpositive beyond any point of `(a, ∞)` where it is
-nonpositive (so `f` first increases, then decreases). Then `f` is nonnegative on `[a, ∞)`. -/
-theorem nonneg_of_tendsto_atTop_of_deriv_nonpos_stable {f f' : ℝ → ℝ} {a x : ℝ} (hax : a ≤ x)
-    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hlim : Tendsto f atTop (𝓝 0))
-    (hf' : ∀ y z, a < y → y ≤ z → f' y ≤ 0 → f' z ≤ 0) : 0 ≤ f x := by
+/-- A real function continuous on `[a, x]`, `a < x`, with a positive derivative on `(a, x)`
+satisfies `f a < f x`. -/
+theorem lt_of_hasDerivAt_pos (hax : a < x) (hfc : ContinuousOn f (Icc a x))
+    (hf : ∀ y ∈ Ioo a x, HasDerivAt f (f' y) y) (hf' : ∀ y ∈ Ioo a x, 0 < f' y) : f a < f x :=
+  strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a x) hfc
+    (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
+    (fun y hy => hf' y (by simpa using hy)) ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax
+
+/-- A real function continuous on `[a, x]`, `a < x`, with a negative derivative on `(a, x)`
+satisfies `f x < f a`. -/
+theorem lt_of_hasDerivAt_neg (hax : a < x) (hfc : ContinuousOn f (Icc a x))
+    (hf : ∀ y ∈ Ioo a x, HasDerivAt f (f' y) y) (hf' : ∀ y ∈ Ioo a x, f' y < 0) : f x < f a :=
+  strictAntiOn_of_hasDerivWithinAt_neg (convex_Icc a x) hfc
+    (fun y hy => (hf y (by simpa using hy)).hasDerivWithinAt)
+    (fun y hy => hf' y (by simpa using hy)) ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax
+
+/-- **Sign change of the derivative, nonstrict form.** Let `f` be continuous on `[a, ∞)` with
+limit `L` at `+∞` and `L ≤ f a`, and let its derivative stay nonpositive beyond any point of
+`(a, ∞)` where it is nonpositive (so `f` first increases, then decreases). Then `L ≤ f x` for
+`x ≥ a`. -/
+theorem le_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_nonpos (hax : a ≤ x)
+    (hfc : ContinuousOn f (Ici a)) (hf : ∀ y, a < y → HasDerivAt f (f' y) y) (ha : L ≤ f a)
+    (hlim : Tendsto f atTop (𝓝 L)) (hf' : ∀ y z, a < y → y ≤ z → f' y ≤ 0 → f' z ≤ 0) :
+    L ≤ f x := by
   rcases hax.eq_or_lt with rfl | hax
-  · exact ha.ge
+  · exact ha
   rcases le_or_gt (f' x) 0 with hx | hx
-  · exact nonneg_of_tendsto_atTop_of_deriv_nonpos (fun y hy => hf y (hax.le.trans hy)) hlim
-      fun y hy => hf' x y hax hy.le hx
+  · exact le_of_tendsto_atTop_of_hasDerivAt_nonpos (hfc.mono (Ici_subset_Ici.mpr hax.le))
+      (fun y hy => hf y (hax.trans hy)) hlim fun y hy => hf' x y hax hy.le hx
   · have hmono : MonotoneOn f (Icc a x) :=
-      monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a x)
-        (fun y hy => (hf y hy.1).continuousAt.continuousWithinAt)
-        (fun y hy => (hf y (interior_subset hy).1).hasDerivWithinAt)
+      monotoneOn_of_hasDerivWithinAt_nonneg (convex_Icc a x) (hfc.mono Icc_subset_Ici_self)
+        (fun y hy => by
+          rw [interior_Icc] at hy
+          exact (hf y hy.1).hasDerivWithinAt)
         (fun y hy => by
           rw [interior_Icc] at hy
           by_contra! h
           exact (hf' y x hy.1 hy.2.le h.le).not_gt hx)
-    simpa [ha] using hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax.le
+    exact ha.trans (hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax.le)
 
-/-- **Sign change of the derivative, strict form.** Let `f` vanish at `a` and tend to `0` at
-`+∞`, and let its derivative be negative beyond any point of `(a, ∞)` where it is nonpositive.
-Then `f` is positive on `(a, ∞)`. -/
-theorem pos_of_tendsto_atTop_of_deriv_nonpos_stable {f f' : ℝ → ℝ} {a x : ℝ} (hax : a < x)
-    (hf : ∀ y, a ≤ y → HasDerivAt f (f' y) y) (ha : f a = 0) (hlim : Tendsto f atTop (𝓝 0))
-    (hf' : ∀ y z, a < y → y < z → f' y ≤ 0 → f' z < 0) : 0 < f x := by
+/-- **Sign change of the derivative, strict form.** Let `f` be continuous on `[a, ∞)` with limit
+`L` at `+∞` and `L ≤ f a`, and let its derivative be negative beyond any point of `(a, ∞)` where
+it is nonpositive. Then `L < f x` for `x > a`. -/
+theorem lt_of_tendsto_atTop_of_hasDerivAt_nonpos_imp_neg (hax : a < x)
+    (hfc : ContinuousOn f (Ici a)) (hf : ∀ y, a < y → HasDerivAt f (f' y) y) (ha : L ≤ f a)
+    (hlim : Tendsto f atTop (𝓝 L)) (hf' : ∀ y z, a < y → y < z → f' y ≤ 0 → f' z < 0) :
+    L < f x := by
   rcases le_or_gt (f' x) 0 with hx | hx
-  · exact pos_of_tendsto_atTop_of_deriv_neg (fun y hy => hf y (hax.le.trans hy)) hlim
-      fun y hy => hf' x y hax hy hx
-  · have hmono : StrictMonoOn f (Icc a x) :=
-      strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a x)
-        (fun y hy => (hf y hy.1).continuousAt.continuousWithinAt)
-        (fun y hy => (hf y (interior_subset hy).1).hasDerivWithinAt)
-        (fun y hy => by
-          rw [interior_Icc] at hy
-          by_contra! h
-          exact (hf' y x hy.1 hy.2 h).not_gt hx)
-    simpa [ha] using hmono ⟨le_rfl, hax.le⟩ ⟨hax.le, le_rfl⟩ hax
+  · exact lt_of_tendsto_atTop_of_hasDerivAt_neg (hfc.mono (Ici_subset_Ici.mpr hax.le))
+      (fun y hy => hf y (hax.trans hy)) hlim fun y hy => hf' x y hax hy hx
+  · refine ha.trans_lt (lt_of_hasDerivAt_pos hax (hfc.mono Icc_subset_Ici_self)
+      (fun y hy => hf y hy.1) fun y hy => ?_)
+    by_contra! h
+    exact (hf' y x hy.1 hy.2 h).not_gt hx
+
+/-- **Sign propagation for a secant-convex derivative.** Let `D(0) = 0` and
+`D′(y) = w(y) φ(y²)` with `w > 0`, where `φ(t) < (t/s) φ(s)` for `0 < t < s`. If `D(y) ≥ 0` at
+some `y > 0`, then `D > 0` on `(y, ∞)`. -/
+theorem pos_of_hasDerivAt_mul_secant {D w φ : ℝ → ℝ} (hw : ∀ y, 0 < w y)
+    (hD : ∀ y, HasDerivAt D (w y * φ (y ^ 2)) y) (hD0 : D 0 = 0)
+    (hsec : ∀ t s, 0 < t → t < s → φ t < t / s * φ s) {y : ℝ} (hy : 0 < y) (hDy : 0 ≤ D y)
+    {t : ℝ} (hyt : y < t) : 0 < D t := by
+  have hcont : Continuous D := continuous_iff_continuousAt.mpr fun s => (hD s).continuousAt
+  -- If `φ(y²) ≤ 0`, then `φ(s²) < 0` on `(0, y)` by the secant property, so `D y < D 0 = 0`.
+  have hφy : 0 < φ (y ^ 2) := by
+    by_contra! hcon
+    have := lt_of_hasDerivAt_neg (f' := fun s => w s * φ (s ^ 2)) hy hcont.continuousOn
+      (fun s _ => hD s) fun s hs => by
+        have hs0 : 0 < s := hs.1
+        have h1 := hsec _ _ (by positivity : 0 < s ^ 2) (by nlinarith [hs.2] : s ^ 2 < y ^ 2)
+        have h2 : s ^ 2 / y ^ 2 * φ (y ^ 2) ≤ 0 :=
+          mul_nonpos_of_nonneg_of_nonpos (by positivity) hcon
+        exact mul_neg_of_pos_of_neg (hw s) (by linarith)
+    linarith
+  -- Then `φ(s²) > 0` for `s > y`, so `D` increases strictly on `[y, t]`.
+  have := lt_of_hasDerivAt_pos (f' := fun s => w s * φ (s ^ 2)) hyt hcont.continuousOn
+    (fun s _ => hD s) fun s hs => by
+      have h1 := hsec _ _ (by positivity : 0 < y ^ 2) (by nlinarith [hs.1] : y ^ 2 < s ^ 2)
+      have h2 : 0 < φ (s ^ 2) := by
+        by_contra! hcon
+        have : y ^ 2 / s ^ 2 * φ (s ^ 2) ≤ 0 :=
+          mul_nonpos_of_nonneg_of_nonpos (by positivity) hcon
+        linarith
+      exact mul_pos (hw s) h2
+  linarith
 
 end TauCeti
