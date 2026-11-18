@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
+public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.Zeta
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Zeta
 public import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
 import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -48,6 +49,16 @@ series is the orbit zeta function
 `exp (∑ᵢ ∑_{n ≥ 1} sgn det (1 - d(φ^[d i * n])_(x i)) e^(n [γ_(x i)]) / n)`, whose signs are the
 local Lefschetz indices of the periodic points `x i` of `φ^[d i * n]`
 (`SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative`).
+When the points `x i` list one point on each periodic orbit of `φ`, the logarithm of the orbit
+zeta function is also a sum over the periodic points `y` of `φ` with a chosen positive period `n`,
+weighted by their local Lefschetz signs `sgn det (1 - d(φ^[n])_y)`
+(`TauCeti.SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_exp_tsum`). So the product of
+the orbit-torus series of all orbit tori is the exponential of the series of signed fixed-point
+counts of the iterates of `φ`
+(`TauCeti.SmoothMappingTorus.mapRingHom_tprod_ofPowerSeries_torusWeightSeries_eq_exp_tsum`). These
+counts are the fixed-point sides of the Lefschetz formulas for the iterates `φ^[n]`; their
+identification with the traces of `φ^[n]` on homology is not done here.
+
 Identifying these labels with the determinant signs of the twisted normal operators of the orbit
 tori is not done here.
 
@@ -62,6 +73,9 @@ tori is not done here.
   `SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative`:
   the same statements for an area-preserving map of a surface, with the orbit tori labelled by the
   linearized return maps of the orbits.
+* `TauCeti.SmoothMappingTorus.mapRingHom_tprod_ofPowerSeries_torusWeightSeries_eq_exp_tsum`: for
+  one point on each periodic orbit, that product is the exponential of the signed fixed-point
+  counts of the iterates of `φ`.
 
 ## References
 
@@ -248,5 +262,46 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivat
   simp only [hit]
   -- As above, `key` and the goal differ only in how the tangent space is written.
   exact key
+
+/-! ### All periodic orbits and the fixed points of the iterates
+
+When the points `x i` list one point on each periodic orbit of `φ`, the orbit-torus series of all
+orbit tori multiply to the exponential of the series of signed fixed-point counts of the iterates
+of `φ`, the terms of the Lefschetz fixed-point formula. -/
+
+include hφ in
+/-- **The orbit-torus series and the fixed points of the iterates.** Let `φ` be a diffeomorphism
+of a compact surface preserving a nondegenerate two-form, nondegenerate up to every period, and
+let `x i` list one point on each periodic orbit of `φ`, of least period `d i`, with linearized
+return map `D i = d(φ^[d i])_(x i)`. Over a `ℚ`-algebra `K`, the product of the orbit-torus series
+labelled by the `D i` and substituted at `t = e^[γ_(x i)]` is
+`exp (∑_{n > 0} ∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y) / n · e^[γ_(y, n)])`, where
+`[γ_(y, n)]` is the class of the closed suspension orbit through `y` traversed in time `n`. -/
+theorem mapRingHom_tprod_ofPowerSeries_torusWeightSeries_eq_exp_tsum (hE : Module.finrank ℝ E = 2)
+    (hσ : σ.IsNondegenerate) (hφσ : SmoothForm.mpullback φ φ.contMDiff σ = σ)
+    (hper : ∀ i, x i ∈ periodicPts φ) (hrep : ∀ y ∈ periodicPts φ, ∃! i, ∃ j, (⇑φ)^[j] (x i) = y)
+    (K : Type*) [CommRing K] [Algebra ℚ K] :
+    mapRingHom (Int.castRingHom K) (AddMonoidHom.id _) ⟨1, one_pos, by simp⟩
+        (∏' i, ofPowerSeries (closedOrbitHomologyClass (isPeriodicPt_minimalPeriod φ (x i)))
+          (timePeriodHom_closedOrbitHomologyClass_pos _
+            (minimalPeriod_pos_of_mem_periodicPts (hper i)))
+          (torusWeightSeries
+            (decide (0 < LinearMap.det (LinearMap.id - fixedPointDerivative I
+              (⇑φ)^[minimalPeriod φ (x i)] ⟨x i, (isPeriodicPt_minimalPeriod φ (x i)).eq⟩)))
+            (if LinearMap.det (LinearMap.id + fixedPointDerivative I
+                (⇑φ)^[minimalPeriod φ (x i)] ⟨x i, (isPeriodicPt_minimalPeriod φ (x i)).eq⟩) < 0
+              then 1 else 0))) =
+      NormedSpace.exp (∑' p : {p : ℕ × M // 0 < p.1 ∧ IsPeriodicPt φ p.1 p.2},
+        (single (closedOrbitHomologyClass p.2.2) (algebraMap ℚ K
+          (((SignType.sign (LinearMap.det (LinearMap.id -
+            fixedPointDerivative I (⇑φ)^[p.1.1] ⟨p.1.2, p.2.2.eq⟩)) : ℤ) : ℚ) / p.1.1)) :
+          NovikovSeries K _ (timePeriodHom φ))) := by
+  -- Distinct representatives lie on distinct orbits.
+  have hxinj : Injective x := fun i i' h ↦
+    (hrep (x i) (hper i)).unique ⟨0, rfl⟩ ⟨0, by rw [iterate_zero_apply, h]⟩
+  rw [← orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative hφ hxinj
+    (fun i ↦ isPeriodicPt_minimalPeriod φ (x i))
+    (fun i ↦ minimalPeriod_pos_of_mem_periodicPts (hper i)) hE hσ hφσ K]
+  exact orbitZeta_closedOrbitHomologyClass_eq_exp_tsum hφ hper hrep K
 
 end TauCeti.SmoothMappingTorus
