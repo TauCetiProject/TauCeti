@@ -39,6 +39,10 @@ each of them, which again carries hypotheses of its own, such as those of
   by the `q ^ n`-th power map.
 * `IsArithFrobAt.mul_of_mem_inertia` — a Frobenius element times an element of the inertia
   subgroup is again a Frobenius element.
+* `IsArithFrobAt.iff_mul_inv_mem_inertia` — given one Frobenius element at `Q`, the Frobenius
+  elements at `Q` are exactly one coset of the inertia subgroup.
+* `IsArithFrobAt.mem_stabilizer_of_isIntegral` — over an integral extension of a domain, a
+  Frobenius element at any ideal `Q` stabilizes `Q`.
 * `IsArithFrobAt.of_le` — a Frobenius element at `Q` is one at any larger ideal with the same
   contraction to the base.
 * `Ideal.exists_isArithFrobAt_smul` — translating a member of the fiber of `σ` by `c` gives a
@@ -139,6 +143,62 @@ theorem of_le {P : Ideal S} (H : IsArithFrobAt R σ Q) (hQP : Q ≤ P)
     (h : P.under R = Q.under R) : IsArithFrobAt R σ P := fun x ↦ by
   rw [h]
   exact hQP (H x)
+
+/-- **The Frobenius elements at `Q` form one coset of the inertia subgroup.** Given one arithmetic
+Frobenius `σ` at `Q`, an element `τ` is an arithmetic Frobenius at `Q` exactly when
+`τ σ⁻¹ ∈ I_Q`. -/
+theorem iff_mul_inv_mem_inertia {G : Type*} [Group G] [MulSemiringAction G S]
+    [SMulCommClass G R S] {σ τ : G} (hσ : IsArithFrobAt R σ Q) :
+    IsArithFrobAt R τ Q ↔ τ * σ⁻¹ ∈ Q.inertia G := by
+  refine ⟨fun hτ ↦ hτ.mul_inv_mem_inertia hσ, fun h x ↦ ?_⟩
+  have := Q.add_mem (Ideal.mem_inertia.mp h (σ • x)) (hσ x)
+  simpa [mul_smul] using this
+
+/-- **An arithmetic Frobenius stabilizes its ideal**, for an integral extension of a domain and
+without assuming the ideal prime. The Frobenius congruence gives `σ • Q ≤ Q`; since every element
+is a root of a monic polynomial over `R`, whose roots `σ` permutes, every element has a finite
+`σ`-orbit, which gives the reverse inclusion. -/
+theorem mem_stabilizer_of_isIntegral {G : Type*} [Group G] [MulSemiringAction G S]
+    [SMulCommClass G R S] [IsDomain S] [Algebra.IsIntegral R S] {σ : G}
+    (h : IsArithFrobAt R σ Q) : σ ∈ MulAction.stabilizer G Q := by
+  have hle (n : ℕ) : ∀ y ∈ Q, (σ ^ n) • y ∈ Q := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      intro y hy
+      rw [pow_succ, mul_smul]
+      exact ih _ (h.le_comap hy)
+  -- every element has a finite orbit under `σ`, since `σ` permutes the roots of a monic
+  -- polynomial over `R` that it satisfies
+  have horb (x : S) : ∃ n, (σ ^ (n + 1)) • x = x := by
+    classical
+    obtain ⟨p, hpm, hp⟩ := Algebra.IsIntegral.isIntegral (R := R) x
+    rw [← Polynomial.aeval_def] at hp
+    let s := (p.map (algebraMap R S)).roots.toFinset
+    have hmem (k : ℕ) : (σ ^ k) • x ∈ s := by
+      rw [Multiset.mem_toFinset (s := (p.map (algebraMap R S)).roots),
+        Polynomial.mem_roots (hpm.map _).ne_zero, Polynomial.IsRoot,
+        Polynomial.eval_map_algebraMap]
+      have := Polynomial.aeval_algHom_apply (MulSemiringAction.toAlgHom R S (σ ^ k)) x p
+      rw [hp, map_zero] at this
+      exact this
+    obtain ⟨i, j, hij, heq⟩ := Finite.exists_ne_map_eq_of_infinite
+      (fun k : ℕ ↦ (⟨(σ ^ k) • x, hmem k⟩ : s))
+    simp only [Subtype.mk.injEq] at heq
+    rcases hij.lt_or_gt with hij | hij
+    · refine ⟨j - i - 1, ?_⟩
+      rw [show j = i + (j - i - 1 + 1) by omega, pow_add, mul_smul] at heq
+      exact (smul_left_cancel_iff _).mp heq.symm
+    · refine ⟨i - j - 1, ?_⟩
+      rw [show i = j + (i - j - 1 + 1) by omega, pow_add, mul_smul] at heq
+      exact (smul_left_cancel_iff _).mp heq
+  rw [MulAction.mem_stabilizer_iff]
+  refine le_antisymm ?_ fun x hx ↦ ?_
+  · rw [Ideal.pointwise_smul_def, Ideal.map_le_iff_le_comap]
+    exact h.le_comap
+  · obtain ⟨n, hn⟩ := horb x
+    rw [← hn, pow_succ', mul_smul]
+    exact Ideal.smul_mem_pointwise_smul σ _ Q (hle n x hx)
 
 end IsArithFrobAt
 
