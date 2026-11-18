@@ -69,6 +69,12 @@ forcing the integral and real ranks to agree.
   `p i(N)` of the image of an integral lattice is closed.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
+* `TauCeti.Toric.isIntegralLattice_castAddHom`, `TauCeti.Toric.isIntegralLattice_intCast`: the
+  standard lattices `ℤ ⊆ ℝ` and `ℤ^n ⊆ ℝ^n`.
+* `TauCeti.Toric.IsIntegralLattice.dualBasis`: in a normed space, the basis of the continuous dual
+  `V*` dual to the real basis `i ∘ b` of an integral basis `b`, with coordinates `x ↦ x (i (b j))`.
+  Its `ℤ`-span is the weight lattice of functionals taking integer values on the lattice
+  (`TauCeti.Toric.IsIntegralLattice.mem_span_dualBasis_iff`), whatever `b` is.
 
 ## Implementation notes
 
@@ -403,7 +409,77 @@ theorem isIntegralLattice_subtype_of_isZLattice [FiniteDimensional ℝ V] (L : S
 
 end Discrete
 
+/-! ### The dual basis of an integral basis -/
+
+section DualBasis
+
+open Module Set Submodule
+
+variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+  (h : IsIntegralLattice i) {κ : Type*} [Finite κ]
+
+namespace IsIntegralLattice
+
+/-- The basis of `V* = StrongDual ℝ V` dual to the real basis `i ∘ b` of `V` attached to an
+integral basis `b` of `N`. -/
+noncomputable def dualBasis (b : Basis κ ℤ N) : Basis κ ℝ (StrongDual ℝ V) :=
+  have := h.finiteDimensional
+  by classical exact (h.isBaseChange.basis b).dualBasis.map LinearMap.toContinuousLinearMap
+
+/-- The coordinates of a functional in the dual basis of `b` are its values on the lattice vectors
+`i (b j)`. -/
+@[simp]
+theorem dualBasis_repr (b : Basis κ ℤ N) (x : StrongDual ℝ V) (j : κ) :
+    (h.dualBasis b).repr x j = x (i (b j)) := by
+  have := h.finiteDimensional
+  classical
+  simp [dualBasis, IsBaseChange.basis_apply]
+
+@[simp]
+theorem dualBasis_equivFun (b : Basis κ ℤ N) (x : StrongDual ℝ V) (j : κ) :
+    (h.dualBasis b).equivFun x j = x (i (b j)) := by
+  rw [Basis.equivFun_apply, dualBasis_repr]
+
+/-- The dual basis of `b` takes the value `1` on the matching lattice vector and `0` on the
+others. -/
+@[simp]
+theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
+    h.dualBasis b j (i (b k)) = if k = j then 1 else 0 := by
+  rw [← h.dualBasis_repr, Basis.repr_self, Finsupp.single_apply]
+  exact if_congr eq_comm rfl rfl
+
+/-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
+it takes integer values on the lattice. In particular this span does not depend on `b`. -/
+theorem mem_span_dualBasis_iff (b : Basis κ ℤ N) {x : StrongDual ℝ V} :
+    x ∈ span ℤ (range (h.dualBasis b)) ↔ ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ) := by
+  have := Fintype.ofFinite κ
+  rw [Basis.mem_span_iff_repr_mem]
+  simp only [dualBasis_repr, algebraMap_int_eq, Int.coe_castRingHom]
+  refine ⟨fun hx n ↦ ?_, fun hx j ↦ hx (b j)⟩
+  choose m hm using hx
+  refine ⟨∑ j, b.repr n j * m j, ?_⟩
+  conv_rhs => rw [← b.sum_repr n, map_sum, map_sum]
+  simp only [map_zsmul, zsmul_eq_mul, ← hm]
+  push_cast
+  rfl
+
+/-- The dual bases of any two integral bases span the same lattice, the weight lattice. -/
+theorem span_dualBasis_eq {κ' : Type*} [Finite κ'] (b : Basis κ ℤ N)
+    (b' : Basis κ' ℤ N) :
+    span ℤ (range (h.dualBasis b)) = span ℤ (range (h.dualBasis b')) := by
+  ext x
+  rw [mem_span_dualBasis_iff, mem_span_dualBasis_iff]
+
+end IsIntegralLattice
+
+end DualBasis
+
 /-! ### The standard lattice -/
+
+/-- The standard lattice `ℤ ⊆ ℝ` given by the integer cast. -/
+theorem isIntegralLattice_castAddHom : IsIntegralLattice (Int.castAddHom ℝ) :=
+  isIntegralLattice_of_basis (Module.Basis.singleton (Fin 1) ℤ) (Module.Basis.singleton (Fin 1) ℝ)
+    fun _ ↦ by simp
 
 /-- The standard lattice `ℤ^n ⊆ ℝ^n` given by the coordinatewise integer cast. -/
 theorem isIntegralLattice_intCast (n : ℕ) :
