@@ -412,7 +412,9 @@ theorem sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
         (sobolevGaugeFixedOperator c)).comp
           ((variationMotion u a).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) := by
   ext1 y
-  simpa using sobolevGaugeFixedOperator_coefficientMotion_apply u a c ((variationMotion u a).symm y)
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  rw [← sobolevGaugeFixedOperator_coefficientMotion_apply, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The kernel of the realization at a moved coefficient is the moved kernel. -/
 theorem ker_sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
@@ -422,10 +424,12 @@ theorem ker_sobolevGaugeFixedOperator_coefficientMotion (u : Circle) (a : ℂ)
         (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)) :
           (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →ₗ[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)) := by
   ext y
-  simp only [Submodule.mem_map, LinearMap.mem_ker, sobolevGaugeFixedOperator_coefficientMotion]
-  refine ⟨fun h ↦ ⟨(variationMotion u a).symm y, by simpa using h, by simp⟩, ?_⟩
+  simp only [Submodule.mem_map, LinearMap.mem_ker, sobolevGaugeFixedOperator_coefficientMotion,
+    ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.map_eq_zero_iff]
+  refine ⟨fun h ↦ ⟨(variationMotion u a).symm y, h, (variationMotion u a).apply_symm_apply y⟩, ?_⟩
   rintro ⟨y₀, hy₀, rfl⟩
-  simpa using hy₀
+  rwa [ContinuousLinearEquiv.symm_apply_apply]
 
 /-- The realization at a moved coefficient is onto exactly when the realization at `c` is. -/
 theorem sobolevGaugeFixedOperator_coefficientMotion_surjective_iff (u : Circle) (a : ℂ)
