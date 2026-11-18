@@ -41,6 +41,16 @@ The computation has three steps.
 The disks of the single cells are lifted to the universe of `E` and `B`, so that the pullbacks
 are Serre fibrations in `TopCat.{u}`.
 
+A map `f : E ⟶ E'` over `B` between Serre fibrations induces maps between all these objects, and
+the identification is natural for them: on the first page it acts on the summand of `j` by the map
+of fibres over `χⱼ(0)`. Barraud–Damian–Humilière–Oancea identify the shriek map of the inclusion
+of a point into an oriented closed `n`-manifold, with a CW structure having a single top cell
+oriented compatibly (or with coefficients in `𝔽₂`, their Lemma 2.9), with the composite
+`Hq+n(E) ⟶ Hq+n(E, p⁻¹(Xⁿ⁻¹)) ≅ Hq(F)`. The naturality of the skeletal identification,
+`TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality`, supplies the
+cell-to-fibre square used to commute that composite with maps of fibrations (their
+Proposition 2.12); neither the shriek map nor Proposition 2.12 itself is formalized here.
+
 ## Main definitions and results
 
 * `TauCeti.TopCat.cellDiskPullbackPair`: the pair `(Pⱼ, ∂Pⱼ)` of the pullback of `p` along the
@@ -57,7 +67,8 @@ are Serre fibrations in `TopCat.{u}`.
   (`TauCeti.TopCat.cellDiskPullbackPairSingularHomologyIso_hom_naturality`).
 * `TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma`:
   `Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ≅ ⨁ⱼ Hq(Fⱼ)`, characterized on the summands by
-  `TauCeti.TopCat.ι_preimageSkeletonPairSingularHomologyIsoSigma_inv`.
+  `TauCeti.TopCat.ι_preimageSkeletonPairSingularHomologyIsoSigma_inv`, and natural in maps over
+  `B` (`TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality`).
 
 ## References
 
@@ -67,6 +78,8 @@ are Serre fibrations in `TopCat.{u}`.
   [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
   Chapter 1, Section 1.1 (the homology spectral sequence).
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Section 5.1.
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, §2.4, Lemma 2.9 and Proposition 2.12.
 -/
 
 public section
@@ -475,6 +488,44 @@ lemma ι_preimageSkeletonPairSingularHomologyIsoSigma_inv (n q : ℕ) (j : cell 
   rw [preimageSkeletonPairSingularHomologyIsoSigma, Iso.trans_inv, Sigma.ι_mapIso_inv_assoc]
   exact congrArg _ ((isColimitCofanSingularHomologyPreimageSkeletonPair C hp R n
     (q + n)).comp_coconePointUniqueUpToIso_inv (coproductIsCoproduct _) ⟨j⟩)
+
+variable {E' : _root_.TopCat.{u}} {p' : E' ⟶ B} {f : E ⟶ E'} in
+/-- **Naturality of the first page of the skeletal filtration of a Serre fibration.** For a map
+`f` over `B` between Serre fibrations `p` and `p'`, the identifications
+`Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ≅ ⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)` intertwine the map induced by `f` on the
+consecutive stages of the skeletal filtrations with the sum of the maps induced on `Hq` by any maps
+`g j` of the fibres over the centres of the cells that agree with `f`. -/
+@[reassoc]
+theorem preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality (hp' : serreFibrations p')
+    (hf : f ≫ p' = p) (n q : ℕ)
+    (g : ∀ j : cell C n, _root_.TopCat.of (p ⁻¹' {map n j 0} : Set E) ⟶
+      _root_.TopCat.of (p' ⁻¹' {map n j 0} : Set E'))
+    (hg : ∀ j x, (g j x : E') = f x) :
+    TopPair.singularHomologyMap
+        (TopCat.Hom.preimagePairMap f hf (skeletonLT_subset_skeletonLT_succ C n))
+        (ModuleCat.of R R) (q + n) ≫
+        (preimageSkeletonPairSingularHomologyIsoSigma C hp' R n q).hom =
+      (preimageSkeletonPairSingularHomologyIsoSigma C hp R n q).hom ≫
+        Limits.Sigma.map fun j ↦
+          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+            (ModuleCat.of R R)).map (g j) := by
+  rw [← cancel_epi (preimageSkeletonPairSingularHomologyIsoSigma C hp R n q).inv,
+    Iso.inv_hom_id_assoc]
+  refine Sigma.hom_ext _ _ fun j ↦ ?_
+  -- On the summand of `j`, this is the naturality of `Hq+n(Pⱼ, ∂Pⱼ) ≅ Hq(Fⱼ)`.
+  have hι : TopPair.singularHomologyMap (cellDiskPullbackPairMap p' C n j) (ModuleCat.of R R)
+        (q + n) ≫ (preimageSkeletonPairSingularHomologyIsoSigma C hp' R n q).hom =
+      (cellDiskPullbackPairSingularHomologyIso hp' R n q j).hom ≫
+        Sigma.ι (fun j : cell C n ↦ ((AlgebraicTopology.singularHomologyFunctor
+          (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
+            (_root_.TopCat.of (p' ⁻¹' {map n j 0} : Set E'))) j := by
+    rw [← Iso.inv_comp_eq, ← ι_preimageSkeletonPairSingularHomologyIsoSigma_inv_assoc,
+      Iso.inv_hom_id, Category.comp_id]
+  rw [ι_preimageSkeletonPairSingularHomologyIsoSigma_inv_assoc, Sigma.ι_map,
+    ← TopPair.singularHomologyMap_comp_assoc, cellDiskPullbackPairMap_comp_preimagePairMap,
+    TopPair.singularHomologyMap_comp_assoc, hι,
+    cellDiskPullbackPairSingularHomologyIso_hom_naturality_assoc hp R hp' hf n q j (g j) (hg j),
+    Iso.inv_hom_id_assoc]
 
 end Homology
 

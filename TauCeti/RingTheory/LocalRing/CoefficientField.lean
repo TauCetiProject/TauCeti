@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Finite.Basic
-public import Mathlib.RingTheory.Etale.Field
+public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.Smooth.AdicCompletion
 public import TauCeti.Algebra.Module.SpanRank
@@ -18,9 +17,9 @@ import TauCeti.RingTheory.MvPowerSeries.Evaluation
 
 Let `R` be a local ring which is complete for the adic topology of its maximal ideal `𝔪`, and let
 `k → R` be a ring homomorphism such that the residue field `R ⧸ 𝔪` is formally étale over `k`; the
-main case is a field `k` over which `R ⧸ 𝔪` is separable (`Algebra.FormallyEtale.of_isSeparable`).
-Then reduction `R → R ⧸ 𝔪` has a unique `k`-algebra section: the residue field lifts to a
-*coefficient field* of `R` containing the image of `k`.
+main case is a field `k` over which `R ⧸ 𝔪` is algebraic and separable
+(`Algebra.FormallyEtale.of_isSeparable`). Then reduction `R → R ⧸ 𝔪` has a unique `k`-algebra
+section: the residue field lifts to a *coefficient field* of `R` containing the image of `k`.
 
 Existence is Hensel's lemma in the guise of formal smoothness: the identity of `R ⧸ 𝔪` lifts along
 the `𝔪`-adically complete ring `R` (`Algebra.FormallySmooth.exists_mkₐ_comp_eq_of_isAdicComplete`).

@@ -20,10 +20,10 @@ has, for every `g ∈ H^j(ℂ)`, a weak solution `u ∈ H^(j+2)(ℂ)`, unique am
 `TauCeti.Vortex.ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq`). This file packages these
 statements about functions as bounded operators between the completed Sobolev spaces.
 
-The spaces are the real Banach spaces `H^s_ℝ(ℂ) = BesselPotentialSpace.realSubmodule ℂ s`, the
-closed real subspaces of Mathlib's Bessel-potential spaces `H^s(ℂ)` formed by the real `H^s`
-functions, read off by `BesselPotentialSpace.reValue`. Gauge parameters are real functions, and
-these are the domain and target of the linearized Coulomb gauge condition.
+The spaces are the real Banach spaces `H^s_ℝ(ℂ) = BesselPotentialSpace.realSubmodule ℂ h` for
+`h : 0 ≤ s`, the closed real subspaces of Mathlib's Bessel-potential spaces `H^s(ℂ)` formed by
+the real `H^s` functions, read off by `BesselPotentialSpace.reValue`. Gauge parameters are real
+functions, and these are the domain and target of the linearized Coulomb gauge condition.
 
 * `TauCeti.Vortex.gaugeGreen : H^j_ℝ(ℂ) →L[ℝ] H^(j+2)_ℝ(ℂ)`, the **Green operator**: the real part
   of `gaugeGreen g` is a weak solution of `d₀* d₀ u = g` (`TauCeti.Vortex.gaugeGreen_spec`), and
@@ -123,19 +123,19 @@ private theorem weak_smul {u u₁ g g₁ : ℂ → ℝ} (c : ℝ) (hu : u =ᵐ[v
 variable (f m) in
 /-- The solution of `d₀* d₀ u = g` for `g ∈ H^j_ℝ(ℂ)`, before linearity is established. -/
 private def greenFun (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
-    (hcont : Continuous x) (g : realSubmodule ℂ (j : ℝ)) :
-    realSubmodule ℂ ((j : ℝ) + 2) :=
+    (hcont : Continuous x) (g : realSubmodule ℂ (Nat.cast_nonneg j)) :
+    realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two) :=
   ofRealSobolev (exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq hk
-    hjk hx hcont (reValue_mem_realSobolevFunctions (by positivity) g.2)).choose_spec.1
+    hjk hx hcont (reValue_mem_realSobolevFunctions g.2)).choose_spec.1
 
 /-- The real part of `greenFun g` is a weak solution of `d₀* d₀ u = g`, for `C²` test functions. -/
 private theorem greenFun_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
-    (hcont : Continuous x) (g : realSubmodule ℂ (j : ℝ))
+    (hcont : Continuous x) (g : realSubmodule ℂ (Nat.cast_nonneg j))
     (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) :
     ∫ z, reValue (greenFun f m hk hjk hx hcont g : H^{(j : ℝ) + 2}(ℂ)) z *
         gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, reValue (g : H^{(j : ℝ)}(ℂ)) z * φ z := by
   set h := exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq hk hjk hx
-    hcont (reValue_mem_realSobolevFunctions (by positivity) g.2)
+    hcont (reValue_mem_realSobolevFunctions g.2)
   rw [← h.choose_spec.2 φ hφ hc]
   exact integral_congr_ae ((reValue_ofRealSobolev (by positivity) h.choose_spec.1).mono
     fun z hz ↦ by simp only [greenFun, hz])
@@ -143,13 +143,13 @@ private theorem greenFun_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFie
 /-- An element of `H^(j+2)_ℝ(ℂ)` whose real part is a weak solution of `d₀* d₀ u = g` is
 `greenFun g`. -/
 private theorem eq_greenFun (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
-    (hcont : Continuous x) (g : realSubmodule ℂ (j : ℝ))
-    (v : realSubmodule ℂ ((j : ℝ) + 2))
+    (hcont : Continuous x) (g : realSubmodule ℂ (Nat.cast_nonneg j))
+    (v : realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two))
     (hv : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
       ∫ z, reValue (v : H^{(j : ℝ) + 2}(ℂ)) z * gaugeAdjoint x (gaugeDirection x φ) z =
         ∫ z, reValue (g : H^{(j : ℝ)}(ℂ)) z * φ z) :
     v = greenFun f m hk hjk hx hcont g :=
-  Subtype.ext <| eq_of_reValue_ae_eq (by positivity) v.2 (greenFun f m hk hjk hx hcont g).2 <|
+  Subtype.ext <| eq_of_reValue_ae_eq v.2 (greenFun f m hk hjk hx hcont g).2 <|
     ae_eq_of_integral_mul_gaugeAdjoint_gaugeDirection_eq (by exact_mod_cast hk) hx hcont
       (memLp_reValue _) (memLp_reValue _) hv
       fun φ hφ hc ↦ greenFun_spec hk hjk hx hcont g φ (hφ.of_le (by simp)) hc
@@ -158,8 +158,8 @@ variable (f m) in
 /-- The solution map of the gauge Laplacian as a linear map, by uniqueness of weak solutions. -/
 private def greenLinear (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     (hcont : Continuous x) :
-    realSubmodule ℂ (j : ℝ) →ₗ[ℝ]
-      realSubmodule ℂ ((j : ℝ) + 2) where
+    realSubmodule ℂ (Nat.cast_nonneg j) →ₗ[ℝ]
+      realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two) where
   toFun := greenFun f m hk hjk hx hcont
   map_add' g₁ g₂ := by
     refine (eq_greenFun hk hjk hx hcont _ _ ?_).symm
@@ -179,8 +179,8 @@ the unique one whose real part `u` solves `d₀* d₀ u = g` weakly (`TauCeti.Vo
 `TauCeti.Vortex.eq_gaugeGreen_iff`). It is a bounded real-linear operator. -/
 def gaugeGreen (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     (hcont : Continuous x) :
-    realSubmodule ℂ (j : ℝ) →L[ℝ]
-      realSubmodule ℂ ((j : ℝ) + 2) :=
+    realSubmodule ℂ (Nat.cast_nonneg j) →L[ℝ]
+      realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two) :=
   ContinuousLinearMap.ofSeqClosedGraph (g := greenLinear f m hk hjk hx hcont) fun g g₀ v hg hv ↦ by
     refine eq_greenFun hk hjk hx hcont g₀ v fun φ hφ hc ↦ ?_
     have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
@@ -203,7 +203,7 @@ def gaugeGreen (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
 /-- The real part of `gaugeGreen g` is a weak solution of `d₀* d₀ u = g`:
 `∫ u · d₀* d₀ φ = ∫ g φ` for every compactly supported `C²` function `φ`. -/
 theorem gaugeGreen_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
-    (hcont : Continuous x) (g : realSubmodule ℂ (j : ℝ))
+    (hcont : Continuous x) (g : realSubmodule ℂ (Nat.cast_nonneg j))
     (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) :
     ∫ z, reValue (gaugeGreen f m hk hjk hx hcont g : H^{(j : ℝ) + 2}(ℂ)) z *
         gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, reValue (g : H^{(j : ℝ)}(ℂ)) z * φ z :=
@@ -212,8 +212,8 @@ theorem gaugeGreen_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpac
 /-- **Uniqueness.** An element `v ∈ H^(j+2)_ℝ(ℂ)` is `gaugeGreen g` exactly when its real part is
 a weak solution of `d₀* d₀ u = g`, tested against smooth compactly supported functions. -/
 theorem eq_gaugeGreen_iff (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
-    (hcont : Continuous x) {g : realSubmodule ℂ (j : ℝ)}
-    {v : realSubmodule ℂ ((j : ℝ) + 2)} :
+    (hcont : Continuous x) {g : realSubmodule ℂ (Nat.cast_nonneg j)}
+    {v : realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two)} :
     v = gaugeGreen f m hk hjk hx hcont g ↔
       ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
         ∫ z, reValue (v : H^{(j : ℝ) + 2}(ℂ)) z * gaugeAdjoint x (gaugeDirection x φ) z =
@@ -227,7 +227,7 @@ equation. -/
 theorem gaugeGreen_injective (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     (hcont : Continuous x) : Function.Injective (gaugeGreen f m hk hjk hx hcont) := by
   intro g₁ g₂ h
-  refine Subtype.ext (eq_of_reValue_ae_eq (by positivity) g₁.2 g₂.2 ?_)
+  refine Subtype.ext (eq_of_reValue_ae_eq g₁.2 g₂.2 ?_)
   refine ae_eq_of_integral_contDiff_smul_eq ((memLp_reValue _).locallyIntegrable one_le_two)
     ((memLp_reValue _).locallyIntegrable one_le_two) fun φ hφ hc ↦ ?_
   have e₁ := gaugeGreen_spec hk hjk hx hcont g₁ φ (hφ.of_le (by simp)) hc
@@ -245,7 +245,7 @@ theorem gaugeGreen_surjective (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFie
   intro v
   obtain ⟨g, hg, hweak⟩ :=
     exists_mem_realSobolevFunctions_integral_mul_gaugeAdjoint_gaugeDirection_eq_of_mem_add_two hk
-      hjk hx (reValue_mem_realSobolevFunctions (by positivity) v.2)
+      hjk hx (reValue_mem_realSobolevFunctions v.2)
   refine ⟨ofRealSobolev hg, ((eq_gaugeGreen_iff hk hjk hx hcont).2 fun φ hφ hc ↦ ?_).symm⟩
   rw [hweak φ hφ hc]
   exact integral_congr_ae ((reValue_ofRealSobolev (by positivity) hg).mono fun z hz ↦ by
@@ -259,7 +259,8 @@ isomorphism `H^(j+2)_ℝ(ℂ) ≃L[ℝ] H^j_ℝ(ℂ)`, characterized by its weak
 `TauCeti.Vortex.gaugeGreen` (`TauCeti.Vortex.coe_gaugeLaplacianEquiv_symm`). -/
 def gaugeLaplacianEquiv (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
     (hcont : Continuous x) :
-    realSubmodule ℂ ((j : ℝ) + 2) ≃L[ℝ] realSubmodule ℂ (j : ℝ) :=
+    realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two) ≃L[ℝ]
+      realSubmodule ℂ (Nat.cast_nonneg j) :=
   (ContinuousLinearEquiv.ofBijective (gaugeGreen f m hk hjk hx hcont)
     (LinearMap.ker_eq_bot.2 (gaugeGreen_injective hk hjk hx hcont))
     (LinearMap.range_eq_top.2 (gaugeGreen_surjective hk hjk hx hcont))).symm
@@ -274,8 +275,8 @@ theorem coe_gaugeLaplacianEquiv_symm (hk : 1 < k) (hjk : j ≤ k)
 /-- The real part of `v ∈ H^(j+2)_ℝ(ℂ)` is a weak solution of `d₀* d₀ v = g` for
 `g = gaugeLaplacianEquiv v`. -/
 theorem gaugeLaplacianEquiv_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framedFieldSpace f m k)
-    (hcont : Continuous x) (v : realSubmodule ℂ ((j : ℝ) + 2)) (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ)
-    (hc : HasCompactSupport φ) :
+    (hcont : Continuous x) (v : realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two))
+    (φ : ℂ → ℝ) (hφ : ContDiff ℝ 2 φ) (hc : HasCompactSupport φ) :
     ∫ z, reValue (v : H^{(j : ℝ) + 2}(ℂ)) z * gaugeAdjoint x (gaugeDirection x φ) z =
       ∫ z, reValue (gaugeLaplacianEquiv f m hk hjk hx hcont v : H^{(j : ℝ)}(ℂ)) z * φ z := by
   conv_lhs => rw [← (gaugeLaplacianEquiv f m hk hjk hx hcont).symm_apply_apply v,
@@ -285,22 +286,25 @@ theorem gaugeLaplacianEquiv_spec (hk : 1 < k) (hjk : j ≤ k) (hx : x ∈ framed
 /-- The gauge Laplacian of `gaugeGreen g` is `g`. -/
 @[simp]
 theorem gaugeLaplacianEquiv_gaugeGreen (hk : 1 < k) (hjk : j ≤ k)
-    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) (g : realSubmodule ℂ (j : ℝ)) :
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    (g : realSubmodule ℂ (Nat.cast_nonneg j)) :
     gaugeLaplacianEquiv f m hk hjk hx hcont (gaugeGreen f m hk hjk hx hcont g) = g := by
   rw [← coe_gaugeLaplacianEquiv_symm, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- The Green operator inverts the gauge Laplacian. -/
 @[simp]
 theorem gaugeGreen_gaugeLaplacianEquiv (hk : 1 < k) (hjk : j ≤ k)
-    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) (v : realSubmodule ℂ ((j : ℝ) + 2)) :
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    (v : realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two)) :
     gaugeGreen f m hk hjk hx hcont (gaugeLaplacianEquiv f m hk hjk hx hcont v) = v := by
   rw [← coe_gaugeLaplacianEquiv_symm, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- `gaugeLaplacianEquiv v = g` exactly when the real part of `v` is a weak solution of
 `d₀* d₀ u = g`, tested against smooth compactly supported functions. -/
 theorem gaugeLaplacianEquiv_apply_eq_iff (hk : 1 < k) (hjk : j ≤ k)
-    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x) {v : realSubmodule ℂ ((j : ℝ) + 2)}
-    {g : realSubmodule ℂ (j : ℝ)} :
+    (hx : x ∈ framedFieldSpace f m k) (hcont : Continuous x)
+    {v : realSubmodule ℂ (add_nonneg (Nat.cast_nonneg j) zero_le_two)}
+    {g : realSubmodule ℂ (Nat.cast_nonneg j)} :
     gaugeLaplacianEquiv f m hk hjk hx hcont v = g ↔
       ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
         ∫ z, reValue (v : H^{(j : ℝ) + 2}(ℂ)) z * gaugeAdjoint x (gaugeDirection x φ) z =
