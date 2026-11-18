@@ -66,6 +66,9 @@ source does not contain `x` (`Bundle.Trivialization.chartDistributionCLM_delta_o
   §§16, 19 (distributions on manifolds and densities).
 -/
 
+-- The carrier, its instances, `ofCompactlySupported` and the test topology are exposed: the
+-- characterizing lemmas below are proved by unfolding them to compactly supported sections, and
+-- without exposure their bodies could not be unfolded in those proofs.
 @[expose] public noncomputable section
 
 open Bundle Set TopologicalSpace ContMDiffSection
@@ -144,6 +147,16 @@ theorem coe_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F �
     ⇑(ofCompactlySupported I F V s) = s.1 :=
   rfl
 
+/-- A bundle test is a smooth section. -/
+theorem contMDiff (s : BundleTest I F V) :
+    ContMDiff I (I.prod 𝓘(ℝ, F)) ∞ fun x ↦ TotalSpace.mk' F x (s x) :=
+  ((ofCompactlySupported I F V).symm s).1.contMDiff
+
+/-- A bundle test has compact support. -/
+theorem isCompact_tsupport (s : BundleTest I F V) : IsCompact (closure {x | s x ≠ 0}) :=
+  (tsupport_def ((ofCompactlySupported I F V).symm s).1).symm ▸
+    mem_compactlySupported.1 ((ofCompactlySupported I F V).symm s).2
+
 /-- Bundle tests are determined by their values. -/
 @[ext]
 theorem ext {s t : BundleTest I F V} (h : ∀ x, s x = t x) : s = t :=
@@ -191,6 +204,27 @@ theorem continuous_apply (x : M) : Continuous fun s : BundleTest I F V ↦ s x :
     (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
   exact (continuous_eval_const _ _ _ (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩) x).comp
     (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _)
+
+/-- Every fixed-compact support stage includes continuously into the bundle tests. -/
+theorem continuous_ofSupportedIn (K : Compacts M) :
+    letI := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
+      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    Continuous (ofCompactlySupported I F V ∘ ofSupportedIn (I := I) (F := F) (V := V) K) :=
+  ContMDiffSection.continuous_ofSupportedIn _ _ _ K
+
+variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
+  [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
+
+/-- The universal property of the test topology: a linear map from bundle tests to a locally
+convex real topological vector space is continuous exactly when it is continuous on every
+fixed-compact support stage. -/
+theorem continuous_iff (g : BundleTest I F V →ₗ[ℝ] G) :
+    letI := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
+      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    Continuous g ↔ ∀ K : Compacts M,
+      Continuous (g ∘ ofCompactlySupported I F V ∘ ofSupportedIn (I := I) (F := F) (V := V) K) :=
+  continuous_compactlySupportedTopology_iff _ _ _
+    (g ∘ₗ (ofCompactlySupported I F V).toLinearMap)
 
 /-! ### Point masses -/
 
@@ -254,7 +288,7 @@ def chartTestCLM : 𝓓(⟨c.target, c.open_target⟩, F) →L[ℝ] BundleTest I
   cont := continuous_chartTestSection (n := ⊤) t c hc hct _ _ _
 
 @[simp]
-theorem chartTestCLM_apply (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
+theorem coe_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
     ⇑(t.chartTestCLM c hc hct φ) = (t.chartTestSection (n := ⊤) c hc hct φ).1 :=
   (rfl)
 
@@ -320,9 +354,9 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
   (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-  (V : M → Type*) [∀ x, NormedAddCommGroup (V x)] [∀ x, NormedSpace ℝ (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle ∞ F V I]
+  (V : M → Type*) [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
 
 /-- The **distributional sections** of a smooth vector bundle `V`: the continuous linear
 functionals on the bundle tests with values in the `V`-dual densities, the bundle of continuous
