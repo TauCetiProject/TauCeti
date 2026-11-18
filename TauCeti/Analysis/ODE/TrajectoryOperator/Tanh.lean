@@ -233,17 +233,24 @@ theorem mem_orthogonal_range_trajectoryOperator_neg_tanh_smul_id_iff [FiniteDime
 `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm` applies. -/
 private theorem neg_tanh_smul_id_hypotheses :
     Continuous (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) ∧
-      (∀ s, ((-Real.tanh s) • ContinuousLinearMap.id ℝ E).toLinearMap.IsSymmetric) ∧
-      (∀ v : E, 1 * ‖v‖ ≤ ‖ContinuousLinearMap.id ℝ E v‖) ∧
-      (∀ v : E, 1 * ‖v‖ ≤ ‖(-ContinuousLinearMap.id ℝ E) v‖) ∧
+      (ContinuousLinearMap.id ℝ E).HasLyapunovForm ∧
+      (-ContinuousLinearMap.id ℝ E).HasLyapunovForm ∧
       Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atBot
         (𝓝 (ContinuousLinearMap.id ℝ E)) ∧
       Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atTop
         (𝓝 (-ContinuousLinearMap.id ℝ E)) := by
-  refine ⟨Real.continuous_tanh.neg.smul continuous_const, fun s x y ↦ ?_, by simp, by simp,
-    by simpa using Real.tendsto_tanh_atBot.neg.smul_const (ContinuousLinearMap.id ℝ E),
-    by simpa using Real.tendsto_tanh_atTop.neg.smul_const (ContinuousLinearMap.id ℝ E)⟩
-  simp [real_inner_smul_left, real_inner_smul_right]
+  have hsym (s : ℝ) : ((-Real.tanh s) • ContinuousLinearMap.id ℝ E).toLinearMap.IsSymmetric :=
+    fun x y ↦ by simp [real_inner_smul_left, real_inner_smul_right]
+  have hbot : Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atBot
+      (𝓝 (ContinuousLinearMap.id ℝ E)) := by
+    simpa using Real.tendsto_tanh_atBot.neg.smul_const (ContinuousLinearMap.id ℝ E)
+  have htop : Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atTop
+      (𝓝 (-ContinuousLinearMap.id ℝ E)) := by
+    simpa using Real.tendsto_tanh_atTop.neg.smul_const (ContinuousLinearMap.id ℝ E)
+  exact ⟨Real.continuous_tanh.neg.smul continuous_const,
+    ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos (by simp),
+    ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos (by simp),
+    hbot, htop⟩
 
 variable [FiniteDimensional ℝ E]
 
@@ -254,11 +261,9 @@ theorem isFredholm_trajectoryOperator_neg_tanh_smul_id
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) :
     (trajectoryOperator (p := 2) AL).IsFredholm := by
-  obtain ⟨hA, hsym, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
   exact isFredholm_trajectoryOperator_of_hasLyapunovForm hA
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hminus)
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos hplus)
-    hbot htop AL hAL
+    hminus hplus hbot htop AL hAL
 
 /-- **The index of `d/ds - tanh s` is `-dim E`.** For the `L∞` class `AL` of `s ↦ -tanh(s) • id`
 on a finite-dimensional real inner product space `E`, the trajectory operator `u ↦ u' + AL u`
@@ -268,16 +273,14 @@ theorem index_trajectoryOperator_neg_tanh_smul_id
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) :
     (trajectoryOperator (p := 2) AL).index = -(Module.finrank ℝ E : ℤ) := by
-  obtain ⟨hA, hsym, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
   -- The coefficients are symmetric, so `AL` is also the class of their adjoints.
   have hadj : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ ContinuousLinearMap.adjoint ((-Real.tanh s) • ContinuousLinearMap.id ℝ E) := by
     filter_upwards [hAL] with s hs
-    rw [hs, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 (hsym s)).adjoint_eq]
+    simp [hs, ContinuousLinearMap.adjoint_id]
   rw [index_trajectoryOperator_of_hasLyapunovForm hA
-      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hminus)
-      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos hplus)
-      hbot htop AL AL hAL hadj,
+      hminus hplus hbot htop AL AL hAL hadj,
     finrank_ker_trajectoryOperator continuous_neg_tanh_smul_id AL hAL,
     finrank_ker_trajectoryOperator continuous_tanh_smul_id (-AL) (neg_ae_eq_tanh_smul_id hAL),
     squareIntegrableSolutions_neg_tanh_smul_id, squareIntegrableSolutions_tanh_smul_id,
@@ -302,11 +305,9 @@ theorem isFredholm_trajectoryOperator_tanh_smul_id
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ E) :
     (trajectoryOperator (p := 2) AL).IsFredholm := by
-  obtain ⟨hA, hsym, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
   exact isFredholm_trajectoryOperator_adjoint_comp_neg hA
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hminus)
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos hplus)
-    hbot htop AL (ae_eq_adjoint_neg_tanh_smul_id_neg hAL)
+    hminus hplus hbot htop AL (ae_eq_adjoint_neg_tanh_smul_id_neg hAL)
 
 /-- **The trajectory operator `d/ds + tanh s` is onto.** For the `L∞` class `AL` of
 `s ↦ tanh(s) • id` on a finite-dimensional real inner product space `E`, the operator
@@ -330,12 +331,10 @@ theorem index_trajectoryOperator_tanh_smul_id
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ E) :
     (trajectoryOperator (p := 2) AL).index = Module.finrank ℝ E := by
-  obtain ⟨hA, hsym, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
   have hneg := neg_ae_eq_neg_smul_id hAL
   rw [index_trajectoryOperator_adjoint_comp_neg hA
-      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hminus)
-      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos hplus)
-      hbot htop (-AL) AL hneg (ae_eq_adjoint_neg_tanh_smul_id_neg hAL),
+      hminus hplus hbot htop (-AL) AL hneg (ae_eq_adjoint_neg_tanh_smul_id_neg hAL),
     index_trajectoryOperator_neg_tanh_smul_id hneg, neg_neg]
 
 end WeakDerivStep
