@@ -27,7 +27,7 @@ live beside `Sentenceω.wellOrder_type_boundedness` in `TauCeti.ModelTheory.Well
 
 ## Main definitions
 
-* `TauCeti.WellOrdersOfBoundedType.boundedTypeSentence`: the disjunction of the Scott sentences of
+* `Ordinal.boundedTypeSentence`: the disjunction of the Scott sentences of
   the ordinals below a countable ordinal.
 
 ## Main results
@@ -47,7 +47,9 @@ open FirstOrder FirstOrder.Language Structure Ordinal
 
 universe w w'
 
-namespace TauCeti.WellOrdersOfBoundedType
+namespace Ordinal
+
+open TauCeti
 
 /-! ### Disjunctions of Scott sentences of ordinals -/
 
@@ -66,6 +68,10 @@ theorem boundedTypeSentence_def (α : Ordinal.{w}) (hα : α < ω₁) :
       (IndexCoding.ofEncodableWith (Cardinal.countable_Iio_of_lt_omega_one hα).toEncodable)
       fun β => ordinalScottSentence β.1 (β.2.trans hα) :=
   (rfl)
+
+end Ordinal
+
+namespace TauCeti.WellOrdersOfBoundedType
 
 /-- A structure satisfies the disjunction of the Scott sentences of the ordinals below `α` exactly
 when it satisfies one of them. -/

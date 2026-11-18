@@ -26,7 +26,7 @@ its models.
 
 ## Main definitions
 
-* `TauCeti.ordinalScottSentence`: the canonical Scott sentence of a countable ordinal in the
+* `Ordinal.ordinalScottSentence`: the canonical Scott sentence of a countable ordinal in the
   language of orders.
 
 ## Main results
@@ -49,9 +49,11 @@ public section
 
 universe w w'
 
-namespace TauCeti
-
 open FirstOrder FirstOrder.Language Structure Ordinal
+
+namespace Ordinal
+
+open TauCeti
 
 /-- The Scott sentence of a countable ordinal `β`, as a well-order in the language of orders. -/
 noncomputable def ordinalScottSentence (β : Ordinal.{w}) (hβ : β < ω₁) :
@@ -67,6 +69,10 @@ theorem ordinalScottSentence_def (β : Ordinal.{w}) (hβ : β < ω₁) :
       have := Cardinal.countable_toType_of_lt_omega_one hβ
       scottSentence (L := Language.order) β.ToType :=
   (rfl)
+
+end Ordinal
+
+namespace TauCeti
 
 /-- A countable ordinal satisfies its own Scott sentence. -/
 @[simp]

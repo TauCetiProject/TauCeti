@@ -799,16 +799,12 @@ private theorem realize_ltAxiom {M : Type w} [LtLang.Structure M] :
   simp [ltAxiom, Term.lt, Term.le, Sentence.Realize, Formula.Realize,
     BoundedFormula.realize_rel₂, Fin.snoc]
 
-/-- The theory of linear orders is countable. -/
-private theorem countable_linearOrderTheory :
-    (BoundedFormula.toOmega '' Language.order.linearOrderTheory).Countable :=
-  (Set.Finite.countable (by simp [linearOrderTheory, partialOrderTheory, preorderTheory])).image _
-
 /-- The sentence of `LtLang` saying that `φ` holds of the order symbol, which is a linear order, and
 that the strict-order symbol is its strict part. -/
 private noncomputable def chainSentence (φ : Language.order.Sentenceω) : LtLang.Sentenceω :=
   LHom.sumInr.onBoundedFormulaInf
-      (φ ⊓ Theoryω.conjunction _ countable_linearOrderTheory) ⊓
+      (φ ⊓ Theoryω.conjunction _
+        (Language.order.finite_linearOrderTheory.countable.image BoundedFormula.toOmega)) ⊓
     ltAxiom.toOmega
 
 /-- An expansion of an order structure satisfies `chainSentence φ` exactly when the order structure
