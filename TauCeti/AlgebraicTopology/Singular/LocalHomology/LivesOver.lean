@@ -264,6 +264,40 @@ theorem livesOverFundamentalClass_homologyMap_coefficient_iff {R' : ModuleCat.{w
   rw [livesOverFundamentalClass_iff, livesOverFundamentalClass_iff, hc]
   exact (map_ne_zero_iff _ hinj)
 
+section Section
+
+variable [TopologicalSpace M] (p : C(E, M)) (s : C(M, E)) (hs : p.comp s = ContinuousMap.id M)
+include hs
+
+/-- **Removing the part of a class carried by a section.** For a section `s` of `p : E → M`, the
+class `α - s_* p_* α` has image zero in `Hₖ(M)`. -/
+theorem homologyMap_sub_homologyMap_section {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
+        (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) = 0 := by
+  rw [map_sub, ← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
+    ← TopCat.ofHom_comp, hs, TopCat.ofHom_id, CategoryTheory.Functor.map_id,
+    SSet.homologyMap_id, ModuleCat.id_apply, sub_self]
+
+/-- **Localizing a class with the part carried by a section removed.** For a section `s` of
+`p : E → M`, the localization at the fibre over `b` of `α - s_* p_* α` is that of `α` minus the
+image under `s` of the local homology class of `p_* α` at `b`. -/
+theorem fiberLocalization_sub_homologyMap_section (b : M) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :
+    (fiberLocalization R p b k).hom
+        (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) =
+      (fiberLocalization R p b k).hom α -
+        (localHomologyMap R s (by rw [← preimage_comp, ← ContinuousMap.coe_comp, hs]; rfl) k).hom
+          ((fiberLocalization R id b k).hom
+            ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) := by
+  rw [map_sub, ← ModuleCat.comp_apply (fiberLocalization R id b k),
+    ← homologyMap_comp_fiberLocalization R s (p := id) (p' := p)
+      (by rw [← ContinuousMap.coe_comp, hs]; rfl) b k, ModuleCat.comp_apply]
+
+end Section
+
 end LivesOver
 
 section Cross

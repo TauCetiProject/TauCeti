@@ -26,6 +26,7 @@ either space. That the constant maps embed `X` in `Map(B, X)` for nonempty `B` i
 * `TauCeti.mappingSpaceEval`: evaluation `Map(B, X) → X` at a chosen point of `B`.
 * `TauCeti.mappingSpaceEval_comp_const'`: constant maps form a continuous section.
 * `TauCeti.isQuotientMap_mappingSpaceEval`: evaluation is a quotient map.
+* `TauCeti.mappingSpaceEvalHomotopy`: evaluations at the two ends of a path are homotopic.
 * `TauCeti.mappingSpaceEval_comp_subtypeVal`: evaluation is constant on the based mapping space,
   the fibre over `x`; its universal lift is `TauCeti.BasedMap.lift`.
 
@@ -88,5 +89,22 @@ theorem mappingSpaceEval_comp_subtypeVal (b : B) (x : X) :
   simp only [ContinuousMap.comp_apply, mappingSpaceEval_apply, ContinuousMap.subtypeVal_apply,
     ContinuousMap.const_apply]
   exact f.2
+
+/-- **Evaluations at the ends of a path are homotopic**, through evaluation along the path. For a
+locally compact `B`, or more generally a locally compact pair `(B, X)`, evaluation
+`Map(B, X) × B → X` is jointly continuous. -/
+def mappingSpaceEvalHomotopy [LocallyCompactPair B X] {b₀ b₁ : B} (γ : Path b₀ b₁) :
+    (mappingSpaceEval (X := X) b₀).Homotopy (mappingSpaceEval b₁) where
+  toFun q := q.2 (γ q.1)
+  continuous_toFun := by fun_prop
+  map_zero_left f := by simp
+  map_one_left f := by simp
+
+/-- At time `t`, the homotopy `mappingSpaceEvalHomotopy γ` evaluates at `γ t`. -/
+@[simp]
+theorem mappingSpaceEvalHomotopy_apply [LocallyCompactPair B X] {b₀ b₁ : B} (γ : Path b₀ b₁)
+    (t : unitInterval) (f : C(B, X)) :
+    mappingSpaceEvalHomotopy γ (t, f) = f (γ t) :=
+  (rfl)
 
 end TauCeti
