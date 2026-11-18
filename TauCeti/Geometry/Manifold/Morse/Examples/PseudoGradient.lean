@@ -20,7 +20,8 @@ each critical point, the linear field `z ↦ (-wᵢ zᵢ)ᵢ` of a Morse chart, 
 `p`, not only its direction: a positive multiple of an adapted pseudo-gradient need not be one.
 This file tests the definition on the two simplest Morse functions.
 
-* **The quadratic well `f(x) = x²` on `ℝ`.** Its Morse charts at `0` are `z = ±√2 x`: every
+* **The quadratic well `f(x) = x²` on `ℝ`.** Its Morse charts at `0` are `z = ±√2 x`
+  (`TauCeti.MorseChart.sqReal` is the chart `z = √2 x`): every
   weight is `1` (`TauCeti.MorseChart.weight_eq_one_sq_real`) and `z² = 2 x²`
   (`TauCeti.MorseChart.sum_coord_toChart_sq_real`). So every pseudo-gradient adapted to `x²` is
   the field `x ↦ -x` near `0`
@@ -62,6 +63,45 @@ namespace TauCeti
 
 namespace MorseChart
 
+/-- **The Morse chart `z = √2 x` of the quadratic well** at `0`: the identity chart of `ℝ`, with the
+coordinate `z = √2 x` and the weight `1`, in which `x² = z² / 2`. -/
+noncomputable def sqReal : MorseChart ℝ (fun x : ℝ ↦ x ^ 2) 0 where
+  toChart := OpenPartialHomeomorph.refl ℝ
+  mem_maximalAtlas := by
+    simpa using IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, ℝ)) (n := ∞) (0 : ℝ)
+  mem_source := mem_univ _
+  apply_self := rfl
+  coord :=
+    letI : Unique (Fin (Module.finrank ℝ ℝ)) := by
+      rw [Module.finrank_self]
+      infer_instance
+    (LinearEquiv.smulOfNeZero ℝ ℝ √2 (by positivity)).trans
+      (LinearEquiv.funUnique (Fin (Module.finrank ℝ ℝ)) ℝ ℝ).symm
+  weight := fun _ ↦ 1
+  weight_eq_neg_one_or_eq_one := fun _ ↦ Or.inr rfl
+  ncard_weight_neg := by
+    rw [manifoldMorseIndex_sq_real_zero, Set.ncard_eq_zero]
+    exact Set.eq_empty_of_forall_notMem fun _ hi ↦ not_lt.2 zero_le_one (Set.mem_ofPred.1 hi)
+  eq_quadratic y _ := by
+    simp [Real.sq_sqrt, mul_pow]
+
+/-- The chart of `MorseChart.sqReal` is the identity of `ℝ`. -/
+@[simp]
+theorem sqReal_toChart : sqReal.toChart = OpenPartialHomeomorph.refl ℝ := by
+  rw [sqReal]
+
+/-- The weights of `MorseChart.sqReal` are `1`. -/
+@[simp]
+theorem sqReal_weight (i : Fin (Module.finrank ℝ ℝ)) : sqReal.weight i = 1 := by
+  rw [sqReal]
+
+/-- The coordinate of `MorseChart.sqReal` is `z = √2 x`. -/
+@[simp]
+theorem sqReal_coord_apply (v : ℝ) (i : Fin (Module.finrank ℝ ℝ)) :
+    sqReal.coord v i = √2 * v := by
+  rw [sqReal]
+  simp
+
 variable (φ : MorseChart ℝ (fun x : ℝ ↦ x ^ 2) 0)
 
 /-- Every weight of a Morse chart of `x ↦ x²` at its minimum `0` is `1`. -/
@@ -86,14 +126,8 @@ theorem eventually_eq_neg_sq_real {X : ℝ → ℝ}
     (hX : IsAdaptedPseudoGradient (fun x : ℝ ↦ x ^ 2) X) : ∀ᶠ y in 𝓝 0, X y = -y := by
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart 0 mfderiv_sq_real_zero
   filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source] with y hy
-  -- On the source of the Morse chart, `X` is the field of the chart.
-  have hXy : X y = φ.field y := by
-    have hinv := isInvertible_mfderiv_chart
-      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) hy
-    rw [← hinv.inverse_apply_self (X y), ← hinv.inverse_apply_self (φ.field y),
-      φ.coord.injective ((hφ y hy).trans (φ.coord_mfderiv_field hy).symm)]
   have hd := φ.mvfderiv_field_apply hy
-  rw [← hXy, φ.sum_coord_toChart_sq_real hy] at hd
+  rw [← φ.eq_field_of_coord_mfderiv hy (hφ y hy), φ.sum_coord_toChart_sq_real hy] at hd
   have hd' := (mvfderiv_sq_real_apply y (X y)).symm.trans hd
   rcases eq_or_ne y 0 with rfl | hy0
   · exact (hX.eq_zero_of_mfderiv_eq_zero mfderiv_sq_real_zero).trans neg_zero.symm
@@ -102,7 +136,7 @@ theorem eventually_eq_neg_sq_real {X : ℝ → ℝ}
 end IsAdaptedPseudoGradient
 
 /-- **The field `x ↦ -x` is a pseudo-gradient adapted to `x ↦ x²`.** In the Morse chart
-`z = √2 x` at `0`, where `x² = z² / 2`, it reads `z ↦ -z`. -/
+`z = √2 x` at `0` (`MorseChart.sqReal`), where `x² = z² / 2`, it reads `z ↦ -z`. -/
 theorem isAdaptedPseudoGradient_sq_real_neg :
     IsAdaptedPseudoGradient (fun x : ℝ ↦ x ^ 2) fun x ↦ (-x : ℝ) where
   contMDiff := contMDiff_vectorSpace_iff_contDiff.2 contDiff_neg
@@ -117,38 +151,14 @@ theorem isAdaptedPseudoGradient_sq_real_neg :
       have h : x ∈ criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) :=
         mem_criticalPoints_iff_mfderiv_eq_zero.2 hx
       rwa [criticalPoints_sq_real] at h
-    have : Unique (Fin (Module.finrank ℝ ℝ)) := by
-      rw [Module.finrank_self]
-      infer_instance
-    refine ⟨{
-      toChart := OpenPartialHomeomorph.refl ℝ
-      mem_maximalAtlas := by
-        simpa using IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, ℝ)) (n := ∞) (0 : ℝ)
-      mem_source := mem_univ _
-      apply_self := rfl
-      coord := (LinearEquiv.smulOfNeZero ℝ ℝ √2 (by positivity)).trans
-        (LinearEquiv.funUnique (Fin (Module.finrank ℝ ℝ)) ℝ ℝ).symm
-      weight := fun _ ↦ 1
-      weight_eq_neg_one_or_eq_one := fun _ ↦ Or.inr rfl
-      ncard_weight_neg := ?_
-      eq_quadratic := ?_ }, ?_⟩
-    · rw [manifoldMorseIndex_sq_real_zero, Set.ncard_eq_zero]
-      exact Set.eq_empty_of_forall_notMem fun _ hi ↦ not_lt.2 zero_le_one (Set.mem_ofPred.1 hi)
-    · intro y _
-      simp [Real.sq_sqrt, mul_pow]
-    · intro y _
-      -- The chart is the identity of `ℝ`, whose derivative is the identity.
-      ext i
-      dsimp only
-      rw [OpenPartialHomeomorph.refl_apply, mfderiv_id]
-      -- The tangent vector `-y` is read as a real number by `coord`.
-      have hc (v : ℝ) : ((LinearEquiv.smulOfNeZero ℝ ℝ √2 (by positivity)).trans
-          (LinearEquiv.funUnique (Fin (Module.finrank ℝ ℝ)) ℝ ℝ).symm) v i = √2 * v := by
-        simp
-      -- The identity of the tangent space at `y` sends `-y` to the real number `-y`.
-      have hv : ContinuousLinearMap.id ℝ (TangentSpace 𝓘(ℝ, ℝ) y) (-y) = (-y : ℝ) := rfl
-      simp only [id_eq, one_mul, hc, hv]
-      ring
+    refine ⟨MorseChart.sqReal, fun y _ ↦ ?_⟩
+    -- The chart is the identity of `ℝ`, whose derivative is the identity.
+    ext i
+    rw [MorseChart.sqReal_toChart, OpenPartialHomeomorph.refl_apply, mfderiv_id]
+    -- The identity of the tangent space at `y` sends `-y` to the real number `-y`.
+    have hv : ContinuousLinearMap.id ℝ (TangentSpace 𝓘(ℝ, ℝ) y) (-y) = (-y : ℝ) := rfl
+    simp only [id_eq, MorseChart.sqReal_weight, one_mul, MorseChart.sqReal_coord_apply, hv]
+    ring
 
 /-- The flow of the adapted pseudo-gradient `x ↦ -x` of `x ↦ x²`: its trajectory through `x₀` is
 `t ↦ x₀ e⁻ᵗ`. -/
