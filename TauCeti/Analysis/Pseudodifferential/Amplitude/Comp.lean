@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Amplitude.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -189,10 +191,8 @@ private theorem fderiv_term_position (hκ : ContDiff ℝ ∞ κ) (hM : ContDiff 
     have hv : ∀ k, fderiv ℝ M w u p.2.2 k = ∑ r, M w p.2.2 r *
         fderiv ℝ M w u (Ring.inverse (M w) (EuclideanSpace.single r 1)) k := by
       intro k
-      have e : p.2.2 = Ring.inverse (M w) (M w p.2.2) := by
-        rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
-          Ring.inverse_mul_cancel _ hu, ContinuousLinearMap.one_def, ContinuousLinearMap.id_apply]
-      conv_lhs => rw [e, ← ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_eq_sum_single]
+      conv_lhs => rw [← ContinuousLinearMap.ringInverse_apply_apply hu p.2.2,
+        ← ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_eq_sum_single]
       simp
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
@@ -222,10 +222,7 @@ private theorem contDiff_coeffInv (hM : ContDiff ℝ ∞ M)
   have hg : ContDiffOn ℝ ∞ (fun w ↦ fderiv ℝ M w u
       (Ring.inverse (M w) (EuclideanSpace.single r 1)) k) {w | IsUnit (M w)} := by
     intro w hw
-    have hinv : ContDiffAt ℝ ∞ (fun w ↦ Ring.inverse (M w)) w := by
-      have := contDiffAt_ringInverse ℝ (n := ∞) hw.unit
-      rw [hw.unit_spec] at this
-      exact this.comp w hM.contDiffAt
+    have hinv : ContDiffAt ℝ ∞ (fun w ↦ Ring.inverse (M w)) w := hM.contDiffAt.inverse hw
     have hd : ContDiffAt ℝ ∞ (fun w ↦ fderiv ℝ M w u) w :=
       ((hM.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const).contDiffAt
     have := hd.clm_apply (hinv.clm_apply
@@ -244,20 +241,15 @@ private theorem exists_norm_le_mul_norm (hM : Continuous M)
     ∃ c, 1 ≤ c ∧ ∀ w ∈ S, ∀ ξ, ‖M w ξ‖ ≤ c * ‖ξ‖ ∧ ‖ξ‖ ≤ c * ‖M w ξ‖ := by
   obtain ⟨A, hA⟩ := hS.exists_bound_of_continuousOn hM.continuousOn
   have hinv : ContinuousOn (fun w ↦ Ring.inverse (M w)) S := fun w hw ↦
-    ((contDiffAt_ringInverse ℝ (n := 0) (hSM w hw).unit).continuousAt.comp_of_eq
-      hM.continuousAt (hSM w hw).unit_spec.symm).continuousWithinAt
+    (((contDiff_zero (𝕜 := ℝ)).2 hM).contDiffAt.inverse (hSM w hw)).continuousAt.continuousWithinAt
   obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn hinv
   refine ⟨max 1 (max A B), le_max_left _ _, fun w hw ξ ↦ ⟨?_, ?_⟩⟩
   · calc ‖M w ξ‖ ≤ ‖M w‖ * ‖ξ‖ := (M w).le_opNorm ξ
       _ ≤ max 1 (max A B) * ‖ξ‖ := by
         gcongr
         exact (hA w hw).trans ((le_max_left _ _).trans (le_max_right _ _))
-  · have e : ξ = Ring.inverse (M w) (M w ξ) := by
-      rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
-        Ring.inverse_mul_cancel _ (hSM w hw), ContinuousLinearMap.one_def,
-        ContinuousLinearMap.id_apply]
-    calc ‖ξ‖ = ‖Ring.inverse (M w) (M w ξ)‖ := by rw [← e]
-      _ ≤ ‖Ring.inverse (M w)‖ * ‖M w ξ‖ := (Ring.inverse (M w)).le_opNorm _
+  · calc ‖ξ‖ ≤ ‖Ring.inverse (M w)‖ * ‖M w ξ‖ :=
+          ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply (hSM w hw) ξ
       _ ≤ max 1 (max A B) * ‖M w ξ‖ := by
         gcongr
         exact (hB w hw).trans ((le_max_right _ _).trans (le_max_right _ _))
@@ -287,32 +279,6 @@ private theorem exists_norm_term_le (hκ : Continuous κ)
   · have : h (p.1, p.2.1) = 0 := image_eq_zero_of_notMem_tsupport fun h' ↦ hw (hhS h')
     simp only [term, this, zero_smul, norm_zero]
     positivity
-
-private theorem iteratedFDerivAlong_sum {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} (s : Finset ι) {f : ι → E → F}
-    (hf : ∀ i, ContDiff ℝ ∞ (f i)) (vs : List E) :
-    iteratedFDerivAlong ℝ vs (∑ i ∈ s, f i) = ∑ i ∈ s, iteratedFDerivAlong ℝ vs (f i) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    have hs : ContDiff ℝ ∞ (∑ j ∈ s, f j) := by
-      rw [Finset.sum_fn]
-      exact ContDiff.sum fun j _ ↦ hf j
-    rw [Finset.sum_insert hi, Finset.sum_insert hi,
-      iteratedFDerivAlong_add (hf i) hs vs (by simp), ih]
-
-private theorem contDiff_finset_sum {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} (s : Finset ι) {f : ι → E → F}
-    (hf : ∀ i, ContDiff ℝ ∞ (f i)) : ContDiff ℝ ∞ (∑ i ∈ s, f i) := by
-  rw [Finset.sum_fn]
-  exact ContDiff.sum fun j _ ↦ hf j
-
-private theorem iteratedFDerivAlong_append_singleton {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (vs : List E) (d : E)
-    (f : E → F) :
-    iteratedFDerivAlong ℝ (vs ++ [d]) f = iteratedFDerivAlong ℝ vs (fun p ↦ fderiv ℝ f p d) := by
-  rw [iteratedFDerivAlong_append, iteratedFDerivAlong_cons, iteratedFDerivAlong_nil]
 
 private theorem norm_sum_le_sum_mul {ι : Type*} (s : Finset ι) {A : Type*} [NormedAddCommGroup A]
     (f : ι → A) (C : ι → ℝ) {w : ℝ} (h : ∀ i ∈ s, ‖f i‖ ≤ C i * w) :
@@ -354,48 +320,49 @@ private theorem exists_norm_iteratedFDerivAlong_term_le (hκ : ContDiff ℝ ∞ 
         ∃ C, ∀ p, ‖iteratedFDerivAlong ℝ (l ++ [(u.1, u.2, 0)]) (term κ M h b) p‖ ≤
           C * (1 + ‖p.2.2‖ ^ 2) ^ ((m - β.length) / 2) := by
       intro l u hl
-      have hA := hl b (h' := fun w ↦ fderiv ℝ h w u)
-        ((hh.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const)
-        ((tsupport_fderiv_apply_subset ℝ u).trans hhS)
-      have hB := fun k ↦ hl (spatialDeriv k b) (h' := fun w ↦ h w * fderiv ℝ κ w.1 u.1 k)
-        (hh.mul (contDiff_apply_coord (((hκ.fderiv_right (m := ∞) (by simp)).comp
-          contDiff_fst).clm_apply contDiff_const) k)) ((tsupport_mul_subset_left).trans hhS)
-      have hD' := fun k r ↦ hl ((ofInner (EuclideanSpace.single r 1)).comp (frequencyDeriv k b))
-        (h' := coeffInv M h u k r) (contDiff_coeffInv hM hh (hhU hhS) u k r)
+      -- The weights of the three kinds of terms, and their smoothness.
+      have hhA : ContDiff ℝ ∞ fun w ↦ fderiv ℝ h w u :=
+        (hh.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
+      have hhB : ∀ k, ContDiff ℝ ∞ fun w : CoordinateSpace n × CoordinateSpace n ↦
+          h w * fderiv ℝ κ w.1 u.1 k := fun k ↦
+        hh.mul (contDiff_apply_coord (((hκ.fderiv_right (m := ∞) (by simp)).comp
+          contDiff_fst).clm_apply contDiff_const) k)
+      have hhD : ∀ k r, ContDiff ℝ ∞ (coeffInv M h u k r) :=
+        contDiff_coeffInv hM hh (hhU hhS) u
+      obtain ⟨CA, hCA⟩ := hl b hhA ((tsupport_fderiv_apply_subset ℝ u).trans hhS)
+      choose CB hCB using fun k ↦ hl (spatialDeriv k b) (hhB k)
         ((tsupport_mul_subset_left).trans hhS)
-      obtain ⟨CA, hCA⟩ := hA
-      choose CB hCB using hB
-      choose CD hCD using hD'
+      choose CD hCD using fun k r ↦
+        hl ((ofInner (EuclideanSpace.single r 1)).comp (frequencyDeriv k b)) (hhD k r)
+          ((tsupport_mul_subset_left).trans hhS)
       refine ⟨CA + ∑ k, CB k + ∑ k, ∑ r, CD k r, fun p ↦ ?_⟩
-      have hcd : ∀ {h' : CoordinateSpace n × CoordinateSpace n → ℝ}, ContDiff ℝ ∞ h' →
-          ∀ {m' : ℝ} (b' : Symbol n V W m'), ContDiff ℝ ∞ (term κ M h' b') :=
-        fun hh' _ b' ↦ contDiff_term hκ hM hh' b'
-      have hA' := hcd ((hh.fderiv_right (m := ∞) (by simp)).clm_apply
-        (contDiff_const (c := u))) b
-      have hBk : ∀ k, ContDiff ℝ ∞
-          (term κ M (fun w ↦ h w * fderiv ℝ κ w.1 u.1 k) (spatialDeriv k b)) := fun k ↦
-        hcd (hh.mul (contDiff_apply_coord (((hκ.fderiv_right (m := ∞) (by simp)).comp
-          contDiff_fst).clm_apply contDiff_const) k)) _
-      have hDkr : ∀ k r, ContDiff ℝ ∞ (term κ M (coeffInv M h u k r)
-          ((ofInner (EuclideanSpace.single r 1)).comp (frequencyDeriv k b))) := fun k r ↦
-        hcd (contDiff_coeffInv hM hh (hhU hhS) u k r) _
+      have hA := contDiff_term hκ hM hhA b
+      have hBk := fun k ↦ contDiff_term hκ hM (hhB k) (spatialDeriv k b)
+      have hDkr := fun k r ↦ contDiff_term hκ hM (hhD k r)
+        ((ofInner (EuclideanSpace.single r 1)).comp (frequencyDeriv k b))
       have hDk : ∀ k, ContDiff ℝ ∞ (∑ r, term κ M (coeffInv M h u k r)
-          ((ofInner (EuclideanSpace.single r 1)).comp (frequencyDeriv k b))) := fun k ↦
-        contDiff_finset_sum _ (hDkr k)
+          ((ofInner (EuclideanSpace.single r 1)).comp (frequencyDeriv k b))) := fun k ↦ by
+        simpa only [Finset.sum_fn] using ContDiff.sum fun r _ ↦ hDkr k r
+      have hB : ContDiff ℝ ∞
+          (∑ k, term κ M (fun w ↦ h w * fderiv ℝ κ w.1 u.1 k) (spatialDeriv k b)) := by
+        simpa only [Finset.sum_fn] using ContDiff.sum fun k _ ↦ hBk k
+      have hD : ContDiff ℝ ∞ (∑ k, ∑ r, term κ M (coeffInv M h u k r)
+          ((ofInner (EuclideanSpace.single r 1)).comp (frequencyDeriv k b))) := by
+        simpa only [Finset.sum_fn] using ContDiff.sum fun k _ ↦ hDk k
       have hAB : ContDiff ℝ ∞ (term κ M (fun w ↦ fderiv ℝ h w u) b +
-          ∑ k, term κ M (fun w ↦ h w * fderiv ℝ κ w.1 u.1 k) (spatialDeriv k b)) :=
-        hA'.add (contDiff_finset_sum _ hBk)
+          ∑ k, term κ M (fun w ↦ h w * fderiv ℝ κ w.1 u.1 k) (spatialDeriv k b)) := hA.add hB
       rw [iteratedFDerivAlong_append_singleton, fderiv_term_position hκ hM hh (hne hhS),
-        iteratedFDerivAlong_add hAB (contDiff_finset_sum _ hDk) _ (by simp),
-        iteratedFDerivAlong_add hA' (contDiff_finset_sum _ hBk) _ (by simp),
-        iteratedFDerivAlong_sum _ hBk, iteratedFDerivAlong_sum _ hDk]
+        iteratedFDerivAlong_add hAB hD _ (by simp),
+        iteratedFDerivAlong_add hA hB _ (by simp),
+        iteratedFDerivAlong_sum _ (fun k _ ↦ hBk k) _ (by simp),
+        iteratedFDerivAlong_sum _ (fun k _ ↦ hDk k) _ (by simp)]
       simp only [Pi.add_apply, Finset.sum_apply]
       rw [add_mul, add_mul]
       refine (norm_add₃_le).trans (add_le_add_three (hCA p) ?_ ?_)
       · exact norm_sum_le_sum_mul _ _ _ fun k _ ↦ hCB k p
       · rw [Finset.sum_mul]
         refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
-        rw [iteratedFDerivAlong_sum _ (hDkr k)]
+        rw [iteratedFDerivAlong_sum _ (fun r _ ↦ hDkr k r) _ (by simp)]
         simp only [Finset.sum_apply]
         refine norm_sum_le_sum_mul _ _ _ fun r _ ↦ ?_
         have := hCD k r p
@@ -407,8 +374,7 @@ private theorem exists_norm_iteratedFDerivAlong_term_le (hκ : ContDiff ℝ ∞ 
         · have e : amplitudeDirections (α ++ [j]) [] [] = amplitudeDirections α [] [] ++
               [(EuclideanSpace.single j (1 : ℝ), 0, 0)] := by
             simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
-              List.append_nil]
-            rfl
+              List.append_nil, Prod.mk_zero_zero]
           rw [e]
           exact hpos _ (EuclideanSpace.single j 1, 0) fun b' h' hh' hh'S ↦
             ih b' hh' hh'S α [] [] (by simp at hD ⊢; omega)
@@ -420,13 +386,9 @@ private theorem exists_norm_iteratedFDerivAlong_term_le (hκ : ContDiff ℝ ∞ 
         exact hpos _ (0, EuclideanSpace.single j 1) fun b' h' hh' hh'S ↦
           ih b' hh' hh'S α γ [] (by simp at hD ⊢; omega)
     · -- The frequency step.
-      have hcd : ∀ k, ContDiff ℝ ∞
-          (term κ M (fun w ↦ h w * M w (EuclideanSpace.single j 1) k) (frequencyDeriv k b)) :=
-        fun k ↦ contDiff_term hκ hM (hh.mul (contDiff_apply_coord
-          (hM.clm_apply contDiff_const) k)) _
-      choose C hC using fun k ↦ ih (frequencyDeriv k b)
-        (h := fun w ↦ h w * M w (EuclideanSpace.single j 1) k)
-        (hh.mul (contDiff_apply_coord (hM.clm_apply contDiff_const) k))
+      have hhM : ∀ k, ContDiff ℝ ∞ fun w ↦ h w * M w (EuclideanSpace.single j 1) k := fun k ↦
+        hh.mul (contDiff_apply_coord (hM.clm_apply contDiff_const) k)
+      choose C hC using fun k ↦ ih (frequencyDeriv k b) (hhM k)
         ((tsupport_mul_subset_left).trans hhS) α γ β (by simp at hD ⊢; omega)
       refine ⟨∑ k, C k, fun p ↦ ?_⟩
       have e : amplitudeDirections α γ (β ++ [j]) =
@@ -434,7 +396,8 @@ private theorem exists_norm_iteratedFDerivAlong_term_le (hκ : ContDiff ℝ ∞ 
         simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
           List.append_assoc]
       rw [e, iteratedFDerivAlong_append_singleton, fderiv_term_frequency hκ hM hh,
-        iteratedFDerivAlong_sum _ hcd]
+        iteratedFDerivAlong_sum _ (fun k _ ↦ contDiff_term hκ hM (hhM k) (frequencyDeriv k b)) _
+          (by simp)]
       simp only [Finset.sum_apply]
       refine norm_sum_le_sum_mul _ _ _ fun k _ ↦ ?_
       have := hC k p
