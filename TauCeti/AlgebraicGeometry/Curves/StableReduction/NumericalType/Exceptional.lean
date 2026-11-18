@@ -84,12 +84,8 @@ theorem exists_weight_intersection_branch_seven_eq
       (hc.intersection_self 3 (by omega)) (hc.intersection_self 4 (by omega))
       (hc.intersection_self 5 (by omega)) hbranch_self
       (hc.ne (by omega) (by omega) (by omega))
-      (hc.ne (by omega) (by omega) (by omega))
-      (hc.ne (by omega) (by omega) (by omega)) (hbranch_ne 1 (by omega)).symm
-      (hc.ne (by omega) (by omega) (by omega))
       (hc.ne (by omega) (by omega) (by omega)) (hbranch_ne 2 (by omega)).symm
-      (hc.ne (by omega) (by omega) (by omega))
-      (hbranch_ne 4 (by omega)).symm (hbranch_ne 5 (by omega)).symm
+      (hc.ne (by omega) (by omega) (by omega)) (hbranch_ne 4 (by omega)).symm
       (hc.intersection_succ_pos 1 (by omega)) (hc.intersection_succ_pos 2 (by omega))
       (hc.intersection_succ_pos 3 (by omega)) (hc.intersection_succ_pos 4 (by omega))
       hbranch_pos

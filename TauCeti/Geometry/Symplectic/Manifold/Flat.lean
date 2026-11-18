@@ -206,7 +206,7 @@ form is nondegenerate there. -/
 theorem isInvertible_flat_iff [FiniteDimensional ℝ E] {x : M} :
     (σ.flat x).IsInvertible ↔ (σ.bilinFormAt x).Nondegenerate := by
   rw [← toBilinForm_flat]
-  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm (E := E)
+  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm
 
 /-- In finite dimensions, a two-form is nondegenerate exactly when all its flat maps are
 invertible. -/
