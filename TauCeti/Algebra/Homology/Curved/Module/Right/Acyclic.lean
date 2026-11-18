@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.Curved.Module.Right.Coproduct
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Product
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Triangulated
 public import TauCeti.CategoryTheory.Triangulated.LocalizingClosure
+import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
 
 /-!
 # Totalizations and the acyclic classes of the second kind
@@ -132,6 +133,19 @@ instance : (totalizations R h).Nonempty :=
 
 end Totalization
 
+/-- For any object property containing all totalizations, the comparison map from the cone of the
+first morphism of a short exact sequence to its third term has cone in `Q`. -/
+theorem coneDesc_mem_trW_of_shortExact
+    (Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
+    (hQ : totalizations R h ≤ Q)
+    {S : ShortComplex
+      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : S.ShortExact) :
+    Q.trW ((dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero)) := by
+  have htot := hQ _ (totalizations_totalization hS)
+  rw [totalization_eq S] at htot
+  exact ObjectProperty.trW.mk Q (coneTriangle_distinguished (coneDesc S.f S.g S.zero)) htot
+
 section TwoOutOfThree
 
 variable (Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
@@ -251,6 +265,15 @@ variable (R h) in
 theorem totalizations_le_absolutelyAcyclic :
     totalizations R h ≤ absolutelyAcyclic R h :=
   (totalizations R h).le_triangEnvelope
+
+/-- For any short exact sequence `S` of curved right modules, the induced map from `cone S.f` to
+`S.X₃` has absolutely acyclic cone. -/
+theorem coneDesc_mem_absolutelyAcyclic_trW
+    {S : ShortComplex
+      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : S.ShortExact) :
+    (absolutelyAcyclic R h).trW ((dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero)) :=
+  coneDesc_mem_trW_of_shortExact (absolutelyAcyclic R h) (totalizations_le_absolutelyAcyclic R h) hS
 
 variable (R h) in
 /-- Totalizations of short exact sequences are coacyclic. -/

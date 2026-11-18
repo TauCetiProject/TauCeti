@@ -150,6 +150,24 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
 
+/-- `ofDecomposition ℳ` inherits `SetLike.GradedOne` from `ℳ`. -/
+instance [One M] [Zero ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    [SetLike.GradedOne ℳ] : SetLike.GradedOne (ofDecomposition ℳ).piece := by
+  rw [ofDecomposition_piece]
+  infer_instance
+
+/-- `ofDecomposition ℳ` inherits `SetLike.GradedMul` from `ℳ`. -/
+instance [Mul M] [Add ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    [SetLike.GradedMul ℳ] : SetLike.GradedMul (ofDecomposition ℳ).piece := by
+  rw [ofDecomposition_piece]
+  infer_instance
+
+/-- `ofDecomposition ℳ` inherits `SetLike.GradedMonoid` from `ℳ`. -/
+instance [Monoid M] [AddMonoid ι] (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
+    [SetLike.GradedMonoid ℳ] : SetLike.GradedMonoid (ofDecomposition ℳ).piece := by
+  rw [ofDecomposition_piece]
+  infer_instance
+
 /-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
 instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from
 internality), but decompositions are unique. -/
@@ -675,6 +693,20 @@ theorem InternalGrading.koszulTwist_apply_of_mem_zero (G : InternalGrading R M �
 theorem InternalGrading.koszulTwist_one_apply_of_mem (G : InternalGrading R M ℤ) {x : M} {e : ℤ}
     (hx : x ∈ G.piece e) : koszulTwist G 1 x = ((e.negOnePow : ℤ) : R) • x := by
   rw [InternalGrading.koszulTwist_apply_of_mem G hx 1, one_mul]
+
+/-- On a homogeneous element of degree `e` in an additive group, the Koszul twist of parameter `q`
+acts by integer scalar multiplication by `(-1)^(q * e)`. -/
+theorem InternalGrading.koszulTwist_eq_zsmul {M : Type v} [AddCommGroup M] [Module R M]
+    (G : InternalGrading R M ℤ) {x : M} {e : ℤ} (hx : x ∈ G.piece e) (q : ℤ) :
+    koszulTwist G q x = ((q * e).negOnePow : ℤ) • x := by
+  rw [G.koszulTwist_apply_of_mem hx q, Int.cast_smul_eq_zsmul R]
+
+/-- On a homogeneous element of degree `e` in an additive group, the Koszul twist of parameter one
+acts by integer scalar multiplication by `(-1)^e`. -/
+theorem InternalGrading.koszulTwist_one_eq_zsmul {M : Type v} [AddCommGroup M] [Module R M]
+    (G : InternalGrading R M ℤ) {x : M} {e : ℤ} (hx : x ∈ G.piece e) :
+    koszulTwist G 1 x = (e.negOnePow : ℤ) • x := by
+  rw [G.koszulTwist_one_apply_of_mem hx, Int.cast_smul_eq_zsmul R]
 
 /-- The Koszul twist preserves each homogeneous piece. -/
 theorem InternalGrading.koszulTwist_mem_piece (G : InternalGrading R M ℤ) {x : M} {e : ℤ}
