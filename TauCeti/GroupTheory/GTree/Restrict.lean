@@ -84,7 +84,7 @@ type `T.V` or `T.E`, on which `G` acts. -/
   rfl
 
 /-- An element acts elliptically on the restricted tree exactly when its image does on `T`. -/
-@[simp] theorem comap_isElliptic_iff (f : H →* G) (h : H) :
+@[simp] theorem isElliptic_comap_iff (f : H →* G) (h : H) :
     (T.comap f).IsElliptic h ↔ T.IsElliptic (f h) := by
   simp only [isElliptic_iff, comap_smul_vertex]
   rfl
@@ -101,10 +101,8 @@ def induceAut (hinv : ∀ g : G, ∀ v ∈ C, g • v ∈ C) (g : G) :
       left_inv v := Subtype.ext (inv_smul_smul g v.1)
       right_inv v := Subtype.ext (smul_inv_smul g v.1) }
   equivE :=
-    { toFun e := ⟨g • e.1, SerreGraph.inducedDarts_mono (Set.smul_set_subset_iff.2 (hinv g))
-        (T.smul_set_inducedDarts g C ▸ Set.smul_mem_smul_set e.2)⟩
-      invFun e := ⟨g⁻¹ • e.1, SerreGraph.inducedDarts_mono (Set.smul_set_subset_iff.2 (hinv g⁻¹))
-        (T.smul_set_inducedDarts g⁻¹ C ▸ Set.smul_mem_smul_set e.2)⟩
+    { toFun e := ⟨g • e.1, smul_mem_inducedDarts (hinv g) e.2⟩
+      invFun e := ⟨g⁻¹ • e.1, smul_mem_inducedDarts (hinv g⁻¹) e.2⟩
       left_inv e := Subtype.ext (inv_smul_smul g e.1)
       right_inv e := Subtype.ext (smul_inv_smul g e.1) }
   map_src e := Subtype.ext (T.src_smul g e.1)
@@ -165,7 +163,7 @@ variable {C} (hC : T.IsConvex C) (hne : C.Nonempty) (hinv : ∀ g : G, ∀ v ∈
   exact Subtype.val_injective.eq_iff.symm
 
 /-- The distance in an invariant subtree is the distance in the tree. -/
-@[simp] theorem subtree_dist (a b : (T.subtree C hC hne hinv).V) :
+@[simp] theorem dist_subtree (a b : (T.subtree C hC hne hinv).V) :
     (T.subtree C hC hne hinv).dist a b = T.dist (Subtype.val a) (Subtype.val b) :=
   hC.dist_induce a b
 
