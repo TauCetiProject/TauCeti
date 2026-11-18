@@ -105,7 +105,9 @@ theorem exists_isSubbundleFrameOn_ker {S : Set B} (hS : IsOpen S)
     · simp_rw [← e.linearEquivAt_symm_apply (R := 𝕜) x (hUe hx)]
       exact (hvU x hx).1.map' L.symm.toLinearMap L.symm.ker
     · ext w
-      rw [show (fun i ↦ e.symm x (v i x)) = L.symm.toLinearMap ∘ (v · x) from rfl,
+      rw [show (fun i ↦ e.symm x (v i x)) = L.symm.toLinearMap ∘ (v · x) by
+          funext i
+          exact (e.linearEquivAt_symm_apply (R := 𝕜) x (hUe hx) (v i x)).symm,
         Set.range_comp, ← Submodule.map_span, (hvU x hx).2, Submodule.mem_map_equiv,
         LinearEquiv.symm_symm, ContinuousLinearMap.mem_ker_inCoordinates_iff (hUW hx).1.1
           (hUW hx).1.2, e.linearEquivAt_apply, e.symm_apply_apply_mk (hUe hx)]
