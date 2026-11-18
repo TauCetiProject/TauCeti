@@ -63,6 +63,8 @@ their star-stable trace-radical quotients.
   `TemperleyLieb R δ n ≃⋆ₐ[R] TemperleyLieb R (-δ) n` for self-adjoint `δ` and `-δ`.
 * `TauCeti.TemperleyLieb.signStarAlgEquivOfAddEqZero`: `signEquivOfAddEqZero` bundled as a
   star-algebra isomorphism for self-adjoint `δ` and `δ'`.
+* `TauCeti.TemperleyLieb.signTraceOfAddEqZero`: the signed transport of trace families, a linear
+  equivalence preserving Markov traces.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquiv`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquivOfAddEqZero`: the induced algebra
   isomorphisms between the trace-radical quotients at `δ` and `-δ` (respectively `δ'`).
@@ -411,6 +413,40 @@ theorem signStarAlgEquivOfAddEqZero_symm (h : δ + δ' = 0) (n : ℕ) :
 
 end StarAddEqZero
 
+section SignTrace
+
+variable {R : Type*} [CommRing R]
+
+/-- The **signed transport of trace families** between opposite loop parameters `δ + δ' = 0`: the
+linear equivalence sending a family `tr'` at `δ'` to `n ↦ (-1) ^ n • (tr' n ∘ s)`, where `s` is
+`signEquivOfAddEqZero h n`. It carries Markov traces to Markov traces
+(`IsMarkovTrace.signTraceOfAddEqZero`). -/
+def signTraceOfAddEqZero {δ δ' : R} (h : δ + δ' = 0) :
+    (∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R) ≃ₗ[R] (∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R) where
+  toFun tr n := (-1 : R) ^ n • (tr n ∘ₗ (signEquivOfAddEqZero h n).toLinearMap)
+  invFun tr n := (-1 : R) ^ n • (tr n ∘ₗ (signEquivOfAddEqZero h n).symm.toLinearMap)
+  left_inv tr := by ext n x; simp [← mul_assoc, ← mul_pow]
+  right_inv tr := by ext n x; simp [← mul_assoc, ← mul_pow]
+  map_add' tr₁ tr₂ := by ext n x; simp [mul_add]
+  map_smul' r tr := by ext n x; simp [mul_left_comm]
+
+/-- Evaluation of the signed transport of a trace family. -/
+@[simp]
+theorem signTraceOfAddEqZero_apply {δ δ' : R} (h : δ + δ' = 0)
+    (tr : ∀ n : ℕ, TemperleyLieb R δ' n →ₗ[R] R) {n : ℕ} (x : TemperleyLieb R δ n) :
+    signTraceOfAddEqZero h tr n x = (-1 : R) ^ n * tr n (signEquivOfAddEqZero h n x) :=
+  (rfl)
+
+/-- Evaluation of the inverse signed transport of a trace family. -/
+@[simp]
+theorem signTraceOfAddEqZero_symm_apply {δ δ' : R} (h : δ + δ' = 0)
+    (tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R) {n : ℕ} (x : TemperleyLieb R δ' n) :
+    (signTraceOfAddEqZero h).symm tr n x =
+      (-1 : R) ^ n * tr n ((signEquivOfAddEqZero h n).symm x) :=
+  (rfl)
+
+end SignTrace
+
 namespace IsMarkovTrace
 
 section Trace
@@ -636,6 +672,12 @@ theorem neg_one_pow_smul_comp_signEquivOfAddEqZero (htr' : IsMarkovTrace R δ' t
       (fun n ↦ (-1 : R) ^ n • (tr' n).comp (signEquivOfAddEqZero h n).toLinearMap) := by
   obtain rfl := eq_neg_of_add_eq_zero_right h
   exact htr'.neg_one_pow_smul_comp_signEquiv
+
+/-- The signed transport `signTraceOfAddEqZero` of a Markov trace family is again a Markov trace
+family, including at zero loop parameter. -/
+theorem signTraceOfAddEqZero (htr' : IsMarkovTrace R δ' tr') (h : δ + δ' = 0) :
+    IsMarkovTrace R δ (TemperleyLieb.signTraceOfAddEqZero h tr') :=
+  htr'.neg_one_pow_smul_comp_signEquivOfAddEqZero h
 
 /-- **Sign transformation of Markov traces.** If `tr` and `tr'` are Markov traces at opposite loop
 parameters `δ + δ' = 0`, then `tr' n (signEquivOfAddEqZero h n x) = (-1) ^ n * tr n x`. -/
