@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
-public import TauCeti.GroupTheory.Coprod.FreelyIndecomposable
+public import TauCeti.GroupTheory.Coprod.FreelyIndecomposable.Basic
 
 /-!
 # The Grushko decomposition of `ℤ² ∗ F₂`
