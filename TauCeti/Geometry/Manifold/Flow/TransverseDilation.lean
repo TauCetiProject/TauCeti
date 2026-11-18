@@ -41,8 +41,9 @@ For a smooth step `Ψ` from `0` to `1` across `[s₀, s₁]`, the fields of the 
 are the family `u + a • Z` with `Z z = Ψ'(ℓ z) • (z - ℓ z • u)` smooth, vanishing on the axis and
 outside the slab `s₀ < ℓ z < s₁`. Their time-`(s₁ - s₀)` maps carry `s₀ • u` to `s₁ • u` with
 derivative the dilation by `exp a` on `ker ℓ`
-(`TauCeti.exists_contDiff_hasFDerivAt_flowOf_add_smul`). The family is affine in `a`, equal to `u`
-at `a = 0`, and every dilation factor `exp a > 0` occurs.
+(`TauCeti.exists_contDiff_hasFDerivAt_flowOf_add_smul`, which also identifies `u + a • Z` with the
+dilation field of `s ↦ a * Ψ s`, so the locality results above apply to its cut-offs). The family
+is affine in `a`, equal to `u` at `a = 0`, and every dilation factor `exp a > 0` occurs.
 
 These fields are the flow-box variations of the proof of the Kupka–Smale theorem: in a chart
 straightening a vector field near a point of a closed orbit
@@ -66,8 +67,9 @@ derivative of the transition across the box with a dilation of the transverse di
 * `TauCeti.flowOf_eventuallyEq_transverseDilation_of_eqOn`,
   `TauCeti.hasFDerivAt_flowOf_of_eqOn_transverseDilationField`: the same time map and derivative
   for every `C¹` field agreeing with the dilation field near the axis segment.
-* `TauCeti.exists_contDiff_hasFDerivAt_flowOf_add_smul`: a smooth field `Z` supported in a slab
-  such that the fields `u + a • Z` realize every transverse dilation `exp a`.
+* `TauCeti.exists_contDiff_hasFDerivAt_flowOf_add_smul`: a smooth step `Ψ` and a smooth field `Z`
+  supported in a slab such that the fields `u + a • Z`, the dilation fields of `s ↦ a * Ψ s`,
+  realize every transverse dilation `exp a`.
 
 ## References
 
@@ -130,10 +132,12 @@ theorem transverseDilationField_smul (hu : ℓ u = 1) (s : ℝ) :
   simp [transverseDilationField_apply, hu]
 
 /-- The fields of the multiples `s ↦ a * Ψ s` of a differentiable profile form the family
-`u + a • Ψ'(ℓ z) • (z - ℓ z • u)`, affine in `a`. -/
+`u + a • (V z - u)` for the field `V` of `Ψ`, affine in `a`. -/
 theorem transverseDilationField_const_mul {z : E} (hΨ : DifferentiableAt ℝ Ψ (ℓ z)) (a : ℝ) :
-    transverseDilationField u ℓ (fun s ↦ a * Ψ s) z = u + a • (deriv Ψ (ℓ z) • (z - ℓ z • u)) := by
-  rw [transverseDilationField_apply, deriv_const_mul a hΨ, mul_smul]
+    transverseDilationField u ℓ (fun s ↦ a * Ψ s) z =
+      u + a • (transverseDilationField u ℓ Ψ z - u) := by
+  rw [transverseDilationField_apply, transverseDilationField_apply, deriv_const_mul a hΨ, mul_smul,
+    add_sub_cancel_left]
 
 /-- A `C^(n+1)` profile gives a `C^n` transverse dilation field. -/
 theorem contDiff_transverseDilationField {n : WithTop ℕ∞} (hΨ : ContDiff ℝ (n + 1) Ψ) :
@@ -227,20 +231,23 @@ theorem isCompleteVectorField_transverseDilationField (hu : ℓ u = 1) (hΨ : Co
       isMIntegralCurve_transverseDilation hu (hΨ.differentiable two_ne_zero) z⟩
 
 /-- **The derivative along the axis.** At a point `s • u` of the axis, the time-`t` map of a
-differentiable profile has derivative `w ↦ w + (exp (Ψ(s + t) - Ψ(s)) - 1) • (w - ℓ w • u)`: the
-identity on `u` and the dilation by `exp (Ψ(s + t) - Ψ(s))` on `ker ℓ`. -/
-theorem hasFDerivAt_transverseDilation_smul (hu : ℓ u = 1) (hΨ : Differentiable ℝ Ψ)
-    (s t : ℝ) :
+profile differentiable at `s` and `s + t` has derivative
+`w ↦ w + (exp (Ψ(s + t) - Ψ(s)) - 1) • (w - ℓ w • u)`: the identity on `u` and the dilation by
+`exp (Ψ(s + t) - Ψ(s))` on `ker ℓ`. -/
+theorem hasFDerivAt_transverseDilation_smul (hu : ℓ u = 1) {s t : ℝ}
+    (hΨs : DifferentiableAt ℝ Ψ s) (hΨst : DifferentiableAt ℝ Ψ (s + t)) :
     HasFDerivAt (transverseDilation u ℓ Ψ t)
       (1 + (Real.exp (Ψ (s + t) - Ψ s) - 1) • (1 - ℓ.smulRight u)) (s • u) := by
   set P : E →L[ℝ] E := 1 - ℓ.smulRight u
   have hP (z : E) : P z = z - ℓ z • u := by simp [P]
   have hPs : P (s • u) = 0 := by simp [hP, hu]
+  have hℓ : ℓ (s • u) = s := by simp [hu]
+  rw [← hℓ] at hΨs hΨst
   -- The transverse factor `exp (Ψ(ℓ z + t) - Ψ(ℓ z)) - 1` is differentiable in `z`; its product
   -- with the transverse coordinate `P z`, which vanishes on the axis, has derivative `c • P` there.
   have hc : DifferentiableAt ℝ (fun z : E ↦ Real.exp (Ψ (ℓ z + t) - Ψ (ℓ z)) - 1) (s • u) :=
-    ((((hΨ.comp (ℓ.differentiable.add_const t)).sub (hΨ.comp ℓ.differentiable)) _).exp).sub_const
-      1
+    (((hΨst.comp (s • u) (ℓ.differentiableAt.add_const t)).sub
+      (hΨs.comp (s • u) ℓ.differentiableAt)).exp).sub_const 1
   have h := ((hasFDerivAt_id (s • u)).add_const (t • u)).add
     (hc.hasFDerivAt.smul P.hasFDerivAt)
   convert h using 1
@@ -259,7 +266,8 @@ theorem hasFDerivAt_flowOf_transverseDilationField (hu : ℓ u = 1) (hΨ : ContD
   have hφ : flowOf (I := 𝓘(ℝ, E)) (transverseDilationField u ℓ Ψ) t = transverseDilation u ℓ Ψ t :=
     funext (flowOf_transverseDilationField hu hΨ t)
   rw [hφ]
-  exact hasFDerivAt_transverseDilation_smul hu (hΨ.differentiable two_ne_zero) s t
+  exact hasFDerivAt_transverseDilation_smul hu (hΨ.differentiable two_ne_zero _)
+    (hΨ.differentiable two_ne_zero _)
 
 variable [CompleteSpace E] {W : E → E} {U : Set E}
 
@@ -292,34 +300,41 @@ theorem hasFDerivAt_flowOf_of_eqOn_transverseDilationField (hu : ℓ u = 1)
     (hsU : ∀ τ ∈ uIcc 0 t, (s + τ) • u ∈ U) :
     HasFDerivAt (flowOf (I := 𝓘(ℝ, E)) W t)
       (1 + (Real.exp (Ψ (s + t) - Ψ s) - 1) • (1 - ℓ.smulRight u)) (s • u) :=
-  (hasFDerivAt_transverseDilation_smul hu (hΨ.differentiable two_ne_zero) s t).congr_of_eventuallyEq
+  (hasFDerivAt_transverseDilation_smul hu (hΨ.differentiable two_ne_zero s)
+    (hΨ.differentiable two_ne_zero (s + t))).congr_of_eventuallyEq
     (flowOf_eventuallyEq_transverseDilation_of_eqOn hu hΨ hW hU hWU hsU)
 
 end Flow
 
 section Realization
 
-/-- **Realizing a transverse dilation.** For `s₀ < s₁` there is a smooth field `Z`, vanishing
-outside the slab `s₀ < ℓ z < s₁` and on the axis `ℝ • u`, such that for every `a` the time
-`s₁ - s₀` map of the field `u + a • Z` has derivative
-`w ↦ w + (exp a - 1) • (w - ℓ w • u)` at `s₀ • u`: the identity on `u` and the dilation by
-`exp a` on `ker ℓ`. The fields `u + a • Z` are the transverse dilation fields of the profiles
-`a • Ψ` for a smooth step `Ψ` from `0` to `1` across `[s₀, s₁]`. -/
+/-- **Realizing a transverse dilation.** For `s₀ < s₁` there are a smooth step `Ψ` from `0` to `1`
+across `[s₀, s₁]` and a smooth field `Z`, vanishing outside the slab `s₀ < ℓ z < s₁` and on the axis
+`ℝ • u`, such that for every `a` the field `u + a • Z` is the transverse dilation field of the
+profile `s ↦ a * Ψ s`, and its time-`(s₁ - s₀)` map carries `s₀ • u` to `s₁ • u` with derivative
+`w ↦ w + (exp a - 1) • (w - ℓ w • u)` there: the identity on `u` and the dilation by `exp a` on
+`ker ℓ`. -/
 theorem exists_contDiff_hasFDerivAt_flowOf_add_smul (hu : ℓ u = 1) {s₀ s₁ : ℝ} (h : s₀ < s₁) :
-    ∃ Z : E → E, ContDiff ℝ ∞ Z ∧ (∀ z, ℓ z ∉ Ioo s₀ s₁ → Z z = 0) ∧ (∀ s : ℝ, Z (s • u) = 0) ∧
-      ∀ a : ℝ, HasFDerivAt (flowOf (I := 𝓘(ℝ, E)) (fun z ↦ u + a • Z z) (s₁ - s₀))
-        (1 + (Real.exp a - 1) • (1 - ℓ.smulRight u)) (s₀ • u) := by
+    ∃ Ψ : ℝ → ℝ, ContDiff ℝ ∞ Ψ ∧ (∀ r ≤ s₀, Ψ r = 0) ∧ (∀ r, s₁ ≤ r → Ψ r = 1) ∧
+      (∀ r ∉ Ioo s₀ s₁, deriv Ψ r = 0) ∧
+      ∃ Z : E → E, ContDiff ℝ ∞ Z ∧ (∀ z, ℓ z ∉ Ioo s₀ s₁ → Z z = 0) ∧ (∀ s : ℝ, Z (s • u) = 0) ∧
+        ∀ a : ℝ, (fun z ↦ u + a • Z z) = transverseDilationField u ℓ (fun s ↦ a * Ψ s) ∧
+          flowOf (I := 𝓘(ℝ, E)) (fun z ↦ u + a • Z z) (s₁ - s₀) (s₀ • u) = s₁ • u ∧
+          HasFDerivAt (flowOf (I := 𝓘(ℝ, E)) (fun z ↦ u + a • Z z) (s₁ - s₀))
+            (1 + (Real.exp a - 1) • (1 - ℓ.smulRight u)) (s₀ • u) := by
   obtain ⟨Ψ, hΨ, hΨ₀, hΨ₁, hΨ'⟩ := exists_contDiff_step h
-  have hΨd : ContDiff ℝ ∞ (deriv Ψ) := (contDiff_infty_iff_deriv.mp hΨ).2
-  refine ⟨fun z ↦ deriv Ψ (ℓ z) • (z - ℓ z • u),
-    (hΨd.comp ℓ.contDiff).smul (contDiff_id.sub (ℓ.contDiff.smul contDiff_const)),
-    fun z hz ↦ by simp [hΨ' _ hz], fun s ↦ by simp [hu], fun a ↦ ?_⟩
-  have hV : (fun z ↦ u + a • (deriv Ψ (ℓ z) • (z - ℓ z • u))) =
+  refine ⟨Ψ, hΨ, hΨ₀, hΨ₁, hΨ', fun z ↦ transverseDilationField u ℓ Ψ z - u,
+    (contDiff_transverseDilationField (hΨ.of_le (by simp))).sub contDiff_const,
+    fun z hz ↦ by simp [transverseDilationField_eq_of_deriv_eq_zero (hΨ' _ hz)],
+    fun s ↦ by simp [hu], fun a ↦ ?_⟩
+  have hV : (fun z ↦ u + a • (transverseDilationField u ℓ Ψ z - u)) =
       transverseDilationField u ℓ (fun s ↦ a * Ψ s) :=
     funext fun z ↦ (transverseDilationField_const_mul (hΨ.differentiable (by simp) _) a).symm
-  have h := hasFDerivAt_flowOf_transverseDilationField (Ψ := fun s ↦ a * Ψ s) hu
-    (contDiff_const.mul (hΨ.of_le (by simp))) s₀ (s₁ - s₀)
-  rwa [add_sub_cancel, hΨ₀ s₀ le_rfl, hΨ₁ s₁ le_rfl, mul_zero, mul_one, sub_zero, ← hV] at h
+  have haΨ : ContDiff ℝ 2 fun s ↦ a * Ψ s := contDiff_const.mul (hΨ.of_le (by simp))
+  refine ⟨hV, ?_, ?_⟩ <;> rw [hV]
+  · simp [hu, haΨ]
+  · simpa [hΨ₀ s₀ le_rfl, hΨ₁ s₁ le_rfl] using
+      hasFDerivAt_flowOf_transverseDilationField hu haΨ s₀ (s₁ - s₀)
 
 end Realization
 
