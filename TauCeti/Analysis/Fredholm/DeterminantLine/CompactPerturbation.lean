@@ -225,18 +225,14 @@ theorem canonicalDetLineOrientation_zero (hA : IsFredholm A) :
     _ = _ := LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq _ _ _
 
 omit [CompleteSpace E] [CompleteSpace F] in
-/-- Two splittings `A + K = A' + K'` into complex-linear and compact parts differ by the compact
-operator `A' - A = K - K'`. -/
-private theorem isCompactOperator_sub_of_restrictScalars_add_eq {A' : E →L[ℂ] F}
-    {K K' : E →L[ℝ] F} (hK : IsCompactOperator K) (hK' : IsCompactOperator K')
-    (h : A.restrictScalars ℝ + K = A'.restrictScalars ℝ + K') : IsCompactOperator (A' - A) := by
-  have : ⇑(A' - A) = ⇑(K - K') := by
-    ext v
-    have hv := congrArg (fun T : E →L[ℝ] F ↦ T v) h
-    simp only [add_apply, coe_restrictScalars', sub_apply] at hv ⊢
-    linear_combination (norm := module) (-1 : ℝ) • hv
-  rw [this]
-  simpa using hK.sub hK'
+/-- Two splittings `A + K = A' + K'` into complex-linear and real-linear parts differ by
+`A' - A = K - K'`. -/
+private theorem sub_eq_sub_of_restrictScalars_add_eq {A' : E →L[ℂ] F} {K K' : E →L[ℝ] F}
+    (h : A.restrictScalars ℝ + K = A'.restrictScalars ℝ + K') (v : E) :
+    A' v - A v = K v - K' v := by
+  have hv := congrArg (fun T : E →L[ℝ] F ↦ T v) h
+  simp only [add_apply, coe_restrictScalars'] at hv
+  linear_combination (norm := module) (-1 : ℝ) • hv
 
 /-- **The canonical orientation does not depend on the splitting.** If `A + K = A' + K'` for
 complex-linear Fredholm operators `A`, `A'` and compact real-linear operators `K`, `K'`, the
@@ -252,7 +248,10 @@ theorem canonicalDetLineOrientation_congr {A' : E →L[ℂ] F} {K K' : E →L[�
   -- The paths are kept opaque, and compared with their values through pointwise equalities.
   obtain ⟨B, hB⟩ : ∃ B : ℝ → E →L[ℂ] F, B = fun s ↦ A + s • (A' - A) := ⟨_, rfl⟩
   obtain ⟨L, hL⟩ : ∃ L : ℝ → E →L[ℝ] F, L = fun s ↦ K + s • (K' - K) := ⟨_, rfl⟩
-  have hdiff := isCompactOperator_sub_of_restrictScalars_add_eq hK hK' h
+  have hsplit := sub_eq_sub_of_restrictScalars_add_eq h
+  have hdiff : IsCompactOperator (A' - A) := by
+    rw [show ⇑(A' - A) = ⇑(K - K') from funext fun v ↦ by simp only [sub_apply, hsplit]]
+    simpa using hK.sub hK'
   have hBF (s : ℝ) : IsFredholm (B s) := by
     rw [hB]
     exact hA.add_of_isCompactOperator (by simpa using hdiff.smul s)
@@ -262,9 +261,8 @@ theorem canonicalDetLineOrientation_congr {A' : E →L[ℂ] F} {K K' : E →L[�
   have hT (s : ℝ) : (B s).restrictScalars ℝ + L s = A.restrictScalars ℝ + K := by
     rw [hB, hL]
     ext v
-    have hv := congrArg (fun T : E →L[ℝ] F ↦ T v) h
-    simp only [add_apply, coe_restrictScalars', smul_apply, sub_apply] at hv ⊢
-    linear_combination (norm := module) (-s) • hv
+    simp only [add_apply, coe_restrictScalars', smul_apply, sub_apply, hsplit]
+    module
   have hBc : Continuous B := by rw [hB]; fun_prop
   have hLc' : Continuous L := by rw [hL]; fun_prop
   have hB₀ : A = B 0 := by simp [hB]

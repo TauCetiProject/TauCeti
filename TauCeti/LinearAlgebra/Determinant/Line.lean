@@ -80,8 +80,9 @@ the linear algebra itself is standard.
   convention).
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
-* `LinearMap.detLineCongrOfEq_rfl` and `LinearMap.detLineCongrOfEq_trans`: the identifications of
-  the determinant lines of equal maps are functorial.
+* `LinearMap.detLineCongrOfEq_rfl`, `LinearMap.detLineCongrOfEq_trans` and
+  `LinearMap.detLineCongrOfEq_symm`: the identifications of the determinant lines of equal maps are
+  functorial.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
@@ -453,6 +454,14 @@ theorem detLineCongrOfEq_trans {g k : M →ₗ[R] N} (h : f = g) (h' : g = k) :
     (detLineCongrOfEq h).trans (detLineCongrOfEq h') = detLineCongrOfEq (h.trans h') := by
   subst h h'
   simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_trans]
+
+/-- Reversing the identification of the determinant lines of equal maps is the identification in
+the other direction. -/
+@[simp]
+theorem detLineCongrOfEq_symm {g : M →ₗ[R] N} (h : f = g) :
+    (detLineCongrOfEq h).symm = detLineCongrOfEq h.symm := by
+  subst h
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_symm]
 
 /-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
 determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that
