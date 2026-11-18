@@ -125,18 +125,18 @@ private theorem ae_restrict_apply_indicatorConstLp_eq (S : Lp E p μ →L[𝕜] 
 
 /-- **A multiplication operator bounds its symbol.** Let `1 ≤ p < ∞`, let `μ` be σ-finite and let
 `E` be separable. If a bounded operator `S` from `Lᵖ(α, E)` to `Lᵖ(α, F)` acts on every indicator
-class `1_s v` as multiplication by a strongly measurable operator-valued function `m`, then
+class `1_s v` as multiplication by an a.e. strongly measurable operator-valued function `m`, then
 `‖m x‖ ≤ ‖S‖` for almost every `x`. -/
 theorem ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq [SigmaFinite μ]
     [TopologicalSpace.SeparableSpace E] (hp : p ≠ ∞) (S : Lp E p μ →L[𝕜] Lp F p μ)
-    {m : α → E →L[𝕜] F} (hm : StronglyMeasurable m)
+    {m : α → E →L[𝕜] F} (hm : AEStronglyMeasurable m μ)
     (hmS : ∀ (s : Set α) (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (v : E),
       S (indicatorConstLp p hs hμs v) =ᵐ[μ] fun x ↦ m x (s.indicator (fun _ ↦ v) x)) :
     ∀ᵐ x ∂μ, ‖m x‖ ≤ ‖S‖ := by
   have hp₀ : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   have hv (v : E) : ∀ᵐ x ∂μ, ‖m x v‖ₑ ≤ ‖S‖ₑ * ‖v‖ₑ := by
     have ha : AEStronglyMeasurable (fun x ↦ m x v) μ :=
-      ((apply 𝕜 F v).continuous.comp_stronglyMeasurable hm).aestronglyMeasurable
+      (apply 𝕜 F v).continuous.comp_aestronglyMeasurable hm
     have hind (s : Set α) (hs : MeasurableSet s) (hμs : μ s < ∞) :
         eLpNorm (s.indicator fun x ↦ m x v) p μ ≤ ‖S‖ₑ * ‖v‖ₑ * μ s ^ (1 / p.toReal) := by
       have hSs : eLpNorm (s.indicator fun x ↦ m x v) p μ =
@@ -234,7 +234,7 @@ theorem exists_forall_ae_eq_apply_of_forall_ae_eq_zero [SigmaFinite μ]
     ∃ m : α → E →L[𝕜] F, StronglyMeasurable m ∧ (∀ᵐ x ∂μ, ‖m x‖ ≤ ‖S‖) ∧
       ∀ f : Lp E p μ, S f =ᵐ[μ] fun x ↦ m x (f x) := by
   obtain ⟨m, hm, hmS⟩ := exists_stronglyMeasurable_forall_apply_indicatorConstLp_ae_eq S hS
-  have hbound := ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq hp S hm hmS
+  have hbound := ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq hp S hm.aestronglyMeasurable hmS
   refine ⟨m, hm, hbound, ?_⟩
   -- The multiplication operator `f ↦ m f` is bounded on `Lᵖ`, and agrees with `S` on the
   -- indicator classes, which span a dense subspace.
