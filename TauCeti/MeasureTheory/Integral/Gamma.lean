@@ -72,7 +72,7 @@ theorem integrable_abs_rpow_mul_exp_neg_mul_abs_rpow_iff {p q b : ℝ} (hp : 0 <
       have hxq : 0 ≤ x ^ q := Real.rpow_nonneg hxpos.le q
       have hexp : 1 ≤ Real.exp (-b * |x| ^ p) := by
         apply Real.one_le_exp_iff.mpr
-        exact mul_nonneg (by linarith) (Real.rpow_nonneg (abs_nonneg x) _)
+        exact mul_nonneg (neg_nonneg.mpr hb') (Real.rpow_nonneg (abs_nonneg x) _)
       rw [Real.norm_eq_abs, abs_of_nonneg hxq]
       rw [abs_of_pos hxpos] at hexp
       calc
