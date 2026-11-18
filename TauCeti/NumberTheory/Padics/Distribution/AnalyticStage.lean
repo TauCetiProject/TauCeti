@@ -71,6 +71,7 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
   on the coefficient module is injective.
 * `TauCeti.AnalyticStage.transition_apply`, `TauCeti.AnalyticStage.hasSum_transition_apply`: the
   re-expansion formula for the transition.
+* `TauCeti.AnalyticStage.transitionScalar_def`: the value of the re-expansion scalars.
 * `TauCeti.AnalyticStage.transitionScalar_succ_succ`: Pascal's rule for the re-expansion scalars.
 * `TauCeti.AnalyticStage.norm_transition_apply_le`: the coefficient of `vʲ` after the transition
   has norm at most `‖p‖ʲ ‖c‖`.
@@ -139,16 +140,11 @@ private noncomputable def discTerm (i : ZMod (p ^ h) × ℕ) (e : E) :
     · simp only [hb, ite_false]
       fun_prop
 
-/-- Scalars in `ℤ_p` of norm at most `1` do not increase norms. -/
-theorem norm_smul_le_of_norm_le_one {r : ℤ_[p]} (e : E) (hr : ‖r‖ ≤ 1) :
-    ‖r • e‖ ≤ ‖e‖ :=
-  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) hr)
-
 private theorem norm_discTerm_le (i : ZMod (p ^ h) × ℕ) (e : E) : ‖discTerm i e‖ ≤ ‖e‖ :=
   (ContinuousMap.norm_le _ (norm_nonneg e)).mpr fun y ↦ by
     simp only [discTerm, ContinuousMap.coe_mk]
     split_ifs
-    · exact norm_smul_le_of_norm_le_one e (PadicInt.norm_le_one _)
+    · exact PadicInt.norm_smul_le_of_norm_le_one e (PadicInt.norm_le_one _)
     · simp
 
 variable [IsUltrametricDist E] [CompleteSpace E]
@@ -157,7 +153,7 @@ private theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h))
     (hr : ∀ n, ‖r n‖ ≤ 1) : Summable fun n ↦ r n • c (a, n) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
     rw [Nat.cofinite_eq_atTop]
-    exact squeeze_zero_norm (fun n ↦ norm_smul_le_of_norm_le_one _ (hr n))
+    exact squeeze_zero_norm (fun n ↦ PadicInt.norm_smul_le_of_norm_le_one _ (hr n))
       (tendsto_zero_iff_norm_tendsto_zero.mp (tendsto_apply_mk_atTop c a))
 
 /-- The family of power series with coefficient vector `c`, as a continuous function of the
@@ -335,6 +331,11 @@ theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
 noncomputable def transitionScalar (b : ℤ_[p]) (j k : ℕ) : ℤ_[p] :=
   (k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j
 
+/-- The value of the re-expansion scalar `transitionScalar b j k`. -/
+theorem transitionScalar_def (b : ℤ_[p]) (j k : ℕ) :
+    transitionScalar b j k = (k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j := by
+  rw [transitionScalar]
+
 private theorem norm_transitionScalar_le (b : ℤ_[p]) (j k : ℕ) :
     ‖transitionScalar b j k‖ ≤ ‖(p : ℤ_[p])‖ ^ j := by
   rw [transitionScalar, norm_mul, norm_mul, norm_pow (p : ℤ_[p])]
@@ -445,15 +446,6 @@ theorem hasSum_transition_apply (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1
   rw [coe_transition]
   exact (summable_transitionScalar_smul c _ _ _).hasSum
 
-omit [IsUltrametricDist E] [CompleteSpace E] in
-/-- The centre `a'.val` of a disc of level `h + 1` is `a + pʰ b`, where `a` is the centre of the
-disc of level `h` containing it and `b = ⌊a'.val / pʰ⌋`. -/
-theorem natCast_val_eq_add (a' : ZMod (p ^ (h + 1))) :
-    (a'.val : ℤ_[p]) = (((a'.val : ZMod (p ^ h)).val : ℕ) : ℤ_[p]) +
-      (p : ℤ_[p]) ^ h * ((a'.val / p ^ h : ℕ) : ℤ_[p]) := by
-  rw [ZMod.val_natCast]
-  exact_mod_cast (Nat.mod_add_div a'.val (p ^ h)).symm
-
 /-- On the subdisc with the same natural centre, re-expansion multiplies the degree-`j`
 coefficient by `p^j`. -/
 @[simp]
@@ -501,7 +493,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
   set b : ℤ_[p] := ((a'.val / p ^ h : ℕ) : ℤ_[p])
   have hx : (a'.val : ℤ_[p]) + (p : ℤ_[p]) ^ (h + 1) * v =
       (a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (b + p * v) := by
-    rw [natCast_val_eq_add a']
+    rw [PadicInt.natCast_val_eq_add a']
     ring
   rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul]
   conv_rhs => rw [hx, eval_natCast_val_add_mul]

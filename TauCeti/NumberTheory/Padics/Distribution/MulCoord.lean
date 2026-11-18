@@ -87,10 +87,11 @@ private noncomputable def mulCoordCoeff (c : AnalyticStage p h E) : ZMod (p ^ h)
 private theorem norm_mulCoordCoeff_le (c : AnalyticStage p h E) (i : ZMod (p ^ h) × ℕ) :
     ‖mulCoordCoeff c i‖ ≤ max ‖c i‖ ‖c (i.1, i.2 - 1)‖ := by
   obtain ⟨a, _ | n⟩ := i
-  · exact (norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)).trans (le_max_left _ _)
+  · exact (PadicInt.norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)).trans
+      (le_max_left _ _)
   · exact (IsUltrametricDist.norm_add_le_max _ _).trans
-      (max_le_max (norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _))
-        (norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)))
+      (max_le_max (PadicInt.norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _))
+        (PadicInt.norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)))
 
 private theorem norm_mulCoordCoeff_le_norm (c : AnalyticStage p h E) (i : ZMod (p ^ h) × ℕ) :
     ‖mulCoordCoeff c i‖ ≤ ‖c‖ :=
@@ -219,9 +220,9 @@ theorem transition_mulCoord (c : AnalyticStage p h E) :
   rw [← (hasSum_transition_apply S (mulCoord S c) a' j).tsum_eq]
   rcases j with _ | j
   · rw [(hasSum_choose_smul_mulCoord S c _ _ 0 (hD 0) (Y := 0) (by simp)).tsum_eq,
-      ← natCast_val_eq_add, mulCoord_apply_zero, smul_zero, add_zero]
+      ← PadicInt.natCast_val_eq_add, mulCoord_apply_zero, smul_zero, add_zero]
   · rw [(hasSum_choose_smul_mulCoord S c _ _ (j + 1) (hD (j + 1)) (by simpa using hD j)).tsum_eq,
-      ← natCast_val_eq_add, mulCoord_apply_succ]
+      ← PadicInt.natCast_val_eq_add, mulCoord_apply_succ]
 
 /-- Multiplication by the coordinate commutes with re-expansion between any two levels. -/
 theorem transitionLE_mulCoord {k : ℕ} (hhk : h ≤ k) (c : AnalyticStage p h E) :
@@ -232,6 +233,25 @@ theorem transitionLE_mulCoord {k : ℕ} (hhk : h ≤ k) (c : AnalyticStage p h E
     rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply, ih, transition_mulCoord,
       ContinuousLinearMap.comp_apply]
 
+/-- The Mahler recurrence for Amice's polynomials of degrees `n` and `n + 1 < pʰ` on the disc of
+`a`: these are `(a + pʰ w choose n)` and its successor, so multiplying by the coordinate
+`a + pʰ w` gives `(n + 1) (a + pʰ w choose (n + 1)) + n (a + pʰ w choose n)`. -/
+private theorem coord_mul_amicePolynomial {n : ℕ} (hn : n + 1 < p ^ h) (a : ℤ_[p]) :
+    (Polynomial.C a + Polynomial.C ((p : ℤ_[p]) ^ h) * Polynomial.X) *
+        amicePolynomial p h n a =
+      ((n + 1 : ℕ) : ℤ_[p][X]) * amicePolynomial p h (n + 1) a +
+        (n : ℤ_[p][X]) * amicePolynomial p h n a := by
+  refine Polynomial.funext fun w ↦ ?_
+  have hrec := DFunLike.congr_fun (id_mul_mahler (p := p) n) (a + (p : ℤ_[p]) ^ h * w)
+  simp only [ContinuousMap.mul_apply, ContinuousMap.id_apply, ContinuousMap.add_apply,
+    mahler_apply, nsmul_eq_mul] at hrec
+  simp only [Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_X,
+    Polynomial.eval_natCast, eval_amicePolynomial, Nat.div_eq_of_lt hn,
+    Nat.div_eq_of_lt (Nat.lt_succ_self n |>.trans hn), Nat.factorial_zero, Nat.cast_one,
+    one_mul]
+  push_cast at hrec ⊢
+  exact hrec
+
 omit [CompleteSpace E] in
 /-- On the stage of a level `h` with `n + 1 < pʰ`, multiplication by the coordinate sends Amice's
 vector `e_{h,n} • e = (x choose n) • e` to
@@ -240,41 +260,18 @@ vector `e_{h,n} • e = (x choose n) • e` to
 private theorem mulCoord_amiceTerm {n : ℕ} (hn : n + 1 < p ^ h) (e : E) :
     mulCoord S (amiceTerm p h n e) =
       amiceTerm p h (n + 1) ((n + 1) • e) + amiceTerm p h n (n • e) := by
-  -- Amice's polynomials of degrees `n` and `n + 1` are `(a + pʰ w choose n)` and its successor,
-  -- so the Mahler recurrence becomes an identity of polynomials over `ℤ_p`.
-  have hpoly (a : ℤ_[p]) :
-      (Polynomial.C a + Polynomial.C ((p : ℤ_[p]) ^ h) * Polynomial.X) *
-          amicePolynomial p h n a =
-        ((n + 1 : ℕ) : ℤ_[p][X]) * amicePolynomial p h (n + 1) a +
-          (n : ℤ_[p][X]) * amicePolynomial p h n a := by
-    refine Polynomial.funext fun w ↦ ?_
-    have hrec := DFunLike.congr_fun (id_mul_mahler (p := p) n) (a + (p : ℤ_[p]) ^ h * w)
-    simp only [ContinuousMap.mul_apply, ContinuousMap.id_apply, ContinuousMap.add_apply,
-      mahler_apply, nsmul_eq_mul] at hrec
-    simp only [Polynomial.eval_mul, Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_X,
-      Polynomial.eval_natCast, eval_amicePolynomial, Nat.div_eq_of_lt hn,
-      Nat.div_eq_of_lt (Nat.lt_succ_self n |>.trans hn), Nat.factorial_zero, Nat.cast_one,
-      one_mul]
-    push_cast at hrec ⊢
-    exact hrec
+  -- Compare the coefficients of both sides of `coord_mul_amicePolynomial`.
   ext ⟨a, k⟩
-  have hk := congrArg (fun P : ℤ_[p][X] ↦ P.coeff k) (hpoly (a.val : ℤ_[p]))
-  simp only [FunLike.coe_add, Pi.add_apply, amiceTerm_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p],
-    smul_smul, ← add_smul]
-  rcases k with _ | k
+  have hk := congrArg (fun P : ℤ_[p][X] ↦ P.coeff k) (coord_mul_amicePolynomial hn (a.val : ℤ_[p]))
+  rcases k with _ | k <;>
   · simp only [add_mul, mul_assoc, Polynomial.coeff_add, Polynomial.coeff_C_mul,
-      Polynomial.coeff_X_mul_zero, mul_zero, add_zero, Polynomial.coeff_natCast_mul] at hk
-    rw [mulCoord_apply_zero, amiceTerm_apply, smul_smul, hk]
+      Polynomial.coeff_X_mul_zero, Polynomial.coeff_X_mul, Polynomial.coeff_natCast_mul, mul_zero,
+      add_zero] at hk
+    simp only [mulCoord_apply_zero, mulCoord_apply_succ, FunLike.coe_add, Pi.add_apply,
+      amiceTerm_apply, ← Nat.cast_smul_eq_nsmul ℤ_[p], smul_smul, ← add_smul]
     congr 1
-    push_cast
-    ring
-  · simp only [add_mul, mul_assoc, Polynomial.coeff_add, Polynomial.coeff_C_mul,
-      Polynomial.coeff_X_mul, Polynomial.coeff_natCast_mul] at hk
-    rw [mulCoord_apply_succ, amiceTerm_apply, amiceTerm_apply, smul_smul, smul_smul, ← add_smul,
-      hk]
-    congr 1
-    push_cast
-    ring
+    push_cast at hk ⊢
+    linear_combination hk
 
 end AnalyticStage
 
@@ -366,21 +363,16 @@ transform of `μ`. -/
 theorem amiceTransform_mulCoord (μ : LocallyAnalyticDistribution p K) :
     amiceTransform (mulCoord μ) = PowerSeries.mahlerDerivation K (amiceTransform μ) := by
   ext n
-  rw [coeff_amiceTransform, PowerSeries.coeff_mahlerDerivation, coeff_amiceTransform,
-    coeff_amiceTransform, coe_mulCoord_apply, mulCoord_mahlerTerm, map_add,
-    ← Nat.cast_smul_eq_nsmul K, ← Nat.cast_smul_eq_nsmul K, mahlerTerm_smul, mahlerTerm_smul,
-    map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-  push_cast
+  simp only [coeff_amiceTransform, PowerSeries.coeff_mahlerDerivation, coe_mulCoord_apply,
+    mulCoord_mahlerTerm, map_add, ← Nat.cast_smul_eq_nsmul K, mahlerTerm_smul, map_smul]
+  push_cast [smul_eq_mul]
   ring
 
 /-- Iterating, multiplication by `x ^ k` acts on the Amice transform as `∂ ^ k`. -/
 theorem amiceTransform_iterate_mulCoord (μ : LocallyAnalyticDistribution p K) (k : ℕ) :
     amiceTransform (mulCoord^[k] μ) =
-      (PowerSeries.mahlerDerivation K)^[k] (amiceTransform μ) := by
-  induction k generalizing μ with
-  | zero => rfl
-  | succ k ih =>
-    rw [Function.iterate_succ_apply, Function.iterate_succ_apply, ih, amiceTransform_mulCoord]
+      (PowerSeries.mahlerDerivation K)^[k] (amiceTransform μ) :=
+  Function.Semiconj.iterate_right (f := amiceTransform) amiceTransform_mulCoord k μ
 
 /-- On the distribution of a measure, multiplication by the coordinate is the measure weighted by
 the coordinate function. -/

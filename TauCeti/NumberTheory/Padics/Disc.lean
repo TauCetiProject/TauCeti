@@ -31,6 +31,8 @@ For `h : ℕ`, the residue classes `a ∈ ZMod (p ^ h)` cut `ℤ_p` into the dis
 * `PadicInt.discHomeomorph_symm_natCast_val_add_mul`: the inverse decomposition of `a.val + pʰ w`
   is `(a, w)`.
 * `PadicInt.discHomeomorph_symm_cast_add_mul`: the same statement in simp normal form.
+* `PadicInt.natCast_val_eq_add`: the centre of a disc of level `h + 1` is the centre of the disc
+  of level `h` containing it plus a multiple of `pʰ`.
 -/
 
 public section
@@ -103,5 +105,13 @@ natural representative. This is the simp normal form of
 theorem discHomeomorph_symm_cast_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[p]) :
     (discHomeomorph p h).symm ((a.cast : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = (a, w) := by
   rw [← ZMod.natCast_val, discHomeomorph_symm_natCast_val_add_mul]
+
+/-- The centre `a'.val` of a disc of level `h + 1` is `a + pʰ b`, where `a` is the centre of the
+disc of level `h` containing it and `b = ⌊a'.val / pʰ⌋`. -/
+theorem natCast_val_eq_add {h : ℕ} (a' : ZMod (p ^ (h + 1))) :
+    (a'.val : ℤ_[p]) = (((a'.val : ZMod (p ^ h)).val : ℕ) : ℤ_[p]) +
+      (p : ℤ_[p]) ^ h * ((a'.val / p ^ h : ℕ) : ℤ_[p]) := by
+  rw [ZMod.val_natCast]
+  exact_mod_cast (Nat.mod_add_div a'.val (p ^ h)).symm
 
 end PadicInt
