@@ -226,16 +226,9 @@ theorem chartPushforward_symm_trans_comp_fderiv {ψ₁ ψ₂ : OpenPartialHomeom
       (fderiv ℝ (ψ₁.symm.trans ψ₂) w).comp (J.chartPushforward ψ₁ w) := by
   have hw' : w ∈ ψ₁.target ∧ ψ₁.symm w ∈ ψ₂.source := by simpa using hw
   have hy : ψ₂.symm (ψ₁.symm.trans ψ₂ w) = ψ₁.symm w := by simp [ψ₂.left_inv hw'.2]
-  -- Near `w`, the inverse of `ψ₁` is the inverse of `ψ₂` after the transition.
-  have hev : (ψ₁.symm : G → M) =ᶠ[𝓝 w] ψ₂.symm ∘ (ψ₁.symm.trans ψ₂) := by
-    filter_upwards [(ψ₁.symm.trans ψ₂).open_source.mem_nhds hw] with q hq
-    have hq' : q ∈ ψ₁.target ∧ ψ₁.symm q ∈ ψ₂.source := by simpa using hq
-    simp [ψ₂.left_inv hq'.2]
   have hsymm : ∀ v : G, mfderiv 𝓘(ℝ, G) I ψ₁.symm w v =
       mfderiv 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ w) (fderiv ℝ (ψ₁.symm.trans ψ₂) w v) :=
-    fun v ↦ by
-      rw [hev.mfderiv_eq, mfderiv_comp _ hψ₂s hΘ.mdifferentiableAt, mfderiv_eq_fderiv]
-      rfl
+    DFunLike.congr_fun (ψ₁.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans hw hψ₂s hΘ)
   ext v
   simp only [ContinuousLinearMap.comp_apply]
   rw [chartPushforward_apply, chartPushforward_apply, ← hsymm, hy]

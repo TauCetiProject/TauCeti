@@ -9,10 +9,7 @@ public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Locality
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.TargetChange
-import TauCeti.Analysis.Complex.OperatorNorm
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -48,8 +45,6 @@ The two steps are glued by the locality of the planar equation,
 
 ## Main results
 
-* `TauCeti.InhomogeneousTerm.chartTerm_eq_re_smul_sub_im_smul`: the inhomogeneous term read in
-  charts under a change of holomorphic chart.
 * `TauCeti.isWeakPseudoholomorphicOn_iff_of_subset_maximalAtlas`,
   `TauCeti.isWeakPseudoholomorphic_iff_of_subset_maximalAtlas`: **chart independence**, testing
   families of charts covering `s` and `u '' s`.
@@ -77,130 +72,12 @@ noncomputable section
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X]
-
-/-! ### Changes of holomorphic chart -/
-
-/-- The real derivative of the inverse of a holomorphic chart intertwines multiplication by `i`
-with the almost complex structure of `X`. -/
-private theorem mfderiv_symm_I_mul_of_mem_maximalAtlas {φ : OpenPartialHomeomorph X ℂ}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) {w : ℂ} (hw : w ∈ φ.target) (v : ℂ) :
-    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm w (Complex.I * v) =
-      SmoothAlmostComplexStructure.ofComplexManifold ℂ X (φ.symm w)
-        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm w v) := by
-  obtain ⟨u', hu', hJ⟩ := isPseudoholomorphicAt_iff_isComplexLinearMap.mp
-    (isPseudoholomorphicAt_ofComplexManifold_iff.2
-      (mdifferentiableAt_symm_of_mem_maximalAtlas hφ hw))
-  have h := (isComplexLinearMap_iff_apply _ _ _).mp hJ v
-  erw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    SmoothAlmostComplexStructure.ofComplexManifold_apply] at h
-  rw [hu'.mfderiv]
-  exact h
-
-omit [IsManifold 𝓘(ℂ) ∞ X] in
-/-- The coordinate vector `∂ₛ` of a holomorphic chart `φ'` is, in a holomorphic chart `φ`, the
-derivative of the transition `φ ∘ φ'⁻¹`. -/
-private theorem mfderiv_symm_apply_one_of_mem_maximalAtlas {φ φ' : OpenPartialHomeomorph X ℂ}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
-    {z : ℂ} (hz : z ∈ (φ'.symm.trans φ).source) :
-    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ'.symm z (1 : ℂ) =
-      mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (deriv (F := ℂ) (φ'.symm.trans φ) z) := by
-  have hz' : z ∈ φ'.target ∧ φ'.symm z ∈ φ.source := by simpa using hz
-  have hτ : DifferentiableAt ℂ (φ'.symm.trans φ) z :=
-    (contDiffAt_symm_trans_of_mem_maximalAtlas hφ' hφ hz).differentiableAt one_ne_zero
-  have hev : (φ'.symm : ℂ → X) =ᶠ[𝓝 z] φ.symm ∘ (φ'.symm.trans φ) := by
-    filter_upwards [(φ'.symm.trans φ).open_source.mem_nhds hz] with y hy
-    have hy' : y ∈ φ'.target ∧ φ'.symm y ∈ φ.source := by simpa using hy
-    simp [φ.left_inv hy'.2]
-  have hφR := IsManifold.maximalAtlas_subset_restrictScalars_of_ne_zero 1 one_ne_zero hφ
-  have hs : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) :=
-    mdifferentiableAt_symm_of_mem_maximalAtlas hφR (by simpa using φ.map_source hz'.2)
-  have hτ1 : fderiv ℝ (φ'.symm.trans φ) z 1 = deriv (F := ℂ) (φ'.symm.trans φ) z := by
-    rw [(hτ.hasFDerivAt.restrictScalars ℝ).fderiv]
-    exact fderiv_apply_one_eq_deriv
-  rw [hev.mfderiv_eq, mfderiv_comp z hs (hτ.restrictScalars ℝ).mdifferentiableAt,
-    mfderiv_eq_fderiv, ← hτ1]
-  -- Both sides are the same composite, read on tangent spaces of `ℂ`.
-  rfl
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ℓ : ℕ∞}
   {J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ}
   {ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J}
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-
-/-- The inhomogeneous term evaluated on the coordinate vector `∂ₛ` of a holomorphic chart `φ'`,
-expressed through the coordinate vector `∂ₛ` of a holomorphic chart `φ`: with `a + b i` the
-derivative of the transition `φ ∘ φ'⁻¹`, the vector is `a ∂ₛ + b j ∂ₛ`, and `ν` is antilinear. -/
-private theorem tangentHom_mfderiv_symm_apply_one {φ φ' : OpenPartialHomeomorph X ℂ}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
-    {z : ℂ} (hz : z ∈ (φ'.symm.trans φ).source) (y : M) :
-    ν.val.tangentHom (φ'.symm z, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ'.symm z (1 : ℂ)) =
-      (deriv (φ'.symm.trans φ) z).re •
-          ν.val.tangentHom (φ.symm (φ'.symm.trans φ z), y)
-            (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (1 : ℂ)) -
-        (deriv (φ'.symm.trans φ) z).im •
-          J.tangentEndomorphism (φ.symm (φ'.symm.trans φ z), y)
-            (ν.val.tangentHom (φ.symm (φ'.symm.trans φ z), y)
-              (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (1 : ℂ))) := by
-  have hz' : z ∈ φ'.target ∧ φ'.symm z ∈ φ.source := by simpa using hz
-  have hτz : φ'.symm.trans φ z ∈ φ.target := by simpa using φ.map_source hz'.2
-  have hzx : φ'.symm z = φ.symm (φ'.symm.trans φ z) := by simp [φ.left_inv hz'.2]
-  -- A real-linear map on `ℂ` is determined by its values on `1` and `i`.
-  have hlin : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z)
-        (deriv (F := ℂ) (φ'.symm.trans φ) z) =
-      (deriv (φ'.symm.trans φ) z).re •
-          mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (1 : ℂ) +
-        (deriv (φ'.symm.trans φ) z).im •
-          mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) Complex.I :=
-    ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ _
-  have hI : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) Complex.I =
-      SmoothAlmostComplexStructure.ofComplexManifold ℂ X (φ.symm (φ'.symm.trans φ z))
-        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (1 : ℂ)) := by
-    simpa using mfderiv_symm_I_mul_of_mem_maximalAtlas hφ hτz 1
-  have hj := ν.tangentHom_apply_j (φ.symm (φ'.symm.trans φ z), y)
-    (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (1 : ℂ))
-  rw [SmoothAlmostComplexStructure.toContMDiff_apply] at hj
-  rw [mfderiv_symm_apply_one_of_mem_maximalAtlas hφ hφ' hz, hzx, hlin, hI, map_add, map_smul,
-    map_smul, hj, smul_neg, sub_eq_add_neg]
-
-/-- **Changing the holomorphic chart.** Let `φ` and `φ'` be holomorphic charts of `X`, let `z` lie
-in the source of the transition `τ = φ ∘ φ'⁻¹`, and write `τ'(z) = a + b i`. For a chart `ψ` of
-`M` with values in a normed space, differentiable at `ψ⁻¹ v` with inverse differentiable at a point
-`v` of its target, the inhomogeneous term read in `φ'` and `ψ` at `(z, v)` is
-`a η(τ z, v) - b J(τ z, v) η(τ z, v)`, where `η` and `J` are the term and the structure read in
-`φ` and `ψ`. This is the transformation law of the planar weak equation under the biholomorphism
-`τ`. -/
-theorem InhomogeneousTerm.chartTerm_eq_re_smul_sub_im_smul {φ φ' : OpenPartialHomeomorph X ℂ}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
-    {z : ℂ} (hz : z ∈ (φ'.symm.trans φ).source) {ψ : OpenPartialHomeomorph M G} {v : G}
-    (hv : v ∈ ψ.target) (hψ : MDifferentiableAt I 𝓘(ℝ, G) ψ (ψ.symm v))
-    (hψs : MDifferentiableAt 𝓘(ℝ, G) I ψ.symm v) :
-    ν.chartTerm φ' ψ z v =
-      (deriv (φ'.symm.trans φ) z).re • ν.chartTerm φ ψ (φ'.symm.trans φ z) v -
-        (deriv (φ'.symm.trans φ) z).im •
-          J.chartField φ ψ (φ'.symm.trans φ z) v (ν.chartTerm φ ψ (φ'.symm.trans φ z) v) := by
-  -- The derivative of `ψ` intertwines `J` with the structure read in `ψ`.
-  have hint := (J.freeze (φ.symm (φ'.symm.trans φ z))).mfderiv_comp_toEndomorphism ψ
-    (ψ.map_target hv) hψ (by rwa [ψ.right_inv hv])
-  rw [ψ.right_inv hv] at hint
-  rw [InhomogeneousTerm.chartTerm_apply, InhomogeneousTerm.chartTerm_apply,
-    ContMDiffAlmostComplexStructureFamily.chartField_apply,
-    tangentHom_mfderiv_symm_apply_one hφ hφ' hz, map_smul, mvfderiv_apply_eq_mfderiv_apply,
-    mvfderiv_apply_eq_mfderiv_apply]
-  generalize (ν.val.tangentHom (φ.symm (φ'.symm.trans φ z), ψ.symm v))
-    (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (1 : ℂ)) = w
-  have hJ : (J.freeze (φ.symm (φ'.symm.trans φ z))).chartPushforward ψ v
-      (mfderiv I 𝓘(ℝ, G) ψ (ψ.symm v) w) =
-      mfderiv I 𝓘(ℝ, G) ψ (ψ.symm v)
-        (J.tangentEndomorphism (φ.symm (φ'.symm.trans φ z), ψ.symm v) w) :=
-    (DFunLike.congr_fun hint w).symm.trans (congrArg _ (J.freeze_apply _ _ w))
-  rw [hJ, map_sub, map_smul, map_smul]
-  -- What remains is an identity between vectors of `G`.
-  have h2 : ∀ (a b : ℝ) (x y : G), (2 : ℝ) • (a • x - b • y) = a • (2 : ℝ) • x - b • (2 : ℝ) • y :=
-    fun a b x y ↦ by module
-  exact h2 _ _ _ _
 
 /-! ### Transporting the coordinate equation -/
 
@@ -238,8 +115,7 @@ private theorem IsWeakCauchyRiemannOn.comp_symm_trans_of_mem_maximalAtlas
       ext v
       rw [mul_apply_eq_comp, ContMDiffAlmostComplexStructureFamily.chartField_apply,
         (J.freeze _).chartPushforward_apply_chartPushforward_apply ψ hx (hdiff _ hx).1
-          (hdiff _ hx).2 v]
-      rfl
+          (hdiff _ hx).2 v, neg_apply, one_apply_eq_self]
   refine (isWeakCauchyRiemannOn_congr_ae ?_ ?_).1 h' <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Eventually.of_forall fun z hz ↦ ?_)
   · have hz' : φ'.symm z ∈ φ.source := (by simpa using hU (interior_subset hz) :
@@ -463,7 +339,10 @@ theorem isWeakPseudoholomorphicOn_iff_isWeakCauchyRiemannOn :
       (OpenPartialHomeomorph.refl ℂ) ⁻¹' (s ∩ u ⁻¹' (OpenPartialHomeomorph.refl F).source) = s := by
     simp
   rw [hset]
-  -- In the identity chart, `∂ₛ` is the vector `1` at every point.
+  -- In the identity chart, `∂ₛ` is the vector `1` at every point. The base point `w` is the
+  -- identity chart applied to `z`, which `rw` cannot replace by `z` inside the dependent type
+  -- `TangentSpace 𝓘(ℝ, ℂ) w` of the argument; generalizing over `w` and `a` and substituting
+  -- the equations transports the argument, after which both sides coincide.
   have hone : ∀ (z : ℂ) (v : F) (w : ℂ), w = z → ∀ a : TangentSpace 𝓘(ℝ, ℂ) w, a = (1 : ℂ) →
       ν.val.tangentHom (w, v) a = ν.val.tangentHom (z, v) (1 : ℂ) := by
     rintro z v w rfl a rfl
@@ -472,7 +351,9 @@ theorem isWeakPseudoholomorphicOn_iff_isWeakCauchyRiemannOn :
     (Eventually.of_forall fun z ↦ ?_)
   · ext w
     exact (J.freeze_apply _ _ w).trans (J.tangentEndomorphism_apply _ w)
-  · exact congrArg ((2 : ℝ) • ·) (hone z _ _ rfl _
+  · -- The identity chart sends `∂ₛ` to `1`; the tangent space at `z` of `ℂ` is `ℂ`, so the last
+    -- step is a definitional unfolding of `TangentSpace`.
+    exact congrArg ((2 : ℝ) • ·) (hone z _ _ rfl _
       (by rw [OpenPartialHomeomorph.refl_apply, mfderiv_id]; rfl))
 
 end Plane
