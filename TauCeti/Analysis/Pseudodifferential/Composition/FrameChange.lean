@@ -45,8 +45,6 @@ compactly supported. This file shows that the transformed operator is again a qu
 
 * `TauCeti.Symbol.frameChange a Φ Ψ`: the symbol `Φ (a # Ψ)` of `u ↦ Φ · Op(a) (Ψ u)`, with
   `TauCeti.Symbol.quantizeSchwartzValue_frameChange`.
-* `TauCeti.Symbol.coefficient_sharpTerm_ofSpatial`: the terms of the composition expansion of
-  `a # Ψ`, `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w Ψ`.
 * `TauCeti.Symbol.exists_coefficient_frameChange_eq_sum`,
   `TauCeti.Symbol.exists_coefficient_frameChange_eq`: the frame transformation formula, to any
   order and explicitly to second order.
@@ -158,14 +156,10 @@ theorem frameChange_add_right {Ψ' : CoordinateSpace n → V' →L[ℂ] V} (hΨ'
     (hΨ'c : HasCompactSupport Ψ') :
     a.frameChange Φ (Ψ + Ψ') hΦ (hΨ.add hΨ') (hΨc.add hΨ'c) =
       a.frameChange Φ Ψ hΦ hΨ hΨc + a.frameChange Φ Ψ' hΦ hΨ' hΨ'c := by
-  have hs : ofSpatial (Ψ + Ψ') (hΨ.add hΨ') = ofSpatial Ψ hΨ + ofSpatial Ψ' hΨ' := by
-    ext1
-    funext p
-    simp
   ext1
   funext p
   rw [coefficient_frameChange, sharp_congr _ (((hasCompactSpatialSupport_ofSpatial_iff hΨ).2
-      hΨc).add ((hasCompactSpatialSupport_ofSpatial_iff hΨ').2 hΨ'c)) hs,
+      hΨc).add ((hasCompactSpatialSupport_ofSpatial_iff hΨ').2 hΨ'c)) (ofSpatial_add hΨ hΨ'),
     sharp_add _ ((hasCompactSpatialSupport_ofSpatial_iff hΨ).2 hΨc)
       ((hasCompactSpatialSupport_ofSpatial_iff hΨ').2 hΨ'c)]
   simp [ContinuousLinearMap.comp_add]
@@ -175,14 +169,10 @@ theorem frameChange_sub_right {Ψ' : CoordinateSpace n → V' →L[ℂ] V} (hΨ'
     (hΨ'c : HasCompactSupport Ψ') :
     a.frameChange Φ (Ψ - Ψ') hΦ (hΨ.sub hΨ') (hΨc.sub hΨ'c) =
       a.frameChange Φ Ψ hΦ hΨ hΨc - a.frameChange Φ Ψ' hΦ hΨ' hΨ'c := by
-  have hs : ofSpatial (Ψ - Ψ') (hΨ.sub hΨ') = ofSpatial Ψ hΨ - ofSpatial Ψ' hΨ' := by
-    ext1
-    funext p
-    simp
   ext1
   funext p
   rw [coefficient_frameChange, sharp_congr _ (((hasCompactSpatialSupport_ofSpatial_iff hΨ).2
-      hΨc).sub ((hasCompactSpatialSupport_ofSpatial_iff hΨ').2 hΨ'c)) hs,
+      hΨc).sub ((hasCompactSpatialSupport_ofSpatial_iff hΨ').2 hΨ'c)) (ofSpatial_sub hΨ hΨ'),
     sharp_sub _ ((hasCompactSpatialSupport_ofSpatial_iff hΨ).2 hΨc)
       ((hasCompactSpatialSupport_ofSpatial_iff hΨ').2 hΨ'c)]
   simp [ContinuousLinearMap.comp_sub]
@@ -200,13 +190,10 @@ omit hΨ hΨc in
 theorem frameChange_zero_right (hΨ : ContDiff ℝ ∞ (0 : CoordinateSpace n → V' →L[ℂ] V))
     (hΨc : HasCompactSupport (0 : CoordinateSpace n → V' →L[ℂ] V)) :
     a.frameChange Φ 0 hΦ hΨ hΨc = 0 := by
-  have hs : ofSpatial (0 : CoordinateSpace n → V' →L[ℂ] V) hΨ = 0 := by
-    ext1
-    funext p
-    simp
   ext1
   funext p
-  rw [coefficient_frameChange, sharp_congr _ hasCompactSpatialSupport_zero hs, sharp_zero]
+  rw [coefficient_frameChange, sharp_congr _ hasCompactSpatialSupport_zero (ofSpatial_zero hΨ),
+    sharp_zero]
   simp
 
 /-- The frame change of a symbol with compact spatial support has compact spatial support. -/
@@ -292,16 +279,6 @@ section Expansion
 
 variable {a : Symbol n V W m} (hΦ : ContDiff ℝ ∞ Φ) (hΨ : ContDiff ℝ ∞ Ψ)
   (hΨc : HasCompactSupport Ψ)
-
-/-- **The terms of the composition expansion of `a # Ψ`** for a multiplication operator `Ψ` on the
-right are `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w Ψ`, the sum running over the words `w` of
-coordinate indices of length `k`. -/
-theorem coefficient_sharpTerm_ofSpatial (a : Symbol n V W m) (k : ℕ) (x ξ : CoordinateSpace n) :
-    (a.sharpTerm (ofSpatial Ψ hΨ) k).coefficient (x, ξ) = ((-Complex.I) ^ k / k.factorial) •
-      ∑ w : Fin k → Fin n,
-        (mixedDeriv [] (List.ofFn w) a.coefficient x ξ).comp
-          (coordinateDeriv (List.ofFn w) Ψ x) := by
-  simp only [coefficient_sharpTerm, coefficient_ofSpatial_eq, mixedDeriv_nil_comp_fst]
 
 /-- If `Ψ` is constant near `x`, every term of index `k ≥ 1` of the expansion of `a # Ψ` vanishes
 at `x`. -/

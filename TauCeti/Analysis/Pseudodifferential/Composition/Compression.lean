@@ -209,6 +209,15 @@ theorem IsSmoothing.compress (ha : a.IsSmoothing) (hφ : ContDiff ℝ ∞ φ) (h
     (hψc : HasCompactSupport ψ) : (a.compress φ ψ hφ hψ hψc).IsSmoothing :=
   ha.frameChange _ _ _
 
+/-- A germ condition on the cutoff `ψ` near the support of `φ` is the same condition on the
+transition map `ψ id` near the support of `φ id`. -/
+private theorem eventuallyEq_smul_id {g : CoordinateSpace n → ℝ}
+    (h : ∀ x ∈ Function.support φ, ψ =ᶠ[𝓝 x] g) :
+    ∀ x ∈ Function.support fun x ↦ φ x • ContinuousLinearMap.id ℂ W,
+      (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) =ᶠ[𝓝 x]
+        fun x ↦ g x • ContinuousLinearMap.id ℂ V :=
+  fun x hx ↦ (h x fun h ↦ hx (by simp [h])).fun_comp (· • ContinuousLinearMap.id ℂ V)
+
 variable [CompleteSpace V] [CompleteSpace W]
 
 /-- **The compression to second order.** The compression of a symbol `a` of order `m` by the
@@ -249,7 +258,7 @@ theorem exists_isSmoothing_coefficient_compress_eq (hφ : ContDiff ℝ ∞ φ) (
     (Φ := fun x ↦ φ x • ContinuousLinearMap.id ℂ W) (Ψ := fun x ↦ ψ x • ContinuousLinearMap.id ℂ V)
     (hφ.smul contDiff_const) (hψ.smul contDiff_const) hψc.smul_right
     (T := ContinuousLinearMap.id ℂ V) fun x hx ↦ by
-      filter_upwards [hψφ x fun h ↦ hx (by simp [h])] with y hy using by simp [hy]
+      simpa using eventuallyEq_smul_id (V := V) (W := W) hψφ x hx
   exact ⟨r, hr, fun x ξ ↦ by simpa [compress] using h x ξ⟩
 
 /-- **Compressions by a cutoff vanishing near the support of the left one.** If `ψ = 0` near every
@@ -258,7 +267,7 @@ theorem isSmoothing_compress_of_eventuallyEq_zero (hφ : ContDiff ℝ ∞ φ) (h
     (hψc : HasCompactSupport ψ) (hψφ : ∀ x ∈ Function.support φ, ψ =ᶠ[𝓝 x] 0) :
     (a.compress φ ψ hφ hψ hψc).IsSmoothing :=
   isSmoothing_frameChange_of_eventuallyEq_zero _ _ _ fun x hx ↦ by
-    filter_upwards [hψφ x fun h ↦ hx (by simp [h])] with y hy using by simp [hy]
+    simpa [Pi.zero_def] using eventuallyEq_smul_id (V := V) (W := W) hψφ x hx
 
 /-- **The quantization of a compression** is the compressed quantization:
 `Op(φ (a # ψ)) u = φ · Op(a) (ψ u)`. -/
@@ -276,8 +285,7 @@ theorem isSmoothing_compress_sub_compress {ψ' : CoordinateSpace n → ℝ} (hφ
     (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (hψ' : ContDiff ℝ ∞ ψ')
     (hψ'c : HasCompactSupport ψ') (hψψ' : ∀ x ∈ Function.support φ, ψ =ᶠ[𝓝 x] ψ') :
     (a.compress φ ψ hφ hψ hψc - a.compress φ ψ' hφ hψ' hψ'c).IsSmoothing :=
-  isSmoothing_frameChange_sub_frameChange _ _ _ _ _ fun x hx ↦ by
-    filter_upwards [hψψ' x fun h ↦ hx (by simp [h])] with y hy using by simp [hy]
+  isSmoothing_frameChange_sub_frameChange _ _ _ _ _ (eventuallyEq_smul_id hψψ')
 
 /-- **Ordinary partitions of unity reproduce a symbol modulo smoothing symbols.** Let `φᵢ` be
 finitely many smooth functions with `∑ᵢ φᵢ = 1` on a set `U` outside which `a` vanishes, and `ψᵢ`

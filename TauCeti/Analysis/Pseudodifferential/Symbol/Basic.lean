@@ -851,6 +851,25 @@ def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f
 theorem coefficient_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
     (p : CoordinateSpace n × CoordinateSpace n) : (ofSpatial f hf).coefficient p = f p.1 := (rfl)
 
+@[simp]
+theorem ofSpatial_zero (hf : ContDiff ℝ ∞ (0 : CoordinateSpace n → V →L[ℂ] W)) :
+    ofSpatial 0 hf = 0 := by
+  ext1
+  funext p
+  simp
+
+theorem ofSpatial_add {f g : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hg : ContDiff ℝ ∞ g) : ofSpatial (f + g) (hf.add hg) = ofSpatial f hf + ofSpatial g hg := by
+  ext1
+  funext p
+  simp
+
+theorem ofSpatial_sub {f g : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hg : ContDiff ℝ ∞ g) : ofSpatial (f - g) (hf.sub hg) = ofSpatial f hf - ofSpatial g hg := by
+  ext1
+  funext p
+  simp
+
 /-- The symbol of multiplication by `f` satisfies uniform estimates exactly when every
 coordinate derivative of `f` is bounded. -/
 theorem isUniform_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) :
