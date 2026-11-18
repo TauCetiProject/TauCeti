@@ -121,9 +121,11 @@ theorem mvfderiv_eq_fderiv_symm_trans_comp {ψ₁ ψ₂ : OpenPartialHomeomorph 
     rw [ψ₁.right_inv hw'.1]
     exact hΘ.mdifferentiableAt
   ext v
-  rw [mvfderiv_apply_eq_mfderiv_apply, hev.mfderiv_eq, mfderiv_comp _ hΘ' hψ₁, ψ₁.right_inv hw'.1,
+  rw [ContinuousLinearMap.comp_apply, mvfderiv_apply_eq_mfderiv_apply,
+    mvfderiv_apply_eq_mfderiv_apply, hev.mfderiv_eq, mfderiv_comp _ hΘ' hψ₁, ψ₁.right_inv hw'.1,
     mfderiv_eq_fderiv]
-  -- Both sides are the same composite, read in `F`.
+  -- The casts `tangentSpaceCast` and `NormedSpace.fromTangentSpace` inserted by the chain rule
+  -- and by `mfderiv_eq_fderiv` act as the identity by definition.
   rfl
 
 /-- **The chain rule for the inverse of a change of chart.** Let `ψ₁` and `ψ₂` be open partial
