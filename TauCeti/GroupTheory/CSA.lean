@@ -15,11 +15,12 @@ public import TauCeti.GroupTheory.TrivialIntersection
 A group is CSA if its maximal abelian subgroups are malnormal. The centralizer of a nonidentity
 element in such a group is its unique maximal abelian subgroup containing that element. In
 particular, commutation is transitive through a nonidentity element. In a torsion-free
-commutative-transitive group roots are unique and no nonidentity element is conjugate to its
-inverse. In a torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of
-different cosets of the centralizer of `u` do not commute, and on any finite index set powers
-`c x` of an element outside that centralizer can be chosen so that `(c x)⁻¹ * h * c x'` avoids
-the centralizer for distinct indices when `h = 1` and for all indices when `h` is a prescribed
+commutative-transitive group roots are unique, no nonidentity element is conjugate to its
+inverse, and in the nonabelian case every nonidentity conjugacy class is infinite. In a
+torsion-free CSA group, conjugates of nontrivial powers of `u ≠ 1` by elements of different
+cosets of the centralizer of `u` do not commute, and on any finite index set powers `c x` of an
+element outside that centralizer can be chosen so that `(c x)⁻¹ * h * c x'` avoids the
+centralizer for distinct indices when `h = 1` and for all indices when `h` is a prescribed
 nonidentity element of a finite set. A group is CSA exactly when it is commutative transitive
 and every nonidentity element commuting with one of its conjugates `g * x * g⁻¹` commutes with
 `g`. Consequently, given two noncommuting elements `a` and `b`, the
@@ -307,6 +308,15 @@ theorem IsCommTransitive.center_eq_bot (hG : IsCommTransitive G)
 theorem IsCSA.center_eq_bot (hG : IsCSA G) (h : ¬ IsMulCommutative G) :
     Subgroup.center G = ⊥ :=
   hG.isCommTransitive.center_eq_bot h
+
+/-- In a nonabelian torsion-free commutative-transitive group, every nonidentity element has an
+infinite conjugacy class. -/
+theorem IsCommTransitive.infinite_setOf_isConj [IsMulTorsionFree G] (hG : IsCommTransitive G)
+    (h : ¬ IsMulCommutative G) {g : G} (hg : g ≠ 1) :
+    {x : G | IsConj g x}.Infinite := by
+  have := hG.hasUniqueRoots
+  refine infinite_setOf_isConj_of_notMem_center ?_
+  rwa [hG.center_eq_bot h, Subgroup.mem_bot]
 
 /-- An injective homomorphism into a CSA group has CSA domain. -/
 theorem IsCSA.of_injective {H : Type*} [Group H] (hG : IsCSA G)
