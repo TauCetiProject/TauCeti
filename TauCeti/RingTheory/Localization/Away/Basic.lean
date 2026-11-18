@@ -64,6 +64,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
   `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.injective_iff_isRegular`: the localization map away from `x` is injective
+  if and only if `x` is regular.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -97,6 +99,9 @@ source never states.
 
 `mk'_pow_eq_invSelf_pow_mul` is **also a later addition with no AINTLIB analogue**, proved here
 directly from Mathlib's `mk'` API.
+
+`IsLocalization.Away.injective_iff_isRegular` is **also a later addition with no AINTLIB analogue**,
+proved here directly from Mathlib's `IsLocalization.injective_iff_isRegular`.
 
 `IsLocalization.Away.isSMulRegular_algebraMap`, which says when an element stays a
 nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
@@ -483,6 +488,13 @@ theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algeb
   have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
   exact (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
     inferInstance
+
+/-- The localization map away from `x` is injective if and only if `x` is regular. -/
+theorem injective_iff_isRegular {A S : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    (x : A) [IsLocalization.Away x S] :
+    Function.Injective (algebraMap A S) ↔ IsRegular x := by
+  rw [IsLocalization.injective_iff_isRegular (Submonoid.powers x)]
+  exact ⟨fun h ↦ h ⟨x, Submonoid.mem_powers x⟩, fun hx ⟨_, k, hk⟩ ↦ hk ▸ hx.pow k⟩
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 
