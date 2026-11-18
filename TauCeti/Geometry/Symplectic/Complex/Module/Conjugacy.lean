@@ -142,14 +142,8 @@ private theorem complexLinear_and_bijective_coprod_orthogonal {n : ℕ} {A : V �
       (D.coprod ((Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] V).comp
         ((ℂ ∙ w)ᗮ.subtypeL.restrictScalars ℝ))) := by
   have hDα (α : ℂ) : D α = Ψ (α • w) := by
-    have hα : α = α.re • (1 : ℂ) + α.im • I := by simp
-    calc D α = D (α.re • (1 : ℂ) + α.im • I) := by rw [← hα]
-      _ = α.re • Ψ w + α.im • Ψ (I • w) := by
-        rw [map_add, map_smul, map_smul, hDI, hD1, hΨ]
-      _ = Ψ ((α.re • (1 : ℂ) + α.im • I) • w) := by
-        rw [add_smul, smul_assoc, smul_assoc, one_smul, map_add, map_smul Ψ α.re w,
-          map_smul Ψ α.im (I • w)]
-      _ = Ψ (α • w) := by rw [← hα]
+    rw [show α = α.re • (1 : ℂ) + α.im • I by simp]
+    simp only [map_add, map_smul, hDI, hD1, hΨ, add_smul, smul_assoc, one_smul]
   have hw0 : w ≠ 0 := fun h ↦ hD (ContinuousLinearMap.ext fun α ↦ by simp [hDα, h])
   have hcoprod (p : ℂ × (ℂ ∙ w)ᗮ) : D.coprod ((Ψ : EuclideanSpace ℂ (Fin n) →L[ℝ] V).comp
       ((ℂ ∙ w)ᗮ.subtypeL.restrictScalars ℝ)) p = Ψ (p.1 • w + p.2) := by
@@ -164,7 +158,7 @@ private theorem complexLinear_and_bijective_coprod_orthogonal {n : ℕ} {A : V �
   convert Ψ.bijective.comp E.bijective using 1
   funext p
   rw [Function.comp_apply, hcoprod]
-  rfl
+  simp [E, LinearEquiv.toSpanNonzeroSingleton_apply]
 
 /-- **Normal frames exist.** Let `A` be a complex structure on a finite-dimensional real normed
 space `V`, `A² = -1`, and `D : ℂ →L[ℝ] V` a nonzero map satisfying the Cauchy–Riemann equation
