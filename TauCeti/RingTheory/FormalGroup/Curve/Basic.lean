@@ -731,6 +731,15 @@ theorem subst_frobeniusCurve_log [Algebra ℚ R] (F : FormalGroup R) [F.IsComm] 
     toPowerSeries_frobeniusCurve_𝔾ₐ] using
     congrArg Curve.toPowerSeries (F.logHom.mapCurve_frobeniusCurve n hn γ)
 
+/-- Over a `ℚ`-algebra, the degree-`k` coefficient of the logarithm of `f_n γ` is `n` times the
+degree-`n * k` coefficient of the logarithm of `γ`. -/
+theorem coeff_subst_frobeniusCurve_log [Algebra ℚ R] (F : FormalGroup R) [F.IsComm] (n : ℕ)
+    (hn : n ≠ 0) (γ : F.Curve) (k : ℕ) :
+    PowerSeries.coeff k (PowerSeries.subst (F.frobeniusCurve n hn γ).toPowerSeries F.log) =
+      n * PowerSeries.coeff (n * k) (PowerSeries.subst γ.toPowerSeries F.log) := by
+  rw [subst_frobeniusCurve_log, PowerSeries.coeff_smul, PowerSeries.coeff_cartier, Nat.add_zero,
+    smul_eq_mul]
+
 end FrobeniusSetup
 
 /-! ### Lifting of curves and Cartier's operator identities -/

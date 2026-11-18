@@ -8,14 +8,12 @@ module
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
-# Homomorphisms of centralizers induced by a group homomorphism
+# Centralizers under group homomorphisms
 
 A homomorphism `f : G →* G'` maps the centralizer `C_G(s)` of a subset `s` into the centralizer
 `C_{G'}(f(s))`, hence into `C_{G'}(t)` for every `t ⊆ f(s)`. This file records the restriction of
 `f` as a homomorphism `C_G(s) →* C_{G'}(t)`; the case `s = {u}`, `t = {f u}` gives a homomorphism
-`C_G(u) →* C_{G'}(f u)`.
-
-A group isomorphism `e : G ≃* G'` carries `C_G(s)` onto `C_{G'}(e(s))`.
+`C_G(u) →* C_{G'}(f u)`. An isomorphism maps `C_G(s)` onto `C_{G'}(f(s))`.
 
 ## Main definitions
 
@@ -24,8 +22,8 @@ A group isomorphism `e : G ≃* G'` carries `C_G(s)` onto `C_{G'}(e(s))`.
 
 ## Main results
 
-* `MulEquiv.map_centralizer`: the image of a centralizer under a group isomorphism is the
-  centralizer of the image.
+* `MulEquiv.map_centralizer`: a group isomorphism carries the centralizer of a set onto the
+  centralizer of its image.
 -/
 
 public section
@@ -61,15 +59,14 @@ namespace MulEquiv
 
 variable {G G' : Type*} [Group G] [Group G']
 
-/-- **Transport of centralizers.** A group isomorphism carries the centralizer of a set onto the
-centralizer of its image. -/
+/-- A group isomorphism carries the centralizer of a set onto the centralizer of its image. -/
 @[to_additive /-- An additive group isomorphism carries the centralizer of a set onto the
 centralizer of its image. -/]
 theorem map_centralizer (e : G ≃* G') (s : Set G) :
     (centralizer s).map (e : G →* G') = centralizer (e '' s) := by
-  refine le_antisymm (map_centralizer_le_centralizer_image s (e : G →* G')) fun g hg ↦
-    ⟨e.symm g, ?_, e.apply_symm_apply g⟩
-  simpa [Set.image_image] using
-    map_centralizer_le_centralizer_image (e '' s) (e.symm : G' →* G) (mem_map_of_mem _ hg)
+  ext y
+  rw [← toMonoidHom_eq_coe, mem_map_equiv, mem_centralizer_iff, mem_centralizer_iff,
+    Set.forall_mem_image]
+  exact forall₂_congr fun x _ ↦ by rw [← e.injective.eq_iff, map_mul, map_mul, apply_symm_apply]
 
 end MulEquiv
