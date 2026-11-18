@@ -96,7 +96,10 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars`,
   `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars_add_one`: `κ(S)` is the number of
   variables of `S`, plus one when the coefficient `d` occurs; it equals `2 - χ(S)`
-  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`).
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`). When every variable of
+  `X` occurs in `S`, this is the count `κ(S) = |X| + ε(S)` of [IFT], Definition 6
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_card_of_vars_eq_univ`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_card_add_one_of_vars_eq_univ`).
 * `TauCeti.GroupAlgGeom.Quadratic.exists_standard_toWord_eq_commutator`: the commutator
   `x⁻¹ y⁻¹ x y` is a standard quadratic word.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
@@ -740,6 +743,18 @@ theorem kappa_eq_ncard_vars (h : S.constant = 1) : S.kappa = S.vars.ncard := by
 /-- A standard quadratic equation with the coefficient `d` has `κ(S) - 1` variables. -/
 theorem kappa_eq_ncard_vars_add_one (h : S.constant ≠ 1) : S.kappa = S.vars.ncard + 1 := by
   cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, two_mul]
+
+/-- A standard quadratic equation without the coefficient `d` in which every variable of `X`
+occurs has `κ(S) = |X|`. -/
+theorem kappa_eq_card_of_vars_eq_univ (hX : S.vars = Set.univ) (h : S.constant = 1) :
+    S.kappa = Nat.card X := by
+  rw [kappa_eq_ncard_vars h, hX, Set.ncard_univ]
+
+/-- A standard quadratic equation with the coefficient `d` in which every variable of `X` occurs
+has `κ(S) = |X| + 1`. -/
+theorem kappa_eq_card_add_one_of_vars_eq_univ (hX : S.vars = Set.univ) (h : S.constant ≠ 1) :
+    S.kappa = Nat.card X + 1 := by
+  rw [kappa_eq_ncard_vars_add_one h, hX, Set.ncard_univ]
 
 /-- An orientable standard quadratic equation of genus `n` with `r` atoms has `n + r`
 variables. -/
