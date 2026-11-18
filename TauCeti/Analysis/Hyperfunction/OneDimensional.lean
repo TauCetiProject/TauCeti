@@ -91,11 +91,16 @@ theorem mem_holomorphicSections_iff {U : Opens ℂ} {f : ℂ → ℂ} :
     f ∈ holomorphicSections U ↔ DifferentiableOn ℂ f U ∧ ∀ z, z ∉ U → f z = 0 :=
   Iff.rfl
 
+/-- The indicator function of `U` turns a function holomorphic on `U` into a holomorphic section
+over `U`. -/
+theorem indicator_mem_holomorphicSections_of_differentiableOn {U : Opens ℂ} {f : ℂ → ℂ}
+    (hf : DifferentiableOn ℂ f U) : (U : Set ℂ).indicator f ∈ holomorphicSections U :=
+  ⟨hf.congr fun _ hz => indicator_of_mem hz f, fun _ hz => indicator_of_notMem hz f⟩
+
 /-- The indicator function of a smaller open set restricts holomorphic sections. -/
 theorem indicator_mem_holomorphicSections {U V : Opens ℂ} (h : U ≤ V) {f : ℂ → ℂ}
     (hf : f ∈ holomorphicSections V) : (U : Set ℂ).indicator f ∈ holomorphicSections U :=
-  ⟨(hf.1.mono h).congr fun _ hz => indicator_of_mem hz f,
-    fun _ hz => indicator_of_notMem hz f⟩
+  indicator_mem_holomorphicSections_of_differentiableOn (hf.1.mono h)
 
 /-- Restriction of holomorphic sections to a smaller open set. -/
 def holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V) :
@@ -183,7 +188,7 @@ theorem throughReal_antitone : Antitone throughReal := fun U V h f hf => by
 
 /-- Two functions continuous on open sets containing `ℂ ∖ ℝ` that agree on `ℂ ∖ ℝ` agree on the
 intersection of the two open sets: the real points there are limits of non-real ones. -/
-private theorem eqOn_inf_of_eqOn_nonRealOpen {V₁ V₂ : Opens ℂ} {g₁ g₂ : ℂ → ℂ}
+theorem eqOn_inf_of_eqOn_nonRealOpen {V₁ V₂ : Opens ℂ} {g₁ g₂ : ℂ → ℂ}
     (h₁ : ContinuousOn g₁ V₁) (h₂ : ContinuousOn g₂ V₂) (hV₁ : nonRealOpen ≤ V₁)
     (hV₂ : nonRealOpen ≤ V₂) (h : EqOn g₁ g₂ nonRealOpen) : EqOn g₁ g₂ (V₁ ⊓ V₂ : Opens ℂ) :=
   h.of_subset_closure (h₁.mono inter_subset_left) (h₂.mono inter_subset_right)
