@@ -23,12 +23,15 @@ Hölder with every smaller exponent, with a constant depending on the scale; in 
 function which is Lipschitz between nearby points. Local Hölder bounds around the points of a
 compact set are uniform on a thickening of the set.
 
-A function which is Hölder continuous, with positive exponent, on a dense subset `s` of a
-pseudo-emetric space and takes values in a complete emetric space extends to a function which is
-Hölder continuous on the whole space, with the same constant and exponent.
+A function which is Hölder continuous on a dense subset `s` of a pseudo-emetric space and takes
+values in a complete emetric space extends to a function which is Hölder continuous on the whole
+space, with the same constant and exponent.
 
-The extension is the uniformly continuous extension along the dense inclusion `s → X`, and the
-Hölder inequality passes from `s × s` to its closure because both of its sides are continuous.
+For a positive exponent, the extension is the uniformly continuous extension along the dense
+inclusion `s → X`, and the Hölder inequality passes from `s × s` to its closure because both of its
+sides are continuous. For exponent zero the Hölder condition only bounds the distances by the
+constant, and the extension is the function itself on `s` and a constant off `s`, which need not
+be continuous.
 
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
@@ -48,6 +51,10 @@ points, the form in which Hölder seminorms are written in analysis texts.
 
 By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
 `α ≤ 1`.
+
+For an `α`-Hölder `f` and a `β`-Hölder `g` between pseudo-extended metric spaces, the
+`α β`-Hölder seminorm of `f ∘ g` is at most the seminorm of `f` times the `α`-th power of the
+seminorm of `g`.
 
 ## Main declarations
 
@@ -73,6 +80,8 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   preserves Hölder bounds.
 * `Isometry.holderWith_comp_iff`: postcomposition with an isometry preserves global Hölder bounds
   in both directions.
+* `HolderWith.comp_lipschitzWith_one`: precomposition with a `1`-Lipschitz map keeps the Hölder
+  constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
@@ -89,6 +98,9 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   bound on the difference quotient.
 * `eHolderNorm_le_iff`: `eHolderNorm r f ≤ C` if and only if the Hölder inequality holds with the
   extended constant `C`.
+* `edist_le_eHolderNorm_mul`: the Hölder inequality holds with the Hölder seminorm as constant.
+* `MemHolder.eHolderNorm_comp_le`, `MemHolder.nnHolderNorm_comp_le`: the Hölder seminorm of a
+  composition of Hölder functions.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
   difference quotients.
 * `TauCeti.holderWith_norm_rpow`: the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
@@ -104,11 +116,30 @@ variable {X Y : Type*} [PseudoEMetricSpace X] [EMetricSpace Y] [CompleteSpace Y]
   {C r : ℝ≥0} {f : X → Y} {s : Set X}
 
 /-- **Hölder functions extend from dense sets.** If `f` is Hölder continuous with constant `C` and
-positive exponent `r` on a dense set `s`, and the target is complete, then some function which is
-Hölder continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`.
+exponent `r` on a dense set `s`, and the target is complete, then some function which is Hölder
+continuous with constant `C` and exponent `r` on the whole space agrees with `f` on `s`. For
+`r = 0` the Hölder condition only bounds the distances by `C`, so the extension need not be
+continuous.
 Compare `LipschitzOnWith.extend_real`, which needs no density but only applies to real values. -/
-theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s) (hr : 0 < r)
+theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s)
     (hs : Dense s) : ∃ g : X → Y, HolderWith C r g ∧ EqOn f g s := by
+  classical
+  rcases eq_or_ne r 0 with rfl | hr
+  · -- Exponent zero: the condition says `edist ≤ C`; extend by a constant off `s`.
+    have key : ∀ x ∈ s, ∀ y ∈ s, edist (f x) (f y) ≤ C := fun x hx y hy => by
+      simpa using hf x hx y hy
+    rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+    · have hX : IsEmpty X := ⟨fun x => by simpa using hs.nonempty_iff.2 ⟨x⟩⟩
+      exact ⟨f, fun x => (hX.false x).elim, by simp⟩
+    · refine ⟨fun x => if x ∈ s then f x else f x₀, fun x y => ?_, fun x hx => by simp [hx]⟩
+      have h0 : edist x y ^ (((0 : ℝ≥0) : ℝ)) = 1 := by simp
+      rw [h0, mul_one]
+      by_cases hx : x ∈ s <;> by_cases hy : y ∈ s <;> simp only [hx, hy, ite_true, ite_false]
+      · exact key _ hx _ hy
+      · exact key _ hx _ hx₀
+      · exact key _ hx₀ _ hy
+      · simp
+  replace hr : 0 < r := pos_iff_ne_zero.2 hr
   have hu : UniformContinuous (s.domRestrict f) := hf.holderWith.uniformContinuous hr
   have hi := isUniformInducing_val s
   have hd : DenseRange ((↑) : s → X) := hs.denseRange_val
@@ -172,6 +203,14 @@ theorem Isometry.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoE
     [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y}
     (hf : HolderWith C r f) : HolderWith C r (g ∘ f) :=
   holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
+
+/-- Precomposition with a `1`-Lipschitz map preserves a global Hölder bound, with the same constant
+and exponent. -/
+theorem HolderWith.comp_lipschitzWith_one {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {C r : ℝ≥0} {g : Y → Z} {f : X → Y}
+    (hg : HolderWith C r g) (hf : LipschitzWith 1 f) : HolderWith C r (g ∘ f) := by
+  have h := hg.comp (holderWith_one.2 hf)
+  rwa [mul_one, NNReal.one_rpow, mul_one] at h
 
 /-- Postcomposition with an isometry neither creates nor destroys a global Hölder bound: `g ∘ f`
 is Hölder with constant `C` and exponent `r` exactly when `f` is. -/
@@ -433,6 +472,44 @@ theorem edist_le_eHolderNorm_mul {X Y : Type*} [MetricSpace X] [PseudoEMetricSpa
     (f : X → Y) (x y : X) :
     edist (f x) (f y) ≤ eHolderNorm r f * edist x y ^ (r : ℝ) :=
   eHolderNorm_le_iff.1 le_rfl x y
+
+/-- **The extended Hölder seminorm of a composition.** If `f` is `α`-Hölder and `g` is `β`-Hölder,
+then the `α β`-Hölder seminorm of `f ∘ g` is at most `eHolderNorm α f * eHolderNorm β g ^ α`.
+
+The spaces `X'`, `X` and `Z` may be pseudo-extended metric spaces: no separation is needed. -/
+theorem MemHolder.eHolderNorm_comp_le {X' X Z : Type*} [PseudoEMetricSpace X']
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Z] {α β : ℝ≥0} {f : X → Z} (hf : MemHolder α f)
+    {g : X' → X} (hg : MemHolder β g) :
+    eHolderNorm (α * β) (f ∘ g) ≤ eHolderNorm α f * eHolderNorm β g ^ (α : ℝ) := by
+  -- The infimum defining `eHolderNorm` need not be attained, so bound the seminorm of `f ∘ g` by
+  -- `C * D ^ α` for every pair of Hölder constants `C` of `f` and `D` of `g` (`HolderWith.comp`)
+  -- and pass to the infimum.
+  obtain ⟨C, hC⟩ := hf
+  obtain ⟨D, hD⟩ := hg
+  have : Nonempty {D // HolderWith D β g} := ⟨⟨D, hD⟩⟩
+  conv_rhs => rw [eHolderNorm, eHolderNorm, iInf_subtype', iInf_subtype',
+    ENNReal.iInf_rpow_of_nonneg α.coe_nonneg]
+  refine ENNReal.le_iInf_mul_iInf ⟨⟨C, hC⟩, ENNReal.coe_ne_top⟩
+    ⟨⟨D, hD⟩, ENNReal.rpow_ne_top_of_nonneg α.coe_nonneg ENNReal.coe_ne_top⟩
+    fun C D ↦ ?_
+  rw [← ENNReal.coe_rpow_of_nonneg _ α.coe_nonneg, ← ENNReal.coe_mul]
+  exact (C.2.comp D.2).eHolderNorm_le
+
+/-- **The Hölder seminorm of a composition.** If `f` is `α`-Hölder and `g` is `β`-Hölder, then the
+`α β`-Hölder seminorm of `f ∘ g` is at most `nnHolderNorm α f * nnHolderNorm β g ^ α`. For a
+`K`-Lipschitz `g` (`β = 1`) the factor is at most `K ^ α`.
+
+The spaces `X'`, `X` and `Z` may be pseudo-extended metric spaces: no separation is needed. -/
+theorem MemHolder.nnHolderNorm_comp_le {X' X Z : Type*} [PseudoEMetricSpace X']
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Z] {α β : ℝ≥0} {f : X → Z} (hf : MemHolder α f)
+    {g : X' → X} (hg : MemHolder β g) :
+    nnHolderNorm (α * β) (f ∘ g) ≤ nnHolderNorm α f * nnHolderNorm β g ^ (α : ℝ) := by
+  have hf' : (nnHolderNorm α f : ℝ≥0∞) = eHolderNorm α f :=
+    ENNReal.coe_toNNReal hf.eHolderNorm_ne_top
+  have hg' : (nnHolderNorm β g : ℝ≥0∞) = eHolderNorm β g :=
+    ENNReal.coe_toNNReal hg.eHolderNorm_ne_top
+  rw [← ENNReal.coe_le_coe, ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ α.coe_nonneg, hf', hg']
+  exact coe_nnHolderNorm_le_eHolderNorm.trans (hf.eHolderNorm_comp_le hg)
 
 /-- The Hölder seminorm is the supremum of the difference quotients
 `edist (f x) (f y) / edist x y ^ r` over pairs of distinct points. -/

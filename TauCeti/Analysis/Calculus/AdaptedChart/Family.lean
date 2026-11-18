@@ -24,8 +24,9 @@ B.4.10 in the model case `M = W`, `L = γ (U)`: for `J_m → J` in `C^ℓ` the a
 chosen to converge in `C^ℓ`.
 
 The charts of the family are adapted charts for the structures `J i` in the sense of
-`TauCeti.Analysis.Calculus.AdaptedChart`: their underlying maps are the adapted extensions, so
-flattening (`OpenPartialHomeomorph.isImage_of_coe_eq_adaptedNormalExtension`) applies to each of
+`TauCeti.Analysis.Calculus.AdaptedChart`: their underlying maps are the adapted extensions,
+which are normal extensions (`TauCeti.adaptedNormalExtension_eq_normalExtension`), so
+flattening (`OpenPartialHomeomorph.isImage_of_coe_eq_normalExtension`) applies to each of
 them unconditionally. Intertwining
 (`OpenPartialHomeomorph.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension`) applies to a chart
 `e i` at a point `γ x` with `(x, 0)` in the common source, once `γ` is `C^1` at `x`, `J i` is

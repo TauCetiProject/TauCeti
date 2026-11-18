@@ -34,10 +34,9 @@ running over the exponent vectors `l` on `σ` of total degree `n`
 Schur polynomials as `∑_λ K_{λ l} s_λ(y)`, and the Kostka number `K_{λ l}` is the coefficient of
 `x^l` in `s_λ(x)` (`TauCeti.prod_hsymm_eq_sum_coeff_schurPoly_smul_schurPoly`).  Exchanging the two
 sums leaves `∑_l K_{λ l} x^l` as the cofactor of `s_λ(y)`, and that is `s_λ(x)`, `s_λ` being
-homogeneous of
-degree `n` (`MvPolynomial.IsHomogeneous.aeval_eq_sum_finsuppAntidiag`).  Bijectively, the identity
-is the Robinson--Schensted--Knuth correspondence between matrices of natural numbers and pairs of
-semistandard tableaux of the same shape.
+homogeneous of degree `n` (`MvPolynomial.IsHomogeneous.aeval_eq_sum_finsuppAntidiag`).
+Bijectively, the identity is the Robinson--Schensted--Knuth correspondence between matrices of
+natural numbers and pairs of semistandard tableaux of the same shape.
 
 ## Main results
 
