@@ -325,7 +325,7 @@ theorem exists_root_branch_conjWirtingerDeriv_add_add_eq_zero [CompleteSpace V]
 
 section Collision
 
-open MeasureTheory Polynomial
+open _root_.MeasureTheory Polynomial
 
 /-- The product `∏_{w ∈ S} ∏_{u ∈ S ∖ w} (w - u)` over ordered pairs of distinct members of a
 multiset, which up to sign is the discriminant of `∏_{w ∈ S} (W - w)`. -/
