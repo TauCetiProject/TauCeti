@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.MayerVietoris.Basic
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
@@ -32,9 +32,11 @@ assembles the relative homology with local coefficients over `U ∪ V` from its 
 local-coefficient counterpart of `TopCat.pairMayerVietorisδ`.
 
 The relative twisted chains of `(A, C)` are the quotient of the twisted chains of `X` supported in
-`A` by those supported in `C`. So the chain-level sequence is the cokernel of the morphism from the
-absolute Mayer–Vietoris short exact sequence of twisted chains supported in `C ∩ D`, `C` and `D`,
-and subordinate to `{C, D}`, to the one for `A` and `B`
+`A` by those supported in `C`
+(`TauCeti.LocalCoefficientSystem.isColimitSubsetPairTwistedChainComplexπ`). So the chain-level
+sequence is the cokernel of the morphism from the absolute Mayer–Vietoris short exact sequence of
+twisted chains supported in `C ∩ D`, `C` and `D`, and subordinate to `{C, D}`, to the one for `A`
+and `B`
 (`TauCeti.LocalCoefficientSystem.shortExact_smallTwistedMayerVietorisShortComplex`). Its last
 component is a monomorphism, so the cokernel is short exact by the snake lemma
 (`CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`). Its last term, the chains
@@ -44,9 +46,6 @@ of `(A ∪ B, C ∪ D)` by the small-chain theorem inside a subset
 
 ## Main definitions and results
 
-* `TauCeti.LocalCoefficientSystem.subsetPairTwistedChainComplexMap`: the map of relative twisted
-  chains induced by an inclusion of pairs of subsets of `X`, characterized by
-  `TauCeti.LocalCoefficientSystem.twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap`.
 * `TauCeti.LocalCoefficientSystem.pairTwistedMayerVietorisToBiprod`,
   `TauCeti.LocalCoefficientSystem.pairTwistedMayerVietorisFromBiprod`: the maps
   `Hₙ(A ∩ B, C ∩ D; L) ⟶ Hₙ(A, C; L) ⊞ Hₙ(B, D; L)` and
@@ -83,192 +82,6 @@ namespace TauCeti.LocalCoefficientSystem
 
 variable {R : Type u} [Ring R] {X : TopCat.{v}}
   (L : LocalCoefficientSystem.{u, v, max v w} R X)
-
-/-! ### Relative chains as quotients of chains supported in subsets -/
-
-section Quotient
-
-variable {A C S T : Set X}
-
-/-- The inclusion of the twisted chains of `X` supported in `S` into those supported in `T`, for
-`S ⊆ T`. -/
-private abbrev incl (h : S ⊆ T) :
-    smallTwistedChainComplex L (fun _ : Unit ↦ S) ⟶ smallTwistedChainComplex L (fun _ : Unit ↦ T) :=
-  smallTwistedChainComplexInclusion fun n ↦ smallTwistedChains_mono L _ _ id (fun _ ↦ h) n
-
-/-- Two composites of inclusions of supported chains with the same source and target agree. -/
-private lemma incl_comp_incl {S' T' : Set X} (h : S ⊆ T) (h' : T ⊆ T') (k : S ⊆ S')
-    (k' : S' ⊆ T') : incl L h ≫ incl L h' = incl L k ≫ incl L k' := by
-  simp only [smallTwistedChainComplexInclusion_comp]
-
-/-- The map of chains of subspaces induced by `S ⊆ T` corresponds to the inclusion of supported
-chains. -/
-@[reassoc]
-private lemma incl_comp_subspaceTwistedChainComplexIso_inv (h : S ⊆ T) :
-    incl L h ≫ (subspaceTwistedChainComplexIso L T).inv =
-      (subspaceTwistedChainComplexIso L S).inv ≫ subsetTwistedChainComplexMap L h := by
-  rw [Iso.eq_inv_comp, ← cancel_mono (subspaceTwistedChainComplexIso L T).hom,
-    ← cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ T))]
-  simp
-
-/-- The quotient map from the twisted chains of `X` supported in `A` onto the relative twisted
-chains of the pair `(A, C)`. -/
-private def relπ (h : C ⊆ A) :
-    smallTwistedChainComplex L (fun _ : Unit ↦ A) ⟶
-      (TopPair.ofInclusion h).twistedChainComplex
-        ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) :=
-  (subspaceTwistedChainComplexIso L A).inv ≫ (TopPair.ofInclusion h).twistedChainComplexπ _
-
-private instance (h : C ⊆ A) : Epi (relπ L h) :=
-  epi_comp' inferInstance
-    (TopPair.instEpiChainComplexModuleCatNatTwistedChainComplexπ (TopPair.ofInclusion h)
-      ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L))
-
-/- The ambient space of `TopPair.ofInclusion h` is `TopCat.of A` only after unfolding
-`CategoryTheory.Arrow.mk`, which `rw` and `simp` do not do. The proofs relating maps of the pair to
-maps of chains of subspaces of `X` are therefore assembled from equations by `Eq.trans`, which
-unifies up to unfolding. -/
-
-/-- The map induced by `S ⊆ T` is the change of coefficients identifying `L` restricted to `S` with
-the pullback of `L` restricted to `T` along the inclusion, followed by the map of twisted chains of
-that inclusion. -/
-private lemma subsetTwistedChainComplexMap_eq (h : S ⊆ T) :
-    subsetTwistedChainComplexMap L h =
-      twistedChainComplexCoefficientMap
-          ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
-            (TopCat.ofHom (ContinuousMap.subtypeVal T)).hom).hom.app L) ≫
-        twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
-          ((pullback (X := TopCat.of ↥T) (ContinuousMap.subtypeVal T)).obj L) := by
-  have : Mono (TopCat.ofHom (ContinuousMap.subtypeVal T)) :=
-    (TopCat.mono_iff_injective _).2 Subtype.val_injective
-  refine (cancel_mono (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal T)) L)).1
-    ((subsetTwistedChainComplexMap_twistedChainComplexMap L h).trans
-      (((twistedChainComplexMap_comp (TopCat.ofHom (ContinuousMap.inclusion h))
-        (TopCat.ofHom (ContinuousMap.subtypeVal T)) L)).trans (Category.assoc _ _ _).symm))
-
-/-- The chains of `C` vanish in the relative chains of `(A, C)`. -/
-private lemma subsetTwistedChainComplexMap_comp_twistedChainComplexπ (h : C ⊆ A) :
-    subsetTwistedChainComplexMap L h ≫ (TopPair.ofInclusion h).twistedChainComplexπ
-      ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) = 0 :=
-  (congrArg (· ≫ _) (subsetTwistedChainComplexMap_eq L h)).trans <| (Category.assoc _ _ _).trans <|
-    (congrArg (_ ≫ ·) ((TopPair.ofInclusion h).twistedChainComplexMap_comp_twistedChainComplexπ
-      ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L))).trans comp_zero
-
-/-- The chains of `X` supported in `C` vanish in the relative chains of `(A, C)`. -/
-@[reassoc (attr := simp)]
-private lemma incl_comp_relπ (h : C ⊆ A) : incl L h ≫ relπ L h = 0 :=
-  (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ _) (incl_comp_subspaceTwistedChainComplexIso_inv L h)).trans <|
-      (Category.assoc _ _ _).trans <|
-        (congrArg (_ ≫ ·) (subsetTwistedChainComplexMap_comp_twistedChainComplexπ L h)).trans
-          comp_zero
-
-/-- The chains of the subspace of the pair `(A, C)`, read in the chains of `X` supported in `A`,
-are supported in `C`. -/
-private lemma exists_twistedChainComplexMap_ofInclusion_map_comp (h : C ⊆ A) :
-    ∃ ℓ, twistedChainComplexMap (TopPair.ofInclusion h).map
-        ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) ≫
-      (subspaceTwistedChainComplexIso L A).hom = ℓ ≫ incl L h := by
-  let g := twistedChainComplexMap (TopPair.ofInclusion h).map
-    ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L)
-  have hind : Topology.IsInducing (TopPair.ofInclusion h).map :=
-    (TopPair.ofInclusion h).2.isInducing
-  refine ⟨smallTwistedChainComplexLift
-    (g ≫ twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L) fun n ↦ ?_, ?_⟩
-  · rintro _ ⟨x, rfl⟩
-    refine twistedChainComplexMap_mem_smallTwistedChains
-      (fun _ : Unit ↦ Set.range (TopPair.ofInclusion h).map) (fun _ : Unit ↦ C)
-      (TopCat.ofHom (ContinuousMap.subtypeVal A)) L id (fun _ ↦ ?_) ?_
-    · rintro _ ⟨y, rfl⟩
-      exact y.2
-    · rw [← range_twistedChainComplexMap_f _ _ hind]
-      exact LinearMap.mem_range_self _ x
-  · refine (cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ A))).1
-      ((Category.assoc _ _ _).trans <| (congrArg (g ≫ ·)
-        (subspaceTwistedChainComplexIso_hom_ι L A)).trans ?_)
-    rw [Category.assoc, smallTwistedChainComplexInclusion_ι, smallTwistedChainComplexLift_ι]
-
-/-- **The relative twisted chains of `(A, C)` are the quotient of the chains supported in `A` by
-those supported in `C`.** -/
-private def isColimitRelπ (h : C ⊆ A) :
-    IsColimit (CokernelCofork.ofπ (relπ L h) (incl_comp_relπ L h)) :=
-  CokernelCofork.IsColimit.ofπ' _ _ fun k hk ↦
-    ⟨(TopPair.ofInclusion h).twistedChainComplexDesc _
-        ((subspaceTwistedChainComplexIso L A).hom ≫ k) (by
-          obtain ⟨ℓ, hℓ⟩ := exists_twistedChainComplexMap_ofInclusion_map_comp L h
-          exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ k) hℓ).trans <|
-            (Category.assoc _ _ _).trans <| (congrArg (ℓ ≫ ·) hk).trans comp_zero),
-      (Category.assoc _ _ _).trans <| (congrArg (_ ≫ ·)
-        ((TopPair.ofInclusion h).twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _)).trans
-          (Iso.inv_hom_id_assoc _ _)⟩
-
-end Quotient
-
-/-! ### Maps of relative twisted chains of pairs of subsets -/
-
-section SubsetPair
-
-variable {A₁ C₁ A₂ C₂ A₃ C₃ : Set X} (hC₁ : C₁ ⊆ A₁) (hC₂ : C₂ ⊆ A₂) (hC₃ : C₃ ⊆ A₃)
-
-/-- The map of relative twisted chains `C(A₁, C₁; L) ⟶ C(A₂, C₂; L)` induced by an inclusion of
-pairs of subsets of `X`, `A₁ ⊆ A₂` and `C₁ ⊆ C₂`, with `L` restricted to `A₁` and to `A₂`. It is
-characterized by
-`TauCeti.LocalCoefficientSystem.twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap`. -/
-def subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
-    (TopPair.ofInclusion hC₁).twistedChainComplex
-        ((pullback (X := TopCat.of ↥A₁) (ContinuousMap.subtypeVal A₁)).obj L) ⟶
-      (TopPair.ofInclusion hC₂).twistedChainComplex
-        ((pullback (X := TopCat.of ↥A₂) (ContinuousMap.subtypeVal A₂)).obj L) :=
-  (isColimitRelπ L hC₁).desc (CokernelCofork.ofπ (incl L hA ≫ relπ L hC₂) <|
-    (Category.assoc _ _ _).symm.trans <|
-      (congrArg (· ≫ relπ L hC₂) (incl_comp_incl L hC₁ hA hC hC₂)).trans <|
-        (Category.assoc _ _ _).trans <| (congrArg (incl L hC ≫ ·) (incl_comp_relπ L hC₂)).trans
-          comp_zero)
-
-@[reassoc (attr := simp)]
-private lemma relπ_comp_subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
-    relπ L hC₁ ≫ subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC = incl L hA ≫ relπ L hC₂ :=
-  (isColimitRelπ L hC₁).fac _ WalkingParallelPair.one
-
-/-- The map of relative twisted chains induced by an inclusion of pairs of subsets is induced by
-the map `TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexMap` of absolute twisted
-chains. -/
-@[reassoc (attr := simp)]
-lemma twistedChainComplexπ_comp_subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂) (hC : C₁ ⊆ C₂) :
-    (TopPair.ofInclusion hC₁).twistedChainComplexπ _ ≫
-        subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC =
-      subsetTwistedChainComplexMap L hA ≫ (TopPair.ofInclusion hC₂).twistedChainComplexπ _ := by
-  refine (cancel_epi (subspaceTwistedChainComplexIso L A₁).inv).1 ?_
-  exact (Category.assoc _ _ _).symm.trans <|
-    (relπ_comp_subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC).trans <|
-      (Category.assoc _ _ _).symm.trans <|
-        (congrArg (· ≫ _) (incl_comp_subspaceTwistedChainComplexIso_inv L hA)).trans
-          (Category.assoc _ _ _)
-
-/-- The map of relative twisted chains induced by the identity inclusion of a pair of subsets is
-the identity. -/
-@[simp]
-lemma subsetPairTwistedChainComplexMap_self :
-    subsetPairTwistedChainComplexMap L hC₁ hC₁ subset_rfl subset_rfl = 𝟙 _ := by
-  refine (cancel_epi (relπ L hC₁)).1 <|
-    (relπ_comp_subsetPairTwistedChainComplexMap L hC₁ hC₁ _ _).trans <|
-      .trans ?_ (Category.comp_id _).symm
-  exact (congrArg (· ≫ relπ L hC₁) smallTwistedChainComplexInclusion_refl).trans
-    (Category.id_comp _)
-
-/-- The maps of relative twisted chains induced by inclusions of pairs of subsets compose. -/
-@[reassoc (attr := simp)]
-lemma subsetPairTwistedChainComplexMap_comp_subsetPairTwistedChainComplexMap (hA : A₁ ⊆ A₂)
-    (hC : C₁ ⊆ C₂) (hA' : A₂ ⊆ A₃) (hC' : C₂ ⊆ C₃) :
-    subsetPairTwistedChainComplexMap L hC₁ hC₂ hA hC ≫
-        subsetPairTwistedChainComplexMap L hC₂ hC₃ hA' hC' =
-      subsetPairTwistedChainComplexMap L hC₁ hC₃ (hA.trans hA') (hC.trans hC') := by
-  refine (cancel_epi (relπ L hC₁)).1 ?_
-  rw [relπ_comp_subsetPairTwistedChainComplexMap_assoc, relπ_comp_subsetPairTwistedChainComplexMap,
-    relπ_comp_subsetPairTwistedChainComplexMap, ← Category.assoc,
-    smallTwistedChainComplexInclusion_comp]
-
-end SubsetPair
 
 /-! ### The Mayer–Vietoris sequence of two pairs -/
 
@@ -375,13 +188,15 @@ private abbrev inclUnion (U V : Set X) :
 
 @[reassoc]
 private lemma smallTwistedMayerVietorisToBiprod_fst' (U V : Set X) :
-    smallTwistedMayerVietorisToBiprod L U V ≫ biprod.fst = incl L Set.inter_subset_left := by
+    smallTwistedMayerVietorisToBiprod L U V ≫ biprod.fst =
+      smallTwistedChainComplexSubsetInclusion L Set.inter_subset_left := by
   apply (cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ U))).1
   simp
 
 @[reassoc]
 private lemma smallTwistedMayerVietorisToBiprod_snd' (U V : Set X) :
-    smallTwistedMayerVietorisToBiprod L U V ≫ biprod.snd = -incl L Set.inter_subset_right := by
+    smallTwistedMayerVietorisToBiprod L U V ≫ biprod.snd =
+      -smallTwistedChainComplexSubsetInclusion L Set.inter_subset_right := by
   apply (cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ V))).1
   simp
 
@@ -397,21 +212,16 @@ private lemma inr_smallTwistedMayerVietorisFromBiprod (U V : Set X) :
   apply (cancel_mono (smallTwistedChainComplexι L (Bool.rec U V))).1
   simp
 
-private lemma shortExact_mk_smallTwistedMayerVietoris (U V : Set X) :
-    (ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L U V)).ShortExact := by
-  rw [← smallTwistedMayerVietorisShortComplex_def]
-  exact shortExact_smallTwistedMayerVietorisShortComplex L U V
-
 /-- The map from the relative chains of `(A, C)` to the chains subordinate to `{A, B}` modulo
 those subordinate to `{C, D}`. -/
 private def relToCokernelLeft :
     (TopPair.ofInclusion hCA).twistedChainComplex
         ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj L) ⟶
       cokernel (boolIncl L hCA hDB) :=
-  (isColimitRelπ L hCA).desc (CokernelCofork.ofπ
+  (isColimitSubsetPairTwistedChainComplexπ L hCA).desc (CokernelCofork.ofπ
     (inclLeft L A B subset_rfl ≫ cokernel.π (boolIncl L hCA hDB)) (by
-      rw [← Category.assoc, show incl L hCA ≫ inclLeft L A B subset_rfl =
-        inclLeft L C D subset_rfl ≫ boolIncl L hCA hDB by
+      rw [← Category.assoc, show smallTwistedChainComplexSubsetInclusion L hCA ≫
+          inclLeft L A B subset_rfl = inclLeft L C D subset_rfl ≫ boolIncl L hCA hDB by
           simp only [smallTwistedChainComplexInclusion_comp],
         Category.assoc, cokernel.condition, comp_zero]))
 
@@ -421,24 +231,24 @@ private def relToCokernelRight :
     (TopPair.ofInclusion hDB).twistedChainComplex
         ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) ⟶
       cokernel (boolIncl L hCA hDB) :=
-  (isColimitRelπ L hDB).desc (CokernelCofork.ofπ
+  (isColimitSubsetPairTwistedChainComplexπ L hDB).desc (CokernelCofork.ofπ
     (inclRight L A B subset_rfl ≫ cokernel.π (boolIncl L hCA hDB)) (by
-      rw [← Category.assoc, show incl L hDB ≫ inclRight L A B subset_rfl =
-        inclRight L C D subset_rfl ≫ boolIncl L hCA hDB by
+      rw [← Category.assoc, show smallTwistedChainComplexSubsetInclusion L hDB ≫
+          inclRight L A B subset_rfl = inclRight L C D subset_rfl ≫ boolIncl L hCA hDB by
           simp only [smallTwistedChainComplexInclusion_comp],
         Category.assoc, cokernel.condition, comp_zero]))
 
 @[reassoc (attr := simp)]
-private lemma relπ_comp_relToCokernelLeft :
-    relπ L hCA ≫ relToCokernelLeft L hCA hDB =
+private lemma subsetPairTwistedChainComplexπ_comp_relToCokernelLeft :
+    subsetPairTwistedChainComplexπ L hCA ≫ relToCokernelLeft L hCA hDB =
       inclLeft L A B subset_rfl ≫ cokernel.π (boolIncl L hCA hDB) :=
-  (isColimitRelπ L hCA).fac _ WalkingParallelPair.one
+  (isColimitSubsetPairTwistedChainComplexπ L hCA).fac _ WalkingParallelPair.one
 
 @[reassoc (attr := simp)]
-private lemma relπ_comp_relToCokernelRight :
-    relπ L hDB ≫ relToCokernelRight L hCA hDB =
+private lemma subsetPairTwistedChainComplexπ_comp_relToCokernelRight :
+    subsetPairTwistedChainComplexπ L hDB ≫ relToCokernelRight L hCA hDB =
       inclRight L A B subset_rfl ≫ cokernel.π (boolIncl L hCA hDB) :=
-  (isColimitRelπ L hDB).fac _ WalkingParallelPair.one
+  (isColimitSubsetPairTwistedChainComplexπ L hDB).fac _ WalkingParallelPair.one
 
 /-- The relative Mayer–Vietoris short complex of chains: the relative chains of `(A ∩ B, C ∩ D)`,
 of `(A, C)` and `(B, D)`, and the chains subordinate to `{A, B}` modulo those subordinate to
@@ -449,10 +259,12 @@ private abbrev relShortComplex : ShortComplex (ChainComplex (ModuleCat.{max v w}
         Set.inter_subset_left Set.inter_subset_left)
       (-subsetPairTwistedChainComplexMap L _ hDB Set.inter_subset_right Set.inter_subset_right))
     (biprod.desc (relToCokernelLeft L hCA hDB) (relToCokernelRight L hCA hDB)) (by
-      refine (cancel_epi (relπ L (Set.inter_subset_inter hCA hDB))).1 ?_
+      refine (cancel_epi (subsetPairTwistedChainComplexπ L (Set.inter_subset_inter hCA hDB))).1 ?_
       simp only [biprod.lift_desc, Preadditive.neg_comp, Preadditive.comp_add,
-        Preadditive.comp_neg, relπ_comp_subsetPairTwistedChainComplexMap_assoc,
-        relπ_comp_relToCokernelLeft, relπ_comp_relToCokernelRight, comp_zero]
+        Preadditive.comp_neg,
+        subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap_assoc,
+        subsetPairTwistedChainComplexπ_comp_relToCokernelLeft,
+        subsetPairTwistedChainComplexπ_comp_relToCokernelRight, comp_zero]
       simp only [← Category.assoc, smallTwistedChainComplexInclusion_comp, add_neg_cancel])
 
 /-- The inclusion of the absolute Mayer–Vietoris short exact sequence of the chains supported in
@@ -460,8 +272,9 @@ private abbrev relShortComplex : ShortComplex (ChainComplex (ModuleCat.{max v w}
 private def smallMayerVietorisInclusion :
     ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L C D) ⟶
       ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L A B) where
-  τ₁ := incl L (Set.inter_subset_inter hCA hDB)
-  τ₂ := biprod.map (incl L hCA) (incl L hDB)
+  τ₁ := smallTwistedChainComplexSubsetInclusion L (Set.inter_subset_inter hCA hDB)
+  τ₂ := biprod.map (smallTwistedChainComplexSubsetInclusion L hCA)
+    (smallTwistedChainComplexSubsetInclusion L hDB)
   τ₃ := boolIncl L hCA hDB
   comm₁₂ := by
     apply biprod.hom_ext
@@ -482,30 +295,33 @@ in `A ∩ B`, `A`, `B` and subordinate to `{A, B}` onto the relative short compl
 private def smallMayerVietorisToRel :
     ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L A B) ⟶
       relShortComplex L hCA hDB where
-  τ₁ := relπ L (Set.inter_subset_inter hCA hDB)
-  τ₂ := biprod.map (relπ L hCA) (relπ L hDB)
+  τ₁ := subsetPairTwistedChainComplexπ L (Set.inter_subset_inter hCA hDB)
+  τ₂ := biprod.map (subsetPairTwistedChainComplexπ L hCA) (subsetPairTwistedChainComplexπ L hDB)
   τ₃ := cokernel.π (boolIncl L hCA hDB)
   comm₁₂ := by
     apply biprod.hom_ext
     · simp only [Category.assoc, biprod.map_fst, smallTwistedMayerVietorisToBiprod_fst'_assoc,
-        biprod.lift_fst, relπ_comp_subsetPairTwistedChainComplexMap]
+        biprod.lift_fst, subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap]
     · simp only [Category.assoc, biprod.map_snd, smallTwistedMayerVietorisToBiprod_snd'_assoc,
         biprod.lift_snd, Preadditive.neg_comp, Preadditive.comp_neg,
-        relπ_comp_subsetPairTwistedChainComplexMap]
+        subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap]
   comm₂₃ := by
     apply biprod.hom_ext'
     · simp only [inl_smallTwistedMayerVietorisFromBiprod_assoc, biprod.inl_map_assoc,
-        biprod.inl_desc, relπ_comp_relToCokernelLeft]
+        biprod.inl_desc, subsetPairTwistedChainComplexπ_comp_relToCokernelLeft]
     · simp only [inr_smallTwistedMayerVietorisFromBiprod_assoc, biprod.inr_map_assoc,
-        biprod.inr_desc, relπ_comp_relToCokernelRight]
+        biprod.inr_desc, subsetPairTwistedChainComplexπ_comp_relToCokernelRight]
 
 /-- **The relative Mayer–Vietoris short exact sequence of chains**, the cokernel of the inclusion
 of the absolute Mayer–Vietoris short exact sequence for `C` and `D` into that for `A` and `B`. -/
 private lemma shortExact_relShortComplex : (relShortComplex L hCA hDB).ShortExact := by
   have hL₁ := shortExact_mk_smallTwistedMayerVietoris L C D
   have hw : smallMayerVietorisInclusion L hCA hDB ≫ smallMayerVietorisToRel L hCA hDB = 0 := by
-    refine ShortComplex.hom_ext _ _ (incl_comp_relπ L _) ?_ (cokernel.condition _)
-    apply biprod.hom_ext' <;> simp [smallMayerVietorisInclusion, smallMayerVietorisToRel]
+    refine ShortComplex.hom_ext _ _
+      (smallTwistedChainComplexSubsetInclusion_comp_subsetPairTwistedChainComplexπ L _) ?_
+      (cokernel.condition _)
+    apply biprod.hom_ext' <;> simp [smallMayerVietorisInclusion, smallMayerVietorisToRel,
+      smallTwistedChainComplexSubsetInclusion_comp_subsetPairTwistedChainComplexπ_assoc]
   have : Mono (smallMayerVietorisInclusion L hCA hDB).τ₃ :=
     mono_of_mono_fac (smallTwistedChainComplexInclusion_ι _)
   have := hL₁.epi_g
@@ -513,8 +329,9 @@ private lemma shortExact_relShortComplex : (relShortComplex L hCA hDB).ShortExac
     (smallMayerVietorisInclusion L hCA hDB) (smallMayerVietorisToRel L hCA hDB) hw ?_
   apply ShortComplex.isColimitOfIsColimitπ <;>
     apply (CokernelCofork.isColimitMapCoconeEquiv _ _).2
-  · exact isColimitRelπ L (Set.inter_subset_inter hCA hDB)
-  · exact CokernelCofork.isColimitBiprod (isColimitRelπ L hCA) (isColimitRelπ L hDB)
+  · exact isColimitSubsetPairTwistedChainComplexπ L (Set.inter_subset_inter hCA hDB)
+  · exact CokernelCofork.isColimitBiprod (isColimitSubsetPairTwistedChainComplexπ L hCA)
+      (isColimitSubsetPairTwistedChainComplexπ L hDB)
   · exact cokernelIsCokernel _
 
 /-! #### Comparison with the pair `(A ∪ B, C ∪ D)` -/
@@ -525,27 +342,42 @@ private def cokernelToUnion :
     cokernel (boolIncl L hCA hDB) ⟶
       (TopPair.ofInclusion (Set.union_subset_union hCA hDB)).twistedChainComplex
         ((pullback (X := TopCat.of ↥(A ∪ B)) (ContinuousMap.subtypeVal (A ∪ B))).obj L) :=
-  cokernel.desc _ (inclUnion L A B ≫ relπ L (Set.union_subset_union hCA hDB)) (by
-    rw [← Category.assoc, show boolIncl L hCA hDB ≫ inclUnion L A B =
-      inclUnion L C D ≫ incl L (Set.union_subset_union hCA hDB) by
-        simp only [smallTwistedChainComplexInclusion_comp],
-      Category.assoc, incl_comp_relπ, comp_zero])
+  cokernel.desc _
+    (inclUnion L A B ≫ subsetPairTwistedChainComplexπ L (Set.union_subset_union hCA hDB)) (by
+      rw [← Category.assoc, show boolIncl L hCA hDB ≫ inclUnion L A B = inclUnion L C D ≫
+          smallTwistedChainComplexSubsetInclusion L (Set.union_subset_union hCA hDB) by
+          simp only [smallTwistedChainComplexInclusion_comp],
+        Category.assoc, smallTwistedChainComplexSubsetInclusion_comp_subsetPairTwistedChainComplexπ,
+        comp_zero])
 
 private lemma relToCokernelLeft_comp_cokernelToUnion :
     relToCokernelLeft L hCA hDB ≫ cokernelToUnion L hCA hDB =
       subsetPairTwistedChainComplexMap L hCA _ Set.subset_union_left Set.subset_union_left := by
-  refine (cancel_epi (relπ L hCA)).1 ?_
-  rw [relπ_comp_relToCokernelLeft_assoc, cokernelToUnion, cokernel.π_desc,
-    relπ_comp_subsetPairTwistedChainComplexMap, ← Category.assoc,
+  refine (cancel_epi (subsetPairTwistedChainComplexπ L hCA)).1 ?_
+  rw [subsetPairTwistedChainComplexπ_comp_relToCokernelLeft_assoc, cokernelToUnion,
+    cokernel.π_desc,
+    subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap, ← Category.assoc,
     smallTwistedChainComplexInclusion_comp]
 
 private lemma relToCokernelRight_comp_cokernelToUnion :
     relToCokernelRight L hCA hDB ≫ cokernelToUnion L hCA hDB =
       subsetPairTwistedChainComplexMap L hDB _ Set.subset_union_right Set.subset_union_right := by
-  refine (cancel_epi (relπ L hDB)).1 ?_
-  rw [relπ_comp_relToCokernelRight_assoc, cokernelToUnion, cokernel.π_desc,
-    relπ_comp_subsetPairTwistedChainComplexMap, ← Category.assoc,
+  refine (cancel_epi (subsetPairTwistedChainComplexπ L hDB)).1 ?_
+  rw [subsetPairTwistedChainComplexπ_comp_relToCokernelRight_assoc, cokernelToUnion,
+    cokernel.π_desc,
+    subsetPairTwistedChainComplexπ_comp_subsetPairTwistedChainComplexMap, ← Category.assoc,
     smallTwistedChainComplexInclusion_comp]
+
+/-- By the small-chain theorem inside `U ∪ V`, the inclusion of the chains subordinate to `{U, V}`
+into those supported in `U ∪ V` is a quasi-isomorphism when `U` and `V` are open in `U ∪ V`. -/
+private lemma quasiIso_inclUnion {U V : Set X} (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)))
+    (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) : QuasiIso (inclUnion L U V) :=
+  quasiIso_smallTwistedChainComplexInclusion L (Bool.rec U V)
+    (fun b ↦ by cases b; exacts [Set.subset_union_left, Set.subset_union_right])
+    (fun x hx ↦ by
+      rcases hx with hx | hx
+      exacts [Set.mem_iUnion.2 ⟨false, hx⟩, Set.mem_iUnion.2 ⟨true, hx⟩])
+    (fun b ↦ by cases b; exacts [hU, hV])
 
 variable (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B)))
   (hB : IsOpen ((↑) ⁻¹' B : Set ↥(A ∪ B))) (hC : IsOpen ((↑) ⁻¹' C : Set ↥(C ∪ D)))
@@ -557,14 +389,15 @@ with the relative chains of `(A ∪ B, C ∪ D)` is a quasi-isomorphism. -/
 private lemma quasiIso_cokernelToUnion : QuasiIso (cokernelToUnion L hCA hDB) := by
   have : Mono (boolIncl L hCA hDB) := mono_of_mono_fac (smallTwistedChainComplexInclusion_ι _)
   have hS₁ := cokernelSequence_shortExact (boolIncl L hCA hDB)
-  have : Mono (incl L (Set.union_subset_union hCA hDB)) :=
+  have : Mono (smallTwistedChainComplexSubsetInclusion L (Set.union_subset_union hCA hDB)) :=
     mono_of_mono_fac (smallTwistedChainComplexInclusion_ι _)
-  have hS₂ : (ShortComplex.mk _ _ (incl_comp_relπ L (Set.union_subset_union hCA hDB))).ShortExact :=
-    ShortComplex.ShortExact.mk'
-      (ShortComplex.exact_of_g_is_cokernel _ (isColimitRelπ L (Set.union_subset_union hCA hDB)))
+  have hw := smallTwistedChainComplexSubsetInclusion_comp_subsetPairTwistedChainComplexπ L
+    (Set.union_subset_union hCA hDB)
+  have hS₂ : (ShortComplex.mk _ _ hw).ShortExact :=
+    ShortComplex.ShortExact.mk' (ShortComplex.exact_of_g_is_cokernel _
+      (isColimitSubsetPairTwistedChainComplexπ L (Set.union_subset_union hCA hDB)))
       inferInstance inferInstance
-  let φ : ShortComplex.cokernelSequence (boolIncl L hCA hDB) ⟶
-      ShortComplex.mk _ _ (incl_comp_relπ L (Set.union_subset_union hCA hDB)) :=
+  let φ : ShortComplex.cokernelSequence (boolIncl L hCA hDB) ⟶ ShortComplex.mk _ _ hw :=
     { τ₁ := inclUnion L C D
       τ₂ := inclUnion L A B
       τ₃ := cokernelToUnion L hCA hDB
@@ -572,19 +405,8 @@ private lemma quasiIso_cokernelToUnion : QuasiIso (cokernelToUnion L hCA hDB) :=
         dsimp only [ShortComplex.cokernelSequence]
         rw [smallTwistedChainComplexInclusion_comp, smallTwistedChainComplexInclusion_comp]
       comm₂₃ := (cokernel.π_desc _ _ _).symm }
-  have h₁ : QuasiIso φ.τ₁ := quasiIso_smallTwistedChainComplexInclusion L (Bool.rec C D)
-    (fun b ↦ by cases b; exacts [Set.subset_union_left, Set.subset_union_right])
-    (fun x hx ↦ by
-      rcases hx with hx | hx
-      exacts [Set.mem_iUnion.2 ⟨false, hx⟩, Set.mem_iUnion.2 ⟨true, hx⟩])
-    (fun b ↦ by cases b; exacts [hC, hD])
-  have h₂ : QuasiIso φ.τ₂ := quasiIso_smallTwistedChainComplexInclusion L (Bool.rec A B)
-    (fun b ↦ by cases b; exacts [Set.subset_union_left, Set.subset_union_right])
-    (fun x hx ↦ by
-      rcases hx with hx | hx
-      exacts [Set.mem_iUnion.2 ⟨false, hx⟩, Set.mem_iUnion.2 ⟨true, hx⟩])
-    (fun b ↦ by cases b; exacts [hA, hB])
-  exact HomologicalComplex.HomologySequence.quasiIso_τ₃ φ hS₁ hS₂ h₁ h₂
+  exact HomologicalComplex.HomologySequence.quasiIso_τ₃ φ hS₁ hS₂ (quasiIso_inclUnion L hC hD)
+    (quasiIso_inclUnion L hA hB)
 
 /-- The homology of the chains subordinate to `{A, B}` modulo those subordinate to `{C, D}` is
 `Hₙ(A ∪ B, C ∪ D; L)`. -/
