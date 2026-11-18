@@ -9,8 +9,6 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.Vortex.Dilation
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
-public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
@@ -60,16 +58,16 @@ the plane vortex equations, and the parameter `r` with a dilation of the plane:
 * **Scaled energy.** For a pulled-back field `|F| = |*iF_a|`
   (`norm_alternatingFormEquiv_symm_neg_extDeriv_normalConnection`) and
   `∑ₖ |∇_{eₖ} α|² = |∇₁ α|² + |∇_i α|²` (`sum_norm_covariantDeriv_normalConnection_sq`) at the
-  normal coordinate. For the dilated field, the integrand `r⁻¹ |F_a|² + |∇_a α|² + r (1 - |α|²)²` of
-  Taubes's scaled energy is `2r` times an `r`-independent plane density at `w = t z`, and its
-  integral over the normal plane does not depend on `r`
-  (`integral_inv_mul_curvature_dilateField_sq_add`).
+  normal coordinate. So for the dilated field the integrand `r⁻¹ |F_a|² + |∇_a α|² + r (1 - |α|²)²`
+  of Taubes's scaled energy is a plane expression in the normal coordinate, and its integral over
+  the normal plane does not depend on `r`
+  (`TauCeti.Vortex.integral_inv_mul_curvature_dilateField_sq_add`).
 
 So the base-independent solutions of the flat equations with spinor on the canonical line and
-connection along the normal factor are exactly the pullbacks of plane vortices of coupling `r / 4`,
-equivalently of normalized plane vortices in the coordinate `√(2r) z`. The gauge fixing row, the
-insertion into a curved normal tube and the derivation of the flat equations from actual
-large-parameter solutions are not treated here.
+connection along the normal factor are exactly the pullbacks of plane vortices of coupling `2r`
+(curvature coefficient `r / 4`), equivalently of normalized plane vortices in the coordinate
+`√(2r) z`. The gauge fixing row, the insertion into a curved normal tube and the derivation of the
+flat equations from actual large-parameter solutions are not treated here.
 
 ## References
 
@@ -88,7 +86,7 @@ open exteriorPower
 
 namespace TauCeti.SeibergWitten
 
-open CliffordAlgebra Module Complex MeasureTheory
+open CliffordAlgebra Module Complex
 open scoped RealInnerProductSpace InnerProductSpace ComplexConjugate
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -222,14 +220,14 @@ theorem normalConnection_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (y v : V
 
 /-- **Plane dilation is four-dimensional dilation**: the pullback of the dilated plane field
 `TauCeti.Vortex.dilateField t x` is the pullback of `x` composed with the dilation `y ↦ t y` of
-`V`, with the connection form multiplied by `t`; its section is `α ∘ z ∘ (t • ·)`. -/
+`V`, with the connection form multiplied by `t`. -/
 theorem normalConnection_dilateField (t : ℝ) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
     normalConnection e (Vortex.dilateField t x) y = t • normalConnection e x (t • y) := by
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   rw [show v = fun _ ↦ v 0 from funext fun i ↦ by rw [Subsingleton.elim i 0]]
   simp only [ContinuousAlternatingMap.smul_apply, normalConnection_apply,
-    Vortex.dilateField_apply, map_smul, smul_eq_mul]
-  simp
+    Vortex.dilateField_apply, map_smul, smul_eq_mul, real_smul, Fin.isValue, Matrix.cons_val_zero,
+    Matrix.cons_val_one, normalCoord_re, normalCoord_im]
   ring
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
@@ -462,45 +460,6 @@ theorem norm_alternatingFormEquiv_symm_neg_extDeriv_normalConnection
   rw [h₂₃, e.orthonormal.1 2, one_pow, pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
   rw [alternatingFormEquiv_symm_neg_extDeriv_normalConnection hx, norm_smul, h, mul_one,
     Real.norm_eq_abs, abs_neg]
-
-/-- **The scaled energy of the inserted vortex does not depend on `r`.** For `r > 0` and
-`t = √(2r)`, evaluate the integrand of Taubes's scaled energy,
-`r⁻¹ |F_a|² + |∇_a α|² + r (1 - |α|²)²`, on the pullback of `TauCeti.Vortex.dilateField t X`; by
-`TauCeti.SeibergWitten.norm_alternatingFormEquiv_symm_neg_extDeriv_normalConnection` and
-`TauCeti.SeibergWitten.sum_norm_covariantDeriv_normalConnection_sq` it is the plane expression
-below at `z(y)`. Integrated over the normal plane it equals
-`∫ (2 |*iF_a|² + |∇₁ α|² + |∇_i α|² + (1 - |α|²)² / 2)` for `X`, which does not involve `r`: the
-factor `2r` of the integrand is cancelled by the area factor `t⁻²` of the coordinate `w = t z`. -/
-theorem integral_inv_mul_curvature_dilateField_sq_add (μ : Measure ℂ) [μ.IsAddHaarMeasure]
-    {r : ℝ} (hr : 0 < r) (X : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    ∫ z, (r⁻¹ * Vortex.curvature (Vortex.dilateField (√(2 * r)) X) z ^ 2 +
-        ‖Vortex.covariantDerivative (Vortex.dilateField (√(2 * r)) X) z 1‖ ^ 2 +
-        ‖Vortex.covariantDerivative (Vortex.dilateField (√(2 * r)) X) z I‖ ^ 2 +
-        r * (1 - ‖Vortex.sectionValue (Vortex.dilateField (√(2 * r)) X) z‖ ^ 2) ^ 2) ∂μ =
-      ∫ z, (2 * Vortex.curvature X z ^ 2 + ‖Vortex.covariantDerivative X z 1‖ ^ 2 +
-        ‖Vortex.covariantDerivative X z I‖ ^ 2 + (1 - ‖Vortex.sectionValue X z‖ ^ 2) ^ 2 / 2)
-        ∂μ := by
-  set t := √(2 * r)
-  have ht : t ^ 2 = 2 * r := Real.sq_sqrt (by positivity)
-  have ht₀ : 0 ≤ t := Real.sqrt_nonneg _
-  set g : ℂ → ℝ := fun w ↦ 2 * Vortex.curvature X w ^ 2 + ‖Vortex.covariantDerivative X w 1‖ ^ 2 +
-    ‖Vortex.covariantDerivative X w I‖ ^ 2 + (1 - ‖Vortex.sectionValue X w‖ ^ 2) ^ 2 / 2
-  -- Pointwise, the integrand is `2 r g (t z)`.
-  have key (z : ℂ) : r⁻¹ * Vortex.curvature (Vortex.dilateField t X) z ^ 2 +
-      ‖Vortex.covariantDerivative (Vortex.dilateField t X) z 1‖ ^ 2 +
-      ‖Vortex.covariantDerivative (Vortex.dilateField t X) z I‖ ^ 2 +
-      r * (1 - ‖Vortex.sectionValue (Vortex.dilateField t X) z‖ ^ 2) ^ 2 = (2 * r) * g (t • z) := by
-    have hs : Vortex.sectionValue (Vortex.dilateField t X) z = Vortex.sectionValue X (t • z) := by
-      simp [Vortex.sectionValue_apply, Vortex.dilateField_apply]
-    simp only [g, Vortex.curvature_dilateField, Vortex.covariantDerivative_dilateField, hs,
-      norm_mul, Complex.norm_real, Real.norm_of_nonneg ht₀]
-    field_simp
-    rw [ht]
-    ring
-  simp_rw [key]
-  rw [integral_const_mul, Measure.integral_comp_smul μ g t, Complex.finrank_real_complex, ht,
-    smul_eq_mul, abs_of_nonneg (by positivity), ← mul_assoc, mul_inv_cancel₀ (by positivity),
-    one_mul]
 
 end Equations
 
