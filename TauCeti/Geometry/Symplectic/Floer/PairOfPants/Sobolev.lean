@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Conformal
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Complex.RealChart
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Normed.Operator.Prod
 
 /-!
@@ -35,7 +36,7 @@ The comparison with the cylindrical metric on the ends is exact up to constants.
 `±s ≥ 0` of each end the product of the weight and the Jacobian lies between `4π²` and `20π²`
 (`TauCeti.Floer.cylindricalWeight_endChart_mul_det_fderiv_mem_Icc`). Since the Dirichlet density
 changes by the Jacobian under a holomorphic change of coordinates, up to a factor `2` in a normed
-space (`TauCeti.norm_sq_add_norm_sq_le_two_mul`), the `W^{1,2}` density
+space (`TauCeti.norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq_le`), the `W^{1,2}` density
 `‖∂s ζ‖² + ‖∂t ζ‖² + ‖ζ‖²` of `ζ = ξ ∘ φ_q` in the end coordinates and the weighted density of `ξ`
 times the Jacobian agree up to the factors `2` and `20π²`
 (`TauCeti.Floer.norm_fderiv_comp_endChart_sq_add_le`,
@@ -175,11 +176,8 @@ private theorem exists_fderiv_comp_endChart (q : Puncture) {ξ : ℝ × ℝ → 
   · rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
       (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, Complex.normSq_apply]
     ring
-  · rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply,
-      ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
-    congr 1
-    simp [Complex.equivRealProdCLM_symm_apply, c]
-  · rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply,
+  all_goals
+    rw [fderiv_comp z hξ hφ, ContinuousLinearMap.comp_apply, fderiv_endChart_apply,
       ← ContinuousLinearMap.apply_mk_eq_smul_add_smul]
     congr 1
     simp [Complex.equivRealProdCLM_symm_apply, c]
@@ -197,7 +195,7 @@ theorem norm_fderiv_comp_endChart_sq_add_le (q : Puncture) {ξ : ℝ × ℝ → 
           ‖fderiv ℝ ξ (endChart q z) (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ (endChart q z) (0, 1)‖ ^ 2)) := by
   obtain ⟨a, b, hdet, h₁, h₂⟩ := exists_fderiv_comp_endChart q hξ
   have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hz).1
-  have hconf := norm_sq_add_norm_sq_le_two_mul a b
+  have hconf := norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq_le a b
     (fderiv ℝ ξ (endChart q z) (1, 0)) (fderiv ℝ ξ (endChart q z) (0, 1))
   rw [h₁, h₂]
   rw [hdet] at hρ ⊢
@@ -216,7 +214,7 @@ theorem det_fderiv_endChart_mul_le (q : Puncture) {ξ : ℝ × ℝ → V} {z : �
         ‖fderiv ℝ (ξ ∘ endChart q) z (0, 1)‖ ^ 2 + ‖ξ (endChart q z)‖ ^ 2) := by
   obtain ⟨a, b, hdet, h₁, h₂⟩ := exists_fderiv_comp_endChart q hξ
   have hρ := (cylindricalWeight_endChart_mul_det_fderiv_mem_Icc q hz).2
-  have hconf := mul_norm_sq_add_norm_sq_le_two_mul a b
+  have hconf := le_two_mul_norm_smul_add_smul_sq_add_norm_neg_smul_add_smul_sq a b
     (fderiv ℝ ξ (endChart q z) (1, 0)) (fderiv ℝ ξ (endChart q z) (0, 1))
   rw [h₁, h₂]
   rw [hdet] at hρ ⊢
