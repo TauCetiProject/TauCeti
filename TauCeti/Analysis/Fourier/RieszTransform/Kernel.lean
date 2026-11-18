@@ -726,32 +726,24 @@ theorem hasStandardKernel_rieszTransform (v : E) :
   exponent_pos := one_pos
   norm_le x y _ := by
     have hc := rieszConst_nonneg E
-    rw [Complex.norm_real, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity), dist_eq_norm]
+    rw [Complex.norm_real, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity), dist_eq_norm,
+      mul_assoc _ (rieszConst E)]
     refine (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_right ?_ (by positivity))
-    rw [mul_assoc]
     refine le_mul_of_one_le_left (by positivity) ?_
-    have : (1 : ℝ) ≤ 4 ^ (finrank ℝ E + 1) := one_le_pow₀ (by norm_num)
-    nlinarith
+    exact one_le_mul_of_one_le_of_one_le one_le_two (one_le_mul_of_one_le_of_one_le
+      (by linarith [(finrank ℝ E).cast_nonneg (α := ℝ)]) (one_le_pow₀ (by norm_num)))
   norm_sub_add_norm_sub_le x y y' hy := by
-    rw [← Complex.ofReal_sub, ← Complex.ofReal_sub, Complex.norm_real, Complex.norm_real,
-      Real.norm_eq_abs, Real.norm_eq_abs,
-      Real.coe_toNNReal _ (by positivity [rieszConst_nonneg E]), Real.rpow_one,
-      show (finrank ℝ E : ℝ) + 1 = ((finrank ℝ E + 1 : ℕ) : ℝ) by push_cast; ring,
-      Real.rpow_natCast]
-    simp only [dist_eq_norm] at hy ⊢
-    have e₁ : ‖(x - y') - (x - y)‖ = ‖y - y'‖ := by rw [show (x - y') - (x - y) = y - y' by abel]
-    have e₂ : ‖(y' - x) - (y - x)‖ = ‖y - y'‖ := by
-      rw [show (y' - x) - (y - x) = -(y - y') by abel, norm_neg]
-    have b₁ := abs_rieszKernel_sub_le v (a := x - y') (b := x - y) (by rwa [e₁])
-    have b₂ := abs_rieszKernel_sub_le v (a := y' - x) (b := y - x) (by rwa [e₂, norm_sub_rev y x])
-    rw [e₁] at b₁
-    rw [e₂, norm_sub_rev y x] at b₂
-    rw [abs_sub_comm] at b₁ b₂
-    calc |rieszKernel v (x - y) - rieszKernel v (x - y')| +
-          |rieszKernel v (y - x) - rieszKernel v (y' - x)|
-        ≤ 2 * (rieszConst E * ((finrank ℝ E + 2) * 4 ^ (finrank ℝ E + 1)) * ‖v‖ *
-          ‖y - y'‖ / ‖x - y‖ ^ (finrank ℝ E + 1)) := by linarith
-      _ = _ := by ring
+    have b₁ := abs_rieszKernel_sub_le v (a := x - y') (b := x - y)
+      (by rwa [sub_sub_sub_cancel_left, ← dist_eq_norm, ← dist_eq_norm])
+    have b₂ := abs_rieszKernel_sub_le v (a := y' - x) (b := y - x)
+      (by rwa [sub_sub_sub_cancel_right, ← dist_eq_norm, ← dist_eq_norm, dist_comm y' y,
+        dist_comm y x])
+    simp only [sub_sub_sub_cancel_left, sub_sub_sub_cancel_right] at b₁ b₂
+    rw [Real.coe_toNNReal _ (by positivity [rieszConst_nonneg E])]
+    push_cast [← Complex.ofReal_sub, Complex.norm_real, dist_eq_norm, Real.norm_eq_abs]
+    simp only [norm_sub_rev, abs_sub_comm] at b₁ b₂ ⊢
+    rw [Real.rpow_one, ← Nat.cast_add_one, Real.rpow_natCast]
+    linear_combination b₁ + b₂
   ae_apply_eq_integral f s hs hf := by
     filter_upwards [ae_rieszTransform_eq_integral v f hs hf] with x hx hxs
     rw [hx hxs]

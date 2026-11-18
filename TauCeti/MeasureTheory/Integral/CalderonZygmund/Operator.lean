@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Calderón–Zygmund operators
@@ -144,9 +145,10 @@ theorem continuousOn_uncurry (h : HasStandardKernel T K C δ) :
 /-! ### The kernel modified on the diagonal
 
 The estimates say nothing about `K` on the diagonal, where it need not even be measurable. The
-real Calderón–Zygmund theorems take a strongly measurable operator-valued kernel, so they are
-applied to `K` set to `0` on the diagonal, which is continuous off the diagonal. The change is
-invisible in the integrals `∫ K x y • f y dy` for `x` outside the set carrying `f`. -/
+real Calderón–Zygmund theorems and the kernel of the adjoint take a strongly measurable
+operator-valued kernel, so they are applied to `K` set to `0` on the diagonal, which is continuous
+off the diagonal. The change is invisible in the integrals `∫ K x y • f y dy` for `x` outside the
+set carrying `f`. -/
 
 open scoped Classical in
 /-- The kernel `K` set to `0` on the diagonal. -/
@@ -198,42 +200,41 @@ private theorem norm_offDiag_sub_le (h : HasStandardKernel T K C δ) {x y y' : V
   exact (le_add_of_nonneg_right (norm_nonneg _)).trans
     (h.norm_sub_add_norm_sub_le x y' y (by rwa [dist_comm y' y]))
 
-variable (F) in
-/-- The kernel as an `ℝ`-linear operator-valued kernel, set to `0` on the diagonal, in the form
-taken by the real Calderón–Zygmund theorems. -/
-private def realKernel (K : V → V → ℂ) (x y : V) : F →L[ℝ] F :=
-  offDiag K x y • ContinuousLinearMap.id ℝ F
+section OpKernel
 
-private theorem stronglyMeasurable_realKernel (h : HasStandardKernel T K C δ) :
-    StronglyMeasurable (Function.uncurry (realKernel F K)) :=
+variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [SMulCommClass 𝕜 ℂ F]
+
+variable (F 𝕜) in
+/-- The kernel as a `𝕜`-linear operator-valued kernel `K x y • id`, set to `0` on the diagonal.
+For `𝕜 = ℝ` it is in the form taken by the real Calderón–Zygmund theorems, and for `𝕜 = ℂ` in the
+form taken by `ContinuousLinearMap.ae_adjoint_apply_eq_integral`. -/
+private def opKernel (K : V → V → ℂ) (x y : V) : F →L[𝕜] F :=
+  offDiag K x y • ContinuousLinearMap.id 𝕜 F
+
+private theorem stronglyMeasurable_opKernel (h : HasStandardKernel T K C δ) :
+    StronglyMeasurable (Function.uncurry (opKernel F 𝕜 K)) :=
   h.stronglyMeasurable_offDiag.smul_const _
 
-omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V]
-  [BorelSpace V] in
-/-- A complex multiple `a • id` of the identity, linear over `ℝ` or `ℂ`, has norm at most `‖a‖`. -/
-private theorem norm_smul_id_le {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [SMulCommClass 𝕜 ℂ F]
-    (a : ℂ) : ‖a • ContinuousLinearMap.id 𝕜 F‖ ≤ ‖a‖ :=
-  (norm_smul_le a (ContinuousLinearMap.id 𝕜 F)).trans
-    (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
+private theorem norm_opKernel_le (h : HasStandardKernel T K C δ) (x y : V) (hxy : x ≠ y) :
+    ‖opKernel F 𝕜 K x y‖ ≤ C * dist x y ^ (-(Module.finrank ℝ V : ℝ)) :=
+  (ContinuousLinearMap.norm_smul_id_le _).trans (h.norm_offDiag_le hxy)
 
-private theorem norm_realKernel_le (h : HasStandardKernel T K C δ) (x y : V) (hxy : x ≠ y) :
-    ‖realKernel F K x y‖ ≤ C * dist x y ^ (-(Module.finrank ℝ V : ℝ)) :=
-  (norm_smul_id_le _).trans (h.norm_offDiag_le hxy)
-
-private theorem norm_realKernel_sub_le (h : HasStandardKernel T K C δ) (x y y' : V)
+private theorem norm_opKernel_sub_le (h : HasStandardKernel T K C δ) (x y y' : V)
     (hy : 2 * dist y y' < dist x y') :
-    ‖realKernel F K x y - realKernel F K x y'‖ ≤
+    ‖opKernel F 𝕜 K x y - opKernel F 𝕜 K x y'‖ ≤
       C * (dist y y' ^ δ * dist x y' ^ (-(Module.finrank ℝ V + δ))) := by
-  rw [realKernel, realKernel, ← sub_smul]
-  exact (norm_smul_id_le _).trans (h.norm_offDiag_sub_le hy)
+  rw [opKernel, opKernel, ← sub_smul]
+  exact (ContinuousLinearMap.norm_smul_id_le _).trans (h.norm_offDiag_sub_le hy)
 
-private theorem ae_restrictScalars_apply_eq_integral (h : HasStandardKernel T K C δ)
+private theorem ae_apply_eq_integral_opKernel (h : HasStandardKernel T K C δ)
     (f : Lp F 2 (volume : Measure V)) (s : Set V) (hs : IsCompact s)
     (hf : ∀ᵐ x, x ∉ s → f x = 0) :
-    ∀ᵐ x, x ∉ s → T.restrictScalars ℝ f x = ∫ z, realKernel F K x z (f z) := by
+    ∀ᵐ x, x ∉ s → T f x = ∫ z, opKernel F 𝕜 K x z (f z) := by
   filter_upwards [h.ae_apply_eq_integral f s hs hf] with x hx hxs
-  rw [ContinuousLinearMap.coe_restrictScalars', hx hxs, ← integral_offDiag_smul K hf hxs]
-  simp [realKernel]
+  rw [hx hxs, ← integral_offDiag_smul K hf hxs]
+  simp [opKernel]
+
+end OpKernel
 
 /-! ### Adjoints and the Calderón–Zygmund bounds -/
 
@@ -249,27 +250,19 @@ theorem adjoint (h : HasStandardKernel T K C δ) :
   norm_sub_add_norm_sub_le x y y' hy := by
     simpa only [← map_sub, RCLike.norm_conj, add_comm] using h.norm_sub_add_norm_sub_le x y y' hy
   ae_apply_eq_integral g s hs hg := by
-    have hk : ∀ r > 0, ∃ M, ∀ x y, r ≤ dist x y →
-        ‖offDiag K x y • ContinuousLinearMap.id ℂ F‖ ≤ M := fun r hr ↦
-      ⟨C * r ^ (-(Module.finrank ℝ V : ℝ)), fun x y hxy ↦ by
-        have hxy' : x ≠ y := dist_pos.1 (hr.trans_le hxy)
-        refine (norm_smul_id_le _).trans ((h.norm_offDiag_le hxy').trans ?_)
-        exact mul_le_mul_of_nonneg_left
-          (Real.rpow_le_rpow_of_nonpos hr hxy (neg_nonpos.2 (Nat.cast_nonneg _))) C.2⟩
-    have hrep : ∀ (f : Lp F 2 (volume : Measure V)) (s : Set V), IsCompact s →
-        (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s →
-          T f x = ∫ z, (offDiag K x z • ContinuousLinearMap.id ℂ F) (f z) := fun f s hs hf ↦ by
-      filter_upwards [h.ae_apply_eq_integral f s hs hf] with x hx hxs
-      rw [hx hxs, ← integral_offDiag_smul K hf hxs]
-      simp
+    have hk : ∀ r > 0, ∃ M, ∀ x y, r ≤ dist x y → ‖opKernel F ℂ K x y‖ ≤ M := fun r hr ↦
+      ⟨C * r ^ (-(Module.finrank ℝ V : ℝ)), fun x y hxy ↦
+        (h.norm_opKernel_le x y (dist_pos.1 (hr.trans_le hxy))).trans
+          (mul_le_mul_of_nonneg_left
+            (Real.rpow_le_rpow_of_nonpos hr hxy (neg_nonpos.2 (Nat.cast_nonneg _))) C.2)⟩
     filter_upwards [ContinuousLinearMap.ae_adjoint_apply_eq_integral T
-      (h.stronglyMeasurable_offDiag.smul_const _) hk hrep g hs hg] with x hx hxs
+      h.stronglyMeasurable_opKernel hk h.ae_apply_eq_integral_opKernel g hs hg] with x hx hxs
     rw [hx hxs, ← integral_offDiag_smul (fun x y ↦ conj (K y x)) hg hxs]
     refine integral_congr_ae (.of_forall fun z ↦ ?_)
     by_cases hxz : x = z
-    · simp [offDiag, hxz]
+    · simp [opKernel, offDiag, hxz]
     · dsimp only
-      rw [offDiag_of_ne hxz, offDiag_of_ne (Ne.symm hxz), map_smulₛₗ,
+      rw [opKernel, offDiag_of_ne hxz, offDiag_of_ne (Ne.symm hxz), map_smulₛₗ,
         ContinuousLinearMap.adjoint_id, smul_apply, ContinuousLinearMap.id_apply]
 
 /-- **Calderón–Zygmund operators are of weak type `(1, 1)`**: there is a constant `A` with
@@ -279,8 +272,8 @@ theorem exists_mul_volume_lt_enorm_le (h : HasStandardKernel T K C δ) :
     ∃ A : ℝ≥0, ∀ (f : Lp F 2 (volume : Measure V)) (t : ℝ≥0∞),
       t * volume {x | t < ‖T f x‖ₑ} ≤ A * eLpNorm f 1 volume := by
   obtain ⟨A, hA⟩ := ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
-    (T.restrictScalars ℝ) h.stronglyMeasurable_realKernel h.exponent_pos h.norm_realKernel_le
-    h.norm_realKernel_sub_le h.ae_restrictScalars_apply_eq_integral
+    (T.restrictScalars ℝ) h.stronglyMeasurable_opKernel h.exponent_pos h.norm_opKernel_le
+    h.norm_opKernel_sub_le h.ae_apply_eq_integral_opKernel
   exact ⟨A, fun f t ↦ by
     rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)]
     simpa using hA f t⟩
@@ -302,10 +295,10 @@ theorem exists_eLpNorm_le (h : HasStandardKernel T K C δ) {p : ℝ≥0∞} (hp 
       ContinuousLinearMap.adjoint_inner_left]
   have h' := h.adjoint
   exact ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow (T.restrictScalars ℝ)
-    h.stronglyMeasurable_realKernel h'.stronglyMeasurable_realKernel h.exponent_pos
-    h'.exponent_pos h.norm_realKernel_le h'.norm_realKernel_le h.norm_realKernel_sub_le
-    h'.norm_realKernel_sub_le h.ae_restrictScalars_apply_eq_integral
-    (hadj ▸ h'.ae_restrictScalars_apply_eq_integral) hp hp_top
+    h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel h.exponent_pos
+    h'.exponent_pos h.norm_opKernel_le h'.norm_opKernel_le h.norm_opKernel_sub_le
+    h'.norm_opKernel_sub_le h.ae_apply_eq_integral_opKernel
+    (hadj ▸ h'.ae_apply_eq_integral_opKernel) hp hp_top
 
 end HasStandardKernel
 

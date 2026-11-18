@@ -39,7 +39,9 @@ The pointwise supremum of finitely many integrable lattice-valued functions is i
 (`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
 integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multiplier bounded on
 a set containing the support of an integrable function keeps it integrable
-(`MeasureTheory.Integrable.smul_of_support_subset`).
+(`MeasureTheory.Integrable.smul_of_support_subset`). For a measure finite on compact sets, an `Lᵖ`
+function with `1 ≤ p` vanishing outside a compact set is integrable
+(`MeasureTheory.MemLp.integrable_of_isCompact`).
 -/
 
 public section
@@ -172,6 +174,15 @@ theorem Integrable.smul_of_support_subset {α 𝕜 E : Type*} [NormedRing 𝕜]
     Integrable (fun x ↦ g x • f x) μ :=
   (hf.norm.const_mul K).mono' (hg.smul hf.1)
     (ae_of_all _ (TauCeti.norm_smul_le_mul_norm_of_support_subset hsupp hK))
+
+/-- An `Lᵖ` function, `1 ≤ p`, vanishing almost everywhere outside a compact set is integrable for
+a measure finite on compact sets. -/
+theorem MemLp.integrable_of_isCompact {α E : Type*} [MeasurableSpace α] [TopologicalSpace α]
+    {μ : Measure α} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E] {f : α → E}
+    {p : ENNReal} (hf : MemLp f p μ) (hp : 1 ≤ p) {s : Set α} (hs : IsCompact s)
+    (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs.measure_lt_top.ne
+  exact IntegrableOn.integrable_of_ae_notMem_eq_zero ((hf.restrict s).integrable hp) hfs
 
 end MeasureTheory
 

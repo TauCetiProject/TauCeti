@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -438,13 +439,6 @@ theorem integrable_inner_apply_kernel_of_norm_le {k : V → V → H →L[𝕜] K
     · simp [hp₂ h₂]
   · simp [hp₁ h₁]
 
-/-- An `L²` function vanishing outside a compact set is integrable. -/
-private theorem integrable_of_isCompact [TopologicalSpace V] [IsFiniteMeasureOnCompacts μ]
-    {f : V → K} (hf : MemLp f 2 μ) {s : Set V} (hs : IsCompact s)
-    (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
-  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs.measure_lt_top.ne
-  exact IntegrableOn.integrable_of_ae_notMem_eq_zero ((hf.restrict s).integrable one_le_two) hfs
-
 end OffSupport
 
 end TauCeti
@@ -471,8 +465,8 @@ private theorem integral_inner_adjoint_apply_eq (T : Lp H 2 μ →L[𝕜] Lp K 2
     (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : Lp K 2 μ} (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0)
     {φ : Lp H 2 μ} (hφ : ∀ᵐ x ∂μ, x ∉ t → φ x = 0) :
     ∫ y, ⟪adjoint T g y, φ y⟫_𝕜 ∂μ = ∫ y, ⟪∫ z, adjoint (k z y) (g z) ∂μ, φ y⟫_𝕜 ∂μ := by
-  have hgi := TauCeti.integrable_of_isCompact (Lp.memLp g) hs hg
-  have hφi := TauCeti.integrable_of_isCompact (Lp.memLp φ) ht hφ
+  have hgi := (Lp.memLp g).integrable_of_isCompact one_le_two hs hg
+  have hφi := (Lp.memLp φ).integrable_of_isCompact one_le_two ht hφ
   calc ∫ y, ⟪adjoint T g y, φ y⟫_𝕜 ∂μ = ⟪adjoint T g, φ⟫_𝕜 := (L2.inner_def _ _).symm
     _ = ⟪g, T φ⟫_𝕜 := adjoint_inner_left _ _ _
     _ = ∫ z, ⟪g z, T φ z⟫_𝕜 ∂μ := L2.inner_def _ _
@@ -522,7 +516,7 @@ private theorem memLp_indicator_integral_adjoint_apply {k : V → V → H →L[�
             Measure.quasiMeasurePreserving_snd)))
   · rw [← integral_const_mul]
     refine norm_integral_le_of_norm_le
-      ((TauCeti.integrable_of_isCompact (Lp.memLp g) hs hg).norm.const_mul M) ?_
+      (((Lp.memLp g).integrable_of_isCompact one_le_two hs hg).norm.const_mul M) ?_
     filter_upwards [hg] with z hz
     by_cases hzs : z ∈ s
     · refine (le_opNorm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
