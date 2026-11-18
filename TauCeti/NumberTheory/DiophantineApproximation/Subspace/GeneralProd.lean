@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Dual.GeneralPosition
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproxProd
 
+import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
 import TauCeti.Data.Finset.Max
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
@@ -112,23 +113,6 @@ private theorem prod_sumElim_proj_le (v : AbsoluteValue K ℝ) (w : AbsoluteValu
   exact prod_le_one₀ (fun _ _ ↦ div_nonneg (apply_nonneg _ _) hS)
     fun j _ ↦ div_le_one_of_le₀ (hyS j) hS
 
-/-- If `t ⊆ B`, the values `f k` are nonnegative and `1 ≤ C * f k` for every `k ∈ B` outside `t`,
-then the product of `f` over `t` is at most `C ^ #B` times its product over `B`. -/
-private theorem prod_le_pow_mul_prod [DecidableEq κ] {t B : Finset κ} (htB : t ⊆ B) {f : κ → ℝ}
-    (hf : ∀ k ∈ B, 0 ≤ f k) {C : ℝ} (hC : 1 ≤ C) (hdisc : ∀ k ∈ B \ t, 1 ≤ C * f k) :
-    ∏ k ∈ t, f k ≤ C ^ #B * ∏ k ∈ B, f k := by
-  have ht : 0 ≤ ∏ k ∈ t, f k := prod_nonneg fun k hk ↦ hf k (htB hk)
-  rw [← prod_sdiff htB]
-  calc ∏ k ∈ t, f k = 1 * ∏ k ∈ t, f k := (one_mul _).symm
-    _ ≤ (∏ k ∈ B \ t, C * f k) * ∏ k ∈ t, f k := by
-        refine mul_le_mul_of_nonneg_right ?_ ht
-        exact one_le_prod₀ hdisc
-    _ = C ^ #(B \ t) * ((∏ k ∈ B \ t, f k) * ∏ k ∈ t, f k) := by
-        rw [prod_mul_distrib, prod_const, mul_assoc]
-    _ ≤ C ^ #B * ((∏ k ∈ B \ t, f k) * ∏ k ∈ t, f k) := by
-        refine mul_le_mul_of_nonneg_right (pow_le_pow_right₀ hC (card_le_card sdiff_subset)) ?_
-        exact mul_nonneg (prod_nonneg fun k hk ↦ hf k (sdiff_subset hk)) ht
-
 /-- **One place.** At an absolute value `w` lying over `v`, let the forms `l k`, `k ∈ B`, be in
 general position. There is `C ≥ 1` such that every nonzero point `x` has a system `l'` of
 `card ι` linearly independent forms, each a form `l k` with `k ∈ B` or a coordinate form, whose
@@ -184,8 +168,11 @@ private theorem exists_forall_exists_prod_le_mul_prod (v : AbsoluteValue K ℝ)
       exact hD t (hl t htB htn.le) htn y j _ fun k' hk' ↦ hmin k' hk' k hk.1 hk.2
     rw [← mul_div_assoc, one_le_div hS]
     exact hSk.trans (mul_le_mul_of_nonneg_right (hDC t htB) (apply_nonneg _ _))
-  exact (prod_sumElim_proj_le v w l e x).trans
-    (prod_le_pow_mul_prod htB (fun _ _ ↦ div_nonneg (apply_nonneg _ _) hS.le) hC1 hdisc)
+  have hf : ∀ k ∈ B, 0 ≤ w (l k y) / S := fun _ _ ↦ div_nonneg (apply_nonneg _ _) hS.le
+  refine (prod_sumElim_proj_le v w l e x).trans <|
+    (prod_le_pow_card_sdiff_mul_prod htB (fun k hk ↦ hf k (htB hk)) hdisc).trans ?_
+  exact mul_le_mul_of_nonneg_right (pow_le_pow_right₀ hC1 (card_le_card sdiff_subset))
+    (prod_nonneg hf)
 
 end Local
 
@@ -304,8 +291,9 @@ lying over `v`. There are finitely many systems `L'` of forms, each linearly ind
 place of `Sinf` and `Sfin`, and a constant `C > 0` such that every nonzero point `x` satisfies
 `approxProd Sinf Sfin w L' x ≤ C * generalProd Sinf Sfin w B L x` for one of them.
 
-At each place the system consists of forms `L v k`, `k ∈ B v`, completed by coordinate forms when
-`B v` has fewer than `card ι` members. -/
+The statement does not say which forms the systems consist of. The proof builds them at each place
+from forms `L v k`, `k ∈ B v`, completed by coordinate forms when `B v` has fewer than `card ι`
+members. -/
 theorem exists_finset_forall_approxProd_le_mul_generalProd [Fintype ι]
     (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1) (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1)
     (hLInf : ∀ v ∈ Sinf, IsGeneralPosition fun k : B v.1 ↦ L v.1 k)

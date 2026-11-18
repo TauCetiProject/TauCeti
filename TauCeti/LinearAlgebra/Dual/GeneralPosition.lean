@@ -10,9 +10,7 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import TauCeti.LinearAlgebra.LinearIndependent.GeneralPosition
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.Basic
-import TauCeti.LinearAlgebra.LinearIndependent.Extend
 
 /-!
 # Linear forms in general position
@@ -29,12 +27,6 @@ in general position in the sense of `TauCeti.InGeneralPosition`
 (`Module.Dual.isGeneralPosition_iff_inGeneralPosition`). General position of the members indexed
 by a finset `B` is general position of the restricted family `fun k : B ↦ l k`, read off on the
 finsets contained in `B` by `Module.Dual.isGeneralPosition_subtype_iff`.
-
-The coordinate forms span the dual space (`Module.Dual.span_range_proj`), so a linearly
-independent family of forms extends to a basis of the dual by coordinate forms
-(`LinearIndependent.exists_linearIndependent_sumElim_proj`). This is how a place with fewer than
-`card ι` forms is completed to a full system in the Subspace Theorem: the value of a coordinate
-form at a point is bounded by the largest coordinate.
 
 ## References
 
@@ -138,33 +130,4 @@ theorem isGeneralPosition_iff_inGeneralPosition [DecidableEq ι] [Fintype κ] {n
       simp [σ, range_comp]
     exact ((key σ hσ).mp ((hcoef σ).mp (hl σ hσ))).mono (hrange ▸ coe_subset.mpr hst)
 
-omit [Fintype ι] in
-/-- The coordinate forms span the dual of `F^ι`. -/
-theorem span_range_proj [Finite ι] :
-    Submodule.span F (range fun j : ι ↦ (LinearMap.proj j : Dual F (ι → F))) = ⊤ := by
-  classical
-  have := Fintype.ofFinite ι
-  have h : (fun j : ι ↦ (LinearMap.proj j : Dual F (ι → F))) = (Pi.basisFun F ι).dualBasis := by
-    ext j x
-    simp
-  rw [h, Basis.span_eq]
-
 end Module.Dual
-
-/-- A linearly independent family `f` of forms on `F^ι` extends by coordinate forms to a basis of
-the dual: for some finset `u` of coordinates, `Sum.elim f (proj ∘ (↑) : u → _)` is linearly
-independent and has `card ι` members. -/
-theorem LinearIndependent.exists_linearIndependent_sumElim_proj {F ι τ : Type*} [Field F]
-    [Fintype ι] [Fintype τ] {f : τ → Module.Dual F (ι → F)} (hf : LinearIndependent F f) :
-    ∃ u : Finset ι, LinearIndependent F
-        (Sum.elim f fun j : u ↦ (LinearMap.proj (j : ι) : Module.Dual F (ι → F))) ∧
-      Fintype.card τ + #u = Fintype.card ι := by
-  classical
-  obtain ⟨u, hli, hspan⟩ := hf.exists_linearIndependent_sumElim Module.Dual.span_range_proj
-  refine ⟨u.toFinset, ?_, ?_⟩
-  · convert hli.comp (Sum.map id (Equiv.subtypeEquivRight fun j ↦ Set.mem_toFinset))
-      (Sum.map_injective.mpr ⟨injective_id, Equiv.injective _⟩) using 1
-    ext (k | j) <;> rfl
-  · have hcard := Module.finrank_eq_card_basis (Basis.mk hli hspan.ge)
-    rw [Subspace.dual_finrank_eq, Module.finrank_fintype_fun_eq_card, Fintype.card_sum] at hcard
-    rw [hcard, Set.toFinset_card]
