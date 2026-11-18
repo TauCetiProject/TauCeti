@@ -54,7 +54,10 @@ holomorphy in `z`.
   `H^{s,p}` into `H^{s - re z,p}`.
 * `BesselPotentialSpace.besselPotentialCLM`: `J^z` as a bounded operator
   `H^{s,p}(E, F) →L[ℂ] H^{s - re z,p}(E, F)`, agreeing with `SchwartzMap.besselPotentialCLM z`
-  on Schwartz functions (`BesselPotentialSpace.besselPotentialCLM_toBesselPotentialSpaceCLM`), and
+  on Schwartz functions (`BesselPotentialSpace.besselPotentialCLM_toBesselPotentialSpaceCLM`)
+  and with Mathlib's `TemperedDistribution.besselPotential` at real orders
+  (`BesselPotentialSpace.toDistr_besselPotentialCLM_ofReal`), with orders adding under composition
+  (`BesselPotentialSpace.besselPotentialCLM_besselPotentialCLM`), and
   `BesselPotentialSpace.exists_norm_besselPotentialCLM_le` its norm bound `C (1 + |im z|) ^ N`.
 
 ## References
@@ -181,6 +184,34 @@ theorem toDistr_besselPotentialCLM (hp : 1 < p) (hp_top : p ≠ ∞) (z : ℂ) (
     (besselPotentialCLM hp hp_top z u).toDistr =
       fourierMultiplierCLM F (TauCeti.japaneseBracketCpow z) u.toDistr :=
   toDistr_mapCLM _ _ u
+
+/-- At a real order `t`, `besselPotentialCLM hp hp_top t` acts on the underlying tempered
+distributions as Mathlib's Bessel potential `TemperedDistribution.besselPotential E F t`. -/
+theorem toDistr_besselPotentialCLM_ofReal (hp : 1 < p) (hp_top : p ≠ ∞) (t : ℝ)
+    (u : H^{s, p}(E, F)) :
+    (besselPotentialCLM hp hp_top (t : ℂ) u).toDistr = besselPotential E F t u.toDistr := by
+  rw [toDistr_besselPotentialCLM, besselPotential]
+  congr 2
+  funext ξ
+  exact TauCeti.japaneseBracketCpow_ofReal t ξ
+
+/-- The orders of Bessel potentials on the Sobolev scale add: `J^w (J^z u) = J^(z + w) u`, after
+identifying `H^{s - re (z + w),p}` with `H^{s - re z - re w,p}`. -/
+@[simp]
+theorem besselPotentialCLM_besselPotentialCLM (hp : 1 < p) (hp_top : p ≠ ∞) (z w : ℂ)
+    (u : H^{s, p}(E, F)) :
+    besselPotentialCLM hp hp_top w (besselPotentialCLM hp hp_top z u) =
+      (besselPotentialCLM hp hp_top (z + w) u).copy (s - z.re - w.re)
+        (by rw [Complex.add_re]; ring) := by
+  ext1
+  rw [toDistr_copy _ (by rw [Complex.add_re]; ring), toDistr_besselPotentialCLM,
+    toDistr_besselPotentialCLM, toDistr_besselPotentialCLM,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply
+      (TauCeti.hasTemperateGrowth_japaneseBracketCpow z)
+      (TauCeti.hasTemperateGrowth_japaneseBracketCpow w)]
+  congr 2
+  funext ξ
+  exact (TauCeti.japaneseBracketCpow_add z w ξ).symm
 
 /-- On Schwartz functions, `besselPotentialCLM hp hp_top z` is the Bessel potential
 `SchwartzMap.besselPotentialCLM z` of complex order. -/
