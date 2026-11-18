@@ -111,6 +111,20 @@ namespace HomologicalComplex
 variable {F : Type*} [Field F] {C : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))}
   {n : ZMod 2 → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
 
+/-! The previous and next degrees of `0` and `1` for the shape `ComplexShape.up (ZMod 2)`. -/
+
+private theorem up_zmod_two_prev_zero : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
+  (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
+
+private theorem up_zmod_two_next_zero : (ComplexShape.up (ZMod 2)).next 0 = 1 :=
+  (ComplexShape.up _).next_eq' (zero_add 1)
+
+private theorem up_zmod_two_prev_one : (ComplexShape.up (ZMod 2)).prev 1 = 0 :=
+  (ComplexShape.up _).prev_eq' (zero_add 1)
+
+private theorem up_zmod_two_next_one : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
+  (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
+
 section Torsion
 
 variable (C)
@@ -123,13 +137,11 @@ lifts `s₀`, `s₁`, and `0` otherwise. The quotient does not depend on these c
 def parityTorsion : F := by
   classical
   exact if h : C.Acyclic then
-    torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
-        ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1)
+    torsionBracket c up_zmod_two_prev_one up_zmod_two_next_one (h 1)
         (chosenBoundaryBasis C c 0 1) (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
         (chosenBoundaryLift_spec C c 1 0) *
-      (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-        ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) (chosenBoundaryBasis C c 1 0)
-        (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
+      (torsionBracket c up_zmod_two_prev_zero up_zmod_two_next_zero (h 0)
+        (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
         (chosenBoundaryLift_spec C c 0 1))⁻¹
   else 0
 
@@ -390,6 +402,25 @@ private theorem exactAt_iff_of_linearEquiv {j k j' k' : ZMod 2} (hjk : j + 1 = k
     range_d_eq_map eⱼ eₖ hu hk, ker_d_eq_map eⱼ eₖ hu hj]
   exact (Submodule.map_injective_of_injective eⱼ.injective).eq_iff
 
+/-- Linear equivalences `e₀ : Cⱼ ≃ D₀` and `e₁ : Cₖ ≃ D₁`, for `{j, k} = {0, 1}`, intertwining the
+differentials of `C` and `D` up to a nonzero scalar make `D` acyclic exactly when `C` is. -/
+private theorem acyclic_iff_of_linearEquiv {j k : ZMod 2} (hjk : j + 1 = k)
+    (e₀ : C.X j ≃ₗ[F] D.X 0) (e₁ : C.X k ≃ₗ[F] D.X 1) {u : F} (hu : u ≠ 0)
+    (h₀₁ : ∀ x, (D.d 0 1).hom (e₀ x) = u • e₁ ((C.d j k).hom x))
+    (h₁₀ : ∀ x, (D.d 1 0).hom (e₁ x) = u • e₀ ((C.d k j).hom x)) :
+    D.Acyclic ↔ C.Acyclic := by
+  have hkj : k + 1 = j := by rw [← hjk, add_assoc, CharTwo.add_self_eq_zero, add_zero]
+  have h₀ := exactAt_iff_of_linearEquiv hjk (zero_add 1) e₀ e₁ hu h₀₁ h₁₀
+  have h₁ := exactAt_iff_of_linearEquiv hkj (CharTwo.add_self_eq_zero 1) e₁ e₀ hu h₁₀ h₀₁
+  have hi (i : ZMod 2) : i = j ∨ i = k := by
+    rw [← hjk]
+    exact (by decide : ∀ i j : ZMod 2, i = j ∨ i = j + 1) i j
+  refine ⟨fun h i ↦ ?_, fun h i ↦ ?_⟩
+  · rcases hi i with rfl | rfl
+    exacts [h₀.1 (h 0), h₁.1 (h 1)]
+  · fin_cases i
+    exacts [h₀.2 (h j), h₁.2 (h k)]
+
 /-- The basis of the boundaries of `D` in degree `j'` transported along `e_j` from a basis `b` of
 the boundaries of `C` in degree `j`. -/
 private def mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
@@ -416,39 +447,6 @@ private theorem d_inv_smul_apply {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.
     (D.d j' k').hom (u⁻¹ • eⱼ (s l)) = mapRangeBasis eₖ eⱼ hu h b l := by
   rw [coe_mapRangeBasis, map_smul, h, smul_smul, inv_mul_cancel₀ hu, one_smul, hs]
 
-/-- A bracket of `D` computed with boundary bases and lifts transported along a linear equivalence
-`e` from those of a bracket of `C`, the lifts being rescaled by `a`: it is `a ^ q` times the bracket
-of `C`, where `q` is the number of lifts. -/
-private theorem torsionBracket_eq_pow_mul {i j k i' j' k' : ZMod 2}
-    (hi : (ComplexShape.up (ZMod 2)).prev j = i) (hk : (ComplexShape.up (ZMod 2)).next j = k)
-    (h : C.ExactAt j) (hi' : (ComplexShape.up (ZMod 2)).prev j' = i')
-    (hk' : (ComplexShape.up (ZMod 2)).next j' = k') (h' : D.ExactAt j') {p q : ℕ}
-    (b₁ : Basis (Fin p) F (LinearMap.range (C.d i j).hom))
-    (b₀ : Basis (Fin q) F (LinearMap.range (C.d j k).hom))
-    (s : Fin q → C.X j) (hs : ∀ l, (C.d j k).hom (s l) = b₀ l)
-    (b₁' : Basis (Fin p) F (LinearMap.range (D.d i' j').hom))
-    (b₀' : Basis (Fin q) F (LinearMap.range (D.d j' k').hom))
-    (s' : Fin q → D.X j') (hs' : ∀ l, (D.d j' k').hom (s' l) = b₀' l)
-    (e : C.X j ≃ₗ[F] D.X j') (hm : m j' = n j) (hd : ∀ l, d j' l = e (c j (Fin.cast hm l)))
-    (hb₁ : ∀ l, (b₁' l : D.X j') = e (b₁ l)) (a : F) (hs's : ∀ l, s' l = a • e (s l)) :
-    torsionBracket d hi' hk' h' b₁' b₀' s' hs' = a ^ q * torsionBracket c hi hk h b₁ b₀ s hs := by
-  have hn := eq_add_of_exactAt c hi hk h b₁ b₀
-  have hdc : d j' = ((c j).map e).reindex (finCongr hm.symm) :=
-    Basis.eq_of_apply_eq fun l ↦ by simp [hd]
-  -- Both brackets are determinants with respect to `c j` reindexed to `Fin (p + q)`.
-  have hdet (v : Fin (p + q) → C.X j) :
-      (c j).det (v ∘ Fin.cast hn) = ((c j).reindex (finCongr hn)).det v := by
-    rw [Basis.det_reindex]
-    rfl
-  rw [torsionBracket_eq_det_append d hi' hk' h' b₁' b₀' s' hs' (hm.trans hn),
-    torsionBracket_eq_det_append c hi hk h b₁ b₀ s hs hn, hdc, Basis.det_reindex, Basis.det_map]
-  have hv : e.symm ∘ ((Fin.append (fun l ↦ (b₁' l : D.X j')) s' ∘ Fin.cast (hm.trans hn)) ∘
-      finCongr hm.symm) = Fin.append (fun l ↦ (b₁ l : C.X j)) (a • s) ∘ Fin.cast hn := by
-    ext l
-    obtain ⟨l, rfl⟩ := (finCongr hn.symm).surjective l
-    induction l using Fin.addCases <;> simp [hb₁, hs's]
-  rw [hv, hdet, hdet, AlternatingMap.map_append_smul, smul_eq_mul]
-
 /-- **Transport of the torsion along linear equivalences.** Let `e₀ : C₀ ≃ D₀` and `e₁ : C₁ ≃ D₁`
 be linear equivalences intertwining the differentials of `C` and `D` up to a nonzero scalar `u`,
 `D.d ∘ e = u • (e ∘ C.d)`, and let the bases `d i` of `D` be the images of the bases `c i` of `C`.
@@ -463,23 +461,12 @@ theorem parityTorsion_eq_mul_of_linearEquiv (e₀ : C.X 0 ≃ₗ[F] D.X 0) (e₁
     D.parityTorsion d = C.parityTorsion c *
       (u ^ finrank F (LinearMap.range (C.d 0 1).hom) /
         u ^ finrank F (LinearMap.range (C.d 1 0).hom)) := by
-  have hDC : D.Acyclic ↔ C.Acyclic := by
-    have h₀ := exactAt_iff_of_linearEquiv (zero_add 1) (zero_add 1) e₀ e₁ hu h₀₁ h₁₀
-    have h₁ := exactAt_iff_of_linearEquiv (CharTwo.add_self_eq_zero 1)
-      (CharTwo.add_self_eq_zero 1) e₁ e₀ hu h₁₀ h₀₁
-    refine ⟨fun h i ↦ ?_, fun h i ↦ ?_⟩ <;> fin_cases i
-    exacts [h₀.1 (h 0), h₁.1 (h 1), h₀.2 (h 0), h₁.2 (h 1)]
+  have hDC := acyclic_iff_of_linearEquiv (zero_add 1) e₀ e₁ hu h₀₁ h₁₀
   by_cases hC : C.Acyclic
   swap
   · rw [parityTorsion_of_not_acyclic C c hC, parityTorsion_of_not_acyclic D d (mt hDC.1 hC),
       zero_mul]
   have hD := hDC.2 hC
-  have hp₀ : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
-    (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
-  have hn₀ : (ComplexShape.up (ZMod 2)).next 0 = 1 := (ComplexShape.up _).next_eq' (zero_add 1)
-  have hp₁ : (ComplexShape.up (ZMod 2)).prev 1 = 0 := (ComplexShape.up _).prev_eq' (zero_add 1)
-  have hn₁ : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
-    (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
   -- Transport the chosen boundary bases of `C` along `e`, and its lifts rescaled by `u⁻¹`.
   set b₀ := chosenBoundaryBasis C c 1 0
   set b₁ := chosenBoundaryBasis C c 0 1
@@ -490,13 +477,14 @@ theorem parityTorsion_eq_mul_of_linearEquiv (e₀ : C.X 0 ≃ₗ[F] D.X 0) (e₁
   rw [parityTorsion_eq hC b₀ b₁ s₀ (chosenBoundaryLift_spec C c 0 1) s₁
       (chosenBoundaryLift_spec C c 1 0),
     parityTorsion_eq hD _ _ _ hs₀ _ hs₁,
-    torsionBracket_eq_pow_mul hp₁ hn₁ (hC 1) hp₁ hn₁ (hD 1) b₁ b₀ s₁
-      (chosenBoundaryLift_spec C c 1 0) _ _ _ hs₁ e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₁)
-      u⁻¹ fun _ ↦ rfl,
-    torsionBracket_eq_pow_mul hp₀ hn₀ (hC 0) hp₀ hn₀ (hD 0) b₀ b₁ s₀
-      (chosenBoundaryLift_spec C c 0 1) _ _ _ hs₀ e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₀)
-      u⁻¹ fun _ ↦ rfl]
-  have := torsionBracket_ne_zero c hp₀ hn₀ (hC 0) b₀ b₁ s₀ (chosenBoundaryLift_spec C c 0 1)
+    torsionBracket_eq_pow_mul c up_zmod_two_prev_one up_zmod_two_next_one (hC 1) b₁ b₀ s₁
+      (chosenBoundaryLift_spec C c 1 0) up_zmod_two_prev_one up_zmod_two_next_one (hD 1) _ _ _ hs₁
+      e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₁) u⁻¹ fun _ ↦ rfl,
+    torsionBracket_eq_pow_mul c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0) b₀ b₁ s₀
+      (chosenBoundaryLift_spec C c 0 1) up_zmod_two_prev_zero up_zmod_two_next_zero (hD 0) _ _ _ hs₀
+      e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₀) u⁻¹ fun _ ↦ rfl]
+  have := torsionBracket_ne_zero c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0) b₀ b₁ s₀
+    (chosenBoundaryLift_spec C c 0 1)
   simp only [inv_pow]
   field_simp
 
@@ -516,24 +504,12 @@ theorem parityTorsion_eq_inv_mul_of_linearEquiv (e₀ : C.X 1 ≃ₗ[F] D.X 0)
     D.parityTorsion d = (C.parityTorsion c)⁻¹ *
       (u ^ finrank F (LinearMap.range (C.d 1 0).hom) /
         u ^ finrank F (LinearMap.range (C.d 0 1).hom)) := by
-  have hDC : D.Acyclic ↔ C.Acyclic := by
-    have h₀ := exactAt_iff_of_linearEquiv (CharTwo.add_self_eq_zero 1) (zero_add 1) e₀ e₁ hu h₀₁
-      h₁₀
-    have h₁ := exactAt_iff_of_linearEquiv (zero_add 1) (CharTwo.add_self_eq_zero 1) e₁ e₀ hu h₁₀
-      h₀₁
-    refine ⟨fun h i ↦ ?_, fun h i ↦ ?_⟩ <;> fin_cases i
-    exacts [h₁.1 (h 1), h₀.1 (h 0), h₀.2 (h 1), h₁.2 (h 0)]
+  have hDC := acyclic_iff_of_linearEquiv (CharTwo.add_self_eq_zero 1) e₀ e₁ hu h₀₁ h₁₀
   by_cases hC : C.Acyclic
   swap
   · rw [parityTorsion_of_not_acyclic C c hC, parityTorsion_of_not_acyclic D d (mt hDC.1 hC),
       inv_zero, zero_mul]
   have hD := hDC.2 hC
-  have hp₀ : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
-    (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
-  have hn₀ : (ComplexShape.up (ZMod 2)).next 0 = 1 := (ComplexShape.up _).next_eq' (zero_add 1)
-  have hp₁ : (ComplexShape.up (ZMod 2)).prev 1 = 0 := (ComplexShape.up _).prev_eq' (zero_add 1)
-  have hn₁ : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
-    (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
   -- Transport the chosen boundary bases of `C` along `e`, and its lifts rescaled by `u⁻¹`; the
   -- boundaries of `D` in degree `0` come from those of `C` in degree `1`, and conversely.
   set b₀ := chosenBoundaryBasis C c 1 0
@@ -545,13 +521,14 @@ theorem parityTorsion_eq_inv_mul_of_linearEquiv (e₀ : C.X 1 ≃ₗ[F] D.X 0)
   rw [parityTorsion_eq hC b₀ b₁ s₀ (chosenBoundaryLift_spec C c 0 1) s₁
       (chosenBoundaryLift_spec C c 1 0),
     parityTorsion_eq hD _ _ _ hs₀ _ hs₁,
-    torsionBracket_eq_pow_mul hp₀ hn₀ (hC 0) hp₁ hn₁ (hD 1) b₀ b₁ s₀
-      (chosenBoundaryLift_spec C c 0 1) _ _ _ hs₁ e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₀)
-      u⁻¹ fun _ ↦ rfl,
-    torsionBracket_eq_pow_mul hp₁ hn₁ (hC 1) hp₀ hn₀ (hD 0) b₁ b₀ s₁
-      (chosenBoundaryLift_spec C c 1 0) _ _ _ hs₀ e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₁)
-      u⁻¹ fun _ ↦ rfl]
-  have := torsionBracket_ne_zero c hp₁ hn₁ (hC 1) b₁ b₀ s₁ (chosenBoundaryLift_spec C c 1 0)
+    torsionBracket_eq_pow_mul c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0) b₀ b₁ s₀
+      (chosenBoundaryLift_spec C c 0 1) up_zmod_two_prev_one up_zmod_two_next_one (hD 1) _ _ _ hs₁
+      e₁ hm₁ hd₁ (coe_mapRangeBasis e₁ e₀ hu h₀₁ b₀) u⁻¹ fun _ ↦ rfl,
+    torsionBracket_eq_pow_mul c up_zmod_two_prev_one up_zmod_two_next_one (hC 1) b₁ b₀ s₁
+      (chosenBoundaryLift_spec C c 1 0) up_zmod_two_prev_zero up_zmod_two_next_zero (hD 0) _ _ _ hs₀
+      e₀ hm₀ hd₀ (coe_mapRangeBasis e₀ e₁ hu h₁₀ b₁) u⁻¹ fun _ ↦ rfl]
+  have := torsionBracket_ne_zero c up_zmod_two_prev_one up_zmod_two_next_one (hC 1) b₁ b₀ s₁
+    (chosenBoundaryLift_spec C c 1 0)
   simp only [inv_pow, mul_inv]
   field_simp
 
@@ -626,9 +603,8 @@ theorem parityTorsion_shift_of_odd {k : ℤ} (hk : Odd k) :
   swap
   · simp [parityTorsion_of_not_acyclic C c hC]
   -- For an acyclic complex `n₀ = p + q`, the sum of the ranks of the two differentials.
-  rw [eq_add_of_exactAt c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-    ((ComplexShape.up _).next_eq' (zero_add 1)) (hC 0) (chosenBoundaryBasis C c 1 0)
-    (chosenBoundaryBasis C c 0 1)]
+  rw [eq_add_of_exactAt c up_zmod_two_prev_zero up_zmod_two_next_zero (hC 0)
+    (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1)]
   simp only [Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one, div_eq_mul_inv, ← inv_pow,
     inv_neg, inv_one]
   ring
