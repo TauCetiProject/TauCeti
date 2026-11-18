@@ -146,6 +146,21 @@ private theorem hasMFDerivWithinAt_sweep {γ : ℝ → M} (hγ : ContMDiff 𝓘(
     (Φ.contMDiff_cylinderMap _).mdifferentiableAt (by simp)
   exact hcyl.hasMFDerivAt.comp_hasMFDerivWithinAt z (hγz.hasMFDerivWithinAt.prodMk hproj)
 
+/-- On the strip `[0, 1] × ℝ`, the derivative within the strip of the swept map at `(t, s)` sends
+`v` to the derivative of the motion `(x, t) ↦ φ_t x` at `(γ s, t)` applied to
+`(dγ v.2, d(projIcc) v.1)`. -/
+private theorem mfderivWithin_sweep_apply {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) J 1 γ)
+    {z : ℝ × ℝ} (hz : z.1 ∈ Icc (0 : ℝ) 1) (v : ℝ × ℝ) :
+    mfderivWithin 𝓘(ℝ, ℝ × ℝ) J (Φ.sweep γ) (Icc 0 1 ×ˢ univ) z v =
+      mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (γ z.2, projIcc 0 1 zero_le_one z.1)
+        (mfderiv 𝓘(ℝ, ℝ) J γ z.2 v.2,
+          mfderivWithin 𝓘(ℝ, ℝ) (𝓡∂ 1) (projIcc (0 : ℝ) 1 zero_le_one) (Icc 0 1) z.1 v.1) := by
+  rw [(Φ.hasMFDerivWithinAt_sweep hγ hz).mfderivWithin (uniqueMDiffOn_strip z ⟨hz, mem_univ _⟩)]
+  -- `ContinuousLinearMap.comp`, `prod`, `fst` and `snd` evaluate this way by definition. Their
+  -- evaluation lemmas do not rewrite here: the source of `dγ` is `TangentSpace 𝓘(ℝ, ℝ) z.2`, a type
+  -- synonym of `ℝ`, so the composite only typechecks up to unfolding that synonym.
+  rfl
+
 /-- On the strip `[0, 1] × ℝ`, the time derivative of the swept map at `(t, s)` is the time
 derivative `∂ₜ φ_t (γ s)` of the motion. -/
 private theorem mfderivWithin_sweep_fst {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) J 1 γ)
@@ -153,11 +168,9 @@ private theorem mfderivWithin_sweep_fst {γ : ℝ → M} (hγ : ContMDiff 𝓘(�
     mfderivWithin 𝓘(ℝ, ℝ × ℝ) J (Φ.sweep γ) (Icc 0 1 ×ˢ univ) z (1, 0) =
       mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (γ z.2, projIcc 0 1 zero_le_one z.1)
         ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one z.1))) := by
-  rw [(Φ.hasMFDerivWithinAt_sweep hγ hz).mfderivWithin (uniqueMDiffOn_strip z ⟨hz, mem_univ _⟩)]
-  have h0 : mfderiv 𝓘(ℝ, ℝ) J γ z.2 0 = 0 := map_zero _
-  -- The left side is the derivative of the motion at `(dγ 0, d(projIcc) 1)`.
-  exact congrArg (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (γ z.2, projIcc 0 1 zero_le_one z.1))
-    (congrArg₂ Prod.mk h0 (mfderivWithin_projIcc_one hz))
+  exact (Φ.mfderivWithin_sweep_apply hγ hz (1, 0)).trans <|
+    congrArg (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (γ z.2, projIcc 0 1 zero_le_one z.1))
+      (congrArg₂ Prod.mk (map_zero _) (mfderivWithin_projIcc_one hz))
 
 /-- On the strip `[0, 1] × ℝ`, the derivative of the swept map along the curve at `(t, s)` is the
 image `dφ_t (γ' s)` of the velocity of the curve. -/
@@ -166,12 +179,9 @@ private theorem mfderivWithin_sweep_snd {γ : ℝ → M} (hγ : ContMDiff 𝓘(�
     mfderivWithin 𝓘(ℝ, ℝ × ℝ) J (Φ.sweep γ) (Icc 0 1 ×ˢ univ) z (0, 1) =
       mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (γ z.2, projIcc 0 1 zero_le_one z.1)
         (Manifold.curveVelocity J γ z.2, (0 : EuclideanSpace ℝ (Fin 1))) := by
-  rw [(Φ.hasMFDerivWithinAt_sweep hγ hz).mfderivWithin (uniqueMDiffOn_strip z ⟨hz, mem_univ _⟩)]
-  have h0 : mfderivWithin 𝓘(ℝ, ℝ) (𝓡∂ 1) (projIcc (0 : ℝ) 1 zero_le_one) (Icc 0 1) z.1 0 = 0 :=
-    map_zero _
-  -- The left side is the derivative of the motion at `(dγ 1, d(projIcc) 0)`.
-  exact congrArg (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (γ z.2, projIcc 0 1 zero_le_one z.1))
-    (congrArg₂ Prod.mk Manifold.curveVelocity_apply.symm h0)
+  exact (Φ.mfderivWithin_sweep_apply hγ hz (0, 1)).trans <|
+    congrArg (mfderiv (J.prod (𝓡∂ 1)) J Φ.cylinderMap (γ z.2, projIcc 0 1 zero_le_one z.1))
+      (congrArg₂ Prod.mk Manifold.curveVelocity_apply.symm (map_zero _))
 
 variable [IsManifold J ∞ M]
 
@@ -217,8 +227,12 @@ theorem pathIntegral_fluxForm_eq_rectangleIntegral (σ : SmoothForm J M ℝ 2) {
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [uIcc_of_le zero_le_one] at ht
     simp only [G, SmoothForm.coe_mpullback, mpullback_apply, mpullbackWithin_apply]
+    rw [sweep.eq_1 Φ γ (t, s)]
     congr 1
     funext i
+    -- The entries of `Fin.cons` and of `![(1, 0), (0, 1)]` at `0` and `1` reduce by definition;
+    -- their evaluation lemmas do not rewrite, since the vectors on the left live in tangent-space
+    -- type synonyms of `E × EuclideanSpace ℝ (Fin 1)`.
     refine Fin.cases ?_ (fun j ↦ ?_) i
     · exact (Φ.mfderivWithin_sweep_fst hγ (z := (t, s)) ht).symm
     · rw [Fin.fin_one_eq_zero j]
