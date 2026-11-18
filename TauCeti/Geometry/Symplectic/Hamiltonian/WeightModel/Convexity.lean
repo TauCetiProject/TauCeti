@@ -22,7 +22,7 @@ small invariant balls, are preconnected.
 
 Both reduce to the map `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of half squared radii
 (`TauCeti.halfSqRadii`), onto the closed orthant of `ℝ^ι`, since `μ = L ∘ Φ` for the linear map
-`L a = Σ_i a_i (-α_i)` (`TauCeti.weightMomentMap_eq_linearCombination`).
+`L a = Σ_i a_i (-α_i)` (`TauCeti.weightMomentMap_eq_linearCombination_comp_halfSqRadii`).
 
 * Polar coordinates `z_i = √(2 s_i) e^{i θ_i}` exhibit `Φ⁻¹(S)`, for a convex set `S`, as the image
   of the preconnected set `ℝ^ι × (S ∩ [0, ∞)^ι)`; so `Φ⁻¹(S)` is preconnected
@@ -76,20 +76,6 @@ namespace TauCeti
 variable {ι : Type*}
 
 /-! ### The half squared radii -/
-
-/-- The half squared radii `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of a point `(q, p)` of `ℂ^ι`, that
-is, the halved squared moduli `|z_i|² / 2` of its coordinates `z_i = q_i + i p_i`. -/
-noncomputable def halfSqRadii (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : ι → ℝ :=
-  fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2
-
-@[simp]
-theorem halfSqRadii_apply (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
-    halfSqRadii x i = (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
-  (rfl)
-
-/-- The half squared radii lie in the closed orthant. -/
-theorem halfSqRadii_nonneg (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : 0 ≤ halfSqRadii x :=
-  fun i ↦ by rw [Pi.zero_apply, halfSqRadii_apply]; positivity
 
 /-- **Preimages of convex sets under the half squared radii are preconnected.** For a convex set
 `S ⊆ ℝ^ι`, the points of `ℂ^ι` whose half squared radii `(q_i² + p_i²) / 2` lie in `S` form a
@@ -169,24 +155,9 @@ theorem image_halfSqRadii_mem_nhdsWithin (x : EuclideanSpace ℝ ι × Euclidean
   exact mem_of_superset (inter_mem_nhdsWithin (Ici 0) hpre) fun s ⟨hs, hsN⟩ ↦
     ⟨σ s, hsN, hΦσ s hs⟩
 
-/-- The half squared radii take every value in the closed orthant. -/
-theorem range_halfSqRadii : range (halfSqRadii (ι := ι)) = Ici 0 := by
-  refine Subset.antisymm (range_subset_iff.2 halfSqRadii_nonneg) fun s hs ↦
-    ⟨(WithLp.toLp 2 fun i ↦ √(2 * s i), 0), ?_⟩
-  ext i
-  simp only [halfSqRadii_apply, PiLp.zero_apply]
-  rw [sq_sqrt (mul_nonneg zero_le_two (hs i))]
-  ring
-
 /-! ### The moment map of the weight model -/
 
 variable [Fintype ι] {𝔱 : Type*} [NormedAddCommGroup 𝔱] [NormedSpace ℝ 𝔱]
-
-/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` composed with the
-half squared radii. -/
-private theorem weightMomentMap_eq_comp (α : ι → StrongDual ℝ 𝔱) :
-    weightMomentMap α = Fintype.linearCombination ℝ (-α) ∘ halfSqRadii :=
-  funext (weightMomentMap_eq_linearCombination α)
 
 /-- The image of the moment map of the weight model is convex. -/
 theorem convex_range_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
@@ -199,7 +170,7 @@ convex set `S ⊆ 𝔱*`, the set of points of `ℂ^ι` mapped into `S` by
 `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i` is preconnected, for arbitrary weights `α`. -/
 theorem isPreconnected_preimage_weightMomentMap (α : ι → StrongDual ℝ 𝔱)
     {S : Set (StrongDual ℝ 𝔱)} (hS : Convex ℝ S) : IsPreconnected (weightMomentMap α ⁻¹' S) := by
-  rw [weightMomentMap_eq_comp, preimage_comp]
+  rw [weightMomentMap_eq_linearCombination_comp_halfSqRadii, preimage_comp]
   exact isPreconnected_preimage_halfSqRadii (hS.linear_preimage _)
 
 /-- **The fibres of the weight model moment map are preconnected**, for arbitrary weights. -/
@@ -224,7 +195,7 @@ theorem isPreconnected_preimage_weightMomentMap_inter (α : ι → StrongDual �
   have hhalf : Convex ℝ {s : ι → ℝ | ∑ i, s i < r / 2} :=
     convex_halfSpace_lt ⟨fun a b ↦ by simp [Finset.sum_add_distrib],
       fun c a ↦ by simp [Finset.mul_sum]⟩ _
-  rw [hball, weightMomentMap_eq_comp, preimage_comp, ← preimage_inter]
+  rw [hball, weightMomentMap_eq_linearCombination_comp_halfSqRadii, preimage_comp, ← preimage_inter]
   exact isPreconnected_preimage_halfSqRadii ((hS.linear_preimage _).inter hhalf)
 
 /-- **The weight model moment map is open onto its image.** The moment map
@@ -234,7 +205,8 @@ theorem image_mem_nhdsWithin_range_weightMomentMap (α : ι → StrongDual ℝ �
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
     {N : Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)} (hN : N ∈ 𝓝 x) :
     weightMomentMap α '' N ∈ 𝓝[range (weightMomentMap α)] (weightMomentMap α x) := by
-  rw [weightMomentMap_eq_comp, range_comp, range_halfSqRadii, image_comp]
+  rw [weightMomentMap_eq_linearCombination_comp_halfSqRadii, range_comp, range_halfSqRadii,
+    image_comp]
   obtain ⟨N', hN', hN'N⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1
     (image_halfSqRadii_mem_nhdsWithin x hN)
   exact mem_of_superset
