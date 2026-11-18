@@ -126,21 +126,6 @@ theorem homLocalRep_extChartAt_apply (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) {i y
     Trivialization.symmL_apply (R := 𝕜) _ h₁e, Trivialization.symm_apply_apply_mk _ h₁e,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ h₂]
 
-variable (I) in
-/-- At the base point `x`, the local representative of `Φ` in the chart and trivializations at `x`
-intertwines the trivializations of `V₁` and `V₂` at `x` with `Φ x`. -/
-private theorem homLocalRep_extChartAt_self_comp (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) :
-    (homLocalRep I F₁ F₂ Φ x (extChartAt I x x)).comp
-        ((trivializationAt F₁ V₁ x).continuousLinearMapAt 𝕜 x) =
-      ((trivializationAt F₂ V₂ x).continuousLinearMapAt 𝕜 x).comp (Φ x) := by
-  have h₂ := mem_baseSet_trivializationAt F₂ V₂ x
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _
-      (mem_baseSet_trivializationAt F₁ V₁ x),
-    Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ h₂,
-    homLocalRep_extChartAt_apply I Φ (mem_baseSet_self (H := H) F₁ V₁ x) h₂ v]
-
 /-- Near the image of `y`, the local representative of `Φ s` is the local representative of `Φ`
 applied to that of `s`. -/
 private theorem localRep_eventuallyEq_homLocalRep_apply (Φ : ∀ x, V₁ x →L[𝕜] V₂ x)
@@ -329,11 +314,12 @@ theorem value_map (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) (j : FirstJetBu
     value I F₂ x (map I F₁ F₂ Φ x j) = Φ x (value I F₁ x j) := by
   have h₁ := mem_baseSet_trivializationAt F₁ V₁ x
   have h₂ := mem_baseSet_trivializationAt F₂ V₂ x
-  have h := DFunLike.congr_fun (homLocalRep_extChartAt_self_comp I (F₁ := F₁) (F₂ := F₂) Φ x)
+  have h := DFunLike.congr_fun
+    (ContinuousLinearMap.inCoordinates_comp_continuousLinearMapAt (F' := F₂) (y₀ := x) (Φ x) h₁)
     ((trivializationAt F₁ V₁ x).symmL 𝕜 x j.1)
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     Trivialization.continuousLinearMapAt_symmL _ h₁] at h
-  rw [value_apply, value_apply, map_apply, h, ← Trivialization.symmL_apply (R := 𝕜) _ h₂,
+  rw [value_apply, value_apply, map_apply_fst, h, ← Trivialization.symmL_apply (R := 𝕜) _ h₂,
     Trivialization.symmL_continuousLinearMapAt _ h₂, Trivialization.symmL_apply (R := 𝕜) _ h₁]
 
 /-- The square formed by the projections `J¹Vᵢ x → Vᵢ x`, the prolongation `J¹Φ x` and `Φ x`
@@ -355,9 +341,10 @@ theorem map_ofDeriv (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) (L : TangentS
   rw [map_apply, ofDeriv_apply, ofDeriv_apply]
   refine Prod.ext (map_zero _) ?_
   simp only [map_zero, zero_add]
+  rw [homLocalRep_extChartAt Φ (mem_chart_source H x)]
   exact (ContinuousLinearMap.comp_assoc _ _ L).symm.trans
-    ((congrArg (· ∘L L) (homLocalRep_extChartAt_self_comp I Φ x)).trans
-      (ContinuousLinearMap.comp_assoc _ _ L))
+    ((congrArg (· ∘L L) (ContinuousLinearMap.inCoordinates_comp_continuousLinearMapAt (Φ x)
+      (mem_baseSet_trivializationAt F₁ V₁ x))).trans (ContinuousLinearMap.comp_assoc _ _ L))
 
 end Kernel
 

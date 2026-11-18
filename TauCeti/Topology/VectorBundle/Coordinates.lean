@@ -34,6 +34,8 @@ of fibre maps as the composite of their coordinate expressions, and
 `ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
 identity map and scalar multiples in a compatible target vector-bundle structure, and
 `ContinuousLinearMap.inCoordinates_finset_sum` reads finite sums of fibre maps.
+`ContinuousLinearMap.inCoordinates_comp_continuousLinearMapAt` states that the coordinate
+expression of a fibre map intertwines the two trivializations with the map.
 `ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
 and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
 a fibre map off its coordinate expression, and `ContinuousLinearMap.range_inCoordinates`
@@ -227,6 +229,16 @@ theorem inCoordinates_id {x₀ x : B} (hx : x ∈ (trivializationAt F V x₀).ba
     inCoordinates F V F V x₀ x x₀ x (.id 𝕜 (V x)) = .id 𝕜 F := by
   ext v
   simp [inCoordinates_eq hx hx]
+
+/-- The coordinate expression of a fibre map intertwines the trivializations of the two bundles
+with the map, provided the source trivialization contains the source fibre base point. -/
+theorem inCoordinates_comp_continuousLinearMapAt {x₀ x : B} {y₀ y : B'} (ϕ : V x →SL[σ] W y)
+    (hx : x ∈ (trivializationAt F V x₀).baseSet) :
+    (inCoordinates F V F' W x₀ x y₀ y ϕ).comp
+        ((trivializationAt F V x₀).continuousLinearMapAt 𝕜 x) =
+      ((trivializationAt F' W y₀).continuousLinearMapAt 𝕜' y).comp ϕ := by
+  ext v
+  simp only [inCoordinates, comp_apply, Trivialization.symmL_continuousLinearMapAt _ hx]
 
 /-- `inCoordinates` commutes with scalar multiplication by any `c : 𝕜''` from a compatible
 `VectorBundle 𝕜'' F' W` structure. Both sides vanish when `y` is outside the base set of the
