@@ -145,8 +145,9 @@ theorem sum_homogeneousLittlewoodPaleyBlock_Ioc {a b : ℤ} (hab : a ≤ b) :
   have hadd := fourierMultiplierCLM_add (F := F)
     (Function.HasTemperateGrowth.sum (s := Finset.Ioc a b) fun j _ ↦
       φ.hasTemperateGrowth_ofReal_littlewoodPaley j)
-    (φ.hasTemperateGrowth_ofReal_apply_inv_smul (2 ^ a))
-  rw [hsum, fourierMultiplierCLM_sum F fun j _ ↦ φ.hasTemperateGrowth_ofReal_littlewoodPaley j]
+    (φ.lowPassSchwartz (zpow_ne_zero a two_ne_zero)).hasTemperateGrowth
+  rw [φ.coe_lowPassSchwartz, hsum,
+    fourierMultiplierCLM_sum F fun j _ ↦ φ.hasTemperateGrowth_ofReal_littlewoodPaley j]
     at hadd
   simp_rw [homogeneousLittlewoodPaleyBlock_eq_fourierMultiplierCLM]
   exact eq_sub_of_add_eq hadd.symm

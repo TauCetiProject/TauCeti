@@ -294,13 +294,6 @@ theorem coe_lowPassSchwartz_eq_comp {R : ℝ} (hR : R ≠ 0) :
   ext ξ
   simp
 
-/-- The complex low-pass symbol `φ (R⁻¹ ·)` has temperate growth, so it is a Fourier multiplier on
-Schwartz functions and on tempered distributions. -/
-theorem hasTemperateGrowth_ofReal_apply_inv_smul (R : ℝ) :
-    (fun ξ ↦ (φ (R⁻¹ • ξ) : ℂ)).HasTemperateGrowth := by
-  have := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
-  fun_prop
-
 end ContDiffBump
 
 /-- A compact subset `K` of an open set `U` of a finite-dimensional space has a compactly supported
