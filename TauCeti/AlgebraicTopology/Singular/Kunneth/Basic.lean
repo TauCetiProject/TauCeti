@@ -414,13 +414,10 @@ theorem finrank_singularHomology_tensor [Nontrivial k] (n : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y)) =
       ∑ x ∈ Finset.antidiagonal n,
         Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.1).obj M).obj X) *
-          Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.2).obj N).obj Y) := by
-  let e : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ≃ Finset.antidiagonal n :=
-    Equiv.subtypeEquivRight fun x ↦ by simp
-  have := Fintype.ofEquiv _ e.symm
-  rw [← (singularHomologyKunnethDirectSumIso X Y M N n).toLinearEquiv.finrank_eq,
-    Module.finrank_directSum, ← Finset.sum_coe_sort (Finset.antidiagonal n)]
-  exact Fintype.sum_equiv e _ _ fun x ↦ Module.finrank_tensorProduct
+          Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) x.2).obj N).obj Y) :=
+  have := isIso_singularHomologyKunneth_of_projective_homology X Y M N n
+  (asIso (singularHomologyKunneth X Y M N n)).toLinearEquiv.finrank_eq.symm.trans
+    (GradedObject.Monoidal.finrank_tensorObj _ _ n)
 
 end Free
 
