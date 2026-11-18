@@ -71,10 +71,10 @@ private theorem variableMap_injective (i : Fin n) : Function.Injective (variable
 
 private noncomputable def singletonQuotientHomologyEquiv (i : Fin n) :
     (d).quotientHomology hd (LinearMap.range (variableMap i))
-        (LinearMap.range_le_comap_range_of_comp_eq (variableMap i) (variableMap_comp G i)) ≃ₗ[F]
+        (LinearMap.range_le_comap_range_of_comp_eq (variableMap_comp G i).symm) ≃ₗ[F]
       G.partiallyBlockedHomology {i} :=
   LinearMap.quotientHomologyEquivOfSurjective hd
-    (LinearMap.range_le_comap_range_of_comp_eq (variableMap i) (variableMap_comp G i))
+    (LinearMap.range_le_comap_range_of_comp_eq (variableMap_comp G i).symm)
     ((d).mapQ_comp_mapQ_eq_zero hd _ (G.blockedChains_le_comap_unblockedDifferential {i}))
     ((blockedChains F {i}).restrictScalars F).mkQ
     (Submodule.mkQ_surjective _)
@@ -85,7 +85,7 @@ private theorem singletonQuotientHomologyEquiv_quotientHomologyClass (i : Fin n)
     (hc : d c ∈ LinearMap.range (variableMap i)) :
     singletonQuotientHomologyEquiv G i
         (LinearMap.quotientHomologyClass hd
-          (LinearMap.range_le_comap_range_of_comp_eq (variableMap i) (variableMap_comp G i))
+          (LinearMap.range_le_comap_range_of_comp_eq (variableMap_comp G i).symm)
           c hc) =
       LinearMap.quotientHomologyClass hd
         (G.blockedChains_le_comap_unblockedDifferential {i}) c

@@ -50,7 +50,7 @@ theorem mappingConeQuotientProjection_apply (x : M × N) :
 /-- The cone projection commutes with the induced differential on the cokernel. -/
 theorem mappingConeQuotientProjection_comp :
     mappingConeQuotientProjection f ∘ₗ mappingCone d e f =
-      (range f).mapQ (range f) e (range_le_comap_range_of_comp_eq f hf) ∘ₗ
+      (range f).mapQ (range f) e (range_le_comap_range_of_comp_eq hf.symm) ∘ₗ
         mappingConeQuotientProjection f := by
   apply LinearMap.ext
   intro x
@@ -80,7 +80,7 @@ theorem mk_neg_mem_ker_mappingCone (hinj : Function.Injective f) {c : N} {a : M}
 theorem homologyMap_mappingConeQuotientProjection_bijective (hinj : Function.Injective f) :
     Function.Bijective (homologyMap (mappingConeQuotientProjection f)
       (mappingCone_comp_self f hd he hf)
-      (e.mapQ_comp_mapQ_eq_zero he (range f) (range_le_comap_range_of_comp_eq f hf))
+      (e.mapQ_comp_mapQ_eq_zero he (range f) (range_le_comap_range_of_comp_eq hf.symm))
       (mappingConeQuotientProjection_comp d e f hf)) := by
   constructor
   · rw [homologyMap_injective_iff]
@@ -113,7 +113,7 @@ theorem homologyMap_mappingConeQuotientProjection_bijective (hinj : Function.Inj
 quotient by its range. The forward map is induced by projection onto the second coordinate. -/
 noncomputable def mappingConeQuotientHomologyEquiv (hinj : Function.Injective f) :
     (mappingCone d e f).homology (mappingCone_comp_self f hd he hf) ≃ₗ[S]
-      e.quotientHomology he (range f) (range_le_comap_range_of_comp_eq f hf) :=
+      e.quotientHomology he (range f) (range_le_comap_range_of_comp_eq hf.symm) :=
   LinearEquiv.ofBijective _
     (homologyMap_mappingConeQuotientProjection_bijective d hd e he f hf hinj)
 
@@ -122,7 +122,7 @@ noncomputable def mappingConeQuotientHomologyEquiv (hinj : Function.Injective f)
 theorem mappingConeQuotientHomologyEquiv_mk (hinj : Function.Injective f)
     (z : ker (mappingCone d e f)) :
     mappingConeQuotientHomologyEquiv d hd e he f hf hinj (Submodule.Quotient.mk z) =
-      quotientHomologyClass he (range_le_comap_range_of_comp_eq f hf) z.1.2
+      quotientHomologyClass he (range_le_comap_range_of_comp_eq hf.symm) z.1.2
         (apply_snd_mem_range_of_mem_ker_mappingCone z.2) := by
   rw [mappingConeQuotientHomologyEquiv, LinearEquiv.ofBijective_apply, homologyMap_mk,
     quotientHomologyClass_def]
@@ -133,7 +133,7 @@ class of the cone cycle `(-a, c)`. -/
 theorem mappingConeQuotientHomologyEquiv_symm_quotientHomologyClass
     (hinj : Function.Injective f) (c : N) (a : M) (hc : e c = f a) :
     (mappingConeQuotientHomologyEquiv d hd e he f hf hinj).symm
-        (quotientHomologyClass he (range_le_comap_range_of_comp_eq f hf) c
+        (quotientHomologyClass he (range_le_comap_range_of_comp_eq hf.symm) c
           (mem_range.mpr ⟨a, hc.symm⟩)) =
       Submodule.Quotient.mk ⟨(-a, c), mk_neg_mem_ker_mappingCone he hf hinj hc⟩ := by
   rw [LinearEquiv.symm_apply_eq, mappingConeQuotientHomologyEquiv_mk]
@@ -178,8 +178,8 @@ omit hd
 The comparison factors through their mapping cones and uses the specified homotopy `h`. -/
 noncomputable def quotientHomologyEquivOfHomotopy
     (hfi : Function.Injective f) (hgi : Function.Injective g) :
-    e.quotientHomology he (range f) (range_le_comap_range_of_comp_eq f hf) ≃ₗ[S]
-      e.quotientHomology he (range g) (range_le_comap_range_of_comp_eq g hg) := by
+    e.quotientHomology he (range f) (range_le_comap_range_of_comp_eq hf.symm) ≃ₗ[S]
+      e.quotientHomology he (range g) (range_le_comap_range_of_comp_eq hg.symm) := by
   have hd : d ∘ₗ d = 0 := LinearMap.ext fun x =>
     apply_eq_zero_of_apply_eq he hf hfi (c := f x) (congr($hf x)).symm
   exact (mappingConeQuotientHomologyEquiv d hd e he f hf hfi).symm.trans
@@ -193,9 +193,9 @@ of `c - h a` modulo `range g`. -/
 theorem quotientHomologyEquivOfHomotopy_quotientHomologyClass
     (hfi : Function.Injective f) (hgi : Function.Injective g) (c : N) (a : M) (hc : e c = f a) :
     quotientHomologyEquivOfHomotopy d e he f hf g h hg hh hfi hgi
-        (quotientHomologyClass he (range_le_comap_range_of_comp_eq f hf) c
+        (quotientHomologyClass he (range_le_comap_range_of_comp_eq hf.symm) c
           (mem_range.mpr ⟨a, hc.symm⟩)) =
-      quotientHomologyClass he (range_le_comap_range_of_comp_eq g hg) (c - h a)
+      quotientHomologyClass he (range_le_comap_range_of_comp_eq hg.symm) (c - h a)
         (mem_range.mpr ⟨a, (apply_sub_eq_of_homotopy d e he f hf g h hh hfi hc).symm⟩) := by
   have hd : d ∘ₗ d = 0 := LinearMap.ext fun x =>
     apply_eq_zero_of_apply_eq he hf hfi (c := f x) (congr($hf x)).symm
