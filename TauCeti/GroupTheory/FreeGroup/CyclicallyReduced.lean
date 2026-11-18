@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 public import TauCeti.GroupTheory.FreeGroup.Reduce
 import TauCeti.Data.List.Infix
+import TauCeti.Data.List.Rotate
 
 /-!
 # Cyclic reduction and word length in a free group
@@ -22,6 +24,17 @@ word of `x ^ m` is `c ++ vᵐ ++ c⁻¹` for `m ≥ 1`. Its first `L` letters th
 `m ≥ L` (`FreeGroup.take_toWord_pow_of_le`): they are the first `L` letters of the attracting ray
 `c ++ v ++ v ++ ⋯` of `x`. In particular, the reduced word of `x ^ m` has at least `m` letters
 (`FreeGroup.length_take_toWord_pow`).
+
+A nonzero power `wⁿ = (List.replicate n w).flatten` is cyclically reduced exactly when `w` is
+(`FreeGroup.isCyclicallyReduced_flatten_replicate_iff`). If a word `a` and its formal inverse
+both occur in powers of a cyclically reduced word `b`, then `b` is a cyclic rotation of
+`a ++ v ++ invRev a ++ u` (`FreeGroup.IsCyclicallyReduced.exists_isRotated_append_invRev`,
+Lemma 7 of Lyndon and Schützenberger); in particular `b` is at least twice as long as `a`.
+
+## References
+
+* R. C. Lyndon, M. P. Schützenberger, *The equation `a^M = b^N c^P` in a free group*, Michigan
+  Math. J. 9 (1962), 289–298, §2, Lemma 7.
 -/
 
 public section
@@ -33,6 +46,50 @@ theorem isCyclicallyReduced_of_forall_snd_eq {α : Type*} {w : List (α × Bool)
     (h : ∀ x ∈ w, x.2 = e) : IsCyclicallyReduced w :=
   ⟨isReduced_of_forall_snd_eq h, fun x hx y hy _ ↦
     (h x (List.mem_of_getLast? hx)).trans (h y (List.mem_of_mem_head? hy)).symm⟩
+
+/-- A nonzero power `wⁿ` of a word is cyclically reduced exactly when `w` is. -/
+@[to_additive (attr := simp)]
+theorem isCyclicallyReduced_flatten_replicate_iff {α : Type*} {w : List (α × Bool)} {n : ℕ}
+    (hn : n ≠ 0) : IsCyclicallyReduced (List.replicate n w).flatten ↔ IsCyclicallyReduced w := by
+  refine ⟨fun h ↦ ⟨h.isReduced.infix (List.infix_of_mem_flatten (List.mem_replicate.2 ⟨hn, rfl⟩)),
+    fun x hx y hy ↦ h.2 x ?_ y ?_⟩, fun h ↦ h.flatten_replicate n⟩
+  · rwa [List.getLast?_flatten_replicate hn]
+  · rwa [List.head?_flatten_replicate hn]
+
+/-- **Lyndon–Schützenberger, Lemma 7.** If a word `a` and its formal inverse both occur in powers
+of a cyclically reduced word `b`, then `b` is a cyclic rotation of a word
+`a ++ v ++ invRev a ++ u`. In particular `2 * a.length ≤ b.length`. -/
+theorem IsCyclicallyReduced.exists_isRotated_append_invRev {α : Type*} {a b : List (α × Bool)}
+    {m n : ℕ} (hb : IsCyclicallyReduced b) (h₁ : a <:+: (List.replicate m b).flatten)
+    (h₂ : FreeGroup.invRev a <:+: (List.replicate n b).flatten) :
+    ∃ u v : List (α × Bool), b ~r a ++ v ++ FreeGroup.invRev a ++ u := by
+  rcases eq_or_ne a [] with rfl | ha₀
+  · exact ⟨b, [], by simpa [FreeGroup.invRev] using List.IsRotated.refl b⟩
+  have ha : IsReduced a := (hb.flatten_replicate m).isReduced.infix h₁
+  -- Rotating `bᵐ⁺ⁿ = s ++ (a ++ t ++ bⁿ)` gives a power of a rotation `b'` of `b` that begins
+  -- with `a` and contains `bⁿ`, hence `invRev a`.
+  obtain ⟨s, t, hst⟩ := h₁
+  obtain ⟨b', hb', hpow⟩ :=
+    List.exists_isRotated_flatten_replicate_of_append_eq (n := m + n) (s := s)
+      (t := a ++ t ++ (List.replicate n b).flatten)
+      (by rw [List.replicate_add, List.flatten_append, ← hst]; simp)
+  have ha' : a <+: (List.replicate (m + n) b').flatten :=
+    ⟨t ++ (List.replicate n b).flatten ++ s, by rw [← hpow]; simp⟩
+  have h₂' : FreeGroup.invRev a <:+: (List.replicate (m + n) b').flatten :=
+    h₂.trans ⟨a ++ t, s, by rw [← hpow]⟩
+  have hb'p : b' <+: (List.replicate (m + n) b').flatten := by
+    simpa using List.flatten_replicate_prefix_flatten_replicate b'
+      (Nat.one_le_iff_ne_zero.2 fun h ↦ ha₀ (by simpa [h] using ha'))
+  rcases List.prefix_or_prefix_of_prefix ha' hb'p with ⟨c, rfl⟩ | hba
+  · -- `b' = a ++ c`: by Corollary 6.1, `invRev a` is a factor of `c`.
+    obtain ⟨v, u, rfl⟩ := ha.invRev_infix_of_infix_flatten_replicate_append (m := 1) (b := c)
+      Nat.one_ne_zero (by simpa using h₂')
+    exact ⟨u, v, by simpa [List.append_assoc] using hb'.symm⟩
+  · -- `b'` is a prefix of `a`, so `invRev b'` is a factor of a power of `b'`: by Corollary 6.2,
+    -- `b' = []`, and then `a = []`.
+    have : b' = [] := (ha.infix hba.isInfix).eq_nil_of_invRev_infix_flatten_replicate
+      ((invRev_isInfix_invRev.2 hba.isInfix).trans h₂')
+    exact absurd (by simpa [this] using ha') ha₀
 
 variable {α : Type*} [DecidableEq α]
 
