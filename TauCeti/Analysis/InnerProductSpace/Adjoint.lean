@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Compression
+public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Affine.MazurUlam
@@ -57,6 +58,7 @@ Compression is its inverse on this corner, and extension preserves composition a
   same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`).
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
+* `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`.
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
 
@@ -212,6 +214,14 @@ theorem adjointRealCLM_apply (T : V →L[𝕜] W) : adjointRealCLM T = adjoint T
   rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv,
     IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+
+/-- The pointwise adjoint `x ↦ (f x)†` of a `C^n` family of operators between Hilbert spaces is
+`C^n`. -/
+theorem _root_.ContDiff.clm_adjoint {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : G → V →L[𝕜] W} {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) :
+    ContDiff ℝ n fun x ↦ adjoint (f x) := by
+  simpa only [Function.comp_def, adjointRealCLM_apply] using
+    hf.continuousLinearMap_comp adjointRealCLM
 
 end RealAdjoint
 
