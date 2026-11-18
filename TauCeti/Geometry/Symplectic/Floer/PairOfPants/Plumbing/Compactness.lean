@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Energy
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness of plumbed four-punctured spheres as the neck stretches
@@ -260,7 +261,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
   refine ⟨φ ∘ φ', Z, Z', v, v', hφ.comp hφ', hZΩ,
     (mul_le_mul_of_nonneg_left (min_le_left δ δ') (Nat.cast_nonneg _)).trans hZE, hZΩ',
     (mul_le_mul_of_nonneg_left (min_le_right δ δ') (Nat.cast_nonneg _)).trans hZE', hvc, hvK,
-    fun U hU z hz ↦ (hlim U hU z hz).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, hφ'.tendsto_atTop.eventually h⟩,
+    hlim.comp_tendsto hφ'.tendsto_atTop,
     hvc', hvK', hlim'⟩
 
 end TauCeti.SymplecticForm
@@ -591,7 +592,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
   refine ⟨σ ∘ σ', Z, Z', v, v', hσ.comp hσ', hZΩ,
     (mul_le_mul_of_nonneg_left (min_le_left δ δ') (Nat.cast_nonneg _)).trans hZE, hZΩ',
     (mul_le_mul_of_nonneg_left (min_le_right δ δ') (Nat.cast_nonneg _)).trans hZE', hvc, hvK,
-    fun U hU z hz ↦ (hlim U hU z hz).imp fun _ ⟨ht, h⟩ ↦ ⟨ht, hσ'.tendsto_atTop.eventually h⟩,
+    hlim.comp_tendsto hσ'.tendsto_atTop,
     fun y hy ↦ (hpt y hy).comp hσ'.tendsto_atTop, hvc', hvK', hlim', hpt'⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

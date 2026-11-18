@@ -30,6 +30,9 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
+Locally uniform convergence along a filter `l` passes to any family of indices tending to `l`,
+for instance to a subsequence (`TendstoLocallyUniformlyOn.comp_tendsto`).
+
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
@@ -49,6 +52,14 @@ initial points.
 public section
 
 open Filter Set Topology Uniformity
+
+/-- Locally uniform convergence along `l` passes to a reindexing `g` tending to `l`, such as a
+subsequence. -/
+theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι} {s : Set α}
+    (h : TendstoLocallyUniformlyOn F f l s) {l' : Filter ι'} {g : ι' → ι} (hg : Tendsto g l' l) :
+    TendstoLocallyUniformlyOn (fun i ↦ F (g i)) f l' s :=
+  fun U hU x hx ↦ (h U hU x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, hg.eventually hev⟩
 
 /-- **Locally uniform convergence to a continuous limit is continuous convergence.** On an open
 set on which the limit is continuous, `F i → f` locally uniformly exactly when `F i y → f x` as
