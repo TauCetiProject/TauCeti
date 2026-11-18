@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.HNNExtension
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.ProperPower
-import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
@@ -188,10 +187,9 @@ extension of `G` along the isomorphism `⟨a⟩ ≃* ⟨b⟩`, `a ↦ b`, whose 
 to `b`. -/
 theorem exists_injective_isConj_of_orderOf_eq {a b : G} (h : orderOf a = orderOf b) :
     ∃ (P : Type u) (_ : Group P) (ι : G →* P), Function.Injective ι ∧ IsConj (ι a) (ι b) := by
-  let φ := mulEquivOfOrderOfEq (fun y => (zpowers_mk_self_eq_top a).ge (mem_top y))
-    (fun y => (zpowers_mk_self_eq_top b).ge (mem_top y)) (by rwa [orderOf_mk, orderOf_mk])
-  refine ⟨HNNExtension G _ _ φ, inferInstance, of, of_injective _, isConj_iff.2 ⟨t, ?_⟩⟩
-  simpa [φ] using (equiv_eq_conj (φ := φ) ⟨a, mem_zpowers a⟩).symm
+  refine ⟨HNNExtension G _ _ (zpowersMulEquivOfOrderOfEq h), inferInstance, of, of_injective _,
+    isConj_iff.2 ⟨t, ?_⟩⟩
+  simpa using (equiv_eq_conj (φ := zpowersMulEquivOfOrderOfEq h) ⟨a, mem_zpowers a⟩).symm
 
 variable [IsMulTorsionFree G]
 

@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 import Mathlib.Algebra.Group.ULift
 import Mathlib.GroupTheory.Commutator.Basic
-import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 
@@ -152,10 +151,7 @@ private theorem exists_injective_dihedral {G : Type u} [Group G] {n : ℕ} (hn :
     rw [orderOf_pow' _ hn, orderOf_r_one, Nat.gcd_mul_right_left,
       Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn)]
   -- the embedding `⟨g⟩ →* D`, `g ↦ rⁿ`
-  let ψ := (zpowers _).subtype.comp (mulEquivOfOrderOfEq
-    (fun y => (zpowers_mk_self_eq_top g).ge (mem_top y))
-    (fun y => (zpowers_mk_self_eq_top (r 1 ^ n : DihedralGroup (n * orderOf g))).ge (mem_top y))
-    (by rwa [orderOf_mk, orderOf_mk])).toMonoidHom
+  let ψ := (zpowers _).subtype.comp (zpowersMulEquivOfOrderOfEq hord).toMonoidHom
   have hψ : Function.Injective ψ := (zpowers _).subtype_injective.comp (MulEquiv.injective _)
   obtain ⟨P, _, α, β, hα, -, h⟩ := exists_injective_comp_eq_comp (zpowers g).subtype_injective hψ
   exact ⟨P, _, α, β, hα, by simpa [ψ] using (DFunLike.congr_fun h ⟨g, mem_zpowers g⟩).symm⟩

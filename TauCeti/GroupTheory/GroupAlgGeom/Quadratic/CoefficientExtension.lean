@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAlgGeom.CoefficientExtension
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.StandardMap
-import TauCeti.GroupTheory.GroupAlgGeom.CoefficientExtension
 import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Surface
 import TauCeti.GroupTheory.HNNExtension
 import TauCeti.GroupTheory.PushoutI.Basic
@@ -17,9 +17,9 @@ import TauCeti.GroupTheory.PushoutI.Basic
 Let `S` be a standard quadratic equation over a torsion-free group `G`, and `G_S = G[X] ⧸ ncl(S)`
 its group. Then `S` has a solution in a group containing `G`, so the coefficients embed in `G_S`
 (`Quadratic.Standard.systemGroup_coeff_injective`). Hence, for an injective `f : G →* H`, the
-group of `S` embeds in the group of its image `S.map f` over `H`
-(`Quadratic.Standard.exists_injective_systemGroup_map`), by the change of coefficients for systems
-whose coefficients embed (`SystemGroup.comap_normalClosure_image`). This is Proposition 2 of
+homomorphism `SystemGroup.map` from the group of `S` to the group of its image `S.map f` over `H`
+is injective (`Quadratic.Standard.systemGroup_map_injective`), by the change of coefficients for
+systems whose coefficients embed (`SystemGroup.map_injective`). This is Proposition 2 of
 [VAR-I], where `H` is assumed torsion-free as well. Torsion-freeness of `G` cannot be dropped:
 over `G = ℤ/6 = ⟨g⟩`, the equation `z⁻¹ g³ z g² = 1` makes `g³`, of order dividing `2`, conjugate
 to `g⁴`, of order dividing `3`, so both vanish in `G_S`, and so does `g = g³ g⁻²`.
@@ -28,8 +28,8 @@ to `g⁴`, of order dividing `3`, so both vanish in `G_S`, and so does `g = g³ 
 
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.systemGroup_coeff_injective`: over a torsion-free
   group, `G` embeds in the group of a standard quadratic equation.
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_injective_systemGroup_map`: over a torsion-free
-  group, the homomorphism `G_S →* H_{f(S)}` induced by an injective `f : G →* H` is injective.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.systemGroup_map_injective`: over a torsion-free group,
+  the homomorphism `G_S →* H_{f(S)}` induced by an injective `f : G →* H` is injective.
 
 ## Implementation notes
 
@@ -180,19 +180,15 @@ theorem systemGroup_coeff_injective [IsMulTorsionFree G] (S : Standard G X) :
   exact SystemGroup.coeff_injective hι hV
 
 /-- **The group of a standard quadratic equation under an extension of the coefficients.** If `G`
-is torsion-free and `f : G →* H` is injective, the homomorphism `G_S → H_{f(S)}` induced by `f`
+is torsion-free and `f : G →* H` is injective, the homomorphism `G_S →* H_{f(S)}` induced by `f`
 is injective. -/
-theorem exists_injective_systemGroup_map {H : Type*} [Group H] [IsMulTorsionFree G] {f : G →* H}
-    (hf : Function.Injective f) (S : Standard G X) :
-    ∃ F : SystemGroup G {S.toWord} →* SystemGroup H
-        {(S.map f fun _ hg => (map_ne_one_iff f hf).2 (ne_one_of_mem_coeffs hg)).toWord},
-      Function.Injective F ∧ ∀ w : GX G X, F (QuotientGroup.mk w) =
-        QuotientGroup.mk (Monoid.Coprod.map f (FreeGroup.map id) w) := by
-  have h := SystemGroup.comap_normalClosure_image hf (systemGroup_coeff_injective S)
-  rw [Set.image_singleton] at h
-  rw [toWord_map]
-  exact ⟨QuotientGroup.map _ _ _ h.ge, (QuotientGroup.map_injective_iff _ _ _ h.ge).2 h.le,
-    fun _ => rfl⟩
+theorem systemGroup_map_injective {H : Type*} [Group H] [IsMulTorsionFree G] {f : G →* H}
+    (hf : Injective f) (S : Standard G X) (hS : ∀ g ∈ S.coeffs, f g ≠ 1)
+    (h : Monoid.Coprod.map f (FreeGroup.map id) '' {S.toWord} ⊆
+      Subgroup.normalClosure {(S.map f hS).toWord}) :
+    Injective (SystemGroup.map f h) :=
+  SystemGroup.map_injective hf (systemGroup_coeff_injective S) h <| by
+    simpa using Subgroup.subset_normalClosure (Set.mem_singleton _)
 
 end Quadratic.Standard
 
