@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.Periodic.Basic
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.Shift
@@ -66,8 +67,13 @@ even `k` and of the second kind for odd `k`. Hence an even shift does not change
 `C⟦1⟧` exchanging the even and odd terms, turns it into `(-1) ^ n₀ · τ(C, c)⁻¹`, where `n₀` is the
 dimension of `C₀` (`HomologicalComplex.parityTorsion_shift_of_odd`).
 
-Torsions of two-periodic complexes over Novikov rings, read in each field component of a total
-quotient ring, are the Floer analogues of the Reidemeister torsion of a closed manifold.
+The torsion is compatible with scalar extension along a homomorphism of fields `φ : F →+* K`
+(`HomologicalComplex.map_parityTorsion`): if `D` is a two-periodic complex over `K` with bases
+`e i` in which the matrices of the differentials are the images under `φ` of those of `C`, then
+`τ(D) = φ(τ(C))`. Torsions of two-periodic complexes over Novikov rings, read in each field
+component of a total quotient ring through this compatibility
+(`HomologicalComplex.componentwiseParityTorsion`), are the Floer analogues of the Reidemeister
+torsion of a closed manifold.
 
 ## Main declarations
 
@@ -90,6 +96,8 @@ quotient ring, are the Floer analogues of the Reidemeister torsion of a closed m
   complexes.
 * `HomologicalComplex.parityTorsion_shift_of_even`, `HomologicalComplex.parityTorsion_shift_of_odd`:
   the torsion of a shifted complex; the parity shift inverts the torsion up to the sign `(-1) ^ n₀`.
+* `HomologicalComplex.map_parityTorsion`: the torsion of the scalar extension of a based
+  two-periodic complex along a homomorphism of fields is the image of its torsion.
 
 ## References
 
@@ -229,6 +237,49 @@ theorem parityTorsion_unitsSMul (w : ∀ i, Fin (n i) → Fˣ) :
   simp
 
 end BasisChange
+
+section ScalarExtension
+
+/-! ### Scalar extension along a homomorphism of fields -/
+
+variable {c} {K : Type*} [Field K] (φ : F →+* K)
+  {D : HomologicalComplex (ModuleCat K) (ComplexShape.up (ZMod 2))}
+  {e : ∀ i, Basis (Fin (n i)) K (D.X i)}
+
+/-- **Scalar extension of the torsion.** Let `φ : F →+* K` be a homomorphism of fields, and let
+`D` be a two-periodic complex of vector spaces over `K` with bases `e i` in which the matrices of
+the differentials are the images under `φ` of the matrices of the differentials of `C` in the bases
+`c i`; that is, `(D, e)` is the scalar extension of `(C, c)` along `φ`. Then the torsion of `D` is
+the image under `φ` of the torsion of `C`. This holds for every complex: `D` is acyclic exactly when
+`C` is, and both torsions are `0` otherwise. -/
+theorem map_parityTorsion
+    (hd : ∀ i j, LinearMap.toMatrix (e i) (e j) (D.d i j).hom =
+      (LinearMap.toMatrix (c i) (c j) (C.d i j).hom).map φ) :
+    φ (C.parityTorsion c) = D.parityTorsion e := by
+  have hDC : D.Acyclic ↔ C.Acyclic := acyclic_iff_of_toMatrix_eq φ fun i j _ ↦ hd i j
+  by_cases h : C.Acyclic
+  swap
+  · rw [parityTorsion_of_not_acyclic C c h, parityTorsion_of_not_acyclic D e (mt hDC.1 h),
+      map_zero]
+  have hD := hDC.2 h
+  -- Compute the torsion of `D` with the images of the chosen boundary bases and lifts of `C` under
+  -- the `φ`-semilinear maps `semilinearMap φ (c i) (e i)`; each bracket is then the image of the
+  -- corresponding bracket of `C`.
+  let b (i j : ZMod 2) := boundaryBasisSemilinearMap φ (hd i j) (chosenBoundaryBasis C c i j)
+  have hs (i j : ZMod 2) (l) :
+      (D.d i j).hom ((c i).semilinearMap φ (e i) (chosenBoundaryLift C c i j l)) = b i j l := by
+    rw [coe_boundaryBasisSemilinearMap, Basis.semilinearMap_comp_apply_of_toMatrix_eq (hd i j),
+      chosenBoundaryLift_spec]
+  rw [parityTorsion_eq h (chosenBoundaryBasis C c 1 0) (chosenBoundaryBasis C c 0 1) _
+      (chosenBoundaryLift_spec C c 0 1) _ (chosenBoundaryLift_spec C c 1 0),
+    parityTorsion_eq hD (b 1 0) (b 0 1) ((c 0).semilinearMap φ (e 0) ∘ chosenBoundaryLift C c 0 1)
+      (hs 0 1) ((c 1).semilinearMap φ (e 1) ∘ chosenBoundaryLift C c 1 0) (hs 1 0),
+    torsionBracket_semilinearMap φ _ _ (h 1) (hD 1) _ _ _ _ _ _
+      (coe_boundaryBasisSemilinearMap φ (hd 0 1) _) (hs 1 0),
+    torsionBracket_semilinearMap φ _ _ (h 0) (hD 0) _ _ _ _ _ _
+      (coe_boundaryBasisSemilinearMap φ (hd 1 0) _) (hs 0 1), map_mul, map_inv₀]
+
+end ScalarExtension
 
 section TwoTerm
 

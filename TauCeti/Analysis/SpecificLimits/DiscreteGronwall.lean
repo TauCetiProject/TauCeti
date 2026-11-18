@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Algebra.Order.Floor.Semiring
 
@@ -15,9 +16,11 @@ public import Mathlib.Algebra.Order.Floor.Semiring
 A discrete Grönwall argument shows that a quantity growing at most by the factor `1 + aτ` per
 time step of length `τ` grows at most like `exp (a t)` up to time `t`. This file records the
 growth factor estimate `(1 + aτ) ^ ⌈t / τ⌉₊ ≤ exp (a (t + τ))`, valid uniformly in the time
-step (`TauCeti.one_add_mul_pow_ceil_div_le_exp`), and a discrete Grönwall bound for sequences
-that move in steps paid for by an energy which is bounded below in terms of the distance
-travelled (`TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`).
+step (`TauCeti.one_add_mul_pow_ceil_div_le_exp`), its sharp form as the time step tends to `0`,
+`(1 + aτ) ^ L → exp (a T)` and `τ ∑_{n < L} (1 + aτ) ^ n → ∫₀ᵀ exp (a r) dr` whenever `L τ → T`
+(`TauCeti.tendsto_one_add_mul_pow` and `TauCeti.tendsto_mul_sum_one_add_mul_pow`), and a
+discrete Grönwall bound for sequences that move in steps paid for by an energy which is bounded
+below in terms of the distance travelled (`TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`).
 
 Conversely, a nonincreasing quantity which drops at least by a factor `q < 1` over every time
 interval of length `T` decays exponentially, at the rate `-log q / T`
@@ -34,6 +37,9 @@ flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` g
 ## Main declarations
 
 * `TauCeti.one_add_mul_pow_ceil_div_le_exp`: `(1 + aτ) ^ ⌈t / τ⌉₊ ≤ exp (a (t + τ))`.
+* `TauCeti.tendsto_one_add_mul_pow` and `TauCeti.tendsto_mul_sum_one_add_mul_pow`: the growth
+  factors `(1 + aτ) ^ L` and their sums `τ ∑_{n < L} (1 + aτ) ^ n` converge to `exp (a T)` and
+  `∫₀ᵀ exp (a r) dr` as `τ → 0` with `L τ → T`.
 * `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`: the discrete Grönwall bound
   `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` under coercivity.
 * `TauCeti.le_div_mul_exp_of_antitoneOn`: exponential decay of a nonincreasing function which
@@ -68,6 +74,54 @@ theorem one_add_mul_pow_ceil_div_le_exp {a τ t : ℝ} (ha : 0 ≤ a) (htτ : 0 
         linarith [Real.add_one_le_exp (a * τ)]
     _ = Real.exp (a * (⌈t / τ⌉₊ * τ)) := by rw [← Real.exp_nat_mul]; ring_nf
     _ ≤ Real.exp (a * (t + τ)) := by gcongr
+
+/-- **Convergence of the discrete growth factors.** If `L i` time steps of length `τ i → 0` take
+the total time `L i τ i → T`, the accumulated growth factors `(1 + a τ i) ^ L i` converge to
+`exp (a T)`. For `τ i = T / i` and `L i = i` this is `(1 + a T / i) ^ i → exp (a T)`. -/
+theorem tendsto_one_add_mul_pow {ι : Type*} {l : Filter ι} {τ : ι → ℝ} {L : ι → ℕ} {a T : ℝ}
+    (hτ : Filter.Tendsto τ l (nhds 0)) (hL : Filter.Tendsto (fun i ↦ L i * τ i) l (nhds T)) :
+    Filter.Tendsto (fun i ↦ (1 + a * τ i) ^ L i) l (nhds (Real.exp (a * T))) := by
+  have h1 : Filter.Tendsto (fun i ↦ 1 + a * τ i) l (nhds 1) := by
+    simpa using (hτ.const_mul a).const_add 1
+  have hpos : ∀ᶠ i in l, 0 < 1 + a * τ i := h1.eventually (lt_mem_nhds one_pos)
+  -- `L log (1 + a τ)` lies between `a L τ / (1 + a τ)` and `a L τ`, which both tend to `a T`.
+  have hup : Filter.Tendsto (fun i ↦ a * (L i * τ i)) l (nhds (a * T)) := hL.const_mul a
+  have hlow : Filter.Tendsto (fun i ↦ a * (L i * τ i) * (1 + a * τ i)⁻¹) l (nhds (a * T)) := by
+    simpa using hup.mul (h1.inv₀ one_ne_zero)
+  have hlog : Filter.Tendsto (fun i ↦ L i * Real.log (1 + a * τ i)) l (nhds (a * T)) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hlow hup ?_ ?_
+    · filter_upwards [hpos] with i hi
+      calc a * (L i * τ i) * (1 + a * τ i)⁻¹ = L i * (1 - (1 + a * τ i)⁻¹) := by
+            field_simp
+            ring
+        _ ≤ L i * Real.log (1 + a * τ i) := by gcongr; exact Real.one_sub_inv_le_log_of_pos hi
+    · filter_upwards [hpos] with i hi
+      calc (L i : ℝ) * Real.log (1 + a * τ i) ≤ L i * (1 + a * τ i - 1) := by
+            gcongr; exact Real.log_le_sub_one_of_pos hi
+        _ = a * (L i * τ i) := by ring
+  refine ((Real.continuous_exp.tendsto _).comp hlog).congr' ?_
+  filter_upwards [hpos] with i hi
+  rw [Function.comp_apply, Real.exp_nat_mul, Real.exp_log hi]
+
+/-- **Convergence of the discrete exponential integrals.** If `L i` time steps of length `τ i → 0`
+take the total time `L i τ i → T`, then `τ i ∑_{n < L i} (1 + a τ i) ^ n`, the discrete
+counterpart of `∫₀ᵀ exp (a r) dr` for the growth factor `1 + a τ i` per step, converges to it. -/
+theorem tendsto_mul_sum_one_add_mul_pow {ι : Type*} {l : Filter ι} {τ : ι → ℝ} {L : ι → ℕ}
+    {a T : ℝ} (hτ : Filter.Tendsto τ l (nhds 0))
+    (hL : Filter.Tendsto (fun i ↦ L i * τ i) l (nhds T)) :
+    Filter.Tendsto (fun i ↦ τ i * ∑ n ∈ Finset.range (L i), (1 + a * τ i) ^ n) l
+      (nhds (∫ r in 0..T, Real.exp (a * r))) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · simpa [mul_comm] using hL
+  -- For `a ≠ 0` both sides are the corresponding increments of the exponential, divided by `a`.
+  have hint : ∫ r in 0..T, Real.exp (a * r) = (Real.exp (a * T) - 1) / a := by
+    rw [intervalIntegral.integral_comp_mul_left (fun r ↦ Real.exp r) ha, integral_exp, mul_zero,
+      Real.exp_zero, smul_eq_mul, inv_mul_eq_div]
+  rw [hint]
+  refine (((tendsto_one_add_mul_pow hτ hL).sub_const 1).div_const a).congr fun i ↦ ?_
+  rw [← geom_sum_mul]
+  field_simp
+  ring
 
 /-- **Discrete Grönwall bound under coercivity.** Let `D n ≥ 0` with `D 0 = 0` grow by steps
 `D (n + 1) ≤ D n + d n` whose squared lengths are paid for by an energy `e`,

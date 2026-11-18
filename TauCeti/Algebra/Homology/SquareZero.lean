@@ -51,6 +51,10 @@ elements of `M`, on which such structure is defined. The image is represented in
   Mathlib's explicit homology of a short complex of modules are `d.boundariesInKer`.
 * `LinearMap.homologyMap_surjective_iff` and `LinearMap.homologyMap_injective_iff`: elementwise
   descriptions of surjectivity and injectivity of the map induced on homology.
+* `LinearMap.homologyMap_eq_of_sub_eq`: chain maps differing by `e ∘ h + h ∘ d` induce the same
+  map on homology.
+* `LinearMap.comp_comp_sub_id_eq_of_sub_id_eq`: a chain homotopy for a composite of two chain
+  homotopy equivalences.
 * `LinearMap.ker_le_range_mappingCone_iff`: a linear chain map over a single coefficient ring
   induces a bijection on homology exactly when its mapping cone is exact.
 * `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
@@ -174,6 +178,18 @@ theorem homologyMap_mk (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘
       Submodule.Quotient.mk ⟨f z, map_mem_ker_of_comp_eq (d := d) (e := e) f hf z.2⟩ :=
   (rfl)
 
+/-- **Homotopic chain maps induce the same map on homology.** If `f - g = e ∘ h + h ∘ d` for some
+linear map `h`, a chain homotopy from `g` to `f`, then `f` and `g` induce the same map on
+homology. -/
+theorem homologyMap_eq_of_sub_eq (f g h : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f ∘ₛₗ d = e ∘ₛₗ f) (hg : g ∘ₛₗ d = e ∘ₛₗ g) (hfg : f - g = e ∘ₛₗ h + h ∘ₛₗ d) :
+    homologyMap f hd he hf = homologyMap g hd he hg := by
+  refine LinearMap.ext fun c ↦ ?_
+  obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ c
+  rw [homologyMap_mk, homologyMap_mk, Submodule.Quotient.eq, mem_boundariesInKer]
+  refine ⟨h z, ?_⟩
+  simpa [mem_ker.mp z.2] using congr($hfg z).symm
+
 /-- The map induced by `f` on homology is surjective exactly when every cycle of `e` differs from
 the image of a cycle of `d` by a boundary. -/
 theorem homologyMap_surjective_iff (f : M →ₛₗ[σ] N) (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
@@ -288,6 +304,34 @@ theorem homologyMap_homologyMap (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ] N) 
   congr($(homologyMap_comp_homologyMap g f hd he hq hf hg) c)
 
 end SemilinearMap
+
+section Homotopy
+
+variable {N P : Type*} [AddCommGroup N] [Module S N] [AddCommGroup P] [Module S P] {d}
+  {e : N →ₗ[S] N}
+
+/-- **Composites of chain homotopy equivalences.** If `g ∘ f - 1 = d ∘ h + h ∘ d` and
+`g' ∘ f' - 1 = e ∘ k + k ∘ e` for chain maps `f` and `g`, then
+`(g ∘ g') ∘ (f' ∘ f) - 1 = d ∘ l + l ∘ d` for `l = h + g ∘ k ∘ f`. Neither `d` nor `e` needs to
+square to zero. -/
+theorem comp_comp_sub_id_eq_of_sub_id_eq {f : M →ₗ[S] N} {g : N →ₗ[S] M} {f' : N →ₗ[S] P}
+    {g' : P →ₗ[S] N} {h : M →ₗ[S] M} {k : N →ₗ[S] N} (hf : f ∘ₗ d = e ∘ₗ f)
+    (hg : g ∘ₗ e = d ∘ₗ g) (hgf : g ∘ₗ f - LinearMap.id = d ∘ₗ h + h ∘ₗ d)
+    (hgf' : g' ∘ₗ f' - LinearMap.id = e ∘ₗ k + k ∘ₗ e) :
+    (g ∘ₗ g') ∘ₗ (f' ∘ₗ f) - LinearMap.id =
+      d ∘ₗ (h + g ∘ₗ k ∘ₗ f) + (h + g ∘ₗ k ∘ₗ f) ∘ₗ d := by
+  ext x
+  have h₃ (y : N) : g (e y) = d (g y) := congr($hg y)
+  have h₄ : e (f x) = f (d x) := congr($hf x).symm
+  have h₁ : g (g' (f' (f x))) - g (f x) = d (g (k (f x))) + g (k (f (d x))) := by
+    simpa [h₃, h₄] using congr(g ($hgf' (f x)))
+  have h₂ : g (f x) - x = d (h x) + h (d x) := by simpa using congr($hgf x)
+  simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply,
+    map_add]
+  rw [← sub_add_sub_cancel _ (g (f x)), h₁, h₂]
+  abel
+
+end Homotopy
 
 section Product
 
