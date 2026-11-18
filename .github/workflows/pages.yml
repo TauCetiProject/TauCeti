@@ -321,7 +321,7 @@ jobs:
       # requests and the dominant cost of this job. Publishing the result means
       # anything asking "where is the queue stuck" reads a file instead of
       # repeating the fetch.
-      - name: Checkout the pinned merge policy (read-only)
+      - name: Checkout the merge policy (read-only)
         if: env.REFRESH_SITE_DATA == 'true'
         id: merge-policy
         continue-on-error: true
