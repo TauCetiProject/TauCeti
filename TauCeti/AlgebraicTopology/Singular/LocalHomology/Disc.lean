@@ -33,10 +33,10 @@ needs no boundary circle, so this transfers its laws to boundary degrees:
   (`TauCeti.HomologicalOrientation.degree_toBasedLoop_comp_eq_degree_mul`), where `deg θ` is the
   homological degree of a proper map (`TauCeti.HomologicalOrientation.degree`);
 * **additivity**: if finitely many pairwise disjoint open subdiscs of the closed disc contain all
-  its zeros, and `h` has no zero on their boundary circles, the boundary degree of `h` is the sum
-  of its boundary degrees along those circles (`Circle.degree_toBasedLoop_eq_sum`). For the empty
-  family this is the vanishing of the degree of a map without zeros, and for a single subdisc it is
-  the invariance of the boundary degree under passing to a subdisc containing all the zeros.
+  its zeros, the boundary degree of `h` is the sum of its boundary degrees along those circles
+  (`Circle.degree_toBasedLoop_eq_sum`). For the empty family this is the vanishing of the degree
+  of a map without zeros, and for a single subdisc it is the invariance of the boundary degree
+  under passing to a subdisc containing all the zeros.
 
 The proof extends `h` from the closed disc to the plane by the radial retraction onto the disc
 (`TauCeti.centeredRadialRetraction`). The extension has no zero outside the open disc, so its local
@@ -250,22 +250,32 @@ namespace Circle
 open TauCeti
 
 /-- **Boundary degrees are additive over disjoint subdiscs.** Let `h` be continuous on the closed
-disc of radius `r > 0` about `z₀`, with no zero on its boundary circle. Let finitely many closed
-subdiscs, of radii `ρ i > 0` about `c i`, have pairwise disjoint interiors, and suppose that `h`
-has no zero on their boundary circles and that every zero of `h` in the closed disc lies in one of
-their interiors. Then the boundary degree of `h` along the circle of radius `r` is the sum of its
-boundary degrees along the circles of radii `ρ i`. -/
+disc of radius `r > 0` about `z₀`. Let finitely many closed subdiscs, of radii `ρ i > 0` about
+`c i`, have pairwise disjoint interiors, and suppose that every zero of `h` in the closed disc lies
+in one of their interiors. Then the boundary degree of `h` along the circle of radius `r` is the
+sum of its boundary degrees along the circles of radii `ρ i`. -/
 theorem degree_toBasedLoop_eq_sum {ι : Type*} [Fintype ι] {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
-    {h : ℂ → ℂ} (hh : ContinuousOn h (closedBall z₀ r)) (hne : ∀ z ∈ sphere z₀ r, h z ≠ 0)
-    {c : ι → ℂ} {ρ : ι → ℝ} (hρ : ∀ i, 0 < ρ i)
+    {h : ℂ → ℂ} (hh : ContinuousOn h (closedBall z₀ r)) {c : ι → ℂ} {ρ : ι → ℝ} (hρ : ∀ i, 0 < ρ i)
     (hsub : ∀ i, closedBall (c i) (ρ i) ⊆ closedBall z₀ r)
     (hdisj : Pairwise fun i k ↦ Disjoint (ball (c i) (ρ i)) (ball (c k) (ρ k)))
-    (hne' : ∀ i, ∀ z ∈ sphere (c i) (ρ i), h z ≠ 0)
     (hzero : ∀ z ∈ closedBall z₀ r, h z = 0 → ∃ i, z ∈ ball (c i) (ρ i))
     {u : C(Circle, Circle)} (hu : ∀ ζ : Circle, (u ζ : ℂ) = h (z₀ + r * ζ) / ‖h (z₀ + r * ζ)‖)
     {v : ι → C(Circle, Circle)}
     (hv : ∀ i (ζ : Circle), (v i ζ : ℂ) = h (c i + ρ i * ζ) / ‖h (c i + ρ i * ζ)‖) :
     degree u.toBasedLoop = ∑ i, degree (v i).toBasedLoop := by
+  -- The zeros of `h` lie in the open subdiscs, so off the outer circle and the subdisc circles.
+  have hne (z) (hz : z ∈ sphere z₀ r) : h z ≠ 0 := fun hz0 ↦ by
+    obtain ⟨i, hi⟩ := hzero z (sphere_subset_closedBall hz) hz0
+    have hball : ball (c i) (ρ i) ⊆ ball z₀ r := interior_closedBall z₀ hr.ne' ▸
+      interior_maximal (ball_subset_closedBall.trans (hsub i)) isOpen_ball
+    exact (mem_sphere.1 hz).not_lt (mem_ball.1 (hball hi))
+  have hne' (i) (z) (hz : z ∈ sphere (c i) (ρ i)) : h z ≠ 0 := fun hz0 ↦ by
+    obtain ⟨k, hk⟩ := hzero z (hsub i (sphere_subset_closedBall hz)) hz0
+    obtain rfl | hik := eq_or_ne i k
+    · exact (mem_sphere.1 hz).not_lt (mem_ball.1 hk)
+    · refine disjoint_left.1 ((hdisj hik).closure_left isOpen_ball) ?_ hk
+      rw [closure_ball _ (hρ i).ne']
+      exact sphere_subset_closedBall hz
   have o : HomologicalOrientation ℂ ℂ 2 :=
     (HomologicalOrientation.nonempty_of_simplyConnectedSpace finrank_real_complex).some
   set G := HomologicalOrientation.radialExtension hr hh

@@ -283,24 +283,6 @@ theorem localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap {j : 
     o.localHomologyMap_fundamentalClassOn_comap hn hj hK,
     o.localHomologyRestriction_fundamentalClassOn hn _ hxK]
 
-omit [T2Space M] [T2Space U] in
-/-- Let `j : U → M` be continuous and `K ⊆ U`, and push a class of `Hₙ(U, U ∖ K; ℤ)` into
-`Hₙ(M, M ∖ T; ℤ)` for a set `T` with `j⁻¹(T) ⊆ K`. At a point `y` of `T` outside the range of `j`
-the pushed class restricts to zero. -/
-theorem localHomologyRestriction_localHomologyMap_of_notMem_range (j : C(U, M)) {K : Set U}
-    {T : Set M} (hT : j ⁻¹' T ⊆ K) {y : M} (hy : y ∈ T) (hyj : y ∉ range j)
-    (γ : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) K n) :
-    localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hy) n
-      (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j hT n γ) = 0 := by
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  -- No point of `U` lies over `y`, so the map factors through `Hₙ(U, U) = 0`.
-  have h : j ⁻¹' {y} ⊆ ∅ := fun z hz ↦ hyj ⟨z, hz⟩
-  have h₁ := localHomologyMap_comp_localHomologyRestriction R j (singleton_subset_iff.2 hy) hT n
-  have h₂ := localHomologyRestriction_comp_localHomologyMap R j (empty_subset K) h n
-  rw [← ConcreteCategory.comp_apply, h₁, ← h₂, ConcreteCategory.comp_apply,
-    (isZero_localHomology_empty R n).eq_zero_of_tgt (localHomologyRestriction R _ _)]
-  simp
-
 end OpenEmbedding
 
 section DisjointOpens
@@ -322,7 +304,10 @@ theorem fundamentalClassOn_eq_sum_localHomologyMap [Fintype ι] {A : Set M} (hA 
   rw [map_sum, Finset.sum_eq_single k]
   · exact o.localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap hn
       (j := ⟨Subtype.val, continuous_subtype_val⟩) (U k).isOpenEmbedding' _ _ (x := ⟨x, hxk⟩) hx
-  · refine fun i _ hik ↦ localHomologyRestriction_localHomologyMap_of_notMem_range _ _ hx ?_ _
+  · refine fun i _ hik ↦ ?_
+    rw [← ConcreteCategory.comp_apply,
+      localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range _ _ _ hx ?_]
+    · simp
     rintro ⟨z, rfl⟩
     exact disjoint_left.1 (hU hik) z.2 hxk
   · simp
@@ -374,16 +359,12 @@ theorem localHomologyRestriction_localOrientationAlong_of_ne {z : M} {U : Set M}
     (hz : z ∈ U) (hUZ : ∀ x ∈ U, x ∈ Z → x = z) {x : M} (hx : x ∈ Z) (hxz : x ≠ z) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx) n
       (o.localOrientationAlong hU hz hUZ) = 0 := by
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  -- No point of `U` lies over `x ≠ z`, so the map factors through `Hₙ(U, U) = 0`.
-  have h : (Subtype.val : U → M) ⁻¹' {x} ⊆ ∅ := fun y (hy : y.1 = x) ↦
-    hxz (hy.symm.trans (hUZ y.1 y.2 (hy ▸ hx)))
-  have h₁ := localHomologyMap_comp_localHomologyRestriction R ⟨Subtype.val, continuous_subtype_val⟩
-    (S := {(⟨z, hz⟩ : U)}) (singleton_subset_iff.2 hx) (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) n
-  have h₂ := localHomologyRestriction_comp_localHomologyMap R ⟨Subtype.val, continuous_subtype_val⟩
-    (empty_subset {(⟨z, hz⟩ : U)}) h n
-  rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h₁, ← h₂, ConcreteCategory.comp_apply,
-    (isZero_localHomology_empty R n).eq_zero_of_tgt (localHomologyRestriction R _ _)]
+  -- No point of `U` lies over `x ≠ z`.
+  have h := localHomologyMap_comp_localHomologyRestriction_eq_zero_of_notMem_range
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩ (S := {(⟨z, hz⟩ : U)})
+    (fun x hx ↦ Subtype.ext (hUZ x.1 x.2 hx)) hx
+    (by rintro ⟨y, rfl⟩; exact hxz (hUZ y.1 y.2 hx)) n
+  rw [localOrientationAlong, ← ConcreteCategory.comp_apply, h]
   simp
 
 /-- **The fundamental class along a finite set is a sum of local orientations.** For a finite set
