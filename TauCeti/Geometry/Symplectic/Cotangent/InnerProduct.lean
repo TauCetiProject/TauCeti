@@ -103,7 +103,7 @@ theorem radialPrimitive_stdSymplecticForm_apply (z v : V × V) :
   have hd : fderiv ℝ (fun z : V × V ↦ ⟪z.1, z.2⟫_ℝ) z v = ⟪z.1, v.2⟫_ℝ + ⟪v.1, z.2⟫_ℝ := by
     rw [fderiv_inner_apply ℝ (differentiableAt_fst (𝕜 := ℝ)) (differentiableAt_snd (𝕜 := ℝ)),
       fderiv_fst, fderiv_snd]
-    rfl
+    simp only [ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
   rw [hα, hd, cotangentLiouvilleForm_apply]
   simp only [Matrix.cons_val_zero, cotangentInnerEquiv_apply_fst,
     cotangentInnerEquiv_apply_snd_apply, real_inner_comm v.1]

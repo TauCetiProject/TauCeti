@@ -144,7 +144,7 @@ theorem SymplecticForm.isClosed_mpullback_radialPrimitive (σ : SymplecticForm V
     ← mpullback_mextDeriv (hf.of_le (by simp)) hprim, mextDeriv_radialPrimitive,
     ← SmoothForm.coe_mpullback f hf,
     (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero hf).1 h]
-  rfl
+  exact ZeroMemClass.coe_zero _
 
 end Isotropic
 

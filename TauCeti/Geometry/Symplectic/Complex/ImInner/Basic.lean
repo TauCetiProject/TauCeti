@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
+public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+public import TauCeti.Geometry.Symplectic.Lagrangian.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
 
 /-!
@@ -42,18 +43,15 @@ These are the conventions in which holomorphic discs in `ℂⁿ` with boundary o
 submanifold are studied; the corresponding statements for maps are in
 `TauCeti.Geometry.Symplectic.Complex.ImInner.Manifold`.
 
-The statements about Lagrangian subspaces hold for every orthogonal almost complex structure `J` on
-a real inner product space: the symplectic complement of a subspace `W` for `ω = ⟪J ·, ·⟫` is the
-orthogonal complement of `J W` (`TauCeti.AlmostComplexStructure.orthogonal_symplecticForm`), so in
-finite dimension `W` is Lagrangian exactly when `Wᗮ = J W`
-(`TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff`).
+The statements about Lagrangian subspaces specialise, through `TauCeti.imInnerSymplecticForm_eq`,
+those for an orthogonal almost complex structure `J` on a real inner product space
+(`TauCeti.AlmostComplexStructure.orthogonal_symplecticForm` and
+`TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff`).
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.orthogonal_symplecticForm` and
-  `TauCeti.AlmostComplexStructure.isLagrangian_symplecticForm_iff`: symplectic complements for an
-  orthogonal complex structure.
 * `TauCeti.imInnerSymplecticForm`: the symplectic form `Im ⟪·, ·⟫_ℂ`, with
+  `TauCeti.imInnerSymplecticForm_eq`,
   `TauCeti.imInnerSymplecticForm_compatible` and
   `TauCeti.imInnerSymplecticForm_associatedBilinForm_apply`.
 * `TauCeti.isLagrangian_imInnerSymplecticForm_iff` and
@@ -79,36 +77,6 @@ namespace TauCeti
 open Complex Module
 open scoped InnerProductSpace
 
-/-! ### Symplectic complements for an orthogonal complex structure -/
-
-namespace AlmostComplexStructure
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫_ℝ = ⟪v, w⟫_ℝ)
-include hJ
-
-/-- For an orthogonal complex structure `J`, the symplectic complement of a subspace `W` for
-`ω = ⟪J ·, ·⟫` is the orthogonal complement of its image `J W`. -/
-theorem orthogonal_symplecticForm (W : Submodule ℝ V) :
-    (J.symplecticForm hJ).orthogonal W = (W.map J.toLinearMap)ᗮ := by
-  ext x
-  simp [SymplecticForm.mem_orthogonal_iff, Submodule.mem_orthogonal]
-
-/-- For an orthogonal complex structure `J` on a finite-dimensional space, a subspace `W` is
-Lagrangian for `ω = ⟪J ·, ·⟫` exactly when its orthogonal complement is its image `J W`. -/
-theorem isLagrangian_symplecticForm_iff [FiniteDimensional ℝ V] {W : Submodule ℝ V} :
-    (J.symplecticForm hJ).IsLagrangian W ↔ Wᗮ = W.map J.toLinearMap := by
-  rw [SymplecticForm.isLagrangian_iff, SymplecticForm.isIsotropic_iff_le,
-    SymplecticForm.isCoisotropic_iff_le, and_comm, ← le_antisymm_iff,
-    orthogonal_symplecticForm hJ]
-  constructor
-  · intro h
-    rw [← Submodule.orthogonal_orthogonal (W.map J.toLinearMap), h]
-  · intro h
-    rw [← h, Submodule.orthogonal_orthogonal]
-
-end AlmostComplexStructure
-
 /-! ### The symplectic form of a complex inner product space -/
 
 section InnerProductSpace
@@ -120,17 +88,19 @@ attribute [local instance] InnerProductSpace.complexToReal
 
 variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℂ E]
 
-/-- Multiplication by `i` preserves the real inner product of a complex inner product space. -/
-private theorem real_inner_I_smul_I_smul (v w : E) :
-    ⟪AlmostComplexStructure.ofComplexModule E v, AlmostComplexStructure.ofComplexModule E w⟫_ℝ =
-      ⟪v, w⟫_ℝ := by
-  simp [real_inner_eq_re_inner, inner_smul_left, inner_smul_right, ← mul_assoc]
-
 /-- The **symplectic form `Im ⟪·, ·⟫_ℂ`** of a complex inner product space, regarded as a real
 vector space. It is the form `⟪i v, w⟫_ℝ` of multiplication by `i`
 (`TauCeti.AlmostComplexStructure.symplecticForm`). -/
 noncomputable def imInnerSymplecticForm : SymplecticForm E :=
-  (AlmostComplexStructure.ofComplexModule E).symplecticForm (real_inner_I_smul_I_smul E)
+  (AlmostComplexStructure.ofComplexModule E).symplecticForm
+    AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule
+
+/-- The symplectic form `Im ⟪·, ·⟫_ℂ` is the symplectic form of the orthogonal complex structure
+given by multiplication by `i`. -/
+theorem imInnerSymplecticForm_eq :
+    imInnerSymplecticForm E = (AlmostComplexStructure.ofComplexModule E).symplecticForm
+      AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule :=
+  (rfl)
 
 variable {E}
 
