@@ -32,6 +32,11 @@ by conjugation on every transitive normal subgroup.
 ## Main statements
 
 * `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
+* `ConjAct.toConjAct_smul_eq_self_of_mem_center`,
+  `ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center`: conjugation by a central element fixes
+  every element of the group and every indexed family of pairs in the group.
+* `ConjAct.smul_eq_self_of_mem_center`, `ConjAct.smul_mul_of_mem_center`: conjugation fixes
+  central elements and commutes with left multiplication by a central element.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
 * `Subgroup.conjugationAction`: the explicit conjugation action on a normal subgroup.
@@ -59,6 +64,30 @@ theorem ConjAct.mk_eq_mk_iff_isConj {G : Type*} [Group G] {x y : G} :
     (Quotient.mk'' x : MulAction.orbitRel.Quotient (ConjAct G) G) = Quotient.mk'' y ↔
       IsConj x y :=
   Quotient.eq''.trans (by rw [ConjAct.orbitRel_conjAct])
+
+/-- Conjugation by a central element fixes every element of the group. -/
+theorem ConjAct.toConjAct_smul_eq_self_of_mem_center {G : Type*} [Group G] {u : G}
+    (hu : u ∈ Subgroup.center G) (x : G) : ConjAct.toConjAct u • x = x := by
+  rw [ConjAct.toConjAct_smul, ← Subgroup.mem_center_iff.mp hu x, mul_inv_cancel_right]
+
+/-- Simultaneous conjugation of an indexed family of pairs by a central element fixes every
+entry. -/
+theorem ConjAct.toConjAct_smul_pi_prod_eq_self_of_mem_center {G ι : Type*} [Group G] {u : G}
+    (hu : u ∈ Subgroup.center G) (x : ι → G × G) :
+    ConjAct.toConjAct u • x = x :=
+  funext fun j => Prod.ext
+    (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+    (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+
+/-- Every conjugation fixes a central element of the group. -/
+theorem ConjAct.smul_eq_self_of_mem_center {G : Type*} [Group G] (u : ConjAct G) {c : G}
+    (hc : c ∈ Subgroup.center G) : u • c = c :=
+  ((Set.ext_iff.mp ConjAct.fixedPoints_eq_center c).mpr hc) u
+
+/-- Conjugation commutes with left multiplication by a central element. -/
+theorem ConjAct.smul_mul_of_mem_center {G : Type*} [Group G] (u : ConjAct G) {c : G}
+    (hc : c ∈ Subgroup.center G) (a : G) : u • (c * a) = c * (u • a) := by
+  rw [smul_mul', ConjAct.smul_eq_self_of_mem_center u hc]
 
 namespace MonoidHom
 
