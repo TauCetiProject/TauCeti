@@ -31,7 +31,9 @@ Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces t
 orthogonal block sum `f ⊕ g`. It is additive in the pair `(f, g)`, its rank is the sum of the
 ranks of `f` and `g`, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
-coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
+coordinate embeds the other factor isometrically into `WithLp p (α × β)`. For linear maps `f` and
+`g`, following `f × g` by `WithLp.toLp p` is injective when `f` and `g` are, and its range is
+described componentwise.
 
 ## Main statements
 
@@ -59,6 +61,10 @@ coordinate embeds the other factor isometrically into `WithLp p (α × β)`.
   inclusions of the factors are contractions.
 * `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
   embeds the other factor isometrically into `WithLp p (α × β)`.
+* `WithLp.injective_linearEquiv_symm_comp_prodMap`,
+  `WithLp.mem_range_linearEquiv_symm_comp_prodMap` — applying linear maps `f` and `g` to the two
+  components and then `WithLp.toLp p` is injective when `f` and `g` are, and its range consists of
+  the pairs whose components lie in the ranges of `f` and `g`.
 -/
 
 public section
@@ -409,5 +415,30 @@ theorem isometry_toLp_prodMk_right (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Ty
     Isometry fun x : α ↦ toLp p (x, y) := by
   simpa [Function.comp_def] using
     (IsometryEquiv.withLpProdComm p β α).isometry.comp (isometry_toLp_prodMk_left p y)
+
+section ProdMap
+
+variable {p : ℝ≥0∞} {R M N M' N' : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+  {f : M →ₗ[R] M'} {g : N →ₗ[R] N'}
+
+/-- Applying injective linear maps `f` and `g` to the two components and then `WithLp.toLp p` is
+injective. -/
+theorem injective_linearEquiv_symm_comp_prodMap (hf : Function.Injective f)
+    (hg : Function.Injective g) :
+    Function.Injective ((WithLp.linearEquiv p R (M' × N')).symm.toLinearMap ∘ₗ f.prodMap g) :=
+  (WithLp.linearEquiv p R _).symm.injective.comp <| by
+    rw [LinearMap.coe_prodMap]
+    exact hf.prodMap hg
+
+/-- A pair in `WithLp p (M' × N')` lies in the range of `f × g` followed by `WithLp.toLp p` exactly
+when its components lie in the ranges of `f` and `g`. -/
+theorem mem_range_linearEquiv_symm_comp_prodMap {w : WithLp p (M' × N')} :
+    w ∈ LinearMap.range ((WithLp.linearEquiv p R (M' × N')).symm.toLinearMap ∘ₗ f.prodMap g) ↔
+      w.fst ∈ LinearMap.range f ∧ w.snd ∈ LinearMap.range g := by
+  rw [LinearMap.range_comp, LinearMap.range_prodMap, Submodule.mem_map_equiv,
+    LinearEquiv.symm_symm, Submodule.mem_prod, coe_linearEquiv, ofLp_fst, ofLp_snd]
+
+end ProdMap
 
 end WithLp
