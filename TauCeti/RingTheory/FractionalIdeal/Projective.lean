@@ -10,9 +10,10 @@ public import Mathlib.RingTheory.PicardGroup
 /-!
 # Invertible fractional ideals are finite projective
 
-The finite generation and projectivity of invertible submodules give the corresponding
-instances for invertible fractional ideals. These let fractional ideals represent objects
-in the category of finite projective modules, and hence classes in projective `K₀`.
+The finite generation, projectivity and invertibility of invertible submodules give the
+corresponding instances for invertible fractional ideals. These let fractional ideals represent
+objects in the category of finite projective modules, and hence classes in projective `K₀`, and
+make them invertible modules in the sense of the Picard group.
 -/
 
 public section
@@ -29,5 +30,11 @@ instance finite_units (I : (FractionalIdeal S P)ˣ) : Module.Finite R (I : Fract
 instance projective_units [FaithfulSMul R P] (I : (FractionalIdeal S P)ˣ) :
     Module.Projective R (I : FractionalIdeal S P) :=
   Submodule.projective_of_isUnit ((coeSubmoduleHom S P).isUnit_map I.isUnit)
+
+/-- An invertible fractional ideal in a faithful algebra is an invertible module. -/
+instance invertible_units [FaithfulSMul R P] (I : (FractionalIdeal S P)ˣ) :
+    Module.Invertible R (I : FractionalIdeal S P) :=
+  inferInstanceAs (Module.Invertible R
+    (((coeSubmoduleHom S P).isUnit_map I.isUnit).unit : Submodule R P))
 
 end FractionalIdeal
