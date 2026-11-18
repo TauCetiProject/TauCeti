@@ -42,9 +42,11 @@ variable on a probability space.
 * `MeasureTheory.MemLp.integrable_norm_sub_sq_prod`: for `f ∈ L²(μ)` and a finite measure `μ`,
   the function `(x, y) ↦ ‖f x - f y‖²` is integrable for `μ ⊗ μ`.
 * `TauCeti.integral_norm_sub_sq_prod`: the identity above.
-* `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
-  square-integrable function is at most the square root of its second moment, which is the
-  nonnegativity of its variance.
+* `MeasureTheory.integral_le_sqrt_integral_sq` and
+  `MeasureTheory.integral_norm_pow_le_sqrt_integral_norm_pow`: on a probability space, the mean of
+  a real square-integrable function is at most the square root of its second moment (the
+  nonnegativity of its variance), and the `k`-th norm moment of a `2k`-integrable function is at
+  most the square root of its `2k`-th norm moment.
 * `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
   composition with a measure-preserving measurable embedding.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
@@ -125,6 +127,22 @@ theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Mea
   have h := ProbabilityTheory.variance_nonneg g μ
   rw [ProbabilityTheory.variance_eq_sub hg] at h
   simpa only [Pi.pow_apply, sub_nonneg] using h
+
+/-- On a probability space, the `k`-th norm moment of a `2k`-integrable function is at most the
+square root of its `2k`-th norm moment. -/
+theorem integral_norm_pow_le_sqrt_integral_norm_pow {Ω E : Type*} [MeasurableSpace Ω]
+    [NormedAddCommGroup E] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → E}
+    {k : ℕ} (hf : MemLp f (2 * k : ℕ) μ) :
+    ∫ x, ‖f x‖ ^ k ∂μ ≤ √(∫ x, ‖f x‖ ^ (2 * k) ∂μ) := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · have hsq : (fun x ↦ ‖‖f x‖ ^ k‖ ^ 2) = fun x ↦ ‖f x‖ ^ (2 * k) := by
+      ext x
+      rw [Real.norm_of_nonneg (pow_nonneg (norm_nonneg _) k), ← pow_mul, mul_comm]
+    have hg : MemLp (fun x ↦ ‖f x‖ ^ k) 2 μ :=
+      (memLp_two_iff_integrable_sq_norm (hf.aestronglyMeasurable.norm.pow k)).2
+        (hsq ▸ hf.integrable_norm_pow (by positivity))
+    simpa only [← pow_mul, mul_comm k 2] using integral_le_sqrt_integral_sq hg
 
 end MeasureTheory
 

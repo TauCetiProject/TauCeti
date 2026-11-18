@@ -21,16 +21,23 @@ limiting set, as in the allocation of disjoint sets of prescribed mass in a lami
 For metric-valued functions, summable bounds on consecutive distances outside events of
 summable measure imply that almost every pointwise sequence is Cauchy.
 
+Similarly, if the deviation sets `{x | ε ≤ dist (X n x) (Y x)}` of a sequence of functions into a
+pseudometric space have summable outer measure for every `ε > 0`, applying Borel--Cantelli along
+radii `(j + 1)⁻¹` gives almost-everywhere convergence `X n x → Y x`, in particular whenever the
+tail measures are bounded by `ENNReal.ofReal (v n / ε ^ 2)` for a summable sequence `v`.
+
 ## Main statements
 
 * `TauCeti.MeasureTheory.ae_eventually_mem_iff_mem_liminf`
 * `TauCeti.MeasureTheory.ae_cauchySeq_of_summable_of_tsum_measure_dist_gt_ne_top`
+* `TauCeti.MeasureTheory.ae_tendsto_of_tsum_measure_ge_ne_top`
+* `TauCeti.MeasureTheory.ae_tendsto_of_measure_ge_le_ofReal_div_sq`
 -/
 
 public section
 
 open Filter MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal symmDiff Topology
 
 namespace TauCeti.MeasureTheory
 
@@ -66,5 +73,30 @@ theorem ae_cauchySeq_of_summable_of_tsum_measure_dist_gt_ne_top {E : Type*} [Pse
   refine hr.of_norm_bounded_eventually_nat ?_
   filter_upwards [hx] with n hn
   simpa only [Real.norm_eq_abs, abs_of_nonneg dist_nonneg] using not_lt.mp hn
+
+/-- If for every `ε > 0` the deviation sets `{x | ε ≤ dist (X n x) (Y x)}` have summable outer
+measure, then `X n x` converges to `Y x` as `n → ∞` for `μ`-almost every `x`. -/
+theorem ae_tendsto_of_tsum_measure_ge_ne_top {E : Type*} [PseudoMetricSpace E] {X : ℕ → α → E}
+    {Y : α → E} (h : ∀ ε > 0, (∑' n, μ {x | ε ≤ dist (X n x) (Y x)}) ≠ ∞) :
+    ∀ᵐ x ∂μ, Tendsto (fun n ↦ X n x) atTop (𝓝 (Y x)) := by
+  have hbc (j : ℕ) : ∀ᵐ x ∂μ, ∀ᶠ n in atTop, dist (X n x) (Y x) < (j + 1 : ℝ)⁻¹ := by
+    simpa only [mem_ofPred_eq, not_le] using ae_eventually_notMem (h _ (inv_pos.2 (by positivity)))
+  filter_upwards [ae_all_iff.2 hbc] with x hx
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  obtain ⟨j, hj⟩ := exists_nat_one_div_lt hε
+  filter_upwards [hx j] with n hn
+  exact hn.trans (by simpa only [one_div] using hj)
+
+/-- If the deviation tails `μ {x | ε ≤ dist (X n x) (Y x)}` are bounded by
+`ENNReal.ofReal (v n / ε ^ 2)` for a summable real sequence `v`, then `X n x` converges to `Y x`
+for `μ`-almost every `x`. -/
+theorem ae_tendsto_of_measure_ge_le_ofReal_div_sq {E : Type*} [PseudoMetricSpace E]
+    {X : ℕ → α → E} {Y : α → E} {v : ℕ → ℝ} (hv : Summable v)
+    (h : ∀ (n : ℕ) {ε : ℝ}, 0 < ε →
+      μ {x | ε ≤ dist (X n x) (Y x)} ≤ ENNReal.ofReal (v n / ε ^ 2)) :
+    ∀ᵐ x ∂μ, Tendsto (fun n ↦ X n x) atTop (𝓝 (Y x)) :=
+  ae_tendsto_of_tsum_measure_ge_ne_top fun ε hε ↦
+    ne_top_of_le_ne_top (hv.div_const (ε ^ 2)).tsum_ofReal_ne_top
+      (tsum_le_tsum fun n ↦ h n hε)
 
 end TauCeti.MeasureTheory

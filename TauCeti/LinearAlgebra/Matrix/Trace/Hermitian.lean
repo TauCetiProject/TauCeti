@@ -9,14 +9,22 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
-# Trace of a Hermitian square
+# Traces of Hermitian matrices
 
-The trace of the square of a Hermitian complex matrix is the sum of its squared entry norms.
+The trace of a Hermitian matrix over `ℝ` or `ℂ` is real (`Matrix.IsHermitian.coe_re_trace`), and
+the trace of the square of a Hermitian complex matrix is the sum of its squared entry norms
+(`Matrix.IsHermitian.trace_mul_self_eq_sum_norm_sq`).
 -/
 
 public section
 
 namespace Matrix
+
+/-- The trace of a Hermitian matrix over `ℝ` or `ℂ` equals the coercion of its real part. -/
+theorem IsHermitian.coe_re_trace {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι]
+    {A : Matrix ι ι 𝕜} (hA : A.IsHermitian) :
+    (RCLike.re A.trace : 𝕜) = A.trace := by
+  rw [← RCLike.conj_eq_iff_re, ← RCLike.star_def, ← trace_conjTranspose, hA.eq]
 
 /-- The trace of the square of a Hermitian complex matrix is its entrywise squared norm sum. -/
 theorem IsHermitian.trace_mul_self_eq_sum_norm_sq {ι : Type*} [Fintype ι]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Factorial.Basic
-import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Nat.Choose.Basic
 
 /-!
 # Nonvanishing factorials
@@ -16,9 +16,11 @@ also lets `NeZero.charZero` infer nonvanishing of factorials cast to characteris
 scalars, so constructions requiring an invertible factorial apply automatically there.
 
 The file also records `Nat.sq_eq_descFactorial_two_add`, the expansion `n ^ 2 = (n)₂ + n` of a
-square into falling factorials, which converts second factorial moments into second moments,
-and `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
-termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`, and
+square into falling factorials, which converts second factorial moments into second moments;
+`Nat.pow_succ_le_descFactorial_add_choose_two_mul_pow`, its higher-degree inequality
+`n ^ (k + 1) ≤ (n)_{k + 1} + (k + 1).choose 2 * n ^ k`;
+`Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`, `6 ^ n * n ! ≤ (2 * n + 1)!`, the
+termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`; and
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`.
 -/
@@ -41,6 +43,28 @@ theorem sq_eq_descFactorial_two_add (n : ℕ) : n ^ 2 = n.descFactorial 2 + n :=
   rcases n with _ | n
   · simp
   · rw [succ_descFactorial_succ, descFactorial_one, Nat.pow_two, succ_mul, Nat.mul_comm]
+
+/-- Upper bound on `n ^ (k + 1) - (n)_{k + 1}`, with equality at `k = 0` and `k = 1`
+(`Nat.sq_eq_descFactorial_two_add`). -/
+theorem pow_succ_le_descFactorial_add_choose_two_mul_pow (n k : ℕ) :
+    n ^ (k + 1) ≤ n.descFactorial (k + 1) + (k + 1).choose 2 * n ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hc : (k + 2).choose 2 = (k + 1).choose 2 + (k + 1) := by
+      rw [choose_succ_succ (k + 1) 1, choose_one_right, Nat.add_comm]
+    have hdf : n.descFactorial (k + 1) * n ≤
+        n.descFactorial (k + 2) + (k + 1) * n ^ (k + 1) := by
+      rw [descFactorial_mul_self]
+      exact Nat.add_le_add_left (Nat.mul_le_mul_left _ (descFactorial_le_pow n (k + 1))) _
+    calc n ^ (k + 2) = n ^ (k + 1) * n := Nat.pow_succ n (k + 1)
+      _ ≤ (n.descFactorial (k + 1) + (k + 1).choose 2 * n ^ k) * n := Nat.mul_le_mul_right n ih
+      _ = n.descFactorial (k + 1) * n + (k + 1).choose 2 * n ^ (k + 1) := by
+        rw [Nat.add_mul, Nat.mul_assoc, ← Nat.pow_succ]
+      _ ≤ (n.descFactorial (k + 2) + (k + 1) * n ^ (k + 1)) +
+          (k + 1).choose 2 * n ^ (k + 1) := Nat.add_le_add_right hdf _
+      _ = n.descFactorial (k + 2) + (k + 2).choose 2 * n ^ (k + 1) := by
+        rw [hc, Nat.add_mul ((k + 1).choose 2) (k + 1)]; ac_rfl
 
 /-- `6 ^ n * n ! ≤ (2 * n + 1)!`, with equality at `n = 0` and `n = 1`. -/
 theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :
