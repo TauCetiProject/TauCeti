@@ -194,7 +194,11 @@ theorem induction_on {P : MatsumotoGroup F → Prop} (q : MatsumotoGroup F)
     (symbol : ∀ x y : Fˣ, P (symbol x y)) (add : ∀ a b, P a → P b → P (a + b)) : P q := by
   obtain ⟨t, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   induction t using TensorProduct.inductionOn with
-  | tmul a b => exact symbol (Additive.toMul a) (Additive.toMul b)
+  | tmul a b =>
+    obtain ⟨x, rfl⟩ := Additive.ofMul.surjective a
+    obtain ⟨y, rfl⟩ := Additive.ofMul.surjective b
+    rw [mk_tmul]
+    exact symbol x y
   | add s t hs ht => exact add _ _ hs ht
 
 /-- Homomorphisms out of the Matsumoto group are determined by their values on the Steinberg
