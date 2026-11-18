@@ -191,10 +191,7 @@ theorem conjWirtingerDeriv_eq_zero_iff {f : UnitAddTorus (Fin 2) → ℂ}
     · subst hn
       simp
     · have h' := mFourierCoeff_conjWirtingerDeriv hf n
-      rw [h] at h'
-      have h0 : mFourierCoeff (0 : UnitAddTorus (Fin 2) → ℂ) n = 0 := by
-        simpa using mFourierCoeff_smul (0 : ℂ) (0 : UnitAddTorus (Fin 2) → ℂ) n
-      rw [h0, eq_comm, mul_eq_zero] at h'
+      rw [h, mFourierCoeff_zero, eq_comm, mul_eq_zero] at h'
       simp [hn, h'.resolve_left (conjWirtingerMultiplier_ne_zero hn)]
   · rintro ⟨c, rfl⟩
     funext z
@@ -211,25 +208,17 @@ theorem exists_conjWirtingerDeriv_eq_iff {g : UnitAddTorus (Fin 2) → ℂ}
   · intro hg0
     -- Divide the coefficients of `g` by the multiplier; at `n = 0` this gives `0`.
     set c : (Fin 2 → ℤ) → ℂ := fun n ↦ mFourierCoeff g n / (π * I * (n 0 + I * n 1))
-    have hcle (n : Fin 2 → ℤ) : ‖c n‖ ≤ ‖mFourierCoeff g n‖ := by
+    have hcle (n : Fin 2 → ℤ) : ‖c n‖ ≤ 1 * ‖mFourierCoeff g n‖ := by
+      rw [one_mul]
       by_cases hn : n = 0
       · subst hn
         simp [c]
       · rw [norm_div]
         exact div_le_self (norm_nonneg _) (one_le_norm_conjWirtingerMultiplier hn)
-    have hc (k : ℕ) : Summable fun n ↦ ‖c n‖ * ‖n‖ ^ k := by
-      refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-        (summable_norm_mFourierCoeff_mul_pow hg zero_le_one k)
-      rw [one_mul]
-      exact mul_le_mul (hcle n) (pow_le_pow_left₀ (norm_nonneg _) (by linarith) k)
-        (by positivity) (norm_nonneg _)
-    have hc1 : Summable fun n ↦ ‖c n‖ := by simpa using hc 0
-    refine ⟨fun z ↦ ∑' n, c n • mFourier n z, tsum_smul_mFourier_mem_smoothFunctions hc, ?_⟩
-    refine eq_of_mFourierCoeff_eq
-      (conjWirtingerDeriv_mem_smoothFunctions (tsum_smul_mFourier_mem_smoothFunctions hc)) hg
-      fun n ↦ ?_
-    rw [mFourierCoeff_conjWirtingerDeriv (tsum_smul_mFourier_mem_smoothFunctions hc),
-      mFourierCoeff_tsum_smul_mFourier hc1]
+    have hmem := tsum_smul_mFourier_mem_smoothFunctions_of_norm_le hg hcle
+    refine ⟨fun z ↦ ∑' n, c n • mFourier n z, hmem, ?_⟩
+    refine eq_of_mFourierCoeff_eq (conjWirtingerDeriv_mem_smoothFunctions hmem) hg fun n ↦ ?_
+    rw [mFourierCoeff_conjWirtingerDeriv hmem, mFourierCoeff_tsum_smul_mFourier_of_norm_le hg hcle]
     by_cases hn : n = 0
     · subst hn
       simp [hg0]
