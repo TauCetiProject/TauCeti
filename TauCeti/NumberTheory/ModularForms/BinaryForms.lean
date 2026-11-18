@@ -43,6 +43,9 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
   `TauCeti.binaryFormRep_upperTriangular_X_one_pow`: negated, scalar, and upper-triangular
   matrices act by `(-1)ʷ`, by the `w`th power of the scalar, and (on `Yʷ`) by `dʷ`.
 * `TauCeti.mapHomogeneousSubmodule_binaryFormRep`: changing coefficients commutes with the action.
+* `TauCeti.binaryFormRep_diagonal_binaryFormMonomialBasis`,
+  `TauCeti.binaryFormMonomialBasis_repr_binaryFormRep_diagonal`: the diagonal matrix
+  `diag(a, d)` multiplies the monomial `Xʲ Yʷ⁻ʲ` by `aʲ dʷ⁻ʲ`.
 * `TauCeti.binaryFormRep_parity_binaryFormMonomialBasis`,
   `TauCeti.binaryFormMonomialBasis_repr_binaryFormRep_parity`: the parity action
   `P(X, Y) ↦ P(-X, Y)` multiplies the monomial `Xʲ Yʷ⁻ʲ` by `(-1)ʲ`.
@@ -218,13 +221,30 @@ theorem mapHomogeneousSubmodule_binaryFormRep {S : Type*} [CommRing S] (f : S �
   funext a
   simp
 
+/-- The diagonal matrix `diag(a, d)` multiplies the monomial `Xʲ Yʷ⁻ʲ` by `aʲ dʷ⁻ʲ`. -/
+theorem binaryFormRep_diagonal_binaryFormMonomialBasis (a d : ℤ) (j : Fin (w + 1)) :
+    binaryFormRep R w (op !![a, 0; 0, d]) (binaryFormMonomialBasis R w j) =
+      ((a : R) ^ (j : ℕ) * (d : R) ^ (w - j)) • binaryFormMonomialBasis R w j := by
+  apply Subtype.ext
+  simp [smul_eq_C_mul, linearSubst_X, mul_pow]
+  ring
+
+/-- The coordinates of `P ∣ diag(a, d)` in the monomial basis: the coefficient of `Xʲ Yʷ⁻ʲ` is
+multiplied by `aʲ dʷ⁻ʲ`. -/
+theorem binaryFormMonomialBasis_repr_binaryFormRep_diagonal (a d : ℤ)
+    (P : homogeneousSubmodule (Fin 2) R w) (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w).repr (binaryFormRep R w (op !![a, 0; 0, d]) P) j =
+      (a : R) ^ (j : ℕ) * (d : R) ^ (w - j) * (binaryFormMonomialBasis R w).repr P j := by
+  conv_lhs => rw [← (binaryFormMonomialBasis R w).sum_repr P, map_sum]
+  simp only [map_smul, binaryFormRep_diagonal_binaryFormMonomialBasis, smul_smul]
+  rw [Module.Basis.repr_sum_self, mul_comm]
+
 /-- The parity action `P(X, Y) ↦ P(-X, Y)` multiplies the monomial `Xʲ Yʷ⁻ʲ` by `(-1)ʲ`. -/
 @[simp]
 theorem binaryFormRep_parity_binaryFormMonomialBasis (j : Fin (w + 1)) :
     binaryFormRep R w (op !![-1, 0; 0, 1]) (binaryFormMonomialBasis R w j) =
       (-1 : R) ^ (j : ℕ) • binaryFormMonomialBasis R w j := by
-  apply Subtype.ext
-  simp [smul_eq_C_mul, linearSubst_X, neg_pow (X 0 : MvPolynomial (Fin 2) R), mul_assoc]
+  simpa using binaryFormRep_diagonal_binaryFormMonomialBasis (R := R) (-1) 1 j
 
 /-- The coordinates of `P(-X, Y)` in the monomial basis: the coefficient of `Xʲ Yʷ⁻ʲ` is
 multiplied by `(-1)ʲ`. -/
@@ -233,9 +253,7 @@ theorem binaryFormMonomialBasis_repr_binaryFormRep_parity (P : homogeneousSubmod
     (j : Fin (w + 1)) :
     (binaryFormMonomialBasis R w).repr (binaryFormRep R w (op !![-1, 0; 0, 1]) P) j =
       (-1) ^ (j : ℕ) * (binaryFormMonomialBasis R w).repr P j := by
-  conv_lhs => rw [← (binaryFormMonomialBasis R w).sum_repr P, map_sum]
-  simp only [map_smul, binaryFormRep_parity_binaryFormMonomialBasis, smul_smul]
-  rw [Module.Basis.repr_sum_self, mul_comm]
+  simpa using binaryFormMonomialBasis_repr_binaryFormRep_diagonal (R := R) (-1) 1 P j
 
 variable (R w) in
 /-- The binary form `(xY - yX)ʷ` of degree `w`, the `w`th power of a linear form vanishing at
