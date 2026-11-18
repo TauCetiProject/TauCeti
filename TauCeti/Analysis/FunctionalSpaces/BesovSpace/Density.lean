@@ -92,7 +92,8 @@ private theorem exists_norm_sub_le_norm_tail (u : BesovSpace F φ s p q) :
   obtain ⟨L, hL⟩ := exists_block_sub_eq_zero_and_norm_le_of_toDistr_eq_lowPass (F := F) (φ := φ)
   set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hK0 : 0 ≤ K := integral_nonneg fun _ ↦ norm_nonneg _
-  obtain ⟨a, ha, -⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le u
+  set a := u.weightedBlockNorms
+  have ha (k : ℕ) : a k = 2 ^ (s * k) * ‖u.block k‖ := weightedBlockNorms_apply u k
   refine ⟨L, K, a, fun N v hv ↦ ?_⟩
   set n := N + 1 - L
   set t : lp (fun _ : ℕ ↦ ℝ) q := a - ∑ i ∈ Finset.range n, lp.single q i (a i)
