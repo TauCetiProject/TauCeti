@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.IntegralLattice.Binary.Isometry
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Reflection
 import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Finite
-import TauCeti.NumberTheory.IntegralLattice.Binary.Determinant23
+import TauCeti.NumberTheory.IntegralLattice.Binary.Determinant23.Basic
 import TauCeti.NumberTheory.NumberField.QuadraticAlgebra
 
 /-!

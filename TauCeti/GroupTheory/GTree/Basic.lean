@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Aut
+public import TauCeti.Combinatorics.Graph.Serre.Quotient
 public import TauCeti.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 
 /-!
 # Group actions on trees
@@ -19,11 +20,15 @@ A `G`-tree is a Serre tree with an action of `G` by graph automorphisms without 
 element maps a dart to its reverse. This file sets up the vocabulary of Bass–Serre theory for
 such actions.
 
+* The quotient graph `T / G` of a `G`-tree (`GTree.quotient`) has the orbits of vertices and
+  of darts as its vertices and darts; it is connected, and the projection `GTree.quotientMap`
+  onto it is surjective with the orbits as fibres.
 * An element is *elliptic* when it fixes a vertex and *hyperbolic* otherwise; a subgroup is
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
   `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
-  inversion.
+  inversion. The action maps convex sets of vertices to convex sets and commutes with convex
+  hulls; the segment from `x` to `(g h) x` lies in the union of `[x, g x]` and `g [x, h x]`.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
@@ -34,17 +39,22 @@ such actions.
   `T` dominates `T'` exactly when every vertex stabilizer of `T` is elliptic in `T'`. Two
   `G`-trees lie in the same deformation space when each dominates the other.
 
-A `G`-tree with at most one vertex has no darts, is minimal and relative to all families of
-subgroups, every subgroup is elliptic in it, and it is dominated by every `G`-tree; it dominates
-exactly the `G`-trees in which `G` fixes a vertex. The one-vertex `G`-tree is such a tree. The
-line, a `G`-tree for the infinite cyclic group, is in `TauCeti.GroupTheory.GTree.Line`. The
-automorphism of the segment exchanging its vertices inverts its edge
-(`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree exchanges the
-endpoints of a dart.
+A `G`-tree has at most one vertex exactly when it has no darts. Such a tree is minimal and
+relative to all families of subgroups, every subgroup is elliptic in it, and it is dominated by
+every `G`-tree; it dominates exactly the `G`-trees in which `G` fixes a vertex. The one-vertex
+`G`-tree is such a tree. In a `G`-tree with trivial vertex stabilizers only the trivial subgroup
+is elliptic, so such a tree is relative to every family containing the trivial subgroup and every
+family of trivial subgroups. The line, a `G`-tree for the infinite cyclic group, is in
+`TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element is in
+`TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its vertices inverts
+its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of a `G`-tree
+exchanges the endpoints of a dart.
 
 ## Main declarations
 
 * `TauCeti.GTree`: a Serre tree with an action of `G` without inversions.
+* `TauCeti.GTree.quotient`, `TauCeti.GTree.quotientMap`: the quotient graph and the projection
+  onto it.
 * `TauCeti.GTree.IsElliptic`, `TauCeti.GTree.IsHyperbolic`,
   `TauCeti.GTree.IsEllipticSubgroup`: elliptic and hyperbolic elements, elliptic subgroups.
 * `TauCeti.GTree.translationLength`: the translation length of an element.
@@ -79,7 +89,13 @@ structure GTree (G : Type w) [Group G] extends SerreGraph.{u, v} where
 
 namespace GTree
 
-variable {G : Type w} [Group G] (T : GTree.{u, v} G)
+section
+
+variable {G : Type w} [Group G]
+
+section Basic
+
+variable (T : GTree.{u, v} G)
 
 /-- `G` acts on the vertices of a `G`-tree. -/
 instance : MulAction G T.V := MulAction.compHom T.V T.action
@@ -112,6 +128,161 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
 
+/-- The underlying graph of a `G`-tree is acyclic. -/
+@[simp] theorem isAcyclic : T.IsAcyclic :=
+  T.isTree.isAcyclic
+
+/-! ### The quotient graph -/
+
+section Quotient
+
+/-- The quotient graph `T / G` of a `G`-tree. -/
+abbrev quotient : SerreGraph.{u, v} :=
+  T.toSerreGraph.quotient T.action T.smul_ne_rev
+
+/-- The projection of a `G`-tree to its quotient graph. -/
+abbrev quotientMap : T.toSerreGraph.Hom T.quotient :=
+  T.toSerreGraph.quotientMap T.action T.smul_ne_rev
+
+/-- Every vertex of the quotient graph is the image of a vertex of the tree. -/
+theorem quotientMap_mapV_surjective : Function.Surjective T.quotientMap.mapV :=
+  SerreGraph.quotientMap_mapV_surjective _ _ _
+
+/-- Every dart of the quotient graph is the image of a dart of the tree. -/
+theorem quotientMap_mapE_surjective : Function.Surjective T.quotientMap.mapE :=
+  SerreGraph.quotientMap_mapE_surjective _ _ _
+
+/-- The quotient graph of a `G`-tree is connected. -/
+theorem quotient_connected : T.quotient.Connected :=
+  SerreGraph.quotient_connected T.isTree.connected
+
+variable {T}
+
+/-- Two vertices of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapV_eq_iff {a b : T.V} :
+    T.quotientMap.mapV a = T.quotientMap.mapV b ↔ ∃ g : G, g • a = b :=
+  SerreGraph.quotientMap_mapV_eq_iff
+
+/-- Two darts of a `G`-tree have the same image in the quotient graph exactly when they are in
+the same orbit. -/
+theorem quotientMap_mapE_eq_iff {e f : T.E} :
+    T.quotientMap.mapE e = T.quotientMap.mapE f ↔ ∃ g : G, g • e = f :=
+  SerreGraph.quotientMap_mapE_eq_iff
+
+/-- A vertex of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapV_smul (g : G) (a : T.V) :
+    T.quotientMap.mapV (g • a) = T.quotientMap.mapV a :=
+  SerreGraph.quotientMap_mapV_smul g a
+
+/-- A dart of a `G`-tree and its translates have the same image in the quotient graph. -/
+@[simp] theorem quotientMap_mapE_smul (g : G) (e : T.E) :
+    T.quotientMap.mapE (g • e) = T.quotientMap.mapE e :=
+  SerreGraph.quotientMap_mapE_smul g e
+
+end Quotient
+
+section Translate
+
+variable {T}
+
+/-- The translate of a path by an element of the group: the path through the translates of its
+darts. -/
+def smulPath (g : G) {a b : T.V} (p : T.Path a b) : T.Path (g • a) (g • b) :=
+  (T.action g).smulPath p
+
+/-- The translate of a path by `g` is its translate by the automorphism by which `g` acts. -/
+theorem smulPath_def (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p = (T.action g).smulPath p := (rfl)
+
+/-- The translate of the empty path is empty. -/
+@[simp] theorem smulPath_nil (g : G) (a : T.V) :
+    smulPath g (Quiver.Path.nil : T.Path a a) = Quiver.Path.nil :=
+  Aut.smulPath_nil (T.action g) a
+
+/-- The translate of a path extended by a dart is the translate extended by the translated
+dart. -/
+@[simp] theorem smulPath_cons (g : G) {a b c : T.V} (p : T.Path a b) (e : Quiver.Hom b c) :
+    smulPath g (p.cons e) =
+      (smulPath g p).cons ⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :=
+  Aut.smulPath_cons (T.action g) p e
+
+/-- The translate of a one-dart path is the one-dart path through the translated dart. -/
+@[simp] theorem smulPath_toPath (g : G) {a b : T.V} (e : Quiver.Hom a b) :
+    smulPath g e.toPath =
+      Quiver.Hom.toPath (⟨g • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :
+        Quiver.Hom (g • a) (g • b)) :=
+  Aut.smulPath_toPath (T.action g) e
+
+/-- The translate of a concatenation is the concatenation of the translates. -/
+@[simp] theorem smulPath_comp (g : G) {a b c : T.V} (p : T.Path a b) (q : T.Path b c) :
+    smulPath g (p.comp q) = (smulPath g p).comp (smulPath g q) :=
+  Aut.smulPath_comp (T.action g) p q
+
+/-- The translate of a reversed path is the reverse of the translate. -/
+@[simp] theorem smulPath_reverse (g : G) {a b : T.V} (p : T.Path a b) :
+    smulPath g p.reverse = (smulPath g p).reverse :=
+  Aut.smulPath_reverse (T.action g) p
+
+/-- The translate of a path passes through the translates of its vertices. -/
+@[simp] theorem vertices_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).vertices = p.vertices.map (g • ·) :=
+  Aut.vertices_smulPath (T.action g) p
+
+/-- The identity translates every path to itself. -/
+theorem one_smulPath {a b : T.V} (p : T.Path a b) :
+    smulPath (1 : G) p = p.cast (one_smul G a).symm (one_smul G b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_one T.action)).trans
+    (heq_of_eq (Aut.one_smulPath p))
+
+/-- Translating by a product is translating by each factor in turn. -/
+theorem mul_smulPath (g h : G) {a b : T.V} (p : T.Path a b) :
+    smulPath (g * h) p = (smulPath g (smulPath h p)).cast (mul_smul g h a).symm
+      (mul_smul g h b).symm := by
+  rw [Quiver.Path.eq_cast_iff_heq]
+  exact (congr_arg_heq (fun φ : T.Aut => φ.smulPath p) (map_mul T.action g h)).trans
+    (heq_of_eq (Aut.mul_smulPath _ _ p))
+
+/-- The translate of a path traverses the translates of its darts. -/
+@[simp] theorem darts_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.darts T.toSerreGraph (smulPath g p) = (Path.darts T.toSerreGraph p).map (g • ·) :=
+  Aut.darts_smulPath (T.action g) p
+
+/-- The translate of a path is reduced exactly when the path is. -/
+@[simp] theorem isReduced_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    Path.IsReduced T.toSerreGraph (smulPath g p) ↔ Path.IsReduced T.toSerreGraph p :=
+  Aut.isReduced_smulPath (T.action g) p
+
+/-- The translate of a path has the same length as the path. -/
+@[simp] theorem length_smulPath (g : G) {a b : T.V} (p : T.Path a b) :
+    (smulPath g p).length = p.length :=
+  Aut.length_smulPath (T.action g) p
+
+end Translate
+
+/-- The `n`-th power of an element moves a vertex by at most `n` times as much as the element. -/
+theorem dist_pow_smul_le (g : G) (v : T.V) (n : ℕ) :
+    T.dist v (g ^ n • v) ≤ n * T.dist v (g • v) := by
+  rw [smul_vertex_def, smul_vertex_def, map_pow]
+  exact Aut.dist_pow_smul_le (T.action g) (T.nonempty_path _ _) n
+
+/-- The `n`-th power of an element moves a vertex by at most `|n|` times as much as the
+element. -/
+theorem dist_zpow_smul_le (g : G) (v : T.V) (n : ℤ) :
+    T.dist v (g ^ n • v) ≤ n.natAbs * T.dist v (g • v) := by
+  rw [smul_vertex_def, smul_vertex_def, map_zpow]
+  exact Aut.dist_zpow_smul_le (T.action g) (T.nonempty_path _ _) n
+
+/-- A vertex `v` is moved by at most the displacement of another vertex `a` plus twice the
+distance between them. -/
+theorem dist_smul_le_dist_smul_add_two_mul_dist (g : G) (a v : T.V) :
+    T.dist v (g • v) ≤ T.dist a (g • a) + 2 * T.dist v a := by
+  have h₁ := dist_triangle (T.nonempty_path v a) (T.nonempty_path a (g • v))
+  have h₂ := dist_triangle (T.nonempty_path a (g • a)) (T.nonempty_path (g • a) (g • v))
+  rw [dist_smul, dist_comm a v] at h₂
+  omega
+
 instance : Nonempty T.V := ((connected_iff _).mp (IsTree.connected _ T.isTree)).1
 
 /-- No element exchanges the endpoints of a dart. -/
@@ -126,7 +297,13 @@ theorem smul_tgt_ne_src_of_smul_src_eq_tgt {g : G} {e : T.E} (h : g • T.src e 
   simp only [Path.darts_toPath, List.cons.injEq, and_true, x, y] at hxy
   exact T.smul_ne_rev g e hxy
 
+end Basic
+
 /-! ### Elliptic and hyperbolic elements -/
+
+section Elliptic
+
+variable (T : GTree.{u, v} G)
 
 /-- An element is elliptic when it fixes a vertex. -/
 def IsElliptic (g : G) : Prop :=
@@ -139,6 +316,32 @@ def IsHyperbolic (g : G) : Prop :=
 /-- A subgroup is elliptic when it fixes a vertex. -/
 def IsEllipticSubgroup (H : Subgroup G) : Prop :=
   ∃ v : T.V, H ≤ stabilizer G v
+
+@[simp] theorem isElliptic_one : T.IsElliptic 1 :=
+  ⟨Classical.arbitrary T.V, one_smul G _⟩
+
+@[simp] theorem isEllipticSubgroup_bot : T.IsEllipticSubgroup ⊥ :=
+  ⟨Classical.arbitrary T.V, bot_le⟩
+
+/-- Vertex stabilizers are elliptic. -/
+theorem isEllipticSubgroup_stabilizer (v : T.V) : T.IsEllipticSubgroup (stabilizer G v) :=
+  ⟨v, le_rfl⟩
+
+/-- The stabilizer of a dart fixes its source. -/
+theorem stabilizer_dart_le_stabilizer_src (e : T.E) :
+    stabilizer G e ≤ stabilizer G (T.src e) := fun g hg => by
+  rw [mem_stabilizer_iff] at hg ⊢
+  rw [← src_smul, hg]
+
+/-- The stabilizer of a dart fixes its target. -/
+theorem stabilizer_dart_le_stabilizer_tgt (e : T.E) :
+    stabilizer G e ≤ stabilizer G (T.tgt e) := fun g hg => by
+  rw [mem_stabilizer_iff] at hg ⊢
+  rw [← tgt_smul, hg]
+
+/-- Dart stabilizers are elliptic. -/
+theorem isEllipticSubgroup_stabilizer_dart (e : T.E) : T.IsEllipticSubgroup (stabilizer G e) :=
+  ⟨T.src e, T.stabilizer_dart_le_stabilizer_src e⟩
 
 variable {T}
 
@@ -155,10 +358,6 @@ theorem isEllipticSubgroup_iff {H : Subgroup G} :
 theorem isEllipticSubgroup_iff_forall {H : Subgroup G} :
     T.IsEllipticSubgroup H ↔ ∃ v : T.V, ∀ h ∈ H, h • v = v := by
   simp only [isEllipticSubgroup_iff, IsConcreteLE.le_iff, mem_stabilizer_iff]
-
-variable (T) in
-@[simp] theorem isElliptic_one : T.IsElliptic 1 :=
-  ⟨Classical.arbitrary T.V, one_smul G _⟩
 
 @[simp] theorem isElliptic_inv_iff {g : G} : T.IsElliptic g⁻¹ ↔ T.IsElliptic g :=
   exists_congr fun v => by rw [inv_smul_eq_iff, eq_comm]
@@ -190,10 +389,14 @@ theorem IsHyperbolic.ne_one {g : G} (hg : T.IsHyperbolic g) : g ≠ 1 := by
     T.IsEllipticSubgroup (Subgroup.zpowers g) ↔ T.IsElliptic g := by
   simp only [isEllipticSubgroup_iff, Subgroup.zpowers_le, mem_stabilizer_iff, isElliptic_iff]
 
-/-- The powers of an elliptic element are elliptic. -/
+/-- The integer powers of an elliptic element are elliptic. -/
 theorem IsElliptic.zpow {g : G} (hg : T.IsElliptic g) (n : ℤ) : T.IsElliptic (g ^ n) := by
   obtain ⟨v, hv⟩ := isEllipticSubgroup_zpowers_iff.mpr hg
   exact ⟨v, hv (Subgroup.zpow_mem_zpowers g n)⟩
+
+/-- The natural powers of an elliptic element are elliptic. -/
+theorem IsElliptic.pow {g : G} (hg : T.IsElliptic g) (n : ℕ) : T.IsElliptic (g ^ n) := by
+  simpa only [zpow_natCast] using hg.zpow n
 
 /-- Elements of an elliptic subgroup are elliptic. -/
 theorem IsEllipticSubgroup.isElliptic {H : Subgroup G} (hH : T.IsEllipticSubgroup H) {g : G}
@@ -207,49 +410,15 @@ theorem IsEllipticSubgroup.mono {H K : Subgroup G} (hH : T.IsEllipticSubgroup H)
   obtain ⟨v, hv⟩ := hH
   exact ⟨v, hKH.trans hv⟩
 
-variable (T) in
-@[simp] theorem isEllipticSubgroup_bot : T.IsEllipticSubgroup ⊥ :=
-  ⟨Classical.arbitrary T.V, bot_le⟩
-
-variable (T) in
-/-- Vertex stabilizers are elliptic. -/
-theorem isEllipticSubgroup_stabilizer (v : T.V) : T.IsEllipticSubgroup (stabilizer G v) :=
-  ⟨v, le_rfl⟩
-
-variable (T) in
-/-- The stabilizer of a dart fixes its source. -/
-theorem stabilizer_dart_le_stabilizer_src (e : T.E) :
-    stabilizer G e ≤ stabilizer G (T.src e) := fun g hg => by
-  rw [mem_stabilizer_iff] at hg ⊢
-  rw [← src_smul, hg]
-
-variable (T) in
-/-- The stabilizer of a dart fixes its target. -/
-theorem stabilizer_dart_le_stabilizer_tgt (e : T.E) :
-    stabilizer G e ≤ stabilizer G (T.tgt e) := fun g hg => by
-  rw [mem_stabilizer_iff] at hg ⊢
-  rw [← tgt_smul, hg]
-
 /-- A dart and its reverse have the same stabilizer. -/
 @[simp] theorem stabilizer_rev (e : T.E) : stabilizer G (T.rev e) = stabilizer G e := by
   ext g
   rw [mem_stabilizer_iff, mem_stabilizer_iff, ← rev_smul, T.rev_injective.eq_iff]
 
-variable (T) in
-/-- Dart stabilizers are elliptic. -/
-theorem isEllipticSubgroup_stabilizer_dart (e : T.E) : T.IsEllipticSubgroup (stabilizer G e) :=
-  ⟨T.src e, T.stabilizer_dart_le_stabilizer_src e⟩
-
-/-- In a `G`-tree with at most one vertex, `G` fixes the vertex. -/
-@[simp] theorem stabilizer_eq_top_of_subsingleton [Subsingleton T.V] (v : T.V) :
-    stabilizer G v = ⊤ :=
-  eq_top_iff.mpr fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)
-
-variable (T) in
-/-- Every subgroup is elliptic in a `G`-tree with at most one vertex. -/
-theorem isEllipticSubgroup_of_subsingleton [Subsingleton T.V] (H : Subgroup G) :
-    T.IsEllipticSubgroup H :=
-  ⟨Classical.arbitrary T.V, le_top.trans_eq (stabilizer_eq_top_of_subsingleton _).symm⟩
+/-- If the vertex stabilizers of a `G`-tree are trivial, only the trivial subgroup is elliptic. -/
+theorem isEllipticSubgroup_iff_eq_bot (h : ∀ v : T.V, stabilizer G v = ⊥) {H : Subgroup G} :
+    T.IsEllipticSubgroup H ↔ H = ⊥ := by
+  simp only [isEllipticSubgroup_iff, h, le_bot_iff, exists_const]
 
 /-- Conjugates of an elliptic subgroup are elliptic. -/
 theorem IsEllipticSubgroup.map_conj {H : Subgroup G} (hH : T.IsEllipticSubgroup H) (g : G) :
@@ -266,18 +435,88 @@ theorem IsEllipticSubgroup.map_conj {H : Subgroup G} (hH : T.IsEllipticSubgroup 
   refine Subgroup.mem_map.mpr ⟨MulAut.conj g x, Subgroup.mem_map_of_mem _ hx, ?_⟩
   simp [mul_assoc]
 
+/-- In a `G`-tree with at most one vertex, `G` fixes the vertex. -/
+@[simp] theorem stabilizer_eq_top_of_subsingleton [Subsingleton T.V] (v : T.V) :
+    stabilizer G v = ⊤ :=
+  eq_top_iff.mpr fun _ _ => mem_stabilizer_iff.mpr (Subsingleton.elim _ _)
+
+variable (T)
+
+/-- Every subgroup is elliptic in a `G`-tree with at most one vertex. -/
+theorem isEllipticSubgroup_of_subsingleton [Subsingleton T.V] (H : Subgroup G) :
+    T.IsEllipticSubgroup H :=
+  ⟨Classical.arbitrary T.V, le_top.trans_eq (stabilizer_eq_top_of_subsingleton _).symm⟩
+
+end Elliptic
+
+/-! ### Translates of sets -/
+
+section Pointwise
+
+open scoped Pointwise
+
+variable (T : GTree.{u, v} G)
+
+theorem smul_set_vertex_def (g : G) (S : Set T.V) : g • S = T.action g • S :=
+  Set.ext fun v => by simp only [Set.mem_smul_set, smul_vertex_def]
+
+theorem smul_set_dart_def (g : G) (S : Set T.E) : g • S = T.action g • S :=
+  Set.ext fun v => by simp only [Set.mem_smul_set, smul_dart_def]
+
+/-- The darts induced by the translate of a set of vertices are the translates of the darts
+induced by the set. -/
+theorem smul_set_inducedDarts (g : G) (C : Set T.V) :
+    g • T.inducedDarts C = T.inducedDarts (g • C) := by
+  rw [smul_set_vertex_def, smul_set_dart_def, Aut.smul_set_inducedDarts]
+
+/-- The action commutes with convex hulls. -/
+theorem convexHull_smul_set (g : G) (S : Set T.V) :
+    T.convexHull (g • S) = g • T.convexHull S := by
+  rw [smul_set_vertex_def, smul_set_vertex_def, Aut.convexHull_smul_set]
+
+/-- The translate of the segment from `a` to `b` is the segment from `g • a` to `g • b`. -/
+theorem smul_set_convexHull_pair (g : G) (a b : T.V) :
+    g • T.convexHull {a, b} = T.convexHull {g • a, g • b} := by
+  rw [← convexHull_smul_set, Set.smul_set_insert, Set.smul_set_singleton]
+
+/-- The segment from `x` to `(g * h) • x` is contained in the union of the segment from `x` to
+`g • x` and the translate by `g` of the segment from `x` to `h • x`. -/
+theorem convexHull_pair_mul_smul_subset (g h : G) (x : T.V) :
+    T.convexHull {x, (g * h) • x} ⊆ T.convexHull {x, g • x} ∪ g • T.convexHull {x, h • x} := by
+  rw [smul_set_convexHull_pair, ← mul_smul]
+  exact T.isTree.convexHull_pair_subset_union _ _ _
+
+/-- The segment from `x` to `g⁻¹ • x` is the translate by `g⁻¹` of the segment from `x` to
+`g • x`. -/
+theorem convexHull_pair_inv_smul (g : G) (x : T.V) :
+    T.convexHull {x, g⁻¹ • x} = g⁻¹ • T.convexHull {x, g • x} := by
+  rw [smul_set_convexHull_pair, inv_smul_smul, Set.pair_comm]
+
+variable {T}
+
+/-- The translate of a set of vertices is convex exactly when the set is. -/
+@[simp] theorem isConvex_smul_set_iff {g : G} {S : Set T.V} :
+    T.IsConvex (g • S) ↔ T.IsConvex S := by
+  rw [smul_set_vertex_def, Aut.isConvex_smul_set_iff]
+
+end Pointwise
+
 /-! ### Fixed vertices -/
 
-variable (T) in
+section FixedVertices
+
+variable (T : GTree.{u, v} G)
+
 /-- The vertices fixed by an element form a convex set. -/
 theorem isConvex_fixedBy (g : G) : T.IsConvex (fixedBy T.V g) :=
   Aut.isConvex_fixedBy (IsTree.isAcyclic _ T.isTree) (T.action g)
 
-variable (T) in
 /-- The vertices fixed by a subgroup form a convex set. -/
 theorem isConvex_fixedPoints (H : Subgroup G) : T.IsConvex (fixedPoints H T.V) := by
   rw [fixed_eq_iInter_fixedBy]
   exact isConvex_iInter fun h => T.isConvex_fixedBy h
+
+variable {T}
 
 /-- A subgroup is elliptic exactly when it fixes some vertex. -/
 theorem isEllipticSubgroup_iff_nonempty_fixedPoints {H : Subgroup G} :
@@ -285,12 +524,19 @@ theorem isEllipticSubgroup_iff_nonempty_fixedPoints {H : Subgroup G} :
   simp only [isEllipticSubgroup_iff_forall, Set.Nonempty, mem_fixedPoints, Subtype.forall,
     Subgroup.mk_smul]
 
+end FixedVertices
+
 /-! ### Translation length -/
 
-variable (T) in
+section TranslationLength
+
+variable (T : GTree.{u, v} G)
+
 /-- The translation length `ℓ(g) = min_v d(v, g v)` of an element. -/
 noncomputable def translationLength (g : G) : ℕ :=
   ⨅ v : T.V, T.dist v (g • v)
+
+variable {T}
 
 theorem translationLength_le (g : G) (v : T.V) : T.translationLength g ≤ T.dist v (g • v) :=
   ciInf_le (OrderBot.bddBelow _) v
@@ -311,10 +557,6 @@ theorem translationLength_eq_zero_iff {g : G} : T.translationLength g = 0 ↔ T.
 theorem translationLength_pos_iff {g : G} : 0 < T.translationLength g ↔ T.IsHyperbolic g := by
   rw [Nat.pos_iff_ne_zero, Ne, translationLength_eq_zero_iff, IsHyperbolic]
 
-variable (T) in
-@[simp] theorem translationLength_one : T.translationLength 1 = 0 :=
-  translationLength_eq_zero_iff.mpr (isElliptic_one T)
-
 /-- An element and its inverse have the same translation length. -/
 @[simp] theorem translationLength_inv (g : G) :
     T.translationLength g⁻¹ = T.translationLength g := by
@@ -330,13 +572,25 @@ variable (T) in
   exact ((MulAction.surjective h).iInf_congr (h • ·) fun v => by
     simp only [mul_smul, inv_smul_smul, dist_smul]).symm
 
+variable (T)
+
+@[simp] theorem translationLength_one : T.translationLength 1 = 0 :=
+  translationLength_eq_zero_iff.mpr (isElliptic_one T)
+
+end TranslationLength
+
 /-! ### Minimal and relative trees -/
 
-variable (T) in
+section Minimal
+
+variable (T : GTree.{u, v} G)
+
 /-- A `G`-tree is minimal when it has no proper invariant subtree: every nonempty convex set of
 vertices invariant under `G` contains every vertex. -/
 def IsMinimal : Prop :=
   ∀ S : Set T.V, S.Nonempty → T.IsConvex S → (∀ g : G, ∀ v ∈ S, g • v ∈ S) → S = Set.univ
+
+variable {T}
 
 theorem isMinimal_iff : T.IsMinimal ↔
     ∀ S : Set T.V, S.Nonempty → T.IsConvex S → (∀ g : G, ∀ v ∈ S, g • v ∈ S) →
@@ -356,11 +610,32 @@ theorem IsMinimal.subsingleton (hT : T.IsMinimal) (h : T.IsEllipticSubgroup ⊤)
       rw [hw, hv g (Subgroup.mem_top g)]
   exact Set.subsingleton_univ_iff.mp (hS ▸ Set.subsingleton_singleton)
 
-variable (T) in
+end Minimal
+
+section Relative
+
+variable (T : GTree.{u, v} G)
+
 /-- A `G`-tree is relative to families `𝒜` and `ℋ` of subgroups when the stabilizer of every
 dart lies in `𝒜` and every subgroup in `ℋ` is elliptic. -/
 def IsRelative (𝒜 ℋ : Set (Subgroup G)) : Prop :=
   (∀ e : T.E, stabilizer G e ∈ 𝒜) ∧ ∀ H ∈ ℋ, T.IsEllipticSubgroup H
+
+/-- A `G`-tree with at most one vertex has no darts. -/
+theorem isEmpty_dart_of_subsingleton [Subsingleton T.V] : IsEmpty T.E :=
+  (IsTree.isAcyclic _ T.isTree).isEmpty_dart_of_subsingleton
+
+/-- A `G`-tree without darts has at most one vertex. -/
+theorem subsingleton_of_isEmpty_dart [IsEmpty T.E] : Subsingleton T.V :=
+  ⟨fun a b => (T.nonempty_path a b).elim (eq_of_path_of_forall_src_eq_tgt _ isEmptyElim)⟩
+
+/-- A `G`-tree with at most one vertex is relative to all families of subgroups. -/
+theorem isRelative_of_subsingleton [Subsingleton T.V] (𝒜 ℋ : Set (Subgroup G)) :
+    T.IsRelative 𝒜 ℋ :=
+  ⟨fun e => (T.isEmpty_dart_of_subsingleton.false e).elim,
+    fun H _ => T.isEllipticSubgroup_of_subsingleton H⟩
+
+variable {T}
 
 theorem isRelative_iff {𝒜 ℋ : Set (Subgroup G)} : T.IsRelative 𝒜 ℋ ↔
     (∀ e : T.E, stabilizer G e ∈ 𝒜) ∧ ∀ H ∈ ℋ, T.IsEllipticSubgroup H := Iff.rfl
@@ -378,34 +653,33 @@ theorem IsRelative.mono {𝒜 𝒜' ℋ ℋ' : Set (Subgroup G)} (h : T.IsRelati
     (hℋ : ℋ' ⊆ ℋ) : T.IsRelative 𝒜' ℋ' :=
   ⟨fun e => h𝒜 (h.1 e), fun H hH => h.2 H (hℋ hH)⟩
 
-variable (T) in
-/-- A `G`-tree with at most one vertex has no darts. -/
-theorem isEmpty_dart_of_subsingleton [Subsingleton T.V] : IsEmpty T.E :=
-  (IsTree.isAcyclic _ T.isTree).isEmpty_dart_of_subsingleton
+/-- A `G`-tree with trivial vertex stabilizers is relative to any family of subgroups containing
+the trivial subgroup and any family of trivial subgroups. -/
+theorem isRelative_of_forall_stabilizer_eq_bot {𝒜 ℋ : Set (Subgroup G)} (h𝒜 : ⊥ ∈ 𝒜)
+    (hℋ : ℋ ⊆ {⊥}) (h : ∀ v : T.V, stabilizer G v = ⊥) : T.IsRelative 𝒜 ℋ :=
+  ⟨fun e => (isEllipticSubgroup_iff_eq_bot h).mp (T.isEllipticSubgroup_stabilizer_dart e) ▸ h𝒜,
+    fun _ hH => (isEllipticSubgroup_iff_eq_bot h).mpr (hℋ hH)⟩
 
-variable (T) in
-/-- A `G`-tree with at most one vertex is relative to all families of subgroups. -/
-theorem isRelative_of_subsingleton [Subsingleton T.V] (𝒜 ℋ : Set (Subgroup G)) :
-    T.IsRelative 𝒜 ℋ :=
-  ⟨fun e => (T.isEmpty_dart_of_subsingleton.false e).elim,
-    fun H _ => T.isEllipticSubgroup_of_subsingleton H⟩
+end Relative
 
 /-! ### Domination and deformation spaces -/
 
-variable (T) in
+section Dominates
+
+variable (T : GTree.{u, v} G)
+
 /-- A `G`-tree `T` dominates `T'` when there is a `G`-equivariant map from the vertices of `T`
 to the vertices of `T'`. -/
 def Dominates (T' : GTree.{u', v'} G) : Prop :=
   Nonempty (T.V →[G] T'.V)
 
-variable {T' : GTree.{u', v'} G} {T'' : GTree.{u'', v''} G}
-
-theorem dominates_iff_nonempty : T.Dominates T' ↔ Nonempty (T.V →[G] T'.V) := Iff.rfl
-
-variable (T) in
 /-- Every `G`-tree dominates itself. -/
 theorem Dominates.refl : T.Dominates T :=
   ⟨MulActionHom.id G⟩
+
+variable {T} {T' : GTree.{u', v'} G} {T'' : GTree.{u'', v''} G}
+
+theorem dominates_iff_nonempty : T.Dominates T' ↔ Nonempty (T.V →[G] T'.V) := Iff.rfl
 
 /-- Domination is transitive. -/
 theorem Dominates.trans (h : T.Dominates T') (h' : T'.Dominates T'') : T.Dominates T'' :=
@@ -433,11 +707,6 @@ theorem dominates_iff_forall_isEllipticSubgroup :
   ⟨fun h _ hH => h.isEllipticSubgroup hH,
     fun h => dominates_iff.mpr fun v => h _ (T.isEllipticSubgroup_stabilizer v)⟩
 
-variable (T) in
-/-- Every `G`-tree dominates a `G`-tree with at most one vertex. -/
-theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
-  dominates_iff.mpr fun _ => T'.isEllipticSubgroup_of_subsingleton _
-
 /-- A `G`-tree with at most one vertex dominates exactly the `G`-trees in which `G` is
 elliptic. -/
 theorem dominates_iff_of_subsingleton [Subsingleton T.V] :
@@ -446,17 +715,29 @@ theorem dominates_iff_of_subsingleton [Subsingleton T.V] :
   exact ⟨fun h => stabilizer_eq_top_of_subsingleton (Classical.arbitrary T.V) ▸ h _,
     fun h _ => h.mono le_top⟩
 
-variable (T T') in
+variable (T)
+
+/-- Every `G`-tree dominates a `G`-tree with at most one vertex. -/
+theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
+  dominates_iff.mpr fun _ => T'.isEllipticSubgroup_of_subsingleton _
+
+end Dominates
+
+section SameDeformationSpace
+
+variable (T : GTree.{u, v} G) (T' : GTree.{u', v'} G)
+
 /-- Two `G`-trees lie in the same deformation space when each dominates the other. -/
 def SameDeformationSpace : Prop :=
   T.Dominates T' ∧ T'.Dominates T
 
-theorem sameDeformationSpace_iff :
-    T.SameDeformationSpace T' ↔ T.Dominates T' ∧ T'.Dominates T := Iff.rfl
-
-variable (T) in
 theorem SameDeformationSpace.refl : T.SameDeformationSpace T :=
   ⟨.refl T, .refl T⟩
+
+variable {T T'} {T'' : GTree.{u'', v''} G}
+
+theorem sameDeformationSpace_iff :
+    T.SameDeformationSpace T' ↔ T.Dominates T' ∧ T'.Dominates T := Iff.rfl
 
 theorem SameDeformationSpace.symm (h : T.SameDeformationSpace T') : T'.SameDeformationSpace T :=
   ⟨h.2, h.1⟩
@@ -478,18 +759,34 @@ theorem sameDeformationSpace_iff_forall_isEllipticSubgroup :
   simp only [sameDeformationSpace_iff, dominates_iff_forall_isEllipticSubgroup, iff_def,
     forall_and]
 
+end SameDeformationSpace
+
+end
+
 /-! ### The one-vertex tree -/
 
-variable (G) in
 /-- The one-vertex `G`-tree, with the trivial action. -/
-def point : GTree.{u, v} G where
-  toSerreGraph := SerreGraph.point
+def point (G : Type w) [Group G] : GTree.{u, v} G where
+  toSerreGraph := SerreGraph.noEdge PUnit
   isTree := single_vertex_isTree
   action := 1
-  action_smul_ne_rev _ e := e.elim
+  action_smul_ne_rev _ e := isEmptyElim e
 
-instance : Subsingleton (point.{u, v} G).V :=
+instance {G : Type w} [Group G] : Subsingleton (point.{u, v} G).V :=
   inferInstanceAs (Subsingleton PUnit)
+
+section Point
+
+variable (G : Type w) [Group G]
+
+theorem point_isMinimal : (point.{u, v} G).IsMinimal :=
+  isMinimal_of_subsingleton
+
+/-- The one-vertex tree is relative to all families of subgroups. -/
+theorem point_isRelative (𝒜 ℋ : Set (Subgroup G)) : (point.{u, v} G).IsRelative 𝒜 ℋ :=
+  isRelative_of_subsingleton _ 𝒜 ℋ
+
+variable {G}
 
 /-- Every subgroup is elliptic in the one-vertex tree. -/
 @[simp] theorem point_isEllipticSubgroup (H : Subgroup G) :
@@ -500,23 +797,16 @@ instance : Subsingleton (point.{u, v} G).V :=
 @[simp] theorem point_isElliptic (g : G) : (point.{u, v} G).IsElliptic g :=
   isEllipticSubgroup_zpowers_iff.mp (point_isEllipticSubgroup _)
 
-variable (G) in
-theorem point_isMinimal : (point.{u, v} G).IsMinimal :=
-  isMinimal_of_subsingleton
-
-variable (G) in
-/-- The one-vertex tree is relative to all families of subgroups. -/
-theorem point_isRelative (𝒜 ℋ : Set (Subgroup G)) : (point.{u, v} G).IsRelative 𝒜 ℋ :=
-  isRelative_of_subsingleton _ 𝒜 ℋ
-
-variable (T) in
 /-- Every `G`-tree dominates the one-vertex tree. -/
-theorem dominates_point : T.Dominates (point.{u', v'} G) :=
+theorem dominates_point (T : GTree.{u, v} G) : T.Dominates (point.{u', v'} G) :=
   T.dominates_of_subsingleton
 
 /-- The one-vertex tree dominates exactly the `G`-trees in which `G` is elliptic. -/
-theorem point_dominates_iff : (point.{u', v'} G).Dominates T ↔ T.IsEllipticSubgroup ⊤ :=
+theorem point_dominates_iff {T : GTree.{u, v} G} :
+    (point.{u', v'} G).Dominates T ↔ T.IsEllipticSubgroup ⊤ :=
   dominates_iff_of_subsingleton
+
+end Point
 
 end GTree
 

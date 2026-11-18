@@ -48,6 +48,8 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.comp_neg_mem_periodicSolutions_hamiltonianVectorField_iff`: reversing
+  time turns the 1-periodic orbits of the reversed Hamiltonian `-H(-t)` into those of `H`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose 1-periodic orbits are all nondegenerate has
   finitely many 1-periodic orbits.
@@ -57,6 +59,9 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 * `SmoothTwoForm.IsNondegenerate.finite_contractiblePeriodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose contractible 1-periodic orbits are all
   nondegenerate has finitely many contractible 1-periodic orbits.
+* `SmoothTwoForm.IsNondegenerate.isMIntegralCurve_const_hamiltonianVectorField_smul_iff`: for
+  `s ≠ 0`, the constant curve at `x` is an orbit of `s F` exactly when `x` is a critical point of
+  `F`.
 
 ## References
 
@@ -74,6 +79,26 @@ open Function
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+namespace SmoothTwoForm
+
+/-- **Reversing time in a Hamiltonian orbit.** For a time-dependent Hamiltonian `H`, the curve
+`t ↦ γ (-t)` is a `T`-periodic orbit of `H` exactly when `γ` is a `T`-periodic orbit of the
+reversed Hamiltonian `(t, x) ↦ -H (-t) x`: both the time and the Hamiltonian vector field change
+sign. -/
+theorem comp_neg_mem_periodicSolutions_hamiltonianVectorField_iff {E H' M : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H'] {I : ModelWithCorners ℝ E H'}
+    [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I ∞ M] (σ : SmoothTwoForm I M)
+    (H : ℝ → M → ℝ) {T : ℝ} {γ : ℝ → M} :
+    (fun t ↦ γ (-t)) ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) T ↔
+      γ ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (fun x ↦ -H (-t) x)) T := by
+  rw [comp_neg_mem_periodicSolutions_iff]
+  have h : (fun t x ↦ -σ.hamiltonianVectorField (H (-t)) x) =
+      fun t ↦ σ.hamiltonianVectorField (fun x ↦ -H (-t) x) :=
+    funext fun t ↦ funext fun x ↦ (hamiltonianVectorField_neg (f := H (-t)) x).symm
+  rw [h]
+
+end SmoothTwoForm
 
 namespace SmoothTwoForm.IsNondegenerate
 
@@ -143,6 +168,16 @@ theorem finite_contractiblePeriodicSolutions_hamiltonianVectorField [CompactSpac
   finite_contractiblePeriodicSolutions (h.contMDiff_hamiltonianVectorField_uncurry (n := 1)
     (by simp) (hH.of_le (by norm_num))) (fun t ↦ by rw [hP t]) one_pos 0
     (by simpa only [zero_add] using hnd)
+
+omit [T2Space M] [BoundarylessManifold I M] in
+/-- For `s ≠ 0`, the constant curve at `x` is an integral curve of the Hamiltonian vector field of
+`s F` exactly when `x` is a critical point of `F`. -/
+theorem isMIntegralCurve_const_hamiltonianVectorField_smul_iff (h : σ.IsNondegenerate) {F : M → ℝ}
+    {s : ℝ} (hs : s ≠ 0) {x : M} :
+    IsMIntegralCurve (fun _ : ℝ ↦ x) (σ.hamiltonianVectorField (s • F)) ↔
+      x ∈ criticalPoints I F := by
+  rw [isMIntegralCurve_const_iff, hamiltonianVectorField_const_smul, smul_eq_zero,
+    or_iff_right hs, h.hamiltonianVectorField_eq_zero_iff, mem_criticalPoints]
 
 end SmoothTwoForm.IsNondegenerate
 

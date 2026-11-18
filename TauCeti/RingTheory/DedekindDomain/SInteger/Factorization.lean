@@ -58,7 +58,7 @@ lemma integer_count_coeIdeal_map {v : HeightOneSpectrum R} (hv : v ∉ S) {J : I
   · rw [Ideal.map_bot]
     simp only [coeIdeal_bot, count_zero]
   have hmJ := Ideal.map_ne_bot_of_ne_bot (S := S.integer K) hJ
-  rw [count_coe K _ hmJ, count_coe K v hJ, Nat.cast_inj]
+  rw [count_coeIdeal K _ hmJ, count_coeIdeal K v hJ, Nat.cast_inj]
   -- the two multiplicities dominate the same `k`, and `le_count_associates_iff_le_pow` turns each
   -- side into
   -- containment of a prime power, which `integer_map_le_map_pow_iff` transfers

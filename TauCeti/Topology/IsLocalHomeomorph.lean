@@ -16,6 +16,7 @@ public import TauCeti.Topology.SeparatedMap
 # Local homeomorphisms: path-connectedness, local inverses, fiber sums, products, base change
 
 A map that is a local homeomorphism at each point of an open set sends that set to an open set.
+Being a local homeomorphism at a point only depends on the germ of the map there.
 
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
@@ -42,6 +43,8 @@ groupoid.
 
 * `IsLocalHomeomorphOn.isOpen_image`: a local homeomorphism on an open set maps it to an open
   set.
+* `IsLocalHomeomorphOn.congr_of_eventuallyEq`: being a local homeomorphism at a point depends only
+  on the germ of the map there.
 * `IsLocalHomeomorph.locallyPathConnectedSpace`: the domain of a local homeomorphism into a
   locally path-connected space is locally path-connected.
 * `IsLocalHomeomorph.localInverseAt_comp_eventuallyEq`: near `z`, a local inverse composed with
@@ -55,6 +58,10 @@ groupoid.
   map is a local homeomorphism.
 * `IsLocalHomeomorph.of_isEmbedding_of_range_eq`: a local homeomorphism restricts to one along a
   pullback square of embeddings, such as the restriction to the full preimage of any subspace.
+* `IsLocalHomeomorph.of_comp_of_surjective`: if `g ∘ f` and a surjective `f` are local
+  homeomorphisms, so is `g`.
+* `TauCeti.isLocalHomeomorph_of_discreteTopology`: every map between discrete spaces is a local
+  homeomorphism.
 -/
 
 public section
@@ -70,6 +77,17 @@ theorem _root_.IsLocalHomeomorphOn.isOpen_image {f : E → B} {s : Set E}
     (hf : IsLocalHomeomorphOn f s) (hs : IsOpen s) : IsOpen (f '' s) :=
   isOpen_iff_mem_nhds.2 <| Set.forall_mem_image.2 fun _ hx ↦
     hf.map_nhds_eq hx ▸ Filter.image_mem_map (hs.mem_nhds hx)
+
+/-- Being a local homeomorphism at the points of `s` only depends on the germs of the map at
+those points. -/
+theorem _root_.IsLocalHomeomorphOn.congr_of_eventuallyEq {f g : E → B} {s : Set E}
+    (hf : IsLocalHomeomorphOn f s) (hfg : ∀ x ∈ s, f =ᶠ[𝓝 x] g) : IsLocalHomeomorphOn g s := by
+  refine IsLocalHomeomorphOn.mk g s fun x hx ↦ ?_
+  obtain ⟨e, hxe, he⟩ := hf x hx
+  obtain ⟨U, hfgU, hUo, hxU⟩ := eventually_nhds_iff.1 (hfg x hx)
+  refine ⟨e.restrOpen U hUo, by simpa using ⟨hxe, hxU⟩, fun z hz ↦ ?_⟩
+  rw [OpenPartialHomeomorph.restrOpen_source] at hz
+  rw [← hfgU z hz.2, he, OpenPartialHomeomorph.coe_restrOpen]
 
 /-- **A local homeomorphism with locally path-connected codomain has locally path-connected
 domain.** In particular the total space of a covering of a locally path-connected space is
@@ -120,12 +138,8 @@ theorem eventually_finsum_mem_preimage_singleton_eq_sum
   -- by disjoint open sets `W e` on which `p` is injective.
   have hF :=
     hp.isLocallyInjective.finite_preimage_singleton_inter (hf (isCompact_singleton (x := b₀)))
-  obtain ⟨O, hO, hdisj⟩ := hF.t2_separation
-  have hW (e : E) : ∃ W : Set E, IsOpen W ∧ e ∈ W ∧ W ⊆ O e ∧ Set.InjOn p W := by
-    obtain ⟨U, hU, heU, hinj⟩ := hp.isLocallyInjective e
-    exact ⟨O e ∩ U, (hO e).2.inter hU, ⟨(hO e).1, heU⟩, Set.inter_subset_left,
-      hinj.mono Set.inter_subset_right⟩
-  choose W hWo hWe hWO hWinj using hW
+  obtain ⟨W, hWo, hWe, hWinj, hWdisj⟩ :=
+    hp.isLocallyInjective.exists_isOpen_injOn_pairwiseDisjoint hF
   -- Away from the image of the rest `L` of the support over a compact neighbourhood `K`, every
   -- point of a fiber in the support lies in some `W e`.
   set L := tsupport f \ ⋃ e ∈ hF.toFinset, W e
@@ -149,8 +163,8 @@ theorem eventually_finsum_mem_preimage_singleton_eq_sum
   · -- Distinct points of `F` have sections in the disjoint sets `W e`.
     intro e he e' he' h
     by_contra hne
-    exact Set.disjoint_left.mp (hdisj (hF.mem_toFinset.1 he) (hF.mem_toFinset.1 he') hne)
-      (hWO e (hbσ e he).1) (by simpa only [h] using hWO e' (hbσ e' he').1)
+    exact Set.disjoint_left.mp (hWdisj (hF.mem_toFinset.1 he) (hF.mem_toFinset.1 he') hne)
+      (hbσ e he).1 (by simpa only [h] using (hbσ e' he').1)
   · ext e'
     simp only [Set.mem_inter_iff, Set.mem_preimage, Set.mem_singleton_iff, Finset.coe_image,
       Set.mem_image, Finset.mem_coe, Function.mem_support]
@@ -250,5 +264,24 @@ theorem _root_.IsLocalHomeomorph.of_isEmbedding_of_range_eq {X' Y' : Type*}
     exact (congrFun hcomm x'').symm.trans (by rw [Function.comp_apply, hx'', hu])
 
 end Pullback
+
+/-- A map is a local homeomorphism if its composite with a surjective local homeomorphism is
+a local homeomorphism. -/
+theorem of_comp_of_surjective {X Y Z : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+    {f : X → Y} {g : Y → Z} (hgf : IsLocalHomeomorph (g ∘ f))
+    (hf : IsLocalHomeomorph f) (hsurj : Function.Surjective f) : IsLocalHomeomorph g := by
+  have h := hgf.isLocalHomeomorphOn.of_comp_right hf.isLocalHomeomorphOn
+    (s := Set.univ)
+  rwa [Set.image_univ, hsurj.range_eq, ← isLocalHomeomorph_iff_isLocalHomeomorphOn_univ] at h
+
+/-- Every map between discrete spaces is a local homeomorphism. -/
+theorem _root_.TauCeti.isLocalHomeomorph_of_discreteTopology {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [DiscreteTopology X] [DiscreteTopology Y] {f : X → Y} :
+    IsLocalHomeomorph f :=
+  isLocalHomeomorph_iff_isOpenEmbedding_restrict.mpr fun x ↦
+    ⟨{x}, (isOpen_discrete _).mem_nhds rfl, .of_continuous_injective_isOpenMap
+      continuous_of_discreteTopology (Function.injective_of_subsingleton _)
+      fun _ _ ↦ isOpen_discrete _⟩
 
 end IsLocalHomeomorph
