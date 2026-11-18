@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Toric.Delzant.Stabilizer
 public import TauCeti.Geometry.Toric.Delzant.TangentCone
 public import TauCeti.Geometry.Toric.Delzant.Torus
 import TauCeti.Algebra.AddCircle
-import TauCeti.Logic.Function.Extend
 import TauCeti.Topology.Constructions.Pi
 
 /-!
@@ -328,7 +327,7 @@ omit [FiniteDimensional ℝ V] [Fintype (activeSet (facetPairing i u) c v)] in
 private theorem normalizer_inactive (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) {j : ι}
     (hj : j ∉ activeSet (facetPairing i u) c v) :
     normalizer hv x j = ((⟨x.1 j, x.2 j⟩ : ℂ).arg : AddCircle (2 * π)) := by
-  simp only [normalizer, Pi.sub_apply, Function.extend_subtypeVal_apply_of_notMem hj,
+  simp only [normalizer, Pi.sub_apply, Function.extend_val_apply' hj,
     Pi.zero_apply, sub_zero, inactiveArg, hj, ↓reduceIte]
 
 omit [FiniteDimensional ℝ V] [Fintype (activeSet (facetPairing i u) c v)] in
@@ -752,7 +751,7 @@ private theorem vertexLift_torusRotation
     exact ⟨rfl, rfl⟩
   ext j <;> by_cases hj : j ∈ activeSet (facetPairing i u) c v <;>
     simp [hj, torusRotation_apply_fst, torusRotation_apply_snd,
-      Function.extend_subtypeVal_apply_of_mem, Function.extend_subtypeVal_apply_of_notMem, h0]
+      Function.extend_val_apply, Function.extend_val_apply', h0]
 
 /-- **Equivariance of the vertex chart.** The inverse of the chart intertwines the rotation
 `w_k ↦ exp(-i φ_k) w_k` of `ℂ^A` with the action of the residual torus through the isomorphism

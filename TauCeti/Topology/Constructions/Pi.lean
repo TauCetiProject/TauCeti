@@ -11,7 +11,6 @@ public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sigma
-import TauCeti.Logic.Function.Extend
 
 /-!
 # Shrinking open sets into dense open sets of finite products
@@ -64,8 +63,8 @@ theorem continuous_extend_subtypeVal {ι : Type*} {s : Set ι} (e : ι → X) :
     Continuous fun g : s → X ↦ extend Subtype.val g e := by
   refine continuous_pi fun j ↦ ?_
   by_cases hj : j ∈ s
-  · exact (continuous_apply _).congr fun g ↦ (Subtype.val_injective.extend_apply g e ⟨j, hj⟩).symm
-  · exact continuous_const.congr fun g ↦ (extend_subtypeVal_apply_of_notMem hj g e).symm
+  · exact (continuous_apply _).congr fun g ↦ (extend_val_apply (g := g) (j := e) hj).symm
+  · exact continuous_const.congr fun g ↦ (extend_val_apply' (g := g) (j := e) hj).symm
 
 /-- In a Hausdorff space, the injective tuples indexed by a finite type form an open subset of the
 product: injectivity asks finitely many pairs of coordinates to differ. -/

@@ -100,7 +100,8 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
 * `Module.Basis.range_weightMomentMap_neg`: when the negated weights form a basis `b` of `𝔱*`,
   the image of `μ` is the cone of covectors with nonnegative coordinates in `b`.
 * `TauCeti.weightRotation_apply_eq_self_iff`, `TauCeti.weightGenerator_apply_eq_zero_iff`: the
-  stabilizer and the infinitesimal stabilizer of a point.
+  stabilizer and the infinitesimal stabilizer of a point; coordinatewise,
+  `TauCeti.weightRotation_apply_eq_self_iff_apply`.
 * `TauCeti.weightRotation_neg_apply_eq_self_iff`, `TauCeti.weightRotation_neg_apply_eq_iff`: the
   stabilizer of a point, and when two rotations agree at a point, with angles in `ℝ / 2πℤ`.
 * `TauCeti.mem_ker_weightGenerator_iff`, `TauCeti.finrank_ker_weightGenerator`: the kernel of the
@@ -384,40 +385,37 @@ theorem _root_.Module.Basis.range_weightMomentMap_neg (b : Module.Basis ι ℝ (
   ext ν
   exact b.mem_pointedCone_hull_range_iff ν
 
+/-- **Stabilizers in the weight model, coordinatewise.** The rotation by `θ` fixes the
+coordinate `z_i = q_i + i p_i` exactly when `z_i = 0` or `θ_i ∈ 2πℤ`. -/
+theorem weightRotation_apply_eq_self_iff_apply (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    (weightRotation θ x).1 i = x.1 i ∧ (weightRotation θ x).2 i = x.2 i ↔
+      (x.1 i ≠ 0 ∨ x.2 i ≠ 0) → ∃ k : ℤ, k * (2 * π) = θ i := by
+  rw [weightRotation_apply_fst, weightRotation_apply_snd, ← cos_eq_one_iff]
+  constructor
+  · rintro ⟨h1, h2⟩ hx
+    have hpos : 0 < x.1 i ^ 2 + x.2 i ^ 2 := by
+      rcases hx with hx | hx
+      · positivity
+      · positivity
+    have h : (cos (θ i) - 1) * (x.1 i ^ 2 + x.2 i ^ 2) = 0 := by
+      linear_combination x.1 i * h1 + x.2 i * h2
+    linarith [(mul_eq_zero.mp h).resolve_right hpos.ne']
+  · intro h
+    by_cases hx : x.1 i ≠ 0 ∨ x.2 i ≠ 0
+    · have hc := h hx
+      have hs : sin (θ i) = 0 := by nlinarith [sin_sq_add_cos_sq (θ i)]
+      simp [hc, hs]
+    · obtain ⟨h1, h2⟩ := not_or.1 hx
+      simp [not_not.1 h1, not_not.1 h2]
+
 /-- **Stabilizers in the weight model.** The rotation by `θ` fixes `z` exactly when `θ_i ∈ 2πℤ`
 for every coordinate `z_i = q_i + i p_i` that is nonzero. -/
 theorem weightRotation_apply_eq_self_iff (θ : ι → ℝ)
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     weightRotation θ x = x ↔ ∀ i, (x.1 i ≠ 0 ∨ x.2 i ≠ 0) → ∃ k : ℤ, k * (2 * π) = θ i := by
-  -- A coordinate `q + i p` is fixed by the rotation by `a` exactly when it vanishes or `a ∈ 2πℤ`.
-  have hrot (a q p : ℝ) : (cos a * q - sin a * p = q ∧ sin a * q + cos a * p = p) ↔
-      (q = 0 ∧ p = 0) ∨ ∃ k : ℤ, k * (2 * π) = a := by
-    rw [← cos_eq_one_iff]
-    constructor
-    · rintro ⟨h1, h2⟩
-      by_cases hqp : q = 0 ∧ p = 0
-      · exact Or.inl hqp
-      refine Or.inr ?_
-      have hpos : 0 < q ^ 2 + p ^ 2 := by
-        rcases not_and_or.mp hqp with hq | hp
-        · positivity
-        · positivity
-      have h : (cos a - 1) * (q ^ 2 + p ^ 2) = 0 := by linear_combination q * h1 + p * h2
-      linarith [(mul_eq_zero.mp h).resolve_right hpos.ne']
-    · rintro (⟨rfl, rfl⟩ | h)
-      · simp
-      · have hs : sin a = 0 := by nlinarith [sin_sq_add_cos_sq a]
-        simp [h, hs]
-  simp only [Prod.ext_iff, PiLp.ext_iff, weightRotation_apply_fst, weightRotation_apply_snd]
-  constructor
-  · intro h i hi
-    exact ((hrot _ _ _).mp ⟨h.1 i, h.2 i⟩).resolve_left (by tauto)
-  · intro h
-    have key (i : ι) := (hrot (θ i) (x.1 i) (x.2 i)).mpr <| by
-      by_cases hi : x.1 i ≠ 0 ∨ x.2 i ≠ 0
-      · exact Or.inr (h i hi)
-      · exact Or.inl (by tauto)
-    exact ⟨fun i ↦ (key i).1, fun i ↦ (key i).2⟩
+  simp only [Prod.ext_iff, PiLp.ext_iff, ← forall_and]
+  exact forall_congr' (weightRotation_apply_eq_self_iff_apply θ x)
 
 /-- **Stabilizers in the weight model, on the circle.** The rotation by `-θ` fixes `z` exactly when
 the class of `θ_i` in `ℝ / 2πℤ` vanishes for every coordinate `z_i = q_i + i p_i` that is
@@ -884,27 +882,17 @@ theorem torusRotation_apply_eq_self_iff_apply (θ : ι → AddCircle (2 * π))
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (j : ι) :
     (torusRotation θ x).1 j = x.1 j ∧ (torusRotation θ x).2 j = x.2 j ↔
       (x.1 j ≠ 0 ∨ x.2 j ≠ 0) → θ j = 0 := by
-  obtain ⟨t, ht⟩ := QuotientAddGroup.mk_surjective (θ j)
-  rw [torusRotation_apply_fst, torusRotation_apply_snd, ← ht, Function.Periodic.lift_coe,
-    Function.Periodic.lift_coe, AddCircle.coe_eq_zero_iff]
-  simp only [zsmul_eq_mul]
-  rw [← cos_eq_one_iff]
-  constructor
-  · rintro ⟨h1, h2⟩ hx
-    have hpos : 0 < x.1 j ^ 2 + x.2 j ^ 2 := by
-      rcases hx with hx | hx
-      · positivity
-      · positivity
-    have h : (cos t - 1) * (x.1 j ^ 2 + x.2 j ^ 2) = 0 := by
-      linear_combination x.1 j * h1 + x.2 j * h2
-    linarith [(mul_eq_zero.1 h).resolve_right hpos.ne']
-  · intro h
-    by_cases hx : x.1 j ≠ 0 ∨ x.2 j ≠ 0
-    · have hc := h hx
-      have hs : sin t = 0 := by nlinarith [sin_sq_add_cos_sq t]
-      simp [hc, hs]
-    · obtain ⟨h1, h2⟩ := not_or.1 hx
-      simp [not_not.1 h1, not_not.1 h2]
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
+  rw [torusRotation_coe, weightRotation_apply_eq_self_iff_apply, AddCircle.coe_eq_zero_iff]
+  refine imp_congr_right fun _ ↦ ⟨fun ⟨k, hk⟩ ↦ ⟨-k, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨-k, ?_⟩⟩
+  · rw [zsmul_eq_mul]
+    simp only [Pi.neg_apply] at hk
+    push_cast
+    linarith
+  · rw [zsmul_eq_mul] at hk
+    simp only [Pi.neg_apply]
+    push_cast
+    linarith
 
 /-- **Stabilizers of the rotation torus.** The rotation by `θ ∈ (ℝ / 2πℤ)^ι` fixes `z ∈ ℂ^ι`
 exactly when `θ_j = 0` for every coordinate `z_j` that is nonzero. -/

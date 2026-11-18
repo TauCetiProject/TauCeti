@@ -30,9 +30,6 @@ the points which lie in `s` as soon as they lie in `t`.
   the value `e n` at every negative integer `n`.
 * `Function.Injective.extend_comp_extend`: extension along a composite `f₂₃ ∘ f₁₂` is the iterated
   extension, provided only the outer map `f₂₃` is injective.
-* `Function.extend_subtypeVal_apply_of_mem`, `Function.extend_subtypeVal_apply_of_notMem`: the
-  extension of a function on `s` along `Subtype.val` agrees with it on `s`, and with the fallback
-  outside `s`.
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
 -/
@@ -79,16 +76,6 @@ theorem extend_natCast_sub_natCast {α : Sort*} (a : ℕ → α) (e : α) (s : �
   · intro k
     have hcast : (s : ℤ) + (k : ℤ) = ((s + k : ℕ) : ℤ) := by omega
     rw [hcast, Injective.extend_apply (fun _ _ h => Int.natCast_inj.mp h)]
-
-/-- Extending a function `g` on a subset `s` along `Subtype.val` gives `g` on `s`. -/
-theorem extend_subtypeVal_apply_of_mem {α β : Type*} {s : Set α} {a : α} (ha : a ∈ s)
-    (g : s → β) (e : α → β) : extend Subtype.val g e a = g ⟨a, ha⟩ :=
-  Subtype.val_injective.extend_apply g e ⟨a, ha⟩
-
-/-- Extending a function on a subset `s` along `Subtype.val` gives the fallback outside `s`. -/
-theorem extend_subtypeVal_apply_of_notMem {α β : Type*} {s : Set α} {a : α} (ha : a ∉ s)
-    (g : s → β) (e : α → β) : extend Subtype.val g e a = e a :=
-  extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ ha (hb ▸ b.2)
 
 /-- Extending a function on `t` along `Subtype.val`, or first restricting it to a subset `s ⊆ t`,
 gives the same value at a point `a` that lies in `s` whenever it lies in `t`: both are `g a` if

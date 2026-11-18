@@ -15,7 +15,6 @@ import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.AddCircle
 import TauCeti.LinearAlgebra.Finsupp.LinearCombination
-import TauCeti.Logic.Function.Extend
 
 /-!
 # The kernel torus of a facet presentation
@@ -529,7 +528,7 @@ theorem vertexTorusHom_extend (φ : activeSet (facetPairing i u) c x → AddCirc
       have hne : (⟨j, hj⟩ : activeSet (facetPairing i u) c x) ≠ k := fun h ↦ hjk (by rw [← h])
       rw [← hx.basis_apply ⟨j, hj⟩, hx.basis.repr_self,
         Finsupp.single_eq_of_ne' hne, zero_smul]
-    · rw [Function.extend_subtypeVal_apply_of_notMem hj, Pi.zero_apply, smul_zero]
+    · rw [Function.extend_val_apply' hj, Pi.zero_apply, smul_zero]
   · simp
 
 variable (p) in
