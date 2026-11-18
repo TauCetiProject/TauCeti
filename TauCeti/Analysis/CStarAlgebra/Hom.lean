@@ -14,6 +14,8 @@ public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 A `⋆`-algebra homomorphism between complex C⋆-algebras is automatically continuous, so its
 two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for any morphism
 class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
+A `⋆`-homomorphism between complex C⋆-algebras is contractive, so it bundles as a continuous
+linear map `NonUnitalStarAlgHom.toContinuousLinearMap` of norm at most `1`.
 A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
 bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
 -/
@@ -30,6 +32,26 @@ open scoped CStarAlgebra in
 in any morphism class) is closed. -/
 instance isClosed_ker : IsClosed (TwoSidedIdeal.ker φ : Set A) :=
   TwoSidedIdeal.isClosed_ker (map_continuous φ)
+
+end NonUnitalStarAlgHom
+
+namespace NonUnitalStarAlgHom
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+
+/-- A `⋆`-homomorphism between C⋆-algebras as a continuous linear map. It has norm at most `1`
+because `⋆`-homomorphisms between C⋆-algebras are contractive. -/
+def toContinuousLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →L[ℂ] B :=
+  LinearMap.mkContinuous (φ : A →ₗ[ℂ] B) 1 fun a => by
+    simpa using NonUnitalStarAlgHom.norm_apply_le φ a
+
+@[simp]
+theorem coe_toContinuousLinearMap (φ : A →⋆ₙₐ[ℂ] B) : ⇑φ.toContinuousLinearMap = φ :=
+  (rfl)
+
+/-- A `⋆`-homomorphism between C⋆-algebras has norm at most `1` as a continuous linear map. -/
+theorem norm_toContinuousLinearMap_le (φ : A →⋆ₙₐ[ℂ] B) : ‖φ.toContinuousLinearMap‖ ≤ 1 :=
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 end NonUnitalStarAlgHom
 
