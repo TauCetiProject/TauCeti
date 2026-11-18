@@ -214,7 +214,8 @@ theorem continuous_meridianContraction :
 theorem meridianContraction_apply_mem_range (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (s t : I) :
     meridianContraction p u s t ∈ Set.range (sphereMeridian p u) := by
   rw [meridianContraction_apply]
-  exact ⟨_, rfl⟩
+  -- By definition, `Path.Homotopy.reflTransSymm γ` evaluates `γ` at `reflTransSymmAux`.
+  exact ⟨⟨Path.Homotopy.reflTransSymmAux (s, t), Path.Homotopy.reflTransSymmAux_mem_I _⟩, rfl⟩
 
 /-! ### The loops of loops `Γ_{u,v}` and the double loops `σ_{p,u,v}` -/
 
