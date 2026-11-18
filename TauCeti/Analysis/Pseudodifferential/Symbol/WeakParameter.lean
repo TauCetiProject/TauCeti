@@ -450,11 +450,12 @@ section Comp
 
 variable [CompleteSpace W] [CompleteSpace U]
 
-/-- The order of the term `∂_r^i b ∘ ∂_r^(j - i) a` of Leibniz's rule is `m' + m + d j`. -/
-theorem comp_order_le {j : ℕ} (i : Fin (j + 1)) :
-    m' + d * i + (m + d * ↑(j - i : ℕ)) ≤ m' + m + d * j := by
-  have hi : (i : ℕ) ≤ j := Nat.lt_succ_iff.1 i.2
-  exact le_of_eq (by rw [Nat.cast_sub hi]; ring)
+/-- For `i ≤ j`, `m' + d i + (m + d (j - i)) = m' + m + d j`: the order of the term
+`∂_r^i b ∘ ∂_r^(j - i) a` of Leibniz's rule is `m' + m + d j`. -/
+theorem add_mul_add_add_mul_sub_eq {j : ℕ} (i : Fin (j + 1)) :
+    m' + d * i + (m + d * ↑(j - i : ℕ)) = m' + m + d * j := by
+  rw [Nat.cast_sub i.is_le]
+  ring
 
 /-- **Composition.** The pointwise composition `(x, ξ, r) ↦ b(x, ξ, r) ∘ a(x, ξ, r)` of weakly
 parameter-dependent symbols `b` of frequency order `m'` and `a` of frequency order `m` has
@@ -469,7 +470,8 @@ def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W
     (fun p r hr ↦ by simp [b.coefficient_of_notMem p r hr])
     (fun j r ↦ ∑ i : Fin (j + 1),
       (j.choose i : ℂ) •
-        Symbol.inclusion (comp_order_le i) ((b.slice i r).comp (a.slice (j - i) r)))
+        Symbol.inclusion (add_mul_add_add_mul_sub_eq i).le
+          ((b.slice i r).comp (a.slice (j - i) r)))
     (fun j r p ↦ by
       rw [iteratedDeriv_clm_comp (b.contDiffAt_coefficient p r) (a.contDiffAt_coefficient p r),
         Symbol.coefficient_sum, Finset.sum_apply,
@@ -501,7 +503,8 @@ is the sum of the compositions `(j choose i) ∂_r^i b ∘ ∂_r^(j - i) a` of s
 theorem slice_comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m)
     (j : ℕ) (r : R) :
     (b.comp a).slice j r = ∑ i : Fin (j + 1), (j.choose i : ℂ) •
-      Symbol.inclusion (comp_order_le i) ((b.slice i r).comp (a.slice (j - i) r)) :=
+      Symbol.inclusion (add_mul_add_add_mul_sub_eq i).le
+        ((b.slice i r).comp (a.slice (j - i) r)) :=
   slice_ofSlices ..
 
 theorem comp_add (b : WeakParameterSymbol n R W U d m') (a₁ a₂ : WeakParameterSymbol n R V W d m) :
