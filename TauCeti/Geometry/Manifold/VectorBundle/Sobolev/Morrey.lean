@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Exponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Morrey's embedding for Sobolev sections over surfaces
@@ -295,7 +296,6 @@ expression of the continuous representative depends continuously on the element 
 private theorem continuous_coordRestrictₗ (hkp : 2 < (k : ℝ≥0∞) * p) (i : Fin A.n)
     {U : Opens ℂ} (hUi : closure (U : Set ℂ) ⊆ A.image i) (hUc : IsCompact (closure (U : Set ℂ))) :
     Continuous (coordRestrictₗ hkp i hUi) := by
-  classical
   set L := closure (U : Set ℂ)
   have : CompactSpace L := isCompact_iff_compactSpace.1 hUc
   refine (coordRestrictₗ hkp i hUi).continuous_of_seq_closed_graph fun w w₀ g hw hg ↦ ?_
@@ -311,29 +311,13 @@ private theorem continuous_coordRestrictₗ (hkp : 2 < (k : ℝ≥0∞) * p) (i 
     filter_upwards [hns, ae_all_iff.2 fun n ↦ chartValueL_ae_eq_coord_toSection hkp (w (ns n)) i,
       chartValueL_ae_eq_coord_toSection hkp w₀ i] with y hy hn h₀
     simpa only [hn, h₀] using hy
-  -- The limit `g` agrees with the chart expression of the representative of the limit on `U`,
-  -- hence on its closure.
-  set g' : ℂ → F := fun y ↦ if h : y ∈ L then g ⟨y, h⟩ else 0
-  have hg' : ContinuousOn g' L := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    convert g.continuous using 1
-    funext y
-    simp [g', y.2]
-  have hcont := A.continuousOn_coord (continuous_toSection hkp w₀) i
-  have heqU : EqOn g' (A.coord i (toSection hkp w₀)) U := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ U.isOpen (hg'.mono subset_closure)
-      (hcont.mono (subset_closure.trans hUi))
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset (subset_closure.trans hUi) hae,
-      ae_restrict_mem U.isOpen.measurableSet] with y hy hyU
-    have hyL : y ∈ L := subset_closure hyU
-    have hgy : Tendsto (fun n ↦ A.coord i (toSection hkp (w (ns n))) y) atTop (𝓝 (g' y)) := by
-      simpa only [g', hyL, ↓reduceDIte, Function.comp_def, coordRestrictₗ_apply] using
-        ((continuous_eval_const (⟨y, hyL⟩ : L)).tendsto g).comp (hg.comp hns_mono.tendsto_atTop)
-    exact tendsto_nhds_unique hgy hy
-  have heqL : EqOn g' (A.coord i (toSection hkp w₀)) L :=
-    heqU.of_subset_closure hg' (hcont.mono hUi) subset_closure subset_rfl
-  ext y
-  simpa only [g', y.2, ↓reduceDIte, coordRestrictₗ_apply] using heqL y.2
+  -- The limit `g` agrees with the chart expression of the representative of the limit almost
+  -- everywhere on `U`, hence on its closure.
+  refine DFunLike.coe_injective (U.isOpen.ext_closure_of_ae_eq (μ := volume) g.continuous
+    (coordRestrictₗ hkp i hUi w₀).continuous ?_)
+  filter_upwards [(ae_restrict_iff' (A.image i).isOpen.measurableSet).1 hae] with y hy hyU
+  exact tendsto_nhds_unique (((continuous_eval_const (⟨y, subset_closure hyU⟩ : L)).tendsto g).comp
+    (hg.comp hns_mono.tendsto_atTop)) (hy (hUi (subset_closure hyU)))
 
 /-- **Morrey's embedding for Sobolev sections: the sup bound.** For `2 < k p`, the chart
 expression of the continuous representative is bounded on every compact subset `K` of the chart
@@ -363,17 +347,14 @@ def evalL (hkp : 2 < (k : ℝ≥0∞) * p) (x : M) : SobolevSection A volume p k
   cont := by
     obtain ⟨i, hx⟩ := A.exists_mem_dom x
     have hxi : A.chart i x ∈ A.image i := A.mem_image.2 ⟨x, hx, rfl⟩
-    obtain ⟨C, hC⟩ := exists_norm_coord_toSection_le hkp i isCompact_singleton
+    obtain ⟨U, hxU, hUi, hUc⟩ := Opens.exists_between_and_isCompact_closure isCompact_singleton
       (singleton_subset_iff.2 hxi)
-    -- The chart expression at `A.chart i x`, which determines the value at `x`.
-    let φ : SobolevSection A volume p k →ₗ[ℝ] F :=
-      { toFun w := A.coord i (toSection hkp w) (A.chart i x)
-        map_add' w v := by simp [A.coord_add i _ _ hxi]
-        map_smul' c w := by simp [A.coord_smul i _ _ hxi] }
+    -- The chart expression at `A.chart i x` determines the value at `x`.
     refine (((A.triv i).symmL ℝ x).continuous.comp
-      (φ.mkContinuous C fun w ↦ hC w _ rfl).continuous).congr fun w ↦ ?_
-    simp [φ, (A.triv i).symmL_apply (A.dom_subset_baseSet i hx), A.coord_chart _ hx,
-      (A.triv i).symm_apply_apply_mk (A.dom_subset_baseSet i hx)]
+      ((continuous_eval_const (⟨A.chart i x, subset_closure (hxU rfl)⟩ :
+        closure (U : Set ℂ))).comp (continuous_coordRestrictₗ hkp i hUi hUc))).congr fun w ↦ ?_
+    simp [coordRestrictₗ_apply, (A.triv i).symmL_apply (A.dom_subset_baseSet i hx),
+      A.coord_chart _ hx, (A.triv i).symm_apply_apply_mk (A.dom_subset_baseSet i hx)]
 
 @[simp]
 theorem evalL_apply (hkp : 2 < (k : ℝ≥0∞) * p) (x : M) (w : SobolevSection A volume p k) :
