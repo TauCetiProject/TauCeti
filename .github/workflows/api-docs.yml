@@ -137,7 +137,8 @@ jobs:
           restore-keys: |
             docs-build-v2-no-equations-${{ hashFiles('lean-toolchain', 'lake-manifest.json', 'docbuild/lake-manifest.json') }}-
 
-      # doc-gen4 needs TauCeti's oleans. ci.yml publishes them, and ci.yml and pr-build.yml
+      # doc-gen4 needs TauCeti's oleans. Merge-queue staging publishes them before each landing
+      # (ci.yml only as a fallback for pushes outside the queue), and ci.yml and pr-build.yml
       # already restore them. Restore into the root project rather than docbuild: a path
       # dependency builds in its own directory.
       - name: Configure the Lake artifact cache (no-op unless the public endpoints are set)
