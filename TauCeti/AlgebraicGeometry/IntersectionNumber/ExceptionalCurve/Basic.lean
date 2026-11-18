@@ -116,12 +116,8 @@ private lemma nonempty_iso_twistingSheaf_iff_intersectionNumber {I : X.IdealShea
         Proj.twistingSheaf (SymmetricAlgebra.homogeneousSubmodule κ (Fin 2 → κ)) 1) ↔
       LineBundleClass.intersectionNumber κ (e.hom ≫ I.subschemeι)
         (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹ = -1 := by
-  -- Degree is an additive isomorphism `Pic(ℙ¹_κ) ≃ ℤ`, so inverting a class negates its degree.
-  have hinv (a : LineBundleClass (projectiveLine κ)) :
-      LineBundleClass.eulerDegree κ a⁻¹ = -LineBundleClass.eulerDegree κ a := by
-    simpa using map_neg (projectiveLine.picardDegreeEquiv κ) (Additive.ofMul a)
   rw [projectiveLine.nonempty_iso_twistingSheaf_iff, LineBundleClass.intersectionNumber_def,
-    LineBundleClass.pullback_inv, LineBundleClass.pullback_mk, hinv,
+    LineBundleClass.pullback_inv, LineBundleClass.pullback_mk, projectiveLine.eulerDegree_inv,
     LineBundleClass.eulerDegree_mk, neg_inj]
 
 /-- **Exceptional curves of the first kind by their self-intersection.** The closed subscheme `E`
@@ -204,23 +200,22 @@ theorem finrank_cohomology_one_trivial_eq_zero :
   have := hE.subsingleton_cohomology_succ_trivial 0
   Module.finrank_zero_of_subsingleton
 
-/-- Intersection numbers with an exceptional curve `E` over a field `k` are those computed over
+omit hE in
+/-- Intersection numbers with a closed subscheme `E` over a field `k` are those computed over
 `κ` on `ℙ¹_κ` through an isomorphism `e : ℙ¹_κ ≅ E`, scaled by `dim_k H⁰(E, 𝒪_E)`. -/
 private lemma intersectionNumber_eq_mul {κ : Type u} [Field κ]
     (e : projectiveLine κ ≅ I.subscheme) (a : LineBundleClass X) :
     LineBundleClass.intersectionNumber k I.subschemeι a =
       LineBundleClass.intersectionNumber κ (e.hom ≫ I.subschemeι) a *
         finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) := by
-  have := hE.compactSpace
-  have := hE.quasiSeparatedSpace
   -- Regard `ℙ¹_κ` as a scheme over `k` through `e`, and compute there.
   let : (projectiveLine κ).Over (Spec (.of k)) := ⟨e.hom ≫ (I.subscheme ↘ Spec (.of k))⟩
   have : e.hom.IsOver (Spec (.of k)) := ⟨rfl⟩
   have h := LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial k κ
     (isField_of_universallyClosed κ (projectiveLine κ ↘ Spec (.of κ)))
     (LineBundleClass.pullback (e.hom ≫ I.subschemeι) a)
-  rw [(projectiveLine.cohomologyZeroTrivialLinearEquiv κ).finrank_eq, Module.finrank_self,
-    Nat.cast_one, mul_one, Scheme.Hom.finrank_cohomology_trivial_of_isIso e.hom k 0,
+  rw [projectiveLine.finrank_cohomology_zero_trivial, Nat.cast_one, mul_one,
+    Scheme.Hom.finrank_cohomology_trivial_of_isIso e.hom k 0,
     ← LineBundleClass.pullback_comp, LineBundleClass.eulerDegree_pullback_of_isIso e.hom rfl] at h
   rw [LineBundleClass.intersectionNumber_def, LineBundleClass.intersectionNumber_def, h, mul_comm,
     LineBundleClass.pullback_comp]
@@ -233,7 +228,7 @@ theorem intersectionNumber_self :
         (LineBundleClass.mk hE.isEffectiveCartier.toInvertibleSheaf)⁻¹ =
       -(finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) : ℤ) := by
   obtain ⟨_, κ, _, e, he⟩ := isExceptionalCurveOfFirstKind_iff_intersectionNumber.mp hE
-  rw [hE.intersectionNumber_eq_mul k e, he, neg_one_mul]
+  rw [intersectionNumber_eq_mul k e, he, neg_one_mul]
 
 /-- **The conormal bundle of an exceptional curve has degree its weight.** Over every field `k`
 over which an exceptional curve of the first kind `E` lies,
@@ -243,7 +238,7 @@ theorem intersectionNumber_mk_toInvertibleSheaf :
         (LineBundleClass.mk hE.isEffectiveCartier.toInvertibleSheaf) =
       finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) := by
   obtain ⟨κ, _, e, he⟩ := hE.exists_iso
-  rw [hE.intersectionNumber_eq_mul k e, LineBundleClass.intersectionNumber_mk,
+  rw [intersectionNumber_eq_mul k e, LineBundleClass.intersectionNumber_mk,
     (projectiveLine.nonempty_iso_twistingSheaf_iff κ _ 1).mp he, one_mul]
 
 /-- **Exceptional curves are invariant under isomorphisms.** The inverse image of an exceptional
