@@ -96,9 +96,9 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
   intro x hx
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
   rw [involute_eq_of_mem_even (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)]
-  have hodd := mul_mul_inv_mem_evenOdd Q (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)
-    (evenUnitaryGroup.coe_mem_evenOdd_zero Q (inv_mem hx)) (ι_mem_evenOdd_one Q m)
-  have hrev := reverse_mul_mul_inv_eq_self Q (evenUnitaryGroup.reverse_mul_self Q ⟨x, hx⟩)
+  have hodd := mul_mul_inv_mem_evenOdd (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)
+    (ι_mem_evenOdd_one Q m)
+  have hrev := reverse_mul_mul_inv_eq_self (evenUnitaryGroup.reverse_mul_self Q ⟨x, hx⟩)
     (reverse_ι m)
   -- So the conjugate is `ι Q w + c • ω`, and its square is the scalar `Q m`.
   obtain ⟨y₁, hy₁, y₂, hy₂, hy⟩ := Submodule.mem_sup.mp

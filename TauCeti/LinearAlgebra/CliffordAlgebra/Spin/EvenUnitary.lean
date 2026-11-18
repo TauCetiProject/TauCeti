@@ -115,28 +115,6 @@ def evenUnitaryGroup : Subgroup (CliffordAlgebra Q)ˣ where
     · rw [hinv]
       exact hunit
 
-/-- Conjugation by a unit whose value and inverse lie in the even part of the Clifford algebra
-preserves every graded piece. -/
-theorem mul_mul_inv_mem_evenOdd {x : (CliffordAlgebra Q)ˣ}
-    (hx : (x : CliffordAlgebra Q) ∈ evenOdd Q 0) (hxi : (↑x⁻¹ : CliffordAlgebra Q) ∈ evenOdd Q 0)
-    {k : ZMod 2} {y : CliffordAlgebra Q} (hy : y ∈ evenOdd Q k) :
-    (x : CliffordAlgebra Q) * y * ↑x⁻¹ ∈ evenOdd Q k := by
-  have h : (x : CliffordAlgebra Q) * y ∈ evenOdd Q k :=
-    zero_add k ▸ SetLike.mul_mem_graded hx hy
-  exact add_zero k ▸ SetLike.mul_mem_graded h hxi
-
-/-- Reversal fixes the conjugate of a reversal-fixed element by a unit `x` with
-`reverse x * x = 1`, because reversal then inverts `x`. -/
-theorem reverse_mul_mul_inv_eq_self {x : (CliffordAlgebra Q)ˣ}
-    (hx : reverse (x : CliffordAlgebra Q) * (x : CliffordAlgebra Q) = 1) {y : CliffordAlgebra Q}
-    (hy : reverse y = y) :
-    reverse ((x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q)) =
-      (x : CliffordAlgebra Q) * y * (↑x⁻¹ : CliffordAlgebra Q) := by
-  have hxr := Units.eq_inv_of_mul_eq_one_right hx
-  have hxir : reverse (↑x⁻¹ : CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
-    rw [← hxr, reverse_reverse]
-  simp only [reverse.map_mul, hy, hxr, hxir, mul_assoc]
-
 namespace evenUnitaryGroup
 
 /-- Membership in `evenUnitaryGroup` is exactly evenness together with the unitary equation. -/
