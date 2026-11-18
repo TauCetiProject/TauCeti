@@ -190,7 +190,7 @@ instance finiteDimensional_cohomology_trivial_of_isCurveOver [X.IsCurveOver k] (
   have hpush (m : ℕ) : FiniteDimensional k (Cohomology ((pushforward ν).obj OY) m) := by
     let _ : Module k (Cohomology OY m) := cohomologyBaseModule k Y OY m
     have := finiteDimensional_cohomology_of_isCurveOver k OY m
-    exact Module.Finite.equiv (ν.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY m).symm
+    exact Module.Finite.equiv (ν.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m).symm
   let φ : OX ⟶ (pushforward ν).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit ν.toRingCatSheafHom
   have : Mono φ := ν.mono_unitToPushforwardObjUnit
@@ -270,7 +270,7 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   have : Mono φ := f.mono_unitToPushforwardObjUnit
   have hS := TauCeti.cokernelSequence_shortExact φ
-  let eCech (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY m
+  let eCech (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m
   have hY_eq : eulerCharBelow k Y (InvertibleSheaf.trivial Y).obj 2 =
       eulerCharBelow k X ((pushforward f).obj OY) 2 := by
     rw [eulerCharBelow_two, eulerCharBelow_two,
@@ -310,7 +310,7 @@ theorem genus_le_of_isModification [X.IsCurveOver k] [Y.IsCurveOver k]
   have : FiniteDimensional k (Cohomology OX 1) :=
     Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X 1)
   have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let eCech := f.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY 1
+  let eCech := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY 1
   let φ : OX ⟶ (pushforward f).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   let ψ : Cohomology OX 1 →ₗ[k] Cohomology OY 1 :=
