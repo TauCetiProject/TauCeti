@@ -229,7 +229,7 @@ theorem eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f) (hg : Dif
     h0, h1]
 
 /-- **The Riccati form** (DLMF 9.2.16), pointwise: if `w` and `w′` are differentiable at `z`,
-`w″(z) = z w(z)` and `w(z) ≠ 0`, then `W = w′/w` has derivative `z − W(z)²` at `z`. -/
+`w′′(z) = z w(z)` and `w(z) ≠ 0`, then `W = w′/w` has derivative `z − W(z)²` at `z`. -/
 theorem hasDerivAt_deriv_div_of_airy_ode_at {w : ℂ → ℂ} {z : ℂ} (hw : DifferentiableAt ℂ w z)
     (hw' : DifferentiableAt ℂ (deriv w) z) (hode : deriv^[2] w z = z * w z) (hz : w z ≠ 0) :
     HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z := by
