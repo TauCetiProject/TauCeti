@@ -135,9 +135,8 @@ theorem bracket_apply_eq_zero_of_apply_eq_zero_left {x : M} {a b : Cₛ^∞⟮I;
   refine Submodule.smul_induction_on (p := fun u ↦ A.bracket u b x = 0)
     (mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero ha) ?_ ?_
   · intro f hf u _
-    rw [A.bracket_swap]
-    change -(A.bracket b (f • u) x) = 0
-    rw [A.bracket_smul_apply, mem_smoothVanishingIdeal_iff.mp hf, hb, map_zero]
+    rw [A.bracket_swap, ContMDiffSection.coe_neg, Pi.neg_apply, neg_eq_zero, A.bracket_smul_apply,
+      mem_smoothVanishingIdeal_iff.mp hf, hb, map_zero]
     simp
   · intro u₁ u₂ h₁ h₂
     simp [h₁, h₂]
@@ -179,20 +178,23 @@ private theorem isotropyExtension_apply {x : M} (v : A.isotropy x) :
   simpa [isotropyExtension] using
     (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose_spec
 
+omit [FiniteDimensional ℝ F] in
+private theorem isotropyExtension_apply_mem {x : M} (v : A.isotropy x) :
+    isotropyExtension A v x ∈ A.isotropy x := by
+  simpa only [isotropyExtension_apply] using v.2
+
 /-- The bracket of the isotropy Lie algebra at `x`: the value at `x` of the bracket of chosen
 smooth sections through the two isotropy vectors. By `TauCeti.LieAlgebroid.bracket_apply_congr`
 any other choice gives the same value (`TauCeti.LieAlgebroid.coe_bracket_isotropy`). -/
 instance instBracketIsotropy (x : M) : Bracket (A.isotropy x) (A.isotropy x) where
+  -- The data unfolds `isotropyExtension` by hand: the module system forbids a private
+  -- declaration in the data of a public instance, outside tactic blocks. The tactic membership
+  -- proofs use `isotropyExtension_apply_mem`, whose statement is definitionally the required one.
   bracket v w :=
     ⟨A.bracket (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose
       (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)).choose x,
-      A.bracket_apply_mem_isotropy
-        (by
-          change isotropyExtension A v x ∈ A.isotropy x
-          simpa only [isotropyExtension_apply] using v.2)
-        (by
-          change isotropyExtension A w x ∈ A.isotropy x
-          simpa only [isotropyExtension_apply] using w.2)⟩
+      A.bracket_apply_mem_isotropy (by exact isotropyExtension_apply_mem A v)
+        (by exact isotropyExtension_apply_mem A w)⟩
 
 /-- The bracket of the isotropy Lie algebra at `x` is the value at `x` of the bracket of any two
 smooth sections through the two isotropy vectors. -/
@@ -201,8 +203,7 @@ theorem coe_bracket_isotropy {x : M} {v w : A.isotropy x} {a b : Cₛ^∞⟮I; F
   exact A.bracket_apply_congr (a := isotropyExtension A v) (b := isotropyExtension A w)
     ((isotropyExtension_apply A v).trans ha.symm)
     ((isotropyExtension_apply A w).trans hb.symm)
-    (by simpa only [isotropyExtension_apply] using v.2)
-    (by simpa only [isotropyExtension_apply] using w.2)
+    (isotropyExtension_apply_mem A v) (isotropyExtension_apply_mem A w)
 
 /-- The **isotropy Lie algebra** of a Lie algebroid at `x`, with the bracket
 `TauCeti.LieAlgebroid.coe_bracket_isotropy` of isotropy vectors. Its Jacobi identity is that of the
