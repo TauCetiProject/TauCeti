@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -227,9 +228,16 @@ theorem hasTemperateGrowth_japaneseBracketCpow (z : ℂ) :
   refine Function.HasTemperateGrowth.mul (by fun_prop) ?_
   exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
 
-/-- The complex power `x ↦ ⟨x⟩ ^ z` of the Japanese bracket is smooth. -/
-theorem contDiff_japaneseBracketCpow (z : ℂ) : ContDiff ℝ ∞ (japaneseBracketCpow z : H → ℂ) :=
-  (hasTemperateGrowth_japaneseBracketCpow z).1
+/-- The complex power `x ↦ ⟨x⟩ ^ z` of the Japanese bracket is smooth, indeed analytic: it is
+`w ↦ w ^ (z / 2)`, analytic on the slit plane, composed with `x ↦ 1 + ‖x‖ ^ 2`. -/
+@[fun_prop]
+theorem contDiff_japaneseBracketCpow {n : WithTop ℕ∞} (z : ℂ) :
+    ContDiff ℝ n (japaneseBracketCpow z : H → ℂ) := by
+  have hg : ContDiffOn ℝ n (fun w : ℂ ↦ w ^ (z / 2)) slitPlane :=
+    ((analyticOnNhd_id.cpow analyticOnNhd_const fun _ hw ↦ hw).restrictScalars).contDiffOn
+      isOpen_slitPlane.uniqueDiffOn
+  exact hg.comp_contDiff (ofRealCLM.contDiff.comp (contDiff_const.add (contDiff_norm_sq ℝ)))
+    fun x ↦ ofReal_mem_slitPlane.2 (by positivity)
 
 /-- **The derivative of `⟨x⟩ ^ z` in `x`** is `z ⟨x⟩ ^ (z - 2) ⟪x, ·⟫`: differentiating
 `(1 + ‖x‖ ^ 2) ^ (z / 2)` gives `(z / 2) (1 + ‖x‖ ^ 2) ^ (z / 2 - 1) 2 ⟪x, ·⟫`. -/
@@ -329,8 +337,8 @@ theorem exists_norm_iteratedFDeriv_japaneseBracketCpow_le (k : ℕ) :
       ext v
       simp [Λ]
     rw [← norm_iteratedFDeriv_fderiv, hfd]
-    refine (norm_iteratedFDeriv_smul_le (contDiff_japaneseBracketCpow (z - 2)) (z • Λ).contDiff x
-      (mod_cast le_top)).trans ?_
+    refine (norm_iteratedFDeriv_smul_le (contDiff_japaneseBracketCpow (n := ∞) (z - 2))
+      (z • Λ).contDiff x (mod_cast le_top)).trans ?_
     rw [Finset.sum_mul, Finset.sum_mul]
     refine Finset.sum_le_sum fun i hi ↦ ?_
     have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
