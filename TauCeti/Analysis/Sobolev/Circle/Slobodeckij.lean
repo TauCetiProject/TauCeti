@@ -40,8 +40,8 @@ Unlike the Fourier description, differences behave well under nonlinear maps. If
 most `K²` times that of `u`. Hence composition with a Lipschitz function maps `H^s` to itself for
 `0 < s < 1` (`TauCeti.CircleSobolev.exists_toLpₗᵢ_inclusion_eq_comp_of_lipschitzWith`). These
 Nemytskii maps need no holomorphy of `f`, unlike those of
-`TauCeti/Analysis/Sobolev/Circle/Nemytskii.lean`, and the orders `1/2 < s < 1` covered here are
-those at which `H^s` consists of continuous functions.
+`TauCeti/Analysis/Sobolev/Circle/Nemytskii/Basic.lean`, and the orders `1/2 < s < 1` covered here
+are those at which `H^s` consists of continuous functions.
 
 ## Main definitions
 

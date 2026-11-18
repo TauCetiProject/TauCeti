@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Circle.Neck
-public import TauCeti.Analysis.Sobolev.Circle.Nemytskii
+public import TauCeti.Analysis.Sobolev.Circle.Nemytskii.Basic
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
