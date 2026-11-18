@@ -114,6 +114,20 @@ theorem log_prod_iSup_eq (S : Finset (HeightOneSpectrum (𝓞 K)))
 
 variable [Finite ι]
 
+/-- **The height of a nonzero tuple integral outside a finite set `S₀` of finite places is at most
+the product of its local sup norms over the infinite places and the places of `S₀`.** It is
+stated with `S₀` given as finite places, and integrality through their absolute values;
+`NumberField.mulHeight_le_prod` is the form for height one primes and `S`-integers. -/
+theorem mulHeight_le_prod_of_forall_le_one (S₀ : Finset (FinitePlace K)) (hx : x ≠ 0)
+    (hxS₀ : ∀ v : FinitePlace K, v ∉ S₀ → ∀ i, v (x i) ≤ 1) :
+    mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult) * ∏ v ∈ S₀, ⨆ i, v (x i) := by
+  rw [NumberField.mulHeight_eq hx]
+  gcongr
+  · exact Finset.prod_nonneg fun v _ ↦ pow_nonneg (Real.iSup_nonneg fun i ↦ apply_nonneg _ _) _
+  · exact Finset.finprod_le_prod_of_le_one₀ S₀ (FinitePlace.hasFiniteMulSupport_iSup hx)
+      (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
+      fun v hv ↦ Real.iSup_le (hxS₀ v hv) zero_le_one
+
 /-- **The height of a nonzero tuple of `S`-integers is at most the product of its local sup norms
 over the infinite places and the places of `S`.** The local sup norms at the other finite places
 are at most `1`. -/
@@ -121,40 +135,11 @@ theorem mulHeight_le_prod (S : Finset (HeightOneSpectrum (𝓞 K))) (hx : x ≠ 
     (hxS : ∀ i, x i ∈ (S : Set (HeightOneSpectrum (𝓞 K))).integer K) :
     mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult)
       * ∏ v ∈ S, ⨆ i, FinitePlace.mk v (x i) := by
-  classical
-  rw [NumberField.mulHeight_eq hx, ← FinitePlace.finprod_comp_mk]
-  refine mul_le_mul_of_nonneg_left ?_
-    (Finset.prod_nonneg fun v _ ↦ pow_nonneg (Real.iSup_nonneg fun i ↦ apply_nonneg _ _) _)
-  set F : HeightOneSpectrum (𝓞 K) → ℝ := fun v ↦ ⨆ i, FinitePlace.mk v (x i)
-  -- compare with the function equal to `F` on `S` and to `1` outside it
-  have hle : ∀ v, F v ≤ (S : Set (HeightOneSpectrum (𝓞 K))).mulIndicator F v := fun v ↦ by
-    rw [Set.mulIndicator_apply]
-    split_ifs with hv
-    · exact le_rfl
-    · exact Real.iSup_le (fun i ↦ (Set.mem_integer_iff_finitePlace _ _).mp (hxS i) v hv)
-        zero_le_one
-  have hFfin : Function.HasFiniteMulSupport F :=
-    (FinitePlace.hasFiniteMulSupport_iSup hx).comp_of_injective
-      (g := (FinitePlace.equivHeightOneSpectrum (K := K)).symm)
-      (FinitePlace.equivHeightOneSpectrum (K := K)).symm.injective
-  calc ∏ᶠ v, F v ≤ ∏ᶠ v, (S : Set (HeightOneSpectrum (𝓞 K))).mulIndicator F v :=
-        finprod_le_finprod₀ hFfin (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
-          (S.finite_toSet.subset (Set.mulSupport_mulIndicator_subset)) hle
-    _ = ∏ v ∈ S, F v := by rw [← finprod_mem_def, finprod_mem_coe_finset]
-
-/-- **The height of a nonzero tuple integral outside a finite set `S₀` of finite places is at most
-the product of its local sup norms over the infinite places and the places of `S₀`.** This is
-`NumberField.mulHeight_le_prod` with `S₀` given as finite places and integrality stated through
-their absolute values. -/
-theorem mulHeight_le_prod_of_forall_le_one (S₀ : Finset (FinitePlace K)) (hx : x ≠ 0)
-    (hxS₀ : ∀ v : FinitePlace K, v ∉ S₀ → ∀ i, v (x i) ≤ 1) :
-    mulHeight x ≤ (∏ v : InfinitePlace K, (⨆ i, v (x i)) ^ v.mult) * ∏ v ∈ S₀, ⨆ i, v (x i) := by
-  rw [NumberField.mulHeight_eq hx]
-  exact mul_le_mul_of_nonneg_left
-    (Finset.finprod_le_prod_of_le_one₀ S₀ (FinitePlace.hasFiniteMulSupport_iSup hx)
-      (fun v ↦ Real.iSup_nonneg fun i ↦ apply_nonneg _ _)
-      fun v hv ↦ Real.iSup_le (hxS₀ v hv) zero_le_one)
-    (Finset.prod_nonneg fun v _ ↦ pow_nonneg (Real.iSup_nonneg fun i ↦ apply_nonneg _ _) _)
+  have h := mulHeight_le_prod_of_forall_le_one
+    (S.map FinitePlace.equivHeightOneSpectrum.symm.toEmbedding) hx fun v hv i ↦ by
+      rw [← FinitePlace.mk_maximalIdeal v]
+      exact (Set.mem_integer_iff_finitePlace _ _).mp (hxS i) _ (by simpa using hv)
+  rwa [Finset.prod_map] at h
 
 /-- **The height of an `S`-primitive tuple is the product of its local sup norms over the
 infinite places and the places of `S`.** -/

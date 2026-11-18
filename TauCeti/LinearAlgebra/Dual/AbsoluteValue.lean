@@ -51,8 +51,9 @@ theorem exists_forall_abv_apply_le_mul {l : ι → Module.Dual K (ι → K)}
         rw [Finset.sum_mul]
         gcongr with i
         exact hM i
-    _ ≤ (∑ j, ∑ i, abv (a j i)) * M :=
-        mul_le_mul_of_nonneg_right (Finset.single_le_sum (f := fun j ↦ ∑ i, abv (a j i))
-          (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abv.nonneg _) (Finset.mem_univ j)) hM0
+    _ ≤ (∑ j, ∑ i, abv (a j i)) * M := by
+        gcongr ?_ * _
+        exact Finset.single_le_sum (f := fun j ↦ ∑ i, abv (a j i))
+          (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abv.nonneg _) (Finset.mem_univ j)
 
 end LinearIndependent

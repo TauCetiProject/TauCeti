@@ -8,8 +8,10 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.Height.Subspace.Basic
+import TauCeti.Analysis.ExteriorPower.Plucker
 import TauCeti.LinearAlgebra.Dual.AbsoluteValue
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 import TauCeti.NumberTheory.Height.Primitive
 
 /-!
@@ -55,6 +57,9 @@ so the bound is uniform over families of exponents moving with the level.
   Lemma 7.5.21, upper bound.
 * J.-H. Evertse and H. P. Schlickewei, *A quantitative version of the absolute subspace theorem*,
   J. reine angew. Math. 548 (2002), Lemma 12.3.
+* A version of this bound is formalized in Ralf Stephan's
+  `DiophantineApproximation/SubspaceHeightBounds.lean` in `rwst/Subspace-Theorems`, snapshot
+  `09835cb` (Apache 2.0).
 -/
 
 public section
@@ -65,40 +70,10 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [LinearOrder ι]
 
-omit [NumberField K] in
-/-- If every coordinate of every member of a family of `p ≤ #ι` vectors is at most `D * B` at an
-absolute value `v`, then every Plücker coordinate of the family is at most
-`(#ι)! * max 1 D ^ #ι * B ^ p` there. -/
-private theorem apply_plucker_le [Fintype ι] {v : AbsoluteValue K ℝ} {p : ℕ}
-    (hp : p ≤ Fintype.card ι) {y : Fin p → ι → K} {D B : ℝ} (hD : 0 ≤ D) (hB : 0 ≤ B)
-    (hy : ∀ b j, v (y b j) ≤ D * B) (s : Set.powersetCard ι p) :
-    v (plucker y s) ≤ (Fintype.card ι).factorial * max 1 D ^ Fintype.card ι * B ^ p := by
-  rw [plucker_apply]
-  refine (Matrix.abv_det_le_factorial_prod _ v (b := fun _ ↦ D * B) fun b j ↦ hy b _).trans ?_
-  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_pow, ← mul_assoc]
-  gcongr
-  exact (pow_le_pow_left₀ hD (le_max_right 1 D) p).trans (pow_le_pow_right₀ (le_max_left 1 D) hp)
-
-omit [LinearOrder ι] in
-/-- The power of `Q` attached to a weight `p · W`, with `W` a weighted sum of exponents over the
-infinite places and `S₀`, splits as a product of local powers. -/
-private theorem rpow_mul_sum_eq_prod (S₀ : Finset (FinitePlace K)) (m : AbsoluteValue K ℝ → ℝ)
-    (p : ℕ) {Q : ℝ} (hQ : 0 < Q) :
-    Q ^ ((p : ℝ) * (∑ v : InfinitePlace K, (v.mult : ℝ) * m v.1 + ∑ v ∈ S₀, m v.1)) =
-      (∏ v : InfinitePlace K, ((Q ^ m v.1) ^ p) ^ v.mult) * ∏ v ∈ S₀, (Q ^ m v.1) ^ p := by
-  rw [mul_add, Real.rpow_add hQ, Finset.mul_sum, Finset.mul_sum, Real.rpow_sum_of_pos hQ,
-    Real.rpow_sum_of_pos hQ]
-  congr 1 <;> refine Finset.prod_congr rfl fun v _ ↦ ?_
-  · rw [← Real.rpow_mul_natCast hQ.le, ← Real.rpow_mul_natCast hQ.le]
-    congr 1
-    ring
-  · rw [← Real.rpow_mul_natCast hQ.le]
-    congr 1
-    ring
-
 /-- The height of the Plücker point of `p` linearly independent points of an approximation domain
-at a level `Q ≥ 1` is at most `C * Q ^ (p * W)`, where `C` is assembled from constants `D v`
-bounding the coordinates by the values of the forms at the infinite places and at `S₀`. -/
+at a level `Q ≥ 1` is at most `C * Q ^ (p * W)`, where `p * W` is the weight of the exponents
+`cMax v` repeated `p` times and `C` is assembled from constants `D v` bounding the coordinates by
+the values of the forms at the infinite places and at `S₀`. -/
 private theorem mulHeight_plucker_le [Fintype ι] {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.1))
@@ -112,20 +87,27 @@ private theorem mulHeight_plucker_le [Fintype ι] {S₀ : Finset (FinitePlace K)
       ((∏ v : InfinitePlace K,
           ((Fintype.card ι).factorial * max 1 (D v.1) ^ Fintype.card ι) ^ v.mult) *
         ∏ v ∈ S₀, (Fintype.card ι).factorial * max 1 (D v.1) ^ Fintype.card ι) *
-        Q ^ ((p : ℝ) *
-          (∑ v : InfinitePlace K, (v.mult : ℝ) * (⨆ i, c v.1 i) + ∑ v ∈ S₀, ⨆ i, c v.1 i)) := by
+        Q ^ approxWeight S₀ (fun v (_ : Fin p) ↦ ⨆ i, c v i) := by
   set E : AbsoluteValue K ℝ → ℝ :=
     fun v ↦ (Fintype.card ι).factorial * max 1 (D v) ^ Fintype.card ι
   have hQ0 : 0 < Q := zero_lt_one.trans_le hQ
-  rw [rpow_mul_sum_eq_prod S₀ (fun v ↦ ⨆ i, c v i) p hQ0]
+  rw [rpow_approxWeight S₀ _ hQ0]
+  simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
   -- Local bounds on the Plücker coordinates at the infinite places and at `S₀`.
   have hloc (v : AbsoluteValue K ℝ) (hv : LinearIndependent K (L v))
       (hyv : ∀ k i, v (L v i (y k)) ≤ Q ^ c v i) :
-      ⨆ s, v (plucker y s) ≤ E v * (Q ^ ⨆ i, c v i) ^ p :=
-    Real.iSup_le (fun s ↦ apply_plucker_le hp (hD0 v) (Real.rpow_nonneg hQ0.le _)
+      ⨆ s, v (plucker y s) ≤ E v * (Q ^ ⨆ i, c v i) ^ p := by
+    refine Real.iSup_le (fun s ↦ ?_) (by positivity)
+    refine (v.plucker_le_factorial_mul_prod (b := fun _ ↦ D v * Q ^ ⨆ i, c v i)
       (fun k j ↦ hD v hv (y k) _ (fun i ↦ (hyv k i).trans <|
-        Real.rpow_le_rpow_of_exponent_le hQ (le_ciSup (Finite.bddAbove_range _) i)) j) s)
-      (by positivity)
+        Real.rpow_le_rpow_of_exponent_le hQ (le_ciSup (Finite.bddAbove_range _) i)) j) s).trans ?_
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_pow, ← mul_assoc]
+    simp only [E]
+    have := hD0 v
+    gcongr ?_ * ?_ * _
+    · exact_mod_cast Nat.factorial_le hp
+    · exact (pow_le_pow_left₀ (hD0 v) (le_max_right 1 _) p).trans
+        (pow_le_pow_right₀ (le_max_left 1 _) hp)
   have hinf (v : InfinitePlace K) : ⨆ s, v (plucker y s) ≤ E v.1 * (Q ^ ⨆ i, c v.1 i) ^ p :=
     hloc v.1 (hLInf v) fun k i ↦ (mem_approxDomain.1 (hyD k)).1 v i
   have hfin (v : FinitePlace K) (hv : v ∈ S₀) :
@@ -186,14 +168,18 @@ theorem exists_forall_relativeSubspaceHeight_approxSpan_le [Finite ι]
   obtain ⟨b, hbD, hbspan, hbli⟩ := exists_linearIndependent K (approxDomain S₀ L c Q)
   have : Finite b := hbli.setFinite.to_subtype
   obtain ⟨p, ⟨e⟩⟩ := Finite.exists_equiv_fin b
-  set y : Fin p → ι → K := fun k ↦ (e.symm k : ι → K)
+  set y : Fin p → ι → K := Subtype.val ∘ e.symm with hy_def
   have hy : LinearIndependent K y := hbli.comp _ e.symm.injective
   have hrange : Set.range y = b := by
-    rw [show y = Subtype.val ∘ e.symm from rfl, Set.range_comp, e.symm.range_eq_univ,
-      Set.image_univ, Subtype.range_coe]
+    rw [hy_def, Set.range_comp, e.symm.range_eq_univ, Set.image_univ, Subtype.range_coe]
   have hV : approxSpan S₀ L c Q = span K (Set.range y) := by
     rw [approxSpan_eq_span, ← hbspan, hrange]
-  rw [hV, relativeSubspaceHeight_span_range hy, finrank_span_eq_card hy, Fintype.card_fin]
+  -- The exponent is the weight of the exponents `cMax v`, repeated `p` times.
+  have hW : (p : ℝ) * (∑ v : InfinitePlace K, (v.mult : ℝ) * (⨆ i, c v.1 i) +
+      ∑ v ∈ S₀, ⨆ i, c v.1 i) = approxWeight S₀ (fun v (_ : Fin p) ↦ ⨆ i, c v i) := by
+    simp only [approxWeight_def, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul, mul_add, Finset.mul_sum, mul_left_comm]
+  rw [hV, relativeSubspaceHeight_span_range hy, finrank_span_eq_card hy, Fintype.card_fin, hW]
   exact mulHeight_plucker_le hLInf hLFin hD0 hD hQ (by simpa using hy.fintype_card_le_finrank) hy
     fun k ↦ hbD (e.symm k).2
 
