@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
-public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
 /-!
 # Singular homology of a space approximated on compact sets
@@ -89,9 +89,9 @@ theorem exists_singularHomologyMap_eq_of_homotopic
   obtain ⟨j, e, he⟩ := happrox K hK
   refine ⟨j, ((singularHomologyFunctor _ n).obj M).map (ofHom e) y, ?_⟩
   have h : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).map (ofHom e ≫ c.ι.app j) =
-      ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.subtypeVal K)) :=
-    -- Singular homology of a map is by definition the homology of its map of singular chains.
-    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor he.some M n
+      ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.subtypeVal K)) := by
+    rw [← ofHom_hom (c.ι.app j), ← ofHom_comp]
+    exact ContinuousMap.singularHomologyFunctor_map_eq_of_homotopic M n he
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, h]
 
 /-- **Classes vanishing in an approximated space vanish in the approximations.** Let `c` be a
@@ -126,10 +126,16 @@ theorem exists_singularHomologyMap_eq_zero_of_homotopic
       (ofHom ⟨hK₀.restrict, (c.ι.app j).hom.continuous.restrict hK₀⟩ ≫
         ofHom (ContinuousMap.inclusion hKL) ≫ ofHom e) =
       ((singularHomologyFunctor _ n).obj M).map
-        (ofHom (ContinuousMap.subtypeVal K) ≫ F.map f) :=
-    -- As above; the restriction of the leg to `K → L` is the composite of its restriction to
+        (ofHom (ContinuousMap.subtypeVal K) ≫ F.map f) := by
+    -- The restriction of the leg to `K → L` is the composite of its restriction to
     -- `K → c.ι.app j '' K` with the inclusion into `L`.
-    TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor he.some M n
+    have hr : (ContinuousMap.inclusion hKL).comp
+        ⟨hK₀.restrict, (c.ι.app j).hom.continuous.restrict hK₀⟩ =
+          ⟨(hK₀.mono_right hKL).restrict,
+            (c.ι.app j).hom.continuous.restrict (hK₀.mono_right hKL)⟩ := rfl
+    rw [← ofHom_comp, ← ofHom_comp, ContinuousMap.comp_assoc, hr, ← ofHom_hom (F.map f),
+      ← ofHom_comp]
+    exact ContinuousMap.singularHomologyFunctor_map_eq_of_homotopic M n he
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← h, Functor.map_comp,
     Functor.map_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hyL, map_zero]
 
