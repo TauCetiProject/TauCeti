@@ -11,7 +11,6 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.LSeries.Convolution
-public import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
 # Completely multiplicative arithmetic functions
@@ -25,7 +24,7 @@ at which `f` vanishes.
 Since an arithmetic function vanishes at `0`, a completely multiplicative arithmetic function is
 the same thing as a monoid-with-zero homomorphism `ℕ →*₀ R`, and the two notions are identified
 by an equivalence commuting with evaluation. Through it, Mathlib's Euler product for completely
-multiplicative functions applies, and with it the Euler product of the Dirichlet series.
+multiplicative functions applies.
 
 Completely multiplicative functions interact with Dirichlet convolution through the pointwise
 product: `f · (g ⋆ h) = (f · g) ⋆ (f · h)`. Over a commutative ring this makes `μ · f` the
@@ -50,8 +49,6 @@ divisor functions and of functions such as Liouville's `λ`.
 * `ArithmeticFunction.IsCompletelyMultiplicative.coe_moebius_pmul_mul_self`: `(μ · f) ⋆ f = 1`.
 * `ArithmeticFunction.IsCompletelyMultiplicative.eulerProduct_tprod`:
   `∏' p, (1 - f p)⁻¹ = ∑' n, f n` for absolutely summable `f`.
-* `ArithmeticFunction.IsCompletelyMultiplicative.LSeries_eulerProduct_tprod`: the Euler product
-  `∏' p, (1 - f p * p ^ (-s))⁻¹` of an absolutely convergent Dirichlet series.
 * `ArithmeticFunction.isCompletelyMultiplicative_liouville` and
   `ArithmeticFunction.isCompletelyMultiplicative_toArithmeticFunction_cpow`: Liouville's `λ` and
   `n ↦ n ^ ν` for complex `ν`; `ArithmeticFunction.not_isCompletelyMultiplicative_moebius`: the
@@ -78,6 +75,11 @@ variable {R : Type*}
 `f (m * n) = f m * f n` for all `m n : ℕ`, without any coprimality condition. -/
 def IsCompletelyMultiplicative [MonoidWithZero R] (f : ArithmeticFunction R) : Prop :=
   f 1 = 1 ∧ ∀ m n : ℕ, f (m * n) = f m * f n
+
+/-- Unfolds `IsCompletelyMultiplicative`, to build or destructure it from other modules. -/
+theorem isCompletelyMultiplicative_iff [MonoidWithZero R] {f : ArithmeticFunction R} :
+    f.IsCompletelyMultiplicative ↔ f 1 = 1 ∧ ∀ m n : ℕ, f (m * n) = f m * f n :=
+  Iff.rfl
 
 namespace IsCompletelyMultiplicative
 
@@ -239,8 +241,9 @@ theorem ppow [CommSemiring R] {f : ArithmeticFunction R} (hf : f.IsCompletelyMul
 end IsCompletelyMultiplicative
 
 /-- The power `n ↦ n ^ k` is completely multiplicative. -/
-theorem isCompletelyMultiplicative_pow (k : ℕ) : (pow k).IsCompletelyMultiplicative :=
-  isCompletelyMultiplicative_id.ppow k
+theorem isCompletelyMultiplicative_pow (k : ℕ) : (pow k).IsCompletelyMultiplicative := by
+  unfold pow
+  exact isCompletelyMultiplicative_id.ppow k
 
 namespace IsCompletelyMultiplicative
 
@@ -290,28 +293,6 @@ theorem eulerProduct_tprod (hf : f.IsCompletelyMultiplicative) (hsum : Summable 
   (hf.eulerProduct_hasProd hsum).tprod_eq
 
 end EulerProduct
-
-section LSeries
-
-variable {f : ArithmeticFunction ℂ} {s : ℂ}
-
-/-- **The Euler product of a Dirichlet series** with completely multiplicative coefficients, as
-a `HasProd`: where the series converges absolutely, `∏' p, (1 - f p * p ^ (-s))⁻¹ = L(f, s)`. -/
-theorem LSeries_eulerProduct_hasProd (hf : f.IsCompletelyMultiplicative)
-    (hs : LSeriesSummable (⇑f) s) :
-    HasProd (fun p : Primes ↦ (1 - f p * (p : ℂ) ^ (-s))⁻¹) (LSeries (⇑f) s) := by
-  simpa using TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence (c := 0) hf.map_one
-    (fun {m n} _ _ _ ↦ hf.map_mul m n)
-    (fun p _ r ↦ by simp only [hf.map_pow, Pi.zero_apply, zero_mul, sub_zero]; ring) hs
-
-/-- **The Euler product of a Dirichlet series** with completely multiplicative coefficients:
-where the series converges absolutely, `∏' p, (1 - f p * p ^ (-s))⁻¹ = L(f, s)`. -/
-theorem LSeries_eulerProduct_tprod (hf : f.IsCompletelyMultiplicative)
-    (hs : LSeriesSummable (⇑f) s) :
-    ∏' p : Primes, (1 - f p * (p : ℂ) ^ (-s))⁻¹ = LSeries (⇑f) s :=
-  (hf.LSeries_eulerProduct_hasProd hs).tprod_eq
-
-end LSeries
 
 end IsCompletelyMultiplicative
 
