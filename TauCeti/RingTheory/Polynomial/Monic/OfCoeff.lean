@@ -26,7 +26,8 @@ a *free* tuple rather than as the data of a polynomial subtype.
 ## Main declarations
 
 * `TauCeti.Polynomial.monicOfCoeff`: the monic polynomial `X ^ n + ∑ i, c i * X ^ i` of degree `n`
-  whose `n` lower coefficients are `c`.
+  whose `n` lower coefficients are `c`, with unfolding equation
+  `TauCeti.Polynomial.monicOfCoeff_def`.
 * `TauCeti.Polynomial.monic_monicOfCoeff`, `TauCeti.Polynomial.natDegree_monicOfCoeff`,
   `TauCeti.Polynomial.eval_monicOfCoeff`: its monicity, its degree and its values.
 * `TauCeti.Polynomial.star_eval_monicOfCoeff`: over a commutative star ring, conjugating its value
@@ -67,6 +68,11 @@ analytic dependence on the coefficients against: `Sym.coeffEquiv_symm_apply` des
 inverse chart as its root multiset. -/
 noncomputable def monicOfCoeff (c : Fin n → R) : R[X] :=
   X ^ n + ∑ i : Fin n, monomial (i : ℕ) (c i)
+
+/-- Defining equation of `TauCeti.Polynomial.monicOfCoeff`, allowing downstream modules to rewrite
+without exposing the body of the definition. -/
+theorem monicOfCoeff_def (c : Fin n → R) :
+    monicOfCoeff c = X ^ n + ∑ i : Fin n, monomial (i : ℕ) (c i) := (rfl)
 
 /-- The lower part of `TauCeti.Polynomial.monicOfCoeff` has degree less than `n`, which is where its
 monicity and its degree come from. -/

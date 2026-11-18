@@ -10,6 +10,7 @@ public import Mathlib.Topology.ExtendFrom
 public import Mathlib.Topology.MetricSpace.Basic
 public import Mathlib.Topology.MetricSpace.Bounded
 public import TauCeti.Topology.Continuum
+import TauCeti.Topology.ContinuousOn.ClosedGraph
 
 /-!
 # Cluster sets and the continuous extension they produce
@@ -89,6 +90,11 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   `TauCeti.isConnected_clusterSetOn_of_isBounded` are again the proper-metric forms.
 * `TauCeti.isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset` — the
   metric-space criterion for preconnected approach regions.
+* `TauCeti.isPreconnectedApproachAt_of_notMem_closure`,
+  `TauCeti.IsPreconnectedApproachAt.image_homeomorph`,
+  `TauCeti.isPreconnectedApproachAt_image_homeomorph_iff`, and
+  `TauCeti.IsPreconnectedApproachAt.graphOn` — trivial approach regions off the closure, transport
+  along homeomorphisms, and lifting to continuous graphs over Hausdorff codomains.
 
 ## References
 
@@ -582,6 +588,58 @@ theorem IsPreconnectedApproachAt.image {Y : Type*} [TopologicalSpace Y] {U : Set
       exact ⟨mem_image_of_mem φ hx, by rwa [mem_preimage, hκφ hx], hts hxt⟩
   rw [heq]
   exact htU.image _ (hφU.mono inter_subset_left)
+
+/-- Outside `closure U`, a set is locally empty and therefore has preconnected approach regions. -/
+theorem isPreconnectedApproachAt_of_notMem_closure {U : Set X} {a : X} (ha : a ∉ closure U) :
+    IsPreconnectedApproachAt U a := by
+  intro s hs
+  refine ⟨s ∩ (closure U)ᶜ, inter_mem hs (isClosed_closure.isOpen_compl.mem_nhds ha),
+    inter_subset_left, ?_⟩
+  convert isPreconnected_empty (α := X) using 1
+  exact eq_empty_iff_forall_notMem.2 fun z ⟨hzU, _, hzc⟩ ↦ hzc (subset_closure hzU)
+
+/-- Preconnected approach regions are preserved under a homeomorphism. -/
+theorem IsPreconnectedApproachAt.image_homeomorph {Y : Type*} [TopologicalSpace Y] {U : Set X}
+    {a : X} (h : IsPreconnectedApproachAt U a) (e : X ≃ₜ Y) :
+    IsPreconnectedApproachAt (e '' U) (e a) :=
+  h.image e.continuous.continuousAt e.continuous.continuousOn
+    e.symm.continuous.continuousAt (e.symm_apply_apply a) (fun x _ ↦ e.symm_apply_apply x)
+
+/-- Having preconnected approach regions is invariant under a homeomorphism of the ambient
+spaces. -/
+@[simp]
+theorem isPreconnectedApproachAt_image_homeomorph_iff {Y : Type*} [TopologicalSpace Y] {U : Set X}
+    (e : X ≃ₜ Y) {y : Y} :
+    IsPreconnectedApproachAt (e '' U) y ↔ IsPreconnectedApproachAt U (e.symm y) :=
+  ⟨fun h ↦ e.symm_image_image U ▸ h.image_homeomorph e.symm,
+    fun h ↦ e.apply_symm_apply y ▸ h.image_homeomorph e⟩
+
+/-- If `U` has preconnected approach regions at `p.1` and `f : X → Y` is continuous on `closure U`
+into a Hausdorff space `Y`, then the graph `U.graphOn f` has preconnected approach regions at
+`p`. -/
+theorem IsPreconnectedApproachAt.graphOn {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {U : Set X} {f : X → Y} {p : X × Y} (hU : IsPreconnectedApproachAt U p.1)
+    (hf : ContinuousOn f (closure U)) :
+    IsPreconnectedApproachAt (U.graphOn f) p := by
+  by_cases hp : p ∈ closure (U.graphOn f)
+  · rw [hf.closure_graphOn, mem_graphOn] at hp
+    obtain ⟨hp1, hp2⟩ := hp
+    intro W hW
+    obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.1 hW
+    have hv' : f ⁻¹' v ∈ 𝓝[closure U] p.1 := hf p.1 hp1 (hp2.symm ▸ hv)
+    obtain ⟨u₁, hu₁, hu₁sub⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hv'
+    obtain ⟨t, ht, htu, hUt⟩ := hU (u ∩ u₁) (inter_mem hu hu₁)
+    refine ⟨t ×ˢ v, prod_mem_nhds ht hv,
+      (prod_mono (htu.trans inter_subset_left) subset_rfl).trans huv, ?_⟩
+    have heq : U.graphOn f ∩ (t ×ˢ v) = (fun x ↦ (x, f x)) '' (U ∩ t) := by
+      ext ⟨x, y⟩
+      simp only [mem_inter_iff, mem_graphOn, mem_prod, mem_image, Prod.mk.injEq]
+      refine ⟨fun ⟨⟨hxU, hxy⟩, hxt, _⟩ ↦ ⟨x, ⟨hxU, hxt⟩, rfl, hxy⟩, ?_⟩
+      rintro ⟨x', ⟨hxU, hxt⟩, rfl, rfl⟩
+      exact ⟨⟨hxU, rfl⟩, hxt, hu₁sub ⟨(htu hxt).2, subset_closure hxU⟩⟩
+    rw [heq]
+    exact hUt.image _ (continuousOn_id.prodMk (hf.mono (inter_subset_left.trans subset_closure)))
+  · exact isPreconnectedApproachAt_of_notMem_closure hp
 
 end ApproachRegions
 
