@@ -17,7 +17,9 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
 An invariant normal subgroup of the first factor is normal in the full semidirect product
 (`Subgroup.normal_map_inl`). When `D` is a complement of the normal subgroup `N`, the inverse
 of Mathlib's isomorphism `SemidirectProduct.mulEquivSubgroup : N ⋊ D ≃* G` is the unique
-decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
+decomposition `g = n * d` of `Subgroup.IsComplement.equiv`. More generally, when `K` normalizes
+`H` and the two meet trivially, multiplication is an isomorphism `H ⋊ K ≃* H ⊔ K`, with no
+normality of `H` in the ambient group (`SemidirectProduct.mulEquivSup`).
 
 ## Main results
 
@@ -30,6 +32,8 @@ decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
 * `SemidirectProduct.infinite_range_inl`: the image of the normal factor is infinite whenever the
   normal factor is infinite.
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff`: its kernel consists of antidiagonal pairs.
+* `SemidirectProduct.monoidHomSubgroup_injective` and `SemidirectProduct.mulEquivSup`: when
+  moreover `H ⊓ K = ⊥`, multiplication is injective, hence an isomorphism `H ⋊ K ≃* H ⊔ K`.
 * `SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff`: an external lift kills this kernel
   exactly when the two maps agree on the intersection.
 * `SemidirectProduct.mulEquivSubgroup_symm_trans_equivProd`: for a complement `D` of a normal
@@ -139,6 +143,37 @@ theorem mem_ker_monoidHomSubgroup_iff
     (x : H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K) :
     x ∈ (monoidHomSubgroup hLE).ker ↔ (x.left : G) = (x.right : G)⁻¹ := by
   rw [MonoidHom.mem_ker, monoidHomSubgroup_apply, mul_eq_one_iff_eq_inv]
+
+/-- If `K` normalizes `H` and the two subgroups meet trivially, multiplication `H ⋊ K → G` is
+injective. -/
+theorem monoidHomSubgroup_injective (h : H ⊓ K = ⊥) :
+    Function.Injective (monoidHomSubgroup hLE) := by
+  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
+  have hpair := (mem_ker_monoidHomSubgroup_iff hLE x).1 hx
+  -- The common value `x.left = x.right⁻¹` lies in `H ⊓ K = ⊥`.
+  have hmem : (x.left : G) ∈ H ⊓ K :=
+    ⟨x.left.2, hpair ▸ K.inv_mem x.right.2⟩
+  rw [h, Subgroup.mem_bot] at hmem
+  have hright : (x.right : G) = 1 := by rw [← inv_inv (x.right : G), ← hpair, hmem, inv_one]
+  ext <;> simp [hmem, hright]
+
+/-- **A semidirect product of two subgroups meeting trivially is their join.** If `K` normalizes
+`H` and `H ⊓ K = ⊥`, multiplication is an isomorphism `H ⋊ K ≃* H ⊔ K`. -/
+noncomputable def mulEquivSup (h : H ⊓ K = ⊥) :
+    H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K ≃* ↥(H ⊔ K) :=
+  (MonoidHom.ofInjective (monoidHomSubgroup_injective hLE h)).trans
+    (MulEquiv.subgroupCongr (range_monoidHomSubgroup hLE))
+
+@[simp]
+theorem coe_mulEquivSup_apply (h : H ⊓ K = ⊥)
+    (x : H ⋊[(H.normalizerMonoidHom).comp (Subgroup.inclusion hLE)] K) :
+    (mulEquivSup hLE h x : G) = x.left * x.right :=
+  monoidHomSubgroup_apply hLE x
+
+/-- The two components of the inverse of `mulEquivSup` multiply back to the given element. -/
+theorem left_mul_right_mulEquivSup_symm_apply (h : H ⊓ K = ⊥) (g : ↥(H ⊔ K)) :
+    (((mulEquivSup hLE h).symm g).left : G) * ((mulEquivSup hLE h).symm g).right = g := by
+  rw [← coe_mulEquivSup_apply hLE h, MulEquiv.apply_symm_apply]
 
 variable (f : H →* D) (g : K →* D)
 variable (hconj : ∀ b : K,
