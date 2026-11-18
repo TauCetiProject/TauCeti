@@ -524,9 +524,9 @@ boundary `fun s => B (s + 1)` to `B`, with `Hive.rotate` as inverse. -/
 def fixedIntegerHiveRotateEquiv {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
     FixedIntegerHive (fun s => B (s + 1)) ≃ FixedIntegerHive B where
   toFun h := ⟨h.val.rotate.rotate, by
+    rw [boundary_rotate, boundary_rotate, h.property]
     ext s i
     have hs : s + 1 + 1 + 1 = s := by fin_cases s <;> decide
-    rw [boundary_rotate, boundary_rotate, h.property]
     exact congrFun (congrArg B hs) i⟩
   invFun h := ⟨h.val.rotate, by ext s i; simp [h.property]⟩
   left_inv _ := by ext p; simp
