@@ -140,9 +140,9 @@ theorem twistedComplexι_twistedComplexMap {𝓕 𝓖 : DGLocalSystemFamily.{uM}
 theorem twistedComplexMap_id (𝓕 : DGLocalSystemFamily.{uM} β R) :
     twistedComplexMap m (𝟙 𝓕) = 𝟙 (twistedComplex m 𝓕) := by
   refine twistedComplex_hom_ext m fun c ↦ ?_
-  rw [twistedComplexι_twistedComplexMap, Category.comp_id]
-  exact (congrArg (· ≫ twistedComplexι m 𝓕 c) ((m c).coefficientCochainComplexMap_id _)).trans
-    (Category.id_comp _)
+  rw [twistedComplexι_twistedComplexMap, Category.comp_id, Pi.id_apply,
+    DGRightModuleCat.id_eq_id, RowFiniteTwistingCocycle.coefficientCochainComplexMap_id,
+    Category.id_comp]
 
 @[reassoc, simp]
 theorem twistedComplexMap_comp {𝓕 𝓖 𝓗 : DGLocalSystemFamily.{uM} β R} (φ : 𝓕 ⟶ 𝓖)
@@ -150,9 +150,8 @@ theorem twistedComplexMap_comp {𝓕 𝓖 𝓗 : DGLocalSystemFamily.{uM} β R} 
     twistedComplexMap m (φ ≫ ψ) = twistedComplexMap m φ ≫ twistedComplexMap m ψ := by
   refine twistedComplex_hom_ext m fun c ↦ ?_
   rw [twistedComplexι_twistedComplexMap, twistedComplexι_twistedComplexMap_assoc,
-    twistedComplexι_twistedComplexMap]
-  exact (congrArg (· ≫ twistedComplexι m 𝓗 c)
-    ((m c).coefficientCochainComplexMap_comp _ _ _ (φ c) (ψ c))).trans (Category.assoc _ _ _)
+    twistedComplexι_twistedComplexMap, Pi.comp_apply, DGRightModuleCat.comp_eq_comp,
+    RowFiniteTwistingCocycle.coefficientCochainComplexMap_comp, Category.assoc]
 
 /-- The twisted complex as a functor of the coefficient family. -/
 @[expose] def twistedComplexFunctor :
