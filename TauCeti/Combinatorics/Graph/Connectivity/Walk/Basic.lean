@@ -561,6 +561,18 @@ theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
 theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup :=
   hp
 
+/-- The left part of a concatenated path is a path. -/
+theorem IsPath.of_append_left {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsPath) : p.IsPath := by
+  rw [isPath_def, support_append] at hpq
+  exact hpq.of_append_left
+
+/-- The right part of a concatenated path is a path. -/
+theorem IsPath.of_append_right {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsPath) : q.IsPath := by
+  rw [isPath_def, support_append_eq_support_dropLast_append] at hpq
+  exact hpq.of_append_right
+
 @[simp]
 theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).IsPath ↔ x ≠ y := by
