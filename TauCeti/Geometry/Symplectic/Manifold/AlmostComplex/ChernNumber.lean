@@ -9,8 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ComplexTangentBundle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 public import TauCeti.Topology.VectorBundle.Complex.Clutching
-import TauCeti.Geometry.Symplectic.Cayley.Basic
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 
 /-!
 # The first Chern number of a symplectic manifold on spheres
@@ -72,16 +70,6 @@ namespace TauCeti.SmoothTwoForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {σ : SmoothTwoForm I M} {J₀ J₁ : SmoothAlmostComplexStructure I M}
-
-/-- For two smooth almost complex structures tamed by `σ`, the endomorphism `1 - J₁ J₀` of every
-tangent space is invertible. -/
-theorem Tames.isUnit_one_sub_toEndomorphism_mul (h₀ : σ.Tames J₀) (h₁ : σ.Tames J₁) (x : M) :
-    IsUnit (1 - J₁.toEndomorphism x * J₀.toEndomorphism x) := by
-  have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
-  have hσ := h₀.isNondegenerate
-  have h := ((hσ.tames_iff.1 h₁) x).isUnit_one_sub_mul ((hσ.tames_iff.1 h₀) x)
-  refine ContinuousLinearMap.isUnit_of_isUnit_toLinearMap_of_finiteDimensional ?_
-  simpa using h
 
 variable (G G' : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
   [NormedAddCommGroup G'] [NormedSpace ℂ G'] [FiniteDimensional ℂ G']
