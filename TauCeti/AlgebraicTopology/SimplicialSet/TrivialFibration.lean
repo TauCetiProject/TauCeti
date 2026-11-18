@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
-public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 
 /-!
 # Trivial fibrations of simplicial sets are shrinkable
@@ -26,7 +25,7 @@ it is a Kan fibration which is shrinkable:
 * a trivial fibration is a split epimorphism, any two maps into its source which agree after
   composing with it are homotopic over its target, and hence every section of it extends to a
   shrinking;
-* conversely, a shrinkable Kan fibration is a trivial fibration.
+* conversely, a shrinkable left fibration is a trivial fibration.
 
 In particular a trivial fibration is a simplicial homotopy equivalence, compatibly with the
 projection to `Y`, and so induces a bijection on connected components. This is the combinatorial
@@ -40,7 +39,7 @@ structure.
 * `SSet.exists_homotopy_of_rlp_monomorphisms`: maps into the source of a trivial fibration which
   agree after composing with it are homotopic over its target.
 * `SSet.Shrinking.ofRLP`: every section of a trivial fibration extends to a shrinking.
-* `SSet.Shrinking.rlp_monomorphisms`: a shrinkable Kan fibration is a trivial fibration.
+* `SSet.Shrinking.rlp_monomorphisms`: a shrinkable left fibration is a trivial fibration.
 * `SSet.rlp_monomorphisms_iff`: the resulting characterization of trivial fibrations.
 * `SSet.bijective_mapπ₀_of_rlp_monomorphisms`: a trivial fibration induces a bijection on
   connected components.
@@ -139,9 +138,9 @@ theorem ofRLP_section_ (hp : (monomorphisms SSet.{u}).rlp p) (s : Y ⟶ X) (hs :
   -- A tactic proof keeps the body of `ofRLP` private: an exported `dsimp` lemma would need it.
   rfl
 
-/-- A Kan fibration admitting a shrinking has the right lifting property with respect to all
+/-- A left fibration admitting a shrinking has the right lifting property with respect to all
 monomorphisms. -/
-theorem rlp_monomorphisms [Fibration p] (h : Shrinking p) : (monomorphisms SSet.{u}).rlp p := by
+theorem rlp_monomorphisms [LeftFibration p] (h : Shrinking p) : (monomorphisms SSet.{u}).rlp p := by
   intro A B i (hi : Mono i)
   refine ⟨fun {a b} sq ↦ ?_⟩
   -- Deform `b ≫ h.section_` along the shrinking, extending the shrinking homotopy on `A`, by the

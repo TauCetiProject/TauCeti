@@ -106,7 +106,8 @@ theorem rlp_monomorphisms_of_isWeaklyContractible_fiber (p : X ⟶ Y) [Fibration
   have sq₁ : CommSq a ι₁ p (∂Δ[n].ι ▷ Δ[1] ≫ C.h ≫ b) :=
     ⟨by rw [ι₁_comp_assoc, C.h₁_assoc, Category.id_comp, sq.w]⟩
   let L₁ := sq₁.lift
-  have hL₁ : ι₀ ≫ L₁ ≫ p = const y := by rw [sq₁.fac_right, ι₀_comp_assoc, hC₀, comp_const]
+  have hL₁ : (ι₀ ≫ L₁) ≫ p = const y := by
+    rw [Category.assoc, sq₁.fac_right, ι₀_comp_assoc, hC₀, comp_const]
   -- The fibre over `y` is a contractible Kan complex, so the end of `L₁` extends to `Δ[n]`.
   have hF := (rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
     stdSimplex.isTerminalObj₀ (stdSimplex.isTerminalObj₀.from (fiber p y : SSet.{u}))).2
