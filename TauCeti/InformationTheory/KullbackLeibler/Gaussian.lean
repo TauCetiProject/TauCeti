@@ -32,6 +32,9 @@ generating function of `N(a, v)` at `t`. Its mean under `N(a, v)` is
 
 * A. B. Tsybakov, *Introduction to Nonparametric Estimation*, Springer, 2009, Corollary 2.1(i),
   p. 87, for unit variance.
+
+The proof is adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
+`CKSD/Nonparametric/LowerBounds/Gaussian.lean`, theorem `CKSD.klDiv_gaussianReal_gaussianReal`.
 -/
 
 public section
