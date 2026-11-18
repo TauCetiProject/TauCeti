@@ -1,0 +1,441 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.GroupAction.Quotient
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
+import TauCeti.Geometry.Lie.AutomaticSmoothness
+import TauCeti.Geometry.Manifold.Submersion.Basic
+
+/-!
+# Twisted products `G ×_K B`
+
+Let `K` be a closed subgroup of a finite-dimensional real Lie group `G`, itself a Lie group for
+the subspace topology, and let `K` act smoothly on a boundaryless Hausdorff manifold `B`, for
+instance on a `K`-invariant open subset of a representation. The **twisted product** `G ×_K B`
+is the orbit space of the action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on `G × B`. This action
+is free and proper, so the quotient manifold theorem (`ProperSMul.instIsManifoldOrbitRelQuotient`)
+makes `G ×_K B` a smooth manifold of dimension `dim G + dim B - dim K` for which the projection
+`(g, b) ↦ [g, b]` is a smooth submersion. The group `G` acts on it smoothly from the left by
+`g • [g', b] = [g * g', b]`.
+
+Taking for `B` the one-point space `Unit` gives the orbit space `G ×_K pt` of the right action
+of `K` on `G` by multiplication, the space of cosets `gK`; we use this orbit space for `G ⧸ K`.
+The projection `[g, b] ↦ [g]` onto it is smooth and `G`-equivariant. When `b₀ : B` is fixed by
+`K`, the zero section `[g] ↦ [g, b₀]` is a `G`-equivariant smooth embedding whose image is the
+`G`-orbit of `[1, b₀]`: it is a smooth section of the projection.
+
+In the slice theorem, `K` is the compact stabilizer of a point `x` of a proper `G`-manifold and
+`B` a small invariant ball in the normal space to the orbit at `x`; the model `G ×_K B` maps
+diffeomorphically onto an invariant neighbourhood of the orbit, the zero section going to the
+orbit itself.
+
+The action of `K` on `G × B` lives on the type synonym `TauCeti.TwistedProduct.Pairs K B`, so
+that it does not clash with the diagonal action of `K` on `G × B`.
+
+## Main definitions and results
+
+* `TauCeti.TwistedProduct K B`: the twisted product `G ×_K B`, with classes
+  `TauCeti.TwistedProduct.mk K g b`.
+* `TauCeti.TwistedProduct.instProperSMulPairs`, `TauCeti.TwistedProduct.instIsCancelSMulPairs`:
+  the action of `K` on `G × B` is proper and free.
+* `TauCeti.TwistedProduct.chartedSpace`: the smooth structure of `G ×_K B` from the quotient
+  manifold theorem, for which `TauCeti.TwistedProduct.isSubmersion_mk` makes the projection
+  from `G × B` a smooth submersion.
+* `TauCeti.TwistedProduct.contMDiffSMul`: the left action of `G` on `G ×_K B` is smooth.
+* `TauCeti.TwistedProduct.proj`, `TauCeti.TwistedProduct.contMDiff_proj`: the smooth
+  equivariant projection `G ×_K B → G ×_K pt`.
+* `TauCeti.TwistedProduct.zeroSection`,
+  `TauCeti.TwistedProduct.isSmoothEmbedding_zeroSection`,
+  `TauCeti.TwistedProduct.range_zeroSection`: for a `K`-fixed point `b₀`, the zero section is a
+  smooth embedding onto the orbit of `[1, b₀]`.
+
+## References
+
+* E. Meinrenken, *Group actions on manifolds*, lecture notes, University of Toronto, 2003,
+  Section 1.6 and the proof of Theorem 1.25.
+* J. J. Duistermaat and J. A. C. Kolk, *Lie Groups*, Springer, 2000, Section 2.4.
+-/
+
+@[expose] public section
+
+noncomputable section
+
+open Function Set Filter Manifold Topology
+open scoped ContDiff Manifold
+
+namespace TauCeti
+
+namespace TwistedProduct
+
+variable {G : Type*} [Group G]
+
+/-- The space of pairs `(g, b)` with `g : G` and `b : B`, on which `K` acts by
+`k • (g, b) = (g * k⁻¹, k • b)` (`TauCeti.TwistedProduct.instMulActionPairs`). It is a type
+synonym of `G × B`, so that this action does not clash with the diagonal action of `K`. -/
+@[nolint unusedArguments]
+def Pairs (_ : Subgroup G) (B : Type*) : Type _ := G × B
+
+variable {K : Subgroup G} {B : Type*}
+
+/-- The pair `(g, b)` as a point of `TauCeti.TwistedProduct.Pairs K B`. -/
+def Pairs.mk (g : G) (b : B) : Pairs K B := (g, b)
+
+/-- The pair `(g, b)` underlying a point of `TauCeti.TwistedProduct.Pairs K B`. -/
+def Pairs.toProd (p : Pairs K B) : G × B := p
+
+/-- The pair underlying `Pairs.mk g b` is `(g, b)`. -/
+@[simp]
+theorem Pairs.toProd_mk (g : G) (b : B) : (Pairs.mk g b : Pairs K B).toProd = (g, b) :=
+  rfl
+
+/-- A point of `Pairs K B` is the `Pairs.mk` of its underlying pair. -/
+@[simp]
+theorem Pairs.mk_toProd (p : Pairs K B) : Pairs.mk p.toProd.1 p.toProd.2 = p :=
+  rfl
+
+/-- Points of `Pairs K B` with the same underlying pair are equal. -/
+theorem Pairs.ext {p q : Pairs K B} (h : p.toProd = q.toProd) : p = q :=
+  h
+
+section Structure
+
+variable [TopologicalSpace G] [TopologicalSpace B]
+
+/-- The product topology on pairs. -/
+instance instTopologicalSpacePairs : TopologicalSpace (Pairs K B) :=
+  inferInstanceAs (TopologicalSpace (G × B))
+
+/-- The identification of `Pairs K B` with `G × B` is continuous. -/
+theorem Pairs.continuous_toProd : Continuous (Pairs.toProd : Pairs K B → G × B) :=
+  continuous_id
+
+variable {EG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG]
+  {HG : Type*} [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG} [ChartedSpace HG G]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} [ChartedSpace HB B]
+
+/-- The product charts on pairs. -/
+instance instChartedSpacePairs : ChartedSpace (ModelProd HG HB) (Pairs K B) :=
+  inferInstanceAs (ChartedSpace (ModelProd HG HB) (G × B))
+
+/-- Pairs form the product manifold `G × B`. -/
+instance instIsManifoldPairs {n : ℕ∞ω} [IsManifold IG n G] [IsManifold IB n B] :
+    IsManifold (IG.prod IB) n (Pairs K B) :=
+  inferInstanceAs (IsManifold (IG.prod IB) n (G × B))
+
+end Structure
+
+variable [MulAction K B]
+
+/-- The action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on pairs. -/
+instance instMulActionPairs : MulAction K (Pairs K B) where
+  smul k p := Pairs.mk (p.toProd.1 * (k : G)⁻¹) (k • p.toProd.2)
+  one_smul p := by
+    change Pairs.mk (p.toProd.1 * ((1 : K) : G)⁻¹) ((1 : K) • p.toProd.2) = p
+    simp
+  mul_smul k k' p := by
+    change Pairs.mk (p.toProd.1 * ((k * k' : K) : G)⁻¹) ((k * k') • p.toProd.2) =
+      Pairs.mk (p.toProd.1 * (k' : G)⁻¹ * (k : G)⁻¹) (k • k' • p.toProd.2)
+    simp [mul_assoc, mul_smul]
+
+/-- `k • (g, b) = (g * k⁻¹, k • b)`. -/
+theorem Pairs.smul_mk (k : K) (g : G) (b : B) :
+    k • (Pairs.mk g b : Pairs K B) = Pairs.mk (g * (k : G)⁻¹) (k • b) :=
+  rfl
+
+/-- The pair underlying `k • p` is `(g * k⁻¹, k • b)` for `p` the pair `(g, b)`. -/
+@[simp]
+theorem Pairs.toProd_smul (k : K) (p : Pairs K B) :
+    (k • p).toProd = (p.toProd.1 * (k : G)⁻¹, k • p.toProd.2) :=
+  rfl
+
+/-- The action of `K` on pairs is free. -/
+instance instIsCancelSMulPairs : IsCancelSMul K (Pairs K B) where
+  toIsLeftCancelSMul := inferInstance
+  right_cancel' k k' p h := by
+    have h₁ := congrArg (fun q : Pairs K B ↦ q.toProd.1) h
+    simp only [Pairs.toProd_smul, mul_right_inj, inv_inj] at h₁
+    exact Subtype.ext h₁
+
+end TwistedProduct
+
+variable {G : Type*} [Group G] (K : Subgroup G) (B : Type*) [MulAction K B]
+
+/-- **The twisted product** `G ×_K B`: the orbit space of the action
+`k • (g, b) = (g * k⁻¹, k • b)` of a subgroup `K` of `G` on `G × B`. -/
+abbrev TwistedProduct : Type _ :=
+  MulAction.orbitRel.Quotient K (TwistedProduct.Pairs K B)
+
+namespace TwistedProduct
+
+variable {B}
+
+/-- The class `[g, b]` of `(g, b)` in the twisted product `G ×_K B`. -/
+def mk (g : G) (b : B) : TwistedProduct K B :=
+  Quotient.mk _ (Pairs.mk g b)
+
+variable {K}
+
+/-- Every point of `G ×_K B` is a class `[g, b]`. -/
+@[elab_as_elim]
+theorem ind {motive : TwistedProduct K B → Prop} (h : ∀ g b, motive (mk K g b))
+    (x : TwistedProduct K B) : motive x :=
+  Quotient.inductionOn' x fun p ↦ h p.toProd.1 p.toProd.2
+
+/-- The projection `G × B → G ×_K B` is surjective. -/
+theorem mk_surjective : Surjective fun p : G × B ↦ mk K p.1 p.2 :=
+  fun x ↦ ind (motive := fun x ↦ ∃ p : G × B, mk K p.1 p.2 = x) (fun g b ↦ ⟨(g, b), rfl⟩) x
+
+/-- Two classes `[g, b]` and `[g', b']` agree exactly when `(g', b') = (g * k⁻¹, k • b)` for
+some `k : K`. -/
+theorem mk_eq_mk_iff {g g' : G} {b b' : B} :
+    mk K g b = mk K g' b' ↔ ∃ k : K, g' = g * (k : G)⁻¹ ∧ b' = k • b := by
+  refine Quotient.eq''.trans ((MulAction.orbitRel_apply).trans ?_)
+  constructor
+  · rintro ⟨k, hk⟩
+    have h := congrArg Pairs.toProd hk
+    simp only [Pairs.toProd_smul, Pairs.toProd_mk, Prod.mk.injEq] at h
+    refine ⟨k⁻¹, ?_, ?_⟩
+    · simp [← h.1, mul_assoc]
+    · simp [← h.2]
+  · rintro ⟨k, rfl, rfl⟩
+    exact ⟨k⁻¹, by simp [Pairs.smul_mk, mul_assoc]⟩
+
+/-- `[g * k, b] = [g, k • b]` for `k : K`. -/
+theorem mk_mul_smul (g : G) (k : K) (b : B) : mk K (g * k) b = mk K g (k • b) :=
+  mk_eq_mk_iff.2 ⟨k, by simp, rfl⟩
+
+/-- The left action `g • [g', b] = [g * g', b]` of `G` on `G ×_K B`. -/
+instance instMulAction : MulAction G (TwistedProduct K B) where
+  smul g := Quotient.map' (fun p : Pairs K B ↦ Pairs.mk (g * p.toProd.1) p.toProd.2)
+    fun p q h ↦ by
+      obtain ⟨k, rfl⟩ := h
+      exact ⟨k, by simp [Pairs.smul_mk, mul_assoc]⟩
+  one_smul x := ind (motive := fun x ↦ Quotient.map' _ _ x = x) (fun g b ↦ by
+    change mk K (1 * g) b = mk K g b
+    rw [one_mul]) x
+  mul_smul g g' x := ind (motive := fun x ↦ Quotient.map' _ _ x = Quotient.map' _ _
+    (Quotient.map' _ _ x)) (fun g'' b ↦ by
+      change mk K (g * g' * g'') b = mk K (g * (g' * g'')) b
+      rw [mul_assoc]) x
+
+/-- `g • [g', b] = [g * g', b]`. -/
+@[simp]
+theorem smul_mk (g g' : G) (b : B) : g • mk K g' b = mk K (g * g') b :=
+  rfl
+
+/-- The projection `[g, b] ↦ [g]` of `G ×_K B` onto the orbit space `G ×_K pt` of the right
+action of `K` on `G` by multiplication, the space of cosets `gK`. -/
+def proj : TwistedProduct K B → TwistedProduct K Unit :=
+  Quotient.map' (fun p : Pairs K B ↦ Pairs.mk p.toProd.1 ()) fun p q h ↦ by
+    obtain ⟨k, rfl⟩ := h
+    exact ⟨k, rfl⟩
+
+/-- The projection sends `[g, b]` to `[g]`. -/
+@[simp]
+theorem proj_mk (g : G) (b : B) : proj (mk K g b) = mk K g () :=
+  rfl
+
+/-- The projection is `G`-equivariant. -/
+theorem proj_smul (g : G) (x : TwistedProduct K B) : proj (g • x) = g • proj x :=
+  ind (motive := fun x ↦ proj (g • x) = g • proj x) (fun _ _ ↦ rfl) x
+
+/-- The zero section `[g] ↦ [g, b₀]` of `G ×_K B` over `G ×_K pt`, for a point `b₀` of `B`
+fixed by `K`. -/
+def zeroSection {b₀ : B} (hb₀ : b₀ ∈ MulAction.fixedPoints K B) :
+    TwistedProduct K Unit → TwistedProduct K B :=
+  Quotient.map' (fun p : Pairs K Unit ↦ Pairs.mk p.toProd.1 b₀) fun p q h ↦ by
+    obtain ⟨k, rfl⟩ := h
+    exact ⟨k, by
+      change Pairs.mk (q.toProd.1 * (k : G)⁻¹) (k • b₀) = Pairs.mk (q.toProd.1 * (k : G)⁻¹) b₀
+      rw [hb₀ k]⟩
+
+variable {b₀ : B} (hb₀ : b₀ ∈ MulAction.fixedPoints K B)
+
+/-- The zero section sends `[g]` to `[g, b₀]`. -/
+@[simp]
+theorem zeroSection_mk (g : G) (u : Unit) : zeroSection hb₀ (mk K g u) = mk K g b₀ :=
+  rfl
+
+/-- The zero section is a section of the projection. -/
+theorem proj_zeroSection : LeftInverse proj (zeroSection hb₀) :=
+  fun x ↦ ind (motive := fun x ↦ proj (zeroSection hb₀ x) = x) (fun _ _ ↦ rfl) x
+
+/-- The zero section is `G`-equivariant. -/
+theorem zeroSection_smul (g : G) (x : TwistedProduct K Unit) :
+    zeroSection hb₀ (g • x) = g • zeroSection hb₀ x :=
+  ind (motive := fun x ↦ zeroSection hb₀ (g • x) = g • zeroSection hb₀ x) (fun _ _ ↦ rfl) x
+
+/-- The zero section identifies `G ×_K pt` with the `G`-orbit of `[1, b₀]`. -/
+theorem range_zeroSection : range (zeroSection hb₀) = MulAction.orbit G (mk K 1 b₀) := by
+  ext x
+  constructor
+  · rintro ⟨y, rfl⟩
+    induction y using ind with
+    | h g u => exact ⟨g, by simp⟩
+  · rintro ⟨g, rfl⟩
+    exact ⟨mk K g (), by simp⟩
+
+section Topology
+
+variable [TopologicalSpace G] [TopologicalSpace B]
+
+/-- The action of a closed subgroup `K` on `G × B` by `k • (g, b) = (g * k⁻¹, k • b)` is
+proper. Along an ultrafilter on which `(g * k⁻¹, g)` converges, `k = (g * k⁻¹)⁻¹ * g` converges
+in `G`, and its limit lies in `K` because `K` is closed. -/
+instance instProperSMulPairs [IsTopologicalGroup G] [hK : IsClosed (K : Set G)]
+    [ContinuousSMul K B] [T2Space B] : ProperSMul K (Pairs K B) := by
+  have hcont : Continuous fun p : K × Pairs K B ↦ p.1 • p.2 :=
+    show Continuous fun p : K × (G × B) ↦ (p.2.1 * (p.1 : G)⁻¹, p.1 • p.2.2) by fun_prop
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨⟨hcont⟩, fun 𝒰 x₁ x₂ h ↦ ?_⟩
+  have h₁ := ((Pairs.continuous_toProd.tendsto x₁).comp (h.fst_nhds))
+  have h₂ := ((Pairs.continuous_toProd.tendsto x₂).comp (h.snd_nhds))
+  -- The element `k` of `K` is `(g * k⁻¹)⁻¹ * g`.
+  have hk : Tendsto (fun p : K × Pairs K B ↦ ((p.1 : K) : G)) 𝒰
+      (𝓝 (x₁.toProd.1⁻¹ * x₂.toProd.1)) := by
+    refine (h₁.fst_nhds.inv.mul h₂.fst_nhds).congr fun p ↦ ?_
+    simp [mul_assoc]
+  have hmem : x₁.toProd.1⁻¹ * x₂.toProd.1 ∈ K :=
+    hK.mem_of_tendsto hk (Eventually.of_forall fun p ↦ p.1.2)
+  have hfst : Tendsto Prod.fst 𝒰 (𝓝 (⟨_, hmem⟩ : K)) :=
+    (tendsto_subtype_rng (f := (Prod.fst : K × Pairs K B → K))).2 hk
+  refine ⟨⟨_, hmem⟩, Pairs.ext (Prod.ext ?_ ?_), hfst⟩
+  · simp
+  · exact tendsto_nhds_unique (hfst.smul h₂.snd_nhds) h₁.snd_nhds
+
+end Topology
+
+section Manifold
+
+variable {EK : Type*} [NormedAddCommGroup EK] [NormedSpace ℝ EK]
+  {HK : Type*} [TopologicalSpace HK] {IK : ModelWithCorners ℝ EK HK}
+  {EG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG]
+  {HG : Type*} [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG}
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
+
+/-- The trivial action on the one-point space is smooth. -/
+instance instContMDiffSMulUnit {M : Type*} [TopologicalSpace M] [ChartedSpace HK M] [SMul M Unit]
+    {n : ℕ∞ω} : ContMDiffSMul IK 𝓘(ℝ, Unit) n M Unit :=
+  ⟨by
+    rw [show (fun p : M × Unit ↦ p.1 • p.2) = fun _ ↦ () from Subsingleton.elim _ _]
+    exact contMDiff_const⟩
+
+variable [TopologicalSpace G] [ChartedSpace HG G] [ChartedSpace HK K]
+  [TopologicalSpace B] [ChartedSpace HB B]
+
+/-- A smooth action of `K` on `B` gives a smooth action of `K` on pairs: the inclusion of `K`
+in `G` is smooth by automatic smoothness (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`). -/
+instance instContMDiffSMulPairs [FiniteDimensional ℝ EG] [FiniteDimensional ℝ EK]
+    [LieGroup IG ∞ G] [LieGroup IK ∞ K] [ContMDiffSMul IK IB ∞ K B] :
+    ContMDiffSMul IK (IG.prod IB) ∞ K (Pairs K B) where
+  contMDiff_smul := by
+    have hι : ContMDiff IK IG ∞ (Subtype.val : K → G) :=
+      Lie.contMDiff_of_continuous_monoidHom K.subtype continuous_subtype_val
+    exact show ContMDiff (IK.prod (IG.prod IB)) (IG.prod IB) ∞
+        (fun p : K × (G × B) ↦ (p.2.1 * (p.1 : G)⁻¹, p.1 • p.2.2)) from
+      (contMDiff_snd.fst.mul (hι.comp contMDiff_fst).inv).prodMk
+        (contMDiff_fst.smul contMDiff_snd.snd)
+
+variable [FiniteDimensional ℝ EK] [LieGroup IK ∞ K] [IsClosed (K : Set G)]
+  [FiniteDimensional ℝ EG] [IG.Boundaryless] [LieGroup IG ∞ G]
+  [FiniteDimensional ℝ EB] [IB.Boundaryless] [IsManifold IB ∞ B] [T2Space B]
+  [ContMDiffSMul IK IB ∞ K B]
+
+variable (K B IK IG IB) in
+/-- The smooth structure of the twisted product `G ×_K B`, from the quotient manifold theorem
+for the free proper action of `K` on `G × B`. It is a manifold
+(`TauCeti.TwistedProduct.instIsManifold`) of dimension `dim G + dim B - dim K`, modelled on
+`ProperSMul.QuotientModelSpace EK (EG × EB)`. -/
+abbrev chartedSpace :
+    ChartedSpace (ProperSMul.QuotientModelSpace EK (EG × EB)) (TwistedProduct K B) :=
+  letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
+  letI : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
+  ProperSMul.orbitRelQuotientChartedSpace IK K (IG.prod IB) (Pairs K B)
+
+/-- **The twisted product `G ×_K B` is a smooth manifold.** -/
+instance instIsManifold :
+    let _ := chartedSpace K B IK IG IB
+    IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞ (TwistedProduct K B) :=
+  letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
+  letI : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
+  ProperSMul.instIsManifoldOrbitRelQuotient
+
+/-- **The projection `G × B → G ×_K B` is a smooth submersion.** -/
+theorem isSubmersion_mk :
+    let _ := chartedSpace K B IK IG IB
+    IsSubmersion (IG.prod IB) 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞
+      fun p : G × B ↦ mk K p.1 p.2 :=
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
+  let _ : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
+  have h := ProperSMul.isSubmersion_quotientMk (I := IK) (G := K) (I' := IG.prod IB)
+    (M := Pairs K B)
+  h
+
+/-- The projection `G × B → G ×_K B` is smooth. -/
+theorem contMDiff_mk :
+    let _ := chartedSpace K B IK IG IB
+    ContMDiff (IG.prod IB) 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞
+      fun p : G × B ↦ mk K p.1 p.2 := by
+  let _ := chartedSpace K B IK IG IB
+  exact isSubmersion_mk.contMDiff
+
+/-- **The left action of `G` on `G ×_K B` is smooth.** It descends from the smooth map
+`(g, (g', b)) ↦ [g * g', b]` along the surjective submersion `G × (G × B) → G × (G ×_K B)`. -/
+theorem contMDiffSMul :
+    let _ := chartedSpace K B IK IG IB
+    ContMDiffSMul IG 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞ G
+      (TwistedProduct K B) := by
+  let _ := chartedSpace K B IK IG IB
+  have hq := (IsSubmersion.id (I := IG) (M := G) (n := ∞)).prodMap
+    (isSubmersion_mk (K := K) (B := B) (IK := IK) (IG := IG) (IB := IB))
+  refine ⟨(hq.contMDiff_comp_iff (surjective_id.prodMap mk_surjective) le_rfl).1 ?_⟩
+  exact contMDiff_mk.comp ((contMDiff_fst.mul contMDiff_snd.fst).prodMk contMDiff_snd.snd)
+
+/-- **The projection `G ×_K B → G ×_K pt` is smooth.** -/
+theorem contMDiff_proj :
+    let _ := chartedSpace K B IK IG IB
+    let _ := chartedSpace K Unit IK IG 𝓘(ℝ, Unit)
+    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB))
+      𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × Unit)) ∞ (proj : TwistedProduct K B → _) := by
+  let _ := chartedSpace K B IK IG IB
+  let _ := chartedSpace K Unit IK IG 𝓘(ℝ, Unit)
+  refine ((isSubmersion_mk (K := K) (B := B) (IK := IK) (IG := IG) (IB := IB)).contMDiff_comp_iff
+    mk_surjective le_rfl).1 ?_
+  exact contMDiff_mk.comp (contMDiff_fst.prodMk contMDiff_const)
+
+/-- The zero section `G ×_K pt → G ×_K B` at a `K`-fixed point is smooth. -/
+theorem contMDiff_zeroSection :
+    let _ := chartedSpace K B IK IG IB
+    let _ := chartedSpace K Unit IK IG 𝓘(ℝ, Unit)
+    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × Unit))
+      𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞ (zeroSection hb₀) := by
+  let _ := chartedSpace K B IK IG IB
+  let _ := chartedSpace K Unit IK IG 𝓘(ℝ, Unit)
+  refine ((isSubmersion_mk (K := K) (B := Unit) (IK := IK) (IG := IG)
+    (IB := 𝓘(ℝ, Unit))).contMDiff_comp_iff mk_surjective le_rfl).1 ?_
+  exact contMDiff_mk.comp (contMDiff_fst.prodMk contMDiff_const)
+
+/-- **The zero section is a smooth embedding.** For a point `b₀` of `B` fixed by `K`, the map
+`G ×_K pt → G ×_K B`, `[g] ↦ [g, b₀]`, is a smooth embedding onto the `G`-orbit of `[1, b₀]`
+(`TauCeti.TwistedProduct.range_zeroSection`): it has the smooth left inverse `proj`. -/
+theorem isSmoothEmbedding_zeroSection :
+    let _ := chartedSpace K B IK IG IB
+    let _ := chartedSpace K Unit IK IG 𝓘(ℝ, Unit)
+    IsSmoothEmbedding 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × Unit))
+      𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞ (zeroSection hb₀) := by
+  let _ := chartedSpace K B IK IG IB
+  let _ := chartedSpace K Unit IK IG 𝓘(ℝ, Unit)
+  exact (contMDiff_zeroSection (IK := IK) (IG := IG) (IB := IB) hb₀
+    ).isSmoothEmbedding_of_leftInverse (by simp)
+    ((contMDiff_proj (IK := IK) (IG := IG) (IB := IB)).of_le (by simp)) (proj_zeroSection hb₀)
+
+end Manifold
+
+end TwistedProduct
+
+end TauCeti
