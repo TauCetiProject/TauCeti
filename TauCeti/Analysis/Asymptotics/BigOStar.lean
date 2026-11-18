@@ -89,6 +89,11 @@ theorem BigOStar.nonneg (h : BigOStar a b e) : 0 ≤ e :=
 theorem bigOStar_self_iff : BigOStar a a e ↔ 0 ≤ e := by
   simp [bigOStar_iff]
 
+/-- `a = 0 + O*(e)` says that `‖a‖ ≤ e`. -/
+@[simp]
+theorem bigOStar_zero_right_iff : BigOStar a 0 e ↔ ‖a‖ ≤ e := by
+  rw [bigOStar_iff, sub_zero]
+
 /-- Every element equals itself up to any nonnegative error. -/
 theorem BigOStar.refl (a : E) (he : 0 ≤ e) : BigOStar a a e :=
   bigOStar_self_iff.2 he
@@ -132,11 +137,6 @@ theorem bigOStar_zero_iff [NormedAddGroup E] {a b : E} : BigOStar a b 0 ↔ a = 
 section SeminormedAddCommGroup
 
 variable [SeminormedAddCommGroup E] {a a₁ a₂ b b₁ b₂ : E} {e e₁ e₂ : ℝ}
-
-/-- `a = 0 + O*(e)` says that `‖a‖ ≤ e`. -/
-@[simp]
-theorem bigOStar_zero_right_iff : BigOStar a 0 e ↔ ‖a‖ ≤ e := by
-  rw [bigOStar_iff, sub_zero]
 
 /-- `a = b + O*(e)` says that `a` lies within distance `e` of `b`. -/
 theorem bigOStar_iff_dist : BigOStar a b e ↔ dist a b ≤ e := by
