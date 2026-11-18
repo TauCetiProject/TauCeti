@@ -61,15 +61,15 @@ universe u v
 
 variable {D : TopCat.GlueData.{u}}
 
-/-- Functions on the pieces which agree on every overlap agree on all points identified in the
+/-- Functions on two pieces which agree on their overlap agree on points identified in the
 glued space. -/
-theorem apply_eq_apply_of_ι_eq {α : Sort*} (g : ∀ i, D.U i → α)
-    (hg : ∀ i j (x : D.V (i, j)), g i (D.f i j x) = g j (D.f j i (D.t i j x)))
-    {i j : D.J} {x : D.U i} {y : D.U j} (h : D.toGlueData.ι i x = D.toGlueData.ι j y) :
-    g i x = g j y := by
+theorem apply_eq_apply_of_ι_eq {α : Sort*} {i j : D.J} (gi : D.U i → α) (gj : D.U j → α)
+    (hg : ∀ x : D.V (i, j), gi (D.f i j x) = gj (D.f j i (D.t i j x)))
+    {x : D.U i} {y : D.U j} (h : D.toGlueData.ι i x = D.toGlueData.ι j y) :
+    gi x = gj y := by
   obtain ⟨z, rfl, rfl⟩ : ∃ z : D.V (i, j), D.f i j z = x ∧ D.f j i (D.t i j z) = y :=
     (D.ι_eq_iff_rel i j x y).1 h
-  exact hg i j z
+  exact hg z
 
 /-- A continuous map out of a glued space is determined by its values on all pieces. -/
 theorem hom_ext_ι {X : TopCat.{u}} {g g' : D.toGlueData.glued ⟶ X}
@@ -141,17 +141,9 @@ theorem gluedMap_injective_iff :
 
 /-- The glued map is open exactly when all piece maps are open. -/
 theorem isOpenMap_gluedMap_iff : IsOpenMap (gluedMap a φ hφ) ↔ ∀ i, IsOpenMap (φ i) := by
-  refine ⟨fun h i ↦ (D'.ι_isOpenEmbedding (a i)).isOpenMap_iff.2 ?_, fun h ↦ ?_⟩
-  · have : D'.toGlueData.ι (a i) ∘ φ i = gluedMap a φ hφ ∘ D.toGlueData.ι i :=
-      funext fun x ↦ (gluedMap_ι i x).symm
-    rw [this]
-    exact h.comp (D.ι_isOpenEmbedding i).isOpenMap
-  -- Test openness after the open quotient map from the disjoint union of the pieces.
-  refine IsOpenMap.of_comp (f := fun x : Σ i, D.U i ↦ D.toGlueData.ι x.1 x.2)
-    D.isOpenQuotientMap_sigma_ι.continuous D.isOpenQuotientMap_sigma_ι.surjective ?_
-  refine isOpenMap_sigma.2 fun i ↦ ?_
-  simpa only [Function.comp_def, gluedMap_ι] using
-    (D'.ι_isOpenEmbedding (a i)).isOpenMap.comp (h i)
+  rw [D.isOpenQuotientMap_sigma_ι.isOpenMap_iff, isOpenMap_sigma]
+  simp only [Function.comp_def, gluedMap_ι]
+  exact forall_congr' fun i ↦ (D'.ι_isOpenEmbedding (a i)).isOpenMap_iff.symm
 
 /-- The glued map is an open embedding exactly when the piece maps are open and reflect
 identifications. -/
@@ -195,7 +187,8 @@ theorem gluedMap_comp {D' D'' : TopCat.GlueData.{u}} {a : D.J → D'.J}
       D''.toGlueData.ι (b j) (ψ j (D'.f j i (D'.t i j x)))) :
     gluedMap a φ hφ ≫ gluedMap b ψ hψ =
       gluedMap (b ∘ a) (fun i ↦ (ψ (a i)).comp (φ i))
-        (fun i j x ↦ apply_eq_apply_of_ι_eq (fun k y ↦ D''.toGlueData.ι (b k) (ψ k y)) hψ
+        (fun i j x ↦ apply_eq_apply_of_ι_eq (fun y ↦ D''.toGlueData.ι (b (a i)) (ψ (a i) y))
+          (fun y ↦ D''.toGlueData.ι (b (a j)) (ψ (a j) y)) (hψ (a i) (a j))
           (hφ i j x)) :=
   hom_ext_ι fun i x ↦ by simp
 
@@ -203,31 +196,38 @@ theorem gluedMap_comp {D' D'' : TopCat.GlueData.{u}} {a : D.J → D'.J}
 
 section Criteria
 
-variable {D' : TopCat.GlueData.{v}} {a : D.J → D'.J} (f : ∀ i, D.U i → D'.U (a i))
-  (hf : ∀ i j (x : D.U i) (y : D.U j), D'.toGlueData.ι (a i) (f i x) =
-    D'.toGlueData.ι (a j) (f j y) ↔ D.toGlueData.ι i x = D.toGlueData.ι j y)
+variable {D' : TopCat.GlueData.{v}}
 
-include hf in
 /-- Piece maps which preserve and reflect identifications identify the relation between two
 charts with the preimage of the relation between the corresponding charts. -/
-theorem chartRel_eq_preimage_prodMap (i j : D.J) :
-    D.chartRel i j = Prod.map (f i) (f j) ⁻¹' D'.chartRel (a i) (a j) := by
+theorem chartRel_eq_preimage_prodMap {i j : D.J} {i' j' : D'.J}
+    (fi : D.U i → D'.U i') (fj : D.U j → D'.U j')
+    (hf : ∀ x y, D'.toGlueData.ι i' (fi x) = D'.toGlueData.ι j' (fj y) ↔
+      D.toGlueData.ι i x = D.toGlueData.ι j y) :
+    D.chartRel i j = Prod.map fi fj ⁻¹' D'.chartRel i' j' := by
   ext ⟨x, y⟩
   simp [hf]
 
-include hf in
 /-- Under surjective piece maps which preserve and reflect identifications, an overlap is
 nonempty exactly when the corresponding overlap is. -/
-theorem nonempty_V_iff_of_surjective (hsurj : ∀ i, Function.Surjective (f i)) (i j : D.J) :
-    Nonempty (D'.V (a i, a j)) ↔ Nonempty (D.V (i, j)) := by
+theorem nonempty_V_iff_of_surjective {i j : D.J} {i' j' : D'.J}
+    {fi : D.U i → D'.U i'} {fj : D.U j → D'.U j'}
+    (hf : ∀ x y, D'.toGlueData.ι i' (fi x) = D'.toGlueData.ι j' (fj y) ↔
+      D.toGlueData.ι i x = D.toGlueData.ι j y)
+    (hfi : Function.Surjective fi) (hfj : Function.Surjective fj) :
+    Nonempty (D'.V (i', j')) ↔ Nonempty (D.V (i, j)) := by
   simp only [← range_ι_inter_range_ι_nonempty_iff]
   constructor
   · rintro ⟨_, ⟨x, rfl⟩, y, hy⟩
-    obtain ⟨x, rfl⟩ := hsurj i x
-    obtain ⟨y, rfl⟩ := hsurj j y
-    exact ⟨_, mem_range_self x, y, ((hf i j x y).1 hy.symm).symm⟩
+    obtain ⟨x, rfl⟩ := hfi x
+    obtain ⟨y, rfl⟩ := hfj y
+    exact ⟨_, mem_range_self x, y, ((hf x y).1 hy.symm).symm⟩
   · rintro ⟨_, ⟨x, rfl⟩, y, hy⟩
-    exact ⟨_, mem_range_self (f i x), f j y, ((hf i j x y).2 hy.symm).symm⟩
+    exact ⟨_, mem_range_self (fi x), fj y, ((hf x y).2 hy.symm).symm⟩
+
+variable {a : D.J → D'.J} (f : ∀ i, D.U i → D'.U (a i))
+  (hf : ∀ i j (x : D.U i) (y : D.U j), D'.toGlueData.ι (a i) (f i x) =
+    D'.toGlueData.ι (a j) (f j y) ↔ D.toGlueData.ι i x = D.toGlueData.ι j y)
 
 include hf in
 /-- Under a surjective index map and surjective piece maps which preserve and reflect
@@ -239,7 +239,7 @@ theorem reflTransGen_nonempty_V_iff_of_surjective (ha : Function.Surjective a)
     Relation.ReflTransGen (fun k l ↦ Nonempty (D'.V (k, l))) (a i) (a j) ↔
       Relation.ReflTransGen (fun k l ↦ Nonempty (D.V (k, l))) i j := by
   refine ⟨fun h ↦ ?_, Relation.ReflTransGen.lift a
-    (fun k l ↦ (nonempty_V_iff_of_surjective f hf hsurj k l).2) i j⟩
+    (fun k l ↦ (nonempty_V_iff_of_surjective (hf k l) (hsurj k) (hsurj l)).2) i j⟩
   -- Lift the chain step by step, choosing a preimage of each index along the way.
   suffices ∀ k, Relation.ReflTransGen (fun k l ↦ Nonempty (D'.V (k, l))) (a i) k →
       ∀ l, a l = k → Relation.ReflTransGen (fun k l ↦ Nonempty (D.V (k, l))) i l from
@@ -249,23 +249,25 @@ theorem reflTransGen_nonempty_V_iff_of_surjective (ha : Function.Surjective a)
   | refl =>
     -- An index over the same piece as `i` meets it in the nonempty piece itself.
     intro l hl
-    refine .single ((nonempty_V_iff_of_surjective f hf hsurj i l).1 ?_)
+    refine .single ((nonempty_V_iff_of_surjective (hf i l) (hsurj i) (hsurj l)).1 ?_)
     rw [hl, ← range_ι_inter_range_ι_nonempty_iff, inter_self]
     exact ⟨_, mem_range_self (f i hi.some)⟩
   | @tail k _ _ hkl ih =>
     intro l hl
     obtain ⟨k, rfl⟩ := ha k
-    exact (ih k rfl).tail ((nonempty_V_iff_of_surjective f hf hsurj k l).1 (hl ▸ hkl))
+    exact (ih k rfl).tail
+      ((nonempty_V_iff_of_surjective (hf k l) (hsurj k) (hsurj l)).1 (hl ▸ hkl))
 
 /-- Under homeomorphisms of the pieces which preserve and reflect identifications, the relation
 between two charts is closed exactly when the relation between the corresponding charts is. These
 relations decide whether the glued space is Hausdorff
 (`TopCat.GlueData.t2Space_iff_isClosed_chartRel`). -/
-theorem isClosed_chartRel_iff_of_homeomorph (φ : ∀ i, D.U i ≃ₜ D'.U (a i))
-    (hφ : ∀ i j (x : D.U i) (y : D.U j), D'.toGlueData.ι (a i) (φ i x) =
-      D'.toGlueData.ι (a j) (φ j y) ↔ D.toGlueData.ι i x = D.toGlueData.ι j y) (i j : D.J) :
-    IsClosed (D'.chartRel (a i) (a j)) ↔ IsClosed (D.chartRel i j) := by
-  rw [chartRel_eq_preimage_prodMap (fun i ↦ φ i) hφ, ← Homeomorph.coe_prodCongr,
+theorem isClosed_chartRel_iff_of_homeomorph {i j : D.J} {i' j' : D'.J}
+    (φi : D.U i ≃ₜ D'.U i') (φj : D.U j ≃ₜ D'.U j')
+    (hφ : ∀ x y, D'.toGlueData.ι i' (φi x) = D'.toGlueData.ι j' (φj y) ↔
+      D.toGlueData.ι i x = D.toGlueData.ι j y) :
+    IsClosed (D'.chartRel i' j') ↔ IsClosed (D.chartRel i j) := by
+  rw [chartRel_eq_preimage_prodMap φi φj hφ, ← Homeomorph.coe_prodCongr,
     Homeomorph.isClosed_preimage]
 
 end Criteria

@@ -77,21 +77,27 @@ theorem reindexMap_eq_gluedMap (r : K → D.J) :
 theorem reindexMap_ι (r : K → D.J) (i : K) (x : D.U (r i)) :
     D.reindexMap r ((D.reindex r).toGlueData.ι i x) = D.toGlueData.ι (r i) x := by
   rw [reindexMap_eq_gluedMap]
-  exact (gluedMap_ι (D := D.reindex r) i x).trans
-    (congrArg (D.toGlueData.ι (r i)) (ContinuousMap.id_apply x))
+  refine (gluedMap_ι (D := D.reindex r) i x).trans ?_
+  change D.toGlueData.ι (r i) (ContinuousMap.id (D.U (r i)) x) = D.toGlueData.ι (r i) x
+  rw [ContinuousMap.id_apply]
 
 /-- The image of the selected gluing is precisely the union of the selected pieces. -/
 theorem range_reindexMap (r : K → D.J) :
     range (D.reindexMap r) = ⋃ i, range (D.toGlueData.ι (r i)) := by
   rw [reindexMap_eq_gluedMap]
-  -- The identity map of each selected piece is surjective.
-  exact (range_gluedMap _ _ _).trans (iUnion_congr fun i ↦
-    (congrArg (D.toGlueData.ι (r i) '' ·) (range_eq_univ.2 fun y ↦
-      ⟨y, ContinuousMap.id_apply y⟩)).trans image_univ)
+  refine (range_gluedMap _ _ _).trans ?_
+  change (⋃ i, D.toGlueData.ι (r i) '' range (ContinuousMap.id (D.U (r i)))) = _
+  simp only [ContinuousMap.coe_id, range_id, image_univ]
 
 /-- Selecting a subfamily, even with repeated indices, embeds its gluing as an open subspace. -/
 theorem isOpenEmbedding_reindexMap (r : K → D.J) : IsOpenEmbedding (D.reindexMap r) := by
-  refine (isOpenEmbedding_gluedMap_iff).2 ⟨fun _ ↦ IsOpenMap.id, fun i j x y hxy ↦ ?_⟩
+  rw [reindexMap_eq_gluedMap]
+  refine isOpenEmbedding_gluedMap_iff.2 ⟨fun i ↦ ?_, fun i j x y hxy ↦ ?_⟩
+  · change IsOpenMap (ContinuousMap.id (D.U (r i)))
+    simpa only [ContinuousMap.coe_id] using (IsOpenMap.id : IsOpenMap (id : D.U (r i) → _))
+  change D.toGlueData.ι (r i) (ContinuousMap.id _ x) =
+    D.toGlueData.ι (r j) (ContinuousMap.id _ y) at hxy
+  simp only [ContinuousMap.id_apply] at hxy
   exact ((D.reindex r).ι_eq_iff_rel i j x y).2
     ((D.reindex_rel r i j x y).2 ((D.ι_eq_iff_rel _ _ _ _).1 hxy))
 

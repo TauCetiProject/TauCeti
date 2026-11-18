@@ -267,7 +267,8 @@ theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n'') (hm'' : m ≤ n'')
     letI := D''.chartedSpace H''
     (h'.mapContMDiffMap hm' h'' hm'' b g hg).comp (h.mapContMDiffMap hm h' hm' a f hf) =
       h.mapContMDiffMap hm h'' hm'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
-        (fun i j x ↦ apply_eq_apply_of_ι_eq (fun k y ↦ D''.toGlueData.ι (b k) (g k y)) hg
+        (fun i j x ↦ apply_eq_apply_of_ι_eq (fun y ↦ D''.toGlueData.ι (b (a i)) (g (a i) y))
+          (fun y ↦ D''.toGlueData.ι (b (a j)) (g (a j) y)) (hg (a i) (a j))
           (hf i j x)) := by
   let := D.chartedSpace H
   let := D'.chartedSpace H'
@@ -275,7 +276,8 @@ theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n'') (hm'' : m ≤ n'')
   apply D.contMDiffMap_ext
   intro i x
   rw [h.mapContMDiffMap_ι hm h'' hm'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
-    (fun i j x ↦ apply_eq_apply_of_ι_eq (fun k y ↦ D''.toGlueData.ι (b k) (g k y)) hg
+    (fun i j x ↦ apply_eq_apply_of_ι_eq (fun y ↦ D''.toGlueData.ι (b (a i)) (g (a i) y))
+      (fun y ↦ D''.toGlueData.ι (b (a j)) (g (a j) y)) (hg (a i) (a j))
       (hf i j x)) i x]
   simp only [ContMDiffMap.comp_apply, mapContMDiffMap_ι, Function.comp_apply]
 

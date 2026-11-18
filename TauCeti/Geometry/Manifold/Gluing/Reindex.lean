@@ -57,7 +57,9 @@ theorem IsCompatible.isLocalDiffeomorph_reindexMap (h : D.IsCompatible I n) (r :
   let := D.chartedSpace H
   let := (D.reindex r).chartedSpace H
   rw [reindexMap_eq_gluedMap]
-  exact ((h.reindex r).isLocalDiffeomorph_gluedMap_iff h _ _).2 fun i ↦
+  refine ((h.reindex r).isLocalDiffeomorph_gluedMap_iff h _ _).2 fun i ↦ ?_
+  change IsLocalDiffeomorph I I n (ContinuousMap.id (D.U (r i)))
+  simpa only [ContinuousMap.coe_id, Diffeomorph.coe_refl] using
     (Diffeomorph.refl I (D.U (r i)) n).isLocalDiffeomorph
 
 /-- A selected family that still covers gives the same manifold, through the canonical map
