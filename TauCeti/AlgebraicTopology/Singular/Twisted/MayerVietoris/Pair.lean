@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.MayerVietoris.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.MayerVietoris
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Relative
 public import TauCeti.Algebra.Homology.HomologySequenceBiprod
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
