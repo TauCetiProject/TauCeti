@@ -386,21 +386,22 @@ lemma twistedChainComplexMap_mem_smallTwistedChains (r : ι → κ)
     ContinuousMap.coe_comp, Set.range_comp]
   exact ⟨r i, ((hf i).mono_left hi).image_subset⟩
 
-/-- Along an injective map `f`, a chain is supported in `f ⁻¹' S` exactly when its pushforward is
-supported in `S`. -/
-lemma twistedChainComplexMap_f_mem_smallTwistedChains_iff [Mono f] {n : ℕ} {S : Set Y}
+/-- Along an injective map `f`, a chain is subordinate to the preimages `f ⁻¹' V i` exactly when
+its pushforward is subordinate to `V`. -/
+lemma twistedChainComplexMap_f_mem_smallTwistedChains_iff [Mono f] {n : ℕ}
     {c : ((pullback f.hom).obj M).twistedChainComplex.X n} :
-    ((twistedChainComplexMap f M).f n).hom c ∈ smallTwistedChains M (fun _ : Unit ↦ S) n ↔
-      c ∈ smallTwistedChains ((pullback f.hom).obj M) (fun _ : Unit ↦ f ⁻¹' S) n := by
+    ((twistedChainComplexMap f M).f n).hom c ∈ smallTwistedChains M V n ↔
+      c ∈ smallTwistedChains ((pullback f.hom).obj M) (fun k ↦ f ⁻¹' V k) n := by
   refine ⟨fun hc ↦ ?_, twistedChainComplexMap_mem_smallTwistedChains _ _ f M id
-    (fun _ ↦ Set.mapsTo_preimage f S)⟩
+    (fun k ↦ Set.mapsTo_preimage f (V k))⟩
   rw [mem_smallTwistedChains_iff] at hc ⊢
   intro τ hτ
   rw [← twistedChainComplexCoeff_twistedChainComplexMap_f_apply]
   refine hc _ fun h ↦ hτ ?_
-  simp only [TopCat.mem_smallSingularSubcomplex_iff, exists_const,
-    TopCat.toSSetObjEquiv_toSSet_map_app, ContinuousMap.coe_comp, Set.range_comp] at h ⊢
-  exact Set.image_subset_iff.1 h
+  simp only [TopCat.mem_smallSingularSubcomplex_iff, TopCat.toSSetObjEquiv_toSSet_map_app,
+    ContinuousMap.coe_comp, Set.range_comp] at h ⊢
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, Set.image_subset_iff.1 hk⟩
 
 /-- Along an inducing map, the pushforwards of twisted chains are exactly the chains supported in
 its range. -/
