@@ -50,12 +50,16 @@ transported to `s` by adding a base point, is the Euclidean Hausdorff measure of
 of `s` (`AffineSubspace.volume_preimage_coe_vadd`). These coordinates `v ↦ v +ᵥ q` are Mathlib's
 `IsometryEquiv.vaddConst q` followed by the inclusion of `s`
 (`AffineSubspace.val_comp_vaddConst`), so they form an isometry onto `s`
-(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). In particular, for a unit
+(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). Hence the isodiametric
+inequality holds on `s`: `μHE[k] (t ∩ s) ≤ (ediam t / 2) ^ k ω_k` for every set `t`, where `k` is
+the dimension of `s` (`AffineSubspace.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul`).
+In particular, for a unit
 vector `ν` of a finite-dimensional real inner product space of dimension `n`, the restriction of
 `μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of the
 orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
 (`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
-are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`).
+are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`), and the isodiametric
+inequality holds on the hyperplane (`TauCeti.euclideanHausdorffMeasure_inter_setOf_inner_eq_le`).
 
 ## References
 
@@ -378,6 +382,27 @@ theorem volume_preimage_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s)
     preimage_comp, (IsometryEquiv.vaddConst q).isometry.euclideanHausdorffMeasure_preimage,
     (IsometryEquiv.vaddConst q).range_eq_univ, inter_univ, euclideanHausdorffMeasure_preimage_coe]
 
+/-- **Isodiametric inequality in an affine subspace.** The part of a set `t` lying in an affine
+subspace `s` of dimension `k` has `μHE[k] (t ∩ s) ≤ (ediam t / 2) ^ k ω_k`, where `ω_k` is the
+volume of the unit ball of `EuclideanSpace ℝ (Fin k)`. -/
+theorem euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul (s : AffineSubspace ℝ P)
+    (t : Set P) :
+    μHE[finrank ℝ s.direction] (t ∩ s) ≤ (Metric.ediam t / 2) ^ finrank ℝ s.direction *
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ s.direction))) 1) := by
+  rcases isEmpty_or_nonempty s with hs | hs
+  · have : t ∩ (s : Set P) = ∅ := eq_empty_of_forall_notMem fun x hx => hs.false ⟨x, hx.2⟩
+    simp [this]
+  obtain ⟨q⟩ := id hs
+  rw [← s.volume_preimage_coe_vadd q t]
+  refine (Measure.addHaar_le_ediam_div_two_pow_mul_addHaar_ball volume _).trans ?_
+  gcongr
+  · rw [← (s.isometry_coe_vadd q).ediam_image]
+    exact Metric.ediam_mono (image_preimage_subset _ _)
+  · -- An orthonormal basis identifies `s.direction` with `ℝ^k`, preserving unit balls.
+    let e := (stdOrthonormalBasis ℝ s.direction).repr
+    rw [← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
+      e.preimage_ball, map_zero]
+
 end AffineSubspace
 
 namespace TauCeti
@@ -418,6 +443,29 @@ theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (
     Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
     (isometry_smul_add_coe c).map_euclideanHausdorffMeasure]
   exact congrArg _ hrange.symm
+
+/-- **Isodiametric inequality on a hyperplane.** For a unit vector `ν` of a space of dimension `n`,
+the part of a set `t` on the hyperplane `{x | ⟪x, ν⟫ = c}` has
+`μHE[n - 1] (t ∩ {x | ⟪x, ν⟫ = c}) ≤ (ediam t / 2) ^ (n - 1) ω_{n-1}`, where `ω_{n-1}` is the volume
+of the unit ball of `EuclideanSpace ℝ (Fin (n - 1))`. -/
+theorem euclideanHausdorffMeasure_inter_setOf_inner_eq_le (hν : ‖ν‖ = 1) (c : ℝ) (t : Set F) :
+    μHE[finrank ℝ F - 1] (t ∩ {x | ⟪x, ν⟫ = c}) ≤ (Metric.ediam t / 2) ^ (finrank ℝ F - 1) *
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
+  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
+  -- The hyperplane is the affine subspace through `c • ν` with direction `(ℝ ∙ ν)ᗮ`.
+  set S := AffineSubspace.mk' (c • ν) (ℝ ∙ ν)ᗮ
+  have hS : (S : Set F) = {x | ⟪x, ν⟫ = c} := by
+    ext x
+    rw [SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub,
+      Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left, real_inner_smul_left,
+      real_inner_self_eq_norm_sq, hν, one_pow, mul_one, mem_ofPred_eq, sub_eq_zero]
+  have hdim : finrank ℝ S.direction = finrank ℝ F - 1 := by
+    rw [AffineSubspace.direction_mk',
+      Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0]
+  have h := S.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul t
+  rwa [hS, hdim] at h
 
 /-- Integrals over the hyperplane `{x | ⟪x, ν⟫ = c}` against Hausdorff measure are integrals over
 `(ℝ ∙ ν)ᗮ` against Lebesgue measure. -/
