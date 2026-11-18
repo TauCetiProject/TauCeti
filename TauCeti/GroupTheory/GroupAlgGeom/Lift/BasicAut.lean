@@ -45,6 +45,10 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 * `TauCeti.GroupAlgGeom.Lift.basicWord`: the word `S₀`.
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff`, `basicLink`, `basicY`, `basicX`, `basicComm`: the basic
   automorphisms.
+* `TauCeti.GroupAlgGeom.Lift.basicCoeffData`, `basicLinkData`, `basicYData`, `basicXData`,
+  `basicCommData`: the basic automorphisms as twist data (`TauCeti.GroupAlgGeom.TwistData`), which
+  also record the word `A`; their automorphisms are the basic automorphisms
+  (`toMulAut_basicCoeffData` and the same for the other four).
 
 ## Main results
 
@@ -227,6 +231,22 @@ noncomputable def basicCoeff : MulAut (GX G X) :=
     (twistHom_coeffTerm inj c j j' (Commute.refl _))
     (twistHom_coeffTerm inj c j j' (Commute.refl _).inv_left)
 
+/-- `basicCoeff` as a twist datum: the word `A = z_j⁻¹ c_j z_j * z_j'⁻¹ c_j' z_j'` and its
+exponents. -/
+noncomputable def basicCoeffData : TwistData G X where
+  A := coeffAtom z c j * coeffAtom z c j'
+  e := blockExp x y z 0 0 fun k => if k = j ∨ k = j' then (0, 1) else 0
+  twistHom_self := twistHom_coeffTerm inj c j j' (Commute.refl _)
+  twistHom_inv_self := twistHom_coeffTerm inj c j j' (Commute.refl _).inv_left
+
+@[simp]
+theorem toMulAut_basicCoeffData : (basicCoeffData inj c j j').toMulAut = basicCoeff inj c j j' :=
+  MulEquiv.ext fun w => by simp [basicCoeff, basicCoeffData]
+
+@[simp]
+theorem basicCoeffData_A :
+    (basicCoeffData inj c j j').A = coeffAtom z c j * coeffAtom z c j' := (rfl)
+
 @[simp]
 theorem basicCoeff_inl (g : G) : basicCoeff inj c j j' (inl g) = inl g := by
   simp [basicCoeff]
@@ -356,6 +376,21 @@ noncomputable def basicLink : MulAut (GX G X) :=
     (blockExp x y z (Pi.single i (-1, 1)) (Pi.single i (-1, 0)) (Pi.single j (0, 1)))
     (twistHom_linkTerm inj c j i (Commute.refl _))
     (twistHom_linkTerm inj c j i (Commute.refl _).inv_left)
+
+/-- `basicLink` as a twist datum: the word `A = z_j⁻¹ c_j z_j * x_i⁻¹` and its exponents. -/
+noncomputable def basicLinkData : TwistData G X where
+  A := coeffAtom z c j * (inr (.of (x i)))⁻¹
+  e := blockExp x y z (Pi.single i (-1, 1)) (Pi.single i (-1, 0)) (Pi.single j (0, 1))
+  twistHom_self := twistHom_linkTerm inj c j i (Commute.refl _)
+  twistHom_inv_self := twistHom_linkTerm inj c j i (Commute.refl _).inv_left
+
+@[simp]
+theorem toMulAut_basicLinkData : (basicLinkData inj c j i).toMulAut = basicLink inj c j i :=
+  MulEquiv.ext fun w => by simp [basicLink, basicLinkData]
+
+@[simp]
+theorem basicLinkData_A :
+    (basicLinkData inj c j i).A = coeffAtom z c j * (inr (.of (x i)))⁻¹ := (rfl)
 
 @[simp]
 theorem basicLink_inl (g : G) : basicLink inj c j i (inl g) = inl g := by
@@ -516,6 +551,20 @@ noncomputable def basicY : MulAut (GX G X) :=
   twist (inr (.of (x i))) (blockExp x y z 0 (Pi.single i (1, 0)) 0)
     (by simp [blockExp_x inj]) (by simp [blockExp_x inj])
 
+/-- `basicY` as a twist datum: the word `A = x_i` and its exponents. -/
+noncomputable def basicYData : TwistData G X where
+  A := inr (.of (x i))
+  e := blockExp x y z 0 (Pi.single i (1, 0)) 0
+  twistHom_self := by simp [blockExp_x inj]
+  twistHom_inv_self := by simp [blockExp_x inj]
+
+@[simp]
+theorem toMulAut_basicYData : (basicYData (G := G) inj i).toMulAut = basicY inj i :=
+  MulEquiv.ext fun w => by simp [basicY, basicYData]
+
+@[simp]
+theorem basicYData_A : (basicYData (G := G) inj i).A = inr (.of (x i)) := (rfl)
+
 @[simp]
 theorem basicY_inl (g : G) : basicY inj i (inl g) = inl g := by
   simp [basicY]
@@ -612,6 +661,20 @@ the indices `i : Fin n` from `0`). -/
 noncomputable def basicX : MulAut (GX G X) :=
   twist (inr (.of (y i))) (blockExp x y z (Pi.single i (1, 0)) 0 0)
     (by simp [blockExp_y inj]) (by simp [blockExp_y inj])
+
+/-- `basicX` as a twist datum: the word `A = y_i` and its exponents. -/
+noncomputable def basicXData : TwistData G X where
+  A := inr (.of (y i))
+  e := blockExp x y z (Pi.single i (1, 0)) 0 0
+  twistHom_self := by simp [blockExp_y inj]
+  twistHom_inv_self := by simp [blockExp_y inj]
+
+@[simp]
+theorem toMulAut_basicXData : (basicXData (G := G) inj i).toMulAut = basicX inj i :=
+  MulEquiv.ext fun w => by simp [basicX, basicXData]
+
+@[simp]
+theorem basicXData_A : (basicXData (G := G) inj i).A = inr (.of (y i)) := (rfl)
 
 @[simp]
 theorem basicX_inl (g : G) : basicX inj i (inl g) = inl g := by
@@ -724,6 +787,22 @@ noncomputable def basicComm : MulAut (GX G X) :=
       (fun l => if l = i then (-1, 1) else if l = i' then (-1, 0) else 0) 0)
     (twistHom_commTerm inj i i' (Commute.refl _))
     (twistHom_commTerm inj i i' (Commute.refl _).inv_left)
+
+/-- `basicComm` as a twist datum: the word `A = y_i x_i'⁻¹` and its exponents. -/
+noncomputable def basicCommData : TwistData G X where
+  A := inr (.of (y i)) * (inr (.of (x i')))⁻¹
+  e := blockExp x y z (fun l => if l = i' then (-1, 1) else if l = i then (-1, 0) else 0)
+    (fun l => if l = i then (-1, 1) else if l = i' then (-1, 0) else 0) 0
+  twistHom_self := twistHom_commTerm inj i i' (Commute.refl _)
+  twistHom_inv_self := twistHom_commTerm inj i i' (Commute.refl _).inv_left
+
+@[simp]
+theorem toMulAut_basicCommData : (basicCommData (G := G) inj i i').toMulAut = basicComm inj i i' :=
+  MulEquiv.ext fun w => by simp [basicComm, basicCommData]
+
+@[simp]
+theorem basicCommData_A :
+    (basicCommData (G := G) inj i i').A = inr (.of (y i)) * (inr (.of (x i')))⁻¹ := (rfl)
 
 @[simp]
 theorem basicComm_inl (g : G) : basicComm inj i i' (inl g) = inl g := by
