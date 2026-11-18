@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Analytic.Basic
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.FieldTheory.Finite.Polynomial
 
 /-!
@@ -20,6 +22,8 @@ dimension `(m + Fintype.card ι).choose (Fintype.card ι)`.
 These are functions on the whole Euclidean space, before restriction to a domain or passage
 to almost-everywhere classes. In particular, degree zero means exactly the constant functions,
 also when the coordinate type is empty.
+
+Polynomial functions are analytic on the whole Euclidean space, independently of their degree.
 
 Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
 the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
@@ -72,6 +76,16 @@ theorem mem_polynomialsDegLE_iff {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ} :
     f ∈ polynomialsDegLE ι m ↔
       ∃ p : MvPolynomial ι ℝ, p.totalDegree ≤ m ∧ polynomialEvalₗ ι p = f := by
   simp only [polynomialsDegLE_def, Submodule.mem_map, mem_restrictTotalDegree]
+
+/-- A bounded-degree polynomial function is analytic on the whole Euclidean space. -/
+theorem analyticOnNhd_coe_polynomialsDegLE [Fintype ι] {m : ℕ} (q : polynomialsDegLE ι m) :
+    AnalyticOnNhd ℝ (q : EuclideanSpace ℝ ι → ℝ) Set.univ := by
+  obtain ⟨p, -, hp⟩ := (mem_polynomialsDegLE_iff ι).1 q.property
+  rw [← hp]
+  convert AnalyticOnNhd.eval_continuousLinearMap
+    (EuclideanSpace.equiv ι ℝ).toContinuousLinearMap p using 1
+  ext x
+  exact polynomialEvalₗ_apply ι p x
 
 /-- Evaluating a formal polynomial belongs to the function space exactly at its degree
 and above. -/

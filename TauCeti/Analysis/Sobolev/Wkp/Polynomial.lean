@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.MvPolynomial.Regularity
+public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import Mathlib.Analysis.Analytic.Uniqueness
@@ -45,7 +45,7 @@ private theorem exists_value_ae_eq_polynomial
     (k : ℕ) {m : ℕ} (q : polynomialsDegLE ι m) :
     ∃ u : Wkp μ Ω p k, (value k u : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ.restrict Ω] q :=
   exists_value_ae_eq_of_contDiffOn_of_isCompact k isOpen_univ
-    (polynomialsDegLE.analyticOnNhd q).contDiff.contDiffOn
+    (analyticOnNhd_coe_polynomialsDegLE ι q).contDiff.contDiffOn
     hΩ.isCompact_closure subset_closure (Set.subset_univ _)
 
 /-- Send a bounded-degree polynomial function to its Sobolev class on a bounded open set.
@@ -104,6 +104,29 @@ theorem lowerOrder_polynomialL
   rw [← value_succ]
   exact value_polynomialL_ae hΩ (k + 1) m q
 
+/-- The highest weak derivative of a polynomial class is its classical iterated gradient
+almost everywhere on the domain. -/
+theorem iteratedGradient_polynomialL_ae
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (k m : ℕ) (q : polynomialsDegLE ι m) :
+    (iteratedGradient k (polynomialL (μ := μ) (p := p) hΩ (k + 1) m q) :
+      EuclideanSpace ℝ ι → IteratedGradient (EuclideanSpace ℝ ι) k)
+      =ᵐ[μ.restrict Ω] iteratedGradientChain q k :=
+  iteratedGradient_ae_eq_of_contDiffOn k _
+    ((analyticOnNhd_coe_polynomialsDegLE ι q).contDiff.contDiffOn.mono (Set.subset_univ _))
+    (value_polynomialL_ae hΩ (k + 1) m q)
+
+/-- The highest weak derivative of a polynomial class has the classical derivative's
+`Lᵖ` seminorm. -/
+theorem norm_iteratedGradient_polynomialL
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (k m : ℕ) (q : polynomialsDegLE ι m) :
+    ‖iteratedGradient k (polynomialL (μ := μ) (p := p) hΩ (k + 1) m q)‖ =
+      lpNorm (iteratedFDeriv ℝ (k + 1) (q : EuclideanSpace ℝ ι → ℝ)) p (μ.restrict Ω) :=
+  norm_iteratedGradient_eq_lpNorm_of_contDiffOn k _
+    ((analyticOnNhd_coe_polynomialsDegLE ι q).contDiff.contDiffOn.mono (Set.subset_univ _))
+    (value_polynomialL_ae hΩ (k + 1) m q)
+
 /-- On a nonempty open set, taking a polynomial's Sobolev class loses no information. -/
 theorem polynomialL_injective (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
     (hΩne : (Ω : Set (EuclideanSpace ℝ ι)).Nonempty) (k m : ℕ) :
@@ -113,16 +136,32 @@ theorem polynomialL_injective (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpa
     (h ▸ value_polynomialL_ae hΩ k m r)
   obtain ⟨x, hx⟩ := hΩne
   have heq := Measure.eqOn_open_of_ae_eq hae Ω.isOpen
-    ((polynomialsDegLE.analyticOnNhd q).continuousOn.mono (Set.subset_univ _))
-    ((polynomialsDegLE.analyticOnNhd r).continuousOn.mono (Set.subset_univ _))
+    ((analyticOnNhd_coe_polynomialsDegLE ι q).continuousOn.mono (Set.subset_univ _))
+    ((analyticOnNhd_coe_polynomialsDegLE ι r).continuousOn.mono (Set.subset_univ _))
   apply Subtype.ext
-  exact (polynomialsDegLE.analyticOnNhd q).eq_of_eventuallyEq (polynomialsDegLE.analyticOnNhd r)
+  exact (analyticOnNhd_coe_polynomialsDegLE ι q).eq_of_eventuallyEq
+    (analyticOnNhd_coe_polynomialsDegLE ι r)
     (Filter.eventuallyEq_of_mem (Ω.isOpen.mem_nhds hx) heq)
 
 /-- The subspace of Sobolev classes represented by polynomials of degree at most `m`. -/
 def polynomialClasses (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k m : ℕ) :
     Submodule ℝ (Wkp μ Ω p k) :=
   (polynomialL hΩ k m).toLinearMap.range
+
+/-- The polynomial subspace is the range of the polynomial class map. -/
+theorem polynomialClasses_def
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k m : ℕ) :
+    polynomialClasses (μ := μ) (p := p) hΩ k m = (polynomialL hΩ k m).toLinearMap.range :=
+  (rfl)
+
+/-- A polynomial's Sobolev class belongs to the polynomial subspace. -/
+@[simp]
+theorem polynomialL_mem_polynomialClasses
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (k m : ℕ) (q : polynomialsDegLE ι m) :
+    polynomialL (μ := μ) (p := p) hΩ k m q ∈ polynomialClasses hΩ k m := by
+  rw [polynomialClasses_def]
+  exact LinearMap.mem_range_self _ q
 
 /-- Membership in the polynomial subspace means having a bounded-degree polynomial
 representative almost everywhere. -/
@@ -133,12 +172,55 @@ theorem mem_polynomialClasses_iff
   simp only [polynomialClasses, LinearMap.mem_range, ContinuousLinearMap.coe_coe,
     ← eq_polynomialL_iff hΩ k m, eq_comm]
 
+/-- Increasing the degree bound enlarges the polynomial Sobolev subspace. -/
+theorem polynomialClasses_mono
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k : ℕ) :
+    Monotone (polynomialClasses (μ := μ) (p := p) hΩ k) := by
+  intro m n hmn u hu
+  obtain ⟨q, hq⟩ := (mem_polynomialClasses_iff hΩ k m u).1 hu
+  exact (mem_polynomialClasses_iff hΩ k n u).2
+    ⟨⟨q, polynomialsDegLE_mono ι hmn q.property⟩, hq⟩
+
 /-- Polynomial Sobolev classes form a finite-dimensional subspace, including on the empty set. -/
 instance finiteDimensional_polynomialClasses
     (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k m : ℕ) :
     FiniteDimensional ℝ (polynomialClasses (μ := μ) (p := p) hΩ k m) := by
   unfold polynomialClasses
   infer_instance
+
+/-- Order-zero polynomial classes form a finite-dimensional subspace. This instance handles
+the reduction of `Wkp` at order zero during instance search. -/
+instance finiteDimensional_polynomialClasses_zero
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (m : ℕ) :
+    FiniteDimensional ℝ (polynomialClasses (μ := μ) (p := p) hΩ 0 m) :=
+  finiteDimensional_polynomialClasses hΩ 0 m
+
+/-- Positive-order polynomial classes form a finite-dimensional subspace. This instance handles
+the reduction of `Wkp` at successor orders during instance search. -/
+instance finiteDimensional_polynomialClasses_succ
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k m : ℕ) :
+    FiniteDimensional ℝ (polynomialClasses (μ := μ) (p := p) hΩ (k + 1) m) :=
+  finiteDimensional_polynomialClasses hΩ (k + 1) m
+
+/-- The finite-dimensional polynomial subspace is closed, giving a Hausdorff normed quotient. -/
+instance isClosed_polynomialClasses
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k m : ℕ) :
+    IsClosed (polynomialClasses (μ := μ) (p := p) hΩ k m : Set (Wkp μ Ω p k)) :=
+  Submodule.isClosed_of_finiteDimensional _
+
+/-- Order-zero polynomial classes are closed. This instance handles the reduction of `Wkp`
+at order zero during instance search. -/
+instance isClosed_polynomialClasses_zero
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (m : ℕ) :
+    IsClosed (polynomialClasses (μ := μ) (p := p) hΩ 0 m : Set (Wkp μ Ω p 0)) :=
+  isClosed_polynomialClasses hΩ 0 m
+
+/-- Positive-order polynomial classes are closed. This instance handles the reduction of `Wkp`
+at successor orders during instance search. -/
+instance isClosed_polynomialClasses_succ
+    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k m : ℕ) :
+    IsClosed (polynomialClasses (μ := μ) (p := p) hΩ (k + 1) m : Set (Wkp μ Ω p (k + 1))) :=
+  isClosed_polynomialClasses hΩ (k + 1) m
 
 /-- On a nonempty open set the dimension of polynomial Sobolev classes is the number of
 monomials of total degree at most `m`. -/
