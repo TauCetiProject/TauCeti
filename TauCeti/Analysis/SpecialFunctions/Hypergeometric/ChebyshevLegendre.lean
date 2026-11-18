@@ -18,8 +18,8 @@ For `n : ℕ` and every `x : ℂ` (DLMF 15.9.5–15.9.7):
 
 * `Tₙ(x) = ₂F₁(−n, n; ½; (1 − x)/2)`;
 * `Uₙ(x) = (n + 1) ₂F₁(−n, n + 2; 3/2; (1 − x)/2)`;
-* `P̃ₙ(y) = ₂F₁(−n, n + 1; 1; y)` for Mathlib's shifted Legendre polynomial `P̃ₙ`, so that
-  `Pₙ(x) = P̃ₙ((1 − x)/2) = ₂F₁(−n, n + 1; 1; (1 − x)/2)`.
+* `P*ₙ(y) = ₂F₁(−n, n + 1; 1; y)` for Mathlib's shifted Legendre polynomial `P*ₙ`, so that
+  `Pₙ(x) = P*ₙ((1 − x)/2) = ₂F₁(−n, n + 1; 1; (1 − x)/2)`.
 
 Here `T` and `U` are Mathlib's `Polynomial.Chebyshev.T` and `Polynomial.Chebyshev.U`, and `₂F₁`
 is Mathlib's `ordinaryHypergeometric`.
@@ -156,7 +156,7 @@ theorem chebyshevU_eq_ordinaryHypergeometric (n : ℕ) (x : ℂ) :
   simp [pow_mul']
 
 /-- **DLMF 15.9.7.** Mathlib's shifted Legendre polynomial is the terminating Gauss series,
-`P̃ₙ(y) = ₂F₁(−n, n + 1; 1; y)` for `n : ℕ` and every `y : ℂ`, with no further sign. At
+`P*ₙ(y) = ₂F₁(−n, n + 1; 1; y)` for `n : ℕ` and every `y : ℂ`, with no further sign. At
 `y = (1 − x)/2` both sides are the Legendre polynomial `Pₙ(x)`. -/
 theorem shiftedLegendre_eval_eq_ordinaryHypergeometric (n : ℕ) (y : ℂ) :
     ((Polynomial.shiftedLegendre n).map (Int.castRingHom ℂ)).eval y =
