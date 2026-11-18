@@ -16,20 +16,14 @@ This file collects criteria, read off the long exact sequences of pairs and trip
 relative singular homology `Hₙ(X, A; L)` with coefficients in a local system `L` to vanish or to
 agree with the relative homology of another pair.
 
-* **Deformations.** The relative twisted homology vanishes modulo a set `S` into which `X` deforms
-  through maps keeping `S` inside `S` (`TopPair.isZero_twistedHomology_ofSubset_of_homotopy`), the
-  twisted counterpart of `TopPair.isZero_singularHomology_ofSubset_of_homotopy`. The inclusion of
-  `S` is then a homotopy equivalence, so this is an instance of the vanishing criterion
-  `TopPair.isZero_twistedHomology_of_isIso` of
-  `TauCeti.AlgebraicTopology.Singular.Twisted.Relative`.
-* **Acyclic open covers.** Let `U` and `V` be open subsets of `X` such that `X` is acyclic modulo
-  `U` and modulo `V`: `Hₙ(X, U; L) = Hₙ(X, V; L) = 0` for all `n`. Then
-  `Hₙ₊₁(X, U ∪ V; L) ≅ Hₙ(X, U ∩ V; L)` (`TopPair.twistedHomologyOfSubsetUnionIso`) and
-  `H₀(X, U ∪ V; L) = 0` (`TopPair.isZero_twistedHomology_ofSubset_union_zero`). This is what the
-  relative Mayer–Vietoris sequence gives for constant coefficients. Here it is obtained from the
-  long exact sequences of the triples `(X, U ∪ V, U)` and `(X, V, U ∩ V)` and excision of the pair
-  `(V, U ∩ V) ⟶ (U ∪ V, U)` (`TopPair.isIso_twistedHomologyMap_unionExcisionMap`):
-  `Hₙ₊₁(X, U ∪ V) ≅ Hₙ(U ∪ V, U) ≅ Hₙ(V, U ∩ V) ≅ Hₙ(X, U ∩ V)`.
+Let `U` and `V` be open subsets of `X` such that `X` is acyclic modulo `U` and modulo `V`:
+`Hₙ(X, U; L) = Hₙ(X, V; L) = 0` for all `n`. Then `Hₙ₊₁(X, U ∪ V; L) ≅ Hₙ(X, U ∩ V; L)`
+(`TopPair.twistedHomologyOfSubsetUnionIso`) and `H₀(X, U ∪ V; L) = 0`
+(`TopPair.isZero_twistedHomology_ofSubset_union_zero`). This is what the relative Mayer–Vietoris
+sequence gives for constant coefficients. Here it is obtained from the long exact sequences of the
+triples `(X, U ∪ V, U)` and `(X, V, U ∩ V)` and excision of the pair `(V, U ∩ V) ⟶ (U ∪ V, U)`
+(`TopPair.isIso_twistedHomologyMap_unionExcisionMap`):
+`Hₙ₊₁(X, U ∪ V) ≅ Hₙ(U ∪ V, U) ≅ Hₙ(V, U ∩ V) ≅ Hₙ(X, U ∩ V)`.
 
 ## References
 
@@ -44,35 +38,6 @@ noncomputable section
 open CategoryTheory Limits
 
 universe u v w
-
-namespace TopPair
-
-open TauCeti
-
-variable {R : Type u} [Ring R]
-
-/-- **Relative twisted homology vanishes modulo a set into which the space deforms.** If a homotopy
-`H` from the identity of `X` to a map `ρ` with values in `S` keeps `S` inside `S`, then
-`Hₙ(X, S; L) = 0` for every local coefficient system `L` on `X`. -/
-theorem isZero_twistedHomology_ofSubset_of_homotopy {X : TopCat.{v}} {S : Set X} {ρ : X ⟶ X}
-    (H : (TopCat.Hom.hom (𝟙 X)).Homotopy ρ.hom)
-    (hS : ∀ (τ : unitInterval) (x : X), x ∈ S → H (τ, x) ∈ S) (hρ : ∀ x, ρ x ∈ S)
-    (L : LocalCoefficientSystem.{u, v, max v w} R X) (n : ℕ) :
-    IsZero ((ofSubset S).twistedHomology L n) := by
-  -- The inclusion of `S` is a homotopy equivalence, with homotopy inverse `ρ`.
-  let r : C(X, S) := ⟨fun x ↦ ⟨ρ x, hρ x⟩, by fun_prop⟩
-  let e : ContinuousMap.HomotopyEquiv S X :=
-    { toFun := ⟨Subtype.val, continuous_subtype_val⟩
-      invFun := r
-      left_inv := ⟨{
-        toFun := fun p ↦ ⟨H (unitInterval.symm p.1, p.2.1), hS _ _ p.2.2⟩
-        continuous_toFun := by fun_prop
-        map_zero_left := fun x ↦ Subtype.ext (by simp [r])
-        map_one_left := fun x ↦ Subtype.ext (by simp) }⟩
-      right_inv := ⟨H.symm⟩ }
-  exact isZero_twistedHomology_of_isIso (ofSubset S) L (fun k ↦ e.isIso_twistedHomologyMap L k) n
-
-end TopPair
 
 namespace TopPair
 

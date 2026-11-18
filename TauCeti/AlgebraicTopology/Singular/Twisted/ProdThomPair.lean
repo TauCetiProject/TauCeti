@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
+public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Relative
 public import TauCeti.AlgebraicTopology.Singular.Twisted.SubspaceCompl
 
 /-!
@@ -101,7 +102,8 @@ theorem isZero_twistedHomology_prodThomPair {n : ℕ} (hn : n < finrank ℝ F) :
 /-- **The Thom isomorphism of a product bundle in homology with local coefficients**: for `F` of
 dimension `r`, `m = n + r` and every local coefficient system `L` on `B × F`,
 `Hₘ(B × F, B × (F ∖ {0}); L) ≅ Hₙ(B; s⁎L)`, where `s⁎L` is the restriction of `L` to the zero
-section `s` (`TauCeti.prodZeroSection`). In particular `Hᵣ(B × F, B × (F ∖ {0}); L) ≅ H₀(B; s⁎L)`.
+section `s` (`ContinuousMap.HomotopyEquiv.prodZeroSection`). In particular
+`Hᵣ(B × F, B × (F ∖ {0}); L) ≅ H₀(B; s⁎L)`.
 
 The isomorphism is the composite of `r` connecting maps of triples and excisions
 (`TopPair.twistedHomologyOfSubsetUnionIso`), for choices of subspaces and functionals of `F` that
@@ -109,7 +111,9 @@ do not depend on `B` or `L`, followed by the identification of `Hₙ(B × F; L)`
 along the zero section. -/
 def prodThomPairTwistedHomologyIso (n m : ℕ) (h : n + finrank ℝ F = m := by lia) :
     (prodThomPair B F).twistedHomology L m ≅
-      ((LocalCoefficientSystem.pullback (prodZeroSection B F).hom).obj L).twistedHomology n :=
+      ((LocalCoefficientSystem.pullback
+          (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection B F).toFun).hom).obj
+        L).twistedHomology n :=
   -- The global instance for `subspaceComplPair q ⊤` is not found here: its key keeps the carrier
   -- of a general space, while the carrier of `TopCat.of (B × F)` reduces to `B × F`.
   have : IsEmpty (subspaceComplPair (proj (B := B) (F := F)) ⊤).snd :=
@@ -121,14 +125,8 @@ def prodThomPairTwistedHomologyIso (n m : ℕ) (h : n + finrank ℝ F = m := by 
     (@asIso _ _ _ _ ((subspaceComplPair (proj (B := B) (F := F)) ⊤).twistedHomologyπ L n)
       (TopPair.isIso_twistedHomologyπ_of_isEmpty (subspaceComplPair (proj (B := B) (F := F)) ⊤)
         L n)).symm ≪≫
-    (@asIso _ _ _ _ (LocalCoefficientSystem.twistedHomologyMap (prodZeroSection B F) L n)
-      (by
-        have h := (ContinuousMap.HomotopyEquiv.prodZeroSection B F).isIso_twistedHomologyMap L n
-        have he : TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection B F).toFun =
-            prodZeroSection B F :=
-          ConcreteCategory.hom_ext _ _ fun b ↦
-            (ContinuousMap.HomotopyEquiv.prodZeroSection_apply B F b).trans
-              (prodZeroSection_apply F b).symm
-        rwa [he] at h)).symm
+    (@asIso _ _ _ _ (LocalCoefficientSystem.twistedHomologyMap
+        (TopCat.ofHom (ContinuousMap.HomotopyEquiv.prodZeroSection B F).toFun) L n)
+      ((ContinuousMap.HomotopyEquiv.prodZeroSection B F).isIso_twistedHomologyMap L n)).symm
 
 end TauCeti

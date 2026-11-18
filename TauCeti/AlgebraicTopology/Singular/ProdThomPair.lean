@@ -60,8 +60,6 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 
 * `TauCeti.prodThomPairProj`, `TauCeti.prodThomPairPuncturedProj`: the projections
   `B × F → B` and `B × (F ∖ {0}) → B`.
-* `TauCeti.prodZeroSection`: the zero section `B → B × F`, a homotopy equivalence
-  (`ContinuousMap.HomotopyEquiv.prodZeroSection`).
 * `TauCeti.prodThomPairPuncturedHomotopyEquiv`: for `e : F ≃L[ℝ] ℝᵈ⁺¹`, the punctured product
   `B × (F ∖ {0})` is homotopy equivalent to `Sᵈ × B` by `(b, x) ↦ (e x / ‖e x‖, b)`.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
@@ -187,15 +185,6 @@ def prodThomPairProj : (prodThomPair B F).fst ⟶ TopCat.of B :=
 
 @[simp]
 lemma prodThomPairProj_apply (p : B × F) : prodThomPairProj B F p = p.1 :=
-  (rfl)
-
-variable (B) in
-/-- The zero section `b ↦ (b, 0)` of the product bundle `B × F → B`. -/
-def prodZeroSection : TopCat.of B ⟶ TopCat.of (B × F) :=
-  TopCat.ofHom ⟨fun b ↦ (b, 0), by fun_prop⟩
-
-@[simp]
-lemma prodZeroSection_apply (b : B) : prodZeroSection B F b = (b, 0) :=
   (rfl)
 
 variable (B) in
