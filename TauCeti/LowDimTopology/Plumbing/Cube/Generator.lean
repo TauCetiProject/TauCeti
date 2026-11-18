@@ -59,10 +59,8 @@ lattice-homology differential can use directly.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose opening item asks for Némethi's lattice (co)homology from lattice
-points and weight functions. The lower/upper face convention and exponents are the standard
-cubical-boundary data in Némethi, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
+The lower/upper face convention and exponents are the standard cubical-boundary data in Némethi,
+[arXiv:0709.0841](https://arxiv.org/abs/0709.0841).
 -/
 
 public section

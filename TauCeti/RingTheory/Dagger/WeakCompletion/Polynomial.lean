@@ -181,7 +181,6 @@ private theorem integral_of_mem {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖
     have hdeg : (Q j).totalDegree < t.degree := by
       have hdiv : (c + 1) * k ≤ t.degree := Nat.mul_div_le _ _
       have hj' := mem_range.mp hj
-      have hk' : 0 < k := Nat.pos_of_ne_zero hk
       nlinarith [hQ j]
     rw [MvPolynomial.coeff_eq_zero_of_totalDegree_lt hdeg, mul_zero]
   have hb := norm_sub_le_of_eval_eq hπ hπ1 z p k (by
@@ -206,7 +205,7 @@ private theorem mem_of_coefficient_hasSum {π : O} (hπ : π ≠ 0) (hπ1 : ‖(
   refine mem_weakCompletionSet_iff.mpr ⟨c, Q, hdeg, fun k ↦ ?_⟩
   rw [MvPolynomial.aeval_X_left]
   apply eval_eq_of_norm_sub_le hπ hπ1
-  apply (MvPowerSeries.norm_le_iff (pow_nonneg (norm_nonneg _) k)).mpr
+  apply MvPowerSeries.norm_le_iff.mpr
   intro t
   -- Coefficientwise convergence suffices: every tail coefficient is bounded by ‖π‖^k.
   have htail : HasSum (fun j ↦ (π : K) ^ (j + k) * ((Q (j + k)).coeff t : K))
@@ -244,7 +243,7 @@ private theorem mem_of_integral {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖
   have hQrange (j : ℕ) : ∃ p : P, p.map (Subring.unitClosedBall K).subtype = Q j := by
     apply MvPolynomial.mem_range_map_iff_coeffs_subset.mpr
     intro a ha
-    obtain ⟨t, ht, rfl⟩ := MvPolynomial.mem_coeffs_iff.mp ha
+    obtain ⟨t, _, rfl⟩ := MvPolynomial.mem_coeffs_iff.mp ha
     exact ⟨⟨(Q j).coeff t, Subring.mem_unitClosedBall.mpr (hQ1 j t)⟩, rfl⟩
   choose Q' hQ' using hQrange
   apply mem_of_coefficient_hasSum hπ hπ1 z c Q'

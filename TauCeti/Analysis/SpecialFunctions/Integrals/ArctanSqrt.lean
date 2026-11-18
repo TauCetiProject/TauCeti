@@ -72,7 +72,6 @@ private theorem hasDerivAt_two_mul_arctan_sqrt_sub_sq_div {j t : ℝ} (hj : 0 < 
     HasDerivAt (fun x ↦ 2 * arctan (√(f x - j ^ 2) / j))
       (f' t * j / (f t * √(f t - j ^ 2))) t := by
   have hpos : 0 < f t - j ^ 2 := sub_pos.2 ht
-  have hs : 0 < √(f t - j ^ 2) := Real.sqrt_pos.2 hpos
   have hsq : √(f t - j ^ 2) ^ 2 = f t - j ^ 2 := Real.sq_sqrt hpos.le
   have hf : 0 < f t := (sq_nonneg j).trans_lt ht
   convert (((hd.sub_const (j ^ 2)).sqrt hpos.ne').div_const j).arctan.const_mul 2 using 1
@@ -233,7 +232,7 @@ theorem tendsto_integral_mul_mul_div_mul_sqrt_sub_sq (hab : a < b) {ψ : ℝ →
     obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn hψsub
     obtain ⟨δ, hδ, hδψ⟩ := Metric.continuousWithinAt_iff.1 (hψ a haIcc) (ε / (4 * π))
       (by positivity)
-    set c := min b (a + δ / 2) with hc
+    set c := min b (a + δ / 2)
     have hac : a < c := lt_min hab (by linarith)
     have hcIcc : c ∈ Icc a b := ⟨hac.le, min_le_left _ _⟩
     have htail : Tendsto (fun j ↦ M * (G j b - G j c)) (𝓝[>] 0) (𝓝 0) := by

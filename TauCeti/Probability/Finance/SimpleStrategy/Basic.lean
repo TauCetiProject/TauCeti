@@ -36,7 +36,10 @@ transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
 (`TauCeti.Finance.simpleGains_apply_eq_sum`); so they are known at that date when `X` is known at
 each trading date (`TauCeti.Finance.stronglyMeasurable_simpleGains`), and integrable when each
 trade has integrable gains (`TauCeti.Finance.integrable_simpleGains`). After the last date they
-stay at their terminal value (`TauCeti.Finance.simpleGains_of_ge`). When a real-time price path
+stay at their terminal value (`TauCeti.Finance.simpleGains_of_ge`); at any time `t` they are the
+discrete transform over the grid clipped at `t` (`TauCeti.Finance.simpleGains_eq_sum_ite_le`),
+and they have continuous paths along continuous price paths
+(`TauCeti.Finance.continuous_simpleGains`). When a real-time price path
 is the indefinite integral of a rate `X'`, as a deterministic bond is, the gains are the time
 integral `∫ a_u X'_u du` (`TauCeti.Finance.simpleGains_eq_integral`).
 
@@ -143,11 +146,8 @@ theorem simpleHolding_of_mem_Ioc (hτ : MonotoneOn τ (Set.Iic n)) (hj : j < n)
     (ht : t ∈ Set.Ioc (τ j) (τ (j + 1))) (ω : Ω) : simpleHolding τ n a t ω = a j ω := by
   rw [simpleHolding_def, sum_eq_single_of_mem j (mem_range.2 hj), Set.indicator_of_mem ht]
   intro i hi hij
-  refine Set.indicator_of_notMem (fun hit ↦ ?_) _
-  -- Intervals with different indices are disjoint.
-  rcases lt_or_gt_of_ne hij with hij | hij
-  · exact (hit.2.trans (hτ (hij.trans hj) hj.le hij)).not_gt ht.1
-  · exact (ht.2.trans (hτ (hij.trans (mem_range.1 hi)) (mem_range.1 hi).le hij)).not_gt hit.1
+  exact Set.indicator_of_notMem
+    (hτ.notMem_Ioc_of_mem_Ioc_of_ne (mem_range.1 hi) hj hij ht) _
 
 /-- Outside `(τ 0, τ n]` a simple strategy over a partition monotone up to `n` holds nothing. -/
 @[simp]
@@ -174,6 +174,28 @@ theorem simpleGains_of_ge (hτ : MonotoneOn τ (Set.Iic n)) (ht : τ n ≤ t) (X
   have h₀ : τ i ≤ τ n := hτ (mem_range.1 hi).le Set.self_mem_Iic (mem_range.1 hi).le
   have h₁ : τ (i + 1) ≤ τ n := hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)
   simp [h₀, h₁, h₀.trans ht, h₁.trans ht]
+
+/-- At time `t`, the gains over a partition monotone up to `n` are the discrete transform over
+the grid clipped at `t`, with the positions on intervals starting after `t` discarded. -/
+theorem simpleGains_eq_sum_ite_le (hτ : MonotoneOn τ (Set.Iic n)) (X : ι → Ω → ℝ) (t : ι)
+    (ω : Ω) :
+    simpleGains τ n a X t ω = ∑ i ∈ range n, (if τ i ≤ t then a i else 0) ω *
+      (X (min (τ (i + 1)) t) ω - X (min (τ i) t) ω) := by
+  refine sum_congr rfl fun i hi ↦ ?_
+  by_cases hit : τ i ≤ t
+  · simp only [hit, ↓reduceIte]
+  · have h₀ : min (τ i) t = t := min_eq_right (not_le.mp hit).le
+    have h₁ : min (τ (i + 1)) t = t := min_eq_right ((not_le.mp hit).le.trans
+      (hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)))
+    simp only [hit, ↓reduceIte, Pi.zero_apply, h₀, h₁, sub_self, mul_zero]
+
+/-- The gains along a continuous price path are continuous in time. -/
+theorem continuous_simpleGains [TopologicalSpace ι] [OrderClosedTopology ι] {ω : Ω}
+    (hX : Continuous fun t ↦ X t ω) : Continuous fun t ↦ simpleGains τ n a X t ω := by
+  simp only [simpleGains_def]
+  exact continuous_finsetSum _ fun j _ ↦ continuous_const.mul
+    ((hX.comp (continuous_const.min continuous_id)).sub
+      (hX.comp (continuous_const.min continuous_id)))
 
 /-- The gains from trading a constant price vanish. -/
 @[simp]
@@ -302,6 +324,16 @@ theorem stronglyMeasurable_simpleGains {m : ℕ} (hτ : MonotoneOn τ (Set.Iic n
   exact ((ha i (him.trans hm)).mono (hle i (by omega))).mul
     (((hXm _ (him.trans hm)).mono (hle _ him)).sub ((hXm i (by omega)).mono (hle i (by omega))))
 
+/-- A position chosen at `τ j` and discarded when its interval starts after `t` is known at the
+clipped date `min (τ j) t`. -/
+theorem stronglyMeasurable_ite_le_min (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (t : ι) (hj : j < n) :
+    StronglyMeasurable[ℱ (min (τ j) t)] (if τ j ≤ t then a j else 0) := by
+  by_cases hjt : τ j ≤ t
+  · rw [min_eq_left hjt]
+    simpa only [hjt, ↓reduceIte] using ha j hj
+  · simpa only [hjt, ↓reduceIte] using stronglyMeasurable_zero
+
 /-- The gains of a simple strategy at a trading date are integrable when each of its trades has
 integrable gains. -/
 theorem integrable_simpleGains {m : ℕ} {Q : Measure Ω} (hτ : MonotoneOn τ (Set.Iic n))
@@ -426,7 +458,7 @@ theorem isSelfFinancing_iff :
 /-- Holdings that are constant across trading dates are self-financing. -/
 theorem isSelfFinancing_const (a b : Ω → ℝ) :
     IsSelfFinancing τ n (fun _ ↦ a) (fun _ ↦ b) S β := by
-  intro j hj ω
+  intro j _ ω
   rfl
 
 /-- Self-financing strategies are closed under addition. -/

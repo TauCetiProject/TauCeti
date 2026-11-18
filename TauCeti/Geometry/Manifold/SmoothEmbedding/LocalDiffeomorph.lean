@@ -147,7 +147,7 @@ theorem val_comp_codRestrict [IsManifold J n N] (f : SmoothEmbedding I J n M N)
 section InverseFunctionTheorem
 
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
-  [FiniteDimensional 𝕂 F] {K : ModelWithCorners 𝕂 F H}
+  {K : ModelWithCorners 𝕂 F H}
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] [FiniteDimensional 𝕂 F']
   {K' : ModelWithCorners 𝕂 F' G}
   {X : Type*} [TopologicalSpace X] [ChartedSpace H X]

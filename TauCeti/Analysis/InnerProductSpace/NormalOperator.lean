@@ -175,23 +175,24 @@ namespace Commute
 with its adjoint. -/
 theorem star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
     (h : Commute T S) : Commute T (star S) := by
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   -- Transfer commutation along the endomorphism algebra equivalence in both directions.
   have hc := h.map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E)
   have hs := IsStarNormal.commute_star_right (a := S.toContinuousLinearMap) inferInstance hc
   rw [← toContinuousLinearMap_star] at hs
   exact hs.of_map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E).injective
 
-/-- The real and imaginary parts of two commuting normal operators commute in all four
-combinations. -/
+/-- If `T` is normal and commutes with `S`, then the real and imaginary parts of `T` and `S`
+commute in all four combinations. -/
 theorem realPart_imaginaryPart_of_isStarNormal {T S : E →ₗ[ℂ] E}
-    [IsStarNormal T] [IsStarNormal S] (h : Commute T S) :
+    [IsStarNormal T] (h : Commute T S) :
     Commute (ℜ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℜ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) := by
-  have h₂ := h.star_right_of_isStarNormal
   have h₃ := h.symm.star_right_of_isStarNormal.symm
+  have h₂ : Commute T (star S) := by
+    simpa using h.symm.star_right_of_isStarNormal.star_star.symm
   have h₄ := h.star_star
   -- Expand multiplication, use the four commutation relations, then normalize scalars.
   refine ⟨?_, ?_, ?_, ?_⟩
@@ -214,7 +215,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     ∃ (b : OrthonormalBasis κ ℂ E) (μ : ι → κ → ℂ),
       ∀ i j, T i (b j) = μ i j • b j := by
   classical
-  have := FiniteDimensional.complete ℂ E
+  have := FiniteDimensional.completeSpace ℂ E
   have hcomm (i j : ι) : Commute (T i) (T j) :=
     if h : i = j then h ▸ Commute.refl _ else hC h
   -- All real and imaginary parts are symmetric and commute with one another.
@@ -226,7 +227,6 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   have hSC : Pairwise (Commute on S) := by
     rintro ⟨i, a⟩ ⟨j, b⟩ -
     have := hT i
-    have := hT j
     have h := (hcomm i j).realPart_imaginaryPart_of_isStarNormal
     cases a <;> cases b
     exacts [h.1, h.2.1, h.2.2.1, h.2.2.2]

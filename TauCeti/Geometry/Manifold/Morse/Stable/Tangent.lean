@@ -66,7 +66,7 @@ its tangent space.** For a critical point `x` of index `k`, the stable manifold 
 of an adapted pseudo-gradient is the image of a smooth embedding `ι : L → M` of a real vector space
 `L` of dimension `n - k`, sending `0` to `x`. The Hessian of `f` at `x`, read in the preferred
 chart, is positive on every nonzero vector of the tangent space `dι₀(L)` of `W^s(x)` at `x`. -/
-theorem exists_isSmoothEmbedding_stableSet (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem exists_isSmoothEmbedding_stableSet
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     ∃ L : Submodule ℝ E,
       Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E ∧
@@ -74,7 +74,7 @@ theorem exists_isSmoothEmbedding_stableSet (hf : MDifferentiable 𝓘(ℝ, E) �
         range ι = hX.flow.stableSet x ∧ ι 0 = x ∧
         ∀ u : L, u ≠ 0 → 0 < hessianQuadraticForm (f ∘ (extChartAt 𝓘(ℝ, E) x).symm)
           (extChartAt 𝓘(ℝ, E) x x) (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) ι 0 u) := by
-  obtain ⟨φ, δ, hemb, hrange, h0, hd, -⟩ := hX.exists_stableParam hf hx
+  obtain ⟨φ, δ, hemb, hrange, h0, hd, -⟩ := hX.exists_stableParam hx
   refine ⟨φ.stableSubspace, φ.finrank_stableSubspace_add_manifoldMorseIndex, _, hemb, hrange,
     h0, fun u hu ↦ ?_⟩
   have hQ := φ.hessianQuadraticForm_extChartAt
@@ -97,8 +97,7 @@ theorem exists_isSmoothEmbedding_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
           (extChartAt 𝓘(ℝ, E) x x) (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E) ι 0 u) < 0 := by
   -- The unstable manifold of `X` is the stable manifold of `-X`, adapted to `-f`.
   obtain ⟨L, hL, ι, hemb, hrange, h0, hpos⟩ :=
-    (hX.neg hf).exists_isSmoothEmbedding_stableSet
-      (hf.neg.contMDiff.mdifferentiable (by simp)) (mfderiv_neg_eq_zero_iff.2 hx)
+    (hX.neg hf).exists_isSmoothEmbedding_stableSet (mfderiv_neg_eq_zero_iff.2 hx)
   have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   rw [hX.unstableSet_eq_stableSet_neg hf]

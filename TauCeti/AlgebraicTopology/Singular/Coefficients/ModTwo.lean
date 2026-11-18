@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
-public import TauCeti.Algebra.Category.ModuleCat.ModTwo
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.Bockstein
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
+public import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
 
 import TauCeti.Algebra.Category.ModuleCat.AB
 import TauCeti.AlgebraicTopology.Singular.Reduced
@@ -24,13 +24,15 @@ long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`, or with the field `�
 `𝔽₂`-vector spaces. The two agree: restriction of scalars along `ℤ → 𝔽₂` preserves coproducts and
 homology, so the integer-module homology is the mod-two homology with its scalars restricted
 (`TopCat.singularHomologyModTwoIso`). In particular one vanishes exactly when the other does
-(`TopCat.isZero_singularHomology_modTwo_iff`).
+(`TopCat.isZero_singularHomology_modTwo_iff`, and `TopCat.isZero_singularHomology_modTwo_iff'` for
+spaces in the lowest universe, with the coefficients `ℤ/2` and `𝔽₂` themselves rather than lifted).
 
 The coefficient long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0` relates integral homology to mod-two
-homology. Its first map induces multiplication by two on `Hₙ(X; ℤ)`
-(`TopCat.singularHomologyFunctor_map_modTwoCoefficientSequence_f_app`), and its second map induces
-the reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)` (`TopCat.singularHomologyReductionModTwo`). Exactness
-says:
+homology. Its first map induces multiplication by two on `Hₙ(X; ℤ)` (the case `m = 2` of
+`TopCat.singularHomologyFunctor_map_zmodCoefficientSequence_f_app`, from
+`TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence`), and its second map
+induces the reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)` (`TopCat.singularHomologyReductionModTwo`).
+Exactness says:
 
 * a class reduces to zero exactly when it is twice a class
   (`TopCat.ker_singularHomologyReductionModTwo`);
@@ -118,22 +120,20 @@ theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
   -- restriction of scalars does not change the underlying abelian group
   rfl
 
-/-! ### The reduction modulo two -/
+/-- For a space in the lowest universe, singular homology with coefficients in the integer module
+`ℤ/2` vanishes exactly when singular homology with coefficients in the field `𝔽₂` does, with the
+coefficients `ℤ/2` and `𝔽₂` themselves rather than their universe lifts. -/
+theorem isZero_singularHomology_modTwo_iff' (X : TopCat.{0}) (n : ℕ) :
+    IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ZMod 2))).obj X) ↔
+      IsZero (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) n).obj
+        (ModuleCat.of (ZMod 2) (ZMod 2))).obj X) := by
+  rw [Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).mapIso
+      (ULift.moduleEquiv : ULift.{0} (ZMod 2) ≃ₗ[ℤ] ZMod 2).toModuleIso.symm).app X),
+    isZero_singularHomology_modTwo_iff]
+  exact Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) n).mapIso
+    (ULift.moduleEquiv : ULift.{0} (ZMod 2) ≃ₗ[ZMod 2] ZMod 2).toModuleIso).app X)
 
-/-- The coefficient map `ℤ ⟶ ℤ` of the mod-two coefficient sequence induces multiplication by two on
-integral singular homology. -/
-theorem singularHomologyFunctor_map_modTwoCoefficientSequence_f_app (X : TopCat.{u}) (n : ℕ) :
-    (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
-        TauCeti.modTwoCoefficientSequence.{u}.f).app X).hom =
-      LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) 2 := by
-  -- Mathlib's `singularHomologyFunctor` is by definition singular chains followed by homology
-  change (HomologicalComplex.homologyMap (((singularChainComplexFunctor (ModuleCat.{u} ℤ)).map
-    TauCeti.modTwoCoefficientSequence.f).app X) n).hom =
-      LinearMap.lsmul ℤ ((((singularChainComplexFunctor (ModuleCat.{u} ℤ)).obj
-        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X).homology n) 2
-  ext x
-  simp [HomologicalComplex.homologyMap_add, two_smul]
+/-! ### The reduction modulo two -/
 
 /-- The **reduction modulo two** `Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)`, induced by the coefficient map
 `ℤ ⟶ ℤ/2`. -/
@@ -141,7 +141,8 @@ abbrev singularHomologyReductionModTwo (X : TopCat.{u}) (n : ℕ) :
     ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X ⟶
       ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj X :=
-  ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map TauCeti.modTwoCoefficientSequence.{u}.g).app X
+  ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
+    (TauCeti.zmodCoefficientSequence.{u} 2).g).app X
 
 /-- **The kernel of the reduction modulo two**: an integral homology class reduces to zero modulo
 two exactly when it is twice a class. -/
@@ -149,9 +150,11 @@ theorem ker_singularHomologyReductionModTwo (X : TopCat.{u}) (n : ℕ) :
     LinearMap.ker (X.singularHomologyReductionModTwo n).hom =
       LinearMap.range (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) 2) := by
-  rw [← X.singularHomologyFunctor_map_modTwoCoefficientSequence_f_app n]
+  have h := X.singularHomologyFunctor_map_zmodCoefficientSequence_f_app 2 n
+  rw [Nat.cast_ofNat] at h
+  rw [← h]
   exact ((X.singularHomology_exact_coefficient₂
-    TauCeti.modTwoCoefficientSequence_shortExact.{u} n).moduleCat_range_eq_ker).symm
+    (TauCeti.zmodCoefficientSequence_shortExact.{u} 2) n).moduleCat_range_eq_ker).symm
 
 /-- The reduction modulo two is onto in degree `n + 1` exactly when multiplication by two is
 injective on `Hₙ(X; ℤ)`. -/
@@ -159,12 +162,14 @@ theorem surjective_singularHomologyReductionModTwo_succ_iff (X : TopCat.{u}) (n 
     Function.Surjective (X.singularHomologyReductionModTwo (n + 1)) ↔
       Function.Injective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) 2) := by
-  have hS := TauCeti.modTwoCoefficientSequence_shortExact.{u}
+  have hS := TauCeti.zmodCoefficientSequence_shortExact.{u} 2
+  have h := X.singularHomologyFunctor_map_zmodCoefficientSequence_f_app 2 n
+  rw [Nat.cast_ofNat] at h
   -- both conditions say that the Bockstein homomorphism vanishes
   rw [← ModuleCat.epi_iff_surjective,
     (X.singularHomology_exact_coefficient₃ hS (n + 1) n).epi_f_iff,
     ← (X.singularHomology_exact_coefficient₁ hS (n + 1) n).mono_g_iff, ModuleCat.mono_iff_injective,
-    ← X.singularHomologyFunctor_map_modTwoCoefficientSequence_f_app n]
+    ← h]
 
 /-- The reduction modulo two is onto in degree one: the zeroth integral homology is a free abelian
 group, so multiplication by two is injective on it. -/

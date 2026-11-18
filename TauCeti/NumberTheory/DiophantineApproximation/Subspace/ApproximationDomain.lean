@@ -83,6 +83,7 @@ public section
 noncomputable section
 
 open Module NumberField NumberField.mixedEmbedding NumberField.InfinitePlace
+open scoped Pointwise
 
 namespace TauCeti.NumberField
 
@@ -166,6 +167,17 @@ theorem mixedEmbedding_mem_approxBody_iff {L : AbsoluteValue K ℝ → ι → Du
     (fun j ↦ mixedEmbedding K (x j)) ∈ approxBody L c Q ↔
       ∀ (w : InfinitePlace K) (i : ι), w (L w.1 i x) ≤ Q ^ c w.1 i := by
   simp only [mem_approxBody, sum_mixedEmbedding_mul_mixedEmbedding, normAtPlace_apply]
+
+/-- The coordinatewise mixed embedding of a point `x` of `Kⁱ` lies in the dilate `t • B` of the
+infinite part `B` of an approximation domain, for `t > 0`, exactly when
+`w (L w i x) ≤ t * Q ^ c w i` at every infinite place `w`. -/
+theorem mixedEmbedding_mem_smul_approxBody_iff {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    {c : AbsoluteValue K ℝ → ι → ℝ} {Q t : ℝ} (ht : 0 < t) {x : ι → K} :
+    (fun j ↦ mixedEmbedding K (x j)) ∈ t • approxBody L c Q ↔
+      ∀ (w : InfinitePlace K) (i : ι), w (L w.1 i x) ≤ t * Q ^ c w.1 i := by
+  simp only [Set.mem_smul_set_iff_inv_smul_mem₀ ht.ne', mem_approxBody, Pi.smul_apply,
+    mul_smul_comm, ← Finset.smul_sum, normAtPlace_smul, sum_mixedEmbedding_mul_mixedEmbedding,
+    normAtPlace_apply, abs_inv, abs_of_pos ht, inv_mul_le_iff₀ ht]
 
 /-- **An approximation domain is the set of points of a module whose mixed embedding lies in a
 body**: `x` lies in it exactly when it lies in the finite part and its coordinatewise mixed
@@ -374,7 +386,7 @@ theorem span_approxModule_eq_top [Finite ι] [NumberField K] (S₀ : Finset (Fin
   obtain ⟨d, hd0, hd⟩ := FinitePlace.exists_ne_zero_forall_mul_apply_le S₀ fun v _ ↦ hS0 v
   have hdK : (d : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.2 hd0
   have hmem (j : ι) : (d : K) • Pi.basisFun K ι j ∈ approxModule S₀ L c Q := by
-    refine mem_approxModule.2 ⟨fun v hv i ↦ ?_, fun v hv k ↦ ?_⟩
+    refine mem_approxModule.2 ⟨fun v hv i ↦ ?_, fun v _ k ↦ ?_⟩
     · rw [map_smul, smul_eq_mul, map_mul]
       calc v (d : K) * v (L v.1 i (Pi.basisFun K ι j))
           ≤ v (d : K) * (S v * |Q| ^ c v.1 i) :=

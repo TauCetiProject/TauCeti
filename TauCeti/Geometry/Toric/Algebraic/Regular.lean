@@ -30,8 +30,9 @@ cone in an integral lattice has only one primitive generator. This pins the bloc
 transition matrix between two extending bases: every ray column is a standard column supported at
 the matching ray row, so splitting the index set of each basis into its rays and a common
 complement, compatibly with the two ray indexings, the matrix is `[[1, B], [0, D]]` with `D`
-unimodular. The analytic layer consumes exactly this shape: changing the extending basis keeps the
-boundary coordinates, twists them by `B`, and acts on the torus coordinates by `D`.
+unimodular. The affine analytic charts use exactly this shape: by
+`TauCeti.Toric.mixedMonomialMap_ofTorusBlock_coneChartAmbient`, changing the extending basis keeps
+the boundary coordinates, twists them by `B`, and acts on the torus coordinates by `D`.
 
 ## Main declarations
 
@@ -109,7 +110,6 @@ structure IsExtendingBasis (i : N →+ V) {σ : PointedCone ℝ V} {n : ℕ}
 primitive ray generators. The toric-cone hypothesis is part of the definition: it enforces
 lattice rationality, salience, and finite generation, while the basis condition alone would be
 vacuous for any cone whose `ToricRay` type is empty. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 structure IsRegularCone (i : N →+ V) (σ : PointedCone ℝ V) : Prop extends IsToricCone i σ where
   /-- Some integral basis extends the primitive ray generators of the cone. -/
   exists_basis : ∃ (n : ℕ) (b : Module.Basis (Fin n) ℤ N) (r : ToricRay σ ↪ Fin n),
@@ -437,7 +437,6 @@ namespace Fan
 
 /-- A fan is *regular*, or smooth, when every one of its cones is regular. This is the hypothesis
 under which the analytic realization of the fan is a complex manifold. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 def IsRegular (Φ : Fan i) : Prop := ∀ ⦃σ⦄, σ ∈ Φ.cones → IsRegularCone i σ
 
 /-- The characteristic property of a regular fan. -/

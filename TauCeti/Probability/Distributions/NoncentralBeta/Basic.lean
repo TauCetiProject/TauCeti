@@ -240,7 +240,7 @@ theorem noncentralBetaMeasure_zero_noncentrality (a : ℝ) (hb : 0 < b) :
     noncentralBetaMeasure a b 0 = noncentralBetaComponent a b := by
   rcases lt_or_ge a 0 with ha | ha
   · simp [ha]
-  ext s hs
+  ext s _
   rw [noncentralBetaMeasure_apply ha hb, tsum_eq_single 0]
   · simp [poissonMeasure_singleton]
   · intro j hj

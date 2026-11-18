@@ -145,10 +145,9 @@ theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} {D E : Divisor k F}
   have hord := (mem_riemannRochSpace_iff_neg_le_ord (pow_ne_zero n h0)).mp hf P
   rw [P.ord_pow] at hord
   have := hDE P
-  rcases Nat.eq_zero_or_pos n with rfl | hn
+  rcases Nat.eq_zero_or_pos n with rfl | _
   · simp at hord this
     omega
-  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
   nlinarith
 
 /-- Membership in `L(nP)` for a single place `P`: a nonzero function lies in `L(nP)` exactly when
@@ -495,12 +494,7 @@ private lemma finiteDimensional_and_finrank_le_of_le (hF : IsFunctionField k F) 
       exact hne (WeilDivisor.ext fun P ↦ le_antisymm (WeilDivisor.coeff_le_coeff hDE P) (hcon P))
     have hPdeg : 1 ≤ (P.degree : ℤ) := by
       exact_mod_cast P.one_le_degree_of_isFunctionField hF
-    have hstep : D + WeilDivisor.ofPoint P ≤ E := WeilDivisor.le_iff.mpr fun Q ↦ by
-      rcases eq_or_ne Q P with rfl | hQ
-      · rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_self]
-        omega
-      · rw [WeilDivisor.coeff_add, WeilDivisor.coeff_ofPoint_of_ne hQ, add_zero]
-        exact WeilDivisor.coeff_le_coeff hDE Q
+    have hstep : D + WeilDivisor.ofPoint P ≤ E := WeilDivisor.add_ofPoint_le_of_coeff_lt hDE hP
     have hdeg : Divisor.degree (D + WeilDivisor.ofPoint P) =
         Divisor.degree D + (P.degree : ℤ) := by
       rw [Divisor.degree_add, Divisor.degree_ofPoint]

@@ -12,6 +12,10 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 
 This file records elementary consequences of the submultiplicativity of the norm, and an estimate
 for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative.
+
+Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
+(`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
+(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`.
 -/
 
 public section
@@ -26,6 +30,21 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- The distance from `e * a` to `c` exceeds the distance from `e * b` to `c` by at most
+`‖e‖ ‖a - b‖`: `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`. -/
+theorem norm_mul_sub_le_left {R : Type*} [NonUnitalSeminormedRing R] (e a b c : R) :
+    ‖e * a - c‖ ≤ ‖e‖ * ‖a - b‖ + ‖e * b - c‖ := by
+  rw [← sub_add_sub_cancel (e * a) (e * b) c, ← mul_sub]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
+/-- The distance from `a * e` to `c` exceeds the distance from `b * e` to `c` by at most
+`‖a - b‖ ‖e‖`: `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`. This is the right-multiplication
+version of `TauCeti.norm_mul_sub_le_left`. -/
+theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c : R) :
+    ‖a * e - c‖ ≤ ‖a - b‖ * ‖e‖ + ‖b * e - c‖ := by
+  rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
+  exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
@@ -78,6 +97,19 @@ theorem norm_mul_pow_le {R : Type*} [SeminormedRing R] (x y : R) (n : ℕ) :
   · exact (norm_mul_le _ _).trans
       (mul_le_mul_of_nonneg_left (norm_pow_le' y n.succ_pos) (norm_nonneg x))
 
+/-- Without the normalisation `‖1‖ = 1`, a product with a finite product of powers still
+satisfies `‖b * ∏_{s ∈ S} (a s) ^ (e s)‖ ≤ ‖b‖ * ∏_{s ∈ S} ‖a s‖ ^ (e s)`, including empty `S`
+and zero exponents. The product bounds `Finset.norm_prod_le`, `TauCeti.norm_prod_le_prod_norm`
+and `Finsupp.norm_prod_pow_le` assume `NormOneClass`. -/
+theorem _root_.Finset.norm_mul_prod_pow_le {ι R : Type*} [SeminormedCommRing R] (S : Finset ι)
+    (a : ι → R) (e : ι → ℕ) (b : R) : ‖b * ∏ s ∈ S, a s ^ e s‖ ≤ ‖b‖ * ∏ s ∈ S, ‖a s‖ ^ e s := by
+  classical
+  induction S using Finset.induction_on generalizing b with
+  | empty => simp
+  | insert t S ht ih =>
+    rw [Finset.prod_insert ht, Finset.prod_insert ht, ← mul_assoc, ← mul_assoc]
+    exact (ih _).trans (by gcongr; exact norm_mul_pow_le _ _ _)
+
 /-- For a multiplicative norm with `‖1‖ = 1`, an element `w` of norm one and `r` of norm at most
 one, `‖w - 1‖ ≤ ‖(w - 1) a‖ + 2 ‖a - r‖ + 2 (1 - ‖r‖)` for every `a`. So `w - 1` is controlled by
 `(w - 1) a` wherever `a` is close to some `r` of norm close to one. -/
@@ -102,9 +134,32 @@ theorem norm_prod_le_prod_norm_of_nonempty {ι R : Type*} [SeminormedCommRing R]
     {s : Finset ι} (hs : s.Nonempty) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
   induction hs using Finset.Nonempty.cons_induction with
   | singleton a => simp
-  | cons a s ha hs ih =>
+  | cons a s ha _ ih =>
     rw [Finset.prod_cons, Finset.prod_cons]
     exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
+
+/-- The norm of a finite product is bounded by the product of the norms, over a seminormed
+commutative ring with `‖1‖ = 1`; that normalisation is used only for the empty product. Mathlib's
+`Finset.norm_prod_le` states this only for a `NormedCommRing`. -/
+theorem norm_prod_le_prod_norm {ι R : Type*} [SeminormedCommRing R] [NormOneClass R]
+    (s : Finset ι) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  · exact norm_prod_le_prod_norm_of_nonempty hs f
+
+/-- **A finite product of unit-ball elements lies in the unit ball**, over a seminormed
+commutative ring with `‖1‖ = 1`. -/
+theorem norm_prod_le_one {ι R : Type*} [SeminormedCommRing R] [NormOneClass R] {s : Finset ι}
+    {b : ι → R} (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) : ‖∏ i ∈ s, b i‖ ≤ 1 :=
+  (norm_prod_le_prod_norm s b).trans (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) hb)
+
+/-- **A finite product over a nonempty set of unit-ball elements lies in the unit ball**, over a
+seminormed commutative ring, without assuming `‖1‖ = 1`. For the empty product, which is `1`, see
+`TauCeti.norm_prod_le_one`. -/
+theorem norm_prod_le_one_of_nonempty {ι R : Type*} [SeminormedCommRing R] {s : Finset ι}
+    (hs : s.Nonempty) {b : ι → R} (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) : ‖∏ i ∈ s, b i‖ ≤ 1 :=
+  (norm_prod_le_prod_norm_of_nonempty hs b).trans
+    (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) hb)
 
 /-- A point within distance `1` of `1` is not `0`. -/
 theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R] {z : R}

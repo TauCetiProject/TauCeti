@@ -306,7 +306,7 @@ theorem eval_eq_discPolynomial
     by_contra hnk
     exact Finsupp.mem_support_iff.mp hn <| by
       rw [discPolynomial_coeff, c.property a n (by simpa using hnk)]
-  · intro n hn
+  · intro n _
     exact smul_zero _
 
 /-- Continuous functions represented by degree-at-most-`k` polynomials in the normalized

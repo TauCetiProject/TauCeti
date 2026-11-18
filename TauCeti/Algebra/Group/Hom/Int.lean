@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Group.Int.Defs
 /-!
 # Integer characters with comparable kernels
 
-If the kernel of a nonzero integer-valued character is contained in the kernel of another,
+If the kernel of an integer-valued character is contained in the kernel of another,
 some nonzero integer multiple of the latter is a multiple of the former. Equal kernels
 therefore give equal nonzero integer multiples. These facts compare integral normals without
 choosing a basis or extending scalars to a field.
@@ -33,10 +33,14 @@ variable {A : Type*} [AddGroup A]
 
 /-- If the kernel of an integer character is contained in that of another,
 then a nonzero integer multiple of the latter is a multiple of the former.
-The second character is allowed to be zero. -/
-theorem exists_ne_zero_zsmul_eq_of_ker_le (f g : A →+ ℤ) (hf : f ≠ 0)
+Either character is allowed to be zero. -/
+theorem exists_ne_zero_zsmul_eq_of_ker_le (f g : A →+ ℤ)
     (hker : f.ker ≤ g.ker) :
     ∃ c d : ℤ, c ≠ 0 ∧ c • g = d • f := by
+  by_cases hf : f = 0
+  · refine ⟨1, 0, Int.one_ne_zero, ?_⟩
+    have hg : g = 0 := AddMonoidHom.ker_eq_top_iff.mp (top_unique (by simpa [hf] using hker))
+    simp [hg]
   obtain ⟨a, ha⟩ := DFunLike.ne_iff.mp hf
   refine ⟨f a, g a, ha, ?_⟩
   ext x
@@ -46,16 +50,19 @@ theorem exists_ne_zero_zsmul_eq_of_ker_le (f g : A →+ ℤ) (hf : f ≠ 0)
   simpa only [map_sub, map_zsmul, AddMonoidHom.zsmul_apply, Int.zsmul_eq_mul,
     sub_eq_zero, mul_comm (f x)] using hg
 
-/-- Nonzero integer characters with the same kernel have equal nonzero integer multiples. -/
-theorem exists_ne_zero_zsmul_eq_of_ker_eq (f g : A →+ ℤ) (hf : f ≠ 0)
+/-- Integer characters with the same kernel have equal nonzero integer multiples. -/
+theorem exists_ne_zero_zsmul_eq_of_ker_eq (f g : A →+ ℤ)
     (hker : f.ker = g.ker) :
     ∃ c e : ℤ, c ≠ 0 ∧ e ≠ 0 ∧ c • f = e • g := by
+  by_cases hf : f = 0
+  · have hg : g = 0 := AddMonoidHom.ker_eq_top_iff.mp (by rw [← hker, hf]; simp)
+    exact ⟨1, 1, Int.one_ne_zero, Int.one_ne_zero, by simp [hf, hg]⟩
   obtain ⟨a, ha⟩ := DFunLike.ne_iff.mp hf
   have hga : g a ≠ 0 := by
     intro h
     have hm : a ∈ f.ker := hker ▸ AddMonoidHom.mem_ker.mpr h
     exact ha (AddMonoidHom.mem_ker.mp hm)
-  obtain ⟨c, d, hc, hcd⟩ := f.exists_ne_zero_zsmul_eq_of_ker_le g hf hker.le
+  obtain ⟨c, d, hc, hcd⟩ := f.exists_ne_zero_zsmul_eq_of_ker_le g hker.le
   have hd : d ≠ 0 := by
     intro hd
     have hv : c * g a = 0 := by simpa [hd] using DFunLike.congr_fun hcd a

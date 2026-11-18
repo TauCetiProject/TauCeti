@@ -6,7 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.MeanValue
+public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 public import Mathlib.Topology.MetricSpace.Equicontinuity
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Topology.ContinuousMap.SecondCountableSpace
+import Mathlib.Topology.Sequences
+import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # Equicontinuity from bounds on derivatives
@@ -16,6 +22,13 @@ equicontinuous if its derivatives are uniformly bounded on each compact subset. 
 mean-value inequality supplies a common Lipschitz bound on a small ball around each point.
 This criterion is useful when applying Arzelà–Ascoli to families controlled by interior
 estimates, without requiring a global bound on the derivatives.
+
+Applied to the derivatives themselves, Arzelà–Ascoli gives convergence in `C¹`
+(`TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_fderiv`): if `uₙ → v` pointwise on an open
+subset of a finite-dimensional space, with values in a finite-dimensional space, and the
+derivatives `Duₙ` are equicontinuous and bounded at each point, then along a subsequence
+`Duₙ → Dv` locally uniformly, and `v` is `C¹`. Equicontinuity of the derivatives is what interior
+estimates for second derivatives provide.
 -/
 
 public section
@@ -43,7 +56,7 @@ theorem equicontinuousOn_of_forall_isCompact_norm_fderiv_le
   let L : ℝ≥0 := ⟨max M 0, le_max_right _ _⟩
   have hLip : ∀ i, LipschitzOnWith L (u i) (closedBall (x : E) (r / 2)) := by
     intro i
-    apply (convex_closedBall (x : E) (r / 2)).lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := ℝ)
+    apply (convex_closedBall (x : E) (r / 2)).lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ)
     · intro y hy
       exact (hu i y (hball hy)).differentiableAt (hΩ.mem_nhds (hball hy))
     · intro y hy
@@ -58,5 +71,31 @@ theorem equicontinuousOn_of_forall_isCompact_norm_fderiv_le
   filter_upwards [hnear] with y hy i
   exact (hLip i).dist_le_mul _ (mem_closedBall_self (by positivity)) _
     (ball_subset_closedBall hy)
+
+/-- **Arzelà–Ascoli in `C¹`.** Let `uₙ` be differentiable on an open subset `Ω` of a
+finite-dimensional space, with values in a finite-dimensional space, and converge pointwise on
+`Ω` to `v`. If the derivatives `Duₙ` are equicontinuous on `Ω` and bounded at each point, then
+`v` is `C¹` on `Ω` and, along a subsequence, `Duₙ → Dv` locally uniformly on `Ω`. -/
+theorem exists_strictMono_tendstoLocallyUniformlyOn_fderiv [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ F] {u : ℕ → E → F} {v : E → F} (hΩ : IsOpen Ω)
+    (hu : ∀ n, DifferentiableOn ℝ (u n) Ω) (hequi : EquicontinuousOn (fun n ↦ fderiv ℝ (u n)) Ω)
+    (hbd : ∀ x ∈ Ω, ∃ M, ∀ n, ‖fderiv ℝ (u n) x‖ ≤ M)
+    (hlim : ∀ x ∈ Ω, Tendsto (fun n ↦ u n x) atTop (𝓝 (v x))) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ContDiffOn ℝ 1 v Ω ∧
+      TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) (fderiv ℝ v) atTop Ω := by
+  obtain ⟨φ, hφ, G, hGc, hconv⟩ :=
+    exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hΩ hequi fun x hx ↦
+      ⟨closedBall 0 (hbd x hx).choose, isCompact_closedBall _ _,
+        fun n ↦ mem_closedBall_zero_iff.2 ((hbd x hx).choose_spec n)⟩
+  -- The limit of the derivatives is the derivative of the limit.
+  have hderiv : ∀ x ∈ Ω, HasFDerivAt v (G x) x := fun x hx ↦
+    hasFDerivAt_of_tendstoLocallyUniformlyOn hΩ hconv
+      (fun n y hy ↦ ((hu (φ n)) y hy).differentiableAt (hΩ.mem_nhds hy) |>.hasFDerivAt)
+      (fun y hy ↦ (hlim y hy).comp hφ.tendsto_atTop) hx
+  have hfd : EqOn (fderiv ℝ v) G Ω := fun x hx ↦ (hderiv x hx).fderiv
+  refine ⟨φ, hφ, ?_, hconv.congr_right fun x hx ↦ (hfd hx).symm⟩
+  exact (contDiffOn_succ_iff_fderiv_of_isOpen (n := 0) hΩ).2
+    ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt, by simp,
+      contDiffOn_zero.2 (hGc.congr hfd)⟩
 
 end TauCeti

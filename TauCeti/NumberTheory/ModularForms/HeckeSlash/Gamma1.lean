@@ -14,8 +14,8 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.ModularForm
 `HeckeSlash/ModularForm.lean` builds, for a subgroup `G ≤ SL(2, ℤ)` and a double coset of a Hecke
 triple whose two flanks are `G.map (mapGL ℚ)`, the `ℂ`-linear endomorphisms of
 `ModularForm (G.map (mapGL ℝ)) k` and `CuspForm (G.map (mapGL ℝ)) k` that the coset induces. This
-file instantiates that at `G = Γ₁(N)` and `Δ = Δ₀(N)` — the roadmap's Layer 2(b) setting — and
-discharges, once, the two side conditions the general construction carries.
+file instantiates that at `G = Γ₁(N)` and `Δ = Δ₀(N)`, and discharges, once, the two side
+conditions the general construction carries.
 
 The Hecke triple itself is `HeckeRing/GL2/Gamma1.lean`'s instance, and the finiteness of the
 right-coset index follows from it. What is left is the positivity hypothesis, and that is
@@ -31,7 +31,7 @@ and any representatives of the cosets `Γ₁(N) aᵢ` — always with the same a
 
 ⚠ These are the operators of an *arbitrary* double coset. Identifying particular cosets with the
 classical `Tₙ` — the normalisation lemma for `Γ₁(N) · diag(1, p) · Γ₁(N)`, and the `q`-expansion
-recurrences — is a separate milestone and is not proved here.
+recurrences — is a separate step and is not proved here.
 
 ## Main definitions
 
@@ -65,10 +65,9 @@ namespace HeckeRing.GL2
 variable {N : ℕ} [NeZero N] (k : ℤ)
   (D : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)))
 
-/-- **The Hecke operator of a double coset on `M_k(Γ₁(N))`.** This is the roadmap's Layer 2(b)
-target for `ModularForm`: a `ℂ`-linear endomorphism of the space of modular forms of level
-`Γ₁(N)` attached to an arbitrary double coset of the Hecke triple `(Γ₁(N), Δ₀(N))`, with no
-condition relating `N` to the determinant of the coset. -/
+/-- **The Hecke operator of a double coset on `M_k(Γ₁(N))`.** This is a `ℂ`-linear endomorphism
+of the space of modular forms of level `Γ₁(N)` attached to an arbitrary double coset of the Hecke
+triple `(Γ₁(N), Δ₀(N))`, with no condition relating `N` to the determinant of the coset. -/
 noncomputable def heckeSlashGamma1ModularFormEnd :
     Module.End ℂ (ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :=
   heckeSlashModularFormEnd k D (out_mem_glpos_of_delta0 N D)

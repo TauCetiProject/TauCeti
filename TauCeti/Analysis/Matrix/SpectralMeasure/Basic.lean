@@ -126,6 +126,44 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
 
+/-- Applying a real star-algebra homomorphism entrywise preserves the spectral measure of a
+Hermitian matrix. In particular, real symmetric matrices have the same spectral measure when
+viewed as complex Hermitian matrices. -/
+@[simp]
+theorem spectralMeasure_map {𝕜' : Type*} [RCLike 𝕜'] (A : Matrix n n 𝕜)
+    (f : 𝕜 →⋆ₐ[ℝ] 𝕜') (hAf : (A.map f).IsHermitian) :
+    (A.map f).spectralMeasure hAf =
+      A.spectralMeasure ((isHermitian_map_iff (map_star f) f.toRingHom.injective).mp hAf) := by
+  have hA := (isHermitian_map_iff (map_star f) f.toRingHom.injective).mp hAf
+  rw [spectralMeasure_def, spectralMeasure_def]
+  apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+  have h := congrArg (Multiset.map RCLike.re)
+    (hA.splits_charpoly.roots_map f.toRingHom)
+  have hchar : (A.map f).charpoly = A.charpoly.map f.toRingHom := charpoly_map A _
+  rw [← hchar, hAf.roots_charpoly_eq_eigenvalues,
+    hA.roots_charpoly_eq_eigenvalues] at h
+  have hf (r : ℝ) : f (r : 𝕜) = (r : 𝕜') := f.commutes r
+  simpa [Multiset.map_map, Function.comp_def, hf] using h
+
+/-- Viewing a real symmetric matrix over an `RCLike` field preserves its spectral measure. -/
+@[simp]
+theorem spectralMeasure_map_algebraMap (A : Matrix n n ℝ)
+    (hA : (A.map (algebraMap ℝ 𝕜)).IsHermitian) :
+    (A.map (algebraMap ℝ 𝕜)).spectralMeasure hA =
+      A.spectralMeasure ((isHermitian_map_iff (map_star (RCLike.ofRealStarAlgHom 𝕜))
+        (algebraMap ℝ 𝕜).injective).mp hA) :=
+  spectralMeasure_map A (RCLike.ofRealStarAlgHom 𝕜) hA
+
+/-- Viewing a real symmetric matrix as a complex Hermitian matrix preserves its spectral
+measure. -/
+@[simp]
+theorem spectralMeasure_map_ofReal (A : Matrix n n ℝ)
+    (hA : (A.map ((↑) : ℝ → ℂ)).IsHermitian) :
+    (A.map ((↑) : ℝ → ℂ)).spectralMeasure hA =
+      A.spectralMeasure ((isHermitian_map_iff (map_star (RCLike.ofRealStarAlgHom ℂ))
+        Complex.ofReal_injective).mp hA) :=
+  spectralMeasure_map A (RCLike.ofRealStarAlgHom ℂ) hA
+
 /-- The empirical spectral measure depends continuously on the Hermitian matrix for the weak
 topology on probability measures. -/
 @[fun_prop]
@@ -193,7 +231,7 @@ theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n 𝕜} (hA : A.PosS
   have hsum :
       ∑ i, (Set.Iio 0).indicator (1 : ℝ → ℝ≥0∞) (hA.isHermitian.eigenvalues i) = 0 := by
     apply Finset.sum_eq_zero
-    intro i hi
+    intro i _
     simp [not_lt.mpr (hA.eigenvalues_nonneg i)]
   rw [hsum]
   simp
@@ -224,6 +262,21 @@ theorem spectralMeasure_eq_of_charpoly_eq {A B : Matrix n n 𝕜} (hA : A.IsHerm
     (hB : B.IsHermitian) (h : A.charpoly = B.charpoly) :
     A.spectralMeasure hA = B.spectralMeasure hB := by
   rw [spectralMeasure_def, spectralMeasure_def, (hA.eigenvalues_eq_eigenvalues_iff hB).2 h]
+
+/-- The spectral measure of a real diagonal is the empirical measure of its diagonal entries,
+including repetitions. -/
+@[simp]
+theorem spectralMeasure_diagonal (d : n → ℝ) :
+    (diagonal (fun i ↦ (d i : 𝕜))).spectralMeasure
+      (isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)) =
+        empiricalMeasureOfFintype d := by
+  rw [spectralMeasure_def]
+  apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+  apply Multiset.map_injective (RCLike.ofReal_injective (K := 𝕜))
+  rw [Multiset.map_map, ← IsHermitian.roots_charpoly_eq_eigenvalues]
+  rw [charpoly_diagonal, Polynomial.roots_prod]
+  · simp
+  · simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero]
 
 /-- Conjugating a Hermitian matrix by an invertible matrix does not change its spectral measure,
 provided the conjugate is again Hermitian. -/

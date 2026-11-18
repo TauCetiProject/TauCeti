@@ -60,17 +60,6 @@ variable {𝕜 : Type*} [RCLike 𝕜]
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
-private theorem exp_mapsTo_positiveDiagonal (m : ℕ) :
-    MapsTo NormedSpace.exp
-      {X : Matrix (Fin m) (Fin m) 𝕜 | X.IsUpperTriangular ∧ ∀ i, RCLike.im (X i i) = 0}
-      {g | g.IsUpperTriangular ∧ ∀ i, RCLike.im (g i i) = 0 ∧ 0 < RCLike.re (g i i)} := by
-  rintro X ⟨hX, hreal⟩
-  refine ⟨hX.exp, fun i ↦ ?_⟩
-  have hdiag := RCLike.re_eq_self_of_im_eq_zero (hreal i)
-  rw [hX.exp_apply_diag, ← hdiag, RCLike.exp_ofReal]
-  refine ⟨RCLike.ofReal_im _, ?_⟩
-  simpa only [RCLike.ofReal_re] using Real.exp_pos (RCLike.re (X i i))
-
 private def leadingBlock {n : ℕ} (X : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) :
     Matrix (Fin n) (Fin n) 𝕜 :=
   X.submatrix Fin.castSucc Fin.castSucc
@@ -210,7 +199,9 @@ theorem bijOn_exp_upperTriangular_realDiagonal (n : ℕ) :
     BijOn exp
       {X : Matrix (Fin n) (Fin n) 𝕜 | X.IsUpperTriangular ∧ ∀ i, RCLike.im (X i i) = 0}
       {g | g.IsUpperTriangular ∧ ∀ i, RCLike.im (g i i) = 0 ∧ 0 < RCLike.re (g i i)} := by
-  refine ⟨exp_mapsTo_positiveDiagonal n, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
+  · rintro X ⟨hX, hreal⟩
+    exact ⟨hX.exp, fun i ↦ (RCLike.pos_iff.mp (hX.exp_apply_diag_pos i (hreal i))).symm⟩
   · intro X hX Y hY h
     exact (triangularLog_exp hX.1 hX.2).symm.trans
       ((congrArg (triangularLog n) h).trans (triangularLog_exp hY.1 hY.2))

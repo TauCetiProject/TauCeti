@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 public import TauCeti.Topology.Covering.Homeomorph
 public import TauCeti.Topology.Covering.Prod
 

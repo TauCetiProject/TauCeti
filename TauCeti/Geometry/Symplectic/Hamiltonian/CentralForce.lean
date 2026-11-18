@@ -57,6 +57,8 @@ there.
 
 ## Main declarations
 
+* `TauCeti.centralForceHamiltonian_smul`: isometries fixing the origin, such as rotations,
+  preserve every central-force Hamiltonian.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian`: Hamilton's
   equations for a central force.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
@@ -110,6 +112,16 @@ theorem continuousAt_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ} {x : V 
     (hU : ContinuousAt U ‖x.1‖) : ContinuousAt (centralForceHamiltonian m U) x :=
   ((continuous_snd.norm.pow 2).continuousAt.div_const _).add
     (hU.comp (f := fun y : V × V ↦ ‖y.1‖) continuous_fst.norm.continuousAt)
+
+/-- Acting on positions and momenta alike by an isometry of `V` fixing the origin, such as a
+rotation, preserves every central-force Hamiltonian `‖p‖² / (2m) + U(‖q‖)`. -/
+@[simp]
+theorem centralForceHamiltonian_smul {M : Type*} [SMulZeroClass M V] [IsIsometricSMul M V]
+    (m : ℝ) (U : ℝ → ℝ) (g : M) (x : V × V) :
+    centralForceHamiltonian m U (g • x) = centralForceHamiltonian m U x := by
+  obtain ⟨q, p⟩ := x
+  simp only [Prod.smul_mk, centralForceHamiltonian_apply,
+    (isometry_smul V g).norm_map_of_map_zero (smul_zero g)]
 
 /-- The derivative of the Kepler potential `-κ / r` at a nonzero radius is `κ / r²`. -/
 theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
@@ -289,7 +301,7 @@ theorem inner_rungeLenz_fst (m κ : ℝ) (x : V × V) :
       ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 - m * κ * ‖x.1‖ := by
   rcases eq_or_ne x.1 0 with hq | hq
   · simp [rungeLenz, hq]
-  · have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
+  · have _ : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
     simp only [rungeLenz, inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
       real_inner_comm x.2 x.1]
     field_simp

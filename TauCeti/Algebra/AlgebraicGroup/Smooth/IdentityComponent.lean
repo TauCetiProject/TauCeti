@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.GroupScheme
-import Mathlib.RingTheory.Localization.Away.Lemmas
 public import Mathlib.RingTheory.Smooth.Basic
 
 /-!
@@ -29,24 +28,9 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
 /-- The identity component of a smooth finite-type affine group is smooth. -/
 instance smooth_identityComponent (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     [Algebra.Smooth k H] : Algebra.Smooth k (identityComponent H) := by
-  let e : H := PrimeSpectrum.connectedComponentIdempotent (R := H)
-    (Bialgebra.augmentationPoint k H)
-  -- The ideal's definition is not exposed across modules, so use its public membership lemma.
-  have hI : PrimeSpectrum.connectedComponentIdeal (R := H) (Bialgebra.augmentationPoint k H) =
-      Ideal.span {1 - e} := by
-    ext x
-    exact (PrimeSpectrum.mem_connectedComponentIdeal_iff
-      (x := Bialgebra.augmentationPoint k H) (r := x)).trans Ideal.mem_span_singleton'.symm
-  let _ : IsLocalization.Away e (identityComponent H) := by
-    -- Direct application through the bundled identity component exceeds the heartbeat limit.
-    -- Expose the quotient carrier so the underlying Hopf ideal can be rewritten explicitly.
-    change IsLocalization.Away e
-      (H ⧸ (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)).toIdeal)
-    rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal, hI]
-    exact IsLocalization.Away.quotient_of_isIdempotentElem
-      (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent (R := H) _)
-  let _ : Algebra.Smooth H (identityComponent H) :=
-    Algebra.Smooth.of_isLocalization_Away e
+  have := isLocalization_away_identityComponent H
+  let _ : Algebra.Smooth H (identityComponent H) := Algebra.Smooth.of_isLocalization_Away
+    (PrimeSpectrum.connectedComponentIdempotent (R := H) (Bialgebra.augmentationPoint k H))
   exact Algebra.Smooth.comp k H (identityComponent H)
 
 end TauCeti.FiniteTypeCommHopfAlgCat

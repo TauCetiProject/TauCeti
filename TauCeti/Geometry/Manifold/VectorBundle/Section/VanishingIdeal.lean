@@ -80,20 +80,26 @@ theorem apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top {x : M} {s : Cₛ^∞
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
 
+/-- A smooth section vanishing on a neighbourhood of `x` lies in `I_x ^ m Γ(V)` for every `m`. -/
+theorem mem_smoothVanishingIdeal_pow_smul_top_of_eventuallyEq_zero {x : M} {s : Cₛ^∞⟮I; F, V⟯}
+    (hs : ∀ᶠ y in 𝓝 x, s y = 0) (m : ℕ) :
+    s ∈ smoothVanishingIdeal I x ^ m • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯) := by
+  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hs).mem_iff.mp hs
+  let χ : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
+  have hχ : ⇑χ = ρ := ContMDiffMap.coeFn_mk _ _
+  have hfac : s = (1 - χ) ^ m • s := by
+    ext y
+    by_cases hy : ρ y = 0
+    · simp [hχ, hy]
+    · simp [(hρ (Function.mem_support.mpr hy)).out]
+  rw [hfac]
+  exact Submodule.smul_mem_smul (Ideal.pow_mem_pow (by simp [hχ]) m) Submodule.mem_top
+
 /-- A smooth section vanishing on a neighbourhood of `x` lies in `I_x Γ(V)`. -/
 theorem mem_smoothVanishingIdeal_smul_top_of_eventuallyEq_zero {x : M} {s : Cₛ^∞⟮I; F, V⟯}
     (hs : ∀ᶠ y in 𝓝 x, s y = 0) :
     s ∈ smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯) := by
-  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hs).mem_iff.mp hs
-  let χ : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
-  have hχ : ⇑χ = ρ := ContMDiffMap.coeFn_mk _ _
-  have hfac : s = (1 - χ) • s := by
-    ext y
-    by_cases hy : ρ y = 0
-    · simp [hχ, hy]
-    · simp [show s y = 0 from hρ hy]
-  rw [hfac]
-  exact Submodule.smul_mem_smul (by simp [hχ]) Submodule.mem_top
+  simpa using mem_smoothVanishingIdeal_pow_smul_top_of_eventuallyEq_zero hs 1
 
 variable [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
 

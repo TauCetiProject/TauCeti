@@ -29,6 +29,8 @@ Lie-group exponential.
 
 ## Main results
 
+* `ContMDiffMonoidMorphism.groupLieAlgebraLieHom`: the differential at the identity of a smooth
+  homomorphism, as a homomorphism of the tangent Lie algebras.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
   homomorphism preserves the Lie bracket.
@@ -42,6 +44,7 @@ Lie-group exponential.
   criterion at every point.
 * `ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective`: injectivity of the identity
   differential implies injectivity of the Lie map.
+* `ContMDiffMonoidMorphism.leftInverse_lieMap`: inverse composition laws pass to Lie maps.
 * `TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt`: the Lie-algebra equivalence induced by a smooth
   homomorphism that is a local diffeomorphism at the identity.
 * `ContMDiffMonoidMorphism.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a
@@ -116,18 +119,34 @@ theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
   rw [map_one] at h
   exact h
 
+/-- The differential at the identity of a smooth homomorphism, as a homomorphism of the tangent
+Lie algebras. -/
+def ContMDiffMonoidMorphism.groupLieAlgebraLieHom [CompleteSpace E] [CompleteSpace E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I' G' where
+  toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
+  map_lie' := φ.groupLieAlgebraMap_lie _ _
+
+@[simp]
+theorem ContMDiffMonoidMorphism.coe_groupLieAlgebraLieHom [CompleteSpace E] [CompleteSpace E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    ⇑φ.groupLieAlgebraLieHom = φ.toMonoidHom.groupLieAlgebraMap I I' :=
+  (rfl)
+
+@[simp]
+theorem ContMDiffMonoidMorphism.toLinearMap_groupLieAlgebraLieHom [CompleteSpace E]
+    [CompleteSpace E'] (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
+    (φ.groupLieAlgebraLieHom : GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I' G') =
+      (φ.toMonoidHom.groupLieAlgebraMap I I' : GroupLieAlgebra I G →ₗ[ℝ] GroupLieAlgebra I' G') :=
+  (rfl)
+
 /-- The Lie functor on morphisms: the differential at the identity of a smooth homomorphism. -/
 noncomputable def lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') :
     LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G' :=
-  let tangentMap : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I' G' :=
-    { toLinearMap := φ.toMonoidHom.groupLieAlgebraMap I I'
-      map_lie' := by
-        intro X Y
-        exact φ.groupLieAlgebraMap_lie X Y }
   (leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := I') (G := G') (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).symm.toLieHom.comp
-    (tangentMap.comp
+    (φ.groupLieAlgebraLieHom.comp
       (leftInvariantDerivationLieEquivGroupLieAlgebra
         (I := I) (G := G) (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)).toLieHom)
 
@@ -259,6 +278,17 @@ private theorem monoidHom_mulInvariantExp
   rw [mulInvariantExp_eq_mulInvariantIntegralCurve]
   rw [mulInvariantExp_eq_mulInvariantIntegralCurve]
   exact congrFun heq 1
+
+/-- A left inverse pair of smooth homomorphisms induces a left inverse pair of Lie maps. -/
+theorem ContMDiffMonoidMorphism.leftInverse_lieMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (ψ : ContMDiffMonoidMorphism I' I ∞ G' G)
+    (h : ψ.comp φ = ContMDiffMonoidMorphism.id) :
+    Function.LeftInverse (lieMap ψ) (lieMap φ) := by
+  intro X
+  have h' := congrArg (fun f ↦ lieMap f X) h
+  simpa only [lieMap_comp, LieHom.comp_apply, lieMap_id, one_apply_eq_self] using h'
 
 /-- A smooth group homomorphism intertwines the Lie-group exponentials through its Lie map. -/
 @[simp]

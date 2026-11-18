@@ -98,8 +98,6 @@ restated here.
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -136,7 +134,7 @@ single strand of the identity diagram, so it carries that strand to itself and l
 unchanged. -/
 @[simp]
 theorem capCup_self (a : Fin k) : capCup a a = permToBrauer 1 := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rw [capCup_val_apply]
   rcases x with i | i <;> rcases eq_or_ne i a with rfl | hia
   · simp
@@ -189,7 +187,7 @@ theorem eq_capCup_iff {D : BrauerDiagram k} (hab : a ≠ b) :
   · subst h
     exact ⟨capCup_val_inl_left hab, capCup_val_inr_left hab,
       fun _ hia hib => capCup_val_inl_of_ne hia hib⟩
-  · refine Subtype.ext (Equiv.ext fun x => ?_)
+  · ext x
     rcases x with i | i <;> rcases eq_or_ne i a with rfl | hia
     · rw [h₁, capCup_val_inl_left hab]
     · rcases eq_or_ne i b with rfl | hib

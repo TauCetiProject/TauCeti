@@ -26,6 +26,10 @@ respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
 
 * `measurable_reindexPopulation` — measurability of the joint selection/population evaluation;
 * `samplePopulation` — sample a random population along an independent random selection;
+* `samplePopulation_map` — measurable observations commute with sampling;
+* `samplePopulation_dirac_comp` — its deterministic-population composition form;
+* `samplePopulation_assoc` — iterated population sampling composes selection laws via
+  `samplePopulation`;
 * `samplePopulation_apply`, `samplePopulation_apply_population` — its evaluation by
   conditioning on the selection or on the population;
 * `samplePopulation_eq_bind`, `samplePopulation_eq_bind_population` — its form as a mixture,
@@ -79,6 +83,25 @@ theorem samplePopulation_def (σ : Measure (ι → κ)) (ρ : Measure (κ → α
     samplePopulation σ ρ = (σ.prod ρ).map fun p i => p.2 (p.1 i) :=
   (rfl)
 
+/-- Sampling along the zero selection measure gives the zero measure. -/
+@[simp]
+theorem samplePopulation_zero_left (ρ : Measure (κ → α)) :
+    samplePopulation (0 : Measure (ι → κ)) ρ = 0 := by
+  simp [samplePopulation_def]
+
+/-- Sampling the zero population measure gives the zero measure. -/
+@[simp]
+theorem samplePopulation_zero_right (σ : Measure (ι → κ)) :
+    samplePopulation σ (0 : Measure (κ → α)) = 0 := by
+  simp [samplePopulation_def]
+
+/-- Sampling an s-finite population law along an s-finite selection law gives an s-finite law. -/
+instance sfinite_samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α))
+    [SFinite σ] [SFinite ρ] :
+    SFinite (samplePopulation σ ρ) := by
+  rw [samplePopulation_def]
+  infer_instance
+
 /-- Sampling a finite population law along a finite selection law gives a finite law. -/
 instance isFiniteMeasure_samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α))
     [IsFiniteMeasure σ] [IsFiniteMeasure ρ] :
@@ -109,6 +132,31 @@ theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ �
     Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
   rfl
 
+/-- A measurable observation commutes with sampling along any selection law. The population law
+need only be s-finite; no finiteness or normalization is required of the selection law. -/
+theorem samplePopulation_map {β : Type*} [MeasurableSpace β] (σ : Measure (ι → κ))
+    (ρ : Measure (κ → α)) [SFinite ρ] {g : α → β} (hg : Measurable g) :
+    samplePopulation σ (ρ.map (fun x i => g (x i))) =
+      (samplePopulation σ ρ).map (fun y i => g (y i)) := by
+  have hκ : Measurable (fun x : κ → α => fun i => g (x i)) := by fun_prop
+  have hι : Measurable (fun y : ι → α => fun i => g (y i)) := by fun_prop
+  have hprod := Measure.map_prod_map σ ρ measurable_id hκ
+  rw [Measure.map_id] at hprod
+  rw [samplePopulation_def, hprod,
+    Measure.map_map measurable_reindexPopulation (measurable_id.prodMap hκ),
+    samplePopulation_def, Measure.map_map hι measurable_reindexPopulation]
+  rfl
+
+/-- Sampling an observed deterministic population along any selection law is the observation's
+pushforward of the original sampling law. -/
+theorem samplePopulation_dirac_comp {β : Type*} [MeasurableSpace β]
+    (σ : Measure (ι → κ)) (x : κ → α) {g : α → β} (hg : Measurable g) :
+    samplePopulation σ (Measure.dirac (g ∘ x)) =
+      (samplePopulation σ (Measure.dirac x)).map (fun y i => g (y i)) := by
+  have hκ : Measurable (fun y : κ → α => fun i => g (y i)) := by fun_prop
+  simpa only [Measure.map_dirac' hκ, Function.comp_def] using
+    samplePopulation_map σ (Measure.dirac x) hg
+
 /-- Evaluating a sampled law by conditioning first on the selection: it averages the laws of the
 selected entries of the population over the selection law. -/
 theorem samplePopulation_apply {σ : Measure (ι → κ)} {ρ : Measure (κ → α)} [SFinite ρ]
@@ -127,6 +175,26 @@ theorem samplePopulation_apply_population {σ : Measure (ι → κ)} [SFinite σ
   rw [samplePopulation_def, Measure.map_apply measurable_reindexPopulation hA,
     Measure.prod_apply_symm (measurable_reindexPopulation hA)]
   -- The section of the joint preimage at `x` is, by definition, the reindexed preimage.
+  rfl
+
+/-- Iterated population sampling is associative: sampling along `σ` and then independently along
+`τ` is sampling once along the composite selection law `samplePopulation τ σ`. -/
+theorem samplePopulation_assoc {ν : Type*} [MeasurableSpace ν] [Countable ν]
+    [MeasurableSingletonClass ν] (τ : Measure (ι → κ)) (σ : Measure (κ → ν)) [SFinite σ]
+    (ρ : Measure (ν → α)) [SFinite ρ] :
+    samplePopulation τ (samplePopulation σ ρ) =
+      samplePopulation (samplePopulation τ σ) ρ := by
+  apply Measure.ext fun A hA => ?_
+  have hmeas : Measurable (fun m : ι → ν => ρ ((fun x : ν → α => fun i => x (m i)) ⁻¹' A)) :=
+    measurable_measure_prodMk_left (measurable_reindexPopulation hA)
+  rw [samplePopulation_apply hA, samplePopulation_apply hA, samplePopulation_def τ σ,
+    lintegral_map hmeas measurable_reindexPopulation,
+    lintegral_prod (fun p : (ι → κ) × (κ → ν) =>
+      ρ ((fun x : ν → α => fun i => x (p.2 (p.1 i))) ⁻¹' A))
+      (hmeas.comp measurable_reindexPopulation).aemeasurable]
+  refine lintegral_congr fun k => ?_
+  have hk : Measurable (fun y : κ → α => fun i : ι => y (k i)) := by fun_prop
+  rw [samplePopulation_apply (hk hA)]
   rfl
 
 /-- Sampling a random population is the mixture, over the selection law, of reading each fixed

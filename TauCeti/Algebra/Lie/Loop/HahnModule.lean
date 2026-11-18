@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Loop
-public import TauCeti.Algebra.Lie.HahnModule
+public import TauCeti.Algebra.Lie.HahnModule.Basic
 public import TauCeti.RingTheory.HahnSeries.Addition
 
 /-!

@@ -40,9 +40,6 @@ pointwise kernel.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §18.a.
-
-This supplies the isomorphism-invariance needed by the central-isogeny, simply-connected and
-adjoint-form targets in Layer 6 of the ReductiveGroups roadmap.
 -/
 
 public section

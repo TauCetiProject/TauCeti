@@ -130,8 +130,8 @@ def lattice (d : Coordinate) (s : Finset (ℤ × ℤ)) : Division d (latticeRegi
     aesop
   aedisjoint := by
     intro K hK L hL hKL
-    obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp hK
-    obtain ⟨l, hl, rfl⟩ := Finset.mem_image.mp hL
+    obtain ⟨k, _, rfl⟩ := Finset.mem_image.mp hK
+    obtain ⟨l, _, rfl⟩ := Finset.mem_image.mp hL
     simpa only [GraphCell.region_lattice] using
       latticeSquare_aedisjoint (fun h ↦ hKL (congrArg (GraphCell.lattice d) h))
 
