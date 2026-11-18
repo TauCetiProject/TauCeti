@@ -5,19 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Character.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.InvolutionCount
-public import TauCeti.RepresentationTheory.FDRep.FrobeniusSchur
 
 /-!
 # Frobenius-Schur indicators of groups of odd order
 
-The `n`-th power map is a bijection of a group `G` whenever `n` is coprime to `|G|`
-(`Nat.Coprime.pow_left_bijective`), so the average `|G|⁻¹ ∑_g χ(gⁿ)` of an irreducible character
-`χ` equals the average `|G|⁻¹ ∑_g χ(g)`, which is the dimension of the invariants
-(`Representation.card_inv_mul_sum_char_eq_finrank`). An irreducible representation has a nonzero
-invariant vector only when it is the trivial line, so the average is `1` for the trivial
-character and `0` otherwise. This holds over any field in which `|G|` is invertible. For a group of
-odd order, squaring is such a bijection, so **every nontrivial irreducible representation of a
+For an irreducible character `χ` and `n` coprime to `|G|`, the average `|G|⁻¹ ∑_g χ(gⁿ)` is `1`
+for the trivial character and `0` otherwise, over any field in which `|G|` is invertible
+(`Representation.card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime`). For a group of odd order,
+`n = 2` is coprime to `|G|`, so **every nontrivial irreducible representation of a
 group of odd order has Frobenius-Schur indicator `ν₂(χ) = |G|⁻¹ ∑_g χ(g²) = 0`**. Over an
 algebraically closed field this means it carries no nonzero invariant bilinear form, that is, it
 is of complex type (`TauCeti.Representation.frobeniusSchurIndicator_eq_zero_iff`). In a group of
@@ -32,17 +29,14 @@ group of odd order the unweighted sum `∑_χ ν₂(χ)` of the indicators and t
 
 The categorical `n`-th Frobenius-Schur indicator of a simple object of `FDRep k G`, for the
 standard pivotal structure and `n` coprime to `|G|`, takes the same values
-(`FDRep.frobeniusSchurIndicator_fdRep`); for a group of odd order this covers the second indicator.
+(`FDRep.frobeniusSchurIndicator_fdRep_eq_zero_iff_of_coprime`); for a group of odd order this
+covers the second indicator.
 
 ## Main statements
 
-* `Representation.card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime`: for an irreducible
-  representation and `n` coprime to `|G|`, the average `|G|⁻¹ ∑_g χ(gⁿ)` is `0` exactly when the
+* `Representation.frobeniusSchurIndicator_eq_zero_iff_of_odd_card`: an irreducible
+  representation of a group of odd order has Frobenius-Schur indicator `0` exactly when its
   character is nontrivial.
-* `Representation.frobeniusSchurIndicator_eq_zero_iff_of_odd_card`: the same criterion for the
-  Frobenius-Schur indicator of an irreducible representation of a group of odd order.
-* `FDRep.frobeniusSchurIndicator_fdRep_eq_zero_iff_of_coprime`: the same criterion for the
-  categorical `n`-th indicator of a simple object of `FDRep k G`, for `n` coprime to `|G|`.
 * `TauCeti.frobeniusSchurIndicatorRow_eq_zero_iff_of_odd_card`: a row of the character table of a
   group of odd order has indicator `0` exactly when its character is nontrivial.
 * `TauCeti.sum_frobeniusSchurIndicatorRow_of_odd_card`: the unweighted sum of the row indicators of
@@ -56,36 +50,9 @@ standard pivotal structure and `n` coprime to `|G|`, takes the same values
 
 public section
 
-universe u v w
+universe v w
 
 namespace Representation
-
-section Average
-
-variable {k : Type u} {G : Type v} {V : Type w} [Field k] [Group G] [Fintype G]
-  [Invertible (Nat.card G : k)] [AddCommGroup V] [Module k V]
-
-/-- **For an irreducible representation and `n` coprime to `|G|`, the average `|G|⁻¹ ∑_g χ(gⁿ)` is
-`0` exactly when its character is nontrivial.** Over any field in which `|G|` is invertible. -/
-theorem card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime (ρ : Representation k G V)
-    [ρ.IsIrreducible] {n : ℕ} (hn : (Nat.card G).Coprime n) :
-    (Nat.card G : k)⁻¹ * ∑ g : G, ρ.character (g ^ n) = 0 ↔ ρ.character ≠ fun _ => 1 := by
-  have : FiniteDimensional k V := ρ.asModuleEquiv.finiteDimensional
-  -- The `n`-th power map permutes `G`, so the average of `χ(gⁿ)` is the dimension of the
-  -- invariants.
-  rw [Fintype.sum_bijective _ hn.pow_left_bijective _ (ρ.character ·)
-    fun _ => rfl, card_inv_mul_sum_char_eq_finrank]
-  refine ⟨fun h hχ => ?_, fun hχ => by_contra fun h => hχ ?_⟩
-  · rw [← card_inv_mul_sum_char_eq_finrank, hχ, Finset.sum_const, Finset.card_univ,
-      Fintype.card_eq_nat_card, nsmul_eq_mul, mul_one, inv_mul_cancel_of_invertible] at h
-    exact one_ne_zero h
-  · -- A nonzero invariant vector makes `ρ` the trivial line.
-    have hne : ρ.invariants ≠ ⊥ := fun hb => h (by rw [hb, finrank_bot, Nat.cast_zero])
-    funext g
-    rw [‹ρ.IsIrreducible›.eq_trivial_of_invariants_ne_bot hne, char_trivial,
-      ‹ρ.IsIrreducible›.finrank_eq_one_of_invariants_ne_bot hne, Nat.cast_one]
-
-end Average
 
 variable {k : Type} {G : Type v} {V : Type w} [Field k] [Group G] [Fintype G]
   [Invertible (Nat.card G : k)] [AddCommGroup V] [Module k V]
@@ -133,24 +100,3 @@ theorem sum_frobeniusSchurIndicatorRow_of_odd_card (hG : Odd (Nat.card G)) :
 end Rows
 
 end TauCeti
-
-namespace FDRep
-
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Invertible (Nat.card G : k)]
-
-/-- **The categorical `n`-th Frobenius-Schur indicator of a simple object of `FDRep k G`, for `n`
-coprime to `|G|`, is `0` exactly when its character is nontrivial.** For a group of odd order this
-applies to the second indicator (`n = 2`, via `Odd.coprime_two_right`); for instance, each of the
-two nontrivial one-dimensional representations of `C₃` has categorical second indicator `0`. -/
-theorem frobeniusSchurIndicator_fdRep_eq_zero_iff_of_coprime (V : FDRep k G)
-    [CategoryTheory.Simple V] {n : ℕ+} (hn : (Nat.card G).Coprime n) :
-    TauCeti.frobeniusSchurIndicator k V n = 0 ↔ V.character ≠ fun _ => 1 := by
-  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
-    Invertible.ne_zero (Nat.card G : k) (by rw [h, Nat.cast_zero])
-  let _ : Fintype G := Fintype.ofFinite G
-  have := isIrreducible_of_simple V
-  rw [frobeniusSchurIndicator_fdRep V n]
-  simpa only [character_ρ, funext (character_ρ V)] using
-    Representation.card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime V.ρ hn
-
-end FDRep
