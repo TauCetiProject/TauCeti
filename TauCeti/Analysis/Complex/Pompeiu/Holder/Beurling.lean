@@ -153,10 +153,8 @@ theorem beurlingCkCLM_apply_fst (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0
     (beurlingCkCLM k hα hα1 hr hR f).1 i x =
       iteratedFDeriv ℝ i
         (fun w ↦ wirtingerDeriv (cauchyTransform (f : CkHolderSpace k α ℂ F)) w 1) x := by
-  have hT := (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
-    f.2).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
-    (f : CkHolderSpace k α ℂ F).contDiff
-    (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
+  have hT := contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1
+    (isCompact_closedBall c r) f.2
   have hi : (i : ℕ) + 1 ≤ k + 1 := by omega
   rw [iteratedFDeriv_wirtingerDeriv_one (hT.of_le (by exact_mod_cast hi)), beurlingCkCLM,
     ContinuousLinearMap.comp_apply, beurlingPost_apply_fst]
@@ -172,10 +170,8 @@ theorem beurlingCkCLM_apply_snd (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0
     (beurlingCkCLM k hα hα1 hr hR f).2 x =
       iteratedFDeriv ℝ k
         (fun w ↦ wirtingerDeriv (cauchyTransform (f : CkHolderSpace k α ℂ F)) w 1) x := by
-  have hT := (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
-    f.2).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
-    (f : CkHolderSpace k α ℂ F).contDiff
-    (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
+  have hT := contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1
+    (isCompact_closedBall c r) f.2
   rw [iteratedFDeriv_wirtingerDeriv_one hT, beurlingCkCLM, ContinuousLinearMap.comp_apply,
     beurlingPost_apply_snd]
   exact congrArg (wirtingerOneCurryRight k) (cauchyTransformCkCLM_apply_snd k hα hα1 hr hR f x)

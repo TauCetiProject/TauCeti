@@ -32,7 +32,9 @@ everything to the case `k = 0`, which is the one-derivative Hölder gain of
 * `TauCeti.exists_contDiffOn_holderOnWith_iteratedFDeriv_cauchyTransform`: the `C^{k+1,α}`
   estimate on an output disc, for `C^{k,α}` data on an input disc.
 * `HasCompactSupport.contDiff_cauchyTransform_of_holderWith_iteratedFDeriv`: the transform of
-  compactly supported `C^{k,α}` data is globally `C^{k+1}`.
+  compactly supported `C^{k,α}` data is globally `C^{k+1}`; in particular so is the transform of
+  an element of `TauCeti.supportedCkHolderSubmodule` for a compact set
+  (`TauCeti.contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule`).
 * `TauCeti.cauchyTransformCkCLM`: the transform as a bounded real-linear operator from
   `C^{k,α}` data supported in `closedBall c r` to the derivative fields of orders through
   `k + 1` on `closedBall c R` with the supremum norm, together with the `α`-Hölder field of
@@ -224,6 +226,14 @@ section Operator
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace ℝ F]
   [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F] {k : ℕ} {α : ℝ≥0} {c : ℂ} {r R : ℝ}
 
+/-- The Cauchy transform of `C^{k,α}` data vanishing off a compact set is globally `C^{k+1}`. -/
+theorem contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule (hα : 0 < α) (hα1 : α < 1)
+    {s : Set ℂ} (hs : IsCompact s) {f : CkHolderSpace k α ℂ F}
+    (hf : f ∈ supportedCkHolderSubmodule k α s) : ContDiff ℝ (k + 1 : ℕ) (cauchyTransform f) :=
+  (hasCompactSupport_of_mem_supportedCkHolderSubmodule hs
+    hf).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1 f.contDiff
+    f.memHolder_iteratedFDeriv.holderWith
+
 /-- The Cauchy transform of an element of the supported `C^{k,α}` source space. -/
 private def cauchyCk (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
     ℂ → F :=
@@ -238,10 +248,7 @@ private theorem support_source
 private theorem contDiff_cauchyCk (hα : 0 < α) (hα1 : α < 1)
     (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
     ContDiff ℝ (k + 1 : ℕ) (cauchyCk f) :=
-  (hasCompactSupport_of_mem_supportedCkHolderSubmodule (isCompact_closedBall c r)
-    f.2).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
-    (f : CkHolderSpace k α ℂ F).contDiff
-    (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
+  contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1 (isCompact_closedBall c r) f.2
 
 /-- The constant of the higher Hölder gain, for fixed target, order, exponent and discs. -/
 private def gainConst (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (c : ℂ) (hr : 0 ≤ r) (hR : 0 ≤ R) :

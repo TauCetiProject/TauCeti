@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Holder.Localization
 public import TauCeti.Analysis.Holder.Product
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The Beltrami equation with small `C^{k,α}` coefficient
@@ -19,23 +20,19 @@ closed disc `closedBall c r`. This file solves the Beltrami equation `\bar∂ψ 
 `C^{k,α}` norm of `μ` is small, with a solution `ψ` of class `C^{k+1,α}` on the disc that is
 `C^{k+1}`-close to the identity there.
 
-As in the case `k = 0` (`TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`), the solution
-is `ψ = z + T h`, where `T` is the Cauchy transform and the source `h` is the fixed point of
-`h = μ (1 + B h)`, with `B = ∂ T` the Beurling operator. Here the contraction runs on the Banach
+The solution is `ψ = z + T h`, where `T` is the Cauchy transform and the source `h` is the fixed
+point of `h = μ (1 + B h)`, with `B = ∂ T` the Beurling operator. The contraction runs on the Banach
 space of `C^{k,α}` data supported in the disc (`TauCeti.isClosed_supportedCkHolderSubmodule`).
 The Beurling operator `TauCeti.beurlingCkCLM` takes such data to the `C^{k,α}` fields of `B h`
 on a larger disc. Multiplying by a fixed smooth cutoff turns them into an element of the global
-space `CkHolderSpace k α ℂ ℂ` (`TauCeti.Beltrami.cutoffBeurlingCkCLM`), and multiplying by `μ`
-with `ContinuousLinearMap.compCkHolder₂` gives the linear part of the fixed-point map,
-`TauCeti.Beltrami.beltramiCkOperator`, whose operator norm is a fixed multiple of `‖μ‖`.
+space `CkHolderSpace k α ℂ ℂ`, and multiplying by `μ` with `ContinuousLinearMap.compCkHolder₂`
+gives the linear part `h ↦ μ χ B h` of the fixed-point map, whose operator norm is a fixed multiple
+of `‖μ‖`. The Neumann series (`ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one`) then gives
+the source. The cutoff and the linear part are private to this file: they depend on a cutoff
+chosen for this proof.
 
 ## Main results
 
-* `TauCeti.Beltrami.cutoffBeurlingCkCLM`: `h ↦ χ B h` as a bounded operator from `C^{k,α}` data
-  supported in `closedBall c r` to `CkHolderSpace k α ℂ ℂ`, equal to `B h` on
-  `closedBall c (r + 1)`.
-* `TauCeti.Beltrami.beltramiCkOperator`: `h ↦ μ χ B h` on the supported space, with operator norm
-  at most a fixed multiple of `‖μ‖`.
 * `TauCeti.exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv`: for `‖μ‖` below a threshold
   depending only on `k`, `α`, `c` and `r`, there is a supported source `h` with `‖h‖ ≤ 2 ‖μ‖`
   such that `ψ = z + T h` is globally `C^{k+1}`, solves `\bar∂ψ = μ ∂ψ` on `ℂ`, has derivatives of
@@ -196,7 +193,7 @@ private theorem cutoffBeurling_apply_of_notMem
 it sends `C^{k,α}` data `h` supported in `closedBall c r` to `χ B h ∈ C^{k,α}(ℂ)`, where
 `B h = ∂ (T h)` is the Beurling transform and `χ` is a fixed smooth cutoff, equal to one on
 `closedBall c (r + 1)` and vanishing off `ball c (r + 2)`. It is real linear and bounded. -/
-def cutoffBeurlingCkCLM (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) :
+private def cutoffBeurlingCkCLM (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r) :
     supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r) →L[ℝ]
       CkHolderSpace k α ℂ ℂ :=
   LinearMap.mkContinuous
@@ -221,7 +218,7 @@ private theorem cutoffBeurlingCkCLM_apply'
   LinearMap.mkContinuous_apply _ _ _ h
 
 /-- On `closedBall c (r + 1)` the cut-off Beurling operator is the Beurling transform. -/
-theorem cutoffBeurlingCkCLM_apply_of_mem
+private theorem cutoffBeurlingCkCLM_apply_of_mem
     (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) {z : ℂ}
     (hz : z ∈ closedBall c (r + 1)) :
     cutoffBeurlingCkCLM k hα hα1 hr h z =
@@ -231,7 +228,7 @@ theorem cutoffBeurlingCkCLM_apply_of_mem
 
 /-- On `ball c (r + 1)` every derivative of the cut-off Beurling operator is that of the
 Beurling transform. -/
-theorem iteratedFDeriv_cutoffBeurlingCkCLM_of_mem
+private theorem iteratedFDeriv_cutoffBeurlingCkCLM_of_mem
     (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) {z : ℂ}
     (hz : z ∈ ball c (r + 1)) (j : ℕ) :
     iteratedFDeriv ℝ j (cutoffBeurlingCkCLM k hα hα1 hr h) z =
@@ -242,7 +239,7 @@ theorem iteratedFDeriv_cutoffBeurlingCkCLM_of_mem
     ((bump c hr).eventuallyEq_one_of_mem_ball hz) j
 
 /-- The cut-off Beurling operator vanishes off `ball c (r + 2)`. -/
-theorem cutoffBeurlingCkCLM_apply_eq_zero
+private theorem cutoffBeurlingCkCLM_apply_eq_zero
     (h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) {z : ℂ}
     (hz : r + 2 ≤ dist z c) : cutoffBeurlingCkCLM k hα hα1 hr h z = 0 := by
   rw [cutoffBeurlingCkCLM_apply', cutoffBeurling_apply, (bump c hr).zero_of_le_dist hz, zero_smul]
@@ -251,7 +248,7 @@ theorem cutoffBeurlingCkCLM_apply_eq_zero
 `μ` in the supported space, it is `h ↦ μ χ B h`, the product of `μ` with the cut-off Beurling
 operator `TauCeti.Beltrami.cutoffBeurlingCkCLM`. It stays in the space of data supported in
 `closedBall c r` because `μ` vanishes off that disc. -/
-def beltramiCkOperator (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
+private def beltramiCkOperator (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     (μ : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) :
     supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r) →L[ℝ]
       supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r) :=
@@ -261,25 +258,23 @@ def beltramiCkOperator (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
       intro x hx
       simp [mem_supportedCkHolderSubmodule_iff.mp μ.property x hx]
 
-/-- The Beltrami operator is pointwise `μ` times the cut-off Beurling operator. -/
-theorem beltramiCkOperator_apply
+/-- The Beltrami operator is pointwise `μ ∂ (T h)`: on `closedBall c r` the cutoff is one, and
+off it `μ` vanishes. -/
+private theorem beltramiCkOperator_apply
     (μ h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) (z : ℂ) :
-    (beltramiCkOperator k hα hα1 hr μ h : CkHolderSpace k α ℂ ℂ) z =
-      (μ : CkHolderSpace k α ℂ ℂ) z * cutoffBeurlingCkCLM k hα hα1 hr h z := by
-  simp [beltramiCkOperator]
-
-/-- On the disc the Beltrami operator is `μ ∂ (T h)`. -/
-theorem beltramiCkOperator_apply_of_mem
-    (μ h : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) {z : ℂ}
-    (hz : z ∈ closedBall c r) :
     (beltramiCkOperator k hα hα1 hr μ h : CkHolderSpace k α ℂ ℂ) z =
       (μ : CkHolderSpace k α ℂ ℂ) z *
         wirtingerDeriv (cauchyTransform (h : CkHolderSpace k α ℂ ℂ)) z 1 := by
-  rw [beltramiCkOperator_apply, cutoffBeurlingCkCLM_apply_of_mem hα hα1 hr h
-    (closedBall_subset_closedBall (by linarith) hz)]
+  have hμh : (beltramiCkOperator k hα hα1 hr μ h : CkHolderSpace k α ℂ ℂ) z =
+      (μ : CkHolderSpace k α ℂ ℂ) z * cutoffBeurlingCkCLM k hα hα1 hr h z := by
+    simp [beltramiCkOperator]
+  by_cases hz : z ∈ closedBall c r
+  · rw [hμh, cutoffBeurlingCkCLM_apply_of_mem hα hα1 hr h
+      (closedBall_subset_closedBall (by linarith) hz)]
+  · rw [hμh, mem_supportedCkHolderSubmodule_iff.mp μ.property z hz, zero_mul, zero_mul]
 
 /-- The operator norm of the Beltrami operator is at most a fixed multiple of `‖μ‖`. -/
-theorem norm_beltramiCkOperator_le
+private theorem norm_beltramiCkOperator_le
     (μ : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r)) :
     ‖beltramiCkOperator k hα hα1 hr μ‖ ≤
       (k + 7) * 2 ^ k * ‖cutoffBeurlingCkCLM (c := c) k hα hα1 hr‖ * ‖μ‖ := by
@@ -312,15 +307,12 @@ private theorem exists_source (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
   refine ⟨h, hh.trans ?_, fun z ↦ ?_⟩
   · rw [div_le_iff₀ (by linarith)]
     nlinarith [norm_nonneg μ]
-  by_cases hz : z ∈ closedBall c r
-  · have := congrArg (fun g : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r) ↦
-      (g : CkHolderSpace k α ℂ ℂ) z) hfix
-    simp only [Submodule.coe_add, CkHolderSpace.coe_add, Pi.add_apply,
-      Beltrami.beltramiCkOperator_apply_of_mem hα hα1 hr _ _ hz] at this
-    rw [← this]
-    ring
-  · rw [mem_supportedCkHolderSubmodule_iff.mp h.property z hz,
-      mem_supportedCkHolderSubmodule_iff.mp μ.property z hz, zero_mul]
+  have := congrArg (fun g : supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r) ↦
+    (g : CkHolderSpace k α ℂ ℂ) z) hfix
+  simp only [Submodule.coe_add, CkHolderSpace.coe_add, Pi.add_apply,
+    Beltrami.beltramiCkOperator_apply hα hα1 hr] at this
+  rw [← this]
+  ring
 
 /-- Regularity of `T h` for a supported `C^{k,α}` source: it is globally `C^{k+1}` with
 `\bar∂ T h = h`, and on the disc its derivatives through order `k + 1` and the Hölder constant of
@@ -334,15 +326,13 @@ private theorem cauchyTransform_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 
       HolderOnWith ‖D h‖₊ α (iteratedFDeriv ℝ (k + 1) T) (closedBall c r) := by
   intro T D
   have hhs := support_subset_of_mem_supportedCkHolderSubmodule h.property
-  refine ⟨(HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r)
-      hhs).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv hα hα1
-      (h : CkHolderSpace k α ℂ ℂ).contDiff
-      (h : CkHolderSpace k α ℂ ℂ).memHolder_iteratedFDeriv.holderWith, fun z ↦ ?_,
-    fun i hi z hz ↦ ?_, ?_⟩
+  refine ⟨contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1
+      (isCompact_closedBall c r) h.2, fun z ↦ ?_, fun i hi z hz ↦ ?_, ?_⟩
   · -- `\bar∂ T h = h`, by the one-derivative Hölder gain on a disc containing `z`.
     obtain ⟨C₀, hC₀⟩ := exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
       (F := ℂ) hα hα1 c hr (dist_nonneg (x := z) (y := c))
-    rw [show T = _ from funext (cauchyTransform_apply _)]
+    dsimp only [T]
+    rw [funext (cauchyTransform_apply _)]
     exact (hC₀ (M := ‖(h : CkHolderSpace k α ℂ ℂ)‖₊) hhs
       ((h : CkHolderSpace k α ℂ ℂ).holderWith hα1.le)
       (fun x ↦ (h : CkHolderSpace k α ℂ ℂ).norm_apply_le x)).2.2.2 z
@@ -363,8 +353,8 @@ There are `δ > 0` and `C` such that every bounded `C^{k,α}` function `μ` vani
 * has `α`-Hölder derivative of order `k + 1` on the disc, with constant `C ‖μ‖`;
 * has an invertible strict derivative at every point of the disc.
 
-For `k = 0` this is the analogue of `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv` on
-the carrier `supportedCkHolderSubmodule 0` in place of `supportedHolderSubmodule`. -/
+The case `k = 0`, stated on the bounded Hölder space `HolderSpace α ℂ ℂ`, is
+`TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`. -/
 theorem exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv (k : ℕ) (hα : 0 < α)
     (hα1 : α < 1) (c : ℂ) (r : ℝ) :
     ∃ δ > 0, ∃ C : ℝ≥0, ∀ μ ∈ supportedCkHolderSubmodule (E := ℂ) (F := ℂ) k α (closedBall c r),
@@ -419,8 +409,8 @@ theorem exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv (k : ℕ) (hα 
   · rw [fderiv_fun_add differentiableAt_fun_id (hTd z), fderiv_fun_id, add_sub_cancel_left]
     push_cast
     exact hfd z hz
-  · refine ((holderOnWith_iteratedFDeriv_succ_id_add (fun _ _ ↦ hT.contDiffAt) hTH).mono
-      hsub).mono_const ?_
+  · refine (((holderOnWith_iteratedFDeriv_succ_add_left_iff (ContinuousLinearMap.id ℝ ℂ)
+      fun _ _ ↦ Filter.Eventually.of_forall hTd).2 hTH).mono hsub).mono_const ?_
     rw [← NNReal.coe_le_coe]
     push_cast
     exact hDh
