@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Classical
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # The principal symbol of a classical symbol on an open set
@@ -224,6 +223,16 @@ theorem term_inclusion_add (j : ℕ) :
     LocalHomogeneousSymbol.coefficient_castDegree]
   rw [LocalHomogeneousSymbol.coefficient_congr_index b.term (Nat.add_sub_cancel_left k j)]
 
+/-- Including a classical symbol on `U` into an equal order (a change of the order's expression)
+keeps its homogeneous terms. -/
+@[simp]
+theorem term_inclusion_zero (hk : m' = m - (0 : ℕ)) (j : ℕ) :
+    (inclusion 0 hk b).term j = (b.term j).castDegree (by rw [hk]; simp) := by
+  ext1
+  simp only [term_inclusion, Nat.zero_le, ↓reduceDIte,
+    LocalHomogeneousSymbol.coefficient_castDegree]
+  rw [LocalHomogeneousSymbol.coefficient_congr_index b.term (Nat.sub_zero j)]
+
 /-- Including a classical symbol on `U` into a strictly larger order kills its principal
 symbol. -/
 @[simp]
@@ -399,16 +408,12 @@ theorem principal_eq_zero_iff {a : LocalClassicalSymbol U V W m} :
   refine ⟨fun h => ?_, fun ⟨r, hr⟩ => ?_⟩
   · obtain ⟨r, hr⟩ := a.exists_sub_cutoffSymbol_principal default
     exact ⟨r, by simpa [h] using hr⟩
-  · -- Near each position of `U`, the cut-off extension to `ℝⁿ` has full symbol of order `m - 1`,
-    -- so its principal symbol vanishes there by the statement on `ℝⁿ`.
-    refine LocalHomogeneousSymbol.ext_of_mem fun x hx ξ _ => ?_
-    obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
-      U.isOpen (singleton_subset_iff.2 hx)
-    have h0 := ClassicalSymbol.principal_eq_zero_iff (a := extend ψ hψ hψU a) |>.2
+  · -- Each cut-off extension to `ℝⁿ` has full symbol of order `m - 1`, so its principal symbol
+    -- vanishes by the statement on `ℝⁿ`.
+    refine LocalHomogeneousSymbol.ext_of_extend fun ψ hψ hψU => ?_
+    rw [map_zero, ← principal_extend hψ hψU a]
+    exact ClassicalSymbol.principal_eq_zero_iff.2
       ⟨LocalSymbol.extend ψ hψ hψU r, funext fun p => by simp [hr]⟩
-    have hx := congrArg (fun c : HomogeneousSymbol _ _ V W m => c.coefficient (x, ξ))
-      ((principal_extend hψ hψU a).symm.trans h0)
-    simpa [(hψ1 x rfl).self_of_nhds] using hx
 
 end LocalClassicalSymbol
 

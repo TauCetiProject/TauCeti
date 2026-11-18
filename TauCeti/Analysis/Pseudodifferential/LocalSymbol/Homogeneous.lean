@@ -492,6 +492,17 @@ theorem coefficient_extend (a : LocalHomogeneousSymbol U V W m)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (extend ψ hψ hψU a).coefficient p = ψ p.1 • a.coefficient p := (rfl)
 
+/-- A homogeneous symbol on `U` is determined by its cut-off extensions to `ℝⁿ`: two homogeneous
+symbols on `U` are equal if their extensions agree for every smooth cutoff supported in `U`. -/
+theorem ext_of_extend {a b : LocalHomogeneousSymbol U V W m}
+    (h : ∀ (ψ : CoordinateSpace n → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U),
+      extend ψ hψ hψU a = extend ψ hψ hψU b) : a = b := by
+  refine ext_of_mem fun x hx ξ _ => ?_
+  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+    U.isOpen (singleton_subset_iff.2 hx)
+  simpa [(hψ1 x rfl).self_of_nhds] using
+    congrArg (fun c : HomogeneousSymbol _ _ V W m => c.coefficient (x, ξ)) (h ψ hψ hψU)
+
 @[simp]
 theorem extend_castDegree {m' : ℝ} (h : m = m') (a : LocalHomogeneousSymbol U V W m) :
     extend ψ hψ hψU (a.castDegree h) = (extend ψ hψ hψU a).castDegree h :=

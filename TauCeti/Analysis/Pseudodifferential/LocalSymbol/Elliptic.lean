@@ -28,9 +28,10 @@ elliptic on `ℝⁿ`.
 * `TauCeti.LocalClassicalSymbol.isElliptic_add_iff`: ellipticity does not see terms of order
   `m - 1`.
 * `TauCeti.LocalHomogeneousSymbol.inverse`: for an elliptic `a` of degree `m` on `U` with a
-  complete source space, the homogeneous symbol `(x, ξ) ↦ a (x, ξ)⁻¹` of degree `-m` on `U`. It
-  commutes with restriction to smaller open sets and with the restriction of homogeneous symbols
-  on `ℝⁿ`.
+  complete source space, the homogeneous symbol `(x, ξ) ↦ a (x, ξ)⁻¹` of degree `-m` on `U`. It is
+  the unique left or right inverse of `a` over `U` (`eq_inverse_of_comp_eq_id_left`,
+  `eq_inverse_of_comp_eq_id_right`), and it commutes with restriction to smaller open sets and with
+  the restriction of homogeneous symbols on `ℝⁿ`.
 * `TauCeti.LocalClassicalSymbol.existsUnique_inversePrincipalSymbol`: the principal symbol of an
   elliptic classical symbol on `U` has a unique two-sided inverse over `U` at nonzero frequencies
   that is a homogeneous symbol of degree `-m` on `U`.
@@ -165,6 +166,25 @@ theorem eq_inverse_of_comp_eq_id_left {b : LocalHomogeneousSymbol U W V (-m)}
         rw [ContinuousLinearMap.comp_assoc, coefficient_comp_coefficient_inverse a ha hx hξ,
           ContinuousLinearMap.comp_id]
     _ = (a.inverse ha).coefficient (x, ξ) := by rw [h x hx ξ hξ, ContinuousLinearMap.id_comp]
+
+/-- A homogeneous symbol of degree `-m` on `U` that is a right inverse of `a` at every position of
+`U` and every nonzero frequency is the inverse of `a`. -/
+theorem eq_inverse_of_comp_eq_id_right {b : LocalHomogeneousSymbol U W V (-m)}
+    (h : ∀ x ∈ U, ∀ ξ, ξ ≠ 0 →
+      a.coefficient (x, ξ) ∘L b.coefficient (x, ξ) = ContinuousLinearMap.id ℂ W) :
+    b = a.inverse ha := by
+  refine ext_of_mem fun x hx ξ hξ => ?_
+  calc b.coefficient (x, ξ)
+      = (a.inverse ha).coefficient (x, ξ) ∘L (a.coefficient (x, ξ) ∘L b.coefficient (x, ξ)) := by
+        rw [← ContinuousLinearMap.comp_assoc, coefficient_inverse_comp_coefficient a ha hx hξ,
+          ContinuousLinearMap.id_comp]
+    _ = (a.inverse ha).coefficient (x, ξ) := by rw [h x hx ξ hξ, ContinuousLinearMap.comp_id]
+
+/-- The inverse of the inverse is the original symbol. -/
+@[simp]
+theorem inverse_inverse [CompleteSpace W] :
+    (a.inverse ha).inverse (a.isElliptic_inverse ha) = a.castDegree (neg_neg m).symm :=
+  ext_of_mem fun x hx ξ hξ => by simp [(ha x hx ξ hξ).inverse_inverse]
 
 /-- The inverse commutes with restriction to a smaller open set. -/
 theorem restrict_inverse (h : U' ≤ U) :
