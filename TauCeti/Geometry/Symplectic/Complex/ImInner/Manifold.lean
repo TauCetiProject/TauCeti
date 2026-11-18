@@ -48,8 +48,9 @@ along the boundary loops of holomorphic discs with Lagrangian boundary are their
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS, 2012,
-  Section 2.1 and Appendix C (the standard structure of `ℂⁿ`, and Gromov's theorem on holomorphic
-  discs with boundary on a compact Lagrangian submanifold).
+  Section 2.1 (the standard structure of `ℂⁿ`).
+* M. Gromov, *Pseudo holomorphic curves in symplectic manifolds*, Invent. Math. 82 (1985),
+  307–347 (holomorphic discs with boundary on a compact Lagrangian submanifold of `ℂⁿ`).
 -/
 
 public section
