@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Matrix adjugation
@@ -67,9 +68,7 @@ theorem det_smul_eq_zero_of_sum_smul_eq_zero {ι M : Type*} [Fintype ι] [Decida
     (hv : ∀ i, ∑ j, A i j • v j = 0) (k : ι) : A.det • v k = 0 := by
   calc A.det • v k = ∑ j, (A.adjugate * A) k j • v j := by
         simp [adjugate_mul, Matrix.smul_apply, Matrix.one_apply, ite_smul]
-    _ = ∑ i, A.adjugate k i • ∑ j, A i j • v j := by
-        simp only [Matrix.mul_apply, Finset.sum_smul, Finset.smul_sum, mul_smul]
-        exact Finset.sum_comm
+    _ = ∑ i, A.adjugate k i • ∑ j, A i j • v j := Matrix.sum_mul_apply_smul A.adjugate A v k
     _ = 0 := by simp [hv]
 
 /-- **Inverses up to a scalar commute.** If `A * B = c • 1` for square matrices over a commutative

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Prod
 public import Mathlib.Topology.MetricSpace.Isometry
 public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.PiCurry
+import TauCeti.Topology.MetricSpace.Isometry.Basic
 
 /-!
 # The product of two finite CW complexes
@@ -84,10 +85,6 @@ private theorem prodCellMap_apply {n : ℕ} (c : ProdCell C D n) (x : Fin n → 
     prodCellMap c x = Prod.map (map _ c.2.1) (map _ c.2.2) (prodCellIsometry c x) :=
   (rfl)
 
-private theorem prodCellIsometry_zero {n : ℕ} (c : ProdCell C D n) :
-    prodCellIsometry c 0 = 0 := by
-  ext <;> simp
-
 private theorem image_prodCellMap {n : ℕ} (c : ProdCell C D n) (s : Set (Fin n → ℝ)) :
     prodCellMap c '' s = Prod.map (map _ c.2.1) (map _ c.2.2) '' (prodCellIsometry c '' s) := by
   rw [image_image]
@@ -95,13 +92,13 @@ private theorem image_prodCellMap {n : ℕ} (c : ProdCell C D n) (s : Set (Fin n
 
 private theorem image_ball_prodCellMap {n : ℕ} (c : ProdCell C D n) :
     prodCellMap c '' ball 0 1 = openCell _ c.2.1 ×ˢ openCell _ c.2.2 := by
-  rw [image_prodCellMap, IsometryEquiv.image_ball, prodCellIsometry_zero, Prod.zero_eq_mk,
-    ← ball_prod_same, prodMap_image_prod, openCell, openCell]
+  rw [image_prodCellMap, Fin.image_ball_appendIsometryOfEq_symm, prodMap_image_prod, openCell,
+    openCell]
 
 private theorem image_closedBall_prodCellMap {n : ℕ} (c : ProdCell C D n) :
     prodCellMap c '' closedBall 0 1 = closedCell _ c.2.1 ×ˢ closedCell _ c.2.2 := by
-  rw [image_prodCellMap, IsometryEquiv.image_closedBall, prodCellIsometry_zero, Prod.zero_eq_mk,
-    ← closedBall_prod_same, prodMap_image_prod, closedCell, closedCell]
+  rw [image_prodCellMap, Fin.image_closedBall_appendIsometryOfEq_symm, prodMap_image_prod,
+    closedCell, closedCell]
 
 /-- The product cells of a given dimension form a finite type when `C` and `D` have finitely
 many cells in every dimension. -/
@@ -138,11 +135,6 @@ private theorem pairwiseDisjoint_prodCellMap :
   obtain rfl := (Finset.mem_antidiagonal.1 hpq).symm.trans (Finset.mem_antidiagonal.1 hpq')
   rfl
 
-private theorem prodCellIsometry_mem_closedBall {n : ℕ} (c : ProdCell C D n) {x : Fin n → ℝ}
-    (hx : x ∈ closedBall 0 1) : prodCellIsometry c x ∈ closedBall 0 1 ×ˢ closedBall 0 1 := by
-  rwa [closedBall_prod_same, ← Prod.zero_eq_mk, ← prodCellIsometry_zero c, mem_closedBall,
-    IsometryEquiv.dist_eq]
-
 /-- The boundary of a product cell lies in the product cells of smaller dimension. -/
 private theorem mapsTo_prodCellMap (n : ℕ) (c : ProdCell C D n) :
     MapsTo (prodCellMap c) (sphere 0 1)
@@ -150,11 +142,11 @@ private theorem mapsTo_prodCellMap (n : ℕ) (c : ProdCell C D n) :
   obtain ⟨⟨⟨p, q⟩, hpq⟩, i, j⟩ := c
   rw [Finset.mem_antidiagonal] at hpq
   intro x hx
-  have hx' : prodCellIsometry ⟨⟨(p, q), _⟩, i, j⟩ x ∈ sphere 0 1 := by
-    rwa [mem_sphere, ← prodCellIsometry_zero ⟨⟨(p, q), _⟩, i, j⟩, IsometryEquiv.dist_eq]
   rw [prodCellMap_apply]
   set y := prodCellIsometry ⟨⟨(p, q), _⟩, i, j⟩ x
-  simp only [sphere_prod, Prod.fst_zero, Prod.snd_zero, mem_union, mem_prod] at hx'
+  have hx' : y ∈ sphere 0 1 ×ˢ closedBall 0 1 ∪ closedBall 0 1 ×ˢ sphere 0 1 := by
+    rw [← Fin.image_sphere_appendIsometryOfEq_symm hpq]
+    exact mem_image_of_mem _ hx
   rcases hx' with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
   · -- The first coordinate lies on the boundary of the `p`-cell of `C`.
     obtain ⟨I, hI⟩ := CWComplex.cellFrontier_subset_finite_closedCell p i
@@ -196,11 +188,14 @@ def cwComplexProd : CWComplex (C ×ˢ D) :=
     eventually_isEmpty_prodCell finite_prodCell
     (fun _ c ↦ by
       rw [prodCellMap, Equiv.transPartialEquiv_source, PartialEquiv.prod_source, source_eq,
-        source_eq, ball_prod_same, ← Prod.zero_eq_mk, ← prodCellIsometry_zero c]
-      exact ((prodCellIsometry c).preimage_ball _ _).trans
-        (by rw [IsometryEquiv.symm_apply_apply]))
+        source_eq]
+      ext x
+      rw [mem_preimage, mem_prod]
+      exact (Fin.mem_ball_iff_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.2)).symm)
     (fun _ c ↦ ((continuousOn _ c.2.1).prodMap (continuousOn _ c.2.2)).comp
-      (prodCellIsometry c).continuous.continuousOn fun _ ↦ prodCellIsometry_mem_closedBall c)
+      (prodCellIsometry c).continuous.continuousOn fun _ hx ↦ by
+        rw [← Fin.image_closedBall_appendIsometryOfEq_symm (Finset.mem_antidiagonal.1 c.1.2)]
+        exact mem_image_of_mem _ hx)
     (fun _ c ↦ (prodCellIsometry c).symm.continuous.comp_continuousOn
       ((continuousOn_symm _ c.2.1).prodMap (continuousOn_symm _ c.2.2)))
     pairwiseDisjoint_prodCellMap mapsTo_prodCellMap iUnion_prodCellMap
@@ -254,9 +249,8 @@ theorem cellFrontier_cellProdEquiv_symm :
     cellFrontier n ((cellProdEquiv n).symm c) =
       cellFrontier _ c.2.1 ×ˢ closedCell _ c.2.2 ∪ closedCell _ c.2.1 ×ˢ cellFrontier _ c.2.2 := by
   rw [cellFrontier, map_cellProdEquiv_symm_eq_prodCellMap,
-    image_prodCellMap, IsometryEquiv.image_sphere, prodCellIsometry_zero, sphere_prod,
-    image_union, Prod.fst_zero, Prod.snd_zero, prodMap_image_prod, prodMap_image_prod,
-    cellFrontier, cellFrontier, closedCell, closedCell]
+    image_prodCellMap, Fin.image_sphere_appendIsometryOfEq_symm, image_union, prodMap_image_prod,
+    prodMap_image_prod, cellFrontier, cellFrontier, closedCell, closedCell]
 
 omit c in
 /-- The number of `n`-cells of `C ×ˢ D` is `∑_{p + q = n} #(p-cells of C) · #(q-cells of D)`. -/

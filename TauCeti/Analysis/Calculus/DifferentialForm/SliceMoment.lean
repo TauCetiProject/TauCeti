@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 
 /-!
 # Moments of the normal slices of a closed two-form
@@ -116,26 +117,11 @@ theorem contDiff_sliceMoment {n : ℕ∞} (hK : IsCompact K) (hTc : ContDiff ℝ
 /-- The closedness `dT = 0` at a point, evaluated on a base direction `(v, 0)` and the fibre frame
 `(∂_x, ∂_y)`: the base derivative of the slice density is a sum of fibre derivatives of the mixed
 coefficients. -/
-private theorem fderiv_apply_base_eq (hTc : ContDiff ℝ 1 T) {x : E × ℂ}
-    (hdT : extDeriv T x = 0) (v : E) :
+private theorem fderiv_apply_base_eq {x : E × ℂ} (hdT : extDeriv T x = 0) (v : E) :
     fderiv ℝ T x (v, 0) ![(0, 1), (0, I)] =
       fderiv ℝ T x (0, 1) ![(v, 0), (0, I)] - fderiv ℝ T x (0, I) ![(v, 0), (0, 1)] := by
-  have hd := (hTc.differentiable one_ne_zero) x
-  have h := extDeriv_apply hd ![(v, 0), (0, 1), (0, I)]
-  rw [hdT, Fin.sum_univ_three] at h
-  have hr (A : Fin 2 → E × ℂ) (u : E × ℂ) : fderiv ℝ (T · A) x u = fderiv ℝ T x u A := by
-    rw [fderiv_continuousAlternatingMap_apply hd (fun _ ↦ differentiableAt_const _)]
-    simp
-  have h₀ : Fin.removeNth 0 ![((v, 0) : E × ℂ), (0, 1), (0, I)] = ![(0, 1), (0, I)] := by
-    funext i; fin_cases i <;> rfl
-  have h₁ : Fin.removeNth 1 ![((v, 0) : E × ℂ), (0, 1), (0, I)] = ![(v, 0), (0, I)] := by
-    funext i; fin_cases i <;> rfl
-  have h₂ : Fin.removeNth 2 ![((v, 0) : E × ℂ), (0, 1), (0, I)] = ![(v, 0), (0, 1)] := by
-    funext i; fin_cases i <;> rfl
-  simp only [h₀, h₁, h₂, hr, ContinuousAlternatingMap.coe_zero, Pi.zero_apply, Fin.val_zero,
-    Fin.val_one, Fin.val_two, pow_zero, pow_one, one_smul, neg_smul, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, even_two,
-    Even.neg_pow, one_pow] at h
+  have h := extDeriv_apply_triple x ((v, 0) : E × ℂ) (0, 1) (0, I) (ω := T)
+  rw [hdT, ContinuousAlternatingMap.coe_zero, Pi.zero_apply] at h
   linear_combination -h
 
 /-- A continuous function vanishing off a compact set is integrable on `ℂ`. -/
@@ -214,7 +200,7 @@ theorem fderiv_sliceMoment_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T) (hg
   -- Return to the integral over `ℂ`, then use `dT = 0` and integrate by parts in the fibre.
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun w hw ↦ by
     simp [fderiv_eq_zero_of_notMem hK.isClosed hT z hw]]
-  simp only [he, fderiv_apply_base_eq hTc (hdT _) v, sub_smul]
+  simp only [he, fderiv_apply_base_eq (hdT _) v, sub_smul]
   have hi := integrable_fderiv_coeff_smul hK hTc hg.continuous hT z
   have hj (u : ℂ) (A : Fin 2 → E × ℂ) := integrable_coeff_smul hK hTc
     ((hg.continuous_fderiv one_ne_zero).clm_apply (continuous_const (y := u))) hT z A

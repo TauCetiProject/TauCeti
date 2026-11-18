@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 
