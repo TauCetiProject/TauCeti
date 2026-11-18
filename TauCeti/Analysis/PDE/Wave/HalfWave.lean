@@ -41,8 +41,9 @@ annuli `‖ξ‖ ≈ 2^j` (Tao, Section 2.2).
   `W₊(t)* = W₊(-t)` and commutation with Fourier multipliers
   (applied form: `TauCeti.fourierMultiplierCLM_halfWavePropagator_apply`).
 * `TauCeti.adjoint_halfWavePropagator_comp_fourierMultiplierCLM` and
-  `TauCeti.halfWavePropagator_comp_apply_adjoint`: for `U(t) = W₊(t) T_m`, the adjoint
-  `U(t)* = T_{star m} W₊(-t)` and the time pairings `U(s) U(t)* = W₊(s - t) T_m T_{star m}`.
+  `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint`: for `U(t) = W₊(t) T_m`,
+  the adjoint `U(t)* = T_{star m} W₊(-t)` and the time pairings
+  `U(s) U(t)* = W₊(s - t) T_m T_{star m}`.
 * `TauCeti.contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol`: the symbol `exp(2πi t ‖ξ‖)` is smooth
   away from the origin.
 
@@ -119,8 +120,8 @@ theorem adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply (t : ℝ)
   rw [adjoint_halfWavePropagator_comp_fourierMultiplierCLM, ContinuousLinearMap.comp_apply]
 
 /-- The time pairings `U(s) U(t)*` of `U(t) = W₊(t) T_m` are `W₊(s - t) T_m T_{star m}`. -/
-theorem halfWavePropagator_comp_apply_adjoint (s t : ℝ) (m : Lp ℂ ∞ (volume : Measure E))
-    (g : Lp F 2 (volume : Measure E)) :
+theorem halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint (s t : ℝ)
+    (m : Lp ℂ ∞ (volume : Measure E)) (g : Lp F 2 (volume : Measure E)) :
     (halfWavePropagator F s ∘L Lp.fourierMultiplierCLM F m)
         (ContinuousLinearMap.adjoint (halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m) g) =
       halfWavePropagator F (s - t)
