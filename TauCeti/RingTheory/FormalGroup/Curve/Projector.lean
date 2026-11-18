@@ -19,7 +19,8 @@ It preserves coefficients below degree `n`. Over a rational algebra, its effect 
 logarithm is to delete precisely the degrees divisible by `n`.
 
 These are the individual factors in Cartier's prime-to-`p` projection onto typical curves;
-this file constructs individual factors, without taking an infinite product.
+their infinite composite is `FormalGroup.typicalProjectorCurve` in
+`TauCeti.RingTheory.FormalGroup.Curve.Typical`.
 
 ## References
 
@@ -260,6 +261,17 @@ theorem toPowerSeries_cartierProjectorCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0)
   rw [← Curve.additiveToPowerSeriesHom_apply, map_sub,
     Curve.additiveToPowerSeriesHom_apply, Curve.additiveToPowerSeriesHom_apply,
     toPowerSeries_verschiebungCurve, hnorm]
+
+/-- On the additive formal group, the Cartier projector deletes precisely the coefficients whose
+degrees are divisible by its index. -/
+theorem coeff_cartierProjectorCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0) (hunit : IsUnit (n : R)) (k : ℕ)
+    (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff k ((𝔾ₐ (R := R)).cartierProjectorCurve n hn hunit γ).toPowerSeries =
+      if n ∣ k then 0 else PowerSeries.coeff k γ.toPowerSeries := by
+  rw [toPowerSeries_cartierProjectorCurve_𝔾ₐ, map_sub, PowerSeries.coeff_expand]
+  split_ifs with hdvd
+  · rw [PowerSeries.coeff_cartier, Nat.add_zero, Nat.mul_div_cancel' hdvd, sub_self]
+  · rw [sub_zero]
 
 /-- The logarithm of a projected curve is obtained by subtracting the part supported in degrees
 divisible by `n`. -/
