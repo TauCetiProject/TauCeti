@@ -51,7 +51,7 @@ irrational holonomy, the last statement is the vanishing of holomorphic sections
 every finite cover of `C`: the Cauchy–Riemann operators of these lines have zero kernel. This
 is the input which forces the coefficients `b_j ∈ H⁰(C, N ^ j)`, `1 ≤ j ≤ m`, of a compact
 holomorphic curve in the total space of `N` covering `C` with degree `m` to vanish, so that the
-curve lies on the zero section; that application is not formalized here.
+curve lies on the zero section (`TauCeti.Analysis.Complex.QuasiPeriodic.Multisection`).
 
 For a lattice in `ℂ` with a basis `ω₁, ω₂`, `TauCeti.Analysis.Complex.Wirtinger.FlatTorus` proves
 the quantitative counterpart: an `L²` coercivity estimate for `∂bar` on `C²` sections over the
