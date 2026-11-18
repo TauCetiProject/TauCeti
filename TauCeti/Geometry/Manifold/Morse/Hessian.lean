@@ -581,7 +581,7 @@ theorem mvfderiv_mvfderiv_extend_eq_criticalHessian [IsManifold I 2 M]
     (hf.contDiffAt_comp_extChartAt_symm.fderiv_right
       (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
   -- Near `x`, `df(extend w)` is the coordinate expression of `df` along `w`, read in the chart.
-  rw [(Manifold.mvfderiv_extend_eventuallyEq (hf.of_le one_le_two) w).mvfderiv_eq,
+  rw [(Manifold.mvfderiv_extend_eventuallyEq f BoundarylessManifold.isInteriorPoint w).mvfderiv_eq,
     mvfderiv_comp_apply_of_differentiableAt (hDg.clm_apply (differentiableAt_const w))
       (mdifferentiableAt_extChartAt (mem_chart_source H x)),
     mvfderiv_apply_of_eventuallyEq_extChartAt EventuallyEq.rfl, criticalHessian_def]
