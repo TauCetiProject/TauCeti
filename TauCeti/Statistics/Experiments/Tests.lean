@@ -160,6 +160,20 @@ theorem IsUniformlyMostPowerfulUnbiasedTest.hasTestLevel {P : Θ → Measure X} 
     HasTestLevel P H₀ α φ :=
   h.1
 
+/-- A test similar of size `α` on `B` has level `α` for the null hypothesis `B`. -/
+theorem IsSimilarTest.hasTestLevel {P : Θ → Measure X} {B : Set Θ} {α : ℝ} {φ : X → ℝ}
+    (h : IsSimilarTest P B α φ) : HasTestLevel P B α φ :=
+  ⟨h.1, fun θ hθ ↦ (h.2 θ hθ).le⟩
+
+/-- A constant test `c ∈ [0, 1]` is similar of size `c` on every set `B` of parameters whose
+laws are probability measures. -/
+theorem isSimilarTest_const {P : Θ → Measure X} {B : Set Θ}
+    (hP : ∀ θ ∈ B, IsProbabilityMeasure (P θ)) {c : ℝ} (hc : c ∈ Icc (0 : ℝ) 1) :
+    IsSimilarTest P B c fun _ ↦ c := by
+  refine ⟨IsStatisticalTest.const hc, fun θ hθ ↦ ?_⟩
+  have := hP θ hθ
+  simp [testPower]
+
 section ThresholdTest
 
 variable {α : Type*} [LinearOrder α]
