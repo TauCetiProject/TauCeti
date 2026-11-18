@@ -32,7 +32,13 @@ over an arbitrary site. This file only packages it over a scheme:
   modules over itself, is invertible;
 * `SheafOfModules.isInvertible_iff_exists_isOpenCover` characterizes invertible sheaves on a
   scheme as those whose restrictions to the open subschemes of some open cover are isomorphic to
-  the structure sheaves of those open subschemes.
+  the structure sheaves of those open subschemes;
+* `SheafOfModules.LocalTrivializations.ofIsOpenCover` and
+  `SheafOfModules.LocalTrivializations.ofForallMem` build a rank-one atlas of an `𝒪_X`-module
+  from an open cover, respectively from a neighbourhood of each point, together with a
+  trivialization over each member, and `TauCeti.SheafOfModules.LocalTrivializations.unitIsoRestrict`
+  turns a free rank-one trivialization over an open `U` into an isomorphism from the structure
+  sheaf of the open subscheme `U` to the restriction of the module to `U`.
 
 A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives local coordinates:
 
@@ -45,7 +51,12 @@ A free rank-one trivialization of an `𝒪_X`-module `M` over an open `V` gives 
 * `Scheme.Modules.existsUnique_eq_smul_map_trivializationGenerator` writes every section over
   `W ≤ V` uniquely as a regular multiple of the restricted basis section, and
   `Scheme.Modules.existsUnique_map_trivializationGenerator_eq_smul` shows that the basis sections
-  of two trivializations differ by a unique regular unit on any common open subset.
+  of two trivializations differ by a unique regular unit on any common open subset;
+* `Scheme.Modules.trivializationCoordinateIso` is the isomorphism `M.over U ≅ 𝒪_U` from which
+  `Scheme.Modules.trivializationCoordinate` is read off on each open `W ≤ U`;
+* `Scheme.Modules.trivializationGenerator_ne_zero` says that the basis section is nonzero on a
+  nonempty open subset, and `Scheme.Modules.exists_mem_trivialization` that every point of a
+  scheme lies in the domain of a rank-one trivialization of an invertible sheaf.
 
 These local rank-one coordinates describe transition functions between local bases and provide
 normal forms for sections used in line-bundle constructions.
