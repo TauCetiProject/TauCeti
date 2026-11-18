@@ -382,19 +382,6 @@ private theorem abs_sub_lt_pi_div_two_left (hδ : 0 < δ) (ha : 0 < a) (hab : a 
   rw [abs_of_pos hδ, abs_sub_comm] at hdrift
   exact (abs_sub_le _ (Θ b) _).trans_lt (by linarith)
 
-/-- Two solutions on `(0, 1)` which agree at one time `c ∈ (0, 1)` agree on `(0, 1)`. -/
-private theorem eqOn_Ioo_of_hasDerivAt_circleContinuationSlope {c : ℝ} (hc : c ∈ Ioo 0 1)
-    (hΘ₁ : ∀ t ∈ Ioo 0 1, HasDerivAt Θ₁ (circleContinuationSlope δ r t (Θ₁ t)) t)
-    (hΘ₂ : ∀ t ∈ Ioo 0 1, HasDerivAt Θ₂ (circleContinuationSlope δ r t (Θ₂ t)) t)
-    (h : Θ₁ c = Θ₂ c) : EqOn Θ₁ Θ₂ (Ioo 0 1) := by
-  intro t ht
-  have hm : 0 < min t c := lt_min ht.1 hc.1
-  have hM : max t c < 1 := max_lt ht.2 hc.2
-  exact eqOn_of_hasDerivWithinAt_circleContinuationSlope hm hM
-    (fun s hs ↦ (hΘ₁ s ⟨hm.trans_le hs.1, hs.2.trans_lt hM⟩).hasDerivWithinAt)
-    (fun s hs ↦ (hΘ₂ s ⟨hm.trans_le hs.1, hs.2.trans_lt hM⟩).hasDerivWithinAt)
-    ⟨min_le_right _ _, le_max_right _ _⟩ h ⟨min_le_left _ _, le_max_left _ _⟩
-
 /-- **The trajectory leaving a source minimum ends at a target minimum.** Let the path `r` be
 constant, `r₀` on `(0, a]` and `r₁` on `[b, 1)`, and let `D = 2 δ ∫_a^b (t (1 - t²))⁻¹ dt` bound the
 drift of the angle across the window `[a, b]`. If the target minimum `r₁ + π / 2 + k π` is within
