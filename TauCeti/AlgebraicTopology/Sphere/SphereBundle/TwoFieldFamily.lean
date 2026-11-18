@@ -5,22 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import TauCeti.AlgebraicTopology.Sphere.TwoFieldFamily
 public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Triple
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
-import TauCeti.Topology.VectorBundle.Section
-import TauCeti.Topology.VectorBundle.Smul
+import TauCeti.Topology.VectorBundle.TangentCircle
 
 /-!
 # The family of two-spheres of a sphere bundle with two orthonormal vertical fields
 
 Let `E → B` be a real vector bundle whose fibres are inner product spaces, with continuous fibre
 norm, and let `Q = S(E)` be its unit sphere bundle. A **vertical vector field** on `Q` assigns to
-each unit vector `x ∈ E_b` a vector `u x ∈ E_b` of the same fibre; it is tangent to the sphere
-fibre through `x` when `u x ⊥ x`. Two continuous vertical fields that are tangent to the sphere
-fibres and linearly independent at every point can be normalized by Gram–Schmidt to fields `u`,
-`v` with `x`, `u x`, `v x` orthonormal for every `x`, cutting out the same equators
+each unit vector `x ∈ E_b` a vector `u x ∈ E_b` of the same fibre. Two continuous vertical fields
+that are tangent to the sphere fibres and linearly independent at every point can be normalized
+to fields `u`, `v` with `x`, `u x`, `v x` orthonormal for every `x`, cutting out the same equators
 (`TauCeti.exists_orthonormal_sphereBundle_fields`).
 
 For such `u`, `v`, over each `x ∈ S(E_b)` lies the equator `Σₓ` of unit vectors `w ∈ E_b`
@@ -41,11 +39,10 @@ Putting the two-sphere of Example 6.20 into each sphere fibre gives the family
 where `σ (x, w)` sweeps, through each point `w'` of the circle through `x` and `w` tangent to
 `v x`, the circle through `x` and `w'` tangent to `u x`. It lies over `Q`: evaluation at the north
 pole sends `σ (x, w)` to `x` (`TauCeti.mappingSpaceEval_comp_sphereBundleTwoFieldSphereFamily`).
-Over a point of the fibre `S(E_b)`, it is the family `TauCeti.twoFieldSphereFamily` of the sphere
-`S(E_b)` and the restricted fields, followed by the inclusion `S(E_b) → Q` of the sphere fibre
-(`TauCeti.coe_sphereBundleTwoFieldSphereFamily_ofFiber`). So on the fibre `Σₓ`, read as based
-maps at `x`, the family is the based family of the sphere `S(E_b)` followed by the map of double
-loop spaces `Ω²S(E_b) → Ω²Q` induced by the fibre.
+Over a point of the fibre `S(E_b)`, it agrees pointwise, in the fibre of `E` over `b`, with the
+family `TauCeti.twoFieldSphereFamily` of the sphere `S(E_b)` and the restricted fields
+(`TauCeti.coe_sphereBundleTwoFieldSphereFamily_ofFiber`). The induced map of double loop spaces
+`Ω²S(E_b) → Ω²Q` is not formalised here.
 
 This is the family of two-spheres of the second alternative of the source's Proposition 6.23, for
 an `Sⁿ`-bundle `Q → B` with `n ≡ 3 (mod 4)` and two everywhere independent vertical vector fields.
@@ -57,18 +54,14 @@ class of a fibre are not addressed here.
 
 ## Main declarations
 
-* `Continuous.tangentCircle_totalSpace`: tangent circles of continuously varying vectors of a
-  vector bundle vary continuously in the total space.
-* `TauCeti.exists_orthonormal_sphereBundle_fields`: Gram–Schmidt normalization of two
-  independent vertical fields tangent to the sphere fibres.
 * `TauCeti.SphereBundleTwoFieldEquators F E u v`: the space `Σ` of pairs `(x, w)` with `w` a unit
   vector of the fibre through `x` orthogonal to `u x` and `v x`.
 * `TauCeti.sphereBundleTwoFieldSphereFamily`: the family `σ : Σ → Map(S², Q)`.
 * `TauCeti.coe_sphereBundleTwoFieldSphereFamily_sphereCollapse`: on the square, `σ (x, w)` is
   `y ↦ tangentCircle x (u x) (tangentCircle x (v x) w (2π y₀)) (2π y₁)`.
 * `TauCeti.mappingSpaceEval_comp_sphereBundleTwoFieldSphereFamily`: `σ` lies over `Q`.
-* `TauCeti.coe_sphereBundleTwoFieldSphereFamily_ofFiber`: over a point of `S(E_b)`, `σ` is the
-  family of the sphere `S(E_b)` followed by the inclusion of the sphere fibre.
+* `TauCeti.coe_sphereBundleTwoFieldSphereFamily_ofFiber`: over a point of `S(E_b)`, `σ` agrees
+  pointwise, in the fibre of `E` over `b`, with the family of the sphere `S(E_b)`.
 
 ## References
 
@@ -83,37 +76,6 @@ noncomputable section
 
 open Bundle Metric Real
 open scoped RealInnerProductSpace Topology unitInterval Topology.Homotopy
-
-/-! ### Tangent circles in a vector bundle -/
-
-section TangentCircle
-
-variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type*} [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace ℝ (E b)]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
-  [TauCeti.ContinuousFiberNorm F E]
-  {Y : Type*} [TopologicalSpace Y] {b : Y → B} {p u q : ∀ y, E (b y)} {θ : Y → ℝ}
-
-/-- **Tangent circles in a vector bundle vary continuously.** If the vectors `p y`, `u y`, `q y`
-of the fibre over `b y` depend continuously on `y` in the total space, and the angle `θ y` is
-continuous, then so does the point `tangentCircle (p y) (u y) (q y) (θ y)`. The coefficients of
-the circle are continuous because the fibre norm is. -/
-theorem Continuous.tangentCircle_totalSpace
-    (hp : Continuous fun y ↦ TotalSpace.mk' F (b y) (p y))
-    (hu : Continuous fun y ↦ TotalSpace.mk' F (b y) (u y))
-    (hq : Continuous fun y ↦ TotalSpace.mk' F (b y) (q y)) (hθ : Continuous θ) :
-    Continuous fun y ↦ TotalSpace.mk' F (b y) (TauCeti.tangentCircle (p y) (u y) (q y) (θ y)) := by
-  have hqp : Continuous fun y ↦ TotalSpace.mk' F (b y) (q y - p y) := by
-    simpa only [sub_eq_add_neg, neg_one_smul] using
-      hq.add_totalSpace ℝ ((continuous_const (y := (-1 : ℝ))).smul_totalSpace hp)
-  have hn : Continuous fun y ↦ ‖q y - p y‖ := hqp.norm_bundle_of_continuousFiberNorm
-  simp only [TauCeti.tangentCircle_def]
-  refine (Continuous.add_totalSpace ℝ ?_ ?_).add_totalSpace ℝ ?_
-  · exact (by fun_prop : Continuous fun y ↦ (1 + cos (θ y)) / 2).smul_totalSpace hp
-  · exact (by fun_prop : Continuous fun y ↦ (1 - cos (θ y)) / 2).smul_totalSpace hq
-  · exact (hn.div_const 2 |>.mul (continuous_sin.comp hθ)).smul_totalSpace hu
-
-end TangentCircle
 
 namespace TauCeti
 
@@ -139,9 +101,9 @@ structure SphereBundleTwoFieldEquators (u v : ∀ x : sphereBundle F E, E (x : T
   /-- The vector `w` is a unit vector. -/
   norm_vec : ‖vec‖ = 1
   /-- The vector `w` is orthogonal to `u x`. -/
-  inner_vec_left : ⟪vec, u base⟫ = 0
+  inner_vec_u : ⟪vec, u base⟫ = 0
   /-- The vector `w` is orthogonal to `v x`. -/
-  inner_vec_right : ⟪vec, v base⟫ = 0
+  inner_vec_v : ⟪vec, v base⟫ = 0
 
 namespace SphereBundleTwoFieldEquators
 
@@ -160,6 +122,14 @@ theorem toProd_injective : Function.Injective (toProd (u := u) (v := v)) := by
   obtain ⟨rfl, hw⟩ := hpq
   obtain rfl := eq_of_heq (TotalSpace.mk.inj hw).2
   rfl
+
+/-- Two points of `Σ` are equal when their base points are, and their vectors are as points of the
+total space of `E`. -/
+@[ext]
+theorem ext {p q : SphereBundleTwoFieldEquators F E u v} (hbase : p.base = q.base)
+    (hvec : TotalSpace.mk' F (p.base : TotalSpace F E).proj p.vec =
+      TotalSpace.mk' F (q.base : TotalSpace F E).proj q.vec) : p = q :=
+  toProd_injective (Prod.ext hbase hvec)
 
 variable [TopologicalSpace (TotalSpace F E)]
 
@@ -213,85 +183,12 @@ open SphereBundleTwoFieldEquators
 
 variable {u v : ∀ x : sphereBundle F E, E (x : TotalSpace F E).proj}
 
-/-! ### Normalizing two independent vertical fields -/
-
-section Normalize
-
-variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
-  [ContinuousFiberNorm F E]
-
-/-- **Normalizing two independent vertical fields.** Let `u`, `v` be continuous vertical fields of
-the unit sphere bundle, tangent to the sphere fibres (`u x ⊥ x`, `v x ⊥ x`) and linearly
-independent at every point. Their Gram–Schmidt normalizations `u' x`, `v' x`
-(`InnerProductSpace.gramSchmidtNormed` of the pair `(u x, v x)`) are continuous vertical fields
-with `x`, `u' x`, `v' x` orthonormal, and they cut out the same equators: a vector of the fibre
-through `x` is orthogonal to `u' x` and `v' x` exactly when it is orthogonal to `u x` and
-`v x`. -/
-theorem exists_orthonormal_sphereBundle_fields
-    (hu : Continuous fun x : sphereBundle F E ↦ TotalSpace.mk' F (x : TotalSpace F E).proj (u x))
-    (hv : Continuous fun x : sphereBundle F E ↦ TotalSpace.mk' F (x : TotalSpace F E).proj (v x))
-    (hxu : ∀ x : sphereBundle F E, ⟪(x : TotalSpace F E).2, u x⟫ = 0)
-    (hxv : ∀ x : sphereBundle F E, ⟪(x : TotalSpace F E).2, v x⟫ = 0)
-    (huv : ∀ x, LinearIndependent ℝ ![u x, v x]) :
-    ∃ u' v' : ∀ x : sphereBundle F E, E (x : TotalSpace F E).proj,
-      (Continuous fun x : sphereBundle F E ↦ TotalSpace.mk' F (x : TotalSpace F E).proj (u' x)) ∧
-      (Continuous fun x : sphereBundle F E ↦ TotalSpace.mk' F (x : TotalSpace F E).proj (v' x)) ∧
-      (∀ x : sphereBundle F E, Orthonormal ℝ ![(x : TotalSpace F E).2, u' x, v' x]) ∧
-      ∀ (x : sphereBundle F E) (w : E (x : TotalSpace F E).proj),
-        ⟪w, u' x⟫ = 0 ∧ ⟪w, v' x⟫ = 0 ↔ ⟪w, u x⟫ = 0 ∧ ⟪w, v x⟫ = 0 := by
-  -- Orthogonality to the two vectors of a pair depends only on the plane they span, which
-  -- Gram–Schmidt preserves.
-  have hspan (x : sphereBundle F E) (w : E (x : TotalSpace F E).proj) :
-      (∀ i, ⟪w, InnerProductSpace.gramSchmidtNormed ℝ ![u x, v x] i⟫ = 0) ↔
-        ⟪w, u x⟫ = 0 ∧ ⟪w, v x⟫ = 0 := by
-    have key (f : Fin 2 → E (x : TotalSpace F E).proj) :
-        (∀ i, ⟪w, f i⟫ = 0) ↔ Submodule.span ℝ (Set.range f) ≤ (ℝ ∙ w)ᗮ := by
-      simp [Submodule.span_le, Set.range_subset_iff,
-        Submodule.mem_orthogonal_singleton_iff_inner_right]
-    rw [key, InnerProductSpace.span_gramSchmidtNormed_range, InnerProductSpace.span_gramSchmidt,
-      ← key, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-  have hc (i : Fin 2) : Continuous fun x : sphereBundle F E ↦
-      TotalSpace.mk' F (x : TotalSpace F E).proj (![u x, v x] i) := by
-    fin_cases i
-    exacts [hu, hv]
-  refine ⟨fun x ↦ InnerProductSpace.gramSchmidtNormed ℝ ![u x, v x] 0,
-    fun x ↦ InnerProductSpace.gramSchmidtNormed ℝ ![u x, v x] 1,
-    Continuous.gramSchmidtNormed_bundle 0 (fun i _ ↦ hc i) fun x ↦ (huv x).linearIndepOn _,
-    Continuous.gramSchmidtNormed_bundle 1 (fun i _ ↦ hc i) fun x ↦ (huv x).linearIndepOn _,
-    fun x ↦ orthonormal_vecCons_iff.2 ⟨mem_sphereBundle.1 x.2, ?_, ?_⟩,
-    fun x w ↦ by rw [← hspan x w, Fin.forall_fin_two]⟩
-  · have h := (hspan x (x : TotalSpace F E).2).2 ⟨hxu x, hxv x⟩
-    exact Fin.forall_fin_two.2 ⟨h 0, h 1⟩
-  · convert InnerProductSpace.gramSchmidtNormed_orthonormal (huv x) using 1
-    ext i
-    fin_cases i <;> rfl
-
-end Normalize
-
 /-! ### The family of two-spheres -/
 
 section Pointwise
 
 variable (h : ∀ x : sphereBundle F E, Orthonormal ℝ ![(x : TotalSpace F E).2, u x, v x])
 include h
-
-/-! The orthonormality relations of `x`, `u x`, `v x`, read off from `h` by index. -/
-
-private theorem inner_u_eq_zero (x : sphereBundle F E) : ⟪(x : TotalSpace F E).2, u x⟫ = 0 := by
-  simpa using (h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 1)
-
-private theorem inner_v_eq_zero (x : sphereBundle F E) : ⟪(x : TotalSpace F E).2, v x⟫ = 0 := by
-  simpa using (h x).inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)
-
-private theorem inner_v_u_eq_zero (x : sphereBundle F E) : ⟪v x, u x⟫ = 0 := by
-  simpa using (h x).inner_eq_zero (by decide : (2 : Fin 3) ≠ 1)
-
-private theorem norm_u_eq_one (x : sphereBundle F E) : ‖u x‖ = 1 := by
-  simpa using (h x).norm_eq_one 1
-
-private theorem norm_v_eq_one (x : sphereBundle F E) : ‖v x‖ = 1 := by
-  simpa using (h x).norm_eq_one 2
 
 omit h in
 /-- The point at the angles `(θ₀, θ₁)` of the two-sphere of `(x, w)`, in the fibre of `E` through
@@ -305,11 +202,11 @@ private def twoFieldPoint (p : SphereBundleTwoFieldEquators F E u v) (θ₀ θ�
 private theorem norm_twoFieldPoint (p : SphereBundleTwoFieldEquators F E u v) (θ₀ θ₁ : ℝ) :
     ‖twoFieldPoint p θ₀ θ₁‖ = 1 := by
   have hx : ‖(p.base : TotalSpace F E).2‖ = 1 := mem_sphereBundle.1 p.base.2
-  exact norm_tangentCircle hx (norm_u_eq_one h _) (inner_u_eq_zero h _)
-    (norm_tangentCircle hx (norm_v_eq_one h _) (inner_v_eq_zero h _) p.norm_vec
-      p.inner_vec_right θ₀)
-    (inner_tangentCircle_eq_zero (inner_u_eq_zero h _) (inner_v_u_eq_zero h _) p.inner_vec_left
-      θ₀) θ₁
+  have h := h p.base
+  exact norm_tangentCircle hx h.norm_vecCons_one h.inner_vecCons_zero_one
+    (norm_tangentCircle hx h.norm_vecCons_two h.inner_vecCons_zero_two p.norm_vec p.inner_vec_v θ₀)
+    (inner_tangentCircle_eq_zero h.inner_vecCons_zero_one
+      (inner_eq_zero_symm.1 h.inner_vecCons_one_two) p.inner_vec_u θ₀) θ₁
 
 omit h in
 /-- On the boundary of the square, the two-sphere of `(x, w)` is at `x`. -/
@@ -324,22 +221,42 @@ end Pointwise
 section Diagonal
 
 variable [TopologicalSpace (TotalSpace F E)]
-  (h : ∀ x : sphereBundle F E, Orthonormal ℝ ![(x : TotalSpace F E).2, u x, v x])
+  (hxu : ∀ x : sphereBundle F E, ⟪(x : TotalSpace F E).2, u x⟫ = 0)
+  (hxv : ∀ x : sphereBundle F E, ⟪(x : TotalSpace F E).2, v x⟫ = 0)
 
-/-- The **diagonal section** `x ↦ (x, x)` of `Σ → S(E)`: every point lies on its own equator. -/
+/-- The **diagonal section** `x ↦ (x, x)` of `Σ → S(E)`: when both fields are tangent to the
+sphere fibres, every point lies on its own equator. -/
 def SphereBundleTwoFieldEquators.diag : C(sphereBundle F E, SphereBundleTwoFieldEquators F E u v)
     where
   toFun x :=
     { base := x
       vec := (x : TotalSpace F E).2
       norm_vec := mem_sphereBundle.1 x.2
-      inner_vec_left := inner_u_eq_zero h x
-      inner_vec_right := inner_v_eq_zero h x }
+      inner_vec_u := hxu x
+      inner_vec_v := hxv x }
   continuous_toFun := continuous_iff.2 ⟨continuous_id, continuous_subtype_val⟩
+
+/-- The base point of `(x, x)` is `x`. -/
+@[simp]
+theorem SphereBundleTwoFieldEquators.base_diag (x : sphereBundle F E) :
+    (SphereBundleTwoFieldEquators.diag hxu hxv x).base = x :=
+  (rfl)
+
+/-- The vector of `(x, x)` is its base point `x`, in the fibre through `x`. -/
+theorem SphereBundleTwoFieldEquators.vec_diag (x : sphereBundle F E) :
+    (SphereBundleTwoFieldEquators.diag hxu hxv x).vec =
+      ((SphereBundleTwoFieldEquators.diag hxu hxv x).base : TotalSpace F E).2 :=
+  (rfl)
+
+/-- The point `w` of `(x, x)` is `x`. -/
+@[simp]
+theorem SphereBundleTwoFieldEquators.point_diag (x : sphereBundle F E) :
+    point (SphereBundleTwoFieldEquators.diag hxu hxv x) = x :=
+  (rfl)
 
 @[simp]
 theorem SphereBundleTwoFieldEquators.proj_comp_diag :
-    proj.comp (SphereBundleTwoFieldEquators.diag h) = ContinuousMap.id (sphereBundle F E) :=
+    proj.comp (SphereBundleTwoFieldEquators.diag hxu hxv) = ContinuousMap.id (sphereBundle F E) :=
   (rfl)
 
 end Diagonal
@@ -373,8 +290,8 @@ def SphereBundleTwoFieldEquators.ofFiber {b : B}
   base := fiberPoint b zw.1.1
   vec := (zw.1.2 : E b)
   norm_vec := norm_eq_of_mem_sphere zw.1.2
-  inner_vec_left := (mem_twoFieldEquators.1 zw.2).1
-  inner_vec_right := (mem_twoFieldEquators.1 zw.2).2
+  inner_vec_u := (mem_twoFieldEquators.1 zw.2).1
+  inner_vec_v := (mem_twoFieldEquators.1 zw.2).2
 
 omit [∀ b, InnerProductSpace ℝ (E b)] in
 /-- At a point `x` of the sphere bundle, the field `u` restricted to the sphere fibre through `x`
@@ -399,6 +316,12 @@ theorem continuous_sphereBundleFiberField [TopologicalSpace B] [NormedAddCommGro
 theorem SphereBundleTwoFieldEquators.coe_base_ofFiber {b : B}
     (zw : twoFieldEquators (sphereBundleFiberField u b) (sphereBundleFiberField v b)) :
     ((SphereBundleTwoFieldEquators.ofFiber zw).base : TotalSpace F E) = ⟨b, zw.1.1⟩ :=
+  (rfl)
+
+/-- The point `w` of `ofFiber zw` is the point `w` of the sphere fibre over `b`. -/
+theorem SphereBundleTwoFieldEquators.coe_point_ofFiber [TopologicalSpace (TotalSpace F E)] {b : B}
+    (zw : twoFieldEquators (sphereBundleFiberField u b) (sphereBundleFiberField v b)) :
+    (point (SphereBundleTwoFieldEquators.ofFiber zw) : TotalSpace F E) = ⟨b, zw.1.2⟩ :=
   (rfl)
 
 end Fiber
@@ -507,17 +430,16 @@ theorem sphereBundleProj_sphereBundleTwoFieldSphereFamily
 /-- The two-sphere of the point `(x, x)` is constant at `x`. -/
 @[simp]
 theorem sphereBundleTwoFieldSphereFamily_diag (x : sphereBundle F E) :
-    sphereBundleTwoFieldSphereFamily h hu hv (SphereBundleTwoFieldEquators.diag h x) =
+    sphereBundleTwoFieldSphereFamily h hu hv
+        (SphereBundleTwoFieldEquators.diag (fun x ↦ (h x).inner_vecCons_zero_one)
+          (fun x ↦ (h x).inner_vecCons_zero_two) x) =
       ContinuousMap.const Sphere2 x := by
   ext z : 1
   obtain ⟨y, rfl⟩ := sphereCollapse_surjective 2 Sphere2.north z
   refine Subtype.ext ?_
   rw [coe_sphereBundleTwoFieldSphereFamily_sphereCollapse]
-  -- The base point of `diag h x` is `x` and its vector is `x.2`, by definition; the vector is a
-  -- dependent field, so no rewriting lemma can replace it, and we restate the goal instead.
-  change TotalSpace.mk' F _ (tangentCircle (x : TotalSpace F E).2 (u x)
-    (tangentCircle (x : TotalSpace F E).2 (v x) (x : TotalSpace F E).2 _) _) = (x : TotalSpace F E)
-  rw [tangentCircle_self, tangentCircle_self]
+  rw [vec_diag, tangentCircle_self, tangentCircle_self]
+  exact congrArg Subtype.val (base_diag _ _ x)
 
 /-! ### The family over a point -/
 
