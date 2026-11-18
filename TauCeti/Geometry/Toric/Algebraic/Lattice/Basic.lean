@@ -75,6 +75,9 @@ forcing the integral and real ranks to agree.
   `V*` dual to the real basis `i ∘ b` of an integral basis `b`, with coordinates `x ↦ x (i (b j))`.
   Its `ℤ`-span is the weight lattice `TauCeti.Toric.weightLattice` of functionals taking integer
   values on the lattice (`TauCeti.Toric.IsIntegralLattice.span_dualBasis`), whatever `b` is.
+* `TauCeti.Toric.IsIntegralLattice.isZLattice_weightLattice`: the weight lattice is discrete,
+  hence a `ZLattice` in Mathlib's sense, with `ℤ`-basis
+  `TauCeti.Toric.IsIntegralLattice.weightLatticeBasis` given by the dual basis.
 
 ## Implementation notes
 
@@ -481,6 +484,35 @@ theorem span_dualBasis (b : Basis κ ℤ N) : span ℤ (range (h.dualBasis b)) =
   conv_rhs => rw [← b.sum_repr n, map_sum, map_sum]
   push_cast
   simp only [map_zsmul, zsmul_eq_mul, ← hm]
+
+/-- The `ℤ`-basis of the weight lattice given by the dual basis of an integral basis `b`. -/
+noncomputable def weightLatticeBasis (b : Basis κ ℤ N) : Basis κ ℤ (weightLattice i) :=
+  ((h.dualBasis b).restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (h.span_dualBasis b))
+
+/-- The vectors of `weightLatticeBasis b` are those of the dual basis of `b`. -/
+@[simp]
+theorem coe_weightLatticeBasis (b : Basis κ ℤ N) (j : κ) :
+    (h.weightLatticeBasis b j : StrongDual ℝ V) = h.dualBasis b j := by
+  simp [weightLatticeBasis]
+
+include h in
+/-- The weight lattice of an integral lattice is a discrete subgroup of `V*`. -/
+theorem discreteTopology_weightLattice : DiscreteTopology (weightLattice i) := by
+  let _ := h.free
+  let _ := h.finite
+  rw [← h.span_dualBasis (Module.Free.chooseBasis ℤ N)]
+  infer_instance
+
+/-- The weight lattice of an integral lattice is a `ℤ`-lattice in Mathlib's sense. -/
+theorem isZLattice_weightLattice :
+    haveI := h.discreteTopology_weightLattice
+    IsZLattice ℝ (weightLattice i) := by
+  let _ := h.free
+  let _ := h.finite
+  have := h.discreteTopology_weightLattice
+  refine ⟨?_⟩
+  rw [← h.span_dualBasis (Module.Free.chooseBasis ℤ N)]
+  exact ZSpan.span_top _
 
 end IsIntegralLattice
 
