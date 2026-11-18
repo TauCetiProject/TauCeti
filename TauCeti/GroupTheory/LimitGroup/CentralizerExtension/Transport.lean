@@ -38,7 +38,7 @@ Kharlampovich–Myasnikov's *Irreducible affine varieties over a free group. I*.
   in an ICE group over `F` and `L` embeds in an ICE group over `K`, then `L` embeds in an ICE group
   over `F`, compatibly with the coefficients.
 * `TauCeti.LimitGroup.ICE.exists_embedding_centralizerExt`: over a residually free `E`, the
-  extension `E(w, ℤ)` of the centralizer of any `w ≠ 1` embeds over `E` in an ICE group over `E`.
+  extension `E(w, ℤⁿ)` of the centralizer of any `w ≠ 1` embeds over `E` in an ICE group over `E`.
 
 ## References
 
@@ -110,16 +110,20 @@ theorem exists_embedding_comp {F E : Type u} {K E' : Type v} {L : Type*} [Group 
 end ICE
 
 /-- **One extension of a centralizer is an ICE step.** Over a residually free group `E`, for
-`w ≠ 1` the extension `E(w, ℤ)` embeds over `E` in an ICE group over `E`: `w` has a root `r` that
-is not a proper power with the same centralizer, and `E(w, ℤ) ≃* E(r, ℤ)`. -/
+`w ≠ 1` the extension `E(w, ℤⁿ)` embeds over `E` in an ICE group over `E`: `w` has a root `r` that
+is not a proper power with the same centralizer, and `E(w, ℤⁿ) ≃* E(r, ℤⁿ)`, an admissible
+extension when `n > 0`, while `E(w, ℤ⁰) ≃* E`. -/
 theorem ICE.exists_embedding_centralizerExt {E : Type u} [Group E] (hE : IsResiduallyFree E) {w : E}
-    (hw : w ≠ 1) :
+    (hw : w ≠ 1) (n : ℕ) :
     ∃ (E' : Type u) (_ : Group E') (j : E →* E') (_ : ICE E E' j)
-      (f : GroupAlgGeom.GHom (CentralizerExt.of : E →* CentralizerExt w 1) j),
+      (f : GroupAlgGeom.GHom (CentralizerExt.of : E →* CentralizerExt w n) j),
       Function.Injective f := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · exact ⟨E, _, .id E, .refl, ⟨CentralizerExt.zeroEquiv.toMonoidHom, CentralizerExt.zeroEquiv_of⟩,
+      CentralizerExt.zeroEquiv.injective⟩
   obtain ⟨r, -, -, -, hr, hC⟩ := hE.centralizerExt_root_reduction hw
-  exact ⟨CentralizerExt r 1, _, CentralizerExt.of,
-    .single (isAdmissibleCentralizerStep_iff.2 ⟨hr, one_pos⟩),
+  exact ⟨CentralizerExt r n, _, CentralizerExt.of,
+    .single (isAdmissibleCentralizerStep_iff.2 ⟨hr, hn⟩),
     ⟨(CentralizerExt.congr hC).toMonoidHom, CentralizerExt.congr_of hC⟩,
     (CentralizerExt.congr hC).injective⟩
 
@@ -144,6 +148,6 @@ example : ∃ (E : Type) (_ : Group E) (j : FreeGroup (Fin 2) →* E) (_ : ICE (
     (f : GroupAlgGeom.GHom (CentralizerExt.of : FreeGroup (Fin 2) →*
       CentralizerExt (FreeGroup.of (0 : Fin 2) ^ 2) 1) j), Function.Injective f :=
   ICE.exists_embedding_centralizerExt isFullyResiduallyFree_of_isFreeGroup.isResiduallyFree
-    (by simp)
+    (by simp) 1
 
 end TauCeti.LimitGroup

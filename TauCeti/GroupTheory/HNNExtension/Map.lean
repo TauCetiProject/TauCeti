@@ -13,7 +13,8 @@ public import Mathlib.GroupTheory.HNNExtension
 Let `HNNExtension G A B φ` and `HNNExtension H A' B' φ'` be HNN extensions, with stable letters
 `t` and `t'`. A homomorphism `f : G →* H` that maps `A` into `A'` compatibly with the associated
 isomorphisms, `φ' (f a) = f (φ a)` for `a ∈ A`, induces a homomorphism of HNN extensions that is
-`f` on `G` and sends `t` to `t'` (`HNNExtension.map`).
+`f` on `G` and sends `t` to `t'` (`HNNExtension.map`). This construction is functorial
+(`HNNExtension.map_id`, `HNNExtension.map_comp`).
 
 If `f` is injective and pulls `A'` and `B'` back into `A` and `B`, the induced homomorphism is
 injective (`HNNExtension.map_injective`): it sends a reduced word `g₀ t^{ε₁} g₁ ⋯ t^{εₙ} gₙ` to
@@ -63,6 +64,21 @@ theorem map_of (g : G) : map f hA hφ (of g) = of (f g) :=
 @[simp]
 theorem map_t : map f hA hφ t = t :=
   lift_t _ _ _
+
+@[simp]
+theorem map_comp_of : (map f hA hφ).comp of = of.comp f :=
+  MonoidHom.ext (map_of f hA hφ)
+
+@[simp]
+theorem map_id : map (φ := φ) (.id G) (comap_id A).ge (fun _ ↦ rfl) = .id (HNNExtension G A B φ) :=
+  hom_ext (by ext; simp) (by simp)
+
+theorem map_comp {K : Type*} [Group K] {A'' B'' : Subgroup K} {φ'' : A'' ≃* B''} (g : H →* K)
+    (hA' : A' ≤ A''.comap g) (hφ' : ∀ a : A', (φ'' ⟨g a, hA' a.2⟩ : K) = g (φ' a)) :
+    map (g.comp f) (hA.trans <| (comap_mono hA').trans (comap_comap A'' g f).le)
+        (fun a ↦ by simpa using (hφ' ⟨f a, hA a.2⟩).trans (congrArg g (hφ a))) =
+      (map g hA' hφ').comp (map f hA hφ) :=
+  hom_ext (by ext; simp) (by simp)
 
 -- If `f` pulls `A'` and `B'` back into `A` and `B`, then `f g` lies in the associated subgroup
 -- `toSubgroup A' B' u` of the target only when `g` lies in `toSubgroup A B u`.

@@ -13,9 +13,9 @@ public import Mathlib.GroupTheory.Subgroup.Centralizer
 A homomorphism `f : G →* G'` maps the centralizer `C_G(s)` of a subset `s` into the centralizer
 `C_{G'}(f(s))`, hence into `C_{G'}(t)` for every `t ⊆ f(s)`. This file records the restriction of
 `f` as a homomorphism `C_G(s) →* C_{G'}(t)`; the case `s = {u}`, `t = {f u}` gives a homomorphism
-`C_G(u) →* C_{G'}(f u)`. An isomorphism `e : G ≃* G'` restricts to an isomorphism
-`C_G(s) ≃* C_{G'}(e(s))`; for an inner automorphism this identifies the centralizers of conjugate
-elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
+`C_G(u) →* C_{G'}(f u)`. An injective `f` pulls `C_{G'}(f(s))` back to `C_G(s)`. An isomorphism
+`e : G ≃* G'` restricts to an isomorphism `C_G(s) ≃* C_{G'}(e(s))`; for an inner automorphism this
+identifies the centralizers of conjugate elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
 
 ## Main definitions
 
@@ -23,6 +23,10 @@ elements, `C_G(g⁻¹ x g) = g⁻¹ C_G(x) g`.
   `t ⊆ f(s)`.
 * `MulEquiv.centralizerMap`: the restriction `C_G(s) ≃* C_{G'}(t)` of `e : G ≃* G'`, for
   `t = e(s)`.
+
+## Main results
+
+* `Subgroup.comap_centralizer_image_of_injective`: `f⁻¹(C_{G'}(f(s))) = C_G(s)` for injective `f`.
 -/
 
 public section
@@ -53,6 +57,21 @@ theorem centralizerMap_injective {f : G →* G'} (hf : Function.Injective f) {s 
   fun _ _ hc => Subtype.ext (hf (congrArg Subtype.val hc))
 
 end MonoidHom
+
+namespace Subgroup
+
+variable {G G' : Type*} [Group G] [Group G']
+
+/-- An injective homomorphism `f : G →* G'` pulls the centralizer `C_{G'}(f(s))` back to
+`C_G(s)`. -/
+@[to_additive /-- An injective homomorphism `f : G →+ G'` pulls the centralizer `C_{G'}(f(s))`
+back to `C_G(s)`. -/]
+theorem comap_centralizer_image_of_injective {f : G →* G'} (hf : Function.Injective f)
+    (s : Set G) : (centralizer (f '' s)).comap f = centralizer s := by
+  ext g
+  simp [mem_centralizer_iff, ← map_mul, hf.eq_iff]
+
+end Subgroup
 
 namespace MulEquiv
 

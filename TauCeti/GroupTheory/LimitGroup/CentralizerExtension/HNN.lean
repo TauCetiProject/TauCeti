@@ -100,8 +100,7 @@ theorem hnnLift_injective (φ : centralizer {α} ≃* centralizer {β})
     MulEquiv.centralizerMap (MulAut.conj k⁻¹) (by simp [hαβ])
   -- `θ` pulls the centralizer of `θ x` back to the centralizer of `x`.
   have hC (x : B) : (centralizer {θ x}).comap θ = centralizer {x} := by
-    ext g
-    simp [mem_centralizer_singleton_iff, ← map_mul, hθ.eq_iff]
+    simpa using comap_centralizer_image_of_injective hθ {x}
   -- `K(θ β, ℤ)` maps to the HNN extension of `K` along `ψ` by `s ↦ k⁻¹ t⁻¹`; after `hnnLift`, this
   -- is the homomorphism of HNN extensions induced by `θ`, which is injective.
   let Ψ : CentralizerExt (θ β) 1 →* HNNExtension K _ _ ψ :=
