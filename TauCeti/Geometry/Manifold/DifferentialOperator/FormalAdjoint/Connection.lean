@@ -78,12 +78,6 @@ local instance : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
-omit [T2Space M] [I.Boundaryless] [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M] in
-/-- The divergence of a smooth vector field is smooth. -/
-private theorem contMDiff_divergence_section :
-    ContMDiff I 𝓘(ℝ) ∞ (divergence I fun x ↦ X x) :=
-  contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp) (by simpa using X.contMDiff)
-
 /-- **The formal adjoint of a covariant derivative along a vector field.** For a metric connection
 `∇` on a Riemannian vector bundle over a Riemannian manifold without boundary, and a smooth vector
 field `X`, an operator `Q` acting by `Q τ = -∇_X τ - (div X) τ` is the formal adjoint of `∇_X` with
@@ -99,7 +93,7 @@ theorem IsMetricCompatible.isFormalAdjoint_alongVectorField (hcov : cov.IsMetric
   set μ := riemannianVolume I M
   set f : M → ℝ := fun x ↦ ⟪σ x, τ x⟫
   have hfc : HasCompactSupport f := ContMDiffSection.hasCompactSupport_inner hστ
-  have hdiv := contMDiff_divergence_section X
+  have hdiv := X.contMDiff_divergence
   have h₁ : Integrable (fun x ↦ ⟪cov.alongVectorField X σ x, τ x⟫) μ :=
     LinearMap.integrable_inner_apply_left (cov.tsupport_alongVectorField_apply_subset X) hστ
   have h₂ : Integrable (fun x ↦ ⟪σ x, cov.alongVectorField X τ x⟫) μ :=
@@ -141,7 +135,7 @@ theorem IsMetricCompatible.formalAdjoint_alongVectorField_apply (hcov : cov.IsMe
       -cov τ x (X x) - divergence I (fun y ↦ X y) x • τ x := by
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
     (V := V)
-  let d : C^∞⟮I, M; ℝ⟯ := ⟨divergence I fun y ↦ X y, contMDiff_divergence_section X⟩
+  let d : C^∞⟮I, M; ℝ⟯ := ⟨divergence I fun y ↦ X y, X.contMDiff_divergence⟩
   have hd : ⇑d = divergence I fun y ↦ X y := ContMDiffMap.coeFn_mk _ _
   have h := hcov.isFormalAdjoint_alongVectorField X
     (Q := -cov.alongVectorField X - Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ d) fun τ x ↦ by simp [hd]
