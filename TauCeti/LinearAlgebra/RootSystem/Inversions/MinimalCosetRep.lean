@@ -83,16 +83,23 @@ section NotOrthogonal
 
 variable (P b)
 
+/-- The positive roots not orthogonal to a weight split into those pairing negatively and those
+pairing positively with it. -/
+theorem ncard_setOf_isPos_and_coroot'_ne_zero_eq_add (x : M) :
+    {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard =
+      {i | b.IsPos i ∧ P.coroot' i x < 0}.ncard + {i | b.IsPos i ∧ 0 < P.coroot' i x}.ncard := by
+  rw [← ncard_union_eq]
+  · congr 1
+    ext i
+    simp only [mem_ofPred_eq, mem_union, ne_iff_lt_or_gt]
+    tauto
+  · exact disjoint_left.mpr fun i hi hi' ↦ hi.2.not_gt hi'.2
+
 /-- **The positive roots not orthogonal to a weight are as many as the roots pairing negatively with
 it.** Root negation carries the positive roots pairing positively with `x` onto the negative roots
 pairing negatively with it. -/
 theorem ncard_setOf_isPos_and_coroot'_ne_zero (x : M) :
     {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard = {i | P.coroot' i x < 0}.ncard := by
-  have hpos : {i | b.IsPos i ∧ P.coroot' i x ≠ 0} =
-      {i | b.IsPos i ∧ P.coroot' i x < 0} ∪ {i | b.IsPos i ∧ 0 < P.coroot' i x} := by
-    ext i
-    simp only [mem_ofPred_eq, mem_union, ne_iff_lt_or_gt]
-    tauto
   have hall : {i | P.coroot' i x < 0} =
       {i | b.IsPos i ∧ P.coroot' i x < 0} ∪ {i | ¬ b.IsPos i ∧ P.coroot' i x < 0} := by
     ext i
@@ -113,9 +120,8 @@ theorem ncard_setOf_isPos_and_coroot'_ne_zero (x : M) :
         ?_⟩, reflectionPerm_reflectionPerm_self P j⟩
       rw [coroot'_reflectionPerm_self, LinearMap.neg_apply, neg_pos]
       exact hj.2
-  rw [hpos, hall, ncard_union_eq, ncard_union_eq, hneg]
-  · exact disjoint_left.mpr fun i hi hi' ↦ hi'.1 hi.1
-  · exact disjoint_left.mpr fun i hi hi' ↦ hi.2.not_gt hi'.2
+  rw [ncard_setOf_isPos_and_coroot'_ne_zero_eq_add, hall, ncard_union_eq, hneg]
+  exact disjoint_left.mpr fun i hi hi' ↦ hi'.1 hi.1
 
 /-- **The number of positive roots not orthogonal to a weight is invariant under the Weyl group.**
 For a dominant weight this is the number of positive roots outside the root subsystem of its
@@ -132,7 +138,7 @@ theorem ncard_setOf_isPos_and_coroot'_smul_ne_zero (w : P.weylGroup) (x : M) :
   · refine ⟨P.weylGroupToPerm w j, ?_, ?_⟩
     · rw [mem_ofPred_eq, coroot'_weylGroupToPerm_smul]
       exact hj
-    · rw [← Equiv.Perm.mul_apply, ← map_mul, inv_mul_cancel, map_one, Equiv.Perm.one_apply]
+    · simp [map_inv]
 
 end NotOrthogonal
 
@@ -198,15 +204,9 @@ theorem ncard_setOf_isPos_and_coroot'_smul_pos_add_length (hlam : lam ∈ domina
     {w : P.weylGroup} (hw : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w) :
     {i | b.IsPos i ∧ 0 < P.coroot' i (w • lam)}.ncard + (weylCoxeterSystem P b).length w =
       {i | b.IsPos i ∧ P.coroot' i lam ≠ 0}.ncard := by
-  have hsplit : {i | b.IsPos i ∧ P.coroot' i (w • lam) ≠ 0} =
-      {i | b.IsPos i ∧ 0 < P.coroot' i (w • lam)} ∪
-        {i | b.IsPos i ∧ P.coroot' i (w • lam) < 0} := by
-    ext i
-    simp only [mem_ofPred_eq, mem_union, ne_iff_lt_or_gt]
-    tauto
-  rw [← ncard_setOf_isPos_and_coroot'_smul_ne_zero P b w, hsplit, ncard_union_eq,
-    ncard_setOf_isPos_and_coroot'_smul_neg hlam hw]
-  exact disjoint_left.mpr fun i hi hi' ↦ hi.2.not_gt hi'.2
+  rw [← ncard_setOf_isPos_and_coroot'_smul_ne_zero P b w,
+    ncard_setOf_isPos_and_coroot'_ne_zero_eq_add, ncard_setOf_isPos_and_coroot'_smul_neg hlam hw,
+    add_comm]
 
 /-- **Index count for a height in the open dominant chamber.** For `X` in the open dominant chamber,
 a dominant weight `λ` and the minimal representative `w` of a coset of its stabilizer, the number of
