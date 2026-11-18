@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -57,6 +57,9 @@ is the special case that matters downstream.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
   infimum of those lengths.
+
+The path-containment lemma `TauCeti.Manifold.mem_ball_of_pathELength_lt` is adapted from
+Giada Franz’s verified `ForTauCeti` formalization.
 
 ## References
 
@@ -376,6 +379,33 @@ theorem exists_pathELength_lt_of_dist_lt {x y : M} {r : ℝ} (hr : dist x y < r)
 end PseudoMetric
 
 end IsRiemannianManifold
+
+namespace Manifold
+
+section BallContainment
+
+variable {M : Type*} [PseudoMetricSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+
+/-- A `C¹` path starting at `p` whose length is less than `s` stays in the open ball `B(p, s)`. -/
+theorem mem_ball_of_pathELength_lt {γ : ℝ → M} {p : M} {s : ℝ} (hγ : CMDiff[Icc 0 1] 1 γ)
+    (hγ0 : γ 0 = p) (hlen : pathELength I γ 0 1 < ENNReal.ofReal s) {t : ℝ} (ht : t ∈ Icc 0 1) :
+    γ t ∈ Metric.ball p s := by
+  have hle : pathELength I γ 0 t ≤ pathELength I γ 0 1 := pathELength_mono le_rfl ht.2
+  have hlt : pathELength I γ 0 t < ENNReal.ofReal s := hle.trans_lt hlen
+  have hd := TauCeti.IsRiemannianManifold.dist_le_toReal_pathELength (I := I)
+    (hγ.mono (Icc_subset_Icc le_rfl ht.2)) hγ0 rfl ht.1 hlt.ne_top
+  rw [Metric.mem_ball, dist_comm]
+  refine hd.trans_lt ?_
+  have hs : 0 < s := by
+    by_contra h
+    simp [ENNReal.ofReal_eq_zero.2 (not_lt.1 h)] at hlt
+  exact (ENNReal.toReal_lt_toReal hlt.ne_top ENNReal.ofReal_ne_top).2 hlt |>.trans_eq
+    (ENNReal.toReal_ofReal hs.le)
+
+end BallContainment
+
+end Manifold
 
 section OfRiemannianMetric
 
