@@ -440,21 +440,6 @@ private theorem endCutoff_cylindricalEndLift (hL : 0 < L) (r r' : Puncture) (t :
 
 /-! ### The receiving and inserted pieces of a map -/
 
-/-- The components of the plumbed perturbation are `C¹` on the plumbed four-punctured sphere times
-the target. -/
-private theorem contDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) (v : ℂ) :
-    ContDiffOn ℝ 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      ({z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact (contDiffAt_uncurry_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x
-    v).contDiffWithinAt
-
 /-- The receiving piece `(1 - β(s_q - L/2 - 1)) u` of a map `u` that is `C²` on the plumbed
 four-punctured sphere vanishes near the puncture `ψ(1)`, and so is `C²` on `S`. -/
 private theorem contDiffOn_receivingPiece (hq : q ≠ inf) (hL : 4 < L) {u : ℝ × ℝ → V}
