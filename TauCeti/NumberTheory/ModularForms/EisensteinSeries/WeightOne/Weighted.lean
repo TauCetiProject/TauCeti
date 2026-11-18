@@ -6,20 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
-public import Mathlib.Algebra.Group.EvenFunction
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
-public import Mathlib.NumberTheory.ModularForms.QExpansion
-import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Basic.Complex.Basic
 import TauCeti.Data.Nat.Cast.Order.Field
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.NumberTheory.ModularForms.Basic
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Analysis.Normed.Group.Tannery
-import Mathlib.Analysis.Normed.Ring.Finite
 
 /-!
 # Weight-one Eisenstein series weighted by a function of residues
@@ -136,8 +131,7 @@ public section
 
 noncomputable section
 
-open ModularForm UpperHalfPlane Matrix CongruenceSubgroup Complex Filter Set PeriodPair
-open EisensteinSeries
+open ModularForm UpperHalfPlane Matrix CongruenceSubgroup Complex Filter PeriodPair
 open TauCeti.UpperHalfPlane (tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty
   tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty)
 
@@ -171,16 +165,19 @@ lemma weightedE1_zero : weightedE1 (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
   simp [weightedE1]
 
 /-- The series is linear in the weight: sums. -/
+@[simp]
 lemma weightedE1_add (W W' : (Fin 2 → ZMod N) → ℂ) :
     weightedE1 (W + W') = weightedE1 W + weightedE1 W' := by
   ext z
   simp [weightedE1, add_mul, Finset.sum_add_distrib, mul_add]
 
 /-- The series is linear in the weight: scalar multiples. -/
+@[simp]
 lemma weightedE1_smul (c : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
     weightedE1 (c • W) = c • weightedE1 W := by
   ext z
-  simp [weightedE1, Finset.mul_sum, mul_assoc, mul_left_comm]
+  simp only [weightedE1, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun a _ ↦ by ring
 
 /-! ### The corrected division values of `ζ` -/
 
@@ -277,7 +274,6 @@ private lemma zetaValue_lift_smul (γ : SL(2, ℤ)) (a : Fin 2 → ZMod N) (z : 
 private lemma zetaValue_lift_neg (a : Fin 2 → ZMod N) (z : ℍ) :
     zetaValue N (lift (-a)) z = -zetaValue N (lift a) z := by
   have hcast : ((↑) : ℤ → ZMod N) ∘ (-lift a) = -a := by
-    rw [← intCast_comp_lift (-a), intCast_comp_lift]
     ext i
     simp [lift]
   rw [← zetaValue_neg, zetaValue_eq_lift (-lift a), hcast]

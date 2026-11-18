@@ -34,7 +34,8 @@ theorems take the degree and continuation equations as hypotheses, and the bundl
 
 ## Main definitions
 
-* `TauCeti.continuationMap R M ν`: the map `(P → M) →ₗ[R] (Q → M)` of a matrix `ν`.
+* `TauCeti.continuationMap R M ν`: the map `(P → M) →ₗ[R] (Q → M)` of a matrix `ν`, and
+  `TauCeti.continuationMapₗ`: the same map as an `R`-linear map in the matrix.
 * `TauCeti.ContinuationCocycle mP mQ`: continuation cocycles between twisting cocycles, with
   `refl` and `comp`.
 
@@ -104,6 +105,37 @@ theorem continuationMap_zero : continuationMap R M (0 : Matrix P Q A) = 0 :=
   LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (0 : Matrix P Q A) f y).trans <| by
     simp only [Matrix.zero_apply, op_zero, zero_smul, Finset.sum_const_zero, LinearMap.zero_apply,
       Pi.zero_apply]
+
+/-- The continuation map of a finite sum of matrices is the sum of their continuation maps. -/
+theorem continuationMap_sum {ι : Type*} (s : Finset ι) (F : ι → Matrix P Q A) :
+    continuationMap R M (∑ i ∈ s, F i : Matrix P Q A) = ∑ i ∈ s, continuationMap R M (F i) :=
+  map_sum (G := Matrix P Q A →+ (P → M) →ₗ[R] Q → M)
+    ⟨⟨continuationMap R M, continuationMap_zero R M P Q⟩, continuationMap_add⟩ F s
+
+section Linear
+
+variable [Module R A] [IsScalarTower R Aᵐᵒᵖ M]
+
+/-- The continuation map is homogeneous in the matrix. -/
+theorem continuationMap_smul (r : R) (F : Matrix P Q A) :
+    continuationMap R M (r • F) = r • continuationMap R M F :=
+  LinearMap.ext fun f ↦ funext fun y ↦ (continuationMap_apply (r • F) f y).trans <| by
+    simp only [LinearMap.smul_apply, Pi.smul_apply, continuationMap_apply F, Finset.smul_sum,
+      Matrix.smul_apply, op_smul, smul_assoc]
+
+variable (R M P Q) in
+/-- The continuation map as an `R`-linear map in the matrix. -/
+noncomputable def continuationMapₗ : Matrix P Q A →ₗ[R] (P → M) →ₗ[R] Q → M where
+  toFun := continuationMap R M
+  map_add' := continuationMap_add
+  map_smul' := continuationMap_smul
+
+@[simp]
+theorem continuationMapₗ_apply (F : Matrix P Q A) :
+    continuationMapₗ R M P Q F = continuationMap R M F :=
+  (rfl)
+
+end Linear
 
 /-- The `y`-component of the continuation map of an elementary tensor `α ⊗ x`. -/
 @[simp]
