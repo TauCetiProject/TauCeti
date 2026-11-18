@@ -136,27 +136,6 @@ theorem stripGeneratingTarget_add_intCast (hS : Function.Periodic S (1, 1)) (x X
 
 variable {N : ℕ} [NeZero N]
 
-/-- **The derivative of the cyclic action.** If each `S_i` is differentiable at the edge
-`(q_i, q_(i+1))`, then `W(q) = Σ_i S_i(q_i, q_(i+1))` has derivative
-`v ↦ Σ_i dS_i(q_i, q_(i+1)) (v_i, v_(i+1))` at `q`. -/
-theorem hasFDerivAt_cyclicAction {S : ZMod N → ℝ × ℝ → ℝ} {q : ZMod N → ℝ}
-    (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
-    HasFDerivAt (cyclicAction S)
-      (∑ i, (fderiv ℝ (S i) (q i, q (i + 1))).comp ((proj i).prod (proj (i + 1)))) q := by
-  have h : cyclicAction S = fun q' ↦ ∑ i, S i (q' i, q' (i + 1)) := by
-    funext q'
-    simp [cyclicAction_apply]
-  rw [h]
-  exact HasFDerivAt.fun_sum fun i _ ↦ (hS i).hasFDerivAt.comp q
-    ((hasFDerivAt_apply i q).prodMk (hasFDerivAt_apply (i + 1) q))
-
-/-- If each `S_i` is differentiable at the edge `(q_i, q_(i+1))`, then the cyclic action
-`W(q) = Σ_i S_i(q_i, q_(i+1))` is differentiable at `q`. -/
-theorem differentiableAt_cyclicAction {S : ZMod N → ℝ × ℝ → ℝ} {q : ZMod N → ℝ}
-    (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
-    DifferentiableAt ℝ (cyclicAction S) q :=
-  (hasFDerivAt_cyclicAction hS).differentiableAt
-
 /-- **The partial derivatives of the cyclic action.** If each `S_i` is differentiable at the edge
 `(q_i, q_(i+1))`, the derivative of `W(q) = Σ_i S_i(q_i, q_(i+1))` at `q` pairs `v` with
 `Σ_i v_i (∂₁ S_i(q_i, q_(i+1)) + ∂₂ S_(i-1)(q_(i-1), q_i))`. -/
@@ -299,13 +278,6 @@ theorem exists_equiv_periodic_of_isStripGenerating
     fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
 
 /-! ### The diagonal integer quotient -/
-
-/-- If each `S_i` is invariant under the diagonal translation `(x, X) ↦ (x + 1, X + 1)`, then the
-cyclic action is invariant under the diagonal translation `q ↦ q + 1` of configurations. -/
-theorem periodic_cyclicAction (hS : ∀ i, Function.Periodic (S i) (1, 1)) :
-    Function.Periodic (cyclicAction S) 1 := fun q ↦ by
-  simp only [cyclicAction_apply, Pi.add_apply, Pi.one_apply]
-  exact Finset.sum_congr rfl fun i _ ↦ by simpa using hS i (q i, q (i + 1))
 
 omit [NeZero N] in
 /-- The diagonal translate of a configuration by an integer `k`. -/
