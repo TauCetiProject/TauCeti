@@ -76,6 +76,8 @@ unfolding.
   coordinate from a standard signature form.
 * `TauCeti.realCliffordFirstSplitIsometry`: the isometry which separates the first coordinate from
   `realCliffordForm (n + 1) 0` via `Fin.cons`.
+* `TauCeti.realCliffordFirstReflectionIsometry`: the involutive isometry of
+  `realCliffordForm (n + 1) 0` negating the first coordinate and fixing `Fin.tail`.
 * `TauCeti.realCliffordFormZeroReindex` and `TauCeti.realCliffordBlockSwapIsometry`: coordinate
   reindexing of positive-definite signature forms along `Fin m ≃ Fin n` and its specialization to
   the block swap `finAddFlip`.
@@ -543,6 +545,41 @@ theorem realCliffordFirstSplitIsometry_single_zero (n : ℕ) (r : ℝ) :
   have h : (Pi.single 0 r : Fin (n + 1) → ℝ) = Fin.cons r 0 :=
     funext (Fin.cases (by simp) (by simp))
   rw [h, realCliffordFirstSplitIsometry_cons]
+
+/-- **First-coordinate reflection isometry**: the involutive quadratic isometry of
+`realCliffordForm (n + 1) 0` negating the `0`-th coordinate and fixing all remaining coordinates.
+In the Lipschitz group (`CliffordAlgebra.lipschitzGroup`) this corresponds to twisted conjugation
+by the unit vector `Pi.single 0 1`. -/
+def realCliffordFirstReflectionIsometry (n : ℕ) :
+    (realCliffordForm (n + 1) 0).IsometryEquiv (realCliffordForm (n + 1) 0) :=
+  _root_.QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares
+    (Fin.cons (-1 : ℝˣ) fun _ ↦ 1) fun i ↦ by
+      refine Fin.cases ?_ (fun _ ↦ ?_) i <;> simp
+
+/-- Evaluating `realCliffordFirstReflectionIsometry` negates the `0`-th coordinate and keeps
+`Fin.tail`. -/
+@[simp]
+theorem realCliffordFirstReflectionIsometry_apply (n : ℕ) (v : Fin (n + 1) → ℝ) :
+    realCliffordFirstReflectionIsometry n v = Fin.cons (-v 0) (Fin.tail v) := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  ext i
+  refine Fin.cases ?_ (fun _ ↦ ?_) i
+  · simp [realCliffordFirstReflectionIsometry,
+      _root_.QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares]
+  · simp [realCliffordFirstReflectionIsometry,
+      _root_.QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares, Fin.tail]
+
+/-- `realCliffordFirstReflectionIsometry` is an involution. -/
+@[simp]
+theorem realCliffordFirstReflectionIsometry_symm (n : ℕ) :
+    (realCliffordFirstReflectionIsometry n).symm = realCliffordFirstReflectionIsometry n := by
+  apply DFunLike.ext
+  intro v
+  rw [QuadraticMap.IsometryEquiv.symm_apply_eq]
+  ext i
+  refine Fin.cases ?_ (fun _ ↦ ?_) i
+  · simp
+  · simp [Fin.tail]
 
 -- Not `@[simp]`: `realCliffordSplitIsometry p q 0 0` has domain `realCliffordForm (p + q) (0 + 0)`,
 -- so `Nat.add_zero` simplifies `0 + 0` inside `@DFunLike.coe`'s type parameter (`simpNF`).

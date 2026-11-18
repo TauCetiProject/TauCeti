@@ -66,6 +66,8 @@ homomorphisms on the closed unit-range carriers in `(CliffordAlgebra (realCliffo
   `TauCeti.realCliffordSpinToSpecialOrthogonalRange_comp_blockSum`: compatibility
   of the unit-range stabilization and block-sum homomorphisms with the native Spin-to-`SO` carrier
   projection.
+* `TauCeti.realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv`: conjugation by
+  first-coordinate reflection bundled as a topological group automorphism of `SO(n + 1)`.
 
 ## References
 
@@ -449,6 +451,37 @@ theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
         ((realCliffordSpinToSpecialOrthogonalRange p).prodMap
           (realCliffordSpinToSpecialOrthogonalRange q)) :=
   ContinuousMonoidHom.ext fun _ ↦ by simp
+
+/-! ### First-coordinate reflection on `SO(n + 1)` -/
+
+/-- **Conjugation by first-coordinate reflection on `SO(n + 1)` is continuous.** -/
+@[fun_prop]
+theorem continuous_specialOrthogonalGroupCongr_realCliffordFirstReflectionIsometry (n : ℕ) :
+    Continuous (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr :=
+  (realCliffordFirstReflectionIsometry n).continuous_specialOrthogonalGroupCongr_pi
+
+/-- **First-coordinate reflection conjugation on `SO(n + 1)`, bundled as a topological group
+automorphism.** -/
+def realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv (n : ℕ) :
+    QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0) ≃ₜ*
+      QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0) :=
+  (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongrContinuousMulEquivPi
+
+/-- Evaluating `realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv` applies
+`(realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr`. -/
+@[simp]
+theorem realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_apply (n : ℕ)
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 1) 0)) :
+    realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n g =
+      (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongr g :=
+  (realCliffordFirstReflectionIsometry n).specialOrthogonalGroupCongrContinuousMulEquivPi_apply g
+
+/-- `realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv` is an involution. -/
+@[simp]
+theorem realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv_symm (n : ℕ) :
+    (realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n).symm =
+      realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv n := by
+  simp [realCliffordFirstReflectionSpecialOrthogonalContinuousMulEquiv]
 
 end
 

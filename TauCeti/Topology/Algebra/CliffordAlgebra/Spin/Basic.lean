@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Stabilizer
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Basic
 public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # Topology on Clifford Spin groups
@@ -179,6 +179,14 @@ universe u v
 
 variable {R : Type u} [CommRing R] [TopologicalSpace R]
   {V : Type v} [AddCommGroup V] [Module R V]
+
+/-- The canonical inclusion from a Spin group into the even Clifford subalgebra is continuous for
+their subtype topologies. -/
+@[fun_prop]
+theorem continuous_spinGroupToEven (Q : QuadraticForm R V) :
+    Continuous (spinGroupToEven Q) :=
+  continuous_induced_rng.mpr <|
+    continuous_subtype_val.congr fun s ↦ (coe_spinGroupToEven_apply Q s).symm
 
 /-- A Spin group inside a continuously multiplicative Clifford algebra is a topological group for
 its subtype topology. Multiplication is inherited from the Clifford algebra, while inversion is
