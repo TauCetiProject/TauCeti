@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
@@ -42,6 +43,12 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
   structure of each class;
 * `TauCeti.ParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m` has
   order `m' + m`;
+* `TauCeti.ParameterSymbol.spatialDeriv`, `TauCeti.ParameterSymbol.frequencyDeriv`: a derivative
+  `∂_{xⱼ}` keeps the order and a derivative `∂_{ξⱼ}` lowers it by one, uniformly in `z`;
+* `TauCeti.ParameterSymbol.IsHomogeneous`: joint homogeneity
+  `a((x, t ξ), t² z) = t ^ μ a((x, ξ), z)`, preserved by sums, pointwise compositions
+  (`IsHomogeneous.comp`), inverses (`IsHomogeneous.inverse`) and derivatives, a frequency
+  derivative lowering the degree by one (`IsHomogeneous.frequencyDeriv`);
 * `TauCeti.ParameterSymbol.inverse`: **uniform inverse estimates**. If `a` has order `m` and is
   elliptic with parameter (`TauCeti.ParameterSymbol.IsElliptic`: it is invertible, with
   `‖a⁻¹‖ ≤ C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (-m)`), its pointwise inverse has order `-m`;
@@ -51,7 +58,9 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
   positive constant. Hence the resolvent symbol `((s + ‖ξ‖²) - z)⁻¹` has order `-2`
   (`TauCeti.ParameterSymbol.coefficient_inverse_shiftedLaplacian`). For `s = 0` it is the principal
   resolvent symbol `(‖ξ‖² - z)⁻¹`, which keeps its low-frequency values: at `ξ = 0` it is `1` for
-  `z = -1` and `1 / 2` for `z = -2`.
+  `z = -1` and `1 / 2` for `z = -2`. The symbol `‖ξ‖² - z` is homogeneous of degree `2`
+  (`TauCeti.ParameterSymbol.isHomogeneous_shiftedLaplacian_zero`), so this resolvent symbol is
+  homogeneous of degree `-2`: scaling `(ξ, z)` by `(2, 4)` multiplies it by `1 / 4`.
 
 ## Implementation notes
 
@@ -361,6 +370,48 @@ private theorem Bounds.inverse (hΛ : IsOpen Λ) {V W : Type*} [NormedAddCommGro
     exact hA j hj x hx ξ z hz
   · simpa [Real.rpow_neg (parameterWeight_pos ξ z).le, div_eq_mul_inv] using hB x hx ξ z hz
 
+/-- Differentiating once in a direction `d` lowers the order by `s` if, at every frequency `ξ`
+and spectral parameter `z`, `d` is the dilation of a vector of norm at most
+`parameterWeight ξ z ^ (-s)`. -/
+private theorem Bounds.fderiv_apply (hΛ : IsOpen Λ) (hf : ContDiffOn ℝ ∞ f (univ ×ˢ Λ))
+    (hb : Bounds Λ m f) {d : (CoordinateSpace n × CoordinateSpace n) × ℂ} {s : ℝ}
+    (hd : ∀ ξ : CoordinateSpace n, ∀ z ∈ Λ, ∃ d', parameterDilation n (parameterWeight ξ z) d' = d ∧
+      ‖d'‖ ≤ parameterWeight ξ z ^ (-s)) :
+    Bounds Λ (m - s) (fun p => fderiv ℝ f p d) := fun K hK k => by
+  obtain ⟨C, hC, hf'⟩ := hb K hK (k + 1)
+  refine ⟨C, hC, fun x hx ξ z hz => ?_⟩
+  obtain ⟨d', rfl, hd'⟩ := hd ξ z hz
+  set t := parameterWeight ξ z
+  set D := parameterDilation n t
+  set p : (CoordinateSpace n × CoordinateSpace n) × ℂ := ((x, ξ), z)
+  obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_dilation hΛ hf (p := p) hz t
+  set φ := fun v => f (p + D v)
+  have hφ : ContDiffAt ℝ ∞ φ 0 := (hfT 0 h0).contDiffAt (hU.mem_nhds h0)
+  -- Near `0`, the pulled back derivative in the direction `D d'` is that of `φ` along `d'`.
+  have heq : (fun v => fderiv ℝ f (p + D v) (D d')) =ᶠ[𝓝 0]
+      (ContinuousLinearMap.apply ℝ _ d') ∘ fderiv ℝ φ := by
+    filter_upwards [hU.mem_nhds h0] with v hv
+    have hfd : DifferentiableAt ℝ f (p + D v) :=
+      (hf.contDiffAt ((isOpen_univ.prod hΛ).mem_nhds hv)).differentiableAt (by simp)
+    have hφd := (hfd.hasFDerivAt.comp v ((D.hasFDerivAt (x := v)).const_add p)).fderiv
+    simp only [Function.comp_def] at hφd
+    simp [φ, hφd]
+  rw [parameterIteratedFDeriv_mk_eq, (heq.iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds]
+  refine ((ContinuousLinearMap.apply ℝ A d').norm_iteratedFDeriv_comp_left
+    (hφ.fderiv_right (m := k) (by exact_mod_cast le_top)) le_rfl).trans ?_
+  rw [norm_iteratedFDeriv_fderiv]
+  have h := hf' x hx ξ z hz
+  rw [parameterIteratedFDeriv_mk_eq] at h
+  calc ‖ContinuousLinearMap.apply ℝ A d'‖ * ‖iteratedFDeriv ℝ (k + 1) φ 0‖
+      ≤ t ^ (-s) * (C * t ^ m) := by
+        refine mul_le_mul ((ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg d')
+          fun L => ?_).trans hd') h (norm_nonneg _) (rpow_parameterWeight_pos ξ z _).le
+        rw [ContinuousLinearMap.apply_apply, mul_comm]
+        exact L.le_opNorm d'
+    _ = C * t ^ (m - s) := by
+        rw [sub_eq_add_neg, Real.rpow_add (parameterWeight_pos ξ z)]
+        ring
+
 /-- A constant has order `0`. -/
 private theorem bounds_const (c : A) :
     Bounds Λ 0 (fun _ : (CoordinateSpace n × CoordinateSpace n) × ℂ => c) := fun K _ k => by
@@ -531,6 +582,12 @@ instance : Module ℂ (ParameterSymbol n Λ V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → ParameterSymbol n Λ V W m) :
+    (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ : ParameterSymbol n Λ V W m →+ _)
+    f s
+
 end Module
 
 /-- A parameter-dependent symbol of order `m` has every order `m' ≥ m`, since the weight is at
@@ -571,6 +628,95 @@ def comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) :
 theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
     (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) := (rfl)
+
+/-! ### Derivatives in the position and in the frequency -/
+
+section Deriv
+
+private theorem differentiableAt_coefficient (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    DifferentiableAt ℝ a.coefficient p :=
+  (a.contDiffOn_coefficient.contDiffAt
+    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)).differentiableAt (by simp)
+
+open scoped Classical in
+/-- The derivative of a symbol of order `m` in a direction `d` which, at every frequency `ξ` and
+spectral parameter `z`, is the dilation of a vector of norm at most `parameterWeight ξ z ^ (-s)`:
+a symbol of order `m - s`. -/
+private def derivAlong (d : (CoordinateSpace n × CoordinateSpace n) × ℂ) {s : ℝ}
+    (hd : ∀ ξ : CoordinateSpace n, ∀ z ∈ Λ, ∃ d', parameterDilation n (parameterWeight ξ z) d' = d ∧
+      ‖d'‖ ≤ parameterWeight ξ z ^ (-s)) :
+    ParameterSymbol n Λ V W m →ₗ[ℂ] ParameterSymbol n Λ V W (m - s) where
+  toFun a :=
+    { coefficient := fun p => if p.2 ∈ Λ then fderiv ℝ a.coefficient p d else 0
+      contDiffOn_coefficient := by
+        refine ((a.contDiffOn_coefficient.fderiv_of_isOpen (isOpen_univ.prod Λ.isOpen)
+          (m := ∞) (by exact_mod_cast le_rfl)).clm_apply (contDiffOn_const (c := d))).congr
+          fun p hp => ?_
+        simp [SetLike.mem_coe.1 hp.2]
+      coefficient_of_notMem := fun p hp => by simp [hp]
+      exists_bound := by
+        refine (Bounds.fderiv_apply Λ.isOpen a.contDiffOn_coefficient a.exists_bound hd).congr
+          fun p hp => ?_
+        filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp] with q hq
+        have hq' : q.2 ∈ Λ := hq
+        simp [hq'] }
+  map_add' a b := ext_of_mem fun x ξ z hz => by
+    simp only [coefficient_add, Pi.add_apply, hz, ↓reduceIte]
+    rw [fderiv_add (a.differentiableAt_coefficient hz) (b.differentiableAt_coefficient hz)]
+    rfl
+  map_smul' c a := ext_of_mem fun x ξ z hz => by
+    simp only [coefficient_smul, Pi.smul_apply, hz, ↓reduceIte, RingHom.id_apply]
+    rw [fderiv_const_smul (a.differentiableAt_coefficient hz)]
+    rfl
+
+private theorem coefficient_derivAlong {d : (CoordinateSpace n × CoordinateSpace n) × ℂ} {s : ℝ}
+    (hd : ∀ ξ : CoordinateSpace n, ∀ z ∈ Λ, ∃ d', parameterDilation n (parameterWeight ξ z) d' = d ∧
+      ‖d'‖ ≤ parameterWeight ξ z ^ (-s))
+    (a : ParameterSymbol n Λ V W m) {p : (CoordinateSpace n × CoordinateSpace n) × ℂ}
+    (hp : p.2 ∈ Λ) : (derivAlong d hd a).coefficient p = fderiv ℝ a.coefficient p d := by
+  simp [derivAlong, hp]
+
+/-- A position direction is not dilated. -/
+private theorem exists_parameterDilation_eq_spatial (j : Fin n) (ξ : CoordinateSpace n) (z : ℂ)
+    (_ : z ∈ Λ) : ∃ d', parameterDilation n (parameterWeight ξ z) d' =
+      ((EuclideanSpace.single j 1, 0), 0) ∧ ‖d'‖ ≤ parameterWeight ξ z ^ (-0 : ℝ) :=
+  ⟨((EuclideanSpace.single j 1, 0), 0), by simp, by simp [Prod.norm_def]⟩
+
+/-- A frequency direction is dilated by the weight. -/
+private theorem exists_parameterDilation_eq_frequency (j : Fin n) (ξ : CoordinateSpace n) (z : ℂ)
+    (_ : z ∈ Λ) : ∃ d', parameterDilation n (parameterWeight ξ z) d' =
+      ((0, EuclideanSpace.single j 1), 0) ∧ ‖d'‖ ≤ parameterWeight ξ z ^ (-1 : ℝ) := by
+  have ht := parameterWeight_pos ξ z
+  refine ⟨((0, (parameterWeight ξ z)⁻¹ • EuclideanSpace.single j 1), 0),
+    by simp [smul_smul, ht.ne'], ?_⟩
+  simp [Prod.norm_def, norm_smul, abs_of_pos ht, Real.rpow_neg_one, ht.le]
+
+/-- The derivative `∂_{x_j} a` of a parameter-dependent symbol in the `j`-th position coordinate,
+again of order `m`. -/
+def spatialDeriv (j : Fin n) : ParameterSymbol n Λ V W m →ₗ[ℂ] ParameterSymbol n Λ V W m :=
+  (inclusion (by simp)).comp (derivAlong _ (s := 0) (exists_parameterDilation_eq_spatial j))
+
+/-- The derivative `∂_{ξ_j} a` of a parameter-dependent symbol in the `j`-th frequency coordinate,
+of order `m - 1`. -/
+def frequencyDeriv (j : Fin n) : ParameterSymbol n Λ V W m →ₗ[ℂ] ParameterSymbol n Λ V W (m - 1) :=
+  derivAlong _ (exists_parameterDilation_eq_frequency j)
+
+@[simp]
+theorem coefficient_spatialDeriv (j : Fin n) (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    (spatialDeriv j a).coefficient p =
+      fderiv ℝ a.coefficient p ((EuclideanSpace.single j 1, 0), 0) :=
+  coefficient_derivAlong (exists_parameterDilation_eq_spatial j) a hp
+
+@[simp]
+theorem coefficient_frequencyDeriv (j : Fin n) (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    (frequencyDeriv j a).coefficient p =
+      fderiv ℝ a.coefficient p ((0, EuclideanSpace.single j 1), 0) :=
+  coefficient_derivAlong (exists_parameterDilation_eq_frequency j) a hp
+
+end Deriv
 
 /-! ### Parameter-ellipticity and the inverse -/
 
@@ -613,6 +759,114 @@ theorem coefficient_inverse_comp_coefficient [CompleteSpace V] {a : ParameterSym
     ((a.inverse ha).coefficient ((x, ξ), z)).comp (a.coefficient ((x, ξ), z)) =
       ContinuousLinearMap.id ℂ V :=
   (ha.isInvertible x ξ z hz).inverse_comp_self
+
+/-! ### Joint homogeneity in the frequency and the spectral parameter -/
+
+section Homogeneous
+
+/-- A parameter-dependent symbol is *homogeneous of degree `μ`* under the dilations
+`(ξ, z) ↦ (t ξ, t² z)` of the frequency and the spectral parameter if
+`a((x, t ξ), t² z) = t ^ μ a((x, ξ), z)` for every `t > 0` such that both `z` and `t² z` lie in
+`Λ` (`TauCeti.ParameterSymbol.isHomogeneous_iff`). Since the coefficients are only defined on
+`Λ`, which need not be closed under these dilations, nothing is required otherwise. The resolvent
+symbol `(‖ξ‖² - z)⁻¹` is homogeneous of degree `-2`. -/
+def IsHomogeneous (a : ParameterSymbol n Λ V W m) (μ : ℝ) : Prop :=
+  ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ, p.2 ∈ Λ → ∀ t : ℝ, 0 < t →
+    (parameterDilation n t p).2 ∈ Λ →
+      a.coefficient (parameterDilation n t p) = ((t ^ μ : ℝ) : ℂ) • a.coefficient p
+
+theorem isHomogeneous_iff {a : ParameterSymbol n Λ V W m} {μ : ℝ} :
+    a.IsHomogeneous μ ↔ ∀ x ξ, ∀ z ∈ Λ, ∀ t : ℝ, 0 < t → (t ^ 2 : ℝ) • z ∈ Λ →
+      a.coefficient ((x, t • ξ), (t ^ 2 : ℝ) • z) = ((t ^ μ : ℝ) : ℂ) • a.coefficient ((x, ξ), z) :=
+  ⟨fun h x ξ z hz t ht htz => h ((x, ξ), z) hz t ht htz,
+    fun h ⟨⟨x, ξ⟩, z⟩ hz t ht htz => h x ξ z hz t ht htz⟩
+
+variable {μ μ' : ℝ}
+
+theorem isHomogeneous_zero : (0 : ParameterSymbol n Λ V W m).IsHomogeneous μ :=
+  fun _ _ _ _ _ => by simp
+
+theorem IsHomogeneous.add {a b : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
+    (hb : b.IsHomogeneous μ) : (a + b).IsHomogeneous μ := fun p hp t ht htp => by
+  rw [coefficient_add, Pi.add_apply, Pi.add_apply, ha p hp t ht htp, hb p hp t ht htp, smul_add]
+
+theorem IsHomogeneous.smul {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ) (c : ℂ) :
+    (c • a).IsHomogeneous μ := fun p hp t ht htp => by
+  rw [coefficient_smul, Pi.smul_apply, Pi.smul_apply, ha p hp t ht htp, smul_comm]
+
+theorem IsHomogeneous.neg {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ) :
+    (-a).IsHomogeneous μ := fun p hp t ht htp => by
+  rw [coefficient_neg, Pi.neg_apply, Pi.neg_apply, ha p hp t ht htp, smul_neg]
+
+theorem IsHomogeneous.sum {ι : Type*} {s : Finset ι} {f : ι → ParameterSymbol n Λ V W m}
+    (hf : ∀ i ∈ s, (f i).IsHomogeneous μ) : (∑ i ∈ s, f i).IsHomogeneous μ :=
+  fun p hp t ht htp => by
+    simp only [coefficient_sum, Finset.sum_apply, Finset.smul_sum]
+    exact Finset.sum_congr rfl fun i hi => hf i hi p hp t ht htp
+
+theorem IsHomogeneous.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
+    (h : m ≤ m') : (inclusion h a).IsHomogeneous μ :=
+  ha
+
+/-- The pointwise composition of homogeneous symbols of degrees `μ'` and `μ` is homogeneous of
+degree `μ' + μ`. -/
+theorem IsHomogeneous.comp {b : ParameterSymbol n Λ W U m'} {a : ParameterSymbol n Λ V W m}
+    (hb : b.IsHomogeneous μ') (ha : a.IsHomogeneous μ) : (b.comp a).IsHomogeneous (μ' + μ) :=
+  fun p hp t ht htp => by
+    simp only [coefficient_comp, hb p hp t ht htp, ha p hp t ht htp,
+      ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, smul_smul,
+      Real.rpow_add ht, Complex.ofReal_mul, mul_comm]
+
+/-- The pointwise inverse of a parameter-elliptic symbol homogeneous of degree `μ` is homogeneous
+of degree `-μ`. -/
+theorem IsHomogeneous.inverse [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsHomogeneous μ) (he : a.IsElliptic) : (a.inverse he).IsHomogeneous (-μ) :=
+  fun p hp t ht htp => by
+    simp only [coefficient_inverse, ha p hp t ht htp, ContinuousLinearMap.inverse_smul,
+      Real.rpow_neg ht.le, Complex.ofReal_inv]
+
+/-- Differentiating the homogeneity relation: the derivative at the dilated point along the dilated
+direction is `t ^ μ` times the derivative. -/
+private theorem IsHomogeneous.fderiv_apply {a : ParameterSymbol n Λ V W m}
+    (ha : a.IsHomogeneous μ) {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ)
+    {t : ℝ} (ht : 0 < t) (htp : (parameterDilation n t p).2 ∈ Λ)
+    (d : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    fderiv ℝ a.coefficient (parameterDilation n t p) (parameterDilation n t d) =
+      ((t ^ μ : ℝ) : ℂ) • fderiv ℝ a.coefficient p d := by
+  set D := parameterDilation n t
+  have hD : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × ℂ => (D q).2 :=
+    continuous_snd.comp D.continuous
+  have heq : (a.coefficient ∘ D) =ᶠ[𝓝 p] fun q => ((t ^ μ : ℝ) : ℂ) • a.coefficient q := by
+    filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp,
+      (Λ.isOpen.preimage hD).mem_nhds htp] with q hq hDq
+    exact ha q hq t ht hDq
+  have hchain := ((a.differentiableAt_coefficient htp).hasFDerivAt.comp p D.hasFDerivAt).fderiv
+  rw [← ContinuousLinearMap.comp_apply, ← hchain, heq.fderiv_eq,
+    fderiv_fun_const_smul (a.differentiableAt_coefficient hp)]
+  rfl
+
+/-- A position derivative of a homogeneous symbol is homogeneous of the same degree. -/
+theorem IsHomogeneous.spatialDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
+    (j : Fin n) : (spatialDeriv j a).IsHomogeneous μ := fun p hp t ht htp => by
+  rw [coefficient_spatialDeriv j a hp, coefficient_spatialDeriv j a htp,
+    ← ha.fderiv_apply hp ht htp]
+  simp
+
+/-- A frequency derivative of a homogeneous symbol of degree `μ` is homogeneous of degree
+`μ - 1`. -/
+theorem IsHomogeneous.frequencyDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsHomogeneous μ)
+    (j : Fin n) : (frequencyDeriv j a).IsHomogeneous (μ - 1) := fun p hp t ht htp => by
+  have h := ha.fderiv_apply hp ht htp ((0, EuclideanSpace.single j 1), 0)
+  have hd : parameterDilation n t ((0, EuclideanSpace.single j 1), 0) =
+      t • (((0, EuclideanSpace.single j 1), 0) : (CoordinateSpace n × CoordinateSpace n) × ℂ) := by
+    simp
+  rw [hd, ContinuousLinearMap.map_smul_of_tower, ← Complex.coe_smul] at h
+  rw [coefficient_frequencyDeriv j a hp, coefficient_frequencyDeriv j a htp]
+  refine smul_right_injective _ (Complex.ofReal_ne_zero.2 ht.ne') ?_
+  simp only
+  rw [h, smul_smul, ← Complex.ofReal_mul, Real.rpow_sub_one ht.ne', mul_div_cancel₀ _ ht.ne']
+
+end Homogeneous
 
 /-! ### The shifted Laplacian and its resolvent -/
 
@@ -783,6 +1037,32 @@ theorem coefficient_inverse_shiftedLaplacian [CompleteSpace V] {s : ℝ}
       (((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z)⁻¹ • ContinuousLinearMap.id ℂ V := by
   rw [coefficient_inverse, coefficient_shiftedLaplacian s x ξ hz,
     ContinuousLinearMap.inverse_smul, ContinuousLinearMap.inverse_id]
+
+/-- The symbol `‖ξ‖² - z` of `-Δ - z` is homogeneous of degree `2` under `(ξ, z) ↦ (t ξ, t² z)`;
+hence so is its inverse, the principal resolvent symbol `(‖ξ‖² - z)⁻¹`, of degree `-2`. -/
+theorem isHomogeneous_shiftedLaplacian_zero :
+    (shiftedLaplacian V 0 : ParameterSymbol n Λ V V 2).IsHomogeneous 2 := by
+  refine isHomogeneous_iff.2 fun x ξ z hz t ht htz => ?_
+  rw [coefficient_shiftedLaplacian 0 x _ htz, coefficient_shiftedLaplacian 0 x ξ hz, smul_smul]
+  congr 1
+  simp only [zero_add, norm_smul, Real.norm_eq_abs, abs_of_pos ht, mul_pow, Real.rpow_two,
+    Complex.real_smul]
+  push_cast
+  ring
+
+/-- The symbol of `s - Δ - z` does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_shiftedLaplacian (j : Fin n) (s : ℝ) :
+    spatialDeriv j (shiftedLaplacian V s : ParameterSymbol n Λ V V 2) = 0 :=
+  ext_of_mem fun x ξ z hz => by
+    rw [coefficient_spatialDeriv j _ hz, coefficient_zero, Pi.zero_apply,
+      ← DifferentiableAt.lineDeriv_eq_fderiv (differentiableAt_coefficient _ hz), lineDeriv]
+    have hconst : (fun t : ℝ => (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).coefficient
+        (((x, ξ), z) + t • ((EuclideanSpace.single j 1, 0), 0))) =
+          fun _ => (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).coefficient ((x, ξ), z) := by
+      funext t
+      simp [shiftedLaplacian]
+    rw [hconst, deriv_const]
 
 end ParameterSymbol
 
