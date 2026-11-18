@@ -241,9 +241,7 @@ private theorem capForm_eventuallyEq_tip :
   have hr2 : ‖y‖ ^ 2 ≠ 0 := by positivity
   -- With `r = ‖y‖`, `f r = 2 sin (r / 2)` and `cos r = 1 - 2 sin² (r / 2)`.
   have hcos : cos ‖y‖ = 1 - 2 * sin (‖y‖ / 2) ^ 2 := by
-    have h2 := cos_two_mul (‖y‖ / 2)
-    rw [show 2 * (‖y‖ / 2) = ‖y‖ by ring] at h2
-    nlinarith [sin_sq_add_cos_sq (‖y‖ / 2)]
+    rw [← cos_two_mul_eq_one_sub, mul_div_cancel₀ _ two_ne_zero]
   have hD₁ : dslope cosSqrt 0 (‖y‖ ^ 2) = (cos ‖y‖ - 1) / ‖y‖ ^ 2 := by
     rw [dslope_of_ne _ hr2, slope_def_field, cosSqrt_sq, cosSqrt_zero, sub_zero]
   have hD₂ : dslope (dslope cosSqrt 0) 0 (‖y‖ ^ 2) =
@@ -406,16 +404,7 @@ theorem metric_inner_mfderiv_standardCapPolar (p : standardCapRadialDomain × sp
     ContMDiffRiemannianMetric.ofLE_inner, ContMDiffRiemannianMetric.ofLE_inner,
     sphereRoundMetric_inner]
   simp only [standardCapPolar_apply, inner_add_left, inner_add_right, real_inner_smul_left,
-    real_inner_smul_right, hu, hξ, hξ']
-  -- The radial factor carries the Euclidean metric of `ℝ`, read through the identifications of
-  -- the tangent spaces of the open half-line with `ℝ`.
-  have hrad (a b : TangentSpace 𝓘(ℝ) p.1) :
-      (riemannianMetricVectorSpace ℝ).inner (p.1 : ℝ) (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1 a)
-          (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1 b) =
-        NormedSpace.fromTangentSpace (p.1 : ℝ) (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1 b) *
-          NormedSpace.fromTangentSpace (p.1 : ℝ) (tangentSpaceOpenEquiv (I := 𝓘(ℝ)) p.1 a) :=
-    RCLike.inner_apply _ _
-  rw [hrad]
+    real_inner_smul_right, hu, hξ, hξ', riemannianMetricVectorSpace_inner, Real.inner_apply]
   field_simp
   ring
 
@@ -456,6 +445,15 @@ theorem scalarCurvature_metric_standardCapPolar {n : ℕ} [Fact (finrank ℝ V =
     ContMDiffRiemannianMetric.scalarCurvature_pullback_of_isInvertible _ contMDiff_standardCapPolar
       isInvertible_mfderiv_standardCapPolar]
 
+/-- Away from the tip, the scalar curvature of the standard cap at `x` is the scalar curvature of
+the punctured standard cap at a point of `(0, ∞) × Sⁿ` of radius `‖x‖`. -/
+theorem exists_scalarCurvature_metric_eq_puncturedMetric {n : ℕ} [Fact (finrank ℝ V = n + 1)]
+    {x : V} (hx : x ≠ 0) :
+    ∃ p : standardCapRadialDomain × sphere (0 : V) 1, (p.1 : ℝ) = ‖x‖ ∧
+      (hf.metric V).scalarCurvature x = (hf.puncturedMetric (n := n) V).scalarCurvature p := by
+  obtain ⟨p, rfl⟩ : x ∈ range (standardCapPolar V) := by rwa [range_standardCapPolar]
+  exact ⟨p, (norm_standardCapPolar p).symm, hf.scalarCurvature_metric_standardCapPolar p⟩
+
 /-- A value taken by the scalar curvature at every point of a neighbourhood of the tip, except
 possibly the tip itself, is also taken at the tip, by continuity. -/
 private theorem scalarCurvature_metric_zero_eq [Nontrivial V] {c : ℝ} {s : Set V} (hs : s ∈ 𝓝 0)
@@ -475,9 +473,8 @@ theorem scalarCurvature_metric_nonneg (x : V) : 0 ≤ (hf.metric V).scalarCurvat
   · exact ((hf.metric V).scalarCurvature_eq_zero_of_subsingleton x).ge
   obtain ⟨n, _⟩ := exists_fact_finrank_eq_succ (V := V)
   refine (hf.metric V).le_scalarCurvature_of_dense (dense_compl_singleton 0) (fun y hy ↦ ?_) x
-  obtain ⟨p, rfl⟩ : y ∈ range (standardCapPolar V) := by rwa [range_standardCapPolar]
-  rw [hf.scalarCurvature_metric_standardCapPolar (n := n)]
-  exact hf.scalarCurvature_puncturedMetric_nonneg p
+  obtain ⟨p, -, hp⟩ := hf.exists_scalarCurvature_metric_eq_puncturedMetric (n := n) hy
+  exact hp ▸ hf.scalarCurvature_puncturedMetric_nonneg p
 
 /-- **The cylindrical end of the standard cap**: far from the tip the scalar curvature of the
 standard cap on a space of dimension `d` is `(d - 1)(d - 2) / 2`, the scalar curvature of the round
@@ -490,11 +487,9 @@ theorem exists_scalarCurvature_metric_eq_cylinder :
   obtain ⟨n, hn⟩ := exists_fact_finrank_eq_succ (V := V)
   obtain ⟨R, hR, h⟩ := hf.exists_scalarCurvature_puncturedMetric_eq_cylinder (V := V) (n := n)
   refine ⟨R, hR, fun x hx ↦ ?_⟩
-  obtain ⟨p, rfl⟩ : x ∈ range (standardCapPolar V) := by
-    rw [range_standardCapPolar]
-    exact norm_pos_iff.1 (hR.trans_le hx)
-  rw [norm_standardCapPolar] at hx
-  rw [hf.scalarCurvature_metric_standardCapPolar (n := n), h p hx, hn.out]
+  obtain ⟨p, hp, hpx⟩ :=
+    hf.exists_scalarCurvature_metric_eq_puncturedMetric (n := n) (norm_pos_iff.1 (hR.trans_le hx))
+  rw [hpx, h p (hp ▸ hx), hn.out]
   push_cast
   ring
 
@@ -512,9 +507,8 @@ theorem exists_scalarCurvature_metric_eq_round :
   obtain ⟨r₀, hr₀, h⟩ := hf.exists_scalarCurvature_puncturedMetric_eq_round (V := V) (n := n)
   have hne (x : V) (hx : ‖x‖ < r₀) (hx0 : x ≠ 0) :
       (hf.metric V).scalarCurvature x = finrank ℝ V * (finrank ℝ V - 1) / 4 := by
-    obtain ⟨p, rfl⟩ : x ∈ range (standardCapPolar V) := by rwa [range_standardCapPolar]
-    rw [norm_standardCapPolar] at hx
-    rw [hf.scalarCurvature_metric_standardCapPolar (n := n), h p hx, hn.out]
+    obtain ⟨p, hp, hpx⟩ := hf.exists_scalarCurvature_metric_eq_puncturedMetric (n := n) hx0
+    rw [hpx, h p (hp ▸ hx), hn.out]
     push_cast
     ring
   refine ⟨r₀, hr₀, fun x hx ↦ ?_⟩

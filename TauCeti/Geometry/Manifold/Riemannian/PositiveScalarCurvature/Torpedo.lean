@@ -304,12 +304,7 @@ theorem torpedoMetric_inner (y : F) (v w : TangentSpace 𝓘(ℝ, F) y) :
     (torpedoMetric F).inner y v w = exp (2 * torpedoExponent ‖y‖) *
       ⟪NormedSpace.fromTangentSpace y v, NormedSpace.fromTangentSpace y w⟫_ℝ := by
   rw [torpedoMetric, ContMDiffRiemannianMetric.rescale_inner,
-    ContMDiffRiemannianMetric.ofLE_inner]
-  -- The standard metric `riemannianMetricVectorSpace` has `innerSL ℝ` as its inner product on
-  -- each fibre, and `TangentSpace` is a type synonym for `F` whose canonical identification
-  -- `fromTangentSpace` is the identity, so both sides agree definitionally; this is the same
-  -- transport as in `TauCeti.Manifold.inner_tangentSpace_vectorSpace`.
-  rfl
+    ContMDiffRiemannianMetric.ofLE_inner, riemannianMetricVectorSpace_inner]
 
 /-- On the ball of radius `e⁻²` the torpedo metric is `(2 R / (1 + ‖y‖²))² ⟪v, w⟫`, the round
 metric of the sphere of radius `R = torpedoCapRadius` in stereographic coordinates. -/
