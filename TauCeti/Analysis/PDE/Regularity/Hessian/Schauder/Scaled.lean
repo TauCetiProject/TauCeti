@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Holder.Interpolation
+import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.LowerOrder
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecificLimits.Absorption
@@ -286,7 +287,14 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half_of_lowerO
     u N₀ N₁ N₂ K V hu hN₀ hN₁ hN₂ hV hK
   -- `u` and `Du` are `α`-Hölder on the ball, with constants `N₁ (2 δ)^{1-α}` and
   -- `N₂ (2 δ)^{1-α}`.
-  obtain ⟨hHu, hHDu, -⟩ := holderOnWith_ball_of_norm_le hα1.le hu hN₁ hN₂
+  have hcda (x : E) (hx : x ∈ ball x₀ δ) : ContDiffAt ℝ 2 u x :=
+    hu.contDiffAt (isOpen_ball.mem_nhds hx)
+  have hHu := holderOnWith_ball_of_norm_fderiv_le hα1.le
+    (fun x hx => ((hcda x hx).differentiableAt (by norm_num)).differentiableWithinAt) hN₁
+  have hHDu := holderOnWith_ball_of_norm_fderiv_le hα1.le
+    (fun x hx => (((hcda x hx).fderiv_right (m := 1) le_rfl).differentiableAt
+      (by norm_num)).differentiableWithinAt)
+    fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN₂ x hx
   rw [show (2 * (δ : ℝ)).toNNReal = 2 * δ by
     rw [← NNReal.coe_ofNat, ← NNReal.coe_mul, Real.toNNReal_coe]] at hHu hHDu
   -- The principal part `L u - (b · ∇u + c u)` is `α`-Hölder on the ball.
