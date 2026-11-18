@@ -85,24 +85,6 @@ namespace TauCeti
 
 variable {R : Type*} [CommRing R] [StarRing R] {ι : Type*} [LinearOrder ι] {n : ℕ}
 
-/-- For self-adjoint `s`, the coefficients of the signed checked R-matrix in the word basis are
-self-adjoint. -/
-theorem isSelfAdjoint_signedCheckedR_single_apply (pos : ι → Prop) [DecidablePred pos] {s : R}
-    (hs : IsSelfAdjoint s)
-    (j k : Fin n) (w u : Fin n → ι) :
-    IsSelfAdjoint (signedCheckedR pos s j k (single w 1) u) := by
-  have hQ : IsSelfAdjoint (s ^ 2) := hs.pow 2
-  rw [signedCheckedR_apply]
-  simp only [Finsupp.single_apply]
-  split_ifs <;> simp only [mul_one, mul_zero, sub_zero, zero_sub, neg_zero] <;>
-    first
-    | exact .zero R
-    | exact hQ
-    | exact (IsSelfAdjoint.one R).neg
-    | exact hQ.sub (.one R)
-    | exact hs.neg
-    | exact (hQ.sub (.one R)).sub hs
-
 namespace TypeAHeckeAlgebra
 
 variable (pos : ι → Prop) [DecidablePred pos] (q : Rˣ) [hq : Fact (IsSelfAdjoint (q : R))]
