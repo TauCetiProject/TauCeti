@@ -103,6 +103,13 @@ theorem finrank_negativeWeight_fun :
   rw [Module.finrank_fintype_fun_eq_card, ← φ.ncard_weight_neg, Set.ncard_eq_toFinset_card',
     Fintype.card_subtype, Set.toFinset_ofPred]
 
+/-- The number of orientation coordinates is the dimension of the space of coordinates of negative
+weight, so that its orientations are opposite to each other. -/
+theorem card_fin_manifoldMorseIndex_eq_finrank :
+    Fintype.card (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) =
+      Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) := by
+  rw [Fintype.card_fin, φ.finrank_negativeWeight_fun]
+
 /-- The vector of the model whose coordinates in the Morse chart `φ` are `c` in the directions of
 negative weight and `0` in the directions of positive weight. -/
 noncomputable def negativeExtend : ({i // φ.weight i < 0} → ℝ) →ₗ[ℝ] E :=
@@ -134,6 +141,15 @@ theorem negativeCoord_negativeExtend (c : {i // φ.weight i < 0} → ℝ) :
 theorem injective_negativeExtend : Injective φ.negativeExtend :=
   LeftInverse.injective φ.negativeCoord_negativeExtend
 
+/-- A point of the chart whose coordinates are `c ≠ 0` in the directions of negative weight and `0`
+elsewhere is not the centre of the chart. -/
+theorem toChart_symm_negativeExtend_ne {c : {i // φ.weight i < 0} → ℝ} (hc : c ≠ 0)
+    (hT : φ.negativeExtend c ∈ φ.toChart.target) : φ.toChart.symm (φ.negativeExtend c) ≠ x := by
+  intro h
+  have h0 : φ.negativeExtend c = 0 := by
+    rw [← φ.toChart.right_inv hT, h, φ.apply_self]
+  exact hc (φ.injective_negativeExtend (h0.trans (map_zero _).symm))
+
 /-- A vector whose coordinates of positive weight vanish is recovered from its coordinates of
 negative weight. -/
 theorem negativeExtend_negativeCoord {v : E}
@@ -143,10 +159,10 @@ theorem negativeExtend_negativeCoord {v : E}
   · exact (φ.coord_negativeExtend_of_weight_neg _ ⟨i, hi⟩).trans (negativeCoord_apply _ _ _)
   · rw [φ.coord_negativeExtend_of_not_weight_neg _ hi, hv i hi]
 
-/-- The linear flow multiplies `φ.negativeExtend c` by `e^{-s}` at time `-s`. -/
-theorem linearFlow_neg_coord_negativeExtend (s : ℝ) (c : {i // φ.weight i < 0} → ℝ) :
-    φ.linearFlow (-s) (φ.coord (φ.negativeExtend c)) =
-      Real.exp (-s) • φ.coord (φ.negativeExtend c) := by
+/-- The linear flow multiplies `φ.negativeExtend c` by `e^{t}` at time `t`. -/
+theorem linearFlow_coord_negativeExtend (t : ℝ) (c : {i // φ.weight i < 0} → ℝ) :
+    φ.linearFlow t (φ.coord (φ.negativeExtend c)) =
+      Real.exp t • φ.coord (φ.negativeExtend c) := by
   funext i
   rw [Pi.smul_apply, smul_eq_mul]
   rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi

@@ -75,6 +75,22 @@ theorem mem_framedGaugeGroup (u : ℂ → Circle) :
     u ∈ framedGaugeGroup ↔
       ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) := Iff.rfl
 
+/-- A gauge of the smooth framed group composed with a translation is again in the smooth
+framed group. -/
+theorem comp_add_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) (a : ℂ) :
+    (fun w ↦ u (w + a)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_id.add contDiff_const),
+    ht.comp (Homeomorph.addRight a).map_cocompact.le⟩
+
+/-- A gauge of the smooth framed group composed with multiplication by a nonzero constant, such
+as a rotation, is again in the smooth framed group. -/
+theorem comp_mul_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) {c : ℂ}
+    (hc : c ≠ 0) : (fun w ↦ u (c * w)) ∈ framedGaugeGroup := by
+  obtain ⟨hs, ht⟩ := (mem_framedGaugeGroup u).1 hu
+  exact (mem_framedGaugeGroup _).2 ⟨hs.comp (contDiff_const.mul contDiff_id),
+    ht.comp (Filter.tendsto_cocompact_mul_left₀ hc)⟩
+
 /-- The real one-form `Im(u⁻¹ du)`. Multiplication by `i` recovers the imaginary connection
 increment; for a circle-valued map the inverse is complex conjugation. -/
 def gaugeForm (u : ℂ → Circle) (z : ℂ) : ℂ →L[ℝ] ℝ :=

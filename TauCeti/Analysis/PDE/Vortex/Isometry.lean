@@ -406,10 +406,8 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
     gaugeTransform (translationGauge m a) (translateField a x) ∈ framedFieldSpace f m k := by
   rw [mem_framedFieldSpace] at hx ⊢
   have hg := ((mem_framedGaugeGroup _).1 (translationGauge_mem_framedGaugeGroup m a)).1
-  have htr : ContDiff ℝ ∞ (translateField a (referenceField f m)) := by
-    rw [show translateField a (referenceField f m) = fun z ↦ referenceField f m (z + a) from
-      funext fun z ↦ translateField_apply a _ z]
-    exact (contDiff_referenceField f m).comp (contDiff_id.add contDiff_const)
+  have htr : ContDiff ℝ ∞ (translateField a (referenceField f m)) :=
+    contDiff_translateField a (contDiff_referenceField f m)
   have hD : gaugeTransform (translationGauge m a) (translateField a (referenceField f m)) -
       referenceField f m ∈ sobolevFields k := mem_sobolevFields_of_hasCompactSupport
     ((contDiff_gaugeTransform (by simpa using hg) htr).sub (contDiff_referenceField f m))
