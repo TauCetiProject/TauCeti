@@ -137,12 +137,14 @@ theorem _root_.ContinuousLinearMap.mgradient_ne_zero {F : Type*} [NormedAddCommG
   have hd := mgradient_eq_zero_iff.mp hz
   have he := congrArg
     (fun A : TangentSpace 𝓘(ℝ, F) x →L[ℝ] ℝ ↦
-      A ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v)) hd
+      A ((NormedSpace.fromTangentSpace x).symm v)) hd
   rw [zero_apply] at he
   have hval : mvfderiv 𝓘(ℝ, F) L x
-      ((tangentSpaceCastModel 𝓘(ℝ, F) x).symm v) = L v := by
+      ((NormedSpace.fromTangentSpace x).symm v) = L v := by
     rw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_eq_fderiv, L.hasFDerivAt.fderiv]
-    rfl
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+    exact NormedSpace.fromTangentSpace_symm_apply (L x) (L v)
   exact hval.symm.trans he
 
 /-- The actual normal-coordinate differential has nonzero native gradient in every
