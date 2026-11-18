@@ -13,6 +13,7 @@ import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.Analysis.Complex.Pompeiu.Weak
 import TauCeti.MeasureTheory.Function.RankOne
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # The similarity principle for classical solutions of linear Cauchy–Riemann equations
@@ -42,17 +43,18 @@ coefficient depending on `ξ`: the rank-one map `D w = ‖ξ‖⁻² ⟪ξ, w⟫
 merely measurable, since it jumps at the zeros of `ξ`. Then the Cauchy integral equation
 `Ψ = 1 + T (½ Ψ D)`, for the Cauchy transform `T` inverting `bar∂ = (∂ₛ + i ∂ₜ)/2`, is solved on a
 small closed disc by the contraction mapping theorem
-(`TauCeti.exists_cauchyTransform_eq_of_memLp`, which allows any coefficient `D` that is `Lᵖ` on
-the disc, `p > 2`, with small norm there). Its solution `Ψ` is continuous, close to `1` and hence
-invertible, and has weak derivative `bar∂Ψ = ½ Ψ D`. The Leibniz rule for the
-Cauchy transform (`TauCeti.hasWeakConjWirtingerDerivOn_cauchyTransform_apply`) then gives
-`bar∂ (Ψ ξ) = Ψ (bar∂ξ + ½ D ξ) = Ψ (bar∂ξ + ½ C ξ) = 0` weakly, so `σ = Ψ ξ` is holomorphic by
-Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
+(`TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`, which allows any
+coefficient `D` that is `Lᵖ` on the disc, `p > 2`, with small norm there). Its solution `Ψ` is
+continuous, close to `1` and hence invertible, and has weak derivative `bar∂Ψ = ½ Ψ D`. The
+Leibniz rule for the Cauchy transform (`TauCeti.hasWeakConjWirtingerDerivOn_cauchyTransform_apply`)
+then gives `bar∂ (Ψ ξ) = Ψ (bar∂ξ + ½ D ξ) = Ψ (bar∂ξ + ½ C ξ) = 0` weakly, so `σ = Ψ ξ` is
+holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
 
 ## Main results
 
-* `TauCeti.exists_cauchyTransform_eq_of_memLp`: the Cauchy integral equation `g = ½ (1 + T g) D`
-  on a closed disc, for a coefficient `D` that is `Lᵖ` on the disc with small norm.
+* `TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`: the Cauchy integral
+  equation `g = ½ (1 + T g) D` on a closed disc, for a coefficient `D` that is `Lᵖ` on the disc
+  with small norm.
 * `TauCeti.exists_similarity_of_contDiffOn`: the local factorization `ξ = Φ σ` on a disc.
 * `TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`: the factorization in the form consumed by
   `TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation`.
@@ -176,8 +178,9 @@ private theorem norm_cauchyTransform_cauchySource_le {p q : ℝ≥0∞} [p.Holde
     _ = _ := by ring
 
 /-- At `p = ∞`, a coefficient bounded by `M` on a closed disc of radius `r` with `2 r M ≤ 1/4`
-satisfies the smallness condition of `TauCeti.exists_cauchyTransform_eq_of_memLp`, since the
-reciprocal kernel truncated at `2r` has `L¹` norm `4πr`. -/
+satisfies the smallness condition of
+`TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`, since the reciprocal kernel
+truncated at `2r` has `L¹` norm `4πr`. -/
 private theorem mul_eLpNorm_top_le {D : ℂ → E →L[ℂ] E} {c : ℂ} {r M : ℝ} (hr : 0 ≤ r)
     (hM : 0 ≤ M) (hD : AEStronglyMeasurable D (volume.restrict (closedBall c r)))
     (hDM : ∀ᵐ z ∂volume.restrict (closedBall c r), ‖D z‖ ≤ M) (hrM : 2 * r * M ≤ 4⁻¹) :
@@ -196,11 +199,9 @@ private theorem mul_eLpNorm_top_le {D : ℂ → E →L[ℂ] E} {c : ℂ} {r M : 
 conjugate exponent `q < 2`, and let `D` be a field of complex-linear maps that is `Lᵖ` on a closed
 disc of radius `r`, small in the sense that `π⁻¹ ‖K‖_{L^q} ‖D‖_{Lᵖ} ≤ 1/2` for the reciprocal kernel
 `K` truncated at `2r`. Then there is `g ∈ Lᵖ`, vanishing off the disc, whose Cauchy transform is
-continuous and satisfies `g = ½ (1 + T g) D` on the disc, with `‖T g‖ < 1` there. So
-`Ψ = 1 + T g` is a continuous family of invertible maps on the disc solving `bar∂Ψ = ½ Ψ D`. It is
-the fixed point of the contraction `Ψ ↦ 1 + T (½ Ψ D)` of the continuous maps on the disc. -/
-theorem exists_cauchyTransform_eq_of_memLp [CompleteSpace E] {p q : ℝ≥0∞}
-    [p.HolderConjugate q] (hq : q < 2) {D : ℂ → E →L[ℂ] E} {c : ℂ} {r : ℝ}
+continuous and satisfies `g = ½ (1 + T g) D` on the disc, with `‖T g‖ < 1` there. -/
+theorem exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp [CompleteSpace E]
+    {p q : ℝ≥0∞} [p.HolderConjugate q] (hq : q < 2) {D : ℂ → E →L[ℂ] E} {c : ℂ} {r : ℝ}
     (hD : MemLp D p (volume.restrict (closedBall c r)))
     (hDs : Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (r + r)) q volume).toReal *
       (eLpNorm D p (volume.restrict (closedBall c r))).toReal ≤ 2⁻¹) :
@@ -324,9 +325,10 @@ private theorem exists_similarity_of_contDiffOn_of_innerProductSpace [FiniteDime
       ‖rankOneDivNormSq ℂ (C z (ξ z)) (ξ z)‖ ≤ M :=
     (ae_restrict_iff' measurableSet_closedBall).2 (ae_of_all _ fun z hz ↦
       ((C z).norm_rankOneDivNormSq_map_le _).trans ((hRΩ (hsub hz)).1.trans (le_max_left _ _)))
-  obtain ⟨g, hgp, hgs, hTg, hgeq, hTg1⟩ := exists_cauchyTransform_eq_of_memLp (p := ∞) (q := 1)
-    (by norm_num) (memLp_top_of_bound hDm M hDM)
-    (mul_eLpNorm_top_le hr.le hM hDm hDM (two_mul_min_mul_le (R := R / 2) hM))
+  obtain ⟨g, hgp, hgs, hTg, hgeq, hTg1⟩ :=
+    exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp (p := ∞) (q := 1) (by norm_num)
+      (memLp_top_of_bound hDm M hDM)
+      (mul_eLpNorm_top_le hr.le hM hDm hDM (two_mul_min_mul_le (R := R / 2) hM))
   have : IsFiniteMeasure (volume.restrict (closedBall z₀ r)) :=
     isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
   have hgi : IntegrableOn g (closedBall z₀ r) := (hgp.restrict (closedBall z₀ r)).integrable le_top
@@ -436,11 +438,10 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn (hΩ : IsOpen Ω) (hξ : Cont
   have := FiniteDimensional.completeSpace ℂ V
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ :=
     exists_similarity_of_contDiffOn hΩ hξ hCm hCb heq hz₀
-  obtain ⟨u, hu⟩ := hΦu z₀ (mem_ball_self hr)
-  -- restricting the scalars of the equivalence `Φ z₀` to `ℝ` keeps it invertible
-  refine .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
+  -- restricting the scalars of the unit `Φ z₀` to `ℝ` keeps it a unit
+  exact .of_eqOn_ball hr (Φ := fun z ↦ (Φ z).restrictScalars ℝ)
     ((ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℂ).continuous.comp_continuousOn hΦ)
-    (hu ▸ ⟨((ContinuousLinearEquiv.unitsEquiv ℂ V u).restrictScalars ℝ).toUnit, rfl⟩) hσ hξσ
+    (ContinuousLinearMap.isUnit_restrictScalars (hΦu z₀ (mem_ball_self hr))) hσ hξσ
 
 /-- **Unique continuation** for classical solutions. On a connected open set `Ω`, a `C¹` solution
 of `∂ₛξ + i ∂ₜξ + C ξ = 0`, with measurable, locally bounded real-linear coefficient `C`, that

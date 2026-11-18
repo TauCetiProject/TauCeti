@@ -12,12 +12,12 @@ public import Mathlib.Basic.Real.ConjExponents
 # Hölder exponent triples in `ℝ≥0∞`
 
 Elementary facts about Hölder exponents: the missing exponent `r` with `1/p + 1/r = 1/q` exists
-once `q ≤ p`, and the conjugate exponent of `p > 2` is below `2`.
+once `q ≤ p`, and the conjugate exponent of `p` is below `2` exactly when `p > 2`.
 
 ## Main declarations
 
 * `ENNReal.HolderTriple.of_le`: for `q ≤ p`, the triple `(p, (q⁻¹ - p⁻¹)⁻¹, q)`.
-* `ENNReal.conjExponent_lt_two`: `p.conjExponent < 2` for `2 < p`.
+* `ENNReal.conjExponent_lt_two_iff`: `p.conjExponent < 2` exactly when `2 < p`.
 -/
 
 public section
@@ -34,12 +34,10 @@ end ENNReal.HolderTriple
 
 namespace ENNReal
 
-/-- The conjugate exponent of `p > 2` is below `2`. -/
-theorem conjExponent_lt_two {p : ℝ≥0∞} (hp : 2 < p) : p.conjExponent < 2 := by
-  have h1 : 1 < p - 1 := by
-    rwa [lt_tsub_iff_left, one_add_one_eq_two]
-  rw [conjExponent]
-  calc 1 + (p - 1)⁻¹ < 1 + 1 := ENNReal.add_lt_add_left one_ne_top (ENNReal.inv_lt_one.2 h1)
-    _ = 2 := one_add_one_eq_two
+/-- The conjugate exponent of `p` is below `2` exactly when `p` is above `2`. -/
+@[simp]
+theorem conjExponent_lt_two_iff {p : ℝ≥0∞} : p.conjExponent < 2 ↔ 2 < p := by
+  rw [conjExponent, ← one_add_one_eq_two, ENNReal.add_lt_add_iff_left one_ne_top,
+    ENNReal.inv_lt_one, lt_tsub_iff_left]
 
 end ENNReal

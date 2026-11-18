@@ -293,8 +293,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimension
 /-- **The Cauchy transform of finite-dimensional `Lᵖ` data is locally `W^{1,p}`.** For
 `1 < p < ∞` and `f ∈ Lᵖ(ℂ)` supported in a closed disc, with values in a finite-dimensional complex
 normed space, `T f` belongs to the local Sobolev class `W^{1,p}_loc` on every subset of the plane.
-The data are read in a Euclidean model, where `TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`
-applies. -/
+Unlike `TauCeti.memWkpLoc_one_cauchyTransform_of_memLp`, the values need not lie in an inner
+product space. -/
 theorem memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) {f : ℂ → F} (hf : MemLp f p volume) {c : ℂ} {r : ℝ}
     (hs : support f ⊆ closedBall c r) (U : Set ℂ) : MemWkpLoc p U 1 (cauchyTransform f) := by
