@@ -18,8 +18,8 @@ Let `P : D_t → (Λ →ₗ[ℤ] E)` be a `C^n` family of full lattices over the
 `z ↦ z ^ m` from the disc `D_z` of radius `r`. Fix `l : Λ` and suppose that the normalized pure
 translation action `TauCeti.logTranslationMulAction` of the `m`-th roots of unity on `X` is free,
 so that the cyclic quotient `Q = X / C_m` carries its quotient atlas and is a `C^n` manifold
-(`TauCeti.isManifold_torusFamilyAffineQuotient`). Freeness is a condition on the central torus
-only: it holds exactly when the class of `l` in `Λ ⧸ mΛ` has exact order `m`
+(`TauCeti.isManifold_torusFamilyAffineQuotient`). When `0 < r`, freeness is a condition on the
+central torus only: it holds exactly when the class of `l` in `Λ ⧸ mΛ` has exact order `m`
 (`TauCeti.isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_mk_eq`).
 
 The punctured parts `Q* = {t ≠ 0}` of `Q` and `Y* = {t ≠ 0}` of `Y` are open subsets, and carry
