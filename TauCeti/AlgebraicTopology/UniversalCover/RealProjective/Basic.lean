@@ -37,6 +37,8 @@ provided by `TauCeti.Analysis.Normed.Module.Ball.IntUnitsAction`.
 * `TauCeti.RealProjectiveSpace.isQuotientCoveringMap_mk`: the unit-sphere quotient is a quotient
   covering map with group `ℤˣ`.
 * `TauCeti.RealProjectiveSpace.isCoveringMap_mk`: the underlying covering-map statement.
+* `TauCeti.RealProjectiveSpace.eq_or_eq_neg_of_mk_comp_eq`: two continuous lifts to the sphere of
+  the same map from a preconnected space are equal or antipodal.
 * `TauCeti.RealProjectiveSpace.instUniqueZero`: `RP⁰` has exactly one point.
 * `TauCeti.RealProjectiveSpace.instPathConnectedSpace`: `RPⁿ` is path-connected for every `n`.
 * `TauCeti.RealProjectiveSpace.instT2Space`: `RPⁿ` is Hausdorff.
@@ -239,6 +241,21 @@ instance instPathConnectedSpace :
 /-- The unit-sphere projection onto real projective space is a covering map. -/
 theorem isCoveringMap_mk : IsCoveringMap (mk n) :=
   (isQuotientCoveringMap_mk n).isCoveringMap
+
+variable {n} in
+/-- **Lifts to the sphere are unique up to the antipode.** Two continuous maps from a preconnected
+space to the unit sphere with the same image in real projective space are equal or antipodal. -/
+theorem eq_or_eq_neg_of_mk_comp_eq {A : Type*} [TopologicalSpace A] [PreconnectedSpace A]
+    {F G : A → sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1} (hF : Continuous F)
+    (hG : Continuous G) (h : mk n ∘ F = mk n ∘ G) : G = F ∨ G = -F := by
+  rcases isEmpty_or_nonempty A with hA | ⟨⟨a⟩⟩
+  · exact .inl (Subsingleton.elim _ _)
+  rcases (mk_eq_mk_iff n _ _).1 (congrFun h a) with ha | ha
+  · exact .inl ((isCoveringMap_mk n).eq_of_comp_eq hF hG h a ha).symm
+  refine .inr ((isCoveringMap_mk n).eq_of_comp_eq hG hF.neg ?_ a (by simp [ha]))
+  funext a
+  simp only [Function.comp_apply, Pi.neg_apply, mk_neg]
+  exact (congrFun h a).symm
 
 /-- The projection from the unit sphere onto real projective space is open. -/
 theorem isOpenMap_mk : IsOpenMap (mk n) :=
