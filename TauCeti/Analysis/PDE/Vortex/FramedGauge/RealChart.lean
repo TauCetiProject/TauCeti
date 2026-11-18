@@ -341,9 +341,9 @@ theorem hasFDerivAt_realSobolevEquation (hk : 2 ≤ k)
   rw [← realSobolevEquation_eq_comp hk] at hD
   convert hD using 1
   ext v i : 2
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, realPartPi_apply,
-    ContinuousLinearMap.coe_restrictScalars', coordInclusion_apply, coordInclusion_apply,
-    ← coe_realSobolevLinearizedEquation_apply hk, realPartCLM_coe]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    realPartPi_apply, coordInclusion_apply]
+  rw [← coe_realSobolevLinearizedEquation_apply hk, realPartCLM_coe]
 
 /-- **The zeros of the real vortex equation map are the vortices.** For `k ≥ 2`, a continuous
 field `x` of `A_m^(k+1)` solves the vortex equation exactly when its real coordinates are a zero

@@ -206,6 +206,20 @@ private theorem coeFn_inclusionLp_conjAux (F : H^{s}(E)) :
   rw [conjAux, ← toLp_inclusion, toLp_inclusion_toBesselPotentialSpace h _ rfl, toLp_inclusion]
   exact Lp.coeFn_star _
 
+variable (h) in
+/-- Two elements of `H^s(E)` with a.e. equal `L²` functions are equal. -/
+private theorem ext_of_ae_eq_inclusionLp {F G : H^{s}(E)}
+    (hFG : inclusionLp h F =ᵐ[volume] inclusionLp h G) : F = G :=
+  inclusionLp_injective h (Lp.ext hFG)
+
+private theorem conjAux_smul (c : ℂ) (F : H^{s}(E)) :
+    conjAux h (c • F) = conj c • conjAux h F :=
+  ext_of_ae_eq_inclusionLp h <| by
+    filter_upwards [coeFn_inclusionLp_conjAux (h := h) (c • F),
+      coeFn_inclusionLp_conjAux (h := h) F, Lp.coeFn_smul c (inclusionLp h F),
+      Lp.coeFn_smul (conj c) (inclusionLp h (conjAux h F))] with z h₁ h₂ h₃ h₄
+    simp only [(inclusionLp h).map_smul, h₁, h₂, h₃, h₄, Pi.smul_apply, smul_eq_mul, map_mul]
+
 private theorem norm_conjAux (F : H^{s}(E)) : ‖conjAux h F‖ = ‖F‖ :=
   (MemSobolev.norm_toBesselPotentialSpace_of_ae_eq_conj (memSobolev_toLp_inclusion h F)
     (Lp.coeFn_star _) _).trans
@@ -218,19 +232,14 @@ conjugate of the `L²` function of `F` (`coeFn_inclusionLp_conjCLM`). It is a re
 def conjCLM : H^{s}(E) →L[ℝ] H^{s}(E) :=
   LinearMap.mkContinuous
     { toFun := conjAux h
-      map_add' F G := inclusionLp_injective h <| Lp.ext <| by
+      map_add' F G := ext_of_ae_eq_inclusionLp h <| by
         filter_upwards [coeFn_inclusionLp_conjAux (h := h) (F + G),
           coeFn_inclusionLp_conjAux (h := h) F, coeFn_inclusionLp_conjAux (h := h) G,
           Lp.coeFn_add (inclusionLp h (conjAux h F)) (inclusionLp h (conjAux h G)),
           Lp.coeFn_add (inclusionLp h F) (inclusionLp h G)] with z h₁ h₂ h₃ h₄ h₅
         simp only [map_add, h₁, h₂, h₃, h₄, h₅, Pi.add_apply]
-      map_smul' c F := inclusionLp_injective h <| Lp.ext <| by
-        rw [RingHom.id_apply, ← Complex.coe_smul, ← Complex.coe_smul]
-        filter_upwards [coeFn_inclusionLp_conjAux (h := h) ((c : ℂ) • F),
-          coeFn_inclusionLp_conjAux (h := h) F,
-          Lp.coeFn_smul (c : ℂ) (inclusionLp h (conjAux h F)),
-          Lp.coeFn_smul (c : ℂ) (inclusionLp h F)] with z h₁ h₂ h₃ h₄
-        simp only [map_smul, h₁, h₂, h₃, h₄, Pi.smul_apply, smul_eq_mul, map_mul,
+      map_smul' c F := by
+        rw [RingHom.id_apply, ← Complex.coe_smul, ← Complex.coe_smul, conjAux_smul,
           Complex.conj_ofReal] }
     1 fun F ↦ (norm_conjAux F).le.trans (one_mul _).symm.le
 
@@ -251,16 +260,12 @@ theorem isometry_conjCLM : Isometry (conjCLM E h) :=
 /-- Complex conjugation on `H^s(E)` is conjugate-linear over `ℂ`. -/
 @[simp]
 theorem conjCLM_smul (c : ℂ) (F : H^{s}(E)) : conjCLM E h (c • F) = conj c • conjCLM E h F :=
-  inclusionLp_injective h <| Lp.ext <| by
-    filter_upwards [coeFn_inclusionLp_conjCLM (h := h) (c • F),
-      coeFn_inclusionLp_conjCLM (h := h) F, Lp.coeFn_smul c (inclusionLp h F),
-      Lp.coeFn_smul (conj c) (inclusionLp h (conjCLM E h F))] with z h₁ h₂ h₃ h₄
-    simp only [(inclusionLp h).map_smul, h₁, h₂, h₃, h₄, Pi.smul_apply, smul_eq_mul, map_mul]
+  conjAux_smul (h := h) c F
 
 /-- Complex conjugation on `H^s(E)` is an involution. -/
 @[simp]
 theorem conjCLM_conjCLM (F : H^{s}(E)) : conjCLM E h (conjCLM E h F) = F :=
-  inclusionLp_injective h <| Lp.ext <| by
+  ext_of_ae_eq_inclusionLp h <| by
     filter_upwards [coeFn_inclusionLp_conjCLM (h := h) (conjCLM E h F),
       coeFn_inclusionLp_conjCLM (h := h) F] with z h₁ h₂
     rw [h₁, h₂, Complex.conj_conj]
@@ -268,7 +273,7 @@ theorem conjCLM_conjCLM (F : H^{s}(E)) : conjCLM E h (conjCLM E h F) = F :=
 /-- Complex conjugation fixes the real elements of `H^s(E)`. -/
 @[simp]
 theorem conjCLM_coe (F : realSubmodule E h) : conjCLM E h (F : H^{s}(E)) = F :=
-  inclusionLp_injective h <| Lp.ext <| by
+  ext_of_ae_eq_inclusionLp h <| by
     filter_upwards [coeFn_inclusionLp_conjCLM (h := h) (F : H^{s}(E)),
       (mem_realSubmodule_iff h).1 F.2] with z h₁ h₂
     rw [h₁, Complex.conj_eq_iff_im.2 h₂]
