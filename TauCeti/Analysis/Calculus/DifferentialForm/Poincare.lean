@@ -152,6 +152,7 @@ private theorem intervalIntegrable_integrand {x₀ x : E} {ω : E → E [⋀^Fin
       volume 0 1 := by
   have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) (segment ℝ x₀ x) := fun _ ht ↦
     lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht)
+  simp only [← ContinuousAlternatingMap.curryLeftFlipL_apply_apply (𝕜 := ℝ)]
   exact ((continuousOn_pow n).smul ((ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := F)
     (n := n) (x - x₀)).continuous.comp_continuousOn
       (hω.comp lineMap_continuous.continuousOn hmaps))).intervalIntegrable

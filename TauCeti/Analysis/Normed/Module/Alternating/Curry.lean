@@ -103,11 +103,8 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 
 /-- The interior product `f ↦ f.curryLeft x` of continuous alternating maps of `n + 1` vectors with
 a fixed vector `x`, as a continuous linear map depending linearly on `x`: the flip of
-`ContinuousAlternatingMap.curryLeftLI`.
-
-The body is exposed, like that of `curryLeftLI`, so that integrability and differentiability
-arguments in other modules can identify `curryLeftFlipL x f` with `f.curryLeft x` by unfolding. -/
-@[expose] noncomputable def curryLeftFlipL :
+`ContinuousAlternatingMap.curryLeftLI`. -/
+noncomputable def curryLeftFlipL :
     E →L[𝕜] (E [⋀^Fin (n + 1)]→L[𝕜] F) →L[𝕜] E [⋀^Fin n]→L[𝕜] F :=
   (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).toContinuousLinearMap.flip
 
