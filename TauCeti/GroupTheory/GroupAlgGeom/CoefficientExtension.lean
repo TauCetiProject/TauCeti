@@ -21,6 +21,8 @@ which `G_S` embeds, and the composite `G_S →* H_{f(S)} →* H ∗_G G_S` is th
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.SystemGroup.map`: the homomorphism `G_S →* H_T` induced by `f : G →* H`.
+  It is functorial: the identity of `G` induces the identity (`map_id`), and `g ∘ f` induces the
+  composite of the homomorphisms induced by `f` and `g` (`map_comp_map`, `map_map`).
 
 ## Main results
 
@@ -66,6 +68,39 @@ theorem map_comp_coeff (f : G →* H)
     (map f h).comp (coeff S) = (coeff T).comp f := by
   ext
   simp
+
+/-- Changing the coefficients along the identity of `G` induces the identity of `G_S`. -/
+@[simp]
+theorem map_id (h : Monoid.Coprod.map (.id G) (FreeGroup.map id) '' S ⊆ normalClosure S) :
+    map (.id G) h = .id (SystemGroup G S) := by
+  ext <;> simp
+
+/-- If `f(S)` is a consequence of `T` and `g(T)` is a consequence of `U`, then `(g ∘ f)(S)` is a
+consequence of `U`. -/
+theorem image_comp_subset_normalClosure {K : Type*} [Group K] {U : Set (GX K X)} {f : G →* H}
+    {g : H →* K} (hf : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T)
+    (hg : Monoid.Coprod.map g (FreeGroup.map id) '' T ⊆ normalClosure U) :
+    Monoid.Coprod.map (g.comp f) (FreeGroup.map id) '' S ⊆ normalClosure U := by
+  rintro _ ⟨s, hs, rfl⟩
+  simpa [Monoid.Coprod.map_map, FreeGroup.map_eq_lift, FreeGroup.lift_of_eq_id] using
+    congrArg (map g hg) ((QuotientGroup.eq_one_iff _).2 (hf ⟨s, hs, rfl⟩))
+
+/-- Changing the coefficients along `f` and then along `g` induces the same homomorphism
+`G_S →* K_U` as changing them along `g ∘ f`. -/
+@[simp]
+theorem map_comp_map {K : Type*} [Group K] {U : Set (GX K X)} (f : G →* H) (g : H →* K)
+    (hf : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T)
+    (hg : Monoid.Coprod.map g (FreeGroup.map id) '' T ⊆ normalClosure U) :
+    (map g hg).comp (map f hf) = map (g.comp f) (image_comp_subset_normalClosure hf hg) := by
+  ext <;> simp
+
+/-- Changing the coefficients along `f` and then along `g` is changing them along `g ∘ f`. -/
+@[simp]
+theorem map_map {K : Type*} [Group K] {U : Set (GX K X)} (f : G →* H) (g : H →* K)
+    (hf : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T)
+    (hg : Monoid.Coprod.map g (FreeGroup.map id) '' T ⊆ normalClosure U) (x : SystemGroup G S) :
+    map g hg (map f hf x) = map (g.comp f) (image_comp_subset_normalClosure hf hg) x :=
+  DFunLike.congr_fun (map_comp_map f g hf hg) x
 
 /-- **Change of coefficients.** Let `f : G →* H` be injective and `S` a system of equations over
 `G` such that `G` embeds in `G_S`. A word of `G[X]` whose image under `f` lies in the normal
