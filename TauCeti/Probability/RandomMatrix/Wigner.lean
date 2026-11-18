@@ -89,6 +89,12 @@ abbrev StrictUpperFin (n : ℕ) := {ij : Fin n × Fin n // ij.1.val < ij.2.val}
 def wignerUpperIndex {n : ℕ} (u : StrictUpperFin n) : StrictUpper :=
   ⟨(u.1.1.val, u.1.2.val), by exact_mod_cast u.2⟩
 
+/-- Reading the row and column labels of a finite upper coordinate in the infinite array. -/
+@[simp]
+theorem wignerUpperIndex_val {n : ℕ} (u : StrictUpperFin n) :
+    (wignerUpperIndex u).val = (u.val.1.val, u.val.2.val) :=
+  (rfl)
+
 /-- Coordinate labels for a finite Wigner matrix: upper-triangular entries and its diagonal. -/
 abbrev WignerCoordinateIndex (n : ℕ) := StrictUpperFin n ⊕ Fin n
 
