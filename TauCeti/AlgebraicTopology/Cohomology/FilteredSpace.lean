@@ -30,6 +30,13 @@ on `X (p - 1)`.
 * **First page.** The object at `(p, q)` on the first page is the relative singular cohomology
   `Hⁿ(X p, X (p - 1))` with `p + q = n`
   (`TauCeti.filteredSpaceCohomologySpectralSequenceFirstPageXIso`); it vanishes when `p + q < 0`.
+* **First differential.** The differential from `(p - 1, q)` to `(p, q)` on the first page is the
+  connecting map `Hⁿ(X (p - 1), X (p - 2)) ⟶ Hⁿ⁺¹(X p, X (p - 1))` of the triple
+  `(X p, X (p - 1), X (p - 2))` (`TauCeti.TopTriple.singularCohomologyδ`)
+  (`TauCeti.filteredSpaceCohomologySpectralSequence_first_page_d_eq`). This holds because the
+  sequence of graded pieces `F^{p+1}/F^{p+2} ⟶ F^p/F^{p+2} ⟶ F^p/F^{p+1}`, whose connecting map is
+  the first differential (`CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq`),
+  is the extended relative cochain sequence of that triple.
 * **Convergence.** The abutment in degree `n` is `Hⁿ(Y)`
   (`TauCeti.filteredSpaceCohomologyAbutmentIso`). When `X a = ∅` and `X b = Y`, the filtration is
   finite and the spectral sequence converges strongly: on late pages the object at `(p, q)` is the
@@ -41,9 +48,7 @@ Filtering the total space of a fibration by the preimages of the skeleta of the 
 cohomology Serre spectral sequence, with `E₁^{p,q} = H^{p+q}(Eₚ, Eₚ₋₁)`. Over an
 infinite-dimensional base that filtration is not finite in any degree. Its convergence, through
 the completeness of the cochain filtration
-(`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete`), is not treated here; neither is
-the identification of the first differential with the connecting map of the triple
-`(X (p + 1), X p, X (p - 1))` (`TauCeti.TopTriple.singularCohomologyδ`).
+(`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete`), is not treated here.
 
 This is the cohomological counterpart of `TauCeti.filteredSpaceSpectralSequence`
 (`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic`), whose construction it dualises.
@@ -444,9 +449,11 @@ theorem filteredSpaceCohomologySpectralSequence_first_page_d_eq (p q : ℤ) (n :
             (singularCochainFiltration_anti R k M (hX (by lia : r - 1 ≤ r)))) _).hom ≫
         (homologyMapIso (singularCochainFiltrationCokernelIso R k M
             (hX (by lia : r - 1 ≤ r))) _ ≪≫
-          extendHomologyIso _ ComplexShape.embeddingUpNat hm.symm).hom :=
-    (congrArg (_ ≫ ·) ((congrArg (· ≫ _) (homologyMap_comp _ _ _)).trans
-      (Category.assoc _ _ _))).trans (Category.assoc _ _ _).symm
+          extendHomologyIso _ ComplexShape.embeddingUpNat hm.symm).hom := by
+    rw [filteredSpaceCohomologySpectralSequenceFirstPageXIso, firstPageXIsoExtend,
+      Functor.mapIso_trans]
+    simp only [Iso.trans_hom, Category.assoc]
+    rfl
   have hd := (Iso.eq_comp_inv _).1
     ((CochainComplex.decreasingFiltrationSpectralSequence_first_page_d_eq _
       (antitone_singularCochainFiltration_sub_one R k M hX) (p - 1) p q (by lia)
