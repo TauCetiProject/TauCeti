@@ -175,19 +175,14 @@ theorem setLIntegral_floerEnergyDensity_Ici_eq_of_tendsto_hamiltonianAction
     Set.prod_mono (fun s h ↦ hb.trans_le h.1) le_rfl
   have hRU (n : ℕ) : Icc b (b + n) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi a ×ˢ univ :=
     (hRsub n).trans (Set.prod_mono le_rfl (subset_univ _))
-  have hEcont := ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2)
-    (isOpen_Ioi.prod isOpen_univ) (hu.of_le one_le_two) contDiffOn_const
-    (contDiff_uncurry_cylindrical hH).contDiffOn
   -- Exhaust the half-cylinder by the rectangles `[b, b + n] × [0, 1]`, on which the energy is the
   -- change of action.
-  refine setLIntegral_Ici_prod_eq_ofReal_of_tendsto (fun n ↦ ?_) hL
-  rw [← ofReal_integral_eq_lintegral_ofReal
-      ((hEcont.mono (hRU n)).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-      ((ae_restrict_iff' (measurableSet_Icc.prod measurableSet_Icc)).2 (Eventually.of_forall
-        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z (hRsub n hz)) (hfloer z (hRsub n hz)))),
-    ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH (isOpen_Ioi.prod isOpen_univ) hu
-      (le_add_of_nonneg_right n.cast_nonneg) (hRU n)
-      fun s h ↦ by simpa using hper s (hb.trans_le h.1) 0]
+  exact setLIntegral_Ici_prod_eq_ofReal_of_tendsto (fun n ↦
+    ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (fun z hz ↦ hJ z (hRsub n hz))
+      hH (isOpen_Ioi.prod isOpen_univ) hu (le_add_of_nonneg_right n.cast_nonneg) (hRU n)
+      (fun s h ↦ by simpa using hper s (hb.trans_le h.1) 0) fun z hz ↦ by
+        simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1
+          (hfloer z (hRsub n hz))) hL
 
 /-- **The action along loops with vanishing defect.** Let `H` be a `C¹` Hamiltonian and let `u` be
 `C¹` on the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a`
