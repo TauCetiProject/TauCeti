@@ -149,18 +149,16 @@ for its values. -/
 private lemma inv_mul_sum_Ico_le {u : ℕ → ℝ} {c : ℝ} {a m : ℕ} (hm : 0 < m)
     (h : ∀ k ∈ Ico a (a + m), u k ≤ c) :
     (m : ℝ)⁻¹ • ∑ k ∈ Ico a (a + m), u k ≤ c := by
-  rw [smul_eq_mul]
-  have h' := expect_le (nonempty_Ico.2 (Nat.lt_add_of_pos_right hm)) h
-  rwa [expect_eq_sum_div_card, Nat.card_Ico, Nat.add_sub_cancel_left, div_eq_inv_mul] at h'
+  simpa [expect_eq_sum_div_card, div_eq_inv_mul] using
+    expect_le (nonempty_Ico.2 (Nat.lt_add_of_pos_right hm)) h
 
 /-- On a window `[a, a + m)` of positive length, the average of `u` is at least any lower bound
 for its values. -/
 private lemma le_inv_mul_sum_Ico {u : ℕ → ℝ} {c : ℝ} {a m : ℕ} (hm : 0 < m)
     (h : ∀ k ∈ Ico a (a + m), c ≤ u k) :
     c ≤ (m : ℝ)⁻¹ • ∑ k ∈ Ico a (a + m), u k := by
-  rw [smul_eq_mul]
-  have h' := le_expect (nonempty_Ico.2 (Nat.lt_add_of_pos_right hm)) h
-  rwa [expect_eq_sum_div_card, Nat.card_Ico, Nat.add_sub_cancel_left, div_eq_inv_mul] at h'
+  simpa [expect_eq_sum_div_card, div_eq_inv_mul] using
+    le_expect (nonempty_Ico.2 (Nat.lt_add_of_pos_right hm)) h
 
 /-- Some `p` makes `K / (p + 1)` smaller than a given `ε > 0`. -/
 private lemma exists_div_add_one_lt (K : ℝ) {ε : ℝ} (hε : 0 < ε) :
@@ -181,6 +179,27 @@ private lemma mul_sub_div_le_max_div {K : ℝ} {p j k : ℕ} (hj : 0 < j) (hjk :
         rw [← mul_assoc]; gcongr; exact le_max_left _ _
     _ ≤ max K 0 * j := by gcongr
 
+/-- On the forward window `[N, N + ⌊N / (p + 2)⌋)`, the distance `k - N` is at most
+`N / (p + 1)`. -/
+private lemma sub_mul_le_of_mem_Ico_add {p N k : ℕ} (hk : k ∈ Ico N (N + N / (p + 2))) :
+    ((k : ℝ) - N) * (p + 1) ≤ N := by
+  rw [mem_Ico] at hk
+  have hkN : (k : ℝ) < N + (N / (p + 2) : ℕ) := by exact_mod_cast hk.2
+  have hmR : ((N / (p + 2) : ℕ) : ℝ) * (p + 2) ≤ N := by
+    exact_mod_cast Nat.div_mul_le_self N (p + 2)
+  nlinarith
+
+/-- On the backward window `[N - ⌊N / (p + 2)⌋, N)`, the distance `N - k` is at most
+`k / (p + 1)`. -/
+private lemma sub_mul_le_of_mem_Ico_sub {p N k : ℕ} (hk : k ∈ Ico (N - N / (p + 2)) N) :
+    ((N : ℝ) - k) * (p + 1) ≤ k := by
+  rw [mem_Ico] at hk
+  have hk' : ((N - N / (p + 2) : ℕ) : ℝ) ≤ k := by exact_mod_cast hk.1
+  rw [Nat.cast_sub (Nat.div_le_self _ _)] at hk'
+  have hmR : ((N / (p + 2) : ℕ) : ℝ) * (p + 2) ≤ N := by
+    exact_mod_cast Nat.div_mul_le_self N (p + 2)
+  nlinarith
+
 /-- The lower half of Landau's theorem: comparing `s N` with its averages over the backward
 windows `[N - m, N)`, a slowly decreasing sequence is eventually above every `b < S`. -/
 private lemma eventually_lt_of_cesaro_of_sub_le {s : ℕ → ℝ} {S K b : ℝ}
@@ -194,16 +213,15 @@ private lemma eventually_lt_of_cesaro_of_sub_le {s : ℕ → ℝ} {S K b : ℝ}
   set m := N / (p + 2)
   have hm : 0 < m := Nat.div_pos hN (by omega)
   have hle : N - m + m = N := Nat.sub_add_cancel (Nat.div_le_self _ _)
-  have hmN : m * (p + 2) ≤ N := Nat.div_mul_le_self N (p + 2)
-  have hmR : (m : ℝ) * (p + 2) ≤ N := by exact_mod_cast hmN
-  have hm2 : 2 * m ≤ N := by nlinarith
+  have hm2 : 2 * m ≤ N := by
+    have : m * (p + 2) ≤ N := Nat.div_mul_le_self N (p + 2)
+    nlinarith
   have havg : (m : ℝ)⁻¹ • ∑ k ∈ Ico (N - m) (N - m + m), s k ≤ s N + max K 0 / (p + 1) :=
     inv_mul_sum_Ico_le hm fun k hk ↦ by
-      rw [hle, mem_Ico] at hk
-      have hk' : ((N - m : ℕ) : ℝ) ≤ k := by exact_mod_cast hk.1
-      rw [Nat.cast_sub (Nat.div_le_self _ _)] at hk'
-      have := (hs k N (by omega) hk.2.le).trans
-        (mul_sub_div_le_max_div (p := p) (by omega) hk.2.le (by nlinarith))
+      rw [hle] at hk
+      have hk' := mem_Ico.1 hk
+      have := (hs k N (by omega) hk'.2.le).trans
+        (mul_sub_div_le_max_div (p := p) (by omega) hk'.2.le (sub_mul_le_of_mem_Ico_sub hk))
       linarith
   rw [hle] at havg
   linarith
@@ -220,14 +238,10 @@ private lemma eventually_gt_of_cesaro_of_sub_le {s : ℕ → ℝ} {S K b : ℝ}
     eventually_ge_atTop (p + 2)] with N hW hN
   set m := N / (p + 2)
   have hm : 0 < m := Nat.div_pos hN (by omega)
-  have hmR : (m : ℝ) * (p + 2) ≤ N := by exact_mod_cast Nat.div_mul_le_self N (p + 2)
   have havg : s N - max K 0 / (p + 1) ≤ (m : ℝ)⁻¹ • ∑ k ∈ Ico N (N + m), s k :=
     le_inv_mul_sum_Ico hm fun k hk ↦ by
-      rw [mem_Ico] at hk
-      have hkN : (k : ℝ) < N + m := by exact_mod_cast hk.2
-      have hNk : (N : ℝ) ≤ k := by exact_mod_cast hk.1
-      have := (hs N k (by omega) hk.1).trans
-        (mul_sub_div_le_max_div (p := p) (by omega) hk.1 (by nlinarith))
+      have := (hs N k (by omega) (mem_Ico.1 hk).1).trans
+        (mul_sub_div_le_max_div (p := p) (by omega) (mem_Ico.1 hk).1 (sub_mul_le_of_mem_Ico_add hk))
       linarith
   linarith
 
@@ -237,9 +251,11 @@ converges to `S`. -/
 theorem tendsto_of_cesaro_of_sub_le {s : ℕ → ℝ} {S K : ℝ}
     (hc : Tendsto (fun N : ℕ ↦ (N : ℝ)⁻¹ * ∑ i ∈ range N, s i) atTop (𝓝 S))
     (hs : ∀ j k : ℕ, 0 < j → j ≤ k → s j - s k ≤ K * (k - j) / j) :
-    Tendsto s atTop (𝓝 S) :=
-  tendsto_order.2 ⟨fun _ hb ↦ eventually_lt_of_cesaro_of_sub_le hc hs hb,
-    fun _ hb ↦ eventually_gt_of_cesaro_of_sub_le hc hs hb⟩
+    Tendsto s atTop (𝓝 S) := by
+  have hc' : Tendsto (fun N : ℕ ↦ (N : ℝ)⁻¹ • ∑ i ∈ range N, s i) atTop (𝓝 S) := by
+    simpa only [smul_eq_mul] using hc
+  exact tendsto_order.2 ⟨fun _ hb ↦ eventually_lt_of_cesaro_of_sub_le hc' hs hb,
+    fun _ hb ↦ eventually_gt_of_cesaro_of_sub_le hc' hs hb⟩
 
 /-- **Landau's Tauberian theorem in a real normed space.** If the Cesàro means of `s : ℕ → E`
 converge to `S` and `‖s k - s j‖ ≤ K (k - j) / j` whenever `0 < j ≤ k`, then `s` converges
@@ -256,19 +272,15 @@ theorem tendsto_of_cesaro_of_norm_sub_le {s : ℕ → E} {S : E} {K : ℝ}
   set m := N / (p + 2)
   have hm : 0 < m := Nat.div_pos hN (by omega)
   have hmR' : (0 : ℝ) < m := by exact_mod_cast hm
-  have hmR : (m : ℝ) * (p + 2) ≤ N := by exact_mod_cast Nat.div_mul_le_self N (p + 2)
   -- Each value on the window `[N, N + m)` lies within `max K 0 / (p + 1)` of `s N`.
   have hterm : ∀ k ∈ Ico N (N + m), ‖s N - s k‖ ≤ max K 0 / (p + 1) := by
     intro k hk
-    rw [mem_Ico] at hk
-    have hkN : (k : ℝ) < N + m := by exact_mod_cast hk.2
     rw [norm_sub_rev]
-    exact (hs N k (by omega) hk.1).trans
-      (mul_sub_div_le_max_div (p := p) (by omega) hk.1 (by nlinarith))
+    exact (hs N k (by omega) (mem_Ico.1 hk).1).trans
+      (mul_sub_div_le_max_div (p := p) (by omega) (mem_Ico.1 hk).1 (sub_mul_le_of_mem_Ico_add hk))
   have hdiff : s N - (m : ℝ)⁻¹ • ∑ k ∈ Ico N (N + m), s k =
       (m : ℝ)⁻¹ • ∑ k ∈ Ico N (N + m), (s N - s k) := by
-    rw [sum_sub_distrib, sum_const, Nat.card_Ico, Nat.add_sub_cancel_left, smul_sub,
-      ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, inv_mul_cancel₀ hmR'.ne', one_smul]
+    simp [sum_sub_distrib, smul_sub, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, hmR'.ne']
   have hclose : dist (s N) ((m : ℝ)⁻¹ • ∑ k ∈ Ico N (N + m), s k) ≤ max K 0 / (p + 1) := by
     rw [dist_eq_norm, hdiff, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hmR'.le),
       inv_mul_le_iff₀ hmR']
