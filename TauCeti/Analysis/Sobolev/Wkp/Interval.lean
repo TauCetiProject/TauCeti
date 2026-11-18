@@ -100,8 +100,8 @@ theorem ae_norm_gradient_lowerOrder_le_of_mem_w1p0Submodule (hab : a < b)
       _ ≤ N := integral_mono_interval le_rfl ht.1 ht.2 (ae_of_all _ fun _ => norm_nonneg _) hDn
   -- `u'` has integral zero, which bounds the constant: `|k| ≤ N`.
   have hGint : IntegrableOn (fun t => ∫ s in a..t, D s 1) (Ioo a b) :=
-    (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hDint
-      (left_mem_Icc.2 hab.le)).integrableOn_Icc.mono_set Ioo_subset_Icc_self
+    TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo hDint
+      (left_mem_Icc.2 hab.le)
   have hk0 : (b - a) * k + ∫ t in Ioo a b, ∫ s in a..t, D s 1 = 0 := by
     rw [← W1p.intervalIntegral_gradient_eq_zero_of_mem_w1p0Submodule hab.le hu0,
       integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, integral_congr_ae hk,

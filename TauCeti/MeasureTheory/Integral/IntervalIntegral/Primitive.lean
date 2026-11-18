@@ -38,6 +38,9 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo` and
+  `TauCeti.intervalIntegral.integral_norm_primitive_le`: such a primitive is integrable on
+  `(a, b)`, with `L¹(a, b)` norm at most `(b - a) ‖f‖₁`.
 * `Continuous.contDiff_one_primitive`: the primitive of a continuous function is `C¹`.
 * `TauCeti.intervalIntegral.memLp_primitive`: on a bounded interval `(a, b)`, the primitive based
   at a point of `[a, b]` of a function integrable on `(a, b)` lies in every `Lᵖ(a, b)`.
@@ -107,6 +110,25 @@ theorem memLp_primitive {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b
     MemLp (fun t ↦ ∫ s in t₀..t, f s) p (volume.restrict (Ioo a b)) :=
   (continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).memLp_restrict_of_subset_isCompact
     isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on the open interval
+`Ioo a b`, based at a point `t₀` of `Icc a b`, is integrable on `Ioo a b` for any measure that is
+finite on compact sets. -/
+theorem integrableOn_primitive_of_integrableOn_Ioo {μ ν : Measure ℝ} [NullSingletonClass μ]
+    [IsFiniteMeasureOnCompacts ν] {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b) μ)
+    (ht₀ : t₀ ∈ Icc a b) : IntegrableOn (fun t ↦ ∫ s in t₀..t, f s ∂μ) (Ioo a b) ν :=
+  (continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).integrableOn_Icc.mono_set
+    Ioo_subset_Icc_self
+
+/-- The `L¹(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
+`(a, b)`, based at a point `t₀` of `[a, b]`, is at most `b - a` times the `L¹(a, b)` norm of `f`. -/
+theorem integral_norm_primitive_le {t₀ : ℝ} (hf : IntegrableOn f (Ioo a b)) (ht₀ : t₀ ∈ Icc a b) :
+    ∫ t in Ioo a b, ‖∫ s in t₀..t, f s‖ ≤ (b - a) * ∫ s in Ioo a b, ‖f s‖ := by
+  calc ∫ t in Ioo a b, ‖∫ s in t₀..t, f s‖ ≤ ∫ _ in Ioo a b, ∫ s in Ioo a b, ‖f s‖ :=
+        setIntegral_mono_on (integrableOn_primitive_of_integrableOn_Ioo hf ht₀).norm
+          (integrableOn_const measure_Ioo_lt_top.ne) measurableSet_Ioo fun _ ht ↦
+            norm_integral_le_setIntegral_norm hf ht₀ (Ioo_subset_Icc_self ht)
+    _ = _ := by rw [setIntegral_const, Real.volume_real_Ioo_of_le (ht₀.1.trans ht₀.2), smul_eq_mul]
 
 /-- The `Lᵖ(a, b)` norm of the primitive `t ↦ ∫ s in t₀..t, f s` of a function integrable on
 `(a, b)`, based at a point `t₀` of `[a, b]`, is at most `(b - a) ^ (1 / p)` times the `L¹(a, b)`
