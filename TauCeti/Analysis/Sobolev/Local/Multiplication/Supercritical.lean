@@ -17,8 +17,10 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
 Let `Ω ⊆ ℂ` be open and let `B : F × G → H` be continuous bilinear with `F` and `G`
 finite-dimensional. This file proves that `W^{k,p}_loc(Ω)` is an algebra under `B` whenever
 `1 < p < ∞` and `kp > 2`. For `p > 2` this is `TauCeti.MemWkpLoc.bilin_succ`; the point here is the
-range `p ≤ 2`, where the factors need not be locally bounded and the weak derivatives of the
-product are controlled by the Sobolev embedding at every order rather than by `L^∞` bounds.
+range `p ≤ 2`. There `f` and `g` are still locally bounded, but their weak derivatives of order
+`j` with `(k - j) p ≤ 2` need not be. Terms of the Leibniz rule in which neither factor is locally
+bounded are controlled by the Sobolev embedding at every order and Hölder's inequality with
+finite exponents; terms with a locally bounded factor may still use `L^∞_loc` bounds.
 
 The algebra property is the diagonal case of a statement with three orders. If
 `f ∈ W^{a,p}_loc`, `g ∈ W^{b,p}_loc`, `c ≤ a`, `c ≤ b` and `(a + b - c) p > 2`, then
@@ -39,7 +41,11 @@ only, which pairs with no finite exponent of the other factor.
 
 * `TauCeti.MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul`: `B(f, g) ∈ L^p_loc` for
   `(a + b) p > 2`.
-* `TauCeti.MemWkpLoc.bilin_of_two_lt_add_mul`: `B(f, g) ∈ W^{c,p}_loc` for
+* `TauCeti.HasWeakFDerivOn.bilin_of_two_lt_add_mul` and
+  `TauCeti.HasWeakFDerivOn.bilin_of_two_lt_mul`: the weak Leibniz rule
+  `D B(f, g) = B(Df, g) + B(f, Dg)` for `f ∈ W^{a+1,p}_loc` and `g ∈ W^{b+1,p}_loc` with
+  `(a + b + 1) p > 2`.
+* `TauCeti.MemWkpLoc.bilin_of_two_lt_add_sub_mul`: `B(f, g) ∈ W^{c,p}_loc` for
   `(a + b - c) p > 2`.
 * `TauCeti.MemWkpLoc.bilin_of_two_lt_mul`, `TauCeti.MemWkpLoc.clm_apply_of_two_lt_mul` and
   `TauCeti.MemWkpLoc.compL_of_two_lt_mul`: the algebra property of `W^{k,p}_loc` for `kp > 2`.
@@ -74,7 +80,7 @@ private theorem MemWkpLoc.memLpLoc_inv_ofReal {p : ℝ≥0} {m : ℕ} {u : ℂ �
     rintro rfl
     simp at ht
   rw [ENNReal.ofReal_coe_nnreal, ← ENNReal.coe_inv ht0]
-  refine memWkpLoc_zero_iff.1 (MemWkpLoc.of_add_of_inv_sub_inv_le (k := m) (m := 0) hu hp ?_ ?_)
+  refine hu.memLpLoc_of_inv_sub_inv_le_div_two hp ?_ ?_
   · rw [← NNReal.coe_le_coe, NNReal.coe_inv, ← inv_le_inv₀ (inv_pos.2 ht) hp0, inv_inv]
     exact htp
   · rw [NNReal.coe_inv, inv_inv]
@@ -172,10 +178,68 @@ theorem MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul (B : F →L[ℝ] G →L[ℝ] 
     ring
   exact holder hfs hgs
 
+/-- **The weak Leibniz rule for `kp > 2`, with two orders.** Let `1 < p`, let
+`f ∈ W^{a+1,p}_loc(Ω, F)` and `g ∈ W^{b+1,p}_loc(Ω, G)` have weak derivatives `Df` and `Dg` on
+`Ω`, and let `(a + b + 1) p > 2`. Then `B(Df, g) + B(f, Dg)` is a weak derivative of `B(f, g)` on
+`Ω`. For `p ≤ 2` the factors and their derivatives need not be locally bounded, and the products
+are integrable by the Sobolev embedding of each factor and Hölder's inequality. -/
+theorem HasWeakFDerivOn.bilin_of_two_lt_add_mul [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+    {p : ℝ≥0} (hp : 1 < p) {a b : ℕ} {f : ℂ → F} {g : ℂ → G} {Df : ℂ → ℂ →L[ℝ] F}
+    {Dg : ℂ → ℂ →L[ℝ] G}
+    (hDf : HasWeakFDerivOn volume Ω f Df) (hDg : HasWeakFDerivOn volume Ω g Dg)
+    (hf : MemWkpLoc p Ω (a + 1) f) (hg : MemWkpLoc p Ω (b + 1) g)
+    (hab : 2 < ((a + b + 1 : ℕ) : ℝ≥0) * p) :
+    HasWeakFDerivOn volume Ω (fun z => B (f z) (g z))
+      (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) := by
+  have hDfa := hf.memWkpLoc_of_hasWeakFDerivOn hDf
+  have hDgb := hg.memWkpLoc_of_hasWeakFDerivOn hDg
+  -- A factor of order `m` is placed in `L^{1/T m}_loc`, for the exponents `T` of
+  -- `exists_leibniz_inv_exponents` at `x = 1/p`.
+  have hp0 : (0 : ℝ) < p := zero_lt_one.trans (by exact_mod_cast hp)
+  set x : ℝ := (p : ℝ)⁻¹ with hx
+  have hx0 : 0 < x := inv_pos.2 hp0
+  have hx1 : x < 1 := inv_lt_one_of_one_lt₀ (by exact_mod_cast hp)
+  have hxab : 2 * x < a + b + 1 := by
+    have : (2 : ℝ) < ((a + b + 1 : ℕ) : ℝ) * p := by exact_mod_cast hab
+    push_cast at this
+    rw [hx, ← div_eq_mul_inv, div_lt_iff₀ hp0]
+    exact this
+  obtain ⟨T, hT0, hTx, hxT, hsum⟩ := exists_leibniz_inv_exponents hx0 hx1
+  -- These local `Fact` instances supply the `[Fact (1 ≤ _)]` arguments of
+  -- `HasWeakFDerivOn.bilin_of_memLp` below.
+  have hP (m : ℕ) : Fact (1 ≤ (ENNReal.ofReal (T m))⁻¹) :=
+    ⟨one_le_inv_ofReal ((hTx m).trans hx1.le)⟩
+  have hfP := hf.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
+  have hDfP := hDfa.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
+  have hgP := hg.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
+  have hDgP := hDgb.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
+  exact hDf.bilin_of_memLp B (inv_ofReal_ne_top (hT0 _)) (inv_ofReal_ne_top (hT0 _))
+    (inv_ofReal_ne_top (hT0 _)) (inv_ofReal_ne_top (hT0 _))
+    (inv_inv_ofReal_add_le (hT0 _).le (hT0 _).le (hsum (a + 1) (b + 1) (by push_cast; linarith)))
+    (inv_inv_ofReal_add_le (hT0 _).le (hT0 _).le (hsum a (b + 1) (by push_cast; linarith)))
+    (inv_inv_ofReal_add_le (hT0 _).le (hT0 _).le (hsum (a + 1) b (by push_cast; linarith)))
+    hDg (fun K hK hKΩ => memLpLoc_iff.1 hfP K hKΩ hK)
+    (fun K hK hKΩ => memLpLoc_iff.1 hDfP K hKΩ hK)
+    (fun K hK hKΩ => memLpLoc_iff.1 hgP K hKΩ hK)
+    (fun K hK hKΩ => memLpLoc_iff.1 hDgP K hKΩ hK)
+
+/-- **The weak Leibniz rule for `kp > 2`.** Let `1 < p` and `(k + 1) p > 2`, and let
+`f ∈ W^{k+1,p}_loc(Ω, F)` and `g ∈ W^{k+1,p}_loc(Ω, G)` have weak derivatives `Df` and `Dg` on
+`Ω`. Then `B(Df, g) + B(f, Dg)` is a weak derivative of `B(f, g)` on `Ω`. -/
+theorem HasWeakFDerivOn.bilin_of_two_lt_mul [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+    {p : ℝ≥0} (hp : 1 < p) {k : ℕ} {f : ℂ → F} {g : ℂ → G} {Df : ℂ → ℂ →L[ℝ] F} {Dg : ℂ → ℂ →L[ℝ] G}
+    (hDf : HasWeakFDerivOn volume Ω f Df) (hDg : HasWeakFDerivOn volume Ω g Dg)
+    (hf : MemWkpLoc p Ω (k + 1) f) (hg : MemWkpLoc p Ω (k + 1) g)
+    (hkp : 2 < ((k + 1 : ℕ) : ℝ≥0) * p) :
+    HasWeakFDerivOn volume Ω (fun z => B (f z) (g z))
+      (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) :=
+  hDf.bilin_of_two_lt_add_mul B hp hDg hf hg
+    (hkp.trans_le (mul_le_mul_left (Nat.cast_le.2 (by omega)) _))
+
 /-- **Products of local Sobolev maps with three orders.** Let `1 < p`, let
 `f ∈ W^{a,p}_loc(Ω, F)` and `g ∈ W^{b,p}_loc(Ω, G)`, and let `c ≤ a`, `c ≤ b` with
 `(a + b - c) p > 2`. Then `B(f, g)` is in `W^{c,p}_loc(Ω, H)`. -/
-theorem MemWkpLoc.bilin_of_two_lt_add_mul [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+theorem MemWkpLoc.bilin_of_two_lt_add_sub_mul [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
     {p : ℝ≥0} (hp : 1 < p) {a b c : ℕ} {f : ℂ → F} {g : ℂ → G} (hf : MemWkpLoc p Ω a f)
     (hg : MemWkpLoc p Ω b g) (hca : c ≤ a) (hcb : c ≤ b)
     (habc : 2 < ((a + b - c : ℕ) : ℝ≥0) * p) :
@@ -187,38 +251,8 @@ theorem MemWkpLoc.bilin_of_two_lt_add_mul [CompleteSpace H] (B : F →L[ℝ] G �
     obtain ⟨b, rfl⟩ : ∃ b', b = b' + 1 := ⟨b - 1, by omega⟩
     obtain ⟨Df, hDf, hDfa⟩ := hf.exists_weakFDeriv_of_isOpen
     obtain ⟨Dg, hDg, hDgb⟩ := hg.exists_weakFDeriv_of_isOpen
-    -- A factor of order `m` is placed in `L^{1/T m}_loc`, for the exponents `T` of
-    -- `exists_leibniz_inv_exponents` at `x = 1/p`.
-    have hp0 : (0 : ℝ) < p := zero_lt_one.trans (by exact_mod_cast hp)
-    set x : ℝ := (p : ℝ)⁻¹ with hx
-    have hx0 : 0 < x := inv_pos.2 hp0
-    have hx1 : x < 1 := inv_lt_one_of_one_lt₀ (by exact_mod_cast hp)
-    have hxab : 2 * x < a + b + 1 := by
-      have h : ((a + 1 + (b + 1) - (c + 1) : ℕ) : ℝ) ≤ a + b + 1 := by
-        have := Nat.cast_le (α := ℝ).2 (show a + 1 + (b + 1) - (c + 1) ≤ a + b + 1 by omega)
-        push_cast at this
-        exact this
-      have : (2 : ℝ) < ((a + 1 + (b + 1) - (c + 1) : ℕ) : ℝ) * p := by exact_mod_cast habc
-      rw [hx, ← div_eq_mul_inv, div_lt_iff₀ hp0]
-      nlinarith
-    obtain ⟨T, hT0, hTx, hxT, hsum⟩ := exists_leibniz_inv_exponents hx0 hx1
-    -- These local `Fact` instances supply the `[Fact (1 ≤ _)]` arguments of
-    -- `HasWeakFDerivOn.bilin_of_memLp` below.
-    have hP (m : ℕ) : Fact (1 ≤ (ENNReal.ofReal (T m))⁻¹) :=
-      ⟨one_le_inv_ofReal ((hTx m).trans hx1.le)⟩
-    have hfP := hf.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
-    have hDfP := hDfa.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
-    have hgP := hg.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
-    have hDgP := hDgb.memLpLoc_inv_ofReal hp.le (hT0 _) (hTx _) (hxT _)
-    have hD := hDf.bilin_of_memLp B (inv_ofReal_ne_top (hT0 _)) (inv_ofReal_ne_top (hT0 _))
-      (inv_ofReal_ne_top (hT0 _)) (inv_ofReal_ne_top (hT0 _))
-      (inv_inv_ofReal_add_le (hT0 _).le (hT0 _).le (hsum (a + 1) (b + 1) (by push_cast; linarith)))
-      (inv_inv_ofReal_add_le (hT0 _).le (hT0 _).le (hsum a (b + 1) (by push_cast; linarith)))
-      (inv_inv_ofReal_add_le (hT0 _).le (hT0 _).le (hsum (a + 1) b (by push_cast; linarith)))
-      hDg (fun K hK hKΩ => memLpLoc_iff.1 hfP K hKΩ hK)
-      (fun K hK hKΩ => memLpLoc_iff.1 hDfP K hKΩ hK)
-      (fun K hK hKΩ => memLpLoc_iff.1 hgP K hKΩ hK)
-      (fun K hK hKΩ => memLpLoc_iff.1 hDgP K hKΩ hK)
+    have hD := hDf.bilin_of_two_lt_add_mul B hp hDg hf hg
+      (habc.trans_le (mul_le_mul_left (Nat.cast_le.2 (by omega)) _))
     -- Both terms of the Leibniz rule keep the value of `a + b - c` and lose one order.
     have habc' : a + (b + 1) - c = a + 1 + (b + 1) - (c + 1) := by omega
     have habc'' : a + 1 + b - c = a + 1 + (b + 1) - (c + 1) := by omega
@@ -234,12 +268,12 @@ theorem MemWkpLoc.bilin_of_two_lt_mul [CompleteSpace H] (B : F →L[ℝ] G →L[
     (hp : 1 < p) {k : ℕ} (hkp : 2 < (k : ℝ≥0) * p) {f : ℂ → F} {g : ℂ → G}
     (hf : MemWkpLoc p Ω k f) (hg : MemWkpLoc p Ω k g) :
     MemWkpLoc p Ω k (fun z => B (f z) (g z)) :=
-  hf.bilin_of_two_lt_add_mul B hp hg le_rfl le_rfl (by rwa [Nat.add_sub_cancel])
+  hf.bilin_of_two_lt_add_sub_mul B hp hg le_rfl le_rfl (by rwa [Nat.add_sub_cancel])
 
 /-- **Coefficient fields acting on local Sobolev maps for `kp > 2`.** Let `1 < p` and `k p > 2`.
 A coefficient field `A ∈ W^{k,p}_loc(Ω; F →L[ℝ] G)` applied to `u ∈ W^{k,p}_loc(Ω; F)` gives
 `z ↦ A z (u z) ∈ W^{k,p}_loc(Ω; G)`. -/
-theorem MemWkpLoc.clm_apply_of_two_lt_mul [CompleteSpace G] {p : ℝ≥0} (hp : 1 < p) {k : ℕ}
+theorem MemWkpLoc.clm_apply_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k : ℕ}
     (hkp : 2 < (k : ℝ≥0) * p) {A : ℂ → F →L[ℝ] G} {u : ℂ → F} (hA : MemWkpLoc p Ω k A)
     (hu : MemWkpLoc p Ω k u) : MemWkpLoc p Ω k (fun z => A z (u z)) :=
   hA.bilin_of_two_lt_mul (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) hp hkp hu

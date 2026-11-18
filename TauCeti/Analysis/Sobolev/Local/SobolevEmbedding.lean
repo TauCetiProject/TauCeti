@@ -49,8 +49,9 @@ estimates follow in a basis of `F`.
 * `TauCeti.exists_eLpNorm_top_le_mul_eLpNormWkp_one`: the order-one `L^∞` bound for `q > 2`.
 * `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le`: the embedding `W^{1,q}_loc ⊂ L^s_loc`.
 * `TauCeti.MemWkpLoc.of_succ_of_inv_sub_inv_le`: order lowering `W^{k+1,q}_loc ⊂ W^{k,s}_loc`.
-* `TauCeti.MemWkpLoc.of_add_of_inv_sub_inv_le`: its iterate `W^{k+m,q}_loc ⊂ W^{m,s}_loc` for
-  `1/q - 1/s ≤ k/2`.
+* `TauCeti.MemWkpLoc.of_le_of_inv_sub_inv_le`: its iterate `W^{k,q}_loc ⊂ W^{m,s}_loc` for
+  `m ≤ k` and `1/q - 1/s ≤ (k - m)/2`, and `TauCeti.MemWkpLoc.memLpLoc_of_inv_sub_inv_le_div_two`,
+  the embedding `W^{k,q}_loc ⊂ L^s_loc` for `1/q - 1/s ≤ k/2`.
 * `TauCeti.exists_eLpNormWkp_le_mul_eLpNormWkp_succ`: the estimate for order lowering.
 * `TauCeti.MemWkpLoc.exists_two_lt_memWkpLoc_one_of_two_lt_mul`: for `kp > 2`, membership in
   `W^{1,r}_loc` for some finite `r > 2`.
@@ -194,10 +195,9 @@ theorem MemWkpLoc.of_succ_of_inv_sub_inv_le (hu : MemWkpLoc q Ω (k + 1) u) (hq 
     exact memWkpLoc_succ_iff_of_isOpen.2
       ⟨(hu.of_le (by omega)).memLpLoc_of_inv_sub_inv_le hq hqs hgap, D, hD, ih hDk⟩
 
-/-- **The Sobolev embedding at every order.** If `1 ≤ q ≤ s < ∞` and `1/q - 1/s ≤ k/2`, then
-`W^{k+m,q}_loc(Ω, F) ⊂ W^{m,s}_loc(Ω, F)`. At `m = 0` this is `W^{k,q}_loc ⊂ L^s_loc`. -/
-theorem MemWkpLoc.of_add_of_inv_sub_inv_le {m : ℕ} (hu : MemWkpLoc q Ω (k + m) u) (hq : 1 ≤ q)
-    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ k / 2) : MemWkpLoc s Ω m u := by
+/-- The Sobolev embedding at every order, with the order of the source written as `k + m`. -/
+private theorem MemWkpLoc.of_add_of_inv_sub_inv_le {m : ℕ} (hu : MemWkpLoc q Ω (k + m) u)
+    (hq : 1 ≤ q) (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ k / 2) : MemWkpLoc s Ω m u := by
   -- Each step lowers the order by one and replaces `1/q` by `max (1/q - 1/2) (1/s)`.
   induction k generalizing q with
   | zero =>
@@ -237,6 +237,21 @@ theorem MemWkpLoc.of_add_of_inv_sub_inv_le {m : ℕ} (hu : MemWkpLoc q Ω (k + m
         linarith
       · rw [hr, h, sub_self]
         positivity
+
+/-- **The Sobolev embedding at every order.** If `m ≤ k`, `1 ≤ q ≤ s < ∞` and
+`1/q - 1/s ≤ (k - m)/2`, then `W^{k,q}_loc(Ω, F) ⊂ W^{m,s}_loc(Ω, F)`. -/
+theorem MemWkpLoc.of_le_of_inv_sub_inv_le {m : ℕ} (hu : MemWkpLoc q Ω k u) (hmk : m ≤ k)
+    (hq : 1 ≤ q) (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ ((k - m : ℕ) : ℝ) / 2) :
+    MemWkpLoc s Ω m u := by
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + m := ⟨k - m, by omega⟩
+  rw [Nat.add_sub_cancel] at hgap
+  exact hu.of_add_of_inv_sub_inv_le hq hqs hgap
+
+/-- **The local Sobolev embedding at every order.** If `1 ≤ q ≤ s < ∞` and
+`1/q - 1/s ≤ k/2`, every `u ∈ W^{k,q}_loc(Ω, F)` is locally `L^s` on `Ω`. -/
+theorem MemWkpLoc.memLpLoc_of_inv_sub_inv_le_div_two (hu : MemWkpLoc q Ω k u) (hq : 1 ≤ q)
+    (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ k / 2) : MemLpLoc s Ω u :=
+  memWkpLoc_zero_iff.1 (hu.of_le_of_inv_sub_inv_le k.zero_le hq hqs (by simpa using hgap))
 
 /-- **The estimate for order lowering.** Let `1 ≤ q ≤ s < ∞` with `1/q - 1/s ≤ 1/2`, and let `V`
 have compact closure inside the open set `W ⊆ ℂ`. There is a constant `C` such that every
@@ -343,13 +358,8 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul {p : ℝ≥0∞} (hp 
 /-- **Local boundedness for `kp > 2`.** If `1 ≤ p ≤ ∞` and `2 < k p`, every
 `u ∈ W^{k,p}_loc(Ω, F)` is locally essentially bounded on `Ω`. -/
 theorem MemWkpLoc.memLpLoc_top_of_two_lt_mul {p : ℝ≥0∞} (hp : 1 ≤ p)
-    (hkp : 2 < (k : ℝ≥0∞) * p) (hu : MemWkpLoc p Ω k u) : MemLpLoc ∞ Ω u := by
-  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
-  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
-  have hKc : closure K = K := hK.isClosed.closure_eq
-  obtain ⟨C, hC⟩ := exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul (F := F) (W := W) hp hkp
-    (by rwa [hKc]) (by rwa [hKc])
-  exact memLp_iff.2 ((hC u).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
-    (lt_top_iff_ne_top.2 (hu.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
+    (hkp : 2 < (k : ℝ≥0∞) * p) (hu : MemWkpLoc p Ω k u) : MemLpLoc ∞ Ω u :=
+  (hu.continuousOn_preciseRepresentative_of_two_lt_mul hp hkp).memLpLoc.congr_ae
+    (hu.memLpLoc.ae_eq_preciseRepresentative hp).symm
 
 end TauCeti
