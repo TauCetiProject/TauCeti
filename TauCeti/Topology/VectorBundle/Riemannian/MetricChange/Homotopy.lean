@@ -96,60 +96,6 @@ section Continuity
 
 variable [ContinuousFiberNorm F E]
 
-private theorem continuous_metricChangeCompositionHomotopy_chart
-    (e : Trivialization F (π F E)) [e.IsLinear ℝ] {n : ℕ} (c : Module.Basis (Fin n) ℝ F) :
-    Continuous fun p : unitInterval × (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
-      (⟨p.2.1.proj, ContinuousLinearMap.metricChangeCompositionHomotopy
-        (h.inner p.2.1.proj) (k.inner p.2.1.proj)
-        (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2.1.proj)
-        (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2.1.proj) (p.1, p.2.1.2)⟩ :
-          TotalSpace F E) := by
-  let frame := e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ)
-  have hframe (w : EuclideanSpace ℝ (Fin n)) :
-      Continuous fun y : e.baseSet ↦ TotalSpace.mk' F (y : B) (frame y w) :=
-    (OrthonormalFrameBundle.continuous_totalSpaceMk_frame w).comp
-      (e.continuous_orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ))
-  let h' (y : e.baseSet) := (h.inner y).bilinearComp
-    (frame y : EuclideanSpace ℝ (Fin n) →L[ℝ] E y)
-    (frame y : EuclideanSpace ℝ (Fin n) →L[ℝ] E y)
-  let k' (y : e.baseSet) := (k.inner y).bilinearComp
-    (frame y : EuclideanSpace ℝ (Fin n) →L[ℝ] E y)
-    (frame y : EuclideanSpace ℝ (Fin n) →L[ℝ] E y)
-  have hh : Continuous h' := h.continuous_inner_bilinearComp _ hframe
-  have hk : Continuous k' := k.continuous_inner_bilinearComp _ hframe
-  have hp (y : e.baseSet) :=
-    ContinuousLinearMap.isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv
-      (h.inner y) (frame y).toContinuousLinearEquiv
-      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner y)
-  have kp (y : e.baseSet) :=
-    ContinuousLinearMap.isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv
-      (k.inner y) (frame y).toContinuousLinearEquiv
-      (k.isStrictlyPositive_continuousLinearMapOfBilin_inner y)
-  let base (p : unitInterval × (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E))) :
-      e.baseSet := ⟨p.2.1.proj, p.2.2⟩
-  have hb : Continuous base :=
-    ((FiberBundle.continuous_proj F E).comp
-      (continuous_subtype_val.comp continuous_snd)).subtype_mk _
-  have hv : Continuous fun p :
-      unitInterval × (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
-        (frame (base p)).symm p.2.1.2 :=
-    (e.continuous_orthonormalFrame_symm_apply c
-      (EuclideanSpace.basisFun (Fin n) ℝ)).comp continuous_snd
-  have ht : Continuous (Prod.fst :
-      unitInterval × (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) → unitInterval) :=
-    continuous_fst
-  have hc := ht.metricChangeCompositionHomotopy
-    (hh.comp hb) (hk.comp hb) hv (fun p ↦ hp (base p)) (fun p ↦ kp (base p))
-  refine (OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
-    (((e.continuous_orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ)).comp hb).prodMk
-      hc)).congr fun p ↦ ?_
-  simp only [Function.comp_apply, h', k']
-  rw [ContinuousLinearMap.metricChangeCompositionHomotopy_bilinearComp
-    (h.inner (base p)) (k.inner (base p)) (frame (base p))
-    (h.isStrictlyPositive_continuousLinearMapOfBilin_inner (base p))
-    (k.isStrictlyPositive_continuousLinearMapOfBilin_inner (base p))]
-  simp only [LinearIsometryEquiv.apply_symm_apply, frame, base]
-
 /-- The fibrewise composition homotopy is jointly continuous in time and the bundle point. -/
 theorem continuous_metricChangeCompositionHomotopy :
     Continuous fun p : unitInterval × TotalSpace F E ↦
@@ -158,19 +104,31 @@ theorem continuous_metricChangeCompositionHomotopy :
         (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2.proj)
         (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2.proj) (p.1, p.2.2)⟩ :
           TotalSpace F E) := by
-  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
-  let e := trivializationAt F E p₀.2.proj
-  have he : p₀.2.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E p₀.2.proj
-  have : FiniteDimensional ℝ F :=
-    (e.continuousLinearEquivAt ℝ p₀.2.proj he).toLinearEquiv.finiteDimensional
-  let U : Set (unitInterval × TotalSpace F E) := {p | p.2.proj ∈ e.baseSet}
-  have hU : U ∈ 𝓝 p₀ :=
-    (e.open_baseSet.preimage ((FiberBundle.continuous_proj F E).comp continuous_snd)).mem_nhds he
-  refine ContinuousOn.continuousAt ?_ hU
-  rw [continuousOn_iff_continuous_domRestrict]
-  exact (h.continuous_metricChangeCompositionHomotopy_chart k e (Module.finBasis ℝ F)).comp
-    (((continuous_fst.comp continuous_subtype_val).prodMk
-      ((continuous_snd.comp continuous_subtype_val).subtype_mk fun p : U ↦ p.2)))
+  suffices hc : Continuous fun p : unitInterval × TotalSpace F E ↦
+      (⟨p.2.proj, h.metricChangeCompositionTransport k p.1 p.2.proj p.2.2⟩ : TotalSpace F E) by
+    simpa only [metricChangeCompositionTransport_apply] using hc
+  refine continuous_totalSpaceMk_apply_of_orthonormalFrame
+    (A := h.metricChangeCompositionTransport k) fun e _ n c ↦ ?_
+  let frame := e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) ℝ)
+  refine continuous_clm_apply.2 fun w ↦ ?_
+  have hc := continuous_fst.metricChangeCompositionHomotopy
+    ((h.continuous_inner_bilinearComp_orthonormalFrame e c).comp continuous_snd)
+    ((k.continuous_inner_bilinearComp_orthonormalFrame e c).comp continuous_snd)
+    (continuous_const (y := w))
+    (fun p ↦ ContinuousLinearMap.isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv
+      (h.inner p.2) (frame p.2).toContinuousLinearEquiv
+      (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2))
+    (fun p ↦ ContinuousLinearMap.isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv
+      (k.inner p.2) (frame p.2).toContinuousLinearEquiv
+      (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2))
+  refine hc.congr fun p ↦ ?_
+  simp only [Function.comp_apply]
+  rw [ContinuousLinearMap.metricChangeCompositionHomotopy_bilinearComp
+    (h.inner p.2) (k.inner p.2) (frame p.2)
+    (h.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2)
+    (k.isStrictlyPositive_continuousLinearMapOfBilin_inner p.2)]
+  simp only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_coe'',
+    metricChangeCompositionTransport_apply, frame]
 
 end Continuity
 
