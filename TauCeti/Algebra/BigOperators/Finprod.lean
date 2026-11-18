@@ -37,6 +37,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `TauCeti.finprod_comp_eq_of_injective` and `TauCeti.finsum_comp_eq_of_injective`: reindex
   along an injection when the family is trivial outside its range.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
+* `TauCeti.finprod_sigma`: a finitely supported product over `Σ i, κ i` is the iterated product
+  over `i` and the fiber `κ i`.
 * `TauCeti.finprod_mem_fiberwise`: regroup a product over a preimage `g ⁻¹' t` by the fibers of
   `g` over `t`.
 * `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
@@ -135,6 +137,16 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ᶠ b, ∏ a ∈ hf.toFinset with g a = b, f a := finprod_congr hb
     _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
+
+/-- A finitely supported product over a sigma type is the product, over the first coordinate, of
+the products over the fibers. Neither the base nor the fibers need be finite. -/
+@[to_additive /-- A finitely supported sum over a sigma type is the sum, over the first
+coordinate, of the sums over the fibers. Neither the base nor the fibers need be finite. -/]
+theorem finprod_sigma {ι M : Type*} [CommMonoid M] {κ : ι → Type*} (f : (Σ i, κ i) → M)
+    (hf : (mulSupport f).Finite) : ∏ᶠ x, f x = ∏ᶠ i, ∏ᶠ k : κ i, f ⟨i, k⟩ := by
+  rw [← finprod_fiberwise Sigma.fst f hf]
+  exact finprod_congr fun i ↦
+    (finprod_comp_equiv (Equiv.sigmaSubtype i).symm (f := fun x ↦ f x.1)).symm
 
 /-- Regroup a product over a preimage `g ⁻¹' t` by the fibers of `g` over the points of `t`, when
 only finitely many factors over `t` differ from `1`. -/
