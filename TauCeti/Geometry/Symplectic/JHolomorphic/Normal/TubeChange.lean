@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.Rescaling
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Topology.UniformSpace.UniformConvergence
+import TauCeti.Analysis.Calculus.FDeriv.NormalSegment
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.Calculus.IteratedFDeriv.SliceLimit
 
