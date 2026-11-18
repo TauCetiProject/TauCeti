@@ -30,6 +30,9 @@ symmetric form of a simply-laced Cartan matrix.
   root `j ≠ -s` in the direction `s` never reaches `-s`.
 * `RootPairing.root_ne_and_root_ne_neg_of_root_eq_add`: in a reduced root pairing, a summand of a
   root that is a sum of two roots is neither that root nor its negative.
+* `RootPairing.two_smul_sub_coroot'_smul_root_mem_ker_coroot'` and
+  `RootPairing.eq_or_eq_reflectionPerm_self_of_ker_coroot'_le`: in a root pairing with reduced
+  coroots and `2 ≠ 0`, inclusion of coroot kernels forces the indices to agree up to root negation.
 -/
 
 public section
@@ -102,5 +105,37 @@ theorem flip_isReduced [Finite ι] [CharZero R] [P.IsReduced] : P.flip.IsReduced
   have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
   have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
   inferInstance
+
+omit [IsDomain R] [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- For any root `α` and weight `x`, `2 • x - ⟨x, α^∨⟩ • α` lies in `ker (P.coroot' α)`. -/
+theorem two_smul_sub_coroot'_smul_root_mem_ker_coroot' (α : ι) (x : M) :
+    (2 : R) • x - P.coroot' α x • P.root α ∈ LinearMap.ker (P.coroot' α) := by
+  simp [mul_comm]
+
+omit [IsDomain R] [Module.IsTorsionFree R M] in
+/-- If `ker (P.coroot' α) ≤ ker (P.coroot' β)` in a root pairing with reduced coroots and `2 ≠ 0`,
+then `β` is either `α` or its negated index `P.reflectionPerm α α`. -/
+theorem eq_or_eq_reflectionPerm_self_of_ker_coroot'_le [P.flip.IsReduced] {α β : ι}
+    (h : LinearMap.ker (P.coroot' α) ≤ LinearMap.ker (P.coroot' β)) :
+    β = α ∨ β = P.reflectionPerm α α := by
+  have hprop : (2 : R) • P.coroot' β = P.coroot' β (P.root α) • P.coroot' α := by
+    ext x
+    have hβx : P.coroot' β ((2 : R) • x - P.coroot' α x • P.root α) = 0 :=
+      h (P.two_smul_sub_coroot'_smul_root_mem_ker_coroot' α x)
+    simp only [map_sub, map_smul, smul_eq_mul, sub_eq_zero] at hβx
+    simp only [LinearMap.smul_apply, smul_eq_mul, hβx, mul_comm]
+  have hcoroot : (2 : R) • P.coroot β = P.coroot' β (P.root α) • P.coroot α :=
+    P.toLinearMap.flip.toPerfPair.injective (by simpa [map_smul] using hprop)
+  have hdep : ¬ LinearIndependent R ![P.coroot α, P.coroot β] := by
+    rw [LinearIndependent.pair_iff]
+    push Not
+    exact ⟨-P.coroot' β (P.root α), 2, by rw [neg_smul, ← hcoroot, neg_add_cancel],
+      fun _ ↦ NeZero.ne (2 : R)⟩
+  rcases IsReduced.eq_or_eq_neg (P := P.flip) α β hdep with hpos | hneg
+  · exact Or.inl (P.coroot.injective hpos.symm)
+  · refine Or.inr (P.coroot.injective ?_)
+    simp only [flip_root] at hneg
+    rw [coroot_reflectionPerm, coreflection_apply_self]
+    exact neg_eq_iff_eq_neg.mp hneg.symm
 
 end RootPairing
