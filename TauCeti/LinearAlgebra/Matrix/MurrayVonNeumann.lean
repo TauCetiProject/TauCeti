@@ -334,11 +334,7 @@ theorem isMurrayVonNeumannEquivalent_of_mem_unitary_mul_fromBlocks_mul_star [Dec
   have h := (hp.isMurrayVonNeumannEquivalent_fromBlocks_zero (n := n)).trans
     ((hp.fromBlocks_zero₁₂_zero₂₁ (.zero _)).isMurrayVonNeumannEquivalent_mul_mul_star hw)
   rw [hwpq] at h
-  obtain ⟨hq₁, hq₂⟩ := h.isStarProjection_right
-  have hq : IsStarProjection q := by
-    refine ⟨?_, ?_⟩
-    · simpa [IsIdempotentElem, fromBlocks_multiply] using hq₁.eq
-    · simpa [IsSelfAdjoint, star_eq_conjTranspose, fromBlocks_conjTranspose] using hq₂.star_eq
+  have hq := (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mp h.isStarProjection_right).2
   exact h.trans (hq.isMurrayVonNeumannEquivalent_zero_fromBlocks (n := m)).symm
 
 /-- Diagonal matrix units of any sizes are equivalent: `single j i 1` implements
