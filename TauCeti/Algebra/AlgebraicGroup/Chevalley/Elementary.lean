@@ -111,38 +111,52 @@ theorem extendedElementarySubgroup_le_iff (H : Subgroup (D.points A)) :
   · rintro h _ ⟨s, rfl⟩
     exact h s
 
-/-- If the units are divisible, the actual torus lies in the elementary subgroup. -/
-theorem range_torusPoints_le_elementarySubgroup [RootableBy Aˣ ℕ] :
+/-- If full-weight restriction is surjective, the actual torus lies in the elementary subgroup. -/
+theorem range_torusPoints_le_elementarySubgroup_of_surjective
+    (hs : Function.Surjective (D.fullWeightTorusRestriction A)) :
     (D.torusPoints A).range ≤ D.elementarySubgroup A := by
   rintro _ ⟨s, rfl⟩
   rw [D.elementarySubgroup_eq_closure_simpleRootPair]
-  exact D.torusPoints_mem_closure_rootSubgroup A s
+  exact D.torusPoints_mem_closure_rootSubgroup_of_mem_range A s (hs s)
+
+/-- If full-weight restriction is surjective, adjoining the actual torus does not enlarge the
+elementary subgroup. -/
+theorem extendedElementarySubgroup_eq_elementarySubgroup_of_surjective
+    (hs : Function.Surjective (D.fullWeightTorusRestriction A)) :
+    D.extendedElementarySubgroup A = D.elementarySubgroup A := by
+  rw [extendedElementarySubgroup_def, sup_eq_left]
+  exact D.range_torusPoints_le_elementarySubgroup_of_surjective A hs
+
+/-- If the units are divisible, the actual torus lies in the elementary subgroup. -/
+theorem range_torusPoints_le_elementarySubgroup [RootableBy Aˣ ℕ] :
+    (D.torusPoints A).range ≤ D.elementarySubgroup A :=
+  D.range_torusPoints_le_elementarySubgroup_of_surjective A
+    (D.fullWeightTorusRestriction_surjective A)
 
 /-- With divisible units, adjoining the actual torus does not enlarge the elementary subgroup.
 This applies in particular over algebraically closed fields. -/
 @[simp]
 theorem extendedElementarySubgroup_eq_elementarySubgroup [RootableBy Aˣ ℕ] :
-    D.extendedElementarySubgroup A = D.elementarySubgroup A := by
-  rw [extendedElementarySubgroup_def, sup_eq_left]
-  exact D.range_torusPoints_le_elementarySubgroup A
+    D.extendedElementarySubgroup A = D.elementarySubgroup A :=
+  D.extendedElementarySubgroup_eq_elementarySubgroup_of_surjective A
+    (D.fullWeightTorusRestriction_surjective A)
 
 /-- If the weights of the datum span the full weight lattice, the actual torus lies in the
 elementary subgroup over every commutative ring. -/
 theorem range_torusPoints_le_elementarySubgroup_of_weightLattice_eq_top
     (hD : D.weightLattice = ⊤) :
-    (D.torusPoints A).range ≤ D.elementarySubgroup A := by
-  rintro _ ⟨s, rfl⟩
-  rw [D.elementarySubgroup_eq_closure_simpleRootPair]
-  exact D.torusPoints_mem_closure_rootSubgroup_of_weightLattice_eq_top A hD s
+    (D.torusPoints A).range ≤ D.elementarySubgroup A :=
+  D.range_torusPoints_le_elementarySubgroup_of_surjective A
+    (D.fullWeightTorusRestriction_surjective_of_weightLattice_eq_top A hD)
 
 /-- If the weights of the datum span the full weight lattice, adjoining the actual torus does
 not enlarge the elementary subgroup, over every commutative ring. -/
 @[simp]
 theorem extendedElementarySubgroup_eq_elementarySubgroup_of_weightLattice_eq_top
     (hD : D.weightLattice = ⊤) :
-    D.extendedElementarySubgroup A = D.elementarySubgroup A := by
-  rw [extendedElementarySubgroup_def, sup_eq_left]
-  exact D.range_torusPoints_le_elementarySubgroup_of_weightLattice_eq_top A hD
+    D.extendedElementarySubgroup A = D.elementarySubgroup A :=
+  D.extendedElementarySubgroup_eq_elementarySubgroup_of_surjective A
+    (D.fullWeightTorusRestriction_surjective_of_weightLattice_eq_top A hD)
 
 /-- Every elementary element belongs to the extended elementary subgroup. -/
 theorem elementarySubgroup_le_extendedElementarySubgroup :
