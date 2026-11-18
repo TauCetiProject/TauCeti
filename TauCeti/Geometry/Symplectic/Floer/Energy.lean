@@ -19,6 +19,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -897,14 +898,14 @@ theorem le_setIntegral_floerEnergyDensity_of_forall_le_mul (ω : SymplecticForm 
     (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U)
     (hm : ∀ r ∈ Icc s (s + h), m ≤ h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t)) :
     m ≤ ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
-  obtain ⟨hgint, heq⟩ :=
-    integrableOn_and_integral_setIntegral_floerEnergyDensity ω hU hu hKs hKt hR
-  have hint : ∫ _ in Icc s (s + h), m / h ≤
-      ∫ r in Icc s (s + h), ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t) :=
-    setIntegral_mono_on (integrableOn_const (by simp)) hgint measurableSet_Icc fun r hr ↦
-      (div_le_iff₀' hh).2 (hm r hr)
-  rwa [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left,
-    smul_eq_mul, mul_div_cancel₀ _ hh.ne', heq] at hint
+  have hRint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) (Icc s (s + h) ×ˢ Icc (0 : ℝ) 1) :=
+    ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hR).integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)
+  have hint := setIntegral_rect_le_mul_of_forall_setIntegral_le (f := fun _ ↦ m / h) (c := 1)
+    (integrableOn_const (isCompact_Icc.prod isCompact_Icc).measure_lt_top.ne) hRint fun r hr ↦ by
+      simpa [setIntegral_const] using (div_le_iff₀' hh).2 (hm r hr)
+  -- The constant `m / h` integrates to `m` over the rectangle of area `h`.
+  simpa [Measure.volume_eq_prod, -Set.Icc_prod_Icc, hh.le, mul_div_cancel₀ _ hh.ne'] using hint
 
 end Integral
 
