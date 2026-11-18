@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.ExtChartAt
