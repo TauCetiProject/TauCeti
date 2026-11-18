@@ -41,8 +41,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   half of the roots are positive, and `TauCeti.posRootsFinset_eq_filter`,
   `TauCeti.card_posRootsFinset` read `TauCeti.posRootsFinset` as the filter of the positivity
   predicate and its cardinality as the cardinality of `TauCeti.posRoots`.
-* `TauCeti.ncard_setOf_isPos_and_coroot'_ne_zero` says the positive roots not orthogonal to a
-  weight are as many as the roots pairing negatively with it.
+* `TauCeti.ncard_setOf_isPos_and_coroot'_ne_zero_eq_ncard_setOf_coroot'_neg` says the positive
+  roots not orthogonal to a weight are as many as the roots pairing negatively with it.
 * `TauCeti.add_mem_posRoots` and `TauCeti.add_mem_negRoots` say each of the two sets is closed
   under those sums of its members that are again roots, and
   `TauCeti.reflectionPerm_self_notMem_posRoots`, `TauCeti.reflectionPerm_self_notMem_negRoots` say
@@ -740,7 +740,7 @@ theorem ncard_setOf_isPos_and_coroot'_ne_zero_eq_add (x : M) :
 /-- **The positive roots not orthogonal to a weight are as many as the roots pairing negatively with
 it.** Root negation carries the positive roots pairing positively with `x` onto the negative roots
 pairing negatively with it. -/
-theorem ncard_setOf_isPos_and_coroot'_ne_zero (x : M) :
+theorem ncard_setOf_isPos_and_coroot'_ne_zero_eq_ncard_setOf_coroot'_neg (x : M) :
     {i | b.IsPos i ∧ P.coroot' i x ≠ 0}.ncard = {i | P.coroot' i x < 0}.ncard := by
   have hall : {i | P.coroot' i x < 0} =
       {i | b.IsPos i ∧ P.coroot' i x < 0} ∪ {i | ¬ b.IsPos i ∧ P.coroot' i x < 0} := by
