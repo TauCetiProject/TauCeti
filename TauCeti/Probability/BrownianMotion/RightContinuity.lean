@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import TauCeti.Probability.Process.Filtration.Natural
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
+import TauCeti.MeasureTheory.Function.ConditionalExpectation.Completion
 import TauCeti.Probability.Independence.CondExp
 import TauCeti.Probability.Independence.Limit
 
@@ -22,6 +24,8 @@ The whole future increment process is independent of the right-continuous natura
 An event in that past is also determined by the original past and the future increments;
 conditioning on the original past therefore recovers its indicator. The conclusion concerns
 null augmentation on the completed ambient space, not right continuity of the raw filtration.
+The usual augmentation therefore has the same `Lᵖ` claims at every time as the natural
+filtration, for every exponent and complete normed target space.
 
 ## References
 
@@ -34,7 +38,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Set
-open scoped NNReal Topology
+open scoped NNReal ENNReal Topology
 
 namespace TauCeti
 
@@ -145,5 +149,17 @@ theorem isRightContinuous_nullAugment_natural (hW : IsBrownianReal W P)
   obtain ⟨C, hC, hBC⟩ := (Filtration.measurableSet_nullAugment_iff _ P s B).mp
     (hW.rightCont_natural_le_nullAugment hmeas s B hB)
   exact ⟨C, hC, hAB.trans hBC⟩
+
+/-- The usual augmentation of the natural filtration of a Brownian motion has the same `Lᵖ`
+claims at every time as the natural filtration itself, for every exponent and complete normed
+target space. -/
+theorem lpMeas_rightCont_nullAugment_natural_eq_lpMeas_natural (hW : IsBrownianReal W P)
+    (hmeas : ∀ t, StronglyMeasurable (W t)) {F 𝕜 : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] (p : ℝ≥0∞) (T : ℝ≥0) :
+    lpMeas F 𝕜 (((Filtration.natural W hmeas).nullAugment P).rightCont T) p P =
+      lpMeas F 𝕜 (Filtration.natural W hmeas T) p P := by
+  have := hW.isRightContinuous_nullAugment_natural hmeas
+  rw [Filtration.IsRightContinuous.eq, Filtration.nullAugment_apply]
+  exact TauCeti.MeasureTheory.lpMeas_eventuallyMeasurableSpace p
 
 end ProbabilityTheory.IsBrownianReal

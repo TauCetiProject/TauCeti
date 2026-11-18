@@ -120,8 +120,14 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Iic` and
   `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Ici`: a real curve constant on a closed half-line has
   zero manifold derivative in the interior of that half-line.
+* `TauCeti.Manifold.hasMFDerivAt_if_le`: curves meeting at an endpoint glue differentiably when
+  their derivatives follow the same dependent family of continuous linear maps.
 * `TauCeti.Manifold.curveVelocityLift_eq_of_mdifferentiableAt_if_le`: two real curves meeting at
   `c`, whose concatenation at `c` is differentiable there, have the same velocity at `c`.
+* `TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp`: the chain rule for the inverse
+  extended chart along a curve in the model space, with
+  `TauCeti.Manifold.hasMFDerivAt_extChartAt_symm_add_smul` its unrestricted case for a straight
+  segment.
 -/
 
 public section
@@ -900,6 +906,44 @@ theorem mfderiv_eq_zero_of_eqOn_Ici (h : EqOn γ (fun _ => p) (Ici a)) (ht : a <
   ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) p t).congr_of_eventuallyEq
     (by filter_upwards [Ioi_mem_nhds ht] with s hs using h (mem_Ici.2 hs.le))).mfderiv
 
+/-- Glue real curves meeting at `c` whose derivatives follow the same dependent family of
+continuous linear maps. No equation of motion or separation hypothesis is needed. -/
+theorem hasMFDerivAt_if_le {f g : ℝ → N} {c u : ℝ}
+    {L : (r : ℝ) → (y : N) → TangentSpace 𝓘(ℝ, ℝ) r →L[ℝ] TangentSpace I y}
+    (hfg : f c = g c)
+    (hf : u ≤ c → HasMFDerivAt 𝓘(ℝ, ℝ) I f u (L u (f u)))
+    (hg : c ≤ u → HasMFDerivAt 𝓘(ℝ, ℝ) I g u (L u (g u))) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ if r ≤ c then f r else g r) u
+      (L u (if u ≤ c then f u else g u)) := by
+  have hcast (r : ℝ) {p q : N} (hpq : p = q) :
+      (tangentSpaceCast I p q : TangentSpace I p →L[ℝ] TangentSpace I q) ∘L L r p =
+        L r q := by
+    subst q
+    rfl
+  rcases lt_trichotomy u c with h | h | h
+  · exact ((hf h.le).congr_of_eventuallyEq
+      ((eventually_lt_nhds h).mono fun r hr ↦ ite_eq_left hr.le)).congr_mfderiv
+        (hcast u (ite_eq_left h.le).symm)
+  · subst u
+    have h₁ := (hf le_rfl).hasMFDerivWithinAt (s := Iic c)
+    have h₂ := (hg le_rfl).hasMFDerivWithinAt (s := Ici c)
+    have h₁' := h₁.congr_mono (f₁ := fun r ↦ if r ≤ c then f r else g r) (t := Iic c)
+      (fun r hr ↦ ite_eq_left hr) (ite_eq_left le_rfl) Subset.rfl
+    have h₂' := h₂.congr_mono (f₁ := fun r ↦ if r ≤ c then f r else g r) (t := Ici c)
+      (fun r hr ↦ by
+        split_ifs with h
+        · exact (le_antisymm h hr) ▸ hfg
+        · rfl)
+      ((ite_eq_left le_rfl).trans hfg) Subset.rfl
+    have hleft := h₁'.congr_mfderiv (hcast c (ite_eq_left le_rfl).symm)
+    have hright := h₂'.congr_mfderiv
+      (hcast c ((ite_eq_left le_rfl).trans hfg).symm)
+    exact (hleft.union hright).hasMFDerivAt
+      (by rw [Iic_union_Ici]; exact Filter.univ_mem)
+  · exact ((hg h.le).congr_of_eventuallyEq
+      ((eventually_gt_nhds h).mono fun r hr ↦ ite_eq_right (not_le.mpr hr))).congr_mfderiv
+        (hcast u (ite_eq_right (not_le.mpr h)).symm)
+
 /-- **Velocities at a differentiable junction.** Let `δ` and `γ` be real curves which meet at the
 parameter `c` and are differentiable there. If the curve which follows `δ` up to `c` and `γ`
 after `c` is differentiable at `c`, then `δ` and `γ` have the same velocity at `c`: their
@@ -1067,5 +1111,49 @@ theorem isMIntegralCurve_iff_curveVelocity_eq {γ : ℝ → M} {v : (x : M) → 
         uniqueDiffWithinAt_univ
   · rw [← (h t).2]
     exact hasMFDerivAt_curveVelocity (h t).1
+
+section ExtChartAtSymm
+
+variable [IsManifold I 1 M] {x : M}
+
+/-- **The chain rule for the inverse extended chart along a curve.** A curve `γ` in the model space
+which has derivative `d` at `t` within `J`, passes through the target of the extended chart at `x`
+at time `t` and lies in the range of the model eventually within `J`, is carried by the inverse
+chart to a curve in `M` whose velocity at `t` within `J` is the image of `d` under the derivative
+of the inverse chart. -/
+theorem hasMFDerivWithinAt_extChartAt_symm_comp {γ : ℝ → E} {d : E} {J : Set ℝ} {t : ℝ}
+    (ht : γ t ∈ (extChartAt I x).target) (hrange : ∀ᶠ s in 𝓝[J] t, γ s ∈ Set.range I)
+    (hγ : HasDerivWithinAt γ d J t) :
+    HasMFDerivWithinAt 𝓘(ℝ, ℝ) I (fun s ↦ (extChartAt I x).symm (γ s)) J t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight
+        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) (γ t) d)) := by
+  refine (hasMFDerivWithinAt_inter' hrange).1 ?_
+  have hγ' : HasMFDerivWithinAt 𝓘(ℝ, ℝ) 𝓘(ℝ, E) γ (J ∩ {s | γ s ∈ Set.range I}) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight d) :=
+    hasMFDerivWithinAt_iff_hasFDerivWithinAt.2
+      (hγ.hasFDerivWithinAt.mono Set.inter_subset_left)
+  exact ((mdifferentiableWithinAt_extChartAt_symm ht).hasMFDerivWithinAt.comp t hγ'
+    fun _ hs ↦ hs.2).congr_mfderiv
+    (ContinuousLinearMap.comp_toSpanSingleton
+      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) (γ t)) d)
+
+/-- A straight segment `s ↦ c + s • d` in the chart, at a time `t` at which it is in the interior
+of the chart target, is differentiable in the manifold with derivative the image of `d` under the
+derivative of the inverse chart. This is the unrestricted case of
+`TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp` for the segment. -/
+theorem hasMFDerivAt_extChartAt_symm_add_smul {c d : E} {t : ℝ}
+    (ht : (extChartAt I x).target ∈ 𝓝 (c + t • d)) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d)) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight
+        (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) (c + t • d) d)) := by
+  have hseg : HasDerivAt (fun s : ℝ ↦ c + s • d) d t := by
+    simpa using ((hasDerivAt_id t).smul_const d).const_add c
+  refine hasMFDerivWithinAt_univ.1 ?_
+  exact hasMFDerivWithinAt_extChartAt_symm_comp (mem_of_mem_nhds ht)
+    (eventually_nhdsWithin_of_eventually_nhds
+      ((hseg.continuousAt.eventually_mem ht).mono fun _ hs ↦ extChartAt_target_subset_range x hs))
+    hseg.hasDerivWithinAt
+
+end ExtChartAtSymm
 
 end TauCeti.Manifold

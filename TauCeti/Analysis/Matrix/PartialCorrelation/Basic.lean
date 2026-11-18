@@ -200,13 +200,15 @@ theorem partialCorrelationGram_apply_eq_sum_Iic (z : strictLowerTriangle p → �
     (i j : Fin p) :
     partialCorrelationGram z i j =
       ∑ k ∈ Finset.Iic j, partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
-  rw [partialCorrelationGram_def, Matrix.mul_apply]
-  simp only [Matrix.transpose_apply]
-  symm
-  apply Finset.sum_subset (Finset.subset_univ _)
-  intro k _ hk
-  simp only [Finset.mem_Iic, not_le] at hk
-  rw [partialCorrelationCholesky_apply_of_lt z hk, mul_zero]
+  rw [partialCorrelationGram_def,
+    (isLowerTriangular_partialCorrelationCholesky z).mul_transpose_apply_eq_sum_Iic]
+  apply Finset.sum_subset (Finset.Iic_subset_Iic.2 (min_le_right i j))
+  intro k hk hmin
+  have hik : i < k := by
+    rcases min_lt_iff.mp (not_le.mp (Finset.mem_Iic.not.mp hmin)) with hik | hjk
+    · exact hik
+    · exact absurd hjk (not_lt_of_ge (Finset.mem_Iic.mp hk))
+  rw [partialCorrelationCholesky_apply_of_lt z hik, zero_mul]
 
 /-- The first column of the Gram matrix consists of the first-column partial correlations. -/
 theorem partialCorrelationGram_apply_zero_of_pos (z : strictLowerTriangle (p + 1) → ℝ)
