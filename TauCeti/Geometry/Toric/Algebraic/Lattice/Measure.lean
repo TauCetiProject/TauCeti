@@ -111,6 +111,7 @@ def dualMeasure : Measure (StrongDual ℝ V) :=
 
 /-- The Haar measure normalized by the dual basis of any integral basis is the lattice-normalized
 measure. -/
+@[simp]
 theorem addHaar_dualBasis (b : Basis κ ℤ N) : (h.dualBasis b).addHaar = h.dualMeasure :=
   have := h.free
   have := h.finite
@@ -142,15 +143,16 @@ basis of an integral basis carry the lattice-normalized measure to Lebesgue meas
 theorem measurePreserving_dualBasis_equivFun (b : Basis κ ℤ N) :
     MeasurePreserving (h.dualBasis b).equivFun h.dualMeasure volume := by
   have := (h.dualBasis b).finiteDimensional_of_finite
-  have hc : Continuous (h.dualBasis b).equivFun := LinearMap.continuous_of_finiteDimensional _
-  refine ⟨hc.measurable, ?_⟩
   have hmap := (h.dualBasis b).map_addHaar (h.dualBasis b).equivFunL
   have hb : (h.dualBasis b).map (h.dualBasis b).equivFunL.toLinearEquiv = Pi.basisFun ℝ κ := by
     classical
     ext j k
     simp [Pi.single_apply, Finsupp.single_apply, eq_comm]
   rw [h.addHaar_dualBasis, hb, Basis.addHaar_basisFun] at hmap
-  exact hmap
+  have hcoe : ⇑(h.dualBasis b).equivFunL = (h.dualBasis b).equivFun :=
+    funext fun x ↦ funext fun j ↦ by rw [Basis.equivFunL_apply, Basis.equivFun_apply]
+  rw [← hcoe]
+  exact ⟨(h.dualBasis b).equivFunL.continuous.measurable, hmap⟩
 
 /-! ### Naturality and products -/
 

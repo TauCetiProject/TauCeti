@@ -459,9 +459,8 @@ theorem mem_span_dualBasis_iff (b : Basis κ ℤ N) {x : StrongDual ℝ V} :
   choose m hm using hx
   refine ⟨∑ j, b.repr n j * m j, ?_⟩
   conv_rhs => rw [← b.sum_repr n, map_sum, map_sum]
-  simp only [map_zsmul, zsmul_eq_mul, ← hm]
   push_cast
-  rfl
+  simp only [map_zsmul, zsmul_eq_mul, ← hm]
 
 /-- The dual bases of any two integral bases span the same lattice, the weight lattice. -/
 theorem span_dualBasis_eq {κ' : Type*} [Finite κ'] (b : Basis κ ℤ N)

@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.MeasureTheory.Measure.Lebesgue.RegionBetween
 
 /-!
 # Volumes of Delzant polytopes
@@ -38,9 +39,10 @@ open set of points lying on none of its facets, which is nonempty.
 For the standard lattices, the volume is Lebesgue measure in the coordinates `x (eⱼ)`. The
 interval `[0, a]`, the moment polytope of the two-sphere, has length `a`
 (`TauCeti.Toric.dualMeasure_facetPolyhedron_interval`). The Hirzebruch trapezoid
-`{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` has area `a b - k b² / 2` whenever
-`0 ≤ a` and `k b ≤ a` (`TauCeti.Toric.dualMeasure_facetPolyhedron_hirzebruch`); for `k = 0` this is
-the rectangle `[0, a] × [0, b]` of `S² × S²`, of area `a b`.
+`{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` with `0 ≤ a`, `0 ≤ b` and `k b ≤ a` has area
+`a b - k b² / 2` (`TauCeti.Toric.dualMeasure_facetPolyhedron_hirzebruch`, which states the area as
+`ENNReal.ofReal (a b - k b² / 2)`, so that it also covers the empty trapezoid of `b < 0`). For
+`k = 0` this is the rectangle `[0, a] × [0, b]` of `S² × S²`, of area `a b`.
 
 ## Main results
 
@@ -53,7 +55,7 @@ the rectangle `[0, a] × [0, b]` of `S² × S²`, of area `a b`.
   positive volume.
 * `TauCeti.Toric.dualMeasure_facetPolyhedron_interval`: the interval `[0, a]` has length `a`.
 * `TauCeti.Toric.dualMeasure_facetPolyhedron_hirzebruch`: the Hirzebruch trapezoid has area
-  `a b - k b² / 2`.
+  `ENNReal.ofReal (a b - k b² / 2)`.
 
 ## References
 
@@ -172,54 +174,11 @@ theorem dualMeasure_facetPolyhedron_interval (a : ℝ) :
     (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc).nullMeasurableSet, volume_pi_pi]
   simp
 
-/-- The area of the region `{(s, t) | 0 ≤ t ≤ b, 0 ≤ s ≤ a - k t}` is `a b - k b² / 2` (or zero when
-this is negative), provided `0 ≤ a` and `k b ≤ a`. -/
-private theorem volume_trapezoid {k a b : ℝ} (ha : 0 ≤ a) (hkb : k * b ≤ a) :
-    volume {p : ℝ × ℝ | p.2 ∈ Icc 0 b ∧ p.1 ∈ Icc 0 (a - k * p.2)} =
-      ENNReal.ofReal (a * b - k * b ^ 2 / 2) := by
-  rcases lt_or_ge b 0 with hb | hb
-  · -- For `b < 0` the region is empty, and `a b - k b² / 2 ≤ a b / 2 ≤ 0`.
-    have hempty : {p : ℝ × ℝ | p.2 ∈ Icc 0 b ∧ p.1 ∈ Icc 0 (a - k * p.2)} = ∅ :=
-      eq_empty_of_forall_notMem fun p hp ↦ (hp.1.1.trans hp.1.2).not_gt hb
-    rw [hempty, measure_empty, eq_comm, ENNReal.ofReal_eq_zero]
-    nlinarith
-  have hpos : ∀ t ∈ Icc 0 b, 0 ≤ a - k * t := by
-    rintro t ⟨ht₀, htb⟩
-    rcases le_total 0 k with hk | hk
-    · nlinarith
-    · nlinarith
-  have hmeas : MeasurableSet {p : ℝ × ℝ | p.2 ∈ Icc 0 b ∧ p.1 ∈ Icc 0 (a - k * p.2)} := by
-    refine (measurableSet_Icc.preimage measurable_snd).inter
-      ((measurableSet_le ?_ ?_).inter (measurableSet_le ?_ ?_)) <;> fun_prop
-  rw [Measure.volume_eq_prod, Measure.prod_apply_symm hmeas]
-  have hslice (t : ℝ) : volume ((fun s ↦ (s, t)) ⁻¹'
-      {p : ℝ × ℝ | p.2 ∈ Icc 0 b ∧ p.1 ∈ Icc 0 (a - k * p.2)}) =
-      (Icc 0 b).indicator (fun t ↦ ENNReal.ofReal (a - k * t)) t := by
-    by_cases ht : t ∈ Icc 0 b
-    · have hpre : (fun s ↦ (s, t)) ⁻¹'
-          {p : ℝ × ℝ | p.2 ∈ Icc 0 b ∧ p.1 ∈ Icc 0 (a - k * p.2)} = Icc 0 (a - k * t) := by
-        ext s
-        simp [ht.1, ht.2]
-      rw [indicator_of_mem ht, hpre, Real.volume_Icc, sub_zero]
-    · have hpre : (fun s ↦ (s, t)) ⁻¹'
-          {p : ℝ × ℝ | p.2 ∈ Icc 0 b ∧ p.1 ∈ Icc 0 (a - k * p.2)} = ∅ :=
-        eq_empty_of_forall_notMem fun s hs ↦ ht hs.1
-      rw [indicator_of_notMem ht, hpre, measure_empty]
-  simp_rw [hslice]
-  have hint : ∫ t in (0)..b, (a - k * t) = a * b - k * b ^ 2 / 2 := by
-    rw [intervalIntegral.integral_sub intervalIntegrable_const
-      ((by fun_prop : Continuous fun t : ℝ ↦ k * t).intervalIntegrable 0 b),
-      intervalIntegral.integral_const_mul, intervalIntegral.integral_const, integral_id]
-    simp only [sub_zero, smul_eq_mul]
-    ring
-  rw [lintegral_indicator measurableSet_Icc, ← ofReal_integral_eq_lintegral_ofReal
-    ((by fun_prop : Continuous fun t : ℝ ↦ a - k * t).integrableOn_Icc)
-    ((ae_restrict_iff' measurableSet_Icc).2 (Filter.Eventually.of_forall hpos)),
-    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hb, hint]
-
 /-- **The area of a Hirzebruch trapezoid.** For `0 ≤ a` and `k b ≤ a`, the trapezoid
-`{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` has area `a b - k b² / 2` for the
-lattice-normalized measure of `ℤ² ⊂ ℝ²`. For `k = 0` it is the rectangle `[0, a] × [0, b]`. -/
+`{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` has area `ENNReal.ofReal (a b - k b² / 2)` for
+the lattice-normalized measure of `ℤ² ⊂ ℝ²`: this is `a b - k b² / 2` when `0 ≤ b`, while for
+`b < 0` the trapezoid is empty and has area zero. For `k = 0` it is the rectangle
+`[0, a] × [0, b]`. -/
 theorem dualMeasure_facetPolyhedron_hirzebruch {k : ℤ} {a b : ℝ} (ha : 0 ≤ a) (hkb : k * b ≤ a) :
     (isIntegralLattice_intCast 2).dualMeasure
         (facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
@@ -230,24 +189,47 @@ theorem dualMeasure_facetPolyhedron_hirzebruch {k : ℤ} {a b : ℝ} (ha : 0 ≤
     congr 1
     ext l
     simp [Pi.single_apply, apply_ite]
-  let S : Set (ℝ × ℝ) := {p | p.2 ∈ Icc 0 b ∧ p.1 ∈ Icc 0 (a - k * p.2)}
+  -- In the coordinates `(x(e₂), x(e₁))` the trapezoid is the region below `t ↦ a - k t`.
+  set R := closedRegionBetween 0 (fun t ↦ a - k * t) (Icc 0 b) with hRdef
+  have hR : MeasurableSet R :=
+    measurableSet_closedRegionBetween measurable_zero (by fun_prop) measurableSet_Icc
   have hpre : facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)
-      (hirzebruchSupport a b) = e.equivFun ⁻¹' (MeasurableEquiv.finTwoArrow ⁻¹' S) := by
+      (hirzebruchSupport a b) =
+        e.equivFun ⁻¹' (MeasurableEquiv.finTwoArrow ⁻¹' (Prod.swap ⁻¹' R)) := by
     ext x
     simp only [mem_facetPolyhedron_hirzebruch_iff, mem_preimage, MeasurableEquiv.finTwoArrow_apply,
-      he, S, mem_ofPred_eq, mem_Icc]
+      he, hRdef, Prod.fst_swap, Prod.snd_swap, mem_closedRegionBetween, Pi.zero_apply, mem_Icc]
     constructor
     · rintro ⟨h₀, h₁, h₂, h₃⟩
       exact ⟨⟨h₁, h₂⟩, h₀, by linarith⟩
     · rintro ⟨⟨h₁, h₂⟩, h₀, h₃⟩
       exact ⟨h₀, h₁, h₂, by linarith⟩
-  have hS : MeasurableSet S := by
-    refine (measurableSet_Icc.preimage measurable_snd).inter
-      ((measurableSet_le ?_ ?_).inter (measurableSet_le ?_ ?_)) <;> fun_prop
   rw [hpre, ((isIntegralLattice_intCast 2).measurePreserving_dualBasis_equivFun
       (Pi.basisFun ℤ (Fin 2))).measure_preimage
-      (MeasurableEquiv.finTwoArrow.measurable hS).nullMeasurableSet,
-    (volume_preserving_finTwoArrow ℝ).measure_preimage hS.nullMeasurableSet]
-  exact volume_trapezoid ha hkb
+      (MeasurableEquiv.finTwoArrow.measurable (measurable_swap hR)).nullMeasurableSet,
+    (volume_preserving_finTwoArrow ℝ).measure_preimage (measurable_swap hR).nullMeasurableSet,
+    Measure.volume_eq_prod, Measure.measurePreserving_swap.measure_preimage hR.nullMeasurableSet,
+    hRdef, volume_closedRegionBetween_eq_lintegral measurable_zero (by fun_prop) measurableSet_Icc,
+    sub_zero]
+  rcases lt_or_ge b 0 with hb | hb
+  · -- For `b < 0` the region is empty, and `a b - k b² / 2 ≤ a b / 2 ≤ 0`.
+    rw [Icc_eq_empty_of_lt hb, Measure.restrict_empty, lintegral_zero_measure, eq_comm,
+      ENNReal.ofReal_eq_zero]
+    nlinarith
+  have hpos : ∀ t ∈ Icc 0 b, 0 ≤ a - k * t := by
+    rintro t ⟨ht₀, htb⟩
+    rcases le_total 0 (k : ℝ) with hk | hk
+    · nlinarith
+    · nlinarith
+  have hint : ∫ t in (0)..b, (a - k * t) = a * b - k * b ^ 2 / 2 := by
+    rw [intervalIntegral.integral_sub intervalIntegrable_const
+      ((by fun_prop : Continuous fun t : ℝ ↦ k * t).intervalIntegrable 0 b),
+      intervalIntegral.integral_const_mul, intervalIntegral.integral_const, integral_id]
+    simp only [sub_zero, smul_eq_mul]
+    ring
+  rw [← ofReal_integral_eq_lintegral_ofReal
+    ((by fun_prop : Continuous fun t : ℝ ↦ a - k * t).integrableOn_Icc)
+    ((ae_restrict_iff' measurableSet_Icc).2 (Filter.Eventually.of_forall hpos)),
+    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hb, hint]
 
 end TauCeti.Toric
