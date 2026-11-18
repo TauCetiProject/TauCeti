@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Riccardo Brasca, The Tau Ceti contributors
 -/
 module
 
@@ -15,6 +15,8 @@ The native local-isometry differential preserves tangent norms, so the actual Ri
 length integral is preserved on curves differentiable almost everywhere. In particular this
 holds for `C¹` curves on closed parameter intervals, including in native boundary or corner
 source manifolds. Differentiability is required only where the length density is integrated.
+
+Ported from Riccardo Brasca's `ForTauCeti` formalization.
 -/
 
 public noncomputable section
