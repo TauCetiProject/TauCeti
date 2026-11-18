@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.Dilation.Basic
 public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Analysis.PDE.Vortex.Uniqueness
@@ -45,6 +46,8 @@ symmetries of the vortex equations on `Sym^m ℂ`:
   (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_translateField`);
 * rotating a field by `u`, that is pulling it back by `z ↦ u z`, rotates its divisor by `u⁻¹`
   (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_rotateField`);
+* dilating a field by `t ≠ 0`, that is pulling it back by `z ↦ t z`, divides its divisor by `t`
+  (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_dilateField`);
 * continuous gauge transformations, in particular the smooth framed gauges and the constant
   line-frame gauges, do not change the divisor
   (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_gaugeTransform`).
@@ -176,7 +179,7 @@ theorem exists_sym_isZeroMultiplicity_sectionValue {m : ℕ}
 
 omit hn hb₁ hb₂ hp hq hhol
 
-/-! ### The divisor under translations, rotations and gauge transformations -/
+/-! ### The divisor under translations, rotations, dilations and gauge transformations -/
 
 section Laws
 
@@ -200,13 +203,18 @@ theorem isZeroMultiplicity_sectionValue_rotateField
     (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (u : Circle) :
     IsZeroMultiplicity (sectionValue (rotateField u x))
       fun z ↦ (D.map ((u : ℂ)⁻¹ * ·)).count z := by
-  have hu := Circle.coe_ne_zero u
-  convert h.comp_mul_add hu 0 using 1
-  · funext w
-    rw [sectionValue_rotateField, add_zero]
-  · funext z
-    rw [add_zero, ← Multiset.count_map_eq_count' ((u : ℂ)⁻¹ * ·) D
-      (mul_right_injective₀ (inv_ne_zero hu)) (u * z), inv_mul_cancel_left₀ hu]
+  convert h.comp_const_mul (Circle.coe_ne_zero u) using 1
+  exact funext (sectionValue_rotateField u x)
+
+/-- **Dilation law for the divisor.** Pulling a field back by `z ↦ t • z`, `t ≠ 0`, divides
+its zero divisor `D` by `t`. -/
+theorem isZeroMultiplicity_sectionValue_dilateField
+    (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {t : ℝ}
+    (ht : t ≠ 0) :
+    IsZeroMultiplicity (sectionValue (dilateField t x))
+      fun z ↦ (D.map ((t : ℂ)⁻¹ * ·)).count z := by
+  convert h.comp_const_mul (Complex.ofReal_ne_zero.2 ht) using 1
+  exact funext fun w ↦ by rw [sectionValue_dilateField, Complex.real_smul]
 
 /-- **Gauge invariance of the divisor.** A continuous gauge transformation multiplies the
 section by a function without zeros, so it does not change the zero multiplicities. This applies
