@@ -11,7 +11,7 @@ import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
-# Valuation rings: squares `1 + 4c`, integrality under domination, and divisibility
+# Valuation rings: squares `1 + 4c`, domination, surjective local maps, divisibility
 
 In a commutative ring `R` with total divisibility and regular `2`, the element `1 + 4c` is a square
 exactly when `c` has the form `t ^ 2 + t`, the witness being `1 + 2t`. One direction is an identity
@@ -28,6 +28,11 @@ containing `S`, an element of `K` whose image lies in `S` already lies in `R`. O
 valuation ring this is what lets an integrality statement proved after a ramified extension of
 the base descend to the base itself.
 
+A local homomorphism `φ : R → S` from a ring with total divisibility to a domain is surjective
+as soon as every element of `S` is a fraction `φ a / φ b`: either `b ∣ a`, and the fraction is
+the image of `a / b`, or `a ∣ b`, and the fraction is the inverse of the image of `b / a`, which
+is then a unit because `φ` is local.
+
 In a valuation ring an irreducible element `ϖ` generates the maximal ideal, with no discreteness
 hypothesis; so for a valuation subring `s` of a commutative ring the powers of the maximal ideal
 are, inside that ring, the scaled copies `ϖ ^ k • s`.
@@ -43,6 +48,8 @@ discrete valuation ring on its own elements, and the points with zero support of
   `c = t ^ 2 + t` for some `t`.
 * `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
   lies in a ring `S` dominating `R` already lies in `R`.
+* `TauCeti.ValuationRing.surjective_of_forall_exists_mul_eq`: a local homomorphism from a ring
+  with total divisibility to a domain whose elements are fractions of images is surjective.
 * `Irreducible.maximalIdeal_eq_of_preValuationRing`: an irreducible element
   of a valuation ring generates its maximal ideal.
 * `Irreducible.image_maximalIdeal_pow_eq_smul`: for an irreducible `ϖ` of a valuation subring `s`
@@ -119,6 +126,29 @@ theorem isInteger_of_isInteger_algebraMap (hS : Function.Injective (algebraMap S
   rw [← inv_inv x, ← hr, map_units_inv, IsUnit.unit_spec]
 
 end Domination
+
+section Surjective
+
+variable {R S : Type*} [CommRing R] [PreValuationRing R] [CommRing S] [IsDomain S]
+
+/-- **A local homomorphism from a valuation ring onto its fractions.** Let `φ : R →+* S` be a
+local homomorphism from a ring with total divisibility to a domain. If every element of `S` is a
+fraction `φ a / φ b` with `φ b ≠ 0`, then `φ` is surjective. -/
+theorem surjective_of_forall_exists_mul_eq (φ : R →+* S) [IsLocalHom φ]
+    (h : ∀ z : S, ∃ a b : R, φ b ≠ 0 ∧ φ b * z = φ a) : Function.Surjective φ := by
+  intro z
+  obtain ⟨a, b, hb, hz⟩ := h z
+  rcases _root_.ValuationRing.dvd_total b a with ⟨c, rfl⟩ | ⟨c, rfl⟩
+  · exact ⟨c, mul_left_cancel₀ hb (by rw [hz, map_mul])⟩
+  -- Otherwise `b = a c`, so `φ c * z = 1` and `c` is a unit.
+  rw [map_mul] at hb hz
+  have hzc : z * φ c = 1 := mul_left_cancel₀ (left_ne_zero_of_mul hb) <| by
+    linear_combination hz
+  have hc : IsUnit c := isUnit_of_map_unit φ c (.of_mul_eq_one_right _ hzc)
+  refine ⟨↑hc.unit⁻¹, mul_right_cancel₀ (right_ne_zero_of_mul hb) ?_⟩
+  rw [hzc, ← map_mul, IsUnit.val_inv_mul, map_one]
+
+end Surjective
 
 /-- In a valuation ring, an irreducible element generates the maximal ideal. No discrete valuation
 ring hypothesis is needed (compare `Irreducible.maximalIdeal_eq`). -/
