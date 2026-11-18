@@ -112,7 +112,8 @@ the target coefficient ring. -/
 theorem pushforwardExteriorPowerComparison_app_val_app_mk (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
     (m : Fin n → PresheafOfModulesOfCommRing.obj (R := S.obj) ((pushforward φ).obj M).val U) :
-    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj]
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, sheafCompose_obj_obj,
+      CommRingCat.forgetToRingCat_obj, Functor.id_obj]
     (((pushforwardExteriorPowerComparison φ n).app M).val.app U
       ((exteriorPowerIso n ((pushforward φ).obj M)).inv.val.app U
         (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
@@ -205,7 +206,8 @@ sheafified wedge of the images of its factors under the unit. -/
 theorem pullbackExteriorPowerComparison_app_val_app_unit_mk (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf S)) (U : Cᵒᵖ)
     (m : Fin n → PresheafOfModulesOfCommRing.obj (R := S.obj) M.val U) :
-    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, Functor.op_obj]
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, Functor.op_obj,
+      sheafCompose_obj_obj, CommRingCat.forgetToRingCat_obj]
     (((pullbackExteriorPowerComparison adj n).app M).val.app (F.op.obj U)
       ((adj.unit.app ((exteriorPower S n).obj M)).val.app U
         ((exteriorPowerIso n M).inv.val.app U
