@@ -140,16 +140,11 @@ theorem fubiniStudyHeight_def (x : OnePoint ℂ) :
     fubiniStudyHeight x = (hermitianProjector (equivProjectivization ℂ x) 0 0).re :=
   (rfl)
 
-/-- The squared Hermitian norm of the homogeneous coordinates `(t, 1)` of a finite point. -/
-private theorem star_dotProduct_self_coe (z : ℂ) :
-    (star ![z, 1] ⬝ᵥ ![z, 1] : ℂ) = ((1 + ‖z‖ ^ 2 : ℝ) : ℂ) := by
-  simp [dotProduct, Fin.sum_univ_two, mul_comm, Complex.normSq_eq_conj_mul_self, add_comm,
-    ← Complex.normSq_eq_norm_sq]
-
 @[simp]
 theorem fubiniStudyHeight_coe (z : ℂ) : fubiniStudyHeight z = ‖z‖ ^ 2 / (1 + ‖z‖ ^ 2) := by
   rw [fubiniStudyHeight, equivProjectivization_apply_coe, hermitianProjector_mk _ (by simp),
-    rankOneHermitianProjector_apply, star_dotProduct_self_coe]
+    rankOneHermitianProjector_apply, star_vec2_one_dotProduct_self,
+    RCLike.ofReal_eq_complex_ofReal]
   simp only [Matrix.cons_val_zero, Complex.star_def, Complex.mul_conj, ← Complex.ofReal_div,
     Complex.ofReal_re, Complex.normSq_eq_norm_sq]
 
