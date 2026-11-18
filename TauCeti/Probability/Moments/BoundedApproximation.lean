@@ -9,7 +9,6 @@ public import TauCeti.MeasureTheory.Function.Lp.Norm
 
 import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Bounded approximation preserving the first two moments
@@ -32,22 +31,10 @@ namespace TauCeti.Probability
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsProbabilityMeasure μ]
 
-omit [CompleteSpace E] [BorelSpace E] in
-private theorem tendsto_integral_normCutoff (h₂ : MemLp (id : E → E) 2 μ) :
-    Tendsto (fun R : ℝ ↦ ∫ x, (if ‖x‖ ≤ R then x else 0) ∂μ) atTop
-      (𝓝 (∫ x, x ∂μ)) := by
-  refine tendsto_integral_filter_of_dominated_convergence (fun x : E ↦ ‖x‖)
-    (.of_forall fun R ↦ (h₂.ite_norm_le R).aestronglyMeasurable)
-    (.of_forall fun R ↦ .of_forall fun x ↦ ?_)
-    (h₂.integrable (by norm_num)).norm (.of_forall fun x ↦ ?_)
-  · split_ifs <;> simp
-  · exact tendsto_const_nhds.congr' (by
-      filter_upwards [eventually_ge_atTop ‖x‖] with R hR
-      simp [hR])
-
 /-- A centered law with unit second absolute moment admits bounded, centered, unit second
 moment approximations obtained by measurable maps of the original variable. The errors
-converge to zero in mean square. -/
+converge to zero in mean square. The `MemLp` hypothesis includes almost-everywhere strong
+measurability of the identity. -/
 theorem exists_bounded_centered_unitSecondMoment_approx
     (h₂ : MemLp (id : E → E) 2 μ) (hmean : ∫ x, x ∂μ = 0)
     (hunit : ∫ x, ‖x‖ ^ 2 ∂μ = 1) :
@@ -68,7 +55,8 @@ theorem exists_bounded_centered_unitSecondMoment_approx
     · exact tendsto_const_nhds.congr' (by
         filter_upwards [eventually_ge_atTop ‖x‖] with R hR
         simp [T, hR])
-  have hm : Tendsto m atTop (𝓝 0) := hmean ▸ tendsto_integral_normCutoff h₂
+  have hm : Tendsto m atTop (𝓝 0) :=
+    hmean ▸ (h₂.integrable (by norm_num)).tendsto_integral_ite_norm_le
   let C (R : ℝ) : E → E := T R - fun _ ↦ m R
   have hC (R : ℝ) : MemLp (C R) 2 μ := (hT R).sub (memLp_const _)
   have hCLp (R : ℝ) : (hC R).toLp (C R) = (hT R).toLp (T R) - Lp.const 2 μ (m R) :=
