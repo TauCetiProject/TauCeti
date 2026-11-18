@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.Algebra.Homology.Periodic.Basic
 
 /-!
 # Exactness of two-periodic complexes of modules
@@ -89,11 +90,11 @@ theorem acyclic_iff_of_linearEquiv_zmod_two {j k : ZMod 2} (hjk : j + 1 = k)
     D.Acyclic ↔ C.Acyclic := by
   have hkj : k + 1 = j := by rw [← hjk, add_assoc, CharTwo.add_self_eq_zero, add_zero]
   have h₀ := exactAt_iff_of_linearEquiv ((ComplexShape.up _).prev_eq' hkj)
-    ((ComplexShape.up _).next_eq' hjk) ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-    ((ComplexShape.up _).next_eq' (zero_add 1)) e₁ e₀ e₁ hu hu h₁₀ h₀₁
+    ((ComplexShape.up _).next_eq' hjk) CochainComplex.prev_zmod_two_zero
+    CochainComplex.next_zmod_two_zero e₁ e₀ e₁ hu hu h₁₀ h₀₁
   have h₁ := exactAt_iff_of_linearEquiv ((ComplexShape.up _).prev_eq' hjk)
-    ((ComplexShape.up _).next_eq' hkj) ((ComplexShape.up _).prev_eq' (zero_add 1))
-    ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) e₀ e₁ e₀ hu hu h₀₁ h₁₀
+    ((ComplexShape.up _).next_eq' hkj) CochainComplex.prev_zmod_two_one
+    CochainComplex.next_zmod_two_one e₀ e₁ e₀ hu hu h₀₁ h₁₀
   have hi (i : ZMod 2) : i = j ∨ i = k := by
     rw [← hjk]
     exact (by decide : ∀ i j : ZMod 2, i = j ∨ i = j + 1) i j
