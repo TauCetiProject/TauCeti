@@ -42,19 +42,22 @@ identifies the `ℤ/2`-grading of `Cℓ(A ⊗ M, Q_A)` with the scalar extension
   isomorphism of coefficient algebras `A ≃ₐ[R] B`; `CliffordAlgebra.baseChangeCongr_unique`
   characterizes it, and it commutes with the grade involution, reversal and Clifford conjugation.
 * `CliffordAlgebra.liftBaseChangeEquiv`: `R`-algebra maps `Cℓ(M, Q) → B` into an `A`-algebra `B`
-  correspond to `A`-algebra maps `Cℓ(A ⊗ M, Q_A) → B`; `CliffordAlgebra.eq_liftBaseChange_iff`
-  characterizes the extension `CliffordAlgebra.liftBaseChange` by its restriction along
-  `CliffordAlgebra.ofBaseChangeAux`.
+  correspond to `A`-algebra maps `Cℓ(A ⊗ M, Q_A) → B`; `CliffordAlgebra.eq_liftBaseChange_iff` and
+  `CliffordAlgebra.eq_liftBaseChange_iff_ι` characterize the extension
+  `CliffordAlgebra.liftBaseChange` by its restriction along `CliffordAlgebra.ofBaseChangeAux` and
+  on generators `ι (1 ⊗ₜ v)`, together with naturality (`CliffordAlgebra.comp_liftBaseChange`,
+  `CliffordAlgebra.liftBaseChange_comp_map`) and anticommutation lifting
+  (`CliffordAlgebra.mul_liftBaseChange_ι_eq_neg`).
 * `CliffordAlgebra.ofBaseChange_map_involute` and `CliffordAlgebra.ofBaseChange_map_reverse`:
   under `CliffordAlgebra.ofBaseChange`, the grade involution and reversal of the right tensor
   factor become those of `Cℓ(A ⊗ M, Q_A)`.
 * `CliffordAlgebra.mem_baseChange_evenOdd_zero_iff` and
   `CliffordAlgebra.mem_baseChange_evenOdd_one_iff`: on the tensor carrier, the scalar extensions
   of the even and odd parts are the `±1`-eigenspaces of the grade involution of the right factor.
-* `CliffordAlgebra.toBaseChange_mem_baseChange_evenOdd_iff` and
-  `CliffordAlgebra.ofBaseChange_mem_evenOdd_iff`: `CliffordAlgebra.equivBaseChange` and its
-  inverse match the parity-`i` part of `Cℓ(A ⊗ M, Q_A)` with the scalar extension of the
-  parity-`i` part of `Cℓ(M, Q)`.
+* `CliffordAlgebra.toBaseChange_mem_baseChange_evenOdd_iff`,
+  `CliffordAlgebra.ofBaseChange_mem_evenOdd_iff`, and `CliffordAlgebra.ofBaseChangeAux_mem_evenOdd`:
+  `CliffordAlgebra.equivBaseChange`, its inverse, and `CliffordAlgebra.ofBaseChangeAux` are
+  compatible with the `ℤ/2`-grading.
 -/
 
 public section
@@ -400,7 +403,79 @@ theorem eq_liftBaseChange_iff (Q : QuadraticForm R M) (f : CliffordAlgebra Q →
   rw [liftBaseChange, ← Equiv.symm_apply_eq, AlgHom.ext_iff]
   simp only [liftBaseChangeEquiv_symm_apply]
 
+/-- `CliffordAlgebra.liftBaseChange` factors through `CliffordAlgebra.toBaseChange` and
+`AlgHom.liftEquiv`. -/
+theorem liftBaseChange_apply {Q : QuadraticForm R M} (f : CliffordAlgebra Q →ₐ[R] B)
+    (x : CliffordAlgebra (Q.baseChange A)) :
+    liftBaseChange A Q f x = f.liftEquiv R A (CliffordAlgebra Q) B (toBaseChange A Q x) :=
+  (rfl)
+
+/-- On the tensor carrier `A ⊗[R] Cℓ(M, Q)`, `CliffordAlgebra.liftBaseChange` is
+`AlgHom.liftEquiv`. -/
+@[simp]
+theorem liftBaseChange_ofBaseChange {Q : QuadraticForm R M} (f : CliffordAlgebra Q →ₐ[R] B)
+    (y : A ⊗[R] CliffordAlgebra Q) :
+    liftBaseChange A Q f (ofBaseChange A Q y) = f.liftEquiv R A (CliffordAlgebra Q) B y := by
+  rw [liftBaseChange_apply, toBaseChange_ofBaseChange]
+
+/-- `CliffordAlgebra.liftBaseChange` agrees with `f` on the generators `ι (1 ⊗ₜ v)`. -/
+theorem liftBaseChange_ι_one_tmul {Q : QuadraticForm R M} (f : CliffordAlgebra Q →ₐ[R] B)
+    (v : M) : liftBaseChange A Q f (ι (Q.baseChange A) (1 ⊗ₜ v)) = f (ι Q v) := by
+  simp
+
+/-- The inverse of `CliffordAlgebra.liftBaseChangeEquiv` is composition with
+`CliffordAlgebra.ofBaseChangeAux`. -/
+theorem liftBaseChangeEquiv_symm_eq (Q : QuadraticForm R M)
+    (g : CliffordAlgebra (Q.baseChange A) →ₐ[A] B) :
+    (liftBaseChangeEquiv A Q).symm g = (g.restrictScalars R).comp (ofBaseChangeAux A Q) :=
+  (rfl)
+
+/-- **Generator uniqueness of the extension**: an `A`-algebra map `g` out of `Cℓ(A ⊗ M, Q_A)`
+equals `CliffordAlgebra.liftBaseChange A Q f` if and only if it agrees with `f` on every generator
+`ι (1 ⊗ₜ v)`. -/
+theorem eq_liftBaseChange_iff_ι {Q : QuadraticForm R M} {f : CliffordAlgebra Q →ₐ[R] B}
+    {g : CliffordAlgebra (Q.baseChange A) →ₐ[A] B} :
+    g = liftBaseChange A Q f ↔ ∀ v : M, g (ι (Q.baseChange A) (1 ⊗ₜ v)) = f (ι Q v) := by
+  refine ⟨fun h v ↦ h ▸ liftBaseChange_ι_one_tmul f v, fun h ↦ ?_⟩
+  apply (eq_liftBaseChange_iff Q f g).2
+  have heq : (g.restrictScalars R).comp (ofBaseChangeAux A Q) = f := by
+    ext v
+    simpa using h v
+  exact AlgHom.congr_fun heq
+
+/-- `CliffordAlgebra.liftBaseChange` commutes with postcomposition by an `A`-algebra
+homomorphism. -/
+theorem comp_liftBaseChange {C : Type*} [Semiring C] [Algebra R C] [Algebra A C]
+    [IsScalarTower R A C] {Q : QuadraticForm R M} (g : B →ₐ[A] C) (f : CliffordAlgebra Q →ₐ[R] B) :
+    g.comp (liftBaseChange A Q f) = liftBaseChange A Q ((g.restrictScalars R).comp f) :=
+  eq_liftBaseChange_iff_ι.2 fun v ↦ by simp
+
+/-- `CliffordAlgebra.liftBaseChange` is natural with respect to quadratic isometries. -/
+theorem liftBaseChange_comp_map {N : Type*} [AddCommGroup N] [Module R N] {Q : QuadraticForm R M}
+    {Q' : QuadraticForm R N} (e : Q →qᵢ Q') (f : CliffordAlgebra Q' →ₐ[R] B) :
+    (liftBaseChange A Q' f).comp (CliffordAlgebra.map (e.baseChange A)) =
+      liftBaseChange A Q (f.comp (CliffordAlgebra.map e)) :=
+  eq_liftBaseChange_iff_ι.2 fun v ↦ by simp
+
 end LiftBaseChange
+
+section LiftBaseChangeRing
+
+variable {B : Type*} [Ring B] [Algebra A B] [Algebra R B] [IsScalarTower R A B]
+
+/-- If `γ : B` anticommutes with `f (ι Q v)` for every `v : M`, then `γ` anticommutes with
+`liftBaseChange A Q f (ι (Q.baseChange A) w)` for every `w : A ⊗[R] M`. -/
+theorem mul_liftBaseChange_ι_eq_neg {Q : QuadraticForm R M} (f : CliffordAlgebra Q →ₐ[R] B)
+    (γ : B) (hγf : ∀ v, γ * f (ι Q v) = -(f (ι Q v) * γ)) (w : A ⊗[R] M) :
+    γ * liftBaseChange A Q f (ι (Q.baseChange A) w) =
+      -(liftBaseChange A Q f (ι (Q.baseChange A) w) * γ) := by
+  induction w using TensorProduct.inductionOn with
+  | tmul a v =>
+    rw [liftBaseChange_ι_tmul, mul_smul_comm, hγf, smul_neg, ← smul_mul_assoc]
+  | add x y hx hy =>
+    rw [map_add, map_add, mul_add, hx, hy, add_mul, neg_add]
+
+end LiftBaseChangeRing
 
 /-! ### The tensor carrier: inverse-map forms and the grading -/
 
@@ -498,6 +573,14 @@ exactly onto the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. -/
 theorem ofBaseChange_mem_evenOdd_iff {y : A ⊗[R] CliffordAlgebra Q} {i : ZMod 2} :
     ofBaseChange A Q y ∈ evenOdd (Q.baseChange A) i ↔ y ∈ (evenOdd Q i).baseChange A := by
   rw [← toBaseChange_mem_baseChange_evenOdd_iff, toBaseChange_ofBaseChange]
+
+/-- `CliffordAlgebra.ofBaseChangeAux` preserves the `ℤ/2`-grading: an element of parity `i` in
+`Cℓ(M, Q)` maps into the parity-`i` part of `Cℓ(A ⊗ M, Q_A)`. -/
+theorem ofBaseChangeAux_mem_evenOdd {x : CliffordAlgebra Q} {i : ZMod 2}
+    (hx : x ∈ evenOdd Q i) :
+    ofBaseChangeAux A Q x ∈ evenOdd (Q.baseChange A) i := by
+  rw [← toBaseChange_mem_baseChange_evenOdd_iff, toBaseChange_ofBaseChangeAux]
+  exact Submodule.tmul_mem_baseChange_of_mem 1 hx
 
 end TensorCarrier
 

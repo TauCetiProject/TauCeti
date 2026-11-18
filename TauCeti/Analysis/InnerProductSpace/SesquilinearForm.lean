@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Sesquilinear forms with prescribed adjoints
@@ -17,7 +17,9 @@ definite real or complex sesquilinear form, the scalar is uniquely determined an
 This is the full-endomorphism-algebra form of the uniqueness of an invariant metric.
 
 The comparison uses Mathlib's rank-one operators: their adjoints exchange the two vectors.
-It does not assume that the form being compared is already represented by an operator.
+It does not assume that the form being compared is already represented by an operator. We also
+package a positive semidefinite anisotropic sesquilinear form over `ℝ` or `ℂ` as an
+`InnerProductSpace.Core` (`LinearMap.IsPosSemidef.toInnerProductCore`).
 -/
 
 public section
@@ -25,6 +27,44 @@ public section
 namespace LinearMap
 
 open InnerProductSpace
+open scoped ComplexOrder
+
+section Core
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E] {H : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜}
+
+/-- A positive semidefinite anisotropic sesquilinear form over `ℝ` or `ℂ` defines an
+`InnerProductSpace.Core`. -/
+@[instance_reducible]
+def IsPosSemidef.toInnerProductCore (hH : H.IsPosSemidef)
+    (hdef : ∀ x : E, x ≠ 0 → H x x ≠ 0) : InnerProductSpace.Core 𝕜 E where
+  inner x y := H x y
+  conj_inner_symm x y := hH.isSymm.eq y x
+  re_inner_nonneg x := (RCLike.nonneg_iff.mp (hH.isNonneg.nonneg x)).1
+  add_left x y z := by simp
+  smul_left x y r := by simp
+  definite x hx := by_contra fun h ↦ hdef x h hx
+
+/-- The inner product of `LinearMap.IsPosSemidef.toInnerProductCore` evaluates as the underlying
+sesquilinear form. -/
+@[simp]
+theorem IsPosSemidef.toInnerProductCore_inner (hH : H.IsPosSemidef)
+    (hdef : ∀ x : E, x ≠ 0 → H x x ≠ 0) (x y : E) :
+    (hH.toInnerProductCore hdef).inner x y = H x y :=
+  (rfl)
+
+/-- Under `InnerProductSpace.ofCore` applied to `LinearMap.IsPosSemidef.toInnerProductCore`,
+`inner 𝕜 x y` evaluates as `H x y` because `InnerProductSpace.ofCore` copies `inner` from
+`Core.toCore`. -/
+theorem IsPosSemidef.inner_ofCore_toInnerProductCore (hH : H.IsPosSemidef)
+    (hdef : ∀ x : E, x ≠ 0 → H x x ≠ 0) (x y : E) :
+    letI : NormedAddCommGroup E := (hH.toInnerProductCore hdef).toNormedAddCommGroup
+    letI : InnerProductSpace 𝕜 E :=
+      InnerProductSpace.ofCore (hH.toInnerProductCore hdef).toCore
+    inner 𝕜 x y = H x y :=
+  (rfl)
+
+end Core
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E]
@@ -38,8 +78,6 @@ theorem eq_mul_inner_of_adjoint (H : E →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜)
   have h := hH (rankOne 𝕜 x u).toLinearMap u y
   simpa [ContinuousLinearMap.adjoint_toLinearMap, rankOne_apply,
     hu, mul_comm] using h
-
-open scoped ComplexOrder
 
 /-- A positive definite real or complex sesquilinear form giving all endomorphisms their usual
 adjoints is a unique positive real multiple of the inner product. Nontriviality is necessary
