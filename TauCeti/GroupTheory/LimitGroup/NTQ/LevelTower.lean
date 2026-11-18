@@ -93,46 +93,36 @@ theorem exists_tower_abelian (f : K →* H) :
 
 section Centralizer
 
-/-- The standard quadratic equation `y⁻¹ c y c⁻¹ = 1` in one variable over `T`, for `c ≠ 1`. -/
-private def conjEquation {T : Type u} [Group T] {c : T} (hc : c ≠ 1) :
-    Quadratic.Standard T PUnit.{u + 1} :=
-  .orientableCoeff 0 1 one_pos Fin.elim0 Fin.elim0 (fun _ ↦ .unit) (by decide) (fun _ ↦ c)
-    (fun _ ↦ hc) c⁻¹ (inv_ne_one.2 hc)
-
-/-- The solutions of `y⁻¹ c y c⁻¹ = 1` are the elements commuting with `c`. -/
-private theorem mem_V_conjEquation {T M : Type u} [Group T] [Group M] {ι : T →* M} {c : T}
-    (hc : c ≠ 1) {w : PUnit.{u + 1} → M} :
-    w ∈ V ι {(conjEquation hc).toWord} ↔ Commute (w .unit) (ι c) := by
-  rw [conjEquation, Quadratic.Standard.toWord_orientableCoeff_zero_one,
-    Quadratic.mem_V_conjugacy_iff (b := 1) (by simp)]
-  simp [mem_centralizer_singleton_iff, commute_iff_eq]
+open Quadratic.Standard
 
 /-- Over `H` and for `c ≠ 1`, the tower of `n` stacked quadratic levels `yᵢ⁻¹ c yᵢ c⁻¹ = 1` has a
 top carrier `T` separated by `H`, the letters `yᵢ` commute with `c` in `T`, and every tuple of
 elements of `H` commuting with `c` is the image of `(y₁, …, yₙ)` under a homomorphism `T → H`
 over `H`. -/
-private theorem exists_tower_conjEquation {c : H} (hc : c ≠ 1) : ∀ n : ℕ,
+private theorem exists_tower_centralizerEquation {c : H} (hc : c ≠ 1) : ∀ n : ℕ,
     ∃ (T : Type u) (_ : Group T) (j : H →* T) (_ : Tower H T j) (q : Fin n → T),
       IsSeparatedBy j (MonoidHom.id H) ∧ (∀ i, Commute (q i) (j c)) ∧
         ∀ v : Fin n → H, (∀ i, Commute (v i) c) → ∃ ρ : GHom j (MonoidHom.id H), ⇑ρ ∘ q = v
   | 0 => ⟨H, inferInstance, .id H, .base, Fin.elim0, (IsDiscriminatedBy.self _).isSeparatedBy,
       fun i ↦ i.elim0, fun _ _ ↦ ⟨GHom.id _, funext fun i ↦ i.elim0⟩⟩
   | n + 1 => by
-    obtain ⟨T, _, j, t, q, hsep, hq, hcov⟩ := exists_tower_conjEquation hc n
+    obtain ⟨T, _, j, t, q, hsep, hq, hcov⟩ := exists_tower_centralizerEquation hc n
     have hjc : j c ≠ 1 := (map_ne_one_iff j t.injective).2 hc
-    let S : Set (GX T PUnit.{u + 1}) := {(conjEquation hjc).toWord}
+    let S : Set (GX T PUnit.{u + 1}) := {(centralizerEquation .unit hjc).toWord}
     -- Each level is a coordinate group over the carrier below, so it is separated by `H`.
     have hsep' := (CoordGroup.isSeparatedBy_coeff (ι := .id T) S).comp j
     rw [MonoidHom.id_comp] at hsep'
     refine ⟨CoordGroup (.id T) S, inferInstance, (CoordGroup.coeff (.id T) S).comp j,
-      t.cons (.quadratic PUnit (conjEquation hjc) 1 ((mem_V_conjEquation hjc).2 (.one_left _))),
+      t.cons (.quadratic PUnit (centralizerEquation .unit hjc) 1
+        (mem_V_centralizerEquation.2 (.one_left _))),
       Fin.cons (CoordGroup.genericPoint (.id T) S .unit) (CoordGroup.coeff (.id T) S ∘ q),
       hsep'.trans hsep, fun i ↦ ?_, fun v hv ↦ ?_⟩
     · refine Fin.cases ?_ (fun i ↦ ?_) i
-      · exact (mem_V_conjEquation hjc).1 (CoordGroup.genericPoint_mem_V S)
+      · exact (mem_V_centralizerEquation (x := PUnit.unit) (hc := hjc)).1
+          (CoordGroup.genericPoint_mem_V S)
       · simpa using (hq i).map (CoordGroup.coeff (.id T) S)
     · obtain ⟨ρ, hρ⟩ := hcov (Fin.tail v) fun i ↦ hv i.succ
-      have hw : (fun _ ↦ j (v 0)) ∈ V (.id T) S := (mem_V_conjEquation hjc).2 ((hv 0).map j)
+      have hw : (fun _ ↦ j (v 0)) ∈ V (.id T) S := mem_V_centralizerEquation.2 ((hv 0).map j)
       refine ⟨⟨(ρ : T →* H).comp (CoordGroup.evalGHom _ hw : _ →* T), fun h ↦ ?_⟩,
         funext fun i ↦ Fin.cases ?_ (fun i ↦ ?_) i⟩
       · simp
@@ -150,7 +140,7 @@ private theorem exists_tower_centralizer_of_commute (hH : IsCommTransitive H) (f
       q ∈ V (j.comp f) (centralizer U hU : Level K X).equations ∧
         ∀ v ∈ V f (centralizer U hU : Level K X).equations, ∃ ρ : GHom j (MonoidHom.id H),
           ⇑ρ ∘ q = v := by
-  obtain ⟨T, _, j, t, q, hT, hq, hcov⟩ := exists_tower_conjEquation hfc₀ (Nat.card X)
+  obtain ⟨T, _, j, t, q, hT, hq, hcov⟩ := exists_tower_centralizerEquation hfc₀ (Nat.card X)
   -- The centralizer of `f c₀` is abelian in `T`, which is separated by `H`.
   have := hT.isMulCommutative_centralizer
     (isCommTransitive_iff_centralizer_isMulCommutative.1 hH _ hfc₀)
@@ -163,17 +153,6 @@ private theorem exists_tower_centralizer_of_commute (hH : IsCommTransitive H) (f
   · exact setLike_mul_comm (hmem (hq _)) (hmem ((hU' c hc).map j))
   · obtain ⟨ρ, hρ⟩ := hcov (v ∘ e.symm) fun i ↦ (mem_V_centralizer.1 hv).2 _ c₀ hc₀
     exact ⟨ρ, funext fun x ↦ by simpa using congrFun hρ (e x)⟩
-
-omit [Finite X] in
-/-- Over a commutative transitive group `H`, if two coefficients `f c₀` and `f c₁`, `c₀, c₁ ∈ U`,
-do not commute, then the only `H`-point of the centralizer level is trivial. -/
-private theorem eq_one_of_mem_V_centralizer (hH : IsCommTransitive H) {f : K →* H} {U : Set K}
-    {hU : U.Finite} {c₀ c₁ : K} (hc₀ : c₀ ∈ U) (hc₁ : c₁ ∈ U) (h : ¬Commute (f c₁) (f c₀))
-    {v : X → H} (hv : v ∈ V f (centralizer U hU : Level K X).equations) : v = 1 := by
-  funext x
-  by_contra hx
-  have hv' := (mem_V_centralizer.1 hv).2 x
-  exact h ((isCommTransitive_iff H).1 hH _ (v x) _ hx (hv' c₁ hc₁).symm (hv' c₀ hc₀))
 
 /-- Over a commutative transitive group `H`, the `H`-points of a centralizer level, the tuples of
 pairwise commuting elements commuting with the coefficients, are covered by a tower over `H`. -/
