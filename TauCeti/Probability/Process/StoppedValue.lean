@@ -135,6 +135,20 @@ theorem stoppedValue_preimage_eq (t : Set β) :
   | top => simp
   | coe i => simp
 
+/-- The level-set partition used to glue stopped values. -/
+private noncomputable def stoppedValuePartition (τ : Ω → WithTop ι) :
+    IndexedPartition (fun v : Set.range τ => {ω | τ ω = v.val}) where
+  eq_of_mem := fun hv hw => Subtype.ext (hv.symm.trans hw)
+  some := fun v => v.property.choose
+  some_mem := fun v => v.property.choose_spec
+  index := fun ω => ⟨τ ω, ω, rfl⟩
+  mem_index := fun _ => rfl
+
+private theorem stoppedValue_eq_partition (ω : Ω) :
+    stoppedValue u τ ω = u ((stoppedValuePartition τ).index ω).val.untopA ω := by
+  have h := Set.mem_ofPred_eq.mp ((stoppedValuePartition τ).mem_index ω)
+  simp only [stoppedValue, h]
+
 variable [MeasurableSpace β]
 
 /-- At a random time with countable range whose level sets are measurable, the stopped value of a
@@ -182,6 +196,18 @@ theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder 
   cases v with
   | top => exact hτ.measurableSpace_le _ (hτ.measurableSet_eq_top_of_countable_range hc)
   | coe i => exact ℱ.le i _ (hτ.measurableSet_eq_of_countable_range hc i)
+
+omit [Nonempty ι] in
+/-- Every level set of a countable-range stopping time, including its infinite-time event,
+is measurable for the stopped sigma-algebra, even in a partially ordered time type. -/
+theorem IsStoppingTime.measurableSet_stopping_eq_of_countable_range [PartialOrder ι]
+    {ℱ : Filtration ι m} (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable)
+    (v : WithTop ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = v} := by
+  cases v with
+  | top => exact hτ.measurableSet_eq_top_of_countable_range hc
+  | coe i =>
+    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
+    exact hτ.measurableSet_eq_of_countable_range hc i
 
 section CountableTime
 
@@ -237,18 +263,9 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
   -- the gluing below uses indicator functions; any value of the process serves as their zero
   let : Zero E := ⟨X (Classical.arbitrary ι) ω₀⟩
   have := hc.to_subtype
-  -- each level set of `τ` is measurable for the stopping sigma algebra, by transport of the slice
-  have hmeas (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
-    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
-    exact hτ.measurableSet_eq_of_countable_range hc i
   let s : Set.range τ → Set Ω := fun v ↦ {ω | τ ω = v.val}
-  have hs : IndexedPartition s := IndexedPartition.mk' s
-    (fun v w hvw ↦ Set.disjoint_left.2 fun ω hv hw ↦
-      hvw (Subtype.ext (hv.symm.trans hw)))
-    (fun v ↦ by obtain ⟨ω, hω⟩ := v.property; exact ⟨ω, hω⟩)
-    (fun ω ↦ ⟨⟨τ ω, ⟨ω, rfl⟩⟩, rfl⟩)
-  have htop : MeasurableSet[hτ.measurableSpace] {ω | τ ω = ⊤} :=
-    hτ.measurableSet_eq_top_of_countable_range hc
+  let hs := stoppedValuePartition τ
+  have htop := hτ.measurableSet_stopping_eq_of_countable_range hc ⊤
   have hind (v : Set.range τ) :
       StronglyMeasurable[hτ.measurableSpace] ((s v).indicator (X v.val.untopA)) := by
     obtain ⟨v, hv⟩ := v
@@ -271,17 +288,13 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
         (fun t ht ↦ ?_) ((hX i).indicator hslice) (fun ω hω ↦ Set.indicator_of_notMem hω _)
       rw [Set.inter_comm, hτ.measurableSet_inter_eq_iff, Set.inter_comm]
       exact ht
-  have hm (v : Set.range τ) : MeasurableSet[hτ.measurableSpace] (s v) := by
-    obtain ⟨v, hv⟩ := v
-    induction v using WithTop.recTopCoe with
-    | top => exact htop
-    | coe i => exact hmeas i
+  have hm (v : Set.range τ) : MeasurableSet[hτ.measurableSpace] (s v) :=
+    hτ.measurableSet_stopping_eq_of_countable_range hc v.val
   let : MeasurableSpace Ω := hτ.measurableSpace
   convert hs.stronglyMeasurable_piecewise hm hind using 1
   ext ω
   rw [IndexedPartition.piecewise_apply, Set.indicator_of_mem (hs.mem_index ω)]
-  simp only [stoppedValue]
-  rw [(hs.mem_index ω : τ ω = _)]
+  exact stoppedValue_eq_partition ω
 
 /-- Stopping a strongly adapted process at a countable-range stopping time preserves literal
 strong adaptation on a raw filtration, with no path regularity or finiteness assumption on
