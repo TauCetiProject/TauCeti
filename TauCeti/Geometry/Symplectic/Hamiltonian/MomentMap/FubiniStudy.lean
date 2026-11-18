@@ -135,6 +135,11 @@ onto the line `[z₀ : z₁]` of `ℂ²` (`TauCeti.hermitianProjector`), that is
 def fubiniStudyHeight (x : OnePoint ℂ) : ℝ :=
   (hermitianProjector (equivProjectivization ℂ x) 0 0).re
 
+/-- The height is the first diagonal entry of the orthogonal projector onto the line. -/
+theorem fubiniStudyHeight_def (x : OnePoint ℂ) :
+    fubiniStudyHeight x = (hermitianProjector (equivProjectivization ℂ x) 0 0).re :=
+  (rfl)
+
 /-- The squared Hermitian norm of the homogeneous coordinates `(t, 1)` of a finite point. -/
 private theorem star_dotProduct_self_coe (z : ℂ) :
     (star ![z, 1] ⬝ᵥ ![z, 1] : ℂ) = ((1 + ‖z‖ ^ 2 : ℝ) : ℂ) := by
@@ -356,6 +361,13 @@ of the height `h` (`OnePoint.fubiniStudyHeight`) it is `ξ ↦ h ξ₀ + (1 - h)
 (`OnePoint.fubiniStudyMoment_apply`). -/
 def fubiniStudyMoment (x : OnePoint ℂ) : Module.Dual ℝ (Fin 2 → ℝ) :=
   ∑ i, (hermitianProjector (equivProjectivization ℂ x) i i).re • LinearMap.proj i
+
+/-- The projector diagonal is `ξ ↦ Σᵢ Pᵢᵢ ξᵢ`, where `P` is the orthogonal projector onto the
+line. -/
+theorem fubiniStudyMoment_def (x : OnePoint ℂ) :
+    fubiniStudyMoment x =
+      ∑ i, (hermitianProjector (equivProjectivization ℂ x) i i).re • LinearMap.proj i :=
+  (rfl)
 
 @[simp]
 theorem fubiniStudyMoment_apply (x : OnePoint ℂ) (ξ : Fin 2 → ℝ) :
