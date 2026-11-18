@@ -571,7 +571,8 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
   have hKc := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
-    (contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L)
+    (K := pairOfPantsContinuationPerturbation G H L) fun w x ↦
+      contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L w x
   have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
     (contMDiffAt_pairOfPantsPerturbation hH hHs)
   have hRc := (integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation ω hG hH hGs
@@ -881,7 +882,8 @@ theorem lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq
     L hu.continuousOn
   rw [IntegrableOn, Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal] at hR
   exact hω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm
-    (fun w x ↦ contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L w x)
+    (K := pairOfPantsContinuationPerturbation G H L)
+    (contMDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L)
     (fun _ _ x hw ↦ pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le hw x) hH hu
     (fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)) hA hR hh
 
