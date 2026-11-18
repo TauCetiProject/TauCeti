@@ -742,7 +742,6 @@ theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensio
     simp only [ρ]
     constructor <;> linarith
 
-
 open MeasureTheory Metric in
 /-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`
 such that around every centre `c` and for every radius `0 ≤ r`, some smooth `ψ : ℝ → ℝ` has
@@ -799,7 +798,7 @@ section ScaledCutoff
 
 open Metric
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Cutoff functions.** There is `C ≥ 0`, depending only on `E`, such that for every `c` and
 `r > 0` there is a smooth function `ρ : E → ℝ` with values in `[0, 1]`, equal to `1` on the closed
@@ -843,7 +842,7 @@ section CutoffDecay
 
 open Metric
 
-variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+variable {G : Type*} [NormedSpace ℝ E] [NormedAddCommGroup G]
 
 /-- **Cutoff derivative against decaying data.** Let `χ` equal `1` on the closed ball of radius
 `R` about the origin and `0` outside radius `2 R`, with `‖Dχ‖ ≤ A`. If `‖x‖ ‖u x‖ ≤ M` for
