@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
@@ -27,6 +28,9 @@ to be finite. For `p = 2` this says that the discarded second absolute moment
 (`MeasureTheory.MemLp.tendsto_integral_indicator_norm_sq`). The cut-off function is bounded by
 the level itself (`TauCeti.norm_indicator_setOf_norm_le_le`), and is measurable when the original
 function is (`Measurable.indicator_setOf_norm_le`).
+
+The integral of a norm cutoff also tends to the original integral for any integrable function
+(`MeasureTheory.Integrable.tendsto_integral_ite_norm_le`).
 -/
 
 public section
@@ -89,6 +93,20 @@ theorem _root_.Measurable.indicator_setOf_norm_le
     (hf : Measurable f) (R : ℝ) :
     Measurable ({x | ‖f x‖ ≤ R}.indicator f) :=
   hf.indicator (measurableSet_le (continuous_norm.measurable.comp hf) measurable_const)
+
+/-- The integrals of the norm cutoffs of an integrable function converge to its integral
+as the cutoff radius tends to infinity. -/
+theorem Integrable.tendsto_integral_ite_norm_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : Ω → E} (hf : Integrable f P) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ x, (if ‖f x‖ ≤ R then f x else 0) ∂P) Filter.atTop
+      (𝓝 (∫ x, f x ∂P)) := by
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖f x‖)
+    (.of_forall fun R ↦ hf.aestronglyMeasurable.ite_norm_le R)
+    (.of_forall fun R ↦ .of_forall fun x ↦ ?_) hf.norm (.of_forall fun x ↦ ?_)
+  · split_ifs <;> simp
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [Filter.eventually_ge_atTop ‖f x‖] with R hR
+    simp [hR]
 
 /-- Cutting off an `Lᵖ` function at a real norm level preserves `Lᵖ` membership,
 including for infinite measures and arbitrary exponents. -/

@@ -85,6 +85,19 @@ theorem matrix_row {Ω m n R : Type*} [MeasurableSpace Ω]
     (TauCeti.measurePreserving_piCurry μ).hasLaw.comp hflat
   exact (TauCeti.Probability.hasLaw_pi_iff.mp hrows).1
 
+/-- The columns of a matrix with mutually independent entries are mutually independent
+as random vectors, even for infinite index types. The entry maps only need to be almost
+everywhere measurable. -/
+theorem matrix_col {Ω m n R : Type*} [MeasurableSpace Ω] [MeasurableSpace R]
+    {P : Measure Ω} {X : Ω → Matrix m n R}
+    (hX : iIndepFun (fun ij : m × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
+    (hm : ∀ i j, AEMeasurable (fun ω ↦ X ω i j) P) :
+    iIndepFun (fun j ω ↦ (X ω).col j) P := by
+  have hind' : iIndepFun (fun ij : n × m ↦ fun ω ↦ (X ω).transpose ij.1 ij.2) P := by
+    simpa only [Matrix.transpose_apply] using
+      hX.precomp (g := fun ij : n × m ↦ (ij.2, ij.1)) (Equiv.prodComm n m).injective
+  simpa only [Matrix.row_transpose] using hind'.matrix_row fun j i ↦ hm i j
+
 end ProbabilityTheory.iIndepFun
 
 namespace TauCeti.Probability
