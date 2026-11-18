@@ -82,22 +82,8 @@ theorem dirichletForcing_extendByZeroL (hU : U ≤ Omega) (f : Lp ℝ 2 (mu.rest
     (v : W1p0 mu U 2) :
     dirichletForcing f (W1p0.extendByZeroL hU v) =
       ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-  have hUm := U.isOpen.measurableSet
-  have hval := coeFn_extendByZeroLpₗᵢ ℝ hUm (SetLike.coe_subset_coe.mpr hU)
-    (W1p.value (v : W1p mu U 2))
   rw [dirichletForcing_apply_eq_setIntegral, W1p0.value_extendByZeroL]
-  calc ∫ x in Omega, f x * (extendByZeroLpₗᵢ ℝ mu hUm (SetLike.coe_subset_coe.mpr hU)
-          (W1p.value (v : W1p mu U 2)) : _ → ℝ) x ∂mu
-      = ∫ x in Omega, (U : Set (EuclideanSpace ℝ ι)).indicator
-          (fun x ↦ f x * W1p.value (v : W1p mu U 2) x) x ∂mu := by
-        refine integral_congr_ae ?_
-        filter_upwards [hval] with x hx
-        by_cases hxU : x ∈ (U : Set (EuclideanSpace ℝ ι))
-        · rw [hx, indicator_of_mem hxU, indicator_of_mem hxU]
-        · rw [hx, indicator_of_notMem hxU, indicator_of_notMem hxU, mul_zero]
-    _ = ∫ x in U, f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-        rw [integral_indicator hUm, Measure.restrict_restrict hUm,
-          inter_eq_left.2 (SetLike.coe_subset_coe.mpr hU)]
+  exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
 
 /-- **Céa's estimate for the Dirichlet problem on a smaller domain.** Let the energy form `B` of
 `(a, b, c)` satisfy `C ‖w‖² ≤ B(w, w)` on `H¹₀(Ω)` with `C > 0`, let `u ∈ H¹₀(Ω)` solve
