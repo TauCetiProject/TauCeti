@@ -14,7 +14,9 @@ Let `ρ` be a jointly continuous representation (`TauCeti.ContinuousRep`) of a t
 `Γ` on a module `V` over a ring `E`, and let `O → E` be a ring map, typically the inclusion of a
 discrete valuation ring into its fraction field. An *integral model* of `ρ` over `O` is a
 `Γ`-stable full lattice `Λ ⊆ V`: a finitely generated `O`-submodule spanning `V` over `E`
-(Mathlib's `Submodule.IsFullLattice E Λ`) and preserved by every `ρ g`. For an `ℓ`-adic Galois
+whose `O`-linearly independent subsets stay `E`-linearly independent (Mathlib's
+`Submodule.IsFullLattice E Λ`; the independence condition is automatic when `E` is the fraction
+field of a domain `O`), and preserved by every `ρ g`. For an `ℓ`-adic Galois
 representation on a `ℚ_ℓ`-vector space, an integral model is a `Γ`-stable `ℤ_ℓ`-lattice, the
 object whose reductions modulo `ℓⁿ` are the finite-level Galois representations.
 
@@ -30,8 +32,8 @@ This file develops the elementary theory of integral models.
   its module topology (`Submodule.IsLattice.isModuleTopology`), and the valuation ring of a
   nonarchimedean local field is a discrete valuation ring, so every lattice there is free.
 * The units of `E` act on integral models by homothety, and integral models are ordered by
-  inclusion, with sums and, over a principal ideal domain with fraction field `E`,
-  intersections.
+  inclusion. When `E` is a field and the fraction field of `O` they have sums, and when moreover
+  `O` is a principal ideal domain they have intersections.
 * A representation of a compact group on a finite-dimensional vector space over a field with a
   valuative topology, such as a nonarchimedean local field, has an integral model over the
   valuation ring (`TauCeti.GaloisLattice.IntegralModel.nonempty`), by the stable-lattice theorem.
@@ -66,13 +68,15 @@ variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] (O : Type*) [CommRing O]
   [IsScalarTower O E V] [TopologicalSpace V]
 
 /-- **An integral model** of a continuous representation `ρ` of `Γ` on `V` over the coefficient
-ring `O`: a full `O`-lattice in `V` (finitely generated over `O` and spanning `V` over `E`) that
-is stable under every `ρ g`. -/
+ring `O`: a full `O`-lattice in `V` (finitely generated over `O`, spanning `V` over `E`, and
+with `O`-linearly independent subsets `E`-linearly independent) that is stable under every
+`ρ g`. -/
 @[ext]
 structure IntegralModel (ρ : ContinuousRep Γ E V) where
   /-- The underlying lattice. -/
   lattice : Submodule O V
-  /-- The lattice is full: finitely generated over `O` and spanning `V` over `E`. -/
+  /-- The lattice is full: finitely generated over `O`, spanning `V` over `E`, and with
+  `O`-linearly independent subsets `E`-linearly independent. -/
   isLattice : lattice.IsFullLattice E
   /-- The lattice is stable under the action. -/
   stable : ∀ g, ∀ x ∈ lattice, ρ g x ∈ lattice
