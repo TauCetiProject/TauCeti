@@ -20,9 +20,15 @@ its group. Then `S` has a solution in a group containing `G`, so the coefficient
 homomorphism `SystemGroup.map` from the group of `S` to the group of its image `S.map f` over `H`
 is injective (`Quadratic.Standard.systemGroup_map_injective`), by the change of coefficients for
 systems whose coefficients embed (`SystemGroup.map_injective`). This is Proposition 2 of
-[VAR-I], where `H` is assumed torsion-free as well. Torsion-freeness of `G` cannot be dropped:
-over `G = ℤ/6 = ⟨g⟩`, the equation `z⁻¹ g³ z g² = 1` makes `g³`, of order dividing `2`, conjugate
-to `g⁴`, of order dividing `3`, so both vanish in `G_S`, and so does `g = g³ g⁻²`.
+[VAR-I], where `H` is assumed torsion-free as well.
+
+Torsion-freeness of `G` cannot be dropped from either result. Over `G = ℤ/6 = ⟨g⟩`, the equation
+`z⁻¹ g³ z g² = 1` makes `g³`, of order dividing `2`, conjugate to `g⁴`, of order dividing `3`, so
+both vanish in `G_S`, and so does `g = g³ g⁻²`: the coefficients do not embed. Let `g ∈ A₁₂` have
+cycle type `(2, 2, 3, 5)`, so that `G = ⟨g⟩ ≅ ℤ/30`. The equation `z⁻¹ g¹⁵ z g¹⁰ = 1`, which
+conjugates an element of order `2` to one of order `3`, has the group `G_S ≅ ℤ/5 ∗ ℤ`. Over the
+simple group `H = A₁₂` it kills `H`, so `H_{f(S)} ≅ ℤ` and `G_S → H_{f(S)}` sends `g⁶ ≠ 1`
+to `1`.
 
 ## Main results
 

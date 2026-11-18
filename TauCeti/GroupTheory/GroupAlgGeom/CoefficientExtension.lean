@@ -42,27 +42,26 @@ open Function Monoid.Coprod Subgroup
 
 namespace TauCeti.GroupAlgGeom.SystemGroup
 
-variable {G : Type*} [Group G] {X : Type*}
-
-variable {H : Type*} [Group H]
+variable {G H X : Type*} [Group G] [Group H] {S : Set (GX G X)} {T : Set (GX H X)}
 
 /-- The homomorphism `G_S →* H_T` induced by `f : G →* H`, for systems `S` over `G` and `T` over
 `H` such that the image under `f` of each equation of `S` is a consequence of `T`. -/
-def map (f : G →* H) {S : Set (GX G X)} {T : Set (GX H X)}
-    (h : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T) :
+def map (f : G →* H) (h : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T) :
     SystemGroup G S →* SystemGroup H T :=
   QuotientGroup.map _ _ (Monoid.Coprod.map f (FreeGroup.map id))
     (normalClosure_le_normal (Set.image_subset_iff.1 h))
 
+/-- The homomorphism `G_S →* H_T` induced by `f` sends the class of a word `w` to the class of its
+image, in which each coefficient `g` is replaced by `f g` and the variables are unchanged. -/
 @[simp]
-theorem map_mk (f : G →* H) {S : Set (GX G X)} {T : Set (GX H X)}
-    (h : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T) (w : GX G X) :
+theorem map_mk (f : G →* H) (h : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T)
+    (w : GX G X) :
     map f h (w : SystemGroup G S) = (Monoid.Coprod.map f (FreeGroup.map id) w : SystemGroup H T) :=
   (rfl)
 
 /-- The homomorphism `G_S →* H_T` induced by `f` is compatible with the coefficients: it sends
 `g ∈ G` to `f g`. -/
-theorem map_comp_coeff (f : G →* H) {S : Set (GX G X)} {T : Set (GX H X)}
+theorem map_comp_coeff (f : G →* H)
     (h : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T) :
     (map f h).comp (coeff S) = (coeff T).comp f := by
   ext
@@ -72,8 +71,7 @@ theorem map_comp_coeff (f : G →* H) {S : Set (GX G X)} {T : Set (GX H X)}
 `G` such that `G` embeds in `G_S`. A word of `G[X]` whose image under `f` lies in the normal
 closure of the image of `S` lies in the normal closure of `S`; that is, the homomorphism
 `G_S →* H_{f(S)}` induced by `f` is injective. -/
-theorem comap_normalClosure_image {f : G →* H} (hf : Injective f)
-    {S : Set (GX G X)} (hS : Injective (coeff S)) :
+theorem comap_normalClosure_image {f : G →* H} (hf : Injective f) (hS : Injective (coeff S)) :
     (normalClosure (Monoid.Coprod.map f (FreeGroup.map id) '' S)).comap
       (Monoid.Coprod.map f (FreeGroup.map id)) = normalClosure S := by
   set F : GX G X →* GX H X := Monoid.Coprod.map f (FreeGroup.map id)
@@ -97,8 +95,7 @@ theorem comap_normalClosure_image {f : G →* H} (hf : Injective f)
 /-- **Change of coefficients for system groups.** Let `f : G →* H` be injective, `S` a system over
 `G` such that `G` embeds in `G_S`, and `T` a system over `H` such that `f(S)` and `T` are
 consequences of each other. Then the homomorphism `G_S →* H_T` induced by `f` is injective. -/
-theorem map_injective {f : G →* H} (hf : Injective f) {S : Set (GX G X)}
-    (hS : Injective (coeff S)) {T : Set (GX H X)}
+theorem map_injective {f : G →* H} (hf : Injective f) (hS : Injective (coeff S))
     (h : Monoid.Coprod.map f (FreeGroup.map id) '' S ⊆ normalClosure T)
     (hT : T ⊆ normalClosure (Monoid.Coprod.map f (FreeGroup.map id) '' S)) :
     Injective (map f h) :=
