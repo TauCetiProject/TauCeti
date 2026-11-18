@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
@@ -15,6 +15,10 @@ A nonempty preconnected set with compact proper closure in a preconnected, local
 locally connected Hausdorff space has an open preconnected enlargement containing its closure.
 The enlargement has compact proper closure and contains a point outside the original closure.
 This supplies strict domain enlargements for scalar Dirichlet eigenvalue monotonicity.
+
+Adapted from Otis Chodosh's original formalization in
+`ForTauCeti.Topology.Connected.RelativelyCompact`:
+https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/8aec9bbc07081bb020b19f55d4aaa32c13db6667/ForTauCeti/Topology/Connected/RelativelyCompact.lean
 -/
 
 public section
