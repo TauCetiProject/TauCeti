@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
-public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
@@ -35,18 +35,21 @@ built from finitely many eigenvectors.
 
 ## Main declarations
 
-* `HilbertBasis.projection`: the coordinate projection onto the closed span of `b i`, `i ∈ s`.
+* `HilbertBasis.projection`: the coordinate projection onto the closed span of `b i`, `i ∈ s`,
+  with `HilbertBasis.projection_eq_diagonal` relating it to `HilbertBasis.diagonal`.
 * `HilbertBasis.repr_projection`, `HilbertBasis.projection_apply_self`,
   `HilbertBasis.hasSum_projection`, `HilbertBasis.projection_eq_sum`: its coordinates, its values
   on the basis and its expansion in the basis.
-* `HilbertBasis.projection_inter`, `HilbertBasis.isIdempotentElem_projection`,
-  `HilbertBasis.isSymmetric_projection`, `HilbertBasis.projection_compl`: it is an orthogonal
-  projection, and these projections form a Boolean algebra of commuting projections.
+* `HilbertBasis.projection_mul_projection`, `HilbertBasis.commute_projection`,
+  `HilbertBasis.isIdempotentElem_projection`, `HilbertBasis.isSymmetric_projection`,
+  `HilbertBasis.projection_compl`: it is an orthogonal projection, and these projections form a
+  Boolean algebra of commuting projections.
+* `HilbertBasis.isStarProjection_projection`, `HilbertBasis.adjoint_projection`,
+  `HilbertBasis.projection_eq_starProjection`: in a complete space it is the star projection
+  onto the closure of the span of `b '' s`.
 * `HilbertBasis.hasSum_norm_projection_sq`, `HilbertBasis.norm_projection_le`: the norm of the
   projection of a vector, and the bound `‖b.projection s‖ ≤ 1`.
 * `HilbertBasis.hasFiniteRange_projection`: the projection has finite rank for finite `s`.
-* `HilbertBasis.finiteProjection_eq_projection`: for a basis indexed by `ℕ`, the projection
-  `b.finiteProjection n` onto the first `n + 1` basis vectors is `b.projection (Set.Iio (n + 1))`.
 * `HilbertBasis.mul_norm_projection_sq_le`, `HilbertBasis.mul_norm_apply_projection_sq_le`: the
   weighted bounds above.
 
@@ -76,6 +79,12 @@ def projection : E →L[𝕜] E :=
   b.diagonal ⟨s.indicator 1, memℓp_infty ⟨1, by
     rintro _ ⟨i, rfl⟩
     by_cases hi : i ∈ s <;> simp [hi]⟩⟩
+
+/-- The coordinate projection is the diagonal operator whose entries are the indicator function
+of `s`. -/
+theorem projection_eq_diagonal (hs : Memℓp (s.indicator (1 : ι → 𝕜)) ∞) :
+    b.projection s = b.diagonal ⟨s.indicator 1, hs⟩ := by
+  rw [projection]
 
 /-- The coordinates of `b.projection s x` are those of `x` on `s` and zero off `s`. -/
 @[simp]
@@ -112,15 +121,27 @@ theorem projection_eq_sum (s : Finset ι) (x : E) :
 
 /-- Two coordinate projections in the same basis multiply to the projection onto the
 intersection. -/
-theorem projection_inter : b.projection (s ∩ t) = b.projection s * b.projection t := by
+@[simp]
+theorem projection_mul_projection : b.projection s * b.projection t = b.projection (s ∩ t) := by
   ext1 x
   apply b.repr.injective
   ext i
   by_cases hs : i ∈ s <;> by_cases ht : i ∈ t <;> simp [hs, ht]
 
+/-- Two coordinate projections in the same basis compose to the projection onto the
+intersection. -/
+@[simp]
+theorem projection_comp_projection :
+    b.projection s ∘L b.projection t = b.projection (s ∩ t) :=
+  b.projection_mul_projection s t
+
+/-- Coordinate projections in the same basis commute. -/
+theorem commute_projection : Commute (b.projection s) (b.projection t) := by
+  rw [Commute, SemiconjBy, projection_mul_projection, projection_mul_projection, Set.inter_comm]
+
 /-- The coordinate projection is idempotent. -/
 theorem isIdempotentElem_projection : IsIdempotentElem (b.projection s) := by
-  rw [IsIdempotentElem, ← projection_inter, Set.inter_self]
+  rw [IsIdempotentElem, projection_mul_projection, Set.inter_self]
 
 /-- The coordinate projection onto all indices is the identity. -/
 @[simp]
@@ -182,14 +203,44 @@ theorem hasFiniteRange_projection (hs : s.Finite) :
   b.hasFiniteRange_of_apply_eq_zero _ hs.toFinset fun i hi ↦ by
     simp [Set.indicator_of_notMem (by simpa using hi : i ∉ s)]
 
-/-- For a Hilbert basis indexed by `ℕ`, the finite-section projection onto the first `n + 1`
-basis vectors is the coordinate projection onto the indices `i < n + 1`. -/
-theorem finiteProjection_eq_projection [CompleteSpace E] (b : HilbertBasis ℕ 𝕜 E) (n : ℕ) :
-    b.finiteProjection n = b.projection (Set.Iio (n + 1)) := by
+section CompleteSpace
+
+variable [CompleteSpace E]
+
+/-- In a complete space the coordinate projection is a star projection. -/
+theorem isStarProjection_projection : IsStarProjection (b.projection s) :=
+  ⟨b.isIdempotentElem_projection s,
+    ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 (b.isSymmetric_projection s)⟩
+
+/-- The coordinate projection is self-adjoint. -/
+@[simp]
+theorem adjoint_projection : (b.projection s).adjoint = b.projection s :=
+  (b.isStarProjection_projection s).isSelfAdjoint.adjoint_eq
+
+/-- The coordinate projection is the orthogonal projection onto the closure of the span of the
+basis vectors `b i` with `i ∈ s`. -/
+theorem projection_eq_starProjection :
+    b.projection s = (Submodule.span 𝕜 (b '' s)).topologicalClosure.starProjection := by
+  set S := Submodule.span 𝕜 (b '' s)
+  have hbS {i : ι} (hi : i ∈ s) : b i ∈ S.topologicalClosure :=
+    S.le_topologicalClosure (Submodule.subset_span ⟨i, hi, rfl⟩)
   ext1 x
-  apply b.repr.injective
-  ext i
-  by_cases hi : i < n + 1 <;> simp [hi]
+  refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun w hw ↦ ?_).symm
+  · refine S.isClosed_topologicalClosure.mem_of_tendsto (b.hasSum_projection s x)
+      (Filter.Eventually.of_forall fun F ↦ Submodule.sum_mem _ fun i _ ↦ ?_)
+    by_cases hi : i ∈ s
+    · simpa [hi] using Submodule.smul_mem _ ⟪b i, x⟫_𝕜 (hbS hi)
+    · simp [hi]
+  · have hx : x - b.projection s x = b.projection sᶜ x := by simp [projection_compl]
+    rw [hx, ← Submodule.mem_orthogonal_singleton_iff_inner_right]
+    refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_)
+      (Submodule.isClosed_orthogonal _) hw
+    rintro _ ⟨i, hi, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_orthogonal_singleton_iff_inner_right,
+      ← ContinuousLinearMap.coe_coe, b.isSymmetric_projection]
+    simp [hi]
+
+end CompleteSpace
 
 /-- **Weighted bound for a coordinate projection.** Let `w` be a family of weights with
 `c ≤ w i` for `i ∈ s` and `0 ≤ w i` for `i ∉ s`. If the weighted sum of the squared coordinates
