@@ -37,7 +37,9 @@ basic theorems about this class.
   (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`, `TauCeti.exists_eLpNorm_le_of_hormander`),
   whose hypotheses on the adjoint the adjoint theorem supplies.
 * **Examples.** The identity has the kernel `0` (`TauCeti.hasStandardKernel_id`), and the Riesz
-  transforms are Calderón–Zygmund operators (`TauCeti.hasStandardKernel_rieszTransform`).
+  transforms are Calderón–Zygmund operators (`TauCeti.hasStandardKernel_rieszTransform`). A
+  difference kernel `(x, y) ↦ k (x - y)` satisfies the smoothness estimate in both variables once
+  `k` satisfies it in one (`TauCeti.norm_sub_add_norm_sub_le_of_norm_sub_le`).
 
 The definition asks nothing of `K` on the diagonal, and no measurability: the smoothness estimate
 makes `K` continuous off the diagonal (`TauCeti.HasStandardKernel.continuousOn_uncurry`), which is
@@ -61,6 +63,24 @@ open MeasureTheory Metric Set Filter
 open scoped ENNReal NNReal InnerProductSpace ComplexConjugate Topology
 
 namespace TauCeti
+
+/-- **The smoothness estimate for a difference kernel.** If `k` satisfies the one-variable estimate
+`‖k a - k b‖ ≤ c ‖a - b‖ ^ δ / ‖b‖ ^ e` whenever `2 ‖a - b‖ < ‖b‖`, then the kernel
+`(x, y) ↦ k (x - y)` satisfies the smoothness estimate in both variables with the constant `2 c`,
+as in the field `TauCeti.HasStandardKernel.norm_sub_add_norm_sub_le`. -/
+theorem norm_sub_add_norm_sub_le_of_norm_sub_le {X E : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup E] {k : X → E} {c δ e : ℝ}
+    (hk : ∀ a b, 2 * ‖a - b‖ < ‖b‖ → ‖k a - k b‖ ≤ c * ‖a - b‖ ^ δ / ‖b‖ ^ e) {x y y' : X}
+    (hy : 2 * dist y y' < dist x y) :
+    ‖k (x - y) - k (x - y')‖ + ‖k (y - x) - k (y' - x)‖ ≤
+      2 * c * dist y y' ^ δ / dist x y ^ e := by
+  have b₁ := hk (x - y') (x - y) (by rwa [sub_sub_sub_cancel_left, ← dist_eq_norm, ← dist_eq_norm])
+  have b₂ := hk (y' - x) (y - x) (by
+    rwa [sub_sub_sub_cancel_right, ← dist_eq_norm, ← dist_eq_norm, dist_comm y' y, dist_comm y x])
+  rw [sub_sub_sub_cancel_left, norm_sub_rev (k _), ← dist_eq_norm y, ← dist_eq_norm x] at b₁
+  rw [sub_sub_sub_cancel_right, norm_sub_rev (k _), ← dist_eq_norm y', ← dist_eq_norm y,
+    dist_comm y' y, dist_comm y x] at b₂
+  exact (add_le_add b₁ b₂).trans_eq (by ring)
 
 variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]

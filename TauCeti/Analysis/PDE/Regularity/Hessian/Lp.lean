@@ -293,20 +293,18 @@ theorem hasStandardKernel_fourierMultiplierCLM_hessianSymbolLp (hn : 3 ≤ n)
     have hP : (1 : ℝ) ≤ 2 ^ (n + 2) := one_le_pow₀ one_le_two
     nlinarith [mul_nonneg (sub_nonneg.2 hP) (by positivity : (0 : ℝ) ≤ ((n : ℝ) + 5) * n)]
   norm_sub_add_norm_sub_le x y y' hy := by
-    have b₁ := abs_iteratedFDeriv_two_newtonianKernel_apply_sub_le v w (a := x - y') (b := x - y)
-      (by rw [sub_sub_sub_cancel_left, ← dist_eq_norm, ← dist_eq_norm]; exact hy.le)
-    have b₂ := abs_iteratedFDeriv_two_newtonianKernel_apply_sub_le v w (a := y' - x) (b := y - x)
-      (by
-        rw [sub_sub_sub_cancel_right, ← dist_eq_norm, ← dist_eq_norm, dist_comm y' y,
-          dist_comm y x]
-        exact hy.le)
     have hvol := volume_real_unitBall_pos n
-    simp only [sub_sub_sub_cancel_left, sub_sub_sub_cancel_right] at b₁ b₂
-    rw [norm_sub_rev y' y, norm_sub_rev y x] at b₂
-    rw [Real.coe_toNNReal _ (by positivity), finrank_euclideanSpace_fin, Real.rpow_one,
-      dist_eq_norm x y, dist_eq_norm y y', div_eq_mul_inv, ← Real.rpow_neg (norm_nonneg _)]
-    simp only [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, neg_sub_neg]
-    linear_combination b₁ + b₂
+    refine (norm_sub_add_norm_sub_le_of_norm_sub_le
+      (k := fun z ↦ ((-iteratedFDeriv ℝ 2 (newtonianKernel n) z ![v, w] : ℝ) : ℂ))
+      (c := 2 ^ (n + 1) * ((n : ℝ) + 5) *
+        (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * (‖v‖ * ‖w‖)) (δ := 1)
+      (e := Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) + 1) (fun a b hab ↦ ?_) hy).trans_eq ?_
+    · rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, neg_sub_neg, abs_sub_comm,
+        finrank_euclideanSpace_fin, Real.rpow_one, div_eq_mul_inv, ← Real.rpow_neg (norm_nonneg _),
+        mul_assoc _ ‖a - b‖]
+      exact abs_iteratedFDeriv_two_newtonianKernel_apply_sub_le v w hab.le
+    · rw [Real.coe_toNNReal _ (by positivity), pow_succ]
+      ring
   ae_apply_eq_integral f s hs hf := by
     filter_upwards [ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral hn v w f hs hf]
       with x hx hxs

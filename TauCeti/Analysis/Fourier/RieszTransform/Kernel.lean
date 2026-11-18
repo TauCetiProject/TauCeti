@@ -733,17 +733,14 @@ theorem hasStandardKernel_rieszTransform (v : E) :
     exact one_le_mul_of_one_le_of_one_le one_le_two (one_le_mul_of_one_le_of_one_le
       (by linarith [(finrank ℝ E).cast_nonneg (α := ℝ)]) (one_le_pow₀ (by norm_num)))
   norm_sub_add_norm_sub_le x y y' hy := by
-    have b₁ := abs_rieszKernel_sub_le v (a := x - y') (b := x - y)
-      (by rwa [sub_sub_sub_cancel_left, ← dist_eq_norm, ← dist_eq_norm])
-    have b₂ := abs_rieszKernel_sub_le v (a := y' - x) (b := y - x)
-      (by rwa [sub_sub_sub_cancel_right, ← dist_eq_norm, ← dist_eq_norm, dist_comm y' y,
-        dist_comm y x])
-    simp only [sub_sub_sub_cancel_left, sub_sub_sub_cancel_right] at b₁ b₂
-    rw [Real.coe_toNNReal _ (by positivity [rieszConst_nonneg E])]
-    push_cast [← Complex.ofReal_sub, Complex.norm_real, dist_eq_norm, Real.norm_eq_abs]
-    simp only [norm_sub_rev, abs_sub_comm] at b₁ b₂ ⊢
-    rw [Real.rpow_one, ← Nat.cast_add_one, Real.rpow_natCast]
-    linear_combination b₁ + b₂
+    refine (norm_sub_add_norm_sub_le_of_norm_sub_le (k := fun z ↦ (rieszKernel v z : ℂ))
+      (c := rieszConst E * ((finrank ℝ E + 2) * 4 ^ (finrank ℝ E + 1)) * ‖v‖) (δ := 1)
+      (e := finrank ℝ E + 1) (fun a b hab ↦ ?_) hy).trans_eq ?_
+    · rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs, Real.rpow_one,
+        ← Nat.cast_add_one, Real.rpow_natCast]
+      exact abs_rieszKernel_sub_le v hab
+    · rw [Real.coe_toNNReal _ (by positivity [rieszConst_nonneg E])]
+      ring
   ae_apply_eq_integral f s hs hf := by
     filter_upwards [ae_rieszTransform_eq_integral v f hs hf] with x hx hxs
     rw [hx hxs]
