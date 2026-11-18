@@ -150,9 +150,8 @@ theorem mk_one_one_zero : (mk 1 1 0 : GL (Fin 2) R) = 1 := by
 /-- The inverse of `!![a, b; 0, d]` is `!![a⁻¹, -a⁻¹ b d⁻¹; 0, d⁻¹]`. -/
 theorem inv_mk (a d : Rˣ) (b : R) :
     (mk a d b : GL (Fin 2) R)⁻¹ = mk a⁻¹ d⁻¹ (-((a⁻¹ : Rˣ) * b * (d⁻¹ : Rˣ))) :=
-  inv_eq_of_mul_eq_one_right <| by
-    rw [mk_mul_mk, mul_inv_cancel, mul_inv_cancel, mul_neg, ← mul_assoc, ← mul_assoc,
-      Units.mul_inv, one_mul, neg_add_cancel, mk_one_one_zero]
+  inv_eq_of_mul_eq_one_right <| Units.ext (Matrix.ext fun i j => by
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two, ← mul_assoc])
 
 end Ring
 

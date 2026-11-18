@@ -121,6 +121,14 @@ theorem coe_gl2PhiElement :
       !![(p : ℚ_[p]), 0; 0, 1] := by
   simp [GL2PhiElement]
 
+/-- The powers of `φ = diag(p, 1)` are the matrices `diag(pⁿ, 1)`. -/
+theorem gl2PhiElement_pow (n : ℕ) :
+    GL2PhiElement p ^ n =
+      GL2Borel.mk (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero) ^ n) 1 0 := by
+  -- `φ` is the image of `(p, 1)` under the torus homomorphism, which commutes with powers.
+  rw [GL2PhiElement, ← GL2Borel.coe_torusHom (_, 1), ← Subgroup.coe_pow, ← map_pow, Prod.pow_mk,
+    one_pow, GL2Borel.coe_torusHom]
+
 namespace GL2PadicInt
 
 /-- **Membership in `GL₂(ℤ_p)`**: an element of `GL₂(ℚ_p)` lies in `GL₂(ℤ_p)` exactly when its
@@ -133,20 +141,20 @@ theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
     refine ⟨fun i j => ?_, ?_⟩
     · rw [Matrix.GeneralLinearGroup.map_apply, PadicInt.Coe.ringHom_apply, PadicInt.norm_coe]
       exact PadicInt.norm_le_one _
-    · rw [← Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.map_det,
-        Units.coe_map, MonoidHom.coe_ofClass, PadicInt.Coe.ringHom_apply, PadicInt.norm_coe,
-        ← PadicInt.isUnit_iff]
-      exact Units.isUnit _
+    · simpa [← RingHom.mapMatrix_apply, ← RingHom.map_det] using
+        PadicInt.isUnit_iff.mp (Matrix.GeneralLinearGroup.det h).isUnit
   · rintro ⟨hint, hdet⟩
     -- The entries of `g` lift to a matrix over `ℤ_p`, whose determinant is the unit `det g`.
     set M : Matrix (Fin 2) (Fin 2) ℤ_[p] := fun i j => ⟨_, hint i j⟩
-    have hM : M.map PadicInt.Coe.ringHom = (g : Matrix (Fin 2) (Fin 2) ℚ_[p]) := (rfl)
+    -- `ℤ_[p]` is a type synonym for a subtype of `ℚ_[p]`, so the value of `⟨x, hx⟩ : ℤ_[p]` is `x`
+    -- by `rfl`; Mathlib states no simp lemma for it (compare `PadicInt.mk_coe`).
+    have hM : M.map PadicInt.Coe.ringHom = (g : Matrix (Fin 2) (Fin 2) ℚ_[p]) :=
+      Matrix.ext fun _ _ => rfl
     have hMdet : IsUnit M.det := by
       rw [PadicInt.isUnit_iff, ← PadicInt.norm_coe, ← PadicInt.Coe.ringHom_apply,
         RingHom.map_det, RingHom.mapMatrix_apply, hM, hdet]
     refine ⟨Matrix.GeneralLinearGroup.mk'' M hMdet, Matrix.GeneralLinearGroup.ext fun i j => ?_⟩
-    rw [Matrix.GeneralLinearGroup.map_apply, ← hM]
-    rfl
+    simp [Matrix.GeneralLinearGroup.map_apply, ← hM]
 
 /-- **`GL₂(ℤ_p)` is the stabiliser of the standard lattice**: an element of `GL₂(ℚ_p)` lies in
 `GL₂(ℤ_p)` exactly when it and its inverse have integral entries. -/
@@ -168,6 +176,19 @@ theorem mem_iff_inv {g : GL (Fin 2) ℚ_[p]} :
     simpa using Matrix.norm_det_le_prod_of_norm_le (c := fun _ => 1) hg'
   nlinarith [norm_nonneg ((g : Matrix (Fin 2) (Fin 2) ℚ_[p]).det),
     norm_nonneg (((g⁻¹ : GL (Fin 2) ℚ_[p]) : Matrix (Fin 2) (Fin 2) ℚ_[p]).det)]
+
+/-- An element of `GL₂(ℚ_p)` lies in `GL₂(ℤ_p)` exactly when it is the image of an element of
+`GL₂(ℤ_p)` under the inclusion `ℤ_p ⊂ ℚ_p`. -/
+theorem mem_iff_exists_map {g : GL (Fin 2) ℚ_[p]} :
+    g ∈ GL2PadicInt p ↔
+      ∃ h : GL (Fin 2) ℤ_[p], Matrix.GeneralLinearGroup.map PadicInt.Coe.ringHom h = g :=
+  MonoidHom.mem_range
+
+/-- The image of an element of `GL₂(ℤ_p)` under the inclusion `ℤ_p ⊂ ℚ_p` lies in `GL₂(ℤ_p)`. -/
+@[simp]
+theorem map_mem (h : GL (Fin 2) ℤ_[p]) :
+    Matrix.GeneralLinearGroup.map PadicInt.Coe.ringHom h ∈ GL2PadicInt p :=
+  MonoidHom.mem_range.mpr ⟨h, rfl⟩
 
 variable (p)
 
@@ -261,6 +282,19 @@ theorem inv_gl2PhiElement_notMem_gl2MirabolicPlus : (GL2PhiElement p)⁻¹ ∉ G
 
 namespace GL2MirabolicPadicInt
 
+variable (p) in
+/-- `P(ℤ_p)` is the intersection of the mirabolic subgroup with `GL₂(ℤ_p)`. -/
+theorem eq_inf : GL2MirabolicPadicInt p = GL2Mirabolic ℚ_[p] ⊓ GL2PadicInt p :=
+  (rfl)
+
+/-- `P(ℤ_p) ⊆ P`. -/
+theorem le_gl2Mirabolic : GL2MirabolicPadicInt p ≤ GL2Mirabolic ℚ_[p] :=
+  inf_le_left
+
+/-- `P(ℤ_p) ⊆ GL₂(ℤ_p)`. -/
+theorem le_gl2PadicInt : GL2MirabolicPadicInt p ≤ GL2PadicInt p :=
+  inf_le_right
+
 /-- **Membership in `P(ℤ_p)`**: a mirabolic matrix `!![a, b; 0, 1]` lies in `GL₂(ℤ_p)` exactly when
 `a` is a `p`-adic unit and `b` is integral. -/
 theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
@@ -276,6 +310,13 @@ theorem mem_iff {g : GL (Fin 2) ℚ_[p]} :
   rw [GL2PadicInt.mem_iff, hdet]
   refine ⟨fun h => ⟨h.2, h.1 0 1⟩, fun h => ⟨fun i j => ?_, h.1⟩⟩
   fin_cases i <;> fin_cases j <;> simp [h.1.le, h.2, hg₀, hg₁]
+
+/-- **Membership in `P(ℤ_p)`**: the mirabolic matrix `!![a, b; 0, 1]` lies in `P(ℤ_p)` exactly
+when `a` is a `p`-adic unit and `b` is integral. -/
+@[simp]
+theorem mk_mem_iff {a : ℚ_[p]ˣ} {b : ℚ_[p]} :
+    GL2Borel.mk a 1 b ∈ GL2MirabolicPadicInt p ↔ ‖(a : ℚ_[p])‖ = 1 ∧ ‖b‖ ≤ 1 := by
+  simp [mem_iff, GL2Mirabolic.mk_mem]
 
 /-- `P(ℤ_p) ⊆ P⁺`. -/
 theorem le_gl2MirabolicPlus : (GL2MirabolicPadicInt p).toSubmonoid ≤ GL2MirabolicPlus p :=
@@ -294,14 +335,6 @@ theorem exists_gl2PhiElement_pow_mul_mem {g : GL (Fin 2) ℚ_[p]} (hg : g ∈ GL
   obtain ⟨a, b, rfl⟩ := GL2Mirabolic.mem_iff_exists_mk.mp hg
   obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (max ‖(a : ℚ_[p])‖ ‖b‖)
     (Nat.one_lt_cast.mpr hp.out.one_lt : (1 : ℝ) < p)
-  have hpow : ∀ m : ℕ, GL2PhiElement p ^ m =
-      GL2Borel.mk (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero) ^ m) 1 0 := by
-    intro m
-    have hφ : GL2PhiElement p = ((GL2Borel.torusHom
-        (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero), 1) : GL2Borel ℚ_[p]) :
-          GL (Fin 2) ℚ_[p]) := by
-      rw [GL2PhiElement, GL2Borel.coe_torusHom]
-    rw [hφ, ← Subgroup.coe_pow, ← map_pow, Prod.pow_mk, one_pow, GL2Borel.coe_torusHom]
   -- Multiplying by `p ^ n` scales both coordinates by `p⁻ⁿ` in norm.
   have hscale : ∀ x : ℚ_[p], ‖x‖ < (p : ℝ) ^ n → ‖(p : ℚ_[p]) ^ n * x‖ ≤ 1 := by
     intro x hx
@@ -309,7 +342,7 @@ theorem exists_gl2PhiElement_pow_mul_mem {g : GL (Fin 2) ℚ_[p]} (hg : g ∈ GL
       inv_mul_le_iff₀ (pow_pos (Nat.cast_pos.mpr hp.out.pos) n), mul_one]
     exact hx.le
   refine ⟨n, ?_⟩
-  rw [hpow, GL2Borel.mk_mul_mk, one_mul, zero_mul, add_zero, mk_mem_iff, Units.val_mul,
+  rw [gl2PhiElement_pow, GL2Borel.mk_mul_mk, one_mul, zero_mul, add_zero, mk_mem_iff, Units.val_mul,
     Units.val_pow_eq_pow_val, Units.val_mk0]
   exact ⟨hscale _ ((le_max_left _ _).trans_lt hn), hscale _ ((le_max_right _ _).trans_lt hn)⟩
 
