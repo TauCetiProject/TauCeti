@@ -21,21 +21,23 @@ Lichnerowicz formula for the square of a spin Dirac operator.
 
 * **Contraction of the last three slots.** For every `u`,
   `∑ⱼₖₗ r(u, eⱼ, eₖ, eₗ) c(eⱼ) c(eₖ) c(eₗ) = 2 c(Ric(u)♯)`, where `Ric(u)♯ = ∑ₗ Ric(u, eₗ) eₗ`
-  (`TauCeti.FourTensor.sum_smul_ι_mul_ι_mul_ι`). Each rotation of `c(x) c(y) c(z)` differs from
-  it by a commutator `⁅c(x) c(y), c(z)⁆`, which is a vector (`CliffordAlgebra.ι_mul_ι_lie_ι`), so
-  the sum over the three rotations is `3 c(x) c(y) c(z)` up to terms of degree one. The first
-  Bianchi identity kills that sum against `r`; what remains are the contractions of `r`.
+  (`TauCeti.FourTensor.sum_sum_sum_smul_ι_mul_ι_mul_ι`). Each rotation of `c(x) c(y) c(z)`
+  differs from it by a commutator `⁅c(x) c(y), c(z)⁆`, which is a vector
+  (`CliffordAlgebra.ι_mul_ι_lie_ι`), so the sum over the three rotations is `3 c(x) c(y) c(z)` up
+  to terms of degree one. The first Bianchi identity kills that sum against `r`; what remains are
+  the contractions of `r`.
 * **The full contraction.** `∑ᵢⱼₖₗ r(eᵢ, eⱼ, eₖ, eₗ) c(eᵢ) c(eⱼ) c(eₖ) c(eₗ) = -2 Scal`
-  (`TauCeti.FourTensor.sum_smul_ι_mul_ι_mul_ι_mul_ι`), because the symmetric Ricci form contracts
-  against `c(eᵢ) c(eₗ)` to minus its trace
+  (`TauCeti.FourTensor.sum_sum_sum_sum_smul_ι_mul_ι_mul_ι_mul_ι`), because the symmetric Ricci
+  form contracts against `c(eᵢ) c(eₗ)` to minus its trace
   (`CliffordAlgebra.sum_sum_smul_ι_mul_ι_of_symm`).
 * **The spin curvature term.** The curvature of the spinor bundle is
   `R^S(X, Y) = ¼ ∑ₖₗ ⟪R(X, Y) eₖ, eₗ⟫ c(eₖ) c(eₗ)`, and the curvature term of the Weitzenböck
   formula for the spin Dirac operator is `½ ∑ᵢⱼ c(eᵢ) c(eⱼ) R^S(eᵢ, eⱼ)`. It is the scalar
-  `Scal / 4` (`TauCeti.FourTensor.sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_smul_ι_mul_ι`).
+  `Scal / 4`
+  (`TauCeti.FourTensor.sum_sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_sum_smul_ι_mul_ι`).
   For the constant-curvature tensor, the curvature tensor of the unit sphere `Sⁿ` with
   `n = dim V`, it is `n (n - 1) / 4`
-  (`FourTensor.sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_smul_ι_mul_ι_constantCurvature`).
+  (`sum_sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_sum_smul_ι_mul_ι_constantCurvature`).
 
 The statements live in the Clifford algebra itself, so they hold in every Clifford module after
 applying the representation. They use only the Clifford relations and the symmetries of `r`.
@@ -147,7 +149,7 @@ private theorem sum_smul_rotations_eq (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hr : r.I
 /-- **The Clifford contraction of the last three slots of a curvature tensor**: for
 `Q v = -‖v‖²`, an algebraic curvature tensor `r` and an orthonormal basis `(eᵢ)`,
 `∑ⱼₖₗ r(u, eⱼ, eₖ, eₗ) c(eⱼ) c(eₖ) c(eₗ) = 2 c(Ric(u)♯)`, where `Ric(u)♯ = ∑ₗ Ric(u, eₗ) eₗ`. -/
-theorem sum_smul_ι_mul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hr : r.IsAlgebraicCurvature)
+theorem sum_sum_sum_smul_ι_mul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hr : r.IsAlgebraicCurvature)
     (b : OrthonormalBasis I ℝ V) (u : V) :
     ∑ j, ∑ k, ∑ l, r ![u, b j, b k, b l] • (ι Q (b j) * ι Q (b k) * ι Q (b l)) =
       (2 : ℝ) • ι Q (∑ l, ricci r u (b l) • b l) := by
@@ -165,8 +167,8 @@ theorem sum_smul_ι_mul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hr : r.IsAlg
 /-- **The full Clifford contraction of a curvature tensor**: for `Q v = -‖v‖²`, an algebraic
 curvature tensor `r` and an orthonormal basis `(eᵢ)`,
 `∑ᵢⱼₖₗ r(eᵢ, eⱼ, eₖ, eₗ) c(eᵢ) c(eⱼ) c(eₖ) c(eₗ) = -2 Scal`. -/
-theorem sum_smul_ι_mul_ι_mul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hr : r.IsAlgebraicCurvature)
-    (b : OrthonormalBasis I ℝ V) :
+theorem sum_sum_sum_sum_smul_ι_mul_ι_mul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hr : r.IsAlgebraicCurvature) (b : OrthonormalBasis I ℝ V) :
     ∑ i, ∑ j, ∑ k, ∑ l,
         r ![b i, b j, b k, b l] • (ι Q (b i) * ι Q (b j) * ι Q (b k) * ι Q (b l)) =
       algebraMap ℝ (CliffordAlgebra Q) (-2 * scalar r) := by
@@ -177,7 +179,7 @@ theorem sum_smul_ι_mul_ι_mul_ι_mul_ι (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hr : 
           r ![b i, b j, b k, b l] • (ι Q (b j) * ι Q (b k) * ι Q (b l)) := by
           simp only [Finset.mul_sum, mul_smul_comm, mul_assoc]
       _ = _ := by
-          rw [sum_smul_ι_mul_ι_mul_ι hQ hr b]
+          rw [sum_sum_sum_smul_ι_mul_ι_mul_ι hQ hr b]
           simp only [map_sum, map_smul, Finset.smul_sum, Finset.mul_sum, mul_smul_comm, smul_smul]
   simp_rw [h]
   rw [sum_sum_smul_ι_mul_ι_of_symm hQ b fun i l ↦ by rw [(hr.isSymm_ricci).eq (b i) (b l)]]
@@ -190,7 +192,7 @@ curvature tensor `r(u, v, z, w) = ⟪R(u, v) w, z⟫` and an orthonormal basis `
 curvature `R^S(X, Y) = ¼ ∑ₖₗ ⟪R(X, Y) eₖ, eₗ⟫ c(eₖ) c(eₗ)` contracts to
 `½ ∑ᵢⱼ c(eᵢ) c(eⱼ) R^S(eᵢ, eⱼ) = Scal / 4`. This is the curvature term of the Weitzenböck formula
 `D² = ∇*∇ + Scal / 4` for the square of the spin Dirac operator. -/
-theorem sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_smul_ι_mul_ι
+theorem sum_sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_sum_smul_ι_mul_ι
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hr : r.IsAlgebraicCurvature) (b : OrthonormalBasis I ℝ V) :
     ∑ i, ∑ j, (2 : ℝ)⁻¹ • (ι Q (b i) * ι Q (b j) *
         ((4 : ℝ)⁻¹ • ∑ k, ∑ l, r ![b i, b j, b l, b k] • (ι Q (b k) * ι Q (b l)))) =
@@ -205,20 +207,20 @@ theorem sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_smul_ι_mul_ι
     rw [hr.antisymm_last (b i) (b j) (b l) (b k)]
     congr 1
     ring
-  rw [h, sum_smul_ι_mul_ι_mul_ι_mul_ι hQ hr b, Algebra.smul_def, ← map_mul]
+  rw [h, sum_sum_sum_sum_smul_ι_mul_ι_mul_ι_mul_ι hQ hr b, Algebra.smul_def, ← map_mul]
   congr 1
   ring
 
 /-- **The Lichnerowicz term of the round sphere**: for the constant-curvature tensor, the curvature
 tensor of the unit sphere `Sⁿ` with `n = dim V`, the spin curvature term of the Lichnerowicz formula
 is `n (n - 1) / 4`. For the unit two-sphere it is `1 / 2`. -/
-theorem sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_smul_ι_mul_ι_constantCurvature
+theorem sum_sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_sum_smul_ι_mul_ι_constantCurvature
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (b : OrthonormalBasis I ℝ V) :
     ∑ i, ∑ j, (2 : ℝ)⁻¹ • (ι Q (b i) * ι Q (b j) * ((4 : ℝ)⁻¹ •
         ∑ k, ∑ l, constantCurvature V ![b i, b j, b l, b k] • (ι Q (b k) * ι Q (b l)))) =
       algebraMap ℝ (CliffordAlgebra Q)
         (Module.finrank ℝ V * ((Module.finrank ℝ V : ℝ) - 1) / 4) := by
-  rw [sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_smul_ι_mul_ι hQ
+  rw [sum_sum_inv_two_smul_ι_mul_ι_mul_inv_four_smul_sum_sum_smul_ι_mul_ι hQ
     isAlgebraicCurvature_constantCurvature b, scalar_constantCurvature]
 
 end TauCeti.FourTensor
