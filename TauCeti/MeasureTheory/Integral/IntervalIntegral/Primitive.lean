@@ -50,6 +50,7 @@ used to identify weak derivatives on an interval with ordinary primitives.
   primitives `c + ∫_{t₀}^· d v` in `C([a, b], E)` is continuous in `v` when `d v` is continuous in
   `v` in `L¹(a, b)`, is bounded by `‖c‖ + ∫ B` when `‖d v‖ ≤ B`, and then has relatively compact
   range (Arzelà–Ascoli).
+* `ContDiff.contDiff_add_one_integral`: the primitive of a `C^k` function on `ℝ` is `C^(k+1)`.
 * `TauCeti.intervalIntegral.integral_deriv_smul_primitive_eq_sub_of_le`: integration by parts
   between a `C¹` scalar function `φ : ℝ → 𝕜` (`[RCLike 𝕜]`) and the primitive of an integrable `f`,
   which need not be differentiable anywhere:
@@ -231,6 +232,18 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
       (norm_le_of_forall_eq_add_integral ht₀ (hdi v) hBi (hdB v) (hT v)))
 
 end Family
+
+/-- The primitive `x ↦ ∫ t in a..x, f t` of a `C^k` function `f` on `ℝ` is `C^(k+1)`. When `E` is
+complete its derivative is `f` (`Continuous.deriv_integral`); otherwise the primitive is the
+constant `0`. -/
+theorem _root_.ContDiff.contDiff_add_one_integral {k : ℕ∞} (hf : ContDiff ℝ k f) (a : ℝ) :
+    ContDiff ℝ (k + 1) (fun x ↦ ∫ t in a..x, f t) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simpa [intervalIntegral, integral_of_not_completeSpace hE] using contDiff_const
+  exact contDiff_succ_iff_deriv.2 ⟨fun x ↦
+    (hf.continuous.integral_hasStrictDerivAt a x).hasDerivAt.differentiableAt, by simp,
+    by rwa [funext (hf.continuous.deriv_integral f a)]⟩
 
 variable [CompleteSpace E]
 
