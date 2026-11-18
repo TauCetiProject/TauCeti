@@ -43,6 +43,8 @@ connected.
 
 ## Main results
 
+* `TauCeti.twoFieldEquatorsChartedSpace_eq`: these charts are those of
+  `TauCeti.euclideanChartedSpaceOfExistsTrivialization`.
 * `TauCeti.exists_trivialization_twoFieldEquators_sphere`: `Σ → Sⁿ⁺²` is locally trivial with
   fibre the unit sphere `Sⁿ` of `ℝⁿ⁺¹`.
 * `TauCeti.simplyConnectedSpace_twoFieldEquators`: for `n ≥ 2`, `Σ` is simply connected.
@@ -89,6 +91,15 @@ noncomputable def twoFieldEquatorsChartedSpace :
     ChartedSpace (EuclideanSpace ℝ (Fin (n + 2 + n))) (twoFieldEquators u v) :=
   euclideanChartedSpaceOfExistsTrivialization (n := n + 2) (m := n)
     (exists_trivialization_twoFieldEquators_sphere (n := n) hu hv huv)
+
+/-- `TauCeti.twoFieldEquatorsChartedSpace` is the Euclidean atlas of the locally trivial projection
+onto `Sⁿ⁺²`, so its charts are described by
+`TauCeti.euclideanChartedSpaceOfExistsTrivialization_chartAt`. -/
+theorem twoFieldEquatorsChartedSpace_eq :
+    twoFieldEquatorsChartedSpace (n := n) hu hv huv =
+      euclideanChartedSpaceOfExistsTrivialization (n := n + 2) (m := n)
+        (exists_trivialization_twoFieldEquators_sphere (n := n) hu hv huv) :=
+  (rfl)
 
 /-- **The space of equators is simply connected** in a space `E` of dimension `n + 3` with
 `n ≥ 2`, as a bundle of simply connected spheres `Sⁿ` over the simply connected sphere `Sⁿ⁺²`. -/
