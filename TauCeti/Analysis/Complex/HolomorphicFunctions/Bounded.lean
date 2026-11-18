@@ -246,7 +246,12 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
   refine (IsCompact.isCompactOperator_of_equicontinuousOn
     (U.isOpenEmbedding'.isInducing.isCompact_preimage' hK (by simpa using hKU))
     (ContinuousMap.inclusion (hU'K.trans hKU)) (fun z => hU'K z.2)
+    (Φ := fun f : boundedHolomorphicFunctions E U => (f : U →ᵇ E))
+    (fun f => (f : U →ᵇ E).continuous.continuousOn)
     (T := fun f => (restrict (hU'K.trans hKU) f : U' →ᵇ E)) (restrict_apply _)
+    (closedBall_mem_nhds 0 one_pos) (fun x _ => ⟨closedBall 0 1, isCompact_closedBall 0 1,
+      fun f hf => mem_closedBall_zero_iff.mpr
+        ((norm_coe_le_norm (f : U →ᵇ E) x).trans (mem_closedBall_zero_iff.mp hf))⟩)
     (Equicontinuous.equicontinuousOn ?_ _)).codRestrict (fun f => (restrict _ f).2)
     (isClosed_boundedHolomorphicFunctions U')
   -- On a ball of radius `R` around `x` inside `U`, the Cauchy estimate gives the common

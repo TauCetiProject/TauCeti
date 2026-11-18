@@ -6,86 +6,66 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 public import Mathlib.Topology.UniformSpace.Equicontinuity
-import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # Compact operators into spaces of bounded continuous functions
 
-Let `F` be a proper normed group. An operator `T : E → α →ᵇ F` on a seminormed group, with `α`
-compact, is compact as soon as the image of the unit ball of `E` is pointwise bounded and
-equicontinuous (`TauCeti.isCompactOperator_of_equicontinuous`). This is the Arzelà–Ascoli
-theorem in operator form.
+Let `F` be a pseudometric space and `α` a compact space. An operator `T : E → α →ᵇ F` is
+compact as soon as it maps a neighborhood of `0` to an equicontinuous family whose values at
+each point lie in a compact set (`TauCeti.isCompactOperator_of_equicontinuous`). This is the
+Arzelà–Ascoli theorem in operator form.
 
-In the form used for restriction maps, an operator from a subgroup `s` of `α →ᵇ F` to `β →ᵇ F`
-that reads functions along a continuous map `j : β → α` with values in a compact set `K` is
-compact as soon as the unit ball of `s` is equicontinuous on `K`
-(`IsCompact.isCompactOperator_of_equicontinuousOn`). For spaces of bounded holomorphic functions,
-Cauchy estimates give the equicontinuity, and the result is Montel's theorem.
+In the form used for restriction maps, an operator `E → β →ᵇ F` that reads the functions
+`Φ f : α → F` along a continuous map `j : β → α` with values in a compact set `K` is compact as
+soon as a neighborhood of `0` gives a family that is equicontinuous on `K` with pointwise
+relatively compact values there (`IsCompact.isCompactOperator_of_equicontinuousOn`). For spaces
+of bounded holomorphic functions, Cauchy estimates give the equicontinuity, and the result is
+Montel's theorem.
 -/
 
 public section
 
-open BoundedContinuousFunction Metric Set
+open BoundedContinuousFunction Set
 open scoped Topology
 
-variable {E α β F : Type*} [SeminormedAddCommGroup E] [TopologicalSpace α] [TopologicalSpace β]
-  [NormedAddCommGroup F] [ProperSpace F]
+variable {E α β F : Type*} [TopologicalSpace E] [Zero E] [TopologicalSpace α]
+  [TopologicalSpace β] [PseudoMetricSpace F]
 
 namespace TauCeti
 
-/-- **Arzelà–Ascoli for operators.** Let `α` be compact and `F` proper. If an operator
-`T : E → α →ᵇ F` maps the unit ball of `E` to a pointwise bounded, equicontinuous family, then
-`T` is a compact operator. -/
-theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →ᵇ F}
-    (hC : ∀ x, ∃ C : ℝ, ∀ f ∈ closedBall (0 : E) 1, ‖T f x‖ ≤ C)
-    (hT : Equicontinuous fun f : closedBall (0 : E) 1 => (T f : α → F)) :
+/-- **Arzelà–Ascoli for operators.** Let `α` be compact. If an operator `T : E → α →ᵇ F` maps
+a neighborhood `V` of `0` to an equicontinuous family whose values at each point lie in a
+compact set, then `T` is a compact operator. -/
+theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →ᵇ F} {V : Set E}
+    (hV : V ∈ 𝓝 0) (hTV : ∀ x, ∃ Q : Set F, IsCompact Q ∧ ∀ f ∈ V, T f x ∈ Q)
+    (hT : Equicontinuous fun f : V => (T f : α → F)) :
     IsCompactOperator T := by
-  classical
-  choose C hC using hC
-  -- Equicontinuity propagates each pointwise bound to a neighborhood. Compactness then
-  -- reduces these local bounds to a single bound on the whole family.
-  have hU : ∀ x, ∃ U ∈ 𝓝 x, ∀ y ∈ U, ∀ f : closedBall (0 : E) 1, ‖T f y‖ ≤ C x + 1 := by
-    intro x
-    refine ⟨{y | ∀ f : closedBall (0 : E) 1, dist (T f x) (T f y) < 1},
-      Metric.equicontinuousAt_iff_right.mp (hT x) 1 one_pos, ?_⟩
-    intro y hy f
-    exact (norm_le_norm_add_const_of_dist_le (by simpa [dist_comm] using (hy f).le)).trans
-      (add_le_add (hC x f f.property) le_rfl)
-  choose U hUx hU using hU
-  obtain ⟨t, ht⟩ := CompactSpace.elim_nhds_subcover U hUx
-  let B := ∑ x ∈ t, max (C x + 1) 0
-  have hB : ∀ f ∈ closedBall (0 : E) 1, ∀ y, ‖T f y‖ ≤ B := by
-    intro f hf y
-    have hyU : y ∈ ⋃ x ∈ t, U x := by rw [ht]; trivial
-    obtain ⟨x, hxt, hy⟩ := mem_iUnion₂.mp hyU
-    exact (hU x y hy ⟨f, hf⟩).trans ((le_max_left _ _).trans
-      (Finset.single_le_sum (fun z _ => le_max_right (C z + 1) 0) hxt))
-  refine (isCompactOperator_iff_exists_mem_nhds_isCompact_closure_image T).mpr
-    ⟨closedBall 0 1, closedBall_mem_nhds _ one_pos,
-      arzela_ascoli (closedBall 0 B) (isCompact_closedBall 0 B) _ ?_ ?_⟩
-  · rintro _ x ⟨f, hf, rfl⟩
-    exact mem_closedBall_zero_iff.mpr (hB f hf x)
-  · rw [image_eq_range]
-    simpa only [Equicontinuous, EquicontinuousAt, forall_subtype_range_iff] using hT
+  let e := ContinuousMap.isometryEquivBoundedOfCompact α F
+  have h := ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := fun f : V => e.symm (T f))
+    hT fun x => let ⟨Q, hQ, hTQ⟩ := hTV x; ⟨Q, hQ, fun f => hTQ f f.2⟩
+  refine ⟨_, h.image e.continuous, Filter.mem_of_superset hV fun f hf => ?_⟩
+  exact ⟨_, subset_closure ⟨⟨f, hf⟩, rfl⟩, e.apply_symm_apply _⟩
 
 end TauCeti
 
-/-- **Arzelà–Ascoli for restriction operators.** Let `T` send `f ∈ s ≤ (α →ᵇ F)` to the
-function `f ∘ j` in `β →ᵇ F`, where `j` takes values in a compact set `K`. If `F` is proper and
-the unit ball of `s` is equicontinuous on `K`, then `T` is a compact operator. -/
-theorem IsCompact.isCompactOperator_of_equicontinuousOn {S : Type*} [SetLike S (α →ᵇ F)]
-    [AddSubgroupClass S (α →ᵇ F)] {s : S} {K : Set α} (hK : IsCompact K) (j : C(β, α))
-    (hjK : ∀ z, j z ∈ K) {T : s → β →ᵇ F} (hT : ∀ f z, T f z = (f : α →ᵇ F) (j z))
-    (hs : EquicontinuousOn (fun f : closedBall (0 : s) 1 => ((f : s) : α → F)) K) :
+/-- **Arzelà–Ascoli for restriction operators.** Let `T` send `f : E` to the function
+`Φ f ∘ j` in `β →ᵇ F`, where `j` takes values in a compact set `K` on which each `Φ f` is
+continuous. If `Φ` maps a neighborhood `V` of `0` to a family that is equicontinuous on `K` and
+whose values at each point of `K` lie in a compact set, then `T` is a compact operator. -/
+theorem IsCompact.isCompactOperator_of_equicontinuousOn {K : Set α} (hK : IsCompact K)
+    (j : C(β, α)) (hjK : ∀ z, j z ∈ K) {Φ : E → α → F} (hΦ : ∀ f, ContinuousOn (Φ f) K)
+    {T : E → β →ᵇ F} (hT : ∀ f z, T f z = Φ f (j z)) {V : Set E} (hV : V ∈ 𝓝 0)
+    (hΦV : ∀ x ∈ K, ∃ Q : Set F, IsCompact Q ∧ ∀ f ∈ V, Φ f x ∈ Q)
+    (hs : EquicontinuousOn (fun f : V => Φ f) K) :
     IsCompactOperator T := by
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let σ : C(β, K) := ⟨fun z => ⟨j z, hjK z⟩, j.continuous.subtype_mk _⟩
-  have hR : IsCompactOperator fun f : s => (f : α →ᵇ F).domRestrict K :=
-    TauCeti.isCompactOperator_of_equicontinuous
-      (fun x => ⟨1, fun f hf =>
-        (norm_coe_le_norm (f : α →ᵇ F) x).trans (mem_closedBall_zero_iff.mp hf)⟩)
+  have hR : IsCompactOperator fun f => mkOfCompact ⟨K.domRestrict (Φ f), (hΦ f).domRestrict⟩ :=
+    TauCeti.isCompactOperator_of_equicontinuous hV (fun x => hΦV x x.2)
       ((equicontinuous_restrict_iff _).mpr hs)
-  convert hR.continuous_comp (continuous_compContinuous σ) using 1
-  exact funext fun f => ext fun z => hT f z
+  obtain ⟨Q, hQ, hRQ⟩ := hR
+  refine ⟨_, hQ.image (continuous_compContinuous σ), Filter.mem_of_superset hRQ fun f hf => ?_⟩
+  exact ⟨_, hf, ext fun z => (hT f z).symm⟩
