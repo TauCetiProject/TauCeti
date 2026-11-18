@@ -14,12 +14,12 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 
 Let `f : M → N` be an immersion into a manifold whose tangent spaces carry a Riemannian metric.
 At `x : M` the orthogonal normal space `ν_f,x = (range df_x)ᗮ` (`TauCeti.orthogonalNormalSpace`)
-maps isomorphically onto the quotient `T_{f x} N ⧸ range df_x` by `w ↦ [w]`
-(`TauCeti.orthogonalNormalSpaceEquivQuotient`). The inverse sends `[v]` to the orthogonal
-projection of `v` onto `ν_f,x`, which does not depend on the representative, since adding `df u`
-leaves the projection unchanged. The quotient norm of `[w]` is the norm of `w`
-(`TauCeti.norm_orthogonalNormalSpaceEquivQuotient`). The fibres are indexed by the source point,
-so two sheets of an immersion through one image point keep separate fibres.
+maps isomorphically and isometrically onto the quotient `T_{f x} N ⧸ range df_x` by `w ↦ [w]`
+(`TauCeti.orthogonalNormalSpaceEquivQuotient`, the inverse of Mathlib's
+`Submodule.quotientEquivOrthogonal`), and for an embedding onto its intrinsic normal space
+(`TauCeti.SmoothEmbedding.orthogonalNormalSpaceEquiv`). The inverse sends `[v]` to the orthogonal
+projection of `v` onto `ν_f,x`. The fibres are indexed by the source point, so two sheets of an
+immersion through one image point keep separate fibres.
 
 For a `C^n` embedding with `m + 1 ≤ n` and a `C^m` metric, these fibre isomorphisms assemble into
 a `C^m` diffeomorphism over the identity of `M` from the orthogonal normal bundle `ν_f`
@@ -52,103 +52,9 @@ variable {E V H G M N : Type*}
   [TopologicalSpace N] [ChartedSpace G N]
   [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
 
-section Fibre
-
-variable (f : M → N) (x : M)
-  [(LinearMap.range (mfderiv I J f x).toLinearMap).HasOrthogonalProjection]
-
-/-- The range of the differential and the normal space are topological complements. -/
-theorem isTopCompl_range_mfderiv_orthogonalNormalSpace :
-    (LinearMap.range (mfderiv I J f x).toLinearMap).IsTopCompl (orthogonalNormalSpace I J f x) := by
-  rw [orthogonalNormalSpace_def]
-  exact Submodule.isTopCompl_orthogonal _
-
-/-- The normal space `(range df_x)ᗮ` of a map at `x` is isomorphic to the quotient
-`T_{f x} N ⧸ range df_x` by `w ↦ [w]`, whenever the range of the differential admits an orthogonal
-projection, for instance for a finite-dimensional source. The inverse is the orthogonal projection
-onto the normal space (`TauCeti.orthogonalNormalSpaceEquivQuotient_symm_mk`). -/
-def orthogonalNormalSpaceEquivQuotient :
-    orthogonalNormalSpace I J f x ≃L[ℝ]
-      TangentSpace J (f x) ⧸ LinearMap.range (mfderiv I J f x).toLinearMap :=
-  (Submodule.quotientEquivOfIsTopCompl _ _
-    (isTopCompl_range_mfderiv_orthogonalNormalSpace f x)).symm
-
-/-- The comparison takes a normal vector to its class. -/
-@[simp]
-theorem orthogonalNormalSpaceEquivQuotient_apply (w : orthogonalNormalSpace I J f x) :
-    orthogonalNormalSpaceEquivQuotient f x w = Submodule.Quotient.mk (w : TangentSpace J (f x)) :=
-  (rfl)
-
-/-- The inverse comparison takes the class of an ambient vector to its orthogonal projection onto
-the normal space; in particular this projection depends only on the class. -/
-@[simp]
-theorem orthogonalNormalSpaceEquivQuotient_symm_mk (v : TangentSpace J (f x)) :
-    (orthogonalNormalSpaceEquivQuotient f x).symm (Submodule.Quotient.mk v) =
-      (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, orthogonalNormalSpaceEquivQuotient_apply,
-    Submodule.Quotient.eq, Submodule.coe_orthogonalProjectionOnto_apply]
-  have h := (orthogonalNormalSpace I J f x).sub_starProjection_mem_orthogonal v
-  rwa [orthogonal_orthogonalNormalSpace] at h
-
-/-- **The quotient norm equals the normal norm.** For a normal vector `w`, the quotient norm of its
-class `[w]` in `T_{f x} N ⧸ range df_x` is the norm of `w`. -/
-theorem norm_orthogonalNormalSpaceEquivQuotient (w : orthogonalNormalSpace I J f x) :
-    ‖orthogonalNormalSpaceEquivQuotient f x w‖ = ‖(w : TangentSpace J (f x))‖ := by
-  rw [orthogonalNormalSpaceEquivQuotient_apply]
-  refine (QuotientAddGroup.norm_mk (S := (LinearMap.range (mfderiv I J f x).toLinearMap
-    ).toAddSubgroup) (w : TangentSpace J (f x))).trans ?_
-  rw [Submodule.coe_toAddSubgroup, ← Submodule.dist_starProjection_eq_infDist,
-    (Submodule.starProjection_apply_eq_zero_iff _).mpr, dist_zero_right]
-  rw [← orthogonalNormalSpace_def]
-  exact w.2
-
-end Fibre
-
 namespace SmoothEmbedding
 
 variable {n : ℕ∞ω} [FiniteDimensional ℝ V]
-
-/-- For a smooth embedding, the orthogonal normal space at `x` is isomorphic to the intrinsic normal
-space `T_{f x} N ⧸ range df_x` by `w ↦ [w]`; the inverse takes orthogonal representatives
-(`TauCeti.SmoothEmbedding.orthogonalNormalSpaceEquiv_symm_apply`). -/
-def orthogonalNormalSpaceEquiv (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    orthogonalNormalSpace I J f x ≃L[ℝ] f.NormalSpace x hn :=
-  orthogonalNormalSpaceEquivQuotient f x
-
-/-- The comparison takes a normal vector to its normal class. -/
-@[simp]
-theorem orthogonalNormalSpaceEquiv_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (w : orthogonalNormalSpace I J f x) :
-    f.orthogonalNormalSpaceEquiv x hn w = f.normalClass x hn w := by
-  rw [normalClass_def]
-  rfl
-
-/-- The inverse comparison takes the normal class of an ambient vector to its orthogonal projection
-onto the normal space. -/
-@[simp]
-theorem orthogonalNormalSpaceEquiv_symm_normalClass (f : SmoothEmbedding I J n M N) (x : M)
-    (hn : n ≠ 0) (v : TangentSpace J (f x)) :
-    (f.orthogonalNormalSpaceEquiv x hn).symm (f.normalClass x hn v) =
-      (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v := by
-  rw [normalClass_def]
-  exact orthogonalNormalSpaceEquivQuotient_symm_mk (I := I) (f : M → N) x v
-
-/-- The inverse comparison takes a normal class to its orthogonal representative. -/
-theorem orthogonalNormalSpaceEquiv_symm_apply (f : SmoothEmbedding I J n M N) (x : M)
-    (hn : n ≠ 0) (v : f.NormalSpace x hn) :
-    ((f.orthogonalNormalSpaceEquiv x hn).symm v : TangentSpace J (f x)) =
-      f.normalRepresentative x hn v := by
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn v
-  rw [normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace,
-    orthogonalNormalSpaceEquiv_symm_normalClass, Submodule.coe_orthogonalProjectionOnto_apply]
-
-/-- The quotient norm (`TauCeti.SmoothEmbedding.normalSpaceNormedAddCommGroup`) of the normal class
-of a normal vector is its norm. -/
-theorem norm_orthogonalNormalSpaceEquiv (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (w : orthogonalNormalSpace I J f x) :
-    letI := f.normalSpaceNormedAddCommGroup x hn
-    ‖f.orthogonalNormalSpaceEquiv x hn w‖ = ‖(w : TangentSpace J (f x))‖ :=
-  norm_orthogonalNormalSpaceEquivQuotient (f : M → N) x w
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
   [FiniteDimensional ℝ E] {m : ℕ∞ω} [IsManifold J 1 N]
