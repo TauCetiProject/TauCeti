@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Module.AuslanderReiten.HomCokernel
+public import TauCeti.Algebra.Module.LinearMap.Defs
 public import TauCeti.Algebra.Module.Injective.Hom
 public import TauCeti.LinearAlgebra.Exact
 
@@ -246,17 +247,6 @@ variable {M₁' M₂' M₃' : Type*}
   {φ' : M₁' →ₗ[A] M₂'} {ψ' : M₂' →ₗ[A] M₃'} {a₁ : M₁ →ₗ[A] M₁'} {a₂ : M₂ →ₗ[A] M₂'}
   {a₃ : M₃ →ₗ[A] M₃'}
 
-omit [Module.Projective A P₀] in
-/-- A lift composed with a commutative square is a lift: if `ψ ∘ y = g ∘ q` and
-`b ∘ ψ = ψ' ∘ a`, then `ψ' ∘ (a ∘ y) = (b ∘ g) ∘ q`. -/
-private theorem comp_lift_eq {U V W V' W' Y : Type*} [AddCommGroup U] [Module A U]
-    [AddCommGroup V] [Module A V] [AddCommGroup W] [Module A W] [AddCommGroup V'] [Module A V']
-    [AddCommGroup W'] [Module A W'] [AddCommGroup Y] [Module A Y] {ψ : V →ₗ[A] W}
-    {ψ' : V' →ₗ[A] W'} {a : V →ₗ[A] V'} {b : W →ₗ[A] W'} (h : b ∘ₗ ψ = ψ' ∘ₗ a)
-    {y : U →ₗ[A] V} {g : Y →ₗ[A] W} {q : U →ₗ[A] Y} (hy : ψ ∘ₗ y = g ∘ₗ q) :
-    ψ' ∘ₗ (a ∘ₗ y) = (b ∘ₗ g) ∘ₗ q := by
-  rw [← LinearMap.comp_assoc, ← h, LinearMap.comp_assoc, hy, LinearMap.comp_assoc]
-
 /-- **Naturality of the snake lemma for the defect.** A morphism `(a₁, a₂, a₃)` of exact sequences
 `0 → M₁ → M₂ → M₃ → 0` carries `δ^*(X) ≅ ker H(φ)` to `δ'^*(X) ≅ ker H(φ')`: postcomposition
 with `a₃` on the left corresponds to `H(a₁)` on the right. -/
@@ -274,8 +264,9 @@ theorem contravariantDefectEquivKer_naturality (hfp : Exact f p) (hp : Surjectiv
       hfp.linearMap_comp_eq_zero, LinearMap.comp_zero])
   rw [compRight_apply] at hz
   rw [contravariantDefectMap_mk, contravariantDefectEquivKer_mk hfp hp hφ hψ hφψ g y hy z hz,
-    contravariantDefectEquivKer_mk hfp hp hφ' hψ' hφψ' (a₃ ∘ₗ g) (a₂ ∘ₗ y) (comp_lift_eq h₂ hy)
-      (a₁ ∘ₗ z) (comp_lift_eq h₁ hz), homCokernelMap_mk]
+    contravariantDefectEquivKer_mk hfp hp hφ' hψ' hφψ' (a₃ ∘ₗ g) (a₂ ∘ₗ y)
+      (comp_comp_eq_comp_comp_of_comp_eq h₂ hy) (a₁ ∘ₗ z)
+      (comp_comp_eq_comp_comp_of_comp_eq h₁ hz), homCokernelMap_mk]
 
 variable [Module.Finite A P₀] [Module.Finite A P₁] [Module.Projective A P₁]
   {E : Type w} [AddCommGroup E] [Module k E] [Small.{w} k] [Module.Injective k E]
