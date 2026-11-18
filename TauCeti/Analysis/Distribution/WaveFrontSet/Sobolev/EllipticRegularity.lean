@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.EllipticRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.LineDeriv
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 

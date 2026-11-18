@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
 public import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.ProdInner
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -899,13 +900,6 @@ theorem singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero [Measurab
     (∑ i ∈ s, c i • ∂^{m i} T).singularSupport = T.singularSupport := by
   simpa using singularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s c
     (a := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) m hk (fun _ _ ξ hξ ↦ by simpa using hσ ξ hξ) T
-
-/-- The Laplacian `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)` is the sum of the second iterated
-derivatives `∂^{![b i, b i]}` along any orthonormal basis `b`. -/
-theorem laplacianCLM_eq_sum_iteratedLineDerivOp {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (T : 𝓓'(Ω, ℂ)) :
-    laplacianCLM ℝ E 𝓓'(Ω, ℂ) T = ∑ i, ∂^{![b i, b i]} T := by
-  simp [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left]
 
 /-- **The Laplacian preserves the wave front set.** The Laplacian
 `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`, which is `∑ i, ∂_{b i} ∂_{b i}` for any orthonormal
