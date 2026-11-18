@@ -21,8 +21,10 @@ image consists of the families with the same formal coefficients at every radius
 description proves completeness without choosing a sequence of radii or a single norm.
 Convergence may also be tested along any family of radii tending to the boundary, so a
 cofinal sequence yields the same topology. Polynomial truncations converge in this topology,
-and coefficient maps are uniformly continuous. These are specializations of the Gauss topology
-of a family of radii in `TauCeti.RingTheory.PowerSeries.GaussFamily`.
+coefficient maps are uniformly continuous, and additive maps bounded between smaller-radius Gauss
+norms are uniformly continuous. The topology, completeness, and polynomial density are
+specializations of the Gauss topology of a family of radii in
+`TauCeti.RingTheory.PowerSeries.GaussFamily`.
 
 ## References
 
@@ -86,6 +88,21 @@ theorem restrict_polynomialHom_C {S : Type*} [NormedCommRing S] [IsUltrametricDi
   apply Subtype.ext
   simp
 
+/-- Restriction commutes with scalar multiplication from a base algebra. -/
+@[simp]
+theorem restrict_smul {S : Type*} [CommSemiring S] [Algebra S R] (r : Set.Ioo (0 : ℝ) R₀)
+    (s : S) (f : OnOpenDisc.subring R R₀) :
+    restrict r (s • f) = s • restrict r f :=
+  Subtype.ext (by simp)
+
+/-- Restriction commutes with the algebra map from a base algebra. -/
+@[simp]
+theorem restrict_algebraMap {S : Type*} [CommSemiring S] [Algebra S R] (r : Set.Ioo (0 : ℝ) R₀)
+    (s : S) :
+    restrict r (algebraMap S (OnOpenDisc.subring R R₀) s) =
+      algebraMap S (IsRestricted.subring (R := R) (r : ℝ)) s :=
+  Subtype.ext (by simp)
+
 /-- Restriction of an open-disc series to all smaller positive closed discs at once. -/
 noncomputable def restrictFamily :
     OnOpenDisc.subring R R₀ →+* ∀ r : Set.Ioo (0 : ℝ) R₀, IsRestricted.subring (R := R) (r : ℝ) :=
@@ -139,6 +156,17 @@ theorem uniformContinuous_iff {X : Type*} [UniformSpace X]
 
 instance : IsUniformAddGroup (OnOpenDisc.subring R R₀) :=
   GaussFamily.isUniformAddGroup isUniformInducing_restrictFamily
+
+/-- An additive homomorphism between open-disc subrings is uniformly continuous when each target
+smaller-radius Gauss norm is bounded by a multiple of some source smaller-radius Gauss norm. -/
+theorem uniformContinuous_of_norm_restrict_le {S F : Type*} [NormedRing S] [IsUltrametricDist S]
+    {S₀ : ℝ} [FunLike F (OnOpenDisc.subring R R₀) (OnOpenDisc.subring S S₀)]
+    [AddMonoidHomClass F (OnOpenDisc.subring R R₀) (OnOpenDisc.subring S S₀)] (φ : F)
+    (hφ : ∀ s : Set.Ioo (0 : ℝ) S₀, ∃ (r : Set.Ioo (0 : ℝ) R₀) (C : ℝ),
+      ∀ f, ‖restrict s (φ f)‖ ≤ C * ‖restrict r f‖) :
+    UniformContinuous φ :=
+  GaussFamily.uniformContinuous_of_norm_restrict_le isUniformInducing_restrictFamily
+    isUniformInducing_restrictFamily φ hφ
 
 instance : IsTopologicalRing (OnOpenDisc.subring R R₀) :=
   GaussFamily.isTopologicalRing isUniformInducing_restrictFamily

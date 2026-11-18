@@ -38,6 +38,7 @@ value at `b` is bounded by a constant multiple of the Gauss norm at `r`
   `PowerSeries.OnOpenDisc.evalAt_sum` and `PowerSeries.OnOpenDisc.evalAt_mul`: evaluation
   preserves addition, scalar multiplication, finite sums and multiplication.
 * `PowerSeries.OnOpenDisc.map_evalAt`: naturality in continuous algebra homomorphisms.
+* `PowerSeries.OnOpenDisc.evalAt_map`: naturality in continuous coefficient homomorphisms.
 * `PowerSeries.OnOpenDisc.evalAtHom_comp_inclusion`: entire series are evaluated as such.
 * `TauCeti.PowerSeries.OnOpenDisc.isRestrictedEvalAtHom_comp_restrict`: restricting to a closed
   disc containing `b` and evaluating there is evaluation on the open disc.
@@ -87,6 +88,21 @@ theorem OnOpenDisc.map_evalAt {B F : Type*} [Semiring B] [Algebra R B] [Topologi
   simp [map_smul, map_pow]
 
 end Seminormed
+
+section EvalAtMap
+
+variable {R S : Type*} [NormedCommRing R] [CompleteSpace R] [CommSemiring S]
+  [TopologicalSpace S] [T2Space S] {R₀ : ℝ} {f : R⟦X⟧}
+
+/-- Evaluation of series on an open disc commutes with continuous coefficient homomorphisms:
+`(φ f)(φ b) = φ (f(b))`. -/
+theorem OnOpenDisc.evalAt_map (hf : f.OnOpenDisc R₀) (φ : R →+* S) (hφ : Continuous φ) {b : R}
+    (hb : ‖b‖ < R₀) :
+    (PowerSeries.map φ f).evalAt (φ b) = φ (f.evalAt b) := by
+  rw [← ((hf.hasSum_evalAt hb).map φ hφ).tsum_eq, evalAt_def]
+  simp [map_pow]
+
+end EvalAtMap
 
 section Normed
 
