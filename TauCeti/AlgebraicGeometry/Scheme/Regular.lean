@@ -48,13 +48,12 @@ to check.
 * `Scheme.isIntegrallyClosed_stalk_of_coheight_le_one`: on an open subset of dimension at most
   one whose codimension-one local rings are discrete valuation rings, every local ring is
   integrally closed;
-* `Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed` and
-  `Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero`: under
-  the same hypotheses, a nonzero rational function with *zero* order at every codimension-one point
-  of `U` is the germ of a unit of `Γ(X, U)`.
+* `Scheme.exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed`: when the
+  local rings of `U` are integrally closed, a nonzero rational function with *zero* order at every
+  codimension-one point of `U` is the germ of a unit of `Γ(X, U)`.
 
 The regularity statements identify the sheaf `𝒪_X(0)` of the zero divisor with the structure
-sheaf. The unit statements apply them to a function and to its inverse; they are the local
+sheaf. The unit statement applies them to a function and to its inverse; it is the local
 comparison used to glue the local equations of a locally principal Weil divisor into a Cartier
 divisor, and to show that a Cartier divisor on a normal scheme is determined by its Weil divisor.
 
@@ -209,20 +208,6 @@ theorem exists_germToFunctionField_eq_of_ord_nonneg
     (hf : ∀ (y : CodimensionOnePoint X), (y : X) ∈ U → 0 ≤ X.ord f y) :
     ∃ a : Γ(X, U), X.germToFunctionField U a = f :=
   exists_germToFunctionField_eq_of_ord_nonneg_of_isIntegrallyClosed
-    (isIntegrallyClosed_stalk_of_coheight_le_one hDVR hU) hf
-
-/-- **A rational function without zeros or poles is a regular unit.** On a locally Noetherian
-integral scheme, let `U` be a nonempty open subset of dimension at most one whose codimension-one
-local rings are discrete valuation rings. A nonzero rational function whose order vanishes at
-every codimension-one point of `U` is the germ of a unit of `Γ(X, U)`. -/
-theorem exists_unit_germToFunctionField_eq_of_ord_eq_zero
-    {U : X.Opens} [Nonempty U]
-    (hDVR : ∀ y : CodimensionOnePoint X, (y : X) ∈ U →
-      IsDiscreteValuationRing (X.presheaf.stalk (y : X)))
-    (hU : ∀ y ∈ U, coheight y ≤ 1) {f : X.functionFieldˣ}
-    (hf : ∀ (y : CodimensionOnePoint X), (y : X) ∈ U → X.ord (f : X.functionField) y = 0) :
-    ∃ a : Γ(X, U)ˣ, X.germToFunctionField U (a : Γ(X, U)) = (f : X.functionField) :=
-  exists_unit_germToFunctionField_eq_of_ord_eq_zero_of_isIntegrallyClosed
     (isIntegrallyClosed_stalk_of_coheight_le_one hDVR hU) hf
 
 end Scheme
