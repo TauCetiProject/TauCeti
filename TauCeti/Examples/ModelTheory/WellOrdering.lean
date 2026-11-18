@@ -231,9 +231,9 @@ private theorem realize_chainSentence_iff (φ : Language.order.Sentenceω) (M : 
     realize_ltAxiom, hle]
 
 /-- **A sentence true in ordinals above every countable ordinal has a non-well-ordered countable
-model.** A
-sentence of the language of orders that, for every countable ordinal `α`, holds in some ordinal
-`β ≥ α` also holds in a countable linear order, in any universe, that is not well-founded. -/
+model.** A sentence of the language of orders that, for every countable ordinal `α`, holds in
+some ordinal `β ≥ α` also holds in a countable linear order, in any universe, that is not
+well-founded. -/
 theorem exists_countable_realize_not_wellFoundedLT (φ : Language.order.Sentenceω)
     (hφ : ∀ α : Ordinal.{w}, α < ω₁ → ∃ β ≥ α,
       letI := orderStructure β.ToType
