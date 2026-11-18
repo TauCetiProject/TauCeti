@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 
 /-!
@@ -58,6 +59,8 @@ apply to all three ends.
   differentiable in the target point for `C¹` Hamiltonians.
 * `TauCeti.Floer.contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt`: a datum
   which is `Cⁿ` on `S × M` has `Cⁿ` components in the real coordinates of `S`.
+* `TauCeti.Floer.contDiffOn_pairOfPantsPerturbation_comp_symm`: read in a chart `φ` of a manifold,
+  the components of the perturbation of `Cⁿ` Hamiltonians are `Cⁿ` on `S × φ.target`.
 * `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation_domain`,
   `TauCeti.Floer.mdifferentiableAt_pairOfPantsPerturbation_target`: for `C¹` Hamiltonians on a
   manifold, the components of the perturbation are differentiable at points of `S` in the domain
@@ -273,6 +276,25 @@ theorem contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
       contMDiffAt_snd
   exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
     contMDiffAt_const).contMDiffWithinAt
+
+/-- Read in a chart `φ` from `M` onto an open subset of a normed space `V`, the components of the
+pair-of-pants perturbation of period-one `Cⁿ` Hamiltonians on `M` are `Cⁿ` jointly in the domain
+point of `S`, in real coordinates, and the chart coordinate. -/
+theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞}
+    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {H : Puncture → ℝ → M → ℝ}
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (v : ℂ) :
+    ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm p.1) (φ.symm p.2) v)
+      (thricePuncturedSphereReal ×ˢ φ.target) := by
+  have hg : ContMDiffOn 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℝ × ℝ).prod I) n
+      (fun p : (ℝ × ℝ) × V ↦ (p.1, φ.symm p.2)) (thricePuncturedSphereReal ×ˢ φ.target) :=
+    contDiff_fst.contMDiff.contMDiffOn.prodMk
+      ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
+        contDiff_snd.contMDiff.contMDiffOn fun _ hp ↦ hp.2)
+  have hK := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
+    (fun w x ↦ contMDiffAt_pairOfPantsPerturbation hH hHs w x) v
+  exact contMDiffOn_iff_contDiffOn.1 (hK.comp hg fun _ hp ↦ ⟨hp.1, mem_univ _⟩)
 
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`, for `C¹` Hamiltonians on a manifold. -/
