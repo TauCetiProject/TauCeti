@@ -31,6 +31,8 @@ So the equation tested on `∂ₛ` alone loses no information.
 * `TauCeti.InhomogeneousTerm.chartTerm`: an inhomogeneous term read in charts, with its
   interaction with the module operations, with regularity downgrades, with replacing the
   structures by equal ones and with identity charts.
+* `TauCeti.InhomogeneousTerm.chartTerm_symm_trans_apply`: under a change of chart of `M`, the
+  term read in charts is transported by the derivative of the transition.
 * `TauCeti.InhomogeneousTerm.chartTerm_apply_eq_zero_iff`: the term read in charts vanishes at a
   point exactly when the term vanishes on `∂ₛ` there.
 * `TauCeti.InhomogeneousTerm.tangentHom_eq_zero_iff_apply_eq_zero`: over a two-dimensional domain,
@@ -152,6 +154,21 @@ theorem chartTerm_refl {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     mvfderiv_eq_fderiv_apply, fderiv_id]
   -- The identity of `F` fixes the tangent vector, read as a vector of `F`.
   rfl
+
+/-- **Changing the chart of the target.** For two charts `ψ₁` and `ψ₂` of `M` with values in a
+normed space and a point `w` of the source of the transition `Θ = ψ₂ ∘ ψ₁⁻¹`, the term read in `φ`
+and `ψ₂` at `(z, Θ w)` is the derivative of `Θ` at `w` applied to the term read in `φ` and `ψ₁`
+at `(z, w)`, provided `ψ₁` is differentiable at `ψ₁⁻¹ w` and `Θ` at `w`. -/
+theorem chartTerm_symm_trans_apply (ν : InhomogeneousTerm j J) (φ : OpenPartialHomeomorph P ℂ)
+    (z : ℂ) {ψ₁ ψ₂ : OpenPartialHomeomorph M G} {w : G} (hw : w ∈ (ψ₁.symm.trans ψ₂).source)
+    (hψ₁ : MDifferentiableAt I 𝓘(ℝ, G) ψ₁ (ψ₁.symm w))
+    (hΘ : DifferentiableAt ℝ (ψ₁.symm.trans ψ₂) w) :
+    ν.chartTerm φ ψ₂ z (ψ₁.symm.trans ψ₂ w) =
+      fderiv ℝ (ψ₁.symm.trans ψ₂) w (ν.chartTerm φ ψ₁ z w) := by
+  have hw' : w ∈ ψ₁.target ∧ ψ₁.symm w ∈ ψ₂.source := by simpa using hw
+  have hy : ψ₂.symm (ψ₁.symm.trans ψ₂ w) = ψ₁.symm w := by simp [ψ₂.left_inv hw'.2]
+  rw [chartTerm_apply, chartTerm_apply, hy, ψ₁.mvfderiv_eq_fderiv_symm_trans_comp hw hψ₁ hΘ,
+    ContinuousLinearMap.comp_apply, map_smul]
 
 /-- An inhomogeneous term read in charts vanishes at the value `ψ y` exactly when the term at
 `(φ⁻¹ z, y)` vanishes on `∂ₛ = dφ⁻¹ 1`, for a chart `ψ` differentiable at `y` with inverse
