@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Probability.Distributions.BetaGas.Normalizability
+import TauCeti.Probability.Distributions.BetaGas.PartitionFunction
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
 # Beta-gas normalizability tests
@@ -15,7 +17,7 @@ Smoke tests for the general-potential logarithmic-growth API.
 
 namespace TauCeti.Probability
 
-open MeasureTheory Real
+open _root_.MeasureTheory Real
 
 variable {n : ℕ} {β β' : ℝ} {V : ℝ → ℝ}
 variable (hβ : 0 < β) (hβ' : 1 < β') (hββ' : β ≤ β') (hV : Continuous V)
@@ -72,5 +74,29 @@ example : (∫ x, betaGasPDFReal n β V x
 
 example : IsProbabilityMeasure (gaussianBetaGasMeasure 0 β) :=
   isProbabilityMeasure_gaussianBetaGasMeasure 0 hβ
+
+example : ¬ Integrable (fun x : ℝ => |x| ^ (-1 : ℝ) * exp (-1 * x ^ 2)) := by
+  intro h
+  have hparams := TauCeti.integrable_abs_rpow_mul_exp_neg_mul_sq_iff.mp h
+  norm_num at hparams
+
+example : ¬ Integrable (fun x : ℝ => |x| ^ (0 : ℝ) * exp (-0 * x ^ 2)) := by
+  intro h
+  have hparams := TauCeti.integrable_abs_rpow_mul_exp_neg_mul_sq_iff.mp h
+  norm_num at hparams
+
+example : gaussianBetaGasPartitionFunction 2 1 = 4 * sqrt π := by
+  rw [gaussianBetaGasPartitionFunction_two_eq (by norm_num : (0 : ℝ) < 1)]
+  norm_num [Real.Gamma_one, Real.rpow_natCast]
+
+example : gaussianBetaGasPartitionFunction 2 2 = π := by
+  have hGamma : Gamma (3 / 2 : ℝ) = sqrt π / 2 := by
+    have h := Real.Gamma_add_one (s := (1 / 2 : ℝ)) (by norm_num)
+    rw [Real.Gamma_one_half_eq] at h
+    convert h using 1 <;> norm_num
+    ring
+  rw [gaussianBetaGasPartitionFunction_two_eq (by norm_num : (0 : ℝ) < 2)]
+  norm_num [Real.rpow_natCast, Real.rpow_neg, hGamma]
+  nlinarith [Real.sq_sqrt Real.pi_pos.le]
 
 end TauCeti.Probability
