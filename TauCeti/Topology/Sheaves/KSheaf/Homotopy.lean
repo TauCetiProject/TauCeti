@@ -209,6 +209,11 @@ theorem nonempty_isColimit_coconeOfCompacts_homology (K : Compacts X)
     let ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
     ⟨⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.2)⟩⟩
   let e := asIso (homologyMap (hc.desc (F.coconeOfCompacts K)) n)
+  -- the goal's cocone `coconeOfCompacts (F ⋙ G) K` (with `G` the degree `n` cohomology functor)
+  -- is `G.mapCocone (F.coconeOfCompacts K)` by definition: both have point `G.obj (F.obj (op K))`
+  -- and legs `G.map (F.map _)`, and their diagrams differ by the definitional reassociation
+  -- `(_ ⋙ F) ⋙ G = _ ⋙ (F ⋙ G)`; `G.map` is `homologyMap · n` by definition
+  -- (`HomologicalComplex.homologyFunctor_map`), which the leg compatibility below uses
   exact ⟨(isColimitOfPreserves (homologyFunctor C (ComplexShape.up ℤ) n) hc).ofIsoColimit
       (Cocone.ext (c' := (homologyFunctor C (ComplexShape.up ℤ) n).mapCocone
         (F.coconeOfCompacts K)) e (fun L ↦
