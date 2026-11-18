@@ -138,8 +138,8 @@ theorem gl2PhiElement_pow (n : ℕ) :
     GL2PhiElement p ^ n =
       GL2Borel.mk (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.mpr hp.out.ne_zero) ^ n) 1 0 := by
   -- `φ` is the image of `(p, 1)` under the torus homomorphism, which commutes with powers.
-  rw [gl2PhiElement_eq_mk, ← GL2Borel.coe_torusHom (_, 1), ← Subgroup.coe_pow, ← map_pow,
-    Prod.pow_mk, one_pow, GL2Borel.coe_torusHom]
+  simpa [gl2PhiElement_eq_mk] using
+    congrArg Subtype.val (map_pow GL2Borel.torusHom (Units.mk0 (p : ℚ_[p]) _, 1) n).symm
 
 namespace GL2PadicInt
 
@@ -342,9 +342,8 @@ theorem exists_gl2PhiElement_pow_mul_mem {g : GL (Fin 2) ℚ_[p]} (hg : g ∈ GL
   -- Multiplying by `p ^ n` scales both coordinates by `p⁻ⁿ` in norm.
   have hscale : ∀ x : ℚ_[p], ‖x‖ < (p : ℝ) ^ n → ‖(p : ℚ_[p]) ^ n * x‖ ≤ 1 := by
     intro x hx
-    rw [norm_mul, norm_pow, Padic.norm_p, inv_pow,
-      inv_mul_le_iff₀ (pow_pos (Nat.cast_pos.mpr hp.out.pos) n), mul_one]
-    exact hx.le
+    have hpn : (0 : ℝ) < (p : ℝ) ^ n := pow_pos (Nat.cast_pos.mpr hp.out.pos) n
+    simpa [Padic.norm_p, inv_mul_le_iff₀ hpn] using hx.le
   refine ⟨n, ?_⟩
   simpa [gl2PhiElement_pow] using
     And.intro (hscale _ ((le_max_left _ _).trans_lt hn)) (hscale _ ((le_max_right _ _).trans_lt hn))

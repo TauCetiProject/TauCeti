@@ -182,10 +182,7 @@ def semidirectProductEquiv : AffineGroup R ≃* GL2Mirabolic R where
     simp
   map_mul' x y := by
     refine Subtype.ext ?_
-    simp only [Subgroup.coe_mul, GL2Borel.mk_mul_mk, SemidirectProduct.mul_left,
-      SemidirectProduct.mul_right, toAdd_mul, affineAction_apply_toAdd, mul_one,
-      Units.val_one]
-    rw [add_comm]
+    simp [add_comm]
 
 @[simp]
 theorem coe_semidirectProductEquiv_apply (x : AffineGroup R) :
