@@ -86,11 +86,11 @@ private noncomputable def mulCoordCoeff (c : AnalyticStage p h E) : ZMod (p ^ h)
 
 private theorem norm_mulCoordCoeff_le (c : AnalyticStage p h E) (i : ZMod (p ^ h) × ℕ) :
     ‖mulCoordCoeff c i‖ ≤ max ‖c i‖ ‖c (i.1, i.2 - 1)‖ := by
-  have hsmul (r : ℤ_[p]) (e : E) : ‖r • e‖ ≤ ‖e‖ :=
-    (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) (PadicInt.norm_le_one r))
   obtain ⟨a, _ | n⟩ := i
-  · exact (hsmul _ _).trans (le_max_left _ _)
-  · exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le_max (hsmul _ _) (hsmul _ _))
+  · exact (norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)).trans (le_max_left _ _)
+  · exact (IsUltrametricDist.norm_add_le_max _ _).trans
+      (max_le_max (norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _))
+        (norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)))
 
 private theorem norm_mulCoordCoeff_le_norm (c : AnalyticStage p h E) (i : ZMod (p ^ h) × ℕ) :
     ‖mulCoordCoeff c i‖ ≤ ‖c‖ :=
@@ -184,72 +184,39 @@ theorem eval_mulCoord (c : AnalyticStage p h E) (x : ℤ_[p]) :
   simp only [Finset.range_one, Finset.sum_singleton, pow_zero, one_smul, mulCoord_apply_zero]
   module
 
-/-- The coefficient of `vʲ` in the re-expansion `(b + p v)^(k+1)` satisfies Pascal's rule
-`T(j, k + 1) = b T(j, k) + p T(j - 1, k)`, the second term being absent for `j = 0`. -/
-private theorem transitionScalar_succ (b : ℤ_[p]) (j k : ℕ) :
-    ((k + 1).choose j : ℤ_[p]) * b ^ (k + 1 - j) * (p : ℤ_[p]) ^ j =
-      b * ((k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j) +
-        (p : ℤ_[p]) * (if j = 0 then 0 else
-          (k.choose (j - 1) : ℤ_[p]) * b ^ (k - (j - 1)) * (p : ℤ_[p]) ^ (j - 1)) := by
-  rcases j with _ | j
-  · simp only [Nat.choose_zero_right, Nat.cast_one, Nat.sub_zero, pow_zero, mul_one, one_mul,
-      ite_true, mul_zero, add_zero, pow_succ]
-    ring
-  simp only [add_eq_zero, one_ne_zero, and_false, ite_false, Nat.add_sub_cancel,
-    Nat.choose_succ_succ', Nat.cast_add]
-  rcases lt_trichotomy j k with hjk | rfl | hjk
-  · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hjk
-    rw [show j + m + 1 + 1 - (j + 1) = m + 1 by omega, show j + m + 1 - (j + 1) = m by omega,
-      show j + m + 1 - j = m + 1 by omega]
-    ring
-  · simp [Nat.choose_succ_self, pow_succ]
-    ring
-  · simp [Nat.choose_eq_zero_of_lt hjk, Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_lt hjk)]
-
 omit [CompleteSpace E] in
 /-- Re-expanding `x f` on a disc `a + pʰ(b + p v)`: if the coefficient of `vʲ` (resp. `v^(j-1)`)
 in the re-expansion of `f` is `D` (resp. `Y`, or `0` when `j = 0`), then that of `x f` is
 `(a + pʰ b) D + p^(h+1) Y`. -/
 private theorem hasSum_choose_smul_mulCoord (c : AnalyticStage p h E) (a : ZMod (p ^ h))
     (b : ℤ_[p]) (j : ℕ) {D Y : E}
-    (hD : HasSum (fun k ↦ ((k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j) • c (a, k))
-      D)
-    (hY : HasSum (fun k ↦ (if j = 0 then 0 else (k.choose (j - 1) : ℤ_[p]) *
-      b ^ (k - (j - 1)) * (p : ℤ_[p]) ^ (j - 1)) • c (a, k)) Y) :
-    HasSum (fun k ↦ ((k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j) •
-        mulCoord S c (a, k))
+    (hD : HasSum (fun k ↦ transitionScalar b j k • c (a, k)) D)
+    (hY : HasSum (fun k ↦ (if j = 0 then 0 else transitionScalar b (j - 1) k) • c (a, k)) Y) :
+    HasSum (fun k ↦ transitionScalar b j k • mulCoord S c (a, k))
       (((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * b) • D + (p : ℤ_[p]) ^ (h + 1) • Y) := by
-  -- Split the terms of positive degree by Pascal's rule `transitionScalar_succ`.
-  have hsucc : HasSum (fun k ↦ (((k + 1).choose j : ℤ_[p]) * b ^ (k + 1 - j) *
-      (p : ℤ_[p]) ^ j) • mulCoord S c (a, k + 1)) _ :=
+  -- Split the terms of positive degree by Pascal's rule `transitionScalar_succ_succ`.
+  have hsucc : HasSum (fun k ↦ transitionScalar b j (k + 1) • mulCoord S c (a, k + 1)) _ :=
     ((((hasSum_nat_add_iff' 1).mpr hD).const_smul (a.val : ℤ_[p])).add
       (hD.const_smul ((p : ℤ_[p]) ^ h * b))).add (hY.const_smul ((p : ℤ_[p]) ^ (h + 1)))
       |>.congr_fun fun k ↦ by
-      rw [mulCoord_apply_succ, transitionScalar_succ b j k]
-      module
-  have hsum := (hasSum_nat_add_iff (f := fun k ↦ ((k.choose j : ℤ_[p]) * b ^ (k - j) *
-    (p : ℤ_[p]) ^ j) • mulCoord S c (a, k)) 1).mp hsucc
+      rw [mulCoord_apply_succ]
+      rcases j with _ | j
+      · simp only [transitionScalar_zero_left, ↓reduceIte, pow_succ]
+        module
+      · simp only [transitionScalar_succ_succ, Nat.add_one_ne_zero, ↓reduceIte, Nat.add_sub_cancel]
+        module
+  have hsum := (hasSum_nat_add_iff
+    (f := fun k ↦ transitionScalar b j k • mulCoord S c (a, k)) 1).mp hsucc
   simp only [Finset.range_one, Finset.sum_singleton, mulCoord_apply_zero] at hsum
   convert hsum using 1
   module
-
-omit [IsUltrametricDist E] [CompleteSpace E] in
-private theorem natCast_val_eq_add (a' : ZMod (p ^ (h + 1))) :
-    (a'.val : ℤ_[p]) = (((a'.val : ZMod (p ^ h)).val : ℕ) : ℤ_[p]) +
-      (p : ℤ_[p]) ^ h * ((a'.val / p ^ h : ℕ) : ℤ_[p]) := by
-  rw [ZMod.val_natCast]
-  exact_mod_cast (Nat.mod_add_div a'.val (p ^ h)).symm
 
 /-- Multiplication by the coordinate commutes with re-expansion to the discs of the next level. -/
 theorem transition_mulCoord (c : AnalyticStage p h E) :
     transition S (mulCoord S c) = mulCoord S (transition S c) := by
   ext ⟨a', j⟩
-  have hD (j : ℕ) : HasSum (fun k ↦ ((k.choose j : ℤ_[p]) *
-      ((a'.val / p ^ h : ℕ) : ℤ_[p]) ^ (k - j) * (p : ℤ_[p]) ^ j) •
-        c ((a'.val : ZMod (p ^ h)), k)) (transition S c (a', j)) := by
-    rw [transition_apply]
-    exact (summable_smul_apply c _ fun _ ↦ PadicInt.norm_le_one _).hasSum
-  rw [transition_apply]
+  have hD (j : ℕ) := hasSum_transition_apply S c a' j
+  rw [← (hasSum_transition_apply S (mulCoord S c) a' j).tsum_eq]
   rcases j with _ | j
   · rw [(hasSum_choose_smul_mulCoord S c _ _ 0 (hD 0) (Y := 0) (by simp)).tsum_eq,
       ← natCast_val_eq_add, mulCoord_apply_zero, smul_zero, add_zero]
@@ -298,14 +265,16 @@ private theorem mulCoord_amiceTerm {n : ℕ} (hn : n + 1 < p ^ h) (e : E) :
   · simp only [add_mul, mul_assoc, Polynomial.coeff_add, Polynomial.coeff_C_mul,
       Polynomial.coeff_X_mul_zero, mul_zero, add_zero, Polynomial.coeff_natCast_mul] at hk
     rw [mulCoord_apply_zero, amiceTerm_apply, smul_smul, hk]
+    congr 1
     push_cast
-    ring_nf
+    ring
   · simp only [add_mul, mul_assoc, Polynomial.coeff_add, Polynomial.coeff_C_mul,
       Polynomial.coeff_X_mul, Polynomial.coeff_natCast_mul] at hk
     rw [mulCoord_apply_succ, amiceTerm_apply, amiceTerm_apply, smul_smul, smul_smul, ← add_smul,
       hk]
+    congr 1
     push_cast
-    ring_nf
+    ring
 
 end AnalyticStage
 
@@ -393,6 +362,7 @@ theorem stageSeminorm_mulCoord_le (h : ℕ) (μ : LocallyAnalyticDistribution p 
 
 /-- **The Amice transform of `x μ`** is the Mahler derivation `∂ = (1 + T) d/dT` of the Amice
 transform of `μ`. -/
+@[simp]
 theorem amiceTransform_mulCoord (μ : LocallyAnalyticDistribution p K) :
     amiceTransform (mulCoord μ) = PowerSeries.mahlerDerivation K (amiceTransform μ) := by
   ext n
@@ -414,6 +384,7 @@ theorem amiceTransform_iterate_mulCoord (μ : LocallyAnalyticDistribution p K) (
 
 /-- On the distribution of a measure, multiplication by the coordinate is the measure weighted by
 the coordinate function. -/
+@[simp]
 theorem mulCoord_ofMeasure (μ : AbstractMeasure ℤ_[p] K K) :
     mulCoord (ofMeasure μ) =
       ofMeasure (AbstractMeasure.weight (ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], K)) μ) := by
