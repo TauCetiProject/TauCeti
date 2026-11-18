@@ -40,20 +40,21 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- A smooth vector field admits a strictly positive smooth multiplier that bounds its speed
-along any prescribed smooth real function. No compactness or boundarylessness is needed. -/
+/-- A `C^m` vector field admits a strictly positive `C^m` multiplier that bounds its speed
+along any prescribed `C^n` real function when `m + 1 ≤ n`. No compactness or boundarylessness
+is needed. -/
 theorem _root_.ContMDiff.exists_pos_contMDiffMap_abs_mvfderiv_smul_le [IsManifold I 1 M]
-    {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {X : (x : M) → TangentSpace I x}
-    (hX : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, X x⟩ : TangentBundle I M)))
+    {n m : ℕ∞ω} {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) n f) (hmn : m + 1 ≤ n) {X : (x : M) → TangentSpace I x}
+    (hX : ContMDiff I I.tangent m (fun x ↦ (⟨x, X x⟩ : TangentBundle I M)))
     {ε : ℝ} (hε : 0 < ε) :
-    ∃ a : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ x, 0 < a x) ∧
+    ∃ a : C^m⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ x, 0 < a x) ∧
       ∀ x, |mvfderiv I f x (a x • X x)| ≤ ε := by
   let g : M → ℝ := fun x ↦ mvfderiv I f x (X x)
-  have hg : ContMDiff I 𝓘(ℝ) ∞ g :=
-    (hf.contMDiff_mvfderiv_apply (m := ∞) (by simp)).comp hX
+  have hg : ContMDiff I 𝓘(ℝ) m g :=
+    (hf.contMDiff_mvfderiv_apply hmn).comp hX
   have hden (x : M) : 0 < 1 + g x ^ 2 := by positivity
-  let a : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ :=
+  let a : C^m⟮I, M; 𝓘(ℝ), ℝ⟯ :=
     ⟨fun x ↦ 2 * ε / (1 + g x ^ 2),
       contMDiff_const.div₀ (contMDiff_const.add (hg.pow 2)) (fun x ↦ (hden x).ne')⟩
   have ha (x : M) : 0 < a x := div_pos (mul_pos (by norm_num) hε) (hden x)
@@ -69,7 +70,7 @@ theorem _root_.ContMDiff.exists_pos_contMDiffMap_abs_mvfderiv_smul_le [IsManifol
 /-- There are a nonnegative smooth proper exhaustion and a smooth strictly inward field whose
 exhaustion speed is uniformly bounded by a prescribed positive constant. In particular, the
 bound may be chosen to be `1 / 2`. -/
-theorem exists_strictInward_isProperMap_abs_mvfderiv_le [IsManifold I ∞ M]
+theorem exists_isProperMap_mem_strictInwardTangentCone_abs_mvfderiv_le [IsManifold I ∞ M]
     [FiniteDimensional ℝ E] [T2Space M]
     [SigmaCompactSpace M] {ε : ℝ} (hε : 0 < ε) :
     ∃ (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯),
@@ -78,7 +79,8 @@ theorem exists_strictInward_isProperMap_abs_mvfderiv_le [IsManifold I ∞ M]
       ∀ x, |mvfderiv I f x (X x)| ≤ ε := by
   obtain ⟨f, hf, hf₀⟩ := exists_contMDiffMap_isProperMap_nonneg (M := M) I
   obtain ⟨Y, hY⟩ := exists_contMDiffSection_mem_strictInwardTangentCone (M := M) I
-  obtain ⟨a, ha, hab⟩ := f.contMDiff.exists_pos_contMDiffMap_abs_mvfderiv_smul_le Y.contMDiff hε
+  obtain ⟨a, ha, hab⟩ :=
+    f.contMDiff.exists_pos_contMDiffMap_abs_mvfderiv_smul_le (by simp) Y.contMDiff hε
   let X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
     ⟨fun x ↦ a x • Y x, a.contMDiff.smul_section Y.contMDiff⟩
   exact ⟨f, X, hf, hf₀, fun x ↦ (smul_mem_strictInwardTangentCone_iff (ha x)).2 (hY x), hab⟩
