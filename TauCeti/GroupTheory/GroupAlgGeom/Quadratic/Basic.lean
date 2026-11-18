@@ -87,6 +87,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `TauCeti.GroupAlgGeom.Quadratic.isQuadratic_map_iff`,
   `TauCeti.GroupAlgGeom.Quadratic.isStrictlyQuadratic_map_iff`: an injective map transporting
   occurrence counts along a bijection of the variables preserves (strictly) quadratic systems.
+* `TauCeti.GroupAlgGeom.Quadratic.IsQuadratic.image_map`: every change of coefficients
+  `G →* H`, injective or not, keeps a system quadratic.
 * `TauCeti.GroupAlgGeom.Quadratic.exists_isCyclicallyReduced_conj`,
   `TauCeti.GroupAlgGeom.Quadratic.IsStrictlyQuadratic.exists_isCyclicallyReduced_conj`: cyclic
   reduction relative to `G`, and of strictly quadratic words.
@@ -337,6 +339,18 @@ theorem IsStrictlyQuadratic.isQuadratic {S : Finset (GX G X)} (h : IsStrictlyQua
 
 theorem IsQuadratic.mono {S T : Finset (GX G X)} (hT : IsQuadratic T) (h : S ⊆ T) :
     IsQuadratic S := fun x => (Finset.sum_le_sum_of_subset h).trans (hT x)
+
+/-- A change of coefficients `f : G →* H` keeps a system quadratic: it does not increase the
+number of occurrences of a variable in a word, and identifying words only lowers the counts. -/
+theorem IsQuadratic.image_map [DecidableEq (GX H X)] {S : Finset (GX G X)} (hS : IsQuadratic S)
+    (f : G →* H) : IsQuadratic (S.image (Monoid.Coprod.map f (FreeGroup.map id))) := fun x =>
+  calc ∑ w ∈ S.image (Monoid.Coprod.map f (FreeGroup.map id)), occurrences x w
+      ≤ ∑ w ∈ S, occurrences x (Monoid.Coprod.map f (FreeGroup.map id) w) :=
+        Finset.sum_image_le_of_nonneg fun _ _ => Nat.zero_le _
+    _ ≤ ∑ w ∈ S, occurrences x w := Finset.sum_le_sum fun w _ =>
+        occurrences_map_le _ x x (by simp [occurrences_inl]) (by simp [occurrences_inr_of_self])
+          (fun z hz => by simp [occurrences_inr_of_of_ne hz]) w
+    _ ≤ 2 := hS x
 
 section Map
 
