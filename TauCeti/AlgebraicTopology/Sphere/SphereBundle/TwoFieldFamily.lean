@@ -29,7 +29,10 @@ equators form the space `Σ` (`TauCeti.SphereBundleTwoFieldEquators`) of pairs `
 topology of a subspace of `Q × E`. Projection to `x` (`TauCeti.SphereBundleTwoFieldEquators.proj`)
 maps `Σ` to `Q`, with the section `x ↦ (x, x)` (`TauCeti.SphereBundleTwoFieldEquators.diag`), and
 `w` is itself a point of `Q` in the sphere fibre through `x`
-(`TauCeti.SphereBundleTwoFieldEquators.point`).
+(`TauCeti.SphereBundleTwoFieldEquators.point`). The space of equators of the sphere `S(E_b)` and
+the restricted fields maps continuously into `Σ`
+(`TauCeti.SphereBundleTwoFieldEquators.ofFiber`,
+`TauCeti.SphereBundleTwoFieldEquators.continuous_ofFiber`).
 
 Putting the two-sphere of Example 6.20 into each sphere fibre gives the family
 (`TauCeti.sphereBundleTwoFieldSphereFamily`)
@@ -273,8 +276,12 @@ def SphereBundleTwoFieldEquators.ofFiber {b : B}
   base := ⟨⟨b, zw.1.1⟩, mem_sphereBundle.2 (norm_eq_of_mem_sphere zw.1.1)⟩
   vec := (zw.1.2 : E b)
   norm_vec := norm_eq_of_mem_sphere zw.1.2
-  inner_vec_u := (mem_twoFieldEquators.1 zw.2).1
-  inner_vec_v := (mem_twoFieldEquators.1 zw.2).2
+  inner_vec_u := by
+    have h := (mem_twoFieldEquators.1 zw.2).1
+    rwa [sphereBundleFiberField_apply] at h
+  inner_vec_v := by
+    have h := (mem_twoFieldEquators.1 zw.2).2
+    rwa [sphereBundleFiberField_apply] at h
 
 /-- The base point of `ofFiber zw` is the point `z` of the sphere fibre over `b`. -/
 @[simp]
@@ -288,6 +295,16 @@ theorem SphereBundleTwoFieldEquators.coe_point_ofFiber [TopologicalSpace (TotalS
     (zw : twoFieldEquators (sphereBundleFiberField u b) (sphereBundleFiberField v b)) :
     (point (SphereBundleTwoFieldEquators.ofFiber zw) : TotalSpace F E) = ⟨b, zw.1.2⟩ :=
   (rfl)
+
+/-- The map `ofFiber` from the space of equators of the sphere `S(E_b)` into `Σ` is continuous. -/
+theorem SphereBundleTwoFieldEquators.continuous_ofFiber [TopologicalSpace B]
+    [NormedAddCommGroup F] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] {b : B} :
+    Continuous (SphereBundleTwoFieldEquators.ofFiber (u := u) (v := v) (b := b)) :=
+  continuous_iff.2
+    ⟨((FiberBundle.continuous_totalSpaceMk F E b).comp
+        (continuous_subtype_val.comp (continuous_fst.comp continuous_subtype_val))).subtype_mk _,
+      (FiberBundle.continuous_totalSpaceMk F E b).comp
+        (continuous_subtype_val.comp (continuous_snd.comp continuous_subtype_val))⟩
 
 end Fiber
 
@@ -423,6 +440,7 @@ theorem coe_sphereBundleTwoFieldSphereFamily_ofFiber {b : B}
   rw [coe_sphereBundleTwoFieldSphereFamily_sphereCollapse, coe_twoFieldSphereFamily_sphereCollapse]
   -- Both sides are the same tangent circles in `E_b`: the base point of `ofFiber zw` is the point
   -- `z` of the sphere bundle, and the restricted fields are `u`, `v` at that point.
+  simp only [sphereBundleFiberField_apply]
   rfl
 
 end Family

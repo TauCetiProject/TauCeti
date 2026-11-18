@@ -41,15 +41,15 @@ section Fiber
 variable (u) in
 /-- A vertical field `u` of `S(E)`, restricted to the sphere fibre over `b`: a vector field on the
 unit sphere `S(E_b)`. -/
-@[expose] def sphereBundleFiberField (b : B) (z : sphere (0 : E b) 1) : E b :=
+def sphereBundleFiberField (b : B) (z : sphere (0 : E b) 1) : E b :=
   u ⟨⟨b, z⟩, mem_sphereBundle.2 (norm_eq_of_mem_sphere z)⟩
 
-/-- At a point `x` of the sphere bundle, the field `u` restricted to the sphere fibre through `x`
-is `u x`. -/
+variable (u) in
+/-- At a point `z` of the sphere fibre over `b`, the field `u` restricted to that fibre is `u` at
+the point `z` of the sphere bundle. -/
 @[simp]
-theorem sphereBundleFiberField_apply (x : sphereBundle F E)
-    (hx : (x : TotalSpace F E).2 ∈ sphere (0 : E (x : TotalSpace F E).proj) 1) :
-    sphereBundleFiberField u (x : TotalSpace F E).proj ⟨(x : TotalSpace F E).2, hx⟩ = u x :=
+theorem sphereBundleFiberField_apply (b : B) (z : sphere (0 : E b) 1) :
+    sphereBundleFiberField u b z = u ⟨⟨b, z⟩, mem_sphereBundle.2 (norm_eq_of_mem_sphere z)⟩ :=
   (rfl)
 
 /-- A point `z` of the sphere fibre over `b` and the restricted fields at `z` are orthonormal. -/
