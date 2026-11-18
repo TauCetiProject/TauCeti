@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
+import TauCeti.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # The linearized Floer operator under holomorphic changes of domain coordinates
@@ -46,6 +47,9 @@ Let `dφ_w` be complex linear, so that it is multiplication by a complex number 
   (`TauCeti.SymplecticForm.associatedBilinForm_floerLinearization_perturbationPullback`). With the
   change of variables formula, the integral of `g(D ξ, D ξ)` over a region is the same computed in
   either chart (`TauCeti.SymplecticForm.integral_associatedBilinForm_floerLinearization_image`).
+
+Away from solutions, `floerLinearization_perturbationPullback_eq_sub` gives the correction
+`-b (dJ ξ) F(u)` for endomorphism-valued families with `J² = -1` near the target point.
 
 These are the identities through which the end estimates of the linearized operator on a cylinder
 (`TauCeti.Geometry.Symplectic.Floer.EndLinearization`) apply on the ends of a punctured domain.
@@ -265,5 +269,74 @@ theorem integral_associatedBilinForm_floerLinearization_image (ω : SymplecticFo
     rw [abs_of_nonneg hdet, smul_eq_mul,
       ω.associatedBilinForm_floerLinearization_perturbationPullback (hφ w hw) (hφJ w hw)
         (hu w hw) (hξ w hw) (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw)]
+
+section
+
+variable {J : ℝ × ℝ → V → V →L[ℝ] V}
+
+/-- **Naturality of the linearized Floer operator.** Let `dφ_w` be complex linear, with
+`dφ_w (1, 0) = (a, b)`, let `J² = -1` near `u (φ w)` and let the Hamiltonians be differentiable near
+`u (φ w)` with Hamiltonian vector fields differentiable there. Then the linearization along
+`u ∘ φ` in the direction `ξ ∘ φ`, for the structures `J ∘ φ` and the pulled-back datum `φ^*K`, is
+
+`D_{u ∘ φ}(ξ ∘ φ)(w) = (a - b J) D_u ξ(φ w) - b (dJ(u) ξ) F_K(u)(φ w)`,
+
+where `J` and its target derivative `dJ` are taken at `(φ w, u (φ w))` and `ξ` at `φ w`. -/
+theorem floerLinearization_perturbationPullback_eq_sub (ω : SymplecticForm V)
+    (hφ : DifferentiableAt ℝ φ w)
+    (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hu : DifferentiableAt ℝ u (φ w)) (hξ : DifferentiableAt ℝ ξ (φ w))
+    (hKs : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 (u (φ w)), DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) (u (φ w)))
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) (u (φ w)))
+    (hJ : ∀ᶠ y in 𝓝 (u (φ w)), J (φ w) y * J (φ w) y = -1) :
+    ω.floerLinearization (fun w' ↦ J (φ w')) (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) (ξ ∘ φ) w =
+      (fderiv ℝ φ w stdComplexLineReal).1 • ω.floerLinearization J Ks Kt u ξ (φ w) -
+        (fderiv ℝ φ w stdComplexLineReal).2 •
+          J (φ w) (u (φ w)) (ω.floerLinearization J Ks Kt u ξ (φ w)) -
+        (fderiv ℝ φ w stdComplexLineReal).2 •
+          fderiv ℝ (J (φ w)) (u (φ w)) (ξ (φ w)) (ω.floerOperator J Ks Kt u (φ w)) := by
+  have hA (v : V) : J (φ w) (u (φ w)) (J (φ w) (u (φ w)) v) = -v := by
+    simpa using congrArg (fun L : V →L[ℝ] V ↦ L v) hJ.self_of_nhds
+  -- The target derivative of `J` anticommutes with `J`.
+  have hanti (v : V) : J (φ w) (u (φ w)) (fderiv ℝ (J (φ w)) (u (φ w)) (ξ (φ w)) v) +
+      fderiv ℝ (J (φ w)) (u (φ w)) (ξ (φ w)) (J (φ w) (u (φ w)) v) = 0 := by
+    simpa using congrArg (fun L : V →L[ℝ] V ↦ L v)
+      (mul_fderiv_add_fderiv_mul_eq_zero (𝕜 := ℝ) hJ (ξ (φ w)))
+  -- The slice defect `∂t (u ∘ φ) - X_{(φ^*K)_t}` is the perturbed derivative of `u` on `(-b, a)`.
+  have hP := congrArg (fun L : ℝ × ℝ →L[ℝ] V ↦ L stdComplexLineImag)
+    (ω.perturbedFDeriv_perturbationPullback hφ hu hKs.self_of_nhds hKt.self_of_nhds)
+  simp only [perturbedFDeriv_apply_stdComplexLineImag, ContinuousLinearMap.comp_apply,
+    comp_apply] at hP
+  -- The column `(-b, a)` in the standard real basis.
+  have hφ' : fderiv ℝ φ w stdComplexLineImag =
+      -(fderiv ℝ φ w stdComplexLineReal).2 • stdComplexLineReal +
+        (fderiv ℝ φ w stdComplexLineReal).1 • stdComplexLineImag := by
+    simpa [stdComplexLineReal, stdComplexLineImag] using hφJ.apply_stdComplexLineImag_eq
+  simp only [hφ', map_add, map_smul] at hP
+  have hξ' := (fderiv ℝ ξ (φ w) : ℝ × ℝ →ₗ[ℝ] V).apply_stdComplexLine
+    (fderiv ℝ φ w stdComplexLineReal)
+  simp only [ContinuousLinearMap.coe_coe] at hξ'
+  -- Expand both linearizations and the Floer operator in these coordinates.
+  rw [floerLinearization_def]
+  simp only [comp_apply]
+  rw [hP, fderiv_comp w hξ hφ, ω.fderiv_hamiltonianVectorField_perturbationPullback hKs hKt hXs hXt,
+    ω.fderiv_hamiltonianVectorField_perturbationPullback hKs hKt hXs hXt, floerLinearization_def,
+    floerOperator_eq_perturbedFDeriv]
+  simp only [ContinuousLinearMap.comp_apply, hξ', hφ', _root_.add_apply, _root_.smul_apply,
+    perturbedFDeriv_apply_stdComplexLineImag, perturbedFDeriv_apply_stdComplexLineReal, map_add,
+    map_sub, map_smul, hA, Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul,
+    stdComplexLineReal_fst, stdComplexLineReal_snd, stdComplexLineImag_fst,
+    stdComplexLineImag_snd]
+  -- What remains is `b (J dJ + dJ J)` applied to the slice defect `∂t u - X_{K_t}(u)`.
+  linear_combination (norm := module)
+    (fderiv ℝ φ w stdComplexLineReal).2 • hanti (fderiv ℝ u (φ w) stdComplexLineImag) -
+      (fderiv ℝ φ w stdComplexLineReal).2 •
+        hanti (ω.hamiltonianVectorField (Kt (φ w)) (u (φ w)))
+
+end
 
 end TauCeti.SymplecticForm
