@@ -8,8 +8,8 @@ module
 public import TauCeti.GroupTheory.LimitGroup.NTQ.Tower
 public import TauCeti.GroupTheory.LimitGroup.NTQ.Specialization
 public import TauCeti.GroupTheory.GroupAlgGeom.SolutionImage
-public import TauCeti.GroupTheory.GroupAlgGeom.Irreducible.FreeGroup
-public import TauCeti.GroupTheory.GroupAlgGeom.FreeDiscrimination
+import TauCeti.GroupTheory.GroupAlgGeom.Irreducible.FreeGroup
+import TauCeti.GroupTheory.GroupAlgGeom.FreeDiscrimination
 import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.FreeProduct
 import TauCeti.GroupTheory.NoncommPiCoprod
 import TauCeti.Topology.NoetherianSpace.Decomposition
@@ -40,6 +40,8 @@ irreducible algebraic set embeds its coordinate group, over `G`, in a normalized
 
 ## Main results
 
+* `TauCeti.LimitGroup.NTQ.TowerCover.exists_comp_point_eq`: every point of `P` is `ψ ∘ p_j` for
+  some `j` and `ψ`.
 * `TauCeti.LimitGroup.NTQ.TowerCover.V_eq_iUnion`: a tower cover of `V(S)` writes it as the union
   of the images.
 * `TauCeti.LimitGroup.NTQ.TowerCover.n_eq_zero_iff`: a tower cover of `V(S)` is empty exactly when
@@ -51,14 +53,15 @@ irreducible algebraic set embeds its coordinate group, over `G`, in a normalized
 * `TauCeti.LimitGroup.NTQ.TowerCover.exists_closure_range_eq`,
   `TauCeti.LimitGroup.NTQ.TowerCover.injective_hom_of_closure_eq`: over an irreducible `V(S)`, some
   image is dense, and its `θ_j` is injective.
-* Examples: `TauCeti.LimitGroup.NTQ.exists_bijective_gHom_coordGroup_empty` (the empty system,
-  whose coordinate group is `F[X]`); `TauCeti.LimitGroup.NTQ.V_commutatorPair_eq_union_range`,
+* Examples: `TauCeti.LimitGroup.NTQ.V_commutatorPair_eq_union_range`,
   `TauCeti.LimitGroup.NTQ.exists_gHom_commutatorPair_free`,
   `TauCeti.LimitGroup.NTQ.exists_gHom_commutatorPair_abelian` and
   `TauCeti.LimitGroup.NTQ.notMem_range_abelian_commutatorPair` (the two towers of
-  `[u, v] = [u, x] = 1`); covers of `[x, a] = 1` and of `⟨a⟩ ∪ ⟨b⟩` by centralizer towers; and
-  `TauCeti.LimitGroup.NTQ.not_exists_injective_gHom_unionEquations` (the coordinate group of
-  `⟨a⟩ ∪ ⟨b⟩` embeds in no discriminated group).
+  `[u, v] = [u, x] = 1`); covers of the empty system by the free tower `F[X]`, through
+  `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_bijective_gHom_coordGroup_empty`, and of `[x, a] = 1`
+  and `⟨a⟩ ∪ ⟨b⟩` by centralizer towers. The coordinate group of `⟨a⟩ ∪ ⟨b⟩` embeds in no
+  discriminated group, so in no discriminated tower
+  (`TauCeti.GroupAlgGeom.not_exists_injective_gHom_unionEquations`).
 
 ## References
 
@@ -129,6 +132,12 @@ theorem range_subset_V (c : TowerCover S P) (j : Fin c.n) :
   rintro _ ⟨ψ, rfl⟩
   have h := (ψ.comp (c.hom j)).comp_mem_V (CoordGroup.genericPoint_mem_V S)
   rwa [GHom.coe_comp, Function.comp_assoc, ← point_def] at h
+
+/-- Every point of `P` is `ψ ∘ p_j` for some tower `j` and some homomorphism `ψ` of the `j`-th
+tower to `G` over `G`. -/
+theorem exists_comp_point_eq (c : TowerCover S P) {v : X → G} (hv : v ∈ P) :
+    ∃ j, ∃ ψ : GHom (c.coeff j) (MonoidHom.id G), ⇑ψ ∘ c.point j = v :=
+  Set.mem_iUnion.1 (c.subset_iUnion hv)
 
 /-- A tower cover of `V(S)` writes `V(S)` as the union of the images of its towers. -/
 theorem V_eq_iUnion (c : TowerCover S (V (MonoidHom.id G) S)) :
@@ -201,8 +210,12 @@ theorem injective_hom_of_closure_eq (c : TowerCover S P) {j : Fin c.n}
     closure_minimal (subset_V_I _) (isClosed_V _) (h.symm ▸ hv)
   exact mem_V.1 hv' w (c.mem_I_range hq)
 
+/- `mono` and `ofBijective` are reducible. Their field lemmas equate terms whose types, such as
+`GHom _ ((c.mono h).coeff j)` and `GHom _ (c.coeff j)`, agree only after unfolding the
+construction, and `simp` checks such agreements at reducible transparency. -/
+
 /-- A tower cover of `P` is a tower cover of every subset of `P`. -/
-def mono (c : TowerCover S P) {P' : Set (X → G)} (h : P' ⊆ P) : TowerCover S P' where
+abbrev mono (c : TowerCover S P) {P' : Set (X → G)} (h : P' ⊆ P) : TowerCover S P' where
   n := c.n
   carrier := c.carrier
   instGroup := c.instGroup
@@ -211,9 +224,27 @@ def mono (c : TowerCover S P) {P' : Set (X → G)} (h : P' ⊆ P) : TowerCover S
   hom := c.hom
   subset_iUnion := h.trans c.subset_iUnion
 
+section mono
+
+variable (c : TowerCover S P) {P' : Set (X → G)} (h : P' ⊆ P)
+
+@[simp]
+theorem mono_n : (c.mono h).n = c.n := (rfl)
+
+@[simp]
+theorem mono_coeff (j : Fin c.n) : (c.mono h).coeff j = c.coeff j := (rfl)
+
+@[simp]
+theorem mono_hom (j : Fin c.n) : (c.mono h).hom j = c.hom j := (rfl)
+
+@[simp]
+theorem mono_point (j : Fin c.n) : (c.mono h).point j = c.point j := (rfl)
+
+end mono
+
 /-- The tower cover of `V(S)` with one tower, given by an isomorphism of the coordinate group of
 `S` with the top carrier of a tower. -/
-def ofBijective {T : Type u} [Group T] {ι : G →* T} (t : Tower G T ι)
+abbrev ofBijective {T : Type u} [Group T] {ι : G →* T} (t : Tower G T ι)
     (θ : GHom (CoordGroup.coeff (MonoidHom.id G) S) ι) (hθ : Function.Bijective θ) :
     TowerCover S (V (MonoidHom.id G) S) where
   n := 1
@@ -224,6 +255,26 @@ def ofBijective {T : Type u} [Group T] {ι : G →* T} (t : Tower G T ι)
   hom _ := θ
   subset_iUnion v hv := Set.mem_iUnion.2
     ⟨0, (CoordGroup.evalGHom v hv).comp (θ.symmOfBijective hθ), funext fun x ↦ by simp⟩
+
+section ofBijective
+
+variable {T : Type u} [Group T] {ι : G →* T} (t : Tower G T ι)
+  (θ : GHom (CoordGroup.coeff (MonoidHom.id G) S) ι) (hθ : Function.Bijective θ)
+
+@[simp]
+theorem ofBijective_n : (ofBijective t θ hθ).n = 1 := (rfl)
+
+@[simp]
+theorem ofBijective_coeff (j : Fin 1) : (ofBijective t θ hθ).coeff j = ι := (rfl)
+
+@[simp]
+theorem ofBijective_hom (j : Fin 1) : (ofBijective t θ hθ).hom j = θ := (rfl)
+
+@[simp]
+theorem ofBijective_point (j : Fin 1) :
+    (ofBijective t θ hθ).point j = ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id G) S := (rfl)
+
+end ofBijective
 
 end TowerCover
 
@@ -240,30 +291,13 @@ private theorem exists_gHom_coordGroup_of_isSeparatedBy {K : Type*} [Group K] {�
   refine ⟨⟨QuotientGroup.lift _ (eval κ p) hRad, fun g ↦ by simp⟩, funext fun x ↦ ?_⟩
   simp [CoordGroup.genericPoint_apply]
 
-/-- Over a nonabelian free group `F`, the coordinate group of the empty system in the variables
-`X` is the free `F`-group `F[X] = F ∗ F(X)`, the variables going to themselves. -/
-theorem exists_bijective_gHom_coordGroup_empty {F : Type u} [Group F] [IsFreeGroup F]
-    (hF : ¬IsMulCommutative F) (X : Type w) :
-    ∃ θ : GHom (CoordGroup.coeff (MonoidHom.id F) (∅ : Set (GX F X))) (inl : F →* GX F X),
-      Function.Bijective θ ∧
-        ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id F) ∅ = fun x ↦ inr (FreeGroup.of x) := by
-  -- `F[X]` is separated by `F`, so evaluation at the variables is defined on `F_{R(∅)}`, where
-  -- it sends the class of each `w` to `w`.
-  obtain ⟨θ, hθ⟩ := exists_gHom_coordGroup_of_isSeparatedBy (S := ∅)
-    (GX.isDiscriminatedBy_of_isFreeGroup hF).isSeparatedBy (p := fun x ↦ inr (of x)) (by simp)
-  have hθw (w : GX F X) : θ w = w := by
-    simpa [hθ] using map_eval θ (v := CoordGroup.genericPoint (MonoidHom.id F) ∅) w
-  refine ⟨θ, ⟨(injective_iff_map_eq_one θ).2 fun q hq ↦ ?_, fun w ↦ ⟨w, hθw w⟩⟩, hθ⟩
-  obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
-  rw [hθw] at hq
-  rw [hq, QuotientGroup.mk_one]
-
-/-- The one-level free tower `F[X]` covers the empty system, with the identity word map. -/
+/-- Over a nonabelian free group `F`, the one-level free tower `F[X]` covers the empty system, with
+the identity word map. -/
 noncomputable example {F : Type u} [Group F] [IsFreeGroup F] (hF : ¬IsMulCommutative F) (X : Type u)
     [Finite X] : TowerCover (∅ : Set (GX F X)) (V (MonoidHom.id F) ∅) :=
-  TowerCover.ofBijective (Tower.single (.free X))
-    (exists_bijective_gHom_coordGroup_empty hF X).choose
-    (exists_bijective_gHom_coordGroup_empty hF X).choose_spec.1
+  have h := IsSeparatedBy.exists_bijective_gHom_coordGroup_empty
+    (GX.isDiscriminatedBy_of_isFreeGroup hF).isSeparatedBy
+  TowerCover.ofBijective (Tower.single (.free X)) h.choose h.choose_spec.1
 
 /-- Over `F(α)`, the equation `[x, a] = 1` for a basis letter `a` is covered by the admissible
 full-centralizer tower `F(a, ℤ)`, the variable going to the new letter. -/
@@ -310,49 +344,55 @@ theorem V_commutatorPair_eq_union_range (hG : IsCommTransitive G) :
     refine ψ.comp_mem_V (mem_V_commutatorPair.2 ⟨?_, ?_⟩) <;>
       exact ((Commute.all _ _).map inr)
 
-/-- Over a nonabelian free group `F`, the word map `(u, v, x) ↦ (1, v, x)` induces an
-`F`-homomorphism from the coordinate group of `[u, v] = [u, x] = 1` to the free level
-`F ∗ F(v, x)`. -/
-theorem exists_gHom_commutatorPair_free {F : Type u} [Group F] [IsFreeGroup F]
-    (hF : ¬IsMulCommutative F) :
-    ∃ θ : GHom (CoordGroup.coeff (MonoidHom.id F) (commutatorPair F)) (inl : F →* GX F (Fin 2)),
-      ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id F) (commutatorPair F) =
+/-- If `G[v, x]` is separated by `G` over `G`, as it is over a nonabelian free group
+(`TauCeti.GroupAlgGeom.GX.isDiscriminatedBy_of_isFreeGroup`), the word map
+`(u, v, x) ↦ (1, v, x)` induces a `G`-homomorphism from the coordinate group of
+`[u, v] = [u, x] = 1` to the free level `G ∗ F(v, x)`. -/
+theorem exists_gHom_commutatorPair_free
+    (h : IsSeparatedBy (inl : G →* GX G (Fin 2)) (MonoidHom.id G)) :
+    ∃ θ : GHom (CoordGroup.coeff (MonoidHom.id G) (commutatorPair G)) (inl : G →* GX G (Fin 2)),
+      ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id G) (commutatorPair G) =
         ![1, inr (of 0), inr (of 1)] :=
-  exists_gHom_coordGroup_of_isSeparatedBy (GX.isDiscriminatedBy_of_isFreeGroup hF).isSeparatedBy
-    (by simp)
+  exists_gHom_coordGroup_of_isSeparatedBy h (by simp)
 
-/-- Over a nonabelian free group `F`, the word map `(u, v, x) ↦ (u, v, x)` induces an
-`F`-homomorphism from the coordinate group of `[u, v] = [u, x] = 1` to the abelian level
-`F ∗ ℤ³`. -/
-theorem exists_gHom_commutatorPair_abelian {F : Type u} [Group F] [IsFreeGroup F]
-    (hF : ¬IsMulCommutative F) :
-    ∃ θ : GHom (CoordGroup.coeff (MonoidHom.id F) (commutatorPair F))
-        (inl : F →* Monoid.Coprod F (Fin 3 → Multiplicative ℤ)),
-      ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id F) (commutatorPair F) =
+/-- Over a nonabelian fully residually free group `G`, for instance a nonabelian free group, the
+word map `(u, v, x) ↦ (u, v, x)` induces a `G`-homomorphism from the coordinate group of
+`[u, v] = [u, x] = 1` to the abelian level `G ∗ ℤ³`. -/
+theorem exists_gHom_commutatorPair_abelian (hG : IsFullyResiduallyFree G)
+    (hG' : ¬IsMulCommutative G) :
+    ∃ θ : GHom (CoordGroup.coeff (MonoidHom.id G) (commutatorPair G))
+        (inl : G →* Monoid.Coprod G (Fin 3 → Multiplicative ℤ)),
+      ⇑θ ∘ CoordGroup.genericPoint (MonoidHom.id G) (commutatorPair G) =
         fun i : Fin 3 ↦ inr (Pi.mulSingle i (Multiplicative.ofAdd 1)) := by
-  -- `F ∗ ℤ³` embeds over `F` in an ICE group over `F`, which is discriminated by `F`.
-  obtain ⟨E, _, j, c, f, hf⟩ :=
-    exists_ice_embedding_coprod_pi (isFullyResiduallyFree_of_isFreeGroup (G := F)) hF 3
+  -- `G ∗ ℤ³` embeds over `G` in an ICE group over `G`, which is discriminated by `G`.
+  obtain ⟨E, _, j, c, f, hf⟩ := exists_ice_embedding_coprod_pi hG hG' 3
   exact exists_gHom_coordGroup_of_isSeparatedBy
-    ((c.isDiscriminatedBy isFullyResiduallyFree_of_isFreeGroup).of_injective f hf).isSeparatedBy
+    ((c.isDiscriminatedBy hG).of_injective f hf).isSeparatedBy
     (mem_V_commutatorPair.2 ⟨(Commute.all _ _).map inr, (Commute.all _ _).map inr⟩)
 
-/-- Over `F(α)`, for distinct basis letters `a`, `b`, the solution `(u, v, x) = (1, a, b)` of
-`[u, v] = [u, x] = 1` is not in the image of the abelian level `F ∗ ℤ³`, whose points are pairwise
+/-- For non-commuting `a`, `b` in `G`, the solution `(u, v, x) = (1, a, b)` of
+`[u, v] = [u, x] = 1` is not in the image of the abelian level `G ∗ ℤ³`, whose points are pairwise
 commuting triples. -/
-theorem notMem_range_abelian_commutatorPair {α : Type u} {a b : α} (hab : a ≠ b) :
-    ![1, of a, of b] ∉ Set.range fun ψ : GHom (inl : FreeGroup α →*
-        Monoid.Coprod (FreeGroup α) (Fin 3 → Multiplicative ℤ)) (MonoidHom.id (FreeGroup α)) ↦
-      ⇑ψ ∘ fun i ↦ inr (Pi.mulSingle i (Multiplicative.ofAdd 1)) := by
+theorem notMem_range_abelian_commutatorPair {a b : G} (hab : ¬Commute a b) :
+    ![1, a, b] ∉ Set.range fun ψ : GHom (inl : G →* Monoid.Coprod G (Fin 3 → Multiplicative ℤ))
+      (MonoidHom.id G) ↦ ⇑ψ ∘ fun i ↦ inr (Pi.mulSingle i (Multiplicative.ofAdd 1)) := by
   rintro ⟨ψ, hψ⟩
-  -- The images of two generators of `ℤ³` commute, while `a` and `b` do not.
-  refine hab (FreeGroup.eq_of_commute_of_of ?_)
+  -- The images of two generators of `ℤ³` commute.
+  refine hab ?_
   have h1 := congrFun hψ 1
   have h2 := congrFun hψ 2
   simp only [Function.comp_apply] at h1 h2
   simpa [h1, h2] using ((Commute.all (Pi.mulSingle (1 : Fin 3) (Multiplicative.ofAdd (1 : ℤ)))
     (Pi.mulSingle 2 (Multiplicative.ofAdd 1))).map
-      (inr : (Fin 3 → Multiplicative ℤ) →* Monoid.Coprod (FreeGroup α) _)).map ψ
+      (inr : (Fin 3 → Multiplicative ℤ) →* Monoid.Coprod G _)).map ψ
+
+/-- Over `F(α)`, for distinct basis letters `a`, `b`, the solution `(1, a, b)` of
+`[u, v] = [u, x] = 1` is not in the image of the abelian level `F ∗ ℤ³`. -/
+example {α : Type u} {a b : α} (hab : a ≠ b) :
+    ![1, of a, of b] ∉ Set.range fun ψ : GHom (inl : FreeGroup α →*
+        Monoid.Coprod (FreeGroup α) (Fin 3 → Multiplicative ℤ)) (MonoidHom.id (FreeGroup α)) ↦
+      ⇑ψ ∘ fun i ↦ inr (Pi.mulSingle i (Multiplicative.ofAdd 1)) :=
+  notMem_range_abelian_commutatorPair fun h ↦ hab (FreeGroup.eq_of_commute_of_of h)
 
 /-- Over `F(α)`, the union `⟨a⟩ ∪ ⟨b⟩` of the centralizers of two basis letters, the solutions of
 the equations `[[x, a], g [x, b] g⁻¹] = 1` for `g ∈ F(α)`, is covered by the two admissible
@@ -394,20 +434,5 @@ noncomputable example {α : Type u} (a b : α) :
   rw [hθ j]
   funext
   simp [hk]
-
-/-- Over `F(α)`, for distinct basis letters `a`, `b` and a variable `x` among the variables `X`,
-the coordinate group of `⟨a⟩ ∪ ⟨b⟩` (in the `x`-coordinate) embeds, over `F(α)`, in no group
-discriminated by `F(α)`, for instance in no normalized tower over `F(α)` discriminated by `F(α)`. -/
-theorem not_exists_injective_gHom_unionEquations {α : Type u} {X : Type w} (x : X) {a b : α}
-    (hab : a ≠ b) :
-    ¬∃ (T : Type*) (_ : Group T) (ι : FreeGroup α →* T)
-      (_ : IsDiscriminatedBy ι (MonoidHom.id (FreeGroup α)))
-      (θ : GHom (CoordGroup.coeff (MonoidHom.id (FreeGroup α))
-        (unionEquations {⁅(inr (of x) : GX (FreeGroup α) X), (inl (of a) : GX (FreeGroup α) X)⁆}
-          {⁅(inr (of x) : GX (FreeGroup α) X), (inl (of b) : GX (FreeGroup α) X)⁆})) ι),
-      Function.Injective θ := by
-  rintro ⟨T, _, ι, hι, θ, hθ⟩
-  exact not_isDiscriminatedBy_coordGroup_unionEquations_commutatorElement_of x hab
-    (hι.of_injective θ hθ)
 
 end TauCeti.LimitGroup.NTQ

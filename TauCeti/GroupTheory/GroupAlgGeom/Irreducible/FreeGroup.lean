@@ -49,6 +49,8 @@ and a CSA coordinate group over the nonabelian group `F` would make the union ir
   `TauCeti.GroupAlgGeom.not_isFullyResiduallyFree_coordGroup_unionEquations_commutatorElement_of`:
   for `a ≠ b` the coordinate group of the union is neither discriminated by `F` nor fully
   residually free.
+* `TauCeti.GroupAlgGeom.not_exists_injective_gHom_unionEquations`: for `a ≠ b` the coordinate
+  group of the union embeds over `F` in no group discriminated by `F`.
 
 ## References
 
@@ -249,6 +251,20 @@ theorem not_isDiscriminatedBy_coordGroup_unionEquations_commutatorElement_of (x 
         {⁅(inr (of x) : GX (FreeGroup α) X), inl (of b)⁆})) (.id (FreeGroup α)) := by
   rw [← isIrreducible_V_iff_isDiscriminatedBy, V_unionEquations_commutatorElement_of]
   exact not_isIrreducible_setOf_mem_zpowers_of_or x hab
+
+/-- Over a free group `F` and for distinct free generators `a` and `b`, the coordinate group of
+the union `⟨a⟩ ∪ ⟨b⟩` (of the `x`-coordinate) embeds over `F` in no group discriminated by `F`
+over `F`: discrimination passes to subgroups over `F`. -/
+theorem not_exists_injective_gHom_unionEquations (x : X) {a b : α} (hab : a ≠ b) :
+    ¬∃ (T : Type*) (_ : Group T) (ι : FreeGroup α →* T)
+      (_ : IsDiscriminatedBy ι (.id (FreeGroup α)))
+      (θ : GHom (CoordGroup.coeff (X := X) (.id (FreeGroup α))
+        (unionEquations {⁅(inr (of x) : GX (FreeGroup α) X), inl (of a)⁆}
+          {⁅(inr (of x) : GX (FreeGroup α) X), inl (of b)⁆})) ι),
+      Function.Injective θ := by
+  rintro ⟨T, _, ι, hι, θ, hθ⟩
+  exact not_isDiscriminatedBy_coordGroup_unionEquations_commutatorElement_of x hab
+    (hι.of_injective θ hθ)
 
 /-- Over a free group `F` and for distinct free generators `a` and `b`, the coordinate group of
 the union `⟨a⟩ ∪ ⟨b⟩` (of the `x`-coordinate) is not fully residually free. -/

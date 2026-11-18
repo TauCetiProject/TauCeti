@@ -117,6 +117,8 @@ also cover systems without solutions, whose coordinate group is trivial.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_exists_coordGroup`: a group generated over `G` by the
   images of `X` is separated by `H` if and only if it is `G`-isomorphic to a coordinate group over
   `H` in the variables `X`.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.exists_bijective_gHom_coordGroup_empty`: if `G[X]` is
+  separated by `H`, the coordinate group of the empty system is `G[X]`.
 * `TauCeti.GroupAlgGeom.isDiscriminatedBy_iff_exists_coordGroup`: over an equationally
   Noetherian `H` and for finite `X`, such a group is discriminated by `H` if and only if it is
   `G`-isomorphic to the coordinate group of an irreducible algebraic set defined by a finite
@@ -288,6 +290,26 @@ theorem CoordGroup.isSeparatedBy_of_bijective {S : Set (GX G X)}
     (φ : GHom (CoordGroup.coeff ι S) κ) (hφ : Function.Bijective φ) : IsSeparatedBy κ ι :=
   (CoordGroup.isSeparatedBy_coeff S).of_injective (φ.symmOfBijective hφ)
     (φ.symmOfBijective_injective hφ)
+
+/-- If `G[X]` is separated by `H` over `G`, the coordinate group over `H` of the empty system in
+the variables `X` is `G[X]`, by the `G`-isomorphism sending the class of each `w ∈ G[X]` to `w`.
+This applies over a nonabelian free group `F`: `F[X]` is discriminated by `F`
+(`TauCeti.GroupAlgGeom.GX.isDiscriminatedBy_of_isFreeGroup`). -/
+theorem IsSeparatedBy.exists_bijective_gHom_coordGroup_empty
+    (h : IsSeparatedBy (inl : G →* GX G X) ι) :
+    ∃ θ : GHom (CoordGroup.coeff ι (∅ : Set (GX G X))) inl, Function.Bijective θ ∧
+      ∀ w : GX G X, θ (w : CoordGroup ι ∅) = w := by
+  -- The empty system has the radical of the trivial kernel of the identity of `G[X]`, which is
+  -- its own radical as `G[X]` is separated by `H`.
+  have hker : (GHom.id (inl : G →* GX G X) : GX G X →* GX G X).ker = normalClosure ∅ := by
+    rw [normalClosure_empty, MonoidHom.ker_eq_bot_iff]
+    simpa using Function.injective_id
+  have hπ : Function.Surjective (GHom.id (inl : G →* GX G X)) := by
+    simpa using Function.surjective_id
+  rw [CoordGroup.coeff_def]
+  obtain ⟨θ, hθ, hθw⟩ := GX.exists_bijective_gHom_of_eq_ker (N := Rad ι ∅) _ hπ
+    (by rw [← h.Rad_ker_eq, hker, Rad_normalClosure])
+  exact ⟨θ, hθ, fun w => by simpa using hθw w⟩
 
 /-- Let `S` and `T` be systems with the same radical over `H`, that is, each lies in the radical
 of the other. Then the group `G_T = G[X] ⧸ ncl(T)` is separated by `H` if and only if the radical
