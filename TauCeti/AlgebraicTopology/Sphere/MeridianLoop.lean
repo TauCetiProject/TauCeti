@@ -220,12 +220,7 @@ theorem isIso_singularHomologyFunctor_map_meridianLoop {m : ℕ} (hE : finrank �
     exact Submodule.finrank_orthogonal_span_singleton hp0
   -- A generalized loop `c` of `S(p^⊥)` that is a homeomorphism off the boundary of its cube.
   obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphere hV u₀
-  have hcs' : Function.Surjective c := fun q ↦ by
-    by_cases hq : q = u₀
-    · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
-    · exact hcs q hq
-  have hc : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
-    ⟨(GenLoop.injective_toSphere_iff c).2 hci, (GenLoop.surjective_toSphere_iff c).2 hcs'⟩
+  have hc : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_forall_ne R hcs hci
   -- Read through the meridian loops, `c` becomes a generalized loop `f` of `Ω_p Sⁿ` at
   -- `γ_{u₀} · γ_{u₀}⁻¹`. Transported to the constant loop, it has a generating Hurewicz class,
   -- since its shift to the sphere does.

@@ -214,12 +214,7 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
     exact Submodule.finrank_orthogonal_span_singleton hu0
   -- A generalized loop `c` of `Σ` that is a homeomorphism off the boundary of its cube.
   obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator hv0 (k := m + 2) hV p₀
-  have hcs' : Function.Surjective c := fun q ↦ by
-    by_cases hq : q = p₀
-    · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
-    · exact hcs q hq
-  have hc : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
-    ⟨(GenLoop.injective_toSphere_iff c).2 hci, (GenLoop.surjective_toSphere_iff c).2 hcs'⟩
+  have hc : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_forall_ne R hcs hci
   -- Read through `σ` and the loop-space shifts, `c` becomes a cube `Q` of `Sⁿ` that is again a
   -- homeomorphism off the boundary.
   set γ := GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀) c
