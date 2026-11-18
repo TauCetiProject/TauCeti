@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
-public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Determinants of continuous linear maps: relative determinants and the cofactor contraction
@@ -35,8 +36,11 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 
 ## Main declarations
 
-* `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_comp`, `ContinuousLinearMap.det_smul`:
-  the determinant of the identity, of a composition and of a scalar multiple.
+* `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_comp`, `ContinuousLinearMap.det_smul`,
+  `ContinuousLinearMap.det_piMap`: the determinant of the identity, of a composition, of a scalar
+  multiple and of a coordinatewise endomorphism of a finite dependent product.
+* `ContinuousLinearEquiv.det_piCongrRight`, `ContinuousLinearEquiv.det_negCoord`: the determinants
+  of a coordinatewise continuous linear equivalence and of a single-coordinate negation.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
   bound `1 - δ re (trace H) - P δ² ≤ ‖det (1 - δ H)‖` for `0 ≤ δ ≤ 1`.
 * `ContinuousLinearEquiv.det_symm_comp_mul_det_symm_comp`: relative determinants multiply.
@@ -66,6 +70,15 @@ theorem det_comp (f g : M →L[R] M) : (f ∘L g).det = f.det * g.det :=
 theorem det_smul [ContinuousConstSMul R M] [Module.Free R M] (c : R) (f : M →L[R] M) :
     (c • f).det = c ^ Module.finrank R M * f.det :=
   LinearMap.det_smul c (f : M →ₗ[R] M)
+
+/-- The determinant of a coordinatewise continuous linear endomorphism of a finite dependent
+product of finite free modules is the product of the component determinants. -/
+@[simp]
+theorem det_piMap {ι : Type*} [Fintype ι] {N : ι → Type*}
+    [∀ i, TopologicalSpace (N i)] [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+    [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)] (f : ∀ i, N i →L[R] N i) :
+    (piMap f).det = ∏ i, (f i).det := by
+  rw [det, coe_piMap, LinearMap.det_piMap]
 
 section RCLike
 
@@ -178,5 +191,54 @@ theorem sum_cofactor_comp_apply_single (L : (ι → R) ≃L[R] (ι → R))
       _ = F' i (L (∑ j, L.symm (Pi.single i 1) j • Pi.single j 1)) := by
         simp only [map_sum, map_smul, ContinuousLinearMap.map_smul]
       _ = F' i (Pi.single i 1) := by rw [← pi_eq_sum_univ', apply_symm_apply]
+
+section PiDet
+
+variable {ι R : Type*} [CommRing R]
+
+/-- The determinant of a coordinatewise continuous linear equivalence of a finite dependent product
+is the product of the component determinants. -/
+@[simp]
+theorem det_piCongrRight [Fintype ι] {N : ι → Type*}
+    [∀ i, TopologicalSpace (N i)] [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+    [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)] (e : ∀ i, N i ≃L[R] N i) :
+    LinearMap.det (piCongrRight e : ((i : ι) → N i) →ₗ[R] (i : ι) → N i) =
+      ∏ i, LinearMap.det (e i : N i →ₗ[R] N i) := by
+  have h : (piCongrRight e : ((i : ι) → N i) →ₗ[R] (i : ι) → N i) =
+      LinearMap.piMap fun i ↦ (e i : N i →ₗ[R] N i) := by
+    ext x i
+    simp
+  rw [h, LinearMap.det_piMap]
+
+/-- Negating the `k`-th factor of a finite dependent product has determinant
+`(-1) ^ finrank R (N k)`. -/
+theorem det_negCoord [Finite ι] [DecidableEq ι] {N : ι → Type*}
+    [∀ i, TopologicalSpace (N i)] [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+    [∀ i, ContinuousNeg (N i)] [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)] (k : ι) :
+    LinearMap.det (negCoord R (Q := N) k : ((i : ι) → N i) →ₗ[R] (i : ι) → N i) =
+      (-1 : R) ^ Module.finrank R (N k) := by
+  cases nonempty_fintype ι
+  rw [negCoord_def, det_piCongrRight, Finset.prod_eq_single k]
+  · rw [Function.update_self]
+    have hneg : ((neg R : N k ≃L[R] N k) : N k →ₗ[R] N k) = -LinearMap.id := by
+      ext x
+      simp
+    rw [hneg, ← neg_one_smul R (LinearMap.id : N k →ₗ[R] N k), LinearMap.det_smul,
+      LinearMap.det_id, mul_one]
+  · intro i _ hik
+    rw [Function.update_of_ne hik]
+    have hid : (ContinuousLinearEquiv.refl R (N i) : N i →ₗ[R] N i) = LinearMap.id := by ext; simp
+    rw [hid, LinearMap.det_id]
+  · intro hk
+    exact absurd (Finset.mem_univ k) hk
+
+/-- Negating the `k`-th coordinate of `ι → R` has determinant `-1`. -/
+@[simp]
+theorem det_negCoord_ring [Finite ι] [DecidableEq ι] [TopologicalSpace R] [ContinuousNeg R]
+    (k : ι) :
+    LinearMap.det (negCoord R (Q := fun _ : ι ↦ R) k : (ι → R) →ₗ[R] ι → R) = -1 := by
+  rw [det_negCoord, CommSemiring.finrank_self, pow_one]
+
+end PiDet
 
 end ContinuousLinearEquiv
