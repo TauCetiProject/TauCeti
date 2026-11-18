@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.Geometry.Convex.FullSimplex
 public import TauCeti.Geometry.Manifold.ContMDiff.OnSubset
@@ -27,8 +28,9 @@ Applying Mathlib's simplicial chain functor gives the complex of smooth singular
 `(smoothSingularSubcomplex I M : SSet).chainComplex R`, with boundary the alternating sum of the
 faces, and `SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R` is its inclusion into singular
 chains. A smooth map of manifolds carries smooth simplices to smooth simplices
-(`TauCeti.smoothSingularSubcomplexMap`). Constant simplices are smooth, so a constant map from any
-topological space induces a map into the smooth singular subcomplex
+(`TauCeti.smoothSingularSubcomplexMap`), and a diffeomorphism induces an isomorphism of smooth
+singular subcomplexes (`Diffeomorph.smoothSingularSubcomplexIso`). Constant simplices are smooth,
+so a constant map from any topological space induces a map into the smooth singular subcomplex
 (`TauCeti.smoothSingularSubcomplexConst`).
 
 The `p`-simplices of the subcomplex form the type `TauCeti.SmoothSimplex I M p`. A smooth simplex
@@ -51,6 +53,8 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.smoothSingularSubcomplexMap`: the induced map of smooth singular subcomplexes.
 * `TauCeti.coe_smoothSingularSubcomplexMap_app`: it acts on underlying singular simplices as the
   map of singular simplicial sets.
+* `Diffeomorph.smoothSingularSubcomplexIso`: a diffeomorphism induces an isomorphism of smooth
+  singular subcomplexes.
 * `TauCeti.smoothSingularSubcomplexConst`: the map of a singular simplicial set to the smooth
   singular subcomplex induced by a constant map.
 * `TauCeti.SmoothSimplex`: the smooth singular `p`-simplices, the `p`-simplices of
@@ -541,3 +545,45 @@ theorem SmoothSimplex.smoothSingularSubcomplexMap_app_ofCurve
   simp
 
 end TauCeti
+
+namespace Diffeomorph
+
+variable {E H E' H' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'} {M N : Type u} [TopologicalSpace M]
+  [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- The map of smooth singular subcomplexes induced by a smooth self-map equal to the identity is
+the identity. -/
+private theorem smoothSingularSubcomplexMap_eq_id {g : M → M} (hg : ContMDiff I I ∞ g)
+    (h : g = id) : TauCeti.smoothSingularSubcomplexMap g hg = 𝟙 _ := by
+  subst h
+  exact TauCeti.smoothSingularSubcomplexMap_id
+
+/-- The isomorphism of smooth singular subcomplexes induced by a diffeomorphism. -/
+def smoothSingularSubcomplexIso (Φ : Diffeomorph I J M N ∞) :
+    (TauCeti.smoothSingularSubcomplex I M : SSet) ≅ (TauCeti.smoothSingularSubcomplex J N : SSet)
+    where
+  hom := TauCeti.smoothSingularSubcomplexMap Φ Φ.contMDiff
+  inv := TauCeti.smoothSingularSubcomplexMap Φ.symm Φ.symm.contMDiff
+  hom_inv_id := by
+    rw [← TauCeti.smoothSingularSubcomplexMap_comp]
+    exact smoothSingularSubcomplexMap_eq_id _ Φ.symm_comp_self
+  inv_hom_id := by
+    rw [← TauCeti.smoothSingularSubcomplexMap_comp]
+    exact smoothSingularSubcomplexMap_eq_id _ Φ.self_comp_symm
+
+/-- The forward map of the isomorphism is the map induced by the diffeomorphism. -/
+@[simp]
+theorem smoothSingularSubcomplexIso_hom (Φ : Diffeomorph I J M N ∞) :
+    Φ.smoothSingularSubcomplexIso.hom = TauCeti.smoothSingularSubcomplexMap Φ Φ.contMDiff :=
+  (rfl)
+
+/-- The inverse of the isomorphism is the map induced by the inverse diffeomorphism. -/
+@[simp]
+theorem smoothSingularSubcomplexIso_inv (Φ : Diffeomorph I J M N ∞) :
+    Φ.smoothSingularSubcomplexIso.inv =
+      TauCeti.smoothSingularSubcomplexMap Φ.symm Φ.symm.contMDiff :=
+  (rfl)
+
+end Diffeomorph

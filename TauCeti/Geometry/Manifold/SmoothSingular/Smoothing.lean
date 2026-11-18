@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.HasExactLimitsOfShape
-public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MayerVietoris
@@ -20,9 +19,10 @@ Let `M` be a smooth manifold, over any real model with corners `I`, which is Hau
 compact and second countable, for instance a Hausdorff σ-compact manifold over a
 finite-dimensional model. This file proves the **smoothing theorem**: the inclusion of the complex
 of smooth singular chains of `M` into the complex of singular chains is a quasi-isomorphism, with
-coefficients in any object `R` of an abelian category with exact countable coproducts, such as a
-module category (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι`). So smooth singular
-homology is singular homology (`TauCeti.smoothSingularHomologyIso`), naturally in smooth maps
+coefficients in any object `R` of an abelian category with coproducts (indexed by types in `Type`),
+in which countable coproducts are exact, such as a module category
+(`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι`). So smooth singular homology is
+singular homology (`TauCeti.smoothSingularHomologyIso`), naturally in smooth maps
 (`TauCeti.smoothSingularHomologyIso_hom_naturality`). This is the input for reading integrals of
 closed forms over smooth cycles on singular homology classes, such as the symplectic area of a
 class in `H₂(M; ℤ)`, which is the integral of the symplectic form over a smooth representative.
@@ -52,8 +52,6 @@ because the disjoint-union step is applied to families indexed by `ℕ`.
 * `TauCeti.smoothSingularHomologyIso`: smooth singular homology is singular homology.
 * `TauCeti.smoothSingularHomologyIso_hom_naturality`,
   `TauCeti.smoothSingularHomologyIso_inv_naturality`: the isomorphism is natural in smooth maps.
-* `Diffeomorph.smoothSingularSubcomplexIso`: a diffeomorphism induces an isomorphism of smooth
-  singular subcomplexes.
 * `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_of_diffeomorph`: the smoothing
   theorem is invariant under diffeomorphisms.
 
@@ -71,48 +69,6 @@ open CategoryTheory Limits Set TopologicalSpace Convexity
 open scoped Manifold ContDiff
 
 universe u v w
-
-namespace Diffeomorph
-
-variable {E H E' H' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'} {M N : Type u} [TopologicalSpace M]
-  [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace H' N]
-
-/-- The map of smooth singular subcomplexes induced by a smooth self-map equal to the identity is
-the identity. -/
-private theorem smoothSingularSubcomplexMap_eq_id {g : M → M} (hg : ContMDiff I I ∞ g)
-    (h : g = id) : TauCeti.smoothSingularSubcomplexMap g hg = 𝟙 _ := by
-  subst h
-  exact TauCeti.smoothSingularSubcomplexMap_id
-
-/-- The isomorphism of smooth singular subcomplexes induced by a diffeomorphism. -/
-def smoothSingularSubcomplexIso (Φ : Diffeomorph I J M N ∞) :
-    (TauCeti.smoothSingularSubcomplex I M : SSet) ≅ (TauCeti.smoothSingularSubcomplex J N : SSet)
-    where
-  hom := TauCeti.smoothSingularSubcomplexMap Φ Φ.contMDiff
-  inv := TauCeti.smoothSingularSubcomplexMap Φ.symm Φ.symm.contMDiff
-  hom_inv_id := by
-    rw [← TauCeti.smoothSingularSubcomplexMap_comp]
-    exact smoothSingularSubcomplexMap_eq_id _ Φ.symm_comp_self
-  inv_hom_id := by
-    rw [← TauCeti.smoothSingularSubcomplexMap_comp]
-    exact smoothSingularSubcomplexMap_eq_id _ Φ.self_comp_symm
-
-/-- The forward map of the isomorphism is the map induced by the diffeomorphism. -/
-@[simp]
-theorem smoothSingularSubcomplexIso_hom (Φ : Diffeomorph I J M N ∞) :
-    Φ.smoothSingularSubcomplexIso.hom = TauCeti.smoothSingularSubcomplexMap Φ Φ.contMDiff :=
-  (rfl)
-
-/-- The inverse of the isomorphism is the map induced by the inverse diffeomorphism. -/
-@[simp]
-theorem smoothSingularSubcomplexIso_inv (Φ : Diffeomorph I J M N ∞) :
-    Φ.smoothSingularSubcomplexIso.inv =
-      TauCeti.smoothSingularSubcomplexMap Φ.symm Φ.symm.contMDiff :=
-  (rfl)
-
-end Diffeomorph
 
 namespace TauCeti
 
@@ -148,27 +104,6 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iff_of_diffeomorph
 
 end Diffeomorph
 
-/-! ### Convex chart domains -/
-
-section Chart
-
-variable {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- A convex chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' K`, for a convex set `K`
-with `K ∩ range I` inside the target of the extended chart, is mapped by the extended chart onto
-the convex set `K ∩ range I`. -/
-private theorem extChartAt_image_eq_inter_range {x : M} {K : Set E} {U : Set M}
-    (hK : K ∩ range I ⊆ (extChartAt I x).target)
-    (hU : U = (chartAt H x).source ∩ extChartAt I x ⁻¹' K) :
-    extChartAt I x '' U = K ∩ range I := by
-  subst hU
-  rw [← extChartAt_source I, ← (extChartAt I x).symm_image_target_inter_eq',
-    (extChartAt I x).image_symm_image_of_subset_target inter_subset_left]
-  exact Subset.antisymm (fun e he ↦ ⟨he.2, extChartAt_target_subset_range x he.1⟩)
-    fun e he ↦ ⟨hK he, he.1⟩
-
-end Chart
-
 /-! ### The smoothing theorem -/
 
 section Smoothing
@@ -181,8 +116,9 @@ variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 variable (I M) in
 /-- **The smoothing theorem.** On a Hausdorff, locally compact, second countable smooth manifold
 `M`, over any real model with corners, the inclusion of smooth singular chains into singular
-chains, with coefficients in an object `R` of an abelian category with exact countable coproducts,
-is a quasi-isomorphism. The hypotheses on `M` hold for a Hausdorff σ-compact manifold over a
+chains, with coefficients in an object `R` of an abelian category with coproducts (indexed by
+types in `Type`), in which countable coproducts are exact, such as a module category, is a
+quasi-isomorphism. The hypotheses on `M` hold for a Hausdorff σ-compact manifold over a
 finite-dimensional model (`Manifold.locallyCompact_of_finiteDimensional`,
 `ChartedSpace.secondCountable_of_sigmaCompact`). -/
 theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι :
@@ -192,7 +128,7 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι :
     · have : IsEmpty (⊥ : Opens M) := ⟨fun y ↦ y.2⟩
       exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty R
     · intro x K U _ hK hKt hU ⟨y₀, hy₀⟩
-      have himage := extChartAt_image_eq_inter_range hKt hU
+      have himage : extChartAt I x '' U = K ∩ range I := hU ▸ extChartAt_image_eq_inter_range hKt
       have hstar : StarConvex ℝ (extChartAt I x y₀) (extChartAt I x '' U) := by
         rw [himage]
         exact (hK.inter I.convex_range).starConvex (himage ▸ mem_image_of_mem _ hy₀)
@@ -207,7 +143,8 @@ theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι :
 variable (I M) in
 /-- **Smooth singular homology is singular homology.** The inclusion of smooth singular chains
 into singular chains induces an isomorphism on homology in every degree, with coefficients in an
-object `R` of an abelian category with exact countable coproducts. -/
+object `R` of an abelian category with coproducts (indexed by types in `Type`), in which countable
+coproducts are exact, such as a module category. -/
 def smoothSingularHomologyIso (n : ℕ) :
     (smoothSingularSubcomplex I M : SSet).homology R n ≅
       (TopCat.toSSet.obj (TopCat.of M)).homology R n :=
