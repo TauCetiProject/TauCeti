@@ -28,9 +28,11 @@ proves:
    `Metric.eball c R \ Metric.closedBall c r` (`0 ≤ r`, `ENNReal.ofReal r < R`, allowing `r = 0` and
    `R = ⊤`) and complex-differentiable outside a countable subset admits a convergent Laurent series
    with coefficients `circleLaurentCoeff f c ρ` for any `ρ ∈ (r, R)`.
-4. **Removable-singularity characterization** (for complete `E`): a convergent Laurent series on a
-   punctured disk `Metric.eball c R \ {c}` agrees near `c` with a function analytic at `c` if and
-   only if all negative-degree coefficients vanish.
+4. **Removable-singularity characterization and global singular representatives** (for complete
+   `E`): a convergent Laurent series on a punctured disk `Metric.eball c R \ {c}` agrees near `c`
+   with a function analytic at `c` if and only if all negative-degree coefficients vanish, and
+   every punctured-neighborhood holomorphic germ splits into a global representative analytic on
+   `{c}ᶜ` (vanishing along `Filter.cocompact ℂ`) plus a germ analytic at `c`.
 5. **Term-by-term differentiation** (for complete `E`): differentiating a convergent Laurent series
    shifts coefficients by `n ↦ (n + 1) • a (n + 1)`.
 
@@ -45,8 +47,9 @@ proves:
   `DifferentiableOn.hasLaurentSeriesOnAnnulus`, and
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
   open annuli.
-* `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_eventuallyEq_iff`: removable singularities on
-  punctured disks via vanishing of negative Laurent coefficients.
+* `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_eventuallyEq_iff` and
+  `TauCeti.exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt`: removable
+  singularities on punctured disks and global `{c}ᶜ`-analytic singular representatives.
 * `TauCeti.HasLaurentSeriesOnAnnulus.deriv` and
   `TauCeti.HasLaurentSeriesOnAnnulus.hasSum_deriv`: term-by-term differentiation of Laurent series.
 
@@ -409,6 +412,34 @@ theorem exists_analyticAt_eventuallyEq_iff {f : ℂ → E} {a : ℤ → E} {c : 
     (Eventually.of_forall fun z hzc => (Function.update_of_ne hzc _ _).symm)
 
 end HasLaurentSeriesOnAnnulus
+
+/-- **Global singular representative of an isolated singularity.** If `f : ℂ → E` is
+complex-differentiable on a punctured neighborhood of `c : ℂ`, its negative Laurent part on a small
+punctured disk around `c` defines a function `q : ℂ → E` that is complex-analytic on the entire
+punctured plane `{c}ᶜ`, vanishes along `Filter.cocompact ℂ`, and differs from `f` on `𝓝[≠] c` by a
+function complex-analytic at `c`. -/
+theorem exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt
+    {f : ℂ → E} {c : ℂ} (hf : ∀ᶠ z in 𝓝[≠] c, DifferentiableAt ℂ f z) :
+    ∃ q : ℂ → E, AnalyticOnNhd ℂ q {c}ᶜ ∧ Tendsto q (cocompact ℂ) (𝓝 0) ∧
+      ∃ g : ℂ → E, AnalyticAt ℂ g c ∧ ∀ᶠ z in 𝓝[≠] c, f z - q z = g z := by
+  obtain ⟨R, hR_pos, hR⟩ := eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp hf)
+  let R' : ℝ≥0∞ := ENNReal.ofReal R
+  have hf_ann : DifferentiableOn ℂ f (eball c R' \ closedBall c 0) := by
+    rw [eball_ofReal, closedBall_zero]
+    exact fun z ⟨hz_ball, hz_ne⟩ => (hR z hz_ball hz_ne).differentiableWithinAt
+  have hρR : ENNReal.ofReal (R / 2) < R' :=
+    (ENNReal.ofReal_lt_ofReal_iff hR_pos).mpr (half_lt_self hR_pos)
+  have hL : HasLaurentSeriesOnAnnulus f (circleLaurentCoeff f c (R / 2)) c 0 R' :=
+    hf_ann.hasLaurentSeriesOnAnnulus le_rfl (half_pos hR_pos) hρR
+  refine ⟨laurentNegPart (circleLaurentCoeff f c (R / 2)) c,
+    by simpa only [closedBall_zero] using hL.analyticOnNhd_laurentNegPart,
+    hL.tendsto_laurentNegPart_cocompact,
+    laurentPosPart (circleLaurentCoeff f c (R / 2)) c,
+    hL.analyticOnNhd_laurentPosPart c (mem_eball_self hL.outerRadius_pos), ?_⟩
+  filter_upwards [sdiff_mem_nhdsWithin_compl (ball_mem_nhds c hR_pos) {c}] with z hz
+  have hz_ann : z ∈ eball c R' \ closedBall c 0 := by
+    rwa [eball_ofReal, closedBall_zero]
+  exact sub_eq_of_eq_add (hL.eq_laurentPosPart_add_laurentNegPart hz_ann)
 
 /-! ### Term-by-term differentiation of Laurent series -/
 

@@ -133,6 +133,17 @@ theorem postcomp [CStarAlgebra C] (h : ApproximatelyUnitarilyEquivalent φ ψ)
       (ρ.toNonUnitalStarAlgHom.comp φ) (ρ.toNonUnitalStarAlgHom.comp ψ) :=
   h.postcomp_of_map_one _ (map_one ρ)
 
+/-- Unital postcomposition along a factorization `ρ ∘ ι = κ` carries approximate unitary
+equivalence of the composites with `ι` to approximate unitary equivalence of the composites
+with `κ`. -/
+theorem postcomp_of_comp_eq [CStarAlgebra C] {D : Type*} [NonUnitalCStarAlgebra D]
+    {φ ψ : A →⋆ₙₐ[ℂ] D} {ι : D →⋆ₙₐ[ℂ] B} {κ : D →⋆ₙₐ[ℂ] C}
+    (h : ApproximatelyUnitarilyEquivalent (ι.comp φ) (ι.comp ψ)) (ρ : B →⋆ₐ[ℂ] C)
+    (hρ : ρ.toNonUnitalStarAlgHom.comp ι = κ) :
+    ApproximatelyUnitarilyEquivalent (κ.comp φ) (κ.comp ψ) := by
+  subst hρ
+  simpa only [NonUnitalStarAlgHom.comp_assoc] using h.postcomp ρ
+
 /-- Approximately unitarily equivalent maps have the same pointwise norm. -/
 theorem norm_eq (h : ApproximatelyUnitarilyEquivalent φ ψ) (a : A) : ‖φ a‖ = ‖ψ a‖ := by
   have hle {φ ψ : A →⋆ₙₐ[ℂ] B} (h : ApproximatelyUnitarilyEquivalent φ ψ) :
