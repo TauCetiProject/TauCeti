@@ -6,9 +6,7 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Liouville
-public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.LSeries.Dirichlet
-public import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
 # Completely multiplicative arithmetic functions
@@ -30,10 +28,11 @@ exactly the coercions of the monoid-with-zero homomorphisms `ℕ →*₀ R`.
   completely multiplicative function distributes over Dirichlet convolution.
 * `ArithmeticFunction.IsCompletelyMultiplicative.moebius_pmul_mul_self`: the Dirichlet inverse of
   a completely multiplicative `f` is `μ · f`.
-* `ArithmeticFunction.IsCompletelyMultiplicative.eulerProduct_tprod` and
-  `ArithmeticFunction.IsCompletelyMultiplicative.LSeries_eulerProduct_tprod`: Euler products.
 * Instances: `ζ`, `pow k`, `n ↦ n ^ ν` for complex `ν`, the Liouville function and the
   arithmetic function of a Dirichlet character.
+
+The Euler products of completely multiplicative functions are in
+`TauCeti/NumberTheory/EulerProduct/CompletelyMultiplicative.lean`.
 -/
 
 public section
@@ -111,12 +110,15 @@ theorem map_pow (hf : f.IsCompletelyMultiplicative) (n k : ℕ) : f (n ^ k) = f 
   _root_.map_pow hf.toMonoidWithZeroHom n k
 
 /-- Two completely multiplicative functions are equal if and only if they agree at primes. -/
-theorem eq_iff_eq_on_primes {R : Type*} [CommMonoidWithZero R] {f g : ArithmeticFunction R}
+theorem eq_iff_eq_on_primes {g : ArithmeticFunction R}
     (hf : f.IsCompletelyMultiplicative) (hg : g.IsCompletelyMultiplicative) :
     f = g ↔ ∀ p, p.Prime → f p = g p := by
-  rw [IsMultiplicative.eq_iff_eq_on_prime_powers f hf.isMultiplicative g hg.isMultiplicative]
-  refine ⟨fun h p hp ↦ by simpa using h p 1 hp, fun h p i hp ↦ ?_⟩
-  rw [hf.map_pow, hg.map_pow, h p hp]
+  refine ⟨fun h p _ ↦ h ▸ rfl, fun h ↦ ArithmeticFunction.ext fun n ↦ ?_⟩
+  induction n using Nat.recOnMul with
+  | zero => simp
+  | one => rw [hf.map_one, hg.map_one]
+  | prime p hp => exact h p hp
+  | mul a b ha hb => rw [hf.map_mul, hg.map_mul, ha, hb]
 
 end IsCompletelyMultiplicative
 
@@ -228,48 +230,6 @@ theorem mul_moebius_pmul [Ring R] {f : ArithmeticFunction R}
       left_ne_zero_of_mem_divisorsAntidiagonal hx]
   rw [key, coe_zeta_mul_coe_moebius, ArithmeticFunction.one_apply]
   split_ifs with h <;> simp [h, hf.map_one]
-
-section EulerProduct
-
-variable {F : Type*} [NormedField F] [CompleteSpace F] {f : ArithmeticFunction F}
-
-/-- The Euler product of a norm-summable completely multiplicative function, stated in terms
-of `HasProd`. -/
-theorem eulerProduct_hasProd (hf : f.IsCompletelyMultiplicative) (hsum : Summable (‖f ·‖)) :
-    HasProd (fun p : Primes ↦ (1 - f p)⁻¹) (∑' n, f n) :=
-  EulerProduct.eulerProduct_completely_multiplicative_hasProd (f := hf.toMonoidWithZeroHom) hsum
-
-/-- The Euler product `∏ₚ (1 - f p)⁻¹ = ∑ₙ f n` of a norm-summable completely multiplicative
-function. -/
-theorem eulerProduct_tprod (hf : f.IsCompletelyMultiplicative) (hsum : Summable (‖f ·‖)) :
-    ∏' p : Primes, (1 - f p)⁻¹ = ∑' n, f n :=
-  (hf.eulerProduct_hasProd hsum).tprod_eq
-
-end EulerProduct
-
-section LSeries
-
-open Complex
-
-variable {f : ArithmeticFunction ℂ}
-
-/-- The Euler product of the L-series of a completely multiplicative function, stated in terms
-of `HasProd`. -/
-theorem LSeries_eulerProduct_hasProd (hf : f.IsCompletelyMultiplicative) {s : ℂ}
-    (hs : LSeriesSummable f s) :
-    HasProd (fun p : Primes ↦ (1 - f p * (p : ℂ) ^ (-s))⁻¹) (LSeries f s) := by
-  simpa using TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence (c := 0) hf.map_one
-    (fun _ _ _ ↦ hf.map_mul _ _) (fun p _ r ↦ by
-      rw [pow_succ' _ (r + 1), hf.map_mul]; simp) hs
-
-/-- The Euler product `∏ₚ (1 - f p p⁻ˢ)⁻¹ = L(f, s)` of the L-series of a completely
-multiplicative function at a point of absolute convergence. -/
-theorem LSeries_eulerProduct_tprod (hf : f.IsCompletelyMultiplicative) {s : ℂ}
-    (hs : LSeriesSummable f s) :
-    ∏' p : Primes, (1 - f p * (p : ℂ) ^ (-s))⁻¹ = LSeries f s :=
-  (hf.LSeries_eulerProduct_hasProd hs).tprod_eq
-
-end LSeries
 
 end IsCompletelyMultiplicative
 
