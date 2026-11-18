@@ -26,16 +26,18 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 For `f : ℝⁿ → F` with compact support, the **Newtonian potential** of `f` is the convolution
 `u = Gₙ ⋆ f`, `u x = ∫ Gₙ(x - y) f(y) dy`, of `f` with the Newtonian kernel
-`Gₙ = TauCeti.newtonianKernel n`. For `n ≥ 3` and `f` of class `C²` with compact support:
+`Gₙ = TauCeti.newtonianKernel n`. For `f` of class `C²` with compact support:
 
 * `u` is as smooth as `f` (no restriction on `n` is needed here);
-* `u` solves **Poisson's equation** `-Δu = f` on all of `ℝⁿ`;
-* `u` is harmonic off the support of `f`, where its second derivatives are obtained by
-  integrating `f` against the Hessian of `Gₙ` (for this, too, any `n`);
+* for `n = 1` and `n ≥ 3`, `u` solves **Poisson's equation** `-Δu = f` on all of `ℝⁿ` (in
+  dimension one `G₁(x) = -|x| / 2`, so `u'' = -f`);
+* `u` is harmonic off the support of `f` (in every dimension; for `n = 0, 2` the kernel is zero);
+* off the support of `f`, the second derivatives of `u` are obtained by integrating `f` against
+  the Hessian of `Gₙ` (for this, too, any `n`);
 * `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`; for a non-integrable `f` the potential
   vanishes outside the ball containing the support, so the bound holds trivially there), and so
   tends to zero at infinity;
-* `u` is the **unique** `C²` solution of `-Δv = f` that tends to zero at infinity.
+* for `n ≥ 3`, `u` is the **unique** `C²` solution of `-Δv = f` that tends to zero at infinity.
 
 The Laplacian falls on `f` under the convolution (`HasCompactSupport.laplacian_convolution_right`),
 and the distributional identity `-ΔGₙ = δ` (`TauCeti.integral_laplacian_mul_newtonianKernel_sub`)
@@ -83,20 +85,28 @@ theorem contDiff_newtonianKernel_convolution {k : ℕ∞} (hf : ContDiff ℝ k f
     (hc : HasCompactSupport f) : ContDiff ℝ k (newtonianKernel n ⋆ f) :=
   hc.contDiff_convolution_right _ (locallyIntegrable_newtonianKernel n) hf
 
-/-- **The Newtonian potential solves Poisson's equation.** For `n ≥ 3` and `f` of class `C²`
-with compact support on `ℝⁿ`, the Newtonian potential `u = Gₙ ⋆ f` satisfies `-Δu = f`. -/
-theorem laplacian_newtonianKernel_convolution [CompleteSpace F] (hn : 3 ≤ n)
+/-- **The Newtonian potential solves Poisson's equation.** For `n = 1` or `n ≥ 3` and `f` of class
+`C²` with compact support on `ℝⁿ`, the Newtonian potential `u = Gₙ ⋆ f` satisfies `-Δu = f`. -/
+theorem laplacian_newtonianKernel_convolution [CompleteSpace F] (hn : n ≠ 2) (hn0 : n ≠ 0)
     (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) : Δ (newtonianKernel n ⋆ f) = -f :=
   laplacian_convolution_eq_neg_of_integral_laplacian_mul (locallyIntegrable_newtonianKernel n)
     (fun _ hφ hφc x ↦ by
       simp_rw [newtonianKernel_sub_comm n x]
-      exact integral_laplacian_mul_newtonianKernel_sub hn hφ hφc x) hf hc
+      exact integral_laplacian_mul_newtonianKernel_sub hn hn0 hφ hφc x) hf hc
 
-/-- For `n ≥ 3`, the Newtonian potential of a `C²` function `f` with compact support is harmonic
-off the support of `f`. -/
-theorem harmonicOnNhd_newtonianKernel_convolution (hn : 3 ≤ n)
+/-- The Newtonian potential of a `C²` function `f` with compact support is harmonic off the
+support of `f`. In dimensions zero and two the kernel vanishes identically, so the potential is
+zero there. -/
+theorem harmonicOnNhd_newtonianKernel_convolution
     (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) :
     HarmonicOnNhd (newtonianKernel n ⋆ f) (tsupport f)ᶜ := fun x hx => by
+  by_cases h : n = 0 ∨ n = 2
+  · rcases h with rfl | rfl
+    · rw [newtonianKernel_dim_zero, zero_convolution]
+      exact harmonicAt_const 0
+    · rw [newtonianKernel_two, zero_convolution]
+      exact harmonicAt_const 0
+  obtain ⟨hn0, hn⟩ := not_or.mp h
   refine ⟨(contDiff_newtonianKernel_convolution hf hc).contDiffAt, ?_⟩
   by_cases hF : CompleteSpace F
   swap
@@ -105,7 +115,7 @@ theorem harmonicOnNhd_newtonianKernel_convolution (hn : 3 ≤ n)
       rw [h0]
       exact congrFun (laplacian_const (c := (0 : F))) y
   filter_upwards [(isClosed_tsupport f).isOpen_compl.mem_nhds hx] with y hy
-  rw [laplacian_newtonianKernel_convolution hn hf hc, Pi.neg_apply,
+  rw [laplacian_newtonianKernel_convolution hn hn0 hf hc, Pi.neg_apply,
     image_eq_zero_of_notMem_tsupport hy, neg_zero, Pi.zero_apply]
 
 /-- If `f` vanishes off `closedBall 0 R` and is not integrable, then the Newtonian potential
@@ -383,7 +393,8 @@ theorem eq_newtonianKernel_convolution_of_laplacian_eq_neg [CompleteSpace F] (hn
   have hw : HarmonicOnNhd (v - newtonianKernel n ⋆ f) univ := fun x _ =>
     ⟨(hv.sub hu).contDiffAt, Eventually.of_forall fun y => by
       rw [hv.contDiffAt.laplacian_sub hu.contDiffAt, hΔ,
-        laplacian_newtonianKernel_convolution hn hf hc, sub_self, Pi.zero_apply]⟩
+        laplacian_newtonianKernel_convolution (by omega) (by omega) hf hc, sub_self,
+        Pi.zero_apply]⟩
   have hw₀ := hv₀.sub (tendsto_newtonianKernel_convolution_cocompact hn hc)
   rw [sub_zero] at hw₀
   exact sub_eq_zero.1 (hw.eq_zero_of_tendsto_cocompact hw₀)
