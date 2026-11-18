@@ -172,7 +172,7 @@ variable [FiniteDimensional ℝ E] {x : M}
 finite-dimensional manifold. -/
 theorem _root_.TauCeti.IsContactFormAt.isInvertible_contactFlat (hx : IsContactFormAt α.1 x) :
     (α.contactFlat x).IsInvertible :=
-  ContinuousLinearMap.isInvertible_of_separatingLeft (E := E) fun (v : TangentSpace I x) hv ↦
+  ContinuousLinearMap.isInvertible_of_separatingLeft fun (v : TangentSpace I x) hv ↦
     (isContactFormAt_iff_isContact.1 hx).separatingLeft_add_smulRight (isAlt_bilinFormAt _ x) v
       fun w ↦ by
         rw [LinearMap.add_apply, LinearMap.add_apply, LinearMap.smulRight_apply,
