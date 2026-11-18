@@ -235,11 +235,9 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
   have hVηc : HasCompactSupport (fun t ↦ V t ^ 2 • η t) := hηc.smul_left (f := fun t ↦ V t ^ 2)
   have hA := contDiff_gaugeFixedAdjoint hx hη
   have hAc := hasCompactSupport_gaugeFixedAdjoint (x := x) hηc
-  have hH : MemLp H 2 μ :=
-    (continuous_gaugeFixedAdjoint hx.continuous
-      (hVη.of_le (by norm_num))).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint hVηc)
-  have hG : MemLp (gaugeFixedAdjoint x η) 2 μ := hA.continuous.memLp_of_hasCompactSupport hAc
+  have hH : MemLp H 2 μ := memLp_gaugeFixedAdjoint hx.continuous (hVη.of_le (by norm_num)) hVηc
+  have hG : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+    memLp_gaugeFixedAdjoint hx.continuous (hη.of_le (by norm_num)) hηc
   have hi₁ : Integrable (fun z ↦ ⟪gaugeFixedAdjoint x η z - y z, H z⟫) μ :=
     (hG.sub hy).integrable_inner hH
   have hi₂ : Integrable (fun z ↦ ⟪y z, H z⟫) μ := hy.integrable_inner hH
@@ -362,12 +360,9 @@ private theorem integral_sq_mul_norm_sq_le_add_mul_integral_norm_sub_sq
   set H := gaugeFixedAdjoint x (fun t ↦ V t ^ 2 • η t)
   have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
     hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
-  have hG : MemLp G 2 μ := (contDiff_gaugeFixedAdjoint hx hη).continuous.memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint hηc)
-  have hH : MemLp H 2 μ :=
-    (continuous_gaugeFixedAdjoint hx.continuous
-      (((hV.pow 2).smul hη).of_le (by norm_num))).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint (hηc.smul_left (f := fun t ↦ V t ^ 2)))
+  have hG : MemLp G 2 μ := memLp_gaugeFixedAdjoint hx.continuous (hη.of_le (by norm_num)) hηc
+  have hH : MemLp H 2 μ := memLp_gaugeFixedAdjoint hx.continuous
+    (((hV.pow 2).smul hη).of_le (by norm_num)) (hηc.smul_left (f := fun t ↦ V t ^ 2))
   have hη₂ : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
   have iyG : Integrable (fun z ↦ ‖y z - G z‖ ^ 2) μ := (hy.sub hG).norm.integrable_sq
   have iy := hy.norm.integrable_sq
