@@ -109,6 +109,22 @@ variable {C D : Set B} [RelCWComplex C D]
 
 variable {p}
 
+/-- A differential of the page `r` shifts `a + 2b` at the position `(a, b)` by `2 - r` in one
+direction or the other; in particular the differentials of the first page, numbered `2`, preserve
+the rows. -/
+private lemma add_two_mul_eq_of_rel {r : ℤ} {pq pq' : ℤ × ℤ}
+    (h : (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq' ∨
+      (ComplexShape.up' ((r, 1 - r) : ℤ × ℤ)).Rel pq' pq) :
+    pq'.1 + 2 * pq'.2 = pq.1 + 2 * pq.2 + (2 - r) ∨
+      pq'.1 + 2 * pq'.2 = pq.1 + 2 * pq.2 - (2 - r) := by
+  rcases h with rfl | rfl
+  · left
+    simp only [Prod.fst_add, Prod.snd_add]
+    lia
+  · right
+    simp only [Prod.fst_add, Prod.snd_add]
+    lia
+
 /-- On the row `q = 0` of the first page, the projection of the Serre spectral sequence of a
 fibration with path-connected fibres onto the base is an isomorphism: the map
 `H_k(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹); R) ⟶ H_k(Xᵏ, Xᵏ⁻¹; R)` is, cell by cell, the map `H₀(F) ⟶ H₀(pt)` of the
@@ -161,12 +177,9 @@ theorem isIso_serreSpectralSequenceProj_hom_three_f (hp : serreFibrations p)
     IsIso (((serreSpectralSequenceProj p R C).hom 3).f pq) :=
   (serreSpectralSequenceProj p R C).isIso_hom_f_add_one 2 le_rfl pq fun pq' hpq' ↦
     isIso_serreSpectralSequenceProj_hom_two_f R hp hconn pq' (by
-      rcases hpq' with rfl | rfl | rfl
+      rcases hpq' with rfl | hpq'
       · exact hpq
-      · simp only [Prod.fst_add, Prod.snd_add]
-        lia
-      · simp only [Prod.fst_add, Prod.snd_add] at hpq
-        lia)
+      · rcases add_two_mul_eq_of_rel hpq' with h | h <;> lia)
 
 end Row
 
@@ -205,6 +218,18 @@ theorem isZero_serreSpectralSequence_id_page_two_X {C D : Set B} [RelCWComplex C
     exact (TopPair.isZero_singularHomology_ofInclusion_congr _ _
       (skeletonLT_subset_skeletonLT_succ C k) h₂ h₁ n).2
       (isZero_singularHomology_skeletonPair_of_ne C (ModuleCat.of R R) (by lia))
+
+/-- From the second page on, numbered `3`, the differentials at a position on the row `q = 0` of
+the spectral sequence of the skeletal filtration leave that row, so their other ends vanish
+already on the second page. -/
+lemma isZero_serreSpectralSequence_id_page_three_X_of_rel {C D : Set B}
+    [RelCWComplex C D] {pq : ℤ × ℤ} (hpq : pq.1 + 2 * pq.2 = -1) (s : ℤ) (hs : 3 ≤ s)
+    (pq' : ℤ × ℤ) (hpq' : (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq pq' ∨
+      (ComplexShape.up' ((s, 1 - s) : ℤ × ℤ)).Rel pq' pq) :
+    IsZero (((serreSpectralSequence C (𝟙 B) R).page 3).X pq') :=
+  (serreSpectralSequence C (𝟙 B) R).isZero_page_X_of_le (r := 2) le_rfl
+    (isZero_serreSpectralSequence_id_page_two_X R pq' (by
+      rcases add_two_mul_eq_of_rel hpq' with h | h <;> lia)) 3 (by norm_num)
 
 variable [CWComplex (univ : Set B)]
 
@@ -271,14 +296,7 @@ def serreSpectralSequenceIdSecondPageXIsoSingularHomology (k : ℕ) (pq : ℤ ×
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
         (ModuleCat.of R R)).obj B :=
   ((serreSpectralSequence univ (𝟙 B) R).pageXIsoOfLEOfIsZero (r := 3) (by norm_num)
-      (fun s hs pq' hpq' ↦ (serreSpectralSequence univ (𝟙 B) R).isZero_page_X_of_le
-        (r := 2) le_rfl (isZero_serreSpectralSequence_id_page_two_X R pq' (by
-          rcases hpq' with rfl | rfl
-          · simp only [Prod.fst_add, Prod.snd_add]
-            lia
-          · simp only [Prod.fst_add, Prod.snd_add] at hb ha
-            lia)) 3 (by norm_num))
-      (k + 3) (by lia)).symm ≪≫
+      (isZero_serreSpectralSequence_id_page_three_X_of_rel R (by lia)) (k + 3) (by lia)).symm ≪≫
     serreSpectralSequencePageXIsoGraded (MorphismProperty.id_mem _ B) R (K := univ)
       (subset_univ _) (k + 3) (by lia) pq (by lia) (by lia) ≪≫
     cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ hb ha
@@ -292,14 +310,7 @@ lemma serreSpectralSequenceIdSecondPageXIsoSingularHomology_hom (k : ℕ) (pq : 
     (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -k) :
     (serreSpectralSequenceIdSecondPageXIsoSingularHomology R k pq hb ha).hom =
       ((serreSpectralSequence univ (𝟙 B) R).pageXIsoOfLEOfIsZero (r := 3) (by norm_num)
-        (fun s hs pq' hpq' ↦ (serreSpectralSequence univ (𝟙 B) R).isZero_page_X_of_le
-          (r := 2) le_rfl (isZero_serreSpectralSequence_id_page_two_X R pq' (by
-            rcases hpq' with rfl | rfl
-            · simp only [Prod.fst_add, Prod.snd_add]
-              lia
-            · simp only [Prod.fst_add, Prod.snd_add] at hb ha
-              lia)) 3 (by norm_num))
-        (k + 3) (by lia)).inv ≫
+        (isZero_serreSpectralSequence_id_page_three_X_of_rel R (by lia)) (k + 3) (by lia)).inv ≫
       (serreSpectralSequencePageXIsoGraded (MorphismProperty.id_mem _ B) R (K := univ)
         (subset_univ _) (k + 3) (by lia) pq (by lia) (by lia)).hom ≫
       (cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ hb ha).hom :=
