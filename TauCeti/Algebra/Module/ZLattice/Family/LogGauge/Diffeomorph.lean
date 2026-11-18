@@ -49,8 +49,6 @@ of the orbit map `X → Q`, a local biholomorphism. Near a point `[t₀, e₀]` 
 
 ## Main results
 
-* `TauCeti.contMDiff_logTranslationSection`: the translation sections of the normalized action
-  are `C^n` for `C^n` periods, so the quotient atlas of `Q` is available.
 * `TauCeti.torusFamilyLogGaugeDiffeomorph_mk`, `TauCeti.torusFamilyLogGaugeDiffeomorph_symm_mk`:
   the diffeomorphism and its inverse on representatives, with any root and branch.
 
@@ -127,71 +125,12 @@ which the coordinate `t = z ^ m` (`TauCeti.torusFamilyCyclicQuotientProjection`)
 
 end Opens
 
-/-! ### Maps out of open subsets through a local diffeomorphism -/
-
-section LocalDiffeomorph
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
-  {E₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
-  {E₃ : Type*} [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃]
-  {H₁ : Type*} [TopologicalSpace H₁] {H₂ : Type*} [TopologicalSpace H₂]
-  {H₃ : Type*} [TopologicalSpace H₃] {I₁ : ModelWithCorners 𝕜 E₁ H₁}
-  {I₂ : ModelWithCorners 𝕜 E₂ H₂} {I₃ : ModelWithCorners 𝕜 E₃ H₃} {n : ℕ∞ω}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H₁ M]
-  {B : Type*} [TopologicalSpace B] [ChartedSpace H₂ B]
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H₃ N]
-
-/-- Let `p` be a `C^n` local diffeomorphism at `x` and `U` an open neighbourhood of `p x`. A map
-`g` out of `U` is `C^n` at `p x` when `g (p y) = f y` whenever `p y ∈ U`, for a map `f` that is
-`C^n` at `x`: near `p x`, `g` is `f` composed with a local inverse of `p`. This is the analogue
-of `IsLocalDiffeomorphAt.contMDiffAt_comp_iff` for maps defined only on an open subset. -/
-private theorem contMDiffAt_of_isLocalDiffeomorphAt_of_forall_eq {p : M → B} {x : M}
-    (hp : IsLocalDiffeomorphAt I₁ I₂ n p x) (U : Opens B) (hx : p x ∈ U) {f : M → N}
-    (hf : ContMDiffAt I₁ I₃ n f x) {g : U → N} (hg : ∀ y (hy : p y ∈ U), g ⟨p y, hy⟩ = f y) :
-    ContMDiffAt I₂ I₃ n g ⟨p x, hx⟩ := by
-  refine ContMDiffAt.congr_of_eventuallyEq (f := fun y : U ↦ f (hp.localInverse y)) ?_ ?_
-  · exact hf.comp_of_eq (hp.contMDiffAt_localInverse.comp (⟨p x, hx⟩ : U)
-        contMDiff_subtype_val.contMDiffAt)
-      (hp.localInverse_left_inv hp.localInverse_mem_target)
-  · filter_upwards [hp.localInverse_eventuallyEq_right.comp_tendsto
-      continuous_subtype_val.continuousAt] with ⟨y, hy⟩ hpy
-    simp only [Function.comp_apply, id_eq] at hpy
-    have hy' : p (hp.localInverse y) ∈ U := by rwa [hpy]
-    rw [← hg _ hy']
-    exact congrArg g (Subtype.ext hpy.symm)
-
-end LocalDiffeomorph
-
-/-! ### Regularity of the normalized action -/
-
 variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   (P : Metric.ball (0 : ℂ) (r ^ m) → Λ →ₗ[ℤ] E) (l : Λ)
   [FiniteDimensional ℂ E] [∀ t, DiscreteTopology (LinearMap.range (P t))]
   [∀ t, IsZLattice ℝ (LinearMap.range (P t))] {n : ℕ∞ω}
   (hP : ∀ l, ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun t ↦ P t l) (hinj : ∀ t, Function.Injective (P t))
-
-/-- **The translation sections are `C^n`.** For `C^n` periods, the translation section
-`z ↦ [ζ z, (log ζ / 2πi) • P (z ^ m) l]` of the normalized pure translation action is `C^n`; for
-holomorphic periods it is holomorphic. -/
-theorem contMDiff_logTranslationSection (ζ : rootsOfUnity m ℂ) :
-    letI := periodAddAction (powPullbackPeriod m r P)
-    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
-      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-    ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (logTranslationSection P l ζ) := by
-  let _ := periodAddAction (powPullbackPeriod m r P)
-  let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-    (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
-    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  rw [show logTranslationSection P l ζ = fun z ↦ Quotient.mk _ (ζ • z,
-      (log ((ζ : ℂˣ) : ℂ) / (2 * π * I)) • powPullbackPeriod m r P z l) from
-    funext (logTranslationSection_eq_mk_of_exp_eq P l (exp_log (ζ : ℂˣ).ne_zero))]
-  exact (isLocalDiffeomorph_torusFamily_mk _ (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-    (fun l ↦ contMDiff_powPullbackPeriod P (hP l))).contMDiff.comp
-    ((contMDiff_const_smul ζ).prodMk
-      (ContMDiff.smul (I := 𝓘(ℂ)) contMDiff_const (contMDiff_powPullbackPeriod P (hP l))))
 
 /-! ### The logarithmic gauge is a diffeomorphism -/
 
@@ -213,7 +152,7 @@ private theorem isLocalDiffeomorph_logTranslationQuotient_mk :
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     IsLocalDiffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (Quotient.mk (orbitRel (rootsOfUnity m ℂ)
         (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) :=
@@ -223,7 +162,7 @@ private theorem isLocalDiffeomorph_logTranslationQuotient_mk :
     (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
     (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
     (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l) (fun _ ↦ contMDiff_snd)
-    (contMDiff_logTranslationSection P l hP hinj) hfree
+    (contMDiff_logTranslationSection P hP hinj l) hfree
 
 /-- The logarithmic gauge `Q* → Y*` is `C^n`. Near the orbit of a point `x₀` over `z₀ ≠ 0`, it is
 the upstairs gauge `TauCeti.torusFamilyLogGauge` composed with a local inverse of the orbit map
@@ -242,7 +181,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     ContMDiff (M := logTranslationQuotientPuncturedOpens P l) (M' := torusFamilyPuncturedOpens P)
       (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (torusFamilyLogGaugeEquiv P l hr) := by
   let _ := periodAddAction P
@@ -258,7 +197,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
     (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
     (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-    (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+    (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
   rintro ⟨q₀, hq₀⟩
   obtain ⟨x₀, rfl⟩ := Quotient.mk_surjective q₀
   have hx₀ :
@@ -266,9 +205,8 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
     fun h ↦ (mem_logTranslationQuotientPuncturedOpens P l).1 hq₀ (by
       rw [torusFamilyCyclicQuotientProjection_mk, h, zero_pow (NeZero.ne m)])
   refine (ContMDiffAt.subtypeVal_comp_iff (torusFamilyPuncturedOpens P) _ _).1 ?_
-  exact contMDiffAt_of_isLocalDiffeomorphAt_of_forall_eq
-    (isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree x₀) _ hq₀
-    (contMDiffAt_torusFamilyLogGauge P hP hinj l hx₀)
+  exact (isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree x₀).contMDiffAt_of_forall_eq
+    le_rfl _ hq₀ (contMDiffAt_torusFamilyLogGauge P hP hinj l hx₀)
     fun x hx ↦ torusFamilyLogGaugeEquiv_mk P l hr x hx
 
 /-- **The inverse of the logarithmic gauge in local form.** Near `(t₀, e₀)` with `t₀ ≠ 0`, the
@@ -291,7 +229,7 @@ private theorem exists_contMDiffAt_eq_torusFamilyLogGaugeEquiv_symm_mk
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     ∃ F : Metric.ball (0 : ℂ) (r ^ m) × E → orbitRel.Quotient (rootsOfUnity m ℂ)
         (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)),
       ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n F (t₀, e₀) ∧
@@ -311,7 +249,7 @@ private theorem exists_contMDiffAt_eq_torusFamilyLogGaugeEquiv_symm_mk
     (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
     (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-    (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+    (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
   set z₀ := rootsOfUnityBall.rootMap hr t₀
   have hz₀m : (z₀ : ℂ) ^ m = t₀ := by
     rw [← rootsOfUnityBall.coe_powMap, rootsOfUnityBall.powMap_rootMap]
@@ -365,7 +303,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     ContMDiff (M := torusFamilyPuncturedOpens P) (M' := logTranslationQuotientPuncturedOpens P l)
       (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n (torusFamilyLogGaugeEquiv P l hr).symm := by
   let _ := periodAddAction P
@@ -381,7 +319,7 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
     (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
     (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-    (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+    (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
   rintro ⟨y₀, hy₀⟩
   obtain ⟨⟨t₀, e₀⟩, rfl⟩ := Quotient.mk_surjective y₀
   have ht₀ : (t₀ : ℂ) ≠ 0 := by
@@ -389,9 +327,8 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
   obtain ⟨F, hF, hFeq⟩ :=
     exists_contMDiffAt_eq_torusFamilyLogGaugeEquiv_symm_mk P l hP hinj hr hfree ht₀ e₀
   refine (ContMDiffAt.subtypeVal_comp_iff (logTranslationQuotientPuncturedOpens P l) _ _).1 ?_
-  exact contMDiffAt_of_isLocalDiffeomorphAt_of_forall_eq
-    (isLocalDiffeomorph_torusFamily_mk P hinj hP (t₀, e₀)) _ hy₀ hF
-    fun p hp ↦ (hFeq p.1 p.2 hp).symm
+  exact (isLocalDiffeomorph_torusFamily_mk P hinj hP (t₀, e₀)).contMDiffAt_of_forall_eq le_rfl _
+    hy₀ hF fun p hp ↦ (hFeq p.1 p.2 hp).symm
 
 /-- **The logarithmic gauge is a diffeomorphism.** Let `P` be a `C^n` family of full period
 lattices over the disc of radius `r ^ m`, and suppose the normalized pure translation action of the
@@ -416,7 +353,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     logTranslationQuotientPuncturedOpens P l ≃ₘ^n⟮𝓘(ℂ).prod 𝓘(ℂ, E), 𝓘(ℂ).prod 𝓘(ℂ, E)⟯
       torusFamilyPuncturedOpens P :=
   letI := periodAddAction P
@@ -432,7 +369,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
     (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
     (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-    (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+    (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
   { toEquiv := torusFamilyLogGaugeEquiv P l hr
     contMDiff_toFun := contMDiff_torusFamilyLogGaugeEquiv P l hP hinj hr hfree
     contMDiff_invFun := contMDiff_torusFamilyLogGaugeEquiv_symm P l hP hinj hr hfree }
@@ -452,7 +389,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     (torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree).toEquiv =
       torusFamilyLogGaugeEquiv P l hr :=
   (rfl)
@@ -472,7 +409,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     ⇑(torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree) = torusFamilyLogGaugeEquiv P l hr :=
   (rfl)
 
@@ -491,7 +428,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     ⇑(torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree).symm =
       (torusFamilyLogGaugeEquiv P l hr).symm :=
   (rfl)
@@ -513,7 +450,7 @@ theorem torusFamilyLogGaugeDiffeomorph_mk
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     (torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree ⟨Quotient.mk _ x, hx⟩ :
         AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E)) =
       torusFamilyLogGauge P l x :=
@@ -538,7 +475,7 @@ theorem coe_torusFamilyProjection_torusFamilyLogGaugeDiffeomorph
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     ((torusFamilyProjection P (torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree q).1 :
       Metric.ball (0 : ℂ) (r ^ m)) : ℂ) =
       torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
@@ -566,7 +503,7 @@ theorem torusFamilyLogGaugeDiffeomorph_symm_mk {t : Metric.ball (0 : ℂ) (r ^ m
       (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
       (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
       (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
-      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+      (fun ζ ↦ (contMDiff_logTranslationSection P hP hinj l ζ).continuous) hfree
     ((torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree).symm ⟨Quotient.mk _ (t, e), ht⟩ :
         orbitRel.Quotient (rootsOfUnity m ℂ)
           (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) =
