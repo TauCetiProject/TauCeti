@@ -177,6 +177,7 @@ theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :
 theorem stdComplexSymplecticForm_apply_ofComplexModule_eq_inner (v w : ℂ) :
     stdComplexSymplecticForm v (AlmostComplexStructure.ofComplexModule ℂ w) = ⟪v, w⟫_ℝ := by
   simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply, Complex.inner]
+  ring
 
 /-- A real-linear map `v ↦ α v - β ⟪z, v⟫ z` of `ℂ` scales the area form by its determinant
 `α (α - β |z|²)`. -/
