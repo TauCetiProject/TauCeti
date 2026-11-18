@@ -343,7 +343,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
       (cohomologyMapBaseLinear k X S.g i) := by
     rw [coe_cohomologyMapBaseLinear, coe_cohomologyMapBaseLinear]
     exact exact_cohomologyMap_cohomologyMap hS i
-  exact moduleFinite_of_exact hex
+  exact hex.moduleFinite
 
 omit hS in
 /-- `Hⁿ¹(X, M₁)` is squeezed by the exact sequence between `Hⁿ⁰(X, M₃)` and `Hⁿ¹(X, M₂)`, where
@@ -356,7 +356,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
       (cohomologyMapBaseLinear k X S.f n₁) := by
     simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
       exact_cohomologyδ_cohomologyMap hS n₀ n₁ h
-  exact moduleFinite_of_exact hex
+  exact hex.moduleFinite
 
 omit hS in
 /-- A monomorphism `M ⟶ N` embeds `H⁰(X, M)` into `H⁰(X, N)`, so `H⁰(X, M)` is
