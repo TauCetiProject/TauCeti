@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Equalizer
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 import TauCeti.Data.ZMod.MonoidHomEquiv
 
@@ -13,7 +14,6 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.PointsDivisor
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ZModProdAut
-import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.IdealSheaf.Product
 
 /-!
@@ -33,7 +33,12 @@ For `A = ℤ/Nℤ` with `N ≠ 0` such a homomorphism is an `S`-point `P` of `E[
 (`EllipticCurveGeom.isFiberwiseInjective_zmod_iff`). For `A = (ℤ/Nℤ)²` it is a pair `(P, Q)` of
 `S`-points of `E[N]` none of whose combinations `aP + bQ` with `(a, b) ≠ 0` meets the zero section
 (`EllipticCurveGeom.isFiberwiseInjective_zmod_prod_iff`), that is, a basis of the `N`-torsion in
-every geometric fibre in which `N` is invertible: over a separably closed field in which `N` is
+every geometric fibre in which `N` is invertible. For `N ≠ 0`, such a pair exists only where `N` is
+invertible: if `φ : (ℤ/Nℤ)² →* E(S)` is injective on every fibre, then `N` is nonzero in every
+residue field of `S`
+(`EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`), because over a field in
+which `N` vanishes `E[N]` has fewer than `N²` points
+(`EllipticCurveGeom.natCast_ne_zero_of_injective`). Over a separably closed field in which `N` is
 invertible, the injective homomorphisms `(ℤ/Nℤ)² →* E(K)` are exactly those with image `E[N](K)`
 (`EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`), every elliptic curve there has
 one (`EllipticCurveGeom.exists_isFiberwiseInjective`), and any two differ by a unique matrix in
@@ -94,6 +99,10 @@ The group law on points of `E` is written multiplicatively, following `EllipticC
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_zmod_three_prod_iff`: the naive
   `[Γ(3)]` condition, as `P` and `Q` missing the zero section and `Q` differing from `±P` at every
   point.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.natCast_ne_zero_of_injective` and
+  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsFiberwiseInjective.natCast_residueField_ne_zero`:
+  for `N ≠ 0`, a naive `[Γ(N)]`-structure over a field forces `N` to be nonzero in that field, so
+  one over a scheme `S` forces `N` to be nonzero in every residue field of `S`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.isFiberwiseInjective_iff_range_eq_ker`: over a
   separably closed field in which `N` is invertible, the naive `[Γ(N)]`-structures are the bases of
   `E[N](K)`.
@@ -189,7 +198,6 @@ theorem mem_naiveLocus_iff {h : H.left} :
 /-- For a finite group `A`, the naive locus is open: it is the complement of the finitely many
 closed sets where some `u a` with `a ≠ 1` meets the closed image of the zero section. -/
 theorem isOpen_naiveLocus [Finite A] : IsOpen (naiveLocus u) := by
-  have := E.zero.isClosedImmersion_of_comp_eq_id E.zero_comp
   have h : naiveLocus u = ⋂ a ∈ {a : A | a ≠ 1}, ((u a).left ⁻¹' Set.range E.zero)ᶜ := by
     ext h
     simp only [naiveLocus, Set.mem_ofPred_eq, Set.mem_iInter, Set.mem_compl_iff, Set.mem_preimage]
@@ -452,6 +460,46 @@ theorem isFiberwiseInjective_zmod_three_prod_iff
     div_eq_one, div_eq_one, ← map_one ψ, hψ, hψ, hψ, hψ]
   simp only [map_one, map_inv, hom_inv_left]
   exact and_congr_right fun _ ↦ and_congr_right fun _ ↦ and_comm
+
+/-! ### For `N ≠ 0`, naive `[Γ(N)]`-structures exist only where `N` is invertible -/
+
+section NatCast
+
+variable {N : ℕ} [NeZero N]
+
+/-- **A naive `[Γ(N)]`-structure over a field forces `N` to be nonzero in that field.** For
+`N ≠ 0`, if an elliptic curve `E` over a field `K` has an injective homomorphism
+`φ : (ℤ/Nℤ)² →* E(K)`, then `N` is nonzero in `K`:
+`φ` takes values in the `N`-torsion `E[N](K)` (`range_le_ker_mulBy`), which has fewer than `N²`
+points when `N` vanishes in `K` (`natCard_torsion_lt`). -/
+theorem natCast_ne_zero_of_injective {K : Type u} [Field K] (E : EllipticCurveGeom (Spec (.of K)))
+    {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)}
+    (hφ : Function.Injective φ) : (N : K) ≠ 0 := by
+  intro hNK
+  have hN : (N : ℤ) ≠ 0 := by exact_mod_cast NeZero.ne N
+  have := E.finite_comp_mulBy_eq_one hN
+  have : Finite (IsMonHom.monoidHom (E.mulBy N) (𝟙_ (Over (Spec (.of K))))).ker :=
+    .of_equiv _ (Equiv.subtypeEquivRight fun x ↦ by
+      rw [MonoidHom.mem_ker, IsMonHom.monoidHom_apply])
+  have hlt := E.natCard_torsion_lt hN (by exact_mod_cast hNK)
+  rw [Nat.card_congr (E.torsionPointsMulEquiv N _).toEquiv, Int.natAbs_natCast] at hlt
+  have hle := Subgroup.card_le_of_le (range_le_ker_mulBy φ)
+  rw [← Nat.card_congr (MonoidHom.ofInjective hφ).toEquiv] at hle
+  have hA : Nat.card (Multiplicative (ZMod N × ZMod N)) = N ^ 2 := by
+    simp [sq]
+  exact hlt.not_ge (hA ▸ hle)
+
+/-- **For `N ≠ 0`, naive `[Γ(N)]`-structures exist only where `N` is invertible.** If a
+homomorphism `φ : (ℤ/Nℤ)² →* E(S)` is injective on every fibre of an elliptic curve `E` over a
+scheme `S`, then `N` is nonzero in the residue field of every point `s` of `S`: on the fibre of `E`
+over `κ(s)` the homomorphism stays injective (`isFiberwiseInjective_iff_forall_residueField`), so
+`natCast_ne_zero_of_injective` applies. -/
+theorem IsFiberwiseInjective.natCast_residueField_ne_zero
+    {φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap)}
+    (hφ : E.IsFiberwiseInjective φ) (s : S) : (N : S.residueField s) ≠ 0 :=
+  natCast_ne_zero_of_injective _ (isFiberwiseInjective_iff_forall_residueField.mp hφ s)
+
+end NatCast
 
 /-! ### Naive `[Γ(N)]`-structures over a separably closed field -/
 

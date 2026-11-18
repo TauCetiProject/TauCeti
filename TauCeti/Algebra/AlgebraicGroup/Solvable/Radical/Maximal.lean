@@ -65,7 +65,7 @@ theorem le_of_finrank_maximal
       (IsSolvableRadicalCandidate H)
       hI.isNormal
       (fun hK ↦
-        geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hK.geometricallyConnected)
+        geometricallyConnectedCommHopfAlgProperty.connectedSpace hK.geometricallyConnected)
       (fun hK ↦ hK.smooth)
       (fun hK ↦ hI.productOfNormal hK)
       hI hmax hJ
