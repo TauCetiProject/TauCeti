@@ -128,7 +128,7 @@ theorem hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral {c : ι �
   have hmemLp : ∀ {h : (ι → ℝ) → ℝ}, MemLp h 2 (Measure.pi fun _ : ι ↦ volume) →
       MemLp (h ∘ d) 2 (Measure.pi fun _ : ι ↦ volume) := fun hh ↦ by
     refine MemLp.comp_of_map ?_ (by fun_prop : Continuous d).aemeasurable
-    rw [map_mul_pi_addHaar_eq_smul _ fun i ↦ inv_ne_zero (hc i)]
+    rw [Measure.map_mul_pi_addHaar_eq_smul _ fun i ↦ inv_ne_zero (hc i)]
     exact hh.smul_measure ENNReal.ofReal_ne_top
   have key := hasSum_integral_prod_hermiteFunction_mul_mul_integral (hmemLp hf) (hmemLp hg)
   have hcoeff : ∀ (h : (ι → ℝ) → ℝ) (a : ι → ℕ),
