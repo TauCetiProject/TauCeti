@@ -38,9 +38,10 @@ base, shifted up by the index.
 For a non-orientable negative bundle and a field of characteristic other than `2` the shifted
 homology of the base must be taken with coefficients twisted by the orientation of `V`, which this
 file does not treat. The base `B` is compact, since `g` embeds the disc bundle, which contains the
-zero section, as a closed subset of a compact set. The rank `1` is excluded because the Thom
-isomorphism over a compact base used here (`TauCeti.IsThomClass.bijective_homologyThomMap`) needs
-rank at least `2`; rank `0`, the case of a family of local minima, is
+zero section, as a closed subset of a compact set
+(`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`). The rank `1` is excluded because the
+Thom isomorphism over a compact base used here (`TauCeti.IsThomClass.bijective_homologyThomMap`)
+needs rank at least `2`; rank `0`, the case of a family of local minima, is
 `TauCeti.IsThomClass.bijective_homologyThomMap_of_finrank_eq_zero`.
 
 ## References
@@ -101,6 +102,22 @@ theorem isZero_singularHomology_sublevelPair_of_lt_finrank
     hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS R n
   (isZero_singularHomology_thomPair R hn).of_iso e
 
+omit [T2Space M] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [VectorBundle ℝ F V] in
+/-- **The critical submanifold of a Morse–Bott level is compact.** In the setting of
+`TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`, the base `B` of the negative bundle
+is compact: `g` carries the disc bundle onto a closed subset of the compact set
+`{x ∈ W | s x + 2 t x ≤ 2ε}`, and the disc bundle contains the zero section. -/
+theorem compactSpace_of_isClosedEmbedding_gaugeDiscBundle
+    (hε : 0 ≤ ε) (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) (hρ : IsFiberGauge ρ)
+    (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
+    (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε}) : CompactSpace B := by
+  have hcpt : IsCompact (g '' gaugeDiscBundle ρ) :=
+    hK.of_isClosed_subset (range_domRestrict g _ ▸ hg.isClosed_range)
+      (hgD ▸ fun x ⟨hxW, htx, hsx⟩ ↦ ⟨hxW, by linarith⟩)
+  have : CompactSpace (gaugeDiscBundle ρ) := isCompact_univ_iff.1 <| by
+    simpa [preimage_eq_univ_iff.2 (range_domRestrict g _).le] using hg.isCompact_preimage hcpt
+  exact hρ.compactSpace_of_compactSpace_gaugeDiscBundle
+
 /-- **Across a Morse–Bott level the relative homology is the shifted homology of the critical
 submanifold.** In the setting of `TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`,
 let the negative disc bundle of the quadratic normal form `f = c - s + t` be parametrized by the
@@ -132,18 +149,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomCla
         (TopCat.of B)) := by
   obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir φ
     hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) (finrank ℝ F + p)
-  -- The base is compact: `g` carries the disc bundle onto a closed subset of the compact set `hK`,
-  -- and the disc bundle contains the zero section.
-  have : CompactSpace B := by
-    have hcpt : IsCompact (g '' gaugeDiscBundle ρ) :=
-      hK.of_isClosed_subset (range_domRestrict g _ ▸ hg.isClosed_range)
-        (hgD ▸ fun x ⟨hxW, htx, hsx⟩ ↦ ⟨hxW, by linarith⟩)
-    have : CompactSpace (gaugeDiscBundle ρ) := isCompact_univ_iff.1 <| by
-      simpa [preimage_eq_univ_iff.2 (range_domRestrict g _).le] using hg.isCompact_preimage hcpt
-    exact Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.1.proj)
-      ((FiberBundle.continuous_proj F V).comp continuous_subtype_val)
-      fun b ↦ ⟨⟨zeroSection F V b, mem_gaugeDiscBundle.2
-        ((hρ.eq_zero_of_snd_eq_zero (zeroSection_snd F V b)).trans_le zero_le_one)⟩, rfl⟩
+  have := compactSpace_of_isClosedEmbedding_gaugeDiscBundle hε.le hK hρ hg hgD
   -- The homology Thom map is bijective in rank `0` and in every rank at least `2`.
   have hbij : Function.Bijective
       (homologyThomMap F V (ModuleCat.of K K) (finrank ℝ F) p _ rfl u).hom := by

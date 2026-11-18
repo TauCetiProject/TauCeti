@@ -27,7 +27,10 @@ a continuous family of positive definite quadratic forms `Q_b`. Its disc bundle 
 be the unit disc bundle of any norm already carried by the fibres: for instance the negative disc
 bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `q v = -Hess(v, v) / (2ε)`
 on the negative normal bundle. The unit sphere bundle projects continuously onto the base
-(`TauCeti.sphereBundleProj`).
+(`TauCeti.sphereBundleProj`). The disc bundle of a fibre gauge contains the zero section
+(`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`), so it projects onto the base, and the
+base is compact when the disc bundle is
+(`TauCeti.IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -201,6 +204,10 @@ theorem nonneg (v : TotalSpace F E) : 0 ≤ ρ v := by
 /-- A fibre gauge vanishes exactly on the zero section. -/
 theorem eq_zero_iff {v : TotalSpace F E} : ρ v = 0 ↔ v.2 = 0 :=
   ⟨fun h ↦ by_contra fun hv ↦ (hρ.pos hv).ne' h, hρ.eq_zero_of_snd_eq_zero⟩
+
+/-- The zero section lies in the disc bundle of a fibre gauge. -/
+theorem zeroSection_mem_gaugeDiscBundle (b : B) : zeroSection F E b ∈ gaugeDiscBundle ρ :=
+  mem_gaugeDiscBundle.2 ((hρ.eq_zero_of_snd_eq_zero (zeroSection_snd F E b)).trans_le zero_le_one)
 
 end IsFiberGauge
 
@@ -379,6 +386,22 @@ theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
   exact ⟨fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩, fun ⟨hv, hvb⟩ ↦ ⟨hv, hvb⟩⟩
 
 end Proper
+
+section Compact
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F] {E : B → Type w}
+  [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+
+/-- The base of a bundle is compact when the disc bundle of a fibre gauge is: the projection maps
+the disc bundle onto the base, since the disc bundle contains the zero section. -/
+theorem IsFiberGauge.compactSpace_of_compactSpace_gaugeDiscBundle {ρ : TotalSpace F E → ℝ}
+    (hρ : IsFiberGauge ρ) [CompactSpace (gaugeDiscBundle ρ)] : CompactSpace B :=
+  Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.1.proj)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
+    fun b ↦ ⟨⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩, rfl⟩
+
+end Compact
 
 variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
