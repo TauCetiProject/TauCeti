@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
+import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 
 /-!
 # Ample line bundles
@@ -31,7 +32,14 @@ the regular functions `r` on `X`, whose nonvanishing loci are the basic open set
 ample exactly when `X` is quasi-compact and covered by affine basic open sets of global functions,
 that is, when `X` is quasi-affine (`LineBundleClass.isAmple_one_iff`). In particular `𝒪_X` is ample
 on every affine scheme, and so is every torsion class there
-(`LineBundleClass.isAmple_of_pow_eq_one`).
+(`LineBundleClass.isAmple_of_pow_eq_one`). More generally, every line-bundle class on an affine
+scheme is ample (`LineBundleClass.isAmple_of_isAffine`): the global sections of a line bundle
+generate its stalks, and their nonvanishing loci are affine.
+
+A scheme carrying an ample line bundle is quasi-separated
+(`LineBundleClass.IsAmple.quasiSeparatedSpace`): it is covered by affine nonvanishing loci `X_s`,
+and `X_s ∩ X_t` is the nonvanishing locus of the restriction of `t` to the affine scheme `X_s`,
+hence affine.
 
 ## Main definitions
 
@@ -45,6 +53,10 @@ on every affine scheme, and so is every torsion class there
   then so is `a`.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_one_iff`: the structure sheaf is ample
   exactly when `X` is quasi-affine.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.isAmple_of_isAffine`: on an affine scheme every
+  line-bundle class is ample.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.IsAmple.quasiSeparatedSpace`: a scheme with an ample
+  line-bundle class is quasi-separated.
 
 ## References
 
@@ -141,5 +153,30 @@ ample. -/
 theorem isAmple_of_pow_eq_one [X.IsQuasiAffine] {a : LineBundleClass X} {n : ℕ} (hn : 0 < n)
     (h : a ^ n = 1) : a.IsAmple :=
   IsAmple.of_pow hn (h ▸ isAmple_one)
+
+/-- **Every line bundle on an affine scheme is ample.** The global sections of a line bundle `L` on
+an affine scheme generate every stalk, and their nonvanishing loci are affine. -/
+theorem isAmple_of_isAffine [IsAffine X] (a : LineBundleClass X) : a.IsAmple where
+  compactSpace := inferInstance
+  exists_isAffineOpen_nonvanishingLocus x := by
+    obtain ⟨L, rfl⟩ := mk_surjective a
+    obtain ⟨s, hs⟩ := Scheme.Modules.exists_mem_nonvanishingLocus_of_isAffineOpen L.obj
+      (isAffineOpen_top X) (Opens.mem_top x)
+    exact ⟨1, Nat.one_pos, L, (pow_one _).symm, s, hs, (isAffineOpen_top X).nonvanishingLocus s⟩
+
+/-- **A scheme carrying an ample line bundle is quasi-separated.** It is covered by the affine
+nonvanishing loci `X_s` of global sections of line bundles, and `X_s ∩ X_t` is the nonvanishing
+locus of the restriction of `t` to the affine open `X_s`, which is affine. -/
+theorem IsAmple.quasiSeparatedSpace {a : LineBundleClass X} (h : a.IsAmple) :
+    QuasiSeparatedSpace X := by
+  let I := Σ L : InvertibleSheaf X,
+    {s : Γ(L.obj, ⊤) // IsAffineOpen (L.obj.nonvanishingLocus s)}
+  refine Scheme.quasiSeparatedSpace_of_isOpenCover (fun i : I ↦ i.1.obj.nonvanishingLocus i.2.1)
+    (IsOpenCover.mk (top_unique fun x _ ↦ ?_)) (fun i ↦ i.2.2) fun i j ↦ ?_
+  · obtain ⟨-, -, L, -, s, hx, hs⟩ := h.exists_isAffineOpen_nonvanishingLocus x
+    exact Opens.mem_iSup.mpr ⟨⟨L, s, hs⟩, hx⟩
+  · let k : i.1.obj.nonvanishingLocus i.2.1 ⟶ ⊤ := homOfLE le_top
+    rw [← Opens.coe_inf, ← Scheme.Modules.nonvanishingLocus_map k]
+    exact (i.2.2.nonvanishingLocus _).isCompact
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
