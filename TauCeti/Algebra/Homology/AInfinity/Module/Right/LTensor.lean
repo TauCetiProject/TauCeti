@@ -154,8 +154,8 @@ private theorem lTensorAct_comp_tmul (hB : IsUngradedDGAlgebra dB) {n : ℕ} (k 
   have hπ := List.prod_ofFn_mul_prod_ofFn (Nat.lt_succ_iff.mp hk) b
   -- `m₁` of `d_B b₀ ⊗ m` adds `d_B (d_B b₀) ⊗ m = 0`; the `d_B` term of the outer operation
   -- survives only when it is `m₁`, that is when `k = n`.
-  rw [lTensorAct_tmul_tmul, map_add, lTensorAct_tmul_tmul, mul_assoc, hπ,
-    apply_ite (Mm.lTensorAct dB (n - k) _), lTensorAct_tmul_tmul, hB.map_map,
+  rw [lTensorAct_tmul_tmul, map_add, lTensorAct_tmul_tmul, mul_assoc, hπ]
+  simp only [apply_ite (Mm.lTensorAct dB (n - k) _), lTensorAct_tmul_tmul, hB.map_map,
     TensorProduct.zero_tmul, ite_self, add_zero, map_zero]
   simp only [show (n - k = 0) = ((k : ℕ) = n) from propext (by omega)]
   -- When `k = n` (resp. `k = 0`) the inner (resp. outer) operation is the operation of arity `n`
@@ -189,9 +189,8 @@ private theorem stasheffDiff_lTensorAct_tmul (hB : IsUngradedDGAlgebra dB) (n : 
   have hu (x : A) (y : B) : update (fun i => a i ⊗ₜ[R] b i) l (x ⊗ₜ[R] y) =
       fun i => update a l x i ⊗ₜ[R] update b l y i :=
     funext fun i => (apply_update₂ (fun _ => (· ⊗ₜ[R] ·)) a b l x y i).symm
-  rw [ungradedTensorDifferential_tmul, MultilinearMap.map_update_add, LinearMap.add_apply, hu, hu,
-    lTensorAct_tmul_tmul, lTensorAct_tmul_tmul, ite_eq_right hn, add_zero, add_zero,
-    update_eq_self, update_eq_self]
+  rw [ungradedTensorDifferential_tmul, MultilinearMap.map_update_add, LinearMap.add_apply]
+  simp [hu, lTensorAct_tmul_tmul, hn]
 
 private theorem stasheffMul_lTensorAct_tmul (n : ℕ) (a : Fin n → A) (b : Fin n → B) (b₀ : B)
     (m : M) :
@@ -236,12 +235,11 @@ private theorem lTensorAct_stasheff [CharP R 2] (hB : IsUngradedDGAlgebra dB) (n
   simp only [_root_.add_apply, LinearMap.add_apply, _root_.zero_apply,
     LinearMap.zero_apply, ungradedStasheffCompMultilinear_apply,
     ungradedStasheffDiffMultilinear_apply, ungradedStasheffMulMultilinear_apply,
-    ungradedStasheffComp_def, ungradedStasheffDiff_def]
+    ungradedStasheffComp_def]
   -- The composite terms.
   rw [Finset.sum_congr rfl fun k _ => Mm.lTensorAct_comp_tmul hB k a b b₀ m,
     Finset.sum_add_distrib, Finset.sum_add_distrib, sum_ite_val_eq_last, sum_ite_val_eq_zero,
-    ← TensorProduct.tmul_sum, ← ungradedStasheffDiff_def, stasheffDiff_lTensorAct_tmul Mm hB,
-    stasheffMul_lTensorAct_tmul]
+    ← TensorProduct.tmul_sum, stasheffDiff_lTensorAct_tmul Mm hB, stasheffMul_lTensorAct_tmul]
   have h := Mm.stasheff n a m
   rw [ungradedStasheffComp_def] at h
   have hL := hB.map_mul b₀ (List.ofFn b).prod
