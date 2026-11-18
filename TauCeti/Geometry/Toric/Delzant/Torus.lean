@@ -229,47 +229,6 @@ theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
     exact surjective_linearCombination_real hi hu
   exact fun q ↦ let ⟨_, h⟩ := exists_facetTorusHom_eq hspan q; ⟨_, h⟩
 
-/-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
-the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel
-of `(ℝ / pℤ)^ι → V / p i(N)` whose coordinates outside `s` vanish is zero. -/
-theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
-    (hs : ∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) {θ : ι → AddCircle p}
-    (hθ : θ ∈ (facetTorusHom i u p).ker) (hθs : ∀ j ∉ s, θ j = 0) : θ = 0 := by
-  classical
-  obtain ⟨b, hb⟩ := hs
-  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-  -- Lift `θ` to angles supported in `s`.
-  set t' : ι → ℝ := fun j ↦ if j ∈ s then t j else 0 with ht'
-  have hθt' : θ = fun j ↦ (t' j : AddCircle p) := funext fun j ↦ by
-    by_cases hj : j ∈ s
-    · simp [t', hj, ht]
-    · simp [t', hj, hθs j hj]
-  rw [hθt', AddMonoidHom.mem_ker, facetTorusHom_coe, QuotientAddGroup.eq_zero_iff] at hθ
-  obtain ⟨n, hn⟩ := hθ
-  -- Comparing coefficients in the real basis `i (u j)`, `j ∈ s`, of `V` gives `t j ∈ pℤ`.
-  have hcoeff : ∀ j : s, t j = p * b.repr n j := by
-    have hli := hi.linearIndependent_basis b
-    simp only [hb] at hli
-    have hsum : ∑ j : s, (t j - p * b.repr n j) • i (u j) = 0 := by
-      have h1 : Fintype.linearCombination ℝ (fun j ↦ i (u j)) t' = ∑ j : s, t j • i (u j) := by
-        rw [Fintype.linearCombination_apply]
-        simp only [t', ite_smul, zero_smul]
-        rw [← Finset.sum_filter]
-        exact Finset.sum_subtype _ (by simp) fun j ↦ t j • i (u j)
-      have h2 : (p • i) n = ∑ j : s, (p * b.repr n j) • i (u j) := by
-        conv_lhs => rw [← b.sum_repr n]
-        simp only [AddMonoidHom.smul_apply, map_sum, map_zsmul, hb, mul_smul,
-          Int.cast_smul_eq_zsmul]
-        exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
-      simp only [sub_smul, Finset.sum_sub_distrib, ← h1, ← h2, hn, sub_self]
-    intro j
-    exact sub_eq_zero.1 (Fintype.linearIndependent_iff.1 hli _ hsum j)
-  funext j
-  by_cases hj : j ∈ s
-  · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
-    exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
-  · exact hθs j hj
-
 /-- **The kernel torus in lattice coordinates.** Let `b` be a basis of the integral lattice `N`,
 and write `u j = Σ_k a_(j k) b k` with integers `a_(j k)`. An element `θ` of `(ℝ / pℤ)^ι` lies in
 the kernel of `(ℝ / pℤ)^ι → V / p i(N)` exactly when `Σ_j a_(j k) θ_j = 0` in `ℝ / pℤ` for every
@@ -301,6 +260,28 @@ theorem mem_ker_facetTorusHom_iff_of_basis (hi : IsIntegralLattice i) {κ : Type
     refine ⟨∑ k, m k • b k, B.ext_elem fun k ↦ ?_⟩
     rw [hx, ← hm, map_smul, Finsupp.smul_apply, hrepr, b.repr_sum_self]
     simp [zsmul_eq_mul, mul_comm]
+
+/-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
+the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel
+of `(ℝ / pℤ)^ι → V / p i(N)` whose coordinates outside `s` vanish is zero. -/
+theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
+    (hs : ∃ b : Module.Basis s ℤ N, ∀ j, b j = u j) {θ : ι → AddCircle p}
+    (hθ : θ ∈ (facetTorusHom i u p).ker) (hθs : ∀ j ∉ s, θ j = 0) : θ = 0 := by
+  obtain ⟨b, hb⟩ := hs
+  rw [mem_ker_facetTorusHom_iff_of_basis hi b] at hθ
+  funext j
+  by_cases hj : j ∈ s
+  · -- In the basis `b` of normals indexed by `s`, the `j`-th coordinate equation reads `θ j = 0`.
+    refine Eq.trans ?_ (hθ ⟨j, hj⟩)
+    rw [Finset.sum_eq_single j]
+    · rw [← hb ⟨j, hj⟩, b.repr_self, Finsupp.single_eq_same, one_smul]
+    · intro j' _ hj'
+      by_cases hj's : j' ∈ s
+      · have hne : (⟨j', hj's⟩ : s) ≠ ⟨j, hj⟩ := fun h ↦ hj' (congrArg Subtype.val h)
+        rw [← hb ⟨j', hj's⟩, b.repr_self, Finsupp.single_eq_of_ne' hne, zero_smul]
+      · rw [hθs j' hj's, smul_zero]
+    · simp
+  · exact hθs j hj
 
 /-! ### Changes of presentation -/
 
