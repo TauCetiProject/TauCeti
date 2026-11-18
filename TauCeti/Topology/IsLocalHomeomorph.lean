@@ -104,6 +104,8 @@ theorem _root_.IsClosedMap.isLocalHomeomorphOn_preimage {f : E → B} (hf : Cont
     (hcl : IsClosedMap f) {V : Set B} (hV : IsOpen V) (hbij : Set.BijOn f (f ⁻¹' V) V) :
     IsLocalHomeomorphOn f (f ⁻¹' V) := by
   -- The restriction `f⁻¹(V) → V` is a continuous closed bijection, hence a homeomorphism.
+  -- `V.restrictPreimage f` is by definition `(mapsTo_preimage f V).restrict`, which is the map
+  -- `hbij.mapsTo.restrict` that `Set.BijOn.bijective` proves bijective.
   have hres : Function.Bijective (V.restrictPreimage f) := hbij.bijective
   let e := (Equiv.ofBijective _ hres).toHomeomorphOfContinuousClosed
     hf.restrictPreimage (hcl.restrictPreimage V)

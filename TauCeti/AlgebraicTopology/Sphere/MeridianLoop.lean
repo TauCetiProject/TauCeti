@@ -115,7 +115,7 @@ private theorem meridianCube_eq_sphereMeridian {z : I^(Fin (k + 1))}
     rw [meridianLoop_def, Path.trans_apply] at hz ⊢
     split_ifs at hz ⊢ with ht
     · exact ⟨ht, rfl⟩
-    · exact absurd ⟨_, rfl⟩ hz
+    · exact absurd ⟨_, (Path.symm_apply _ _).symm⟩ hz
   · exact absurd (meridianContraction_apply_mem_range p u₀ _ _) hz
 
 /-- **The cube of the transported meridian loops covers the complement of `γ_{u₀}` once**, when
