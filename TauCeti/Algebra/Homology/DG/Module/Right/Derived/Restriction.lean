@@ -45,22 +45,30 @@ namespace DerivedCategory
 
 /-- Restriction of scalars along a DG algebra morphism on derived categories of right modules,
 induced by ordinary restriction as a morphism of localizers. -/
-@[expose]
 noncomputable def restrictScalars (f : DGAlgHom hA hB) :
     DerivedCategory.{uR, uB, uM} hB ⥤ DerivedCategory.{uR, uA, uM} hA :=
   (restrictScalarsLocalizerMorphism f).localizedFunctor (Q hB) (Q hA)
 
+/-- Derived restriction is the localized functor of the ordinary restriction localizer morphism. -/
+theorem restrictScalars_def (f : DGAlgHom hA hB) :
+    restrictScalars.{uR, uA, uB, uM} f =
+      (restrictScalarsLocalizerMorphism f).localizedFunctor (Q hB) (Q hA) := (rfl)
+
 /-- Derived restriction lifts ordinary restriction followed by localization. -/
-noncomputable instance (f : DGAlgHom hA hB) :
+noncomputable instance liftingRestrictScalars (f : DGAlgHom hA hB) :
     Localization.Lifting (Q.{uR, uB, uM} hB) (quasiIsos hB)
-      (DGRightModuleCat.restrictScalars f ⋙ Q hA) (restrictScalars f) :=
-  (restrictScalarsLocalizerMorphism f).liftingLocalizedFunctor (Q hB) (Q hA)
+      (DGRightModuleCat.restrictScalars f ⋙ Q hA) (restrictScalars f) := by
+  rw [restrictScalars_def]
+  exact restrictScalarsLocalizerMorphism_functor f ▸
+    (restrictScalarsLocalizerMorphism f).liftingLocalizedFunctor (Q hB) (Q hA)
 
 /-- Localization intertwines ordinary and derived restriction. -/
-noncomputable instance (f : DGAlgHom hA hB) :
+noncomputable instance catCommSqRestrictScalars (f : DGAlgHom hA hB) :
     CatCommSq (DGRightModuleCat.restrictScalars f) (Q.{uR, uB, uM} hB) (Q hA)
-      (restrictScalars f) :=
-  (restrictScalarsLocalizerMorphism f).catCommSq (Q hB) (Q hA)
+      (restrictScalars f) := by
+  rw [restrictScalars_def]
+  exact restrictScalarsLocalizerMorphism_functor f ▸
+    (restrictScalarsLocalizerMorphism f).catCommSq (Q hB) (Q hA)
 
 /-- Derived restriction agrees with ordinary restriction on DG modules, naturally in the module.
 This is the characteristic comparison for computing the descended functor. -/
@@ -79,7 +87,25 @@ theorem liftingIso_restrictScalars (f : DGAlgHom hA hB) :
 @[simp]
 theorem catCommSq_iso_restrictScalars (f : DGAlgHom hA hB) :
     CatCommSq.iso (DGRightModuleCat.restrictScalars f) (Q.{uR, uB, uM} hB) (Q hA)
-      (restrictScalars f) = (restrictScalarsFactors f).symm := (rfl)
+      (restrictScalars f) = (restrictScalarsFactors f).symm := by
+  unfold restrictScalarsFactors
+  delta catCommSqRestrictScalars liftingRestrictScalars
+  cases restrictScalars_def.{uR, uA, uB, uM} f
+  have compatible (F : DGRightModuleCat.{uR, uB, uM} hB ⥤ DGRightModuleCat hA)
+      (e : (restrictScalarsLocalizerMorphism f).functor = F) :
+      letI : CatCommSq F (Q hB) (Q hA)
+          ((restrictScalarsLocalizerMorphism f).localizedFunctor (Q hB) (Q hA)) :=
+        e ▸ (restrictScalarsLocalizerMorphism f).catCommSq (Q hB) (Q hA)
+      letI : Localization.Lifting (Q hB) (quasiIsos hB) (F ⋙ Q hA)
+          ((restrictScalarsLocalizerMorphism f).localizedFunctor (Q hB) (Q hA)) :=
+        e ▸ (restrictScalarsLocalizerMorphism f).liftingLocalizedFunctor (Q hB) (Q hA)
+      CatCommSq.iso F (Q hB) (Q hA)
+          ((restrictScalarsLocalizerMorphism f).localizedFunctor (Q hB) (Q hA)) =
+        (Localization.Lifting.iso (Q hB) (quasiIsos hB) (F ⋙ Q hA)
+          ((restrictScalarsLocalizerMorphism f).localizedFunctor (Q hB) (Q hA))).symm := by
+    cases e
+    rfl
+  exact compatible _ (restrictScalarsLocalizerMorphism_functor f)
 
 /-- The comparison of derived and ordinary restriction is natural in maps of DG modules. -/
 @[reassoc (attr := simp)]

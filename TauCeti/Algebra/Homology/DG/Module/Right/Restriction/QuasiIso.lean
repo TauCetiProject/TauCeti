@@ -87,7 +87,6 @@ theorem quasiIsos_restrictScalars_map_iff (f : DGAlgHom hA hB)
 
 /-- Ordinary restriction, regarded as a morphism of the localizers defined by
 quasi-isomorphisms. -/
-@[expose]
 noncomputable def restrictScalarsLocalizerMorphism (f : DGAlgHom hA hB) :
     LocalizerMorphism (quasiIsos.{uR, uB, uM} hB) (quasiIsos hA) where
   functor := restrictScalars f
@@ -103,6 +102,7 @@ quasi-isomorphism. -/
 instance (f : DGAlgHom hA hB) :
     (restrictScalarsLocalizerMorphism.{uR, uA, uB, uM} f).IsInduced where
   inverseImage_eq := by
+    rw [restrictScalarsLocalizerMorphism_functor]
     ext M N g
     exact quasiIsos_restrictScalars_map_iff f g
 
