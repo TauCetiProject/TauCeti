@@ -131,6 +131,13 @@ theorem IsComplexLinear.comp {F : V →ₗ[R] W} {G : W →ₗ[R] U}
   isComplexLinear_of_apply fun v => by
     simp only [LinearMap.comp_apply, hF.apply v, hG.apply (F v)]
 
+/-- Postcomposing with an injective complex-linear map preserves and reflects complex linearity. -/
+theorem IsComplexLinear.comp_iff_of_injective {F : V →ₗ[R] W} {G : W →ₗ[R] U}
+    (hG : IsComplexLinear J' J'' G) (hinj : Function.Injective G) :
+    IsComplexLinear J J'' (G ∘ₗ F) ↔ IsComplexLinear J J' F :=
+  ⟨fun h => isComplexLinear_of_apply fun v => hinj <| by
+    rw [hG.apply, ← LinearMap.comp_apply G F, h.apply, LinearMap.comp_apply], fun h => hG.comp h⟩
+
 end Semiring
 
 section CommSemiring
