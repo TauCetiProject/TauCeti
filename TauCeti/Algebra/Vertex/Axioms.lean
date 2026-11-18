@@ -240,12 +240,11 @@ theorem eq_field_of_lie_translation [IsAddTorsionFree V] {B : VertexOperator R V
     induction l with
     | zero => simp [b]
     | succ l ih =>
+      have hidx : -((l + 1 : ℕ) : ℤ) - 1 = -l - 1 - 1 := by omega
       have h₁ := hrec (-l - 1)
-      have h₂ := A.translation_ncoeff_apply_vacuum b (-l - 1)
-      rw [ih, h₂, show -(-(l : ℤ) - 1) = ((l + 1 : ℕ) : ℤ) by push_cast; ring, natCast_zsmul,
-        natCast_zsmul] at h₁
-      rw [show -((l + 1 : ℕ) : ℤ) - 1 = -l - 1 - 1 by push_cast; ring]
-      exact (eq_of_nsmul_eq_nsmul_of_addCommute (Nat.succ_ne_zero l) (.all _ _) h₁).symm
+      rw [ih, A.translation_ncoeff_apply_vacuum b] at h₁
+      rw [hidx]
+      exact ((AddCommute.all _ _).eq_of_zsmul_eq_zsmul (by omega) h₁).symm
   intro n
   obtain ⟨k, rfl⟩ | ⟨l, rfl⟩ : (∃ k : ℕ, n = k) ∨ ∃ l : ℕ, n = -l - 1 := by
     rcases le_or_gt 0 n with h | h

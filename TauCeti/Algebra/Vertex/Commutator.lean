@@ -71,6 +71,10 @@ theorem field_ncoeff_apply [IsAddTorsionFree V] (a b : V) (n : ℕ) :
     refine sum_congr rfl fun ij _ ↦ ?_
     simp [A.ncoeff_field_apply_vacuum_of_nonneg a ij.1 (by positivity), -zsmul_eq_mul,
       -nsmul_eq_mul]
+  -- A summand of `hvac` vanishes once `b₍ₖ₊ⱼ₎|0⟩ = 0`, that is, when `k + j ≥ 0`.
+  have hterm (k : ℤ) (ij : ℕ × ℕ) (hk : 0 ≤ k + ij.2) : n.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+      ((A.field a)[[(ij.1 : ℤ)]]) (((A.field b)[[k + ij.2]]) A.vacuum) = 0 := by
+    simp [A.ncoeff_field_apply_vacuum_of_nonneg _ _ hk]
   have hP : P = A.field ((P[[-1]]) A.vacuum) := by
     refine A.eq_field_of_lie_translation (fun c ↦ ?_)
       (lie_ncoeff_nonnegResidueProduct (A.lie_translation_ncoeff a)
@@ -80,14 +84,13 @@ theorem field_ncoeff_apply [IsAddTorsionFree V] (a b : V) (n : ℕ) :
       obtain ⟨N₃, h₃⟩ := A.exists_isLocalOfOrder b c
       exact ⟨_, isLocalOfOrder_nonnegResidueProduct h₁ h₂ h₃ n⟩
     · rw [hvac]
-      refine sum_eq_zero fun ij _ ↦ ?_
-      rw [A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega), map_zero, smul_zero, smul_zero]
+      exact sum_eq_zero fun ij _ ↦ hterm k ij (by omega)
   have hP₁ : (P[[-1]]) A.vacuum = ((A.field a)[[n]]) b := by
     rw [hvac, sum_eq_single (n, 0)]
     · simp
     · intro ij hij hne
       have hj : ij.2 ≠ 0 := fun hj ↦ hne (Prod.ext (by simpa [hj] using mem_antidiagonal.1 hij) hj)
-      rw [A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega), map_zero, smul_zero, smul_zero]
+      exact hterm (-1) ij (by omega)
     · simp
   rw [hP, hP₁]
 
