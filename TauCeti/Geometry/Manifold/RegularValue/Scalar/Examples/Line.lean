@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Orientation
 
 /-!
@@ -110,9 +111,8 @@ theorem orientationAt_boundaryOrientation_scalarRegularBand_id_of_eq_left :
     (isRegularValue_id b) hab x hx (v := -e.symm 1) (by simp [e])
     (EuclideanSpace.basisFun (Fin 0) ℝ).toBasis e' (by
       funext i
-      rw [Fin.fin_one_eq_zero i, Fin.cons_zero, Basis.unitsSMul_apply, Function.update_self,
-        Basis.map_apply, Basis.singleton_apply, Units.neg_smul, one_smul,
-        ContinuousLinearEquiv.coe_toLinearEquiv])
+      rw [Fin.fin_one_eq_zero i]
+      simp [e', e, Basis.unitsSMul_apply])
   rw [Basis.orientation_neg_single, orientation_map_fromTangentSpace_symm_singleton] at hspec
   refine (Basis.orientation_ne_iff_eq_neg _ _).1 fun h ↦ ?_
   exact Module.Ray.ne_neg_self _ (hspec.1 h.symm).symm
@@ -123,17 +123,10 @@ end Band
 
 section Square
 
-/-- The derivative of `x ↦ x²` at `0` is zero. -/
-private theorem fderiv_sq_zero : fderiv ℝ (fun x : ℝ ↦ x ^ 2) 0 = 0 := by
-  rw [(hasStrictDerivAt_pow 2 (0 : ℝ)).hasDerivAt.hasFDerivAt.fderiv]
-  simp
-
 /-- The derivative of `x ↦ x²` vanishes at `0`, so `0` is not a regular value. -/
-theorem not_isRegularValue_sq_zero : ¬IsRegularValue 𝓘(ℝ) 𝓘(ℝ) (fun x : ℝ ↦ x ^ 2) 0 := fun h ↦ by
-  have hs := isRegularPoint_iff_surjective_fderiv.1 (h.isRegularPoint (x := 0) (by simp))
-  rw [fderiv_sq_zero] at hs
-  obtain ⟨_, hu⟩ := hs 1
-  exact zero_ne_one hu
+theorem not_isRegularValue_sq_zero : ¬IsRegularValue 𝓘(ℝ) 𝓘(ℝ) (fun x : ℝ ↦ x ^ 2) 0 := by
+  rw [isRegularValue_iff_notMem_image_criticalPoints, criticalPoints_pow le_rfl]
+  simp
 
 /-- **The square has no regular level at `0`.** For every atlas on the level `{x | x² = 0}` of the
 expected dimension `1 - 1 = 0`, the derivative of the inclusion into `ℝ` does not have range the
@@ -145,15 +138,11 @@ theorem range_mfderiv_coe_ne_ker_mfderiv_sq (c : ChartedSpace (Fin 0 → ℝ) {x
   have : Subsingleton (TangentSpace 𝓘(ℝ, Fin 0 → ℝ) x) :=
     inferInstanceAs (Subsingleton (Fin 0 → ℝ))
   have hx : (x : ℝ) = 0 := pow_eq_zero_iff two_ne_zero |>.1 x.2
-  rw [mfderiv_eq_fderiv, hx, fderiv_sq_zero, ContinuousLinearMap.zero_comp,
-    ContinuousLinearMap.comp_zero]
-  intro h
-  have h1 : (NormedSpace.fromTangentSpace (𝕜 := ℝ) _).symm 1 ∈
-      (0 : TangentSpace 𝓘(ℝ) (0 : ℝ) →L[ℝ] TangentSpace 𝓘(ℝ) ((0 : ℝ) ^ 2)).ker := by simp
-  rw [← h] at h1
-  obtain ⟨u, hu⟩ := h1
-  rw [Subsingleton.elim u 0, map_zero] at hu
-  exact one_ne_zero ((NormedSpace.fromTangentSpace _).symm.map_eq_zero_iff.1 hu.symm)
+  have hd : mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun y : ℝ ↦ y ^ 2) x = 0 :=
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 (by simp [criticalPoints_pow le_rfl, hx])
+  rw [hd, Subsingleton.elim (mfderiv _ _ _ x) 0]
+  simp only [ContinuousLinearMap.toLinearMap_zero, LinearMap.range_zero, LinearMap.ker_zero]
+  exact (bot_ne_top : (⊥ : Submodule ℝ ℝ) ≠ ⊤)
 
 end Square
 

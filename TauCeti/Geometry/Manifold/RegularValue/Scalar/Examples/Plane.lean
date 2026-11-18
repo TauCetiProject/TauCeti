@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.NormSq
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Boundary
 
 /-!
@@ -26,13 +26,12 @@ the diffeomorphism with `ℝ`, the inclusion is `y ↦ (c, y)`, with derivative 
 (`TauCeti.fderiv_coe_regularLevelFstDiffeomorph_symm`).
 
 **The squared norm.** On a real inner product space every nonzero value of `x ↦ ‖x‖²` is regular
-(`TauCeti.isRegularValue_norm_sq`): the derivative at `x` is `v ↦ 2 ⟪x, v⟫`, which is onto as soon
-as `x ≠ 0`. So in dimension `n + 1` the closed unit ball `{‖x‖² ≤ 1}` carries the half-space atlas
-`TauCeti.scalarRegularSublevelChartedSpace`, and its manifold boundary is the unit sphere
-(`TauCeti.boundary_scalarRegularSublevel_norm_sq`). For the plane, `n = 1`, the boundary is the unit
-circle. Its boundary atlas is modelled on `EuclideanSpace ℝ (Fin 1)`, its regular-level atlas on
-`Fin 1 → ℝ`, and `TauCeti.scalarRegularSublevelBoundaryDiffeomorph` identifies the two by the
-identity of points.
+(`TauCeti.isRegularValue_norm_sq`). So in dimension `n + 1` the closed unit ball `{‖x‖² ≤ 1}`
+carries the half-space atlas `TauCeti.scalarRegularSublevelChartedSpace`, and its manifold boundary
+is the unit sphere (`TauCeti.boundary_scalarRegularSublevel_norm_sq`). For the plane, `n = 1`, the
+boundary is the unit circle. Its boundary atlas is modelled on `EuclideanSpace ℝ (Fin 1)`, its
+regular-level atlas on `Fin 1 → ℝ`, and `TauCeti.scalarRegularSublevelBoundaryDiffeomorph`
+identifies the two by the identity of points.
 -/
 
 public section
@@ -112,26 +111,8 @@ end Coordinate
 
 section NormSq
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Every nonzero value of the squared norm on a real inner product space is a regular value:
-the derivative `v ↦ 2 ⟪x, v⟫` at a point `x ≠ 0` is onto. -/
-theorem isRegularValue_norm_sq {c : ℝ} (hc : c ≠ 0) :
-    IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) (fun x : E ↦ ‖x‖ ^ 2) c := by
-  rw [isRegularValue_iff]
-  intro x hx
-  have hx0 : x ≠ 0 := by
-    rintro rfl
-    exact hc (by simpa using hx.symm)
-  rw [isRegularPoint_iff_surjective_fderiv, fderiv_norm_sq_apply]
-  intro t
-  refine ⟨(t / (2 * ‖x‖ ^ 2)) • x, ?_⟩
-  have hx2 : ‖x‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hx0)
-  simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply,
-    inner_smul_right, real_inner_self_eq_norm_sq, nsmul_eq_mul, Nat.cast_ofNat]
-  field_simp [hx2]
-
-variable [FiniteDimensional ℝ E] {n : ℕ} (hn : finrank ℝ E = n + 1)
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {n : ℕ} (hn : finrank ℝ E = n + 1)
 
 /-- **The boundary of the unit ball is the unit sphere.** For the half-space atlas of the regular
 sublevel `{x | ‖x‖² ≤ 1}` of the squared norm on a real inner product space of dimension `n + 1`,
