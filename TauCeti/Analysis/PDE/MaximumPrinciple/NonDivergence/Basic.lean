@@ -82,6 +82,7 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
   symmetric part of the coefficient matrix.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_mul`: the principal part of a product.
 * `TauCeti.PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq`: conjugation of
   `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_b + c` by a weight `exp ∘ ℓ`, for functions that are `C²` at a point.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
@@ -317,6 +318,22 @@ theorem sum_coefficientSymmetricPart_mul_fderiv_fderiv {A : Matrix ι ι ℝ}
   simp only [coefficientSymmetricPart_apply, add_div, add_mul, Finset.sum_add_distrib,
     div_mul_eq_mul_div, ← Finset.sum_div]
   rw [hswap, add_halves]
+
+/-- **The principal part of a product.** For `η` and `u` that are `C²` at the point,
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ(η u) = η ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu + u ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼη + ∑ᵢⱼ Aᵢⱼ (∂ᵢη ∂ⱼu + ∂ᵢu ∂ⱼη)`. -/
+theorem sum_mul_fderiv_fderiv_mul (A : Matrix ι ι ℝ) {η u : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hη : ContDiffAt ℝ 2 η x) (hu : ContDiffAt ℝ 2 u x) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (η * u)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) =
+      η x * ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) +
+        u x * ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ η) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) +
+        ∑ i, ∑ j, A i j * (fderiv ℝ η x (EuclideanSpace.single i 1) *
+          fderiv ℝ u x (EuclideanSpace.single j 1) + fderiv ℝ u x (EuclideanSpace.single i 1) *
+            fderiv ℝ η x (EuclideanSpace.single j 1)) := by
+  simp only [fderiv_fderiv_mul_apply hη hu, Finset.mul_sum, ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 omit [DecidableEq ι] in
 /-- The algebra behind conjugation by a weight `W = exp ℓ`. Writing `A`, `c` for the
