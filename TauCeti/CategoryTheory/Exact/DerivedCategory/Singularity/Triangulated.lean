@@ -41,6 +41,8 @@ structure.
 
 ## Main results
 
+* `TauCeti.ExactStructure.IsFrobenius.stableToSingularity_commShiftIso_one_hom_app`: the
+  commutation with the shift in degree one.
 * `TauCeti.ExactStructure.IsFrobenius.stableToSingularity_isTriangulated`: `F` is a triangle
   functor.
 
@@ -161,6 +163,20 @@ noncomputable def stableToSingularityCommShift :
     E.stableToSingularity.CommShift ℤ :=
   hF.commShiftOfIntertwiningStableSuspensionShift _ hF.stableSuspensionCompStableToSingularityIso
 
+/-- In degree one, the commutation of `F` with the shifts is the identification `Σ ≅ ⟦1⟧` of the
+stable category followed by the comparison `F ∘ Σ ≅ ⟦1⟧ ∘ F`. -/
+theorem stableToSingularity_commShiftIso_one_hom_app (X : E.ProjectiveStableCategory) :
+    letI := hF.stableHasShift
+    letI := hF.stableToSingularityCommShift
+    (E.stableToSingularity.commShiftIso (1 : ℤ)).hom.app X =
+      E.stableToSingularity.map (hF.stableShiftFunctorOneIso.hom.app X) ≫
+        hF.stableSuspensionCompStableToSingularityIso.hom.app X := by
+  let := hF.stableHasShift
+  let := hF.stableToSingularityCommShift
+  rw [hF.commShiftOfIntertwiningStableSuspensionShift_iso_one E.stableToSingularity
+    hF.stableSuspensionCompStableToSingularityIso]
+  rfl
+
 /-- The image of the connecting map `Z ⟶ ΣX` of a conflation `X ↣ Y ↠ Z`, followed by the
 comparison `F(ΣX) ⟶ F(X)⟦1⟧`, is the connecting morphism of the conflation in `D_sg(E)`. -/
 theorem stableToSingularity_map_connectingMap_comp {S : ShortComplex C} (hS : E.Conflation S) :
@@ -213,18 +229,10 @@ theorem stableToSingularity_isTriangulated :
     rw [stableToSingularity_map_eq, Category.assoc, Category.assoc,
       Iso.inv_hom_id, Category.comp_id]
   · -- The comparison of shifts in degree one is `stableToSingularitySuspensionMap`.
-    have h₁ := hF.commShiftOfIntertwiningStableSuspensionShift_iso_one E.stableToSingularity
-      hF.stableSuspensionCompStableToSingularityIso
-    have h₃ : (E.stableToSingularity.commShiftIso (1 : ℤ)).hom.app
-        (E.projectiveStableFunctor.obj S.X₁) = E.stableToSingularity.map
-          (hF.stableShiftFunctorOneIso.hom.app (E.projectiveStableFunctor.obj S.X₁)) ≫
-        hF.stableSuspensionCompStableToSingularityIso.hom.app
-          (E.projectiveStableFunctor.obj S.X₁) := by
-      rw [h₁]
-      rfl
     have h₄ := hF.stableToSingularity_map_connectingMap_comp hS
     dsimp
-    rw [h₃, stableSuspensionCompStableToSingularityIso_hom_app]
+    rw [stableToSingularity_commShiftIso_one_hom_app,
+      stableSuspensionCompStableToSingularityIso_hom_app]
     simp only [Functor.map_comp, Category.assoc, ← Functor.map_comp_assoc E.stableToSingularity,
       Iso.inv_hom_id_app, CategoryTheory.Functor.map_id, Category.id_comp, eqToHom_map,
       eqToHom_trans_assoc, eqToHom_refl, reassoc_of% h₄, Iso.inv_hom_id_map, Category.comp_id]
