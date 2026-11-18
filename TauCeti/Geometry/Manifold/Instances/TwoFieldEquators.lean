@@ -131,7 +131,7 @@ open Quaternion
 open scoped RightActions
 
 variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℍᵐᵒᵖ E]
-  [NormSMulClass ℍᵐᵒᵖ E] [ContinuousConstSMul ℍᵐᵒᵖ E] {n : ℕ}
+  [NormSMulClass ℍᵐᵒᵖ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 3)] {i j : Fin 3}
 
 /-- **The quaternionic spaces of equators are orientable.** If the quaternions act on the right on
