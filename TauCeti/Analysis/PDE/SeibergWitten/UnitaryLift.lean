@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
-import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
 
 /-!
@@ -49,20 +48,26 @@ of the rotations of that oriented plane
 (`TauCeti.SeibergWitten.unitaryLift_toSpecialOrthogonal_spinCCircle`): on the canonical line
 `c(e₀) c(e₁)` acts by `-i`, where `spinCCircle` has weight one.
 
-The canonical lift acts on the half-spinors through the complex structure of `V`. On `W⁻` it
-sends `c(v) u₀` to `c(A v) u₀`
-(`TauCeti.SeibergWitten.spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul`), so the
-complex-linear map `v ↦ c(v) u₀` from `(V, J)` to `W⁻` is equivariant. On `W⁺` it sends
-`c(v) c(w) u₀` to `c(A v) c(A w) u₀`
-(`TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`). The
-complementary line is spanned by `c(e₀) c(e₂) u₀`, and `c(v) c(w) u₀` is the complex determinant
-of `v, w` in the basis `(e₀, e₂)` of `(V, J)` times `c(e₀) c(e₂) u₀`, plus a multiple of `u₀`
-(`TauCeti.SeibergWitten.ι_apply_ι_apply_of_cliffordProjection_apply_eq_self`). Hence the
-determinant character of the canonical lift of `A` is the complex determinant `det_ℂ A`
-(`TauCeti.SeibergWitten.det_unitaryLift`). At the level of structure groups, this says that the
-determinant line of the canonical `Spinᶜ` structure is `Λ²_ℂ (T X, J) = K⁻¹`.
-
 The subgroup fixing the canonical line is defined through the given spin module `W`.
+
+The determinant character of the canonical lift is the complex determinant: `det (unitaryLift A)`
+is the determinant of `A` as a `ℂ`-linear map of the complex vector space `(V, J)`
+(`TauCeti.AlmostComplexStructure.complexModule`), as stated in
+`TauCeti.SeibergWitten.det_unitaryLift`. At the level of structure groups, the determinant line
+of the canonical `Spinᶜ` structure is therefore the anticanonical line `K⁻¹ = Λ²_ℂ (T X, J)`.
+This goes through the negative half-spinors: for `u ≠ 0` on the canonical line, `v ↦ c(v) u` is
+an injective map from `V` to the negative half-spinors which turns `J` into `i` and intertwines
+`A` with the action of its canonical lift
+(`TauCeti.SeibergWitten.spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul`). It is therefore
+a `ℂ`-linear isomorphism conjugating `A` to the canonical lift, and the canonical lift acts on the
+negative half-spinors with determinant its determinant character
+(`CliffordAlgebra.det_spinCGroupHalfSpinRep`).
+
+On the positive half-spinors, the canonical lift sends `c(v) c(w) u` to `c(A v) c(A w) u`
+(`TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`). With the formula
+for `c(v) c(w) u` in `TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine`
+(`TauCeti.SeibergWitten.ι_apply_ι_apply_of_cliffordProjection_apply_eq_self`), this is the
+splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` as representations of `U(V, J)`.
 
 ## Main definitions
 
@@ -86,9 +91,12 @@ The subgroup fixing the canonical line is defined through the given spin module 
   character.
 * `TauCeti.SeibergWitten.unitaryLift_toSpecialOrthogonal_spinCCircle`: comparison with
   `spinCCircle` on the complex line `⟨e₂, e₃⟩`.
-* `TauCeti.SeibergWitten.spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul` and
-  `TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`: the canonical
-  lift on `c(v) u₀ ∈ W⁻` and on `c(v) c(w) u₀ ∈ W⁺`.
+* `TauCeti.SeibergWitten.spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul`: Clifford
+  multiplication on the canonical line intertwines `A` with its canonical lift acting on the
+  negative half-spinors.
+* `TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`: on the positive
+  half-spinors, the canonical lift sends `c(v) c(w) u` to `c(A v) c(A w) u` for `u` on the
+  canonical line.
 * `TauCeti.SeibergWitten.det_unitaryLift`: the determinant character of the canonical lift is the
   complex determinant.
 
@@ -467,128 +475,6 @@ theorem
 
 end Det
 
-/-! ### The canonical lift on the half-spinors -/
-
-section Intertwiner
-
-variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
-  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-
-omit [FiniteDimensional ℂ W] in
-/-- The vector `x ψ` of `W` depends only on the vector `ψ` of `W`, not on the eigenspace of the
-chirality in which `ψ` is regarded. -/
-private theorem coe_spinCGroupHalfSpinRep_apply_congr (x : spinCGroup Q hQ₀) {ε ε' : ℂ}
-    (h : ε = ε')
-    {ψ : eigenspace (ρ (chirality Q o)) ε} {ψ' : eigenspace (ρ (chirality Q o)) ε'}
-    (hψ : (ψ : W) = ψ') :
-    (spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ : W) = spinCGroupHalfSpinRep o ρ ε' hQ₀ x ψ' := by
-  subst h
-  rw [Subtype.ext hψ]
-
-omit [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] in
-/-- If `β` and `u` are nonzero eigenvectors of `T` for the eigenvalues `2i` and `-2i`, then
-`d β = D β - c u` forces `d = D`. -/
-private theorem eq_of_smul_eq_smul_sub_smul {T : Module.End ℂ W} {β u : W}
-    (hβ : T β = (2 * Complex.I) • β) (hu : T u = (-2 * Complex.I) • u) (hβ₀ : β ≠ 0)
-    (hu₀ : u ≠ 0) {d D c : ℂ} (h : d • β = D • β - c • u) : d = D := by
-  have hli : LinearIndependent ℂ ![β, u] := by
-    refine T.eigenvectors_linearIndependent' ![2 * Complex.I, -2 * Complex.I] ?_ _ fun i ↦ ?_
-    · have hne : 2 * Complex.I ≠ -2 * Complex.I := fun h ↦ by
-        have h' : (4 : ℂ) * Complex.I = 0 := by linear_combination h
-        simp at h'
-      intro i j hij
-      fin_cases i <;> fin_cases j
-      · rfl
-      · exact absurd (by simpa using hij) hne
-      · exact absurd (by simpa using hij.symm) hne
-      · rfl
-    · fin_cases i
-      · exact Module.End.hasEigenvector_iff.2 ⟨Module.End.mem_eigenspace_iff.2 hβ, hβ₀⟩
-      · exact Module.End.hasEigenvector_iff.2 ⟨Module.End.mem_eigenspace_iff.2 hu, hu₀⟩
-  exact sub_eq_zero.1 (LinearIndependent.pair_iff.1 hli (d - D) c (by rw [sub_smul, h]; abel)).1
-
-/-- **The canonical lift on `W⁻`**: for `ψ` in the canonical line, the canonical lift of `A` sends
-`c(v) ψ` to `c(A v) ψ`. So `v ↦ c(v) ψ`, a complex-linear map from `(V, J)` to the negative
-half-spinors (`TauCeti.SeibergWitten.ι_apply_apply_of_cliffordProjection_apply_eq_self`), is
-equivariant for `U(V, J)`, acting on `W⁻` through the canonical lift. -/
-theorem spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul (A : J.unitaryGroup Q)
-    {ψ : eigenspace (ρ (chirality Q o)) 1}
-    (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • (ψ : W)) (v : V) :
-    spinCGroupHalfSpinRep o ρ (-1) hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A)
-        (halfSpinCliffordMul o ρ 1 v ψ) =
-      halfSpinCliffordMul o ρ 1
-        (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) ψ := by
-  have h := ι_apply_spinCGroupHalfSpinRep_apply o ρ 1 hQ₀
-    (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) v ψ
-  rw [toSpecialOrthogonal_unitaryLift,
-    unitaryLift_mem_canonicalLineFixingSubgroup hQ he h₀ h₂ hQ₀ hW hρ A ψ hψ] at h
-  exact Subtype.ext (by rw [coe_halfSpinCliffordMul_apply_apply]; exact h.symm)
-
-/-- **The canonical lift on products `c(v) c(w) ψ`**: for `ψ` in the canonical line, the canonical
-lift of `A` sends the positive half-spinor `c(v) c(w) ψ` to `c(A v) c(A w) ψ`. -/
-theorem coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq (A : J.unitaryGroup Q)
-    {ψ : eigenspace (ρ (chirality Q o)) 1}
-    (hψ : ρ (bivectorExterior Q J.kahlerForm) ψ = (-2 * Complex.I) • (ψ : W)) {v w : V}
-    {φ : eigenspace (ρ (chirality Q o)) 1} (hφ : (φ : W) = ρ (ι Q v) (ρ (ι Q w) ψ)) :
-    (spinCGroupHalfSpinRep o ρ 1 hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) φ : W) =
-      ρ (ι Q (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v))
-        (ρ (ι Q (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) w)) ψ) := by
-  have h := ι_apply_spinCGroupHalfSpinRep_apply o ρ (-1) hQ₀
-    (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) v (halfSpinCliffordMul o ρ 1 w ψ)
-  rw [toSpecialOrthogonal_unitaryLift,
-    spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul hQ he h₀ h₂ hQ₀ hW hρ A hψ,
-    coe_halfSpinCliffordMul_apply_apply] at h
-  rw [h]
-  exact coe_spinCGroupHalfSpinRep_apply_congr hQ₀ _ (neg_neg 1).symm (by simp [hφ])
-
-/-- **The determinant character of the canonical lift is the complex determinant**: the canonical
-lift of a unitary rotation `A` of `(V, J)` has determinant character `det_ℂ A`, the determinant of
-`A` as a complex-linear map of `(V, J)`. Equivalently, by
-`spinCGroupHalfSpinRep_apply_eq_det_smul_of_mem_canonicalLineFixingSubgroup_of_bivectorExterior`,
-the canonical lift acts on the complementary line of the canonical line in `W⁺` by `det_ℂ A`, as
-`U(V, J)` acts on `Λ²_ℂ (V, J)`. -/
-theorem det_unitaryLift (A : J.unitaryGroup Q) :
-    letI := J.complexModule
-    (spinCGroup.det Q hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) : ℂ) =
-      LinearMap.det
-        (AlmostComplexStructure.isComplexLinearMap_of_mem_unitaryGroup A.2).toComplexLinearMap := by
-  let := J.complexModule
-  obtain ⟨u, hu₀, hu, -⟩ :=
-    exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
-  -- `β = c(e₀) c(e₂) u` is a nonzero vector of the complementary line.
-  set β : W := ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u)
-  have hβmem : β ∈ eigenspace (ρ (chirality Q o)) 1 := by
-    simpa only [neg_neg] using map_ι_apply_mem_eigenspace_chirality_neg o
-      (map_ι_apply_mem_eigenspace_chirality_neg o
-        (by rw [← positiveHalfSpinors_eq_eigenspace]; exact u.2) (e 2)) (e 0)
-  have hβω : ρ (bivectorExterior Q J.kahlerForm) β = (2 * Complex.I) • β :=
-    bivectorExterior_kahlerForm_apply_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self
-      hQ he h₀ h₂ hu
-  have hQe (i : Fin 4) : Q (e i) ≠ 0 := by simp [hQ, e.orthonormal.1 i]
-  have hβ₀ : β ≠ 0 := by
-    rw [Ne, map_eq_zero_iff _ (map_ι_injective ρ (hQe 0)),
-      map_eq_zero_iff _ (map_ι_injective ρ (hQe 2))]
-    exact fun h ↦ hu₀ (Subtype.ext h)
-  have huω := bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu
-  have huω' : ρ (bivectorExterior Q J.kahlerForm) (positiveHalfSpinorsEquiv o ρ u) =
-      (-2 * Complex.I) • (positiveHalfSpinorsEquiv o ρ u : W) := by
-    rw [LinearEquiv.coe_ofEq_apply]
-    exact huω
-  -- The canonical lift `x` of `A` has `x β = det x • β` and `x β = c(A e₀) c(A e₂) u`, which is
-  -- `D β - h u` with `D` the complex determinant of `A` in the frame.
-  have hact := coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq hQ he h₀ h₂ hQ₀ hW hρ A
-    huω' (φ := ⟨β, hβmem⟩) (by rw [LinearEquiv.coe_ofEq_apply])
-  rw [spinCGroupHalfSpinRep_apply_eq_det_smul_of_mem_canonicalLineFixingSubgroup_of_bivectorExterior
-      hQ he h₀ h₂ hQ₀ hW (unitaryLift_mem_canonicalLineFixingSubgroup hQ he h₀ h₂ hQ₀ hW hρ A)
-      (β := ⟨β, hβmem⟩) hβω, LinearEquiv.coe_ofEq_apply,
-    ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ he h₀ h₂ hu] at hact
-  simp only [Submodule.coe_smul] at hact
-  rw [AlmostComplexStructure.det_eq_of_orthonormalBasis h₀ h₂]
-  simp only [IsComplexLinearMap.toComplexLinearMap_apply]
-  exact eq_of_smul_eq_smul_sub_smul hβω huω hβ₀ (by simpa using hu₀) hact
-
-end Intertwiner
-
 /-! ### Comparison with the lift of the rotations of a complex line -/
 
 section Circle
@@ -611,6 +497,125 @@ theorem unitaryLift_toSpecialOrthogonal_spinCCircle (z : Circle) :
     (spinCCircle_mem_canonicalLineFixingSubgroup hQ he h₀ h₂ hQ₀ z)
 
 end Circle
+
+/-! ### The determinant character is the complex determinant -/
+
+section ComplexDeterminant
+
+variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+
+include hQ he h₀ h₂ in
+/-- On a vector `u` of the canonical line, Clifford multiplication turns the complex scalar
+`a + b i`, acting on `V` by `a + b J`, into the scalar `a + b i` on the negative half-spinors:
+`c(a v + b J v) u = (a + b i) c(v) u`. -/
+private theorem halfSpinCliffordMul_smul_add_smul_apply {u : eigenspace (ρ (chirality Q o)) 1}
+    (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W)) (a b : ℝ) (v : V) :
+    halfSpinCliffordMul o ρ 1 (a • v + b • J v) u =
+      ((a : ℂ) + b * Complex.I) • halfSpinCliffordMul o ρ 1 v u := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  have hJ := halfSpinCliffordMul_apply_eq_smul (ψ := u)
+    (ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂
+      (cliffordProjection_apply_eq_self_of_bivectorExterior_apply o ρ
+        (ψ := (positiveHalfSpinorsEquiv o ρ).symm u) hu) v)
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hJ]
+  module
+
+include hQ he h₀ h₂ hW in
+/-- **The canonical lift acts on the negative half-spinors as `A` acts on `V`.** For `u` on the
+canonical line, the map `v ↦ c(v) u` from `V` to the negative half-spinors intertwines `A` with
+the action of its canonical lift. This map is injective for `u ≠ 0`, and complex linear for the
+complex structure `J` on `V` (`c(J v) u = i c(v) u`), so it identifies `(V, J)` with the
+negative half-spinors as representations of `U(V, J)`. -/
+theorem spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul
+    {u : eigenspace (ρ (chirality Q o)) 1}
+    (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W))
+    (A : J.unitaryGroup Q) (v : V) :
+    spinCGroupHalfSpinRep o ρ (-1) hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A)
+        (halfSpinCliffordMul o ρ 1 v u) =
+      halfSpinCliffordMul o ρ 1
+        (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) u := by
+  have hxu := unitaryLift_mem_canonicalLineFixingSubgroup hQ he h₀ h₂ hQ₀ hW hρ A u hu
+  have h := ι_apply_spinCGroupHalfSpinRep_apply o ρ 1 hQ₀
+    (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) v u
+  rw [hxu, toSpecialOrthogonal_unitaryLift] at h
+  exact Subtype.ext (by simpa using h.symm)
+
+omit [FiniteDimensional ℂ W] in
+/-- The vector `x ψ` of `W` depends only on the vector `ψ` of `W`, not on the eigenspace of the
+chirality in which `ψ` is regarded. -/
+private theorem coe_spinCGroupHalfSpinRep_apply_congr (x : spinCGroup Q hQ₀) {ε ε' : ℂ}
+    (h : ε = ε')
+    {ψ : eigenspace (ρ (chirality Q o)) ε} {ψ' : eigenspace (ρ (chirality Q o)) ε'}
+    (hψ : (ψ : W) = ψ') :
+    (spinCGroupHalfSpinRep o ρ ε hQ₀ x ψ : W) = spinCGroupHalfSpinRep o ρ ε' hQ₀ x ψ' := by
+  subst h
+  rw [Subtype.ext hψ]
+
+include hQ he h₀ h₂ hW in
+/-- **The canonical lift on products `c(v) c(w) u`**: for `u` on the canonical line, the canonical
+lift of `A` sends the positive half-spinor `c(v) c(w) u` to `c(A v) c(A w) u`. -/
+theorem coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq
+    {u : eigenspace (ρ (chirality Q o)) 1}
+    (hu : ρ (bivectorExterior Q J.kahlerForm) u = (-2 * Complex.I) • (u : W))
+    (A : J.unitaryGroup Q) {v w : V} {φ : eigenspace (ρ (chirality Q o)) 1}
+    (hφ : (φ : W) = ρ (ι Q v) (ρ (ι Q w) u)) :
+    (spinCGroupHalfSpinRep o ρ 1 hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) φ : W) =
+      ρ (ι Q (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v))
+        (ρ (ι Q (((A : TauCeti.QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) w)) u) := by
+  have h := ι_apply_spinCGroupHalfSpinRep_apply o ρ (-1) hQ₀
+    (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) v (halfSpinCliffordMul o ρ 1 w u)
+  rw [toSpecialOrthogonal_unitaryLift,
+    spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul hQ he h₀ h₂ hQ₀ hW hρ hu A,
+    coe_halfSpinCliffordMul_apply_apply] at h
+  rw [h]
+  exact coe_spinCGroupHalfSpinRep_apply_congr hQ₀ _ (neg_neg 1).symm (by simp [hφ])
+
+include hQ he h₀ h₂ hW in
+/-- **The determinant character of the canonical lift is the complex determinant.** The canonical
+`Spinᶜ` lift of a unitary rotation `A` of `(V, J)` has determinant character `det_ℂ A`, the
+determinant of `A` as a `ℂ`-linear map of the complex vector space `(V, J)`. At the level of
+structure groups, this says that the determinant line of the canonical `Spinᶜ` structure of an
+almost Hermitian four-manifold is the anticanonical line `K⁻¹ = Λ²_ℂ (T X, J)`. -/
+theorem det_unitaryLift (A : J.unitaryGroup Q) :
+    letI := J.complexModule
+    (spinCGroup.det Q hQ₀ (unitaryLift hQ he h₀ h₂ hQ₀ hW hρ A) : ℂ) =
+      LinearMap.det
+        (AlmostComplexStructure.isComplexLinearMap_of_mem_unitaryGroup A.2).toComplexLinearMap := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  have : FiniteDimensional ℂ V := .of_restrictScalars_finite ℝ ℂ V
+  obtain ⟨u₀, hu₀, hu, -⟩ :=
+    exists_ne_zero_cliffordProjection_kahlerForm_apply_eq_self_forall_eq_smul hQ he h₀ h₂ hW
+  obtain ⟨u, rfl⟩ := (positiveHalfSpinorsEquiv o ρ).symm.surjective u₀
+  have hb := bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu
+  have hW₁ : finrank ℂ (eigenspace (ρ (chirality Q o)) 1) = 2 :=
+    (positiveHalfSpinorsEquiv o ρ).finrank_eq.symm.trans hW
+  have hW' : finrank ℂ (eigenspace (ρ (chirality Q o)) (-1)) = 2 :=
+    (finrank_eigenspace_chirality_neg o ρ 1).trans hW₁
+  -- The real isomorphism `v ↦ c(v) u` from `V` onto the negative half-spinors is `ℂ`-linear for
+  -- the complex structure `J` on `V`.
+  let E := cliffordMulEquiv o hQ u.2 (by simpa using hu₀) hW₁
+  have hE (v : V) : E v = halfSpinCliffordMul o ρ 1 v u :=
+    Subtype.ext (by rw [coe_cliffordMulEquiv_apply, coe_halfSpinCliffordMul_apply_apply])
+  let Te : V ≃ₗ[ℂ] eigenspace (ρ (chirality Q o)) (-1) :=
+    { E with
+      map_smul' z v := by
+        simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe, hE]
+        rw [J.complexModule_smul_def, halfSpinCliffordMul_smul_add_smul_apply hQ he h₀ h₂ hb,
+          Complex.re_add_im, RingHom.id_apply] }
+  have hTe (v : V) : Te v = halfSpinCliffordMul o ρ 1 v u := hE v
+  -- By the intertwining lemma, the canonical lift acts on the negative half-spinors as
+  -- `Te A Te⁻¹`.
+  rw [← det_spinCGroupHalfSpinRep o ρ (-1) hQ₀ hQ hW', ← LinearMap.det_conj _ Te]
+  congr 1
+  refine LinearMap.ext fun w ↦ ?_
+  obtain ⟨v, rfl⟩ := Te.surjective w
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
+  rw [IsComplexLinearMap.toComplexLinearMap_apply, hTe, hTe]
+  exact spinCGroupHalfSpinRep_unitaryLift_halfSpinCliffordMul hQ he h₀ h₂ hQ₀ hW hρ hb A v
+
+end ComplexDeterminant
 
 end Hermitian
 

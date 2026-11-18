@@ -27,10 +27,14 @@ The formal infrastructure is Mathlib's relative simplicial chains: the compariso
 quotient natural transformation `SSetPair.chainComplexFunctorπ`, and its invertibility for a
 pair whose subcomplex is empty is Mathlib's `SSetPair.isIso_chainComplexπ`.
 
-For any pair whose subspace is empty, the singular simplicial set of the subspace has no simplices
-(`TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty`), so by Mathlib's
+The singular simplicial set of an empty space has no simplices
+(`TopCat.hasDimensionLT_toSSet_of_isEmpty`), so neither has that of the subspace of a pair whose
+subspace is empty (`TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty`). By Mathlib's
 `SSetPair.isIso_chainComplexπ` the quotient map `TopPair.singularHomologyπ` from ambient to
-relative singular homology is an isomorphism, found by instance resolution.
+relative singular homology of such a pair is therefore an isomorphism, found by instance
+resolution. Hence a map of pairs with empty subspaces is an isomorphism on ambient homology when
+it is one on relative homology
+(`TopPair.isIso_homologyMap_fst_of_isEmpty`).
 -/
 
 public section
@@ -40,6 +44,13 @@ noncomputable section
 open CategoryTheory Limits
 
 universe w v u
+
+/-- The singular simplicial set of an empty space has no simplices: a simplex has a value at a
+vertex. -/
+instance TopCat.hasDimensionLT_toSSet_of_isEmpty (X : TopCat.{w}) [IsEmpty X] :
+    (TopCat.toSSet.obj X).HasDimensionLT 0 :=
+  (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+    isEmptyElim (TopCat.toSSetObj₀Equiv σ)
 
 namespace TopPair
 
@@ -52,10 +63,7 @@ instance isEmpty_incl_obj_snd (X : TopCat.{w}) : IsEmpty (incl.obj X).snd :=
 /-- The singular simplicial set of an empty subspace has no simplices. -/
 instance hasDimensionLT_toSSetPair_left_of_isEmpty (P : TopPair.{w}) [IsEmpty P.snd] :
     (toSSetPair.obj P).left.HasDimensionLT 0 :=
-  (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun h ↦ by
-    obtain ⟨σ⟩ := h
-    rw [toSSetPair_obj_left] at σ
-    exact isEmptyElim (TopCat.toSSetObj₀Equiv σ)
+  inferInstanceAs ((TopCat.toSSet.obj P.snd).HasDimensionLT 0)
 
 /-- Ordinary singular chains are the ambient chains of the singular pair associated to `(X, ∅)`. -/
 lemma singularChainComplexFunctor_eq_incl_chainComplexFunctorRight :
@@ -176,6 +184,24 @@ lemma singularHomologyInclIso_hom_app (n : ℕ) (X : TopCat.{w}) :
   erw [eqToHom_refl, Category.id_comp, CategoryTheory.Functor.map_comp, eqToHom_map, Category.assoc,
     eqToHom_trans]
   rfl
+
+/-- A map of pairs `f : (X, ∅) ⟶ (X', ∅)` whose subspaces are empty induces an isomorphism
+`Hₙ(X) ≅ Hₙ(X')` if it induces one on `Hₙ(X, ∅) ≅ Hₙ(X', ∅)`. Only the target subspace needs to
+be assumed empty, since `f` maps the source subspace into it. -/
+lemma isIso_homologyMap_fst_of_isEmpty {P P' : TopPair.{w}} [IsEmpty P'.snd] (f : P ⟶ P')
+    (n : ℕ) (hrel : IsIso (TopPair.singularHomologyMap f R n)) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n) := by
+  have : IsEmpty P.snd := ⟨fun a ↦ isEmptyElim (Hom.snd f a)⟩
+  have hπ : IsIso (P.singularHomologyπ R n) := inferInstance
+  have hπ' : IsIso (P'.singularHomologyπ R n) := inferInstance
+  have : IsIso (SSet.homologyMap (TopCat.toSSet.map (Hom.fst f)) R n ≫
+      P'.singularHomologyπ R n) := by
+    rw [singularHomologyπ_naturality]
+    exact IsIso.comp_isIso' hπ hrel
+  -- In this composite the source of `P'.singularHomologyπ R n` is the homology of the singular
+  -- simplicial set of `X'`, which instance search does not identify with the ambient homology of
+  -- the singular pair, so `hπ'` is passed explicitly.
+  exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ _ hπ' this
 
 end Homology
 

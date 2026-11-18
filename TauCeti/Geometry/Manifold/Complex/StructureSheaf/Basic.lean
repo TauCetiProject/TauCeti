@@ -41,6 +41,10 @@ The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
 Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
 and pull back holomorphic germs (`stalkPrecomp`), functorially and preserving their values.
+The same precomposition is a morphism of presheaves of complex vector spaces
+(`holomorphicStructureSheafModules.homOfContMDiff`), an isomorphism when the map has a holomorphic
+inverse (`holomorphicStructureSheafModules.isIso_homOfContMDiff`); this is how the Čech cohomology
+of the structure sheaf is compared along biholomorphisms.
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -554,6 +558,71 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
 theorem forget_eq :
     (holomorphicStructureSheafModules I X).obj ⋙ forget (ModuleCat ℂ) =
       (holomorphicStructureSheaf I X).obj ⋙ forget CommRingCat := (rfl)
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
+  {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
+
+/-- Precomposition by a complex analytic map `f`, on the complex vector spaces of holomorphic
+sections over an open set `U` and over its inverse image: the ring homomorphism
+`holomorphicStructureSheaf.precomp`, read as a linear map. -/
+def precompLinearMap (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
+    (holomorphicStructureSheafModules J Y).obj.obj U →ₗ[ℂ]
+      (holomorphicStructureSheafModules I X).obj.obj
+        (op (α := Opens X) ((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) where
+  toFun := holomorphicStructureSheaf.precomp I X f hf U
+  map_add' := map_add _
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem precompLinearMap_apply (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ)
+    (g : (holomorphicStructureSheafModules J Y).obj.obj U)
+    (x : ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U))) :
+    precompLinearMap I X f hf U g x = g ⟨f x.1, x.2⟩ :=
+  holomorphicStructureSheaf.precomp_apply I X f hf U g x
+
+/-- A complex analytic map `f` induces a morphism `𝒪_Y ⟶ f_*𝒪_X` of presheaves of complex vector
+spaces by precomposition. It is the linear counterpart of
+`holomorphicStructureSheaf.homOfContMDiff`. -/
+def homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) :
+    (holomorphicStructureSheafModules J Y).obj ⟶
+      (TopCat.Presheaf.pushforward (ModuleCat ℂ) (TopCat.ofHom ⟨f, hf.continuous⟩)).obj
+        (holomorphicStructureSheafModules I X).obj where
+  app U := ModuleCat.ofHom (precompLinearMap I X f hf U)
+  naturality _ _ _ := rfl
+
+@[simp]
+theorem homOfContMDiff_app (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
+    (homOfContMDiff I X f hf).app U = ModuleCat.ofHom (precompLinearMap I X f hf U) :=
+  (rfl)
+
+/-- Precomposition by a complex analytic map `f` with a complex analytic inverse `g` is bijective
+on sections: a holomorphic function `h` on `f ⁻¹' U` is the pullback of the holomorphic function
+`y ↦ h (g y)` on `U`, and only of it. -/
+theorem precompLinearMap_bijective (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → X)
+    (hg : ContMDiff J I ω g) (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f)
+    (U : (Opens Y)ᵒᵖ) : Function.Bijective (precompLinearMap I X f hf U) := by
+  -- `g` maps `U` into its inverse image under `f`.
+  let k : ↥(unop U) → ↥((Opens.map (TopCat.ofHom ⟨f, hf.continuous⟩)).obj (unop U)) :=
+    fun y ↦ ⟨g y.1, ((hfg y.1).symm ▸ y.2 : f (g y.1) ∈ unop U)⟩
+  have hk : ContMDiff J I ω k := by
+    rw [← ContMDiff.subtypeVal_comp_iff]
+    exact hg.comp contMDiff_subtype_val
+  have hfk (y : ↥(unop U)) : (⟨f (k y).1, (k y).2⟩ : ↥(unop U)) = y := Subtype.ext (hfg y.1)
+  refine ⟨fun h₁ h₂ h ↦ ext fun y ↦ ?_, fun h ↦ ⟨ofContMDiff (fun y ↦ h (k y))
+    ((contMDiff h).comp hk), ext fun x ↦ ?_⟩⟩
+  · simpa only [precompLinearMap_apply, hfk] using congr($h (k y))
+  · rw [precompLinearMap_apply, ofContMDiff_apply]
+    exact congrArg h (Subtype.ext (hgf x.1))
+
+/-- Precomposition by a complex analytic map `f` with a complex analytic inverse `g` identifies
+`𝒪_Y` with `f_*𝒪_X`. -/
+theorem isIso_homOfContMDiff (f : X → Y) (hf : ContMDiff I J ω f) (g : Y → X)
+    (hg : ContMDiff J I ω g) (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) :
+    IsIso (homOfContMDiff I X f hf) := by
+  refine (NatTrans.isIso_iff_isIso_app _).2 fun U ↦ ?_
+  rw [homOfContMDiff_app, ConcreteCategory.isIso_iff_bijective]
+  exact precompLinearMap_bijective I X f hf g hg hgf hfg U
 
 end holomorphicStructureSheafModules
 

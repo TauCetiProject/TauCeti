@@ -82,10 +82,9 @@ jobs:
       # Pinned leanprover/elan release, verified by SHA-256; scripts/test_elan_pin.py keeps the
       # copies of the pin honest.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
           project-directory: .
       - name: Install elan (pinned + checksum)
         env:

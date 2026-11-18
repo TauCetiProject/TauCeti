@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Product
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.Projection
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
@@ -23,6 +24,10 @@ isomorphism `ExteriorAlgebra.prodEquivTensor` between `⋀ (M × N)` and the gra
 * `TauCeti.exteriorPower.wedgeTensor`: the wedge product `⋀ᵖ M ⊗ ⋀^q N → ⋀ⁿ (M × N)`.
 * `TauCeti.exteriorPower.sum_coe_wedgeTensor_map_proj`: the degree-`n` component of an element
   of `⋀ (M × N)` is the sum of the wedge products of its bidegree-`(i, n - i)` components.
+* `TauCeti.exteriorPower.map_fst_comp_map_inl`, `TauCeti.exteriorPower.map_fst_comp_wedgeLeft`
+  and `TauCeti.exteriorPower.map_inl_comp_map_fst_zero`: the `⋀ M`-component `⋀ fst` of
+  `⋀ (M × N)` is a retraction of `⋀ inl`, kills `(0, x) ∧ b` for `b ∈ ⋀ M`, and in degree zero
+  is inverse to `⋀ inl`.
 -/
 
 public section
@@ -99,6 +104,29 @@ theorem sum_coe_wedgeTensor_map_proj (n : ℕ) (y : ExteriorAlgebra R M ⊗[R] E
           · have : q ≠ n - i := by omega
             simp [this]
           · simp [hi]
+
+/-- The `⋀ M`-component of `a ∈ ⋀ M ⊆ ⋀ (M × N)` is `a`. -/
+theorem map_fst_comp_map_inl (n : ℕ) :
+    _root_.exteriorPower.map n (LinearMap.fst R M N) ∘ₗ
+        _root_.exteriorPower.map n (LinearMap.inl R M N) = LinearMap.id := by
+  rw [← _root_.exteriorPower.map_comp, LinearMap.fst_comp_inl, _root_.exteriorPower.map_id]
+
+/-- The `⋀ M`-component of `e ∧ b` is zero, for `e = (0, x)` and `b ∈ ⋀ M ⊆ ⋀ (M × N)`. -/
+theorem map_fst_comp_wedgeLeft (x : N) (n : ℕ) :
+    _root_.exteriorPower.map (n + 1) (LinearMap.fst R M N) ∘ₗ
+        (ExteriorAlgebra.wedgeLeft (LinearMap.inr R M N x) n ∘ₗ
+          _root_.exteriorPower.map n (LinearMap.inl R M N)) = 0 :=
+  LinearMap.ext fun b ↦ Subtype.ext <| by simp
+
+/-- In degree zero, `⋀ (M × N)` has no `N`-part: `⋀⁰ inl ∘ ⋀⁰ fst = id`. -/
+theorem map_inl_comp_map_fst_zero :
+    _root_.exteriorPower.map 0 (LinearMap.inl R M N) ∘ₗ
+        _root_.exteriorPower.map 0 (LinearMap.fst R M N) = LinearMap.id := by
+  rw [← _root_.exteriorPower.map_comp]
+  refine _root_.exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ ?_)
+  simp only [LinearMap.compAlternatingMap_apply, _root_.exteriorPower.map_apply_ιMulti,
+    LinearMap.id_apply]
+  exact congrArg _ (Subsingleton.elim _ _)
 
 end exteriorPower
 

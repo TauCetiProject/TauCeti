@@ -387,7 +387,7 @@ theorem W1p0.extendByZeroL_eq_differenceQuotient {w : E} {t : ℝ}
     (W1p0.extendByZeroL le_top g : W1p mu ⊤ p) =
       W1p.differenceQuotient le_rfl w t (Set.mapsTo_univ (· + t • w) _)
         (W1p0.extendByZeroL le_top u : W1p mu ⊤ p) := by
-  have hm := Omega.isOpen.measurableSet
+  have hm := Omega.isOpen.nullMeasurableSet (μ := mu)
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := subset_univ _
   -- Both sides vanish off `Ω`, and on `Ω` they are the difference quotient of `u`.
   have hext : ∀ v : Lp ℝ p (mu.restrict Omega),
@@ -400,7 +400,7 @@ theorem W1p0.extendByZeroL_eq_differenceQuotient {w : E} {t : ℝ}
     ae_restrict_of_ae (hext (W1p.value (u : W1p mu Omega p))),
     ae_restrict_of_ae ((measurePreserving_add_right mu (t • w)).quasiMeasurePreserving.ae_eq_comp
       (hext (W1p.value (u : W1p mu Omega p)))),
-    ae_restrict_of_ae ((ae_restrict_iff' hm).1
+    ae_restrict_of_ae ((ae_restrict_iff'₀ hm).1
       (W1p.value_differenceQuotient_ae le_rfl w t hVO (u : W1p mu Omega p)))]
     with x h1 h2 h3 h4 h5
   simp only [Function.comp_apply] at h4

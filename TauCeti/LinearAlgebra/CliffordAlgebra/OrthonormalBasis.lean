@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 -- Private: the ordered-product, square and even-relation formulas are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
+import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
@@ -34,11 +35,12 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
 * `OrthonormalBasis.map_apply_mul_map_apply`: `Q (bᵢ) Q (bⱼ) = 1` for orthonormal basis vectors.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
-* `OrthonormalBasis.ι_apply_ι_apply_comm`, `OrthonormalBasis.ι_apply_ι_apply_self`: in every
-  representation of the Clifford algebra, `c(bᵢ) c(bⱼ) = -c(bⱼ) c(bᵢ)` for `i ≠ j` and
-  `c(bᵢ) c(bᵢ) = -1`.
-* `OrthonormalBasis.ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)` in every representation.
-* `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: in the even subalgebra,
+* `OrthonormalBasis.map_ι_apply_map_ι_apply`, `OrthonormalBasis.map_ι_apply_map_ι_apply_comm`: in
+  a Clifford module, `c(bᵢ)² = -1`, and `c(bᵢ)` and `c(bⱼ)` anticommute for `i ≠ j`.
+* `OrthonormalBasis.map_ι_apply_eq_sum`: `c(v) = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ)` in a Clifford module.
+* `QuadraticMap.polar_eq_neg_two_inner`: the polar form of `Q` is `-2 ⟪u, v⟫`.
+* `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
+  `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
   `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 
@@ -90,49 +92,54 @@ theorem prod_map_map_eq_neg_one_pow (l : List ι) : ((l.map b).map Q).prod = (-1
   obtain ⟨i, -, rfl⟩ := hx
   simp [hQ, b.orthonormal.1 i]
 
-section Representation
+section Module
 
-variable {S M : Type*} [Semiring S] [Algebra ℝ S] [AddCommGroup M] [Module S M] [Module ℝ M]
-  [IsScalarTower ℝ S M] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End S M)
+variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
 
-/-- For `Q v = -‖v‖²`, Clifford multiplications by distinct orthonormal basis vectors anticommute
-in every representation of the Clifford algebra: `c(bᵢ) c(bⱼ) y = -c(bⱼ) c(bᵢ) y`. -/
-theorem ι_apply_ι_apply_comm {i j : ι} (hij : i ≠ j) (y : M) :
-    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b j)) y) =
-      -ρ (CliffordAlgebra.ι Q (b j)) (ρ (CliffordAlgebra.ι Q (b i)) y) := by
-  rw [← mul_apply_eq_comp, ← map_mul,
-    CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij), map_neg, map_mul,
-    LinearMap.neg_apply, mul_apply_eq_comp]
-
-/-- For `Q v = -‖v‖²`, Clifford multiplication by an orthonormal basis vector squares to `-1` in
-every representation of the Clifford algebra: `c(bᵢ) c(bᵢ) y = -y`. -/
-theorem ι_apply_ι_apply_self (i : ι) (y : M) :
-    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b i)) y) = -y := by
-  rw [← mul_apply_eq_comp, ← map_mul, CliffordAlgebra.ι_sq_scalar, AlgHom.commutes,
-    Module.algebraMap_end_apply, hQ, b.orthonormal.1 i]
+/-- For `Q v = -‖v‖²`, Clifford multiplication by an orthonormal basis vector squares to `-1`:
+`c(bᵢ) (c(bᵢ) ψ) = -ψ`. -/
+theorem map_ι_apply_map_ι_apply (i : ι) (ψ : W) :
+    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b i)) ψ) = -ψ := by
+  rw [CliffordAlgebra.map_ι_apply_map_ι_apply ρ, hQ, b.orthonormal.1 i]
   simp
 
+/-- For `Q v = -‖v‖²`, Clifford multiplications by distinct orthonormal basis vectors
+anticommute: `c(bᵢ) (c(bⱼ) ψ) = -c(bⱼ) (c(bᵢ) ψ)` for `i ≠ j`. -/
+theorem map_ι_apply_map_ι_apply_comm {i j : ι} (hij : i ≠ j) (ψ : W) :
+    ρ (CliffordAlgebra.ι Q (b i)) (ρ (CliffordAlgebra.ι Q (b j)) ψ) =
+      -ρ (CliffordAlgebra.ι Q (b j)) (ρ (CliffordAlgebra.ι Q (b i)) ψ) := by
+  simpa [mul_apply_eq_comp] using
+    congrArg (fun x ↦ ρ x ψ) (CliffordAlgebra.ι_mul_ι_comm_of_isOrtho (b.isOrtho_apply hQ hij))
+
 omit hQ in
-/-- Clifford multiplication expanded in an orthonormal basis, in every representation of the
-Clifford algebra: `c(v) y = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) y`. -/
-theorem ι_apply_eq_sum (v : V) (y : M) :
-    ρ (CliffordAlgebra.ι Q v) y = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) y := by
+/-- Clifford multiplication expanded in an orthonormal basis: `c(v) ψ = ∑ᵢ ⟪bᵢ, v⟫ c(bᵢ) ψ`. -/
+theorem map_ι_apply_eq_sum (v : V) (ψ : W) :
+    ρ (CliffordAlgebra.ι Q v) ψ = ∑ i, ⟪b i, v⟫ • ρ (CliffordAlgebra.ι Q (b i)) ψ := by
   conv_lhs => rw [← b.sum_repr' v]
   simp [map_sum, map_smul, LinearMap.sum_apply]
 
-end Representation
+end Module
 
 end OrthonormalBasis
 
 namespace CliffordAlgebra
 
+/-- For `Q v = -‖v‖²`, the polar form of `Q` is `-2 ⟪u, v⟫`. -/
+theorem _root_.QuadraticMap.polar_eq_neg_two_inner (u v : V) :
+    QuadraticMap.polar Q u v = -2 * ⟪u, v⟫ := by
+  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
+  ring
+
+/-- **The polarized Clifford relation**: for `Q v = -‖v‖²`,
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
+    ι Q u * ι Q v + ι Q v * ι Q u = algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪u, v⟫) := by
+  rw [ι_mul_ι_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
+
 /-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
 theorem even_ι_bilin_add_swap_eq_neg_two_inner (u v : V) :
     (even.ι Q).bilin u v + (even.ι Q).bilin v u = algebraMap ℝ (even Q) (-2 * ⟪u, v⟫) := by
-  rw [even_ι_bilin_add_swap]
-  congr 1
-  simp only [QuadraticMap.polar, hQ, norm_add_sq_real]
-  ring
+  rw [even_ι_bilin_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
 
 /-- **The square of a Clifford basis vector of an orthonormal basis**: for `Q v = -‖v‖²`, the
 ordered product `e_s` of the generators indexed by `s` satisfies
