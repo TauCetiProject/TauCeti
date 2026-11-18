@@ -399,6 +399,10 @@ private theorem slabReverse_slabMk (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ
       slabMk x (iccTimeReverse (T : ℝ) (sub_self _).symm (sub_zero _).symm t) :=
   slabTimeReverse_slabMk _ _ _ x t
 
+private theorem coe_slabTime_slabReverse (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
+    (slabTime (slabReverse T p) : ℝ) = T - slabTime p :=
+  coe_slabTime_slabTimeReverse ..
+
 /-- Reversing a coefficient or forcing field in time, `f ↦ f ∘ R`. -/
 private def reverseL : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ →L[ℝ]
     HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ :=
@@ -577,7 +581,7 @@ theorem euclideanTerminalSolutionBUC_apply_le {γ M K : ℝ} (hc : ∀ p, c p �
     (hw : ∀ x, (w : EuclideanSpace ℝ ι →ᵇ ℝ) x ≤ M) (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
     euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w) p ≤
       Real.exp (γ * (T - slabTime p)) * (M + (T - slabTime p) * K) := by
-  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabTimeReverse]
+  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabReverse]
   exact euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (a := fun i j ↦ reverseL (a i j))
     (b := fun i ↦ reverseL (b i)) (c := reverseL c) (reverse_ellipticity ha)
     (fun q ↦ by rw [reverseL_apply]; exact hc _) hγ hM hK (-reverseL f) w
@@ -591,7 +595,7 @@ theorem abs_euclideanTerminalSolutionBUC_apply_le {γ M K : ℝ} (hc : ∀ p, c 
     (hw : ∀ x, |(w : EuclideanSpace ℝ ι →ᵇ ℝ) x| ≤ M) (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
     |euclideanTerminalSolutionBUC hα₀ hα₁ hT a b c ha (f, w) p| ≤
       Real.exp (γ * (T - slabTime p)) * (M + (T - slabTime p) * K) := by
-  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabTimeReverse]
+  rw [euclideanTerminalSolutionBUC_apply, ← coe_slabTime_slabReverse]
   exact abs_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (a := fun i j ↦ reverseL (a i j))
     (b := fun i ↦ reverseL (b i)) (c := reverseL c) (reverse_ellipticity ha)
     (fun q ↦ by rw [reverseL_apply]; exact hc _) hγ (-reverseL f) w
