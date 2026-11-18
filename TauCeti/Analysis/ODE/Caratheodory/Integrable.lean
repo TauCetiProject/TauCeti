@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Order.Floor
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
@@ -34,18 +35,20 @@ it has derivative `P t (Y t) + F t` at almost every `t ∈ (a, b)`
 (`TauCeti.ae_hasDerivAt_of_forall_mem_Icc_eq_add_integral`). A complex Banach space with a
 complex-linear coefficient is the case obtained by restriction of scalars.
 
-The essentially bounded case is `TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard` in
-`TauCeti.Analysis.ODE.Caratheodory`. The proof here follows the same argument, that some iterate
-of the Picard map is a contraction, with the length `t - a` replaced by
-`Φ t = ∫ s in t₀..t, ‖P s‖`: the `n`-th iterate moves two curves at time `t` by at most
-`|Φ t| ^ n / n!` times their distance. The induction step is the identity
-`∫ s in Ι c t, g s * |G s| ^ n = |G t| ^ (n + 1) / (n + 1)` for a nonnegative integrable `g` with
-primitive `G` (`TauCeti.integral_uIoc_mul_abs_primitive_pow`), which comes from the fundamental
-theorem of calculus for absolutely continuous functions.
+The essentially bounded case, `TauCeti.exists_continuousOn_eq_forall_mem_Icc_eq_picard` and
+`TauCeti.eqOn_of_forall_mem_Icc_eq_picard` in `TauCeti.Analysis.ODE.Caratheodory`, is derived from
+these results. The proof shows, as in Mathlib's Picard–Lindelöf theorem, that some iterate of the
+Picard map is a contraction, measuring time by `Φ t = ∫ s in t₀..t, ‖P s‖`: the `n`-th iterate
+moves two curves at time `t` by at most `|Φ t| ^ n / n!` times their distance. The induction step
+is the identity `∫ s in Ι c t, g s * |G s| ^ n = |G t| ^ (n + 1) / (n + 1)` for a nonnegative
+integrable `g` with primitive `G` (`IntervalIntegrable.integral_uIoc_mul_abs_primitive_pow`).
 
 ## References
 
 * E. A. Coddington, N. Levinson, *Theory of Ordinary Differential Equations*, Chapter 2, §1.
+* Mathlib's `Mathlib/Analysis/ODE/PicardLindelof.lean` (Yury Kudryashov, Winston Yin), whose
+  argument that some iterate of the Picard map is a contraction the existence and uniqueness proofs
+  follow.
 -/
 
 public section
@@ -53,76 +56,25 @@ public section
 open Function MeasureTheory Set intervalIntegral
 open scoped Nat NNReal Interval
 
-namespace TauCeti
-
-/-- The primitive `G t = ∫ r in c..t, g r` of a function `g` integrable on `[c, t]` satisfies
-`∫ s in c..t, g s * G s ^ n = G t ^ (n + 1) / (n + 1)`. -/
-theorem integral_mul_primitive_pow {g : ℝ → ℝ} {c t : ℝ} (hg : IntervalIntegrable g volume c t)
-    (n : ℕ) :
-    ∫ s in c..t, g s * (∫ r in c..s, g r) ^ n = (∫ r in c..t, g r) ^ (n + 1) / (n + 1) := by
-  set G := fun s ↦ ∫ r in c..s, g r
-  have hG : AbsolutelyContinuousOnInterval G c t :=
-    hg.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc
-  have hpow : ∀ k : ℕ, AbsolutelyContinuousOnInterval (fun s ↦ G s ^ k) c t := by
-    intro k
-    induction k with
-    | zero => simpa using (contDiffOn_const (c := (1 : ℝ))).absolutelyContinuousOnInterval
-    | succ k ih => simpa [pow_succ] using ih.fun_mul hG
-  have hH := ((hpow (n + 1)).const_mul ((n + 1 : ℝ)⁻¹)).integral_deriv_eq_sub
-  have hGc : G c = 0 := integral_same
-  rw [hGc, zero_pow n.succ_ne_zero, mul_zero, sub_zero] at hH
-  rw [div_eq_inv_mul, ← hH]
-  refine integral_congr_ae ?_
-  filter_upwards [hg.ae_hasDerivAt_integral] with s hs hsI
-  refine (HasDerivAt.deriv ?_).symm
-  convert ((hs (uIoc_subset_uIcc hsI) c left_mem_uIcc).pow (n + 1)).const_mul
-    ((n + 1 : ℝ)⁻¹) using 1
-  simp only [Nat.add_sub_cancel]
-  push_cast
-  field_simp
-
-/-- For a nonnegative function `g` integrable on `[c, t]` with primitive
-`G s = ∫ r in c..s, g r`, `∫ s in Ι c t, g s * |G s| ^ n = |G t| ^ (n + 1) / (n + 1)`. This is the
-estimate behind the Picard iteration for a linear equation with integrable coefficient. -/
-theorem integral_uIoc_mul_abs_primitive_pow {g : ℝ → ℝ} {c t : ℝ}
-    (hg : IntervalIntegrable g volume c t) (hg₀ : 0 ≤ g) (n : ℕ) :
-    ∫ s in Ι c t, g s * |∫ r in c..s, g r| ^ n = |∫ r in c..t, g r| ^ (n + 1) / (n + 1) := by
-  rcases le_total c t with h | h
-  · have hnn : ∀ s, c ≤ s → 0 ≤ ∫ r in c..s, g r := fun s hs ↦ integral_nonneg hs fun r _ ↦ hg₀ r
-    rw [uIoc_of_le h, ← integral_of_le h, abs_of_nonneg (hnn t h), ← integral_mul_primitive_pow hg]
-    refine integral_congr fun s hs ↦ ?_
-    rw [uIcc_of_le h] at hs
-    simp only [abs_of_nonneg (hnn s hs.1)]
-  · have hnp : ∀ s, s ≤ c → ∫ r in c..s, g r ≤ 0 := fun s hs ↦ by
-      rw [integral_symm, neg_nonpos]
-      exact integral_nonneg hs fun r _ ↦ hg₀ r
-    rw [uIoc_of_ge h, ← integral_of_le h, abs_of_nonpos (hnp t h)]
-    have : ∫ s in t..c, g s * |∫ r in c..s, g r| ^ n =
-        (-1) ^ n * ∫ s in t..c, g s * (∫ r in c..s, g r) ^ n := by
-      rw [← intervalIntegral.integral_const_mul]
-      refine integral_congr fun s hs ↦ ?_
-      rw [uIcc_of_le h] at hs
-      rw [abs_of_nonpos (hnp s hs.2), neg_pow]
-      ring
-    rw [this, integral_symm, integral_mul_primitive_pow hg, neg_pow _ (n + 1), pow_succ (-1 : ℝ)]
-    ring
+namespace MeasureTheory.IntegrableOn
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {P : ℝ → E →L[ℝ] E} {F : ℝ → E}
-  {a b t₀ : ℝ} {y₀ : E}
+  {a b : ℝ}
 
 /-- The right-hand side `s ↦ P s (x s) + F s` of a linear equation with coefficient `P` and forcing
 term `F` integrable on `[a, b]` is integrable on `[a, b]` along every curve `x` continuous on
 `[a, b]`. -/
-theorem integrableOn_clm_apply_add_of_integrableOn (hP : IntegrableOn P (Icc a b))
-    (hF : IntegrableOn F (Icc a b)) {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
-    IntegrableOn (fun s ↦ P s (x s) + F s) (Icc a b) := by
-  refine IntegrableOn.add ?_ hF
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hx
-  refine (hP.norm.mul_const C).mono'
-    ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).aestronglyMeasurable_comp₂ hP.aestronglyMeasurable
-      (hx.aestronglyMeasurable measurableSet_Icc)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Icc] with s hs
-  exact ((P s).le_opNorm _).trans (mul_le_mul_of_nonneg_left (hC s hs) (norm_nonneg _))
+theorem clm_apply_add (hP : IntegrableOn P (Icc a b)) (hF : IntegrableOn F (Icc a b)) {x : ℝ → E}
+    (hx : ContinuousOn x (Icc a b)) : IntegrableOn (fun s ↦ P s (x s) + F s) (Icc a b) :=
+  ((hP.locallyIntegrableOn.clm_apply_continuousOn isClosed_Icc.isLocallyClosed hx)
+    |>.integrableOn_isCompact isCompact_Icc).add hF
+
+end MeasureTheory.IntegrableOn
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {P : ℝ → E →L[ℝ] E} {F : ℝ → E}
+  {a b t₀ : ℝ} {y₀ : E}
 
 namespace LinearCaratheodory
 
@@ -133,14 +85,14 @@ include ht₀ hP hF in
 and any `t ∈ [a, b]`. -/
 private theorem intervalIntegrable (y : C(Icc a b, E)) (t : Icc a b) :
     IntervalIntegrable (fun s ↦ P s (IccExtend (ht₀.1.trans ht₀.2) y s) + F s) volume t₀ t :=
-  ((integrableOn_clm_apply_add_of_integrableOn hP hF
+  ((hP.clm_apply_add hF
     y.continuous.Icc_extend'.continuousOn).mono_set (uIcc_subset_Icc ht₀ t.2)).intervalIntegrable
 
 /-- The Picard map `y ↦ y₀ + ∫ s in t₀..t, (P s (y s) + F s)` on `C([a, b], E)`. -/
 private noncomputable def next (y₀ : E) (y : C(Icc a b, E)) : C(Icc a b, E) where
   toFun t := y₀ + ∫ s in t₀..(t : ℝ), (P s (IccExtend (ht₀.1.trans ht₀.2) y s) + F s)
   continuous_toFun := by
-    have hI := integrableOn_clm_apply_add_of_integrableOn hP hF
+    have hI := hP.clm_apply_add hF
       (y.continuous.Icc_extend' (h := ht₀.1.trans ht₀.2)).continuousOn
     have h := continuousOn_primitive_interval'
       ((intervalIntegrable_iff_integrableOn_Icc_of_le (ht₀.1.trans ht₀.2)).2 hI)
@@ -192,8 +144,8 @@ private theorem dist_iterate_next_apply_le (n : ℕ) (y z : C(Icc a b, E)) (t : 
     · rw [intervalIntegral.integral_mul_const, abs_mul,
         abs_of_nonneg (by positivity : 0 ≤ dist y z / n !), abs_integral_eq_abs_integral_uIoc,
         abs_of_nonneg (setIntegral_nonneg measurableSet_uIoc fun s _ ↦ by positivity),
-        integral_uIoc_mul_abs_primitive_pow (hPn.mono_set (by rwa [uIcc_of_le hab]))
-          fun s ↦ norm_nonneg _,
+        (hPn.mono_set (by rwa [uIcc_of_le hab])).integral_uIoc_mul_abs_primitive_pow
+          (ae_of_all _ fun s ↦ norm_nonneg _),
         Nat.factorial_succ]
       push_cast
       field_simp
@@ -278,7 +230,7 @@ theorem absolutelyContinuousOnInterval_of_forall_mem_Icc_eq_add_integral (ht₀ 
     AbsolutelyContinuousOnInterval Y a b := by
   have hab := ht₀.1.trans ht₀.2
   have hI := (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-    (integrableOn_clm_apply_add_of_integrableOn hP hF hY)
+    (hP.clm_apply_add hF hY)
   refine ((contDiffOn_const (c := y₀)).absolutelyContinuousOnInterval.add
     (hI.absolutelyContinuousOnInterval_intervalIntegral' (by rwa [uIcc_of_le hab]))).congr ?_
   intro t ht
@@ -295,7 +247,7 @@ theorem ae_hasDerivAt_of_forall_mem_Icc_eq_add_integral [CompleteSpace E] (ht₀
     ∀ᵐ t, t ∈ Ioo a b → HasDerivAt Y (P t (Y t) + F t) t := by
   have hab := ht₀.1.trans ht₀.2
   have hI := (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-    (integrableOn_clm_apply_add_of_integrableOn hP hF hY)
+    (hP.clm_apply_add hF hY)
   filter_upwards [hI.ae_hasDerivAt_integral] with t hd ht
   rw [uIcc_of_le hab] at hd
   refine ((hd (Ioo_subset_Icc_self ht) t₀ ht₀).const_add y₀).congr_of_eventuallyEq ?_
