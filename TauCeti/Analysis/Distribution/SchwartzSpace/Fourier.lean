@@ -55,6 +55,7 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 * `SchwartzMap.fourierMultiplierCLM_one_add_norm_sq`: the Bessel multiplier of order `2` is
   `1 - (2π)⁻² Δ`.
 * `SchwartzMap.fourierInv_apply_eq_fourier_neg`: `𝓕⁻ f x = 𝓕 f (-x)`.
+* `SchwartzMap.integral_fourier_eq`: `∫ 𝓕 f = f 0`.
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
 * `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
   bilinear pairings has the reflected symbol, `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`.
@@ -65,6 +66,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   support of the Fourier transform.
 * `SchwartzMap.fourier_compSubConstCLM_apply`, `SchwartzMap.support_fourier_compSubConstCLM`:
   translation multiplies the Fourier transform by a phase and keeps its support.
+* `SchwartzMap.fourier_compCLMOfContinuousLinearEquiv_apply`: composition with a linear isometry
+  equivalence commutes with the Fourier transform, `𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -74,8 +77,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   `‖𝓕⁻ (∂_m^N σ) x‖² = (2π) ^ (2N) ⟪x, m⟫ ^ (2N) ‖𝓕⁻ σ x‖²`.
 * `SchwartzMap.exists_seminorm_fourier_le_sum_seminorm`: each seminorm `‖ξ‖ ^ k ‖𝓕 g ξ‖` of the
   Fourier transform is bounded by finitely many Schwartz seminorms of `g`.
-* `SchwartzMap.fourierInv_postcompCLM_apply`: the inverse Fourier transform commutes with
-  postcomposition by a continuous linear map.
+* `SchwartzMap.fourier_postcompCLM_apply`, `SchwartzMap.fourierInv_postcompCLM_apply`: the
+  Fourier transform and its inverse commute with postcomposition by a continuous linear map.
 * `SchwartzMap.norm_fourierInv_toL2_eq`: Plancherel's theorem for the inverse Fourier transform.
 * `SchwartzMap.norm_toLp_fourierMultiplierCLM_eq`: Plancherel's theorem for Fourier multipliers,
   `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
@@ -135,6 +138,13 @@ theorem fourierMultiplierCLM_add {g₁ g₂ : E → 𝕜} (hg₁ : g₁.HasTempe
 point. This is the Schwartz-space form of Mathlib's `Real.fourierInv_eq_fourier_neg`. -/
 theorem fourierInv_apply_eq_fourier_neg (f : 𝓢(E, F)) (x : E) : 𝓕⁻ f x = 𝓕 f (-x) := by
   simp [fourierInv_apply_eq]
+
+/-- The integral of the Fourier transform of a Schwartz function is its value at `0`, by Fourier
+inversion. -/
+theorem integral_fourier_eq [CompleteSpace F] (f : 𝓢(E, F)) : ∫ ξ, 𝓕 f ξ = f 0 := by
+  have h : 𝓕⁻ (𝓕 f) = f := FourierTransform.fourierInv_fourier_eq f
+  rw [← congrArg (· (0 : E)) h, fourierInv_coe, Real.fourierInv_eq]
+  simp
 
 /-- Exchanging the two Fourier transforms in `𝓕 (g • 𝓕⁻ f)` reflects the symbol: it is the
 Fourier multiplier `𝓕⁻ (g (-ξ) • 𝓕 f)`. This is the identity behind the transpose of a Fourier
@@ -305,6 +315,15 @@ theorem support_fourier_compSubConstCLM (u : 𝓢(E, F)) (a : E) :
   rw [fourier_coe, fourier_coe, funext (compSubConstCLM_apply u a),
     TauCeti.support_fourier_comp_sub_const]
 
+/-- The Fourier transform commutes with composition by a linear isometry equivalence:
+`𝓕 (u ∘ A) ξ = 𝓕 u (A ξ)`. -/
+theorem fourier_compCLMOfContinuousLinearEquiv_apply {D : Type*} [NormedAddCommGroup D]
+    [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace D] [BorelSpace D]
+    (A : D ≃ₗᵢ[ℝ] E) (u : 𝓢(E, F)) (ξ : D) :
+    𝓕 (compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) ξ = 𝓕 u (A ξ) := by
+  rw [fourier_coe, fourier_coe, compCLMOfContinuousLinearEquiv_apply]
+  exact Real.fourier_comp_linearIsometry A u ξ
+
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/
 theorem fourier_lineDerivOp_lineDerivOp_apply (u : 𝓢(E, F)) (v w ξ : E) :
@@ -360,6 +379,19 @@ theorem exists_seminorm_fourier_le_sum_seminorm (k : ℕ) :
   obtain ⟨s, c, -, hc⟩ := Seminorm.bound_sum_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
   refine ⟨s, c, c.2, fun g ↦ (hc g).trans_eq ?_⟩
   simp [schwartzSeminormFamily, NNReal.smul_def]
+
+/-- The Fourier transform of a Schwartz function commutes with postcomposition by a continuous
+complex-linear map: `𝓕 (L ∘ f) = L ∘ 𝓕 f`. -/
+@[simp]
+theorem fourier_postcompCLM_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace F] [CompleteSpace G] (L : F →L[ℂ] G) (f : 𝓢(E, F)) (x : E) :
+    𝓕 (postcompCLM L f) x = L (𝓕 f x) := by
+  rw [fourier_coe, fourier_coe, Real.fourier_eq, Real.fourier_eq, ← L.integral_comp_comm]
+  · simp [Circle.smul_def]
+  · refine f.integrable.norm.mono' ?_ (.of_forall fun v ↦ ?_)
+    · exact ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul
+        f.continuous).aestronglyMeasurable
+    · simp [Circle.norm_smul]
 
 /-- The inverse Fourier transform of a Schwartz function commutes with postcomposition by a
 continuous complex-linear map: `𝓕⁻ (L ∘ f) = L ∘ 𝓕⁻ f`. -/
