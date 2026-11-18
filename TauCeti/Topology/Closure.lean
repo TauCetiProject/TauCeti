@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ClusterPt
+public import Mathlib.Topology.NhdsWithin
 
 /-!
 # Closures and neighbourhoods
@@ -84,8 +84,7 @@ theorem not_subset_union_singleton_of_mem_closure {A B N : Set X} {y₀ : X} (hN
 closure. -/
 theorem mem_closure_of_mem_nhdsNE {s : Set X} {x : X} [(𝓝[≠] x).NeBot] (hs : s ∈ 𝓝[≠] x) :
     x ∈ closure s :=
-  mem_closure_iff_nhdsWithin_neBot.2 <|
-    Filter.neBot_of_le (f := 𝓝[≠] x) (le_inf inf_le_left (Filter.le_principal_iff.2 hs))
+  mem_closure_iff_nhdsWithin_neBot.2 (Filter.neBot_of_le (nhdsWithin_le_of_mem hs))
 
 /-- Pointwise limits of maps into a closed set `L` map into `L`: if every `u m` maps `S` into
 `L` and `u m s → v s` for every `s ∈ S`, then `v` maps `S` into `L`. -/
