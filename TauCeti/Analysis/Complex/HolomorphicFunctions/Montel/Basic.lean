@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Montel.Precompact
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.Montel.Precompact
 import Mathlib.Topology.UniformSpace.CompactConvergence
 import TauCeti.Analysis.Complex.UniformLimit
 
@@ -20,10 +20,10 @@ the target is `ℂ`, and supplies the subsequence selection used by Vitali's the
 `Conformal/Vitali.lean`. In several variables it is the compactness input to the Cartan–Serre
 finiteness theorem for coherent analytic cohomology.
 
-`Conformal/Montel/Precompact.lean` proves that the continuous restrictions form a relatively
-compact subset of `C(↥Ω, E)` with its compact-open topology, and characterizes this compactness by
-local boundedness. This file extracts a convergent subsequence and identifies its holomorphic
-limit.
+`HolomorphicFunctions/Montel/Precompact.lean` proves that the continuous restrictions form a
+relatively compact subset of `C(↥Ω, E)` with its compact-open topology, and characterizes this
+compactness by local boundedness. This file extracts a convergent subsequence and identifies its
+holomorphic limit.
 
 An open subset of a proper metric space is locally compact and second countable,
 hence hemicompact: its compact subsets admit a countable cofinal family. Thus the compact-open
@@ -70,7 +70,8 @@ theorem montel [ProperSpace E] (hΩ : IsOpen Ω) (hF : ∀ n, DifferentiableOn �
   classical
   have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
   set f : ℕ → C(Ω, E) := fun n => ⟨Ω.domRestrict (F n), ((hF n).continuousOn).domRestrict⟩
-  -- The relative compactness of the restricted family, from `Conformal/Montel/Precompact.lean`.
+  -- The relative compactness of the restricted family, from
+  -- `HolomorphicFunctions/Montel/Precompact.lean`.
   have hcpt : IsCompact (closure (Set.range f)) :=
     isCompact_closure_range_of_isLocallyBoundedOn hΩ hF hb fun _ => rfl
   obtain ⟨a, -, φ, hφ, hconv⟩ := hcpt.tendsto_subseq (x := f) fun n => subset_closure ⟨n, rfl⟩

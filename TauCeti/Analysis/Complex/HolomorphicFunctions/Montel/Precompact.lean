@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.NormalFamilies
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.NormalFamilies
 import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
@@ -16,7 +16,7 @@ A family of holomorphic maps on an open subset `Ω` of a proper complex normed s
 continuous restrictions have compact closure in `C(↥Ω, E)`.
 This space carries the compact-open topology, whose convergence is locally uniform convergence.
 The compactness equivalence supplies the input for the subsequence selection theorem in
-`Conformal/Montel/Basic.lean`.
+`HolomorphicFunctions/Montel/Basic.lean`.
 
 The converse, `TauCeti.isLocallyBoundedOn_of_isCompact_closure_range`, is proved in
 `TauCeti/Analysis/Normed/Group/LocallyBounded.lean`: it is purely topological and holds on any

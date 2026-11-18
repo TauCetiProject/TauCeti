@@ -120,7 +120,7 @@ on an open `U ⊇ closedBall c (2 * r)` and `‖f‖ ≤ M` there, then `f` move
 at most `M / r` times the distance between them.
 
 The constant `M / r` depends only on the sup bound and the radius, which is what makes this
-estimate usable uniformly across a family; see `IsLocallyBoundedOn.equicontinuousOn`. -/
+estimate usable uniformly across a family; see `norm_inv_smul_sub_inv_smul_le`. -/
 theorem dist_le_of_forall_mem_closedBall_two_mul_norm_le (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f U) {c : ℂ} {r M : ℝ} (hr : 0 < r) (hsub : closedBall c (2 * r) ⊆ U)
     (hM : ∀ w ∈ closedBall c (2 * r), ‖f w‖ ≤ M) {z w : ℂ} (hz : z ∈ ball c r)
