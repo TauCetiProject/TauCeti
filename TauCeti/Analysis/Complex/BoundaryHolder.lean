@@ -185,11 +185,11 @@ private theorem norm_sub_le_of_mem_sphere_mul (hf : DiffContOnCl ℂ f (ball 0 1
       have := h _ huv v hv
       rwa [← sub_one_mul, norm_mul, hv1, mul_one, hu1] at this)
     (z := r * w) (by
-      rw [mem_closedBall_zero_iff, norm_mul, norm_real, Real.norm_of_nonneg hr.le, hw1, mul_one]
+      rw [mem_closedBall_zero_iff, norm_mul, Complex.norm_of_nonneg hr.le, hw1, mul_one]
       exact hr1)
   have huw : u * (r * w) = r * w₀ := by
     rw [mul_left_comm, div_mul_cancel₀ w₀ hw0]
-  rw [huw, norm_sub_rev, norm_mul, norm_real, Real.norm_of_nonneg hr.le, hw1, mul_one] at hrot
+  rw [huw, norm_sub_rev, norm_mul, Complex.norm_of_nonneg hr.le, hw1, mul_one] at hrot
   push_cast
   rw [Real.coe_toNNReal _ hr.le]
   calc ‖f (r * w) - f (r * w₀)‖ ≤ C * ‖w - w₀‖ ^ α * r := hrot
@@ -218,22 +218,22 @@ private theorem cos_mul_norm_sub_le (hf : DiffContOnCl ℂ f (ball 0 1)) {α : �
   have hr0 : (r : ℂ) ≠ 0 := ofReal_ne_zero.mpr hr.ne'
   set w₀ : ℂ := z / r
   have hw₀ : ‖w₀‖ = 1 := by
-    rw [norm_div, norm_real, Real.norm_of_nonneg hr.le, div_self hr.ne']
+    rw [norm_div, Complex.norm_of_nonneg hr.le, div_self hr.ne']
   have hrw₀ : (r : ℂ) * w₀ = z := mul_div_cancel₀ z hr0
   have hfr : DiffContOnCl ℂ (fun ξ ↦ f (r * ξ)) (ball 0 1) :=
-    hf.comp_const_mul (by rwa [norm_real, Real.norm_of_nonneg hr.le])
+    hf.comp_const_mul (by rwa [Complex.norm_of_nonneg hr.le])
   -- The rescaled function has `α`-Hölder boundary values with constant `C r ^ α`.
   have hbd (w : ℂ) (hw : w ∈ sphere (0 : ℂ) 1) :=
     norm_sub_le_of_mem_sphere_mul hf hα1.le h hr hr1 hw hw₀
   have hz'r : z' / r ∈ closedBall (0 : ℂ) 1 := by
-    rw [mem_closedBall_zero_iff, norm_div, norm_real, Real.norm_of_nonneg hr.le]
+    rw [mem_closedBall_zero_iff, norm_div, Complex.norm_of_nonneg hr.le]
     exact div_le_one_of_le₀ hle hr.le
   have key := cos_mul_norm_sub_le_of_mem_sphere hfr hα0 hα1 hw₀ hbd hz'r
   have hrz' : (r : ℂ) * (z' / r) = z' := mul_div_cancel₀ z' hr0
   rw [hrz', hrw₀, norm_sub_rev (f z')] at key
   have hdist : r * ‖z' / r - w₀‖ = ‖z - z'‖ := by
     calc r * ‖z' / r - w₀‖ = ‖(r : ℂ)‖ * ‖z' / r - w₀‖ := by
-          rw [norm_real, Real.norm_of_nonneg hr.le]
+          rw [Complex.norm_of_nonneg hr.le]
       _ = ‖z - z'‖ := by rw [← norm_mul, mul_sub, hrz', hrw₀, norm_sub_rev]
   refine key.trans_eq ?_
   push_cast
@@ -254,8 +254,7 @@ theorem holderOnWith_closedBall {c : ℂ} {R : ℝ} {C α : ℝ≥0} (hf : DiffC
   have hR0 : (R : ℂ) ≠ 0 := ofReal_ne_zero.mpr hR.ne'
   set A : ℂ → ℂ := fun ξ ↦ c + R * ξ
   have hA (ξ ξ' : ℂ) : ‖A ξ - A ξ'‖ = R * ‖ξ - ξ'‖ := by
-    simp only [A, add_sub_add_left_eq_sub, ← mul_sub, norm_mul, norm_real,
-      Real.norm_of_nonneg hR.le]
+    simp only [A, add_sub_add_left_eq_sub, ← mul_sub, norm_mul, Complex.norm_of_nonneg hR.le]
   have hAc (ξ : ℂ) : ‖A ξ - c‖ = R * ‖ξ‖ := by simpa [A] using hA ξ 0
   have hmaps : MapsTo A (ball (0 : ℂ) 1) (ball c R) := fun ξ hξ ↦ by
     rw [mem_ball_zero_iff] at hξ
@@ -279,7 +278,7 @@ theorem holderOnWith_closedBall {c : ℂ} {R : ℝ} {C α : ℝ≥0} (hf : DiffC
       (x - c) / R ∈ closedBall (0 : ℂ) 1 ∧ A ((x - c) / R) = x := by
     refine ⟨?_, by simp only [A]; rw [mul_div_cancel₀ _ hR0, add_sub_cancel]⟩
     rw [mem_closedBall, dist_eq_norm] at hx
-    rw [mem_closedBall_zero_iff, norm_div, norm_real, Real.norm_of_nonneg hR.le]
+    rw [mem_closedBall_zero_iff, norm_div, Complex.norm_of_nonneg hR.le]
     exact div_le_one_of_le₀ hx hR.le
   obtain ⟨hξ, hAξ⟩ := hpull hz
   obtain ⟨hξ', hAξ'⟩ := hpull hz'
@@ -374,10 +373,13 @@ private theorem tendsto_slope (hf : DiffContOnCl ℂ f (ball 0 1)) {z : ℂ}
 
 /-- Inside the disc, the difference quotients along the rotations are within `C |t| ^ α` of
 `(I z) • f' z`: two difference quotients differ on the circle, hence on the disc, by at most
-`C (|t| ^ α + |s| ^ α)`, and the second one tends to `(I z) • f' z` as `s → 0`. -/
+`C (|t| ^ α + |s| ^ α)`, and the second one tends to `(I z) • f' z` as `s → 0`, while
+`C |s| ^ α` tends to `0`. -/
 private theorem norm_slope_sub_smul_deriv_le (hf : DiffContOnCl ℂ f (ball 0 1))
     (hv : ∀ w ∈ sphere (0 : ℂ) 1, HasDerivAt (fun t : ℝ ↦ f (exp (I * t) * w)) (v w) 0)
-    (h : HolderOnWith C α v (sphere 0 1)) (hα0 : 0 < α) {t : ℝ} (ht : t ≠ 0) {z : ℂ}
+    (h : HolderOnWith C α v (sphere 0 1))
+    (hpow : Tendsto (fun s : ℝ ↦ (C : ℝ) * |s| ^ (α : ℝ)) (𝓝[≠] 0) (𝓝 0)) {t : ℝ} (ht : t ≠ 0)
+    {z : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) :
     ‖(t : ℂ)⁻¹ • (f (exp (I * t) * z) - f z) - (I * z) • deriv f z‖ ≤ C * |t| ^ (α : ℝ) := by
   set S : ℝ → ℂ → E := fun s z ↦ (s : ℂ)⁻¹ • (f (exp (I * s) * z) - f z)
@@ -395,9 +397,7 @@ private theorem norm_slope_sub_smul_deriv_le (hf : DiffContOnCl ℂ f (ball 0 1)
     ((tendsto_slope hf hz).const_sub (S t z)).norm
   have hlim' : Tendsto (fun s : ℝ ↦ C * |t| ^ (α : ℝ) + C * |s| ^ (α : ℝ)) (𝓝[≠] 0)
       (𝓝 (C * |t| ^ (α : ℝ))) := by
-    simpa using (tendsto_const_nhds.add
-      (((continuous_abs.tendsto' 0 0 abs_zero).rpow_const_nhds_zero
-        (NNReal.coe_pos.mpr hα0)).const_mul (C : ℝ))).mono_left nhdsWithin_le_nhds
+    simpa using tendsto_const_nhds.add hpow
   exact le_of_tendsto_of_tendsto hlim hlim' (eventually_nhdsWithin_of_forall hcomp)
 
 /-- A function equal to `(I z) • f' z` on the open disc and to `v` on the circle is
@@ -423,7 +423,7 @@ private theorem diffContOnCl_of_eqOn [CompleteSpace E] (hf : DiffContOnCl ℂ f 
     refine lt_of_le_of_lt ?_ hs
     rcases (mem_closedBall_zero_iff.mp hz).lt_or_eq with hz1 | hz1
     · rw [hgb z (mem_ball_zero_iff.mpr hz1)]
-      exact norm_slope_sub_smul_deriv_le hf hv h hα0 hs0 (mem_ball_zero_iff.mpr hz1)
+      exact norm_slope_sub_smul_deriv_le hf hv h hpow hs0 (mem_ball_zero_iff.mpr hz1)
     · have hzs : z ∈ sphere (0 : ℂ) 1 := mem_sphere_zero_iff_norm.mpr hz1
       rw [hgs z hzs]
       exact norm_slope_sub_le hv h hzs hs0
