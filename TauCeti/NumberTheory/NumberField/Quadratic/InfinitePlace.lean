@@ -30,13 +30,22 @@ rational `a`.
   complex exactly when `d < 0`.
 * `NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex`: an imaginary
   quadratic field has a presentation with negative squarefree radicand.
+* `NumberField.isTotallyReal_of_finrank_eq_two_of_isReal`: a quadratic field admitting a real
+  infinite place is totally real.
+* `NumberField.isTotallyComplex_of_finrank_eq_two_of_discr_neg` and
+  `NumberField.isTotallyReal_of_finrank_eq_two_of_discr_nonneg`: the signature of an arbitrary
+  quadratic field from the sign of its discriminant.
 * `QuadraticAlgebra.isTotallyComplex_iff`: `QuadraticAlgebra ℚ a 0` is totally complex exactly
   when `a < 0`.
+
+## References
+
+* H. Cohen, *A Course in Computational Algebraic Number Theory*, Springer, 1993, §5.1.
 -/
 
 public section
 
-open Polynomial NumberField
+open Polynomial NumberField NumberField.InfinitePlace
 
 namespace NumberField
 
@@ -75,6 +84,27 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_of_isTotallyComplex [IsTo
   obtain ⟨θ, d, hmin, hgen, hd⟩ := exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
   exact ⟨θ, d, hmin, hgen, hd,
     (isTotallyComplex_iff_neg_of_minpoly_eq_X_sq_sub_C hmin hgen).mp inferInstance⟩
+
+/-- A quadratic number field admitting a real infinite place is totally real. -/
+theorem isTotallyReal_of_finrank_eq_two_of_isReal (hK : Module.finrank ℚ K = 2)
+    {w : InfinitePlace K} (hw : w.IsReal) : IsTotallyReal K := by
+  classical
+  have hdeg := InfinitePlace.card_add_two_mul_card_eq_rank K
+  have hnr : 0 < nrRealPlaces K := Fintype.card_pos_iff.mpr ⟨⟨w, hw⟩⟩
+  exact nrComplexPlaces_eq_zero_iff.mp (by omega)
+
+/-- A quadratic number field with negative discriminant is totally complex. -/
+theorem isTotallyComplex_of_finrank_eq_two_of_discr_neg (hK : Module.finrank ℚ K = 2)
+    (hd : discr K < 0) : IsTotallyComplex K := by
+  have hdeg := InfinitePlace.card_add_two_mul_card_eq_rank K
+  have hc : nrComplexPlaces K = 1 :=
+    InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)
+  exact nrRealPlaces_eq_zero_iff.mp (by omega)
+
+/-- A quadratic number field with nonnegative discriminant is totally real. -/
+theorem isTotallyReal_of_finrank_eq_two_of_discr_nonneg (hK : Module.finrank ℚ K = 2)
+    (hd : 0 ≤ discr K) : IsTotallyReal K :=
+  IsTotallyReal.of_zero_lt_discr (lt_of_le_of_ne hd (discr_ne_zero K).symm) (by omega)
 
 end NumberField
 

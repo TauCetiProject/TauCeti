@@ -36,17 +36,12 @@ The function being bounded is the native analytic continuation, not the Dirichle
 
 public section
 
-open Finset Filter MeasureTheory Complex Asymptotics
+open Finset Filter MeasureTheory Complex
 open scoped Topology
 
 namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-
-private theorem sum_isBigO_one (hχ : χ ≠ 1) :
-    (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
-  refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
-  simpa using χ.norm_sum_Icc_le_level hχ n
 
 /-- Partial summation represents the continued L-function of a nonprincipal character on the
 whole half-plane `Re(s) > 0`. -/
@@ -54,7 +49,8 @@ theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     χ.LFunction s =
       s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (t : ℂ) ^ (-(s + 1)) := by
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
-  have hF := TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO _ (χ.sum_isBigO_one hχ)
+  have hF :=
+    TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO _ (χ.sum_Icc_isBigO_rpow_zero hχ)
   have heq : χ.LFunction =ᶠ[𝓝 (2 : ℂ)]
       fun z ↦ z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) *
         (t : ℂ) ^ (-(z + 1)) := by
@@ -62,7 +58,7 @@ theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
       (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z hz
     rw [LFunction_eq_LSeries χ hz]
     exact LSeries_eq_mul_integral _ le_rfl (lt_trans zero_lt_one hz)
-      (χ.LSeriesSummable_of_one_lt_re hz) (χ.sum_isBigO_one hχ)
+      (χ.LSeriesSummable_of_one_lt_re hz) (χ.sum_Icc_isBigO_rpow_zero hχ)
   have hL := (differentiable_LFunction hχ).differentiableOn.analyticOnNhd hopen
   exact (hL.eqOn_of_preconnected_of_eventuallyEq
     (hF.analyticOnNhd hopen) (convex_halfSpace_re_gt 0).isPreconnected
@@ -86,7 +82,7 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
     rw [hf, norm_mul, norm_cpow_eq_rpow_re_of_pos ht]
     norm_num
   have hint : IntegrableOn (fun t ↦ ‖f t‖) (Set.Ioi 1) :=
-    (TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_isBigO_one hχ)
+    (TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_Icc_isBigO_rpow_zero hχ)
       (s := 1) (by simp)).norm
   -- Split the integral at `N`: bound the partial sums by `t` below `N` and by `N` above it.
   have hlow : ∫ t in Set.Ioc 1 (N : ℝ), ‖f t‖ ≤ Real.log N := by

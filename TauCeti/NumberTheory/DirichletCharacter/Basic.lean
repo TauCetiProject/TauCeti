@@ -66,6 +66,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
   `DirichletCharacter.conductor_eq_eight_of_apply_one_ne_apply_five`.
+* `DirichletCharacter.level_two`, `DirichletCharacter.three_le_level_of_ne_one`,
+  `DirichletCharacter.three_le_conductor_of_ne_one`: every character of level two is principal,
+  so any nonprincipal character of nonzero level has level and conductor at least three.
 * `DirichletCharacter.ext_of_level_four`, `DirichletCharacter.ext_of_level_eight`: a character of
   level four is determined by its value at `3`, and one of level eight by its values at `3`
   and `5`.
@@ -155,6 +158,31 @@ theorem conductor_eq_eight_of_apply_one_ne_apply_five {R : Type*} [CommMonoidWit
     chi.conductor = 8 :=
   conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 3) Nat.prime_two chi
     isCoprime_one_left ⟨5, -3, by norm_num⟩ (by norm_num) hdist
+
+/-- Every Dirichlet character of level two is principal. -/
+theorem level_two {R : Type*} [CommMonoidWithZero R] (χ : DirichletCharacter R 2) : χ = 1 := by
+  refine MulChar.ext fun u ↦ ?_
+  simp [(by decide : ∀ u : (ZMod 2)ˣ, u = 1) u]
+
+/-- There is at most one Dirichlet character of level two. -/
+instance {R : Type*} [CommMonoidWithZero R] : Subsingleton (DirichletCharacter R 2) :=
+  subsingleton_iff.mpr fun χ ψ ↦ by rw [level_two χ, level_two ψ]
+
+/-- A nonprincipal Dirichlet character of nonzero level has level at least three. -/
+theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
+  by_contra! hN
+  have hN0 : 0 < N := NeZero.pos N
+  interval_cases N
+  · exact hχ (level_one χ)
+  · exact hχ (level_two χ)
+
+/-- A nonprincipal Dirichlet character of nonzero level has conductor at least three. -/
+theorem three_le_conductor_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ χ.conductor := by
+  have : NeZero χ.conductor := ⟨χ.conductor_ne_zero⟩
+  refine three_le_level_of_ne_one (χ := χ.primitiveCharacter) fun h ↦ hχ ?_
+  rw [← χ.changeLevel_primitiveCharacter, h, changeLevel_one]
 
 /-- Two characters of level four agreeing at `3` are equal. -/
 theorem ext_of_level_four {R : Type*} [CommMonoidWithZero R] {χ ψ : DirichletCharacter R 4}
