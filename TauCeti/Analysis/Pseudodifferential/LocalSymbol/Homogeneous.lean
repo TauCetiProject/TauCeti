@@ -256,6 +256,15 @@ theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
     (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
   (rfl)
 
+/-- In a family `a i` of homogeneous symbols on `U` whose degrees depend on the index, the
+coefficient of `a i` depends only on the value of `i`, although the types of `a i` and `a i'`
+differ. -/
+theorem coefficient_congr_index {ι : Type*} {d : ι → ℝ}
+    (a : (i : ι) → LocalHomogeneousSymbol U V W (d i)) {i i' : ι} (h : i = i') :
+    (a i).coefficient = (a i').coefficient := by
+  subst h
+  rfl
+
 @[simp]
 theorem castDegree_zero (h : m = m') :
     (0 : LocalHomogeneousSymbol U V W m).castDegree h = 0 :=
