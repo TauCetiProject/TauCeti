@@ -760,8 +760,24 @@ protected def copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
   graphAfter_last := d.graphAfter_last.trans h
 
 @[simp]
+theorem copy_copy {H' H'' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
+    (h' : H' = H'') : (d.copy h).copy h' = d.copy (h.trans h') := by
+  cases h
+  cases h'
+  rfl
+
+@[simp]
+theorem copy_inj {H' : Graph α β} {d₁ d₂ : G.EarDecomposition H} {h : H = H'} :
+    d₁.copy h = d₂.copy h ↔ d₁ = d₂ := by
+  cases h
+  rfl
+
+@[simp]
 theorem length_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).length = d.length := (rfl)
+
+@[simp]
+theorem copy_rfl (d : G.EarDecomposition H) : d.copy rfl = d := (rfl)
 
 @[simp]
 theorem graphAfter_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
@@ -1140,6 +1156,12 @@ theorem earAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
   -- Projection reduction exposes the `Fin.castLE` index hidden by the opaque `prefix` body.
   change d.earAt _ = d.earAt _
   congr 1
+
+/-- Prefixing retains the walks of the original ears before the chosen index. -/
+theorem walkAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1)) (j : Fin i.val) :
+    (d.prefix i).walkAt (Fin.cast (length_prefix d i).symm j) =
+      d.walkAt (Fin.castLE (Nat.le_of_lt_succ i.isLt) j) := by
+  rw [walkAt_eq, walkAt_eq, earAt_prefix]
 
 /-- Prefixing retains the kind of every ear before the chosen index. -/
 theorem kindAt_prefix (d : G.EarDecomposition H) (i : Fin (d.length + 1))
