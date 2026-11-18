@@ -32,6 +32,9 @@ geometric parallel transport from `p`, and so does not depend on the segment
 (`radialParallelLinearMap_eq_of_mem`); outside the segment it carries no geometric meaning.
 Neither a prescribed parallel frame nor a model scalar equation is assumed.
 
+The inverse radial-frame coordinates reconstruct tangent vectors and preserve their norm.
+Differentiating these coordinates reads the covariant derivative in the parallel frame.
+
 See J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 4.
 -/
 
@@ -383,6 +386,98 @@ theorem contMDiffAt_radialParallelLinearMap_apply (h : IsNormalDomain I M p U)
   exact (hc i).contMDiff.contMDiffAt.smul_totalSpace
     (((h.contMDiffOn_normalOrthonormalFrame b i).contMDiffAt
       (h.isOpen_image.mem_nhds hq)).comp t hγ)
+
+/-- Coordinates in the orthonormal frame obtained by radial parallel transport. -/
+def radialFrameCoordinates (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U) (t : ℝ) :
+    TangentSpace I (riemannianExp I M p (t • v)) →L[ℝ] TangentSpace I p :=
+  ∑ i, (innerSL ℝ (h.radialParallelLinearMap b v hlr hseg t (b i))).smulRight (b i)
+
+/-- Radial coordinates pair with the transported orthonormal basis vectors. -/
+theorem radialFrameCoordinates_apply (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U) (t : ℝ)
+    (x : TangentSpace I (riemannianExp I M p (t • v))) :
+    h.radialFrameCoordinates b v hlr hseg t x =
+      ∑ i, ⟪h.radialParallelLinearMap b v hlr hseg t (b i), x⟫_ℝ • b i := by
+  simp [radialFrameCoordinates]
+
+/-- On a segment containing zero, radial coordinates are inverse parallel transport. -/
+theorem radialFrameCoordinates_eq_symm (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l < r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U)
+    (h0 : 0 ∈ Icc l r) {t : ℝ} (ht : t ∈ Icc l r)
+    (x : TangentSpace I (riemannianExp I M p (t • v))) :
+    h.radialFrameCoordinates b v hlr.le hseg t x =
+      (h.radialParallelIsometry b v hlr hseg h0 ht).symm x := by
+  let e := h.radialParallelIsometry b v hlr hseg h0 ht
+  rw [radialFrameCoordinates_apply]
+  have he (i : ι) :
+      ⟪h.radialParallelLinearMap b v hlr.le hseg t (b i), x⟫_ℝ =
+        ⟪b i, e.symm x⟫_ℝ := by
+    rw [← h.radialParallelIsometry_apply b v hlr hseg h0 ht]
+    exact e.inner_map_eq_flip (b i) x
+  simp only [he]
+  exact b.sum_repr' _
+
+/-- Parallel transport reconstructs a tangent vector from its radial coordinates. -/
+@[simp]
+theorem radialParallelLinearMap_radialFrameCoordinates (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l < r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U)
+    (h0 : 0 ∈ Icc l r) {t : ℝ} (ht : t ∈ Icc l r)
+    (x : TangentSpace I (riemannianExp I M p (t • v))) :
+    h.radialParallelLinearMap b v hlr.le hseg t
+      (h.radialFrameCoordinates b v hlr.le hseg t x) = x := by
+  rw [h.radialFrameCoordinates_eq_symm b v hlr hseg h0 ht,
+    ← h.radialParallelIsometry_apply b v hlr hseg h0 ht]
+  exact (h.radialParallelIsometry b v hlr hseg h0 ht).apply_symm_apply x
+
+/-- Radial coordinates preserve the norm on the prescribed segment. -/
+@[simp]
+theorem norm_radialFrameCoordinates (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l < r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U)
+    (h0 : 0 ∈ Icc l r) {t : ℝ} (ht : t ∈ Icc l r)
+    (x : TangentSpace I (riemannianExp I M p (t • v))) :
+    ‖h.radialFrameCoordinates b v hlr.le hseg t x‖ = ‖x‖ := by
+  rw [h.radialFrameCoordinates_eq_symm b v hlr hseg h0 ht]
+  exact (h.radialParallelIsometry b v hlr hseg h0 ht).symm.norm_map x
+
+/-- Differentiating radial-frame components is covariant differentiation of the field.
+The frame derivative vanishes because this is the constructed parallel frame. -/
+theorem hasDerivAt_radialFrameCoordinates (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U)
+    {X : ∀ s : ℝ, TangentSpace I (riemannianExp I M p (s • v))} {t : ℝ}
+    (ht : t ∈ Icc l r)
+    (hX : DifferentiableAt ℝ (sectionCoord ℝ (F := E)
+      (fun s : ℝ ↦ riemannianExp I M p (s • v)) X (riemannianExp I M p (t • v))) t) :
+    HasDerivAt (fun s ↦ h.radialFrameCoordinates b v hlr hseg s (X s))
+      (h.radialFrameCoordinates b v hlr hseg t
+        (alongCurve (leviCivitaConnection I M)
+          (fun s : ℝ ↦ riemannianExp I M p (s • v)) X t)) t := by
+  let γ := fun s : ℝ ↦ riemannianExp I M p (s • v)
+  have hγ : MDiffAt γ t :=
+    ((contMDiffAt_riemannianExp (h.subset_expDomain (hseg t ht))).comp t
+      (contDiff_id.smul contDiff_const).contMDiff.contMDiffAt).mdifferentiableAt (by simp)
+  have hd (i : ι) : HasDerivAt
+      (fun s ↦ ⟪h.radialParallelLinearMap b v hlr hseg s (b i), X s⟫_ℝ)
+      ⟪h.radialParallelLinearMap b v hlr hseg t (b i),
+        alongCurve (leviCivitaConnection I M) γ X t⟫_ℝ t := by
+    have hP := differentiableAt_sectionCoord γ _
+      ((h.contMDiffAt_radialParallelLinearMap_apply b v hlr hseg (b i)
+        (hseg t ht)).mdifferentiableAt (by simp))
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+    have hzero : alongCurve (leviCivitaConnection I M) γ
+        (fun s ↦ h.radialParallelLinearMap b v hlr hseg s (b i)) t = 0 := by
+      simpa only [radialParallelLinearMap_apply] using
+        h.alongCurve_radialParallel_eq_zero b v hlr hseg (b i) ht
+    simpa only [hzero, inner_zero_left, zero_add] using
+      (isMetricCompatible_leviCivitaConnection I).hasDerivAt_inner_alongCurve hγ hP hX
+  simpa only [radialFrameCoordinates_apply, γ] using
+    HasDerivAt.fun_sum (fun i (_ : i ∈ Finset.univ) ↦ (hd i).smul_const (b i))
 
 /-- Radial parallel transport carries the initial radial vector to the geodesic velocity. -/
 theorem radialParallelLinearMap_radial (h : IsNormalDomain I M p U)
