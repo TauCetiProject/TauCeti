@@ -38,7 +38,7 @@ is a regular ring, so that every `Localization M` of a regular ring, including
   contains an element outside `𝔪²`, also used by the one-element criterion;
 * `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`: the quotient by such a
   parameter is a domain, so the ideal the parameter generates is prime, the hypothesis the
-  statements for an irreducible first equation of `TauCeti.RingTheory.Intersection` take;
+  statements for an irreducible first equation of `TauCeti.RingTheory.Intersection.Basic` take;
 * `TauCeti.IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span`: such a parameter `x` is
   a nonzerodivisor modulo any `g ∉ (x)`;
 * `TauCeti.IsRegularLocalRing.of_maximalIdeal_eq_span_singleton`: a Noetherian local ring whose
@@ -224,8 +224,8 @@ quotient `R ⧸ (f)` is a regular local ring by
 `TauCeti.IsRegularLocalRing.quotient_span_singleton`, hence a domain by
 `TauCeti.IsRegularLocalRing.isDomain`, and `Ideal.Quotient.isDomain_iff_prime` reads that back as
 the primality of `(f)`, the hypothesis the statements for an irreducible first equation of
-`TauCeti.RingTheory.Intersection` take. A consumer needing the domain instance itself obtains it
-from the primality, as `(Ideal.Quotient.isDomain_iff_prime _).mp` of it.
+`TauCeti.RingTheory.Intersection.Basic` take. A consumer needing the domain instance itself
+obtains it from the primality, as `(Ideal.Quotient.isDomain_iff_prime _).mp` of it.
 
 In a ring of Krull dimension two that curve is a discrete valuation ring as well, being a regular
 local ring of dimension one by `TauCeti.ringKrullDim_quotient_span_singleton_eq_one` and therefore
