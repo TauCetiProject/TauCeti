@@ -35,6 +35,9 @@ cover. No separation axiom is assumed.
   with respect to refinements of open covers, and
   `TauCeti.Topology.homologyMap_cechComplexMap_comp_toCechCohomology_app` is its component at a
   presheaf.
+* `TauCeti.Topology.isIso_toCechCohomology_app_of_forall_isIso`: if every open cover is refined by
+  a finite cover of a given kind, and refinements between such covers induce isomorphisms on Čech
+  cohomology, then every such cover computes the Čech cohomology.
 * `TauCeti.Topology.toCechCohomology_comp_finiteCechCohomologyIso_inv`: the inverse of
   `finiteCechCohomologyIso` on the image of the Čech cohomology of a small open cover.
 
@@ -109,11 +112,80 @@ theorem homologyMap_cechComplexMap_comp_toCechCohomology_app {ι κ : Type u} {U
     (hV : IsOpenCover V) (P : (Opens X)ᵒᵖ ⥤ A) :
     HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexMap P φ) n ≫
         (toCechCohomology A n V hV).app P =
-      (toCechCohomology A n U hU).app P := by
-  rw [← cechComplexHomologyMap_comp_toCechCohomology A n φ hU hV, NatTrans.comp_app,
-    TauCeti.CategoryTheory.cechComplexHomologyMap_app]
-  -- the two sides differ only in the unfolding of the source of `(toCechCohomology A n V hV).app P`
-  rfl
+      (toCechCohomology A n U hU).app P :=
+  TauCeti.CategoryTheory.homologyMap_cechComplexMap_comp_toCechCohomology_app A _ _ n φ _ P
+
+/-- The members of a finite indexed cover isomorphic to a family `W` are members of `W`. -/
+private lemma FiniteOpenCover.opens_eq_of_iso {ν : Type u} {W : ν → Opens X}
+    {T : FiniteOpenCover X} (e : T.toFormalCoproduct ≅ FormalCoproduct.mk ν W)
+    (i : ULift.{u} (Fin T.n)) : T.opens i = W (e.hom.f i) := by
+  have h : e.inv.f (e.hom.f i) = i := congrArg (fun φ ↦ φ.f i) e.hom_inv_id
+  have h' := leOfHom (e.inv.φ (e.hom.f i))
+  rw [h] at h'
+  exact le_antisymm (leOfHom (e.hom.φ i)) h'
+
+/-- **Covers computing Čech cohomology.** Let `L` be a property of opens such that every open
+cover of `X` is refined by a finite open cover whose members have `L`, and every refinement
+between two finite open covers whose members have `L` induces an isomorphism on the degree `n`
+Čech cohomology of `P`. Then for every finite open cover `U` whose members have `L`, the map from
+`Hⁿ(Č(U, P))` to the Čech cohomology of `P` is an isomorphism. -/
+theorem isIso_toCechCohomology_app_of_forall_isIso [HasColimitsOfSize.{u, u} A]
+    (P : (Opens X)ᵒᵖ ⥤ A) (L : Opens X → Prop)
+    (hL : ∀ {κ : Type u} (V : κ → Opens X), IsOpenCover V →
+      ∃ (ν : Type u) (_ : Finite ν) (W : ν → Opens X), ⨆ i, W i = ⊤ ∧ (∀ i, ∃ k, W i ≤ V k) ∧
+        ∀ i, L (W i))
+    (hiso : ∀ V W : FiniteOpenCover X, (∀ i, L (V.opens i)) → (∀ i, L (W.opens i)) →
+      ∀ φ : W.toFormalCoproduct ⟶ V.toFormalCoproduct,
+        IsIso (HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexMap P φ) n))
+    {ι : Type u} [Finite ι] (U : ι → Opens X) (hU : IsOpenCover U) (hLU : ∀ i, L (U i)) :
+    IsIso ((toCechCohomology A n U hU).app P) := by
+  -- the finite covers whose members have `L` form a directed system, cofinal with the
+  -- point-neighborhood covers, along which the Čech cohomology of `P` is constant
+  let J := {W : FiniteOpenCover X // ∀ i, L (W.opens i)}
+  have hJ {κ : Type u} (V : κ → Opens X) (hV : IsOpenCover V) :
+      ∃ T : J, Nonempty (T.1.toFormalCoproduct ⟶ FormalCoproduct.mk κ V) := by
+    obtain ⟨ν, _, W, hW, hWV, hLW⟩ := hL V hV
+    obtain ⟨T, ⟨e⟩⟩ := FiniteOpenCover.exists_iso W (IsOpenCover.mk hW)
+    choose k hk using hWV
+    exact ⟨⟨T, fun i ↦ by rw [FiniteOpenCover.opens_eq_of_iso e i]; exact hLW _⟩,
+      ⟨e.hom ≫ ⟨k, fun i ↦ homOfLE (hk i)⟩⟩⟩
+  have : IsDirectedOrder J := ⟨fun a b ↦ by
+    obtain ⟨c, hac, hbc⟩ := exists_ge_ge a.1 b.1
+    obtain ⟨T, ⟨ψ⟩⟩ := hJ c.opens c.isOpenCover
+    exact ⟨T, ⟨ψ ≫ hac.some⟩, ⟨ψ ≫ hbc.some⟩⟩⟩
+  obtain ⟨U₀, ⟨e⟩⟩ := FiniteOpenCover.exists_iso U hU
+  let j₀ : J := ⟨U₀, fun i ↦ by rw [FiniteOpenCover.opens_eq_of_iso e i]; exact hLU _⟩
+  let E : J → FormalCoproduct.{u} (Opens X) := fun W ↦ W.1.toFormalCoproduct
+  have hE : ∀ ⦃i j : J⦄, i ≤ j → Nonempty (E j ⟶ E i) := fun _ _ h ↦ h
+  have h₁ (W : J) : ∃ V : PointOpenCover X, Nonempty (V.toFormalCoproduct ⟶ E W) :=
+    PointOpenCover.exists_refinement W.1.opens W.1.isOpenCover
+  have h₂ (V : PointOpenCover X) : ∃ W : J, Nonempty (E W ⟶ V.toFormalCoproduct) :=
+    hJ V.opens V.isOpenCover
+  have : IsIso ((TauCeti.CategoryTheory.cechCohomologyι E hE n j₀).app P) :=
+    TauCeti.CategoryTheory.isIso_cechCohomologyι_app A E hE n P j₀ fun W _ φ ↦
+      hiso _ _ j₀.2 W.2 φ
+  have : IsIso (TauCeti.CategoryTheory.cechComplexHomologyMap A n e.hom) :=
+    ⟨TauCeti.CategoryTheory.cechComplexHomologyMap A n e.inv, by
+      rw [← TauCeti.CategoryTheory.cechComplexHomologyMap_comp, e.inv_hom_id,
+        TauCeti.CategoryTheory.cechComplexHomologyMap_id], by
+      rw [← TauCeti.CategoryTheory.cechComplexHomologyMap_comp, e.hom_inv_id,
+        TauCeti.CategoryTheory.cechComplexHomologyMap_id]⟩
+  let c := TauCeti.CategoryTheory.cechCohomologyIso A E hE PointOpenCover.toFormalCoproduct
+    (fun _ _ h ↦ h) n h₁ h₂
+  have hfac : TauCeti.CategoryTheory.cechComplexHomologyMap A n e.hom ≫
+      TauCeti.CategoryTheory.cechCohomologyι E hE n j₀ ≫ c.hom = toCechCohomology A n U hU := by
+    rw [TauCeti.CategoryTheory.cechCohomologyIso_hom]
+    -- the source of `cechCohomologyι E hE n j₀` is that of the structure map of `U₀` only after
+    -- unfolding the diagram, so the steps are combined as terms
+    exact (_ ≫= TauCeti.CategoryTheory.cechCohomologyι_comp_cechCohomologyComparison A E hE _ _ n
+      h₁ j₀).trans
+        (TauCeti.CategoryTheory.cechComplexHomologyMap_comp_toCechCohomology A _ _ n e.hom (h₁ j₀))
+  rw [← hfac]
+  exact IsIso.comp_isIso'
+    (inferInstance : IsIso ((TauCeti.CategoryTheory.cechComplexHomologyMap A n e.hom).app P))
+    (IsIso.comp_isIso'
+      (inferInstance : IsIso ((TauCeti.CategoryTheory.cechCohomologyι E hE n j₀).app P))
+      (inferInstance : IsIso (c.hom.app P)))
 
 variable (X) [CompactSpace X] [HasColimitsOfShape (FiniteOpenCover X) A]
 
