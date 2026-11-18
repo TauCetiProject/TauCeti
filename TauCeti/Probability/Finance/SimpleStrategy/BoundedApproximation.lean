@@ -98,6 +98,34 @@ theorem exists_simpleHolding_eLpNorm_sub_lt_of_bound
     simpa only [Set.projIcc_of_mem _ hp', Subtype.dist_eq, Real.dist_eq, NNReal.coe_one,
       one_mul, Real.norm_eq_abs, clip] using hdist
 
+/-- Bound-preserving grid approximation for a finite ambient product-space measure without
+initial-time mass. Predictability and boundedness supply square integrability internally. -/
+theorem exists_simpleHolding_eLpNorm_sub_lt_of_isStronglyPredictable_of_bound
+    (ν : Measure (ℝ≥0 × Ω)) [IsFiniteMeasure ν]
+    (hzero : ν ({0} ×ˢ (univ : Set Ω)) = 0)
+    {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
+    {K : ℝ} (hbound : ∀ᵐ p ∂ν, ‖H p.1 p.2‖ ≤ K)
+    {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ (n : ℕ) (τ : ℕ → ℝ≥0) (a : ℕ → Ω → ℝ),
+      τ 0 = 0 ∧ StrictMonoOn τ (Iic n) ∧
+      (∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) ∧
+      (∀ j < n, ∀ ω, ‖a j ω‖ ≤ K) ∧
+      eLpNorm (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2 ν < ε := by
+  have hset : MeasurableSet[ℱ.predictable] ({0} ×ˢ (univ : Set Ω)) := by
+    simpa only [NNReal.bot_eq_zero] using
+      measurableSet_predictable_singleton_bot_prod (𝓕 := ℱ) MeasurableSet.univ
+  have hb := StronglyMeasurable.ae_le_trim_of_stronglyMeasurable
+    ℱ.predictable_le_prod hH.norm stronglyMeasurable_const hbound
+  obtain ⟨n, τ, a, hτ₀, hτ, ha, hbound', herr⟩ :=
+    ℱ.exists_simpleHolding_eLpNorm_sub_lt_of_bound (ν.trim ℱ.predictable_le_prod)
+      (fun _ _ _ _ ↦ measure_ne_top _ _) ((trim_measurableSet_eq _ hset).trans hzero)
+      (MemLp.of_bound hH.aestronglyMeasurable K hb) hb hε
+  refine ⟨n, τ, a, hτ₀, hτ, ha, hbound', ?_⟩
+  have hs : StronglyMeasurable[ℱ.predictable]
+      (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) :=
+    (isStronglyPredictable_simpleHolding (ℱ := ℱ) ha).sub hH
+  rwa [eLpNorm_trim ℱ.predictable_le_prod hs] at herr
+
 /-- Finite-horizon time-product form of bound-preserving grid approximation.
 In particular a bounded predictable Brownian drift has elementary approximations with a
 common height bound, rather than a bound growing with the accuracy. -/
@@ -112,30 +140,63 @@ theorem exists_simpleHolding_eLpNorm_sub_lt_timeMeasure_of_bound
       (∀ j < n, ∀ ω, ‖a j ω‖ ≤ K) ∧
       eLpNorm (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) 2
         ((TauCeti.Probability.timeMeasure T).prod P) < ε := by
-  let ν := (TauCeti.Probability.timeMeasure T).prod P
-  have hm : AEStronglyMeasurable (Function.uncurry H) ν :=
-    (hH.mono ℱ.predictable_le_prod).aestronglyMeasurable
-  have hH₂ : MemLp (Function.uncurry H) 2 ν := (memLp_const K).mono' hm hbound
-  have hb : ∀ᵐ p ∂ℱ.predictableMeasure P T, ‖H p.1 p.2‖ ≤ K := by
-    have hs : MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω | ¬ ‖H p.1 p.2‖ ≤ K} :=
-      (measurableSet_le hH.norm.measurable measurable_const).compl
-    rw [ℱ.predictableMeasure_def, ae_iff, trim_measurableSet_eq ℱ.predictable_le_prod hs]
-    exact hbound
-  obtain ⟨n, τ, a, hτ₀, hτ, ha, hbound', herr⟩ :=
-    ℱ.exists_simpleHolding_eLpNorm_sub_lt_of_bound (ℱ.predictableMeasure P T)
-      (fun _ _ _ _ ↦ measure_ne_top _ _)
-      (ℱ.predictableMeasure_singleton_zero_prod P T MeasurableSet.univ)
-      ((ℱ.memLp_predictableMeasure_iff P hH T 2).mpr hH₂) hb hε
-  refine ⟨n, τ, a, hτ₀, hτ, ha, hbound', ?_⟩
-  have hs : StronglyMeasurable[ℱ.predictable]
-      (fun p ↦ simpleHolding τ n a p.1 p.2 - H p.1 p.2) :=
-    (isStronglyPredictable_simpleHolding (ℱ := ℱ) ha).sub hH
-  rwa [ℱ.predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hs] at herr
+  apply ℱ.exists_simpleHolding_eLpNorm_sub_lt_of_isStronglyPredictable_of_bound
+    _ _ hH hbound hε
+  simp [Measure.prod_prod]
+
+/-- A predictable square-integrable target has finite-grid L² approximations with the same
+bound on every height, for any measure finite on predictable rectangles with no mass at zero. -/
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_of_bound
+    (μ : @Measure (ℝ≥0 × Ω) ℱ.predictable)
+    (hfin : ∀ s t A, MeasurableSet[ℱ s] A → μ (Ioc s t ×ˢ A) ≠ ∞)
+    (hzero : μ ({0} ×ˢ (univ : Set Ω)) = 0)
+    {H : ℝ≥0 → Ω → ℝ} (hH₂ : MemLp (Function.uncurry H) 2 μ)
+    {K : ℝ} (hbound : ∀ᵐ p ∂μ, ‖H p.1 p.2‖ ≤ K) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ),
+      (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
+      (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
+      (∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ K) ∧
+      Tendsto (fun m ↦ eLpNorm
+        (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2 μ)
+        atTop (𝓝 0) := by
+  have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_of_bound μ hfin hzero hH₂
+    hbound (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
+  choose n τ a hτ₀ hτ ha hb herr using hex
+  refine ⟨n, τ, a, hτ₀, hτ, ha, hb, ?_⟩
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    ENNReal.tendsto_inv_nat_nhds_zero (fun _ ↦ bot_le) (fun m ↦ (herr m).le)
+
+/-- For a finite ambient measure without initial-time mass, a bounded strongly predictable
+process is an L² limit of finite-grid holdings with the same bound on every height. -/
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_of_isStronglyPredictable_of_bound
+    (ν : Measure (ℝ≥0 × Ω)) [IsFiniteMeasure ν]
+    (hzero : ν ({0} ×ˢ (univ : Set Ω)) = 0)
+    {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
+    {K : ℝ} (hbound : ∀ᵐ p ∂ν, ‖H p.1 p.2‖ ≤ K) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ),
+      (∀ m, τ m 0 = 0) ∧ (∀ m, StrictMonoOn (τ m) (Iic (n m))) ∧
+      (∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)) ∧
+      (∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ K) ∧
+      Tendsto (fun m ↦ eLpNorm
+        (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2 ν)
+        atTop (𝓝 0) := by
+  have hset : MeasurableSet[ℱ.predictable] ({0} ×ˢ (univ : Set Ω)) := by
+    simpa only [NNReal.bot_eq_zero] using
+      measurableSet_predictable_singleton_bot_prod (𝓕 := ℱ) MeasurableSet.univ
+  have hb := StronglyMeasurable.ae_le_trim_of_stronglyMeasurable
+    ℱ.predictable_le_prod hH.norm stronglyMeasurable_const hbound
+  obtain ⟨n, τ, a, hτ₀, hτ, ha, hb, hlim⟩ :=
+    ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_of_bound (ν.trim ℱ.predictable_le_prod)
+      (fun _ _ _ _ ↦ measure_ne_top _ _) ((trim_measurableSet_eq _ hset).trans hzero)
+      (MemLp.of_bound hH.aestronglyMeasurable K hb) hb
+  refine ⟨n, τ, a, hτ₀, hτ, ha, hb, hlim.congr fun m ↦ ?_⟩
+  exact eLpNorm_trim ℱ.predictable_le_prod
+    ((isStronglyPredictable_simpleHolding (ℱ := ℱ) (ha m)).sub hH)
 
 /-- A bounded predictable process has a sequence of finite-grid energy approximations on a
 fixed finite horizon with the same bound on every height of every approximant. No moment
 hypothesis on the process is needed beyond its deterministic bound. -/
-theorem exists_seq_simpleHolding_tendsto_eLpNorm_of_bound
+theorem exists_seq_simpleHolding_tendsto_eLpNorm_timeMeasure_of_bound
     (P : Measure Ω) [IsFiniteMeasure P] (T : ℝ≥0)
     {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyPredictable ℱ H)
     {K : ℝ} (hbound : ∀ᵐ p ∂(TauCeti.Probability.timeMeasure T).prod P, ‖H p.1 p.2‖ ≤ K) :
@@ -146,11 +207,8 @@ theorem exists_seq_simpleHolding_tendsto_eLpNorm_of_bound
       Tendsto (fun m ↦ eLpNorm
         (fun p ↦ simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
           ((TauCeti.Probability.timeMeasure T).prod P)) atTop (𝓝 0) := by
-  have hex (m : ℕ) := ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure_of_bound P T hH
-    hbound (ε := (m : ℝ≥0∞)⁻¹) (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top m))
-  choose n τ a hτ₀ hτ ha hb herr using hex
-  refine ⟨n, τ, a, hτ₀, hτ, ha, hb, ?_⟩
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    ENNReal.tendsto_inv_nat_nhds_zero (fun _ ↦ bot_le) (fun m ↦ (herr m).le)
+  apply ℱ.exists_seq_simpleHolding_tendsto_eLpNorm_of_isStronglyPredictable_of_bound
+    _ _ hH hbound
+  simp [Measure.prod_prod]
 
 end MeasureTheory.Filtration
