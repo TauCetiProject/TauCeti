@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Real.Cardinality
 public import Mathlib.MeasureTheory.Measure.Portmanteau
+
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Continuity sets, null-boundary thickenings and finite partitions
@@ -42,7 +45,7 @@ portmanteau API and is useful when localizing locally finite measures.
 public section
 
 open Filter Function MeasureTheory Set
-open scoped ENNReal NNReal Topology
+open scoped ContDiff ENNReal NNReal Topology
 
 namespace MeasureTheory.Measure
 
@@ -214,5 +217,36 @@ theorem exists_measure_nndist_ge_le_of_tendsto (h : Tendsto μs L (𝓝 μ)) (x 
   have hlt := lt_of_le_of_lt
     (ProbabilityMeasure.limsup_measure_closed_le_of_tendsto h (hS n)) hn
   filter_upwards [Filter.eventually_lt_of_limsup_lt hlt] with i hi using hi.le
+
+/-- Smooth compactly supported test functions determine weak convergence of probability measures
+on a finite-dimensional real normed space. -/
+theorem tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    {μs : ι → ProbabilityMeasure E} {μ : ProbabilityMeasure E}
+    (h : ∀ f : E → ℝ, ContDiff ℝ ∞ f → HasCompactSupport f →
+      Tendsto (fun i ↦ ∫ x, f x ∂(μs i : Measure E)) l (𝓝 (∫ x, f x ∂(μ : Measure E)))) :
+    Tendsto μs l (𝓝 μ) := by
+  rcases eq_or_neBot l with rfl | hl
+  · simp
+  apply tendsto_of_forall_isOpen_le_liminf'
+  intro U hU
+  rw [hU.measure_eq_iSup_isCompact (μ : Measure E)]
+  refine iSup₂_le fun K hKU ↦ iSup_le fun hK ↦ ?_
+  obtain ⟨f, hf, h01, h1, hc, hsub⟩ := hK.exists_contDiff_cutoff hU hKU
+  have htest := ENNReal.tendsto_ofReal (h f hf hc)
+  have hl : ENNReal.ofReal (∫ x, f x ∂(μ : Measure E)) =
+      l.liminf (fun i ↦ ENNReal.ofReal (∫ x, f x ∂(μs i : Measure E))) :=
+    htest.liminf_eq.symm
+  calc
+    (μ : Measure E) K ≤ ENNReal.ofReal (∫ x, f x ∂(μ : Measure E)) :=
+      (hf.continuous.integrable_of_hasCompactSupport hc).measure_le_integral
+        (ae_of_all _ fun x ↦ (h01 (mem_range_self x)).1) fun x hx ↦ by
+          have hfx : f x = 1 := interior_subset (h1 hx)
+          exact hfx.ge
+    _ = _ := hl
+    _ ≤ _ := liminf_le_liminf (Eventually.of_forall fun i ↦
+      integral_le_measure (fun x _ ↦ (h01 (mem_range_self x)).2) fun x hx ↦
+        (Function.notMem_support.mp (fun hs ↦ hx (hsub (subset_tsupport f hs)))).le)
 
 end MeasureTheory.ProbabilityMeasure

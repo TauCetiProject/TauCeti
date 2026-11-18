@@ -110,6 +110,43 @@ theorem MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le {α β γ ι : Type*}
     (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ≤ ‖D x‖ₑ) : UniformIntegrable V p μ :=
   (uniformIntegrable_const hp hp_top hD).ae_mono hV hle
 
+/-- A uniform bound in a strictly larger `Lᵠ` gives uniform integrability in `Lᵖ`. -/
+theorem MeasureTheory.unifIntegrable_of_eLpNorm_le {α E ι : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {ν : Measure α} {p q C : ℝ≥0∞} {u : ι → α → E}
+    (hpq : p < q) (hC : C ≠ ∞)
+    (h : ∀ i, eLpNorm (u i) q ν ≤ C) :
+    UnifIntegrable u p ν := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · refine unifIntegrable_iff.2 fun ε hε ↦ ⟨1, one_pos, fun i s _ ↦ ?_⟩
+    have hi : MemLp (u i) q ν := memLp_iff.mpr ((h i).trans_lt hC.lt_top)
+    rw [eLpNorm_exponent_zero hi.aestronglyMeasurable.restrict]
+    exact hε.le
+  have hp := pos_iff_ne_zero.mpr hp0
+  have hp' : p ≠ ∞ := (hpq.trans_le le_top).ne
+  have hpos : 0 < 1 / p.toReal - 1 / q.toReal := by
+    by_cases hq : q = ∞
+    · simp [hq, ENNReal.toReal_pos hp.ne' hp']
+    · exact sub_pos.2 (one_div_lt_one_div_of_lt (ENNReal.toReal_pos hp.ne' hp')
+        ((ENNReal.toReal_lt_toReal hp' hq).2 hpq))
+  have hlim : Tendsto (fun t : ℝ≥0∞ ↦ C * t ^ (1 / p.toReal - 1 / q.toReal)) (𝓝 0) (𝓝 0) := by
+    have ht := (ENNReal.continuous_rpow_const (y := 1 / p.toReal - 1 / q.toReal)).continuousAt
+      (x := (0 : ℝ≥0∞))
+    have hm := ENNReal.Tendsto.const_mul (a := C) ht (Or.inr hC)
+    simpa only [ENNReal.zero_rpow_of_pos hpos, mul_zero] using hm
+  refine unifIntegrable_iff.2 fun ε hε ↦ ?_
+  have hev := ENNReal.tendsto_nhds_zero.1 hlim ε hε
+  obtain ⟨δ, hδ, hδε⟩ := ENNReal.nhds_zero_basis_Iic.eventually_iff.1 hev
+  refine ⟨δ, hδ, fun i s hsmall ↦ ?_⟩
+  have hLp : MemLp (u i) q ν := memLp_iff.mpr ((h i).trans_lt hC.lt_top)
+  calc
+    eLpNorm (u i) p (ν.restrict s) ≤
+        eLpNorm (u i) q (ν.restrict s) * (ν s) ^ (1 / p.toReal - 1 / q.toReal) := by
+      rw [← Measure.restrict_apply_univ]
+      exact eLpNorm_le_eLpNorm_mul_rpow_measure_univ hpq.le hLp.aestronglyMeasurable.restrict
+    _ ≤ C * (ν s) ^ (1 / p.toReal - 1 / q.toReal) :=
+      mul_le_mul' ((eLpNorm_restrict_le _ _ _ _).trans (h i)) le_rfl
+    _ ≤ ε := hδε (x := ν s) hsmall
+
 namespace TauCeti
 
 /-- A family of almost everywhere nonnegative integrable real functions on a finite measure
