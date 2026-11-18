@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Subalgebra.Centralizer
+public import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Abelian
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Prod
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
@@ -22,11 +22,12 @@ back as the product of the images of `a` and `u` under the two factor inclusions
 
 When `Z` is a free module, for instance over a field, the center of `U(Z × S)` is then
 `Sym(Z) ⊗ Z(U(S))`. The left factor of `Sym(Z) ⊗ U(S)` is commutative, so an element is central
-exactly when it commutes with the right factor `1 ⊗ U(S)`; Mathlib's centralizer theorem
-identifies that centralizer with the range of `id ⊗ (Z(U(S)) ↪ U(S))`, and this map is injective
-because `Sym(Z)` is free, hence flat. The resulting algebra equivalence commutes with the actual
-inclusions. No finite-dimensionality or characteristic hypothesis is used: in characteristic `p`,
-the center of `U(S)` contains `p`-th power elements, and they are retained.
+exactly when it commutes with the right factor `1 ⊗ U(S)`, and
+`Subalgebra.center_tensorProduct_eq_range_of_free` identifies the center with the range of
+`id ⊗ (Z(U(S)) ↪ U(S))`. This map is injective because `Sym(Z)` is free, hence flat. The
+resulting algebra equivalence commutes with the actual inclusions. No finite-dimensionality or
+characteristic hypothesis is used: in characteristic `p`, the center of `U(S)` contains `p`-th
+power elements, and they are retained.
 
 ## Main definitions
 
@@ -43,8 +44,6 @@ the center of `U(S)` contains `p`-th power elements, and they are retained.
   is the product of the two factor inclusions.
 * `TauCeti.UniversalEnvelopingAlgebra.productEnveloping_naturality`: naturality in maps of both
   factors.
-* `Subalgebra.center_tensorProduct_eq_range_of_free`: the center of `A ⊗ B` for a commutative
-  free `A` is the range of `id ⊗ (Z(B) ↪ B)`.
 * `TauCeti.UniversalEnvelopingAlgebra.productCenterEquiv_inclusion`: the inclusion square
   `(id ⊗ val) ∘ productCenterEquiv = productEnveloping ∘ val`.
 * `TauCeti.UniversalEnvelopingAlgebra.productCenterEquiv_symm_tmul`: the inverse on a pure
@@ -64,33 +63,6 @@ the center of `U(S)` contains `p`-th power elements, and they are retained.
 public section
 
 open scoped TensorProduct
-
-namespace Subalgebra
-
-/-- If `A` is commutative and free, the center of `A ⊗ B` is `A ⊗ Z(B)`, embedded by
-`id ⊗ (Z(B) ↪ B)`. -/
-theorem center_tensorProduct_eq_range_of_free (R A B : Type*) [CommSemiring R] [CommSemiring A]
-    [Algebra R A] [Semiring B] [Algebra R B] [Module.Free R A] :
-    Subalgebra.center R (A ⊗[R] B) =
-      (Algebra.TensorProduct.map (AlgHom.id R A) (Subalgebra.center R B).val).range := by
-  apply le_antisymm
-  · rw [← centralizer_range_includeRight_eq_center_tensorProduct, ← centralizer_univ]
-    exact centralizer_le R _ _ (Set.subset_univ _)
-  · rintro _ ⟨y, rfl⟩
-    rw [mem_center_iff]
-    intro w
-    induction w using TensorProduct.inductionOn with
-    | add w w' hw hw' => rw [add_mul, mul_add, hw, hw']
-    | tmul a b =>
-      induction y using TensorProduct.inductionOn with
-      | add y y' hy hy' => rw [map_add, mul_add, add_mul, hy, hy']
-      | tmul a' c =>
-        have hc : b * (c : B) = c * b := mem_center_iff.mp c.2 b
-        rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Algebra.TensorProduct.map_tmul,
-          Algebra.TensorProduct.tmul_mul_tmul,
-          Algebra.TensorProduct.tmul_mul_tmul, AlgHom.id_apply, Subalgebra.coe_val, mul_comm a, hc]
-
-end Subalgebra
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -132,6 +104,17 @@ theorem productEnveloping_ι (x : Z × S) :
     Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul]
   exact congrArg₂ (· + ·)
     (congrArg (· ⊗ₜ[R] (1 : US)) (symmetricAlgebraEquiv_symm_ι R Z x.1)) (by simp)
+
+/-- The `simp`-normal form of `productEnveloping_ι`, stated for the canonical generators as `simp`
+writes them: `ι R x` unfolds to `mkAlgHom R L (TensorAlgebra.ι R x)`. -/
+@[simp]
+theorem productEnveloping_ι' (x : Z × S) :
+    productEnveloping R Z S
+        (_root_.UniversalEnvelopingAlgebra.mkAlgHom R (Z × S) (TensorAlgebra.ι R x)) =
+      SymmetricAlgebra.ι R Z x.1 ⊗ₜ[R] (1 : US) +
+        (1 : SymmetricAlgebra R Z) ⊗ₜ[R]
+          _root_.UniversalEnvelopingAlgebra.mkAlgHom R S (TensorAlgebra.ι R x.2) := by
+  simpa only [_root_.UniversalEnvelopingAlgebra.ι_apply] using productEnveloping_ι R Z S x
 
 /-- On the abelian factor inclusion, `productEnveloping` is the inverse abelian comparison
 tensored with one. -/
@@ -223,6 +206,7 @@ noncomputable def productCenterEquiv :
 
 /-- The inclusion square of `productCenterEquiv`: followed by `id ⊗ val`, it is
 `productEnveloping` on the underlying central element. -/
+@[simp]
 theorem productCenterEquiv_inclusion (z : Subalgebra.center K UP) :
     Algebra.TensorProduct.map (AlgHom.id K (SymmetricAlgebra K Z)) (ZS).val
         (productCenterEquiv K Z S z) =
@@ -236,6 +220,7 @@ theorem productCenterEquiv_inclusion (z : Subalgebra.center K UP) :
 
 /-- The inverse of `productCenterEquiv` on a pure tensor `a ⊗ c` is the product of the images of
 `a` and of the central element `c` under the two factor inclusions. -/
+@[simp]
 theorem productCenterEquiv_symm_tmul (a : SymmetricAlgebra K Z) (c : ZS) :
     ((productCenterEquiv K Z S).symm (a ⊗ₜ[K] c) : UP) =
       map K (LieHom.inl K Z S) (symmetricAlgebraEquiv K Z a) *
