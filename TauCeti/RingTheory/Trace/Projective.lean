@@ -44,6 +44,8 @@ the primes of `R`, where the criterion is the classical one for finite algebras 
   `Tr_{A ⊗ S/A}(a ⊗ s) = a · Tr_{S/R}(s)`.
 * `Algebra.algebraMap_projectiveTrace_one`: `Tr_{S/R}(1)` is the rank of `S` at every prime.
 * `Algebra.projectiveTrace_prod_apply`: the trace is additive on products of algebras.
+* `LinearMap.projectiveTrace_restrictScalars`, `Algebra.projectiveTrace_trans`: transitivity of
+  the trace in towers, `tr_{M/R} = Tr_{B/R} ∘ tr_{M/B}` and `Tr_{T/R} = Tr_{S/R} ∘ Tr_{T/S}`.
 * `Algebra.etale_iff_projectiveTraceForm_bijective`: a finite projective algebra is étale iff its
   trace pairing is perfect.
 
@@ -218,5 +220,68 @@ theorem etale_iff_projectiveTraceForm_bijective :
     exact Etale.of_formallyUnramified_of_flat
 
 end CommRing
+
+end Algebra
+
+/-! ### Transitivity in towers -/
+
+namespace LinearMap
+
+variable {R B M : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B] [Module.Finite R B]
+  [Module.Projective R B] [AddCommMonoid M] [Module R M] [Module B M] [IsScalarTower R B M]
+  [Module.Finite B M] [Module.Projective B M] [Module.Finite R M] [Module.Projective R M]
+
+/-- **Transitivity of the trace for modules.** For a finite projective `B`-module `M` over a finite
+projective `R`-algebra `B`, the trace over `R` of a `B`-linear endomorphism `φ` of `M` is
+`Tr_{B/R}(tr_{M/B} φ)`. This is the finite projective counterpart of the free case
+`LinearMap.trace_restrictScalars`; the `R`-module `M` is finite projective by
+`Module.Finite.trans` and `Module.Projective.trans`. -/
+@[simp]
+theorem projectiveTrace_restrictScalars (φ : M →ₗ[B] M) :
+    projectiveTrace R M (φ.restrictScalars R) =
+      Algebra.projectiveTrace R B (projectiveTrace B M φ) := by
+  induction φ using induction_on_smulRight with
+  | smulRight ψ m =>
+    -- `x ↦ ψ x • m` factors over `R` through `B`, and the composite the other way round is
+    -- multiplication by `ψ m` on `B`.
+    have hfac : (ψ.smulRight m).restrictScalars R =
+        (toSpanSingleton B M m).restrictScalars R ∘ₗ ψ.restrictScalars R := by
+      ext x
+      simp
+    have hmul : ψ.restrictScalars R ∘ₗ (toSpanSingleton B M m).restrictScalars R =
+        Algebra.lmul R B (ψ m) := by
+      ext b
+      simp [mul_comm]
+    rw [hfac, projectiveTrace_cyclic, hmul, projectiveTrace_smulRight,
+      Algebra.projectiveTrace_apply]
+  | add f g hf hg => simp only [restrictScalars_add, map_add, hf, hg]
+
+end LinearMap
+
+namespace Algebra
+
+variable {R S T : Type*} [CommSemiring R] [CommSemiring S] [CommSemiring T] [Algebra R S]
+  [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Module.Finite R S] [Module.Projective R S]
+  [Module.Finite S T] [Module.Projective S T] [Module.Finite R T] [Module.Projective R T]
+
+/-- **Transitivity of the trace in towers.** For finite projective algebras `T / S / R`,
+`Tr_{T/R}(t) = Tr_{S/R}(Tr_{T/S}(t))`. This is the finite projective counterpart of
+`Algebra.trace_trace`; the `R`-module `T` is finite projective by `Module.Finite.trans` and
+`Module.Projective.trans`. -/
+@[simp]
+theorem projectiveTrace_projectiveTrace (t : T) :
+    projectiveTrace R S (projectiveTrace S T t) = projectiveTrace R T t := by
+  have : (lmul S T t).restrictScalars R = lmul R T t := by
+    ext
+    simp
+  rw [projectiveTrace_apply (R := S), ← LinearMap.projectiveTrace_restrictScalars, this,
+    projectiveTrace_apply]
+
+/-- **Transitivity of the trace in towers**, as an equality of linear maps:
+`Tr_{T/R} = Tr_{S/R} ∘ Tr_{T/S}` for finite projective algebras `T / S / R`. -/
+@[simp]
+theorem projectiveTrace_trans :
+    projectiveTrace R S ∘ₗ (projectiveTrace S T).restrictScalars R = projectiveTrace R T :=
+  LinearMap.ext projectiveTrace_projectiveTrace
 
 end Algebra
