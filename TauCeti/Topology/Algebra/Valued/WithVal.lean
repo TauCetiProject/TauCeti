@@ -31,6 +31,8 @@ The uniform-continuity and completion-transport arguments are extracted and gene
 
 ## Main results
 
+* `WithVal.uniformContinuousConstSMul`: scalar multiplication by an algebra base is uniformly
+  continuous on `WithVal v`.
 * `WithVal.uniformContinuous_congr`: the map
   `WithVal.congr v w σ : WithVal v ≃+* WithVal w` is uniformly continuous.
 * `Valuation.Completion.continuous_valued`: if every value of `v` is attained, the completed
@@ -51,6 +53,19 @@ namespace WithVal
 
 variable {K K' : Type*} [Ring K] [Ring K'] {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
   {v : Valuation K Γ₀} {w : Valuation K' Γ₀}
+
+/-- Scalar multiplication by any commutative semiring acting as an algebra on `K` is uniformly
+continuous on `WithVal v`, since `c • x = algebraMap S (WithVal v) c * x`.
+
+This is intentionally a `theorem` rather than a global `instance`: registering it globally would
+activate Mathlib's priority-1000 `UniformSpace.Completion.instModule` and
+`UniformSpace.Completion.algebra` for every `[Algebra S K]`, creating non-defeq `Module`/`Algebra`
+diamonds with completion algebra instances defined via explicit ring homomorphisms (such as
+`TauCeti.Place.instAlgebraCompletion`). -/
+theorem uniformContinuousConstSMul {S : Type*} [CommSemiring S] [Algebra S K]
+    (v : Valuation K Γ₀) : UniformContinuousConstSMul S (WithVal v) := ⟨fun _ ↦ by
+  simp_rw [WithVal.smul_right_def, Algebra.smul_def]
+  exact (Ring.uniformContinuousConstSMul (WithVal v)).uniformContinuous_const_smul _⟩
 
 /-- **A valuation-preserving isomorphism is uniformly continuous.** If `σ : K ≃+* K'` carries the
 valuation `v` to `w`, then `σ` is uniformly continuous as a map `WithVal v → WithVal w`. -/

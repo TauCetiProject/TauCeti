@@ -19,9 +19,14 @@ The induced algebra structure makes the completed extension available for local 
 The algebra structure is explicit, since choosing different places above `P` gives different
 completed extensions. Install `completionExtensionAlgebra` locally. When the constant fields
 agree, `isScalarTower_completionExtensionAlgebra` also identifies the original constant action
-through the completed extension. The completed extension restricts to a local homomorphism
-`completionIntegersExtension` of completed valuation rings, whose algebra
-`completionIntegersExtensionAlgebra` is likewise installed locally.
+through the completed extension; in general, `completionAlgebraBase` equips `P'.Completion` with
+the composite `k`-algebra structure factoring through both `k'` and `P.Completion`, and
+`completionExtensionRestrictScalarsEquiv` identifies `(P'.restrictScalars k).Completion` with
+`P'.Completion` as a `P.Completion`-algebra. The completed extension preserves the ramification
+index (`ramificationIdx_completionPlace`), restricts to an injective local homomorphism
+`completionIntegersExtension` of completed valuation rings (whose algebra
+`completionIntegersExtensionAlgebra` is likewise installed locally), and receives the local model
+`integralClosure P.integers F'` via `integralClosureToCompletionIntegers`.
 No finiteness, separability, or residue-field assumptions are needed.
 
 The construction uses Mathlib's `UniformSpace.Completion.mapRingHom`. The valuation-extension
@@ -160,6 +165,59 @@ theorem completionExtension_algebraMap (c : k) :
     completionExtension_completionEmbedding, ← IsScalarTower.algebraMap_apply k F F',
     IsScalarTower.algebraMap_apply k k' F', P'.completionEmbedding.commutes]
 
+/-- Completion preserves the ramification index over the place below, with no finiteness or
+separability assumptions. -/
+@[simp]
+theorem ramificationIdx_completionPlace :
+    letI := P.completionExtensionAlgebra P' hP
+    ramificationIdx P.Completion P'.completionPlace = ramificationIdx F P' := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [ramificationIdx_def, Valuation.ordIndex_eq_mul_of_forall_ord_eq _ P.completionPlace.valuation
+      (e := ramificationIdx F P') fun x ↦ ?_,
+    Valuation.ordIndex_eq_one_of_surjective _ P.completionPlace.valuation_surjective, mul_one]
+  simpa only [Valuation.ord_comap, algebraMap_completionExtensionAlgebra, ← ord_valuation] using
+    P.ord_completionExtension P' hP x
+
+/-- Through the constants `k'`, the completion at `P'` is a `k`-algebra. Like
+`TauCeti.Place.integersAlgebraBase`, this is not a global instance, since for `k = k'` it would
+compete with `TauCeti.Place.instAlgebraCompletion`. Install it locally together with
+`TauCeti.Place.isScalarTower_completionAlgebraBase` and
+`TauCeti.Place.isScalarTower_completionAlgebraBase_completionExtension`. -/
+@[instance_reducible]
+noncomputable def completionAlgebraBase : Algebra k P'.Completion :=
+  ((algebraMap k' P'.Completion).comp (algebraMap k k')).toAlgebra
+
+omit [Algebra k F'] [IsScalarTower k k' F'] in
+/-- On constants `c : k`, `completionAlgebraBase` acts through `k'`. -/
+theorem algebraMap_completionAlgebraBase (c : k) :
+    letI := completionAlgebraBase (k := k) P'
+    algebraMap k P'.Completion c = algebraMap k' P'.Completion (algebraMap k k' c) :=
+  (rfl)
+
+omit [Algebra k F'] [IsScalarTower k k' F'] in
+/-- The `k`-algebra `completionAlgebraBase` on `P'.Completion` factors through `k'`. As in
+`TauCeti.Place.isScalarTower_completionExtensionAlgebra`, the scalar actions are those of the
+algebra structures rather than the inherited uniform-completion actions. -/
+theorem isScalarTower_completionAlgebraBase :
+    letI := completionAlgebraBase (k := k) P'
+    @IsScalarTower k k' P'.Completion _
+      (P'.instAlgebraCompletion).toSMul (completionAlgebraBase (k := k) P').toSMul :=
+  letI := completionAlgebraBase (k := k) P'
+  IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+
+/-- The `k`-algebra `completionAlgebraBase` on `P'.Completion` factors through `P.Completion`. -/
+theorem isScalarTower_completionAlgebraBase_completionExtension :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := completionAlgebraBase (k := k) P'
+    @IsScalarTower k P.Completion P'.Completion
+      (P.instAlgebraCompletion).toSMul (P.completionExtensionAlgebra P' hP).toSMul
+      (completionAlgebraBase (k := k) P').toSMul := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := completionAlgebraBase (k := k) P'
+  refine IsScalarTower.of_algebraMap_eq fun c ↦ ?_
+  rw [P.algebraMap_completionExtensionAlgebra P' hP, P.completionExtension_algebraMap P' hP]
+  rfl
+
 section Integers
 
 /-- The completed extension carries the completed valuation ring of `P` into that of `P'`. -/
@@ -179,6 +237,12 @@ noncomputable def completionIntegersExtension :
 theorem coe_completionIntegersExtension (x : P.completionPlace.integers) :
     (P.completionIntegersExtension P' hP x : P'.Completion) = P.completionExtension P' hP x :=
   (rfl)
+
+/-- The map of completed valuation rings is injective, being a restriction of an embedding of
+fields. -/
+theorem completionIntegersExtension_injective :
+    Function.Injective (P.completionIntegersExtension P' hP) := fun _ _ h ↦
+  Subtype.ext <| (P.completionExtension P' hP).injective (congrArg Subtype.val h)
 
 /-- Completing the valuation-ring embedding agrees with first completing both rings
 and then applying the completed extension. -/
@@ -225,12 +289,74 @@ instance isLocalHom_algebraMap_completionIntegersExtensionAlgebra :
   rw [algebraMap_completionIntegersExtensionAlgebra]
   infer_instance
 
+/-- The completed valuation ring of `P'` is torsion-free over that of `P`. -/
+instance isTorsionFree_completionIntegersExtensionAlgebra :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  rw [Module.isTorsionFree_iff_algebraMap_injective, algebraMap_completionIntegersExtensionAlgebra]
+  exact P.completionIntegersExtension_injective P' hP
+
 /-- The chosen algebra map of completed valuation rings is the completed extension. -/
 theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace.integers) :
     letI := P.completionIntegersExtensionAlgebra P' hP
     (algebraMap P.completionPlace.integers P'.completionPlace.integers x : P'.Completion) =
       P.completionExtension P' hP x :=
   (rfl)
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension in
+/-- The completed valuation rings and the upper completed field form a scalar tower. -/
+theorem isScalarTower_completionIntegersExtensionAlgebra :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine .of_algebraMap_eq fun x ↦ ?_
+  rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
+    P.algebraMap_completionExtensionAlgebra P' hP]
+  exact (P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP x).symm
+
+section IntegralClosure
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- The canonical embedding of `integralClosure P.integers F'` into the completed valuation ring
+at a place `P'` lying over `P`. -/
+noncomputable def integralClosureToCompletionIntegers :
+    integralClosure P.integers F' →+* P'.completionPlace.integers :=
+  P'.completionIntegersEmbedding.toRingHom.comp
+    ((algebraMap (integralClosure P.integers F') F').codRestrict P'.integers
+      fun x ↦ by subst hP; exact algebraMap_mem_integers_of_mem_integralClosure k F P' x)
+
+@[simp]
+theorem coe_integralClosureToCompletionIntegers (x : integralClosure P.integers F') :
+    (P.integralClosureToCompletionIntegers P' hP x : P'.Completion) =
+      P'.completionEmbedding (x : F') :=
+  (P'.completionIntegersEmbedding_apply _).trans
+    (congrArg P'.completionEmbedding (RingHom.codRestrict_apply _ _ _ x))
+
+/-- The embedding `integralClosure P.integers F' →+* P'.completionPlace.integers` is injective. -/
+theorem integralClosureToCompletionIntegers_injective :
+    Function.Injective (P.integralClosureToCompletionIntegers P' hP) := fun _ _ h ↦
+  Subtype.ext <| P'.completionEmbedding.toRingHom.injective <| by
+    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+      coe_integralClosureToCompletionIntegers] using congrArg Subtype.val h
+
+/-- On `P.integers`, `integralClosureToCompletionIntegers` agrees with completing at `P` and
+applying `completionIntegersExtension`. -/
+@[simp]
+theorem integralClosureToCompletionIntegers_algebraMap (r : P.integers) :
+    P.integralClosureToCompletionIntegers P' hP
+        (algebraMap P.integers (integralClosure P.integers F') r) =
+      P.completionIntegersExtension P' hP (P.completionIntegersEmbedding r) := by
+  apply Subtype.ext
+  rw [coe_integralClosureToCompletionIntegers, coe_completionIntegersExtension,
+    completionIntegersEmbedding_apply, completionExtension_completionEmbedding,
+    Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply P.integers F F',
+    ValuationSubring.algebraMap_apply]
+
+end IntegralClosure
 
 end Integers
 
@@ -291,5 +417,65 @@ theorem completionExtension_self :
   simp
 
 end Constants
+
+section RestrictScalars
+
+variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
+  [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
+  [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
+  (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
+
+/-- `completionRestrictScalarsRingEquiv` intertwines `completionExtension` from `P.Completion`. -/
+@[simp]
+theorem completionRestrictScalarsRingEquiv_completionExtension (z : P.Completion) :
+    P'.completionRestrictScalarsRingEquiv k
+        (P.completionExtension (P'.restrictScalars k)
+          ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP) z) =
+      P.completionExtension P' hP z := by
+  have hhom : (P'.completionRestrictScalarsRingEquiv k).toRingHom.comp
+        (P.completionExtension (P'.restrictScalars k)
+          ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)) =
+      P.completionExtension P' hP :=
+    P.eq_completionExtension_of_continuous P' hP
+      ((P'.continuous_completionRestrictScalarsRingEquiv (k₀ := k)).comp
+        (P.continuous_completionExtension _ _))
+      fun x ↦ by simp
+  exact DFunLike.congr_fun hhom z
+
+/-- Restricting the constant field of the upper place `P'` to `k` induces a canonical
+`P.Completion`-algebra isomorphism `(P'.restrictScalars k).Completion ≃ₐ[P.Completion]
+P'.Completion`. -/
+noncomputable def completionExtensionRestrictScalarsEquiv :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionExtensionAlgebra (P'.restrictScalars k)
+      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    (P'.restrictScalars k).Completion ≃ₐ[P.Completion] P'.Completion :=
+  letI := P.completionExtensionAlgebra P' hP
+  letI := P.completionExtensionAlgebra (P'.restrictScalars k)
+    ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+  AlgEquiv.ofRingEquiv (f := P'.completionRestrictScalarsRingEquiv k) fun z ↦ by
+    rw [P.algebraMap_completionExtensionAlgebra, P.algebraMap_completionExtensionAlgebra]
+    exact P.completionRestrictScalarsRingEquiv_completionExtension P' hP z
+
+@[simp]
+theorem completionExtensionRestrictScalarsEquiv_apply
+    (z : (P'.restrictScalars k).Completion) :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionExtensionAlgebra (P'.restrictScalars k)
+      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    P.completionExtensionRestrictScalarsEquiv P' hP z =
+      P'.completionRestrictScalarsRingEquiv k z :=
+  (rfl)
+
+@[simp]
+theorem completionExtensionRestrictScalarsEquiv_symm_apply (z : P'.Completion) :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionExtensionAlgebra (P'.restrictScalars k)
+      ((P'.restrict_restrictScalars (k := k) (F := F)).trans hP)
+    (P.completionExtensionRestrictScalarsEquiv P' hP).symm z =
+      (P'.completionRestrictScalarsRingEquiv k).symm z :=
+  (rfl)
+
+end RestrictScalars
 
 end TauCeti.Place
