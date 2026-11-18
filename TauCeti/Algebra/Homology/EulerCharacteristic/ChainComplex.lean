@@ -20,7 +20,8 @@ differential, applied to the boundaries `Bₙ = im (Kₙ₊₁ ⟶ Kₙ)`, gives
 dim Kₙ = dim Hₙ(K) + dim Bₙ + dim Bₙ₋₁,
 ```
 
-(`ChainComplex.finrank_X_zero`, `ChainComplex.finrank_X_succ`), and the alternating sum of these
+(`ChainComplex.finrank_X_zero`, `ChainComplex.finrank_X_succ`, and `ChainComplex.finrank_X` in
+every degree at once), and the alternating sum of these
 identities telescopes: up to degree `n` the alternating sums of the dimensions of the terms and
 of the homology differ by `(-1)ⁿ dim Bₙ`
 (`ChainComplex.sum_range_finrank_X_eq_sum_range_finrank_homology_add`).  If the differential
@@ -93,6 +94,22 @@ theorem finrank_X_succ (n : ℕ) [Module.Finite k (K.X (n + 1))] :
   rw [← e.toLinearEquiv.finrank_eq] at h
   rw [← LinearMap.finrank_range_add_finrank_ker (K.d (n + 1) n).hom, ← h]
   ring
+
+/-- In every degree `n`, rank--nullity gives
+`dim Kₙ = dim Hₙ(K) + dim im (Kₙ₊₁ ⟶ Kₙ) + dim im (Kₙ ⟶ Kₙ₋₁)`, where in degree `0` the last
+differential is `K.d 0 0 = 0`. This is `ChainComplex.finrank_X_zero` and
+`ChainComplex.finrank_X_succ` in one formula. -/
+theorem finrank_X (n : ℕ) [Module.Finite k (K.X n)] :
+    finrank k (K.X n) = finrank k (K.homology n) +
+      finrank k (LinearMap.range (K.d (n + 1) n).hom) +
+        finrank k (LinearMap.range (K.d n (n - 1)).hom) := by
+  cases n with
+  | zero =>
+    rw [K.finrank_X_zero, Nat.zero_sub, K.shape 0 0 (by simp), ModuleCat.hom_zero,
+      LinearMap.range_zero, finrank_bot, add_zero]
+  | succ n =>
+    rw [Nat.add_sub_cancel]
+    exact K.finrank_X_succ n
 
 /-- If the terms of `K` through degree `n` are finite-dimensional, the alternating sums up to
 degree `n` of the dimensions of the terms and of the homology of `K` differ by the dimension of

@@ -48,6 +48,8 @@ the half-wave phases are with `k = 1`, the propagator intertwines the normalized
 * `TauCeti.phasePropagator_zero`, `TauCeti.phasePropagator_add`: the group law.
 * `TauCeti.norm_phasePropagator_apply`, `TauCeti.inner_phasePropagator_apply`,
   `TauCeti.adjoint_phasePropagator`: unitarity.
+* `TauCeti.inner_phasePropagator_sub_apply`: the Duhamel pairing `⟪exp(i(t - s)ω(D)) f, g⟫` as a
+  pairing of data pulled back to time zero.
 * `TauCeti.continuous_phasePropagator_apply`: strong continuity.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 * `TauCeti.phasePropagator_dilateLp`: for a phase positively homogeneous of degree `k`, the
@@ -240,6 +242,16 @@ theorem inner_phasePropagator_apply (t : ℝ) (f g : Lp F 2 (volume : Measure E)
   rw [← ContinuousLinearMap.adjoint_inner_right, adjoint_phasePropagator,
     phasePropagator_neg_apply_phasePropagator_apply]
 
+/-- The pairing `⟪exp(i(t - s)ω(D)) f, g⟫` of a Duhamel integrand is the pairing
+`⟪exp(isω(D))* f, exp(itω(D))* g⟫` of the data pulled back to time zero. -/
+theorem inner_phasePropagator_sub_apply (s t : ℝ) (f g : Lp F 2 (volume : Measure E)) :
+    ⟪phasePropagator F ω (t - s) f, g⟫ =
+      ⟪ContinuousLinearMap.adjoint (phasePropagator F ω s) f,
+        ContinuousLinearMap.adjoint (phasePropagator F ω t) g⟫ := by
+  rw [adjoint_phasePropagator, adjoint_phasePropagator,
+    ← inner_phasePropagator_apply ω (-t) (phasePropagator F ω (t - s) f) g,
+    ← phasePropagator_add_apply, neg_add_eq_sub, sub_sub_cancel_left]
+
 /-- `exp(itω(D))` commutes with every `L²` Fourier multiplier. -/
 theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
     phasePropagator F ω t ∘L Lp.fourierMultiplierCLM F m =
@@ -251,6 +263,19 @@ theorem phasePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (vol
   filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_phaseSymbol ω t).toLp _) m,
     Lp.coeFn_lpSMul (r := ∞) m ((memLp_phaseSymbol ω t).toLp _)] with ξ h₁ h₂
   rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', smul_eq_mul, smul_eq_mul, mul_comm]
+
+/-- `exp(itω(D)) T_m` is the multiplier with any symbol `σ` equal almost everywhere to
+`exp(i t ω(ξ)) m(ξ)`. -/
+theorem phasePropagator_fourierMultiplierCLM_apply_of_ae_eq (t : ℝ)
+    {m σ : Lp ℂ ∞ (volume : Measure E)} (h : σ =ᵐ[volume] fun ξ ↦ phaseSymbol ω t ξ * m ξ)
+    (f : Lp F 2 (volume : Measure E)) :
+    phasePropagator F ω t (Lp.fourierMultiplierCLM F m f) = Lp.fourierMultiplierCLM F σ f := by
+  rw [phasePropagator_def, Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
+  congr 2
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_lpSMul (r := ∞) ((memLp_phaseSymbol ω t).toLp _) m,
+    (memLp_phaseSymbol ω t).coeFn_toLp, h] with ξ h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply', h₂, h₃, smul_eq_mul]
 
 /-- **Strong continuity**: `t ↦ exp(itω(D)) f` is continuous for every `f ∈ L²`. -/
 theorem continuous_phasePropagator_apply (f : Lp F 2 (volume : Measure E)) :

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Defs
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
@@ -79,6 +80,8 @@ how `G₂^W` is compared with series built from Mathlib's `EisensteinSeries.G2`.
   `TauCeti.EisensteinSeries.weightedG2_single_slash` for a single residue.
 * `TauCeti.EisensteinSeries.weightedG2_comp_neg`: the series is unchanged when the residues are
   negated.
+* `TauCeti.EisensteinSeries.mdifferentiable_weierstrassP_periodPair_div`: the division values
+  `z ↦ ℘((b₀ z + b₁) / N; ℤ z + ℤ)` are holomorphic on `ℍ`.
 * `TauCeti.EisensteinSeries.weightedG2_mdifferentiable`: holomorphy on `ℍ`.
 * `TauCeti.EisensteinSeries.isBoundedAtImInfty_weightedG2_slash`: every `SL(2, ℤ)`-translate is
   bounded at `i∞`.
@@ -365,7 +368,7 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
     continuous_coe.continuousOn
   set r₀ := r ⟨⟨A, B⟩, hB⟩
   have hr₀ : 0 < r₀ := r_pos _
-  set R : ℝ := |(b 0 : ℝ)| * |M| + |(b 1 : ℝ)| + 1
+  set R : ℝ := ‖(b 0 : ℂ)‖ * |M| + ‖(b 1 : ℂ)‖ + 1
   have hR : 0 < R := by positivity
   have hlim : (fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z)) =
       fun z ↦ ∑' y, ((N : ℂ) ^ 2 * eisSummand 2 (b - N • y) z - eisSummand 2 y z) :=
@@ -389,24 +392,23 @@ private lemma tendstoLocallyUniformly_weierstrassP_divisionPoint (b : Fin 2 → 
   have hl : r₀ * ‖y‖ ≤ ‖(y 0 : ℂ) * z + y 1‖ :=
     (mul_le_mul_of_nonneg_right (r_lower_bound_on_verticalStrip z hB (HABK hz))
       (norm_nonneg _)).trans (r_mul_max_le z hy0)
-  have hx : ‖divisionPoint N b z‖ < R := by
-    have hN : (1 : ℝ) ≤ N := by exact_mod_cast NeZero.one_le
-    have hz' : ‖(z : ℂ)‖ ≤ |M| := (hM z hz).trans (le_abs_self M)
-    rw [divisionPoint, norm_div, Complex.norm_natCast]
-    refine (div_le_self (norm_nonneg _) hN).trans_lt ?_
-    refine (norm_add_le _ _).trans_lt ?_
-    rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
-    have := mul_le_mul_of_nonneg_left hz' (abs_nonneg (b 0 : ℝ))
-    linarith
+  have hx : ‖divisionPoint N b z‖ < R :=
+    (Complex.norm_mul_add_div_natCast_le N (b 0) (b 1) ((hM z hz).trans (le_abs_self M))).trans_lt
+      (lt_add_one _)
   refine (weierstrassP_bound R hR _ hx _ (hy'.trans hl)).trans ?_
   rw [mul_assoc (10 * R), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
   exact mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_nonpos (by positivity) hl (by norm_num)) (by positivity)
 
-/-- Each division value of `℘` is holomorphic on `ℍ`. -/
-private lemma mdifferentiable_weierstrassP_divisionPoint (b : Fin 2 → ℤ) :
-    MDiff (fun z : ℍ ↦ ℘[z.periodPair] (divisionPoint N b z)) :=
-  TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
+omit [NeZero N] in
+/-- **The division values of `℘` are holomorphic**: for `b ∈ ℤ²`, the function
+`z ↦ ℘((b₀ z + b₁) / N; ℤ z + ℤ)` is holomorphic on `ℍ`. -/
+theorem mdifferentiable_weierstrassP_periodPair_div (b : Fin 2 → ℤ) :
+    MDiff fun z : ℍ ↦ ℘[z.periodPair] (((b 0 : ℂ) * z + b 1) / N) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · simpa [PeriodPair.weierstrassP_zero] using mdifferentiable_const
+  have : NeZero N := ⟨hN⟩
+  exact TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
     (tendstoLocallyUniformly_weierstrassP_divisionPoint b) (Eventually.of_forall fun _ ↦
       UpperHalfPlane.mdifferentiable_iff.mpr (DifferentiableOn.fun_sum fun y _ ↦
         ((eisSummand_extension_differentiableOn 2 _).const_mul _).sub
@@ -414,8 +416,8 @@ private lemma mdifferentiable_weierstrassP_divisionPoint (b : Fin 2 → ℤ) :
 
 /-- **The weighted weight-two series is holomorphic on `ℍ`.** -/
 theorem weightedG2_mdifferentiable (W : (Fin 2 → ZMod N) → ℂ) : MDiff (weightedG2 W) := by
-  have h (a : Fin 2 → ZMod N) := mdifferentiable_weierstrassP_divisionPoint (N := N) (lift a)
-  simp only [divisionPoint_lift] at h
+  have h (a : Fin 2 → ZMod N) := mdifferentiable_weierstrassP_periodPair_div (N := N) (lift a)
+  simp only [lift_eq, Int.cast_natCast] at h
   have hsum : MDiff fun z : ℍ ↦ ∑ a, W a *
       ℘[z.periodPair] (((a 0).val * (z : ℂ) + (a 1).val) / N) := by
     convert MDifferentiable.sum (t := Finset.univ)
