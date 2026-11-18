@@ -63,6 +63,8 @@ injectivity.
   and, for trivial `G`, `G[X] ≅ F(X)`, under which evaluation is `FreeGroup.lift`.
 * `TauCeti.GroupAlgGeom.GX.not_commute_inl_inr_of`: a nontrivial coefficient does not commute
   with a variable, so the inclusions of `G` and `F(X)` do not commute in `G[X]`.
+* `TauCeti.GroupAlgGeom.GX.not_commute_inr_of_inr_of`: two distinct variables do not commute.
+* `TauCeti.GroupAlgGeom.GX.map_map`: renamings of the variables compose.
 * `TauCeti.GroupAlgGeom.GHom.mem_range_of_pow_mem_range`: if a group with unique roots admits a
   `G`-homomorphism back to `G`, the image of `G` in it is closed under roots.
 * `TauCeti.GroupAlgGeom.mapsTo_wordMap_id`, `TauCeti.GroupAlgGeom.mapsTo_wordMap_comp`: the tuple
@@ -587,6 +589,16 @@ theorem eval_map {Y : Type*} (f : K →* G) (e : Y → X) (w : GX K Y) :
     eval ι v (Monoid.Coprod.map f (FreeGroup.map e) w) = eval (ι.comp f) (v ∘ e) w :=
   DFunLike.congr_fun (eval_comp_map f e) w
 
+/-- Renaming the variables along `e` and then along `e'` is renaming them along `e' ∘ e`, with the
+composite change of coefficients. -/
+theorem GX.map_map {Y Z : Type*} (f : K →* G) (f' : G →* L) (e : Y → X) (e' : X → Z)
+    (w : GX K Y) :
+    Monoid.Coprod.map f' (FreeGroup.map e') (Monoid.Coprod.map f (FreeGroup.map e) w) =
+      Monoid.Coprod.map (f'.comp f) (FreeGroup.map (e' ∘ e)) w := by
+  rw [Monoid.Coprod.map_map]
+  congr 2
+  exact FreeGroup.ext_hom _ _ fun _ => rfl
+
 /-! ### Extending a word homomorphism by further variables -/
 
 section SumExtend
@@ -801,6 +813,11 @@ theorem not_commute_inl_inr_of {a : G} (ha : a ≠ 1) (x : X) :
     eval (MulAction.toPermHom G (Option G)) fun _ => Equiv.swap none (some 1)
   have := congrArg (fun σ : Equiv.Perm (Option G) => σ none) (congrArg f h.eq)
   exact ha (by simpa [f] using this)
+
+/-- Two distinct variables do not commute in `G[X]`. -/
+theorem not_commute_inr_of_inr_of {x y : X} (hxy : x ≠ y) :
+    ¬Commute (inr (FreeGroup.of x) : GX G X) (inr (FreeGroup.of y)) := fun h =>
+  hxy <| FreeGroup.eq_of_commute_of_of <| congrArg snd h.eq
 
 end GX
 
