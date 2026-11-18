@@ -242,9 +242,11 @@ theorem IsNondegenerate.sum_trace_mul [Fintype k] [DecidableEq k] (hψ : ψ.IsNo
   · simp [hy]
   obtain ⟨x₀, hx₀⟩ := TauCeti.Algebra.exists_trace_mul_ne_zero (F := ZMod p) hy
   rw [mul_comm] at hx₀
-  exact sum_eq_zero_of_sub_one_mem_nonZeroDivisors
+  have h := sum_eq_zero_of_sub_one_mem_nonZeroDivisors
     (φ := ψ.compAddMonoidHom ((Algebra.trace (ZMod p) k).toAddMonoidHom.comp
-      (AddMonoidHom.mulRight y))) (b := x₀) (hψ.isUnit_sub_one hx₀).mem_nonZeroDivisors
+      (AddMonoidHom.mulRight y))) (b := x₀)
+    (by simpa using (hψ.isUnit_sub_one hx₀).mem_nonZeroDivisors)
+  simpa using h
 
 /-- The character `ψ ∘ Tr` of a finite field `k` of characteristic `p` is primitive when `ψ` is
 nondegenerate and `Λ` is nontrivial. -/
@@ -328,10 +330,9 @@ theorem IsNondegenerate.bijective_mulShift_compAddMonoidHom_trace [Finite k]
   ext y
   have := LinearMap.BilinForm.apply_toDual_symm_apply (hB := traceForm_nondegenerate (ZMod p) k)
     (F.toZModLinearMap p) y
-  have hF : ⇑F = f := by simp only [F, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
-  rw [Algebra.traceForm_apply, AddMonoidHom.coe_toZModLinearMap, hF] at this
-  rw [mulShift_apply, compAddMonoidHom_apply, LinearMap.toAddMonoidHom_coe, this]
-  exact hf y
+  simp only [F, Algebra.traceForm_apply, AddMonoidHom.coe_toZModLinearMap, AddMonoidHom.coe_mk,
+    ZeroHom.coe_mk] at this
+  simpa [F, mulShift_apply, this] using hf y
 
 end FiniteField
 
