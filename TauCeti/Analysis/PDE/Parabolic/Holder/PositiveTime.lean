@@ -29,9 +29,7 @@ where `‖u‖_{2+α,par;[δ,T]}` is the order-two norm of the restriction of `u
 The weight `δ^(1 + α/2)` is the parabolic scaling of the top-order Hölder seminorms. The constant
 is uniform in `u` and only the supremum of the initial values enters, as needed to pass to limits
 of smooth approximations of bounded uniformly continuous initial data at positive times
-(`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUCRestrictL`). Restriction to the slab
-`ℝⁿ × [δ, T]` commutes with the operator, the coefficients being restricted as well
-(`TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_restrictL`).
+(`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUCRestrictL`).
 
 ## The argument
 
@@ -58,8 +56,6 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   estimate with `‖u‖_∞` on the right.
 * `exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL`: the weighted estimate with the
   supremum of the initial values on the right.
-* `euclideanParabolicOperatorL_restrictL`: restriction to a smaller slab commutes with the
-  operator.
 
 ## References
 
@@ -453,26 +449,6 @@ theorem exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL (hα₀ : 
   calc _ ≤ C₁ * (P + ‖valueL u‖) := h
     _ ≤ C₁ * (P + E₀ * (P + M)) := by gcongr
     _ ≤ C₁ * (1 + E₀) * (P + M) := by nlinarith [mul_nonneg hC₁ (mul_nonneg hE₀ hM₀)]
-
-/-- **Restriction commutes with the parabolic operator.** For `t₀ ≤ t₀' < t₁' ≤ t₁`, applying the
-operator with the coefficients restricted to `ℝⁿ × [t₀', t₁']` to the restriction of `u` gives the
-restriction of `P u`. -/
-theorem euclideanParabolicOperatorL_restrictL (hα : α ≤ 1) {t₀ t₁ t₀' t₁' : ℝ} {ht : t₀ < t₁}
-    (h₀ : t₀ ≤ t₀') (h₁ : t₁' ≤ t₁) (ht' : t₀' < t₁')
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
-    euclideanParabolicOperatorL hα
-        (fun i j ↦ HolderSpace.compLipschitzL _
-          (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) (a i j))
-        (fun i ↦ HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
-          (b i))
-        (HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁)) c)
-        (restrictL h₀ h₁ ht' u) =
-      HolderSpace.compLipschitzL _ (LipschitzWith.inclusion (slab_subset_slab h₀ h₁))
-        (euclideanParabolicOperatorL hα a b c u) :=
-  HolderSpace.ext fun p ↦ by simp
 
 end Euclidean
 

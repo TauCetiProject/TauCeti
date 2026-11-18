@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Holder.UniformContinuous
 public import TauCeti.Analysis.PDE.Parabolic.Holder.PositiveTime
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
-import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Group.Submodule
 import TauCeti.Analysis.PDE.HeatKernel.UniformContinuous
 
@@ -415,12 +414,7 @@ private theorem exists_rpow_mul_norm_restrictL_euclideanInitialDataCLE_symm_le (
     hα₀ hα₁ (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
   refine ⟨C, hC, ?_⟩
   intro T hT hTT₀ a b c hl hak hbk hck d δ hδ hδT
-  -- The coefficient bound gives the upper ellipticity bound.
-  have hup : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
-      (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ↦
-    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
-      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
-  have h := hest T hT hTT₀ a b c hl hup hak hbk hck
+  have h := hest T hT hTT₀ a b c hl (toQuadraticForm'_le_of_forall_norm_le hak) hak hbk hck
     ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩).symm d) (M := ‖toBUC d.2‖)
     (fun x ↦ by
       rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
@@ -463,22 +457,7 @@ constant that blows up as `δ → 0`. -/
 private theorem exists_norm_solutionRestrict_le :
     ∃ C, ∀ d, ‖solutionRestrict hα₀ hα₁ hT a b c ha hδ hδT d‖ ≤ C * ‖dataMap d‖ := by
   obtain ⟨lam, hlam, hl⟩ := ha
-  -- A common bound `K` for the Hölder norms of all coefficients.
-  set K : ℝ≥0 := ∑ i, ∑ j, ‖a i j‖₊ + ∑ i, ‖b i‖₊ + ‖c‖₊
-  have hak : ∀ i j, ‖a i j‖ ≤ K := fun i j ↦ by
-    have h₁ := Finset.single_le_sum (f := fun j ↦ ‖a i j‖₊) (fun _ _ ↦ zero_le)
-      (Finset.mem_univ j)
-    have h₂ := Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖₊) (fun _ _ ↦ zero_le)
-      (Finset.mem_univ i)
-    rw [← coe_nnNorm, NNReal.coe_le_coe]
-    exact h₁.trans (h₂.trans (le_add_right (le_add_right le_rfl)))
-  have hbk : ∀ i, ‖b i‖ ≤ K := fun i ↦ by
-    have h := Finset.single_le_sum (f := fun i ↦ ‖b i‖₊) (fun _ _ ↦ zero_le) (Finset.mem_univ i)
-    rw [← coe_nnNorm, NNReal.coe_le_coe]
-    exact h.trans (le_add_right (le_add_left le_rfl))
-  have hck : ‖c‖ ≤ K := by
-    rw [← coe_nnNorm, NNReal.coe_le_coe]
-    exact le_add_left le_rfl
+  obtain ⟨K, hak, hbk, hck⟩ := exists_coeff_norm_le a b c
   obtain ⟨C, hC, hest⟩ := exists_rpow_mul_norm_restrictL_euclideanInitialDataCLE_symm_le
     (ι := ι) hα₀ hα₁ hlam K T
   have hδ' : 0 < δ ^ (1 + (α : ℝ) / 2) := Real.rpow_pos_of_pos hδ _
