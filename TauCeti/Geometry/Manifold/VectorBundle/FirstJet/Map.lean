@@ -93,11 +93,19 @@ representative `localRep I (F →L[𝕜] G) Φ i` in the chart at `i` and the tr
 
 variable {I F G}
 
-/-- A point of the chart domain at `i` is recovered from its chart coordinate, so it keeps every
-property it has. -/
-private theorem extChartAt_symm_extChartAt_mem {i y : M} (hy : y ∈ (chartAt H i).source)
-    {S : Set M} (h : y ∈ S) : (extChartAt I i).symm (extChartAt I i y) ∈ S := by
-  rwa [(extChartAt I i).left_inv (by rwa [extChartAt_source])]
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V] in
+/-- The chart derivative at `extChartAt I i y` of the local representative of `s` is the
+derivative `g'` of any function `g` that agrees with it at every chart coordinate whose inverse
+chart image lies in an open neighbourhood `S` of `y`. -/
+private theorem fderivWithin_localRep_eq {s : ∀ y, V y} {i y : M} {S : Set M}
+    (hy : y ∈ (extChartAt I i).source) (hS : IsOpen S) (hyS : y ∈ S) {g : E → F}
+    {g' : E →L[𝕜] F} (hg : HasFDerivWithinAt g g' (range I) (extChartAt I i y))
+    (heq : ∀ z, (extChartAt I i).symm z ∈ S → localRep I F s i z = g z) :
+    fderivWithin 𝕜 (localRep I F s i) (range I) (extChartAt I i y) = g' := by
+  refine (hg.congr_of_eventuallyEq ?_ (heq _ (by rwa [(extChartAt I i).left_inv hy]))).fderivWithin
+    (I.uniqueDiffOn _ (extChartAt_target_subset_range i ((extChartAt I i).map_source hy)))
+  filter_upwards [mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hy (hS.mem_nhds hyS))]
+    with z hz using heq z hz
 
 /-- A point of the first-jet chart domain of `V` at `i` where the trivialization of `W` at `i` is
 defined lies in the first-jet chart domain of `Hom(V, W)` at `i`. -/
@@ -117,6 +125,17 @@ theorem localRep_apply_localRep (Φ : ∀ y, V y →L[𝕜] W y) (s : ∀ y, V y
     ContinuousLinearMap.comp_apply, Trivialization.symmL_apply _ hV,
     Trivialization.symm_apply_apply_mk _ hV,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hW]
+
+/-- At the chart coordinate of a point `y` of the first-jet chart domain of `V` at `i` where the
+trivialization of `W` at `i` is defined, the local representative of `Φ s` is the local
+representative of `Φ` applied to that of `s`. -/
+theorem localRep_apply_localRep_extChartAt (Φ : ∀ y, V y →L[𝕜] W y) (s : ∀ y, V y) {i y : M}
+    (hV : y ∈ baseSet (H := H) F V i) (hW : y ∈ (trivializationAt G W i).baseSet) :
+    localRep I (F →L[𝕜] G) Φ i (extChartAt I i y) (localRep I F s i (extChartAt I i y)) =
+      localRep I G (fun y ↦ Φ y (s y)) i (extChartAt I i y) := by
+  have hy := (extChartAt I i).left_inv (mem_extChartAt_source_of_mem_baseSet I hV)
+  exact localRep_apply_localRep Φ s (by rw [hy]; exact ((mem_baseSet_iff _ _).1 hV).1)
+    (by rw [hy]; exact hW)
 
 /-- At the base point, the local representative of `Φ` is `Φ` read in the trivializations, so
 on values it is `Φ` itself. -/
@@ -158,19 +177,12 @@ theorem fderivWithin_localRep_apply {Φ : ∀ y, V y →L[𝕜] W y} {s : ∀ y,
           (fderivWithin 𝕜 (localRep I F s i) (range I) (extChartAt I i y)) +
         (fderivWithin 𝕜 (localRep I (F →L[𝕜] G) Φ i) (range I) (extChartAt I i y)).flip
           (localRep I F s i (extChartAt I i y)) := by
-  have hy := mem_extChartAt_source_of_mem_baseSet I hV
-  have hV' := (mem_baseSet_iff _ _).1 hV
   have hprod := (differentiableWithinAt_localRep I (F →L[𝕜] G) hΦ
     (mem_baseSet_hom hV hW)).hasFDerivWithinAt.clm_apply
     (differentiableWithinAt_localRep I F hs hV).hasFDerivWithinAt
-  refine (hprod.congr_of_eventuallyEq ?_ ?_).fderivWithin
-    (I.uniqueDiffOn _ (extChartAt_target_subset_range i ((extChartAt I i).map_source hy)))
-  · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hV hV'.2,
-      mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hy
-        ((trivializationAt G W i).open_baseSet.mem_nhds hW))] with z hzV hzW
-    exact (localRep_apply_localRep Φ s ((mem_baseSet_iff _ _).1 hzV).1 hzW).symm
-  · exact (localRep_apply_localRep Φ s (extChartAt_symm_extChartAt_mem hV'.2 hV'.1)
-      (extChartAt_symm_extChartAt_mem hV'.2 hW)).symm
+  exact fderivWithin_localRep_eq (mem_extChartAt_source_of_mem_baseSet I hV)
+    ((isOpen_baseSet F V i).inter (trivializationAt G W i).open_baseSet) ⟨hV, hW⟩ hprod
+    fun z hz ↦ (localRep_apply_localRep Φ s ((mem_baseSet_iff _ _).1 hz.1).1 hz.2).symm
 
 /-! ### The prolongation of a bundle morphism -/
 
@@ -208,6 +220,7 @@ theorem value_map (Φ : ∀ y, V y →L[𝕜] W y) (x : M) (j : FirstJetBundle I
   rw [value_apply, value_apply, map_fst, symm_localRep_extChartAt_apply]
 
 /-- The value map intertwines `J¹Φ` and `Φ`. -/
+@[simp]
 theorem value_comp_map (Φ : ∀ y, V y →L[𝕜] W y) (x : M) :
     value I G x ∘L map I F G Φ x = Φ x ∘L value I F x :=
   ContinuousLinearMap.ext (value_map Φ x)
@@ -240,10 +253,7 @@ theorem map_jet {Φ : ∀ y, V y →L[𝕜] W y} {s : ∀ y, V y} {x : M}
   have hx := mem_chart_source H x
   refine Prod.ext ?_ ?_
   · rw [map_fst, jet_fst, jet_fst, ← localRep_extChartAt I F s hx,
-      localRep_apply_localRep Φ s
-        (extChartAt_symm_extChartAt_mem hx (mem_baseSet_trivializationAt F V x))
-        (extChartAt_symm_extChartAt_mem hx hW),
-      localRep_extChartAt I G _ hx]
+      localRep_apply_localRep_extChartAt Φ s hV hW, localRep_extChartAt I G _ hx]
   · rw [map_snd, jet_snd, jet_snd, fderivWithin_localRep_apply hΦ hs hV hW, jet_fst,
       localRep_extChartAt I F s hx]
 
@@ -267,9 +277,7 @@ theorem coordChange_map {Φ : ∀ y, V y →L[𝕜] W y} {i y : M}
   rw [map_jet hΦ hs', coordChange_jet I G (hΦ.clm_bundle_apply hs') hW,
     coordChange_jet I F hs' hV, ContinuousLinearMap.firstJetPullback_apply,
     ContinuousLinearMap.comp_id, fderivWithin_localRep_apply hΦ hs' hV hW'.1, add_comm,
-    ← localRep_extChartAt I F s hV'.2,
-    localRep_apply_localRep Φ s (extChartAt_symm_extChartAt_mem hV'.2 hV'.1)
-      (extChartAt_symm_extChartAt_mem hV'.2 hW'.1),
+    ← localRep_extChartAt I F s hV'.2, localRep_apply_localRep_extChartAt Φ s hV hW'.1,
     localRep_extChartAt I G _ hV'.2]
 
 /-! ### Functoriality -/
@@ -280,8 +288,8 @@ theorem map_id [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 
     map I F F (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x = ContinuousLinearMap.id 𝕜 _ := by
   have hx := mem_baseSet_self (H := H) F V x
   have hx' := mem_extChartAt_source_of_mem_baseSet I hx
-  have hx₀ := extChartAt_symm_extChartAt_mem (I := I) (mem_chart_source H x)
-    (mem_baseSet_trivializationAt F V x)
+  have hx₀ : (extChartAt I x).symm (extChartAt I x x) ∈ (trivializationAt F V x).baseSet := by
+    rw [extChartAt_to_inv]; exact mem_baseSet_trivializationAt F V x
   -- Near the base point the local representative of the identity is constantly the identity.
   have hrep : ∀ z, (extChartAt I x).symm z ∈ (trivializationAt F V x).baseSet →
       localRep I (F →L[𝕜] F) (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x z =
@@ -289,14 +297,9 @@ theorem map_id [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 
     simp only [localRep_apply, hom_trivializationAt_apply]
     exact ContinuousLinearMap.inCoordinates_id hz
   have hderiv : fderivWithin 𝕜 (localRep I (F →L[𝕜] F) (fun y ↦ ContinuousLinearMap.id 𝕜 (V y)) x)
-      (range I) (extChartAt I x x) = 0 := by
-    refine ((hasFDerivWithinAt_const (ContinuousLinearMap.id 𝕜 F) _ _).congr_of_eventuallyEq
-      ?_ ?_).fderivWithin (I.uniqueDiffOn _ (extChartAt_target_subset_range x
-        ((extChartAt I x).map_source hx')))
-    · filter_upwards [eventually_extChartAt_symm_mem_baseSet I hx (mem_chart_source H x)]
-        with z hz
-      exact hrep z ((mem_baseSet_iff _ _).1 hz).1
-    · exact hrep _ hx₀
+      (range I) (extChartAt I x x) = 0 :=
+    fderivWithin_localRep_eq hx' (trivializationAt F V x).open_baseSet
+      (mem_baseSet_trivializationAt F V x) (hasFDerivWithinAt_const _ _ _) hrep
   rw [map, hderiv, hrep _ hx₀]
   exact ContinuousLinearMap.firstJetPullback_id
 
@@ -317,24 +320,22 @@ theorem map_comp {Φ : ∀ y, V y →L[𝕜] W y} {Ψ : ∀ y, W y →L[𝕜] W'
   have hW := mem_baseSet_trivializationAt G W x
   have hW' := mem_baseSet_trivializationAt G' W' x
   have hx' := mem_extChartAt_source_of_mem_baseSet I hV
-  have hWx := extChartAt_symm_extChartAt_mem (I := I) (mem_chart_source H x) hW
+  have hWx : (extChartAt I x).symm (extChartAt I x x) ∈ (trivializationAt G W x).baseSet := by
+    rw [extChartAt_to_inv]; exact hW
   -- The product rule for the composite of the local representatives.
   have hWb : x ∈ baseSet (H := H) G W x := mem_baseSet_self G W x
   have hprod := (differentiableWithinAt_localRep I (G →L[𝕜] G') hΨ
     (mem_baseSet_hom hWb hW')).hasFDerivWithinAt.clm_comp
     (differentiableWithinAt_localRep I (F →L[𝕜] G) hΦ (mem_baseSet_hom hV hW)).hasFDerivWithinAt
-  have hD := (hprod.congr_of_eventuallyEq ?_ (localRep_comp Φ Ψ hWx)).fderivWithin
-    (I.uniqueDiffOn _ (extChartAt_target_subset_range x ((extChartAt I x).map_source hx')))
-  · rw [map, map, map, hD, localRep_comp Φ Ψ hWx]
-    refine Eq.trans ?_ (ContinuousLinearMap.firstJetPullback_comp _ _ _ _ _ _).symm
-    simp only [ContinuousLinearMap.comp_id]
-    -- The two sides are now the same first-jet transformation, typed on the left as a map of the
-    -- fibres `J¹Vₓ → J¹W'ₓ` and on the right as a map of their models `F × (E →L[𝕜] F)` and
-    -- `G' × (E →L[𝕜] G')`; the fibres of `J¹V` and `J¹W'` are by definition these models.
-    rfl
-  · filter_upwards [mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hx'
-      ((trivializationAt G W x).open_baseSet.mem_nhds hW))] with z hz
-    exact localRep_comp Φ Ψ hz
+  have hD := fderivWithin_localRep_eq hx' (trivializationAt G W x).open_baseSet hW hprod
+    fun z hz ↦ localRep_comp Φ Ψ hz
+  rw [map, map, map, hD, localRep_comp Φ Ψ hWx]
+  refine Eq.trans ?_ (ContinuousLinearMap.firstJetPullback_comp _ _ _ _ _ _).symm
+  simp only [ContinuousLinearMap.comp_id]
+  -- The two sides are now the same first-jet transformation, typed on the left as a map of the
+  -- fibres `J¹Vₓ → J¹W'ₓ` and on the right as a map of their models `F × (E →L[𝕜] F)` and
+  -- `G' × (E →L[𝕜] G')`; the fibres of `J¹V` and `J¹W'` are by definition these models.
+  rfl
 
 end Comp
 
