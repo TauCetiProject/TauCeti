@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
-import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Dual.AbsoluteValue
 import TauCeti.NumberTheory.Height.FundamentalInequality
 
 /-!
@@ -239,32 +239,24 @@ private theorem exists_pos_forall_mul_rpow_le_pow {S₀ : Finset (FinitePlace K)
         (∀ (w : InfinitePlace K) (i : ι), w (L w.val i x) ≤ t * Q ^ c w.val i) →
         C * Q ^ (-approxAbsWeight S₀ c) ≤ t ^ finrank ℚ K := by
   classical
-  -- At each place with independent forms, every coordinate is a combination of the forms.
-  have hcomb (v : AbsoluteValue K ℝ) : ∃ a : ι → ι → K,
-      LinearIndependent K (L v) → ∀ (x : ι → K) j, x j = ∑ i, a j i * L v i x := by
+  -- At each place with independent forms, a coordinate is at most `D v` times a common bound on
+  -- the values of the forms.
+  have hcoord (v : AbsoluteValue K ℝ) : ∃ D : ℝ, 0 < D ∧ (LinearIndependent K (L v) →
+      ∀ (x : ι → K) (j : ι) (M : ℝ), (∀ i, v (L v i x) ≤ M) → v (x j) ≤ D * M) := by
     by_cases hv : LinearIndependent K (L v)
-    · obtain ⟨a, ha⟩ := hv.exists_sum_smul_eq_proj
-      exact ⟨a, fun _ x j ↦ by simpa using (LinearMap.congr_fun (ha j) x).symm⟩
-    · exact ⟨0, fun h ↦ (hv h).elim⟩
-  choose a ha using hcomb
-  set D : AbsoluteValue K ℝ → ℝ := fun v ↦ 1 + ∑ j, ∑ i, v (a v j i)
-  -- A coordinate is at most `D v` times a common bound on the values of the forms.
-  have hD (v : AbsoluteValue K ℝ) (hv : LinearIndependent K (L v)) (x : ι → K) (j : ι)
-      (M : ℝ) (hM : ∀ i, v (L v i x) ≤ M) : v (x j) ≤ D v * M := by
-    calc v (x j) ≤ ∑ i, v (a v j i) * v (L v i x) := by
-          rw [ha v hv x j]
-          exact (AbsoluteValue.sum_le _ _ _).trans_eq (by simp only [map_mul])
-      _ ≤ (∑ i, v (a v j i)) * M := by
-          rw [Finset.sum_mul]
-          gcongr with i
-          exact hM i
-      _ ≤ D v * M := by
-          refine mul_le_mul_of_nonneg_right ?_ ((apply_nonneg v _).trans (hM j))
-          exact (Finset.single_le_sum (f := fun j ↦ ∑ i, v (a v j i))
-            (fun _ _ ↦ by positivity) (Finset.mem_univ j)).trans (le_add_of_nonneg_left zero_le_one)
+    · obtain ⟨D, hD0, hD⟩ := hv.exists_forall_abv_apply_le_mul v
+      refine ⟨1 + D, by positivity, fun _ x j M hM ↦ (hD x M hM j).trans ?_⟩
+      have hM0 : 0 ≤ M := (apply_nonneg v _).trans (hM j)
+      gcongr
+      exact le_add_of_nonneg_left zero_le_one
+    · exact ⟨1, one_pos, fun h ↦ (hv h).elim⟩
+  choose D hD0 hD using hcoord
   set C' : ℝ := (∏ v : InfinitePlace K, D v.val ^ v.mult) * ∏ v ∈ S₀, D v.val
-  refine ⟨C'⁻¹, by positivity, fun c Q t hQ ht x hxΛ hx hxB ↦ ?_⟩
-  rw [Real.rpow_neg (zero_le_one.trans hQ), ← mul_inv, inv_le_iff_one_le_mul₀' (by positivity)]
+  have hC' : 0 < C' :=
+    mul_pos (Finset.prod_pos fun v _ ↦ pow_pos (hD0 _) _) (Finset.prod_pos fun v _ ↦ hD0 _)
+  refine ⟨C'⁻¹, inv_pos.2 hC', fun c Q t hQ ht x hxΛ hx hxB ↦ ?_⟩
+  rw [Real.rpow_neg (zero_le_one.trans hQ), ← mul_inv,
+    inv_le_iff_one_le_mul₀' (mul_pos hC' (Real.rpow_pos_of_pos (zero_lt_one.trans_le hQ) _))]
   exact one_le_mul_rpow_approxAbsWeight_mul_pow hLInf hLFin D hD c hQ ht.le hxΛ hx hxB
 
 open scoped Classical Pointwise in
