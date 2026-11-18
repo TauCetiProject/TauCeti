@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Otis Chodosh, The Tau Ceti contributors
 -/
 module
 
@@ -15,6 +15,10 @@ differentiates the squared gradient norm. Symmetry of the native Hessian identif
 gradient with twice the covariant derivative of the original gradient in its own direction.
 These identities hold in every dimension and require no boundary or global topological
 assumptions.
+
+These identities are ported from Otis Chodosh's `ForTauCeti` formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory), module
+`ForTauCeti/Geometry/Manifold/Riemannian/Gradient/NormSq.lean`.
 
 ## References
 
