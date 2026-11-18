@@ -30,7 +30,8 @@ is only known to be a geodesic in the interior of its parameter interval, such a
 length-minimizing curve whose endpoints lie on the boundary of a domain.
 
 The finite-endpoint geodesic extensions need a `C²` metric on a `C³` manifold without boundary.
-The globally smooth curve extensions require a smooth metric and manifold without boundary.
+The smooth extensions on open preconnected sets require only a smooth metric and manifold; the
+closed-interval and maximal-geodesic smooth extensions also assume no boundary.
 No completeness assumption is needed.
 
 ## Main results
@@ -82,7 +83,7 @@ variable
 
 section SmoothExtension
 
-variable [I.Boundaryless] [IsManifold I ∞ M]
+variable [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
 /-- A geodesic on an open preconnected set `U` agrees near any set closed in `ℝ` and contained
