@@ -43,6 +43,16 @@ to the CW approximation (`TopCat.Hom.arbitraryBaseSerreSpectralSequence`), so th
   `B`, of the normalized cubical singular homology `H^□_q` of the fibre over the image of the centre
   of the cell.
 
+## Implementation notes
+
+The simplicial isomorphisms composed here (for instance
+`TauCeti.TopCat.serreSpectralObjectPullbackAbutmentIso`) land in
+`((AlgebraicTopology.singularHomologyFunctor _ n).obj (ModuleCat.of R R)).obj E`, which is only
+definitionally equal to the source `HomologicalComplex.homology ((singularChains R).obj E) n` of
+`TauCeti.singularCubicalHomologyIso`. The composites `_ ≪≫ _` in the definitions therefore do
+not match `Iso.trans_hom` or `Iso.trans_inv` syntactically, and `rw` fails on them. The `_hom`
+and `_inv` lemmas are proved by terms that let Lean unfold the definitions instead.
+
 ## References
 
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
@@ -128,8 +138,7 @@ lemma serreSpectralObjectPullbackAbutmentIsoCubical_hom {g : B' ⟶ B}
     (serreSpectralObjectPullbackAbutmentIsoCubical hp R C hg n).hom =
       (serreSpectralObjectPullbackAbutmentIso hp R C hg n).hom ≫
         HomologicalComplex.homologyMap ((singularToCubical R).app E) n :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   congrArg ((serreSpectralObjectPullbackAbutmentIso hp R C hg n).hom ≫ ·)
     (singularCubicalHomologyIso_hom (k := R) E n)
 
@@ -142,8 +151,7 @@ lemma serreSpectralObjectPullbackAbutmentIsoCubical_inv {g : B' ⟶ B}
     (serreSpectralObjectPullbackAbutmentIsoCubical hp R C hg n).inv =
       HomologicalComplex.homologyMap ((cubicalToSingular R).app E) n ≫
         (serreSpectralObjectPullbackAbutmentIso hp R C hg n).inv :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   congrArg (· ≫ (serreSpectralObjectPullbackAbutmentIso hp R C hg n).inv)
     (singularCubicalHomologyIso_inv (k := R) E n)
 
@@ -171,8 +179,7 @@ lemma serreSpectralSequencePullbackFirstPageXIsoSigmaCubical_hom (g : B' ⟶ B) 
     (serreSpectralSequencePullbackFirstPageXIsoSigmaCubical hp R C g k q pq hb ha).hom =
       (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).hom ≫
         Limits.Sigma.map fun _ ↦ HomologicalComplex.homologyMap ((singularToCubical R).app _) q :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   congrArg ((serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).hom ≫ ·)
     (sigmaMapIso_singularCubicalHomologyIso_hom R _ q)
 
@@ -190,8 +197,7 @@ lemma ι_serreSpectralSequencePullbackFirstPageXIsoSigmaCubical_inv (g : B' ⟶ 
           ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
             (ModuleCat.of R R)).obj (p.fiber (g (map k j 0)))) j ≫
         (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g k q pq hb ha).inv :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   (congrArg (Sigma.ι _ j ≫ · ≫ _) (sigmaMapIso_singularCubicalHomologyIso_inv R _ q)).trans
     (Sigma.ι_map_assoc _ j _)
 
@@ -217,8 +223,7 @@ lemma arbitraryBaseSerreAbutmentIsoCubical_hom (n : ℕ) :
     (arbitraryBaseSerreAbutmentIsoCubical hp R n).hom =
       (arbitraryBaseSerreAbutmentIso hp R n).hom ≫
         HomologicalComplex.homologyMap ((singularToCubical R).app E) n :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   congrArg ((arbitraryBaseSerreAbutmentIso hp R n).hom ≫ ·)
     (singularCubicalHomologyIso_hom (k := R) E n)
 
@@ -230,8 +235,7 @@ lemma arbitraryBaseSerreAbutmentIsoCubical_inv (n : ℕ) :
     (arbitraryBaseSerreAbutmentIsoCubical hp R n).inv =
       HomologicalComplex.homologyMap ((cubicalToSingular R).app E) n ≫
         (arbitraryBaseSerreAbutmentIso hp R n).inv :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   congrArg (· ≫ (arbitraryBaseSerreAbutmentIso hp R n).inv)
     (singularCubicalHomologyIso_inv (k := R) E n)
 
@@ -260,8 +264,7 @@ lemma arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical_hom (k q : ℕ
     (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical hp R k q pq hb ha).hom =
       (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫
         Limits.Sigma.map fun _ ↦ HomologicalComplex.homologyMap ((singularToCubical R).app _) q :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   congrArg ((arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).hom ≫ ·)
     (sigmaMapIso_singularCubicalHomologyIso_hom R _ q)
 
@@ -281,8 +284,7 @@ lemma ι_arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical_inv (k q : 
           ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
             (ModuleCat.of R R)).obj (p.fiber (sigmaCWApproximationMap B (map k j 0)))) j ≫
         (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R k q pq hb ha).inv :=
-  -- The isomorphism is the composite `_ ≪≫ _` of its definition; `Iso.trans_hom`/`Iso.trans_inv`
-  -- do not rewrite it here, so this term relies on Lean unfolding that definition.
+  -- Term proof by unfolding the definition; see the implementation notes.
   (congrArg (Sigma.ι _ j ≫ · ≫ _) (sigmaMapIso_singularCubicalHomologyIso_inv R _ q)).trans
     (Sigma.ι_map_assoc _ j _)
 
