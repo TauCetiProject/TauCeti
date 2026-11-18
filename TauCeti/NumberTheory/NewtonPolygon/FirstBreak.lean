@@ -30,23 +30,28 @@ may approach the line.
 Over a normed division ring whose norm is `‖x‖ = b ^ (-v x)`, a first break at `j` with slope `m`
 makes `f` distinguished of degree `j` at the radius `b ^ m`, and makes the order of vanishing its
 lowest dominant degree there. When the weighted coefficients are bounded at some larger radius,
-the converse holds as well. A first break also makes `f` restricted at `b ^ m`, so over a complete
-ultrametric normed field Weierstrass preparation at `b ^ m` writes `f` uniquely as a restricted
-unit times a monic polynomial of degree `j`, and that polynomial is pure of slope `m`.
+the converse holds as well: if the order of vanishing `a` satisfies `a < j`, these two active
+indices give a first break at `j` with slope `m`. More generally, any finite face of slope `m`
+ending at `j` makes `f` restricted at `b ^ m`, so over a complete ultrametric normed field
+Weierstrass preparation at `b ^ m` writes `f` uniquely as a restricted unit times a monic
+polynomial of degree `j`. At a first break that polynomial is pure of slope `m`.
 
 ## Main results
 
 * `PowerSeries.isFirstBreak_newtonPolygon_iff` and `Polynomial.isFirstBreak_newtonPolygon_iff`:
   the coefficient-line criteria for a first break.
 * `PowerSeries.isFirstBreak_newtonPolygon_iff_isFiniteFace`: a first break at `j` of slope `m` is
-  the face of slope `m` from the order of vanishing to `j`.
+  the face of slope `m` from the order of vanishing `a` to `j`, with `a < j`.
 * `PowerSeries.isLowestDominant_and_isDistinguished_of_isFirstBreak_newtonPolygon`: a first break
   at `j` of slope `m` gives distinguishedness of degree `j` at `b ^ m`, with the order of vanishing
   as lowest dominant degree.
 * `PowerSeries.isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished`: with bounded
-  weighted coefficients at a larger radius, a first break is exactly this pair of active indices.
-* `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak`: first-segment
-  unique factorisation by Weierstrass preparation.
+  weighted coefficients at a larger radius, a first break at `j` is exactly this pair of active
+  indices together with `a < j` for the order of vanishing `a`.
+* `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace` and
+  `PowerSeries.existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak`: unique factorisation
+  by Weierstrass preparation at the right endpoint of a finite face, and in particular at a first
+  break.
 * `PowerSeries.forall_mem_newtonSlopes_eq_of_isFirstBreak`: the polynomial factor is pure of
   the first slope, even without completeness.
 
@@ -179,22 +184,31 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {f 
 
 include hb hv
 
+/-- **Factorisation at a finite face.** Over a complete ultrametric normed field, suppose the Newton
+polygon of `f` has a finite face of slope `σ` ending at `j`. Then `f` is in exactly one way a unit
+of the ring of series restricted at `b ^ σ` times a monic polynomial of degree `j`. The series is
+automatically restricted at `b ^ σ`, since its polygon has a supporting line of strictly larger
+slope through `j`. -/
+theorem existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace {σ : ℝ} {l j : ℕ}
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l j) :
+    ∃! p : IsRestricted.subring (R := K) (b ^ σ) × Polynomial K,
+      IsUnit p.1 ∧ p.2.IsMonicOfDegree j ∧ (p.1 : K⟦X⟧) * (p.2 : K⟦X⟧) = f := by
+  have hfr := isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface
+  have hfd := isDistinguished_of_isFiniteFace v hb hv hfr hface
+  exact hfd.existsUnique_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hfr
+
 /-- **First-segment factorisation.** Over a complete ultrametric normed field, suppose the Newton
 polygon of `f` has its first break at `j` with slope `m`. Then `f` is in exactly one way a unit of
 the ring of series restricted at `b ^ m` times a monic polynomial of degree `j`. Purity of
-this polynomial follows from `forall_mem_newtonSlopes_eq_of_isFirstBreak`. The series
-is automatically restricted at `b ^ m`, since its polygon has a supporting line of strictly larger
-slope after the break. -/
+this polynomial follows from `forall_mem_newtonSlopes_eq_of_isFirstBreak`. -/
 theorem existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak {m : ℝ} {j : ℕ}
     (hbr : IsFirstBreak (f.newtonPolygon v) m j) :
     ∃! p : IsRestricted.subring (R := K) (b ^ m) × Polynomial K,
       IsUnit p.1 ∧ p.2.IsMonicOfDegree j ∧ (p.1 : K⟦X⟧) * (p.2 : K⟦X⟧) = f := by
   obtain ⟨a, -, -, hface⟩ :=
     (f.isConvexSeq_newtonPolygon v).isFirstBreak_iff_isFiniteFace.mp hbr
-  have hfr := isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface
-  have hfd := isDistinguished_of_isFiniteFace v hb hv hfr hface
-  exact hfd.existsUnique_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit
-    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) m) hfr
+  exact existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace v hb hv hface
 
 end NormedField
 

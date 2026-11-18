@@ -12,13 +12,14 @@ public import TauCeti.Analysis.Convex.Sequence.Envelope
 # Pointwise strict inequalities do not force a first break
 
 For a sequence with finitely many finite points, such as the coefficient heights of a
-polynomial, the lower convex envelope has its first break at `j` with slope `m` as soon as a line
-of slope `m` supports the points, passes through the first point and the point at `j`, and lies
-strictly below every later point (`TauCeti.IsLowerConvexEnvelope.isFirstBreak_iff_of_finite`).
-This example shows that the finiteness cannot be dropped.
+polynomial, the lower convex envelope has its first break at `j` with slope `m` as soon as `j` lies
+strictly after the first finite point `a`, and a line of slope `m` supports the points, passes
+through the points at `a` and `j`, and lies strictly below every later point
+(`TauCeti.IsLowerConvexEnvelope.isFirstBreak_iff_of_finite`). This example shows that the
+finiteness cannot be dropped.
 
-The heights `0, 0, 1/2, 1/3, 1/4, …` lie on the horizontal line through the points at `0` and
-`1`, and strictly above it after `1`. Since they tend to `0`, their lower convex envelope is the
+The heights `0, 0, 1/2, 1/3, 1/4, …` lie on the horizontal line of height `0` at `0` and `1`, and
+strictly above it after `1`. Since they tend to `0`, their lower convex envelope is the
 horizontal ray of height `0`, which has no first break at all.
 -/
 

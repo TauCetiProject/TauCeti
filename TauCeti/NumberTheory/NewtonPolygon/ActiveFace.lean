@@ -81,8 +81,9 @@ theorem isRestricted_of_isFiniteFace_newtonPolygon {l u : ℕ}
     ((abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)).trans_lt
       (Real.rpow_lt_rpow_of_exponent_lt hb (by linarith)))
 
-/-- A finite Newton face identifies the first and last active coefficients even at a
-convergence boundary. The face itself supplies bounded weighted coefficients. -/
+/-- A finite Newton face of slope `σ` identifies its endpoints as the first and last active
+coefficients at `b ^ σ`. No boundedness hypothesis is needed: the face makes the weighted
+coefficients bounded at a strictly larger radius, so `f` is restricted at `b ^ σ`. -/
 theorem isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon
     {l u : ℕ}
     (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :

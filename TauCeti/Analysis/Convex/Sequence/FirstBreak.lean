@@ -20,14 +20,14 @@ the last point of a finite domain, as for the endpoint of the Newton polygon of 
 The first break and its slope are unique.
 
 For a convex sequence, a first break at `j` of slope `m` is the same as a finite face of slope
-`m` running from the first finite index `a` to `j`. For the lower convex envelope of an arbitrary
-point set `y` whose first finite point is `a`, this gives the coefficient-line criterion
-`IsLowerConvexEnvelope.isFirstBreak_iff`: the envelope has its first break at `j` with slope `m`
-exactly when `a < j`, some line of slope `m` supports `y` and passes through the points at `a`
-and `j`, and some line of strictly larger slope through the point at `j` supports `y` at every
-index after `j`. The second line cannot be replaced by pointwise strict inequalities after `j`:
-points lying strictly above the line of slope `m` after `j` but approaching it allow the envelope
-to continue along a ray of slope `m` beyond `j`.
+`m` running from the first finite index `a` to `j`, with positive width `a < j`. For the lower
+convex envelope of an arbitrary point set `y` whose first finite point is `a`, this gives the
+coefficient-line criterion `IsLowerConvexEnvelope.isFirstBreak_iff`: the envelope has its first
+break at `j` with slope `m` exactly when `a < j`, some line of slope `m` supports `y` and passes
+through the points at `a` and `j`, and some line of strictly larger slope through the point at
+`j` supports `y` at every index after `j`. The second line cannot be replaced by pointwise strict
+inequalities after `j`: points lying strictly above the line of slope `m` after `j` but
+approaching it allow the envelope to continue along a ray of slope `m` beyond `j`.
 
 ## Main definitions
 
@@ -38,7 +38,7 @@ to continue along a ray of slope `m` beyond `j`.
 
 * `TauCeti.IsFirstBreak.unique`: the first break and its slope are unique.
 * `TauCeti.IsConvexSeq.isFirstBreak_iff_isFiniteFace`: for a convex sequence, a first break at
-  `j` of slope `m` is a finite face of slope `m` from the first finite index to `j`.
+  `j` of slope `m` is a finite face of slope `m` from the first finite index `a < j` to `j`.
 * `TauCeti.IsLowerConvexEnvelope.isFirstBreak_iff`: the coefficient-line criterion for a first
   break of a lower convex envelope.
 * `TauCeti.IsLowerConvexEnvelope.isFirstBreak_iff_of_finite`: for finitely many finite points,

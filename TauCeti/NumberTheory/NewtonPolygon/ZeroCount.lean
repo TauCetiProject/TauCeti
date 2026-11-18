@@ -226,18 +226,19 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 include hb hv
 
-/-- **Slope multiplicities count zeros on a sphere.** If `f` is restricted at `b ^ σ` and its
-Newton polygon has a finite face of slope `σ`, then in any algebraically closed complete normed
-field extension `L` the multiplicity of the slope `σ` is the number of zeros of `f` with
-`‖x‖ = b ^ σ`, counted with multiplicity. The radius may lie on the boundary of convergence. -/
+/-- **Slope multiplicities count zeros on a sphere.** If the Newton polygon of `f` has a finite
+face of slope `σ`, then in any algebraically closed complete normed field extension `L` the
+multiplicity of the slope `σ` is the number of zeros of `f` with `‖x‖ = b ^ σ`, counted with
+multiplicity. The face itself makes `f` restricted at `b ^ σ`. -/
 theorem newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq {σ : ℝ} {l u : ℕ}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l u) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
   obtain ⟨hl, hu⟩ := isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv
     hface
   rw [newtonSlopeMultiplicity_eq_of_isFiniteFace hface,
     TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq hu hl
-      (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hfr]
+      (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)
+      (isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface)]
 
 /-- **Slope multiplicities of entire series count zeros.** For a nonzero entire series `f` and any
 algebraically closed complete normed field extension `L`, the multiplicity of every slope `σ` of
@@ -247,8 +248,7 @@ theorem IsEntire.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq (hf
     (hf0 : f ≠ 0) (σ : ℝ) :
     f.newtonSlopeMultiplicity v σ = ((f.zeroMultiset (b ^ σ) L).filter (‖·‖ = b ^ σ)).card := by
   obtain ⟨l, u, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 σ
-  exact PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq v hb hv L
-    (hf.isRestricted _) hface
+  exact PowerSeries.newtonSlopeMultiplicity_eq_card_filter_zeroMultiset_norm_eq v hb hv L hface
 
 end ZeroMultiset
 
