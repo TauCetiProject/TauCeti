@@ -54,9 +54,8 @@ The `quality-pass` review angle checks it.
   axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
   `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
   overrides). Do not try to disable these.
-- Content CI verifies the mathematics. Regression tests of CI tooling belong in
-  independent workflows triggered by changes under `scripts/` or `.github/`
-  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint,
+- Content CI verifies the mathematics. Regression tests of CI tooling belong with the
+  shared tooling in TauCetiTools and run in its CI. Never make content builds, audits, lint,
   merge statuses, or cache
   publication depend on infrastructure test suites. Runtime checks needed to establish
   a safe sandbox and validate the actual candidate remain part of content CI.
