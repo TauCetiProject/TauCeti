@@ -331,43 +331,29 @@ theorem norm_compHolder₂_valueHolderL_le_of_eq_zero {s : ℝ} (has : a ≤ s) 
     mem_slab.2 ⟨hp, (mem_slab.1 p.2).2⟩
   have hw : ∀ p (hp : p ∈ S), w ⟨p, hmem p hp⟩ = u p := fun p hp ↦ by
     simp [w]
-  have hwu : ‖valueL w‖ ≤ ‖valueL u‖ := norm_valueL_restrictL_le u
   have hcoe : (valueHolderL hα w : slab (E := E) s b → G) = (valueL w : slab (E := E) s b → G) :=
     funext fun p ↦ by simp
   have hHS : HolderOnWith (nnHolderNorm α (valueL w : slab (E := E) s b → G)) α
-      (u : slab (E := E) a b → G) S := by
+      (valueHolderL hα u : slab (E := E) a b → G) S := by
     refine HolderOnWith.of_dist_le fun p hp q hq ↦ ?_
-    rw [← valueL_apply u, ← valueL_apply u, ← hw p hp, ← hw q hq, ← hcoe]
+    rw [valueHolderL_apply, valueHolderL_apply, ← valueL_apply u, ← valueL_apply u, ← hw p hp,
+      ← hw q hq, ← hcoe]
     exact (valueHolderL hα w).holderWith.dist_le _ _
-  have hprod := B.flip.holderWith_comp₂_of_eq_zero hHS g.holderWith
-    (Mf := ‖valueL w‖₊) (Mg := ‖g.toBoundedContinuousFunction‖₊)
-    (fun p hp ↦ by
-      rw [← hw p hp, coe_nnNorm, ← valueL_apply]
-      exact (valueL w).norm_coe_le_norm _)
-    (fun p _ ↦ by simpa using g.toBoundedContinuousFunction.norm_coe_le_norm p)
-    (fun p hp ↦ hg p (not_le.1 hp))
-  have heq : (B.compHolder₂ g (valueHolderL hα u) : slab (E := E) a b → H) =
-      fun p ↦ B.flip (valueL u p) (g p) := funext fun p ↦ by simp
-  -- The supremum: the product vanishes off `S`, and `u = w` on `S`.
-  have hsup : ∀ p, ‖B.compHolder₂ g (valueHolderL hα u) p‖ ≤
-      ‖B‖ * ‖g.toBoundedContinuousFunction‖ * ‖valueL w‖ := fun p ↦ by
-    rw [ContinuousLinearMap.compHolder₂_apply, valueHolderL_apply]
-    by_cases hp : p ∈ S
-    · rw [← valueL_apply u, ← hw p hp]
-      have hgp : ‖g p‖ ≤ ‖g.toBoundedContinuousFunction‖ := by
-        simpa using g.toBoundedContinuousFunction.norm_coe_le_norm p
-      have hwp := (valueL w).norm_coe_le_norm ⟨p, hmem p hp⟩
-      exact (B.le_opNorm₂ _ _).trans (by gcongr)
-    · rw [hg p (not_le.1 hp), map_zero, _root_.zero_apply, norm_zero]
-      positivity
-  refine (HolderSpace.norm_le_of_norm_le_of_holderWith (by positivity) hsup
-    (heq ▸ hprod)).trans ?_
-  rw [HolderSpace.norm_def (valueHolderL hα w), toBoundedContinuousFunction_valueHolderL]
+  have hflip : B.compHolder₂ g (valueHolderL hα u) = B.flip.compHolder₂ (valueHolderL hα u) g :=
+    HolderSpace.ext fun p ↦ by simp
+  rw [hflip]
+  refine (B.flip.norm_compHolder₂_apply_le_of_holderOnWith_of_eq_zero _ g hHS
+    (M := ‖valueL w‖₊) (fun p hp ↦ ?_) (fun p hp ↦ hg p (not_le.1 hp))).trans ?_
+  · rw [valueHolderL_apply, ← valueL_apply u, ← hw p hp, coe_nnNorm]
+    exact (valueL w).norm_coe_le_norm _
+  rw [ContinuousLinearMap.opNorm_flip, HolderSpace.norm_def g,
+    HolderSpace.norm_def (valueHolderL hα w), toBoundedContinuousFunction_valueHolderL]
+  simp only [HolderSpace.coe_toBoundedContinuousFunction]
   push_cast
-  rw [ContinuousLinearMap.opNorm_flip]
   have := norm_nonneg B
   have := norm_nonneg g.toBoundedContinuousFunction
   have := NNReal.coe_nonneg (nnHolderNorm α (g : slab (E := E) a b → F))
+  have hwu : ‖valueL w‖ ≤ ‖valueL u‖ := norm_valueL_restrictL_le u
   have := mul_le_mul_of_nonneg_left hwu
     (mul_nonneg (norm_nonneg B) (NNReal.coe_nonneg (nnHolderNorm α (g : slab (E := E) a b → F))))
   nlinarith
