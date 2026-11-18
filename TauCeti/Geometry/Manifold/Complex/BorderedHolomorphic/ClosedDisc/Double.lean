@@ -28,7 +28,8 @@ single Möbius transformation. The doubled Cayley chart at a point `ζ` of the u
 inverse `w ↦ ζ (I - w) / (w + I)` on the closed upper half-plane, landing in the first sheet, and
 `w ↦ ζ (I - conj w) / (conj w + I)` on the open lower half-plane, landing in the second sheet. The
 inversion in the unit circle turns the second formula into the first, because `conj ζ = ζ⁻¹`. So
-the doubled chart, followed by the homeomorphism to the sphere, is the Möbius transformation
+the inverse of the doubled chart, followed by the homeomorphism to the sphere, is the Möbius
+transformation
 `w ↦ ζ (I - w) / (w + I)` of the matrix `!![-ζ, ζ * I; 1, I]` on the whole plane, with
 `-I ↦ ∞`, and Möbius transformations are biholomorphisms of the sphere.
 
@@ -39,8 +40,8 @@ characteristic of the double is `2 = 2 · 1`, twice that of the disc.
 
 ## Main declarations
 
-* `Complex.UnitClosedDisc.schottkyDoubleHomeomorph`: the Schottky double of `𝕔𝔻` is the
-  topological double of the closed disc along its boundary circle.
+* `Complex.UnitClosedDisc.schottkyDoubleHomeomorphDiscDouble`: the Schottky double of `𝕔𝔻` is
+  the topological double of the closed disc along its boundary circle.
 * `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph`: the Schottky double of `𝕔𝔻` is
   biholomorphic to the Riemann sphere.
 * `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_doubleChart_symm`: in the doubled Cayley
@@ -51,7 +52,8 @@ characteristic of the double is `2 = 2 · 1`, twice that of the disc.
 * `Complex.UnitClosedDisc.schottkyDoubleDiffeomorph_image_fixed`: the fixed set of the sheet swap
   becomes the unit circle.
 * `Complex.UnitClosedDisc.eulerChar_schottkyDouble` and
-  `Complex.UnitClosedDisc.eulerChar_schottkyDouble_eq_two_mul`: `χ = 2 = 2 · χ(𝕔𝔻)`.
+  `Complex.UnitClosedDisc.eulerChar_schottkyDouble_eq_two_mul`: `χ = 2 = 2 · χ(𝕔𝔻)`, where
+  `χ(𝕔𝔻) = 1` (`Complex.UnitClosedDisc.eulerChar_eq_one`) since the disc is contractible.
 
 ## References
 
@@ -70,70 +72,54 @@ namespace Complex.UnitClosedDisc
 
 /-! ### The topological double -/
 
-/-- Two copies of a homeomorphism that carries `A` onto `B` glue to a homeomorphism of the
-doubles. -/
-private def doubleAlongCongr {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] (e : X ≃ₜ Y)
-    {A : Set X} {B : Set Y} (h : e '' A = B) : DoubleAlong A ≃ₜ DoubleAlong B where
-  toFun := DoubleAlong.desc A ((DoubleAlong.inl B).comp e) ((DoubleAlong.inr B).comp e)
-    fun x ↦ DoubleAlong.inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.2⟩
-  invFun := DoubleAlong.desc B ((DoubleAlong.inl A).comp e.symm)
-    ((DoubleAlong.inr A).comp e.symm)
-    fun y ↦ DoubleAlong.inl_coe_eq_inr A ⟨e.symm y, by
-      have hy : (y : Y) ∈ e '' A := by rw [h]; exact y.2
-      obtain ⟨x, hx, hxy⟩ := hy
-      rwa [← hxy, e.symm_apply_apply]⟩
-  left_inv p := by
-    induction p using DoubleAlong.induction_on <;> simp
-  right_inv p := by
-    induction p using DoubleAlong.induction_on <;> simp
-  continuous_toFun := ContinuousMap.continuous _
-  continuous_invFun := ContinuousMap.continuous _
-
-private theorem doubleAlongCongr_inl {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) {A : Set X} {B : Set Y} (h : e '' A = B) (x : X) :
-    doubleAlongCongr e h (DoubleAlong.inl A x) = DoubleAlong.inl B (e x) :=
-  DoubleAlong.desc_inl _ _ _ _ x
-
-private theorem doubleAlongCongr_inr {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (e : X ≃ₜ Y) {A : Set X} {B : Set Y} (h : e '' A = B) (x : X) :
-    doubleAlongCongr e h (DoubleAlong.inr A x) = DoubleAlong.inr B (e x) :=
-  DoubleAlong.desc_inr _ _ _ _ x
-
 /-- The Schottky double of the closed unit disc is the topological double of the closed disc
 along its boundary circle `TauCeti.DoubleAlong.discBoundary`: the boundary of `𝕔𝔻` as a Riemann
 surface with boundary is the unit circle. -/
-def schottkyDoubleHomeomorph : SchottkyDouble 𝕔𝔻 ≃ₜ DoubleAlong DoubleAlong.discBoundary :=
-  doubleAlongCongr homeomorphClosedBall image_homeomorphClosedBall_compl_borderedInterior
+def schottkyDoubleHomeomorphDiscDouble :
+    SchottkyDouble 𝕔𝔻 ≃ₜ DoubleAlong DoubleAlong.discBoundary :=
+  DoubleAlong.congr homeomorphClosedBall image_homeomorphClosedBall_compl_borderedInterior
 
 @[simp]
-theorem schottkyDoubleHomeomorph_inl (z : 𝕔𝔻) :
-    schottkyDoubleHomeomorph (DoubleAlong.inl _ z) =
+theorem schottkyDoubleHomeomorphDiscDouble_inl (z : 𝕔𝔻) :
+    schottkyDoubleHomeomorphDiscDouble (DoubleAlong.inl _ z) =
       DoubleAlong.inl _ (homeomorphClosedBall z) :=
-  doubleAlongCongr_inl _ _ z
+  DoubleAlong.congr_inl _ _ z
 
 @[simp]
-theorem schottkyDoubleHomeomorph_inr (z : 𝕔𝔻) :
-    schottkyDoubleHomeomorph (DoubleAlong.inr _ z) =
+theorem schottkyDoubleHomeomorphDiscDouble_inr (z : 𝕔𝔻) :
+    schottkyDoubleHomeomorphDiscDouble (DoubleAlong.inr _ z) =
       DoubleAlong.inr _ (homeomorphClosedBall z) :=
-  doubleAlongCongr_inr _ _ z
+  DoubleAlong.congr_inr _ _ z
+
+@[simp]
+theorem schottkyDoubleHomeomorphDiscDouble_symm_inl (z : closedBall (0 : ℂ) 1) :
+    schottkyDoubleHomeomorphDiscDouble.symm (DoubleAlong.inl _ z) =
+      DoubleAlong.inl _ (homeomorphClosedBall.symm z) := by
+  rw [Homeomorph.symm_apply_eq, schottkyDoubleHomeomorphDiscDouble_inl,
+    Homeomorph.apply_symm_apply]
+
+@[simp]
+theorem schottkyDoubleHomeomorphDiscDouble_symm_inr (z : closedBall (0 : ℂ) 1) :
+    schottkyDoubleHomeomorphDiscDouble.symm (DoubleAlong.inr _ z) =
+      DoubleAlong.inr _ (homeomorphClosedBall.symm z) := by
+  rw [Homeomorph.symm_apply_eq, schottkyDoubleHomeomorphDiscDouble_inr,
+    Homeomorph.apply_symm_apply]
 
 /-- The homeomorphism of doubles intertwines the two sheet swaps. -/
 @[simp]
-theorem schottkyDoubleHomeomorph_swap (p : SchottkyDouble 𝕔𝔻) :
-    schottkyDoubleHomeomorph (DoubleAlong.swap _ p) =
-      DoubleAlong.swap _ (schottkyDoubleHomeomorph p) := by
-  induction p using DoubleAlong.induction_on <;> simp
+theorem schottkyDoubleHomeomorphDiscDouble_swap (p : SchottkyDouble 𝕔𝔻) :
+    schottkyDoubleHomeomorphDiscDouble (DoubleAlong.swap _ p) =
+      DoubleAlong.swap _ (schottkyDoubleHomeomorphDiscDouble p) :=
+  DoubleAlong.congr_swap _ _ p
 
 @[simp]
-theorem schottkyDoubleHomeomorph_symm_swap (p : DoubleAlong DoubleAlong.discBoundary) :
-    schottkyDoubleHomeomorph.symm (DoubleAlong.swap _ p) =
-      DoubleAlong.swap _ (schottkyDoubleHomeomorph.symm p) := by
-  rw [Homeomorph.symm_apply_eq, schottkyDoubleHomeomorph_swap, Homeomorph.apply_symm_apply]
+theorem schottkyDoubleHomeomorphDiscDouble_symm_swap (p : DoubleAlong DoubleAlong.discBoundary) :
+    schottkyDoubleHomeomorphDiscDouble.symm (DoubleAlong.swap _ p) =
+      DoubleAlong.swap _ (schottkyDoubleHomeomorphDiscDouble.symm p) := by
+  rw [Homeomorph.symm_apply_eq, schottkyDoubleHomeomorphDiscDouble_swap,
+    Homeomorph.apply_symm_apply]
 
 /-! ### The Möbius transformation of a doubled Cayley chart -/
-
-private theorem ne_zero_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) : ζ ≠ 0 :=
-  ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)
 
 /-- The matrix `!![-ζ, ζ * I; 1, I]` of the Möbius transformation `w ↦ ζ (I - w) / (w + I)`, the
 inverse of the Cayley chart centred at `ζ` extended to the whole sphere. Its determinant is
@@ -143,17 +129,26 @@ def cayleyMoebius (ζ : ℂ) (hζ : ‖ζ‖ = 1) : GL (Fin 2) ℂ :=
     rw [det_fin_two_of]
     have : -ζ * I - ζ * I * 1 = -2 * I * ζ := by ring
     rw [this]
-    exact mul_ne_zero (mul_ne_zero (by norm_num) I_ne_zero) (ne_zero_of_norm_eq_one hζ))
+    exact mul_ne_zero (mul_ne_zero (by norm_num) I_ne_zero)
+      (ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)))
 
 /-- The matrix of `cayleyMoebius ζ`. -/
+@[simp]
 theorem coe_cayleyMoebius (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     (cayleyMoebius ζ hζ : Matrix (Fin 2) (Fin 2) ℂ) = !![-ζ, ζ * I; 1, I] :=
   (rfl)
 
 /-- The Möbius transformation of `cayleyMoebius ζ` sends `-I` to `∞`. -/
+@[simp]
 theorem cayleyMoebius_smul_neg_I (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
     cayleyMoebius ζ hζ • ((-I : ℂ) : OnePoint ℂ) = (∞ : OnePoint ℂ) := by
   simp [smul_some_eq_ite, coe_cayleyMoebius]
+
+/-- The Möbius transformation of `cayleyMoebius ζ` sends `∞` to `-ζ`. -/
+@[simp]
+theorem cayleyMoebius_smul_infty (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+    cayleyMoebius ζ hζ • (∞ : OnePoint ℂ) = ((-ζ : ℂ) : OnePoint ℂ) := by
+  simp [smul_infty_eq_ite, coe_cayleyMoebius]
 
 /-- Away from `-I`, the Möbius transformation of `cayleyMoebius ζ` is `w ↦ ζ (I - w) / (w + I)`. -/
 theorem cayleyMoebius_smul_coe (ζ : ℂ) (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : w + I ≠ 0) :
@@ -164,7 +159,7 @@ theorem cayleyMoebius_smul_coe (ζ : ℂ) (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : w
 
 /-- The biholomorphism of the Schottky double of the disc onto the sphere, as a homeomorphism. -/
 private def toSphere : SchottkyDouble 𝕔𝔻 ≃ₜ OnePoint ℂ :=
-  schottkyDoubleHomeomorph.trans DoubleAlong.discDoubleHomeomorph
+  schottkyDoubleHomeomorphDiscDouble.trans DoubleAlong.discDoubleHomeomorph
 
 private theorem toSphere_inl (z : 𝕔𝔻) :
     toSphere (DoubleAlong.inl _ z) = ((z : ℂ) : OnePoint ℂ) := by
@@ -180,7 +175,7 @@ private theorem toSphere_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
     (he : cayleyChart ζ hζ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 𝕔𝔻) (w : ℂ) :
     toSphere ((SchottkyDouble.doubleChart (cayleyChart ζ hζ) he).symm w) =
       cayleyMoebius ζ hζ • (w : OnePoint ℂ) := by
-  have hζ0 := ne_zero_of_norm_eq_one hζ
+  have hζ0 : ζ ≠ 0 := ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)
   rcases le_or_gt 0 w.im with hnn | hneg
   · have hw : w + I ≠ 0 := add_I_ne_zero_of_im_nonneg hnn
     rw [SchottkyDouble.doubleChart_symm_apply_of_im_nonneg he hnn, toSphere_inl,
@@ -188,17 +183,11 @@ private theorem toSphere_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
       cayleyMoebius_smul_coe ζ hζ hw]
   · rw [SchottkyDouble.doubleChart_symm_apply_of_im_neg he hneg, toSphere_inr,
       coe_cayleyChart_symm_apply, ClosedUpperHalfPlane.coe_fold_of_im_nonpos hneg.le]
-    have hconj : conj ζ * ζ = 1 := by
-      rw [mul_comm, mul_conj', hζ]
-      norm_num
     rcases eq_or_ne w (-I) with rfl | hwI
     · rw [cayleyMoebius_smul_neg_I]
       simp
     · have hw : w + I ≠ 0 := fun h ↦ hwI (eq_neg_of_add_eq_zero_left h)
-      have hcw : conj w + I ≠ 0 := fun h ↦ by
-        have := congrArg Complex.im h
-        simp only [add_im, conj_im, I_im, zero_im] at this
-        linarith
+      have hcw : conj w + I ≠ 0 := add_I_ne_zero_of_im_nonneg (by simpa using hneg.le)
       have hcw' : I - conj w ≠ 0 := by
         intro h
         apply hwI
@@ -209,8 +198,7 @@ private theorem toSphere_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
       have hw2 : -I - w ≠ 0 := by
         rw [← neg_add', neg_ne_zero, add_comm]
         exact hw
-      have hζ' : conj ζ = ζ⁻¹ := eq_inv_of_mul_eq_one_left hconj
-      simp only [map_div₀, map_mul, map_sub, map_add, conj_conj, conj_I, hζ']
+      simp only [map_div₀, map_mul, map_sub, map_add, conj_conj, conj_I, ← inv_eq_conj hζ]
       field_simp
       ring
 
@@ -223,9 +211,16 @@ followed by a Möbius transformation. -/
 private theorem toSphere_eq_smul_chartAt {p q : SchottkyDouble 𝕔𝔻}
     (hq : q ∈ (chartAt ℂ p).source) :
     toSphere q = chartMoebius p • ((chartAt ℂ p q : ℂ) : OnePoint ℂ) := by
-  rw [chartMoebius, ← toSphere_doubleChart_symm (norm_chartCenter _)
-    (IsManifold.chart_mem_maximalAtlas _)]
-  exact congrArg toSphere ((chartAt ℂ p).left_inv hq).symm
+  have he : cayleyChart (chartCenter (DoubleAlong.fold _ p)) (norm_chartCenter _) ∈
+      IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 𝕔𝔻 := by
+    rw [← chartAt_eq]
+    exact IsManifold.chart_mem_maximalAtlas _
+  have hc : chartAt ℂ p = SchottkyDouble.doubleChart _ he := by
+    rw [SchottkyDouble.chartAt_eq]
+    congr 1
+  rw [hc] at hq ⊢
+  rw [chartMoebius, ← toSphere_doubleChart_symm (norm_chartCenter _) he,
+    (SchottkyDouble.doubleChart _ he).left_inv hq]
 
 private theorem contMDiff_toSphere : ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω toSphere := by
   intro p
@@ -281,16 +276,18 @@ theorem schottkyDoubleDiffeomorph_inr (z : 𝕔𝔻) :
       unitCircleInversion ((z : ℂ) : OnePoint ℂ) :=
   toSphere_inr z
 
-/-- The biholomorphism is the topological double of the disc, followed by
+/-- The underlying homeomorphism of the biholomorphism is
+`Complex.UnitClosedDisc.schottkyDoubleHomeomorphDiscDouble` followed by
 `TauCeti.DoubleAlong.discDoubleHomeomorph`. -/
 theorem schottkyDoubleDiffeomorph_toHomeomorph :
     schottkyDoubleDiffeomorph.toHomeomorph =
-      schottkyDoubleHomeomorph.trans DoubleAlong.discDoubleHomeomorph :=
+      schottkyDoubleHomeomorphDiscDouble.trans DoubleAlong.discDoubleHomeomorph :=
   (rfl)
 
 /-- **The biholomorphism in a doubled Cayley chart.** In the doubled Cayley chart centred at a
 point `ζ` of the unit circle, the biholomorphism onto the sphere is the single Möbius
 transformation `w ↦ ζ (I - w) / (w + I)` of the whole plane, with `-I ↦ ∞`. -/
+@[simp]
 theorem schottkyDoubleDiffeomorph_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
     (he : cayleyChart ζ hζ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 𝕔𝔻) (w : ℂ) :
     schottkyDoubleDiffeomorph ((SchottkyDouble.doubleChart (cayleyChart ζ hζ) he).symm w) =
@@ -305,28 +302,56 @@ involution, to the inversion `w ↦ (conj w)⁻¹` of the sphere in the unit cir
 theorem schottkyDoubleDiffeomorph_swap (p : SchottkyDouble 𝕔𝔻) :
     schottkyDoubleDiffeomorph (DoubleAlong.swap _ p) =
       unitCircleInversion (schottkyDoubleDiffeomorph p) := by
-  change toSphere _ = unitCircleInversion (toSphere p)
-  simp [toSphere]
+  induction p using DoubleAlong.induction_on <;> simp
+
+/-- The inverse of the biholomorphism carries the inversion in the unit circle to the sheet
+swap. -/
+@[simp]
+theorem schottkyDoubleDiffeomorph_symm_unitCircleInversion (x : OnePoint ℂ) :
+    schottkyDoubleDiffeomorph.symm (unitCircleInversion x) =
+      DoubleAlong.swap _ (schottkyDoubleDiffeomorph.symm x) :=
+  EquivLike.injective schottkyDoubleDiffeomorph <| by
+    rw [Diffeomorph.apply_symm_apply, schottkyDoubleDiffeomorph_swap, Diffeomorph.apply_symm_apply]
+
+/-- A point of the closed unit disc comes from the first sheet. -/
+theorem schottkyDoubleDiffeomorph_symm_coe_of_norm_le_one {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    schottkyDoubleDiffeomorph.symm (z : OnePoint ℂ) = DoubleAlong.inl _ (mk z hz) :=
+  EquivLike.injective schottkyDoubleDiffeomorph <| by
+    rw [Diffeomorph.apply_symm_apply, schottkyDoubleDiffeomorph_inl, coe_mk]
+
+/-- A point of the closed exterior of the unit disc comes from the second sheet, at the inverse
+of its conjugate. -/
+theorem schottkyDoubleDiffeomorph_symm_coe_of_one_le_norm {z : ℂ} (hz : 1 ≤ ‖z‖) :
+    schottkyDoubleDiffeomorph.symm (z : OnePoint ℂ) =
+      DoubleAlong.inr _ (mk (conj z)⁻¹ (by simpa using inv_le_one_of_one_le₀ hz)) := by
+  have hz0 : z ≠ 0 := norm_pos_iff.1 (one_pos.trans_le hz)
+  refine EquivLike.injective schottkyDoubleDiffeomorph ?_
+  rw [Diffeomorph.apply_symm_apply, schottkyDoubleDiffeomorph_inr, coe_mk,
+    unitCircleInversion_coe (by simpa using hz0), map_inv₀, conj_conj, inv_inv]
+
+/-- The point at infinity comes from the centre of the second sheet. -/
+@[simp]
+theorem schottkyDoubleDiffeomorph_symm_infty :
+    schottkyDoubleDiffeomorph.symm ∞ = DoubleAlong.inr _ 0 :=
+  EquivLike.injective schottkyDoubleDiffeomorph <| by
+    rw [Diffeomorph.apply_symm_apply, schottkyDoubleDiffeomorph_inr, coe_zero,
+      unitCircleInversion_zero]
 
 /-- The biholomorphism carries the fixed set of the sheet swap, the boundary circle of the disc on
 the first sheet, onto the unit circle of the sphere. -/
 theorem schottkyDoubleDiffeomorph_image_fixed :
     schottkyDoubleDiffeomorph '' {p | DoubleAlong.swap (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ p = p} =
       (↑) '' sphere (0 : ℂ) 1 := by
-  have h : schottkyDoubleHomeomorph '' {p | DoubleAlong.swap
-      (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ p = p} =
-      {p | DoubleAlong.swap DoubleAlong.discBoundary p = p} := by
-    rw [schottkyDoubleHomeomorph.image_eq_preimage_symm]
-    ext p
-    change DoubleAlong.swap _ (schottkyDoubleHomeomorph.symm p) = schottkyDoubleHomeomorph.symm p ↔
-      DoubleAlong.swap _ p = p
-    rw [← schottkyDoubleHomeomorph_symm_swap, schottkyDoubleHomeomorph.symm.injective.eq_iff]
-  rw [← DoubleAlong.discDoubleHomeomorph_image_fixed_eq_sphere, ← h, image_image]
+  rw [← DoubleAlong.discDoubleHomeomorph_image_fixed_eq_sphere,
+    ← DoubleAlong.image_congr_fixed homeomorphClosedBall
+      image_homeomorphClosedBall_compl_borderedInterior, image_image,
+    ← schottkyDoubleDiffeomorph.coe_toHomeomorph, schottkyDoubleDiffeomorph_toHomeomorph]
   rfl
 
-/-- The closed unit disc has finite CW type, being a closed ball. -/
-instance instFiniteCWType : FiniteCWType 𝕔𝔻 :=
-  homeomorphClosedBall.finiteCWType
+/-- The Euler characteristic of the closed unit disc is `1`, the disc being contractible. -/
+@[simp]
+theorem eulerChar_eq_one : eulerChar 𝕔𝔻 = 1 :=
+  eulerChar_of_contractibleSpace
 
 /-- The Schottky double of the closed unit disc has finite CW type, being the Riemann sphere. -/
 instance finiteCWType_schottkyDouble : FiniteCWType (SchottkyDouble 𝕔𝔻) :=
@@ -334,15 +359,14 @@ instance finiteCWType_schottkyDouble : FiniteCWType (SchottkyDouble 𝕔𝔻) :=
 
 /-- **Euler characteristic of the Schottky double of the disc.** It is the Riemann sphere, with
 Euler characteristic `2`. -/
+@[simp]
 theorem eulerChar_schottkyDouble : eulerChar (SchottkyDouble 𝕔𝔻) = 2 := by
-  rw [schottkyDoubleHomeomorph.eulerChar_eq, DoubleAlong.eulerChar_discDouble]
+  rw [schottkyDoubleHomeomorphDiscDouble.eulerChar_eq, DoubleAlong.eulerChar_discDouble]
 
 /-- The Euler characteristic of the Schottky double of the disc is twice that of the disc:
 `2 = 2 · 1`. -/
 theorem eulerChar_schottkyDouble_eq_two_mul :
     eulerChar (SchottkyDouble 𝕔𝔻) = 2 * eulerChar 𝕔𝔻 := by
-  rw [eulerChar_schottkyDouble, homeomorphClosedBall.eulerChar_eq,
-    eulerChar_closedBall _ zero_le_one, mul_one]
-
+  rw [eulerChar_schottkyDouble, eulerChar_eq_one, mul_one]
 
 end Complex.UnitClosedDisc
