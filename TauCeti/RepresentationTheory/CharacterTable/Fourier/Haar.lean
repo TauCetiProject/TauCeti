@@ -72,13 +72,21 @@ theorem _root_.ContinuousMap.coeff_monoidAlgebraHaarEquiv_symm (F : C(G, 𝕜)) 
     ((monoidAlgebraHaarEquiv 𝕜 G).symm F).coeff g = (Nat.card G : 𝕜)⁻¹ * F g := by
   simp [monoidAlgebraHaarEquiv, Units.smul_def]
 
+/-- The image of a single monoid-algebra term is supported at its index, with its coefficient
+multiplied by the group order. -/
+@[simp high]
+theorem monoidAlgebraHaarEquiv_single_apply [DecidableEq G] (a : G) (c : 𝕜) (g : G) :
+    monoidAlgebraHaarEquiv 𝕜 G (MonoidAlgebra.single a c) g =
+      if g = a then (Nat.card G : 𝕜) * c else 0 := by
+  simp [Finsupp.single_apply, eq_comm, mul_ite]
+
 /-- The image of `1 : 𝕜[G]` under `monoidAlgebraHaarEquiv` has value `|G|` at `1` and zero
 elsewhere. -/
 @[simp high]
 theorem monoidAlgebraHaarEquiv_one_apply [One G] [DecidableEq G] (g : G) :
     monoidAlgebraHaarEquiv 𝕜 G 1 g = if g = 1 then (Nat.card G : 𝕜) else 0 := by
-  classical
-  simp [MonoidAlgebra.one_def, Finsupp.single_apply, eq_comm]
+  simpa only [MonoidAlgebra.one_def, mul_one] using
+    (monoidAlgebraHaarEquiv_single_apply (𝕜 := 𝕜) (1 : G) (1 : 𝕜) g)
 
 end Coefficients
 
@@ -110,7 +118,8 @@ theorem _root_.MonoidAlgebra.monoidAlgebraHaarEquiv_mul (f h : 𝕜[G]) :
 /-- Probability-Haar convolution corresponds to multiplication in the monoid algebra under the
 inverse scaling `F ↦ |G|⁻¹ F`. -/
 @[simp]
-theorem monoidAlgebraHaarEquiv_symm_convolutionCLM_toLp (F H : C(G, 𝕜)) :
+theorem _root_.ContinuousMap.monoidAlgebraHaarEquiv_symm_convolutionCLM_toLp
+    (F H : C(G, 𝕜)) :
     (monoidAlgebraHaarEquiv 𝕜 G).symm
         (convolutionCLM F (ContinuousMap.toLp 2 (haarProb G) 𝕜 H)) =
       (monoidAlgebraHaarEquiv 𝕜 G).symm F * (monoidAlgebraHaarEquiv 𝕜 G).symm H := by
