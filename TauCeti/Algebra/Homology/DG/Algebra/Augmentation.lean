@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
+public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
 # Augmented differential graded algebras
@@ -195,6 +196,34 @@ theorem splitLinearEquiv_symm_apply (x : R × e.augmentationIdeal) :
   refine Prod.ext ?_ (Subtype.ext ?_)
   · rw [map_add, e.map_algebraMap, hx, add_zero]
   · rw [coe_reducedPart, map_add, e.map_algebraMap, hx, add_zero, add_sub_cancel_left]
+
+/-- An augmentation vanishes on homogeneous elements of nonzero degree. -/
+theorem map_eq_zero_of_mem_ne_zero {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) (hp : p ≠ 0) : e a = 0 :=
+  ((mem_trivialGrading_iff R R).mp (GradedFunLike.map_mem e ha)).resolve_left hp
+
+/-- An augmentation is invariant under every Koszul twist. -/
+@[simp] theorem map_koszulTwist (q : ℤ) (a : A) :
+    e ((InternalGrading.ofDecomposition 𝒜).koszulTwist q a) = e a :=
+  LinearMap.congr_fun ((InternalGrading.ofDecomposition 𝒜).linearMap_ext
+    (f := e.toGradedAlgHom.toAlgHom.toLinearMap ∘ₗ
+      (InternalGrading.ofDecomposition 𝒜).koszulTwist q)
+    (g := e.toGradedAlgHom.toAlgHom.toLinearMap) fun p y hy ↦ by
+      simp only [LinearMap.comp_apply, (InternalGrading.ofDecomposition 𝒜).koszulTwist_apply_of_mem
+        hy q, map_smul]
+      rcases eq_or_ne p 0 with rfl | hp
+      exacts [by simp, by simp [e.map_eq_zero_of_mem_ne_zero (by simpa using hy) hp]]) a
+
+/-- The reduced-part projection is homogeneous of degree zero for the restricted grading on the
+augmentation ideal. -/
+theorem isHomogeneous_reducedPart :
+    LinearMap.IsHomogeneous e.reducedPart 𝒜
+      (fun p ↦ (𝒜 p).comap e.augmentationIdeal.toSubmodule.subtype) 0 :=
+  LinearMap.isHomogeneous_def.2 fun p a ha ↦ by
+    rw [add_zero, Submodule.mem_comap, Submodule.subtype_apply, coe_reducedPart]
+    rcases eq_or_ne p 0 with rfl | hp
+    · rw [Algebra.algebraMap_eq_smul_one]
+      exact (𝒜 0).sub_mem ha ((𝒜 0).smul_mem _ (SetLike.one_mem_graded 𝒜))
+    · rwa [e.map_eq_zero_of_mem_ne_zero ha hp, map_zero, sub_zero]
 
 end DGAlgAugmentation
 
