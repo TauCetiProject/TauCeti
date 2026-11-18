@@ -42,6 +42,11 @@ group orbits in projective and quasi-projective quotients.
   `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isImmersion_proj`: common affine
   neighbourhoods inside prescribed source opens for affine morphisms and immersions into `Proj`.
 
+## References
+
+* [The Stacks Project, Tag 01ZY](https://stacks.math.columbia.edu/tag/01ZY): finite subsets of
+  locally closed subschemes of `Proj` have affine neighborhoods. The homogeneous prime-avoidance
+  construction here also places the neighborhood inside a prescribed open.
 -/
 
 public section
