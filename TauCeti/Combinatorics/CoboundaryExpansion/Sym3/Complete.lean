@@ -79,7 +79,7 @@ private theorem defect_w4 :
   rw [sum_congr rfl h, ← Nat.cast_sum]
   have h8 : ∑ p ∈ (univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
       #(w4 p.1 p.2.1 * w4 p.2.1 p.2.2 * (w4 p.1 p.2.2)⁻¹).support = 8 := by
-    decide
+    decide +kernel
   rw [h8]
   norm_num
 

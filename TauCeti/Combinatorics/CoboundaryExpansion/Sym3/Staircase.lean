@@ -68,7 +68,7 @@ private theorem card_support_inv_mul_ite_mul {x y : Perm (Fin 3)} (hx : x = 1 �
   have key : ∀ x y : Perm (Fin 3), x = 1 ∨ x = swap 0 1 → y = 1 ∨ y = swap 0 1 → ∀ b : Bool,
       #(x⁻¹ * (if b = true then swap 0 1 else 1) * y).support =
         if Xor (b = true) (Xor (x = swap 0 1) (y = swap 0 1)) then 2 else 0 := by
-    decide
+    decide +kernel
   by_cases hp : p
   · simpa [hp] using key x y hx hy true
   · simpa [hp] using key x y hx hy false
