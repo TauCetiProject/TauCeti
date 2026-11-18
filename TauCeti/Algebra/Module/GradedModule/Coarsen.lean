@@ -296,6 +296,11 @@ along reduction modulo two, so the `coarsenGrading` API and instances apply to i
 abbrev parityGrading (ℳ : ℤ → Submodule R M) : ZMod 2 → Submodule R M :=
   coarsenGrading ℳ (Int.castAddHom (ZMod 2))
 
+/-- `parityGrading` is `coarsenGrading` along reduction modulo two. -/
+theorem parityGrading_eq_coarsenGrading (ℳ : ℤ → Submodule R M) :
+    parityGrading ℳ = coarsenGrading ℳ (Int.castAddHom (ZMod 2)) :=
+  (rfl)
+
 /-- An element of degree `n` has parity `n` modulo two. -/
 theorem mem_parityGrading_of_mem {ℳ : ℤ → Submodule R M} {n : ℤ} {x : M} (hx : x ∈ ℳ n) :
     x ∈ parityGrading ℳ n :=
@@ -385,6 +390,11 @@ piece is the sum of the pieces of degree `2 * k` and whose odd piece is the sum 
 degree `2 * k + 1`. -/
 noncomputable def parity (G : InternalGrading R M ℤ) : InternalGrading R M (ZMod 2) :=
   G.coarsen (Int.castAddHom (ZMod 2))
+
+/-- `InternalGrading.parity` is `InternalGrading.coarsen` along reduction modulo two. -/
+theorem parity_eq_coarsen (G : InternalGrading R M ℤ) :
+    G.parity = G.coarsen (Int.castAddHom (ZMod 2)) :=
+  (rfl)
 
 @[simp]
 theorem parity_piece (G : InternalGrading R M ℤ) : G.parity.piece = parityGrading G.piece := (rfl)

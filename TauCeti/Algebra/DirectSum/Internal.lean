@@ -28,7 +28,9 @@ commit `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0),
 by the Mei contributors (Authors: Codex).
 `DirectSum.map_decompose_shift` says that an additive map carrying each summand of one
 decomposition into a summand of another, along an injective reindexing of the degrees, commutes
-with the homogeneous projections, while `DirectSum.isInternal_comap` and
+with the homogeneous projections; in particular, `DirectSum.Decomposition.eq_of_subset` shows that
+two internal decompositions on the same index type coincide when each summand of one is contained
+in the corresponding summand of the other. Meanwhile, `DirectSum.isInternal_comap` and
 `DirectSum.Decomposition.restrict` transport a decomposition backwards along an injective linear
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
@@ -260,6 +262,19 @@ theorem map_decompose_shift {ι κ M N S T : Type*}
     · rw [decompose_of_mem_ne ℳ hxM (Ne.symm hij), map_zero,
         decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
   | add x y hx hy => simp [hx, hy]
+
+/-- Two internal decompositions of an additive commutative monoid indexed by the same type are
+equal as soon as each summand of the first is contained in the corresponding summand of the
+second. -/
+theorem Decomposition.eq_of_subset {ι M S : Type*} [DecidableEq ι] [AddCommMonoid M]
+    [SetLike S M] [AddSubmonoidClass S M] (ℳ 𝓝 : ι → S) [Decomposition ℳ] [Decomposition 𝓝]
+    (h : ∀ i ⦃x : M⦄, x ∈ ℳ i → x ∈ 𝓝 i) : ℳ = 𝓝 := by
+  funext i
+  refine SetLike.ext fun z ↦ ⟨fun hz ↦ h i hz, fun hz ↦ ?_⟩
+  have hproj := map_decompose_shift ℳ 𝓝 (AddMonoidHom.id M) id Function.injective_id
+    (fun j _ hx ↦ h j hx) i z
+  simp only [AddMonoidHom.id_apply, id_eq, decompose_of_mem_same 𝓝 hz] at hproj
+  exact hproj ▸ (decompose ℳ z i).property
 
 end DirectSum
 
