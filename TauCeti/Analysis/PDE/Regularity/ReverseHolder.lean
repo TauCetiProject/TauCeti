@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -195,11 +194,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
     field_simp
   -- The `L²` norm of `w` on `B(x₀, ρ)` is `√I`.
   have hwB : eLpNorm (fun x => W1p.value u x ^ (p / 2)) 2 (mu.restrict (Metric.ball x₀ ρ)) =
-      ENNReal.ofReal √I := by
-    rw [← eLpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset hball hwv),
-      ((Lp.memLp (W1p.value w)).mono_measure
-        (Measure.restrict_mono hball le_rfl)).eLpNorm_two_eq_ofReal_sqrt_integral]
-    simp only [Real.norm_eq_abs, sq_abs, I]
+      ENNReal.ofReal √I := W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral hwv hball
   -- The `L^q` norm of `w` on `B(x₀, r)` is at most that of `z` on `Ω`.
   have hzr := W1p.eLpNorm_le_eLpNorm_value_contDiffSMul hψ hM hψM' hgradM' hwv
     ((Metric.ball_subset_ball hrρ.le).trans hball) measurableSet_ball

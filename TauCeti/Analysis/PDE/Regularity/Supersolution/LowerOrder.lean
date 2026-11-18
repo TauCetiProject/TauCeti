@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Caccioppoli.Power
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.Analysis.SpecificLimits.Normed
@@ -232,12 +231,7 @@ private theorem exists_eLpNorm_rpow_neg_le_mul_eLpNorm_rpow_neg_lowerOrder :
   have hgradz := norm_gradient_contDiffSMul_le_lowerOrder h ha hb hc hb_bound hc_bound hβ hγ hu hm
     hmu hP hwv hball hψ hψr hcpt (hψts.trans hρ'B) hψg hM hψM' hgradM'
   -- The norms of `u^{-P/2}` on the two balls, through `w` and `z`.
-  have hwB : eLpNorm (fun x => W1p.value u x ^ (-P / 2)) 2 (mu.restrict (ball x₀ ρ)) =
-      ENNReal.ofReal √(∫ x in ball x₀ ρ, W1p.value w x ^ 2 ∂mu) := by
-    rw [← eLpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset hball hwv),
-      ((Lp.memLp (W1p.value w)).mono_measure
-        (Measure.restrict_mono hball le_rfl)).eLpNorm_two_eq_ofReal_sqrt_integral]
-    simp only [Real.norm_eq_abs, sq_abs]
+  have hwB := W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral hwv hball
   have hzr := W1p.eLpNorm_le_eLpNorm_value_contDiffSMul hψ hM hψM' hgradM' hwv
     ((ball_subset_ball hrρ.le).trans hball) measurableSet_ball
     (hψ1.mono ball_subset_closedBall) q
