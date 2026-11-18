@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Character
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
+import TauCeti.Analysis.Normed.Module.Prod
 import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
@@ -64,9 +65,6 @@ on the connected ball and is the constant `μ^ξ(p)`.
 
 ## Main results
 
-* `TauCeti.weightRotation_arg_circleExp`: the rotation by the arguments of `e^{i θₖ}` is the
-  rotation by `θ`.
-* `TauCeti.norm_sq_add_norm_sq_weightRotation`: rotations preserve `‖q‖² + ‖p‖²`.
 * `TauCeti.SymplecticForm.exists_continuousLinearEquiv_weightRotation`: a symplectic
   representation of a compact commutative group is, in linear symplectic coordinates `V ≃ ℂⁿ`,
   the rotation of the coordinates by characters.
@@ -93,55 +91,6 @@ open Set Real
 open scoped Manifold
 
 namespace TauCeti
-
-variable {ι : Type*} [Fintype ι]
-
-/-- The rotation by the arguments of the unit complex numbers `e^{i θₖ}` is the rotation by the
-angles `θ`: rotations only depend on their angles modulo `2π`. -/
-theorem weightRotation_arg_circleExp (θ : ι → ℝ) :
-    weightRotation (fun i ↦ Complex.arg (Circle.exp (θ i))) = weightRotation θ := by
-  have hc (t : ℝ) : cos (Complex.arg (Circle.exp t)) = cos t := by
-    rw [Complex.cos_arg (Circle.coe_ne_zero _), Circle.norm_coe, div_one, Circle.coe_exp,
-      Complex.exp_ofReal_mul_I_re]
-  have hs (t : ℝ) : sin (Complex.arg (Circle.exp t)) = sin t := by
-    rw [Complex.sin_arg, Circle.norm_coe, div_one, Circle.coe_exp, Complex.exp_ofReal_mul_I_im]
-  refine ContinuousLinearMap.ext fun x ↦ ?_
-  ext i <;> simp only [weightRotation_apply_fst, weightRotation_apply_snd, hc, hs]
-
-/-- Rotations preserve the squared radius `‖q‖² + ‖p‖²` of `ℂ^ι`. -/
-@[simp]
-theorem norm_sq_add_norm_sq_weightRotation (θ : ι → ℝ)
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    ‖(weightRotation θ x).1‖ ^ 2 + ‖(weightRotation θ x).2‖ ^ 2 = ‖x.1‖ ^ 2 + ‖x.2‖ ^ 2 := by
-  have h := (exists_weightRotation_apply_eq_iff x (weightRotation θ x)).1 ⟨θ, rfl⟩
-  simp only [EuclideanSpace.real_norm_sq_eq]
-  rw [← Finset.sum_add_distrib, ← Finset.sum_congr rfl fun j _ ↦ h j, Finset.sum_add_distrib]
-
-/-- The round ball `‖q‖² + ‖p‖² < r²` of `ℂ^ι` lies in every open set containing the origin once
-`r > 0` is small enough. -/
-private theorem exists_normSq_ball_subset {U : Set (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)}
-    (hU : IsOpen U) (h0 : 0 ∈ U) :
-    ∃ r > 0, {z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < r ^ 2} ⊆ U := by
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 hU 0 h0
-  refine ⟨r, hr, fun z hz ↦ hball ?_⟩
-  have h1 : ‖z.1‖ < r := lt_of_pow_lt_pow_left₀ 2 hr.le (by nlinarith [sq_nonneg ‖z.2‖, hz.out])
-  have h2 : ‖z.2‖ < r := lt_of_pow_lt_pow_left₀ 2 hr.le (by nlinarith [sq_nonneg ‖z.1‖, hz.out])
-  rw [Metric.mem_ball, dist_zero_right, Prod.norm_def]
-  exact max_lt h1 h2
-
-/-- The round ball `‖q‖² + ‖p‖² < r²` of `ℂ^ι` is preconnected: it is star-shaped about the
-origin. -/
-private theorem isPreconnected_normSq_ball {r : ℝ} (hr : 0 < r) :
-    IsPreconnected
-      {z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < r ^ 2} := by
-  have h0 : (0 : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∈
-      {z : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι | ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < r ^ 2} := by
-    simp [hr]
-  refine (StarConvex.isPathConnected (fun z hz a c _ hc hac ↦ ?_) h0).isConnected.isPreconnected
-  simp only [Set.mem_ofPred_eq, smul_zero, zero_add, Prod.smul_fst, Prod.smul_snd, norm_smul,
-    Real.norm_eq_abs, abs_of_nonneg hc] at hz ⊢
-  have hc1 : c ^ 2 ≤ 1 := pow_le_one₀ hc (by linarith)
-  nlinarith [sq_nonneg ‖z.1‖, sq_nonneg ‖z.2‖]
 
 namespace SymplecticForm
 
@@ -170,14 +119,10 @@ theorem exists_continuousLinearEquiv_weightRotation {V G : Type*} [NormedAddComm
       (weightRotation fun k ↦ Complex.arg (χ k g)).toLinearMap ∘ₗ
         b.darbouxBasisEquiv.toLinearMap := by
     refine b.ext fun ⟨k, j⟩ ↦ ?_
-    rcases Fin.exists_fin_two.1 ⟨j, rfl⟩ with rfl | rfl
-    · simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
-        (hbχ g k).1, map_add, map_smul, Module.Basis.darbouxBasisEquiv_apply_zero,
-        Module.Basis.darbouxBasisEquiv_apply_one]
-      ext m <;> by_cases hm : m = k <;> simp [hm, hcos, hsin]
-    · simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
-        (hbχ g k).2, map_add, map_smul, Module.Basis.darbouxBasisEquiv_apply_zero,
-        Module.Basis.darbouxBasisEquiv_apply_one]
+    rcases Fin.exists_fin_two.1 ⟨j, rfl⟩ with rfl | rfl <;>
+      simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
+        (hbχ g k).1, (hbχ g k).2, map_add, map_smul, Module.Basis.darbouxBasisEquiv_apply_zero,
+        Module.Basis.darbouxBasisEquiv_apply_one] <;>
       ext m <;> by_cases hm : m = k <;> simp [hm, hcos, hsin]
   exact LinearMap.congr_fun key v
 
@@ -260,12 +205,13 @@ theorem IsSymplectic.exists_weightRotation_darbouxChart (hσ : σ.IsSymplectic)
   let c₁ := c₀.trans (L.toPartialDiffeomorph (n := ∞))
   have hc₁ : (c₁ : M → EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) = L ∘ c₀ := by
     rw [PartialDiffeomorph.coe_trans, ContinuousLinearEquiv.toPartialDiffeomorph_toPartialEquiv]
-    rfl
+    simp only [Equiv.toPartialEquiv_apply, LinearEquiv.coe_toEquiv,
+      ContinuousLinearEquiv.coe_toLinearEquiv]
   have hc₁s : c₁.source = c₀.source := by simp [c₁]
   have hc₁p : c₁ p = 0 := by rw [hc₁, Function.comp_apply, hc₀p, map_zero]
   -- Restrict `c₁` to the preimage of a round ball in its target.
-  obtain ⟨r, hr, hBt⟩ :=
-    exists_normSq_ball_subset c₁.open_target (hc₁p ▸ c₁.map_source (hc₁s ▸ hpc₀))
+  obtain ⟨r, hr, hBt⟩ := exists_setOf_norm_fst_sq_add_norm_snd_sq_lt_subset
+    (c₁.open_target.mem_nhds (hc₁p ▸ c₁.map_source (hc₁s ▸ hpc₀)))
   set B := {z : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) |
     ‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 < r ^ 2} with hB
   have hBo : IsOpen B := isOpen_lt (by fun_prop) continuous_const
@@ -299,7 +245,7 @@ theorem IsSymplectic.exists_weightRotation_darbouxChart (hσ : σ.IsSymplectic)
       rw [hchart, mvfderiv_comp_apply x L.differentiableAt.mdifferentiableAt
         (c₀.mdifferentiableAt (by simp) (hmem.1 hx).1), mvfderiv_eq_fderiv_apply, L.fderiv,
         mvfderiv_apply_eq_mfderiv_apply]
-      rfl
+      rw [ContinuousLinearEquiv.coe_coe]
     rw [hdchart, hdchart, hL, hc₀σ x (hmem.1 hx).1]
 
 end Darboux
@@ -466,8 +412,11 @@ theorem exists_weightModelChart (hμ : σ.IsMomentMap (InfinitesimalAction.funda
       (mfderiv_fundamentalVectorField_eq_weightGenerator hcd hα (fun g ↦ (hequiv g y hy).2) ξ)
   -- The source of the chart is connected, being the preimage of a ball, so `F` is constant there.
   have hsrc : IsPreconnected chart.source := by
+    have hB := (convex_setOf_norm_fst_sq_add_norm_snd_sq_lt (E := EuclideanSpace ℝ (Fin n))
+      (F := EuclideanSpace ℝ (Fin n)) (r ^ 2)).isPreconnected
+    rw [← htarget] at hB
     rw [← chart.toPartialEquiv.symm_image_target_eq_source]
-    exact (htarget ▸ isPreconnected_normSq_ball hr).image _ chart.contMDiffOn_invFun.continuousOn
+    exact hB.image _ chart.contMDiffOn_invFun.continuousOn
   have : PreconnectedSpace chart.source := isPreconnected_iff_preconnectedSpace.1 hsrc
   have hloc : IsLocallyConstant (chart.source.domRestrict F) :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦
