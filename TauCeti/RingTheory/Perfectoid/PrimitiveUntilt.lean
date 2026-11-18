@@ -399,8 +399,8 @@ It is multiplicative and sends `0` to `0`, but it is not additive. -/
 noncomputable def sharp : P.plus →*₀ untilt p P J where
   __ := (algebraMap (𝕎 P.plus) (untilt p P J) : 𝕎 P.plus →* untilt p P J).comp (teichmuller p)
   map_zero' := by
-    change algebraMap (𝕎 P.plus) (untilt p P J) (teichmuller p 0) = 0
-    rw [WittVector.teichmuller_zero, map_zero]
+    simp only [MonoidHom.toFun_eq_coe, MonoidHom.comp_apply, MonoidHom.coe_ofClass,
+      WittVector.teichmuller_zero, map_zero]
 
 /-- `x♯` is the image of the Teichmüller representative `[x]`. -/
 theorem sharp_apply (x : P.plus) :
