@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.BraidWord.CrossingInsertion
-public import TauCeti.KnotTheory.BraidWord.StrandIncl
-public import TauCeti.KnotTheory.Markov.Closure
-public import TauCeti.KnotTheory.Markov.Skein
+import TauCeti.KnotTheory.BraidWord.StrandIncl
+import TauCeti.KnotTheory.Markov.Closure
+import TauCeti.KnotTheory.Markov.Skein
 public import TauCeti.KnotTheory.TemperleyLieb
 import Mathlib.Tactic.LinearCombination
 import TauCeti.KnotTheory.BraidWord.FreeCancellation.Closure
@@ -26,8 +26,9 @@ trace of the braid `w` represents is `δ` times the normalized bracket of the cl
 the difference of normalizations: the bracket gives the unknot the value `1`, the Markov trace the
 value `δ`. In terms of the Jones polynomial, the trace is `δ` times the Jones polynomial of the
 closure evaluated at `t ^ (1/2) = A⁻²`
-(`TauCeti.BraidWord.jonesTrace_toBraid_eq_eval₂_jonesPolynomial`); only when `δ` is invertible
-does this say that the evaluated Jones polynomial is the trace divided by `δ`.
+(`TauCeti.BraidWord.jonesTrace_toBraid_eq_eval₂_jonesPolynomial`); when `δ` is a non-zero-divisor
+(for instance over `ℤ[A, A⁻¹]`, where `δ` is not a unit) the evaluated Jones polynomial is the
+unique quotient of the trace by `δ`.
 
 The proof is the uniqueness of skein invariants, `TauCeti.MarkovBraid.eq_of_skein`. Both sides are
 Markov invariants. The trace is one by `TauCeti.MarkovEquiv.jonesTrace_eq`; the bracket of the
@@ -36,13 +37,14 @@ closure is one since closures of Markov-equivalent braids are Reidemeister equiv
 `A⁴ V(σᵢ c) - A⁻⁴ V(σᵢ⁻¹ c) = (A⁻² - A²) V(c)`: the trace by `TauCeti.MarkovBraid.jonesTrace_skein`,
 and the bracket by `TauCeti.BraidWord.normalizedKauffmanBracket_closure_cons_skein`, applied to a
 word for `c` beginning with `σᵢ σᵢ⁻¹`, so that both positions of the crossing already meet the
-diagram. Both are multiplied by `δ` when an uncrossed strand is added, and both take the value `δ`
-on the unknot. The comparison holds over every commutative ring, without dividing by `δ`.
+diagram. Both are multiplied by `δ` when an uncrossed strand is added, and the trace and `δ` times
+the bracket both take the value `δ` on the unknot. The comparison holds over every commutative
+ring, without dividing by `δ`.
 
 ## Main results
 
-* `TauCeti.BraidWord.jonesTrace_toBraid`: the Markov trace of the Jones representation is `δ`
-  times the normalized Kauffman bracket of the closure.
+* `TauCeti.BraidWord.jonesTrace_toBraid`: the writhe-normalized Markov trace of the Jones
+  representation is `δ` times the normalized Kauffman bracket of the closure.
 * `TauCeti.BraidWord.jonesTrace_toBraid_eq_eval₂_jonesPolynomial`: the same in terms of the Jones
   polynomial of the closure.
 
@@ -136,8 +138,9 @@ theorem jonesTrace_toBraid (a : Rˣ) {n : ℕ} (w : BraidWord (n + 1)) :
       simp [OrientedPDCode.writhe_def])
   rw [congrFun h, closureBracket_mk]
 
-/-- The braid and diagram routes agree, in terms of the Jones polynomial: the Markov trace of the
-Jones representation is `δ` times the Jones polynomial of the closure at `t ^ (1/2) = A⁻²`. -/
+/-- The braid and diagram routes agree, in terms of the Jones polynomial: the writhe-normalized
+Markov trace of the Jones representation is `δ` times the Jones polynomial of the closure at
+`t ^ (1/2) = A⁻²`. -/
 theorem jonesTrace_toBraid_eq_eval₂_jonesPolynomial (a : Rˣ) {n : ℕ} (w : BraidWord (n + 1)) :
     MarkovBraid.jonesTrace ⟨n, w.toBraid⟩ a =
       jonesDelta a * eval₂ (Int.castRingHom R) (a⁻¹ ^ 2) w.closure.jonesPolynomial := by

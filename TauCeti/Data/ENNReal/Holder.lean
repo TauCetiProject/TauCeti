@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.ENNReal.Holder
-public import Mathlib.Basic.Real.ConjExponents
 
 /-!
 # Hölder exponent triples in `ℝ≥0∞`
 
-Elementary facts about Hölder exponents: the missing exponent `r` with `1/p + 1/r = 1/q` exists
-once `q ≤ p`, and the conjugate exponent of `p` is below `2` exactly when `p > 2`.
+Elementary facts about `ENNReal.HolderTriple` and `ENNReal.HolderConjugate`: the missing
+exponent `r` with `1/p + 1/r = 1/q` exists once `q ≤ p`, and the exponent conjugate to `p > 2`
+is less than `2`, as for the supercritical exponents of planar Sobolev and Cauchy-transform
+estimates.
 
 ## Main declarations
 
 * `ENNReal.HolderTriple.of_le`: for `q ≤ p`, the triple `(p, (q⁻¹ - p⁻¹)⁻¹, q)`.
-* `ENNReal.conjExponent_lt_two_iff`: `p.conjExponent < 2` exactly when `2 < p`.
+* `ENNReal.HolderConjugate.lt_two`: the conjugate of an exponent `p > 2` is less than `2`.
 -/
 
 public section
@@ -32,12 +33,14 @@ theorem of_le {p q : ℝ≥0∞} (hqp : q ≤ p) : HolderTriple p (q⁻¹ - p⁻
 
 end ENNReal.HolderTriple
 
-namespace ENNReal
+namespace ENNReal.HolderConjugate
 
-/-- The conjugate exponent of `p` is below `2` exactly when `p` is above `2`. -/
-@[simp]
-theorem conjExponent_lt_two_iff {p : ℝ≥0∞} : p.conjExponent < 2 ↔ 2 < p := by
-  rw [conjExponent, ← one_add_one_eq_two, ENNReal.add_lt_add_iff_left one_ne_top,
-    ENNReal.inv_lt_one, lt_tsub_iff_left]
+/-- The exponent conjugate to `p > 2` is less than `2`. -/
+theorem lt_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 < p) : q < 2 := by
+  by_contra hq
+  have h := ENNReal.add_lt_add_of_lt_of_le (ENNReal.inv_ne_top.2 (ne_zero q p))
+    (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_le_inv.2 (not_lt.1 hq))
+  rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
+  exact lt_irrefl _ h
 
-end ENNReal
+end ENNReal.HolderConjugate

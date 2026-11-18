@@ -7,16 +7,16 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.StandardFrame
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
-import Mathlib.MeasureTheory.Function.UniformIntegrable
-import TauCeti.Data.ENNReal.Holder
 import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
+import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
 import TauCeti.Analysis.Complex.Wirtinger.Weyl
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.Local.Multiplication
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.RankOne
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
@@ -41,8 +41,9 @@ structure of a holomorphic map: unique continuation from a zero of infinite orde
 (`TauCeti.eqOn_zero_of_isWeakLinearCauchyRiemannOn_of_forall_isBigO`) and isolated zeros
 (`TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_isWeakLinearCauchyRiemannOn`). These consequences
 allow `p = ∞`, and the last two need only a finite-dimensional real normed space `V`, read in a
-complex Euclidean model. This extends the classical case `TauCeti.exists_similarity_of_contDiffOn`,
-for `C¹` solutions of the equation with `J = i` and locally bounded `C`.
+complex Euclidean model. This extends `TauCeti.exists_similarity_of_hasWeakConjWirtingerDerivOn`,
+for the constant structure `J = i`, to a variable `J`, and adds the `W^{1,p}_loc` regularity of
+the factor `Φ`.
 
 The proof has two steps.
 
@@ -82,51 +83,6 @@ open Asymptotics Complex Filter Function MeasureTheory Metric Set Topology Topol
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-! ### Choosing the disc -/
-
-/-- A field that is `Lᵖ` on a closed disc about `z₀`, `1 ≤ p < ∞`, satisfies the smallness
-condition of `TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp` on some smaller
-closed disc about `z₀`, since its `Lᵖ` norm on sets of small measure is small. -/
-private theorem exists_lt_mul_eLpNorm_le {E : Type*} [NormedAddCommGroup E] {p q : ℝ≥0∞}
-    (hp : 1 ≤ p) (hp_top : p ≠ ∞) (hq : q < 2) {D : ℂ → E} {z₀ : ℂ} {R : ℝ} (hR : 0 < R)
-    (hD : MemLp D p (volume.restrict (closedBall z₀ R))) :
-    ∃ r, 0 < r ∧ r < R ∧ Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (r + r)) q volume).toReal *
-      (eLpNorm D p (volume.restrict (closedBall z₀ r))).toReal ≤ 2⁻¹ := by
-  set A := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal
-  obtain ⟨δ, hδ, hδD⟩ := hD.eLpNorm_indicator_le hp hp_top
-    (ENNReal.ofReal_pos.2 (by positivity : 0 < 2⁻¹ / (A + 1)))
-  have hvol :=
-    tendsto_measure_cthickening_of_isCompact (μ := volume) (isCompact_singleton (x := z₀))
-  rw [measure_singleton] at hvol
-  obtain ⟨r, ⟨hrR, hrδ⟩, hr⟩ := ((eventually_nhdsWithin_of_eventually_nhds (s := Ioi (0 : ℝ))
-    ((eventually_lt_nhds hR).and (hvol.eventually (gt_mem_nhds hδ)))).and
-    self_mem_nhdsWithin).exists
-  rw [cthickening_singleton _ (le_of_lt hr)] at hrδ
-  have hsub : closedBall z₀ r ⊆ closedBall z₀ R := closedBall_subset_closedBall hrR.le
-  refine ⟨r, hr, hrR, ?_⟩
-  -- the kernel factor grows with the radius
-  have hK : (eLpNorm (truncatedCauchyKernel (r + r)) q volume).toReal ≤
-      (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal := by
-    refine ENNReal.toReal_mono (memLp_truncatedCauchyKernel hq _).eLpNorm_ne_top
-      (eLpNorm_mono (measurable_truncatedCauchyKernel _).aestronglyMeasurable fun z ↦ ?_)
-    simp only [truncatedCauchyKernel_def]
-    exact norm_indicator_le_of_subset (closedBall_subset_closedBall (by linarith)) _ _
-  -- and the coefficient factor is small on the small disc
-  have hN : (eLpNorm D p (volume.restrict (closedBall z₀ r))).toReal ≤ 2⁻¹ / (A + 1) := by
-    have h := hδD (closedBall z₀ r) measurableSet_closedBall.nullMeasurableSet (by
-      rw [Measure.restrict_apply measurableSet_closedBall]
-      exact (measure_mono inter_subset_left).trans hrδ.le)
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict
-      (measurableSet_closedBall : MeasurableSet (closedBall z₀ r)).nullMeasurableSet,
-      Measure.restrict_restrict measurableSet_closedBall, inter_eq_left.2 hsub] at h
-    exact ENNReal.toReal_le_of_le_ofReal (by positivity) h
-  calc _ ≤ A * (2⁻¹ / (A + 1)) := by
-        simp only [A, mul_assoc]
-        gcongr
-    _ = 2⁻¹ * (A / (A + 1)) := by ring
-    _ ≤ 2⁻¹ * 1 := by gcongr; exact (div_le_one (by positivity)).2 (by linarith)
-    _ = 2⁻¹ := mul_one _
 
 /-! ### The standard structure -/
 
@@ -212,23 +168,38 @@ private theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul {p : ℝ
       EqOn (fun z ↦ Ψ z (ξ z)) σ (ball z₀ r) := by
   have := FiniteDimensional.completeSpace ℂ V
   have hp1' : (1 : ℝ≥0∞) < p := by exact_mod_cast one_lt_two.trans hp
-  have hq : (p : ℝ≥0∞).conjExponent < 2 := ENNReal.conjExponent_lt_two_iff.2 (by exact_mod_cast hp)
   have : (p : ℝ≥0∞).HolderConjugate (p : ℝ≥0∞).conjExponent := .conjExponent hp1'.le
+  have hq : (p : ℝ≥0∞).conjExponent < 2 :=
+    ENNReal.HolderConjugate.lt_two (p := (p : ℝ≥0∞)) (by exact_mod_cast hp)
   -- a closed disc in `Ω`, and a complex-linear coefficient `D` with `D ξ = C ξ` on it
-  obtain ⟨R₀, hR₀, hR₀Ω⟩ := Metric.isOpen_iff.1 Ω.isOpen z₀ hz₀
-  have hRΩ : closedBall z₀ (R₀ / 2) ⊆ Ω :=
-    (closedBall_subset_ball (half_lt_self hR₀)).trans hR₀Ω
+  obtain ⟨R, hR, hRΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hz₀)
   obtain ⟨D, hDp, hD⟩ :=
     (memLpLoc_iff.1 hC _ hRΩ (isCompact_closedBall _ _)).exists_memLp_clm_apply_eq
       ((hξ.continuousOn.mono hRΩ).aestronglyMeasurable measurableSet_closedBall)
-  -- a smaller disc on which the Cauchy integral equation is solvable
-  obtain ⟨r, hr, hrR, hsmall⟩ :=
-    exists_lt_mul_eLpNorm_le hp1'.le ENNReal.coe_ne_top hq (half_pos hR₀) hDp
-  have hsub : closedBall z₀ r ⊆ closedBall z₀ (R₀ / 2) := closedBall_subset_closedBall hrR.le
+  set K := Real.pi⁻¹ *
+    (eLpNorm (truncatedCauchyKernel (R + R)) (p : ℝ≥0∞).conjExponent volume).toReal
+  have hK : 0 ≤ K := by positivity
+  -- a smaller disc on which `D` has `Lᵖ` norm at most `1 / (2 (K + 1))`
+  have hDR : MemLp ((closedBall z₀ R).indicator D) p volume :=
+    (memLp_indicator_iff_restrict measurableSet_closedBall.nullMeasurableSet).2 hDp
+  obtain ⟨r, hDr, hr, hrR⟩ := ((((tendsto_eLpNorm_restrict_closedBall ENNReal.coe_ne_top hDR
+    z₀).eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (show 0 < 2⁻¹ / (K + 1) by
+      positivity)))).filter_mono nhdsWithin_le_nhds).and (Ioo_mem_nhdsGT hR)).exists
+  have hsub : closedBall z₀ r ⊆ closedBall z₀ R := closedBall_subset_closedBall hrR.le
+  rw [eLpNorm_congr_ae ((ae_restrict_iff' measurableSet_closedBall).2
+    (ae_of_all _ fun z hz ↦ indicator_of_mem (hsub hz) D))] at hDr
+  have hKD : K * (eLpNorm D p (volume.restrict (closedBall z₀ r))).toReal ≤ 2⁻¹ := by
+    have h1 := ENNReal.toReal_le_of_le_ofReal (by positivity) hDr.le
+    calc _ ≤ K * (2⁻¹ / (K + 1)) := by gcongr
+      _ ≤ 2⁻¹ := by
+          rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+          nlinarith
   have hball : ball z₀ r ⊆ Ω := ball_subset_closedBall.trans (hsub.trans hRΩ)
+  -- the Cauchy integral equation on the smaller disc
   obtain ⟨g, hgp, hgs, hTg, hgeq, hTg1⟩ :=
-    exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hq
-      (hDp.mono_measure (Measure.restrict_mono hsub le_rfl)) hsmall
+    exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hq hK
+      (fun f hf hfs w hw ↦ norm_cauchyTransform_le hq hf (hfs.trans hsub) (hsub hw))
+      (hDp.mono_measure (Measure.restrict_mono hsub le_rfl)) hKD
   set Ψ : ℂ → V →L[ℂ] V := fun z ↦ 1 + cauchyTransform g z with hΨ
   have hunit (z : ℂ) (hz : z ∈ ball z₀ r) : IsUnit (Ψ z) := by
     by_contra h

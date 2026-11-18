@@ -36,6 +36,9 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
   `C^k` in both directions, and cuts out the boundary as the zero slice of its normal coordinate.
 * `TauCeti.EuclideanHalfSpace.homeomorphNormalIio`: that segment, read by its normal coordinate
   as the real interval `[0, ε)`.
+* `TauCeti.EuclideanHalfSpace.normalIioOpensZero` and
+  `TauCeti.EuclideanHalfSpace.homeomorphNormalIioOpens`: the origin of the open segment
+  `normalIioOpens ε`, and that open segment read as the real interval `[0, ε)`.
 * `TauCeti.IsProductCollarChart.homeomorphProd`: the local collar itself, a homeomorphism of the
   source of a product collar chart onto (its part of) the boundary times `[0, ε)`.
 * `TauCeti.IsProductCollarChart.sourceOpens` and
@@ -216,6 +219,52 @@ def homeomorphNormalIio (ε : ℝ) : ↥(normalIio ε) ≃ₜ ↥(Set.Ico (0 : �
 @[simp]
 theorem coe_homeomorphNormalIio {ε : ℝ} (t : ↥(normalIio ε)) :
     (homeomorphNormalIio ε t : ℝ) = t.1.1 0 := (rfl)
+
+/-- The origin of the one-dimensional half-space model, as a point of the open initial segment
+`normalIioOpens ε` of positive height. -/
+def normalIioOpensZero {ε : ℝ} (hε : 0 < ε) : normalIioOpens ε :=
+  ⟨0, zero_mem_normalIio hε⟩
+
+/-- The origin of the open initial segment is the origin of the half-space model. -/
+@[simp]
+theorem coe_normalIioOpensZero {ε : ℝ} (hε : 0 < ε) :
+    (normalIioOpensZero hε : EuclideanHalfSpace 1) = 0 := (rfl)
+
+/-- The open initial segment `normalIioOpens ε`, read by its normal coordinate as the real
+interval `[0, ε)`. Its underlying set is `normalIio ε`, so this is `homeomorphNormalIio ε` with
+its source read as the open subspace. -/
+def homeomorphNormalIioOpens (ε : ℝ) : normalIioOpens ε ≃ₜ Ico (0 : ℝ) ε :=
+  homeomorphNormalIio ε
+
+/-- The interval reading of the open initial segment is the normal coordinate. -/
+@[simp]
+theorem coe_homeomorphNormalIioOpens {ε : ℝ} (t : normalIioOpens ε) :
+    (homeomorphNormalIioOpens ε t : ℝ) = (t : EuclideanHalfSpace 1).1 0 := (rfl)
+
+/-- The inverse of the interval reading of the open initial segment is the normal ray. -/
+@[simp]
+theorem coe_homeomorphNormalIioOpens_symm {ε : ℝ} (r : Ico (0 : ℝ) ε) :
+    ((homeomorphNormalIioOpens ε).symm r : EuclideanHalfSpace 1) = normalRay r := (rfl)
+
+/-- The interval reading sends the origin of the open initial segment to the origin of `[0, ε)`. -/
+@[simp]
+theorem homeomorphNormalIioOpens_normalIioOpensZero {ε : ℝ} (hε : 0 < ε) :
+    homeomorphNormalIioOpens ε (normalIioOpensZero hε) = ⟨0, left_mem_Ico.2 hε⟩ :=
+  Subtype.ext (by simp)
+
+/-- The origin of `[0, ε)` corresponds to the origin of the open initial segment. -/
+@[simp]
+theorem homeomorphNormalIioOpens_symm_zero {ε : ℝ} (h : (0 : ℝ) ∈ Ico (0 : ℝ) ε) :
+    (homeomorphNormalIioOpens ε).symm ⟨0, h⟩ = normalIioOpensZero (left_mem_Ico.1 h) :=
+  (homeomorphNormalIioOpens ε).symm_apply_eq.2 (homeomorphNormalIioOpens_normalIioOpensZero _).symm
+
+/-- The origin of the unit interval `[0, 1)` corresponds to the origin of the open initial
+segment. This is the form `homeomorphNormalIioOpens_symm_zero` takes at height `1`, where
+`Set.Ico.mk_zero` rewrites the origin of `[0, 1)` to `0`. -/
+@[simp]
+theorem homeomorphNormalIioOpens_one_symm_zero :
+    (homeomorphNormalIioOpens 1).symm 0 = normalIioOpensZero one_pos :=
+  homeomorphNormalIioOpens_symm_zero _
 
 /-- The open embedding `t ↦ eᵗ` of the real line onto the open part `(0, ∞)` of the
 one-dimensional half-space. -/
@@ -492,7 +541,7 @@ neighbourhood basis.
 
 This is the local half of the collar neighbourhood theorem; the global statement patches these
 boxes along the whole boundary. -/
-theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
+theorem exists_isProductCollarChart_of_mem_boundary {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     ∃ (φ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1))
       (V : Set (EuclideanSpace ℝ (Fin n))) (ε : ℝ),
@@ -503,7 +552,7 @@ theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
   -- the boundary point is read in the collar chart as a point of the zero slice
   have hx0 : (collarChart e x).2 = 0 :=
     EuclideanHalfSpace.eq_zero_iff.2
-      ((mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hk (chart_mem_atlas _ x) hxe).1 hx)
+      ((mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hxe).1 hx)
   have hxt : ((collarChart e x).1, (collarChart e x).2) ∈ (collarChart e).target :=
     (collarChart e).map_source hxs
   -- shrink an ambient box to a box of the form `V × [0, ε)`
@@ -540,19 +589,20 @@ theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
     exact (contMDiffOn_collarChart_symm (IsManifold.chart_mem_maximalAtlas x)).mono hBsub
   · intro y hy
     rw [hcoe]
-    exact mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hk (chart_mem_atlas _ x) (hsub hy)
+    exact mem_boundary_iff_collarChart_snd_apply_zero_eq_zero (hsub hy)
 
-/-- **A local collar neighbourhood of a boundary point.** Every boundary point of a `C^k`
-manifold with boundary, `k ≠ 0`, has an open neighbourhood `U` homeomorphic to the product of its
-part `U ∩ ∂M` of the boundary with a half-open interval `[0, ε)`.
+/-- **A local collar neighbourhood of a boundary point.** Every boundary point of a charted
+space modeled on a Euclidean half-space has an open neighbourhood `U` homeomorphic to the product
+of its part `U ∩ ∂M` of the boundary with a half-open interval `[0, ε)`.
 
 This is the local collar; the collar neighbourhood theorem is the statement that the `U` can be
 taken to be a single neighbourhood of the whole boundary, with `U ∩ ∂M = ∂M`. -/
-theorem exists_homeomorph_prod_Ico_of_mem_boundary (hk : k ≠ 0) {x : M}
+theorem exists_homeomorph_prod_Ico_of_mem_boundary {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     ∃ (U : Set M) (ε : ℝ), IsOpen U ∧ x ∈ U ∧ 0 < ε ∧
       Nonempty (↥U ≃ₜ ↥(U ∩ (𝓡∂ (n + 1)).boundary M) × ↥(Set.Ico (0 : ℝ) ε)) := by
-  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary hk hx
+  -- Take `k = 0`: every charted space is a `C^0` manifold, so no smoothness of `M` is assumed.
+  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary (k := 0) hx
   exact ⟨φ.source, ε, φ.open_source, hxφ, h.height_pos,
     ⟨h.homeomorphProd.trans
       ((Homeomorph.refl _).prodCongr (EuclideanHalfSpace.homeomorphNormalIio ε))⟩⟩
