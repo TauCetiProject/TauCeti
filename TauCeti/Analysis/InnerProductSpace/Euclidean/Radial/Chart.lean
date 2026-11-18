@@ -50,16 +50,18 @@ theorem radialChart_source : (radialChart (n := n)).source = univ := by
 theorem coe_radialChart : ⇑(radialChart (n := n)) =
     EuclideanSpace.equiv (Fin n) ℝ ∘ OpenPartialHomeomorph.univUnitBall ∘
       (EuclideanSpace.equiv (Fin n) ℝ).symm := by
-  funext z
-  rfl
+  simp only [radialChart, OpenPartialHomeomorph.coe_trans, Homeomorph.toOpenPartialHomeomorph_apply,
+    ContinuousLinearEquiv.coe_toHomeomorph]
 
 /-- The inverse of the radial chart is `OpenPartialHomeomorph.univUnitBall.symm` read through
 `EuclideanSpace.equiv`. -/
 theorem coe_radialChart_symm : ⇑(radialChart (n := n)).symm =
     EuclideanSpace.equiv (Fin n) ℝ ∘ OpenPartialHomeomorph.univUnitBall.symm ∘
       (EuclideanSpace.equiv (Fin n) ℝ).symm := by
-  funext z
-  rfl
+  simp only [radialChart, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+    OpenPartialHomeomorph.coe_trans, Homeomorph.toOpenPartialHomeomorph_symm_apply,
+    ContinuousLinearEquiv.coe_symm_toHomeomorph, ContinuousLinearEquiv.symm_symm,
+    Function.comp_assoc]
 
 /-- The radial chart takes values in the open Euclidean unit ball. -/
 @[simp]
@@ -83,8 +85,9 @@ theorem radialChart_symm_apply (z : Fin n → ℝ) :
     EuclideanSpace.norm_sq_eq, PiLp.coe_continuousLinearEquiv]
 
 /-- The radial chart is smooth. -/
-theorem contDiff_radialChart : ContDiff ℝ ∞ (radialChart (n := n)) :=
-  (EuclideanSpace.equiv (Fin n) ℝ).contDiff.comp
+theorem contDiff_radialChart : ContDiff ℝ ∞ (radialChart (n := n)) := by
+  rw [coe_radialChart]
+  exact (EuclideanSpace.equiv (Fin n) ℝ).contDiff.comp
     (OpenPartialHomeomorph.contDiff_univUnitBall.comp
       (EuclideanSpace.equiv (Fin n) ℝ).symm.contDiff)
 
@@ -97,7 +100,7 @@ theorem contDiffOn_radialChart_symm :
     (EuclideanSpace.equiv (Fin n) ℝ).contDiff.comp_contDiffOn
       (OpenPartialHomeomorph.contDiffOn_univUnitBall_symm.comp
         (EuclideanSpace.equiv (Fin n) ℝ).symm.contDiff.contDiffOn fun _ hz ↦ hz)
-  refine h.congr_mono (fun z _ ↦ rfl) fun z hz ↦ ?_
+  refine h.congr_mono (fun z _ ↦ by rw [coe_radialChart_symm]) fun z hz ↦ ?_
   rw [radialChart_target, mem_ofPred_eq] at hz
   rw [mem_preimage, mem_ball_zero_iff, ← sq_lt_one_iff₀ (norm_nonneg _),
     EuclideanSpace.norm_sq_eq, PiLp.continuousLinearEquiv_symm_apply]

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Gradient
 public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Geometry.Manifold.Riemannian.Invariant
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Radial.Chart
+import TauCeti.Data.Set.Card
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.InformationTheory.Coding.Equivalence
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
@@ -145,29 +146,18 @@ noncomputable def projectiveMomentMorseChart (hk : ∀ i, i ≠ k → w i ≠ w 
   weight_eq_neg_one_or_eq_one i := by split_ifs <;> simp
   ncard_weight_neg := by
     rw [manifoldMorseIndex_projectiveMomentFunction, Module.finrank_self, one_mul]
-    have himage : (k.succAbove ∘ finCongr (Module.finrank_fin_fun ℝ)) ''
-        {i | (if w k < w (k.succAbove (finCongr (Module.finrank_fin_fun ℝ) i)) then (1 : ℝ)
-          else -1) < 0} =
-          {i | w i < w k} := by
+    -- A weight is negative exactly when the corresponding weight of `w` lies below `w k`.
+    have hpre : {i | (if w k < w (k.succAbove (finCongr (Module.finrank_fin_fun ℝ) i)) then (1 : ℝ)
+        else -1) < 0} =
+          finCongr (Module.finrank_fin_fun ℝ) ⁻¹' (k.succAbove ⁻¹' {i | w i < w k}) := by
       ext i
-      constructor
-      · rintro ⟨i, hi, rfl⟩
-        simp only [mem_ofPred_eq] at hi ⊢
-        split_ifs at hi with h
-        · norm_num at hi
-        · exact lt_of_le_of_ne (not_lt.1 h) (hk _ (Fin.succAbove_ne k _))
-      · intro hi
-        have hik : i ≠ k := by
-          rintro rfl
-          exact lt_irrefl (w i) hi
-        obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq hik
-        refine ⟨(finCongr (Module.finrank_fin_fun ℝ)).symm j, ?_, by simp⟩
-        simp only [mem_ofPred_eq, Equiv.apply_symm_apply]
-        rw [ite_eq_right_of_eq_false _ _ (eq_false (not_lt.2 (le_of_lt hi)))]
-        norm_num
-    rw [← himage, ncard_image_of_injective _
-      ((Fin.succAbove_right_injective (p := k)).comp
-        (finCongr (Module.finrank_fin_fun ℝ)).injective)]
+      simp only [mem_ofPred_eq, mem_preimage]
+      split_ifs with h
+      · exact iff_of_false (by norm_num) (not_lt.2 h.le)
+      · exact iff_of_true (by norm_num) (lt_of_le_of_ne (not_lt.1 h) (hk _ (Fin.succAbove_ne k _)))
+    rw [hpre, ncard_preimage_of_injective_subset_range (finCongr _).injective
+      fun i _ ↦ (finCongr _).surjective i, ncard_preimage_succAbove,
+      sdiff_singleton_eq_self (lt_irrefl (w k))]
   eq_quadratic y hy := by
     have hy' : y ∈ affineOpen k := by simpa using hy.1
     set z := affineChart k y with hz
