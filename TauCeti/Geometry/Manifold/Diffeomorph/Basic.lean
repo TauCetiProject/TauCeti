@@ -206,6 +206,14 @@ theorem mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f 
     rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
       ContinuousLinearMap.zero_comp]
 
+/-- **Chain rule for precomposition with a diffeomorphism, for vector-valued functions.** The
+differential of `f ∘ h` at `x`, with values in `E'`, is `df ∘ dh`. No differentiability of `f` is
+assumed. -/
+theorem mvfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f : N → E') (x : M) :
+    mvfderiv I (f ∘ h) x = (mvfderiv J f (h x)).comp (mfderiv I J h x) := by
+  rw [mvfderiv, mvfderiv, h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.comp_assoc,
+    Function.comp_apply]
+
 /-- Postcomposition with a diffeomorphism maps tangent images by its differential: the range of
 the differential of `h ∘ f` at `x` is the image of the range of the differential of `f` under the
 linear equivalence `dh`, `Diffeomorph.mfderivToContinuousLinearEquiv`.
