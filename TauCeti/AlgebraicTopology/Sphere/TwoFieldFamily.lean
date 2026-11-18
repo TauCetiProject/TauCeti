@@ -123,6 +123,11 @@ theorem isCompact_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
     (hv : Continuous v) : IsCompact (twoFieldEquators u v) :=
   (isClosed_twoFieldEquators hu hv).isCompact
 
+/-- **The space of equators is compact.** -/
+theorem compactSpace_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
+    (hv : Continuous v) : CompactSpace (twoFieldEquators u v) :=
+  isCompact_iff_compactSpace.1 (isCompact_twoFieldEquators hu hv)
+
 /-- The space of equators is the space of unit vectors orthogonal to the frames `(u x, v x)`. -/
 theorem twoFieldEquators_eq_orthogonalSphereBundle :
     twoFieldEquators u v = orthogonalSphereBundle fun x ↦ ![u x, v x] := by
