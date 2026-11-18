@@ -105,14 +105,12 @@ theorem cylinderHomotopy_apply (ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]�
 map; the cylinder homotopy operator integrates it over time. -/
 private def contractInl : ((E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin n]→L[ℝ] F :=
   ContinuousAlternatingMap.compContinuousLinearMapCLM (.inl ℝ E ℝ) ∘L
-    (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := F)
-      (n := n)).toContinuousLinearMap.flip (0, 1)
+    ContinuousAlternatingMap.curryLeftFlipL (0, 1)
 
 private theorem contractInl_def :
     contractInl (E := E) (F := F) (n := n) =
       ContinuousAlternatingMap.compContinuousLinearMapCLM (.inl ℝ E ℝ) ∘L
-        (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E × ℝ) (F := F)
-          (n := n)).toContinuousLinearMap.flip (0, 1) :=
+        ContinuousAlternatingMap.curryLeftFlipL (0, 1) :=
   (rfl)
 
 private theorem contractInl_apply (α : (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F) :
@@ -442,8 +440,7 @@ theorem extDerivWithin_cylinderHomotopy_add_cylinderHomotopy_extDerivWithin (hs 
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   have key := congrArg (ContinuousAlternatingMap.compContinuousLinearMapCLM (.inl ℝ E ℝ))
     (ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft (A t) (0, 1))
-  rw [ContinuousAlternatingMap.curryLeftFlipL_def, map_add,
-    ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
+  rw [map_add, ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
     ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap] at key
