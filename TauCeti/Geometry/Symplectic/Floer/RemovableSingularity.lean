@@ -8,13 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
-import TauCeti.Geometry.Symplectic.CompatibleMetric
-import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity
-import TauCeti.Geometry.Symplectic.Prod.Basic
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 
 /-!
@@ -32,9 +29,11 @@ The proof reduces to that case by Gromov's graph construction
 (`TauCeti.Geometry.Symplectic.Floer.Graph`). Rescale the domain coordinate of the graph by a
 scale `μ > 0`: the map `U(w) = (μ w, u w)` into `ℂ × V` solves the Cauchy–Riemann equation of
 Gromov's structure `graphStructure J' X'` for the rescaled data `J'(ζ, x) = J(μ⁻¹ ζ, x)` and
-`X'(ζ, x) = μ⁻¹ X(μ⁻¹ ζ, x)`. The split form `σ ⊕ ω` of the standard area form `σ` on `ℂ` and `ω`
+`X'(ζ, x) = μ⁻¹ X(μ⁻¹ ζ, x)` (`TauCeti.Floer.fderiv_toLp_smul_prodMk_I_eq_graphStructure_iff`).
+The split form `σ ⊕ ω` of the standard area form `σ` on `ℂ` and `ω`
 tames Gromov's structure as soon as the Hamiltonian term is small compared with the taming
-constant of `J`, which a large `μ` achieves. The graph has finite energy
+constant of `J` (`TauCeti.Floer.mul_norm_sq_le_prodL2_graphStructure`), which a large `μ`
+achieves. The graph has finite energy
 `∫ (μ² + ‖∂ₛu‖²)` on the disc, so the removal theorem for pseudoholomorphic curves applies to it,
 and the second coordinate of its extension extends `u`.
 
@@ -67,118 +66,21 @@ namespace TauCeti.Floer
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
 
-/-- The split symplectic form `σ ⊕ ω` on `ℂ × V`, for the standard area form `σ` on `ℂ`. -/
-private noncomputable def splitForm (ω : SymplecticForm V) :
-    SymplecticForm (WithLp 2 (ℂ × V)) :=
-  (stdComplexSymplecticForm.prod ω).transport (WithLp.linearEquiv 2 ℝ (ℂ × V)).symm
-
-private theorem splitForm_apply (ζ η : WithLp 2 (ℂ × V)) :
-    splitForm ω ζ η = stdComplexSymplecticForm ζ.fst η.fst + ω ζ.snd η.snd := by
-  simp [splitForm]
-
-/-- The split structure `i ⊕ J₀` on `ℂ × V`. -/
-private noncomputable def splitStructure (J₀ : AlmostComplexStructure V) :
-    AlmostComplexStructure (WithLp 2 (ℂ × V)) :=
-  ((AlmostComplexStructure.ofComplexModule ℂ).prod J₀).transport
-    (WithLp.linearEquiv 2 ℝ (ℂ × V)).symm
-
-private theorem splitForm_splitStructure (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
-    (ζ η : WithLp 2 (ℂ × V)) : splitForm ω ζ (splitStructure J₀ η) = inner ℝ ζ η := by
-  simp [splitForm, splitStructure, hg, WithLp.prod_inner_apply,
-    AlmostComplexStructure.ofComplexModule_apply]
-  ring
-
-/-- **The split form tames Gromov's structure when the Hamiltonian term is small.** Let `J(p)` be
-tamed by `ω` with constant `c`, with `‖J(p)‖ ≤ B`, and let `‖X(p)‖ ≤ η`, where `η ≤ 1/2` and
-`2 (η (B + 1))² ≤ c`. Then `σ ⊕ ω` tames `graphStructure J X` at `p` with constant `min 1 c / 4`. -/
-private theorem mul_norm_sq_le_splitForm_graphStructure (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
-    {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {p : WithLp 2 (ℂ × V)} {c B η : ℝ}
-    (hc : 0 < c) (hη : 0 ≤ η) (hη2 : η ≤ 1 / 2) (hηB : 2 * (η * (B + 1)) ^ 2 ≤ c)
-    (htame : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J p.ofLp v)) (hJ : ‖J p.ofLp‖ ≤ B)
-    (hX : ‖X p.ofLp‖ ≤ η) (ζ : WithLp 2 (ℂ × V)) :
-    min 1 c / 4 * ‖ζ‖ ^ 2 ≤ splitForm ω ζ (graphStructure J X p ζ) := by
-  obtain ⟨a, ha⟩ : ∃ a, ζ.snd = a + X p.ofLp ζ.fst := ⟨_, (sub_add_cancel _ _).symm⟩
-  -- Expand the form: `σ(ξ, i ξ) + ω(a, J a) + ω(X ξ, J a) + ω(v, X (i ξ))` with `v = a + X ξ`.
-  have hexp : splitForm ω ζ (graphStructure J X p ζ) = ‖ζ.fst‖ ^ 2 + ω a (J p.ofLp a) +
-      ω (X p.ofLp ζ.fst) (J p.ofLp a) + ω ζ.snd (X p.ofLp (I * ζ.fst)) := by
-    rw [splitForm_apply, graphStructure_apply]
-    simp only [WithLp.toLp_fst, WithLp.toLp_snd, ha,
-      add_sub_cancel_right, stdComplexSymplecticForm_apply, map_add, LinearMap.add_apply,
-      mul_re, mul_im, I_re, I_im, Complex.sq_norm, Complex.normSq_apply]
-    ring
-  have h1 : c * ‖a‖ ^ 2 ≤ ω a (J p.ofLp a) := htame a
-  have h2 : -(η * ‖ζ.fst‖ * (B * ‖a‖)) ≤ ω (X p.ofLp ζ.fst) (J p.ofLp a) := by
-    refine neg_le_of_abs_le ((SymplecticForm.abs_apply_le_norm_mul_norm hg _ _).trans ?_)
-    gcongr
-    · exact (X p.ofLp).le_of_opNorm_le hX _
-    · exact (J p.ofLp).le_of_opNorm_le hJ a
-  have h3 : -(‖ζ.snd‖ * (η * ‖ζ.fst‖)) ≤ ω ζ.snd (X p.ofLp (I * ζ.fst)) := by
-    refine neg_le_of_abs_le ((SymplecticForm.abs_apply_le_norm_mul_norm hg _ _).trans ?_)
-    gcongr
-    simpa using (X p.ofLp).le_of_opNorm_le hX (I * ζ.fst)
-  have hn : ‖ζ.snd‖ ≤ ‖a‖ + η * ‖ζ.fst‖ := by
-    rw [ha]
-    exact (norm_add_le _ _).trans (by gcongr; exact (X p.ofLp).le_of_opNorm_le hX _)
-  have hζ : ‖ζ‖ ^ 2 = ‖ζ.fst‖ ^ 2 + ‖ζ.snd‖ ^ 2 := WithLp.prod_norm_sq_eq_of_L2 ζ
-  -- The cross terms are absorbed: `η (B + 1) ‖ξ‖ ‖a‖ ≤ c ‖a‖² / 2 + ‖ξ‖² / 4`.
-  have hη2' : η ^ 2 * ‖ζ.fst‖ ^ 2 ≤ ‖ζ.fst‖ ^ 2 / 4 := by
-    have : η ^ 2 ≤ 1 / 4 := by nlinarith
-    nlinarith [mul_le_mul_of_nonneg_right this (sq_nonneg ‖ζ.fst‖)]
-  have hcross : η * (B + 1) * ‖ζ.fst‖ * ‖a‖ ≤ c / 2 * ‖a‖ ^ 2 + ‖ζ.fst‖ ^ 2 / 4 := by
-    have hk : (η * (B + 1)) ^ 2 * ‖ζ.fst‖ ^ 2 ≤ c / 2 * ‖ζ.fst‖ ^ 2 := by
-      nlinarith [sq_nonneg ‖ζ.fst‖]
-    have : 2 * c * (η * (B + 1) * ‖ζ.fst‖ * ‖a‖) ≤
-        2 * c * (c / 2 * ‖a‖ ^ 2 + ‖ζ.fst‖ ^ 2 / 4) := by
-      nlinarith [sq_nonneg (c * ‖a‖ - η * (B + 1) * ‖ζ.fst‖)]
-    exact le_of_mul_le_mul_left this (by positivity)
-  have hlow : ‖ζ.fst‖ ^ 2 / 2 + c / 2 * ‖a‖ ^ 2 ≤ splitForm ω ζ (graphStructure J X p ζ) := by
-    rw [hexp]
-    have hnx : ‖ζ.snd‖ * (η * ‖ζ.fst‖) ≤ (‖a‖ + η * ‖ζ.fst‖) * (η * ‖ζ.fst‖) := by gcongr
-    nlinarith [norm_nonneg ζ.fst, norm_nonneg a, (norm_nonneg _).trans hJ]
-  have hm1 : min 1 c ≤ 1 := min_le_left _ _
-  have hmc : min 1 c ≤ c := min_le_right _ _
-  have hm0 : 0 < min 1 c := lt_min one_pos hc
-  have hn2 : ‖ζ.snd‖ ^ 2 ≤ 2 * ‖a‖ ^ 2 + ‖ζ.fst‖ ^ 2 / 2 := by
-    have h := pow_le_pow_left₀ (norm_nonneg _) hn 2
-    nlinarith [sq_nonneg (‖a‖ - η * ‖ζ.fst‖)]
-  rw [hζ]
-  nlinarith [norm_nonneg ζ.fst, norm_nonneg a]
-
 section Euclidean
 
 variable [FiniteDimensional ℝ V] {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V}
   {W : Set (ℂ × V)} {K : Set V} {u : ℂ → V} {z₀ : ℂ} {R c : ℝ}
 
 omit [FiniteDimensional ℝ V] in
-/-- The graph `w ↦ (μ w, u w)` of a solution of the inhomogeneous equation, with its first
-coordinate rescaled by `μ ≠ 0`, solves the Cauchy–Riemann equation of Gromov's structure for the
-rescaled data `J(μ⁻¹ ζ, x)` and `μ⁻¹ X(μ⁻¹ ζ, x)`. -/
-private theorem fderiv_toLp_smul_prodMk_I_eq_graphStructure {μ : ℝ} (hμ : μ ≠ 0) {y : ℂ}
-    (hu : DifferentiableAt ℝ u y)
-    (hF : fderiv ℝ u y I - X (y, u y) I = J (y, u y) (fderiv ℝ u y 1 - X (y, u y) 1)) :
-    fderiv ℝ (fun w ↦ WithLp.toLp 2 (μ • w, u w)) y I =
-      graphStructure (fun q ↦ J (μ⁻¹ • q.1, q.2)) (fun q ↦ μ⁻¹ • X (μ⁻¹ • q.1, q.2))
-        (WithLp.toLp 2 (μ • y, u y)) (fderiv ℝ (fun w ↦ WithLp.toLp 2 (μ • w, u w)) y 1) := by
-  have hd : DifferentiableAt ℝ (fun w : ℂ ↦ μ • w) y := differentiableAt_id.const_smul μ
-  have hfd : HasFDerivAt (fun w : ℂ ↦ μ • w) (μ • ContinuousLinearMap.id ℝ ℂ) y :=
-    (hasFDerivAt_id y).const_smul μ
-  have hI : I * (μ • (1 : ℂ)) = μ • I := by simp [Complex.real_smul, mul_comm]
-  rw [fderiv_toLp_prodMk_apply hd hu, fderiv_toLp_prodMk_apply hd hu, hfd.fderiv,
-    graphStructure_apply]
-  simp only [WithLp.toLp_fst, WithLp.toLp_snd, inv_smul_smul₀ hμ, FunLike.coe_smul,
-    ContinuousLinearMap.coe_id', Pi.smul_apply, id_eq, hI, map_smul, smul_inv_smul₀ hμ]
-  rw [← hF, sub_add_cancel]
-
-omit [FiniteDimensional ℝ V] in
 /-- **Choosing the scale of the graph.** Given a taming constant `c > 0` and bounds `B` for `J`
 and `M` for `X`, there is a scale `μ > 0` such that at every point `(z, x)` where these hold, the
 split form `σ ⊕ ω` tames Gromov's structure of the rescaled data `J(μ⁻¹ ζ, x)`, `μ⁻¹ X(μ⁻¹ ζ, x)`
 at `(μ z, x)`, with constant `min 1 c / 4`. -/
-private theorem exists_pos_forall_mul_norm_sq_le_splitForm (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
+private theorem exists_pos_forall_mul_norm_sq_le_prodL2 (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w)
     (hc : 0 < c) (B M : ℝ) :
     ∃ μ : ℝ, 0 < μ ∧ ∀ ⦃z : ℂ⦄ ⦃x : V⦄, (∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (z, x) v)) →
       ‖J (z, x)‖ ≤ B →
-      ‖X (z, x)‖ ≤ M → ∀ ζ, min 1 c / 4 * ‖ζ‖ ^ 2 ≤ splitForm ω ζ
+      ‖X (z, x)‖ ≤ M → ∀ ζ, min 1 c / 4 * ‖ζ‖ ^ 2 ≤ stdComplexSymplecticForm.prodL2 ω ζ
         (graphStructure (fun q ↦ J (μ⁻¹ • q.1, q.2)) (fun q ↦ μ⁻¹ • X (μ⁻¹ • q.1, q.2))
           (WithLp.toLp 2 (μ • z, x)) ζ) := by
   have hlim : Tendsto (fun μ : ℝ ↦ μ⁻¹ * |M|) atTop (𝓝 0) := by
@@ -192,7 +94,7 @@ private theorem exists_pos_forall_mul_norm_sq_le_splitForm (hg : ∀ v w, ω v (
   refine ⟨μ, hμ, fun z x htame hJ hX ζ ↦ ?_⟩
   have hp : (μ⁻¹ • (WithLp.toLp 2 (μ • z, x)).ofLp.1, (WithLp.toLp 2 (μ • z, x)).ofLp.2) =
       (z, x) := by simp only [inv_smul_smul₀ hμ.ne']
-  refine mul_norm_sq_le_splitForm_graphStructure hg hc (by positivity) hμ1 hμ2
+  refine mul_norm_sq_le_prodL2_graphStructure hg hc (by positivity) hμ1 hμ2
     (fun v ↦ by simpa only [hp] using htame v) (by simpa only [hp] using hJ) ?_ ζ
   simp only [hp]
   rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hμ.le)]
@@ -218,11 +120,11 @@ private theorem integrableOn_norm_fderiv_toLp_smul_prodMk_sq (μ : ℝ)
 open Classical in
 /-- **Continuous removal of a finite-energy puncture of a Floer solution.** Let `J(z, x)` and
 the Hamiltonian one-form `X(z, x)` be `C²` on an open set containing `closedBall z₀ R ×ˢ K` for a
-compact `K ⊆ V`, with `J² = -1` there, and let `u` be a `C³` solution of the inhomogeneous
-Cauchy–Riemann equation `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on the punctured disc
-`ball z₀ R \ {z₀}`, with image in `K`, finite energy `∫ ‖∂ₛu‖²` and `J(z, u z)` uniformly tamed by
-`ω`. Then `u` has a limit `q ∈ K` at the puncture, and updating `u` at `z₀` to `q` gives a
-continuous map on the whole disc with image in `K`.
+compact `K ⊆ V`, with `J² = -1` on `closedBall z₀ R ×ˢ K`, and let `u` be a `C³` solution of the
+inhomogeneous Cauchy–Riemann equation `∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on the
+punctured disc `ball z₀ R \ {z₀}`, with image in `K`, finite energy `∫ ‖∂ₛu‖²` and `J(z, u z)`
+uniformly tamed by `ω`. Then `u` has a limit `q ∈ K` at the puncture, and updating `u` at `z₀` to
+`q` gives a continuous map on the whole disc with image in `K`.
 
 The fixed structure `J₀` identifies the given inner product with a symplectic metric. No
 regularity at the puncture is assumed or concluded beyond continuity. -/
@@ -245,7 +147,7 @@ theorem exists_continuousOn_update_of_finite_energy
   have hBK : IsCompact (closedBall z₀ R ×ˢ K) := (isCompact_closedBall z₀ R).prod hK
   obtain ⟨B, hBd⟩ := hBK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
   obtain ⟨M, hMd⟩ := hBK.exists_bound_of_continuousOn (hX.continuousOn.mono hKW)
-  obtain ⟨μ, hμ, htameμ⟩ := exists_pos_forall_mul_norm_sq_le_splitForm (J := J) (X := X) hg hc B M
+  obtain ⟨μ, hμ, htameμ⟩ := exists_pos_forall_mul_norm_sq_le_prodL2 (J := J) (X := X) hg hc B M
   set g : ℂ × V → ℂ × V := fun q ↦ (μ⁻¹ • q.1, q.2)
   set e : ℂ × V → WithLp 2 (ℂ × V) := fun q ↦ WithLp.toLp 2 (μ • q.1, q.2)
   have hgc : ContDiff ℝ ⊤ g := (contDiff_fst.const_smul _).prodMk contDiff_snd
@@ -256,9 +158,11 @@ theorem exists_continuousOn_update_of_finite_energy
   have hmem : ∀ z ∈ ball z₀ R \ {z₀}, (z, u z) ∈ closedBall z₀ R ×ˢ K := fun z hz ↦
     ⟨ball_subset_closedBall hz.1, huK hz⟩
   obtain ⟨q', hq'K, hq'lim, hcont, hmaps⟩ :=
-    (splitForm ω).exists_continuousOn_update_of_finite_energy (J₀ := splitStructure J₀)
+    (stdComplexSymplecticForm.prodL2 ω).exists_continuousOn_update_of_finite_energy
+      (J₀ := (AlmostComplexStructure.ofComplexModule ℂ).prodL2 J₀)
       (u := fun w ↦ WithLp.toLp 2 (μ • w, u w)) (K := e '' (closedBall z₀ R ×ˢ K))
-      (splitForm_splitStructure hg) (by positivity) hR
+      (SymplecticForm.prodL2_apply_prodL2 stdComplexSymplecticForm_apply_ofComplexModule_eq_inner
+        hg) (by positivity) hR
       ((hW.preimage hgc.continuous).preimage (WithLp.prod_continuous_ofLp 2 ℂ V))
       (contDiffOn_graphStructure (hJ.comp (hgc.of_le le_top).contDiffOn (mapsTo_preimage _ _))
         ((hX.comp (hgc.of_le le_top).contDiffOn (mapsTo_preimage _ _)).const_smul _))
@@ -268,7 +172,8 @@ theorem exists_continuousOn_update_of_finite_energy
       (by rintro _ ⟨q, hq, rfl⟩ ζ; exact graphStructure_graphStructure (fun v ↦ by
         simpa only [Function.comp_apply, hge] using hJsq q hq v) ζ)
       (WithLp.contDiff_toLp.comp_contDiffOn ((contDiff_id.const_smul μ).contDiffOn.prodMk hu))
-      (fun z hz ↦ fderiv_toLp_smul_prodMk_I_eq_graphStructure hμ.ne' (hdiff z hz) (hF z hz))
+      (fun z hz ↦
+        (fderiv_toLp_smul_prodMk_I_eq_graphStructure_iff hμ.ne' (hdiff z hz)).2 (hF z hz))
       (fun z hz ↦ ⟨(z, u z), hmem z hz, rfl⟩)
       (fun z hz ↦ htameμ (htame z hz) (hBd _ (hmem z hz)) (hMd _ (hmem z hz)))
       (integrableOn_norm_fderiv_toLp_smul_prodMk_sq μ hdiff henergy)
@@ -280,7 +185,7 @@ theorem exists_continuousOn_update_of_finite_energy
       (fun ζ : WithLp 2 (ℂ × V) ↦ ζ.snd) ∘
         Function.update (fun w ↦ WithLp.toLp 2 (μ • w, u w)) z₀ (e (z, x)) := by
     ext1 y
-    rcases eq_or_ne y z₀ with rfl | hy <;> simp [Function.update_of_ne, *, e]
+    by_cases hy : y = z₀ <;> simp [hy, e]
   refine ⟨x, hzx.2, by simpa [e, Function.comp_def] using (hsnd.tendsto _).comp hq'lim,
     hupd ▸ hsnd.comp_continuousOn hcont, hupd ▸ ?_⟩
   rintro y hy
@@ -380,12 +285,13 @@ private theorem exists_mem_tendsto_comp_equivRealProdCLM (hg : ∀ v w, ω v (J�
     henergy).imp fun _ h ↦ ⟨h.1, h.2.1⟩
 
 open Classical in
-/-- **A finite-energy Floer solution extends continuously across a puncture.** Let
-`K = K_s ds + K_t dt` be `C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing
-`Ω × K`, for an open `Ω ∋ z₀` and a compact `K ⊆ V`, with `J(z, x)` tamed by `ω` on `Ω × K`. Let
-`u` be a `C³` solution of the Floer equation `(du - X_K)^{0,1} = 0` on `Ω \ {z₀}` with image in `K`
-and integrable Floer energy density `ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})`. Then `u` has a limit
-`q ∈ K` at `z₀`, and updating `u` at `z₀` to `q` gives a continuous map on `Ω` with image in `K`.
+/-- **A finite-energy Floer solution extends continuously across a puncture.** Let the
+Hamiltonian perturbation `(Ks, Kt)` be `C³` and `J(z, x)` be `C²` on an open set
+`W ⊆ (ℝ × ℝ) × V` containing `Ω × K`, for an open `Ω ∋ z₀` and a compact `K ⊆ V`, with `J(z, x)`
+tamed by `ω` on `Ω × K`. Let `u` be a `C³` solution of the Floer equation `(du - X)^{0,1} = 0`
+for the Hamiltonian one-form `X = ds ⊗ X_{Ks} + dt ⊗ X_{Kt}` on `Ω \ {z₀}`, with image in `K` and
+integrable Floer energy density `ω(∂ₛu - X_{Ks}, ∂ₜu - X_{Kt})`. Then `u` has a limit `q ∈ K` at
+`z₀`, and updating `u` at `z₀` to `q` gives a continuous map on `Ω` with image in `K`.
 
 The fixed structure `J₀` identifies the given inner product with a symplectic metric. No
 regularity at `z₀` is assumed or concluded beyond continuity. -/
@@ -418,14 +324,11 @@ theorem exists_continuousOn_update_of_floer (hg : ∀ v w, ω v (J₀ w) = inner
     (hu.comp L.contDiff.contDiffOn hmaps)
     (fun y hy ↦ hfl _ (hmaps hy)) (huK.comp hmaps) hint
   -- Back to the real coordinates `ℝ × ℝ`.
-  have hL : Tendsto L.symm (𝓝[≠] z₀) (𝓝[≠] y₀) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((L.symm.continuous.tendsto z₀).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun z hz ↦ L.symm.injective.ne hz)
   have hlimu : Tendsto u (𝓝[≠] z₀) (𝓝 q) := by
-    have h := hlim.comp hL
-    rwa [Function.comp_assoc, show (L : ℂ → ℝ × ℝ) ∘ L.symm = id from funext L.apply_symm_apply,
-      Function.comp_id] at h
+    have hmap : map L (𝓝[≠] y₀) = 𝓝[≠] z₀ := by
+      simpa [y₀] using L.toHomeomorph.map_punctured_nhds_eq y₀
+    rw [← hmap, tendsto_map'_iff]
+    exact hlim
   refine ⟨q, hqK, hlimu, continuousOn_update_iff.mpr ⟨hu.continuousOn, fun _ ↦
     hlimu.mono_left (nhdsWithin_mono _ (sdiff_subset_compl _ _))⟩, fun y hy ↦ ?_⟩
   rcases eq_or_ne y z₀ with rfl | hyz
