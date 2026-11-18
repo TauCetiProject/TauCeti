@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.PushoutI.Map
+import Mathlib.Order.Filter.Finite
 import TauCeti.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -29,6 +30,9 @@ larger than `f(C_G(u))`.
 * `TauCeti.LimitGroup.CentralizerExt.map_injective`: it is injective if `f` is, an instance of the
   injectivity criterion `Monoid.PushoutI.map_injective` for homomorphisms of amalgamated products.
 * `TauCeti.LimitGroup.CentralizerExt.map_injective_iff`: it is injective exactly when `f` is.
+* `TauCeti.LimitGroup.CentralizerExt.eventually_map_ne_one`: if homomorphisms `fᵢ` (to possibly
+  different groups) eventually keep every nonidentity element of `G` along a filter, the induced
+  homomorphisms eventually keep every nonidentity element of `G(u, ℤⁿ)`.
 
 ## References
 
@@ -41,6 +45,7 @@ larger than `f(C_G(u))`.
 public section
 
 open Subgroup
+open scoped commutatorElement
 
 namespace TauCeti.LimitGroup
 
@@ -132,6 +137,64 @@ theorem map_injective_iff {f : G →* K} (u : G) (n : ℕ) :
   refine ⟨fun h => ?_, fun hf => map_injective hf u n⟩
   rw [← (of_injective (u := f u) (n := n)).of_comp_iff, ← MonoidHom.coe_comp, ← map_comp_of]
   exact h.comp of_injective
+
+/-- The induced homomorphism on an element `h * a₁ * ⋯ * aᵣ` written with the letters of a word:
+the image is `f h * f a₁ * ⋯ * f aᵣ`, letter by letter. -/
+private theorem map_base_mul_ofCoprodI_prod (f : G →* K) (u : G) (n : ℕ) (h : centralizer {u})
+    (w : Monoid.CoprodI.Word (CentralizerExtFactor u n)) :
+    map f u n (Monoid.PushoutI.base _ h * Monoid.PushoutI.ofCoprodI w.prod) =
+      Monoid.PushoutI.base _ (f.centralizerMap Set.image_singleton.superset h) *
+        (w.toList.map fun a => Monoid.PushoutI.of (φ := centralizerExtMap (f u) n) a.1
+          (factorMap f u n a.1 a.2)).prod := by
+  rw [map_eq_pushoutIMap, map_mul, Monoid.PushoutI.map_base, Monoid.CoprodI.Word.prod,
+    map_list_prod, map_list_prod, List.map_map, List.map_map]
+  simp [Function.comp_def]
+
+/-- If homomorphisms `fᵢ` eventually keep every nonidentity element of `G`, a letter of `G(u, ℤⁿ)`
+outside `C_G(u)` eventually has its image outside `C_{Kᵢ}(fᵢ u)`: a letter `g ∉ C_G(u)` once
+`fᵢ [g, u] ≠ 1`, and a letter `(c, v)` with `v ≠ 0` always. -/
+private theorem eventually_factorMap_notMem_range {ι : Type*} {l : Filter ι} {K : ι → Type*}
+    [∀ i, Group (K i)] {f : ∀ i, G →* K i} (hf : ∀ g : G, g ≠ 1 → ∀ᶠ i in l, f i g ≠ 1) (u : G)
+    (n : ℕ) {a : Σ b, CentralizerExtFactor u n b} (ha : a.2 ∉ (centralizerExtMap u n a.1).range) :
+    ∀ᶠ i in l, factorMap (f i) u n a.1 a.2 ∉ (centralizerExtMap (f i u) n a.1).range := by
+  rcases a with ⟨_ | _, g⟩
+  · have hg : ⁅(show G from g), u⁆ ≠ 1 := by
+      simpa [commutatorElement_eq_one_iff_commute, mem_centralizer_singleton_iff] using ha
+    filter_upwards [hf _ hg] with i hi
+    simpa [factorMap, commutatorElement_eq_one_iff_commute, mem_centralizer_singleton_iff]
+      using hi
+  · refine .of_forall fun i ⟨c, hc⟩ => ha ⟨g.1, ?_⟩
+    rw [centralizerExtMap_true] at hc ⊢
+    -- The second components: `1 = v`, since the image of `(c, v)` is `(f c, v)`.
+    exact Prod.ext rfl (congrArg Prod.snd hc :)
+
+/-- If homomorphisms `fᵢ : G →* Kᵢ` eventually keep every nonidentity element of `G` along a
+filter, the induced homomorphisms `G(u, ℤⁿ) →* Kᵢ(fᵢ u, ℤⁿ)` eventually keep every nonidentity
+element of `G(u, ℤⁿ)`. For a constant family of one injective homomorphism this is
+`map_injective`. -/
+theorem eventually_map_ne_one {ι : Type*} {l : Filter ι} {K : ι → Type*} [∀ i, Group (K i)]
+    {f : ∀ i, G →* K i} (hf : ∀ g : G, g ≠ 1 → ∀ᶠ i in l, f i g ≠ 1) (u : G) (n : ℕ)
+    {x : CentralizerExt u n} (hx : x ≠ 1) : ∀ᶠ i in l, map (f i) u n x ≠ 1 := by
+  -- Write `x = h * a₁ * ⋯ * aᵣ` with `h ∈ C_G(u)` and a reduced word `a₁ ⋯ aᵣ`.
+  obtain ⟨h, w, hw, rfl⟩ := Monoid.PushoutI.exists_eq_base_mul_ofCoprodI_prod x
+  rcases eq_or_ne w.toList [] with hL | hL
+  · -- A word with no letters: `x = h ≠ 1`, and its image `f h` is eventually nontrivial.
+    have hh : (h : G) ≠ 1 := fun h1 => hx <| by
+      simp [show h = 1 from Subtype.ext h1, Monoid.CoprodI.Word.prod, hL]
+    filter_upwards [hf _ hh] with i hi h1
+    simp only [map_base_mul_ofCoprodI_prod, hL, List.map_nil, List.prod_nil, mul_one] at h1
+    exact hi ((MonoidHom.centralizerMap_apply_coe _ _ h).symm.trans <| congrArg Subtype.val <|
+      (map_eq_one_iff _ (Monoid.PushoutI.base_injective (centralizerExtMap_injective _ n))).1 h1)
+  -- Otherwise the images of the letters eventually stay outside the amalgamated subgroup, so the
+  -- image of the word is reduced and not in the amalgamated subgroup.
+  filter_upwards [(Filter.eventually_all_finite w.toList.finite_toSet).2 fun a ha =>
+    eventually_factorMap_notMem_range hf u n (hw a ha)] with i hi h1
+  rw [map_base_mul_ofCoprodI_prod] at h1
+  refine Monoid.PushoutI.list_prod_notMem_range_base (centralizerExtMap_injective _ n)
+    (L := w.toList.map fun a => ⟨a.1, factorMap (f i) u n a.1 a.2⟩) (by simpa using hL)
+    ((List.isChain_map _).2 (w.chain_ne.imp fun _ _ h => h)) (List.forall_mem_map.2 hi) ?_
+  rw [List.map_map]
+  exact ⟨_, (map_inv _ _).trans (eq_inv_of_mul_eq_one_right h1).symm⟩
 
 end CentralizerExt
 
