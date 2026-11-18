@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 
 /-!
 # The integral Grönwall inequality with an integrable kernel
@@ -23,15 +23,10 @@ Let `β ≥ 0` be integrable on `[a, b]` and let `u` satisfy `u t ≤ α + ∫�
 bounded, nor `u` continuous; the constant-kernel case for continuous `u` is
 `TauCeti.le_mul_exp_of_le_add_mul_integral`.
 
-The proof follows the absolutely continuous route: with `v t = ∫ₐᵗ β u` and `B t = ∫ₐᵗ β`, the
-product `(α + v) e^{-B}` is absolutely continuous on `[a, t]` with derivative
-`β e^{-B} (u - α - v) ≤ 0` almost everywhere, so it is at most its value `α` at `a`.
-
 The sign of the kernel matters: `u ≡ 1/2`, `β ≡ -1` and `α = 1` satisfy the hypothesis on
 `[0, 1]`, yet `1/2 > e^{-1}`.
 
-This is §1.1 of the TauCetiRoadmap roadmap `DiracScatteringAndNonlinearFourierTransform`, the
-estimate behind uniqueness and the bounds for linear Carathéodory systems.
+This is the estimate behind uniqueness and the bounds for linear Carathéodory systems.
 
 ## References
 
@@ -52,6 +47,9 @@ theorem le_mul_exp_integral_of_le_add_integral_mul {u β : ℝ → ℝ} {a b α 
     (hβu : IntegrableOn (fun s ↦ β s * u s) (Icc a b))
     (h : ∀ t ∈ Icc a b, u t ≤ α + ∫ s in a..t, β s * u s) :
     ∀ t ∈ Icc a b, u t ≤ α * exp (∫ s in a..t, β s) := by
+  -- Integrating factor: with `v t = ∫ₐᵗ β u` and `B t = ∫ₐᵗ β`, the product `(α + v) e^{-B}` is
+  -- absolutely continuous on `[a, t]` with derivative `β e^{-B} (u - α - v) ≤ 0` almost
+  -- everywhere, so it is at most its value `α` at `a`.
   intro t ht
   set B : ℝ → ℝ := fun x ↦ ∫ s in a..x, β s
   set v : ℝ → ℝ := fun x ↦ ∫ s in a..x, β s * u s
@@ -64,13 +62,8 @@ theorem le_mul_exp_integral_of_le_add_integral_mul {u β : ℝ → ℝ} {a b α 
     hβi.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc
   have hvAC : AbsolutelyContinuousOnInterval v a t :=
     hβui.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc
-  -- `exp ∘ (-B)` is absolutely continuous: `exp` is Lipschitz on the bounded range of `-B`.
-  obtain ⟨C, hC⟩ := isCompact_uIcc.exists_bound_of_continuousOn hBAC.continuousOn
-  obtain ⟨K, hK⟩ := (contDiff_exp.contDiffOn (s := Icc (-C) C) (n := 1)).exists_lipschitzOnWith
-    one_ne_zero (convex_Icc _ _) isCompact_Icc
   have hEAC : AbsolutelyContinuousOnInterval (fun x ↦ exp (-B x)) a t :=
-    hK.comp_absolutelyContinuousOnInterval (g := fun x ↦ -B x)
-      (fun x hx ↦ abs_le.1 (by simpa using hC x hx)) hBAC.neg
+    hBAC.neg.comp_of_contDiffAt (φ := exp) fun _ _ ↦ contDiff_exp.contDiffAt
   have hgAC : AbsolutelyContinuousOnInterval (fun x ↦ (α + v x) * exp (-B x)) a t :=
     ((LipschitzWith.const α).lipschitzOnWith.absolutelyContinuousOnInterval.add hvAC).fun_mul
       hEAC
