@@ -13,9 +13,10 @@ public import TauCeti.AlgebraicTopology.DoldKan.HomotopyGroups
 
 The Dold–Kan image of the complex with a module `A` in degree `n` and zero elsewhere
 is a functorial simplicial Eilenberg–MacLane module. Its normalized Moore complex is
-canonically `A[n]`. At the zero vertex its only nonzero homotopy group is `A` in
-degree `n`, and the identification is natural in coefficient maps. In positive
-degrees its set of components is a singleton.
+canonically `A[n]`. At the zero vertex every `πₖ` with `k ≠ n` is a singleton; in
+particular the module is connected when `n` is positive. For positive `n`, the group
+`πₙ` is identified with `A`, naturally in coefficient maps. No identification of `π₀`
+with `A` is given here for the degree-zero model.
 
 The coefficient identification uses the native Dold–Kan counit, followed by the
 canonical homology identification for a single complex. Thus it fixes a specific
@@ -34,7 +35,8 @@ complex; no comparison with topological homotopy groups is asserted.
 ## References
 
 * P. G. Goerss and J. F. Jardine, *Simplicial Homotopy Theory*, Chapter III, §2.
-* J. P. May, *Simplicial Objects in Algebraic Topology*, §17.
+* J. P. May, *Simplicial Objects in Algebraic Topology*, §17, for the Moore-complex
+  homotopy comparison used here.
 -/
 
 public noncomputable section
@@ -68,6 +70,19 @@ abbrev basepoint (A : ModuleCat.{v} R) (n : ℕ) : (simplicialSet A n) _⦋0⦌ 
 def map {A B : ModuleCat.{v} R} (f : A ⟶ B) (n : ℕ) :
     simplicialSet A n ⟶ simplicialSet B n :=
   Functor.whiskerRight ((doldKanEilenbergMacLane R n).map f) (forget (ModuleCat R))
+
+/-- The induced map is the whiskered coefficient map of `Γ(A[n])`. -/
+lemma map_def {A B : ModuleCat.{v} R} (f : A ⟶ B) (n : ℕ) :
+    map f n = Functor.whiskerRight ((doldKanEilenbergMacLane R n).map f) (forget (ModuleCat R)) :=
+  (rfl)
+
+/-- The induced map acts on simplices by the coefficient map of `Γ(A[n])`.
+Not `@[simp]`: `simp` rewrites the carrier type of its left-hand side by `Functor.comp_obj`,
+so the `simpNF` linter rejects it. -/
+lemma map_app_apply {A B : ModuleCat.{v} R} (f : A ⟶ B) (n : ℕ) (X : SimplexCategoryᵒᵖ)
+    (x : (simplicialSet A n).obj X) :
+    (map f n).app X x = ((doldKanEilenbergMacLane R n).map f).app X x :=
+  (rfl)
 
 /-- The induced map preserves the zero vertex. -/
 lemma map_basepoint {A B : ModuleCat.{v} R} (f : A ⟶ B) (n : ℕ) :
@@ -103,6 +118,23 @@ lemma normalizationIso_app (A : ModuleCat.{v} R) (n : ℕ) :
   simp [normalizationIso, Functor.isoWhiskerLeft, Functor.associator, Functor.rightUnitor]
   rfl
 
+/-- The forward normalization map at a coefficient module is the native Dold–Kan counit. -/
+@[simp]
+lemma normalizationIso_hom_app (A : ModuleCat.{v} R) (n : ℕ) :
+    (normalizationIso (R := R) n).hom.app A =
+      Abelian.DoldKan.equivalence.counitIso.hom.app
+        ((single (ModuleCat R) (ComplexShape.down ℕ) n).obj A) := by
+  rw [← Iso.app_hom, normalizationIso_app, Iso.app_hom]
+
+/-- The inverse normalization map at a coefficient module is the inverse native Dold–Kan
+counit. -/
+@[simp]
+lemma normalizationIso_inv_app (A : ModuleCat.{v} R) (n : ℕ) :
+    (normalizationIso (R := R) n).inv.app A =
+      Abelian.DoldKan.equivalence.counitIso.inv.app
+        ((single (ModuleCat R) (ComplexShape.down ℕ) n).obj A) := by
+  rw [← Iso.app_inv, normalizationIso_app, Iso.app_inv]
+
 /-- In the distinguished positive degree the homotopy group is the coefficient module,
 using the Moore comparison and the Dold–Kan counit, with no choice of sign. -/
 def piAddEquiv (A : ModuleCat.{v} R) (n : ℕ) :
@@ -118,13 +150,13 @@ lemma piAddEquiv_apply (A : ModuleCat.{v} R) (n : ℕ)
     (x : Additive (SSet.KanComplex.π (n + 1) (simplicialSet A (n + 1))
       (basepoint A (n + 1)))) :
     piAddEquiv A n x = (singleObjHomologySelfIso (ComplexShape.down ℕ) (n + 1) A).hom
-      (homologyMap ((normalizationIso (R := R) (n + 1)).app A).hom (n + 1)
+      (homologyMap ((normalizationIso (R := R) (n + 1)).hom.app A) (n + 1)
         (piAddEquivNormalizedMooreComplexHomology
           ((doldKanEilenbergMacLane R (n + 1)).obj A) n x)) := by
-  rw [normalizationIso_app]
-  simp only [piAddEquiv, AddEquiv.trans_apply]
-  erw [ChainComplex.doldKanPiAddEquivHomology_apply]
-  rfl
+  rw [normalizationIso_hom_app, piAddEquiv, AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv,
+    ChainComplex.doldKanPiAddEquivHomology_apply]
+  -- `erw`: the two sides elaborate `ComplexShape.down ℕ` with different `Add ℕ` instances
+  erw [Iso.toLinearEquiv_apply]
 
 /-- On a pointed simplex represented by a normalized cycle, the coefficient is obtained by
 applying the counit to that cycle and reading its value in `A[n+1]`. This pins the
@@ -140,20 +172,11 @@ lemma piAddEquiv_mk (A : ModuleCat.{v} R) (n : ℕ)
           SSet.yonedaEquiv p.map) :
     piAddEquiv A n (.ofMul (SSet.KanComplex.π.mk p)) =
       (singleObjCyclesSelfIso (ComplexShape.down ℕ) (n + 1) A).hom
-        (cyclesMap ((normalizationIso (R := R) (n + 1)).app A).hom (n + 1) c) := by
-  have hclass : piAddEquivNormalizedMooreComplexHomology
-      ((doldKanEilenbergMacLane R (n + 1)).obj A) n (.ofMul (SSet.KanComplex.π.mk p)) =
-      ((AlgebraicTopology.normalizedMooreComplex (ModuleCat R)).obj
-        ((doldKanEilenbergMacLane R (n + 1)).obj A)).homologyπ (n + 1) c := by
-    apply homologyMap_inclusionOfMooreComplexMap_injective
-    rw [homologyMap_inclusionOfMooreComplexMap_piAddEquivNormalizedMooreComplexHomology,
-      piAddEquivAlternatingFaceMapComplexHomology_mk p
-        (cyclesMap (AlgebraicTopology.inclusionOfMooreComplexMap
-          ((doldKanEilenbergMacLane R (n + 1)).obj A)) (n + 1) c)
-        (by simpa only [← ModuleCat.comp_apply, cyclesMap_i] using hc),
-      moduleCat_homologyMap_homologyπ]
-  rw [piAddEquiv_apply, hclass, normalizationIso_app]
-  erw [moduleCat_homologyMap_homologyπ]
+        (cyclesMap ((normalizationIso (R := R) (n + 1)).hom.app A) (n + 1) c) := by
+  rw [piAddEquiv, AddEquiv.trans_apply, ChainComplex.doldKanPiAddEquivHomology_mk _ n p c hc,
+    LinearEquiv.coe_toAddEquiv]
+  -- `erw`: the two sides elaborate `ComplexShape.down ℕ` with different `Add ℕ` instances
+  erw [Iso.toLinearEquiv_apply]
   exact ConcreteCategory.congr_hom
     (homologyπ_singleObjHomologySelfIso_hom (ComplexShape.down ℕ) (n + 1) A) _
 
@@ -162,27 +185,28 @@ lemma piAddEquiv_map {A B : ModuleCat.{v} R} (f : A ⟶ B) (n : ℕ)
     (x : SSet.KanComplex.π (n + 1) (simplicialSet A (n + 1)) (basepoint A (n + 1))) :
     piAddEquiv B n (.ofMul (SSet.KanComplex.π.map (map f (n + 1)) (map_basepoint f _) x)) =
       f (piAddEquiv A n (.ofMul x)) := by
-  simp only [piAddEquiv, AddEquiv.trans_apply]
+  simp only [map_def, Functor.comp_map, piAddEquiv, AddEquiv.trans_apply,
+    LinearEquiv.coe_toAddEquiv]
+  -- `erw`: the class lives over `(single ⋙ Γ).obj A ⋙ forget _`, which is
+  -- `Γ.obj (single.obj A) ⋙ forget _` only after unfolding `Functor.comp`
   erw [ChainComplex.doldKanPiAddEquivHomology_map]
   exact ConcreteCategory.congr_hom
     (singleObjHomologySelfIso_hom_naturality (ComplexShape.down ℕ) (n + 1) f)
     (ChainComplex.doldKanPiAddEquivHomology _ n (.ofMul x))
 
-/-- Every positive homotopy group outside the distinguished degree vanishes. -/
-theorem subsingleton_pi (A : ModuleCat.{v} R) (n k : ℕ) (h : k + 1 ≠ n) :
-    Subsingleton (SSet.KanComplex.π (k + 1) (simplicialSet A n) (basepoint A n)) := by
+/-- Every homotopy set outside the distinguished degree is a singleton. In particular, the
+simplicial Eilenberg–MacLane module of positive degree is connected. -/
+theorem subsingleton_pi (A : ModuleCat.{v} R) (n k : ℕ) (h : k ≠ n) :
+    Subsingleton (SSet.KanComplex.π k (simplicialSet A n) (basepoint A n)) := by
   have := ModuleCat.subsingleton_of_isZero
-    (isZero_single_obj_homology (ComplexShape.down ℕ) n A (k + 1) h)
-  exact (ChainComplex.doldKanPiAddEquivHomology
-    ((single (ModuleCat R) (ComplexShape.down ℕ) n).obj A) k).toEquiv.subsingleton
-
-/-- In positive degree the simplicial Eilenberg–MacLane module is connected. -/
-theorem subsingleton_piZero (A : ModuleCat.{v} R) (n : ℕ) (hn : n ≠ 0) :
-    Subsingleton (SSet.KanComplex.π 0 (simplicialSet A n) (basepoint A n)) := by
-  have := ModuleCat.subsingleton_of_isZero
-    (isZero_single_obj_homology (ComplexShape.down ℕ) n A 0 (Ne.symm hn))
-  exact (ChainComplex.doldKanPiZeroEquivHomology
-    ((single (ModuleCat R) (ComplexShape.down ℕ) n).obj A)).subsingleton
+    (isZero_single_obj_homology (ComplexShape.down ℕ) n A k h)
+  cases k with
+  | zero =>
+    exact (ChainComplex.doldKanPiZeroEquivHomology
+      ((single (ModuleCat R) (ComplexShape.down ℕ) n).obj A)).subsingleton
+  | succ k =>
+    exact (Additive.ofMul.trans (ChainComplex.doldKanPiAddEquivHomology
+      ((single (ModuleCat R) (ComplexShape.down ℕ) n).obj A) k).toEquiv).subsingleton
 
 end DoldKanEilenbergMacLane
 
