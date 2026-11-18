@@ -161,6 +161,13 @@ private theorem HasCompactSpatialSupport.contDiff_shiftedMultiplier
     ContDiff ℝ ∞ (shiftedMultiplier b η) :=
   (contDiff_shiftedWeight t η).smul (hb.contDiff_fourier_slice_smul η)
 
+/-- The constants of a family of nonnegative per-order bounds combine into one bound: their sum
+over `Finset.range N` is nonnegative and dominates each of its terms. -/
+private theorem sum_range_nonneg_and_le {B : ℕ → ℝ} (hB0 : ∀ j, 0 ≤ B j) (N : ℕ) :
+    0 ≤ ∑ j ∈ Finset.range N, B j ∧ ∀ j < N, B j ≤ ∑ i ∈ Finset.range N, B i :=
+  ⟨Finset.sum_nonneg fun j _ ↦ hB0 j,
+    fun _ hj ↦ Finset.single_le_sum (fun i _ ↦ hB0 i) (Finset.mem_range.2 hj)⟩
+
 /-- **Mihlin bounds of the shifted multiplier.** There is a constant `M`, depending only on `n`,
 `t`, `k` and `r`, with the following property. If the derivatives of order at most `k` of
 `ξ ↦ b̂(η, ξ)` are bounded by `B ⟨ξ⟩ ^ (t - j) ⟨η⟩ ^ (-(r + |t| + k))`, then
@@ -221,11 +228,11 @@ private theorem HasCompactSpatialSupport.exists_norm_iteratedFDeriv_shiftedMulti
     exists_norm_iteratedFDeriv_shiftedMultiplier_le_mul (V := V) (W := W) (n := n) (t := t) k r
   choose B hB0 hB using fun j : ℕ ↦
     hb.exists_norm_iteratedFDeriv_fourier_slice_le j (r + |-t| + k)
-  have hS0 : 0 ≤ ∑ j ∈ Finset.range (k + 1), B j := Finset.sum_nonneg fun j _ ↦ hB0 j
+  obtain ⟨hS0, hS⟩ := sum_range_nonneg_and_le hB0 (k + 1)
   refine ⟨M * ∑ j ∈ Finset.range (k + 1), B j, mul_nonneg hM0 hS0,
     hM b hb _ hS0 fun j hj η ξ ↦ (hB j η ξ).trans ?_⟩
   gcongr
-  exact Finset.single_le_sum (fun i _ ↦ hB0 i) (Finset.mem_range.2 (by omega))
+  exact hS j (by omega)
 
 /-- The shifted multiplier is bounded by `C ⟨η⟩ ^ (-r)`, uniformly in `ζ`. -/
 private theorem HasCompactSpatialSupport.exists_norm_shiftedMultiplier_le
@@ -403,7 +410,7 @@ private theorem exists_eLpNorm_fourierInv_shiftedMultiplier_le_mul [NeZero n] {p
       (hb.contDiff_shiftedMultiplier η) fun k ↦ ⟨D k * ρ, fun ζ ↦ by
         rw [zero_sub, mul_right_comm]
         exact hD k η ζ⟩
-  -- `ENNReal.ofReal x` is by definition the coercion of `x.toNNReal`.
+  rw [← ENNReal.ofNNReal_toNNReal]
   exact hC₀ hgrowth hA w
 
 /-- **The `Lᵖ` estimate in positive dimension.** Let `1 < p < ∞`. There is a constant `L`,
@@ -502,9 +509,7 @@ private theorem exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul {p : ℝ≥0�
     calc _ ≤ ENNReal.ofReal (μ * (μ * μ) * B) * eLpNorm w p volume := by
           gcongr
       _ = _ := by
-          -- `ENNReal.ofReal x` is by definition the coercion of `x.toNNReal`.
-          rw [ENNReal.ofReal_mul (by positivity)]
-          rfl
+          rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofNNReal_toNNReal]
   have : NeZero n := ⟨hn.ne'⟩
   obtain ⟨L, hL⟩ := exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul_of_shiftedMultiplier
     (V := V) (W := W) (n := n) (t := t) hp hp_top
@@ -512,7 +517,7 @@ private theorem exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul {p : ℝ≥0�
     exists_norm_iteratedFDeriv_shiftedMultiplier_le_mul (V := V) (W := W) (n := n) (t := t) k
       ((n : ℝ) + 1)
   set M' : ℝ := ∑ k ∈ Finset.range (n + 2), M k
-  have hM'0 : 0 ≤ M' := Finset.sum_nonneg fun k _ ↦ hM0 k
+  obtain ⟨hM'0, hM'⟩ := sum_range_nonneg_and_le hM0 (n + 2)
   refine ⟨L * M'.toNNReal, fun b hb B hB0 hB w ↦ ?_⟩
   refine (hL b hb (M' * B) (mul_nonneg hM'0 hB0) (fun k hk η ζ ↦ ?_) w).trans_eq ?_
   · refine (hM k b hb B hB0 (fun j hj η ξ ↦ (hB j (hj.trans hk) η ξ).trans ?_) η ζ).trans ?_
@@ -520,9 +525,8 @@ private theorem exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul {p : ℝ≥0�
       have hk' : (k : ℝ) ≤ ((n + 1 : ℕ) : ℝ) := by exact_mod_cast hk
       gcongr
     · gcongr
-      exact Finset.single_le_sum (fun i _ ↦ hM0 i) (Finset.mem_range.2 (by omega))
-  · rw [ENNReal.ofReal_mul hM'0, ENNReal.coe_mul, ← mul_assoc]
-    rfl
+      exact hM' k (by omega)
+  · rw [ENNReal.ofReal_mul hM'0, ENNReal.coe_mul, ← mul_assoc, ENNReal.ofNNReal_toNNReal]
 
 variable [CompleteSpace V] [CompleteSpace W]
 
@@ -593,14 +597,12 @@ private theorem HasCompactSpatialSupport.exists_norm_toBesselPotentialSpaceCLM_q
   choose B hB0 hB using fun j : ℕ ↦ hb.exists_norm_iteratedFDeriv_fourier_slice_le j
     ((n : ℝ) + 1 + |-(m + -s)| + ((n + 1 : ℕ) : ℝ))
   set B' : ℝ := ∑ j ∈ Finset.range (n + 2), B j
-  have hB'0 : 0 ≤ B' := Finset.sum_nonneg fun j _ ↦ hB0 j
+  obtain ⟨hB'0, hB'⟩ := sum_range_nonneg_and_le hB0 (n + 2)
   refine ⟨L * B'.toNNReal, ha.norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s fun w ↦
     (hL _ hb B' hB'0 (fun j hj η ξ ↦ (hB j η ξ).trans ?_) w).trans_eq ?_⟩
   · gcongr
-    exact Finset.single_le_sum (fun i _ ↦ hB0 i) (Finset.mem_range.2 (by omega))
-  · -- `ENNReal.ofReal x` is by definition the coercion of `x.toNNReal`.
-    rw [ENNReal.coe_mul]
-    rfl
+    exact hB' j (by omega)
+  · rw [ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal]
 
 /-! ### The operator on `H^{s,p}` -/
 
@@ -712,7 +714,8 @@ theorem exists_norm_quantizeBesselPotentialSpace_le_seminorm
   · rw [FunLike.coe_smul]
     exact (Seminorm.continuous_finsetSum fun j _ ↦ hqT j).const_smul _
   obtain ⟨B, hB⟩ : ∃ B : ℝ, B = ∑ j ∈ Finset.range (n + 2), q j (T a) := ⟨_, rfl⟩
-  have hB0 : 0 ≤ B := hB ▸ Finset.sum_nonneg fun j _ ↦ apply_nonneg _ _
+  obtain ⟨hB0, hBj⟩ := sum_range_nonneg_and_le (fun j ↦ apply_nonneg (q j) (T a)) (n + 2)
+  rw [← hB] at hB0 hBj
   have hqB : (L • ∑ j ∈ Finset.range (n + 2), (q j).comp T.toLinearMap :
       Seminorm ℂ (Symbol n V W m)) a = L * B := by
     rw [FunLike.coe_smul, Pi.smul_apply, NNReal.smul_def, smul_eq_mul, FunLike.coe_sum,
@@ -729,13 +732,11 @@ theorem exists_norm_quantizeBesselPotentialSpace_le_seminorm
           (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + |-(m + -s)| + ((n + 1 : ℕ) : ℝ)) / 2) :=
     fun j hj η ξ ↦ (hqa j _ hbK η ξ).trans (by
       gcongr
-      rw [hB, ← hTa]
-      exact Finset.single_le_sum (fun i _ ↦ apply_nonneg _ _) (Finset.mem_range.2 (by omega)))
+      rw [← hTa]
+      exact hBj j (by omega))
   have hu := ha.norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s (C := L * B.toNNReal)
     fun w ↦ (hL _ (ha.comp_right _) B hB0 hslice w).trans_eq (by
-      -- `ENNReal.ofReal x` is by definition the coercion of `x.toNNReal`.
-      rw [ENNReal.coe_mul]
-      rfl)
+      rw [ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal])
   rw [hqB, quantizeBesselPotentialSpace]
   refine LinearMap.opNorm_extendOfNorm_le (denseRange_toBesselPotentialSpaceCLM s hp_top)
     (mul_nonneg L.2 hB0) fun u ↦ ?_
