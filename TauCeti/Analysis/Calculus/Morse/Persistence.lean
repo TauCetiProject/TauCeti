@@ -192,7 +192,7 @@ theorem exists_pos_forall_morseIndex_eq [FiniteDimensional ℝ E]
   obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff
     (α := {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm}) |>.1
     (ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := Subtype.val)
-      (Eventually.of_forall fun B ↦ B.property) continuous_subtypeVal.continuousAt hnd)
+      a.property continuous_subtypeVal.continuousAt hnd)
   refine ⟨ε, hε, fun g y hg hlt ↦ ?_⟩
   rw [hmorse, hmorse f x]
   refine hball (y := ⟨_, hsymm hg⟩) ?_
