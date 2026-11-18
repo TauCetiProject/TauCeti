@@ -57,12 +57,12 @@ restriction to an open subset are continuous linear maps of these spaces.
   `TauCeti.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of linear
   maps into `𝓓'_Γ(Ω)`.
 * `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
-  `TauCeti.WaveFrontSpace.lineDerivOpCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
+  `TauCeti.WaveFrontSpace.lineDerivCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
   inclusion for a larger cone, multiplication by a smooth function, differentiation and
   restriction as continuous linear maps.
 * `TauCeti.WaveFrontSpace.seminorm_inclusionCLM`,
   `TauCeti.WaveFrontSpace.seminorm_smulLeftCLM`,
-  `TauCeti.WaveFrontSpace.seminorm_lineDerivOpCLM_le`,
+  `TauCeti.WaveFrontSpace.seminorm_lineDerivCLM_le`,
   `TauCeti.WaveFrontSpace.seminorm_restrictCLM`: the seminorm estimates behind their
   continuity, in terms of the transported data `TauCeti.WaveFrontSeminormIndex.mono`,
   `TauCeti.WaveFrontSeminormIndex.smulLeft`, `TauCeti.WaveFrontSeminormIndex.withOrder`,
@@ -557,7 +557,7 @@ theorem _root_.TauCeti.WaveFrontSeminormIndex.lineDeriv_order (v : E)
   (rfl)
 
 /-- The bound `‖∂_v T‖_{φ,V,N} ≤ 2π ‖v‖ ‖T‖_{φ,V,N+1} + ‖T‖_{∂_v φ,V,N}` for any `u'` whose
-underlying distribution is `∂_v T`, before `TauCeti.WaveFrontSpace.lineDerivOpCLM` is
+underlying distribution is `∂_v T`, before `TauCeti.WaveFrontSpace.lineDerivCLM` is
 defined. -/
 private theorem seminorm_lineDerivOp_le (v : E) (i : WaveFrontSeminormIndex Ω Γ)
     (u : WaveFrontSpace Ω Γ) (u' : WaveFrontSpace Ω Γ)
@@ -586,7 +586,7 @@ private theorem seminorm_lineDerivOp_le (v : E) (i : WaveFrontSeminormIndex Ω �
 
 /-- Differentiation `T ↦ ∂_v T` on `𝓓'_Γ(Ω)`, a continuous linear map: the seminorm
 `‖∂_v T‖_{φ,V,N}` is at most `2π ‖v‖ ‖T‖_{φ,V,N+1} + ‖T‖_{∂_v φ,V,N}`. -/
-def lineDerivOpCLM (v : E) : WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω Γ :=
+def lineDerivCLM (v : E) : WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω Γ :=
   let A : WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace Ω Γ :=
     { toFun u := mk (∂_{v} u.toDistribution)
         ((waveFrontSet_lineDerivOp_subset _ v).trans u.waveFrontSet_toDistribution_subset)
@@ -603,15 +603,15 @@ def lineDerivOpCLM (v : E) : WaveFrontSpace Ω Γ →L[ℂ] WaveFrontSpace Ω Γ
             seminorm_lineDerivOp_le v i u (A u) (rfl)⟩⟩
 
 @[simp]
-theorem toDistribution_lineDerivOpCLM (v : E) (u : WaveFrontSpace Ω Γ) :
-    (lineDerivOpCLM v u).toDistribution = ∂_{v} u.toDistribution :=
+theorem toDistribution_lineDerivCLM (v : E) (u : WaveFrontSpace Ω Γ) :
+    (lineDerivCLM v u).toDistribution = ∂_{v} u.toDistribution :=
   (rfl)
 
 /-- **The seminorms of a derivative.** For `T ∈ 𝓓'_Γ(Ω)`,
 `‖∂_v T‖_{φ,V,N} ≤ 2π ‖v‖ ‖T‖_{φ,V,N+1} + ‖T‖_{∂_v φ,V,N}`. -/
-theorem seminorm_lineDerivOpCLM_le (v : E) (i : WaveFrontSeminormIndex Ω Γ)
+theorem seminorm_lineDerivCLM_le (v : E) (i : WaveFrontSeminormIndex Ω Γ)
     (u : WaveFrontSpace Ω Γ) :
-    WaveFrontSpace.seminorm i (lineDerivOpCLM v u) ≤
+    WaveFrontSpace.seminorm i (lineDerivCLM v u) ≤
       2 * π * ‖v‖ * WaveFrontSpace.seminorm (i.withOrder (i.order + 1)) u +
         WaveFrontSpace.seminorm (i.lineDeriv v) u :=
   seminorm_lineDerivOp_le v i u _ (rfl)
