@@ -64,7 +64,8 @@ These are the normalizations of `TauCeti.Vortex.gaugeFixedOperator`: the plane v
 with `α_ξ = 2 (ξ₂ + i ξ₃)`. The normal block `ξ` carries a connection along the normal factor and a
 section of the canonical line, as for the vortex itself; the paired block `η` carries a
 connection along the base and a section of the complementary line. At the pullback
-`(b_x, α_x u₀)` of a plane field `x` (the case `(ξ, η) = (x, 0)`), the operator applied to the
+`(b_x, α_x u₀)` of a plane field `x` (the case `(ξ, η) = (x, 0)`, see
+`normalModelConnection_zero_right` and `normalModelSpinor_zero_right`), the operator applied to the
 normal model of `(ξ, η)` is, at every point `y` and with `L_x`, `L_x*` evaluated at `z(y)`:
 
 * gauge row: `(L_x ξ)₀` (`flatDeformationGauge_normalModel`);
@@ -388,11 +389,12 @@ theorem pairedConnection_apply (η : ℂ → EuclideanSpace ℝ (Fin 4)) (y v : 
       η (normalCoord e y) 0 * ⟪e 0, v⟫ - η (normalCoord e y) 1 * ⟪e 1, v⟫ := by
   simp [pairedConnection]
 
-/-- The normal coordinate on the frame: `z(e₀) = z(e₁) = 0`, `z(e₂) = 1`, `z(e₃) = i`. -/
-private theorem normalCoord_apply_frame :
-    normalCoord e (e 0) = 0 ∧ normalCoord e (e 1) = 0 ∧ normalCoord e (e 2) = 1 ∧
-      normalCoord e (e 3) = I := by
-  simp [normalCoord_apply, e.inner_eq_ite]
+/-- The paired connection of the zero plane field vanishes. -/
+@[simp]
+theorem pairedConnection_zero : pairedConnection e (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = 0 := by
+  funext y
+  ext v
+  simp [pairedConnection]
 
 private theorem fderiv_comp_normalCoord_apply {c : ℂ → ℝ} {y : V}
     (hc : DifferentiableAt ℝ c (normalCoord e y)) (v : V) :
@@ -427,6 +429,13 @@ theorem normalModelConnection_apply (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
   simp only [normalModelConnection, ContinuousAlternatingMap.add_apply, normalConnection_apply,
     pairedConnection_apply, normalCoord_re, normalCoord_im]
   ring
+
+/-- The connection of the normal model of `(ξ, 0)` is the normal connection of `ξ`. -/
+@[simp]
+theorem normalModelConnection_zero_right (ξ : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    normalModelConnection e ξ 0 = normalConnection e ξ := by
+  funext y
+  simp [normalModelConnection]
 
 variable [Fact (finrank ℝ V = 4)]
 
@@ -477,6 +486,24 @@ private theorem differentiableAt_comp_normalCoord_apply {c : ℂ → EuclideanSp
     DifferentiableAt ℝ (fun w ↦ c w i) (normalCoord e y) :=
   (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hc
 
+/-- The derivatives along a vector `v` of the coefficients of the connection of the normal model on
+the frame, through the normal coordinate. -/
+private theorem fderiv_normalModelConnection_frame (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
+    (hη : DifferentiableAt ℝ η (normalCoord e y)) :
+    (∀ v, fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 0)) y v =
+        fderiv ℝ (fun w ↦ η w 0) (normalCoord e y) (normalCoord e v)) ∧
+      (∀ v, fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 1)) y v =
+        -fderiv ℝ (fun w ↦ η w 1) (normalCoord e y) (normalCoord e v)) ∧
+      (∀ v, fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 2)) y v =
+        fderiv ℝ (fun w ↦ ξ w 0) (normalCoord e y) (normalCoord e v)) ∧
+      (∀ v, fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 3)) y v =
+        fderiv ℝ (fun w ↦ ξ w 1) (normalCoord e y) (normalCoord e v)) := by
+  obtain ⟨h0, h1, h2, h3⟩ := normalModelConnection_frame (e := e) ξ η
+  refine ⟨fun v ↦ ?_, fun v ↦ ?_, fun v ↦ ?_, fun v ↦ ?_⟩ <;>
+    simp only [h0, h1, h2, h3, fderiv_fun_neg, neg_apply,
+      fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hη _),
+      fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hξ _)]
+
 /-- The connection of the normal model is differentiable where its plane fields are. -/
 theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
     (hη : DifferentiableAt ℝ η (normalCoord e y)) :
@@ -493,7 +520,9 @@ theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (n
     ext v
     have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
     rw [hv, normalModelConnection_apply]
-    simp
+    simp only [Fin.isValue, ContinuousAlternatingMap.ofSubsingletonLIE_apply,
+      ContinuousAlternatingMap.ofSubsingleton_apply_apply, add_apply, smul_apply,
+      coe_innerSL_apply, smul_eq_mul, sub_apply]
     ring
   rw [h]
   exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
@@ -517,8 +546,7 @@ theorem flatDeformationGauge_normalModel (hu₀₁ : ‖u₀‖ = 1)
     flatDeformationGauge e (normalModelConnection e ξ η) (normalModelSpinor e u₀ x 0)
         (normalModelSpinor e u₀ ξ η) y =
       Vortex.gaugeAdjoint x ξ (normalCoord e y) := by
-  obtain ⟨h0, h1, h2, h3⟩ := normalModelConnection_frame (e := e) ξ η
-  obtain ⟨z0, z1, z2, z3⟩ := normalCoord_apply_frame (e := e)
+  obtain ⟨d0, d1, d2, d3⟩ := fderiv_normalModelConnection_frame hξ hη
   have hβ : ⟪(u₀ : W), (pairedSpinor e u₀ : W)⟫_ℂ = 0 := by
     rw [← Submodule.coe_inner]
     exact inner_pairedSpinor_eq_zero hQ hkl he h₀ h₂ hρ hu₀
@@ -532,13 +560,16 @@ theorem flatDeformationGauge_normalModel (hu₀₁ : ‖u₀‖ = 1)
       Vortex.sectionValue ξ (normalCoord e y) • (u₀ : W) +
         Vortex.sectionValue η (normalCoord e y) • (pairedSpinor e u₀ : W) := by
     rw [normalModelSpinor_apply, Submodule.coe_add, Submodule.coe_smul, Submodule.coe_smul]
-  simp only [flatDeformationGauge, Fin.sum_univ_four, h0, h1, h2, h3, fderiv_fun_neg, neg_apply,
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hη _),
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hξ _), z0, z1, z2, z3,
-    map_zero, neg_zero, zero_add]
+  simp only [flatDeformationGauge, Fin.sum_univ_four, d0, d1, d2, d3, normalCoord_apply_zero,
+    normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three, map_zero, neg_zero,
+    zero_add]
   rw [hψ, hζ, inner_smul_left, inner_smul_left, inner_add_right, inner_smul_right,
     inner_smul_right, hu, hβ]
-  simp [Vortex.gaugeAdjoint_def, Vortex.sectionValue_apply]
+  simp only [Fin.isValue, conj_I, Vortex.sectionValue_apply, map_mul, map_add, conj_ofReal, mul_neg,
+    mul_one, mul_zero, add_zero, neg_mul, neg_re, mul_re, I_re, conj_re, re_ofNat, add_re,
+    ofReal_re, ofReal_im, I_im, sub_self, neg_zero, conj_im, im_ofNat, add_im, neg_im, mul_im,
+    zero_add, zero_mul, sub_zero, sub_neg_eq_add, one_mul, zero_sub, neg_add_rev, neg_neg,
+    Vortex.gaugeAdjoint_def]
   ring
 
 omit [FiniteDimensional ℂ W] in
@@ -554,6 +585,30 @@ private theorem inner_normalModel_curvature (hξ : DifferentiableAt ℝ ξ (norm
     extDeriv_apply_pair_of_differentiableAt (differentiableAt_normalModelConnection hξ hη)]
   ring
 
+/-- The curvature row of the normal model paired with `e₀ ∧ eⱼ`, where `⋆(e₀ ∧ eⱼ) = s eₖ ∧ eₗ`:
+the derivative along `eⱼ` of the coefficient on `e₀`, plus `s` times the curl of the coefficients on
+`eₖ` and `eₗ`, plus half the `q'`-coordinate. The coefficient on `eⱼ` is constant along `e₀`. -/
+private theorem inner_flatDeformationCurvature_normalModel_zero
+    (hξ : DifferentiableAt ℝ ξ (normalCoord e y)) (hη : DifferentiableAt ℝ η (normalCoord e y))
+    {j k l : Fin 4} {s : ℝ}
+    (hj : o.hodgeStar hkl (ιMulti ℝ 2 ![e 0, e j]) = s • ιMulti ℝ 2 ![e k, e l]) :
+    ⟪flatDeformationCurvature o ρ hkl (normalModelConnection e ξ η) (normalModelSpinor e u₀ x 0)
+        (normalModelSpinor e u₀ ξ η) y, ιMulti ℝ 2 ![e 0, e j]⟫ =
+      fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e 0)) y (e j) +
+        s * (fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e k)) y (e l) -
+          fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e l)) y (e k)) +
+        2⁻¹ * ⟪(quadraticTwoFormPolar o ρ hkl (normalModelSpinor e u₀ x 0 y)
+          (normalModelSpinor e u₀ ξ η y) : ⋀[ℝ]^2 V), ιMulti ℝ 2 ![e 0, e j]⟫ := by
+  obtain ⟨d0, d1, d2, d3⟩ := fderiv_normalModelConnection_frame hξ hη
+  have hj0 : fderiv ℝ (fun y' ↦ normalModelConnection e ξ η y' (fun _ ↦ e j)) y (e 0) = 0 := by
+    fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, d0, d1, d2, d3,
+      normalCoord_apply_zero, map_zero, neg_zero]
+  have hs : ∀ a b : ⋀[ℝ]^2 V, ⟪o.hodgeStar hkl a, b⟫ = ⟪a, o.hodgeStar hkl b⟫ :=
+    o.isSymmetric_hodgeStar_of_even even_two hkl
+  rw [flatDeformationCurvature, inner_add_left, inner_add_left, real_inner_smul_left, hs, hj,
+    real_inner_smul_right, inner_normalModel_curvature hξ hη, inner_normalModel_curvature hξ hη,
+    hj0, sub_zero]
+
 section Curvature
 
 include hQ hkl he h₀ h₂ hρ hu₀
@@ -567,20 +622,18 @@ theorem inner_flatDeformationCurvature_normalModel_zero_one (hu₀₁ : ‖u₀�
     ⟪flatDeformationCurvature o ρ hkl (normalModelConnection e ξ η) (normalModelSpinor e u₀ x 0)
         (normalModelSpinor e u₀ ξ η) y, ιMulti ℝ 2 ![e 0, e 1]⟫ =
       Vortex.gaugeFixedOperator x ξ (normalCoord e y) 1 := by
-  obtain ⟨h0, h1, h2, h3⟩ := normalModelConnection_frame (e := e) ξ η
-  obtain ⟨z0, z1, z2, z3⟩ := normalCoord_apply_frame (e := e)
-  have hs : ∀ a b : ⋀[ℝ]^2 V, ⟪o.hodgeStar hkl a, b⟫ = ⟪a, o.hodgeStar hkl b⟫ :=
-    o.isSymmetric_hodgeStar_of_even even_two hkl
-  rw [flatDeformationCurvature, inner_add_left, inner_add_left, real_inner_smul_left, hs,
-    o.hodgeStar_ιMulti_zero_one hkl he,
-    inner_normalModel_curvature hξ hη, inner_normalModel_curvature hξ hη,
+  obtain ⟨d0, -, d2, d3⟩ := fderiv_normalModelConnection_frame hξ hη
+  rw [inner_flatDeformationCurvature_normalModel_zero hkl x hξ hη
+      ((o.hodgeStar_ιMulti_zero_one hkl he).trans (one_smul ℝ _).symm),
     normalModelSpinor_zero_right, normalModelSpinor_apply,
     inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl he h₀ h₂ hρ hu₀ hu₀₁]
-  simp only [h0, h1, h2, h3, fderiv_fun_neg, neg_apply,
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hη _),
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hξ _), z0, z1, z2, z3,
-    map_zero, neg_zero]
-  simp [Vortex.linearizedEquation_apply_zero, Vortex.sectionValue_apply]
+  simp only [d0, d2, d3, normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three,
+    map_zero, zero_add, one_mul]
+  simp only [Fin.isValue, Vortex.sectionValue_apply, map_mul, map_add, conj_ofReal, conj_I, mul_neg,
+    mul_re, conj_re, re_ofNat, add_re, ofReal_re, neg_re, I_re, mul_zero, ofReal_im, I_im,
+    mul_one, sub_self, neg_zero, add_zero, conj_im, im_ofNat, add_im, neg_im, mul_im, zero_add,
+    zero_mul, sub_zero, neg_mul, sub_neg_eq_add, Vortex.gaugeFixedOperator_apply_one,
+    Vortex.linearizedEquation_apply_zero]
   ring
 
 /-- **The curvature row of the normal model along `e₀ ∧ e₂` is minus the gauge row of `L_x*`**:
@@ -591,20 +644,17 @@ theorem inner_flatDeformationCurvature_normalModel_zero_two (hu₀₁ : ‖u₀�
     ⟪flatDeformationCurvature o ρ hkl (normalModelConnection e ξ η) (normalModelSpinor e u₀ x 0)
         (normalModelSpinor e u₀ ξ η) y, ιMulti ℝ 2 ![e 0, e 2]⟫ =
       -Vortex.gaugeFixedAdjoint x η (normalCoord e y) 0 := by
-  obtain ⟨h0, h1, h2, h3⟩ := normalModelConnection_frame (e := e) ξ η
-  obtain ⟨z0, z1, z2, z3⟩ := normalCoord_apply_frame (e := e)
-  have hs : ∀ a b : ⋀[ℝ]^2 V, ⟪o.hodgeStar hkl a, b⟫ = ⟪a, o.hodgeStar hkl b⟫ :=
-    o.isSymmetric_hodgeStar_of_even even_two hkl
-  rw [flatDeformationCurvature, inner_add_left, inner_add_left, real_inner_smul_left, hs,
-    o.hodgeStar_ιMulti_zero_two hkl he,
-    inner_neg_right, inner_normalModel_curvature hξ hη, inner_normalModel_curvature hξ hη,
+  obtain ⟨d0, d1, -, d3⟩ := fderiv_normalModelConnection_frame hξ hη
+  rw [inner_flatDeformationCurvature_normalModel_zero hkl x hξ hη
+      ((o.hodgeStar_ιMulti_zero_two hkl he).trans (neg_one_smul ℝ _).symm),
     normalModelSpinor_zero_right, normalModelSpinor_apply,
     inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl he h₀ h₂ hρ hu₀ hu₀₁]
-  simp only [h0, h1, h2, h3, fderiv_fun_neg, neg_apply,
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hη _),
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hξ _), z0, z1, z2, z3,
-    map_zero]
-  simp [Vortex.sectionValue_apply]
+  simp only [d0, d1, d3, normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three,
+    map_zero, sub_zero]
+  simp only [Fin.isValue, mul_neg, neg_mul, one_mul, neg_neg, Vortex.sectionValue_apply, map_mul,
+    map_add, conj_ofReal, conj_I, mul_im, mul_re, re_ofNat, add_re, ofReal_re, I_re, mul_zero,
+    ofReal_im, I_im, mul_one, sub_self, add_zero, im_ofNat, add_im, zero_add, zero_mul, sub_zero,
+    conj_re, neg_im, conj_im, neg_zero, neg_re, Vortex.gaugeFixedAdjoint_apply_zero, neg_sub]
   ring
 
 /-- **The curvature row of the normal model along `e₀ ∧ e₃` is minus the curvature row of
@@ -616,20 +666,17 @@ theorem inner_flatDeformationCurvature_normalModel_zero_three (hu₀₁ : ‖u�
     ⟪flatDeformationCurvature o ρ hkl (normalModelConnection e ξ η) (normalModelSpinor e u₀ x 0)
         (normalModelSpinor e u₀ ξ η) y, ιMulti ℝ 2 ![e 0, e 3]⟫ =
       -Vortex.gaugeFixedAdjoint x η (normalCoord e y) 1 := by
-  obtain ⟨h0, h1, h2, h3⟩ := normalModelConnection_frame (e := e) ξ η
-  obtain ⟨z0, z1, z2, z3⟩ := normalCoord_apply_frame (e := e)
-  have hs : ∀ a b : ⋀[ℝ]^2 V, ⟪o.hodgeStar hkl a, b⟫ = ⟪a, o.hodgeStar hkl b⟫ :=
-    o.isSymmetric_hodgeStar_of_even even_two hkl
-  rw [flatDeformationCurvature, inner_add_left, inner_add_left, real_inner_smul_left, hs,
-    o.hodgeStar_ιMulti_zero_three hkl he,
-    inner_normalModel_curvature hξ hη, inner_normalModel_curvature hξ hη,
+  obtain ⟨d0, d1, d2, -⟩ := fderiv_normalModelConnection_frame hξ hη
+  rw [inner_flatDeformationCurvature_normalModel_zero hkl x hξ hη
+      ((o.hodgeStar_ιMulti_zero_three hkl he).trans (one_smul ℝ _).symm),
     normalModelSpinor_zero_right, normalModelSpinor_apply,
     inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl he h₀ h₂ hρ hu₀ hu₀₁]
-  simp only [h0, h1, h2, h3, fderiv_fun_neg, neg_apply,
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hη _),
-    fderiv_comp_normalCoord_apply (differentiableAt_comp_normalCoord_apply hξ _), z0, z1, z2, z3,
-    map_zero]
-  simp [Vortex.sectionValue_apply]
+  simp only [d0, d1, d2, normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three,
+    map_zero, sub_zero, one_mul]
+  simp only [Fin.isValue, Vortex.sectionValue_apply, map_mul, map_add, conj_ofReal, conj_I, mul_neg,
+    mul_re, re_ofNat, add_re, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
+    add_zero, im_ofNat, add_im, mul_im, zero_add, zero_mul, sub_zero, conj_re, neg_re, neg_zero,
+    conj_im, neg_im, sub_neg_eq_add, Vortex.gaugeFixedAdjoint_apply_one, neg_sub]
   ring
 
 end Curvature
@@ -695,7 +742,6 @@ theorem flatDeformationDirac_normalModel (hξ : DifferentiableAt ℝ ξ (normalC
           Vortex.gaugeFixedAdjoint x η (normalCoord e y) 3 * I)) • ρ (ι Q (e 0)) u₀ +
         (2 * ((Vortex.gaugeFixedOperator x ξ (normalCoord e y) 2 : ℂ) +
           Vortex.gaugeFixedOperator x ξ (normalCoord e y) 3 * I)) • ρ (ι Q (e 2)) u₀ := by
-  obtain ⟨z0, z1, z2, z3⟩ := normalCoord_apply_frame (e := e)
   set f := Vortex.sectionValue ξ (normalCoord e y)
   set g := Vortex.sectionValue η (normalCoord e y)
   set α := Vortex.sectionValue x (normalCoord e y)
@@ -713,27 +759,29 @@ theorem flatDeformationDirac_normalModel (hξ : DifferentiableAt ℝ ξ (normalC
     flatDeformationDirac_normalModel_eq_sum x hξ hη
   rw [hsum, sum_smul_ι_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂ hu₀,
     sum_smul_ι_apply_pairedSpinor hQ hkl he h₀ h₂ hu₀]
-  -- Compare the two coefficients.
-  have hA : X 0 + I * X 1 - (Y 2 - I * Y 3) =
-      2 * ((Vortex.gaugeFixedAdjoint x η (normalCoord e y) 2 : ℂ) +
-        Vortex.gaugeFixedAdjoint x η (normalCoord e y) 3 * I) := by
-    simp only [hX, hY, normalModelConnection_apply, e.inner_eq_ite, z0, z1, z2, z3, map_zero,
+  -- Compare the two coefficients, after evaluating `X` and `Y` on the frame.
+  have hAB : X 0 + I * X 1 - (Y 2 - I * Y 3) =
+        2 * ((Vortex.gaugeFixedAdjoint x η (normalCoord e y) 2 : ℂ) +
+          Vortex.gaugeFixedAdjoint x η (normalCoord e y) 3 * I) ∧
+      X 2 + I * X 3 + (Y 0 - I * Y 1) =
+        2 * ((Vortex.gaugeFixedOperator x ξ (normalCoord e y) 2 : ℂ) +
+          Vortex.gaugeFixedOperator x ξ (normalCoord e y) 3 * I) := by
+    simp only [hX, hY, normalModelConnection_apply, e.inner_eq_ite, normalCoord_apply_zero,
+      normalCoord_apply_one, normalCoord_apply_two, normalCoord_apply_three, map_zero,
       Vortex.fderiv_sectionValue_apply (differentiableAt_comp_normalCoord_apply hξ 2)
         (differentiableAt_comp_normalCoord_apply hξ 3),
       Vortex.fderiv_sectionValue_apply (differentiableAt_comp_normalCoord_apply hη 2)
         (differentiableAt_comp_normalCoord_apply hη 3)]
-    apply Complex.ext <;> simp [f, g, α, Vortex.sectionValue_apply] <;> ring
-  have hB : X 2 + I * X 3 + (Y 0 - I * Y 1) =
-      2 * ((Vortex.gaugeFixedOperator x ξ (normalCoord e y) 2 : ℂ) +
-        Vortex.gaugeFixedOperator x ξ (normalCoord e y) 3 * I) := by
-    simp only [hX, hY, normalModelConnection_apply, e.inner_eq_ite, z0, z1, z2, z3, map_zero,
-      Vortex.fderiv_sectionValue_apply (differentiableAt_comp_normalCoord_apply hξ 2)
-        (differentiableAt_comp_normalCoord_apply hξ 3),
-      Vortex.fderiv_sectionValue_apply (differentiableAt_comp_normalCoord_apply hη 2)
-        (differentiableAt_comp_normalCoord_apply hη 3)]
-    apply Complex.ext <;> simp [f, g, α, Vortex.sectionValue_apply,
-      Vortex.linearizedEquation_apply_one, Vortex.linearizedEquation_apply_two] <;> ring
-  rw [← hA, ← hB]
+    constructor <;> apply Complex.ext <;> simp only [ofReal_zero, zero_mul, add_zero, mul_zero,
+      Pi.zero_apply, Fin.isValue, PiLp.zero_apply, ↓reduceIte, mul_one, one_ne_zero, sub_self,
+      Fin.reduceEq, Vortex.sectionValue_apply, sub_zero, zero_add, zero_ne_one, zero_sub,
+      ofReal_neg, mul_neg, neg_mul, sub_re, add_re, mul_re, I_re, ofReal_re, I_im, ofReal_im,
+      re_ofNat, im_ofNat, add_im, mul_im, one_mul, neg_re, neg_zero, neg_neg, neg_add_rev,
+      Vortex.gaugeFixedAdjoint_apply_two, ofReal_add, ofReal_sub, ofReal_mul,
+      Vortex.gaugeFixedAdjoint_apply_three, sub_im, neg_im, f, α, g,
+      Vortex.gaugeFixedOperator_apply_two, Vortex.linearizedEquation_apply_one,
+      Vortex.gaugeFixedOperator_apply_three, Vortex.linearizedEquation_apply_two] <;> ring
+  rw [← hAB.1, ← hAB.2]
   module
 
 end Rows
