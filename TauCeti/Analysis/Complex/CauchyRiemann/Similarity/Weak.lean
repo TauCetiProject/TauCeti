@@ -9,14 +9,11 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.StandardFrame
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
 import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
-import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
 import TauCeti.Analysis.Complex.Wirtinger.Weyl
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.Local.Multiplication
-import TauCeti.Data.ENNReal.Holder
 import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
-import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.RankOne
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
@@ -54,8 +51,8 @@ The proof has two steps.
   complex-linear coefficient `D` with `D ξ = C ξ` that is `Lᵖ` with `C`, a rank-one map built in a
   Euclidean model of `V` (`MeasureTheory.MemLp.exists_memLp_clm_apply_eq`), and the Cauchy
   integral equation `Ψ = 1 + T (½ Ψ D)` is solved on a closed disc
-  (`TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`). Since `D` is only
-  `Lᵖ`, the disc is taken so small that the `Lᵖ` norm of `D` on it is small. The solution
+  (`TauCeti.exists_pos_lt_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`). Since `D` is
+  only `Lᵖ`, the disc is taken so small that the `Lᵖ` norm of `D` on it is small. The solution
   `Ψ = 1 + T g`, with `g = ½ Ψ D ∈ Lᵖ`, is continuous, invertible, and lies in `W^{1,p}_loc` with
   `bar∂Ψ = g` (`TauCeti.memWkpLoc_one_cauchyTransform_of_memLp_of_finiteDimensional`). The weak
   Leibniz rule for products of `W^{1,p}_loc` maps, `p > 2`, gives
@@ -168,38 +165,17 @@ private theorem exists_similarity_of_isWeakLinearCauchyRiemannOn_I_smul {p : ℝ
       EqOn (fun z ↦ Ψ z (ξ z)) σ (ball z₀ r) := by
   have := FiniteDimensional.completeSpace ℂ V
   have hp1' : (1 : ℝ≥0∞) < p := by exact_mod_cast one_lt_two.trans hp
-  have : (p : ℝ≥0∞).HolderConjugate (p : ℝ≥0∞).conjExponent := .conjExponent hp1'.le
-  have hq : (p : ℝ≥0∞).conjExponent < 2 :=
-    ENNReal.HolderConjugate.lt_two (p := (p : ℝ≥0∞)) (by exact_mod_cast hp)
   -- a closed disc in `Ω`, and a complex-linear coefficient `D` with `D ξ = C ξ` on it
   obtain ⟨R, hR, hRΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hz₀)
   obtain ⟨D, hDp, hD⟩ :=
     (memLpLoc_iff.1 hC _ hRΩ (isCompact_closedBall _ _)).exists_memLp_clm_apply_eq
       ((hξ.continuousOn.mono hRΩ).aestronglyMeasurable measurableSet_closedBall)
-  set K := Real.pi⁻¹ *
-    (eLpNorm (truncatedCauchyKernel (R + R)) (p : ℝ≥0∞).conjExponent volume).toReal
-  have hK : 0 ≤ K := by positivity
-  -- a smaller disc on which `D` has `Lᵖ` norm at most `1 / (2 (K + 1))`
-  have hDR : MemLp ((closedBall z₀ R).indicator D) p volume :=
-    (memLp_indicator_iff_restrict measurableSet_closedBall.nullMeasurableSet).2 hDp
-  obtain ⟨r, hDr, hr, hrR⟩ := ((((tendsto_eLpNorm_restrict_closedBall ENNReal.coe_ne_top hDR
-    z₀).eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (show 0 < 2⁻¹ / (K + 1) by
-      positivity)))).filter_mono nhdsWithin_le_nhds).and (Ioo_mem_nhdsGT hR)).exists
-  have hsub : closedBall z₀ r ⊆ closedBall z₀ R := closedBall_subset_closedBall hrR.le
-  rw [eLpNorm_congr_ae ((ae_restrict_iff' measurableSet_closedBall).2
-    (ae_of_all _ fun z hz ↦ indicator_of_mem (hsub hz) D))] at hDr
-  have hKD : K * (eLpNorm D p (volume.restrict (closedBall z₀ r))).toReal ≤ 2⁻¹ := by
-    have h1 := ENNReal.toReal_le_of_le_ofReal (by positivity) hDr.le
-    calc _ ≤ K * (2⁻¹ / (K + 1)) := by gcongr
-      _ ≤ 2⁻¹ := by
-          rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-          nlinarith
-  have hball : ball z₀ r ⊆ Ω := ball_subset_closedBall.trans (hsub.trans hRΩ)
-  -- the Cauchy integral equation on the smaller disc
-  obtain ⟨g, hgp, hgs, hTg, hgeq, hTg1⟩ :=
-    exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hq hK
-      (fun f hf hfs w hw ↦ norm_cauchyTransform_le hq hf (hfs.trans hsub) (hsub hw))
-      (hDp.mono_measure (Measure.restrict_mono hsub le_rfl)) hKD
+  -- the Cauchy integral equation on a smaller disc
+  obtain ⟨r, ⟨hr, hrR⟩, g, hgp, hgs, hTg, hgeq, hTg1⟩ :=
+    exists_pos_lt_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp
+      (by exact_mod_cast hp) ENNReal.coe_ne_top hR hDp
+  have hball : ball z₀ r ⊆ Ω :=
+    ball_subset_closedBall.trans ((closedBall_subset_closedBall hrR.le).trans hRΩ)
   set Ψ : ℂ → V →L[ℂ] V := fun z ↦ 1 + cauchyTransform g z with hΨ
   have hunit (z : ℂ) (hz : z ∈ ball z₀ r) : IsUnit (Ψ z) := by
     by_contra h

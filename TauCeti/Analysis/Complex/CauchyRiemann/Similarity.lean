@@ -262,6 +262,45 @@ theorem exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp [CompleteSp
       _ ≤ 4⁻¹ * (4 / 3) := by gcongr
       _ < 1 := by norm_num
 
+/-- **The Cauchy integral equation on a small disc.** For a finite exponent `p > 2` and a field
+`D` of complex-linear maps that is `Lᵖ` on the closed disc of radius `R > 0` about `c`, some
+smaller closed disc, of radius `r ∈ (0, R)`, carries a solution `g ∈ Lᵖ`, vanishing off it, of
+`g = ½ (1 + T g) D` with `T g` continuous and of norm less than `1` on that disc. The radius is
+taken so small that the `Lᵖ` norm of `D` on the disc is small, and the equation is solved by
+`TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`. -/
+theorem exists_pos_lt_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp [CompleteSpace E]
+    {D : ℂ → E →L[ℂ] E} {c : ℂ} {R : ℝ} {p : ℝ≥0∞} (hp : 2 < p) (hp_top : p ≠ ⊤) (hR : 0 < R)
+    (hD : MemLp D p (volume.restrict (closedBall c R))) :
+    ∃ r ∈ Ioo 0 R, ∃ g : ℂ → E →L[ℂ] E, MemLp g p volume ∧ support g ⊆ closedBall c r ∧
+      Continuous (cauchyTransform g) ∧
+      (∀ z ∈ closedBall c r, g z = (2 : ℂ)⁻¹ • (1 + cauchyTransform g z).comp (D z)) ∧
+      ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
+  have hp1 : 1 < p := (by norm_num : (1 : ℝ≥0∞) < 2).trans hp
+  have : Fact (1 ≤ p) := ⟨hp1.le⟩
+  have hq : p.conjExponent < 2 := ENNReal.HolderConjugate.lt_two hp
+  -- the Cauchy transform bound of the double of the disc
+  set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) p.conjExponent volume).toReal
+  have hK : 0 ≤ K := by positivity
+  -- a smaller disc on which `D` has `Lᵖ` norm at most `1 / (2 (K + 1))`
+  have hDR : MemLp ((closedBall c R).indicator D) p volume :=
+    (memLp_indicator_iff_restrict measurableSet_closedBall.nullMeasurableSet).2 hD
+  obtain ⟨r, hDr, hr, hrR⟩ := ((((tendsto_eLpNorm_restrict_closedBall hp_top hDR
+    c).eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (show 0 < 2⁻¹ / (K + 1) by
+      positivity)))).filter_mono nhdsWithin_le_nhds).and (Ioo_mem_nhdsGT hR)).exists
+  have hsub : closedBall c r ⊆ closedBall c R := closedBall_subset_closedBall hrR.le
+  -- on the smaller disc the cut-off coefficient is `D` itself
+  rw [eLpNorm_congr_ae ((ae_restrict_iff' measurableSet_closedBall).2
+    (ae_of_all _ fun z hz ↦ indicator_of_mem (hsub hz) D))] at hDr
+  have hKD : K * (eLpNorm D p (volume.restrict (closedBall c r))).toReal ≤ 2⁻¹ := by
+    have h1 := ENNReal.toReal_le_of_le_ofReal (by positivity) hDr.le
+    calc _ ≤ K * (2⁻¹ / (K + 1)) := by gcongr
+      _ ≤ 2⁻¹ := by
+          rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+          nlinarith
+  exact ⟨r, ⟨hr, hrR⟩, exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hq hK
+    (fun f hf hfs w hw ↦ norm_cauchyTransform_le hq hf (hfs.trans hsub) (hsub hw))
+    (hD.mono_measure (Measure.restrict_mono hsub le_rfl)) hKD⟩
+
 end CauchyEquation
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
@@ -281,47 +320,15 @@ private theorem exists_closedBall_cauchyTransform_eq [FiniteDimensional ℂ E] {
       (∀ z ∈ closedBall z₀ r, g z =
         (2 : ℂ)⁻¹ • (1 + cauchyTransform g z).comp (rankOneDivNormSq ℂ (C z (ξ z)) (ξ z))) ∧
       ∀ z ∈ closedBall z₀ r, ‖cauchyTransform g z‖ < 1 := by
-  have hp1 : 1 < p := (by norm_num : (1 : ℝ≥0∞) < 2).trans hp
-  have : Fact (1 ≤ p) := ⟨hp1.le⟩
-  have hq : p.conjExponent < 2 := ENNReal.HolderConjugate.lt_two hp
-  -- a closed disc in `Ω`, with the Cauchy transform bound of its double
-  obtain ⟨R, hR, hRΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hz₀)
-  set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) p.conjExponent volume).toReal
-  have hK : 0 ≤ K := by positivity
-  -- a smaller disc on which `C` has `Lᵖ` norm at most `1 / (2 (K + 1))`
-  have hCR : MemLp ((closedBall z₀ R).indicator C) p volume :=
-    (memLp_indicator_iff_restrict measurableSet_closedBall.nullMeasurableSet).2
-      (memLpLoc_iff.1 hC _ hRΩ (isCompact_closedBall _ _))
-  obtain ⟨r, hCr, hr, hrR⟩ := ((((tendsto_eLpNorm_restrict_closedBall hp_top hCR
-    z₀).eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 (show 0 < 2⁻¹ / (K + 1) by
-      positivity)))).filter_mono nhdsWithin_le_nhds).and (Ioo_mem_nhdsGT hR)).exists
-  have hsub : closedBall z₀ r ⊆ closedBall z₀ R := closedBall_subset_closedBall hrR.le
-  have hsubΩ : closedBall z₀ r ⊆ Ω := hsub.trans hRΩ
-  -- on the smaller disc the cut-off coefficient is `C` itself
-  rw [eLpNorm_congr_ae ((ae_restrict_iff' measurableSet_closedBall).2
-    (ae_of_all _ fun z hz ↦ indicator_of_mem (hsub hz) C))] at hCr
-  -- absorb the real-linear coefficient into a complex-linear one, of no larger norm
-  have hCr' : MemLp C p (volume.restrict (closedBall z₀ r)) :=
-    memLpLoc_iff.1 hC _ hsubΩ (isCompact_closedBall _ _)
-  have hξm : AEStronglyMeasurable ξ (volume.restrict (closedBall z₀ r)) :=
-    (hξ.mono hsubΩ).aestronglyMeasurable measurableSet_closedBall
-  have hKD : K * (eLpNorm (fun z ↦ rankOneDivNormSq ℂ (C z (ξ z)) (ξ z)) p
-      (volume.restrict (closedBall z₀ r))).toReal ≤ 2⁻¹ := by
-    have h1 := ENNReal.toReal_le_of_le_ofReal (by positivity)
-      ((TauCeti.MeasureTheory.eLpNorm_rankOneDivNormSq_apply_le (𝕜 := ℂ)
-        hCr'.aestronglyMeasurable hξm p).trans hCr.le)
-    calc _ ≤ K * (2⁻¹ / (K + 1)) := by gcongr
-      _ ≤ 2⁻¹ := by
-          rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-          nlinarith
-  -- solve the Cauchy integral equation on the smaller disc
-  have hT (f : ℂ → E →L[ℂ] E) (hf : MemLp f p volume) (hfs : support f ⊆ closedBall z₀ r)
-      (w : ℂ) (hw : w ∈ closedBall z₀ r) :
-      ‖cauchyTransform f w‖ ≤ K * (eLpNorm f p volume).toReal :=
-    norm_cauchyTransform_le hq hf (hfs.trans hsub) (hsub hw)
   have := FiniteDimensional.completeSpace ℂ E
-  exact ⟨r, hr, hsubΩ, exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hq hK hT
-    (hCr'.rankOneDivNormSq_apply (𝕜 := ℂ) hξm) hKD⟩
+  -- a closed disc in `Ω`, on which the rank-one coefficient is `Lᵖ` with `C`
+  obtain ⟨R, hR, hRΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds hz₀)
+  have hD := (memLpLoc_iff.1 hC _ hRΩ (isCompact_closedBall _ _)).rankOneDivNormSq_apply
+    (𝕜 := ℂ) ((hξ.mono hRΩ).aestronglyMeasurable measurableSet_closedBall)
+  -- solve the Cauchy integral equation on a smaller disc
+  obtain ⟨r, ⟨hr, hrR⟩, h⟩ :=
+    exists_pos_lt_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hp hp_top hR hD
+  exact ⟨r, hr, (closedBall_subset_closedBall hrR.le).trans hRΩ, h⟩
 
 /-- The value of `bar∂ (Ψ ξ)` vanishes where `bar∂ξ = ½ (-C ξ)` and `bar∂Ψ = ½ Ψ D`, for
 `Ψ = 1 + T` and `D ξ = C ξ`. -/
