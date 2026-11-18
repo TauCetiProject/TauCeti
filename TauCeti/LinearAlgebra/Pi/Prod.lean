@@ -28,10 +28,8 @@ variable (R : Type*) [Semiring R] {ι : Type*} (M N : ι → Type*) [∀ i, AddC
 /-- `TauCeti.AddEquiv.arrowProdEquivProdArrow` as a linear equivalence: a family of pairs is a pair
 of families. -/
 def arrowProdEquivProdArrow : ((i : ι) → M i × N i) ≃ₗ[R] ((i : ι) → M i) × ((i : ι) → N i) :=
-  (TauCeti.AddEquiv.arrowProdEquivProdArrow M N).toLinearEquiv fun c x ↦ by
-    simp only [TauCeti.AddEquiv.arrowProdEquivProdArrow_apply, Pi.smul_apply, Prod.smul_fst,
-      Prod.smul_snd, Prod.smul_mk]
-    rfl
+  (TauCeti.AddEquiv.arrowProdEquivProdArrow M N).toLinearEquiv fun _ _ ↦ by
+    ext <;> simp
 
 variable {R M N}
 

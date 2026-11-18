@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.DirectSum
 public import TauCeti.LinearAlgebra.Determinant.Dual
-public import TauCeti.LinearAlgebra.Determinant.Pi
+public import TauCeti.LinearAlgebra.Determinant.Pi.Basic
 public import TauCeti.LinearAlgebra.Pi.Map
 public import TauCeti.LinearAlgebra.Pi.Prod
 
@@ -117,12 +117,6 @@ theorem finrank_ker_prod_dual :
     finrank K (ker f × Dual K (N ⧸ range f)) = finrank K (ker f) + finrank K (N ⧸ range f) := by
   rw [Module.finrank_prod, Subspace.dual_finrank_eq]
 
-/-- An exterior product of an empty family, indexed by `Fin n` with `n = 0`, is `1`. -/
-private theorem ιMulti_eq_one_of_eq_zero {V : Type*} [AddCommGroup V] [Module K V] {n : ℕ}
-    (hn : n = 0) (v : Fin n → V) : ExteriorAlgebra.ιMulti K n v = 1 := by
-  subst hn
-  exact ExteriorAlgebra.ιMulti_zero_apply v
-
 /-- For a bijective map, `LinearMap.detLineEquivProdDual` sends the canonical generator of `det f`
 (`LinearMap.detLineEquivOfBijective`) to the empty exterior product `1` of the zero space
 `ker f × (coker f)^*`. -/
@@ -138,7 +132,7 @@ theorem coe_detLineEquivProdDual_detLineEquivOfBijective_symm_one (hf : Function
       (TauCeti.detLineDualEquiv K _ (exteriorPower.ιMulti K _ 0)) 0
       (by rw [TauCeti.detLineDualEquiv_ιMulti_ιMulti, Matrix.det_isEmpty]),
     coe_detLineEquivProdDual_tmul]
-  refine ιMulti_eq_one_of_eq_zero ?_ _
+  rw [ExteriorAlgebra.ιMulti_apply, List.ofFn_eq_nil_iff.2, List.prod_nil]
   rw [finrank_ker_eq_zero_of_injective hf.1, Subspace.dual_finrank_eq, hc]
 
 end Single
@@ -237,9 +231,7 @@ product of the canonical generators of the `det (f i)` (`LinearMap.detLineEquivO
 theorem detLinePiMapEquiv_detLineEquivOfBijective_symm_one
     (h : ∀ i, Even (finrank K (ker (f i)) + finrank K (N i ⧸ range (f i))))
     (hf : ∀ i, Function.Bijective (f i)) :
-    detLinePiMapEquiv f h ((detLineEquivOfBijective
-        (by rw [coe_piMap]; exact Function.Bijective.piMap hf : Function.Bijective (piMap f))).symm
-          1) =
+    detLinePiMapEquiv f h ((detLineEquivOfBijective (bijective_piMap f hf)).symm 1) =
       ⨂ₜ[K] i, (detLineEquivOfBijective (hf i)).symm 1 := by
   rw [← LinearEquiv.eq_symm_apply]
   refine (piMap f).detLineEquivProdDual.injective (Subtype.ext ?_)
