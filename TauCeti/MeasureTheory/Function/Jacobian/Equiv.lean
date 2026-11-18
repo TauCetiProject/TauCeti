@@ -14,15 +14,12 @@ For a bijection `φ` of a finite-dimensional real vector space whose inverse is 
 Mathlib's change of variables formula
 (`MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul`) applied to `φ⁻¹` on the whole
 space reads `∫ g(φ x) dμ(x) = ∫ |det Dφ⁻¹(y)| • g(y) dμ(y)` for every function `g` and every
-additive Haar measure `μ`, with no integrability assumption. In particular, if `|det Dφ⁻¹| ≤ M`,
-then `∫ g ∘ φ ≤ M ∫ g` for every nonnegative integrable `g`.
+additive Haar measure `μ`, with no integrability assumption.
 
 ## Main results
 
 * `TauCeti.integral_comp_equiv_eq_integral_abs_det_fderiv_symm_smul`: the change of variables
   formula along a bijection.
-* `TauCeti.integral_comp_equiv_le_mul_integral`: the bound `∫ g ∘ φ ≤ M ∫ g` when
-  `|det Dφ⁻¹| ≤ M`.
 -/
 
 public section
@@ -44,15 +41,5 @@ theorem integral_comp_equiv_eq_integral_abs_det_fderiv_symm_smul [NormedAddCommG
     (fun y _ ↦ (hψ y).hasFDerivAt.hasFDerivWithinAt) φ.symm.injective.injOn fun x ↦ g (φ x)
   rw [Set.image_univ_of_surjective φ.symm.surjective] at hcv
   simpa only [Measure.restrict_univ, Equiv.apply_symm_apply] using hcv
-
-/-- If `φ⁻¹` is differentiable and `|det Dφ⁻¹| ≤ M`, then `∫ g ∘ φ ≤ M ∫ g` for every nonnegative
-integrable function `g`. -/
-theorem integral_comp_equiv_le_mul_integral (hψ : Differentiable ℝ φ.symm) {M : ℝ}
-    (hM : ∀ y, |(fderiv ℝ φ.symm y).det| ≤ M) {g : E → ℝ} (hg0 : ∀ x, 0 ≤ g x)
-    (hg : Integrable g μ) : ∫ x, g (φ x) ∂μ ≤ M * ∫ x, g x ∂μ := by
-  rw [integral_comp_equiv_eq_integral_abs_det_fderiv_symm_smul μ hψ, ← integral_const_mul]
-  refine integral_mono_of_nonneg (.of_forall fun y ↦ smul_nonneg (abs_nonneg _) (hg0 y))
-    (hg.const_mul M) (.of_forall fun y ↦ ?_)
-  exact mul_le_mul_of_nonneg_right (hM y) (hg0 y)
 
 end TauCeti

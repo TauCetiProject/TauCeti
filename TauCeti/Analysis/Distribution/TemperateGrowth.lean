@@ -73,11 +73,11 @@ A measure of temperate growth is finite on compact sets.
 * `Function.HasTemperateGrowth.abs`: `|f|` has temperate growth if `f` has no zeros.
 * `Function.HasTemperateGrowth.abs_det_fderiv_symm`: the Jacobian factor `|det Dφ⁻¹|` of a
   bijection `φ` such that `φ` and `φ⁻¹` have temperate growth.
-* `ContDiff.norm_iteratedFDeriv_basis_repr_fderiv_apply_le`: the derivatives of the chain-rule
-  coefficient `x ↦ (b.repr (Dg(x) v))ᵢ` in an orthonormal basis are bounded by those of `g`.
 * `Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le`: the Jacobian
   factor `|det Dφ⁻¹|` has a bounded derivative of order `n` when those of `φ⁻¹` of orders `1` to
   `n + 1` are bounded.
+* `ContDiff.norm_iteratedFDeriv_basis_repr_fderiv_apply_le`: the derivatives of the chain-rule
+  coefficient `x ↦ (b.repr (Dg(x) v))ᵢ` in an orthonormal basis are bounded by those of `g`.
 * `Function.HasTemperateGrowth.exists_norm_le_of_leftInverse`: a polynomial lower bound for
   `‖f x‖` from a left inverse of temperate growth.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
@@ -210,6 +210,34 @@ theorem Function.HasTemperateGrowth.abs_det_fderiv_symm {E : Type*} [NormedAddCo
   hψ.det_fderiv.abs fun y ↦ φ.det_fderiv_symm_ne_zero (hφ.1.differentiable (by simp) _)
     (hψ.1.differentiable (by simp) y)
 
+/-- If `φ` and `φ⁻¹` have temperate growth and the derivatives of `φ⁻¹` of orders `1` to `n + 1`
+are bounded, then the derivative of order `n` of the Jacobian factor `|det Dφ⁻¹|` is bounded. -/
+theorem Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {φ : E ≃ E}
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth) (n : ℕ)
+    (hb : ∀ m ≤ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (m + 1) φ.symm x‖ ≤ C) :
+    ∃ C, ∀ y, ‖iteratedFDeriv ℝ n
+      (fun y ↦ ((|(_root_.fderiv ℝ φ.symm y).det| : ℝ) : ℂ)) y‖ ≤ C := by
+  -- The determinant of the bounded smooth map `Dφ⁻¹` has bounded derivatives.
+  obtain ⟨C, hC⟩ := (ContinuousLinearMap.hasTemperateGrowth_det.1.of_le
+    (by exact_mod_cast le_top)).exists_norm_iteratedFDeriv_comp_le
+      (hψ.fderiv.1.of_le (by exact_mod_cast le_top))
+      fun m hm ↦ (hb m hm).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x
+  -- `det Dφ⁻¹` has no zeros on the connected space `E`, hence a constant sign `ε`.
+  have hcont : Continuous fun y ↦ (_root_.fderiv ℝ φ.symm y).det := hψ.det_fderiv.1.continuous
+  obtain ⟨ε, hε⟩ := isPreconnected_univ.exists_abs_eq_mul hcont.continuousOn fun y _ ↦
+    φ.det_fderiv_symm_ne_zero (hφ.1.differentiable (by simp) _) (hψ.1.differentiable (by simp) y)
+  have hJ : (fun y ↦ ((|(_root_.fderiv ℝ φ.symm y).det| : ℝ) : ℂ)) =
+      (ε • Complex.ofRealCLM) ∘ ((fun A : E →L[ℝ] E ↦ A.det) ∘ _root_.fderiv ℝ φ.symm) := by
+    funext y
+    simp only [Function.comp_apply, _root_.smul_apply, Complex.ofRealCLM_apply,
+      Complex.real_smul, hε y (Set.mem_univ y), Complex.ofReal_mul]
+  refine ⟨‖ε • Complex.ofRealCLM‖ * C, fun y ↦ ?_⟩
+  rw [hJ]
+  exact ((ε • Complex.ofRealCLM).norm_iteratedFDeriv_comp_left
+    ((ContinuousLinearMap.hasTemperateGrowth_det.1.comp hψ.fderiv.1).contDiffAt) (by simp)).trans
+    (mul_le_mul_of_nonneg_left (hC y) (norm_nonneg _))
+
 section InnerProduct
 
 /-- The derivatives of the coordinate `x ↦ (b.repr (Dg(x) v))ᵢ` of a directional derivative in an
@@ -235,39 +263,6 @@ theorem ContDiff.norm_iteratedFDeriv_basis_repr_fderiv_apply_le {E F ι : Type*}
   refine (A.norm_iteratedFDeriv_comp_left hd.contDiffAt le_rfl).trans ?_
   refine (mul_le_of_le_one_left (norm_nonneg _) hA).trans ?_
   exact hg.norm_iteratedFDeriv_fderiv_apply_le (by simpa using hn) v x
-
-namespace Function.HasTemperateGrowth
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- If `φ` and `φ⁻¹` have temperate growth and the derivatives of `φ⁻¹` of orders `1` to `n + 1`
-are bounded, then the derivative of order `n` of the Jacobian factor `|det Dφ⁻¹|` is bounded. -/
-theorem exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le [FiniteDimensional ℝ E] {φ : E ≃ E}
-    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth) (n : ℕ)
-    (hb : ∀ m ≤ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (m + 1) φ.symm x‖ ≤ C) :
-    ∃ C, ∀ y, ‖iteratedFDeriv ℝ n
-      (fun y ↦ ((|(_root_.fderiv ℝ φ.symm y).det| : ℝ) : ℂ)) y‖ ≤ C := by
-  -- The determinant of the bounded smooth map `Dφ⁻¹` has bounded derivatives.
-  obtain ⟨C, hC⟩ := (ContinuousLinearMap.hasTemperateGrowth_det.1.of_le
-    (by exact_mod_cast le_top)).exists_norm_iteratedFDeriv_comp_le
-      (hψ.fderiv.1.of_le (by exact_mod_cast le_top))
-      fun m hm ↦ (hb m hm).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x
-  -- `det Dφ⁻¹` has no zeros on the connected space `E`, hence a constant sign `ε`.
-  have hcont : Continuous fun y ↦ (_root_.fderiv ℝ φ.symm y).det := hψ.det_fderiv.1.continuous
-  obtain ⟨ε, hε⟩ := isPreconnected_univ.exists_abs_eq_mul hcont.continuousOn fun y _ ↦
-    φ.det_fderiv_symm_ne_zero (hφ.1.differentiable (by simp) _) (hψ.1.differentiable (by simp) y)
-  have hJ : (fun y ↦ ((|(_root_.fderiv ℝ φ.symm y).det| : ℝ) : ℂ)) =
-      (ε • Complex.ofRealCLM) ∘ ((fun A : E →L[ℝ] E ↦ A.det) ∘ _root_.fderiv ℝ φ.symm) := by
-    funext y
-    simp only [Function.comp_apply, _root_.smul_apply, Complex.ofRealCLM_apply,
-      Complex.real_smul, hε y (Set.mem_univ y), Complex.ofReal_mul]
-  refine ⟨‖ε • Complex.ofRealCLM‖ * C, fun y ↦ ?_⟩
-  rw [hJ]
-  exact ((ε • Complex.ofRealCLM).norm_iteratedFDeriv_comp_left
-    ((ContinuousLinearMap.hasTemperateGrowth_det.1.comp hψ.fderiv.1).contDiffAt) (by simp)).trans
-    (mul_le_mul_of_nonneg_left (hC y) (norm_nonneg _))
-
-end Function.HasTemperateGrowth
 
 end InnerProduct
 
