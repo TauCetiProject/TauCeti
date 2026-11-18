@@ -23,7 +23,7 @@ This file contains this pigeonhole step, for an arbitrary sequence `c : ℕ → 
 partial order. The source's alternative `Comp(Π_{K (r + 1)}) = 0` is not needed: a monotone sequence
 with few values always has a stable window, provided the depth `L` is large compared with the number
 of values. The depth cannot be fixed before the sequence: the identity of `ℕ`, which takes `L + 1`
-values on `[0, L]`, has no stable window at all.
+values on `[0, L]`, is constant on no window `[K (r - 1), K (r + 2)]` with `K > 0`.
 
 ## Main results
 
