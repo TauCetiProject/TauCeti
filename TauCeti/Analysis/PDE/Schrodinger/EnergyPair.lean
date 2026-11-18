@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
 public import TauCeti.Analysis.PDE.Schrodinger.Strichartz
 import TauCeti.Analysis.PDE.Strichartz.EnergyPair
+import TauCeti.MeasureTheory.Integral.ChristKiselev
 
 /-!
 # The energy pair in the Strichartz estimates for the Schrödinger equation
