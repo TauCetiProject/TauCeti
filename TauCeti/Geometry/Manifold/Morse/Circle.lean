@@ -162,12 +162,11 @@ theorem circleCosTwoMax_injective (r : ℝ) : Injective (circleCosTwoMax r) := b
 
 /-- The two minima are different. -/
 theorem circleCosTwoMin_injective (r : ℝ) : Injective (circleCosTwoMin r) := by
-  intro i j hij
-  fin_cases i <;> fin_cases j
-  · rfl
-  · exact ((coe_add_pi_ne (r + π / 2)) (by simpa [circleCosTwoMin_def] using hij.symm)).elim
-  · exact ((coe_add_pi_ne (r + π / 2)) (by simpa [circleCosTwoMin_def] using hij)).elim
-  · rfl
+  -- The minima for `r` are the maxima for `r + π / 2`.
+  have : circleCosTwoMin r = circleCosTwoMax (r + π / 2) :=
+    funext fun j ↦ by rw [circleCosTwoMin_def, circleCosTwoMax_def]
+  rw [this]
+  exact circleCosTwoMax_injective (r + π / 2)
 
 /-- The two maxima are equal only if their labels are. -/
 @[simp]
