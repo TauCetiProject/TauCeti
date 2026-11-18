@@ -177,6 +177,7 @@ theorem image_equations_splitGenusTwo {X₁ : Type v} [Finite X₁] (U₂ : Syst
 the base group is not commutative: the coefficient `[x₂, y₂]` stays nontrivial in the coordinate
 group of the lower system extended by `x₂, y₂` exactly then, and `x₁ = y₂`, `y₁ = x₂` solves the top
 level there. -/
+@[simp]
 theorem isRegular_splitGenusTwo_iff {U₂ : System G Y₂} :
     (splitGenusTwo U₂).IsRegular ↔ U₂.IsRegular ∧ ∃ g h : G, ¬Commute g h := by
   refine ⟨fun h => ⟨isRegular_cons_empty.1 h.of_cons, ?_⟩, fun ⟨hU, g, h, hgh⟩ => ?_⟩
@@ -218,8 +219,8 @@ example : (splitGenusTwo (cons (G := FreeGroup (Fin 2)) nil (Fin 2 ⊕ Fin 2)
 
 /-- Over the commutative group `ℤ`, splitting the regular one-level system `[x₁, y₁][x₂, y₂] = 1`
 does not give a regular system. -/
-example : ¬(splitGenusTwo (G := Multiplicative ℤ) nil).IsRegular := fun h =>
-  (isRegular_splitGenusTwo_iff.1 h).2.elim fun g ⟨k, hgk⟩ => hgk (Commute.all g k)
+example : ¬(splitGenusTwo (G := Multiplicative ℤ) nil).IsRegular := by
+  simp [Commute.all]
 
 /-- Over `F(a, b)`, moving an empty level in one variable below the closed genus-two level
 `[x₁, y₁][x₂, y₂] = 1` gives a regular system. -/
