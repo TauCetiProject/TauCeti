@@ -295,23 +295,33 @@ private abbrev halfCompl (B : Type w) [TopologicalSpace B] (W : Submodule ℝ F)
   proj B ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ
 
 variable (B) in
+/-- `B × F` deforms into the complement of `B` times a closed half-subspace `{y ∈ W | φ y ≤ 0}`
+with `φ v = 1` for some `v ∈ W`, through maps keeping that complement inside itself: the homotopy
+moves along straight lines towards `v` in each fibre. -/
+theorem exists_homotopy_halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F) (hv : v ∈ W)
+    (hφv : φ v = 1) :
+    ∃ (ρ : TopCat.of (B × F) ⟶ TopCat.of (B × F))
+      (H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy ρ.hom),
+      (∀ (τ : unitInterval) (p : TopCat.of (B × F)),
+        p ∈ Prod.snd ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ → H (τ, p) ∈ Prod.snd ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ) ∧
+      ∀ p, ρ p ∈ Prod.snd ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ :=
+  ⟨TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩,
+    { toFun q := (q.2.1, (q.1 : ℝ) • v + (1 - (q.1 : ℝ)) • q.2.2)
+      continuous_toFun := by fun_prop
+      map_zero_left _ := by simp
+      map_one_left _ := by simp },
+    fun τ _ hp ↦ starConvex_compl_setOf_mem_and_nonpos hv (by simp [hφv]) hp τ.2.1
+      (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _),
+    fun _ h ↦ (hφv ▸ one_pos : 0 < φ v).not_ge h.2⟩
+
+variable (B) in
 /-- The relative homology of `B × F` modulo the complement of a closed half-subspace vanishes:
 `B × F` deforms into that complement along straight lines towards `v`. -/
 private lemma isZero_singularHomology_halfCompl (W : Submodule ℝ F) (φ : F →ₗ[ℝ] ℝ) (v : F)
     (hv : v ∈ W) (hφv : φ v = 1) (n : ℕ) :
     IsZero ((TopPair.ofSubset (halfCompl B W φ)).singularHomology R n) := by
-  have hmem : ∀ p : B × F, (p.1, v) ∈ halfCompl B W φ := fun p h ↦
-    (hφv ▸ one_pos : 0 < φ v).not_ge h.2
-  let c : TopCat.of (B × F) ⟶ TopCat.of (B × F) :=
-    TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩
-  let H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy c.hom :=
-    { toFun q := (q.2.1, (q.1 : ℝ) • v + (1 - (q.1 : ℝ)) • q.2.2)
-      continuous_toFun := by fun_prop
-      map_zero_left _ := by simp
-      map_one_left _ := by simp [c] }
-  exact TopPair.isZero_singularHomology_ofSubset_of_homotopy H
-    (fun τ p hp ↦ starConvex_compl_setOf_mem_and_nonpos hv (by simp [hφv]) hp τ.2.1
-      (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)) hmem R n
+  obtain ⟨ρ, H, hS, hρ⟩ := exists_homotopy_halfCompl B W φ v hv hφv
+  exact TopPair.isZero_singularHomology_ofSubset_of_homotopy H hS hρ R n
 
 variable (B)
 

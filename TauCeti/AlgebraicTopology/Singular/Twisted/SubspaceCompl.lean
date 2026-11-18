@@ -149,7 +149,7 @@ theorem isZero_twistedHomology_ofSubset_union_zero :
     (hU₀ 0).of_iso (twistedHomologyTotalPairOfSubsetIso L Set.subset_union_left 0)
   -- The instance argument is passed explicitly: searching for it runs out of time.
   exact @IsZero.of_epi _ _ _ _ _ (T.twistedHomologyTotalToOuter L 0)
-    (TopTriple.epi_twistedHomologyTotalToOuter_zero T L) h₀
+    (TopTriple.instEpiModuleCatTwistedHomologyTotalToOuterOfNatNat T L) h₀
 
 variable (hU : IsOpen U) (hV : IsOpen V) (hV₀ : ∀ n, IsZero ((ofSubset V).twistedHomology L n))
 include hU hV hV₀

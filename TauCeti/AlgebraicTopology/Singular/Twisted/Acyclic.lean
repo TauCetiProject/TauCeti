@@ -18,8 +18,6 @@ homology of `X`.
   (`TauCeti.LocalCoefficientSystem.isZero_twistedHomology_of_isEmpty`). So for a pair with empty
   subspace the quotient map `Hₙ(X; L) ⟶ Hₙ(X, ∅; L)` is an isomorphism
   (`TopPair.isIso_twistedHomologyπ_of_isEmpty`).
-* In degree zero that quotient map is surjective for every pair
-  (`TopPair.epi_twistedHomologyπ_zero`).
 * If the inclusion `A ⟶ X` induces isomorphisms on twisted homology, the relative twisted homology
   vanishes (`TopPair.isZero_twistedHomology_of_isIso`). In particular it vanishes modulo a set `S`
   into which `X` deforms through maps keeping `S` inside `S`
@@ -60,13 +58,6 @@ open TauCeti
 
 variable {R : Type u} [Ring R] (P : TopPair.{v})
   (L : LocalCoefficientSystem.{u, v, max v w} R P.fst)
-
-/-- In degree zero, every relative twisted homology class comes from the ambient space. -/
-instance epi_twistedHomologyπ_zero : Epi (P.twistedHomologyπ L 0) := by
-  have : Epi ((P.twistedChainComplexπ L).f 0) :=
-    (ModuleCat.epi_iff_surjective _).2 (P.twistedChainComplexπ_f_surjective L (k := 0))
-  exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel (P.twistedChainComplexπ L) 0
-    (by simp)
 
 /-- For a pair with empty subspace, relative twisted homology is the twisted homology of the
 ambient space. -/

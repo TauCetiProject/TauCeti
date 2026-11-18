@@ -22,8 +22,7 @@ morphisms of the coefficient system. The connecting map factors through the conn
 map of `(X,A)` and the quotient to `(A,B)`, as needed
 for successive connecting maps in a filtered space. When `(X,A)` has vanishing twisted
 homology in two adjacent degrees, the inclusion `(A,B) ⟶ (X,B)` is an isomorphism in the
-lower one (`TauCeti.TopTriple.isIso_twistedHomologyMap_innerToTotal_of_isZero`), and in
-degree zero the quotient `H₀(X,B;L) ⟶ H₀(X,A;L)` is always surjective.
+lower one (`TauCeti.TopTriple.isIso_twistedHomologyMap_innerToTotal_of_isZero`).
 
 The construction follows `TauCeti.TopTriple.shortExact_singularChainComplexShortComplex`
 and the cokernel presentations in `TopPair.twistedChainComplex`. Pullback along a
@@ -338,16 +337,5 @@ theorem isIso_twistedHomologyMap_innerToTotal_of_isZero (n : ℕ)
       (innerToTotal.app T) L n) :=
     (T.twistedHomology_exact_total L n).epi_f (hn.eq_of_tgt _ _)
   exact isIso_of_mono_of_epi _
-
-/-- In degree zero, the quotient `H₀(X,B;L) ⟶ H₀(X,A;L)` is surjective. -/
-instance epi_twistedHomologyTotalToOuter_zero : Epi (T.twistedHomologyTotalToOuter L 0) := by
-  have : Epi (((outerPair.obj T).twistedChainComplexπ L).f 0) :=
-    (ModuleCat.epi_iff_surjective _).2
-      ((outerPair.obj T).twistedChainComplexπ_f_surjective L (k := 0))
-  have h := congrArg (fun g ↦ g.f 0) (T.twistedChainComplexπ_comp_totalToOuter L)
-  simp only [HomologicalComplex.comp_f] at h
-  have : Epi ((T.twistedChainComplexTotalToOuter L).f 0) := epi_of_epi_fac h
-  exact HomologicalComplex.epi_homologyMap_of_epi_of_not_rel
-    (T.twistedChainComplexTotalToOuter L) 0 (by simp)
 
 end TauCeti.TopTriple
