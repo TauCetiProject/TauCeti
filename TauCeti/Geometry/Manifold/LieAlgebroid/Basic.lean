@@ -212,6 +212,12 @@ theorem bracket_smul_right (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ�
   ext x
   simp [A.bracket_smul_apply]
 
+/-- The bracket of sections is antisymmetric: `[a, b] = -[b, a]`. -/
+theorem bracket_swap (a b : Cₛ^∞⟮I; F, V⟯) : A.bracket a b = -A.bracket b a := by
+  have h := A.bracket_self (a + b)
+  simp only [map_add, LinearMap.add_apply, A.bracket_self, zero_add, add_zero] at h
+  exact eq_neg_of_add_eq_zero_right h
+
 section Separation
 
 variable [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]
