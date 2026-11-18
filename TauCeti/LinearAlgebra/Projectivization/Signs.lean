@@ -60,7 +60,7 @@ theorem affineChart_signs_smul {K : Type*} [Field K] (ε : Fin (n + 1) → ℤˣ
   induction x using ind with | h v hv =>
   ext j
   have hk : ((ε k : ℤ) : K) * (ε k : ℤ) = 1 := by
-    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+    rw [← Int.cast_mul, Int.units_coe_mul_self, Int.cast_one]
   simp only [smul_mk, affineChart_mk, Pi.smul_apply', chartSigns_apply, Units.smul_def,
     zsmul_eq_mul, Units.val_mul, Int.cast_mul]
   rw [mul_div_mul_comm, div_eq_mul_inv ((ε (k.succAbove j) : ℤ) : K),
