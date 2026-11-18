@@ -190,6 +190,26 @@ theorem _root_.LinearMap.quadraticFrameFunction_apply (T : E →ₗ[ℂ] E)
 
 open _root_.LinearMap (quadraticFrameFunction)
 
+/-- The quadratic frame function of the zero operator is zero. -/
+@[simp] theorem _root_.LinearMap.quadraticFrameFunction_zero :
+    quadraticFrameFunction (0 : E →ₗ[ℂ] E) = 0 := by
+  funext v
+  simp
+
+/-- The quadratic frame function of a sum is the sum of the quadratic frame functions. -/
+@[simp] theorem _root_.LinearMap.quadraticFrameFunction_add (S T : E →ₗ[ℂ] E) :
+    quadraticFrameFunction (S + T) = quadraticFrameFunction S + quadraticFrameFunction T := by
+  funext v
+  simp only [LinearMap.quadraticFrameFunction_apply, LinearMap.add_apply, inner_add_right, map_add,
+    Pi.add_apply]
+
+/-- The quadratic frame function commutes with multiplication by a real scalar. -/
+@[simp] theorem _root_.LinearMap.quadraticFrameFunction_smul (c : ℝ) (T : E →ₗ[ℂ] E) :
+    quadraticFrameFunction ((c : ℂ) • T) = c • quadraticFrameFunction T := by
+  funext v
+  simp only [LinearMap.quadraticFrameFunction_apply, LinearMap.smul_apply, inner_smul_right,
+    ← RCLike.ofReal_eq_complex_ofReal, RCLike.re_ofReal_mul, Pi.smul_apply, smul_eq_mul]
+
 /-- The real quadratic function has weight the real part of the trace.
 For Hermitian operators the inner product and trace are real. -/
 theorem _root_.LinearMap.isFrameFunction_quadratic [FiniteDimensional ℂ E] (T : E →ₗ[ℂ] E) :
@@ -233,9 +253,7 @@ theorem IsFrameFunction.operator_eq_zero {T : E →ₗ[ℂ] E}
     (hf : IsFrameFunction (quadraticFrameFunction T) 0) (hT : T.IsSymmetric)
     (hn : ∀ v, 0 ≤ quadraticFrameFunction T v) : T = 0 := by
   apply hT.ext_quadraticFrameFunction (by intro x y; simp)
-  rw [hf.eq_zero_of_nonneg hn]
-  funext v
-  simp [quadraticFrameFunction]
+  simpa only [LinearMap.quadraticFrameFunction_zero] using hf.eq_zero_of_nonneg hn
 
 /-- In dimension one a frame function is induced by multiplication by its weight. -/
 theorem IsFrameFunction.eq_quadratic_of_finrank_one
