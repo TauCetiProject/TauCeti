@@ -171,10 +171,7 @@ lemma subspaceChainFiltration_eq_bot (hF : ∀ Z : TopCat.{w}, IsEmpty Z → IsZ
 @[simp]
 lemma subspaceChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
     subspaceChainFiltration F X b = ⊤ := by
-  have : IsIso (TopPair.ofSubset (X b)).map := by
-    refine TopCat.isIso_of_bijective_of_isOpenMap _ ⟨Subtype.val_injective, fun y ↦ ?_⟩
-      (hb ▸ isOpen_univ : IsOpen (X b)).isOpenEmbedding_subtypeVal.isOpenMap
-    exact ⟨⟨y, hb ▸ Set.mem_univ y⟩, rfl⟩
+  have := TopPair.isIso_ofSubset_map_of_eq_univ hb
   have : IsIso (subspaceChainFiltrationι F X b) := by
     rw [subspaceChainFiltrationι]
     exact Functor.map_isIso (ComplexShape.embeddingDownNat.extendFunctor A) _

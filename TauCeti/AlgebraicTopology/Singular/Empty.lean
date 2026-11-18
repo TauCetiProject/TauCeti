@@ -28,12 +28,13 @@ quotient natural transformation `SSetPair.chainComplexFunctorπ`, and its invert
 pair whose subcomplex is empty is Mathlib's `SSetPair.isIso_chainComplexπ`.
 
 The singular simplicial set of an empty space has no simplices
-(`TopCat.hasDimensionLT_toSSet_obj_of_isEmpty`), in particular for the subspace of a pair
-(`TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty`). So for any pair whose subspace is
-empty, by Mathlib's `SSetPair.isIso_chainComplexπ` the quotient map
-`TopPair.singularHomologyπ` from ambient to relative singular homology is an isomorphism, found
-by instance resolution. Hence a map of pairs with empty subspaces is an isomorphism on ambient
-homology when it is one on relative homology (`TopPair.isIso_homologyMap_fst_of_isEmpty`).
+(`TopCat.hasDimensionLT_toSSet_of_isEmpty`), so neither has that of the subspace of a pair whose
+subspace is empty (`TopPair.hasDimensionLT_toSSetPair_left_of_isEmpty`). By Mathlib's
+`SSetPair.isIso_chainComplexπ` the quotient map `TopPair.singularHomologyπ` from ambient to
+relative singular homology of such a pair is therefore an isomorphism, found by instance
+resolution. Hence a map of pairs with empty subspaces is an isomorphism on ambient homology when
+it is one on relative homology
+(`TopPair.isIso_homologyMap_fst_of_isEmpty`).
 -/
 
 public section
@@ -44,14 +45,12 @@ open CategoryTheory Limits
 
 universe w v u
 
-namespace TopCat
-
-/-- The singular simplicial set of an empty space has no simplices. -/
-instance hasDimensionLT_toSSet_obj_of_isEmpty (Z : TopCat.{w}) [IsEmpty Z] :
-    (toSSet.obj Z).HasDimensionLT 0 :=
-  (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦ isEmptyElim (toSSetObj₀Equiv σ)
-
-end TopCat
+/-- The singular simplicial set of an empty space has no simplices: a simplex has a value at a
+vertex. -/
+instance TopCat.hasDimensionLT_toSSet_of_isEmpty (X : TopCat.{w}) [IsEmpty X] :
+    (TopCat.toSSet.obj X).HasDimensionLT 0 :=
+  (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
+    isEmptyElim (TopCat.toSSetObj₀Equiv σ)
 
 namespace TopPair
 
@@ -64,7 +63,7 @@ instance isEmpty_incl_obj_snd (X : TopCat.{w}) : IsEmpty (incl.obj X).snd :=
 /-- The singular simplicial set of an empty subspace has no simplices. -/
 instance hasDimensionLT_toSSetPair_left_of_isEmpty (P : TopPair.{w}) [IsEmpty P.snd] :
     (toSSetPair.obj P).left.HasDimensionLT 0 :=
-  TopCat.hasDimensionLT_toSSet_obj_of_isEmpty P.snd
+  inferInstanceAs ((TopCat.toSSet.obj P.snd).HasDimensionLT 0)
 
 /-- Ordinary singular chains are the ambient chains of the singular pair associated to `(X, ∅)`. -/
 lemma singularChainComplexFunctor_eq_incl_chainComplexFunctorRight :
