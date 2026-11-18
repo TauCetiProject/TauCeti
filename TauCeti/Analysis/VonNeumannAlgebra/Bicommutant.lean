@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Density
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology.Compact
+public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.StrongStarTopology
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 
@@ -145,11 +146,6 @@ private theorem closure_image_ofCLM_inter_of_retraction (S : StarSubalgebra 𝕜
         exact ⟨f a, ⟨hfS a ha, hft a⟩, rfl⟩)
     rwa [ContinuousLinearMapWOT.toCLM_ofCLM, hfix x hxt] at this
 
-/-- The adjoint on the weak operator copy is computed on the underlying operators. -/
-private theorem ofCLM_star (a : H →L[𝕜] H) :
-    ContinuousLinearMapWOT.ofCLM (star a) = star (ContinuousLinearMapWOT.ofCLM a) :=
-  ContinuousLinearMapWOT.ext fun _ ↦ (ContinuousLinearMapWOT.star_apply _ _).symm
-
 /-- The weak operator closure of the self-adjoint part of a unital star subalgebra is the
 self-adjoint part of its double commutant. -/
 theorem closure_image_ofCLM_inter_selfAdjoint (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
@@ -163,7 +159,8 @@ theorem closure_image_ofCLM_inter_selfAdjoint (S : StarSubalgebra 𝕜 (H →L[�
   refine S.closure_image_ofCLM_inter_of_retraction (f := fun a ↦ selfAdjointPart ℝ a) ?_
     (fun a ha ↦ ?_) (fun a ↦ (selfAdjointPart ℝ a).2) fun a ha ↦ ha.coe_selfAdjointPart_apply ℝ
   · simp only [selfAdjointPart_apply_coe, RCLike.real_smul_eq_coe_smul (K := 𝕜),
-      ContinuousLinearMapWOT.ofCLM_smul, ContinuousLinearMapWOT.ofCLM_add, ofCLM_star,
+      ContinuousLinearMapWOT.ofCLM_smul, ContinuousLinearMapWOT.ofCLM_add,
+      ContinuousLinearMapWOT.ofCLM_star,
       ContinuousLinearMapWOT.ofCLM_toCLM]
     fun_prop
   · rw [selfAdjointPart_apply_coe]
@@ -184,7 +181,8 @@ theorem closure_image_ofCLM_inter_skewAdjoint (S : StarSubalgebra 𝕜 (H →L[�
       congrArg Subtype.val (LinearMap.congr_fun (skewAdjointPart_comp_subtype_skewAdjoint ℝ)
         (⟨a, ha⟩ : skewAdjoint.submodule ℝ (H →L[𝕜] H)))
   · simp only [skewAdjointPart_apply_coe, RCLike.real_smul_eq_coe_smul (K := 𝕜),
-      ContinuousLinearMapWOT.ofCLM_smul, ContinuousLinearMapWOT.ofCLM_sub, ofCLM_star,
+      ContinuousLinearMapWOT.ofCLM_smul, ContinuousLinearMapWOT.ofCLM_sub,
+      ContinuousLinearMapWOT.ofCLM_star,
       ContinuousLinearMapWOT.ofCLM_toCLM]
     fun_prop
   · rw [skewAdjointPart_apply_coe]
