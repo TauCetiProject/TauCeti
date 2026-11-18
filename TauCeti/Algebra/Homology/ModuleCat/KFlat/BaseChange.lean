@@ -10,8 +10,12 @@ public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Derives
 public import TauCeti.Algebra.Homology.Adjunction
 public import TauCeti.Algebra.Homology.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
+public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.CategoryTheory.Functor.Derived.Adjunction
-import TauCeti.Algebra.Homology.ModuleCat.KFlat.Tensor
+import Mathlib.RingTheory.Flat.CategoryTheory
+import TauCeti.Algebra.Category.ModuleCat.AB
+import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
+import TauCeti.CategoryTheory.Localization.DerivabilityStructure.Derives
 
 /-!
 # Derived extension of scalars and its adjunction with restriction of scalars
@@ -27,7 +31,9 @@ provides:
 * existence of the left derived extension-of-scalars functor `- ⊗^L_R S : D(R) ⥤ D(S)`
   (`TauCeti.hasLeftDerivedFunctor_extendScalars`, `TauCeti.derivedExtendScalars`);
 * invertibility of the derived comparison on K-flat complexes
-  (`TauCeti.isIso_app_of_isKFlat_of_isLeftDerivedFunctor_extendScalars`);
+  (`TauCeti.isIso_app_of_isKFlat_of_isLeftDerivedFunctor_extendScalars`), in particular on
+  bounded-above complexes of flat modules
+  (`TauCeti.isIso_app_of_boundedAbove_flat_of_isLeftDerivedFunctor_extendScalars`);
 * the derived adjunction `G ⊣ (ModuleCat.restrictScalars f).mapDerivedCategory` for any left
   derived functor `(G, α)` of scalar extension (`TauCeti.derivedExtendRestrictScalarsAdj`,
   `TauCeti.nonempty_derivedExtendRestrictScalarsAdj`), together with the compatibility of its unit
@@ -146,6 +152,20 @@ instance isIso_app_of_isKFlat_of_isLeftDerivedFunctor_extendScalars
     simp
   rwa [NatTrans.isIso_app_iff_of_iso α (eqToIso heq)] at h
 
+/-- On a bounded-above complex `P` of flat `R`-modules, the comparison `α.app P` of any left derived
+extension-of-scalars functor `(G, α)` is an isomorphism in `DerivedCategory (ModuleCat.{u} S)`. -/
+theorem isIso_app_of_boundedAbove_flat_of_isLeftDerivedFunctor_extendScalars
+    [HasDerivedCategory.{w} (ModuleCat.{u} R)] [HasDerivedCategory.{w'} (ModuleCat.{u} S)]
+    (G : DerivedCategory (ModuleCat.{u} R) ⥤ DerivedCategory (ModuleCat.{u} S))
+    (α : DerivedCategory.Q ⋙ G ⟶ complexBaseChange f ⋙ DerivedCategory.Q)
+    [G.IsLeftDerivedFunctor α
+      (HomologicalComplex.quasiIso (ModuleCat.{u} R) (ComplexShape.up ℤ))]
+    (P : CochainComplex (ModuleCat.{u} R) ℤ) (b : ℤ)
+    [P.IsStrictlyLE b] [∀ i, Module.Flat R (P.X i)] :
+    IsIso (α.app P) :=
+  have := P.isKFlat_of_boundedAbove_flat b
+  inferInstance
+
 end DerivedExtendScalars
 
 section DerivedAdjunction
@@ -172,18 +192,9 @@ def derivedExtendRestrictScalarsAdj
       (Functor.whiskerRight eR.inv G ≫ (Functor.associator _ _ _).hom) W_S :=
     Functor.isRightDerivedFunctor_of_inverts W_S (R' ⋙ G)
       ((Functor.associator DerivedCategory.Q R' G).symm ≪≫ Functor.isoWhiskerRight eR G)
-  have hDerivesComp : (CochainComplex.KFlat.localizerMorphism (ModuleCat.{u} R)).Derives
-      ((complexBaseChange f ⋙ DerivedCategory.Q) ⋙ R') :=
-    MorphismProperty.IsInvertedBy.of_comp _ _ (localizerMorphism_derives_complexBaseChange f) R'
   have : (G ⋙ R').IsLeftDerivedFunctor
-      ((Functor.associator _ _ _).inv ≫ Functor.whiskerRight α R') W_R := by
-    refine hDerivesComp.isLeftDerivedFunctor_of_isIso _ fun P ↦ ?_
-    have : IsIso (α.app ((CochainComplex.KFlat.localizerMorphism
-        (ModuleCat.{u} R)).functor.obj P)) :=
-      (localizerMorphism_derives_complexBaseChange f).isIso' α P
-    dsimp
-    rw [Category.id_comp]
-    infer_instance
+      ((Functor.associator _ _ _).inv ≫ Functor.whiskerRight α R') W_R :=
+    (localizerMorphism_derives_complexBaseChange f).isLeftDerivedFunctor_comp R' α
   exact ((ModuleCat.extendRestrictScalarsAdj f).mapHomologicalComplex
     (ComplexShape.up ℤ)).derived W_R W_S α eR.inv
 
