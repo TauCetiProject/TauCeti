@@ -12,8 +12,10 @@ public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 Mathlib's Leibniz bound `ContinuousLinearMap.norm_iteratedFDerivWithin_le_of_bilinear` controls
 the `k`-th derivative of `y ↦ B (f y) (g y)` by a binomial sum over the derivatives of `f` and
-`g`. When all derivatives of `f` of order at most `k` are bounded by `M₁` and those of `g` by
-`M₂`, the sum collapses to `‖B‖ * 2 ^ k * M₁ * M₂`
+`g`. It holds at any point near which `f` and `g` are smooth enough, with no global regularity
+(`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt`). When all derivatives
+of `f` of order at most `k` are bounded by `M₁` and those of `g` by `M₂`, the sum collapses to
+`‖B‖ * 2 ^ k * M₁ * M₂`
 (`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_forall_le`). The constant
 `‖B‖ * 2 ^ k` depends only on `B` and `k`, which gives one constant serving every function and
 every order at most `k` (`TauCeti.exists_norm_iteratedFDeriv_bilinear_le`).
@@ -26,6 +28,23 @@ open scoped ContDiff
 variable {𝕜 E X Y Z : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
   [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+
+/-- **The Leibniz bound at a point.** If `f` and `g` are `C^N` at `x`, the `n`-th derivative of
+`y ↦ B (f y) (g y)` at `x`, for `n ≤ N`, is bounded by the binomial sum of the derivatives of `f`
+and `g` at `x`. This is the local form of `ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear`,
+which asks for global smoothness. -/
+theorem ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear_of_contDiffAt
+    (B : X →L[𝕜] Y →L[𝕜] Z) {f : E → X} {g : E → Y} {x : E} {N : ℕ∞ω}
+    (hf : ContDiffAt 𝕜 N f x) (hg : ContDiffAt 𝕜 N g x) {n : ℕ} (hn : n ≤ N) :
+    ‖iteratedFDeriv 𝕜 n (fun y => B (f y) (g y)) x‖ ≤ ‖B‖ * ∑ i ∈ Finset.range (n + 1),
+      (n.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i f x‖ * ‖iteratedFDeriv 𝕜 (n - i) g x‖ := by
+  obtain ⟨u, hu, hfu⟩ := hf.contDiffOn (m := n) hn (by simp)
+  obtain ⟨v, hv, hgv⟩ := hg.contDiffOn (m := n) hn (by simp)
+  obtain ⟨t, htuv, ht, hxt⟩ := mem_nhds_iff.mp (Filter.inter_mem hu hv)
+  have h := B.norm_iteratedFDerivWithin_le_of_bilinear
+    (hfu.mono (htuv.trans Set.inter_subset_left)) (hgv.mono (htuv.trans Set.inter_subset_right))
+    ht.uniqueDiffOn hxt le_rfl
+  simpa only [iteratedFDerivWithin_of_isOpen _ ht hxt] using h
 
 /-- The Leibniz rule at a point of an open set, with all derivatives of order at most `k` of `f`
 and `g` bounded by constants. -/
