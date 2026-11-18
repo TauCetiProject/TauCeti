@@ -133,8 +133,9 @@ theorem sub_mul_mobiusOf_ne_zero : C a - C c * mobiusOf a b c d ≠ 0 := by
   rw [← sub_mul_mobiusOf_mul_den, h0, zero_mul]
 
 omit hdet in
-/-- **The inverse coefficient matrix recovers `X`**: `X · (a - c · m) = d · m - b`, both sides
-being the determinant times `X` over the denominator, whenever the denominator is nonzero. -/
+/-- **The adjugate coefficient identity** `X · (a - c · m) = d · m - b`, whenever the denominator
+is nonzero: both sides are the determinant times `X` over the denominator. No hypothesis on the
+determinant is needed; `X_eq_div_mobiusOf` uses it to divide and so recover `X` from `m`. -/
 theorem X_mul_sub_mul_mobiusOf (hD : (C c * X + C d : RatFunc K) ≠ 0) :
     (X : RatFunc K) * (C a - C c * mobiusOf a b c d) = C d * mobiusOf a b c d - C b := by
   refine mul_right_cancel₀ hD ?_
