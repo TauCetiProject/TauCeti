@@ -1049,6 +1049,26 @@ theorem poissonBracket_constSmooth (omegaForm : SymplecticForm V) (f g : V → �
   -- `NormedSpace.fromTangentSpace`.
   exact fromTangentSpace_constSmooth_apply omegaForm x _ _
 
+/-- **Integral curves on an open subset solve Hamilton's equations.** For a constant symplectic
+form `ω` on `V` and an open set `U ⊆ V`, a global integral curve in `U` of the Hamiltonian vector
+field of `f ∘ val` for the restriction of `ω` to `U` is, read in `V`, a solution of Hamilton's
+equations `x' = X_f(x)` of the linear theory. -/
+theorem hasDerivAt_coe_of_isMIntegralCurve (omegaForm : SymplecticForm V)
+    {U : TopologicalSpace.Opens V} {f : V → ℝ} {γ : ℝ → U}
+    (hγ : IsMIntegralCurve γ (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : U → V) contMDiff_subtype_val omegaForm.constSmooth)
+      (f ∘ Subtype.val))) (t : ℝ) :
+    HasDerivAt (fun s ↦ (γ s : V)) (omegaForm.hamiltonianVectorField f (γ t)) t := by
+  -- The inclusion of `U` carries the restricted Hamiltonian vector field to that of `f`.
+  have h := (hγ.isMIntegralCurveOn Set.univ).map_of_mfderiv_eq (f := (Subtype.val : U → V))
+    (W := fun y ↦ omegaForm.constSmooth.hamiltonianVectorField f y)
+    (fun _ _ ↦ contMDiff_subtype_val.mdifferentiableAt one_ne_zero) fun s _ ↦ by
+      rw [Manifold.mfderiv_subtype_val, SmoothTwoForm.hamiltonianVectorField_comp_subtype_val,
+        ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+  have h' := (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.1 h t (Set.mem_univ t)).hasDerivAt
+    Filter.univ_mem
+  simpa [Function.comp_def, hamiltonianVectorField_constSmooth] using h'
+
 end SymplecticForm
 
 end TauCeti

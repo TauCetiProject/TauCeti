@@ -373,13 +373,7 @@ theorem contDiffAt_centralForceEnergyMomentum {m : ℝ} {U : ℝ → ℝ} {n : W
     ContDiffAt ℝ n (centralForceEnergyMomentum b m U) x := by
   refine contDiffAt_pi.2 fun i ↦ ?_
   fin_cases i
-  · have hn : ContDiffAt ℝ n (fun y : V × V ↦ U ‖y.1‖) x :=
-      hU.comp x ((contDiffAt_norm ℝ hq).comp x contDiffAt_fst)
-    have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 0) =
-        fun y ↦ ‖y.2‖ ^ 2 / (2 * m) + U ‖y.1‖ :=
-      funext fun y ↦ centralForceHamiltonian_apply m U y.1 y.2
-    rw [Fin.zero_eta, h]
-    exact ((contDiff_norm_sq ℝ).comp contDiff_snd).contDiffAt.div_const _ |>.add hn
+  · exact contDiffAt_centralForceHamiltonian hU hq
   · have h : (fun y : V × V ↦ centralForceEnergyMomentum b m U y 1) =
         fun y ↦ ⟪y.1, b 0⟫_ℝ * ⟪y.2, b 1⟫_ℝ - ⟪y.1, b 1⟫_ℝ * ⟪y.2, b 0⟫_ℝ :=
       funext fun y ↦ angularMomentum_apply (b 0) (b 1) y.1 y.2
