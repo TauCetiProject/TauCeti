@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.G2.ShortRoot.Datum
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius
 
 /-!
