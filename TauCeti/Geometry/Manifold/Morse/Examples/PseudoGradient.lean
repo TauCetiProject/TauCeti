@@ -34,9 +34,10 @@ This file tests the definition on the two simplest Morse functions.
   `(-1, 1)` the field `(u, v) ↦ (u, -v)` reads `(z₁, -z₂)`, and it is adapted
   (`TauCeti.isAdaptedPseudoGradient_neg_sq_add_sq`), as the product of the adapted fields of
   `-u²` and `v²`; its trajectories are `t ↦ (u₀ eᵗ, v₀ e⁻ᵗ)`
-  (`TauCeti.isMIntegralCurve_neg_sq_add_sq`). The field `(u, v) ↦ (-u, -v)`, which reads
-  `(-z₁, -z₂)`, is not adapted (`TauCeti.not_isAdaptedPseudoGradient_neg_sq_add_sq_neg`): along it
-  `df = 2 u² - 2 v²`, which increases `f` on the `u`-axis.
+  (`TauCeti.isMIntegralCurve_mul_exp_prodMk_mul_exp_neg`). The field `(u, v) ↦ (-u, -v)`,
+  which reads `(-z₁, -z₂)`, is not adapted
+  (`TauCeti.not_isAdaptedPseudoGradient_neg_sq_add_sq_neg`): along it `df = 2 u² - 2 v²`, which
+  increases `f` on the `u`-axis.
 * **A normalized field on a band.** On the band `1 ≤ x² ≤ 4`, the field `x ↦ -1 / (2 x)` lowers
   `x²` at unit speed (`TauCeti.mvfderiv_sq_real_apply_neg_inv`), as do the fields that deform a
   sublevel across a critical-free band
@@ -59,35 +60,13 @@ namespace TauCeti
 
 /-! ### The quadratic well -/
 
-/-- The derivative of `x ↦ x²` on `ℝ` at `x`, applied to a tangent vector `v`, is `2 x v`. -/
-theorem mvfderiv_sq_real_apply (x v : ℝ) :
-    mvfderiv 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2) x v = 2 * x * v := by
-  refine (mvfderiv_eq_fderiv_apply _ x v).trans ?_
-  rw [fderiv_eq_smul_deriv]
-  simp
-  ring
-
-/-- `0` is the critical point of `x ↦ x²` on `ℝ`. -/
-theorem mfderiv_sq_real_zero : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ) (fun y : ℝ ↦ y ^ 2) 0 = 0 := by
-  refine mvfderiv_eq_zero_iff.1 (ContinuousLinearMap.ext fun v ↦ ?_)
-  simp
-
-/-- The Morse index of `x ↦ x²` at its minimum `0` is `0`. -/
-theorem manifoldMorseIndex_sq_real_zero :
-    manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) 0 = 0 :=
-  manifoldMorseIndex_eq_zero_of_isLocalMin (contDiff_id.pow 2).contMDiff.contMDiffAt
-    (Eventually.of_forall fun y ↦ by simp [sq_nonneg])
-
 namespace MorseChart
 
 variable (φ : MorseChart ℝ (fun x : ℝ ↦ x ^ 2) 0)
 
 /-- Every weight of a Morse chart of `x ↦ x²` at its minimum `0` is `1`. -/
-theorem weight_eq_one_sq_real (i : Fin (Module.finrank ℝ ℝ)) : φ.weight i = 1 := by
-  have hempty : {i | φ.weight i < 0} = ∅ :=
-    (Set.ncard_eq_zero (toFinite _)).1 (φ.ncard_weight_neg.trans manifoldMorseIndex_sq_real_zero)
-  by_contra h
-  exact (Set.eq_empty_iff_forall_notMem.1 hempty) i ((φ.weight_ne_one_iff i).1 h)
+theorem weight_eq_one_sq_real (i : Fin (Module.finrank ℝ ℝ)) : φ.weight i = 1 :=
+  φ.weight_eq_one_of_manifoldMorseIndex_eq_zero manifoldMorseIndex_sq_real_zero i
 
 /-- **Morse charts of the quadratic well.** In every Morse chart of `x ↦ x²` at `0`, the
 coordinates `z` of a point `y` satisfy `Σᵢ zᵢ² = 2 y²`: the chart is `z = ±√2 y`. -/
@@ -211,7 +190,7 @@ theorem isAdaptedPseudoGradient_neg_sq_add_sq :
 
 /-- The flow of the adapted pseudo-gradient `(u, v) ↦ (u, -v)` of the saddle `-u² + v²`: its
 trajectory through `(u₀, v₀)` is `t ↦ (u₀ eᵗ, v₀ e⁻ᵗ)`. -/
-theorem isMIntegralCurve_neg_sq_add_sq (u₀ v₀ : ℝ) :
+theorem isMIntegralCurve_mul_exp_prodMk_mul_exp_neg (u₀ v₀ : ℝ) :
     IsMIntegralCurve (I := 𝓘(ℝ, ℝ × ℝ)) (fun t ↦ ((u₀ * Real.exp t, v₀ * Real.exp (-t)) : ℝ × ℝ))
       fun p : ℝ × ℝ ↦ ((p.1, -p.2) : ℝ × ℝ) := by
   refine isMIntegralCurve_iff_isMIntegralCurveOn.2
