@@ -143,10 +143,8 @@ private theorem IsRungeCompactPair.isUnitMulExpNear_eval (hRunge : IsRungeCompac
       simp only [Multiset.map_cons, Multiset.prod_cons]
       exact (hRunge.isUnitMulExpNear_sub (hs β (Multiset.mem_cons_self β s))).mul
         (ih fun γ hγ ↦ hs γ (Multiset.mem_cons_of_mem hγ))
-  have heval (z : ℂ) : p.eval z = p.leadingCoeff * (p.roots.map fun β ↦ z - β).prod := by
-    conv_lhs => rw [← C_leadingCoeff_mul_prod_multiset_X_sub_C (p := p)
-      IsAlgClosed.card_roots_eq_natDegree]
-    simp [eval_multiset_prod, Multiset.map_map]
+  have heval (z : ℂ) : p.eval z = p.leadingCoeff * (p.roots.map fun β ↦ z - β).prod :=
+    (IsAlgClosed.splits p).eval_eq_prod_roots z
   obtain ⟨z₀, hz₀⟩ := hKne
   have hlc : p.leadingCoeff ≠ 0 := fun h ↦ hp z₀ hz₀ (by simp [heval, h])
   exact ((isUnitMulExpNear_const hlc).mul
