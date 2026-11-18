@@ -57,6 +57,7 @@ theorem curryRight_zero : (0 : ContinuousMultilinearMap 𝕜 Ei G).curryRight = 
   (continuousMultilinearCurryRightEquiv 𝕜 Ei G).map_zero
 
 /-- Separating the last variable of a continuous multilinear map preserves distances. -/
+@[simp]
 theorem edist_curryRight (f g : ContinuousMultilinearMap 𝕜 Ei G) :
     edist f.curryRight g.curryRight = edist f g :=
   (continuousMultilinearCurryRightEquiv 𝕜 Ei G).edist_map f g
