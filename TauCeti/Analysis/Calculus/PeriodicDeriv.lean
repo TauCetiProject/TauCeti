@@ -93,8 +93,7 @@ protected theorem Periodic.logDeriv {𝕜' : Type*} [NontriviallyNormedField �
   hf.deriv.div hf
 
 /-- **A periodic `C¹` function is Lipschitz.** A continuously differentiable periodic function of
-a real variable has a continuous periodic derivative, which is therefore bounded, and the mean
-value inequality turns that bound into a Lipschitz constant. -/
+a real variable with nonzero period is Lipschitz. -/
 theorem Periodic.exists_lipschitzWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {f : ℝ → F} {c : ℝ} (hf : Periodic f c) (hc : c ≠ 0) (hf₁ : ContDiff ℝ 1 f) :
     ∃ K, LipschitzWith K f := by

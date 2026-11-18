@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Order.Filter.AtTopBot.Defs
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Topology.Algebra.Order.Field
@@ -23,7 +24,8 @@ bound on the derivative, is Mathlib's `Convex.isLittleO_pow_succ_real`.
 In particular a function which converges at `+∞` and whose derivative converges there has
 derivative tending to `0` (`TauCeti.eq_zero_of_tendsto_of_tendsto_deriv`). For a solution of an
 autonomous equation `x' = F x` with continuous `F`, this says that a limit of the solution at `+∞`
-is a zero of `F`.
+or at `-∞` is a zero of `F` (`TauCeti.apply_eq_zero_of_tendsto_atTop_of_hasDerivAt`,
+`TauCeti.apply_eq_zero_of_tendsto_atBot_of_hasDerivAt`).
 -/
 
 public section
@@ -85,5 +87,23 @@ theorem eq_zero_of_tendsto_of_tendsto_deriv {c L : E}
   have h0 : Tendsto (fun x ↦ x⁻¹ • f x) atTop (𝓝 0) := by
     simpa using tendsto_inv_atTop_zero.smul hL
   exact tendsto_nhds_unique (tendsto_inv_smul_atTop_of_tendsto_deriv hf hf') h0
+
+/-- **A limit at `+∞` of a solution of an autonomous equation is an equilibrium.** If `x' = F x`
+near `+∞` and `x` tends to `L` at `+∞`, where `F` is continuous at `L`, then `F L = 0`. -/
+theorem apply_eq_zero_of_tendsto_atTop_of_hasDerivAt {F : E → E} {x : ℝ → E} {L : E}
+    (hF : ContinuousAt F L) (hx : ∀ᶠ t in atTop, HasDerivAt x (F (x t)) t)
+    (hL : Tendsto x atTop (𝓝 L)) : F L = 0 :=
+  eq_zero_of_tendsto_of_tendsto_deriv hx (hF.tendsto.comp hL) hL
+
+/-- **A limit at `-∞` of a solution of an autonomous equation is an equilibrium.** If `x' = F x`
+near `-∞` and `x` tends to `L` at `-∞`, where `F` is continuous at `L`, then `F L = 0`. -/
+theorem apply_eq_zero_of_tendsto_atBot_of_hasDerivAt {F : E → E} {x : ℝ → E} {L : E}
+    (hF : ContinuousAt F L) (hx : ∀ᶠ t in atBot, HasDerivAt x (F (x t)) t)
+    (hL : Tendsto x atBot (𝓝 L)) : F L = 0 := by
+  have hL' := hL.comp tendsto_neg_atTop_atBot
+  refine neg_eq_zero.1 (eq_zero_of_tendsto_of_tendsto_deriv (f := fun t ↦ x (-t)) ?_
+    (hF.tendsto.comp hL').neg hL')
+  filter_upwards [tendsto_neg_atTop_atBot.eventually hx] with t ht
+  simpa [Function.comp_def] using ht.scomp t (hasDerivAt_neg t)
 
 end TauCeti
