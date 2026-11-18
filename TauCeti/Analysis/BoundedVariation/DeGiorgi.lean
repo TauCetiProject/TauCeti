@@ -194,6 +194,16 @@ private theorem measurableSet_preimage_inv_smul_sub {U : Set E} (hU : Measurable
     MeasurableSet (((↑) : Ω → E) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' U)) :=
   (hU.preimage (by fun_prop)).preimage measurable_subtype_coe
 
+/-- At a point `x` of the reduced boundary with outer normal `ν`, the disc `ball 0 R ∩ ν⊥` cut from
+the tangent hyperplane has finite `Hⁿ⁻¹` measure. -/
+private theorem euclideanHausdorffMeasure_ball_zero_inter_setOf_inner_outerNormal_ne_top
+    (hx : x ∈ reducedBoundary volume Ω s) {R : ℝ} (hR : 0 < R) :
+    μHE[finrank ℝ E - 1] (ball (0 : E) R ∩ {y | ⟪y, outerNormal volume Ω s x⟫ = 0}) ≠ ∞ := by
+  have h := euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (norm_outerNormal hx) (0 : E) hR
+  rw [inner_zero_left] at h
+  rw [h]
+  exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.ofReal_ne_top) measure_ball_lt_top.ne
+
 /-- At a point `x` of the reduced boundary with outer normal `ν`, in dimension `n ≥ 2`, for `R > 0`
 and `δ > 0`, the rescaled ball `{z | r⁻¹ • (z - x) ∈ ball 0 R}` has perimeter measure at most
 `(Hⁿ⁻¹(ball 0 R ∩ ν⊥) + δ) r ^ (n - 1)` for all small `r > 0`, by the density of the perimeter
@@ -208,9 +218,8 @@ private theorem eventually_variationMeasure_preimage_ball_le (hn : 2 ≤ finrank
   rw [inner_zero_left, ← ENNReal.ofReal_pow hR.le] at ha
   set k := finrank ℝ E - 1
   set a := μHE[k] (ball (0 : E) R ∩ {y | ⟪y, outerNormal volume Ω s x⟫ = 0})
-  have hatop : a ≠ ∞ := by
-    rw [ha]
-    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne
+  have hatop : a ≠ ∞ :=
+    euclideanHausdorffMeasure_ball_zero_inter_setOf_inner_outerNormal_ne_top hx hR
   -- A constant `c > 1` with `c a ≤ a + δ`.
   obtain ⟨c, hc1, hca⟩ : ∃ c, 1 < c ∧ c * a ≤ a + δ := by
     rcases eq_or_ne a 0 with ha0 | ha0
@@ -256,22 +265,13 @@ private theorem eventually_variationMeasure_preimage_le (hn : 2 ≤ finrank ℝ 
         (μHE[finrank ℝ E - 1] (C ∩ {y | ⟪y, outerNormal volume Ω s x⟫ = 0}) + δ) := by
   set k := finrank ℝ E - 1
   set P := {y : E | ⟪y, outerNormal volume Ω s x⟫ = 0}
-  have hP : MeasurableSet P := measurableSet_eq_fun (by fun_prop) measurable_const
   have hδ2 : δ / 2 ≠ 0 := (ENNReal.half_pos hδ.ne').ne'
   let V : Opens E := ⟨ball 0 R \ C, isOpen_ball.sdiff hC⟩
   -- `a = Hⁿ⁻¹(ball 0 R ∩ ν⊥)` splits as `b + m` along `V` and `C`.
   have habm : μHE[k] (ball (0 : E) R ∩ P) = μHE[k] ((V : Set E) ∩ P) + μHE[k] (C ∩ P) := by
-    have hVC : ((V : Set E) ∩ P) ∪ (C ∩ P) = ball 0 R ∩ P := by
-      rw [← union_inter_distrib_right]
-      exact congrArg (· ∩ P) (sdiff_union_of_subset hCR)
-    have hdisj : Disjoint ((V : Set E) ∩ P) (C ∩ P) :=
-      disjoint_sdiff_left.mono inter_subset_left inter_subset_left
-    rw [← hVC, measure_union hdisj (hC.measurableSet.inter hP)]
-  have hatop : μHE[k] (ball (0 : E) R ∩ P) ≠ ∞ := by
-    have h := euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (norm_outerNormal hx) (0 : E) hR
-    rw [inner_zero_left] at h
-    rw [h]
-    exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.ofReal_ne_top) measure_ball_lt_top.ne
+    rw [← measure_inter_add_sdiff (ball (0 : E) R ∩ P) hC.measurableSet, inter_right_comm,
+      inter_eq_right.2 hCR, inter_sdiff_right_comm, add_comm, Opens.coe_mk]
+  have hatop := euclideanHausdorffMeasure_ball_zero_inter_setOf_inner_outerNormal_ne_top hx hR
   set b := μHE[k] ((V : Set E) ∩ P)
   set m := μHE[k] (C ∩ P)
   -- A lower bound `b'` for the rescaled `V`, within `δ / 2` of `b`.

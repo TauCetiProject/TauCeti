@@ -50,13 +50,14 @@ transported to `s` by adding a base point, is the Euclidean Hausdorff measure of
 of `s` (`AffineSubspace.volume_preimage_coe_vadd`). These coordinates `v ↦ v +ᵥ q` are Mathlib's
 `IsometryEquiv.vaddConst q` followed by the inclusion of `s`
 (`AffineSubspace.val_comp_vaddConst`), so they form an isometry onto `s`
-(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). Hence the isodiametric
-inequality holds on `s`: `μHE[k] (t ∩ s) ≤ (ediam t / 2) ^ k ω_k` for every set `t`, where `k` is
-the dimension of `s` (`AffineSubspace.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul`).
-In particular, for a unit
-vector `ν` of a finite-dimensional real inner product space of dimension `n`, the restriction of
-`μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of the
-orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
+(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). Balls of the same radius
+in a real inner product space of dimension `k` and in `EuclideanSpace ℝ (Fin k)` have the same
+volume (`TauCeti.volume_ball_eq_of_finrank_eq`). Hence the isodiametric inequality holds on `s`:
+`μHE[k] (t ∩ s) ≤ (ediam t / 2) ^ k ω_k` for every set `t`, where `k` is the dimension of `s`
+(`AffineSubspace.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul`). In particular, for a
+unit vector `ν` of a finite-dimensional real inner product space of dimension `n`, the
+restriction of `μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue
+measure of the orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
 (`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
 are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`), the disc cut from the
 hyperplane by a ball of radius `r` centred on it has measure `ω_{n-1} r ^ (n - 1)`
@@ -348,6 +349,23 @@ end TauCeti
 
 end Normalization
 
+namespace TauCeti
+
+/-- Balls of the same radius in two finite-dimensional real inner product spaces of the same
+dimension `k` have the same volume; here the second space is `EuclideanSpace ℝ (Fin k)`. -/
+theorem volume_ball_eq_of_finrank_eq {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {k : ℕ} (hk : finrank ℝ V = k)
+    (x : V) (y : EuclideanSpace ℝ (Fin k)) (r : ℝ) :
+    volume (Metric.ball x r) = volume (Metric.ball y r) := by
+  subst hk
+  -- An orthonormal basis identifies `V` with `ℝ^k`, preserving volume and balls about `0`.
+  let e := (stdOrthonormalBasis ℝ V).repr
+  rw [Measure.addHaar_ball_center, Measure.addHaar_ball_center volume y,
+    ← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet, e.preimage_ball,
+    map_zero]
+
+end TauCeti
+
 namespace AffineSubspace
 
 variable {V P : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MetricSpace P]
@@ -400,10 +418,7 @@ theorem euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul (s : AffineSubs
   gcongr
   · rw [← (s.isometry_coe_vadd q).ediam_image]
     exact Metric.ediam_mono (image_preimage_subset _ _)
-  · -- An orthonormal basis identifies `s.direction` with `ℝ^k`, preserving unit balls.
-    let e := (stdOrthonormalBasis ℝ s.direction).repr
-    rw [← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
-      e.preimage_ball, map_zero]
+  · exact (TauCeti.volume_ball_eq_of_finrank_eq rfl _ _ _).le
 
 end AffineSubspace
 
@@ -460,9 +475,8 @@ theorem euclideanHausdorffMeasure_inter_setOf_inner_eq_le (hν : ‖ν‖ = 1) (
   set S := AffineSubspace.mk' (c • ν) (ℝ ∙ ν)ᗮ
   have hS : (S : Set F) = {x | ⟪x, ν⟫ = c} := by
     ext x
-    rw [SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub,
-      Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left, real_inner_smul_left,
-      real_inner_self_eq_norm_sq, hν, one_pow, mul_one, mem_ofPred_eq, sub_eq_zero]
+    simp [S, AffineSubspace.mem_mk', Submodule.mem_orthogonal_singleton_iff_inner_left,
+      inner_sub_left, real_inner_smul_left, hν, sub_eq_zero]
   have hdim : finrank ℝ S.direction = finrank ℝ F - 1 := by
     rw [AffineSubspace.direction_mk',
       Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0]
@@ -493,13 +507,9 @@ theorem euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (hν : ‖ν‖ = 1)
       Metric.ball ⟨x - c • ν, hx₀⟩ r := by
     convert hι.preimage_ball ⟨x - c • ν, hx₀⟩ r
     simp
-  -- An orthonormal basis identifies `(ℝ ∙ ν)ᗮ` with `ℝ^(n-1)`, preserving volume and unit balls.
-  have hball : volume (Metric.ball (0 : (ℝ ∙ ν)ᗮ) 1) =
-      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
-    let e := ((stdOrthonormalBasis ℝ (ℝ ∙ ν)ᗮ).reindex (finCongr
-      (Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0))).repr
-    rw [← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet,
-      e.preimage_ball, map_zero]
+  have hball := volume_ball_eq_of_finrank_eq
+    (Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0) (0 : (ℝ ∙ ν)ᗮ)
+    (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1
   rw [← Measure.restrict_apply' (measurableSet_eq_fun (by fun_prop) measurable_const),
     euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
     Measure.map_apply hι.continuous.measurable measurableSet_ball, hpre,
