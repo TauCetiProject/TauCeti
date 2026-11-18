@@ -203,7 +203,7 @@ theorem exists_signedMorseBoundaryCoeff_circleCosTwo_eq (hδ : 0 < δ)
   refine ⟨𝔬₁.reverse S, fun i j ↦ ?_⟩
   have hqS : circleCosTwoMinCrit δ r i ∉ S := by
     rintro ⟨j', hj', -⟩
-    simpa using congrArg Subtype.val hj'
+    exact circleCosTwoMinCrit_ne_circleCosTwoMaxCrit δ r i j' hj'
   have hpS : circleCosTwoMaxCrit δ r j ∈ S ↔ ε j ≠ if j = 0 then 1 else -1 := by
     refine ⟨fun ⟨j', hj', hne⟩ ↦ ?_, fun hne ↦ ⟨j, rfl, hne⟩⟩
     rwa [(circleCosTwoMaxCrit_inj δ r).1 hj']
