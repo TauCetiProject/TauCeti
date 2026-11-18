@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Topology.Maps.LocalSections
 
 -- Access the body of `Manifold.IsSubmersionOfComplement`, which Mathlib does not expose, to supply
 -- its missing pointwise characterization.
@@ -66,6 +67,7 @@ constant on the fibres factors through a unique `C^m` map
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_uncurry_section`,
   `Manifold.IsSubmersionAt.exists_contMDiffOn_uncurry_section`: local sections through every
   nearby point of the source, depending smoothly on that point.
+* `Manifold.IsSubmersion.isOpenMap`: a submersion from a boundaryless manifold is an open map.
 * `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
@@ -377,6 +379,15 @@ theorem IsSubmersion.exists_contMDiffOn_section_of_surjective [I.Boundaryless]
   obtain ⟨x, rfl⟩ := hsurj y
   obtain ⟨U, hU, hxU, s, _, hs, hfs⟩ := h.exists_contMDiffOn_section x
   exact ⟨U, hU, hxU, s, hs, hfs⟩
+
+omit [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
+/-- **A submersion from a boundaryless manifold is an open map.** Every point has a continuous
+local section through it by `exists_contMDiffOn_section`. -/
+theorem IsSubmersion.isOpenMap [I.Boundaryless] (h : IsSubmersion I J n f) : IsOpenMap f := by
+  refine .of_local_sections fun y ↦ ?_
+  obtain ⟨U, hU, hyU, s, hsy, hs, hfs⟩ := h.exists_contMDiffOn_section y
+  exact ⟨s, hs.continuousOn.continuousAt (hU.mem_nhds hyU), hsy,
+    eventually_of_mem (hU.mem_nhds hyU) hfs⟩
 
 section Descent
 
