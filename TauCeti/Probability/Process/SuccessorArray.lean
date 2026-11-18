@@ -272,6 +272,17 @@ theorem visitedSuccessorProcess_visitCell (X : ℕ → Ω → α) (n : ℕ) (ω 
   rw [visitedSuccessorProcess_apply]
   exact visitedSuccessorArray_visitCell _ _
 
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- The cell preimage of a finite window of the visited successor array read at the cells `τ p`:
+the set of outcomes whose visited successor array has the prescribed entries at those cells. -/
+theorem preimage_restrict_visitedSuccessorProcess (τ : α × ℕ → α × ℕ)
+    (F : Finset (α × ℕ)) (g : F → α) :
+    (fun ω ↦ F.restrict fun p : α × ℕ ↦ visitedSuccessorProcess X (τ p) ω) ⁻¹' {g} =
+      {ω | ∀ p : F, visitedSuccessorArray (fun n ↦ X n ω) (τ p).1 (τ p).2 = g p} := by
+  ext ω
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
+    visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
+
 /-- Every entry of the visited successor array of an almost everywhere measurable process is
 almost everywhere measurable. -/
 theorem aemeasurable_visitedSuccessorProcess {μ : Measure Ω} {X : ℕ → Ω → α}
