@@ -9,6 +9,7 @@ public import Mathlib.Probability.Independence.Process.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Probability.HasLaw
 import Mathlib.LinearAlgebra.Matrix.RowCol
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Product laws and independence for random matrices
@@ -54,6 +55,35 @@ theorem indepFun_updateCol_zero {Ω p n R : Type*}
     ext i j
     by_cases h : j = k <;> simp [f, h]
   simpa only [Function.comp_def, hleft, g] using h
+
+/-- The rows of a finite matrix with mutually independent entries are mutually independent
+as random vectors. The entry maps only need to be almost everywhere measurable. -/
+theorem matrix_row {Ω m n R : Type*} [MeasurableSpace Ω] [Finite m] [Finite n]
+    [MeasurableSpace R] {P : Measure Ω} {X : Ω → Matrix m n R}
+    (hX : iIndepFun (fun ij : m × n ↦ fun ω ↦ X ω ij.1 ij.2) P)
+    (hm : ∀ i j, AEMeasurable (fun ω ↦ X ω i j) P) :
+    iIndepFun (fun i ω ↦ (X ω).row i) P := by
+  let _ := Fintype.ofFinite m
+  let _ := Fintype.ofFinite n
+  have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  let μ (i : m) (j : n) := P.map (fun ω ↦ X ω i j)
+  have (i : m) (j : n) : IsProbabilityMeasure (μ i j) :=
+    (Measure.isProbabilityMeasure_map_iff (hm i j)).mpr inferInstance
+  have hrow (i : m) : P.map (fun ω ↦ (X ω).row i) = Measure.pi (μ i) :=
+    iIndepFun.map_fun_eq_pi_map (hm i)
+      (hX.precomp (g := fun j : n ↦ (i, j)) (fun _ _ h ↦ congrArg Prod.snd h))
+  have hflat := iIndepFun.map_fun_eq_pi_map (fun ij : m × n ↦ hm ij.1 ij.2) hX
+  let e := MeasurableEquiv.curry m n R
+  have hmap := congrArg (Measure.map e) hflat
+  rw [AEMeasurable.map_map_of_aemeasurable e.measurable.aemeasurable
+    (aemeasurable_pi_iff.2 fun ij ↦ hm ij.1 ij.2),
+    (TauCeti.measurePreserving_curry μ).map_eq] at hmap
+  apply (iIndepFun_iff_map_fun_eq_pi_map (f := fun i ω ↦ (X ω).row i)
+    fun i ↦ aemeasurable_pi_iff.2 (hm i)).2
+  simp_rw [hrow]
+  convert hmap using 2
+  funext ω i j
+  exact Matrix.row_apply _ _ _
 
 end ProbabilityTheory.iIndepFun
 
