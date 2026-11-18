@@ -24,7 +24,8 @@ The connection is required to be `C^n` locally on the trivialization base sets, 
 Repeated differentiation supplies regularity for second covariant derivatives: for a locally
 `C¹` connection and the stated manifold and tangent-bundle hypotheses, a `C²` section lift has
 a `C¹` first covariant derivative and hence a continuous second covariant derivative. This
-ensures continuity of the second covariant derivative occurring in the Jacobi equation.
+ensures continuity of the second covariant derivative occurring in the Jacobi equation. We also
+record subset restriction of `alongCurveWithin` for `C¹` tangent-bundle sections.
 
 ## References
 
@@ -41,6 +42,8 @@ noncomputable section
 namespace CovariantDerivative
 
 open TauCeti.Manifold
+
+section Regularity
 
 variable
   {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
@@ -153,5 +156,32 @@ theorem contMDiff_alongCurve
   rw [← contMDiffOn_univ]
   simpa only [alongCurveWithin_univ] using
     contMDiffOn_alongCurveWithin cov γ V hcov uniqueDiffOn_univ hV.contMDiffOn
+
+end Regularity
+
+/-- Restricting `alongCurveWithin` from `u` to a subset `s ⊆ u` at a point of unique
+differentiability for a `C¹` tangent-bundle section along `γ`. -/
+theorem alongCurveWithin_subset_of_contMDiffOn_one
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    (cov : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    {γ : 𝕜 → M} {W : ∀ t, TangentSpace I (γ t)} {s u : Set 𝕜} {r : 𝕜}
+    (hsub : s ⊆ u) (hs : UniqueDiffWithinAt 𝕜 s r)
+    (hW : ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent 1 (fun t ↦ TotalSpace.mk' E (γ t) (W t)) u)
+    (hr : r ∈ s) :
+    alongCurveWithin cov γ W s r = alongCurveWithin cov γ W u r := by
+  let _ : IsManifold I (1 + 1) M := ‹IsManifold I 2 M›
+  let _ : ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have hγr : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I 1 γ u r :=
+    (Bundle.contMDiff_proj (TangentSpace I)).contMDiffAt.comp_contMDiffWithinAt r (hW r (hsub hr))
+  exact alongCurveWithin_subset cov γ W hsub hs
+    (differentiableWithinAt_sectionCoord γ W ((hW r (hsub hr)).mdifferentiableWithinAt one_ne_zero)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r)))
+    (by
+      simpa [writtenInExtChartAt] using
+        (hγr.mdifferentiableWithinAt one_ne_zero).differentiableWithinAt_writtenInExtChartAt)
 
 end CovariantDerivative
