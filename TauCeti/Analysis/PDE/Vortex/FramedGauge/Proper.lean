@@ -390,24 +390,16 @@ private theorem tendsto_eLpNorm_of_gaugeTransform_eq (hk : 2 < k) [l.NeBot]
   -- Off `K` the gauges are controlled by the sections; on `K` they converge uniformly.
   have hG : Tendsto (fun i ↦ eLpNorm (G i) 2 volume) l (𝓝 0) := tendsto_eLpNorm_coord hx hy
   have hDK : Tendsto (fun i ↦ eLpNorm (K.indicator (D i)) 2 volume) l (𝓝 0) := by
-    refine tendsto_eLpNorm_zero_of_eventually_le_mul (b := K.indicator fun _ ↦ (1 : ℝ))
-      (by rw [eLpNorm_indicator_const hK.isClosed.measurableSet.nullMeasurableSet two_ne_zero
-          ENNReal.ofNat_ne_top]
-          exact ENNReal.mul_ne_top eNorm_ne_top
-            (ENNReal.rpow_ne_top_of_nonneg (by positivity) hK.measure_lt_top.ne))
-      (Eventually.of_forall fun i ↦ ((hDc i).aestronglyMeasurable.indicator
-        hK.isClosed.measurableSet)) fun δ hδ ↦ ?_
+    have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
+    simp_rw [eLpNorm_indicator_eq_eLpNorm_restrict hK.isClosed.measurableSet.nullMeasurableSet]
+    refine tendsto_eLpNorm_zero_of_eventually_ae_le
+      (.of_forall fun i ↦ (hDc i).aestronglyMeasurable) fun δ hδ ↦ ?_
     filter_upwards [Metric.tendstoUniformlyOn_iff.1 (tendstoLocallyUniformly_iff_forall_isCompact.1
       (tendstoLocallyUniformly_of_gaugeTransform_eq hk hxy huxy hx hy) _ hK) δ
         (NNReal.coe_pos.2 hδ)] with i hi
-    refine Eventually.of_forall fun z ↦ ?_
-    by_cases hz : z ∈ K
-    · have := hi z hz
-      rw [dist_comm, dist_eq_norm] at this
-      rw [Set.indicator_of_mem hz, Set.indicator_of_mem hz, ← ofReal_norm,
-        ← ofReal_norm, norm_one, ENNReal.ofReal_one, mul_one, ← ENNReal.ofReal_coe_nnreal]
-      exact ENNReal.ofReal_le_ofReal this.le
-    · simp [Set.indicator_of_notMem hz]
+    filter_upwards [ae_restrict_mem hK.isClosed.measurableSet] with z hz
+    rw [eNorm_le_coe, ← NNReal.coe_le_coe, coe_nnNorm, ← dist_eq_norm, dist_comm]
+    exact (hi z hz).le
   have hle (i : ι) : eLpNorm (D i) 2 volume ≤
       eLpNorm (G i) 2 volume + eLpNorm (K.indicator (D i)) 2 volume := by
     rw [← eLpNorm_norm (K.indicator (D i))
