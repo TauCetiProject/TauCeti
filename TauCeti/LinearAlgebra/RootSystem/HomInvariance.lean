@@ -45,7 +45,8 @@ weight-space vectors.
   `RootPairing.Hom.root_indexEquiv_eq_sub_iff`: it preserves and reflects the relations
   `α = β + γ` and `α = β - γ` between roots.
 * `RootPairing.Hom.linearIndependent_root_indexEquiv_iff`: it preserves and reflects linear
-  independence of a pair of roots.
+  independence of a pair of roots; consequently `RootPairing.Hom.isReduced` and
+  `RootPairing.Equiv.isReduced` transport reducedness to the target pairing.
 * `RootPairing.Hom.chainTopCoeff_indexEquiv` and `RootPairing.Hom.chainBotCoeff_indexEquiv`: it
   preserves the two root-string coefficients.
 * `RootPairing.Hom.coroot'_weightMap` and `RootPairing.Hom.weightMap_reflection`: the weight map
@@ -160,6 +161,16 @@ theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
   ext k
   fin_cases k <;> simp [Hom.root_weightMap_apply]
 
+/-- A homomorphism with injective weight map transports reducedness to the target. -/
+theorem isReduced [P.IsReduced] : P₂.IsReduced := by
+  rw [isReduced_iff']; intro i₂ j₂ hij hdep
+  obtain ⟨i, rfl⟩ := f.indexEquiv.surjective i₂
+  obtain ⟨j, rfl⟩ := f.indexEquiv.surjective j₂
+  rcases IsReduced.eq_or_eq_neg i j (mt (f.linearIndependent_root_indexEquiv_iff hf i j).mpr hdep)
+    with hroot | hroot
+  · exact absurd (congrArg f.indexEquiv (P.root.injective hroot)) hij
+  · rw [← Hom.root_weightMap_apply P P₂ i f, hroot, map_neg, Hom.root_weightMap_apply P P₂ j f]
+
 end Injective
 
 section Chain
@@ -189,5 +200,9 @@ theorem chainBotCoeff_indexEquiv (i j : ι) :
 end Chain
 
 end Hom
+
+/-- An equivalence of root pairings transports reducedness from the source to the target. -/
+theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=
+  e.toHom.isReduced e.bijective_weightMap.injective
 
 end RootPairing
