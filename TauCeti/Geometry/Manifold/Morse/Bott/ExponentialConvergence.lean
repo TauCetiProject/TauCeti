@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 Let `i : S → M` be a nondegenerate, or Morse–Bott, critical submanifold of a function `f` on a
 boundaryless manifold carrying a Riemannian metric. Its points are critical points of `f`, but
-they are not isolated, so they are not nondegenerate critical points, and the exponential
+they need not be isolated, so they need not be nondegenerate critical points, and the exponential
 convergence of negative gradient trajectories to nondegenerate critical points does not apply to
 them as stated. What that convergence uses is only Łojasiewicz's gradient inequality with exponent
 `1 / 2` at the limit.
@@ -27,8 +27,9 @@ the Riemannian gradient and any continuous metric: near `i s`,
 (`IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_mgradient_sq`, in the namespace
 `TauCeti.SmoothEmbedding`). It is the inequality in the preferred chart at `i s`
 (`IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq`),
-in which the differential of `f` is bounded by a multiple of the length of its gradient
-(`TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`).
+carried to the gradient by
+`TauCeti.exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm`, since in that
+chart the differential of `f` is bounded by a multiple of the length of its gradient.
 
 Consequently a negative gradient trajectory converging to a point of a Morse–Bott critical
 submanifold converges to it exponentially fast in the Riemannian distance
@@ -80,17 +81,9 @@ squared Riemannian length of the gradient of `f` at `y`, for any continuous Riem
 theorem exists_mul_abs_sub_le_norm_mgradient_sq
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
     (hi : i.IsNondegenerateCriticalSubmanifold f) (hn : 2 ≤ n) (s : S) :
-    ∃ lam > 0, ∀ᶠ y in 𝓝 (i s), lam * |f y - f (i s)| ≤ ‖mgradient I f y‖ ^ 2 := by
-  obtain ⟨lam, hlam, hloj⟩ := hi.exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq hn s
-  obtain ⟨C, hC, hbd⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) (i s)
-  refine ⟨lam / C ^ 2, by positivity, ?_⟩
-  filter_upwards [hloj, hbd] with y hy hyb
-  calc lam / C ^ 2 * |f y - f (i s)| = lam * |f y - f (i s)| / C ^ 2 := by ring
-    _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I (i s)).symm) (extChartAt I (i s) y)‖ ^ 2 / C ^ 2 := by
-        gcongr
-    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr; exact hyb f
-    _ = ‖mgradient I f y‖ ^ 2 := by field_simp
+    ∃ lam > 0, ∀ᶠ y in 𝓝 (i s), lam * |f y - f (i s)| ≤ ‖mgradient I f y‖ ^ 2 :=
+  exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm
+    (hi.exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq hn s)
 
 /-- **A trajectory converging to a point of a Morse–Bott critical submanifold converges to it
 exponentially fast.** Let `i : S → M` be a nondegenerate critical submanifold of a `C²` function

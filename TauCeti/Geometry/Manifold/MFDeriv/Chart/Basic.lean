@@ -465,7 +465,7 @@ theorem exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_s
       (mem_chart_source H x)).symm.fun_comp f
   have hd := (contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.1 hf).eventually (by simp)
   rw [← hTe x ⟨hx, mem_chart_source H x⟩] at hd
-  obtain ⟨K, hK, hKb⟩ := exists_norm_fderiv_le_mul_norm_fderiv_comp hcomp
+  obtain ⟨K, hK, hKb⟩ := exists_norm_fderiv_comp_le_mul_norm_fderiv hcomp
     (Filter.mem_of_superset (I.isOpen_extendCoordChange_source.mem_nhds (mem_of_mem_nhds hTx))
       fun w hw ↦ ((hT.contDiffAt (I.isOpen_extendCoordChange_source.mem_nhds hw)).differentiableAt
         one_ne_zero))

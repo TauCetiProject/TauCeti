@@ -29,14 +29,16 @@ transported from the normed-space inequality
 `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq` for the coordinate
 expression of `f` in the preferred chart at `p`: near `p` the differential of that expression is
 bounded by a multiple of the Riemannian length of the gradient
-(`TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`). The metric
+(`TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`), so any
+Łojasiewicz inequality in that chart gives one for the gradient
+(`TauCeti.exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm`). The metric
 need not be adapted to the chart, nor smooth.
 
 Now let `γ` be the maximal integral curve of `-grad f` through `x`, defined for all positive time
 and converging to a critical point `p` near which such a Łojasiewicz inequality holds. Besides
 nondegenerate critical points, this covers the points of Morse–Bott critical submanifolds
 (`SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_mul_abs_sub_le_norm_mgradient_sq`),
-where the critical points are not isolated. The energy `f (γ t) - f p` is nonnegative
+where the critical points need not be isolated. The energy `f (γ t) - f p` is nonnegative
 (`TauCeti.le_comp_maximalIntegralCurve_neg_mgradient`), since `f` decreases along `γ` and tends to
 `f p`. Its derivative is `-‖grad f (γ t)‖ ^ 2`, which the inequality above bounds by `-lam` times
 the energy once `γ` stays near `p`, so by Grönwall's inequality the energy decays like
@@ -70,6 +72,9 @@ bounded below converges exponentially fast to a critical point
 
 ## Main results
 
+* `TauCeti.exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm`: a
+  Łojasiewicz inequality with exponent `1/2` in the preferred chart at `p` gives one for the
+  Riemannian gradient.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradient_sq`: the
   Łojasiewicz inequality with exponent `1/2` near a nondegenerate critical point, for the
   Riemannian gradient.
@@ -115,6 +120,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {p : M}
 
+/-- **Łojasiewicz's gradient inequality passes from the preferred chart to the Riemannian
+gradient.** If near `p` the absolute energy difference `|f y - f p|` is bounded by a multiple of
+the squared norm of the differential of `f` read in the preferred extended chart at `p`, then it is
+bounded by a multiple of the squared Riemannian length of the gradient of `f` at `y`, for any
+continuous Riemannian metric. -/
+theorem exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm
+    (h : ∃ lam > 0, ∀ᶠ y in 𝓝 p, lam * |f y - f p| ≤
+      ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ^ 2) :
+    ∃ lam > 0, ∀ᶠ y in 𝓝 p, lam * |f y - f p| ≤ ‖mgradient I f y‖ ^ 2 := by
+  obtain ⟨C, -, hbd⟩ :=
+    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) p
+  exact exists_mul_le_sq_of_eventually_le_mul h (.of_forall fun _ ↦ norm_nonneg _)
+    (hbd.mono fun y hy ↦ hy f)
+
 /-- **The Morse form of Łojasiewicz's gradient inequality on a Riemannian manifold.** Near a
 nondegenerate critical point `p` of `f`, the absolute energy difference `|f y - f p|` is bounded by
 a multiple of the squared Riemannian length of the gradient of `f` at `y`, for any continuous
@@ -124,17 +143,11 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
     ∃ lam > 0, ∀ᶠ y in 𝓝 p, lam * |f y - f p| ≤ ‖mgradient I f y‖ ^ 2 := by
   obtain ⟨lam, hlam, hloj⟩ :=
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hp).exists_mul_abs_sub_le_norm_fderiv_sq
-  obtain ⟨C, hC, hbd⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) p
-  refine ⟨lam / C ^ 2, by positivity, ?_⟩
-  filter_upwards [(continuousAt_extChartAt (I := I) p).eventually hloj, hbd,
-    extChartAt_source_mem_nhds (I := I) p] with y hy hyb hys
-  simp only [Function.comp_apply, (extChartAt I p).left_inv hys,
-    (extChartAt I p).left_inv (mem_extChartAt_source p)] at hy
-  calc lam / C ^ 2 * |f y - f p| = lam * |f y - f p| / C ^ 2 := by ring
-    _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ^ 2 / C ^ 2 := by gcongr
-    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr; exact hyb f
-    _ = ‖mgradient I f y‖ ^ 2 := by field_simp
+  refine exists_mul_abs_sub_le_norm_mgradient_sq_of_fderiv_comp_extChartAt_symm ⟨lam, hlam, ?_⟩
+  filter_upwards [(continuousAt_extChartAt (I := I) p).eventually hloj,
+    extChartAt_source_mem_nhds (I := I) p] with y hy hys
+  simpa only [Function.comp_apply, (extChartAt I p).left_inv hys,
+    (extChartAt I p).left_inv (mem_extChartAt_source p)] using hy
 
 end Lojasiewicz
 

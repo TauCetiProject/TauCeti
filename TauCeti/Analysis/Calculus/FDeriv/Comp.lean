@@ -33,7 +33,7 @@ precomposition with the derivative of that map.
   injective derivative.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
-* `TauCeti.exists_norm_fderiv_le_mul_norm_fderiv_comp`: near a point where `φ` is `C¹`, the
+* `TauCeti.exists_norm_fderiv_comp_le_mul_norm_fderiv`: near a point where `φ` is `C¹`, the
   differential of `f ∘ φ` is at most a fixed multiple of that of `f`.
 * `ContinuousLinearMap.fderiv_comp_right_of_rightInverse`,
   `ContinuousLinearMap.fderiv_comp_left_of_leftInverse`: the chain rule for precomposition with a
@@ -87,7 +87,7 @@ theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b 
 agrees near `x` with `f ∘ φ`, where `φ` is differentiable near `x` with derivative continuous at
 `x`, and `f` is differentiable at `φ y` for `y` near `x`, then near `x` the differential of `g` at
 `y` has norm at most a fixed multiple of that of `f` at `φ y`. -/
-theorem exists_norm_fderiv_le_mul_norm_fderiv_comp {f : E → G} {φ : F → E} {g : F → G} {x : F}
+theorem exists_norm_fderiv_comp_le_mul_norm_fderiv {f : E → G} {φ : F → E} {g : F → G} {x : F}
     (hg : g =ᶠ[nhds x] f ∘ φ) (hφ : ∀ᶠ y in nhds x, DifferentiableAt 𝕜 φ y)
     (hφ' : ContinuousAt (fderiv 𝕜 φ) x) (hf : ∀ᶠ y in nhds x, DifferentiableAt 𝕜 f (φ y)) :
     ∃ K > 0, ∀ᶠ y in nhds x, ‖fderiv 𝕜 g y‖ ≤ K * ‖fderiv 𝕜 f (φ y)‖ := by

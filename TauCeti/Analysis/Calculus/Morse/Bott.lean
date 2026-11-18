@@ -41,7 +41,7 @@ the **Morse–Bott form of Łojasiewicz's gradient inequality** with exponent `1
 `lam * |f z - f (a, 0)| ≤ ‖Df(z)‖ ^ 2` (`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq`). It is
 the input for the exponential convergence of gradient trajectories to points of a Morse–Bott
 critical submanifold, exactly as at a nondegenerate critical point, although near a Morse–Bott
-zero section the critical points are not isolated.
+zero section the critical points need not be isolated.
 
 With the parametric Morse lemma this gives the **Morse–Bott lemma** in product coordinates
 (`TauCeti.exists_morseBott_chart_of_contDiffOn`): if `f` is `C^{n+2}` near `(a, 0)`, with
@@ -237,7 +237,7 @@ base directions, then near `(a, 0)` the absolute energy difference is bounded by
 squared norm of the differential: the Łojasiewicz inequality holds with exponent `1 / 2`, as at a
 nondegenerate critical point
 (`TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`), although the
-critical points near `(a, 0)` are not isolated. -/
+critical points near `(a, 0)` need not be isolated. -/
 theorem exists_mul_abs_sub_le_norm_fderiv_sq [FiniteDimensional ℝ F]
     (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
     (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :

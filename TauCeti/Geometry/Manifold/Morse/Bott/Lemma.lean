@@ -428,7 +428,7 @@ theorem eventually_mem_range_of_mem_criticalPoints (hi : i.IsNondegenerateCritic
 nondegenerate critical submanifold of `f`, with `i` of class `C²`, then near each point `i s` the
 absolute energy difference `|f y - f (i s)|` is bounded by a multiple of the squared norm of the
 differential of `f`, read in the preferred extended chart at `i s`: the Łojasiewicz inequality
-with exponent `1 / 2`, although the critical points near `i s` are not isolated. -/
+with exponent `1 / 2`, although the critical points near `i s` need not be isolated. -/
 theorem exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq
     (hi : i.IsNondegenerateCriticalSubmanifold f) (hn : 2 ≤ n) (s : S) :
     ∃ lam > 0, ∀ᶠ y in 𝓝 (i s), lam * |f y - f (i s)| ≤
@@ -446,32 +446,28 @@ theorem exists_mul_abs_sub_le_norm_fderiv_comp_extChartAt_symm_sq
   obtain ⟨lam, hlam, hloj⟩ := exists_mul_abs_sub_le_norm_fderiv_sq hga hcrit hker
   -- The slice chart distorts the differential, relative to the preferred chart, by at most `K`,
   -- and the linear coordinates `L` by at most `‖L‖ + 1`.
-  obtain ⟨K, hK, hKb⟩ := exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm
+  obtain ⟨K, -, hKb⟩ := exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm
     (IsManifold.maximalAtlas_subset_of_le (by norm_num)
       (IsManifold.maximalAtlas_subset_of_le hn h.codChart_mem_maximalAtlas)) hxe
     ((hi.contMDiffAt s).of_le one_le_two)
-  set K' := (‖(L : E' × F →L[ℝ] E)‖ + 1) * K
   -- Read the inequality at `z = L⁻¹ (ξ y)`, which tends to `(a, 0)` as `y` tends to `i s`.
   have hκ : Tendsto (fun y ↦ L.symm (ξ y)) (𝓝 (i s)) (𝓝 (h.domChart.extend J s, 0)) := by
     have hc := L.symm.continuous.continuousAt.comp (h.codChart.continuousAt_extend (I := I) hxe)
     rwa [ContinuousAt, Function.comp_apply, hxL, L.symm_apply_apply] at hc
-  refine ⟨lam / K' ^ 2, by positivity, ?_⟩
-  filter_upwards [hκ.eventually hloj, hKb, h.codChart.open_source.mem_nhds hxe] with y hy hyK hys
-  have hξy : ξ.symm (ξ y) = y := h.codChart.extend_left_inv (I := I) hys
-  have hξs : ξ.symm (ξ (i s)) = i s := h.codChart.extend_left_inv (I := I) hxe
-  rw [← Function.comp_assoc, L.comp_right_fderiv, L.apply_symm_apply] at hy
-  simp only [Function.comp_apply, L.apply_symm_apply, hξy, ← hxL, hξs] at hy
-  have hnorm : ‖fderiv ℝ (f ∘ ξ.symm) (ξ y) ∘L (L : E' × F →L[ℝ] E)‖ ≤
-      K' * ‖fderiv ℝ (f ∘ (extChartAt I (i s)).symm) (extChartAt I (i s) y)‖ :=
-    (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
-      rw [mul_comm, mul_assoc]
-      exact mul_le_mul (le_add_of_nonneg_right zero_le_one) hyK (norm_nonneg _) (by positivity)
-  have hK' : K' ≠ 0 := by positivity
-  calc lam / K' ^ 2 * |f y - f (i s)| = lam * |f y - f (i s)| / K' ^ 2 := by ring
-    _ ≤ (K' * ‖fderiv ℝ (f ∘ (extChartAt I (i s)).symm) (extChartAt I (i s) y)‖) ^ 2 / K' ^ 2 := by
-        gcongr
-        exact hy.trans (pow_le_pow_left₀ (norm_nonneg _) hnorm 2)
-    _ = ‖fderiv ℝ (f ∘ (extChartAt I (i s)).symm) (extChartAt I (i s) y)‖ ^ 2 := by field_simp
+  refine exists_mul_le_sq_of_eventually_le_mul
+    (g := fun y ↦ ‖fderiv ℝ (f ∘ ξ.symm) (ξ y) ∘L (L : E' × F →L[ℝ] E)‖)
+    (K := (‖(L : E' × F →L[ℝ] E)‖ + 1) * K) ⟨lam, hlam, ?_⟩ (.of_forall fun _ ↦ norm_nonneg _) ?_
+  · filter_upwards [hκ.eventually hloj, h.codChart.open_source.mem_nhds hxe] with y hy hys
+    have hξy : ξ.symm (ξ y) = y := h.codChart.extend_left_inv (I := I) hys
+    have hξs : ξ.symm (ξ (i s)) = i s := h.codChart.extend_left_inv (I := I) hxe
+    rw [← Function.comp_assoc, L.comp_right_fderiv, L.apply_symm_apply] at hy
+    simpa only [Function.comp_apply, L.apply_symm_apply, hξy, ← hxL, hξs] using hy
+  -- The slice chart distorts the differential, relative to the preferred chart, by at most `K`,
+  -- and the linear coordinates `L` by at most `‖L‖ + 1`.
+  · filter_upwards [hKb] with y hyK
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    rw [mul_comm, mul_assoc]
+    exact mul_le_mul (le_add_of_nonneg_right zero_le_one) hyK (norm_nonneg _) (by positivity)
 
 /-- **The image of a Morse–Bott critical submanifold is open in the critical set**: it is cut out
 of the critical set by an open subset of `M`. -/
