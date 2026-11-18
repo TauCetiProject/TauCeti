@@ -8,16 +8,50 @@ module
 public import Mathlib.Topology.Order.Cadlag
 
 /-!
-# Càdlàg step functions
+# Càdlàg step and monotone functions
 
-A step taking its new value at its jump time is càdlàg. This supplies the path
-regularity of indicators of closed stochastic rays, including a jump at time zero.
+A step taking its new value at its jump time is càdlàg, and every monotone right-continuous
+function into a conditionally complete linear order with the order topology is càdlàg. On a partial
+order, right continuity at a bottom element is full continuity there. At any discontinuity where a
+natural-valued monotone path is right-continuous and exceeds some strictly earlier value by at most
+one, its left limit is one less than its current value.
 -/
 
 public section
 
-open Filter Set
+open Filter Function Set
 open scoped Topology
+
+/-- Right continuity at a bottom element of a partial order implies continuity there. -/
+theorem ContinuousWithinAt.continuousAt_of_isBot {α β : Type*} [PartialOrder α]
+    [TopologicalSpace α] [TopologicalSpace β] {f : α → β} {a : α}
+    (hf : ContinuousWithinAt f (Ioi a) a) (ha : IsBot a) : ContinuousAt f a := by
+  simpa [ha.Ici_eq, continuousWithinAt_univ] using continuousWithinAt_Ioi_iff_Ici.mp hf
+
+namespace Monotone
+
+/-- Every monotone right-continuous function from a linear order into a conditionally complete
+linear order (both with the order topology) is càdlàg. -/
+theorem isCadlag {α β : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [ConditionallyCompleteLinearOrder β] [TopologicalSpace β] [OrderTopology β]
+    {f : α → β} (hf : Monotone f) (hrc : IsRightContinuous f) : IsCadlag f :=
+  ⟨hrc, fun x ↦ ⟨_, hf.tendsto_nhdsLT x⟩⟩
+
+/-- At a discontinuity `x` where a monotone natural-valued function is right-continuous and exceeds
+some strictly earlier value by at most one, its left limit is one below its value at `x`. -/
+theorem leftLim_add_one_eq_of_not_continuousAt {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] {f : α → ℕ} (hf : Monotone f)
+    {x : α} (hrc : ContinuousWithinAt f (Ioi x) x) (hx : ¬ ContinuousAt f x)
+    (hjump : ∃ s < x, f x ≤ f s + 1) :
+    leftLim f x + 1 = f x := by
+  obtain ⟨s, hsx, hfs⟩ := hjump
+  have hr : rightLim f x = f x := (hf.continuousWithinAt_Ioi_iff_rightLim_eq).mp hrc
+  have hne : leftLim f x ≠ f x := fun h ↦
+    hx (hf.continuousAt_iff_leftLim_eq_rightLim.mpr (h.trans hr.symm))
+  have hlt : leftLim f x < f x := lt_of_le_of_ne (hf.leftLim_le le_rfl) hne
+  exact le_antisymm hlt (hfs.trans (Nat.add_le_add_right (hf.le_leftLim hsx) 1))
+
+end Monotone
 
 namespace TauCeti
 

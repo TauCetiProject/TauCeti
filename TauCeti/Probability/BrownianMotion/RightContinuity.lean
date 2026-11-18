@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import TauCeti.Probability.Process.Filtration.Natural
-import TauCeti.Probability.Independence.CondExp
-import TauCeti.Probability.Independence.Limit
+import TauCeti.Probability.Independence.Filtration
 
 /-!
 # Right continuity of the augmented natural Brownian filtration
@@ -36,18 +35,6 @@ noncomputable section
 open MeasureTheory Filter Set
 open scoped NNReal Topology
 
-namespace TauCeti
-
-/-- Coordinatewise measurability makes the whole future-increment process measurable.
-No probability law or path regularity is required. -/
-theorem measurable_shift_sub {Ω ι E : Type*} [MeasurableSpace Ω] [Add ι]
-    [MeasurableSpace E] [Sub E] [MeasurableSub₂ E] {W : ι → Ω → E}
-    (hmeas : ∀ t, Measurable (W t)) (s : ι) :
-    Measurable (fun ω v => W (s + v) ω - W s ω) :=
-  measurable_pi_iff.2 fun v => (hmeas (s + v)).sub (hmeas s)
-
-end TauCeti
-
 namespace ProbabilityTheory.IsBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {W : ℝ≥0 → Ω → ℝ}
@@ -58,43 +45,21 @@ theorem indep_shift_rightCont_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) (s : ℝ≥0) :
     Indep (MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance)
       ((Filtration.natural W hmeas).rightCont s) P := by
-  classical
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let ℱ := Filtration.natural W hmeas
-  obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto s
-  have hfinite (I : Finset ℝ≥0) :
-      Indep (MeasurableSpace.comap (fun ω (v : I) => W (s + v) ω - W s ω) inferInstance)
-        (ℱ.rightCont s) P := by
-    apply Indep.symm
-    refine indep_comap_of_ae_tendsto (X := fun n ω (v : I) =>
-        W (u n + v) ω - W (u n) ω) (ℱ.rightCont.le s)
-      (fun n => (I.measurable_restrict.comp
-        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) (u n))).aemeasurable)
-      (I.measurable_restrict.comp
-        (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s)).aemeasurable ?_ ?_
-    · intro n
-      have hfull : Indep (MeasurableSpace.comap
-          (fun ω v => W (u n + v) ω - W (u n) ω) inferInstance) (ℱ (u n)) P := by
-        rw [Filtration.natural_eq_comap]
-        exact (IndepFun_iff_Indep ..).1 (hW.indepFun_shift (u n))
-      refine (indep_of_indep_of_le_right
-        (indep_of_indep_of_le_left hfull ?_) (ℱ.rightCont_le_of_lt (hu n))).symm
-      simp only [MeasurableSpace.comap_process_pi]
-      exact iSup_le fun v => le_iSup (fun a : ℝ≥0 =>
-        MeasurableSpace.comap (fun ω => W (u n + a) ω - W (u n) ω) inferInstance) v.val
-    · filter_upwards [hW.cont] with ω hω
-      exact tendsto_pi_nhds.2 fun v =>
-        (hω.continuousAt.tendsto.comp (hlim.add_const v.val)).sub
-          (hω.continuousAt.tendsto.comp hlim)
-  rw [MeasurableSpace.comap_process_pi, iSup_eq_iSup_finset]
-  apply indep_iSup_of_monotone
-  · intro I
-    simpa only [MeasurableSpace.comap_process_pi, iSup_subtype'] using hfinite I
-  · intro I
-    exact iSup₂_le fun v _ =>
-      ((TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s).eval (a := v)).comap_le
-  · exact ℱ.rightCont.le s
-  · exact fun I J hIJ => iSup_le_iSup_of_subset hIJ
+  refine (Filtration.stronglyAdapted_natural hmeas).adapted.indep_comap_shift_rightCont
+    (fun r t hrt ↦ ?_) (fun r ↦ ?_) s
+  · have hfull : Indep (MeasurableSpace.comap
+        (fun ω v => W (r + v) ω - W r ω) inferInstance) (Filtration.natural W hmeas r) P := by
+      rw [Filtration.natural_eq_comap]
+      exact (IndepFun_iff_Indep ..).1 (hW.indepFun_shift r)
+    refine indep_of_indep_of_le_left hfull ?_
+    have hproj := MeasurableSpace.comap_le_comap_pi
+      (g := fun v ω => W (r + v) ω - W r ω) (t - r)
+    simpa only [add_tsub_cancel_of_le hrt, Pi.sub_def] using hproj
+  · obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto r
+    refine ⟨u, hu, hlim, ?_⟩
+    filter_upwards [hW.cont] with ω hω
+    exact hω.continuousAt.tendsto.comp hlim
 
 /-- Every event of the raw right-continuous natural Brownian filtration has a representative
 in the original natural sigma-algebra at the same time. -/
@@ -102,48 +67,16 @@ theorem rightCont_natural_le_nullAugment (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) (s : ℝ≥0) :
     (Filtration.natural W hmeas).rightCont s ≤
       (Filtration.natural W hmeas).nullAugment P s := by
-  classical
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  let ℱ := Filtration.natural W hmeas
-  let mFuture := MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance
-  -- Restore the ambient instance: mFuture is also eligible for measurable-space synthesis.
-  let : MeasurableSpace Ω := mΩ
-  have hfuture : mFuture ≤ mΩ :=
-    (TauCeti.measurable_shift_sub (fun t => (hmeas t).measurable) s).comap_le
-  have hle : ℱ.rightCont s ≤ ℱ s ⊔ mFuture :=
-    (ℱ.rightCont_le_of_lt (lt_add_one s)).trans
-      (Filtration.natural_le_sup_comap_shift W hmeas s (s + 1))
-  intro A hA
-  rw [Filtration.measurableSet_nullAugment_iff]
-  have hAi : Integrable (A.indicator (fun _ => (1 : ℝ))) P :=
-    (integrable_const 1).indicator (ℱ.rightCont.le s A hA)
-  have hcond := (hW.indep_shift_rightCont_natural hmeas s).symm
-    |>.condExp_eq_of_le_of_stronglyMeasurable_sup (ℱ.le_rightCont s) (ℱ.rightCont.le s)
-      hfuture ((stronglyMeasurable_const.indicator hA).mono hle) hAi
-  have heq : P[A.indicator (fun _ => (1 : ℝ)) | ℱ s] =ᵐ[P]
-      A.indicator (fun _ => (1 : ℝ)) :=
-    hcond.symm.trans (Filter.EventuallyEq.of_eq
-      (condExp_of_stronglyMeasurable (ℱ.rightCont.le s)
-        (stronglyMeasurable_const.indicator hA) hAi))
-  refine ⟨{ω | 1 / 2 < P[A.indicator (fun _ => (1 : ℝ)) | ℱ s] ω},
-    measurableSet_lt measurable_const stronglyMeasurable_condExp.measurable, ?_⟩
-  filter_upwards [heq] with ω hω
-  simp only [hω]
-  by_cases hωA : ω ∈ A <;> norm_num [hωA]
+  exact Filtration.rightCont_natural_le_nullAugment_of_indep_shift hmeas
+    (hW.indep_shift_rightCont_natural hmeas s)
 
 /-- The null-augmented natural filtration of Brownian motion is right-continuous. This uses
 the completed ambient space of `Filtration.nullAugment`; no completeness of `P` is assumed. -/
 theorem isRightContinuous_nullAugment_natural (hW : IsBrownianReal W P)
     (hmeas : ∀ t, StronglyMeasurable (W t)) :
-    ((Filtration.natural W hmeas).nullAugment P).IsRightContinuous := by
-  constructor
-  intro s
-  rw [Filtration.rightCont_nullAugment_apply]
-  intro A hA
-  rw [Filtration.measurableSet_nullAugment_iff] at hA ⊢
-  obtain ⟨B, hB, hAB⟩ := hA
-  obtain ⟨C, hC, hBC⟩ := (Filtration.measurableSet_nullAugment_iff _ P s B).mp
-    (hW.rightCont_natural_le_nullAugment hmeas s B hB)
-  exact ⟨C, hC, hAB.trans hBC⟩
+    ((Filtration.natural W hmeas).nullAugment P).IsRightContinuous :=
+  Filtration.isRightContinuous_nullAugment_of_rightCont_le_nullAugment
+    (hW.rightCont_natural_le_nullAugment hmeas)
 
 end ProbabilityTheory.IsBrownianReal
