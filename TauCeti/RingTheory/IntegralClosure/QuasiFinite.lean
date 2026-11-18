@@ -121,10 +121,11 @@ a Noetherian N-1 domain with fraction field `K`, for instance an integrally clos
 domain, let `A` be a finite type quasi-finite `P`-algebra, and let `B` be an `A`-algebra that is
 torsion-free over `P` with finite étale generic fibre `K ⊗[P] B`. Then the integral closure of `A`
 in `B` is a finite `A`-module. -/
-theorem finite_integralClosure_of_quasiFinite_of_etale [IsDomain P] [IsNoetherianRing P]
+theorem finite_integralClosure_of_quasiFinite_of_etale [IsNoetherianRing P]
     [Ring.IsN1 P] (K : Type*) [Field K] [Algebra P K] [IsFractionRing P K]
     [Algebra.FiniteType P A] [Algebra.QuasiFinite P A] [Module.IsTorsionFree P B]
     [Algebra.Etale K (K ⊗[P] B)] : Module.Finite A (integralClosure A B) :=
+  have := IsDomain.of_faithfulSMul P K
   have := Ring.finite_integralClosure_of_isTorsionFree_of_etale (R := P) K B
   finite_integralClosure_of_quasiFinite (P := P)
 
