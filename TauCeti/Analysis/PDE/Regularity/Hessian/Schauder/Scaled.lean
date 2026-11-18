@@ -35,8 +35,7 @@ the centre. Unlike the estimate on small balls
 (`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv`), only
 the supremum of `|u|` remains among the lower-order terms: no bounds on `Du` or `D²u` and no
 supremum of `L u` are needed. The Hölder continuity of `D²u` on the smaller closed balls enters
-only qualitatively. The case `b = 0`, `c = 0` is
-`exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_of_mul_rpow_le`.
+only qualitatively.
 
 ## The argument
 
@@ -599,38 +598,5 @@ theorem
   have h1 : 0 ≤ (C₃ : ℝ) * (A₀ * (2 * θ) ^ (-(2 + (α : ℝ))) * K) := by positivity
   have h2 : 0 ≤ (C₃ : ℝ) * (C₁ * (r ^ (-(2 + (α : ℝ))) * Mu)) := by positivity
   nlinarith
-
-/-- **The interior Schauder estimate in scaled form.** Let `0 < α < 1`, and let `λ`, `Λ` and `M`
-be given. Then there is a constant `C ≥ 0`, depending only on `n`, `α`, `λ`, `Λ` and `M`, with the
-following property. Let `r > 0`, let `a` be a matrix-valued coefficient which is uniformly elliptic
-and bounded with constants `0 < λ ≤ Λ` on `B_{2r} = ball x₀ (2 r)` and `α`-Hölder there entrywise
-with constant `[a]_α`, where `r^α [a]_α ≤ M`, and put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu`. Let `u` be `C²` on
-`B_{2r}` with `|u| ≤ M_u` there, and with `D²u` `α`-Hölder on `closedBall x₀ ρ` for every `ρ < 2 r`
-(with any constants). If `L u` is `α`-Hölder on `B_{2r}` with constant `K`, then `D²u` is
-`α`-Hölder on `closedBall x₀ r` with constant `C (r^{-2-α} M_u + K)`.
-
-This is the case `b = 0`, `c = 0` of
-`exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul`
-(Gilbarg–Trudinger, Theorem 6.2). -/
-theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_of_mul_rpow_le
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (lam Lam : ℝ) (M : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {x₀ : E} {r : ℝ}
-      {Ka Mu K : ℝ≥0} {u : E → ℝ}, 0 < r → UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam →
-      (∀ i j, HolderOnWith Ka α (fun x => a x i j) (ball x₀ (2 * r))) →
-      Ka * r ^ (α : ℝ) ≤ M → ContDiffOn ℝ 2 u (ball x₀ (2 * r)) →
-      (∀ x ∈ ball x₀ (2 * r), |u x| ≤ Mu) →
-      (∀ ρ < 2 * r, ∃ V : ℝ≥0, HolderOnWith V α (iteratedFDeriv ℝ 2 u) (closedBall x₀ ρ)) →
-      HolderOnWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) (ball x₀ (2 * r)) →
-      HolderOnWith (C * (r ^ (-(2 + (α : ℝ))) * Mu + K)).toNNReal α
-        (iteratedFDeriv ℝ 2 u) (closedBall x₀ r) := by
-  obtain ⟨C, hC0, hC⟩ :=
-    exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fderiv_add_fderiv_add_mul
-      hα hα1 lam Lam M (n := n)
-  refine ⟨C, hC0, fun hr hA hKa hKaM hu hMu hV hK => ?_⟩
-  refine hC (b := 0) (c := 0) (Kb := 0) (Mb := 0) (Kc := 0) (Mc := 0) hr hA hKa hKaM
-    (HolderWith.const.holderOnWith _) (fun _ _ => by simp) (by simp) (by simp)
-    (HolderWith.const.holderOnWith _) (fun _ _ => by simp) (by simp) (by simp) hu hMu hV ?_
-  simpa using hK
 
 end TauCeti.PDE
