@@ -43,6 +43,9 @@ reversed flow.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_unstableSet`: slice charts for `W^s(x)` and,
   for a Morse function, `W^u(x)`, onto subspaces of dimensions `n - k` and `k`.
+* `TauCeti.IsAdaptedPseudoGradient.isOpen_stableSet_of_manifoldMorseIndex_eq_zero` and
+  `TauCeti.IsAdaptedPseudoGradient.isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank`: `W^s(x)`
+  is open when `x` has index `0`, and `W^u(x)` when `x` has index `n`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_isManifold` and
   `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_isManifold`: the manifold structures, of
   dimensions `n - k` and `k`.
@@ -349,6 +352,31 @@ theorem exists_isSliceChart_unstableSet (hX : IsAdaptedPseudoGradient f X)
   have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   exact ⟨L, q, by omega, hpq, hq, hs⟩
+
+/-- **The stable manifold of a critical point of index `0` is open.** Its slice charts flatten it
+onto a subspace of full dimension, so it contains the source of a chart around each of its
+points. -/
+theorem isOpen_stableSet_of_manifoldMorseIndex_eq_zero (hX : IsAdaptedPseudoGradient f X)
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
+    IsOpen (hX.flow.stableSet x) := by
+  refine isOpen_iff_mem_nhds.2 fun p hp ↦ ?_
+  obtain ⟨L, q, hL, hpq, -, hs⟩ := hX.exists_isSliceChart_stableSet hx hp
+  have hLtop : L = ⊤ := Submodule.eq_top_of_finrank_eq (by omega)
+  exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
+    (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
+
+/-- **The unstable manifold of a critical point of top index is open.** Its slice charts flatten
+it onto a subspace of full dimension, so it contains the source of a chart around each of its
+points. -/
+theorem isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E) :
+    IsOpen (hX.flow.unstableSet x) := by
+  refine isOpen_iff_mem_nhds.2 fun p hp ↦ ?_
+  obtain ⟨L, q, hL, hpq, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hp
+  have hLtop : L = ⊤ := Submodule.eq_top_of_finrank_eq (by omega)
+  exact Filter.mem_of_superset (q.open_source.mem_nhds hpq) fun z hz ↦
+    (isSliceChart_iff.1 hs z hz).2 (by simp [hLtop])
 
 /-- **The stable set is a manifold of dimension `n - k`.** For a critical point `x` of index
 `k`, the stable set `W^s(x)` of the flow of an adapted pseudo-gradient carries a smooth

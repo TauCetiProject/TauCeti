@@ -44,6 +44,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `AddCircle (1 : ℚ)` once that multiple is an integer.
 * `AddCircle.coe_add_intCast`: adding an integer does not change a class in
   `AddCircle (1 : 𝕜)`.
+* `AddCircle.coe_add_int_mul_period`: adding an integer multiple of the period does not change
+  a class in `AddCircle p`.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -131,12 +133,16 @@ theorem zsmul_coe_eq_zero {k c : ℤ} {x : ℚ} (h : (k : ℚ) * x = c) :
   rw [zsmul_eq_mul, h]
   exact eq_intCast (algebraMap ℤ ℚ) c
 
+/-- Adding an integer multiple of the period does not change a class in `AddCircle p`. -/
+theorem coe_add_int_mul_period {𝕜 : Type*} [Ring 𝕜] (p x : 𝕜) (k : ℤ) :
+    ((x + k * p : 𝕜) : AddCircle p) = (x : AddCircle p) := by
+  rw [coe_add, ← zsmul_eq_mul, coe_zsmul, coe_period, smul_zero, add_zero]
+
 /-- Adding an integer does not change a class in `AddCircle (1 : 𝕜)`. This is
-`AddCircle.coe_add_period` for an arbitrary integer multiple of the period `1`. -/
+`AddCircle.coe_add_int_mul_period` for the period `1`. -/
 theorem coe_add_intCast {𝕜 : Type*} [Ring 𝕜] (x : 𝕜) (n : ℤ) :
     ((x + n : 𝕜) : AddCircle (1 : 𝕜)) = (x : AddCircle (1 : 𝕜)) := by
-  rw [coe_add, add_eq_left, coe_eq_zero_iff]
-  exact ⟨n, by simp⟩
+  simpa only [mul_one] using coe_add_int_mul_period (1 : 𝕜) x n
 
 /-- The floor of the sum of the representatives in `[0, 1)` of two points of `AddCircle (1 : 𝕜)`
 is the defect of additivity of the representatives. -/
