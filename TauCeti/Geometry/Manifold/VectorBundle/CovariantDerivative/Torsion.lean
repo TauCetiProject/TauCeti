@@ -76,11 +76,9 @@ theorem IsTorsionFree.mlieBracket_eq_zero_of_cov_eq_zero
 
 section TorsionFree
 
-variable [CompleteSpace E]
-  {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)}
+variable {cov : _root_.CovariantDerivative I E (TangentSpace I : M → Type _)}
   [cov.ContMDiffCovariantDerivative ∞]
 
-omit [CompleteSpace E] in
 /-- Applying a torsion-free connection to the Lie bracket of smooth vector fields gives the
 difference of applying it to their two covariant derivatives. -/
 theorem covariantDerivative_mlieBracket_apply_eq_sub_of_torsion_free
