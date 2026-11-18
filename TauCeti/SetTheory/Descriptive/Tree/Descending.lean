@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.SetTheory.Descriptive.Tree
+import Mathlib.Data.List.ChainOfFn
 
 /-!
 # The descending tree of a relation
@@ -13,11 +14,11 @@ public import TauCeti.SetTheory.Descriptive.Tree
 For a relation `r` on a type `α`, the **descending tree** `Descriptive.Tree.descendingTree r` is
 the descriptive tree of finite sequences `[a₀, a₁, …, aₙ]` with `r aᵢ₊₁ aᵢ` for each `i`. Its
 infinite branches are the infinite `r`-descending sequences, so it is well-founded exactly when `r`
-is. Below a node, the tree depends only on the last entry of the node, and its rank there is the
-successor of the `r`-rank of that entry. Consequently the rank of the whole tree is the successor of
-the supremum of the successors of the `r`-ranks, and for a well-order the order type is at most the
-rank of the tree. The empty sequence always lies in the tree, so even on an empty carrier its rank
-is `1`.
+is. Below a node, the tree depends only on the last entry of the node. When `r` is well-founded,
+the rank of the tree below a node is the successor of the `r`-rank of the node's last entry, and
+the rank of the whole tree is the successor of the supremum of the successors of the `r`-ranks; for
+a well-order the order type is therefore at most the rank of the tree. The empty sequence always
+lies in the tree, so even on an empty carrier its rank is `1`.
 
 No countability of the carrier is assumed. Combined with the analytic boundedness theorem for
 families of well-founded trees, this bounds the order types of analytic families of well-orders.
@@ -30,9 +31,10 @@ families of well-founded trees, this bounds the order types of analytic families
 
 * `Descriptive.Tree.isWellFounded_descendingTree_iff`: the descending tree is well-founded exactly
   when `r` is.
-* `Descriptive.Tree.rank_subAt_descendingTree_singleton`: the rank below `x` is the successor of
-  the `r`-rank of `x`.
-* `Descriptive.Tree.rank_descendingTree`: the rank of the descending tree.
+* `Descriptive.Tree.rank_subAt_descendingTree_singleton`: when `r` is well-founded, the rank below
+  `x` is the successor of the `r`-rank of `x`.
+* `Descriptive.Tree.rank_descendingTree`: the rank of the descending tree of a well-founded
+  relation.
 * `Descriptive.Tree.type_le_rank_descendingTree`: for a well-order, the order type is at most the
   rank of the descending tree.
 
@@ -59,44 +61,23 @@ def descendingTree : tree α :=
 variable {r}
 
 /-- A list lies in the descending tree when each entry is `r`-related to the one before. -/
+@[simp]
 theorem mem_descendingTree {l : List α} : l ∈ descendingTree r ↔ l.IsChain fun a b => r b a :=
   Iff.rfl
 
 /-- The empty sequence lies in every descending tree, whatever the carrier. -/
-@[simp]
 theorem nil_mem_descendingTree : [] ∈ descendingTree r :=
   List.isChain_nil
 
 /-- Every one-term sequence lies in the descending tree. -/
-@[simp]
 theorem singleton_mem_descendingTree (x : α) : [x] ∈ descendingTree r :=
   List.isChain_singleton x
 
 /-- A sequence is a branch of the descending tree exactly when it is `r`-descending. -/
 theorem forall_ofFn_mem_descendingTree_iff (f : ℕ → α) :
     (∀ n, List.ofFn (fun i : Fin n => f i) ∈ descendingTree r) ↔ ∀ n, r (f (n + 1)) (f n) := by
-  have h (n : ℕ) : List.ofFn (fun i : Fin n => f i) = (List.range n).map f := by
-    apply List.ext_getElem <;> simp
-  simp only [mem_descendingTree, h]
-  constructor
-  · intro H n
-    have := H (n + 2)
-    rw [List.range_succ, List.range_succ, List.map_append, List.map_append,
-      List.append_assoc] at this
-    exact (by simpa [List.isChain_append] using this : _ ∧ _ ∧ _).2.1
-  · intro H n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [List.range_succ, List.map_append]
-      refine List.IsChain.append ih (List.isChain_singleton _) ?_
-      intro x hx y hy
-      cases n with
-      | zero => simp at hx
-      | succ n =>
-        obtain rfl : x = f n := by simpa [List.range_succ] using hx.symm
-        obtain rfl : y = f (n + 1) := by simpa using hy.symm
-        exact H n
+  simp only [mem_descendingTree, List.isChain_ofFn]
+  exact ⟨fun H n => H (n + 2) n (by omega), fun H _ i _ => H i⟩
 
 /-- **The descending tree is well-founded exactly when `r` is**: a branch is an infinite
 `r`-descending sequence. -/
@@ -114,7 +95,8 @@ theorem subAt_descendingTree_append_singleton {l : List α} {x : α}
   rw [List.isChain_append (l₁ := l ++ [x]), List.isChain_append (l₁ := [x])]
   simp [h]
 
-/-- The node rank below `x` is the successor of the `r`-rank of `x`. -/
+/-- When `r` is well-founded, the rank of the descending tree below `x` is the successor of the
+`r`-rank of `x`. -/
 theorem rank_subAt_descendingTree_singleton [hr : WellFounded r] (x : α) :
     rank (subAt (descendingTree r) [x]) = Order.succ (WellFounded.rank r x) := by
   have hT : IsWellFounded (descendingTree r) := isWellFounded_descendingTree_iff.2 hr

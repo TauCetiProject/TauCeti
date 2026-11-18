@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.SetTheory.Descriptive.Tree.Descending
-import Mathlib.SetTheory.Ordinal.Arithmetic
 
 /-!
 # Regression examples: descending trees
