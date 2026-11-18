@@ -23,6 +23,10 @@ generator `D` of the orbit `i` is the finite sum of the counts over the classes 
 `q A = rᵢ - D`, that is, the count of the planes whose cap class is `D`
 (`TauCeti.Floer.coordinates_symm_coefficientComparison_apply`). This file proves:
 
+* **Change of reference caps.** Moving the reference caps to `q gᵢ # rᵢ` changes the class
+  `rᵢ - u` of each counted plane `u` by `gᵢ`. With the generating series multiplied by `q^(gᵢ)`
+  accordingly, the combination of the counts is unchanged
+  (`TauCeti.Floer.coordinates_symm_coefficientComparison_vadd`).
 * **Degree from the index.** If every counted class satisfies the rigidity condition
   `μ(rᵢ) - 2 c₁(A) = n - k`, the combination has cochain degree `k`
   (`TauCeti.Floer.coordinates_symm_coefficientComparison_mem_cochain_gradeBy`). For the
@@ -80,7 +84,10 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   [∀ i, AddTorsor (PeriodGroup ω c) (P₁ i)] [∀ j, AddTorsor (PeriodGroup ω c) (P₂ j)]
   [∀ k, AddTorsor (PeriodGroup ω c) (P₀ k)]
   (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
-  {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+
+section Monoid
+
+variable {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
   {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
   (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
@@ -475,5 +482,28 @@ theorem cohomologyProduct_kernelProduct_coefficientComparison_mk_unit [Fintype �
     exact h
 
 end Cohomology
+
+end Monoid
+
+section Reference
+
+variable {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+  (hq : ∀ A, area ω c (q A) = ωG A) {F₁ : (Σ i, P₁ i) → ℝ}
+  (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+
+/-- **The combination of plane counts does not depend on the reference caps.** Moving the
+reference caps to `q gᵢ # rᵢ` changes the class `rᵢ - u` of a counted plane `u` by `gᵢ`, so the
+generating series become `q^(gᵢ) Eᵢ`; the completed combination of the counts on capped generators
+is unchanged. -/
+theorem coordinates_symm_coefficientComparison_vadd [Semiring R] [Finite ι₁]
+    (E : ι₁ → NovikovSeries R G ωG) (g : ι₁ → G) :
+    (coordinates hF₁ fun i => q (g i) +ᵥ r₁ i).symm
+        (fun i => coefficientComparison q hq (NovikovSeries.single (g i) 1 * E i)) =
+      (coordinates hF₁ r₁).symm fun i => coefficientComparison q hq (E i) := by
+  refine Subtype.ext (funext fun ⟨i, D⟩ => ?_)
+  rw [coordinates_symm_apply, coordinates_symm_apply, _root_.map_mul, coefficientComparison_single,
+    coeff_single_mul, one_mul, vsub_vadd_eq_vsub_sub, neg_neg, add_sub_cancel]
+
+end Reference
 
 end TauCeti.Floer
