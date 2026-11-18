@@ -78,7 +78,6 @@ private theorem IsNullSet.preimage_inter_of_isSubmersionAt_of_subset_interior
     refine hc.preimage_mem_nhds ?_
     rw [comp_apply, e.left_inv hpe]
     exact extChartAt_source_mem_nhds (θ p)
-  obtain ⟨t, -, htc, hSt⟩ := TopologicalSpace.countable_cover_nhdsWithin hV
   -- There the coordinate expression of `θ` is `C¹` with surjective derivative.
   let Θ : M → E' → E := fun y ↦ extChartAt I y ∘ θ ∘ e.symm
   have hΘ : ∀ y, ∀ w ∈ S ∩ V y, ContDiffAt ℝ 1 (Θ y) w ∧ Surjective (fderiv ℝ (Θ y) w) := by
@@ -95,15 +94,19 @@ private theorem IsNullSet.preimage_inter_of_isSubmersionAt_of_subset_interior
     exact (isRegularPoint_iff_surjective_fderivWithin
       ((hθ p hpA).contMDiffAt.mdifferentiableAt hn₀) hz hy).1
       (isRegularPoint_iff.2 ((hθ p hpA).surjective_mfderiv hn₀))
-  -- Each chart image of `s` is null, so each piece of the cover is null.
+  -- Each chart image of `s` is null, so the preimage is locally null.
   have hpiece : ∀ y, ν ((Θ y) ⁻¹' (extChartAt I y '' (s ∩ (extChartAt I y).source))
       ∩ (S ∩ V y)) = 0 := fun y ↦
     addHaar_preimage_inter_eq_zero_of_surjective_fderiv (μ := Measure.addHaar) ν
       (fun w hw ↦ (hΘ y w hw).1) (fun w hw ↦ (hΘ y w hw).2) (hs.chartwise y _)
-  refine measure_mono_null ?_ ((measure_biUnion_null_iff htc).2 fun w _ ↦ hpiece (θ (e.symm w)))
-  rintro _ ⟨p, ⟨⟨hps, hpA⟩, hpe⟩, rfl⟩
-  obtain ⟨w, hwt, hpw⟩ := mem_iUnion₂.1 (hSt ⟨p, ⟨hpA, hpe⟩, rfl⟩)
-  refine mem_iUnion₂.2 ⟨w, hwt, ⟨⟨θ p, ⟨hps, ?_⟩, ?_⟩, ⟨p, ⟨hpA, hpe⟩, rfl⟩, hpw⟩⟩
+  let B := e '' ((θ ⁻¹' s ∩ A) ∩ e.source)
+  have hBS : B ⊆ S := image_mono (inter_subset_inter_left _ inter_subset_right)
+  refine measure_null_of_locally_null B fun w hw ↦ ?_
+  refine ⟨_, Filter.mem_of_superset
+    (Filter.inter_mem self_mem_nhdsWithin (nhdsWithin_mono w hBS (hV w (hBS hw)))) ?_,
+    hpiece (θ (e.symm w))⟩
+  rintro _ ⟨⟨p, ⟨⟨hps, hpA⟩, hpe⟩, rfl⟩, hpw⟩
+  refine ⟨⟨θ p, ⟨hps, ?_⟩, ?_⟩, ⟨p, ⟨hpA, hpe⟩, rfl⟩, hpw⟩
   · simpa [V, e.left_inv hpe] using hpw
   · simp [Θ, e.left_inv hpe]
 
