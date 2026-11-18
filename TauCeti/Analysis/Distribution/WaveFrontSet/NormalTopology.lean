@@ -296,26 +296,22 @@ instance instTopologicalSpace : TopologicalSpace (WaveFrontSpace Ω Γ) :=
     (seminormFamily Ω Γ).moduleFilterBasis.topology
 
 private theorem withSeminorms_seminormFamily :
-    @WithSeminorms ℂ (WaveFrontSpace Ω Γ) (WaveFrontSeminormIndex Ω Γ) _ _ _ (seminormFamily Ω Γ)
-      seminormTopology :=
-  @WithSeminorms.mk _ _ _ _ _ _ _ seminormTopology rfl
+    WithSeminorms (topology := seminormTopology) (seminormFamily Ω Γ) :=
+  WithSeminorms.mk (topology := seminormTopology) rfl
 
 theorem continuous_toDistribution :
     Continuous (toDistribution : WaveFrontSpace Ω Γ → 𝓓'(Ω, ℂ)) :=
-  @continuous_inf_dom_left _ _ _ (TopologicalSpace.induced toDistribution inferInstance)
-    seminormTopology _ continuous_induced_dom
+  continuous_inf_dom_left (t₂ := seminormTopology) continuous_induced_dom
 
 theorem continuous_seminorm (i : WaveFrontSeminormIndex Ω Γ) :
     Continuous (WaveFrontSpace.seminorm i) :=
-  @continuous_inf_dom_right _ _ _ (TopologicalSpace.induced toDistribution inferInstance)
-    seminormTopology _
-    (@WithSeminorms.continuous_seminorm ℂ _ _ _ _ _ seminormTopology _
-      withSeminorms_seminormFamily i)
+  continuous_inf_dom_right (t₁ := .induced toDistribution inferInstance)
+    (WithSeminorms.continuous_seminorm (t := seminormTopology) withSeminorms_seminormFamily i)
 
 instance : IsTopologicalAddGroup (WaveFrontSpace Ω Γ) :=
   isTopologicalAddGroup_inf (isTopologicalAddGroup_induced toDistribution)
-    (@WithSeminorms.isTopologicalAddGroup ℂ _ _ _ _ _ seminormTopology _
-      withSeminorms_seminormFamily)
+    (letI : TopologicalSpace (WaveFrontSpace Ω Γ) := seminormTopology
+    withSeminorms_seminormFamily.isTopologicalAddGroup)
 
 instance : T2Space (WaveFrontSpace Ω Γ) :=
   .of_injective_continuous toDistribution_injective continuous_toDistribution
@@ -329,10 +325,12 @@ theorem tendsto_nhds_iff {α : Type*} {l : Filter α} {f : α → WaveFrontSpace
   have hnhds : 𝓝 u = comap toDistribution (𝓝 u.toDistribution) ⊓
       @nhds _ seminormTopology u := by
     rw [← nhds_induced]
-    exact @nhds_inf _ (TopologicalSpace.induced toDistribution inferInstance) seminormTopology u
-  rw [hnhds, tendsto_inf, tendsto_comap_iff,
-    @WithSeminorms.tendsto_nhds ℂ _ _ _ _ _ _ seminormTopology _ withSeminorms_seminormFamily]
-  rfl
+    exact nhds_inf (t₁ := .induced toDistribution inferInstance) (t₂ := seminormTopology)
+  have hseminorm : Tendsto f l (@nhds _ seminormTopology u) ↔
+      ∀ i ε, 0 < ε → ∀ᶠ a in l, WaveFrontSpace.seminorm i (f a - u) < ε :=
+    letI : TopologicalSpace (WaveFrontSpace Ω Γ) := seminormTopology
+    withSeminorms_seminormFamily.tendsto_nhds f u
+  rw [hnhds, tendsto_inf, tendsto_comap_iff, hseminorm, Function.comp_def]
 
 /-- **Continuity of linear maps into `𝓓'_Γ(Ω)`.** A linear map from a topological additive group
 into `𝓓'_Γ(Ω)` is continuous exactly when its composite with the inclusion into `𝓓'(Ω)` and its
@@ -342,12 +340,10 @@ theorem continuous_linearMap_iff {F : Type*} [AddCommGroup F] [Module ℂ F] [To
     Continuous A ↔ Continuous (toDistribution ∘ₗ A) ∧
       ∀ i, Continuous ((WaveFrontSpace.seminorm i).comp A) :=
   ⟨fun h ↦ ⟨continuous_toDistribution.comp h, fun i ↦ (continuous_seminorm i).comp h⟩,
-    fun ⟨h₁, h₂⟩ ↦ (@continuous_inf_rng _ _ A _
-      (TopologicalSpace.induced toDistribution inferInstance) seminormTopology).2
-        ⟨continuous_induced_rng.2 h₁,
-          @WithSeminorms.continuous_of_continuous_comp ℂ ℂ F (WaveFrontSpace Ω Γ)
-            (WaveFrontSeminormIndex Ω Γ) _ _ _ _ _ _ (RingHom.id ℂ) _ (seminormFamily Ω Γ) _ _
-            seminormTopology withSeminorms_seminormFamily A h₂⟩⟩
+    fun ⟨h₁, h₂⟩ ↦ (continuous_inf_rng (t₂ := .induced toDistribution inferInstance)
+      (t₃ := seminormTopology)).2 ⟨continuous_induced_rng.2 h₁,
+      letI : TopologicalSpace (WaveFrontSpace Ω Γ) := seminormTopology
+      withSeminorms_seminormFamily.continuous_of_continuous_comp A h₂⟩⟩
 
 /-- A linear map into `𝓓'_Γ(Ω)` whose composite with the inclusion into `𝓓'(Ω)` is continuous,
 and each of whose seminorms `‖A ·‖_{φ,V,N}` is bounded by a continuous seminorm, is continuous. -/
@@ -497,8 +493,8 @@ theorem seminorm_smulLeftCLM (hg : ContDiff ℝ ∞ g) (i : WaveFrontSeminormInd
     (u : WaveFrontSpace Ω Γ) :
     WaveFrontSpace.seminorm i (smulLeftCLM hg u) = WaveFrontSpace.seminorm (i.smulLeft hg) u :=
   seminorm_eq_of_localFourier_eq rfl rfl fun η _ ↦ by
-    rw [toDistribution_smulLeftCLM, localFourier_smulLeftCLM]
-    rfl
+    rw [toDistribution_smulLeftCLM, localFourier_smulLeftCLM,
+      WaveFrontSeminormIndex.smulLeft_cutoff]
 
 end SmulLeft
 
@@ -567,23 +563,10 @@ private theorem seminorm_lineDerivOp_le (v : E) (i : WaveFrontSeminormIndex Ω �
       2 * π * ‖v‖ * WaveFrontSpace.seminorm (i.withOrder (i.order + 1)) u +
         WaveFrontSpace.seminorm (i.lineDeriv v) u := by
   refine seminorm_le_bound i u' (by positivity) fun η hη ↦ ?_
-  have h₁ := le_seminorm (i.withOrder (i.order + 1)) u (η := η) hη
-  have h₂ := le_seminorm (i.lineDeriv v) u (η := η) hη
-  rw [hu', localFourier_lineDerivOp]
-  calc (1 + ‖η‖) ^ i.order * ‖2 * π * I * ⟪v, η⟫ * u.toDistribution.localFourier i.cutoff η -
-          u.toDistribution.localFourier (∂_{v} i.cutoff) η‖
-      ≤ (1 + ‖η‖) ^ i.order *
-          (2 * π * ‖v‖ * (1 + ‖η‖) * ‖u.toDistribution.localFourier i.cutoff η‖) +
-        (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier (∂_{v} i.cutoff) η‖ := by
-        rw [← mul_add]
-        refine mul_le_mul_of_nonneg_left ((norm_sub_le _ _).trans ?_) (by positivity)
-        rw [norm_mul]
-        gcongr
-        exact TauCeti.norm_two_pi_I_mul_inner_le v η
-    _ = 2 * π * ‖v‖ *
-          ((1 + ‖η‖) ^ (i.order + 1) * ‖u.toDistribution.localFourier i.cutoff η‖) +
-        (1 + ‖η‖) ^ i.order * ‖u.toDistribution.localFourier (∂_{v} i.cutoff) η‖ := by ring
-    _ ≤ _ := add_le_add (mul_le_mul_of_nonneg_left h₁ (by positivity)) h₂
+  rw [hu']
+  exact (one_add_norm_pow_mul_norm_localFourier_lineDerivOp_le _ v _ _ η).trans
+    (add_le_add (mul_le_mul_of_nonneg_left (le_seminorm (i.withOrder (i.order + 1)) u hη)
+      (by positivity)) (le_seminorm (i.lineDeriv v) u hη))
 
 /-- Differentiation `T ↦ ∂_v T` on `𝓓'_Γ(Ω)`, a continuous linear map: the seminorm
 `‖∂_v T‖_{φ,V,N}` is at most `2π ‖v‖ ‖T‖_{φ,V,N+1} + ‖T‖_{∂_v φ,V,N}`. -/
@@ -696,8 +679,8 @@ theorem seminorm_restrictCLM (h : Ω' ≤ Ω) (hΓ : Γ ∩ (Ω' : Set E) ×ˢ u
     WaveFrontSpace.seminorm i (restrictCLM h hΓ u) =
       WaveFrontSpace.seminorm (i.restrict h hΓ) u :=
   seminorm_eq_of_localFourier_eq rfl rfl fun η _ ↦ by
-    rw [toDistribution_restrictCLM, localFourier_restrictCLM]
-    rfl
+    rw [toDistribution_restrictCLM, localFourier_restrictCLM,
+      WaveFrontSeminormIndex.restrict_cutoff]
 
 end Restriction
 

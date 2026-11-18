@@ -518,21 +518,11 @@ private theorem exists_localFourier_iteratedLineDerivOp_le {T : 𝓓'(Ω, ℂ)} 
     have hφ₁ := h₁ φ hφ B (fun i hi ↦ hB i (by omega)) η hη
     have hφ₂ := h₁ (∂_{m 0} φ) ((tsupport_lineDerivOp_subset φ _).trans hφ) (‖m 0‖ * B)
       (norm_iteratedFDeriv_lineDerivOp_le φ (m 0) (r := ρ + r) hB) η hη
-    rw [iteratedLineDerivOp_succ_left, localFourier_lineDerivOp]
-    calc (1 + ‖η‖) ^ j * ‖2 * π * I * ⟪m 0, η⟫ * (∂^{Fin.tail m} T).localFourier φ η -
-          (∂^{Fin.tail m} T).localFourier (∂_{m 0} φ) η‖
+    rw [iteratedLineDerivOp_succ_left]
+    calc (1 + ‖η‖) ^ j * ‖(∂_{m 0} (∂^{Fin.tail m} T)).localFourier φ η‖
         ≤ 2 * π * ‖m 0‖ * (1 + ‖η‖) * ((1 + ‖η‖) ^ j * ‖(∂^{Fin.tail m} T).localFourier φ η‖) +
-            (1 + ‖η‖) ^ j * ‖(∂^{Fin.tail m} T).localFourier (∂_{m 0} φ) η‖ := by
-          refine (mul_le_mul_of_nonneg_left (norm_sub_le _ _) (by positivity)).trans ?_
-          rw [norm_mul, mul_add]
-          gcongr ?_ + _
-          calc (1 + ‖η‖) ^ j * (‖(2 * π * I * ⟪m 0, η⟫ : ℂ)‖ *
-                ‖(∂^{Fin.tail m} T).localFourier φ η‖)
-              ≤ (1 + ‖η‖) ^ j * (2 * π * ‖m 0‖ * (1 + ‖η‖) *
-                ‖(∂^{Fin.tail m} T).localFourier φ η‖) := by
-                gcongr
-                exact TauCeti.norm_two_pi_I_mul_inner_le _ _
-            _ = _ := by ring
+            (1 + ‖η‖) ^ j * ‖(∂^{Fin.tail m} T).localFourier (∂_{m 0} φ) η‖ :=
+          (one_add_norm_pow_mul_norm_localFourier_lineDerivOp_le _ _ _ _ _).trans_eq (by ring)
       _ ≤ 2 * π * ‖m 0‖ * (1 + ‖η‖) * (C₁ * B * (1 + ‖η‖) ^ (k + r)) +
             C₁ * (‖m 0‖ * B) * (1 + ‖η‖) ^ (k + r + 1) :=
           add_le_add (mul_le_mul_of_nonneg_left hφ₁ (by positivity)) <| hφ₂.trans <|
