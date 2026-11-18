@@ -39,8 +39,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   the inclusion `(i(S), ∅) ⟶ (M_{c+ε}, M_{c-ε})` induces isomorphisms on relative homology.
 * `isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero`: the same for
   `(i(S), ∅) ⟶ (M_b, M_a)`, for any band `f⁻¹[a, b]` around the level as above.
-* `nonempty_singularHomology_sublevelPair_iso_of_manifoldMorseIndex_eq_zero`:
-  `Hₙ(M_b, M_a) ≅ Hₙ(S)`.
+* `singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero`: `Hₙ(S) ≅ Hₙ(M_b, M_a)`, induced by
+  `i` and the inclusion of pairs.
 
 ## The proof
 
@@ -245,9 +245,12 @@ theorem isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_ze
 /-- **The relative homology across the level of a Morse–Bott submanifold of index zero is the
 homology of the submanifold.** Under the hypotheses of
 `isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero`, for `S` in the
-universe of `M`, `Hₙ({f ≤ b}, {f ≤ a})` is isomorphic to `Hₙ(S)`, in every degree and for every
-coefficient object of an abelian category with coproducts. -/
-theorem nonempty_singularHomology_sublevelPair_iso_of_manifoldMorseIndex_eq_zero {S : Type u}
+universe of `M`, `Hₙ(S) ≅ Hₙ({f ≤ b}, {f ≤ a})`, in every degree and for every coefficient object
+of an abelian category with coproducts. The forward map is induced by `i`, followed by the quotient
+map from absolute to relative homology of `(i(S), ∅)` and by the inclusion of pairs
+`(i(S), ∅) ⟶ ({f ≤ b}, {f ≤ a})`
+(`singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero_hom`). -/
+def singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero {S : Type u}
     [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] {i : SmoothEmbedding J I ∞ S M}
     [T2Space M] [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
@@ -255,19 +258,46 @@ theorem nonempty_singularHomology_sublevelPair_iso_of_manifoldMorseIndex_eq_zero
     (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
     {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) (n : ℕ) :
-    Nonempty (((AlgebraicTopology.singularHomologyFunctor A n).obj R).obj (TopCat.of S) ≅
-      (sublevelPair f (hac.trans hcb).le).singularHomology R n) := by
+    ((AlgebraicTopology.singularHomologyFunctor A n).obj R).obj (TopCat.of S) ≅
+      (sublevelPair f (hac.trans hcb).le).singularHomology R n :=
   have : IsEmpty (TopPair.ofInclusion (X := TopCat.of M) (empty_subset (range i))).snd :=
     inferInstanceAs (IsEmpty (∅ : Set M))
-  have hπ : IsIso ((TopPair.ofInclusion (X := TopCat.of M)
-    (empty_subset (range i))).singularHomologyπ R n) := inferInstance
-  obtain ⟨p, hπp, hpπ⟩ := hπ.out
-  obtain ⟨g, hfg, hgf⟩ :=
-    (h.isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero hfs hc hidx hac
-      hcb hcompact hcrit R n).out
-  exact ⟨((AlgebraicTopology.singularHomologyFunctor A n).obj R).mapIso
+  have := h.isIso_singularHomologyMap_range_sublevelPair_of_manifoldMorseIndex_eq_zero hfs hc hidx
+    hac hcb hcompact hcrit R n
+  -- Each `asIso` is elaborated without the expected type, so that instance search sees the objects
+  -- of the pairs rather than the homology of `S` they unfold to.
+  ((AlgebraicTopology.singularHomologyFunctor A n).obj R).mapIso
       (TopCat.isoOfHomeo i.isEmbedding.toHomeomorph) ≪≫
-    ⟨_, p, hπp, hpπ⟩ ≪≫ ⟨_, g, hfg, hgf⟩⟩
+    (asIso ((TopPair.ofInclusion (X := TopCat.of M) (empty_subset (range i))).singularHomologyπ
+      R n) :) ≪≫
+    (asIso (TopPair.singularHomologyMap (TopPair.ofInclusionMap (X := TopCat.of M)
+      (Y := TopCat.of M) (empty_subset (range i)) (sublevel_mono f (hac.trans hcb).le)
+      (ContinuousMap.inclusion (range_subset_iff.2 fun s ↦ (hc s).trans_le hcb.le))
+      fun _ hx ↦ hx.elim) R n) :)
+
+/-- The forward map of `singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero` is induced by
+`i : S → i(S)`, followed by the quotient map from absolute to relative homology of `(i(S), ∅)` and
+by the inclusion of pairs `(i(S), ∅) ⟶ ({f ≤ b}, {f ≤ a})`. -/
+@[reassoc]
+theorem singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero_hom {S : Type u}
+    [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] {i : SmoothEmbedding J I ∞ S M}
+    [T2Space M] [SecondCountableTopology M] [J.Boundaryless] [Nonempty S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hidx : ∀ s, manifoldMorseIndex I f (i s) = 0) (hac : a < c)
+    (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A) (n : ℕ) :
+    (h.singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero hfs hc hidx hac hcb hcompact
+        hcrit R n).hom =
+      ((AlgebraicTopology.singularHomologyFunctor A n).obj R).map
+          (TopCat.ofHom ⟨rangeFactorization i, i.isEmbedding.continuous.rangeFactorization⟩) ≫
+        (TopPair.ofInclusion (X := TopCat.of M) (empty_subset (range i))).singularHomologyπ R n ≫
+        TopPair.singularHomologyMap (TopPair.ofInclusionMap (X := TopCat.of M)
+          (Y := TopCat.of M) (empty_subset (range i)) (sublevel_mono f (hac.trans hcb).le)
+          (ContinuousMap.inclusion (range_subset_iff.2 fun s ↦ (hc s).trans_le hcb.le))
+          fun _ hx ↦ hx.elim) R n := by
+  rw [singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero]
+  rfl
 
 end IsNondegenerateCriticalSubmanifold
 
