@@ -43,11 +43,14 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 * `TauCeti.GroupAlgGeom.Lift.coeffAtom`, `TauCeti.GroupAlgGeom.Lift.commAtom`: the atoms
   `zⱼ⁻¹ cⱼ zⱼ` and `[xᵢ, yᵢ]`.
 * `TauCeti.GroupAlgGeom.Lift.basicWord`: the word `S₀`.
+* `TauCeti.GroupAlgGeom.Lift.blockExp`: the exponents prescribed on the variables `xᵢ`, `yᵢ`,
+  `zⱼ` and zero elsewhere; the exponents of the basic automorphisms as twists.
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff`, `basicLink`, `basicY`, `basicX`, `basicComm`: the basic
   automorphisms.
 * `TauCeti.GroupAlgGeom.Lift.basicCoeffData`, `basicLinkData`, `basicYData`, `basicXData`,
   `basicCommData`: the basic automorphisms as twist data (`TauCeti.GroupAlgGeom.TwistData`), which
-  also record the word `A`; their automorphisms are the basic automorphisms
+  also record the word `A` and the exponents (`basicCoeffData_A`, `basicCoeffData_e` and the same
+  for the other four); their automorphisms are the basic automorphisms
   (`toMulAut_basicCoeffData` and the same for the other four).
 
 ## Main results
@@ -139,32 +142,34 @@ section BlockExp
 variable {x y : Fin n → X} {z : Fin m → X} {ex ey : Fin n → ℤ × ℤ} {ez : Fin m → ℤ × ℤ}
 
 /-- The exponents on `X` that are `ex i` at `x i`, `ey i` at `y i`, `ez j` at `z j` and zero at
-the other variables. -/
-private noncomputable def blockExp (x y : Fin n → X) (z : Fin m → X) (ex ey : Fin n → ℤ × ℤ)
+the other variables, when the variables `x i`, `y i`, `z j` are pairwise distinct. They are the
+exponents of the basic automorphisms as twists. -/
+noncomputable def blockExp (x y : Fin n → X) (z : Fin m → X) (ex ey : Fin n → ℤ × ℤ)
     (ez : Fin m → ℤ × ℤ) : X → ℤ × ℤ :=
   Function.extend (Sum.elim (Sum.elim x y) z) (Sum.elim (Sum.elim ex ey) ez) 0
+
+theorem blockExp_eq_zero {v : X} (hx : ∀ i, v = x i → ex i = 0)
+    (hy : ∀ i, v = y i → ey i = 0) (hz : ∀ j, v = z j → ez j = 0) :
+    blockExp x y z ex ey ez v = 0 := by
+  classical
+  have key (a) (ha : Sum.elim (Sum.elim x y) z a = v) : Sum.elim (Sum.elim ex ey) ez a = 0 := by
+    rcases a with (i | i) | j
+    exacts [hx i ha.symm, hy i ha.symm, hz j ha.symm]
+  rw [blockExp, Function.extend_def]
+  split_ifs with hv
+  exacts [key _ hv.choose_spec, rfl]
 
 variable (inj : (Sum.elim (Sum.elim x y) z).Injective)
 include inj
 
-private theorem blockExp_x (i : Fin n) : blockExp x y z ex ey ez (x i) = ex i :=
+theorem blockExp_x (i : Fin n) : blockExp x y z ex ey ez (x i) = ex i :=
   inj.extend_apply _ _ (.inl (.inl i))
 
-private theorem blockExp_y (i : Fin n) : blockExp x y z ex ey ez (y i) = ey i :=
+theorem blockExp_y (i : Fin n) : blockExp x y z ex ey ez (y i) = ey i :=
   inj.extend_apply _ _ (.inl (.inr i))
 
-private theorem blockExp_z (j : Fin m) : blockExp x y z ex ey ez (z j) = ez j :=
+theorem blockExp_z (j : Fin m) : blockExp x y z ex ey ez (z j) = ez j :=
   inj.extend_apply _ _ (.inr j)
-
-private theorem blockExp_eq_zero {v : X} (hx : ∀ i, v = x i → ex i = 0)
-    (hy : ∀ i, v = y i → ey i = 0) (hz : ∀ j, v = z j → ez j = 0) :
-    blockExp x y z ex ey ez v = 0 := by
-  by_cases hv : ∃ a, Sum.elim (Sum.elim x y) z a = v
-  · obtain ⟨(i | i) | j, rfl⟩ := hv
-    · exact (blockExp_x inj i).trans (hx i rfl)
-    · exact (blockExp_y inj i).trans (hy i rfl)
-    · exact (blockExp_z inj j).trans (hz j rfl)
-  · exact Function.extend_apply' _ _ _ hv
 
 variable {B : GX G X} (c : Fin m → G)
 
@@ -248,6 +253,10 @@ theorem basicCoeffData_A :
     (basicCoeffData inj c j j').A = coeffAtom z c j * coeffAtom z c j' := (rfl)
 
 @[simp]
+theorem basicCoeffData_e : (basicCoeffData inj c j j').e =
+    blockExp x y z 0 0 fun k => if k = j ∨ k = j' then (0, 1) else 0 := (rfl)
+
+@[simp]
 theorem basicCoeff_inl (g : G) : basicCoeff inj c j j' (inl g) = inl g := by
   simp [basicCoeff]
 
@@ -314,7 +323,7 @@ theorem basicCoeff_zpow_inr_of_right (k : ℤ) :
 theorem basicCoeff_zpow_inr_of_of_ne {v : X} (hj : v ≠ z j) (hj' : v ≠ z j') (k : ℤ) :
     (basicCoeff inj c j j' ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
   rw [basicCoeff, twist_zpow_apply, twistHom_inr_of,
-    blockExp_eq_zero inj (by simp) (by simp) (by rintro l rfl; aesop)]
+    blockExp_eq_zero (by simp) (by simp) (by rintro l rfl; aesop)]
   simp
 
 theorem basicCoeff_inr_of_of_ne {v : X} (hj : v ≠ z j) (hj' : v ≠ z j') :
@@ -391,6 +400,10 @@ theorem toMulAut_basicLinkData : (basicLinkData inj c j i).toMulAut = basicLink 
 @[simp]
 theorem basicLinkData_A :
     (basicLinkData inj c j i).A = coeffAtom z c j * (inr (.of (x i)))⁻¹ := (rfl)
+
+@[simp]
+theorem basicLinkData_e : (basicLinkData inj c j i).e =
+    blockExp x y z (Pi.single i (-1, 1)) (Pi.single i (-1, 0)) (Pi.single j (0, 1)) := (rfl)
 
 @[simp]
 theorem basicLink_inl (g : G) : basicLink inj c j i (inl g) = inl g := by
@@ -486,7 +499,7 @@ theorem basicLink_zpow_inr_of_y (k : ℤ) :
 
 theorem basicLink_zpow_inr_of_of_ne {v : X} (hz : v ≠ z j) (hx : v ≠ x i) (hy : v ≠ y i)
     (k : ℤ) : (basicLink inj c j i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicLink, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero inj
+  rw [basicLink, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hx (congrArg x h)) _)
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hy (congrArg y h)) _)
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hz (congrArg z h)) _)]
@@ -566,6 +579,10 @@ theorem toMulAut_basicYData : (basicYData (G := G) inj i).toMulAut = basicY inj 
 theorem basicYData_A : (basicYData (G := G) inj i).A = inr (.of (x i)) := (rfl)
 
 @[simp]
+theorem basicYData_e : (basicYData (G := G) inj i).e = blockExp x y z 0 (Pi.single i (1, 0)) 0 :=
+  (rfl)
+
+@[simp]
 theorem basicY_inl (g : G) : basicY inj i (inl g) = inl g := by
   simp [basicY]
 
@@ -604,7 +621,7 @@ theorem basicY_zpow_inr_of (k : ℤ) :
 
 theorem basicY_zpow_inr_of_of_ne {v : X} (hy : v ≠ y i) (k : ℤ) :
     (basicY inj i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicY, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero inj (by simp)
+  rw [basicY, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero (by simp)
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hy (congrArg y h)) _) (by simp)]
   simp
 
@@ -677,6 +694,10 @@ theorem toMulAut_basicXData : (basicXData (G := G) inj i).toMulAut = basicX inj 
 theorem basicXData_A : (basicXData (G := G) inj i).A = inr (.of (y i)) := (rfl)
 
 @[simp]
+theorem basicXData_e : (basicXData (G := G) inj i).e = blockExp x y z (Pi.single i (1, 0)) 0 0 :=
+  (rfl)
+
+@[simp]
 theorem basicX_inl (g : G) : basicX inj i (inl g) = inl g := by
   simp [basicX]
 
@@ -715,7 +736,7 @@ theorem basicX_zpow_inr_of (k : ℤ) :
 
 theorem basicX_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (k : ℤ) :
     (basicX inj i ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicX, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero inj
+  rw [basicX, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero
     (by rintro l rfl; exact Pi.single_eq_of_ne (fun h => hx (congrArg x h)) _) (by simp) (by simp)]
   simp
 
@@ -803,6 +824,11 @@ theorem toMulAut_basicCommData : (basicCommData (G := G) inj i i').toMulAut = ba
 @[simp]
 theorem basicCommData_A :
     (basicCommData (G := G) inj i i').A = inr (.of (y i)) * (inr (.of (x i')))⁻¹ := (rfl)
+
+@[simp]
+theorem basicCommData_e : (basicCommData (G := G) inj i i').e =
+    blockExp x y z (fun l => if l = i' then (-1, 1) else if l = i then (-1, 0) else 0)
+      (fun l => if l = i then (-1, 1) else if l = i' then (-1, 0) else 0) 0 := (rfl)
 
 @[simp]
 theorem basicComm_inl (g : G) : basicComm inj i i' (inl g) = inl g := by
@@ -919,7 +945,7 @@ theorem basicComm_zpow_inr_of_y_right (h : i ≠ i') (k : ℤ) :
 theorem basicComm_zpow_inr_of_of_ne {v : X} (hx : v ≠ x i) (hy : v ≠ y i) (hx' : v ≠ x i')
     (hy' : v ≠ y i') (k : ℤ) :
     (basicComm inj i i' ^ k) (inr (.of v)) = (inr (.of v) : GX G X) := by
-  rw [basicComm, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero inj
+  rw [basicComm, twist_zpow_apply, twistHom_inr_of, blockExp_eq_zero
     (by rintro l rfl; simp [show l ≠ i' from fun h => hx' (congrArg x h),
       show l ≠ i from fun h => hx (congrArg x h)])
     (by rintro l rfl; simp [show l ≠ i from fun h => hy (congrArg y h),
