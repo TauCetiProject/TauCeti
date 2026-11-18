@@ -14,6 +14,8 @@ The restriction of a bounded operator `T` to a submodule `M` is `T ∘L M.subtyp
 decreases as the submodule shrinks, and passing to the topological closure of `M` does not
 change it, since the bound `‖T x‖ ≤ C ‖x‖` cuts out a closed set. Over a densely normed field,
 the norm of the restriction is the supremum of `‖T x‖` over the vectors `x ∈ M` with `‖x‖ ≤ 1`.
+An operator within distance `1` of one fixing `M` restricts to an injective map on `M`
+(`ContinuousLinearMap.injective_comp_subtypeL_of_norm_sub_lt_one`).
 
 A bounded bilinear action preserving a submodule restricts to a bounded action on that
 submodule, with operator norm at most that of the original action.
@@ -48,6 +50,24 @@ theorem nnnorm_comp_subtypeL_topologicalClosure (T : E →L[𝕜] F) (M : Submod
   exact closure_minimal (fun y hy ↦ (T ∘L M.subtypeL).le_opNNNorm ⟨y, hy⟩) hclosed hx
 
 end Subspace
+
+section Injective
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- An operator within distance `1` of an operator fixing a submodule `M` is injective on `M`. -/
+theorem injective_comp_subtypeL_of_norm_sub_lt_one {P P₀ : E →L[𝕜] E} {M : Submodule 𝕜 E}
+    (hP₀ : ∀ v : M, P₀ v = v) (h : ‖P₀ - P‖ < 1) : Function.Injective (P ∘L M.subtypeL) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  rw [comp_apply, Submodule.subtypeL_apply] at hv
+  by_contra hv0
+  have hv0' : 0 < ‖(v : E)‖ := norm_pos_iff.2 fun h ↦ hv0 (Subtype.ext h)
+  have hle : ‖(v : E)‖ ≤ ‖P₀ - P‖ * ‖(v : E)‖ :=
+    calc ‖(v : E)‖ = ‖(P₀ - P) v‖ := by rw [sub_apply, hP₀ v, hv, sub_zero]
+      _ ≤ ‖P₀ - P‖ * ‖(v : E)‖ := (P₀ - P).le_opNorm _
+  exact lt_irrefl _ (hle.trans_lt (mul_lt_of_lt_one_left hv0' h))
+
+end Injective
 
 section DenselyNormed
 
