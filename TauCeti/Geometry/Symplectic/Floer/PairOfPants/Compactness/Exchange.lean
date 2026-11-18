@@ -245,30 +245,6 @@ variable {E G M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [IsManifold I ⊤ M] [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {H : Puncture → ℝ → M → ℝ}
 
-omit [FiniteDimensional ℝ E] [IsManifold I ⊤ M] [FiniteDimensional ℝ V] in
-/-- Read in a chart `φ`, the members of the input-exchange family are jointly `C³` in the
-parameter `c`, the domain point `z ∈ S` in real coordinates and the chart coordinate `y`: they are
-the smooth family on `ℝ × (ℂ × M)` composed with `(c, z, y) ↦ (c, (z, φ⁻¹ y))`. -/
-private theorem contDiffOn_exchangePerturbation_comp_symm (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) (w : ℂ) :
-    ContDiffOn ℝ 3 (fun q : ℝ × ((ℝ × ℝ) × V) ↦
-      exchangePerturbation H q.1 (equivRealProdCLM.symm q.2.1) (φ.symm q.2.2) w)
-      (univ ×ˢ (thricePuncturedSphereReal ×ˢ φ.target)) := by
-  have hg : ContMDiffOn 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 3
-      (fun q : ℝ × ((ℝ × ℝ) × V) ↦ (q.1, (equivRealProdCLM.symm q.2.1, φ.symm q.2.2)))
-      (univ ×ˢ (univ ×ˢ φ.target)) :=
-    contDiff_fst.contMDiff.contMDiffOn.prodMk
-      ((equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.contMDiffOn
-        |>.prodMk ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
-          (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffOn fun _ hq ↦ hq.2.2))
-  rintro ⟨c, z, y⟩ ⟨-, hz, hy⟩
-  have h := (contMDiffAt_exchangePerturbation (n := 3) hH hHs c
-    ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ (φ.symm y)).comp_contMDiffWithinAt (c, (z, y))
-    (hg _ ⟨trivial, trivial, hy⟩)
-  exact ((contMDiffWithinAt_iff_contDiffWithinAt.1 h).clm_apply contDiffWithinAt_const).mono
-    (prod_mono subset_rfl (prod_mono (subset_univ _) subset_rfl))
-
 /-- **Solutions of the input-exchange family in a symplectic chart of a manifold converge off
 finitely many bubbling points.** Let `ω` be a nondegenerate two-form on `M` and let `H_q` be
 period-one `C³` Hamiltonians on `M` with `|H_q| ≤ B_q`. Let `φ` be a smooth partial
@@ -347,13 +323,19 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ex
         TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
   set S := thricePuncturedSphereReal
-  have hK' (w : ℂ) := contDiffOn_exchangePerturbation_comp_symm hH hHs φ w
+  -- Read in the chart, the Hamiltonians are `C³` in `(c, z, y)`.
+  have hK' (w : ℂ) : ContDiffOn ℝ 3 (fun q : ℝ × ((ℝ × ℝ) × V) ↦
+      exchangePerturbation H q.1 (equivRealProdCLM.symm q.2.1) (φ.symm q.2.2) w)
+      (univ ×ˢ (S ×ˢ φ.target)) :=
+    (contDiffOn_comp_prodMap_equivRealProdCLM_symm_symm
+      (F := fun p : ℝ × (ℂ × M) ↦ exchangePerturbation H p.1 p.2.1 p.2.2)
+      (fun c z hz x ↦ contMDiffAt_exchangePerturbation hH hHs c
+        ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x) contDiff_id φ).clm_apply contDiffOn_const
   have hWt : IsOpen (W ∩ univ ×ˢ (S ×ˢ φ.target)) :=
     hW.inter (isOpen_univ.prod (isOpen_thricePuncturedSphereReal.prod φ.open_target))
-  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (S ×ˢ φ.target) := by
-    intro q hq
-    obtain ⟨x, hx, hxq⟩ := hq.2.2
-    exact ⟨hCDKW hq, trivial, hDS hq.2.1, hxq ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩
+  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (S ×ˢ φ.target) :=
+    subset_inter hCDKW (prod_mono (subset_univ _)
+      (prod_mono hDS (φ.toPartialEquiv.mapsTo.mono_left hKφ).image_subset))
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     φ (Ks := fun c z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x 1)
     (Kt := fun c z x ↦ exchangePerturbation H c (equivRealProdCLM.symm z) x Complex.I) (J := J)
