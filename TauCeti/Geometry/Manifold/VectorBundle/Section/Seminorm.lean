@@ -20,9 +20,10 @@ Composing this linear coordinate map with `ContMDiffMap.chartDerivativeSeminorm`
 `ContMDiffMap.chartCkSeminorm` gives the compact chart/frame seminorms of sections.
 These measure the actual coordinate derivatives, including order zero, without requiring
 an ambient norm on the fibres or choosing a connection. They supply the local controls
-used in smooth-section and compactly supported test-section topologies. At the centre of a chart
-on an open subset, an interior point, these chart jets are the ordinary derivatives of the
-coefficients read in the ambient chart
+used in smooth-section and compactly supported test-section topologies. The chart jet of the
+coefficients at a single coordinate point is the linear map `Bundle.Trivialization.frameJetAt`.
+At the centre of a chart on an open subset, an interior point, these chart jets are the
+ordinary derivatives of the coefficients read in the ambient chart
 (`Bundle.Trivialization.chartIteratedFDeriv_frameCoordinates_self`).
 
 The construction allows finite and infinite regularity, manifolds with corners, and
@@ -104,6 +105,24 @@ theorem frameCoordinates_eq_clmApply (e' : Trivialization F (π F V))
 
 
 variable [IsManifold I n M]
+
+/-- The chart derivative of order `m` of the frame coefficients of a section, in the chart of `U`
+at `x`, evaluated at the coordinate point `z`. -/
+def frameJetAt (x : U) (m : ℕ) (hm : m ≤ n) (z : (extChartAt I x).target) :
+    Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] E [×m]→L[𝕜] F :=
+  (ContinuousMap.evalCLM 𝕜 z).toLinearMap ∘ₗ
+    ContMDiffMap.chartIteratedFDerivLinearMap x m hm ∘ₗ frameCoordinates e hU
+
+/-- The pointwise frame jet is the chart derivative of the frame coefficients at that point. -/
+@[simp]
+theorem frameJetAt_apply (x : U) (m : ℕ) (hm : m ≤ n) (z : (extChartAt I x).target)
+    (s : Cₛ^n⟮I; F, V⟯) :
+    frameJetAt e hU x m hm z s =
+      ContMDiffMap.chartIteratedFDeriv (frameCoordinates e hU s) x m hm z := by
+  simp only [frameJetAt, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+    ContinuousMap.evalCLM_apply]
+  exact congrArg (· z) (ContMDiffMap.chartIteratedFDerivLinearMap_apply (I := I) x m hm
+    (frameCoordinates e hU s))
 
 /-- At the centre of a chart of an open subset `U` of the base set of a trivialization `e`, if the
 centre is an interior point, the chart derivatives of the frame coefficients of a section are the

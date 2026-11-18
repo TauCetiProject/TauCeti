@@ -98,16 +98,13 @@ theorem continuous_of_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top
   let z₀ : (extChartAt I x').target := ⟨extChartAt I x' x', mem_extChartAt_target x'⟩
   -- The `r`-jet at `x` of the frame coefficients, a continuous map to a finite-dimensional space.
   let J : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Π k : Fin (r + 1), E [×k]→L[ℝ] F :=
-    LinearMap.pi fun k ↦ (ContinuousMap.evalCLM ℝ z₀).toLinearMap ∘ₗ
-      ContMDiffMap.chartIteratedFDerivLinearMap x' k (hk k) ∘ₗ (e i).frameCoordinates (hU i)
+    LinearMap.pi fun k ↦ (e i).frameJetAt (hU i) x' k (hk k) z₀
   have hJk (s : Cₛ^∞⟮I; F, V⟯) (k : Fin (r + 1)) : J s k =
-      ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x' k (hk k) z₀ :=
-    congrArg (fun f ↦ f z₀) (ContMDiffMap.chartIteratedFDerivLinearMap_apply (I := I) x' k (hk k)
-      ((e i).frameCoordinates (hU i) s))
+      ContMDiffMap.chartIteratedFDeriv ((e i).frameCoordinates (hU i) s) x' k (hk k) z₀ := by
+    simp only [J, LinearMap.pi_apply, Trivialization.frameJetAt_apply]
   have hJ : Continuous J := continuous_pi fun k ↦ by
-    simp_rw [hJk]
-    exact (continuous_eval_const z₀).comp
-      (ContMDiffSection.continuous_frameJet_apply e U hU i x' k (hk k))
+    simp only [J, LinearMap.pi_apply]
+    exact ContMDiffSection.continuous_frameJetAt e U hU i x' k (hk k) z₀
   -- `Λ` vanishes on the kernel of `J`.
   have hker : LinearMap.ker J ≤ LinearMap.ker Λ := fun s hs ↦ by
     rw [LinearMap.mem_ker] at hs ⊢
@@ -222,12 +219,14 @@ private theorem continuous_chartIteratedFDeriv_frameCoordinates_apply
     (fun s ↦ (Bundle.Trivial.homeomorphProd M G).symm.continuous.comp_continuousOn
       (continuousOn_id.prodMk ((Φ s).continuous.comp_continuousOn hptS))) isCompact_singleton
     (singleton_subset_iff.2 ⟨q, hqs, rfl⟩)
-  let Λ : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] G := (ContinuousMap.evalCLM ℝ z).toLinearMap ∘ₗ Φ
+  let Λ : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] E [×m]→L[ℝ] F' := e'.frameJetAt hO x' m hm z ∘ₗ P
+  have hΛ' (s : Cₛ^∞⟮I; F, V⟯) :
+      Λ s = ContMDiffMap.chartIteratedFDeriv (e'.frameCoordinates hO (P s)) x' m hm z := by
+    simp only [Λ, LinearMap.comp_apply, Trivialization.frameJetAt_apply]
   have hΛ (s : Cₛ^∞⟮I; F, V⟯) : Λ s = P' s q := by
-    rw [hP', hptq]
-    simp only [Λ, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ContinuousMap.evalCLM_apply]
+    rw [hP', hptq, hΛ', hΦ]
   have hfun : (fun s ↦ ContMDiffMap.chartIteratedFDeriv (e'.frameCoordinates hO (P s)) x' m hm z) =
-      ⇑Λ := funext fun s ↦ (congrArg (· z) (hΦ s)).symm
+      ⇑Λ := funext fun s ↦ (hΛ' s).symm
   rw [hfun]
   exact continuous_of_apply_eq_zero_of_mem_smoothVanishingIdeal_pow_smul_top e U hU Λ
     (hcover q) BoundarylessManifold.isInteriorPoint (r := r) fun s hs ↦
@@ -259,16 +258,11 @@ theorem continuous_of_apply_eq_zero_of_eventuallyEq [I.Boundaryless] [LindelofSp
   have : CompactSpace K := isCompact_iff_compactSpace.mp K.isCompact
   -- The seminorm is the supremum over `K` of the norms of pointwise continuous functionals.
   let p (z : K) : Seminorm ℝ Cₛ^∞⟮I; F, V⟯ :=
-    (normSeminorm ℝ (E [×m]→L[ℝ] F')).comp
-      ((ContinuousMap.evalCLM ℝ (z : (extChartAt I x').target)).toLinearMap ∘ₗ
-        ContMDiffMap.chartIteratedFDerivLinearMap x' m hm ∘ₗ (e' j).frameCoordinates (hU' j) ∘ₗ P)
+    (normSeminorm ℝ (E [×m]→L[ℝ] F')).comp ((e' j).frameJetAt (hU' j) x' m hm z ∘ₗ P)
   have hp (z : K) (s : Cₛ^∞⟮I; F, V⟯) : p z s =
       ‖ContMDiffMap.chartIteratedFDeriv ((e' j).frameCoordinates (hU' j) (P s)) x' m hm z‖ := by
     simp only [p, Seminorm.comp_apply, coe_normSeminorm, LinearMap.comp_apply,
-      ContinuousLinearMap.coe_coe, ContinuousMap.evalCLM_apply]
-    exact congrArg (fun f ↦ ‖f (z : (extChartAt I x').target)‖)
-      (ContMDiffMap.chartIteratedFDerivLinearMap_apply (I := I) x' m hm
-        ((e' j).frameCoordinates (hU' j) (P s)))
+      Trivialization.frameJetAt_apply]
   have hpc (z : K) : Continuous (p z) := by
     simp_rw [funext (hp z)]
     exact (continuous_chartIteratedFDeriv_frameCoordinates_apply e U hU P hloc hcover (e' j)
