@@ -32,6 +32,7 @@ normed spaces:
   `a`.
 * `TauCeti.norm_inv_sqrt_smul_sq`: scaling a vector by `(√a)⁻¹`, `a ≥ 0`, divides its squared
   norm by `a`.
+* `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
@@ -106,6 +107,12 @@ theorem norm_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace �
 theorem norm_inv_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {a : ℝ}
     (ha : 0 ≤ a) (x : E) : ‖(√a)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / a := by
   simp [norm_smul, mul_pow, Real.sq_sqrt ha, div_eq_inv_mul]
+
+/-- The sign `(-1) ^ n` does not change norms. -/
+@[simp]
+theorem norm_neg_one_pow_smul {R G : Type*} [SeminormedRing R] [NormOneClass R] [Norm G]
+    [SMul R G] [NormSMulClass R G] (n : ℕ) (y : G) : ‖(-1 : R) ^ n • y‖ = ‖y‖ := by
+  rcases neg_one_pow_eq_or R n with h | h <;> simp [h, norm_smul]
 
 /-- The ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when `u` and `v` are scaled by the same nonzero
 scalar. -/
