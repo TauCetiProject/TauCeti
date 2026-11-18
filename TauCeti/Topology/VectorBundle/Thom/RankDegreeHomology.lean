@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.MayerVietoris.RankDegree
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
+import TauCeti.Topology.Category.TopCat.Limits.Basic
 import TauCeti.Topology.Connected.PathConnected
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 
@@ -342,7 +343,8 @@ private theorem thomPairSingularHomologyFinrankInv_restrict (hg : IsLocalFiberGe
 variable (F E) in
 /-- The inclusions of the finite unions of the chosen trivializing open sets into the base. -/
 private def baseFiniteTrivializingUnionCocone :
-    Cocone ((monotone_biUnion_baseSet_trivializationAt F E).functor ⋙ Set.functorToTopCat) where
+    Cocone ((monotone_biUnion_baseSet_trivializationAt F E).functor ⋙
+      TopCat.subspaceDiagram (A := (id : Set B → Set B)) monotone_id) where
   pt := TopCat.of B
   ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
 
@@ -365,8 +367,8 @@ over these the map is an isomorphism by the Mayer–Vietoris argument. -/
 private theorem isIso_thomPairSingularHomologyFinrankInv (hg : IsLocalFiberGenerator K F E g ε) :
     IsIso (thomPairSingularHomologyFinrankInv hg) :=
   isIso_of_isColimit_biUnion_baseSet
-    (A := Set.functorToTopCat (X := B) ⋙ (singularHomologyFunctor (ModuleCat.{w} K) 0).obj
-      (ModuleCat.of K K))
+    (A := TopCat.subspaceDiagram (A := (id : Set B → Set B)) monotone_id ⋙
+      (singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K))
     (ψ := thomPairOverSingularHomologyFinrankInv hg) le_rfl
     (fun h ↦ thomPairOverSingularHomologyFinrankInv_naturality hg h)
     (fun _ _ ↦ epi_biprod_desc_singularHomologyMap_inclusion _ _ _)
