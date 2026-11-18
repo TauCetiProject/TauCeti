@@ -174,8 +174,7 @@ theorem mk_add_mul (z v : ℂ) (ω : L) :
 /-- The projection of the flat line to the torus `ℂ / L`, induced by `(z, v) ↦ z`. -/
 def proj : FlatLine ψ → AddAction.orbitRel.Quotient L ℂ :=
   Quotient.lift (fun p ↦ Quotient.mk _ p.1) fun p q ⟨ω, h⟩ ↦
-    Quotient.sound ⟨FlatLineLattice.toLattice ψ ω, by
-      simp [← h, Submodule.vadd_def, add_comm]⟩
+    L.orbitRelQuotient_mk_eq_mk_iff.2 (by simp [← h])
 
 @[simp]
 theorem proj_mk (p : ℂ × ℂ) :
@@ -216,12 +215,11 @@ private theorem mk_fiberCoord {z : ℂ} {x : FlatLine ψ}
     (hx : proj x = Quotient.mk (AddAction.orbitRel L ℂ) z) :
     Quotient.mk _ (z, fiberCoord z x) = x := by
   obtain ⟨⟨z', v'⟩, rfl⟩ := Quotient.mk_surjective x
-  obtain ⟨γ, hγ⟩ := Quotient.exact hx
+  obtain ⟨γ, hγ⟩ : ∃ γ : L, (γ : ℂ) = z' - z :=
+    ⟨⟨_, L.orbitRelQuotient_mk_eq_mk_iff.1 hx⟩, rfl⟩
   have h : ∃ v, (Quotient.mk _ (z', v') : FlatLine ψ) = Quotient.mk _ (z, v) := by
     refine ⟨(ψ γ : ℂ)⁻¹ * v', ?_⟩
-    rw [← mk_add_mul z _ γ, mul_inv_cancel_left₀ (Circle.coe_ne_zero _)]
-    congr 2
-    simpa [Submodule.vadd_def, add_comm] using hγ.symm
+    rw [← mk_add_mul z _ γ, mul_inv_cancel_left₀ (Circle.coe_ne_zero _), hγ, add_sub_cancel]
   rw [fiberCoord, dite_eq_left h]
   exact h.choose_spec.symm
 
@@ -266,9 +264,8 @@ private theorem mdifferentiableAt_fiberCoord {X : Type*} [TopologicalSpace X] [C
     filter_upwards [hmk, hsrc] with x' h₁ h₂
     have h₄ : proj (u x') = Quotient.mk _ (c (u x')).1 := by conv_lhs => rw [← h₁, proj_mk]
     rw [h₄] at h₂ ⊢
-    obtain ⟨γ, hγ⟩ := Quotient.exact (addQuotientMk_apply_of_mem_atlas_addQuotient he h₂)
-    rw [← hγ]
-    simp [Submodule.vadd_def]
+    exact L.orbitRelQuotient_mk_eq_mk_iff.1
+      (addQuotientMk_apply_of_mem_atlas_addQuotient he h₂)
   have hδc : ContinuousAt (fun x' ↦ e (proj (u x')) - (c (u x')).1) x :=
     (ContinuousAt.comp (f := fun x' ↦ proj (u x')) (e.continuousAt hx) hproj).sub
       hlift.continuousAt.fst
@@ -290,6 +287,11 @@ private theorem mdifferentiableAt_fiberCoord {X : Type*} [TopologicalSpace X] [C
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X] [T2Space X] [ConnectedSpace X] {u : X → FlatLine ψ}
 
+omit [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [T2Space X] [ConnectedSpace X] in
+private theorem mdifferentiable_proj_comp (hu : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, ℂ × ℂ) u) :
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) fun x ↦ proj (u x) := fun x ↦
+  ((contMDiff_proj ⊤).mdifferentiable (by simp) _).comp x (hu x)
+
 omit [T2Space X] in
 /-- A nonconstant holomorphic map from a compact connected Riemann surface to the flat line has a
 projection to the torus which is constant near no point: otherwise the projection is constant,
@@ -299,7 +301,7 @@ private theorem not_eventuallyConst_proj_comp (hu : MDifferentiable 𝓘(ℂ) �
     (hne : ∃ x x', u x ≠ u x') (x₁ : X) : ¬EventuallyConst (fun x ↦ proj (u x)) (𝓝 x₁) := by
   intro hx₁
   have hconst : ∀ x', proj (u x') = proj (u x₁) := RiemannSurface.apply_eq_of_eventuallyConst
-    (fun x ↦ ((contMDiff_proj ⊤).mdifferentiable (by simp) _).comp x (hu x)) hx₁
+    (mdifferentiable_proj_comp hu) hx₁
   set e := chartAt ℂ (proj (u x₁))
   have hg : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) fun x' ↦ fiberCoord (e (proj (u x'))) (u x') := fun x' ↦
     mdifferentiableAt_fiberCoord (hu x') (chart_mem_atlas _ _)
@@ -323,7 +325,7 @@ they are holomorphic sections of the `j`-th power of the flat line. -/
 private theorem fiberEsymm_add (hfin : ∀ y, ((fun x ↦ proj (u x)) ⁻¹' {y}).Finite) (j : ℕ)
     (z : ℂ) (ω : L) : fiberEsymm u j (z + ω) = (ψ ω : ℂ) ^ j * fiberEsymm u j z := by
   have hz : (Quotient.mk (AddAction.orbitRel L ℂ) (z + ω)) = Quotient.mk _ z :=
-    Quotient.sound ⟨ω, by simp [Submodule.vadd_def, add_comm]⟩
+    L.orbitRelQuotient_mk_eq_mk_iff.2 (by simp)
   rw [fiberEsymm, fiberEsymm, hz, ← smul_eq_mul, Multiset.pow_smul_esymm, Multiset.map_map]
   congr 1
   refine Multiset.map_congr rfl fun x hx ↦ ?_
@@ -336,8 +338,7 @@ translate of `z₀` by a lattice vector, and quasi-periodicity moves the conclus
 private theorem differentiable_fiberEsymm (hu : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, ℂ × ℂ) u)
     (hne : ∃ x x', u x ≠ u x') (j : ℕ) : Differentiable ℂ (fiberEsymm u j) := by
   intro z₀
-  have hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) fun x ↦ proj (u x) := fun x ↦
-    ((contMDiff_proj ⊤).mdifferentiable (by simp) _).comp x (hu x)
+  have hf := mdifferentiable_proj_comp hu
   have hnc := not_eventuallyConst_proj_comp hu hne
   have hfin := RiemannSurface.finite_preimage_singleton hf hnc
   set e := chartAt ℂ (Quotient.mk (AddAction.orbitRel L ℂ) z₀)
@@ -357,10 +358,10 @@ private theorem differentiable_fiberEsymm (hu : MDifferentiable 𝓘(ℂ) 𝓘(�
     rw [((RiemannSurface.mem_fiberMultiset (hfin _)).1 hx').1,
       ← chartAt_addQuotient_symm_eq_addQuotientMk _ hw, e.right_inv hw]
   -- The coordinate of the chart is a translate `z₀ + γ` of `z₀` by a lattice vector.
-  obtain ⟨γ, hγ⟩ := Quotient.exact (addQuotientMk_chartAt_self (Quotient.mk
-    (AddAction.orbitRel L ℂ) z₀))
+  obtain ⟨γ, hγ⟩ : ∃ γ : L, (γ : ℂ) = e (Quotient.mk _ z₀) - z₀ :=
+    ⟨⟨_, L.orbitRelQuotient_mk_eq_mk_iff.1 (addQuotientMk_chartAt_self _)⟩, rfl⟩
   have hd : DifferentiableAt ℂ (fiberEsymm u j) (z₀ + γ) := by
-    rw [← hγ.symm.trans (by simp [Submodule.vadd_def, add_comm] : _ = z₀ + γ)]
+    rw [hγ, add_sub_cancel]
     exact (RiemannSurface.analyticAt_esymm_map_fiberMultiset hf hnc
       (IsManifold.chart_mem_maximalAtlas _) (mem_chart_source _ _) hg j).congr heq
       |>.differentiableAt
@@ -375,18 +376,12 @@ private theorem differentiable_fiberEsymm (hu : MDifferentiable 𝓘(ℂ) 𝓘(�
 `ψ` be a unitary character of a full lattice `L` of infinite order, so that no positive power of
 the flat line `N` of `ψ` over the torus `ℂ / L` is trivial; this holds as soon as one holonomy
 `ψ ω₀` has infinite order. Let `u : X → N` be a nonconstant holomorphic map from a compact
-connected Riemann surface. Then every point of `u` lies on the zero section `{[(z, 0)]}`.
-
-If the projection of `u` to the torus is a branched covering of degree `m`, the elementary
-symmetric functions of the fibre coordinates of `u` along its fibres are holomorphic sections of
-`N ^ j`, `1 ≤ j ≤ m`; these vanish, so all fibre coordinates vanish. A curve inside one fibre is
-constant, by the maximum principle. -/
+connected Riemann surface. Then every point of `u` lies on the zero section `{[(z, 0)]}`. -/
 theorem exists_eq_mk_zero_of_mdifferentiable [IsZLattice ℝ L]
     (hu : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, ℂ × ℂ) u) (hne : ∃ x x', u x ≠ u x') (hψ : ¬IsOfFinOrder ψ)
     (x : X) :
     ∃ z : ℂ, u x = Quotient.mk _ (z, 0) := by
-  have hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) fun x ↦ proj (u x) := fun x ↦
-    ((contMDiff_proj ⊤).mdifferentiable (by simp) _).comp x (hu x)
+  have hf := mdifferentiable_proj_comp hu
   have hnc := not_eventuallyConst_proj_comp hu hne
   have hfin := RiemannSurface.finite_preimage_singleton hf hnc
   -- A flat line with no trivial positive power has no nonzero holomorphic section.
