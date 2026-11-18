@@ -267,10 +267,11 @@ private theorem eventually_variationMeasure_preimage_le (hn : 2 ≤ finrank ℝ 
   set P := {y : E | ⟪y, outerNormal volume Ω s x⟫ = 0}
   have hδ2 : δ / 2 ≠ 0 := (ENNReal.half_pos hδ.ne').ne'
   let V : Opens E := ⟨ball 0 R \ C, isOpen_ball.sdiff hC⟩
+  have hV : (V : Set E) = ball 0 R \ C := Opens.coe_mk
   -- `a = Hⁿ⁻¹(ball 0 R ∩ ν⊥)` splits as `b + m` along `V` and `C`.
   have habm : μHE[k] (ball (0 : E) R ∩ P) = μHE[k] ((V : Set E) ∩ P) + μHE[k] (C ∩ P) := by
     rw [← measure_inter_add_sdiff (ball (0 : E) R ∩ P) hC.measurableSet, inter_right_comm,
-      inter_eq_right.2 hCR, inter_sdiff_right_comm, add_comm, Opens.coe_mk]
+      inter_eq_right.2 hCR, inter_sdiff_right_comm, add_comm, hV]
   have hatop := euclideanHausdorffMeasure_ball_zero_inter_setOf_inner_outerNormal_ne_top hx hR
   set b := μHE[k] ((V : Set E) ∩ P)
   set m := μHE[k] (C ∩ P)
@@ -283,20 +284,20 @@ private theorem eventually_variationMeasure_preimage_le (hn : 2 ≤ finrank ℝ 
     have hbtop : b ≠ ∞ := ne_top_of_le_ne_top hatop (by rw [habm]; exact le_self_add)
     obtain ⟨b', h1, h2⟩ := exists_between (ENNReal.sub_lt_self hbtop hb hδ2)
     exact ⟨b', ne_top_of_lt h2, tsub_le_iff_right.1 h1.le,
-      eventually_mul_le_variationMeasure_preimage hn hx (isBounded_ball.subset sdiff_subset) h2⟩
+      eventually_mul_le_variationMeasure_preimage hn hx
+        (isBounded_ball.subset (hV.trans_subset sdiff_subset)) h2⟩
   filter_upwards [hlow, eventually_variationMeasure_preimage_ball_le hn hx hR hδ2]
     with r hlow hball
   -- The rescaled `C` and `V` make up the rescaled `ball 0 R`.
   have hU : ((↑) : Ω → E) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' C) ∪
       (↑) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' (V : Set E)) =
         (↑) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' ball 0 R) := by
-    rw [← preimage_union, ← preimage_union]
-    exact congrArg _ (congrArg _ (union_sdiff_cancel hCR))
+    rw [← preimage_union, ← preimage_union, hV, union_sdiff_cancel hCR]
   have hdisj : Disjoint (((↑) : Ω → E) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' C))
-      ((↑) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' (V : Set E))) :=
-    (disjoint_sdiff_right.preimage _).preimage _
+      ((↑) ⁻¹' ((fun z => r⁻¹ • (z - x)) ⁻¹' (V : Set E))) := by
+    rw [hV]; exact (disjoint_sdiff_right.preimage _).preimage _
   rw [← hU, measure_union hdisj
-    (measurableSet_preimage_inv_smul_sub (isOpen_ball.sdiff hC).measurableSet r)] at hball
+    (measurableSet_preimage_inv_smul_sub V.isOpen.measurableSet r)] at hball
   refine ENNReal.le_of_add_le_add_right
     (ENNReal.mul_ne_top (ENNReal.ofReal_ne_top (r := r ^ k)) hb'top) ?_
   calc _ ≤ _ := add_le_add_right hlow _
