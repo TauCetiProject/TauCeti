@@ -39,6 +39,7 @@ action of `M` on `D φ` is the adjugate action on `φ`, transposed. Applied to t
 
 * `TauCeti.binaryFormRep_op_mul_apply`: the action is on the right, `P ∣ (M * N) =
   (P ∣ M) ∣ N`.
+* `TauCeti.eval_binaryFormRep_apply`: `(P ∣ M)(x) = P(M x)`.
 * `TauCeti.binaryFormRep_op_neg`, `TauCeti.binaryFormRep_op_scalar`,
   `TauCeti.binaryFormRep_upperTriangular_X_one_pow`: negated, scalar, and upper-triangular
   matrices act by `(-1)ʷ`, by the `w`th power of the scalar, and (on `Yʷ`) by `dʷ`.
@@ -103,6 +104,13 @@ theorem coe_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
     (binaryFormRep R w (op M) P : MvPolynomial (Fin 2) R) =
       linearSubst (M.map (Int.cast : ℤ → R)) P := by
   simp [binaryFormRep]
+
+/-- The value of `P ∣ M` at `x` is the value of `P` at `M x`. -/
+theorem eval_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
+    (P : homogeneousSubmodule (Fin 2) R w) (x : Fin 2 → R) :
+    eval x (binaryFormRep R w (op M) P : MvPolynomial (Fin 2) R) =
+      eval (M.map (Int.cast : ℤ → R) *ᵥ x) (P : MvPolynomial (Fin 2) R) := by
+  rw [coe_binaryFormRep_apply, eval_linearSubst]
 
 /-- The action is on the right: `P ∣ (M * N) = (P ∣ M) ∣ N`. -/
 theorem binaryFormRep_op_mul_apply (M N : Matrix (Fin 2) (Fin 2) ℤ)
@@ -316,8 +324,8 @@ private theorem binaryFormRep_binaryFormDual_of_infinite_domain [IsDomain R] [In
       binaryFormDual R w (φ ∘ₗ binaryFormAdjugateRep R w M) := by
   apply Subtype.ext
   refine MvPolynomial.funext fun v ↦ ?_
-  rw [coe_binaryFormRep_apply, eval_linearSubst, eval_binaryFormDual, eval_binaryFormDual,
-    LinearMap.comp_apply, binaryFormAdjugateRep_apply, binaryFormRep_adjugate_linearFormPow]
+  rw [eval_binaryFormRep_apply, eval_binaryFormDual, eval_binaryFormDual, LinearMap.comp_apply,
+    binaryFormAdjugateRep_apply, binaryFormRep_adjugate_linearFormPow]
 
 /-- **Equivariance of `D`.** For every integral matrix `M`, `(D φ) ∣ M =
 `D (φ ∘ (· ∣ adj M))`: the action of `M` on the binary form attached to `φ` is the transpose of
