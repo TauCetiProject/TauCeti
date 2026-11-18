@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Glue
+public import TauCeti.CategoryTheory.Exact.Functor
 public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.CategoryTheory.ObjectProperty.Shift
@@ -34,6 +35,7 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
   through conflations.
 * `TauCeti.ExactStructure.acyclic`: the acyclic complexes of an exact structure, characterized by
   `TauCeti.ExactStructure.acyclic_iff`.
+* `TauCeti.ExactStructure.AcyclicData.map`: acyclicity data mapped by a conflation-exact functor.
 
 ## Main results
 
@@ -46,6 +48,8 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 * `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`: a complex mapping to an acyclic
   complex by an isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing
   above, is acyclic.
+* `TauCeti.ExactStructure.IsConflationExact.map_acyclic`: a conflation-exact functor preserves
+  acyclic complexes.
 
 ## References
 
@@ -509,6 +513,29 @@ theorem acyclic_mappingCone_of_iso {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} 
     E.acyclic (CochainComplex.mappingCone φ₁) :=
   E.acyclic.prop_of_iso (HomologicalComplex.homotopyCofiber.mapArrowIso φ₂ φ₁
     (fun j ↦ ⟨j - 1, by simp⟩) (Arrow.isoMk a b comm.symm).symm) h
+
+section Functor
+
+variable {D : Type*} [Category D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+  {E} {E' : ExactStructure D} {F : C ⥤ D} [F.Additive]
+
+/-- Acyclicity data mapped by a conflation-exact functor: the cycles, inflations and deflations
+are the images under `F`. -/
+def AcyclicData.map (hF : E.IsConflationExact E' F) {K : CochainComplex C ℤ}
+    (h : E.AcyclicData K) : E'.AcyclicData ((F.mapHomologicalComplex (.up ℤ)).obj K) where
+  Z n := F.obj (h.Z n)
+  i n := F.map (h.i n)
+  p n := F.map (h.p n)
+  zero n := by rw [← F.map_comp, h.zero, F.map_zero]
+  conflation n := hF.map_conflation (h.conflation n)
+  fac n := by rw [← F.map_comp, h.fac]; rfl
+
+/-- **A conflation-exact functor preserves acyclic complexes.** -/
+theorem IsConflationExact.map_acyclic (hF : E.IsConflationExact E' F) {K : CochainComplex C ℤ}
+    (hK : E.acyclic K) : E'.acyclic ((F.mapHomologicalComplex (.up ℤ)).obj K) :=
+  (((E.acyclic_iff K).1 hK).some.map hF).acyclic
+
+end Functor
 
 end ExactStructure
 
