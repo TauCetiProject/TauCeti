@@ -73,8 +73,9 @@ private theorem IsNullSet.preimage_inter_of_isSubmersionAt_of_subset_interior
     have hc : ContinuousAt (θ ∘ e.symm) (e p) :=
       (hθ p hpA).contMDiffAt.continuousAt.comp_of_eq (continuousAt_extChartAt_symm' hpe)
         (e.left_inv hpe)
-    refine mem_nhdsWithin_of_mem_nhds
-      (show (θ ∘ e.symm) ⁻¹' (extChartAt I (θ p)).source ∈ 𝓝 (e p) from ?_)
+    apply mem_nhdsWithin_of_mem_nhds
+    dsimp only [V]
+    rw [← Set.preimage_comp]
     refine hc.preimage_mem_nhds ?_
     rw [comp_apply, e.left_inv hpe]
     exact extChartAt_source_mem_nhds (θ p)
