@@ -20,6 +20,8 @@ contains such a free group.
 
 ## Main results
 
+* `TauCeti.not_hasFoelnerSets_freeGroup`: a free group on at least two generators has no Følner
+  sets.
 * `TauCeti.not_amenable_freeGroup`: a free group on at least two generators is not amenable as a
   discrete group.
 * `TauCeti.not_amenable_of_injective_freeGroup`: a discrete group containing a free group on at
@@ -35,6 +37,11 @@ public section
 namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+
+/-- A free group on at least two generators has no Følner sets. -/
+theorem not_hasFoelnerSets_freeGroup {α : Type*} [Nontrivial α] :
+    ¬ HasFoelnerSets (FreeGroup α) :=
+  fun h => hasFoelnerSets_iff_not_paradoxical_univ.1 h FreeGroup.paradoxical_univ
 
 /-- A free group on at least two generators is not amenable as a discrete group. -/
 theorem not_amenable_freeGroup {α : Type*} [Nontrivial α] [TopologicalSpace (FreeGroup α)]
