@@ -17,17 +17,23 @@ For an element `p` of an additive group that is not of finite additive order, th
 the ambient group to be torsion-free. A homomorphism into a torsion-free additive group is
 injective on `zmultiples p` whenever it is nonzero at `p`. If `n ↦ n • g` identifies `ℤ` with a
 group `H`, then any element that an additive endomorphism of `H` sends to `g` is `g` up to a unit
-of `ℤ`, and every surjective additive endomorphism of `H` is an involution.
+of `ℤ`, and every surjective additive endomorphism of `H` is an involution. Free generation
+`n ↦ n • g` is transported along additive equivalences, and generation of the whole group is
+transported along surjective additive maps.
 
 ## Main declarations
 
 * `TauCeti.intEquivZMultiples`: the isomorphism `ℤ ≃+ zmultiples p` for a non-torsion `p`.
+* `TauCeti.zmultiples_apply_eq_top_of_surjective`: a surjective additive map sends a generator
+  of the source to a generator of the target.
 * `AddMonoidHom.comp_zmultiples_subtype_injective`: injectivity on a cyclic subgroup when
   its generator has nonzero image in a torsion-free group.
 * `AddMonoidHom.exists_eq_units_smul_of_map_eq`: in an infinite cyclic group with generator `g`,
   an element sent to `g` by an additive endomorphism is a unit multiple of `g`.
 * `AddMonoidHom.involutive_of_surjective`: a surjective additive endomorphism of an infinite cyclic
   group is `±1`, hence an involution.
+* `AddEquiv.bijective_zmultiplesHom_apply_iff`: `n ↦ n • f a` is bijective exactly when
+  `n ↦ n • a` is, for an additive equivalence `f`.
 -/
 
 public section
@@ -59,6 +65,15 @@ theorem intEquivZMultiples_symm_mk_zsmul (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
 theorem intEquivZMultiples_symm_zsmul (hp : ¬ IsOfFinAddOrder p) (a : zmultiples p) :
     (intEquivZMultiples hp).symm a • p = (a : G) := by
   rw [← intEquivZMultiples_apply hp, AddEquiv.apply_symm_apply]
+
+/-- A surjective additive map sends an element whose `ℤ`-multiples exhaust the source to an element
+whose `ℤ`-multiples exhaust the target. -/
+theorem zmultiples_apply_eq_top_of_surjective {F H : Type*} [AddGroup H] [FunLike F G H]
+    [AddMonoidHomClass F G H] {g : F} (hg : Function.Surjective g) (hp : zmultiples p = ⊤) :
+    zmultiples (g p) = ⊤ := by
+  rw [← AddMonoidHom.coe_ofClass g, ← AddMonoidHom.map_zmultiples, hp, ← AddMonoidHom.range_eq_map,
+    AddMonoidHom.range_eq_top]
+  exact hg
 
 end TauCeti
 
@@ -101,3 +116,17 @@ theorem involutive_of_surjective {H : Type*} [AddCommGroup H] (f : H →+ H) {g 
   rcases Int.units_eq_one_or ε with rfl | rfl <;> simp [hfg]
 
 end AddMonoidHom
+
+namespace AddEquiv
+
+/-- An additive equivalence `f` transports free generation: `n ↦ n • f a` is bijective exactly
+when `n ↦ n • a` is. -/
+theorem bijective_zmultiplesHom_apply_iff {A B : Type*} [AddGroup A] [AddGroup B] (f : A ≃+ B)
+    (a : A) :
+    Function.Bijective (zmultiplesHom B (f a)) ↔ Function.Bijective (zmultiplesHom A a) := by
+  have h : ⇑(zmultiplesHom B (f a)) = f ∘ zmultiplesHom A a := by
+    funext n
+    rw [Function.comp_apply, zmultiplesHom_apply, zmultiplesHom_apply, map_zsmul]
+  rw [h, EquivLike.comp_bijective]
+
+end AddEquiv

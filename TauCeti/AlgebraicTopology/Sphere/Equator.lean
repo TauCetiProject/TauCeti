@@ -68,19 +68,12 @@ open scoped unitInterval ContinuousMap
 
 namespace TauCeti
 
-section Seminormed
-
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-
-omit [NormedSpace ℝ E] in
 /-- The unit sphere minus two antipodal points is invariant under the antipodal map. -/
-theorem neg_mem_compl_singleton_inter_compl_singleton_neg {p x : sphere (0 : E) 1}
-    (hx : x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1))) :
+theorem neg_mem_compl_singleton_inter_compl_singleton_neg {E : Type*} [SeminormedAddCommGroup E]
+    {p x : sphere (0 : E) 1} (hx : x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1))) :
     -x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)) := by
   simp only [Set.mem_inter_iff, Set.mem_compl_singleton_iff] at hx ⊢
   exact ⟨fun h ↦ hx.2 (neg_eq_iff_eq_neg.mp h), fun h ↦ hx.1 (neg_inj.mp h)⟩
-
-end Seminormed
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -224,7 +217,8 @@ private lemma zerothHomotopy_mk_equatorHomotopyEquiv_symm
       ZerothHomotopy.mk x :=
   ZerothHomotopy.sound ((equatorHomotopyEquiv p).left_inv.some.evalAt x)
 
-variable {p} in
+variable {p}
+
 /-- **A punctured sphere has no third arc.** On the unit sphere of a real inner product space
 minus two antipodal points `p` and `-p`, every point lies in the path component of `x` or in that
 of `-x`. In dimension two these are the two distinct arcs of the circle
@@ -262,20 +256,16 @@ theorem zerothHomotopy_mk_eq_or_eq_neg {x : sphere (0 : E) 1}
       ((PathConnectedSpace.somePath (equatorHomotopyEquiv p y)
         (equatorHomotopyEquiv p ⟨x, hx⟩)).map (equatorHomotopyEquiv p).symm.continuous)
 
-section Circle
-
-variable {p} (hE : finrank ℝ E = 2)
-include hE
-
 /-- In dimension two the equator is a zero-sphere. -/
-private lemma finrank_orthogonal_span_eq_one : finrank ℝ (ℝ ∙ (p : E))ᗮ = 1 :=
+private lemma finrank_orthogonal_span_eq_one (hE : finrank ℝ E = 2) :
+    finrank ℝ (ℝ ∙ (p : E))ᗮ = 1 :=
   have : Fact (finrank ℝ E = 1 + 1) := ⟨hE⟩
   Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p)
 
 /-- **The two arcs of a punctured circle are distinct.** On the unit circle of a two-dimensional
 real inner product space minus two antipodal points `p` and `-p`, a point `x` and its antipode
 `-x` lie in distinct path components. -/
-theorem zerothHomotopy_mk_neg_ne_of_finrank_eq_two {x : sphere (0 : E) 1}
+theorem zerothHomotopy_mk_neg_ne_of_finrank_eq_two (hE : finrank ℝ E = 2) {x : sphere (0 : E) 1}
     (hx : x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1))) :
     ZerothHomotopy.mk (⟨-x, neg_mem_compl_singleton_inter_compl_singleton_neg hx⟩ :
         ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1))) ≠
@@ -285,8 +275,6 @@ theorem zerothHomotopy_mk_neg_ne_of_finrank_eq_two {x : sphere (0 : E) 1}
   rw [equatorHomotopyEquiv_neg p hx] at hj
   exact zerothHomotopy_mk_neg_ne (finrank_orthogonal_span_eq_one hE)
     (equatorHomotopyEquiv p ⟨x, hx⟩) (Quotient.sound hj)
-
-end Circle
 
 /-! ### The standard collapse onto the equator orthogonal to a vector -/
 

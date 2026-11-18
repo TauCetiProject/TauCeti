@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import Mathlib.Probability.Moments.IntegrableExpMul
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -173,7 +174,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
     · exact fun x hx => by simp only [g, indicator_of_mem (hsub q hq hx), Pi.sub_apply]
     · rw [pow_succ, mul_assoc]
   -- Off the cubes, `‖f - c‖ ≤ 2M` almost everywhere.
-  have hae := ae_le_of_forall_notMem_calderonZygmundCubes hgm hg' ht0
+  have hae := ae_le_of_forall_notMem_calderonZygmundCubes hgm le_rfl
+    (by simpa only [ENNReal.rpow_one] using hg') ht0
   -- Hence, up to a null set, the superlevel set at `2ⁿ⁺¹ (N + 1) M` lies in the union over the
   -- cubes `Q'` of the superlevel sets at `2ⁿ⁺¹ N M` of `‖f - f_{Q'}‖` on `Q'`.
   refine ⟨C, hsub, ?_, ?_⟩
@@ -191,8 +193,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
           refine ⟨q, hq, hxq, lt_of_not_ge fun hle => hxS.2.not_ge ?_⟩
           calc ‖f x - c‖ₑ
               ≤ ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ +
-                  ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume - c‖ₑ := by
-                simpa only [eDist_eq_eNorm_sub] using edist_triangle (f x) _ c
+                  ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume - c‖ₑ :=
+                eNorm_sub_le_eNorm_sub_add_eNorm_sub _ _ _
             _ ≤ 2 ^ (n + 1) * N * M + 2 ^ (n + 1) * M := add_le_add hle (havg q hq)
             _ = 2 ^ (n + 1) * ↑(N + 1) * M := by push_cast; ring
         · push Not at hmem

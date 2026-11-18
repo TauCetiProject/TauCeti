@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.MeasureEstimate
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.KrylovSafonov
 import Mathlib.Analysis.SpecialFunctions.Log.Base
-import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
 import TauCeti.Basic.ENNReal.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 
@@ -53,6 +54,8 @@ only makes the right-hand side smaller, so the smallness of `f` is needed at the
   superlevel sets `{u ≥ Mʲ⁺¹}` in a dyadic cube.
 * `TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`: the power decay
   `|{u ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|`.
+* `TauCeti.PDE.exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul`: the same power
+  decay for a cube translated to be centred at an arbitrary point.
 
 ## References
 
@@ -337,6 +340,72 @@ theorem exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul {κ : ℝ} (hκ : 0 
       exact (measure_mono (inter_subset_inter_left _ (ofPred_subset_ofPred.2 fun _ hx ↦
         hMt.trans hx))).trans (H hc hR ha hLam hcont hu hnonneg hsuper hf hx j)
   exact hvol.trans (by gcongr)
+
+/-- **The power decay about an arbitrary centre.** The power decay
+`TauCeti.PDE.exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul`, stated for dyadic cubes about
+their own centres, transported by the translation `x ↦ x + d` that takes the centre
+`c₀ = (2ᵏ / 2, …, 2ᵏ / 2)` of `dyadicCube k 0` to an arbitrary point `c`. -/
+theorem exists_volume_setOf_le_comp_add_inter_dyadicCube_le_rpow_mul {κ : ℝ}
+    (hκ : 0 < κ) :
+    ∃ C ε ε₀ : ℝ, 0 < C ∧ 0 < ε ∧ 0 < ε₀ ∧
+      ∀ ⦃lam Lam R : ℝ⦄ ⦃k : ℤ⦄ ⦃c : EuclideanSpace ℝ ι⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃u f : EuclideanSpace ℝ ι → ℝ⦄,
+        4 * 2 ^ k * √(Fintype.card ι) ≤ R →
+        UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
+        ContinuousOn u (closedBall c R) → ContDiffOn ℝ 2 u (ball c R) →
+        (∀ x ∈ closedBall c R, 0 ≤ u x) →
+        (∀ x ∈ ball c R, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ f x) →
+        ENNReal.ofReal R * eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
+          (volume.restrict (ball c R)) ≤ ENNReal.ofReal (ε₀ * lam) →
+        (∃ x ∈ ball c (2 * 2 ^ k * √(Fintype.card ι)), u x ≤ 1) →
+        ∀ ⦃t : ℝ⦄, 0 < t →
+          volume ({x | t ≤ u (x + (c - WithLp.toLp 2 fun _ ↦ 2⁻¹ * 2 ^ k))} ∩
+            WithLp.ofLp ⁻¹' dyadicCube k 0) ≤
+            ENNReal.ofReal (C * t ^ (-ε)) *
+              volume (WithLp.ofLp ⁻¹' dyadicCube k 0 : Set (EuclideanSpace ℝ ι)) := by
+  obtain ⟨C, ε, ε₀, hC, hε, hε₀, H⟩ :=
+    exists_volume_setOf_le_inter_dyadicCube_le_rpow_mul (ι := ι) hκ
+  refine ⟨C, ε, ε₀, hC, hε, hε₀, ?_⟩
+  intro lam Lam R k c a u f hR ha hLam hcont hu hnonneg hsuper hf hx t ht
+  set c₀ : EuclideanSpace ℝ ι := WithLp.toLp 2 fun _ ↦ 2⁻¹ * 2 ^ k
+  set d := c - c₀
+  have hd (x : EuclideanSpace ℝ ι) : dist (x + d) c = dist x c₀ := dist_add_sub_eq x c c₀
+  have hball : MapsTo (· + d) (ball c₀ R) (ball c R) := fun x hx ↦ by
+    rw [mem_ball, hd]
+    exact hx
+  have hcball : MapsTo (· + d) (closedBall c₀ R) (closedBall c R) := fun x hx ↦ by
+    rw [mem_closedBall, hd]
+    exact hx
+  have hpre : (· + d) ⁻¹' ball c R = ball c₀ R := by
+    ext x
+    simp only [mem_preimage, mem_ball, hd]
+  have he : MeasurableEmbedding (· + d : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) :=
+    measurableEmbedding_addRight d
+  have hfd : eLpNorm (fun x ↦ (f (x + d))⁺) (Fintype.card ι) (volume.restrict (ball c₀ R)) =
+      eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball c R)) := by
+    rw [← hpre]
+    -- Present the integrand as a composition with the translation, the form of
+    -- `MeasurableEmbedding.eLpNorm_map_measure`; the two agree by beta reduction.
+    change eLpNorm ((fun x ↦ (f x)⁺) ∘ (· + d)) _ _ = _
+    rw [← he.eLpNorm_map_measure, ← he.restrict_map, map_add_right_eq_self]
+  have ha' : UniformlyEllipticOn (ball c₀ R) (fun x ↦ a (x + d)) lam Lam :=
+    .of_bounds ha.pos ha.le (fun _ hx ξ ↦ ha.lower_bound (hball hx) ξ)
+      (fun _ hx η ξ ↦ ha.upper_bound (hball hx) η ξ)
+  refine H (m := 0) (c := c₀) (a := fun x ↦ a (x + d)) (u := fun x ↦ u (x + d))
+    (f := fun x ↦ f (x + d)) (by simp [c₀]) hR
+    ha' hLam
+    (hcont.comp (continuous_id.add continuous_const).continuousOn hcball)
+    (hu.comp (contDiff_id.add contDiff_const).contDiffOn hball)
+    (fun x hx ↦ hnonneg _ (hcball hx)) (fun x hx ↦ ?_) (by rwa [hfd]) ?_ ht
+  · have h1 : fderiv ℝ (fun y ↦ u (y + d)) = fun y ↦ fderiv ℝ u (y + d) :=
+      funext fun y ↦ fderiv_comp_add_right d
+    rw [h1, fderiv_comp_add_right d]
+    exact hsuper _ (hball hx)
+  · obtain ⟨x, hx, hux⟩ := hx
+    refine ⟨x - d, ?_, by simpa using hux⟩
+    rw [mem_ball, ← hd, sub_add_cancel]
+    exact hx
 
 end PDE
 

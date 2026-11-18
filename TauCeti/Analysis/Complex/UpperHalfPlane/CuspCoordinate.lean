@@ -300,6 +300,19 @@ theorem tendsto_qParam_atImInfty {w : ℝ} (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ 𝔢 w z) atImInfty (𝓝[≠] 0) :=
   (Function.Periodic.qParam_tendsto hw).comp tendsto_coe_atImInfty
 
+/-- The q-parameter of positive width, as a function on `ℍ`, maps the filter at `i∞` onto the
+punctured neighbourhood of zero. -/
+theorem map_qParam_atImInfty {w : ℝ} (hw : 0 < w) :
+    Filter.map (fun z : ℍ ↦ 𝔢 w z) atImInfty = 𝓝[≠] 0 := by
+  refine le_antisymm (tendsto_qParam_atImInfty hw) fun s hs ↦ ?_
+  obtain ⟨A, hA⟩ := (atImInfty_mem _).mp (mem_map.mp hs)
+  filter_upwards [(Function.Periodic.invQParam_tendsto hw).eventually
+      (preimage_mem_comap (Ici_mem_atTop (max A 1))), self_mem_nhdsWithin] with q hq hq0
+  have him : 0 < (Function.Periodic.invQParam w q).im :=
+    zero_lt_one.trans_le ((le_max_right _ _).trans hq)
+  have hqq := hA ⟨_, him⟩ ((le_max_left _ _).trans hq)
+  rwa [Set.mem_preimage, Function.Periodic.qParam_right_inv hw.ne' hq0] at hqq
+
 /-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
 theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ))

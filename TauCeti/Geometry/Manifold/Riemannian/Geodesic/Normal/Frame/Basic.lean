@@ -117,16 +117,10 @@ theorem contMDiffOn_normalOrthonormalFrame (h : IsNormalDomain I M p U)
       fun q ↦ gramSchmidtNormed ℝ (fun j ↦ normalCoordinateField I M p U (b j) q) i :=
     funext (normalOrthonormalFrame_def b i)
   rw [heq]
-  intro q hq
-  let v : ι → Π q : M, TangentSpace I q := fun j ↦ normalCoordinateField I M p U (b j)
-  have hv (j : ι) : CMDiffAt ∞ (T% (v j)) q :=
-    (h.contMDiffOn_normalCoordinateField (b j)).contMDiffAt (h.isOpen_image.mem_nhds hq)
-  have hi : LinearIndependent ℝ (fun j ↦ v j q) :=
-    h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent hq
-  apply ContMDiffAt.contMDiffWithinAt
-  apply ContMDiffAt.gramSchmidtNormed_bundle (I := I) (F := E) (v := v) (j := i)
-  · exact hv
-  · exact hi
+  exact ContMDiffOn.gramSchmidtNormed_bundle (I := I) (F := E) i
+    (fun j _ ↦ h.contMDiffOn_normalCoordinateField (b j))
+    (fun q hq ↦ (h.linearIndependent_normalCoordinateField
+      b.orthonormal.linearIndependent hq).linearIndepOn _)
 
 /-- Normal orthonormal frame sections form a smooth local frame in Mathlib's sense. -/
 theorem isLocalFrameOn_normalOrthonormalFrame (h : IsNormalDomain I M p U)

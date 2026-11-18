@@ -60,9 +60,12 @@ namespace IsCyclotomicExtension
 namespace Rat
 
 /-- A prime dividing the discriminant of an `m`-th cyclotomic extension of `ℚ` divides `m`. -/
-theorem prime_dvd_of_dvd_natAbs_discr (E : Type*) [Field E] [NumberField E] (m : ℕ) [NeZero m]
+theorem prime_dvd_of_dvd_natAbs_discr (E : Type*) [Field E] [NumberField E] (m : ℕ)
     [IsCyclotomicExtension {m} ℚ E] {p : ℕ} (hp : p.Prime)
     (hpd : p ∣ (NumberField.discr E).natAbs) : p ∣ m := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · exact dvd_zero p
+  have : NeZero m := ⟨hm⟩
   refine hp.dvd_of_dvd_pow (n := m.totient) (hpd.trans ?_)
   obtain ⟨c, hc⟩ := Nat.prod_primeFactors_pow_totient_ediv_dvd m
   rw [IsCyclotomicExtension.Rat.natAbs_discr (K := E) (n := m), hc,

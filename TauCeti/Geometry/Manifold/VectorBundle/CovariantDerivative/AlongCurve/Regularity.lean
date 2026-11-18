@@ -54,11 +54,10 @@ variable
 /-- Near a parameter where the curve and section lift are `C¹`, the reading of the native
 covariant derivative in any fixed chart is its defining fixed-chart coordinate formula. -/
 theorem eventuallyEq_sectionCoord_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
-    (hs : UniqueDiffOn 𝕜 s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hV : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s t) :
-    sectionCoord (F := E) γ (alongCurveWithin cov γ V s) x =ᶠ[𝓝[s] t]
+    sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) x =ᶠ[𝓝[s] t]
       alongCurveInChartWithin cov γ V s x := by
   let e := trivializationAt E (TangentSpace I) x
   have hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I 1 γ s t :=
@@ -66,14 +65,14 @@ theorem eventuallyEq_sectionCoord_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x 
       (n := 1)).contMDiffAt.comp_contMDiffWithinAt t hV
   have hbase := hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)
   have hγ' : ∀ᶠ r in 𝓝[s] t, ContMDiffWithinAt 𝓘(𝕜, 𝕜) I 1 γ s r := by
-    simpa only [insert_eq_of_mem ht] using
-      (contMDiffWithinAt_iff_contMDiffWithinAt_nhdsWithin (by norm_num)).1 hγ
+    exact ((contMDiffWithinAt_iff_contMDiffWithinAt_nhdsWithin (by norm_num)).1 hγ).filter_mono
+      (nhdsWithin_mono t (subset_insert t s))
   have hV' : ∀ᶠ r in 𝓝[s] t, ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s r := by
-    simpa only [insert_eq_of_mem ht] using
-      (contMDiffWithinAt_iff_contMDiffWithinAt_nhdsWithin (by norm_num)).1 hV
-  filter_upwards [self_mem_nhdsWithin, hbase, hγ', hV'] with r hr hxr hγr hVr
-  have hread := symmL_alongCurveInChartWithin cov γ V hxr (hs r hr)
+    exact ((contMDiffWithinAt_iff_contMDiffWithinAt_nhdsWithin (by norm_num)).1 hV).filter_mono
+      (nhdsWithin_mono t (subset_insert t s))
+  filter_upwards [hbase, hγ', hV'] with r hxr hγr hVr
+  have hread := symmL_alongCurveInChartWithin cov γ V hxr
     (hγr.mdifferentiableWithinAt (by norm_num))
     (differentiableWithinAt_sectionCoord γ V
       (hVr.mdifferentiableWithinAt (by norm_num))
@@ -102,7 +101,7 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
       (n := n + 1)).contMDiffAt.comp_contMDiffWithinAt t hV
   have hn : n ≤ n + 1 := le_self_add
   have h1 : (1 : ℕ∞ω) ≤ n + 1 := le_add_of_nonneg_left (zero_le : 0 ≤ n)
-  have hv : ContDiffWithinAt 𝕜 (n + 1) (sectionCoord (F := E) γ V x) s t :=
+  have hv : ContDiffWithinAt 𝕜 (n + 1) (sectionCoord 𝕜 (F := E) γ V x) s t :=
     (contDiffWithinAt_sectionCoord_iff γ V hγ hx).2 hV
   have hu : ContDiffWithinAt 𝕜 (n + 1) (extChartAt I x ∘ γ) s t :=
     ((contMDiffAt_extChartAt' (by
@@ -123,7 +122,7 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
   apply (contDiffWithinAt_sectionCoord_iff γ (alongCurveWithin cov γ V s)
     (hγ.of_le hn) hx).1
   exact hcoord.congr_of_eventuallyEq_of_mem
-    (eventuallyEq_sectionCoord_alongCurveWithin cov γ V hs ht hx
+    (eventuallyEq_sectionCoord_alongCurveWithin cov γ V hx
       (hV.of_le h1)) ht
 
 /-- On a parameter set with unique derivatives, differentiating a `C^(n + 1)` section lift
