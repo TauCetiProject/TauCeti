@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
+public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Weak
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
@@ -73,6 +74,9 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
 
 ## Main results
 
+* `TauCeti.exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp`: the Cauchy integral
+  equation `g = ½ (1 + T g) D` on a closed disc, for a coefficient `D` that is `Lᵖ` on the disc
+  with small norm.
 * `TauCeti.exists_similarity_of_hasWeakConjWirtingerDerivOn`: the local factorization `ξ = Φ σ`
   on a disc, for continuous weak solutions with locally `Lᵖ` coefficient, `p > 2`.
 * `TauCeti.hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn`: the factorization in the
@@ -103,9 +107,11 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
 /-! ### The Cauchy integral equation -/
+
+section CauchyEquation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The source term `½ Ψ D` of the Cauchy integral equation, for `Ψ` given on the closed disc
 and extended by `0`. -/
@@ -220,8 +226,9 @@ whose Cauchy transform is continuous and satisfies `g = ½ (1 + T g) D` on the d
 `‖T g‖ < 1` there. So `Ψ = 1 + T g` is a continuous family of invertible maps on the disc solving
 `bar∂Ψ = ½ Ψ D`. It is the fixed point of the contraction `Ψ ↦ 1 + T (½ Ψ D)` of the continuous
 maps on the disc. -/
-private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ → E →L[ℂ] E} {c : ℂ}
-    {r K : ℝ} {p q : ℝ≥0∞} [p.HolderConjugate q] (hq : q < 2) (hK : 0 ≤ K)
+theorem exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp [CompleteSpace E]
+    {D : ℂ → E →L[ℂ] E} {c : ℂ} {r K : ℝ} {p q : ℝ≥0∞} [p.HolderConjugate q] (hq : q < 2)
+    (hK : 0 ≤ K)
     (hT : ∀ f : ℂ → E →L[ℂ] E, MemLp f p volume → support f ⊆ closedBall c r →
       ∀ w ∈ closedBall c r, ‖cauchyTransform f w‖ ≤ K * (eLpNorm f p volume).toReal)
     (hD : MemLp D p (volume.restrict (closedBall c r)))
@@ -230,7 +237,6 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
       Continuous (cauchyTransform g) ∧
       (∀ z ∈ closedBall c r, g z = (2 : ℂ)⁻¹ • (1 + cauchyTransform g z).comp (D z)) ∧
       ∀ z ∈ closedBall c r, ‖cauchyTransform g z‖ < 1 := by
-  have := FiniteDimensional.completeSpace ℂ E
   have hTΨ := norm_cauchyTransform_cauchySource_le hK hT hD hKD
   have hcont (Ψ : C(closedBall c r, E →L[ℂ] E)) :
       Continuous (cauchyTransform (cauchySource D Ψ)) :=
@@ -265,6 +271,10 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
   · calc ‖cauchyTransform g z‖ ≤ 4⁻¹ * ‖Ψ₀‖ := hTΨ Ψ₀ hz
       _ ≤ 4⁻¹ * (4 / 3) := by gcongr
       _ < 1 := by norm_num
+
+end CauchyEquation
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
 
 /-! ### The similarity principle -/
 
@@ -319,8 +329,9 @@ private theorem exists_closedBall_cauchyTransform_eq [FiniteDimensional ℂ E] {
       (w : ℂ) (hw : w ∈ closedBall z₀ r) :
       ‖cauchyTransform f w‖ ≤ K * (eLpNorm f p volume).toReal :=
     norm_cauchyTransform_le hq hf (hfs.trans hsub) (hsub hw)
-  exact ⟨r, hr, hsubΩ,
-    exists_cauchyTransform_eq hq hK hT (hCr'.rankOneDivNormSq_apply (𝕜 := ℂ) hξm) hKD⟩
+  have := FiniteDimensional.completeSpace ℂ E
+  exact ⟨r, hr, hsubΩ, exists_eq_two_inv_smul_one_add_cauchyTransform_comp_of_memLp hq hK hT
+    (hCr'.rankOneDivNormSq_apply (𝕜 := ℂ) hξm) hKD⟩
 
 /-- The value of `bar∂ (Ψ ξ)` vanishes where `bar∂ξ = ½ (-C ξ)` and `bar∂Ψ = ½ Ψ D`, for
 `Ψ = 1 + T` and `D ξ = C ξ`. -/
