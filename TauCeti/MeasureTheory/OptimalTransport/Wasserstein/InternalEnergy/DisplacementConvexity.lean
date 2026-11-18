@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 /-!
 # McCann's displacement convexity of internal energies
 
-Let `E` be a real inner product space of finite dimension `n ≥ 1` with an additive Haar measure
+Let `E` be a real inner product space of finite dimension `n` with an additive Haar measure
 `ρ`, and let `U : ℝ → ℝ` satisfy `U 0 = 0` and **McCann's condition**:
 
   `s ↦ sⁿ U(s⁻ⁿ)` is convex and nonincreasing on `(0, ∞)`.
@@ -341,8 +341,22 @@ private theorem internalEnergy_map_smul_add_smul_gradient_le_of_hessian [Nontriv
   · rw [hHS x hxS'] at h0
     simp [hr0x hxS' h0 hrec] at hr
 
+omit [FiniteDimensional ℝ E] [BorelSpace E] [ρ.IsAddHaarMeasure] in
+/-- In a subsingleton space every map is the identity, so the interpolation is trivial and the
+convexity inequality is that of a single energy. -/
+private theorem internalEnergy_map_smul_add_smul_le_of_subsingleton [Subsingleton E]
+    (μ : Measure E) (G : E → E) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+    internalEnergy U ρ (μ.map fun x => (1 - t) • x + t • G x) ≤
+      ((1 - t : ℝ) : EReal) * internalEnergy U ρ μ +
+        (t : EReal) * internalEnergy U ρ (μ.map G) := by
+  have hid : ∀ g : E → E, g = id := fun g => funext fun x => Subsingleton.elim _ _
+  rw [hid (fun x => (1 - t) • x + t • G x), hid G, Measure.map_id]
+  refine le_of_eq ?_
+  rw [← EReal.right_distrib_of_nonneg (EReal.coe_nonneg.2 (sub_nonneg.2 ht.2))
+    (EReal.coe_nonneg.2 ht.1), ← EReal.coe_add, sub_add_cancel, EReal.coe_one, one_mul]
+
 /-- **McCann's displacement convexity of internal energies.** Let `E` be a real inner product space
-of finite dimension `n ≥ 1` with an additive Haar measure `ρ`, and let `U : ℝ → ℝ` satisfy
+of finite dimension `n` with an additive Haar measure `ρ`, and let `U : ℝ → ℝ` satisfy
 `U 0 = 0` and McCann's condition: `s ↦ sⁿ U(s⁻ⁿ)` is convex and nonincreasing on `(0, ∞)`. Let
 `f : E → EReal` be convex (convex real epigraph, never `⊥`), with real representative `F`, and let
 `μ` be a σ-finite measure, absolutely continuous with respect to `ρ` and carried by the interior of
@@ -351,7 +365,7 @@ the effective domain of `f`. Then the internal energy is convex along the interp
 `𝓤(μₜ) ≤ (1 - t) 𝓤(μ) + t 𝓤((∇F)₊ μ)` for `t ∈ [0, 1]`, provided neither endpoint has energy `⊥`.
 The endpoint `(∇F)₊ μ` need not be absolutely continuous; its singular part is charged at the
 recession constant `U'(∞)`. -/
-theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 = 0)
+theorem internalEnergy_map_smul_add_smul_gradient_le (hU0 : U 0 = 0)
     (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
     (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {μ : Measure E}
@@ -362,6 +376,8 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
     internalEnergy U ρ (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) ≤
       ((1 - t : ℝ) : EReal) * internalEnergy U ρ μ +
         (t : EReal) * internalEnergy U ρ (μ.map (∇ fun x' => (f x').toReal)) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact internalEnergy_map_smul_add_smul_le_of_subsingleton ρ μ _ ht
   set D := interior {x | f x ≠ ⊤}
   set G := ∇ fun x' => (f x').toReal
   -- After the trivial endpoints `t = 0, 1` and the case where the endpoint has energy `⊤`, all
@@ -397,13 +413,12 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
         (pow_mul_apply_inv_pow_le_recessionConstant (finrank_pos.ne') ha one_pos))).symm
 
 /-- **McCann's displacement convexity in the quadratic Wasserstein space.** Let `E` be a real
-inner product space of finite dimension `n ≥ 1` with an additive Haar measure `ρ`, and let `U`
+inner product space of finite dimension `n` with an additive Haar measure `ρ`, and let `U`
 satisfy `U 0 = 0` and McCann's condition: `s ↦ sⁿ U(s⁻ⁿ)` is convex and nonincreasing on
 `(0, ∞)`. For laws `μ, ν` of finite second moment with `μ ≪ ρ`, the internal energy is convex along
 McCann's displacement interpolation, a geodesic of `P₂(E)` from `μ` to `ν`, provided neither
 endpoint has energy `⊥`. -/
-theorem WassersteinSpace.exists_isGeodesicSegment_convexAlong_internalEnergy [Nontrivial E]
-    (hU0 : U 0 = 0)
+theorem WassersteinSpace.exists_isGeodesicSegment_convexAlong_internalEnergy (hU0 : U 0 = 0)
     (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
     (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
     {μ ν : WassersteinSpace 2 E} (hμ : ((μ : ProbabilityMeasure E) : Measure E) ≪ ρ)
