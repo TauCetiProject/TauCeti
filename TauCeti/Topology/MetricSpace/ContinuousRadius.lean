@@ -30,10 +30,14 @@ of that parameter space. This uses Mathlib's generalized tube lemma, its compact
 diagonal/uniformity comparison, and the same convex selection theorem. The radii control
 individual steps of local transports, without averaging invertible operators.
 
-Similarly, an open subset of `ℝ × X` containing `{0} × X` contains a tube
-`{(t, x) | |t| < ε x}` of positive continuous width over a normal paracompact space `X`
-(`IsOpen.exists_continuous_pos_forall_abs_lt`). This is the shape of a collar of variable width
-around a noncompact hypersurface.
+Similarly, an open subset of `X × Y` containing the graph of a continuous map `F : X → Y` into a
+pseudometric space contains `{(x, y) | dist y (F x) < δ x}` for a positive continuous function `δ`
+on a normal paracompact space `X` (`IsOpen.exists_continuous_pos_forall_dist_lt`). This is the
+variable radius of a relative approximation whose straight-line homotopy must stay in a prescribed
+open set. For the zero map into `ℝ` it says that an open subset of `ℝ × X` containing `{0} × X`
+contains a tube `{(t, x) | |t| < ε x}` of positive continuous width
+(`IsOpen.exists_continuous_pos_forall_abs_lt`), the shape of a collar of variable width around a
+noncompact hypersurface.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Theorem 6.24, the variable-radius shrinking argument.
@@ -127,21 +131,37 @@ theorem exists_continuous_pos_forall_dist_le [NormalSpace X] [ParacompactSpace X
   obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
   exact ⟨δ, fun x ↦ (hδ x).1, fun x ↦ (hδ x).2⟩
 
+/-- **A neighbourhood of positive continuous width around a graph.** Over a normal paracompact
+space `X`, an open subset of `X × Y` containing the graph of a continuous map `F` into a
+pseudometric space `Y` contains `{(x, y) | dist y (F x) < δ x}` for some positive continuous
+function `δ`. No compactness of `X` is needed. -/
+theorem exists_continuous_pos_forall_dist_lt [NormalSpace X] [ParacompactSpace X]
+    {Y : Type*} [PseudoMetricSpace Y] {U : Set (X × Y)} (hU : IsOpen U) {F : X → Y}
+    (hF : Continuous F) (hFU : ∀ x, (x, F x) ∈ U) :
+    ∃ δ : C(X, ℝ), (∀ x, 0 < δ x) ∧ ∀ (x : X) (y : Y), dist y (F x) < δ x → (x, y) ∈ U := by
+  let R (x : X) : Set ℝ := {r | 0 < r ∧ ∀ y : Y, dist y (F x) < r → (x, y) ∈ U}
+  have hconv (x : X) : Convex ℝ (R x) := OrdConnected.convex
+    ⟨fun _ ha _ hb _ hc ↦ ⟨ha.1.trans_le hc.1, fun y hy ↦ hb.2 y (hy.trans_le hc.2)⟩⟩
+  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ x' in 𝓝 x, c ∈ R x' := by
+    obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.mp (hU.mem_nhds (hFU x))
+    obtain ⟨c, hc, hcv⟩ := Metric.mem_nhds_iff.mp hv
+    refine ⟨c / 2, ?_⟩
+    filter_upwards [hu, (hF.tendsto x).eventually (Metric.ball_mem_nhds (F x) (half_pos hc))]
+      with x' hx' (hFx' : dist (F x') (F x) < c / 2)
+    refine ⟨half_pos hc, fun y hy ↦ huv ⟨hx', hcv ?_⟩⟩
+    rw [Metric.mem_ball]
+    linarith [dist_triangle y (F x') (F x)]
+  obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
+  exact ⟨δ, fun x ↦ (hδ x).1, fun x ↦ (hδ x).2⟩
+
 /-- **A tube of positive continuous width.** Over a normal paracompact space `X`, an open subset
 of `ℝ × X` containing `{0} × X` contains the tube `{(t, x) | |t| < ε x}` of some positive
 continuous function `ε`. No compactness of `X` is needed. -/
 theorem exists_continuous_pos_forall_abs_lt [NormalSpace X] [ParacompactSpace X]
     {U : Set (ℝ × X)} (hU : IsOpen U) (h0 : ∀ x, (0, x) ∈ U) :
     ∃ ε : C(X, ℝ), (∀ x, 0 < ε x) ∧ ∀ (x : X) (t : ℝ), |t| < ε x → (t, x) ∈ U := by
-  let R (x : X) : Set ℝ := {r | 0 < r ∧ ∀ t : ℝ, |t| < r → (t, x) ∈ U}
-  have hconv (x : X) : Convex ℝ (R x) := OrdConnected.convex
-    ⟨fun _ ha _ hb _ hc ↦ ⟨ha.1.trans_le hc.1, fun t ht ↦ hb.2 t (ht.trans_le hc.2)⟩⟩
-  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ R y := by
-    obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.mp (hU.mem_nhds (h0 x))
-    obtain ⟨c, hc, hcu⟩ := Metric.mem_nhds_iff.mp hu
-    exact ⟨c, Filter.mem_of_superset hv fun y hy ↦ ⟨hc, fun t ht ↦
-      huv ⟨hcu (by rwa [Metric.mem_ball, Real.dist_0_eq_abs]), hy⟩⟩⟩
-  obtain ⟨ε, hε⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
-  exact ⟨ε, fun x ↦ (hε x).1, fun x ↦ (hε x).2⟩
+  obtain ⟨ε, hε, hεU⟩ := (hU.preimage continuous_swap).exists_continuous_pos_forall_dist_lt
+    continuous_const h0
+  exact ⟨ε, hε, fun x t ht ↦ hεU x t (by rwa [Real.dist_eq, sub_zero])⟩
 
 end IsOpen
