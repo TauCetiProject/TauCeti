@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.LinearAlgebra.Submodule.Independent
 public import TauCeti.Algebra.Lie.Sl2.RangeKer
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute

@@ -248,8 +248,7 @@ variable (X)
 def totalSpaceForgetIso :
     totalSpace X ⋙ (isGeometricVectorBundle X).ι ⋙ QuasicoherentLinearScheme.forget X ≅
       totalSpaceScheme X :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦
-    (Category.comp_id _).trans (Category.id_comp _).symm
+  Iso.refl _
 
 /-- The comparison `totalSpaceForgetIso` is the identity on each object. -/
 @[simp]

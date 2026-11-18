@@ -5,138 +5,105 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Torus.Conjugacy
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.Group
-import Mathlib.RepresentationTheory.Stabilizer
-import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
+import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
-# Adjoint orbits through the Lie algebra of a maximal torus
+# Adjoint orbits meet the Lie algebra of a maximal torus in Weyl orbits
 
 Let `T` be a maximal torus of a compact Lie group `G`, with Lie algebra `𝔱 ⊆ 𝔤`. Every adjoint
-orbit of `G` on `𝔤` meets `𝔱` (`TauCeti.Lie.IsMaximalTorus.exists_Ad_mem_lieSubalgebraOfSubgroup`).
-This file shows that it meets `𝔱` in exactly one orbit of the normalizer `N(T)`, so in exactly one
-orbit of the Weyl group `N(T) / T` acting on `𝔱` by the adjoint representation.
+orbit of `G` meets `𝔱` (`TauCeti.Lie.IsMaximalTorus.exists_Ad_mem_lieSubalgebraOfSubgroup`). This
+file proves that it meets `𝔱` in exactly one orbit of the Weyl group `W = N(T) / T`: two elements
+`X, Y ∈ 𝔱` with `Ad_g X = Y` are related by the adjoint action of an element of the normalizer
+`N(T)`.
 
-The argument is the Lie algebra analogue of the one for conjugacy classes in
-`TauCeti.Geometry.Lie.Subgroup.Weyl.ConjugacyClasses`. Let `X, Y ∈ 𝔱` with `Ad_g X = Y`. The
-torus `T` fixes `Y`, since it is commutative and `Y ∈ 𝔱`, and the conjugate torus `g T g⁻¹` fixes
-`Ad_g X = Y` for the same reason. Both are connected, so they lie in the identity component
-`Z_G(Y)⁰` of the closed stabilizer `Z_G(Y) = {h | Ad_h Y = Y}`, and they are maximal tori of `G`
-there. Maximal tori lying in a closed subgroup are conjugate by an element of its identity component
-(`TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_map_conj_eq_of_le`), so some
-`c ∈ Z_G(Y)⁰` conjugates `g T g⁻¹` to `T`. Then `c g` normalizes `T` and still sends `X` to
-`Ad_c Y = Y`. Neither `G` nor the stabilizer `Z_G(Y)` needs to be connected: the conjugating element
-`c` is found in the identity component regardless.
+The argument is the Lie algebra form of the one for conjugacy classes in
+`TauCeti.Geometry.Lie.Subgroup.Weyl.ConjugacyClasses`. Let `Z_G(Y) = {h ∈ G | Ad_h Y = Y}` be the
+stabilizer of `Y` in the adjoint representation; it is the centralizer of the one-parameter
+subgroup `t ↦ exp (t Y)`, hence a closed subgroup
+(`TauCeti.Lie.isClosed_stabilizer_continuousAdjointRepresentation`). Both `T` and `g T g⁻¹` lie
+in the identity component `Z_G(Y)⁰`: they are connected, and they fix `Y = Ad_g X` because `T`
+is commutative and `X, Y ∈ 𝔱`. Both are maximal tori of `G`, so they are conjugate by some
+`c ∈ Z_G(Y)⁰`, and then `c g ∈ N(T)` with `Ad_(c g) X = Ad_c Y = Y`. Neither `G` nor the full
+centralizer `Z_G(Y)` needs to be connected, and the conjugating element `c` is found in the
+identity component of `Z_G(Y)`.
 
 ## Main results
 
-* `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_mul_mem_normalizer`: if `Ad_g X = Y`
-  for `X, Y ∈ 𝔱`, then `c g ∈ N(T)` for some `c` in the identity component of the stabilizer of
-  `Y`, and `Ad_(c g) X = Y`.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_stabilizer_mul_mem_normalizer`: if
+  `Ad_g X = Y` with `X, Y ∈ 𝔱`, then `c g ∈ N(T)` for some `c ∈ Z_G(Y)⁰`.
 * `TauCeti.Lie.IsMaximalTorus.exists_mem_normalizer_Ad_eq`: elements of `𝔱` in one adjoint orbit
   are in one orbit of `N(T)`.
-* `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_apply_eq`: they are in one orbit of
-  the Weyl group.
-* `TauCeti.Lie.IsMaximalTorus.range_Ad_inter_lieSubalgebraOfSubgroup`: the adjoint orbit of `X ∈ 𝔱`
-  meets `𝔱` exactly in the `N(T)`-orbit of `X`.
+* `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_iff`: two elements of `𝔱` lie in
+  one adjoint orbit of `G` exactly when they lie in one orbit of the Weyl group.
+* `TauCeti.Lie.IsMaximalTorus.range_Ad_inter_lieSubalgebraOfSubgroup`: the adjoint orbit of
+  `X ∈ 𝔱` meets `𝔱` exactly in the `N(T)`-orbit of `X`.
 
 ## References
 
 * T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
-  Chapter IV, § 2.
-* J. J. Duistermaat and J. A. C. Kolk, *Lie Groups*, Springer Universitext (2000), Section 3.7.
+  Chapter IV.
 -/
 
 public section
-
-open scoped ContDiff Manifold
 
 noncomputable section
 
 namespace TauCeti.Lie
 
+open scoped ContDiff Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
+
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-  [T2Space G] [CompactSpace G]
+/-! ### Weyl orbits in the Lie algebra of a maximal torus -/
 
-include I
+section Compact
 
-/-- The stabilizer `{h | Ad_h Y = Y}` of an element of the Lie algebra under the adjoint
-representation. -/
-private abbrev adStabilizer (Y : LeftInvariantDerivation I G) : Subgroup G :=
-  Representation.stabilizer (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation Y
+variable [CompactSpace G]
 
-omit [CompactSpace G] in
-private theorem coe_adStabilizer (Y : LeftInvariantDerivation I G) :
-    (adStabilizer I Y : Set G) = {h | Ad (I := I) h Y = Y} := by
-  ext h
-  simp [ContRepresentation.toMonoidHom_apply]
-
-omit [CompactSpace G] in
-private theorem isClosed_adStabilizer (Y : LeftInvariantDerivation I G) :
-    IsClosed (adStabilizer I Y : Set G) := by
-  rw [coe_adStabilizer]
-  have hcont : Continuous fun h : G ↦ Ad (I := I) h Y :=
-    (contMDiff_Ad_apply (I := I) (G := G)).continuous.comp
-      (continuous_id.prodMk continuous_const)
-  exact isClosed_eq hcont continuous_const
-
-/-- **Adjoint conjugacy in the Lie algebra of a maximal torus is realized in its normalizer.** Let
-`T` be a maximal torus of a compact Lie group and let `X, Y` lie in its Lie algebra `𝔱`. If
-`Ad_g X = Y`, then `c g` normalizes `T` for some `c` in the identity component of the stabilizer
-`Z_G(Y) = {h | Ad_h Y = Y}`, and `Ad_(c g) X = Y`. -/
-theorem IsMaximalTorus.exists_mem_connectedComponentIn_mul_mem_normalizer {T : Subgroup G}
-    (hT : IsMaximalTorus T) {X Y : LeftInvariantDerivation I G}
+/-- **Adjoint conjugacy in a torus Lie algebra is realized in the normalizer.** If `Ad_g X = Y`
+for `X, Y` in the Lie algebra of a maximal torus `T` of a compact Lie group, then `c g` normalizes
+`T` for some `c` in the identity component of the adjoint stabilizer `Z_G(Y)`; in particular
+`Ad_(c g) X = Y`. -/
+theorem IsMaximalTorus.exists_mem_connectedComponentIn_stabilizer_mul_mem_normalizer
+    {T : Subgroup G} (hT : IsMaximalTorus T) {X Y : LeftInvariantDerivation I G}
     (hX : X ∈ lieSubalgebraOfSubgroup (I := I) T) (hY : Y ∈ lieSubalgebraOfSubgroup (I := I) T)
     {g : G} (hg : Ad (I := I) g X = Y) :
-    ∃ c ∈ connectedComponentIn {h : G | Ad (I := I) h Y = Y} 1,
-      c * g ∈ Subgroup.normalizer (T : Set G) ∧ Ad (I := I) (c * g) X = Y := by
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have hTc : T ≤ Subgroup.centralizer (T : Set G) :=
-    Subgroup.le_centralizer_iff_isMulCommutative.mpr hT.isTorus.isMulCommutative
-  -- `T` fixes `Y`, and `g T g⁻¹` fixes `Ad_g X = Y`, because `T` fixes every element of `𝔱`.
-  have hTK : T ≤ adStabilizer I Y := fun t ht ↦ by
-    rw [← SetLike.mem_coe, coe_adStabilizer]
-    exact Ad_apply_eq_self_of_mem_centralizer (hTc ht) hY
-  have hSK : T.map (MulAut.conj g).toMonoidHom ≤ adStabilizer I Y := by
-    rintro _ ⟨t, ht, rfl⟩
-    rw [← SetLike.mem_coe, coe_adStabilizer, Set.mem_ofPred_eq, MulEquiv.coe_toMonoidHom,
-      MulAut.conj_apply, Ad_mul, Ad_mul, Ad_inv, LieEquiv.trans_apply, LieEquiv.trans_apply, ← hg,
-      LieEquiv.symm_apply_apply, Ad_apply_eq_self_of_mem_centralizer (hTc ht) hX]
-  obtain ⟨c, hc, hmap⟩ := (hT.map_conj g).exists_mem_connectedComponentIn_map_conj_eq_of_le I
-    (isClosed_adStabilizer I Y) hT hSK hTK
-  rw [coe_adStabilizer] at hc
-  have hcY : Ad (I := I) c Y = Y := connectedComponentIn_subset _ _ hc
-  refine ⟨c, hc, ?_, ?_⟩
-  · rw [Subgroup.mem_normalizer_iff_map_conj_eq, map_mul]
-    exact (Subgroup.map_map _ _ _).symm.trans hmap
-  · rw [Ad_mul, LieEquiv.trans_apply, hg, hcY]
+    ∃ c ∈ connectedComponentIn
+        ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y :
+          Set G) 1,
+      c * g ∈ Subgroup.normalizer (T : Set G) := by
+  let _ : IsMulCommutative T := hT.isTorus.isMulCommutative
+  -- `T` fixes `Y ∈ Lie(T)`, and `g T g⁻¹` fixes `Ad_g X = Y` because `T` fixes `X ∈ Lie(T)`.
+  have hSK : T.map (MulAut.conj g).toMonoidHom ≤
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y := by
+    rw [← hg, ← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
+      Representation.stabilizer_conj]
+    exact Subgroup.map_mono (le_stabilizer_continuousAdjointRepresentation hX)
+  exact hT.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le I
+    (isClosed_stabilizer_continuousAdjointRepresentation Y)
+    (le_stabilizer_continuousAdjointRepresentation hY) hSK
 
-/-- **Elements of `𝔱` in one adjoint orbit are in one orbit of the normalizer.** For a maximal
-torus `T` of a compact Lie group, two elements of its Lie algebra that are conjugate under the
-adjoint action of `G` are conjugate under the adjoint action of the normalizer of `T`. -/
+/-- **Elements of a torus Lie algebra in one adjoint orbit are in one orbit of the normalizer.**
+If `Ad_g X = Y` for `X, Y` in the Lie algebra of a maximal torus `T` of a compact Lie group, then
+`Ad_n X = Y` for some `n` normalizing `T`. -/
 theorem IsMaximalTorus.exists_mem_normalizer_Ad_eq {T : Subgroup G} (hT : IsMaximalTorus T)
     {X Y : LeftInvariantDerivation I G} (hX : X ∈ lieSubalgebraOfSubgroup (I := I) T)
     (hY : Y ∈ lieSubalgebraOfSubgroup (I := I) T) {g : G} (hg : Ad (I := I) g X = Y) :
     ∃ n ∈ Subgroup.normalizer (T : Set G), Ad (I := I) n X = Y := by
-  obtain ⟨c, -, hn, hcg⟩ := hT.exists_mem_connectedComponentIn_mul_mem_normalizer I hX hY hg
-  exact ⟨c * g, hn, hcg⟩
-
-/-- **Elements of `𝔱` in one adjoint orbit are Weyl-related.** For a maximal torus `T` of a
-compact Lie group, two elements of its Lie algebra that are conjugate under the adjoint action of
-`G` are related by the adjoint action of an element of the Weyl group `N(T) / T`. -/
-theorem IsMaximalTorus.exists_weylAdjointRepresentation_apply_eq {T : Subgroup G}
-    [IsMulCommutative T] (hT : IsMaximalTorus T)
-    (X Y : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) {g : G} (hg : Ad (I := I) g X = Y) :
-    ∃ w : T.normalizerQuotient, T.weylAdjointRepresentation (I := I) w X = Y := by
-  obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq I X.2 Y.2 hg
-  refine ⟨((⟨n, hn⟩ : Subgroup.normalizer (T : Set G)) : T.normalizerQuotient), Subtype.ext ?_⟩
-  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply, hnX]
+  obtain ⟨c, hc, hn⟩ :=
+    hT.exists_mem_connectedComponentIn_stabilizer_mul_mem_normalizer hX hY hg
+  refine ⟨c * g, hn, ?_⟩
+  rw [Ad_mul, LieEquiv.trans_apply, hg]
+  exact mem_stabilizer_continuousAdjointRepresentation_iff.mp (connectedComponentIn_subset _ _ hc)
 
 /-- **The adjoint orbit of an element of `𝔱` meets `𝔱` in its normalizer orbit.** For a maximal
 torus `T` of a compact Lie group and `X` in its Lie algebra `𝔱`, the elements of `𝔱` of the form
@@ -149,9 +116,29 @@ theorem IsMaximalTorus.range_Ad_inter_lieSubalgebraOfSubgroup {T : Subgroup G}
   ext Y
   constructor
   · rintro ⟨⟨g, hg⟩, hY⟩
-    obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq I hX hY hg
+    obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq hX hY hg
     exact ⟨⟨n, hn⟩, hnX⟩
   · rintro ⟨n, rfl⟩
     exact ⟨⟨n, rfl⟩, Ad_mem_lieSubalgebraOfSubgroup n.2 hX⟩
+
+/-- **An adjoint orbit meets the Lie algebra of a maximal torus in one Weyl orbit.** Two elements
+of the Lie algebra of a maximal torus `T` of a compact Lie group lie in one adjoint orbit exactly
+when they are related by the Weyl group `N(T) / T`, acting through
+`Subgroup.weylAdjointRepresentation`. -/
+theorem IsMaximalTorus.exists_weylAdjointRepresentation_eq_iff {T : Subgroup G}
+    [IsMulCommutative T] (hT : IsMaximalTorus T)
+    (X Y : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
+    (∃ w : T.normalizerQuotient, T.weylAdjointRepresentation (I := I) w X = Y) ↔
+      ∃ g : G, Ad (I := I) g X = Y := by
+  constructor
+  · rintro ⟨w, rfl⟩
+    obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
+    exact ⟨n, (T.coe_weylAdjointRepresentation_mk_apply n X).symm⟩
+  · rintro ⟨g, hg⟩
+    obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq X.2 Y.2 hg
+    refine ⟨((⟨n, hn⟩ : Subgroup.normalizer (T : Set G)) : T.normalizerQuotient), ?_⟩
+    exact Subtype.ext ((T.coe_weylAdjointRepresentation_mk_apply ⟨n, hn⟩ X).trans hnX)
+
+end Compact
 
 end TauCeti.Lie

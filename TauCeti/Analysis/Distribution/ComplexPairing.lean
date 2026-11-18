@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -70,15 +71,8 @@ def complexPairing (T : 𝓓'^{n}(Ω, ℂ)) : 𝓓^{n}(Ω, ℂ) →L[ℂ] ℂ wh
     simp only [map_add]
     ring
   map_smul' c φ := by
-    have hre : postcompCLM (𝕜 := ℝ) reCLM (c • φ) =
-        c.re • postcompCLM (𝕜 := ℝ) reCLM φ - c.im • postcompCLM (𝕜 := ℝ) imCLM φ := by
-      ext t
-      simp
-    have him : postcompCLM (𝕜 := ℝ) imCLM (c • φ) =
-        c.re • postcompCLM (𝕜 := ℝ) imCLM φ + c.im • postcompCLM (𝕜 := ℝ) reCLM φ := by
-      ext t
-      simp
-    simp only [hre, him, map_sub, map_add, map_smul, RingHom.id_apply, real_smul]
+    simp only [postcompCLM_reCLM_smul, postcompCLM_imCLM_smul, map_sub, map_add, map_smul,
+      RingHom.id_apply, real_smul]
     conv_rhs => rw [← re_add_im c]
     ring_nf
     rw [I_sq]
@@ -96,13 +90,7 @@ is `T` itself. -/
 @[simp]
 theorem complexPairing_postcompCLM_ofRealCLM (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℝ)) :
     T.complexPairing (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = T φ := by
-  have hre : postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
-    ext t
-    simp
-  have him : postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
-    ext t
-    simp
-  simp [complexPairing_apply, hre, him]
+  simp [complexPairing_apply]
 
 @[simp]
 theorem complexPairing_add (T S : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
