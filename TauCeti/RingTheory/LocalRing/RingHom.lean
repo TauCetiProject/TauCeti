@@ -28,6 +28,9 @@ on units. This is the semilocal counterpart of Mathlib's
 remainder theorem a lift of a unit can be corrected by an element of the kernel so that it avoids
 every maximal ideal.
 
+Unit reflection also passes to subalgebras: if `R → S` reflects units then so does `R → T` for
+every subalgebra `T` of `S` (`Subalgebra.isLocalHom_algebraMap`).
+
 For a surjection of local rings `A → A'`, the image of the maximal ideal of `A` has radical the
 maximal ideal of `A'` (`TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`): the closed
 point of `Spec A'` is the only point over the closed point of `Spec A`.
@@ -83,6 +86,19 @@ theorem surjective_units_map_of_surjective [_root_.Finite (MaximalSpectrum R)] (
   exact ⟨hunit.unit, Units.ext (by simp [ha, hfb, mem_ker.mp hk])⟩
 
 end RingHom
+
+namespace Subalgebra
+
+variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+
+/-- If `R → S` reflects units, then so does `R → T` for every subalgebra `T` of `S`. -/
+instance isLocalHom_algebraMap [IsLocalHom (algebraMap R S)] (T : Subalgebra R S) :
+    IsLocalHom (algebraMap R T) :=
+  have : IsLocalHom ((T.val : T →+* S).comp (algebraMap R T)) := by
+    rwa [T.val.comp_algebraMap]
+  isLocalHom_of_comp _ (T.val : T →+* S)
+
+end Subalgebra
 
 namespace TauCeti.IsLocalRing
 
