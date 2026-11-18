@@ -322,7 +322,7 @@ theorem isAsymptoticallyEuclideanEnd_comp_iff (Φ : RiemannianIsometry I J M N) 
     IsAsymptoticallyEuclideanEnd J t R (Φ ∘ φ) ↔ IsAsymptoticallyEuclideanEnd I t R φ := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp Φ.isLocalRiemannianIsometry Φ.injective.injOn⟩
   have h' := h.comp Φ.symm.isLocalRiemannianIsometry Φ.symm.injective.injOn
-  rwa [← comp_assoc, show ⇑Φ.symm ∘ Φ = id from funext Φ.symm_apply_apply, id_comp] at h'
+  rwa [← comp_assoc, Φ.symm_comp_self, id_comp] at h'
 
 /-- The identity parametrization of flat Euclidean space is an asymptotically Euclidean end of
 every order on the exterior of every ball, in positive dimension: its coefficients are exactly
@@ -364,8 +364,9 @@ decay. -/
 theorem not_isAsymptoticallyEuclideanEnd_two_smul {t : ℝ} (ht : 0 < t) (R : ℝ) :
     ¬ IsAsymptoticallyEuclideanEnd 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) t R
       (fun y : EuclideanSpace ℝ (Fin n) ↦ (2 : ℝ) • y) := by
-  rintro ⟨-, hn, -, -, -, -, C, hC⟩
-  let i : Fin n := ⟨0, hn⟩
+  intro h
+  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
+  let i : Fin n := ⟨0, h.dim_pos⟩
   -- For large `s`, the point `s • eᵢ` lies outside the ball and `C s^(-t) < 3`.
   obtain ⟨s, hsR, hs0, hsC⟩ := (eventually_gt_atTop R).and ((eventually_gt_atTop 0).and
     (((tendsto_rpow_neg_atTop ht).const_mul C).eventually
@@ -438,7 +439,7 @@ theorem isFiniteEndedAsymptoticallyEuclidean_comp_iff (Φ : RiemannianIsometry I
       IsFiniteEndedAsymptoticallyEuclidean I t R φ := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp Φ⟩
   have h' := h.comp Φ.symm
-  simp only [← comp_assoc, show ⇑Φ.symm ∘ Φ = id from funext Φ.symm_apply_apply, id_comp] at h'
+  simp only [← comp_assoc, Φ.symm_comp_self, id_comp] at h'
   exact h'
 
 /-- Flat Euclidean space of positive dimension, with the identity parametrization of the exterior
