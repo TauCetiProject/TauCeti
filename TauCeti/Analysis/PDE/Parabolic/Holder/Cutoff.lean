@@ -262,7 +262,7 @@ theorem exists_timeCutoff (hα : α ≤ 2) :
     rw [h]
     exact hH₀.trans (mul_le_mul_of_nonneg_right (by linarith) (by positivity))
   · refine (hχt p).trans ?_
-    rw [smoothTransition.deriv_of_neg (by rw [sub_neg, div_lt_one hs]; exact hp), mul_zero]
+    rw [smoothTransition.deriv_of_nonpos (by rw [sub_nonpos, div_le_one hs]; exact hp.le), mul_zero]
   · exact (congrArg abs (hχt p)).trans_le ((hb₁ _).trans (by gcongr; linarith))
   · have h : (timeDerivL χ : slab (E := E) a b → ℝ) =
         fun p : slab (E := E) a b ↦ g₁ (p : ParabolicSpaceTime E).time := funext hχt
