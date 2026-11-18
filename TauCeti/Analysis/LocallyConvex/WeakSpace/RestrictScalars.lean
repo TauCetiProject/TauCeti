@@ -51,20 +51,10 @@ noncomputable def restrictScalars : WeakSpace 𝕜 E ≃L[ℝ] WeakSpace ℝ E w
     -- The target still contains the linear-equivalence and flipped-pairing projections.
     change Continuous (fun x : WeakSpace 𝕜 E ↦ f ((toWeakSpace 𝕜 E).symm x))
     simpa only [StrongDual.re_extendRCLike_apply] using h
-  continuous_invFun := by
-    apply WeakBilin.continuous_of_continuous_eval
-    intro f
-    have hre : Continuous (fun x : WeakSpace ℝ E ↦
-        RCLike.re (f ((toWeakSpace ℝ E).symm x))) :=
+  continuous_invFun :=
+    WeakBilin.continuous_of_continuous_eval_re (topDualPairing 𝕜 E).flip fun f ↦
       WeakBilin.eval_continuous (topDualPairing ℝ E).flip
         (RCLike.reCLM.comp (f.restrictScalars ℝ))
-    have him : Continuous (fun x : WeakSpace ℝ E ↦
-        RCLike.im (f ((toWeakSpace ℝ E).symm x))) :=
-      WeakBilin.eval_continuous (topDualPairing ℝ E).flip
-        (RCLike.imCLM.comp (f.restrictScalars ℝ))
-    exact ((RCLike.continuous_ofReal.comp hre).add
-      ((RCLike.continuous_ofReal.comp him).mul_const (RCLike.I : 𝕜))).congr
-        (fun x ↦ RCLike.re_add_im (f ((toWeakSpace ℝ E).symm x)))
 
 /-- Real restriction does not change the underlying vector. -/
 @[simp] theorem restrictScalars_toWeakSpace (x : E) :
