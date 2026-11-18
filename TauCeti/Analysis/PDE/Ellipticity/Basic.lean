@@ -49,6 +49,8 @@ constants are parameters, not hidden existential data.
   predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.congr`: replace a coefficient field by one that agrees
   on the domain.
+* `TauCeti.PDE.UniformlyEllipticOn.comp`: precomposition with a map into the domain preserves
+  the predicate.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
 * `TauCeti.PDE.sum_inner_mul_matrixBilinearForm`: expansion in the standard orthonormal basis.
@@ -721,6 +723,14 @@ lemma apply_of_forall {S : Type*} [Nonempty S] {a : X → S → Matrix n n ℝ}
     UniformlyEllipticOn Ω (fun x => a x (v x)) lam Lam :=
   of_bounds (h (Classical.arbitrary S)).pos (h (Classical.arbitrary S)).le
     (fun _ hx ξ => (h _).lower_bound hx ξ) (fun _ hx η ξ => (h _).upper_bound hx η ξ)
+
+/-- Uniform ellipticity is preserved by precomposition with a map into the domain. Precomposing
+with a retraction onto a subset of the domain extends a field to the whole space with the same
+constants. -/
+lemma comp {Y : Type*} {g : Y → X} {s : Set Y} (h : UniformlyEllipticOn Ω a lam Lam)
+    (hg : Set.MapsTo g s Ω) : UniformlyEllipticOn s (a ∘ g) lam Lam :=
+  of_bounds h.pos h.le (fun _ hy ξ => h.lower_bound (hg hy) ξ)
+    (fun _ hy η ξ => h.upper_bound (hg hy) η ξ)
 
 /-- At every point of the domain, uniform ellipticity gives a norm bound for the attached
 matrix bilinear form. -/

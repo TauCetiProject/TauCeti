@@ -110,6 +110,8 @@ estimates do not see the boundary.
   `TauCeti.PDE.exists_forcing_energyFormH1_principal_eq`: a weak equation with bounded
   lower-order coefficients gives a weak equation for its principal part with the `L²` forcing
   `f - ⟪b, ∇u⟫ - c u`.
+* `TauCeti.PDE.eLpNorm_sub_inner_gradient_sub_mul_value_le`: the bound
+  `‖f - ⟪b, ∇u⟫ - c u‖₂ ≤ ‖f‖₂ + ‖b‖_∞ ‖∇u‖₂ + ‖c‖_∞ ‖u‖₂` on that forcing.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
@@ -953,9 +955,36 @@ theorem energyFormH1_principal_eq_setIntegral_sub {a : EuclideanSpace ℝ ι →
       rw [integral_sub (hF.sub' hBv) hCv, integral_sub hF hBv]
 
 open scoped InnerProductSpace in
+/-- **The size of the forcing of the principal equation.** For `f ∈ L²(Ω)`, `u ∈ H¹(Ω)` and
+essentially bounded `b, c`, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal equation satisfies
+
+`‖f - ⟪b, ∇u⟫ - c u‖_{L²(Ω)} ≤ ‖f‖_{L²(Ω)} + ‖b‖_{L∞(Ω)} ‖∇u‖_{L²(Ω)} + ‖c‖_{L∞(Ω)} ‖u‖_{L²(Ω)}`. -/
+theorem eLpNorm_sub_inner_gradient_sub_mul_value_le {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega)) (f : EuclideanSpace ℝ ι → ℝ)
+    (u : W1p mu Omega 2) :
+    eLpNorm (fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) 2
+        (mu.restrict Omega) ≤ eLpNorm f 2 (mu.restrict Omega) +
+      eLpNorm b ⊤ (mu.restrict Omega) * eLpNorm (W1p.gradient u) 2 (mu.restrict Omega) +
+      eLpNorm c ⊤ (mu.restrict Omega) * eLpNorm (W1p.value u) 2 (mu.restrict Omega) := by
+  have h2 : eLpNorm (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) ≤
+      ((1 : NNReal) : ENNReal) * eLpNorm b ⊤ (mu.restrict Omega) *
+        eLpNorm (W1p.gradient u) 2 (mu.restrict Omega) :=
+    eLpNorm_le_eLpNorm_top_mul_eLpNorm 2 (fun v w => ⟪v, w⟫_ℝ) 1 continuous_inner hb
+      (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
+  have h3 : eLpNorm (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) ≤
+      eLpNorm c ⊤ (mu.restrict Omega) * eLpNorm (W1p.value u) 2 (mu.restrict Omega) :=
+    eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm 2 hc
+  refine (eLpNorm_sub_le one_le_two).trans (add_le_add ((eLpNorm_sub_le one_le_two).trans
+    (add_le_add le_rfl (h2.trans_eq (by rw [ENNReal.coe_one, one_mul])))) h3)
+
+open scoped InnerProductSpace in
 /-- A weak equation with an essentially bounded principal energy density and bounded
-lower-order coefficients admits an `L²` forcing for its principal part alone. Neither
-ellipticity nor a boundary condition on the solution is required. The forcing is
+lower-order coefficients admits an `L²` forcing `g` for its principal part alone, with
+
+`‖g‖_{L²(Ω)} ≤ ‖f‖_{L²(Ω)} + ‖b‖_{L∞(Ω)} ‖∇u‖_{L²(Ω)} + ‖c‖_{L∞(Ω)} ‖u‖_{L²(Ω)}`.
+
+Neither ellipticity nor a boundary condition on the solution is required. The forcing is
 `f - ⟪b, ∇u⟫ - c u` (`TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub`). -/
 theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
@@ -965,15 +994,24 @@ theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → 
     (hu : ∀ v : W1p0 mu Omega 2,
       energyFormH1 a b c u (v : W1p mu Omega 2) =
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
-    ∃ g : Lp ℝ 2 (mu.restrict Omega), ∀ v : W1p0 mu Omega 2,
+    ∃ g : Lp ℝ 2 (mu.restrict Omega), (∀ v : W1p0 mu Omega 2,
       energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-        ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+        ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu) ∧
+      ‖g‖ ≤ ‖f‖ + (eLpNorm b ⊤ (mu.restrict Omega)).toReal * ‖W1p.gradient u‖ +
+        (eLpNorm c ⊤ (mu.restrict Omega)).toReal * ‖W1p.value u‖ := by
   have hG := memLp_forcing_principal hb hc f u
-  refine ⟨hG.toLp _, fun v => ?_⟩
-  rw [energyFormH1_principal_eq_setIntegral_sub ha hb hc hu v]
-  refine integral_congr_ae ?_
-  filter_upwards [hG.coeFn_toLp] with x hx
-  rw [hx]
+  refine ⟨hG.toLp _, fun v => ?_, ?_⟩
+  · rw [energyFormH1_principal_eq_setIntegral_sub ha hb hc hu v]
+    refine integral_congr_ae ?_
+    filter_upwards [hG.coeFn_toLp] with x hx
+    rw [hx]
+  have hbfin := hb.eLpNorm_lt_top.ne
+  have hcfin := hc.eLpNorm_lt_top.ne
+  rw [Lp.norm_toLp, Lp.norm_def, Lp.norm_def, Lp.norm_def]
+  refine (ENNReal.toReal_mono (by finiteness) (eLpNorm_sub_inner_gradient_sub_mul_value_le
+    hb.aestronglyMeasurable hc.aestronglyMeasurable f u)).trans_eq ?_
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_add (by finiteness)
+    (by finiteness), ENNReal.toReal_mul, ENNReal.toReal_mul]
 
 namespace UniformlyEllipticOn
 

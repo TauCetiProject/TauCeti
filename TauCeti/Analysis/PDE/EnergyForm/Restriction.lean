@@ -40,7 +40,8 @@ integrability hypotheses on `Ω`.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
 * `TauCeti.PDE.exists_forcing_restrictL_of_eqOn`: for `b, c ∈ L∞(Ω)`, the restriction of a weak
   solution to a set where the principal coefficient is replaced by an essentially bounded one
-  solves the equation without lower-order terms, with some `L²` forcing.
+  solves the equation without lower-order terms, with an `L²` forcing bounded by
+  `‖f‖₂ + ‖b‖_∞ ‖∇u‖₂ + ‖c‖_∞ ‖u‖₂` (`TauCeti.PDE.eLpNorm_sub_inner_gradient_sub_mul_value_le`).
 * `TauCeti.PDE.energyFormH1_restrictL_eq_neg_setIntegral_inner`: weak solutions of `L u = div F`
   restrict to weak solutions of the same equation.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral_sub_setIntegral_inner`: weak solutions of
@@ -276,7 +277,11 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the
 restriction of `u` to `U` solves the equation with principal part `a'` and no lower-order terms,
-with some forcing `g ∈ L²(U)`. -/
+with a forcing `g ∈ L²(U)` bounded by
+
+`‖g‖_{L²(U)} ≤ ‖f‖_{L²(U)} + ‖b‖_{L∞(U)} ‖∇u‖_{L²(U)} + ‖c‖_{L∞(U)} ‖u‖_{L²(U)}`.
+
+The forcing is `f - ⟪b, ∇u⟫ - c u`. -/
 theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
@@ -286,13 +291,19 @@ theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix �
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
-    ∃ g : Lp ℝ 2 (mu.restrict U), ∀ v : W1p0 mu U 2,
+    ∃ g : Lp ℝ 2 (mu.restrict U), (∀ v : W1p0 mu U 2,
       energyFormH1 a' 0 0 (W1p.restrictL hU u) (v : W1p mu U 2) =
-        ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu := by
+        ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu) ∧
+      ‖g‖ ≤ (eLpNorm f 2 (mu.restrict U)).toReal +
+        (eLpNorm b ⊤ (mu.restrict U)).toReal * ‖W1p.gradient (W1p.restrictL hU u)‖ +
+        (eLpNorm c ⊤ (mu.restrict U)).toReal * ‖W1p.value (W1p.restrictL hU u)‖ := by
+  set uU := W1p.restrictL hU u
   have hle : mu.restrict U ≤ mu.restrict Omega :=
     Measure.restrict_mono (SetLike.coe_subset_coe.mpr hU) le_rfl
+  have hbU := hb.mono_measure hle
+  have hcU := hc.mono_measure hle
   have hfU : MemLp f 2 (mu.restrict U) := (Lp.memLp f).mono_measure hle
-  have hu₁ : ∀ v : W1p0 mu U 2, energyFormH1 a' b c (W1p.restrictL hU u) (v : W1p mu U 2) =
+  have hu₁ : ∀ v : W1p0 mu U 2, energyFormH1 a' b c uU (v : W1p mu U 2) =
       ∫ x in U, hfU.toLp f x * W1p.value (v : W1p mu U 2) x ∂mu := by
     intro v
     have h := energyFormH1_restrictL_eq_setIntegral hU hu v
@@ -301,8 +312,8 @@ theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix �
     refine integral_congr_ae ?_
     filter_upwards [hfU.coeFn_toLp] with x hx
     rw [hx]
-  exact exists_forcing_energyFormH1_principal_eq ha'
-    (hb.mono_measure hle) (hc.mono_measure hle) hu₁
+  obtain ⟨g, hg, hgle⟩ := exists_forcing_energyFormH1_principal_eq ha' hbU hcU hu₁
+  exact ⟨g, hg, hgle.trans_eq (by rw [Lp.norm_toLp])⟩
 
 open scoped InnerProductSpace in
 /-- **Weak solutions with a datum in divergence form restrict to weak solutions.** If
