@@ -288,6 +288,11 @@ theorem quasiIsos_iff {M N : DGRightModuleCat.{uR, uA, uM} h} (f : M ⟶ N) :
     CategoryTheory.ConcreteCategory.isIso_iff_bijective]
   exact Iff.rfl
 
+/-- A morphism is a quasi-isomorphism exactly when its map on cohomology is an isomorphism. -/
+theorem isQuasiIso_iff_isIso_cohomologyFunctor_map {M N : DGRightModuleCat.{uR, uA, uM} h}
+    (f : M ⟶ N) : IsQuasiIso f ↔ IsIso (cohomologyFunctor.map f) :=
+  (quasiIsos_iff f).symm
+
 end DGRightModuleCat
 
 end TauCeti
