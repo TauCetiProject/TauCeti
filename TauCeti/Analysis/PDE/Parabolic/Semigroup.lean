@@ -22,8 +22,9 @@ Dirichlet realization `TauCeti.PDE.dirichletOperator` of `L`. The motivating exa
 
 `∂ₜu + L u = 0` in `Ω`, `u = 0` on `∂Ω`, `u(0) = u₀`.
 
-This file constructs the semigroup and describes its generator; it does not prove that
-`t ↦ e^{-tL} u₀` solves this parabolic problem.
+This file constructs the semigroup and describes its generator. That `t ↦ e^{-tL} u₀` is the
+continuous representative of the weak solution of this problem, and Duhamel's formula with a
+forcing term, are proved in `TauCeti.Analysis.PDE.Parabolic.Duhamel`.
 
 The generator is `-TauCeti.PDE.dirichletOperator` (`TauCeti.PDE.dirichletSemigroup_generator`),
 so the description of the Dirichlet realization in `TauCeti.Analysis.PDE.Spectrum.Operator`
