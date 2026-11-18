@@ -22,7 +22,7 @@ and proves `Γ(½ + ia) = |Γ(½ + ia)| e^{iφ₂(a)}`.
 
 ## Main declarations
 
-* `Complex.digamma_conj`: `ψ(s̄) = conj ψ(s)`.
+* `Complex.digamma_conj`: `ψ(conj s) = conj ψ(s)`.
 * `TauCeti.Real.gammaHalfPhase`: the phase `φ₂`.
 * `TauCeti.Gamma_one_half_add_mul_I`: `Γ(½ + ia) = |Γ(½ + ia)| e^{iφ₂(a)}`.
 * `TauCeti.Real.hasDerivAt_gammaHalfPhase`: `φ₂′(a) = Re ψ(½ + ia)`.
@@ -48,7 +48,7 @@ open Complex
 
 open scoped ComplexConjugate Real
 
-/-- The digamma function commutes with complex conjugation: `ψ(s̄) = conj ψ(s)`. -/
+/-- The digamma function commutes with complex conjugation: `ψ(conj s) = conj ψ(s)`. -/
 theorem Complex.digamma_conj (s : ℂ) : digamma (conj s) = conj (digamma s) := by
   have hG : Gamma = conj ∘ Gamma ∘ conj := funext fun s => by simp [Gamma_conj]
   have hd : deriv Gamma (conj s) = conj (deriv Gamma s) := by
