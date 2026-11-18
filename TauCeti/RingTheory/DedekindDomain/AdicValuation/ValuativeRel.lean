@@ -43,8 +43,9 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   quotient representative.
 * `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletion_dvd_iff`: the residue
   characteristic of `K_v` divides `n` exactly when `n ∈ v`.
-* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: that
-  residue field has `Ideal.absNorm v.asIdeal` elements.
+* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: the
+  `Nat.card` of that residue field is `Ideal.absNorm v.asIdeal`, both being `0` when the residue
+  field is infinite.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
   completion with finite residue field is a nonarchimedean local field.
 * `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
@@ -155,9 +156,8 @@ theorem mem_maximalIdeal_integer_pow_iff {x : 𝒪[v.adicCompletion K]} {n : ℕ
 /-- An element of `K_v` lies in `𝒪_v` exactly when the valuation of the valuative relation is at
 most `1`. This is Mathlib's `mem_adicCompletionIntegers`, which is stated for the adic valuation
 `Valued.v`, read through the valuative relation. -/
--- This is intentionally not a simp lemma: it would make the upstream theorem
--- `adicCompletionExtension_mem_adicCompletionIntegers` fail the simp-normal-form linter, while
--- that theorem's module cannot import this valuative adapter without creating an import cycle.
+-- This is intentionally not a simp lemma: it would make the theorem
+-- `adicCompletionExtension_mem_adicCompletionIntegers` fail the simp-normal-form linter.
 theorem mem_adicCompletionIntegers_iff_valuation_le_one (x : v.adicCompletion K) :
     x ∈ v.adicCompletionIntegers K ↔
       ValuativeRel.valuation (v.adicCompletion K) x ≤ 1 := by
@@ -239,7 +239,8 @@ theorem ringChar_residueField_adicCompletion_dvd_iff {n : ℕ} :
     map_eq_zero_iff _ (RingEquiv.injective _), ← map_natCast (Ideal.Quotient.mk v.asIdeal),
     Ideal.Quotient.eq_zero_iff_mem]
 
-/-- The residue field of `K_v` has cardinality the absolute norm of `v`. -/
+/-- The residue field of `K_v` has `Nat.card` the absolute norm of `v`; both sides are `0` when
+the residue field is infinite. -/
 theorem natCard_residueField_adicCompletion_eq_absNorm :
     Nat.card 𝓀[v.adicCompletion K] = Ideal.absNorm v.asIdeal := by
   rw [Ideal.absNorm_of_ne_bot v.ne_bot, Submodule.cardQuot_apply]
@@ -370,7 +371,8 @@ order remains a nonsquare in the completion.
 
 The value group of `HeightOneSpectrum.valuation` is `WithZero (Multiplicative ℤ)`, whose
 multiplicative identity `1` is the value zero, that is, order of vanishing zero, so an order of
-vanishing `1` is written `WithZero.exp (-1)`, the value of a generator of `v.asIdeal`; the passage
+vanishing `1` is written `WithZero.exp (-1)`, the value of an element of `v`-adic order `1` (a
+uniformizer at `v`; `v.asIdeal` need not be principal); the passage
 between the two conventions is `neg_log_valuation_eq_one_iff` in
 `TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic`. -/
 theorem not_isSquare_adicCompletion_of_valuation_eq_exp_of_not_even
@@ -398,8 +400,8 @@ end IsDedekindDomain.HeightOneSpectrum
 
 namespace TauCeti
 
-/-- An integral lift of a global field element to an adic completion is a unit exactly when
-the global element has valuation one. -/
+/-- An integral lift of an element of `K` to an adic completion is a unit exactly when that
+element has valuation one. -/
 theorem isUnit_integer_adicCompletion_iff_valuation_eq_one
     (R : Type*) [CommRing R] [IsDedekindDomain R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
