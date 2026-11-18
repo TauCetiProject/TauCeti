@@ -49,8 +49,9 @@ dimension two that kernel vanishes identically, so the planar case is instead
 
 * `TauCeti.ballGreenCorrector`: the reflected Newtonian kernel correcting the boundary values.
 * `TauCeti.harmonicOnNhd_ballGreenCorrector`: harmonicity of the corrector inside the ball.
-* `TauCeti.continuousAt_ballGreenCorrector`, `TauCeti.measurable_ballGreenCorrector`: joint
-  continuity off the reflection locus `‖x‖ ‖y‖ = 1`, and joint measurability.
+* `TauCeti.continuousAt_ballGreenCorrector`, `TauCeti.contDiffOn_ballGreenCorrector`,
+  `TauCeti.measurable_ballGreenCorrector`: joint continuity and smoothness off the reflection
+  locus `‖x‖ ‖y‖ = 1`, and joint measurability.
 * `TauCeti.ballGreenKernel`: the Dirichlet Green kernel of the unit ball.
 * `TauCeti.ballGreenKernel_comm`: symmetry of the Green kernel in its two arguments.
 * `TauCeti.harmonicAt_ballGreenKernel`: harmonicity in `y` away from the pole.
@@ -278,6 +279,17 @@ theorem continuousAt_ballGreenCorrector {x y : EuclideanSpace ℝ (Fin n)} (h : 
   exact continuousAt_const.mul (ContinuousAt.rpow_const (by fun_prop)
     (Or.inl (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos h).ne'))
 
+/-- The corrector is jointly smooth wherever the reflection polynomial does not vanish. -/
+theorem contDiffOn_ballGreenCorrector {k : WithTop ℕ∞} :
+    ContDiffOn ℝ k (fun p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) =>
+      ballGreenCorrector n p.1 p.2) {p | ‖p.1‖ * ‖p.2‖ ≠ 1} := by
+  simp_rw [ballGreenCorrector_def]
+  refine contDiffOn_const.mul (ContDiffOn.rpow_const_of_ne ?_ fun p hp =>
+    (norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos hp).ne')
+  exact (((contDiff_norm_sq ℝ).comp contDiff_fst).mul ((contDiff_norm_sq ℝ).comp contDiff_snd)
+    |>.sub (contDiff_const.mul (contDiff_fst.inner ℝ contDiff_snd))
+    |>.add contDiff_const).contDiffOn
+
 /-- The corrector is jointly measurable. -/
 @[fun_prop]
 theorem measurable_ballGreenCorrector (n : ℕ) :
@@ -392,21 +404,20 @@ theorem ballGreenKernel_le_newtonianKernel_sub (hn : 3 ≤ n) (x y : EuclideanSp
   rw [ballGreenKernel_def]
   exact sub_le_self _ (ballGreenCorrector_nonneg hn x y)
 
-/-- The corrector is bounded below by the value of the Newtonian kernel at distance `2`, for a
-pole in the closed unit ball and a variable in the open one: outside dimension two the corrector
-is the radially decreasing profile of `Φ` at the square root of the reflection polynomial
-`‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1`, which lies in `(0, 4]`, and in dimension two both sides vanish. -/
-theorem newtonianKernel_le_ballGreenCorrector {x y z : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≤ 1)
-    (hy : ‖y‖ < 1) (hz : ‖z‖ = 2) :
+/-- The corrector is bounded below by the value of the Newtonian kernel at distance `2` whenever
+`‖x‖ ‖y‖ < 1`: outside dimension two the corrector is the radially decreasing profile of `Φ` at
+the square root of the reflection polynomial `‖x‖² ‖y‖² - 2 ⟪x, y⟫ + 1`, which lies in `(0, 4]`,
+and in dimension two both sides vanish. -/
+theorem newtonianKernel_le_ballGreenCorrector {x y z : EuclideanSpace ℝ (Fin n)}
+    (hxy : ‖x‖ * ‖y‖ < 1) (hz : ‖z‖ = 2) :
     newtonianKernel n z ≤ ballGreenCorrector n x y := by
   obtain rfl | hn := eq_or_ne n 2
   · simp [newtonianKernel_def, ballGreenCorrector_def]
   have hn0 : 0 < n := pos_of_ne_euclideanSpace (x := z) (y := 0) (by rintro rfl; norm_num at hz)
-  have hxy : ‖x‖ * ‖y‖ < 1 := (mul_le_of_le_one_left (norm_nonneg y) hx).trans_lt hy
   have hpos := norm_sq_mul_norm_sq_sub_two_mul_inner_add_one_pos hxy.ne
   have hle : ‖x‖ ^ 2 * ‖y‖ ^ 2 - 2 * ⟪x, y⟫_ℝ + 1 ≤ (2 : ℝ) ^ 2 := by
     have hi := neg_le_of_abs_le (abs_real_inner_le_norm x y)
-    nlinarith [norm_nonneg x, norm_nonneg y, mul_nonneg (norm_nonneg x) (norm_nonneg y)]
+    nlinarith [mul_nonneg (norm_nonneg x) (norm_nonneg y)]
   rw [newtonianKernel_def, ← Real.sq_rpow_div_two (norm_nonneg z), hz, ballGreenCorrector_def]
   rcases hle.lt_or_eq with hlt | heq
   · exact (newtonianKernel_rpow_sq_lt n hn hn0 hpos hlt).le
@@ -421,7 +432,8 @@ theorem abs_ballGreenKernel_le {x y z : EuclideanSpace ℝ (Fin n)} (hx : ‖x�
   obtain rfl | hn := eq_or_ne n 2
   · simp [ballGreenKernel_def, newtonianKernel_def, ballGreenCorrector_def]
   have hG := ballGreenKernel_pos hn hx hy hxy
-  have hφ := newtonianKernel_le_ballGreenCorrector hx.le hy hz
+  have hφ := newtonianKernel_le_ballGreenCorrector
+    ((mul_le_of_le_one_left (norm_nonneg y) hx.le).trans_lt hy) hz
   rw [abs_of_pos hG]
   rw [ballGreenKernel_def] at hG ⊢
   linarith [le_abs_self (newtonianKernel n (y - x)), neg_abs_le (newtonianKernel n z)]

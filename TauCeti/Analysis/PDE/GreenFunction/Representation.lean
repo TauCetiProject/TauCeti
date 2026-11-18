@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DirichletBall
-import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
-import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
+import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 
@@ -38,8 +37,9 @@ boundary values `Φ ⋆ f`, and on the closed ball
 
 (`TauCeti.integral_ballGreenKernel_mul_eq_sub`): the Green potential is the Newtonian potential
 corrected by the harmonic extension of its own trace on the sphere. Harmonicity of `h` comes from
-the converse of the mean-value property: the corrector is harmonic in `x` for every `y` in the
-ball, so Fubini's theorem moves the mean value onto it. For `f` of class `C²` the Newtonian
+differentiating under the integral sign over the compact set `tsupport f`: the corrector is
+jointly smooth off `‖x‖ ‖y‖ = 1` and harmonic in `x` for every `y` in the ball
+(`TauCeti.harmonicOnNhd_integral_smul_of_contDiffOn`). For `f` of class `C²` the Newtonian
 potential solves `-Δ(Φ ⋆ f) = f` and the comparison of classical and weak solutions
 (`TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub`) identifies the
 Green potential with the weak solution
@@ -235,72 +235,37 @@ theorem continuousOn_integral_ballGreenCorrector_mul (hf : Continuous f)
     (continuousOn_ballGreenCorrector_mul hf hsupp) fun _ _ _ hy =>
       ballGreenCorrector_mul_eq_zero hy
 
-/-- Fubini's theorem applies to the integrand of the harmonic correction on the product of a set
-inside the closed unit ball with the support of `f`. -/
-private theorem integrable_ballGreenCorrector_mul (hf : Continuous f)
-    (hsupp : tsupport f ⊆ ball 0 1) {s : Set (EuclideanSpace ℝ (Fin n))}
-    (hs : MeasurableSet s) (hs1 : s ⊆ closedBall 0 1) (hsfin : volume s < ∞) :
-    Integrable (Function.uncurry fun x y => ballGreenCorrector n x y * f y)
-      ((volume.restrict s).prod (volume.restrict (tsupport f))) := by
-  have hK : IsCompact (tsupport f) := hasCompactSupport_of_tsupport_subset_ball hsupp
-  have hKm : MeasurableSet (tsupport f) := (isClosed_tsupport f).measurableSet
-  have hcont := continuousOn_ballGreenCorrector_mul hf hsupp
-  obtain ⟨C, hC⟩ := ((isCompact_closedBall (0 : EuclideanSpace ℝ (Fin n)) 1).prod
-    hK).exists_bound_of_continuousOn (hcont.mono (prod_mono subset_rfl (subset_univ _)))
-  have : IsFiniteMeasure (volume.restrict s) := isFiniteMeasure_restrict.2 hsfin.ne
-  have : IsFiniteMeasure (volume.restrict (tsupport f)) :=
-    isFiniteMeasure_restrict.2 hK.measure_lt_top.ne
-  refine Integrable.of_bound ?_ C ?_
-  · rw [Measure.prod_restrict]
-    exact (hcont.mono (prod_mono hs1 (subset_univ _))).aestronglyMeasurable (hs.prod hKm)
-  · rw [Measure.prod_restrict]
-    filter_upwards [ae_restrict_mem (hs.prod hKm)] with p hp
-    exact hC p ⟨hs1 hp.1, hp.2⟩
-
 /-- **The harmonic correction is harmonic.** For `f` continuous with `tsupport f` inside the unit
 ball, `x ↦ ∫ φ(x, y) f(y) dy` is harmonic in the open unit ball. -/
 theorem harmonicOnNhd_integral_ballGreenCorrector_mul (hf : Continuous f)
     (hsupp : tsupport f ⊆ ball 0 1) :
     HarmonicOnNhd (fun x => ∫ y, ballGreenCorrector n x y * f y) (ball 0 1) := by
+  have hK : IsCompact (tsupport f) := hasCompactSupport_of_tsupport_subset_ball hsupp
   have hKm : MeasurableSet (tsupport f) := (isClosed_tsupport f).measurableSet
+  have : CompactSpace (tsupport f) := isCompact_iff_compactSpace.1 hK
+  -- The integral over `ℝⁿ` is an integral over the compact parameter space `tsupport f`.
   have hrestr : ∀ x, ∫ y, ballGreenCorrector n x y * f y =
-      ∫ y in tsupport f, ballGreenCorrector n x y * f y := fun x =>
-    (setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy =>
-      ballGreenCorrector_mul_eq_zero hy).symm
-  refine harmonicOnNhd_of_setAverage_ball_eq (μ := volume) isOpen_ball
-    ((continuousOn_integral_ballGreenCorrector_mul hf hsupp).mono ball_subset_closedBall)
-    fun c hc => ?_
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (isOpen_ball.mem_nhds hc)
-  refine (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_).frequently
-  have hsub : closedBall c r ⊆ ball 0 1 := (closedBall_subset_closedBall hr.2.le).trans hεU
-  -- The mean value property of the corrector in its first variable.
-  have hmean : ∀ y ∈ tsupport f, ∫ x in ball c r, ballGreenCorrector n x y =
-      volume.real (ball c r) * ballGreenCorrector n c y := fun y hy => by
-    have hharm : HarmonicOnNhd (ballGreenCorrector n y) (closedBall c r) := fun x hx =>
-      harmonicOnNhd_ballGreenCorrector (mem_ball_zero_iff.1 (hsupp hy)).le x (hsub hx)
-    simp_rw [ballGreenCorrector_comm _ y]
-    rw [InnerProductSpace.HarmonicOnNhd.setIntegral_ball_eq (μ := volume) hharm, smul_eq_mul]
-  have hvol : volume.real (ball c r) ≠ 0 := by
-    rw [measureReal_def]
-    exact ENNReal.toReal_ne_zero.2 ⟨(measure_ball_pos volume c hr.1).ne', measure_ball_lt_top.ne⟩
-  calc ⨍ x in ball c r, ∫ y, ballGreenCorrector n x y * f y
-      = (volume.real (ball c r))⁻¹ *
-          ∫ x in ball c r, ∫ y in tsupport f, ballGreenCorrector n x y * f y := by
-        rw [setAverage_eq, smul_eq_mul,
-          setIntegral_congr_fun measurableSet_ball fun x _ => hrestr x]
-    -- Fubini's theorem on `ball c r × tsupport f`.
-    _ = (volume.real (ball c r))⁻¹ *
-          ∫ y in tsupport f, ∫ x in ball c r, ballGreenCorrector n x y * f y := by
-        rw [integral_integral_swap (integrable_ballGreenCorrector_mul hf hsupp measurableSet_ball
-          (ball_subset_closedBall.trans (hsub.trans ball_subset_closedBall)) measure_ball_lt_top)]
-    -- The mean value property of the corrector in its first variable.
-    _ = (volume.real (ball c r))⁻¹ *
-          ∫ y in tsupport f, volume.real (ball c r) * (ballGreenCorrector n c y * f y) := by
-        congr 1
-        refine setIntegral_congr_fun hKm fun y hy => ?_
-        rw [integral_mul_const, hmean y hy, mul_assoc]
-    _ = ∫ y, ballGreenCorrector n c y * f y := by
-        rw [integral_const_mul, inv_mul_cancel_left₀ hvol, hrestr c]
+      ∫ y : tsupport f, f y • ballGreenCorrector n x y ∂volume.comap Subtype.val := fun x => by
+    rw [integral_subtype_comap hKm fun y => f y • ballGreenCorrector n x y,
+      ← setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy =>
+        ballGreenCorrector_mul_eq_zero hy]
+    simp only [smul_eq_mul, mul_comm (f _)]
+  have hg : Integrable (fun y : tsupport f => f y) (volume.comap Subtype.val) :=
+    (MeasurableEmbedding.subtype_coe hKm).integrable_map_iff.1
+      (by rw [map_comap_subtype_coe hKm]; exact hf.continuousOn.integrableOn_compact hK)
+  have hUW : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, ∀ y : tsupport f,
+      (x, (y : EuclideanSpace ℝ (Fin n))) ∈ {p : EuclideanSpace ℝ (Fin n) ×
+        EuclideanSpace ℝ (Fin n) | ‖p.1‖ * ‖p.2‖ ≠ 1} := fun x hx y =>
+    ((mul_le_of_le_one_left (norm_nonneg _) (mem_ball_zero_iff.1 hx).le).trans_lt
+      (mem_ball_zero_iff.1 (hsupp y.2))).ne
+  have hharm : ∀ y : tsupport f,
+      HarmonicOnNhd (fun x => ballGreenCorrector n x y) (ball 0 1) := fun y => by
+    simp_rw [ballGreenCorrector_comm _ (y : EuclideanSpace ℝ (Fin n))]
+    exact harmonicOnNhd_ballGreenCorrector (mem_ball_zero_iff.1 (hsupp y.2)).le
+  simp_rw [hrestr]
+  exact harmonicOnNhd_integral_smul_of_contDiffOn hg continuous_subtype_val
+    (isOpen_ne_fun (by fun_prop) continuous_const) contDiffOn_ballGreenCorrector isOpen_ball
+    hUW hharm
 
 /-- **Boundary values of the harmonic correction.** On the unit sphere the corrector is the
 Newtonian kernel, so the harmonic correction equals the Newtonian potential `Φ ⋆ f` there. -/
@@ -520,13 +485,11 @@ theorem ae_setIntegral_ballGreenKernel_eq (hn : n ≠ 1) :
   have hw : ContDiff ℝ 2 w := by
     rw [hwdef]
     exact hw'.const_smul (2 * ((n : ℝ) + 1))⁻¹
+  -- `Δ (1 - ‖y‖²) = -2 (n + 1)`, by `laplacian_norm_sq`.
   have hΔ : ∀ x, Δ w x = -1 := fun x => by
-    rw [hwdef, laplacian_smul _ hw'.contDiffAt,
-      contDiffAt_const.laplacian_sub (contDiff_norm_sq ℝ).contDiffAt, laplacian_const,
-      laplacian_norm_sq, finrank_euclideanSpace_fin, Pi.zero_apply, smul_eq_mul]
+    simp [hwdef, laplacian_smul _ hw'.contDiffAt,
+      contDiffAt_const.laplacian_sub (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq]
     field_simp
-    push_cast
-    ring
   have hwu := hu.value_ae_eq_of_contDiffOn hΩ.le hw.contDiffOn hw.continuous.continuousOn
     (fun x hx => by
       rw [hΩ, frontier_ball 0 one_ne_zero, mem_sphere_zero_iff_norm] at hx
