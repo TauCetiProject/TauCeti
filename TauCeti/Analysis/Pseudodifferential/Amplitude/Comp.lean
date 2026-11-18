@@ -241,7 +241,7 @@ private theorem exists_norm_le_mul_norm (hM : Continuous M)
     ∃ c, 1 ≤ c ∧ ∀ w ∈ S, ∀ ξ, ‖M w ξ‖ ≤ c * ‖ξ‖ ∧ ‖ξ‖ ≤ c * ‖M w ξ‖ := by
   obtain ⟨A, hA⟩ := hS.exists_bound_of_continuousOn hM.continuousOn
   have hinv : ContinuousOn (fun w ↦ Ring.inverse (M w)) S := fun w hw ↦
-    (((contDiff_zero (𝕜 := ℝ)).2 hM).contDiffAt.inverse (hSM w hw)).continuousAt.continuousWithinAt
+    (hM.continuousAt.ringInverse (hSM w hw)).continuousWithinAt
   obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn hinv
   refine ⟨max 1 (max A B), le_max_left _ _, fun w hw ξ ↦ ⟨?_, ?_⟩⟩
   · calc ‖M w ξ‖ ≤ ‖M w‖ * ‖ξ‖ := (M w).le_opNorm ξ
@@ -371,18 +371,10 @@ private theorem exists_norm_iteratedFDerivAlong_term_le (hκ : ContDiff ℝ ∞ 
     · rcases List.eq_nil_or_concat' γ with rfl | ⟨γ, j, rfl⟩
       · rcases List.eq_nil_or_concat' α with rfl | ⟨α, j, rfl⟩
         · simp at hD
-        · have e : amplitudeDirections (α ++ [j]) [] [] = amplitudeDirections α [] [] ++
-              [(EuclideanSpace.single j (1 : ℝ), 0, 0)] := by
-            simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
-              List.append_nil, Prod.mk_zero_zero]
-          rw [e]
+        · rw [amplitudeDirections_append_singleton_left]
           exact hpos _ (EuclideanSpace.single j 1, 0) fun b' h' hh' hh'S ↦
             ih b' hh' hh'S α [] [] (by simp at hD ⊢; omega)
-      · have e : amplitudeDirections α (γ ++ [j]) [] = amplitudeDirections α γ [] ++
-            [(0, EuclideanSpace.single j (1 : ℝ), 0)] := by
-          simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
-            List.append_nil, List.append_assoc]
-        rw [e]
+      · rw [amplitudeDirections_append_singleton_mid]
         exact hpos _ (0, EuclideanSpace.single j 1) fun b' h' hh' hh'S ↦
           ih b' hh' hh'S α γ [] (by simp at hD ⊢; omega)
     · -- The frequency step.
@@ -391,11 +383,8 @@ private theorem exists_norm_iteratedFDerivAlong_term_le (hκ : ContDiff ℝ ∞ 
       choose C hC using fun k ↦ ih (frequencyDeriv k b) (hhM k)
         ((tsupport_mul_subset_left).trans hhS) α γ β (by simp at hD ⊢; omega)
       refine ⟨∑ k, C k, fun p ↦ ?_⟩
-      have e : amplitudeDirections α γ (β ++ [j]) =
-          amplitudeDirections α γ β ++ [(0, 0, EuclideanSpace.single j (1 : ℝ))] := by
-        simp only [amplitudeDirections_def, List.map_append, List.map_cons, List.map_nil,
-          List.append_assoc]
-      rw [e, iteratedFDerivAlong_append_singleton, fderiv_term_frequency hκ hM hh,
+      rw [amplitudeDirections_append_singleton_right, iteratedFDerivAlong_append_singleton,
+        fderiv_term_frequency hκ hM hh,
         iteratedFDerivAlong_sum _ (fun k _ ↦ contDiff_term hκ hM (hhM k) (frequencyDeriv k b)) _
           (by simp)]
       simp only [Finset.sum_apply]

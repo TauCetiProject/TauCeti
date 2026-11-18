@@ -141,9 +141,8 @@ private theorem integral_fourierChar_smul_apply_fourier_comp_eq {κ : E ≃ₜ E
   have hk_supp : HasCompactSupport (Function.uncurry k) := by
     set T : Set E := (fun q : E × E ↦ Ring.inverse (N q.1) q.2) '' (tsupport ψ ×ˢ tsupport A)
     have hT : IsCompact T := (hψc.prod hAc).image_of_continuousOn fun q hq ↦
-      (isBoundedBilinearMap_apply.continuous.continuousAt.comp_of_eq
-        ((((contDiff_zero (𝕜 := ℝ)).2 (hN.comp continuous_fst)).contDiffAt.inverse
-          (hNu q.1 hq.1)).continuousAt.prodMk continuous_snd.continuousAt) rfl).continuousWithinAt
+      (((hN.comp continuous_fst).continuousAt.ringInverse (hNu q.1 hq.1)).clm_apply
+        continuous_snd.continuousAt).continuousWithinAt
     refine HasCompactSupport.intro (hψc.prod hT) fun q hq ↦ ?_
     by_contra hne
     have hψq : ψ q.1 ≠ 0 := fun h0 ↦ hne (by simp [Function.uncurry, k, s, h0])
@@ -202,6 +201,19 @@ section Limit
 variable {m : ℝ}
 
 omit [CompleteSpace V] [CompleteSpace W] in
+/-- The input-position slices `y ↦ c(x, y, ξ) (u y)` of an amplitude, applied to a Schwartz
+function, are smooth. -/
+private theorem contDiff_coefficient_slice_apply (c : Amplitude n V W m)
+    (x ξ : CoordinateSpace n) (u : 𝓢(CoordinateSpace n, V)) :
+    ContDiff ℝ ∞ fun y ↦ c.coefficient (x, y, ξ) (u y) := by
+  have h := ((ContinuousLinearMap.id ℂ (V →L[ℂ] W)).bilinearRestrictScalars
+    ℝ).isBoundedBilinearMap.contDiff.comp
+      ((c.contDiff_coefficient.comp (by fun_prop : ContDiff ℝ ∞
+        fun y : CoordinateSpace n ↦ (x, y, ξ))).prodMk (u.smooth ⊤))
+  simpa only [Function.comp_def, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+    ContinuousLinearMap.id_apply] using h
+
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- The derivatives of `y ↦ r(y) • c(x, y, ξ) (u y)` are bounded by `B ⟨ξ⟩ ^ m` on the input
 support of `c`, if the derivatives of `r` are bounded there. -/
 private theorem exists_norm_iteratedFDeriv_smul_apply_le {c : Amplitude n V W m}
@@ -223,10 +235,10 @@ private theorem exists_norm_iteratedFDeriv_smul_apply_le {c : Amplitude n V W m}
   have hcs : ContDiff ℝ ∞ fun y ↦ c.coefficient (x, y, ξ) :=
     c.contDiff_coefficient.comp (by fun_prop)
   have hP : (fun y ↦ c.coefficient (x, y, ξ) (u y)) =
-      fun y ↦ P (c.coefficient (x, y, ξ)) (u y) := rfl
-  have hg : ContDiff ℝ ∞ fun y ↦ c.coefficient (x, y, ξ) (u y) := by
-    rw [hP]
-    exact P.isBoundedBilinearMap.contDiff.comp (hcs.prodMk u.smooth')
+      fun y ↦ P (c.coefficient (x, y, ξ)) (u y) := funext fun y ↦ by
+    simp only [P, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+      ContinuousLinearMap.id_apply]
+  have hg := contDiff_coefficient_slice_apply c x ξ u
   -- The derivatives of `y ↦ c(x, y, ξ) (u y)`.
   have hgj : ∀ j, ‖iteratedFDeriv ℝ j (fun y ↦ c.coefficient (x, y, ξ) (u y)) y‖ ≤
       G j * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
@@ -264,6 +276,43 @@ private theorem exists_norm_iteratedFDeriv_smul_apply_le {c : Amplitude n V W m}
         ‖iteratedFDeriv ℝ (k - i) (fun y ↦ c.coefficient (x, y, ξ) (u y)) y‖
       ≤ (k.choose i : ℝ) * R i * (G (k - i) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by gcongr
     _ = (k.choose i : ℝ) * R i * G (k - i) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
+
+omit [CompleteSpace W] in
+/-- **Fourier decay of the rescaled input slices.** If `g` vanishes outside a compact set `L` and
+its derivatives up to order `N` are bounded by `B ⟨2π ζ⟩ ^ m`, then `‖𝓕 g ζ‖` is at most a
+constant times `⟨ζ⟩ ^ (|m| - N)`, where the constant depends only on `N`, `B`, `L` and `m`. -/
+private theorem norm_fourier_le_of_tsupport_subset {g : CoordinateSpace n → W} {N : ℕ}
+    (hg : ContDiff ℝ N g) {L : Set (CoordinateSpace n)} (hL : IsCompact L) (hgL : tsupport g ⊆ L)
+    {B : ℝ} (ζ : CoordinateSpace n)
+    (hgB : ∀ p ≤ N, ∀ y, ‖iteratedFDeriv ℝ p g y‖ ≤ B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2)) :
+    ‖𝓕 g ζ‖ ≤ 2 ^ N * B * volume.real L * (2 * π) ^ |m| *
+      (1 + ‖ζ‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
+  have hB : 0 ≤ B := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hgB 0 (Nat.zero_le N) 0))
+    (by positivity)
+  have h := one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset hg hL.measure_lt_top.ne hgL
+    hgB ζ
+  have hw : (1 + ‖ζ‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖ζ‖) ^ N := by
+    simpa using one_add_norm_sq_rpow_half_le_one_add_norm_rpow ζ (Nat.cast_nonneg (α := ℝ) N)
+  have h2π : (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) ≤ (2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (|m| / 2) := by
+    refine (one_add_norm_smul_sq_rpow_le (by nlinarith [Real.two_le_pi]) m ζ).trans ?_
+    gcongr
+    · nlinarith [sq_nonneg ‖ζ‖]
+    · linarith [le_abs_self m]
+  have hsplit : (1 + ‖ζ‖ ^ 2) ^ (|m| / 2) * (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) =
+      (1 + ‖ζ‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
+    rw [← Real.rpow_add (by positivity)]
+    ring_nf
+  have hF : ‖𝓕 g ζ‖ ≤
+      2 ^ N * (B * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * volume.real L) *
+        (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) := by
+    rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+    exact (mul_le_mul_of_nonneg_left hw (norm_nonneg _)).trans (by rw [mul_comm]; exact h)
+  calc ‖𝓕 g ζ‖
+      ≤ 2 ^ N * (B * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (|m| / 2)) * volume.real L) *
+          (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) := hF.trans (by gcongr)
+    _ = 2 ^ N * B * volume.real L * (2 * π) ^ |m| *
+          ((1 + ‖ζ‖ ^ 2) ^ (|m| / 2) * (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2)) := by ring
+    _ = _ := by rw [hsplit]
 
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Removing a uniformly bounded regularization.** Let `c` be an amplitude vanishing for input
@@ -303,13 +352,9 @@ private theorem tendsto_quantizeAmplitudeValue_smul {c : Amplitude n V W m}
   have hg₀L : ∀ ζ, ∀ y ∉ L, g₀ ζ y = 0 := fun ζ y hy ↦ by simp [hg₀, hLc y hy]
   have hgT : ∀ t ζ, tsupport (g t ζ) ⊆ L := fun t ζ ↦
     closure_minimal (Function.support_subset_iff'.2 (hgL t ζ)) hL.isClosed
-  have hgs : ∀ t ζ, ContDiff ℝ ∞ (g t ζ) := by
-    intro t ζ
+  have hgs : ∀ t ζ, ContDiff ℝ ∞ (g t ζ) := fun t ζ ↦ by
     rw [hg]
-    have hcs : ContDiff ℝ ∞ fun y ↦ c.coefficient (x, y, (2 * π) • ζ) :=
-      c.contDiff_coefficient.comp (by fun_prop)
-    exact (hr t _).smul (((ContinuousLinearMap.id ℂ (V →L[ℂ] W)).bilinearRestrictScalars
-      ℝ).isBoundedBilinearMap.contDiff.comp (hcs.prodMk u.smooth'))
+    exact (hr t _).smul (contDiff_coefficient_slice_apply c x _ u)
   -- The derivatives of the slices up to order `N` are bounded by `B' ⟨2π ζ⟩ ^ m`.
   have hgB : ∀ t, 1 ≤ t → ∀ ζ, ∀ p ≤ N, ∀ y, ‖iteratedFDeriv ℝ p (g t ζ) y‖ ≤
       B' * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) := by
@@ -324,42 +369,6 @@ private theorem tendsto_quantizeAmplitudeValue_smul {c : Amplitude n V W m}
     · rw [image_eq_zero_of_notMem_tsupport fun h ↦
         hy (hgT t ζ (tsupport_iteratedFDeriv_subset p h)), norm_zero]
       exact mul_nonneg hB' (by positivity)
-  -- The dominating function.
-  have hbound : ∀ t, 1 ≤ t → ∀ ζ, ‖𝐞 ⟪ζ, x⟫ • 𝓕 (g t ζ) ζ‖ ≤
-      C * (1 + ‖ζ‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
-    intro t ht ζ
-    have h := one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset
-      ((hgs t ζ).of_le (by exact_mod_cast le_top)) hL.measure_lt_top.ne (hgT t ζ) (hgB t ht ζ) ζ
-    have hw : (1 + ‖ζ‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖ζ‖) ^ N := by
-      simpa using one_add_norm_sq_rpow_half_le_one_add_norm_rpow ζ (Nat.cast_nonneg (α := ℝ) N)
-    rw [Circle.smul_def, norm_smul, Circle.norm_coe, one_mul]
-    have h2π : (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) ≤ (2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (|m| / 2) := by
-      have hpi : (1 : ℝ) ≤ 2 * π := by nlinarith [Real.two_le_pi]
-      refine (one_add_norm_sq_rpow_le_of_norm_le_mul (x := (2 * π) • ζ) (y := ζ) hpi m ?_ ?_).trans
-        ?_
-      · rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-      · rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-        calc ‖ζ‖ = 1 * (1 * ‖ζ‖) := by ring
-          _ ≤ 2 * π * (2 * π * ‖ζ‖) := by gcongr
-      · gcongr
-        · nlinarith [sq_nonneg ‖ζ‖]
-        · linarith [le_abs_self m]
-    have hsplit : (1 + ‖ζ‖ ^ 2) ^ (|m| / 2) * (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) =
-        (1 + ‖ζ‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by
-      rw [← Real.rpow_add (by positivity)]
-      ring_nf
-    have hF : ‖𝓕 (g t ζ) ζ‖ ≤
-        2 ^ N * (B' * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * volume.real L) *
-          (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) := by
-      rw [neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
-      exact (mul_le_mul_of_nonneg_left hw (norm_nonneg _)).trans (by rw [mul_comm]; exact h)
-    calc ‖𝓕 (g t ζ) ζ‖
-        ≤ 2 ^ N * (B' * ((2 * π) ^ |m| * (1 + ‖ζ‖ ^ 2) ^ (|m| / 2)) * volume.real L) *
-            (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2) := hF.trans (by gcongr)
-      _ = C * ((1 + ‖ζ‖ ^ 2) ^ (|m| / 2) * (1 + ‖ζ‖ ^ 2) ^ (-(N : ℝ) / 2)) := by
-          simp only [C]
-          ring
-      _ = C * (1 + ‖ζ‖ ^ 2) ^ (-((N : ℝ) - |m|) / 2) := by rw [hsplit]
   have hN : (finrank ℝ (CoordinateSpace n) : ℝ) < (N : ℝ) - |m| := by
     simp only [finrank_euclideanSpace, Fintype.card_fin, N]
     push_cast
@@ -418,21 +427,18 @@ private theorem tendsto_quantizeAmplitudeValue_smul {c : Amplitude n V W m}
           (continuous_const.prodMk (continuous_fst.prodMk (continuous_snd.const_smul (2 * π))))
       rw [hg]
       exact h1.smul (h2.clm_apply (u.continuous.comp continuous_fst))
-    have hcont := (continuous_integral_fourierChar_smul (K := L) (g := fun q ↦ g t q.2 q.1) hgc
-      hL (fun y hy ζ ↦ hgL t ζ y hy)).comp (continuous_id.prodMk continuous_id)
-    have hF : (fun ζ ↦ 𝓕 (g t ζ) ζ) =
-        (fun q : CoordinateSpace n × CoordinateSpace n ↦
-          ∫ y, (𝐞 (-⟪y, q.1⟫) : ℂ) • (fun q ↦ g t q.2 q.1) (y, q.2)) ∘
-          (fun ζ ↦ (id ζ, id ζ)) := by
-      funext ζ
-      rw [Real.fourier_eq]
-      simp only [Circle.smul_def, Function.comp_apply, id]
-    refine ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
-      ?_).aestronglyMeasurable
-    rw [hF]
-    exact hcont
+    -- The Fourier transforms of the slices are the diagonal of a jointly continuous integral.
+    have hcont : Continuous fun ζ ↦ 𝓕 (g t ζ) ζ := by
+      simp only [Real.fourier_eq, Circle.smul_def]
+      exact (continuous_integral_fourierChar_smul (K := L) (g := fun q ↦ g t q.2 q.1) hgc hL
+        fun y hy ζ ↦ hgL t ζ y hy).comp (continuous_id.prodMk continuous_id)
+    exact ((Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
+      hcont).aestronglyMeasurable
   · filter_upwards [eventually_ge_atTop 1] with t ht
-    exact .of_forall fun ζ ↦ hbound t ht ζ
+    refine .of_forall fun ζ ↦ ?_
+    rw [Circle.smul_def, norm_smul, Circle.norm_coe, one_mul]
+    exact norm_fourier_le_of_tsupport_subset ((hgs t ζ).of_le (by exact_mod_cast le_top)) hL
+      (hgT t ζ) ζ (hgB t ht ζ)
 
 end Limit
 
@@ -441,6 +447,14 @@ end Limit
 section Main
 
 variable {m : ℝ}
+
+/-- The regularizing cutoffs `ρ(t⁻¹ w)` tend to `ρ 0 = 1` as `t → ∞`. -/
+private theorem tendsto_cutoff_inv_smul {ρ : CoordinateSpace n → ℝ} (hρ : Continuous ρ)
+    (hρ0 : ρ 0 = 1) (w : CoordinateSpace n) :
+    Tendsto (fun t : ℝ ↦ ρ (t⁻¹ • w)) atTop (𝓝 1) := by
+  rw [← hρ0]
+  refine hρ.continuousAt.tendsto.comp ?_
+  simpa using (tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const w
 
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Removing the regularization on the symbol side.** For a compactly supported continuous
@@ -468,11 +482,8 @@ private theorem tendsto_integral_cutoff_smul_quantizeSchwartzValue' (a : Symbol 
     simp only [Circle.smul_def, norm_smul, smul_apply, Circle.norm_coe, one_mul]
     exact mul_le_mul_of_nonneg_right ((Real.norm_eq_abs _).symm ▸ (hRρ _)) (norm_nonneg _)
   · refine .of_forall fun ζ ↦ ?_
-    have h1 : Tendsto (fun t : ℝ ↦ ρ (t⁻¹ • (2 * π) • ζ)) atTop (𝓝 1) := by
-      rw [← hρ0]
-      refine hρ.continuousAt.tendsto.comp ?_
-      simpa using (tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const ((2 * π) • ζ)
-    have h2 := h1.smul_const (a.coefficient (z, (2 * π) • ζ))
+    have h2 := (tendsto_cutoff_inv_smul hρ hρ0 ((2 * π) • ζ)).smul_const
+      (a.coefficient (z, (2 * π) • ζ))
     rw [one_smul] at h2
     exact tendsto_const_nhds.smul
       (((ContinuousLinearMap.apply ℂ W (𝓕 v ζ)).continuous.tendsto _).comp h2)
@@ -517,13 +528,9 @@ private theorem exists_norm_iteratedFDeriv_cutoff_le
   set Q := (fun q : CoordinateSpace n × CoordinateSpace n ↦
     ((x, Ring.inverse (M (x, q.1)) q.2), q.1)) '' (L ×ˢ Metric.closedBall 0 1)
   have hQ : IsCompact Q := (hL.prod (isCompact_closedBall 0 1)).image_of_continuousOn
-    fun q hq ↦ by
-      have hinv := (((contDiff_zero (𝕜 := ℝ)).2 (hMx.comp continuous_fst)).contDiffAt.inverse
-        (hLM q.1 hq.1)).continuousAt
-      exact ((continuousAt_const.prodMk
-        (isBoundedBilinearMap_apply.continuous.continuousAt.comp_of_eq
-          (hinv.prodMk continuous_snd.continuousAt) rfl)).prodMk
-        continuous_fst.continuousAt).continuousWithinAt
+    fun q hq ↦ ((continuousAt_const.prodMk
+      (((hMx.comp continuous_fst).continuousAt.ringInverse (hLM q.1 hq.1)).clm_apply
+        continuous_snd.continuousAt)).prodMk continuous_fst.continuousAt).continuousWithinAt
   obtain ⟨R, hR⟩ := hQ.exists_bound_of_continuousOn
     (hh.continuous_iteratedFDeriv (m := k) (by simp)).continuousOn
   refine ⟨max R 0, fun t y hy ξ ↦ ?_⟩
@@ -548,6 +555,30 @@ private theorem exists_norm_iteratedFDeriv_cutoff_le
     · simp
     · rw [iteratedFDeriv_const_of_ne hk.ne']
       simp
+
+/-- The weight `f(x, y) |det Dκ(y)| |det M(x, y)|` is smooth if `f` is smooth and `Dκ(y)` and
+`M(x, y)` are invertible on the support of `f`. -/
+private theorem contDiff_mul_abs_det_mul_abs_det {κ : CoordinateSpace n → CoordinateSpace n}
+    (hκ : ContDiff ℝ ∞ κ)
+    {M : CoordinateSpace n × CoordinateSpace n → CoordinateSpace n →L[ℝ] CoordinateSpace n}
+    (hM : ContDiff ℝ ∞ M) {f : CoordinateSpace n × CoordinateSpace n → ℝ} (hf : ContDiff ℝ ∞ f)
+    (hfu : ∀ w ∈ tsupport f, IsUnit (fderiv ℝ κ w.2) ∧ IsUnit (M w)) :
+    ContDiff ℝ ∞ fun w ↦ f w * (|(fderiv ℝ κ w.2).det| * |(M w).det|) := by
+  have hdet : ∀ {A : CoordinateSpace n →L[ℝ] CoordinateSpace n}, IsUnit A → A.det ≠ 0 :=
+    fun hA ↦
+      (LinearMap.isUnit_det _ (ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.1 hA)).ne_zero
+  have h1 : ContDiff ℝ ∞ fun w : CoordinateSpace n × CoordinateSpace n ↦ (fderiv ℝ κ w.2).det :=
+    ContinuousLinearMap.contDiff_det.comp ((hκ.fderiv_right (m := ∞) (by simp)).comp contDiff_snd)
+  have h2 : ContDiff ℝ ∞ fun w ↦ (M w).det := ContinuousLinearMap.contDiff_det.comp hM
+  -- The determinants do not vanish near the support of `f`.
+  have hO : IsOpen {w | (M w).det ≠ 0 ∧ (fderiv ℝ κ w.2).det ≠ 0} :=
+    (isOpen_ne_fun h2.continuous continuous_const).inter
+      (isOpen_ne_fun h1.continuous continuous_const)
+  have hon : ContDiffOn ℝ ∞ (fun w : CoordinateSpace n × CoordinateSpace n ↦
+      |(fderiv ℝ κ w.2).det| * |(M w).det|) {w | (M w).det ≠ 0 ∧ (fderiv ℝ κ w.2).det ≠ 0} :=
+    fun w hw ↦ ((h1.contDiffAt.abs hw.2).mul (h2.contDiffAt.abs hw.1)).contDiffWithinAt
+  exact hon.contDiff_smul_of_tsupport_subset hO hf.contDiffOn
+    fun w hw ↦ ⟨hdet (hfu w hw).2, hdet (hfu w hw).1⟩
 
 /-- **Changes of coordinates for pseudodifferential operators.** Let `κ` be a smooth homeomorphism
 of `ℝⁿ`, `a` a symbol of order `m` vanishing at positions outside a compact set `K`, and `ψ` a
@@ -597,9 +628,6 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
   obtain ⟨M, hM, hMS⟩ := exists_contDiff_eqOn_adjoint_ringInverse hΦs hS hSΦ
   have hMu : ∀ w ∈ tsupport φ ×ˢ tsupport ψ, IsUnit (M w) :=
     fun w hw ↦ hMS w hw ▸ ContinuousLinearMap.isUnit_adjoint_iff.2 (hSΦ w hw).ringInverse
-  have hdet : ∀ {A : CoordinateSpace n →L[ℝ] CoordinateSpace n}, IsUnit A → A.det ≠ 0 :=
-    fun hA ↦
-      (LinearMap.isUnit_det _ (ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.1 hA)).ne_zero
   -- The weight `g(x, y) = φ(x) ψ(y) |det Dκ(y)| |det M(x, y)|`.
   obtain ⟨g, hgdef⟩ : ∃ g : CoordinateSpace n × CoordinateSpace n → ℝ,
       g = fun w ↦ (φ w.1 * ψ w.2) * (|(fderiv ℝ κ w.2).det| * |(M w).det|) := ⟨_, rfl⟩
@@ -609,23 +637,9 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
       subset_tsupport _ (right_ne_zero_of_mul hw)⟩)
       ((isClosed_tsupport _).prod (isClosed_tsupport _))
   have hg : ContDiff ℝ ∞ g := by
-    have h1 : ContDiff ℝ ∞ fun w : CoordinateSpace n × CoordinateSpace n ↦
-        (fderiv ℝ κ w.2).det :=
-      ContinuousLinearMap.contDiff_det.comp
-        ((hκ.fderiv_right (m := ∞) (by simp)).comp contDiff_snd)
-    have h2 : ContDiff ℝ ∞ fun w ↦ (M w).det := ContinuousLinearMap.contDiff_det.comp hM
-    -- The determinants do not vanish near the support of `φ(x) ψ(y)`.
-    have hO' : IsOpen {w | (M w).det ≠ 0 ∧ (fderiv ℝ κ w.2).det ≠ 0} :=
-      (isOpen_ne_fun h2.continuous continuous_const).inter
-        (isOpen_ne_fun h1.continuous continuous_const)
-    have hon : ContDiffOn ℝ ∞ (fun w : CoordinateSpace n × CoordinateSpace n ↦
-        |(fderiv ℝ κ w.2).det| * |(M w).det|)
-        {w | (M w).det ≠ 0 ∧ (fderiv ℝ κ w.2).det ≠ 0} := fun w hw ↦
-      ((h1.contDiffAt.abs hw.2).mul (h2.contDiffAt.abs hw.1)).contDiffWithinAt
     rw [hgdef]
-    exact hon.contDiff_smul_of_tsupport_subset hO'
-      ((hφ.comp contDiff_fst).mul (hψ.comp contDiff_snd)).contDiffOn
-      (hφψ.trans fun w hw ↦ ⟨hdet (hMu w hw), hdet (hκ' w.2 hw.2)⟩)
+    exact contDiff_mul_abs_det_mul_abs_det hκ hM ((hφ.comp contDiff_fst).mul (hψ.comp contDiff_snd))
+      fun w hw ↦ ⟨hκ' w.2 (hφψ hw).2, hMu w (hφψ hw)⟩
   have hgS : tsupport g ⊆ tsupport φ ×ˢ tsupport ψ := by
     rw [hgdef]
     exact tsupport_mul_subset_left.trans hφψ
@@ -645,24 +659,8 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
           subset_tsupport _ hψx⟩
       have hu : IsUnit (fderiv ℝ κ x) := hΦx x ▸ hSΦ _ hxS
       simp only
-      -- `det ((Dκ(x)⁻¹)*) = det (Dκ(x)⁻¹) = (det Dκ(x))⁻¹`.
-      have hinv : (Ring.inverse (fderiv ℝ κ x)).det * (fderiv ℝ κ x).det = 1 := by
-        have h := congrArg ContinuousLinearMap.det (Ring.inverse_mul_cancel _ hu)
-        simp only [ContinuousLinearMap.det] at h ⊢
-        rw [← map_mul]
-        simpa using h
-      have hadj : (ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x))).det =
-          (Ring.inverse (fderiv ℝ κ x)).det := by
-        have hB : ((ContinuousLinearMap.adjoint (Ring.inverse (fderiv ℝ κ x)) :
-            CoordinateSpace n →L[ℝ] CoordinateSpace n) :
-              CoordinateSpace n →ₗ[ℝ] CoordinateSpace n) =
-            LinearMap.adjoint ((Ring.inverse (fderiv ℝ κ x) :
-              CoordinateSpace n →L[ℝ] CoordinateSpace n) :
-                CoordinateSpace n →ₗ[ℝ] CoordinateSpace n) := by
-          rw [ContinuousLinearMap.adjoint_toLinearMap]
-        simp only [ContinuousLinearMap.det]
-        rw [hB, LinearMap.det_adjoint, star_trivial]
-      rw [hMS _ hxS, hΦx, hφ1' x hx, hadj, ← abs_mul, mul_comm (fderiv ℝ κ x).det, hinv]
+      rw [hMS _ hxS, hΦx, hφ1' x hx, ← abs_mul,
+        ContinuousLinearMap.det_mul_det_adjoint_ringInverse hu]
       simp
     · simp [haK _ hx]
   · rw [Amplitude.quantizeSchwartzValue_leftSymbol hc]
@@ -694,10 +692,7 @@ theorem Symbol.exists_amplitude_quantizeSchwartzValue_comp_eq (a : Symbol n V W 
         continuous_fst)).clm_apply continuous_snd).const_smul t⁻¹)))
       (fun k ↦ (exists_norm_iteratedFDeriv_cutoff_le hM hρ hρs x hψc
         (fun y hy ↦ hMu _ (hxS y hy)) k).imp fun _ hR t _ ↦ hR t)
-      (fun y ξ ↦ by
-        rw [← hρ0]
-        refine hρ.continuous.continuousAt.tendsto.comp ?_
-        simpa using (tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const (M (x, y) ξ))
+      (fun y ξ ↦ tendsto_cutoff_inv_smul hρ.continuous hρ0 (M (x, y) ξ))
     -- The symbol side: the regularized symbols `ρ(t⁻¹ η) a(z, η)`.
     have hLHS := tendsto_integral_cutoff_smul_quantizeSchwartzValue' a (κ x) v hρ.continuous
       hρc hρ0

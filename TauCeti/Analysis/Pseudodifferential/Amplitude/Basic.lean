@@ -84,6 +84,24 @@ theorem amplitudeDirections_def (α γ β : List (Fin n)) :
         β.map (fun j ↦ (0, 0, EuclideanSpace.single j 1)) := by
   simp [amplitudeDirections, mixedDirections_def, Function.comp_def, List.append_assoc]
 
+/-- Appending an output-position direction, when there are no other directions. -/
+theorem amplitudeDirections_append_singleton_left (α : List (Fin n)) (j : Fin n) :
+    amplitudeDirections (α ++ [j]) [] [] =
+      amplitudeDirections α [] [] ++ [(EuclideanSpace.single j 1, 0, 0)] := by
+  simp [amplitudeDirections_def, Prod.mk_zero_zero]
+
+/-- Appending an input-position direction, when there are no frequency directions. -/
+theorem amplitudeDirections_append_singleton_mid (α γ : List (Fin n)) (j : Fin n) :
+    amplitudeDirections α (γ ++ [j]) [] =
+      amplitudeDirections α γ [] ++ [(0, EuclideanSpace.single j 1, 0)] := by
+  simp [amplitudeDirections_def]
+
+/-- Appending a frequency direction. -/
+theorem amplitudeDirections_append_singleton_right (α γ β : List (Fin n)) (j : Fin n) :
+    amplitudeDirections α γ (β ++ [j]) =
+      amplitudeDirections α γ β ++ [(0, 0, EuclideanSpace.single j 1)] := by
+  simp [amplitudeDirections_def]
+
 @[simp]
 theorem length_amplitudeDirections (α γ β : List (Fin n)) :
     (amplitudeDirections α γ β).length = α.length + γ.length + β.length := by

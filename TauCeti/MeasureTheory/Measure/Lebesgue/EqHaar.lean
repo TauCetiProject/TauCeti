@@ -106,7 +106,7 @@ theorem integral_eq_abs_det_smul_integral_comp {G : Type*} [NormedAddCommGroup G
     ∫ x, f x ∂μ = |N.det| • ∫ y, f (N y) ∂μ := by
   obtain ⟨u, rfl⟩ := hN
   set e := ContinuousLinearEquiv.unitsEquiv ℝ F u
-  have he : ⇑e = ⇑(u : F →L[ℝ] F) := rfl
+  have he : ⇑e = ⇑(u : F →L[ℝ] F) := funext (ContinuousLinearEquiv.unitsEquiv_apply ℝ F u)
   have h := integral_image_eq_integral_abs_det_fderiv_smul μ MeasurableSet.univ
     (fun y _ ↦ (u : F →L[ℝ] F).hasFDerivAt.hasFDerivWithinAt) (he ▸ e.injective).injOn f
   rw [image_univ_of_surjective (he ▸ e.surjective)] at h
