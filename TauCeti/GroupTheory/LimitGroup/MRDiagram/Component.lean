@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Zariski
 public import TauCeti.GroupTheory.LimitGroup.MRDiagram.Basic
-public import Mathlib.Topology.Irreducible
 import TauCeti.Topology.NoetherianSpace.Decomposition
 
 /-!
@@ -191,6 +190,7 @@ variable {S : Set (GX A X)} {x : X → H}
 /-- A diagram reduced to a leaf is component-normalized when the only maximal irreducible subset
 of the solution set is the closure of the set of values at `x` of the homomorphisms out of the
 leaf. -/
+@[simp]
 theorem isComponentNormalized_leaf {free : IsFreeGGroup ι} :
     (leaf free).IsComponentNormalized ιL S x ↔
       {Z | Maximal (fun Z ↦ @IsIrreducible (X → L) (zariskiTopology ιL X) Z ∧ Z ⊆ V ιL S) Z} =
@@ -223,6 +223,7 @@ variable {n : ℕ} {K : Fin n → Type u} [∀ i, Group (K i)] {κ : ∀ i, A �
 /-- A diagram is component-normalized when the closures of the sets of solutions obtained through
 the edges at its root are pairwise distinct and are exactly the maximal irreducible subsets of the
 solution set. -/
+@[simp]
 theorem isComponentNormalized_node :
     (node M hM π child).IsComponentNormalized ιL S x ↔
       Function.Injective (fun i =>
