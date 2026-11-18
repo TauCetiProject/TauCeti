@@ -328,8 +328,7 @@ private theorem tendsto_inv_mul_phaseSymbol_sub_one (ξ : E) :
     · simp [mul_comm]
   rw [hasDerivAt_iff_tendsto_slope] at h
   refine h.congr fun t ↦ ?_
-  rw [slope_def_module, phaseSymbol_zero, sub_zero, RCLike.real_smul_eq_coe_mul (K := ℂ)]
-  rfl
+  rw [slope_def_module, phaseSymbol_zero, sub_zero, Complex.real_smul]
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The difference quotients of the phase symbol are bounded by `|ω(ξ)|`. -/
@@ -356,6 +355,14 @@ private theorem coeFn_fourier_smul_phasePropagator_sub (t : ℝ) (f : Lp F 2 (vo
     coeFn_fourier_phasePropagator ω t f] with ξ h₁ h₂ h₃
   refine h₁.trans ?_
   rw [Pi.smul_apply, h₂, Pi.sub_apply, h₃, mul_smul, sub_smul, one_smul]
+
+/-- If `𝓕 g = i ω 𝓕 f` for some `g ∈ L²`, then `ω 𝓕 f ∈ L²`. -/
+private theorem memLp_smul_fourier_of_ae_eq {f g : Lp F 2 (volume : Measure E)}
+    (h : 𝓕 g =ᵐ[volume] fun ξ ↦ (I * ω ξ) • 𝓕 f ξ) :
+    MemLp (fun ξ ↦ (ω ξ : ℂ) • 𝓕 f ξ) 2 volume := by
+  refine ((Lp.memLp (𝓕 g)).const_smul (-I)).ae_eq ?_
+  filter_upwards [h] with ξ hξ
+  simp [hξ, smul_smul, ← mul_assoc]
 
 /-- Membership in the domain of the complex generator of `exp(itω(D))` is membership in the
 domain of its real generator. -/
@@ -402,10 +409,7 @@ private theorem tendsto_smul_phasePropagator_sub {f g : Lp F 2 (volume : Measure
       (𝓝 (𝓕 g)) := by
     rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
     -- Dominated convergence on the Fourier side, with dominating function `‖ω 𝓕 f‖`.
-    have hb : MemLp (fun ξ ↦ (ω ξ : ℂ) • 𝓕 f ξ) 2 (volume : Measure E) := by
-      refine ((Lp.memLp (𝓕 g)).const_smul (-I)).ae_eq ?_
-      filter_upwards [h] with ξ hξ
-      rw [Pi.smul_apply, hξ, smul_smul, ← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
+    have hb := memLp_smul_fourier_of_ae_eq ω h
     have hdc := TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (l := 𝓝[>] (0 : ℝ)) (q := 2)
       (by simp) (f := fun t ξ ↦ (((t⁻¹ : ℝ) : ℂ) * (phaseSymbol ω t ξ - 1)) • 𝓕 f ξ)
       (g := fun ξ ↦ (I * ω ξ) • 𝓕 f ξ) ?_ hb (C := 2) ?_ ?_
@@ -463,13 +467,8 @@ theorem mem_domain_phaseGroup_iff (f : Lp F 2 (volume : Measure E)) :
     f ∈ (phaseGroup E F ω).domain ↔ MemLp (fun ξ ↦ (ω ξ : ℂ) • 𝓕 f ξ) 2 volume := by
   constructor
   · intro hf
-    set U := phaseGroup E F ω
-    let f' : (U.complexGenerator (isUnitary_phaseGroup ω)).domain :=
-      ⟨f, (mem_complexGenerator_domain_phaseGroup_iff ω).mpr hf⟩
-    refine ((Lp.memLp (𝓕 (U.complexGenerator (isUnitary_phaseGroup ω) f'))).const_smul
-      (-I)).ae_eq ?_
-    filter_upwards [coeFn_fourier_complexGenerator_phaseGroup ω f'] with ξ hξ
-    rw [Pi.smul_apply, hξ, smul_smul, ← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
+    exact memLp_smul_fourier_of_ae_eq ω (coeFn_fourier_complexGenerator_phaseGroup ω
+      ⟨f, (mem_complexGenerator_domain_phaseGroup_iff ω).mpr hf⟩)
   · intro hf
     refine mem_domain_phaseGroup_of_ae_eq ω (g := 𝓕⁻ ((hf.const_smul I).toLp _)) ?_
     rw [FourierTransform.fourier_fourierInv_eq]

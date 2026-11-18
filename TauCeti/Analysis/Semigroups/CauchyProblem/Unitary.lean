@@ -67,13 +67,18 @@ open scoped InnerProductSpace LinearPMap
 
 namespace TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary
 
-/-- A function continuous on `[0, ∞)` is integrable on every `(0, t]`. -/
-private theorem integrableOn_Ioc_of_continuousOn {X : Type*} [NormedAddCommGroup X] {f : ℝ → X}
-    (hf : ContinuousOn f (Ici 0)) (t : ℝ) : IntegrableOn f (Ioc 0 t) :=
-  ((hf.mono Icc_subset_Ici_self).integrableOn_compact isCompact_Icc).mono_set Ioc_subset_Icc_self
-
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {U : StronglyContinuousGroup H} {F : ℝ → H} {x : H} {u : ℝ → H}
+
+/-- The weak formulation against `ψ` at time `t`, with `φ` standing for `A ψ`, says that
+`⟪φ, ∫_{(0,t]} u⟫ = -⟪ψ, u t - x - ∫_{(0,t]} F⟫`: the inner products commute with the time
+integrals. -/
+private theorem inner_eq_iff_inner_integral_eq {t : ℝ} (hu : IntegrableOn u (Ioc 0 t))
+    (hF : IntegrableOn F (Ioc 0 t)) (ψ φ : H) :
+    ⟪ψ, u t⟫_ℂ = ⟪ψ, x⟫_ℂ - (∫ s in Ioc 0 t, ⟪φ, u s⟫_ℂ) + ∫ s in Ioc 0 t, ⟪ψ, F s⟫_ℂ ↔
+      ⟪φ, ∫ s in Ioc 0 t, u s⟫_ℂ = -⟪ψ, u t - x - ∫ s in Ioc 0 t, F s⟫_ℂ := by
+  rw [integral_inner hu, integral_inner hF, inner_sub_right, inner_sub_right]
+  constructor <;> intro h <;> linear_combination h
 
 /-- **A mild solution is a weak solution.** If `u` is a mild solution of `u' = A u + F`,
 `u(0) = x`, for the generator `A` of a unitary group, then for every `ψ` in the domain of `A`
@@ -87,18 +92,12 @@ theorem inner_eq_of_isForcedMildSolution (hU : U.IsUnitary)
   have hv := hu.integral_mem_domain ht
   have hA := hu.map_integral_eq_sub ht
   rw [LinearPMap.restrictScalars_apply] at hA
-  set v : (U.complexGenerator hU).domain :=
+  have hskew := hU.inner_complexGenerator_eq_neg ψ
     ⟨∫ s in Ioc 0 t, u s, (LinearPMap.mem_restrictScalars_domain ℝ _).mp hv⟩
-  have hskew := hU.inner_complexGenerator_eq_neg ψ v
-  have hiu : ∫ s in Ioc 0 t, ⟪U.complexGenerator hU ψ, u s⟫_ℂ =
-      ⟪U.complexGenerator hU ψ, ∫ s in Ioc 0 t, u s⟫_ℂ :=
-    integral_inner (integrableOn_Ioc_of_continuousOn hu.continuousOn t) _
-  have hiF : ∫ s in Ioc 0 t, ⟪(ψ : H), F s⟫_ℂ = ⟪(ψ : H), ∫ s in Ioc 0 t, F s⟫_ℂ :=
-    integral_inner (hu.locallyIntegrableOn.integrableOn_Ioc_of_Ici t) _
-  have hvA : U.complexGenerator hU v = u t - x - ∫ s in Ioc 0 t, F s := hA
-  rw [hvA, inner_sub_right, inner_sub_right] at hskew
-  change ⟪U.complexGenerator hU ψ, ∫ s in Ioc 0 t, u s⟫_ℂ = _ at hskew
-  rw [hiu, hiF]
+  rw [hA] at hskew
+  refine (inner_eq_iff_inner_integral_eq
+    ((hu.continuousOn.locallyIntegrableOn measurableSet_Ici).integrableOn_Ioc_of_Ici t)
+    (hu.locallyIntegrableOn.integrableOn_Ioc_of_Ici t) _ _).2 ?_
   linear_combination hskew
 
 /-- The weak formulation at a time `t ≥ 0` identifies the generator on the time integral: the
@@ -119,15 +118,10 @@ private theorem exists_mem_domain_complexGenerator_eq (hU : U.IsUnitary)
   -- The weak formulation says that `-w` is the adjoint of `A` applied to the time integral.
   have hadj : ∀ ψ : A.domain, ⟪-w, (ψ : H)⟫_ℂ = ⟪∫ s in Ioc 0 t, u s, A ψ⟫_ℂ := by
     intro ψ
-    have hψ := h ψ
-    have hiu : ∫ s in Ioc 0 t, ⟪A ψ, u s⟫_ℂ = ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ :=
-      integral_inner (integrableOn_Ioc_of_continuousOn hu t) _
-    have hiF : ∫ s in Ioc 0 t, ⟪(ψ : H), F s⟫_ℂ = ⟪(ψ : H), ∫ s in Ioc 0 t, F s⟫_ℂ :=
-      integral_inner (hF.integrableOn_Ioc_of_Ici t) _
-    have hval : ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ = -⟪(ψ : H), w⟫_ℂ := by
-      simp only [w, inner_sub_right]
-      rw [← hiu, ← hiF]
-      linear_combination hψ
+    have hval : ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ = -⟪(ψ : H), w⟫_ℂ :=
+      (inner_eq_iff_inner_integral_eq
+        ((hu.locallyIntegrableOn measurableSet_Ici).integrableOn_Ioc_of_Ici t)
+        (hF.integrableOn_Ioc_of_Ici t) _ _).1 (h ψ)
     calc ⟪-w, (ψ : H)⟫_ℂ = (starRingEnd ℂ) ⟪(ψ : H), -w⟫_ℂ := (inner_conj_symm _ _).symm
       _ = (starRingEnd ℂ) ⟪A ψ, ∫ s in Ioc 0 t, u s⟫_ℂ := by rw [inner_neg_right, hval]
       _ = ⟪∫ s in Ioc 0 t, u s, A ψ⟫_ℂ := inner_conj_symm _ _

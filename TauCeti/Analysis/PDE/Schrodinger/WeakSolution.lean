@@ -45,10 +45,11 @@ with `A ψ = i Δψ` that weak formulation is the one above, since `⟪i Δψ, u
 
 ## Main declarations
 
-* `TauCeti.exists_complexGenerator_schrodinger_eq_I_smul`: if `𝓕 χ = -4π² ‖ξ‖² 𝓕 ψ`, then `ψ` lies
-  in the domain of the generator `A` of the Schrödinger group and `A ψ = i χ`.
-* `TauCeti.coeFn_fourier_neg_I_smul_complexGenerator_schrodinger`: conversely, every `ψ` in the
-  domain of `A` has such a `χ`, namely `-i A ψ`.
+* `TauCeti.exists_complexGenerator_phaseGroup_laplacianSymbol_eq_I_smul`: if
+  `𝓕 χ = -4π² ‖ξ‖² 𝓕 ψ`, then `ψ` lies in the domain of the generator `A` of the Schrödinger group
+  and `A ψ = i χ`.
+* `TauCeti.coeFn_fourier_neg_I_smul_complexGenerator_phaseGroup_laplacianSymbol`: conversely,
+  every `ψ` in the domain of `A` has such a `χ`, namely `-i A ψ`.
 * `TauCeti.eqOn_schrodingerDuhamel_iff`: a continuous `L²`-valued function satisfies the weak
   formulation of the Schrödinger equation if and only if it is Duhamel's formula.
 * `TauCeti.inner_schrodingerDuhamel`: Duhamel's formula satisfies the weak formulation.
@@ -80,7 +81,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- **The generator of the Schrödinger group is `i Δ`.** If `χ ∈ L²` is the Laplacian of
 `ψ ∈ L²` in the sense that `𝓕 χ = -4π² ‖ξ‖² 𝓕 ψ`, then `ψ` lies in the domain of the generator
 `A` of `S(t) = exp(itΔ)`, and `A ψ = i χ`. -/
-theorem exists_complexGenerator_schrodinger_eq_I_smul {ψ χ : Lp F 2 (volume : Measure E)}
+theorem exists_complexGenerator_phaseGroup_laplacianSymbol_eq_I_smul
+    {ψ χ : Lp F 2 (volume : Measure E)}
     (h : 𝓕 χ =ᵐ[volume] fun ξ ↦ (laplacianSymbol ξ : ℂ) • 𝓕 ψ ξ) :
     ∃ hψ : ψ ∈ ((phaseGroup E F laplacianSymbol).complexGenerator
         (isUnitary_phaseGroup laplacianSymbol)).domain,
@@ -94,7 +96,7 @@ theorem exists_complexGenerator_schrodinger_eq_I_smul {ψ χ : Lp F 2 (volume : 
 
 /-- Every `ψ` in the domain of the generator `A` of the Schrödinger group has its Laplacian in
 `L²`: `χ = -i A ψ` satisfies `𝓕 χ = -4π² ‖ξ‖² 𝓕 ψ`. -/
-theorem coeFn_fourier_neg_I_smul_complexGenerator_schrodinger
+theorem coeFn_fourier_neg_I_smul_complexGenerator_phaseGroup_laplacianSymbol
     (ψ : ((phaseGroup E F laplacianSymbol).complexGenerator
       (isUnitary_phaseGroup laplacianSymbol)).domain) :
     𝓕 ((-I) • (phaseGroup E F laplacianSymbol).complexGenerator
@@ -104,7 +106,8 @@ theorem coeFn_fourier_neg_I_smul_complexGenerator_schrodinger
   filter_upwards [Lp.coeFn_smul (-I) (𝓕 ((phaseGroup E F laplacianSymbol).complexGenerator
       (isUnitary_phaseGroup laplacianSymbol) ψ)),
     coeFn_fourier_complexGenerator_phaseGroup laplacianSymbol ψ] with ξ h₁ h₂
-  rw [h₁, Pi.smul_apply, h₂, smul_smul, ← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul]
+  rw [h₁, Pi.smul_apply, h₂]
+  simp [smul_smul, ← mul_assoc]
 
 /-- A continuous function on `[0, ∞)` is Duhamel's formula there exactly when it is the mild
 solution of `∂ₜu = A u - i G`, `u(0) = f`, for the generator `A` of the Schrödinger group. -/
@@ -154,12 +157,12 @@ theorem eqOn_schrodingerDuhamel_iff (hG : LocallyIntegrableOn G (Ici 0))
   refine (eqOn_schrodingerDuhamel_iff_isForcedMildSolution hG).trans <|
     ((isUnitary_phaseGroup laplacianSymbol).isForcedMildSolution_iff_forall_inner_eq
       (hG.smul (-I)) hu).trans ⟨fun h ψ χ hχ t ht ↦ ?_, fun h ψ t ht ↦ ?_⟩
-  · obtain ⟨hψ, hA⟩ := exists_complexGenerator_schrodinger_eq_I_smul hχ
+  · obtain ⟨hψ, hA⟩ := exists_complexGenerator_phaseGroup_laplacianSymbol_eq_I_smul hχ
     exact (inner_eq_iff_of_eq_I_smul _ hA t).1 (h ⟨ψ, hψ⟩ t ht)
   · refine (inner_eq_iff_of_eq_I_smul _
       (χ := (-I) • (phaseGroup E F laplacianSymbol).complexGenerator
         (isUnitary_phaseGroup laplacianSymbol) ψ) ?_ t).2
-      (h ψ _ (coeFn_fourier_neg_I_smul_complexGenerator_schrodinger ψ) t ht)
+      (h ψ _ (coeFn_fourier_neg_I_smul_complexGenerator_phaseGroup_laplacianSymbol ψ) t ht)
     rw [smul_smul, mul_neg, I_mul_I, neg_neg, one_smul]
 
 /-- **Duhamel's formula is a weak solution** of the Schrödinger equation `i ∂ₜu + Δu = G`,
