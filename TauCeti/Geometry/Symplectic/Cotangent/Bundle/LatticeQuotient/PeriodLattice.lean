@@ -105,6 +105,7 @@ theorem flowOf_hamiltonianVectorField_comp_proj_mk {g : B → ℝ} (hg : ContMDi
 /-- **The action of `T*_b B` on a fibre of `T*B/Λ`.** A covector `β` at `b` acts on the fibre of
 `T*B/Λ → B` over `b` by `[b, p] ↦ [b, p - β]`: this is the time-one map of the Hamiltonian flow of
 `g ∘ proj` for any `C²` function `g` with `dg_b = β`. -/
+@[simp]
 theorem coe_fiberAction_mk {b : B} (β p : E →L[ℝ] ℝ)
     (hp : mk hα ⟨b, p⟩ ∈ proj hα ⁻¹' {b}) :
     ((isLagrangianTorusFibration_proj hα hclosed).fiberAction
