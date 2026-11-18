@@ -433,7 +433,8 @@ of its associated sections, over every open. -/
 @[simp]
 theorem tildeExteriorPowerIso_hom_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
     (U : (Spec R).Opens) (m : Fin n → M) :
-    (tildeExteriorPowerIso n M).hom.val.app (.op U)
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((tildeExteriorPowerIso n M).hom.val.app (.op U)
         (tilde.toOpen (M.exteriorPower n) U (ModuleCat.exteriorPower.mk m)) =
       (SheafOfModules.exteriorPowerIso n (tilde M)).inv.val.app (.op U)
         (((PresheafOfModules.sheafificationAdjunction (𝟙 (Spec R).ringCatSheaf.obj)).unit.app
@@ -441,7 +442,7 @@ theorem tildeExteriorPowerIso_hom_toOpen_mk (n : ℕ) (M : ModuleCat.{u} R)
             (tilde M).val)).app (.op U)
           (ModuleCat.exteriorPower.mk
             (M := PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
-            (fun i ↦ tilde.toOpen M U (m i)))) := by
+            (fun i ↦ tilde.toOpen M U (m i))))) := by
   have h := congrArg ((tildeExteriorPowerIso n M).hom.val.app (.op U))
     (tildeExteriorPowerIso_inv_toOpen_mk n M U m)
   exact h.symm.trans (ModuleCat.hom_inv_apply

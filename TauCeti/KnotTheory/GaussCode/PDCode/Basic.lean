@@ -452,7 +452,7 @@ theorem relabel_toOrientedPDCode_eq {m : ℕ} (hm : m ≠ 0) (G : BasedOrientedG
     · refine Equiv.ext fun x ↦ ?_
       obtain ⟨⟨c, slot⟩, rfl⟩ := (PDCode.crossingSlotEquiv m).surjective x
       simp [PDCode.crossingBlockEquiv_refl, hcross]
-    · refine Subtype.ext (Equiv.ext fun x ↦ ?_)
+    · ext x
       obtain ⟨⟨i, b⟩, rfl⟩ := φ.surjective x
       simp [hedge']
     · simp [hm, hcount]
