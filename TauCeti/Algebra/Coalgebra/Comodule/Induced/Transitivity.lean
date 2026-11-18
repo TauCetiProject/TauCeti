@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Induced.Basic
-import Mathlib.CategoryTheory.Yoneda
 
 /-!
 # Transitivity of cotensor induction
@@ -35,60 +34,61 @@ open TauCeti TauCeti.Comodule
 
 namespace CoalgHom
 
-universe u v w x y z
+universe u v w x y y' z
 
 variable {R : Type u} [CommRing R]
 variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Flat R C]
 variable {D : Type w} [AddCommMonoid D] [Module R D] [Coalgebra R D] [Module.Flat R D]
 variable {E : Type x} [AddCommMonoid E] [Module R E] [Coalgebra R E]
 variable (f : C →ₗc[R] D) (g : D →ₗc[R] E)
-variable {M : Type (max v w y)} [AddCommMonoid M] [Module R M] [Comodule R E M]
+variable {M : Type y} [AddCommMonoid M] [Module R M] [Comodule R E M]
 variable {N : Type z} [AddCommMonoid N] [Module R N] [Comodule R C N]
+
+private def corestrictCompHomEquiv :
+    (letI := Corestrict (M := N) f
+     letI := Corestrict (M := N) g
+     Hom R E N M) ≃ₗ[R]
+      (letI := Corestrict (M := N) (g.comp f); Hom R E N M) :=
+  letI := Corestrict (M := N) f
+  { toFun h :=
+      letI := Corestrict (M := N) g
+      let l := h.toLinearMap
+      have hl := h.map_coact
+      letI := Corestrict (M := N) (g.comp f)
+      { toLinearMap := l
+        map_coact := by simpa only [corestrict_coact, corestrictCoact_comp] using hl }
+    invFun h :=
+      letI := Corestrict (M := N) (g.comp f)
+      let l := h.toLinearMap
+      have hl := h.map_coact
+      letI := Corestrict (M := N) g
+      { toLinearMap := l
+        map_coact := by simpa only [corestrict_coact, corestrictCoact_comp] using hl }
+    left_inv _ := rfl
+    right_inv _ := rfl
+    map_add' _ _ := rfl
+    map_smul' _ _ := rfl }
+
+omit [Module.Flat R C] [Module.Flat R D] in
+private theorem corestrictCompHomEquiv_apply
+    (h : letI := Corestrict (M := N) f
+         letI := Corestrict (M := N) g
+         Hom R E N M) (n : N) : corestrictCompHomEquiv f g h n = h n :=
+  rfl
 
 private noncomputable def transReciprocity :
     Hom R C N (induced f (induced g M)) ≃ₗ[R]
-      (letI := Corestrict (M := N) (g.comp f); Hom R E N M) := by
+      (letI := Corestrict (M := N) (g.comp f); Hom R E N M) :=
   letI := Corestrict (M := N) f
-  let e : Hom R D N (induced g M) ≃ₗ[R]
-      (letI := Corestrict (M := N) (g.comp f); Hom R E N M) := by
-    let a := inducedEquiv g (N := N) (M := M)
-    letI := Corestrict (M := N) (g.comp f)
-    -- Repackage the same linear map using the equality of the composite and successive
-    -- coactions. Keeping its underlying map explicit gives computation without casts.
-    let b : Hom R E N M ≃ₗ[R]
-        (letI := Corestrict (M := N) g; Hom R E N M) :=
-      { toFun h := by
-          let l := h.toLinearMap
-          have hl := h.map_coact
-          letI := Corestrict (M := N) g
-          exact
-            { toLinearMap := l
-              map_coact := by
-                simpa only [corestrict_coact, corestrictCoact_comp] using hl }
-        invFun h := by
-          letI := Corestrict (M := N) g
-          let l := h.toLinearMap
-          have hl := h.map_coact
-          letI := Corestrict (M := N) (g.comp f)
-          exact
-            { toLinearMap := l
-              map_coact := by
-                simpa only [corestrict_coact, corestrictCoact_comp] using hl }
-        left_inv _ := rfl
-        right_inv _ := rfl
-        map_add' _ _ := rfl
-        map_smul' _ _ := rfl }
-    exact a.trans b.symm
-  exact (inducedEquiv f).trans e
+  (inducedEquiv f).trans ((inducedEquiv g).trans (corestrictCompHomEquiv f g))
 
 private theorem transReciprocity_apply (h : Hom R C N (induced f (induced g M))) :
     letI := Corestrict (M := induced g M) g
     letI := Corestrict (M := N) (g.comp f)
     ∀ n, transReciprocity f g h n = inducedEval g (inducedEquiv f h n) := by
   intro n
-  simp only [transReciprocity, LinearEquiv.trans_apply, inducedEquiv_apply,
-    Hom.comp_apply, corestrictHom_apply]
-  rfl
+  simp only [transReciprocity, LinearEquiv.trans_apply, corestrictCompHomEquiv_apply,
+    inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply]
 
 private theorem transReciprocity_comp
     {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
@@ -116,40 +116,59 @@ private theorem transHomEquiv_comp
   simp only [transHomEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
     inducedEquiv_comp, transReciprocity_comp]
 
-variable (M) in
-/-- Transitivity of cotensor induction as an isomorphism of comodules. Successive evaluation
-along `f` and `g` is evaluation along `g.comp f`. -/
-noncomputable def inducedTransIso :
-    ComoduleCat.of R C (induced f (induced g M)) ≅
-      ComoduleCat.of R C (induced (g.comp f) M) :=
-  Yoneda.ext _ _ (fun h ↦ transHomEquiv f g h) (fun h ↦ (transHomEquiv f g).symm h)
-    (fun h ↦ (transHomEquiv f g).symm_apply_apply h)
-    (fun h ↦ (transHomEquiv f g).apply_symm_apply h)
-    (fun k h ↦ transHomEquiv_comp f g h k)
+/-- The comparison from successive cotensor induction to induction along the composite. -/
+noncomputable def inducedTransHom :
+    Hom R C (induced f (induced g M)) (induced (g.comp f) M) :=
+  transHomEquiv f g (Hom.id R C (induced f (induced g M)))
 
-private theorem inducedTransIso_hom_eq :
-    (inducedTransIso f g M).hom =
-      transHomEquiv f g (Hom.id R C (induced f (induced g M))) :=
-  (rfl)
+/-- The comparison from induction along the composite to successive cotensor induction. -/
+noncomputable def inducedTransInv :
+    Hom R C (induced (g.comp f) M) (induced f (induced g M)) :=
+  (transHomEquiv f g).symm (Hom.id R C (induced (g.comp f) M))
 
-private theorem inducedTransIso_hom_comp (h : Hom R C N (induced f (induced g M))) :
-    (inducedTransIso f g M).hom.comp h = transHomEquiv f g h := by
-  rw [inducedTransIso_hom_eq, ← transHomEquiv_comp, Hom.id_comp]
+private theorem inducedTransHom_comp (h : Hom R C N (induced f (induced g M))) :
+    (inducedTransHom f g).comp h = transHomEquiv f g h := by
+  rw [inducedTransHom, ← transHomEquiv_comp, Hom.id_comp]
 
-/-- On the ambient cotensor products, transitivity applies the counit of `D` to the
+/-- Successive induction followed by the inverse comparison is the identity. -/
+@[simp]
+theorem inducedTransInv_comp_inducedTransHom :
+    (inducedTransInv f g (M := M)).comp (inducedTransHom f g) =
+      Hom.id R C (induced f (induced g M)) := by
+  apply (transHomEquiv f g).injective
+  rw [transHomEquiv_comp, inducedTransInv, LinearEquiv.apply_symm_apply,
+    Hom.id_comp, inducedTransHom]
+
+/-- The inverse comparison followed by the forward comparison is the identity. -/
+@[simp]
+theorem inducedTransHom_comp_inducedTransInv :
+    (inducedTransHom f g (M := M)).comp (inducedTransInv f g) =
+      Hom.id R C (induced (g.comp f) M) := by
+  rw [inducedTransHom_comp, inducedTransInv, LinearEquiv.apply_symm_apply]
+
+/-- Applying the inverse comparison after the forward comparison recovers the input. -/
+@[simp]
+theorem inducedTransInv_inducedTransHom (t : induced f (induced g M)) :
+    inducedTransInv f g (inducedTransHom f g t) = t := by
+  simpa only [Hom.comp_apply, Hom.id_apply] using
+    DFunLike.congr_fun (inducedTransInv_comp_inducedTransHom f g) t
+
+/-- Applying the forward comparison after the inverse comparison recovers the input. -/
+@[simp]
+theorem inducedTransHom_inducedTransInv (t : induced (g.comp f) M) :
+    inducedTransHom f g (inducedTransInv f g t) = t := by
+  simpa only [Hom.comp_apply, Hom.id_apply] using
+    DFunLike.congr_fun (inducedTransHom_comp_inducedTransInv f g) t
+
+/-- On the ambient tensor products, transitivity applies the counit of `D` to the
 intermediate induction and leaves the `C` factor unchanged. -/
 @[simp]
-theorem coe_inducedTransIso_hom_apply (t : induced f (induced g M)) :
+theorem coe_inducedTransHom_apply (t : induced f (induced g M)) :
     letI := Corestrict (M := induced g M) g
-    (ComoduleCat.hom R C (inducedTransIso f g M).hom t : M ⊗[R] C) =
+    (inducedTransHom f g t : M ⊗[R] C) =
       (inducedEval g).toLinearMap.rTensor C t := by
   let := Corestrict (M := induced g M) g
   let := Corestrict (M := induced f (induced g M)) f
-  have hf := congrArg (fun k ↦ (k t : (induced g M) ⊗[R] C))
-    ((inducedEquiv f).symm_apply_apply (Hom.id R C (induced f (induced g M))))
-  simp only [inducedEquiv_symm_apply, coe_inducedLift_apply, inducedEquiv_apply,
-    Hom.comp_toLinearMap, corestrictHom_toLinearMap, Hom.id_toLinearMap,
-    LinearMap.comp_id, Hom.id_apply] at hf
   let := Corestrict (M := induced f (induced g M)) (g.comp f)
   have he : (transReciprocity f g (Hom.id R C (induced f (induced g M)))).toLinearMap =
       (inducedEval g).toLinearMap ∘ₗ (inducedEval f).toLinearMap := by
@@ -157,57 +176,120 @@ theorem coe_inducedTransIso_hom_apply (t : induced f (induced g M)) :
     intro x
     simp only [Hom.coe_toLinearMap, transReciprocity_apply, inducedEquiv_apply, Hom.comp_apply,
       corestrictHom_apply, Hom.id_apply, LinearMap.comp_apply]
-  rw [inducedTransIso_hom_eq, transHomEquiv, LinearEquiv.trans_apply,
-    inducedEquiv_symm_apply, coe_inducedLift_apply, he, LinearMap.rTensor_comp_apply, hf]
+  rw [inducedTransHom, transHomEquiv, LinearEquiv.trans_apply,
+    inducedEquiv_symm_apply, coe_inducedLift_apply, he, LinearMap.rTensor_comp_apply,
+    rTensor_inducedEval_coact]
+
+/-- On ambient tensors, the inverse comparison comultiplies the `C` factor and applies
+`f` to its first component. -/
+@[simp]
+theorem subtype_rTensor_coe_inducedTransInv_apply (t : induced (g.comp f) M) :
+    (SMulMemClass.subtype (induced g M)).rTensor C
+        (inducedTransInv f g t : (induced g M) ⊗[R] C) =
+      (TensorProduct.assoc R M D C).symm
+        (((f : C →ₗ[R] D).rTensor C ∘ₗ Coalgebra.comul).lTensor M t) := by
+  let := Corestrict (M := induced g M) g
+  let e := (inducedEval g (M := M)).toLinearMap
+  let l := (f : C →ₗ[R] D).rTensor C ∘ₗ Coalgebra.comul
+  have he : e.rTensor D ∘ₗ coact (R := R) (C := D) =
+      SMulMemClass.subtype (induced g M) :=
+    LinearMap.ext (rTensor_inducedEval_coact g)
+  have hn (s : (induced g M) ⊗[R] C) :
+      (e.rTensor D).rTensor C ((TensorProduct.assoc R (induced g M) D C).symm
+        (l.lTensor (induced g M) s)) =
+      (TensorProduct.assoc R M D C).symm (l.lTensor M (e.rTensor C s)) := by
+    simp only [LinearMap.rTensor_def, LinearMap.lTensor_def,
+      TensorProduct.map_map_assoc_symm, TensorProduct.map_id, TensorProduct.map_map,
+      LinearMap.comp_id, LinearMap.id_comp]
+  have ht := congrArg ((e.rTensor D).rTensor C)
+    ((mem_induced_iff f).mp (inducedTransInv f g t).2)
+  rw [← LinearMap.rTensor_comp_apply, he, hn] at ht
+  rw [ht, ← coe_inducedTransHom_apply, inducedTransHom_inducedTransInv]
 
 /-- The transitivity isomorphism carries successive counit evaluation to the counit
 evaluation for the composite coalgebra map. -/
-theorem inducedEval_inducedTransIso_hom (t : induced f (induced g M)) :
+theorem inducedEval_inducedTransHom (t : induced f (induced g M)) :
     letI := Corestrict (M := induced (g.comp f) M) (g.comp f)
     letI := Corestrict (M := induced f (induced g M)) f
     letI := Corestrict (M := induced g M) g
-    inducedEval (g.comp f) (ComoduleCat.hom R C (inducedTransIso f g M).hom t) =
+    inducedEval (g.comp f) (inducedTransHom f g t) =
       inducedEval g (inducedEval f t) := by
   have h := (inducedEquiv (g.comp f)).apply_symm_apply
     (transReciprocity f g (Hom.id R C (induced f (induced g M))))
   have ht := congrArg (fun k ↦ k t) h
-  simpa only [inducedTransIso_hom_eq, transHomEquiv, LinearEquiv.trans_apply,
+  simpa only [inducedTransHom, transHomEquiv, LinearEquiv.trans_apply,
     inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply, transReciprocity_apply,
     Hom.id_apply] using ht
 
 /-- Evaluation after the inverse transitivity map is the original composite evaluation. -/
-theorem inducedEval_inducedTransIso_inv (t : induced (g.comp f) M) :
+theorem inducedEval_inducedEval_inducedTransInv (t : induced (g.comp f) M) :
     letI := Corestrict (M := induced (g.comp f) M) (g.comp f)
     letI := Corestrict (M := induced f (induced g M)) f
     letI := Corestrict (M := induced g M) g
-    inducedEval g (inducedEval f (ComoduleCat.hom R C (inducedTransIso f g M).inv t)) =
+    inducedEval g (inducedEval f (inducedTransInv f g t)) =
       inducedEval (g.comp f) t := by
-  rw [← inducedEval_inducedTransIso_hom]
-  exact congrArg (inducedEval (g.comp f))
-    (ConcreteCategory.congr_hom (inducedTransIso f g M).inv_hom_id t)
+  rw [← inducedEval_inducedTransHom, inducedTransHom_inducedTransInv]
 
-variable {M' : Type (max v w y)} [AddCommMonoid M'] [Module R M'] [Comodule R E M']
+variable {M' : Type y'} [AddCommMonoid M'] [Module R M'] [Comodule R E M']
 
 /-- Transitivity of induction is natural in the coefficient comodule. -/
-theorem inducedTransIso_naturality (h : Hom R E M M') :
-    (inducedTransIso f g M').hom.comp (inducedMap f (inducedMap g h)) =
-      (inducedMap (g.comp f) h).comp (inducedTransIso f g M).hom := by
+theorem inducedTransHom_naturality (h : Hom R E M M') :
+    (inducedTransHom f g (M := M')).comp (inducedMap f (inducedMap g h)) =
+      (inducedMap (g.comp f) h).comp (inducedTransHom f g (M := M)) := by
   apply (inducedEquiv (g.comp f)).injective
-  rw [inducedTransIso_hom_comp, inducedEquiv_inducedMap_comp]
+  rw [inducedTransHom_comp, inducedEquiv_inducedMap_comp]
   let := Corestrict (M := induced f (induced g M)) (g.comp f)
   apply Hom.ext
   intro t
   simp only [transHomEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
     transReciprocity_apply, inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply]
-  rw [inducedEval_inducedTransIso_hom]
-  have hf := congrArg (fun k ↦ k t)
-    (inducedEquiv_inducedMap_comp f (inducedMap g h)
-      (Hom.id R C (induced f (induced g M))))
-  simp only [inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply, Hom.id_apply] at hf
-  rw [hf]
-  have hg := congrArg (fun k ↦ k (inducedEval f t))
-    (inducedEquiv_inducedMap_comp g h (Hom.id R D (induced g M)))
-  simpa only [inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply, Hom.id_apply]
-    using hg
+  rw [inducedEval_inducedTransHom, inducedEval_inducedMap, inducedEval_inducedMap]
+
+/-- The inverse transitivity comparison is natural in the coefficient comodule. -/
+theorem inducedTransInv_naturality (h : Hom R E M M') :
+    (inducedTransInv f g (M := M')).comp (inducedMap (g.comp f) h) =
+      (inducedMap f (inducedMap g h)).comp (inducedTransInv f g (M := M)) := by
+  apply (transHomEquiv f g).injective
+  rw [transHomEquiv_comp, inducedTransInv, LinearEquiv.apply_symm_apply, Hom.id_comp,
+    ← inducedTransHom_comp, ← Hom.comp_assoc, inducedTransHom_naturality,
+    Hom.comp_assoc, inducedTransHom_comp_inducedTransInv, Hom.comp_id]
+
+section Bundled
+
+variable {M : Type (max w y)} [AddCommMonoid M] [Module R M] [Comodule R E M]
+variable {M' : Type (max w y)} [AddCommMonoid M'] [Module R M'] [Comodule R E M']
+
+variable (M) in
+/-- Transitivity of cotensor induction as an isomorphism of comodules. Successive evaluation
+along `f` and `g` is evaluation along `g.comp f`. -/
+noncomputable def inducedTransIso :
+    ComoduleCat.of R C (induced f (induced g M)) ≅
+      ComoduleCat.of R C (induced (g.comp f) M) where
+  hom := ComoduleCat.ofHom R C (inducedTransHom f g)
+  inv := ComoduleCat.ofHom R C (inducedTransInv f g)
+  hom_inv_id := by
+    rw [← ComoduleCat.ofHom_comp, inducedTransInv_comp_inducedTransHom, ComoduleCat.ofHom_id]
+  inv_hom_id := by
+    rw [← ComoduleCat.ofHom_comp, inducedTransHom_comp_inducedTransInv, ComoduleCat.ofHom_id]
+
+/-- The forward map of the bundled transitivity isomorphism is the unbundled comparison. -/
+@[simp]
+theorem inducedTransIso_hom :
+    (inducedTransIso f g M).hom = ComoduleCat.ofHom R C (inducedTransHom f g) :=
+  (rfl)
+
+/-- The inverse map of the bundled transitivity isomorphism is the unbundled comparison. -/
+@[simp]
+theorem inducedTransIso_inv :
+    (inducedTransIso f g M).inv = ComoduleCat.ofHom R C (inducedTransInv f g) :=
+  (rfl)
+
+/-- The bundled transitivity isomorphism is natural in the coefficient comodule. -/
+theorem inducedTransIso_naturality (h : Hom R E M M') :
+    ComoduleCat.ofHom R C (inducedMap f (inducedMap g h)) ≫ (inducedTransIso f g M').hom =
+      (inducedTransIso f g M).hom ≫ ComoduleCat.ofHom R C (inducedMap (g.comp f) h) := by
+  simp only [inducedTransIso_hom, ← ComoduleCat.ofHom_comp, inducedTransHom_naturality]
+
+end Bundled
 
 end CoalgHom
