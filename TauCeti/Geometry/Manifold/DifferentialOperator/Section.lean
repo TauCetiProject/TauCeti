@@ -35,6 +35,8 @@ converse to locality: on a compact manifold every local operator has finite orde
   between sections are local.
 * `TauCeti.tsupport_differentialOperators_section_apply_subset`: hence they do not enlarge the
   closed supports of sections.
+* `TauCeti.tsupport_smulCommutator_section_apply_subset`: commutators with multiplication by
+  smooth functions preserve the property of not enlarging supports.
 * `TauCeti.mem_differentialOperators_section_iff_forall_apply_eq_zero`: a linear map between
   sections has order `r` exactly when it kills `I_x ^ (r + 1) Γ(V)` at every point `x`.
 
@@ -83,6 +85,18 @@ theorem tsupport_differentialOperators_section_apply_subset
     differentialOperators_section_apply_eq_zero_of_eventuallyEq hP <|
       Filter.mem_of_superset (s.isClosed_tsupport.isOpen_compl.mem_nhds hx) fun _ hy ↦
         s.eq_zero_of_notMem_tsupport hy
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- If a linear map `Q : Γ(V) → Γ(W)` does not enlarge supports, neither does its commutator
+`[Q, a]` with multiplication by a smooth function `a`. -/
+theorem tsupport_smulCommutator_section_apply_subset
+    {Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} (hQ : ∀ s, (Q s).tsupport ⊆ s.tsupport)
+    (a : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) : (smulCommutator ℝ a Q s).tsupport ⊆ s.tsupport := by
+  refine (ContMDiffSection.tsupport_subset_iff s.isClosed_tsupport).2 fun x hx ↦ ?_
+  have h₁ := (Q (a • s)).eq_zero_of_notMem_tsupport fun h ↦
+    hx ((hQ _).trans (ContMDiffSection.tsupport_smul_function_subset_right a s) h)
+  have h₂ := (Q s).eq_zero_of_notMem_tsupport fun h ↦ hx (hQ s h)
+  simp [smulCommutator_apply_apply, h₁, h₂]
 
 /-- **Differential operators between sections, pointwise.** For a smooth real vector bundle `W` of
 finite rank, a linear map `P : Γ(V) → Γ(W)` is a differential operator of order `r` in

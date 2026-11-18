@@ -266,17 +266,6 @@ theorem isFormalAdjoint_lsmul (a : C^∞⟮I, M; ℝ⟯) :
   isFormalAdjoint_of_forall_inner_eq fun s t x ↦ by
     simp [inner_smul_left, inner_smul_right]
 
-omit [MeasurableSpace M] in
-/-- If `Q` does not enlarge supports, neither does `-[Q, a]`. -/
-private theorem tsupport_neg_smulCommutator_apply_subset (hQ : ∀ t, (Q t).tsupport ⊆ t.tsupport)
-    (a : C^∞⟮I, M; ℝ⟯) (t : Cₛ^∞⟮I; F', W⟯) :
-    ((-TauCeti.smulCommutator ℝ a Q) t).tsupport ⊆ t.tsupport := by
-  refine (ContMDiffSection.tsupport_subset_iff t.isClosed_tsupport).2 fun x hx ↦ ?_
-  have h₁ := (Q (a • t)).eq_zero_of_notMem_tsupport fun h ↦
-    hx ((hQ _).trans (ContMDiffSection.tsupport_smul_function_subset_right a t) h)
-  have h₂ := (Q t).eq_zero_of_notMem_tsupport fun h ↦ hx (hQ t h)
-  simp [smulCommutator_apply_apply, h₁, h₂]
-
 end Multiplication
 
 /-! ### Uniqueness -/
@@ -406,7 +395,8 @@ theorem IsFormalAdjoint.mem_differentialOperators {m : ℕ} (h : P.IsFormalAdjoi
     refine mem_differentialOperators_succ_iff.2 fun a ↦ ?_
     simpa using neg_mem <| ih (h.smulCommutator hPs hQs a)
       (smulCommutator_mem_differentialOperators hP a)
-      (tsupport_neg_smulCommutator_apply_subset hQs a)
+      (fun t ↦ by
+        simpa [neg_add_eq_sub] using tsupport_smulCommutator_section_apply_subset hQs (-a) t)
       (tsupport_differentialOperators_section_apply_subset
         (smulCommutator_mem_differentialOperators hP a))
 
