@@ -38,7 +38,9 @@ of `G` are the increments of `g ∘ f` for some potential `g` of `φ` near `f x`
 * `TauCeti.potentialIntegral_refl`, `TauCeti.potentialIntegral_symm`,
   `TauCeti.potentialIntegral_trans`, `TauCeti.potentialIntegral_reparam`: the integral vanishes
   on constant paths, changes sign under reversal, is additive under concatenation and invariant
-  under reparametrization.
+  under reparametrization. Concatenation and reparametrization only need a primitive along the
+  relevant path (`TauCeti.IsPrimitiveAlong.potentialIntegral_trans`,
+  `TauCeti.IsPrimitiveAlong.potentialIntegral_reparam`).
 
 ## References
 
@@ -284,25 +286,26 @@ theorem potentialIntegral_cast (φ : E → E →L[ℝ] F) (γ : Path a b) {a' b'
   · rw [potentialIntegral_of_not_exists h,
       potentialIntegral_of_not_exists (γ := γ.cast ha hb) (by rwa [Path.cast_coe])]
 
+/-- If `φ` has a primitive along a path, the integral is invariant under reparametrization. -/
+theorem IsPrimitiveAlong.potentialIntegral_reparam {G : I → F} (hG : IsPrimitiveAlong φ γ G)
+    {h : I → I} (hh : Continuous h) (h₀ : h 0 = 0) (h₁ : h 1 = 1) :
+    potentialIntegral φ (γ.reparam h hh h₀ h₁) = potentialIntegral φ γ := by
+  rw [(hG.comp hh).potentialIntegral_eq, hG.potentialIntegral_eq, Function.comp_apply,
+    Function.comp_apply, h₀, h₁]
+
 /-- For a field with local potentials on a set containing the path, the integral is invariant
 under reparametrization. -/
 theorem potentialIntegral_reparam (hφ : HasLocalPotentials s φ) (hγ : ∀ t, γ t ∈ s)
     {h : I → I} (hh : Continuous h) (h₀ : h 0 = 0) (h₁ : h 1 = 1) :
     potentialIntegral φ (γ.reparam h hh h₀ h₁) = potentialIntegral φ γ := by
   obtain ⟨G, hG⟩ := hφ.exists_isPrimitiveAlong γ.continuous hγ
-  rw [(hG.comp hh).potentialIntegral_eq, hG.potentialIntegral_eq, Function.comp_apply,
-    Function.comp_apply, h₀, h₁]
+  exact hG.potentialIntegral_reparam hh h₀ h₁
 
-/-- For a field with local potentials on a set containing two paths, the integral along their
+/-- If `φ` has a primitive along the concatenation of two paths, the integral along the
 concatenation is the sum of the integrals. -/
-theorem potentialIntegral_trans (hφ : HasLocalPotentials s φ) {δ : Path b c}
-    (hγ : ∀ t, γ t ∈ s) (hδ : ∀ t, δ t ∈ s) :
+theorem IsPrimitiveAlong.potentialIntegral_trans {δ : Path b c} {G : I → F}
+    (hG : IsPrimitiveAlong φ (γ.trans δ) G) :
     potentialIntegral φ (γ.trans δ) = potentialIntegral φ γ + potentialIntegral φ δ := by
-  have hγδ : ∀ t, (γ.trans δ) t ∈ s := fun t ↦ by
-    rcases Path.trans_range γ δ ▸ mem_range_self (f := γ.trans δ) t with ⟨u, hu⟩ | ⟨u, hu⟩
-    · exact hu ▸ hγ u
-    · exact hu ▸ hδ u
-  obtain ⟨G, hG⟩ := hφ.exists_isPrimitiveAlong (γ.trans δ).continuous hγδ
   -- Restrict the primitive to the two halves of the unit interval.
   let h₁ : I → I := fun t ↦ ⟨t / 2, by constructor <;> linarith [t.2.1, t.2.2]⟩
   let h₂ : I → I := fun t ↦ ⟨(1 + t) / 2, by constructor <;> linarith [t.2.1, t.2.2]⟩
@@ -320,5 +323,17 @@ theorem potentialIntegral_trans (hφ : HasLocalPotentials s φ) {δ : Path b c}
   rw [hG.potentialIntegral_eq, hG₁.potentialIntegral_eq, hG₂.potentialIntegral_eq]
   simp only [Function.comp_apply, e₀, e₁, e₂]
   abel
+
+/-- For a field with local potentials on a set containing two paths, the integral along their
+concatenation is the sum of the integrals. -/
+theorem potentialIntegral_trans (hφ : HasLocalPotentials s φ) {δ : Path b c}
+    (hγ : ∀ t, γ t ∈ s) (hδ : ∀ t, δ t ∈ s) :
+    potentialIntegral φ (γ.trans δ) = potentialIntegral φ γ + potentialIntegral φ δ := by
+  have hγδ : ∀ t, (γ.trans δ) t ∈ s := fun t ↦ by
+    rcases Path.trans_range γ δ ▸ mem_range_self (f := γ.trans δ) t with ⟨u, hu⟩ | ⟨u, hu⟩
+    · exact hu ▸ hγ u
+    · exact hu ▸ hδ u
+  obtain ⟨G, hG⟩ := hφ.exists_isPrimitiveAlong (γ.trans δ).continuous hγδ
+  exact hG.potentialIntegral_trans
 
 end TauCeti
