@@ -499,8 +499,8 @@ private theorem trivGenHom_comp_map {x y : TopCat.of W}
   induction p using Path.Homotopic.Quotient.ind with
   | mk γ =>
     ext c
-    have h := signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (card_fin_eq_finrank hF) b₀
-      (modelOrientation hF)
+    have h := signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (card_fin_eq_finrank hF)
+      (trivializationAt F E b₀) (modelOrientation hF)
       (γ.map continuous_subtype_val) (fun t ↦ hW (γ t).2) (hW x.2) (hW y.2) (1 : ℤ)
     rw [ModuleCat.hom_comp, LinearMap.comp_apply, trivGenHom_apply, trivGenHom_apply, map_zsmul,
       pullback_obj_map, FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map, trivGen,

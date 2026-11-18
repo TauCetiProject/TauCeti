@@ -250,20 +250,16 @@ theorem signLocalSystemTensorIso_inv_app_mul {x : B} (o : Orientation ℝ (E x) 
 
 end Tensor
 
-/-- **Transport over a trivializing set**: along a path in the base set of the trivialization of
-the atlas at `b₀`, transport in the orientation local system carries the element with value `r`
-at the orientation read as `ω` at the start to the element with value `r` at the orientation read
-as `ω` at the end. -/
-theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (b₀ : B) (ω : Orientation ℝ F ι)
-    {x y : B} (γ : Path x y) (hγ : ∀ t, γ t ∈ (trivializationAt F E b₀).baseSet)
-    (hx : x ∈ (trivializationAt F E b₀).baseSet) (hy : y ∈ (trivializationAt F E b₀).baseSet)
-    (r : R) :
+/-- **Transport over a trivializing set**: along a path in the base set of a trivialization `e` of
+the atlas, transport in the orientation local system carries the element with value `r` at the
+orientation read as `ω` at the start to the element with value `r` at the orientation read as `ω`
+at the end. -/
+theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] (ω : Orientation ℝ F ι) {x y : B} (γ : Path x y)
+    (hγ : ∀ t, γ t ∈ e.baseSet) (hx : x ∈ e.baseSet) (hy : y ∈ e.baseSet) (r : R) :
     ((signLocalSystem F E R hι).map (Path.Homotopic.Quotient.mk γ)).hom
-        ((signLocalSystemFiberEquiv hι
-          (((trivializationAt F E b₀).mapOrientation ι hx).symm ω)).symm r) =
-      (signLocalSystemFiberEquiv hι (((trivializationAt F E b₀).mapOrientation ι hy).symm ω)).symm
-        r := by
-  set e := trivializationAt F E b₀
+        ((signLocalSystemFiberEquiv hι ((e.mapOrientation ι hx).symm ω)).symm r) =
+      (signLocalSystemFiberEquiv hι ((e.mapOrientation ι hy).symm ω)).symm r := by
   set cov := isCoveringMap_proj (F := F) (E := E) hι
   -- Lift the reversed path through the orientation read as `ω` at `y`; it stays in that sheet.
   let c₀ : (proj ⁻¹' {y} : Set (VectorBundleOrientationCover F E ι)) :=
@@ -282,7 +278,7 @@ theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (b₀ : B) (ω : O
   have hm : cov.monodromy (inv q) c₀ = ⟨⟨x, (e.mapOrientation ι hx).symm ω⟩, rfl⟩ := by
     have hmon : ((cov.monodromy (inv q) c₀ : _) : VectorBundleOrientationCover F E ι) = Γ 1 :=
       cov.coe_monodromy_inv_mk γ c₀
-    have hsheet := mem_sheet_of_continuous hι b₀ ω hΓ h₀ 1
+    have hsheet := mem_sheet_of_continuous hι e ω hΓ h₀ 1
     rw [← hmon] at hsheet
     obtain ⟨hm, hω⟩ := mem_sheet_iff.1 hsheet
     generalize cov.monodromy (inv q) c₀ = m at hm hω ⊢
