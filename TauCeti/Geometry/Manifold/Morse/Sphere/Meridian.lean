@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
-public import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
+public import TauCeti.Geometry.Manifold.Morse.Sphere.Bott
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
-public import TauCeti.Geometry.Sphere.LinearIsometry
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import TauCeti.Topology.Order.IntermediateValue
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -24,8 +23,8 @@ consists of the two poles and the latitudes `h = c` at the critical points `c` o
 (`TauCeti.criticalPoints_comp_sphereHeight`); when `φ'' (c) ≠ 0` such a latitude is a Morse–Bott
 critical submanifold (`TauCeti.Geometry.Manifold.Morse.Sphere.Bott`). This file follows the
 negative gradient trajectories of `f` for a Riemannian metric on the sphere that is invariant under
-the reflections in the hyperplanes containing `v`, such as the round metric
-(`LinearIsometryEquiv.isLocalRiemannianIsometry_unitSphereEquiv`).
+the reflections in the hyperplanes containing `v`, such as the round metric, for which every
+linear isometry acts by Riemannian isometries (`LinearIsometryEquiv.unitSphereRiemannianIsometry`).
 
 * **Trajectories stay in a meridian plane.** For every vector `u ⊥ v`, the reflection `r_u` in
   the hyperplane `u^⊥` is an isometry fixing `f`, so it carries trajectories to trajectories.
@@ -75,9 +74,9 @@ described in `TauCeti.Geometry.Manifold.Morse.Sphere.Bott`.
 * `IsMIntegralCurve.tendsto_of_neg_mgradient_sq_comp_sphereHeight_of_pos`,
   `IsMIntegralCurve.tendsto_of_neg_mgradient_sq_comp_sphereHeight_of_neg`: the trajectories of
   `h²` run from a pole to the equator.
-* `IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_lt`,
+* `IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_lt_neg_sqrt`,
   `IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_mem_Ioo`,
-  `IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_gt`: the
+  `IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_sqrt_lt`: the
   trajectories of `b h - h³` in its three regular bands.
 
 ## References
@@ -97,14 +96,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
-/-- A linear isometry fixing `v` preserves the height in the direction `v`. -/
-theorem sphereHeight_unitSphereEquiv {e : E ≃ₗᵢ[ℝ] E} {v : sphere (0 : E) 1}
-    (he : e (v : E) = v) (x : sphere (0 : E) 1) :
-    sphereHeight v (e.unitSphereEquiv x) = sphereHeight v x := by
-  rw [sphereHeight_apply, sphereHeight_apply, LinearIsometryEquiv.coe_unitSphereEquiv_apply]
-  nth_rw 1 [← he]
-  exact e.inner_map_map _ _
-
 /-! ### Points of the sphere in a meridian plane -/
 
 section Plane
@@ -119,12 +110,9 @@ private theorem exists_eq_of_mem_span_pair (hy : (y : E) ∈ span ℝ {(v : E), 
       ⟪(y : E), (x : E) - sphereHeight v x • (v : E)⟫ = b * (1 - sphereHeight v x ^ 2) ∧
       sphereHeight v y ^ 2 + b ^ 2 * (1 - sphereHeight v x ^ 2) = 1 := by
   obtain ⟨a, b, hab⟩ := mem_span_pair.1 hy
-  have hvv : ⟪(v : E), (v : E)⟫ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere, one_pow]
-  have hxx : ⟪(x : E), (x : E)⟫ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere, one_pow]
-  have hyy : ⟪(y : E), (y : E)⟫ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere, one_pow]
+  have hvv : ⟪(v : E), (v : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere _)
+  have hxx : ⟪(x : E), (x : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere _)
+  have hyy : ⟪(y : E), (y : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere _)
   have hxv : ⟪(x : E), (v : E)⟫ = sphereHeight v x := (sphereHeight_apply v x).symm
   have hvx : ⟪(v : E), (x : E)⟫ = sphereHeight v x := by rw [real_inner_comm, hxv]
   have hyv : sphereHeight v y = a + b * sphereHeight v x := by
@@ -219,6 +207,13 @@ private theorem notMem_criticalPoints_of_sphereHeight_mem_Ioo {φ : ℝ → ℝ}
     (Ioo_subset_Icc_self hy) with h | h
   · exact hy.1.ne' h
   · exact hy.2.ne h
+
+/-- If `φ' < 0` on `(c₁, c₂)`, then `φ` is smaller at every point of `(c₁, c₂)` than at `c₁`. -/
+private theorem apply_lt_apply_left_of_deriv_neg {φ : ℝ → ℝ} {c₁ c₂ y : ℝ} (hφ : Continuous φ)
+    (hy : y ∈ Ioo c₁ c₂) (hderiv : ∀ c ∈ Ioo c₁ c₂, deriv φ c < 0) : φ y < φ c₁ :=
+  strictAntiOn_of_deriv_neg (convex_Icc c₁ c₂) hφ.continuousOn
+    (by simpa only [interior_Icc] using hderiv) ⟨le_rfl, (hy.1.trans hy.2).le⟩
+    (Ioo_subset_Icc_self hy) hy.1
 
 /-- The closed arc between the levels `c₁` and `c₂` of the meridian from `v` to `-v` through `x`. -/
 private def meridianArc (v x : sphere (0 : E) 1) (c₁ c₂ : ℝ) : Set (sphere (0 : E) 1) :=
@@ -335,8 +330,8 @@ private theorem inner_pos_of_isMIntegralCurve
       (hγ.coe_mem_span_pair_of_neg_mgradient_comp_sphereHeight hsymm hφ 0 s) hs.symm
     exact (sphereHeight_sq_lt_one_of_notMem_criticalPoints hφd
       (notMem_criticalPoints_of_isMIntegralCurve hγ hφ h0 s)).ne h
-  · have hxx : ⟪(γ 0 : E), (γ 0 : E)⟫ = 1 := by
-      rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere, one_pow]
+  · have hxx : ⟪(γ 0 : E), (γ 0 : E)⟫ = 1 :=
+      inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere _)
     simp only [comp_apply, inner_sub_right, real_inner_smul_right, hxx, ← sphereHeight_apply]
     linarith
 
@@ -373,10 +368,7 @@ private theorem sphereHeight_mem_Ioo_of_isMIntegralCurve
   refine ⟨isPreconnected_Ici.forall_lt_of_lt (continuousOn_const (c := c₁)) hg
     (Or.inr fun s hs hsc ↦ ?_) (mem_Ici.2 le_rfl) h₀.1 t ht, ?_⟩
   · -- `φ ∘ h` does not increase along `γ`, but `φ c₁ > φ (h (γ 0))`.
-    have hanti : StrictAntiOn φ (Icc c₁ c₂) :=
-      strictAntiOn_of_deriv_neg (convex_Icc c₁ c₂) hφ.continuous.continuousOn
-        (by simpa only [interior_Icc] using hderiv)
-    have h₁ := hanti ⟨le_rfl, (h₀.1.trans h₀.2).le⟩ (Ioo_subset_Icc_self h₀) h₀.1
+    have h₁ := apply_lt_apply_left_of_deriv_neg hφ.continuous h₀ hderiv
     have h₂ : (φ ∘ sphereHeight v) (γ s) ≤ (φ ∘ sphereHeight v) (γ 0) :=
       antitone_comp_of_isMIntegralCurve hγ hφ hs
     simp only [comp_apply, ← hsc] at h₂
@@ -428,10 +420,7 @@ theorem _root_.IsMIntegralCurve.tendsto_atTop_of_neg_mgradient_comp_sphereHeight
     · have hFp : (φ ∘ sphereHeight v) p ≤ (φ ∘ sphereHeight v) (γ 0) :=
         le_of_tendsto ((hf.continuous.tendsto p).comp hlim)
           ((eventually_ge_atTop 0).mono fun t ht ↦ antitone_comp_of_isMIntegralCurve hγ hφ ht)
-      have hanti : StrictAntiOn φ (Icc c₁ c₂) :=
-        strictAntiOn_of_deriv_neg (convex_Icc c₁ c₂) hφ.continuous.continuousOn
-          (by simpa only [interior_Icc] using hderiv)
-      have h₁ := hanti ⟨le_rfl, (h₀.1.trans h₀.2).le⟩ (Ioo_subset_Icc_self h₀) h₀.1
+      have h₁ := apply_lt_apply_left_of_deriv_neg hφ.continuous h₀ hderiv
       simp only [comp_apply, h] at hFp
       linarith
     · exact h
@@ -473,6 +462,15 @@ theorem _root_.IsMIntegralCurve.tendsto_atTop_of_neg_mgradient_comp_sphereHeight
     rw [sphereHeight_neg, Pi.neg_apply]
   simpa only [hneg, coe_neg_sphere, neg_smul_neg, neg_sq] using key
 
+omit [IsContMDiffRiemannianBundle (𝓡 n) 1 (EuclideanSpace ℝ (Fin n))
+  (fun y : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) y)] in
+/-- Reversing time turns a negative gradient trajectory of `φ ∘ h` into one of `(-φ) ∘ h`. -/
+private theorem isMIntegralCurve_comp_neg
+    (hγ : IsMIntegralCurve γ (-mgradient (𝓡 n) (φ ∘ sphereHeight v))) :
+    IsMIntegralCurve (fun t ↦ γ (-t)) (-mgradient (𝓡 n) ((-φ) ∘ sphereHeight v)) := by
+  rw [Pi.neg_comp]
+  exact hγ.comp_neg_neg_mgradient
+
 /-- **The backward limit of a gradient trajectory of a function of the height.** Under the
 hypotheses of the decreasing case, but with `c₁` a critical point of `φ` or `-1`, the negative
 gradient trajectory of `φ ∘ h` through `x` with `c₁ < h(x) < c₂` converges as `t → -∞` to the point
@@ -486,21 +484,16 @@ theorem _root_.IsMIntegralCurve.tendsto_atBot_of_neg_mgradient_comp_sphereHeight
     Tendsto (fun t ↦ (γ t : E)) atBot (𝓝 (c₁ • (v : E) + (√(1 - c₁ ^ 2) /
       √(1 - sphereHeight v (γ 0) ^ 2)) • ((γ 0 : E) - sphereHeight v (γ 0) • (v : E)))) := by
   -- Reversing time turns a trajectory of `-grad (φ ∘ h)` into one of `-grad ((-φ) ∘ h)`.
-  have hγ' : IsMIntegralCurve (γ ∘ (· * -1)) (-mgradient (𝓡 n) ((-φ) ∘ sphereHeight v)) := by
-    convert hγ.comp_mul (-1) using 1
-    funext y
-    rw [show (-φ) ∘ sphereHeight v = -(φ ∘ sphereHeight v) from rfl]
-    simp only [Pi.neg_apply, Pi.smul_apply, mgradient_neg, neg_neg, neg_smul, one_smul]
+  have hγ' := isMIntegralCurve_comp_neg hγ
   have key := hγ'.tendsto_atTop_of_neg_mgradient_comp_sphereHeight_of_deriv_pos hsymm hφ.neg hc₁
-    hc₂ (by simpa only [comp_apply, zero_mul] using h₀)
+    hc₂ (by simpa only [neg_zero] using h₀)
     (fun c hc ↦ by rw [deriv.neg, neg_pos]; exact hderiv c hc)
     (by
       rcases hcrit with h | h
       · exact Or.inl h
       · exact Or.inr (by rw [deriv.neg, h, neg_zero]))
-  simp only [comp_apply, zero_mul] at key
-  convert key.comp tendsto_neg_atBot_atTop using 2 with t
-  simp only [comp_apply, mul_neg, mul_one, neg_neg]
+  simp only [neg_zero] at key
+  exact tendsto_comp_neg_atTop_iff.1 key
 
 /-- **The backward limit of a gradient trajectory of a function of the height, increasing case.**
 Under the hypotheses of the increasing case, but with `c₂` a critical point of `φ` or `1`, the
@@ -514,27 +507,18 @@ theorem _root_.IsMIntegralCurve.tendsto_atBot_of_neg_mgradient_comp_sphereHeight
     (hderiv : ∀ c ∈ Ioo c₁ c₂, 0 < deriv φ c) (hcrit : c₂ = 1 ∨ deriv φ c₂ = 0) :
     Tendsto (fun t ↦ (γ t : E)) atBot (𝓝 (c₂ • (v : E) + (√(1 - c₂ ^ 2) /
       √(1 - sphereHeight v (γ 0) ^ 2)) • ((γ 0 : E) - sphereHeight v (γ 0) • (v : E)))) := by
-  have hγ' : IsMIntegralCurve (γ ∘ (· * -1)) (-mgradient (𝓡 n) ((-φ) ∘ sphereHeight v)) := by
-    convert hγ.comp_mul (-1) using 1
-    funext y
-    rw [show (-φ) ∘ sphereHeight v = -(φ ∘ sphereHeight v) from rfl]
-    simp only [Pi.neg_apply, Pi.smul_apply, mgradient_neg, neg_neg, neg_smul, one_smul]
+  have hγ' := isMIntegralCurve_comp_neg hγ
   have key := hγ'.tendsto_atTop_of_neg_mgradient_comp_sphereHeight_of_deriv_neg hsymm hφ.neg hc₁
-    hc₂ (by simpa only [comp_apply, zero_mul] using h₀)
+    hc₂ (by simpa only [neg_zero] using h₀)
     (fun c hc ↦ by rw [deriv.neg, neg_lt_zero]; exact hderiv c hc)
     (by
       rcases hcrit with h | h
       · exact Or.inl h
       · exact Or.inr (by rw [deriv.neg, h, neg_zero]))
-  simp only [comp_apply, zero_mul] at key
-  convert key.comp tendsto_neg_atBot_atTop using 2 with t
-  simp only [comp_apply, mul_neg, mul_one, neg_neg]
+  simp only [neg_zero] at key
+  exact tendsto_comp_neg_atTop_iff.1 key
 
 /-! ### Two caps: the function `h²` -/
-
-/-- The derivative of `t ↦ t²` is `2 t`. -/
-private theorem deriv_sq' (c : ℝ) : deriv (fun t : ℝ ↦ t ^ 2) c = 2 * c := by
-  simp
 
 /-- **The trajectories of `h²` in the northern hemisphere run from the north pole to the
 equator.** For a metric invariant under the reflections in the hyperplanes containing `v`, the
@@ -550,14 +534,13 @@ theorem _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_sq_comp_sphereHeight_of
       Tendsto (fun t ↦ (γ t : E)) atTop (𝓝 ((√(1 - sphereHeight v (γ 0) ^ 2))⁻¹ •
         ((γ 0 : E) - sphereHeight v (γ 0) • (v : E)))) := by
   have hderiv (c : ℝ) (hc : c ∈ Ioo (0 : ℝ) 1) : 0 < deriv (fun t : ℝ ↦ t ^ 2) c := by
-    rw [deriv_sq']
-    linarith [hc.1]
+    simpa using mul_pos two_pos hc.1
   constructor
   · convert hγ.tendsto_atBot_of_neg_mgradient_comp_sphereHeight_of_deriv_pos hsymm (by fun_prop)
       (by norm_num) le_rfl ⟨h₀, h₁⟩ hderiv (Or.inl rfl) using 2
     simp
   · convert hγ.tendsto_atTop_of_neg_mgradient_comp_sphereHeight_of_deriv_pos hsymm (by fun_prop)
-      (by norm_num) le_rfl ⟨h₀, h₁⟩ hderiv (Or.inr (by rw [deriv_sq', mul_zero])) using 2
+      (by norm_num) le_rfl ⟨h₀, h₁⟩ hderiv (Or.inr (by simp)) using 2
     simp
 
 /-- **The trajectories of `h²` in the southern hemisphere run from the south pole to the
@@ -574,31 +557,28 @@ theorem _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_sq_comp_sphereHeight_of
       Tendsto (fun t ↦ (γ t : E)) atTop (𝓝 ((√(1 - sphereHeight v (γ 0) ^ 2))⁻¹ •
         ((γ 0 : E) - sphereHeight v (γ 0) • (v : E)))) := by
   have hderiv (c : ℝ) (hc : c ∈ Ioo (-1 : ℝ) 0) : deriv (fun t : ℝ ↦ t ^ 2) c < 0 := by
-    rw [deriv_sq']
-    linarith [hc.2]
+    simpa using mul_neg_of_pos_of_neg two_pos hc.2
   constructor
   · convert hγ.tendsto_atBot_of_neg_mgradient_comp_sphereHeight_of_deriv_neg hsymm (by fun_prop)
       le_rfl (by norm_num) ⟨h₁, h₀⟩ hderiv (Or.inl rfl) using 2
     simp
   · convert hγ.tendsto_atTop_of_neg_mgradient_comp_sphereHeight_of_deriv_neg hsymm (by fun_prop)
-      le_rfl (by norm_num) ⟨h₁, h₀⟩ hderiv (Or.inr (by rw [deriv_sq', mul_zero])) using 2
+      le_rfl (by norm_num) ⟨h₁, h₀⟩ hderiv (Or.inr (by simp)) using 2
     simp
+
+end TauCeti
 
 /-! ### Four critical levels: the function `b h - h³` -/
 
-variable {b : ℝ}
+namespace IsMIntegralCurve
 
-/-- The derivative of `t ↦ b t - t³` is `b - 3 t²`. -/
-private theorem deriv_mul_sub_pow_three' (c : ℝ) :
-    deriv (fun t : ℝ ↦ b * t - t ^ 3) c = b - 3 * c ^ 2 := by
-  rw [(((hasDerivAt_id' c).const_mul b).fun_sub (hasDerivAt_pow 3 c)).deriv]
-  norm_num
+open TauCeti
 
-/-- The derivative of `t ↦ b t - t³` vanishes where `t² = b / 3`. -/
-private theorem deriv_mul_sub_pow_three'_eq_zero {c : ℝ} (hc : c ^ 2 = b / 3) :
-    deriv (fun t : ℝ ↦ b * t - t ^ 3) c = 0 := by
-  rw [deriv_mul_sub_pow_three', hc]
-  ring
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)] [RiemannianBundle (fun y : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) y)]
+  [IsContMDiffRiemannianBundle (𝓡 n) 1 (EuclideanSpace ℝ (Fin n))
+    (fun y : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) y)]
+  {v : sphere (0 : E) 1} {γ : ℝ → sphere (0 : E) 1} {b : ℝ}
 
 /-- **The trajectories of `b h - h³` below the lower critical latitude run from the south pole to
 it.** For `0 ≤ b` put `a = √(b / 3)`. For a metric invariant under the reflections in the
@@ -606,7 +586,7 @@ hyperplanes containing `v`, the negative gradient trajectory of `b h - h³` thro
 `-1 < h(x) < -a` converges to `-v` as `t → -∞`, and as `t → ∞` to the point
 `-a v + √(1 - a²) w` of the latitude `h = -a` on the meridian through `x`, where `w` is the unit
 vector in the direction of `x - h(x) v`. -/
-theorem _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_lt
+theorem tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_lt_neg_sqrt
     (hγ : IsMIntegralCurve γ (-mgradient (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v)))
     (hsymm : ∀ u : E, ⟪u, (v : E)⟫ = 0 →
       IsLocalRiemannianIsometry (𝓡 n) (𝓡 n) (ℝ ∙ u)ᗮ.reflection.unitSphereEquiv)
@@ -618,7 +598,7 @@ theorem _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_
   have ha₀ := Real.sqrt_nonneg (b / 3)
   have hderiv (c : ℝ) (hc : c ∈ Ioo (-1 : ℝ) (-√(b / 3))) :
       deriv (fun t : ℝ ↦ b * t - t ^ 3) c < 0 := by
-    rw [deriv_mul_sub_pow_three']
+    simp only [deriv_mul_sub_pow_three]
     nlinarith [hc.2]
   constructor
   · convert hγ.tendsto_atBot_of_neg_mgradient_comp_sphereHeight_of_deriv_neg hsymm (by fun_prop)
@@ -626,7 +606,7 @@ theorem _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_
     simp
   · convert hγ.tendsto_atTop_of_neg_mgradient_comp_sphereHeight_of_deriv_neg hsymm (by fun_prop)
       le_rfl (by linarith) ⟨h₀, h₁⟩ hderiv
-      (Or.inr (deriv_mul_sub_pow_three'_eq_zero (by rw [neg_sq, ha]))) using 4
+      (Or.inr (deriv_mul_sub_pow_three_eq_zero_of_sq_eq (by rw [neg_sq, ha]))) using 4
     rw [neg_sq, ha]
 
 /-- **The trajectories of `b h - h³` between the critical latitudes run from the upper to the
@@ -635,8 +615,7 @@ hyperplanes containing `v`, the negative gradient trajectory of `b h - h³` thro
 `-a < h(x) < a` converges as `t → -∞` to the point `a v + √(1 - a²) w` of the latitude `h = a`,
 and as `t → ∞` to the point `-a v + √(1 - a²) w` of the latitude `h = -a`, both on the meridian
 through `x`, where `w` is the unit vector in the direction of `x - h(x) v`. -/
-theorem
-    _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_mem_Ioo
+theorem tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_mem_Ioo
     (hγ : IsMIntegralCurve γ (-mgradient (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v)))
     (hsymm : ∀ u : E, ⟪u, (v : E)⟫ = 0 →
       IsLocalRiemannianIsometry (𝓡 n) (𝓡 n) (ℝ ∙ u)ᗮ.reflection.unitSphereEquiv)
@@ -654,15 +633,15 @@ theorem
   have ha₁ : √(b / 3) ≤ 1 := Real.sqrt_le_one.2 (by linarith)
   have hderiv (c : ℝ) (hc : c ∈ Ioo (-√(b / 3)) √(b / 3)) :
       0 < deriv (fun t : ℝ ↦ b * t - t ^ 3) c := by
-    rw [deriv_mul_sub_pow_three']
+    simp only [deriv_mul_sub_pow_three]
     nlinarith [hc.1, hc.2]
   constructor
   · convert hγ.tendsto_atBot_of_neg_mgradient_comp_sphereHeight_of_deriv_pos hsymm (by fun_prop)
-      (by linarith) ha₁ h₀ hderiv (Or.inr (deriv_mul_sub_pow_three'_eq_zero ha)) using 4
+      (by linarith) ha₁ h₀ hderiv (Or.inr (deriv_mul_sub_pow_three_eq_zero_of_sq_eq ha)) using 4
     rw [ha]
   · convert hγ.tendsto_atTop_of_neg_mgradient_comp_sphereHeight_of_deriv_pos hsymm (by fun_prop)
       (by linarith) ha₁ h₀ hderiv
-      (Or.inr (deriv_mul_sub_pow_three'_eq_zero (by rw [neg_sq, ha]))) using 4
+      (Or.inr (deriv_mul_sub_pow_three_eq_zero_of_sq_eq (by rw [neg_sq, ha]))) using 4
     rw [neg_sq, ha]
 
 /-- **The trajectories of `b h - h³` above the upper critical latitude run from it to the north
@@ -671,7 +650,7 @@ hyperplanes containing `v`, the negative gradient trajectory of `b h - h³` thro
 `a < h(x) < 1` converges as `t → -∞` to the point `a v + √(1 - a²) w` of the latitude `h = a` on
 the meridian through `x`, where `w` is the unit vector in the direction of `x - h(x) v`, and to `v`
 as `t → ∞`. -/
-theorem _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_gt
+theorem tendsto_of_neg_mgradient_mul_sub_pow_three_comp_sphereHeight_of_sqrt_lt
     (hγ : IsMIntegralCurve γ (-mgradient (𝓡 n) ((fun t : ℝ ↦ b * t - t ^ 3) ∘ sphereHeight v)))
     (hsymm : ∀ u : E, ⟪u, (v : E)⟫ = 0 →
       IsLocalRiemannianIsometry (𝓡 n) (𝓡 n) (ℝ ∙ u)ᗮ.reflection.unitSphereEquiv)
@@ -683,15 +662,15 @@ theorem _root_.IsMIntegralCurve.tendsto_of_neg_mgradient_mul_sub_pow_three_comp_
   have ha₀ := Real.sqrt_nonneg (b / 3)
   have hderiv (c : ℝ) (hc : c ∈ Ioo √(b / 3) 1) :
       deriv (fun t : ℝ ↦ b * t - t ^ 3) c < 0 := by
-    rw [deriv_mul_sub_pow_three']
+    simp only [deriv_mul_sub_pow_three]
     nlinarith [hc.1]
   constructor
   · convert hγ.tendsto_atBot_of_neg_mgradient_comp_sphereHeight_of_deriv_neg hsymm (by fun_prop)
       (by linarith) le_rfl ⟨h₀, h₁⟩ hderiv
-      (Or.inr (deriv_mul_sub_pow_three'_eq_zero ha)) using 4
+      (Or.inr (deriv_mul_sub_pow_three_eq_zero_of_sq_eq ha)) using 4
     rw [ha]
   · convert hγ.tendsto_atTop_of_neg_mgradient_comp_sphereHeight_of_deriv_neg hsymm (by fun_prop)
       (by linarith) le_rfl ⟨h₀, h₁⟩ hderiv (Or.inl rfl) using 2
     simp
 
-end TauCeti
+end IsMIntegralCurve
