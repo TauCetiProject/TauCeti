@@ -623,8 +623,8 @@ noncomputable def sectionRingAwayOneEquiv (hF : IsFunctionField k F) (z : Fˣ) :
   rw [Nat.cast_one, one_mul, map_one, ← WithZero.exp_zero, WithZero.exp_inj, eq_comm]
   exact coeff_poles_eq_zero_iff hF z P
 
-/-- Under `TauCeti.Divisor.sectionRingAwayOneEquiv`, the fraction `g Xʳ / Xʳ` is sent to
-the degree-`r` coefficient of `g`. -/
+/-- Under `TauCeti.Divisor.sectionRingAwayOneEquiv`, the fraction `g / Xʳ`, for `g` a section
+of degree `r`, is sent to the degree-`r` coefficient of `g`. -/
 @[simp]
 theorem sectionRingAwayOneEquiv_mk (hF : IsFunctionField k F) (z : Fˣ) (r : ℕ)
     (g : sectionRing (poles hF z)) (hg : g ∈ sectionRingGrade (poles hF z) r) :
