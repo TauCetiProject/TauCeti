@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Homology.ShortComplex.Colimit
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
+public import Mathlib.Topology.Sets.Compacts
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.WithAlgebraicStructures
 public import TauCeti.Topology.Category.TopCat.Subspace
 public import TauCeti.Topology.Category.TopPair
@@ -49,6 +50,10 @@ cokernels commute with colimits (`TauCeti.isColimitOfIsColimitCokernelCofork`).
 * `TauCeti.exists_singularHomologyMap_inclusion_eq_zero`: with coefficients in a module, a class of
   one member of an increasing cover of a subspace by relatively open sets that vanishes in the
   subspace already vanishes in some larger member.
+* `TauCeti.exists_isCompact_singularHomologyMap_subtypeVal_eq`,
+  `TauCeti.exists_isCompact_singularHomologyMap_inclusion_eq_zero`: with coefficients in a module,
+  every class of a space comes from a compact subset, and a class of a compact subset which
+  vanishes in the space vanishes in a larger compact subset.
 * `TopPair.isColimitMapCoconeSingularChainComplex` and `TopPair.isColimitMapCoconeSingularHomology`:
   for a cocone over a filtered diagram of topological pairs whose legs are embeddings of the
   ambient spaces, such that every compact subset of the ambient space and of the subspace of the
@@ -153,6 +158,50 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
   exact ⟨j, f.le, hfg⟩
 
 end Module
+
+section Compact
+
+variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {X : TopCat.{w}}
+
+/-- The compact subsets of `X` and their inclusions into `X`, a cocone of embeddings over the
+directed set of compact subsets which absorbs every compact subset. -/
+private def compactsCocone (X : TopCat.{w}) :
+    Cocone ({ obj K := of (K : Set X)
+              map f := ofHom (ContinuousMap.inclusion f.le) } :
+      TopologicalSpace.Compacts X ⥤ TopCat.{w}) where
+  pt := X
+  ι := { app K := ofHom (ContinuousMap.subtypeVal (K : Set X)) }
+
+private def isColimitCompactsCocone (X : TopCat.{w}) :
+    IsColimit (((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).mapCocone
+      (compactsCocone X)) :=
+  isColimitMapCoconeSingularHomology M n _ (fun _ ↦ IsEmbedding.subtypeVal)
+    fun K hK ↦ ⟨⟨K, hK⟩, fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+
+/-- **Singular homology classes have compact support.** With coefficients in a module, every
+singular homology class of `X` is the image of a class of some compact subset of `X`. -/
+theorem exists_isCompact_singularHomologyMap_subtypeVal_eq
+    (x : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj X) :
+    ∃ K : Set X, IsCompact K ∧ ∃ y : ((singularHomologyFunctor _ n).obj M).obj (of K),
+      ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.subtypeVal K)) y = x := by
+  obtain ⟨K, y, hy⟩ := Concrete.isColimit_exists_rep _ (isColimitCompactsCocone M n X) x
+  exact ⟨K, K.isCompact, y, hy⟩
+
+/-- **Vanishing of a singular homology class is detected on a compact subset.** With
+coefficients in a module, a class of a compact subset `K` of `X` which vanishes in `X` already
+vanishes in some compact subset of `X` containing `K`. -/
+theorem exists_isCompact_singularHomologyMap_inclusion_eq_zero {K : Set X} (hK : IsCompact K)
+    (y : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj (of K))
+    (hy : ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.subtypeVal K)) y = 0) :
+    ∃ L : Set X, IsCompact L ∧ ∃ hKL : K ⊆ L,
+      ((singularHomologyFunctor _ n).obj M).map (ofHom (ContinuousMap.inclusion hKL)) y = 0 := by
+  let K' : TopologicalSpace.Compacts X := ⟨K, hK⟩
+  obtain ⟨L, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq (i := K') (j := K') _
+    (isColimitCompactsCocone M n X) y 0 (by rw [map_zero]; exact hy)
+  rw [map_zero] at hfg
+  exact ⟨L, L.isCompact, f.le, hfg⟩
+
+end Compact
 
 end TauCeti
 
