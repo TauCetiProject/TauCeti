@@ -222,7 +222,8 @@ theorem bernsteinNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : 
   refine le_antisymm (bernsteinNumber_le_of_forall_rank_eq fun M hM ↦ ?_) bot_le
   obtain ⟨x, hxM, hTx, hx0⟩ := Submodule.exists_mem_ker_ne_zero_of_rank_lt
     (f := (T : E →ₗ[𝕜] F)) (by rw [hM]; exact_mod_cast n.lt_succ_self) hT
-  exact ⟨x, hxM, hx0, by simp [show T x = 0 from hTx]⟩
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hTx
+  exact ⟨x, hxM, hx0, by simp [hTx]⟩
 
 /-- **Perturbative triangle bound.** `bₙ(S + T) ≤ bₙ(S) + ‖T‖`. -/
 theorem bernsteinNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
