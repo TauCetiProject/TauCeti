@@ -16,7 +16,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Normed.Module.QuadraticMap
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Necessary and strict derivative tests
@@ -369,51 +369,6 @@ open scoped ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-private theorem eventually_pos_hessian {f : E → ℝ} {a : E}
-    (hf : ContDiffAt ℝ 2 f a)
-    (hpos : ∀ v, v ≠ 0 → 0 < fderiv ℝ (fderiv ℝ f) a v v) :
-    ∀ᶠ z in 𝓝 a, ∀ v, v ≠ 0 → 0 < fderiv ℝ (fderiv ℝ f) z v v := by
-  let B := fderiv ℝ (fderiv ℝ f) a
-  have hani : B.toBilinForm.toQuadraticMap.Anisotropic := by
-    intro v hv
-    by_contra hv0
-    exact (hpos v hv0).ne' hv
-  obtain ⟨c, hc, hcoer⟩ := hani.exists_pos_mul_norm_sq_le
-    (B.continuous₂.comp (continuous_id.prodMk continuous_id))
-  have hcont : ContinuousAt (fderiv ℝ (fderiv ℝ f)) a :=
-    hf.continuousAt_fderiv_fderiv le_rfl
-  have hclose : ∀ᶠ z in 𝓝 a, ‖fderiv ℝ (fderiv ℝ f) z - B‖ < c / 2 := by
-    -- `ContinuousAt` selects the bounded-convergence topology on continuous linear maps,
-    -- while `.norm` expects the topology projected from their seminormed group instance.
-    -- Mathlib's operator pseudometric replaces its uniformity to agree with that topology
-    -- (see `ContinuousLinearMap.toPseudoMetricSpace`); fix the target explicitly so the
-    -- elaborator can use this definitional agreement before applying the norm lemma.
-    have hlim : Tendsto (fderiv ℝ (fderiv ℝ f)) (𝓝 a)
-        (@nhds (E →L[ℝ] E →L[ℝ] ℝ)
-          (@UniformSpace.toTopologicalSpace _
-            (@PseudoMetricSpace.toUniformSpace _ SeminormedAddGroup.toPseudoMetricSpace)) B) :=
-      hcont
-    have hnorm := (hlim.sub_const B).norm
-    have hcenter : ‖B - B‖ < c / 2 := by
-      rw [sub_self, ContinuousLinearMap.opNorm_zero]
-      exact half_pos hc
-    exact hnorm.eventually (gt_mem_nhds hcenter)
-  filter_upwards [hclose] with z hz v hv
-  have hdiff := ContinuousLinearMap.le_opNorm₂
-    (fderiv ℝ (fderiv ℝ f) z - fderiv ℝ (fderiv ℝ f) a) v v
-  simp only [sub_apply] at hdiff
-  have hnh : 0 < ‖v‖ := norm_pos_iff.2 hv
-  have h1 := hcoer v
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
-    Real.norm_eq_abs, abs_of_pos (hpos v hv)] at h1
-  have h2 : ‖fderiv ℝ (fderiv ℝ f) z - fderiv ℝ (fderiv ℝ f) a‖ * ‖v‖ * ‖v‖ ≤
-      c / 2 * ‖v‖ ^ 2 := by
-    rw [mul_assoc, ← sq]
-    exact mul_le_mul_of_nonneg_right hz.le (sq_nonneg _)
-  have h3 := neg_abs_le (fderiv ℝ (fderiv ℝ f) z v v - fderiv ℝ (fderiv ℝ f) a v v)
-  rw [← Real.norm_eq_abs] at h3
-  nlinarith [sq_pos_of_pos hnh]
-
 /-- **The second derivative test.** Let `f` be `C²` at `a`, with `f'(a) = 0` and `f''(a)`
 positive definite. Then `f(a) < f(y)` for all `y ≠ a` close to `a`. -/
 theorem eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos {f : E → ℝ} {a : E}
@@ -421,8 +376,9 @@ theorem eventually_lt_of_fderiv_eq_zero_of_fderiv_fderiv_pos {f : E → ℝ} {a 
     (hpos : ∀ v, v ≠ 0 → 0 < fderiv ℝ (fderiv ℝ f) a v v) :
     ∀ᶠ y in 𝓝[≠] a, f a < f y := by
   have hev : ∀ᶠ z in 𝓝 a, ContDiffAt ℝ 2 f z := hf.eventually (by simp)
-  obtain ⟨δ, hδ, hball⟩ :=
-    Metric.eventually_nhds_iff_ball.1 (hev.and (eventually_pos_hessian hf hpos))
+  have hpos' := (hf.continuousAt_fderiv_fderiv le_rfl).eventually
+    (TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds hpos)
+  obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hev.and hpos')
   filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds a hδ)] with y hy
   obtain ⟨hya, hyb⟩ := hy
   set h := y - a
