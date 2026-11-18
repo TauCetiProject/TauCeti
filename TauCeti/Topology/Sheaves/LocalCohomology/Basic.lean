@@ -83,7 +83,7 @@ of the sheaf of hyperfunctions.
 * `CategoryTheory.Sheaf.isZero_stalk_supportedHSheaf_of_notMem`: the stalks of `𝓗_Sⁿ(F)` at
   points outside `S` vanish;
 * `CategoryTheory.Sheaf.isZero_supportedHSheaf_succ_of_isFlasque`: `𝓗_Sⁿ⁺¹(F) = 0` for a flasque
-  sheaf `F`.
+  sheaf `F`;
 * `CategoryTheory.Sheaf.supportedSectionsFunctor S`: the supported-section functor `Γ_S`, which
   is left exact (`CategoryTheory.Sheaf.exact_map_supportedSectionsFunctor`; as an instance,
   `CategoryTheory.Sheaf.preservesFiniteLimits_supportedSectionsFunctor`) and through which
@@ -91,7 +91,7 @@ of the sheaf of hyperfunctions.
   (`CategoryTheory.Sheaf.supportedHZeroEquiv_naturality_right`);
 * `CategoryTheory.Sheaf.shortExact_map_supportedSectionsFunctor`: `Γ_S` preserves a short exact
   sequence `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` with `𝓗_S¹(F₁) = 0`;
-* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation.
+* `CategoryTheory.Sheaf.subsingleton_supportedH_of_isZero_supportedHSheaf`: support truncation;
 * `CategoryTheory.Sheaf.isSheaf_supportedHPresheaf_of_isZero_supportedHSheaf`: if `𝓗_S^q(F) = 0`
   for `q < n`, the presheaf `W ↦ H_Sⁿ(W, F)` is a sheaf;
 * `CategoryTheory.Sheaf.supportedHSectionsEquiv`: under the same hypothesis,
@@ -950,20 +950,15 @@ private def supportedHPresheafEdgeIsoOfIsZeroSucc
 variable {n : ℕ}
 
 /-- The degenerate edge comparison in degree zero, `H_Zⁿ(-, F) ≅ H_Z⁰(-, 𝓗_Sⁿ(F))`, as an
-isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by
+isomorphism of presheaves: `CategoryTheory.Sheaf.supportedHEdgeEquiv` followed by the inverse of
 `H_Z⁰(W, 𝓗_Sⁿ(F)) ≃+ Γ_Z(W, 𝓗_Sⁿ(F))`. -/
 private def supportedHPresheafEdgeIsoZero (h : ∀ q < n, IsZero (F.supportedHSheaf S q))
     (hZS : Z ≤ S) : F.supportedHPresheaf Z n ≅ (F.supportedHSheaf S n).supportedHPresheaf Z 0 :=
-  NatIso.ofComponents (fun W ↦ ((F.supportedHEdgeEquiv h hZS W.unop).trans
-    ((F.supportedHSheaf S n).supportedHZeroEquiv Z W.unop).symm).toAddCommGrpIso) fun f ↦ by
+  NatIso.ofComponents (fun W ↦ (F.supportedHEdgeEquiv h hZS W.unop).toAddCommGrpIso) (fun f ↦ by
     ext x
-    apply ((F.supportedHSheaf S n).supportedHZeroEquiv Z _).injective
-    apply Subtype.ext
-    -- both sides are the restriction of the image of `x` in `Γ_Z(W, 𝓗_Sⁿ(F))`
-    exact ((congrArg Subtype.val (AddEquiv.apply_symm_apply _ _)).trans
-      (coe_supportedHEdgeEquiv_supportedHRestrict F h hZS (leOfHom f.unop) x)).trans
-      ((coe_supportedHZeroEquiv_supportedHRestrict _ Z (leOfHom f.unop) _).trans
-        (congrArg _ (congrArg Subtype.val (AddEquiv.apply_symm_apply _ _)))).symm
+    exact Subtype.ext
+      (F.coe_supportedHEdgeEquiv_supportedHRestrict h hZS (leOfHom f.unop) x)) ≪≫
+    ((F.supportedHSheaf S n).supportedHPresheafZeroIso Z).symm
 
 /-- **Degenerate edge comparison.** If the local cohomology sheaves `𝓗_S^q(F)` vanish for all
 `q ≠ n`, then for every closed `Z ≤ S` and every `j` the cohomology `H_Z^{n+j}(W, F)` with supports
@@ -994,7 +989,13 @@ lemma supportedHZeroEquiv_supportedHPresheafEdgeIso_hom_app
         ((F.supportedHPresheafEdgeIso h hZS (add_zero n)).hom.app (op W) x) =
       F.supportedHEdgeEquiv (fun q hq ↦ h q hq.ne) hZS W x := by
   simp only [supportedHPresheafEdgeIso, supportedHPresheafEdgeIsoZero, eqToIso_refl,
-    Iso.refl_trans, NatIso.ofComponents_hom_app]
+    Iso.refl_trans, Iso.trans_hom, Iso.symm_hom, supportedHPresheafZeroIso,
+    TopCat.Presheaf.comp_app, NatIso.ofComponents_hom_app, NatIso.ofComponents_inv_app]
+  -- The goal is `e ((d.toAddCommGrpIso.hom ≫ e.toAddCommGrpIso.inv) x) = d x` for the edge
+  -- equivalence `d` and `e = supportedHZeroEquiv`. Both components are typed only through the
+  -- unfolding of `supportedHPresheaf`, so `ConcreteCategory.comp_apply` and
+  -- `AddEquiv.toAddCommGrpIso_inv` cannot rewrite them; the composite is `e.symm ∘ d` by
+  -- definition.
   exact AddEquiv.apply_symm_apply _ _
 
 end higherEdge

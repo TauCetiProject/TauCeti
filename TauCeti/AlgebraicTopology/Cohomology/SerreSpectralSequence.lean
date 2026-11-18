@@ -37,7 +37,7 @@ are free, so relative cohomology vanishes in the same range.
   `F^j H^{j+q} / F^{j+1} H^{j+q}` of the filtration of `H^{j+q}(E; M)`
   (`TauCeti.TopCat.serreCohomologySpectralSequencePageXIsoGraded`). The cochain filtration does not
   vanish in any degree over an infinite-dimensional base; convergence comes from its completeness
-  (`TauCeti.isCompleteFiltration_vanishingSingularCochains`).
+  (`TauCeti.isCompleteFiltration_singularCochainFiltration`).
 
 The identification of the second page with `H^j(B; H^q(F; M))` and the multiplicative structure are
 not treated here.

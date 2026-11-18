@@ -1,18 +1,21 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: OpenAI Codex
+Authors: OpenAI Codex, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Analysis.Complex.BorelCaratheodory
 public import Mathlib.Analysis.Complex.AbsMax
+public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.Complex.Liouville
+import TauCeti.Analysis.Complex.BranchLogRoot
+import TauCeti.Analysis.Convex.SimplyConnected
 
 /-!
 # Consequences of the Borel–Carathéodory theorem
 
-Two consequences of Mathlib's Borel–Carathéodory theorem, which bounds a holomorphic function on
+Three consequences of Mathlib's Borel–Carathéodory theorem, which bounds a holomorphic function on
 a disc by an upper bound on its real part.
 
 For an entire `H`, an upper bound `Complex.exp(H(z)) = O(Complex.exp(‖z‖^p))` with `p ≥ 0` forces
@@ -24,11 +27,17 @@ Combined with the Cauchy estimate, the same theorem bounds the derivative: if `g
 on `ball z₀ r`, vanishes at `z₀` and has real part at most `A`, then
 `‖deriv g z‖ ≤ 4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A` for `‖z - z₀‖ < r`.
 
+For a nonvanishing holomorphic function on an open disc, a relative norm bound by `M`
+also bounds its logarithmic derivative by the same coefficient times `log M`. Boundary and
+exterior values are unrestricted.
+
 ## Main results
 
 * `Differentiable.isBigO_of_cexp_isBigO`: polynomial growth of an entire logarithm.
 * `Complex.norm_deriv_le_of_forall_mem_ball_re_le`: the derivative bound from a one-sided
   real-part bound.
+* `Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul`: the estimate from a relative
+  norm bound.
 -/
 
 public section
@@ -163,5 +172,44 @@ theorem Complex.norm_deriv_le_of_forall_mem_ball_re_le {g : ℂ → ℂ} {z₀ :
   refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
   have := hderiv (a / (4 * (r + d) / (r - d) ^ 2)) (by rwa [lt_div_iff₀' hc])
   rwa [mul_div_cancel₀ _ hc.ne'] at this
+
+/-- A nonvanishing holomorphic function on an open disc with relative norm bound `M` has
+logarithmic derivative bounded by `4 (r + ‖z-z₀‖) / (r - ‖z-z₀‖)² log M` inside the disc.
+No condition on its boundary or exterior values is required. -/
+theorem Complex.norm_logDeriv_le_of_forall_mem_ball_norm_le_mul {B : ℂ → ℂ} {z₀ z : ℂ} {r M : ℝ}
+    (hB : DifferentiableOn ℂ B (ball z₀ r))
+    (hB0 : ∀ w ∈ ball z₀ r, B w ≠ 0)
+    (hM : ∀ w ∈ ball z₀ r, ‖B w‖ ≤ M * ‖B z₀‖)
+    (hz : ‖z - z₀‖ < r) :
+    ‖logDeriv B z‖ ≤ 4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * Real.log M := by
+  have hr : 0 < r := (norm_nonneg _).trans_lt hz
+  have hzb : z ∈ ball z₀ r := by rwa [mem_ball, dist_eq_norm]
+  have hBz₀ : B z₀ ≠ 0 := hB0 z₀ (mem_ball_self hr)
+  have hMpos : 0 < M := by
+    have hc := hM z₀ (mem_ball_self hr)
+    have hn := norm_pos_iff.mpr hBz₀
+    nlinarith
+  obtain ⟨L, hLd, hL⟩ := TauCeti.exists_differentiableOn_eqOn_exp_comp (U := ball z₀ r)
+    ((convex_ball z₀ r).isSimplyConnected ⟨z₀, mem_ball_self hr⟩) isOpen_ball
+    (hB.div_const (B z₀))
+    (fun ⟨w, hw, h0⟩ ↦ div_ne_zero (hB0 w hw) hBz₀ h0)
+  let H : ℂ → ℂ := fun w ↦ L w - L z₀
+  have hre (w : ℂ) (hw : w ∈ ball z₀ r) : (H w).re ≤ Real.log M := by
+    have hexp : exp (H w) = B w / B z₀ := by
+      have h₁ := hL hw
+      have h₂ := hL (mem_ball_self hr)
+      simp only [Function.comp_apply, div_self hBz₀] at h₁ h₂
+      simp [H, Complex.exp_sub, h₁, h₂]
+    rw [Real.le_log_iff_exp_le hMpos, ← Complex.norm_exp, hexp, norm_div,
+      div_le_iff₀ (norm_pos_iff.2 hBz₀)]
+    exact hM w hw
+  have hlogB : deriv H z = logDeriv B z := by
+    simp only [H, deriv_sub_const]
+    rw [TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp isOpen_ball hLd hL hzb]
+    simp only [div_eq_mul_inv]
+    exact logDeriv_mul_const z _ (inv_ne_zero hBz₀)
+  rw [← hlogB]
+  exact Complex.norm_deriv_le_of_forall_mem_ball_re_le (hLd.sub_const _)
+    (sub_self _) hre hz
 
 end DerivBound

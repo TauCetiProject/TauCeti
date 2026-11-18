@@ -103,8 +103,7 @@ theorem norm_coeff_rescale_units_inv (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit
     (hr : ∀ i, ‖(u i : R)‖ * r i = 1) (f : MvPowerSeries σ R) (n : σ →₀ ℕ) :
     ‖coeff n (rescale (fun i ↦ (((u i)⁻¹ : Rˣ) : R)) f)‖ = ‖coeff n f‖ * n.prod (r · ^ ·) := by
   have hinv (i : σ) : ‖(((u i)⁻¹ : Rˣ) : R)‖ * 1 = r i := by
-    have hu0 : ‖(u i : R)‖ ≠ 0 := left_ne_zero_of_mul_eq_one (hr i)
-    rw [mul_one, NormedRing.norm_units_inv_of_norm_mul hu0 (hu i).norm_mul,
+    rw [mul_one, NormedRing.norm_units_inv_of_norm_mul (hu i).norm_mul,
       inv_eq_of_mul_eq_one_right (hr i)]
   simpa [Finsupp.prod] using norm_coeff_rescale_mul_prod _ (fun i ↦ (hu i).units_inv) hinv f n
 
