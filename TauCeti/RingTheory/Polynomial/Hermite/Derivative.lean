@@ -84,6 +84,14 @@ theorem hermite_add_two (n : ℕ) :
     hermite (n + 2) = X * hermite (n + 1) - (n + 1) • hermite n := by
   rw [hermite_succ (n + 1), derivative_hermite_succ]
 
+/-- The three-term recurrence `hermite_add_two` evaluated at a point of any ring:
+`H_{n+2}(x) = x H_{n+1}(x) - (n+1) Hₙ(x)`. -/
+theorem aeval_hermite_add_two {R : Type*} [Ring R] (x : R) (n : ℕ) :
+    aeval x (hermite (n + 2)) =
+      x * aeval x (hermite (n + 1)) - (n + 1) * aeval x (hermite n) := by
+  rw [hermite_add_two]
+  simp
+
 /-! ## Parity -/
 
 /-- **Parity of the Hermite polynomials.** `Hₙ(-x) = (-1)ⁿ Hₙ(x)` in any ring. -/
