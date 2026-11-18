@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
 import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
@@ -307,16 +308,6 @@ theorem logIntegral_isEquivalent_div_log :
 The integral `∫ t in 2..x, f t / (t * log t ^ 2)` is what Abel summation leaves behind when a
 logarithmically weighted counting function is converted into an unweighted one.  It is negligible
 on the scale `x / log x` as soon as `f` grows at most linearly. -/
-
-/-- **The Chebyshev scale `x / log x` diverges.**  Equivalently, a constant is `o (x / log x)`. -/
-theorem tendsto_div_log_atTop : Tendsto (fun x : ℝ ↦ x / Real.log x) atTop atTop := by
-  have hlog := Real.isLittleO_log_id_atTop.tendsto_div_nhds_zero
-  simp only [id_eq] at hlog
-  have h : Tendsto (fun x : ℝ ↦ Real.log x / x) atTop (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hlog ?_
-    filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx
-    exact div_pos (Real.log_pos hx) (by linarith)
-  exact h.inv_tendsto_nhdsGT_zero.congr fun x ↦ inv_div _ _
 
 /-- A constant is `o (x / log x)`, because that scale diverges. -/
 theorem isLittleO_const_div_log (c : ℝ) :
