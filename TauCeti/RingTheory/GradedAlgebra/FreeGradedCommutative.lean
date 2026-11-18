@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.NegOnePow
+public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Multiset.Sort
@@ -18,6 +19,8 @@ public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.RingTheory.GradedAlgebra.PositivePart
 public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Basic
 
+import Mathlib.Data.Multiset.Bind
+
 /-!
 # Free graded-commutative algebras
 
@@ -29,7 +32,9 @@ commute up to the Koszul sign `x i * x j = (-1) ^ (deg i * deg j) • (x j * x i
 monomials `x_{i₁}^{f i₁} ⋯ x_{i_k}^{f i_k}`, `i₁ < ⋯ < i_k`, over the exponent vectors `f` (finitely
 supported, with `f i ≤ 1` when `deg i` is odd) form a basis of `A`.
 
-The main result is the universal property: when `2` is invertible in `K`, an algebra map out of
+The presentation and its basis and degree results allow commutative semiring scalars, with `A`
+still a ring for the Koszul sign. The universal property below uses commutative ring scalars:
+when `2` is invertible in `K`, an algebra map out of
 `ΛV` may send the generators to any elements of a graded-commutative algebra in the same degrees,
 and is determined by these images. The hypothesis on `2` is needed: over `𝔽₂`, where every Koszul
 sign is `1`, the polynomial ring `𝔽₂[e]` with `e` in degree `1` satisfies the definition on the
@@ -118,6 +123,30 @@ theorem standardMonomial_single (i : ι) (n : ℕ) : standardMonomial x (single 
     ((Multiset.eq_sort_iff _).2 ⟨List.pairwise_replicate.2 (Or.inr le_rfl), rfl⟩).symm]
   simp
 
+/-- A standard monomial is the product of the powers of its generators, in support order.
+This groups consecutive copies of each generator without assuming commutativity. -/
+theorem standardMonomial_eq_prod_sort (f : ι →₀ ℕ) :
+    standardMonomial x f = (f.support.sort.map fun i => x i ^ f i).prod := by
+  have hs : f.support.sort.flatMap (fun i => List.replicate (f i) i) = f.toMultiset.sort := by
+    refine (Multiset.eq_sort_iff (· ≤ ·)).2 ⟨?_, ?_⟩
+    · refine List.pairwise_flatMap.2 ⟨?_, ?_⟩
+      · intro i _
+        exact List.pairwise_replicate_of_refl
+      · exact (f.support.pairwise_sort _).imp fun {_ _} hij _ ha _ hb => by
+          rw [(List.mem_replicate.1 ha).2, (List.mem_replicate.1 hb).2]
+          exact hij
+    · rw [← Multiset.coe_bind, Finset.sort_eq, Multiset.bind, Multiset.join,
+        Finsupp.toMultiset_apply, Finsupp.sum, Finset.sum]
+      congr 1
+      exact Multiset.map_congr rfl fun i _ => (Multiset.nsmul_singleton i (f i)).symm
+  rw [standardMonomial_def, ← hs]
+  generalize f.support.sort = l
+  induction l with
+  | nil => rfl
+  | cons i l ih =>
+    rw [List.flatMap_cons, List.map_append, List.prod_append, List.map_replicate,
+      List.prod_replicate, ih, List.map_cons, List.prod_cons]
+
 /-- A monoid homomorphism maps standard monomials in the `x i` to standard monomials in their
 images. -/
 theorem map_standardMonomial {S F : Type*} [Monoid S] [FunLike F R S] [MonoidHomClass F R S]
@@ -198,9 +227,36 @@ exponents, with every generator of odd degree occurring at most once. -/
 abbrev ExponentVector {ι : Type*} (deg : ι → ℕ) : Type _ :=
   {f : ι →₀ ℕ // ∀ i, Odd (deg i) → f i ≤ 1}
 
+namespace ExponentVector
+
+variable {ι : Type*} {deg : ι → ℕ}
+
+/-- The empty exponent vector. -/
+instance : Zero (ExponentVector deg) := ⟨⟨0, fun _ _ => zero_le_one⟩⟩
+
+/-- The empty exponent vector has all exponents zero. -/
+@[simp]
+theorem coe_zero : ((0 : ExponentVector deg) : ι →₀ ℕ) = 0 := rfl
+
+/-- A single power, subject to the odd-exponent bound. -/
+noncomputable def single (i : ι) (n : ℕ) (h : Odd (deg i) → n ≤ 1) : ExponentVector deg :=
+  ⟨Finsupp.single i n, fun j hj => by
+    classical
+    by_cases hij : i = j
+    · subst j
+      simpa using h hj
+    · simp [Finsupp.single_eq_of_ne (Ne.symm hij)]⟩
+
+/-- The underlying exponent function of a single power. -/
+@[simp]
+theorem coe_single (i : ι) (n : ℕ) (h : Odd (deg i) → n ≤ 1) :
+    (single i n h : ι →₀ ℕ) = Finsupp.single i n := (rfl)
+
+end ExponentVector
+
 section FreeGradedCommutative
 
-variable {K : Type*} [CommRing K] {A : Type*} [Ring A] [Algebra K A]
+variable {K : Type*} [CommSemiring K] {A : Type*} [Ring A] [Algebra K A]
   {ι : Type*} [LinearOrder ι]
 
 variable (𝒜 : ℤ → Submodule K A) in
@@ -299,15 +355,15 @@ theorem eq_span_one_of_pos (hx : IsFreeGradedCommutative 𝒜 x deg) (hdeg : ∀
     𝒜 0 = Submodule.span K {1} := by
   rw [← hx.span_standardMonomial_eq 0]
   congr 1
-  refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨⟨0, fun _ _ => zero_le_one⟩, by simp, by simp⟩, ?_⟩
+  refine Set.eq_singleton_iff_unique_mem.2 ⟨⟨0, by simp, by simp⟩, ?_⟩
   rintro _ ⟨f, hf, rfl⟩
-  by_cases h : f.val = 0
-  · simp [h]
-  obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 h
-  have := le_weight_of_ne_zero (w := fun i => (deg i : ℤ)) (fun _ => Int.natCast_nonneg _) hi
-  simp only [Set.mem_ofPred_eq] at hf
-  have := hdeg i
-  omega
+  have := Finsupp.nonTorsionWeight_of (R := ℕ) (w := deg) fun i => Nat.ne_of_gt (hdeg i)
+  change weight (fun i => (deg i : ℤ)) f.val = 0 at hf
+  have hw : (weight deg f.val : ℤ) = 0 := by
+    simpa only [weight_apply, Finsupp.sum, Nat.cast_sum, nsmul_eq_mul, Nat.cast_mul,
+      Nat.cast_id] using hf
+  have h := (Finsupp.weight_eq_zero_iff_eq_zero deg).1 (Int.natCast_eq_zero.1 hw)
+  simp [h]
 
 end Degree
 
@@ -353,13 +409,16 @@ private theorem constr_generator_mul (hx : IsFreeGradedCommutative 𝒜 x deg)
 omit [Invertible (2 : K)] in
 private theorem constr_one (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B) :
     hx.basis.constr K (fun f => standardMonomial b f.val) 1 = 1 := by
-  rw [← standardMonomial_zero x, ← basis_apply hx ⟨0, fun _ _ => zero_le_one⟩,
-    Module.Basis.constr_basis, standardMonomial_zero]
+  have hzero : hx.basis 0 = 1 := by simp
+  rw [← hzero, Module.Basis.constr_basis, ExponentVector.coe_zero, standardMonomial_zero]
 
-private theorem constr_x (hx : IsFreeGradedCommutative 𝒜 x deg)
-    (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) (i : ι) :
+omit [Invertible (2 : K)] in
+private theorem constr_x (hx : IsFreeGradedCommutative 𝒜 x deg) (i : ι) :
     hx.basis.constr K (fun f => standardMonomial b f.val) (x i) = b i := by
-  rw [← mul_one (x i), constr_generator_mul hx hb, constr_one, mul_one]
+  let f := ExponentVector.single (deg := deg) i 1 (fun _ => le_rfl)
+  have hi : hx.basis f = x i := by simp [f]
+  rw [← hi, Module.Basis.constr_basis]
+  simp [f]
 
 /-- The linear map sending each standard monomial in the `x i` to the same standard monomial in
 the `b i` is multiplicative: the set of `w` with `L (w * a) = L w * L a` for all `a` is a
@@ -377,7 +436,7 @@ private theorem constr_mul (hx : IsFreeGradedCommutative 𝒜 x deg)
   | mem w hw =>
     obtain ⟨i, rfl⟩ := hw
     intro a
-    rw [constr_generator_mul hx hb, constr_x hx hb]
+    rw [constr_generator_mul hx hb, constr_x hx]
   | algebraMap r =>
     intro a
     rw [Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul, map_smul, map_smul, constr_one,
@@ -403,7 +462,7 @@ noncomputable def lift (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
 theorem lift_x (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
     (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) (i : ι) :
     hx.lift b hb (x i) = b i := by
-  rw [lift, AlgHom.ofLinearMap_apply, constr_x hx hb]
+  rw [lift, AlgHom.ofLinearMap_apply, constr_x hx]
 
 /-- `lift` sends the family of generators `x` to the family `b`. -/
 @[simp]
