@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -131,8 +132,7 @@ private theorem tendsto_setLIntegral_floerEnergyDensity_of_forall_eq
       (contDiff_uncurry_cylindrical hH).contDiffOn).mono (subset_univ _) |>.integrableOn_compact
         (isCompact_Icc.prod isCompact_Icc))
     (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦
-      ω.floerEnergyDensity_nonneg (fun v hv ↦
-        (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc k z (hsub hz) v))
+      ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc k z (hsub hz)))
         (hfloer k z (hsub hz)))
 
 /-- A stationary limit of Floer trajectories with uniformly bounded derivatives is the stationary
