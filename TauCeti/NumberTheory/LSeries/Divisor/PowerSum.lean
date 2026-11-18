@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.Convolution
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Complex
 import TauCeti.NumberTheory.LSeries.Continuity
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.RiemannZeta
 import TauCeti.NumberTheory.LSeries.Twist
 
@@ -50,14 +51,6 @@ open scoped LSeries.notation ArithmeticFunction.zeta
 
 namespace TauCeti.LSeries
 
-/-- A Dirichlet series that converges absolutely exactly on `Re s > a` has abscissa `a`. -/
-private theorem abscissaOfAbsConv_eq_of_LSeriesSummable_iff {f : ℕ → ℂ} {a : ℝ}
-    (h : ∀ s : ℂ, LSeriesSummable f s ↔ a < s.re) : abscissaOfAbsConv f = a := by
-  refine le_antisymm (abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦
-    (h y).mpr (by simpa using hy)) (not_lt.mp fun ha ↦ ?_)
-  exact lt_irrefl a <| by
-    simpa using (h a).mp (LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using ha))
-
 /-- Away from `0`, `cpow ν` is the constant series `1` twisted by `n ^ ν`. -/
 private theorem cpow_eq_one_mul_natCast_cpow (ν : ℂ) {n : ℕ} (hn : n ≠ 0) :
     cpow ν n = (1 : ℕ → ℂ) n * (n : ℂ) ^ ν := by
@@ -78,12 +71,6 @@ theorem LSeries_cpow {ν s : ℂ} (hs : 1 + ν.re < s.re) :
 /-- The abscissa of absolute convergence of the series of `n ↦ n ^ ν` is `1 + Re ν`. -/
 theorem abscissaOfAbsConv_cpow (ν : ℂ) : abscissaOfAbsConv ↗(cpow ν) = (1 + ν.re : ℝ) :=
   abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦ LSeriesSummable_cpow_iff
-
-/-- The series of `ζ`, as an arithmetic function with complex values, converges absolutely on
-`Re s > 1`. -/
-private theorem LSeriesSummable_natCoe_zeta {s : ℂ} (hs : 1 < s.re) :
-    LSeriesSummable ↗(ζ : ArithmeticFunction ℂ) s := by
-  simpa only [natCoe_apply] using LSeriesSummable_zeta_iff.mpr hs
 
 /-- `∑ σ_ν(n) n ^ {-s} = ζ(s) ζ(s - ν)` for `Re s > max(1, 1 + Re ν)`. -/
 theorem LSeries_sigmaC {ν s : ℂ} (hs : max 1 (1 + ν.re) < s.re) :
