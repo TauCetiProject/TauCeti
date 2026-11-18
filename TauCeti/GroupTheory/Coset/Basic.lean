@@ -52,6 +52,11 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
 read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection.
+
+The coset space `G ⧸ K` is by definition the orbit space of the right multiplication action of
+`K.op` (`QuotientGroup.mk_eq_quotient_mk_orbitRel`), and that action is free: right
+multiplication of a cancellative monoid on itself is free
+(`TauCeti.instIsCancelSMulMulOpposite`), and so is its restriction to `K.op`.
 -/
 
 public section
@@ -345,5 +350,30 @@ theorem pairwise_disjoint_out_smul (hdisj : ∀ g ∉ H, Disjoint (g • V) V) :
   rwa [smul_smul, mul_inv_cancel_left] at this
 
 end Action
+
+end QuotientGroup
+
+namespace TauCeti
+
+/-- Right multiplication of a cancellative monoid on itself, `MulOpposite.op a • b = b * a`, is
+free. It restricts to the right multiplication action of `K.op` for a subgroup `K`, whose orbits
+are the left cosets of `K`. -/
+@[to_additive /-- Right addition of a cancellative additive monoid on itself,
+`AddOpposite.op a +ᵥ b = b + a`, is free. -/]
+instance instIsCancelSMulMulOpposite {M : Type*} [CancelMonoid M] : IsCancelSMul Mᵐᵒᵖ M where
+  left_cancel' _ _ _ h := mul_right_cancel h
+  right_cancel' _ _ _ h := MulOpposite.unop_injective (mul_left_cancel h)
+
+end TauCeti
+
+namespace QuotientGroup
+
+/-- The projection to the coset space `G ⧸ K` is the projection to the orbit space of the right
+multiplication action of `K.op`; the left coset relation is by definition this orbit relation. -/
+@[to_additive /-- The projection to the coset space `G ⧸ K` is the projection to the orbit space
+of the right addition action of `K.op`. -/]
+theorem mk_eq_quotient_mk_orbitRel {G : Type*} [Group G] (K : Subgroup G) :
+    (QuotientGroup.mk : G → G ⧸ K) = Quotient.mk (MulAction.orbitRel K.op G) :=
+  rfl
 
 end QuotientGroup
