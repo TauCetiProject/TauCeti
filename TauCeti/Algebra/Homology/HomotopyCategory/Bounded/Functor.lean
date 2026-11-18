@@ -155,6 +155,34 @@ noncomputable def mapHomotopyCategoryBoundedSingleFunctorIso (n : ℤ) :
       isoWhiskerLeft F (TauCeti.HomotopyCategory.Bounded.singleFunctorCompιIso D n).symm ≪≫
       (Functor.associator _ _ _).symm)
 
+/-- In the homotopy category, the comparison `mapHomotopyCategoryBoundedSingleFunctorIso` is the
+comparison `HomologicalComplex.singleMapHomologicalComplex` of single complexes. -/
+theorem ι_map_mapHomotopyCategoryBoundedSingleFunctorIso_hom_app (n : ℤ) (X : C) :
+    (TauCeti.HomotopyCategory.Bounded.ι D).map
+        ((F.mapHomotopyCategoryBoundedSingleFunctorIso n).hom.app X) =
+      F.mapHomotopyCategoryBoundedCompι.hom.app _ ≫
+        (F.mapHomotopyCategory (.up ℤ)).map
+          ((TauCeti.HomotopyCategory.Bounded.singleFunctorCompιIso C n).hom.app X) ≫
+        (HomotopyCategory.quotient D (.up ℤ)).map
+          ((HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) n).hom.app X) ≫
+        (TauCeti.HomotopyCategory.Bounded.singleFunctorCompιIso D n).inv.app (F.obj X) := by
+  -- The comparisons `singleFunctorPostcompQuotientIso` are identities by definition.
+  have h₁ : (HomotopyCategory.singleFunctorPostcompQuotientIso C n).hom.app X = 𝟙 _ := rfl
+  have h₂ : (HomotopyCategory.singleFunctorPostcompQuotientIso D n).inv.app (F.obj X) = 𝟙 _ := rfl
+  simp only [comp_obj, ObjectProperty.ι_obj, mapHomotopyCategoryBoundedSingleFunctorIso,
+    whiskeringRight_obj_obj, FullyFaithful.preimageIso_hom, Iso.trans_hom, isoWhiskerLeft_hom,
+    Iso.symm_hom, isoWhiskerRight_hom, FullyFaithful.whiskeringRight_preimage_app,
+    NatTrans.comp_app, associator_hom_app, whiskerLeft_app, associator_inv_app, whiskerRight_app,
+    HomotopyCategory.quotient_obj_singleFunctors_obj, h₁, map_id,
+    mapHomotopyCategoryFactors_hom_app, h₂, Category.comp_id, Category.id_comp,
+    ObjectProperty.ι_map, ObjectProperty.homMk_hom]
+  -- The identities sit on objects which agree with the neighbouring ones only up to unfolding.
+  erw [Category.id_comp ((TauCeti.HomotopyCategory.Bounded.singleFunctorCompιIso D n).inv.app
+      (F.obj X)), Category.id_comp ((HomotopyCategory.quotient D (.up ℤ)).map
+      ((HomologicalComplex.singleMapHomologicalComplex F (.up ℤ) n).hom.app X) ≫
+        (TauCeti.HomotopyCategory.Bounded.singleFunctorCompιIso D n).inv.app (F.obj X))]
+  rfl
+
 end Single
 
 end Functor
