@@ -876,11 +876,14 @@ theorem le_setIntegral_floerEnergyDensity_of_forall_le_mul (ω : SymplecticForm 
   have hRint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) (Icc s (s + h) ×ˢ Icc (0 : ℝ) 1) :=
     ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hR).integrableOn_compact
       (isCompact_Icc.prod isCompact_Icc)
-  have hint := setIntegral_rect_le_mul_of_forall_setIntegral_le (f := fun _ ↦ m / h) (c := 1)
-    (integrableOn_const (isCompact_Icc.prod isCompact_Icc).measure_lt_top.ne) hRint fun r hr ↦ by
-      simpa [setIntegral_const] using (div_le_iff₀' hh).2 (hm r hr)
-  -- The constant `m / h` integrates to `m` over the rectangle of area `h`.
-  simpa [Measure.volume_eq_prod, -Set.Icc_prod_Icc, hh.le, mul_div_cancel₀ _ hh.ne'] using hint
+  rw [← setIntegral_setIntegral_slice_eq_setIntegral_rect hRint]
+  calc m = ∫ _ in Icc s (s + h), m / h := by
+        rw [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), smul_eq_mul,
+          add_sub_cancel_left, mul_div_cancel₀ _ hh.ne']
+    _ ≤ ∫ r in Icc s (s + h), ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t) :=
+        setIntegral_mono_on (integrableOn_const isCompact_Icc.measure_lt_top.ne)
+          (integrableOn_setIntegral_slice hRint) measurableSet_Icc fun r hr ↦
+            (div_le_iff₀' hh).2 (hm r hr)
 
 end Integral
 
