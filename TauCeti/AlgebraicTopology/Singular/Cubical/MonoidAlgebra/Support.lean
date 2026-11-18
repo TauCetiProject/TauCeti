@@ -25,6 +25,8 @@ This file records how this submodule of the module `TauCeti.cubicalChainModule Y
 * it is closed under the differential and is a homogeneous submodule for the grading by dimension,
   so it is a differential graded submodule;
 * it increases with `S`, is everything for `S = univ` and is zero for `S = ∅`;
+* the chains supported in two subsets are those supported in their intersection, so chains
+  supported in pairwise disjoint subsets are independent;
 * a map sending `S` into `S'` pushes chains supported in `S` to chains supported in `S'`;
 * if every compact subset of `Y` lies in some member of a family `S i`, the chains supported in the
   `S i` together are all the chains, since the image of a cube is compact.
@@ -196,6 +198,44 @@ theorem isHomogeneous_cubicalChainModuleSupportedIn (S : Set Y) :
         (map_subtypeVal_mem_supportedIn R c)
     · rw [DirectSum.decompose_of_mem_ne _ (cubicalChainModuleLof_mem _) (Ne.symm hi)]
       exact zero_mem _
+
+/-- **Chains supported in two subsets are supported in their intersection.** Every homogeneous
+component of such a chain is a chain of one dimension supported in both subsets, hence in their
+intersection (`TauCeti.NormalizedCubicalChain.supportedIn_inter`). -/
+theorem cubicalChainModuleSupportedIn_inter (S S' : Set Y) :
+    cubicalChainModuleSupportedIn H R (S ∩ S') =
+      cubicalChainModuleSupportedIn H R S ⊓ cubicalChainModuleSupportedIn H R S' := by
+  classical
+  refine le_antisymm (le_inf (cubicalChainModuleSupportedIn_mono Set.inter_subset_left)
+    (cubicalChainModuleSupportedIn_mono Set.inter_subset_right)) fun x ⟨hS, hS'⟩ ↦ ?_
+  rw [← DirectSum.sum_support_decompose (cubicalChainModuleGrading Y H R) x]
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  have hi := isHomogeneous_cubicalChainModuleSupportedIn (H := H) (R := R) S i hS
+  have hi' := isHomogeneous_cubicalChainModuleSupportedIn (H := H) (R := R) S' i hS'
+  rcases mem_cubicalChainModuleGrading_iff.1 (SetLike.coe_mem
+      (DirectSum.decompose (cubicalChainModuleGrading Y H R) x i)) with h | ⟨n, c, -, h⟩
+  · rw [h]
+    exact zero_mem _
+  · rw [← h, cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff] at hi hi' ⊢
+    rw [NormalizedCubicalChain.supportedIn_inter]
+    exact ⟨hi, hi'⟩
+
+/-- Chains supported in disjoint subsets have only `0` in common. -/
+theorem disjoint_cubicalChainModuleSupportedIn {S S' : Set Y} (h : Disjoint S S') :
+    Disjoint (cubicalChainModuleSupportedIn H R S) (cubicalChainModuleSupportedIn H R S') := by
+  rw [disjoint_iff, ← cubicalChainModuleSupportedIn_inter, h.inter_eq,
+    cubicalChainModuleSupportedIn_empty]
+
+/-- **Chains supported in pairwise disjoint subsets are independent**: a finite sum of chains
+supported in pairwise disjoint subsets vanishes only if every term does. -/
+theorem iSupIndep_cubicalChainModuleSupportedIn {ι : Type*} {S : ι → Set Y}
+    (hS : Pairwise (Function.onFun Disjoint S)) :
+    iSupIndep fun i ↦ cubicalChainModuleSupportedIn H R (S i) := by
+  refine iSupIndep_def.2 fun i ↦ (disjoint_cubicalChainModuleSupportedIn (H := H) (R := R)
+    (S' := ⋃ (j) (_ : j ≠ i), S j) ?_).mono_right ?_
+  · exact Set.disjoint_iUnion₂_right.2 fun _ hj ↦ hS (Ne.symm hj)
+  · exact iSup₂_le fun j hj ↦ cubicalChainModuleSupportedIn_mono
+      (Set.subset_iUnion₂ (s := fun j (_ : j ≠ i) ↦ S j) j hj)
 
 /-- **Push-forward preserves support**: a map sending `S` into `S'` sends the chains supported in
 `S` to chains supported in `S'`. -/

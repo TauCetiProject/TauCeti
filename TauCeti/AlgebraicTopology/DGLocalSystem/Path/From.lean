@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Augmentation
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Support
 public import TauCeti.Topology.PathSpace.Moore.From
 
 /-!
@@ -34,6 +35,11 @@ truncation does not commute with concatenation in front.
 
 This is the augmentation of the path fibration `Ω_b B → P_b B → B` against which a semi-free
 resolution of `R` over `C_*(Ω_b B; R)` is compared, as in Brown's twisted tensor products.
+
+The Moore paths from `b` to a point `c` are the fibre over `c` of the end point map
+`P_b B → B`. Pushing their chains forward (`TauCeti.pathChainToPathFromChain`) identifies
+`C_*(P_{b→c} B; R)` with the chains of `P_b B` supported in that fibre, as left modules over
+`C_*(Ω_b B; R)` and compatibly with the differentials.
 
 The monoid `H` is the phantom parameter of `TauCeti.cubicalChainModule`: no monoid acts on the free
 end point of a path from `b`, and it plays no role.
@@ -79,5 +85,94 @@ theorem exists_pathFromChainDifferential_eq_of_augmentation_eq_zero
     (hε : cubicalChainModuleAugmentation (MoorePathFrom B b) H R m = 0) :
     ∃ n, cubicalChainModuleDifferential (MoorePathFrom B b) H R n = m :=
   exists_cubicalChainModuleDifferential_eq_of_augmentation_eq_zero hd hε
+
+/-! ### The chains on a fibre of the end point map -/
+
+variable (H R) in
+/-- The chains on the Moore paths from `b` to `c`, the fibre over `c` of the end point map
+`P_b B → B`, pushed forward to chains on the based path space along
+`TauCeti.MoorePathBetween.toMoorePathFrom`. -/
+noncomputable def pathChainToPathFromChain (c : B) :
+    cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R →ₗ[R]
+      cubicalChainModule (MoorePathFrom B b) H R :=
+  (cubicalChainModuleEquiv _ H R).symm.toLinearMap ∘ₗ
+    cubicalChainSumMap R (MoorePathBetween.toMoorePathFrom b c) ∘ₗ
+      (cubicalChainModuleEquiv _ _ R).toLinearMap
+
+/-- On a homogeneous chain, the push-forward to the based path space is the push-forward of the
+chain. -/
+@[simp]
+theorem pathChainToPathFromChain_lof {c : B} {n : ℕ}
+    (x : NormalizedCubicalChain (MoorePathBetween B b c) R n) :
+    pathChainToPathFromChain H R c (cubicalChainModuleLof _ _ R n x) =
+      cubicalChainModuleLof _ H R n
+        (NormalizedCubicalChain.map R (MoorePathBetween.toMoorePathFrom b c) n x) := by
+  simp [pathChainToPathFromChain]
+
+/-- The push-forward to the based path space preserves the grading. -/
+theorem pathChainToPathFromChain_mem {c : B} {i : ℤ}
+    {x : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R}
+    (hx : x ∈ cubicalChainModuleGrading _ _ R i) :
+    pathChainToPathFromChain H R c x ∈ cubicalChainModuleGrading (MoorePathFrom B b) H R i := by
+  rcases mem_cubicalChainModuleGrading_iff.1 hx with rfl | ⟨n, y, hn, rfl⟩
+  · rw [map_zero]
+    exact zero_mem _
+  · rw [pathChainToPathFromChain_lof]
+    exact mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨n, _, hn, rfl⟩)
+
+/-- The push-forward to the based path space commutes with the differentials. -/
+theorem cubicalChainModuleDifferential_pathChainToPathFromChain {c : B}
+    (x : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
+    cubicalChainModuleDifferential (MoorePathFrom B b) H R (pathChainToPathFromChain H R c x) =
+      pathChainToPathFromChain H R c (cubicalChainModuleDifferential _ _ R x) :=
+  (cubicalChainModuleEquiv _ H R).injective <| by
+    simp [pathChainToPathFromChain, cubicalChainModuleEquiv_differential,
+      cubicalChainDifferential_cubicalChainSumMap]
+
+/-- The push-forward to the based path space is linear for the loops at `b` acting in front. -/
+theorem pathChainToPathFromChain_smul {c : B} (a : loopChainAlgebra B b R)
+    (x : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
+    pathChainToPathFromChain H R c (a • x) = a • pathChainToPathFromChain H R c x := by
+  induction x using cubicalChainModule.induction_on with
+  | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, smul_add]
+  | lof q y =>
+    induction a using DirectSum.induction_on with
+    | zero => rw [zero_smul, map_zero, zero_smul]
+    | add a a' ha ha' => rw [add_smul, map_add, ha, ha', add_smul]
+    | of p z =>
+      rw [← DirectSum.lof_eq_of R, lof_smul_cubicalChainModuleLof, pathChainToPathFromChain_lof,
+        pathChainToPathFromChain_lof, lof_smul_cubicalChainModuleLof,
+        NormalizedCubicalChain.map_leftAct _ MoorePathBetween.toMoorePathFrom_smul]
+
+/-- The push-forward to the based path space is injective. -/
+theorem pathChainToPathFromChain_injective (c : B) :
+    Function.Injective (pathChainToPathFromChain (b := b) H R c) := by
+  -- Compare the components of each dimension, where the push-forward is injective.
+  refine fun x y h ↦ (cubicalChainModuleEquiv _ _ R).injective <| DirectSum.ext fun n ↦ ?_
+  have hn := congrArg (fun z ↦ cubicalChainModuleEquiv _ H R z n) h
+  simp only [pathChainToPathFromChain, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearEquiv.apply_symm_apply, cubicalChainSumMap_apply] at hn
+  exact NormalizedCubicalChain.map_injective R _
+    MoorePathBetween.isEmbedding_toMoorePathFrom.injective n hn
+
+/-- **The chains on the paths from `b` to `c` are the chains of `P_b B` supported over `c`**: the
+image of the push-forward is the chains supported in the fibre of the end point map over `c`. -/
+theorem range_pathChainToPathFromChain (c : B) :
+    LinearMap.range (pathChainToPathFromChain (b := b) H R c) =
+      cubicalChainModuleSupportedIn H R (MoorePathFrom.endpoint B b ⁻¹' {c}) := by
+  have hι := MoorePathBetween.isEmbedding_toMoorePathFrom (X := B) (b := b) (c := c)
+  rw [← MoorePathBetween.range_toMoorePathFrom]
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨x, rfl⟩
+    induction x using cubicalChainModule.induction_on with
+    | add x x' hx hx' => rw [map_add]; exact add_mem hx hx'
+    | lof n y =>
+      rw [pathChainToPathFromChain_lof, cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff,
+        ← NormalizedCubicalChain.range_map_eq_supportedIn_range R hι.isInducing]
+      exact LinearMap.mem_range_self _ y
+  · rw [cubicalChainModuleSupportedIn_eq_span, Submodule.span_le]
+    rintro _ ⟨n, σ, hσ, rfl⟩
+    obtain ⟨y, hy⟩ := NormalizedCubicalChain.ofCube_mem_range_map R hι.isInducing hσ
+    exact ⟨cubicalChainModuleLof _ _ R n y, by rw [pathChainToPathFromChain_lof, hy]⟩
 
 end TauCeti
