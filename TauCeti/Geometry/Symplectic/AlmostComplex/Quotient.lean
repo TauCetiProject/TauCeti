@@ -9,13 +9,16 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
-# Complex structures induced on quotients
+# Almost complex structures on quotient spaces
 
-Let `J` be a linear complex structure on a real vector space `V`. If `J` preserves a subspace `L`,
-it induces a complex structure on the quotient `V ⧸ L` for which the quotient map is complex
-linear (`TauCeti.AlmostComplexStructure.quotient`). More generally, if `π : V → W` is a
-surjective linear map whose kernel `J` preserves, there is exactly one complex structure `J_W` on
-`W` with `π ∘ J = J_W ∘ π` (`TauCeti.AlmostComplexStructure.descend`,
+An invariant real subspace of an almost complex vector space has an almost complex quotient.
+The quotient projection intertwines the two structures. In particular this constructs the
+complex structure on the normal quotient of a pseudoholomorphic immersion, without a metric
+or a choice of complement.
+
+More generally, if `π : V → W` is a surjective linear map whose kernel `J` preserves, there is
+exactly one complex structure `J_W` on `W` with `π ∘ J = J_W ∘ π`
+(`TauCeti.AlmostComplexStructure.descend`,
 `TauCeti.AlmostComplexStructure.isComplexLinearMap_iff_eq_descend`). Conversely, the kernel of a
 complex-linear map is invariant
 (`TauCeti.IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero`), so the invariance of the
@@ -31,7 +34,7 @@ varying structure on the base.
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.quotient`: the structure induced on `V ⧸ L`.
+* `TauCeti.AlmostComplexStructure.quotient`: the structure induced on `V ⧸ p`.
 * `TauCeti.AlmostComplexStructure.descend`: the structure induced on the target of a surjection
   whose kernel is `J`-invariant, characterized by `TauCeti.AlmostComplexStructure.descend_apply`.
 * `TauCeti.AlmostComplexStructure.isComplexLinearMap_iff_eq_descend`: it is the only structure
@@ -40,37 +43,75 @@ varying structure on the base.
 
 public section
 
-namespace TauCeti
+namespace TauCeti.AlmostComplexStructure
 
-variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
+variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
-/-- The kernel of a complex-linear map is invariant under the source structure: if `F v = 0`
-then `F (J v) = J' (F v) = 0`. -/
-theorem IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero {J : AlmostComplexStructure V}
-    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) {v : V}
-    (hv : F v = 0) : F (J v) = 0 := by
-  rw [(isComplexLinearMap_iff_apply J J' F).1 hF v, hv, J'.apply_zero]
-
-namespace AlmostComplexStructure
-
-/-- **The quotient complex structure.** A complex structure `J` preserving a subspace `L` induces
-the complex structure `[v] ↦ [J v]` on `V ⧸ L`. -/
-def quotient (J : AlmostComplexStructure V) (L : Submodule ℝ V) (hL : ∀ x ∈ L, J x ∈ L) :
-    AlmostComplexStructure (V ⧸ L) where
-  toLinearMap := L.mapQ L J.toLinearMap hL
+/-- The almost complex structure induced on the quotient by an invariant real subspace. -/
+def quotient (J : AlmostComplexStructure V) (p : Submodule ℝ V)
+    (hp : ∀ v ∈ p, J v ∈ p) : AlmostComplexStructure (V ⧸ p) where
+  toLinearMap := p.mapQ p J.toLinearMap hp
   square_neg := by
+    apply LinearMap.ext
+    intro v
+    obtain ⟨w, rfl⟩ := p.mkQ_surjective v
+    simp [Submodule.mapQ_apply, J.apply_apply]
+
+/-- The underlying endomorphism is the map induced on the quotient. -/
+theorem quotient_toLinearMap (J : AlmostComplexStructure V) (p : Submodule ℝ V)
+    (hp : ∀ v ∈ p, J v ∈ p) :
+    (J.quotient p hp).toLinearMap = p.mapQ p J.toLinearMap hp := (rfl)
+
+/-- On a quotient class the induced structure applies the original structure to a lift. -/
+@[simp]
+theorem quotient_mk (J : AlmostComplexStructure V) (p : Submodule ℝ V)
+    (hp : ∀ v ∈ p, J v ∈ p) (v : V) :
+    J.quotient p hp (Submodule.Quotient.mk v) = Submodule.Quotient.mk (J v) := by
+  simp [quotient]
+
+/-- The quotient projection is complex linear. -/
+@[simp]
+theorem isComplexLinearMap_mkQ (J : AlmostComplexStructure V) (p : Submodule ℝ V)
+    (hp : ∀ v ∈ p, J v ∈ p) :
+    IsComplexLinearMap J (J.quotient p hp) p.mkQ := by
+  simp [isComplexLinearMap_iff_apply]
+
+/-- The quotient structure is characterized by complex linearity of the quotient projection. -/
+theorem quotient_eq_iff (J : AlmostComplexStructure V) (p : Submodule ℝ V)
+    (hp : ∀ v ∈ p, J v ∈ p) (K : AlmostComplexStructure (V ⧸ p)) :
+    J.quotient p hp = K ↔ IsComplexLinearMap J K p.mkQ := by
+  constructor
+  · rintro rfl
+    exact J.isComplexLinearMap_mkQ p hp
+  · intro h
     ext v
+    obtain ⟨w, rfl⟩ := p.mkQ_surjective v
+    rw [← (isComplexLinearMap_iff_apply _ _ _).1 h w]
     simp
 
-@[simp]
-theorem quotient_mk (J : AlmostComplexStructure V) (L : Submodule ℝ V) (hL : ∀ x ∈ L, J x ∈ L)
-    (v : V) : J.quotient L hL (Submodule.Quotient.mk v) = Submodule.Quotient.mk (J v) :=
-  (rfl)
+variable {W : Type*} [AddCommGroup W] [Module ℝ W]
 
-/-- The quotient map is complex linear for the quotient structure. -/
-theorem isComplexLinearMap_mkQ (J : AlmostComplexStructure V) (L : Submodule ℝ V)
-    (hL : ∀ x ∈ L, J x ∈ L) : IsComplexLinearMap J (J.quotient L hL) L.mkQ :=
-  (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ (quotient_mk J L hL v).symm
+/-- Complex linearity out of a quotient can be tested after the quotient projection. -/
+theorem isComplexLinearMap_comp_mkQ_iff (J : AlmostComplexStructure V)
+    (p : Submodule ℝ V) (hp : ∀ v ∈ p, J v ∈ p) (K : AlmostComplexStructure W)
+    (f : V ⧸ p →ₗ[ℝ] W) :
+    IsComplexLinearMap J K (f.comp p.mkQ) ↔ IsComplexLinearMap (J.quotient p hp) K f := by
+  simp only [isComplexLinearMap_iff_apply, LinearMap.comp_apply, Submodule.mkQ_apply]
+  constructor
+  · intro h v
+    obtain ⟨w, rfl⟩ := p.mkQ_surjective v
+    simpa using h w
+  · intro h v
+    simpa using h (p.mkQ v)
+
+/-- The quotient lift is complex-linear exactly when the original map is. -/
+@[simp]
+theorem isComplexLinearMap_liftQ_iff (J : AlmostComplexStructure V)
+    (p : Submodule ℝ V) (hp : ∀ v ∈ p, J v ∈ p) (K : AlmostComplexStructure W)
+    (f : V →ₗ[ℝ] W) (hf : p ≤ LinearMap.ker f) :
+    IsComplexLinearMap (J.quotient p hp) K (p.liftQ f hf) ↔ IsComplexLinearMap J K f := by
+  rw [← isComplexLinearMap_comp_mkQ_iff]
+  simp
 
 /-- **The complex structure induced on the target of a surjection.** If `π : V → W` is surjective
 and its kernel is `J`-invariant, the quotient structure on `V ⧸ ker π`, transported along
@@ -115,6 +156,53 @@ theorem descend_fst_apply {E N : Type*} [AddCommGroup E] [Module ℝ E] [AddComm
     J.descend (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ v = (J (v, 0)).1 :=
   descend_apply J (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ (v, 0)
 
-end AlmostComplexStructure
+end TauCeti.AlmostComplexStructure
+
+namespace TauCeti
+
+variable {U V : Type*}
+  [AddCommGroup U] [Module ℝ U] [AddCommGroup V] [Module ℝ V]
+  {j : AlmostComplexStructure U} {J : AlmostComplexStructure V} {f : U →ₗ[ℝ] V}
+
+/-- The kernel of a complex-linear map is invariant under the source structure: if `f v = 0`
+then `f (j v) = J (f v) = 0`. -/
+theorem IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero (hf : IsComplexLinearMap j J f)
+    {u : U} (hu : f u = 0) : f (j u) = 0 := by
+  rw [(isComplexLinearMap_iff_apply j J f).1 hf u, hu, J.apply_zero]
+
+/-- The almost complex structure on the quotient by the range of a complex-linear map. -/
+def IsComplexLinearMap.quotientRange (hf : IsComplexLinearMap j J f) :
+    AlmostComplexStructure (V ⧸ LinearMap.range f) :=
+  J.quotient (LinearMap.range f) (fun _ hv ↦ hf.apply_mem_range hv)
+
+/-- The range-quotient structure is induced by the target structure on the invariant range. -/
+theorem IsComplexLinearMap.quotientRange_def (hf : IsComplexLinearMap j J f) :
+    hf.quotientRange = J.quotient (LinearMap.range f) (fun _ hv ↦ hf.apply_mem_range hv) :=
+  (rfl)
+
+/-- On a range quotient class the induced structure applies the target structure to a lift. -/
+@[simp]
+theorem IsComplexLinearMap.quotientRange_mk (hf : IsComplexLinearMap j J f) (v : V) :
+    hf.quotientRange (Submodule.Quotient.mk v) = Submodule.Quotient.mk (J v) := by
+  simp only [IsComplexLinearMap.quotientRange_def, AlmostComplexStructure.quotient_mk]
+
+/-- Projection to the range quotient of a complex-linear map is complex-linear. -/
+@[simp]
+theorem IsComplexLinearMap.isComplexLinearMap_quotientRange_mkQ
+    (hf : IsComplexLinearMap j J f) :
+    IsComplexLinearMap J hf.quotientRange (LinearMap.range f).mkQ := by
+  rw [hf.quotientRange_def]
+  exact J.isComplexLinearMap_mkQ _ _
+
+/-- A complex-linear map preserving invariant submodules induces a complex-linear quotient map. -/
+theorem IsComplexLinearMap.mapQ {V W : Type*}
+    [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
+    {J : AlmostComplexStructure V} {K : AlmostComplexStructure W} {f : V →ₗ[ℝ] W}
+    (h : IsComplexLinearMap J K f) (p : Submodule ℝ V) (q : Submodule ℝ W)
+    (hp : ∀ v ∈ p, J v ∈ p) (hq : ∀ w ∈ q, K w ∈ q) (hf : p ≤ q.comap f) :
+    IsComplexLinearMap (J.quotient p hp) (K.quotient q hq) (p.mapQ q f hf) := by
+  rw [← AlmostComplexStructure.isComplexLinearMap_comp_mkQ_iff]
+  rw [Submodule.mapQ_mkQ]
+  exact (K.isComplexLinearMap_mkQ q hq).comp h
 
 end TauCeti
