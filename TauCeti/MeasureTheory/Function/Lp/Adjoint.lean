@@ -27,9 +27,9 @@ of finite-measure support (`AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_inte
 The same argument transfers weighted bounds. For real weights `u` on the source and `w` on the
 target, a bound `‖u⁻¹ T† g‖_{p'} ≤ C ‖w⁻¹ g‖_{q'}` for the adjoint gives
 `‖w T f‖_q ≤ C ‖u f‖_p` for the operator. The weights need not be bounded: the pairing of `w T f`
-is computed through the bounded truncations `w / (1 + |w| / (n + 1))`, which increase to `w`. For
-exponential weights `u = w = exp (c ρ)` this turns an estimate showing that `T†` preserves decay
-at rate `-c` into one showing that `T` preserves decay at rate `c`.
+is computed through the bounded truncations `wₙ = w / (1 + |w| / (n + 1))`, which converge to
+`w` with `|wₙ| ≤ |w|`. For exponential weights `u = w = exp (c ρ)` this turns an estimate showing
+that `T†` preserves decay at rate `-c` into one showing that `T` preserves decay at rate `c`.
 
 ## Main declarations
 
