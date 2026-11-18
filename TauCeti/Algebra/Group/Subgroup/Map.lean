@@ -320,7 +320,7 @@ theorem _root_.MulEquiv.commutatorCongr_symm (e : G ≃* H) :
 /-- The image of `H ⊓ f⁻¹(K)` under `f` is the part of `K` inside `f(H)`. -/
 @[to_additive /-- The image of `H ⊓ f⁻¹(K)` under an additive homomorphism `f` is the part of `K`
 inside `f(H)`. -/]
-theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
+theorem _root_.Subgroup.map_inf_comap {N : Type*} [Group N]
     (H : Subgroup G) (K : Subgroup N) (f : G →* N) :
     (H ⊓ K.comap f).map f = H.map f ⊓ K := by
   apply SetLike.coe_injective
