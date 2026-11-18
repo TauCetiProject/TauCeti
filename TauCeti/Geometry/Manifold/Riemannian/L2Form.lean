@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
 public import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.AlternatingForm
 public import TauCeti.MeasureTheory.Function.LpSection.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.WithFiberMetric
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -88,15 +87,6 @@ private theorem continuous_norm_toWithFiberMetric (α : SmoothForm I M ℝ k) :
     Continuous fun x ↦ ‖WithFiberMetric.toWithFiberMetric (formMetric I M k) x (α.1 x)‖ :=
   Continuous.norm_bundle_of_continuousFiberNorm (F := E [⋀^Fin k]→L[ℝ] ℝ)
     (continuous_toWithFiberMetric α)
-
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
-/-- A function bounded by the vanishing of a compactly supported form has compact support. -/
-private theorem hasCompactSupport_of_compactlySupportedForms {f : M → ℝ}
-    (α : compactlySupportedForms I M k) (hf : ∀ x, α.1.1 x = 0 → f x = 0) :
-    HasCompactSupport f :=
-  HasCompactSupport.mono' ((mem_compactlySupportedForms I).1 α.2) fun x hx ↦
-    subset_tsupport _ fun h ↦ hx (hf x h)
 
 variable [MeasurableSpace M] [BorelSpace M] [SecondCountableTopology M]
 

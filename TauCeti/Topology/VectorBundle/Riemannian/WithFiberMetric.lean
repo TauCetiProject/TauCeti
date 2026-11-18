@@ -102,6 +102,20 @@ the metric `g`. -/
 def toWithFiberMetric (b : B) : E b ≃L[ℝ] WithFiberMetric g b :=
   ContinuousLinearEquiv.refl ℝ (E b)
 
+-- Use these identities for explicit rewriting: simplifying away the transport loses the
+-- fibre copy in inferred types and can prevent matching lemmas about its metric and norm.
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- Transport to the fibre carrying `g` preserves the underlying vector. -/
+theorem toWithFiberMetric_apply (b : B) (v : E b) :
+    toWithFiberMetric g b v = v :=
+  (rfl)
+
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- Transport back from the fibre carrying `g` preserves the underlying vector. -/
+theorem toWithFiberMetric_symm_apply (b : B) (v : WithFiberMetric g b) :
+    (toWithFiberMetric g b).symm v = v :=
+  (rfl)
+
 /-- The inner product of the copy is the metric `g`. -/
 @[simp]
 theorem inner_toWithFiberMetric (b : B) (v w : E b) :
