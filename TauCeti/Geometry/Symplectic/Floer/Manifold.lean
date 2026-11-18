@@ -93,6 +93,8 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`: for a perturbation
   `K = K_t dt`, the energy density `ω(η, J η)` of a solution, with `η = ∂_t u - X_{K_t}(u)`, its
   nonnegativity, and continuity of the curvature and of the energy density.
+* `SmoothTwoForm.continuous_eval₂_mfderiv`: continuity of the area density `ω(∂ₛu, ∂ₜu)` of a
+  `C¹` map.
 * `SmoothTwoForm.tendsto_perturbedMFDeriv` and `SmoothTwoForm.continuousOn_floerEnergyDensity`:
   convergence of perturbed derivatives in the tangent bundle, and continuity of the energy density
   of a `C¹` map when the Hamiltonian vector fields are continuous into the tangent bundle.
@@ -472,24 +474,27 @@ theorem continuous_hamiltonianCurvature_zero_left_comp
     hKt.comp (contDiff_snd.contMDiff.prodMk (hu.comp contDiff_fst.contMDiff))
   exact (h.fderiv (n := 0) contDiff_id (by norm_num)).continuous.clm_apply continuous_const
 
+/-- For a `C¹` map `u`, the area density `ω(∂ₛu, ∂ₜu)` is continuous. -/
+theorem continuous_eval₂_mfderiv (ω : SmoothTwoForm I M)
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
+    Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) :=
+  ((ω.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
+    simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+
 /-- For a `C¹` map `u` and a `C¹` family of Hamiltonians `K_t`, the Floer energy density of the
 perturbation `K = K_t dt` is continuous. -/
 theorem IsNondegenerate.continuous_floerEnergyDensity_zero_left [FiniteDimensional ℝ E]
     (hω : ω.IsNondegenerate) (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u) := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
   -- The three terms of the pointwise energy identity are continuous.
-  have harea : Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) :=
-    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
   have hK : ContDiff ℝ 1 fun w ↦ Kt w (u w) :=
     contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
   have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal :=
     (hK.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  refine ((harea.add hdK).sub
+  refine (((continuous_eval₂_mfderiv ω hu).add hdK).sub
     (continuous_hamiltonianCurvature_zero_left_comp (ω := ω) hKt hu)).congr fun z ↦ ?_
   rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
     (contMDiffAt_const.mdifferentiableAt one_ne_zero) ((hKt _).mdifferentiableAt one_ne_zero)]
