@@ -318,6 +318,32 @@ private theorem fderiv_uncurry_apply (ω : SymplecticForm V) {K : ℝ × ℝ →
   simp only [ContinuousLinearMap.coe_coe, smul_eq_mul] at hcoord
   rw [hsplit, ← hleft, ← hright, apply_hamiltonianVectorField, hcoord]
 
+/-- The algebra behind the curvature identity for Gromov's taming form, shared by its vector-space
+and manifold versions. For vectors `X_s`, `X_t` and the one-form `X(a, b) = a X_s + b X_t`, the
+value `ω(v - X ξ, v' - X ξ')` plus `c + R` times `(ds ∧ dt)(ξ, ξ')`, where
+`R = D_ts - D_st - ω(X_s, X_t)`, expands to `ω(v, v')` plus the coordinate expression of `dK` for
+`K = K_s ds + K_t dt` plus `c (ds ∧ dt)(ξ, ξ')`. Here `D_ss`, `D_st`, `D_ts`, `D_tt` stand for the
+domain derivatives `∂_s K_s`, `∂_t K_s`, `∂_s K_t`, `∂_t K_t`, and the target derivatives of `K_s`
+and `K_t` are the contractions `ω(X_s, ·)` and `ω(X_t, ·)`. -/
+theorem apply_sub_smul_add_smul_add_mul {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (ω : SymplecticForm W) (Xs Xt v v' : W) (ξ ξ' : ℝ × ℝ) (Dss Dst Dts Dtt c : ℝ) :
+    ω (v - (ξ.1 • Xs + ξ.2 • Xt)) (v' - (ξ'.1 • Xs + ξ'.2 • Xt)) +
+        (c + (Dts - Dst - ω Xs Xt)) * (ξ.1 * ξ'.2 - ξ.2 * ξ'.1) =
+      ω v v' +
+          ((ξ.1 * Dss + ξ.2 * Dst + ω Xs v) * ξ'.1 + (ξ.1 * Dts + ξ.2 * Dtt + ω Xt v) * ξ'.2 -
+            ((ξ'.1 * Dss + ξ'.2 * Dst + ω Xs v') * ξ.1 +
+              (ξ'.1 * Dts + ξ'.2 * Dtt + ω Xt v') * ξ.2)) +
+        c * (ξ.1 * ξ'.2 - ξ.2 * ξ'.1) := by
+  simp only [map_sub, map_add, map_smul, LinearMap.sub_apply, LinearMap.add_apply,
+    LinearMap.smul_apply, smul_eq_mul]
+  have hXs : ω.toBilinForm Xs Xs = 0 := ω.self_eq_zero Xs
+  have hXt : ω.toBilinForm Xt Xt = 0 := ω.self_eq_zero Xt
+  have hXts : ω.toBilinForm Xt Xs = -ω.toBilinForm Xs Xt := (ω.neg_eq Xs Xt).symm
+  have hv : ω.toBilinForm v Xs = -ω.toBilinForm Xs v := (ω.neg_eq Xs v).symm
+  have hv' : ω.toBilinForm v Xt = -ω.toBilinForm Xt v := (ω.neg_eq Xt v).symm
+  linear_combination -ξ'.1 * hv - ξ'.2 * hv' + ξ.1 * ξ'.1 * hXs + ξ.2 * ξ'.2 * hXt +
+    ξ.2 * ξ'.1 * hXts
+
 /-- **The curvature identity for Gromov's taming form.** At `p = (z, x)`, the form
 `Ω_c = pr₂^* ω + dK + c ds ∧ dt` evaluates to `ω(v - X_K ξ, v' - X_K ξ')` plus `c + R_K(z, x)`
 times `(ds ∧ dt)(ξ, ξ')`, on tangent vectors `(ξ, v)` and `(ξ', v')`. -/
@@ -330,17 +356,8 @@ theorem floerGraphForm_eq (ω : SymplecticForm V) (hKs : DifferentiableAt ℝ (u
   rw [floerGraphForm_def, extDeriv_perturbationOneForm_apply hKs hKt,
     fderiv_uncurry_apply ω hKs, fderiv_uncurry_apply ω hKs, fderiv_uncurry_apply ω hKt,
     fderiv_uncurry_apply ω hKt, hamiltonianCurvature_def, poissonBracket_def]
-  simp only [hamiltonianOneForm_apply, map_sub, map_add, map_smul, LinearMap.sub_apply,
-    LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
-  set Xs := ω.hamiltonianVectorField (Ks p.1) p.2
-  set Xt := ω.hamiltonianVectorField (Kt p.1) p.2
-  have hXs : ω.toBilinForm Xs Xs = 0 := ω.self_eq_zero Xs
-  have hXt : ω.toBilinForm Xt Xt = 0 := ω.self_eq_zero Xt
-  have hXts : ω.toBilinForm Xt Xs = -ω.toBilinForm Xs Xt := (ω.neg_eq Xs Xt).symm
-  have hv : ω.toBilinForm ζ.2 Xs = -ω.toBilinForm Xs ζ.2 := (ω.neg_eq Xs ζ.2).symm
-  have hv' : ω.toBilinForm ζ.2 Xt = -ω.toBilinForm Xt ζ.2 := (ω.neg_eq Xt ζ.2).symm
-  linear_combination ζ'.1.1 * hv + ζ'.1.2 * hv' - ζ.1.1 * ζ'.1.1 * hXs -
-    ζ.1.2 * ζ'.1.2 * hXt - ζ.1.2 * ζ'.1.1 * hXts
+  simp only [hamiltonianOneForm_apply]
+  exact (ω.apply_sub_smul_add_smul_add_mul _ _ _ _ _ _ _ _ _ _ _).symm
 
 /-- Where `c + R_K ≠ 0`, Gromov's taming form at `p = (z, x)` is the skew product of
 `(c + R_K(z, x)) ds ∧ dt` and `ω` along the Hamiltonian one-form `X_K(z, x)`. -/
