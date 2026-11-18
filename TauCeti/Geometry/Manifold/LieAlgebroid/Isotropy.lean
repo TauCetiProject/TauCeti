@@ -173,23 +173,26 @@ smooth sections through the two isotropy vectors. By `TauCeti.LieAlgebroid.brack
 any other choice gives the same value (`TauCeti.LieAlgebroid.coe_bracket_isotropy`). -/
 instance instBracketIsotropy (x : M) : Bracket (A.isotropy x) (A.isotropy x) where
   bracket v w :=
-    ⟨A.bracket (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)).choose
-      (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)).choose x,
+    ⟨A.bracket (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose
+      (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)).choose x,
       A.bracket_apply_mem_isotropy
         (by
-          rw [(ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)).choose_spec]
+          rw [← ContMDiffSection.evalLinearMap_apply,
+            (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose_spec]
           exact v.2)
         (by
-          rw [(ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)).choose_spec]
+          rw [← ContMDiffSection.evalLinearMap_apply,
+            (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)).choose_spec]
           exact w.2)⟩
 
 /-- The bracket of the isotropy Lie algebra at `x` is the value at `x` of the bracket of any two
 smooth sections through the two isotropy vectors. -/
 theorem coe_bracket_isotropy {x : M} {v w : A.isotropy x} {a b : Cₛ^∞⟮I; F, V⟯} (ha : a x = v)
-    (hb : b x = w) : ((⁅v, w⁆ : A.isotropy x) : V x) = A.bracket a b x :=
-  have hv := (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)).choose_spec
-  have hw := (ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)).choose_spec
-  A.bracket_apply_congr (hv.trans ha.symm) (hw.trans hb.symm)
+    (hb : b x = w) : ((⁅v, w⁆ : A.isotropy x) : V x) = A.bracket a b x := by
+  have hv := (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose_spec
+  have hw := (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)).choose_spec
+  rw [ContMDiffSection.evalLinearMap_apply] at hv hw
+  exact A.bracket_apply_congr (hv.trans ha.symm) (hw.trans hb.symm)
     (by rw [hv]; exact v.2)
     (by rw [hw]; exact w.2)
 
@@ -198,32 +201,46 @@ theorem coe_bracket_isotropy {x : M} {v w : A.isotropy x} {a b : Cₛ^∞⟮I; F
 bracket of sections. -/
 instance instLieRingIsotropy (x : M) : LieRing (A.isotropy x) where
   add_lie v₁ v₂ w := by
-    obtain ⟨a₁, ha₁⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v₁ : V x)
-    obtain ⟨a₂, ha₂⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v₂ : V x)
-    obtain ⟨b, hb⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)
+    obtain ⟨a₁, ha₁⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v₁ : V x)
+    obtain ⟨a₂, ha₂⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v₂ : V x)
+    obtain ⟨b, hb⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)
+    rw [ContMDiffSection.evalLinearMap_apply] at ha₁ ha₂ hb
     ext
     rw [Submodule.coe_add, A.coe_bracket_isotropy ha₁ hb, A.coe_bracket_isotropy ha₂ hb,
       A.coe_bracket_isotropy (a := a₁ + a₂) (by
         rw [ContMDiffSection.coe_add, Pi.add_apply, ha₁, ha₂, Submodule.coe_add]) hb,
       map_add, LinearMap.add_apply, ContMDiffSection.coe_add, Pi.add_apply]
   lie_add v w₁ w₂ := by
-    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
-    obtain ⟨b₁, hb₁⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w₁ : V x)
-    obtain ⟨b₂, hb₂⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w₂ : V x)
+    obtain ⟨a, ha⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
+    obtain ⟨b₁, hb₁⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w₁ : V x)
+    obtain ⟨b₂, hb₂⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w₂ : V x)
+    rw [ContMDiffSection.evalLinearMap_apply] at ha hb₁ hb₂
     ext
     rw [Submodule.coe_add, A.coe_bracket_isotropy ha hb₁, A.coe_bracket_isotropy ha hb₂,
       A.coe_bracket_isotropy (b := b₁ + b₂) ha (by
         rw [ContMDiffSection.coe_add, Pi.add_apply, hb₁, hb₂, Submodule.coe_add]),
       map_add, ContMDiffSection.coe_add, Pi.add_apply]
   lie_self v := by
-    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
+    obtain ⟨a, ha⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
+    rw [ContMDiffSection.evalLinearMap_apply] at ha
     ext
     rw [A.coe_bracket_isotropy ha ha, A.bracket_self, ContMDiffSection.coe_zero, Pi.zero_apply,
       Submodule.coe_zero]
   leibniz_lie u v w := by
-    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (u : V x)
-    obtain ⟨b, hb⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
-    obtain ⟨c, hc⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)
+    obtain ⟨a, ha⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (u : V x)
+    obtain ⟨b, hb⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
+    obtain ⟨c, hc⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)
+    rw [ContMDiffSection.evalLinearMap_apply] at ha hb hc
     ext
     rw [Submodule.coe_add, A.coe_bracket_isotropy ha (A.coe_bracket_isotropy hb hc).symm,
       A.coe_bracket_isotropy (A.coe_bracket_isotropy ha hb).symm hc,
@@ -233,8 +250,11 @@ instance instLieRingIsotropy (x : M) : LieRing (A.isotropy x) where
 /-- The isotropy Lie algebra at `x` is a Lie algebra over `ℝ`. -/
 instance instLieAlgebraIsotropy (x : M) : LieAlgebra ℝ (A.isotropy x) where
   lie_smul c v w := by
-    obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
-    obtain ⟨b, hb⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (w : V x)
+    obtain ⟨a, ha⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
+    obtain ⟨b, hb⟩ :=
+      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)
+    rw [ContMDiffSection.evalLinearMap_apply] at ha hb
     ext
     rw [Submodule.coe_smul, A.coe_bracket_isotropy ha hb, A.coe_bracket_isotropy (b := c • b) ha
       (by rw [ContMDiffSection.coe_smul, Pi.smul_apply, hb, Submodule.coe_smul]), map_smul,
@@ -299,7 +319,8 @@ theorem coe_isotropyEval_apply {x : M} (s : A.isotropySections x) :
 /-- Every isotropy vector is the value of an isotropic section. -/
 theorem isotropyEval_surjective (x : M) : Function.Surjective (A.isotropyEval x) := by
   intro v
-  obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ (v : V x)
+  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
+  rw [ContMDiffSection.evalLinearMap_apply] at ha
   refine ⟨⟨A.sectionsEquiv.symm a, ?_⟩, Subtype.ext ?_⟩
   · rw [mem_isotropySections_iff, LinearEquiv.apply_symm_apply, ha]
     exact v.2
