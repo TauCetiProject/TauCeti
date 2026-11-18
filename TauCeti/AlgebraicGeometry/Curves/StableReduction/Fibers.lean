@@ -17,6 +17,10 @@ It records compatibility with the structure morphism and proves that the inclusi
 immersion and an affine morphism, with scheme-theoretically dense image. A morphism of total spaces
 over the base is compatible with the chosen generic fibres exactly when it commutes with these
 inclusions.
+Conversely, a flat finitely presented scheme over the discrete valuation ring together with a
+pullback square exhibiting a prescribed scheme over the fraction field as its generic fibre is a
+model (`TauCeti.Model.ofIsPullback`).
+
 When the model is a family of curves, so is its generic fibre.
 -/
 
@@ -116,6 +120,51 @@ instance isSchemeTheoreticallyDominant_genericι (M : Model R K C toK) :
   have := isSchemeTheoreticallyDominant_genericFiberι R K (IsFractionRing.injective R K) M.toBase
   rw [genericι_def]
   infer_instance
+
+section OfIsPullback
+
+variable {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [Flat toBase]
+  [LocallyOfFinitePresentation toBase] [QuasiCompact toBase] [QuasiSeparated toBase] {j : C ⟶ X}
+
+/-- The model with total space `X` determined by a pullback square exhibiting `C` as the generic
+fibre of `X`. Its generic-fibre identification is the canonical comparison of `C` with the chosen
+pullback, so that its generic-fibre inclusion is `j` (`TauCeti.Model.genericι_ofIsPullback`).
+This is the converse of `TauCeti.Model.isPullback_genericι`. -/
+def ofIsPullback (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K)))) :
+    Model R K C toK where
+  total := X
+  toBase := toBase
+  flat := ‹_›
+  locallyOfFinitePresentation := ‹_›
+  quasiCompact := ‹_›
+  quasiSeparated := ‹_›
+  genericFiberIso := Over.isoMk h.isoPullback.symm (IsPullback.isoPullback_inv_snd _)
+
+variable (h : IsPullback j toK toBase (Spec.map (CommRingCat.ofHom (algebraMap R K))))
+
+/-- The total space of the model given by a pullback square is the scheme in that square. -/
+@[simp]
+lemma ofIsPullback_total : (ofIsPullback toBase h).total = X :=
+  (rfl)
+
+/-- The structure morphism of the model given by a pullback square is the morphism in that
+square. -/
+@[simp]
+lemma ofIsPullback_toBase :
+    (ofIsPullback toBase h).toBase = eqToHom (ofIsPullback_total toBase h) ≫ toBase :=
+  (rfl)
+
+/-- The generic-fibre inclusion of the model given by a pullback square is the morphism in that
+square. -/
+@[simp]
+lemma genericι_ofIsPullback :
+    (ofIsPullback toBase h).genericι = j ≫ eqToHom (ofIsPullback_total toBase h).symm := by
+  rw [genericι_def]
+  -- By definition of `ofIsPullback`, the inverse generic-fibre identification is
+  -- `h.isoPullback.hom` and the `eqToHom` is the identity of `X`.
+  exact (h.isoPullback_hom_fst).trans (Category.comp_id j).symm
+
+end OfIsPullback
 
 /-- A morphism of total spaces over the base respects the chosen identifications of generic fibres
 as soon as it carries the chosen generic fibre of `M` to that of `N`. This is the converse of
