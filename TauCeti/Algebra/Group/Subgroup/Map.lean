@@ -38,11 +38,11 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   distinguishes it from Mathlib's `QuotientGroup.congr`.
 * `TauCeti.QuotientGroup.congrComapOfSurjectiveMk`: a homomorphism `ψ : G →* H` meeting every
   coset of `B` gives a bijection `G ⧸ ψ⁻¹(B) ≃ H ⧸ B`.
+* `TauCeti.QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection
+  whose kernel lies in the subgroup.
 
 ## Main results
 
-* `QuotientGroup.congrOfSurjectiveOfKerLe`: coset spaces transport along a surjection whose
-  kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
 * `Subgroup.map_inf_comap`, `AddSubgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is

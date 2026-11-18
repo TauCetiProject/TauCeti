@@ -27,8 +27,10 @@ mapping cone of a morphism between bounded complexes is bounded
 on the cone are given by `CochainComplex.isStrictlyLE_mappingCone` (also only
 `[HasHomotopyCofiber f]`) and, under `[HasBinaryBiproducts C]`, Mathlib's
 `CochainComplex.isStrictlyGE_mappingCone`. Consequently the full subcategory is stable under
-shifts and distinguished triangles. Complexes concentrated in one degree, or in two adjacent
-degrees, are bounded (`CochainComplex.bounded_single`, `CochainComplex.bounded_double`).
+shifts and, up to isomorphism, under distinguished triangles (the representative of an object is
+remembered strictly, so the property itself is not closed under isomorphism). Complexes
+concentrated in one degree, or in two adjacent degrees, are bounded
+(`CochainComplex.bounded_single`, `CochainComplex.bounded_double`).
 
 The construction follows the organization of Mathlib's bounded-below category
 `HomotopyCategory.Plus`, replacing its one-sided support condition by two-sided boundedness.
@@ -55,9 +57,10 @@ The construction follows the organization of Mathlib's bounded-below category
   `HomotopyCategory.singleFunctor`.
 
 The homotopy category of bounded complexes over an essentially small category is essentially
-small (through `HomotopyCategory.essentiallySmall` and
-`CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`), so it has a triangulated
-Grothendieck group.
+small, which needs only `[Preadditive C]` (through `HomotopyCategory.essentiallySmall` and
+`CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`). With `[HasZeroObject C]` and
+`[HasBinaryBiproducts C]` it is also a triangulated subcategory of the homotopy category, so it
+has a triangulated Grothendieck group.
 
 ## References
 
