@@ -408,6 +408,13 @@ theorem eval_mul_inv_mul {A : Type*} [CommGroup A] (ι : G →* A) (u v w : X �
     hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun x => by simp)
   simp [h]
 
+/-- In a commutative group, evaluating a word at `v` is evaluating it at `u` times evaluating it,
+with all coefficients replaced by `1`, at `v / u`. -/
+theorem eval_eq_eval_mul_eval_one_div {A : Type*} [CommGroup A] (ι : G →* A) (u v : X → A)
+    (s : GX G X) : eval ι v s = eval ι u s * eval 1 (v / u) s :=
+  DFunLike.congr_fun (hom_ext (MonoidHom.ext fun g => by simp)
+    (FreeGroup.ext_hom _ _ fun x => by simp) : eval ι v = eval ι u * eval 1 (v / u)) s
+
 /-- Homomorphisms commute with evaluation: `f ∘ eval ι v = eval (f ∘ ι) (f ∘ v)`. -/
 theorem _root_.MonoidHom.comp_eval (f : H →* K) {ι : G →* H} {v : X → H} :
     f.comp (eval ι v) = eval (f.comp ι) (f ∘ v) :=
