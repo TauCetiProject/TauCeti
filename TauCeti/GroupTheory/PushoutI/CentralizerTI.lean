@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.PushoutI.Reduced
-public import TauCeti.GroupTheory.TrivialIntersection
 
 /-!
 # Centralizers of factor elements in an amalgam with malnormal edge groups
@@ -41,8 +40,9 @@ The proof uses normal forms rather than the Bass–Serre tree. Write an element 
 is a reduced word of length at least three; when `x'` lies in it, malnormality turns the first
 letter `k ∈ G j` of `w` into the letter `k⁻¹ * x' * k` outside the amalgamated subgroup, and the
 conjugate is a reduced word that is either of length at least three or a single letter of `G j`.
-By the normal form theorem (Mathlib's `Monoid.PushoutI.Reduced.exists_normalWord_prod_eq`) neither
-lies in `G i`.
+By the normal form theorem neither lies in `G i`: a conjugate of length at least three lies in no
+factor (`Monoid.PushoutI.list_prod_inv_mul_of_mul_list_prod_notMem_range_of`), and `G i` meets
+`G j` only in the amalgamated subgroup.
 
 ## References
 
@@ -56,81 +56,10 @@ public section
 
 namespace Monoid.PushoutI
 
-open Function Subgroup CoprodI
+open Function Subgroup
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)] {H : Type*} [Group H]
   {φ : ∀ i, H →* G i}
-
-/-- A list of letters, consecutive ones from different factors and none of them in the amalgamated
-subgroup, spells a reduced word of the free product with the same product. -/
-private theorem exists_reduced_toList_eq {L : List (Σ i, G i)}
-    (hc : L.IsChain fun l l' => l.1 ≠ l'.1) (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) :
-    ∃ w : Word G, w.toList = L ∧ Reduced φ w ∧
-      ofCoprodI w.prod = (L.map fun l => of (φ := φ) l.1 l.2).prod := by
-  refine ⟨⟨L, fun l hl h1 => hred l hl ⟨1, by rw [map_one, h1]⟩, hc⟩, rfl, hred, ?_⟩
-  simp [Word.prod, map_list_prod, Function.comp_def]
-
-/-- A list of letters, consecutive ones from different factors and none of them in the amalgamated
-subgroup, whose product lies in a factor, has at most one letter. -/
-private theorem length_le_one_of_list_prod_mem_range (hφ : ∀ i, Injective (φ i))
-    {L : List (Σ i, G i)} (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
-    (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) {j : ι}
-    (hL : (L.map fun l => of l.1 l.2).prod ∈ (of (φ := φ) j).range) : L.length ≤ 1 := by
-  classical
-  obtain ⟨d⟩ := NormalWord.transversal_nonempty φ hφ
-  obtain ⟨w, rfl, hw, hprod⟩ := exists_reduced_toList_eq hc hred
-  obtain ⟨v, hv, hvw⟩ := hw.exists_normalWord_prod_eq d
-  obtain ⟨y, hy⟩ := hL
-  by_cases hyr : y ∈ (φ j).range
-  · -- The normal word of an element of the amalgamated subgroup has no letters.
-    obtain ⟨h, rfl⟩ := hyr
-    have hvh : v = h • NormalWord.empty :=
-      NormalWord.prod_injective (by simp [hv, hprod, ← hy, of_apply_eq_base])
-    rw [← List.length_map Sigma.fst, ← hvw]
-    simp [hvh, NormalWord.base_smul_def']
-  · -- Otherwise the normal word of `y` has the single letter `y`.
-    obtain ⟨w', hw'L, hw', hprod'⟩ := exists_reduced_toList_eq (φ := φ)
-      (List.isChain_singleton (⟨j, y⟩ : Σ i, G i)) (by simpa using hyr)
-    obtain ⟨v', hv', hvw'⟩ := hw'.exists_normalWord_prod_eq d
-    have hvv : v = v' := NormalWord.prod_injective (by simp [hv, hv', hprod, hprod', hy])
-    rw [← List.length_map Sigma.fst, ← hvw, hvv, hvw', hw'L]
-    simp
-
-/-- In an amalgamated product of groups, let `w` be the product of a nonempty list of letters,
-consecutive ones from different factors and none of them in the amalgamated subgroup, and let `g`
-be a letter outside the amalgamated subgroup whose factor is not that of the first letter of the
-list. Then the conjugate `w⁻¹ * g * w` lies in no factor. -/
-private theorem list_prod_inv_mul_of_mul_list_prod_notMem_range (hφ : ∀ i, Injective (φ i))
-    {L : List (Σ i, G i)} (hL : L ≠ []) (hc : L.IsChain fun l l' => l.1 ≠ l'.1)
-    (hred : ∀ l ∈ L, l.2 ∉ (φ l.1).range) {i j : ι} {g : G i} (hg : g ∉ (φ i).range)
-    (hi : ∀ l ∈ L.head?, l.1 ≠ i) :
-    (L.map fun l => of l.1 l.2).prod⁻¹ * of i g * (L.map fun l => of l.1 l.2).prod ∉
-      (of (φ := φ) j).range := by
-  -- The conjugate is the product of the list `w⁻¹ ++ g :: w` of `2 * r + 1 ≥ 3` letters.
-  have hprod : (((L.map fun l => (⟨l.1, l.2⁻¹⟩ : Σ i, G i)).reverse ++ ⟨i, g⟩ :: L).map
-      fun l => of (φ := φ) l.1 l.2).prod =
-      (L.map fun l => of l.1 l.2).prod⁻¹ * of i g * (L.map fun l => of l.1 l.2).prod := by
-    rw [List.prod_inv_reverse]
-    simp [Function.comp_def, mul_assoc]
-  rw [← hprod]
-  intro hmem
-  have hlen := length_le_one_of_list_prod_mem_range hφ ?_ ?_ hmem
-  · simp only [List.length_append, List.length_reverse, List.length_map, List.length_cons] at hlen
-    exact hL (List.eq_nil_of_length_eq_zero (by omega))
-  · refine List.isChain_append.2 ⟨?_, List.isChain_cons.2 ⟨fun l hl => (hi l hl).symm, hc⟩, ?_⟩
-    · rw [List.isChain_reverse, List.isChain_map]
-      exact hc.imp fun _ _ h => h.symm
-    · intro l hl l' hl'
-      obtain rfl : l' = ⟨i, g⟩ := by simpa using hl'.symm
-      rw [List.getLast?_reverse, List.head?_map] at hl
-      obtain ⟨l₀, hl₀, rfl⟩ := Option.mem_map.1 hl
-      exact hi l₀ hl₀
-  · intro l hl
-    rcases List.mem_append.1 hl with hl | hl
-    · obtain ⟨l₀, hl₀, rfl⟩ := List.mem_map.1 (List.mem_reverse.1 hl)
-      exact fun h => hred l₀ hl₀ (by simpa using inv_mem h)
-    · rcases List.mem_cons.1 hl with rfl | hl
-      exacts [hg, hred l hl]
 
 /-- In an amalgamated product of groups, let `w` be the product of a nonempty list of letters,
 consecutive ones from different factors and none of them in the amalgamated subgroup, whose first
@@ -162,7 +91,7 @@ private theorem list_prod_inv_mul_base_mul_list_prod_notMem_range (hφ : ∀ i, 
       rw [← inf_of_range_eq_base_range hφ hji]
       exact ⟨⟨_, rfl⟩, by simpa using hmem⟩
     exact hm ⟨h', of_injective hφ j (by rw [of_apply_eq_base, hh'])⟩
-  · exact list_prod_inv_mul_of_mul_list_prod_notMem_range hφ hL₁ (List.isChain_cons.1 hc).2
+  · exact list_prod_inv_mul_of_mul_list_prod_notMem_range_of hφ hL₁ (List.isChain_cons.1 hc).2
       (fun l hl => hred l (List.mem_cons_of_mem _ hl)) hm
       (fun l hl => ((List.isChain_cons.1 hc).1 l hl).symm)
 
@@ -197,7 +126,7 @@ theorem centralizer_of_eq_map_of_isTISubgroup (hφ : ∀ j, Injective (φ j)) {i
       refine list_prod_inv_mul_base_mul_list_prod_notMem_range hφ hH hL hc hred hhead (h := h)
         (fun h1 => hx' (by rw [← hh, h1, map_one])) ⟨x, ?_⟩
       rw [← of_apply_eq_base φ i, hh, hconj]
-    · exact list_prod_inv_mul_of_mul_list_prod_notMem_range hφ hL hc hred hxr hhead
+    · exact list_prod_inv_mul_of_mul_list_prod_notMem_range_of hφ hL hc hred hxr hhead
         ⟨x, hconj.symm⟩
   · simpa using map_centralizer_le_centralizer_image {x} (of (φ := φ) i)
 

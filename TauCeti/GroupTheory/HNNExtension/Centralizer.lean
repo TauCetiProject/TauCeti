@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.HNNExtension
-public import TauCeti.GroupTheory.TrivialIntersection
+public import TauCeti.GroupTheory.HNNExtension
 
 /-!
 # Centralizers of base elements in an HNN extension
@@ -37,17 +36,17 @@ letter commutes with every element of `B`. For `A = ⟨a⟩` and `A' = ⟨b a b�
 
 ## Implementation notes
 
-The proof uses Britton's lemma in the form of Mathlib's
-`HNNExtension.NormalWord.ReducedWord.map_fst_eq_and_of_prod_eq`: two reduced words with the same
-product have heads in the same coset of the associated subgroup of their first letter. Write an
-element commuting with `x` as a reduced word `h * t ^ u * b * ⋯`. Comparing the reduced words of
-`x * y` and `y * x` shows that `h⁻¹ * x * h` lies in the associated subgroup of `t ^ (-u)`, so
-`t ^ u` carries it to a nontrivial element `x₁` of the associated subgroup of `t ^ u`. If there is
-no further letter, `x` is conjugate in `B` both to `h⁻¹ * x * h` and to `x₁`, which contradicts the
-hypothesis on conjugates; if the next letter is `t ^ u'`, the same comparison puts `b⁻¹ * x₁ * b`
-into the associated subgroup of `t ^ (-u')`, which contradicts malnormality when `u' = -u` (as the
-word is reduced, `b` is then outside the associated subgroup of `t ^ u`) and the hypothesis on
-conjugates when `u' = u`.
+The proof uses Britton's lemma in the form of `HNNExtension.head_inv_mul_mul_head_mem_toSubgroup`
+(from Mathlib's `HNNExtension.ReducedWord.map_fst_eq_and_of_prod_eq`): a reduced word starting with
+`t ^ u` conjugates an element of `B` back into `B` only if its head conjugates it into the
+associated subgroup of `t ^ (-u)`. Write an element commuting with `x` as a reduced word
+`h * t ^ u * b * ⋯`. Then `h⁻¹ * x * h` lies in the associated subgroup of `t ^ (-u)`, so `t ^ u`
+carries it to a nontrivial element `x₁` of the associated subgroup of `t ^ u`
+(`HNNExtension.exists_t_zpow_conj_eq_of`). If there is no further letter, `x` is conjugate in `B`
+both to `h⁻¹ * x * h` and to `x₁`, which contradicts the hypothesis on conjugates; if the next
+letter is `t ^ u'`, the same lemma puts `b⁻¹ * x₁ * b` into the associated subgroup of `t ^ (-u')`,
+which contradicts malnormality when `u' = -u` (as the word is reduced, `b` is then outside the
+associated subgroup of `t ^ u`) and the hypothesis on conjugates when `u' = u`.
 
 ## References
 
@@ -65,49 +64,6 @@ namespace HNNExtension
 open NormalWord
 
 variable {B : Type*} [Group B] {A A' : Subgroup B} {φ : A ≃* A'}
-
-/-- Multiplying the product of a reduced word with at least one letter on the right by an element
-of the base group gives the product of a reduced word with the same head. -/
-private theorem exists_reducedWord_head_eq_prod_mul (w : ReducedWord B A A') (hw : w.toList ≠ [])
-    (c : B) : ∃ w' : ReducedWord B A A', w'.head = w.head ∧ w'.prod φ = w.prod φ * of c := by
-  obtain ⟨L, p, hL⟩ := (List.eq_nil_or_concat w.toList).resolve_left hw
-  have hchain := w.chain
-  rw [hL, List.concat_eq_append, List.isChain_append] at hchain
-  refine ⟨⟨w.head, L ++ [(p.1, p.2 * c)], List.isChain_append.2
-    ⟨hchain.1, List.isChain_singleton _, fun a ha b hb => ?_⟩⟩, rfl, ?_⟩
-  · obtain rfl : b = (p.1, p.2 * c) := by simpa using hb.symm
-    exact hchain.2.2 a ha p (by simp)
-  · simp [ReducedWord.prod, hL, mul_assoc]
-
-/-- If a reduced word starts with the letter `t ^ u`, its product conjugates an element `c` of the
-base group back into the base group only if its head conjugates `c` into the associated subgroup
-of `t ^ (-u)`. -/
-private theorem head_inv_mul_mul_head_mem_toSubgroup {w : ReducedWord B A A'} {u : ℤˣ} {g : B}
-    {L : List (ℤˣ × B)} (hw : w.toList = (u, g) :: L) {c : B}
-    (hc : (w.prod φ)⁻¹ * of c * w.prod φ ∈ (of : B →* HNNExtension B A A' φ).range) :
-    w.head⁻¹ * c * w.head ∈ toSubgroup A A' (-u) := by
-  obtain ⟨c', hc'⟩ := hc
-  obtain ⟨w', hw'h, hw'⟩ := exists_reducedWord_head_eq_prod_mul (φ := φ) w (by simp [hw]) c'
-  have h := (ReducedWord.map_fst_eq_and_of_prod_eq φ (w₁ := { w with head := c * w.head })
-    (w₂ := w') ?_).2 u (by simp [hw])
-  · simpa [hw'h, mul_assoc] using inv_mem h
-  · rw [hw', hc']
-    simp only [ReducedWord.prod, map_mul]
-    group
-
-/-- Conjugating by `t ^ u` carries a nontrivial element of the associated subgroup of `t ^ (-u)`
-to a nontrivial element of the associated subgroup of `t ^ u`. -/
-private theorem exists_t_zpow_conj_eq_of (u : ℤˣ) {x : B} (hx : x ∈ toSubgroup A A' (-u))
-    (hx1 : x ≠ 1) : ∃ y ∈ toSubgroup A A' u, y ≠ 1 ∧
-      (t : HNNExtension B A A' φ) ^ (-(u : ℤ)) * of x * t ^ (u : ℤ) = of y := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · refine ⟨φ.symm ⟨x, hx⟩, (φ.symm ⟨x, hx⟩).2, fun h1 => hx1 ?_, ?_⟩
-    · simpa [Subtype.ext_iff] using h1
-    · simp [equiv_symm_eq_conj]
-  · have hx' : x ∈ A := by simpa using hx
-    refine ⟨φ ⟨x, hx'⟩, (φ ⟨x, hx'⟩).2, fun h1 => hx1 ?_, ?_⟩
-    · simpa using h1
-    · simp [equiv_eq_conj]
 
 /-- If no nontrivial element of `A'` is conjugate into `A`, no nontrivial element of the associated
 subgroup of `t ^ u` is conjugate into that of `t ^ (-u)`. -/
@@ -159,11 +115,10 @@ private theorem toList_eq_nil_of_prod_inv_mul_mul_prod_eq (hA : TauCeti.IsTISubg
   · rfl
   exfalso
   -- The head `h` conjugates `x` into the associated subgroup of `t ^ (-u)`, and `t ^ u` carries
-  -- `h⁻¹ * x * h` to a nontrivial element `x₁` of the associated subgroup of `t ^ u`, which the
-  -- rest `z` of the word conjugates to `x`.
+  -- `h⁻¹ * x * h` to an element `x₁` of the associated subgroup of `t ^ u`, which the rest `z` of
+  -- the word conjugates to `x`; so `x₁` is nontrivial.
   have hx₀ := head_inv_mul_mul_head_mem_toSubgroup hL ⟨x, hw.symm⟩
-  obtain ⟨x₁, hx₁, hx₁1, hx₁t⟩ := exists_t_zpow_conj_eq_of (φ := φ) u hx₀
-    (by simpa [mul_assoc, inv_mul_eq_one] using hx)
+  obtain ⟨x₁, hx₁, hx₁t⟩ := exists_t_zpow_conj_eq_of (φ := φ) u hx₀
   have hchain := w.chain
   rw [hL, List.isChain_cons] at hchain
   let z : ReducedWord B A A' := ⟨b, L, hchain.2⟩
@@ -174,6 +129,9 @@ private theorem toList_eq_nil_of_prod_inv_mul_mul_prod_eq (hA : TauCeti.IsTISubg
     rw [← hw, ← hx₁t]
     simp only [map_mul, map_inv]
     group
+  have hx₁1 : x₁ ≠ 1 := by
+    rintro rfl
+    exact hx (by simpa [map_eq_one_iff _ (of_injective (φ := φ))] using hz.symm)
   rcases hL' : L with _ | ⟨⟨u', b'⟩, L'⟩
   · -- `x` is conjugate in `B` both to `h⁻¹ * x * h` and to `x₁`, which is impossible.
     have hzb : z.prod φ = of b := by simp [ReducedWord.prod, z, hL']
