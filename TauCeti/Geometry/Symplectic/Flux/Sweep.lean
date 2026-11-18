@@ -36,7 +36,7 @@ For a closed `σ` preserved by `φ₁`, the flux is the de Rham class of the flu
 the class of a `C¹` loop is therefore the `σ`-area swept by the loop during the isotopy
 (`TauCeti.Diffeotopy.period_flux_ofMul_eq_rectangleIntegral`). For a symplectic form this is the
 classical description of the flux of a symplectic isotopy as the symplectic area swept out by
-loops, and it shows at once that a Hamiltonian isotopy sweeps zero area along every loop
+loops, and it shows at once that a Hamiltonian isotopy sweeps zero area along every `C¹` loop
 (`TauCeti.Diffeotopy.IsHamiltonian.rectangleIntegral_sweep_eq_zero`).
 
 ## Main definitions
@@ -95,13 +95,11 @@ theorem sweep_apply (γ : ℝ → M) (z : ℝ × ℝ) :
 
 /-- At time zero the swept map is the curve. -/
 theorem sweep_zero (γ : ℝ → M) (s : ℝ) : Φ.sweep γ (0, s) = γ s := by
-  rw [sweep_apply, projIcc_left]
-  exact Φ.apply_zero (γ s)
+  rw [sweep_apply, projIcc_left, Set.Icc.mk_zero, Φ.apply_zero]
 
 /-- At time one the swept map is the curve moved by the final diffeomorphism. -/
 theorem sweep_one (γ : ℝ → M) (s : ℝ) : Φ.sweep γ (1, s) = Φ.final (γ s) := by
-  rw [sweep_apply, projIcc_right, Φ.final_apply]
-  rfl
+  rw [sweep_apply, projIcc_right, Set.Icc.mk_one, Φ.final_apply]
 
 /-- The swept map along a `C^m` curve, for a `C^n` diffeotopy with `m ≤ n`, is `C^m` on the strip
 `[0, 1] × ℝ`. -/
@@ -252,8 +250,8 @@ theorem pathIntegral_fluxForm_eq_rectangleIntegral (σ : SmoothForm J M ℝ 2) {
 
 /-- **The flux on a loop is the swept area.** Let `σ` be a closed two-form preserved by the final
 diffeomorphism of `φ`. The period of the flux of `φ` on the class of a `C¹` loop `c` at `x`,
-parametrized by `[0, 1]`, is the integral of `σ` over the torus `(t, s) ↦ φ_t (c s)` swept out by
-the loop during the isotopy. -/
+parametrized by `[0, 1]`, is the integral of `σ` over the cylinder `(t, s) ↦ φ_t (c s)`,
+`(t, s) ∈ [0, 1] × [0, 1]`, swept out by the loop during the isotopy. -/
 theorem period_flux_ofMul_eq_rectangleIntegral [FiniteDimensional ℝ E] [T2Space M]
     (σ : closedForms J M 2) (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) {c : ℝ → M}
     (hc : ContMDiff 𝓘(ℝ, ℝ) J 1 c) {x : M} {γ : Path x x} (hγ : ∀ t : unitInterval, γ t = c t) :
