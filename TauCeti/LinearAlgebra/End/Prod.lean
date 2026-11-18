@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Semisimple
 import TauCeti.LinearAlgebra.End.Aeval
+import TauCeti.LinearAlgebra.Prod
 import TauCeti.RingTheory.SimpleModule.Basic
 
 /-!
@@ -32,9 +33,9 @@ coprimality passes to iterated products.
 
 public section
 
-namespace TauCeti
-
 open LinearMap Polynomial
+
+namespace TauCeti
 
 section
 
@@ -45,22 +46,13 @@ section Semiring
 variable {K : Type u} {V : Type v} {W : Type w}
 variable [Semiring K] [AddCommMonoid V] [Module K V] [AddCommMonoid W] [Module K W]
 
-/-- A power of a componentwise product of endomorphisms is the componentwise product of the
-powers. -/
-@[simp]
-private theorem _root_.Module.End.prodMap_pow (f : Module.End K V) (g : Module.End K W) (n : ℕ) :
-    (f.prodMap g) ^ n = (f ^ n).prodMap (g ^ n) := by
-  induction n with
-  | zero => exact LinearMap.prodMap_one.symm
-  | succ n hn => rw [pow_succ, pow_succ, pow_succ, hn, LinearMap.prodMap_mul]
-
 /-- The componentwise product of two nilpotent endomorphisms is nilpotent. -/
 theorem _root_.IsNilpotent.prodMap {f : Module.End K V} {g : Module.End K W}
     (hf : IsNilpotent f) (hg : IsNilpotent g) : IsNilpotent (f.prodMap g) := by
   obtain ⟨m, hm⟩ := hf
   obtain ⟨n, hn⟩ := hg
   refine ⟨m + n, ?_⟩
-  rw [Module.End.prodMap_pow, pow_add, hm, zero_mul, pow_add, hn, mul_zero,
+  rw [LinearMap.prodMap_pow, pow_add, hm, zero_mul, pow_add, hn, mul_zero,
     LinearMap.prodMap_zero]
 
 end Semiring

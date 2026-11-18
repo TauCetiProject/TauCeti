@@ -35,8 +35,9 @@ by the equivalence.
 * `LinearEquiv.homCongrRight`: an isomorphism of targets induces an equivalence of hom spaces
   over the auxiliary scalar semiring.
 
-* `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
-  kernels and ranges across an intertwining semilinear equivalence.
+* `LinearEquiv.map_ker_of_intertwine`, `LinearEquiv.map_range_of_intertwine`, and
+  `LinearEquiv.bijective_restrict_iff_of_intertwine`: transport of kernels, ranges, and restricted
+  bijectivity across an intertwining semilinear equivalence.
 * `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
   commutes with powers and transports kernels.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
@@ -158,6 +159,23 @@ theorem map_range_of_intertwine
     exact ⟨e b, h b⟩
   · rintro ⟨b, rfl⟩
     exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
+
+/-- If a semilinear equivalence `e` intertwines endomorphisms `f` and `g` pointwise
+(`g (e d) = e (f d)`), then `f` restricts to a bijection on an invariant submodule `p` if and only
+if `g` restricts to a bijection on `p.map e`. -/
+theorem bijective_restrict_iff_of_intertwine
+    (e : M ≃ₛₗ[σ] N) (f : M →ₗ[R] M) (g : N →ₗ[S] N)
+    (h : ∀ d, g (e d) = e (f d)) {p : Submodule R M} {q : Submodule S N}
+    (hpq : Submodule.map (e : M →ₛₗ[σ] N) p = q)
+    {hp : ∀ x ∈ p, f x ∈ p} {hq : ∀ y ∈ q, g y ∈ q} :
+    Function.Bijective (f.restrict hp) ↔ Function.Bijective (g.restrict hq) := by
+  subst hpq
+  let eSub := p.equivMapOfInjective (e : M →ₛₗ[σ] N) e.injective
+  have hcomp : ⇑(g.restrict hq) ∘ ⇑eSub = ⇑eSub ∘ ⇑(f.restrict hp) := by
+    funext x
+    exact Subtype.ext (h x.1)
+  rw [← Function.Bijective.of_comp_iff (g.restrict hq) eSub.bijective, hcomp,
+    Function.Bijective.of_comp_iff' eSub.bijective (f.restrict hp)]
 
 end Intertwining
 

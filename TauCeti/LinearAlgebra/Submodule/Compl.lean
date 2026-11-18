@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.LocalRing.Module
+public import TauCeti.LinearAlgebra.Submodule.Prod
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Projection
 
@@ -82,10 +82,8 @@ variable {L₁ L₂ : Submodule R E} {M₁ M₂ : Submodule R F}
 
 /-- Products of complementary submodules are complementary. -/
 theorem IsCompl.prod (hL : IsCompl L₁ L₂) (hM : IsCompl M₁ M₂) :
-    IsCompl (L₁.prod M₁) (L₂.prod M₂) := by
-  refine IsCompl.of_eq ?_ ?_
-  · rw [Submodule.prod_inf_prod, hL.inf_eq_bot, hM.inf_eq_bot, Submodule.prod_bot]
-  · rw [Submodule.prod_sup_prod, hL.sup_eq_top, hM.sup_eq_top, Submodule.prod_top]
+    IsCompl (L₁.prod M₁) (L₂.prod M₂) :=
+  Submodule.isCompl_prod_iff.mpr ⟨hL, hM⟩
 
 end Prod
 
