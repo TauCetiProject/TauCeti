@@ -79,9 +79,8 @@ jobs:
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
     # Pinned to a TauCetiReview commit; bump deliberately (an unpinned @main lets an upstream change
     # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
-    # Re-pin together with .github/actions/checkout-merge-policy
-    # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
-    # commit, supplied explicitly as review_ref.
+    # Re-pin together with .github/actions/checkout-merge-policy. The called workflow checks out
+    # its own commit, supplied explicitly as review_ref.
     uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@ddb128180df46b7cc8e0a53188871578f2510498
     with:
       review_ref: ddb128180df46b7cc8e0a53188871578f2510498
