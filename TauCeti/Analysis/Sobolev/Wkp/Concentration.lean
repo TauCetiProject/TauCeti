@@ -120,8 +120,7 @@ private theorem exists_profile [FiniteDimensional ℝ E] [Nontrivial E] {r : ℝ
   rw [mem_closedBall, dist_eq_norm] at hyb
   refine ⟨⟨b, b.contDiff, b.hasCompactSupport, fun z hz => ?_⟩, y, ?_, ?_, hy⟩
   · rw [hsupp, mem_closedBall, dist_eq_norm] at hz
-    change z ∈ ball (0 : E) r
-    rw [mem_ball_zero_iff]
+    rw [TopologicalSpace.Opens.coe_mk, mem_ball_zero_iff]
     linarith [norm_le_norm_add_norm_sub' z a]
   · linarith [norm_le_norm_add_norm_sub' a y, norm_sub_rev a y]
   · linarith [norm_le_norm_add_norm_sub' y a]
