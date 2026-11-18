@@ -234,6 +234,15 @@ private theorem ae_apply_eq_integral_opKernel (h : HasStandardKernel T K C δ)
   rw [hx hxs, ← integral_offDiag_smul K hf hxs]
   simp [opKernel]
 
+/-- `ae_apply_eq_integral_opKernel` for the realification `T.restrictScalars ℝ`, the operator
+taken by the real Calderón–Zygmund theorems. -/
+private theorem ae_restrictScalars_apply_eq_integral_opKernel (h : HasStandardKernel T K C δ)
+    (f : Lp F 2 (volume : Measure V)) (s : Set V) (hs : IsCompact s)
+    (hf : ∀ᵐ x, x ∉ s → f x = 0) :
+    ∀ᵐ x, x ∉ s → T.restrictScalars ℝ f x = ∫ z, opKernel F ℝ K x z (f z) := by
+  simpa only [ContinuousLinearMap.coe_restrictScalars'] using
+    h.ae_apply_eq_integral_opKernel f s hs hf
+
 end OpKernel
 
 /-! ### Adjoints and the Calderón–Zygmund bounds -/
@@ -273,10 +282,10 @@ theorem exists_mul_volume_lt_enorm_le (h : HasStandardKernel T K C δ) :
       t * volume {x | t < ‖T f x‖ₑ} ≤ A * eLpNorm f 1 volume := by
   obtain ⟨A, hA⟩ := ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
     (T.restrictScalars ℝ) h.stronglyMeasurable_opKernel h.exponent_pos h.norm_opKernel_le
-    h.norm_opKernel_sub_le h.ae_apply_eq_integral_opKernel
+    h.norm_opKernel_sub_le h.ae_restrictScalars_apply_eq_integral_opKernel
   exact ⟨A, fun f t ↦ by
     rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)]
-    simpa using hA f t⟩
+    simpa only [ContinuousLinearMap.coe_restrictScalars'] using hA f t⟩
 
 /-- **Calderón–Zygmund operators are bounded on `Lᵖ`** for `1 < p < ∞`: there is a constant `A`
 with `‖T f‖_p ≤ A ‖f‖_p` for every `f ∈ L²`. The adjoint of `T` is a Calderón–Zygmund operator
@@ -288,11 +297,14 @@ theorem exists_eLpNorm_le (h : HasStandardKernel T K C δ) {p : ℝ≥0∞} (hp 
   -- The Calderón–Zygmund theorem is stated for real Hilbert spaces.
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have h' := h.adjoint
-  exact ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow (T.restrictScalars ℝ)
-    h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel h.exponent_pos
-    h'.exponent_pos h.norm_opKernel_le h'.norm_opKernel_le h.norm_opKernel_sub_le
-    h'.norm_opKernel_sub_le h.ae_apply_eq_integral_opKernel
-    (L2.adjoint_restrictScalars T ▸ h'.ae_apply_eq_integral_opKernel) hp hp_top
+  simpa only [ContinuousLinearMap.coe_restrictScalars'] using
+    ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow (T.restrictScalars ℝ)
+      h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel h.exponent_pos
+      h'.exponent_pos h.norm_opKernel_le h'.norm_opKernel_le h.norm_opKernel_sub_le
+      h'.norm_opKernel_sub_le h.ae_restrictScalars_apply_eq_integral_opKernel
+      (fun f s hs hf ↦ by
+        rw [L2.adjoint_restrictScalars]
+        exact h'.ae_restrictScalars_apply_eq_integral_opKernel f s hs hf) hp hp_top
 
 end HasStandardKernel
 
