@@ -70,16 +70,17 @@ private def toCoprodI : M ∗ N ≃* CoprodI (Factors M N) :=
   (MulEquiv.coprodCongr MulEquiv.ulift.symm MulEquiv.ulift.symm).trans
     (CoprodI.boolEquivCoprod (Factors M N)).symm
 
+-- `toSigma` is reducible so that unification identifies the factor `(toSigma s).1` of a letter
+-- `s = .inl m` with `false` (and of `s = .inr n` with `true`): `simp` cannot rewrite `toSigma s`
+-- inside the dependent index of `Monoid.CoprodI.of`.
 /-- A letter of `M ⊕ N` as a letter of the family `Factors M N`. -/
-private def toSigma : M ⊕ N → Σ b, Factors M N b
-  | .inl m => ⟨false, ULift.up m⟩
-  | .inr n => ⟨true, ULift.up n⟩
+private abbrev toSigma : M ⊕ N → Σ b, Factors M N b
+  | .inl m => ⟨false, MulEquiv.ulift.symm m⟩
+  | .inr n => ⟨true, MulEquiv.ulift.symm n⟩
 
-omit [Monoid M] [Monoid N] in
 private theorem toSigma_fst (s : M ⊕ N) : (toSigma s).1 = s.isRight := by
   cases s <;> rfl
 
-omit [Monoid M] [Monoid N] in
 private theorem toSigma_injective : Function.Injective (toSigma (M := M) (N := N)) := by
   rintro (m | n) (m' | n') h <;> simp_all [toSigma]
 
@@ -89,7 +90,7 @@ private theorem toCoprodI_mk_ofList (L : List (M ⊕ N)) :
   | nil => simp
   | cons s L ih =>
     rw [FreeMonoid.ofList_cons, map_mul, map_mul, ih, List.map_cons, List.prod_cons]
-    cases s <;> simp [toCoprodI, toSigma] <;> rfl
+    cases s <;> simp [toCoprodI, toSigma]
 
 /-- A reduced word of `M ∗ N` as a reduced word of `Monoid.CoprodI (Factors M N)`. -/
 private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
@@ -97,9 +98,7 @@ private def toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsChain (· �
   toList := L.map toSigma
   ne_one := by
     simp only [List.mem_map, forall_exists_index, and_imp]
-    rintro _ (m | n) hs rfl h
-    · exact h₁ (by simpa [toSigma, show m = 1 from congrArg ULift.down h] using hs)
-    · exact h₂ (by simpa [toSigma, show n = 1 from congrArg ULift.down h] using hs)
+    rintro _ (m | n) hs rfl h <;> simp_all [toSigma]
   chain_ne := by
     rw [List.isChain_map]
     simpa [toSigma_fst, List.isChain_map] using hc
@@ -114,20 +113,25 @@ private theorem prod_toWord (L : List (M ⊕ N)) (hc : (L.map Sum.isRight).IsCha
 /-- **Uniqueness of reduced words in a free product.** Two words in the letters `M ⊕ N`, none of
 whose letters is `1` and whose consecutive letters lie in different factors, have the same image
 in `M ∗ N` only if they are equal. -/
+@[simp]
 theorem mk_ofList_inj {L L' : List (M ⊕ N)} (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
     (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) (hc' : (L'.map Sum.isRight).IsChain (· ≠ ·))
     (h₁' : Sum.inl 1 ∉ L') (h₂' : Sum.inr 1 ∉ L') :
     (mk (FreeMonoid.ofList L) : M ∗ N) = mk (FreeMonoid.ofList L') ↔ L = L' := by
   classical
   refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
-  -- Compare the corresponding reduced words of `Monoid.CoprodI`, which are unique.
-  have hw := CoprodI.Word.equiv.symm.injective
-    (show (toWord L hc h₁ h₂).prod = (toWord L' hc' h₁' h₂').prod by
-      rw [prod_toWord, prod_toWord, h])
+  -- The corresponding reduced words of `Monoid.CoprodI` have the same product. A reduced word is
+  -- determined by its product: `Word.prod` is, by definition, the inverse of the bijection
+  -- `Word.equiv` from `Monoid.CoprodI` to its reduced words.
+  have hprod : Function.Injective (CoprodI.Word.prod (M := Factors M N)) :=
+    CoprodI.Word.equiv.symm.injective
+  have hw : toWord L hc h₁ h₂ = toWord L' hc' h₁' h₂' :=
+    hprod (by rw [prod_toWord, prod_toWord, h])
   exact List.map_injective_iff.2 toSigma_injective (congrArg CoprodI.Word.toList hw)
 
 /-- The image in `M ∗ N` of a nonempty word in the letters `M ⊕ N`, none of whose letters is `1`
 and whose consecutive letters lie in different factors, is not `1`. -/
+@[simp]
 theorem mk_ofList_ne_one {L : List (M ⊕ N)} (hL : L ≠ []) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
     (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) : (mk (FreeMonoid.ofList L) : M ∗ N) ≠ 1 := fun h =>
   hL ((mk_ofList_inj (L' := []) hc h₁ h₂ (by simp) (by simp) (by simp)).1 (by simpa using h))

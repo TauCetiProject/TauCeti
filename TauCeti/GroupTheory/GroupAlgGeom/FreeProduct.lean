@@ -63,7 +63,7 @@ theorem IsDiscriminatedBy.coprod_inl (h : IsDiscriminatedBy (1 : Unit →* K) (1
     obtain ⟨x, -, hk⟩ := hT.1 hk
     rintro rfl
     exact h₂ x hk
-  refine ⟨⟨map (.id H) φ, fun _ => rfl⟩, fun x hx => ?_⟩
+  refine ⟨⟨map (.id H) φ, fun _ => by simp⟩, fun x hx => ?_⟩
   rw [← hR x]
   exact map_mk_ofList_ne_one _ _ (fun hn => hs x hx (by simpa [hn] using (hR x).symm)) (hc x)
     (fun m hm h1 => h₁ x (by rw [MonoidHom.id_apply] at h1; rwa [h1] at hm))
