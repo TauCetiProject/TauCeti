@@ -297,7 +297,7 @@ private def cellRadialPath (n : ℕ) (j : cell C n) (γ : MoorePathBetween B b (
   MoorePathPullback.radialPaths
     ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
     (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
-    ⟨γ.1, γ.2.1, γ.2.2.trans (by simp [cellDiskMap])⟩
+    ⟨γ.toMoorePath, γ.source, γ.target.trans (by simp [cellDiskMap])⟩
 
 variable (C) in
 /-- **Radial paths to the points of the `n`-cells.** Given a Moore path `γ j` from `b` to the
@@ -319,6 +319,28 @@ theorem target_cellRadialPaths {n : ℕ} (γ : ∀ j : cell C n, MoorePathBetwee
     (q : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1) :
     (cellRadialPaths C n γ q).target = sigmaCellMap C n q := by
   simp [cellRadialPaths, cellRadialPath, cellDiskMap]
+
+@[simp]
+theorem length_cellRadialPaths {n : ℕ} (γ : ∀ j : cell C n, MoorePathBetween B b (map n j 0))
+    (q : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1) :
+    (cellRadialPaths C n γ q).length = (γ q.1).toMoorePath.length + 1 := by
+  simp [cellRadialPaths, cellRadialPath]
+
+/-- After the path `γ j` to the centre of the cell `j`, the radial path to the image of `v`
+follows the image `t ↦ χⱼ(t • v)` of the radial segment in one unit of Moore time. -/
+theorem cellRadialPaths_apply_length_add {n : ℕ}
+    (γ : ∀ j : cell C n, MoorePathBetween B b (map n j 0)) (j : cell C n)
+    (v : closedBall (0 : Fin n → ℝ) 1) (t : I) :
+    cellRadialPaths C n γ ⟨j, v⟩ ((γ j).toMoorePath.length + unitInterval.toNNReal t) =
+      sigmaCellMap C n ⟨j, ⟨(t : ℝ) • (v : Fin n → ℝ),
+        ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex
+          (mem_closedBall_self zero_le_one)).smul_mem v.2 t.2.1 t.2.2⟩⟩ := by
+  have h := MoorePathPullback.radialPaths_apply_length_add
+    ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
+    (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
+    ⟨(γ j).toMoorePath, (γ j).source, (γ j).target.trans (by simp [cellDiskMap])⟩ v t
+  simp only [MoorePathBetween.toMoorePath_mk] at h
+  exact h.trans (by simp [cellDiskMap, AffineMap.lineMap_apply_module])
 
 variable (b C) in
 /-- The pullback `P` of the based Moore path fibration `P_b B → B` to the disks of the `n`-cells,
