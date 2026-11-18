@@ -110,10 +110,10 @@ theorem isPuncturedSymbol_iff {ℓ : ℝ} {f : E → F} :
       ∀ j : ℕ, iteratedFDeriv ℝ j f =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (ℓ - j) :=
   Iff.rfl
 
-/-- The inductive step of the derivative bounds for inverses and compositions: if `fderiv F'`
-agrees near every point of a punctured neighbourhood with a map `G'` whose `k`-th derivative is
-`O(‖z‖ ^ (a - k))`, then the `(k + 1)`-th derivative of `F'` is `O(‖z‖ ^ (b - (k + 1)))` for
-`b = a + 1`. -/
+/-- The inductive step of the derivative bounds for linear maps, inverses and compositions: if
+`fderiv F'` agrees near every point of a punctured neighbourhood with a map `G'` whose `k`-th
+derivative is `O(‖z‖ ^ (a - k))`, then the `(k + 1)`-th derivative of `F'` is
+`O(‖z‖ ^ (b - (k + 1)))` for `b = a + 1`. -/
 private theorem isBigO_iteratedFDeriv_succ_of_eventuallyEq {F' : E → F} {G' : E → E →L[ℝ] F}
     {a b : ℝ} {k : ℕ} (hF : ∀ᶠ z in 𝓝[≠] (0 : E), fderiv ℝ F' =ᶠ[𝓝 z] G')
     (hG : iteratedFDeriv ℝ k G' =O[𝓝[≠] (0 : E)] fun z ↦ ‖z‖ ^ (a - k)) (hab : a + 1 = b) :
@@ -243,14 +243,9 @@ theorem _root_.ContinuousLinearMap.isPuncturedSymbol (L : E →L[ℝ] F) :
     refine IsBigO.of_bound ‖L‖ (Eventually.of_forall fun z ↦ ?_)
     simpa using L.le_opNorm z
   | succ j =>
-    have hL : fderiv ℝ L = fun _ ↦ L := funext fun _ ↦ L.fderiv
-    have h := ((isPuncturedSymbol_const (E := E) L).2 j).norm_left
-    refine IsBigO.of_norm_left (h.congr' (Eventually.of_forall fun z ↦ ?_)
-      (Eventually.of_forall fun z ↦ ?_))
-    · simp only
-      rw [← norm_iteratedFDeriv_fderiv, hL]
-    · push_cast
-      ring_nf
+    exact isBigO_iteratedFDeriv_succ_of_eventuallyEq (G' := fun _ ↦ L)
+      (Eventually.of_forall fun _ ↦ .of_forall fun _ ↦ L.fderiv)
+      ((isPuncturedSymbol_const L).2 j) (by ring)
 
 /-- The identity is a punctured symbol of order `1`. -/
 theorem isPuncturedSymbol_id : IsPuncturedSymbol 1 fun z : E ↦ z :=
