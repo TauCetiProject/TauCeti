@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Lex
+public import Mathlib.Data.Finsupp.Weight
 import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
@@ -17,7 +18,8 @@ function extension by zero, over any additive commutative monoid. For an arbitra
 the range of `Finsupp.mapDomain f` consists of the finitely supported functions vanishing outside
 the range of `f` (`Finsupp.mem_range_mapDomain_iff'`). Restricting to a predicate commutes with
 pushing forward along `f` when the predicate on the source is the pullback along `f` of a
-predicate on the target (`Finsupp.mapDomain_subtypeDomain`).
+predicate on the target (`Finsupp.mapDomain_subtypeDomain`). The weight of the push-forward along
+`f` is the weight for the pulled-back weights (`Finsupp.weight_mapDomain`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -50,6 +52,12 @@ theorem mem_range_mapDomain_iff' {α β M : Type*} [AddCommMonoid M] (f : α →
       lmapDomain_supported M ℕ f Set.univ
   simpa only [LinearMap.mem_range, lmapDomain_apply, mem_supported', Set.mem_range] using
     SetLike.ext_iff.1 h x
+
+/-- The weight of the push-forward of `u` along `f` is the weight of `u` for the weights `w ∘ f`. -/
+theorem weight_mapDomain {σ τ M R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (f : σ → τ) (w : τ → M) (u : σ →₀ R) :
+    weight w (u.mapDomain f) = weight (w ∘ f) u := by
+  simp [weight, linearCombination_mapDomain]
 
 /-- A finitely supported function supported on a set `s` is the push-forward along the inclusion
 of its restriction to `s`. -/
