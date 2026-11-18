@@ -353,10 +353,13 @@ theorem mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E �
   rfl
 
 open Filter in
-/-- If the critical point of the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)`
-of a family with differentiable slices is, near `(p, extChartAt I x x)`, uniquely `η q.1`, then the
-zero of the manifold derivative of `fun y ↦ f (q.1, y)` near `(p, x)` is uniquely
-`(extChartAt I x).symm (η q.1)`. -/
+/-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
+the target of the extended chart at `x` for `q.1` near `p`, and that near `(p, extChartAt I x x)`
+the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)` is differentiable in `v` and
+its Fréchet derivative at `q.2` vanishes exactly when `η q.1 = q.2`. Then near `(p, x)` the manifold
+derivative of `fun y ↦ f (q.1, y)` at `q.2` vanishes exactly when
+`(extChartAt I x).symm (η q.1) = q.2`. This transfers the equivalence only: it does not assert that
+a critical point exists. -/
 theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [TopologicalSpace P]
     {f : P × M → F} {p : P} {x : M} {η : P → E}
     (hslice : ∀ᶠ q in 𝓝 (p, extChartAt I x x),
