@@ -88,6 +88,10 @@ namespace ContinuousLinearMapWOT
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
 
+/-- The adjoint on the weak operator copy agrees with the adjoint of the underlying operator. -/
+@[simp] theorem ofCLM_star (a : E →L[𝕜] E) : ofCLM (star a) = star (ofCLM a) :=
+  ContinuousLinearMapWOT.ext fun _ ↦ (ContinuousLinearMapWOT.star_apply _ _).symm
+
 /-- The positive operators, cut out by closed conditions on matrix coefficients, form a weak
 operator closed set. -/
 theorem isClosed_setOf_isPositive : IsClosed {T : E →WOT[𝕜] E | (toCLM T).IsPositive} := by
