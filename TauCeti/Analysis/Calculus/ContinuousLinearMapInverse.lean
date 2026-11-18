@@ -172,8 +172,7 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
       _ ≤ ‖y‖ + ‖((f : E →L[𝕜] F) - A) x‖ := norm_sub_le _ _
       _ ≤ ‖y‖ + ‖(f : E →L[𝕜] F) - A‖ * ‖x‖ := by gcongr; exact le_opNorm _ _
   have hx : ‖x‖ ≤ M * ‖A x‖ := by
-    calc ‖x‖ = ‖A.inverse (A x)‖ := by simp [hA.inverse_apply_self]
-      _ ≤ ‖A.inverse‖ * ‖A x‖ := le_opNorm _ _
+    calc ‖x‖ ≤ ‖A.inverse‖ * ‖A x‖ := hA.norm_le_norm_inverse_mul_norm x
       _ ≤ M * ‖A x‖ := by gcongr
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]

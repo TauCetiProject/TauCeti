@@ -146,13 +146,8 @@ theorem norm_weakFDeriv_le_norm_trajectoryOperator_add (A : Lp (F →L[ℝ] F) �
   let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
   let w := weakFDeriv base u
   -- On `ℝ →L[ℝ] F`, evaluation at `1` is an isometry, so it preserves the `Lᵖ` norm.
-  have hw : ‖w‖ = ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w‖ := by
-    rw [Lp.norm_def, Lp.norm_def]
-    congr 1
-    refine (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_).symm
-    filter_upwards [(ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp w] with s hs
-    rw [hs, ContinuousLinearMap.apply_apply]
-    exact (ContinuousLinearMap.toSpanSingletonLIE ℝ F).symm.norm_map (w s)
+  have hw : ‖w‖ = ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w‖ :=
+    (Lp.norm_apply_one_compLp w).symm
   have hA : ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u)‖ ≤
       ‖A‖ * ‖prev base u‖ :=
     (ContinuousLinearMap.norm_holder_apply_apply_le _ _ _).trans
@@ -238,22 +233,16 @@ theorem exists_prev_eq_and_trajectoryOperator_eq_of_hasWeakLineDerivOn
     ∃ u, prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u = x ∧
       trajectoryOperator A u = f := by
   let g := f - (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A x
-  -- The weak derivative `g` as an `Lᵖ` path of linear maps `ℝ →L[ℝ] F`.
-  let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
   have hg : (fun s ↦ f s - A s (x s)) =ᵐ[mu.restrict Omega] g := by
     filter_upwards [Lp.coeFn_sub f ((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A x),
       (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) A x] with s hs hAs
     simp only [g, hs, Pi.sub_apply, hAs, ContinuousLinearMap.id_apply]
-  have hD : HasWeakFDerivOn mu Omega (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)) x)
-      (lift.compLp g) := by
-    rw [hasWeakFDerivOn_iff]
-    intro r
-    refine (by simpa using (h.congr_ae_deriv hg).smul_direction r :
-      HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
-    filter_upwards [lift.coeFn_compLp g] with s hs
-    simp [lift, hs]
-  refine ⟨mk _ x _ hD, prev_mk _ _ _ _, ?_⟩
-  rw [trajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mk]
+  have hx : HasWeakLineDerivOn mu Omega
+      (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)) x) g 1 := by
+    rw [ContinuousLinearMap.id_apply]
+    exact h.congr_ae_deriv hg
+  refine ⟨mkLine _ x g hx, prev_mkLine .., ?_⟩
+  rw [trajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_mkLine]
   exact h
 
 end TauCeti.WeakDerivStep

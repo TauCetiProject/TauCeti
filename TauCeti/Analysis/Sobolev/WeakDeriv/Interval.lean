@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationTh
 import TauCeti.Topology.Order.Interval
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # Weak derivatives on an interval
@@ -64,6 +65,8 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_left`: the same with the primitive
   taken from the left endpoint, when the weak derivative is integrable.
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_top`: the same on the whole line.
+* `TauCeti.HasWeakLineDerivOn.integral_eq_zero`: on the whole line, an integrable function with an
+  integrable weak derivative has `∫ u' = 0`.
 * `TauCeti.HasWeakLineDerivOn.exists_continuousOn_ae_eq`: if the weak derivative is integrable,
   the function has a representative continuous on the closed interval.
 * `TauCeti.HasWeakLineDerivOn.integral_eq_sub`: the fundamental theorem of calculus for such a
@@ -88,7 +91,7 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
 public section
 
 open MeasureTheory Set Filter TopologicalSpace intervalIntegral
-open scoped Interval Distributions
+open scoped Interval Distributions Topology
 
 namespace TauCeti
 
@@ -265,6 +268,33 @@ theorem HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_top
     rw [hc0 n] at h
     exact h
   rwa [hU, Measure.restrict_univ] at hae
+
+/-- **An integrable weak derivative on the line has integral zero.** If `u'` is the weak
+derivative of `u` on all of `ℝ` and both are integrable, then `∫ u' = 0`. -/
+theorem HasWeakLineDerivOn.integral_eq_zero (h : HasWeakLineDerivOn volume ⊤ u u' 1)
+    (hu : Integrable u) (hu' : Integrable u') : ∫ t, u' t = 0 := by
+  have := h.completeSpace
+  obtain ⟨c, hc⟩ := h.exists_ae_eq_add_intervalIntegral_top 0
+  -- The continuous representative `w` is integrable and has limits at `±∞`, which must vanish.
+  set w : ℝ → F := fun t ↦ c + ∫ s in (0 : ℝ)..t, u' s
+  have hw : Integrable w := hu.congr hc
+  have htop : Tendsto w atTop (𝓝 (c + ∫ s in Ioi 0, u' s)) :=
+    tendsto_const_nhds.add (intervalIntegral_tendsto_integral_Ioi 0 hu'.integrableOn tendsto_id)
+  have hbot : Tendsto w atBot (𝓝 (c - ∫ s in Iic 0, u' s)) := by
+    refine (tendsto_const_nhds.sub (intervalIntegral_tendsto_integral_Iic (a := id) 0
+      hu'.integrableOn tendsto_id)).congr fun t ↦ ?_
+    simp only [w, id, intervalIntegral.integral_symm t 0, sub_eq_add_neg]
+  have h₁ := (hw.integrableAtFilter atTop).eq_zero_of_tendsto (fun s hs ↦ by
+    obtain ⟨b, hb⟩ := mem_atTop_sets.1 hs
+    rw [← top_le_iff, ← Real.volume_Ici (a := b)]
+    exact measure_mono hb) htop
+  have h₂ := (hw.integrableAtFilter atBot).eq_zero_of_tendsto (fun s hs ↦ by
+    obtain ⟨b, hb⟩ := mem_atBot_sets.1 hs
+    rw [← top_le_iff, ← Real.volume_Iic (a := b)]
+    exact measure_mono hb) hbot
+  rw [← integral_Iic_add_Ioi (b := 0) hu'.integrableOn hu'.integrableOn]
+  rw [sub_eq_zero] at h₂
+  rw [← h₂, h₁]
 
 /-- **A continuous representative.** If `u'` is the weak derivative of `u` on `Ioo a b` and `u'`
 is integrable on `Ioo a b`, then `u` agrees almost everywhere on `Ioo a b` with a function
