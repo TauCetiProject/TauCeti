@@ -140,18 +140,14 @@ theorem twistedComplexι_twistedComplexMap {𝓕 𝓖 : DGLocalSystemFamily.{uM}
 theorem twistedComplexMap_id (𝓕 : DGLocalSystemFamily.{uM} β R) :
     twistedComplexMap m (𝟙 𝓕) = 𝟙 (twistedComplex m 𝓕) := by
   refine twistedComplex_hom_ext m fun c ↦ ?_
-  rw [twistedComplexι_twistedComplexMap, Category.comp_id, Pi.id_apply,
-    DGRightModuleCat.id_eq_id, RowFiniteTwistingCocycle.coefficientCochainComplexMap_id,
-    Category.id_comp]
+  simp [DGRightModuleCat.id_eq_id, RowFiniteTwistingCocycle.coefficientCochainComplexMap_id]
 
 @[reassoc, simp]
 theorem twistedComplexMap_comp {𝓕 𝓖 𝓗 : DGLocalSystemFamily.{uM} β R} (φ : 𝓕 ⟶ 𝓖)
     (ψ : 𝓖 ⟶ 𝓗) :
     twistedComplexMap m (φ ≫ ψ) = twistedComplexMap m φ ≫ twistedComplexMap m ψ := by
   refine twistedComplex_hom_ext m fun c ↦ ?_
-  rw [twistedComplexι_twistedComplexMap, twistedComplexι_twistedComplexMap_assoc,
-    twistedComplexι_twistedComplexMap, Pi.comp_apply, DGRightModuleCat.comp_eq_comp,
-    RowFiniteTwistingCocycle.coefficientCochainComplexMap_comp, Category.assoc]
+  simp [DGRightModuleCat.comp_eq_comp, RowFiniteTwistingCocycle.coefficientCochainComplexMap_comp]
 
 /-- The twisted complex as a functor of the coefficient family. -/
 @[expose] def twistedComplexFunctor :
@@ -220,9 +216,8 @@ theorem twistedComplexHomologyIso_hom_naturality {𝓕 𝓖 : DGLocalSystemFamil
   rw [← Iso.inv_comp_eq, ← Category.assoc]
   refine Sigma.hom_ext _ _ fun c ↦ ?_
   rw [Category.assoc, ι_twistedComplexHomologyIso_inv_assoc,
-    ← HomologicalComplex.homologyMap_comp_assoc, twistedComplexι_twistedComplexMap,
-    HomologicalComplex.homologyMap_comp_assoc,
-    homologyMap_twistedComplexι_twistedComplexHomologyIso_hom, Sigma.ι_map]
+    ← HomologicalComplex.homologyMap_comp_assoc]
+  simp [HomologicalComplex.homologyMap_comp]
 
 /-- **Quasi-isomorphisms of coefficient families.** A morphism of coefficient families induces a
 quasi-isomorphism of twisted complexes exactly when it induces one on the twisted complex of every
@@ -284,8 +279,7 @@ theorem twistedComplexContinuation_refl (𝓕 : DGLocalSystemFamily.{uM} β R) :
         𝓕 =
       𝟙 (twistedComplex m 𝓕) := by
   refine twistedComplex_hom_ext m fun c ↦ ?_
-  rw [twistedComplexι_twistedComplexContinuation, RowFiniteContinuationCocycle.continuationHom_refl,
-    Category.id_comp, Category.comp_id]
+  simp
 
 variable {m} in
 /-- The composite of two families of continuation cocycles induces the composite of the morphisms
@@ -297,9 +291,7 @@ theorem twistedComplexContinuation_comp (ν : ∀ c, RowFiniteContinuationCocycl
         (fun c ↦ (ν c).comp (μ c) (loopChain_isDGAlgebra B (β.point c) R)) 𝓕 =
       twistedComplexContinuation ν 𝓕 ≫ twistedComplexContinuation μ 𝓕 := by
   refine twistedComplex_hom_ext m fun c ↦ ?_
-  rw [twistedComplexι_twistedComplexContinuation, RowFiniteContinuationCocycle.continuationHom_comp,
-    twistedComplexι_twistedComplexContinuation_assoc, twistedComplexι_twistedComplexContinuation,
-    Category.assoc]
+  simp [RowFiniteContinuationCocycle.continuationHom_comp]
 
 variable [HasExactColimitsOfShape (Discrete (ZerothHomotopy B)) (ModuleCat.{uM} R)]
 
