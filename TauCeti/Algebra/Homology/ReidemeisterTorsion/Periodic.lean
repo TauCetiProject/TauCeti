@@ -406,8 +406,7 @@ private def mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
     (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) {p : ℕ}
     (b : Basis (Fin p) F (LinearMap.range (C.d k j).hom)) :
     Basis (Fin p) F (LinearMap.range (D.d k' j').hom) :=
-  b.map ((eⱼ.submoduleMap _).trans
-    (LinearEquiv.ofEq _ _ (range_d_eq_map_of_linearEquiv eⱼ eₖ hu.isUnit h).symm))
+  b.map (boundaryEquivOfLinearEquiv eⱼ eₖ hu.isUnit h)
 
 private theorem coe_mapRangeBasis {j k j' k' : ZMod 2} (eⱼ : C.X j ≃ₗ[F] D.X j')
     (eₖ : C.X k ≃ₗ[F] D.X k') {u : F} (hu : u ≠ 0)

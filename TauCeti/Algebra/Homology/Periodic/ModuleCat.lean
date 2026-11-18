@@ -77,7 +77,7 @@ namespace HomologicalComplex
 
 /-! ### Linear equivalences intertwining the differentials up to a unit -/
 
-variable {R : Type*} [CommRing R]
+variable {R : Type*} [Ring R]
   {C D : HomologicalComplex (ModuleCat R) (ComplexShape.up (ZMod 2))}
 
 /-- Linear equivalences intertwining the differentials of two-periodic complexes `C` and `D` up to

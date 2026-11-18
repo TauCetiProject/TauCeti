@@ -64,7 +64,8 @@ image of the incoming differential, the term and the image of the outgoing diffe
 short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`). Linear equivalences
 intertwining two differentials up to a unit identify their images and kernels
 (`HomologicalComplex.range_d_eq_map_of_linearEquiv`,
-`HomologicalComplex.ker_d_eq_map_of_linearEquiv`).
+`HomologicalComplex.ker_d_eq_map_of_linearEquiv`), and restrict to an equivalence of the images
+(`HomologicalComplex.boundaryEquivOfLinearEquiv`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
@@ -682,7 +683,7 @@ namespace HomologicalComplex
 
 /-! ### Linear equivalences intertwining the differentials up to a unit -/
 
-variable {R : Type*} [CommRing R] {ι : Type*} {c : ComplexShape ι}
+variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   {C D : HomologicalComplex (ModuleCat R) c}
 
 /-- If `D.d k' j' ∘ e_k = u • (e_j ∘ C.d k j)` for linear equivalences `e_j`, `e_k` and a unit `u`,
@@ -692,13 +693,34 @@ theorem range_d_eq_map_of_linearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D
     (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
     LinearMap.range (D.d k' j').hom =
       (LinearMap.range (C.d k j).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
-  have hd : (D.d k' j').hom =
-      ((eⱼ : C.X j →ₗ[R] D.X j') ∘ₗ (C.d k j).hom) ∘ₗ (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) := by
-    ext x
-    simpa using h (eₖ.symm x)
-  have htop : LinearMap.range (u • (eₖ.symm : D.X k' →ₗ[R] C.X k)) = ⊤ :=
-    LinearMap.range_eq_top.2 fun x ↦ ⟨eₖ (hu.unit⁻¹.val • x), by simp [smul_smul]⟩
-  rw [hd, LinearMap.range_comp_of_range_eq_top _ htop, LinearMap.range_comp]
+  ext y
+  simp only [LinearMap.mem_range, Submodule.mem_map, exists_exists_eq_and, LinearEquiv.coe_coe]
+  constructor
+  · rintro ⟨z, rfl⟩
+    obtain ⟨x, rfl⟩ := eₖ.surjective z
+    exact ⟨u • x, by rw [h, map_smul, map_smul]⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨eₖ (hu.unit⁻¹.val • x), by rw [h, map_smul, map_smul, smul_smul, hu.mul_val_inv,
+      one_smul]⟩
+
+/-- The linear equivalence between the boundaries of `C` in degree `j` and those of `D` in degree
+`j'` induced by linear equivalences `e_j`, `e_k` intertwining the differentials up to a unit; it is
+the restriction of `e_j` (`HomologicalComplex.range_d_eq_map_of_linearEquiv`). -/
+def boundaryEquivOfLinearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
+    LinearMap.range (C.d k j).hom ≃ₗ[R] LinearMap.range (D.d k' j').hom :=
+  (eⱼ.submoduleMap _).trans
+    (LinearEquiv.ofEq _ _ (range_d_eq_map_of_linearEquiv eⱼ eₖ hu h).symm)
+
+/-- The isomorphism `boundaryEquivOfLinearEquiv` is the restriction of `e_j`. -/
+@[simp]
+theorem coe_boundaryEquivOfLinearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X j')
+    (eₖ : C.X k ≃ₗ[R] D.X k') {u : R} (hu : IsUnit u)
+    (h : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x))
+    (x : LinearMap.range (C.d k j).hom) :
+    (boundaryEquivOfLinearEquiv eⱼ eₖ hu h x : D.X j') = eⱼ x :=
+  (rfl)
 
 /-- If `D.d j' k' ∘ e_j = u • (e_k ∘ C.d j k)` for linear equivalences `e_j`, `e_k` and a unit `u`,
 the cycles of `D` in degree `j'` are the image under `e_j` of those of `C` in degree `j`. -/
@@ -707,15 +729,11 @@ theorem ker_d_eq_map_of_linearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X
     (h : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x)) :
     LinearMap.ker (D.d j' k').hom =
       (LinearMap.ker (C.d j k).hom).map (eⱼ : C.X j →ₗ[R] D.X j') := by
-  have hd : (D.d j' k').hom =
-      (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) ∘ₗ (eⱼ.symm : D.X j' →ₗ[R] C.X j) := by
-    ext x
-    simpa using h (eⱼ.symm x)
-  have hker : LinearMap.ker (u • ((eₖ : C.X k →ₗ[R] D.X k') ∘ₗ (C.d j k).hom)) =
-      LinearMap.ker (C.d j k).hom := by
-    ext x
-    simp [hu.smul_eq_zero]
-  rw [hd, LinearMap.ker_comp, hker, Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+  ext y
+  obtain ⟨x, rfl⟩ := eⱼ.surjective y
+  rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearMap.mem_ker,
+    LinearMap.mem_ker, h, hu.smul_eq_zero, LinearEquiv.coe_coe, eⱼ.symm_apply_apply,
+    eₖ.map_eq_zero_iff]
 
 end HomologicalComplex
 
