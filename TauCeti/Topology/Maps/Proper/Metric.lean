@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Topology.Order.Sublevel
 
 import Mathlib.Analysis.Normed.Group.Uniform
+import Mathlib.Topology.LocalAtTarget
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
@@ -23,6 +24,10 @@ exhaustion function remains proper. The source needs no metric or separation ass
 The proof uses Mathlib's compactness of closed thickenings in proper metric spaces: the
 inverse image of a compact set under the perturbed map is a closed subset of the original
 map's inverse image of a compact thickening.
+
+In any proper seminormed group, the norm map is proper (`TauCeti.isProperMap_norm'`,
+`TauCeti.isProperMap_norm`), and its restriction to `{x | R < ‖x‖}` onto `Set.Ioi R` is proper
+(`TauCeti.isProperMap_norm_Ioi'`, `TauCeti.isProperMap_norm_Ioi`).
 
 In a proper normed group the squared distance `v ↦ ‖v - a‖ ^ 2` from a point tends to infinity
 along the cocompact filter, so it is proper, and so is its composition with any closed embedding.
@@ -53,6 +58,23 @@ theorem _root_.IsProperMap.of_dist_le {X Y : Type*} [TopologicalSpace X] [Metric
     (hK.isClosed.preimage hg) ?_
   intro x hx
   exact Metric.mem_cthickening_of_dist_le (f x) (g x) C K hx (hfg x)
+
+/-- In a proper seminormed group, the norm map is proper. -/
+@[to_additive (attr := fun_prop) isProperMap_norm
+  /-- In a proper seminormed additive group, the norm map is proper. -/]
+theorem isProperMap_norm' {E : Type*} [SeminormedGroup E] [ProperSpace E] :
+    IsProperMap (norm : E → ℝ) := by
+  rw [← dist_one]
+  exact isProperMap_dist (1 : E)
+
+/-- In a proper seminormed group, the norm restricted to `{x : E // R < ‖x‖}` is a proper map onto
+`Set.Ioi R`. -/
+@[to_additive isProperMap_norm_Ioi
+  /-- In a proper seminormed additive group, the norm restricted to `{x : E // R < ‖x‖}` is a
+  proper map onto `Set.Ioi R`. -/]
+theorem isProperMap_norm_Ioi' {E : Type*} [SeminormedGroup E] [ProperSpace E] (R : ℝ) :
+    IsProperMap (fun x : {x : E // R < ‖x‖} => (⟨‖(x : E)‖, x.2⟩ : Ioi R)) :=
+  (isProperMap_norm' (E := E)).restrictPreimage (Ioi R)
 
 /-- In a proper normed group, the squared distance from a point is a proper map. -/
 theorem isProperMap_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [ProperSpace E] (a : E) :

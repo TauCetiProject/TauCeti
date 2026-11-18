@@ -46,8 +46,9 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   to a Riemannian manifold, `z ↦ ‖df_z ξ‖` is continuous.
 * `ContMDiffOn.contDiffOn_inner_mfderiv`: for a `C^(m+1)` map `f` from an open subset of a normed
   space to a `C^m` Riemannian manifold, `z ↦ ⟪df_z ξ, df_z η⟫` is `C^m`.
-* `TauCeti.inner_tangentSpace_congr` and `TauCeti.norm_tangentSpace_congr`: inner products and
-  norms of vectors in the tangent spaces at two equal points agree.
+* `TauCeti.inner_tangentSpace_congr`, `TauCeti.inner_tangentSpaceCast`, and
+  `TauCeti.norm_tangentSpace_congr`: inner products and norms of vectors in the tangent spaces at
+  two equal points agree.
 * `TauCeti.mfderiv_mem_ball_of_apply_eq_self`: if `f` fixes `p` and its differential at `p`
   preserves the metric there, it maps every ball around the origin of `T_p M` into itself.
 -/
@@ -283,6 +284,13 @@ theorem inner_tangentSpace_congr {q p : M} (h : q = p) {u w : TangentSpace I q}
     {u' w' : TangentSpace I p} (hu : (u : E) = u') (hw : (w : E) = w') :
     inner ℝ u w = inner ℝ u' w' := by
   subst h hu hw
+  rfl
+
+/-- Casting two tangent vectors along an equality of base points preserves their Riemannian
+inner product. -/
+theorem inner_tangentSpaceCast {p q : M} (hpq : p = q) (v w : TangentSpace I p) :
+    inner ℝ (tangentSpaceCast I p q v) (tangentSpaceCast I p q w) = inner ℝ v w := by
+  subst hpq
   rfl
 
 /-- The norms of a vector in the tangent spaces at two equal points agree. Both tangent spaces
