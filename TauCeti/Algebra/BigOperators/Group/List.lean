@@ -137,8 +137,8 @@ partial products. -/
 @[simp]
 theorem prod_ofFn_contractNth {n : ℕ} (b : Fin (n + 1) → M) (l : Fin n) :
     (ofFn (Fin.contractNth l.castSucc (· * ·) b)).prod = (ofFn b).prod := by
-  simpa only [Fin.partialProd, Fin.val_last, take_of_length_le, length_ofFn, le_refl] using
-    Fin.partialProd_contractNth_castSucc l b
+  rw [← Fin.partialProd_last_eq_prod_ofFn, ← Fin.partialProd_last_eq_prod_ofFn,
+    Fin.partialProd_contractNth_castSucc]
 
 end OfFn
 

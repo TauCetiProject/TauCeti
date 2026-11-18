@@ -111,9 +111,10 @@ theorem typeABoxDifferential_lTensor_smul {K : ℕ}
   rw [sum_eq_single_of_mem 0 (mem_range.2 (Nat.succ_pos K)) fun n _ hn => by
     simp [hn]]
   simp only [ite_true]
-  rw [Fintype.sum_eq_single (fun _ => z) fun x hx => ite_eq_right fun h => (hx (funext fun i => by
-    obtain rfl : i = Fin.last 0 := Fin.ext (by have := i.isLt; simp only [Fin.val_last]; omega)
-    exact h)).elim]
+  -- A path of length zero ending at `z` is the constant path at `z`.
+  have hconst : ∀ x : Fin 1 → Y, x (Fin.last 0) = z → x = fun _ => z := fun x h =>
+    funext fun i => by rw [Subsingleton.elim i (Fin.last 0), h]
+  rw [Fintype.sum_eq_single (fun _ => z) fun x hx => ite_eq_right fun h => (hx (hconst x h)).elim]
   exact ite_eq_left rfl
 
 /-- **The box tensor differential with a bounded type `DD` structure satisfies the Leibniz rule**
