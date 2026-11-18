@@ -137,6 +137,7 @@ theorem range_torusPoints_le_elementarySubgroup_of_weightLattice_eq_top
 
 /-- If the weights of the datum span the full weight lattice, adjoining the actual torus does
 not enlarge the elementary subgroup, over every commutative ring. -/
+@[simp]
 theorem extendedElementarySubgroup_eq_elementarySubgroup_of_weightLattice_eq_top
     (hD : D.weightLattice = ⊤) :
     D.extendedElementarySubgroup A = D.elementarySubgroup A := by
@@ -190,7 +191,7 @@ theorem mem_extendedElementarySubgroup_iff (g : D.points A) :
 
 section Determination
 
-variable {A} {G : Type*} [Group G] {f g : D.points A →* G}
+variable {A} {G : Type*} [Monoid G] {f g : D.points A →* G}
 
 /-- Two homomorphisms out of the points of a Chevalley datum that agree on the positive and
 negative simple root subgroups agree on the whole elementary subgroup, over every commutative
