@@ -19,8 +19,8 @@ Let `V → M` be a smooth real vector bundle over a smooth manifold. Its **bundl
 locally convex topology of their fixed-compact support stages
 (`ContMDiffSection.compactlySupportedTopology`), computed in the preferred trivializations
 `trivializationAt F V x`. Every covering family of smooth frames gives the same topology
-(`TauCeti.BundleTest.instTopologicalSpace_eq`), so this choice is only a normalization. The
-topology is Hausdorff.
+(`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`), so this choice is
+only a normalization. The topology is Hausdorff.
 
 A continuous linear functional `T : BundleTest I F V →L_c[ℝ] ℝ` is a distribution paired with
 `V`-valued tests; the space of these functionals carries the topology of uniform convergence on
@@ -114,7 +114,7 @@ variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The test topology, computed in the preferred trivializations `trivializationAt F V x` over
 their base sets. Every covering family of smooth frames gives the same topology
-(`TauCeti.BundleTest.instTopologicalSpace_eq`). -/
+(`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`). -/
 instance instTopologicalSpace : TopologicalSpace (BundleTest I F V) :=
   compactlySupportedTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
     (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
@@ -186,7 +186,7 @@ variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames
 `e i` over open sets `U i` contained in their base sets: it does not depend on the frames. -/
-theorem instTopologicalSpace_eq [LocallyCompactSpace E] {ι : Type*}
+theorem instTopologicalSpace_eq_compactlySupportedTopology [LocallyCompactSpace E] {ι : Type*}
     (e : ι → Trivialization F (π F V)) [∀ i, MemTrivializationAtlas (e i)]
     (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
     (hcover : ∀ x : M, ∃ i, x ∈ U i) :
