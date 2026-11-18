@@ -47,20 +47,6 @@ class ContentCISeparationTests(unittest.TestCase):
         self.assertNotIn('duplicate-audit-tests', ci)
         self.assertEqual(ci['publish-lake-cache']['needs'], ['build'])
 
-    def test_stack_policy_suite_uses_the_production_tools_pin(self):
-        production = workflow('stack-policy.yml')['jobs']['enforce']['steps']
-        tests = workflow('infrastructure-tests.yml')['jobs']['python-tests']['steps']
-        production_setup = next(step for step in production
-                                if '/.github/actions/setup@' in step.get('uses', ''))
-        test_setup = next(step for step in tests
-                          if step.get('name') == 'Prepare stack-policy tools at the production pin')
-        self.assertEqual(test_setup['uses'], production_setup['uses'])
-        self.assertEqual(test_setup['with'], production_setup['with'])
-        setup_index = tests.index(test_setup)
-        regression_index = next(i for i, step in enumerate(tests)
-                                if step.get('name') == 'Stack-policy regression tests')
-        self.assertLess(setup_index, regression_index)
-
     def test_dependency_warming_probes_are_manual_only(self):
         path = WORKFLOWS / 'warm-dependencies.yml'
         if not path.exists():

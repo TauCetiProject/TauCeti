@@ -99,17 +99,18 @@ theorem tendsto_intervalIntegral_endLoop {M : Type*} [TopologicalSpace M]
     Tendsto (fun R : ℝ ↦ ∫ t in (0 : ℝ)..1, H q t (u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) atTop
       (𝓝 (∫ t in (0 : ℝ)..1, H q t (x t))) := by
-  refine tendsto_intervalIntegral_comp_of_tendsto_of_norm_le (hHc q) ?_
-    (Eventually.of_forall fun R t _ ↦ (Real.norm_eq_abs _).trans_le (hB q _ _)) fun t _ ↦ hx t
+  refine tendsto_intervalIntegral_comp_of_continuousOn (hHc q)
+    (fun _ ↦ (Real.norm_eq_abs _).trans_le (hB q _ _)) hu
+    (y := fun R t ↦ Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))
+    (Eventually.of_forall fun R ↦ (Complex.equivRealProdCLM.continuous.comp
+      ((q.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))).continuousOn) ?_
+    fun t _ ↦ hx t
   -- For `R > 0` the circle `±s = R` lies in `S`, where `u` is continuous.
-  filter_upwards [eventually_gt_atTop 0] with R hR
-  have hmem (t : ℝ) : Complex.equivRealProdCLM
-      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)) ∈ thricePuncturedSphereReal := by
-    rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
-    refine cylindricalEndLift_ne_zero_and_ne_one q ?_
-    rcases endSign_eq_one_or_eq_neg_one q with h | h <;> simp [h, hR]
-  exact (hu.comp_continuous (Complex.equivRealProdCLM.continuous.comp
-    ((q.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))) hmem).continuousOn
+  filter_upwards [eventually_gt_atTop 0] with R hR t _
+  rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
+  refine cylindricalEndLift_ne_zero_and_ne_one q ?_
+  rcases endSign_eq_one_or_eq_neg_one q with h | h <;> simp [h, hR]
 
 end Floer
 
