@@ -223,16 +223,8 @@ theorem forall_nonneg_iff_sigNeg_eq_zero (Q : _root_.QuadraticForm K M) :
       rintro rfl
       rw [map_zero, neg_zero] at hQx
       exact lt_irrefl 0 hQx
-    have hpos : ((-Q).restrict (Submodule.span K {x})).PosDef := by
-      rintro ⟨v, hv⟩ hv0
-      obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hv
-      have hc0 : c ≠ 0 := by
-        rintro rfl
-        exact hv0 (by simp)
-      rw [restrict_apply, neg_apply, Q.map_smul, smul_eq_mul]
-      have : -(c * c * Q x) = (c * c) * -Q x := by ring
-      rw [this]
-      exact mul_pos (mul_self_pos.mpr hc0) hQx
+    have hpos : ((-Q).restrict (Submodule.span K {x})).PosDef :=
+      QuadraticMap.posDef_restrict_span_singleton (Q := -Q) hQx
     have hrank : Module.finrank K (Submodule.span K {x}) = 1 := finrank_span_singleton hx0
     have hle := le_sigNeg_of_negDef (Q := Q) hpos
     rw [hrank, hsig] at hle
