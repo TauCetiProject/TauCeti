@@ -482,8 +482,9 @@ theorem extend_eventuallyEq_zero_of_forall_iteratedLineDeriv_eq_zero (x : U)
 private theorem iteratedLineDeriv_eq_zero_of_eventuallyEq (x : U)
     {f : boundedHolomorphicFunctions E U} (hf : extend f =ᶠ[𝓝 (x : V)] 0) (v : V) (k : ℕ) :
     iteratedLineDeriv x v k f = 0 := by
+  have hcontinuous : Continuous (fun t : ℂ => (x : V) + t • v) := by fun_prop
   have hline : Tendsto (fun t : ℂ => (x : V) + t • v) (𝓝 0) (𝓝 (x : V)) := by
-    simpa using (show Continuous (fun t : ℂ => (x : V) + t • v) by fun_prop).tendsto 0
+    simpa using hcontinuous.tendsto 0
   simpa [iteratedLineDeriv_apply, Function.comp_def] using
     (hf.comp_tendsto hline).iteratedDeriv_eq k
 
