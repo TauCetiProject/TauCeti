@@ -167,20 +167,28 @@ theorem boundaryEquation_moveConstBases
   by_cases hs : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1) <;>
     simp [boundaryEquation_snd_of_sign_eq, boundaryEquation_snd_of_sign_ne, hs]
 
+/-- The constant bases after moving those of `μ` are the constant bases of `Ω` on items outside
+`μ` and the constant bases on items `k` of `μ` moved to `Ω.dualItem μ k`, with their letter
+inverted when `ε(μ) ≠ ε(Δμ)`. -/
+theorem mem_constBases_moveConstBases {b : Fin Ω.numItems × (A × Bool)} :
+    b ∈ (Ω.moveConstBases μ).constBases ↔ (b ∈ Ω.constBases ∧ b.1 ∉ Ω.baseItems μ) ∨
+      ∃ b' ∈ Ω.constBases, b'.1 ∈ Ω.baseItems μ ∧ (Ω.dualItem μ b'.1,
+        (b'.2.1, if Ω.sign μ = Ω.sign (Ω.dual μ) then b'.2.2 else !b'.2.2)) = b := by
+  classical
+  grind
+
 /-- A constant base of an item outside `μ` is not moved. -/
 theorem mem_constBases_moveConstBases_of_notMem {b : Fin Ω.numItems × (A × Bool)}
-    (hb : b ∈ Ω.constBases) (hk : b.1 ∉ Ω.baseItems μ) : b ∈ (Ω.moveConstBases μ).constBases := by
-  classical
-  exact Finset.mem_image.2 ⟨b, hb, ite_eq_right hk⟩
+    (hb : b ∈ Ω.constBases) (hk : b.1 ∉ Ω.baseItems μ) : b ∈ (Ω.moveConstBases μ).constBases :=
+  (Ω.mem_constBases_moveConstBases μ).2 (.inl ⟨hb, hk⟩)
 
 /-- A constant base of an item `k` of `μ` is moved to the item `Ω.dualItem μ k`, with its letter
 inverted when `ε(μ) ≠ ε(Δμ)`. -/
 theorem mem_constBases_moveConstBases_of_mem {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) (hk : b.1 ∈ Ω.baseItems μ) :
     (Ω.dualItem μ b.1, (b.2.1, if Ω.sign μ = Ω.sign (Ω.dual μ) then b.2.2 else !b.2.2)) ∈
-      (Ω.moveConstBases μ).constBases := by
-  classical
-  exact Finset.mem_image.2 ⟨b, hb, ite_eq_left hk⟩
+      (Ω.moveConstBases μ).constBases :=
+  (Ω.mem_constBases_moveConstBases μ).2 (.inr ⟨b, hb, hk, rfl⟩)
 
 /-- Every equation of `Ω` is an equation of `Ω` with the constant bases of `μ` moved, or the
 coefficient equation of a constant base of an item of `μ`. -/
@@ -205,17 +213,13 @@ theorem equations_moveConstBases_subset_union :
       ((fun b => (Ω.dualItem μ b.1,
         (b.2.1, if Ω.sign μ = Ω.sign (Ω.dual μ) then b.2.2 else !b.2.2))) ''
           {b | b ∈ Ω.constBases ∧ b.1 ∈ Ω.baseItems μ}) := by
-  classical
   refine ((Ω.moveConstBases μ).forall_mem_equations (P := (· ∈ _))).2
     ⟨fun ν => ?_, fun b hb => ?_, fun c hc => ?_⟩
   · exact Or.inl ((basicEquation_moveConstBases Ω μ ν).symm ▸ Ω.basicEquation_mem_equations ν)
-  · obtain ⟨b', hb', rfl⟩ := Finset.mem_image.1 hb
-    rw [coeffEquation_moveConstBases]
-    by_cases hk : b'.1 ∈ Ω.baseItems μ
-    · rw [ite_eq_left hk]
-      exact Or.inr ⟨_, ⟨b', ⟨hb', hk⟩, rfl⟩, rfl⟩
-    · rw [ite_eq_right hk]
-      exact Or.inl (Ω.coeffEquation_mem_equations hb')
+  · rw [coeffEquation_moveConstBases]
+    rcases (Ω.mem_constBases_moveConstBases μ).1 hb with ⟨hb, -⟩ | ⟨b', hb', hk, rfl⟩
+    · exact Or.inl (Ω.coeffEquation_mem_equations hb)
+    · exact Or.inr ⟨_, ⟨b', ⟨hb', hk⟩, rfl⟩, rfl⟩
   · exact Or.inl ((boundaryEquation_moveConstBases Ω μ c).symm ▸
       Ω.boundaryEquation_mem_equations hc)
 
@@ -338,12 +342,9 @@ include h hΩ in
 /-- After the constant bases of `μ` are moved, no constant base lies on an item of `μ`. -/
 private theorem notMem_baseItems_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ (Ω.moveConstBases μ).constBases) : b.1 ∉ Ω.baseItems μ := by
-  classical
-  obtain ⟨b', -, rfl⟩ := Finset.mem_image.1 hb
-  by_cases hk : b'.1 ∈ Ω.baseItems μ
-  · rw [ite_eq_left hk]
-    exact dualItem_notMem h hΩ hk
-  · rwa [ite_eq_right hk]
+  rcases (Ω.mem_constBases_moveConstBases μ).1 hb with ⟨-, hk⟩ | ⟨b', -, hk, rfl⟩
+  · exact hk
+  · exact dualItem_notMem h hΩ hk
 
 variable (Ω μ) in
 /-- The word of the segment of `Δ(μ)` matched with the item `k` of `μ`, in the items of `Ω`. -/
@@ -627,25 +628,25 @@ private theorem coeffEquation_eq_iff (v : Fin Ω.numItems → H)
 
 /-! ### The substitution `π` -/
 
-private theorem wordMap_removeLonelyWord_apply (v : Fin (Ω.removeLonely μ h).numItems → H)
-    (k : Fin Ω.numItems) :
-    wordMap ι (Ω.removeLonelyWord μ h) v k = evalWord ι v (Ω.removeLonelyList μ h k) := by
+/-- At an assignment `v` of the items of the result in an `F(A)`-group, `π` sends the item `k` of
+`Ω` to the value of the word `Ω.removeLonelyList μ h k` at `v`. -/
+theorem wordMap_removeLonelyWord_apply (v : Fin (Ω.removeLonely μ h).numItems → H)
+    (k : Fin Ω.numItems) : wordMap ι (Ω.removeLonelyWord μ h) v k =
+      FreeGroup.lift (Sum.elim v (ι ∘ FreeGroup.of)) (FreeGroup.mk (Ω.removeLonelyList μ h k)) := by
   rw [wordMap_apply, removeLonelyWord, EqIneqSystem.eval_toGX, EqIneqSystem.eval_eq_lift]
-  rfl
 
 /-- `π` sends an item outside `μ` to the corresponding item of the result. -/
-private theorem wordMap_removeLonelyWord_orderEmbOfFin (v : Fin (Ω.removeLonely μ h).numItems → H)
+theorem wordMap_removeLonelyWord_orderEmbOfFin (v : Fin (Ω.removeLonely μ h).numItems → H)
     (j : Fin (Ω.baseItems μ)ᶜ.card) :
     wordMap ι (Ω.removeLonelyWord μ h) v ((Ω.baseItems μ)ᶜ.orderEmbOfFin rfl j) = v j := by
-  rw [wordMap_removeLonelyWord_apply, removeLonelyList_of_notMem, evalWord,
-    FreeGroup.lift_mk_singleton]
+  rw [wordMap_removeLonelyWord_apply, removeLonelyList_of_notMem, FreeGroup.lift_mk_singleton]
   rfl
 
 private theorem wordMap_removeLonelyWord_comp_of_mem (v : Fin Ω.numItems → H) {k : Fin Ω.numItems}
     (hk : k ∈ Ω.baseItems μ) :
     wordMap ι (Ω.removeLonelyWord μ h) (v ∘ (Ω.baseItems μ)ᶜ.orderEmbOfFin rfl) k =
       evalWord ι v (Ω.tiedSegment μ k) := by
-  rw [wordMap_removeLonelyWord_apply, ← evalWord_restoreWord,
+  rw [wordMap_removeLonelyWord_apply, ← evalWord.eq_1, ← evalWord_restoreWord,
     restoreWord_removeLonelyList_of_mem h hk, tiedSegment]
 
 private theorem wordMap_removeLonelyWord_comp_of_notMem (v : Fin Ω.numItems → H)
