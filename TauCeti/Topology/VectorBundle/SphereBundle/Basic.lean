@@ -44,9 +44,10 @@ where `E₀` is the complement of the zero section:
   retraction `v ↦ v / max 1 (ρ v)` (`TauCeti.gaugeDiscBundleHomotopyEquiv`);
 * the inclusion `S_ρ(E) → E₀` is a homotopy equivalence, with homotopy inverse the normalization
   `v ↦ v / ρ v` (`TauCeti.gaugeSphereBundleHomotopyEquiv`). For the unit sphere bundle the
-  inclusion `S(E) → E₀` (`TauCeti.sphereBundleInclusion`) and the normalization `v ↦ v / ‖v‖`
-  (`TauCeti.sphereBundleNormalization`) are morphisms of topological spaces, and the inclusion
-  induces isomorphisms on cohomology (`TauCeti.isIso_singularCohomologyMap_sphereBundleInclusion`).
+  inclusion `S(E) → E₀` (`TauCeti.sphereBundleInclusion`) is a morphism of topological spaces.
+  When the fibres are normed and the fibre norm is continuous on the total space, so is the
+  normalization `v ↦ v / ‖v‖` (`TauCeti.sphereBundleNormalization`), and the inclusion induces
+  isomorphisms on cohomology (`TauCeti.isIso_singularCohomologyMap_sphereBundleInclusion`).
 
 In both cases the homotopy is the straight line from the identity to the retraction, which only
 rescales each vector by a positive factor. In general they do not combine into a homotopy
@@ -59,17 +60,20 @@ every degree (`TauCeti.isIso_singularHomologyMap_gaugeDiscSpherePairMap` and
 
 So Thom classes may be read on any gauge disc-sphere pair, and the cohomology of the deleted total
 space `E₀` in the long exact sequence of the Thom pair is that of the sphere bundle, as in the
-Gysin sequence: with the connecting morphism `Hˡ(S(E)) ⟶ Hˡ⁺¹(E, E₀)` of the unit sphere bundle
-(`TauCeti.sphereBundleδ`), the sequence
+Gysin sequence. For these fibre-gauge comparisons no orientation, finite-dimensionality, norm on
+the fibres or condition on the base is needed. The rank zero case is included: there `S_ρ(E)` and
+`E₀` are empty and `D_ρ(E) = E`.
+
+For the unit sphere bundle of a bundle with normed fibres whose fibre norm is continuous on the
+total space, with the connecting morphism `Hˡ(S(E)) ⟶ Hˡ⁺¹(E, E₀)` (`TauCeti.sphereBundleδ`), the
+sequence
 
 `⋯ ⟶ Hᵐ(E, E₀) ⟶ Hᵐ(B) ⟶ Hᵐ(S(E)) ⟶ Hᵐ⁺¹(E, E₀) ⟶ Hᵐ⁺¹(B) ⟶ ⋯`
 
 of the Euler class maps, the pullback along `S(E) → B` and `TauCeti.sphereBundleδ` is exact
 (`TauCeti.exact_eulerClass_singularCohomologyMap_sphereBundleProj`,
 `TauCeti.exact_singularCohomologyMap_sphereBundleProj_sphereBundleδ`,
-`TauCeti.exact_sphereBundleδ_eulerClass`). No orientation, finite-dimensionality, norm on the
-fibres or condition on the base is needed. The rank zero case is included: there `S_ρ(E)` and `E₀`
-are empty and `D_ρ(E) = E`.
+`TauCeti.exact_sphereBundleδ_eulerClass`).
 
 ## References
 
