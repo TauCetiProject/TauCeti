@@ -417,6 +417,13 @@ theorem norm_restrictL_le_one : ‖restrictL (α := α) (E := E) (F := F) ha hb�
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb f
 
+variable (ha hb) in
+/-- Restriction to a smaller slab does not increase the norm, applied form. -/
+theorem norm_restrictL_le (f : ParabolicC1HolderSpace α E F a b) :
+    ‖restrictL ha hb f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb f
+
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
 theorem restrictL_self (f : ParabolicC1HolderSpace α E F a b) :

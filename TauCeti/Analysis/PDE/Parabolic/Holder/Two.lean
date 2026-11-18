@@ -567,6 +567,13 @@ theorem hasFDerivAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) {t : �
       (timeExtension hab.le (spatialFDerivL f) y t) y := by
   simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
 
+/-- The spatial slices of the extension of `D_x u` constant in time have the gradient `D_x² u`. -/
+theorem hasFDerivAt_timeExtension_spatialFDerivL (f : ParabolicC2HolderSpace α E F hab) {t : ℝ}
+    (ht : t ∈ Icc a b) (y : E) :
+    HasFDerivAt (fun z ↦ timeExtension hab.le (spatialFDerivL f) z t)
+      (timeExtension hab.le (spatialSecondFDerivL f) y t) y := by
+  simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialSecondFDerivAt ⟨t, ht⟩ y
+
 /-- The time slices of the extension of `u` constant in time have the time derivative `∂ₜ u` on
 `[a, b]`. -/
 theorem hasDerivWithinAt_timeExtension (f : ParabolicC2HolderSpace α E F hab) (x : E)
@@ -580,18 +587,13 @@ theorem timeEHolderNorm_spatialFDeriv_le (f : ParabolicC2HolderSpace α E F hab)
     timeEHolderNorm ((1 + α) / 2) (spatialFDerivL f : _ → _) ≤
       eHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) +
         eHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _) := by
-  have hxx : ∀ t ∈ Icc a b, ∀ x,
-      HasFDerivAt (fun y ↦ timeExtension hab.le (spatialFDerivL f) y t)
-        (timeExtension hab.le (spatialSecondFDerivL f) x t) x := by
-    intro t ht x
-    simpa [timeExtension, projIcc_of_mem hab.le ht] using
-      f.hasSpatialSecondFDerivAt ⟨t, ht⟩ x
   have h := timeEHolderNorm_le_eHolderNorm_add_eHolderNorm
     (E := E) (F := F) (a := a) (b := b)
     (u := timeExtension hab.le f) (u' := timeExtension hab.le (spatialFDerivL f))
     (u'' := timeExtension hab.le (spatialSecondFDerivL f))
     (uₜ := timeExtension hab.le (timeDerivL f)) α
-    (fun t ht x ↦ f.hasFDerivAt_timeExtension ht x) hxx
+    (fun t ht x ↦ f.hasFDerivAt_timeExtension ht x)
+    (fun t ht x ↦ f.hasFDerivAt_timeExtension_spatialFDerivL ht x)
     fun x t ht ↦ f.hasDerivWithinAt_timeExtension x ht
   simpa only [timeExtension_of_mem, slabMk_space_slabTime,
     HolderSpace.coe_toBoundedContinuousFunction] using h

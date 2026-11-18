@@ -209,14 +209,9 @@ private theorem eHolderNorm_valueL_add_eHolderNorm_spatialFDerivL_le (hα : α �
             nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) +
             nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) +
         14 * ε ^ (-(1 + (α : ℝ))) * ‖valueL f‖₊) := by
-  have hxx : ∀ t ∈ Icc a b, ∀ y,
-      HasFDerivAt (fun z ↦ timeExtension hab.le (spatialFDerivL f) z t)
-        (timeExtension hab.le (spatialSecondFDerivL f) y t) y := by
-    intro t ht y
-    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using
-      f.hasSpatialSecondFDerivAt ⟨t, ht⟩ y
   have h := ParabolicSpaceTime.eHolderNorm_add_eHolderNorm_le hα hε hε₁
-    (fun t ht y ↦ f.hasFDerivAt_timeExtension ht y) hxx
+    (fun t ht y ↦ f.hasFDerivAt_timeExtension ht y)
+    (fun t ht y ↦ f.hasFDerivAt_timeExtension_spatialFDerivL ht y)
     (fun y t ht ↦ f.hasDerivWithinAt_timeExtension y ht)
     (M₀ := ‖valueL f‖₊) (M₂ := ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖₊)
     (Mₜ := ‖(timeDerivL f).toBoundedContinuousFunction‖₊)
