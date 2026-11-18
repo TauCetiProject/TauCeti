@@ -19,7 +19,8 @@ scalars. Real and imaginary parts identify this real vector space with a pair of
 function spaces, and conjugation is a real algebra involution. Differentiation commutes with
 real and imaginary parts at every nonzero differentiability order. Precomposition with a
 smooth map is a complex algebra homomorphism (`ContMDiffMap.compRightComplexAlgHom`), used
-to pull back complex-valued differential data.
+to pull back complex-valued differential data, and so is evaluation at a point
+(`ContMDiffMap.complexEvalAlgHom`).
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -80,6 +81,21 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem complex_smul_apply (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     (z • f) x = z * f x := by
   rfl
+
+/-- Evaluation at a point, as a complex algebra homomorphism from the real-smooth complex-valued
+functions to `ℂ`. This is the complex version of `ContMDiffMap.evalAlgHom`. -/
+def complexEvalAlgHom (x : M) : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₐ[ℂ] ℂ where
+  toFun f := f x
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+@[simp]
+theorem complexEvalAlgHom_apply (x : M) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    complexEvalAlgHom x f = f x :=
+  (rfl)
 
 section Pullback
 
