@@ -53,9 +53,8 @@ decomposition follows from the regular one.
 * `TauCeti.RegularFormClass.eq_hyperbolicClass_iff_not_anisotropic_of_rank_eq_two`: a class of
   rank two is the hyperbolic class exactly when it is isotropic.
 * `TauCeti.RegularFormClass.wittIndex_mk_binary_of_isSquare`,
-  `TauCeti.RegularFormClass.wittIndex_mk_binary_of_not_isSquare`,
-  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_isSquare`: the Witt index of `⟨a, b⟩`,
-  and its anisotropic part when it is hyperbolic.
+  `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_isSquare`: the Witt index and the
+  anisotropic part of `⟨a, b⟩` when it is hyperbolic.
 * `QuadraticForm.exists_equivalent_hyperbolicPresentation_prod`: the decomposition read as an
   isometry of quadratic forms.
 * `QuadraticForm.mem_unitValueSet_iff_not_anisotropic_mk_rankOne_add`: a regular form represents
@@ -405,14 +404,6 @@ theorem RegularFormClass.anisotropicPart_mk_binary_of_isSquare {a b : Kˣ}
     RegularFormClass.anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 0 := by
   rw [(RegularFormClass.mk_binary_eq_hyperbolicClass_iff a b).mpr h,
     RegularFormClass.anisotropicPart_hyperbolicClass]
-
-/-- The Witt index of `⟨a, b⟩` is `0` when `-ab` is not a square. -/
-@[simp]
-theorem RegularFormClass.wittIndex_mk_binary_of_not_isSquare {a b : Kˣ}
-    (h : ¬IsSquare (-(a * b))) :
-    RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 0 :=
-  RegularFormClass.wittIndex_eq_zero_iff.mpr
-    ((RegularFormClass.anisotropic_mk_binary_iff a b).mpr h)
 
 end Decomposition
 
