@@ -27,9 +27,10 @@ multiplied by a function `f` of both variables it acts as `f D ξ + (∂s f) ξ 
 `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B` (`norm_floerLinearization_fun_smul_sq_le`). On a direction
 multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ` (`floerLinearization_smul_fst`); in
 particular, conjugated by an exponential weight `e^{δ s}` it becomes `floerLinearization - δ`
-(`floerLinearization_exp_smul`). Its value at a point depends only on the germ of the direction there (`floerLinearization_congr_of_eventuallyEq`), so
-it vanishes off the support of the direction (`floerLinearization_of_notMem_tsupport`), and on
-the Floer data only through their values at that point (`floerLinearization_congr_data`). For
+(`floerLinearization_exp_smul`). Its value at a point depends only on the germ of the direction
+there (`floerLinearization_congr_of_eventuallyEq`), so it vanishes off the support of the direction
+(`floerLinearization_of_notMem_tsupport`), and on the Floer data only through their values at that
+point (`floerLinearization_congr_data`). For
 `C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
 are `C¹` (`continuousAt_floerLinearization`), and continuous everywhere when they are so
 everywhere (`continuous_floerLinearization`), or when the direction is supported in an open set

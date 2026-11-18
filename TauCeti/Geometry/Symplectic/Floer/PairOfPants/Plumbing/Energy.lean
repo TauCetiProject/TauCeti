@@ -406,7 +406,9 @@ theorem integrableOn_hamiltonianCurvature_plumbedTruncation (ω : SmoothTwoForm 
         z (u z)) (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) := by
   have hR₀ (r r' : Puncture) : 0 ≤ Function.update (fun _ ↦ R) r (L / 2) r' :=
     le_update_iff (x := fun _ ↦ (0 : ℝ)).2 ⟨by linarith, fun _ _ ↦ by linarith⟩ r'
-  rw [preimage_plumbedTruncation hq L R, preimage_truncation_inter_eq_preimage_truncationAt q hR,
+  rw [preimage_plumbedTruncation hq L R]
+  simp only [← endHeight_apply]
+  rw [preimage_truncation_inter_eq_preimage_truncationAt q hR,
     preimage_truncation_inter_eq_preimage_truncationAt inf hR]
   exact (integrableOn_hamiltonianCurvature_plumbedPerturbation_receiving ω hq hHb hHbs hab hL
     (hR₀ q) (by simp) hu).union
