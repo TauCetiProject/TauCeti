@@ -507,12 +507,32 @@ lemma relativeMayerVietoris_isPullback {k : ℕ}
         (t := V))) R k)
       (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_right) R k)
       (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_left) R k)
-      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) :=
-  IsPullback.of_exact_shortComplex ⟨by
-      simpa [relativeMayerVietorisToBiprod, relativeMayerVietorisFromBiprod, add_neg_eq_zero,
-        -relativeMayerVietorisToBiprod_fromBiprod] using
-        relativeMayerVietorisToBiprod_fromBiprod R U V k⟩
-    (relativeMayerVietoris_exact₂ R hU hV k) (mono_relativeMayerVietorisToBiprod R hU hV h)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) := by
+  have sq : CommSq
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) (Set.inter_subset_left (s := U)
+        (t := V))) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_right) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_left) R k)
+      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 X) Set.subset_union_right) R k) := by
+    have hw := relativeMayerVietorisToBiprod_fromBiprod R U V k
+    rw [← Category.id_comp (relativeMayerVietorisFromBiprod R U V k), ← biprod.total] at hw
+    simp only [Preadditive.add_comp, Preadditive.comp_add, Category.assoc,
+      relativeMayerVietorisToBiprod_fst_assoc, relativeMayerVietorisToBiprod_snd_assoc,
+      inl_relativeMayerVietorisFromBiprod, inr_relativeMayerVietorisFromBiprod,
+      Preadditive.neg_comp, add_neg_eq_zero] at hw
+    exact ⟨hw⟩
+  -- The short complex of the square is the relative Mayer–Vietoris sequence at
+  -- `Hₖ(X, U) ⊞ Hₖ(X, V)`, componentwise by the identity.
+  have e : sq.shortComplex ≅
+      ShortComplex.mk _ _ (relativeMayerVietorisToBiprod_fromBiprod R U V k) := by
+    refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_
+    · dsimp [CommSq.shortComplex]
+      apply biprod.hom_ext <;> simp
+    · dsimp [CommSq.shortComplex]
+      apply biprod.hom_ext' <;> simp
+  obtain ⟨hex, hmono⟩ := (ShortComplex.exact_and_mono_f_iff_of_iso e).2
+    ⟨relativeMayerVietoris_exact₂ R hU hV k, mono_relativeMayerVietorisToBiprod R hU hV h⟩
+  exact IsPullback.of_exact_shortComplex sq hex hmono
 
 /-- The map `H₀(X, U) ⊞ H₀(X, V) ⟶ H₀(X, U ∪ V)` at the end of the relative Mayer–Vietoris
 sequence is an epimorphism, for any subspaces `U` and `V`: already `H₀(X, U) ⟶ H₀(X, U ∪ V)` is,

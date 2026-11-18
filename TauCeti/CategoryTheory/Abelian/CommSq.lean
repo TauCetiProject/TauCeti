@@ -44,6 +44,9 @@ variable {C : Type*} [Category* C] [Preadditive C]
 /-- The two short complexes `P ⟶ B ⊞ D ⟶ Z` of a commutative square, with maps `(a, -b)`,
 `(c, d)` and with maps `(a, b)`, `(c, -d)`, are isomorphic through the sign change of the summand
 `D`. -/
+-- The body is exposed so that `simps!` can state its components, among them the sign change
+-- `biprod.map (𝟙 B) (-𝟙 D)` on the middle term, as definitional simp lemmas.
+@[expose, simps!]
 noncomputable def CommSq.shortComplexIsoShortComplex' {P B D Z : C} {a : P ⟶ B} {b : P ⟶ D}
     {c : B ⟶ Z} {d : D ⟶ Z} [HasBinaryBiproduct B D] (sq : CommSq a b c d) :
     sq.shortComplex ≅ sq.shortComplex' :=

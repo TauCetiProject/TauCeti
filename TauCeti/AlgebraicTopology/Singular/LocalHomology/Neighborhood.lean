@@ -65,7 +65,7 @@ variable {J : Type*} [Category J] {S : Set M} {K : J → Set M} (hK : ∀ ⦃i j
 -- `LocalHomology/KSheaf.lean`, compare them componentwise by `Iso.refl`.
 /-- The pairs `(M, M ∖ K j)` over a category `J` of sets `K j`, with the maps induced by the
 identity of `M`. -/
-@[expose]
+@[expose, simps]
 def complPairDiagram : J ⥤ TopPair.{w} where
   obj j := TopPair.ofSubset ((K j)ᶜ : Set (TopCat.of M))
   map f := TopPair.ofSubsetMap (𝟙 _) (compl_subset_compl.2 (hK f))
@@ -73,7 +73,7 @@ def complPairDiagram : J ⥤ TopPair.{w} where
   map_comp _ _ := TopPair.ofSubsetMap_comp (𝟙 _) (𝟙 _) _ _ _
 
 /-- The cocone of the pairs `(M, M ∖ K j)` over the pair `(M, M ∖ S)`, for sets `K j ⊇ S`. -/
-@[expose]
+@[expose, simps]
 def complPairCocone : Cocone (complPairDiagram hK) where
   pt := TopPair.ofSubset (Sᶜ : Set (TopCat.of M))
   ι := { app j := TopPair.ofSubsetMap (𝟙 _) (compl_subset_compl.2 (hSK j))

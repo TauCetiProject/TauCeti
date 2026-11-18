@@ -113,6 +113,8 @@ theorem isPullback_localHomologyKPresheaf_map [T2Space M] {k : ℕ}
       ((localHomologyKPresheaf R M k).map (opHomOfLE sq.le₁₂))
       ((localHomologyKPresheaf R M k).map (opHomOfLE sq.le₁₃)) := by
   obtain ⟨rfl, rfl⟩ := sq
+  -- The coercions of `K₂ ⊓ K₃` and `K₂ ⊔ K₃` to sets are definitionally `↑K₂ ∩ ↑K₃` and
+  -- `↑K₂ ∪ ↑K₃` (`Compacts.coe_inf`, `Compacts.coe_sup`).
   exact isPullback_localHomologyRestriction K₂.isCompact.isClosed K₃.isCompact.isClosed h
 
 section LocallyCompact
