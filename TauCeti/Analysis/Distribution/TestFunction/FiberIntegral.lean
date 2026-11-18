@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Submersion
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -94,7 +94,7 @@ private theorem linearCoordImage_subset :
       (Ω' : Set E') ×ˢ ((⊤ : Opens (A : E →ₗ[ℝ] E').ker) : Set (A : E →ₗ[ℝ] E').ker) := by
   intro p hp
   refine ⟨?_, trivial⟩
-  have h := hW (show (linearCoord hA).symm p ∈ W from hp)
+  have h := hW (by simpa [linearCoordImage] using hp)
   rwa [← linearCoord_apply_fst hA, ContinuousLinearEquiv.apply_symm_apply] at h
 
 variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
@@ -103,25 +103,23 @@ variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
 
 /-- The constant comparing `μ` with the product of `ν` and a Haar measure on `ker A`, through
 `linearCoord`. -/
-private def linearScale : ℝ :=
+private def linearScale : NNReal :=
   Measure.addHaarScalarFactor (μ.map (linearCoord hA)) (ν.prod Measure.addHaar)
 
 private theorem map_linearCoord :
-    μ.map (linearCoord hA) =
-      Measure.addHaarScalarFactor (μ.map (linearCoord hA)) (ν.prod Measure.addHaar) •
-        ν.prod Measure.addHaar :=
+    μ.map (linearCoord hA) = linearScale hA μ ν • ν.prod Measure.addHaar :=
   Measure.isAddLeftInvariant_eq_smul _ _
 
 /-- Fibre integration along a surjective linear map `A`: `y ↦ c ∫ k, ψ (L⁻¹ (y, k)) dk`. -/
 private def linearFiberIntegral : 𝓓(W, ℝ) →L[ℝ] 𝓓(Ω', ℝ) :=
-  linearScale hA μ ν •
+  (linearScale hA μ ν : ℝ) •
     (Distribution.ofFun ⊤ (fun _ ↦ (1 : ℝ)) Measure.addHaar ⊤).partialPairing
       (linearCoordImage_subset hA hW) ∘L
     (linearCoord hA).transportTestFunction (mapsTo_linearCoord hA W)
 
 private theorem linearFiberIntegral_apply (ψ : 𝓓(W, ℝ)) (y : E') :
     linearFiberIntegral hA hW μ ν ψ y =
-      linearScale hA μ ν * ∫ k, ψ ((linearCoord hA).symm (y, k)) ∂Measure.addHaar := by
+      (linearScale hA μ ν : ℝ) * ∫ k, ψ ((linearCoord hA).symm (y, k)) ∂Measure.addHaar := by
   simp only [linearFiberIntegral, ContinuousLinearMap.comp_apply, smul_apply,
     Distribution.partialPairing_apply, smul_eq_mul]
   rw [Distribution.ofFun_apply (locallyIntegrableOn_const _)]
@@ -147,17 +145,15 @@ private theorem integral_linearFiberIntegral_smul (ψ : 𝓓(W, ℝ)) {g : E' �
       ((Function.support_smul_subset_left _ _).trans (subset_tsupport _))).1
       (hc.integrableOn_compact hK)
   calc ∫ y, linearFiberIntegral hA hW μ ν ψ y • g y ∂ν
-      = linearScale hA μ ν • ∫ y, (∫ k, ψ' (y, k) ∂Measure.addHaar) • g y ∂ν := by
-        simp_rw [linearFiberIntegral_apply, mul_smul, integral_smul, hψ']
-        rfl
-    _ = linearScale hA μ ν • ∫ p, ψ' p • g p.1 ∂(ν.prod Measure.addHaar) := by
+      = (linearScale hA μ ν : ℝ) • ∫ y, (∫ k, ψ' (y, k) ∂Measure.addHaar) • g y ∂ν := by
+        simp_rw [linearFiberIntegral_apply, mul_smul, integral_smul, hψ', L]
+    _ = (linearScale hA μ ν : ℝ) • ∫ p, ψ' p • g p.1 ∂(ν.prod Measure.addHaar) := by
         rw [integral_prod _ hint]
         simp_rw [integral_smul_const]
     _ = ∫ p, ψ' p • g p.1 ∂(μ.map L) := by
-        rw [map_linearCoord hA μ ν, integral_smul_nnreal_measure]
-        rfl
+        rw [map_linearCoord hA μ ν, integral_smul_nnreal_measure, NNReal.smul_def]
     _ = ∫ x, ψ x • g (A x) ∂μ := by
-        rw [show (⇑L) = ⇑L.toHomeomorph.toMeasurableEquiv from rfl, integral_map_equiv]
+        rw [← L.coe_toHomeomorph, ← Homeomorph.toMeasurableEquiv_coe, integral_map_equiv]
         simp [hψ', L, linearCoord_apply_fst]
 
 end Linear
@@ -183,12 +179,23 @@ private theorem exists_chart (a : Ω) :
 private def chart (a : Ω) : OpenPartialHomeomorph E E :=
   (exists_chart hf hsurj a).choose
 
-private theorem chart_spec (a : Ω) :
-    (a : E) ∈ (chart hf hsurj a).source ∧ (chart hf hsurj a).source ⊆ Ω ∧
-      ContDiffOn ℝ ∞ (chart hf hsurj a) (chart hf hsurj a).source ∧
-      ContDiffOn ℝ ∞ (chart hf hsurj a).symm (chart hf hsurj a).target ∧
-      EqOn f (fderiv ℝ f a ∘ chart hf hsurj a) (chart hf hsurj a).source :=
-  (exists_chart hf hsurj a).choose_spec
+private theorem mem_chart_source (a : Ω) : (a : E) ∈ (chart hf hsurj a).source :=
+  (exists_chart hf hsurj a).choose_spec.1
+
+private theorem chart_source_subset (a : Ω) : (chart hf hsurj a).source ⊆ Ω :=
+  (exists_chart hf hsurj a).choose_spec.2.1
+
+private theorem contDiffOn_chart (a : Ω) :
+    ContDiffOn ℝ ∞ (chart hf hsurj a) (chart hf hsurj a).source :=
+  (exists_chart hf hsurj a).choose_spec.2.2.1
+
+private theorem contDiffOn_chart_symm (a : Ω) :
+    ContDiffOn ℝ ∞ (chart hf hsurj a).symm (chart hf hsurj a).target :=
+  (exists_chart hf hsurj a).choose_spec.2.2.2.1
+
+private theorem eqOn_chart (a : Ω) :
+    EqOn f (fderiv ℝ f a ∘ chart hf hsurj a) (chart hf hsurj a).source :=
+  (exists_chart hf hsurj a).choose_spec.2.2.2.2
 
 /-- The source of the chart at `a`, as an open set. -/
 private def chartSource (a : Ω) : Opens E :=
@@ -202,14 +209,14 @@ include hfΩ in
 private theorem mapsTo_chart (a : Ω) :
     MapsTo (chart hf hsurj a) (chartSource hf hsurj a) (chartTarget (f := f) (Ω' := Ω') a) := by
   intro x hx
-  have h := (chart_spec hf hsurj a).2.2.2.2 hx
+  have h := eqOn_chart hf hsurj a hx
   simp only [Function.comp_apply] at h
   rw [chartTarget, Opens.coe_mk, mem_preimage, ← h]
-  exact hfΩ ((chart_spec hf hsurj a).2.1 hx)
+  exact hfΩ (chart_source_subset hf hsurj a hx)
 
 private theorem iSup_chartSource : ⨆ a, chartSource hf hsurj a = Ω := by
-  refine le_antisymm (iSup_le fun a _ hx ↦ (chart_spec hf hsurj a).2.1 hx) fun x hx ↦ ?_
-  exact Opens.mem_iSup.2 ⟨⟨x, hx⟩, (chart_spec hf hsurj ⟨x, hx⟩).1⟩
+  refine le_antisymm (iSup_le fun a _ hx ↦ chart_source_subset hf hsurj a hx) fun x hx ↦ ?_
+  exact Opens.mem_iSup.2 ⟨⟨x, hx⟩, mem_chart_source hf hsurj ⟨x, hx⟩⟩
 
 end Chart
 
@@ -218,37 +225,6 @@ section Submersion
 variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
   (μ : Measure E) [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A function continuous on an open set `N` whose products with all smooth functions compactly
-supported in `N` have integral zero vanishes on `N`. -/
-private theorem eqOn_zero_of_integral_smul_eq_zero {N : Set E'} (hN : IsOpen N) {d : E' → ℝ}
-    (hd : ContinuousOn d N)
-    (h : ∀ g : E' → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ N →
-      ∫ y, d y • g y ∂ν = 0) :
-    EqOn d 0 N := by
-  have hae := hN.ae_eq_zero_of_integral_contDiff_smul_eq_zero (hd.locallyIntegrableOn
-    hN.measurableSet) fun g hg hgc hgN ↦ by simpa [mul_comm] using h g hg hgc hgN
-  exact ν.eqOn_open_of_ae_eq ((ae_restrict_iff' hN.measurableSet).2 hae) hN hd continuousOn_const
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A test function on `Ω'` is determined by its integrals against smooth functions compactly
-supported in `Ω'`. -/
-private theorem eq_of_forall_integral_smul_eq {h₁ h₂ : 𝓓(Ω', ℝ)}
-    (h : ∀ g : E' → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ Ω' →
-      ∫ y, h₁ y • g y ∂ν = ∫ y, h₂ y • g y ∂ν) :
-    h₁ = h₂ := by
-  have hint (k : 𝓓(Ω', ℝ)) {g : E' → ℝ} (hg : Continuous g) : Integrable (fun y ↦ k y • g y) ν :=
-    (k.continuous.smul hg).integrable_of_hasCompactSupport k.hasCompactSupport.smul_right
-  have hEq := eqOn_zero_of_integral_smul_eq_zero ν Ω'.isOpen (d := ⇑h₁ - ⇑h₂)
-    (h₁.continuous.sub h₂.continuous).continuousOn fun g hg hgc hgN ↦ by
-      simp_rw [Pi.sub_apply, sub_smul]
-      rw [integral_sub (hint h₁ hg.continuous) (hint h₂ hg.continuous), h g hg hgc hgN, sub_self]
-  ext y
-  by_cases hy : y ∈ (Ω' : Set E')
-  · simpa [sub_eq_zero] using hEq hy
-  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy (h₁.tsupport_subset h),
-      image_eq_zero_of_notMem_tsupport fun h ↦ hy (h₂.tsupport_subset h)]
-
 variable {f : E → E'} (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
   (hsurj : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ f x))
 
@@ -256,8 +232,8 @@ variable {f : E → E'} (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
 the chart followed by fibre integration along `Df(a)`. -/
 private def localFiberIntegral (a : Ω) : 𝓓(chartSource hf hsurj a, ℝ) →L[ℝ] 𝓓(Ω', ℝ) :=
   linearFiberIntegral (hsurj a a.2) (W := chartTarget (f := f) (Ω' := Ω') a) (fun _ hx ↦ hx) μ ν ∘L
-    pushforwardCLM (chart hf hsurj a) (chart_spec hf hsurj a).2.2.1
-      (chart_spec hf hsurj a).2.2.2.1 subset_rfl (mapsTo_chart hf hfΩ hsurj a)
+    pushforwardCLM (chart hf hsurj a) (contDiffOn_chart hf hsurj a)
+      (contDiffOn_chart_symm hf hsurj a) subset_rfl (mapsTo_chart hf hfΩ hsurj a)
 
 /-- The defining identity of the local fibre integrals. -/
 private theorem integral_localFiberIntegral_smul {G : Type*} [NormedAddCommGroup G]
@@ -267,14 +243,13 @@ private theorem integral_localFiberIntegral_smul {G : Type*} [NormedAddCommGroup
   set Θ := chart hf hsurj a
   set A := fderiv ℝ f a
   calc ∫ y, localFiberIntegral μ ν hf hfΩ hsurj a φ y • g y ∂ν
-      = ∫ z, pushforwardCLM Θ (chart_spec hf hsurj a).2.2.1 (chart_spec hf hsurj a).2.2.2.1
+      = ∫ z, pushforwardCLM Θ (contDiffOn_chart hf hsurj a) (contDiffOn_chart_symm hf hsurj a)
           subset_rfl (mapsTo_chart hf hfΩ hsurj a) φ z • g (A z) ∂μ :=
         integral_linearFiberIntegral_smul (hsurj a a.2) (fun _ hx ↦ hx) μ ν _ hg
     _ = ∫ x, φ x • g (A (Θ x)) ∂μ := integral_pushforwardCLM_smul μ φ (fun z ↦ g (A z))
     _ = ∫ x, φ x • g (f x) ∂μ := integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
   by_cases hx : x ∈ (chart hf hsurj a).source
-  · simp only [(chart_spec hf hsurj a).2.2.2.2 hx]
-    rfl
+  · simp only [eqOn_chart hf hsurj a hx, Function.comp_apply, A, Θ]
   · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h)]
 
 /-- The local fibre integrals agree on tests supported in the overlap of two chart sources. -/
@@ -282,7 +257,8 @@ private theorem localFiberIntegral_monoCLM (a b : Ω)
     (φ : 𝓓(chartSource hf hsurj a ⊓ chartSource hf hsurj b, ℝ)) :
     localFiberIntegral μ ν hf hfΩ hsurj a (monoCLM ℝ φ) =
       localFiberIntegral μ ν hf hfΩ hsurj b (monoCLM ℝ φ) :=
-  eq_of_forall_integral_smul_eq ν fun g hg _ _ ↦ by
+  ext_of_forall_integral_smul_eq (μ := ν) fun g hg _ _ ↦ by
+    simp_rw [smul_eq_mul, mul_comm (g _), ← smul_eq_mul]
     rw [integral_localFiberIntegral_smul μ ν hf hfΩ hsurj a _ hg.continuous.continuousOn,
       integral_localFiberIntegral_smul μ ν hf hfΩ hsurj b _ hg.continuous.continuousOn]
     simp
@@ -324,7 +300,7 @@ theorem integral_fiberIntegralCLM_smul {G : Type*} [NormedAddCommGroup G] [Norme
       simp only [ContinuousLinearMap.comp_apply]
       rw [integralAgainstBilinCLM_eq_integral (hg.locallyIntegrableOn Ω'.isOpen.measurableSet),
         integralAgainstBilinCLM_eq_integral (hgf.locallyIntegrableOn Ω.isOpen.measurableSet)]
-      have hle : chartSource hf hsurj a ≤ Ω := fun x hx ↦ (chart_spec hf hsurj a).2.1 hx
+      have hle : chartSource hf hsurj a ≤ Ω := fun x hx ↦ chart_source_subset hf hsurj a hx
       simpa [hle] using integral_localFiberIntegral_smul μ ν hf hfΩ hsurj a ψ hg
   have := congrArg (fun S ↦ S φ) h
   simp only [ContinuousLinearMap.comp_apply] at this
@@ -338,10 +314,11 @@ theorem eq_fiberIntegralCLM_iff {φ : 𝓓(Ω, ℝ)} {ψ : 𝓓(Ω', ℝ)} :
     ψ = fiberIntegralCLM μ ν f hf hfΩ hsurj φ ↔
       ∀ g : E' → ℝ, ContDiff ℝ ∞ g → HasCompactSupport g → tsupport g ⊆ Ω' →
         ∫ y, ψ y • g y ∂ν = ∫ x, φ x • g (f x) ∂μ := by
-  refine ⟨?_, fun h ↦ eq_of_forall_integral_smul_eq ν fun g hg hgc hgΩ ↦ ?_⟩
+  refine ⟨?_, fun h ↦ ext_of_forall_integral_smul_eq (μ := ν) fun g hg hgc hgΩ ↦ ?_⟩
   · rintro rfl g hg - -
     exact integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ hg.continuous.continuousOn
-  · rw [h g hg hgc hgΩ, integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ
+  · simp_rw [smul_eq_mul, mul_comm (g _), ← smul_eq_mul]
+    rw [h g hg hgc hgΩ, integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ
       hg.continuous.continuousOn]
 
 /-- The fibre integral of `φ` is supported in the image under `f` of the support of `φ`. -/
@@ -353,8 +330,9 @@ theorem tsupport_fiberIntegralCLM_subset (φ : 𝓓(Ω, ℝ)) :
   by_contra hyK
   -- Off the compact set `f '' supp φ`, the fibre integral has zero integral against every test
   -- function, so it vanishes there.
-  refine hy (eqOn_zero_of_integral_smul_eq_zero ν hK.isClosed.isOpen_compl
+  refine hy (hK.isClosed.isOpen_compl.eqOn_zero_of_integral_contDiff_smul_eq_zero (μ := ν)
     (fiberIntegralCLM μ ν f hf hfΩ hsurj φ).continuous.continuousOn (fun g hg _ hgK ↦ ?_) hyK)
+  simp_rw [smul_eq_mul, mul_comm (g _), ← smul_eq_mul]
   rw [integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj φ hg.continuous.continuousOn]
   have h0 : (fun x ↦ φ x • g (f x)) = 0 := funext fun x ↦ by
     by_cases hx : x ∈ tsupport φ

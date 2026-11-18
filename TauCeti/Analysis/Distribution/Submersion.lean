@@ -22,8 +22,8 @@ where `f_♯ φ` is the integral of the test density `φ` over the fibres of `f`
 (`TestFunction.fiberIntegralCLM`). No condition on the wave front set of `T` is needed: the normal
 set `{(f x, η) | η ≠ 0, (Df x)ᵀ η = 0}` of a submersion is empty. On the distribution of a function
 `g` continuous on `Ω'`, the pullback is the distribution of `g ∘ f`
-(`Distribution.compCLMOfSubmersion_ofFun`); the support of `f^* T` lies in the preimage of the
-support of `T`; and when `f` is a change of variables and `μ = ν`, `f^*` is the pullback
+(`Distribution.compCLMOfSubmersion_ofFun`); on `Ω`, the support of `f^* T` lies in the preimage
+of the support of `T`; and when `f` is a change of variables and `μ = ν`, `f^*` is the pullback
 `Distribution.compCLMOfOpenPartialHomeomorph`.
 
 Typical submersions are the projections of a product, coordinate charts followed by projections,
