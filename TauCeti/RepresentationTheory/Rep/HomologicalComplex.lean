@@ -102,6 +102,21 @@ theorem repResForget₂Iso_hom_f (n : ι) :
 theorem repResForget₂Iso_inv_f (n : ι) :
     (D.repResForget₂Iso φ).inv.f n = 𝟙 _ := (rfl)
 
+/-- Forgetting the group action commutes naturally with restricting a map of representation
+complexes along a monoid homomorphism. -/
+@[reassoc]
+theorem repResForget₂Iso_hom_naturality {D₁ D₂ : HomologicalComplex (Rep.{w} k H) c}
+    (f : D₁ ⟶ D₂) :
+    ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex c).map
+        (((Rep.resFunctor φ).mapHomologicalComplex c).map f) ≫
+      (D₂.repResForget₂Iso φ).hom =
+    (D₁.repResForget₂Iso φ).hom ≫
+      ((forget₂ (Rep k H) (ModuleCat k)).mapHomologicalComplex c).map f := by
+  simpa only [repResForget₂Iso_def, Iso.app_hom, Functor.comp_map] using
+    (Functor.mapHomologicalComplexCompIso
+      (F := Rep.resFunctor φ) (G := forget₂ (Rep k G) (ModuleCat k))
+      (H := forget₂ (Rep k H) (ModuleCat k)) (Iso.refl _) c).hom.naturality f
+
 end Restriction
 
 end HomologicalComplex
