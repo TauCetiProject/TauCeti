@@ -714,10 +714,10 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization
           C * ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
             (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
             (fun w ↦ H w.2) u ξ z‖ ^ 2 := by
-  have hdet := ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd
   simpa only [zero_smul, sub_zero] using
     ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sub_smul_sq hH
       (δ := 0) (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt) hJ hJx
-      (by simpa only [zero_smul, sub_zero] using hdet) hu hux hδ
+      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd _)
+      hu hux hδ
 
 end TauCeti.SymplecticForm

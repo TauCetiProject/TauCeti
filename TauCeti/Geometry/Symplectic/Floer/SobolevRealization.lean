@@ -53,7 +53,7 @@ unweighted spaces, and turns `D_u` into `D_u - c(s)`
 `TauCeti.SymplecticForm.floerWeightedSobolevOperator`, which acts pointwise by the coefficient
 field of `D_u - c(s)` (`TauCeti.SymplecticForm.coeFn_floerWeightedSobolevOperator`); along a Floer
 trajectory these coefficients are bounded
-(`TauCeti.SymplecticForm.memLp_floerWeightedJetCoeff`). The weights need not be small: if the
+(`TauCeti.SymplecticForm.memLp_floerJetCoeff_sub_smul_fst`). The weights need not be small: if the
 fields `dX_{H_t}(x±(t)) - δ± J_t(x±(t))` have nondegenerate return maps (for one-periodic `H`, `J`
 and `x±`, if `δ±` are not eigenvalues of the asymptotic operators at `x±`), the weighted operator
 has finite-dimensional kernel
@@ -328,7 +328,7 @@ theorem floerWeightedSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V)
 bounded.** Under the hypotheses of `TauCeti.SymplecticForm.memLp_floerJetCoeff`, and for a
 continuous `c : ℝ → ℝ` equal to `δm` for `s ≤ -R` and to `δp` for `s ≥ R`, the coefficient field of
 `D_u - c(s)` on jets is essentially bounded on the cylinder. -/
-theorem memLp_floerWeightedJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+theorem memLp_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V}
     {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -344,9 +344,8 @@ theorem memLp_floerWeightedJetCoeff (ω : SymplecticForm V) {H : ℝ → V → �
     (hcp : ∀ s, R ≤ s → c s = δp) :
     MemLp (fun z ↦ ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) u z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure := by
-  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_tendsto hc
-    (tendsto_const_nhds.congr' (eventually_atBot.2 ⟨-R, fun s hs ↦ (hcm s hs).symm⟩))
-    (tendsto_const_nhds.congr' (eventually_atTop.2 ⟨R, fun s hs ↦ (hcp s hs).symm⟩))
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
+    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
   refine (ω.memLp_floerJetCoeff hH hJ hu huxm huxp hδm hδp).sub
     (memLp_top_of_bound ((hc.comp continuous_fst).smul continuous_const).aestronglyMeasurable B
       (Eventually.of_forall fun z ↦ ?_))
@@ -356,7 +355,7 @@ theorem memLp_floerWeightedJetCoeff (ω : SymplecticForm V) {H : ℝ → V → �
 
 /-- The weighted semi-Fredholm estimate along a Floer trajectory, in the form consumed by
 Peetre's argument on the cylinder. -/
-private theorem exists_estimate_floerWeightedJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+private theorem exists_estimate_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V} (hxm : Continuous xm)
     (hxp : Continuous xp) {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -422,10 +421,10 @@ theorem finiteDimensional_ker_floerWeightedSobolevOperator (ω : SymplecticForm 
     FiniteDimensional ℝ (ω.floerWeightedSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         u c).ker := by
-  obtain ⟨C, T, hest⟩ := exists_estimate_floerWeightedJetCoeff ω hH hxm hxp hJ hJxm hJxp hu hJu
+  obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff_sub_smul_fst ω hH hxm hxp hJ hJxm hJxp hu hJu
     huxm huxp hδm hδp hc hcm hcp hdetm hdetp
   exact finiteDimensional_ker_jetOperator_comp_subtypeL
-    (memLp_floerWeightedJetCoeff ω hH hJ hu huxm huxp hδm hδp hc hcm hcp) hest
+    (memLp_floerJetCoeff_sub_smul_fst ω hH hJ hu huxm huxp hδm hδp hc hcm hcp) hest
 
 /-- **The weighted linearized Floer operator along a Floer trajectory has closed range.** Under
 the hypotheses of `TauCeti.SymplecticForm.finiteDimensional_ker_floerWeightedSobolevOperator`,
@@ -455,10 +454,10 @@ theorem isClosed_range_floerWeightedSobolevOperator (ω : SymplecticForm V) {H :
     IsClosed ((ω.floerWeightedSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         u c).range : Set (Lp V 2 stripMeasure)) := by
-  obtain ⟨C, T, hest⟩ := exists_estimate_floerWeightedJetCoeff ω hH hxm hxp hJ hJxm hJxp hu hJu
+  obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff_sub_smul_fst ω hH hxm hxp hJ hJxm hJxp hu hJu
     huxm huxp hδm hδp hc hcm hcp hdetm hdetp
   exact isClosed_range_jetOperator_comp_subtypeL
-    (memLp_floerWeightedJetCoeff ω hH hJ hu huxm huxp hδm hδp hc hcm hcp) hest
+    (memLp_floerJetCoeff_sub_smul_fst ω hH hJ hu huxm huxp hδm hδp hc hcm hcp) hest
 
 /-! ### The unweighted operator -/
 
@@ -495,10 +494,10 @@ theorem finiteDimensional_ker_floerSobolevOperator (ω : SymplecticForm V) {H : 
     (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
     (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJ hJxm hJxp hu hJu huxm huxp
     hδm hδp continuous_const (R := 0) (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-    (by simpa only [zero_smul, sub_zero] using
-      ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hxm hndm)
-    (by simpa only [zero_smul, sub_zero] using
-      ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hxp hndp)
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+      hX hH hxm hndm _)
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+      hX hH hxp hndp _)
 
 /-- **The linearized Floer operator along a Floer trajectory has closed range on `W^{1,2}`.**
 Under the hypotheses of
@@ -531,9 +530,9 @@ theorem isClosed_range_floerSobolevOperator (ω : SymplecticForm V) {H : ℝ →
     (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
     (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJ hJxm hJxp hu hJu huxm huxp
     hδm hδp continuous_const (R := 0) (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
-    (by simpa only [zero_smul, sub_zero] using
-      ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hxm hndm)
-    (by simpa only [zero_smul, sub_zero] using
-      ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hxp hndp)
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+      hX hH hxm hndm _)
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+      hX hH hxp hndp _)
 
 end TauCeti.SymplecticForm

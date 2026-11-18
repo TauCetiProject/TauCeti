@@ -558,9 +558,8 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul
           C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z - c z.1 • ξ z‖ ^ 2) +
             ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) := by
-  obtain ⟨B, hcB⟩ := exists_forall_norm_le_of_tendsto hc
-    (tendsto_const_nhds.congr' (eventually_atBot.2 ⟨-R, fun s hs ↦ (hcm s hs).symm⟩))
-    (tendsto_const_nhds.congr' (eventually_atTop.2 ⟨R, fun s hs ↦ (hcp s hs).symm⟩))
+  obtain ⟨B, hcB⟩ := exists_forall_norm_le_of_eventually_eq hc
+    (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
   have hu' (l : Filter ℝ) : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t) :=
     Eventually.of_forall fun _ _ _ ↦ hu.contDiffAt
   obtain ⟨Cp, -, Up, hUp, hp⟩ :=
@@ -664,11 +663,11 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_c
     ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add_of_cylindrical
       hJm_eq hJp_eq hKs_eq hKtm_eq hKtp_eq hJ hKs hKt hu hJu (c := 0) continuous_const
       (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hHm (hcont hxm) hJm hJxm
-      (by simpa only [zero_smul, sub_zero] using
-        ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hXm hHm hxm hndm)
+      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXm hHm hxm hndm _)
       huxm hδm hHp (hcont hxp) hJp hJxp
-      (by simpa only [zero_smul, sub_zero] using
-        ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hXp hHp hxp hndp)
+      (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+        hXp hHp hxp hndp _)
       huxp hδp
 
 /-- **The semi-Fredholm estimate along a Floer trajectory.** Let `H` be a jointly `C²`

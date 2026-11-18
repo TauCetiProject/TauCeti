@@ -56,6 +56,8 @@ The translation by `c - c₀`, which takes `c₀` to `c`, preserves distances to
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 * `TauCeti.exists_forall_norm_le_of_tendsto` -- a continuous function `ℝ → F` with limits at `±∞`
   is bounded.
+* `TauCeti.exists_forall_norm_le_of_eventually_eq` -- a continuous function `ℝ → F` that is
+  eventually constant at `±∞` is bounded.
 * `TauCeti.exists_enorm_sub_le_mul_of_reflTransGen` -- constants joined by a chain of related
   indices are uniformly close if constants at related indices are.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
@@ -153,6 +155,14 @@ theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] 
     (hA.isBounded_range_iff_isBigO_atTop_atBot.mpr
       ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩)
   exact ⟨M, fun s ↦ hM _ (Set.mem_range_self s)⟩
+
+/-- A continuous function `ℝ → F` into a seminormed group that is eventually constant at `-∞` and
+at `+∞` is bounded. -/
+theorem exists_forall_norm_le_of_eventually_eq {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
+    {Aminus Aplus : F} (hA : Continuous A) (hbot : ∀ᶠ s in atBot, A s = Aminus)
+    (htop : ∀ᶠ s in atTop, A s = Aplus) : ∃ M, ∀ s, ‖A s‖ ≤ M :=
+  exists_forall_norm_le_of_tendsto hA (tendsto_const_nhds.congr' (hbot.mono fun _ h ↦ h.symm))
+    (tendsto_const_nhds.congr' (htop.mono fun _ h ↦ h.symm))
 
 /-- Families of vectors joined by a chain of related indices are uniformly close, if the vectors at
 related indices are: if `‖a k j - a k i‖ ≤ D * G k` for related `i j` and all `k`, then the
