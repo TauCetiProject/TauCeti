@@ -65,6 +65,9 @@ operator, this says that the principal symbol of `Δ` at `df_x` is `-|df_x|² Id
 * `TauCeti.SmoothForm.laplacian`: the Laplacian `δD + Dδ` of a family of differentials `D` and
   codifferentials `δ`.
 * `TauCeti.SmoothForm.hodgeLaplacian`: the Hodge Laplacian `Δ = d*d + dd*` of smooth `k`-forms.
+* `TauCeti.compactlySupportedForms.codifferential`,
+  `TauCeti.compactlySupportedForms.hodgeLaplacian`: their restrictions to compactly supported
+  forms.
 
 ## Main results
 
@@ -477,6 +480,13 @@ theorem tsupport_hodgeLaplacian_subset (o : Manifold.Orientation I M (Fin m)) (h
   tsupport_laplacian_subset
     (fun α ↦ by rw [mextDerivₗ_apply]; exact RoughForm.tsupport_mextDeriv_subset _)
     (tsupport_codifferential_subset o) hkl α
+
+/-- The Hodge Laplacian of a compactly supported form is compactly supported. -/
+theorem hodgeLaplacian_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k) :
+    hodgeLaplacian o hkl α ∈ compactlySupportedForms I M k :=
+  (mem_compactlySupportedForms I).2 (((mem_compactlySupportedForms I).1 hα).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (tsupport_hodgeLaplacian_subset o hkl α))
 
 /-- **The Hodge star commutes with the Hodge Laplacian**: `⋆Δα = Δ⋆α`. -/
 theorem hodgeStar_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
@@ -1211,5 +1221,39 @@ theorem hodgeLaplacian_eq_zero_iff (o : Manifold.Orientation I M (Fin m)) (hkl :
 end Boundaryless
 
 end SmoothForm
+
+namespace compactlySupportedForms
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] {m k l : ℕ}
+
+/-- The codifferential of compactly supported smooth forms, which does not enlarge supports. -/
+def codifferential (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m) :
+    compactlySupportedForms I M (k + 1) →ₗ[ℝ] compactlySupportedForms I M k :=
+  (SmoothForm.codifferential o hkl).restrict fun _ ↦
+    SmoothForm.codifferential_mem_compactlySupportedForms o hkl
+
+/-- The codifferential of a compactly supported form is its codifferential as a smooth form. -/
+@[simp]
+theorem coe_codifferential (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
+    (β : compactlySupportedForms I M (k + 1)) :
+    (codifferential o hkl β : SmoothForm I M ℝ k) = SmoothForm.codifferential o hkl β :=
+  (rfl)
+
+/-- The Hodge Laplacian of compactly supported smooth forms, which does not enlarge supports. -/
+def hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) :
+    compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedForms I M k :=
+  (SmoothForm.hodgeLaplacian o hkl).restrict fun _ ↦
+    SmoothForm.hodgeLaplacian_mem_compactlySupportedForms o hkl
+
+/-- The Hodge Laplacian of a compactly supported form is its Hodge Laplacian as a smooth form. -/
+@[simp]
+theorem coe_hodgeLaplacian (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (α : compactlySupportedForms I M k) :
+    (hodgeLaplacian o hkl α : SmoothForm I M ℝ k) = SmoothForm.hodgeLaplacian o hkl α :=
+  (rfl)
+
+end compactlySupportedForms
 
 end TauCeti
