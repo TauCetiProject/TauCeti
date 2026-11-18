@@ -68,9 +68,10 @@ holomorphic
 (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap`), and its
 energy over a region `B` is the energy of `u` over `ψ_L(B)`
 (`TauCeti.SmoothTwoForm.integral_floerEnergyDensity_plumbedPerturbation_inserted`). The compactness
-theorem for Floer solutions in a symplectic chart (in the namespace
-`TauCeti.SmoothTwoForm.IsNondegenerate`,
-`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`) then applies on each piece, to
+theorem for Floer pairs of pants in a symplectic chart with energy bounded over the region
+considered (in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`,
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le`)
+then applies on each piece, to
 the part `Ω` of the receiving truncation that the solutions map into a compact subset `K` of the
 source of a chart `φ`, and to the part `Ω'` of the inserted truncation that the maps
 `uₖ ∘ ψ_{Lₖ}` send into a compact subset `K'` of the source of a chart `φ'`, such as Darboux
@@ -431,65 +432,6 @@ private theorem floer_comp_plumbingMap_inserted (hω : ω.IsNondegenerate) (hq :
         linarith [(mem_truncation.1 (hΩ'T hw)).2.2 inf]⟩]
   exact setIntegral_le_of_lintegral_ofReal_le hE _
 
-/-- **Compactness on a pair of pants in a symplectic chart.** The compactness theorem for Floer
-solutions in a symplectic chart (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset`)
-for the pair-of-pants perturbation of period-one `C³` Hamiltonians `H` on `M`, over a compact
-subset `D` of the pair of pants `S` in real coordinates, with the structures `J` read in the chart
-`φ` by a family `Jφ` which is `C²` on an open set `W` containing `D × φ(K)`. -/
-private theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants
-    (hω : ω.IsNondegenerate) (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
-    {H : Puncture → ℝ → M → ℝ} (hH : ∀ r, Periodic (H r) 1)
-    (hHs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H r))) {D : Set (ℝ × ℝ)}
-    {K : Set M} {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
-    {Jφ : ℝ × ℝ → V → AlmostComplexStructure V} {W : Set ((ℝ × ℝ) × V)}
-    (hφ : ∀ x ∈ K, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJJ : ∀ z ∈ D, ∀ x ∈ K, IsComplexLinearMap (J z x) (Jφ z (φ x)) (mvfderiv I φ x).toLinearMap)
-    (hW : IsOpen W)
-    (hJφ : ContDiffOn ℝ 2
-      (fun p : (ℝ × ℝ) × V ↦ (Jφ p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hD : IsCompact D) (hDS : D ⊆ thricePuncturedSphereReal) (hK : IsCompact K)
-    (hKφ : K ⊆ φ.source) (hDKW : D ×ˢ (φ '' K) ⊆ W)
-    (hJt : ∀ z ∈ D, ∀ x ∈ K, (hω.symplecticFormAt x).Tames (J z x)) :
-    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃A : ℝ⦄, IsOpen Ω → Ω ⊆ D →
-      (∀ k, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (u k) Ω) →
-      (∀ k, ∀ z ∈ Ω, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
-        (ω.perturbedMFDeriv
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          (u k) z).toLinearMap) →
-      (∀ k, MapsTo (u k) Ω K) →
-      (∀ k, IntegrableOn (ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (u k)) Ω) →
-      (∀ k, ∫ z in Ω, ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (u k) z ≤ A) →
-      ∃ (σ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → M), StrictMono σ ∧
-        ↑Z ⊆ Ω ∧ Z.card * δ ≤ A ∧
-        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, ω.floerEnergyDensity
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          (u (σ n)) y) ∧
-        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
-          ∃ B, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (φ ∘ u (σ n)) y‖ ≤ B) ∧
-        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
-        TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (σ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
-        ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (σ n) y) atTop (𝓝 (v y)) :=
-  hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ
-    (W := W ∩ thricePuncturedSphereReal ×ˢ φ.target) hφ hJJ
-    (hW.inter (isOpen_thricePuncturedSphereReal.prod φ.open_target))
-    ((contDiffOn_pairOfPantsPerturbation_comp_symm hH hHs φ (WithTop.coe_le_coe.2 le_top)
-      1).mono inter_subset_right)
-    ((contDiffOn_pairOfPantsPerturbation_comp_symm hH hHs φ (WithTop.coe_le_coe.2 le_top)
-      Complex.I).mono inter_subset_right)
-    (hJφ.mono inter_subset_left) hD hK hKφ
-    (fun p hp ↦ ⟨hDKW hp, hDS hp.1, by
-      obtain ⟨x, hx, hxp⟩ := hp.2
-      exact hxp ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩) hJt
-
 /-- **Floer solutions on plumbed four-punctured spheres in a manifold converge on both pieces.**
 Let `ω` be a nondegenerate two-form on `M`, let `Ha`, `Hb` be period-one `C³` Hamiltonians on `M`
 with `Hb q = Ha ∞`, `q ≠ ∞`, and fix a truncation `S_R`. Let `φ` and `φ'` be smooth partial
@@ -574,11 +516,12 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
   -- The thresholds of the chart compactness theorem for the two pairs of pants.
-  obtain ⟨δ, hδ, hconv⟩ := exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants
-    hω φ hHb hHbs hφ hJJ hW hJφ (isCompact_preimage_truncation R) hTS hK hKφ hTKW hJt
+  obtain ⟨δ, hδ, hconv⟩ :=
+    hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le
+      φ hHb hHbs hφ hJJ hW hJφ (isCompact_preimage_truncation R) hTS hK hKφ hTKW hJt
   obtain ⟨δ', hδ', hconv'⟩ :=
-    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants hω φ' hHa hHas hφ'
-      hJJ' hW' hJφ' (isCompact_preimage_truncation R) hTS hK' hKφ' hTKW' hJ't
+    hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPants_of_setIntegral_le
+      φ' hHa hHas hφ' hJJ' hW' hJφ' (isCompact_preimage_truncation R) hTS hK' hKφ' hTKW' hJ't
   refine ⟨min δ δ', lt_min hδ hδ', fun Ω Ω' L u Jk E hΩ hΩT hΩ' hΩ'T hL4 hLR hu hfl hJΩ hJΩ' hE
     huK huK' ↦ ?_⟩
   -- Restricted to each piece, the solutions solve the Floer equation of that pair of pants.
