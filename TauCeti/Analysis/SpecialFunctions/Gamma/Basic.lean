@@ -317,10 +317,13 @@ theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : �
 theorem Gamma_one_third_mul_Gamma_two_thirds :
     Gamma (1 / 3) * Gamma (2 / 3) = 2 * Real.pi / (Real.sqrt 3 : ℂ) := by
   have h := Gamma_mul_Gamma_one_sub (1 / 3)
-  rw [show (1 : ℂ) - 1 / 3 = 2 / 3 by norm_num] at h
+  -- The reflection formula is stated at `1 - s`; put `1 - 1/3` in the form `2/3` of the goal.
+  have h23 : (1 : ℂ) - 1 / 3 = 2 / 3 := by norm_num
+  rw [h23] at h
   have hs : sin (Real.pi * (1 / 3)) = (Real.sqrt 3 : ℂ) / 2 := by
-    rw [show (Real.pi : ℂ) * (1 / 3) = ((Real.pi / 3 : ℝ) : ℂ) by push_cast; ring, ← ofReal_sin,
-      Real.sin_pi_div_three]
+    -- Write the argument as the cast of the real number `π/3`, to use `Real.sin_pi_div_three`.
+    have hpi : (Real.pi : ℂ) * (1 / 3) = ((Real.pi / 3 : ℝ) : ℂ) := by push_cast; ring
+    rw [hpi, ← ofReal_sin, Real.sin_pi_div_three]
     push_cast
     ring
   have h3 : (Real.sqrt 3 : ℂ) ≠ 0 := by simp

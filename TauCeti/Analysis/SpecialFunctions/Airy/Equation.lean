@@ -62,6 +62,12 @@ private theorem hasDerivAt_airy_hypergeometric (b z : ℂ) :
   push_cast
   ring
 
+/-- `3 ^ s = 3 ^ t * 3` when `s = t + 1`. This relates the constants `3^{-1/3}` and `3^{1/6}` of
+`Ai′` and `Bi′` to the constants `3^{-4/3}` and `3^{-5/6}` of `Ai` and `Bi`. -/
+private theorem three_cpow_of_eq_add_one {s t : ℂ} (h : s = t + 1) :
+    (3 : ℂ) ^ s = 3 ^ t * 3 := by
+  rw [h, cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
+
 /-- The derivative of `Ai` as a combination of regularized `₀F₁` series. -/
 theorem hasDerivAt_airyAi (z : ℂ) :
     HasDerivAt airyAi (-(3 : ℂ) ^ (-1 / 3 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
@@ -75,8 +81,7 @@ theorem hasDerivAt_airyAi (z : ℂ) :
   · ext w
     ring
   · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
-      show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num,
-      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
+      three_cpow_of_eq_add_one (by norm_num : (-1 / 3 : ℂ) = -4 / 3 + 1)]
     norm_num
     ring
 
@@ -93,8 +98,7 @@ theorem hasDerivAt_airyBi (z : ℂ) :
   · ext w
     ring
   · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
-      show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num,
-      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
+      three_cpow_of_eq_add_one (by norm_num : (1 / 6 : ℂ) = -5 / 6 + 1)]
     norm_num
     ring
 
@@ -131,8 +135,7 @@ theorem airyAi_ode (z : ℂ) : deriv^[2] airyAi z = z * airyAi z := by
     funext fun x => by rw [deriv_airyAi]; ring
   simp only [Pi.add_def] at h
   rw [Function.iterate_succ_apply', Function.iterate_one, hfun, h.deriv]
-  · rw [airyAi_def, show (-1 / 3 : ℂ) = -4 / 3 + 1 by norm_num,
-      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
+  · rw [airyAi_def, three_cpow_of_eq_add_one (by norm_num : (-1 / 3 : ℂ) = -4 / 3 + 1)]
     norm_num
     ring
 
@@ -146,8 +149,7 @@ theorem airyBi_ode (z : ℂ) : deriv^[2] airyBi z = z * airyBi z := by
     funext fun x => by rw [deriv_airyBi]; ring
   simp only [Pi.add_def] at h
   rw [Function.iterate_succ_apply', Function.iterate_one, hfun, h.deriv]
-  · rw [airyBi_def, show (1 / 6 : ℂ) = -5 / 6 + 1 by norm_num,
-      cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
+  · rw [airyBi_def, three_cpow_of_eq_add_one (by norm_num : (1 / 6 : ℂ) = -5 / 6 + 1)]
     norm_num
     ring
 
