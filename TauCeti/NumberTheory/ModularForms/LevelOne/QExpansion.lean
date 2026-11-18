@@ -295,6 +295,27 @@ section Period
 
 variable {N : ℕ} [NeZero N]
 
+/-- The expansion of a normalized Eisenstein series of weight `k ≥ 3` in the parameter of any
+positive integral period is the image of a power series over `K` under every ring homomorphism
+`φ : K →+* ℂ`. -/
+theorem qExpansion_natCast_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ}
+    (hk : 3 ≤ k) : qExpansion N (E hk) ∈ (PowerSeries.map φ).range := by
+  have hperiod : qExpansion N (E hk) =
+      PowerSeries.expand N (NeZero.ne N) (qExpansion 1 (E hk)) := by
+    simpa using TauCeti.qExpansion_nat_mul one_ne_zero (NeZero.pos N)
+      (SlashInvariantFormClass.periodic_comp_ofComplex (E hk) one_mem_strictPeriods_SL)
+      (ModularFormClass.analyticAt_cuspFunction_zero (E hk) one_pos one_mem_strictPeriods_SL)
+  obtain ⟨P, hP⟩ := qExpansion_E_mem_range_map φ hk
+  exact ⟨PowerSeries.expand N (NeZero.ne N) P, by rw [PowerSeries.map_expand, hP, hperiod]⟩
+
+/-- The normalized Eisenstein series has coefficients in every subfield of `ℂ`, also
+when expanded in the parameter of any positive integral period. -/
+theorem qExpansion_natCast_E_coeff_mem {K : Subfield ℂ} {k : ℕ} (hk : 3 ≤ k) (i : ℕ) :
+    (qExpansion N (E hk)).coeff i ∈ K := by
+  obtain ⟨P, hP⟩ := qExpansion_natCast_E_mem_range_map (N := N) K.subtype hk
+  rw [← hP, PowerSeries.coeff_map]
+  exact (P.coeff i).property
+
 /-- The expansion of `Δ` at period `N` is its expansion at period `1` in the variable `qᴺ`. -/
 theorem qExpansion_natCast_discriminant :
     qExpansion N discriminant =
