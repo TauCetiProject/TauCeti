@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Polynomial.SimpleRoots.Covering
 public import TauCeti.Topology.Covering.PowerSubstitution
 import Mathlib.Analysis.Complex.Polynomial.Basic
-import TauCeti.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Limit
 
 /-!
 # Continuous roots after a power substitution
@@ -25,11 +24,9 @@ continuous roots extend across the centre
 `y = c + ζ ^ n` the family splits into `d` linear factors, continuous on the whole disc, distinct
 off the centre, and listing at `ζ = 0` the roots of the central member with their multiplicities.
 Each root function converges at the centre to a root of the central member
-(`TauCeti.Polynomial.exists_isRoot_tendsto_of_continuousOn`): near the centre the roots of the
-family lie close to the finitely many roots of the central member, and the connected punctured disc
-cannot be split between two of them
-(`TauCeti.exists_mem_tendsto_of_forall_eventually_exists_dist_lt`). The factorization then passes
-to the limit (`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`).
+(`TauCeti.Polynomial.exists_isRoot_tendsto_of_continuousOn`), and the factorization passes to the
+limit (`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`), both in
+`TauCeti.Analysis.Polynomial.ContinuityOfRoots.Limit`.
 
 The analytic version, with ambient root functions on an open simply connected domain, is
 `TauCeti.Polynomial.exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution` in
@@ -104,56 +101,6 @@ theorem exists_continuousMap_prod_X_sub_C_powerSubstitution
   exact ⟨r, fun b => ⟨(hr b).1, (Sym.toMonic_ofFn_eq_of_forall_isRoot (hmonic _) (hdeg _)
     (hr b).1 (hr b).2).symm.trans (Sym.toMonic_ofFn _)⟩⟩
 
-/-- **A continuous root extends across a puncture.** Let `F y` be polynomials of degree `d` near
-`c`, a point of a real normed space of dimension greater than one, with coefficients continuous at
-`c`. A root `v` of `F`, continuous on a punctured ball about `c`, converges at `c` to a root of
-`F c`. -/
-theorem exists_isRoot_tendsto_of_continuousOn {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (hE : 1 < Module.rank ℝ E) {F : E → ℂ[X]} {c : E} {d : ℕ}
-    (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
-    (hdeg : ∀ᶠ y in 𝓝 c, (F y).degree = d) {δ : ℝ} (hδ : 0 < δ) {v : E → ℂ}
-    (hv : ContinuousOn v (ball c δ \ {c})) (hroot : ∀ z ∈ ball c δ \ {c}, (F z).IsRoot (v z)) :
-    ∃ w, (F c).IsRoot w ∧ Tendsto v (𝓝[≠] c) (𝓝 w) := by
-  classical
-  -- near `c`, every root of `F y` lies close to a root of `F c`
-  have hclose (ε : ℝ) (hε : 0 < ε) :
-      ∀ᶠ z in 𝓝[≠] c, ∃ s ∈ (F c).roots.toFinset, dist (v z) s < ε := by
-    filter_upwards [nhdsWithin_le_nhds (eventually_rel_roots_norm_sub_lt hF hdeg hε),
-      nhdsWithin_le_nhds hdeg, self_mem_nhdsWithin, nhdsWithin_le_nhds (ball_mem_nhds c hδ)] with
-      z hrel hzd hzc hzb
-    have hvz : v z ∈ (F z).roots :=
-      (mem_roots (ne_zero_of_coe_le_degree hzd.ge)).2 (hroot z ⟨hzb, hzc⟩)
-    obtain ⟨s, hs, hsv⟩ := Multiset.exists_mem_of_rel_of_mem (Multiset.rel_flip.2 hrel) hvz
-    exact ⟨s, Multiset.mem_toFinset.2 hs, by rwa [dist_eq_norm, norm_sub_rev]⟩
-  obtain ⟨w, hw, hlim⟩ := exists_mem_tendsto_of_forall_eventually_exists_dist_lt hE hδ hv hclose
-  exact ⟨w, isRoot_of_mem_roots (Multiset.mem_toFinset.1 hw), hlim⟩
-
-/-- **Splitting passes to the limit.** Let `F y` be complex polynomials of degree at most `d` near
-`c`, with coefficients continuous at `c`, that split into linear factors `X - u_i(y)` on a
-punctured neighbourhood of `c`, the roots `u_i` being continuous at `c`. Then `F c` splits into the
-limiting factors `X - u_i(c)`. -/
-theorem eq_prod_X_sub_C_of_continuousAt {B : Type*} [TopologicalSpace B] {F : B → ℂ[X]} {c : B}
-    [(𝓝[≠] c).NeBot] {d : ℕ} {u : Fin d → B → ℂ}
-    (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
-    (hdeg : ∀ᶠ y in 𝓝 c, (F y).natDegree ≤ d) (hu : ∀ i, ContinuousAt (u i) c)
-    (hsplit : ∀ᶠ y in 𝓝[≠] c, F y = ∏ i, (X - C (u i y))) :
-    F c = ∏ i, (X - C (u i c)) := by
-  refine Polynomial.funext fun z => tendsto_nhds_unique (f := fun y => (F y).eval z)
-    (l := 𝓝[≠] c) ?_ ?_
-  · have hev : (fun y => (F y).eval z) =ᶠ[𝓝 c]
-        fun y => ∑ k ∈ Finset.range (d + 1), (F y).coeff k * z ^ k :=
-      hdeg.mono fun y hy => eval_eq_sum_range' (by omega) z
-    have hsum : ContinuousAt (fun y => ∑ k ∈ Finset.range (d + 1), (F y).coeff k * z ^ k) c :=
-      tendsto_finsetSum _ fun k hk =>
-        (hF k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))).mul continuousAt_const
-    exact (hsum.congr hev.symm).tendsto.mono_left nhdsWithin_le_nhds
-  · have hprod : Tendsto (fun y => (∏ i, (X - C (u i y))).eval z) (𝓝[≠] c)
-        (𝓝 ((∏ i, (X - C (u i c))).eval z)) := by
-      simp only [eval_prod, eval_sub, eval_X, eval_C]
-      exact tendsto_finsetProd _ fun i _ =>
-        tendsto_const_nhds.sub ((hu i).tendsto.mono_left nhdsWithin_le_nhds)
-    exact hprod.congr' (hsplit.mono fun y hy => by simp only [hy])
-
 /-- The punctured-disc stage of `TauCeti.Polynomial.exists_continuousOn_prod_X_sub_C_add_pow`:
 after the substitution `y = c + ζ ^ n` the family splits over the punctured disc into linear
 factors with continuous, pairwise distinct roots. -/
@@ -214,10 +161,8 @@ theorem exists_continuousOn_prod_X_sub_C_add_pow {F : ℂ → ℂ[X]} {c : ℂ} 
   · exact ⟨v, fun i => by simp [ball_eq_empty.2 hR'], by simp [ball_eq_empty.2 hR'],
       by simp [ball_eq_empty.2 hR']⟩
   -- the substituted family `F (c + ζ ^ n)` near `ζ = 0`
-  have hpow : ∀ ζ ∈ ball (0 : ℂ) R', c + ζ ^ n ∈ ball c R := fun ζ hζ => by
-    refine hmem _ (mem_ball_zero_iff.2 ?_)
-    rw [norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.1 hζ) (norm_nonneg ζ) hn).trans_le hR
+  have hpow : ∀ ζ ∈ ball (0 : ℂ) R', c + ζ ^ n ∈ ball c R := fun ζ hζ =>
+    hmem _ (mapsTo_pow_ball_zero hn hR hζ)
   have hG : ∀ i ≤ d, ContinuousAt (fun ζ : ℂ => (F (c + ζ ^ n)).coeff i) 0 := fun i hi =>
     ((hF i hi).continuousAt (isOpen_ball.mem_nhds (hpow 0 (mem_ball_self hR')))).comp_of_eq
       (f := fun ζ : ℂ => c + ζ ^ n) (by fun_prop) rfl

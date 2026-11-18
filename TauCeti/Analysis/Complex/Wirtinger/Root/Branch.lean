@@ -49,8 +49,9 @@ union of graphs of solutions of `D_C`, that is, of pseudoholomorphic sections of
 * `TauCeti.exists_root_branch_conjWirtingerDeriv_add_add_eq_zero`: if the `b_j` are `Cⁿ`, `n ≠ 0`,
   and the equation holds with zero remainder near `x`, this branch solves `D_C v = 0` near `x`.
 
-At the collisions of roots, where `P'` vanishes, the branches are normalized in
-`TauCeti.Analysis.Complex.Wirtinger.Root.Normalization`.
+At an isolated collision of roots in a disc of `ℂ`, with the roots simple elsewhere on the disc,
+the roots are parametrized after a power substitution by continuous weak solutions of the
+pulled-back equation in `TauCeti.Analysis.Complex.Wirtinger.Root.Normalization`.
 
 ## References
 

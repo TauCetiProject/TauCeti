@@ -31,8 +31,8 @@ and suppose that they solve the equation of the elementary symmetric functions o
 with continuous `(0,1)`-forms `ν`, `μ`. Where the roots are simple, the root multigraph
 `{(y, w) : P_y(w) = 0}` is a union of graphs of solutions of `D_C`
 (`TauCeti.exists_root_branch_conjWirtingerDeriv_add_add_eq_zero`). This file treats a point `x`
-where roots may collide, assuming the roots are simple on the rest of the disc, and normalizes the
-multigraph there.
+where roots may collide, assuming the roots are simple on the rest of the disc, and parametrizes
+the roots there by continuous weak solutions of the pulled-back equation.
 
 After the substitution `y = x + ζⁿ`, `n = m!`, the roots become `m` continuous functions `u_i` on a
 disc about `ζ = 0` (`TauCeti.exists_root_branches_hasWeakConjWirtingerDerivOn`):
@@ -134,8 +134,7 @@ private theorem contDiffAt_and_conjWirtingerDeriv_add_smul_eq_zero {n : ℕ}
       L.comp (ContinuousLinearMap.toSpanSingleton ℂ a) = conj a • L := by
     ext v
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul,
-      mul_comm, ← smul_eq_mul, map_smulₛₗ]
-    rfl
+      mul_comm, ← smul_eq_mul, map_smulₛₗ, smul_apply]
   refine ⟨(hvc.comp ζ (by fun_prop)).congr_of_eventuallyEq huv, ?_⟩
   rw [huv.conjWirtingerDeriv_eq, conjWirtingerDeriv_comp_eq_comp_fderiv
       (hvc.differentiableAt one_ne_zero) hderiv.differentiableAt, hderiv.hasFDerivAt.fderiv,
@@ -171,8 +170,7 @@ private theorem exists_continuousOn_root_branches {n : ℕ} {R' : ℝ}
   have h := congrArg Polynomial.roots (huF ζ hζ)
   have hmap : (univ.val.map fun i ↦ X - C (u i ζ)) =
       (univ.val.map fun i ↦ u i ζ).map fun w ↦ X - C w := by
-    rw [Multiset.map_map]
-    rfl
+    simp only [Multiset.map_map, Function.comp_def]
   rwa [roots_multiset_prod_X_sub_C, Finset.prod_eq_multiset_prod, hmap,
     roots_multiset_prod_X_sub_C] at h
 
@@ -252,8 +250,7 @@ theorem exists_root_branches_hasWeakConjWirtingerDerivOn (hr : 0 < r)
   have hR'n : R' ^ n ≤ r :=
     (pow_le_of_le_one hR'.le (min_le_left _ _) hn).trans (min_le_right _ _)
   have hpow : Set.MapsTo (fun ζ : ℂ ↦ x + ζ ^ n) (ball 0 R') (ball x r) := fun ζ hζ ↦ by
-    rw [mem_ball_iff_norm, add_sub_cancel_left, norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.1 hζ) (norm_nonneg ζ) hn).trans_le hR'n
+    simpa [mem_ball_iff_norm] using mapsTo_pow_ball_zero hn hR'n hζ
   obtain ⟨u, huc, hroots⟩ := exists_continuousOn_root_branches
     (fun j hj ↦ (hb j hj).continuousOn) hR hsimple hn hR'n dvd_rfl
   -- off the centre, each branch solves the pulled-back equation classically
