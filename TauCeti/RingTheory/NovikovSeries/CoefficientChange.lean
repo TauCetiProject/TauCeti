@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 public import TauCeti.RingTheory.Localization.FractionRing
 public import TauCeti.RingTheory.NovikovSeries.TotalQuotient
@@ -57,8 +56,6 @@ is a unit, or zero, exactly when the rational one is.
 
 ## Main results
 
-* `TauCeti.NovikovSeries.norm_mapRingHom`: the norm over the Novikov series on a finite-index
-  subgroup commutes with changing coefficients.
 * `TauCeti.NovikovSeries.mapRingHom_mem_nonZeroDivisors_iff`: changing coefficients along an
   injective map into a domain preserves and reflects non-zero-divisors.
 * `TauCeti.NovikovSeries.map_mapRingHom_injective`: the induced map of total rings of fractions is
@@ -85,61 +82,7 @@ namespace TauCeti
 
 namespace NovikovSeries
 
-variable {R S H : Type*} [AddCommGroup H] {N : H →+ ℝ}
-
-/-- Changing coefficients commutes with taking coordinates in the coset basis. -/
-theorem cosetBasis_repr_mapRingHom [CommSemiring R] [CommSemiring S] (ρ : R →+* S)
-    (K : AddSubgroup H) [K.FiniteIndex] (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
-    (a : NovikovSeries R H N) (q : H ⧸ K) :
-    (cosetBasis K s hs).repr (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) q =
-      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id ((cosetBasis K s hs).repr a q) := by
-  ext k
-  simp
-
-variable [CommRing R] [CommRing S]
-
-section FiniteIndex
-
-variable (ρ : R →+* S) (K : AddSubgroup H) [K.FiniteIndex]
-
-/-- Changing coefficients commutes with taking the matrix of multiplication in the coset
-basis. -/
-theorem leftMulMatrix_cosetBasis_mapRingHom (s : H ⧸ K → H) (hs : ∀ q, (s q : H ⧸ K) = q)
-    [Fintype (H ⧸ K)] [DecidableEq (H ⧸ K)] (a : NovikovSeries R H N) :
-    Algebra.leftMulMatrix (cosetBasis K s hs)
-        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
-      (mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id).mapMatrix
-        (Algebra.leftMulMatrix (cosetBasis K s hs) a) := by
-  ext i j k
-  simp
-
-/-- The norm of a Novikov series over the Novikov series on a finite-index subgroup commutes with
-changing coefficients. -/
-theorem norm_mapRingHom (a : NovikovSeries R H N) :
-    Algebra.norm (NovikovSeries S K (N.comp K.subtype))
-        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
-      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id
-        (Algebra.norm (NovikovSeries R K (N.comp K.subtype)) a) := by
-  classical
-  have := Fintype.ofFinite (H ⧸ K)
-  rw [Algebra.norm_eq_matrix_det (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
-    Algebra.norm_eq_matrix_det (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
-    leftMulMatrix_cosetBasis_mapRingHom, RingHom.map_det]
-
-/-- The trace of a Novikov series over the Novikov series on a finite-index subgroup commutes with
-changing coefficients. -/
-theorem trace_mapRingHom (a : NovikovSeries R H N) :
-    Algebra.trace (NovikovSeries S K (N.comp K.subtype)) (NovikovSeries S H N)
-        (mapRingHom ρ (AddMonoidHom.id H) exists_period_rescale_id a) =
-      mapRingHom ρ (AddMonoidHom.id K) exists_period_rescale_id
-        (Algebra.trace (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) a) := by
-  classical
-  have := Fintype.ofFinite (H ⧸ K)
-  rw [Algebra.trace_eq_matrix_trace (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
-    Algebra.trace_eq_matrix_trace (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
-    leftMulMatrix_cosetBasis_mapRingHom, RingHom.mapMatrix_apply, AddMonoidHom.map_trace]
-
-end FiniteIndex
+variable {R S H : Type*} [AddCommGroup H] {N : H →+ ℝ} [CommRing R] [CommRing S]
 
 section NonZeroDivisors
 
