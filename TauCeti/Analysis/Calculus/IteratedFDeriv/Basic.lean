@@ -17,20 +17,28 @@ as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFD
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The first iterated derivative, uncurried, is the Fréchet derivative
 (`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`, with the function-level form
-`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`). The file also supplies the
+`TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`), while evaluating the third iterated
+derivative on three directions gives the three-times curried Fréchet derivative
+(`TauCeti.iteratedFDeriv_three_apply`). The file also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
-curried bilinear maps, and the corresponding exact comparison for differences of second
-derivatives, which transfers Hölder bounds between the two forms of the second derivative.
+curried bilinear maps, with the left currying of the one- and two-variable inverse curryings
+(`TauCeti.curryLeft_continuousMultilinearCurryFin1_symm`,
+`TauCeti.curryLeft_continuousMultilinearCurryFin2_symm`), and the corresponding exact comparison
+for differences of second derivatives, which transfers Hölder bounds between the two forms of the
+second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
 `ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`). Bounded derivatives up
 to a finite order have a common bound
-(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
+(`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`, and for derivatives of positive
+order `TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_one_le`), and such a
 common bound is nonnegative and bounds the function itself
 (`TauCeti.nonneg_and_norm_le_of_norm_iteratedFDeriv_le`). Adding a constant to a function does not
 change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
-iterated derivatives of positive order of the identity are constant
-(`TauCeti.iteratedFDeriv_succ_id_eq`), so adding the identity to a function does not change the
-Hölder constants of its derivatives of positive order
+iterated derivatives of a constant `c` have norm at most `‖c‖`
+(`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
+most one (`TauCeti.norm_iteratedFDeriv_id_le_one`). The iterated derivatives of positive order of the
+identity are constant (`TauCeti.iteratedFDeriv_succ_id_eq`), so adding the identity to a function
+does not change the Hölder constants of its derivatives of positive order
 (`TauCeti.holderOnWith_iteratedFDeriv_succ_id_add`).
 -/
 
@@ -65,6 +73,22 @@ theorem continuousMultilinearCurryFin2_symm_apply
     (continuousMultilinearCurryFin2 𝕜 E F).symm g m = g (m 0) (m 1) := by
   simp [continuousMultilinearCurryFin2, Fin.init]
 
+variable {𝕜 E F} in
+/-- Left currying the `1`-multilinear map of a continuous linear map `L` gives back `L`, with its
+values read as `0`-multilinear maps. -/
+theorem curryLeft_continuousMultilinearCurryFin1_symm (L : E →L[𝕜] F) :
+    ((continuousMultilinearCurryFin1 𝕜 E F).symm L).curryLeft =
+      (continuousMultilinearCurryFin0 𝕜 E F).symm.toLinearIsometry.toContinuousLinearMap.comp L :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousMultilinearMap.ext fun w ↦ by simp
+
+variable {𝕜 E F} in
+/-- Left currying the `2`-multilinear map of a curried bilinear map `B` gives back `B`, with its
+values read as `1`-multilinear maps. -/
+theorem curryLeft_continuousMultilinearCurryFin2_symm (B : E →L[𝕜] E →L[𝕜] F) :
+    ((continuousMultilinearCurryFin2 𝕜 E F).symm B).curryLeft =
+      (continuousMultilinearCurryFin1 𝕜 E F).symm.toLinearIsometry.toContinuousLinearMap.comp B :=
+  ContinuousLinearMap.ext fun v ↦ ContinuousMultilinearMap.ext fun w ↦ by simp
+
 end CurryFin2
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
@@ -91,6 +115,13 @@ theorem continuousMultilinearCurryFin2_iteratedFDeriv_two (f : E → F) (x : E) 
   ext v w
   simp only [continuousMultilinearCurryFin2_apply, iteratedFDeriv_two_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+
+/-- Evaluating the third iterated derivative on three directions gives the three-times curried
+Fréchet derivative, including at points where these derivatives are junk-valued. -/
+theorem iteratedFDeriv_three_apply (f : E → F) (x : E) (m : Fin 3 → E) :
+    iteratedFDeriv 𝕜 3 f x m = fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 f)) x (m 0) (m 1) (m 2) := by
+  rw [iteratedFDeriv_succ_apply_right, iteratedFDeriv_two_apply]
+  rfl
 
 /-- Differences of curried second derivatives and multilinear second derivatives have
 exactly the same norm, without differentiability assumptions. -/
@@ -139,6 +170,23 @@ theorem iteratedFDeriv_succ_add_const (f : E → F) (c : F) (n : ℕ) :
   funext x
   simp only [iteratedFDeriv_succ_eq_comp_right, fderiv_add_const]
 
+/-- The iterated derivatives of a constant function `c` have norm at most `‖c‖`. -/
+theorem norm_iteratedFDeriv_const_le (n : ℕ) (c : F) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (fun _ : E ↦ c) x‖ ≤ ‖c‖ := by
+  rcases n with _ | n
+  · simp
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
+
+/-- The iterated derivatives of positive order of the identity have norm at most one. -/
+theorem norm_iteratedFDeriv_id_le_one {n : ℕ} (hn : 1 ≤ n) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (id : E → E) x‖ ≤ 1 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have hD : fderiv 𝕜 (id : E → E) = fun _ ↦ ContinuousLinearMap.id 𝕜 E := funext fun _ ↦ fderiv_id
+  rw [← norm_iteratedFDeriv_fderiv, hD]
+  rcases n with _ | n
+  · simpa using ContinuousLinearMap.norm_id_le
+  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
+
 /-- The iterated derivatives of positive order of the identity are constant. -/
 theorem iteratedFDeriv_succ_id_eq (n : ℕ) (x y : E) :
     iteratedFDeriv 𝕜 (n + 1) (id : E → E) x = iteratedFDeriv 𝕜 (n + 1) id y := by
@@ -171,6 +219,18 @@ theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N :
   exact ⟨∑ n ∈ Finset.range (N + 1), max (C n) 0, fun n hn x ↦ (hC n hn x).trans
     ((le_max_left _ _).trans (Finset.single_le_sum (f := fun n ↦ max (C n) 0)
       (fun _ _ ↦ le_max_right _ _) (Finset.mem_range.2 (by omega))))⟩
+
+/-- Bounded derivatives of orders `1` to `N + 1` have a common bound. These are the derivatives of
+order at most `N` of `Df`. -/
+theorem exists_forall_norm_iteratedFDeriv_le_of_forall_one_le {f : E → F} {N : ℕ}
+    (hbd : ∀ n, 1 ≤ n → n ≤ N + 1 → ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C) :
+    ∃ L, ∀ n, 1 ≤ n → n ≤ N + 1 → ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ L := by
+  obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists (𝕜 := 𝕜)
+    (f := fderiv 𝕜 f) (N := N) fun n hn ↦ by
+      simpa only [norm_iteratedFDeriv_fderiv] using hbd (n + 1) (by omega) (by omega)
+  refine ⟨L, fun n h₁ h₂ x ↦ ?_⟩
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' h₁
+  simpa only [norm_iteratedFDeriv_fderiv] using hL n (by omega) x
 
 /-- A bound `G` on the derivatives of `f` of order at most `N` is nonnegative and bounds `f`. -/
 theorem nonneg_and_norm_le_of_norm_iteratedFDeriv_le {f : E → F} {N : ℕ} {G : ℝ}

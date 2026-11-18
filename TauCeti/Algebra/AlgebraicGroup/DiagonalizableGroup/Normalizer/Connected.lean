@@ -168,7 +168,7 @@ theorem centralizerHopfIdeal_le_identityComponent_normalizerHopfIdeal
     isReduced_of_smooth k _
   let _ : ConnectedSpace
       (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H N.identityComponent)) :=
-    N.geometricallyConnected_identityComponent.connectedSpace k _
+    N.geometricallyConnected_identityComponent.connectedSpace
   exact centralizerHopfIdeal_le_of_le_normalizerHopfIdeal π hπ _ N.le_identityComponent
 
 /-- A reduced scheme normalizer and the scheme centralizer of a closed diagonalizable
