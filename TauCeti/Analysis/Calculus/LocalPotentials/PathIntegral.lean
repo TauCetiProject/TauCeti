@@ -109,13 +109,14 @@ theorem IsPrimitiveAlong.continuous (hG : IsPrimitiveAlong φ f G) (hf : Continu
     continuousAt_const.add (hgf.sub continuousAt_const)
   exact hc.congr_of_eventuallyEq (hGx.mono fun x' hx' ↦ eq_add_of_sub_eq' hx')
 
-/-- Two primitives at a point along a continuous map have the same increments near that point. -/
-theorem IsPrimitiveAlongAt.eventually_sub_eq_sub (hf : Continuous f) {x : X}
+/-- Two primitives at a point along a map continuous there have the same increments near that
+point. -/
+theorem IsPrimitiveAlongAt.eventually_sub_eq_sub {x : X} (hf : ContinuousAt f x)
     (h₁ : IsPrimitiveAlongAt φ f G₁ x) (h₂ : IsPrimitiveAlongAt φ f G₂ x) :
     ∀ᶠ x' in 𝓝 x, G₁ x' - G₁ x = G₂ x' - G₂ x := by
   obtain ⟨g₁, hg₁, hG₁⟩ := h₁
   obtain ⟨g₂, hg₂, hG₂⟩ := h₂
-  filter_upwards [hG₁, hG₂, hf.continuousAt.eventually
+  filter_upwards [hG₁, hG₂, hf.eventually
     (eventually_sub_eq_sub_of_hasFDerivAt hg₁ hg₂)] with x' hx₁ hx₂ hx
   rw [hx₁, hx₂, hx]
 
@@ -124,7 +125,7 @@ theorem IsPrimitiveAlong.isLocallyConstant_sub (hf : Continuous f)
     (h₁ : IsPrimitiveAlong φ f G₁) (h₂ : IsPrimitiveAlong φ f G₂) :
     IsLocallyConstant (G₁ - G₂) := by
   refine (IsLocallyConstant.iff_eventually_eq _).mpr fun x ↦ ?_
-  filter_upwards [(h₁ x).eventually_sub_eq_sub hf (h₂ x)] with x' hx
+  filter_upwards [(h₁ x).eventually_sub_eq_sub hf.continuousAt (h₂ x)] with x' hx
   rw [Pi.sub_apply, Pi.sub_apply, sub_eq_sub_iff_sub_eq_sub, hx]
 
 /-- On a preconnected domain, two primitives along a continuous map have the same increments. -/
@@ -157,7 +158,7 @@ private theorem exists_isPrimitiveAlongAt_of_le_or_mem {f : I → E} (hf : Conti
     filter_upwards [Iio_mem_nhds htc] with u (hu : u < c)
     simp only [hu.le, htc.le, ↓reduceIte]
   · refine (h₁ t le_rfl).congr ?_
-    filter_upwards [(h₁ t le_rfl).eventually_sub_eq_sub hf (h₂ t hc)] with u hu
+    filter_upwards [(h₁ t le_rfl).eventually_sub_eq_sub hf.continuousAt (h₂ t hc)] with u hu
     by_cases hut : u ≤ t
     · simp only [hut, le_refl, ↓reduceIte]
     · simp only [hut, le_refl, ↓reduceIte]
