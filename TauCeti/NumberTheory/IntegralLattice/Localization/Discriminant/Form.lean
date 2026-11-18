@@ -33,8 +33,8 @@ power of `p`, and a rational number with `p`-power denominator that lies in `ℤ
 (`Padic.den_eq_one_of_pow_mul_eq_of_norm_rat_le_one`). So `b_M(x', y') = b_L(x, y)`; the same
 argument applies to the half-norms when the lattices are even.
 
-Lattices in one genus have isometric localizations at every prime and the same order of
-discriminant group, so their discriminant forms are isometric prime by prime, and hence isometric
+Lattices in one genus have isometric localizations at every prime, so their discriminant forms are
+isometric prime by prime, and hence isometric
 (`TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent`). This is the easy
 half of Nikulin's description of the genus of an even lattice by its signature and its
 discriminant quadratic form, Corollary 1.9.4, and of its odd analogue, Corollary 1.16.3, where the
@@ -422,10 +422,9 @@ bilinear form `b_L`. -/
 theorem nonempty_isometry_discriminantBilinearModule (h : L.SameGenus M) :
     Nonempty (FiniteBilinearModule.Isometry L.discriminantBilinearModule
       M.discriminantBilinearModule) :=
-  FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent
-    h.natCard_discriminantGroup_eq fun p hp ↦
-      have : Fact p.Prime := ⟨hp⟩
-      (h.localIntegralForm_equivalent p).map primaryDiscriminantBilinearIsometry
+  FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
+    have : Fact p.Prime := ⟨hp⟩
+    (h.localIntegralForm_equivalent p).map primaryDiscriminantBilinearIsometry
 
 /-- **Even lattices in one genus have isometric discriminant quadratic forms.** This is the easy
 half of Nikulin's Corollary 1.9.4: the genus of an even nondegenerate lattice determines its
@@ -433,11 +432,10 @@ discriminant quadratic form `q_L`. -/
 theorem nonempty_isometry_discriminantQuadraticModule (h : L.SameGenus M) (hL : L.IsEven) :
     Nonempty (FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
       (M.discriminantQuadraticModule (h.isEven_iff.mp hL))) :=
-  FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent
-    h.natCard_discriminantGroup_eq fun p hp ↦
-      have : Fact p.Prime := ⟨hp⟩
-      (h.localIntegralForm_equivalent p).map
-        (primaryDiscriminantQuadraticIsometry hL (h.isEven_iff.mp hL))
+  FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent fun p hp ↦
+    have : Fact p.Prime := ⟨hp⟩
+    (h.localIntegralForm_equivalent p).map
+      (primaryDiscriminantQuadraticIsometry hL (h.isEven_iff.mp hL))
 
 end SameGenus
 

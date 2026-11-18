@@ -262,7 +262,9 @@ noncomputable def rootSubgroupPoints (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type
     (latticeBasis n) (basisWeight n) k A
 
 /-- A numbered root-subgroup point is the corresponding divided-power exponential matrix. -/
-@[simp] theorem coe_rootSubgroupPoints (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type v) [CommRing A]
+-- Not `@[simp]`: its right-hand side is raw generic Kostant data that simp cannot reduce further,
+-- and would pre-empt the explicit matrix forms stated for `rootSubgroupPoints`.
+theorem coe_rootSubgroupPoints (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : Type v) [CommRing A]
     (u : Multiplicative A) :
     (rootSubgroupPoints n k A u :
         _root_.Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =

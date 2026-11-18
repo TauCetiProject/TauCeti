@@ -45,6 +45,8 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.BipartiteHom.sum_outgoing_eq_sum_incidentEdges` and
   `Graph.BipartiteHom.sum_incoming_eq_sum_incidentEdges`: sums over arrows at a vertex agree with
   sums over its incident edges.
+* `SimpleGraph.IsBipartite.exists_isBipartition_ofSimpleGraph`: a finite bipartite simple graph
+  admits a displayed bipartition of its associated edge-labelled multigraph.
 -/
 
 public section
@@ -215,17 +217,31 @@ theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
     (e : G.BipartiteHom L x y) : y ∈ R :=
   hLR.mem_right_of_isLink e.isLink e.source_mem
 
+/-- For a fixed source, the underlying edge determines the target and bipartite arrow. -/
+theorem outgoing_edge_injective {x : V(G)} :
+    Function.Injective (fun a : Σ y, G.BipartiteHom L x y ↦ a.2.edge) := by
+  rintro ⟨y, a⟩ ⟨z, b⟩ hab
+  dsimp only at hab
+  have hyz : y = z := Subtype.ext (a.isLink.right_unique (hab ▸ b.isLink))
+  subst z
+  exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+
+/-- For a fixed target, the underlying edge determines the source and bipartite arrow. -/
+theorem incoming_edge_injective {x : V(G)} :
+    Function.Injective (fun a : Σ y, G.BipartiteHom L y x ↦ a.2.edge) := by
+  rintro ⟨y, a⟩ ⟨z, b⟩ hab
+  dsimp only at hab
+  have hyz : y = z := Subtype.ext (a.isLink.left_unique (hab ▸ b.isLink))
+  subst z
+  exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+
 /-- The arrows leaving a vertex on the left side of a bipartition are in bijection with the
 actual edges incident with that vertex. -/
 noncomputable def outgoingEquiv {L : Finset V(G)} (x : V(G)) (hx : x ∈ L) :
     (Σ y, G.BipartiteHom L x y) ≃ {e : E(G) // G.Inc e x} :=
   Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_left⟩) ⟨by
-    rintro ⟨y, e⟩ ⟨z, f⟩ h
-    have hef : e.edge = f.edge := congrArg Subtype.val h
-    have hyz : y = z := Subtype.ext (e.isLink.right_unique (hef ▸ f.isLink))
-    subst z
-    exact congrArg (fun a : G.BipartiteHom L x y ↦
-      (⟨y, a⟩ : Σ z, G.BipartiteHom L x z)) (BipartiteHom.ext hef), by
+    intro e f h
+    exact outgoing_edge_injective (congrArg Subtype.val h), by
     intro e
     let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
     refine ⟨⟨y, ⟨e.1, e.2.isLink_other, hx⟩⟩, ?_⟩
@@ -244,12 +260,8 @@ noncomputable def incomingEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R)
     (x : V(G)) (hx : x ∈ R) :
     (Σ y, G.BipartiteHom L y x) ≃ {e : E(G) // G.Inc e x} :=
   Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_right⟩) ⟨by
-    rintro ⟨y, e⟩ ⟨z, f⟩ h
-    have hef : e.edge = f.edge := congrArg Subtype.val h
-    have hyz : y = z := Subtype.ext (e.isLink.left_unique (hef ▸ f.isLink))
-    subst z
-    exact congrArg (fun a : G.BipartiteHom L y x ↦
-      (⟨y, a⟩ : Σ z, G.BipartiteHom L z x)) (BipartiteHom.ext hef), by
+    intro e f h
+    exact incoming_edge_injective (congrArg Subtype.val h), by
     intro e
     let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
     refine ⟨⟨y, ⟨e.1, e.2.isLink_other.symm,
@@ -380,5 +392,28 @@ theorem isBipartition_ofSimpleGraph_iff (H : SimpleGraph α)
       · obtain ⟨x', hx'R, hxx'⟩ := hxy.1
         obtain ⟨y', hy'L, hyy'⟩ := hxy.2
         exact Or.inr ⟨Subtype.ext hxx' ▸ hx'R, Subtype.ext hyy' ▸ hy'L⟩
+
+/-- A finite bipartite simple graph admits a displayed bipartition of its associated
+edge-labelled multigraph. -/
+theorem IsBipartite.exists_isBipartition_ofSimpleGraph [Finite α]
+    {H : SimpleGraph α} (hH : H.IsBipartite) :
+    ∃ L R : Finset V(Graph.ofSimpleGraph H),
+      (Graph.ofSimpleGraph H).IsBipartition L R := by
+  classical
+  let _ := Fintype.ofFinite α
+  obtain ⟨c⟩ := hH
+  let b := H.recolorOfEquiv finTwoEquiv c
+  let L : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ b x.1 = false
+  let R : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ b x.1 = true
+  refine ⟨L, R, ⟨?_, ?_, ?_⟩⟩
+  · exact Finset.disjoint_filter.2 fun _ _ hfalse htrue ↦
+      Bool.false_ne_true (hfalse.symm.trans htrue)
+  · intro x
+    cases hx : b x.1 <;> simp [L, R, hx]
+  · intro e x y he
+    have hxy : H.Adj x.1 y.1 :=
+      (Graph.ofSimpleGraph_adj_iff x.1 y.1).1 ⟨e, he⟩
+    have hb := b.valid hxy
+    cases hx : b x.1 <;> cases hy : b y.1 <;> simp_all [L, R]
 
 end SimpleGraph
