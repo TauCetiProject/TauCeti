@@ -42,6 +42,8 @@ presented; the corresponding inclusions of full subcategories are fully faithful
   `I`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullback f`: the pullback of finite locally
   free sheaves along a morphism of schemes `f`;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullbackCompιIso f`: pullback commutes with
+  inclusion into module sheaves;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullbackFreeIso f I`: pullback of a finite
   free sheaf as a free sheaf on the same basis;
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_isFiniteLocallyFree`: finite local freeness is a
@@ -199,6 +201,27 @@ lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : FiniteLocallyFreeSh
   cases pullback_obj_obj f F
   unfold pullback
   simp
+
+variable {X} in
+/-- Pullback of finite locally free sheaves commutes with inclusion into module sheaves. -/
+noncomputable def pullbackCompιIso {Y : Scheme.{u}} (f : X ⟶ Y) :
+    pullback f ⋙ (Scheme.Modules.isFiniteLocallyFree X).ι ≅
+      (Scheme.Modules.isFiniteLocallyFree Y).ι ⋙ Scheme.Modules.pullback f :=
+  ObjectProperty.liftCompιIso _ _ _
+
+variable {X} in
+/-- The forward pullback inclusion comparison is the canonical object identification. -/
+@[simp]
+lemma pullbackCompιIso_hom_app {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    (pullbackCompιIso f).hom.app E = eqToHom (pullback_obj_obj f E) :=
+  (rfl)
+
+variable {X} in
+/-- The inverse pullback inclusion comparison is the inverse object identification. -/
+@[simp]
+lemma pullbackCompιIso_inv_app {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    (pullbackCompιIso f).inv.app E = eqToHom (pullback_obj_obj f E).symm :=
+  (rfl)
 
 /-- The fully faithful inclusion of finite locally free sheaves into finitely presented
 sheaves. -/
