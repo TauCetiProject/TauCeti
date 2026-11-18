@@ -12,6 +12,7 @@ import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
@@ -387,9 +388,7 @@ theorem exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity
     hfloer
   have hg0 : 0 ≤ ∫ t in Icc (0 : ℝ) 1, e (s, t) :=
     setIntegral_nonneg measurableSet_Icc fun t ht ↦
-      ω.floerEnergyDensity_nonneg
-        (fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc t ht v))
-        (hfloer t ht)
+      ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc t ht)) (hfloer t ht)
   calc _ ≤ C₁ * ((1 + M ^ 2) / c * ∫ t in Icc (0 : ℝ) 1, e (s, t)) :=
         hact.trans (mul_le_mul_of_nonneg_left hint hC₁)
     _ ≤ (C₁ * ((1 + M ^ 2) / c) + 1) * ∫ t in Icc (0 : ℝ) 1, e (s, t) := by
@@ -475,7 +474,8 @@ theorem exists_forall_norm_sub_le_mul_add_mul_sqrt_setIntegral_floerEnergyDensit
   have hRU : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U :=
     fun z hz ↦ hR ⟨hz.1, mem_univ _⟩
   obtain ⟨σ, hσ, hσle⟩ := ω.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le
-    (hH.of_le (by norm_num)) hU hu hh hRU
+    (Ks := fun _ _ ↦ 0) hU hu contDiffOn_const
+    (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn hh hRU
   -- The slice at `σ` has energy at most `W / h`, so it is uniformly close to `x`.
   have hσx := hnear hU hu (fun t ↦ hR ⟨hσ, mem_univ t⟩) (hper σ hσ)
     (fun t ht ↦ hJc _ ⟨hσ, ht⟩) (fun t ht ↦ hJM _ ⟨hσ, ht⟩) (fun t ht ↦ hfloer _ ⟨hσ, ht⟩)
@@ -527,8 +527,8 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le (by norm_num)
   have hopen : IsOpen (Ioi a ×ˢ (univ : Set ℝ)) := isOpen_Ioi.prod isOpen_univ
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz ↦
+    .of_mul_norm_sq_le hc (hJc z hz)
   obtain ⟨δ, hδ, K, hKpos, hslice⟩ :=
     exists_abs_hamiltonianAction_sub_le_mul_setIntegral_floerEnergyDensity hH hx
       (by simpa using hxper 0) hnd c M hc
@@ -580,8 +580,9 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
       prod_mono (fun r hr ↦ hsa.trans_le hr.1) (subset_univ _)
     have hdiff := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH1 hopen hu
       (by linarith : s ≤ s + K) hR fun r hr ↦ by simpa using hper r (hsa.trans_le hr.1) 0
-    have hlow := ω.le_setIntegral_floerEnergyDensity_of_forall_le_mul hH1 hopen
-      (hu.of_le (by norm_num)) hKpos hR (m := f (s + K)) fun r hr ↦
+    have hlow := ω.le_setIntegral_floerEnergyDensity_of_forall_le_mul hopen
+      (hu.of_le (by norm_num)) contDiffOn_const (contDiff_uncurry_cylindrical hH1).contDiffOn
+      hKpos hR (m := f (s + K)) fun r hr ↦
         (hfanti (mem_Ici.2 (hs.trans hr.1)) (mem_Ici.2 (by linarith)) hr.2).trans
           (hfle r (hs.trans hr.1))
     have : f s - f (s + K) = A (s + K) - A s := by simp only [hfdef]; ring
@@ -652,8 +653,8 @@ theorem exists_pos_eventually_norm_sub_le_exp {L : ℝ}
       (contDiff_uncurry_cylindrical (hH.of_le (by norm_num))).contDiffOn).mono
       ((prod_mono le_rfl (subset_univ _)).trans hR)).integrableOn_compact
       (isCompact_Icc.prod isCompact_Icc)
-  have hJ (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) : ω.Tames (J z) := fun v hv ↦
-    (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
+  have hJ (z : ℝ × ℝ) (hz : z ∈ Ioi a ×ˢ Icc 0 1) : ω.Tames (J z) :=
+    .of_mul_norm_sq_le hc (hJc z hz)
   -- The energy over `[s, s + h] × [0, 1]` is at most the energy beyond `s`.
   have hRle : ∫ z in Icc s (s + h) ×ˢ Icc (0 : ℝ) 1, e z ≤ C₁ * Real.exp (-(κ₀ * s)) := by
     rw [integral_eq_lintegral_of_nonneg_ae ((ae_restrict_iff' (measurableSet_Icc.prod

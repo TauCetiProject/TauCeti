@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 
 /-!
 # Exponential decay along a long Floer neck near a nondegenerate orbit
@@ -121,8 +122,7 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_mul_exp_add_exp
       fun r hr ↦ hper r ⟨hs.trans hr.1, hr.2.trans hs'⟩]
     ring
   have he0 (z : ℝ × ℝ) (hz : z ∈ Icc a b ×ˢ Icc 0 1) : 0 ≤ e z :=
-    ω.floerEnergyDensity_nonneg
-      (fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)) (hfloer z hz)
+    ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc z hz)) (hfloer z hz)
   have hmono : MonotoneOn g (Icc a b) := fun s hs s' hs' hss' ↦ by
     have h := henergy hs.1 hss' hs'.2
     have : 0 ≤ ∫ z in Icc s s' ×ˢ Icc 0 1, e z :=
@@ -138,8 +138,9 @@ theorem exists_pos_forall_setIntegral_floerEnergyDensity_le_mul_exp_add_exp
   have hlow (s : ℝ) (hs : a ≤ s) (hsK : s + K ≤ b) (m : ℝ)
       (hm : ∀ r ∈ Icc s (s + K), m ≤ |g r|) : m ≤ g (s + K) - g s := by
     rw [← henergy hs (by linarith) hsK]
-    exact ω.le_setIntegral_floerEnergyDensity_of_forall_le_mul hH1 hU (hu.of_le (by norm_num)) hK
-      (hrect hs hsK) fun r hr ↦ (hm r hr).trans (hg r ⟨hs.trans hr.1, hr.2.trans hsK⟩)
+    exact ω.le_setIntegral_floerEnergyDensity_of_forall_le_mul hU (hu.of_le (by norm_num))
+      contDiffOn_const (contDiff_uncurry_cylindrical hH1).contDiffOn hK (hrect hs hsK)
+      fun r hr ↦ (hm r hr).trans (hg r ⟨hs.trans hr.1, hr.2.trans hsK⟩)
   -- Hence the positive part of `g` doubles forwards and its negative part doubles backwards.
   have hstep (s : ℝ) (hs : a ≤ s) (hsK : s + K ≤ b) :
       2 * g s ≤ g (s + K) ∧ g s ≤ 2 * g (s + K) := by
@@ -243,8 +244,7 @@ theorem exists_pos_forall_norm_sub_le_mul_exp_min
   set h := Real.exp (-(κ * d)) with hhdef
   have hh : 0 < h := Real.exp_pos _
   have hE0 : 0 ≤ E := setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ ω.floerEnergyDensity_nonneg (fun v hv ↦
-      (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)) (hfloer z hz)
+    fun z hz ↦ ω.floerEnergyDensity_nonneg (.of_mul_norm_sq_le hc (hJc z hz)) (hfloer z hz)
   rcases lt_or_ge (b - s) 1 with hshort | hlong
   · -- Near the right end the closeness to `x` already gives the bound.
     exact (hclose (s, t) ⟨hs, ht⟩).trans (le_mul_exp_neg_of_lt_one (lt_min hδ₁ hδ₂).le hκ

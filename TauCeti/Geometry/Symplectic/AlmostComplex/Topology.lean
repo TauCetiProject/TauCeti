@@ -31,6 +31,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
   complex structure squares to `-1`.
 * `TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley`: in operator-norm coordinates the
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
+* `TauCeti.SymplecticForm.Tames.of_mul_norm_sq_le`: a uniform lower bound `c ‖v‖² ≤ ω(v, J v)`
+  with `c > 0` gives tameness.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
 * `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
@@ -92,6 +94,12 @@ theorem toContinuousLinearMap_cayley (J₀ J₁ : AlmostComplexStructure V) {A B
 end AlmostComplexStructure
 
 namespace SymplecticForm
+
+omit [FiniteDimensional ℝ V] in
+/-- A lower bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0` shows that `ω` tames `J`. -/
+theorem Tames.of_mul_norm_sq_le {ω : SymplecticForm V} {J : AlmostComplexStructure V} {c : ℝ}
+    (hc : 0 < c) (h : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) : ω.Tames J :=
+  fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (h v)
 
 /-- Tameness is an open condition: if a family of complex structures is continuous at `x` in
 the operator-norm topology and `ω`-tame there, it is `ω`-tame near `x`. -/

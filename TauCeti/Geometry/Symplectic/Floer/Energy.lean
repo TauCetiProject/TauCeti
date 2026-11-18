@@ -79,8 +79,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   vector field control `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le`,
-  `SymplecticForm.le_setIntegral_floerEnergyDensity_of_forall_le_mul`: for a cylindrical
-  perturbation, comparison of the energy of a rectangle with the energies of its slices.
+  `SymplecticForm.le_setIntegral_floerEnergyDensity_of_forall_le_mul`: comparison of the energy
+  of a rectangle with the energies of its slices.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
   `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
@@ -849,22 +849,21 @@ theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm
   exact ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le (hJc z hz)
     (hJM z hz) (h z hz)
 
-variable {H : ℝ → V → ℝ} {U : Set (ℝ × ℝ)} {s : ℝ}
+variable {U : Set (ℝ × ℝ)} {s : ℝ}
 
 /-- The slice energies of `u` over `[s, s']` are integrable, and by Fubini's theorem their integral
 is the energy of the rectangle `[s, s'] × [0, 1]`. -/
 private theorem integrableOn_and_integral_setIntegral_floerEnergyDensity (ω : SymplecticForm V)
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {s' : ℝ}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {s' : ℝ}
     (hR : Icc s s' ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
-    IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1,
-        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t)) (Icc s s') ∧
-      ∫ r in Icc s s', ∫ t in Icc (0 : ℝ) 1,
-          ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t) =
-        ∫ z in Icc s s' ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u
+    IntegrableOn (fun r ↦ ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t))
+        (Icc s s') ∧
+      ∫ r in Icc s s', ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t) =
+        ∫ z in Icc s s' ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity Ks Kt u
   have hRint : IntegrableOn e (Icc s s' ×ˢ Icc (0 : ℝ) 1) :=
-    ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
-      (contDiff_uncurry_cylindrical hH).contDiffOn).mono hR).integrableOn_compact
+    ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hR).integrableOn_compact
       (isCompact_Icc.prod isCompact_Icc)
   rw [Measure.volume_eq_prod] at hRint ⊢
   refine ⟨?_, (setIntegral_prod e hRint).symm⟩
@@ -872,37 +871,36 @@ private theorem integrableOn_and_integral_setIntegral_floerEnergyDensity (ω : S
     rwa [Measure.prod_restrict]
   exact h.integral_prod_left
 
-/-- **A slice of at most average energy.** Let `u` be `C¹` on an open set `U` containing the
-rectangle `[s, s + h] × [0, 1]`, with `h > 0`, and let `H` be a `C¹` Hamiltonian. For the
-cylindrical perturbation `K = H_t dt`, some slice `σ ∈ [s, s + h]` has energy at most the average
-energy of the rectangle: `h ∫₀¹ e(σ, t) dt ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
+/-- **A slice of at most average energy.** Let `u` and the perturbation data `Ks`, `Kt` be `C¹`
+over an open set `U` containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`. Then some slice
+`σ ∈ [s, s + h]` has energy at most the average energy of the rectangle:
+`h ∫₀¹ e(σ, t) dt ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
 theorem exists_mem_Icc_mul_setIntegral_floerEnergyDensity_le (ω : SymplecticForm V)
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {h : ℝ}
-    (hh : 0 < h) (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
-    ∃ σ ∈ Icc s (s + h), h * ∫ t in Icc (0 : ℝ) 1,
-        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (σ, t) ≤
-      ∫ z in Icc s (s + h) ×ˢ Icc 0 1,
-        ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z := by
-  obtain ⟨hgint, heq⟩ := integrableOn_and_integral_setIntegral_floerEnergyDensity ω hH hU hu hR
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {h : ℝ} (hh : 0 < h)
+    (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U) :
+    ∃ σ ∈ Icc s (s + h), h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (σ, t) ≤
+      ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
+  obtain ⟨hgint, heq⟩ :=
+    integrableOn_and_integral_setIntegral_floerEnergyDensity ω hU hu hKs hKt hR
   obtain ⟨σ, hσ, hσle⟩ := exists_le_setAverage (by simpa using hh) (by simp) hgint
   rw [setAverage_eq, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left, smul_eq_mul,
     heq] at hσle
   exact ⟨σ, hσ, (le_inv_mul_iff₀ hh).1 hσle⟩
 
-/-- **A lower bound on every slice bounds the energy.** Let `u` be `C¹` on an open set `U`
-containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`, and let `H` be a `C¹` Hamiltonian.
-For the cylindrical perturbation `K = H_t dt`, if `m ≤ h ∫₀¹ e(r, t) dt` for every
-`r ∈ [s, s + h]`, then `m ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
+/-- **A lower bound on every slice bounds the energy.** Let `u` and the perturbation data `Ks`,
+`Kt` be `C¹` over an open set `U` containing the rectangle `[s, s + h] × [0, 1]`, with `h > 0`. If
+`m ≤ h ∫₀¹ e(r, t) dt` for every `r ∈ [s, s + h]`, then `m ≤ ∫_{[s, s + h] × [0, 1]} e`. -/
 theorem le_setIntegral_floerEnergyDensity_of_forall_le_mul (ω : SymplecticForm V)
-    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {h m : ℝ}
-    (hh : 0 < h) (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U)
-    (hm : ∀ r ∈ Icc s (s + h),
-      m ≤ h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t)) :
-    m ≤ ∫ z in Icc s (s + h) ×ˢ Icc 0 1,
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z := by
-  obtain ⟨hgint, heq⟩ := integrableOn_and_integral_setIntegral_floerEnergyDensity ω hH hU hu hR
-  have hint : ∫ _ in Icc s (s + h), m / h ≤ ∫ r in Icc s (s + h), ∫ t in Icc (0 : ℝ) 1,
-      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u (r, t) :=
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {h m : ℝ} (hh : 0 < h)
+    (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U)
+    (hm : ∀ r ∈ Icc s (s + h), m ≤ h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t)) :
+    m ≤ ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
+  obtain ⟨hgint, heq⟩ :=
+    integrableOn_and_integral_setIntegral_floerEnergyDensity ω hU hu hKs hKt hR
+  have hint : ∫ _ in Icc s (s + h), m / h ≤
+      ∫ r in Icc s (s + h), ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t) :=
     setIntegral_mono_on (integrableOn_const (by simp)) hgint measurableSet_Icc fun r hr ↦
       (div_le_iff₀' hh).2 (hm r hr)
   rwa [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), add_sub_cancel_left,
