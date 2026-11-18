@@ -114,11 +114,6 @@ theorem mk_mem_criticalPoints_height_iff {t : ℝ} {z : sphere (0 : ℂ) 1} :
   rw [height_comp_uncurry_mk, mem_criticalPoints_comp_snd_iff, criticalPoints_sphereHeight] at h
   exact h.symm
 
-/-- The closed orbits through fixed points are parametrized by the circle `ℝ / ℤ` of period
-`(1 : ℕ)`. -/
-local instance : Fact (0 < ((1 : ℕ) : ℝ)) :=
-  ⟨Nat.cast_pos.2 one_pos⟩
-
 /-- The points `±1` are fixed by conjugation. -/
 private theorem isFixedPt_conjCircleDiffeomorph {z : sphere (0 : ℂ) 1} (hz : z = 1 ∨ z = -1) :
     IsFixedPt conjCircleDiffeomorph z := by
