@@ -20,12 +20,12 @@ groups (`TauCeti.localHomology`).
 
 * `TauCeti.isZero_localHomology_union`: for closed `S` and `T`, if `Hₖ(M, M ∖ S)`, `Hₖ(M, M ∖ T)`
   and `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish, then so does `Hₖ(M, M ∖ (S ∪ T))`.
-* `TauCeti.localHomology_hom_ext_of_union`: for closed `S` and `T` with
-  `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, maps into `Hₖ(M, M ∖ (S ∪ T))` are determined by their
-  restrictions to `S` and to `T`.
 * `TauCeti.isPullback_localHomologyRestriction`: for closed `S` and `T` with
   `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, the square of restriction maps from `Hₖ(M, M ∖ (S ∪ T))` through
   `Hₖ(M, M ∖ S)` and `Hₖ(M, M ∖ T)` to `Hₖ(M, M ∖ (S ∩ T))` is a pullback square.
+* `TauCeti.localHomology_hom_ext_of_union`: for closed `S` and `T` with
+  `Hₖ₊₁(M, M ∖ (S ∩ T)) = 0`, maps into `Hₖ(M, M ∖ (S ∪ T))` are determined by their
+  restrictions to `S` and to `T`.
 * `TauCeti.exists_localHomologyRestriction_union_eq`: with coefficients in a module, classes along
   closed sets `S` and `T` with the same restriction to `S ∩ T` are the restrictions of a single
   class along `S ∪ T`.
@@ -58,36 +58,6 @@ theorem isZero_localHomology_union {S T : Set M} (hS : IsClosed S) (hT : IsClose
   exact IsZero.of_mono (TopCat.relativeMayerVietorisToBiprod R _ _ k)
     ((biprod_isZero_iff _ _).2 ⟨hSk, hTk⟩)
 
-/-- **Maps into local homology of a union are detected on the pieces.** Let `S` and `T` be closed
-and let `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Two maps into `Hₖ(M, M ∖ (S ∪ T))` that agree after
-restriction to `S` and to `T` are equal. -/
-theorem localHomology_hom_ext_of_union {S T : Set M} (hS : IsClosed S) (hT : IsClosed T) {k : ℕ}
-    (h : IsZero (localHomology R (S ∩ T) (k + 1))) {Z : A}
-    {f g : Z ⟶ localHomology R (S ∪ T) k}
-    (hfS : f ≫ localHomologyRestriction R subset_union_left k =
-      g ≫ localHomologyRestriction R subset_union_left k)
-    (hfT : f ≫ localHomologyRestriction R subset_union_right k =
-      g ≫ localHomologyRestriction R subset_union_right k) :
-    f = g := by
-  dsimp only [localHomology] at h
-  rw [compl_inter] at h
-  have := TopCat.mono_relativeMayerVietorisToBiprod R hS.isOpen_compl hT.isOpen_compl h
-  rw [localHomologyRestriction_def] at hfS hfT
-  -- The sequence is stated for `(M ∖ S) ∩ (M ∖ T)`, which is `M ∖ (S ∪ T)` only propositionally,
-  -- so generalize the subspace before comparing with the first map of the sequence.
-  suffices key : ∀ (W : Set (TopCat.of M)) (_ : W = Sᶜ ∩ Tᶜ) (hWS : W ⊆ Sᶜ) (hWT : W ⊆ Tᶜ)
-      (f g : Z ⟶ (TopPair.ofSubset W).singularHomology R k),
-      f ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWS) R k =
-          g ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWS) R k →
-        f ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWT) R k =
-          g ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _) hWT) R k → f = g from
-    key _ (compl_union S T) _ _ f g hfS hfT
-  rintro W rfl hWS hWT f g hS hT
-  rw [← cancel_mono (TopCat.relativeMayerVietorisToBiprod R (X := TopCat.of M) Sᶜ Tᶜ k)]
-  ext
-  · simpa using hS
-  · simpa using hT
-
 /-- **Local homology of a union is a pullback.** Let `S` and `T` be closed and let
 `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Then the square of restriction maps from `Hₖ(M, M ∖ (S ∪ T))` to
 `Hₖ(M, M ∖ S)` and `Hₖ(M, M ∖ T)`, and from these to `Hₖ(M, M ∖ (S ∩ T))`, is a pullback square:
@@ -100,8 +70,8 @@ theorem isPullback_localHomologyRestriction {S T : Set M} (hS : IsClosed S) (hT 
       (localHomologyRestriction R (inter_subset_left : S ∩ T ⊆ S) k)
       (localHomologyRestriction R inter_subset_right k) := by
   simp only [localHomologyRestriction_def]
-  -- As in `TauCeti.localHomology_hom_ext_of_union`, the sequence is stated for `Sᶜ ∩ Tᶜ` and
-  -- `Sᶜ ∪ Tᶜ`, which are `(S ∪ T)ᶜ` and `(S ∩ T)ᶜ` only propositionally, so generalize them.
+  -- The sequence is stated for `Sᶜ ∩ Tᶜ` and `Sᶜ ∪ Tᶜ`, which are `(S ∪ T)ᶜ` and `(S ∩ T)ᶜ` only
+  -- propositionally, so generalize them.
   suffices key : ∀ (W₁ W₂ : Set (TopCat.of M)) (_ : W₁ = Sᶜ ∩ Tᶜ) (_ : W₂ = Sᶜ ∪ Tᶜ)
       (hW₁S : W₁ ⊆ Sᶜ) (hW₁T : W₁ ⊆ Tᶜ) (hSW₂ : Sᶜ ⊆ W₂) (hTW₂ : Tᶜ ⊆ W₂),
       IsZero ((TopPair.ofSubset W₂).singularHomology R (k + 1)) →
@@ -112,6 +82,19 @@ theorem isPullback_localHomologyRestriction {S T : Set M} (hS : IsClosed S) (hT 
     key _ _ (compl_union S T) (compl_inter S T) _ _ _ _ h
   rintro W₁ W₂ rfl rfl - - - - h
   exact TopCat.relativeMayerVietoris_isPullback R hS.isOpen_compl hT.isOpen_compl h
+
+/-- **Maps into local homology of a union are detected on the pieces.** Let `S` and `T` be closed
+and let `Hₖ₊₁(M, M ∖ (S ∩ T))` vanish. Two maps into `Hₖ(M, M ∖ (S ∪ T))` that agree after
+restriction to `S` and to `T` are equal. -/
+theorem localHomology_hom_ext_of_union {S T : Set M} (hS : IsClosed S) (hT : IsClosed T) {k : ℕ}
+    (h : IsZero (localHomology R (S ∩ T) (k + 1))) {Z : A}
+    {f g : Z ⟶ localHomology R (S ∪ T) k}
+    (hfS : f ≫ localHomologyRestriction R subset_union_left k =
+      g ≫ localHomologyRestriction R subset_union_left k)
+    (hfT : f ≫ localHomologyRestriction R subset_union_right k =
+      g ≫ localHomologyRestriction R subset_union_right k) :
+    f = g :=
+  (isPullback_localHomologyRestriction hS hT h).hom_ext hfS hfT
 
 section Module
 
@@ -133,7 +116,7 @@ theorem exists_localHomologyRestriction_union_eq {S T : Set M} (hS : IsClosed S)
     hT.isOpen_compl k
   rw [ShortComplex.moduleCat_exact_iff] at hex
   simp only [localHomologyRestriction_def] at h ⊢
-  -- As in `TauCeti.localHomology_hom_ext_of_union`, the sequence is stated for `Sᶜ ∩ Tᶜ` and
+  -- As in `TauCeti.isPullback_localHomologyRestriction`, the sequence is stated for `Sᶜ ∩ Tᶜ` and
   -- `Sᶜ ∪ Tᶜ`, which are `(S ∪ T)ᶜ` and `(S ∩ T)ᶜ` only propositionally, so generalize them.
   suffices key : ∀ (W₁ W₂ : Set (TopCat.of M)) (_ : W₁ = Sᶜ ∩ Tᶜ) (_ : W₂ = Sᶜ ∪ Tᶜ)
       (hW₁S : W₁ ⊆ Sᶜ) (hW₁T : W₁ ⊆ Tᶜ) (hSW₂ : Sᶜ ⊆ W₂) (hTW₂ : Tᶜ ⊆ W₂),

@@ -38,7 +38,7 @@ The three K-sheaf axioms are proved as follows.
   colimits are exact (`TauCeti.localHomologyKPresheaf.isColimitCoconeOfCompacts`). A singular
   simplex of `M ∖ K` has compact image, which misses some compact neighbourhood of `K`; so the
   subspaces `M ∖ L` exhaust `M ∖ K` in the sense of compact supports
-  (`TopPair.isColimitMapCoconeSingularHomology`).
+  (`TauCeti.isColimitComplPairCocone`).
 
 The empty set and continuity axioms hold in every degree. The union axiom fails in general below
 the dimension: if two closed arcs `K₁` and `K₂` cover the circle `S¹`, then `H₀(S¹, S¹ ∖ Kᵢ) = 0`
@@ -80,8 +80,8 @@ variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 /-- The **local homology K-presheaf** `K ↦ Hₖ(M, M ∖ K)` of a space `M`, with coefficients `R`,
 whose restriction maps are the maps `Hₖ(M, M ∖ K) ⟶ Hₖ(M, M ∖ K')` for `K' ⊆ K` induced by the
 identity of `M` (`TauCeti.localHomologyRestriction`). -/
--- The body is exposed so that the values and maps are definitionally the local homology groups
--- and restriction maps, as the comparison with relative singular homology functors requires.
+-- The body is exposed so that the values are definitionally the local homology groups: the
+-- statement of `localHomologyKPresheaf_map`, a map between values, typechecks only then.
 @[expose]
 def localHomologyKPresheaf (k : ℕ) : TopCat.KPresheaf A (TopCat.of M) where
   obj K := localHomology R (K.unop : Set M) k
@@ -127,37 +127,21 @@ colimit of the groups `Hₖ(M, M ∖ L)` over the compact neighbourhoods `L` of 
 restriction maps. -/
 def localHomologyKPresheaf.isColimitCoconeOfCompacts (k : ℕ) (K : Compacts (TopCat.of M)) :
     IsColimit ((localHomologyKPresheaf R M k).coconeOfCompacts K) := by
-  -- The pairs `(M, M ∖ L)` over the compact neighbourhoods `L` of `K`, with the maps induced by
-  -- the identity of `M`, and their cocone over `(M, M ∖ K)`.
-  let F : (K.compactNhds)ᵒᵖ ⥤ TopPair.{w} :=
-    { obj L := TopPair.ofSubset ((L.unop.1 : Set (TopCat.of M))ᶜ)
-      map h := TopPair.ofSubsetMap (𝟙 _) (compl_subset_compl.2 (leOfHom h.unop))
-      map_id _ := TopPair.ofSubsetMap_id _
-      map_comp _ _ := TopPair.ofSubsetMap_comp (𝟙 _) (𝟙 _) _ _ _ }
-  let c : Cocone F :=
-    { pt := TopPair.ofSubset ((K : Set (TopCat.of M))ᶜ)
-      ι := { app L := TopPair.ofSubsetMap (𝟙 _)
-                (compl_subset_compl.2 (Compacts.subset_of_mem_compactNhds L.unop.2))
-             naturality _ _ _ :=
-               (TopPair.ofSubsetMap_comp (𝟙 _) (𝟙 _) _ _ _).symm.trans
-                 (Category.comp_id _).symm } }
-  have hfst (L : (K.compactNhds)ᵒᵖ) : TopPair.Hom.fst (c.ι.app L) = 𝟙 (TopCat.of M) :=
-    TopPair.ofSubsetMap_fst _ _
-  have hc := TopPair.isColimitMapCoconeSingularHomology R k c (fun L ↦ by rw [hfst]; exact .id)
-    (fun _ _ ↦ ⟨Classical.arbitrary _, fun x _ ↦ ⟨x, by rw [hfst]; rfl⟩⟩) fun T hT ↦ by
-      -- A compact subset of `M ∖ K` misses some compact neighbourhood of `K`.
-      obtain ⟨L, hL, hLT⟩ := K.exists_mem_compactNhds_disjoint
-        (hT.image continuous_subtype_val).isClosed (disjoint_right.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.2)
-      exact ⟨op ⟨L, hL⟩, fun x hx ↦ ⟨⟨x.1, disjoint_right.1 hLT ⟨x, hx, rfl⟩⟩,
-        Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩⟩
+  -- Relative homology of the pairs `(M, M ∖ L)` over the compact neighbourhoods `L` of `K`, since
+  -- a compact subset of `M ∖ K` misses some compact neighbourhood of `K`.
+  have hL : ∀ ⦃L L' : (K.compactNhds)ᵒᵖ⦄, (L ⟶ L') → (L'.unop.1 : Set M) ⊆ L.unop.1 :=
+    fun _ _ h ↦ leOfHom h.unop
+  have hc := isColimitComplPairCocone hL (fun L ↦ Compacts.subset_of_mem_compactNhds L.unop.2) R k
+    fun T hT hTK ↦
+      let ⟨L, hLK, hLT⟩ := K.exists_mem_compactNhds_disjoint hT.isClosed hTK.symm
+      ⟨op ⟨L, hLK⟩, hLT.symm⟩
   rw [TopPair.singularHomologyFunctor_eq_toSSetPair_comp] at hc
   -- The diagram and the cocone of `hc` are those of the K-presheaf, with components the local
   -- homology groups and the restriction maps.
-  let α : F ⋙ TopPair.toSSetPair ⋙ SSetPair.homologyFunctor R k ≅
+  let α : complPairDiagram hL ⋙ TopPair.toSSetPair ⋙ SSetPair.homologyFunctor R k ≅
       (Set.mono_coe K.compactNhds).functor.op ⋙ localHomologyKPresheaf R M k :=
-    NatIso.ofComponents (fun _ ↦ Iso.refl _) fun _ ↦ by
-      simp only [Functor.comp_map, localHomologyKPresheaf_map, localHomologyRestriction_def]
-      exact (Category.comp_id _).trans (Category.id_comp _).symm
+    NatIso.ofComponents (fun _ ↦ Iso.refl _) fun h ↦ (Category.comp_id _).trans
+      ((localHomologyRestriction_def R (hL h) k).symm.trans (Category.id_comp _).symm)
   refine IsColimit.precomposeHomEquiv α _ (hc.ofIsoColimit (Cocone.ext (Iso.refl _) fun L ↦ ?_))
   -- Both legs are the restriction map from a compact neighbourhood of `K` to `K`.
   exact (Category.comp_id _).trans ((localHomologyRestriction_def R
