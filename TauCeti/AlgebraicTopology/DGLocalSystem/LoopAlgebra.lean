@@ -136,7 +136,7 @@ def loopChainMap (f : C(B, B')) (hf : f b = b') :
 
 /-- `C_*(Ωf)` is the morphism of cubical chain algebras induced by the continuous monoid
 homomorphism `Ωf`. -/
-theorem loopChainMap_eq (f : C(B, B')) (hf : f b = b') :
+theorem loopChainMap_def (f : C(B, B')) (hf : f b = b') :
     loopChainMap R f hf = cubicalChainDGAlgHom R (MooreLoopSpace.map f hf) :=
   (rfl)
 

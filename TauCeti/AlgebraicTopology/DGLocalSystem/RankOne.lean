@@ -124,6 +124,7 @@ variable (B : Type*) [TopologicalSpace B] (b : B) (R : Type*) [CommRing R]
 
 /-- A **rank-one local system** on the pointed space `(B, b)`: a character of the Moore loops at
 `b` with values in the units of `R`, constant along paths of loops. -/
+@[ext]
 structure RankOneLocalSystem where
   /-- The action of a loop on the free module `R` of rank one. -/
   ρ : MooreLoopSpace B b →* Rˣ
@@ -133,14 +134,6 @@ structure RankOneLocalSystem where
 namespace RankOneLocalSystem
 
 variable {B b R} (L : RankOneLocalSystem B b R)
-
-/-- Rank-one local systems on which every loop acts by the same unit are equal. -/
-@[ext]
-theorem ext {L L' : RankOneLocalSystem B b R} (h : L.ρ = L'.ρ) : L = L' := by
-  cases L
-  cases L'
-  cases h
-  rfl
 
 /-- The character `Ω_b B → R` of a rank-one local system, with values in `R`. -/
 def character : MooreLoopSpace B b →* R :=
@@ -237,8 +230,8 @@ theorem zpow_ρ (n : ℤ) : (L ^ n).ρ = L.ρ ^ n :=
 
 /-- Rank-one local systems form a commutative group under the tensor product. -/
 instance : CommGroup (RankOneLocalSystem B b R) :=
-  Function.Injective.commGroup ρ (fun _ _ ↦ ext) rfl (fun _ _ ↦ rfl) (fun _ ↦ rfl)
-    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+  Function.Injective.commGroup ρ (fun _ _ ↦ RankOneLocalSystem.ext) rfl (fun _ _ ↦ rfl)
+    (fun _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 /-- The twist of the trivial local system is the identity. -/
 @[simp]
@@ -250,15 +243,6 @@ theorem twist_one :
   rw [twist, ← cubicalChainTwist_one (G := MooreLoopSpace B b) (R := R)]
   congr
 
-/-- **`Φ^L` is an automorphism**: its inverse is the twist of the inverse local system. -/
-theorem twist_comp_twist_inv :
-    L.twist.comp L⁻¹.twist = DGAlgHom.id (loopChain_isDGAlgebra B b R) := by
-  have h : L.character * L⁻¹.character = 1 := by
-    ext γ
-    simp
-  rw [twist, twist, cubicalChainTwist_mul, ← cubicalChainTwist_one (G := MooreLoopSpace B b)]
-  congr
-
 /-- **The twist of a product is the composite of the twists**, `Φ^{L L'} = Φ^L ∘ Φ^{L'}`. -/
 theorem twist_mul (L L' : RankOneLocalSystem B b R) : (L * L').twist = L.twist.comp L'.twist := by
   have h : (L * L').character = L.character * L'.character := by
@@ -267,14 +251,15 @@ theorem twist_mul (L L' : RankOneLocalSystem B b R) : (L * L').twist = L.twist.c
   rw [twist, twist, twist, cubicalChainTwist_mul]
   congr
 
+/-- **`Φ^L` is an automorphism**: its inverse is the twist of the inverse local system. -/
+theorem twist_comp_twist_inv :
+    L.twist.comp L⁻¹.twist = DGAlgHom.id (loopChain_isDGAlgebra B b R) := by
+  rw [← twist_mul, mul_inv_cancel, twist_one]
+
 /-- `Φ^L` is an automorphism: the twist of the inverse local system is a left inverse. -/
 theorem twist_inv_comp_twist :
     L⁻¹.twist.comp L.twist = DGAlgHom.id (loopChain_isDGAlgebra B b R) := by
-  have h : L⁻¹.character * L.character = 1 := by
-    ext γ
-    simp
-  rw [twist, twist, cubicalChainTwist_mul, ← cubicalChainTwist_one (G := MooreLoopSpace B b)]
-  congr
+  rw [← twist_mul, inv_mul_cancel, twist_one]
 
 /-- The **tensor product `𝓕 ⊗ L`** of a DG local system with a rank-one local system: the
 pullback of `𝓕` along `Φ^L`. -/
@@ -407,7 +392,7 @@ theorem monodromy_ofMonodromy (χ : FundamentalGroup B b →* Rˣ) : (ofMonodrom
 
 @[simp]
 theorem ofMonodromy_monodromy : ofMonodromy L.monodromy = L :=
-  ext <| MonoidHom.ext fun γ ↦ by
+  RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
     rw [ofMonodromy_ρ_apply, monodromy_fundamentalGroupHom, inv_inv]
 
 /-- **Rank-one local systems are the characters of the fundamental group**: the monodromy is an
@@ -467,13 +452,14 @@ theorem pullback_character (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSyste
 @[simp]
 theorem pullback_id :
     pullback (R := R) (.id B) (ContinuousMap.id_apply b) = MonoidHom.id _ :=
-  MonoidHom.ext fun L ↦ ext <| MonoidHom.ext fun γ ↦ by simp
+  MonoidHom.ext fun L ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by simp
 
 /-- The pullback along a composite is the composite of the pullbacks. -/
 theorem pullback_comp (g : C(B', B'')) (f : C(B, B')) (hg : g b' = b'') (hf : f b = b') :
     pullback (R := R) (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) =
       (pullback f hf).comp (pullback g hg) :=
-  MonoidHom.ext fun L ↦ ext <| MonoidHom.ext fun γ ↦ by simp [MooreLoopSpace.map_comp g f hg hf]
+  MonoidHom.ext fun L ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ by
+    simp [MooreLoopSpace.map_comp g f hg hf]
 
 /-- The monodromy of a pullback is the monodromy composed with the induced map on fundamental
 groups. -/
@@ -488,7 +474,7 @@ theorem monodromy_pullback (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSyste
 theorem loopChainMap_comp_twist_pullback (f : C(B, B')) (hf : f b = b')
     (L : RankOneLocalSystem B' b' R) :
     (loopChainMap R f hf).comp (pullback f hf L).twist = L.twist.comp (loopChainMap R f hf) := by
-  rw [loopChainMap_eq]
+  rw [loopChainMap_def]
   exact cubicalChainDGAlgHom_comp_cubicalChainTwist (MooreLoopSpace.map f hf)
     L.character_eq_of_joined
 
