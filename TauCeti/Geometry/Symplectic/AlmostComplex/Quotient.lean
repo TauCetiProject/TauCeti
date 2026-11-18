@@ -132,6 +132,7 @@ theorem descend_apply (J : AlmostComplexStructure V) (π : V →ₗ[ℝ] W)
   rw [descend, transport_apply, hs, quotient_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 /-- The surjection is complex linear for the induced structure on its target. -/
+@[simp]
 theorem isComplexLinearMap_descend (J : AlmostComplexStructure V) (π : V →ₗ[ℝ] W)
     (hπ : Function.Surjective π) (hJ : ∀ v, π v = 0 → π (J v) = 0) :
     IsComplexLinearMap J (J.descend π hπ hJ) π :=
