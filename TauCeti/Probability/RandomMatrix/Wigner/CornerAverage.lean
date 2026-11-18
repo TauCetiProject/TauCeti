@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.Wigner
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 import Mathlib.Probability.StrongLaw
 public import Mathlib.Analysis.Matrix.Normed
 
@@ -125,41 +126,29 @@ theorem norm_wignerMatrix_sub_sq_eq_sum_strictUpperFin
     ‖wignerMatrix ξ η n ω - wignerMatrix ζ η n ω‖ ^ 2 =
       (2 / (n : ℝ)) * ∑ i : StrictUpperFin n,
         ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2 := by
-  let g (p : Fin n × Fin n) := if h : p.1 < p.2 then
-    ‖ξ ⟨(p.1.val, p.2.val), h⟩ ω - ζ ⟨(p.1.val, p.2.val), h⟩ ω‖ ^ 2 else 0
-  have hentry (i j : Fin n) :
-      ‖(wignerMatrix ξ η n ω - wignerMatrix ζ η n ω) i j‖ ^ 2 =
-        (n : ℝ)⁻¹ * (g (i, j) + g (j, i)) := by
-    have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
-      simp [norm_inv, Complex.norm_real, abs_of_nonneg (Real.sqrt_nonneg _), inv_pow,
-        Real.sq_sqrt (Nat.cast_nonneg _)]
-    rcases lt_trichotomy i.val j.val with h | h | h
-    · have hij : i < j := h
-      simp only [Matrix.sub_apply, wignerMatrix_apply_of_lt _ _ _ h, g, dite_eq_left hij,
-        dite_eq_right hij.not_gt, add_zero, ← mul_sub, norm_mul, mul_pow, hn]
-    · obtain rfl := Fin.ext h
-      simp [g]
-    · have hji : j < i := h
-      simp only [Matrix.sub_apply, wignerMatrix_apply_of_gt _ _ _ h, g, dite_eq_left hji,
-        dite_eq_right hji.not_gt, zero_add, ← mul_sub, ← star_sub, norm_mul, norm_star, mul_pow, hn]
-  have hsum : ∑ p, g p = ∑ i : StrictUpperFin n,
-      ‖ξ (wignerUpperIndex i) ω - ζ (wignerUpperIndex i) ω‖ ^ 2 := by
-    have hf : ∑ p ∈ Finset.univ.filter (fun p : Fin n × Fin n ↦ p.1 < p.2), g p =
-        ∑ p, g p := by
-      rw [Finset.sum_filter]
-      exact Finset.sum_congr rfl fun p _ ↦ by by_cases hp : p.1 < p.2 <;> simp [g, hp]
-    rw [← hf, Finset.sum_subtype (p := fun p : Fin n × Fin n ↦ p.1.val < p.2.val) _ (by simp)]
-    exact Finset.sum_congr rfl fun (i : StrictUpperFin n) _ ↦ by
-      have hi : wignerUpperIndex i = ⟨(i.val.1.val, i.val.2.val), i.prop⟩ :=
-        Subtype.ext (wignerUpperIndex_val _)
-      have hlt : i.val.1 < i.val.2 := i.prop
-      simp only [hi, g, dite_eq_left hlt]
+  let D := wignerMatrix ξ η n ω - wignerMatrix ζ η n ω
+  have hD : D.IsHermitian :=
+    (wignerMatrix_isHermitian ξ η ω n).sub (wignerMatrix_isHermitian ζ η ω n)
+  have hsymm (i j : Fin n) : ‖D i j‖ ^ 2 = ‖D j i‖ ^ 2 := by
+    rw [← hD.apply i j, norm_star]
+  have hdiag (i : Fin n) : ‖D i i‖ ^ 2 = 0 := by
+    simp [D]
+  have hn : ‖(Real.sqrt n : ℂ)⁻¹‖ ^ 2 = (n : ℝ)⁻¹ := by
+    simp [norm_inv, Complex.norm_real, abs_of_nonneg (Real.sqrt_nonneg _), inv_pow,
+      Real.sq_sqrt (Nat.cast_nonneg _)]
+  have hupper (p : StrictUpperFin n) : ‖D p.val.1 p.val.2‖ ^ 2 =
+      (n : ℝ)⁻¹ * ‖ξ (wignerUpperIndex p) ω - ζ (wignerUpperIndex p) ω‖ ^ 2 := by
+    have hp : wignerUpperIndex p = ⟨(p.val.1.val, p.val.2.val), p.prop⟩ :=
+      Subtype.ext (wignerUpperIndex_val _)
+    simp only [D, Matrix.sub_apply, wignerMatrix_apply_of_lt _ _ _ p.prop,
+      hp, ← mul_sub, norm_mul, mul_pow, hn]
   rw [Matrix.frobenius_norm_def, ← Real.sqrt_eq_rpow]
   simp only [Real.rpow_two]
-  rw [Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)]
-  simp only [hentry, ← Finset.mul_sum, Finset.sum_add_distrib]
-  rw [Finset.sum_comm (f := fun i j ↦ g (j, i)), ← Fintype.sum_prod_type, hsum]
-  ring
+  rw [Real.sq_sqrt (Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
+    sum_symmetric_pairs _ hsymm]
+  simp only [hdiag, Finset.sum_const_zero, zero_add, hupper, ← Finset.mul_sum, nsmul_eq_mul,
+    Nat.cast_ofNat, div_eq_mul_inv, mul_assoc]
+  rfl
 
 /-- Strong law for the arithmetic means of the strictly upper triangular corners of an
 identically distributed, pairwise independent array. -/
