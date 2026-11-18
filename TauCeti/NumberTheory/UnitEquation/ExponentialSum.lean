@@ -14,11 +14,12 @@ import Mathlib.Tactic.FieldSimp
 /-!
 # Zeros of simple exponential sums as unit-equation solutions
 
-Let `α₁, …, αₖ` be units of a field `K` and let `g₁, …, gₖ ∈ K`. The Skolem–Mahler–Lech theorem
-for the simple exponential sum `m ↦ ∑ gᵢ αᵢ ^ m`, with `g` not identically zero and no quotient
-`αᵢ / αⱼ` (`i ≠ j`) a root of unity, says that it has only finitely many zeros. Its classical
-proof reduces each zero to a nondegenerate solution of a unit equation; this file proves that
-reduction, with no hypothesis on `K`, `α` or `g`.
+Let `α₁, …, αₖ` be units of a field `K` and let `g₁, …, gₖ ∈ K`. When `K` has characteristic
+zero, the Skolem–Mahler–Lech theorem for the simple exponential sum `m ↦ ∑ gᵢ αᵢ ^ m`, with `g`
+not identically zero and no quotient `αᵢ / αⱼ` (`i ≠ j`) a root of unity, says that it has only
+finitely many zeros; this fails in positive characteristic. Its classical proof reduces each zero
+to a nondegenerate solution of a unit equation; this file proves that reduction over any field,
+with no hypothesis on `α` or `g` beyond `g ≠ 0`.
 
 At a zero `m`, choose `i₀` with `g_{i₀} ≠ 0` and divide by `-g_{i₀} α_{i₀} ^ m`: the unknowns
 `(αᵢ / α_{i₀}) ^ m`, for `i ≠ i₀`, solve the unit equation with coefficients `-gᵢ / g_{i₀}`.
