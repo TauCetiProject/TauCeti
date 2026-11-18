@@ -106,6 +106,11 @@ The taming constants of `J_p` and the sizes of `X_{K_{s,p}}` are uniform over `C
 comparison of the two energies holds with constants independent of `p`. The statement for a single
 datum is the case of a constant family over a one-point window.
 
+Energy bounds for Floer solutions are usually lower Lebesgue integrals over the whole domain `S`.
+`TauCeti.SymplecticForm.integrableOn_and_setIntegral_floerEnergyDensity_le` turns such a bound
+into the integrability and the bound on the Bochner integral over a window `Ω ⊆ S` that the
+theorems above take.
+
 The coordinate mean-value inequality also holds on squares `B_r(z₀)` of `ℝ × ℝ`, the balls of its
 sup norm, with `δ` uniform over a compact window of the domain and a compact set of the target
 (`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_stdComplexLineReal_sq_le`):
@@ -1021,6 +1026,28 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (ω : Symp
   obtain ⟨φ, -, Z, v, hφ, -, -, h⟩ :=
     hconv (p := fun _ ↦ 0) hΩ hΩD (fun _ ↦ rfl) hu hfl huK hint hE
   exact ⟨φ, Z, v, hφ, h⟩
+
+/-- **The Floer energy over a subdomain as a Bochner integral.** Let `u` be `C¹` and
+`K = K_s ds + K_t dt` be `C¹` on an open set `S ⊆ ℝ × ℝ`, and let `Ω ⊆ S` be measurable with Floer
+energy density nonnegative on `Ω`. If the energy of `u` over `S` is at most `E ≥ 0`, then the
+density is integrable on `Ω` and its integral over `Ω` is at most `E`. This is the form of an
+energy bound over `S` that the compactness theorems above take on a window `Ω` of `S`. -/
+theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SymplecticForm V)
+    {u : ℝ × ℝ → V} {S Ω : Set (ℝ × ℝ)} (hS : IsOpen S) (hΩ : MeasurableSet Ω) (hΩS : Ω ⊆ S)
+    (hu : ContDiffOn ℝ 1 u S) (hKs : ContDiffOn ℝ 1 (Function.uncurry Ks) (S ×ˢ univ))
+    (hKt : ContDiffOn ℝ 1 (Function.uncurry Kt) (S ×ˢ univ))
+    (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
+    (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
+  have hf0' := ae_restrict_of_forall_mem (μ := volume) hΩ hf0
+  have hlin := (lintegral_mono_set hΩS).trans hE
+  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
+    ⟨((ω.continuousOn_floerEnergyDensity hS hu hKs hKt).mono hΩS).aestronglyMeasurable hΩ,
+      (hasFiniteIntegral_iff_ofReal hf0').2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
+  refine ⟨hint, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hf0' hint.aestronglyMeasurable]
+  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
 
 /-- **The mean-value inequality for Floer solutions on squares.** Let `K = K_s ds + K_t dt` be
 `C³` and `J(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × V` containing `D × K` for compact

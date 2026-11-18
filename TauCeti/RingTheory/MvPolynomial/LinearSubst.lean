@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
@@ -26,11 +27,21 @@ acts by `cⁿ`. Restricted to the forms of a fixed degree `n` it is the represen
 In two variables this is the action `P ↦ P(aX + bY, cX + dY)` of `2 × 2` matrices on binary
 forms of degree `n`, through which the modular group acts on period polynomials.
 
+Its transpose `TauCeti.polynomialAction g` substitutes the standard vectors instead: the variable
+`X j`, the `j`-th standard vector of `Rˢ`, goes to its image `∑ᵢ gᵢⱼ X i` under `g`. In two
+variables, with `x = X 0` and `y = X 1`, the matrix `!![a, b; c, d]` substitutes `x ↦ a x + c y`
+and `y ↦ b x + d y`. It is a left action,
+`polynomialAction (g * h) = polynomialAction g ∘ polynomialAction h`, and restricted to the forms of
+degree `d` it is the representation `TauCeti.polynomialRep` of the general linear group.
+
 ## Main definitions
 
 * `MvPolynomial.linearSubst`: the substitution `Xᵢ ↦ ∑ⱼ Mᵢⱼ Xⱼ`.
 * `MvPolynomial.linearSubstRep`: its restriction to forms of degree `n`, as a representation of
   `(Matrix σ σ R)ᵐᵒᵖ`.
+* `TauCeti.polynomialAction`: the substitution of standard vectors by a square matrix.
+* `TauCeti.polynomialRep`: its restriction to forms of degree `d`, as a representation of
+  `GL σ R`.
 
 ## Main results
 
@@ -54,6 +65,9 @@ forms of degree `n`, through which the modular group acts on period polynomials.
   of degree `n` by `cⁿ`.
 * `MvPolynomial.eq_zero_of_add_self_eq_zero`: a polynomial is zero if adding it to itself is
   zero and multiplication by `2` is injective on coefficients.
+* `TauCeti.polynomialAction_mul`: the substitution of standard vectors is a left action.
+* `TauCeti.polynomialAction_sum_C_mul_X`: on linear forms it is matrix-vector multiplication of
+  the coefficient vector.
 -/
 
 public section
@@ -253,3 +267,81 @@ theorem coe_linearSubstRep_apply [DecidableEq σ] {n : ℕ} (M : (Matrix σ σ R
   (rfl)
 
 end MvPolynomial
+
+namespace TauCeti
+
+open MvPolynomial
+
+section Action
+
+variable {σ R : Type*} [Fintype σ] [CommSemiring R]
+
+/-- The substitution of standard vectors by a square matrix `g`: the variable `X j`, the `j`-th
+standard vector, goes to its image `∑ᵢ gᵢⱼ X i` under `g`. In two variables the matrix
+`!![a, b; c, d]` substitutes `X 0 ↦ a X 0 + c X 1` and `X 1 ↦ b X 0 + d X 1`. -/
+noncomputable def polynomialAction (g : Matrix σ σ R) : MvPolynomial σ R →ₐ[R] MvPolynomial σ R :=
+  linearSubst gᵀ
+
+/-- The substitution of standard vectors is the change of variables along the transpose. -/
+theorem polynomialAction_eq_linearSubst_transpose (g : Matrix σ σ R) :
+    polynomialAction g = linearSubst gᵀ :=
+  (rfl)
+
+@[simp]
+theorem polynomialAction_X (g : Matrix σ σ R) (j : σ) :
+    polynomialAction g (X j) = ∑ i, C (g i j) * X i := by
+  simp [polynomialAction_eq_linearSubst_transpose]
+
+@[simp]
+theorem polynomialAction_one [DecidableEq σ] :
+    polynomialAction (1 : Matrix σ σ R) = AlgHom.id R _ := by
+  simp [polynomialAction_eq_linearSubst_transpose]
+
+/-- The substitution of standard vectors is a left action of the matrix monoid. -/
+theorem polynomialAction_mul (g h : Matrix σ σ R) :
+    polynomialAction (g * h) = (polynomialAction g).comp (polynomialAction h) := by
+  rw [polynomialAction_eq_linearSubst_transpose, transpose_mul, linearSubst_mul]
+  rfl
+
+theorem polynomialAction_mul_apply (g h : Matrix σ σ R) (p : MvPolynomial σ R) :
+    polynomialAction (g * h) p = polynomialAction g (polynomialAction h p) := by
+  rw [polynomialAction_mul, AlgHom.comp_apply]
+
+/-- On linear forms the substitution of standard vectors is matrix-vector multiplication of the
+coefficient vector: the linear form with coefficients `v` goes to the one with coefficients
+`g *ᵥ v`. -/
+theorem polynomialAction_sum_C_mul_X (g : Matrix σ σ R) (v : σ → R) :
+    polynomialAction g (∑ j, C (v j) * X j) = ∑ i, C ((g *ᵥ v) i) * X i := by
+  simp only [map_sum, map_mul, polynomialAction_X, algHom_C, algebraMap_eq, Finset.mul_sum,
+    mulVec, dotProduct, map_sum C, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+/-- A diagonal matrix rescales each variable by its diagonal entry. -/
+theorem polynomialAction_diagonal [DecidableEq σ] (t : σ → R) :
+    polynomialAction (diagonal t) = rescale t := by
+  rw [polynomialAction_eq_linearSubst_transpose, diagonal_transpose, linearSubst_diagonal]
+
+/-- The substitution of standard vectors preserves homogeneity. -/
+theorem _root_.MvPolynomial.IsHomogeneous.polynomialAction {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (g : Matrix σ σ R) :
+    (TauCeti.polynomialAction g p).IsHomogeneous n :=
+  hp.linearSubst gᵀ
+
+variable (σ R) in
+/-- The substitution of standard vectors restricted to the forms of degree `d`, as a
+representation of the general linear group. -/
+noncomputable def polynomialRep [DecidableEq σ] (d : ℕ) :
+    Representation R (GL σ R) (homogeneousSubmodule σ R d) :=
+  (linearSubstRep σ R d).comp ((transposeRingEquiv σ R).toMonoidHom.comp (Units.coeHom _))
+
+@[simp]
+theorem coe_polynomialRep_apply [DecidableEq σ] {d : ℕ} (g : GL σ R)
+    (p : homogeneousSubmodule σ R d) :
+    (polynomialRep σ R d g p : MvPolynomial σ R) = polynomialAction (g : Matrix σ σ R) p := by
+  simp [polynomialRep, polynomialAction_eq_linearSubst_transpose]
+
+end Action
+
+end TauCeti

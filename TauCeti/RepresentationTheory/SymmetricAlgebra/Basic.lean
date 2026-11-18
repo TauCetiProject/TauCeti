@@ -48,6 +48,8 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
   representation by linear maps over the invariant subalgebra.
 * `Representation.symmetricAlgebraHomogeneous`: the representation of `G` on the degree-`n`
   homogeneous component `Symⁿ M`.
+* `Representation.invariantsSymmetricAlgebraHomogeneousOneEquiv`: the linear equivalence between
+  the invariants of `Sym¹ M` and `M^G`.
 
 ## Main results
 
@@ -58,7 +60,10 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
   homogeneous subalgebra.
 * `Representation.toSubmodule_symmetricAlgebraInvariants`: as a submodule, it is the module of
   invariants of the induced representation.
-* `Representation.ι_mem_symmetricAlgebraInvariants_iff`: its degree-one part is `M^G`.
+* `Representation.ι_mem_symmetricAlgebraInvariants_iff`,
+  `Representation.finrank_invariants_symmetricAlgebraHomogeneous_one`, and
+  `Representation.finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_one`: its degree-one
+  part is `M^G` and has rank `finrank R ρ.invariants`.
 * `Representation.map_symmetricAlgebraInvariants_of_leftInverse`: an intertwining map with an
   intertwining right inverse carries the invariant subalgebra onto the invariant subalgebra.
 * `Representation.mem_invariants_symmetricAlgebraOverInvariants_iff`: the invariants of the
@@ -425,5 +430,61 @@ instance isIntegral_symmetricAlgebraInvariants [Finite G] :
   Algebra.IsInvariant.isIntegral _ _ G
 
 end CommRing
+
+section AddCommGroup
+
+variable [CommRing R] [Group G] [AddCommGroup M] [Module R M] (ρ : Representation R G M)
+
+/-- The invariants of the degree-one homogeneous component `Sym¹ M` identify linearly with `M^G`
+via `homogeneousSubmoduleOneEquiv`. -/
+noncomputable def invariantsSymmetricAlgebraHomogeneousOneEquiv :
+    (ρ.symmetricAlgebraHomogeneous 1).invariants ≃ₗ[R] ρ.invariants where
+  toFun p := ⟨homogeneousSubmoduleOneEquiv R M p.1, by
+    rw [mem_invariants, ← ι_mem_symmetricAlgebraInvariants_iff,
+      ι_homogeneousSubmoduleOneEquiv_apply]
+    exact (ρ.mem_invariants_symmetricAlgebraHomogeneous_iff p.1).1 p.2⟩
+  map_add' p q := Subtype.ext (map_add (homogeneousSubmoduleOneEquiv R M) p.1 q.1)
+  map_smul' r p := Subtype.ext (map_smul (homogeneousSubmoduleOneEquiv R M) r p.1)
+  invFun m := ⟨(homogeneousSubmoduleOneEquiv R M).symm m.1, by
+    rw [mem_invariants_symmetricAlgebraHomogeneous_iff, coe_homogeneousSubmoduleOneEquiv_symm_apply,
+      ι_mem_symmetricAlgebraInvariants_iff]
+    exact m.2⟩
+  left_inv p := Subtype.ext ((homogeneousSubmoduleOneEquiv R M).symm_apply_apply p.1)
+  right_inv m := Subtype.ext ((homogeneousSubmoduleOneEquiv R M).apply_symm_apply m.1)
+
+/-- Applying `invariantsSymmetricAlgebraHomogeneousOneEquiv` applies
+`homogeneousSubmoduleOneEquiv` to the underlying homogeneous element. -/
+@[simp]
+theorem coe_invariantsSymmetricAlgebraHomogeneousOneEquiv_apply
+    (p : (ρ.symmetricAlgebraHomogeneous 1).invariants) :
+    (ρ.invariantsSymmetricAlgebraHomogeneousOneEquiv p : M) =
+      homogeneousSubmoduleOneEquiv R M p.1 :=
+  (rfl)
+
+/-- Applying `invariantsSymmetricAlgebraHomogeneousOneEquiv.symm` applies
+`(homogeneousSubmoduleOneEquiv R M).symm` to the underlying invariant vector. -/
+@[simp]
+theorem coe_invariantsSymmetricAlgebraHomogeneousOneEquiv_symm_apply
+    (m : ρ.invariants) :
+    (ρ.invariantsSymmetricAlgebraHomogeneousOneEquiv.symm m : homogeneousSubmodule R M 1) =
+      (homogeneousSubmoduleOneEquiv R M).symm m.1 :=
+  (rfl)
+
+/-- The invariants of `Sym¹ M` have the same rank as the linear invariants `M^G`. -/
+@[simp]
+theorem finrank_invariants_symmetricAlgebraHomogeneous_one :
+    Module.finrank R (ρ.symmetricAlgebraHomogeneous 1).invariants =
+      Module.finrank R ρ.invariants :=
+  ρ.invariantsSymmetricAlgebraHomogeneousOneEquiv.finrank_eq
+
+/-- The degree-one part of the invariant subalgebra has the same rank as `M^G`. -/
+theorem finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_one :
+    Module.finrank R
+        ↥(Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants ⊓ homogeneousSubmodule R M 1) =
+      Module.finrank R ρ.invariants := by
+  rw [← ρ.finrank_invariants_symmetricAlgebraHomogeneous 1,
+    ρ.finrank_invariants_symmetricAlgebraHomogeneous_one]
+
+end AddCommGroup
 
 end Representation

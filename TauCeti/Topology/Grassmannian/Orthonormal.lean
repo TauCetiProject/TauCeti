@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Basic
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Orthonormal frames and compactness of finite Grassmannians
@@ -113,9 +114,8 @@ instance : CompactSpace (finiteOrthonormalFrame 𝕜 r N) :=
 vectors: `A • f` has `j`th vector `∑ i, A j i • f i`. -/
 instance : SMul (Matrix.unitaryGroup (Fin r) 𝕜) (finiteOrthonormalFrame 𝕜 r N) where
   smul A f := ⟨fun j ↦ ∑ i, (A : Matrix (Fin r) (Fin r) 𝕜) j i • f.1 i, by
-    simpa only [WithLp.toLp_sum, WithLp.toLp_smul] using (f.2.orthonormal_sum_smul_iff _).2 <| by
-      rw [← Matrix.star_eq_conjTranspose]
-      exact Matrix.mem_unitaryGroup_iff.1 A.2⟩
+    simpa only [WithLp.toLp_sum, WithLp.toLp_smul] using
+      (f.2.orthonormal_sum_smul_iff_mem_unitaryGroup _).2 A.2⟩
 
 @[simp] theorem coe_smul (A : Matrix.unitaryGroup (Fin r) 𝕜) (f : finiteOrthonormalFrame 𝕜 r N) :
     ((A • f : finiteOrthonormalFrame 𝕜 r N) : Fin r → Fin N → 𝕜) =
@@ -134,10 +134,8 @@ instance : MulAction (Matrix.unitaryGroup (Fin r) 𝕜) (finiteOrthonormalFrame 
     ext j : 2
     simp [Matrix.one_apply]
   mul_smul A B f := by
-    ext j : 2
-    simp only [coe_smul, Submonoid.coe_mul, Matrix.mul_apply, Finset.sum_smul, Finset.smul_sum,
-      smul_smul]
-    exact Finset.sum_comm
+    ext : 1
+    simp only [coe_smul, Submonoid.coe_mul, Matrix.sum_mul_apply_smul]
 
 /-- Each unitary matrix acts continuously on orthonormal frames. -/
 instance : ContinuousConstSMul (Matrix.unitaryGroup (Fin r) 𝕜) (finiteOrthonormalFrame 𝕜 r N) where
@@ -392,10 +390,9 @@ theorem frameSpan_toFullRankFrame_eq_iff {f g : finiteOrthonormalFrame 𝕜 r N}
     obtain ⟨A, hA : A • f.toFullRankFrame = g.toFullRankFrame⟩ := frameSpan_eq_frameSpan_iff.1 h
     have hcoe : g.1 = fun j ↦ ∑ i, (A : Matrix (Fin r) (Fin r) 𝕜) j i • f.1 i :=
       (congrArg Subtype.val hA).symm.trans (finiteFullRankFrame.coe_smul A _)
-    have hmem : (A : Matrix (Fin r) (Fin r) 𝕜) ∈ Matrix.unitaryGroup (Fin r) 𝕜 := by
-      rw [Matrix.mem_unitaryGroup_iff, Matrix.star_eq_conjTranspose,
-        ← f.2.orthonormal_sum_smul_iff]
-      simpa only [hcoe, WithLp.toLp_sum, WithLp.toLp_smul] using g.2
+    have hmem : (A : Matrix (Fin r) (Fin r) 𝕜) ∈ Matrix.unitaryGroup (Fin r) 𝕜 :=
+      (f.2.orthonormal_sum_smul_iff_mem_unitaryGroup _).1 <| by
+        simpa only [hcoe, WithLp.toLp_sum, WithLp.toLp_smul] using g.2
     exact ⟨⟨A, hmem⟩, Subtype.ext hcoe.symm⟩
   · rintro ⟨A, rfl⟩
     exact (frameSpan_toFullRankFrame_smul A f).symm
