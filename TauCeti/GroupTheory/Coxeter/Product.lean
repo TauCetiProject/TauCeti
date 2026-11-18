@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.Graph
 public import TauCeti.GroupTheory.Coxeter.Parabolic
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.GroupTheory.NoncommCoprod
 public import Mathlib.GroupTheory.NoncommPiCoprod
@@ -47,8 +46,6 @@ factors together invert multiplication.
 * `CoxeterSystem.commute_of_mem_parabolic_of_mem_parabolic_compl`: the two standard parabolic
   subgroups commute elementwise.
 * `CoxeterSystem.isComplement'_parabolic_compl`: they are complements of each other.
-* `CoxeterMatrix.eq_two_of_connectedComponentMk_ne`: indices in distinct connected components of
-  the Coxeter graph have entry `2`.
 * `CoxeterSystem.card_eq_prod_card_parabolic_supp`: the order of `W` is the product of the orders
   of the standard parabolic subgroups of the connected components of the Coxeter graph.
 
@@ -60,23 +57,6 @@ factors together invert multiplication.
 -/
 
 public section
-
-namespace CoxeterMatrix
-
-variable {B : Type*} (M : CoxeterMatrix B)
-
-/-- Indices in distinct connected components of the Coxeter graph have Coxeter matrix entry `2`:
-their simple reflections commute. -/
-theorem eq_two_of_connectedComponentMk_ne {i j : B}
-    (h : M.graph.connectedComponentMk i ≠ M.graph.connectedComponentMk j) : M i j = 2 := by
-  by_contra hij
-  refine h ?_
-  by_cases hne : i = j
-  · rw [hne]
-  · exact SimpleGraph.ConnectedComponent.connectedComponentMk_eq_of_adj
-      (M.graph_adj.mpr ⟨hne, hij⟩)
-
-end CoxeterMatrix
 
 namespace CoxeterSystem
 
@@ -196,11 +176,13 @@ noncomputable def parabolicProdComplMulEquiv : cs.parabolic J × cs.parabolic J�
 /-- `CoxeterSystem.parabolicProdComplMulEquiv` multiplies the two factors. -/
 @[simp]
 theorem parabolicProdComplMulEquiv_apply (x : cs.parabolic J × cs.parabolic Jᶜ) :
-    cs.parabolicProdComplMulEquiv hJ x = x.1 * x.2 :=
-  (rfl)
+    cs.parabolicProdComplMulEquiv hJ x = x.1 * x.2 := by
+  rw [parabolicProdComplMulEquiv, MonoidHom.toMulEquiv_apply, MonoidHom.noncommCoprod_apply,
+    Subgroup.coe_subtype, Subgroup.coe_subtype]
 
 /-- The inverse of `CoxeterSystem.parabolicProdComplMulEquiv` sends `s i` with `i ∈ J` into the
 first factor. -/
+@[simp]
 theorem parabolicProdComplMulEquiv_symm_simple_of_mem {i : B} (hi : i ∈ J) :
     (cs.parabolicProdComplMulEquiv hJ).symm (cs.simple i) =
       (⟨cs.simple i, cs.simple_mem_parabolic hi⟩, 1) := by
@@ -209,6 +191,7 @@ theorem parabolicProdComplMulEquiv_symm_simple_of_mem {i : B} (hi : i ∈ J) :
 
 /-- The inverse of `CoxeterSystem.parabolicProdComplMulEquiv` sends `s i` with `i ∉ J` into the
 second factor. -/
+@[simp]
 theorem parabolicProdComplMulEquiv_symm_simple_of_notMem {i : B} (hi : i ∉ J) :
     (cs.parabolicProdComplMulEquiv hJ).symm (cs.simple i) =
       (1, ⟨cs.simple i, cs.simple_mem_parabolic (Set.mem_compl hi)⟩) := by
@@ -247,6 +230,18 @@ private theorem pairwise_commute_parabolic_preimage_singleton :
       Commute u v :=
   fun _ _ hkl _ _ ↦ cs.commute_of_mem_parabolic_preimage_singleton c hc hkl
 
+/-- The product of the retractions onto the fibres of `c` sends `s i` into the factor of `c i`. -/
+private theorem pi_parabolicRetraction_simple [DecidableEq ι] (i : B) :
+    MonoidHom.pi (fun k ↦ cs.parabolicRetraction (preimage_singleton_eq_two c hc k))
+      (cs.simple i) = Pi.mulSingle (c i)
+        ⟨cs.simple i, cs.simple_mem_parabolic (Set.mem_preimage.mpr (Set.mem_singleton _))⟩ := by
+  funext k
+  rw [MonoidHom.pi_apply]
+  by_cases hk : c i = k
+  · subst hk
+    rw [Pi.mulSingle_eq_same, parabolicRetraction_simple_of_mem _ _ rfl]
+  · rw [Pi.mulSingle_eq_of_ne' hk, parabolicRetraction_simple_of_notMem _ _ hk]
+
 /-- **A partition of the indices with no edges between its parts splits a Coxeter group.** If
 `c : B → ι` maps to a finite type and `M i j = 2` whenever `c i ≠ c j`, multiplication is an
 isomorphism from the product of the standard parabolic subgroups of the fibres of `c` onto `W`.
@@ -268,16 +263,8 @@ noncomputable def piParabolicMulEquiv [Fintype ι] :
       · rw [Pi.mulSingle_eq_of_ne' hkl, parabolicRetraction_apply_of_subset_compl]
         exact fun _ hi hi' ↦ hkl (by simp_all))
     (cs.ext_simple fun i ↦ by
-      have hi : i ∈ c ⁻¹' {c i} := Set.mem_preimage.mpr (Set.mem_singleton (c i))
-      have h : MonoidHom.pi (fun k ↦ cs.parabolicRetraction (preimage_singleton_eq_two c hc k))
-          (cs.simple i) = Pi.mulSingle (c i) ⟨cs.simple i, cs.simple_mem_parabolic hi⟩ := by
-        funext k
-        rw [MonoidHom.pi_apply]
-        by_cases hk : c i = k
-        · subst hk
-          rw [Pi.mulSingle_eq_same, parabolicRetraction_simple_of_mem _ _ hi]
-        · rw [Pi.mulSingle_eq_of_ne' hk, parabolicRetraction_simple_of_notMem _ _ hk]
-      rw [MonoidHom.comp_apply, h, Subgroup.noncommPiCoprod_mulSingle, MonoidHom.id_apply])
+      rw [MonoidHom.comp_apply, cs.pi_parabolicRetraction_simple c hc,
+        Subgroup.noncommPiCoprod_mulSingle, MonoidHom.id_apply])
 
 /-- `CoxeterSystem.piParabolicMulEquiv` is the inclusion on each factor. -/
 @[simp]
@@ -287,6 +274,7 @@ theorem piParabolicMulEquiv_mulSingle [Fintype ι] [DecidableEq ι] (k : ι)
   exact Subgroup.noncommPiCoprod_mulSingle (H := fun k ↦ cs.parabolic (c ⁻¹' {k})) k u
 
 /-- The inverse of `CoxeterSystem.piParabolicMulEquiv` sends `s i` into the factor of `c i`. -/
+@[simp]
 theorem piParabolicMulEquiv_symm_simple [Fintype ι] [DecidableEq ι] (i : B) :
     (cs.piParabolicMulEquiv c hc).symm (cs.simple i) = Pi.mulSingle (c i)
       ⟨cs.simple i, cs.simple_mem_parabolic (Set.mem_preimage.mpr (Set.mem_singleton _))⟩ := by

@@ -192,27 +192,9 @@ theorem mem_parabolic_iff_exists_wordProd_eq {J : Set B} {w : W} :
 it contains.** -/
 theorem parabolic_hom_ext {G : Type*} [Monoid G] {J : Set B} {φ ψ : cs.parabolic J →* G}
     (h : ∀ i (hi : i ∈ J), φ ⟨s i, cs.simple_mem_parabolic hi⟩ =
-      ψ ⟨s i, cs.simple_mem_parabolic hi⟩) : φ = ψ := by
-  have key : ∀ (ω : List B) (hω : ∀ i ∈ ω, i ∈ J),
-      φ ⟨π ω, cs.wordProd_mem_parabolic hω⟩ =
-        ψ ⟨π ω, cs.wordProd_mem_parabolic hω⟩ := by
-    intro ω hω
-    induction ω with
-    | nil =>
-      have h1 : (⟨π [], cs.wordProd_mem_parabolic hω⟩ : cs.parabolic J) = 1 :=
-        Subtype.ext cs.wordProd_nil
-      rw [h1, map_one, map_one]
-    | cons i ω ih =>
-      have hi : i ∈ J := hω i List.mem_cons_self
-      have hω' : ∀ j ∈ ω, j ∈ J := fun j hj ↦ hω j (List.mem_cons_of_mem i hj)
-      have h1 : (⟨π (i :: ω), cs.wordProd_mem_parabolic hω⟩ : cs.parabolic J) =
-          ⟨s i, cs.simple_mem_parabolic hi⟩ *
-            ⟨π ω, cs.wordProd_mem_parabolic hω'⟩ :=
-        Subtype.ext (cs.wordProd_cons i ω)
-      rw [h1, map_mul, map_mul, h i hi, ih hω']
-  ext ⟨w, hw⟩
-  obtain ⟨ω, hω, rfl⟩ := cs.exists_wordProd_eq_of_mem_parabolic hw
-  exact key ω hω
+      ψ ⟨s i, cs.simple_mem_parabolic hi⟩) : φ = ψ :=
+  MonoidHom.eq_of_eqOn_dense Subgroup.closure_closure_coe_preimage
+    (by rintro ⟨_, _⟩ ⟨i, hi, rfl⟩; exact h i hi)
 
 /-- The word of `CoxeterSystem.mem_parabolic_iff_exists_wordProd_eq` may be taken reduced: every
 element of a standard parabolic subgroup is spelled by a reduced word with letters in the defining
