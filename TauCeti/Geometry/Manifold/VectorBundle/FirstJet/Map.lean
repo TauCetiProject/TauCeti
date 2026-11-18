@@ -249,6 +249,16 @@ theorem map_apply_fst (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) (j : FirstJ
       ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ x x x x (Φ x) j.1 := by
   rw [map_apply, homLocalRep_extChartAt Φ (mem_chart_source H x)]
 
+/-- The derivative coordinate of `J¹Φ x j` is given by the product rule: the derivative of the
+local representative of `Φ` applied to the value coordinate of `j`, plus `Φ x`, read in the
+trivializations at `x`, composed with the derivative coordinate of `j`. -/
+@[simp]
+theorem map_apply_snd (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) (j : FirstJetBundle I F₁ V₁ x) :
+    (map I F₁ F₂ Φ x j).2 =
+      (fderivWithin 𝕜 (homLocalRep I F₁ F₂ Φ x) (range I) (extChartAt I x x)).flip j.1 +
+        (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ x x x x (Φ x)).comp j.2 := by
+  rw [map_apply, homLocalRep_extChartAt Φ (mem_chart_source H x)]
+
 section Naturality
 
 variable [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
@@ -325,6 +335,7 @@ theorem value_map (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) (j : FirstJetBu
 
 /-- The square formed by the projections `J¹Vᵢ x → Vᵢ x`, the prolongation `J¹Φ x` and `Φ x`
 commutes. -/
+@[simp]
 theorem value_comp_map (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) :
     value I F₂ x ∘L map I F₁ F₂ Φ x = Φ x ∘L value I F₁ x :=
   ContinuousLinearMap.ext (value_map Φ x)
