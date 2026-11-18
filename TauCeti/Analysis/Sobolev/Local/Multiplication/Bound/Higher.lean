@@ -29,10 +29,10 @@ The proof is by induction on `k`, starting from the order-one bound
 
 ## Main declarations
 
-* `TauCeti.exists_eLpNormWkp_bilin_le`: the bound at every positive order.
-* `TauCeti.exists_eLpNormWkp_clm_apply_le`: the field form `z ↦ A z (u z)` for a coefficient field
-  `A` of linear maps.
-* `TauCeti.exists_eLpNormWkp_compL_le`: the composition form `z ↦ A z ∘L T z`, for
+* `TauCeti.exists_eLpNormWkp_succ_bilin_le`: the bound at every positive order.
+* `TauCeti.exists_eLpNormWkp_succ_clm_apply_le`: the field form `z ↦ A z (u z)` for a coefficient
+  field `A` of linear maps.
+* `TauCeti.exists_eLpNormWkp_succ_compL_le`: the composition form `z ↦ A z ∘L T z`, for
   finite-dimensional `H`.
 
 ## References
@@ -60,7 +60,7 @@ such that `‖B(f, g)‖_{W^{k+1,q}(U)} ≤ C ‖B‖ ‖f‖_{W^{k+1,p}(Ω)} �
 continuous bilinear map `B : F →L[ℝ] G →L[ℝ] H` and all `f : ℂ → F` and `g : ℂ → G`. At `k = 0`
 this is `TauCeti.exists_eLpNormWkp_one_bilin_le`; at `q = p` it is the local bound for the algebra
 property of `W^{k+1,p}_loc`. -/
-theorem exists_eLpNormWkp_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
+theorem exists_eLpNormWkp_succ_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p)
     (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (f : ℂ → F) (g : ℂ → G),
       eLpNormWkp q U (k + 1) (fun z => B (f z) (g z)) ≤
@@ -79,8 +79,8 @@ theorem exists_eLpNormWkp_bilin_le [CompleteSpace H] (hp : 2 < p) (hq : 1 < q) (
     have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
     have hp0 : (p : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
     have hUΩ' : U ⊆ Ω := subset_closure.trans hUΩ
-    refine le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le hp0 hq0 hUΩ' hUΩ' (by positivity)
-      (fun h => by rw [eLpNormWkp_congr_ae h, eLpNormWkp_zero_fun]) fun hf hg => ?_
+    refine le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le hp0 hq0 hUΩ' hUΩ'
+      (by positivity) (fun h => by rw [eLpNormWkp_congr_ae h, eLpNormWkp_zero_fun]) fun hf hg => ?_
     -- Weak derivatives of the factors realizing their norms on `Ω`.
     obtain ⟨Df, hDf, hDfk, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
     obtain ⟨Dg, hDg, hDgk, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
@@ -121,12 +121,12 @@ is compact and contained in `Ω`, there is a constant `C` such that
 `‖z ↦ A z (u z)‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖u‖_{W^{k+1,q}(Ω)}` for every
 coefficient field `A : ℂ → F →L[ℝ] G` and every `u : ℂ → F`. This is the bound that accompanies
 `TauCeti.MemWkpLoc.clm_apply_succ`. -/
-theorem exists_eLpNormWkp_clm_apply_le (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) (k : ℕ)
+theorem exists_eLpNormWkp_succ_clm_apply_le (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) (k : ℕ)
     {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ (A : ℂ → F →L[ℝ] G) (u : ℂ → F),
       eLpNormWkp q U (k + 1) (fun z => A z (u z)) ≤
         C * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) u := by
-  obtain ⟨C, hC⟩ := exists_eLpNormWkp_bilin_le (F := F →L[ℝ] G) (G := F) (H := G) hp hq hqp k
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := F →L[ℝ] G) (G := F) (H := G) hp hq hqp k
     hU hUΩ
   refine ⟨C, fun A u => (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u).trans ?_⟩
   calc
@@ -141,12 +141,12 @@ set `U` whose closure is compact and contained in `Ω`, there is a constant `C` 
 `‖z ↦ A z ∘L T z‖_{W^{k+1,q}(U)} ≤ C ‖A‖_{W^{k+1,p}(Ω)} ‖T‖_{W^{k+1,q}(Ω)}` for all fields
 `A : ℂ → G →L[ℝ] H` and `T : ℂ → F →L[ℝ] G`. This is the bound that accompanies
 `TauCeti.MemWkpLoc.compL_succ`. -/
-theorem exists_eLpNormWkp_compL_le [FiniteDimensional ℝ H] (hp : 2 < p) (hq : 1 < q)
+theorem exists_eLpNormWkp_succ_compL_le [FiniteDimensional ℝ H] (hp : 2 < p) (hq : 1 < q)
     (hqp : q ≤ p) (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
     ∃ C : ℝ≥0, ∀ (A : ℂ → G →L[ℝ] H) (T : ℂ → F →L[ℝ] G),
       eLpNormWkp q U (k + 1) (fun z => (A z).comp (T z)) ≤
         C * eLpNormWkp p Ω (k + 1) A * eLpNormWkp q Ω (k + 1) T := by
-  obtain ⟨C, hC⟩ := exists_eLpNormWkp_bilin_le (F := G →L[ℝ] H) (G := F →L[ℝ] G)
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le (F := G →L[ℝ] H) (G := F →L[ℝ] G)
     (H := F →L[ℝ] H) hp hq hqp k hU hUΩ
   refine ⟨C, fun A T => (hC (ContinuousLinearMap.compL ℝ F G H) A T).trans ?_⟩
   calc

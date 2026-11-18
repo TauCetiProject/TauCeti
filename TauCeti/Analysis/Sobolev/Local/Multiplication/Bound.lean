@@ -32,8 +32,8 @@ infinite.
 
 ## Main declarations
 
-* `TauCeti.le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le`: the reduction of such a bound to
-  factors of finite norm.
+* `TauCeti.le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le`: the reduction of such a
+  bound to factors of finite norm.
 * `TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one`: the order-zero bound.
 * `TauCeti.exists_eLpNormWkp_one_bilin_le`: the order-one bound. At `q = p` this is the local
   bound for the algebra property of `W^{1,p}_loc`.
@@ -61,8 +61,8 @@ omit [FiniteDimensional ℝ G] in
 `C ‖B‖ ‖f‖_{W^{k,p}(S)} ‖g‖_{W^{l,q}(T)}` for nonzero `p`, `q` and `C` and `V ⊆ S ∩ T`, it
 suffices to treat factors of finite norm, provided `L` vanishes when the product vanishes almost
 everywhere on `V`. -/
-theorem le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le {p q : ℝ≥0∞} (hp : p ≠ 0) (hq : q ≠ 0)
-    {V S T : Set ℂ} (hVS : V ⊆ S) (hVT : V ⊆ T) {k l : ℕ} {C : ℝ≥0} (hC : C ≠ 0)
+theorem le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le {p q : ℝ≥0∞} (hp : p ≠ 0)
+    (hq : q ≠ 0) {V S T : Set ℂ} (hVS : V ⊆ S) (hVT : V ⊆ T) {k l : ℕ} {C : ℝ≥0∞} (hC : C ≠ 0)
     {B : F →L[ℝ] G →L[ℝ] H} {f : ℂ → F} {g : ℂ → G} {L : ℝ≥0∞}
     (hL : (fun z => B (f z) (g z)) =ᵐ[volume.restrict V] 0 → L = 0)
     (hfin : eLpNormWkp p S k f ≠ ∞ → eLpNormWkp q T l g ≠ ∞ →
@@ -71,7 +71,7 @@ theorem le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le {p q : ℝ≥0∞} (hp
   refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hL (.of_forall fun z => ?_))
     (fun hf0 => hL ?_) (fun hg0 => hL ?_) fun _ hf hg => hfin hf hg
   · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
-    have hB : ‖B‖ₑ = 0 := (mul_eq_zero.1 hCB).resolve_left (ENNReal.coe_ne_zero.2 hC)
+    have hB : ‖B‖ₑ = 0 := (mul_eq_zero.1 hCB).resolve_left hC
     simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hB]
   · filter_upwards [ae_mono (Measure.restrict_mono hVS le_rfl)
       (ae_eq_zero_of_eLpNormWkp_eq_zero hp hf0)] with z hz
@@ -100,7 +100,7 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hq : 1 ≤ q) (hqp 
   have hUm : volume.restrict U ≤ volume.restrict Ω :=
     Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl
   rw [← eLpNormWkp_zero (f := f)]
-  refine le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le
+  refine le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le
     (by simpa using (zero_lt_two.trans hp).ne') hq0 subset_rfl (subset_closure.trans hUΩ)
     (by positivity) (fun h => by rw [eLpNorm_congr_ae h, eLpNorm_zero]) fun hf hg => ?_
   rw [eLpNormWkp_zero] at hf ⊢
@@ -151,8 +151,8 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
   have hp0 : (p : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hKm : volume.restrict K ≤ volume.restrict Ω := Measure.restrict_mono hUΩ le_rfl
-  refine le_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le hp0 hq0 hUΩ hUΩ (by positivity)
-    (fun h => by rw [eLpNormWkp_congr_ae h, eLpNormWkp_zero_fun]) fun hf hg => ?_
+  refine le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le hp0 hq0 hUΩ hUΩ
+    (by positivity) (fun h => by rw [eLpNormWkp_congr_ae h, eLpNormWkp_zero_fun]) fun hf hg => ?_
   obtain ⟨Df, hDf, hDfp, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
   obtain ⟨Dg, hDg, hDgq, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
   have hfp := memLp_of_eLpNormWkp_ne_top hf
