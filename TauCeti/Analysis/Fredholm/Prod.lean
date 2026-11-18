@@ -9,6 +9,9 @@ public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
+import TauCeti.LinearAlgebra.LinearMap.Prod
+import TauCeti.LinearAlgebra.Quotient.Prod
+
 /-!
 # Products of Fredholm operators
 
@@ -52,10 +55,10 @@ lemma IsFredholm.prodMap
     exact LinearMap.isStrictMap_prodMap hT.isStrictMap hS.isStrictMap
   · rw [coe_prodMap T S, LinearMap.range_prodMap]
     exact hT.isClosed_range.prod hS.isClosed_range
-  · rw [coe_prodMap T S, LinearMap.ker_prodMap]
-    exact (Submodule.prodEquiv _ _).symm.finiteDimensional
-  · rw [coe_prodMap T S, LinearMap.range_prodMap]
-    exact (Submodule.quotientProdEquiv _ _).symm.finiteDimensional
+  · rw [coe_prodMap T S]
+    infer_instance
+  · rw [coe_prodMap T S]
+    infer_instance
   · rw [coe_prodMap T S, LinearMap.ker_prodMap]
     obtain ⟨PT, hPT⟩ := hT.closedComplemented_ker
     obtain ⟨PS, hPS⟩ := hS.closedComplemented_ker
@@ -75,10 +78,10 @@ lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T :
   have hker := h.finite_ker
   have hcoker := h.finite_coker
   have hrange := h.isClosed_range
-  rw [coe_prodMap, LinearMap.ker_prodMap] at hker
-  rw [coe_prodMap, LinearMap.range_prodMap] at hcoker hrange
-  have := (Submodule.prodEquiv T.ker S.ker).finiteDimensional
-  have := (Submodule.quotientProdEquiv T.range S.range).finiteDimensional
+  rw [coe_prodMap] at hker hcoker hrange
+  rw [LinearMap.range_prodMap] at hrange
+  have := Module.Finite.equiv (LinearMap.kerProdMapEquiv (T : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂))
+  have := Module.Finite.equiv (LinearMap.cokerProdMapEquiv (T : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂))
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · -- `LinearMap.isStrictMap_prodMap_iff` is stated for the underlying linear maps.
     exact (LinearMap.isStrictMap_prodMap_iff (fₗ := (T : E₁ →ₗ[K] F₁))
