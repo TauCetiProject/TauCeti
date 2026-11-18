@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import Mathlib.Combinatorics.SimpleGraph.LineGraph
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.SimpleGraph.Coloring.Edge
 
 /-!
 # Line graphs and edge-colourings of multigraphs
@@ -54,6 +55,8 @@ bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring t
   exactly `F.encard` colours.
 * `Graph.chromaticNumber_lineGraph_ofSimpleGraph`: for a simple graph the least number of colours
   is that of Mathlib's `SimpleGraph.lineGraph`.
+* `SimpleGraph.edgeColoringEquivOfSimpleGraph`: proper edge-colourings of a simple graph agree with
+  those of its associated edge-labelled multigraph.
 -/
 
 public section
@@ -216,11 +219,61 @@ theorem incidenceCount_le_chromaticNumber_lineGraph (G : Graph α β) (x : α) :
   exact SimpleGraph.le_chromaticNumber_of_pairwise_adj (Nat.card_coe_set_eq _).ge _
     (G.pairwise_lineGraph_adj_inclusion x)
 
-/-- For a simple graph `H`, proper edge-colourings of `Graph.ofSimpleGraph H` need as many colours
-as colourings of Mathlib's `SimpleGraph.lineGraph`. -/
+/-- The chromatic number of the line graph of `Graph.ofSimpleGraph H` is the chromatic index of
+the simple graph `H`. -/
+@[simp]
 theorem chromaticNumber_lineGraph_ofSimpleGraph (H : SimpleGraph α) :
-    (ofSimpleGraph H).lineGraph.chromaticNumber = H.lineGraph.chromaticNumber :=
+    (ofSimpleGraph H).lineGraph.chromaticNumber = H.chromaticIndex :=
   SimpleGraph.chromaticNumber_congr (lineGraphOfSimpleGraphIso H)
+
+end Graph
+
+namespace SimpleGraph
+
+open scoped Graph
+
+variable {V : Type u} {G : SimpleGraph V} {C : Type w} {k : ℕ}
+
+/-- Proper edge-colourings of a simple graph are equivalent to proper edge-colourings of its
+associated edge-labelled multigraph. -/
+def edgeColoringEquivOfSimpleGraph (G : SimpleGraph V) (C : Type w) :
+    G.EdgeColoring C ≃ (Graph.ofSimpleGraph G).EdgeColoring C :=
+  coloringCongr (Graph.lineGraphOfSimpleGraphIso G).symm (Equiv.refl C)
+
+/-- Transporting a simple-graph edge-colouring to the associated multigraph evaluates it on the
+corresponding simple edge. -/
+@[simp]
+theorem edgeColoringEquivOfSimpleGraph_apply
+    (c : G.EdgeColoring C) (e : E(Graph.ofSimpleGraph G)) :
+    edgeColoringEquivOfSimpleGraph G C c e =
+      c (Graph.lineGraphOfSimpleGraphIso G e) :=
+  (rfl)
+
+/-- Transporting a multigraph edge-colouring to the simple graph evaluates it on the
+corresponding actual edge. -/
+@[simp]
+theorem edgeColoringEquivOfSimpleGraph_symm_apply
+    (c : (Graph.ofSimpleGraph G).EdgeColoring C) (e : G.edgeSet) :
+    (edgeColoringEquivOfSimpleGraph G C).symm c e =
+      c ((Graph.lineGraphOfSimpleGraphIso G).symm e) :=
+  (rfl)
+
+/-- Edge-colourability of a simple graph agrees with edge-colourability of its associated
+edge-labelled multigraph. -/
+theorem edgeColorableWith_iff_nonempty_edgeColoring_ofSimpleGraph :
+    G.EdgeColorableWith C ↔ Nonempty ((Graph.ofSimpleGraph G).EdgeColoring C) :=
+  (edgeColoringEquivOfSimpleGraph G C).nonempty_congr
+
+/-- Edge-colourability by at most `k` colours agrees with edge-colourability of the associated
+edge-labelled multigraph. -/
+theorem edgeColorable_iff_nonempty_edgeColoring_ofSimpleGraph :
+    G.EdgeColorable k ↔ Nonempty ((Graph.ofSimpleGraph G).EdgeColoring (Fin k)) :=
+  (edgeColorable_iff_edgeColorableWith G).trans
+    edgeColorableWith_iff_nonempty_edgeColoring_ofSimpleGraph
+
+end SimpleGraph
+
+namespace Graph
 
 /-! ### Parallel edges -/
 
