@@ -277,11 +277,6 @@ private theorem two_lt_add_one (hk : 2 < k) : (2 : ℝ) < (k : ℝ) + 1 := by
   have : (2 : ℝ) < k := by exact_mod_cast hk
   linarith
 
-/-- A gauge of `G_(k+1)`, `k ≥ 2`, is continuous as a complex function. -/
-private theorem continuous_coe_toSubgroup (hk : 2 < k) (w : SobolevTopologicalGaugeGroup hs) :
-    Continuous fun z ↦ ((toSubgroup hs w : ℂ → Circle) z : ℂ) :=
-  (differentiable_of_mem_sobolevGaugeGroup (two_lt_add_one hk) (toSubgroup hs w).2).continuous
-
 /-- The limit theorem for gauge equivalences between convergent fields of `A_m^k`: gauges carrying
 `xᵢ` to `yᵢ` converge locally uniformly to a Sobolev gauge carrying `x` to `y`. -/
 private theorem exists_mem_sobolevGaugeGroup_and_tendstoLocallyUniformly (hk : 2 < k) [l.NeBot]
@@ -396,7 +391,7 @@ private theorem tendsto_eLpNorm_of_gaugeTransform_eq (hk : 2 < k) [l.NeBot]
   set D : ι → ℂ → ℂ := fun i z ↦
     ((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z
   have hDc (i : ι) : Continuous (D i) :=
-    (continuous_coe_toSubgroup hk (us i)).sub (continuous_coe_toSubgroup hk u)
+    (continuous_coe_toSubgroup (us i)).sub (continuous_coe_toSubgroup u)
   -- Off `K` the gauges are controlled by the sections; on `K` they converge uniformly.
   have hG : Tendsto (fun i ↦ eLpNorm (G i) 2 volume) l (𝓝 0) := tendsto_eLpNorm_coord hx hy
   have hDK : Tendsto (fun i ↦ eLpNorm (K.indicator (D i)) 2 volume) l (𝓝 0) := by
@@ -524,9 +519,9 @@ theorem tendsto_of_gaugeTransform_eq (hk : 2 < k)
         dist_comm]
       exact hi z
     · refine hL2.congr fun i ↦ eLpNorm_congr_norm_ae ?_ ?_ (Eventually.of_forall fun z ↦ ?_)
-      · exact ((continuous_coe_toSubgroup hk (us i)).sub
-          (continuous_coe_toSubgroup hk u)).aestronglyMeasurable
-      · exact ((continuous_coe_toSubgroup hk (u⁻¹ * us i)).sub
+      · exact ((continuous_coe_toSubgroup (us i)).sub
+          (continuous_coe_toSubgroup u)).aestronglyMeasurable
+      · exact ((continuous_coe_toSubgroup (u⁻¹ * us i)).sub
           continuous_const).aestronglyMeasurable
       · rw [hwn, norm_mul, Circle.norm_coe, one_mul]
   simpa using (tendsto_const_nhds (x := u)).mul hw
