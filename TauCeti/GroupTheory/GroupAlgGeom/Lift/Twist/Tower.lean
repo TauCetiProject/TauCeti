@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Lift.BasicSeq
-public import TauCeti.GroupTheory.GroupAlgGeom.Lift.TwistLift
+public import TauCeti.GroupTheory.GroupAlgGeom.Lift.Twist.Lift
 
 /-!
 # Towers of extensions of centralizers along a sequence of twists
@@ -19,14 +19,18 @@ the first step is the extension `H(u₁, t₁)` of the centralizer of `u₁ = A�
 `x ↦ t₁ ^ l * v x * t₁ ^ r` (`TauCeti.GroupAlgGeom.Lift.twistLift`), and each further step lifts
 the point of the previous stage along the next twist. The stages are bundled as
 `TowerStage G X`: a group, a coefficient map and a point. The result is the tower
-`H = Z₀ ≤ Z₁ ≤ ⋯ ≤ Z_L` of [IFT], p. 104, with its point `λ` (`twistTower`).
+`H = Z₀ ≤ Z₁ ≤ ⋯ ≤ Z_L` of [IFT], p. 104, with its point `λ` (`twistTower`); the base `H`
+embeds in `Z_L` through the inclusions of the steps (`towerInclusion`).
 
 Retracting the letters from the top, `t_L ↦ u_L ^ {p_L}`, then `t_{L-1} ↦ u_{L-1} ^ {p_{L-1}}`
-and so on (`towerRetraction`), sends `λ` to the point `φ_{L,p} v` obtained from `v` by the
-twists with exponents `p` ([IFT], p. 104: `λ_β ξ_p = φ_{2K,p} β`; `eval_towerRetraction`). The
-retraction `t ↦ u ^ k` of one step sends the lifted point to the point twisted `k` times
-(`TowerStage.twisted`, `TowerStage.retraction_comp_lift_point`; [IFT], §7.2: (84) is the
-specialisation of (85)).
+and so on (`towerRetraction`), gives a left inverse of the inclusion of the base. For exponents
+`p = (p₁, …, p_m)` with `m ≤ L` (the steps above the `m`-th getting the exponent `0`), it
+sends `λ` to the point `φ_{m,p} v` obtained from `v` by the twists with exponents `p` ([IFT],
+p. 104: `λ_β ξ_p = φ_{2K,p} β`, the case `m = L`; `eval_towerRetraction`). The bound `m ≤ L` is
+needed: the retraction ignores the exponents beyond the `L`-th, whereas `φ_{m,p}` (`phi`)
+continues the sequence of twists periodically. The retraction `t ↦ u ^ k` of one step sends the
+lifted point to the point twisted `k` times (`TowerStage.twisted`,
+`TowerStage.retraction_comp_lift_point`; [IFT], §7.2: (84) is the specialisation of (85)).
 
 A tower is nondegenerate (`TowerStage.IsNondegenerate`) when every step extends the centralizer
 of a nonidentity element; this holds, for example, when every twisting word has nontrivial value
@@ -45,14 +49,17 @@ basic sequence this is the tower of [IFT], p. 102 (`twistTower_mem_V_oneCommutat
 * `TauCeti.GroupAlgGeom.Lift.TowerStage.lift`: one step of the tower.
 * `TauCeti.GroupAlgGeom.Lift.TowerStage.twisted`: the stage with its point twisted `k` times.
 * `TauCeti.GroupAlgGeom.Lift.twistTower`: the tower along a list of twist data.
+* `TauCeti.GroupAlgGeom.Lift.towerInclusion`: the inclusion of the base into the tower.
 * `TauCeti.GroupAlgGeom.Lift.towerRetraction`: the retraction of the tower with given exponents.
 * `TauCeti.GroupAlgGeom.Lift.TowerStage.IsNondegenerate`: every step extends the centralizer of
   a nonidentity element.
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.Lift.eval_towerRetraction`: the retraction with exponents `p` sends the
-  top point to `φ_{L,p} v`.
+* `TauCeti.GroupAlgGeom.Lift.towerRetraction_towerInclusion`: every retraction of the tower is a
+  left inverse of the inclusion of the base.
+* `TauCeti.GroupAlgGeom.Lift.eval_towerRetraction`: the retraction with exponents
+  `p = (p₁, …, p_m)`, `m ≤ L`, sends the top point to `φ_{m,p} v`.
 * `TauCeti.GroupAlgGeom.Lift.isFullyResiduallyFree_twistTower`,
   `TauCeti.GroupAlgGeom.Lift.twistTower_mem_V`: a nondegenerate tower over a fully residually free
   group is fully residually free, and its point solves every system the twists fix.
@@ -149,10 +156,42 @@ theorem twistTower_nil (P : TowerStage.{u, v, w} G X) : twistTower [] P = P := (
 theorem twistTower_cons (d : TwistData G X) (l : List (TwistData G X))
     (P : TowerStage.{u, v, w} G X) : twistTower (d :: l) P = twistTower l (P.lift d) := (rfl)
 
+/-- The inclusion of the base of the tower into its top group: the composition of the inclusions
+of each stage into the extension of a centralizer of it. -/
+noncomputable def towerInclusion : (l : List (TwistData G X)) → (P : TowerStage.{u, v, w} G X) →
+    P.carrier →* (twistTower l P).carrier
+  | [], P => MonoidHom.id P.carrier
+  | d :: l, P => (towerInclusion l (P.lift d)).comp CentralizerExt.of
+
+@[simp]
+theorem towerInclusion_nil (P : TowerStage.{u, v, w} G X) :
+    towerInclusion [] P = MonoidHom.id P.carrier := (rfl)
+
+theorem towerInclusion_cons (d : TwistData G X) (l : List (TwistData G X))
+    (P : TowerStage.{u, v, w} G X) :
+    towerInclusion (d :: l) P = (towerInclusion l (P.lift d)).comp CentralizerExt.of := (rfl)
+
+theorem towerInclusion_cons_apply (d : TwistData G X) (l : List (TwistData G X))
+    (P : TowerStage.{u, v, w} G X) (x : P.carrier) :
+    towerInclusion (d :: l) P x = towerInclusion l (P.lift d) (CentralizerExt.of x) := (rfl)
+
+/-- The inclusion of the base of the tower commutes with the coefficient maps. -/
+@[simp]
+theorem towerInclusion_coeff (l : List (TwistData G X)) (P : TowerStage.{u, v, w} G X) (g : G) :
+    towerInclusion l P (P.coeff g) = (twistTower l P).coeff g := by
+  induction l generalizing P with
+  | nil => rfl
+  | cons d _ ih => exact ih (P.lift d)
+
+@[simp]
+theorem towerInclusion_comp_coeff (l : List (TwistData G X)) (P : TowerStage.{u, v, w} G X) :
+    (towerInclusion l P).comp P.coeff = (twistTower l P).coeff :=
+  MonoidHom.ext (towerInclusion_coeff l P)
+
 /-- The retraction of the tower onto its base with exponents `p`: the letter of the top step is
 sent to a power of the element whose centralizer it extends, then the letter of the step below,
 and so on. The exponent of the `i`-th step (from the bottom) is the `i`-th entry of `p`, and `0`
-when `p` is shorter. -/
+when `p` is shorter; the entries of `p` beyond the length of the tower are ignored. -/
 noncomputable def towerRetraction : (l : List (TwistData G X)) → (P : TowerStage.{u, v, w} G X) →
     List ℕ → (twistTower l P).carrier →* P.carrier
   | [], P, _ => MonoidHom.id P.carrier
@@ -173,8 +212,42 @@ theorem towerRetraction_cons_apply (d : TwistData G X) (l : List (TwistData G X)
     towerRetraction (d :: l) P p x = CentralizerExt.retraction (fun _ => ((p.headD 0 : ℕ) : ℤ))
       (towerRetraction l (P.lift d) p.tail x) := (rfl)
 
-/-- The retraction with exponents `p` sends the value of a word at the top point of the tower to
-its value at the point `φ_{L,p} v` ([IFT], p. 104, `λ_β ξ_p = φ_{2K,p} β`). -/
+/-- Every retraction of the tower is a left inverse of the inclusion of the base. -/
+@[simp]
+theorem towerRetraction_towerInclusion (l : List (TwistData G X)) (P : TowerStage.{u, v, w} G X)
+    (p : List ℕ) (x : P.carrier) : towerRetraction l P p (towerInclusion l P x) = x := by
+  induction l generalizing P p with
+  | nil => rfl
+  | cons d l ih => exact (congrArg (CentralizerExt.retraction _)
+      (ih (P.lift d) p.tail (CentralizerExt.of x))).trans (CentralizerExt.retraction_of _ x)
+
+@[simp]
+theorem towerRetraction_comp_towerInclusion (l : List (TwistData G X))
+    (P : TowerStage.{u, v, w} G X) (p : List ℕ) :
+    (towerRetraction l P p).comp (towerInclusion l P) = MonoidHom.id P.carrier :=
+  MonoidHom.ext (towerRetraction_towerInclusion l P p)
+
+/-- The retractions of the tower commute with the coefficient maps. -/
+@[simp]
+theorem towerRetraction_coeff (l : List (TwistData G X)) (P : TowerStage.{u, v, w} G X)
+    (p : List ℕ) (g : G) : towerRetraction l P p ((twistTower l P).coeff g) = P.coeff g := by
+  rw [← towerInclusion_coeff, towerRetraction_towerInclusion]
+
+@[simp]
+theorem towerRetraction_comp_coeff (l : List (TwistData G X)) (P : TowerStage.{u, v, w} G X)
+    (p : List ℕ) : (towerRetraction l P p).comp (twistTower l P).coeff = P.coeff :=
+  MonoidHom.ext (towerRetraction_coeff l P p)
+
+/-- The base of the tower embeds in its top group. -/
+theorem towerInclusion_injective (l : List (TwistData G X)) (P : TowerStage.{u, v, w} G X) :
+    Function.Injective (towerInclusion l P) :=
+  Function.LeftInverse.injective (towerRetraction_towerInclusion l P [])
+
+/-- For a tower of `L` steps and exponents `p = (p₁, …, p_m)` with `m ≤ L`, the retraction with
+exponents `p` sends the value of a word at the top point of the tower to its value at the point
+`φ_{m,p} v` ([IFT], p. 104, `λ_β ξ_p = φ_{2K,p} β`, the case `m = L`). The bound `m ≤ L` is
+needed: the retraction ignores the entries of `p` beyond the `L`-th, whereas `phi` continues the
+sequence of twists periodically. -/
 theorem eval_towerRetraction (l : List (TwistData G X)) (P : TowerStage.{u, v, w} G X) {p : List ℕ}
     (hp : p.length ≤ l.length) (w : GX G X) :
     towerRetraction l P p (eval (twistTower l P).coeff (twistTower l P).point w) =
