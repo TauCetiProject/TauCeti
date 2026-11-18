@@ -11,14 +11,13 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
 # Relative Riemannian volume and oriented volume forms
 
 The orientation-free relative density compares the measures induced by Riemannian
-volume forms for any choices of source and target orientations. Reversing either
-orientation leaves the positive measure unchanged.
+volume forms for any choices of source and target orientations.
 -/
 
 public noncomputable section
-open Bundle Manifold Bundle.ContMDiffRiemannianMetric
+open Bundle Manifold TauCeti
 open scoped ContDiff
-namespace TauCeti
+namespace Bundle.ContMDiffRiemannianMetric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H]
@@ -39,11 +38,4 @@ theorem measure_riemannianVolumeForm_eq_map_withDensity_relativeVolumeDensity
   rw [measure_riemannianVolumeForm, measure_riemannianVolumeForm]
   exact riemannianVolume_eq_map_withDensity_relativeVolumeDensity (g := g) (g' := g')
 
-/-- Reversing an orientation leaves the positive Riemannian measure unchanged. -/
-theorem measure_riemannianVolumeForm_neg (g : ContMDiffRiemannianMetric I n E
-    (fun x : M ↦ TangentSpace I x))
-    (o : Manifold.Orientation I (WithMetric g) (Fin m)) :
-    (riemannianVolumeForm (-o)).measure = (riemannianVolumeForm o).measure := by
-  rw [measure_riemannianVolumeForm, measure_riemannianVolumeForm]
-
-end TauCeti
+end Bundle.ContMDiffRiemannianMetric
