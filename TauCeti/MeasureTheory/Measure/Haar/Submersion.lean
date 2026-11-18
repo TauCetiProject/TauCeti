@@ -18,29 +18,35 @@ import TauCeti.MeasureTheory.Measure.Haar.Differentiable
 Let `E₀` and `E` be finite-dimensional real normed spaces with additive Haar measures `μ₀` and
 `μ`. A map `θ : E₀ → E` that is a `C¹` submersion on a set `A`, in the chart normal form
 `Manifold.IsSubmersionAt`, pulls `μ`-null sets back to sets whose intersection with `A` is
-`μ₀`-null. The same holds on an open set `U` on which `θ` is `C¹` with surjective derivative,
-since such a map has the normal form by the inverse function theorem. Neither injectivity nor
-properness of `θ` is required, and the dimensions of `E₀` and `E` may differ.
+`μ₀`-null. The same holds on a set at each point of which `θ` is `C¹` with surjective derivative,
+since such a map has the normal form there by the inverse function theorem
+(`ContDiffAt.isSubmersionAt_of_surjective_fderiv`). Neither injectivity nor properness of `θ` is
+required, and the dimensions of `E₀` and `E` may differ.
 
-In the normal form, `θ` reads as the linear surjection `u ↦ (L u).1` between charts which are
-`C¹` diffeomorphisms of open sets. Chart images of null sets are null
-(`DifferentiableOn.addHaar_image_eq_zero`), and the pushforward of a Haar measure under a linear
-surjection is a multiple of a Haar measure (`LinearMap.exists_map_addHaar_eq_smul_addHaar`), so
-it has the same null sets. Countably many normal-form charts cover `A`.
+In the normal form, `θ` reads as the linear surjection
+`Manifold.IsSubmersionAtOfComplement.projection` between charts which are `C¹` diffeomorphisms
+of open sets. Chart images of null sets are null (`DifferentiableOn.addHaar_image_eq_zero`), and
+the pushforward of a Haar measure under a linear surjection is a multiple of a Haar measure
+(`LinearMap.exists_map_addHaar_eq_smul_addHaar`), so it has the same null sets.
+Countably many normal-form charts cover `A`.
 
-Consequently, almost-everywhere statements on an open set `Ω ⊆ E` pull back along `θ` to its
-open domain `U` when `θ` maps `U` into `Ω`: the pushforward of `μ₀.restrict U` is absolutely
-continuous with respect to `μ.restrict Ω`, and composition with `θ` preserves almost-everywhere
-strong measurability. This is how local integrability classes pull back along submersions.
+Consequently, when `θ` maps `A` into `Ω`, it is quasi-measure-preserving from `μ₀.restrict A` to
+`μ.restrict Ω`, so almost-everywhere statements on `Ω` pull back along `θ` to `A`, and composition
+with `θ` preserves almost-everywhere strong measurability. This is how local integrability classes
+pull back along submersions.
 
 ## Main results
 
 * `TauCeti.addHaar_preimage_inter_eq_zero_of_isSubmersionAt`: a submersion in normal form at
   every point of `A` has `μ₀ (θ ⁻¹' s ∩ A) = 0` whenever `μ s = 0`.
-* `ContDiffOn.addHaar_preimage_inter_eq_zero`: the same on an open set where `θ` is `C¹` with
-  surjective derivative.
-* `ContDiffOn.absolutelyContinuous_map_restrict`: the pushforward of `μ₀.restrict U` under such a
-  map into `Ω` is absolutely continuous with respect to `μ.restrict Ω`.
+* `TauCeti.quasiMeasurePreserving_restrict_of_isSubmersionAt`: such a map from a null-measurable
+  set `A` into `Ω` is quasi-measure-preserving from `μ₀.restrict A` to `μ.restrict Ω`.
+* `TauCeti.addHaar_preimage_inter_eq_zero_of_surjective_fderiv`,
+  `TauCeti.quasiMeasurePreserving_restrict_of_surjective_fderiv`: the same for a map that is `C¹`
+  with surjective derivative at every point of `A`.
+* `ContDiffOn.addHaar_preimage_inter_eq_zero_of_surjective_fderiv`,
+  `ContDiffOn.quasiMeasurePreserving_restrict_of_surjective_fderiv`: the same on an open set where
+  `θ` is `C¹` with surjective derivative.
 * `MeasureTheory.AEStronglyMeasurable.comp_contDiffOn_of_surjective_fderiv`: precomposition with
   such a map preserves almost-everywhere strong measurability.
 
@@ -59,18 +65,19 @@ variable {E₀ E : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [Fini
   [MeasurableSpace E₀] [BorelSpace E₀]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   {μ₀ : Measure E₀} [μ₀.IsAddHaarMeasure] {μ : Measure E} [μ.IsAddHaarMeasure]
-  {θ : E₀ → E} {n : WithTop ℕ∞} {s : Set E}
+  {θ : E₀ → E} {n : WithTop ℕ∞} {s : Set E} {A : Set E₀} {Ω : Set E}
 
 namespace TauCeti
 
 /-- On the domain chart of a submersion in normal form, the preimage of a null set is null. -/
-private theorem addHaar_preimage_inter_domChart_source_eq_zero {x : E₀}
-    (h : IsSubmersionAt 𝓘(ℝ, E₀) 𝓘(ℝ, E) n θ x) (hn : 1 ≤ n) (hs : μ s = 0) :
+private theorem addHaar_preimage_inter_domChart_source_eq_zero {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {x : E₀}
+    (h : IsSubmersionAtOfComplement F 𝓘(ℝ, E₀) 𝓘(ℝ, E) n θ x) (hn : 1 ≤ n) (hs : μ s = 0) :
     μ₀ (θ ⁻¹' s ∩ h.domChart.source) = 0 := by
   have hn₀ : n ≠ 0 := (zero_lt_one.trans_le hn).ne'
   set φ := h.domChart
   set ψ := h.codChart
-  set P : E₀ →ₗ[ℝ] E := (LinearMap.fst ℝ E h.complement).comp h.equiv.toLinearMap
+  set P : E₀ →ₗ[ℝ] E := h.projection.toLinearMap
   have hP : Surjective P := fun y ↦ ⟨h.equiv.symm (y, 0), by simp [P]⟩
   have : FiniteDimensional ℝ E := Module.Finite.of_surjective P hP
   -- The charts of the normal form are `C¹` diffeomorphisms between open sets.
@@ -93,29 +100,61 @@ private theorem addHaar_preimage_inter_domChart_source_eq_zero {x : E₀}
   rintro z ⟨hzs, hzφ⟩
   refine ⟨φ z, ⟨φ.map_source hzφ, hTs ⟨θ z, ⟨hzs, h.source_subset_preimage_source hzφ⟩, ?_⟩⟩,
     φ.left_inv hzφ⟩
-  have := h.writtenInCharts (show φ z ∈ (φ.extend 𝓘(ℝ, E₀)).target by
-    simpa [OpenPartialHomeomorph.extend_target] using φ.map_source hzφ)
-  simp only [comp_apply, OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
-    modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_eq] at this
-  rw [φ.left_inv hzφ] at this
-  simpa [P] using this
+  simpa [OpenPartialHomeomorph.extend_coe, φ, ψ, P] using h.codChart_extend_apply hzφ
 
+variable (μ₀) in
 /-- **Submersions pull back null sets.** If `θ : E₀ → E` is a `C¹` submersion in normal form at
 every point of `A`, then the preimage of a `μ`-null set meets `A` in a `μ₀`-null set. -/
-theorem addHaar_preimage_inter_eq_zero_of_isSubmersionAt {A : Set E₀}
+theorem addHaar_preimage_inter_eq_zero_of_isSubmersionAt
     (hθ : ∀ x ∈ A, IsSubmersionAt 𝓘(ℝ, E₀) 𝓘(ℝ, E) n θ x) (hn : 1 ≤ n) (hs : μ s = 0) :
     μ₀ (θ ⁻¹' s ∩ A) = 0 := by
   classical
+  let h x (hx : x ∈ A) := (hθ x hx).isSubmersionAtOfComplement_complement
   obtain ⟨t, htA, htc, hAt⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (s := A) (f := fun x ↦ if hx : x ∈ A then (hθ x hx).domChart.source else univ)
+    (s := A) (f := fun x ↦ if hx : x ∈ A then (h x hx).domChart.source else univ)
     fun x hx ↦ by
       simp only [hx, ↓reduceDIte]
       exact mem_nhdsWithin_of_mem_nhds
-        ((hθ x hx).domChart.open_source.mem_nhds (hθ x hx).mem_domChart_source)
+        ((h x hx).domChart.open_source.mem_nhds (h x hx).mem_domChart_source)
   refine measure_mono_null (inter_subset_inter_right _ hAt) ?_
   rw [inter_iUnion₂]
   refine (measure_biUnion_null_iff htc).2 fun x hx ↦ ?_
-  simpa [htA hx] using addHaar_preimage_inter_domChart_source_eq_zero (hθ x (htA hx)) hn hs
+  simpa [htA hx] using addHaar_preimage_inter_domChart_source_eq_zero (μ₀ := μ₀)
+    (h x (htA hx)) hn hs
+
+variable (μ) in
+/-- If `θ` is a `C¹` submersion in normal form at every point of a null-measurable set `A` and maps
+`A` into `Ω`, then `θ` is quasi-measure-preserving from `μ₀.restrict A` to `μ.restrict Ω`. -/
+theorem quasiMeasurePreserving_restrict_of_isSubmersionAt
+    (hθ : ∀ x ∈ A, IsSubmersionAt 𝓘(ℝ, E₀) 𝓘(ℝ, E) n θ x) (hn : 1 ≤ n)
+    (hA : NullMeasurableSet A μ₀) (hmaps : MapsTo θ A Ω) :
+    QuasiMeasurePreserving θ (μ₀.restrict A) (μ.restrict Ω) := by
+  have hθm : AEMeasurable θ (μ₀.restrict A) := ContinuousOn.aemeasurable₀
+    (fun x hx ↦ (hθ x hx).contMDiffAt.continuousAt.continuousWithinAt) hA
+  refine ⟨hθm, AbsolutelyContinuous.mk fun t ht ht0 ↦ ?_⟩
+  rw [restrict_apply ht] at ht0
+  rw [map_apply_of_aemeasurable hθm ht, restrict_apply₀' hA]
+  have hsub : θ ⁻¹' t ∩ A ⊆ θ ⁻¹' (t ∩ Ω) ∩ A := fun x hx ↦ ⟨⟨hx.1, hmaps hx.2⟩, hx.2⟩
+  exact measure_mono_null hsub (addHaar_preimage_inter_eq_zero_of_isSubmersionAt μ₀ hθ hn ht0)
+
+variable (μ₀) in
+/-- **`C¹` maps with surjective derivative pull back null sets.** If `θ` is `C¹` at every point of
+`A` with surjective derivative there, then the preimage of a `μ`-null set meets `A` in a
+`μ₀`-null set. -/
+theorem addHaar_preimage_inter_eq_zero_of_surjective_fderiv (hθ : ∀ x ∈ A, ContDiffAt ℝ 1 θ x)
+    (hsurj : ∀ x ∈ A, Surjective (fderiv ℝ θ x)) (hs : μ s = 0) :
+    μ₀ (θ ⁻¹' s ∩ A) = 0 :=
+  addHaar_preimage_inter_eq_zero_of_isSubmersionAt μ₀
+    (fun x hx ↦ (hθ x hx).isSubmersionAt_of_surjective_fderiv (hsurj x hx)) le_rfl hs
+
+variable (μ) in
+/-- If `θ` is `C¹` with surjective derivative at every point of a null-measurable set `A` and maps
+`A` into `Ω`, then `θ` is quasi-measure-preserving from `μ₀.restrict A` to `μ.restrict Ω`. -/
+theorem quasiMeasurePreserving_restrict_of_surjective_fderiv (hθ : ∀ x ∈ A, ContDiffAt ℝ 1 θ x)
+    (hsurj : ∀ x ∈ A, Surjective (fderiv ℝ θ x)) (hA : NullMeasurableSet A μ₀)
+    (hmaps : MapsTo θ A Ω) : QuasiMeasurePreserving θ (μ₀.restrict A) (μ.restrict Ω) :=
+  quasiMeasurePreserving_restrict_of_isSubmersionAt μ
+    (fun x hx ↦ (hθ x hx).isSubmersionAt_of_surjective_fderiv (hsurj x hx)) le_rfl hA hmaps
 
 end TauCeti
 
@@ -123,44 +162,32 @@ namespace ContDiffOn
 
 variable {U : Set E₀}
 
+variable (μ₀) in
 /-- **`C¹` maps with surjective derivative pull back null sets.** If `θ` is `C¹` on an open set
 `U` and its derivative is surjective at every point of `U`, then the preimage of a `μ`-null set
 meets `U` in a `μ₀`-null set. -/
-theorem addHaar_preimage_inter_eq_zero (hθ : ContDiffOn ℝ 1 θ U) (hU : IsOpen U)
-    (hsurj : ∀ x ∈ U, Surjective (fderiv ℝ θ x)) (hs : μ s = 0) :
-    μ₀ (θ ⁻¹' s ∩ U) = 0 := by
-  refine TauCeti.addHaar_preimage_inter_eq_zero_of_isSubmersionAt (n := 1) (fun x hx ↦ ?_)
-    le_rfl hs
-  have : FiniteDimensional ℝ E :=
-    Module.Finite.of_surjective (fderiv ℝ θ x : E₀ →ₗ[ℝ] E) (hsurj x hx)
-  refine (ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv
-    (contMDiffOn_iff_contDiffOn.2 hθ) hU hx le_rfl ?_).isSubmersionAt
-  rw [mfderiv_eq_fderiv, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
-  exact (NormedSpace.fromTangentSpace (θ x)).symm.surjective.comp
-    ((hsurj x hx).comp (NormedSpace.fromTangentSpace x).surjective)
+theorem addHaar_preimage_inter_eq_zero_of_surjective_fderiv (hθ : ContDiffOn ℝ 1 θ U)
+    (hU : IsOpen U) (hsurj : ∀ x ∈ U, Surjective (fderiv ℝ θ x)) (hs : μ s = 0) :
+    μ₀ (θ ⁻¹' s ∩ U) = 0 :=
+  TauCeti.addHaar_preimage_inter_eq_zero_of_surjective_fderiv μ₀
+    (fun _ hx ↦ hθ.contDiffAt (hU.mem_nhds hx)) hsurj hs
 
-variable {Ω : Set E}
-
-/-- If `θ` is `C¹` with surjective derivative on an open set `U` and maps `U` into `Ω`, then the
-pushforward of `μ₀.restrict U` under `θ` is absolutely continuous with respect to
-`μ.restrict Ω`. -/
-theorem absolutelyContinuous_map_restrict (hθ : ContDiffOn ℝ 1 θ U) (hU : IsOpen U)
-    (hsurj : ∀ x ∈ U, Surjective (fderiv ℝ θ x)) (hmaps : MapsTo θ U Ω) :
-    (μ₀.restrict U).map θ ≪ μ.restrict Ω := by
-  refine AbsolutelyContinuous.mk fun t ht ht0 ↦ ?_
-  rw [restrict_apply ht] at ht0
-  rw [map_apply_of_aemeasurable (hθ.continuousOn.aemeasurable hU.measurableSet) ht,
-    restrict_apply' hU.measurableSet]
-  have hnull : μ₀ (θ ⁻¹' (t ∩ Ω) ∩ U) = 0 := hθ.addHaar_preimage_inter_eq_zero hU hsurj ht0
-  have hsub : θ ⁻¹' t ∩ U ⊆ θ ⁻¹' (t ∩ Ω) ∩ U := fun x hx ↦ ⟨⟨hx.1, hmaps hx.2⟩, hx.2⟩
-  exact measure_mono_null hsub hnull
+variable (μ₀ μ) in
+/-- If `θ` is `C¹` with surjective derivative on an open set `U` and maps `U` into `Ω`, then `θ` is
+quasi-measure-preserving from `μ₀.restrict U` to `μ.restrict Ω`. -/
+theorem quasiMeasurePreserving_restrict_of_surjective_fderiv (hθ : ContDiffOn ℝ 1 θ U)
+    (hU : IsOpen U) (hsurj : ∀ x ∈ U, Surjective (fderiv ℝ θ x)) (hmaps : MapsTo θ U Ω) :
+    QuasiMeasurePreserving θ (μ₀.restrict U) (μ.restrict Ω) :=
+  TauCeti.quasiMeasurePreserving_restrict_of_surjective_fderiv μ
+    (fun _ hx ↦ hθ.contDiffAt (hU.mem_nhds hx)) hsurj hU.measurableSet.nullMeasurableSet hmaps
 
 end ContDiffOn
 
 namespace MeasureTheory.AEStronglyMeasurable
 
-variable {F : Type*} [TopologicalSpace F] {u : E → F} {U : Set E₀} {Ω : Set E}
+variable {F : Type*} [TopologicalSpace F] {u : E → F} {U : Set E₀}
 
+variable (μ₀) in
 /-- Precomposition with a map that is `C¹` with surjective derivative on an open set `U` and maps
 `U` into `Ω` carries functions almost everywhere strongly measurable on `Ω` to functions almost
 everywhere strongly measurable on `U`. -/
@@ -168,7 +195,7 @@ theorem comp_contDiffOn_of_surjective_fderiv (hu : AEStronglyMeasurable u (μ.re
     (hθ : ContDiffOn ℝ 1 θ U) (hU : IsOpen U) (hsurj : ∀ x ∈ U, Surjective (fderiv ℝ θ x))
     (hmaps : MapsTo θ U Ω) :
     AEStronglyMeasurable (u ∘ θ) (μ₀.restrict U) :=
-  (hu.mono_ac (hθ.absolutelyContinuous_map_restrict hU hsurj hmaps)).comp_aemeasurable
-    (hθ.continuousOn.aemeasurable hU.measurableSet)
+  hu.comp_quasiMeasurePreserving (hθ.quasiMeasurePreserving_restrict_of_surjective_fderiv μ₀ μ hU
+    hsurj hmaps)
 
 end MeasureTheory.AEStronglyMeasurable
