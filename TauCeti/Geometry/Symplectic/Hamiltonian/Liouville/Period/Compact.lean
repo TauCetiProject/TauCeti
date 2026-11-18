@@ -35,9 +35,7 @@ Every function on a nonempty compact boundaryless manifold has a critical point
 compact boundaryless base of positive dimension has no global action coordinates**
 (`IsLagrangianTorusFibration.not_forall_periodLattice_le_closure_of_compactSpace`): its
 period lattice is never spanned over `ℤ` by the differentials of at most `dim B` functions,
-although it is spanned locally by the differentials of local action coordinates. The hypothesis
-that the period one-forms be exact cannot be dropped from the criterion for global action-angle
-coordinates.
+although it is spanned locally by the differentials of local action coordinates.
 
 The basic example is the torus bundle `T*Tⁿ / Λ → Tⁿ` of the closed angle forms `dt_i` of the torus
 `Tⁿ = ∀ i, AddCircle (p i)` (`TauCeti.torusTimeForm`), the model
