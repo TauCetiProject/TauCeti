@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Collision
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Torus
-import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
 # The collision orbits of the Kepler problem
@@ -186,24 +185,15 @@ theorem exists_forall_hasDerivAt_kepler_iff_angularMomentum_ne_zero
     exact pow_ne_zero_iff (n := 2) two_ne_zero |>.1 h
   · intro hL
     -- The state lies in the bound phase space, on which the energy flow is complete.
-    have hσ := (SymplecticForm.isNondegenerate_constSmooth (stdSymplecticForm (V := V))
-      ).mpullback_subtype_val (keplerBoundPhaseSpace b m κ)
     have hcomplete := isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace b hm hκ 0
+    have hH := contMDiff_pi_module_iff.1
+      (contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b (m := m) (κ := κ)) 0
     rw [show (fun y : keplerBoundPhaseSpace b m κ ↦
         (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘ Subtype.val) y 0) =
           centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val from
-        funext fun y ↦ centralForceEnergyMomentum_zero b m _ _] at hcomplete
-    have hH : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ) 2 (centralForceHamiltonian m (fun r ↦ -κ / r) ∘
-        (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) := by
-      refine fun y ↦ ContDiffAt.contMDiffAt ?_ |>.comp y (contMDiff_subtype_val y)
-      have hy := ((mem_keplerBoundPhaseSpace b).1 y.2).1
-      exact contDiffAt_centralForceHamiltonian
-        (contDiffAt_const.div contDiffAt_id (norm_ne_zero_iff.2 hy)) hy
-    obtain ⟨γ, hγ₀, hγ⟩ := hcomplete.exists_isMIntegralCurve
-      (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hH]))
-      ⟨x, (mem_keplerBoundPhaseSpace b).2 ⟨hq, hE, hL⟩⟩
-    refine ⟨fun s ↦ (γ s : V × V), by simp [hγ₀], fun t ↦
-      ⟨((mem_keplerBoundPhaseSpace b).1 (γ t).2).1, ?_⟩⟩
-    exact SymplecticForm.hasDerivAt_coe_of_isMIntegralCurve _ hγ t
+        funext fun y ↦ centralForceEnergyMomentum_zero b m _ _] at hcomplete hH
+    obtain ⟨γ, hγ₀, hγ⟩ := SymplecticForm.exists_forall_hasDerivAt_of_isCompleteVectorField _
+      (hH.of_le (by simp)) hcomplete ((mem_keplerBoundPhaseSpace b).2 ⟨hq, hE, hL⟩)
+    exact ⟨γ, hγ₀, fun t ↦ ⟨((mem_keplerBoundPhaseSpace b).1 (hγ t).1).1, (hγ t).2⟩⟩
 
 end TauCeti

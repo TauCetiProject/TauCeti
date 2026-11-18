@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 public import TauCeti.Geometry.Manifold.VectorField.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
@@ -24,6 +25,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -1068,6 +1070,26 @@ theorem hasDerivAt_coe_of_isMIntegralCurve (omegaForm : SymplecticForm V)
   have h' := (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.1 h t (Set.mem_univ t)).hasDerivAt
     Filter.univ_mem
   simpa [Function.comp_def, hamiltonianVectorField_constSmooth] using h'
+
+/-- **Complete Hamiltonian flows on an open subset give global motions.** For a constant symplectic
+form `ω` on `V`, an open set `U ⊆ V` and a function `f` that is `C²` on `U`, if the Hamiltonian
+vector field of `f ∘ val` for the restriction of `ω` to `U` is complete, then through every
+`x ∈ U` passes a solution `γ : ℝ → V` of Hamilton's equations `γ' = X_f(γ)` of the linear theory,
+defined and staying in `U` at all times. -/
+theorem exists_forall_hasDerivAt_of_isCompleteVectorField (omegaForm : SymplecticForm V)
+    {U : TopologicalSpace.Opens V} {f : V → ℝ}
+    (hf : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ) 2 (f ∘ (Subtype.val : U → V)))
+    (hcomplete : IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : U → V) contMDiff_subtype_val omegaForm.constSmooth)
+      (f ∘ Subtype.val))) {x : V} (hx : x ∈ U) :
+    ∃ γ : ℝ → V, γ 0 = x ∧
+      ∀ t, γ t ∈ U ∧ HasDerivAt γ (omegaForm.hamiltonianVectorField f (γ t)) t := by
+  -- The restricted Hamiltonian vector field is `C¹`, so it has a global integral curve through `x`.
+  obtain ⟨γ, hγ₀, hγ⟩ := hcomplete.exists_isMIntegralCurve
+    (((isNondegenerate_constSmooth omegaForm).mpullback_subtype_val U
+      ).contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hf])) ⟨x, hx⟩
+  exact ⟨fun s ↦ γ s, by simp [hγ₀], fun t ↦
+    ⟨(γ t).2, omegaForm.hasDerivAt_coe_of_isMIntegralCurve hγ t⟩⟩
 
 end SymplecticForm
 

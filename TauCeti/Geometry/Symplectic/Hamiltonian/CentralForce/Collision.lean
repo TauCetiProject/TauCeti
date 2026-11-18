@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Radial
-import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
 # Collisions of central-force motions
@@ -237,22 +236,18 @@ theorem not_isCompleteVectorField_hamiltonianVectorField_puncturedPhaseSpace [No
         (stdSymplecticForm (V := V)).constSmooth)
       (centralForceHamiltonian m U ∘ Subtype.val)) := by
   intro hcomplete
-  have hσ := (SymplecticForm.isNondegenerate_constSmooth (stdSymplecticForm (V := V))
-    ).mpullback_subtype_val (puncturedPhaseSpace V)
-  -- The Hamiltonian is `C²` off the collision set, so its vector field is `C¹`.
+  -- The Hamiltonian is `C²` off the collision set, so its flow gives global motions.
   have hH : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ) 2 (centralForceHamiltonian m U ∘
       (Subtype.val : puncturedPhaseSpace V → V × V)) := by
     refine fun x ↦ ContDiffAt.contMDiffAt ?_ |>.comp x (contMDiff_subtype_val x)
     have hq := mem_puncturedPhaseSpace.1 x.2
     exact contDiffAt_centralForceHamiltonian (hU.contDiffAt (Ioi_mem_nhds (norm_pos_iff.2 hq))) hq
   obtain ⟨u, hu⟩ := exists_ne (0 : V)
-  obtain ⟨γ, hγ₀, hγ⟩ := hcomplete.exists_isMIntegralCurve
-    (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hH]))
-    ⟨(u, 0), mem_puncturedPhaseSpace.2 hu⟩
-  have hq (t : ℝ) : (γ t : V × V).1 ≠ 0 := mem_puncturedPhaseSpace.1 (γ t).2
+  obtain ⟨γ, hγ₀, hγ⟩ := SymplecticForm.exists_forall_hasDerivAt_of_isCompleteVectorField _ hH
+    hcomplete (x := (u, 0)) (mem_puncturedPhaseSpace.2 hu)
+  have hq (t : ℝ) : (γ t).1 ≠ 0 := mem_puncturedPhaseSpace.1 (hγ t).1
   -- The curve starts at rest, with zero angular momentum.
-  refine sq_sub_inner_sq_ne_zero_of_forall_hasDerivAt hm (γ := fun s ↦ (γ s : V × V))
-    (SymplecticForm.hasDerivAt_coe_of_isMIntegralCurve _ hγ) hq
+  refine sq_sub_inner_sq_ne_zero_of_forall_hasDerivAt hm (fun t ↦ (hγ t).2) hq
     (fun t ↦ (hU.differentiableOn (by norm_num) _
       (norm_pos_iff.2 (hq t))).differentiableAt (Ioi_mem_nhds (norm_pos_iff.2 (hq t))))
     (fun t ↦ hattr _ (norm_pos_iff.2 (hq t))) 0 ?_
