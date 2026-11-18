@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Subharmonic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.InnerProductSpace.Harmonic.LogNorm
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.PDE.PoissonIntegral.Ball
@@ -20,9 +19,10 @@ invisible to the maximum principle there, and so is an isolated singularity of a
 function.
 
 * **The maximum principle with an exceptional point.** Let `U` be a bounded open set, `a` a point
-  of `E`, `u` subharmonic and `h` harmonic on `U \ {a}`, both continuous on `closure U \ {a}`. If
-  `u - h` is bounded above near `a` and `u ≤ h` on `frontier U` away from `a`, then `u ≤ h` on
-  `closure U \ {a}` (`TauCeti.SubharmonicOn.le_of_le_frontier_of_isBoundedUnder`). The point `a`
+  of `E`, `u` subharmonic and `w` superharmonic on `U \ {a}`, both continuous on
+  `closure U \ {a}`. If `u - w` is bounded above near `a` and `u ≤ w` on `frontier U` away from
+  `a`, then `u ≤ w` on `closure U \ {a}`
+  (`TauCeti.SubharmonicOn.le_of_le_frontier_of_isBoundedUnder`). The point `a`
   may lie in `U` or on its frontier: no boundary condition is imposed at `a`.
 * **Removable singularities.** A harmonic function on a punctured neighbourhood of `a` that is
   bounded near `a` has a limit at `a`, and extends to a harmonic function on the whole
@@ -39,12 +39,12 @@ point for the Dirichlet problem.
 
 Let `Φ` be the radial harmonic function with a pole at `a`, `‖x - a‖ ^ (2 - n)` for `n ≥ 3` and
 `-log ‖x - a‖` for `n = 2`, which tends to `+∞` at `a`, and let `closure U ⊆ closedBall a R`. On
-the annulus `U \ closedBall a δ`, the comparison principle for subharmonic functions
-(`TauCeti.SubharmonicOn.le_of_le_frontier`) puts `u - h` below `ε (Φ - Φ_R)`, where `Φ_R` is the
-value of `Φ` at radius `R`, for every `ε > 0` once `δ` is small, since `u - h` is bounded above
-near `a`. Letting `ε → 0` gives `u ≤ h`. For the removable singularity, compare `u` from both
-sides with the Poisson integral of its values on a small sphere about `a`
-(`TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere`).
+the annulus `U \ closedBall a δ`, the comparison principle between subharmonic and superharmonic
+functions (`TauCeti.SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg`) puts `u` below
+`w + ε (Φ - Φ_R)`, where `Φ_R` is the value of `Φ` at radius `R`, for every `ε > 0` once `δ` is
+small, since `u - w` is bounded above near `a`. Letting `ε → 0` gives `u ≤ w`. For the removable
+singularity, compare `u` from both sides with the Poisson integral of its values on a small sphere
+about `a` (`TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere`).
 
 ## References
 
@@ -59,7 +59,7 @@ namespace TauCeti
 open InnerProductSpace Metric Set Filter Topology Function
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {u h : E → ℝ} {U s : Set E} {a : E}
+  [MeasurableSpace E] [BorelSpace E] {u w : E → ℝ} {U s : Set E} {a : E}
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- In dimension at least two there is a radial function with a pole at `a`: `ψ ‖x - a‖` is
@@ -76,26 +76,24 @@ private theorem exists_harmonicOnNhd_comp_norm_sub (hE : 2 ≤ Module.finrank �
     have hp : (2 - Module.finrank ℝ E : ℝ) < 0 := by
       have : (3 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hE3
       linarith
-    refine ⟨fun t ↦ t ^ (2 - Module.finrank ℝ E : ℝ),
+    exact ⟨fun t ↦ t ^ (2 - Module.finrank ℝ E : ℝ),
       Real.antitoneOn_rpow_Ioi_of_exponent_nonpos hp.le, tendsto_rpow_neg_nhdsGT_zero hp,
-      fun x hx ↦ ?_⟩
-    have := harmonicAt_norm_rpow_two_sub_finrank (E := E) (sub_ne_zero.2 hx)
-    simp only [sub_eq_add_neg]
-    exact (harmonicAt_comp_add_right_iff (f := fun y : E ↦ ‖y‖ ^ (2 + -(Module.finrank ℝ E : ℝ)))
-      (a := -a)).2 (by simpa [sub_eq_add_neg] using this)
+      harmonicOnNhd_norm_sub_rpow_two_sub_finrank a⟩
 
 /-- The comparison step on an annulus: with `ψ ‖x - a‖` the pole of
-`exists_harmonicOnNhd_comp_norm_sub` and `closure U ⊆ closedBall a R`, a subharmonic `v` that is
-nonpositive on `frontier U` away from `a` and bounded above by `M` near `a` lies below
-`ε (ψ ‖x - a‖ - ψ R)` for every `ε > 0`. -/
-private theorem le_mul_sub_of_le_frontier {v : E → ℝ} {ψ : ℝ → ℝ} {R M δ₀ ε : ℝ}
-    (hU : IsOpen U) (hUb : Bornology.IsBounded U) (hv : SubharmonicOn v (U \ {a}))
-    (hvc : ContinuousOn v (closure U \ {a})) (hψa : AntitoneOn ψ (Ioi 0))
+`exists_harmonicOnNhd_comp_norm_sub` and `closure U ⊆ closedBall a R`, let `u` be subharmonic
+and `w` superharmonic on `U \ {a}`, with `u ≤ w` on `frontier U` away from `a` and `u - w ≤ M`
+near `a`. Then `u ≤ w + ε (ψ ‖x - a‖ - ψ R)` for every `ε > 0`. -/
+private theorem le_add_mul_sub_of_le_frontier {ψ : ℝ → ℝ} {R M δ₀ ε : ℝ}
+    (hU : IsOpen U) (hUb : Bornology.IsBounded U) (hu : SubharmonicOn u (U \ {a}))
+    (huc : ContinuousOn u (closure U \ {a})) (hw : SubharmonicOn (-w) (U \ {a}))
+    (hwc : ContinuousOn w (closure U \ {a})) (hψa : AntitoneOn ψ (Ioi 0))
     (hψt : Tendsto ψ (𝓝[>] 0) atTop) (hψh : HarmonicOnNhd (fun x ↦ ψ ‖x - a‖) {a}ᶜ)
     (hR : closure U ⊆ closedBall a R) (hδ₀ : 0 < δ₀)
-    (hM : ∀ y, y ≠ a → dist y a < δ₀ → v y ≤ M) (hle : ∀ y ∈ frontier U, y ≠ a → v y ≤ 0)
+    (hM : ∀ y, y ≠ a → dist y a < δ₀ → u y - w y ≤ M)
+    (hle : ∀ y ∈ frontier U, y ≠ a → u y ≤ w y)
     (hε : 0 < ε) {x : E} (hxU : x ∈ closure U) (hxa : x ≠ a) :
-    v x ≤ ε * (ψ ‖x - a‖ - ψ R) := by
+    u x ≤ w x + ε * (ψ ‖x - a‖ - ψ R) := by
   have : Nontrivial E := ⟨⟨x, a, hxa⟩⟩
   -- `ψ` exceeds `ψ R + M / ε` near `0`; choose a radius `δ` below `δ₀` and `‖x - a‖` there.
   have hxa' : 0 < ‖x - a‖ := norm_pos_iff.2 (sub_ne_zero.2 hxa)
@@ -115,11 +113,11 @@ private theorem le_mul_sub_of_le_frontier {v : E → ℝ} {ψ : ℝ → ℝ} {R 
   set g : E → ℝ := ε • ((fun y ↦ ψ ‖y - a‖) - fun _ ↦ ψ R)
   have hg : HarmonicOnNhd g {a}ᶜ := (hψh.sub (harmonicOnNhd_const _)).const_smul
   have hgV : closure V ⊆ {a}ᶜ := fun y hy ↦ (hVa hy).2
-  -- On `frontier V`, either `y ∈ frontier U` where `v ≤ 0 ≤ g`, or `‖y - a‖ = δ` where
-  -- `v ≤ M ≤ g`.
-  have hfr : ∀ y ∈ frontier V, v y ≤ g y := by
+  -- On `frontier V`, either `y ∈ frontier U` where `u ≤ w` and `0 ≤ g`, or `‖y - a‖ = δ` where
+  -- `u - w ≤ M ≤ g`.
+  have hfr : ∀ y ∈ frontier V, u y ≤ (w + g) y := by
     intro y hy
-    simp only [g, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
+    simp only [g, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul]
     rcases frontier_inter_subset U (closedBall a δ)ᶜ hy with ⟨hyU, hyδ⟩ | ⟨-, hyδ⟩
     · rw [closure_compl, interior_closedBall' a δ] at hyδ
       have hya : y ≠ a := fun h ↦ hyδ (h ▸ mem_ball_self hδ0)
@@ -129,49 +127,47 @@ private theorem le_mul_sub_of_le_frontier {v : E → ℝ} {ψ : ℝ → ℝ} {R 
     · rw [frontier_compl, frontier_closedBall' a δ, mem_sphere, dist_eq_norm] at hyδ
       have hya : y ≠ a := fun h ↦ hδ0.ne' (by rw [← hyδ, h, sub_self, norm_zero])
       have := hM y hya (by rw [dist_eq_norm, hyδ]; exact hδ.2.trans_le (min_le_left _ _))
-      have : M ≤ ε * (ψ δ - ψ R) := by
-        rw [← div_le_iff₀' hε]
-        linarith
+      have : M ≤ ε * (ψ δ - ψ R) := by rw [← div_le_iff₀' hε]; linarith
       rw [hyδ]
       linarith
   have hxV : x ∈ closure V := by
     have hxδ : x ∈ (closedBall a δ)ᶜ := fun h ↦ by
-      have : ‖x - a‖ ≤ δ := by simpa [dist_eq_norm] using h
-      linarith [hδ.2.trans_le (min_le_right _ _)]
+      linarith [hδ.2.trans_le (min_le_right _ _), mem_closedBall_iff_norm.1 h]
     have := isClosed_closedBall.isOpen_compl.inter_closure ⟨hxδ, hxU⟩
     rwa [← sdiff_eq_compl_inter] at this
-  have := (hv.mono (sdiff_subset_sdiff_right (singleton_subset_iff.2 (mem_closedBall_self
-    hδ0.le)))).le_of_le_frontier (hU.sdiff isClosed_closedBall) (hUb.subset sdiff_subset)
-    (hvc.mono hVa)
-    (hg.mono (subset_closure.trans hgV)) (hg.continuousOn.mono hgV) hfr x hxV
+  -- Compare `u` with the superharmonic `w + g` on `V`.
+  have hVU : V ⊆ U \ {a} :=
+    sdiff_subset_sdiff_right (singleton_subset_iff.2 (mem_closedBall_self hδ0.le))
+  have hVo : IsOpen V := hU.sdiff isClosed_closedBall
+  have hwg : SubharmonicOn (-(w + g)) V :=
+    neg_add' w g ▸ (hw.mono hVU).sub_harmonicOnNhd (hg.mono (subset_closure.trans hgV)) hVo
+  have := (hu.mono hVU).le_of_le_frontier_of_subharmonicOn_neg hVo (hUb.subset sdiff_subset)
+    (huc.mono hVa) hwg ((hwc.mono hVa).add (hg.continuousOn.mono hgV)) hfr x hxV
   simpa [g] using this
 
 /-- **The maximum principle with an exceptional point.** In dimension at least two, let `U` be a
 bounded open set and `a` a point, in `U`, on its frontier, or elsewhere. Let `u` be subharmonic and
-`h` harmonic on `U \ {a}`, both continuous on `closure U \ {a}`, with `u - h` bounded above near
-`a`. If `u ≤ h` at every point of `frontier U` other than `a`, then `u ≤ h` on
-`closure U \ {a}`. No condition at `a` itself is needed: in dimension at least two a single point
-does not affect the maximum principle. -/
+`w` superharmonic (that is, `-w` is subharmonic) on `U \ {a}`, both continuous on
+`closure U \ {a}`, with `u - w` bounded above near `a`. If `u ≤ w` at every point of
+`frontier U` other than `a`, then `u ≤ w` on `closure U \ {a}`. No condition at `a` itself is
+needed: in dimension at least two a single point does not affect the maximum principle. -/
 theorem SubharmonicOn.le_of_le_frontier_of_isBoundedUnder (hE : 2 ≤ Module.finrank ℝ E)
     (hU : IsOpen U) (hUb : Bornology.IsBounded U) (hu : SubharmonicOn u (U \ {a}))
-    (huc : ContinuousOn u (closure U \ {a})) (hh : HarmonicOnNhd h (U \ {a}))
-    (hhc : ContinuousOn h (closure U \ {a})) (hb : IsBoundedUnder (· ≤ ·) (𝓝[≠] a) (u - h))
-    (hle : ∀ x ∈ frontier U, x ≠ a → u x ≤ h x) : ∀ x ∈ closure U \ {a}, u x ≤ h x := by
+    (huc : ContinuousOn u (closure U \ {a})) (hw : SubharmonicOn (-w) (U \ {a}))
+    (hwc : ContinuousOn w (closure U \ {a})) (hb : IsBoundedUnder (· ≤ ·) (𝓝[≠] a) (u - w))
+    (hle : ∀ x ∈ frontier U, x ≠ a → u x ≤ w x) : ∀ x ∈ closure U \ {a}, u x ≤ w x := by
   rintro x ⟨hxU, hxa⟩
-  have hv := hu.sub_harmonicOnNhd hh (hU.sdiff isClosed_singleton)
   obtain ⟨ψ, hψa, hψt, hψh⟩ := exists_harmonicOnNhd_comp_norm_sub hE a
   obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall a).1 hUb.closure
   obtain ⟨M, hM⟩ := hb
   obtain ⟨δ₀, hδ₀, hM⟩ := Metric.mem_nhdsWithin_iff.1 (eventually_map.1 hM)
-  -- For every `ε > 0`, `(u - h) x ≤ ε (ψ ‖x - a‖ - ψ R)`; let `ε → 0`.
-  have hlim : Tendsto (fun ε : ℝ ↦ ε * (ψ ‖x - a‖ - ψ R)) (𝓝[>] 0) (𝓝 0) := by
-    have hc : Continuous fun ε : ℝ ↦ ε * (ψ ‖x - a‖ - ψ R) := by fun_prop
+  -- For every `ε > 0`, `u x ≤ w x + ε (ψ ‖x - a‖ - ψ R)`; let `ε → 0`.
+  have hlim : Tendsto (fun ε : ℝ ↦ w x + ε * (ψ ‖x - a‖ - ψ R)) (𝓝[>] 0) (𝓝 (w x)) := by
+    have hc : Continuous fun ε : ℝ ↦ w x + ε * (ψ ‖x - a‖ - ψ R) := by fun_prop
     simpa using (hc.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-  have := ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε hε ↦
-    le_mul_sub_of_le_frontier hU hUb hv (huc.sub hhc) hψa hψt hψh hR hδ₀
-      (fun y hya hy ↦ hM ⟨mem_ball.2 hy, hya⟩) (fun y hy hya ↦ sub_nonpos.2 (hle y hy hya))
-      (mem_Ioi.1 hε) hxU hxa)
-  simpa [sub_nonpos] using this
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε hε ↦
+    le_add_mul_sub_of_le_frontier hU hUb hu huc hw hwc hψa hψt hψh hR hδ₀
+      (fun y hya hy ↦ hM ⟨mem_ball.2 hy, hya⟩) hle (mem_Ioi.1 hε) hxU hxa)
 
 /-- A harmonic function on a punctured neighbourhood of `a`, bounded near `a`, agrees on a punctured
 ball about `a` with a function harmonic on the whole ball: the Poisson integral of its values on
@@ -181,15 +177,6 @@ private theorem exists_harmonicOnNhd_ball_eqOn_sdiff (hE : 2 ≤ Module.finrank 
     (hb : IsBoundedUnder (· ≤ ·) (𝓝[≠] a) fun x ↦ |u x|) :
     ∃ r > 0, ∃ P, HarmonicOnNhd P (ball a r) ∧ EqOn u P (ball a r \ {a}) := by
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  -- A function bounded near `a` minus a function continuous at `a` is bounded above near `a`.
-  have hbd : ∀ {f g : E → ℝ}, IsBoundedUnder (· ≤ ·) (𝓝[≠] a) (fun x ↦ |f x|) →
-      ContinuousAt g a → IsBoundedUnder (· ≤ ·) (𝓝[≠] a) (f - g) := fun {f g} ⟨M, hM⟩ hg ↦ by
-    refine isBoundedUnder_of_eventually_le (a := M + (|g a| + 1)) ?_
-    filter_upwards [eventually_map.1 hM, nhdsWithin_le_nhds
-      ((continuous_abs.continuousAt.comp hg).eventually (gt_mem_nhds (lt_add_one |g a|)))]
-      with x hx hgx
-    simp only [Pi.sub_apply, comp_apply] at hgx ⊢
-    linarith [le_abs_self (f x), neg_abs_le (g x)]
   obtain ⟨r, hr, hrs⟩ := nhds_basis_closedBall.mem_iff.1 hs
   have hcl : closedBall a r \ {a} ⊆ s \ {a} := sdiff_subset_sdiff_left hrs
   have hsph : sphere a r ⊆ closedBall a r \ {a} := fun y hy ↦
@@ -200,26 +187,32 @@ private theorem exists_harmonicOnNhd_ball_eqOn_sdiff (hE : 2 ≤ Module.finrank 
   -- The Poisson integral `P` of the values of `u` on `sphere a r`.
   obtain ⟨P, hP, hPc, hPu⟩ := exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere
     (hu.continuousOn.mono (hsph.trans hcl))
-  have hPa : ContinuousAt P a := (hP a (mem_ball_self hr)).1.continuousAt
+  have hPa : Tendsto P (𝓝[≠] a) (𝓝 (P a)) :=
+    (hP a (mem_ball_self hr)).1.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
   -- Compare `u` and `P` from both sides on the punctured ball.
   have hball : ball a r \ {a} ⊆ s \ {a} :=
     (sdiff_subset_sdiff_left ball_subset_closedBall).trans hcl
   have hclb : closure (ball a r) \ {a} ⊆ closedBall a r \ {a} := by rw [closure_ball a hr.ne']
   have hfr : frontier (ball a r) = sphere a r := frontier_ball a hr.ne'
+  have huP : IsBoundedUnder (· ≤ ·) (𝓝[≠] a) (u - P) := by
+    simpa only [sub_eq_add_neg, Pi.neg_def] using
+      isBoundedUnder_le_add (isBoundedUnder_le_abs.1 hb).1
+        (isBoundedUnder_le_neg.2 hPa.isBoundedUnder_ge)
+  have hPu' : IsBoundedUnder (· ≤ ·) (𝓝[≠] a) (P - u) := by
+    simpa only [sub_eq_add_neg, Pi.neg_def] using
+      isBoundedUnder_le_add hPa.isBoundedUnder_le
+        (isBoundedUnder_le_neg.2 (isBoundedUnder_le_abs.1 hb).2)
   have hle := SubharmonicOn.le_of_le_frontier_of_isBoundedUnder hE isOpen_ball isBounded_ball
-    ((hu.mono hball).subharmonicOn) (hu.continuousOn.mono (hclb.trans hcl)) (hP.mono sdiff_subset)
-    (hPc.mono (hclb.trans sdiff_subset)) (hbd hb hPa)
+    ((hu.mono hball).subharmonicOn) (hu.continuousOn.mono (hclb.trans hcl))
+    ((hP.neg.mono sdiff_subset).subharmonicOn) (hPc.mono (hclb.trans sdiff_subset)) huP
     (fun x hx _ ↦ (hPu (hfr ▸ hx)).ge)
   have hge := SubharmonicOn.le_of_le_frontier_of_isBoundedUnder hE isOpen_ball isBounded_ball
-    ((hu.neg.mono hball).subharmonicOn) (hu.continuousOn.neg.mono (hclb.trans hcl))
-    (hP.neg.mono sdiff_subset) (hPc.neg.mono (hclb.trans sdiff_subset))
-    (hbd (by simpa using hb) hPa.neg)
-    (fun x hx _ ↦ by simpa using (hPu (hfr ▸ hx)).le)
+    ((hP.mono sdiff_subset).subharmonicOn) (hPc.mono (hclb.trans sdiff_subset))
+    ((hu.neg.mono hball).subharmonicOn) (hu.continuousOn.mono (hclb.trans hcl)) hPu'
+    (fun x hx _ ↦ (hPu (hfr ▸ hx)).le)
   refine ⟨r, hr, P, hP, fun x hx ↦ ?_⟩
   have hx' : x ∈ closure (ball a r) \ {a} := ⟨subset_closure hx.1, hx.2⟩
-  have := hge x hx'
-  simp only [Pi.neg_apply, neg_le_neg_iff] at this
-  exact le_antisymm (hle x hx') this
+  exact le_antisymm (hle x hx') (hge x hx')
 
 /-- **Removable singularity theorem for harmonic functions.** In dimension at least two, let `s`
 be a neighbourhood of `a` and let `u` be harmonic on `s \ {a}` and bounded near `a`. Then `u`

@@ -222,24 +222,18 @@ theorem not_isBarrier_of_mem_nhdsNE (hE : 2 ≤ Module.finrank ℝ E) (hΩ : Ω 
   -- By the maximum principle with an exceptional point, `w ≥ w z` on the punctured ball.
   have hclb : closure (ball ξ ρ) \ {ξ} ⊆ closedBall ξ ρ \ {ξ} := by rw [closure_ball ξ hρ.ne']
   have hle := SubharmonicOn.le_of_le_frontier_of_isBoundedUnder hE isOpen_ball isBounded_ball
-    (u := -w - fun _ ↦ -w z) (h := fun _ ↦ 0)
-    ((hw.subharmonicOn_neg.mono ((sdiff_subset_sdiff_left ball_subset_closedBall).trans
-      hpunct)).sub_harmonicOnNhd (harmonicOnNhd_const _) (isOpen_ball.sdiff isClosed_singleton))
-    ((hw.continuousOn.mono ((hclb.trans sdiff_subset).trans hcl)).neg.sub continuousOn_const)
-    (harmonicOnNhd_const 0) continuousOn_const
+    (u := fun _ ↦ w z) ((harmonicOnNhd_const _).subharmonicOn) continuousOn_const
+    (hw.subharmonicOn_neg.mono ((sdiff_subset_sdiff_left ball_subset_closedBall).trans hpunct))
+    (hw.continuousOn.mono ((hclb.trans sdiff_subset).trans hcl))
     (isBoundedUnder_of_eventually_le (a := w z) <| by
       filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds ξ hρ)] with x hx
       have := hw.pos x (hcl (ball_subset_closedBall hx.2)) hx.1
-      simp only [Pi.sub_apply, Pi.neg_apply]
+      simp only [Pi.sub_apply]
       linarith)
-    (fun x hx _ ↦ by
-      rw [frontier_ball ξ hρ.ne'] at hx
-      simpa using hmin hx)
+    (fun x hx _ ↦ hmin (frontier_ball ξ hρ.ne' ▸ hx))
   have hge : ∀ᶠ x in 𝓝[≠] ξ, w z ≤ w x := by
     filter_upwards [inter_mem_nhdsWithin _ (ball_mem_nhds ξ hρ)] with x hx
-    have := hle x ⟨subset_closure hx.2, hx.1⟩
-    simp only [Pi.sub_apply, Pi.neg_apply] at this
-    linarith
+    exact hle x ⟨subset_closure hx.2, hx.1⟩
   -- By continuity at `ξ`, `w ξ ≥ w z > 0`, contradicting `w ξ = 0`.
   have htend : Tendsto w (𝓝[≠] ξ) (𝓝 (w ξ)) :=
     (hw.continuousOn ξ hξ).tendsto.mono_left
@@ -269,12 +263,10 @@ theorem exists_continuousOn_frontier_not_exists_harmonicOnNhd_eqOn_frontier
 `ξ`. -/
 theorem isBarrier_norm_sub_of_finrank_eq_one (hE : Module.finrank ℝ E = 1) (hξ : ξ ∉ Ω) :
     IsBarrier Ω ξ fun x ↦ ‖x - ξ‖ := by
-  have hH : HarmonicOnNhd (fun x ↦ ‖x - ξ‖) {ξ}ᶜ := fun x hx ↦ by
-    have := harmonicAt_norm_rpow_two_sub_finrank (E := E) (sub_ne_zero.2 hx)
+  have hH : HarmonicOnNhd (fun x ↦ ‖x - ξ‖) {ξ}ᶜ := by
+    have := harmonicOnNhd_norm_sub_rpow_two_sub_finrank (E := E) ξ
     norm_num [hE] at this
-    simp only [sub_eq_add_neg]
-    exact (harmonicAt_comp_add_right_iff (f := fun y : E ↦ ‖y‖) (a := -ξ)).2
-      (by simpa [sub_eq_add_neg] using this)
+    exact this
   refine ⟨(hH.neg.mono fun x hx h ↦ hξ (mem_singleton_iff.1 h ▸ hx)).subharmonicOn,
     (continuous_norm.comp (continuous_id.sub continuous_const)).continuousOn, by simp,
     fun x _ hx ↦ norm_pos_iff.2 (sub_ne_zero.2 hx)⟩
