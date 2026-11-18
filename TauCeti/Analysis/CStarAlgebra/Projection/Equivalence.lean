@@ -41,7 +41,7 @@ variable {A B m n k l : Type*} [Fintype m] [Fintype n] [Fintype k] [Fintype l]
 
 section Algebraic
 
-variable [NonUnitalRing A] [StarRing A]
+variable [NonUnitalSemiring A] [StarRing A]
   {p : CStarMatrix m m A} {q : CStarMatrix n n A} {r : CStarMatrix k k A}
 
 /-- Two matrix projections are Murray–von Neumann equivalent when a rectangular matrix has
@@ -106,13 +106,25 @@ theorem fromBlocks {p' : CStarMatrix k k A} {q' : CStarMatrix l l A}
       using congrArg₂ (fun x y => Matrix.fromBlocks x 0 0 y)
         (congrArg ofMatrix.symm hv') (congrArg ofMatrix.symm hw')
 
-/-- A nonunital star algebra homomorphism preserves rectangular equivalence entrywise. -/
-theorem map {R : Type*} [Semiring R] [Module R A]
-    [NonUnitalRing B] [StarRing B] [Module R B]
-    (h : MurrayVonNeumannEquiv p q) (f : A →⋆ₙₐ[R] B) :
+/-- A nonunital star ring homomorphism preserves rectangular equivalence entrywise. -/
+theorem map [NonUnitalSemiring B] [StarRing B] {F : Type*} [FunLike F A B]
+    [NonUnitalRingHomClass F A B] [StarHomClass F A B]
+    (h : MurrayVonNeumannEquiv p q) (f : F) :
     MurrayVonNeumannEquiv (p.map f) (q.map f) := by
   obtain ⟨hp, hq, v, hv, hv'⟩ := h
-  refine ⟨hp.map (mapₙₐ f), hq.map (mapₙₐ f), v.map f, ?_, ?_⟩
+  refine ⟨isStarProjection_iff'.mpr ⟨?_, ?_⟩, isStarProjection_iff'.mpr ⟨?_, ?_⟩, v.map f, ?_, ?_⟩
+  · ext i j
+    simpa only [map_apply, mul_apply, map_sum, map_mul] using
+      congrArg f (congrFun (congrFun hp.isIdempotentElem.eq i) j)
+  · ext i j
+    simpa only [map_apply, star_apply, map_star] using
+      congrArg f (congrFun (congrFun hp.isSelfAdjoint.star_eq i) j)
+  · ext i j
+    simpa only [map_apply, mul_apply, map_sum, map_mul] using
+      congrArg f (congrFun (congrFun hq.isIdempotentElem.eq i) j)
+  · ext i j
+    simpa only [map_apply, star_apply, map_star] using
+      congrArg f (congrFun (congrFun hq.isSelfAdjoint.star_eq i) j)
   · ext i j
     simpa only [map_apply, mul_apply, conjTranspose_apply, map_sum, map_mul,
       map_star] using congrArg f (congrFun (congrFun hv i) j)
@@ -244,7 +256,7 @@ theorem zero_murrayVonNeumannEquiv_iff :
 end OrderedStar
 
 /-- Unitary conjugacy implies Murray–von Neumann equivalence. -/
-theorem murrayVonNeumannEquiv_unitary_conj [Ring B] [StarRing B] [DecidableEq m]
+theorem murrayVonNeumannEquiv_unitary_conj [Semiring B] [StarRing B] [DecidableEq m]
     {p : CStarMatrix m m B} (hp : IsStarProjection p) (u : unitary (CStarMatrix m m B)) :
     MurrayVonNeumannEquiv p ((u : CStarMatrix m m B) * p * star (u : CStarMatrix m m B)) := by
   have hq : IsStarProjection ((u : CStarMatrix m m B) * p * star (u : CStarMatrix m m B)) :=
