@@ -63,8 +63,8 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ℝ≥0}
 
 /-! ### The coefficient -/
 
-/-- The coefficient field `(1 + |xᵢ| ^ α) I` on `ℝᵈ`: uniformly elliptic on bounded sets and
-`α`-Hölder, with a cusp along the hyperplane `xᵢ = 0`. -/
+/-- The coefficient field `(1 + |xᵢ| ^ α) I` on `ℝᵈ`: uniformly elliptic on bounded sets and,
+for `α ≤ 1`, `α`-Hölder, with a cusp along the hyperplane `xᵢ = 0`. -/
 def cuspCoefficient (α : ℝ≥0) (i : ι) (x : EuclideanSpace ℝ ι) : Matrix ι ι ℝ :=
   (1 + |x i| ^ (α : ℝ)) • 1
 
@@ -145,7 +145,8 @@ private theorem hasGradientAt_cuspSolution (i : ι) (x : EuclideanSpace ℝ ι) 
     x (EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).hasFDerivAt
   convert h using 1
   · -- `cuspSolution α i` is the primitive of the slope composed with the coordinate `xᵢ`.
-    rfl
+    funext y
+    simp [cuspSolution, EuclideanSpace.coe_proj]
   · ext v
     simp [cuspGradient, EuclideanSpace.inner_single_left]
 
