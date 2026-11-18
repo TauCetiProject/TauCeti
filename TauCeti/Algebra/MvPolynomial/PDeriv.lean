@@ -54,6 +54,9 @@ difference of their constant coefficients.
   along `Xᵢ` vanishes when `degreeOf i p < k`.
 * `MvPolynomial.coeff_iterate_pderiv_mem`: iterated partial derivatives keep the coefficients in
   an additive submonoid.
+* `MvPolynomial.iterate_pderiv_map`: iterated partial derivatives commute with coefficient maps.
+* `MvPolynomial.iterate_pderiv_monomial`: the `k`-th iterated partial derivative along `Xᵢ` of the
+  monomial `a X^m` is `a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
 * `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_mul`,
@@ -174,6 +177,31 @@ theorem coeff_iterate_pderiv_mem {S : Type*} [SetLike S R] [AddSubmonoidClass S 
   | succ k ih =>
     rw [Function.iterate_succ_apply']
     exact coeff_pderiv_mem ih i m
+
+/-- Iterated partial differentiation commutes with mapping the coefficients along a ring
+homomorphism. -/
+@[simp]
+theorem iterate_pderiv_map {S : Type*} [CommSemiring S] (φ : R →+* S) (i : σ) (k : ℕ)
+    (p : MvPolynomial σ R) : (pderiv i)^[k] (p.map φ) = ((pderiv i)^[k] p).map φ := by
+  induction k with
+  | zero => rfl
+  | succ k ih => rw [Function.iterate_succ_apply', ih, pderiv_map, Function.iterate_succ_apply']
+
+/-- The `k`-th iterated partial derivative along `Xᵢ` of a monomial is
+`∂ᵏ/∂Xᵢᵏ (a X^m) = a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`; it vanishes for `k > mᵢ`. -/
+@[simp]
+theorem iterate_pderiv_monomial (i : σ) (k : ℕ) (m : σ →₀ ℕ) (a : R) :
+    (pderiv i)^[k] (monomial m a) =
+      monomial (m - Finsupp.single i k) (a * (m i).descFactorial k) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hm : m - Finsupp.single i k - Finsupp.single i 1 = m - Finsupp.single i (k + 1) := by
+      rw [tsub_tsub, ← Finsupp.single_add]
+    rw [Function.iterate_succ_apply', ih, pderiv_monomial, hm]
+    congr 1
+    simp [Nat.descFactorial_succ]
+    ring
 
 /-- Iterated partial differentiation along `Xᵢ` of a one-variable polynomial in `Xᵢ` is iterated
 differentiation of the polynomial. -/
