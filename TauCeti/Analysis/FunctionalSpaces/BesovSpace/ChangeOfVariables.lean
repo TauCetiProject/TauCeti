@@ -564,10 +564,9 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (φ : Con
   refine ⟨K₁ + K₂ * (2 / φ.rIn) ^ M + K₀, by positivity,
     fun {p} _ {Φ} hΦ hΨ hΦL hΨL {g G} hg hgG j k u f hf ↦ ?_⟩
   -- The Jacobian is bounded below in terms of `DΦ⁻¹`.
-  have hdet (x : E) : J⁻¹ ≤ |(fderiv ℝ Φ x).det| :=
-    Φ.inv_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp) x)
-      (hΨ.1.differentiable (by simp) _) (by
-        simpa using (hΨL 1 le_rfl (by omega) (Φ x)).trans (le_max_right 1 L))
+  have hdet : ∀ x, J⁻¹ ≤ |(fderiv ℝ Φ x).det| :=
+    Φ.inv_max_one_pow_le_abs_det_fderiv (hΦ.1.differentiable (by simp))
+      (hΨ.1.differentiable (by simp)) fun y ↦ by simpa using hΨL 1 le_rfl (by omega) y
   obtain ⟨hG, hg₀⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
   obtain ⟨v, hv, hvn⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_ball_of_annulus φ
     (fun T ↦ smulLeftCLM F g (compCLM F Φ hΦ hΨ T)) (mul_nonneg hK₀ hG) (mul_nonneg hK₁ hG)
