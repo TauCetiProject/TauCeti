@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
-import TauCeti.Algebra.DirectSum.Component
+import TauCeti.RingTheory.MvPolynomial.Decomposition
 
 /-!
 # Tensor products of forms as bihomogeneous polynomials
@@ -71,13 +71,11 @@ variable {ι R}
 
 theorem tensorEquivFinTwoProd_X_tmul_one (i : ι) :
     tensorEquivFinTwoProd ι R (X i ⊗ₜ 1) = X (0, i) := by
-  simp [tensorEquivFinTwoProd]
-  rfl
+  simp [tensorEquivFinTwoProd, finTwoEquiv]
 
 theorem tensorEquivFinTwoProd_one_tmul_X (i : ι) :
     tensorEquivFinTwoProd ι R (1 ⊗ₜ X i) = X (1, i) := by
-  simp [tensorEquivFinTwoProd]
-  rfl
+  simp [tensorEquivFinTwoProd, finTwoEquiv]
 
 /-- `p ⊗ 1` goes to `p` written in the variables `X (0, i)`. -/
 theorem tensorEquivFinTwoProd_tmul_one (p : MvPolynomial ι R) :
@@ -160,15 +158,6 @@ theorem tensorEquivFinTwoProd_map_homogeneousComponent (m n : ℕ)
 
 attribute [local instance] MvPolynomial.decomposition
 
-/-- The projection `TauCeti.homogeneousProj` onto the forms of degree `n`, followed by the
-inclusion, is the homogeneous component of degree `n`. -/
-private theorem subtype_comp_homogeneousProj (n : ℕ) :
-    (homogeneousSubmodule ι R n).subtype ∘ₗ TauCeti.homogeneousProj (homogeneousSubmodule ι R) n =
-      homogeneousComponent n :=
-  LinearMap.ext fun p ↦ by
-    rw [LinearMap.comp_apply, Submodule.subtype_apply, TauCeti.homogeneousProj_apply]
-    exact decomposition.decompose'_apply p n
-
 /-- The tensor product of the forms of degree `m` and of degree `n`, mapped into the polynomials
 in two blocks of variables. -/
 private noncomputable def homogeneousTensorMap (m n : ℕ) :
@@ -231,16 +220,16 @@ theorem coe_homogeneousTensorEquiv_apply (m n : ℕ)
       tensorEquivFinTwoProd ι R (TensorProduct.map (homogeneousSubmodule ι R m).subtype
         (homogeneousSubmodule ι R n).subtype x) := by
   rw [homogeneousTensorEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
-    LinearEquiv.ofInjective_apply]
-  rfl
+    LinearEquiv.ofInjective_apply, homogeneousTensorMap, LinearMap.comp_apply,
+    AlgEquiv.toLinearMap_apply]
 
 @[simp]
 theorem coe_homogeneousTensorEquiv_tmul {m n : ℕ} (p : homogeneousSubmodule ι R m)
     (q : homogeneousSubmodule ι R n) :
     (homogeneousTensorEquiv ι R m n (p ⊗ₜ q) : MvPolynomial (Fin 2 × ι) R) =
       rename (Prod.mk 0) (p : MvPolynomial ι R) * rename (Prod.mk 1) (q : MvPolynomial ι R) := by
-  rw [coe_homogeneousTensorEquiv_apply, TensorProduct.map_tmul, tensorEquivFinTwoProd_tmul]
-  rfl
+  rw [coe_homogeneousTensorEquiv_apply, TensorProduct.map_tmul, tensorEquivFinTwoProd_tmul,
+    Submodule.subtype_apply, Submodule.subtype_apply]
 
 end TensorEquiv
 

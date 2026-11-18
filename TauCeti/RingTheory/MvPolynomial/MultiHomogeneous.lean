@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
+import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Multihomogeneous polynomials
@@ -212,11 +213,7 @@ theorem IsHomogeneous.isMultiHomogeneous_rename {p : MvPolynomial ι R} {m : ℕ
   rw [isMultiHomogeneous_iff_forall_isWeightedHomogeneous]
   intro h' s hs
   obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ hs
-  have key (w : κ × ι → ℕ) :
-      Finsupp.weight w (u.mapDomain (Prod.mk h)) = Finsupp.weight (w ∘ Prod.mk h) u :=
-    Finsupp.sum_mapDomain_index (h := fun i c ↦ c • w i) (fun _ ↦ zero_smul ℕ _)
-      fun _ _ _ ↦ add_smul _ _ _
-  rw [key]
+  rw [Finsupp.weight_mapDomain]
   by_cases hh : h = h'
   · subst hh
     have hw : (fun p : κ × ι ↦ if p.1 = h then 1 else 0) ∘ Prod.mk h = 1 := by

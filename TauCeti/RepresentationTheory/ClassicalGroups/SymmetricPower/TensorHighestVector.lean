@@ -28,11 +28,12 @@ The determinant `x ⊗ y - y ⊗ x` is multiplied by `det g` under the substitut
 factors, while `x` is only rescaled by an upper triangular matrix. Hence the upper triangular matrix
 `!![a, b; 0, d]` multiplies `v_r` by `a ^ (m + n - r) * d ^ r`: the vector `v_r` is fixed by the
 upper unipotent subgroup and has weight `(m + n - r, r)` for the diagonal torus of `GL₂`, so weight
-`m + n - 2 r` for the diagonal torus of `SL₂`. These are the highest weight vectors of the summands
-`det ^ r ⊗ Sym^(m + n - 2 r)(R²)` of the Clebsch–Gordan decomposition of `Symᵐ(R²) ⊗ Symⁿ(R²)`.
-The abstract counterparts in the coordinate model `TauCeti.Sl2Std` of the `sl₂`-modules are the
-vectors `TauCeti.Sl2Std.cgVector`; the vectors here live on the polynomial model, on which the
-group acts by substitution.
+`m + n - 2 r` for the diagonal torus of `SL₂`. Over a field of characteristic zero these are the
+highest weight vectors of the summands `det ^ r ⊗ Sym^(m + n - 2 r)(R²)` of the Clebsch–Gordan
+decomposition of `Symᵐ(R²) ⊗ Symⁿ(R²)`; that decomposition is not proved here. The abstract
+counterparts in the coordinate model `TauCeti.Sl2Std` of the `sl₂`-modules are the vectors
+`TauCeti.Sl2Std.cgVector`; the vectors here live on the polynomial model, on which the group acts
+by substitution.
 
 ## Main definitions
 
@@ -146,11 +147,11 @@ theorem polynomialTensorHighest_mem_range :
   · rw [polynomialTensorHighest_of_not_le h]
     exact Submodule.zero_mem _
 
-/-- The highest weight vector `v_r` is nonzero for `r ≤ min m n`: its bihomogeneous polynomial
-takes the value `1` at `x₁ = x₂ = y₂ = 1`, `y₁ = 0`. -/
+/-- The highest weight vector `v_r` is nonzero for `r ≤ min m n`, over a nontrivial ring. -/
 theorem polynomialTensorHighest_ne_zero [Nontrivial R] (hm : r ≤ m) (hn : r ≤ n) :
     polynomialTensorHighest R m n r ≠ 0 := by
   intro h
+  -- The bihomogeneous polynomial of `v_r` takes the value `1` at `x₁ = x₂ = y₂ = 1`, `y₁ = 0`.
   have := congr(eval (fun p : Fin 2 × Fin 2 ↦ if p = (0, 1) then 0 else 1)
     (tensorEquivFinTwoProd (Fin 2) R $h))
   simp [tensorEquivFinTwoProd_polynomialTensorHighest hm hn] at this
@@ -186,15 +187,13 @@ theorem map_polynomialAction_upperTriangular_polynomialTensorHighest (a b d : R)
         (polynomialTensorHighest R m n r) =
       (a ^ (m + n - r) * d ^ r) • polynomialTensorHighest R m n r := by
   by_cases h : r ≤ m ∧ r ≤ n
-  · have hx : polynomialAction !![a, b; 0, d] (X 0 : MvPolynomial (Fin 2) R) = C a * X 0 := by
-      simp
-    rw [map_polynomialAction_polynomialTensorHighest _ h.1 h.2, hx, polynomialTensorHighest_of_le
-      h.1 h.2, mul_pow, mul_pow, ← C_pow, ← C_pow, ← smul_eq_C_mul, ← smul_eq_C_mul,
-      TensorProduct.smul_tmul_smul,
-      mul_smul_comm, smul_smul, det_fin_two_of]
-    congr 1
-    rw [show m + n - r = r + (m - r) + (n - r) by omega, pow_add, pow_add]
-    ring
+  · obtain ⟨hm, hn⟩ := h
+    have hx : polynomialAction !![a, b; 0, d] (X 0 : MvPolynomial (Fin 2) R) = a • X 0 := by
+      simp [smul_eq_C_mul]
+    rw [map_polynomialAction_polynomialTensorHighest _ hm hn, hx,
+      polynomialTensorHighest_of_le hm hn, show m + n - r = r + (m - r) + (n - r) by omega]
+    simp only [smul_pow, TensorProduct.smul_tmul_smul, mul_smul_comm, smul_smul, det_fin_two_of]
+    module
   · simp [polynomialTensorHighest_of_not_le h]
 
 /-- **The highest weight vector is fixed by the upper unipotent subgroup.** -/
@@ -210,20 +209,20 @@ theorem map_polynomialAction_diagonal_polynomialTensorHighest (t : Fin 2 → R) 
     Algebra.TensorProduct.map (polynomialAction (diagonal t)) (polynomialAction (diagonal t))
         (polynomialTensorHighest R m n r) =
       (t 0 ^ (m + n - r) * t 1 ^ r) • polynomialTensorHighest R m n r := by
-  rw [← map_polynomialAction_upperTriangular_polynomialTensorHighest (b := 0)]
-  congr 3 <;> ext i j <;> fin_cases i <;> fin_cases j <;> rfl
+  rw [diagonal_fin_two, map_polynomialAction_upperTriangular_polynomialTensorHighest]
 
 /-- **The `SL₂`-weight of the highest weight vector is `m + n - 2 r`**: the diagonal matrix
-`diag(t, t⁻¹)` of determinant one multiplies `v_r` by `t ^ (m + n - 2 r)`, for `r ≤ min m n`. -/
-theorem map_polynomialAction_diagonal_inv_polynomialTensorHighest (t : Rˣ) (hm : r ≤ m)
-    (hn : r ≤ n) :
+`diag(t, t⁻¹)` of determinant one multiplies `v_r` by `t ^ (m + n - 2 r)`. -/
+theorem map_polynomialAction_diagonal_inv_polynomialTensorHighest (t : Rˣ) :
     Algebra.TensorProduct.map (polynomialAction (diagonal ![(t : R), ↑t⁻¹]))
         (polynomialAction (diagonal ![(t : R), ↑t⁻¹])) (polynomialTensorHighest R m n r) =
       ((t : R) ^ (m + n - 2 * r)) • polynomialTensorHighest R m n r := by
-  rw [map_polynomialAction_diagonal_polynomialTensorHighest]
-  congr 1
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [show m + n - r = m + n - 2 * r + r by omega, pow_add, mul_assoc, ← mul_pow, Units.mul_inv,
-    one_pow, mul_one]
+  by_cases h : r ≤ m ∧ r ≤ n
+  · rw [map_polynomialAction_diagonal_polynomialTensorHighest]
+    congr 1
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+    rw [show m + n - r = m + n - 2 * r + r by omega, pow_add, mul_assoc, ← mul_pow, Units.mul_inv,
+      one_pow, mul_one]
+  · simp [polynomialTensorHighest_of_not_le h]
 
 end TauCeti
