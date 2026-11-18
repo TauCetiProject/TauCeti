@@ -40,6 +40,8 @@ matrix past `J`.
 * `LieAlgebra.Symplectic.jConj` and `LieAlgebra.Symplectic.symmetrize`: the linear involution
   `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`, and the symmetrization
   `Z ↦ Z + J Zᵀ J` into `sp l R`.
+* `LieAlgebra.Symplectic.lie_symmetrize_symmetrize`: the bracket of two symmetrizations is a
+  symmetrization.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
 * `Matrix.mem_range_scalar_of_commute_sp`: a matrix commuting with every element of `sp l R` is
@@ -158,6 +160,21 @@ noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R whe
 theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
     (symmetrize Z : Matrix (l ⊕ l) (l ⊕ l) R) = Z + jConj Z :=
   (rfl)
+
+/-- The bracket of two symmetrizations is the symmetrization of `⁅X, Y⁆ + ⁅X, J Yᵀ J⁆`. -/
+theorem lie_symmetrize_symmetrize (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
+    ⁅symmetrize X, symmetrize Y⁆ = symmetrize (⁅X, Y⁆ + ⁅X, jConj Y⁆) := by
+  -- `Z ↦ J Zᵀ J` reverses products up to sign.
+  have hmul (A B : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (A * B) = -(jConj B * jConj A) := by
+    simp only [jConj_apply]
+    calc J l R * (A * B)ᵀ * J l R = J l R * Bᵀ * -(J l R * J l R) * Aᵀ * J l R := by
+          rw [J_squared, neg_neg, transpose_mul]
+          noncomm_ring
+      _ = _ := by noncomm_ring
+  ext1
+  rw [LieSubalgebra.coe_bracket, coe_symmetrize_apply, coe_symmetrize_apply, coe_symmetrize_apply]
+  simp only [Ring.lie_def, map_add, map_sub, hmul, jConj_jConj]
+  noncomm_ring
 
 end LieAlgebra.Symplectic
 

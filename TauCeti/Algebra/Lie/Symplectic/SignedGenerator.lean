@@ -151,23 +151,10 @@ private theorem symmetrizeJ_single [Fintype l] (a b : l ⊕ l) :
     symmetrizeJ (single a b (1 : R)) = spGenerator R a b := by
   rw [symmetrizeJ_apply, spGenerator_eq_add_J_mul_transpose_mul_J]
 
-/-- The bracket of two symmetrizations is the symmetrization of `⁅X, Y⁆ + ⁅X, J Yᵀ J⁆`. -/
 private theorem lie_symmetrizeJ_symmetrizeJ [Fintype l] (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
     ⁅symmetrizeJ X, symmetrizeJ Y⁆ = symmetrizeJ (⁅X, Y⁆ + ⁅X, J l R * Yᵀ * J l R⁆) := by
-  have hJJ := J_squared l R
-  -- `X ↦ J Xᵀ J` reverses products up to sign, and is an involution.
-  have hmul (A B : Matrix (l ⊕ l) (l ⊕ l) R) :
-      J l R * (A * B)ᵀ * J l R = -((J l R * Bᵀ * J l R) * (J l R * Aᵀ * J l R)) := by
-    calc J l R * (A * B)ᵀ * J l R = J l R * Bᵀ * -(J l R * J l R) * Aᵀ * J l R := by
-          rw [hJJ, neg_neg, transpose_mul]
-          noncomm_ring
-      _ = _ := by noncomm_ring
-  have hinv (A : Matrix (l ⊕ l) (l ⊕ l) R) : J l R * (J l R * Aᵀ * J l R)ᵀ * J l R = A := by
-    simpa only [jConj_apply] using jConj_jConj A
-  simp only [symmetrizeJ_apply, Ring.lie_def, transpose_add, transpose_sub, Matrix.mul_add,
-    Matrix.add_mul, Matrix.mul_sub, Matrix.sub_mul]
-  rw [hmul X Y, hmul Y X, hmul X, hmul _ X, hinv]
-  abel
+  simp only [symmetrizeJ, LinearMap.comp_apply, LieHom.coe_toLinearMap, ← LieHom.map_lie,
+    lie_symmetrize_symmetrize, jConj_apply]
 
 /-- **Molev's commutation relations** for the generators of the symplectic Lie algebra:
 
