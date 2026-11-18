@@ -56,6 +56,8 @@ and the added rank `n` is positive. A raw level of type (2) carries no such cond
 * `TauCeti.LimitGroup.NTQ.System.finite_equations`: a TQ system is a finite system.
 * `TauCeti.LimitGroup.NTQ.System.coordGroupNilEquiv`: the raw lower group of the bottom level
   is `G`.
+* `TauCeti.LimitGroup.NTQ.System.comap_Rad_cons_empty`: an empty level does not change the radical
+  of the lower system.
 * `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_centralizer`,
   `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_abelian`,
   `TauCeti.LimitGroup.NTQ.System.isNondegenerate_cons_empty`: levels of types (2)–(4) are solved
@@ -261,6 +263,18 @@ noncomputable def coordGroupNilEquiv : (nil : System G PEmpty).CoordGroup ≃* G
 @[simp]
 theorem coordGroupNilEquiv_mk (w : GX G PEmpty) :
     coordGroupNilEquiv (w : (nil : System G PEmpty).CoordGroup) = GX.equivOfIsEmpty w := (rfl)
+
+/-- An equation in the lower variables lies in the radical of `cons S X empty` exactly when it
+lies in the radical of `S`: the radical of the system with the free variables `X` pulls back along
+`G[Y] → G[X ⊕ Y]` to the radical of `S`. -/
+@[simp]
+theorem comap_Rad_cons_empty {ι : G →* H} {Y : Type v} (S : System G Y) (X : Type v) [Finite X] :
+    (Rad ι (cons S X .empty).equations).comap
+      (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)) = Rad ι S.equations := by
+  ext w
+  simp only [Subgroup.mem_comap, mem_Rad, eval_map, MonoidHom.comp_id]
+  refine ⟨fun h v hv => ?_, fun h v hv => h _ (mem_V_cons.1 hv).1⟩
+  simpa using h (Sum.elim 1 v) (mem_V_cons.2 ⟨by simpa using hv, by simp⟩)
 
 /-- A raw TQ system is *nondegenerate* when each of its levels has a solution in its raw lower
 group: `nil` is nondegenerate, and `cons S X L` is nondegenerate when `S` is and the top level

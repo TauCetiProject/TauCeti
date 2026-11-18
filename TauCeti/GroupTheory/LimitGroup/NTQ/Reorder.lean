@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.GroupAlgGeom.FreeVariables
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.StandardMap
 public import TauCeti.GroupTheory.LimitGroup.NTQ.Regular
 
@@ -24,11 +25,7 @@ These moves keep a regular system regular, the split as long as the base group `
 commutative. The coordinate group of a system embeds in that of the system extended by free
 variables, so a regular quadratic level stays regular when an empty level is moved below it; the
 split of a closed genus-two level is regular exactly when the lower system is regular and `G` is
-not commutative. With them, over a non-commutative base group,
-an induction on the levels for the implicit function theorem for regular NTQ systems ([IFT],
-Theorem 11) needs an inductive step only at quadratic top levels which are not closed of genus
-two: closed genus-two levels are split, and empty levels are moved to the bottom, where they merge
-into a single empty level over `G` itself.
+not commutative.
 
 ## Main definitions
 
@@ -67,18 +64,6 @@ universe u v
 
 variable {G : Type u} [Group G]
 
-private theorem map_inr_injective {X Y : Type*} :
-    Function.Injective (Monoid.Coprod.map (.id G) (FreeGroup.map (Sum.inr : Y → X ⊕ Y))) :=
-  Function.LeftInverse.injective (g := eval inl (Sum.elim 1 fun y => inr (FreeGroup.of y)))
-    fun _ => by simp [eval_map]
-
-private theorem map_map_free {X Y Z : Type*} (e : X → Y) (e' : Y → Z) (w : GX G X) :
-    Monoid.Coprod.map (.id G) (FreeGroup.map e') (Monoid.Coprod.map (.id G) (FreeGroup.map e) w) =
-      Monoid.Coprod.map (.id G) (FreeGroup.map (e' ∘ e)) w := by
-  rw [Monoid.Coprod.map_map, MonoidHom.comp_id]
-  congr 2
-  exact FreeGroup.ext_hom _ _ fun _ => rfl
-
 /-! ### Moving an empty level below a quadratic level -/
 
 section Swap
@@ -94,6 +79,13 @@ noncomputable def swapEmpty (U₃ : System G Y₃) (X₁ : Type v) [Finite X₁]
     (.quadratic (Q.map (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)) fun _ hg =>
       (map_ne_one_iff _ map_inr_injective).2 (Quadratic.Standard.ne_one_of_mem_coeffs hg)))
 
+theorem swapEmpty_def (U₃ : System G Y₃) (X₁ : Type v) [Finite X₁]
+    (Q : Quadratic.Standard (GX G Y₃) X₂) :
+    swapEmpty U₃ X₁ Q = cons (cons U₃ X₁ .empty) X₂
+      (.quadratic (Q.map (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)) fun _ hg =>
+        (map_ne_one_iff _ map_inr_injective).2 (Quadratic.Standard.ne_one_of_mem_coeffs hg))) :=
+  (rfl)
+
 /-- The swapped system has the equations of `cons (cons U₃ X₂ (quadratic Q)) X₁ empty`, after
 renaming its variables `X₂ ⊕ (X₁ ⊕ Y₃)` as `X₁ ⊕ (X₂ ⊕ Y₃)`. -/
 theorem image_equations_swapEmpty (U₃ : System G Y₃) (X₁ : Type v) [Finite X₁]
@@ -102,9 +94,9 @@ theorem image_equations_swapEmpty (U₃ : System G Y₃) (X₁ : Type v) [Finite
         (Sum.elim (Sum.inr ∘ Sum.inl) (Sum.elim Sum.inl (Sum.inr ∘ Sum.inr)))) ''
         (swapEmpty U₃ X₁ Q).equations =
       (cons (cons U₃ X₂ (.quadratic Q)) X₁ .empty).equations := by
-  simp only [swapEmpty, equations_cons, Level.equations_empty, Level.equations_quadratic,
+  simp only [swapEmpty_def, equations_cons, Level.equations_empty, Level.equations_quadratic,
     Set.image_empty, Set.union_empty, Set.image_union, Set.image_image, Set.image_singleton,
-    map_map_free, Quadratic.Standard.toWord_map]
+    GX.map_map, MonoidHom.comp_id, Quadratic.Standard.toWord_map]
   congr 2
   rw [← MonoidHom.comp_apply, ← MonoidHom.comp_apply, ← MonoidHom.comp_apply]
   congr 1
@@ -116,21 +108,13 @@ theorem IsRegular.swapEmpty {U₃ : System G Y₃} {X₁ : Type v} [Finite X₁]
     (h : (cons (cons U₃ X₂ (.quadratic Q)) X₁ .empty).IsRegular) :
     (swapEmpty U₃ X₁ Q).IsRegular := by
   obtain ⟨hU, hX, hQ⟩ := isRegular_cons_quadratic.1 (isRegular_cons_empty.1 h)
-  set f : GX G Y₃ →* GX G (X₁ ⊕ Y₃) := Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)
-  set R := Rad (MonoidHom.id G) U₃.equations
-  set R' := Rad (MonoidHom.id G) (cons U₃ X₁ .empty).equations
-  have hle : R ≤ R'.comap f := fun w hw => mem_Rad.2 fun v hv => by
-    simpa [f] using mem_Rad.1 hw _ (mem_V_cons.1 hv).1
-  -- The coordinate group of `U₃` embeds: a word killed by every solution of the extended system
-  -- is killed by the solutions with trivial new coordinates.
-  have hge : R'.comap f ≤ R := fun w hw => mem_Rad.2 fun v hv => by
-    simpa [f] using mem_Rad.1 hw _ (mem_V_cons.2 ⟨by simpa using hv, by simp⟩ :
-      Sum.elim (1 : X₁ → G) v ∈ _)
+  have hR := comap_Rad_cons_empty (ι := .id G) U₃ X₁
+  rw [swapEmpty_def]
   refine isRegular_cons_quadratic.2 ⟨isRegular_cons_empty.2 hU,
     by simp [Quadratic.Standard.vars_map, hX], ?_⟩
   exact (Quadratic.Standard.isRegular_map_iff _ _ _ _).2 <|
-    hQ.map ⟨QuotientGroup.map R R' f hle, fun _ => rfl⟩
-      ((QuotientGroup.map_injective_iff _ _ _ hle).2 hge)
+    hQ.map ⟨QuotientGroup.map _ _ _ hR.ge, fun _ => rfl⟩
+      ((QuotientGroup.map_injective_iff _ _ _ hR.ge).2 hR.le)
 
 end Swap
 
@@ -143,23 +127,13 @@ theorem image_equations_cons_sum_empty {Y₃ X₂ X₁ : Type v} [Finite X₂] [
     Monoid.Coprod.map (.id G) (FreeGroup.map (Equiv.sumAssoc X₁ X₂ Y₃)) ''
         (cons U₃ (X₁ ⊕ X₂) .empty).equations =
       (cons (cons U₃ X₂ .empty) X₁ .empty).equations := by
-  simp [equations_cons, Set.image_image, map_map_free, Function.comp_def]
+  simp [equations_cons, Set.image_image, GX.map_map, Function.comp_def]
 
 /-! ### Splitting a closed genus-two level -/
 
 section Split
 
 variable {Y₂ : Type v}
-
-private theorem commutator_inl_ne_one :
-    (inr ⁅(FreeGroup.of (.inl ⟨0⟩) : FreeGroup (ULift.{v} (Fin 2) ⊕ Y₂))⁻¹,
-      (FreeGroup.of (.inl ⟨1⟩))⁻¹⁆ : GX G (ULift.{v} (Fin 2) ⊕ Y₂)) ≠ 1 := by
-  rw [Ne, map_eq_one_iff _ inr_injective]
-  intro h
-  have := congrArg (FreeGroup.map (Sum.elim (fun i : ULift.{v} (Fin 2) => i.down)
-    (fun _ => (0 : Fin 2)))) h
-  simp only [map_commutatorElement, map_inv, FreeGroup.map.of, Sum.elim_inl, map_one] at this
-  exact absurd this (by decide)
 
 /-- The split of a closed genus-two level over `U₂`: an empty level in variables `x₂, y₂` over
 `U₂`, and above it the level `[x₁, y₁] [x₂, y₂] = 1` in variables `x₁, y₁`, a standard equation of
@@ -169,9 +143,19 @@ noncomputable def splitGenusTwo (U₂ : System G Y₂) :
     System G (ULift.{v} (Fin 2) ⊕ (ULift.{v} (Fin 2) ⊕ Y₂)) :=
   cons (cons U₂ (ULift.{v} (Fin 2)) .empty) (ULift.{v} (Fin 2))
     (.quadratic (.orientableCoeff 1 0 one_pos ![⟨0⟩] ![⟨1⟩] Fin.elim0 (by decide) Fin.elim0
-      (fun j => j.elim0)
-      (inr ⁅(FreeGroup.of (.inl ⟨0⟩) : FreeGroup (ULift.{v} (Fin 2) ⊕ Y₂))⁻¹,
-        (FreeGroup.of (.inl ⟨1⟩))⁻¹⁆) commutator_inl_ne_one))
+      (fun j => j.elim0) ⁅(inr (FreeGroup.of (.inl ⟨0⟩)) : GX G (ULift.{v} (Fin 2) ⊕ Y₂))⁻¹,
+        (inr (FreeGroup.of (.inl ⟨1⟩)))⁻¹⁆
+      fun h => GX.not_commute_inr_of_inr_of (by simp)
+        (Commute.inv_inv_iff.1 (commutatorElement_eq_one_iff_commute.1 h))))
+
+theorem splitGenusTwo_def (U₂ : System G Y₂) :
+    splitGenusTwo U₂ = cons (cons U₂ (ULift.{v} (Fin 2)) .empty) (ULift.{v} (Fin 2))
+      (.quadratic (.orientableCoeff 1 0 one_pos ![⟨0⟩] ![⟨1⟩] Fin.elim0 (by decide) Fin.elim0
+        (fun j => j.elim0) ⁅(inr (FreeGroup.of (.inl ⟨0⟩)) : GX G (ULift.{v} (Fin 2) ⊕ Y₂))⁻¹,
+          (inr (FreeGroup.of (.inl ⟨1⟩)))⁻¹⁆
+        fun h => GX.not_commute_inr_of_inr_of (by simp)
+          (Commute.inv_inv_iff.1 (commutatorElement_eq_one_iff_commute.1 h)))) :=
+  (rfl)
 
 /-- The split of a closed genus-two top level has the equations of
 `cons U₂ X₁ (quadratic [x 0, y 0][x 1, y 1])`, after renaming the variables of its top level as
@@ -183,9 +167,9 @@ theorem image_equations_splitGenusTwo {X₁ : Type v} [Finite X₁] (U₂ : Syst
           (Sum.elim (fun i => Sum.inl (![x 1, y 1] i.down)) Sum.inr))) ''
         (splitGenusTwo U₂).equations =
       (cons U₂ X₁ (.quadratic (.orientable 2 two_pos x y inj))).equations := by
-  simp only [splitGenusTwo, equations_cons, Level.equations_empty, Level.equations_quadratic,
+  simp only [splitGenusTwo_def, equations_cons, Level.equations_empty, Level.equations_quadratic,
     Set.image_empty, Set.union_empty, Set.image_union, Set.image_image, Set.image_singleton,
-    map_map_free]
+    GX.map_map, MonoidHom.comp_id]
   congr 2
   simp [Quadratic.Standard.toWord_def, List.ofFn_succ, commutatorElement_def, mul_assoc]
 
