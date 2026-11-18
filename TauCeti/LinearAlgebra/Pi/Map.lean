@@ -48,14 +48,9 @@ theorem ker_piMap : ker (piMap f) = Submodule.pi Set.univ fun i ↦ ker (f i) :=
 
 /-- The range of a coordinatewise map is the product of the ranges. -/
 @[simp]
-theorem range_piMap : range (piMap f) = Submodule.pi Set.univ fun i ↦ range (f i) := by
-  ext y
-  simp only [mem_range, coe_piMap, Submodule.mem_pi, Set.mem_univ, forall_const]
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨x, rfl⟩ i
-    exact ⟨x i, rfl⟩
-  · choose x hx using h
-    exact ⟨x, funext hx⟩
+theorem range_piMap : range (piMap f) = Submodule.pi Set.univ fun i ↦ range (f i) :=
+  SetLike.coe_injective <| by
+    simpa only [coe_range, coe_piMap, Submodule.coe_pi] using Set.range_piMap fun i ↦ ⇑(f i)
 
 /-- A coordinatewise map of bijective maps is bijective. -/
 theorem bijective_piMap (hf : ∀ i, Function.Bijective (f i)) : Function.Bijective (piMap f) := by

@@ -136,36 +136,44 @@ theorem coe_detLineEquivProdDual_detLineEquivOfBijective_symm_one (hf : Function
 
 end Single
 
-section Pi
+section PiCommRing
 
-variable {K : Type*} [Field K] {ι : Type*} [Fintype ι] [DecidableEq ι] {M N : ι → Type*}
-  [∀ i, AddCommGroup (M i)] [∀ i, Module K (M i)] [∀ i, AddCommGroup (N i)] [∀ i, Module K (N i)]
-  (f : ∀ i, M i →ₗ[K] N i)
+variable {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι] {M N : ι → Type*}
+  [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
+  (f : ∀ i, M i →ₗ[R] N i)
 
 /-- The space `ker × coker^*` of a coordinatewise map is the product of those of its components:
 `ker (piMap f) ≃ ∀ i, ker (f i)` (`LinearMap.kerPiMapEquiv`), and the dual of
 `coker (piMap f) ≃ ∀ i, coker (f i)` (`LinearMap.cokerPiMapEquiv`) is the product of the duals
 (`LinearMap.lsum`). -/
 def piKerProdDualEquiv :
-    ((i : ι) → ker (f i) × Dual K (N i ⧸ range (f i))) ≃ₗ[K]
-      ker (piMap f) × Dual K (((i : ι) → N i) ⧸ range (piMap f)) :=
-  LinearEquiv.arrowProdEquivProdArrow K _ _ ≪≫ₗ
+    ((i : ι) → ker (f i) × Dual R (N i ⧸ range (f i))) ≃ₗ[R]
+      ker (piMap f) × Dual R (((i : ι) → N i) ⧸ range (piMap f)) :=
+  TauCeti.LinearEquiv.arrowProdEquivProdArrow R _ _ ≪≫ₗ
     (kerPiMapEquiv f).symm.prodCongr
-      (LinearMap.lsum K (fun i ↦ N i ⧸ range (f i)) K ≪≫ₗ (cokerPiMapEquiv f).dualMap)
+      (LinearMap.lsum R (fun i ↦ N i ⧸ range (f i)) R ≪≫ₗ (cokerPiMapEquiv f).dualMap)
 
 @[simp]
-theorem coe_piKerProdDualEquiv_apply_fst (x : (i : ι) → ker (f i) × Dual K (N i ⧸ range (f i))) :
+theorem coe_piKerProdDualEquiv_apply_fst (x : (i : ι) → ker (f i) × Dual R (N i ⧸ range (f i))) :
     ((piKerProdDualEquiv f x).1 : (i : ι) → M i) = fun i ↦ ((x i).1 : M i) := by
   simp [piKerProdDualEquiv]
 
 /-- The functional component of `LinearMap.piKerProdDualEquiv` evaluates on the class of `y` to
 the sum over `i` of the `i`th functional on the class of `y i`. -/
 @[simp]
-theorem piKerProdDualEquiv_apply_snd_mk (x : (i : ι) → ker (f i) × Dual K (N i ⧸ range (f i)))
+theorem piKerProdDualEquiv_apply_snd_mk (x : (i : ι) → ker (f i) × Dual R (N i ⧸ range (f i)))
     (y : (i : ι) → N i) :
     (piKerProdDualEquiv f x).2 (Submodule.Quotient.mk y) =
       ∑ i, (x i).2 (Submodule.Quotient.mk (y i)) := by
   simp [piKerProdDualEquiv]
+
+end PiCommRing
+
+section Pi
+
+variable {K : Type*} [Field K] {ι : Type*} [Fintype ι] [DecidableEq ι] {M N : ι → Type*}
+  [∀ i, AddCommGroup (M i)] [∀ i, Module K (M i)] [∀ i, AddCommGroup (N i)] [∀ i, Module K (N i)]
+  (f : ∀ i, M i →ₗ[K] N i)
 
 variable [∀ i, FiniteDimensional K (ker (f i))] [∀ i, FiniteDimensional K (N i ⧸ range (f i))]
 

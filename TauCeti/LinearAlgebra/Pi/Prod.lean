@@ -15,12 +15,12 @@ public import TauCeti.Algebra.Group.Equiv.Pi
 
 A family of pairs `x : ∀ i, M i × N i` is the pair of families `(fun i ↦ (x i).1, fun i ↦ (x i).2)`.
 This is the additive equivalence `TauCeti.AddEquiv.arrowProdEquivProdArrow`, which is also linear:
-`(∀ i, M i × N i) ≃ₗ[R] (∀ i, M i) × (∀ i, N i)` (`LinearEquiv.arrowProdEquivProdArrow`).
+`(∀ i, M i × N i) ≃ₗ[R] (∀ i, M i) × (∀ i, N i)` (`TauCeti.LinearEquiv.arrowProdEquivProdArrow`).
 -/
 
 public section
 
-namespace LinearEquiv
+namespace TauCeti.LinearEquiv
 
 variable (R : Type*) [Semiring R] {ι : Type*} (M N : ι → Type*) [∀ i, AddCommMonoid (M i)]
   [∀ i, Module R (M i)] [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
@@ -49,4 +49,4 @@ theorem toAddEquiv_arrowProdEquivProdArrow :
     (arrowProdEquivProdArrow R M N).toAddEquiv = TauCeti.AddEquiv.arrowProdEquivProdArrow M N :=
   AddEquiv.ext fun _ ↦ by simp
 
-end LinearEquiv
+end TauCeti.LinearEquiv
