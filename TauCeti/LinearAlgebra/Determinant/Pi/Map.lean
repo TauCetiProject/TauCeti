@@ -132,8 +132,7 @@ theorem coe_detLineEquivProdDual_detLineEquivOfBijective_symm_one (hf : Function
       (TauCeti.detLineDualEquiv K _ (exteriorPower.ιMulti K _ 0)) 0
       (by rw [TauCeti.detLineDualEquiv_ιMulti_ιMulti, Matrix.det_isEmpty]),
     coe_detLineEquivProdDual_tmul]
-  rw [ExteriorAlgebra.ιMulti_apply, List.ofFn_eq_nil_iff.2, List.prod_nil]
-  rw [finrank_ker_eq_zero_of_injective hf.1, Subspace.dual_finrank_eq, hc]
+  simp [ExteriorAlgebra.ιMulti_apply, finrank_ker_eq_zero_of_injective hf.1, hc]
 
 end Single
 

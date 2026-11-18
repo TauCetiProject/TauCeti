@@ -41,11 +41,13 @@ theorem mem_ker_piMap {x : ∀ i, M i} : x ∈ ker (piMap f) ↔ ∀ i, x i ∈ 
   simp [funext_iff, Pi.map_apply]
 
 /-- The kernel of a coordinatewise map is the product of the kernels. -/
+@[simp]
 theorem ker_piMap : ker (piMap f) = Submodule.pi Set.univ fun i ↦ ker (f i) := by
   ext x
   simp only [mem_ker_piMap, Submodule.mem_pi, Set.mem_univ, forall_const]
 
 /-- The range of a coordinatewise map is the product of the ranges. -/
+@[simp]
 theorem range_piMap : range (piMap f) = Submodule.pi Set.univ fun i ↦ range (f i) := by
   ext y
   simp only [mem_range, coe_piMap, Submodule.mem_pi, Set.mem_univ, forall_const]
@@ -102,8 +104,9 @@ def cokerPiMapEquiv : ((∀ i, N i) ⧸ range (piMap f)) ≃ₗ[R] ∀ i, N i �
 
 @[simp]
 theorem cokerPiMapEquiv_mk (y : ∀ i, N i) :
-    cokerPiMapEquiv f (Submodule.Quotient.mk y) = fun i ↦ Submodule.Quotient.mk (y i) :=
-  (rfl)
+    cokerPiMapEquiv f (Submodule.Quotient.mk y) = fun i ↦ Submodule.Quotient.mk (y i) := by
+  funext i
+  simp [cokerPiMapEquiv]
 
 @[simp]
 theorem cokerPiMapEquiv_symm_apply (y : ∀ i, N i) :
