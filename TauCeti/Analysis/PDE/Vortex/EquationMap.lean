@@ -68,7 +68,9 @@ are the complexified coordinates of the variation, elements of Mathlib's Bessel-
   difference with `x_m` has coordinates `u`, `x` is a vortex exactly when
   `sobolevEquation f m hk u = 0` (`sobolevEquation_eq_zero_iff`). Only these real zeros, at
   coordinates of real fields, are vortices: the complexified map can also vanish at non-real `u`,
-  which corresponds to no field, and its restriction to the real subspace is not constructed here.
+  which corresponds to no field. Its restriction to the real subspace, whose zeros are exactly the
+  vortices, is `TauCeti.Vortex.realSobolevEquation` in
+  `TauCeti.Analysis.PDE.Vortex.FramedGauge.RealChart`.
 
 No Fredholm property, slice or quotient is constructed here.
 

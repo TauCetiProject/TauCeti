@@ -150,8 +150,13 @@ def ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) 
   continuous' := (contDiff_referenceField f m).continuous.add
     (contDiff_continuousRepField (n := 0) (by simpa using hs) u).continuous
 
+private theorem coe_ofRealSubRef (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) :
+    ⇑(ofRealSubRef (f := f) (m := m) hs u) = referenceField f m + continuousRepField u :=
+  (rfl)
+
 /-- The `j`-th coordinate of `ofRealSubRef hs u` at `z` is `x_m(z)ⱼ` plus the continuous
 representative of `u j` at `z`. -/
+@[simp]
 theorem ofRealSubRef_apply (hs : 1 < s) {h : 0 ≤ s} (u : Fin 4 → realSubmodule ℂ h) (z : ℂ)
     (j : Fin 4) :
     ofRealSubRef (f := f) (m := m) hs u z j = referenceField f m z j + continuousRep (u j) z :=
@@ -204,7 +209,7 @@ theorem coe_realSubRefHomeomorph_symm (hs : 1 < s) {h : 0 ≤ s} :
 theorem contDiff {n : ℕ} (hs : n + 1 < s) (x : SobolevFieldSpace f m s) : ContDiff ℝ n x := by
   have hs₁ : 1 < s := by linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]
   have h : (0 : ℝ) ≤ s := zero_le_one.trans hs₁.le
-  rw [← ofRealSubRef_realSubRef hs₁ (h := h) x]
+  rw [← ofRealSubRef_realSubRef hs₁ (h := h) x, coe_ofRealSubRef]
   exact ((contDiff_referenceField f m).of_le (by exact_mod_cast le_top)).add
     (contDiff_continuousRepField hs _)
 
@@ -259,6 +264,15 @@ theorem coe_realSobolevEquation_apply (hk : 2 ≤ k)
       sobolevEquation f m (one_le_two.trans hk) (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ))) i :=
   (rfl)
 
+/-- The inclusion of real coordinates into complexified coordinates. -/
+private def coordInclusion (h : 0 ≤ s) :
+    (Fin 4 → realSubmodule ℂ h) →L[ℝ] (Fin 4 → H^{s}(ℂ)) :=
+  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule ℂ h).subtypeL
+
+private theorem coordInclusion_apply (h : 0 ≤ s) (u : Fin 4 → realSubmodule ℂ h) :
+    coordInclusion h u = fun a ↦ (u a : H^{s}(ℂ)) :=
+  (rfl)
+
 variable (f m) in
 /-- **The real linearized vortex equation.** For an integer `k ≥ 2` and real coordinates `u` of a
 field `x ∈ A_m^(k+1)`, the linearized vortex equation `d₁` at `x` as a bounded real-linear
@@ -273,8 +287,7 @@ def realSobolevLinearizedEquation (hk : 2 ≤ k)
     ((ContinuousLinearMap.proj i).comp
       (((sobolevLinearizedEquation f m (one_le_two.trans hk)
         (fun a ↦ (u a : H^{(k : ℝ) + 1}(ℂ)))).restrictScalars ℝ).comp
-        (ContinuousLinearMap.pi fun a ↦ (realSubmodule ℂ _).subtypeL.comp
-          (ContinuousLinearMap.proj a)))).codRestrict
+        (coordInclusion _))).codRestrict
       (realSubmodule ℂ k.cast_nonneg) fun v ↦
         sobolevLinearizedEquation_mem_realSubmodule (f := f) (m := m) hk u v i
 
@@ -286,19 +299,10 @@ theorem coe_realSobolevLinearizedEquation_apply (hk : 2 ≤ k)
         (fun a ↦ (v a : H^{(k : ℝ) + 1}(ℂ))) i :=
   (rfl)
 
-/-- The inclusion of real coordinates into complexified coordinates. -/
-private def coordInclusion (h : 0 ≤ s) :
-    (Fin 4 → realSubmodule ℂ h) →L[ℝ] (Fin 4 → H^{s}(ℂ)) :=
-  ContinuousLinearMap.pi fun a ↦ (realSubmodule ℂ h).subtypeL.comp (ContinuousLinearMap.proj a)
-
-private theorem coordInclusion_apply (h : 0 ≤ s) (u : Fin 4 → realSubmodule ℂ h) :
-    coordInclusion h u = fun a ↦ (u a : H^{s}(ℂ)) :=
-  (rfl)
-
 /-- The real part, coordinatewise. -/
 private def realPartPi (h : 0 ≤ s) :
     (Fin 3 → H^{s}(ℂ)) →L[ℝ] (Fin 3 → realSubmodule ℂ h) :=
-  ContinuousLinearMap.pi fun i ↦ (realPartCLM ℂ h).comp (ContinuousLinearMap.proj i)
+  ContinuousLinearMap.piMap fun _ ↦ realPartCLM ℂ h
 
 private theorem realPartPi_apply (h : 0 ≤ s) (v : Fin 3 → H^{s}(ℂ)) (i : Fin 3) :
     realPartPi h v i = realPartCLM ℂ h (v i) :=
