@@ -131,6 +131,9 @@ spaces are to supply; no moduli space, orientation or count is constructed here.
 
 ## References
 
+* H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
+  volume*, Progr. Math. 133 (1995), 483–524, for the independence from the choice of reference
+  caps.
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
   cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200.
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
