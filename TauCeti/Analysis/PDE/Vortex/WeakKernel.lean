@@ -353,7 +353,7 @@ theorem toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero (hx : Contin
   have hae : ∫ z, ⟪(hy₂.toLp y : ℂ → EuclideanSpace ℝ (Fin 4)) z, gaugeFixedAdjoint x η z⟫ =
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ :=
     integral_congr_ae (hy₂.coeFn_toLp.mono fun _ hz ↦ by simp only [hz])
-  rw [hae, ← integral_inner_gaugeFixedOperator hx hy (hη.of_le (by simp)) (.inr hηc)]
+  rw [hae, ← integral_inner_gaugeFixedOperator hy (hη.of_le (by simp)) (.inr hηc)]
   simp [hker]
 
 /-- **Classical kernel elements are weak solutions.** At a continuous field, the `L²` class of a
