@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
 import TauCeti.GroupTheory.GroupAlgGeom.FreeDiscrimination
 import TauCeti.GroupTheory.GroupAlgGeom.FreeGGroup
+import TauCeti.GroupTheory.GroupAlgGeom.SolutionImage
 import TauCeti.Topology.NoetherianSpace.Decomposition
 
 /-!
@@ -186,8 +187,8 @@ theorem isFullyResiduallyFree_coordGroup_singleton_commutatorElement_of (a : α)
 
 /- Let `K` be discriminated by `F` over `F`, and let `s false`, `s true` be commuting elements of
 `K` such that every commuting pair of `F` is their image under some `F`-homomorphism `K → F`.
-Then the commuting pairs are the solutions of the kernel of `F[x, y] → K`, `x ↦ s false`,
-`y ↦ s true`, so the coordinate group of `[x, y] = 1` is discriminated by `F`. -/
+Then the commuting pairs are exactly the images of `s` under the `F`-homomorphisms `K → F`, an
+irreducible set, so the coordinate group of `[x, y] = 1` is discriminated by `F`. -/
 private theorem isDiscriminatedBy_coordGroup_commutatorElement_of_gHom {K : Type*} [Group K]
     {κ : FreeGroup α →* K} (hK : IsDiscriminatedBy κ (.id (FreeGroup α))) (s : Bool → K)
     (hs : Commute (s false) (s true))
@@ -196,14 +197,11 @@ private theorem isDiscriminatedBy_coordGroup_commutatorElement_of_gHom {K : Type
     IsDiscriminatedBy (CoordGroup.coeff (X := Bool) (.id (FreeGroup α))
       {⁅(inr (of false) : GX (FreeGroup α) Bool), inr (of true)⁆}) (.id (FreeGroup α)) := by
   rw [← isIrreducible_V_iff_isDiscriminatedBy]
-  convert hK.isIrreducible_V_ker (evalGHom κ s) using 1
-  refine subset_antisymm (fun v hv => ?_) (V_antitone _ (Set.singleton_subset_iff.2 ?_))
-  · -- Evaluation at a commuting pair `v = ψ ∘ s` factors through `F[x, y] → K`.
-    obtain ⟨ψ, rfl⟩ := h v (mem_V_commutator_iff.1 hv)
-    refine mem_V.2 fun w hw => ?_
-    rw [← map_eval ψ, ← coe_evalGHom]
-    exact (congrArg ψ (MonoidHom.mem_ker.1 hw)).trans (map_one ψ)
-  · simpa [commutatorElement_eq_one_iff_commute] using hs
+  convert hK.isIrreducible_range_comp s using 1
+  ext v
+  refine ⟨fun hv => h v (mem_V_commutator_iff.1 hv), ?_⟩
+  rintro ⟨ψ, rfl⟩
+  exact mem_V_commutator_iff.2 (hs.map ψ)
 
 /- In rank one `F` is abelian, and every pair of elements of `F` is the image of the new letters
 `(t₀, t₁)` of the extension `F(a, ℤ²)` of the centralizer of the generator `a`. -/
