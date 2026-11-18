@@ -10,8 +10,9 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.EuclideanMetric
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Gradient
 public import TauCeti.Geometry.Manifold.Projectivization.Map
 public import TauCeti.Geometry.Manifold.Riemannian.Invariant
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.RadialChart
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
+import TauCeti.InformationTheory.Coding.Equivalence
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
@@ -24,8 +25,9 @@ distinct weights this file constructs an adapted pseudo-gradient of the moment f
 invariant under all sign changes
 (`TauCeti.exists_isAdaptedPseudoGradient_projectiveMomentFunction_mfderiv_smul`). A sign change
 fixing two critical points and exchanging two trajectories between them then compares the signs of
-these trajectories in the integral Morse complex; on `ℝℙ²` the reflection
-`[x : y : z] ↦ [x : y : -z]` exchanges the two trajectories from the maximum to the saddle.
+these trajectories in the integral Morse complex; on `ℝℙ²` with weights `w 0 < w 1 < w 2`, the
+reflection `[x : y : z] ↦ [x : y : -z]` fixes the three critical points and exchanges the two
+trajectories from the maximum `[e₂]` to the saddle `[e₁]`.
 
 An adapted pseudo-gradient must be the linear field of a Morse chart near each critical point, so
 averaging an arbitrary one over the group does not work: the averaged field is linear in no chart
@@ -78,87 +80,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-! ### The sign changes of the homogeneous coordinates -/
-
-/-- The sign changes of the coordinates commute with real scalars, so they act on real projective
-space (`Projectivization.instMulAction`). -/
-instance instSMulCommClassSigns {m : ℕ} : SMulCommClass (Fin m → ℤˣ) ℝ (Fin m → ℝ) :=
-  SMulCommClass.symm _ _ _
-
-/-- The signs by which a sign change `ε` acts on the affine coordinates of the chart at `k`:
-the ratio `v (k.succAbove j) / v k` is multiplied by `ε (k.succAbove j) * ε k`. -/
-def chartSigns (ε : Fin (n + 1) → ℤˣ) (k : Fin (n + 1)) : Fin n → ℤˣ :=
-  fun j ↦ ε (k.succAbove j) * ε k
-
-/-- The sign changes preserve the affine open sets of the standard charts. -/
-theorem signs_smul_mem_affineOpen_iff (ε : Fin (n + 1) → ℤˣ) (k : Fin (n + 1))
-    (x : ℙ ℝ (Fin (n + 1) → ℝ)) : ε • x ∈ affineOpen k ↔ x ∈ affineOpen k := by
-  induction x using ind with | h v hv =>
-  rw [smul_mk, mk_mem_affineOpen_iff, mk_mem_affineOpen_iff, Pi.smul_apply',
-    smul_ne_zero_iff_ne]
-
-/-- In the affine chart at `k`, the sign change `ε` changes the signs of the coordinates by
-`chartSigns ε k`. -/
-theorem affineChart_signs_smul (ε : Fin (n + 1) → ℤˣ) (k : Fin (n + 1))
-    (x : ℙ ℝ (Fin (n + 1) → ℝ)) :
-    affineChart k (ε • x) = chartSigns ε k • affineChart k x := by
-  induction x using ind with | h v hv =>
-  ext j
-  simp only [smul_mk, affineChart_mk, Pi.smul_apply', chartSigns]
-  rcases Int.units_eq_one_or (ε k) with h | h <;>
-    rcases Int.units_eq_one_or (ε (k.succAbove j)) with h' | h' <;>
-    simp [h, h', Units.smul_def, neg_div, div_neg]
-
-/-! ### The radial chart -/
-
-/-- The radial chart `z ↦ (1 + ∑ j, z j ^ 2) ^ (-1 / 2) • z`, an open partial homeomorphism from
-`Fin n → ℝ` onto the open Euclidean unit ball. It is `OpenPartialHomeomorph.univUnitBall` read
-through `EuclideanSpace.equiv`. -/
-noncomputable def radialChart : OpenPartialHomeomorph (Fin n → ℝ) (Fin n → ℝ) :=
-  ((EuclideanSpace.equiv (Fin n) ℝ).symm.toHomeomorph.toOpenPartialHomeomorph.trans
-    OpenPartialHomeomorph.univUnitBall).trans
-    (EuclideanSpace.equiv (Fin n) ℝ).toHomeomorph.toOpenPartialHomeomorph
-
-/-- The radial chart is defined on all of `Fin n → ℝ`. -/
-@[simp]
-theorem radialChart_source : (radialChart (n := n)).source = univ := by
-  simp only [radialChart, OpenPartialHomeomorph.trans_source,
-    Homeomorph.toOpenPartialHomeomorph_source, preimage_univ, inter_univ]
-  exact univ_inter _
-
-/-- The radial chart is `z ↦ z / √(1 + ∑ j, z j ^ 2)`. -/
-theorem radialChart_apply (z : Fin n → ℝ) :
-    radialChart z = (√(1 + ∑ j, z j ^ 2))⁻¹ • z := by
-  simp [radialChart, OpenPartialHomeomorph.univUnitBall_apply, EuclideanSpace.norm_sq_eq]
-  -- `EuclideanSpace.equiv` undoes `WithLp.toLp`.
-  rfl
-
-/-- The radial chart is smooth. -/
-theorem contDiff_radialChart : ContDiff ℝ ∞ (radialChart (n := n)) :=
-  (EuclideanSpace.equiv (Fin n) ℝ).contDiff.comp
-    (OpenPartialHomeomorph.contDiff_univUnitBall.comp
-      (EuclideanSpace.equiv (Fin n) ℝ).symm.contDiff)
-
-/-- The inverse of the radial chart is smooth on the open unit ball. -/
-theorem contDiffOn_radialChart_symm :
-    ContDiffOn ℝ ∞ (radialChart (n := n)).symm radialChart.target := by
-  have h : ContDiffOn ℝ ∞ ((EuclideanSpace.equiv (Fin n) ℝ) ∘
-      OpenPartialHomeomorph.univUnitBall.symm ∘ (EuclideanSpace.equiv (Fin n) ℝ).symm)
-      ((EuclideanSpace.equiv (Fin n) ℝ).symm ⁻¹' Metric.ball 0 1) :=
-    (EuclideanSpace.equiv (Fin n) ℝ).contDiff.comp_contDiffOn
-      (OpenPartialHomeomorph.contDiffOn_univUnitBall_symm.comp
-        (EuclideanSpace.equiv (Fin n) ℝ).symm.contDiff.contDiffOn fun _ hz ↦ hz)
-  refine h.congr_mono (fun z _ ↦ rfl) ?_
-  intro z hz
-  simpa [radialChart, OpenPartialHomeomorph.univUnitBall_target] using hz
-
-/-- The radial chart commutes with changes of sign of the coordinates. -/
-theorem radialChart_smul (δ : Fin n → ℤˣ) (z : Fin n → ℝ) :
-    radialChart (δ • z) = δ • radialChart z := by
-  have h : ∑ j, (δ • z) j ^ 2 = ∑ j, z j ^ 2 := Finset.sum_congr rfl fun j _ ↦ by
-    rcases Int.units_eq_one_or (δ j) with h | h <;> simp [h, Units.smul_def]
-  rw [radialChart_apply, radialChart_apply, h, smul_comm]
-
 /-! ### Explicit Morse charts of the moment function -/
 
 variable {w : Fin (n + 1) → ℝ} {k : Fin (n + 1)}
@@ -167,6 +88,12 @@ variable {w : Fin (n + 1) → ℝ} {k : Fin (n + 1)}
 function at `[eₖ]`. -/
 noncomputable def projectiveMomentScale (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) (j : Fin n) : ℝ :=
   √(2 * |w (k.succAbove j) - w k|)
+
+/-- The square of the scaling factor of the `j`-th Morse coordinate is
+`2 |w (k.succAbove j) - w k|`. -/
+theorem sq_projectiveMomentScale (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) (j : Fin n) :
+    projectiveMomentScale w k j ^ 2 = 2 * |w (k.succAbove j) - w k| :=
+  Real.sq_sqrt (by positivity)
 
 /-- The Morse coordinates are scaled by positive factors when `w k` differs from the other
 weights. -/
@@ -211,8 +138,8 @@ noncomputable def projectiveMomentMorseChart (hk : ∀ i, i ≠ k → w i ≠ w 
         (contDiffOn_radialChart_symm.contMDiffOn.mono inter_subset_left) fun z hz ↦ hz.2
   mem_source := by simp
   apply_self := by
-    simp [radialChart_apply]
-    rfl
+    simp only [OpenPartialHomeomorph.coe_trans, comp_apply, coe_affineOpenPartialHomeomorph,
+      affineChart_mk_single, radialChart_apply, smul_zero]
   coord := projectiveMomentCoord hk
   weight i := if w k < w (k.succAbove (finCongr (Module.finrank_fin_fun ℝ) i)) then 1 else -1
   weight_eq_neg_one_or_eq_one i := by split_ifs <;> simp
@@ -257,8 +184,7 @@ noncomputable def projectiveMomentMorseChart (hk : ∀ i, i ≠ k → w i ≠ w 
     have hterm (j : Fin n) : (if w k < w (k.succAbove j) then (1 : ℝ) else -1) *
         (projectiveMomentScale w k j * ((√(1 + ∑ j, z j ^ 2))⁻¹ * z j)) ^ 2 =
           2 * (w (k.succAbove j) - w k) * z j ^ 2 / (1 + ∑ j, z j ^ 2) := by
-      rw [mul_pow, mul_pow, projectiveMomentScale, Real.sq_sqrt (by positivity), inv_pow,
-        Real.sq_sqrt hS.le]
+      rw [mul_pow, mul_pow, sq_projectiveMomentScale, inv_pow, Real.sq_sqrt hS.le]
       split_ifs with h
       · rw [abs_of_pos (sub_pos.2 h)]
         field_simp
@@ -272,6 +198,31 @@ noncomputable def projectiveMomentMorseChart (hk : ∀ i, i ≠ k → w i ≠ w 
     field_simp
     ring
 
+/-- The chart map of `projectiveMomentMorseChart` is the affine chart at `k` followed by the
+radial chart. -/
+theorem projectiveMomentMorseChart_toChart (hk : ∀ i, i ≠ k → w i ≠ w k) :
+    (projectiveMomentMorseChart hk).toChart = (affineOpenPartialHomeomorph k).trans radialChart :=
+  (rfl)
+
+/-- The Morse chart at `[eₖ]` is defined on the affine open set of the chart at `k`. -/
+@[simp]
+theorem projectiveMomentMorseChart_source (hk : ∀ i, i ≠ k → w i ≠ w k) :
+    (projectiveMomentMorseChart hk).toChart.source = affineOpen k := by
+  simp [projectiveMomentMorseChart_toChart]
+
+/-- The linear coordinates of `projectiveMomentMorseChart` are `projectiveMomentCoord`. -/
+theorem projectiveMomentMorseChart_coord (hk : ∀ i, i ≠ k → w i ≠ w k) :
+    (projectiveMomentMorseChart hk).coord = projectiveMomentCoord hk :=
+  (rfl)
+
+/-- The `i`-th Morse coordinate at `[eₖ]` has weight `1` when `w (k.succAbove i)` exceeds `w k`,
+and `-1` otherwise. -/
+theorem projectiveMomentMorseChart_weight (hk : ∀ i, i ≠ k → w i ≠ w k)
+    (i : Fin (Module.finrank ℝ (Fin n → ℝ))) :
+    (projectiveMomentMorseChart hk).weight i =
+      if w k < w (k.succAbove (finCongr (Module.finrank_fin_fun ℝ) i)) then 1 else -1 :=
+  (rfl)
+
 /-! ### The sign changes in the Morse charts -/
 
 /-- The Morse chart of the moment function at `[eₖ]` turns the sign change `ε` into the change of
@@ -280,7 +231,7 @@ theorem projectiveMomentMorseChart_toChart_smul (hk : ∀ i, i ≠ k → w i ≠
     (ε : Fin (n + 1) → ℤˣ) (y : ℙ ℝ (Fin (n + 1) → ℝ)) :
     (projectiveMomentMorseChart hk).toChart (ε • y) =
       chartSigns ε k • (projectiveMomentMorseChart hk).toChart y := by
-  simp only [projectiveMomentMorseChart, OpenPartialHomeomorph.coe_trans, comp_apply,
+  simp only [projectiveMomentMorseChart_toChart, OpenPartialHomeomorph.coe_trans, comp_apply,
     coe_affineOpenPartialHomeomorph, affineChart_signs_smul, radialChart_smul]
 
 /-- The scaled coordinates commute with changes of sign of the coordinates. -/
@@ -293,19 +244,12 @@ theorem projectiveMomentCoord_smul (hk : ∀ i, i ≠ k → w i ≠ w k) (δ : F
     zsmul_eq_mul]
   ring
 
-/-- Changes of sign of the coordinates preserve the dot product. -/
-theorem signs_smul_dotProduct_signs_smul {m : ℕ} (δ : Fin m → ℤˣ) (a b : Fin m → ℝ) :
-    (δ • a) ⬝ᵥ (δ • b) = a ⬝ᵥ b := by
-  simp only [dotProduct, Pi.smul_apply']
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rcases Int.units_eq_one_or (δ i) with h | h <;> simp [h, Units.smul_def]
-
 /-- The sign changes preserve the source of the Morse chart at `[eₖ]`. -/
-theorem smul_mem_projectiveMomentMorseChart_source (hk : ∀ i, i ≠ k → w i ≠ w k)
+theorem smul_mem_projectiveMomentMorseChart_source_iff (hk : ∀ i, i ≠ k → w i ≠ w k)
     (ε : Fin (n + 1) → ℤˣ) {y : ℙ ℝ (Fin (n + 1) → ℝ)} :
     ε • y ∈ (projectiveMomentMorseChart hk).toChart.source ↔
       y ∈ (projectiveMomentMorseChart hk).toChart.source := by
-  simp [projectiveMomentMorseChart, signs_smul_mem_affineOpen_iff]
+  simp
 
 /-- **The sign changes are isometries of the Euclidean metric of the Morse chart** of the moment
 function at `[eₖ]`. -/
@@ -320,7 +264,7 @@ theorem projectiveMomentMorseChart_euclideanForm_smul (hk : ∀ i, i ≠ k → w
   set φ := projectiveMomentMorseChart hk
   let L : (Fin n → ℝ) →L[ℝ] (Fin n → ℝ) :=
     LinearMap.toContinuousLinearMap (DistribSMul.toLinearMap ℝ (Fin n → ℝ) (chartSigns ε k))
-  have hsrc : ε • y ∈ φ.toChart.source := (smul_mem_projectiveMomentMorseChart_source hk ε).2 hy
+  have hsrc : ε • y ∈ φ.toChart.source := (smul_mem_projectiveMomentMorseChart_source_iff hk ε).2 hy
   have hcomp : (φ.toChart : _ → _) ∘ (ε • ·) = L ∘ φ.toChart :=
     funext fun y ↦ projectiveMomentMorseChart_toChart_smul hk ε y
   have hε : MDifferentiableAt 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n → ℝ)
@@ -340,23 +284,18 @@ theorem projectiveMomentMorseChart_euclideanForm_smul (hk : ∀ i, i ≠ k → w
   have hdot (a b : Fin n → ℝ) : projectiveMomentCoord hk (chartSigns ε k • a) ⬝ᵥ
       projectiveMomentCoord hk (chartSigns ε k • b) =
         projectiveMomentCoord hk a ⬝ᵥ projectiveMomentCoord hk b := by
-    rw [projectiveMomentCoord_smul, projectiveMomentCoord_smul, signs_smul_dotProduct_signs_smul]
-  simp only [MorseChart.euclideanForm_apply, hd]
-  -- The coordinates of `projectiveMomentMorseChart hk` are `projectiveMomentCoord hk` by
-  -- definition, and tangent vectors of `Fin n → ℝ` are its elements.
+    have hδ (c : Fin (Module.finrank ℝ (Fin n → ℝ)) → ℝ) :
+        (chartSigns ε k ∘ finCongr (Module.finrank_fin_fun ℝ)) • c =
+          signedEquiv (chartSigns ε k ∘ finCongr (Module.finrank_fin_fun ℝ)) (Equiv.refl _) c := by
+      ext i
+      simp only [Pi.smul_apply', Units.smul_def, zsmul_eq_mul, signedEquiv_apply,
+        Equiv.refl_symm, Equiv.refl_apply]
+    rw [projectiveMomentCoord_smul, projectiveMomentCoord_smul, hδ, hδ, dotProduct_signedEquiv]
+  simp only [MorseChart.euclideanForm_apply, hd, φ, projectiveMomentMorseChart_coord]
+  -- Tangent vectors of `Fin n → ℝ` are its elements.
   exact hdot _ _
 
 /-! ### An invariant metric and an invariant pseudo-gradient -/
-
-/-- The moment function is invariant under the sign changes of the coordinates. -/
-@[simp]
-theorem projectiveMomentFunction_smul (w : Fin (n + 1) → ℝ) (ε : Fin (n + 1) → ℤˣ)
-    (x : ℙ ℝ (Fin (n + 1) → ℝ)) :
-    projectiveMomentFunction ℝ w (ε • x) = projectiveMomentFunction ℝ w x := by
-  induction x using ind with | h v hv =>
-  have h (i : Fin (n + 1)) : ‖(ε • v) i‖ = ‖v i‖ := by
-    rcases Int.units_eq_one_or (ε i) with h | h <;> simp [h, Units.smul_def]
-  simp only [smul_mk, projectiveMomentFunction_mk, h]
 
 /-- The closed set of points whose affine coordinates at `k` are at most `1 / 2` in absolute
 value. -/
@@ -401,20 +340,18 @@ private theorem smul_mem_nearCoordinatePoint {k : Fin (n + 1)} (ε : Fin (n + 1)
     ε • x ∈ nearCoordinatePoint k := by
   have hx0 := nearCoordinatePoint_subset_affineOpen k hx
   have hεx : ε • x ∈ (affineChart (K := ℝ) k).source := by
-    simpa using (signs_smul_mem_affineOpen_iff ε k x).2 hx0
+    simpa using hx0
   refine ⟨affineChart k (ε • x), ?_, (affineChart (K := ℝ) k).left_inv hεx⟩
   rw [mem_closedBall_zero_iff, pi_norm_le_iff_of_nonneg (by norm_num)]
   intro j
   rw [affineChart_signs_smul, Pi.smul_apply']
-  have h := abs_affineChart_le_of_mem_nearCoordinatePoint hx j
-  rcases Int.units_eq_one_or (chartSigns ε k j) with h' | h' <;>
-    simpa [h', Units.smul_def, one_div] using h
+  rw [norm_units_zsmul, Real.norm_eq_abs]
+  exact abs_affineChart_le_of_mem_nearCoordinatePoint hx j
 
 /-- **A metric on real projective space invariant under the sign changes, Euclidean in Morse
 charts.** For pairwise distinct weights `w`, there is a smooth Riemannian metric on `ℝℙⁿ` for which
 every sign change of the homogeneous coordinates is an isometry, and which near each critical point
-`[eₖ]` of the moment function is the Euclidean metric of a Morse chart, the restriction of
-`projectiveMomentMorseChart`. -/
+`[eₖ]` of the moment function is the Euclidean metric of a Morse chart. -/
 theorem exists_signs_invariant_contMDiffRiemannianMetric_projectiveMomentFunction
     {w : Fin (n + 1) → ℝ} (hw : Injective w) :
     ∃ g : ContMDiffRiemannianMetric 𝓘(ℝ, Fin n → ℝ) ∞ (Fin n → ℝ)
@@ -428,7 +365,7 @@ theorem exists_signs_invariant_contMDiffRiemannianMetric_projectiveMomentFunctio
   have hk (k : Fin (n + 1)) : ∀ i, i ≠ k → w i ≠ w k := fun i hi ↦ hw.ne hi
   let φ (k : Fin (n + 1)) := projectiveMomentMorseChart (hk k)
   have hAsub (k : Fin (n + 1)) : nearCoordinatePoint k ⊆ (φ k).toChart.source := fun x hx ↦ by
-    simpa [φ, projectiveMomentMorseChart] using nearCoordinatePoint_subset_affineOpen k hx
+    simpa [φ] using nearCoordinatePoint_subset_affineOpen k hx
   -- Extend the Euclidean metrics of the Morse charts from the sets `nearCoordinatePoint k`.
   obtain ⟨g₀, hg₀⟩ := exists_contMDiffRiemannianMetric_inner_eq_of_locallyFinite
     (U := fun k ↦ (φ k).toChart.source) (β := fun k ↦ (φ k).euclideanForm)
@@ -487,19 +424,17 @@ theorem exists_isAdaptedPseudoGradient_projectiveMomentFunction_mfderiv_smul
     obtain ⟨φ, hφk⟩ := hφ k
     exact ⟨φ, φ.isEuclidean_iff_euclideanForm.2 fun y hy u v ↦ by rw [g.inner_eq, hφk y hy]⟩
   -- The gradient of an invariant function for an invariant metric is equivariant.
-  have hε : MDifferentiableAt 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n → ℝ)
-      (fun x : ℙ ℝ (Fin (n + 1) → ℝ) ↦ ε • x) x :=
-    (contMDiff_const_smul ε : ContMDiff 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n → ℝ) 1 _).mdifferentiableAt
-      (by simp)
-  have hinv := (Diffeomorph.constSmul 𝓘(ℝ, Fin n → ℝ) 1 ε :
-    ℙ ℝ (Fin (n + 1) → ℝ) ≃ₘ^1⟮_, _⟯ _).isInvertible_mfderiv (x := x) one_ne_zero
-  rw [Diffeomorph.coe_constSmul] at hinv
-  have hfε : projectiveMomentFunction ℝ w ∘ (ε • ·) = projectiveMomentFunction ℝ w :=
-    funext (projectiveMomentFunction_smul w ε)
-  rw [map_neg, neg_inj]
-  refine ext_inner_right ℝ fun u ↦ ?_
-  obtain ⟨a, rfl⟩ := hinv.surjective u
-  rw [← inner_mgradient_comp (hf.contMDiff.mdifferentiableAt (by simp)) hε a, hfε, g.inner_eq,
-    g.inner_eq, hiso]
+  have hloc : IsLocalRiemannianIsometry 𝓘(ℝ, Fin n → ℝ) 𝓘(ℝ, Fin n → ℝ)
+      (fun x : ℙ ℝ (Fin (n + 1) → ℝ) ↦ ε • x) :=
+    { contMDiff := contMDiff_const_smul ε
+      isInvertible_mfderiv := fun x ↦ by
+        have h := (Diffeomorph.constSmul 𝓘(ℝ, Fin n → ℝ) 1 ε :
+          ℙ ℝ (Fin (n + 1) → ℝ) ≃ₘ^1⟮_, _⟯ _).isInvertible_mfderiv (x := x) one_ne_zero
+        rwa [Diffeomorph.coe_constSmul] at h
+      inner_mfderiv := fun x u v ↦ by rw [g.inner_eq, g.inner_eq, hiso] }
+  have h := hloc.mfderiv_mgradient_comp (hf.contMDiff.mdifferentiableAt (by simp) (x := ε • x))
+  rw [show projectiveMomentFunction ℝ w ∘ (ε • ·) = projectiveMomentFunction ℝ w from
+    funext (projectiveMomentFunction_smul w ε)] at h
+  rw [map_neg, h]
 
 end TauCeti
