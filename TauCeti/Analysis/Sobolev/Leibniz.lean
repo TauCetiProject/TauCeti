@@ -86,6 +86,9 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`,
   `TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`: the rule in both forms for a factor that
   is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
+* `TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`: the rule `D(T u) = T Du + (DT) u` for
+  a field `T` of continuous linear maps between finite-dimensional spaces that is `C^n` on `Ω`
+  with `n ≠ 0`.
 * `TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`: a bounded Lipschitz factor keeps
   an `Lᵖ` weak derivative in `Lᵖ`.
 * `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: for `1 ≤ p`, the `Lᵖ` bound

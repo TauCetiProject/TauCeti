@@ -13,6 +13,8 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Complex
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Smooth real Cauchy–Riemann operators on Sobolev sections
@@ -50,26 +52,17 @@ sections the realization agrees with `D`
 
 ## Main definitions
 
-* `TauCeti.SectionChartData.chartDerivL`: the weak derivative of the chart data of an order-one
-  tuple, assembled from the weak gradients of its components.
 * `TauCeti.IsRealCauchyRiemannOperator.sobolevL`: the bounded realization of a smooth real
   Cauchy–Riemann operator from `W^{1,p}` sections to `L^p` `(0,1)`-forms.
 
 ## Main results
 
-* `TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`: the chart data of an order-one tuple are
-  weakly differentiable on the chart image, with weak derivative `chartDerivL`.
 * `TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevL_ae`: in chart `i` the realization is
   `∂bar uᵢ + Zᵢ uᵢ`, for the weak derivative of the chart data `uᵢ`.
 * `TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevL_ofContMDiffSection_ae`: on `C¹`
   sections the realization is `D`.
 * `TauCeti.IsRealCauchyRiemannOperator.chartValueL_sobolevL_sub_ae`: the realizations of two
   smooth real Cauchy–Riemann operators differ by the zeroth-order term `(Zᵢ' - Zᵢ) uᵢ`.
-* `TauCeti.FiniteBundleAtlas.sectionChartData_coordChange_tangentHom_apply`,
-  `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: on an overlap, one-forms
-  change chart by `η ↦ g ∘ η ∘ dτ`, which commutes with taking the complex antilinear part.
-* `TauCeti.FiniteBundleAtlas.contDiffOn_transition`: the chart transitions of a finite bundle atlas
-  over a complex manifold are `C¹` on the overlaps.
 
 ## References
 
@@ -89,217 +82,9 @@ universe u
 
 namespace TauCeti
 
-/-! ### The weak derivative of the chart data of an order-one tuple -/
-
-namespace SectionChartData
-
-variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
-  (μ : Measure E) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
-
-/-- The weak derivative of the chart data in chart `i` of a tuple of order-one Sobolev functions:
-the `Lᵖ` field `y ↦ ∑ j, ⟪∇ (w i j) y, ·⟫ • bⱼ` assembled from the weak gradients of the chart-`i`
-components of `w`, where `b` is the basis `Module.finBasis ℝ F`
-(`TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`). -/
-def chartDerivL (i : Fin C.n) :
-    C.SobolevData μ p 1 →L[ℝ] Lp (E →L[ℝ] F) p (μ.restrict (C.image i)) :=
-  ∑ j, ((((ContinuousLinearMap.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
-      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)).compLpL p _).comp
-    ((Wkp.iteratedGradientL 0).comp ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (C.image i) p 1) j).comp
-      (ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun i : Fin C.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (C.image i) p 1) i)))
-
-/-- Almost everywhere on the image of chart `i`, `chartDerivL` is the sum over the basis vectors
-`bⱼ` of `F` of the weak gradients of the chart-`i` components, paired with `bⱼ`. -/
-theorem chartDerivL_apply_ae (i : Fin C.n) (w : C.SobolevData μ p 1) :
-    ∀ᵐ y ∂μ.restrict (C.image i), C.chartDerivL μ p i w y =
-      ∑ j, (innerSL ℝ (W1p.gradient (w i j) y)).smulRight (finBasis ℝ F j) := by
-  set L : Fin (finrank ℝ F) → E →L[ℝ] E →L[ℝ] F := fun j ↦
-    ((ContinuousLinearMap.smulRightL ℝ E F).flip (finBasis ℝ F j)).comp
-      (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)
-  have heq : C.chartDerivL μ p i w =
-      ∑ j, (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j)) := by
-    simp only [chartDerivL, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.coe_comp,
-      Function.comp_apply, ContinuousLinearMap.proj_apply, L]
-  have hsum := Lp.coeFn_finsetSum (μ := μ.restrict (C.image i)) (p := p) Finset.univ fun j ↦
-    (L j).compLpL p _ (Wkp.iteratedGradientL 0 (w i j))
-  have hj (j : Fin (finrank ℝ F)) := ContinuousLinearMap.coeFn_compLpL (p := p)
-    (μ := μ.restrict (C.image i)) (L j) (Wkp.iteratedGradientL 0 (w i j))
-  filter_upwards [hsum, ae_all_iff.2 hj] with y hy hy'
-  rw [heq, hy, Finset.sum_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [hy' j, Wkp.iteratedGradientL_apply, Wkp.iteratedGradient_zero]
-  ext v
-  simp [L]
-
-/-- **Weak differentiability of the chart data.** The chart data in chart `i` of a tuple of
-order-one Sobolev functions have weak derivative `chartDerivL` on the image of chart `i`. -/
-theorem hasWeakFDerivOn_chartValueL (i : Fin C.n) (w : C.SobolevData μ p 1) :
-    HasWeakFDerivOn μ (C.image i) (C.chartValueL μ p 1 i w) (C.chartDerivL μ p i w) := by
-  have hsum := HasWeakFDerivOn.sum Finset.univ fun j _ ↦
-    (Wkp.hasWeakFDerivOn_value (w i j)).clm_comp
-      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finBasis ℝ F j))
-  refine (hsum.congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [C.chartValueL_apply_ae μ p 1 i w] with y hy
-    simp [hy]
-  · filter_upwards [C.chartDerivL_apply_ae μ p i w] with y hy
-    rw [hy]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    ext v
-    simp
-
-end SectionChartData
-
-/-! ### Chart calculus for one-forms on overlaps -/
-
-namespace FiniteBundleAtlas
-
-open SmoothAlmostComplexStructure
-
-section Transition
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
-  {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] (A : FiniteBundleAtlas ℂ M F V)
-
-/-- The chart transition from chart `i'` to chart `i` of a complex manifold is `C¹` on the overlap.
--/
-theorem contDiffOn_transition (i i' : Fin A.n) :
-    ContDiffOn ℝ 1 (A.transition i i') (A.overlap i i') := by
-  refine ((contDiffOn_symm_trans_of_mem_maximalAtlas
-    (IsManifold.chart_mem_maximalAtlas (A.center i'))
-    (IsManifold.chart_mem_maximalAtlas (A.center i))).mono fun y hy ↦ ?_).congr fun y hy ↦ ?_
-  · obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-    have hs' := A.dom_subset_chart_source i' hx.2
-    simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source,
-      mem_inter_iff, mem_preimage]
-    exact ⟨(A.chart i').map_source hs', by
-      rw [(A.chart i').left_inv hs']; exact A.dom_subset_chart_source i hx.1⟩
-  · obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-    rw [A.transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      (A.chart i').left_inv (A.dom_subset_chart_source i' hx.2)]
-
-end Transition
-
-section TangentHom
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
-  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
-  (A : FiniteBundleAtlas ℂ M F V)
-
-private theorem image_tangentHom' (i : Fin A.n) : A.tangentHom.image i = A.image i :=
-  (image_hom (A := A.tangent) i).trans (image_ofBaseSet i)
-
-private theorem image_tangentHom (i : Fin A.n) :
-    (A.tangentHom.sectionChartData.image i : Set ℂ) = A.image i :=
-  congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom' A i))
-
-private theorem overlap_tangentHom' (i i' : Fin A.n) :
-    A.tangentHom.overlap i i' = A.overlap i i' :=
-  (overlap_hom (A := A.tangent) i i').trans (overlap_ofBaseSet i i')
-
-private theorem overlap_tangentHom (i i' : Fin A.n) :
-    A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
-  (A.tangentHom.sectionChartData_overlap i i').trans (overlap_tangentHom' A i i')
-
-private theorem transition_tangentHom (i i' : Fin A.n) :
-    A.tangentHom.transition i i' = A.transition i i' :=
-  (transition_ofBaseSet (A := A.tangent) i i').trans (transition_ofBaseSet i i')
-
-private theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : ℂ}
-    (hy : y ∈ A.overlap i i') :
-    A.tangentHom.sectionChartData.transition i i' y = A.transition i i' y :=
-  (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom'])).trans
-    (congrFun (transition_tangentHom A i i') y)
-
-private theorem ae_image_tangentHom (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop}
-    (h : ∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ), P y) :
-    ∀ᵐ y ∂μ.restrict (A.image i), P y := by
-  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet]
-  rw [ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet] at h
-  exact h.mono fun y h hy ↦ h (by rwa [image_tangentHom])
-
-private theorem ae_image_tangentHom_iff (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop} :
-    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ), P y) ↔
-      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
-  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet,
-    ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet,
-    image_tangentHom]
-
-private theorem ae_overlap_tangentHom (μ : Measure ℂ) (i i' : Fin A.n) {P : ℂ → Prop}
-    (h : ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y) :
-    ∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y := by
-  rw [ae_restrict_iff' (A.tangentHom.sectionChartData.isOpen_overlap i i').measurableSet]
-  rw [ae_restrict_iff' (A.isOpen_overlap i i').measurableSet] at h
-  exact h.mono fun y h hy ↦ h (by rwa [overlap_tangentHom] at hy)
-
-/-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
-one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
-theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : ℂ}
-    (hy : y ∈ A.overlap i i') (η : ℂ →L[ℝ] F) :
-    A.tangentHom.sectionChartData.coordChange i i' y η =
-      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
-        (η.comp (fderiv ℝ (A.transition i i') y)) := by
-  have hy' : y ∈ A.tangentHom.overlap i i' := by rwa [overlap_tangentHom']
-  have hτ : A.tangentHom.transition i i' y ∈ A.tangentHom.image i := by
-    rw [transition_tangentHom, image_tangentHom']
-    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
-  have h := A.tangentHom.coord_eq_coordChange (fun x ↦ (A.tangentHom.triv i).symm x η) hy'
-  rw [A.tangentHom.coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
-    ← transition_tangentHom, A.tangentHom.coord_triv_symm η hτ, transition_tangentHom] at h
-  rw [A.tangentHom.sectionChartData_coordChange_of_mem hy']
-  exact h.symm
-
-variable [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [∀ x, Module ℂ (V x)]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℂ F V]
-
-/-- On the overlap of charts `i` and `i'`, the complex antilinear part commutes with the
-coordinate change of one-forms: `∂bar (g ∘ L ∘ dτ) = g ∘ ∂bar L ∘ dτ`, since both the coordinate
-change `g` of the complex vector bundle `V` and the derivative of the holomorphic chart transition
-`τ` are complex linear. -/
-theorem complexAntilinearPartL_coordChangeL_comp {i i' : Fin A.n} {y : ℂ}
-    (hy : y ∈ A.overlap i i') (L : ℂ →L[ℝ] F) :
-    complexAntilinearPartL (((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) :
-        F →L[ℝ] F).comp (L.comp (fderiv ℝ (A.transition i i') y))) =
-      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
-        ((complexAntilinearPartL L).comp (fderiv ℝ (A.transition i i') y)) := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := fun x ↦
-    (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
-  have hτ : A.transition i i' y ∈ A.tangentHom.image i := by
-    rw [image_tangentHom']
-    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
-  set θ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x := fun x ↦ (A.tangentHom.triv i).symm x L
-  have h₁ := A.coord_tangentHom_eq_coordChange θ hy
-  have h₂ := A.coord_tangentHom_eq_coordChange
-    (fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) hy
-  rw [A.coord_tangentHom_zeroOnePart, A.coord_tangentHom_zeroOnePart, h₁,
-    A.tangentHom.coord_triv_symm L hτ] at h₂
-  exact h₂
-
-end TangentHom
-
-end FiniteBundleAtlas
 
 /-! ### The realization -/
 
-/-- Expanding in bases `b` of `F` and `B` of `H`: if the `c`th coordinate of a vector is the `c`th
-coordinate of `X` plus the matrix of `Z` applied to `v`, the vector is `X + Z (∑ j, v j • b j)`. -/
-private theorem sum_coord_add_smul {F H : Type*} [AddCommGroup F] [Module ℝ F] [AddCommGroup H]
-    [Module ℝ H] {ι κ : Type*} [Fintype ι] [Fintype κ] (b : Basis ι ℝ F) (B : Basis κ ℝ H)
-    (X : H) (Z : F →ₗ[ℝ] H) (v : ι → ℝ) :
-    ∑ c, (B.coord c X + ∑ j, B.coord c (Z (b j)) * v j) • B c = X + Z (∑ j, v j • b j) := by
-  simp only [add_smul, Finset.sum_add_distrib, Finset.sum_smul, map_sum, map_smul,
-    Basis.coord_apply]
-  congr 1
-  · exact B.sum_repr X
-  · rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp_rw [mul_comm _ (v j), mul_smul, ← Finset.smul_sum, B.sum_repr]
 
 section Realization
 
@@ -427,28 +212,13 @@ private theorem chartValueL_dataL_ae (w : A.sectionChartData.SobolevData μ p 1)
   filter_upwards [h₀, hres, ae_all_iff.2 fun c ↦ chartL_ae A hD hDs μ p i c w,
     A.sectionChartData.chartValueL_apply_ae μ p 1 i w] with y h₁ h₂ h₃ h₄
   rw [h₁, h₄]
-  refine (Finset.sum_congr rfl fun c _ ↦ ?_).trans (sum_coord_add_smul (finBasis ℝ F)
+  refine (Finset.sum_congr rfl fun c _ ↦ ?_).trans (Module.Basis.sum_coord_add_smul (finBasis ℝ F)
     (finBasis ℝ (ℂ →L[ℝ] F)) _ (A.chartZeroOrder D i y : F →ₗ[ℝ] ℂ →L[ℝ] F)
     fun j ↦ Wkp.value 1 (w i j) y)
   exact congrArg (· • _) ((h₂ c).trans ((congrArg
     (fun f : Lp ℝ p (μ.restrict (A.sectionChartData.image i)) ↦ (f : ℂ → ℝ) y)
     (Wkp.value_zero (chartL A hD hDs μ p i c w))).trans (h₃ c)))
 
-omit [T2Space M] [FiniteDimensional ℝ F] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)] in
-/-- The coordinate change of `V` from chart `i` to chart `i'`, read in chart `i'`, is `C¹` on the
-overlap. -/
-private theorem contDiffOn_coordChangeL (i i' : Fin A.n) :
-    ContDiffOn ℝ 1 (fun y ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) :
-      F →L[ℝ] F)) (A.overlap i i') := by
-  refine ((contMDiffOn_coordChangeL (IB := 𝓘(ℝ, ℂ)) (n := 1) (𝕜 := ℝ) (A.triv i)
-    (A.triv i')).contDiffOn_comp_symm_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas (A.center i'))).mono fun y hy ↦ ?_
-  obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 hy
-  have hs' := A.dom_subset_chart_source i' hx.2
-  refine ⟨(A.chart i').map_source hs', ?_⟩
-  rw [mem_preimage, (A.chart i').left_inv hs']
-  exact ⟨A.dom_subset_baseSet i hx.1, A.dom_subset_baseSet i' hx.2⟩
 
 omit [T2Space M] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
 /-- On the overlap of charts `i` and `i'`, the weak derivative of the chart data in chart `i'` of an
@@ -472,7 +242,7 @@ private theorem chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections �
       rw [A.fderiv_transition hy]
       exact ContinuousLinearEquiv.toLinearEquiv _ |>.isUnit_det'.ne_zero)
     fun y hy ↦ A.overlap_subset_image i' i (A.transition_mem_overlap hy)
-  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero (contDiffOn_coordChangeL A i i') one_ne_zero
+  have hprod := hτ.contDiffOn_clm_apply_of_ne_zero (A.contDiffOn_coordChangeL i i') one_ne_zero
   have hcompat : ∀ᵐ y ∂μ.restrict O, ((A.triv i).coordChangeL ℝ (A.triv i')
       ((A.chart i').symm y) : F →L[ℝ] F)
         (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) =
@@ -482,8 +252,11 @@ private theorem chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections �
       ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h hy
     rw [A.sectionChartData_coordChange_of_mem hy, A.sectionChartData_transition_of_mem hy] at h
     exact h.symm
-  exact ((A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i' w).mono
-    (show O ≤ A.sectionChartData.image i' from A.overlap_subset_image i i')).ae_eq
+  -- `O` is the overlap as an open set and `A.sectionChartData.image i'` is the image of chart `i'`
+  -- as an open set; the type ascription states the inclusion of overlap into image as one of
+  -- `Opens ℂ`, which `A.overlap_subset_image` proves for the underlying sets.
+  have hO : O ≤ A.sectionChartData.image i' := A.overlap_subset_image i i'
+  exact ((A.sectionChartData.hasWeakFDerivOn_chartValueL μ p i' w).mono hO).ae_eq
       (hprod.congr_ae hcompat)
 
 include hD in
@@ -505,7 +278,7 @@ private theorem chartData_overlap_eq {i i' : Fin A.n} {y : ℂ} (hy : y ∈ A.ov
     (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
   have hd : DifferentiableAt ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i')
       ((A.chart i').symm z) : F →L[ℝ] F)) y :=
-    ((contDiffOn_coordChangeL A i i').differentiableOn one_ne_zero y hy).differentiableAt
+    ((A.contDiffOn_coordChangeL i i').differentiableOn one_ne_zero y hy).differentiableAt
       ((A.isOpen_overlap i i').mem_nhds hy)
   have hfd : fderiv ℝ (fun z ↦ (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) v) y =
       (fderiv ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm z) :

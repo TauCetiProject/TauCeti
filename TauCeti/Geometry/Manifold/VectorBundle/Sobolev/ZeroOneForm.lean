@@ -52,6 +52,10 @@ which lifts the pointwise `(0,1)`-projection
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_zeroOnePart`: on the image of a chart, a one-form is a
   `(0,1)`-form exactly when its reading is complex antilinear, and its `(0,1)`-part is read as the
   complex antilinear part of its reading.
+* `TauCeti.FiniteBundleAtlas.sectionChartData_coordChange_tangentHom_apply`,
+  `TauCeti.FiniteBundleAtlas.complexAntilinearPartL_coordChangeL_comp`: on an overlap, the chart
+  data of one-forms change chart by `η ↦ g ∘ η ∘ dτ`, which commutes with taking the complex
+  antilinear part.
 * `TauCeti.mem_zeroOneSobolevSections_iff`: membership is complex antilinearity of the chart data
   almost everywhere.
 * `TauCeti.mem_zeroOneSobolevSections_iff_isZeroOneForm`: an element whose chart data are the
@@ -134,6 +138,120 @@ theorem isZeroOneForm_iff_coord_tangentHom (i : Fin A.n)
   exact isZeroOneForm_iff_inCoordinates
     (inTangentCoordinates_ofComplexManifold (A.dom_subset_chart_source i (A.symm_mem_dom hy)))
     (A.dom_subset_baseSet i (A.symm_mem_dom hy))
+
+
+section TangentHom
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  (A : FiniteBundleAtlas ℂ M F V)
+
+/-- The chart images of the atlas of `V`-valued one-forms are those of `A`. -/
+theorem image_tangentHom' (i : Fin A.n) : A.tangentHom.image i = A.image i :=
+  (image_hom (A := A.tangent) i).trans (image_ofBaseSet i)
+
+/-- The chart images of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem image_tangentHom (i : Fin A.n) :
+    (A.tangentHom.sectionChartData.image i : Set ℂ) = A.image i :=
+  congrArg SetLike.coe ((A.tangentHom.sectionChartData_image i).trans (image_tangentHom' A i))
+
+/-- The chart overlaps of the atlas of `V`-valued one-forms are those of `A`. -/
+theorem overlap_tangentHom' (i i' : Fin A.n) :
+    A.tangentHom.overlap i i' = A.overlap i i' :=
+  (overlap_hom (A := A.tangent) i i').trans (overlap_ofBaseSet i i')
+
+/-- The chart overlaps of the section chart data of `V`-valued one-forms are those of `A`. -/
+theorem overlap_tangentHom (i i' : Fin A.n) :
+    A.tangentHom.sectionChartData.overlap i i' = A.overlap i i' :=
+  (A.tangentHom.sectionChartData_overlap i i').trans (overlap_tangentHom' A i i')
+
+/-- The chart transitions of the atlas of `V`-valued one-forms are those of `A`. -/
+theorem transition_tangentHom (i i' : Fin A.n) :
+    A.tangentHom.transition i i' = A.transition i i' :=
+  (transition_ofBaseSet (A := A.tangent) i i').trans (transition_ofBaseSet i i')
+
+/-- On an overlap, the chart transitions of the section chart data of `V`-valued one-forms are
+those of `A`. -/
+theorem sectionChartData_transition_tangentHom {i i' : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.overlap i i') :
+    A.tangentHom.sectionChartData.transition i i' y = A.transition i i' y :=
+  (A.tangentHom.sectionChartData_transition_of_mem (by rwa [overlap_tangentHom'])).trans
+    (congrFun (transition_tangentHom A i i') y)
+
+/-- A property holding almost everywhere on a chart image of the section chart data of one-forms
+holds almost everywhere on the corresponding chart image of `A`. -/
+theorem ae_image_tangentHom (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop}
+    (h : ∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ), P y) :
+    ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet]
+  rw [ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet] at h
+  exact h.mono fun y h hy ↦ h (by rwa [image_tangentHom])
+
+/-- Almost everywhere on a chart image of the section chart data of one-forms is almost everywhere
+on the corresponding chart image of `A`. -/
+theorem ae_image_tangentHom_iff (μ : Measure ℂ) (i : Fin A.n) {P : ℂ → Prop} :
+    (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.image i : Set ℂ), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [ae_restrict_iff' (A.image i).isOpen.measurableSet,
+    ae_restrict_iff' (A.tangentHom.sectionChartData.image i).isOpen.measurableSet,
+    image_tangentHom]
+
+/-- A property holding almost everywhere on an overlap of `A` holds almost everywhere on the
+corresponding overlap of the section chart data of one-forms. -/
+theorem ae_overlap_tangentHom (μ : Measure ℂ) (i i' : Fin A.n) {P : ℂ → Prop}
+    (h : ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y) :
+    ∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y := by
+  rw [ae_restrict_iff' (A.tangentHom.sectionChartData.isOpen_overlap i i').measurableSet]
+  rw [ae_restrict_iff' (A.isOpen_overlap i i').measurableSet] at h
+  exact h.mono fun y h hy ↦ h (by rwa [overlap_tangentHom] at hy)
+
+/-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
+one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/
+theorem sectionChartData_coordChange_tangentHom_apply {i i' : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.overlap i i') (η : ℂ →L[ℝ] F) :
+    A.tangentHom.sectionChartData.coordChange i i' y η =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        (η.comp (fderiv ℝ (A.transition i i') y)) := by
+  have hy' : y ∈ A.tangentHom.overlap i i' := by rwa [overlap_tangentHom']
+  have hτ : A.tangentHom.transition i i' y ∈ A.tangentHom.image i := by
+    rw [transition_tangentHom, image_tangentHom']
+    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  have h := A.tangentHom.coord_eq_coordChange (fun x ↦ (A.tangentHom.triv i).symm x η) hy'
+  rw [A.tangentHom.coord_triv_symm η hτ, A.coord_tangentHom_eq_coordChange _ hy,
+    ← transition_tangentHom, A.tangentHom.coord_triv_symm η hτ, transition_tangentHom] at h
+  rw [A.tangentHom.sectionChartData_coordChange_of_mem hy']
+  exact h.symm
+
+variable [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℂ F V]
+
+/-- On the overlap of charts `i` and `i'`, the complex antilinear part commutes with the
+coordinate change of one-forms: `∂bar (g ∘ L ∘ dτ) = g ∘ ∂bar L ∘ dτ`, since both the coordinate
+change `g` of the complex vector bundle `V` and the derivative of the holomorphic chart transition
+`τ` are complex linear. -/
+theorem complexAntilinearPartL_coordChangeL_comp {i i' : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.overlap i i') (L : ℂ →L[ℝ] F) :
+    complexAntilinearPartL (((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) :
+        F →L[ℝ] F).comp (L.comp (fderiv ℝ (A.transition i i') y))) =
+      ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
+        ((complexAntilinearPartL L).comp (fderiv ℝ (A.transition i i') y)) := by
+  have : ∀ x, ContinuousSMul ℂ (V x) := fun x ↦
+    (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
+  have hτ : A.transition i i' y ∈ A.tangentHom.image i := by
+    rw [image_tangentHom']
+    exact A.overlap_subset_image i' i (A.transition_mem_overlap hy)
+  set θ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x := fun x ↦ (A.tangentHom.triv i).symm x L
+  have h₁ := A.coord_tangentHom_eq_coordChange θ hy
+  have h₂ := A.coord_tangentHom_eq_coordChange
+    (fun x ↦ (ofComplexManifold ℂ M).zeroOnePart (θ x)) hy
+  rw [A.coord_tangentHom_zeroOnePart, A.coord_tangentHom_zeroOnePart, h₁,
+    A.tangentHom.coord_triv_symm L hτ] at h₂
+  exact h₂
+
+end TangentHom
 
 end FiniteBundleAtlas
 
