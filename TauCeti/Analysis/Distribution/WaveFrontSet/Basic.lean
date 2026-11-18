@@ -387,6 +387,7 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
+omit [FiniteDimensional ℝ E] in
 /-- The localized Fourier transform vanishes for a cutoff whose support is disjoint from the
 support of the distribution. -/
 theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
