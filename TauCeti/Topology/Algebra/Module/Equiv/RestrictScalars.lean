@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Restriction of scalars for continuous linear equivalences
@@ -72,8 +73,7 @@ theorem IsInvertible.restrictScalars {f : M →L[S] N} (hf : f.IsInvertible) :
 
 /-- A unit of the ring of continuous endomorphisms stays a unit after restricting scalars. -/
 theorem isUnit_restrictScalars [LinearMap.CompatibleSMul M M R S] {f : M →L[S] M}
-    (hf : IsUnit f) : IsUnit (f.restrictScalars R) := by
-  obtain ⟨u, rfl⟩ := hf
-  exact ⟨((ContinuousLinearEquiv.unitsEquiv S M u).restrictScalars' R).toUnit, rfl⟩
+    (hf : IsUnit f) : IsUnit (f.restrictScalars R) :=
+  isInvertible_iff_isUnit.1 (isInvertible_iff_isUnit.2 hf).restrictScalars
 
 end ContinuousLinearMap

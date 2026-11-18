@@ -315,10 +315,9 @@ theorem exists_hasWeakFDerivOn_cauchyTransform_of_memLp (hp : 1 < p) (hp_top : p
     funext w
     simp [AsR, A.cauchyTransform_comp_comm]
   have hW : MemLp W p volume := (Lp.memLp _).wirtingerPartsCLM hfA
-  refine ⟨fun w ↦ AsR.comp (W w), hW.of_le_mul (c := ‖AsR‖)
-    ((continuous_const.clm_comp continuous_id).comp_aestronglyMeasurable hW.aestronglyMeasurable)
-    (Eventually.of_forall fun w ↦ AsR.opNorm_comp_le _), fun Ω ↦ hT ▸
-      (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hfA hfAs Ω).clm_comp AsR, fun w ↦ ?_⟩
+  refine ⟨fun w ↦ AsR.comp (W w), (ContinuousLinearMap.compL ℝ ℂ G F AsR).comp_memLp' hW,
+    fun Ω ↦ hT ▸ (hasWeakFDerivOn_cauchyTransform_of_memLp hp hp_top hfA hfAs Ω).clm_comp AsR,
+    fun w ↦ ?_⟩
   have h : W w 1 + I • W w I = (2 : ℂ) • A (f w) := by
     simp only [W, wirtingerPartsCLM_apply, one_smul, map_one, Complex.conj_I, smul_add, smul_neg,
       neg_smul, smul_smul, Complex.I_mul_I]

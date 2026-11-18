@@ -123,9 +123,9 @@ variable {X V : Type*} [MeasurableSpace X] [NormedAddCommGroup V] [NormedSpace �
 variable (X V) in
 /-- **A complex-linear coefficient along a solution.** For every map `ξ` and every field `C` of
 real-linear endomorphisms of a finite-dimensional complex normed space `V`, there is a field `D`
-of complex-linear maps with `D ξ = C ξ` and `‖D‖ ≤ K ‖C‖`, strongly measurable when `C` and `ξ`
-are, with a constant `K` depending only on `V`. It is a rank-one map for the inner product
-transported from a Euclidean space. -/
+of complex-linear maps with `D ξ = C ξ` and `‖D‖ ≤ K ‖C‖`, a.e.-strongly measurable for every
+measure for which `C` and `ξ` are, with a constant `K` depending only on `V`. It is a rank-one
+map for the inner product transported from a Euclidean space. -/
 theorem exists_complexLinear_apply_eq :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ (ξ : X → V) (C : X → V →L[ℝ] V), ∃ D : X → V →L[ℂ] V,
       (∀ x, D x (ξ x) = C x (ξ x)) ∧ (∀ x, ‖D x‖ ≤ K * ‖C x‖) ∧

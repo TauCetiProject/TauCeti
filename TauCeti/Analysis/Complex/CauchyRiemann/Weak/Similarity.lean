@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation
 import Mathlib.MeasureTheory.Function.UniformIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Basic.Real.ConjExponents
 import TauCeti.Analysis.Complex.Pompeiu.Pointwise
 import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
 import TauCeti.Analysis.Complex.Wirtinger.Weyl
@@ -255,7 +256,7 @@ private theorem exists_cauchyTransform_eq_of_memLp_closedBall [FiniteDimensional
       (∀ z ∈ closedBall z₀ r, g z = (2 : ℂ)⁻¹ • (D z).comp (1 - cauchyTransform g z)) ∧
       ∀ z ∈ closedBall z₀ r, ‖cauchyTransform g z‖ < 1 := by
   -- the conjugate exponent `q < 2`
-  obtain ⟨q, _, hq⟩ := exists_holderConjugate_lt_two (p := p) (by exact_mod_cast hp)
+  obtain ⟨q, _, hq⟩ := ENNReal.exists_holderConjugate_lt_two (p := p) (by exact_mod_cast hp)
   -- a radius `r ≤ R` on which `K ‖D‖_{Lᵖ} ≤ 1/4`, where `K` bounds `T` on discs of radius `≤ R`
   set K := Real.pi⁻¹ * (eLpNorm (truncatedCauchyKernel (R + R)) q volume).toReal
   have hK : 0 ≤ K := by positivity
@@ -304,11 +305,7 @@ private theorem exists_differentiableOn_eqOn_clm_apply [FiniteDimensional ℂ V]
   let L : (V →L[ℂ] V) →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.restrictScalarsL ℂ V V ℝ ℝ
   have hΦu (z : ℂ) (hz : z ∈ (B : Set ℂ)) : IsUnit (L (Ψ z)) :=
     ContinuousLinearMap.isUnit_restrictScalars (hΨu z hz)
-  have hDΦ : MemLpLoc p B fun w ↦ L.comp (DΨ w) := memLpLoc_iff.2 fun K hK hc ↦
-    (memLpLoc_iff.1 hDΨ K hK hc).of_le_mul (c := ‖L‖)
-      ((continuous_const.clm_comp continuous_id).comp_aestronglyMeasurable
-        (memLpLoc_iff.1 hDΨ K hK hc).aestronglyMeasurable)
-      (Eventually.of_forall fun w ↦ L.opNorm_comp_le _)
+  have hDΦ : MemLpLoc p B fun w ↦ L.comp (DΨ w) := hDΨ.continuousOn_clm_comp continuousOn_const
   have hΦc : ContinuousOn (fun z ↦ L (Ψ z)) B := L.continuous.comp_continuousOn hΨc
   have hη := (isWeakLinearCauchyRiemannOn_iff_frame hp hΦc (hΨ.clm_comp L) hDΦ hΦu
     fun z _ ↦ by ext v; simp [L]).1 h
