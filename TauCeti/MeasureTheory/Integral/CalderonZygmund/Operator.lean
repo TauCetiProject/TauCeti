@@ -219,6 +219,15 @@ theorem setLIntegral_enorm_sub_le (h : HasStandardKernel T K C δ) (y y' : V) :
     (fun r hr ↦ by rw [Measure.addHaar_closedBall _ _ hr.le, Real.rpow_natCast, mul_comm])
     h.exponent_pos fun _ hx ↦ h.norm_sub_le_mul_rpow hx
 
+variable (V C δ) in
+/-- The bound in Hörmander's condition (`TauCeti.HasStandardKernel.setLIntegral_enorm_sub_le`) is
+finite. -/
+private theorem coe_mul_volume_ball_mul_ofReal_ne_top :
+    C * volume (ball (0 : V) 1) *
+      ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) ≠ ∞ :=
+  ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top measure_ball_lt_top.ne)
+    ENNReal.ofReal_ne_top
+
 section OpKernel
 
 variable {𝕜 : Type*} [RCLike 𝕜] [NormedAlgebra 𝕜 ℂ] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 ℂ F]
@@ -315,10 +324,7 @@ theorem _root_.TauCeti.exists_mul_volume_lt_enorm_le_of_hasStandardKernel (C : �
       (K : V → V → ℂ), ‖T‖ ≤ M → HasStandardKernel T K C δ →
       ∀ (f : Lp F 2 (volume : Measure V)) (t : ℝ≥0∞),
         t * volume {x | t < ‖T f x‖ₑ} ≤ A * eLpNorm f 1 volume := by
-  have hB : C * volume (ball (0 : V) 1) *
-      ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) ≠ ∞ :=
-    ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top measure_ball_lt_top.ne)
-      ENNReal.ofReal_ne_top
+  have hB := coe_mul_volume_ball_mul_ofReal_ne_top V C δ
   obtain ⟨A, hA⟩ := exists_mul_volume_lt_enorm_le_of_hormander (V := V) (E := F) (F := F)
     (M := .ofReal M) ENNReal.ofReal_ne_top hB
   refine ⟨A, fun T K hT h f t ↦ ?_⟩
@@ -355,10 +361,7 @@ theorem _root_.TauCeti.exists_eLpNorm_le_of_hasStandardKernel (C : ℝ≥0) (δ 
       ∀ f : Lp F 2 (volume : Measure V), eLpNorm (T f) p volume ≤ A * eLpNorm f p volume := by
   -- The Calderón–Zygmund theorem is stated for real Hilbert spaces.
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hB : C * volume (ball (0 : V) 1) *
-      ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) ≠ ∞ :=
-    ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top measure_ball_lt_top.ne)
-      ENNReal.ofReal_ne_top
+  have hB := coe_mul_volume_ball_mul_ofReal_ne_top V C δ
   obtain ⟨A, hA⟩ := exists_eLpNorm_le_of_hormander (V := V) (H := F) (K := F)
     (M := .ofReal M) ENNReal.ofReal_ne_top hB hB hp hp_top
   refine ⟨A, fun T K hT h f ↦ ?_⟩
