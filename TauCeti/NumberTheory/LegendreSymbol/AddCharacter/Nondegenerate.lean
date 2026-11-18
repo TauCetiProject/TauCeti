@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Group.AddChar
 public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+import TauCeti.FieldTheory.Trace
 
 /-!
 # Nondegenerate additive characters
@@ -211,13 +212,6 @@ section FiniteField
 
 variable (k : Type*) [Field k] [Algebra (ZMod p) k]
 
-/-- A nonzero `c` in a finite field `k` of characteristic `p` has some `x` with `Tr (c * x) ≠ 0`,
-by nondegeneracy of the trace form. -/
-private theorem exists_trace_mul_ne_zero [Finite k] {c : k} (hc : c ≠ 0) :
-    ∃ x, Algebra.trace (ZMod p) k (c * x) ≠ 0 := by
-  by_contra! h
-  exact hc ((traceForm_nondegenerate (ZMod p) k).1 c fun x ↦ by simpa using h x)
-
 /-- **Orthogonality** for a nondegenerate character over a finite field `k` of characteristic `p`:
 `∑ x, ψ (Tr (x * y))` is `#k` at `y = 0` and vanishes elsewhere. -/
 theorem IsNondegenerate.sum_trace_mul [Fintype k] [DecidableEq k] (hψ : ψ.IsNondegenerate) (y : k) :
@@ -225,7 +219,7 @@ theorem IsNondegenerate.sum_trace_mul [Fintype k] [DecidableEq k] (hψ : ψ.IsNo
       if y = 0 then (Fintype.card k : Λ) else 0 := by
   split_ifs with hy
   · simp [hy]
-  obtain ⟨x₀, hx₀⟩ := exists_trace_mul_ne_zero (p := p) k hy
+  obtain ⟨x₀, hx₀⟩ := TauCeti.Algebra.exists_trace_mul_ne_zero (F := ZMod p) hy
   rw [mul_comm] at hx₀
   exact sum_eq_zero_of_sub_one_mem_nonZeroDivisors
     (φ := ψ.compAddMonoidHom ((Algebra.trace (ZMod p) k).toAddMonoidHom.comp
@@ -237,7 +231,7 @@ theorem IsNondegenerate.isPrimitive_compAddMonoidHom_trace [Finite k] [Nontrivia
     (hψ : ψ.IsNondegenerate) :
     (ψ.compAddMonoidHom (Algebra.trace (ZMod p) k).toAddMonoidHom).IsPrimitive := by
   intro c hc h
-  obtain ⟨x, hx⟩ := exists_trace_mul_ne_zero (p := p) k hc
+  obtain ⟨x, hx⟩ := TauCeti.Algebra.exists_trace_mul_ne_zero (F := ZMod p) hc
   have h1 : ψ (Algebra.trace (ZMod p) k (c * x)) = 1 := by simpa using DFunLike.congr_fun h x
   simpa [h1] using hψ.isUnit_sub_one hx
 
@@ -254,8 +248,10 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
   have hshift (a i : ZMod p) : χ a * e i = ψ (i * a) * e i := by
     have hs : ∑ j, χ a * (ψ (-(i * j)) * χ j) = ∑ j, ψ (i * a) * (ψ (-(i * j)) * χ j) :=
       Fintype.sum_equiv (Equiv.addLeft a) _ _ fun j ↦ by
-        rw [Equiv.coe_addLeft, mul_left_comm (χ a), ← map_add_eq_mul χ, ← mul_assoc (ψ _),
-          ← map_add_eq_mul ψ (i * a), show i * a + -(i * (a + j)) = -(i * j) by ring]
+        -- Split `-(i * j)` as `i * a + -(i * (a + j))`; the rest is multiplicativity.
+        have hij : -(i * j) = i * a + -(i * (a + j)) := by ring
+        simp only [Equiv.coe_addLeft, hij, map_add_eq_mul]
+        ring
     rw [he, mul_left_comm, mul_sum, hs, ← mul_sum, mul_left_comm]
   -- The `e i` sum to `1`, by orthogonality on `ZMod p`.
   have horth (j : ZMod p) : ∑ i, ψ (-(i * j)) = if j = 0 then (p : Λ) else 0 := by
@@ -287,8 +283,9 @@ theorem IsNondegenerate.bijective_mulShift [ConnectedSpace (PrimeSpectrum Λ)]
   refine ⟨to_mulShift_inj_of_isPrimitive hψ.isPrimitive, fun χ ↦ ?_⟩
   obtain ⟨c, hc⟩ := hψ.exists_apply_eq χ
   refine ⟨c, ext _ _ fun a ↦ ?_⟩
-  rw [mulShift_apply, ← ZMod.natCast_zmod_val a, mul_comm, ← nsmul_eq_mul, map_nsmul_eq_pow, hc,
-    ← map_nsmul_eq_pow, nsmul_one]
+  obtain ⟨n, rfl⟩ := ZMod.natCast_zmod_surjective a
+  have hχ : χ n = χ 1 ^ n := by simpa using map_nsmul_eq_pow χ n 1
+  simpa [nsmul_eq_mul, mul_comm, hc, hχ] using map_nsmul_eq_pow ψ n c
 
 /-- **Classification of additive characters of a finite field.** If `Spec Λ` is connected, every
 additive character of a finite field `k` of characteristic `p` with values in `Λ` is
@@ -312,7 +309,8 @@ theorem IsNondegenerate.bijective_mulShift_compAddMonoidHom_trace [Finite k]
   ext y
   have := LinearMap.BilinForm.apply_toDual_symm_apply (hB := traceForm_nondegenerate (ZMod p) k)
     (F.toZModLinearMap p) y
-  rw [Algebra.traceForm_apply] at this
+  have hF : ⇑F = f := rfl
+  rw [Algebra.traceForm_apply, AddMonoidHom.coe_toZModLinearMap, hF] at this
   rw [mulShift_apply, compAddMonoidHom_apply, LinearMap.toAddMonoidHom_coe, this]
   exact hf y
 
