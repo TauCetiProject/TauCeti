@@ -16,7 +16,10 @@ In an abelian braided monoidal preadditive category `C` satisfying the graded-te
 `HomologicalComplex.monoidalCategory`, the Koszul braiding exchanges the two factors of the
 totalized tensor product on `CochainComplex C ℤ`, so tensoring on the right with a K-flat complex
 also preserves quasi-isomorphisms (`CochainComplex.quasiIso_tensorHom_id`,
-`CochainComplex.quasiIso_whiskerRight`).
+`CochainComplex.quasiIso_whiskerRight`). Hence the tensor product of two quasi-isomorphisms
+`f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a quasi-isomorphism whenever `L₁` and `K₂` are K-flat
+(`CochainComplex.quasiIso_tensorHom_of_isKFlat_right_left`) or `K₁` and `L₂` are K-flat
+(`CochainComplex.quasiIso_tensorHom_of_isKFlat_left_right`).
 
 When in addition `(CochainComplex.KFlat.localizerMorphism C).HasLeftResolutions` holds, every
 arbitrary cochain complex admits a left resolution by a K-flat complex, so any quasi-isomorphism
@@ -81,6 +84,28 @@ instance quasiIso_whiskerRight (Q : CochainComplex C ℤ) [Q.IsKFlat]
     QuasiIso (f ▷ Q) := by
   rw [whiskerRight_eq_mapBifunctorMap]
   exact inferInstanceAs (QuasiIso (tensorHom f (𝟙 Q)))
+
+/-- The tensor product of two quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a
+quasi-isomorphism whenever `L₁` and `K₂` are K-flat. -/
+lemma quasiIso_tensorHom_of_isKFlat_right_left
+    {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} [L₁.IsKFlat] [K₂.IsKFlat]
+    (f : K₁ ⟶ L₁) (g : K₂ ⟶ L₂) [QuasiIso f] [QuasiIso g] :
+    QuasiIso (tensorHom f g) := by
+  have h : tensorHom f g = tensorHom f (𝟙 K₂) ≫ tensorHom (𝟙 L₁) g := by
+    simp [HomologicalComplex.tensorHom, ← mapBifunctorMap_comp]
+  rw [h]
+  infer_instance
+
+/-- The tensor product of two quasi-isomorphisms `f : K₁ ⟶ L₁` and `g : K₂ ⟶ L₂` is a
+quasi-isomorphism whenever `K₁` and `L₂` are K-flat. -/
+lemma quasiIso_tensorHom_of_isKFlat_left_right
+    {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} [K₁.IsKFlat] [L₂.IsKFlat]
+    (f : K₁ ⟶ L₁) (g : K₂ ⟶ L₂) [QuasiIso f] [QuasiIso g] :
+    QuasiIso (tensorHom f g) := by
+  have h : tensorHom f g = tensorHom (𝟙 K₁) g ≫ tensorHom f (𝟙 L₂) := by
+    simp [HomologicalComplex.tensorHom, ← mapBifunctorMap_comp]
+  rw [h]
+  infer_instance
 
 section HasLeftResolutions
 
