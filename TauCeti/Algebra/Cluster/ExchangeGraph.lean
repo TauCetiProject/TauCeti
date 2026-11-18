@@ -1,0 +1,422 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Combinatorics.SimpleGraph.Acyclic
+public import TauCeti.Data.List.Chain
+public import TauCeti.Data.List.Involutive
+
+/-!
+# The mutation tree and the exchange graph
+
+A mutation word is reduced when no two adjacent directions coincide. Reduced words over `K`
+are the vertices of the mutation tree: mutation in direction `k` cancels a final letter `k`
+and otherwise appends `k`. Each vertex therefore has exactly one edge with each label
+(`TauCeti.Mutation.ReducedWord.neighborSetEquiv`), and the resulting graph is a tree
+(`TauCeti.Mutation.mutationTree_isTree`). It is the regular tree whose edges at each vertex
+are labelled by the mutation directions.
+
+Let `μ k` be a family of involutions, such as seed mutation in direction `k` on a total class
+of seeds. Words act in reading order, and every word acts as its free reduction
+(`TauCeti.Mutation.ReducedWord.eval_reduce`). Given a class map `π`, for instance the quotient
+by simultaneous relabelling of the directions, the exchange graph has as vertices the classes of
+the states reachable from an initial state, two distinct classes being adjacent when they are
+represented by a state and one of its mutations. Evaluating reduced words realizes the exchange
+graph as the simple-graph quotient of the mutation tree
+(`TauCeti.Mutation.exchangeGraph_eq_map`).
+
+## References
+
+* S. Fomin and A. Zelevinsky, *Cluster algebras I: Foundations*, J. Amer. Math. Soc. 15 (2002),
+  §2, for the regular tree with labelled edges indexing a cluster pattern.
+* S. Fomin and A. Zelevinsky, *Cluster algebras II: Finite type classification*, Invent. Math.
+  154 (2003), §1, for exchange graphs of seeds modulo simultaneous relabelling.
+-/
+
+public section
+
+namespace TauCeti.Mutation
+
+open SimpleGraph
+
+variable {K : Type*}
+
+/-- A reduced mutation word: a word in the directions `K` in which no two adjacent letters
+coincide. Words are read from left to right, so the last letter is the latest mutation. -/
+abbrev ReducedWord (K : Type*) := {w : List K // w.IsChain (· ≠ ·)}
+
+namespace ReducedWord
+
+/-- The empty reduced word, the root of the mutation tree. -/
+def nil : ReducedWord K := ⟨[], .nil⟩
+
+/-- The empty reduced word is the empty list. -/
+@[simp]
+theorem val_nil : (nil : ReducedWord K).1 = [] := (rfl)
+
+instance : Inhabited (ReducedWord K) := ⟨nil⟩
+
+/-- Without directions, the empty word is the only reduced word. -/
+instance [IsEmpty K] : Unique (ReducedWord K) where
+  default := nil
+  uniq _ := Subtype.ext <| (List.eq_nil_iff_forall_not_mem.2 fun k _ ↦ isEmptyElim k).trans
+    val_nil.symm
+
+variable [DecidableEq K]
+
+/-- Mutation of reduced words in direction `k`: a final letter `k` is cancelled, and otherwise
+`k` is appended. -/
+def step (k : K) (w : ReducedWord K) : ReducedWord K :=
+  if h : w.1.getLast? = some k then ⟨w.1.dropLast, w.2.dropLast⟩
+  else ⟨w.1 ++ [k], List.isChain_append_singleton_iff.2 ⟨w.2, fun _ hx hxk ↦ h (hxk ▸ hx)⟩⟩
+
+/-- A step in the direction of the last letter deletes that letter. -/
+theorem val_step_of_getLast?_eq {k : K} {w : ReducedWord K} (h : w.1.getLast? = some k) :
+    (step k w).1 = w.1.dropLast := by
+  simp [step, h]
+
+/-- A step in any direction other than the last letter appends that direction. -/
+theorem val_step_of_getLast?_ne {k : K} {w : ReducedWord K} (h : w.1.getLast? ≠ some k) :
+    (step k w).1 = w.1 ++ [k] := by
+  simp [step, h]
+
+/-- The two cases of a step: either `w` is the step extended by `k`, or the step is `w` extended
+by `k`. -/
+theorem val_step_cases (k : K) (w : ReducedWord K) :
+    w.1 = (step k w).1 ++ [k] ∨ (step k w).1 = w.1 ++ [k] := by
+  by_cases h : w.1.getLast? = some k
+  · obtain ⟨u, hu⟩ := List.getLast?_eq_some_iff.1 h
+    left
+    rw [val_step_of_getLast?_eq h, hu, List.dropLast_concat]
+  · exact .inr (val_step_of_getLast?_ne h)
+
+/-- Two steps in the same direction cancel. -/
+@[simp]
+theorem step_step (k : K) (w : ReducedWord K) : step k (step k w) = w := by
+  by_cases h : w.1.getLast? = some k
+  · obtain ⟨u, hu⟩ := List.getLast?_eq_some_iff.1 h
+    have hw : (u ++ [k]).IsChain (· ≠ ·) := hu ▸ w.2
+    have hu' : u.getLast? ≠ some k := fun hu' ↦
+      (List.isChain_append_singleton_iff.1 hw).2 k hu' rfl
+    apply Subtype.ext
+    rw [val_step_of_getLast?_ne (by rwa [val_step_of_getLast?_eq h, hu, List.dropLast_concat]),
+      val_step_of_getLast?_eq h, hu, List.dropLast_concat]
+  · apply Subtype.ext
+    rw [val_step_of_getLast?_eq (by rw [val_step_of_getLast?_ne h, List.getLast?_concat]),
+      val_step_of_getLast?_ne h, List.dropLast_concat]
+
+/-- Each step is an involution on reduced words. -/
+theorem step_involutive (k : K) : Function.Involutive (step k) :=
+  step_step k
+
+/-- A step changes the length of a word, so it moves every vertex. -/
+theorem step_ne (k : K) (w : ReducedWord K) : step k w ≠ w := by
+  intro h
+  rcases val_step_cases k w with hw | hw <;>
+    · have := congrArg List.length hw
+      rw [h] at this
+      simp at this
+
+/-- Steps in different directions lead to different words. -/
+@[simp]
+theorem step_inj {j k : K} {w : ReducedWord K} : step j w = step k w ↔ j = k := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have hl : (step j w).1.length = (step k w).1.length := by rw [h]
+  rcases val_step_cases j w with hj | hj <;> rcases val_step_cases k w with hk | hk
+  · rw [h] at hj
+    exact List.singleton_inj.1 (List.append_cancel_left (hj.symm.trans hk))
+  · have h₁ := congrArg List.length hj
+    have h₂ := congrArg List.length hk
+    simp only [List.length_append, List.length_singleton] at h₁ h₂
+    omega
+  · have h₁ := congrArg List.length hj
+    have h₂ := congrArg List.length hk
+    simp only [List.length_append, List.length_singleton] at h₁ h₂
+    omega
+  · rw [h] at hj
+    exact List.singleton_inj.1 (List.append_cancel_left (hj.symm.trans hk))
+
+/-- Free reduction of a word: perform its steps in reading order, starting from the empty word.
+Adjacent equal letters cancel. -/
+def reduce (w : List K) : ReducedWord K :=
+  w.foldl (fun v k ↦ step k v) nil
+
+/-- The empty word is already reduced. -/
+@[simp]
+theorem reduce_nil : reduce ([] : List K) = nil := (rfl)
+
+/-- Reducing a word ending in `k` performs the step `k` after reducing the rest. -/
+@[simp]
+theorem reduce_append_singleton (w : List K) (k : K) :
+    reduce (w ++ [k]) = step k (reduce w) := by
+  simp [reduce]
+
+/-- A reduced word is its own free reduction. -/
+@[simp]
+theorem reduce_val (w : ReducedWord K) : reduce w.1 = w := by
+  obtain ⟨w, hw⟩ := w
+  induction w using List.reverseRecOn with
+  | nil => rfl
+  | append_singleton u k ih =>
+    rw [reduce_append_singleton, ih hw.left_of_append]
+    exact Subtype.ext <| val_step_of_getLast?_ne fun hu ↦
+      (List.isChain_append_singleton_iff.1 hw).2 k hu rfl
+
+end ReducedWord
+
+open ReducedWord
+
+section Tree
+
+variable (K) in
+/-- The mutation tree: reduced words, with `w` joined to `step k w` by an edge labelled `k`. -/
+def mutationTree [DecidableEq K] : SimpleGraph (ReducedWord K) where
+  Adj v w := ∃ k, step k v = w
+  symm := ⟨fun v _ ⟨k, h⟩ ↦ ⟨k, h ▸ step_step k v⟩⟩
+  loopless := ⟨fun v ⟨k, h⟩ ↦ step_ne k v h⟩
+
+variable [DecidableEq K]
+
+/-- Adjacency in the mutation tree is a step in some direction. -/
+@[simp]
+theorem mutationTree_adj {v w : ReducedWord K} :
+    (mutationTree K).Adj v w ↔ ∃ k, step k v = w := Iff.rfl
+
+/-- Each vertex is adjacent to its step in every direction. -/
+theorem mutationTree_adj_step (k : K) (w : ReducedWord K) :
+    (mutationTree K).Adj w (step k w) := ⟨k, rfl⟩
+
+/-- Two reduced words are adjacent in the mutation tree exactly when one of them extends the
+other by one letter. -/
+theorem mutationTree_adj_iff {v w : ReducedWord K} :
+    (mutationTree K).Adj v w ↔ (∃ k, w.1 = v.1 ++ [k]) ∨ ∃ k, v.1 = w.1 ++ [k] := by
+  refine ⟨fun ⟨k, h⟩ ↦ h ▸ (val_step_cases k v).symm.imp (⟨k, ·⟩) (⟨k, ·⟩), ?_⟩
+  have key : ∀ {v w : ReducedWord K} {k : K}, w.1 = v.1 ++ [k] → (mutationTree K).Adj v w := by
+    intro v w k h
+    have hw : (v.1 ++ [k]).IsChain (· ≠ ·) := h ▸ w.2
+    refine ⟨k, Subtype.ext ?_⟩
+    rw [val_step_of_getLast?_ne fun hv ↦ (List.isChain_append_singleton_iff.1 hw).2 k hv rfl, h]
+  rintro (⟨k, h⟩ | ⟨k, h⟩)
+  · exact key h
+  · exact (key h).symm
+
+/-- The neighbors of a vertex correspond to the directions: each vertex has exactly one edge with
+each label, joining it to its step in that direction. -/
+noncomputable def neighborSetEquiv (w : ReducedWord K) :
+    K ≃ (mutationTree K).neighborSet w :=
+  Equiv.ofBijective (fun k ↦ ⟨step k w, k, rfl⟩)
+    ⟨fun _ _ h ↦ step_inj.1 (congrArg Subtype.val h), fun ⟨_, k, hk⟩ ↦ ⟨k, Subtype.ext hk⟩⟩
+
+/-- The neighbor with label `k` is the step in direction `k`. -/
+@[simp]
+theorem coe_neighborSetEquiv_apply (w : ReducedWord K) (k : K) :
+    (neighborSetEquiv w k : ReducedWord K) = step k w := (rfl)
+
+/-- Every reduced word is joined to the empty word in the mutation tree. -/
+theorem mutationTree_reachable_nil (w : ReducedWord K) : (mutationTree K).Reachable nil w := by
+  obtain ⟨w, hw⟩ := w
+  induction w using List.reverseRecOn with
+  | nil => rfl
+  | append_singleton u k ih =>
+    exact (ih hw.left_of_append).trans <| Adj.reachable <|
+      mutationTree_adj_iff.2 (.inl ⟨k, rfl⟩)
+
+/-- The mutation tree is connected. -/
+theorem mutationTree_connected : (mutationTree K).Connected :=
+  .mk fun v w ↦ (mutationTree_reachable_nil v).symm.trans (mutationTree_reachable_nil w)
+
+/-- The mutation tree has no cycles: removing the edge between `v` and its extension `w`
+leaves the words beginning with `w` closed under adjacency. -/
+theorem mutationTree_isAcyclic : (mutationTree K).IsAcyclic := by
+  have key : ∀ {v w : ReducedWord K} {k : K}, w.1 = v.1 ++ [k] →
+      ¬((mutationTree K).deleteEdges {s(v, w)}).Reachable w v := by
+    intro v w k hvw hreach
+    -- Without the edge `s(v, w)`, every vertex reachable from `w` still begins with `w`.
+    have hprefix : ∀ u, ((mutationTree K).deleteEdges {s(v, w)}).Reachable w u →
+        w.1 <+: u.1 := by
+      intro u hu
+      rw [reachable_iff_reflTransGen] at hu
+      induction hu with
+      | refl => exact List.prefix_rfl
+      | @tail a b _ hab ha =>
+        rw [deleteEdges_adj, mutationTree_adj_iff, Set.mem_singleton_iff] at hab
+        obtain ⟨(⟨j, hj⟩ | ⟨j, hj⟩), hne⟩ := hab
+        · rw [hj]
+          exact ha.trans (List.prefix_append _ _)
+        · rw [hj] at ha
+          rcases List.prefix_concat_iff.1 ha with h | h
+          · refine absurd ?_ hne
+            have hwa : w = a := Subtype.ext (h.trans hj.symm)
+            have hvb : v = b := Subtype.ext <| List.append_inj_left' (hvw.symm.trans h) rfl
+            rw [← hwa, ← hvb, Sym2.eq_swap]
+          · exact h
+    have := (hprefix v hreach).length_le
+    rw [hvw, List.length_append] at this
+    simp at this
+  rw [isAcyclic_iff_forall_adj_isBridge]
+  intro v w hvw
+  rw [isBridge_iff]
+  rcases mutationTree_adj_iff.1 hvw with ⟨k, h⟩ | ⟨k, h⟩
+  · exact fun hr ↦ key h hr.symm
+  · rw [Sym2.eq_swap]
+    exact key h
+
+/-- Reduced words with mutation steps form a tree. -/
+theorem mutationTree_isTree : (mutationTree K).IsTree :=
+  ⟨mutationTree_connected, mutationTree_isAcyclic⟩
+
+end Tree
+
+/-! ### Word evaluation and the exchange graph -/
+
+section Pattern
+
+variable {V X : Type*} (μ : K → V → V) (s : V) (π : V → X)
+
+/-- The state reached from `s` along a reduced word, mutating in reading order. -/
+def ReducedWord.eval (w : ReducedWord K) : V :=
+  w.1.foldl (fun t k ↦ μ k t) s
+
+/-- A reduced word acts by the left fold of its mutations. -/
+theorem ReducedWord.eval_def (w : ReducedWord K) :
+    w.eval μ s = w.1.foldl (fun t k ↦ μ k t) s := (rfl)
+
+/-- The empty word leaves the initial state unchanged. -/
+@[simp]
+theorem ReducedWord.eval_nil : (nil : ReducedWord K).eval μ s = s := (rfl)
+
+/-- The value of a reduced word is reachable. -/
+theorem ReducedWord.foldReachable_eval (w : ReducedWord K) :
+    FoldReachable (fun t k ↦ μ k t) s (w.eval μ s) :=
+  foldReachable_foldl _ s w.1
+
+/-- The classes, under a class map `π`, of the states reachable from `s`. For the quotient by
+simultaneous relabelling these are the reachable seeds modulo relabelling. -/
+def reachableClasses : Set X :=
+  π '' {t | FoldReachable (fun t k ↦ μ k t) s t}
+
+/-- The exchange graph of the states reachable from `s` modulo a class map `π`: two distinct
+classes are adjacent when they contain a reachable state and one of its mutations. With `π` the
+quotient by simultaneous relabelling of the directions, this is the exchange graph of a cluster
+pattern; with `π = id` it is the graph of the reachable states themselves. -/
+def exchangeGraph : SimpleGraph (reachableClasses μ s π) :=
+  SimpleGraph.fromRel fun x y ↦
+    ∃ t, FoldReachable (fun t k ↦ μ k t) s t ∧ ∃ k, π t = x ∧ π (μ k t) = y
+
+/-- The class of the state reached along a reduced word. -/
+def ReducedWord.reachableClass (w : ReducedWord K) : reachableClasses μ s π :=
+  ⟨π (w.eval μ s), w.eval μ s, w.foldReachable_eval μ s, rfl⟩
+
+variable {μ s π}
+
+/-- Reachable classes are the classes of reachable states. -/
+theorem mem_reachableClasses_iff {x : X} :
+    x ∈ reachableClasses μ s π ↔ ∃ t, FoldReachable (fun t k ↦ μ k t) s t ∧ π t = x :=
+  Iff.rfl
+
+/-- The class of a reduced word is the class of its value. -/
+@[simp]
+theorem ReducedWord.coe_reachableClass (w : ReducedWord K) :
+    (w.reachableClass μ s π : X) = π (w.eval μ s) := (rfl)
+
+/-- For involutive mutations, two distinct classes are adjacent exactly when some reachable state
+of the first class has a mutation in the second. -/
+theorem exchangeGraph_adj (hμ : ∀ k, Function.Involutive (μ k))
+    {x y : reachableClasses μ s π} :
+    (exchangeGraph μ s π).Adj x y ↔
+      x ≠ y ∧
+        ∃ t, FoldReachable (fun t k ↦ μ k t) s t ∧ ∃ k, π t = x ∧ π (μ k t) = y := by
+  rw [exchangeGraph, fromRel_adj, or_iff_left_of_imp]
+  rintro ⟨t, ht, k, hx, hy⟩
+  refine ⟨μ k t, ht.trans (foldReachable_apply _ t k), k, hy, ?_⟩
+  rw [hμ k t, hx]
+
+/-- If equal classes have mutations in the same classes, up to a change of direction (as for
+simultaneous relabelling), then adjacency can be tested on any reachable representative. -/
+theorem exchangeGraph_adj_iff_forall (hμ : ∀ k, Function.Involutive (μ k))
+    (hπ : ∀ t t', π t = π t' → ∀ k, ∃ j, π (μ j t') = π (μ k t))
+    {x y : reachableClasses μ s π} :
+    (exchangeGraph μ s π).Adj x y ↔
+      x ≠ y ∧
+        ∀ t, FoldReachable (fun t k ↦ μ k t) s t → π t = x → ∃ k, π (μ k t) = y := by
+  rw [exchangeGraph_adj hμ]
+  refine and_congr_right fun _ ↦ ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨t₀, -, k, hx, hy⟩ t - ht
+    obtain ⟨j, hj⟩ := hπ t₀ t (hx.trans ht.symm) k
+    exact ⟨j, hj.trans hy⟩
+  · obtain ⟨t, ht, hx⟩ := mem_reachableClasses_iff.1 x.2
+    obtain ⟨k, hk⟩ := h t ht hx
+    exact ⟨t, ht, k, hx, hk⟩
+
+variable [DecidableEq K]
+
+/-- A step in the mutation tree is a single mutation of the state. -/
+@[simp]
+theorem ReducedWord.eval_step (hμ : ∀ k, Function.Involutive (μ k)) (k : K)
+    (w : ReducedWord K) : (step k w).eval μ s = μ k (w.eval μ s) := by
+  rcases val_step_cases k w with h | h
+  · rw [eval_def μ s w, h, List.foldl_concat, hμ]
+    rfl
+  · rw [eval_def, h, List.foldl_concat]
+    rfl
+
+/-- Every word acts as its free reduction. -/
+@[simp]
+theorem ReducedWord.eval_reduce (hμ : ∀ k, Function.Involutive (μ k)) (w : List K) :
+    (reduce w).eval μ s = w.foldl (fun t k ↦ μ k t) s := by
+  induction w using List.reverseRecOn with
+  | nil => rfl
+  | append_singleton u k ih =>
+    rw [reduce_append_singleton, eval_step hμ, ih, List.foldl_concat]
+
+omit [DecidableEq K] in
+/-- The states reachable from `s` are exactly the values of reduced words. -/
+theorem ReducedWord.foldReachable_iff_exists_eval (hμ : ∀ k, Function.Involutive (μ k))
+    {t : V} : FoldReachable (fun t k ↦ μ k t) s t ↔ ∃ w : ReducedWord K, w.eval μ s = t := by
+  classical
+  exact ⟨fun h ↦ let ⟨w, hw⟩ := foldReachable_def.1 h; ⟨reduce w, (eval_reduce hμ w).trans hw⟩,
+    fun ⟨w, hw⟩ ↦ hw ▸ w.foldReachable_eval μ s⟩
+
+omit [DecidableEq K] in
+/-- Every reachable class is the class of a reduced word. -/
+theorem ReducedWord.reachableClass_surjective (hμ : ∀ k, Function.Involutive (μ k)) :
+    Function.Surjective (ReducedWord.reachableClass (K := K) μ s π) := by
+  rintro ⟨x, t, ht, rfl⟩
+  obtain ⟨w, rfl⟩ := (foldReachable_iff_exists_eval hμ).1 ht
+  exact ⟨w, rfl⟩
+
+/-- Word evaluation realizes the exchange graph as the simple-graph quotient of the mutation
+tree: two distinct classes are adjacent exactly when they are the classes of two adjacent
+reduced words. -/
+theorem exchangeGraph_eq_map (hμ : ∀ k, Function.Involutive (μ k)) :
+    exchangeGraph μ s π = (mutationTree K).map (ReducedWord.reachableClass μ s π) := by
+  ext x y
+  rw [exchangeGraph_adj hμ, map_adj']
+  refine and_congr_right fun _ ↦ ⟨?_, ?_⟩
+  · rintro ⟨t, ht, k, hx, hy⟩
+    obtain ⟨w, rfl⟩ := (ReducedWord.foldReachable_iff_exists_eval hμ).1 ht
+    refine ⟨w, step k w, mutationTree_adj_step k w, Subtype.ext hx, Subtype.ext ?_⟩
+    rw [ReducedWord.coe_reachableClass, ReducedWord.eval_step hμ, hy]
+  · rintro ⟨v, w, ⟨k, rfl⟩, rfl, rfl⟩
+    exact ⟨v.eval μ s, v.foldReachable_eval μ s, k, rfl, by
+      rw [ReducedWord.coe_reachableClass, ReducedWord.eval_step hμ]⟩
+
+end Pattern
+
+/-! ### Small ranks -/
+
+/-- In rank one the reduced words are the empty word and the one-letter word. -/
+example (w : ReducedWord Unit) : w = ReducedWord.nil ∨ w = step () ReducedWord.nil := by
+  obtain ⟨_ | ⟨a, _ | ⟨b, l⟩⟩, hw⟩ := w
+  · exact .inl rfl
+  · exact .inr (Subtype.ext (by simp [val_step_of_getLast?_ne]))
+  · exact absurd rfl (List.isChain_cons_cons.1 hw).1
+
+/-- The double letter acts as the identity. -/
+example [DecidableEq K] (k : K) : ReducedWord.reduce [k, k] = ReducedWord.nil := by
+  simp [ReducedWord.reduce]
+
+end TauCeti.Mutation
