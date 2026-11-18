@@ -41,9 +41,8 @@ integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multi
 a set containing the support of an integrable function keeps it integrable
 (`MeasureTheory.Integrable.smul_of_support_subset`), and so does an operator-valued function
 bounded on a set outside which the integrable function vanishes
-(`MeasureTheory.Integrable.apply_of_norm_le`). For a measure finite on compact sets, an `Lᵖ`
-function with `1 ≤ p` vanishing outside a compact set is integrable
-(`MeasureTheory.MemLp.integrable_of_isCompact`).
+(`MeasureTheory.Integrable.apply_of_norm_le`). An `Lᵖ` function with `1 ≤ p` vanishing outside
+a set of finite measure is integrable (`MeasureTheory.MemLp.integrable_of_ae_notMem_eq_zero`).
 -/
 
 public section
@@ -192,13 +191,12 @@ theorem Integrable.apply_of_norm_le {α 𝕜 E F : Type*} [NontriviallyNormedFie
   · exact ((A y).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hM y hyt) (norm_nonneg _))
   · simp [hy hyt]
 
-/-- An `Lᵖ` function, `1 ≤ p`, vanishing almost everywhere outside a compact set is integrable for
-a measure finite on compact sets. -/
-theorem MemLp.integrable_of_isCompact {α E : Type*} [MeasurableSpace α] [TopologicalSpace α]
-    {μ : Measure α} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E] {f : α → E}
-    {p : ENNReal} (hf : MemLp f p μ) (hp : 1 ≤ p) {s : Set α} (hs : IsCompact s)
-    (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
-  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs.measure_lt_top.ne
+/-- An `Lᵖ` function, `1 ≤ p`, vanishing almost everywhere outside a set of finite measure is
+integrable. -/
+theorem MemLp.integrable_of_ae_notMem_eq_zero {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {f : α → E} {p : ENNReal} (hf : MemLp f p μ) (hp : 1 ≤ p) {s : Set α}
+    (hs : μ s ≠ ⊤) (hfs : ∀ᵐ x ∂μ, x ∉ s → f x = 0) : Integrable f μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
   exact IntegrableOn.integrable_of_ae_notMem_eq_zero ((hf.restrict s).integrable hp) hfs
 
 end MeasureTheory

@@ -392,22 +392,23 @@ section OffSupport
 open Metric Set
 open scoped InnerProductSpace
 
-variable {𝕜 V H K : Type*} [RCLike 𝕜] [MeasurableSpace V] {μ : Measure V}
+variable {𝕜 α β H K : Type*} [RCLike 𝕜] [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
+  {ν : Measure β}
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K]
 
 /-- The integrand `⟪g x, k x y (φ y)⟫` of the double integral pairing `g` with `T φ` is integrable
 on the product when `g` and `φ` are integrable and vanish outside sets on whose product `k` is
 bounded. This is the counterpart of `TauCeti.integrable_inner_apply_kernel` for kernels bounded
 on the product of the supports rather than having bounded row and column integrals. -/
-theorem integrable_inner_apply_kernel_of_norm_le {k : V → V → H →L[𝕜] K}
-    (hkm : StronglyMeasurable (uncurry k)) {s t : Set V} {M : ℝ}
-    (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : V → K} (hgi : Integrable g μ)
-    (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0) {φ : V → H} (hφi : Integrable φ μ)
-    (hφ : ∀ᵐ x ∂μ, x ∉ t → φ x = 0) :
-    Integrable (fun p : V × V ↦ ⟪g p.1, k p.1 p.2 (φ p.2)⟫_𝕜) (μ.prod μ) := by
-  have hm : AEStronglyMeasurable (fun p : V × V ↦ k p.1 p.2 (φ p.2)) (μ.prod μ) :=
+theorem integrable_inner_apply_kernel_of_norm_le {k : α → β → H →L[𝕜] K}
+    (hkm : AEStronglyMeasurable (uncurry k) (μ.prod ν)) {s : Set α} {t : Set β} {M : ℝ}
+    (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : α → K} (hgi : Integrable g μ)
+    (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0) {φ : β → H} (hφi : Integrable φ ν)
+    (hφ : ∀ᵐ y ∂ν, y ∉ t → φ y = 0) :
+    Integrable (fun p : α × β ↦ ⟪g p.1, k p.1 p.2 (φ p.2)⟫_𝕜) (μ.prod ν) := by
+  have hm : AEStronglyMeasurable (fun p : α × β ↦ k p.1 p.2 (φ p.2)) (μ.prod ν) :=
     (isBoundedBilinearMap_apply.continuous).comp_aestronglyMeasurable
-      (hkm.aestronglyMeasurable.prodMk
+      (hkm.prodMk
         (hφi.aestronglyMeasurable.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_snd))
   refine ((hgi.norm.mul_prod hφi.norm).const_mul M).mono'
     ((hgi.aestronglyMeasurable.comp_quasiMeasurePreserving
@@ -452,8 +453,8 @@ private theorem integral_inner_adjoint_apply_eq (T : Lp H 2 μ →L[𝕜] Lp K 2
     (hM : ∀ x ∈ s, ∀ y ∈ t, ‖k x y‖ ≤ M) {g : Lp K 2 μ} (hg : ∀ᵐ x ∂μ, x ∉ s → g x = 0)
     {φ : Lp H 2 μ} (hφ : ∀ᵐ x ∂μ, x ∉ t → φ x = 0) :
     ∫ y, ⟪adjoint T g y, φ y⟫_𝕜 ∂μ = ∫ y, ⟪∫ z, adjoint (k z y) (g z) ∂μ, φ y⟫_𝕜 ∂μ := by
-  have hgi := (Lp.memLp g).integrable_of_isCompact one_le_two hs hg
-  have hφi := (Lp.memLp φ).integrable_of_isCompact one_le_two ht hφ
+  have hgi := (Lp.memLp g).integrable_of_ae_notMem_eq_zero one_le_two hs.measure_lt_top.ne hg
+  have hφi := (Lp.memLp φ).integrable_of_ae_notMem_eq_zero one_le_two ht.measure_lt_top.ne hφ
   calc ∫ y, ⟪adjoint T g y, φ y⟫_𝕜 ∂μ = ⟪adjoint T g, φ⟫_𝕜 := (L2.inner_def _ _).symm
     _ = ⟪g, T φ⟫_𝕜 := adjoint_inner_left _ _ _
     _ = ∫ z, ⟪g z, T φ z⟫_𝕜 ∂μ := L2.inner_def _ _
@@ -467,7 +468,7 @@ private theorem integral_inner_adjoint_apply_eq (T : Lp H 2 μ →L[𝕜] Lp K 2
           (g z)).symm
       · simp [hgz hz]
     _ = ∫ y, ∫ z, ⟪g z, k z y (φ y)⟫_𝕜 ∂μ ∂μ := integral_integral_swap
-      (TauCeti.integrable_inner_apply_kernel_of_norm_le hkm hM hgi hg hφi hφ)
+      (TauCeti.integrable_inner_apply_kernel_of_norm_le hkm.aestronglyMeasurable hM hgi hg hφi hφ)
     _ = ∫ y, ⟪∫ z, adjoint (k z y) (g z) ∂μ, φ y⟫_𝕜 ∂μ := by
       refine integral_congr_ae ?_
       filter_upwards [hφ] with y hy
@@ -504,7 +505,8 @@ private theorem memLp_indicator_integral_adjoint_apply {k : V → V → H →L[�
             Measure.quasiMeasurePreserving_snd)))
   · rw [← integral_const_mul]
     refine norm_integral_le_of_norm_le
-      (((Lp.memLp g).integrable_of_isCompact one_le_two hs hg).norm.const_mul M) ?_
+      (((Lp.memLp g).integrable_of_ae_notMem_eq_zero one_le_two hs.measure_lt_top.ne
+        hg).norm.const_mul M) ?_
     filter_upwards [hg] with z hz
     by_cases hzs : z ∈ s
     · refine (le_opNorm _ _).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))

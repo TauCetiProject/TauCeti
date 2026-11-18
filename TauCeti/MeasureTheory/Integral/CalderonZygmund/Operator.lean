@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
-import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Calderón–Zygmund operators
@@ -222,28 +221,29 @@ theorem setLIntegral_enorm_sub_le (h : HasStandardKernel T K C δ) (y y' : V) :
 
 section OpKernel
 
-variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] [SMulCommClass 𝕜 ℂ F]
+variable {𝕜 : Type*} [RCLike 𝕜] [NormedAlgebra 𝕜 ℂ] [NormedSpace 𝕜 F] [IsScalarTower 𝕜 ℂ F]
 
 variable (F 𝕜) in
-/-- The kernel as a `𝕜`-linear operator-valued kernel `K x y • id`, set to `0` on the diagonal.
-For `𝕜 = ℝ` it is in the form taken by the real Calderón–Zygmund theorems, and for `𝕜 = ℂ` in the
-form taken by `ContinuousLinearMap.ae_adjoint_apply_eq_integral`. -/
+/-- The kernel as a `𝕜`-linear operator-valued kernel `v ↦ K x y • v`, set to `0` on the
+diagonal. For `𝕜 = ℝ` it is in the form taken by the real Calderón–Zygmund theorems, and for
+`𝕜 = ℂ` in the form taken by `ContinuousLinearMap.ae_adjoint_apply_eq_integral`. -/
 private def opKernel (K : V → V → ℂ) (x y : V) : F →L[𝕜] F :=
-  offDiag K x y • ContinuousLinearMap.id 𝕜 F
+  ContinuousLinearMap.lsmul 𝕜 ℂ (offDiag K x y)
 
 private theorem stronglyMeasurable_opKernel (h : HasStandardKernel T K C δ) :
     StronglyMeasurable (Function.uncurry (opKernel F 𝕜 K)) :=
-  h.stronglyMeasurable_offDiag.smul_const _
+  (ContinuousLinearMap.lsmul 𝕜 ℂ).continuous.comp_stronglyMeasurable
+    h.stronglyMeasurable_offDiag
 
 private theorem norm_opKernel_le (h : HasStandardKernel T K C δ) (x y : V) (hxy : x ≠ y) :
     ‖opKernel F 𝕜 K x y‖ ≤ C * dist x y ^ (-(Module.finrank ℝ V : ℝ)) :=
-  (ContinuousLinearMap.norm_smul_id_le _).trans (h.norm_offDiag_le hxy)
+  (ContinuousLinearMap.opNorm_lsmul_apply_le _).trans (h.norm_offDiag_le hxy)
 
 omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
 private theorem norm_opKernel_sub_le {x y y' : V} (hy : 2 * dist y y' < dist x y') :
     ‖opKernel F 𝕜 K x y - opKernel F 𝕜 K x y'‖ ≤ ‖K x y - K x y'‖ := by
-  rw [opKernel, opKernel, ← sub_smul, offDiag_sub_offDiag hy]
-  exact ContinuousLinearMap.norm_smul_id_le _
+  rw [opKernel, opKernel, ← map_sub, offDiag_sub_offDiag hy]
+  exact ContinuousLinearMap.opNorm_lsmul_apply_le _
 
 /-- Hörmander's condition (`TauCeti.HasStandardKernel.setLIntegral_enorm_sub_le`) for the
 operator-valued kernel. -/
@@ -299,8 +299,10 @@ theorem adjoint (h : HasStandardKernel T K C δ) :
     refine integral_congr_ae (.of_forall fun z ↦ ?_)
     by_cases hxz : x = z
     · simp [opKernel, offDiag, hxz]
-    · dsimp only
-      rw [opKernel, offDiag_of_ne hxz, offDiag_of_ne (Ne.symm hxz), map_smulₛₗ,
+    · have hid (c : ℂ) : ContinuousLinearMap.lsmul ℂ ℂ c = c • ContinuousLinearMap.id ℂ F := by
+        ext; simp
+      dsimp only
+      rw [opKernel, offDiag_of_ne hxz, offDiag_of_ne (Ne.symm hxz), hid, map_smulₛₗ,
         ContinuousLinearMap.adjoint_id, smul_apply, ContinuousLinearMap.id_apply]
 
 /-- **Calderón–Zygmund operators are of weak type `(1, 1)`, uniformly.** Given `C`, `δ` and `M`,

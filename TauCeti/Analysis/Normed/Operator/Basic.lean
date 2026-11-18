@@ -33,8 +33,7 @@ Consequently a strongly continuous family of such maps `T a` sends a continuous 
 the continuous function `a ↦ T a (f a)` (`AddMonoidHomClass.continuousOn_apply_of_bound`,
 `AddMonoidHomClass.continuous_apply_of_bound`). Operators whose norms tend to zero eventually map
 any ball about `0` into any neighbourhood of `0`
-(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`). A scalar multiple `a • id` of
-the identity has norm at most `‖a‖` (`ContinuousLinearMap.norm_smul_id_le`).
+(`ContinuousLinearMap.eventually_mapsTo_ball_of_tendsto_opNorm`).
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
@@ -222,12 +221,6 @@ theorem eventually_mapsTo_ball_of_tendsto_opNorm {ι : Type*} {l : Filter ι} {T
     ∀ᶠ i in l, Set.MapsTo (T i) (Metric.ball 0 R) V :=
   (tendsto_zero_iff_norm_tendsto_zero.mpr hT).eventually
     (eventually_nhds_zero_mapsTo (NormedSpace.isVonNBounded_ball 𝕜 X R) hV)
-
-/-- A scalar multiple `a • id` of the identity has operator norm at most `‖a‖`, for scalars `a`
-from any normed field acting on `X` compatibly with `𝕜`. -/
-theorem norm_smul_id_le {𝕜' : Type*} [NormedField 𝕜'] [NormedSpace 𝕜' X]
-    [SMulCommClass 𝕜 𝕜' X] (a : 𝕜') : ‖a • ContinuousLinearMap.id 𝕜 X‖ ≤ ‖a‖ :=
-  (norm_smul_le a _).trans (mul_le_of_le_one_right (norm_nonneg _) norm_id_le)
 
 /-- The a priori estimate attached to a left inverse modulo an error term: since
 `x = S (T x) - (S ∘ T - 1) x`, the norm of `x` is controlled by `‖T x‖` and the error
