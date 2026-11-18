@@ -28,7 +28,8 @@ well-founded order, where each `z j` is `x j` plus a combination of the earlier 
 the spans of initial segments. A ring homomorphism carries a span over `A` into a span over `B`
 as soon as it carries the generators into the target span and the scalars in `A` to scalars in `B`.
 Over a scalar extension, the image span of a semilinear map is spanned by its values on any
-spanning family of the domain.
+spanning family of the domain. A property closed under `u + a • v` extends from a submodule `S` and
+a vector `x` to `S ⊔ (R ∙ x)`.
 -/
 
 public section
@@ -58,6 +59,16 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
 end TauCeti.Submodule
 
 namespace Submodule
+
+/-- A property `P` closed under `u + a • v` holds on `S ⊔ (R ∙ x)` when it holds on `S` and at
+`x`. -/
+theorem forall_mem_sup_span_singleton {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {S : Submodule R M} {x : M} {P : M → Prop} (hS : ∀ s ∈ S, P s) (hx : P x)
+    (hlin : ∀ u v (a : R), P u → P v → P (u + a • v)) : ∀ s ∈ S ⊔ (R ∙ x), P s := by
+  intro _ hw
+  obtain ⟨s, hs, _, ht, rfl⟩ := Submodule.mem_sup.mp hw
+  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp ht
+  exact hlin s x a (hS s hs) hx
 
 /-- A vector outside the line `ℤ v` is not cancelled by adding any integer multiple of `v`. -/
 theorem ne_zero_add_zsmul_of_notMem_span {M : Type*} [AddCommGroup M] {v y : M}

@@ -36,8 +36,9 @@ is computed for vectors in any algebra over a commutative ring.
 * `TauCeti.one_sub_vecMulVec_mul_self`: the quadratic relation.
 * `TauCeti.det_one_sub_vecMulVec` and `TauCeti.inv_one_sub_vecMulVec`: the determinant and the
   inverse.
-* `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply` and its inverse counterpart compute the
-  induced linear automorphism on column vectors.
+* `TauCeti.one_sub_vecMulVec_mulVec`, `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply`, and its
+  inverse counterpart compute the matrix-vector product and induced linear automorphism on column
+  vectors.
 * `Matrix.one_sub_smul_vecMulVec_mulVec`: the matrix `1 - c v wᵀ`, such as a Householder
   reflection, sends `x` to `x - c v (w ⬝ᵥ x)`.
 -/
@@ -118,6 +119,11 @@ theorem coe_oneSubVecMulVecGL_inv (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (
 end Ring
 
 variable [CommRing R]
+
+/-- A rank-one perturbation of the identity subtracts the row pairing in the column direction. -/
+theorem one_sub_vecMulVec_mulVec (u v x : α → R) :
+    (1 - vecMulVec u v) *ᵥ x = x - (v ⬝ᵥ x) • u := by
+  rw [sub_mulVec, one_mulVec, vecMulVec_mulVec, op_smul_eq_smul]
 
 /-- The quadratic relation for a rank-one perturbation of the identity whose self-pairing is
 `t + 1`. -/

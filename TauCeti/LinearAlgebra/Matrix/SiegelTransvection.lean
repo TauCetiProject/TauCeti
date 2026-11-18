@@ -78,6 +78,8 @@ isotropic points.
   `Matrix.transpose_map_siegelTransvection_mul_mul_self`: `σ(S(u, w, c))ᵀ Q` and, when
   `B(u, u) = B(u, w) = 0`, the isometry defect and the condition `c + ε σ(c) + ε B(w, w) = 0` for
   `S(u, w, c)` to preserve `B`.
+* `Matrix.siegelTransvection_mulVec_eq_self_of_mulVec_eq`: over a field, if `S(u, w, c)` sends `x`
+  to `y` with `B(u, x) ≠ 0`, it fixes every vector orthogonal to `u`, `x`, and `y`.
 
 ## References
 
@@ -272,6 +274,31 @@ theorem transpose_map_siegelTransvection_mul_mul_self (hσ : Function.Involutive
     (hc : c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0) :
     ((Q.siegelTransvection σ ε u w c).map σ)ᵀ * Q * Q.siegelTransvection σ ε u w c = Q := by
   rw [transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, hc, zero_smul, add_zero]
+
+section Field
+
+variable {K n : Type*} [Field K] [Fintype n] [DecidableEq n] {Q : Matrix n n K} {σ : K →+* K}
+  {ε : K}
+
+/-- If a Siegel transformation `S(u, w, c)` sends `x` to `y` with `B(u, x) ≠ 0`, then it fixes
+every vector `z` orthogonal to `u`, `x`, and `y`. -/
+theorem siegelTransvection_mulVec_eq_self_of_mulVec_eq {u w x y z : n → K} {c : K}
+    (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) ≠ 0) (hgx : Q.siegelTransvection σ ε u w c *ᵥ x = y)
+    (huz : (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0) (hxz : (σ ∘ x) ⬝ᵥ (Q *ᵥ z) = 0)
+    (hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) = 0) :
+    Q.siegelTransvection σ ε u w c *ᵥ z = z := by
+  have hbw : ((σ ∘ u) ⬝ᵥ (Q *ᵥ x)) • w =
+      y - x + (ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ x)) - c * ((σ ∘ u) ⬝ᵥ (Q *ᵥ x))) • u := by
+    rw [← hgx, siegelTransvection_mulVec]
+    module
+  have hpair := congrArg (fun t ↦ (σ ∘ t) ⬝ᵥ (Q *ᵥ z)) hbw
+  simp only [TauCeti.map_comp_smul, map_comp_add, map_comp_sub, smul_dotProduct, add_dotProduct,
+    sub_dotProduct, smul_eq_mul, huz, hxz, hyz, mul_zero, sub_zero, add_zero] at hpair
+  have hwz : (σ ∘ w) ⬝ᵥ (Q *ᵥ z) = 0 :=
+    (mul_eq_zero.mp hpair).resolve_left ((map_ne_zero σ).mpr hux)
+  simp [siegelTransvection_mulVec, huz, hwz]
+
+end Field
 
 end Matrix
 
