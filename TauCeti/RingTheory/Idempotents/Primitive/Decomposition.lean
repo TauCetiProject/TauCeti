@@ -117,17 +117,6 @@ theorem op {M : Type*} [Mul M] {e : M} (he : IsIdempotentElem e) :
     IsIdempotentElem (MulOpposite.op e) :=
   congrArg MulOpposite.op he.eq
 
-variable {A : Type*} [Semiring A] {e : A}
-
-/-- **The left ideal `Ae` is the piece `e • A` cut out by `e` acting on the right**, that is, by
-`MulOpposite.op e` acting through the opposite ring; this is the bridge to the Peirce
-decomposition `TauCeti.isInternal_smul_top`. -/
-theorem span_singleton_eq_op_smul_top (he : IsIdempotentElem e) :
-    (Ideal.span {e} : Ideal A) = MulOpposite.op e • (⊤ : Submodule A A) := by
-  ext x
-  rw [TauCeti.mem_span_singleton_iff_mul_eq_self he, he.op.mem_smul_top_iff_smul_eq_self,
-    MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op]
-
 end IsIdempotentElem
 
 namespace OrthogonalIdempotents
@@ -160,7 +149,7 @@ the converse of Mathlib's `DirectSum.completeOrthogonalIdempotents_idempotent`, 
 decomposition `TauCeti.isInternal_smul_top` of `A` under right multiplication. -/
 theorem isInternal_span_singleton [DecidableEq ι] (he : CompleteOrthogonalIdempotents e) :
     IsInternal fun i ↦ (Ideal.span {e i} : Ideal A) := by
-  simpa only [(he.idem _).span_singleton_eq_op_smul_top, Function.comp_apply] using
+  simpa only [Ideal.span_singleton_eq_op_smul_top, Function.comp_apply] using
     TauCeti.isInternal_smul_top (S := A) (M := A) he.op
 
 end Semiring

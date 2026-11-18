@@ -32,6 +32,8 @@ circle `Circle = {z : ℂ | ‖z‖ = 1}` via the standard orthonormal basis iso
   isometry equivalence on underlying points.
 * `TauCeti.EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply`: backward evaluation of the
   homeomorphism on underlying points.
+* `TauCeti.EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp`: the point `e^{iθ}` of `Circle`
+  corresponds to `(cos θ, sin θ)`.
 * `TauCeti.EuclideanSpace.sphereIsometryEquivCircle_neg`: the isometry equivalence negates under
   the antipodal map.
 * `TauCeti.EuclideanSpace.sphereHomeomorphCircle_neg`: the homeomorphism negates under
@@ -39,6 +41,8 @@ circle `Circle = {z : ℂ | ‖z‖ = 1}` via the standard orthonormal basis iso
 * `TauCeti.sphereOneHomeomorphCircle`, `TauCeti.sphereOneIsoCircle`: Mathlib's circle
   `TopCat.sphere 1` is homeomorphic, and isomorphic in `TopCat`, to `Circle`, lifted to the same
   universe.
+* `TauCeti.sphereOneIsoCircleUnlifted`: in universe `0`, `TopCat.sphere 1` is isomorphic in
+  `TopCat` to `Circle` itself.
 * `TauCeti.sphereOnePiIsoCirclePi`: the torus `ι → TopCat.sphere 1` is isomorphic in `TopCat` to
   the torus `ι → Circle`, lifted to the same universe.
 -/
@@ -117,6 +121,15 @@ lemma coe_sphereHomeomorphCircle_symm_apply (z : Circle) :
       Complex.orthonormalBasisOneI.repr (z : ℂ) :=
   coe_sphereIsometryEquivCircle_symm_apply z
 
+/-- The point `e^{iθ}` of `Circle` corresponds to the point `(cos θ, sin θ)` of the unit circle
+in `ℝ²`. -/
+lemma coe_sphereHomeomorphCircle_symm_exp (θ : ℝ) :
+    (sphereHomeomorphCircle.symm (Circle.exp θ) : EuclideanSpace ℝ (Fin 2)) =
+      !₂[Real.cos θ, Real.sin θ] := by
+  rw [coe_sphereHomeomorphCircle_symm_apply]
+  ext j
+  fin_cases j <;> simp [Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+
 /-- The Euclidean-circle isometry negates under the antipodal map. -/
 @[simp]
 lemma sphereIsometryEquivCircle_neg
@@ -188,6 +201,21 @@ lemma sphereOnePiIsoCirclePi_hom_apply {ι : Type u} (x : ι → TopCat.sphere.{
 @[simp]
 lemma sphereOnePiIsoCirclePi_inv_apply {ι : Type u} (z : ι → ULift.{u} Circle) (i : ι) :
     (sphereOnePiIsoCirclePi ι).inv z i = sphereOneHomeomorphCircle.symm (z i) :=
+  (rfl)
+
+/-- Mathlib's circle `TopCat.sphere 1` in universe `0` is isomorphic in `TopCat` to Mathlib's
+complex unit circle `Circle` itself, without a universe lift. -/
+def sphereOneIsoCircleUnlifted : TopCat.sphere.{0} 1 ≅ TopCat.of Circle :=
+  sphereOneIsoCircle ≪≫ TopCat.isoOfHomeo Homeomorph.ulift
+
+@[simp]
+lemma sphereOneIsoCircleUnlifted_hom_apply (x : TopCat.sphere.{0} 1) :
+    sphereOneIsoCircleUnlifted.hom x = EuclideanSpace.sphereHomeomorphCircle x.down :=
+  (rfl)
+
+@[simp]
+lemma sphereOneIsoCircleUnlifted_inv_apply (z : Circle) :
+    sphereOneIsoCircleUnlifted.inv z = ⟨EuclideanSpace.sphereHomeomorphCircle.symm z⟩ :=
   (rfl)
 
 end

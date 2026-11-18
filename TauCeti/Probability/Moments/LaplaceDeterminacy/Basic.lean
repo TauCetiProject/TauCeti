@@ -31,9 +31,9 @@ Lusin–Souslin, and `MeasurableEmbedding.map_injective` recovers `μ = ν` from
 Only the transform's values at *natural* arguments are used, which is why the primary statement
 quantifies over `ℕ`; the real-argument form is a one-line corollary for callers that have it.
 
-This is the uniqueness half of the Bernstein milestone in
-`TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B. The existence half is a separate,
-independent development, and the two are combined in the Hausdorff--Bernstein--Widder theorem
+This is the uniqueness half of Bernstein's theorem on completely monotone functions. The existence
+half is a separate, independent development, and the two are combined in the
+Hausdorff--Bernstein--Widder theorem
 (`TauCeti.hausdorff_bernstein_widder_existsUnique` in
 `Analysis/CompletelyMonotone/Bernstein/HausdorffBernsteinWidder.lean`).
 Nothing here mentions complete monotonicity — the statement is about two arbitrary

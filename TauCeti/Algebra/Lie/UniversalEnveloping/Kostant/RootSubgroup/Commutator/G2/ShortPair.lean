@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic
-public import TauCeti.RingTheory.Nilpotent.RootString.G2.ShortPair
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.G2.ShortPair
 
 /-!
 # The G₂ short-pair relation for Kostant root subgroups
@@ -85,45 +85,11 @@ theorem kostantRootSubgroupPoints_mul_of_g2_short_pair
         kostantRootSubgroupPoints e h ρ M hM l hl q *
         kostantRootSubgroupPoints e h ρ M hM m hm r *
         kostantRootSubgroupPoints e h ρ M hM i hi f := by
-  let x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
-  let y := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))
-  let z := c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))
-  let w := d • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e l))
-  let s := a • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e m))
-  -- Preserve the factors two and three in the integral commutator identities.
-  have hxy : x * y = y * x + 2 • z := by
-    simpa only [x, y, z, one_zsmul] using
-      (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := 1) (q := 1) (r := c) (n := 2) (by simpa using hij))
-  have hxz : x * z = z * x + 3 • w := by
-    simpa only [x, z, w, one_zsmul] using
-      (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := 1) (q := c) (r := d) (n := 3) (by simpa using hik))
-  have hzy : z * y = y * z + 3 • s := by
-    simpa only [z, y, s, one_zsmul] using
-      (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := c) (q := 1) (r := a) (n := 3) (by simpa using hkj))
-  have hxw : Commute x w := (commute_of_lie_eq_zero ρ hil).smul_right d
-  have hxs : Commute x s := (commute_of_lie_eq_zero ρ him).smul_right a
-  have hys : Commute y s := (commute_of_lie_eq_zero ρ hjm).smul_right a
-  have hzw : Commute z w := ((commute_of_lie_eq_zero ρ hkl).smul_left c).smul_right d
-  have hzs : Commute z s := ((commute_of_lie_eq_zero ρ hkm).smul_left c).smul_right a
-  have hws : Commute w s := ((commute_of_lie_eq_zero ρ hlm).smul_left d).smul_right a
-  have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
-  have hMw := dividedPower_zsmul_apply_mem e h ρ M hM d l
-  have hMs := dividedPower_zsmul_apply_mem e h ρ M hM a m
-  -- Transfer integral scaling of the root vectors to scaling of the output parameters.
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
-  rw [hp, hq, hr,
-    ← baseChangeExp_zsmul c M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk,
-    ← baseChangeExp_zsmul d M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv) hMw hl,
-    ← baseChangeExp_zsmul a M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM m n hv) hMs hm]
-  exact baseChangeExp_mul_baseChangeExp_of_g2_short_pair M hxy hxz hzy hxw hxs hys hzw hzs hws
-    hi hj (hk.smul c) _ _ hMz hMw hMs _ _
+  rw [hp, hq, hr]
+  exact baseChangeExp_mul_baseChangeExp_of_g2_short_pair_lie e ρ M
+    hij hik hkj hil him hjm hkl hkm hlm hi hj hk hl hm _ _ _ _ _ _ _
 
 /-- The G₂ short-pair product relation on an admissible Kostant lattice, with the three output
 points written explicitly at parameters `2ctu`, `3dt²u`, and `3atu²`. -/

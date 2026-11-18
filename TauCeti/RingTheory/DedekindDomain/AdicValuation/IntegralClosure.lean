@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Norm.Defs
 
 import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # The completed integer rings are an integral closure
@@ -77,18 +78,21 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 variable (K L)
 
+omit [Finite (R ⧸ v.asIdeal)] in
 /-- **A completion of an extension is a finite extension of completions.** For the canonical
 algebra structure of `adicCompletionExtension`, `L_w` is a finite `K_v`-module. Mathlib's
 instance for an adic completion assumes that `K` and `L` are number fields and holds for an
 arbitrary compatible algebra structure; this one is about the canonical structure over an
 arbitrary Dedekind base. -/
 theorem adicCompletion_moduleFinite :
-    Module.Finite (v.adicCompletion K) (w.adicCompletion L) :=
-  TauCeti.finite_of_valuativeExtension _ _
+    Module.Finite (v.adicCompletion K) (w.adicCompletion L) := by
+  have := Ideal.finite_quotient_of_liesOver v.asIdeal w.asIdeal
+  exact TauCeti.finite_of_valuativeExtension _ _
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.adicCompletion_moduleFinite
 
+omit [Finite (R ⧸ v.asIdeal)] in
 /-- **`𝒪_w` is the integral closure of `𝒪_v` in `L_w`.** An element of `L_w` is integral over
 `𝒪_v` exactly when its valuation is at most `1`, because the valuation of `L_w` is the unique
 extension of the valuation of `K_v`. -/
@@ -97,6 +101,7 @@ theorem adicCompletionIntegers_isIntegralClosure :
       (w.adicCompletion L) where
   algebraMap_injective := Subtype.val_injective
   isIntegral_iff := by
+    have := Ideal.finite_quotient_of_liesOver v.asIdeal w.asIdeal
     intro x
     rw [Valuation.Integers.isIntegral_iff_valuation_le_one
         (v.valuation_integers_adicCompletionIntegers (K := K)) x,
@@ -106,6 +111,7 @@ theorem adicCompletionIntegers_isIntegralClosure :
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure
 
+omit [Finite (R ⧸ v.asIdeal)] in
 variable {K L} in
 /-- **The local norm preserves integrality.** The norm of `L_w` over `K_v` carries the completed
 integer ring `𝒪_w` into `𝒪_v`: an element of `𝒪_w` is integral over `𝒪_v`, hence so is its norm,
@@ -113,6 +119,7 @@ and the integral elements of `K_v` are those of valuation at most `1`. -/
 theorem norm_mem_adicCompletionIntegers {x : w.adicCompletion L}
     (hx : x ∈ w.adicCompletionIntegers L) :
     Algebra.norm (v.adicCompletion K) x ∈ v.adicCompletionIntegers K := by
+  have := Ideal.finite_quotient_of_liesOver v.asIdeal w.asIdeal
   have hint : IsIntegral (v.adicCompletionIntegers K) x :=
     (IsIntegralClosure.isIntegral_iff (A := w.adicCompletionIntegers L)).2 ⟨⟨x, hx⟩, rfl⟩
   exact (v.mem_adicCompletionIntegers_iff_valuation_le_one (K := K) _).2
@@ -144,23 +151,27 @@ private theorem integerEquivAdicCompletionIntegers_comp :
         (algebraMap 𝒪[v.adicCompletion K] 𝒪[w.adicCompletion L]) :=
   RingHom.ext fun x ↦ (integerEquivAdicCompletionIntegers_algebraMap K L v w x).symm
 
+omit [Finite (R ⧸ v.asIdeal)] in
 /-- **`𝒪_w` is a finite `𝒪_v`-module.** The identifications `𝒪[K_v] = 𝒪_v` and `𝒪[L_w] = 𝒪_w`
 carry `TauCeti.integerRingModuleFinite` over to the completed integer rings. -/
 theorem adicCompletionIntegers_moduleFinite :
-    Module.Finite (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) :=
-  Module.Finite.of_equiv_equiv (v.integerEquivAdicCompletionIntegers (K := K))
+    Module.Finite (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) := by
+  have := Ideal.finite_quotient_of_liesOver v.asIdeal w.asIdeal
+  exact Module.Finite.of_equiv_equiv (v.integerEquivAdicCompletionIntegers (K := K))
     (w.integerEquivAdicCompletionIntegers (K := L))
     (integerEquivAdicCompletionIntegers_comp K L v w)
 
 scoped[AdicCompletionExtension] attribute [instance]
   IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_moduleFinite
 
+omit [Finite (R ⧸ v.asIdeal)] in
 /-- **`𝒪_w` is a lattice of full rank in `L_w`.** Its rank as an `𝒪_v`-module is the degree
 `[L_w : K_v]` of the local extension. -/
 @[simp]
 theorem finrank_adicCompletionIntegers :
     Module.finrank (v.adicCompletionIntegers K) (w.adicCompletionIntegers L) =
       Module.finrank (v.adicCompletion K) (w.adicCompletion L) := by
+  have := Ideal.finite_quotient_of_liesOver v.asIdeal w.asIdeal
   rw [← TauCeti.finrank_integerRing (v.adicCompletion K) (w.adicCompletion L)]
   exact (Algebra.finrank_eq_of_equiv_equiv (v.integerEquivAdicCompletionIntegers (K := K))
     (w.integerEquivAdicCompletionIntegers (K := L))

@@ -106,7 +106,6 @@ theorem hermiteIntegral_eq_exp_mul_integral (f : ℂ[X]) (z : ℂ) :
 theorem norm_hermiteIntegral_le {f : ℂ[X]} {z : ℂ} {C : ℝ}
     (hC : ∀ u : ℂ, ‖u‖ ≤ ‖z‖ → ‖f.eval u‖ ≤ C) :
     ‖hermiteIntegral f z‖ ≤ ‖z‖ * Real.exp ‖z‖ * C := by
-  have hC₀ : 0 ≤ C := (norm_nonneg _).trans (hC 0 (by simp))
   have hpt : ∀ t ∈ Set.uIoc (0 : ℝ) 1,
       ‖cexp ((1 - t) • z) * f.eval (t • z)‖ ≤ Real.exp ‖z‖ * C := by
     intro t ht

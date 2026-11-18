@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Comparison
 public import TauCeti.NumberTheory.Height.Arakelov.Extension
+import TauCeti.FieldTheory.IntermediateField.Map
 import TauCeti.NumberTheory.NumberField.AdjoinPair
 
 /-!
@@ -93,12 +94,15 @@ theorem _root_.RingHom.absoluteHeight2_comp (f : F →+* F') (x : ι → F) :
     have : NumberField E := {}
     have : FiniteDimensional ℚ E' := finiteDimensional_adjoin (by rintro _ ⟨i, rfl⟩; exact hfx i)
     have : NumberField E' := {}
-    let e : E ≃ₐ[ℚ] E' := adjoinRangeMapEquiv x f
+    -- The ascription uses that `f.toRatAlgHom` is `f` on elements by the `rfl` lemma
+    -- `RingHom.toRatAlgHom_apply`.
+    let e : E ≃ₐ[ℚ] E' := adjoinRangeMapEquiv x f.toRatAlgHom
     rw [absoluteHeight2, dite_eq_left hfx, absoluteHeight2, dite_eq_left hx,
       ← e.toRingEquiv.height2_comp]
     -- The restricted isomorphism sends each coordinate to its image under `f`.
     refine congrArg height2 (funext fun i ↦ Subtype.ext ?_)
-    exact (coe_adjoinRangeMapEquiv_apply x f ⟨x i, subset_adjoin ℚ _ (Set.mem_range_self i)⟩).symm
+    exact (coe_adjoinRangeMapEquiv_apply x f.toRatAlgHom
+      ⟨x i, subset_adjoin ℚ _ (Set.mem_range_self i)⟩).symm
   · obtain ⟨i, hi⟩ := not_forall.mp hx
     have hi' : ¬IsAlgebraic ℚ (x i) := fun h ↦ hi h.isIntegral
     rw [absoluteHeight2_of_not_isAlgebraic hi',
@@ -129,7 +133,7 @@ theorem absoluteProjectiveTupleHeight_le_absoluteHeight2 {x : ι → F} (hx : x 
   · obtain ⟨E, _, y, rfl⟩ := exists_numberField_comp halg
     have hy : y ≠ 0 := by
       rintro rfl
-      exact hx (by ext i; simp)
+      exact hx (by ext _; simp)
     rw [absoluteProjectiveTupleHeight_comp, RingHom.absoluteHeight2_comp, absoluteHeight2_eq]
     exact absoluteProjectiveTupleHeight_le_height2 hy
   · obtain ⟨i, hi⟩ := not_forall.mp halg

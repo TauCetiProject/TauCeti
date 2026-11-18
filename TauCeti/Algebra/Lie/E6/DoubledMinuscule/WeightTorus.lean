@@ -67,7 +67,7 @@ ring, so the torus remains a closed subgroup. -/
 theorem weightTorusToBaseChangeCoordinateMap_surjective (A : Type u) [CommRing A] :
     Function.Surjective (weightTorusToBaseChangeCoordinateMap A).hom := by
   rw [← baseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap A]
-  exact (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+  exact (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
       (G := SplitTorus.characterGroup (Fin 6))).surjective.comp
     ((CommHopfAlgCat.baseChangeMap_surjective (K := A) weightTorusIntegralCoordinateMap
       weightTorusIntegralCoordinateMap_surjective).comp
@@ -260,7 +260,7 @@ theorem map_baseChangeHopfIdeal_weightTorusIntegralDefiningIdeal :
   refine CommHopfAlgCat.map_baseChangeHopfIdeal_kerOfSurjective
     (baseChangeCoordinateIso R).symm
     (_root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ R
+      (MonoidAlgebra.scalarTensorBialgEquiv ℤ R
         (G := SplitTorus.characterGroup (Fin 6))))
     weightTorusIntegralCoordinateMap_surjective
     (weightTorusToBaseChangeCoordinateMap_surjective R) ?_

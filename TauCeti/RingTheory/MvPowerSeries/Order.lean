@@ -7,11 +7,14 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPowerSeries.Order
+public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 -- Proof-only: coefficients of a difference of substitutions.
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 import Mathlib.Tactic.LinearCombination
+
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -26,9 +29,14 @@ of `f` and on the linear parts of the `a i`, into which it is substituted
 (`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
 the polynomial `f_p(X + Y, Z)`. In finitely many variables the degree-`p` component is a
-polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degree component of
-`f(a)` is that polynomial evaluated at the linear parts of the `a i`
-(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
+polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), total-degree truncations decompose as
+finite sums of these polynomial components
+(`MvPowerSeries.truncTotal_eq_sum_homogeneousComponentPolynomial`) and absorb larger truncations
+(`MvPowerSeries.truncTotal_truncTotal_coe`), and the lowest-degree component of `f(a)` is that
+polynomial evaluated at the linear parts of the `a i`
+(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). Homogeneous components and total-degree
+truncations also commute with variable renaming (`MvPowerSeries.rename_homogeneousComponent`,
+`MvPowerSeries.rename_homogeneousComponentPolynomial`, `MvPowerSeries.rename_truncTotal`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
 those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
@@ -52,7 +60,10 @@ A common lower bound on the orders of two series bounds the orders of their sum 
 `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
 `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
-(`MvPowerSeries.homogeneousComponent_zero`).
+(`MvPowerSeries.homogeneousComponent_zero`), over a nontrivial semiring every coordinate variable
+has order one (`MvPowerSeries.order_X`), and over a nontrivial semiring without zero divisors
+`weightedOrder` and `order` multiply by `n` on `n`-th powers (`MvPowerSeries.weightedOrder_pow`,
+`MvPowerSeries.order_pow`).
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
@@ -67,6 +78,12 @@ namespace MvPowerSeries
 section AddSub
 
 variable {σ R : Type*} {n : ℕ∞}
+
+/-- A power series has order at least `n` exactly when all its coefficients in total degree
+less than `n` vanish. -/
+theorem le_order_iff [Semiring R] {f : MvPowerSeries σ R} :
+    n ≤ f.order ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → coeff d f = 0 :=
+  ⟨fun h _ hd ↦ coeff_of_lt_order (lt_of_lt_of_le hd h), le_order⟩
 
 /-- A lower bound on the orders of two series bounds the order of their sum. -/
 theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
@@ -99,6 +116,24 @@ end AddSub
 section Powers
 
 variable {σ R : Type*} [Semiring R] {f : MvPowerSeries σ R}
+
+/-- Over a nontrivial semiring, every coordinate indeterminate `X i` has order `1`. -/
+@[simp]
+theorem order_X [Nontrivial R] (i : σ) : (X i : MvPowerSeries σ R).order = 1 := by
+  rw [X_def, order_monomial_of_ne_zero one_ne_zero, Finsupp.degree_single, Nat.cast_one]
+
+/-- Over a nontrivial semiring without zero divisors, `weightedOrder` multiplies by `n` on `n`-th
+powers. -/
+theorem weightedOrder_pow [NoZeroDivisors R] [Nontrivial R] (w : σ → ℕ) (f : MvPowerSeries σ R)
+    (n : ℕ) : (f ^ n).weightedOrder w = n • f.weightedOrder w := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, weightedOrder_mul, ih, add_nsmul, one_nsmul]
+
+/-- Over a nontrivial semiring without zero divisors, `order` multiplies by `n` on `n`-th powers. -/
+theorem order_pow [NoZeroDivisors R] [Nontrivial R] (f : MvPowerSeries σ R) (n : ℕ) :
+    (f ^ n).order = n • f.order :=
+  weightedOrder_pow _ f n
 
 /-- A variable is its own degree-one homogeneous component. -/
 @[simp]
@@ -268,6 +303,23 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
 
 end Subst
 
+/-- Variable renaming along any finite-fiber map commutes with taking a homogeneous component. -/
+theorem rename_homogeneousComponent {σ τ R : Type*} [CommSemiring R] (e : σ → τ)
+    [Filter.TendstoCofinite e] (m : ℕ) (f : MvPowerSeries σ R) :
+    rename e (homogeneousComponent m f) = homogeneousComponent m (rename e f) := by
+  classical
+  ext d
+  rw [coeff_rename, coeff_homogeneousComponent, coeff_rename]
+  split_ifs with hd
+  · refine Finset.sum_congr rfl fun u hu ↦ ?_
+    have hmap : Finsupp.mapDomain e u = d := by simpa using hu
+    have hdeg : u.degree = m := by rw [← Finsupp.degree_mapDomain e u, hmap, hd]
+    rw [coeff_homogeneousComponent, ite_eq_left hdeg]
+  · refine Finset.sum_eq_zero fun u hu ↦ ?_
+    have hmap : Finsupp.mapDomain e u = d := by simpa using hu
+    have hdeg : u.degree ≠ m := fun h ↦ hd (by rw [← hmap, Finsupp.degree_mapDomain, h])
+    rw [coeff_homogeneousComponent, ite_eq_right hdeg]
+
 section Polynomial
 
 variable {σ τ R : Type*} [Finite σ]
@@ -293,6 +345,43 @@ theorem isHomogeneous_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
     (f : MvPowerSeries σ R) :
     (homogeneousComponentPolynomial n f).IsHomogeneous n :=
   MvPolynomial.homogeneousComponent_isHomogeneous _ _
+
+/-- The total-degree truncation `truncTotal N f` decomposes as the sum of the polynomial
+homogeneous components of `f` of degree `< N`. -/
+theorem truncTotal_eq_sum_homogeneousComponentPolynomial [CommSemiring R] (N : ℕ)
+    (f : MvPowerSeries σ R) :
+    truncTotal N f = ∑ m ∈ Finset.range N, homogeneousComponentPolynomial m f := by
+  apply MvPolynomial.coe_inj.mp
+  rw [truncTotal_eq_sum, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply, map_sum]
+  exact Finset.sum_congr rfl fun m _ ↦ by
+    rw [MvPolynomial.coeToMvPowerSeries.ringHom_apply, coe_homogeneousComponentPolynomial]
+
+/-- Truncating an `n`-truncation at total degree `m ≤ n` recovers the `m`-truncation. -/
+theorem truncTotal_truncTotal_coe [CommSemiring R] {m n : ℕ} (h : m ≤ n)
+    (f : MvPowerSeries σ R) :
+    truncTotal m (truncTotal n f : MvPowerSeries σ R) = truncTotal m f := by
+  ext d
+  by_cases hd : d.degree < m
+  · rw [coeff_truncTotal _ hd, coeff_truncTotal _ hd, MvPolynomial.coeff_coe,
+      coeff_truncTotal _ (hd.trans_le h)]
+  · rw [coeff_truncTotal_eq_zero _ (not_lt.mp hd), coeff_truncTotal_eq_zero _ (not_lt.mp hd)]
+
+/-- Variable renaming commutes with `homogeneousComponentPolynomial`. -/
+theorem rename_homogeneousComponentPolynomial [Finite τ] [CommSemiring R] (e : σ → τ) (m : ℕ)
+    (f : MvPowerSeries σ R) :
+    MvPolynomial.rename e (homogeneousComponentPolynomial m f) =
+      homogeneousComponentPolynomial m (rename e f) := by
+  apply MvPolynomial.coe_inj.mp
+  rw [← rename_coe, coe_homogeneousComponentPolynomial, coe_homogeneousComponentPolynomial,
+    rename_homogeneousComponent]
+
+/-- Variable renaming commutes with `truncTotal`. -/
+theorem rename_truncTotal [Finite τ] [CommSemiring R] (e : σ → τ) (N : ℕ)
+    (f : MvPowerSeries σ R) :
+    MvPolynomial.rename e (truncTotal N f) = truncTotal N (rename e f) := by
+  apply MvPolynomial.coe_inj.mp
+  rw [← rename_coe, truncTotal_eq_sum, truncTotal_eq_sum, map_sum]
+  exact Finset.sum_congr rfl fun m _ ↦ rename_homogeneousComponent e m f
 
 /-- If `f` vanishes below degree `n` and the series `a i` have no constant term, the degree-`n`
 part of `f(a)` is the polynomial degree-`n` part of `f` evaluated at polynomials `l i` equal to the
@@ -357,7 +446,7 @@ theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries 
   classical
   induction d using Finsupp.induction with
   | zero => simp
-  | single_add i k f hi hk ih =>
+  | single_add i k f _ _ ih =>
     have hprod (c : ι → MvPowerSeries τ R) : ((Finsupp.single i k + f).prod fun i k ↦ c i ^ k) =
         c i ^ k * f.prod fun i k ↦ c i ^ k := by
       rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
@@ -380,7 +469,7 @@ theorem le_order_subst_sub_subst {H : MvPowerSeries σ R} {k : ℕ}
   refine nat_le_order fun e he ↦ ?_
   rw [coeff_subst_sub_subst ha hb]
   refine finsum_eq_zero_of_forall_eq_zero fun d ↦ ?_
-  rcases eq_or_ne d 0 with rfl | hd
+  rcases eq_or_ne d 0 with rfl | _
   · simp
   by_cases hdk : d.degree < k
   · rw [coeff_of_lt_order (hH.trans_lt' (by exact_mod_cast hdk)), zero_smul]

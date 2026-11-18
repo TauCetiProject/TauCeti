@@ -370,11 +370,11 @@ theorem LazardDelineation.isRoot_zero_of_lazardValuation_coeff_zero_eq
 
 end Adjoin
 
-/-- **Multiplying by the distinguished coordinate.** Let `q` be a nonzero polynomial in the
+/-- **Multiplying by the distinguished coordinate.** Let `q` be a polynomial in the
 distinguished variable whose formal constant coefficient has constant Lazard valuation on a
 preconnected base. A Lazard delineation of `q` over the base gives one of `X * q`: the zero
-section is adjoined unless `0` is already a root function. -/
-theorem nonempty_lazardDelineation_X_mul {q : Polynomial (MvPolynomial (Fin n) ℝ)} (hq : q ≠ 0)
+section is adjoined unless `0` is already a root function. (For `q = 0` the two families agree.) -/
+theorem nonempty_lazardDelineation_X_mul {q : Polynomial (MvPolynomial (Fin n) ℝ)}
     (D : LazardDelineation
       (fun _ : Unit ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm q)) S)
     (hS : IsPreconnected S)
@@ -382,6 +382,9 @@ theorem nonempty_lazardDelineation_X_mul {q : Polynomial (MvPolynomial (Fin n) �
     Nonempty (LazardDelineation (fun _ : Unit ↦
       rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm (Polynomial.X * q))) S) := by
   classical
+  rcases eq_or_ne q 0 with rfl | hq
+  · rw [mul_zero]
+    exact ⟨D⟩
   -- Adjoin the coordinate to the delineation of `q`, then pass to the product.
   let G : Option Unit → MvPolynomial (Fin (n + 1)) ℝ := fun k ↦
     k.elim (X (Fin.last n)) fun _ ↦

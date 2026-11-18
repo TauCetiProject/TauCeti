@@ -49,11 +49,15 @@ namespace TauCeti
 
 namespace Probability
 
-/-- The square of a Student t law with `ν > 0` degrees of freedom is the Fisher--Snedecor law
-with parameters `1` and `ν`. -/
+/-- The square of a Student t law with `ν` degrees of freedom is the Fisher--Snedecor law
+with parameters `1` and `ν` (both sides vanish when `ν ≤ 0`). -/
 @[simp]
-theorem studentTMeasure_map_sq {ν : ℝ} (hν : 0 < ν) :
+theorem studentTMeasure_map_sq (ν : ℝ) :
     (studentTMeasure ν).map (fun x : ℝ ↦ x ^ 2) = fisherSnedecorMeasure 1 ν := by
+  by_cases hν : 0 < ν
+  swap
+  · rw [studentTMeasure_of_nonpos (not_lt.1 hν), Measure.map_zero,
+      fisherSnedecorMeasure_of_not_pos fun h ↦ hν h.2]
   let _ : IsProbabilityMeasure (studentTMeasure ν) :=
     isProbabilityMeasure_studentTMeasure hν
   let _ : IsProbabilityMeasure (fisherSnedecorMeasure 1 ν) :=
@@ -184,7 +188,7 @@ theorem map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
       (fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν))).eq_of_map_sq_eq_of_map_neg_eq_self
     (studentTMeasure ν) (map_neg_map_div_sqrt_chiSquaredMeasure hν)
     (studentTMeasure_map_neg ν)
-    ((map_sq_map_div_sqrt_chiSquaredMeasure hν).trans (studentTMeasure_map_sq hν).symm)
+    ((map_sq_map_div_sqrt_chiSquaredMeasure hν).trans (studentTMeasure_map_sq ν).symm)
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {Z V : Ω → ℝ}
 

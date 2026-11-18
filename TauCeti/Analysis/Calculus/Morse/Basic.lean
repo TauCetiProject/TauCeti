@@ -120,8 +120,6 @@ twice differentiable point is `ContDiffAt.isSymmSndFDerivAt`.
   M. Schwarz, *Morse Homology*, Birkhäuser, 1993, Chapter 1, for the nondegeneracy condition in
   Banach and Hilbert generality used here, namely invertibility of the second derivative as a map
   into the dual space.
-* [Heegaard Floer homology roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HeegaardFloer/README.md),
-  Lane M, "Morse homology".
 -/
 
 public section
@@ -166,6 +164,16 @@ theorem hasNondegenerateCriticalPointsOn_iff {s : Set E} :
       ∀ ⦃x⦄, x ∈ s → fderiv ℝ f x = 0 → IsNondegenerateCriticalPoint f x :=
   Iff.rfl
 
+/-- A function with nondegenerate critical points on `s` is differentiable at every point of `s`:
+where it is not differentiable `fderiv` is `0` by convention, so the point would be a critical
+point, hence nondegenerate, hence a point of differentiability. -/
+theorem HasNondegenerateCriticalPointsOn.differentiableAt {s : Set E}
+    (hM : HasNondegenerateCriticalPointsOn f s) {x : E} (hx : x ∈ s) :
+    DifferentiableAt ℝ f x := by
+  by_contra hd
+  exact hd ((hasNondegenerateCriticalPointsOn_iff.1 hM hx
+    (fderiv_zero_of_not_differentiableAt hd)).contDiffAt.differentiableAt two_ne_zero)
+
 /-- Having nondegenerate critical points on `t` is inherited by every subset of `t`. -/
 theorem HasNondegenerateCriticalPointsOn.mono {s t : Set E}
     (hM : HasNondegenerateCriticalPointsOn f t) (hst : s ⊆ t) :
@@ -187,6 +195,17 @@ theorem isNondegenerateCriticalPoint_iff_separatingLeft [FiniteDimensional ℝ E
   refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, h.separatingLeft⟩,
     fun ⟨hd, h0, hnd⟩ ↦ ⟨hd, h0, ?_⟩⟩
   exact ContinuousLinearMap.isInvertible_iff_separatingLeft.2 hnd
+
+/-- **On a zero space every point is a nondegenerate critical point.** A function on a
+zero-dimensional space is constant, its differential vanishes and its second derivative is the
+unique map between two zero spaces, which is invertible. -/
+theorem isNondegenerateCriticalPoint_of_subsingleton [Subsingleton E] (f : E → ℝ) (x : E) :
+    IsNondegenerateCriticalPoint f x :=
+  ⟨(contDiffAt_const (c := f x)).congr_of_eventuallyEq
+      (Eventually.of_forall fun y ↦ congrArg f (Subsingleton.elim y x)),
+    Subsingleton.elim _ _,
+    by rw [Subsingleton.elim (fderiv ℝ (fderiv ℝ f) x) 0]
+       exact ContinuousLinearMap.isInvertible_zero_iff.2 ⟨inferInstance, inferInstance⟩⟩
 
 /-- Nondegeneracy at a point depends only on the germ of the function there. -/
 theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
@@ -248,8 +267,7 @@ theorem isNondegenerateCriticalPoint_comp_iff {φ : F → E} {b : F} (hf : ContD
     (hφ : ContDiffAt ℝ 2 φ b) (hinv : (fderiv ℝ φ b).IsInvertible) :
     IsNondegenerateCriticalPoint (f ∘ φ) b ↔ IsNondegenerateCriticalPoint f (φ b) := by
   have hcrit : fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 :=
-    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num))
-      (hφ.differentiableAt (by norm_num)) hinv
+    fderiv_comp_eq_zero_iff_of_isInvertible (hf.differentiableAt (by norm_num)) hinv
   obtain ⟨e, he⟩ := hinv
   -- The Hessian pulls back as `ψ ↦ ψ ∘ e` composed with the Hessian composed with `e`, and each of
   -- the three factors is invertible.
@@ -330,8 +348,7 @@ theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
   -- Criticality passes to `k` at `Φ u`, since the differential of `Φ` there is invertible.
   have hkcrit : fderiv ℝ k (Φ u) = 0 := by
     by_cases hd : DifferentiableAt ℝ k (Φ u)
-    · rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hd.add_const r)
-        (hΦu.differentiableAt (by norm_num)) hinv] at hcrit
+    · rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hd.add_const r) hinv] at hcrit
       simpa [fderiv_add_const] using hcrit
     · exact fderiv_zero_of_not_differentiableAt hd
   have hnd : IsNondegenerateCriticalPoint (fun w ↦ k w + r) (Φ u) :=

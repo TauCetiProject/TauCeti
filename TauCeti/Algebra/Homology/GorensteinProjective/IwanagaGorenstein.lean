@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.AuslanderReiten.Equivalence
 public import TauCeti.Algebra.Module.AuslanderReiten.RightTorsionfree
 public import TauCeti.CategoryTheory.Exact.Stable.Ext
 public import TauCeti.RingTheory.IwanagaGorenstein
+public import TauCeti.Algebra.Homology.TotallyAcyclic.FGModuleCat
 
 /-!
 # Gorenstein-projective modules over Iwanaga–Gorenstein rings
@@ -38,6 +39,9 @@ property; the content is the converse, which goes through Auslander–Bridger th
 
 * `TauCeti.isGorensteinProjective_iff_ext_eq_zero`: over an Iwanaga–Gorenstein ring, the
   Gorenstein-projective modules are the finitely generated modules `M` with `Ext^{>0}(M, A) = 0`.
+* `FGModuleCat.isGorensteinProjective_of_isSyzygy`: over an Iwanaga–Gorenstein ring with
+  `injdim A ≤ d`, a `d`-th syzygy of finitely generated modules is a Gorenstein-projective object
+  of `FGModuleCat A`.
 
 ## References
 
@@ -105,5 +109,24 @@ theorem isGorensteinProjective_iff_ext_eq_zero [IsIwanagaGorenstein A] (M : Modu
       Module.Finite A M ∧ ∀ (n : ℕ) (e : Ext.{u} M (ModuleCat.of A A) (n + 1)), e = 0 :=
   ⟨fun hM ↦ ⟨hM.finite, fun _ e ↦ hM.ext_eq_zero _ e⟩, fun ⟨_, hM⟩ ↦
     isGorensteinProjective_of_ext_eq_zero M hM⟩
+
+/-- **Syzygies over an Iwanaga–Gorenstein ring are Gorenstein-projective**: if `A` has injective
+dimension at most `d` as a left module, every `d`-th syzygy of finitely generated modules is a
+Gorenstein-projective object of `FGModuleCat A`. -/
+theorem _root_.FGModuleCat.isGorensteinProjective_of_isSyzygy [IsIwanagaGorenstein A] {d : ℕ}
+    [HasInjectiveDimensionLE (ModuleCat.of A A) d] {M : FGModuleCat.{u} A}
+    (hM : (isProjective (FGModuleCat.{u} A)).IsSyzygy d M) :
+    isGorensteinProjective (FGModuleCat.{u} A) M := by
+  -- Among all modules `M` is still a `d`-th syzygy, so it has no higher extensions by `A`.
+  let F := forget₂ (FGModuleCat.{u} A) (ModuleCat.{u} A)
+  have hM' : (isProjective (ModuleCat.{u} A)).IsSyzygy d (F.obj M) :=
+    hM.map F (fun S hS ↦ hS.map_of_exact F) fun Q (_ : Projective Q) ↦
+      -- Instance search does not see the carrier of `Q` through `forget₂`.
+      @ModuleCat.projective_of_categoryTheory_projective A _ (F.obj Q)
+        (FGModuleCat.moduleProjective_of_projective Q)
+  have : Module.Finite A (F.obj M) := inferInstanceAs (Module.Finite A M)
+  exact (FGModuleCat.isGorensteinProjective_iff M).2
+    ((isGorensteinProjective_iff_ext_eq_zero (F.obj M)).2 ⟨inferInstance, fun n e ↦
+      hM'.ext_eq_zero_of_hasInjectiveDimensionLE (fun _ h ↦ h) (ModuleCat.of A A) n e⟩)
 
 end TauCeti

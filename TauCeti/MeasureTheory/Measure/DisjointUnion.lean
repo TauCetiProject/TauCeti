@@ -21,6 +21,9 @@ mass of the union not yet covered by the first `n` sets tends to zero.
 * `MeasureTheory.sum_measure_le_measure_iUnion`: `∑ i ∈ s, μ (f i) ≤ μ (⋃ i, f i)`.
 * `MeasureTheory.tendsto_measure_iUnion_sub_sum_range`:
   `μ (⋃ k, f k) - ∑ k ∈ range n, μ (f k) → 0` as `n → ∞`, if `μ (⋃ k, f k) ≠ ∞`.
+* `MeasureTheory.measure_le_mul_measure_biUnion`: if almost all of `A` is covered by a countable
+  a.e. disjoint family of sets, each meeting `A` in at most a `δ` fraction of its measure, then
+  `μ A ≤ δ μ (⋃ i ∈ s, f i)`.
 -/
 
 public section
@@ -50,5 +53,18 @@ theorem tendsto_measure_iUnion_sub_sum_range {f : ℕ → Set α}
   rw [measure_iUnion₀ hdisj hf] at hfin ⊢
   simpa using ENNReal.Tendsto.sub (tendsto_const_nhds (x := ∑' k, μ (f k)))
     (ENNReal.tendsto_nat_tsum fun k => μ (f k)) (Or.inl hfin)
+
+/-- If almost all of `A` is covered by a countable pairwise a.e. disjoint family of null-measurable
+sets `f i`, `i ∈ s`, each meeting `A` in at most a `δ` fraction of its measure, then the measure of
+`A` is at most `δ` times the measure of their union. -/
+theorem measure_le_mul_measure_biUnion {s : Set ι} {A : Set α} {δ : ℝ≥0∞} (hs : s.Countable)
+    (hf : ∀ i ∈ s, NullMeasurableSet (f i) μ) (hdisj : s.Pairwise (AEDisjoint μ on f))
+    (hA : μ (A \ ⋃ i ∈ s, f i) = 0) (hδ : ∀ i ∈ s, μ (A ∩ f i) ≤ δ * μ (f i)) :
+    μ A ≤ δ * μ (⋃ i ∈ s, f i) :=
+  calc μ A ≤ μ (A ∩ ⋃ i ∈ s, f i) + 0 := hA ▸ measure_le_inter_add_sdiff _ _ _
+    _ = μ (⋃ i ∈ s, A ∩ f i) := by rw [add_zero, inter_iUnion₂]
+    _ ≤ ∑' i : s, μ (A ∩ f i) := measure_biUnion_le _ hs _
+    _ ≤ ∑' i : s, δ * μ (f i) := tsum_le_tsum fun i => hδ i i.2
+    _ = δ * μ (⋃ i ∈ s, f i) := by rw [ENNReal.tsum_mul_left, measure_biUnion₀ hs hdisj hf]
 
 end MeasureTheory

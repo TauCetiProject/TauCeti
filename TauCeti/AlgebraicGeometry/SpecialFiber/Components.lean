@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
@@ -70,6 +71,10 @@ notation on the structure morphism.
   irreducible components of the special fibre are the codimension-one points of `X` lying in it;
 * `AlgebraicGeometry.Scheme.Hom.exists_maximal_base_eq_closedPoint_specializes`: every point of
   the special fibre lies on an irreducible component of it;
+* `AlgebraicGeometry.Scheme.Hom.biUnion_closure_eq_preimage_closedPoint`: the special fibre is
+  the union of its irreducible components;
+* `AlgebraicGeometry.Scheme.Hom.exists_codimensionOnePoint_base_eq_closedPoint`: the special fibre
+  of a universally closed integral scheme has an irreducible component;
 * `AlgebraicGeometry.Scheme.Hom.finite_setOf_base_eq_closedPoint`: the special fibre of a
   Noetherian integral scheme has finitely many irreducible components;
 * `AlgebraicGeometry.Scheme.Hom.ord_germToFunctionField_appTop_pos_iff`: the order of the
@@ -247,6 +252,37 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.exists_maximal_base_eq_closedPoint_s
   obtain ⟨π, hπ, hπ0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hR
   simp only [toBase.base_eq_closedPoint_iff_mem_zeroLocus hπ hπ0] at hx ⊢
   exact Scheme.exists_maximal_mem_zeroLocus_specializes hx
+
+/-- **The special fibre is the union of its irreducible components.** For an integral locally
+Noetherian scheme over a local ring of dimension at most one, whose generic point does not lie in
+the special fibre, the special fibre is the union of the closures of the codimension-one points of
+`X` lying in it. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.biUnion_closure_eq_preimage_closedPoint
+    (hη : toBase (genericPoint X) ≠ closedPoint R) :
+    ⋃ η ∈ {η : CodimensionOnePoint X | toBase η = closedPoint R}, closure {(η : X)} =
+      toBase ⁻¹' {closedPoint R} := by
+  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
+  refine subset_antisymm (Set.iUnion₂_subset fun η hη' ↦ closure_minimal
+    (Set.singleton_subset_iff.mpr hη')
+    ((isClosed_singleton_closedPoint R).preimage toBase.continuous)) fun x hx ↦ ?_
+  obtain ⟨y, hy, hyx⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
+  obtain ⟨hy', hcod⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
+  exact Set.mem_biUnion (x := ⟨y, hcod⟩) hy' (specializes_iff_mem_closure.mp hyx)
+
+/-- **A universally closed scheme has a component in its special fibre.** For an integral locally
+Noetherian scheme universally closed over a local ring of dimension at most one, whose generic
+point does not lie in the special fibre, some codimension-one point of `X` lies in the special
+fibre: the image of `X` is closed and contains a point specializing to the closed point, so the
+special fibre is nonempty, and each of its points lies on an irreducible component of it. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.exists_codimensionOnePoint_base_eq_closedPoint
+    [UniversallyClosed toBase] (hη : toBase (genericPoint X) ≠ closedPoint R) :
+    ∃ η : CodimensionOnePoint X, toBase η = closedPoint R := by
+  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
+  obtain ⟨x, hx⟩ : closedPoint R ∈ Set.range toBase :=
+    (specializes_closedPoint _).mem_closed toBase.isClosedMap.isClosed_range ⟨genericPoint X, rfl⟩
+  obtain ⟨y, hy, -⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
+  obtain ⟨hy', hcod⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
+  exact ⟨⟨y, hcod⟩, hy'⟩
 
 /-- At a codimension-one point of `X`, the order of vanishing of the pullback of a nonzero
 element `π` of the maximal ideal is positive exactly when the point lies in the special fibre.

@@ -51,16 +51,28 @@ end TauCeti.LinearMap
 namespace LinearMap
 
 /-- On a free module of rank one, an endomorphism is its trace times the identity. -/
-theorem eq_trace_smul_one_of_finrank_eq_one {R V : Type*} [CommSemiring R] [StrongRankCondition R]
+theorem eq_trace_smul_one_of_finrank_eq_one {R V : Type*} [CommSemiring R]
     [AddCommMonoid V] [Module R V] [Module.Free R V]
     (h : Module.finrank R V = 1) (f : V →ₗ[R] V) :
     f = LinearMap.trace R V f • (1 : V →ₗ[R] V) := by
-  have : Module.Finite R V := Module.finite_of_finrank_pos (by omega)
-  obtain ⟨c, hc, _⟩ := f.existsUnique_eq_smul_id_of_finrank_eq_one h
-  let b := Module.finBasisOfFinrankEq R V h
-  rw [hc]
-  simp [LinearMap.trace_eq_matrix_trace R b, LinearMap.toMatrix_id, Matrix.trace,
-    Module.End.one_eq_id]
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have := Module.subsingleton R V
+    exact LinearMap.ext fun _ ↦ Subsingleton.elim _ _
+  let b := Module.Free.chooseBasis R V
+  -- A basis of a module of rank one has at most one element.
+  have hle : Cardinal.mk (Module.Free.ChooseBasisIndex R V) ≤ 1 := by
+    simpa [Module.rank_eq_one_iff_finrank_eq_one.2 h] using b.linearIndependent.cardinal_le_rank
+  have : Subsingleton (Module.Free.ChooseBasisIndex R V) := Cardinal.le_one_iff_subsingleton.1 hle
+  rcases isEmpty_or_nonempty (Module.Free.ChooseBasisIndex R V) with hι | hι
+  · have : Subsingleton V := b.repr.toEquiv.subsingleton
+    exact LinearMap.ext fun _ ↦ Subsingleton.elim _ _
+  · have : Unique (Module.Free.ChooseBasisIndex R V) := uniqueOfSubsingleton hι.some
+    apply (LinearMap.toMatrix b b).injective
+    ext i j
+    obtain rfl : i = default := Subsingleton.elim _ _
+    obtain rfl : j = default := Subsingleton.elim _ _
+    simp [LinearMap.trace_eq_matrix_trace R b, Matrix.trace, Module.End.one_eq_id,
+      LinearMap.toMatrix_id]
 
 /-- **The trace of an endomorphism with range in a free submodule.** Let `φ` be an injective
 linear map from `ι → R` to `M`, and let `L` be an endomorphism whose range lies in the range of `φ`

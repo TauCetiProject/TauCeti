@@ -268,8 +268,6 @@ theorem slTwoRoot_isNonZero [NeZero (2 : K)] : (slTwoRoot K).IsNonZero := fun h 
     rw [← slTwoRoot_slTwoCartanGenerator]
     exact congrFun h (slTwoCartanGenerator K)
 
-variable [CharZero K]
-
 /-- A weight of the adjoint action is linear: its value at `x` is the top entry of `x` times its
 value at `h`. -/
 private theorem weight_apply_eq_mul
@@ -284,6 +282,27 @@ theorem weight_ext_slTwoCartanGenerator {χ ψ : Weight K (slTwoDiagonalCartan K
     (SpecialLinear.sl (Fin 2) K)} (h : χ (slTwoCartanGenerator K) = ψ (slTwoCartanGenerator K)) :
     χ = ψ :=
   Weight.ext fun x ↦ by rw [weight_apply_eq_mul χ, weight_apply_eq_mul ψ, h]
+
+/-- `e = E₀₁` is a root vector for the simple root. -/
+theorem single_zero_one_mem_rootSpace_slTwoRoot (c : K) :
+    SpecialLinear.single (0 : Fin 2) 1 zero_ne_one c ∈
+      rootSpace (slTwoDiagonalCartan K) (slTwoRoot K) :=
+  weightSpace_le_genWeightSpace _ _ ((mem_weightSpace _ _).mpr fun x ↦
+    lie_single_zero_one_of_mem x c)
+
+/-- `f = E₁₀` is a root vector for the negative of the simple root. -/
+theorem single_one_zero_mem_rootSpace_neg_slTwoRoot (c : K) :
+    SpecialLinear.single (1 : Fin 2) 0 one_ne_zero c ∈
+      rootSpace (slTwoDiagonalCartan K) (-slTwoRoot K) :=
+  weightSpace_le_genWeightSpace _ _ ((mem_weightSpace _ _).mpr fun x ↦
+    lie_single_one_zero_of_mem x c)
+
+/-- The simple root `α`, as a linear form on the diagonal Cartan, is the weight `2`. -/
+theorem toLinear_slTwoRoot : (slTwoRoot K).toLinear = slTwoWeight (2 : K) :=
+  dual_ext_slTwoCartanGenerator <| by
+    rw [Weight.toLinear_apply, slTwoRoot_slTwoCartanGenerator, slTwoWeight_slTwoCartanGenerator]
+
+variable [CharZero K]
 
 omit [CharZero K] in
 /-- The eigenvalues of `ad h` on a nonzero eigenvector of `sl₂` are `2`, `-2` and `0`. -/
@@ -394,20 +413,6 @@ theorem slTwoPositiveBase_support : (slTwoPositiveBase K).support = {slTwoRootIn
 theorem slTwoRootIndex_mem_support : slTwoRootIndex K ∈ (slTwoPositiveBase K).support :=
   Finset.mem_singleton_self _
 
-/-- `e = E₀₁` is a root vector for the simple root. -/
-theorem single_zero_one_mem_rootSpace_slTwoRoot (c : K) :
-    SpecialLinear.single (0 : Fin 2) 1 zero_ne_one c ∈
-      rootSpace (slTwoDiagonalCartan K) (slTwoRoot K) :=
-  weightSpace_le_genWeightSpace _ _ ((mem_weightSpace _ _).mpr fun x ↦
-    lie_single_zero_one_of_mem x c)
-
-/-- `f = E₁₀` is a root vector for the negative of the simple root. -/
-theorem single_one_zero_mem_rootSpace_neg_slTwoRoot (c : K) :
-    SpecialLinear.single (1 : Fin 2) 0 one_ne_zero c ∈
-      rootSpace (slTwoDiagonalCartan K) (-slTwoRoot K) :=
-  weightSpace_le_genWeightSpace _ _ ((mem_weightSpace _ _).mpr fun x ↦
-    lie_single_one_zero_of_mem x c)
-
 /-- The base `slTwoPositiveBase` selects `e = E₀₁` as positive. -/
 theorem slTwoPositiveBase_positive_generator :
     ∃ i ∈ (slTwoPositiveBase K).support,
@@ -425,11 +430,6 @@ theorem coroot_slTwoRoot : IsKilling.coroot (slTwoRoot K) = slTwoCartanGenerator
     (single_one_zero_mem_rootSpace_neg_slTwoRoot 1)).symm
 
 /-! ### The positive roots and the Weyl denominator -/
-
-/-- The simple root `α`, as a linear form on the diagonal Cartan, is the weight `2`. -/
-theorem toLinear_slTwoRoot : (slTwoRoot K).toLinear = slTwoWeight (2 : K) :=
-  dual_ext_slTwoCartanGenerator <| by
-    rw [Weight.toLinear_apply, slTwoRoot_slTwoCartanGenerator, slTwoWeight_slTwoCartanGenerator]
 
 /-- **The only positive root of `sl₂` is the simple root `α`.** -/
 theorem posRootsFinset_slTwoPositiveBase :

@@ -267,7 +267,7 @@ end Internal
 section Finrank
 
 variable {S M R ι : Type*} [DivisionRing S] [Semiring R]
-  [AddCommGroup M] [Module S M] [Module R M] [SMulCommClass R S M] {e : ι → R} [Fintype ι]
+  [AddCommMonoid M] [Module S M] [Module R M] [SMulCommClass R S M] {e : ι → R} [Fintype ι]
 
 /-- **The dimension count**: for a module finite-dimensional over a division ring `S`, the
 dimensions of the pieces add up to the dimension of the module. -/
@@ -276,6 +276,7 @@ theorem finrank_eq_sum_finrank_smul_top [Module.Finite S M]
     Module.finrank S M
       = ∑ i, Module.finrank S ↥(e i • (⊤ : Submodule S M)) := by
   classical
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup S
   exact finrank_eq_sum_finrank_of_isInternal (isInternal_smul_top he)
 
 end Finrank

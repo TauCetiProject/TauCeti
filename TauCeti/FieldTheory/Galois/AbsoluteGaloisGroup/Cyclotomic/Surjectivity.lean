@@ -46,13 +46,25 @@ open Polynomial
 
 namespace TauCeti
 
-variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K] [CharZero K]
+variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K]
 
 /-- The local `p`-adic cyclotomic character is surjective if all `p`-power cyclotomic
-polynomials are irreducible over the base field. -/
+polynomials are irreducible over the base field. In characteristic `p` the hypothesis fails, since
+`Φ_{p²} = (X - 1) ^ (p² - p)` there. -/
 theorem localCyclotomicCharacter_surjective_of_irreducible
     (hirr : ∀ n : ℕ, Irreducible (cyclotomic (p ^ n) K)) :
     Function.Surjective (localCyclotomicCharacter p K) := by
+  have : NeZero (p : K) := ⟨fun h0 ↦ by
+    have : CharP K p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr h0
+    have hp := (Fact.out : p.Prime)
+    have hcyc := cyclotomic_mul_prime_pow_eq K (p := p) (m := 1)
+      (fun h ↦ hp.one_lt.ne' (Nat.dvd_one.mp h)) (k := 2) two_pos
+    rw [mul_one, cyclotomic_one] at hcyc
+    refine not_irreducible_pow (n := p ^ 2 - p ^ (2 - 1)) ?_ (hcyc ▸ hirr 2)
+    have : 2 ≤ p := hp.two_le
+    have : p ^ 2 = p * p := sq p
+    simp only [Nat.add_one_sub_one, pow_one]
+    nlinarith [Nat.sub_add_cancel (show p ≤ p ^ 2 by nlinarith)]⟩
   intro u
   let t : ℕ → Set (Field.absoluteGaloisGroup K) := fun n ↦
     {σ | PadicInt.toZModPow n (localCyclotomicCharacter p K σ : ℤ_[p]) =

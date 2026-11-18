@@ -28,15 +28,37 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
-* `MeasureTheory.Measure.cdf_map` computes the cdf of a measurable pushforward;
 * `MeasureTheory.Measure.memLp_cdf_comp` proves `Lᵖ` membership of a cdf composed with an
   a.e. measurable function on a finite measure space;
 * `MeasureTheory.Measure.cdf_map` computes the cdf of an almost-everywhere measurable pushforward;
+* `ProbabilityTheory.cdf_zero` computes the cdf of the zero measure, and
+  `ProbabilityTheory.continuousOn_cdf_zero` shows that it is continuous away from zero;
+* `MeasureTheory.Measure.nonempty_setOf_le_cdf` and `MeasureTheory.Measure.nonempty_setOf_lt_cdf`
+  show that a level below one is reached, respectively strictly exceeded, by the cdf at some
+  point, and `MeasureTheory.Measure.bddBelow_setOf_le_cdf` and
+  `MeasureTheory.Measure.bddBelow_setOf_lt_cdf` show that the points where a level above zero is
+  reached, respectively strictly exceeded, are bounded below;
 * `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
   law's cdf at a point by vanishing singleton mass;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.measure_Ioo_eq_zero_of_cdf_eq` shows that an open interval on which the
+  cdf is constant is null;
+* `MeasureTheory.Measure.measure_plateau_eq_zero` and
+  `MeasureTheory.Measure.ae_not_of_lt_of_cdf_eq` show that the part of a plateau of the cdf lying
+  to the right of a point is null, so almost no mass lies on the plateau of a level above that
+  point;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
-  mass below a point has cdf zero there;
+  mass below a point has cdf zero there, and
+  `MeasureTheory.Measure.cdf_eq_zero_of_lt_of_measure_Iio_eq_zero` shows without atomlessness that
+  the cdf vanishes strictly below such a point;
+* `MeasureTheory.Measure.cdf_eq_zero_of_ae_lt` and `MeasureTheory.Measure.cdf_eq_one_of_ae_le`
+  show that the cdf is zero at a point below almost every sample and one at a point bounding
+  almost every sample from above;
+* `MeasureTheory.Measure.measureReal_Iio_le_iff_forall_cdf_le` characterizes an upper bound on the
+  mass of an open ray by the same upper bound on the cdf at every point strictly to its left,
+  `MeasureTheory.Measure.measureReal_Ioc_eq_cdf_sub` computes the mass of a half-open interval as
+  a cdf increment, and `MeasureTheory.Measure.measureReal_Ioi_eq_one_sub_cdf` computes the mass of
+  an open upper ray as one minus the cdf;
 * `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
   `TauCeti.Probability.one_sub_cdf_zero_eq_one_of_absolutelyContinuous` show that survival starts
   at one for an atomless or absolutely continuous law carried by the nonnegative half-line;
@@ -49,6 +71,11 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_pos_of_mem_support_of_lt` and
   `MeasureTheory.Measure.cdf_lt_one_of_mem_support_of_lt` derive strict cdf bounds from a
   support point on the appropriate side of the cutoff;
+* `MeasureTheory.Measure.cdf_pos_iff_of_support_eq_Icc` and
+  `MeasureTheory.Measure.cdf_lt_one_iff_of_support_eq_Icc` characterize where the cdf of a law
+  with closed-interval support `Icc a b` is below one (for the second, no further assumption) and
+  positive (for the first, when the law is also carried by the open interval `Ioo a b`, since an
+  atom at `a` would give positive cdf at `a`);
 * `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
   that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
@@ -70,8 +97,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
 * `MeasureTheory.Measure.cdf_map_intCast` evaluates an integer-valued law's cdf using the
   integer floor, including at negative points;
-* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` shows that every level below one is
-  reached by a finite cumulative mass of a natural-valued law.
+* `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` and
+  `MeasureTheory.Measure.exists_nat_lt_measureReal_Iic` show that every level below one is
+  reached, respectively strictly exceeded, by a finite cumulative mass of a natural-valued law.
 
 ## Adapted from
 
@@ -120,6 +148,18 @@ theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 
     simp only [toRatCDF, hnot, ↓reduceIte, defaultRatCDF, ← not_lt, ite_not, Rat.cast_lt_zero]
   exact hstep.trans (hdirac x)
 
+/-- The cdf of the zero measure is continuous away from zero. -/
+theorem continuousOn_cdf_zero : ContinuousOn (cdf (0 : Measure ℝ)) {0}ᶜ := by
+  intro x hx
+  have h : ∀ᶠ y in 𝓝 x, (0 ≤ y ↔ 0 ≤ x) := by
+    rcases lt_or_gt_of_ne hx with h | h
+    · filter_upwards [Iio_mem_nhds h] with y hy using iff_of_false (not_le.2 hy) (not_le.2 h)
+    · filter_upwards [Ioi_mem_nhds h] with y hy using iff_of_true hy.le h.le
+  refine ContinuousAt.continuousWithinAt
+    ((continuousAt_const (y := cdf (0 : Measure ℝ) x)).congr ?_)
+  filter_upwards [h] with y hy
+  simp only [cdf_zero, hy]
+
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
@@ -159,6 +199,28 @@ distribution function tends to `1` at `+∞`. -/
 theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
     {x : ℝ | t ≤ cdf μ x}.Nonempty :=
   ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
+
+/-- Above the level `0` the points whose cumulative mass reaches the level are bounded below,
+because the cumulative distribution function tends to `0` at `-∞`. -/
+theorem bddBelow_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : 0 < t) :
+    BddBelow {x : ℝ | t ≤ cdf μ x} := by
+  obtain ⟨a, ha⟩ :=
+    eventually_atBot.mp ((tendsto_cdf_atBot μ).eventually (eventually_lt_nhds ht))
+  refine ⟨a, fun x hx ↦ ?_⟩
+  by_contra hxa
+  exact absurd (ha x (not_le.mp hxa).le) (not_lt.mpr hx)
+
+/-- Below the level `1` some point has cumulative mass strictly above the level, because the
+cumulative distribution function tends to `1` at `+∞`. -/
+theorem nonempty_setOf_lt_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
+    {x : ℝ | t < cdf μ x}.Nonempty :=
+  ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists
+
+/-- Above the level `0` the points whose cumulative mass strictly exceeds the level are bounded
+below, because the cumulative distribution function tends to `0` at `-∞`. -/
+theorem bddBelow_setOf_lt_cdf (μ : Measure ℝ) {t : ℝ} (ht : 0 < t) :
+    BddBelow {x : ℝ | t < cdf μ x} :=
+  (bddBelow_setOf_le_cdf μ ht).mono (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)
 
 /-- The upper tail of a probability measure on the reals is one minus its cumulative distribution
 function. -/
@@ -233,6 +295,8 @@ theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
     cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
   rw [cdf_map _ _ (by fun_prop), Int.preimage_Iic]
 
+section Nat
+
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
 /-- At a nonnegative point, the cdf of a natural-valued law cast to the reals is the cumulative
@@ -270,6 +334,8 @@ theorem exists_nat_lt_measureReal_Iic {u : ℝ} (hu : u < 1) :
   obtain ⟨n, hn⟩ := μ.exists_nat_le_measureReal_Iic (u := (u + 1) / 2) (by linarith)
   exact ⟨n, lt_of_lt_of_le (by linarith) hn⟩
 
+end Nat
+
 /-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
 if and only if `ν` assigns mass zero to `{x}`. -/
 theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
@@ -288,6 +354,64 @@ probability measure on `ℝ` is continuous when every singleton has measure zero
 theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : Continuous (cdf ν) :=
   continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
+
+/-- A real probability law gives no mass to an open interval on which its cumulative distribution
+function is constant. -/
+theorem measure_Ioo_eq_zero_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure ν] {y b : ℝ}
+    (h : ∀ z ∈ Ioo y b, cdf ν z = cdf ν y) : ν (Ioo y b) = 0 := by
+  rcases le_or_gt b y with hby | hyb
+  · rw [Ioo_eq_empty (not_lt.2 hby), measure_empty]
+  have hlim : leftLim (cdf ν) b = cdf ν y :=
+    leftLim_eq_of_tendsto <| tendsto_const_nhds.congr'
+      (Filter.eventually_of_mem (Ioo_mem_nhdsLT hyb) fun z hz ↦ (h z hz).symm)
+  rw [← measure_cdf ν, StieltjesFunction.measure_Ioo, hlim, sub_self, ENNReal.ofReal_zero]
+
+/-- The part of the plateau of `cdf ν` that lies strictly to the right of a point `y` is null: the
+atom of a real law sits at the *left* end of its plateau and never strictly inside one. -/
+theorem measure_plateau_eq_zero {ν : Measure ℝ} [IsProbabilityMeasure ν] {y : ℝ} :
+    ν {z | y < z ∧ cdf ν y = cdf ν z} = 0 := by
+  rcases (cdf_le_one ν y).lt_or_eq with hy | hy
+  swap
+  · -- A point of level `1` has no mass above it.
+    refine measure_mono_null (t := Ioi y) (fun z hz ↦ hz.1) ?_
+    rw [← compl_Iic, prob_compl_eq_zero_iff measurableSet_Iic, ← ofReal_cdf ν y, hy]
+    simp
+  -- `S` is the plateau of `cdf ν` at the level `cdf ν y`, cut off at `y`.
+  set S : Set ℝ := {z | y < z ∧ cdf ν y = cdf ν z} with hSdef
+  -- `cdf ν` rises to `1 > cdf ν y`, so it eventually leaves the level `cdf ν y` for good, and no
+  -- plateau point can lie above the bound that this produces.
+  have hbdd : BddAbove S := by
+    obtain ⟨M, hM⟩ :=
+      eventually_atTop.mp ((tendsto_cdf_atTop ν).eventually (eventually_gt_nhds hy))
+    refine ⟨M, fun z hz ↦ le_of_not_gt fun hzM ↦ ?_⟩
+    exact absurd (hM z (le_of_lt hzM)) (not_lt_of_ge hz.2.symm.le)
+  by_cases hSne : S.Nonempty
+  swap
+  · rw [not_nonempty_iff_eq_empty.mp hSne, measure_empty]
+  -- Let `b` be the top point of the plateau: `S ⊆ (y, b]`, and the cumulative function is still
+  -- `cdf ν y` at every point of `(y, b)`.
+  set b : ℝ := sSup S with hbdef
+  have hle : ∀ z : ℝ, z ∈ S → z ≤ b := fun z hz ↦ le_csSup hbdd hz
+  have hstab : ∀ z : ℝ, y < z → z < b → cdf ν z = cdf ν y := by
+    intro z hz1 hz2
+    obtain ⟨w, hw, hzw⟩ := exists_lt_of_lt_csSup (s := S) (b := z) hSne (hbdef ▸ hz2)
+    exact le_antisymm ((monotone_cdf ν hzw.le).trans (le_of_eq ((hSdef ▸ hw).2).symm))
+      (monotone_cdf ν hz1.le)
+  by_cases hb : cdf ν b = cdf ν y
+  · -- The top point has the level of `y`, so `(y, b]` has the null increment `cdf ν b - cdf ν y`.
+    refine measure_mono_null (t := Ioc y b) (fun z hz ↦ ⟨hz.1, hle z hz⟩) ?_
+    rw [← measure_cdf ν, StieltjesFunction.measure_Ioc, hb, sub_self, ENNReal.ofReal_zero]
+  · -- Otherwise `b` is no plateau point, so `S ⊆ (y, b)`, where the cumulative function is
+    -- constant.
+    refine measure_mono_null (t := Ioo y b) (fun z hz ↦ ⟨hz.1, lt_of_le_of_ne (hle z hz) ?_⟩) ?_
+    · rintro rfl
+      exact hb (hz.2.symm)
+    · exact measure_Ioo_eq_zero_of_cdf_eq ν fun z hz ↦ hstab z hz.1 hz.2
+
+/-- Above any point `y`, almost no mass lies on the plateau of `cdf ν` at the level `cdf ν y`. -/
+theorem ae_not_of_lt_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure ν] (y : ℝ) :
+    ∀ᶠ x in ae ν, ¬ (y < x ∧ cdf ν y = cdf ν x) :=
+  ae_iff.mpr <| by simpa using measure_plateau_eq_zero (ν := ν) (y := y)
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/

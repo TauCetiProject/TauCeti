@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.BirchSwinnertonDyer.Quotient
-public import TauCeti.AlgebraicGeometry.EllipticCurve.LFunction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.LFunction.Basic
 
 /-!
 # The statement of the Birch–Swinnerton-Dyer conjecture over `ℚ`

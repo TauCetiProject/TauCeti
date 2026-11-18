@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 public import TauCeti.NumberTheory.Height.Naive
--- Proof-only: Northcott finiteness for the naive height.
+-- Proof-only: Northcott finiteness for the naive height, and Liouville's bound for `wₙ`.
+import TauCeti.NumberTheory.DiophantineApproximation.MahlerExponent
 import TauCeti.NumberTheory.Height.Counting
 
 /-!
@@ -31,8 +32,11 @@ by the roots of such polynomials.
   `algebraicApproximationExponent_zero`: it vanishes for `n = 0`.
 * `algebraicApproximationExponent_le_mahlerExponent`: `w*ₙ(ξ) ≤ wₙ(ξ)` for every real `ξ`, with
   no hypothesis on `ξ`: the conjugates of an algebraic `ξ` are only finitely many approximations.
+  Consequently `w*ₙ(ξ) ≤ D - 1` for algebraic `ξ` of degree `D`
+  (`IsAlgebraic.algebraicApproximationExponent_le`) and `w*ₙ(q) = 0` for `q : ℚ`
+  (`algebraicApproximationExponent_ratCast`).
 * `algebraicApproximationExponent_one_add`: `w*₁(ξ) + 1 = μ(ξ)`, where `μ` is the irrationality
-  exponent.
+  exponent, and `one_le_algebraicApproximationExponent_iff`: `1 ≤ w*ₙ(ξ) ↔ 1 ≤ n ∧ Irrational ξ`.
 
 ## References
 
@@ -138,12 +142,12 @@ theorem algebraicApproximationExponent_zero (ξ : ℝ) : algebraicApproximationE
 
 /-! ### Comparison with Mahler's exponent -/
 
-/-- The estimate for a single approximation: if `α` is algebraic of degree at most `n`, is not a
-conjugate of `ξ`, and approximates `ξ` with exponent `w`, where
+/-- For `w' ≥ 0`, the estimate for a single approximation: if `α` is algebraic of degree at most
+`n`, is not a conjugate of `ξ`, and approximates `ξ` with exponent `w`, where
 `(n + 1) (2 + |ξ|) ^ n ≤ H(α) ^ (w - w')`, then the coefficient vector of its primitive minimal
 polynomial is a `w'`-approximation of the linear form in `ξ, ξ², …, ξⁿ`. -/
 private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ} {ξ w w' : ℝ}
-    {α : ℂ} (hw' : 0 ≤ w') (hww' : w' < w) (halg : IsAlgebraic ℚ α)
+    {α : ℂ} (hw' : 0 ≤ w') (halg : IsAlgebraic ℚ α)
     (hdeg : (minpoly ℚ α).natDegree ≤ n)
     (hle : ‖(ξ : ℂ) - α‖ ≤ naiveHeight α ^ (-w - 1)) (hconj : α ∉ (minpoly ℚ ξ).rootSet ℂ)
     (hR : (n + 1) * (2 + |ξ|) ^ n ≤ naiveHeight α ^ (w - w')) :
@@ -161,11 +165,9 @@ private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ}
     simpa using congrArg norm (aeval_algebraMap_apply ℂ ξ (primitiveMinpoly α))
   -- `F_α(ξ) ≠ 0`, since otherwise `α` would be a conjugate of `ξ`.
   have hne : aeval ξ (primitiveMinpoly α) ≠ 0 := fun h₀ ↦ hconj <| by
-    rw [← minpoly_eq_of_aeval_primitiveMinpoly_eq_zero halg h₀, mem_rootSet]
+    rw [← minpoly_eq_of_aeval_primitiveMinpoly_eq_zero h₀, mem_rootSet]
     exact ⟨minpoly.ne_zero halg.isIntegral, minpoly.aeval ℚ α⟩
   have hx₀ : x ≠ 0 := fun hx ↦ hne (by rw [← hL, hx]; simp)
-  have hξα : ‖(ξ : ℂ) - α‖ ≤ 1 :=
-    hle.trans (Real.rpow_le_one_of_one_le_of_nonpos hH₁ (by linarith))
   rw [mem_linearFormApproximations, hL]
   refine ⟨abs_pos.2 hne, ?_⟩
   have hK : ((minpoly ℚ α).natDegree + 1) * (2 + ‖(ξ : ℂ)‖) ^ (minpoly ℚ α).natDegree ≤ K := by
@@ -175,7 +177,7 @@ private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ}
     linarith [abs_nonneg ξ]
   calc |aeval ξ (primitiveMinpoly α)| ≤ K * H * ‖(ξ : ℂ) - α‖ := by
         rw [← hLℂ]
-        refine (norm_aeval_primitiveMinpoly_le halg hξα).trans ?_
+        refine (norm_aeval_primitiveMinpoly_le halg).trans ?_
         gcongr
     _ ≤ K * H * H ^ (-w - 1) := by gcongr
     _ = K * H ^ (-w) := by
@@ -218,7 +220,7 @@ private theorem infinite_linearFormApproximations_of_infinite {n : ℕ} {ξ w w'
   rintro _ ⟨_, ⟨α, ⟨⟨halg, hdeg, -, hle⟩, hα⟩, rfl⟩, rfl⟩
   simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_and, not_le] at hα
   obtain ⟨hconj, hR'⟩ := hα
-  exact coeffVec_primitiveMinpoly_mem_linearFormApproximations hw' hww' halg hdeg hle hconj
+  exact coeffVec_primitiveMinpoly_mem_linearFormApproximations hw' halg hdeg hle hconj
     (hR _ (hR' halg hdeg).le)
 
 /-- **Approximation by algebraic numbers versus small polynomial values** (Bugeaud,
@@ -236,6 +238,23 @@ theorem algebraicApproximationExponent_le_mahlerExponent (n : ℕ) (ξ : ℝ) :
         rw [mahlerExponent_def]
         exact le_linearFormExponent_of_infinite
           (infinite_linearFormApproximations_of_infinite (by linarith) (by linarith) hw)
+
+end TauCeti
+
+/-- **Liouville's bound for Koksma's exponent.** If `ξ` is a real algebraic number of degree `D`
+over `ℚ`, then `w*ₙ(ξ) ≤ D - 1` for every `n`. -/
+theorem IsAlgebraic.algebraicApproximationExponent_le {ξ : ℝ} (hξ : IsAlgebraic ℚ ξ) (n : ℕ) :
+    TauCeti.algebraicApproximationExponent n ξ ≤ ((minpoly ℚ ξ).natDegree - 1 : ℕ) :=
+  (TauCeti.algebraicApproximationExponent_le_mahlerExponent n ξ).trans (hξ.mahlerExponent_le n)
+
+namespace TauCeti
+
+/-- Rational numbers have Koksma exponent `0` in every degree. -/
+@[simp]
+theorem algebraicApproximationExponent_ratCast (n : ℕ) (q : ℚ) :
+    algebraicApproximationExponent n q = 0 :=
+  nonpos_iff_eq_zero.1 <|
+    (algebraicApproximationExponent_le_mahlerExponent n q).trans_eq (mahlerExponent_ratCast n q)
 
 /-! ### Approximation by rational numbers -/
 
@@ -321,5 +340,18 @@ theorem algebraicApproximationExponent_one_add (ξ : ℝ) :
         gcongr
         exact le_algebraicApproximationExponent_of_infinite
           (infinite_algebraicApproximations_one_of_infinite (by linarith) (by linarith) hp)
+
+/-- Koksma's exponent `w*ₙ(ξ)` is at least `1` if and only if `1 ≤ n` and `ξ` is irrational. -/
+@[simp]
+theorem one_le_algebraicApproximationExponent_iff {n : ℕ} {ξ : ℝ} :
+    1 ≤ algebraicApproximationExponent n ξ ↔ 1 ≤ n ∧ Irrational ξ := by
+  refine ⟨fun h ↦ ⟨Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at h,
+    fun ⟨q, hq⟩ ↦ by simp [← hq] at h⟩, ?_⟩
+  rintro ⟨hn, hξ⟩
+  have h1 : 1 + 1 ≤ algebraicApproximationExponent 1 ξ + 1 := by
+    rw [algebraicApproximationExponent_one_add, one_add_one_eq_two]
+    exact (two_le_irrationalityExponent_iff ξ).2 hξ
+  exact ((ENNReal.add_le_add_iff_right ENNReal.one_ne_top).1 h1).trans
+    (algebraicApproximationExponent_mono ξ hn)
 
 end TauCeti

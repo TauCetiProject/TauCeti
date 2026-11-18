@@ -141,7 +141,7 @@ private theorem eventually_mapOrientation_orientation_eq (b : M) :
     (LinearMap.toContinuousLinearMap J.toLinearMap)).mem_nhds fun u hu ↦ by
       rw [LinearMap.coe_toContinuousLinearMap', ← transport_symplecticFormAt_apply hσ hb]
       exact hJ u hu
-  filter_upwards [hpos, e.open_baseSet.mem_nhds hb] with x hx hxe hxe'
+  filter_upwards [hpos, e.open_baseSet.mem_nhds hb] with x hx _ hxe'
   rw [hmap, hmap]
   refine SymplecticForm.Tames.orientation_eq (fun u hu ↦ ?_) hJ hk
   have := hx u hu

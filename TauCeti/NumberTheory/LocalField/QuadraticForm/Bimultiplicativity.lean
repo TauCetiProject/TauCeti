@@ -8,12 +8,10 @@ module
 public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 
-import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.NumberTheory.HilbertSymbol.SquareClassIndex
-import TauCeti.NumberTheory.LocalField.FiniteExtension.SquareClass
 import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DirectIndex
-import TauCeti.NumberTheory.LocalField.QuadraticForm.UnramifiedClass
-import TauCeti.NumberTheory.LocalField.Squares
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.Index
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.UnitQuotient
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
 
 /-!
 # The index theorem for quadratic norms, and bimultiplicativity of the local Hilbert symbol
@@ -22,15 +20,18 @@ Let `K` be a nonarchimedean local field with `2 ≠ 0`, in any residue character
 from `K(√a)`, that is the subgroup `N` of `Kˣ` consisting of the `b` of the form `x² - a y²` with
 `x, y ∈ K`, form a subgroup of index two in `Kˣ` for every nonsquare radicand `a`.
 
-For odd-valuation radicands the index is computed directly from the base field's unit norm
-families by `TauCeti.quadraticNormSubgroup_index_eq_two_of_odd`. For the remaining radicands,
-the index is computed by counting square classes in a quadratic extension, uniformly in the
-residue characteristic and quadratic defect. For `L = K(√a)`,
-`TauCeti.two_mul_index_quadraticNormSubgroup_mul_card_squareClass` gives
-`2 · (Kˣ : N) · #(Lˣ/(Lˣ)²) = #(Kˣ/(Kˣ)²)²` over any field with `2 ≠ 0`. Over a local field
-`#(Kˣ/(Kˣ)²) = 4 q^{v_K(2)}`, with `q = #𝓀[K]`, and since `[L : K] = 2`,
-`TauCeti.card_squareClass_eq_four_mul_pow_finrank` gives `#(Lˣ/(Lˣ)²) = 4 q^{2 v_K(2)}`. Hence
-`(Kˣ : N) = 2`.
+The index is computed purely in the base field by splitting on the parity of the finite quadratic
+defect exponent `d = δ(a)`. When `d` is even, `a` lies in the unramified quadratic square class
+(`TauCeti.unramified_class_iff_even_defectExponent`), so `N` consists of the elements of even
+normalized valuation and has index two
+(`TauCeti.quadraticNormSubgroup_index_eq_two_of_unramified_class`). When `d` is odd — covering
+both odd-valuation radicands and ramified unit radicands of odd defect — `N` meets every valuation
+coset, reducing `(Kˣ : N)` to the index of the valuation-one norms in `U(K, 0)`
+(`TauCeti.index_subgroupOf_unitFiltration_eq_quadraticNormSubgroup_index_of_odd_defectExponent`)
+and hence to the index of `TauCeti.unitQuadraticNormSquareClasses (a : K)` inside
+`TauCeti.unitSquareClasses K` (`TauCeti.relIndex_unitQuadraticNormSquareClasses`), which equals two
+by the uniformizer and Eisenstein unit-norm square-class counts
+(`TauCeti.relIndex_unitQuadraticNormSquareClasses_of_odd_defectExponent`).
 
 The sign indicator of an index-two subgroup is a character, so the local Hilbert symbol is
 bimultiplicative in both arguments. The same index theorem gives nondegeneracy, and there that step
@@ -50,12 +51,12 @@ field in `TauCeti.NumberTheory.HilbertSymbol.NormSubgroup`, as
 
 ## Main results
 
-* `TauCeti.quadraticNormSubgroup_index_eq_two_of_not_isSquare`: the norm index of every nonsquare
-  radicand.
+* `TauCeti.quadraticNormSubgroup_index_eq_two_of_not_isSquare`,
+  `TauCeti.quadraticNormSubgroup_eq_top_iff`, and
+  `TauCeti.quadraticNormSubgroup_index_eq_two_iff`: the norm subgroup has index `1` (that is,
+  equals `⊤`) when `a` is a square and index `2` when `a` is not a square.
 * `TauCeti.hilbertSymbol_mul_right` and `TauCeti.hilbertSymbol_mul_left`: the Hilbert symbol is
   bilinear in both arguments.
-* `TauCeti.hilbertSymbol_self_mul` and `TauCeti.hilbertSymbol_neg_self_mul`:
-  `(a, ab)_K = (a, -b)_K` and `(a, -ab)_K = (a, b)_K`.
 * `TauCeti.exists_hilbertSymbol_eq_neg_one`: for every nonsquare `a` there is a `b` with
   `(a, b)_K = -1`.
 * `TauCeti.exists_hilbertSymbol_eq_and_hilbertSymbol_eq`: for nonsquares `a`, `b` with `ab` a
@@ -84,17 +85,32 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 a subgroup of index two in `Kˣ` for every `a` that is not a square. -/
 theorem quadraticNormSubgroup_index_eq_two_of_not_isSquare (h2 : (2 : K) ≠ 0) {a : Kˣ}
     (ha : ¬IsSquare a) : (quadraticNormSubgroup (a : K)).index = 2 := by
-  by_cases hodd : Odd (normalizedValuation K a).toAdd
-  · exact quadraticNormSubgroup_index_eq_two_of_odd h2 hodd
-  have : Fact (¬IsSquare (a : K)) := ⟨Units.isSquare_coe_iff.not.mpr ha⟩
-  have h := two_mul_index_quadraticNormSubgroup_mul_card_squareClass a h2
-  rw [card_squareClass_eq_four_mul_pow_finrank h2, QuadraticAlgebra.finrank_eq_two,
-    card_squareClass h2] at h
-  -- `h` reads `2 · (Kˣ : N) · 4 Q² = (4 Q)²` with `Q = q ^ v_K(2) > 0`.
-  have hq : 0 < Nat.card 𝓀[K] := Nat.card_pos
-  have hQ : 0 < 8 * (Nat.card 𝓀[K] ^ natCastValuation K 2 h2) ^ 2 := by positivity
-  refine Nat.eq_of_mul_eq_mul_right hQ ?_
-  linear_combination h
+  obtain ⟨d, hd⟩ := exists_defectExponent_eq_coe ha
+  rcases Int.even_or_odd d with hev | hodd
+  · exact quadraticNormSubgroup_index_eq_two_of_unramified_class
+      ((unramified_class_iff_even_defectExponent h2 hd).mpr hev)
+  · rw [← index_subgroupOf_unitFiltration_eq_quadraticNormSubgroup_index_of_odd_defectExponent
+        hd hodd,
+      ← relIndex_unitQuadraticNormSquareClasses]
+    exact relIndex_unitQuadraticNormSquareClasses_of_odd_defectExponent h2 hd hodd
+
+/-- Over a nonarchimedean local field with `2 ≠ 0`, every unit of `K` is a norm from `K[√a]` if and
+only if `a : Kˣ` is a square. -/
+theorem quadraticNormSubgroup_eq_top_iff (h2 : (2 : K) ≠ 0) (a : Kˣ) :
+    quadraticNormSubgroup (a : K) = ⊤ ↔ IsSquare a := by
+  have : Invertible (2 : K) := invertibleOfNonzero h2
+  refine ⟨fun h ↦ by_contra fun ha ↦ ?_, quadraticNormSubgroup_eq_top_of_isSquare⟩
+  have hidx := quadraticNormSubgroup_index_eq_two_of_not_isSquare h2 ha
+  rw [h, Subgroup.index_top] at hidx
+  omega
+
+/-- Over a nonarchimedean local field with `2 ≠ 0`, `quadraticNormSubgroup (a : K)` has index `2`
+in `Kˣ` if and only if `a : Kˣ` is not a square. -/
+theorem quadraticNormSubgroup_index_eq_two_iff (h2 : (2 : K) ≠ 0) (a : Kˣ) :
+    (quadraticNormSubgroup (a : K)).index = 2 ↔ ¬IsSquare a := by
+  refine ⟨fun hidx ha ↦ ?_, quadraticNormSubgroup_index_eq_two_of_not_isSquare h2⟩
+  rw [(quadraticNormSubgroup_eq_top_iff h2 a).mpr ha, Subgroup.index_top] at hidx
+  omega
 
 /-- **Bimultiplicativity of the local Hilbert symbol in the second argument.** If `2 ≠ 0` in `K`,
 then `(a, bc)_K = (a, b)_K (a, c)_K` for every `a`, `b` and `c`. -/
@@ -115,18 +131,6 @@ theorem hilbertSymbol_mul_left (h2 : (2 : K) ≠ 0) (a b c : Kˣ) :
   have : Invertible (2 : K) := invertibleOfNonzero h2
   -- the first-argument law is the second-argument law read through the symmetry of the symbol
   simp only [hilbertSymbol_comm _ a, hilbertSymbol_mul_right h2]
-
-/-- If `2 ≠ 0` in `K`, then `(a, ab)_K = (a, -b)_K`: the two second arguments differ by the norm
-`-a` from `K(√a)`. -/
-theorem hilbertSymbol_self_mul (h2 : (2 : K) ≠ 0) (a b : Kˣ) :
-    hilbertSymbol a (a * b) = hilbertSymbol a (-b) := by
-  rw [← neg_mul_neg, hilbertSymbol_mul_right h2, hilbertSymbol_neg_self, one_mul]
-
-/-- If `2 ≠ 0` in `K`, then `(a, -ab)_K = (a, b)_K`: the two second arguments differ by the norm
-`-a` from `K(√a)`. -/
-theorem hilbertSymbol_neg_self_mul (h2 : (2 : K) ≠ 0) (a b : Kˣ) :
-    hilbertSymbol a (-(a * b)) = hilbertSymbol a b := by
-  rw [← mul_neg, hilbertSymbol_self_mul h2, neg_neg]
 
 /-- The Hilbert symbol is multiplicative on integer powers of its second argument. -/
 @[simp]
@@ -216,17 +220,24 @@ theorem exists_not_isSquare_hilbertSymbol_eq_one (h2 : (2 : K) ≠ 0) (a : Kˣ) 
   rw [hilbertSymbol_mul_left h2, Int.units_ne_iff_eq_neg.mp hπa, Int.units_ne_iff_eq_neg.mp hΔa]
   decide
 
-/-- **The local Hilbert symbol takes both values.** If `2 ≠ 0` in `K`, then every sign `±1` is
-`(a, b)_K` for some `a, b ∈ Kˣ`; in particular some quaternion algebra `ℍ[K,a,b]` is a division
-algebra. -/
-theorem uncurry_hilbertSymbol_surjective (h2 : (2 : K) ≠ 0) :
+/-- **The local Hilbert symbol takes both values.** Every sign `±1` is `(a, b)_K` for some
+`a, b ∈ Kˣ`; when `2 ≠ 0` in `K`, in particular some quaternion algebra `ℍ[K,a,b]` is a
+division algebra. -/
+theorem uncurry_hilbertSymbol_surjective :
     Function.Surjective (Function.uncurry (hilbertSymbol (K := K))) := by
-  have : Invertible (2 : K) := invertibleOfNonzero h2
   intro s
   rcases Int.units_eq_one_or s with rfl | rfl
-  · exact ⟨(1, 1), hilbertSymbol_one_left 1⟩
+  · exact ⟨(1, 1), hilbertSymbol_one_right 1⟩
   · obtain ⟨π, hπ⟩ := exists_isUniformizer K
-    obtain ⟨b, hb⟩ := exists_hilbertSymbol_eq_neg_one h2 (not_isSquare_of_isUniformizer hπ)
-    exact ⟨(π, b), hb⟩
+    by_cases h2 : (2 : K) = 0
+    · -- in characteristic two, `π = x ^ 2 - y ^ 2 = (x + y) ^ 2` would be a square
+      refine ⟨(1, π), (hilbertSymbol_eq_neg_one_iff _ _).mpr ?_⟩
+      rintro ⟨x, y, h⟩
+      simp only [Units.val_one, one_mul] at h
+      exact not_isSquare_of_isUniformizer hπ
+        (Units.isSquare_coe_iff.mp ⟨x + y, by linear_combination h + (-x * y - y ^ 2) * h2⟩)
+    · have : Invertible (2 : K) := invertibleOfNonzero h2
+      obtain ⟨b, hb⟩ := exists_hilbertSymbol_eq_neg_one h2 (not_isSquare_of_isUniformizer hπ)
+      exact ⟨(π, b), hb⟩
 
 end TauCeti

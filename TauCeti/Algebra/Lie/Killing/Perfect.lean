@@ -9,15 +9,19 @@ public import Mathlib.Algebra.Lie.Killing
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.Algebra.Lie.Perfect
 
 /-!
-# A Lie algebra with nondegenerate Killing form is perfect
+# A Lie algebra over a field with nondegenerate Killing form is perfect
 
-A finite-dimensional Lie algebra `L` whose Killing form `κ` is nondegenerate satisfies
-`⁅L, L⁆ = L`. The proof is a two-line use of the invariance `κ ⁅x, y⁆ z = κ x ⁅y, z⁆`: a linear
-form vanishing on the derived ideal is `κ x` for a unique `x`, and then `κ ⁅x, y⁆ z = κ x ⁅y, z⁆`
-vanishes for all `z`, so `x` is central; a central element of a Killing algebra is zero, so the
-form is zero and the derived ideal was already everything.
+A Lie algebra `L` over a field whose Killing form `κ` is nondegenerate satisfies `⁅L, L⁆ = L`; no
+finite-dimensionality hypothesis is needed, since a Killing Lie algebra is automatically
+finite-dimensional (`TauCeti.finite_of_isKilling`). The proof is a two-line use of the
+invariance `κ ⁅x, y⁆ z = κ x ⁅y, z⁆`: a linear form vanishing on the derived ideal is `κ x` for a
+unique `x`, and then `κ ⁅x, y⁆ z = κ x ⁅y, z⁆` vanishes for all `z`, so `x` is central; a central
+element of a Killing algebra is zero, so the form is zero and the derived ideal was already
+everything.
 
 The statement is recorded here in the form its consumers use: an action of `L` that composes to
 zero is itself zero (`TauCeti.isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero`), which is
@@ -27,8 +31,8 @@ module `M` with `⁅L, M⁆ ⊆ N` and `N` acted on trivially would otherwise es
 
 ## Main results
 
-* `TauCeti.derivedSeries_one_eq_top_of_isKilling`: **a Lie algebra with nondegenerate Killing form
-  is perfect.**
+* `TauCeti.derivedSeries_one_eq_top_of_isKilling`: **a Lie algebra over a field with nondegenerate
+  Killing form is perfect.**
 * `TauCeti.isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero`: over a perfect Lie algebra,
   a module on which the action composes to zero is a trivial module.
 * `LieHom.eq_zero_of_derivedSeries_one_eq_top`: homomorphisms from a perfect Lie algebra
@@ -49,16 +53,14 @@ open LieAlgebra LieModule Module
 
 section Killing
 
-variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
-  [LieAlgebra.IsKilling K L]
+variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [LieAlgebra.IsKilling K L]
 
-/-- **A Lie algebra with nondegenerate Killing form is perfect**: `⁅L, L⁆ = L`.
+/-- **A Lie algebra over a field with nondegenerate Killing form is perfect**: `⁅L, L⁆ = L`.
 
-A linear form killing the derived ideal is `κ x` for some `x`, by nondegeneracy of the Killing
-form on a finite-dimensional space. Invariance turns `κ x ⁅y, z⁆ = 0` into `κ ⁅x, y⁆ z = 0` for
-all `z`, so `⁅x, y⁆ = 0` for every `y`; then `ad x = 0`, so `κ x` vanishes identically and `x = 0`.
-The linear form was therefore zero, which contradicts the properness of the derived ideal. -/
+No finite-dimensionality hypothesis is needed, since a Killing Lie algebra is finite-dimensional
+(`TauCeti.finite_of_isKilling`). -/
 theorem derivedSeries_one_eq_top_of_isKilling : derivedSeries K L 1 = ⊤ := by
+  have := finite_of_isKilling (R := K) (L := L)
   by_contra hne
   have hlt : (derivedSeries K L 1).toSubmodule < ⊤ := by
     refine lt_of_le_of_ne le_top fun hcon ↦ hne ?_
@@ -131,13 +133,10 @@ variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 /-- Every Lie homomorphism from a perfect Lie algebra to an abelian Lie algebra is zero. -/
 theorem eq_zero_of_derivedSeries_one_eq_top (f : L →ₗ⁅R⁆ M)
     (hL : LieAlgebra.derivedSeries R L 1 = ⊤) : f = 0 := by
-  have hM : LieAlgebra.derivedSeries R M 1 = ⊥ := by
-    rw [LieAlgebra.derivedSeries_def, ← LieAlgebra.abelian_iff_derived_one_eq_bot,
-      lie_abelian_iff_equiv_lie_abelian LieIdeal.topEquiv]
-    infer_instance
-  have hmap := LieIdeal.derivedSeries_map_le (f := f) 1
-  rw [hL, hM, le_bot_iff, LieIdeal.map_eq_bot_iff] at hmap
-  ext x
-  exact hmap (LieSubmodule.mem_top x)
+  -- Compare `f` and `0` through the zero map `M → M`, whose kernel `M` is central as `M` is
+  -- abelian.
+  refine f.eq_of_comp_eq_of_ker_le_center 0 (0 : M →ₗ⁅R⁆ M) hL ?_ (by ext; simp)
+  rw [(LieAlgebra.isLieAbelian_iff_center_eq_top R M).mp inferInstance]
+  exact le_top
 
 end LieHom

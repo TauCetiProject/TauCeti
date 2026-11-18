@@ -30,6 +30,11 @@ product of `k` vectors of the second summand acts by `γ ^ k ⊗ ρ₂ (·)`. If
 by `γ₂`, then the tensor grading `γ ⊗ γ₂` is again an involution anticommuting with every
 `c(v, w)`, so `E ⊗ F` is a graded module and the construction can be iterated.
 
+Mathlib's `CliffordAlgebra.prodEquiv` identifies `CliffordAlgebra (Q₁.prod Q₂)` with the graded
+tensor product `evenOdd Q₁ ᵍ⊗ evenOdd Q₂`, and this action is the Koszul-signed tensor action
+through it: an element `b` of `CliffordAlgebra Q₂` of parity `j` acts by `γ ^ j ⊗ ρ₂ b`, so the
+pure tensor `a ᵍ⊗ b` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
+
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
 `TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod.lean`.
@@ -44,6 +49,10 @@ operator, and the normalized volume element of `V ⊕ W` then acts by the tensor
 * `AlgHom.cliffordProdTensor_map_inl`: `CliffordAlgebra Q₁` acts through the first factor.
 * `AlgHom.cliffordProdTensor_map_inr_prod`: a product of `k` vectors of `M₂` acts by
   `γ ^ k ⊗ ρ₂ (·)`.
+* `AlgHom.cliffordProdTensor_map_inr_of_mem_evenOdd`: an element of `CliffordAlgebra Q₂` of
+  parity `j` acts by `γ ^ j ⊗ ρ₂ (·)`.
+* `AlgHom.cliffordProdTensor_toProd_tmul`: under `CliffordAlgebra.prodEquiv`, the pure tensor
+  `a ᵍ⊗ b` with `b` of parity `j` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
 * `AlgHom.map_mul_cliffordProdTensor_ι`: the tensor grading `γ ⊗ γ₂` anticommutes with every
   vector.
 
@@ -169,5 +178,51 @@ theorem map_mul_cliffordProdTensor_ι (γ₂ : Module.End R F)
   -- Collect the anticommutators `γ c₁(v) + c₁(v) γ` and `γ₂ c₂(w) + c₂(w) γ₂`, which vanish.
   rw [add_add_add_comm, ← map_add_left, ← map_add_right, hγρ, hγ₂ρ]
   simp
+
+/-- **Products of `k` vectors of the second summand** act by `γ ^ k ⊗ ρ₂ (·)`: this extends
+`AlgHom.cliffordProdTensor_map_inr_prod` to every element of the `k`-th power of the vector
+subspace. -/
+theorem cliffordProdTensor_map_inr_of_mem_pow {k : ℕ} {b : CliffordAlgebra Q₂}
+    (hb : b ∈ LinearMap.range (ι Q₂) ^ k) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (map (QuadraticMap.Isometry.inr Q₁ Q₂) b) =
+      map (γ ^ k) (ρ₂ b) := by
+  induction hb using Submodule.pow_induction_on_left' with
+  | algebraMap r =>
+    rw [AlgHom.commutes, AlgHom.commutes, AlgHom.commutes, pow_zero]
+    simp only [Algebra.algebraMap_eq_smul_one, map_smul_right, TensorProduct.map_one]
+  | add x y i _ _ hx hy => rw [map_add, map_add, hx, hy, map_add ρ₂, map_add_right]
+  | mem_mul m hm i x _ hx =>
+    obtain ⟨w, rfl⟩ := hm
+    rw [map_mul, map_mul, hx, map_apply_ι, QuadraticMap.Isometry.inr_apply,
+      cliffordProdTensor_ι_inr, ← TensorProduct.map_mul, pow_succ', map_mul]
+
+include hγ in
+/-- **Homogeneous elements of the second summand act through the grading**: an element `b` of
+`CliffordAlgebra Q₂` of parity `j` acts on `E ⊗ F` by `γ ^ j ⊗ ρ₂ b`, so even elements act by
+`1 ⊗ ρ₂ b` and odd elements by `γ ⊗ ρ₂ b`. -/
+theorem cliffordProdTensor_map_inr_of_mem_evenOdd {j : ZMod 2} {b : CliffordAlgebra Q₂}
+    (hb : b ∈ evenOdd Q₂ j) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (map (QuadraticMap.Isometry.inr Q₁ Q₂) b) =
+      map (γ ^ j.val) (ρ₂ b) := by
+  induction b, hb using evenOdd_induction with
+  | range_ι_pow v hv => exact cliffordProdTensor_map_inr_of_mem_pow ρ₁ γ hγ hγρ ρ₂ hv
+  | add x y _ _ hx hy => rw [map_add, map_add, hx, hy, map_add ρ₂, map_add_right]
+  | ι_mul_ι_mul m₁ m₂ x _ hx =>
+    simp only [map_mul, hx, map_apply_ι, QuadraticMap.Isometry.inr_apply,
+      cliffordProdTensor_ι_inr, ← TensorProduct.map_mul, hγ, one_mul]
+
+include hγ in
+/-- **The graded tensor product of Clifford modules is the Koszul-signed tensor action of
+`CliffordAlgebra.prodEquiv`.** Under Mathlib's identification `CliffordAlgebra.prodEquiv` of
+`CliffordAlgebra (Q₁.prod Q₂)` with the graded tensor product `evenOdd Q₁ ᵍ⊗ evenOdd Q₂`, whose
+inverse is `CliffordAlgebra.toProd`, the pure tensor `a ᵍ⊗ b` with `b` of parity `j` acts on
+`E ⊗ F` by `ρ₁ a γ ^ j ⊗ ρ₂ b`. -/
+theorem cliffordProdTensor_toProd_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
+    {b : CliffordAlgebra Q₂} (hb : b ∈ evenOdd Q₂ j) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) =
+      map (ρ₁ a * γ ^ j.val) (ρ₂ b) := by
+  rw [toProd, GradedTensorProduct.lift_tmul, map_mul, cliffordProdTensor_map_inl,
+    cliffordProdTensor_map_inr_of_mem_evenOdd ρ₁ γ hγ hγρ ρ₂ hb, LinearMap.rTensor,
+    ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
 
 end AlgHom

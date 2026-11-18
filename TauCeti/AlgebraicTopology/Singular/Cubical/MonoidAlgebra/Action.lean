@@ -180,6 +180,20 @@ theorem act_one_eq_self {p : ℕ} (c : NormalizedCubicalChain Y R p) :
 
 end MulAction
 
+section Self
+
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a topological magma acting on itself by right multiplication, the action of chains is the
+Pontryagin product. -/
+theorem act_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : act G G R p q a b = mul G R p q a b := by
+  have h : actMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
+  rw [act_def, mul_def, h]
+
+end Self
+
 end NormalizedCubicalChain
 
 open NormalizedCubicalChain
@@ -259,18 +273,27 @@ theorem cubicalChainModuleLof_cast {n m : ℕ} (h : n = m) (x : NormalizedCubica
   rw [cubicalChainModuleLof, LinearMap.comp_apply, cubicalChainLof_cast]
   rfl
 
-/-- Induction on the module: a property holds for every element once it holds for `0`, for the
+/-- Induction on the module: a property holds for every element once it holds for the
 homogeneous chains and is closed under sums. -/
 @[elab_as_elim]
 theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → Prop}
-    (m : cubicalChainModule Y G R) (zero : motive 0)
+    (m : cubicalChainModule Y G R)
     (lof : ∀ (n : ℕ) (c : NormalizedCubicalChain Y R n), motive (cubicalChainModuleLof Y G R n c))
     (add : ∀ m m', motive m → motive m' → motive (m + m')) : motive m := by
   obtain ⟨s⟩ := m
   induction s using DirectSum.induction_on with
-  | zero => exact zero
+  | zero =>
+    have h := lof 0 0
+    rwa [map_zero] at h
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
+
+/-- A space without points has no nonzero chains. -/
+instance [IsEmpty Y] : Subsingleton (cubicalChainModule Y G R) :=
+  subsingleton_of_forall_eq 0 fun m ↦ by
+    induction m using cubicalChainModule.induction_on with
+    | lof n c => rw [Subsingleton.elim c 0, map_zero]
+    | add m m' hm hm' => rw [hm, hm', add_zero]
 
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
@@ -286,7 +309,6 @@ theorem cubicalChainModule_linearMap_ext {N : Type*} [AddCommMonoid N] [Module R
       f (cubicalChainModuleLof Y G R n c) = g (cubicalChainModuleLof Y G R n c)) : f = g :=
   LinearMap.ext fun m ↦ by
     induction m using cubicalChainModule.induction_on with
-    | zero => rw [map_zero, map_zero]
     | lof n c => exact h n c
     | add m m' hm hm' => rw [map_add, map_add, hm, hm']
 
@@ -426,12 +448,8 @@ omit [ContinuousMul G] in
 /-- The unit acts trivially on the module. -/
 theorem cubicalChainActBilin_one (m : cubicalChainModule Y G R) :
     cubicalChainActBilin Y G R m 1 = m := by
-  have h1 : (1 : normalizedCubicalChainAlgebra G R) = cubicalChainLof G R 0 (one G R) := by
-    rw [DirectSum.lof_eq_of]
-    rfl
-  rw [h1]
+  rw [← cubicalChainLof_one]
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | lof n c =>
     rw [cubicalChainActBilin_lof_lof, act_one_eq_self]
     rfl
@@ -443,7 +461,6 @@ theorem cubicalChainActBilin_mul (m : cubicalChainModule Y G R)
     cubicalChainActBilin Y G R m (a * b) =
       cubicalChainActBilin Y G R (cubicalChainActBilin Y G R m a) b := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [map_add, LinearMap.add_apply, hm, hm']
   | lof p c =>
     induction a using DirectSum.induction_on with
@@ -633,7 +650,6 @@ theorem cubicalChainModuleLinearMap_op_smul (f : C(Y, Y'))
     (x : cubicalChainModule Y G R) :
     cubicalChainModuleLinearMap R f (op a • x) = op a • cubicalChainModuleLinearMap R f x := by
   induction x using cubicalChainModule.induction_on with
-  | zero => rw [smul_zero, map_zero, smul_zero]
   | add x x' hx hx' => rw [smul_add, map_add, hx, hx', map_add, smul_add]
   | lof p c =>
     induction a using DirectSum.induction_on with

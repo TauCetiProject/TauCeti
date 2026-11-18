@@ -6,17 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Icc
+public import Mathlib.Geometry.Manifold.Algebra.Monoid
 public import Mathlib.Topology.UnitInterval
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # Smooth time maps into the unit interval
 
-The reflection `t ↦ 1 - t` is smooth for the manifold-with-boundary structure of the
-unit interval. The smooth transition function also gives smooth interval-valued
-maps. These support reversal and stationary-time concatenation of smooth isotopies.
+The reflection `t ↦ 1 - t` and the multiplication `(s, t) ↦ s t` are smooth for the
+manifold-with-boundary structure of the unit interval. The smooth transition function also gives
+smooth interval-valued maps, among them the collared transition
+`TauCeti.collaredSmoothTransitionUnit`, which is `0` up to time `1 / 4` and `1` from time `3 / 4`
+on. These support reversal, rescaling and stationary-time concatenation of smooth isotopies.
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
@@ -39,6 +43,16 @@ theorem contMDiff_symm {n : ℕ∞ω} : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n symm
   simpa only [Function.comp_def, coe_symm_eq] using
     (contMDiff_const.sub (contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := n)))
 
+/-- Multiplication `(s, t) ↦ s t` of the unit interval is analytic, including at the boundary, so
+it is `C^n` for every `n` (`contMDiff_mul`). -/
+instance : ContMDiffMul (𝓡∂ 1) ω I where
+  contMDiff_mul := by
+    apply contMDiff_iff_comp_subtypeVal_Icc.mpr
+    refine ⟨continuous_mul, ?_⟩
+    simpa only [Function.comp_def, Set.Icc.coe_mul, Pi.mul_def] using
+      ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_fst).mul
+        ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_snd)
+
 end unitInterval
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -53,6 +67,48 @@ theorem ContMDiff.smoothTransition (hf : ContMDiff I 𝓘(ℝ) n f) (hn : n ≤ 
   apply contMDiff_iff_comp_subtypeVal_Icc.mpr
   refine ⟨(Real.smoothTransition.continuous.comp hf.continuous).subtype_mk _, ?_⟩
   exact ((Real.smoothTransition.contDiff (n := ⊤)).contMDiff.of_le hn).comp hf
+
+namespace TauCeti
+
+/-- The time reparametrization `t ↦ Real.smoothTransition (2 * t - 1 / 2)`, as a map into the
+unit interval: a smooth transition from `0` to `1` which is constant on neighborhoods of both ends
+of the unit interval. -/
+noncomputable def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
+  ⟨Real.smoothTransition (2 * t - 1 / 2), Real.smoothTransition.nonneg _,
+    Real.smoothTransition.le_one _⟩
+
+/-- The collared smooth transition at `t` is `Real.smoothTransition (2 * t - 1 / 2)`. -/
+@[simp]
+theorem coe_collaredSmoothTransitionUnit (t : ℝ) :
+    (collaredSmoothTransitionUnit t : ℝ) = Real.smoothTransition (2 * t - 1 / 2) :=
+  (rfl)
+
+/-- The collared smooth transition is `C^n` for every `n ≤ ∞`. -/
+theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
+    ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
+  ContMDiff.smoothTransition (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff) hn
+
+/-- The collared smooth transition is smooth as a real-valued function. -/
+theorem contDiff_coe_collaredSmoothTransitionUnit {n : ℕ∞} :
+    ContDiff ℝ n fun t ↦ (collaredSmoothTransitionUnit t : ℝ) :=
+  Real.smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).sub contDiff_const)
+
+/-- The collared smooth transition is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_collaredSmoothTransitionUnit : Continuous collaredSmoothTransitionUnit :=
+  (Real.smoothTransition.continuous.comp (by fun_prop)).subtype_mk _
+
+/-- The collared smooth transition is `0` up to time `1 / 4`. -/
+theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
+    collaredSmoothTransitionUnit t = 0 :=
+  Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
+
+/-- The collared smooth transition is `1` from time `3 / 4` on. -/
+theorem collaredSmoothTransitionUnit_eq_one_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) :
+    collaredSmoothTransitionUnit t = 1 :=
+  Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
+
+end TauCeti
 
 open Set Filter WithLp
 open scoped Topology

@@ -87,7 +87,7 @@ theorem legendreK_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ : 
     legendreK (2 * √k / (1 + k)) = (1 + k) * legendreK k := by
   have hp : 0 < 1 + k := by linarith
   have hm : 0 < 1 - k := by linarith
-  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₀ hk₁.ne
+  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₁.ne
   have hk : k ^ 2 < 1 := by nlinarith
   rw [legendreK_eq_agmIntegral hlt, legendreK_eq_agmIntegral hk,
     one_sub_sq_two_mul_sqrt_div_one_add hk₀,

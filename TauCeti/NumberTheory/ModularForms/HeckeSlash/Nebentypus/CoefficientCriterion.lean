@@ -93,7 +93,7 @@ private lemma primePower_eq_coeff_smul_of_relations (F : modFormCharSpace k χ)
   | more r ih₁ ih₂ =>
     rw [hpow r]
     by_cases hpN : Nat.Coprime p N
-    · rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ k χ hp.pos hpN]
+    · rw [heckeRingHomCharSpace_heckeTGeneratorRecGamma0_succ_succ k χ hpN]
       simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply,
         ih₁, ih₂, map_smul, ← heckeTCompositeGamma0_prime N hp, hprime,
         smul_smul, sub_smul, ← ZMod.coe_unitOfCoprime p hpN, MulChar.ofUnitHom_coe]

@@ -175,15 +175,9 @@ private theorem isZero_res_splittingModule_of_tateHypotheses {L K : Type} [Field
         (Rep.splittingModule (Rep.of (padicCompletionUnitsRepresentation p L K)) u)) n) := by
   let A := Rep.of (padicCompletionUnitsRepresentation p L K)
   -- On an `ℓ`-subgroup with `ℓ ≠ p`, everything vanishes: `#S` is a unit of `ℤ_p`.
-  have hunit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ p) (S : Subgroup (L ≃ₐ[K] L))
-      (hS : IsPGroup ℓ S) : IsUnit (Nat.card S : ℤ_[p]) := by
-    obtain ⟨e, he⟩ := hS.exists_card_eq
-    rw [he, Nat.cast_pow]
-    exact (PadicInt.isUnit_natCast_of_coprime
-      ((Nat.coprime_primes Fact.out Fact.out).mpr (Ne.symm hℓ))).pow e
   have hsub (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ p) (S : Subgroup (L ≃ₐ[K] L)) (hS : IsPGroup ℓ S)
       (n : ℕ) : Subsingleton (groupCohomology (Rep.res S.subtype A) (n + 1)) :=
-    groupCohomology.subsingleton_of_isUnit_natCard _ (hunit ℓ hℓ S hS) n
+    groupCohomology.subsingleton_of_isUnit_natCard _ (PadicInt.isUnit_natCard_of_isPGroup hℓ hS) n
   have hY := TateCohomology.isZero_res_splittingModule A u
     (fun ℓ _ S hS ↦ by
       by_cases hℓ : ℓ = p
@@ -204,7 +198,7 @@ private theorem isZero_res_splittingModule_of_tateHypotheses {L K : Type} [Field
           PadicInt.valuation_natCast, he, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
       · have := hsub ℓ hℓ S hS 1
         rw [Nat.card_unique (α := groupCohomology (Rep.res S.subtype A) 2),
-          Ideal.span_singleton_eq_top.mpr (hunit ℓ hℓ S hS)]
+          Ideal.span_singleton_eq_top.mpr (PadicInt.isUnit_natCard_of_isPGroup hℓ hS)]
         exact (Nat.card_unique).symm)
   exact hY
 

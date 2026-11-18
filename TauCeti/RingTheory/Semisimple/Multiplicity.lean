@@ -82,6 +82,8 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   type with exponent the multiplicity**, `isotypicComponent A M S ≃ₗ[A] Fin m → S` for
   `m = finrank k (S →ₗ[A] M)`, and
   `TauCeti.finrank_isotypicComponent`: consequently `dim (isotypicComponent A M S) = m · dim S`.
+* `TauCeti.finrank_isotypicComponent_mul_finrank_end`: over an arbitrary field,
+  `dim (isotypicComponent A M S) · dim End_A(S) = m · dim S`.
 * `TauCeti.finrank_linearMap_pos_of_ne_bot`: for a finite-dimensional `M`, the hom space out of
   any nonzero submodule is positive-dimensional.  This asks for neither simplicity nor an
   algebraically closed field, so it lives apart from the results above.
@@ -189,14 +191,17 @@ section SimpleTarget
 variable {k A S : Type*} [Field k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
 variable [FiniteDimensional k S]
-variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)]
-  [∀ i, Module A (N i)] [∀ i, IsScalarTower k A (N i)] [∀ i, IsSimpleModule A (N i)]
+variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)]
+  [∀ i, Module A (N i)] [∀ i, IsSimpleModule A (N i)]
 
 /-- A module with a finite decomposition into simple modules has a finite-dimensional space of
-maps from any finite-dimensional module into it. -/
+maps from any finite-dimensional module into it. The `k`-structure of the factors plays no role:
+it is induced from the `A`-structure through `algebraMap k A`. -/
 theorem _root_.LinearEquiv.finiteDimensional_linearMap_of_pi {M : Type*} [AddCommGroup M]
     [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     FiniteDimensional k (S →ₗ[A] M) := by
+  let (i : ι) : Module k (N i) := Module.compHom (N i) (algebraMap k A)
+  have (i : ι) : IsScalarTower k A (N i) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
     finiteDimensional_linearMap_of_isSimpleModule
   have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
@@ -204,6 +209,8 @@ theorem _root_.LinearEquiv.finiteDimensional_linearMap_of_pi {M : Type*} [AddCom
   exact Module.Finite.equiv (LinearEquiv.homCongrRight k (S := S) e).symm
 
 end SimpleTarget
+
+section AlgClosed
 
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
@@ -232,16 +239,29 @@ theorem finrank_linearMap_eq_natCard_of_linearEquiv_pi {M : Type*} [AddCommGroup
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
     LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S), mul_one]
 
-omit [IsAlgClosed k] in
+end AlgClosed
+
+section Constituent
+
+variable {k A S : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
+variable [FiniteDimensional k S]
+variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)]
+  [∀ i, Module A (N i)] [∀ i, IsSimpleModule A (N i)]
+
 /-- **A hom space detects a constituent.**  There is a nonzero `A`-linear map from the simple
 module `S` into `M` exactly when `S` occurs among the simple factors of `M`. -/
 theorem finrank_linearMap_pos_iff_exists_nonempty_linearEquiv {M : Type*} [AddCommGroup M]
     [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     0 < Module.finrank k (S →ₗ[A] M) ↔ ∃ i, Nonempty (S ≃ₗ[A] N i) := by
+  let (i : ι) : Module k (N i) := Module.compHom (N i) (algebraMap k A)
+  have (i : ι) : IsScalarTower k A (N i) := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have : Nontrivial S := IsSimpleModule.nontrivial A S
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
     mul_pos_iff_of_pos_right (finrank_end_pos (k := k)), Nat.card_pos_iff, nonempty_subtype]
   exact and_iff_left inferInstance
+
+end Constituent
 
 end Multiplicity
 
@@ -650,7 +670,10 @@ section IsotypicComponent
 variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
-variable [IsAlgClosed k] [FiniteDimensional k S] [FiniteDimensional k M]
+
+section Equiv
+
+variable [IsAlgClosed k] [FiniteDimensional k M]
 
 /-- **The isotypic component is the power of its type with exponent the multiplicity.**  Mathlib's
 `IsIsotypicOfType.linearEquiv_fun` writes the component as a finite power of `S`; what is proved
@@ -664,11 +687,63 @@ theorem nonempty_linearEquiv_isotypicComponent :
     Module.Finite.of_restrictScalars_finite k A _
   obtain ⟨n, ⟨e⟩⟩ := (IsIsotypicOfType.isotypicComponent A M S).linearEquiv_fun
   have hn : Module.finrank k (S →ₗ[A] M) = n := by
-    rw [← finrank_linearMap_isotypicComponent (k := k),
-      finrank_linearMap_eq_natCard_of_linearEquiv_pi_const (k := k) e]
-    simp
+    by_cases hS : FiniteDimensional k S
+    · rw [← finrank_linearMap_isotypicComponent (k := k),
+        finrank_linearMap_eq_natCard_of_linearEquiv_pi_const (k := k) e]
+      simp
+    · -- A nonzero map out of `S` would embed it `k`-linearly in the finite-dimensional `M`,
+      -- so there is none, and the power has exponent zero.
+      have hzero : ∀ f : S →ₗ[A] M, f = 0 := fun f ↦ by
+        by_contra hf
+        exact hS (Module.Finite.of_injective (f.restrictScalars k)
+          ((LinearMap.injective_or_eq_zero f).resolve_right hf))
+      have hn0 : n = 0 := by
+        by_contra hn0
+        have : Nontrivial S := IsSimpleModule.nontrivial A S
+        let f : S →ₗ[A] M := (isotypicComponent A M S).subtype ∘ₗ e.symm.toLinearMap ∘ₗ
+          LinearMap.single A (fun _ : Fin n ↦ S) ⟨0, Nat.pos_of_ne_zero hn0⟩
+        have hsingle : Function.Injective
+            (LinearMap.single A (fun _ : Fin n ↦ S) ⟨0, Nat.pos_of_ne_zero hn0⟩) :=
+          Pi.single_injective (M := fun _ : Fin n ↦ S) _
+        have hf : Function.Injective f :=
+          Subtype.val_injective.comp (e.symm.injective.comp hsingle)
+        obtain ⟨x, hx⟩ := exists_ne (0 : S)
+        exact hx (hf (by rw [hzero f]; simp))
+      have : Subsingleton (S →ₗ[A] M) := ⟨fun f g ↦ (hzero f).trans (hzero g).symm⟩
+      rw [hn0]
+      exact Module.finrank_zero_of_subsingleton
   rw [hn]
   exact ⟨e⟩
+
+end Equiv
+
+section ArbitraryField
+
+variable [FiniteDimensional k S] [FiniteDimensional k M]
+
+/-- **The dimension of an isotypic component over an arbitrary field.**  The `S`-isotypic component
+of `M` is a power `S^{⊕ n}`, while each copy of `S` contributes the dimension of the division
+algebra `End_A(S)` to the multiplicity `finrank k (S →ₗ[A] M)`; so the dimension of the component
+times `dim End_A(S)` is the multiplicity times `dim S`. -/
+theorem finrank_isotypicComponent_mul_finrank_end :
+    Module.finrank k ↥(isotypicComponent A M S) * Module.finrank k (Module.End A S)
+      = Module.finrank k (S →ₗ[A] M) * Module.finrank k S := by
+  have : Module.Finite k ↥(isotypicComponent A M S) :=
+    .of_injective ((isotypicComponent A M S).subtype.restrictScalars k) Subtype.val_injective
+  have : Module.Finite A ↥(isotypicComponent A M S) :=
+    Module.Finite.of_restrictScalars_finite k A _
+  obtain ⟨n, ⟨e⟩⟩ := (IsIsotypicOfType.isotypicComponent A M S).linearEquiv_fun
+  rw [(e.restrictScalars k).finrank_eq, ← finrank_linearMap_isotypicComponent (k := k) (M := M),
+    e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k) (N := fun _ : Fin n ↦ S),
+    Nat.card_congr (Equiv.subtypeUnivEquiv fun _ ↦ ⟨LinearEquiv.refl A S⟩)]
+  simp [Module.finrank_pi_fintype]
+  ring
+
+end ArbitraryField
+
+section AlgClosed
+
+variable [IsAlgClosed k] [FiniteDimensional k S] [FiniteDimensional k M]
 
 /-- **The dimension of an isotypic component is the multiplicity times the dimension of its
 type.**  This is the counted form of the isotypic decomposition: the `S`-isotypic component of `M`
@@ -676,9 +751,10 @@ is `S^{⊕ m}` with `m` the multiplicity `finrank k (S →ₗ[A] M)`. -/
 theorem finrank_isotypicComponent :
     Module.finrank k ↥(isotypicComponent A M S)
       = Module.finrank k (S →ₗ[A] M) * Module.finrank k S := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_isotypicComponent (k := k) (A := A) (M := M) (S := S)
-  rw [(e.restrictScalars k).finrank_eq]
-  simp [Module.finrank_pi_fintype]
+  simpa [LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S)] using
+    finrank_isotypicComponent_mul_finrank_end (k := k) (A := A) (M := M) (S := S)
+
+end AlgClosed
 
 end IsotypicComponent
 

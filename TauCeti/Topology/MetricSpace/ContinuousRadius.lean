@@ -30,6 +30,11 @@ of that parameter space. This uses Mathlib's generalized tube lemma, its compact
 diagonal/uniformity comparison, and the same convex selection theorem. The radii control
 individual steps of local transports, without averaging invertible operators.
 
+Similarly, an open subset of `ℝ × X` containing `{0} × X` contains a tube
+`{(t, x) | |t| < ε x}` of positive continuous width over a normal paracompact space `X`
+(`IsOpen.exists_continuous_pos_forall_abs_lt`). This is the shape of a collar of variable width
+around a noncompact hypersurface.
+
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 Theorem 6.24, the variable-radius shrinking argument.
 -/
@@ -121,5 +126,22 @@ theorem exists_continuous_pos_forall_dist_le [NormalSpace X] [ParacompactSpace X
       fun s t hst ↦ hy s t (by linarith [lt_min hε one_pos])⟩⟩
   obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
   exact ⟨δ, fun x ↦ (hδ x).1, fun x ↦ (hδ x).2⟩
+
+/-- **A tube of positive continuous width.** Over a normal paracompact space `X`, an open subset
+of `ℝ × X` containing `{0} × X` contains the tube `{(t, x) | |t| < ε x}` of some positive
+continuous function `ε`. No compactness of `X` is needed. -/
+theorem exists_continuous_pos_forall_abs_lt [NormalSpace X] [ParacompactSpace X]
+    {U : Set (ℝ × X)} (hU : IsOpen U) (h0 : ∀ x, (0, x) ∈ U) :
+    ∃ ε : C(X, ℝ), (∀ x, 0 < ε x) ∧ ∀ (x : X) (t : ℝ), |t| < ε x → (t, x) ∈ U := by
+  let R (x : X) : Set ℝ := {r | 0 < r ∧ ∀ t : ℝ, |t| < r → (t, x) ∈ U}
+  have hconv (x : X) : Convex ℝ (R x) := OrdConnected.convex
+    ⟨fun _ ha _ hb _ hc ↦ ⟨ha.1.trans_le hc.1, fun t ht ↦ hb.2 t (ht.trans_le hc.2)⟩⟩
+  have hlocal (x : X) : ∃ c : ℝ, ∀ᶠ y in 𝓝 x, c ∈ R y := by
+    obtain ⟨u, hu, v, hv, huv⟩ := mem_nhds_prod_iff.mp (hU.mem_nhds (h0 x))
+    obtain ⟨c, hc, hcu⟩ := Metric.mem_nhds_iff.mp hu
+    exact ⟨c, Filter.mem_of_superset hv fun y hy ↦ ⟨hc, fun t ht ↦
+      huv ⟨hcu (by rwa [Metric.mem_ball, Real.dist_0_eq_abs]), hy⟩⟩⟩
+  obtain ⟨ε, hε⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
+  exact ⟨ε, fun x ↦ (hε x).1, fun x ↦ (hε x).2⟩
 
 end IsOpen

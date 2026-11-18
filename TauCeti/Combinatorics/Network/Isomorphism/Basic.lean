@@ -261,6 +261,13 @@ theorem assignmentEquiv_apply (e : N ≃ₙ N') (R : Type w') (f : N.Assignment 
     e.assignmentEquiv R f (e.homEquiv x y a) = f a := by
   simp [assignmentEquiv]
 
+/-- Assignment transport preserves evaluation on a total arrow, including its endpoints. -/
+@[simp]
+theorem assignmentEquiv_apply_totalHomEquiv (e : N ≃ₙ N') (R : Type w')
+    (f : N.Assignment R) (a : Σ x y, N.Hom x y) :
+    e.assignmentEquiv R f (e.totalHomEquiv a).2.2 = f a.2.2 :=
+  e.assignmentEquiv_apply R f a.2.2
+
 /-- Pulling an assignment back evaluates by applying the forward arrow equivalence. -/
 @[simp]
 theorem assignmentEquiv_symm_apply (e : N ≃ₙ N') (R : Type w') (f : N'.Assignment R)
@@ -296,6 +303,22 @@ theorem assignmentEquiv_zero {R : Type w'} [Zero R] (e : N ≃ₙ N') :
   apply (e.assignmentEquiv R).symm.injective
   ext x y a
   simp
+
+/-- Assignment transport is additive. -/
+@[simp]
+theorem assignmentEquiv_add {R : Type w'} [Add R] (e : N ≃ₙ N') (f g : N.Assignment R) :
+    e.assignmentEquiv R (f + g) = e.assignmentEquiv R f + e.assignmentEquiv R g := by
+  apply (e.assignmentEquiv R).symm.injective
+  ext x y a
+  simp
+
+/-- Assignment transport commutes with sums of lists of assignments. -/
+theorem assignmentEquiv_list_sum {R : Type w'} [Zero R] [Add R] (e : N ≃ₙ N')
+    (l : List (N.Assignment R)) :
+    e.assignmentEquiv R l.sum = (l.map (e.assignmentEquiv R)).sum := by
+  induction l with
+  | nil => simp
+  | cons f l ih => simp [ih]
 
 /-- Transport along the identity network isomorphism is the identity on assignments. -/
 @[simp]
@@ -505,6 +528,12 @@ theorem mapPath_mapPath_symm (e : N ≃ₙ N') {x y : W} (p : ArrowWalk N'.Hom x
 theorem length_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
     (e.mapPath p).length = p.length :=
   @Prefunctor.length_mapPath V W (Quiver.mk N.Hom) (Quiver.mk N'.Hom) e.toPrefunctor x y p
+
+/-- Walk transport maps the vertex sequence in order, retaining repeated vertices. -/
+@[simp]
+theorem vertices_mapPath (e : N ≃ₙ N') {x y : V} (p : ArrowWalk N.Hom x y) :
+    (e.mapPath p).vertices = p.vertices.map e.vertexEquiv :=
+  @Prefunctor.vertices_mapPath V W ⟨N.Hom⟩ ⟨N'.Hom⟩ e.toPrefunctor x y p
 
 /-- Path transport preserves concatenation. -/
 @[simp]

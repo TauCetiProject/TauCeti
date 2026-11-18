@@ -8,10 +8,14 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
+public import TauCeti.Analysis.InnerProductSpace.Dual
+public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -23,11 +27,15 @@ map `⋀ⁿ f` induced by a linear isometry `f` preserves it, so that rotations 
 act isometrically on its forms, and that infinitesimal rotations, the skew-adjoint endomorphisms,
 act skew-adjointly on forms of every degree. It also records that the norm of a wedge
 `v₁ ∧ ⋯ ∧ vₙ` is the volume of the parallelepiped spanned by the `vᵢ`, bounded by Hadamard's
-inequality. Finally, it packages the skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the
-operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
+inequality. For a real-linear `P : E → ℂ`, it names the two-vector `p₁ ∧ p₂` of the gradients of
+`Re P` and `Im P`, which represents the two-form `Im (conj (P u) P w)`. Finally, it packages the
+skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represents the two-form
+`ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
 
 ## Main definitions
 
+* `ContinuousLinearMap.gradientWedge P`: the wedge `p₁ ∧ p₂` of the vectors representing the
+  real and imaginary parts of a complex-valued covector `P`.
 * `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
 
@@ -48,7 +56,17 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
-* `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`.
+* `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`, and
+  `exteriorPower.norm_ιMulti_two_le`: its case `‖u ∧ w‖ ≤ ‖u‖ ‖w‖` of two vectors.
+* `exteriorPower.norm_ιMulti_comp_linearIsometry`, `exteriorPower.norm_ιMulti_comp_perm`,
+  `exteriorPower.norm_ιMulti_update_smul`: the volume of a frame is invariant under linear
+  isometries and reorderings, and scales by `|c|` when one vector is multiplied by `c`.
+* `Orthonormal.norm_ιMulti`: orthonormal frames, the empty frame among them, have volume one.
+* `Orthonormal.ιMulti_eq_ιMulti_iff`: two orthonormal frames have the same wedge exactly when they
+  differ by a special orthogonal change of frame.
+* `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
+  `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`,
+  and `ContinuousLinearMap.norm_gradientWedge_le`: `‖p₁ ∧ p₂‖ ≤ ‖P‖ ^ 2`.
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
@@ -177,7 +195,97 @@ theorem norm_ιMulti_le_prod_norm (v : Fin n → E) : ‖ιMulti ℝ n v‖ ≤ 
   rw [norm_ιMulti_sq, ← Finset.prod_pow]
   simpa using Matrix.re_det_gram_le_prod_norm_sq (𝕜 := ℝ) v
 
+/-- **Hadamard's inequality** for two vectors: `‖u ∧ w‖ ≤ ‖u‖ ‖w‖`. -/
+theorem norm_ιMulti_two_le (u w : E) : ‖ιMulti ℝ 2 ![u, w]‖ ≤ ‖u‖ * ‖w‖ := by
+  simpa [Fin.prod_univ_two] using norm_ιMulti_le_prod_norm ![u, w]
+
+/-- The volume of a frame is invariant under linear isometries. -/
+@[simp]
+theorem norm_ιMulti_comp_linearIsometry (f : E →ₗᵢ[ℝ] F) (v : Fin n → E) :
+    ‖ιMulti ℝ n (f ∘ v)‖ = ‖ιMulti ℝ n v‖ := by
+  rw [← pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero, norm_ιMulti_sq,
+    norm_ιMulti_sq]
+  congr 1
+  ext i j
+  simp [Matrix.gram]
+
+/-- The volume of a frame does not depend on the order of its vectors. -/
+@[simp]
+theorem norm_ιMulti_comp_perm (v : Fin n → E) (σ : Equiv.Perm (Fin n)) :
+    ‖ιMulti ℝ n (v ∘ σ)‖ = ‖ιMulti ℝ n v‖ := by
+  rw [(ιMulti ℝ n).map_perm]
+  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> simp [h]
+
+/-- Multiplying one vector of a frame by `c` multiplies its volume by `|c|`. -/
+theorem norm_ιMulti_update_smul (v : Fin n → E) (i : Fin n) (c : ℝ) :
+    ‖ιMulti ℝ n (Function.update v i (c • v i))‖ = |c| * ‖ιMulti ℝ n v‖ := by
+  rw [AlternatingMap.map_update_smul, Function.update_eq_self, norm_smul, Real.norm_eq_abs]
+
+/-- An orthonormal frame spans a parallelepiped of volume one: `‖v₁ ∧ ⋯ ∧ vₙ‖ = 1`. -/
+@[simp]
+theorem _root_.Orthonormal.norm_ιMulti {v : Fin n → E} (hv : Orthonormal ℝ v) :
+    ‖ιMulti ℝ n v‖ = 1 := by
+  rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, norm_ιMulti_sq,
+    Matrix.gram_eq_one_iff_orthonormal.mpr hv, Matrix.det_one, one_pow]
+
+omit [FiniteDimensional ℝ E] in
+/-- Two orthonormal frames have the same wedge exactly when one is obtained from the other by a
+special orthogonal change of frame, `vⱼ = ∑ i, A j i • eᵢ` with `A ∈ SO(n)`: they span the same
+subspace and induce the same orientation on it. -/
+theorem _root_.Orthonormal.ιMulti_eq_ιMulti_iff {e v : Fin n → E} (he : Orthonormal ℝ e)
+    (hv : Orthonormal ℝ v) :
+    ιMulti ℝ n v = ιMulti ℝ n e ↔
+      ∃ A ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ, v = fun j ↦ ∑ i, A j i • e i := by
+  classical
+  refine ⟨fun h ↦ ?_, ?_⟩
+  swap
+  · rintro ⟨A, hA, rfl⟩
+    rw [ιMulti_sum_smul, (Matrix.mem_specialOrthogonalGroup_iff.1 hA).2, one_smul]
+  -- Every `vⱼ` lies in the span of `e`, since `vⱼ ∧ e₁ ∧ ⋯ ∧ eₙ = vⱼ ∧ v₁ ∧ ⋯ ∧ vₙ = 0`.
+  have hmem (j : Fin n) : v j ∈ Submodule.span ℝ (Set.range e) := by
+    rw [TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero he.linearIndependent, ← h]
+    exact (TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero hv.linearIndependent
+      (v j)).1 (Submodule.subset_span ⟨j, rfl⟩)
+  choose c hc using fun j ↦ (Submodule.mem_span_range_iff_exists_fun ℝ).1 (hmem j)
+  let A : Matrix (Fin n) (Fin n) ℝ := Matrix.of c
+  have hvA : v = fun j ↦ ∑ i, A j i • e i := funext fun j ↦ (hc j).symm
+  have hAO : A ∈ Matrix.orthogonalGroup (Fin n) ℝ :=
+    (he.orthonormal_sum_smul_iff_mem_unitaryGroup A).1 (hvA ▸ hv)
+  refine ⟨A, Matrix.mem_specialOrthogonalGroup_iff.2 ⟨hAO, ?_⟩, hvA⟩
+  refine smul_left_injective ℝ ((ιMulti_ne_zero_iff e).2 he.linearIndependent) ?_
+  simp only [← ιMulti_sum_smul, ← hvA, h, one_smul]
+
 end exteriorPower
+
+namespace ContinuousLinearMap
+
+open exteriorPower
+open scoped RealInnerProductSpace ComplexConjugate
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- The two-vector `p₁ ∧ p₂` of the gradients of the real and imaginary parts of a
+complex-valued covector `P = p₁ + i p₂`. It represents the two-form `Im (conj (P u) P w)`
+(`ContinuousLinearMap.inner_gradientWedge_ιMulti`). -/
+noncomputable def gradientWedge (P : E →L[ℝ] ℂ) : ⋀[ℝ]^2 E :=
+  ιMulti ℝ 2 ![P.reGradient, P.imGradient]
+
+/-- **The two-form `Im (conj (P u) P w)` is represented by the two-vector `p₁ ∧ p₂`** of the
+gradients of the real and imaginary parts of `P`. -/
+@[simp]
+theorem inner_gradientWedge_ιMulti (P : E →L[ℝ] ℂ) (u w : E) :
+    ⟪P.gradientWedge, ιMulti ℝ 2 ![u, w]⟫ = (conj (P u) * P w).im := by
+  rw [gradientWedge, inner_ιMulti_two, inner_reGradient, inner_reGradient, inner_imGradient,
+    inner_imGradient, Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+/-- The two-vector `p₁ ∧ p₂` of a complex-valued covector `P` has norm at most `‖P‖ ^ 2`. -/
+theorem norm_gradientWedge_le (P : E →L[ℝ] ℂ) : ‖P.gradientWedge‖ ≤ ‖P‖ ^ 2 :=
+  (norm_ιMulti_two_le _ _).trans <| by
+    rw [sq]
+    exact mul_le_mul P.norm_reGradient_le P.norm_imGradient_le (norm_nonneg _) (norm_nonneg _)
+
+end ContinuousLinearMap
 
 namespace OrthonormalBasis
 

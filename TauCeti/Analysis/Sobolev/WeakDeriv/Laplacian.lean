@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -37,6 +38,8 @@ function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
   integration by parts in one direction, `∫ ∂ᵥ∂ᵥφ • u = ∫ φ • ∂ᵥ∂ᵥu`.
 * `ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian`: Green's second identity
   against a test function, `∫ Δφ • u = ∫ φ • Δu`.
+* `ContDiffOn.eqOn_laplacian_of_forall_integral_laplacian_smul_eq`: conversely, a `C²` function
+  whose distributional Laplacian is a continuous function `f` satisfies `Δu = f` pointwise.
 * `InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`: a harmonic function is
   weakly harmonic.
 * `MeasureTheory.LocallyIntegrable.integral_laplacian_mul_eq_neg_integral_sum`: for a locally
@@ -157,6 +160,34 @@ theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
         by_cases hx : x ∈ (Ω : Set E)
         · rw [hΔu x hx, Finset.smul_sum]
         · simp [φ.zero_on_compl hx]
+
+/-- **A `C²` distributional solution of `Δu = f` is a classical one.** If `u` is `C²` on the open
+set `Ω`, `f` is continuous on `Ω`, and `∫ Δφ • u ∂μ = ∫ φ • f ∂μ` for every test function `φ` on
+`Ω`, then `Δu = f` at every point of `Ω`. -/
+theorem _root_.ContDiffOn.eqOn_laplacian_of_forall_integral_laplacian_smul_eq
+    (hu : ContDiffOn ℝ 2 u Ω) {f : E → F} (hf : ContinuousOn f Ω)
+    (h : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = ∫ x, (φ : E → ℝ) x • f x ∂μ) :
+    Set.EqOn (Δ u) f Ω := by
+  have hΔ : ContinuousOn (Δ u) Ω := hu.continuousOn_laplacian Ω.isOpen
+  have hloc : LocallyIntegrableOn (Δ u - f) Ω μ :=
+    (hΔ.sub hf).locallyIntegrableOn Ω.isOpen.measurableSet
+  have hzero := IsOpen.ae_eq_zero_of_integral_contDiff_smul_eq_zero Ω.isOpen hloc
+    fun g hg hgc hgs ↦ by
+    set φ : 𝓓(Ω, ℝ) := ⟨g, hg, hgc, hgs⟩
+    have hΔi : Integrable (fun x ↦ g x • Δ u x) μ := by
+      simpa [φ] using φ.integrable_smul (hΔ.locallyIntegrableOn Ω.isOpen.measurableSet)
+    have hfi : Integrable (fun x ↦ g x • f x) μ := by
+      simpa [φ] using φ.integrable_smul (hf.locallyIntegrableOn Ω.isOpen.measurableSet)
+    have hgreen := hu.integral_laplacian_smul_eq_integral_smul_laplacian (μ := μ) φ
+    rw [h φ] at hgreen
+    simp only [Pi.sub_apply, smul_sub]
+    rw [integral_sub hΔi hfi, sub_eq_zero]
+    exact hgreen.symm
+  have hae : Δ u =ᵐ[μ.restrict Ω] f := by
+    rw [Filter.EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
+    filter_upwards [hzero] with x hx hxΩ
+    exact sub_eq_zero.1 (hx hxΩ)
+  exact Measure.eqOn_open_of_ae_eq hae Ω.isOpen hΔ hf
 
 omit [CompleteSpace F] in
 /-- **A harmonic function is weakly harmonic.** If `u` is harmonic on the open set `Ω`, then

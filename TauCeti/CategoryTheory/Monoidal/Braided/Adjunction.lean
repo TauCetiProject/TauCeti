@@ -24,7 +24,7 @@ public section
 open CategoryTheory MonoidalCategory BraidedCategory
   Functor.LaxMonoidal Functor.OplaxMonoidal
 
-namespace TauCeti
+namespace CategoryTheory.Adjunction
 
 universe v₁ v₂ u₁ u₂
 
@@ -35,7 +35,7 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [BraidedCatego
 /-- The oplax tensor map of a left adjoint respects braiding when the lax tensor map of its
 right adjoint does. No invertibility of the left adjoint's tensor map is required. -/
 @[reassoc]
-theorem _root_.CategoryTheory.Adjunction.map_braiding_hom_comp_δ (adj : F ⊣ G)
+theorem map_braiding_hom_comp_δ (adj : F ⊣ G)
     [F.OplaxMonoidal] [G.LaxBraided] [adj.IsMonoidal] (X Y : C) :
     F.map (β_ X Y).hom ≫ δ F Y X =
       δ F X Y ≫ (β_ (F.obj X) (F.obj Y)).hom := by
@@ -46,8 +46,8 @@ theorem _root_.CategoryTheory.Adjunction.map_braiding_hom_comp_δ (adj : F ⊣ G
 
 /-- A strong monoidal left adjoint of a lax braided right adjoint is braided, for compatible
 monoidal structures. Its monoidal structure is the given structure on `F`. -/
-@[instance_reducible]
-def _root_.CategoryTheory.Adjunction.leftAdjointBraided (adj : F ⊣ G)
+@[expose, instance_reducible]
+def leftAdjointBraided (adj : F ⊣ G)
     [F.Monoidal] [G.LaxBraided] [adj.IsMonoidal] : F.Braided where
   toMonoidal := inferInstance
   braided X Y := by
@@ -56,7 +56,7 @@ def _root_.CategoryTheory.Adjunction.leftAdjointBraided (adj : F ⊣ G)
 
 /-- The braided left adjoint retains its supplied monoidal structure. -/
 @[simp]
-theorem _root_.CategoryTheory.Adjunction.leftAdjointBraided_toMonoidal (adj : F ⊣ G)
+theorem leftAdjointBraided_toMonoidal (adj : F ⊣ G)
     [hF : F.Monoidal] [G.LaxBraided] [adj.IsMonoidal] :
     adj.leftAdjointBraided.toMonoidal = hF :=
   (rfl)
@@ -65,7 +65,7 @@ theorem _root_.CategoryTheory.Adjunction.leftAdjointBraided_toMonoidal (adj : F 
 left adjoint does. This is the converse of `Adjunction.map_braiding_hom_comp_δ`; no invertibility
 of the left adjoint's tensor map is required. -/
 @[reassoc]
-theorem _root_.CategoryTheory.Adjunction.μ_comp_map_braiding_hom (adj : F ⊣ G)
+theorem μ_comp_map_braiding_hom (adj : F ⊣ G)
     [F.OplaxMonoidal] [G.LaxMonoidal] [adj.IsMonoidal]
     (h : ∀ X Y : C, F.map (β_ X Y).hom ≫ δ F Y X = δ F X Y ≫ (β_ (F.obj X) (F.obj Y)).hom)
     (X Y : D) :
@@ -77,17 +77,17 @@ theorem _root_.CategoryTheory.Adjunction.μ_comp_map_braiding_hom (adj : F ⊣ G
 
 /-- A braided strong monoidal left adjoint gives a compatible lax monoidal right adjoint a
 lax braided structure, with the given lax monoidal structure on `G`. -/
-@[instance_reducible]
-def _root_.CategoryTheory.Adjunction.rightAdjointLaxBraided (adj : F ⊣ G)
+@[expose, instance_reducible]
+def rightAdjointLaxBraided (adj : F ⊣ G)
     [F.Braided] [G.LaxMonoidal] [adj.IsMonoidal] : G.LaxBraided where
   toLaxMonoidal := inferInstance
   braided := adj.μ_comp_map_braiding_hom fun _ _ ↦ by simp
 
 /-- The lax braided right adjoint retains its supplied lax monoidal structure. -/
 @[simp]
-theorem _root_.CategoryTheory.Adjunction.rightAdjointLaxBraided_toLaxMonoidal (adj : F ⊣ G)
+theorem rightAdjointLaxBraided_toLaxMonoidal (adj : F ⊣ G)
     [F.Braided] [hG : G.LaxMonoidal] [adj.IsMonoidal] :
     adj.rightAdjointLaxBraided.toLaxMonoidal = hG :=
   (rfl)
 
-end TauCeti
+end CategoryTheory.Adjunction

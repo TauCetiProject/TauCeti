@@ -9,10 +9,20 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.Ascoli
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
+public import Mathlib.Topology.MetricSpace.Thickening
+public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+public import Mathlib.Topology.UnitInterval
 
+import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import Mathlib.Topology.MetricSpace.IsometricSMul
+import Mathlib.Topology.MetricSpace.Lipschitz
+import Mathlib.Topology.MetricSpace.UniformConvergence
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Topology.UniformSpace.Ascoli
+import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # The Arzelà–Ascoli theorem in `C(X, Y)`
@@ -36,7 +46,17 @@ and adds companion statements used for compactness and finite approximation of f
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a weakly locally compact domain, a compact subset of `C(X, Y)` is equicontinuous.
 * A sequence of continuous `1`-periodic loops in a compact subset of a pseudometric space, with a
-  common modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`.
+  common modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`. In
+  particular the `1`-periodic `L`-Lipschitz loops in a compact set form a compact subset of
+  `ℝ →ᵤ M`.
+* A sequence of maps on `ℝ × ℝ` that are uniformly Lipschitz with values in a compact set on
+  exhausting bands `[-Rₙ, Rₙ] × ℝ` has a subsequence converging locally uniformly on the plane.
+  In particular, so do the translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a
+  half-plane `s ≥ b` with values in a compact set.
+* The `C`-Lipschitz maps `X → Y` whose value at a fixed point `x₀` lies in a closed set `K` form a
+  compact subset of `C(X, Y)` when the closed `(C * dist x x₀)`-thickening of `K` is compact for
+  every `x`, in particular when `Y` is proper and `K` is compact. For paths on `I`, compactness
+  of the closed `C`-thickening suffices; for `K = {y}` this is the closed ball about `y`.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -58,6 +78,27 @@ endpoints `eₙ` stay at distance at least `1` from each other
   is equicontinuous.
 * `TauCeti.exists_tendstoUniformly_subseq_of_periodic_of_modulus`: Arzelà–Ascoli for periodic
   loops with a common modulus of continuity.
+* `TauCeti.isCompact_setOf_periodic_lipschitzWith`: the `1`-periodic `L`-Lipschitz loops in a
+  compact set are compact for uniform convergence on `ℝ`.
+* `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith`: Arzelà–Ascoli for maps that
+  are uniformly Lipschitz with values in a compact set on exhausting bands of the plane.
+* `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn`: an equicontinuous
+  sequence of maps on an open subset of a proper space, with values at each point in a compact
+  set, has a locally uniformly convergent subsequence.
+* `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`: Arzelà–Ascoli
+  for uniformly Lipschitz maps with values in a compact set on exhausting discs of the plane.
+* `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
+  of a Lipschitz map on a half-plane `s ≥ b` with values in a compact set have a locally
+  uniformly convergent subsequence.
+* `TauCeti.isCompact_setOf_lipschitzWith_apply_mem`: for a proper target, uniformly Lipschitz
+  maps whose value at a fixed point lies in a compact set form a compact set, with
+  `TauCeti.isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening` its form for
+  a closed set with compact closed thickenings and
+  `TauCeti.isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening` its interval form.
+* `TauCeti.isCompact_setOf_lipschitzWith_apply_eq`: for a proper target, uniformly Lipschitz
+  maps with a common value at a fixed point form a compact set, with
+  `TauCeti.isCompact_setOf_lipschitzWith_apply_eq_of_isCompact_closedBall` its interval form for
+  a compact closed ball.
 
 ## References
 
@@ -193,6 +234,7 @@ theorem IsCompact.equicontinuous [WeaklyLocallyCompactSpace X] [UniformSpace Y]
 namespace TauCeti
 
 open Function
+open scoped NNReal UniformConvergence
 
 /-- **Periodic Arzelà–Ascoli.** A sequence of continuous `1`-periodic loops in a compact set `K`,
 sharing a modulus of continuity `ρ` with `ρ(h) → 0` as `h → 0` on `[0, 1]`, has a subsequence
@@ -231,5 +273,227 @@ theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [Pseud
     rw [heq]
     exact hunif.comp p
   exact ⟨ψ, hψ, x, hxper, hux.continuous (Frequently.of_forall fun n ↦ hy _), hux⟩
+
+/-- **Periodic Arzelà–Ascoli, compact form.** In the topology of uniform convergence on `ℝ`, the
+`1`-periodic `L`-Lipschitz loops with values in a compact set `K` form a compact set. -/
+theorem isCompact_setOf_periodic_lipschitzWith {M : Type*} [MetricSpace M] {K : Set M}
+    (hK : IsCompact K) (L : ℝ≥0) :
+    IsCompact {f : ℝ →ᵤ M | Periodic (UniformFun.toFun f) 1 ∧
+      (∀ t, UniformFun.toFun f t ∈ K) ∧ LipschitzWith L (UniformFun.toFun f)} := by
+  refine IsSeqCompact.isCompact fun f hf ↦ ?_
+  have hρ : Tendsto (fun h : ℝ ↦ L * h) (𝓝 0) (𝓝 0) := by
+    simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul (L : ℝ)
+  obtain ⟨ψ, hψ, x, hxper, -, hux⟩ := exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
+    (fun n ↦ (hf n).2.2.continuous) (fun n ↦ (hf n).1) (fun n ↦ (hf n).2.1) hρ
+    fun n t₁ _ t₂ _ ht ↦ by
+      simpa [Real.dist_eq, abs_of_nonneg (sub_nonneg.2 ht)] using (hf n).2.2.dist_le_mul t₂ t₁
+  -- The limit is again periodic, `L`-Lipschitz and with values in `K`.
+  refine ⟨UniformFun.ofFun x, ⟨hxper, fun t ↦ hK.isClosed.mem_of_tendsto (hux.tendsto_at t)
+    (Eventually.of_forall fun n ↦ (hf (ψ n)).2.1 t), LipschitzWith.of_dist_le_mul fun t t' ↦
+      le_of_tendsto ((hux.tendsto_at t).dist (hux.tendsto_at t'))
+        (Eventually.of_forall fun n ↦ (hf (ψ n)).2.2.dist_le_mul t t')⟩, ψ, hψ,
+    UniformFun.tendsto_iff_tendstoUniformly.2 hux⟩
+
+/-- **Arzelà–Ascoli on an open set of a proper space.** Let `u n` be an equicontinuous sequence of
+maps on an open subset `Ω` of a proper metric space, with values in a pseudometric space, such that
+for each `x ∈ Ω` the values `u n x` lie in a common compact set. A subsequence of the `u n`
+converges locally uniformly on `Ω` to a map continuous on `Ω`. -/
+theorem exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn {X M : Type*}
+    [MetricSpace X] [ProperSpace X] [PseudoMetricSpace M] {Ω : Set X} (hΩ : IsOpen Ω)
+    {u : ℕ → X → M} (hu : EquicontinuousOn u Ω)
+    (hbd : ∀ x ∈ Ω, ∃ Q, IsCompact Q ∧ ∀ n, u n x ∈ Q) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : X → M, ContinuousOn g Ω ∧
+      TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) g atTop Ω := by
+  classical
+  let : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
+  let U : ℕ → C(Ω, M) := fun n ↦ ⟨Ω.domRestrict (u n), (hu.continuousOn n).domRestrict⟩
+  obtain ⟨a, -, φ, hφ, hlim⟩ := (ArzelaAscoli.isCompact_closure_range_of_equicontinuous
+    ((equicontinuous_restrict_iff _).mpr hu) fun x : Ω ↦ hbd x x.2).tendsto_subseq
+    (x := U) fun n ↦ subset_closure (mem_range_self n)
+  -- Extend the limit off `Ω` by the first map, only to express convergence on a subset of `X`.
+  let g : X → M := fun x ↦ if hx : x ∈ Ω then a ⟨x, hx⟩ else u 0 x
+  have hg : g ∘ (Subtype.val : Ω → X) = fun x : Ω ↦ a x := by
+    funext x
+    simp [g, x.2]
+  have hconv : TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) g atTop Ω := by
+    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hg]
+    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hlim
+  exact ⟨φ, hφ, g, hconv.continuousOn
+    (Eventually.of_forall fun n ↦ hu.continuousOn (φ n)).frequently, hconv⟩
+
+/-- Arzelà–Ascoli along exhausting discs of nonnegative radii. -/
+private theorem exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall_of_nonneg
+    {M : Type*} [PseudoMetricSpace M] {K : Set M} (hK : IsCompact K) {w : ℕ → ℝ × ℝ → M} {R : ℕ → ℝ}
+    {L : NNReal} (hR₀ : ∀ n, 0 ≤ R n) (hR : Tendsto R atTop atTop)
+    (hL : ∀ n, LipschitzOnWith L (w n) (Metric.closedBall 0 (R n)))
+    (hwK : ∀ n, MapsTo (w n) (Metric.closedBall 0 (R n)) K) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n ↦ w (φ n)) g atTop := by
+  -- Clamping both coordinates to `[-R n, R n]` retracts the plane onto the disc, and is
+  -- `1`-Lipschitz for the sup norm.
+  set c : ℕ → ℝ → ℝ := fun n a ↦ max (-R n) (min a (R n))
+  have hc (n : ℕ) : LipschitzWith 1 (c n) :=
+    (LipschitzWith.id.min_const (R n)).const_max (-R n)
+  have hcR (n : ℕ) (a : ℝ) : |c n a| ≤ R n :=
+    abs_le.2 ⟨le_max_left _ _, max_le (by linarith [hR₀ n]) (min_le_right _ _)⟩
+  set p : ℕ → ℝ × ℝ → ℝ × ℝ := fun n z ↦ (c n z.1, c n z.2)
+  have hp (n : ℕ) : LipschitzWith 1 (p n) := by
+    simpa using ((hc n).comp LipschitzWith.prod_fst).prodMk ((hc n).comp LipschitzWith.prod_snd)
+  have hpR (n : ℕ) (z : ℝ × ℝ) : p n z ∈ Metric.closedBall 0 (R n) := by
+    rw [mem_closedBall_zero_iff, Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs]
+    exact max_le (hcR n _) (hcR n _)
+  set w' : ℕ → ℝ × ℝ → M := fun n ↦ w n ∘ p n
+  have hw' (n : ℕ) : LipschitzWith L (w' n) := by
+    have h := (hL n).comp ((hp n).lipschitzOnWith (s := univ)) fun z _ ↦ hpR n z
+    rwa [mul_one, lipschitzOnWith_univ] at h
+  -- A subsequence converges in `C(ℝ × ℝ, M)`.
+  set G : ℕ → C(ℝ × ℝ, M) := fun n ↦ ⟨w' n, (hw' n).continuous⟩
+  obtain ⟨g, -, φ, hφ, hlim⟩ := (ArzelaAscoli.isCompact_closure_range_of_equicontinuous
+    (f := G) (LipschitzWith.uniformEquicontinuous w' L hw').equicontinuous
+    fun z ↦ ⟨K, hK, fun n ↦ hwK n (hpR n z)⟩).tendsto_subseq
+    (fun n ↦ subset_closure (mem_range_self n))
+  have hgw := ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 hlim
+  refine ⟨φ, hφ, g, ?_⟩
+  -- On each compact set the clamped maps are eventually the maps themselves.
+  rw [tendstoLocallyUniformly_iff_forall_isCompact] at hgw ⊢
+  intro C hC
+  obtain ⟨m, hm⟩ := (hC.image (continuous_norm (E := ℝ × ℝ))).bddAbove
+  refine (hgw C hC).congr ?_
+  filter_upwards [(hR.comp hφ.tendsto_atTop).eventually_ge_atTop m] with n hn z hz
+  have hmz : ‖z‖ ≤ m := hm (mem_image_of_mem _ hz)
+  simp only [Function.comp_apply] at hn
+  have hclamp (a : ℝ) (ha : |a| ≤ ‖z‖) : c (φ n) a = a := by
+    rw [abs_le] at ha
+    simp only [c]
+    rw [min_eq_left (by linarith), max_eq_right (by linarith)]
+  have h1 := hclamp z.1 (by simpa using norm_fst_le z)
+  have h2 := hclamp z.2 (by simpa using norm_snd_le z)
+  simp only [G, ContinuousMap.coe_mk, w', p, Function.comp_apply, h1, h2]
+
+/-- **Arzelà–Ascoli along exhausting discs.** Let `w n` be `L`-Lipschitz on the closed disc
+`closedBall 0 (R n)` of `ℝ × ℝ` (for the sup norm, the square `[-R n, R n]²`), with values there in
+a compact subset `K` of a pseudometric space, where `R n → ∞`. A subsequence of the `w n`
+converges locally uniformly on `ℝ × ℝ` to a continuous map. For instance, `w n` may be a sequence
+of rescaled solutions of an equation, on discs where their derivatives are known to be bounded. -/
+theorem exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall {M : Type*}
+    [PseudoMetricSpace M] {K : Set M} (hK : IsCompact K) {w : ℕ → ℝ × ℝ → M} {R : ℕ → ℝ}
+    {L : NNReal} (hR : Tendsto R atTop atTop)
+    (hL : ∀ n, LipschitzOnWith L (w n) (Metric.closedBall 0 (R n)))
+    (hwK : ∀ n, MapsTo (w n) (Metric.closedBall 0 (R n)) K) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n ↦ w (φ n)) g atTop := by
+  -- From the index `N` on, the radii are nonnegative.
+  obtain ⟨N, hN⟩ := (hR.eventually_ge_atTop 0).exists_forall_of_atTop
+  obtain ⟨φ, hφ, g, hg⟩ :=
+    exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall_of_nonneg hK
+      (fun n ↦ hN _ (Nat.le_add_left N n)) (hR.comp (tendsto_add_atTop_nat N))
+      (fun n ↦ hL (n + N)) fun n ↦ hwK (n + N)
+  exact ⟨fun n ↦ φ n + N, fun m n hmn ↦ Nat.add_lt_add_right (hφ hmn) N, g, hg⟩
+
+/-- **Arzelà–Ascoli along exhausting bands.** Let `w n` be `L`-Lipschitz on the band
+`[-R n, R n] × ℝ` of `ℝ × ℝ`, with values there in a compact subset `K` of a pseudometric space,
+where `R n → ∞`. A subsequence of the `w n` converges locally uniformly on `ℝ × ℝ` to a
+continuous map. For instance, `w n` may be a sequence of solutions of an equation translated along
+an end, on bands where the solutions are known to have bounded derivatives. -/
+theorem exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith {M : Type*}
+    [PseudoMetricSpace M] {K : Set M} (hK : IsCompact K) {w : ℕ → ℝ × ℝ → M} {R : ℕ → ℝ}
+    {L : NNReal} (hR : Tendsto R atTop atTop)
+    (hL : ∀ n, LipschitzOnWith L (w n) (Icc (-R n) (R n) ×ˢ univ))
+    (hwK : ∀ n, MapsTo (w n) (Icc (-R n) (R n) ×ˢ univ) K) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n ↦ w (φ n)) g atTop := by
+  -- For the sup norm, the disc of radius `R n` lies in the band.
+  have hsub (n : ℕ) : Metric.closedBall (0 : ℝ × ℝ) (R n) ⊆ Icc (-R n) (R n) ×ˢ univ :=
+    fun z hz ↦ ⟨abs_le.1 ((Real.norm_eq_abs z.1).symm.le.trans
+      ((norm_fst_le z).trans (mem_closedBall_zero_iff.1 hz))), mem_univ _⟩
+  exact exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall hK hR
+    (fun n ↦ (hL n).mono (hsub n)) fun n ↦ (hwK n).mono_left (hsub n)
+
+/-- **Arzelà–Ascoli for translates along an end.** Let `u` be Lipschitz on the half-plane
+`s ≥ b` of `ℝ × ℝ`, with values there in a compact subset of a pseudometric space, and let
+`σₙ → ∞`. A subsequence of the translates `(s, t) ↦ u(s + σₙ, t)` converges locally uniformly on
+`ℝ × ℝ` to a continuous map. -/
+theorem exists_subseq_tendstoLocallyUniformly_comp_add {M : Type*} [PseudoMetricSpace M]
+    {K : Set M} (hK : IsCompact K) {u : ℝ × ℝ → M} {b : ℝ} {L : NNReal}
+    (hL : LipschitzOnWith L u (Ici b ×ˢ univ)) (huK : MapsTo u (Ici b ×ˢ univ) K) {σ : ℕ → ℝ}
+    (hσ : Tendsto σ atTop atTop) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n z ↦ u (z + (σ (φ n), 0))) g atTop := by
+  -- The band `[-(σₙ - b), σₙ - b] × ℝ` is translated into `s ≥ b`.
+  have hR : Tendsto (fun n ↦ σ n - b) atTop atTop := tendsto_atTop_add_const_right _ _ hσ
+  have hmaps (n : ℕ) : MapsTo (fun z : ℝ × ℝ ↦ z + (σ n, 0)) (Icc (-(σ n - b)) (σ n - b) ×ˢ univ)
+      (Ici b ×ˢ univ) := fun z hz ↦
+    ⟨mem_Ici.2 (by simp only [Prod.fst_add]; linarith [hz.1.1]), mem_univ _⟩
+  have hadd (n : ℕ) : LipschitzWith 1 fun z : ℝ × ℝ ↦ z + (σ n, 0) :=
+    (IsometryEquiv.addRight ((σ n, 0) : ℝ × ℝ)).isometry.lipschitzWith
+  exact exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith hK hR
+    (fun n ↦ by simpa using hL.comp ((hadd n).lipschitzOnWith) (hmaps n))
+    fun n ↦ huK.comp (hmaps n)
+
+section Lipschitz
+
+open ContinuousMap
+open scoped NNReal unitInterval
+
+/-- The `C`-Lipschitz maps whose value at `x₀` lies in a closed set `K` form a compact subset
+of `C(X, Y)` when the closed `(C * dist x x₀)`-thickening of `K` is compact for every `x`. -/
+theorem isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoEMetricSpace Y] (C : ℝ≥0) (x₀ : X)
+    {K : Set Y} (hK : IsClosed K)
+    (hKC : ∀ x : X, IsCompact (Metric.cthickening (C * dist x x₀) K)) :
+    IsCompact {f : C(X, Y) | LipschitzWith C f ∧ f x₀ ∈ K} := by
+  set A := {f : C(X, Y) | LipschitzWith C f ∧ f x₀ ∈ K}
+  have hA : IsClosed A :=
+    ((isClosed_setOfPred_lipschitzWith C).preimage continuous_coeFun).inter
+      (hK.preimage (continuous_eval_const x₀))
+  have hequi : Equicontinuous fun f : A ↦ ⇑(f : C(X, Y)) :=
+    (LipschitzWith.uniformEquicontinuous _ C fun f ↦ f.2.1).equicontinuous
+  have hball (x : X) : ∃ Q : Set Y, IsCompact Q ∧ ∀ f : A, (f : C(X, Y)) x ∈ Q := by
+    refine ⟨_, hKC x, fun f ↦ Metric.mem_cthickening_of_edist_le _ _ _ _ f.2.2 ?_⟩
+    rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, ← edist_dist]
+    exact f.2.1 x x₀
+  have hrange := ArzelaAscoli.isCompact_closure_range_of_equicontinuous hequi hball
+  rw [Subtype.range_coe] at hrange
+  exact hrange.of_isClosed_subset hA subset_closure
+
+/-- The `C`-Lipschitz paths on the unit interval whose value at a time `t₀` lies in a closed set
+`K` form a compact subset of `C(I, Y)` when the closed `C`-thickening of `K` is compact. -/
+theorem isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening
+    {Y : Type*} [PseudoEMetricSpace Y] (C : ℝ≥0) (t₀ : I)
+    {K : Set Y} (hK : IsClosed K) (hKC : IsCompact (Metric.cthickening C K)) :
+    IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f t₀ ∈ K} :=
+  isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening C t₀ hK fun t ↦
+    hKC.of_isClosed_subset Metric.isClosed_cthickening
+      (Metric.cthickening_mono
+        (mul_le_of_le_one_right C.2 (Real.dist_le_of_mem_Icc_01 t.2 t₀.2)) K)
+
+/-- For a proper target `Y`, the `C`-Lipschitz maps whose value at `x₀` lies in a compact set `K`
+form a compact subset of `C(X, Y)`. -/
+theorem isCompact_setOf_lipschitzWith_apply_mem {X Y : Type*} [PseudoMetricSpace X]
+    [MetricSpace Y] [ProperSpace Y] (C : ℝ≥0) (x₀ : X) {K : Set Y}
+    (hK : IsCompact K) : IsCompact {f : C(X, Y) | LipschitzWith C f ∧ f x₀ ∈ K} :=
+  isCompact_setOf_lipschitzWith_apply_mem_of_forall_isCompact_cthickening C x₀ hK.isClosed
+    fun _ ↦ hK.cthickening
+
+variable {Y : Type*} [MetricSpace Y]
+
+/-- The `C`-Lipschitz paths on the unit interval taking value `x` at `t₀` form a compact subset of
+`C(I, Y)` when the closed ball of radius `C` about `x` is compact. -/
+theorem isCompact_setOf_lipschitzWith_apply_eq_of_isCompact_closedBall (C : ℝ≥0) (t₀ : I)
+    (x : Y) (hx : IsCompact (Metric.closedBall x C)) :
+    IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f t₀ = x} := by
+  simpa only [mem_singleton_iff] using
+    isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening C t₀ isClosed_singleton
+      ((Metric.cthickening_singleton x C.2).symm ▸ hx)
+
+/-- For a proper target `Y`, the `C`-Lipschitz maps taking value `y` at `x₀` form a compact
+subset of `C(X, Y)`. -/
+theorem isCompact_setOf_lipschitzWith_apply_eq {X Y : Type*} [PseudoMetricSpace X]
+    [MetricSpace Y] [ProperSpace Y] (C : ℝ≥0) (x₀ : X) (y : Y) :
+    IsCompact {f : C(X, Y) | LipschitzWith C f ∧ f x₀ = y} := by
+  simpa only [mem_singleton_iff] using
+    isCompact_setOf_lipschitzWith_apply_mem C x₀ (isCompact_singleton (x := y))
+
+end Lipschitz
 
 end TauCeti

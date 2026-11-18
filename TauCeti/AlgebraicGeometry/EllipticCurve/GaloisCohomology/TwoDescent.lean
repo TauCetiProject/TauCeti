@@ -504,7 +504,7 @@ private theorem exists_sq_eq_and_smul_eq_some {xP yP : K} (hP : W.toAffine.Nonsi
     · obtain ⟨hσx, -, hS, hiff⟩ := hσ σ
       simp only [Units.val_mul, val_smul_mk0, Units.val_mk0]
       rw [map_sub, AlgEquiv.commutes, hσx,
-        Affine.Point.xCoord_add_sub hT' hψ' hQ' hy (by rwa [hc']) hS]
+        Affine.Point.xCoord_add_sub hT' hψ' hQ' (by rwa [hc']) hS]
       simp only [hiff, apply_ite Units.val, Units.val_one, Units.val_neg, ι]
   · -- `P ≠ T`: the root is `((x - e)² + W_X(e, t)) / ψ₂(Q)`
     set ψ := (W⁄(SeparableClosure K)).toAffine.polynomialY.evalEval x y

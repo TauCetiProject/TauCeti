@@ -27,7 +27,8 @@ The equivalence and single-constant abstraction work for any connective carrier,
 variable universes. In an expansion along `lhomWithConstants`, abstraction preserves realization
 when the new free variables or bound slot are assigned the interpretations of the corresponding
 constants, while preserving occurring relation and non-constant function symbols and removing `c`
-from the constant support.
+from the constant support. Instantiating the abstracted slot at a term substitutes that term for
+the constant (`realize_inst_abstractConst`).
 
 The construction of `constantsVarsEquiv` follows Mathlib's `BoundedFormula.constantsVarsEquiv`,
 reusing `Term.constantsVarsEquivLeft` on atoms. The infinitary conjunction and disjunction cases
@@ -661,5 +662,21 @@ theorem realize_abstractConst [DecidableEq γ] {M : Type w} [L.Structure M] (e :
       · simp [g, hdc]
     · rfl
   rw [h₀, realize_mapBound, TauCeti.BoundedFormulaInf.realize_relabel, hcast, hnat, hval, h₁]
+
+/-- **Substituting a term for a constant.** Instantiating the abstracted constant `c` of `φ` at a
+term `t` gives a formula that holds exactly when `φ` holds with `c` reinterpreted as the value of
+`t`. -/
+theorem realize_inst_abstractConst [DecidableEq γ] {M : Type w} [L.Structure M] (e : γ → M)
+    (c : γ) (φ : L[[γ]].FormulaInf ι α) (t : L[[γ]].Term (α ⊕ Fin 0)) (v : α → M) :
+    @FormulaInf.Realize _ ι α M (@withConstantsStructure L M _ γ (constantsOn.structure e))
+        ((abstractConst c φ).inst t) v ↔
+      @FormulaInf.Realize _ ι α M (@withConstantsStructure L M _ γ (constantsOn.structure
+        (Function.update e c (@Term.realize _ M (@withConstantsStructure L M _ γ
+          (constantsOn.structure e)) _ (Sum.elim v default) t)))) φ v := by
+  rw [@realize_inst _ _ _ M (@withConstantsStructure L M _ γ (constantsOn.structure e)),
+    ← Fin.snoc_zero default, realize_abstractConst]
+  exact (@FormulaInf.realize_def _ _ _ M (@withConstantsStructure L M _ γ (constantsOn.structure
+    (Function.update e c (@Term.realize _ M (@withConstantsStructure L M _ γ
+      (constantsOn.structure e)) _ (Sum.elim v default) t)))) φ v).symm
 
 end FirstOrder.Language.BoundedFormulaInf

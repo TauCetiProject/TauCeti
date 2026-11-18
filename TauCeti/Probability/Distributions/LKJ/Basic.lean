@@ -271,6 +271,16 @@ theorem ae_posDef_lkjMeasure (p : ℕ) (η : ℝ) :
   rw [ae_iff]
   exact lkjMeasure_compl_posDef p η
 
+/-- Including the positive-definite lift of an LKJ law returns the original law.
+This also holds at nonpositive shape, when both measures vanish. -/
+@[simp]
+theorem map_subtype_val_comap_lkjMeasure (p : ℕ) (η : ℝ) :
+    ((lkjMeasure p η).comap
+        (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))).map
+        Subtype.val = lkjMeasure p η :=
+  (map_comap_subtype_coe (measurableSet_posDefMatrix p) _).trans
+    (Measure.restrict_eq_self_of_ae_mem (ae_posDef_lkjMeasure p η))
+
 /-- A matrix sampled from an LKJ measure has unit diagonal almost surely. -/
 theorem ae_diag_eq_one_lkjMeasure (p : ℕ) (η : ℝ) :
     ∀ᵐ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ∂lkjMeasure p η,
@@ -316,6 +326,16 @@ theorem lintegral_lkjPDF_eq_one (hη : 0 < η) :
 theorem isProbabilityMeasure_lkjMeasure (hη : 0 < η) : IsProbabilityMeasure (lkjMeasure p η) :=
   ⟨by rw [lkjMeasure_of_pos hη, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
     lintegral_lkjPDF_eq_one hη]⟩
+
+/-- At positive shape the LKJ law lifted to the positive-definite cone is a probability law. -/
+theorem isProbabilityMeasure_comap_lkjMeasure (hη : 0 < η) :
+    IsProbabilityMeasure ((lkjMeasure p η).comap
+      (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) := by
+  apply (Measure.isProbabilityMeasure_map_iff
+    (f := (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+    measurable_subtype_coe.aemeasurable).mp
+  rw [map_subtype_val_comap_lkjMeasure]
+  exact isProbabilityMeasure_lkjMeasure hη
 
 variable (p) in
 /-- The positive-definite correlation matrices have correlation Lebesgue measure

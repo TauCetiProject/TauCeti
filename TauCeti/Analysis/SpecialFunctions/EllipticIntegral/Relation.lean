@@ -40,14 +40,13 @@ private theorem hasDerivAt_legendre_relation {k : ℝ} (hk₀ : 0 < k) (hk₁ : 
       legendreEc k * legendreK √(1 - k ^ 2) + legendreEc √(1 - k ^ 2) * legendreK k -
         legendreK k * legendreK √(1 - k ^ 2)) 0 k := by
   have hk : k ^ 2 < 1 := by nlinarith
-  have hs₀ : 0 < √(1 - k ^ 2) := sqrt_pos.2 (sub_pos.2 hk)
   have hs : (√(1 - k ^ 2)) ^ 2 = 1 - k ^ 2 := sq_sqrt (sub_pos.2 hk).le
   have hs₁ : (√(1 - k ^ 2)) ^ 2 < 1 := by rw [hs]; nlinarith
   have hd := (((hasDerivAt_id' k).pow 2).const_sub 1).sqrt (sub_pos.2 hk).ne'
-  have hK := hasDerivAt_legendreK hk₀.ne' hk
-  have hE := hasDerivAt_legendreEc hk₀.ne' hk
-  have hKc := (hasDerivAt_legendreK hs₀.ne' hs₁).comp k hd
-  have hEc := (hasDerivAt_legendreEc hs₀.ne' hs₁).comp k hd
+  have hK := hasDerivAt_legendreK hk
+  have hE := hasDerivAt_legendreEc hk
+  have hKc := (hasDerivAt_legendreK hs₁).comp k hd
+  have hEc := (hasDerivAt_legendreEc hs₁).comp k hd
   refine (((hE.mul hKc).add (hEc.mul hK)).sub (hK.mul hKc)).congr_deriv ?_
   simp only [Function.comp_apply, Pi.pow_apply, Nat.reduceSub, Nat.cast_ofNat, pow_one,
     mul_one, hs, sub_sub_cancel]

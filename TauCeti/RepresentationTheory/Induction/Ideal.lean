@@ -440,7 +440,7 @@ Brauer's induction theorem, that statement is supplied, for the elementary subgr
 `p`-elementary subgroups with coefficients in `ℤ[ζ]`, `ζ` a primitive `|G|`-th root of unity; this
 declaration does not prove it. -/
 theorem indVirtualCharacters_eq_virtualCharacters_iff_forall_prime [IsAlgClosed k]
-    [Invertible (Nat.card G : k)] (A : Subring k) (t : A →+ ℤ) (ht : t 1 = 1) :
+    (A : Subring k) (t : A →+ ℤ) (ht : t 1 = 1) :
     indVirtualCharacters k G P = virtualCharacters k G ↔
       ∀ p : ℕ, p.Prime → ∃ m : ℕ, ¬ p ∣ m ∧
         m • (1 : G → k) ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k)) := by

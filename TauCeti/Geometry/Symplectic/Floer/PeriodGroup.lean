@@ -43,7 +43,9 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 
 ## Main results
 
-* `PeriodGroup.ext_iff`: a class in `Γ` is determined by its area and first Chern number.
+* `PeriodGroup.ext_iff`: a class in `Γ` is determined by its area and first Chern number;
+  equivalently the kernels of area and Chern number are disjoint
+  (`PeriodGroup.disjoint_ker_area_ker_chern`).
 * `PeriodGroup.subsingleton_iff`: `Γ` is trivial exactly when area and Chern number vanish on
   `S`, as for symplectically aspherical manifolds.
 * `PeriodGroup.chern_injective_iff`, `PeriodGroup.area_injective_iff`: the Chern number (resp.
@@ -237,6 +239,21 @@ theorem degree_injective_iff :
   · rw [degree_apply, degree_apply, hγ]
   · simpa using hγ
 
+variable (ω c) in
+/-- A class has degree zero exactly when its first Chern number vanishes. -/
+@[simp]
+theorem ker_degree : (degree ω c).ker = (chern ω c).ker := by
+  ext γ
+  simp [AddMonoidHom.mem_ker]
+
+variable (ω c) in
+/-- Area and first Chern number are jointly injective on the period group: the only class with
+vanishing area and vanishing first Chern number is zero. -/
+theorem disjoint_ker_area_ker_chern : Disjoint (area ω c).ker (chern ω c).ker :=
+  disjoint_iff_inf_le.2 fun γ hγ => AddSubgroup.mem_bot.2 <|
+    ext (by rw [AddMonoidHom.mem_ker.1 hγ.1, map_zero])
+      (by rw [AddMonoidHom.mem_ker.1 hγ.2, map_zero])
+
 /-- If every spherical class with vanishing first Chern number has vanishing area, the period
 group is cyclic. -/
 theorem isAddCyclic_of_ker_le (h : c.ker ≤ ω.ker) : IsAddCyclic (PeriodGroup ω c) :=
@@ -333,6 +350,21 @@ theorem chern_eq_mul_chernEquivInt (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
       chern ω c ((chernEquivInt hker hc).symm 1) := by
   simpa only [AddEquiv.symm_apply_apply] using
     chern_chernEquivInt_symm hker hc (chernEquivInt hker hc γ)
+
+/-- **A generator with positive first Chern number is the positive Chern generator**: its integer
+coordinate is `1`. -/
+theorem chernEquivInt_eq_one_of_zmultiples_eq_top (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
+    {γ : PeriodGroup ω c} (hγ : AddSubgroup.zmultiples γ = ⊤) (h : 0 < chern ω c γ) :
+    chernEquivInt hker hc γ = 1 := by
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1
+    (hγ ▸ AddSubgroup.mem_top ((chernEquivInt hker hc).symm 1))
+  -- Applying the coordinate to `k • γ = e.symm 1` gives `k * e γ = 1`, and `e γ` is positive since
+  -- `chern γ = e γ * chern (e.symm 1)` with both Chern numbers positive.
+  have h1 : k * chernEquivInt hker hc γ = 1 := by
+    rw [← smul_eq_mul, ← map_zsmul, hk, AddEquiv.apply_symm_apply]
+  have hpos : 0 < chernEquivInt hker hc γ := pos_of_mul_pos_left
+    ((chern_eq_mul_chernEquivInt hker hc γ) ▸ h) (chern_chernEquivInt_symm_pos hker hc).le
+  exact Int.eq_one_of_mul_eq_one_left hpos.le h1
 
 /-- Laurent exponents for Floer coefficients. The variable corresponds to the negative of the
 positive Chern generator, so its valuation is positive on positively monotone targets. -/

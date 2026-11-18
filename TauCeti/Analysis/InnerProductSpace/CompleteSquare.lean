@@ -27,7 +27,10 @@ The squared norm of `‖x‖ • y - ‖x‖⁻¹ • x` also has the polynomial
 spherical inversion.
 
 Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the quadratic polynomial
-`‖x - y‖² + 2 ⟪ξ, x - y⟫ t + ‖ξ‖² t²` in `t`.
+`‖x - y‖² + 2 ⟪ξ, x - y⟫ t + ‖ξ‖² t²` in `t`. Factoring `‖q - q₀‖²` out of `‖q - (q₀ + h)‖²` when
+`q ≠ q₀` writes the displaced squared distance in terms of the dimensionless quadratic perturbation
+`(2 ⟪q - q₀, h⟫ - ‖h‖²) / ‖q - q₀‖²`, bounded in absolute value by `2 (‖h‖ / δ) + (‖h‖ / δ)²`
+whenever `‖q - q₀‖ ≥ δ > 0`.
 
 ## Main declarations
 
@@ -40,8 +43,13 @@ Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the qu
 * `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
   vector as a polynomial.
 * `TauCeti.norm_add_smul_sub_sq`: the squared distance along a line as a quadratic polynomial.
+* `TauCeti.norm_sub_add_sq_eq`: the factored squared distance `‖q - (q₀ + h)‖²` for `q ≠ q₀`.
+* `TauCeti.abs_two_mul_inner_sub_norm_sq_div_le`: Cauchy–Schwarz bound on
+  `|(2 ⟪w, h⟫ - ‖h‖²) / ‖w‖²|` when `‖w‖ ≥ δ > 0`.
 * `TauCeti.norm_sub_le_add_div_sub_inner`: for unit vectors `a` and `ν`, the distance `‖a - ν‖`
-  is bounded by `η + 2 / η - 2 / η * ⟪ν, a⟫` for every `η > 0`.
+  is bounded by `η / 2 + 1 / η - 1 / η * ⟪ν, a⟫` for every `η > 0`.
+* `TauCeti.one_sub_div_mul_norm_sq_sub_le_norm_sub_sq`: if `‖q‖ ≤ a r` with `0 ≤ a ≤ L`, then
+  `(1 - a / L) ‖p‖² - (L - a) a r² ≤ ‖p - q‖²`.
 * `Finset.sum_mul_norm_sub_sq_eq` and `Finset.sum_mul_edist_sq_eq`: for finitely many points
   `x i` and weights `w i` summing to `1`, the weighted sum of the squared distances from `y` is
   the squared distance from `y` to the weighted mean `m = ∑ i, w i • x i` plus the weighted sum
@@ -92,13 +100,12 @@ theorem mul_norm_sq_add_mul_norm_sub_sq {a b : ℝ} (hab : a + b ≠ 0) (x y : F
 theorem norm_sq_div_two_add_norm_sub_sq_div {τ : ℝ} (hτ : τ ≠ 0) (hτ' : 1 + τ ≠ 0) (x y : F) :
     ‖y‖ ^ 2 / 2 + ‖x - y‖ ^ 2 / (2 * τ) =
       ‖x‖ ^ 2 / (2 * (1 + τ)) + (1 + τ) / (2 * τ) * ‖y - (1 + τ)⁻¹ • x‖ ^ 2 := by
-  have h₀ : 1 / 2 + 1 / (2 * τ) = (1 + τ) / (2 * τ) := by field_simp; ring
-  have h := mul_norm_sq_add_mul_norm_sub_sq (a := 1 / 2) (b := 1 / (2 * τ))
-    (h₀ ▸ div_ne_zero hτ' (mul_ne_zero two_ne_zero hτ)) x y
-  have h₁ : 1 / (2 * τ) / (1 / 2 + 1 / (2 * τ)) = (1 + τ)⁻¹ := by rw [h₀]; field_simp
-  have h₂ : 1 / 2 * (1 / (2 * τ)) / (1 / 2 + 1 / (2 * τ)) = 1 / (2 * (1 + τ)) := by
-    rw [h₀]; field_simp
-  rw [h₁, h₂, h₀] at h
+  have h₀ : 2⁻¹ + (2 * τ)⁻¹ = (1 + τ) / (2 * τ) := by field_simp; ring
+  have h₁ : (2 * τ)⁻¹ / ((1 + τ) / (2 * τ)) = (1 + τ)⁻¹ := by field_simp
+  have h := mul_norm_sq_add_mul_norm_sub_sq (a := 2⁻¹) (b := (2 * τ)⁻¹)
+    (by rw [h₀]; simp [hτ, hτ']) x y
+  rw [h₀, h₁] at h
+  field_simp at h ⊢
   linear_combination h
 
 /-- The completed square at the weights `1 - t` and `t`, for extended distances: for `t ∈ [0, 1]`,
@@ -114,25 +121,83 @@ theorem edist_smul_add_smul_sq_add {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) (x
   rw [sub_add_cancel, one_mul, div_one, div_one, sub_sub_sub_cancel_right, norm_sub_rev b x,
     norm_sub_rev b a, hcomb] at key
   simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
-  rw [← ENNReal.ofReal_mul (mul_nonneg h₀ h₁), ← ENNReal.ofReal_mul h₁, ← ENNReal.ofReal_mul h₀,
-    ← ENNReal.ofReal_add (by positivity) (mul_nonneg (mul_nonneg h₀ h₁) (by positivity)),
-    ← ENNReal.ofReal_add (mul_nonneg h₁ (by positivity)) (mul_nonneg h₀ (by positivity))]
+  rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul h₁, ← ENNReal.ofReal_mul h₀,
+    ← ENNReal.ofReal_add (by positivity) (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
   congr 1
   linarith
 
-/-- For unit vectors `a` and `ν` and `η > 0`, `‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫`. The distance
-between two unit vectors is thus bounded by a constant plus a multiple of the deficit
+/-- For unit vectors `a` and `ν` and `η > 0`, `‖a - ν‖ ≤ η / 2 + 1 / η - 1 / η * ⟪ν, a⟫`. The
+distance between two unit vectors is thus bounded by a constant plus a multiple of the deficit
 `1 - ⟪ν, a⟫` of their inner product. -/
 theorem norm_sub_le_add_div_sub_inner {a ν : F} {η : ℝ} (ha : ‖a‖ = 1) (hν : ‖ν‖ = 1)
-    (hη : 0 < η) : ‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫ := by
-  -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)` and `‖a - ν‖ ≤ η + ‖a - ν‖² / η`.
+    (hη : 0 < η) : ‖a - ν‖ ≤ η / 2 + 1 / η - 1 / η * ⟪ν, a⟫ := by
+  -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)`, and `2 η ‖a - ν‖ ≤ η² + ‖a - ν‖²`.
   have h := norm_sub_sq_real a ν
   rw [ha, hν, real_inner_comm] at h
-  have heq : η + 2 / η - 2 / η * ⟪ν, a⟫ = (η * η + ‖a - ν‖ ^ 2) / η := by
+  have heq : η / 2 + 1 / η - 1 / η * ⟪ν, a⟫ = (η ^ 2 + ‖a - ν‖ ^ 2) / (2 * η) := by
     field_simp
     linarith
-  rw [heq, le_div_iff₀ hη]
-  nlinarith [sq_nonneg (‖a - ν‖ - η), norm_nonneg (a - ν)]
+  rw [heq, le_div_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (‖a - ν‖ - η)]
+
+/-- **A lower bound for `‖p - q‖²` when `q` is small.** If `‖q‖ ≤ a r` with `0 ≤ a ≤ L`, then
+`(1 - a / L) ‖p‖² - (L - a) a r² ≤ ‖p - q‖²`. After multiplying by `L a`, the difference of
+the two sides is at least the square `(a ‖p‖ - L ‖q‖)²`. -/
+theorem one_sub_div_mul_norm_sq_sub_le_norm_sub_sq {a L r : ℝ} (ha0 : 0 ≤ a) (haL : a ≤ L)
+    {p q : F} (hq : ‖q‖ ≤ a * r) :
+    (1 - a / L) * ‖p‖ ^ 2 - (L - a) * a * r ^ 2 ≤ ‖p - q‖ ^ 2 := by
+  have hpq : ⟪p, q⟫ ≤ ‖p‖ * ‖q‖ := real_inner_le_norm p q
+  have hq0 : 0 ≤ ‖q‖ := norm_nonneg q
+  rw [norm_sub_sq_real]
+  rcases ha0.eq_or_lt with rfl | ha0'
+  · have : ‖q‖ = 0 := le_antisymm (by simpa using hq) hq0
+    rw [this] at hpq ⊢
+    norm_num at hpq ⊢
+    linarith
+  have hL : 0 < L := ha0'.trans_le haL
+  have hq2 : ‖q‖ ^ 2 ≤ (a * r) ^ 2 := pow_le_pow_left₀ hq0 hq 2
+  have hX : 0 ≤ L * a * (a / L * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (L - a) * a * r ^ 2) := by
+    have he : L * a * (a / L * ‖p‖ ^ 2 - 2 * (‖p‖ * ‖q‖) + ‖q‖ ^ 2 + (L - a) * a * r ^ 2) =
+        (a * ‖p‖ - L * ‖q‖) ^ 2 + L * (L - a) * ((a * r) ^ 2 - ‖q‖ ^ 2) := by
+      field_simp
+      ring
+    rw [he]
+    have : 0 ≤ L * (L - a) := mul_nonneg hL.le (by linarith)
+    nlinarith [sq_nonneg (a * ‖p‖ - L * ‖q‖)]
+  have hX' := (mul_nonneg_iff_of_pos_left (by positivity : 0 < L * a)).1 hX
+  have hsplit : (1 - a / L) * ‖p‖ ^ 2 = ‖p‖ ^ 2 - a / L * ‖p‖ ^ 2 := by ring
+  rw [hsplit]
+  nlinarith
+
+/-- Factoring out `‖q - q₀‖²` from the squared distance to a displaced point `q₀ + h` when
+`q ≠ q₀`. -/
+theorem norm_sub_add_sq_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {q q₀ : E} (hq : q ≠ q₀) (h : E) :
+    ‖q - (q₀ + h)‖ ^ 2 =
+      ‖q - q₀‖ ^ 2 * (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) := by
+  have hw : ‖q - q₀‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 hq))
+  rw [sub_add_eq_sub_sub, norm_sub_sq_real, mul_sub, mul_one, mul_div_cancel₀ _ hw]
+  ring
+
+/-- Uniform Cauchy–Schwarz bound on the dimensionless perturbation `(2 ⟪w, h⟫ - ‖h‖²) / ‖w‖²`
+when `‖w‖ ≥ δ > 0`. -/
+theorem abs_two_mul_inner_sub_norm_sq_div_le {w h : F} {δ : ℝ} (hδ : 0 < δ) (hw : δ ≤ ‖w‖) :
+    |(2 * ⟪w, h⟫ - ‖h‖ ^ 2) / ‖w‖ ^ 2| ≤ 2 * (‖h‖ / δ) + (‖h‖ / δ) ^ 2 := by
+  have hw₀ : 0 < ‖w‖ := hδ.trans_le hw
+  have hdiv : ‖h‖ / ‖w‖ ≤ ‖h‖ / δ := div_le_div_of_nonneg_left (norm_nonneg h) hδ hw
+  calc |(2 * ⟪w, h⟫ - ‖h‖ ^ 2) / ‖w‖ ^ 2|
+    _ = |2 * ⟪w, h⟫ - ‖h‖ ^ 2| / ‖w‖ ^ 2 := by
+        rw [abs_div, abs_of_pos (pow_pos hw₀ 2)]
+    _ ≤ (2 * (‖w‖ * ‖h‖) + ‖h‖ ^ 2) / ‖w‖ ^ 2 := by
+        gcongr
+        refine (abs_sub _ _).trans (add_le_add ?_ (le_of_eq (abs_of_nonneg (sq_nonneg ‖h‖))))
+        rw [abs_mul, abs_of_pos zero_lt_two]
+        gcongr
+        exact abs_real_inner_le_norm w h
+    _ = 2 * (‖h‖ / ‖w‖) + (‖h‖ / ‖w‖) ^ 2 := by
+        field_simp
+    _ ≤ 2 * (‖h‖ / δ) + (‖h‖ / δ) ^ 2 := by gcongr
 
 end TauCeti
 
@@ -172,12 +237,8 @@ theorem sum_mul_edist_sq_eq (s : Finset ι) {w : ι → ℝ≥0} (hw : ∑ i ∈
     ∑ i ∈ s, (w i : ℝ≥0∞) * edist y (x i) ^ 2 =
       edist y (∑ i ∈ s, (w i : ℝ) • x i) ^ 2 +
         ∑ i ∈ s, (w i : ℝ≥0∞) * edist (∑ j ∈ s, (w j : ℝ) • x j) (x i) ^ 2 := by
-  have hmul (c : ℝ≥0) (a b : F) :
-      (c : ℝ≥0∞) * edist a b ^ 2 = ENNReal.ofReal (c * ‖a - b‖ ^ 2) := by
-    rw [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
-      ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg]
-  simp only [hmul]
-  simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
+    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
   rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
     ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
     ← ENNReal.ofReal_add (by positivity) (sum_nonneg fun i _ ↦ by positivity),

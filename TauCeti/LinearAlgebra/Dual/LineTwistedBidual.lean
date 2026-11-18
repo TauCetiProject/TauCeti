@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Dual.Contraction
+public import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
 # Bidual evaluation twisted by a line
 
 For a finite-dimensional vector space `A` and a one-dimensional vector space `D`,
 `lineTwistedBidualEquiv` is the canonical identification `(A* ⊗ D)* ⊗ D ≃ A`.
-It combines Mathlib's `TensorProduct.dualDistribEquiv` and `Module.evalEquiv` with
-`contractLeftEquivOfFinrankEqOne`. In particular it involves no choice of a generator of `D`.
-This is the fibrewise identification needed to recover differential forms from
-density-twisted dual tests.
+It combines Mathlib's `TensorProduct.dualDistribEquiv` and `Module.evalEquiv` with the
+contraction `Module.Invertible.linearEquiv` of the line `D` with its dual. In particular it
+involves no choice of a generator of `D`. This is the fibrewise identification needed to recover
+differential forms from density-twisted dual tests.
 
 The evaluation equation says that pairing the image of `ψ ⊗ d` with `a*` gives
 `ψ (a* ⊗ d)`. The inverse can be computed with any pair `δ, d` satisfying `δ d = 1`;
@@ -40,11 +40,12 @@ variable {K A D : Type*} [Field K] [AddCommGroup A] [Module K A]
 def lineTwistedBidualEquiv (hD : finrank K D = 1) :
     (Dual K (Dual K A ⊗[K] D)) ⊗[K] D ≃ₗ[K] A :=
   haveI : FiniteDimensional K D := Module.finite_of_finrank_eq_succ hD
+  haveI := Module.Invertible.of_finrank_eq_one hD
   (TensorProduct.congr (TensorProduct.dualDistribEquiv K (Dual K A) D).symm
       (LinearEquiv.refl K D)) ≪≫ₗ
     TensorProduct.assoc K (Dual K (Dual K A)) (Dual K D) D ≪≫ₗ
     TensorProduct.congr (LinearEquiv.refl K (Dual K (Dual K A)))
-      (contractLeftEquivOfFinrankEqOne hD) ≪≫ₗ
+      (Module.Invertible.linearEquiv K D) ≪≫ₗ
     TensorProduct.rid K (Dual K (Dual K A)) ≪≫ₗ (Module.evalEquiv K A).symm
 
 /-- On decomposable dual tensors, the line factors contract by evaluation. -/

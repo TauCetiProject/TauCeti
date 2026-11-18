@@ -39,10 +39,8 @@ rectangles `x → y → z` passes through a column transposition `y` of `x`, not
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`", and the "grid homology computes" acceptance criterion. The
-column-transposition picture of a rectangle move follows Ozsváth--Stipsicz--Szabó, *Grid Homology
-for Knots and Links*, Chapters 3 and 4.
+The column-transposition picture of a rectangle move follows Ozsváth--Stipsicz--Szabó, *Grid
+Homology for Knots and Links*, Chapters 3 and 4.
 -/
 
 public section

@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
-import TauCeti.LinearAlgebra.OrthogonalGroup
+import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Closedness and path components of matrix orthogonal groups
@@ -330,15 +330,16 @@ theorem exists_path_linearIsometryEquiv_of_det_eq
         EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) ∧
       γ 0 = g ∧ γ 1 = g' := by
   classical
-  obtain ⟨A, rfl⟩ := orthogonalGroupToLinearIsometryEquiv_surjective g
-  obtain ⟨B, rfl⟩ := orthogonalGroupToLinearIsometryEquiv_surjective g'
+  obtain ⟨A, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective g
+  obtain ⟨B, rfl⟩ := Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective g'
   have hAB : (A : _root_.Matrix ι ι ℝ).det = (B : _root_.Matrix ι ι ℝ).det := by
-    rw [← det_orthogonalGroupToLinearIsometryEquiv, ← det_orthogonalGroupToLinearIsometryEquiv]
+    rw [← Matrix.UnitaryGroup.det_toLinearIsometryEquiv,
+      ← Matrix.UnitaryGroup.det_toLinearIsometryEquiv]
     exact h
   obtain ⟨p⟩ := Matrix.joined_orthogonalGroup_iff_det_eq.2 hAB
-  exact ⟨fun t ↦ orthogonalGroupToLinearIsometryEquiv (p t),
-    continuous_orthogonalGroupToLinearIsometryEquiv.comp p.continuous,
-    congrArg orthogonalGroupToLinearIsometryEquiv p.source,
-    congrArg orthogonalGroupToLinearIsometryEquiv p.target⟩
+  exact ⟨fun t ↦ Matrix.UnitaryGroup.toLinearIsometryEquiv (p t),
+    Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv.comp p.continuous,
+    congrArg Matrix.UnitaryGroup.toLinearIsometryEquiv p.source,
+    congrArg Matrix.UnitaryGroup.toLinearIsometryEquiv p.target⟩
 
 end TauCeti

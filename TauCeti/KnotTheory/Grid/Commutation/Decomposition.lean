@@ -290,6 +290,30 @@ theorem toRectangleDecomposition_second_toGridRectangle
   unfold toRectangleDecomposition
   rfl
 
+/-- The two underlying rectangles share their terminal side when the rectangle and the pentagon
+do. -/
+theorem toRectangleDecomposition_first_right_eq_second_right_of_right_eq_right
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.right = D.pentagon.right) :
+    D.toRectangleDecomposition.first.right = D.toRectangleDecomposition.second.right := by
+  simpa only [toRectangleDecomposition_first_right, toRectangleDecomposition_second_right]
+    using hcommon
+
+/-- An empty rectangle of a rectangle-pentagon decomposition stays empty as the first rectangle of
+the underlying rectangle decomposition. -/
+theorem toRectangleDecomposition_first_isEmpty (D : GridRectanglePentagonDecomposition a s x z)
+    (hrectangle : D.rectangle.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    D.toRectangleDecomposition_first_toGridRectangle] using hrectangle
+
+/-- An empty pentagon of a rectangle-pentagon decomposition stays empty as the second rectangle of
+the underlying rectangle decomposition. -/
+theorem toRectangleDecomposition_second_isEmpty (D : GridRectanglePentagonDecomposition a s x z)
+    (hpentagon : D.pentagon.IsEmpty) : D.toRectangleDecomposition.second.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    D.toRectangleDecomposition_middle,
+    D.toRectangleDecomposition_second_toGridRectangle] using hpentagon
+
 /-- A rectangle--pentagon decomposition is determined by its underlying pair of rectangles. -/
 theorem toRectangleDecomposition_injective :
     Function.Injective

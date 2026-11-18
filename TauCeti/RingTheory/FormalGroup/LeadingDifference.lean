@@ -37,7 +37,7 @@ automatically when `n = pᵏ` with `k` less than the heights of both laws.
 * `FormalGroup.exists_homogeneousComponent_sub_eq_smul_lazardCocycle`: if commutative formal group
   laws `F` and `G` agree below degree `n`, the degree-`n` part of `F - G` is `c C_n` for some `c`.
 * `FormalGroup.homogeneousComponent_sub_eq_smul_lazardCocycle`: if moreover `p = 0` in `R` and
-  `n = pᵏ`, `k ≥ 1`, then `c` is the coefficient of `Xⁿ` in `[p]_G - [p]_F`.
+  `n = pᵏ`, then `c` is the coefficient of `Xⁿ` in `[p]_G - [p]_F`.
 * `FormalGroup.succ_le_order_sub_of_coeff_nsmulSeries_eq`: if commutative formal group laws agree
   below degree `pᵏ` and their `p`-series have the same coefficient in degree `pᵏ`, they agree below
   degree `pᵏ + 1`.
@@ -74,16 +74,16 @@ theorem exists_homogeneousComponent_sub_eq_smul_lazardCocycle {n : ℕ}
     hn₀ hn
 
 /-- **The `p`-series detect the leading difference in degree `pᵏ`.** Let `p` be a prime with
-`p = 0` in `R`, and let commutative formal group laws `F` and `G` agree below degree `n = pᵏ`,
-`k ≥ 1`. Then the degree-`n` part of `F - G` is `c C_n`, where `c` is the coefficient of `Xⁿ` in
+`p = 0` in `R`, and let commutative formal group laws `F` and `G` agree below degree `n = pᵏ`.
+Then the degree-`n` part of `F - G` is `c C_n`, where `c` is the coefficient of `Xⁿ` in
 `[p]_G - [p]_F`. -/
 theorem homogeneousComponent_sub_eq_smul_lazardCocycle {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0)
-    {k : ℕ} (hk : k ≠ 0) (hn : (p ^ k : ℕ) ≤ (F.toPowerSeries - G.toPowerSeries).order) :
+    {k : ℕ} (hn : (p ^ k : ℕ) ≤ (F.toPowerSeries - G.toPowerSeries).order) :
     homogeneousComponent (p ^ k) (F.toPowerSeries - G.toPowerSeries) =
       ((PowerSeries.coeff (p ^ k) (G.nsmulSeries p - F.nsmulSeries p) •
           TauCeti.lazardCocycle (p ^ k) R : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
   rw [← homDefect_X] at hn ⊢
-  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle PowerSeries.constantCoeff_X hp hpR hk hn,
+  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle PowerSeries.constantCoeff_X hp hpR hn,
     PowerSeries.X_subst,
     PowerSeries.subst_X (.of_constantCoeff_zero (F.constantCoeff_nsmulSeries p))]
 
@@ -96,14 +96,8 @@ theorem succ_le_order_sub_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime)
     (h : PowerSeries.coeff (p ^ k) (F.nsmulSeries p) =
       PowerSeries.coeff (p ^ k) (G.nsmulSeries p)) :
     ((p ^ k + 1 : ℕ) : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order := by
-  obtain rfl | hk := eq_or_ne k 0
-  · -- formal group laws always agree below degree two
-    rw [← sub_sub_sub_cancel_right F.toPowerSeries G.toPowerSeries (X 0 + X 1)]
-    simpa using le_order_sub
-      (two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y)
-      (two_le_order_sub_X_add_X G.zero_constantCoeff G.lin_coeff_X G.lin_coeff_Y)
   refine succ_le_order_of_homogeneousComponent_eq_zero hn ?_
-  rw [F.homogeneousComponent_sub_eq_smul_lazardCocycle G hp hpR hk hn, map_sub, h, sub_self,
+  rw [F.homogeneousComponent_sub_eq_smul_lazardCocycle G hp hpR hn, map_sub, h, sub_self,
     zero_smul, MvPolynomial.coe_zero]
 
 /-- **Formal group laws of large height agree through degree `pᵏ` once they agree below it.** Over

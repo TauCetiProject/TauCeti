@@ -21,9 +21,7 @@ public section
 
 open CategoryTheory MonoidalCategory MonoidalClosed
 
-namespace TauCeti
-
-open _root_.ModuleCat
+namespace ModuleCat
 
 universe u
 
@@ -34,14 +32,14 @@ variable {R : Type u} [CommRing R] (M : ModuleCat.{u} R)
 
 /-- The dual of a finite projective module tensored with `N` is the internal Hom from `M` to
 `N`. Its forward map sends `f ⊗ n` to `m ↦ f(m) • n`. -/
-def _root_.ModuleCat.dualTensorIhomIso (N : ModuleCat.{u} R) :
+def dualTensorIhomIso (N : ModuleCat.{u} R) :
     ModuleCat.of R (Module.Dual R M) ⊗ N ≅ (ihom M).obj N :=
   ((dualTensorHomEquiv R M N).trans (homLinearEquiv (M := M) (N := N)).symm).toModuleIso
 
 /-- The contraction isomorphism evaluates a pure tensor by applying its functional to the
 argument and scaling the tensor's second factor. -/
 @[simp]
-theorem _root_.ModuleCat.dualTensorIhomIso_hom_tmul (N : ModuleCat.{u} R) (f : Module.Dual R M)
+theorem dualTensorIhomIso_hom_tmul (N : ModuleCat.{u} R) (f : Module.Dual R M)
     (n : N) (m : M) :
     ((dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)).hom m = f m • n := by
   -- `toModuleIso` and `homLinearEquiv` wrap the contraction in categorical Hom data;
@@ -50,7 +48,7 @@ theorem _root_.ModuleCat.dualTensorIhomIso_hom_tmul (N : ModuleCat.{u} R) (f : M
   exact dualTensorHomEquiv_tmul f m n
 
 /-- The contraction isomorphism is natural in the target module. -/
-def _root_.ModuleCat.dualTensorIhomNatIso :
+def dualTensorIhomNatIso :
     MonoidalCategory.tensorLeft (ModuleCat.of R (Module.Dual R M)) ≅ ihom M :=
   NatIso.ofComponents (dualTensorIhomIso M) (fun {N P} g => by
     ext x
@@ -61,18 +59,18 @@ def _root_.ModuleCat.dualTensorIhomNatIso :
 
 /-- The component of the natural tensor–Hom comparison is the contraction isomorphism. -/
 @[simp]
-theorem _root_.ModuleCat.dualTensorIhomNatIso_hom_app (N : ModuleCat.{u} R) :
+theorem dualTensorIhomNatIso_hom_app (N : ModuleCat.{u} R) :
     (dualTensorIhomNatIso M).hom.app N = (dualTensorIhomIso M N).hom := (rfl)
 
 /-- The inverse component of the natural tensor–Hom comparison is the inverse contraction
 isomorphism. -/
 @[simp]
-theorem _root_.ModuleCat.dualTensorIhomNatIso_inv_app (N : ModuleCat.{u} R) :
+theorem dualTensorIhomNatIso_inv_app (N : ModuleCat.{u} R) :
     (dualTensorIhomNatIso M).inv.app N = (dualTensorIhomIso M N).inv := (rfl)
 
 /-- Under the contraction isomorphism, internal-Hom evaluation sends
 `m ⊗ (f ⊗ n)` to `f(m) • n`. -/
-theorem _root_.ModuleCat.dualTensorIhomIso_ev (N : ModuleCat.{u} R)
+theorem dualTensorIhomIso_ev (N : ModuleCat.{u} R)
     (m : M) (f : Module.Dual R M) (n : N) :
     (ihom.ev M).app N (m ⊗ₜ[R] (dualTensorIhomIso M N).hom (f ⊗ₜ[R] n)) = f m • n := by
   -- `ihom_ev_app` describes evaluation as uncurried application, which unfolds to applying
@@ -82,7 +80,7 @@ theorem _root_.ModuleCat.dualTensorIhomIso_ev (N : ModuleCat.{u} R)
 
 /-- The tensor–Hom comparison is contravariantly natural in a finite projective source:
 precomposing a linear map with `φ` corresponds to tensoring with the dual map of `φ`. -/
-theorem _root_.ModuleCat.dualTensorIhomIso_naturality_left
+theorem dualTensorIhomIso_naturality_left
     (M' : ModuleCat.{u} R) [Module.Finite R M'] [Module.Projective R M']
     (φ : M ⟶ M') (N : ModuleCat.{u} R) :
     (ModuleCat.ofHom φ.hom.dualMap ▷ N) ≫ (dualTensorIhomIso M N).hom =
@@ -96,4 +94,4 @@ theorem _root_.ModuleCat.dualTensorIhomIso_naturality_left
 
 end
 
-end TauCeti
+end ModuleCat

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ExteriorPower.Nonarchimedean
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import Mathlib.Basic.Real.Pointwise
 
 /-!
@@ -50,6 +51,28 @@ theorem iSup_plucker_append_mul_left [CommRing K] (v : AbsoluteValue K ℝ)
   simp_rw [Matrix.plucker_append_mul, map_mul,
     ← Real.mul_iSup_of_nonneg (mul_nonneg (v.nonneg _) (v.nonneg _))]
 
+/-- Changing coordinates by an integral invertible matrix `Q` preserves the exterior maximum norm
+of a concatenation, and normalizing the first block by the inverse of a square matrix `P`
+multiplies it by `v P⁻¹.det`. -/
+theorem iSup_plucker_append_inv_mul_mul_eq [CommRing K] [Nontrivial K] [Fintype ι] {n : ℕ}
+    (v : AbsoluteValue K ℝ)
+    (hv : IsNonarchimedean v) (P : Matrix (Fin p) (Fin p) K) (x : Matrix (Fin p) ι K)
+    (t : Matrix (Fin n) ι K) {Q Q' : Matrix ι ι K}
+    (hQ : ∀ i j, v (Q i j) ≤ 1) (hQ' : ∀ i j, v (Q' i j) ≤ 1) (hQQ' : Q * Q' = 1) :
+    (⨆ s, v (plucker (Fin.append (P⁻¹ * (x * Q)).row (t * Q).row) s)) =
+      v P⁻¹.det * ⨆ s, v (plucker (Fin.append x.row t.row) s) := by
+  have hleft := v.iSup_plucker_append_mul_left P⁻¹ 1 (x * Q) (t * Q)
+  simp only [Matrix.one_mul, Matrix.det_one, map_one, mul_one] at hleft
+  rw [hleft]
+  congr 1
+  have hfun : Fin.append (x * Q).row (t * Q).row =
+      (Matrix.of (Fin.append x.row t.row) * Q).row := by
+    ext i j
+    obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
+    rcases i with i | i <;> simp [Matrix.mul_apply]
+  rw [hfun, v.iSup_plucker_mul_eq hv _ hQ hQ' hQQ']
+  simp only [Matrix.row_of]
+
 variable [Field K] [Finite ι]
 
 /-- Concatenation is submultiplicative for the nonarchimedean exterior maximum
@@ -79,7 +102,7 @@ theorem iSup_plucker_append_le (v : AbsoluteValue K ℝ) (hv : IsNonarchimedean 
         (Real.iSup_nonneg_of_nonnegHomClass v _) (Real.iSup_nonneg_of_nonnegHomClass v _))
       have h := Matrix.plucker_append_mul A B (A⁻¹ * Matrix.of x) (B⁻¹ * Matrix.of y) s
       rw [hA, hB] at h
-      simp only [Matrix.row_eq_self, Equiv.symm_apply_apply] at h
+      simp only [Matrix.row_of] at h
       have hm' : v A.det = ⨆ s, v (plucker x s) := hm
       have hn' : v B.det = ⨆ s, v (plucker y s) := hn
       rw [h, map_mul, map_mul, hm', hn']
@@ -91,9 +114,9 @@ theorem iSup_plucker_append_le (v : AbsoluteValue K ℝ) (hv : IsNonarchimedean 
       obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
       rcases i with i | i
       · refine Real.iSup_le (fun j ↦ ?_) zero_le_one
-        simpa [A, hox] using hb i j
+        simpa [A, hox, Matrix.row_of] using hb i j
       · refine Real.iSup_le (fun j ↦ ?_) zero_le_one
-        simpa [B, hoy] using hc i j
+        simpa [B, hoy, Matrix.row_of] using hc i j
     · have hz : plucker y = 0 := not_ne_iff.mp ((plucker_ne_zero_iff y).not.mpr hy)
       have hxy : ¬LinearIndependent K (Fin.append x y) := fun h ↦
         hy (by simpa [Function.comp_def] using
@@ -179,7 +202,7 @@ private theorem iSup_plucker_single_overlap_le {r : ℕ} (v : AbsoluteValue K �
   have ha := v.iSup_plucker_append_single hv e (Matrix.of (Fin.append y z))
   have hb := v.iSup_plucker_append_single hv e (Matrix.of y)
   have hc := v.iSup_plucker_append_single hv e (Matrix.of z)
-  simp only [Matrix.row_eq_self, Equiv.symm_apply_apply, Matrix.of_apply] at ha hb hc
+  simp only [Matrix.row_of, Matrix.of_apply] at ha hb hc
   rw [ha, hb, hc]
   have hfun : (fun i j ↦ if j ∈ range e then 0 else Fin.append y z i j) =
       Fin.append (fun i j ↦ if j ∈ range e then 0 else y i j)
@@ -206,7 +229,7 @@ theorem iSup_plucker_overlap_le {r : ℕ} (v : AbsoluteValue K ℝ)
   by_cases hx : LinearIndependent K x
   · obtain ⟨e, Q, Q', he, hm, hQQ', -, hQ, hQ', hred⟩ :=
       v.exists_integral_plucker_reduction hv (x := Matrix.of x) (by
-        simpa only [Matrix.row_eq_self, Equiv.symm_apply_apply] using hx)
+        simpa only [Matrix.row_of] using hx)
     let P := (Matrix.of x).submatrix id e
     let X := P⁻¹ * (Matrix.of x * Q)
     let Y := Matrix.of y * Q
@@ -215,38 +238,20 @@ theorem iSup_plucker_overlap_le {r : ℕ} (v : AbsoluteValue K ℝ)
     have ha : 0 < a := v.pos (Matrix.det_ne_zero_of_left_inverse
       (Matrix.mul_nonsing_inv P (isUnit_iff_ne_zero.mpr he)))
     have hnorm : a * (⨆ s, v (plucker x s)) = 1 := by
-      simp only [Matrix.row_eq_self, Equiv.symm_apply_apply] at hm
+      simp only [Matrix.row_of] at hm
       rw [← hm]
       exact (v.map_mul _ _).symm.trans (by
         rw [Matrix.det_nonsing_inv_mul_det _ (isUnit_iff_ne_zero.mpr he), map_one])
     -- Integral column reduction supports the common rows on the pivot columns;
     -- normalizing their pivot matrix then makes them coordinate vectors.
-    have hX : X.row = fun i ↦ Pi.single (e i) 1 := by
-      ext i j
-      by_cases hj : j ∈ range e
-      · obtain ⟨b, rfl⟩ := hj
-        have h := congrArg (fun M : Matrix (Fin p) (Fin p) K ↦ M i b)
-          (Matrix.nonsing_inv_mul P (isUnit_iff_ne_zero.mpr he))
-        simpa [X, P, Matrix.mul_apply, hred, Pi.single_apply,
-          e.injective.eq_iff, Matrix.one_apply, eq_comm] using h
-      · have hz : ∀ b, e b ≠ j := fun b h ↦ hj ⟨b, h⟩
-        simp [X, Matrix.mul_apply, hred, hj, hz, Ne.symm]
+    have hX : X.row = fun i ↦ Pi.single (e i) 1 :=
+      Matrix.inv_submatrix_mul_row_eq_single (x := Matrix.of x) (isUnit_iff_ne_zero.mpr he) hred
     -- The same column change preserves every exterior norm; the row operation
     -- on the common block multiplies each extended exterior norm by a.
     have hright {n : ℕ} (t : Fin n → ι → K) :
         (⨆ s, v (plucker (Fin.append X.row (Matrix.of t * Q).row) s)) =
-          a * ⨆ s, v (plucker (Fin.append x t) s) := by
-      have hleft := v.iSup_plucker_append_mul_left P⁻¹ 1 (Matrix.of x * Q) (Matrix.of t * Q)
-      simp only [Matrix.one_mul, Matrix.det_one, map_one, mul_one] at hleft
-      rw [hleft]
-      congr 1
-      have hfun : Fin.append (Matrix.of x * Q).row (Matrix.of t * Q).row =
-          (Matrix.of (Fin.append x t) * Q).row := by
-        ext i j
-        obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
-        rcases i with i | i <;> simp [Matrix.mul_apply]
-      rw [hfun, v.iSup_plucker_mul_eq hv _ hQ hQ' hQQ']
-      simp only [Matrix.row_eq_self, Equiv.symm_apply_apply]
+          a * ⨆ s, v (plucker (Fin.append x t) s) :=
+      v.iSup_plucker_append_inv_mul_mul_eq hv P (Matrix.of x) (Matrix.of t) hQ hQ' hQQ'
     have hyz : (Matrix.of (Fin.append y z) * Q).row = Fin.append Y.row Z.row := by
       ext i j
       obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i

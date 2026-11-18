@@ -208,7 +208,7 @@ private theorem ad_pow_root_eq_zero (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     -- Distinct simple roots pair to at least `-1`.
     have hcol (i : I) (hi : i ∈ O) : -1 ≤ B i j := by
       have hij : i ≠ j := ne_of_mem_of_not_mem hi hj
-      simpa using hB.neg_one_le_dotProduct_mulVec (fun i ↦ hdiag i ▸ even_two)
+      simpa using hB.neg_one_le_dotProduct_mulVec
         (single_mem_normTwoShell (hdiag i)) (single_mem_normTwoShell (hdiag j))
         fun h ↦ by simpa [hij] using congr_fun h i
     refine Set.eq_empty_of_forall_notMem fun x hx ↦ ?_
@@ -390,7 +390,7 @@ theorem reindex_serreLift_folded (σ : Equiv.Perm I)
   have h := isSerreSystem_folded σ hB hdiag hoff hσ
   have hext : (reindexLieEquiv σ hσ hB fun i ↦ hdiag i ▸ even_two).toLieHom.comp (serreLift h) =
       serreLift h :=
-    serre_hom_ext (fun O ↦ by simp) (fun O ↦ by simp) fun O ↦ by simp
+    serre_hom_ext (fun O ↦ by simp) fun O ↦ by simp
   simpa using DFunLike.congr_fun hext x
 
 end ShellLieAlgebra

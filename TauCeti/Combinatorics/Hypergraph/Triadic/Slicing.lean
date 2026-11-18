@@ -78,7 +78,8 @@ private theorem sum_irregular_support_coarsen_le
     calc _ ≤ ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P, (#Q.support : ℝ) :=
             sum_le_sum fun Q _ ↦ by split_ifs <;> simp only [le_refl, Nat.cast_nonneg]
       _ = #P.support := by
-            exact_mod_cast Polyad3.sum_card_support_coarsen hV f hf P
+            norm_cast
+            convert Polyad3.sum_card_support_coarsen hV f hf P
       _ ≤ _ := le_add_of_nonneg_right (by positivity)
 
 open Classical in

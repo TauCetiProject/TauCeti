@@ -276,7 +276,7 @@ private lemma sum_prod_card_nonUniforms_le {Q : Finpartition (univ : Finset V)}
     (if (A p.1.1, A p.1.2) ∈ Q.nonUniforms G τ then 1 else 0 : ℝ)
   have h₂ := Fintype.sum_piFinset_apply_apply (ne_of_lt p.2) (fun _ ↦ (univ : Finset V))
     fun x y ↦ (if (Q.part x, Q.part y) ∈ Q.nonUniforms G τ then 1 else 0 : ℝ)
-  have h₃ : ∏ k ∈ univ \ {p.1.1, p.1.2}, #(univ : Finset V) = Fintype.card V := by
+  have h₃ : ∏ _ ∈ univ \ {p.1.1, p.1.2}, #(univ : Finset V) = Fintype.card V := by
     simp [card_sdiff, ne_of_lt p.2]
   rw [h₃, nsmul_eq_mul] at h₂
   rw [Fintype.piFinset_univ] at h₁ h₂

@@ -82,7 +82,8 @@ Two statements are worth singling out.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
 * `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`: an isometry of a nondegenerate alternating
-  form on a finite-dimensional vector space has determinant `1`.
+  form on a vector space has determinant `1` (by convention when the space is
+  infinite-dimensional).
 * `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
   injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
@@ -544,17 +545,19 @@ end CommRing
 
 section Field
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   {B : BilinForm K V} {f : V →ₗ[K] V}
 
 /-- **Isometries of a nondegenerate alternating form have determinant one.** On a
 finite-dimensional space the form has a symplectic basis, in which the matrix of an isometry is
-symplectic. -/
+symplectic. On an infinite-dimensional space the determinant is `1` by convention. -/
 theorem IsIsometry.det_eq_one_of_isAlt (hB : B.IsAlt) (hnd : B.Nondegenerate)
     (hf : IsIsometry B f) :
     LinearMap.det f = 1 := by
-  obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
-  exact hf.det_eq_one_of_toMatrix_eq_J b hb
+  by_cases h : Module.Finite K V
+  · obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
+    exact hf.det_eq_one_of_toMatrix_eq_J b hb
+  · exact LinearMap.det_eq_one_of_not_module_finite h f
 
 end Field
 
@@ -606,8 +609,7 @@ noncomputable def isometryDet (B : BilinForm R M) : isometryGroup B →* Rˣ :=
 
 @[simp]
 theorem isometryDet_apply (g : isometryGroup B) :
-    isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) := by
-  rw [isometryDet, MonoidHom.comp_apply, Subgroup.coe_subtype]
+    isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) := (rfl)
 
 /-- The determinant-one subgroup regarded as a subgroup of the full isometry group. -/
 noncomputable def specialIsometryWithin (B : BilinForm R M) : Subgroup (isometryGroup B) :=
@@ -631,8 +633,7 @@ noncomputable def specialIsometryToIsometry (B : BilinForm R M) :
 
 @[simp]
 theorem coe_specialIsometryToIsometry (g : specialIsometryGroup B) :
-    ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g := by
-  simp [specialIsometryToIsometry]
+    ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g := (rfl)
 
 /-- The determinant of a determinant-one isometry is one. -/
 @[simp]
@@ -710,10 +711,8 @@ theorem coe_specialIsometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃�
     (g : specialIsometryGroup (LinearMap.BilinForm.congr e B)) :
     ((specialIsometryGroupCongr B e).symm g : M ≃ₗ[R] M) =
       (e.trans (g : M' ≃ₗ[R] M')).trans e.symm := by
-  rw [← (LinearEquiv.autCongr e).injective.eq_iff, LinearEquiv.autCongr_apply,
-    ← coe_specialIsometryGroupCongr_apply, MulEquiv.apply_symm_apply]
   ext x
-  simp
+  simp [specialIsometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply]
 
 end Congr
 
@@ -722,7 +721,7 @@ section BaseChange
 variable (A : Type*) [CommRing A] [Algebra R A] [Module.Free R M] [Module.Finite R M]
 
 /-- Base change preserves determinant-one isometries. -/
-noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
+def specialIsometryGroupBaseChange (B : BilinForm R M) :
     specialIsometryGroup B →* specialIsometryGroup (LinearMap.BilinForm.baseChange A B) where
   toFun g := ⟨isometryGroupBaseChange A B
       ⟨g, specialIsometryGroup_le_isometryGroup B g.2⟩, by
@@ -736,8 +735,7 @@ noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
 theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
     (g : specialIsometryGroup B) :
     (specialIsometryGroupBaseChange A B g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
-      LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
-  simp [specialIsometryGroupBaseChange, isometryGroupBaseChange]
+      LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := (rfl)
 
 end BaseChange
 

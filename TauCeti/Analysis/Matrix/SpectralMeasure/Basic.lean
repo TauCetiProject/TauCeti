@@ -193,7 +193,7 @@ theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n 𝕜} (hA : A.PosS
   have hsum :
       ∑ i, (Set.Iio 0).indicator (1 : ℝ → ℝ≥0∞) (hA.isHermitian.eigenvalues i) = 0 := by
     apply Finset.sum_eq_zero
-    intro i hi
+    intro i _
     simp [not_lt.mpr (hA.eigenvalues_nonneg i)]
   rw [hsum]
   simp
@@ -224,6 +224,21 @@ theorem spectralMeasure_eq_of_charpoly_eq {A B : Matrix n n 𝕜} (hA : A.IsHerm
     (hB : B.IsHermitian) (h : A.charpoly = B.charpoly) :
     A.spectralMeasure hA = B.spectralMeasure hB := by
   rw [spectralMeasure_def, spectralMeasure_def, (hA.eigenvalues_eq_eigenvalues_iff hB).2 h]
+
+/-- The spectral measure of a real diagonal is the empirical measure of its diagonal entries,
+including repetitions. -/
+@[simp]
+theorem spectralMeasure_diagonal (d : n → ℝ) :
+    (diagonal (fun i ↦ (d i : 𝕜))).spectralMeasure
+      (isHermitian_diagonal_of_self_adjoint _ (by ext i; simp)) =
+        empiricalMeasureOfFintype d := by
+  rw [spectralMeasure_def]
+  apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+  apply Multiset.map_injective (RCLike.ofReal_injective (K := 𝕜))
+  rw [Multiset.map_map, ← IsHermitian.roots_charpoly_eq_eigenvalues]
+  rw [charpoly_diagonal, Polynomial.roots_prod]
+  · simp
+  · simp [Finset.prod_ne_zero_iff, Polynomial.X_sub_C_ne_zero]
 
 /-- Conjugating a Hermitian matrix by an invertible matrix does not change its spectral measure,
 provided the conjugate is again Hermitian. -/

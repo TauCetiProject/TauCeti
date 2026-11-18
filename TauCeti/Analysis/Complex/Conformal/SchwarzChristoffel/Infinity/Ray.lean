@@ -165,20 +165,9 @@ theorem range_schwarzChristoffelBoundary_of_neg_one_le_sum {n : ℕ}
   classical
   have hcover : (univ : Set ℝ) =
       (Iic (a 0) ∪ ⋃ i : Fin n, Icc (a i.castSucc) (a i.succ)) ∪ Ici (a (Fin.last n)) := by
-    ext x
-    simp only [mem_univ, mem_union, mem_iUnion, mem_Iic, mem_Ici, true_iff]
-    by_cases hleft : x ≤ a 0
-    · exact Or.inl (Or.inl hleft)
-    by_cases hright : a (Fin.last n) ≤ x
-    · exact Or.inr hright
-    have hn : n ≠ 0 := by
-      rintro rfl
-      simp only [Fin.last_zero] at hright
-      exact hright (le_of_not_ge hleft)
-    exact Or.inl (Or.inr (exists_mem_Icc_castSucc_succ a hn
-      ⟨(le_of_not_ge hleft), (le_of_not_ge hright)⟩))
+    rw [univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ a, union_right_comm]
   have hbounded (i : Fin n) := schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
-    (ha i.castSucc_le_succ) (fun j _ => not_mem_Ioo_castSucc_succ a ha i j)
+    (ha i.castSucc_le_succ) (fun j _ => notMem_Ioo_castSucc_succ a ha i j)
     (hfinite i.castSucc) (hfinite i.succ)
   have hleft := schwarzChristoffelBoundary_image_Iic_eq_ray_prevertex a e z₀ 0 (hfinite 0)
     (fun i _ => ha i.zero_le) hS

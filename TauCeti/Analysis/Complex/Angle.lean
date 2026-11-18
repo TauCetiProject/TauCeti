@@ -12,13 +12,16 @@ public import Mathlib.Analysis.Complex.Angle
 
 For a nonzero complex number `a`, the unoriented angle between `a` and `a * w` is
 `arccos (Re w / |w|)` (`Complex.angle_self_mul_right`); for `w` in the open upper half-plane this
-is the argument of `w`. The file also records a rotation identity for `exp (θ I)`
-(`Complex.im_exp_neg_mul_mul_ofReal_mul_exp`).
+is the argument of `w`. The file also records two rotation identities for `exp (-θ I)`: the
+rotation of a real multiple of `exp (θ I)` (`Complex.im_exp_neg_mul_mul_ofReal_mul_exp`), and the
+height of a horizontal step (`Complex.im_exp_neg_mul_mul_sub`).
 
 ## Main results
 
 * `Complex.angle_self_mul_right`: `angle a (a * w) = arccos (w.re / ‖w‖)` for `a ≠ 0`.
 * `Complex.im_exp_neg_mul_mul_ofReal_mul_exp`: `(exp (-θ I) * (r * exp (θ I))).im = 0`.
+* `Complex.im_exp_neg_mul_mul_sub`: the height of a horizontal step `y - x` (`x.im = y.im`) rotated
+  by `exp (-θ * I)` is its signed length `(y - x).re` times `sin (-θ)`.
 -/
 
 public section
@@ -36,5 +39,17 @@ theorem im_exp_neg_mul_mul_ofReal_mul_exp (θ r : ℝ) :
     (Complex.exp (-θ * Complex.I) * ((r : ℂ) * Complex.exp (θ * Complex.I))).im = 0 := by
   rw [mul_left_comm, ← Complex.exp_add, neg_mul, neg_add_cancel, Complex.exp_zero, mul_one,
     Complex.ofReal_im]
+
+/-- **A horizontal step, rotated by `-θ`, has height `r * sin (-θ)`.**  If `x` and `y` have the same
+imaginary part, then after multiplying `y - x` by `exp (-θ * I)` its imaginary part is the signed
+length `(y - x).re` times `sin (-θ)`. -/
+lemma im_exp_neg_mul_mul_sub (θ : ℝ) {x y : ℂ} (hxy : x.im = y.im) :
+    (Complex.exp (-θ * Complex.I) * (y - x)).im = (y - x).re * Real.sin (-θ) := by
+  have hu : (Complex.exp (-θ * Complex.I)).im = Real.sin (-θ) := by
+    have h := Complex.exp_ofReal_mul_I_im (-θ)
+    push_cast at h
+    exact h
+  simp only [Complex.mul_im, Complex.sub_im, hxy, hu, sub_self, mul_zero, zero_add]
+  ring
 
 end Complex

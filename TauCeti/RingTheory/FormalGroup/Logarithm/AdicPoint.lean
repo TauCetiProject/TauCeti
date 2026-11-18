@@ -38,6 +38,17 @@ variable {R : Type*} [CommRing R] [HasUniqueDiv R] [UniformSpace R]
   (F : FormalGroup R) {s : R} (hs : ∀ n : ℕ, (n + 1 : R) ∣ s ^ n)
   (I : Ideal R) [Fact (IsAdic I)]
 
+/-- The integral logarithm homomorphism on topologically nilpotent points evaluates its
+underlying power series. -/
+theorem val_rescaleLogHom_toTopNilpotentPointHom (x : (F.rescale s).TopNilpotentPoint R) :
+    ((F.rescaleLogHom hs).toTopNilpotentPointHom R x).val =
+      PowerSeries.aeval x.hasEval (F.rescaleLog hs) := by
+  have h := (F.rescaleLogHom hs).hasSum_val_toTopNilpotentPointHom x
+  simp only [rescaleLogHom_toPowerSeries, smul_eq_mul] at h
+  exact h.unique (by
+    simpa only [smul_eq_mul] using
+      (PowerSeries.hasSum_aeval (R := R) x.hasEval (F.rescaleLog hs)))
+
 /-- Evaluation of the integral logarithm identifies the rescaled formal group on `I` with
 ordinary addition on `I`. Its inverse evaluates the inverse integral logarithm. -/
 noncomputable def rescaleLogPointEquiv : (F.rescale s).idealPointSubgroup I ≃+ I :=
@@ -48,11 +59,7 @@ theorem coe_rescaleLogPointEquiv (x : (F.rescale s).idealPointSubgroup I) :
     (F.rescaleLogPointEquiv hs I x : R) = PowerSeries.aeval x.val.hasEval (F.rescaleLog hs) := by
   rw [rescaleLogPointEquiv, AddEquiv.trans_apply, Ideal.coe_additiveFormalGroupPointEquiv,
     TauCeti.FormalGroupIso.coe_toIdealPointEquiv, rescaleLogIso_toHom]
-  have h := (F.rescaleLogIso hs).toHom.hasSum_val_toTopNilpotentPointHom x.val
-  simp only [rescaleLogIso_toHom, rescaleLogHom_toPowerSeries, smul_eq_mul] at h
-  exact h.unique (by
-    simpa only [smul_eq_mul] using
-      (PowerSeries.hasSum_aeval (R := R) x.val.hasEval (F.rescaleLog hs)))
+  exact F.val_rescaleLogHom_toTopNilpotentPointHom hs x.val
 
 /-- The inverse logarithm equivalence evaluates the inverse integral series at its argument. -/
 theorem val_rescaleLogPointEquiv_symm (x : I) :

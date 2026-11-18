@@ -100,6 +100,12 @@ theorem stableSymmetricProj_apply (d : ℕ) (f : stableSymmetricSubmodule R n) :
     stableSymmetricProj R n d f = (f : ∀ d : ℕ, symmetricHomogeneousSubmodule (Fin d) R n) d :=
   (rfl)
 
+/-- The projection to `d` variables of a compatible family given by its members. -/
+@[simp]
+theorem stableSymmetricProj_mk (d : ℕ) (f : ∀ d : ℕ, symmetricHomogeneousSubmodule (Fin d) R n)
+    (hf : f ∈ stableSymmetricSubmodule R n) : stableSymmetricProj R n d ⟨f, hf⟩ = f d :=
+  (rfl)
+
 /-- Setting the last variable to zero in the projection to `d + 1` variables gives the projection
 to `d` variables.
 
@@ -203,6 +209,12 @@ noncomputable def stableSchurBasis :
 theorem stableSchurBasis_apply (μ : n.Partition) : stableSchurBasis R n μ = stableSchur R μ := by
   refine (stableSymmetricProjEquiv R le_rfl).injective (Subtype.ext ?_)
   simp [stableSchurBasis]
+
+/-- **The Schur coordinates of a Schur function**: `s_μ` is the basis vector of index `μ`. -/
+@[simp]
+theorem stableSchurBasis_repr_stableSchur (μ : n.Partition) :
+    (stableSchurBasis R n).repr (stableSchur R μ) = Finsupp.single μ 1 := by
+  rw [← stableSchurBasis_apply, Module.Basis.repr_self]
 
 /-- **The Schur coordinates of a symmetric function are the Schur coordinates of any of its
 projections to an alphabet with at least `n` letters.** -/

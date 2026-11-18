@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Kernels
+public import TauCeti.CategoryTheory.Limits.Shapes.Kernels
 
 /-!
 # Kernel–cokernel pairs
@@ -48,6 +49,9 @@ category with homology the notion coincides with Mathlib's
 * `TauCeti.IsKernelCokernelPair.op`, `TauCeti.isKernelCokernelPair_op_iff` and
   `TauCeti.isKernelCokernelPair_unop_iff`: the notion is self-dual, which is what makes the
   Bühler axioms transport to the opposite category.
+* `TauCeti.IsKernelCokernelPair.isPushout_of_isZero`: the square of the deflation of a
+  kernel–cokernel pair against a zero object is a pushout, by
+  `CategoryTheory.IsPushout.of_isColimit_cokernelCofork`.
 * `TauCeti.IsKernelCokernelPair.of_isIso_f_of_isZero` and
   `TauCeti.IsKernelCokernelPair.of_isIso_g_of_isZero`: an isomorphism is both an inflation and
   a deflation.
@@ -57,6 +61,9 @@ category with homology the notion coincides with Mathlib's
   exact structure.
 * `TauCeti.IsKernelCokernelPair.biprod`: a direct sum of kernel–cokernel pairs is a
   kernel–cokernel pair.
+* `TauCeti.IsKernelCokernelPair.hasHomology`: with a zero object, a kernel–cokernel pair has
+  homology, with no balancedness or (co)completeness assumption, so it is short exact
+  (`TauCeti.IsKernelCokernelPair.shortExact`) in any exact category.
 * `TauCeti.isKernelCokernelPair_iff_shortExact`: in a balanced preadditive category the
   kernel–cokernel pairs among the short complexes with homology are exactly the short exact
   ones. These are the conflations of the canonical exact structure on an abelian category.
@@ -167,6 +174,49 @@ theorem eq_desc (h : IsKernelCokernelPair S) (k : S.X₂ ⟶ A) (hk : S.f ≫ k 
   rw [← cancel_epi S.g, hl, h.g_desc]
 
 end Factorizations
+
+/-- **The cokernel square of a kernel–cokernel pair against a zero object is a pushout**: for a
+kernel–cokernel pair `X₁ ⟶ X₂ ⟶ X₃` and a zero object `Y`, the square with `X₁ ⟶ Y ⟶ X₃` is a
+pushout square, as `X₂ ⟶ X₃` is a cokernel of `X₁ ⟶ X₂`. -/
+theorem isPushout_of_isZero (h : IsKernelCokernelPair S) {Y : C} (hY : IsZero Y) :
+    IsPushout S.f (0 : S.X₁ ⟶ Y) S.g (0 : Y ⟶ S.X₃) :=
+  IsPushout.of_isColimit_cokernelCofork h.gIsCokernel hY
+
+open ZeroObject in
+/-- **A kernel–cokernel pair has homology** in a category with a zero object: the cycles are the
+first term, the opcycles are the last term, and the homology is zero. -/
+theorem hasHomology [HasZeroObject C] (h : IsKernelCokernelPair S) : S.HasHomology := by
+  have := h.mono_f
+  have := h.epi_g
+  have hlift : h.fIsKernel.lift (KernelFork.ofι S.f S.zero) = 𝟙 S.X₁ :=
+    Fork.IsLimit.hom_ext h.fIsKernel (by simp)
+  have hdesc : h.gIsCokernel.desc (CokernelCofork.ofπ S.g S.zero) = 𝟙 S.X₃ :=
+    Cofork.IsColimit.hom_ext h.gIsCokernel (by simp)
+  have hepi : Epi (h.fIsKernel.lift (KernelFork.ofι S.f S.zero)) := by
+    rw [hlift]; exact (inferInstance : Epi (𝟙 S.X₁))
+  have hmono : Mono (h.gIsCokernel.desc (CokernelCofork.ofπ S.g S.zero)) := by
+    rw [hdesc]; exact (inferInstance : Mono (𝟙 S.X₃))
+  exact .mk'
+    { left :=
+        { K := S.X₁
+          H := 0
+          i := S.f
+          π := 0
+          wi := S.zero
+          hi := h.fIsKernel
+          wπ := comp_zero
+          hπ := CokernelCofork.IsColimit.ofEpiOfIsZero _ hepi (isZero_zero C) }
+      right :=
+        { Q := S.X₃
+          H := 0
+          p := S.g
+          ι := 0
+          wp := S.zero
+          hp := h.gIsCokernel
+          wι := zero_comp
+          hι := KernelFork.IsLimit.ofMonoOfIsZero _ hmono (isZero_zero C) }
+      iso := Iso.refl _
+      comm := by simp }
 
 /-- Being a kernel–cokernel pair is invariant under isomorphism of short complexes; this is the
 closure property an exact structure demands of its class of conflations. -/

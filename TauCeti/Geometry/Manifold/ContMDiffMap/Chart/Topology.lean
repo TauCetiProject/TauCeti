@@ -276,6 +276,22 @@ theorem isInducing_compactChartJet :
       (continuous_induced_dom : Continuous (compactChartJet (I := I) (F := F)))
     exact h.congr fun f ↦ compactChartJet_apply f ⟨x, ⟨m, hm⟩, K⟩
 
+/-- A family of vector-valued maps converges in the weak Whitney topology exactly when each of its
+coordinate derivatives, as a continuous map on the whole chart target, converges with compact
+convergence. -/
+theorem tendsto_manifoldWeakWhitney_iff_chartIteratedFDeriv {ι : Type*} {l : Filter ι}
+    {f : ι → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {h : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    Tendsto f l (𝓝 h) ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n),
+      Tendsto (fun i ↦ chartIteratedFDeriv (f i) x m hm) l (𝓝 (chartIteratedFDeriv h x m hm)) := by
+  refine ⟨fun hf x m hm ↦ ((continuous_chartIteratedFDeriv x m hm).tendsto h).comp hf,
+    fun hf ↦ isInducing_compactChartJet.tendsto_nhds_iff.mpr (tendsto_pi_nhds.mpr fun i ↦ ?_)⟩
+  obtain ⟨x, ⟨m, hm⟩, K⟩ := i
+  have ht := ((ContinuousMap.continuous_restrict (K : Set _)).tendsto _).comp (hf x m hm)
+  convert ht using 1
+  · funext i
+    exact compactChartJet_apply (f i) ⟨x, ⟨m, hm⟩, K⟩
+  · exact congrArg nhds (compactChartJet_apply h ⟨x, ⟨m, hm⟩, K⟩)
+
 /-- Subtraction of vector-valued maps is continuous in the weak Whitney topology. -/
 theorem continuous_sub_manifoldWeakWhitney :
     Continuous (fun fg : C^n⟮I, M; 𝓘(𝕜, F), F⟯ × C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦

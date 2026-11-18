@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Sheaves.Functors
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Hom
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.GlobalSections
 
 /-!
 # Affinoid morphisms are induced by their maps of global sections
@@ -57,42 +56,6 @@ variable {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
   (P' : PairOfDefinition B) (Bplus : Subring B)
   (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b) (hP' : P'.ringOfDefinition ≤ Bplus)
 
-/-- Equal recovered ring homomorphisms come from equal maps of global sections. -/
-private theorem Γ_map_eq_of_presentationLimitHomRingHom_eq
-    {f g : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
-      presentationLimitPreAdicSpace P Aplus hAplus hP}
-    (h : presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f =
-      presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' g) :
-    PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op =
-      PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map g).op := by
-  rw [presentationLimitHomRingHom_def, presentationLimitHomRingHom_def] at h
-  exact TopCommRingCat.isCompleteSeparated.ι.map_injective <| (Iso.homCongr _ _).injective <|
-    (forget₂ _root_.TopCommRingCat CommRingCat).map_injective <| CommRingCat.hom_ext h
-
-/-- By naturality, the image of `A` under the component on a rational open of a morphism of
-presheaves out of `𝒪_{Spa A}` is determined by the component on the whole spectrum. -/
-private theorem toPresentationLimit_comp_app_spaBasicOpen {C : TopCat.{u}}
-    (b : C ⟶ TopCat.of ↥(spa Aplus)) (F : C.Presheaf CompleteSeparatedTopCommRingCat.{u})
-    (c : presentationLimitPresheaf P Aplus ⟶
-      (TopCat.Presheaf.pushforward CompleteSeparatedTopCommRingCat b).obj F)
-    (i : PresentationIndex (P := P) Aplus ⊤) :
-    toPresentationLimit Aplus _ ≫
-        eqToHom (presentationLimitPresheaf_obj P Aplus
-          (Opposite.op (spaBasicOpen Aplus i.pres.num i.pres.den))).symm ≫
-        c.app (Opposite.op (spaBasicOpen Aplus i.pres.num i.pres.den)) =
-      toPresentationLimit Aplus ⊤ ≫
-        eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op ⊤)).symm ≫
-        c.app (Opposite.op ⊤) ≫
-        ((TopCat.Presheaf.pushforward CompleteSeparatedTopCommRingCat b).obj F).map
-          (homOfLE le_top).op := by
-  rw [← c.naturality, presentationLimitPresheaf_map]
-  simp
-
--- The proof compares maps of structure presheaves on the rational opens of `Spa(A, A⁺)`, which
--- form a basis, and the target `f_* 𝒪_{Spa B}` is a sheaf. On a rational open `R(T/s)` the
--- sections are `A⟨T/s⟩`, and maps out of it are determined on `A`
--- (`presentationLimit_spaBasicOpen_hom_ext`); by naturality they are determined by the map on
--- global sections.
 /-- **A morphism into an affinoid pre-adic spectrum is determined by its map of global sections**:
 for complete Hausdorff `A` and `B`, two morphisms `Spa(B, B⁺) ⟶ Spa(A, A⁺)` of pre-adic spaces
 with the same global-sections map `A → B` are equal, provided the structure presheaf of
@@ -104,37 +67,13 @@ theorem presentationLimitPreAdicSpace_hom_ext
       presentationLimitPreAdicSpace P Aplus hAplus hP}
     (h : presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f =
       presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' g) : f = g := by
-  -- the maps of points agree, since each is pullback along the recovered ring homomorphism
-  have hbase : f.base = g.base := by
-    ext x
-    exact Subtype.ext (by
-      rw [base_eq_comap_presentationLimitHomRingHom, base_eq_comap_presentationLimitHomRingHom, h])
-  have htop := Γ_map_eq_of_presentationLimitHomRingHom_eq P Aplus hAplus hP P' Bplus hBplus hP' h
-  rw [PresheafedSpace.Γ_map_op, PresheafedSpace.Γ_map_op, PreAdicSpace.forgetToPresheafedSpace_map,
-    PreAdicSpace.forgetToPresheafedSpace_map] at htop
-  ext1
-  clear h
-  generalize f.toHom = F at hbase htop ⊢
-  generalize g.toHom = G at hbase htop ⊢
-  rcases F with ⟨fb, fc⟩
-  rcases G with ⟨gb, gc⟩
-  dsimp only at hbase htop
-  subst hbase
-  congr 1
-  -- compare the maps of presheaves `𝒪_{Spa A} ⟶ f_* 𝒪_{Spa B}` on the rational basis
-  refine TopCat.Sheaf.hom_ext (X := TopCat.of ↥(spa Aplus)) _
-    ⟨_, TopCat.Sheaf.pushforward_sheaf_of_sheaf fb hsheaf⟩ (isBasis_range_spaBasicOpen P Aplus)
-    fun ⟨p, hp⟩ ↦ ?_
-  let i : PresentationIndex (P := P) Aplus ⊤ := ⟨p, hp, le_top⟩
-  refine (cancel_epi (eqToHom (presentationLimitPresheaf_obj P Aplus
-    (Opposite.op (spaBasicOpen Aplus p.num p.den))).symm)).mp
-      (presentationLimit_spaBasicOpen_hom_ext Aplus hAplus p hp ?_)
-  exact (toPresentationLimit_comp_app_spaBasicOpen P Aplus fb _ fc i).trans
-    (Eq.trans (congrArg (fun k ↦ toPresentationLimit Aplus ⊤ ≫
-      eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op ⊤)).symm ≫ k ≫
-        ((TopCat.Presheaf.pushforward CompleteSeparatedTopCommRingCat fb).obj
-          (presentationLimitPresheaf P' Bplus)).map (homOfLE le_top).op) htop)
-      (toPresentationLimit_comp_app_spaBasicOpen P Aplus fb _ gc i).symm)
+  apply presentationLimitAppTop_injective P Aplus hAplus hP
+    (X := presentationLimitPreAdicSpace P' Bplus hBplus hP') hsheaf
+  rw [presentationLimitHomRingHom_eq_comp_presentationLimitAppTop,
+    presentationLimitHomRingHom_eq_comp_presentationLimitAppTop] at h
+  exact (RingHom.cancel_left (Function.LeftInverse.injective (g :=
+    (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv.1) fun b ↦
+      Iso.hom_inv_id_apply (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP') b)).mp h
 
 /-- **The global-sections map of `Spa(φ)` is `φ`**: for complete Hausdorff `A` and `B`, pullback on
 global sections recovers a continuous ring homomorphism `φ : A → B` from the morphism

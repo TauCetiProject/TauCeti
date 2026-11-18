@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The iteration lemma for decay estimates on concentric balls
@@ -35,6 +36,13 @@ theorem and Campanato's characterization of Hölder continuity turn into Hölder
 ## Main declarations
 
 * `TauCeti.exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add`: the iteration lemma.
+* `TauCeti.exists_le_mul_rpow_of_essOsc_step`: the iteration lemma for an oscillation function with
+  an additive inhomogeneity, turned into a bound `φ s ≤ C (s / R)^β (Q + R^γ F)`.
+* `TauCeti.one_sub_mul_pow_mul_add_le_pow_succ_mul`,
+  `TauCeti.div_pow_rpow_le_rpow_mul_pow` and `TauCeti.pow_le_div_rpow_logb`: the bookkeeping of
+  a geometric iteration along the radii `R / bʲ`, in which the bound shrinks by `1 - δ` and an
+  additive datum term `(R / bʲ)^γ` by `b^(-γ)` at each step, and the passage from the radii `R / bʲ`
+  to a power `(ρ / R)^α` of an arbitrary radius.
 
 ## References
 
@@ -183,5 +191,119 @@ theorem exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add {A α β γ : ℝ}
         gcongr
         exacts [le_max_left _ _, le_max_right _ _]
     _ = _ := by ring
+
+/-- The real-number bookkeeping at the end of the proof of the interior oscillation estimate: from
+the iterated bound `φ s ≤ C₁ ((s / R₁)^β φ R₁ + B s^β)` and `φ R₁ ≤ 2 M₀`, with `R₁ = R / 2`,
+`M₀ = D (Q + R^γ F)` and `B = K F R₁^(γ - β)`, one gets
+`φ s ≤ C₁ 2^β (2 D + K) (s / R)^β (Q + R^γ F)`. -/
+private theorem oscillation_decay_bound_aux {C₁ K D β γ s R R₁ F Q M₀ B φs φR₁ : ℝ} (hs : 0 < s)
+    (hR : 0 < R) (hR₁def : R₁ = R / 2) (hγ : 0 < γ) (hK : 0 ≤ K) (hD : 0 ≤ D) (hF : 0 ≤ F)
+    (hQ : 0 ≤ Q) (hC₁ : 0 ≤ C₁) (hfin : φs ≤ C₁ * ((s / R₁) ^ β * φR₁ + B * s ^ β))
+    (hφR₁ : φR₁ ≤ 2 * M₀) (hM₀def : M₀ = D * (Q + R ^ γ * F)) (hBdef : B = K * F * R₁ ^ (γ - β)) :
+    φs ≤ C₁ * 2 ^ β * (2 * D + K) * (s / R) ^ β * (Q + R ^ γ * F) := by
+  have hR₁ : 0 < R₁ := hR₁def ▸ half_pos hR
+  have hsβ : B * s ^ β = K * F * R₁ ^ γ * (s / R₁) ^ β := by
+    rw [hBdef, Real.div_rpow hs.le hR₁.le, Real.rpow_sub hR₁]
+    field_simp
+  have hR₁γ : R₁ ^ γ ≤ R ^ γ := Real.rpow_le_rpow hR₁.le (hR₁def ▸ half_le_self hR.le) hγ.le
+  have hsR₁ : (s / R₁) ^ β = 2 ^ β * (s / R) ^ β := by
+    rw [← Real.mul_rpow (by norm_num) (by positivity), hR₁def]
+    congr 1
+    field_simp
+  have _ : 0 ≤ M₀ := by rw [hM₀def]; positivity
+  calc φs ≤ C₁ * ((s / R₁) ^ β * φR₁ + B * s ^ β) := hfin
+    _ ≤ C₁ * ((s / R₁) ^ β * (2 * M₀) + K * F * R ^ γ * (s / R₁) ^ β) := by
+        rw [hsβ]
+        gcongr
+    _ = C₁ * 2 ^ β * (s / R) ^ β * (2 * D * (Q + R ^ γ * F) + K * (R ^ γ * F)) := by
+        rw [hsR₁, hM₀def]
+        ring
+    _ ≤ C₁ * 2 ^ β * (s / R) ^ β * ((2 * D + K) * (Q + R ^ γ * F)) := by
+        gcongr
+        nlinarith only [mul_nonneg hK hQ]
+    _ = _ := by ring
+
+/-- The iteration step of the interior oscillation estimate, as a statement about the essential
+oscillation `φ` alone. If `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + K ρ^γ F` for `s ≤ ρ ≤ R / 2`, with `φ`
+nonnegative and monotone on `(0, R/2]` and `φ (R / 2) ≤ 2 D (Q + R^γ F)`, then
+`φ s ≤ C (s / R)^β (Q + R^γ F)` for `s ≤ R / 2`, where `β < α₀` and `C > 0` depend only on
+`α₀`, `C₀`, `K`, `D` and `γ`. -/
+theorem exists_le_mul_rpow_of_essOsc_step {α₀ C₀ K D γ : ℝ} (hα₀ : 0 < α₀) (hC₀ : 0 ≤ C₀)
+    (hK : 0 ≤ K) (hD : 0 ≤ D) (hγ : 0 < γ) :
+    ∃ β C : ℝ, 0 < β ∧ β < α₀ ∧ 0 < C ∧ ∀ {φ : ℝ → ℝ} {R s Q F : ℝ}, 0 < s → s ≤ R / 2 →
+      0 ≤ Q → 0 ≤ F → MonotoneOn φ (Ioc 0 (R / 2)) → (∀ ρ ∈ Ioc 0 (R / 2), 0 ≤ φ ρ) →
+      φ (R / 2) ≤ 2 * (D * (Q + R ^ γ * F)) →
+      (∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R / 2 → φ s ≤ C₀ * (s / ρ) ^ α₀ * φ ρ + K * ρ ^ γ * F) →
+      φ s ≤ C * (s / R) ^ β * (Q + R ^ γ * F) := by
+  obtain ⟨β, hβdef⟩ : ∃ β : ℝ, β = min γ (α₀ / 2) := ⟨_, rfl⟩
+  have hβ : 0 < β := hβdef ▸ lt_min hγ (half_pos hα₀)
+  have hβγ : β ≤ γ := hβdef ▸ min_le_left _ _
+  have hβα : β < α₀ := hβdef ▸ (min_le_right _ _).trans_lt (half_lt_self hα₀)
+  obtain ⟨ε₀, C₁, hε₀, hC₁, hiter⟩ :=
+    exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hC₀ hβα hβα
+  refine ⟨β, max 1 (C₁ * 2 ^ β * (2 * D + K)), hβ, hβα, by positivity, ?_⟩
+  intro φ R s Q F hs hsR hQ hF hmono hφ0 hφR₁ hstep
+  have hR : 0 < R := by linarith only [hs, hsR]
+  have hB : 0 ≤ K * F * (R / 2) ^ (γ - β) := by positivity
+  have hfin := hiter hB hε₀.le hmono hφ0 (fun s ρ hs hsρ hρ => (hstep s ρ hs hsρ hρ).trans <| by
+      have := Real.rpow_le_rpow_sub_mul_rpow (hs.trans_le hsρ) hρ hβγ
+      have := hs.trans_le hsρ
+      calc _ ≤ C₀ * (s / ρ) ^ α₀ * φ ρ + K * ((R / 2) ^ (γ - β) * ρ ^ β) * F := by gcongr
+        _ = _ := by ring) s (R / 2) hs hsR le_rfl
+  refine (oscillation_decay_bound_aux hs hR rfl hγ hK hD hF hQ hC₁.le hfin hφR₁ rfl rfl).trans ?_
+  gcongr
+  exact le_max_right _ _
+
+/-- One step of a geometric iteration with an additive datum term multiplies the bound by
+`q = (1 + q₁)/2`: if `1 - δ ≤ q₁ < 1` and the datum term `A` is at most `q₁ʲ E`, then with
+`X = M + 2 E / (1 - q₁)`, `(1 - δ) qʲ X + A ≤ qʲ⁺¹ X`. -/
+theorem one_sub_mul_pow_mul_add_le_pow_succ_mul {δ q₁ M E A : ℝ} (j : ℕ)
+    (hq₁δ : 1 - δ ≤ q₁) (hq₁0 : 0 < q₁) (hq₁ : q₁ < 1) (hM : 0 ≤ M) (hE : 0 ≤ E)
+    (hA : A ≤ q₁ ^ j * E) :
+    (1 - δ) * (((1 + q₁) / 2) ^ j * (M + 2 / (1 - q₁) * E)) + A ≤
+      ((1 + q₁) / 2) ^ (j + 1) * (M + 2 / (1 - q₁) * E) := by
+  set q : ℝ := (1 + q₁) / 2
+  set X : ℝ := M + 2 / (1 - q₁) * E
+  -- `q₁ X + E ≤ q X`, since `(q - q₁) X = (1 - q₁)/2 X ≥ E`.
+  have hkey : q₁ * X + E ≤ q * X := by
+    have hDE : E = (1 - q₁) / 2 * (2 / (1 - q₁) * E) := by field_simp
+    have hmono : (1 - q₁) / 2 * (2 / (1 - q₁) * E) ≤ (1 - q₁) / 2 * X :=
+      mul_le_mul_of_nonneg_left (by simp only [X]; linarith) (by linarith)
+    have hqX : q * X = q₁ * X + (1 - q₁) / 2 * X := by simp only [q]; ring
+    linarith
+  have hq₁q : q₁ ^ j ≤ q ^ j := pow_le_pow_left₀ hq₁0.le (by simp only [q]; linarith) j
+  calc (1 - δ) * (q ^ j * X) + A ≤ q₁ * (q ^ j * X) + q ^ j * E :=
+        add_le_add (mul_le_mul_of_nonneg_right hq₁δ (by positivity))
+          (hA.trans (mul_le_mul_of_nonneg_right hq₁q hE))
+    _ = q ^ j * (q₁ * X + E) := by ring
+    _ ≤ q ^ j * (q * X) := mul_le_mul_of_nonneg_left hkey (by positivity)
+    _ = q ^ (j + 1) * X := by ring
+
+/-- A datum term along the radii `R / bʲ` decays geometrically: if `b^(-γ) ≤ q`, then
+`(R / bʲ)^γ ≤ R^γ qʲ`. -/
+theorem div_pow_rpow_le_rpow_mul_pow {R b γ q : ℝ} (hR : 0 ≤ R) (hb : 0 < b) (hq : (b ^ γ)⁻¹ ≤ q)
+    (j : ℕ) :
+    (R / b ^ j) ^ γ ≤ R ^ γ * q ^ j := by
+  calc (R / b ^ j) ^ γ = R ^ γ * ((b ^ γ)⁻¹) ^ j := by
+        rw [Real.div_rpow hR (by positivity), ← Real.rpow_pow_comm hb.le, inv_pow,
+          div_eq_mul_inv]
+    _ ≤ R ^ γ * q ^ j := by gcongr
+
+/-- Passing from the radii `R / bᵏ` to arbitrary radii: if `R / ρ ≤ bᵏ` with `b > 1` and
+`0 < q ≤ 1`, then `qᵏ ≤ (ρ / R)^α` for `α = log_b (1 / q) ≥ 0`. -/
+theorem pow_le_div_rpow_logb {b q ρ R : ℝ} {k : ℕ} (hb : 1 < b) (hq0 : 0 < q) (hq1 : q ≤ 1)
+    (hρ : 0 < ρ) (hR : 0 < R) (hk : R / ρ ≤ b ^ k) :
+    q ^ k ≤ (ρ / R) ^ Real.logb b q⁻¹ := by
+  have hb0 : 0 < b := one_pos.trans hb
+  set α : ℝ := Real.logb b q⁻¹
+  have hbα : (b ^ k) ^ α = q⁻¹ ^ k := by
+    rw [← Real.rpow_pow_comm hb0.le, Real.rpow_logb hb0 hb.ne' (inv_pos.2 hq0)]
+  have hle : (b ^ k)⁻¹ ≤ ρ / R := by
+    rw [inv_le_comm₀ (by positivity) (by positivity), inv_div]
+    exact hk
+  have hα : 0 ≤ α := Real.logb_nonneg hb ((one_le_inv₀ hq0).2 hq1)
+  calc q ^ k = ((b ^ k) ^ α)⁻¹ := by rw [hbα, inv_pow, inv_inv]
+    _ = ((b ^ k)⁻¹) ^ α := (Real.inv_rpow (by positivity) _).symm
+    _ ≤ (ρ / R) ^ α := Real.rpow_le_rpow (by positivity) hle hα
 
 end TauCeti

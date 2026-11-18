@@ -53,6 +53,7 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
   is infinite.
@@ -87,6 +88,13 @@ def stereographicHeight (w : F) : ℝ :=
 theorem stereographicHeight_apply (w : F) :
     stereographicHeight w = (4 - ‖w‖ ^ 2) / (‖w‖ ^ 2 + 4) :=
   (rfl)
+
+/-- The chart height function decreases with the norm of the chart coordinate. -/
+theorem stereographicHeight_le_stereographicHeight {u w : F} (h : ‖u‖ ≤ ‖w‖) :
+    stereographicHeight w ≤ stereographicHeight u := by
+  rw [stereographicHeight_apply, stereographicHeight_apply,
+    div_le_div_iff₀ (by positivity) (by positivity)]
+  nlinarith [pow_le_pow_left₀ (norm_nonneg u) h 2]
 
 variable [InnerProductSpace ℝ F]
 
@@ -158,13 +166,23 @@ theorem hessianOperator_stereographicHeight_zero :
   (ContDiffAt.hasFDerivAt_gradient contDiff_stereographicHeight.contDiffAt).unique
     hasFDerivAt_gradient_stereographicHeight_zero
 
+omit [CompleteSpace F] in
 /-- The Hessian quadratic form of the chart height function at the origin is minus the squared
 norm. -/
 theorem hessianQuadraticForm_stereographicHeight_zero (w : F) :
     hessianQuadraticForm stereographicHeight 0 w = -‖w‖ ^ 2 := by
-  rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left,
-    hessianOperator_stereographicHeight_zero]
-  simp
+  have hfun : fderiv ℝ stereographicHeight =
+      fun w : F ↦ (-16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) • innerSL ℝ w :=
+    funext fun w ↦ by rw [fderiv_stereographicHeight, div_eq_mul_inv]
+  have hd : DifferentiableAt ℝ (fun w : F ↦ (‖w‖ ^ 2 + 4) ^ 2) 0 :=
+    ((((contDiff_norm_sq ℝ (E := F) (n := 1)).differentiable one_ne_zero) 0).add_const 4).pow 2
+  have hc : DifferentiableAt ℝ (fun w : F ↦ -16 * ((‖w‖ ^ 2 + 4) ^ 2)⁻¹) 0 :=
+    (hd.inv (by norm_num)).const_mul (-16)
+  have hD := hc.hasFDerivAt.smul (innerSL ℝ : F →L[ℝ] F →L[ℝ] ℝ).hasFDerivAt
+  rw [hessianQuadraticForm_apply, hfun]
+  erw [hD.fderiv]
+  norm_num
+  exact real_inner_self_eq_norm_sq w
 
 /-- The origin is a nondegenerate critical point of the chart height function. -/
 theorem isNondegenerateCriticalPoint_stereographicHeight_zero :
@@ -182,9 +200,8 @@ omit [CompleteSpace F] in
 space. -/
 theorem morseIndex_stereographicHeight_zero [FiniteDimensional ℝ F] :
     morseIndex stereographicHeight (0 : F) = finrank ℝ F := by
-  have := FiniteDimensional.complete ℝ F
-  have h := isNondegenerateCriticalPoint_stereographicHeight_zero (F := F)
-  rw [← h.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
+  have := FiniteDimensional.completeSpace ℝ F
+  rw [← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   intro w hw
   rw [neg_apply, hessianQuadraticForm_stereographicHeight_zero, neg_neg]
   positivity
@@ -279,6 +296,14 @@ theorem sphereHeight_self (v : sphere (0 : E) 1) : sphereHeight v v = 1 := by
 theorem sphereHeight_neg_self (v : sphere (0 : E) 1) : sphereHeight v (-v) = -1 := by
   simp [inner_neg_left, norm_eq_of_mem_sphere]
 
+/-- The height function is at most `1`, its value at the north pole. -/
+theorem sphereHeight_le_one (v x : sphere (0 : E) 1) : sphereHeight v x ≤ 1 :=
+  real_inner_le_one_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere v)
+
+/-- The height function is at least `-1`, its value at the south pole. -/
+theorem neg_one_le_sphereHeight (v x : sphere (0 : E) 1) : -1 ≤ sphereHeight v x :=
+  neg_one_le_real_inner_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere v)
+
 /-- The north pole is the only point of height `1`. -/
 theorem sphereHeight_eq_one_iff {v x : sphere (0 : E) 1} : sphereHeight v x = 1 ↔ x = v := by
   refine ⟨fun h ↦ by_contra fun hx ↦ ?_, fun h ↦ h ▸ sphereHeight_self v⟩
@@ -321,6 +346,20 @@ theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
 theorem sphereHeight_comp_extChartAt_symm (v : sphere (0 : E) 1) :
     sphereHeight v ∘ (extChartAt (𝓡 n) v).symm = stereographicHeight := by
   rw [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, comp_id, sphereHeight_comp_chartAt_symm]
+
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- Under the stereographic projection from the north pole `v`, the height function in the
+direction `v` is `-stereographicHeight`. -/
+theorem sphereHeight_stereographic_symm_apply (v : sphere (0 : E) 1) (w : (ℝ ∙ (v : E))ᗮ) :
+    sphereHeight v ((stereographic (norm_eq_of_mem_sphere v)).symm w) = -stereographicHeight w := by
+  have hw : ⟪(w : E), (v : E)⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 w.2
+  have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have h4 : ‖w‖ ^ 2 + 4 ≠ 0 := by positivity
+  rw [sphereHeight_apply, stereographicHeight_apply]
+  simp only [coe_stereographic_symm_apply, inner_smul_left, inner_add_left, hw, hv,
+    RCLike.conj_to_real]
+  field_simp
+  ring
 
 /-- The north pole is a nondegenerate critical point of the height function. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_self (v : sphere (0 : E) 1) :
@@ -374,6 +413,16 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
   ext x
   simp
+
+/-- **Every level of the height except the poles is regular.** The only critical points of the
+height function are the poles, where its values are `1` and `-1`. -/
+theorem isRegularValue_sphereHeight (v : sphere (0 : E) 1) {c : ℝ} (hc₁ : c ≠ 1) (hc₂ : c ≠ -1) :
+    IsRegularValue (𝓡 n) 𝓘(ℝ) (sphereHeight v) c := by
+  refine isRegularValue_iff.2 fun x hx ↦ ?_
+  rw [isRegularPoint_iff_mvfderiv_ne_zero, Ne, mvfderiv_sphereHeight_eq_zero_iff]
+  rintro (rfl | rfl)
+  · exact hc₁ (hx.symm.trans (sphereHeight_self x))
+  · exact hc₂ (hx.symm.trans (sphereHeight_neg_self v))
 
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- **The equator of the circle has two points.** In a two-dimensional real inner product space,

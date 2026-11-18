@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
+import TauCeti.GroupTheory.Coxeter.Length
 
 /-!
 # The canonical symmetrizing trace of the type-A Hecke algebra

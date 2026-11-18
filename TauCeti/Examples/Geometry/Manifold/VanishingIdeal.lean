@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 
 /-!

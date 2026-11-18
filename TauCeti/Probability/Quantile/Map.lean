@@ -190,7 +190,7 @@ theorem quantile_neg_of_continuousWithinAt [IsProbabilityMeasure μ] (h0 : 0 < t
     (h : ContinuousWithinAt μ.quantile (Ioi (1 - t)) (1 - t)) :
     μ.neg.quantile t = -μ.quantile (1 - t) := by
   rw [quantile_neg h0 h1,
-    upperQuantile_eq_quantile_of_continuousWithinAt μ (by linarith) (by linarith) h]
+    upperQuantile_eq_quantile_of_continuousWithinAt μ h]
 
 /-- **Lower endpoint of the reflected law.** If the quantiles of `μ` tend to `a` as the level
 increases to one, then the quantiles of the reflected law tend to `-a` as the level decreases to
@@ -231,14 +231,12 @@ private theorem map_eq_map_neg_comp (hs : s.OrdConnected)
       (∀ᵐ x ∂μ.neg, x ∈ Neg.neg ⁻¹' s) ∧
       MonotoneOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) ∧ ContinuousOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) := by
   have hae : ∀ᵐ x ∂μ.neg, x ∈ Neg.neg ⁻¹' s := by
-    exact μ.ae_neg_mem_preimage hs.measurableSet hμs
+    exact μ.ae_neg_mem_preimage hμs
   have hmono : MonotoneOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) :=
     fun x hx y hy hxy ↦ hg hy hx (neg_le_neg hxy)
   refine ⟨?_, hs.preimage_anti fun _ _ ↦ neg_le_neg, hae, hmono,
     hgc.comp continuousOn_neg fun _ hx ↦ hx⟩
-  have hgm : AEMeasurable (g ∘ Neg.neg) μ.neg := restrict_eq_self_of_ae_mem hae ▸
-    aemeasurable_restrict_of_monotoneOn (measurable_neg hs.measurableSet) hmono
-  exact (μ.map_neg_comp hgm).symm
+  exact μ.map_neg_comp.symm
 
 /-- **Quantiles of a nonincreasing image.** If `g` is nonincreasing and continuous on an interval
 carrying all the mass of `μ`, then at every level strictly between `0` and `1` the quantile of the

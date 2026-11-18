@@ -308,10 +308,10 @@ theorem exists_openNormalSubgroup_isPGroup_subset [SeparatelyContinuousMul G] {s
     ∃ U : OpenNormalSubgroup G, IsPGroup p (G ⧸ U.toSubgroup) ∧ (U : Set G) ⊆ s := by
   let S : Type u := {U : OpenNormalSubgroup G // IsPGroup p (G ⧸ U.toSubgroup)}
   -- The family contains the whole group, so it is nonempty.
-  have : Subsingleton (G ⧸ (openNormalSubgroupTop G).toSubgroup) :=
-    QuotientGroup.subsingleton_iff.mpr (openNormalSubgroupTop_toSubgroup G)
-  have htop : IsPGroup p (G ⧸ (openNormalSubgroupTop G).toSubgroup) := .of_subsingleton p _
-  have : Nonempty S := ⟨⟨openNormalSubgroupTop G, htop⟩⟩
+  have : Subsingleton (G ⧸ (⊤ : OpenNormalSubgroup G).toSubgroup) :=
+    QuotientGroup.subsingleton_iff.mpr OpenNormalSubgroup.toSubgroup_top
+  have htop : IsPGroup p (G ⧸ (⊤ : OpenNormalSubgroup G).toSubgroup) := .of_subsingleton p _
+  have : Nonempty S := ⟨⟨⊤, htop⟩⟩
   have hinf : Disjoint sᶜ (⋂ U : S, (U.1 : Set G)) := by
     rw [Set.disjoint_compl_left_iff_subset]
     exact fun x hx ↦ hKs (mem_proPKernel_iff.mpr fun U hU ↦ Set.mem_iInter.mp hx ⟨U, hU⟩)

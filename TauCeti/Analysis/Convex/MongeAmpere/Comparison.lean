@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Extrema
+import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.Convex.MongeAmpere.Affine
+import TauCeti.Topology.Frontier
 
 /-!
 # The comparison principle for the Monge–Ampère equation
@@ -25,11 +27,14 @@ Monge–Ampère measures `MA_u` and `MA_v` (of `u` and `v` extended by `⊤` off
   Dirichlet problem for the Monge–Ampère equation.
 
 The comparison principle is proved by contradiction. If `u x₀ < v x₀`, then for small `ε > 0`
-the function `w = (1 + ε) v - c` lies above `u` at `x₀` and strictly below `u` on the frontier,
-so the open set `G = {u < w}` has closure inside `Ω`, and `w ≤ u` on its frontier. By
-`TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le`, the subgradients of `w` on `G`,
-are subgradients of `u` on `G`, as are their small perturbations, which form an open ball.
-The scaling law gives `MA_w(G) = (1 + ε)^n MA_v(G)`. Comparing measures,
+the function `w = (1 + ε) v + b` of `TauCeti.exists_convexOn_lt_frontier_of_lt` lies above `u` at
+`x₀` and strictly below `u` on the frontier, so the open set `G = {u < w}` of
+`TauCeti.exists_isOpen_subset_pos_forall_frontier_le` has closure inside `Ω`, and `w ≤ u` on its
+frontier. By `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le`, the subgradients of
+`w` on `G` are subgradients of `u` on `G`, as are their small perturbations, which form an open
+ball.
+The scaling law (`MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos`) gives
+`MA_w(G) = (1 + ε)^n MA_v(G)`. Comparing measures,
 `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`, which is
 impossible.
 
@@ -64,6 +69,22 @@ open scoped Topology ENNReal Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Set E} [DecidablePred (· ∈ Ω)] {u v : E → ℝ}
+
+/-- A contradiction from a set of large measure: let `MAu ≤ MAv` and `MAw = r • MAv` be measures
+with `r > 1`, and `G` a set with `MAv G < ∞`. If `MAu G = μ Su` and `MAw G = μ Sw` with `Sw ⊆ Su`
+and `0 < μ Su`, then `False`. -/
+private theorem _root_.MeasureTheory.Measure.false_of_subset_of_pos {X : Type*}
+    [MeasurableSpace X] (μ : Measure X)
+    {G Su Sw : Set X} {MAu MAv MAw : Measure X} {r : ℝ≥0∞} (hr : 1 < r) (hMA : MAu ≤ MAv)
+    (hwMA : MAw = r • MAv) (hSu : MAu G = μ Su) (hSw : MAw G = μ Sw) (hsub : Sw ⊆ Su)
+    (hpos : 0 < μ Su) (hfin : MAv G ≠ ∞) : False := by
+  have h₁ : r * MAv G ≤ μ Su := by
+    rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
+    exact measure_mono hsub
+  have h₂ : μ Su ≤ MAv G := hSu ▸ Measure.le_iff'.1 hMA G
+  have := ENNReal.mul_lt_mul_left (hpos.trans_le h₂).ne' hfin hr
+  rw [one_mul] at this
+  exact (this.trans_le (h₁.trans h₂)).false
 
 /-- **A lower convex function with the reverse boundary inequality has more Monge–Ampère mass.**
 Let `Ω` be a bounded open set, and let `u` and `v` be convex on `Ω` and continuous on its
@@ -114,7 +135,7 @@ private theorem exists_mem_forall_add_inner_le (hv : ConvexOn ℝ Ω v) {G : Set
     ∃ x ∈ G, ∃ p, ∀ x' ∈ Ω, v x + inner ℝ (x' - x) p ≤ v x' := by
   classical
   have hae := ae_eventually_ne_top_and_differentiableAt_toReal (μ := addHaar)
-    (convex_epigraph_ite hv) ite_ne_bot
+    (convexOn_iff_convex_epigraph_ite.1 hv) ite_ne_bot
   have : (ae (addHaar.restrict G)).NeBot := ae_restrict_neBot.2 (hGo.measure_ne_zero _ hG)
   have hae' : ∀ᵐ y ∂addHaar.restrict G, y ∈ G ∧
       DifferentiableAt ℝ (fun x' => (if x' ∈ Ω then (v x' : EReal) else ⊤).toReal) y := by
@@ -122,10 +143,51 @@ private theorem exists_mem_forall_add_inner_le (hv : ConvexOn ℝ Ω v) {G : Set
     exact ⟨hyG, (h (by simp [hGΩ hyG])).2⟩
   obtain ⟨x, hx, hd⟩ := hae'.exists
   have hp := (mem_subdifferential_ite_iff (innerₗ E) (hGΩ hx)).1
-    (gradient_toReal_mem_subdifferential (convex_epigraph_ite hv) ite_ne_bot (by simp [hGΩ hx]) hd)
+    (gradient_toReal_mem_subdifferential (convexOn_iff_convex_epigraph_ite.1 hv) ite_ne_bot
+      (by simp [hGΩ hx]) hd)
   exact ⟨x, hx, _, by simpa only [innerₗ_apply_apply] using hp⟩
 
 variable [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+omit [Nontrivial E] in
+/-- Let `w ≤ u` on the frontier of a bounded open subset `G` of `Ω` on which `u < w`, with `u`, `w`
+convex on `Ω` and continuous on its closure. Then the subgradient images of `u` and `w` over `G`
+(whose measures are the Monge–Ampère measures of `G`) satisfy `S_w ⊆ S_u`, and `S_u` contains a
+ball. -/
+private theorem _root_.MeasureTheory.Measure.exists_measure_eq_subset_ball (hΩo : IsOpen Ω)
+    (hu : ConvexOn ℝ Ω u) {w : E → ℝ}
+    (hwconv : ConvexOn ℝ Ω w) (huc : ContinuousOn u (closure Ω)) (hwc : ContinuousOn w (closure Ω))
+    {G : Set E} (hGo : IsOpen G) (hGΩ : G ⊆ Ω) (hGb : Bornology.IsBounded G)
+    (hfrG : ∀ y ∈ frontier G, w y ≤ u y) (hpos : ∀ y ∈ G, 0 < w y - u y) (hG : G.Nonempty) :
+    ∃ Su Sw : Set E,
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) G = μ Su ∧
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) G = μ Sw ∧
+      Sw ⊆ Su ∧ ∃ c, ∃ η > 0, ball c η ⊆ Su := by
+  -- The subgradients of `w` on `G` and their small perturbations belong to the image for `u`.
+  set Su := ⋃ y ∈ G ∩ Ω, {p | ∀ x' ∈ Ω, u y + inner ℝ (x' - y) p ≤ u x'}
+  set Sw := ⋃ y ∈ G ∩ Ω, {p | ∀ x' ∈ Ω, w y + inner ℝ (x' - y) p ≤ w x'}
+  have key : ∀ y ∈ G, ∀ p, (∀ x' ∈ Ω, w y + inner ℝ (x' - y) p ≤ w x') →
+      ∀ q : E, ‖q‖ * diam G ≤ w y - u y → p + q ∈ Su := fun y hy p hp q hq =>
+    add_mem_biUnion_of_forall_frontier_le hu hGo hGΩ hGb (huc.mono (closure_mono hGΩ))
+      (hwc.mono (closure_mono hGΩ)) hfrG hy (fun x' hx' => hp x' (hGΩ hx')) hq
+  have hsub : Sw ⊆ Su := by
+    intro p hp
+    obtain ⟨y, hy, hp⟩ := mem_iUnion₂.1 hp
+    simpa using key y hy.1 p hp 0 (by simpa using (hpos y hy.1).le)
+  -- A subgradient of `w` at some point of `G` gives a ball of subgradients of `u`.
+  have hball : ∃ c, ∃ η > 0, ball c η ⊆ Su := by
+    obtain ⟨x₁, hx₁, p₁, hp₁⟩ := exists_mem_forall_add_inner_le hwconv hGo hGΩ hG
+    have hκ : 0 < w x₁ - u x₁ := hpos x₁ hx₁
+    refine ⟨p₁, (w x₁ - u x₁) / (diam G + 1), by positivity, fun z hz => ?_⟩
+    have hz' : ‖z - p₁‖ * diam G ≤ w x₁ - u x₁ := by
+      rw [mem_ball, dist_eq_norm] at hz
+      calc ‖z - p₁‖ * diam G ≤ (w x₁ - u x₁) / (diam G + 1) * (diam G + 1) :=
+            mul_le_mul hz.le (by linarith) diam_nonneg (by positivity)
+        _ = w x₁ - u x₁ := div_mul_cancel₀ _ (by positivity)
+    simpa using key x₁ hx₁ _ hp₁ _ hz'
+  exact ⟨Su, Sw, mongeAmpereMeasure_ite_apply μ hΩo hu AbsolutelyContinuous.rfl hGo.measurableSet,
+    mongeAmpereMeasure_ite_apply μ hΩo hwconv AbsolutelyContinuous.rfl hGo.measurableSet,
+    hsub, hball⟩
 
 /-- **The comparison principle for the Monge–Ampère equation.** Let `Ω` be a bounded open subset
 of a real inner product space `E` of finite dimension `n ≥ 1`, and let `u` and `v` be convex on
@@ -139,108 +201,28 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
       mongeAmpereMeasure μ (fun x => if x ∈ Ω then (v x : EReal) else ⊤))
     (hfr : ∀ x ∈ frontier Ω, v x ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω) : v x₀ ≤ u x₀ := by
   by_contra! hlt
-  -- Choose `ε > 0` with `ε |v| ≤ a / 4` on the closure of `Ω`, where `a = v x₀ - u x₀ > 0`, and
-  -- set `w = (1 + ε) v - a / 2`. Then `u < w` at `x₀` and `w < u` on the frontier of `Ω`.
-  set a := v x₀ - u x₀
-  have ha : 0 < a := sub_pos.2 hlt
-  obtain ⟨M, hM⟩ := hΩ.isCompact_closure.exists_bound_of_continuousOn hvc
-  set ε := a / (4 * (|M| + 1))
-  have hε : 0 < ε := by positivity
-  have hεv : ∀ y ∈ closure Ω, |ε * v y| ≤ a / 4 := fun y hy => by
-    rw [abs_mul, abs_of_pos hε]
-    calc ε * |v y| ≤ ε * (|M| + 1) := by
-          gcongr
-          exact (hM y hy).trans ((le_abs_self M).trans (le_add_of_nonneg_right zero_le_one))
-      _ = a / 4 := by
-          simp only [ε]
-          field_simp
-  set w : E → ℝ := fun y => (1 + ε) * v y - a / 2 with hw
-  have hwc : ContinuousOn w (closure Ω) := (continuousOn_const.mul hvc).sub continuousOn_const
-  have hfrw : ∀ y ∈ frontier Ω, w y < u y := fun y hy => by
-    have := (abs_le.1 (hεv y (frontier_subset_closure hy))).2
-    simp only [hw]
-    linarith [hfr y hy]
-  -- The open set `G = {u < w}` contains `x₀`, its closure lies in `Ω`, and `w ≤ u` on its
-  -- frontier.
-  set G := Ω ∩ (fun y => w y - u y) ⁻¹' Ioi 0
-  have hGo : IsOpen G := ((hwc.sub huc).mono subset_closure).isOpen_inter_preimage hΩo isOpen_Ioi
-  have hGΩ : G ⊆ Ω := inter_subset_left
-  have hx₀G : x₀ ∈ G := by
-    refine ⟨hx₀, ?_⟩
-    have := (abs_le.1 (hεv x₀ (subset_closure hx₀))).1
-    simp only [mem_preimage, mem_Ioi, hw]
-    linarith
-  have hGc : closure G ⊆ Ω := by
-    have hT : closure G ⊆ closure Ω ∩ (fun y => w y - u y) ⁻¹' Ici 0 :=
-      closure_minimal (fun y hy => ⟨subset_closure hy.1, le_of_lt hy.2⟩)
-        ((hwc.sub huc).preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici)
-    intro y hy
-    obtain ⟨hy₁, hy₂⟩ := hT hy
-    by_contra hyΩ
-    have := hfrw y (by rw [hΩo.frontier_eq]; exact ⟨hy₁, hyΩ⟩)
-    simp only [mem_preimage, mem_Ici] at hy₂
-    linarith
-  have hfrG : ∀ y ∈ frontier G, w y ≤ u y := fun y hy => by
-    rw [hGo.frontier_eq] at hy
-    have : ¬0 < w y - u y := fun h => hy.2 ⟨hGc hy.1, h⟩
-    linarith [not_lt.1 this]
+  -- Replace `v` by `w = (1 + ε) v + b`: then `u < w` at `x₀` and `w < u` on the frontier of `Ω`.
+  obtain ⟨ε, hε, b, hwc, hwconv, hfrw, hx₀w⟩ :=
+    exists_convexOn_lt_frontier_of_lt hΩ.isCompact_closure hv hvc hfr hx₀ hlt
+  set w : E → ℝ := fun y => (1 + ε) * v y + b
+  -- The open set `G = {u < w}` contains `x₀`, and `w ≤ u` on its frontier.
+  obtain ⟨G, hGo, hGΩ, hGc, hx₀G, hpos, hfrG⟩ :=
+    exists_isOpen_subset_pos_forall_frontier_le hΩo huc hwc hfrw hx₀ hx₀w
   have hGb : Bornology.IsBounded G := hΩ.subset hGΩ
-  have hεpos : 0 < 1 + ε := by positivity
-  have hwconv : ConvexOn ℝ Ω w := by
-    have hscaled : ConvexOn ℝ Ω (fun y => (1 + ε) * v y) := by
-      simpa only [Pi.smul_apply, smul_eq_mul] using hv.smul hεpos.le
-    exact hscaled.add_const (-(a / 2))
-  -- The subgradients of `w` on `G` and their small perturbations belong to the image for `u`.
-  set Su := ⋃ y ∈ G ∩ Ω, {p | ∀ x' ∈ Ω, u y + inner ℝ (x' - y) p ≤ u x'}
-  set Sw := ⋃ y ∈ G ∩ Ω, {p | ∀ x' ∈ Ω, w y + inner ℝ (x' - y) p ≤ w x'}
-  have key : ∀ y ∈ G, ∀ p, (∀ x' ∈ Ω, w y + inner ℝ (x' - y) p ≤ w x') →
-      ∀ q : E, ‖q‖ * diam G ≤ w y - u y → p + q ∈ Su := fun y hy p hp q hq =>
-    add_mem_biUnion_of_forall_frontier_le hu hGo hGΩ hGb (huc.mono (closure_mono hGΩ))
-      (hwc.mono (closure_mono hGΩ)) hfrG hy (fun x' hx' => hp x' (hGΩ hx')) hq
-  have hsub : Sw ⊆ Su := by
-    intro p hp
-    obtain ⟨y, hy, hp⟩ := mem_iUnion₂.1 hp
-    simpa using key y hy.1 p hp 0 (by simpa using hy.1.2.le)
-  -- A subgradient of `w` at some point of `G` gives a ball of subgradients of `u`.
-  have hball : ∃ c, ∃ η > 0, ball c η ⊆ Su := by
-    obtain ⟨x₁, hx₁, p₁, hp₁⟩ := exists_mem_forall_add_inner_le hwconv hGo hGΩ ⟨x₀, hx₀G⟩
-    have hκ : 0 < w x₁ - u x₁ := hx₁.2
-    refine ⟨p₁, (w x₁ - u x₁) / (diam G + 1), by positivity, fun z hz => ?_⟩
-    have hz' : ‖z - p₁‖ * diam G ≤ w x₁ - u x₁ := by
-      rw [mem_ball, dist_eq_norm] at hz
-      calc ‖z - p₁‖ * diam G ≤ (w x₁ - u x₁) / (diam G + 1) * (diam G + 1) :=
-            mul_le_mul hz.le (by linarith) diam_nonneg (by positivity)
-        _ = w x₁ - u x₁ := div_mul_cancel₀ _ (by positivity)
-    simpa using key x₁ hx₁ _ hp₁ _ hz'
-  obtain ⟨c, η, hη, hcη⟩ := hball
+  obtain ⟨Su, Sw, hSu, hSw, hsub, hball⟩ := Measure.exists_measure_eq_subset_ball μ hΩo hu hwconv
+    huc hwc hGo hGΩ hGb hfrG hpos ⟨x₀, hx₀G⟩
   -- Compare `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`.
-  set MAv := mongeAmpereMeasure μ (fun x => if x ∈ Ω then (v x : EReal) else ⊤)
-  have hSu : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) G = μ Su :=
-    mongeAmpereMeasure_ite_apply μ hΩo hu AbsolutelyContinuous.rfl hGo.measurableSet
-  have hSw : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) G = μ Sw :=
-    mongeAmpereMeasure_ite_apply μ hΩo hwconv AbsolutelyContinuous.rfl hGo.measurableSet
-  have hwMA : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) =
-      ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • MAv := by
-    have hshift := mongeAmpereMeasure_ite_add_linearMap μ (U := Ω)
-      (fun y => (1 + ε) * v y) 0 (-(a / 2))
-    rw [mongeAmpereMeasure_ite_mul_of_pos μ hεpos] at hshift
-    simpa only [hw, LinearMap.zero_apply, add_zero, sub_eq_add_neg, MAv] using hshift
-  have h₁ : ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) * MAv G ≤ μ Su := by
-    rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
-    exact measure_mono hsub
-  have h₂ : μ Su ≤ MAv G := hSu ▸ Measure.le_iff'.1 hMA G
-  have h₃ : 0 < μ Su := (measure_ball_pos μ c hη).trans_le (measure_mono hcη)
-  have h₄ : MAv G ≠ ∞ := by
-    refine ((measure_mono subset_closure).trans_lt ?_).ne
-    refine mongeAmpereMeasure_lt_top μ (convex_epigraph_ite hv) ite_ne_bot
+  have hεpos : 0 < 1 + ε := by positivity
+  obtain ⟨c, η, hη, hcη⟩ := hball
+  refine Measure.false_of_subset_of_pos μ ?_ hMA
+    (Measure.mongeAmpereMeasure_ite_mul_add_of_pos μ hεpos b) hSu hSw hsub
+    ((measure_ball_pos μ c hη).trans_le (measure_mono hcη)) ?_
+  · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
+    exact one_lt_pow₀ (by linarith) finrank_pos.ne'
+  · refine ((measure_mono subset_closure).trans_lt ?_).ne
+    refine mongeAmpereMeasure_lt_top μ (convexOn_iff_convex_epigraph_ite.1 hv) ite_ne_bot
       AbsolutelyContinuous.rfl hGb.isCompact_closure ?_
     rwa [setOf_ite_ne_top, hΩo.interior_eq]
-  have h₅ : 1 < ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) := by
-    rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
-    exact one_lt_pow₀ (by linarith) finrank_pos.ne'
-  have := ENNReal.mul_lt_mul_left (h₃.trans_le h₂).ne' h₄ h₅
-  rw [one_mul] at this
-  exact (this.trans_le (h₁.trans h₂)).false
 
 /-- **Uniqueness for the Dirichlet problem for the Monge–Ampère equation.** Let `Ω` be a bounded
 open subset of a real inner product space of finite dimension `n ≥ 1`, and let `u` and `v` be

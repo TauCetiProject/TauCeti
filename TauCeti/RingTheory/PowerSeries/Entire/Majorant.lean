@@ -151,7 +151,7 @@ theorem isEntire_of_norm_coeff_le_prod {σ : ℕ → ℝ} (hσ : Tendsto σ atTo
   rw [← isRestricted_abs_iff, isRestricted_iff']
   have habs : Tendsto (fun i ↦ |σ i|) cofinite (𝓝 0) := by
     simpa [Nat.cofinite_eq_atTop] using hσ.abs
-  have h := TauCeti.tendsto_mul_pow_of_forall_prod_le (fun i ↦ abs_nonneg (σ i)) habs
+  have h := TauCeti.tendsto_mul_pow_of_forall_prod_le habs
     (x := fun n ↦ ∏ i ∈ range n, |σ i|) (fun n ↦ prod_nonneg fun i _ ↦ abs_nonneg _)
     (fun n c _ hc ↦ hc (range n) (card_range n)) r
   refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) h

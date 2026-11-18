@@ -11,11 +11,11 @@ public import Mathlib.Analysis.Calculus.ImplicitContDiff
 /-!
 # Hitting times of transverse sections
 
-Let `v` be a `C^n` vector field (`n ≥ 1`) on a boundaryless finite-dimensional manifold `M`, and
-suppose the flow carries `p` to `q = flowOf v T p` at time `T`. A local transverse section through
-`q` is described by a function `g : M → ℝ`, `C^n` near `q`, whose derivative along the field does
-not vanish at `q`: `dg_q (v q) ≠ 0`. Nearby points `z` reach the level `{g = g q}` at a time close
-to `T`, and this time depends `C^n` on `z`.
+Let `v` be a `C^n` vector field (`n ≥ 1`) on a boundaryless manifold `M` modelled on a Banach
+space, and suppose the flow carries `p` to `q = flowOf v T p` at time `T`. A local transverse
+section through `q` is described by a function `g : M → ℝ`, `C^n` near `q`, whose derivative along
+the field does not vanish at `q`: `dg_q (v q) ≠ 0`. Nearby points `z` reach the level `{g = g q}`
+at a time close to `T`, and this time depends `C^n` on `z`.
 
 `TauCeti.flowHittingTime v g T p` is this **hitting-time branch**. It is the implicit function of
 the equation `g (flowOf v t z) = g q` in the unknown `t`, read in the extended chart at `p`; the
@@ -68,7 +68,7 @@ open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
   {v : (x : M) → TangentSpace I x} {g : M → ℝ} {T : ℝ} {p : M}
@@ -85,12 +85,12 @@ flowing for time `u.2` from the point with coordinates `u.1`. -/
 private def chartLevel (v : (x : M) → TangentSpace I x) (g : M → ℝ) (p : M) (u : E × ℝ) : ℝ :=
   g (flowOf v u.2 ((extChartAt I p).symm u.1))
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
+omit [CompleteSpace E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
 private theorem chartLevel_extChartAt {z : M} (hz : z ∈ (extChartAt I p).source) (t : ℝ) :
     chartLevel v g p (extChartAt I p z, t) = g (flowOf v t z) := by
   simp only [chartLevel, (extChartAt I p).left_inv hz]
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
+omit [CompleteSpace E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
 private theorem chartLevel_self (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T : ℝ) (p : M) :
     chartLevel v g p (extChartAt I p p, T) = g (flowOf v T p) :=
   chartLevel_extChartAt (mem_extChartAt_source p) T
@@ -281,13 +281,22 @@ variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hT : (T
   (hgv : mvfderiv I g (flowOf v T p) (v (flowOf v T p)) ≠ 0)
 include hv hT hg hgv
 
-/-- The hitting time of a transverse section is continuous at `p`. -/
-theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p :=
-  (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).continuousAt
+omit hv hT hg hgv in
+/-- The hitting time of a transverse section is continuous at `p`. Outside the hypotheses of the
+implicit function theorem the hitting time is the constant `T`, so none are needed. -/
+theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p := by
+  by_cases h : HittingData v g T p
+  · exact (contMDiffAt_flowHittingTime le_rfl h.1 h.2.1 h.2.2.1 h.2.2.2).continuousAt
+  · simpa only [flowHittingTime, h, dite_false] using continuousAt_const
 
 /-- The transition to a transverse section is continuous at `p`. -/
 theorem continuousAt_flowTransition : ContinuousAt (flowTransition v g T p) p :=
   (contMDiffAt_flowTransition le_rfl hv hT hg hgv).continuousAt
+
+/-- The hitting time of a transverse section is differentiable at `p`. -/
+theorem mdifferentiableAt_flowHittingTime :
+    MDifferentiableAt I 𝓘(ℝ) (flowHittingTime v g T p) p :=
+  (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
 
 /-- The transition to a transverse section is differentiable at `p`. -/
 theorem mdifferentiableAt_flowTransition : MDifferentiableAt I I (flowTransition v g T p) p :=

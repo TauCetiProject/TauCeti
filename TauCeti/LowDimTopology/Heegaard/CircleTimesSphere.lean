@@ -86,6 +86,9 @@ differential vanishes and the hat chain complex is `𝔽₂²` with zero differe
 * `TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_circleTimesSphere_one` and
   `TauCeti.HeegaardRegionSystem.stronglyAdmissible_circleTimesSphere_one`: with the basepoint in
   a bigon, the diagram is weakly and strongly admissible at both generators.
+* `TauCeti.HeegaardRegionSystem.finite_setOf_isDomainBetween_circleTimesSphere_one`: with the
+  basepoint in a bigon, only finitely many nonnegative domains have a given Maslov index, even
+  though the diagram is not weakly admissible.
 * `TauCeti.HeegaardRegionSystem.hatDomains_circleTimesSphere_zero_zero_one`: with the basepoint
   in the annulus, the hat differential counts the two bigons from `p₀` to `p₁`.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_circleTimesSphere_zero`: these cancel, and the hat
@@ -357,9 +360,10 @@ theorem maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains (a : Fin 2) {P
 /-- With the basepoint in the annulus, the relative grading of `p₀` over `p₁` is one, computed
 from either bigon. -/
 theorem relativeGrading_circleTimesSphere_zero :
-    (circleTimesSphere 0).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 0 0)
+    (circleTimesSphere 0).relativeGrading ![0, 1, 1] (circleTimesSphereGenerator 0 0)
       (circleTimesSphereGenerator 0 1) = 1 := by
-  rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq () (by decide)
+  rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))
     fun _ => maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains 0,
     maslovIndex_circleTimesSphere_single_one]
   simp
@@ -438,13 +442,26 @@ theorem weaklyAdmissibleAt_circleTimesSphere_one (a : Fin 2) :
     (circleTimesSphere 1).WeaklyAdmissibleAt ![0, 1, 1] (circleTimesSphereGenerator 1 a) :=
   (stronglyAdmissible_circleTimesSphere_one a).weaklyAdmissibleAt
 
+/-- With the basepoint in the bigon `B₁`, only finitely many nonnegative domains connect two
+generators with a given Maslov index, whatever their basepoint multiplicity, since the diagram is
+strongly admissible. This holds although the diagram is not weakly admissible: the multiples of
+the nonnegative periodic domain `A + 2 B₂` have Maslov indices `2 k`, which are all different. -/
+theorem finite_setOf_isDomainBetween_circleTimesSphere_one (x : (circleTimesSphere 1).Generator)
+    (a : Fin 2) (m : ℚ) :
+    Set.Finite {D : Fin 3 → ℤ |
+      (circleTimesSphere 1).IsDomainBetween x (circleTimesSphereGenerator 1 a) D ∧ 0 ≤ D ∧
+        (circleTimesSphere 1).maslovIndex ![0, 1, 1] x (circleTimesSphereGenerator 1 a) D = m} :=
+  (stronglyAdmissible_circleTimesSphere_one a).finite_setOf_isDomainBetween_nonneg_index
+    (by simp [Fin.sum_univ_three]) x m
+
 /-- With the basepoint in the bigon `B₁`, the relative grading of `p₀` over `p₁` is one modulo
 two: the bigons give `-1` and `1`, which agree modulo the periodic Maslov indices. -/
 theorem coe_relativeGrading_circleTimesSphere_one :
-    ((circleTimesSphere 1).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 1 0)
+    ((circleTimesSphere 1).relativeGrading ![0, 1, 1] (circleTimesSphereGenerator 1 0)
       (circleTimesSphereGenerator 1 1) : ℚ ⧸ AddSubgroup.zmultiples (2 : ℚ)) = (1 : ℚ) := by
   rw [← periodicMaslovIndices_circleTimesSphere_one 0,
-    (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq () (by decide),
+    (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq
+      (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide)),
     maslovIndex_circleTimesSphere_single_two]
   simp
 

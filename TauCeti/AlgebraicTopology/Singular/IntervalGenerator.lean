@@ -56,6 +56,11 @@ def cubePoint (t : I) : (cubeBoundaryPair.{w} 1).fst := ULift.up fun _ ↦ t
 lemma cubePoint_down (t : I) : (cubePoint.{w} t).down = fun _ ↦ t := by
   rw [cubePoint]
 
+/-- The parametrization `TauCeti.cubePoint` of the cube `I¹` is continuous. -/
+@[fun_prop]
+lemma continuous_cubePoint : Continuous (cubePoint.{w}) :=
+  continuous_uliftUp.comp (continuous_pi fun _ ↦ continuous_id)
+
 /-- An endpoint of the cube `I¹`, as a point of its boundary. -/
 def cubeEnd (t : I) (ht : t = 0 ∨ t = 1) : (cubeBoundaryPair.{w} 1).snd :=
   ⟨cubePoint t, ⟨0, ht⟩⟩
@@ -65,12 +70,10 @@ lemma map_cubeEnd (t : I) (ht : t = 0 ∨ t = 1) :
     (cubeBoundaryPair.{w} 1).map (cubeEnd t ht) = cubePoint t :=
   (rfl)
 
-/-- The standard singular `1`-simplex of the cube `I¹`, from `0` to `1`. -/
+/-- The standard singular `1`-simplex of the cube `I¹`, from `0` to `1`: the singular
+`1`-simplex `TauCeti.TopCat.simplex₁` of the parametrization `TauCeti.cubePoint` of `I¹`. -/
 def cubeSimplex : (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst) _⦋1⦌ :=
-  ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).symm
-    ⟨fun a ↦ cubePoint ⟨a.weights 1, a.weights_nonneg 1, a.weights_apply_le_one 1⟩,
-      continuous_uliftUp.comp (continuous_pi fun _ ↦
-        (Convexity.StdSimplex.continuous_weights_apply ℝ 1).subtype_mk _)⟩
+  TopCat.simplex₁ ⟨cubePoint, continuous_cubePoint⟩
 
 /-- An endpoint of the cube `I¹`, as a singular `0`-simplex of its boundary. -/
 def cubeEndVertex (t : I) (ht : t = 0 ∨ t = 1) :
@@ -82,40 +85,20 @@ weight. -/
 lemma toSSetObjEquiv_cubeSimplex_apply (a : Convexity.StdSimplex ℝ (Fin 2)) :
     (cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _ cubeSimplex a =
       cubePoint (Convexity.StdSimplex.homeomorphI a) := by
-  rw [cubeSimplex, Equiv.apply_symm_apply]
-  exact congrArg cubePoint (Subtype.ext (Convexity.StdSimplex.homeomorphI_apply_coe a).symm)
+  rw [cubeSimplex, TopCat.toSSetObjEquiv_simplex₁, ContinuousMap.comp_apply,
+    ContinuousMap.coe_ofClass, ContinuousMap.coe_mk]
 
 lemma δ_one_cubeSimplex :
     (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst).δ 1 cubeSimplex =
       (TopCat.toSSet.map (cubeBoundaryPair.{w} 1).map).app _ (cubeEndVertex 0 (Or.inl rfl)) := by
-  apply ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).injective
-  ext a : 1
-  -- Both sides evaluate a singular simplex of the cube: the face of `cubeSimplex` is
-  -- `cubePoint` of the last weight of the face inclusion, and the vertex is `cubePoint` of the
-  -- endpoint, by `toSSetObjEquiv_δ_apply` and the definitions of `cubeSimplex`/`cubeEndVertex`.
-  change cubePoint _ = cubePoint 0
-  congr 1
-  ext
-  exact Finsupp.mapDomain_of_notMem_range _ _ (by
-    simp only [Quiver.Hom.unop_op, Set.mem_range]
-    decide)
+  rw [cubeSimplex, TopCat.δ_one_simplex₁, cubeEndVertex,
+    TopCat.toSSet_map_app_toSSetObj₀Equiv_symm, map_cubeEnd, ContinuousMap.coe_mk]
 
 lemma δ_zero_cubeSimplex :
     (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst).δ 0 cubeSimplex =
       (TopCat.toSSet.map (cubeBoundaryPair.{w} 1).map).app _ (cubeEndVertex 1 (Or.inr rfl)) := by
-  apply ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).injective
-  ext a : 1
-  -- Both sides evaluate a singular simplex of the cube: the face of `cubeSimplex` is
-  -- `cubePoint` of the last weight of the face inclusion, and the vertex is `cubePoint` of the
-  -- endpoint, by `toSSetObjEquiv_δ_apply` and the definitions of `cubeSimplex`/`cubeEndVertex`.
-  change cubePoint _ = cubePoint 1
-  congr 1
-  ext
-  -- The coordinate is the weight at `1 = (0 : Fin 2).succAbove 0` of the face inclusion.
-  change (Convexity.StdSimplex.map (Fin.succAbove 0) a).weights ((0 : Fin 2).succAbove 0) = 1
-  rw [Convexity.StdSimplex.weights_map, Finsupp.mapDomain_apply_of_injective
-    Fin.succAbove_right_injective]
-  simp
+  rw [cubeSimplex, TopCat.δ_zero_simplex₁, cubeEndVertex,
+    TopCat.toSSet_map_app_toSSetObj₀Equiv_symm, map_cubeEnd, ContinuousMap.coe_mk]
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 

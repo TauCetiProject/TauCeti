@@ -43,8 +43,8 @@ symmetric matrix `S ^ s`.
 * `SymplecticGroup.sqrt_mul_star_mem`: the positive factor `√(A Aᴴ)` of a symplectic matrix is
   symplectic.
 * `SymplecticGroup.polarUnitary_mem`: the unitary factor of a symplectic matrix is symplectic.
-* `SymplecticGroup.rpow_neg_eq_J_conj_rpow`: for a positive semidefinite real symplectic matrix
-  `S`, `S ^ (-s) = J S ^ s J⁻¹`.
+* `SymplecticGroup.rpow_neg_eq_J_conj_rpow`: for a real symplectic matrix `S`,
+  `S ^ (-s) = J S ^ s J⁻¹`.
 * `SymplecticGroup.rpow_mem`: every real power of a positive semidefinite real symplectic matrix is
   symplectic.
 * `SymplecticGroup.joinedIn_polarUnitary`: a real symplectic matrix is joined to its orthogonal
@@ -132,21 +132,25 @@ section Real
 
 variable {S : Matrix (l ⊕ l) (l ⊕ l) ℝ}
 
-/-- **Conjugation by `J` inverts the real powers of a positive symplectic matrix.** For a positive
-semidefinite symplectic matrix `S` and every real `s`, `S ^ (-s) = J S ^ s J⁻¹`; for `s = 1` this
-is `S⁻¹ = J S J⁻¹`. -/
-theorem rpow_neg_eq_J_conj_rpow (hS : S.PosSemidef) (hSp : S ∈ symplecticGroup l ℝ) (s : ℝ) :
+/-- **Conjugation by `J` inverts the real powers of a symplectic matrix.** For a symplectic matrix
+`S` and every real `s`, `S ^ (-s) = J S ^ s J⁻¹`; for `s = 1` and `S` positive semidefinite this
+is `S⁻¹ = J S J⁻¹`. When `S` is not positive semidefinite both sides are `0` by convention. -/
+theorem rpow_neg_eq_J_conj_rpow (hSp : S ∈ symplecticGroup l ℝ) (s : ℝ) :
     S ^ (-s) = J l ℝ * S ^ s * (J l ℝ)⁻¹ := by
+  by_cases hS : 0 ≤ S
+  swap
+  · simp [CFC.rpow_def, cfc_apply_of_not_predicate S hS]
   obtain ⟨S', rfl⟩ := (isUnit_iff_isUnit_det S).2 (symplectic_det hSp)
   -- For symmetric `S`, the symplectic inverse formula `S⁻¹ = -J Sᵀ J` reads `S⁻¹ = J S Jᵀ`.
   have hSym : (S' : Matrix (l ⊕ l) (l ⊕ l) ℝ)ᵀ = S' := by
-    simpa [IsHermitian, conjTranspose_eq_transpose_of_trivial] using hS.isHermitian
+    simpa [IsHermitian, conjTranspose_eq_transpose_of_trivial] using
+      (nonneg_iff_posSemidef.1 hS).isHermitian
   have hinv : J l ℝ * S' * star (J l ℝ) = ↑S'⁻¹ := by
     rw [coe_units_inv, inv_eq_symplectic_inv _ hSp, hSym, star_J]
     simp only [mul_neg, neg_mul]
   -- Conjugation by the orthogonal matrix `J` commutes with real powers.
   have h := CFC.rpow_unitary_mul_mul_star ⟨J l ℝ, J_mem_unitaryGroup l ℝ⟩ (S' : Matrix _ _ ℝ) s
-  rw [Subtype.coe_mk, hinv, ← CFC.rpow_neg S' s hS.nonneg, star_J] at h
+  rw [Subtype.coe_mk, hinv, ← CFC.rpow_neg S' s hS, star_J] at h
   rw [h, J_inv]
 
 /-- **Every real power of a positive symplectic matrix is symplectic.** For a positive
@@ -160,7 +164,7 @@ theorem rpow_mem (hS : S.PosSemidef) (hSp : S ∈ symplecticGroup l ℝ) (s : �
       (nonneg_iff_posSemidef.1 (CFC.rpow_nonneg (a := S) (y := s))).isHermitian
   -- `J S ^ s = S ^ (-s) J`, so `S ^ s J S ^ s = S ^ s S ^ (-s) J = J`.
   have hJ : J l ℝ * S ^ s = S ^ (-s) * J l ℝ :=
-    ((eq_J_conj_iff_mul_J_eq _ _).1 (rpow_neg_eq_J_conj_rpow hS hSp s)).symm
+    ((eq_J_conj_iff_mul_J_eq _ _).1 (rpow_neg_eq_J_conj_rpow hSp s)).symm
   rw [mem_iff, hSym, mul_assoc, hJ, ← mul_assoc, CFC.rpow_mul_rpow_neg s hpos, one_mul]
 
 /-- **The positive factor contracts inside the symplectic group.** An invertible symplectic

@@ -101,7 +101,7 @@ theorem isZero_of_forall_hasProjectiveDimensionLT [EnoughProjectives C]
   let := HasExt.standard C
   have := Localization.essSurj (Q C) (DerivedCategory.Bounded.perfect C).trW
   -- Every object of the singularity category is an object of `C` placed in some degree.
-  obtain ⟨M, m, -, ⟨e⟩⟩ := exists_iso_Q_obj_singleFunctor_obj ((Q C).objPreimage Y) 0
+  obtain ⟨M, m, -, ⟨e⟩⟩ := exists_iso_Q_obj_singleFunctor_obj_isSyzygy ((Q C).objPreimage Y) 0
   obtain ⟨n, _⟩ := h M
   exact (isZero_Q_obj_singleFunctor_obj_of_hasProjectiveDimensionLT m M n).of_iso
     (((Q C).objObjPreimageIso Y).symm ≪≫ e)

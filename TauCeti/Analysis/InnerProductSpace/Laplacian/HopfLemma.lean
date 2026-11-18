@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Normed.Module.RCLike.Real
-import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
 # Hopf's boundary-point lemma
@@ -194,20 +194,10 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
       rw [hx₀def, sub_smul]
       abel
     rw [hsub, norm_smul, Real.norm_eq_abs, he, mul_one, abs_of_nonneg (by linarith)]
-  set F : ℝ → ℝ := fun h ↦ u x₀ - u (x₀ - h • e) - ε * hopfBarrier y R p (x₀ - h • e)
-    with hFdef
-  have hF0 : F 0 = 0 := by
-    have hz : hopfBarrier y R p x₀ = 0 := by
-      have h := hnorm_sub (h := 0) hR
-      rw [zero_smul, sub_zero, sub_zero] at h
-      exact hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr h)
-    simp only [hFdef, zero_smul, sub_zero, hz, mul_zero, sub_self]
-  -- The derivative of `u` along the inward ray at `x₀`.
-  have hline : HasDerivAt (fun h : ℝ ↦ x₀ - h • e) (-e) 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_sub x₀
-  have h1 : HasDerivAt (fun h : ℝ ↦ u (x₀ - h • e)) (-(fderiv ℝ u x₀ e)) 0 := by
-    have h := hderiv.hasFDerivAt.comp_hasDerivAt_of_eq (x := 0) hline (by simp)
-    rwa [map_neg] at h
+  have hz : hopfBarrier y R p x₀ = 0 := by
+    have h := hnorm_sub (h := 0) hR
+    rw [zero_smul, sub_zero, sub_zero] at h
+    exact hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr h)
   -- The derivative of the barrier along the inward ray at `x₀`.
   have h2 : HasDerivAt (fun h : ℝ ↦ hopfBarrier y R p (x₀ - h • e)) (-p * R ^ (p - 1)) 0 := by
     have hs : HasDerivAt (fun h : ℝ ↦ R - h) (-1) 0 := by
@@ -221,22 +211,12 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
       filter_upwards [eventually_lt_nhds hR] with h hh
       rw [hopfBarrier, hnorm_sub hh]
     simpa only [mul_neg, mul_one, neg_mul] using hbase.congr_of_eventuallyEq hev
-  have hFderiv : HasDerivAt F (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1))) 0 := by
-    have h := ((hasDerivAt_const (0 : ℝ) (u x₀)).sub h1).sub (h2.const_mul ε)
-    rw [sub_neg_eq_add, zero_add] at h
-    exact h.congr_of_eventuallyEq (.of_forall fun _ ↦ rfl)
-  -- `F ≥ 0` to the right of `0`, so its right derivative at `0` is nonnegative.
-  have hslope : Tendsto (fun h : ℝ ↦ h⁻¹ * F h) (𝓝[>] (0 : ℝ))
-      (𝓝 (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)))) := by
-    simpa only [zero_add, hF0, sub_zero, smul_eq_mul] using hFderiv.tendsto_slope_zero_right
-  have hslope_nonneg : ∀ᶠ h in 𝓝[>] (0 : ℝ), 0 ≤ h⁻¹ * F h := by
-    filter_upwards [Ioc_mem_nhdsGT hδ] with h hh
-    have := hray h hh
-    exact mul_nonneg (inv_nonneg.mpr hh.1.le) (by simp only [hFdef]; linarith)
-  have hkey : 0 ≤ fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)) := ge_of_tendsto hslope hslope_nonneg
-  have hεpos' : 0 < ε * (-p * R ^ (p - 1)) :=
-    mul_pos hε (mul_pos (by linarith) (Real.rpow_pos_of_pos hR _))
-  linarith
+  -- The barrier term bounds the difference quotients of `u` below, so its slope
+  -- `ε (-p) R ^ (p - 1) > 0` bounds the outward derivative.
+  refine (mul_pos hε (mul_pos (neg_pos.mpr hp) (Real.rpow_pos_of_pos hR _))).trans_le
+    (le_fderiv_of_le_sub (g := fun h ↦ ε * hopfBarrier y R p (x₀ - h • e)) hδ hderiv
+      (h2.const_mul ε).hasDerivWithinAt (by simp only [zero_smul, sub_zero, hz, mul_zero])
+      fun h hh ↦ by linarith [hray h hh])
 
 /-- A function continuous on `closedBall y R` and below `M` on the open ball stays a uniform
 margin `δ` below `M` on the sphere of half the radius. -/
@@ -293,32 +273,15 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
 private theorem add_mul_hopfBarrier_le_of_mem_frontier {u : E → ℝ} {y : E} {R p δ ε M : ℝ}
     (hR : 0 < R) (hε : 0 < ε) (hδ : 0 < δ) (hεδ : ε * (R / 2) ^ p = δ / 2)
     (hsph : ∀ w ∈ sphere y (R / 2), u w ≤ M - δ) (hle : ∀ x ∈ sphere y R, u x ≤ M) {w : E}
-    (hnrm : R / 2 ≤ ‖w - y‖ ∧ ‖w - y‖ ≤ R) (hw : w ∈ frontier (closedBall y R \ ball y (R / 2))) :
+    (hw : w ∈ frontier (closedBall y R \ ball y (R / 2))) :
     u w + ε * hopfBarrier y R p w ≤ M := by
-  set K : Set E := closedBall y R \ ball y (R / 2) with hKdef
-  have hwK : w ∈ K := by
-    simp only [hKdef, Set.mem_sdiff, mem_ball, mem_closedBall, dist_eq_norm]
-    exact ⟨hnrm.2, not_lt.mpr hnrm.1⟩
-  -- `K` has the open annulus as interior, so a frontier point is on the outer or inner sphere.
-  have hannulus_int : ball y R \ closedBall y (R / 2) ⊆ interior K :=
-    interior_maximal (fun w hw ↦ by
-      rw [hKdef, Set.mem_sdiff]
-      exact ⟨ball_subset_closedBall hw.1, fun h ↦ hw.2 (ball_subset_closedBall h)⟩)
-      (isOpen_ball.inter isClosed_closedBall.isOpen_compl)
-  rcases eq_or_lt_of_le hnrm.2 with houter | hinner
-  · rw [hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr houter), mul_zero, add_zero]
-    exact hle w (mem_sphere_iff_norm.mpr houter)
-  · have hinner' : ‖w - y‖ = R / 2 := by
-      by_contra hne'
-      have hlt : R / 2 < ‖w - y‖ := lt_of_le_of_ne hnrm.1 (Ne.symm hne')
-      refine (mem_frontier_iff_notMem_interior hwK).mp hw (hannulus_int ⟨?_, ?_⟩)
-      · rw [mem_ball, dist_eq_norm]
-        exact hinner
-      · rw [mem_closedBall, dist_eq_norm]
-        exact not_le.mpr hlt
-    have h1 := hsph w (mem_sphere_iff_norm.mpr hinner')
+  -- A frontier point of the annulus is either on the outer sphere or on the inner sphere.
+  rcases frontier_closedBall_sdiff_ball_subset y (R / 2) R hw with houter | hinner
+  · rw [hopfBarrier_eq_zero_of_mem_sphere houter, mul_zero, add_zero]
+    exact hle w houter
+  · have h1 := hsph w hinner
     have h2 : hopfBarrier y R p w ≤ (R / 2) ^ p := by
-      rw [hopfBarrier, hinner']
+      rw [hopfBarrier, mem_sphere_iff_norm.mp hinner]
       have := (Real.rpow_pos_of_pos hR p).le
       linarith
     have h3 : ε * hopfBarrier y R p w ≤ ε * (R / 2) ^ p :=
@@ -372,7 +335,7 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
   have hdim : (0 : ℝ) < (Module.finrank ℝ E : ℝ) := by exact_mod_cast Module.finrank_pos
   have hβ : 0 ≤ β := (norm_nonneg _).trans (hb y (mem_ball_self hR))
   have hγ : 0 ≤ γ := (hc y (mem_ball_self hR)).trans (hcγ y (mem_ball_self hR))
-  set x₀ : E := y + R • e with hx₀def
+  set x₀ : E := y + R • e
   -- The barrier exponent, negative enough for `mul_hopfBarrier_le_laplacian_add_fderiv`.
   set p : ℝ := -((Module.finrank ℝ E : ℝ) + β * R + γ * R ^ 2) with hpdef
   have hpneg : p < 0 := by
@@ -383,8 +346,7 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
   -- The closed annulus on which the barrier is controlled.
   set K : Set E := closedBall y R \ ball y (R / 2) with hKdef
   have hKsub : K ⊆ closedBall y R := sdiff_subset
-  have hKcompact : IsCompact K := Metric.isCompact_iff_isClosed_bounded.mpr
-    ⟨isClosed_closedBall.sdiff isOpen_ball, isBounded_closedBall.subset hKsub⟩
+  have hKcompact : IsCompact K := (isCompact_closedBall y R).diff isOpen_ball
   have hKnorm : ∀ w ∈ K, R / 2 ≤ ‖w - y‖ ∧ ‖w - y‖ ≤ R := by
     intro w hw
     simp only [hKdef, Set.mem_sdiff, mem_ball, mem_closedBall, dist_eq_norm] at hw
@@ -413,8 +375,7 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
       (hKnorm w (interior_subset hw)).2 (huinterior w (hKball w hw)) (hb w (hKball w hw))
       (hc w (hKball w hw)) (hcγ w (hKball w hw)) (hsub w (hKball w hw))
   have hvbdry : ∀ ⦃w⦄, w ∈ frontier K → v w ≤ u x₀ := fun w hw ↦
-    add_mul_hopfBarrier_le_of_mem_frontier hR hεpos hδpos hεbound hsphere_le hle
-      (hKnorm w (hKcompact.isClosed.frontier_subset hw)) hw
+    add_mul_hopfBarrier_le_of_mem_frontier hR hεpos hδpos hεbound hsphere_le hle hw
   -- The weak maximum principle bounds the perturbation on the whole annulus, in particular
   -- along the inward ray from `x₀`.
   have hKmax : ∀ ⦃w⦄, w ∈ K → v w ≤ u x₀ :=

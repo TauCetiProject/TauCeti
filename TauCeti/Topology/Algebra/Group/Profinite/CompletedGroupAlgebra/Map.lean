@@ -136,7 +136,8 @@ theorem proj_map_eq_zero_iff (V : OpenNormalSubgroup Δ) (x : completedGroupAlge
     proj R Δ V (map R f hf x) = 0 ↔ proj R Γ (V.comap f hf) x = 0 := by
   rw [proj_map]
   exact (MonoidAlgebra.mapDomain_injective
-    ((QuotientGroup.map_injective_iff f V.toSubgroup _).mpr (V.toSubgroup_comap f hf))).eq_iff'
+    ((_root_.QuotientGroup.map_injective_iff _ V.toSubgroup f _).mpr
+      (V.toSubgroup_comap f hf).ge)).eq_iff'
       (MonoidAlgebra.mapDomain_zero (R := R) _)
 
 /-- The induced map sends the group element `γ` to the group element `f γ`. -/
@@ -220,7 +221,6 @@ algebras is surjective. For `R = ℤ_[p]` and profinite `Γ` all the hypotheses 
 instances. -/
 theorem map_surjective [T2Space R] [CompactSpace R] (hs : Function.Surjective f) :
     Function.Surjective (map R f hf) := fun y ↦ by
-  have : Nonempty (OpenNormalSubgroup Δ) := ⟨openNormalSubgroupTop Δ⟩
   -- `C V` is the set of elements whose image agrees with `y` at the level `V`. These sets are
   -- closed, nonempty (the level `V` is reached from the level `f⁻¹(V)`) and decrease along the
   -- levels, so compactness of `R[[Γ]]` gives an element in all of them, which maps to `y`.

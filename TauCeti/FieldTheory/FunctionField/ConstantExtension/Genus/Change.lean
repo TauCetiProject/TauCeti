@@ -175,7 +175,7 @@ private theorem mem_riemannRochSpace_conorm_iff_forall_smul_mem (hF' : IsFunctio
       Divisor.coeff_conorm, hP', hs]
     omega
   simp only [key, mem_riemannRochSpace_iff]
-  exact ⟨fun hz P P' hP' ↦ hz P', fun hz P' ↦ hz _ P' rfl⟩
+  exact ⟨fun hz P P' _ ↦ hz P', fun hz P' ↦ hz _ P' rfl⟩
 
 variable (hF' : IsFunctionField k' F') {D : Divisor k F} {s : Place k F → F}
   (hs0 : ∀ P, s P ≠ 0) (hs : ∀ P, P.ord (s P) = D.coeff P)
@@ -538,7 +538,7 @@ theorem conormClassGroup_canonicalClass_of_genus_eq :
       canonicalClass (hF.of_constantCompositum_eq_top h) hex' :=
   conormClassGroup_canonicalClass_of_forall_dim_conorm_eq hF _
     (Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn)
-    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg) hex hex' hg
+    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg) hex hex'
 
 /-- **The conorm is injective on divisor classes when the genus does not drop** (Stichtenoth,
 Theorem 3.6.3(f), without separability of `k' / k`): under a finite constant field extension

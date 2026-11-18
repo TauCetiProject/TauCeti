@@ -55,9 +55,7 @@ namespace TauCeti
 
 open DoubledQuiver
 
-/-- Every neighborhood in a graph on a finite vertex type has a finite enumeration. -/
-private noncomputable local instance adeNeighborSetFintype {V : Type*} [Finite V]
-    (G : SimpleGraph V) (i : V) : Fintype (G.neighborSet i) := Fintype.ofFinite _
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*) [Field k]
 

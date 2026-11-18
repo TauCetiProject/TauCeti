@@ -14,6 +14,8 @@ public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.LeviForm
 
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+
 /-!
 # The Levi form of a real function on a complex vector space
 
@@ -150,9 +152,10 @@ theorem leviForm_apply_self (hf : ContDiffAt ℝ 2 f x) (v : V) :
 theorem re_leviForm_nonpos_of_isLocalMax (hf : ContDiffAt ℝ 2 f x)
     (hmax : IsLocalMax f x) (v : V) : (leviForm f x v v).re ≤ 0 := by
   rw [re_leviForm_apply]
+  have hnear := hf.eventually_differentiableAt (by norm_num)
   exact div_nonpos_of_nonpos_of_nonneg
-    (add_nonpos (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax v)
-      (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax (Complex.I • v))) (by norm_num)
+    (add_nonpos (fderiv_fderiv_self_nonpos_of_isLocalMax hnear hmax v)
+      (fderiv_fderiv_self_nonpos_of_isLocalMax hnear hmax (Complex.I • v))) (by norm_num)
 
 /-- The Levi form of a `C²` function is Hermitian. -/
 theorem isSymm_leviForm (hf : ContDiffAt ℝ 2 f x) : (leviForm f x).IsSymm := by
@@ -435,8 +438,8 @@ theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
 /-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
 Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. This
 applies to the real part of a holomorphic function, by `TauCeti.leviForm_re_eq_zero`. -/
-theorem morseIndex_eq_finrank_of_leviForm_eq_zero [FiniteDimensional ℂ V]
-    (h : leviForm f x = 0) (hnd : (hessianQuadraticForm f x).Nondegenerate) :
+theorem morseIndex_eq_finrank_of_leviForm_eq_zero (h : leviForm f x = 0)
+    (hnd : (hessianQuadraticForm f x).Nondegenerate) :
     morseIndex f x = Module.finrank ℂ V := by
   have hsum := morseIndex_neg_add_morseIndex_eq_finrank hnd
   rw [morseIndex_neg_eq_of_leviForm_eq_zero h, finrank_real_eq_two_mul_finrank_complex] at hsum

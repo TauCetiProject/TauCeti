@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.DVR
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Principal
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
@@ -239,7 +239,7 @@ private lemma component_inv (j : F.ι) : F.inv.component j = -F.component j := b
   · obtain ⟨y, rfl⟩ := hx
     refine (F.inv.component_apply j y).trans ?_
     rw [Function.locallyFinsuppWithin.coe_neg, Pi.neg_apply, F.component_apply j y,
-      ← TauCeti.AlgebraicGeometry.Scheme.ord_inv, ← Units.val_inv_eq_inv_val]
+      ← AlgebraicGeometry.Scheme.ord_inv, ← Units.val_inv_eq_inv_val]
     -- `F.inv` has the subschemes of `F` and the rational functions `(F.r j)⁻¹`, by definition.
     rfl
   · simp [F.component_apply_eq_zero_of_notMem_range j hx,

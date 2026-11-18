@@ -409,13 +409,7 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   refine ⟨fun h ↦ ⟨PowerSeries.coeff 1 g, ?_⟩, ?_⟩
   · have : HasUniqueDiv R := .of_isTorsionFree ℚ R
-    -- `g(0) = g(0) + g(0)`
-    have hg₀ : PowerSeries.constantCoeff g = 0 := by
-      have := congrArg constantCoeff h
-      rw [map_add, PowerSeries.constantCoeff_subst_of_constantCoeff_zero F.zero_constantCoeff,
-        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (constantCoeff_X _),
-        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (constantCoeff_X _)] at this
-      simpa using this
+    have hg₀ := TauCeti.FormalGroupHom.constantCoeff_eq_zero_of_additive h
     -- differentiate in `X` and set `X = 0`: `g'(T) · F_X(0, T) = g'(0)`
     have hd := congrArg (pderiv 0) h
     rw [map_add, PowerSeries.pderiv_subst hF, PowerSeries.pderiv_subst (hX 0),
@@ -497,7 +491,7 @@ theorem map_log {S : Type*} [CommRing S] [Algebra ℚ S] (f : R →+* S) :
 @[simp]
 theorem map_exp {S : Type*} [CommRing S] [Algebra ℚ S] (f : R →+* S) :
     F.exp.map f = (F.map f).exp := by
-  rw [exp, PowerSeries.map_substInvOfIsUnit f F.constantCoeff_log, exp]
+  rw [exp, PowerSeries.map_substInvOfIsUnit f, exp]
   congr 1
   exact F.map_log f
 
@@ -549,7 +543,7 @@ theorem invariantDifferential_injective :
 noncomputable def logHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where
   toPowerSeries := F.log
   zero_constantCoeff := F.constantCoeff_log
-  hom := (TauCeti.FormalGroupHom.hom_additive_iff F.constantCoeff_log).mpr
+  hom := TauCeti.FormalGroupHom.hom_additive_iff.mpr
     F.subst_toPowerSeries_log
 
 @[simp]
@@ -585,7 +579,7 @@ variable {F} in
 theorem _root_.TauCeti.FormalGroupHom.toPowerSeries_eq_coeff_one_smul_log
     (f : TauCeti.FormalGroupHom F (𝔾ₐ (R := R))) :
     f.toPowerSeries = PowerSeries.coeff 1 f.toPowerSeries • F.log := by
-  have h := (TauCeti.FormalGroupHom.hom_additive_iff f.zero_constantCoeff).mp f.hom
+  have h := TauCeti.FormalGroupHom.hom_additive_iff.mp f.hom
   obtain ⟨c, hc⟩ := F.subst_toPowerSeries_eq_add_iff.mp h
   have hc₁ := congrArg (PowerSeries.coeff 1) hc
   simp only [map_smul, coeff_one_log, smul_eq_mul, mul_one] at hc₁

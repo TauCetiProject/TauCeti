@@ -46,18 +46,28 @@ theorem coe_expNeg (x : ℝ≥0∞) : (expNeg x : ℝ≥0∞) = EReal.exp (-x.to
 
 /-- Only an infinite argument contributes zero. -/
 @[simp] theorem expNeg_eq_zero_iff {x : ℝ≥0∞} : expNeg x = 0 ↔ x = ∞ := by
-  rw [← ENNReal.coe_eq_zero, coe_expNeg]
+  rw [← coe_eq_zero, coe_expNeg]
   simp
 
 /-- The extended negative exponential is antitone, including at infinity. -/
 theorem antitone_expNeg : Antitone expNeg := by
   intro x y h
-  rw [← ENNReal.coe_le_coe, coe_expNeg, coe_expNeg]
+  rw [← coe_le_coe, coe_expNeg, coe_expNeg]
   exact EReal.exp_monotone (EReal.neg_le_neg_iff.mpr (EReal.coe_ennreal_le_coe_ennreal_iff.mpr h))
 
 /-- All values of the negative exponential lie in the unit interval. -/
 theorem expNeg_le_one (x : ℝ≥0∞) : expNeg x ≤ 1 := by
   simpa using antitone_expNeg (a := 0) (b := x) bot_le
+
+/-- A nonzero argument has negative exponential strictly less than one, including at infinity. -/
+theorem expNeg_lt_one {x : ℝ≥0∞} (hx : x ≠ 0) : (expNeg x : ℝ≥0∞) < 1 := by
+  rw [coe_expNeg, EReal.exp_lt_one_iff]
+  exact EReal.neg_lt_zero.mpr (EReal.coe_ennreal_pos_iff_ne_zero.mpr hx)
+
+/-- The complement of the negative exponential is monotone, including at infinity. -/
+theorem monotone_one_sub_expNeg : Monotone fun x => 1 - (expNeg x : ℝ≥0∞) := by
+  intro x y h
+  exact tsub_le_tsub_left (coe_le_coe.mpr (antitone_expNeg h)) 1
 
 /-- Addition becomes multiplication, even when an argument is infinite. -/
 @[simp] theorem expNeg_add (x y : ℝ≥0∞) : expNeg (x + y) = expNeg x * expNeg y := by
@@ -65,12 +75,19 @@ theorem expNeg_le_one (x : ℝ≥0∞) : expNeg x ≤ 1 := by
     EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _)),
     sub_eq_add_neg, EReal.exp_add, toNNReal_mul]
 
+/-- A natural multiple becomes a power, including at infinity. -/
+@[simp] theorem expNeg_mul_natCast (x : ℝ≥0∞) (n : ℕ) :
+    expNeg (x * n) = expNeg x ^ n := by
+  induction n with
+  | zero => simp
+  | succ n hn => simp [Nat.cast_add, mul_add, hn, pow_succ]
+
 /-- Continuity includes convergence to zero when the argument tends to infinity. -/
 @[fun_prop] theorem continuous_expNeg : Continuous expNeg := by
   apply continuous_iff_continuousAt.mpr
   intro x
-  exact (ENNReal.tendsto_toNNReal (by simp : EReal.exp (-x.toEReal) ≠ ∞)).comp
-    (ENNReal.continuous_exp.continuousAt.comp (continuous_coe_ennreal_ereal.continuousAt.neg))
+  exact (tendsto_toNNReal (by simp : EReal.exp (-x.toEReal) ≠ ∞)).comp
+    (continuous_exp.continuousAt.comp (continuous_coe_ennreal_ereal.continuousAt.neg))
 
 /-- A finite sum becomes a product, including infinite summands. -/
 theorem expNeg_sum {ι : Type*} (s : Finset ι) (a : ι → ℝ≥0∞) :
@@ -87,7 +104,7 @@ theorem coe_expNeg_tsum {ι : Type*} (a : ι → ℝ≥0∞) :
   have h := (continuous_coe.comp continuous_expNeg).continuousAt.tendsto.comp
     (CompleteLattice.summable.hasSum (f := a))
   simp only [Function.comp_def, expNeg_sum, ofNNReal_finsetProd] at h
-  exact tendsto_nhds_unique h (ENNReal.multipliable_of_le_one
+  exact tendsto_nhds_unique h (multipliable_of_le_one
     (fun i ↦ coe_le_one_iff.mpr (expNeg_le_one (a i)))).hasProd
 
 /-- Measurability of the extended negative exponential. -/

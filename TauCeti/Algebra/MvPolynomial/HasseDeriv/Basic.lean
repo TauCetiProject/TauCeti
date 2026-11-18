@@ -14,6 +14,8 @@ public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
 
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import Mathlib.Data.Nat.Factorial.NatCast
+import TauCeti.Algebra.Order.AbsoluteValue.Basic
 
 /-!
 # Hasse derivatives of multivariate polynomials
@@ -53,7 +55,11 @@ Roth's theorem.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
-* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`.
+* `MvPolynomial.factorial_smul_hasseDeriv_single`: `k! • ∂^(k eᵢ) P = (∂/∂Xᵢ)^k P`; so evaluating
+  `(∂/∂Xᵢ)^k P` multiplies `(∂^(k eᵢ) P)(x)` by `k!`
+  (`MvPolynomial.eval_iterate_pderiv_eq_factorial_mul`), and when `k!` is a unit (for instance
+  `k < p` in characteristic `p`), an ordinary jet vanishes exactly when the corresponding Hasse jet
+  does (`MvPolynomial.eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero`).
 * `MvPolynomial.hasseDeriv_single_toMvPolynomial`,
   `MvPolynomial.hasseDeriv_toMvPolynomial_eq_zero`: on a polynomial in the single variable `Xᵢ`,
   `∂^(k eᵢ)` is the univariate `k`-th Hasse derivative, and `∂^d` vanishes whenever `d`
@@ -130,13 +136,10 @@ theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
 /-- An absolute value of a coefficient of a Hasse derivative is at most `2 ^ |m + d|` times that
 of the coefficient it comes from: `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
-    [IsDomain S] (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (m + d).degree * abv (P.coeff (m + d)) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · rw [Subsingleton.elim ((hasseDeriv d P).coeff m) 0, abv.map_zero]
-    exact mul_nonneg (pow_nonneg zero_le_two _) (abv.nonneg _)
-  rw [hasseDeriv_coeff, abv.map_mul]
-  refine mul_le_mul_of_nonneg_right ((abv.apply_nat_le_self _).trans ?_) (abv.nonneg _)
+  rw [hasseDeriv_coeff]
+  refine (abv.apply_natCast_mul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (abv.nonneg _))
   have h : (d.prod fun j k ↦ (m j + k).choose k) = d.prod fun j k ↦ ((m + d) j).choose k :=
     Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply]
   rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
@@ -145,7 +148,7 @@ theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrd
 /-- If `P` has partial degrees `degreeOf i P ≤ r i`, then
 `v([X^m] ∂^d P) ≤ 2 ^ ∑ᵢ rᵢ * v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [PartialOrder S]
-    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    [IsOrderedRing S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
     {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) (d m : σ →₀ ℕ) :
     abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * abv (P.coeff (m + d)) := by
   by_cases hm : P.coeff (m + d) = 0
@@ -159,7 +162,7 @@ theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [Partial
 `B`, then every coefficient of every Hasse derivative of `P` has absolute value at most
 `2 ^ ∑ᵢ rᵢ * B`. -/
 theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrder S]
-    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    [IsOrderedRing S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
     {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : S} (hB : ∀ μ, abv (P.coeff μ) ≤ B)
     (d m : σ →₀ ℕ) : abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * B :=
   (abv_coeff_hasseDeriv_le_of_degreeOf_le abv hdeg d m).trans
@@ -168,14 +171,10 @@ theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrd
 /-- At a nonarchimedean absolute value the binomial coefficients of a Hasse derivative are at
 most `1`, so `v([X^m] ∂^d P) ≤ v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le_of_isNonarchimedean {S : Type*} [Semiring S] [LinearOrder S]
-    [IsOrderedRing S] [IsDomain S] {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv)
-    (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ abv (P.coeff (m + d)) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · simp [Subsingleton.elim ((hasseDeriv d P).coeff m) 0]
-  rw [hasseDeriv_coeff, abv.map_mul]
-  exact mul_le_of_le_one_left (abv.nonneg _)
-    (hv.apply_natCast_le_one (by simp) abv.map_one)
+  rw [hasseDeriv_coeff]
+  exact hv.nmul_le (by simp)
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]
@@ -265,6 +264,40 @@ theorem factorial_smul_hasseDeriv_single (i : σ) (k : ℕ) (P : MvPolynomial σ
   | succ k ih =>
     rw [Function.iterate_succ_apply', ← ih, map_nsmul, pderiv_hasseDeriv_single, smul_smul,
       Nat.factorial_succ, mul_comm]
+
+/-- Evaluating `(∂/∂Xᵢ)^k P` at a tuple `x` in an `R`-algebra `S` gives `k!` times the evaluated
+Hasse derivative `∂^(k eᵢ) P`. -/
+theorem aeval_iterate_pderiv_eq_factorial_mul {S : Type*} [CommSemiring S] [Algebra R S]
+    (i : σ) (k : ℕ) (x : σ → S) (P : MvPolynomial σ R) :
+    aeval x ((pderiv i)^[k] P) = (k.factorial : S) * aeval x (hasseDeriv (single i k) P) := by
+  rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul]
+
+/-- Evaluating `(∂/∂Xᵢ)^k P` at `x` gives `k!` times `(∂^(k eᵢ) P)(x)`. -/
+theorem eval_iterate_pderiv_eq_factorial_mul (i : σ) (k : ℕ) (x : σ → R) (P : MvPolynomial σ R) :
+    eval x ((pderiv i)^[k] P) = (k.factorial : R) * eval x (hasseDeriv (single i k) P) := by
+  rw [← factorial_smul_hasseDeriv_single, map_nsmul, nsmul_eq_mul]
+
+/-- If `k!` is a unit, the `k`-th partial derivative in `Xᵢ` vanishes exactly when the Hasse
+derivative along `k • eᵢ` does. -/
+theorem iterate_pderiv_eq_zero_iff_hasseDeriv_eq_zero {k : ℕ} (hk : IsUnit (k.factorial : R))
+    (i : σ) (P : MvPolynomial σ R) :
+    (pderiv i)^[k] P = 0 ↔ hasseDeriv (single i k) P = 0 := by
+  rw [← factorial_smul_hasseDeriv_single, ← Nat.cast_smul_eq_nsmul R, hk.smul_eq_zero]
+
+/-- If `k!` is a unit, the ordinary jet `(∂ᵢ^k P)(a)` vanishes exactly when the Hasse jet
+`(∂^(k eᵢ) P)(a)` does. -/
+theorem eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero {k : ℕ}
+    (hk : IsUnit (k.factorial : R)) (i : σ) (P : MvPolynomial σ R) (a : σ → R) :
+    eval a ((pderiv i)^[k] P) = 0 ↔ eval a (hasseDeriv (single i k) P) = 0 := by
+  rw [eval_iterate_pderiv_eq_factorial_mul, hk.mul_right_eq_zero]
+
+/-- In characteristic `p`, for `k < p` the ordinary jet `(∂ᵢ^k P)(a)` vanishes exactly when the
+Hasse jet `(∂^(k eᵢ) P)(a)` does. -/
+theorem eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero_of_lt {R : Type*} [CommRing R]
+    (p : ℕ) [Fact p.Prime] [CharP R p] {k : ℕ} (hk : k < p) (i : σ) (P : MvPolynomial σ R)
+    (a : σ → R) : eval a ((pderiv i)^[k] P) = 0 ↔ eval a (hasseDeriv (single i k) P) = 0 :=
+  eval_iterate_pderiv_eq_zero_iff_eval_hasseDeriv_eq_zero
+    ((IsUnit.natCast_factorial_iff_of_charP p).2 hk) i P a
 
 /-- On a polynomial in the single variable `Xᵢ`, the Hasse derivative `∂^(k eᵢ)` is the
 univariate `k`-th Hasse derivative. -/

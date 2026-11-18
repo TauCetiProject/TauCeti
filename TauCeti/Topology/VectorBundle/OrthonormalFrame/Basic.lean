@@ -1,13 +1,17 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import TauCeti.Topology.FiberBundle.Proper
 public import TauCeti.Topology.VectorBundle.GramSchmidt
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Topology.Maps.IsEmpty
 
 /-!
 # The orthonormal frame bundle of a Riemannian or Hermitian vector bundle
@@ -85,6 +89,9 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
   `TauCeti.OrthonormalFrameBundle.exists_smul_eq_iff`: the action is free and transitive on fibres.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization`: the frame bundle is locally trivial,
   equivariantly for the action.
+* `TauCeti.OrthonormalFrameBundle.isProperMap_proj`: for a finite-dimensional frame domain,
+  the projection of the frame bundle is proper,
+  so the frames over a compact set of the base form a compact set.
 * `TauCeti.OrthonormalFrameBundle.isOpenQuotientMap_totalSpaceMk_frame_apply`: applying frames to
   vectors is an open quotient map onto the total space of `E`.
 
@@ -95,6 +102,10 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 * D. Husemoller, *Fibre Bundles*, third edition, Graduate Texts in Mathematics 20, Springer
   (1994), Chapter 4 (principal bundles and their associated fibre bundles) and Chapter 5, §§4–5
   (the principal bundle of orthonormal frames).
+* Properness of the projection without a model-fibre dimension hypothesis
+  (`TauCeti.OrthonormalFrameBundle.isProperMap_proj`) draws on
+  [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
+  [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public section
@@ -187,7 +198,7 @@ theorem smul_eq_self_iff {g : unitary (V →L[𝕜] V)} {p : OrthonormalFrameBun
 when they lie over the same base point. -/
 theorem exists_smul_eq_iff {p q : OrthonormalFrameBundle 𝕜 F E V} :
     (∃ g : unitary (V →L[𝕜] V), op g • p = q) ↔ p.proj = q.proj := by
-  refine ⟨fun ⟨g, h⟩ ↦ h ▸ rfl, fun h ↦ ?_⟩
+  refine ⟨fun ⟨_, h⟩ ↦ h ▸ rfl, fun h ↦ ?_⟩
   obtain ⟨b, φ⟩ := p
   obtain ⟨b', ψ⟩ := q
   obtain rfl : b = b' := h
@@ -595,6 +606,26 @@ theorem exists_trivialization [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜
   ⟨(trivializationAt F E x).orthonormalFrameBundle (Module.finBasisOfFinrankEq 𝕜 F h.symm)
       (stdOrthonormalBasis 𝕜 V),
     mem_baseSet_trivializationAt F E x, Trivialization.orthonormalFrameBundle_smul _ _ _⟩
+
+omit [CompleteSpace V] in
+/-- For a finite-dimensional frame domain, the orthonormal-frame projection is proper.
+A frame identifies its domain with the model fibre, so no separate dimension hypothesis is
+needed. If no frame exists, the domain of the projection is empty. -/
+theorem isProperMap_proj [FiniteDimensional 𝕜 V] :
+    IsProperMap (proj : OrthonormalFrameBundle 𝕜 F E V → B) := by
+  cases isEmpty_or_nonempty (OrthonormalFrameBundle 𝕜 F E V) with
+  | inl h =>
+    exact Topology.IsClosedEmbedding.isProperMap (.of_isEmpty _)
+  | inr h =>
+    obtain ⟨⟨x, φ⟩⟩ := h
+    let e := trivializationAt F E x
+    have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F E x
+    let L : V ≃ₗ[𝕜] F := φ.toLinearEquiv.trans (e.continuousLinearEquivAt 𝕜 x hx).toLinearEquiv
+    have : FiniteDimensional 𝕜 F := L.finiteDimensional
+    have : ProperSpace V := FiniteDimensional.proper_rclike 𝕜 V
+    have := FiniteDimensional.proper_rclike 𝕜 (V →L[𝕜] V)
+    exact isProperMap_of_forall_exists_trivialization fun y ↦
+      (exists_trivialization (E := E) L.finrank_eq y).imp fun _ ht ↦ ht.1
 
 /-- Applying frames to vectors is an open map from pairs of an orthonormal frame and a vector of
 `V` to the total space of `E`. -/

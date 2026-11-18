@@ -17,16 +17,16 @@ exactly when its carrier is subsingleton. The zero object of `FGModuleCat` itsel
 
 public section
 
-namespace TauCeti
+namespace FGModuleCat
 
 open CategoryTheory CategoryTheory.Limits
 
 universe v u
 
 /-- A finitely generated module is a zero object exactly when its carrier is subsingleton. -/
-theorem _root_.FGModuleCat.isZero_iff_subsingleton {R : Type u} [Ring R]
+theorem isZero_iff_subsingleton {R : Type u} [Ring R]
     {M : FGModuleCat.{v} R} : IsZero M ↔ Subsingleton M := by
   rw [← ModuleCat.isZero_iff_subsingleton]
   exact ⟨(ObjectProperty.ι _).map_isZero, .of_full_of_faithful_of_isZero (ObjectProperty.ι _) _⟩
 
-end TauCeti
+end FGModuleCat

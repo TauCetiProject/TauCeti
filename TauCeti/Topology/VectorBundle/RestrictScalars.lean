@@ -40,8 +40,8 @@ theorem restrictScalars [∀ x, IsScalarTower 𝕜' 𝕜 (W x)] [VectorBundle �
     let : e.IsLinear 𝕜' := Trivialization.isLinear_restrictScalars 𝕜' 𝕜 e
     let : e'.IsLinear 𝕜' := Trivialization.isLinear_restrictScalars 𝕜' 𝕜 e'
     refine ((ContinuousLinearMap.restrictScalarsIsometry 𝕜 G G 𝕜' ℤ).isometry.continuous
-      |>.comp_continuousOn (continuousOn_coordChange 𝕜 e e')).congr fun b hb ↦
-      (Trivialization.restrictScalars_coordChangeL 𝕜' 𝕜 e e' hb).symm
+      |>.comp_continuousOn (continuousOn_coordChange 𝕜 e e')).congr fun b _ ↦
+      (Trivialization.restrictScalars_coordChangeL 𝕜' 𝕜 e e').symm
 
 /-- Upgrade a `VectorBundle 𝕜' G W` to `VectorBundle 𝕜 G W` along a normed field extension
 `𝕜' ⊆ 𝕜` once every trivialization in the atlas is `𝕜`-linear. -/
@@ -54,8 +54,8 @@ theorem ofLinear [VectorBundle 𝕜' G W]
     let : e'.IsLinear 𝕜 := hlin e' he'
     rw [(ContinuousLinearMap.restrictScalarsIsometry 𝕜 G G 𝕜' ℤ
       ).isometry.isUniformEmbedding.isInducing.continuousOn_iff]
-    exact (continuousOn_coordChange 𝕜' e e').congr fun b hb ↦
-      Trivialization.restrictScalars_coordChangeL 𝕜' 𝕜 e e' hb
+    exact (continuousOn_coordChange 𝕜' e e').congr fun b _ ↦
+      Trivialization.restrictScalars_coordChangeL 𝕜' 𝕜 e e'
 
 end VectorBundle
 

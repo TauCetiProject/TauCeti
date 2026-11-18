@@ -27,7 +27,9 @@ and the induction hypothesis controls the function obtained by averaging over it
 
 * `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences` gives the result for an arbitrary
   finite index type;
-* `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`.
+* `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`;
+* `TauCeti.Probability.neg_sq_div_two_mul_variance_proxy` computes the exponent of the resulting
+  two-sided tail bound for bounded differences `q / n`.
 
 The proof uses Hoeffding's lemma in oscillation form
 (`MeasureTheory.Measure.integral_exp_mul_sub_integral_le_of_abs_sub_le`) and the decomposition of a
@@ -120,7 +122,7 @@ private theorem integral_integral_exp_finCons_le {β : Type*} [MeasurableSpace �
         ∫ w, Real.exp (t * ((∫ a, f (Fin.cons a w) ∂ν) - I)) ∂Measure.pi (fun _ : Fin n => ν) := by
   have : Nonempty β := nonempty_of_isProbabilityMeasure ν
   set πn := Measure.pi (fun _ : Fin n => ν)
-  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
+  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν
   have hg_meas : Measurable g :=
     hf.comp_finCons.stronglyMeasurable.integral_prod_left.measurable
   have hsec_meas : ∀ w : Fin n → β, Measurable (fun a => f (Fin.cons a w)) := fun w =>
@@ -190,7 +192,7 @@ private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [Measurabl
     (integrable_const M).mono'
       (hf.comp_finCons.comp (measurable_id.prodMk measurable_const)
         ).aestronglyMeasurable (ae_of_all _ fun a => by simpa using hMf (Fin.cons a w))
-  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
+  set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν
   have hgf : I = ∫ w, g w ∂πn := by
     rw [hI_def, ν.integral_pi_fin_succ_eq_integral_integral_finCons f
       (ν.integrable_comp_finCons_of_abs_le hf hMf)]
@@ -359,5 +361,19 @@ theorem hasSubgaussianMGF_of_bounded_differences_fin
     ring
   rw [← hvar]
   exact hasSubgaussianMGF_of_bounded_differences ν f hf (fun _ => c) hbd
+
+/-- The exponent in the two-sided tail bound for the variance proxy `n (q / n / 2)²` of a
+`q / n`-bounded-differences estimator is `-ε²n / (2q²)`. -/
+theorem neg_sq_div_two_mul_variance_proxy {q n : ℕ} {ε : ℝ} :
+    -(ε / 2) ^ 2 / (2 * (((n : ℝ≥0) * (Real.toNNReal ((q : ℝ) / (n : ℝ)) / 2) ^ 2 : ℝ≥0) : ℝ)) =
+      -(ε ^ 2 * (n : ℝ)) / (2 * (q : ℝ) ^ 2) := by
+  rcases Nat.eq_zero_or_pos q with rfl | hq
+  · simp
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  simp only [NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_div,
+    Real.coe_toNNReal _ (by positivity : (0 : ℝ) ≤ (q : ℝ) / (n : ℝ)),
+    NNReal.coe_natCast, NNReal.coe_ofNat]
+  field_simp
 
 end TauCeti.Probability

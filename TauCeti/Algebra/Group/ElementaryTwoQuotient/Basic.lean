@@ -21,7 +21,7 @@ For a commutative group `G`, the quotient by its subgroup of squares, `G / G²`,
 of order dividing `2`, so it is a vector space over `𝔽₂ = ZMod 2`. When `G` is finite its dimension
 is the **2-rank** of `G`. This file develops that construction at the level of an arbitrary
 commutative group; the genus-theory specialization to a class group lives in
-`TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient`, and the square-class group `Kˣ ⧸ (Kˣ)²` of
+`TauCeti.RingTheory.ClassGroup.ElementaryTwoQuotient`, and the square-class group `Kˣ ⧸ (Kˣ)²` of
 `TauCeti.FieldTheory.SquareClassGroup.Basic` is the same construction for `G = Kˣ`.
 
 ⚠ This quotient is the **maximal elementary-2 quotient** of `G`, *not* its 2-torsion subgroup
@@ -421,12 +421,15 @@ theorem card_elementaryTwoQuotient_dvd_card :
   rw [card_elementaryTwoQuotient_eq_index_square]
   exact Subgroup.index_dvd_card (Subgroup.square G)
 
-/-- Rank form of `TauCeti.card_elementaryTwoQuotient_dvd_card`: when `G / G²` is a finite
-`ZMod 2`-vector space, `2 ^ TauCeti.twoRank G` divides `|G|`. -/
-theorem two_pow_twoRank_dvd_card [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
-    2 ^ twoRank G ∣ Nat.card G := by
-  rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
-  exact card_elementaryTwoQuotient_dvd_card G
+/-- Rank form of `TauCeti.card_elementaryTwoQuotient_dvd_card`: `2 ^ TauCeti.twoRank G` divides
+`|G|`. When `G / G²` is an infinite-dimensional `ZMod 2`-vector space, `twoRank G` is the junk
+value `0`. -/
+theorem two_pow_twoRank_dvd_card : 2 ^ twoRank G ∣ Nat.card G := by
+  by_cases h : Module.Finite (ZMod 2) (ElementaryTwoQuotient G)
+  · rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
+    exact card_elementaryTwoQuotient_dvd_card G
+  · rw [twoRank, Module.finrank_of_not_finite h, pow_zero]
+    exact one_dvd _
 
 section FiniteCardinality
 
@@ -488,7 +491,9 @@ theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv (e : G ≃* H) :
 theorem twoRank_eq_of_mulEquiv (e : G ≃* H) : twoRank G = twoRank H :=
   finrank_elementaryTwoQuotient_eq_of_mulEquiv e
 
-/-- A surjective homomorphism of commutative groups does not increase the 2-rank. -/
+/-- A surjective homomorphism of commutative groups does not increase the 2-rank, provided the
+source quotient `G / G²` is finite-dimensional over `ZMod 2` (without it `twoRank G` is `0` by
+convention). -/
 theorem twoRank_le_twoRank_of_surjective [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)]
     (f : G →* H) (hf : Function.Surjective f) : twoRank H ≤ twoRank G :=
   LinearMap.finrank_le_finrank_of_surjective (elementaryTwoQuotientMap_surjective f hf)
@@ -555,8 +560,8 @@ theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
     exact Nat.zero_le _
 
 /-- **A surjection keeps the 2-rank exactly when its kernel consists of squares.** For a
-surjective `f : G →* H`, the groups `G` and `H` have the same 2-rank if and only if every element
-of `ker f` is a square in `G`. -/
+surjective `f : G →* H` with `G / G²` finite-dimensional over `ZMod 2`, the groups `G` and `H`
+have the same 2-rank if and only if every element of `ker f` is a square in `G`. -/
 theorem _root_.MonoidHom.twoRank_eq_twoRank_iff_ker_le_square
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H)
     (hf : Function.Surjective f) :

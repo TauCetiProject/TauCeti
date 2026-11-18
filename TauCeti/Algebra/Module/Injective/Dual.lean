@@ -12,9 +12,11 @@ public import TauCeti.LinearAlgebra.Dual.RightAction
 /-!
 # The dual regular module is injective
 
-For an algebra `A` over a field `k`, the dual of the right regular module is an injective
-left `A`-module. Together with its cogenerator property, this provides injective modules
-containing finite-dimensional modules, without a self-injectivity assumption on the algebra.
+For an algebra `A` over a commutative ring `k` and an injective `k`-module `E`, the module
+`Hom_k(A, E)` is an injective left `A`-module, with action through right multiplication on `A`. For
+a field and `E = k` this is the dual of the right regular module. Together with its cogenerator
+property, this provides injective modules containing finite-dimensional modules, without a
+self-injectivity assumption on the algebra.
 
 The action on the dual is specified through an equivariant linear equivalence, rather than
 installed as a global instance on all duals. This follows the convention of
@@ -22,8 +24,7 @@ installed as a global instance on all duals. This follows the convention of
 
 ## Main results
 
-* `LinearEquiv.moduleInjective_of_dual_regular`: the dual of the right regular module is
-  injective.
+* `LinearEquiv.moduleInjective_of_dual_regular`: `Hom_k(A, E)` is injective.
 
 ## References
 
@@ -35,26 +36,30 @@ public section
 
 namespace LinearEquiv
 
-variable {k A Q : Type*}
+universe v
 
-variable [Field k] [Ring A] [Algebra k A] [AddCommGroup Q] [Module A Q] [Module k Q]
+variable {k A Q : Type*} {E : Type v}
 
-/-- The dual of the right regular module, with action `(a • φ) x = φ (x * a)`, is an
-injective left module over any algebra over a field. -/
-theorem moduleInjective_of_dual_regular (e : Q ≃ₗ[k] Module.Dual k A)
+variable [CommRing k] [Small.{v} k] [Ring A] [Algebra k A] [AddCommGroup Q] [Module A Q]
+  [Module k Q] [AddCommGroup E] [Module k E] [Module.Injective k E]
+
+/-- For an injective `k`-module `E`, the module `Hom_k(A, E)`, with action
+`(a • φ) x = φ (x * a)`, is an injective left module over any `k`-algebra `A`. -/
+theorem moduleInjective_of_dual_regular (e : Q ≃ₗ[k] (A →ₗ[k] E))
     (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) :
     Module.Injective A Q := by
   have := e.isScalarTower_of_dual_regular he
   apply Module.Baer.injective
   intro I f
-  -- Extend the functional obtained by evaluation at the unit from the ideal to the algebra.
+  -- Extend the map obtained by evaluation at the unit from the ideal to the algebra.
   let eI : I.restrictScalars k →ₗ[k] I :=
     { toFun := fun x => ⟨x, x.property⟩
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl }
-  let l : I.restrictScalars k →ₗ[k] k :=
-    (Module.Dual.eval k A 1).comp (e.toLinearMap.comp ((f.restrictScalars k).comp eI))
-  obtain ⟨ψ, hψ⟩ := LinearMap.exists_extend l
+  let l : I.restrictScalars k →ₗ[k] E :=
+    (LinearMap.applyₗ (1 : A)).comp (e.toLinearMap.comp ((f.restrictScalars k).comp eI))
+  obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property k E _ _
+    (I.restrictScalars k).subtype (Submodule.injective_subtype _) l
   let g : A →ₗ[A] Q :=
     { toFun := fun a => e.symm (ψ.comp (LinearMap.mulRight k a))
       map_add' := fun a b => by apply e.injective; ext x; simp [mul_add]

@@ -183,7 +183,6 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ →
     (h_tend_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
     (h_tend_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
     (hspec : ∀ l u : ℝ, t₀ - R ≤ l → l < t₀ → t₀ < u → u ≤ t₀ + R → a < l → u ≤ b →
-      (∀ t ∈ Icc l u, γ t = s → t = t₀) →
       Tendsto (fun ε : ℝ => ∫ v in l..u,
         if ‖γ v - s‖ > ε then (γ v - s)⁻¹ * deriv γ v else 0) (𝓝[>] (0 : ℝ))
         (𝓝 (((Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ : ℝ) : ℂ) +
@@ -201,9 +200,9 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ →
   have hw_L : γ (t₀ - ρ) - s ≠ 0 := hne _ ⟨le_rfl, by linarith⟩ (by intro h; linarith)
   have hw_R : γ (t₀ + ρ) - s ≠ 0 := hne _ ⟨by linarith, le_rfl⟩ (by intro h; linarith)
   refine ⟨_, hasCauchyPVAt_iff.mpr ⟨Filter.eventually_iff_exists_mem.mpr ⟨Ioi 0,
-    self_mem_nhdsWithin, fun ε hε => intervalIntegrable_inv_sub_truncated hpc.continuousOn
+    self_mem_nhdsWithin, fun ε hε => intervalIntegrable_inv_sub_truncated
       hpc.intervalIntegrable_deriv hε⟩, hspec _ _ (by linarith) (by linarith) (by linarith)
-      (by linarith) hlo hhi h_unique⟩, ?_⟩
+      (by linarith) hlo hhi⟩, ?_⟩
   have hnotmem : t₀ ∉ T.filter (fun t => t < t₀ - ρ) := by simp [hρ.le]
   have hfil : T.filter (fun t => t < t₀ + ρ) = insert t₀ (T.filter (fun t => t < t₀ - ρ)) := by
     ext t
@@ -272,7 +271,7 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
     · rintro l u₀ u - - ⟨v₁, h₁, e₁⟩ ⟨v₂, h₂, e₂⟩
       refine ⟨v₁ + v₂, h₁.concat h₂, ?_⟩
       rw [Complex.exp_add, mul_comm (Complex.exp v₁), mul_assoc, e₁, e₂]
-    · intro t₀ ht₀'
+    · intro t₀ ht₀' _
       have ht₀ : t₀ ∈ T := (Finset.mem_sort _).mp ht₀'
       exact exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window h_imm hab hT ht₀ hρ_pos
         (hρ_le_R t₀ ht₀) (by linarith [(h_endpts t₀ ht₀).1]) (by linarith [(h_endpts t₀ ht₀).2])

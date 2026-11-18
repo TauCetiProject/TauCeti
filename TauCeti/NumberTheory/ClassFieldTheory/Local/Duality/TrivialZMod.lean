@@ -85,12 +85,24 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchim
 
 include hζ
 
+omit [NeZero n] in
 /-- **The cup square on `H¹(G_K, ℤ/n)` is a perfect pairing** when the nonarchimedean local field
 `K` contains a primitive `n`th root of unity: `a ↦ (b ↦ a ⌣ b)` is a bijection from `H¹(G_K, ℤ/n)`
 onto the `ℤ/n`-linear maps `H¹(G_K, ℤ/n) → H²(G_K, ℤ/n)`. Through the chosen-root identification
 of `ℤ/n` with `μₙ` this is the perfectness of the Hilbert pairing. -/
 theorem cupFp_bijective_of_isPrimitiveRoot :
     Function.Bijective (cupFp n (Field.absoluteGaloisGroup K)) := by
+  rcases n.eq_zero_or_pos with rfl | hpos
+  · -- for `n = 0` the coefficients are `ℤ`, and `H¹(G_K, ℤ)` vanishes since `G_K` is compact
+    let _ := trivialZModAction 0 (Field.absoluteGaloisGroup K)
+    have htriv : ∀ (g : Field.absoluteGaloisGroup K) (m : ZMod 0), g • m = m := fun _ _ ↦ rfl
+    have : ContinuousSMul (Field.absoluteGaloisGroup K) (ZMod 0) := ⟨continuous_snd⟩
+    have : Subsingleton (H1 (Field.absoluteGaloisGroup K) (ZMod 0)) :=
+      subsingleton_H1_of_isAddTorsionFree htriv
+    have : Subsingleton (cohomFp 0 (Field.absoluteGaloisGroup K) 1) :=
+      (cohomFpAddEquivH1 0 _ htriv).injective.subsingleton
+    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun f ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+  have : NeZero n := NeZero.of_pos hpos
   have hn : IsUnit (n : K) := hζ.neZero'.out.isUnit
   have : NeZero (n : K) := ⟨hn.ne_zero⟩
   have hcard := (h2FpEquivZMod hζ).natCard_linearMap_zmod
@@ -111,11 +123,13 @@ theorem cupFp_bijective_of_isPrimitiveRoot :
   -- `a ⌣ b` vanishes for every `b`, so `b ⌣ a` does too, by graded commutativity
   rw [cupFp_eq_zero_comm, ha, LinearMap.zero_apply]
 
+omit [NeZero n] in
 /-- **`H²(G_K, 𝔽_p)` is spanned by cup products** when the nonarchimedean local field `K` contains a
 primitive `p`th root of unity for a prime `p`: it is one-dimensional, and the perfect cup square
 takes a nonzero value on the nontrivial space `H¹(G_K, 𝔽_p)`. -/
 theorem map₂_cupFp_absoluteGaloisGroup_eq_top_of_isPrimitiveRoot [Fact n.Prime] :
     Submodule.map₂ (cupFp n (Field.absoluteGaloisGroup K)) ⊤ ⊤ = ⊤ := by
+  have : NeZero n := ⟨(Fact.out : n.Prime).ne_zero⟩
   have := nontrivial_cohomFp_one_absoluteGaloisGroup_of_isPrimitiveRoot n K hζ
   obtain ⟨a, ha⟩ := exists_ne (0 : cohomFp n (Field.absoluteGaloisGroup K) 1)
   obtain ⟨b, hb⟩ : ∃ b, cupFp n (Field.absoluteGaloisGroup K) a b ≠ 0 := by

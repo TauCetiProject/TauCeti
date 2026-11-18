@@ -88,16 +88,10 @@ theorem IsGorensteinProjective.exists_copresentation_horseshoe
       (biprod.map (0 : PX ⟶ 0) pZ) hz) :=
     E.conflation_biprod (E.conflation_id_zero PX)
       ((ExactStructure.abelian_conflation _).mpr hTZ)
-  have hzero : (sp.isoBinaryBiproduct.hom ≫ biprod.map (𝟙 PX) iZ) ≫
-      biprod.map (0 : PX ⟶ 0) pZ = 0 := by
-    rw [Category.assoc, hz, comp_zero]
   have hnext : E.Conflation (ShortComplex.mk
       (sp.isoBinaryBiproduct.hom ≫ biprod.map (𝟙 PX) iZ)
-      (biprod.map (0 : PX ⟶ 0) pZ) hzero) := by
-    refine E.conflation_of_iso ?_ hbip
-    exact ShortComplex.isoMk sp.isoBinaryBiproduct.symm (Iso.refl _) (Iso.refl _)
-      (by simp only [Iso.symm_hom, Iso.refl_hom, Iso.inv_hom_id_assoc, Category.comp_id])
-      (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
+      (biprod.map (0 : PX ⟶ 0) pZ) (by rw [Category.assoc, hz, comp_zero])) :=
+    E.conflation_iso_hom_comp sp.isoBinaryBiproduct hbip
   rw [cobaseChange_def] at hmiddle
   -- Noether's conflations give the middle copresentation and the extension of cokernels.
   obtain ⟨K, p, a, b, hip, hab, hK, hC, hcomm, hright⟩ :=

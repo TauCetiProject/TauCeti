@@ -20,6 +20,7 @@ public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -227,9 +228,11 @@ lemma evalEval_polynomialY_zero_eq_zero_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x : 
   ring
 
 /-- At a point of `W`, a nonzero value of `f x` forces the `y`-coordinate to be nonzero. -/
-lemma y_ne_zero_of_eval_f_ne_zero [W.IsCharNeTwoNF] {x y : R} (h : W.Equation x y)
-    (hx : W.f.eval x ≠ 0) : y ≠ 0 :=
-  fun h0 ↦ hx <| by simp [(equation_iff_eval_f_eq_sq W x y).mp h, h0]
+lemma y_ne_zero_of_eval_f_ne_zero {x y : R} (h : W.Equation x y)
+    (hx : W.f.eval x ≠ 0) : y ≠ 0 := by
+  rintro rfl
+  rw [equation_iff] at h
+  exact hx (by rw [eval_f]; linear_combination -h)
 
 lemma monic_fCofactor (x : R) : (W.fCofactor x).Monic := by
   simp only [fCofactor]
@@ -332,10 +335,18 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
   rw [← EquivLike.apply_eq_iff_eq <| W.equivProdA' hx]
   simpa only [equivProdA'_apply] using Prod.mk_inj
 
-lemma isUnit_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
+lemma isUnit_mk_iff {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
     IsUnit (AdjoinRoot.mk W.f p) ↔
       IsUnit (p.eval x) ∧ IsUnit (AdjoinRoot.mk (W.fCofactor x) p) := by
-  rw [← isUnit_map_iff (W.equivProdA' hx), W.equivProdA'_apply hx, Prod.isUnit_iff]
+  have key (q : R[X]) : IsUnit (AdjoinRoot.mk q p) ↔ IsCoprime p q := by
+    rw [AdjoinRoot.mk]
+    exact (Ideal.Quotient.isUnit_mk_iff).trans (Ideal.sup_eq_top_iff_isCoprime _ _)
+  have hlin : IsUnit (p.eval x) ↔ IsCoprime p (X - C x) := by
+    rw [← key]
+    exact (MulEquiv.isUnit_map (quotientSpanXSubCAlgEquiv x).toRingEquiv.toMulEquiv
+      (x := AdjoinRoot.mk (X - C x) p))
+  rw [key W.f, key (W.fCofactor x), hlin, W.f_eq_mul_of_eval_eq_zero hx,
+    IsCoprime.mul_right_iff, and_comm]
 
 /-! ### Square classes of the cubic quotient algebra -/
 
@@ -379,7 +390,9 @@ section NontrivialCurve
 
 variable {K : Type*} [CommRing K] [Nontrivial K] (W : Affine K)
 
+omit [Nontrivial K] in
 lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
+  nontriviality K
   have h := W.isUnit_Δ.ne_zero
   contrapose h
   have h2 : (2 : K) = 0 := by
@@ -400,38 +413,46 @@ lemma degree_f : W.f.degree = 3 := by
   rw [degree_eq_natDegree W.f_ne_zero, natDegree_f]
   rfl
 
+omit [Nontrivial K] in
 /-- The discriminant of the cubic `f`, in terms of the coefficients of `W`. -/
 lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆
     - 27 * W.a₆ ^ 2 + 18 * W.a₂ * W.a₄ * W.a₆ := by
+  nontriviality K
   rw [discr_of_degree_eq_three W.degree_f]
   simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
   norm_num
 
+omit [Nontrivial K] in
 /-- At a root `x` of `f`, the discriminant of `f` is the discriminant
 `(x + a₂)² - 4 (x² + a₂x + a₄)` of the cofactor `fCofactor x` times the square of the derivative
 `f' x = 3x² + 2a₂x + a₄`. -/
 lemma discr_f_eq_mul_sq_of_eval_eq_zero {x : K} (hx : W.f.eval x = 0) :
     W.f.discr = ((x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄)) *
       (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) ^ 2 := by
+  nontriviality K
   rw [W.discr_f]
   rw [eval_f] at hx
   linear_combination (18 * W.a₂ * W.a₄ - 4 * W.a₂ ^ 3
     - 27 * (W.a₆ - (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x))) * hx
 
+omit [Nontrivial K] in
 /-- The norm of `f'(T)` in `K[X] ⧸ (f)` is `-disc f`. This holds in every characteristic: the norm
 is the resultant of `f` and `f'`, and since `f` is monic that resultant does not depend on the
 degree at which `f'` is read. -/
 lemma norm_mk_derivative_f :
     Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
+  nontriviality K
   rw [AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le W.monic_f (n := W.f.natDegree - 1)
     (by rw [natDegree_f, derivative_f]; compute_degree),
     resultant_deriv (by rw [degree_f]; norm_num), W.monic_f.leadingCoeff, natDegree_f]
   norm_num
 
+omit [Nontrivial K] in
 /-- In characteristic `≠ 2` normal form the discriminant of `W` is `16` times that of the cubic
 `f`. The two differ by a unit at a prime not above `2`, but not at a prime above `2`: there, if
 `a₂`, `a₄` and `a₆` are integral, `Δ` is never a unit while `disc f` can be. -/
 lemma Δ_eq_sixteen_mul_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
+  nontriviality K
   rw [Δ_of_isCharNeTwoNF W, W.discr_f]
   ring
 
@@ -467,20 +488,31 @@ lemma nonsingular_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : K} (hx
   (equation_iff_nonsingular_of_Δ_ne_zero W.isUnit_Δ.ne_zero).mp
     (by rw [equation_iff_eval_f_eq_sq, hx]; ring)
 
-/-- **Every class in `W.A` is represented by a polynomial of degree at most `2`.** The bound is
-`natDegree f - 1 = 2`; this is the normal form the kernel computation reduces to before
-multiplying by a linear class. -/
+omit [Nontrivial K] in
+/-- **Every class in `W.A` is represented by a polynomial of degree at most `2`.** Over a
+nontrivial ring the bound is `natDegree f - 1 = 2`; over the trivial ring every class is `0`. This
+is the normal form the kernel computation reduces to before multiplying by a linear class. -/
 lemma exists_mk_quadratic_eq (a : W.A) :
     ∃ r s t, a = AdjoinRoot.mk W.f (C r * X ^ 2 + C s * X + C t) := by
+  by_cases hK : Subsingleton K
+  · have : Subsingleton W.A := AdjoinRoot.mk_surjective.subsingleton
+    exact ⟨0, 0, 0, Subsingleton.elim _ _⟩
+  have := not_subsingleton_iff_nontrivial.1 hK
   obtain ⟨p, hp, rfl⟩ := AdjoinRoot.exists_degree_lt_mk_eq W.monic_f a
   rw [degree_eq_natDegree W.monic_f.ne_zero, natDegree_f] at hp
   exact ⟨_, _, _, congrArg (AdjoinRoot.mk W.f) <|
     eq_quadratic_of_degree_le_two <| Order.lt_succ_iff.mp hp⟩
 
+omit [Nontrivial K] in
 /-- **Every class in `W.A' x` is represented by a polynomial of degree at most `1`.** This is
-`exists_mk_quadratic_eq` for the cofactor, where the bound is `natDegree (fCofactor x) - 1 = 1`. -/
+`exists_mk_quadratic_eq` for the cofactor, where over a nontrivial ring the bound is
+`natDegree (fCofactor x) - 1 = 1`. -/
 lemma exists_mk_linear_eq {x : K} (a : W.A' x) :
     ∃ r s, a = AdjoinRoot.mk (W.fCofactor x) (C r * X + C s) := by
+  by_cases hK : Subsingleton K
+  · have : Subsingleton (W.A' x) := AdjoinRoot.mk_surjective.subsingleton
+    exact ⟨0, 0, Subsingleton.elim _ _⟩
+  have := not_subsingleton_iff_nontrivial.1 hK
   obtain ⟨p, hp, rfl⟩ := AdjoinRoot.exists_degree_lt_mk_eq (W.monic_fCofactor x) a
   rw [degree_eq_natDegree (W.monic_fCofactor x).ne_zero, natDegree_fCofactor] at hp
   exact ⟨_, _, congrArg (AdjoinRoot.mk (W.fCofactor x)) <|

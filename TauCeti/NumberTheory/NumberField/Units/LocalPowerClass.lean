@@ -119,7 +119,7 @@ theorem unitLocalPowerClassMap_eq_one_iff {n : ℕ} (hn : n ≠ 0) (u : S.unit K
       Units.ext hb
     have hunit : b' ∈ unitFiltration (v.1.adicCompletion K) 0 := by
       rw [unitFiltration_zero]
-      apply ((ValuativeRel.valuation (v.1.adicCompletion K)).pow_mem_unitGroup_iff hn).mp
+      apply (ValuationSubring.pow_mem_unitGroup_iff _ hn).mp
       rw [← unitFiltration_zero, hpow]
       exact (v.1.unitsMap_algebraMap_mem_unitFiltration_zero_iff u.1).mpr
         (Set.unit_valuation_eq_one S K u fun hv ↦ Set.disjoint_left.mp hST hv v.2)

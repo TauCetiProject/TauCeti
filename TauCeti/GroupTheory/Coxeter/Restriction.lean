@@ -43,6 +43,11 @@ of the Coxeter matrix (`CoxeterSystem.orderOf_simple_mul_simple`).
   subgroup of `J` exactly when its index lies in `J`.
 * `CoxeterSystem.parabolicHom_wordProd`: the homomorphism sends the product of a word to the
   product of its image.
+* `CoxeterSystem.parabolicHom_id`, `CoxeterSystem.parabolicHom_comp`: the homomorphisms are
+  functorial in the map of index types.
+* `CoxeterSystem.parabolicHom_reindex`, `CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex`: along
+  a bijection they are the identity of a reindexed system and the inverse of
+  `CoxeterMatrix.reindexGroupEquiv` on the presented groups.
 * `CoxeterSystem.range_parabolicHom`: its image is the standard parabolic subgroup of
   `Set.range f`.
 * `CoxeterSystem.length_parabolicHom`: **it preserves lengths.**
@@ -100,6 +105,38 @@ theorem parabolicHom_wordProd (ω : List B) :
   induction ω with
   | nil => simp
   | cons i ω ih => simp [wordProd_cons, ih]
+
+/-- **The identity of index types induces the identity of `W`.** -/
+@[simp]
+theorem parabolicHom_id (hid : ∀ i j, M i j = M (id i) (id j)) :
+    cs.parabolicHom cs hid = MonoidHom.id W :=
+  cs.ext_simple fun i ↦ parabolicHom_simple cs hid i
+
+/-- **The homomorphisms `CoxeterSystem.parabolicHom` compose** along composites of maps of index
+types: extending along `f` and then along `g` is extending along `g ∘ f`. -/
+theorem parabolicHom_comp {B'' W'' : Type*} [Group W''] {M'' : CoxeterMatrix B''}
+    {cs'' : CoxeterSystem M'' W''} {g : B' → B''} (hg : ∀ i j, M' i j = M'' (g i) (g j))
+    (hgf : ∀ i j, M i j = M'' ((g ∘ f) i) ((g ∘ f) j)) :
+    (cs'.parabolicHom cs'' hg).comp (cs.parabolicHom cs' hf) = cs.parabolicHom cs'' hgf :=
+  cs.ext_simple fun i ↦ by simp
+
+/-- **Reindexing a Coxeter system along `e` does not change the group**: the homomorphism of
+`CoxeterSystem.parabolicHom` from `cs` to `cs.reindex e` along `e` is the identity of `W`. -/
+@[simp]
+theorem parabolicHom_reindex (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
+    cs.parabolicHom (cs.reindex e) he = MonoidHom.id W :=
+  cs.ext_simple fun i ↦ by simp
+
+/-- On the presented Coxeter groups, the homomorphism of `CoxeterSystem.parabolicHom` along a
+bijection `e` is the inverse of Mathlib's isomorphism `CoxeterMatrix.reindexGroupEquiv`. -/
+@[simp]
+theorem _root_.CoxeterMatrix.toCoxeterSystem_parabolicHom_reindex (M : CoxeterMatrix B)
+    (e : B ≃ B') (he : ∀ i j, M i j = M.reindex e (e i) (e j)) :
+    M.toCoxeterSystem.parabolicHom (M.reindex e).toCoxeterSystem he =
+      (M.reindexGroupEquiv e).symm.toMonoidHom :=
+  M.toCoxeterSystem.ext_simple fun i ↦ by
+    rw [parabolicHom_simple]
+    simp [CoxeterMatrix.reindexGroupEquiv_symm_apply_simple]
 
 /-- The image of `CoxeterSystem.parabolicHom` is the standard parabolic subgroup of
 `Set.range f`. -/

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.Snake
+import Mathlib.LinearAlgebra.TensorProduct.Pi
+import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.GroupTheory.Index.Exact
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.LinearMap.Cardinality
@@ -20,9 +22,10 @@ cokernel of multiplication by `r`. When both are finite, the *Euler quotient*
 `χ_r(M) = #(M ⧸ rM) / #M[r]`
 
 is the Herbrand quotient of the pair of commuting endomorphisms `(0, r)` of `M`. This file proves
-its three basic properties:
+its basic properties:
 
 * it is `1` on a finite module: `#(M ⧸ rM) = #M[r]` when `M` is finite;
+* the cokernel `M ⧸ rM` of a finite product is the product of the cokernels;
 * it is multiplicative along a short exact sequence `0 → M₁ → M₂ → M₃ → 0`, by counting along the
   six-term kernel–cokernel sequence `TauCeti.torsionByδ` of the snake lemma;
 * hence it is unchanged by a linear map with finite kernel and cokernel, which factors through its
@@ -43,6 +46,8 @@ need not agree.
 ## Main results
 
 * `TauCeti.natCard_quotSMulTop_eq_natCard_torsionBy`: `#(M ⧸ rM) = #M[r]` for finite `M`.
+* `TauCeti.natCard_quotSMulTop_prod`, `TauCeti.natCard_quotSMulTop_pi`: the order of the cokernel
+  of multiplication by `r` on a finite product is the product of the orders.
 * `TauCeti.natCard_torsionBy_mul_natCard_quotSMulTop_of_exact`: the count along the six-term
   sequence of a short exact sequence, `#M₁[r] #M₃[r] #(M₂ ⧸ rM₂) = #M₂[r] #(M₁ ⧸ rM₁) #(M₃ ⧸ rM₃)`.
 * `TauCeti.natCard_quotSMulTop_div_natCard_torsionBy_of_exact`: multiplicativity of the Euler
@@ -92,6 +97,33 @@ theorem natCard_quotSMulTop_eq_natCard_torsionBy [Finite M] :
   exact Nat.eq_of_mul_eq_mul_left (Nat.card_pos (α := ↥(r • ⊤ : Submodule R M))) h
 
 end Finite
+
+section Product
+
+/-- The cokernel of multiplication by `r` on a product is the product of the cokernels:
+`#((M × N) ⧸ r(M × N)) = #(M ⧸ rM) #(N ⧸ rN)`. -/
+theorem natCard_quotSMulTop_prod (M N : Type*) [AddCommGroup M] [Module R M] [AddCommGroup N]
+    [Module R N] :
+    Nat.card (QuotSMulTop r (M × N)) = Nat.card (QuotSMulTop r M) * Nat.card (QuotSMulTop r N) := by
+  -- `M ⧸ rM` is `(R ⧸ (r)) ⊗ M`, and the tensor product distributes over the product.
+  rw [Nat.card_congr ((QuotSMulTop.equivQuotTensor r _).trans
+      (TensorProduct.prodRight R R _ M N)).toEquiv, Nat.card_prod,
+    Nat.card_congr (QuotSMulTop.equivQuotTensor r M).toEquiv,
+    Nat.card_congr (QuotSMulTop.equivQuotTensor r N).toEquiv]
+
+/-- The cokernel of multiplication by `r` on a finite product is the product of the cokernels:
+`#((∏ᵢ Mᵢ) ⧸ r(∏ᵢ Mᵢ)) = ∏ᵢ #(Mᵢ ⧸ rMᵢ)`. -/
+theorem natCard_quotSMulTop_pi {ι : Type*} [Fintype ι] (M : ι → Type*) [∀ i, AddCommGroup (M i)]
+    [∀ i, Module R (M i)] :
+    Nat.card (QuotSMulTop r (∀ i, M i)) = ∏ i, Nat.card (QuotSMulTop r (M i)) := by
+  classical
+  -- `M ⧸ rM` is `(R ⧸ (r)) ⊗ M`, and the tensor product distributes over the finite product.
+  rw [Nat.card_congr ((QuotSMulTop.equivQuotTensor r _).trans
+      (TensorProduct.piRight R R _ M)).toEquiv, Nat.card_pi]
+  exact Finset.prod_congr rfl fun i _ ↦
+    (Nat.card_congr (QuotSMulTop.equivQuotTensor r (M i)).toEquiv).symm
+
+end Product
 
 section Exact
 

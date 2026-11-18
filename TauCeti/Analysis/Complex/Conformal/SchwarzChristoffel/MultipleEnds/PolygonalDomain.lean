@@ -19,6 +19,7 @@ import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Formula
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # The Schwarz--Christoffel theorem for polygonal domains with several ends
@@ -132,7 +133,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
       Tendsto (fun z => z * logDeriv (deriv fun z => q + (g z)⁻¹) z)
         (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) ∧
       Injective a ∧ ∀ i, g (a i) ≠ 0 ∧ q + (g (a i))⁻¹ = v i := by
-  have := locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq hUo hq hUb hd hfr
+  have := locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq hq hUb hd hfr
   have hvU (i : ι) : v i ∈ frontier U := by
     obtain ⟨r, hr, n, hn, hUi⟩ := hcorner i
     exact mem_frontier_of_forall_mem_iff_abs_arg_lt hr hn
@@ -155,8 +156,8 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
   have hU (w : ℂ) (hw : w ∈ frontier U) : IsPreconnectedApproachAt U w := by
     by_cases hv : ∃ i, w = v i
     · obtain ⟨i, rfl⟩ := hv
-      obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb hU
+      obtain ⟨ρ, hρ, b, _, hU⟩ := hcorner i
+      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hU
     · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
       exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU
   obtain ⟨f, g, -, hfU, hgc, hgd, hgf, hgne, -, hgr, hginf, hgi, hwg⟩ :=
@@ -167,7 +168,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
   -- the real boundary values of `g` are the inverses of `w - q` for frontier points `w`
   have hgr' : insert (w - q)⁻¹ (g '' {z : ℂ | z.im = 0}) =
       insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U) := by
-    rw [hgr, frontier_image_inv_sub hUo hq hUb]
+    rw [hgr, frontier_image_inv_sub (fun h => hq (subset_closure h)) hUb]
   have hfront {z : ℂ} (hz : z.im = 0) (hgz : g z ≠ 0) : q + (g z)⁻¹ ∈ frontier U := by
     obtain ⟨w', hw', hwg'⟩ := ((hgr' ▸ mem_insert_of_mem _ ⟨z, hz, rfl⟩ :
       g z ∈ insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U))).resolve_left hgz
@@ -209,7 +210,7 @@ private theorem exists_ball_end_of_inverted_coordinate {g f : ℂ → ℂ} {q : 
       (e' = -3 ∧ E = {w : ℂ | ρ < ‖w - c‖ ∧
         (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)}))
     (hS : E ⊆ f '' upperHalfPlaneSet) (hfS : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), f z ∈ E) :
-    (e' ∈ Ioo (-3 : ℝ) (-1) ∧ ∃ r > 0, ∃ c b : ℂ, b ≠ 0 ∧ ∃ G : ℂ → ℂ,
+    (e' ∈ Ioo (-3 : ℝ) (-1) ∧ ∃ r > 0, ∃ c b : ℂ, ∃ G : ℂ → ℂ,
       EqOn G (fun z => b / (f z - c)) (ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}) ∧
       G (x : ℂ) = 0 ∧
       ContinuousOn G (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
@@ -217,7 +218,7 @@ private theorem exists_ball_end_of_inverted_coordinate {g f : ℂ → ℂ} {q : 
       (∀ z ∈ ball (x : ℂ) r, 0 < z.im → |(G z).arg| < (-e' - 1) * Real.pi / 2) ∧
       ∀ z ∈ ball (x : ℂ) r, z.im = 0 → G z ≠ 0 →
         |(G z).arg| = (-e' - 1) * Real.pi / 2) ∨
-    (e' = -1 ∧ ∃ r > 0, ∃ c b : ℂ, b ≠ 0 ∧ ∃ G : ℂ → ℂ,
+    (e' = -1 ∧ ∃ r > 0, ∃ c b : ℂ, ∃ G : ℂ → ℂ,
       EqOn G (fun z => exp ((f z - c) / b)) (ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}) ∧
       G (x : ℂ) = 0 ∧
       ContinuousOn G (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
@@ -236,9 +237,10 @@ private theorem exists_ball_end_of_inverted_coordinate {g f : ℂ → ℂ} {q : 
   · obtain ⟨r, hr, h₁, h₂, h₃, h₄, h₅, h₆⟩ :=
       exists_ball_sector_end_of_inverted_coordinate hgc hgd hgf hgne hgi hx
         (β := -e' - 1) ⟨by linarith [he'.2], by linarith [he'.1]⟩ hb hS hfS
-    exact Or.inl ⟨he', r, hr, c, b, hb, _, h₁, h₂, h₃, h₄, h₅, h₆⟩
-  · exact Or.inr (Or.inl ⟨he', exists_ball_halfStrip_end_of_inverted_coordinate hgc hgd hgf hgne
-      hgi hx hb hS hfS⟩)
+    exact Or.inl ⟨he', r, hr, c, b, _, h₁, h₂, h₃, h₄, h₅, h₆⟩
+  · obtain ⟨r, hr, c', b', -, hG⟩ := exists_ball_halfStrip_end_of_inverted_coordinate hgc hgd
+      hgf hgne hgi hx hb hS hfS
+    exact Or.inr (Or.inl ⟨he', r, hr, c', b', hG⟩)
   · obtain ⟨r, hr, ρ', h₁, h₂, h₃, h₄⟩ :=
       exists_ball_halfStripExterior_end_of_inverted_coordinate hgc hgd hgf hgne hgi hx hb hS hfS
     exact Or.inr (Or.inr ⟨he', r, hr, ρ', c, b, hb, h₁, h₂, h₃, h₄⟩)
@@ -314,11 +316,11 @@ private theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygon
       exact exists_ball_side_of_inverted_coordinate_of_ne_prevertex hgc hgi hgU hgfr hside hga hgx
         fun i => hx (Sum.inl i)
     rcases j with i | k
-    · obtain ⟨ρ', hρ', n, hn, hU'⟩ := hcorner i
+    · obtain ⟨ρ', hρ', n, -, hU'⟩ := hcorner i
       rw [← (hga i).2] at hU'
       obtain ⟨r, hr, h₁, h₂, h₃, h₄⟩ :=
-        exists_ball_corner_of_inverted_coordinate hgc hgi hgU (hga i).1 hρ' hn hU'
-      exact Or.inl ⟨he i, r, hr, n, hn, h₁, h₂, h₃, h₄⟩
+        exists_ball_corner_of_inverted_coordinate hgc hgi hgU (hga i).1 hρ' hU'
+      exact Or.inl ⟨he i, r, hr, n, h₁, h₂, h₃, h₄⟩
     · exact Or.inr (exists_ball_end_of_inverted_coordinate hgc hgd rfl hgf hgne hgi (hga' k)
         (hb k) (hE k) (hgU ▸ hEU k) (hfa' k))
   · rw [← (hga i).2]
@@ -424,7 +426,7 @@ theorem exponent_sum_eq_neg_two_of_polygonal_ends
     deriv_ne_zero_of_injOn hfd isOpen_upperHalfPlaneSet hfB.injOn hz
   -- `f` is an affine image of the primitive, so its pre-Schwarzian is the partial-fraction sum
   have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff _ _ UpperHalfPlane.I
-    hfd hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
+    hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
       (schwarzChristoffelIntegrand_ne_zero _ _ UpperHalfPlane.I.im_pos), _, hform⟩
   have hsum := exponent_sum_eq_of_logDeriv_deriv_eqOn (fun l => ((Sum.elim a a' l : ℝ) : ℂ))
     (fun l => ((Sum.elim e e' l : ℝ) : ℂ)) hpre hinfty

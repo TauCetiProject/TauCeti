@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Tilted
-public import Mathlib.Probability.HasLaw
+public import TauCeti.Probability.Density
 public import TauCeti.Analysis.Fourier.ExpCos
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
@@ -47,6 +47,9 @@ representatives.
 
 * `TauCeti.Probability.vonMisesMeasure_of_nonneg`: for `0 ≤ κ` the law has density
   `vonMisesPDF m κ` with respect to `haarAddCircle`.
+* `ProbabilityTheory.HasLaw.hasPDF_vonMisesMeasure`: a random angle with this law has a Haar
+  density for every concentration; `ProbabilityTheory.HasLaw.pdf_eq_vonMisesPDF` identifies
+  its canonical density with `vonMisesPDF m κ` for `0 ≤ κ`, including zero.
 * `TauCeti.Probability.isProbabilityMeasure_vonMisesMeasure`: for `0 ≤ κ` it is a probability
   measure; `TauCeti.Probability.support_vonMisesMeasure`: its topological support is the whole
   circle.
@@ -236,9 +239,8 @@ theorem measurable_vonMisesMeasure :
       q.1.2 * cos_periodic.lift (q.2 - q.1.1) :=
     (continuous_snd.comp continuous_fst).mul
       (Real.Angle.continuous_cos.comp (continuous_snd.sub (continuous_fst.comp continuous_fst)))
-  have hm := TauCeti.measurable_tilted (Kernel.const (AddCircle (2 * π) × ℝ) haarAddCircle)
-    (f := fun p θ => p.2 * cos_periodic.lift (θ - p.1)) h.measurable
-  simp only [Kernel.const_apply] at hm
+  have hm := Measure.measurable_tilted haarAddCircle
+    (f := fun (p : AddCircle (2 * π) × ℝ) θ => p.2 * cos_periodic.lift (θ - p.1)) h.measurable
   unfold vonMisesMeasure
   exact Measurable.ite (measurableSet_le measurable_const measurable_snd) hm measurable_const
 
@@ -292,8 +294,27 @@ namespace ProbabilityTheory
 
 open TauCeti.Probability
 
+attribute [local instance] factTwoPiPos
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → AddCircle (2 * π)}
   {m : AddCircle (2 * π)} {κ : ℝ}
+
+/-- A von Mises random angle has a density relative to Haar probability measure, including
+at zero concentration and for the zero law at negative concentration. -/
+theorem HasLaw.hasPDF_vonMisesMeasure (hX : HasLaw X (vonMisesMeasure m κ) P) :
+    HasPDF X P haarAddCircle := by
+  by_cases hκ : 0 ≤ κ
+  · exact hasPDF_of_hasLaw_withDensity (measurable_vonMisesPDF m κ).aemeasurable
+      (by rwa [vonMisesMeasure_of_nonneg hκ] at hX)
+  · apply hasPDF_of_hasLaw_withDensity (f := fun _ ↦ 0) aemeasurable_const
+    simpa [vonMisesMeasure_of_neg (not_le.mp hκ)] using hX
+
+/-- At nonnegative concentration, the canonical Haar density of a von Mises random angle is
+`vonMisesPDF`, also at the Haar-uniform boundary `κ = 0`. -/
+theorem HasLaw.pdf_eq_vonMisesPDF (hX : HasLaw X (vonMisesMeasure m κ) P) (hκ : 0 ≤ κ) :
+    pdf X P haarAddCircle =ᵐ[haarAddCircle] vonMisesPDF m κ :=
+  pdf_eq_of_hasLaw_withDensity (measurable_vonMisesPDF m κ).aemeasurable
+    (by rwa [vonMisesMeasure_of_nonneg hκ] at hX)
 
 /-- Rotating a von Mises random angle by `a` gives a von Mises angle with location `m + a`. -/
 theorem HasLaw.add_const_vonMisesMeasure (hX : HasLaw X (vonMisesMeasure m κ) P)

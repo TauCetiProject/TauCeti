@@ -11,6 +11,8 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
@@ -55,13 +57,19 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 * `TestFunction.neg_integral_smul_neg_add_eq`: the integral of a test function against the
   right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak derivative equation.
 
+* `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
+  locally integrable field is integrable.
+
+* `TestFunction.enorm_integral_inner_le_withDensity`: the pairing of a test field supported in `U`
+  and bounded by `1` with `v` is at most the mass of `|v| m` on `U`.
+
 * `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
 -/
 
 public section
 
 open MeasureTheory TopologicalSpace
-open scoped Distributions BoundedContinuousFunction CompactlySupported
+open scoped Distributions BoundedContinuousFunction CompactlySupported RealInnerProductSpace ENNReal
 
 namespace TestFunction
 
@@ -154,6 +162,35 @@ theorem neg_integral_smul_neg_add_eq [OpensMeasurableSpace E] {κ κ' : Type*} [
     simp only [smul_eq_mul, mul_comm]
   · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
 
+section InnerPairing
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]
+
+/-- The pairing of a test vector field with a locally integrable field is integrable. -/
+theorem integrable_inner_subtype {m : Measure Ω} {v : Ω → G} (φ : 𝓓^{n}(Ω, G))
+    (hv : LocallyIntegrable v m) : Integrable (fun x : Ω => ⟪φ x, v x⟫) m :=
+  (φ.integrable_bilin_subtype (innerSL ℝ) hv).congr
+    (ae_of_all _ fun _ => innerSL_apply_apply ℝ _ _)
+
+omit [OpensMeasurableSpace E] in
+/-- The pairing of a test vector field supported in `U` and bounded by `1` with a field `v` is
+bounded by the mass of the measure `|v| m` on `U`. -/
+theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
+    {φ : 𝓓^{n}(Ω, G)} (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
+    ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
+      m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
+  rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
+    ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
+  by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
+  · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
+  · have hzero : φ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx (hφU hx')
+    simp [hx, hzero]
+
+end InnerPairing
+
 section IntegralOne
 
 open Set
@@ -187,12 +224,14 @@ end IntegralOne
 
 section LineDeriv
 
-variable [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+variable [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- The directional derivative of a test function has integral zero against an additive Haar
 measure: `∫ ∂_w φ = 0`. -/
 theorem integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
     ∫ x, lineDeriv ℝ (φ : E → ℝ) x w ∂μ = 0 := by
+  rcases φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous with h | hE
+  · simp [h, lineDeriv]
   have hd := φ.contDiff.differentiable (by simp)
   have hint (ψ : 𝓓(Ω, ℝ)) : Integrable ψ μ :=
     ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport

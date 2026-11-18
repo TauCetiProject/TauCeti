@@ -33,7 +33,7 @@ private theorem exists_subtypeValClosedBallTangentEquiv (x : closedBall (0 : V) 
       e.toContinuousLinearMap =
         (NormedSpace.fromTangentSpace (𝕜 := ℝ) (x : V)).toContinuousLinearMap.comp
           (mfderiv (𝓡∂ n) 𝓘(ℝ, V) Subtype.val x) := by
-  obtain ⟨φ, hφ, hchart⟩ := exists_chartAt_closedBall_eq (n := n) x
+  obtain ⟨φ, _, hchart⟩ := exists_chartAt_closedBall_eq (n := n) x
   let z := extChartAt (𝓡∂ n) x x
   let c : EuclideanSpace ℝ (Fin n) := -EuclideanSpace.single 0 1
   have hzrange : z ∈ range (𝓡∂ n) := extChartAt_target_subset_range x (mem_extChartAt_target x)

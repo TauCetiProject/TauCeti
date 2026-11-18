@@ -51,7 +51,7 @@ private lemma not_integrable_exp_mul_cond_stableLevyMeasure
     ¬ Integrable (fun x ↦ exp (t * x))
       (ProbabilityTheory.cond (stableLevyMeasure α β) {x : ℝ | 1 < |x|}) := by
   intro h
-  have hmass := stableLevyMeasure_abs_gt_pos hα hβ (by norm_num : (0 : ℝ) < 1)
+  have hmass := stableLevyMeasure_abs_gt_pos (ε := 1) hα hβ
   have hfinite := stableLevyMeasure_abs_gt_ne_top
     (α := α) (β := β) (by norm_num : (0 : ℝ) < 1)
   have hrestrict : IntegrableOn (fun x ↦ exp (t * x)) {x : ℝ | 1 < |x|}
@@ -75,8 +75,7 @@ private lemma not_integrable_exp_mul_stableMeasure_one_zero
   intro h
   obtain ⟨ρ, hρ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ
-    (by norm_num : (0 : ℝ) < 1)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   let _ := isProbabilityMeasure_stableMeasure ⟨hα.1, hα.2.le⟩ hβ 1 0
   have hpos := mgf_pos' (X := id) (IsProbabilityMeasure.ne_zero _) h
   rw [← hρ, TauCeti.mgf_id_conv, Pi.mul_apply] at hpos
@@ -96,7 +95,7 @@ private lemma not_integrable_exp_mul_stableMeasure_one_zero
   simp only [mem_preimage, one_mul] at hdomain
   have hrate : ((stableLevyMeasure α β) {x : ℝ | 1 < |x|}).toNNReal ≠ 0 := by
     exact ENNReal.toNNReal_ne_zero.mpr
-      ⟨(stableLevyMeasure_abs_gt_pos hα hβ (by norm_num)).ne',
+      ⟨(stableLevyMeasure_abs_gt_pos hα hβ).ne',
         stableLevyMeasure_abs_gt_ne_top (by norm_num)⟩
   have hjump := (integrable_exp_mul_compoundPoissonMeasure_iff hrate
     (f := AddMonoidHom.id ℝ) measurable_id t).mp
@@ -151,7 +150,7 @@ theorem integrable_exp_mul_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β| 
       exact mem_univ t
     simpa only [integrableExpSet, mem_ofPred_eq, id_eq, true_or, or_true, iff_true] using hmem
   have hmem := mem_integrableExpSet_id_stableMeasure_iff_one_zero (α := α) (β := β)
-    (m := m) (t := t) hs
+    (m := m) (s := s) (t := t)
   simp only [integrableExpSet, mem_ofPred_eq, id_eq] at hmem
   rw [hmem, integrable_exp_mul_stableMeasure_one_zero_iff ⟨hα.1, hα2⟩ hβ]
   have hsign : β * ((s : ℝ) * t) ≤ 0 ↔ β * t ≤ 0 := by

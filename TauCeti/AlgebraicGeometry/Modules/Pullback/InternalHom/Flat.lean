@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Flat
 import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Coherence
 import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Restriction
 import TauCeti.CategoryTheory.Monoidal.Closed.Presentation
-import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.InternalHom.Quasicoherent
 
 /-!

@@ -38,6 +38,9 @@ finite-dimensional continuous representations alone.
 
 * `ContRepresentation.exists_isUnitary_congr`: a finite-dimensional continuous
   representation of a compact group is conjugate to a unitary one.
+* `ContRepresentation.exists_isUnitary_congr_euclideanSpace`: the same for a representation on a
+  finite-dimensional normed space, which is conjugate to a unitary representation on the standard
+  model `EuclideanSpace 𝕜 (Fin (dim V))`.
 * `ContRepresentation.exists_isUnitary_matrixCoeff_eq`: its matrix coefficients are matrix
   coefficients of a unitary representation.
 * `TauCeti.isRepresentative_iff_exists_isUnitary`: a representative function is a matrix
@@ -46,9 +49,9 @@ finite-dimensional continuous representations alone.
 ## Implementation notes
 
 The conjugating automorphism is not asked to be canonical:
-`TauCeti.exists_continuousLinearEquiv_inner_map_map` chooses an eigenbasis of the Gram operator,
-and only its existence is exported. Nothing downstream needs more, since the unitary structure it
-produces is unique up to a unitary equivalence anyway.
+`TauCeti.exists_continuousLinearEquiv_inner_map_map` exports only its existence. Nothing
+downstream needs more, since the unitary structure it produces is unique up to a unitary
+equivalence anyway.
 
 Finite dimensionality enters only through that standardization, which is proved by the spectral
 theorem; the Gram operator itself is built for an arbitrary Hilbert-space carrier.
@@ -70,12 +73,10 @@ namespace ContRepresentation
 section Unitarization
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [FiniteDimensional 𝕜 V]
+  [CompactSpace G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
 
 private local instance instCompleteSpaceUnitaryModel : CompleteSpace V :=
-  FiniteDimensional.complete 𝕜 V
+  FiniteDimensional.completeSpace 𝕜 V
 
 /-- **A finite-dimensional continuous representation of a compact group is conjugate to a unitary
 one.** There is a continuous linear automorphism `e` of the carrier for which the transported
@@ -87,6 +88,7 @@ that form (`TauCeti.exists_continuousLinearEquiv_inner_map_map`) conjugates the 
 form into unitarity of `A⁻¹ ∘ π · ∘ A`. -/
 theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
     ∃ e : V ≃L[𝕜] V, IsUnitary (ContinuousLinearEquiv.congr e π) := by
+  borelize G
   obtain ⟨A, hA⟩ := exists_continuousLinearEquiv_inner_map_map (π.gramOperator hπ)
     (π.isSymmetric_gramOperator hπ) fun _ hv ↦ π.re_inner_gramOperator_self_pos hπ hv
   -- The same standardization with the Gram operator on the second argument, which is the side
@@ -103,7 +105,6 @@ theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continu
   exact ⟨A.symm, (isUnitary_iff_norm_map _).mpr fun g ↦
     (LinearMap.norm_map_iff_inner_map_map _).mpr (hunitary g)⟩
 
-omit [MeasurableSpace G] [BorelSpace G] in
 /-- **A matrix coefficient of a finite-dimensional continuous representation of a compact group is
 a matrix coefficient of a unitary one**, on the same carrier and at suitably moved vectors.
 
@@ -115,8 +116,6 @@ theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ 
     (v w : V) :
     ∃ (ρ : ContRepresentation 𝕜 G V) (hρ : Continuous ρ), IsUnitary ρ ∧
       ∃ v' w' : V, matrixCoeff π hπ v w = matrixCoeff ρ hρ v' w' :=
-  letI := borel G
-  haveI : BorelSpace G := ⟨rfl⟩
   let ⟨e, he⟩ := exists_isUnitary_congr π hπ
   ⟨ContinuousLinearEquiv.congr e π, ContinuousLinearEquiv.continuous_congr e hπ, he, e v,
       ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
@@ -124,6 +123,27 @@ theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ 
         hπ) v w).symm⟩
 
 end Unitarization
+
+section EuclideanModel
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [CompactSpace G] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+
+/-- **A finite-dimensional continuous representation of a compact group on a normed space is
+conjugate to a unitary representation on the standard model** `EuclideanSpace 𝕜 (Fin (dim V))`.
+
+No inner product on `V` is needed. Since the transport is an equivalence of representations, this
+brings the theory of unitary representations to bear on any property that is invariant under such
+equivalences, the character being one (`ContinuousLinearEquiv.character_congr`). -/
+theorem exists_isUnitary_congr_euclideanSpace (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
+    ∃ e : V ≃L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 V)),
+      IsUnitary (ContinuousLinearEquiv.congr e π) := by
+  let f : V ≃L[𝕜] EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 V)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  obtain ⟨e, he⟩ := exists_isUnitary_congr _ (ContinuousLinearEquiv.continuous_congr f hπ)
+  exact ⟨f.trans e, by rwa [ContinuousLinearEquiv.congr_congr] at he⟩
+
+end EuclideanModel
 
 end ContRepresentation
 

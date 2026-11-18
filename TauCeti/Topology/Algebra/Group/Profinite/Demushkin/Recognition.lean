@@ -305,7 +305,7 @@ theorem isDemushkin_of_topologicalGeneratorRankNat_openSubgroup_index_eq (hG : I
   have : Finite (H2 G (ZMod p)) := Nat.finite_of_card_ne_zero (by
     rw [natCard_H2_eq_pow_finrank_cohomFp_two p G htriv]; exact pow_ne_zero _ hp.out.ne_zero)
   -- the three-term Euler formula for `U`
-  have hE := one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG hfg htriv hcd U
+  have hE := one_sub_topologicalGeneratorRankNat_add_finrank_H2 hG hfg hcd U
   rw [← (cohomFpLinearEquivH2 p G htriv).finrank_eq, h2, hUi] at hE
   rw [(cohomFpLinearEquivH2 p (U : Subgroup G) fun u m ↦ htriv u m).finrank_eq]
   have hrank := hU U hUn hUi

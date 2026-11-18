@@ -513,7 +513,7 @@ theorem finite_iff_isSphericalParameterSignature {a b c : ℕ} (h₁ : 1 ≤ a) 
   · rcases (isSphericalParameterSignature_rows_iff a b c).1 h with
       ⟨-, -, -, rfl | ⟨rfl, rfl⟩ | h | h | h⟩
     · exact finite_one (Nat.gcd_pos_of_pos_left _ (by omega))
-    · exact finite_two_two c h₃
+    · exact finite_two_two c (by omega)
     · obtain ⟨rfl, rfl, rfl⟩ := h
       exact finite_two_three_three
     · obtain ⟨rfl, rfl, rfl⟩ := h
@@ -533,7 +533,7 @@ theorem natCard_eq_two_div_orbifoldEulerChar {a b c : ℕ}
     norm_num
     field_simp
     ring_nf
-  · rw [natCard_two_two c h₃, orbifoldEulerChar_def]
+  · rw [natCard_two_two c, orbifoldEulerChar_def]
     norm_num
   · obtain ⟨rfl, rfl, rfl⟩ := h
     norm_num [natCard_two_three_three]

@@ -39,7 +39,7 @@ namespace TauCeti
 
 open DoubledQuiver
 
-attribute [local instance] eNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 private def eBranchNodes {n : ℕ} (hn : 5 ≤ n) : Fin 4 ↪ Fin n where
   toFun i := ⟨![1, 3, 2, 4] i, by fin_cases i <;> simp <;> omega⟩

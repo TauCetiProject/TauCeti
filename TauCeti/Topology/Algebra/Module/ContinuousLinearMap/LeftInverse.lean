@@ -19,6 +19,14 @@ contribution of the first coordinate, then apply a left inverse on the second fa
 
 If a compression `P ∘L A` is invertible, the left inverse `(P ∘L A).inverse ∘L P` also gives a
 projection off the range of `A`. Composing a linear map with this projection annihilates `A`.
+
+A continuous linear injection of a space into a finite-dimensional space of strictly larger
+dimension over a complete field has a continuous left inverse and a nonzero continuous covector
+annihilating its range (`ContinuousLinearMap.exists_leftInverse_ne_zero_comp_eq_zero`).
+
+A space with a continuous linear map into a complete space that has a continuous linear left
+inverse is complete (`ContinuousLinearMap.HasLeftInverse.completeSpace`), as a retract of a
+complete space; this needs uniform additive groups, but no separation and no norm.
 -/
 
 public section
@@ -49,5 +57,46 @@ theorem sub_comp_inverse_comp_comp_eq_zero (a : E →L[R] G) (A : F →L[R] E)
     (P : E →L[R] F) (hQ : (P ∘L A).IsInvertible) :
     (a - a ∘L A ∘L (P ∘L A).inverse ∘L P) ∘L A = 0 := by
   simp [comp_assoc, hQ.inverse_comp_self]
+
+section Uniform
+
+variable {R E F : Type*} [Semiring R]
+  [UniformSpace E] [AddCommGroup E] [IsUniformAddGroup E] [Module R E]
+  [UniformSpace F] [AddCommGroup F] [IsUniformAddGroup F] [Module R F]
+
+/-- The source of a continuous linear map between uniform additive groups which has a continuous
+linear left inverse is complete when the target is. -/
+theorem HasLeftInverse.completeSpace [CompleteSpace F] {L : E →L[R] F} (hL : L.HasLeftInverse) :
+    CompleteSpace E :=
+  .of_comp_eq_id hL.leftInverse L hL.leftInverse_leftInverse.comp_eq_id
+    hL.leftInverse.continuous L.uniformContinuous
+
+end Uniform
+
+section FiniteDimensional
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F]
+
+/-- A continuous linear injection of a space `F` into a finite-dimensional space `E` of strictly
+larger dimension has a continuous left inverse and a nonzero continuous covector annihilating
+its range. -/
+theorem exists_leftInverse_ne_zero_comp_eq_zero (A : F →L[𝕜] E)
+    (hA : Function.Injective A) (h : Module.finrank 𝕜 F < Module.finrank 𝕜 E) :
+    ∃ (P : E →L[𝕜] F) (a : E →L[𝕜] 𝕜),
+      Function.LeftInverse P A ∧ a ≠ 0 ∧ a ∘L A = 0 := by
+  obtain ⟨P, hP⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hA
+  have hlt := Submodule.lt_top_of_finrank_lt_finrank
+    (s := LinearMap.range A.toLinearMap) (by rwa [LinearMap.finrank_range_of_inj hA])
+  obtain ⟨a, ha, haA⟩ := (LinearMap.range A.toLinearMap).exists_le_ker_of_lt_top hlt
+  refine ⟨P, a.toContinuousLinearMap, hP, fun hz ↦ ha (congrArg ContinuousLinearMap.toLinearMap hz),
+    ?_⟩
+  ext c
+  exact haA (LinearMap.mem_range_self _ c)
+
+end FiniteDimensional
 
 end ContinuousLinearMap

@@ -157,7 +157,7 @@ theorem hasBasis_nhds (φ : ContinuousAut G) :
     -- `(N₁ ⊓ N₂ : OpenNormalSubgroup G)` coerces to the infimum of the underlying subgroups.
     exact ⟨⟨N₁ ⊓ N₂, IsTopCharacteristic.inf h₁ h₂⟩, hmono _ _ inf_le_left, hmono _ _ inf_le_right⟩
   have : Nonempty {N : OpenNormalSubgroup G // IsTopCharacteristic G N} :=
-    ⟨⟨{ toOpenSubgroup := ⟨⊤, isOpen_univ⟩ }, IsTopCharacteristic.top⟩⟩
+    ⟨⟨⊤, IsTopCharacteristic.top⟩⟩
   refine (key ▸ hasBasis_iInf_principal hdir).to_hasBasis ?_ ?_
   · rintro ⟨N, hN⟩ -
     exact ⟨N, hN, (hS ⟨N, hN⟩).ge⟩

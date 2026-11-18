@@ -50,8 +50,9 @@ subgroups is separate from this carrier construction.
   `TauCeti.DynkinType.simplyConnectedRootDatum` at `B (n + 1)`, and the conjugation equations
   take them as exponents. They assume `(DynkinType.B (n + 1)).Valid`, which fails at `n = 0`,
   where the carrier still exists.
-* `TauCeti.TypeBSpinCarrier.rep_rootGenerator_inl_castSucc` and its three siblings: each numbered
-  simple generator acts on the spin module by creation and contraction of exterior coordinates.
+* `TauCeti.TypeBSpinCarrier.rep_rootGenerator_inl_castSucc_apply` and its three siblings: each
+  numbered simple generator acts on the spin module by creation and contraction of exterior
+  coordinates.
 * `TauCeti.TypeBSpinCarrier.pow_two_rep_rootGenerator_eq_zero`: each numbered simple generator
   squares to zero on the spin module.
 
@@ -204,7 +205,8 @@ theorem rep_kostantForm_mem_lattice
 /-! ## The represented simple generators as exterior operators -/
 
 /-- A nonterminal raising generator contracts the next exterior coordinate and creates its own. -/
-theorem rep_rootGenerator_inl_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (polarization n).W) :
+theorem rep_rootGenerator_inl_castSucc_apply (j : Fin n)
+    (x : ExteriorAlgebra ℚ (polarization n).W) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily (.inl j.castSucc))) x =
       ExteriorAlgebra.ι ℚ (polarizationBasis n j.castSucc) *
@@ -214,7 +216,8 @@ theorem rep_rootGenerator_inl_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (pol
 
 /-- A nonterminal lowering generator contracts its own exterior coordinate and creates the next
 one. -/
-theorem rep_rootGenerator_inr_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (polarization n).W) :
+theorem rep_rootGenerator_inr_castSucc_apply (j : Fin n)
+    (x : ExteriorAlgebra ℚ (polarization n).W) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily (.inr j.castSucc))) x =
       ExteriorAlgebra.ι ℚ (polarizationBasis n j.succ) *
@@ -225,7 +228,7 @@ theorem rep_rootGenerator_inr_castSucc (j : Fin n) (x : ExteriorAlgebra ℚ (pol
 
 /-- The terminal raising generator creates the final exterior coordinate after the grade
 involution. -/
-theorem rep_rootGenerator_inl_last (x : ExteriorAlgebra ℚ (polarization n).W) :
+theorem rep_rootGenerator_inl_last_apply (x : ExteriorAlgebra ℚ (polarization n).W) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily (.inl (Fin.last n)))) x =
       ExteriorAlgebra.ι ℚ (polarizationBasis n (Fin.last n)) * CliffordAlgebra.involute x := by
@@ -237,7 +240,7 @@ theorem rep_rootGenerator_inl_last (x : ExteriorAlgebra ℚ (polarization n).W) 
 
 /-- The terminal lowering generator contracts the final exterior coordinate and applies the grade
 involution. -/
-theorem rep_rootGenerator_inr_last (x : ExteriorAlgebra ℚ (polarization n).W) :
+theorem rep_rootGenerator_inr_last_apply (x : ExteriorAlgebra ℚ (polarization n).W) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
         (TauCeti.typeBSimpleRootGeneratorFamily (.inr (Fin.last n)))) x =
       CliffordAlgebra.involute
@@ -267,17 +270,17 @@ theorem exists_rep_rootGenerator_inl_exteriorBasis (i : Fin (n + 1))
     have hlt : ¬((Fin.last n : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     have hlast := (DynkinType.typeBSpinWeight_eq_neg_one_iff_of_last hlt s).1 hs
     have hrefl := DynkinType.typeBSpinReflection_eq_insert_of_not_mem_last hlt hlast
-    rw [rep_rootGenerator_inl_last, TauCeti.ExteriorAlgebra.involute_basis, mul_smul_comm,
+    rw [rep_rootGenerator_inl_last_apply, TauCeti.ExteriorAlgebra.involute_basis, mul_smul_comm,
       TauCeti.ExteriorAlgebra.ι_mul_basis, ite_eq_right hlast, hrefl]
     exact ⟨_, by simpa using intCast_smul_units_smul (R := ℚ) ((-1) ^ s.card) _ _⟩
   · intro hs
     have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_neg_one_iff_of_lt hlt s).1 hs
     rw [Fin.orderSucc_castSucc] at hsucc
-    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_not_mem hlt hj
+    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_not_mem hj
       (by simpa using hsucc)
     rw [Fin.orderSucc_castSucc] at hrefl
-    rw [rep_rootGenerator_inl_castSucc,
+    rw [rep_rootGenerator_inl_castSucc_apply,
       TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem _ _ _ _ hj hsucc,
       hrefl]
     exact ⟨_, rfl⟩
@@ -298,7 +301,7 @@ theorem exists_rep_rootGenerator_inr_exteriorBasis (i : Fin (n + 1))
     have hlt : ¬((Fin.last n : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     have hlast := (DynkinType.typeBSpinWeight_eq_one_iff_of_last hlt s).1 hs
     have hrefl := DynkinType.typeBSpinReflection_eq_erase_of_mem_last hlt hlast
-    rw [rep_rootGenerator_inr_last, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
+    rw [rep_rootGenerator_inr_last_apply, TauCeti.ExteriorAlgebra.contractLeft_coord_basis,
       ite_eq_left hlast, Units.smul_def, map_zsmul, TauCeti.ExteriorAlgebra.involute_basis,
       smul_comm, ← Units.smul_def, hrefl]
     exact ⟨_, by
@@ -307,10 +310,10 @@ theorem exists_rep_rootGenerator_inr_exteriorBasis (i : Fin (n + 1))
     have hlt : ((j.castSucc : Fin (n + 1)) : ℕ) + 1 < n + 1 := by simp
     obtain ⟨hj, hsucc⟩ := (DynkinType.typeBSpinWeight_eq_one_iff_of_lt hlt s).1 hs
     rw [Fin.orderSucc_castSucc] at hsucc
-    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_mem hlt hj
+    have hrefl := DynkinType.typeBSpinReflection_eq_insert_erase_of_mem hj
       (by simpa using hsucc)
     rw [Fin.orderSucc_castSucc] at hrefl
-    rw [rep_rootGenerator_inr_castSucc,
+    rw [rep_rootGenerator_inr_castSucc_apply,
       TauCeti.ExteriorAlgebra.ι_mul_contractLeft_coord_basis_of_not_mem_of_mem _ _ _ _ hsucc hj,
       hrefl]
     exact ⟨_, rfl⟩
@@ -658,9 +661,8 @@ theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)
     (u : A) :
     (s ≫ (weightTorus n).hom.hom) *
-        ((AdditiveGroup.groupSchemePointMulEquiv A)
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-              (Multiplicative.ofAdd u)) ≫ (rootSubgroup n k).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm (Multiplicative.ofAdd u) ≫
+          (rootSubgroup n k).hom.hom) *
         (s ≫ (weightTorus n).hom.hom)⁻¹ =
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd
@@ -668,6 +670,7 @@ theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
               (rootGeneratorWeight n k) : A) * u)) ≫
         (rootSubgroup n k).hom.hom := by
+  conv_lhs => rw [AdditiveGroup.schemePointsMulEquiv_symm_apply]
   have h := kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam _ _ _ _ _ _ _
       (isCartanWeightVector_latticeBasis n) (isNilpotent_rep_rootGenerator n) A
       (lie_coroot_rootGenerator n k) s u =≫
@@ -744,9 +747,8 @@ theorem weightTorus_conj_rootSubgroup_root_simpleIndex
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)
     (u : A) :
     (s ≫ (weightTorus n).hom.hom) *
-        ((AdditiveGroup.groupSchemePointMulEquiv A)
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-              (Multiplicative.ofAdd u)) ≫ (rootSubgroup n (.inl i)).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm (Multiplicative.ofAdd u) ≫
+          (rootSubgroup n (.inl i)).hom.hom) *
         (s ≫ (weightTorus n).hom.hom)⁻¹ =
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd
@@ -767,9 +769,8 @@ theorem weightTorus_conj_rootSubgroup_neg_root_simpleIndex
       (SplitTorus.groupScheme ℤ (Fin (n + 1))).X)
     (u : A) :
     (s ≫ (weightTorus n).hom.hom) *
-        ((AdditiveGroup.groupSchemePointMulEquiv A)
-            ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm
-              (Multiplicative.ofAdd u)) ≫ (rootSubgroup n (.inr i)).hom.hom) *
+        ((AdditiveGroup.schemePointsMulEquiv A).symm (Multiplicative.ofAdd u) ≫
+          (rootSubgroup n (.inr i)).hom.hom) *
         (s ≫ (weightTorus n).hom.hom)⁻¹ =
       (AdditiveGroup.schemePointsMulEquiv A).symm
           (Multiplicative.ofAdd

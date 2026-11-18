@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.RegularValue.Open
+import TauCeti.Analysis.Normed.Module.Orientation
 
 /-!
 # Pulling back orientations
@@ -84,7 +85,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [ChartedSpace H'' M''] [IsManifold I'' 1 M''] [FiniteDimensional ℝ E'']
   {ι : Type*} [Fintype ι]
 
-omit [FiniteDimensional ℝ E'] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
 /-- Let `f` be a map that is `C¹` at `a` and whose derivative at each `x` near `a` is the
 equivalence `D x`, and let `ω x` be an orientation of the tangent space of `M'` at `f x`, locally
 constant near `a` when read in the preferred trivialization at `f a`. Then the orientations of the
@@ -131,38 +132,22 @@ theorem eventually_mapOrientation_map_symm_eq {f : M → M'} {a : M}
     rw [ContinuousLinearMap.inCoordinates_eq hx hfx]
     ext v
     simp [T, ← hDx, e, e']
-  -- In the two trivializations the derivative varies continuously, so relative to its value at
-  -- `a` it has positive determinant near `a`.
-  let K : M → E →L[ℝ] E := fun x ↦ ((T a ha hfa).symm : E' →L[ℝ] E).comp (c x)
-  have hKa : K a = ContinuousLinearMap.id ℝ E := by
-    ext v
-    simp [K, hcT a hD.self_of_nhds ha hfa]
-  have hpos : ∀ᶠ x in 𝓝 a, 0 < (K x).det := by
-    have hK : ContinuousAt K a := continuousAt_const.clm_comp hc
-    exact (ContinuousLinearMap.continuous_det.continuousAt.comp hK).eventually
-      (lt_mem_nhds (by simp [hKa, ContinuousLinearMap.det]))
+  -- In the two trivializations the derivative varies continuously, so near `a` its readings
+  -- transport orientations as its reading at `a` does.
+  set ω' := e'.mapOrientation ι hfa (ω a)
+  have hS := _root_.Orientation.eventually_map_eq_map_of_continuousAt hι
+    (_root_.Orientation.map ι (T a ha hfa).symm.toLinearEquiv ω') (L := c) (fun _ ↦ hc)
+    (hcT a hD.self_of_nhds ha hfa)
   have hbase : ∀ᶠ x in 𝓝 a, x ∈ e.baseSet := e.open_baseSet.mem_nhds ha
   have hfbase : ∀ᶠ x in 𝓝 a, f x ∈ e'.baseSet :=
     hf.continuousAt.preimage_mem_nhds (e'.open_baseSet.mem_nhds hfa)
-  filter_upwards [hω, hpos, hbase, hfbase, hD] with x hωx hKx hx₀ hfx hDx hx
+  filter_upwards [hω, hS, hbase, hfbase, hD] with x hωx hSx hx hfx hDx _
   rw [hread x hx hfx, hread a ha hfa, hωx hfx]
-  set ω' := e'.mapOrientation ι hfa (ω a)
-  set η := _root_.Orientation.map ι (T a ha hfa).symm.toLinearEquiv ω'
-  set L := (T x hx hfx).trans (T a ha hfa).symm
-  -- The change of reading `L = (T a)⁻¹ ∘ T x` fixes `η`, since its determinant is positive.
-  have hfix : _root_.Orientation.map ι L.toLinearEquiv η = η := by
-    refine (_root_.Orientation.map_eq_iff_det_pos η _ hι).mpr ?_
-    convert hKx using 2
-    ext v
-    simp [L, K, hcT x hDx hx hfx]
-  calc _root_.Orientation.map ι (T x hx hfx).symm.toLinearEquiv ω'
-      = _root_.Orientation.map ι L.symm.toLinearEquiv η := by
-        rw [← _root_.Orientation.map_trans]
-        exact congrArg (fun L ↦ _root_.Orientation.map ι L ω')
-          (LinearEquiv.ext fun v ↦ by simp [L])
-    _ = η := by
-        rw [ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
-          Equiv.symm_apply_eq, hfix]
+  -- `T x` carries the right-hand side to `ω'`, as `T a` does.
+  rw [ContinuousLinearEquiv.toLinearEquiv_symm (T x hx hfx), ← _root_.Orientation.map_symm,
+    Equiv.symm_apply_eq, hSx (T x hx hfx) (hcT x hDx hx hfx).symm,
+    ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
+    Equiv.apply_symm_apply]
 
 open Classical in
 /-- The pullback of an orientation `o'` of `M'` along a `C¹` map `f : M → M'` whose manifold

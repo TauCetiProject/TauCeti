@@ -42,6 +42,9 @@ local field on `E` compatible with `K`; `L` is then a valuative extension of `E`
   `TauCeti.ramificationIndex_unramifiedExtension_inertiaDegree` and
   `TauCeti.finrank_unramifiedExtension_inertiaDegree_eq_ramificationIndex`: `L/L₀` is totally
   ramified, with ramification index and degree `e`.
+* `TauCeti.wildRamificationExponent_unramifiedExtension_inertiaDegree` and
+  `TauCeti.tameRamificationIndex_unramifiedExtension_inertiaDegree`: `L/L₀` has the wild
+  ramification exponent and tame index of `L/K`.
 * `TauCeti.map_unramifiedExtension_inertiaDegree_le`: maximal unramified subextensions are
   covariant in towers.
 * `TauCeti.map_unramifiedExtension_inertiaDegree_eq_iff`: the maximal unramified subextension is
@@ -87,7 +90,7 @@ theorem isUnramified_unramifiedExtension_inertiaDegree
     [IsNonarchimedeanLocalField (unramifiedExtension K L (inertiaDegree K L))]
     [ValuativeExtension K (unramifiedExtension K L (inertiaDegree K L))] :
     IsUnramified K (unramifiedExtension K L (inertiaDegree K L)) :=
-  isUnramified_unramifiedExtension_of_isPrimitiveRoot inertiaDegree_pos.ne'
+  isUnramified_unramifiedExtension_of_isPrimitiveRoot
     (exists_isPrimitiveRoot_natCard_pow_inertiaDegree_sub_one K L).choose_spec
 
 variable {K L} in
@@ -113,7 +116,7 @@ theorem dvd_inertiaDegree_of_isPrimitiveRoot {f : ℕ} (hf : f ≠ 0) {ζ : L}
   let _ := finiteIntermediateFieldTopology K L (unramifiedExtension K L f)
   have := finiteIntermediateField_isNonarchimedeanLocalField K L (unramifiedExtension K L f)
   have := finiteIntermediateField_valuativeExtension K L (unramifiedExtension K L f)
-  have := isUnramified_unramifiedExtension_of_isPrimitiveRoot hf hζ
+  have := isUnramified_unramifiedExtension_of_isPrimitiveRoot hζ
   rw [inertiaDegree_tower (K := K) (L := unramifiedExtension K L f) L,
     IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension_of_isPrimitiveRoot hf hζ]
   exact dvd_mul_right _ _
@@ -152,6 +155,24 @@ theorem ramificationIndex_unramifiedExtension_inertiaDegree :
     ramificationIndex (unramifiedExtension K L (inertiaDegree K L)) L = ramificationIndex K L :=
   have := isUnramified_unramifiedExtension_inertiaDegree K L
   IsUnramified.ramificationIndex_tower_eq K _ L
+
+/-- The wild ramification exponent of the top step of the canonical unramified--totally
+ramified factorization equals that of `L/K`. -/
+@[simp]
+theorem wildRamificationExponent_unramifiedExtension_inertiaDegree :
+    wildRamificationExponent (unramifiedExtension K L (inertiaDegree K L)) L =
+      wildRamificationExponent K L :=
+  have := isUnramified_unramifiedExtension_inertiaDegree K L
+  IsUnramified.wildRamificationExponent_tower_eq K _ L
+
+/-- The tame ramification index of the top step of the canonical unramified--totally ramified
+factorization equals that of `L/K`. -/
+@[simp]
+theorem tameRamificationIndex_unramifiedExtension_inertiaDegree :
+    tameRamificationIndex (unramifiedExtension K L (inertiaDegree K L)) L =
+      tameRamificationIndex K L :=
+  have := isUnramified_unramifiedExtension_inertiaDegree K L
+  IsUnramified.tameRamificationIndex_tower_eq K _ L
 
 end TotallyRamified
 

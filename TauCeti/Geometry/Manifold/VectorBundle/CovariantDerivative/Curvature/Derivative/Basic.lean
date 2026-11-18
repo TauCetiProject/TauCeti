@@ -112,20 +112,6 @@ private theorem derivCurvatureAux_antisymm (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff
     curvatureTensor_antisymm cov x (covT Y x v), neg_apply, LinearMap.neg_apply]
   abel
 
-private theorem derivCurvatureAux_congr_of_eventuallyEq_first (hY : CMDiff ∞ (T% Y))
-    (hY' : CMDiff ∞ (T% Y')) (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ))
-    (hYY' : ∀ᶠ y in nhds x, Y y = Y' y) :
-    derivCurvatureAux cov covT Y Z σ x = derivCurvatureAux cov covT Y' Z σ x := by
-  funext v
-  have hR : ∀ᶠ y in nhds x, cov.curvatureTensor y (Y y) (Z y) (σ y) =
-      cov.curvatureTensor y (Y' y) (Z y) (σ y) := hYY'.mono fun y hy ↦ by rw [hy]
-  simp only [derivCurvatureAux]
-  rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
-      (mdifferentiable_curvatureTensor_apply hY hZ hσ x)
-      (mdifferentiable_curvatureTensor_apply hY' hZ hσ x) Filter.univ_mem hR,
-    covT.isCovariantDerivativeOn.congr_of_eventuallyEq (hY.mdifferentiableAt (by simp))
-      (hY'.mdifferentiableAt (by simp)) Filter.univ_mem hYY', hYY'.self_of_nhds]
-
 private theorem derivCurvatureAux_add_first (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))
     (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ)) :
     derivCurvatureAux cov covT (Y + Y') Z σ x =
@@ -161,20 +147,6 @@ private theorem derivCurvatureAux_smul_first {f : M → ℝ} (hf : ContMDiff I �
     ContinuousLinearMap.smulRight_apply, map_add, map_smul, LinearMap.add_apply,
     LinearMap.smul_apply]
   module
-
-private theorem derivCurvatureAux_congr_of_eventuallyEq_section (hY : CMDiff ∞ (T% Y))
-    (hZ : CMDiff ∞ (T% Z)) (hσ : CMDiff ∞ (T% σ)) (hσ' : CMDiff ∞ (T% σ'))
-    (hσσ' : ∀ᶠ y in nhds x, σ y = σ' y) :
-    derivCurvatureAux cov covT Y Z σ x = derivCurvatureAux cov covT Y Z σ' x := by
-  funext v
-  have hR : ∀ᶠ y in nhds x, cov.curvatureTensor y (Y y) (Z y) (σ y) =
-      cov.curvatureTensor y (Y y) (Z y) (σ' y) := hσσ'.mono fun y hy ↦ by rw [hy]
-  simp only [derivCurvatureAux]
-  rw [cov.isCovariantDerivativeOn.congr_of_eventuallyEq
-      (mdifferentiable_curvatureTensor_apply hY hZ hσ x)
-      (mdifferentiable_curvatureTensor_apply hY hZ hσ' x) Filter.univ_mem hR,
-    cov.isCovariantDerivativeOn.congr_of_eventuallyEq (hσ.mdifferentiableAt (by simp))
-      (hσ'.mdifferentiableAt (by simp)) Filter.univ_mem hσσ', hσσ'.self_of_nhds]
 
 private theorem derivCurvatureAux_add_section (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
     (hσ : CMDiff ∞ (T% σ)) (hσ' : CMDiff ∞ (T% σ')) :
@@ -224,7 +196,6 @@ private theorem derivCurvatureAux_congr {Z' : Π y : M, TangentSpace I y}
       derivCurvatureAux cov covT A B σ x = derivCurvatureAux cov covT A' B σ x :=
     TauCeti.Manifold.eq_of_contMDiff_tensorial (G := E) (W := TangentSpace I)
       (fun C ↦ derivCurvatureAux cov covT C B σ x) x
-      (fun hC hC' hCC' ↦ derivCurvatureAux_congr_of_eventuallyEq_first hC hC' hB hσ hCC')
       (fun hC hC' ↦ derivCurvatureAux_add_first hC hC' hB hσ)
       (fun hf hC ↦ derivCurvatureAux_smul_first hf hC hB hσ) hA hA' hAA'
   calc derivCurvatureAux cov covT Y Z σ x
@@ -235,7 +206,6 @@ private theorem derivCurvatureAux_congr {Z' : Π y : M, TangentSpace I y}
     _ = derivCurvatureAux cov covT Y' Z' σ' x :=
       TauCeti.Manifold.eq_of_contMDiff_tensorial (G := F) (W := V)
         (fun τ ↦ derivCurvatureAux cov covT Y' Z' τ x) x
-        (fun hτ hτ' hττ' ↦ derivCurvatureAux_congr_of_eventuallyEq_section hY' hZ' hτ hτ' hττ')
         (fun hτ hτ' ↦ derivCurvatureAux_add_section hY' hZ' hτ hτ')
         (fun hf hτ ↦ derivCurvatureAux_smul_section hf hY' hZ' hτ) hσ hσ' hσσ'
 

@@ -228,7 +228,7 @@ omit [IsSemisimpleRing (𝒜 0)] in
 theorem gradedFiniteProjectiveModulesForgetK0_basis_gradedIdempotentProjectiveBasisOfPrimitive
     [IsArtinianRing A] (i : I) :
     gradedFiniteProjectiveModulesForgetK0 𝒜 (LaurentSpecialization.basis (1 : ℤˣ)
-        (gradedIdempotentProjectiveBasisOfPrimitive he he₀
+        (gradedIdempotentProjectiveBasisOfPrimitive he
           (fun i ↦ Ideal.isHomogeneous_span_singleton 𝒜
             (SetLike.isHomogeneousElem_coe (Subtype.mk (e i) (he₀ i) : 𝒜 0)))
           hprim hnoniso) i) =
@@ -278,7 +278,7 @@ theorem cartanMatrix_span_singleton_eq_map_gradedCartanMatrix :
         (isExhaustiveSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
           hprim) =
       (gradedCartanMatrix 𝒜
-        (gradedIdempotentProjectiveBasisOfPrimitive he he₀
+        (gradedIdempotentProjectiveBasisOfPrimitive he
           (fun i ↦ Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩) hprim hnoniso)
         (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso)).map
         (laurentEval (1 : ℤˣ)) := by
