@@ -190,11 +190,10 @@ theorem isIso_map_continuationHom {M : Type uM} [AddCommGroup M] [Module R M] [M
 continuation maps. -/
 def coefficientFunctorCompIso :
     mP.coefficientFunctor.{uR, uA, uM} hA ⋙ L₂ ≅ mQ.coefficientFunctor hA ⋙ L₂ :=
-  NatIso.ofComponents (fun M ↦
-      @asIso _ _ _ _ (L₂.map (H.ν.continuationHom M.isDGRightModule))
-        (H.isIso_map_continuationHom L₂ M.isDGRightModule))
-    fun f ↦ (L₂.map_comp _ _).symm.trans ((congrArg L₂.map
-        ((H.ν.continuationNatTrans hA).naturality f)).trans (L₂.map_comp _ _))
+  haveI : ∀ M, IsIso ((Functor.whiskerRight (H.ν.continuationNatTrans hA) L₂).app M) :=
+    fun M ↦ H.isIso_map_continuationHom L₂ M.isDGRightModule
+  haveI := NatIso.isIso_of_isIso_app (Functor.whiskerRight (H.ν.continuationNatTrans hA) L₂)
+  asIso (Functor.whiskerRight (H.ν.continuationNatTrans hA) L₂)
 
 @[simp]
 theorem coefficientFunctorCompIso_hom_app (M : DGRightModuleCat.{uR, uA, uM} hA) :
