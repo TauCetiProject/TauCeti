@@ -23,11 +23,13 @@ finitely supported factor whose product is `1`. A finitely supported telescoping
 ray `{i} × ℕ` to its starting values. Shifting the index of an alternating product over
 `ℤ` by one inverts it, so multiplying each factor `f j` by `δ (j + 1) * δ j` does not change the
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
+On pairwise disjoint sets, a product of indicators glues different functions on the pieces.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
 function, is a finite sum over the support of the weights.
 A product over a finset is compared with the `finprod` of a finitely supported family whose
-factors off the finset are all at least `1`, or all at most `1`. Finally, left multiplication by a
-left-regular element commutes with `finsum` even when the support is infinite.
+factors off the finset are all at least `1`, or all at most `1`. A `finsum` whose terms are fixed by
+multiplication by an element is fixed by it. Finally, left multiplication by a left-regular
+element commutes with `finsum` even when the support is infinite.
 
 ## Main results
 
@@ -54,6 +56,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `TauCeti.finprod_mul_mul_add_one_zpow_negOnePow`: multiplying each factor `f j` of
   `∏ᶠ j, f j ^ (-1) ^ j` by `δ (j + 1) * δ j`, for a finitely supported family `δ` of nonzero
   elements, does not change the product.
+* `TauCeti.finprod_mulIndicator_of_mem` and `TauCeti.finsum_indicator_of_mem`: for pairwise
+  disjoint sets `s k`, the product of the indicators of `f k` on `s k` glues the functions `f k`.
 * `TauCeti.finsum_smul_eq_sum`: a sum weighted by a finitely supported family of scalars is a
   finite sum over the support of the weights.
 * `TauCeti.finsum_smul_inv_smul`: translating the point of a sum weighted by the translates of a
@@ -61,6 +65,8 @@ left-regular element commutes with `finsum` even when the support is infinite.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
+* `TauCeti.mul_finsum_of_forall` and `TauCeti.finsum_mul_of_forall`: a `finsum` whose terms are
+  fixed by left, respectively right, multiplication by `c` is fixed by it, whatever the support.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
   `finsum`, whatever the support.
 * `Multiset.finsum_count_eq_card`: the multiplicities of a multiset add up to its cardinality.
@@ -259,6 +265,22 @@ theorem finprod_mul_mul_add_one_zpow_negOnePow {G : Type*} [CommGroupWithZero G]
   rw [finprod_mul_distrib h₁ h₀, finprod_zpow_negOnePow_add_one,
     inv_mul_cancel₀ (finprod_ne_zero fun j ↦ zpow_ne_zero _ (hδ₀ j))]
 
+section Indicator
+
+/-- If the sets `s k` are pairwise disjoint, then at a point of `s j` the product of the
+multiplicative indicators of `f k` on `s k` is `f j`: the product glues the functions `f k` on the
+pieces. Compare `tprod_mulIndicator_of_mem_union_disjoint`, which glues a single function. -/
+@[to_additive /-- If the sets `s k` are pairwise disjoint, then at a point of `s j` the sum of the
+indicators of `f k` on `s k` is `f j`: the sum glues the functions `f k` on the pieces. Compare
+`tsum_indicator_of_mem_union_disjoint`, which glues a single function. -/]
+theorem finprod_mulIndicator_of_mem {ι : Type*} {s : ι → Set α} (hs : Pairwise (Disjoint on s))
+    (f : ι → α → M) {j : ι} {x : α} (hx : x ∈ s j) :
+    ∏ᶠ k, (s k).mulIndicator (f k) x = f j x := by
+  rw [finprod_eq_single _ j fun k hk ↦
+    mulIndicator_of_notMem (fun hxk ↦ (hs hk).ne_of_mem hxk hx rfl) _, mulIndicator_of_mem hx]
+
+end Indicator
+
 section WeightedSum
 
 /-- A sum weighted by a finitely supported family of scalars is the finite sum over the support
@@ -277,6 +299,22 @@ theorem finsum_smul_inv_smul {G X R V : Type*} [Group G] [MulAction G X] [AddCom
   simp [mul_smul]
 
 end WeightedSum
+
+section FixedByMul
+
+variable {ι R : Type*} [NonUnitalNonAssocSemiring R] {f : ι → R} {c : R}
+
+/-- A `finsum` whose terms are all fixed by left multiplication by `c` is fixed by it, without any
+finiteness assumption on the support. -/
+theorem mul_finsum_of_forall (h : ∀ i, c * f i = f i) : c * ∑ᶠ i, f i = ∑ᶠ i, f i :=
+  finsum_induction (fun x => c * x = x) (mul_zero c) (fun x y hx hy => by rw [mul_add, hx, hy]) h
+
+/-- A `finsum` whose terms are all fixed by right multiplication by `c` is fixed by it, without
+any finiteness assumption on the support. -/
+theorem finsum_mul_of_forall (h : ∀ i, f i * c = f i) : (∑ᶠ i, f i) * c = ∑ᶠ i, f i :=
+  finsum_induction (fun x => x * c = x) (zero_mul c) (fun x y hx hy => by rw [add_mul, hx, hy]) h
+
+end FixedByMul
 
 end TauCeti
 
