@@ -221,8 +221,9 @@ theorem centralSplitting_symm_negativeGenerator (i : I) :
 
 end Splitting
 
-/-- Every realization is a minimal sub-realization together with an abelian central factor
-at the level of presented Lie algebras, even for a singular matrix. -/
+/-- For a finite index type, the presented algebra of any realization is isomorphic to the
+product of the algebra of a minimal sub-realization and the abelian Lie algebra on a
+complementary space of central directions; the matrix may be singular. -/
 theorem exists_isMinimal_restrict_lieEquiv_prod [Fintype I] :
     ∃ (M Z : Submodule K H) (hc : R.corootSpan ≤ M)
       (hs : M ⊔ R.cartanCenter = ⊤),
