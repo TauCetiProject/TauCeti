@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.ModularForms.GeodesicIntegral.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
 import TauCeti.NumberTheory.ModularForms.Basic
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Primitive
 import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
@@ -274,14 +273,14 @@ private theorem geodesicIntegral_eq_axisLimit_sub (hΦ : ∀ τ : ℍ, HasDerivA
     refine integrableOn_resToImagAxis_Ioi_of_slash_S (hint g hg) ?_
     have := hint _ hgS
     rwa [SlashAction.slash_mul, ModularForm.rat_slash_mapGL,
-      ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash] at this
+      ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash] at this
   -- the limit at the finite end `g • 0` is the limit at `i∞` for `g S`
   have hlim₀ : Tendsto h (𝓝[>] 0) (𝓝 (axisLimit Φ (g * mapGL ℚ S))) := by
     refine ((tendsto_axisLimit hΦ hgS (hint _ hgS)).comp tendsto_inv_nhdsGT_zero).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
     have hS_smul : (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (mapGL ℚ S) •
         ofComplex (I * (t⁻¹ : ℝ)) : ℍ) = ofComplex (I * t) := by
-      rw [Matrix.SpecialLinearGroup.map_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+      rw [Matrix.SpecialLinearGroup.map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
         ← sl_moeb, modular_S_smul]
       ext1
       rw [ofComplex_apply_of_im_pos (by simpa using ht),

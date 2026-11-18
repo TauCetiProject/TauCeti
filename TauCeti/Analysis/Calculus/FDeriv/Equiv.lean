@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import Mathlib.Topology.Compactness.Compact
@@ -17,9 +17,7 @@ import TauCeti.Topology.Algebra.Module.Determinant
 
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Congr
-import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.DiscreteSubset
 
 /-!
@@ -48,6 +46,14 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
+  itself, the derivative at such a point has nonzero determinant.
+* `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
+  space to itself, `det De(e⁻¹ p) · det De⁻¹(p) = 1` at a point `p` of the target.
+* `OpenPartialHomeomorph.det_fderiv_ne_zero_of_contDiffOn`,
+  `OpenPartialHomeomorph.det_fderiv_symm_apply_of_contDiffOn`: for an open partial homeomorphism
+  that is `C^n`, `n ≠ 0`, in both directions, a nonzero Jacobian determinant on the source, and
+  reciprocity of the Jacobian determinants of `e` and `e.symm`.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
 * `Equiv.det_fderiv_symm_mul_det_fderiv`: for a bijection `φ` differentiable at `φ⁻¹ y` with its
   inverse differentiable at `y`, the Jacobian determinants are reciprocal,
@@ -67,10 +73,7 @@ fibre consisting of such points is finite (`IsCompact.finite_of_hasFDerivAt`); t
 finiteness of the preimage of a regular value under a proper map. The same holds for a compact
 part `s ∩ f⁻¹(y)` of a fibre (`IsCompact.finite_inter_preimage_of_hasFDerivAt`), and so for a
 compact fibre of a map `g : s → F` agreeing on `s` with `f`
-(`IsCompact.finite_of_hasFDerivAt_subtype`), as for a map defined on an open subset `s`. In
-particular a compact set of fixed points `x` of `g : s → E` at which `g` agrees with a map `φ`
-having a derivative with `det (1 - Dφ(x)) ≠ 0` is finite
-(`IsCompact.finite_setOf_apply_eq_self_of_hasFDerivAt`).
+(`IsCompact.finite_of_hasFDerivAt_subtype`), as for a map defined on an open subset `s`.
 -/
 
 public section
@@ -166,6 +169,48 @@ theorem inverse_fderiv (e : OpenPartialHomeomorph E F) {y : E} (hy : y ∈ e.sou
     (fderiv 𝕜 e y).inverse = fderiv 𝕜 e.symm (e y) :=
   ContinuousLinearMap.inverse_eq (e.fderiv_comp_fderiv_symm_of_mem_source hy he hes)
     (e.fderiv_symm_comp_fderiv_of_mem_source hy he hes)
+
+/-- An open partial homeomorphism of a space to itself which is differentiable at a point of its
+source, and whose inverse is differentiable at the image point, has a derivative with nonzero
+determinant there. -/
+theorem det_fderiv_ne_zero (e : OpenPartialHomeomorph E E) {y : E} (hy : y ∈ e.source)
+    (he : DifferentiableAt 𝕜 e y) (hes : DifferentiableAt 𝕜 e.symm (e y)) :
+    (fderiv 𝕜 e y).det ≠ 0 := by
+  obtain ⟨A, hA⟩ := e.isInvertible_fderiv hy he hes
+  rw [← hA]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
+
+/-- For an open partial homeomorphism of a space to itself, differentiable at `e⁻¹ p` with inverse
+differentiable at a point `p` of its target, the Jacobian determinants of `e` at `e⁻¹ p` and of
+`e⁻¹` at `p` are reciprocal. -/
+theorem det_fderiv_mul_det_fderiv_symm (e : OpenPartialHomeomorph E E) {p : E}
+    (hp : p ∈ e.target) (hd : DifferentiableAt 𝕜 e (e.symm p))
+    (hds : DifferentiableAt 𝕜 e.symm p) :
+    (fderiv 𝕜 e (e.symm p)).det * (fderiv 𝕜 e.symm p).det = 1 := by
+  rw [← ContinuousLinearMap.det_comp, e.fderiv_comp_fderiv_symm hp hd hds,
+    ContinuousLinearMap.det_id]
+
+/-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
+with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
+source. -/
+theorem det_fderiv_ne_zero_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).det ≠ 0 :=
+  e.det_fderiv_ne_zero hx ((he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+
+/-- For an open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
+with inverse `C^n` on its target, the Jacobian determinant of the inverse at `e x` is the
+reciprocal of that of `e` at a point `x` of the source. -/
+theorem det_fderiv_symm_apply_of_contDiffOn (e : OpenPartialHomeomorph E E) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e.symm (e x)).det = (fderiv 𝕜 e x).det⁻¹ := by
+  have h := e.det_fderiv_mul_det_fderiv_symm (e.map_source hx)
+    ((he.differentiableOn hn).differentiableAt
+      (e.open_source.mem_nhds (e.map_target (e.map_source hx))))
+    ((hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx)))
+  rw [e.left_inv hx] at h
+  exact eq_inv_of_mul_eq_one_right h
 
 end OpenPartialHomeomorph
 
@@ -280,25 +325,3 @@ theorem IsCompact.finite_of_hasFDerivAt_subtype {𝕜 : Type*} [NontriviallyNorm
   rw [himage]
   exact (himage ▸ hK.image continuous_subtype_val).finite_inter_preimage_of_hasFDerivAt
     (fun w hw ↦ hf _ (hmem w hw)) fun w hw ↦ hf' _ (hmem w hw)
-
-/-- **A compact set of nondegenerate fixed points is finite.** Let `f : s → E` agree on `s` with
-`φ : E → E`. If the fixed set of `f` is compact and at each fixed point `x` the map `φ` has a
-derivative `φ' x` with `det (1 - φ' x) ≠ 0`, then the fixed set of `f` is finite. -/
-theorem IsCompact.finite_setOf_apply_eq_self_of_hasFDerivAt {𝕜 : Type*}
-    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {s : Set E} {f : s → E} {φ : E → E}
-    {φ' : E → E →L[𝕜] E} (hc : IsCompact {x | f x = x}) (hφ : ∀ z : s, φ z = f z)
-    (hd : ∀ x ∈ {x | f x = x}, HasFDerivAt φ (φ' x) x)
-    (hdet : ∀ x ∈ {x | f x = x}, (ContinuousLinearMap.id 𝕜 E - φ' x).det ≠ 0) :
-    {x | f x = x}.Finite := by
-  -- The fixed points of `f` are the zeros of `x ↦ x - f x`, which agrees on `s` with
-  -- `x ↦ x - φ x`, whose derivatives `1 - φ' x` are invertible there.
-  have hfix : {x | f x = x} = (fun z : s ↦ (z : E) - f z) ⁻¹' {0} := by
-    ext x
-    exact eq_comm.trans sub_eq_zero.symm
-  rw [hfix] at hc hd hdet ⊢
-  exact hc.finite_of_hasFDerivAt_subtype (f := fun z ↦ z - φ z)
-    (f' := fun x ↦ ContinuousLinearMap.id 𝕜 E - φ' x) (fun z ↦ by simp [hφ])
-    (fun x hx ↦ (hasFDerivAt_id _).sub (hd x hx)) fun x hx ↦
-      ⟨_, ((ContinuousLinearMap.id 𝕜 E - φ' x).toContinuousLinearEquivOfDetNeZero
-        (hdet x hx)).antilipschitzWith⟩

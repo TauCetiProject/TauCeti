@@ -262,7 +262,7 @@ end OpenEmbedding
 
 section Comap
 
-variable {M' : Type} [TopologicalSpace M'] [T2Space M'] [ChartedSpace E M'] {j : M' → M}
+variable {M' : Type} [TopologicalSpace M'] [T2Space M'] [ChartedSpace E M'] {j : C(M', M)}
   (hj : Topology.IsOpenEmbedding j)
 
 /-- Along an open embedding `j : M' → M`, the image of the fundamental class of `M'` along `S`
@@ -271,9 +271,10 @@ orientation of `M'` pulled back along `j`. -/
 theorem localHomologyRestriction_localHomologyMap_fundamentalClassOn_comap {S : Set M'}
     (hS : IsCompact S) {T : Set M} (h : j ⁻¹' T ⊆ S) {a : M'} (ha : j a ∈ T) :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 ha) n
-      (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨j, hj.continuous⟩ h n
+      (localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j h n
         ((o.comap hj).fundamentalClassOn hn hS)) = (o (j a)).val := by
-  rw [← ConcreteCategory.comp_apply,
+  rw [localHomologyMap_congr _ (ContinuousMap.ext fun _ ↦ rfl : j = ⟨j, hj.continuous⟩),
+    ← ConcreteCategory.comp_apply,
     localHomologyMap_comp_localHomologyRestriction_singleton _ hj h ha, ConcreteCategory.comp_apply,
     (o.comap hj).localHomologyRestriction_fundamentalClassOn hn hS (h ha),
     ← Topology.IsOpenEmbedding.coe_localOrientationEquiv, localOrientationEquiv_comap_apply]
@@ -446,6 +447,8 @@ def mapFundamentalClass (f : C(M, X)) :
   (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
     (TopCat.ofHom f)).hom (o.fundamentalClass hn)
 
+/-- Unfolding `mapFundamentalClass`: the image of the fundamental class under the map induced on
+singular homology by `f`. -/
 theorem mapFundamentalClass_def (f : C(M, X)) :
     o.mapFundamentalClass hn f =
       (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).map
@@ -577,6 +580,8 @@ def fundamentalClassEquiv :
       ModuleCat.{0} ℤ) :=
   LinearEquiv.ofBijective _ (o.bijective_toSpanSingleton_fundamentalClass hn)
 
+/-- The equivalence `fundamentalClassEquiv` sends `c : ℤ` to the multiple
+`c • o.fundamentalClass hn`. -/
 @[simp]
 theorem fundamentalClassEquiv_apply (c : ℤ) :
     o.fundamentalClassEquiv hn c = c • o.fundamentalClass hn :=

@@ -5,238 +5,355 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
-import Mathlib.Analysis.Convex.Contractible
+public import TauCeti.Topology.ContinuousMap.Algebra
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
-# The local fixed-point index
+# The fixed-point index of a map of an open subset of a vector space
 
-Let `E` be a finite-dimensional real normed space, `U ⊆ E` open and `f : U → E` continuous. The
-fixed points of `f` are the zeros of the map `x ↦ x - f x`. When the fixed set
-`{x | f x = x}` is compact, the **fixed-point index** of `f` is the local degree of
-`x ↦ x - f x` at `0` (`TauCeti.HomologicalOrientation.localDegree`): the integer `i(f)` with
+Let `E` be a finite-dimensional real normed space, `U ⊆ E` an open subset and `f : U → E` a
+continuous map. The fixed points of `f` are the zeros of its *displacement* `z ↦ z - f z`, a map
+`U → E`. When the fixed set `{z | f z = z}` is compact, the **fixed-point index** of `f`
+(`ContinuousMap.fixedPointIndex`) is the local degree at `0` of the displacement: the integer `d`
+such that the displacement carries the fundamental class of `U` along its fixed set to `d` times
+the local orientation of `E` at `0` (`TauCeti.HomologicalOrientation.localDegree`). It counts the
+fixed points of `f` with multiplicities. The **local fixed-point index** of `f` at a fixed point `x`
+(`ContinuousMap.localFixedPointIndex`) is the local index of the displacement at `x`
+(`TauCeti.HomologicalOrientation.localIndex`); it is nonzero only at isolated fixed points.
 
-`(id - f)_*[U]_{Fix f} = i(f) • o 0`  in  `Hₙ(E, E ∖ {0}; ℤ)`,
+Both integers are defined through an orientation of `E`, but they do not depend on it: reversing
+the orientation reverses it on the source `U` and on the target `E` at once, and the two sign
+changes cancel (`ContinuousMap.fixedPointIndex_eq_localDegree`,
+`ContinuousMap.localFixedPointIndex_eq_localIndex`). So the index needs no orientation of `E`.
 
-where `[U]_{Fix f}` is the fundamental class of `U` along the fixed set. The same orientation `o`
-of `E` is used on the source and on the target, so reversing it negates both sides of this
-equation and leaves the integer `i(f)` unchanged: the index does not depend on an orientation of
-`E` (`ContinuousMap.fixedPointIndex_eq_localDegree`). By convention the index is `0` when the fixed
-set is not compact. No differentiability of `f` and no finiteness of the fixed set is needed.
+The index has the following properties of the classical fixed-point index:
 
-The index has the following properties.
-
-* **Normalization at nondegenerate fixed points.** If `f` agrees on `U` with a map `φ` which is
-  differentiable at a point `x ∈ U` with `det (1 - Dφ(x)) ≠ 0`, the local index of
-  `x ↦ x - f x` at `x` is `sign det (1 - Dφ(x))`
-  (`TauCeti.HomologicalOrientation.localIndex_subtypeValSub_eq_sign_det`). A compact fixed set of
-  such nondegenerate fixed points is finite
-  (`IsCompact.finite_setOf_apply_eq_self_of_hasFDerivAt`), and the index is then the signed
-  count `∑_{f x = x} sign det (1 - Dφ(x))` (`ContinuousMap.fixedPointIndex_eq_sum_sign_det`). In
-  particular a constant map with value `c` has index `1` if `c ∈ U` and `0` otherwise
-  (`ContinuousMap.fixedPointIndex_const_of_mem`, `ContinuousMap.fixedPointIndex_const_of_notMem`,
-  and `ContinuousMap.fixedPointIndex_zero_of_mem`, `ContinuousMap.fixedPointIndex_zero_of_notMem`
-  for the zero map).
-* **Homotopy invariance.** Maps joined by a homotopy `H : [0, 1] × U → E` whose fixed set
-  `{(t, x) | H (t, x) = x}` is compact have the same index
-  (`ContinuousMap.fixedPointIndex_eq_of_homotopy`). For instance, if `U` has compact closure
-  and `H` extends continuously to `[0, 1] × closure U` with no fixed point on the boundary, the
-  fixed set is compact.
-* **Excision.** Restricting `f` to an open subset containing all of its fixed points does not
-  change the index (`ContinuousMap.fixedPointIndex_comp_inclusion`). Applied to `U₁ ∩ U₂`, this
-  shows that the index of an isolated fixed set does not depend on the isolating neighbourhood.
+* **Normalization at nondegenerate fixed points.** If `f` is differentiable at the fixed point `x`
+  with derivative `f'` and `1 - f'` is invertible, then the local index at `x` is the sign of
+  `det (1 - f')` (`ContinuousMap.localFixedPointIndex_eq_sign_det`).
+* **Summation.** If the fixed set is finite, the index is the sum of the local indices
+  (`ContinuousMap.fixedPointIndex_eq_sum_localFixedPointIndex`), hence the signed count
+  `∑ sign det (1 - f'(x))` when every fixed point is nondegenerate
+  (`ContinuousMap.fixedPointIndex_eq_sum_sign_det`); a compact set of nondegenerate fixed points
+  is finite (`ContinuousMap.finite_setOf_apply_eq`). A map without fixed points has index zero.
+* **Homotopy invariance.** Maps `f₀, f₁ : U → E` joined by a homotopy `H` whose fixed set
+  `{(t, z) | H (t, z) = z}` is compact have the same index
+  (`ContinuousMap.fixedPointIndex_eq_of_homotopy`). The fixed points may move, appear and
+  disappear along the homotopy, provided none escapes to the boundary of `U`.
+* **Localization.** The local index at `x` depends only on the germ of `f` at `x`
+  (`ContinuousMap.localFixedPointIndex_congr`) and not on the open set on which `f` is considered
+  (`ContinuousMap.localFixedPointIndex_comp_inclusion`); on an open set whose only fixed point is
+  `x`, the index is the local index at `x`
+  (`ContinuousMap.fixedPointIndex_eq_localFixedPointIndex`).
+* **Excision.** Restricting `f` to an open subset containing all its fixed points does not change
+  the index (`ContinuousMap.fixedPointIndex_comp_inclusion`).
 * **Additivity.** If the fixed set is compact and covered by open subsets `V` and `W` of `U` with
-  no fixed point in both, the index is the sum of the indices of the restrictions to `V` and to
-  `W` (`ContinuousMap.fixedPointIndex_eq_add`).
-* A map without fixed points has index `0` (`ContinuousMap.fixedPointIndex_eq_zero_of_forall_ne`).
+  no fixed point in both, the index is the sum of the indices of the restrictions of `f` to `V` and
+  to `W` (`ContinuousMap.fixedPointIndex_eq_add`). Unlike the summation formula, this needs no
+  finiteness of the fixed set.
+* **Normalization.** A constant map with value `c` has index `1` if `c ∈ U` and `0` otherwise
+  (`ContinuousMap.fixedPointIndex_const_of_mem`, `ContinuousMap.fixedPointIndex_const_of_notMem`).
 
-Together, these compute the index of a degenerate map as the signed count of the fixed points of
-a nondegenerate map joined to it by a homotopy with compact fixed set, such as a small
-perturbation that keeps the boundary of an isolating neighbourhood free of fixed points. For
-example, on `ℝ` the degenerate fixed point `0` of `x ↦ x + x³` has index `-1`: the homotopy
-`x ↦ x + x³ + t x`, `t ∈ [0, 1]`, has `0` as its only fixed point, and ends at a map whose
-derivative at `0` is `2`, with `sign (1 - 2) = -1`. This computation is checked in
-`TauCeti/Examples/AlgebraicTopology/Singular/LocalHomology/FixedPointIndex.lean`.
+Together these say that whenever `f` is joined, by a homotopy with compact fixed set, to a map
+with finitely many nondegenerate fixed points, the index of `f` is the sum of the signs
+`sign det (1 - f')` at the fixed points of that map, whichever such perturbation is used. So the
+index agrees with the definition of the fixed-point index by perturbation. For instance the
+degenerate fixed point `0` of `x ↦ x + x³` on `ℝ`, where `det (1 - f') = 0`, has index `-1`
+(`ContinuousMap.fixedPointIndex_add_pow_three`), because the homotopy `x ↦ x + x³ + t x`,
+`t ∈ [0, 1]`, has no fixed point other than `0` and ends at a map with derivative `2` at `0`.
 
 ## Main definitions
 
-* `ContinuousMap.fixedPointIndex f`: the fixed-point index of `f : C(U, E)`.
+* `ContinuousMap.fixedPointIndex f`: the fixed-point index of `f : U → E`, which is `0` when the
+  fixed set is not compact.
+* `ContinuousMap.localFixedPointIndex f x`: the local fixed-point index of `f` at `x`, which is
+  `0` when `x` is not a fixed point or not an isolated one.
 
 ## Main results
 
-* `ContinuousMap.fixedPointIndex_eq_localDegree`: the index is the local degree at `0` of
-  `x ↦ x - f x`, for any orientation of `E`.
-* `ContinuousMap.fixedPointIndex_of_not_isCompact`,
-  `ContinuousMap.fixedPointIndex_eq_zero_of_forall_ne`: the index vanishes when the fixed set is
-  not compact, or empty.
-* `ContinuousMap.fixedPointIndex_eq_sum_sign_det`, `ContinuousMap.fixedPointIndex_eq_sign_det`:
-  the index is the signed count of nondegenerate fixed points.
+* `ContinuousMap.fixedPointIndex_comp_inclusion`: the index does not change on restricting to an
+  open subset containing every fixed point.
+* `ContinuousMap.fixedPointIndex_eq_add`: the index is additive over two open subsets covering the
+  compact fixed set and meeting it in disjoint parts.
 * `ContinuousMap.fixedPointIndex_const_of_mem`: a constant map with value in `U` has index `1`.
-* `ContinuousMap.fixedPointIndex_eq_of_homotopy`: homotopy invariance.
-* `ContinuousMap.fixedPointIndex_comp_inclusion`: excision.
-* `ContinuousMap.fixedPointIndex_eq_add`: additivity.
+* `ContinuousMap.localFixedPointIndex_eq_sign_det`: the local index at a nondegenerate fixed point
+  is `sign det (1 - f')`.
+* `ContinuousMap.fixedPointIndex_eq_sum_localFixedPointIndex`,
+  `ContinuousMap.fixedPointIndex_eq_sum_sign_det`: the index is the sum of the local indices over a
+  finite fixed set.
+* `ContinuousMap.fixedPointIndex_eq_of_homotopy`: invariance under homotopies with compact fixed
+  set.
+* `ContinuousMap.fixedPointIndex_eq_sign_det_of_forall_eq`: a linear map `A` with `1 - A`
+  invertible has index `sign det (1 - A)` on every open set containing `0`.
 
 ## References
 
 * A. Dold, *Lectures on Algebraic Topology*, Springer, 1972, Chapter VII, §5 (the fixed-point
-  index of a map of an open subset of `ℝⁿ`, defined through the map `x ↦ x - f x` on
-  local homology, and its normalization, homotopy, excision and additivity properties).
+  index of maps of open subsets of `ℝⁿ`).
+* A. Dold, *Fixed point index and fixed point theorem for Euclidean neighborhood retracts*,
+  Topology 4 (1965), 1–8.
+* R. F. Brown, *The Lefschetz Fixed Point Theorem*, Scott, Foresman and Co., 1971, Chapter IV.
 -/
 
 public section
 
 noncomputable section
 
-open Module Set TopologicalSpace Topology
-open TauCeti TauCeti.HomologicalOrientation
+open Module Set Topology TauCeti TopologicalSpace
+
+namespace TauCeti
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- An orientation of `E`, chosen once. The fixed-point index does not depend on it
+(`ContinuousMap.fixedPointIndex_eq_localDegree`). -/
+private def fixedPointOrientation : HomologicalOrientation E E (finrank ℝ E) :=
+  Classical.choice (HomologicalOrientation.nonempty_of_simplyConnectedSpace (M := E) rfl)
+
+end TauCeti
 
 namespace ContinuousMap
-
-section SubtypeValSub
-
-variable {E : Type*} [TopologicalSpace E] {U : Opens E}
-
-/-- The map `x ↦ x - f x` of a map `f : U → E`, that is `ContinuousMap.subtypeVal U - f`. Its
-zeros are the fixed points of `f` (`ContinuousMap.preimage_subtypeValSub_zero`). -/
-def subtypeValSub [Sub E] [ContinuousSub E] (f : C(U, E)) : C(U, E) :=
-  ⟨fun x ↦ (x : E) - f x, by fun_prop⟩
-
-@[simp]
-theorem subtypeValSub_apply [Sub E] [ContinuousSub E] (f : C(U, E)) (x : U) :
-    f.subtypeValSub x = (x : E) - f x :=
-  (rfl)
-
-/-- The zeros of `x ↦ x - f x` are the fixed points of `f`. -/
-@[simp]
-theorem preimage_subtypeValSub_zero [AddGroup E] [ContinuousSub E] (f : C(U, E)) :
-    f.subtypeValSub ⁻¹' {0} = {x | f x = x} := by
-  ext x
-  simp only [mem_preimage, subtypeValSub_apply, mem_singleton_iff, sub_eq_zero, mem_ofPred_eq]
-  exact eq_comm
-
-/-- The map `x ↦ x - f x` commutes with restriction to an open subset `V ⊆ U`. -/
-@[simp]
-theorem subtypeValSub_comp_inclusion [Sub E] [ContinuousSub E] {V : Opens E} (hVU : V ≤ U)
-    (f : C(U, E)) :
-    (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).subtypeValSub =
-      f.subtypeValSub.comp (inclusion (SetLike.coe_subset_coe.2 hVU)) := by
-  ext x
-  rw [comp_apply, subtypeValSub_apply, subtypeValSub_apply, comp_apply, inclusion_apply_coe]
-
-end SubtypeValSub
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {U : Opens E}
 
-/-- The **fixed-point index** of a continuous map `f : U → E` on an open subset `U` of a
-finite-dimensional real normed space: the local degree at `0` of the map `x ↦ x - f x`,
-whose zeros are the fixed points of `f`, for one orientation of `E` used on both sides. It is `0`
-when the fixed set of `f` is not compact. It does not depend on the orientation
-(`ContinuousMap.fixedPointIndex_eq_localDegree`). -/
+/-- The **fixed-point index** of a continuous map `f : U → E` on an open subset `U` of `E`: the
+local degree at `0` of the displacement `z ↦ z - f z` (`ContinuousMap.displacement`), whose zeros
+are the fixed points of `f`.
+It is `0` when the fixed set `{z | f z = z}` is not compact. It does not depend on an orientation
+of `E` (`ContinuousMap.fixedPointIndex_eq_localDegree`). -/
 def fixedPointIndex (f : C(U, E)) : ℤ :=
-  let o := (nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl).some
-  (o.comap U.isOpenEmbedding').localDegree o rfl f.subtypeValSub 0
+  (fixedPointOrientation.comap U.isOpenEmbedding').localDegree fixedPointOrientation rfl
+    f.displacement 0
 
-/-- **The fixed-point index does not depend on the orientation**: for every orientation `o` of
-`E`, it is the local degree at `0` of the map `x ↦ x - f x`, for the orientation `o` on
-the target and its restriction to `U` on the source. -/
+open scoped Classical in
+/-- The **local fixed-point index** of a continuous map `f : U → E` at a fixed point `x`: the local
+index at `x` of the displacement `z ↦ z - f z`. It is `0` when `x` is not a fixed point, or not an
+isolated one. It does not depend on an orientation of `E`
+(`ContinuousMap.localFixedPointIndex_eq_localIndex`). -/
+def localFixedPointIndex (f : C(U, E)) (x : U) : ℤ :=
+  if f x = x then
+    (fixedPointOrientation.comap U.isOpenEmbedding').localIndex fixedPointOrientation
+      f.displacement x
+  else 0
+
+/-- **The fixed-point index in an arbitrary orientation**: for every orientation `o` of `E`, the
+fixed-point index of `f : U → E` is the local degree at `0` of the displacement `z ↦ z - f z`, for
+the orientation `o` restricted to `U` on the source and `o` on the target. -/
 theorem fixedPointIndex_eq_localDegree {n : ℕ} (o : HomologicalOrientation E E n)
-    (hE : finrank ℝ E = n) (f : C(U, E)) :
+    (hn : finrank ℝ E = n) (f : C(U, E)) :
     f.fixedPointIndex =
-      (o.comap U.isOpenEmbedding').localDegree o hE f.subtypeValSub 0 := by
-  subst hE
-  rw [fixedPointIndex]
-  rcases eq_or_eq_neg rfl (nonempty_of_simplyConnectedSpace (M := E) (E := E) rfl).some o with
-    h | h
-  · rw [h]
-  · -- Reversing the orientation on both sides changes the local degree by `(-1)²`.
-    rw [h, comap_neg, localDegree_neg_left _ _ _ rfl, localDegree_neg_right _ _ _ rfl, neg_neg]
+      (o.comap U.isOpenEmbedding').localDegree o hn f.displacement 0 := by
+  subst hn
+  rcases HomologicalOrientation.eq_or_eq_neg rfl fixedPointOrientation o with rfl | rfl
+  · rfl
+  · rw [fixedPointIndex, HomologicalOrientation.comap_neg,
+      HomologicalOrientation.localDegree_neg_left _ _ _ rfl,
+      HomologicalOrientation.localDegree_neg_right _ _ _ rfl, neg_neg]
+
+/-- **The local fixed-point index in an arbitrary orientation**: for every orientation `o` of `E`,
+the local fixed-point index of `f : U → E` at a fixed point `x` is the local index at `x` of the
+displacement `z ↦ z - f z`, for the orientation `o` restricted to `U` on the source and `o` on the
+target. -/
+theorem localFixedPointIndex_eq_localIndex {n : ℕ} (o : HomologicalOrientation E E n)
+    (hn : finrank ℝ E = n) (f : C(U, E)) {x : U} (hx : f x = x) :
+    f.localFixedPointIndex x =
+      (o.comap U.isOpenEmbedding').localIndex o f.displacement x := by
+  subst hn
+  simp only [localFixedPointIndex, hx, ↓reduceIte]
+  rcases HomologicalOrientation.eq_or_eq_neg rfl fixedPointOrientation o with rfl | rfl
+  · rfl
+  · rw [HomologicalOrientation.comap_neg, HomologicalOrientation.localIndex_neg_left _ _ rfl,
+      HomologicalOrientation.localIndex_neg_right _ _ rfl, neg_neg]
+
+/-- The local fixed-point index vanishes at a point which is not fixed. -/
+@[simp]
+theorem localFixedPointIndex_of_ne (f : C(U, E)) {x : U} (hx : f x ≠ x) :
+    f.localFixedPointIndex x = 0 := by
+  simp [localFixedPointIndex, hx]
+
+/-- The local fixed-point index vanishes at a fixed point which is not isolated. -/
+theorem localFixedPointIndex_of_frequently_eq (f : C(U, E)) {x : U}
+    (h : ∃ᶠ z in 𝓝[≠] x, f z = z) : f.localFixedPointIndex x = 0 := by
+  by_cases hx : f x = x
+  · rw [f.localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hx]
+    refine HomologicalOrientation.localIndex_of_frequently_eq _ _ _ (h.mono fun z hz ↦ ?_)
+    simp [hz, hx]
+  · exact f.localFixedPointIndex_of_ne hx
+
+/-- **The local fixed-point index only depends on the germ of the map**: maps agreeing on a
+neighbourhood of `x` have the same local fixed-point index at `x`. -/
+theorem localFixedPointIndex_congr {f g : C(U, E)} {x : U} (hfg : f =ᶠ[𝓝 x] g) :
+    f.localFixedPointIndex x = g.localFixedPointIndex x := by
+  by_cases hx : f x = x
+  · have hgx : g x = x := hfg.eq_of_nhds ▸ hx
+    rw [f.localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hx,
+      g.localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hgx]
+    exact HomologicalOrientation.localIndex_congr _ _ rfl (hfg.mono fun z hz ↦ by simp [hz])
+  · rw [f.localFixedPointIndex_of_ne hx, g.localFixedPointIndex_of_ne (hfg.eq_of_nhds ▸ hx)]
+
+/-- **The local fixed-point index does not depend on the open set**: the local index at `x` of a
+map `f : U → E` restricted to an open subset `V ⊆ U` containing `x` is the local index of `f`
+at `x`. -/
+theorem localFixedPointIndex_comp_inclusion {V : Opens E} (hVU : V ≤ U) (f : C(U, E)) (x : V) :
+    (f.comp (inclusion hVU)).localFixedPointIndex x = f.localFixedPointIndex (inclusion hVU x) := by
+  set ι : C(V, U) := inclusion hVU
+  by_cases hx : f (ι x) = ι x
+  · rw [(f.comp ι).localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hx,
+      f.localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hx]
+    -- The displacement of `f` restricted to `V` is that of `f` read through the inclusion `V → U`.
+    have hι : IsOpenEmbedding ι := Opens.isOpenEmbedding_of_le hVU
+    have h := HomologicalOrientation.localIndex_comap rfl
+      (fixedPointOrientation.comap U.isOpenEmbedding') fixedPointOrientation hι IsOpenEmbedding.id
+      (f := (f.comp ι).displacement) (g := f.displacement) (x := x)
+      (.of_forall fun z ↦ by rw [displacement_comp_inclusion, comp_apply, id_eq])
+    rwa [HomologicalOrientation.comap_id,
+      HomologicalOrientation.comap_comap_of_comp_eq _ _ hι V.isOpenEmbedding' rfl] at h
+  · rw [(f.comp ι).localFixedPointIndex_of_ne hx, f.localFixedPointIndex_of_ne hx]
+
+/-- **The local fixed-point index at a nondegenerate fixed point** is the sign of
+`det (1 - f')`: if `f : U → E` agrees near the fixed point `x` with a map `φ : E → E` which is
+differentiable at `x` with derivative `f'`, and `1 - f'` is invertible, then the local index of `f`
+at `x` is `sign det (1 - f')`. -/
+theorem localFixedPointIndex_eq_sign_det {f : C(U, E)} {x : U} (hx : f x = x) {φ : E → E}
+    (hφ : ∀ᶠ z : U in 𝓝 x, φ z = f z) {f' : E →L[ℝ] E} (hd : HasFDerivAt φ f' x)
+    (hdet : (1 - f').det ≠ 0) :
+    f.localFixedPointIndex x = SignType.sign (1 - f').det := by
+  rw [f.localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hx]
+  have h := fixedPointOrientation.localIndex_comap_eq_sign_det rfl U.isOpenEmbedding'
+    IsOpenEmbedding.id (f := f.displacement) (φ := fun z ↦ z - φ z)
+    (hφ.mono fun z hz ↦ by simp [hz]) ((hasFDerivAt_id (x : E)).sub hd) hdet
+  rwa [HomologicalOrientation.comap_id] at h
 
 /-- The fixed-point index vanishes when the fixed set is not compact. -/
-@[simp]
-theorem fixedPointIndex_of_not_isCompact {f : C(U, E)} (h : ¬IsCompact {x | f x = x}) :
+theorem fixedPointIndex_of_not_isCompact (f : C(U, E)) (h : ¬IsCompact {z | f z = z}) :
     f.fixedPointIndex = 0 := by
-  obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  rw [fixedPointIndex_eq_localDegree o rfl, localDegree_of_not_isCompact]
-  rwa [preimage_subtypeValSub_zero]
+  rw [fixedPointIndex, HomologicalOrientation.localDegree_of_not_isCompact]
+  rwa [preimage_displacement_zero]
 
-/-- A map without fixed points has fixed-point index `0`. -/
-@[simp]
-theorem fixedPointIndex_eq_zero_of_forall_ne {f : C(U, E)} (h : ∀ x : U, f x ≠ x) :
+/-- A map without fixed points has fixed-point index zero. -/
+theorem fixedPointIndex_eq_zero_of_forall_ne (f : C(U, E)) (h : ∀ z, f z ≠ z) :
     f.fixedPointIndex = 0 := by
-  obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  rw [fixedPointIndex_eq_localDegree o rfl]
-  exact localDegree_eq_zero_of_notMem_range _ _ _ rfl _ fun ⟨x, hx⟩ ↦ h x (sub_eq_zero.1 hx).symm
+  rw [fixedPointIndex, HomologicalOrientation.localDegree_eq_zero_of_notMem_range _ _ _ rfl]
+  rintro ⟨z, hz⟩
+  rw [displacement_apply, sub_eq_zero] at hz
+  exact h z hz.symm
 
-/-- A map on the empty open set has fixed-point index `0`. -/
-theorem fixedPointIndex_of_isEmpty [IsEmpty U] (f : C(U, E)) : f.fixedPointIndex = 0 :=
-  fixedPointIndex_eq_zero_of_forall_ne fun x ↦ isEmptyElim x
-
-/-- A constant map with value outside `U` has no fixed point, so it has fixed-point index `0`. -/
-@[simp]
-theorem fixedPointIndex_const_of_notMem {c : E} (hc : c ∉ U) :
-    (ContinuousMap.const U c).fixedPointIndex = 0 :=
-  fixedPointIndex_eq_zero_of_forall_ne fun x (hx : c = x) ↦ hc (hx ▸ x.2)
-
-/-- If `f` agrees on `U` with a map `φ : E → E` which is differentiable at `x ∈ U` with
-`det (1 - Dφ(x)) ≠ 0`, the map `x ↦ x - f x` has local index `sign det (1 - Dφ(x))` at
-`x`, for the orientation `o` of `E` on the target and its restriction to `U` on the source. -/
-theorem _root_.TauCeti.HomologicalOrientation.localIndex_subtypeValSub_eq_sign_det {n : ℕ}
-    (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n) {f : C(U, E)} {φ : E → E}
-    (hφ : ∀ z : U, φ z = f z) {φ' : E →L[ℝ] E} {x : U} (hd : HasFDerivAt φ φ' x)
-    (hdet : (ContinuousLinearMap.id ℝ E - φ').det ≠ 0) :
-    (o.comap U.isOpenEmbedding').localIndex o f.subtypeValSub x =
-      SignType.sign (ContinuousLinearMap.id ℝ E - φ').det := by
-  -- Read `x ↦ x - f x` as a map into the open set `E` itself, where the Jacobian formula for
-  -- maps between open subsets applies.
-  let g : C(U, (⊤ : Opens E)) := ⟨fun z ↦ ⟨(z : E) - f z, trivial⟩, by fun_prop⟩
-  have h := localIndex_comap hE (o.comap U.isOpenEmbedding') o IsOpenEmbedding.id
-    (⊤ : Opens E).isOpenEmbedding' (f := g) (g := f.subtypeValSub) (x := x)
-    (Filter.Eventually.of_forall fun _ ↦ rfl)
-  rw [comap_id, id_eq] at h
-  rw [← h]
-  exact o.localIndex_comap_eq_sign_det hE (φ := fun z ↦ z - φ z) (fun z ↦ by simp [g, hφ])
-    ((hasFDerivAt_id _).sub hd) hdet
-
-/-- **The fixed-point index counts nondegenerate fixed points with signs.** If `f` agrees on `U`
-with a map `φ`, the fixed set of `f` is finite, and at each fixed point `x` the map `φ` is
-differentiable with `det (1 - Dφ(x)) ≠ 0`, then the index is `∑_{f x = x} sign det (1 - Dφ(x))`. -/
-theorem fixedPointIndex_eq_sum_sign_det {f : C(U, E)} {φ : E → E} (hφ : ∀ z : U, φ z = f z)
-    {φ' : E → E →L[ℝ] E} (hfin : {x | f x = x}.Finite)
-    (hd : ∀ x ∈ {x | f x = x}, HasFDerivAt φ (φ' x) x)
-    (hdet : ∀ x ∈ {x | f x = x}, (ContinuousLinearMap.id ℝ E - φ' x).det ≠ 0) :
-    f.fixedPointIndex =
-      ∑ x ∈ hfin.toFinset, (SignType.sign (ContinuousLinearMap.id ℝ E - φ' x).det : ℤ) := by
-  obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  have hpre := preimage_subtypeValSub_zero f
-  rw [fixedPointIndex_eq_localDegree o rfl,
-    localDegree_eq_sum_localIndex _ _ rfl rfl _ (hpre ▸ hfin)]
-  refine Finset.sum_congr (by ext; simp [hpre]) fun x hx ↦ ?_
+/-- **The fixed-point index is the sum of the local indices** over a finite fixed set. -/
+theorem fixedPointIndex_eq_sum_localFixedPointIndex (f : C(U, E))
+    (hfin : {z | f z = z}.Finite) :
+    f.fixedPointIndex = ∑ x ∈ hfin.toFinset, f.localFixedPointIndex x := by
+  have hfin' : (f.displacement ⁻¹' {0}).Finite := by
+    rwa [preimage_displacement_zero]
+  rw [fixedPointIndex, HomologicalOrientation.localDegree_eq_sum_localIndex _ _ rfl rfl _ hfin']
+  refine Finset.sum_congr (Finite.toFinset_inj.2 (preimage_displacement_zero f))
+    fun x hx ↦ ?_
   rw [Finite.mem_toFinset] at hx
-  exact o.localIndex_subtypeValSub_eq_sign_det rfl hφ (hd x hx) (hdet x hx)
+  rw [f.localFixedPointIndex_eq_localIndex fixedPointOrientation rfl hx]
 
-/-- **The fixed-point index of a nondegenerate fixed point** is `sign det (1 - Dφ(x))`, when `x`
-is the only fixed point of `f` and `f` agrees on `U` with a map `φ` differentiable at `x`. -/
-theorem fixedPointIndex_eq_sign_det {f : C(U, E)} {φ : E → E} (hφ : ∀ z : U, φ z = f z)
-    {φ' : E →L[ℝ] E} {x : U} (hfix : {x | f x = x} = {x}) (hd : HasFDerivAt φ φ' x)
-    (hdet : (ContinuousLinearMap.id ℝ E - φ').det ≠ 0) :
-    f.fixedPointIndex = SignType.sign (ContinuousLinearMap.id ℝ E - φ').det := by
-  obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  rw [fixedPointIndex_eq_localDegree o rfl,
-    localDegree_eq_localIndex _ _ rfl rfl _ ((preimage_subtypeValSub_zero f).trans hfix),
-    o.localIndex_subtypeValSub_eq_sign_det rfl hφ hd hdet]
+/-- On an open set whose only fixed point is `x`, the fixed-point index is the local index
+at `x`. -/
+theorem fixedPointIndex_eq_localFixedPointIndex (f : C(U, E)) {x : U}
+    (h : {z | f z = z} = {x}) : f.fixedPointIndex = f.localFixedPointIndex x := by
+  rw [f.fixedPointIndex_eq_sum_localFixedPointIndex (h ▸ finite_singleton x)]
+  simp [h]
+
+/-- **Excision for the fixed-point index**: restricting `f : U → E` to an open subset `V ⊆ U`
+containing every fixed point of `f` does not change the fixed-point index. -/
+theorem fixedPointIndex_comp_inclusion {V : Opens E} (hVU : V ≤ U) (f : C(U, E))
+    (hV : ∀ z, f z = z → (z : E) ∈ V) :
+    (f.comp (inclusion hVU)).fixedPointIndex = f.fixedPointIndex := by
+  set ι : C(V, U) := inclusion hVU
+  have hι : IsOpenEmbedding ι := Opens.isOpenEmbedding_of_le hVU
+  -- All zeros of the displacement of `f` lie in `V`.
+  have hzero : f.displacement ⁻¹' {0} ⊆ range ι := by
+    rw [preimage_displacement_zero]
+    exact fun z hz ↦ ⟨⟨z, hV z hz⟩, rfl⟩
+  rw [fixedPointIndex, fixedPointIndex, displacement_comp_inclusion,
+    ← HomologicalOrientation.localDegree_comap_comp _ _ rfl rfl hι _ hzero,
+    HomologicalOrientation.comap_comap_of_comp_eq _ _ hι V.isOpenEmbedding' rfl]
+
+/-- **Additivity of the fixed-point index**: if the fixed set of `f : U → E` is compact and covered
+by open subsets `V` and `W` of `U` with no fixed point in both, the fixed-point index of `f` is the
+sum of the fixed-point indices of its restrictions to `V` and to `W`. -/
+theorem fixedPointIndex_eq_add {V W : Opens E} (hVU : V ≤ U) (hWU : W ≤ U) (f : C(U, E))
+    (hc : IsCompact {z | f z = z}) (hfix : ∀ z, f z = z → (z : E) ∈ V ∨ (z : E) ∈ W)
+    (hVW : ∀ z, f z = z → (z : E) ∈ V → (z : E) ∉ W) :
+    f.fixedPointIndex =
+      (f.comp (inclusion hVU)).fixedPointIndex + (f.comp (inclusion hWU)).fixedPointIndex := by
+  have hV : IsOpenEmbedding (inclusion hVU : C(V, U)) := Opens.isOpenEmbedding_of_le hVU
+  have hW : IsOpenEmbedding (inclusion hWU : C(W, U)) := Opens.isOpenEmbedding_of_le hWU
+  -- The zeros of the displacement are the fixed points of `f`, and the inclusions of `V` and `W`
+  -- hit exactly the points of `U` lying in `V` and in `W`.
+  have hy : f.displacement ⁻¹' {0} ⊆ range (inclusion hVU) ∪ range (inclusion hWU) := by
+    rw [preimage_displacement_zero]
+    exact fun z hz ↦ (hfix z hz).imp (fun h ↦ ⟨⟨z, h⟩, rfl⟩) fun h ↦ ⟨⟨z, h⟩, rfl⟩
+  have hdisj : Disjoint (f.displacement ⁻¹' {0} ∩ range (inclusion hVU))
+      (f.displacement ⁻¹' {0} ∩ range (inclusion hWU)) := by
+    rw [preimage_displacement_zero]
+    refine disjoint_left.2 ?_
+    rintro _ ⟨hz, a, rfl⟩ ⟨-, b, hb⟩
+    exact hVW _ hz a.2 (congrArg Subtype.val hb ▸ b.2)
+  have h := HomologicalOrientation.localDegree_eq_add (M := U) (M₁ := V) (M₂ := W)
+    (fixedPointOrientation.comap U.isOpenEmbedding') fixedPointOrientation rfl rfl hV hW
+    f.displacement
+    (by rwa [preimage_displacement_zero]) hy hdisj
+  rwa [HomologicalOrientation.comap_comap_of_comp_eq (M := V) (N := U) _ _ hV
+      V.isOpenEmbedding' rfl,
+    HomologicalOrientation.comap_comap_of_comp_eq (M := W) (N := U) _ _ hW
+      W.isOpenEmbedding' rfl,
+    ← displacement_comp_inclusion, ← displacement_comp_inclusion] at h
+
+/-- **A compact set of nondegenerate fixed points is finite**: if `f : U → E` agrees on `U` with a
+map `φ : E → E`, its fixed set is compact, and at each fixed point `x` the map `φ` has a derivative
+`f' x` with `1 - f' x` invertible, then `f` has only finitely many fixed points. -/
+theorem finite_setOf_apply_eq (f : C(U, E)) (hK : IsCompact {z | f z = z}) {φ : E → E}
+    (hφ : ∀ z : U, φ z = f z) {f' : E → E →L[ℝ] E}
+    (hd : ∀ x : U, f x = x → HasFDerivAt φ (f' x) x)
+    (hdet : ∀ x : U, f x = x → (1 - f' x).det ≠ 0) : {z | f z = z}.Finite := by
+  -- The fixed points are the zeros of the displacement, which agrees on `U` with `z ↦ z - φ z`,
+  -- whose derivative `1 - f' x` is invertible at each of them.
+  have hfix (x : U) (hx : x ∈ f.displacement ⁻¹' {0}) : f x = x := by
+    rwa [preimage_displacement_zero] at hx
+  rw [← preimage_displacement_zero] at hK ⊢
+  exact hK.finite_of_hasFDerivAt_subtype (f := fun z ↦ z - φ z) (f' := fun x ↦ 1 - f' x)
+    (fun z ↦ by simp [hφ]) (fun x hx ↦ (hasFDerivAt_id (x : E)).sub (hd x (hfix x hx))) fun x hx ↦
+      ⟨_, ((1 - f' x).toContinuousLinearEquivOfDetNeZero (hdet x (hfix x hx))).antilipschitzWith⟩
+
+/-- **The fixed-point index counts nondegenerate fixed points with signs**: if `f : U → E` agrees
+on `U` with a map `φ : E → E`, the fixed set of `f` is finite, and at each fixed point `x` the map
+`φ` has a derivative `f' x` with `1 - f' x` invertible, then the fixed-point index of `f` is the sum
+of `sign det (1 - f' x)` over its fixed points. -/
+theorem fixedPointIndex_eq_sum_sign_det (f : C(U, E)) (hfin : {z | f z = z}.Finite)
+    {φ : E → E} (hφ : ∀ z : U, φ z = f z) {f' : E → E →L[ℝ] E}
+    (hd : ∀ x : U, f x = x → HasFDerivAt φ (f' x) x)
+    (hdet : ∀ x : U, f x = x → (1 - f' x).det ≠ 0) :
+    f.fixedPointIndex = ∑ x ∈ hfin.toFinset, (SignType.sign (1 - f' x).det : ℤ) := by
+  rw [f.fixedPointIndex_eq_sum_localFixedPointIndex hfin]
+  refine Finset.sum_congr rfl fun x hx ↦ ?_
+  rw [Finite.mem_toFinset] at hx
+  exact f.localFixedPointIndex_eq_sign_det hx (.of_forall hφ) (hd x hx) (hdet x hx)
+
+/-- A map on the empty open set has fixed-point index zero. -/
+theorem fixedPointIndex_of_isEmpty [IsEmpty U] (f : C(U, E)) : f.fixedPointIndex = 0 :=
+  f.fixedPointIndex_eq_zero_of_forall_ne fun z ↦ isEmptyElim z
+
+/-- A constant map with value outside `U` has no fixed point, so it has fixed-point index zero. -/
+@[simp]
+theorem fixedPointIndex_const_of_notMem {c : E} (hc : c ∉ U) : (const U c).fixedPointIndex = 0 :=
+  fixedPointIndex_eq_zero_of_forall_ne _ fun z (hz : c = z) ↦ hc (hz ▸ z.2)
 
 /-- **Normalization of the fixed-point index**: a constant map with value `c ∈ U` has fixed-point
 index `1`. -/
 @[simp]
-theorem fixedPointIndex_const_of_mem {c : E} (hc : c ∈ U) :
-    (ContinuousMap.const U c).fixedPointIndex = 1 := by
-  have hfix : {x : U | ContinuousMap.const U c x = x} = {⟨c, hc⟩} := by
-    ext x
+theorem fixedPointIndex_const_of_mem {c : E} (hc : c ∈ U) : (const U c).fixedPointIndex = 1 := by
+  have hfix : {z | const U c z = z} = {⟨c, hc⟩} := by
+    ext z
     simp [Subtype.ext_iff, eq_comm]
-  rw [fixedPointIndex_eq_sign_det (φ := fun _ ↦ c) (fun _ ↦ rfl) hfix (hasFDerivAt_const c _)
-    (by simp [ContinuousLinearMap.det])]
+  rw [fixedPointIndex_eq_localFixedPointIndex _ hfix,
+    localFixedPointIndex_eq_sign_det (x := ⟨c, hc⟩) rfl (φ := fun _ ↦ c) (.of_forall fun _ ↦ rfl)
+      (hasFDerivAt_const c _) (by simp [ContinuousLinearMap.det])]
   simp [ContinuousLinearMap.det]
 
 /-- The zero map has fixed-point index `1` when `0 ∈ U`. -/
@@ -249,77 +366,100 @@ theorem fixedPointIndex_zero_of_mem (h : (0 : E) ∈ U) : (0 : C(U, E)).fixedPoi
 theorem fixedPointIndex_zero_of_notMem (h : (0 : E) ∉ U) : (0 : C(U, E)).fixedPointIndex = 0 := by
   rw [← const_zero, fixedPointIndex_const_of_notMem h]
 
-/-- **Homotopy invariance of the fixed-point index.** Maps `f₀, f₁ : U → E` joined by a homotopy
-`H` whose fixed set `{(t, x) | H (t, x) = x}` is compact have the same fixed-point index. -/
+/-- **Homotopy invariance of the fixed-point index**: maps `f₀, f₁ : U → E` joined by a homotopy
+`H` whose fixed set `{(t, z) | H (t, z) = z}` is compact have the same fixed-point index. -/
 theorem fixedPointIndex_eq_of_homotopy {f₀ f₁ : C(U, E)} (H : f₀.Homotopy f₁)
     (hH : IsCompact {p : unitInterval × U | H p = p.2}) :
     f₀.fixedPointIndex = f₁.fixedPointIndex := by
-  obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  -- The maps `x ↦ x - fᵢ x` are joined by `(t, x) ↦ x - H (t, x)`, whose zeros are the fixed
-  -- points of `H`.
-  let G : f₀.subtypeValSub.Homotopy f₁.subtypeValSub :=
+  -- The displacements of the maps `H (t, ·)` form a homotopy between the two displacements, whose
+  -- zeros are the fixed points of the homotopy.
+  let D : f₀.displacement.Homotopy f₁.displacement :=
     { toFun := fun p ↦ (p.2 : E) - H p
-      continuous_toFun := by fun_prop
-      map_zero_left := fun x ↦ by simp
-      map_one_left := fun x ↦ by simp }
-  have hG : G ⁻¹' {0} = {p | H p = p.2} := by
+      continuous_toFun := (continuous_subtype_val.comp continuous_snd).sub H.continuous
+      map_zero_left := fun z ↦ by simp
+      map_one_left := fun z ↦ by simp }
+  have hD : D ⁻¹' {0} = {p | H p = p.2} := by
     ext p
+    -- `D p` is `p.2 - H p` by construction.
     exact sub_eq_zero.trans eq_comm
-  rw [fixedPointIndex_eq_localDegree o rfl, fixedPointIndex_eq_localDegree o rfl]
-  exact localDegree_eq_of_homotopy_of_isCompact _ _ _ rfl G (hG ▸ hH)
+  exact HomologicalOrientation.localDegree_eq_of_homotopy_of_isCompact _ _ rfl rfl D (hD ▸ hH)
 
-/-- The fixed-point index of the restriction of `f` to an open subset `V ⊆ U`, as the local degree
-of `x ↦ x - f x` composed with the inclusion, for the orientation of `U` pulled back to
-`V`. -/
-private theorem fixedPointIndex_comp_inclusion_eq_localDegree {n : ℕ}
-    (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n) {V : Opens E} (hVU : V ≤ U)
-    (f : C(U, E)) :
-    (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).fixedPointIndex =
-      ((o.comap U.isOpenEmbedding').comap (j := Opens.inclusion hVU)
-        (Opens.isOpenEmbedding_of_le hVU)).localDegree o hE
-        (f.subtypeValSub.comp ⟨Opens.inclusion hVU, (Opens.isOpenEmbedding_of_le hVU).continuous⟩)
-        0 := by
-  have hincl : inclusion (SetLike.coe_subset_coe.2 hVU) =
-      ⟨Opens.inclusion hVU, (Opens.isOpenEmbedding_of_le hVU).continuous⟩ := by
-    ext x
-    rw [inclusion_apply_coe, coe_mk]
-  -- The orientation of `V` is the one of `U` pulled back along the inclusion, and the
-  -- map `x ↦ x - f x` commutes with restriction.
-  rw [comap_comap, o.comap_congr _ V.isOpenEmbedding'
-      (Set.val_comp_inclusion (SetLike.coe_subset_coe.2 hVU)),
-    fixedPointIndex_eq_localDegree o hE, subtypeValSub_comp_inclusion hVU, hincl]
+/-- **The fixed-point index of a linear map**: if `f : U → E` is the restriction of a linear map
+`A` to an open set containing `0`, and `1 - A` is invertible, then the fixed-point index of `f` is
+`sign det (1 - A)`. -/
+theorem fixedPointIndex_eq_sign_det_of_forall_eq {f : C(U, E)} {A : E →L[ℝ] E} (h0 : (0 : E) ∈ U)
+    (hf : ∀ z : U, f z = A z) (hdet : (1 - A).det ≠ 0) :
+    f.fixedPointIndex = SignType.sign (1 - A).det := by
+  have hinj : Function.Injective ((1 : E →L[ℝ] E) - A) :=
+    ((1 - A).toContinuousLinearEquivOfDetNeZero hdet).injective
+  -- Since `1 - A` is injective, `0` is the only fixed point of `f`.
+  have hfix : {z | f z = z} = {⟨0, h0⟩} := by
+    ext z
+    rw [mem_ofPred_eq, mem_singleton_iff, hf, Subtype.ext_iff]
+    constructor
+    · intro hz
+      exact hinj (by simp [hz])
+    · intro hz
+      simp [hz]
+  rw [f.fixedPointIndex_eq_localFixedPointIndex hfix]
+  exact f.localFixedPointIndex_eq_sign_det (x := ⟨0, h0⟩) (by simp [hf])
+    (.of_forall fun z ↦ (hf z).symm) A.hasFDerivAt hdet
 
-/-- **Excision for the fixed-point index.** Restricting `f` to an open subset `V ⊆ U` containing
-all fixed points of `f` does not change the fixed-point index. -/
-theorem fixedPointIndex_comp_inclusion {V : Opens E} (hVU : V ≤ U) {f : C(U, E)}
-    (hV : ∀ x : U, f x = x → (x : E) ∈ V) :
-    (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).fixedPointIndex =
-      f.fixedPointIndex := by
-  obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  rw [fixedPointIndex_comp_inclusion_eq_localDegree o rfl hVU,
-    fixedPointIndex_eq_localDegree o rfl, localDegree_comap _ _ rfl rfl]
-  rw [preimage_subtypeValSub_zero, Set.range_inclusion (SetLike.coe_subset_coe.2 hVU)]
-  exact hV
+/-- For `t ≥ 0`, the only fixed point of `x ↦ x + x³ + t x` on `ℝ` is `0`. -/
+private theorem eq_zero_of_add_pow_three_add_mul_eq {t z : ℝ} (ht : 0 ≤ t)
+    (hz : z + z ^ 3 + t * z = z) : z = 0 := by
+  have h : z * (z ^ 2 + t) = 0 := by linear_combination hz
+  rcases mul_eq_zero.1 h with h | h
+  · exact h
+  · nlinarith [sq_nonneg z]
 
-/-- **Additivity of the fixed-point index.** If the fixed set of `f` is compact and covered by
-open subsets `V` and `W` of `U` with no fixed point in both, the fixed-point index of `f` is the
-sum of those of its restrictions to `V` and to `W`. -/
-theorem fixedPointIndex_eq_add {V W : Opens E} (hVU : V ≤ U) (hWU : W ≤ U)
-    {f : C(U, E)} (hc : IsCompact {x | f x = x})
-    (hfix : ∀ x : U, f x = x → (x : E) ∈ V ∨ (x : E) ∈ W)
-    (hVW : ∀ x : U, f x = x → (x : E) ∈ V → (x : E) ∉ W) :
-    f.fixedPointIndex = (f.comp (inclusion (SetLike.coe_subset_coe.2 hVU))).fixedPointIndex +
-      (f.comp (inclusion (SetLike.coe_subset_coe.2 hWU))).fixedPointIndex := by
-  obtain ⟨o⟩ := nonempty_of_simplyConnectedSpace (M := E) (E := E) (d := finrank ℝ E) rfl
-  rw [fixedPointIndex_comp_inclusion_eq_localDegree o rfl hVU,
-    fixedPointIndex_comp_inclusion_eq_localDegree o rfl hWU,
-    fixedPointIndex_eq_localDegree o rfl]
-  refine localDegree_eq_add _ _ rfl rfl _ _ _ (preimage_subtypeValSub_zero f ▸ hc) ?_ ?_
-  all_goals
-    -- The ranges of the two inclusions are the points of `U` lying in `V` and in `W`.
-    rw [preimage_subtypeValSub_zero, Set.range_inclusion (SetLike.coe_subset_coe.2 hVU),
-      Set.range_inclusion (SetLike.coe_subset_coe.2 hWU)]
-  · exact hfix
-  · exact disjoint_left.2 fun x ⟨hx, hxV⟩ ⟨_, hxW⟩ ↦ hVW x hx hxV hxW
+/-- **A degenerate fixed point of index `-1`**: the map `x ↦ x + x³` on `ℝ`, whose fixed point `0`
+is degenerate, has fixed-point index `-1`. -/
+theorem fixedPointIndex_add_pow_three :
+    (⟨fun z : (⊤ : Opens ℝ) ↦ (z : ℝ) + (z : ℝ) ^ 3, by fun_prop⟩ :
+      C((⊤ : Opens ℝ), ℝ)).fixedPointIndex = -1 := by
+  set g₁ : C((⊤ : Opens ℝ), ℝ) := ⟨fun z ↦ 2 * (z : ℝ) + (z : ℝ) ^ 3, by fun_prop⟩
+  -- The homotopy `x + x³ + t x`, `t ∈ [0, 1]`, from `x + x³` to `2 x + x³` has fixed set
+  -- `[0, 1] × {0}`, and ends at a map with derivative `2` at its only fixed point `0`.
+  let H : ContinuousMap.Homotopy (⟨fun z : (⊤ : Opens ℝ) ↦ (z : ℝ) + (z : ℝ) ^ 3, by fun_prop⟩ :
+      C((⊤ : Opens ℝ), ℝ)) g₁ :=
+    { toFun := fun p ↦ (p.2 : ℝ) + (p.2 : ℝ) ^ 3 + (p.1 : ℝ) * p.2
+      continuous_toFun := by fun_prop
+      map_zero_left := fun z ↦ by simp
+      map_one_left := fun z ↦ by simp [g₁, two_mul, add_right_comm] }
+  -- `H p` is its defining formula by construction.
+  have hHapply (p : unitInterval × (⊤ : Opens ℝ)) :
+      H p = (p.2 : ℝ) + (p.2 : ℝ) ^ 3 + (p.1 : ℝ) * p.2 := rfl
+  have hH : {p : unitInterval × (⊤ : Opens ℝ) | H p = p.2} = univ ×ˢ {⟨0, trivial⟩} := by
+    ext ⟨t, z⟩
+    simp only [mem_ofPred_eq, mem_prod, mem_univ, mem_singleton_iff, true_and, Subtype.ext_iff,
+      hHapply]
+    constructor
+    · exact eq_zero_of_add_pow_three_add_mul_eq t.2.1
+    · intro hz
+      simp [hz]
+  rw [fixedPointIndex_eq_of_homotopy H (hH ▸ isCompact_univ.prod isCompact_singleton)]
+  -- The map `2 x + x³` has derivative `2` at its only fixed point `0`.
+  have hfix : {z | g₁ z = z} = {⟨0, trivial⟩} := by
+    ext z
+    simp only [mem_ofPred_eq, mem_singleton_iff, Subtype.ext_iff, g₁, ContinuousMap.coe_mk]
+    constructor
+    · intro hz
+      exact eq_zero_of_add_pow_three_add_mul_eq zero_le_one (by linear_combination hz)
+    · intro hz
+      simp [hz]
+  have hd :
+      HasFDerivAt (fun z : ℝ ↦ 2 * z + z ^ 3) (ContinuousLinearMap.toSpanSingleton ℝ 2) 0 := by
+    have h : HasDerivAt (fun z : ℝ ↦ 2 * z + z ^ 3) 2 0 := by
+      convert HasDerivAt.add (HasDerivAt.const_mul (2 : ℝ) (hasDerivAt_id' (0 : ℝ)))
+        (hasDerivAt_pow 3 (0 : ℝ)) using 1
+      norm_num
+    exact h.hasFDerivAt
+  have hdet : (1 - ContinuousLinearMap.toSpanSingleton ℝ (2 : ℝ)).det = -1 := by
+    norm_num [ContinuousLinearMap.det]
+  rw [g₁.fixedPointIndex_eq_localFixedPointIndex hfix,
+    g₁.localFixedPointIndex_eq_sign_det (x := ⟨0, trivial⟩) (by simp [g₁])
+      (.of_forall fun z ↦ by simp [g₁]) hd (by norm_num [hdet]), hdet]
+  simp
 
 end ContinuousMap
