@@ -561,7 +561,7 @@ private theorem approximates3_of_coupled_recoloring [Fintype κ]
     _ ≤ (∑ _c₀ : κ, √g * (Fintype.card V).descFactorial 3) +
           Fintype.card κ * β * (Fintype.card V).descFactorial 3 := by
         gcongr with c₀
-        exact H.sum_card_support_mul_abs_relativeDensity_coarsen_le hV f hf hgap c₀
+        exact H.sum_card_support_mul_abs_relativeDensity_coarsen_le_of_color_eq hV f hf hgap c₀
     _ = Fintype.card κ * (√g + β) * (Fintype.card V).descFactorial 3 := by
         rw [sum_const, card_univ, nsmul_eq_mul]; ring
     _ ≤ Fintype.card κ * (√g + β) * (Fintype.card V : ℝ) ^ 3 := by
