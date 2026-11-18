@@ -80,9 +80,12 @@ theorem stripShear_zero : stripShear 0 = ContinuousLinearEquiv.refl ℝ (ℝ × 
 /-- The shear preserves area: like every transvection, it has determinant `1`. -/
 @[simp]
 theorem det_stripShear (c : ℝ) : (stripShear c : ℝ × ℝ →L[ℝ] ℝ × ℝ).det = 1 := by
-  change LinearMap.det ((stripShear c).toLinearEquiv : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) = 1
-  rw [toLinearEquiv_stripShear, ← LinearEquiv.coe_det, LinearEquiv.transvection.det_eq_one,
-    Units.val_one]
+  -- Both coercions of `stripShear c` to a linear map agree pointwise.
+  have h : ((stripShear c : ℝ × ℝ →L[ℝ] ℝ × ℝ) : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) =
+      ((stripShear c).toLinearEquiv : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) :=
+    LinearMap.ext fun p ↦ by simp
+  rw [ContinuousLinearMap.det, h, toLinearEquiv_stripShear, ← LinearEquiv.coe_det,
+    LinearEquiv.transvection.det_eq_one, Units.val_one]
 
 /-- The shear commutes with the horizontal translations `(x, y) ↦ (x + a, y)`, in particular with
 the deck translation of the strip. -/

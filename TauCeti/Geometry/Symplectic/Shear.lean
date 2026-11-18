@@ -20,8 +20,8 @@ public import Mathlib.Topology.VectorBundle.Riemannian
 # The symplectic shear of the plane
 
 The shear `S(q, p) = (q + p, p)` of `ℝ²` (`TauCeti.linearPlaneShear`), the shear of the strip
-with twist `1` (`TauCeti.stripShear 1`), preserves the standard symplectic form `ω = dq ∧ dp`
-(`TauCeti.isSymplectomorphism_linearPlaneShear`). It shows what goes wrong in the
+with twist `1` (`TauCeti.linearPlaneShear_eq_stripShear_one`), preserves the standard symplectic
+form `ω = dq ∧ dp` (`TauCeti.isSymplectomorphism_linearPlaneShear`). It shows what goes wrong in the
 fixed-locus theorem for groups of symplectomorphisms when no invariant metric is assumed:
 
 * its fixed points form the line `p = 0` (`TauCeti.fixedSubmodule_linearPlaneShear`), which is
@@ -57,6 +57,11 @@ namespace TauCeti
 /-- The shear `(q, p) ↦ (q + p, p)` of the plane: the shear of the strip with twist `1`. -/
 def linearPlaneShear : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
   stripShear 1
+
+/-- The shear of the plane is the shear of the strip with twist `1`, so the `stripShear` API
+(inverse, composition, determinant) applies to it. -/
+theorem linearPlaneShear_eq_stripShear_one : linearPlaneShear = stripShear 1 :=
+  (rfl)
 
 @[simp]
 theorem linearPlaneShear_apply (x : ℝ × ℝ) : linearPlaneShear x = (x.1 + x.2, x.2) := by
