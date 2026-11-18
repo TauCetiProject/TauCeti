@@ -32,19 +32,20 @@ what lets a section `u` of `V` act on such a test `s` without a choice of measur
 pairing of `u` with `s` is the density `x ↦ s x (u x)`, to be integrated over `M`.
 
 In a coordinate chart `c` whose source lies over the base set of a trivialization `t` of `V`, a
-functional `T` is read as a native distribution on the chart target, with values in the dual
-`F →L[ℝ] ℝ` of the model fibre (`Bundle.Trivialization.chartDistributionCLM`): a real test
-function `φ` on the chart target and a vector `v : F` are paired as
-`T (φ • v)`, where `φ • v` is extended to a bundle test through the chart and the frame
-(`Bundle.Trivialization.chartTestCLM`). This is the local representative through which
-regularity of distributions on manifolds, for instance local Sobolev regularity, is defined
-chart by chart from the Euclidean theory.
+functional `T` with values in a normed space `W` is read as a native distribution on the chart
+target, with values in `F →L[ℝ] W` (`Bundle.Trivialization.chartDistributionCLM`); for real
+functionals this is the dual of the model fibre. A real test function `φ` on the chart target
+and a vector `v : F` are paired as `T (φ • v)`, where `φ • v` is extended to a bundle test through
+the chart and the frame (`Bundle.Trivialization.chartTestCLM`). This is the local representative
+through which regularity of distributions on manifolds, for instance local Sobolev regularity, is
+defined chart by chart from the Euclidean theory.
 
-The point mass `δ_x ℓ : s ↦ ℓ (s x)` at `x : M`, for a covector `ℓ` on the fibre `V x`
-(`TauCeti.BundleTest.delta`), vanishes only when `ℓ` does. Its local representative is the
-Euclidean point mass at `c x`, with value the covector `ℓ` read in the frame
-(`Bundle.Trivialization.chartDistributionCLM_delta_of_mem`), and it is invisible in charts whose
-source does not contain `x` (`Bundle.Trivialization.chartDistributionCLM_delta_of_notMem`).
+The point mass `δ_x ℓ : s ↦ ℓ (s x)` at `x : M`, for a covector `ℓ` on the fibre `V x` or more
+generally a continuous linear map `ℓ : V x →L[ℝ] W` (`TauCeti.BundleTest.delta`), vanishes only
+when `ℓ` does. Its local representative is the Euclidean point mass at `c x`, with value `ℓ` read
+in the frame (`Bundle.Trivialization.chartDistributionCLM_delta_of_mem`), and it is invisible in
+charts whose source does not contain `x`
+(`Bundle.Trivialization.chartDistributionCLM_delta_of_notMem`).
 
 ## Main definitions
 
@@ -53,7 +54,7 @@ source does not contain `x` (`Bundle.Trivialization.chartDistributionCLM_delta_o
 * `Bundle.Trivialization.chartTestCLM`: extension of native test functions on a chart target to
   bundle tests, as a continuous linear map.
 * `Bundle.Trivialization.chartDistributionCLM`: the local representative of a functional on bundle
-  tests, a distribution on the chart target with values in `F →L[ℝ] ℝ`.
+  tests, a distribution on the chart target with values in `F →L[ℝ] W`.
 * `TauCeti.BundleTest.delta`: the point mass at a point with a covector on the fibre.
 * `TauCeti.BundleDistribution I M F V`: the distributional sections of `V`, the continuous linear
   functionals on the tests with values in `V →L[ℝ] |Λ|`.
@@ -229,16 +230,18 @@ theorem continuous_iff_continuous_comp (g : BundleTest I F V →ₗ[ℝ] G) :
 
 /-! ### Point masses -/
 
-/-- The **point mass** `δ_x ℓ` at `x : M` with a covector `ℓ` on the fibre `V x`: the functional
-`s ↦ ℓ (s x)` on bundle tests. -/
-def delta (x : M) (ℓ : V x →L[ℝ] ℝ) : BundleTest I F V →L_c[ℝ] ℝ where
+variable {W : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
+
+/-- The **point mass** `δ_x ℓ` at `x : M` with a continuous linear map `ℓ : V x →L[ℝ] W` on the
+fibre `V x`, for instance a covector: the functional `s ↦ ℓ (s x)` on bundle tests. -/
+def delta (x : M) (ℓ : V x →L[ℝ] W) : BundleTest I F V →L_c[ℝ] W where
   toFun s := ℓ (s x)
   map_add' s t := by simp
   map_smul' a s := by simp
   cont := ℓ.continuous.comp (continuous_eval_const x)
 
 @[simp]
-theorem delta_apply (x : M) (ℓ : V x →L[ℝ] ℝ) (s : BundleTest I F V) :
+theorem delta_apply (x : M) (ℓ : V x →L[ℝ] W) (s : BundleTest I F V) :
     delta x ℓ s = ℓ (s x) :=
   (rfl)
 
@@ -249,8 +252,9 @@ theorem exists_apply_eq [FiniteDimensional ℝ E] [T2Space M] (x : M) (v : V x) 
     (I := I) (F := F) (n := ⊤) x v Filter.univ_mem
   exact ⟨ofCompactlySupported I F V ⟨s, ContMDiffSection.mem_compactlySupported.2 hs⟩, hsx⟩
 
-/-- A point mass vanishes exactly when its covector does. -/
-theorem delta_eq_zero_iff [FiniteDimensional ℝ E] [T2Space M] {x : M} {ℓ : V x →L[ℝ] ℝ} :
+/-- A point mass vanishes exactly when its map on the fibre does. -/
+theorem delta_eq_zero_iff [FiniteDimensional ℝ E] [T2Space M] [IsTopologicalAddGroup W] {x : M}
+    {ℓ : V x →L[ℝ] W} :
     delta (I := I) (F := F) x ℓ = 0 ↔ ℓ = 0 := by
   refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨s, rfl⟩ := exists_apply_eq (I := I) (F := F) x v
@@ -279,6 +283,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCo
   (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
   (c : OpenPartialHomeomorph M E)
   (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- Extending native test functions on the target of a smooth chart `c` to bundle tests through a
 bundle frame `t`, by zero outside the chart source (`Bundle.Trivialization.chartTestSection`), as
@@ -312,16 +317,16 @@ theorem chartTestCLM_injective : Function.Injective (t.chartTestCLM c hc hct) :=
 variable [FiniteDimensional ℝ F]
 
 /-- The **local representative** of a functional `T` on bundle tests in a smooth chart `c` and a
-bundle frame `t` over its source: the distribution on the chart target, with values in the dual of
-the model fibre, that pairs a real test function `φ` with `v : F` as `T (φ • v)`, the test
-function `φ • v` being extended to a bundle test through the chart and the frame. -/
+bundle frame `t` over its source: the distribution on the chart target, with values in the maps
+`F →L[ℝ] W` on the model fibre, that pairs a real test function `φ` with `v : F` as `T (φ • v)`,
+the test function `φ • v` being extended to a bundle test through the chart and the frame. -/
 def chartDistributionCLM :
-    (BundleTest I F V →L_c[ℝ] ℝ) →L[ℝ] 𝓓'(⟨c.target, c.open_target⟩, F →L[ℝ] ℝ) :=
-  (TestFunction.dualEquivDistribution : _ ≃L[ℝ] 𝓓'(⟨c.target, c.open_target⟩, F →L[ℝ] ℝ)) ∘L
-    (t.chartTestCLM c hc hct).precompCompactConvergenceCLM ℝ
+    (BundleTest I F V →L_c[ℝ] W) →L[ℝ] 𝓓'(⟨c.target, c.open_target⟩, F →L[ℝ] W) :=
+  (TestFunction.dualEquivDistribution : _ ≃L[ℝ] 𝓓'(⟨c.target, c.open_target⟩, F →L[ℝ] W)) ∘L
+    (t.chartTestCLM c hc hct).precompCompactConvergenceCLM W
 
 @[simp]
-theorem chartDistributionCLM_apply_apply (T : BundleTest I F V →L_c[ℝ] ℝ)
+theorem chartDistributionCLM_apply_apply (T : BundleTest I F V →L_c[ℝ] W)
     (φ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (v : F) :
     t.chartDistributionCLM c hc hct T φ v =
       T (t.chartTestCLM c hc hct (TestFunction.postcompCLM (toSpanSingleton ℝ v) φ)) := by
@@ -331,8 +336,8 @@ theorem chartDistributionCLM_apply_apply (T : BundleTest I F V →L_c[ℝ] ℝ)
   rfl
 
 /-- In a chart whose source contains `x`, the local representative of the point mass `δ_x ℓ` is
-the point mass at `c x` with value the covector `ℓ` read in the frame. -/
-theorem chartDistributionCLM_delta_of_mem {x : M} (hx : x ∈ c.source) (ℓ : V x →L[ℝ] ℝ) :
+the point mass at `c x` with value the map `ℓ` read in the frame. -/
+theorem chartDistributionCLM_delta_of_mem {x : M} (hx : x ∈ c.source) (ℓ : V x →L[ℝ] W) :
     t.chartDistributionCLM c hc hct (BundleTest.delta x ℓ) =
       Distribution.mapCLM (toSpanSingleton ℝ (ℓ ∘L t.symmL ℝ x)) (Distribution.delta (c x)) := by
   ext φ v
@@ -340,7 +345,7 @@ theorem chartDistributionCLM_delta_of_mem {x : M} (hx : x ∈ c.source) (ℓ : V
 
 /-- In a chart whose source does not contain `x`, the local representative of a point mass at `x`
 vanishes. -/
-theorem chartDistributionCLM_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ : V x →L[ℝ] ℝ) :
+theorem chartDistributionCLM_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ : V x →L[ℝ] W) :
     t.chartDistributionCLM c hc hct (BundleTest.delta x ℓ) = 0 := by
   ext φ v
   simp [t.chartTestCLM_apply_of_notMem c hc hct _ hx]
