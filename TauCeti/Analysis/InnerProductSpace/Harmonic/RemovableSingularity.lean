@@ -124,11 +124,11 @@ private theorem le_add_mul_sub_of_le_frontier {ψ : ℝ → ℝ} {R M δ₀ ε :
       have := hle y hyU hya
       have := mul_nonneg hε.le (sub_nonneg.2 (hψR y (frontier_subset_closure hyU) hya))
       linarith
-    · rw [frontier_compl, frontier_closedBall' a δ, mem_sphere, dist_eq_norm] at hyδ
-      have hya : y ≠ a := fun h ↦ hδ0.ne' (by rw [← hyδ, h, sub_self, norm_zero])
-      have := hM y hya (by rw [dist_eq_norm, hyδ]; exact hδ.2.trans_le (min_le_left _ _))
+    · rw [frontier_compl, frontier_closedBall' a δ] at hyδ
+      have hya : y ≠ a := ne_of_mem_sphere hyδ hδ0.ne'
+      have := hM y hya (by rw [mem_sphere.1 hyδ]; exact hδ.2.trans_le (min_le_left _ _))
       have : M ≤ ε * (ψ δ - ψ R) := by rw [← div_le_iff₀' hε]; linarith
-      rw [hyδ]
+      rw [mem_sphere_iff_norm.1 hyδ]
       linarith
   have hxV : x ∈ closure V := by
     have hxδ : x ∈ (closedBall a δ)ᶜ := fun h ↦ by
@@ -180,10 +180,7 @@ private theorem exists_harmonicOnNhd_ball_eqOn_sdiff (hE : 2 ≤ Module.finrank 
   obtain ⟨r, hr, hrs⟩ := nhds_basis_closedBall.mem_iff.1 hs
   have hcl : closedBall a r \ {a} ⊆ s \ {a} := sdiff_subset_sdiff_left hrs
   have hsph : sphere a r ⊆ closedBall a r \ {a} := fun y hy ↦
-    ⟨sphere_subset_closedBall hy, fun h ↦ by
-      have := mem_sphere.1 hy
-      rw [mem_singleton_iff.1 h, dist_self] at this
-      exact hr.ne' this.symm⟩
+    ⟨sphere_subset_closedBall hy, ne_of_mem_sphere hy hr.ne'⟩
   -- The Poisson integral `P` of the values of `u` on `sphere a r`.
   obtain ⟨P, hP, hPc, hPu⟩ := exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere
     (hu.continuousOn.mono (hsph.trans hcl))

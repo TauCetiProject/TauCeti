@@ -195,6 +195,11 @@ theorem forall_mem_frontier_exists_isBarrier_iff (hΩ : IsOpen Ω) (hb : Bornolo
 
 /-! ### Isolated boundary points -/
 
+/-- A set containing a punctured neighbourhood of `ξ` has `ξ` in its closure. -/
+private theorem mem_closure_of_mem_nhdsNE {X : Type*} [TopologicalSpace X] {s : Set X} {x : X}
+    [(𝓝[≠] x).NeBot] (hs : s ∈ 𝓝[≠] x) : x ∈ closure s :=
+  mem_closure_iff_nhdsWithin_neBot.2 (neBot_of_le (nhdsWithin_le_of_mem hs))
+
 /-- **An isolated boundary point is irregular.** In dimension at least two, if `Ω` contains a
 punctured neighbourhood of `ξ`, then no function is a barrier at `ξ` relative to `Ω`. -/
 theorem not_isBarrier_of_mem_nhdsNE (hE : 2 ≤ Module.finrank ℝ E) (hΩ : Ω ∈ 𝓝[≠] ξ)
@@ -202,8 +207,7 @@ theorem not_isBarrier_of_mem_nhdsNE (hE : 2 ≤ Module.finrank ℝ E) (hΩ : Ω 
   intro hw
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   obtain ⟨r, hr, hrΩ⟩ := Metric.mem_nhdsWithin_iff.1 hΩ
-  have hξ : ξ ∈ closure Ω :=
-    mem_closure_iff_nhdsWithin_neBot.2 (neBot_of_le (nhdsWithin_le_of_mem hΩ))
+  have hξ : ξ ∈ closure Ω := mem_closure_of_mem_nhdsNE hΩ
   -- The closed ball of radius `r / 2` lies in `closure Ω`, its punctured part in `Ω`.
   set ρ := r / 2
   have hρ : 0 < ρ := half_pos hr
@@ -253,8 +257,7 @@ theorem exists_continuousOn_frontier_not_exists_harmonicOnNhd_eqOn_frontier
       ¬∃ u, HarmonicOnNhd u Ω ∧ ContinuousOn u (closure Ω) ∧ EqOn u g (frontier Ω) := by
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   by_contra! h
-  have hξ : ξ ∈ frontier Ω := hΩo.frontier_eq ▸
-    ⟨mem_closure_iff_nhdsWithin_neBot.2 (neBot_of_le (nhdsWithin_le_of_mem hΩ)), hξΩ⟩
+  have hξ : ξ ∈ frontier Ω := hΩo.frontier_eq ▸ ⟨mem_closure_of_mem_nhdsNE hΩ, hξΩ⟩
   obtain ⟨w, hw⟩ := (forall_mem_frontier_exists_isBarrier_iff hΩo hb).2 h ξ hξ
   exact not_isBarrier_of_mem_nhdsNE hE hΩ w hw
 
