@@ -12,6 +12,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 -- Proof-only: base change preserves the degree of an isogeny.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Degree
+-- Proof-only: the tautological point of an isogeny is the pushed generic point.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
 
 /-!
 # Faithful additive base change of morphisms of elliptic curves
@@ -38,9 +40,11 @@ and the identification of morphisms with their tautological points in `Isogeny.H
   composition and addition.
 * `TauCeti.Isogeny.Hom.degree_map`: preservation of the degree.
 * `TauCeti.Isogeny.Hom.pointMap_map`: compatibility with the action on points.
-* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`: compatibility of the action on points of the
-  base changes `W⁄L` and `W⁄M` with Mathlib's point map along an algebra homomorphism `L →ₐ[F] M`;
-  for an automorphism of `L` over `F` this is Galois equivariance.
+* `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map`,
+  `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_genericPoint`, and
+  `TauCeti.Isogeny.Hom.pointMap_map_algebraMap_map_genericPoint`: compatibility of the action on
+  points of base changes with Mathlib's point map along algebra homomorphisms, including at the
+  generic point and its images; for an automorphism of `L` over `F` this is Galois equivariance.
 
 ## References
 
@@ -297,6 +301,50 @@ theorem pointMap_map_algebraMap_map {L M : Type*} [Field L] [Field M] [Algebra F
   · exact (congrArg _ (pointMap_map _ _ P)).trans (Point.map_eq_cast_mapAlong σ _).symm
 
 end PointMap
+
+/-- The base change of a morphism `h : W₁ → W₂` to `F(W₁)` sends the generic point of `W₁` to the
+tautological point of `h`. -/
+@[simp]
+theorem pointMap_map_algebraMap_genericPoint [W₁.IsElliptic] [W₂.IsElliptic] (h : Hom W₁ W₂) :
+    (h.map (algebraMap F W₁.FunctionField)).pointMap W₁.genericPoint = h.tautologicalPoint := by
+  rcases eq_zero_or_exists_ofIsogeny h with rfl | ⟨φ, rfl⟩
+  · rw [zero_map, tautologicalPoint_zero]
+    exact zero_pointMap W₁.genericPoint
+  let ι := algebraMap F W₁.FunctionField
+  let idF := AlgHom.id F W₁.FunctionField
+  -- `W₁.genericPoint` and `(ofIsogeny φ).tautologicalPoint` live on `Wᵢ⁄W₁.FunctionField`
+  -- (`WeierstrassCurve.baseChange`), which is definitionally `Wᵢ.map ι`; typing the `Point.some`
+  -- witnesses over `Wᵢ.map ι` lets `rw` apply `pointMap_eq_iff` and `equivBaseChangeSelf_some`.
+  have hP₁ : (W₁.map ι).Nonsingular W₁.genericX W₁.genericY := W₁.nonsingular_genericX_genericY
+  have hP₂ : (W₂.map ι).Nonsingular (φ.fieldPullback W₂.genericX)
+      (φ.fieldPullback W₂.genericY) :=
+    (W₂.baseChange_nonsingular φ.fieldPullback.injective ..).mpr W₂.nonsingular_genericX_genericY
+  have hsrc : W₁.genericPoint = (Point.some W₁.genericX W₁.genericY hP₁ : (W₁.map ι).Point) :=
+    W₁.genericPoint_eq_some
+  have hdst : (ofIsogeny φ).tautologicalPoint =
+      (Point.some (φ.fieldPullback W₂.genericX) (φ.fieldPullback W₂.genericY) hP₂ :
+        (W₂.map ι).Point) :=
+    (tautologicalPoint_ofIsogeny φ).trans <|
+      (Isogeny.tautologicalPoint_eq_map_genericPoint φ).trans <|
+        (congrArg (Point.map φ.fieldPullback) W₂.genericPoint_eq_some).trans (Point.map_some ..)
+  rw [ofIsogeny_map, hsrc, hdst, pointMap_eq_iff, tautologicalPoint_ofIsogeny,
+    Isogeny.tautologicalPoint_eq_map_genericPoint, genericPoint_eq_some, Point.map_some,
+    Point.equivBaseChangeSelf_some, some_sub_baseChange_mem_polePoints_iff,
+    coe_pointEquivDegreeOnePlace_some]
+  refine ⟨?_, ?_⟩
+  · rw [← FunctionField.map_genericX W₂ ι, map_fieldPullback_map, Place.valuation_ofPrime]
+    exact valuation_pointPlace_map_sub_lt_one idF hP₁.1 (φ.fieldPullback W₂.genericX)
+  · rw [← FunctionField.map_genericY W₂ ι, map_fieldPullback_map, Place.valuation_ofPrime]
+    exact valuation_pointPlace_map_sub_lt_one idF hP₁.1 (φ.fieldPullback W₂.genericY)
+
+/-- For any `F`-algebra homomorphism `E : F(W₁) →ₐ[F] K` into a field, the base change of
+`h : W₁ → W₂` to `K` sends `Point.map E W₁.genericPoint` to `Point.map E h.tautologicalPoint`. -/
+@[simp]
+theorem pointMap_map_algebraMap_map_genericPoint [W₁.IsElliptic] [W₂.IsElliptic] [Algebra F K]
+    [DecidableEq K] (h : Hom W₁ W₂) (E : W₁.FunctionField →ₐ[F] K) :
+    (h.map (algebraMap F K)).pointMap (Point.map E W₁.genericPoint) =
+      Point.map E h.tautologicalPoint := by
+  rw [pointMap_map_algebraMap_map, pointMap_map_algebraMap_genericPoint]
 
 end TauCeti.Isogeny.Hom
 

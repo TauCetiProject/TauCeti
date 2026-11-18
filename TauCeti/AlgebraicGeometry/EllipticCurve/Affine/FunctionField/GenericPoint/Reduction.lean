@@ -34,9 +34,10 @@ compared.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.valuation_pointPlace_genericX_sub_lt_one` and
-  `WeierstrassCurve.Affine.valuation_pointPlace_genericY_sub_lt_one`: `x - a` and `y - b` vanish
-  at the place of `(a, b)`.
+* `WeierstrassCurve.Affine.valuation_pointPlace_genericX_sub_lt_one`,
+  `WeierstrassCurve.Affine.valuation_pointPlace_genericY_sub_lt_one`, and
+  `WeierstrassCurve.Affine.valuation_pointPlace_map_sub_lt_one`: `x - a` and `y - b` vanish at the
+  place of `(a, b)`, and every rational function `w` reduces to `E w` at the place of `(E x, E y)`.
 * `WeierstrassCurve.Affine.reductionOfDegreeEqOne_genericPoint`: the generic point reduces to `P`
   at the place of `P`.
 * `WeierstrassCurve.Affine.isEquiv_comap_pointPlace_map`: the place of a point transported along
@@ -53,6 +54,7 @@ compared.
 public section
 
 open Polynomial TauCeti
+open scoped Polynomial.Bivariate
 
 namespace WeierstrassCurve.Affine
 
@@ -73,6 +75,54 @@ theorem valuation_pointPlace_genericY_sub_lt_one {x y : F} (h : W.Equation x y) 
   rw [← algebraMap_YClass, Place.valuation_ofPrime_algebraMap_lt_one_iff,
     CoordinateRing.pointPlace_asIdeal]
   exact Ideal.subset_span (Set.mem_insert_of_mem _ rfl)
+
+variable {W} in
+/-- For any `F`-algebra homomorphism `E : F(W) →ₐ[F] K` into a field, every rational function
+`FunctionField.map W (algebraMap F K) w` reduces to `E w` at the place of `(E x, E y)`. -/
+theorem valuation_pointPlace_map_sub_lt_one {K : Type*} [Field K] [Algebra F K]
+    (E : W.FunctionField →ₐ[F] K)
+    (h₁ : (W.map (algebraMap F K)).Equation (E W.genericX) (E W.genericY))
+    (w : W.FunctionField) :
+    (CoordinateRing.pointPlace h₁).valuation
+        (W.map (algebraMap F K)).FunctionField
+        (FunctionField.map W (algebraMap F K) w - algebraMap K _ (E w)) < 1 := by
+  set ι := algebraMap F K
+  obtain ⟨⟨a, b⟩, hab⟩ := IsLocalization.surj (nonZeroDivisors W.CoordinateRing) w
+  dsimp only at hab
+  obtain ⟨pa, rfl⟩ := AdjoinRoot.mk_surjective a
+  obtain ⟨pb, hb⟩ := AdjoinRoot.mk_surjective b.1
+  have hb' : CoordinateRing.mk W pb = b.1 := hb
+  have hb0 : algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W pb) ≠ 0 := by
+    rw [hb', map_ne_zero_iff _ (IsFractionRing.injective _ _)]
+    exact nonZeroDivisors.ne_zero b.2
+  have hbw : w = algebraMap _ _ (CoordinateRing.mk W pa) /
+      algebraMap _ _ (CoordinateRing.mk W pb) := by
+    rw [eq_div_iff hb0, hb', ← hab]
+  have hEb0 : E (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W pb)) ≠ 0 :=
+    (map_ne_zero E).mpr hb0
+  have hD : algebraMap (W.map ι).CoordinateRing (W.map ι).FunctionField
+      (CoordinateRing.mk (W.map ι) (pb.map (mapRingHom ι))) ≠ 0 := by
+    rw [← CoordinateRing.map_mk, ← FunctionField.map_algebraMap_coordinateRing]
+    exact (map_ne_zero (FunctionField.map W ι)).mpr hb0
+  have heq : FunctionField.map W ι w - algebraMap K _ (E w) =
+      algebraMap _ _
+        (CoordinateRing.mk (W.map ι)
+          (pa.map (mapRingHom ι) - Polynomial.C (Polynomial.C (E w)) * pb.map (mapRingHom ι))) /
+        algebraMap _ _
+          (CoordinateRing.mk (W.map ι) (pb.map (mapRingHom ι))) := by
+    nth_rw 1 [hbw]
+    rw [map_div₀, FunctionField.map_algebraMap_coordinateRing,
+      FunctionField.map_algebraMap_coordinateRing, CoordinateRing.map_mk, CoordinateRing.map_mk,
+      eq_div_iff hD, sub_mul, div_mul_cancel₀ _ hD, map_sub, map_sub, map_mul, map_mul,
+      IsScalarTower.algebraMap_apply K (W.map ι).CoordinateRing,
+      CoordinateRing.mk_C_eq_algebraMap (W := W.map ι) (Polynomial.C (E w)),
+      IsScalarTower.algebraMap_apply K K[X] (W.map ι).CoordinateRing,
+      Polynomial.algebraMap_eq]
+  rw [heq]
+  refine CoordinateRing.valuation_pointPlace_div_lt_one _ h₁
+    (by rwa [evalEval_map_genericX_genericY]) ?_
+  rw [evalEval_sub, evalEval_mul, evalEval_C, eval_C, evalEval_map_genericX_genericY,
+    evalEval_map_genericX_genericY, hbw, map_div₀, div_mul_cancel₀ _ hEb0, sub_self]
 
 section BaseChange
 
