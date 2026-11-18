@@ -989,29 +989,25 @@ private theorem eq_of_left_eq (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × F
   rw [hleft] at e
   exact Fin.ext (U.prefixLength_injOn (Set.mem_Iic.2 p.is_le) (Set.mem_Iic.2 q.is_le) (by omega))
 
+/-- The item of a constant base carries the one-letter word of its label. -/
+theorem word_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)} (hb : b ∈ Ω.constBases) :
+    U.word b.1 = [b.2] := by
+  simpa using U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
+
 include U in
 private theorem label_eq (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.constBases)
     (b' : Fin Ω.numItems × (A × Bool)) (hb' : b' ∈ Ω.constBases) (hk : b.1 = b'.1) :
-    b.2 = b'.2 := by
-  have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
-  have e' := U.subst_eq _ (Ω.coeffEquation_mem_equations hb')
-  simp only [coeffEquation_fst, coeffEquation_snd, substituteVars_singleton_inl,
-    substituteVars_singleton_inr] at e e'
-  rw [hk, e'] at e
-  simp only [List.cons.injEq, and_true] at e
-  exact e.symm
+    b.2 = b'.2 :=
+  List.singleton_inj.1 ((U.word_of_mem_constBases hb).symm.trans
+    (hk ▸ U.word_of_mem_constBases hb'))
 
 /-- The item of a constant base carries a one-letter word, so the prefix length grows by one
 across it. -/
 theorem prefixLength_succ_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
     (hb : b ∈ Ω.constBases) : U.prefixLength (b.1 + 1) = U.prefixLength b.1 + 1 := by
-  have hone : (U.word b.1).length = 1 := by
-    have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
-    simp only [coeffEquation_fst, coeffEquation_snd, substituteVars_singleton_inl,
-      substituteVars_singleton_inr] at e
-    simp [e]
   have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right b.1 1)
-  rw [segment_succ, substituteVars_singleton_inl, hone] at this
+  rw [segment_succ, substituteVars_singleton_inl, U.word_of_mem_constBases hb,
+    List.length_singleton] at this
   omega
 
 include U in
