@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Character
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
+import TauCeti.Analysis.Normed.Group.Prod
 import TauCeti.Analysis.Normed.Module.Prod
 import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
