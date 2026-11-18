@@ -297,6 +297,11 @@ theorem singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero_hom {S : Type 
           (ContinuousMap.inclusion (range_subset_iff.2 fun s ↦ (hc s).trans_le hcb.le))
           fun _ hx ↦ hx.elim) R n := by
   rw [singularHomologyIsoSublevelPairOfManifoldMorseIndexEqZero]
+  -- `Iso.trans_hom`, `Functor.mapIso_hom`, `asIso_hom` and `TopCat.isoOfHomeo_hom` are all `rfl`,
+  -- and so is `IsEmbedding.toHomeomorph_apply_coe`, which says that `i.isEmbedding.toHomeomorph`
+  -- is `rangeFactorization i` pointwise. They cannot be used with `rw` or `simp` here: `i(S)` and
+  -- the first space of `TopPair.ofInclusion` agree only after unfolding the pair, so the motive is
+  -- not type-correct at the transparency `rw` checks. Hence the goal is closed by `rfl`.
   rfl
 
 end IsNondegenerateCriticalSubmanifold
