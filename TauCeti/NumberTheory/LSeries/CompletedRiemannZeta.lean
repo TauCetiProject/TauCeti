@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import TauCeti.Analysis.Meromorphic.Divisor
+import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 /-!
 # Meromorphy and poles of the completed Riemann zeta function
@@ -29,9 +30,12 @@ continuation.
   as well.
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_neg_two_mul_nat_add_one`: `Λ` is regular and
   nonzero at the trivial zeros `-2(n + 1)` of `riemannZeta`, where `Γ_ℝ` has its poles.
-* `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`: the points of positive divisor of `Λ` are
-  exactly the zeros of `riemannZeta` excluded neither by `RiemannHypothesis` as trivial zeros nor
-  as the pole `1`.
+* `TauCeti.zero_lt_divisor_completedRiemannZeta_iff`,
+  `TauCeti.zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo`: the points of positive divisor of
+  `Λ` are the nontrivial zeros of `riemannZeta`, equivalently its zeros in the open critical strip
+  `0 < re s < 1`.
+* `TauCeti.riemannHypothesis_iff_mem_Ioo`: `RiemannHypothesis` is equivalent to every zero of
+  `riemannZeta` in the open critical strip lying on `re s = 1 / 2`.
 -/
 
 public section
@@ -176,5 +180,44 @@ theorem zero_lt_divisor_completedRiemannZeta_iff {s : ℂ} :
       cases n with
       | zero => simp at hs0
       | succ m => exact absurd ⟨m, by push_cast; ring⟩ htriv
+
+/-- Every nontrivial zero of `riemannZeta` lies in the open critical strip `0 < re s < 1`. -/
+theorem re_mem_Ioo_of_riemannZeta_eq_zero {s : ℂ} (hs : riemannZeta s = 0)
+    (htriv : ¬∃ n : ℕ, s = -2 * (n + 1)) : s.re ∈ Ioo 0 1 := by
+  refine ⟨lt_of_not_ge fun hle ↦ htriv ((riemannZeta_eq_zero_iff_of_re_nonpos hle).1 hs),
+    lt_of_not_ge fun hge ↦ riemannZeta_ne_zero_of_one_le_re hge hs⟩
+
+/-- Every zero of `completedRiemannZeta` lies in the open critical strip `0 < re s < 1`. -/
+theorem re_mem_Ioo_of_zero_lt_divisor_completedRiemannZeta {s : ℂ}
+    (hs : 0 < MeromorphicOn.divisor completedRiemannZeta univ s) : s.re ∈ Ioo 0 1 := by
+  obtain ⟨hζ, htriv, -⟩ := zero_lt_divisor_completedRiemannZeta_iff.1 hs
+  exact re_mem_Ioo_of_riemannZeta_eq_zero hζ htriv
+
+/-- The points of positive divisor of `completedRiemannZeta` are precisely the zeros of
+`riemannZeta` in the open critical strip `0 < re s < 1`. -/
+theorem zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo {s : ℂ} :
+    0 < MeromorphicOn.divisor completedRiemannZeta univ s ↔
+      riemannZeta s = 0 ∧ s.re ∈ Ioo 0 1 := by
+  refine ⟨fun h ↦ ⟨(zero_lt_divisor_completedRiemannZeta_iff.1 h).1,
+    re_mem_Ioo_of_zero_lt_divisor_completedRiemannZeta h⟩, ?_⟩
+  rintro ⟨hζ, h0, h1⟩
+  refine zero_lt_divisor_completedRiemannZeta_iff.2 ⟨hζ, ?_, ?_⟩
+  · rintro ⟨n, rfl⟩
+    simp only [mul_re, neg_re, re_ofNat, add_re, natCast_re, one_re, neg_im, im_ofNat, add_im,
+      natCast_im, one_im] at h0
+    linarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+  · rintro rfl
+    norm_num at h1
+
+/-- `RiemannHypothesis` is equivalent to every zero of `riemannZeta` in the open critical strip
+`0 < re s < 1` lying on the critical line `re s = 1 / 2`. -/
+theorem riemannHypothesis_iff_mem_Ioo :
+    RiemannHypothesis ↔ ∀ s : ℂ, riemannZeta s = 0 → s.re ∈ Ioo 0 1 → s.re = 1 / 2 := by
+  refine ⟨fun h s hs hre ↦ ?_, fun h s hs htriv _ ↦
+    h s hs (re_mem_Ioo_of_riemannZeta_eq_zero hs htriv)⟩
+  have hpos : 0 < MeromorphicOn.divisor completedRiemannZeta univ s :=
+    zero_lt_divisor_completedRiemannZeta_iff_mem_Ioo.2 ⟨hs, hre⟩
+  obtain ⟨-, htriv, hs1⟩ := zero_lt_divisor_completedRiemannZeta_iff.1 hpos
+  exact h s hs htriv hs1
 
 end TauCeti

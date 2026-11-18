@@ -21,6 +21,11 @@ public section
 
 namespace DirichletCharacter
 
+/-- When the ambient level is nonzero, the conductor of a Dirichlet character is nonzero. -/
+instance instNeZeroConductor {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
+    (χ : DirichletCharacter R n) : NeZero χ.conductor :=
+  ⟨χ.conductor_ne_zero⟩
+
 /-- A primitive character is principal exactly when its level is one. -/
 theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by
