@@ -279,6 +279,7 @@ theorem projectiveTrace_projectiveTrace (t : T) :
 
 /-- **Transitivity of the trace in towers**, as an equality of linear maps:
 `Tr_{T/R} = Tr_{S/R} ∘ Tr_{T/S}` for finite projective algebras `T / S / R`. -/
+@[simp]
 theorem projectiveTrace_trans :
     projectiveTrace R S ∘ₗ (projectiveTrace S T).restrictScalars R = projectiveTrace R T :=
   LinearMap.ext projectiveTrace_projectiveTrace
