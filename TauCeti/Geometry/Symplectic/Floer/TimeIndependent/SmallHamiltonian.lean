@@ -560,8 +560,9 @@ private theorem mul_integral_norm_sq_slice_le_of_isIsotropic (hg : ∀ v w, ω v
       ((hξ.continuous.comp (.prodMk_right s)).intervalIntegrable _ _)]
     exact L.le_orthogonal_orthogonal (L.sub_mem (hu1 s) (hu0 s))
   have h := mul_integral_norm_sq_le_integral_norm_sq_of_mem_of_integral_mem_orthogonal
-    zero_lt_one (fun t ↦ hasDerivAt_slice_right (hξ.differentiable one_ne_zero (s, t)))
-    (continuous_fderiv_apply_slice_right hξ s (0, 1)) (hperp h0) (hperp h1) hint
+    zero_lt_one
+    (fun t _ ↦ (hasDerivAt_slice_right (hξ.differentiable one_ne_zero (s, t))).hasDerivWithinAt)
+    (continuous_fderiv_apply_slice_right hξ s (0, 1)).continuousOn (hperp h0) (hperp h1) hint
   simpa using h
 
 /-- **Floer strips of a small autonomous Hamiltonian are time-independent.** Let the inner
