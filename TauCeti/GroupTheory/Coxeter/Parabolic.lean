@@ -83,6 +83,8 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
   multiplication by a simple reflection keeps a minimal coset representative minimal when it
   shortens it, and in general either keeps it minimal or stays in the same coset.
 * `CoxeterSystem.parabolic_le_iff`: the universal property of a standard parabolic subgroup.
+* `CoxeterSystem.parabolic_hom_ext`: homomorphisms out of a standard parabolic subgroup are
+  determined by the simple reflections it contains.
 * `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
   `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
   factorization, on the other side, with the left-descent form of the minimality condition;
@@ -185,6 +187,32 @@ theorem mem_parabolic_iff_exists_wordProd_eq {J : Set B} {w : W} :
     w ∈ cs.parabolic J ↔ ∃ ω : List B, (∀ i ∈ ω, i ∈ J) ∧ π ω = w :=
   ⟨cs.exists_wordProd_eq_of_mem_parabolic,
     fun ⟨_, hω, hp⟩ => hp ▸ cs.wordProd_mem_parabolic hω⟩
+
+/-- **Homomorphisms out of a standard parabolic subgroup are determined by the simple reflections
+it contains.** -/
+theorem parabolic_hom_ext {G : Type*} [Monoid G] {J : Set B} {φ ψ : cs.parabolic J →* G}
+    (h : ∀ i (hi : i ∈ J), φ ⟨s i, cs.simple_mem_parabolic hi⟩ =
+      ψ ⟨s i, cs.simple_mem_parabolic hi⟩) : φ = ψ := by
+  have key : ∀ (ω : List B) (hω : ∀ i ∈ ω, i ∈ J),
+      φ ⟨π ω, cs.wordProd_mem_parabolic hω⟩ =
+        ψ ⟨π ω, cs.wordProd_mem_parabolic hω⟩ := by
+    intro ω hω
+    induction ω with
+    | nil =>
+      have h1 : (⟨π [], cs.wordProd_mem_parabolic hω⟩ : cs.parabolic J) = 1 :=
+        Subtype.ext cs.wordProd_nil
+      rw [h1, map_one, map_one]
+    | cons i ω ih =>
+      have hi : i ∈ J := hω i List.mem_cons_self
+      have hω' : ∀ j ∈ ω, j ∈ J := fun j hj ↦ hω j (List.mem_cons_of_mem i hj)
+      have h1 : (⟨π (i :: ω), cs.wordProd_mem_parabolic hω⟩ : cs.parabolic J) =
+          ⟨s i, cs.simple_mem_parabolic hi⟩ *
+            ⟨π ω, cs.wordProd_mem_parabolic hω'⟩ :=
+        Subtype.ext (cs.wordProd_cons i ω)
+      rw [h1, map_mul, map_mul, h i hi, ih hω']
+  ext ⟨w, hw⟩
+  obtain ⟨ω, hω, rfl⟩ := cs.exists_wordProd_eq_of_mem_parabolic hw
+  exact key ω hω
 
 /-- The word of `CoxeterSystem.mem_parabolic_iff_exists_wordProd_eq` may be taken reduced: every
 element of a standard parabolic subgroup is spelled by a reduced word with letters in the defining
