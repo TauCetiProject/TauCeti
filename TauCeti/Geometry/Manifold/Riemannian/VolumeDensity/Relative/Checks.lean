@@ -1,0 +1,45 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
+public import TauCeti.Analysis.Calculus.Deriv.TranslatedPower
+
+/-!
+# Dimension and homothety checks for relative volume density
+
+The relative density of any two metrics is one in dimension zero. Multiplying a metric by
+the square of a positive constant multiplies its density by that constant to the dimension.
+The associated homothety polynomial has the expected first two derivatives at the identity.
+-/
+
+public noncomputable section
+
+open Bundle Manifold
+open scoped ContDiff
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {n n' : ℕ∞ω}
+
+/-- Both parameter derivatives of relative density vanish in dimension zero, for any family
+of metrics. -/
+theorem deriv_relativeVolumeDensity_finrank_zero
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
+    (G : ℝ → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x))
+    (hE : Module.finrank ℝ E = 0) (x : M) (t : ℝ) :
+    deriv (fun s ↦ relativeVolumeDensity g (G s) x) t = 0 ∧
+      deriv (deriv (fun s ↦ relativeVolumeDensity g (G s) x)) t = 0 := by
+  have h : (fun s ↦ relativeVolumeDensity g (G s) x) = fun _ ↦ 1 := by
+    funext s
+    exact relativeVolumeDensity_finrank_zero g (G s) hE x
+  rw [h]
+  simp
+
+end Bundle.ContMDiffRiemannianMetric
