@@ -396,15 +396,17 @@ theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
     (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU hper hfloer
 
 /-- **The energy of a Floer solution over a rectangle.** Under the hypotheses of
-`TauCeti.SymplecticForm.hamiltonianAction_le_hamiltonianAction`, the Floer energy of `u` over
-`[a, b] × [0, 1]`, as the lower Lebesgue integral of its nonnegative energy density, is the
-increase `A_H(u(b, ·)) - A_H(u(a, ·))` of the action. -/
+`TauCeti.SymplecticForm.hamiltonianAction_le_hamiltonianAction`, with the Floer equation stated as
+complex linearity of the perturbed derivative, the Floer energy of `u` over `[a, b] × [0, 1]`, as
+the lower Lebesgue integral of its nonnegative energy density, is the increase
+`A_H(u(b, ·)) - A_H(u(a, ·))` of the action. -/
 theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (ω : SymplecticForm V)
     {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Tames (J z))
     (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
     (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
-    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
-      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
     ∫⁻ z in Icc a b ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
       ENNReal.ofReal (ω.hamiltonianAction H (fun t ↦ u (b, t)) -
@@ -415,7 +417,7 @@ theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (ω : Sy
         (hu.of_le one_le_two) contDiffOn_const (contDiff_uncurry_cylindrical hH).contDiffOn).mono
         hRU).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
       (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
-        fun z hz ↦ ω.floerEnergyDensity_cylindrical_nonneg (hJ z hz) (hfloer z hz))]
+        fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz))]
 
 /-- **The action increases along a Floer solution.** Let `S` be an open interval of `s`-values,
 for instance a half-line `s > a` or `s < a`, and let `u` be a `C²` solution of the Floer equation on

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -126,12 +127,9 @@ private theorem tendsto_setLIntegral_floerEnergyDensity_of_forall_eq
   have hpk (s : ℝ) (_ : s ∈ Icc α β) : f k (s, 1) = f k (s, 0) := by simpa using hper k s 0
   rw [ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH isOpen_univ (hf k).contDiffOn hαβ
     (subset_univ _) hpk]
-  refine (ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (J := J k)
-    (fun z hz v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le
-      (hJc k z ⟨mem_univ _, hz.2⟩ v)) hH isOpen_univ (hf k).contDiffOn hαβ (subset_univ _) hpk
-    fun z hz ↦ ?_).symm
-  simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ (f k) z).1
-    (hfloer k z ⟨mem_univ _, hz.2⟩)
+  exact (ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (J := J k)
+    (fun z hz ↦ tames_of_mul_norm_sq_le hc (hJc k z ⟨mem_univ _, hz.2⟩)) hH isOpen_univ
+    (hf k).contDiffOn hαβ (subset_univ _) hpk fun z hz ↦ hfloer k z ⟨mem_univ _, hz.2⟩).symm
 
 /-- A stationary limit of Floer trajectories with uniformly bounded derivatives is the stationary
 cylinder over a `1`-periodic orbit: `t ↦ g(0, t)` is a `1`-periodic orbit of the Hamiltonian

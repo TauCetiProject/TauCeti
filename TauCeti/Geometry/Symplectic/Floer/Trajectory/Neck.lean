@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 import TauCeti.Analysis.SpecificLimits.Monotone
+import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Breaking
 import TauCeti.Topology.ContinuousMap.Ascoli
 
@@ -107,12 +108,10 @@ theorem tendsto_setLIntegral_floerEnergyDensity_of_tendsto_hamiltonianAction_sub
     Icc_subset_Icc (by linarith [neg_abs_le a, le_max_left |a| |b|])
       (by linarith [le_abs_self b, le_max_right |a| |b|])
   refine (lintegral_mono_set (prod_mono hsub le_rfl)).trans_eq ?_
-  refine ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub
+  exact ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub
     (J := J k) (fun z hz ↦ hJ k z ⟨mem_univ _, hz.2⟩) hH isOpen_univ (hu k).contDiffOn
     (by linarith [(abs_nonneg a).trans (le_max_left |a| |b|)]) (subset_univ _)
-    (fun s _ ↦ by simpa using hper k s 0) fun z hz ↦ ?_
-  simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ (u k) z).1
-    (hfloer k z ⟨mem_univ _, hz.2⟩)
+    (fun s _ ↦ by simpa using hper k s 0) fun z hz ↦ hfloer k z ⟨mem_univ _, hz.2⟩
 
 /-- **Far apart loops of Floer trajectories are joined by a neck over an orbit.** Let `H` be a `C¹`
 Hamiltonian, `1`-periodic in time, and `K` a compact set. Let `u k` be `C²` solutions of the Floer
@@ -145,7 +144,7 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop
   -- contains windows `[τ k - ℓ k, τ k + ℓ k]` with `ℓ k → ∞` across which the action increases by
   -- an amount tending to zero.
   have hJ (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ (univ : Set ℝ) ×ˢ Icc 0 1) : ω.Tames (J k z) :=
-    fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc k z hz v)
+    tames_of_mul_norm_sq_le hc (hJc k z hz)
   have hmono (k : ℕ) := ω.monotone_hamiltonianAction_of_floer hH (hu k) (hper k) (hJ k)
     (hfloer k)
   obtain ⟨B, hB⟩ := ω.exists_forall_abs_hamiltonianAction_le hH.continuous hK L
@@ -212,8 +211,7 @@ theorem exists_hamiltonianAction_mem_Icc_of_tendsto_sub_atTop
     exists_subseq_tendstoLocallyUniformly_comp_add_of_tendsto_sub_atTop hH hHper hK hu hper huK
       hc hJc hJM hfloer hL hσ
   have hmono (k : ℕ) := ω.monotone_hamiltonianAction_of_floer hH (hu k) (hper k)
-    (fun z hz v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc k z hz v))
-    (hfloer k)
+    (fun z hz ↦ tames_of_mul_norm_sq_le hc (hJc k z hz)) (hfloer k)
   -- The actions of the loops at `τ` tend to the action of `x`, and lie between those at `σ` and
   -- at `σ'`, eventually.
   have hτA : Tendsto (fun n ↦ ω.hamiltonianAction H (fun t ↦ u (φ n) (τ n, t))) atTop
