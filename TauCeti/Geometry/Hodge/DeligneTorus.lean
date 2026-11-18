@@ -31,8 +31,6 @@ tensor product structure carries the tensor product action).
 
 ## Main definitions
 
-* `TauCeti.Hodge.HodgeStructureOn.pieceSMul`: the complex-linear map acting on each Hodge
-  component by a prescribed scalar.
 * `TauCeti.Hodge.HodgeStructureOn.complexDeligneAction`: the action `h_ℂ` of `S(ℂ)` on `W`.
 * `TauCeti.Hodge.HodgeStructureOn.deligneAction`: the action `h` of `S(ℝ)` on `W`.
 
@@ -80,39 +78,6 @@ namespace HodgeStructureOn
 variable {W : Type u} [AddCommGroup W] [Module ℂ W]
 variable {ω : Conjugation W} {n : ℤ}
 
-/-! ### Scalars on the Hodge components -/
-
-/-- The complex-linear map acting on each Hodge component `H^{p,n-p}` by the scalar `c p`, through
-the Hodge decomposition. -/
-noncomputable def pieceSMul (hs : HodgeStructureOn W ω n) (c : ℤ → ℂ) : W →ₗ[ℂ] W :=
-  (DirectSum.toModule ℂ ℤ W fun p ↦ c p • (hs.piece p).subtype) ∘ₗ hs.decomposition.toLinearMap
-
-/-- `pieceSMul c` acts on the Hodge component `H^{p,n-p}` by `c p`. -/
-theorem pieceSMul_apply_of_mem (hs : HodgeStructureOn W ω n) (c : ℤ → ℂ) {p : ℤ} {x : W}
-    (hx : x ∈ hs.piece p) : hs.pieceSMul c x = c p • x := by
-  rw [pieceSMul, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    hs.decomposition_apply_of_mem hx, DirectSum.toModule_lof]
-  rfl
-
-/-- `pieceSMul c` is the only additive map acting on each Hodge component `H^{p,n-p}` by
-`c p`. -/
-theorem eq_pieceSMul (hs : HodgeStructureOn W ω n) (c : ℤ → ℂ) (f : W →ₗ[ℂ] W)
-    (hf : ∀ p, ∀ x ∈ hs.piece p, f x = c p • x) : f = hs.pieceSMul c :=
-  hs.addHom_ext_of_piece fun p x hx ↦ by rw [hf p x hx, hs.pieceSMul_apply_of_mem c hx]
-
-/-- The projection to the Hodge component `H^{q,n-q}` turns `pieceSMul c` into the scalar
-`c q`. -/
-theorem proj_pieceSMul (hs : HodgeStructureOn W ω n) (c : ℤ → ℂ) (q : ℤ) (x : W) :
-    hs.proj q (hs.pieceSMul c x) = c q • hs.proj q x := by
-  refine hs.piece_induction_on (motive := fun x ↦ hs.proj q (hs.pieceSMul c x) =
-    c q • hs.proj q x) x (fun p y hy ↦ ?_) fun y z hy hz ↦ ?_
-  · rw [hs.pieceSMul_apply_of_mem c hy, map_smul]
-    by_cases hpq : p = q
-    · subst hpq
-      rfl
-    · rw [hs.proj_apply_eq_zero_of_mem_of_ne hy hpq, smul_zero, smul_zero]
-  · rw [map_add, map_add, hy, hz, map_add, smul_add]
-
 /-! ### The action of `S(ℂ)` -/
 
 /-- **The action `h_ℂ` of the Deligne torus over `ℂ`** attached to a pure Hodge structure of
@@ -148,12 +113,13 @@ theorem complexDeligneAction_mu_apply_of_mem (hs : HodgeStructureOn W ω n) {p :
 
 /-- **The weight** `w(r) = (r⁻¹, r⁻¹)` acts on a pure Hodge structure of weight `n` by the scalar
 `r^n`. -/
+@[simp]
 theorem complexDeligneAction_weight (hs : HodgeStructureOn W ω n) (r : ℂˣ) (x : W) :
     hs.complexDeligneAction (weight ℂ r) x = ((r ^ n : ℂˣ) : ℂ) • x := by
   refine hs.piece_induction_on (motive := fun x ↦ hs.complexDeligneAction (weight ℂ r) x =
     ((r ^ n : ℂˣ) : ℂ) • x) x (fun p y hy ↦ ?_) fun y z hy hz ↦ ?_
-  · rw [hs.complexDeligneAction_apply_of_mem _ hy, characterGroup_weight,
-      show -(-p + (p - n)) = n by ring]
+  · have hexp : -(-p + (p - n)) = n := by ring
+    rw [hs.complexDeligneAction_apply_of_mem _ hy, characterGroup_weight, hexp]
   · rw [map_add, hy, hz, smul_add]
 
 /-- **`h_ℂ` is defined over `ℝ`**: conjugating `h_ℂ(f)` by the conjugation `ω` gives `h_ℂ` of the
@@ -166,10 +132,11 @@ theorem conj_complexDeligneAction (hs : HodgeStructureOn W ω n)
     ω.toEquiv (hs.complexDeligneAction f (ω.toEquiv x)) =
       hs.complexDeligneAction (AlgHom.mapValue Complex.conjAe.toAlgHom f) x) x
     (fun p y hy ↦ ?_) fun y z hy hz ↦ ?_
-  · rw [hs.complexDeligneAction_apply_of_mem _ (hs.conj_mem_piece hy),
+  · have h₁ : -(n - p) = p - n := by ring
+    have h₂ : n - p - n = -p := by ring
+    rw [hs.complexDeligneAction_apply_of_mem _ (hs.conj_mem_piece hy),
       LinearEquiv.map_smulₛₗ, ω.apply_apply, hs.complexDeligneAction_apply_of_mem _ hy,
-      characterGroup_conj, show -(n - p) = p - n by ring, show n - p - n = -p by ring,
-      Units.coe_star, Complex.star_def]
+      characterGroup_conj, h₁, h₂, Units.coe_star, Complex.star_def]
   · rw [map_add, map_add, map_add, hy, hz, map_add]
 
 /-! ### The action of `S(ℝ)` -/
@@ -198,6 +165,7 @@ theorem deligneAction_realPointsMulEquiv_symm_apply_of_mem (hs : HodgeStructureO
 
 /-- **The real action commutes with the conjugation**: `h(f)` is the complexification of a real
 linear map. -/
+@[simp]
 theorem conj_deligneAction (hs : HodgeStructureOn W ω n)
     (f : WithConv (DeligneTorus.S →ₐ[ℝ] ℝ)) (x : W) :
     ω.toEquiv (hs.deligneAction f x) = hs.deligneAction f (ω.toEquiv x) := by
@@ -209,6 +177,7 @@ theorem conj_deligneAction (hs : HodgeStructureOn W ω n)
   conv_rhs => rw [← hreal, ← hs.conj_complexDeligneAction, ω.apply_apply]
 
 /-- **The weight on real points**: `w(r)` for `r ∈ ℝˣ` acts by `r^n`. -/
+@[simp]
 theorem deligneAction_weight (hs : HodgeStructureOn W ω n) (r : ℝˣ) (x : W) :
     hs.deligneAction (weight ℝ r) x = ((r ^ n : ℝˣ) : ℂ) • x := by
   rw [deligneAction_apply, mapValue_weight, hs.complexDeligneAction_weight]
@@ -301,10 +270,10 @@ theorem dual_complexDeligneAction (hs : HodgeStructureOn W ω n)
   · subst ha
     congr 1
     rw [map_inv (characterGroup ℂ (.ofAdd (- -p, -p - n))) f]
+    have hpair : (-p, p - -n) + (- -p, -p - n) = 0 := by
+      ext <;> simp only [Prod.fst_add, Prod.snd_add, Prod.fst_zero, Prod.snd_zero] <;> ring
     congr 1
-    rw [eq_inv_iff_mul_eq_one, ← MonoidHom.mul_apply, ← map_mul, ← ofAdd_add,
-      show (-p, p - -n) + (- -p, -p - n) = 0 by
-        ext <;> simp only [Prod.fst_add, Prod.snd_add, Prod.fst_zero, Prod.snd_zero] <;> ring,
+    rw [eq_inv_iff_mul_eq_one, ← MonoidHom.mul_apply, ← map_mul, ← ofAdd_add, hpair,
       ofAdd_zero, map_one, MonoidHom.one_apply]
   · rw [hs.apply_eq_zero_of_mem_piece_of_ne hu hφ ha, smul_zero, smul_zero]
 
