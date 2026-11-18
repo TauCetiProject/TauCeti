@@ -35,10 +35,10 @@ For a constant structure `J = i` on a complex space these are the classical stat
 `TauCeti.Analysis.Complex.CauchyRiemann.Similarity`. The variable structure is handled in two
 steps.
 
-* **The weak similarity principle.** When `V` is a complex space, on a disc `B` about `z₀` on
-  which `C` is bounded, a `C¹` solution is a weak solution in the sense of
-  `TauCeti.IsWeakLinearCauchyRiemannOn`, the `C¹` field `J` is continuous and of class
-  `W^{1,p}_loc`, and `C` is locally `Lᵖ` for every `p`, say `p = 3`. The similarity principle for
+* **The weak similarity principle.** When `V` is a complex space, a `C¹` solution is a weak
+  solution in the sense of `TauCeti.IsWeakLinearCauchyRiemannOn`, the `C¹` field `J` is
+  continuous and of class `W^{1,p}_loc`, and the locally bounded `C` is locally `Lᵖ` for every
+  `p` (`TauCeti.memLpLoc_of_forall_eventually_norm_le`), say `p = 3`. The similarity principle for
   weak solutions with a variable structure
   (`TauCeti.hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn_of_complexStructure`)
   then gives `ξ` a similarity factorization at every point of `Ω`
@@ -87,23 +87,13 @@ theorem hasSimilarityFactorizationAt_of_contDiffOn_of_complexStructure (hΩ : Is
     (heq : ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0) {z₀ : ℂ}
     (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt ξ z₀ := by
   have := FiniteDimensional.completeSpace ℂ V
-  -- an open disc `B` about `z₀` in `Ω` on which `C` is bounded
-  obtain ⟨M, hM⟩ := hCb z₀ hz₀
-  obtain ⟨R, hR, hRΩ⟩ := Metric.mem_nhds_iff.1 (inter_mem hM (hΩ.mem_nhds hz₀))
-  let B : Opens ℂ := ⟨ball z₀ R, isOpen_ball⟩
-  have hBΩ : (B : Set ℂ) ⊆ Ω := fun z hz ↦ (hRΩ hz).2
-  -- there `ξ` is a weak solution, `J` is `W^{1,3}_loc` and `C` is `L³`
+  -- `ξ` is a weak solution on `Ω`, `J` is `W^{1,3}_loc` and the locally bounded `C` is `L³_loc`
+  let B : Opens ℂ := ⟨Ω, hΩ⟩
   have h : IsWeakLinearCauchyRiemannOn ((3 : ℝ≥0) : ℝ≥0∞) B J C ξ :=
-    isWeakCauchyRiemannOn_of_contDiffOn (hξ.mono hBΩ) fun z hz ↦
-      eq_neg_of_add_eq_zero_left (heq z (hBΩ hz))
-  have : IsFiniteMeasure (volume.restrict (B : Set ℂ)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hC : MemLpLoc ((3 : ℝ≥0) : ℝ≥0∞) B C :=
-    (MemLp.of_bound (hCm.mono_measure (Measure.restrict_mono hBΩ le_rfl)) M
-      (ae_restrict_of_forall_mem measurableSet_ball fun z hz ↦ (hRΩ hz).1)).memLpLoc
+    isWeakCauchyRiemannOn_of_contDiffOn hξ fun z hz ↦ eq_neg_of_add_eq_zero_left (heq z hz)
   exact hasSimilarityFactorizationAt_of_isWeakLinearCauchyRiemannOn_of_complexStructure
-    (by norm_num) (hJ.continuousOn.mono hBΩ) ((hJ.mono hBΩ).memWkpLoc subset_rfl)
-    (fun z hz ↦ hJJ z (hBΩ hz)) h hC (mem_ball_self hR)
+    (Ω := B) (by norm_num) hJ.continuousOn (hJ.memWkpLoc subset_rfl) hJJ h
+    (memLpLoc_of_forall_eventually_norm_le hCm hCb) hz₀
 
 end Complex
 

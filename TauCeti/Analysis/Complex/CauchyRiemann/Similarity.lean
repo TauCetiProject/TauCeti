@@ -30,9 +30,9 @@ holomorphic map: unique continuation from a zero of infinite order
 
 The coefficient `C` need not commute with `i`, and a solution is in general not holomorphic.
 These are the classical cases of the similarity principle for weak solutions
-(`TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn`): on a disc about `z₀` on which `C`
-is bounded, a `C¹` solution is a weak solution and the bounded coefficient is locally `Lᵖ` for
-every `p`, say `p = 3`.
+(`TauCeti.exists_similarity_of_isWeakLinearCauchyRiemannOn`): a `C¹` solution is a weak solution,
+and the locally bounded coefficient is locally `Lᵖ` for every `p`
+(`TauCeti.memLpLoc_of_forall_eventually_norm_le`), say `p = 3`.
 
 ## Main results
 
@@ -76,23 +76,16 @@ theorem exists_similarity_of_contDiffOn (hΩ : IsOpen Ω) (hξ : ContDiffOn ℝ 
       ContinuousOn Φ (ball z₀ r) ∧ (∀ z ∈ ball z₀ r, IsUnit (Φ z)) ∧
       DifferentiableOn ℂ σ (ball z₀ r) ∧ EqOn ξ (fun z ↦ Φ z (σ z)) (ball z₀ r) := by
   have := FiniteDimensional.completeSpace ℂ V
-  -- an open disc `B` about `z₀` in `Ω` on which `C` is bounded
-  obtain ⟨M, hM⟩ := hCb z₀ hz₀
-  obtain ⟨R, hR, hRΩ⟩ := Metric.mem_nhds_iff.1 (inter_mem hM (hΩ.mem_nhds hz₀))
-  let B : Opens ℂ := ⟨ball z₀ R, isOpen_ball⟩
-  have hBΩ : (B : Set ℂ) ⊆ Ω := fun z hz ↦ (hRΩ hz).2
-  -- there `ξ` is a weak solution, and `C` is locally `L³`
+  -- `ξ` is a weak solution on `Ω`, and the locally bounded `C` is locally `L³`
+  let B : Opens ℂ := ⟨Ω, hΩ⟩
   have h : IsWeakLinearCauchyRiemannOn ((3 : ℝ≥0) : ℝ≥0∞) B
       (fun _ ↦ I • ContinuousLinearMap.id ℝ V) C ξ :=
-    isWeakCauchyRiemannOn_of_contDiffOn (hξ.mono hBΩ) fun z hz ↦ by
-      simpa using eq_neg_of_add_eq_zero_left (heq z (hBΩ hz))
-  have hC : MemLpLoc ((3 : ℝ≥0) : ℝ≥0∞) B C := memLpLoc_iff.2 fun K hK hc ↦ by
-    have := isFiniteMeasure_restrict.2 (hc.measure_lt_top (μ := volume)).ne
-    exact MemLp.of_bound (hCm.mono_measure (Measure.restrict_mono (hK.trans hBΩ) le_rfl)) M
-      (ae_restrict_of_forall_mem hc.measurableSet fun z hz ↦ (hRΩ (hK hz)).1)
-  obtain ⟨r, hr, hrB, Φ, σ, hΦ, -, hΦu, hσ, hξσ⟩ :=
-    exists_similarity_of_isWeakLinearCauchyRiemannOn (by norm_num) h hC (mem_ball_self hR)
-  exact ⟨r, hr, hrB.trans hBΩ, Φ, σ, hΦ, hΦu, hσ, hξσ⟩
+    isWeakCauchyRiemannOn_of_contDiffOn hξ fun z hz ↦ by
+      simpa using eq_neg_of_add_eq_zero_left (heq z hz)
+  obtain ⟨r, hr, hrΩ, Φ, σ, hΦ, -, hΦu, hσ, hξσ⟩ :=
+    exists_similarity_of_isWeakLinearCauchyRiemannOn (by norm_num) h
+      (memLpLoc_of_forall_eventually_norm_le (U := B) hCm hCb) hz₀
+  exact ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, hξσ⟩
 
 /-- A `C¹` solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` on an open set `Ω`, with measurable, locally
 bounded real-linear coefficient `C`, has a similarity factorization at every point of `Ω`. -/
