@@ -43,8 +43,8 @@ functions are relatively compact. The normal topology makes `𝓓'_Γ(Ω)` a Hau
 group in which a net converges exactly when it converges in `𝓓'(Ω)` and in every seminorm, and a
 linear map into `𝓓'_Γ(Ω)` is continuous exactly when its composite with the inclusion into
 `𝓓'(Ω)` and its composites with all the seminorms are continuous. For `Γ ⊆ Γ'` the inclusion
-`𝓓'_Γ(Ω) → 𝓓'_Γ'(Ω)` is continuous, and multiplication by a smooth function, differentiation and
-restriction to an open subset are continuous linear maps of these spaces.
+`𝓓'_Γ(Ω) → 𝓓'_Γ'(Ω)` is continuous, and multiplication by a smooth real-valued function,
+differentiation and restriction to an open subset are continuous linear maps of these spaces.
 
 ## Main declarations
 
@@ -58,8 +58,8 @@ restriction to an open subset are continuous linear maps of these spaces.
   maps into `𝓓'_Γ(Ω)`.
 * `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
   `TauCeti.WaveFrontSpace.lineDerivCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
-  inclusion for a larger cone, multiplication by a smooth function, differentiation and
-  restriction as continuous linear maps.
+  inclusion for a larger cone, multiplication by a smooth real-valued function, differentiation
+  and restriction as continuous linear maps.
 * `TauCeti.WaveFrontSpace.seminorm_inclusionCLM`,
   `TauCeti.WaveFrontSpace.seminorm_smulLeftCLM`,
   `TauCeti.WaveFrontSpace.seminorm_lineDerivCLM_le`,
