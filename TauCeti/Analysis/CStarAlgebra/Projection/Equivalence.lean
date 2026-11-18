@@ -156,6 +156,46 @@ theorem pad_zero (hp : IsStarProjection p) :
     · simp [Matrix.mul_apply]
     · simp [Matrix.mul_apply]
 
+/-- A Murray–von Neumann equivalence is implemented by a matrix supported on its initial
+projection. -/
+theorem exists_matrix_mul_eq_self (h : MurrayVonNeumannEquiv p q) :
+    ∃ v : CStarMatrix n m A,
+      v.conjTranspose * v = p ∧ v * v.conjTranspose = q ∧ v * p = v := by
+  obtain ⟨hp, hq, v, hv, hv'⟩ := h
+  have hpp : p * p = p := hp.isIdempotentElem.eq
+  have hpc : p.conjTranspose = p := by rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
+  refine ⟨v * p, ?_, ?_, by rw [mul_assoc_rectangular, hpp]⟩
+  · calc
+      _ = p * (v.conjTranspose * v) * p := by
+        simp only [conjTranspose_mul, hpc, mul_assoc_rectangular]
+      _ = p := by rw [hv, hpp, hpp]
+  · calc
+      _ = v * (p * p) * v.conjTranspose := by
+        simp only [conjTranspose_mul, hpc, mul_assoc_rectangular]
+      _ = (v * v.conjTranspose) * (v * v.conjTranspose) := by
+        rw [hpp, ← hv]
+        simp only [mul_assoc_rectangular]
+      _ = q := by rw [hv', hq.isIdempotentElem.eq]
+
+/-- Rectangular Murray–von Neumann equivalence is transitive. -/
+protected theorem trans (h : MurrayVonNeumannEquiv p q) (h' : MurrayVonNeumannEquiv q r) :
+    MurrayVonNeumannEquiv p r := by
+  obtain ⟨v, hv, hv', hvp⟩ := h.exists_matrix_mul_eq_self
+  obtain ⟨w, hw, hw', hwq⟩ := h'.exists_matrix_mul_eq_self
+  have hqv : q * v = v := by
+    rw [← hv', mul_assoc_rectangular, hv, hvp]
+  refine ⟨h.isStarProjection_left, h'.isStarProjection_right, w * v, ?_, ?_⟩
+  · calc
+      _ = v.conjTranspose * (w.conjTranspose * w) * v := by
+        simp only [conjTranspose_mul, mul_assoc_rectangular]
+      _ = v.conjTranspose * v := by rw [hw, mul_assoc_rectangular, hqv]
+      _ = p := hv
+  · calc
+      _ = w * (v * v.conjTranspose) * w.conjTranspose := by
+        simp only [conjTranspose_mul, mul_assoc_rectangular]
+      _ = w * w.conjTranspose := by rw [hv', hwq]
+      _ = r := hw'
+
 end MurrayVonNeumannEquiv
 
 /-- The witness criterion for Murray–von Neumann equivalence of given projections. -/
@@ -169,51 +209,6 @@ theorem murrayVonNeumannEquiv_iff (hp : IsStarProjection p) (hq : IsStarProjecti
 theorem murrayVonNeumannEquiv_self_iff : MurrayVonNeumannEquiv p p ↔ IsStarProjection p :=
   ⟨MurrayVonNeumannEquiv.isStarProjection_left, MurrayVonNeumannEquiv.refl⟩
 
-end Algebraic
-
-section OrderedStar
-
-variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
-  {p : CStarMatrix m m A} {q : CStarMatrix n n A} {r : CStarMatrix k k A}
-
-/-- An implementing rectangular matrix is supported on its initial projection. -/
-theorem mul_eq_self_of_conjTranspose_mul_eq (v : CStarMatrix n m A)
-    (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) : v * p = v := by
-  have hp' : IsIdempotentElem (v.conjTranspose * v) := by
-    rw [hv]
-    exact hp
-  have hpM := congrArg ofMatrix.symm hp'.eq
-  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at hpM
-  have h := Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) hpM
-  rw [← hv]
-  apply ofMatrix.symm.injective
-  simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
-
-namespace MurrayVonNeumannEquiv
-
-/-- Rectangular equivalence is transitive; compose the implementing matrices. -/
-protected theorem trans (h : MurrayVonNeumannEquiv p q) (h' : MurrayVonNeumannEquiv q r) :
-    MurrayVonNeumannEquiv p r := by
-  obtain ⟨hp, hq, v, hv, hv'⟩ := h
-  obtain ⟨_, hr, w, hw, hw'⟩ := h'
-  have hwp := mul_eq_self_of_conjTranspose_mul_eq w hq.isIdempotentElem hw
-  have hvp := mul_eq_self_of_conjTranspose_mul_eq v hp.isIdempotentElem hv
-  have hqv : q * v = v := by
-    rw [← hv', mul_assoc_rectangular, hv, hvp]
-  refine ⟨hp, hr, w * v, ?_, ?_⟩
-  · calc
-      _ = v.conjTranspose * (w.conjTranspose * w) * v := by
-        simp only [conjTranspose_mul, mul_assoc_rectangular]
-      _ = v.conjTranspose * v := by rw [hw, mul_assoc_rectangular, hqv]
-      _ = p := hv
-  · calc
-      _ = w * (v * v.conjTranspose) * w.conjTranspose := by
-        simp only [conjTranspose_mul, mul_assoc_rectangular]
-      _ = w * w.conjTranspose := by rw [hv', hwp]
-      _ = r := hw'
-
-end MurrayVonNeumannEquiv
-
 /-- For equal matrix sizes, the implementing matrices are exactly partial isometries with the
 specified initial and final projections. -/
 theorem murrayVonNeumannEquiv_iff_exists_partialIsometry {q : CStarMatrix m m A} :
@@ -221,8 +216,8 @@ theorem murrayVonNeumannEquiv_iff_exists_partialIsometry {q : CStarMatrix m m A}
       ∃ v : CStarMatrix m m A, TauCeti.IsPartialIsometry v ∧ star v * v = p ∧
         v * star v = q := by
   constructor
-  · rintro ⟨hp, _, v, hv, hv'⟩
-    have hvp := mul_eq_self_of_conjTranspose_mul_eq v hp.isIdempotentElem hv
+  · intro h
+    obtain ⟨v, hv, hv', hvp⟩ := h.exists_matrix_mul_eq_self
     simp only [← star_eq_conjTranspose] at hv hv'
     refine ⟨v, ?_, hv, hv'⟩
     rw [TauCeti.isPartialIsometry_iff, mul_assoc, hv]
@@ -236,14 +231,13 @@ theorem murrayVonNeumannEquiv_iff_exists_partialIsometry {q : CStarMatrix m m A}
 theorem murrayVonNeumannEquiv_zero_iff :
     MurrayVonNeumannEquiv p (0 : CStarMatrix n n A) ↔ p = 0 := by
   refine ⟨?_, fun h => h ▸ .zero⟩
-  rintro ⟨_, _, v, hv, hv'⟩
-  have h := congrArg ofMatrix.symm hv'
-  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at h
-  have hz : ofMatrix.symm v = 0 := Matrix.self_mul_conjTranspose_eq_zero.mp h
-  have hv0 : v = 0 := by
-    ext i j
-    exact congrFun (congrFun hz i) j
-  simpa only [hv0, conjTranspose_zero, CStarMatrix.zero_mul] using hv.symm
+  rintro ⟨hp, _, v, hv, hv'⟩
+  calc
+    p = p * p := hp.isIdempotentElem.eq.symm
+    _ = v.conjTranspose * (v * v.conjTranspose) * v := by
+      rw [← hv]
+      simp only [mul_assoc_rectangular]
+    _ = 0 := by rw [hv', CStarMatrix.mul_zero, CStarMatrix.zero_mul]
 
 /-- Only zero is equivalent to the zero projection on the initial side. -/
 @[simp]
@@ -252,6 +246,25 @@ theorem zero_murrayVonNeumannEquiv_iff :
   ⟨fun h => murrayVonNeumannEquiv_zero_iff.mp h.symm,
     fun h => h ▸ MurrayVonNeumannEquiv.zero⟩
 
+end Algebraic
+
+section OrderedStar
+
+variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
+  {p : CStarMatrix m m A}
+
+/-- An implementing rectangular matrix is supported on its initial projection. -/
+theorem mul_eq_self_of_conjTranspose_mul_eq (v : CStarMatrix n m A)
+    (hp : IsIdempotentElem p) (hv : v.conjTranspose * v = p) : v * p = v := by
+  have hp' : IsIdempotentElem (v.conjTranspose * v) := by
+    rw [hv]
+    exact hp
+  have hpM := congrArg ofMatrix.symm hp'.eq
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] at hpM
+  have h := Matrix.mul_conjTranspose_mul_self_of_isIdempotentElem (ofMatrix.symm v) hpM
+  rw [← hv]
+  apply ofMatrix.symm.injective
+  simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Matrix.mul_assoc] using h
 
 end OrderedStar
 
