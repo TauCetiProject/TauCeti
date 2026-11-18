@@ -38,7 +38,9 @@ range of `f₀`, is continuous at `f₀` (`BoundedContinuousFunction.apply_mem_o
 `BoundedContinuousFunction.compContinuousₗᵢ` is precomposition with a homeomorphism, as a linear
 isometry equivalence of a submodule of `α →ᵇ β` that it preserves, and
 `ContinuousLinearMap.compLeftContinuousBounded_compContinuous` says that postcomposition with a
-continuous linear map commutes with precomposition.
+continuous linear map commutes with precomposition, and
+`LinearIsometry.norm_compLeftContinuousBounded` that postcomposition with a linear isometry
+preserves the norm.
 
 `BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
 real function is a uniform limit of finite-valued bounded functions.
@@ -153,6 +155,16 @@ theorem ContinuousLinearMap.compLeftContinuousBounded_compContinuous {α δ 𝕜
     g.compLeftContinuousBounded δ (f.compContinuous a) =
       (g.compLeftContinuousBounded α f).compContinuous a :=
   (rfl)
+
+/-- Postcomposition with a linear isometry preserves the norm of a bounded continuous
+function. -/
+theorem LinearIsometry.norm_compLeftContinuousBounded {α 𝕜 β γ : Type*} [TopologicalSpace α]
+    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup β] [NormedSpace 𝕜 β]
+    [SeminormedAddCommGroup γ] [NormedSpace 𝕜 γ] (e : β →ₗᵢ[𝕜] γ) (f : α →ᵇ β) :
+    ‖e.toContinuousLinearMap.compLeftContinuousBounded α f‖ = ‖f‖ := by
+  simp only [BoundedContinuousFunction.norm_eq_iSup_norm,
+    ContinuousLinearMap.compLeftContinuousBounded_apply, LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.norm_map]
 
 namespace BoundedContinuousFunction
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.TopCat.Fiber
-public import TauCeti.Topology.ContinuousMap.GlueHalves
+public import TauCeti.Topology.ContinuousMap.Glue.Halves
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
