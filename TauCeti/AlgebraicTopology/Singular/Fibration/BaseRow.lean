@@ -234,7 +234,7 @@ private lemma isZero_serreSpectralObject_id_abutmentFiltration (k j : ℕ) (hj :
 
 /-- The graded piece `F_k H_k / F_{k-1} H_k` of the filtration of `H_k(B; R)` by the images of the
 homology of the skeleta is all of `H_k(B; R)`. -/
-private def cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso (k : ℕ) (b m : ℤ)
+def cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso (k : ℕ) (b m : ℤ)
     (hb : b = k - 1) (hm : m = -k) :
     cokernel ((serreSpectralObject univ (𝟙 B) R).abutmentFiltrationMap b m) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
@@ -248,6 +248,17 @@ private def cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso (k : ℕ) (b m
   exact (asIso (cokernel.π _)).symm ≪≫
     asIso ((serreSpectralObject univ (𝟙 B) R).abutmentFiltrationι _ _) ≪≫
     filteredSpaceAbutmentIso (ModuleCat.of R R) (monotone_preimageSkeleton (𝟙 B)) k
+
+/-- The identification of the graded piece `F_k H_k / F_{k-1} H_k` with `H_k(B; R)` is induced by
+the inclusion of `F_k H_k` into the abutment, followed by the identification of the abutment with
+`H_k(B; R)`. -/
+@[reassoc]
+lemma π_cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso_hom (k : ℕ) :
+    cokernel.π _ ≫ (cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ rfl rfl).hom =
+      (serreSpectralObject univ (𝟙 B) R).abutmentFiltrationι ((k : ℤ) - 1 + 1) (-k) ≫
+        (filteredSpaceAbutmentIso (ModuleCat.of R R) (monotone_preimageSkeleton (𝟙 B)) k).hom := by
+  simp only [cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso, Iso.trans_hom, Iso.symm_hom,
+    asIso_inv, asIso_hom, IsIso.hom_inv_id_assoc]
 
 /-- **The row `q = 0` of the second page of the spectral sequence of the skeletal filtration.** For
 a CW complex `B`, the object `E²_{k,0}` of the Serre spectral sequence of the identity of `B`, at
@@ -272,6 +283,28 @@ def serreSpectralSequenceIdSecondPageXIsoSingularHomology (k : ℕ) (pq : ℤ ×
       (subset_univ _) (k + 3) (by lia) pq (by lia) (by lia) ≪≫
     cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ hb ha
 
+/-- The identification of the row `q = 0` of the second page of the spectral sequence of the
+skeletal filtration with `H_k(B; R)` is the passage to a late page, where the object is the graded
+piece `F_k H_k / F_{k-1} H_k` of the filtration of the abutment, followed by the identification of
+that graded piece with `H_k(B; R)`
+(`TauCeti.TopCat.π_cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso_hom`). -/
+lemma serreSpectralSequenceIdSecondPageXIsoSingularHomology_hom (k : ℕ) (pq : ℤ × ℤ)
+    (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -k) :
+    (serreSpectralSequenceIdSecondPageXIsoSingularHomology R k pq hb ha).hom =
+      ((serreSpectralSequence univ (𝟙 B) R).pageXIsoOfLEOfIsZero (r := 3) (by norm_num)
+        (fun s hs pq' hpq' ↦ (serreSpectralSequence univ (𝟙 B) R).isZero_page_X_of_le
+          (r := 2) le_rfl (isZero_serreSpectralSequence_id_page_two_X R pq' (by
+            rcases hpq' with rfl | rfl
+            · simp only [Prod.fst_add, Prod.snd_add]
+              lia
+            · simp only [Prod.fst_add, Prod.snd_add] at hb ha
+              lia)) 3 (by norm_num))
+        (k + 3) (by lia)).inv ≫
+      (serreSpectralSequencePageXIsoGraded (MorphismProperty.id_mem _ B) R (K := univ)
+        (subset_univ _) (k + 3) (by lia) pq (by lia) (by lia)).hom ≫
+      (cokernelSerreSpectralObjectIdAbutmentFiltrationMapIso R k _ _ hb ha).hom :=
+  (rfl)
+
 end Base
 
 /-! ### The row `q = 0` of the second page -/
@@ -291,10 +324,9 @@ def serreSpectralSequenceSecondPageXIsoSingularHomology (hp : serreFibrations p)
     ((serreSpectralSequence univ p R).page 3).X pq ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
         (ModuleCat.of R R)).obj B :=
-  have : IsIso (((serreSpectralSequenceProj p R univ).hom 3 (Int.le.intro 1 rfl)).f pq) :=
+  have : IsIso (((serreSpectralSequenceProj p R univ).hom 3).f pq) :=
     isIso_serreSpectralSequenceProj_hom_three_f R hp (fun b _ ↦ hconn b) pq (by lia)
-  asIso (((serreSpectralSequenceProj p R univ).hom 3 (Int.le.intro 1 rfl)).f pq) ≪≫
-    serreSpectralSequenceIdSecondPageXIsoSingularHomology R k pq hb ha
+  @asIso _ _ _ _ _ this ≪≫ serreSpectralSequenceIdSecondPageXIsoSingularHomology R k pq hb ha
 
 /-- The identification `E²_{k,0} ≅ H_k(B; R)` is the projection onto the spectral sequence of the
 skeletal filtration of the base, followed by the identification of its row `q = 0`. -/
