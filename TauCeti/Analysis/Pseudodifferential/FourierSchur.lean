@@ -26,11 +26,12 @@ at most `N = ⌈|s - m|⌉₊ + n + 1` only
 (`TauCeti.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_norm_iteratedFDeriv_le`). The
 constant `C` depends on `n`, `m`, `s` and `K`, not on `p`. No derivative of `p` in the frequency
 enters, and the position slices need only be `C^N`, so `p` need not be a symbol: for instance
-`q(x, ξ) χ(y)` on `ℝ^k × ℝ^l`, for a symbol `q` of order `m ≥ 0` on `ℝ^k` and a compactly supported
-smooth `χ`, satisfies these bounds with the weight `⟨(ξ, η)⟩ ^ m`, while its frequency derivatives
-of order larger than `m` do not decay in the frequency `η` of the second factor. Estimates for
-such coefficients, linear in `A`, are what give operator-norm bounds `C ε` for differences of
-quantizations whose position derivatives are `O(ε ⟨ξ⟩ ^ m)`.
+`q(x, ξ) χ(y)` on `ℝ^k × ℝ^l`, for a symbol `q` of order `m ≥ 0` on `ℝ^k` vanishing for positions
+`x` outside a compact set and a compactly supported smooth `χ`, vanishes for positions outside a
+compact set and satisfies these bounds with the weight `⟨(ξ, η)⟩ ^ m`, while its frequency
+derivatives of order larger than `m` do not decay in the frequency `η` of the second factor.
+Estimates for such coefficients, linear in `A`, are what give operator-norm bounds `C ε` for
+differences of quantizations whose position derivatives are `O(ε ⟨ξ⟩ ^ m)`.
 
 ## The argument
 
