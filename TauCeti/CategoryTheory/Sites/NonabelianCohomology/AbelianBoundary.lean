@@ -75,6 +75,15 @@ lemma abelianBoundary_equivSheafH_symm (z : H E.X₃ 1) :
     abelianBoundary hE ((equivSheafH E.X₃).symm z) = H.δ hE 1 2 rfl z := by
   rw [abelianBoundary_def, Equiv.apply_symm_apply]
 
+/-- If the projection `E.X₂ → E.X₃` is a split epimorphism, every torsor class of `E.X₃` has zero
+boundary. -/
+@[simp]
+theorem abelianBoundary_eq_zero_of_isSplitEpi [IsSplitEpi E.g]
+    (x : NonabelianH1 ((abelianSheafToGrpSheaf J).obj E.X₃)) : abelianBoundary hE x = 0 := by
+  rw [abelianBoundary_def]
+  refine (H.exact_map_δ hE 1 2 rfl _).2 ⟨H.map (section_ E.g) 1 (equivSheafH E.X₃ x), ?_⟩
+  rw [← H.map_comp_apply, IsSplitEpi.id, H.map_id_apply]
+
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
 
 /-- A torsor class of `E.X₃` has zero boundary if and only if it is obtained from a torsor class
@@ -94,13 +103,6 @@ theorem abelianBoundary_eq_zero_iff (x : NonabelianH1 ((abelianSheafToGrpSheaf J
 lemma abelianBoundary_map_g (y : NonabelianH1 ((abelianSheafToGrpSheaf J).obj E.X₂)) :
     abelianBoundary hE (map ((abelianSheafToGrpSheaf J).map E.g) y) = 0 :=
   (abelianBoundary_eq_zero_iff hE _).2 ⟨y, rfl⟩
-
-/-- If the projection `E.X₂ → E.X₃` is a split epimorphism, every torsor class of `E.X₃` has zero
-boundary. -/
-theorem abelianBoundary_eq_zero_of_isSplitEpi [IsSplitEpi E.g]
-    (x : NonabelianH1 ((abelianSheafToGrpSheaf J).obj E.X₃)) : abelianBoundary hE x = 0 :=
-  (abelianBoundary_eq_zero_iff hE x).2 ⟨map ((abelianSheafToGrpSheaf J).map (section_ E.g)) x, by
-    rw [map_map, ← Functor.map_comp, IsSplitEpi.id, Functor.map_id, map_id, id_eq]⟩
 
 /-- The boundary is natural in morphisms of short exact sequences: for `φ : E ⟶ E'`, the
 boundary of the image of a torsor class along `φ.τ₃` is the image under `φ.τ₁` of its
