@@ -195,8 +195,8 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_convex
   -- The Poincaré–Wirtinger inequality for `w`, with the mean over `{u ≤ k}`.
   have hPW : eLpNorm (W1p.value w) 1 nu ≤
       ENNReal.ofReal (K / mu.real S) * ‖W1p.gradient w‖ₑ := by
-    have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex (S := S) ENNReal.one_ne_top hconv hb
-      (hB.inter Omega.isOpen.measurableSet).nullMeasurableSet inter_subset_right hS0 w
+    have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex (S := S) hconv hb inter_subset_right
+      hS0 w
     rw [havg] at h
     simpa only [sub_zero] using h
   have hkey := (ofReal_mul_measure_le_eLpNorm_value_truncation u hkl hA hwval).trans
