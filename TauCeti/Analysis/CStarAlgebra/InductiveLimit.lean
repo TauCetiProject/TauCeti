@@ -157,7 +157,7 @@ theorem of_f {i j : ι} (h : i ≤ j) (a : A i) : of A f j (f i j h a) = of A f 
   DirectLimit.mk_apply i j a h
 
 /-- Every element of the algebraic direct limit comes from some stage. -/
-theorem exists_of_eq (z : CStarSeminormedDirectLimit A f) : ∃ i a, of A f i a = z := by
+theorem exists_of (z : CStarSeminormedDirectLimit A f) : ∃ i a, of A f i a = z := by
   obtain ⟨i, a, rfl⟩ := DirectLimit.exists_eq_mk f z
   exact ⟨i, a, rfl⟩
 
@@ -174,7 +174,7 @@ instance : Norm (CStarSeminormedDirectLimit A f) where
 
 private instance (z : CStarSeminormedDirectLimit A f) :
     Nonempty {p : Σ i, A i // of A f p.1 p.2 = z} := by
-  obtain ⟨i, a, h⟩ := exists_of_eq z
+  obtain ⟨i, a, h⟩ := exists_of z
   exact ⟨⟨⟨i, a⟩, h⟩⟩
 
 private theorem bddBelow_norm (z : CStarSeminormedDirectLimit A f) :
@@ -252,7 +252,7 @@ theorem norm_mul_self_le (z : CStarSeminormedDirectLimit A f) : ‖z‖ * ‖z�
   -- if `z` is represented by `a ∈ A i` and `star z * z` by `b ∈ A j`, then at a common stage `k`
   -- the image of `b` is `star a' * a'` for the image `a'` of `a`, so `‖b‖ ≥ ‖a'‖ ^ 2`, and `a'`
   -- represents `z`
-  obtain ⟨i, a, rfl⟩ := exists_of_eq z
+  obtain ⟨i, a, rfl⟩ := exists_of z
   refine le_norm_of_forall fun j b hb => ?_
   rw [← map_star, ← map_mul] at hb
   obtain ⟨k, hjk, hik, hk⟩ := of_eq_of_iff.1 hb
@@ -292,6 +292,13 @@ instance : NonUnitalCStarAlgebra (CStarInductiveLimit A f) :=
   letI : NonUnitalCStarAlgebra (Completion (CStarSeminormedDirectLimit A f)) :=
     { toCStarRing := Completion.cstarRing norm_mul_self_le }
   inferInstanceAs (NonUnitalCStarAlgebra (Completion (CStarSeminormedDirectLimit A f)))
+
+/-- The C⋆-inductive limit carries the spectral order of a C⋆-algebra. -/
+instance : PartialOrder (CStarInductiveLimit A f) :=
+  CStarAlgebra.spectralOrder _
+
+instance : StarOrderedRing (CStarInductiveLimit A f) :=
+  CStarAlgebra.spectralOrderedRing _
 
 variable (A f) in
 /-- The completion map of the algebraic direct limit into the C⋆-inductive limit, as a
@@ -403,8 +410,16 @@ variable (A f) in
 theorem dense_iUnion_range_of : Dense (⋃ i, Set.range (of A f i)) := by
   refine (denseRange_toCompletion A f).mono ?_
   rintro _ ⟨z, rfl⟩
-  obtain ⟨i, a, rfl⟩ := CStarSeminormedDirectLimit.exists_of_eq z
+  obtain ⟨i, a, rfl⟩ := CStarSeminormedDirectLimit.exists_of z
   exact Set.mem_iUnion.2 ⟨i, a, toCompletion_of i a⟩
+
+/-- The C⋆-inductive limit of a countable directed system of separable C⋆-algebras is
+separable. -/
+instance [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (A i)] :
+    TopologicalSpace.SeparableSpace (CStarInductiveLimit A f) := by
+  rw [← TopologicalSpace.isSeparable_univ_iff, ← (dense_iUnion_range_of A f).closure_eq]
+  exact (TopologicalSpace.IsSeparable.iUnion fun i =>
+    TopologicalSpace.isSeparable_range (map_continuous (of A f i))).closure
 
 /-- To prove a closed property of every element of the C⋆-inductive limit, it suffices to prove
 it on the images of the stages. -/
@@ -686,6 +701,16 @@ instance : NormedAlgebra ℂ (CStarSeminormedDirectLimit A f) where
 theorem of_one (i : ι) : of A f i 1 = 1 :=
   (DirectLimit.one_def i).symm
 
+/-- The algebraic direct limit of nontrivial unital C⋆-algebras along unital connecting maps is
+nontrivial. -/
+instance [∀ i, Nontrivial (A i)] : Nontrivial (CStarSeminormedDirectLimit A f) := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  have : Nonempty {j // i ≤ j} := ⟨⟨i, le_rfl⟩⟩
+  refine nontrivial_of_ne 1 0 fun h => ?_
+  have := norm_of (f := f) i 1
+  simp_rw [of_one, h, norm_zero, map_one, CStarRing.norm_one, ciInf_const] at this
+  exact zero_ne_one this
+
 end CStarSeminormedDirectLimit
 
 namespace CStarInductiveLimit
@@ -710,6 +735,15 @@ theorem toCompletion_one : toCompletion A f 1 = 1 := by
 @[simp]
 theorem of_one (i : ι) : of A f i 1 = 1 := by
   rw [← toCompletion_of, CStarSeminormedDirectLimit.of_one, toCompletion_one]
+
+/-- The C⋆-inductive limit of nontrivial unital C⋆-algebras along unital connecting maps is
+nontrivial. -/
+instance [∀ i, Nontrivial (A i)] : Nontrivial (CStarInductiveLimit A f) := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  refine nontrivial_of_ne 1 0 fun h => ?_
+  obtain ⟨j, hj, hlt⟩ := (of_eq_zero_iff.1 ((of_one i).trans h)) 1 one_pos
+  rw [map_one, CStarRing.norm_one] at hlt
+  exact lt_irrefl _ hlt
 
 /-- The ⋆-homomorphism induced by a compatible family of unital ⋆-homomorphisms into a unital
 C⋆-algebra is unital. -/
