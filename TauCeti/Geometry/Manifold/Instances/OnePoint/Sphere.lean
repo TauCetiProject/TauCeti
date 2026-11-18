@@ -406,6 +406,16 @@ private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
       ← Submodule.mem_orthogonal_singleton_iff_inner_right]
     exact (ι _).2
 
+/-- The differential of `σ = diffeomorphSphere v ι` read in `E` is the differential of `σ` followed
+by that of the inclusion of the sphere into `E`. -/
+private theorem mvfderiv_coe_toSphere_eq_comp (x : OnePoint ℂ) (c : TangentSpace 𝓘(ℝ, ℂ) x) :
+    mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x c =
+      mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
+        (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x c) :=
+  -- The composite `(↑) ∘ diffeomorphSphere v ι` is `fun y ↦ (toSphere v ι y : E)` by definition.
+  mvfderiv_comp_apply x ((contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero)
+    ((diffeomorphSphere v ι).mdifferentiable (by simp) x) c
+
 /-- **The round metric is `4π` times the Fubini–Study metric.** Along the diffeomorphism
 `σ = diffeomorphSphere v ι`, the round metric of the unit sphere pulls back to `4π` times the
 Fubini–Study metric `g_FS(a, b) = ω_FS(a, i b)` of the Riemann sphere: for tangent vectors `a`, `b`
@@ -414,16 +424,8 @@ theorem inner_mfderiv_diffeomorphSphere (x : OnePoint ℂ) (a b : ℂ) :
     ⟪mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x a,
       mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x b⟫_ℝ =
       4 * Real.pi * SmoothBundleForm.eval₂ fubiniStudyForm x a (Complex.I * b) := by
-  have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x :=
-    (diffeomorphSphere v ι).mdifferentiable (by simp) x
-  have hcoe : MDifferentiableAt (𝓡 2) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)
-      (diffeomorphSphere v ι x) := (contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero
-  have hd (c : ℂ) : mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
-      (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x c) =
-      mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x c :=
-    -- The composite `(↑) ∘ diffeomorphSphere v ι` is `fun y ↦ (toSphere v ι y : E)` by definition.
-    (mvfderiv_comp_apply x hcoe hσ c).symm
-  rw [inner_tangentSpace_sphere, hd a, hd b, inner_mvfderiv_coe_toSphere]
+  rw [inner_tangentSpace_sphere, ← mvfderiv_coe_toSphere_eq_comp v ι x a,
+    ← mvfderiv_coe_toSphere_eq_comp v ι x b, inner_mvfderiv_coe_toSphere]
   rw [eval₂_fubiniStudyForm_I_mul, fubiniStudyDensity_def]
   field_simp
 
@@ -439,31 +441,18 @@ private theorem mpullback_sphereVolumeForm_apply (x : OnePoint ℂ) (a b : Tange
       o.volumeForm ![(toSphere v ι x : E),
         mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x a,
         mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x b] := by
-  have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x :=
-    (diffeomorphSphere v ι).mdifferentiable (by simp) x
-  have hcoe : MDifferentiableAt (𝓡 2) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)
-      (diffeomorphSphere v ι x) := (contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero
   rw [mpullback_apply_pair, Orientation.sphereVolumeForm_apply]
   congr 1
   funext i
   fin_cases i
   · rfl
-  · exact (mvfderiv_comp_apply x hcoe hσ a).symm
-  · exact (mvfderiv_comp_apply x hcoe hσ b).symm
+  · exact (mvfderiv_coe_toSphere_eq_comp v ι x a).symm
+  · exact (mvfderiv_coe_toSphere_eq_comp v ι x b).symm
 
 /-- The differential of `σ` read in `E` takes values orthogonal to the point `σ x`. -/
 private theorem inner_coe_toSphere_mvfderiv (x : OnePoint ℂ) (c : TangentSpace 𝓘(ℝ, ℂ) x) :
     ⟪(toSphere v ι x : E), mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x c⟫_ℝ = 0 := by
-  have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x :=
-    (diffeomorphSphere v ι).mdifferentiable (by simp) x
-  have hcoe : MDifferentiableAt (𝓡 2) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)
-      (diffeomorphSphere v ι x) := (contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero
-  -- The composite `(↑) ∘ diffeomorphSphere v ι` is `fun y ↦ (toSphere v ι y : E)` by definition.
-  have hd : mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) x c =
-      mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι x)
-        (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) x c) :=
-    mvfderiv_comp_apply x hcoe hσ c
-  rw [hd]
+  rw [mvfderiv_coe_toSphere_eq_comp]
   exact inner_coe_mvfderiv_subtypeVal_sphere (diffeomorphSphere v ι x) _
 
 /-- The area of the image of the square spanned by `1` and `i`:
@@ -563,10 +552,6 @@ private theorem volumeForm_mvfderiv_coe_toSphere_pos_iff_orientationAt
   set D := (diffeomorphSphere v ι).mfderivToContinuousLinearEquiv (by simp) y
   have hmap := Manifold.Orientation.map_orientationAt_pullback o.sphereOrientation hf hdf hcard
     y D ((diffeomorphSphere v ι).mfderivToContinuousLinearEquiv_coe (by simp))
-  have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) y :=
-    (diffeomorphSphere v ι).mdifferentiable (by simp) y
-  have hcoe : MDifferentiableAt (𝓡 2) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)
-      (diffeomorphSphere v ι y) := (contMDiff_coe_sphere _).mdifferentiableAt one_ne_zero
   -- The basis `(1, i)` of the tangent space at `y`, which is `ℂ`.
   let b : Module.Basis (Fin 2) ℝ (TangentSpace 𝓘(ℝ, ℂ) y) := Complex.basisOneI
   have h1 := (Orientation.map (Fin 2) D.toLinearEquiv).injective.eq_iff
@@ -576,7 +561,7 @@ private theorem volumeForm_mvfderiv_coe_toSphere_pos_iff_orientationAt
   refine Iff.trans (iff_of_eq (congrArg (fun w ↦ 0 < o.volumeForm w) (funext fun i ↦ ?_))) h1
   have hb (c : TangentSpace 𝓘(ℝ, ℂ) y) : mvfderiv 𝓘(ℝ, ℂ) (fun y ↦ (toSphere v ι y : E)) y c =
       mvfderiv (𝓡 2) ((↑) : sphere (0 : E) 1 → E) (diffeomorphSphere v ι y) (D c) :=
-    (mvfderiv_comp_apply y hcoe hσ c).trans (congrArg _ (DFunLike.congr_fun
+    (mvfderiv_coe_toSphere_eq_comp v ι y c).trans (congrArg _ (DFunLike.congr_fun
       ((diffeomorphSphere v ι).mfderivToContinuousLinearEquiv_coe (by simp)).symm c))
   fin_cases i
   · rfl
