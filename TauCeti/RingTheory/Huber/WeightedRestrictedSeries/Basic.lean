@@ -823,16 +823,6 @@ theorem weightedC_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
       exact ha
     · exact (weightMul T ν U).zero_mem
 
-/-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` when `c` meets the bound `T(j eᵢ) · U` of its degree. -/
-theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
-    (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ}
-    (hc : c ∈ weightMul T (Finsupp.single i j) U) :
-    weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U := fun ν ↦ by
-  classical
-  simp only [Subring.coe_mul, SubmonoidClass.coe_pow, coe_weightedC, coe_weightedX,
-    MvPowerSeries.coeff_C_mul, MvPowerSeries.coeff_X_pow]
-  split_ifs with h <;> simp [h, hc]
-
 /-- `R⟨X⟩_T` for a subring `R` of `A`: the series all of whose coefficients meet the `R` bound,
 `aν ∈ Tν · R` for every `ν`. Its carrier is the subgroup `TauCeti.Huber.weightedNhd` of `R`; that
 it is a subring is coefficientwise multiplicativity of `R`.
@@ -1047,21 +1037,35 @@ theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
   Subtype.ext (by simp)
 
-/-- A monomial `a Xν` lies in `R⟨X⟩_T` exactly when its coefficient meets the `R` bound,
-`a ∈ Tν · R`. -/
+/-- A monomial `a Xν` lies in `U⟨X⟩` exactly when `a ∈ Tν · U`. -/
+@[simp 1100] theorem weightedPolynomialHom_monomial_mem_weightedNhd [NonarchimedeanRing A]
+    {T : Fin k → Set A} {hT : IsWeightFamily T} {U : AddSubgroup A} {ν : Fin k →₀ ℕ} {a : A} :
+    weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedNhd T hT U ↔
+      a ∈ weightMul T ν U := by
+  simp only [mem_weightedNhd, coe_weightedPolynomialHom, MvPolynomial.coe_monomial,
+    MvPowerSeries.coeff_monomial]
+  refine ⟨fun h ↦ by simpa using h ν, fun h μ ↦ ?_⟩
+  split_ifs with hμ
+  · exact hμ ▸ h
+  · exact zero_mem _
+
+/-- A monomial `a Xν` lies in `R⟨X⟩_T` exactly when its coefficient is in `Tν · R`. -/
 -- Apply before `mem_weightedSubring`, which expands the bound on every coefficient.
 @[simp 1100]
 theorem weightedPolynomialHom_monomial_mem_weightedSubring [NonarchimedeanRing A]
     {T : Fin k → Set A} {hT : IsWeightFamily T} {R : Subring A} {ν : Fin k →₀ ℕ} {a : A} :
     weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedSubring T hT R ↔
-      a ∈ weightMul T ν R.toAddSubgroup := by
-  classical
-  simp only [mem_weightedSubring, mem_weightedNhd, coe_weightedPolynomialHom,
-    MvPolynomial.coe_monomial, MvPowerSeries.coeff_monomial]
-  refine ⟨fun h ↦ by simpa using h ν, fun h μ ↦ ?_⟩
-  split_ifs with hμ
-  · exact hμ ▸ h
-  · exact zero_mem _
+      a ∈ weightMul T ν R.toAddSubgroup :=
+  mem_weightedSubring.trans weightedPolynomialHom_monomial_mem_weightedNhd
+
+/-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` exactly when `c ∈ T(j eᵢ) · U`. -/
+@[simp 1100] theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A]
+    {T : Fin k → Set A} (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ} :
+    weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U ↔
+      c ∈ weightMul T (Finsupp.single i j) U := by
+  rw [← weightedPolynomialHom_monomial_mem_weightedNhd (hT := hT),
+    ← MvPolynomial.C_mul_X_pow_eq_monomial, map_mul, map_pow, weightedPolynomialHom_C,
+    weightedPolynomialHom_X]
 
 /-- **The inclusion of the polynomials is injective**: a polynomial is determined by its
 coefficients, and the inclusion changes none of them.
