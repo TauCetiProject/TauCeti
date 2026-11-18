@@ -11,13 +11,13 @@ import TauCeti.Analysis.Convex.StdSimplex
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.MeasureTheory.Function.Lp.AeMem
+import TauCeti.MeasureTheory.Function.LpSeminorm.RadonNikodym
 import TauCeti.Probability.Distributions.Categorical.Basic
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import Mathlib.Topology.Sion
 
 /-!
@@ -69,25 +69,17 @@ private theorem convex_feasibleActions (μ : Measure X) : Convex ℝ (feasibleAc
   Lp.convex_setOf_ae_mem <| (StdSimplex.convex_range_toFun_comp_weights ℝ _).linear_preimage
     (WithLp.linearEquiv 2 ℝ (A → ℝ)).toLinearMap
 
-private theorem exists_norm_le_simplex_weights :
-    ∃ C : ℝ, 0 < C ∧ ∀ v : EuclideanSpace ℝ A,
-      WithLp.ofLp v ∈ range (fun t : StdSimplex ℝ A ↦ (t.weights : A → ℝ)) → ‖v‖ ≤ C := by
-  have hS := isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights ℝ A).continuous
-  have hb := (hS.image (PiLp.continuous_toLp 2 (fun _ : A ↦ ℝ))).isBounded
-  obtain ⟨C, hC, hsub⟩ := hb.subset_closedBall_lt 0 (0 : EuclideanSpace ℝ A)
-  exact ⟨C, hC, fun v hv ↦ mem_closedBall_zero_iff.mp (hsub ⟨_, hv, by simp⟩)⟩
-
 private theorem isBounded_feasibleActions (μ : Measure X) [IsFiniteMeasure μ] :
     Bornology.IsBounded (feasibleActions A μ) := by
-  obtain ⟨C, hC, hbound⟩ := exists_norm_le_simplex_weights (A := A)
   refine Metric.isBounded_closedBall.subset (s := feasibleActions A μ)
-    (t := Metric.closedBall 0 ((measureUnivNNReal μ : ℝ) ^ (2 : ℝ)⁻¹ * C)) ?_
+    (t := Metric.closedBall 0 ((measureUnivNNReal μ : ℝ) ^ (2 : ℝ)⁻¹)) ?_
   intro f hf
   rw [mem_closedBall_zero_iff]
-  have hpoint : ∀ᵐ x ∂μ, ‖f x‖ ≤ C := by
+  have hpoint : ∀ᵐ x ∂μ, ‖f x‖ ≤ 1 := by
     filter_upwards [hf] with x hx
-    exact hbound (f x) hx
-  simpa using Lp.norm_le_of_ae_bound hC.le hpoint
+    obtain ⟨t, ht⟩ := hx
+    simpa [ht] using t.norm_toLp_weights_le_one (p := 2)
+  simpa using Lp.norm_le_of_ae_bound zero_le_one hpoint
 
 variable [MeasurableSpace A] [MeasurableSingletonClass A]
 
@@ -135,9 +127,9 @@ private theorem exists_mem_feasibleActions_of_kernel (μ : Measure X) [IsFiniteM
     rw [StdSimplex.range_toFun_comp_weights, mem_inter_iff, mem_iInter]
     refine ⟨fun a ↦ measureReal_nonneg, ?_⟩
     simp [w]
-  obtain ⟨C, _, hC⟩ := exists_norm_le_simplex_weights (A := A)
-  have hLp : MemLp w 2 μ := MemLp.of_bound hw.aestronglyMeasurable C <|
-    ae_of_all _ fun x ↦ hC (w x) (hS x)
+  have hLp : MemLp w 2 μ := MemLp.of_bound hw.aestronglyMeasurable 1 <| ae_of_all _ fun x ↦ by
+    obtain ⟨t, ht⟩ := hS x
+    simpa [ht] using t.norm_toLp_weights_le_one (p := 2)
   refine ⟨hLp.toLp w, ?_, ?_⟩
   · filter_upwards [hLp.coeFn_toLp] with x hx
     simpa only [hx] using hS x
@@ -145,22 +137,11 @@ private theorem exists_mem_feasibleActions_of_kernel (μ : Measure X) [IsFiniteM
     intro a
     simp [hx, w]
 
-omit [MeasurableSpace A] [MeasurableSingletonClass A] in
-private theorem memLp_loss_rnDeriv {μ ν : Measure X} [IsFiniteMeasure μ] (hν : ν ≤ μ)
-    (l : A → ℝ) :
-    MemLp (fun x ↦ (ν.rnDeriv μ x).toReal • WithLp.toLp 2 l : X → EuclideanSpace ℝ A) 2 μ := by
-  have hm := ((ν.measurable_rnDeriv μ).ennreal_toReal.smul
-    (measurable_const (a := (WithLp.toLp 2 l : EuclideanSpace ℝ A))))
-  refine MemLp.of_bound hm.aestronglyMeasurable
-    ‖(WithLp.toLp 2 l : EuclideanSpace ℝ A)‖ ?_
-  filter_upwards [Measure.rnDeriv_le_one_of_le hν] with x hx
-  rw [norm_smul, Real.norm_of_nonneg ENNReal.toReal_nonneg]
-  exact mul_le_of_le_one_left (norm_nonneg _) (by simpa using ENNReal.toReal_mono (by simp) hx)
-
 private noncomputable def riskLinearMap {μ : Measure X} [IsFiniteMeasure μ]
     {P : Θ → Measure X} (hP : ∀ θ, P θ ≤ μ) (L : Θ → A → ℝ) :
     ActionL2 A μ →L[ℝ] (Θ → ℝ) :=
-  ContinuousLinearMap.pi fun θ ↦ innerSL ℝ ((memLp_loss_rnDeriv (hP θ) (L θ)).toLp _)
+  ContinuousLinearMap.pi fun θ ↦
+    innerSL ℝ (((P θ).memLp_toReal_rnDeriv_smul_const (hP θ) 2 (WithLp.toLp 2 (L θ))).toLp _)
 
 private theorem riskLinearMap_eq_risk {P : Θ → Measure X} [∀ θ, IsFiniteMeasure (P θ)]
     {μ : Measure X} [IsFiniteMeasure μ] (hP : ∀ θ, P θ ≤ μ) (L : Θ → A → ℝ)
@@ -173,7 +154,8 @@ private theorem riskLinearMap_eq_risk {P : Θ → Measure X} [∀ θ, IsFiniteMe
   rw [← integral_toReal_rnDeriv_mul ((hP θ).absolutelyContinuous)]
   simp only [riskLinearMap, ContinuousLinearMap.pi_apply, innerSL_apply_apply, L2.inner_def]
   apply integral_congr_ae
-  filter_upwards [(memLp_loss_rnDeriv (hP θ) (L θ)).coeFn_toLp, hf] with x hfx hkx
+  filter_upwards [((P θ).memLp_toReal_rnDeriv_smul_const (hP θ) 2
+    (WithLp.toLp 2 (L θ))).coeFn_toLp, hf] with x hfx hkx
   rw [hfx, inner_smul_left, EuclideanSpace.inner_eq_star_dotProduct, RCLike.conj_to_real]
   congr 1
   simp only [dotProduct, Pi.star_apply, star_trivial, hkx, smul_eq_mul]
@@ -220,11 +202,11 @@ theorem isCompact_convex_range_risk [Finite Θ] [Finite A] (P : Θ → Measure X
 
 variable [MeasurableSpace Θ] [MeasurableSingletonClass Θ]
 
-/-- **Finite-game minimax theorem.** Finite nonempty parameter and action sets admit a saddle
-point consisting of a randomized Bayes rule and a probability prior. The risk of the rule at
-every parameter is at most its average risk under that prior. -/
+/-- **Finite-game minimax theorem.** With finite sampling measures and finite nonempty parameter
+and action sets, there is a saddle point consisting of a randomized Bayes rule and a probability
+prior. The risk of the rule at every parameter is at most its average risk under that prior. -/
 theorem exists_statistical_game_saddle_point [Finite Θ] [Finite A] [Nonempty Θ] [Nonempty A]
-    (P : Θ → Measure X) [∀ θ, IsProbabilityMeasure (P θ)] (L : Θ → A → ℝ) :
+    (P : Θ → Measure X) [∀ θ, IsFiniteMeasure (P θ)] (L : Θ → A → ℝ) :
     ∃ δ : {κ : Kernel X A // IsMarkovKernel κ}, ∃ π : ProbabilityMeasure Θ,
       IsBayesRule (fun κ : {κ : Kernel X A // IsMarkovKernel κ} ↦ risk P L κ.val)
         (π : Measure Θ) δ ∧
@@ -266,9 +248,10 @@ theorem exists_statistical_game_saddle_point [Finite Θ] [Finite A] [Nonempty Θ
     have h := hs _ (mem_range_self δ) v.weights (mem_range_self v)
     simpa [havg, B, v, StdSimplex.weights_single, Finsupp.single_apply] using h
 
-/-- In a finite statistical game the minimax and maximin values of the real risk agree. -/
+/-- In a finite statistical game with finite sampling measures, the minimax and maximin values
+of the real risk agree. -/
 theorem iInf_iSup_risk_eq_iSup_iInf_integral_risk [Finite Θ] [Finite A] [Nonempty Θ] [Nonempty A]
-    (P : Θ → Measure X) [∀ θ, IsProbabilityMeasure (P θ)] (L : Θ → A → ℝ) :
+    (P : Θ → Measure X) [∀ θ, IsFiniteMeasure (P θ)] (L : Θ → A → ℝ) :
     (⨅ δ : {κ : Kernel X A // IsMarkovKernel κ}, ⨆ θ, risk P L δ.val θ) =
       ⨆ π : ProbabilityMeasure Θ, ⨅ δ : {κ : Kernel X A // IsMarkovKernel κ},
         ∫ θ, risk P L δ.val θ ∂(π : Measure Θ) := by
@@ -291,15 +274,16 @@ theorem iInf_iSup_risk_eq_iSup_iInf_integral_risk [Finite Θ] [Finite A] [Nonemp
   have hπ : (⨅ d, B π d) = B π δ := by
     have hb (d : D) : B π δ ≤ B π d := hbayes.integral_le d Integrable.of_finite
     exact le_antisymm (ciInf_le ⟨_, forall_mem_range.mpr hb⟩ _) (le_ciInf hb)
-  obtain ⟨C, hC⟩ := Finite.exists_le (fun p : Θ × A ↦ |L p.1 p.2|)
-  have hlower (ν : ProbabilityMeasure Θ) (d : D) : -C ≤ B ν d := by
-    have hθ (θ : Θ) : -C ≤ R d θ := by
-      let := d.property
-      exact (abs_le.mp (abs_risk_le (ae_of_all _ fun a ↦ hC (θ, a)))).1
-    simpa using integral_mono (μ := (ν : Measure Θ)) (integrable_const (-C))
-      Integrable.of_finite hθ
+  have hbdd (ν : ProbabilityMeasure Θ) : BddBelow (range (B ν)) := by
+    let := Fintype.ofFinite Θ
+    have hcont : Continuous fun r : Θ → ℝ ↦ ∫ θ, r θ ∂(ν : Measure Θ) := by
+      simp_rw [integral_fintype Integrable.of_finite]
+      fun_prop
+    have hcomp : B ν = (fun r ↦ ∫ θ, r θ ∂(ν : Measure Θ)) ∘ R := rfl
+    rw [hcomp, range_comp]
+    exact ((isCompact_convex_range_risk P L).1.image hcont).bddBelow
   have hupper (ν : ProbabilityMeasure Θ) : (⨅ d, B ν d) ≤ B π δ :=
-    (ciInf_le ⟨_, forall_mem_range.mpr (hlower ν)⟩ δ).trans ((hle ν δ).trans_eq hM)
+    (ciInf_le (hbdd ν) δ).trans ((hle ν δ).trans_eq hM)
   have hright : (⨆ ν, ⨅ d, B ν d) = B π δ :=
     le_antisymm (ciSup_le hupper)
       (hπ.ge.trans (le_ciSup ⟨_, forall_mem_range.mpr hupper⟩ π))
