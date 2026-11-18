@@ -39,6 +39,8 @@ automorphisms of `K_{f(L/K)} / K` that extend to `L`.
   `TauCeti.inertiaDegree_fixedField_stabilizer_out` on Galois orbits.
 * `IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one`: a subextension is totally
   ramified exactly when its residue degree is one.
+* `IntermediateField.finrank_div_inertiaDegree_pos`: on a finite subextension, `[L : K] / f(L/K)`
+  is positive.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
 * `IntermediateField.inf_maximalUnramifiedExtension`: `L ∩ K^{ur} = K_{f(L/K)}` for finite `L`.
 * `IntermediateField.natCard_algEquiv_eq_mul`: decomposition of `Nat.card (L ≃ₐ[K] L)` along
@@ -121,6 +123,16 @@ theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K))
     exact ⟨ramificationIndex K L,
       (ramificationIndex_mul_inertiaDegree K L).symm.trans (mul_comm _ _)⟩
   · simp [inertiaDegree_of_not_finite h, Module.finrank_of_not_finite h]
+
+/-- On a finite subextension, the quotient `[L : K] / f(L/K)` (its ramification index) is
+positive. -/
+theorem finrank_div_inertiaDegree_pos (L : IntermediateField K (SeparableClosure K))
+    [Module.Finite K L] : 0 < Module.finrank K L / L.inertiaDegree := by
+  have hmul := Nat.mul_div_cancel' L.inertiaDegree_dvd_finrank
+  have hpos : 0 < Module.finrank K L := Module.finrank_pos
+  by_contra! hle
+  rw [Nat.le_zero.mp hle, mul_zero] at hmul
+  omega
 
 /-- The residue degree vanishes exactly on infinite subextensions. -/
 @[simp]
