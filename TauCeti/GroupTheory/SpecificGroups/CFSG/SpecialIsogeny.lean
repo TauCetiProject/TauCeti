@@ -500,8 +500,9 @@ theorem datumSpecialIsogeny_weightMap_apply (e : SuzukiReeIndex) (χ : Fin e.1.r
     ((e.1.dynkinType.simplyConnectedRootDatum e.1.dynkinType_valid).coroot
       (e.1.dynkinType.simpleIndex e.1.dynkinType_valid i))
   -- Both pairings are dot products against the standard basis vectors of the simple coroots.
-  rw [datumSpecialIsogeny_coweightMap_coroot_simpleIndex, toLinearMap_simplyConnectedRootDatum,
-    toLinearMap_simplyConnectedRootDatum, dotProduct_smul] at h
+  rw [datumSpecialIsogeny_coweightMap_coroot_simpleIndex,
+    toLinearMap_simplyConnectedRootDatum_apply_apply,
+    toLinearMap_simplyConnectedRootDatum_apply_apply, dotProduct_smul] at h
   simpa [mul_comm] using h
 
 /-! ## The square relation -/
