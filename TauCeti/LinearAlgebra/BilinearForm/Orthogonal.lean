@@ -685,9 +685,10 @@ theorem finrank_orthogonal_span_singleton_add_one (B : LinearMap.BilinForm K V) 
 
 omit [FiniteDimensional K V] in
 /-- The orthogonal complement of a subspace has at least the complementary dimension:
-`dim V ≤ dim W + dim Wᗮ`. No reflexivity or nondegeneracy is needed; the defect is the dimension
-of `W ∩ ker B` (`LinearMap.BilinForm.finrank_add_finrank_orthogonal'`). In infinite dimension
-`finrank K V` is `0`, so the inequality holds by the junk value. -/
+`dim V ≤ dim W + dim Wᗮ`. No reflexivity or nondegeneracy is needed. When `V` is
+finite-dimensional, the defect is the dimension of `W ∩ ker B`
+(`LinearMap.BilinForm.finrank_add_finrank_orthogonal'`); in infinite dimension `finrank K V` is
+`0`, so the inequality holds by the junk value. -/
 theorem finrank_le_finrank_add_finrank_orthogonal (B : LinearMap.BilinForm K V)
     (W : Submodule K V) : finrank K V ≤ finrank K W + finrank K (B.orthogonal W) := by
   by_cases hV : FiniteDimensional K V
