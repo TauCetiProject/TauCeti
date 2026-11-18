@@ -809,18 +809,19 @@ theorem continuous_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
     Continuous (gaugeFixedAdjoint x y) :=
   (contDiff_gaugeFixedAdjoint (n := 0) (contDiff_zero.mpr hx) (by simpa using hy)).continuous
 
-/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
-theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
-    HasCompactSupport (gaugeFixedAdjoint x y) := by
-  apply hy.mono'
-  intro z hz
-  by_contra hn
+/-- Outside `tsupport y`, `L_x* y` vanishes, with no regularity assumption on the field. -/
+theorem gaugeFixedAdjoint_eq_zero_of_notMem_tsupport {z : ℂ} (hz : z ∉ tsupport y) :
+    gaugeFixedAdjoint x y z = 0 := by
   have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
     fderiv_of_notMem_tsupport ℝ fun h ↦
-      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
-  apply hz
+      hz (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
   ext i
-  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
+  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hz]
+
+/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
+theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedAdjoint x y) :=
+  hy.mono' fun _ hz ↦ not_not.1 fun hn ↦ hz (gaugeFixedAdjoint_eq_zero_of_notMem_tsupport hn)
 
 /-- The gauge-fixed operator is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
 theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}
