@@ -108,26 +108,6 @@ theorem measureReal_exists_isCompressibleVector_norm_toEuclideanLin_lt_le
 private def fixedDirectionRate (L : ℝ≥0) : ℝ :=
   (1 / 1536) * min (1 / (4 * ((L ^ 2 : ℝ≥0) : ℝ) ^ 2)) (1 / (2 * ((L ^ 2 : ℝ≥0) : ℝ)))
 
-private theorem measureReal_l2_opNorm_gt_le_of_card_le
-    (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) P)
-    {L : ℝ≥0} (hA : ∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) (L ^ 2) P)
-    (hdim : Fintype.card n ≤ Fintype.card m) :
-    P.real {ω | 24 * (L : ℝ) * Real.sqrt (Fintype.card m) < ‖A ω‖} ≤
-      2 * Real.exp (-(Fintype.card m : ℝ)) := by
-  have : IsProbabilityMeasure P := hind.isProbabilityMeasure
-  let d : ℝ := Fintype.card m
-  have hnorm := hind.measureReal_matrix_l2_opNorm_gt_le hA (t := Real.sqrt d) (by positivity)
-  rw [Real.sq_sqrt (by positivity)] at hnorm
-  refine (measureReal_mono ?_ (measure_ne_top _ _)).trans hnorm
-  intro ω hω
-  have hcard : (Fintype.card n : ℝ) ≤ d := Nat.cast_le.mpr hdim
-  have hsqrt := Real.sqrt_le_sqrt hcard
-  have hthreshold : 8 * (L : ℝ) * (Real.sqrt d + Real.sqrt (Fintype.card n) +
-      Real.sqrt d) ≤ 24 * (L : ℝ) * Real.sqrt d := by
-    have hh := mul_nonneg L.coe_nonneg (sub_nonneg.mpr hsqrt)
-    nlinarith only [hh]
-  exact hthreshold.trans_lt hω
-
 private theorem measureReal_compressible_le_exp
     (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) P)
     {L : ℝ≥0} (hA : ∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) (L ^ 2) P)

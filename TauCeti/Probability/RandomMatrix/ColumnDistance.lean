@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Moments.SubspaceDistance
 public import TauCeti.Probability.Independence.Matrix
 import TauCeti.Analysis.Normed.Module.FiniteSpan
-import TauCeti.Probability.Independence.SectionBounds
+import TauCeti.Probability.Independence.Integration
 
 /-!
 # Distances of independent columns from the span of the other columns
