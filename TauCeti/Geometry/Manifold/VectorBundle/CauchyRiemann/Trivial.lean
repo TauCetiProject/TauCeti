@@ -41,8 +41,10 @@ Wirtinger derivative and the Wirtinger derivative.
 * `TauCeti.SmoothAlmostComplexStructure.dbarFunction_eq_zero_iff`,
   `TauCeti.SmoothAlmostComplexStructure.dbarFunction_eq_zero_iff_isPseudoholomorphicAt`,
   `TauCeti.SmoothAlmostComplexStructure.dbarFunction_ofComplexManifold_eq_zero_iff`: its kernel
-  at a point consists of the functions whose differential is complex linear there, that is, of the
-  pseudoholomorphic functions, which on a complex manifold are the holomorphic ones.
+  at a point consists of the functions whose differential is complex linear there. Among the
+  functions real differentiable at the point, these are the pseudoholomorphic functions, which on
+  a complex manifold are the holomorphic ones; a function that is not differentiable there has
+  zero differential and so also lies in the kernel.
 * `TauCeti.SmoothAlmostComplexStructure.delFunction`: the operator `σ ↦ (dσ)^{1,0}` on
   `F`-valued functions.
 * `TauCeti.SmoothAlmostComplexStructure.delFunction_add_dbarFunction`,
