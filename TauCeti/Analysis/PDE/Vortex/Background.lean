@@ -443,7 +443,7 @@ private theorem tendstoUniformly_exp_smul_exp_backgroundAmplitude_smul {w : ι �
     TendstoUniformly
       (fun i z ↦ Real.exp (w i z) • (Real.exp (backgroundAmplitude (P i).eval z) • (P i).eval z))
       (fun z ↦ Real.exp (w₀ z) • (Real.exp (backgroundAmplitude Q.eval z) • Q.eval z)) l := by
-  have hE := hconv.rexp_of_le hM
+  have hE := hconv.rexp ⟨M, Set.forall_mem_range.2 hM⟩
   have hG := tendstoUniformly_exp_backgroundAmplitude_smul hdeg hcoeff
   rw [Metric.tendstoUniformly_iff] at hE hG ⊢
   intro ε hε

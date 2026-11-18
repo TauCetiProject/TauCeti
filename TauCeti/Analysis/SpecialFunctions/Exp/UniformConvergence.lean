@@ -20,21 +20,28 @@ cannot be dropped: `x + 1 / n → x` uniformly on `ℝ`, but
 
 ## Main results
 
-* `TendstoUniformly.rexp_of_le`: if `f i → g` uniformly and `g ≤ M`, then
-  `exp ∘ f i → exp ∘ g` uniformly.
+* `TendstoUniformlyOn.rexp`: if `f i → g` uniformly on `K` and `g` is bounded above on `K`, then
+  `exp ∘ f i → exp ∘ g` uniformly on `K`.
+* `TendstoUniformly.rexp`: the same on the whole space.
 -/
 
 public section
 
 open Filter
 
-/-- If `f i → g` uniformly and `g` is bounded above, then `exp ∘ f i → exp ∘ g` uniformly. This is
-the real part of `TendstoUniformlyOn.comp_cexp` for the complexified functions. -/
-theorem TendstoUniformly.rexp_of_le {α ι : Type*} {l : Filter ι} {f : ι → α → ℝ} {g : α → ℝ}
-    {M : ℝ} (hf : TendstoUniformly f g l) (hM : ∀ x, g x ≤ M) :
-    TendstoUniformly (fun i x ↦ Real.exp (f i x)) (fun x ↦ Real.exp (g x)) l := by
-  have h := (tendstoUniformlyOn_univ.2
-    (Complex.ofRealCLM.uniformContinuous.comp_tendstoUniformly hf)).comp_cexp
-    ⟨M, by rintro _ ⟨x, -, rfl⟩; simpa using hM x⟩
+/-- If `f i → g` uniformly on `K` and `g` is bounded above on `K`, then `exp ∘ f i → exp ∘ g`
+uniformly on `K`. This is the real part of `TendstoUniformlyOn.comp_cexp` for the complexified
+functions. -/
+theorem TendstoUniformlyOn.rexp {α ι : Type*} {l : Filter ι} {f : ι → α → ℝ} {g : α → ℝ}
+    {K : Set α} (hf : TendstoUniformlyOn f g l K) (hg : BddAbove (g '' K)) :
+    TendstoUniformlyOn (fun i x ↦ Real.exp (f i x)) (fun x ↦ Real.exp (g x)) l K := by
+  have h := (Complex.ofRealCLM.uniformContinuous.comp_tendstoUniformlyOn hf).comp_cexp
+    (by simpa [Set.image_image] using hg)
   simpa [← Complex.ofReal_exp, Function.comp_def] using
-    Complex.reCLM.uniformContinuous.comp_tendstoUniformly (tendstoUniformlyOn_univ.1 h)
+    Complex.reCLM.uniformContinuous.comp_tendstoUniformlyOn h
+
+/-- If `f i → g` uniformly and `g` is bounded above, then `exp ∘ f i → exp ∘ g` uniformly. -/
+theorem TendstoUniformly.rexp {α ι : Type*} {l : Filter ι} {f : ι → α → ℝ} {g : α → ℝ}
+    (hf : TendstoUniformly f g l) (hg : BddAbove (Set.range g)) :
+    TendstoUniformly (fun i x ↦ Real.exp (f i x)) (fun x ↦ Real.exp (g x)) l :=
+  tendstoUniformlyOn_univ.1 <| (tendstoUniformlyOn_univ.2 hf).rexp <| by rwa [Set.image_univ]
