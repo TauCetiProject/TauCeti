@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.LinearAlgebra.Dimension.Finite
 import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
@@ -25,11 +26,12 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent, and
-vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
+linearly independent, and vectors in their span vanish outside the corresponding indices. These
+algebraic facts hold over normed rings at every exponent; over a ring with the strong rank
+condition, for instance a field, `lp` over an infinite index type is therefore not a finite module
+(`lp.not_finite`). In `ℓ²`, the squared norm of a finite sum of single-coordinate vectors is the
+sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single`
+for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
 most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
 
@@ -197,6 +199,14 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
     exact lp.single_apply_ne (E := fun _ : ι ↦ 𝕜) p (f j) 1
       (fun hij ↦ hi ⟨j, hij.symm⟩)
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
+
+omit [DecidableEq ι] in
+/-- For an infinite index type, the scalar sequence space `lp` is not a finite module. -/
+theorem not_finite [Infinite ι] [StrongRankCondition 𝕜] :
+    ¬ Module.Finite 𝕜 (lp (fun _ : ι ↦ 𝕜) p) := fun _ ↦ by
+  classical
+  exact Module.Finite.not_linearIndependent_of_infinite _
+    (linearIndependent_single_one (ι := ι) (𝕜 := 𝕜) (p := p))
 
 end Single
 

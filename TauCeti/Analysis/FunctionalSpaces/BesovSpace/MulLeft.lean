@@ -239,7 +239,7 @@ private theorem mulLeftCLM_compL_mulLeftCLM_eq_id {A : E → F →L[ℂ] G} {B :
     mulLeftCLM φ s p q B hB hbdB ∘L mulLeftCLM φ s p q A hA hbdA = .id ℂ _ := by
   have hBA : (fun x ↦ (B x).comp (A x)) = fun _ ↦ .id ℂ F := funext h
   rw [mulLeftCLM_compL_mulLeftCLM hA hbdA hB hbdB (by rw [hBA]; exact .const _)
-      (by rw [hBA]; exact fun n _ ↦ ⟨_, norm_iteratedFDeriv_const_le _ n⟩)]
+      (by rw [hBA]; exact fun n _ ↦ ⟨_, norm_iteratedFDeriv_const_le n _⟩)]
   exact mulLeftCLM_eq_id h _ _
 
 variable (φ s p q) in
