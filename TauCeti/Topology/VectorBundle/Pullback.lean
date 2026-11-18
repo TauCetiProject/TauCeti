@@ -129,10 +129,12 @@ theorem continuousLinearMapAt_pullback (e : Trivialization F (π F V)) [e.IsLine
     (f : K) (x : B') :
     (e.pullback f).continuousLinearMapAt 𝕜 x = e.continuousLinearMapAt 𝕜 (f x) := by
   ext v
-  -- Both sides are the chart at `f x` on the base set and zero off it.
-  change (e.pullback f).linearMapAt 𝕜 x v = e.linearMapAt 𝕜 (f x) v
-  simp only [coe_linearMapAt]
-  rfl
+  -- Both sides are the chart at `f x` on the base set and zero off it. Here `v : (f *ᵖ V) x`,
+  -- which is `V (f x)` only after unfolding, so `rw`/`simp` cannot rewrite the right side; its
+  -- `continuousLinearMapAt_apply` unfolding is applied as a term at type `V (f x)` instead.
+  simp only [continuousLinearMapAt_apply, linearMapAt_apply, pullback_baseSet, Set.mem_preimage,
+    pullback_apply]
+  exact ((congrFun (e.continuousLinearMapAt_apply 𝕜 (f x)) v).trans (e.linearMapAt_apply v)).symm
 
 end Bundle.Trivialization
 
