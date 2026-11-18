@@ -137,12 +137,9 @@ theorem ae_tendsto_of_ae_ae_tendsto_logarithmicPotential [SFinite P]
       (fun n ↦ (hX n).measurable_mk) hmY hμ
     filter_upwards [h] with z hz
     filter_upwards [hz, hXY] with ω hω he
-    rwa [← show (fun n ↦ (X n ω : Measure ℂ).logarithmicPotential z) =
-        (fun n ↦ (Y n ω : Measure ℂ).logarithmicPotential z) from
-      funext fun n ↦ congrArg (fun σ : ProbabilityMeasure ℂ ↦
-        (σ : Measure ℂ).logarithmicPotential z) (he n)]
+    simpa only [he] using hω
   filter_upwards [hY, hXY] with ω hω he
-  rwa [show (fun n ↦ X n ω) = (fun n ↦ Y n ω) from funext he]
+  simpa only [← he] using hω
 
 /-- Pointwise convergence in probability of the potentials for almost every observation point
 implies convergence in probability of every bounded continuous test integral. -/

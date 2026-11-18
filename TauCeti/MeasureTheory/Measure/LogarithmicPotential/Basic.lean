@@ -190,11 +190,11 @@ theorem exists_eLpNorm_normalizedLogarithmicPotential_le (R : ℝ) :
       intro w
       have hm : Measurable (fun z ↦ K z w) :=
         hK.comp (measurable_id.prodMk measurable_const)
+      simp only [K] at hm
       have h := hbound w
       rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by norm_num) (by norm_num)
-        (show AEStronglyMeasurable (fun z ↦ Real.log ‖z - w‖ - Real.posLog ‖w‖) ν
-          from hm.aestronglyMeasurable)] at h
-      simpa only [ENNReal.toReal_ofNat] using h
+        hm.aestronglyMeasurable] at h
+      simpa only [K, ENNReal.toReal_ofNat] using h
 
 /-- The normalized potential of a finite measure is locally square integrable. -/
 theorem memLp_normalizedLogarithmicPotential_closedBall (μ : Measure ℂ) [IsFiniteMeasure μ]

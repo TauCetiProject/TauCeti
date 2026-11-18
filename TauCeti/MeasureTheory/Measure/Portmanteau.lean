@@ -218,35 +218,6 @@ theorem exists_measure_nndist_ge_le_of_tendsto (h : Tendsto μs L (𝓝 μ)) (x 
     (ProbabilityMeasure.limsup_measure_closed_le_of_tendsto h (hS n)) hn
   filter_upwards [Filter.eventually_lt_of_limsup_lt hlt] with i hi using hi.le
 
-private theorem integral_cutoff_le_measure {E : Type*} [NormedAddCommGroup E]
-    [MeasurableSpace E] [BorelSpace E] {μ : ProbabilityMeasure E} {U : Set E}
-    (hU : MeasurableSet U) {f : E → ℝ} (hf : Continuous f) (hc : HasCompactSupport f)
-    (h01 : range f ⊆ Icc 0 1) (hsub : tsupport f ⊆ U) :
-    ENNReal.ofReal (∫ x, f x ∂(μ : Measure E)) ≤ (μ : Measure E) U := by
-  rw [← ofReal_measureReal (μ := (μ : Measure E)) (s := U)]
-  apply ENNReal.ofReal_le_ofReal
-  rw [← integral_indicator_one hU]
-  exact integral_mono (hf.integrable_of_hasCompactSupport hc) (integrable_const 1 |>.indicator hU)
-    fun x ↦ by
-      by_cases hx : x ∈ U
-      · simpa [indicator_of_mem hx] using (h01 (mem_range_self x)).2
-      · simp [indicator_of_notMem hx, Function.notMem_support.mp
-          (fun h ↦ hx (hsub (subset_tsupport f h)))]
-
-private theorem measure_le_integral_cutoff {E : Type*} [NormedAddCommGroup E]
-    [MeasurableSpace E] [BorelSpace E] {μ : ProbabilityMeasure E} {K : Set E}
-    (hK : MeasurableSet K) {f : E → ℝ} (hf : Continuous f) (hc : HasCompactSupport f)
-    (h0 : ∀ x, 0 ≤ f x) (h1 : ∀ x ∈ K, f x = 1) :
-    (μ : Measure E) K ≤ ENNReal.ofReal (∫ x, f x ∂(μ : Measure E)) := by
-  rw [← ofReal_measureReal (μ := (μ : Measure E)) (s := K)]
-  apply ENNReal.ofReal_le_ofReal
-  rw [← integral_indicator_one hK]
-  exact integral_mono (integrable_const 1 |>.indicator hK) (hf.integrable_of_hasCompactSupport hc)
-    fun x ↦ by
-      by_cases hx : x ∈ K
-      · simp [indicator_of_mem hx, h1 x hx]
-      · simpa [indicator_of_notMem hx] using h0 x
-
 /-- Smooth compactly supported test functions determine weak convergence of probability measures
 on a finite-dimensional real normed space. -/
 theorem tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport
@@ -269,11 +240,13 @@ theorem tendsto_of_forall_tendsto_integral_contDiff_hasCompactSupport
     htest.liminf_eq.symm
   calc
     (μ : Measure E) K ≤ ENNReal.ofReal (∫ x, f x ∂(μ : Measure E)) :=
-      measure_le_integral_cutoff hK.measurableSet hf.continuous hc
-        (fun x ↦ (h01 (mem_range_self x)).1)
-        (fun x hx ↦ by simpa using (interior_subset (h1 hx) : x ∈ f ⁻¹' {1}))
+      (hf.continuous.integrable_of_hasCompactSupport hc).measure_le_integral
+        (ae_of_all _ fun x ↦ (h01 (mem_range_self x)).1) fun x hx ↦ by
+          have hfx : f x = 1 := interior_subset (h1 hx)
+          exact hfx.ge
     _ = _ := hl
     _ ≤ _ := liminf_le_liminf (Eventually.of_forall fun i ↦
-      integral_cutoff_le_measure hU.measurableSet hf.continuous hc h01 hsub)
+      integral_le_measure (fun x _ ↦ (h01 (mem_range_self x)).2) fun x hx ↦
+        (Function.notMem_support.mp (fun hs ↦ hx (hsub (subset_tsupport f hs)))).le)
 
 end MeasureTheory.ProbabilityMeasure
