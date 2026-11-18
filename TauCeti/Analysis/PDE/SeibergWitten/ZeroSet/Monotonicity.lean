@@ -379,11 +379,12 @@ theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
 /-- **Taubes's monotonicity inequality in a Darboux chart.** Let `J`, `e` and the closed two-form
 field `F` be as in `measure_closedBall_le_mul_deriv_add`, on the open ball `ball c R`, and let
 `δ ≥ 0` be a continuous density there bounded by the Kähler component of `F`,
-`δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`. Suppose that `δ` bounds the Hermitian part of `F` only for a
-complex structure `J' x` and a quadratic form `g x` that vary with the point:
-`F(v, J' x v) ≤ ((1 + κ) δ + K) g x v`, where `J' x` is within `L ‖x - c‖` of `J`, `g x v` is at
-most `(1 + L ‖x - c‖) ‖v‖²`, and the norm of `F` is bounded by the density, `‖F‖ ≤ A δ + K`. Then
-the measure `ν = δ dμ` satisfies, at every radius `0 < σ < R`, the differential inequality
+`δ ≤ F(e₀, e₁) + F(e₂, e₃) + K`. Let `0 < σ < R` be a radius on whose sphere `δ` bounds the
+Hermitian part of `F` only for a complex structure `J' x` and a quadratic form `g x` that vary with
+the point: `F(v, J' x v) ≤ ((1 + κ) δ + K) g x v`, where `J' x` is within `L ‖x - c‖` of `J`,
+`g x v` is at most `(1 + L ‖x - c‖) ‖v‖²`, and the norm of `F` is bounded by the density,
+`‖F‖ ≤ A δ + K`. Then the measure `ν = δ dμ` satisfies, at the radius `σ`, the differential
+inequality
 
 `ν(B_σ) ≤ (σ / 2) (1 + (1 + A) L σ) (1 + κ) d/dσ ν(B_σ) + K (1 + 2 L R) (|S| / 2 + |B₁|) σ⁴`
 
@@ -394,10 +395,10 @@ theorem measure_closedBall_le_mul_one_add_mul_deriv_add {J : AlmostComplexStruct
     (hF : ∀ x ∈ ball c R, ContDiffAt ℝ 1 F x) (hdF : ∀ x ∈ ball c R, extDeriv F x = 0)
     (hδ : ContinuousOn δ (ball c R)) (hδ₀ : ∀ x ∈ ball c R, 0 ≤ δ x)
     (hω : ∀ x ∈ ball c R, δ x ≤ F x ![e 0, e 1] + F x ![e 2, e 3] + K)
-    (hB : ∀ x ∈ ball c R, ∀ v, F x ![v, J' x v] ≤ ((1 + κ) * δ x + K) * g x v)
-    (hg : ∀ x ∈ ball c R, ∀ v, g x v ≤ (1 + L * ‖x - c‖) * ‖v‖ ^ 2)
-    (hJ : ∀ x ∈ ball c R, ∀ v, ‖J' x v - J v‖ ≤ L * ‖x - c‖ * ‖v‖)
-    (hFn : ∀ x ∈ ball c R, ‖F x‖ ≤ A * δ x + K) (hσ : σ ∈ Ioo 0 R) :
+    (hB : ∀ x ∈ sphere c σ, ∀ v, F x ![v, J' x v] ≤ ((1 + κ) * δ x + K) * g x v)
+    (hg : ∀ x ∈ sphere c σ, ∀ v, g x v ≤ (1 + L * ‖x - c‖) * ‖v‖ ^ 2)
+    (hJ : ∀ x ∈ sphere c σ, ∀ v, ‖J' x v - J v‖ ≤ L * ‖x - c‖ * ‖v‖)
+    (hFn : ∀ x ∈ sphere c σ, ‖F x‖ ≤ A * δ x + K) (hσ : σ ∈ Ioo 0 R) :
     ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c σ)).toReal ≤
       σ / 2 * (1 + (1 + A) * L * σ) * (1 + κ) * deriv (fun s ↦
         ((μ.withDensity fun x ↦ ENNReal.ofReal (δ x)) (closedBall c s)).toReal) σ +
@@ -421,18 +422,18 @@ theorem measure_closedBall_le_mul_one_add_mul_deriv_add {J : AlmostComplexStruct
       linarith
     have hnorm : |F x ![v, J' x v - J v]| ≤ ‖F x‖ * (‖v‖ * ‖J' x v - J v‖) := by
       simpa [Fin.prod_univ_two, Real.norm_eq_abs] using (F x).le_opNorm ![v, J' x v - J v]
-    have hg' := hg x hxR v
-    have hJ' := hJ x hxR v
+    have hg' := hg x hx v
+    have hJ' := hJ x hx v
     rw [hxc] at hg' hJ'
     have h₁ : ((1 + κ) * δ x + K) * g x v ≤ ((1 + κ) * δ x + K) * ((1 + L * σ) * ‖v‖ ^ 2) :=
       mul_le_mul_of_nonneg_left hg' (add_nonneg (mul_nonneg (by linarith) hδx) hK)
     have h₂ : ‖F x‖ * (‖v‖ * ‖J' x v - J v‖) ≤ (A * δ x + K) * (‖v‖ * (L * σ * ‖v‖)) :=
-      mul_le_mul (hFn x hxR) (mul_le_mul_of_nonneg_left hJ' (norm_nonneg v))
+      mul_le_mul (hFn x hx) (mul_le_mul_of_nonneg_left hJ' (norm_nonneg v))
         (by positivity) (add_nonneg (mul_nonneg hA hδx) hK)
     calc F x ![v, J v]
         ≤ ((1 + κ) * δ x + K) * ((1 + L * σ) * ‖v‖ ^ 2) +
             (A * δ x + K) * (‖v‖ * (L * σ * ‖v‖)) := by
-          linarith [hB x hxR v, neg_abs_le (F x ![v, J' x v - J v])]
+          linarith [hB x hx v, neg_abs_le (F x ![v, J' x v - J v])]
       _ ≤ _ := by
           nlinarith [mul_nonneg (mul_nonneg (mul_nonneg (mul_nonneg hκ hA) hL) hσ.1.le)
             (mul_nonneg hδx (sq_nonneg ‖v‖)),
