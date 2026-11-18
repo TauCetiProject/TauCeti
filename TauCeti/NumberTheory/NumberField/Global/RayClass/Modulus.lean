@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
 
 /-!
 # Moduli of a number field and multiplicative congruence
@@ -79,6 +80,8 @@ away from a finite set of primes.
   modulo the narrow modulus are the totally positive integer units.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_of_dvd_span_singleton`: a divisor of a principal
   ideal whose generator is a unit at the finite part is prime to the modulus.
+* `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_span_singleton_iff`: an integer generates an
+  ideal prime to the modulus exactly when it is a unit at the finite part.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_iff_sup_eq_top`: being prime to the support is
   comaximality with the finite part.
 
@@ -572,15 +575,11 @@ theorem Modulus.isCoprimeTo_of_dvd_span_singleton {m : Modulus K} {J : Ideal (�
     exact (valuation_lt_one_iff_mem (K := K) v a).mpr hmem
   exact absurd (mem_primeToSubgroup.mp hx v ((Modulus.mem_support_iff m v).mp hv)) hlt.ne
 
-/-- **A principal ideal is prime to the modulus exactly when its generator is a unit at the
-finite part.** -/
-theorem Modulus.isCoprimeTo_span_singleton_iff {m : Modulus K} {a : 𝓞 K} {x : Kˣ}
-    (hxa : (x : K) = a) : m.IsCoprimeTo (Ideal.span {a}) ↔ x ∈ primeToSubgroup m := by
-  refine ⟨fun h ↦ mem_primeToSubgroup.mpr fun v hv ↦ ?_,
-    fun hx ↦ isCoprimeTo_of_dvd_span_singleton hxa hx dvd_rfl⟩
-  rw [hxa, valuation_of_algebraMap, intValuation_eq_one_iff]
-  exact fun hva ↦ (isCoprimeTo_iff.mp h).2 v ((mem_support_iff m v).mpr hv)
-    (Ideal.dvd_span_singleton.mpr hva)
+/-- **An integer generates an ideal prime to the modulus exactly when it is a unit at the finite
+part**, that is, when it lies in `primeToSubgroup m`. -/
+theorem Modulus.isCoprimeTo_span_singleton_iff {m : Modulus K} {a : 𝓞 K} :
+    m.IsCoprimeTo (Ideal.span {a}) ↔ ∃ x : primeToSubgroup m, ((x : Kˣ) : K) = a :=
+  Ideal.isPrimeTo_span_singleton_iff K
 
 /-- **Being prime to the modulus is comaximality with its finite part.**  A prime dividing both `I`
 and the finite part is exactly a prime of the support dividing `I`, and such a prime exists as soon

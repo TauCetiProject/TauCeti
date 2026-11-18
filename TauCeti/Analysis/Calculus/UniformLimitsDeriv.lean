@@ -16,6 +16,8 @@ import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 The Fréchet derivative identity is closed under uniform convergence of bounded continuous value
 and derivative fields. The derivative field may be read through a uniformly continuous map.
 These results supply the closed graph used to construct complete spaces of differentiable maps.
+For fields on an open set, the value field is extended by zero, which does not change its
+derivatives at points of the set.
 The corresponding one-dimensional graph on a closed interval includes the one-sided derivatives
 at both endpoints.
 
@@ -61,6 +63,44 @@ theorem isClosed_setOf_hasFDerivAt {𝕜 : Type*} {E : Type u} {Y : Type v}
     IsClosed {J : (E →ᵇ Y) × (E →ᵇ (E →L[𝕜] Y)) |
       ∀ x, HasFDerivAt (J.1 : E → Y) (J.2 x) x} :=
   isClosed_setOf_hasFDerivAt_comp id uniformContinuous_id
+
+/-- On an open set `s`, the set of bounded continuous fields on `s` satisfying a Fréchet derivative
+identity at every point of `s` is closed. The value field is extended by zero outside `s`, which
+does not affect derivatives at points of the open set, and the derivative is read off the second
+field through a uniformly continuous map. -/
+theorem isClosed_setOf_hasFDerivAt_extend_comp {𝕜 : Type*} {E : Type u} {Y Z : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [PseudoMetricSpace Z] {s : Set E} (hs : IsOpen s)
+    (L : Z → E →L[𝕜] Y) (hL : UniformContinuous L) :
+    IsClosed {J : (s →ᵇ Y) × (s →ᵇ Z) |
+      ∀ x : s, HasFDerivAt (Function.extend Subtype.val (J.1 : s → Y) 0) (L (J.2 x)) x} := by
+  classical
+  rw [← isSeqClosed_iff_isClosed]
+  intro J j hJ hjlim x
+  -- The derivative fields, extended by zero outside `s`.
+  let D : (s →ᵇ Z) → E → E →L[𝕜] Y := fun B y ↦ if h : y ∈ s then L (B ⟨y, h⟩) else 0
+  have hD : ∀ (B : s →ᵇ Z) (y : s), D B y = L (B y) := fun B y ↦ dite_eq_left y.2
+  have hext : ∀ (g : s → Y) (y : s), Function.extend Subtype.val g 0 (y : E) = g y :=
+    fun g y ↦ Subtype.val_injective.extend_apply g 0 y
+  have hv := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
+    ((continuous_fst.tendsto j).comp hjlim)
+  have hd := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp
+    ((continuous_snd.tendsto j).comp hjlim)
+  rw [← hD]
+  refine hasFDerivAt_of_tendstoUniformlyOn
+    (f := fun n ↦ Function.extend Subtype.val ((J n).1 : s → Y) 0) (f' := fun n ↦ D (J n).2)
+    (g' := D j.2) (l := atTop) hs ?_ ?_ ?_ x.2
+  · rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
+    simpa only [Function.comp_def, hD] using hL.comp_tendstoUniformly hd
+  · intro n y hy
+    lift y to s using hy
+    rw [hD]
+    exact hJ n y
+  · intro y hy
+    lift y to s using hy
+    simp only [hext]
+    exact hv.tendsto_at y
 
 /-- The derivative graph of bounded continuous fields on a nondegenerate closed interval is
 closed, including the one-sided derivative identities at its endpoints. The value field is
