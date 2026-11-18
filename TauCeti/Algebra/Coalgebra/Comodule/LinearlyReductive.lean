@@ -522,14 +522,8 @@ theorem isCompletelyReducible_iff_sSup_atoms_eq_top :
   let Φ := Subcomodule.convolutionSubmoduleOrderIso (R := R) (C := C) (M := V)
   have key : sSup {S : Subcomodule R C V | IsAtom S} =
       Φ.symm (sSup {m : Submodule (WithConv (C →ₗ[R] R)) V | IsAtom m}) := by
-    apply le_antisymm
-    · refine sSup_le fun S hS ↦ ?_
-      rw [← Φ.le_iff_le, Φ.apply_symm_apply]
-      exact le_sSup ((Φ.isAtom_iff S).mpr hS)
-    · rw [← Φ.le_iff_le, Φ.apply_symm_apply]
-      refine sSup_le fun m hm ↦ ?_
-      rw [← Φ.apply_symm_apply m, Φ.le_iff_le]
-      exact le_sSup ((Φ.symm.isAtom_iff m).mpr hm)
+    rw [Φ.symm.map_sSup_eq_sSup_symm_preimage]
+    simp only [OrderIso.symm_symm, Set.preimage_setOf_eq, Φ.isAtom_iff]
   rw [key, ← Φ.symm.map_top, Φ.symm.injective.eq_iff]
 
 end Projective
