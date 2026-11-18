@@ -38,8 +38,10 @@ Adding a barycentric-affine function `c₀ + x • α + y • β + z • γ` pre
 and subtracting the value at `A` normalizes any rhombus-concave function (`Hive.ofRhombusConcave`).
 Normalized hives form an `AddCommMonoid` (`IntegerHive n`) and, over an ordered semiring, a pointed
 cone (`Hive.pointedCone`). Clockwise edge differences along `A → B → C → A` define an ambient
-linear map `Hive.boundaryLinear` whose values telescope to zero (`Hive.sum_boundary`) and decrease
-weakly along each side (`Hive.boundary_antitone`), making each side of an integer hive a
+linear map `Hive.boundaryLinear` whose values telescope to zero (`Hive.sum_boundary`); its range
+is exactly the triples of cyclic trace zero
+(`Hive.exists_boundaryLinear_eq_iff_sum_eq_zero`). The boundary of a hive decreases weakly along
+each side (`Hive.boundary_antitone`), making each side of an integer hive a
 `TauCeti.DominantWeight`. Rotation shifts sides cyclically; reflection reverses them and applies
 `TauCeti.DominantWeight.dual`.
 
@@ -911,6 +913,44 @@ theorem sum_boundaryLinear {S : Type*} [Semiring S] [AddCommGroup R] [Module S R
   rw [← Vertex.edgePoint_add_one_zero n 0, ← Vertex.edgePoint_add_one_zero n 1,
     Vertex.edgePoint_zero_zero, Vertex.edgePoint_two_last,
     zero_add, show (1 : Fin 3) + 1 = 2 from rfl]; abel
+
+/-- A boundary triple is the clockwise edge-difference triple of some lattice function exactly when
+its cyclic trace `∑ s, ∑ i, B s i` vanishes. -/
+theorem exists_boundaryLinear_eq_iff_sum_eq_zero [AddCommGroup R] (B : Fin 3 → Fin n → R) :
+    (∃ f : Vertex n → R, boundaryLinear ℤ n R f = B) ↔ ∑ s : Fin 3, ∑ i : Fin n, B s i = 0 := by
+  refine ⟨fun ⟨f, hf⟩ => hf ▸ sum_boundaryLinear f, fun hB => ?_⟩
+  -- `P s k` is the sum of the first `k` entries of side `s`.
+  let P (s : Fin 3) (k : ℕ) : R := ∑ j ∈ Finset.range k, if h : j < n then B s ⟨j, h⟩ else 0
+  have hP (s : Fin 3) (i : Fin n) : P s (i.val + 1) - P s i.val = B s i := by
+    simp [P, Finset.sum_range_succ]
+  have hPn (s : Fin 3) : P s n = ∑ i, B s i := by
+    simp [P, ← Fin.sum_univ_eq_sum_range]
+  -- Walk clockwise from `A`, accumulating the boundary entries; interior values are irrelevant.
+  let f (p : Vertex n) : R :=
+    if p.z = 0 then P 0 p.y else if p.x = 0 then P 0 n + P 1 p.z
+    else if p.y = 0 then P 0 n + P 1 n + P 2 p.x else 0
+  have hf (s : Fin 3) (k : Fin (n + 1)) :
+      f (Vertex.edgePoint n s k) = ![0, P 0 n, P 0 n + P 1 n] s + P s k := by
+    rw [Fin.sum_univ_three, ← hPn, ← hPn, ← hPn] at hB
+    obtain ⟨k, hk⟩ := k
+    fin_cases s
+    · simp [f]
+    · rcases k with _ | k
+      · simp [f, P]
+      · simp [f]
+    · rcases Nat.lt_or_ge k n with hkn | hkn
+      · rcases k with _ | k
+        · simp [f, P, hkn.ne']
+        · -- This interior point of edge `C → A` has `z`-coordinate `n - (k + 1) ≠ 0`, so `f`
+          -- skips its first (`z = 0`) branch and takes the third (`y = 0`) one.
+          have hz : n - (k + 1) ≠ 0 := by omega
+          simp [f, hz]
+      · obtain rfl : k = n := by omega
+        simpa [f, P] using hB.symm
+  refine ⟨f, ?_⟩
+  ext s i
+  rw [boundaryLinear_apply, hf, hf, add_sub_add_left_eq_sub]
+  exact hP s i
 
 section HiveBoundary
 
