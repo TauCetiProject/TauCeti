@@ -130,15 +130,9 @@ theorem pullbackMap_jet {s : ∀ y, V y} {x : N}
 @[simp]
 theorem value_pullbackMap (x : N) (j : FirstJetBundle I F V (f x)) :
     value J F x (pullbackMap I J F f x j) = value I F (f x) j := by
-  set e := trivializationAt F V (f x)
-  set e' := trivializationAt F ((f : N → M) *ᵖ V) x
-  -- The trivialization `e'` of `f*V` at `x` is by definition the pullback of `e`, so it reads the
-  -- vector `e.symm (f x) j.1` as `j.1`.
-  have hy : (e' ⟨x, e.symm (f x) j.1⟩).2 = j.1 :=
-    congrArg Prod.snd (e.apply_mk_symm (mem_baseSet_trivializationAt F V (f x)) j.1)
   rw [value_apply, value_apply, pullbackMap_fst]
-  exact (congrArg (e'.symm x) hy.symm).trans
-    (e'.symm_apply_apply_mk (mem_baseSet_trivializationAt F _ x) _)
+  -- The trivialization of `f*V` at `x` is by definition the pullback of the one of `V` at `f x`.
+  exact (trivializationAt F V (f x)).symm_pullback f (mem_baseSet_trivializationAt F V (f x)) j.1
 
 end Pullback
 
@@ -230,13 +224,7 @@ theorem pullbackMap_ofDeriv (f : C^1⟮J, N; I, M⟯) (x : N)
     pullbackMap I J F f x (ofDeriv I F (f x) L) =
       ofDeriv (V := (f : N → M) *ᵖ V) J F x (L.comp (mfderiv J I f x)) := by
   -- The trivialization of `f*V` at `x` reads `V_{f x}` as the trivialization of `V` at `f x` does.
-  have h : (trivializationAt F V (f x)).continuousLinearMapAt 𝕜 (f x) =
-      (trivializationAt F ((f : N → M) *ᵖ V) x).continuousLinearMapAt 𝕜 x :=
-    ContinuousLinearMap.ext fun w ↦
-      ((trivializationAt F V (f x)).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-        (mem_baseSet_trivializationAt F V (f x)) w).trans
-      ((trivializationAt F ((f : N → M) *ᵖ V) x).continuousLinearMapAt_apply_of_mem (R := 𝕜)
-        (mem_baseSet_trivializationAt F _ x) w).symm
+  have h := ((trivializationAt F V (f x)).continuousLinearMapAt_pullback (𝕜 := 𝕜) f x).symm
   refine Prod.ext ((pullbackMap_fst f x _).trans
     ((ofDeriv_fst I F (f x) L).trans (ofDeriv_fst J F x _).symm)) ((pullbackMap_snd f x _).trans ?_)
   exact ((congrArg (fun A : E →L[𝕜] F ↦ A.comp (mfderiv J I f x)) (ofDeriv_snd I F (f x) L)).trans
