@@ -247,7 +247,6 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
     (U.isOpenEmbedding'.isInducing.isCompact_preimage' hK (by simpa using hKU))
     (ContinuousMap.inclusion (hU'K.trans hKU)) (fun z => hU'K z.2)
     (Φ := fun f : boundedHolomorphicFunctions E U => (f : U →ᵇ E))
-    (fun f => (f : U →ᵇ E).continuous.continuousOn)
     (T := fun f => (restrict (hU'K.trans hKU) f : U' →ᵇ E)) (restrict_apply _)
     (closedBall_mem_nhds 0 one_pos) (fun x _ => ⟨closedBall 0 1, isCompact_closedBall 0 1,
       fun f hf => mem_closedBall_zero_iff.mpr

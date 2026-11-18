@@ -52,20 +52,25 @@ theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →�
 end TauCeti
 
 /-- **Arzelà–Ascoli for restriction operators.** Let `T` send `f : E` to the function
-`Φ f ∘ j` in `β →ᵇ F`, where `j` takes values in a compact set `K` on which each `Φ f` is
-continuous. If `Φ` maps a neighborhood `V` of `0` to a family that is equicontinuous on `K` and
-whose values at each point of `K` lie in a compact set, then `T` is a compact operator. -/
+`Φ f ∘ j` in `β →ᵇ F`, where `j` takes values in a compact set `K`. If `Φ` maps a neighborhood
+`V` of `0` to a family that is equicontinuous on `K` and whose values at each point of `K` lie in
+a compact set, then `T` is a compact operator. -/
 theorem IsCompact.isCompactOperator_of_equicontinuousOn {K : Set α} (hK : IsCompact K)
-    (j : C(β, α)) (hjK : ∀ z, j z ∈ K) {Φ : E → α → F} (hΦ : ∀ f, ContinuousOn (Φ f) K)
-    {T : E → β →ᵇ F} (hT : ∀ f z, T f z = Φ f (j z)) {V : Set E} (hV : V ∈ 𝓝 0)
+    (j : C(β, α)) (hjK : ∀ z, j z ∈ K) {Φ : E → α → F} {T : E → β →ᵇ F}
+    (hT : ∀ f z, T f z = Φ f (j z)) {V : Set E} (hV : V ∈ 𝓝 0)
     (hΦV : ∀ x ∈ K, ∃ Q : Set F, IsCompact Q ∧ ∀ f ∈ V, Φ f x ∈ Q)
     (hs : EquicontinuousOn (fun f : V => Φ f) K) :
     IsCompactOperator T := by
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let σ : C(β, K) := ⟨fun z => ⟨j z, hjK z⟩, j.continuous.subtype_mk _⟩
-  have hR : IsCompactOperator fun f => mkOfCompact ⟨K.domRestrict (Φ f), (hΦ f).domRestrict⟩ :=
-    TauCeti.isCompactOperator_of_equicontinuous hV (fun x => hΦV x x.2)
-      ((equicontinuous_restrict_iff _).mpr hs)
-  obtain ⟨Q, hQ, hRQ⟩ := hR
-  refine ⟨_, hQ.image (continuous_compContinuous σ), Filter.mem_of_superset hRQ fun f hf => ?_⟩
-  exact ⟨_, hf, ext fun z => (hT f z).symm⟩
+  -- Only the functions indexed by `V` matter; `p` projects every `f` to one of them, and
+  -- equicontinuity makes each `Φ (p f)` continuous on `K`.
+  classical
+  let p : E → V := fun f => if h : f ∈ V then ⟨f, h⟩ else ⟨0, mem_of_mem_nhds hV⟩
+  obtain ⟨Q, hQ, hRQ⟩ := TauCeti.isCompactOperator_of_equicontinuous
+    (T := fun f => mkOfCompact ⟨K.domRestrict (Φ (p f)), (hs.continuousOn (p f)).domRestrict⟩)
+    hV (fun x => let ⟨Q, hQ, hΦQ⟩ := hΦV x x.2; ⟨Q, hQ, fun f _ => hΦQ _ (p f).2⟩)
+    (((equicontinuous_restrict_iff _).mpr hs).comp fun f : V => p f)
+  refine ⟨_, hQ.image (continuous_compContinuous σ),
+    Filter.mem_of_superset (Filter.inter_mem hV hRQ) fun f hf => ⟨_, hf.2, ext fun z => ?_⟩⟩
+  simp [p, hf.1, hT, σ]
