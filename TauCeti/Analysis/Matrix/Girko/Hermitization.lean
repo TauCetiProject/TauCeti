@@ -42,7 +42,8 @@ empirical eigenvalue measure. -/
 theorem empiricalLogPotential_def (A : Matrix ι ι ℂ)
     (z : ℂ) :
     A.empiricalLogPotential z =
-      ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ) := rfl
+      ∫ w, Real.log ‖z - w‖ ∂(A.eigenvalueMeasure : Measure ℂ) := by
+  rw [empiricalLogPotential]
 
 /-- Away from the eigenvalues, the empirical logarithmic potential is `1 / card ι` times the
 logarithm of the norm of the shifted determinant. -/
@@ -116,7 +117,7 @@ theorem empiricalLogPotential_eq_log_det_eq_sum_log_singularValues
     have hprod : (toEuclideanLin (A - scalar ι z)).normDet =
         ∏ i : Fin (Fintype.card ι),
           (toEuclideanLin (A - scalar ι z)).singularValues i := by
-      simpa only [finrank_euclideanSpace] using
+      simpa only [finrank_euclideanSpace, Fin.prod_univ_eq_prod_range] using
         (LinearMap.normDet_eq_prod_singularValues (toEuclideanLin (A - scalar ι z)))
     exact hnorm.symm.trans hprod
   refine ⟨empiricalLogPotential_eq_log_norm_det A z hdet, ?_⟩

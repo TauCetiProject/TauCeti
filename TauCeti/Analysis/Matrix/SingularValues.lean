@@ -56,7 +56,7 @@ theorem norm_det_eq_prod_singularValues (A : Matrix ι ι 𝕜) :
     rw [LinearMap.normDet_eq_norm_det, hdet]
   have hprod : (toEuclideanLin A).normDet =
       ∏ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i := by
-    simpa only [finrank_euclideanSpace] using
+    simpa only [finrank_euclideanSpace, Fin.prod_univ_eq_prod_range] using
       (LinearMap.normDet_eq_prod_singularValues (toEuclideanLin A))
   exact hnorm.symm.trans hprod
 
