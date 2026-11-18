@@ -25,6 +25,8 @@ The generic restriction compatibility used to establish this result is provided 
   to an open contained in the preimage of its domain;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_pullback`: the pullback of an invertible
   sheaf is invertible;
+* `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_restrict`: the restriction of an
+  invertible sheaf along an open immersion is invertible;
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_forall_restrict`: a sheaf of modules
   is invertible exactly when its restrictions to the members of an open cover are invertible;
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.pullback`: the pullback functor on line bundles.
@@ -94,12 +96,17 @@ instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
       ⟨Scheme.Modules.unitIsoRestrictPullback f le_rfl (e i).some⟩⟩
   rw [IsOpenCover, ← Scheme.Hom.preimage_iSup, hV.iSup_eq_top, Scheme.Hom.preimage_top]
 
+/-- The restriction of an invertible sheaf along an open immersion is invertible. -/
+instance isInvertible_restrict [IsOpenImmersion f] (M : Y.Modules) [isInvertible Y M] :
+    isInvertible X (M.restrict f) :=
+  (isInvertible X).prop_of_iso ((Scheme.Modules.restrictFunctorIsoPullback f).app M).symm
+    inferInstance
+
 /-- **Invertibility is local**: a sheaf of modules on a scheme is invertible exactly when its
 restriction to every member of an open cover is invertible. -/
 theorem isInvertible_iff_forall_restrict (𝒰 : X.OpenCover) (M : X.Modules) :
     isInvertible X M ↔ ∀ i, isInvertible (𝒰.X i) (M.restrict (𝒰.f i)) := by
-  refine ⟨fun _ i ↦ (isInvertible _).prop_of_iso
-    ((Scheme.Modules.restrictFunctorIsoPullback (𝒰.f i)).app M).symm inferInstance, fun h ↦ ?_⟩
+  refine ⟨fun _ i ↦ inferInstance, fun h ↦ ?_⟩
   -- Trivialize the restriction to each member `𝒰.X i` on an open cover `W i` of `𝒰.X i`, and
   -- pick for every point of `X` a trivializing open `W i k` whose image contains it.
   choose ι W hW e using fun i ↦ isInvertible_iff_exists_isOpenCover.mp (h i)

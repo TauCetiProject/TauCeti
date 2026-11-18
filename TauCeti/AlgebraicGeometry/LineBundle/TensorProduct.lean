@@ -31,7 +31,9 @@ for the trivial line bundle.
 * `InvertibleSheaf.tensorProductComm` exchanges the two tensor factors;
 * `InvertibleSheaf.tensorProductAssoc` is the associativity isomorphism;
 * `InvertibleSheaf.tensorTrivialLeftIso` and `InvertibleSheaf.tensorTrivialRightIso` are the
-  unit isomorphisms in the full category of invertible sheaves.
+  unit isomorphisms in the full category of invertible sheaves;
+* `SheafOfModules.isInvertible_tensor`: the monoidal tensor product of two invertible sheaves is
+  invertible.
 
 The underlying sheaf is exposed by `tensorProduct_obj`, while the congruence, symmetry,
 associativity, and unit isomorphisms provide the categorical API for manipulating tensor products
@@ -109,6 +111,14 @@ lemma tensorProductCongrLeft_inv_val {L L' K : InvertibleSheaf X} (e : L ≅ L')
   simp only [tensorProductCongrLeft, ObjectProperty.isoMk, ObjectProperty.homMk,
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
+/-- `tensorProductCongrLeft` commutes with taking inverses of isomorphisms. -/
+@[simp] lemma tensorProductCongrLeft_symm {L L' K : InvertibleSheaf X} (e : L ≅ L') :
+    tensorProductCongrLeft (K := K) e.symm = (tensorProductCongrLeft (K := K) e).symm := by
+  refine Iso.ext (ObjectProperty.hom_ext _ (_root_.SheafOfModules.hom_ext ?_))
+  rw [tensorProductCongrLeft_hom_val, Iso.symm_hom, tensorProductCongrLeft_inv_val]
+  exact congrArg (·.hom.val) (SheafOfModules.tensorProductCongrLeft_symm (N := K.obj) X.sheaf
+    ((SheafOfModules.isInvertible X).ι.mapIso e))
+
 /-- The sheaf isomorphism underlying transport through the second tensor factor. -/
 def tensorProductCongrRightIso {L K K' : InvertibleSheaf X} (e : K ≅ K') :
     @Iso (SheafOfModules X.ringCatSheaf) _ (tensorProduct L K).obj (tensorProduct L K').obj := by
@@ -136,6 +146,14 @@ lemma tensorProductCongrRight_inv_val {L K K' : InvertibleSheaf X} (e : K ≅ K'
       (tensorProductCongrRightIso e).inv.val := by
   simp only [tensorProductCongrRight, ObjectProperty.isoMk, ObjectProperty.homMk,
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
+
+/-- `tensorProductCongrRight` commutes with taking inverses of isomorphisms. -/
+@[simp] lemma tensorProductCongrRight_symm {L K K' : InvertibleSheaf X} (e : K ≅ K') :
+    tensorProductCongrRight (L := L) e.symm = (tensorProductCongrRight (L := L) e).symm := by
+  refine Iso.ext (ObjectProperty.hom_ext _ (_root_.SheafOfModules.hom_ext ?_))
+  rw [tensorProductCongrRight_hom_val, Iso.symm_hom, tensorProductCongrRight_inv_val]
+  exact congrArg (·.hom.val) (SheafOfModules.tensorProductCongrRight_symm (M := L.obj) X.sheaf
+    ((SheafOfModules.isInvertible X).ι.mapIso e))
 
 /-- Tensor product preserves isomorphism of line bundles in both variables. -/
 lemma isIsomorphic_tensorProduct {L L' K K' : InvertibleSheaf X}
@@ -253,7 +271,92 @@ lemma tensorTrivialRightIso_inv_val (L : InvertibleSheaf X) :
   simp only [tensorTrivialRightIso, ObjectProperty.isoMk, ObjectProperty.homMk,
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso_inv_val]
 
+/-- The forward map of `tensorProductObjIso` factors through `SheafOfModules.tensorProductIso` and
+`SheafOfModules.tensorUnderlyingIso`. -/
+lemma tensorProductObjIso_hom (L K : InvertibleSheaf X) :
+    (tensorProductObjIso L K).hom =
+      (eqToIso (tensorProduct_obj L K)).hom ≫
+        (SheafOfModules.tensorProductIso X.sheaf L.obj K.obj).hom ≫
+          (L.obj.tensorUnderlyingIso K.obj).inv :=
+  (rfl)
+
+/-- `tensorProductObjIso` is natural in the first tensor factor. -/
+@[reassoc] lemma tensorProductCongrLeft_hom_tensorProductObjIso_hom {L L' K : InvertibleSheaf X}
+    (e : L ≅ L') :
+    (tensorProductCongrLeft (K := K) e).hom.hom ≫ (tensorProductObjIso L' K).hom =
+      (tensorProductObjIso L K).hom ≫ (e.hom.hom ▷ K.obj) := by
+  let L₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := L.obj
+  let L'₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := L'.obj
+  let K₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := K.obj
+  let e₀ : L₀ ≅ L'₀ := (SheafOfModules.isInvertible X).ι.mapIso e
+  have hcongr : (tensorProductCongrLeft (K := K) e).hom.hom =
+      (SheafOfModules.tensorProductCongrLeft (N := K₀) X.sheaf e₀).hom :=
+    _root_.SheafOfModules.hom_ext (tensorProductCongrLeft_hom_val e)
+  have h2 := _root_.SheafOfModules.tensorUnderlyingIso_naturality (R := X.sheaf) e₀.hom (𝟙 K₀)
+  rw [tensorHom_id, _root_.SheafOfModules.id_val, tensorHom_id] at h2
+  have h3 : (PresheafOfModules.sheafification (𝟙 (SheafOfModules.ringCatSheaf X.sheaf).obj)).map
+        (e₀.hom.val ▷ K₀.val) ≫ (L'₀.tensorUnderlyingIso K₀).inv =
+      (L₀.tensorUnderlyingIso K₀).inv ≫ (e₀.hom ▷ K₀) := by
+    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]; exact h2.symm
+  have h1 := SheafOfModules.tensorProductCongrLeft_hom_tensorProductIso_hom (N := K₀) X.sheaf e₀
+  have hmain : (SheafOfModules.tensorProductCongrLeft (N := K₀) X.sheaf e₀).hom ≫
+      (SheafOfModules.tensorProductIso X.sheaf L'₀ K₀).hom ≫ (L'₀.tensorUnderlyingIso K₀).inv =
+    ((SheafOfModules.tensorProductIso X.sheaf L₀ K₀).hom ≫ (L₀.tensorUnderlyingIso K₀).inv) ≫
+      (e₀.hom ▷ K₀) := by rw [reassoc_of% h1, h3, Category.assoc]
+  have hobj (A B : InvertibleSheaf X) :
+      ((tensorProductObjIso A B).hom :
+        SheafOfModules.tensorProduct X.sheaf A.obj B.obj ⟶ A.obj ⊗ B.obj) =
+      (SheafOfModules.tensorProductIso X.sheaf A.obj B.obj).hom ≫
+        (A.obj.tensorUnderlyingIso B.obj).inv := Category.id_comp _
+  exact (congrArg₂ (· ≫ ·) hcongr (hobj L' K)).trans <|
+    hmain.trans (congrArg (· ≫ _) (hobj L K)).symm
+
+/-- `tensorProductObjIso` is natural in the second tensor factor. -/
+@[reassoc] lemma tensorProductCongrRight_hom_tensorProductObjIso_hom {L K K' : InvertibleSheaf X}
+    (e : K ≅ K') :
+    (tensorProductCongrRight (L := L) e).hom.hom ≫ (tensorProductObjIso L K').hom =
+      (tensorProductObjIso L K).hom ≫ (L.obj ◁ e.hom.hom) := by
+  let L₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := L.obj
+  let K₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := K.obj
+  let K'₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := K'.obj
+  let e₀ : K₀ ≅ K'₀ := (SheafOfModules.isInvertible X).ι.mapIso e
+  have hcongr : (tensorProductCongrRight (L := L) e).hom.hom =
+      (SheafOfModules.tensorProductCongrRight (M := L₀) X.sheaf e₀).hom :=
+    _root_.SheafOfModules.hom_ext (tensorProductCongrRight_hom_val e)
+  have h2 := _root_.SheafOfModules.tensorUnderlyingIso_naturality (R := X.sheaf) (𝟙 L₀) e₀.hom
+  rw [id_tensorHom, _root_.SheafOfModules.id_val, id_tensorHom] at h2
+  have h3 : (PresheafOfModules.sheafification (𝟙 (SheafOfModules.ringCatSheaf X.sheaf).obj)).map
+        (L₀.val ◁ e₀.hom.val) ≫ (L₀.tensorUnderlyingIso K'₀).inv =
+      (L₀.tensorUnderlyingIso K₀).inv ≫ (L₀ ◁ e₀.hom) := by
+    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]; exact h2.symm
+  have h1 := SheafOfModules.tensorProductCongrRight_hom_tensorProductIso_hom (M := L₀) X.sheaf e₀
+  have hmain : (SheafOfModules.tensorProductCongrRight (M := L₀) X.sheaf e₀).hom ≫
+      (SheafOfModules.tensorProductIso X.sheaf L₀ K'₀).hom ≫ (L₀.tensorUnderlyingIso K'₀).inv =
+    ((SheafOfModules.tensorProductIso X.sheaf L₀ K₀).hom ≫ (L₀.tensorUnderlyingIso K₀).inv) ≫
+      (L₀ ◁ e₀.hom) := by rw [reassoc_of% h1, h3, Category.assoc]
+  have hobj (A B : InvertibleSheaf X) :
+      ((tensorProductObjIso A B).hom :
+        SheafOfModules.tensorProduct X.sheaf A.obj B.obj ⟶ A.obj ⊗ B.obj) =
+      (SheafOfModules.tensorProductIso X.sheaf A.obj B.obj).hom ≫
+        (A.obj.tensorUnderlyingIso B.obj).inv := Category.id_comp _
+  exact (congrArg₂ (· ≫ ·) hcongr (hobj L K')).trans <|
+    hmain.trans (congrArg (· ≫ _) (hobj L K)).symm
+
 end InvertibleSheaf
+
+namespace SheafOfModules
+
+variable {X : Scheme.{u}}
+
+/-- The monoidal tensor product of two invertible `𝒪_X`-modules is invertible. -/
+instance isInvertible_tensor {M N : X.Modules}
+    [hM : isInvertible X M] [hN : isInvertible X N] :
+    isInvertible X (M ⊗ N) :=
+  (isInvertible X).prop_of_iso
+    (InvertibleSheaf.tensorProductObjIso ⟨M, hM⟩ ⟨N, hN⟩)
+    (InvertibleSheaf.tensorProduct ⟨M, hM⟩ ⟨N, hN⟩).2
+
+end SheafOfModules
 
 end
 

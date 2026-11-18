@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Constructible
+public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Stalk
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
+public import TauCeti.AlgebraicGeometry.Modules.Sections
 
 /-!
 # The nonvanishing locus of a section of an invertible sheaf
@@ -45,7 +49,16 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
 * `AlgebraicGeometry.Scheme.Modules.range_nonvanishingLocus_eq_of_iso`: isomorphic invertible
   sheaves have the same nonvanishing loci of sections over each open;
 * `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_unit`: on the structure sheaf, `X_r` is the
-  basic open set of the regular function `r`.
+  basic open set of the regular function `r`;
+* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_restrictAppIso_inv`,
+  `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_pullbackSections`, and
+  `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_pullbackSectionsLE`: the nonvanishing locus
+  of a restricted or pulled-back section is the preimage of the nonvanishing locus;
+* `AlgebraicGeometry.Scheme.Modules.exists_finite_affine_cover_le_nonvanishingLocus`,
+  `AlgebraicGeometry.Scheme.Modules.basicOpen_eq_inf_nonvanishingLocus`, and
+  `AlgebraicGeometry.Scheme.Modules.isRetrocompact_nonvanishingLocus`: quasi-compact opens admit
+  finite trivializing affine covers, and the nonvanishing locus of a section over a retrocompact
+  (in particular global) open is retrocompact.
 
 ## References
 
@@ -56,7 +69,7 @@ of the restriction of `s`. In other words, `s` trivializes `M` over `X_s`.
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace
+open CategoryTheory AlgebraicGeometry Opposite TopologicalSpace MonoidalCategory
 
 namespace AlgebraicGeometry.Scheme.Modules
 
@@ -305,5 +318,229 @@ theorem nonvanishingLocus_unit {U : X.Opens} (r : Γ(X, U)) :
   · exact congrArg _ (mul_one r).symm
   · rw [hone]
     exact (inf_eq_left.mpr (X.basicOpen_le r)).symm
+
+omit [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M] in
+private theorem bijective_smul_restrictAppIso_inv_iff {Y : Scheme.{u}} (j : Y ⟶ X)
+    [IsOpenImmersion j] {U W' : Y.Opens} (k : W' ⟶ U) (s : Γ(M, j ''ᵁ U)) :
+    (Function.Bijective fun r : Γ(Y, W') ↦
+      r • (M.restrict j).presheaf.map k.op ((M.restrictAppIso j U).inv s)) ↔
+    Function.Bijective fun r : Γ(X, j ''ᵁ W') ↦
+      r • M.presheaf.map (homOfLE (j.image_mono k.le)).op s := by
+  have hM := ConcreteCategory.bijective_of_isIso (M.restrictAppIso j W').hom
+  have hj := ConcreteCategory.bijective_of_isIso (j.appIso W').inv
+  have hcomp : (M.restrictAppIso j W').hom ∘ (fun r : Γ(Y, W') ↦
+      r • (M.restrict j).presheaf.map k.op ((M.restrictAppIso j U).inv s)) =
+      (fun r : Γ(X, j ''ᵁ W') ↦
+        r • M.presheaf.map (homOfLE (j.image_mono k.le)).op s) ∘ (j.appIso W').inv := by
+    funext r; dsimp only [Function.comp_apply]
+    rw [smul_restrictAppIso_hom_apply, map_restrictAppIso_hom_apply, Iso.inv_hom_id_apply]
+  rw [← Function.Bijective.of_comp_iff' hM, hcomp, Function.Bijective.of_comp_iff _ hj]
+
+/-- Under restriction of an invertible sheaf along an open immersion `j : Y ⟶ X`, the nonvanishing
+locus of a section over `j ''ᵁ U` pulls back to `j ⁻¹ᵁ X_s`. -/
+@[simp]
+theorem nonvanishingLocus_restrictAppIso_inv {Y : Scheme.{u}} (j : Y ⟶ X) [IsOpenImmersion j]
+    (U : Y.Opens) (s : Γ(M, j ''ᵁ U)) :
+    (M.restrict j).nonvanishingLocus ((M.restrictAppIso j U).inv s) =
+      j ⁻¹ᵁ M.nonvanishingLocus s := by
+  have hle : j ⁻¹ᵁ M.nonvanishingLocus s ≤ U :=
+    (Set.preimage_mono (M.nonvanishingLocus_le s)).trans_eq
+      (congrArg SetLike.coe (j.preimage_image_eq U))
+  refine le_antisymm ?_ ?_
+  · refine (Set.subset_preimage_image j.base _).trans <| Set.preimage_mono <|
+      (le_nonvanishingLocus_iff s (homOfLE (j.image_mono
+        ((M.restrict j).nonvanishingLocus_le _)))).mpr fun V i ↦ ?_
+    obtain ⟨W', hW', rfl⟩ : ∃ W' : Y.Opens,
+        W' ≤ (M.restrict j).nonvanishingLocus ((M.restrictAppIso j U).inv s) ∧ j ''ᵁ W' = V := by
+      refine ⟨j ⁻¹ᵁ V, (Set.preimage_mono i.le).trans_eq
+        (congrArg SetLike.coe (j.preimage_image_eq _)), ?_⟩
+      rw [Scheme.Hom.image_preimage_eq_opensRange_inf]
+      exact inf_eq_right.mpr (i.le.trans (j.image_le_opensRange _))
+    have hk := (M.bijective_smul_restrictAppIso_inv_iff j
+      (homOfLE hW' ≫ homOfLE ((M.restrict j).nonvanishingLocus_le _)) s).mp
+      ((le_nonvanishingLocus_iff _ (homOfLE ((M.restrict j).nonvanishingLocus_le _))).mp
+        le_rfl W' (homOfLE hW'))
+    rwa [Subsingleton.elim (i ≫ _) (homOfLE _)]
+  · refine (le_nonvanishingLocus_iff _ (homOfLE hle)).mpr fun W' k ↦
+      (M.bijective_smul_restrictAppIso_inv_iff j (k ≫ homOfLE hle) s).mpr ?_
+    have himg : j ''ᵁ (j ⁻¹ᵁ M.nonvanishingLocus s) ≤ M.nonvanishingLocus s := j.image_preimage_le _
+    have hk := (le_nonvanishingLocus_iff s (homOfLE (himg.trans (M.nonvanishingLocus_le s)))).mp
+      himg (j ''ᵁ W') (homOfLE (j.image_mono k.le))
+    rwa [Subsingleton.elim (homOfLE (j.image_mono k.le) ≫ _)
+      (homOfLE (j.image_mono (k ≫ homOfLE hle).le))] at hk
+
+private theorem nonvanishingLocus_pullbackSectionsLE_top_of_eq_top {Y : Scheme.{u}} (g : Y ⟶ X)
+    {b : Γ(M, ⊤)} (hb : M.nonvanishingLocus b = ⊤) :
+    ((pullback g).obj M).nonvanishingLocus
+      (g.pullbackSectionsLE M ⊤ ⊤ g.preimage_top.symm.le b) = ⊤ := by
+  let φ : (𝟙_ X.Modules : X.Modules) ⟶ M := M.unitHomEquivTop.symm b
+  have : IsIso φ :=
+    Hom.isIso_iff_isIso_app.mpr fun W ↦ (ConcreteCategory.isIso_iff_bijective _).mpr <| by
+      have hfun : (φ.app W : Γ(X, W) → Γ(M, W)) =
+          fun r : Γ(X, W) ↦ r • M.presheaf.map (W.leTop ≫ 𝟙 ⊤).op b := funext fun r ↦
+        (M.unitHomEquivTop_symm_val_app b W r).trans (by rw [Category.comp_id])
+      rw [hfun]; exact (le_nonvanishingLocus_iff b (𝟙 ⊤)).mp hb.ge W W.leTop
+  let ψ : (𝟙_ Y.Modules : Y.Modules) ≅ (pullback g).obj M :=
+    (pullbackObjUnitIso g).symm ≪≫ (pullback g).mapIso (asIso φ)
+  let oneY : Γ(𝟙_ Y.Modules, ⊤) := (1 : Γ(Y, ⊤))
+  have hψ : ψ.hom.app ⊤ oneY = g.pullbackSectionsLE M ⊤ ⊤ g.preimage_top.symm.le b := by
+    have h2 : ((pullback g).map φ).app ⊤ (g.pullbackSections (𝟙_ X.Modules) ⊤ (1 : Γ(X, ⊤))) =
+        g.pullbackSections M ⊤ b :=
+      (Scheme.Hom.pullbackSections_naturality g (𝟙_ X.Modules) ⊤ φ (1 : Γ(X, ⊤))).trans <|
+        congrArg (g.pullbackSections M ⊤)
+          ((M.unitHomEquivTop_apply φ).symm.trans (M.unitHomEquivTop.apply_symm_apply b))
+    exact (ConcreteCategory.comp_apply _ _ oneY).trans <|
+      (congrArg _ (Scheme.Hom.pullbackObjUnitIso_inv_app_one g)).trans <|
+        h2.trans (Scheme.Hom.pullbackSectionsLE_self g M ⊤ b).symm
+  rw [← hψ, nonvanishingLocus_hom_app ψ]
+  exact (nonvanishingLocus_unit (1 : Γ(Y, ⊤))).trans Y.basicOpen_one
+
+private theorem nonvanishingLocus_pullbackSections_ι (V : X.Opens) (b : Γ(M, V)) :
+    ((pullback V.ι).obj M).nonvanishingLocus (V.ι.pullbackSections M V b) =
+      V.ι ⁻¹ᵁ M.nonvanishingLocus b := by
+  rw [Scheme.Hom.pullbackSections_of_isOpenImmersion,
+    nonvanishingLocus_hom_app ((restrictFunctorIsoPullback V.ι).app M),
+    nonvanishingLocus_restrictAppIso_inv, nonvanishingLocus_map,
+    Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι, inf_idem,
+    inf_eq_right.mpr (M.nonvanishingLocus_le b)]
+
+private theorem le_nonvanishingLocus_pullbackSections_of_le {Y : Scheme.{u}} (g : Y ⟶ X)
+    {W : X.Opens} {b : Γ(M, W)} (hb : W ≤ M.nonvanishingLocus b) :
+    g ⁻¹ᵁ W ≤ ((pullback g).obj M).nonvanishingLocus (g.pullbackSections M W b) := by
+  let g' : (g ⁻¹ᵁ W).toScheme ⟶ W.toScheme := g.resLE W (g ⁻¹ᵁ W) le_rfl
+  have hWtop : (⊤ : W.toScheme.Opens) ≤ W.ι ⁻¹ᵁ W := W.ι_preimage_self.symm.le
+  have hgWtop : (⊤ : (g ⁻¹ᵁ W).toScheme.Opens) ≤ (g ⁻¹ᵁ W).ι ⁻¹ᵁ (g ⁻¹ᵁ W) :=
+    (g ⁻¹ᵁ W).ι_preimage_self.symm.le
+  let b₀ : Γ((pullback W.ι).obj M, ⊤) := W.ι.pullbackSectionsLE M W ⊤ hWtop b
+  have hb₀ : ((pullback W.ι).obj M).nonvanishingLocus b₀ = ⊤ := by
+    dsimp only [b₀]; rw [Scheme.Hom.pullbackSectionsLE_apply, nonvanishingLocus_map,
+      nonvanishingLocus_pullbackSections_ι, top_inf_eq, eq_top_iff]
+    exact fun ⟨x, hxW⟩ _ ↦ hb hxW
+  let e : (pullback g').obj ((pullback W.ι).obj M) ≅
+      (pullback (g ⁻¹ᵁ W).ι).obj ((pullback g).obj M) :=
+    (pullbackComp g' W.ι).app M ≪≫ (pullbackCongr (g.resLE_comp_ι le_rfl)).app M ≪≫
+      ((pullbackComp (g ⁻¹ᵁ W).ι g).app M).symm
+  have he : e.hom.app ⊤ (g'.pullbackSectionsLE ((pullback W.ι).obj M) ⊤ ⊤
+      g'.preimage_top.symm.le b₀) = (g ⁻¹ᵁ W).ι.pullbackSectionsLE ((pullback g).obj M)
+      (g ⁻¹ᵁ W) ⊤ hgWtop (g.pullbackSections M W b) := by
+    simp only [e, b₀, Iso.trans_hom, Iso.symm_hom, Iso.app_hom, Iso.app_inv, Hom.comp_app]
+    have s1 := Scheme.Hom.pullbackSectionsLE_comp_hom W.ι M W g' ⊤ hWtop (W := ⊤)
+      g'.preimage_top.symm.le b
+    have s2 := Scheme.Hom.pullbackSectionsLE_congr (g' ≫ W.ι) M W ⊤
+      (g'.preimage_top.symm.le.trans (Set.preimage_mono hWtop)) (g.resLE_comp_ι le_rfl) b
+    have s3 := (Scheme.Hom.pullbackSectionsLE_comp g M W (g ⁻¹ᵁ W).ι (g ⁻¹ᵁ W) le_rfl
+      (W := ⊤) hgWtop b).trans <| congrArg
+        ((g ⁻¹ᵁ W).ι.pullbackSectionsLE ((pullback g).obj M) (g ⁻¹ᵁ W) ⊤ hgWtop)
+        (Scheme.Hom.pullbackSectionsLE_self g M W b)
+    exact (ConcreteCategory.comp_apply _ _ _).trans <| (congrArg _ s1).trans <|
+      (ConcreteCategory.comp_apply _ _ _).trans <| (congrArg _ s2).trans s3
+  have htop : ((pullback (g ⁻¹ᵁ W).ι).obj ((pullback g).obj M)).nonvanishingLocus
+      ((g ⁻¹ᵁ W).ι.pullbackSectionsLE ((pullback g).obj M) (g ⁻¹ᵁ W) ⊤ hgWtop
+        (g.pullbackSections M W b)) = ⊤ := by
+    rw [← he, nonvanishingLocus_hom_app e,
+      nonvanishingLocus_pullbackSectionsLE_top_of_eq_top g' hb₀]
+  rw [Scheme.Hom.pullbackSectionsLE_apply, nonvanishingLocus_map,
+    nonvanishingLocus_pullbackSections_ι, top_inf_eq] at htop
+  exact fun y hy ↦ (eq_top_iff.mp htop (Opens.mem_top ⟨y, hy⟩) : y ∈ _)
+
+/-- **Pullback commutes with nonvanishing loci.** For any morphism of schemes `g : Y ⟶ X` and
+section `s` of an invertible sheaf `M` over `U`, the nonvanishing locus of `g^* s` is the preimage
+`g ⁻¹ᵁ X_s`. -/
+@[simp]
+theorem nonvanishingLocus_pullbackSections {Y : Scheme.{u}} (g : Y ⟶ X) {U : X.Opens}
+    (s : Γ(M, U)) :
+    ((pullback g).obj M).nonvanishingLocus (g.pullbackSections M U s) =
+      g ⁻¹ᵁ M.nonvanishingLocus s := by
+  ext y; by_cases hyU : y ∈ g ⁻¹ᵁ U
+  · obtain ⟨V, t, hgyV⟩ := exists_mem_trivialization M (g.base y)
+    let i : U ⊓ V ⟶ V := homOfLE inf_le_right; let j : U ⊓ V ⟶ U := homOfLE inf_le_left
+    let b : Γ(M, U ⊓ V) := M.presheaf.map i.op (trivializationGenerator M t)
+    let r : Γ(X, U ⊓ V) := trivializationCoordinate M t i (M.presheaf.map j.op s)
+    have hb : U ⊓ V ≤ M.nonvanishingLocus b := by
+      rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
+      exact le_inf le_rfl inf_le_right
+    have hs : M.presheaf.map j.op s = r • b :=
+      eq_trivializationCoordinate_smul_map_trivializationGenerator M t i _
+    have hLHS : y ∈ g ⁻¹ᵁ (U ⊓ V) ⊓ ((pullback g).obj M).nonvanishingLocus
+        (g.pullbackSections M U s) ↔ y ∈ Y.basicOpen (g.app (U ⊓ V) r) := by
+      rw [← nonvanishingLocus_map ((Opens.map g.base).map j) (g.pullbackSections M U s),
+        Scheme.Hom.pullbackSections_restrict, hs, map_smulₛₗ, nonvanishingLocus_smul,
+        inf_eq_left.mpr
+          ((Y.basicOpen_le _).trans (M.le_nonvanishingLocus_pullbackSections_of_le g hb))]
+    have hRHS : y ∈ g ⁻¹ᵁ (U ⊓ V) ⊓ g ⁻¹ᵁ M.nonvanishingLocus s ↔
+        y ∈ Y.basicOpen (g.app (U ⊓ V) r) := by
+      rw [← Scheme.Hom.preimage_inf, ← nonvanishingLocus_map, hs, nonvanishingLocus_smul,
+        inf_eq_left.mpr ((X.basicOpen_le r).trans hb), Scheme.preimage_basicOpen]
+    exact ⟨fun h ↦ (hRHS.mpr (hLHS.mp ⟨⟨hyU, hgyV⟩, h⟩)).2,
+      fun h ↦ (hLHS.mpr (hRHS.mp ⟨⟨hyU, hgyV⟩, h⟩)).2⟩
+  · exact iff_of_false (fun h ↦ hyU (((pullback g).obj M).nonvanishingLocus_le _ h))
+      (fun h ↦ hyU (M.nonvanishingLocus_le s h))
+
+/-- The nonvanishing locus of a section pulled back along `g` and restricted to `V ≤ g ⁻¹ᵁ U` is
+`V ⊓ g ⁻¹ᵁ X_s`. -/
+@[simp]
+theorem nonvanishingLocus_pullbackSectionsLE {Y : Scheme.{u}} (g : Y ⟶ X) {U : X.Opens}
+    (V : Y.Opens) (hV : V ≤ g ⁻¹ᵁ U) (s : Γ(M, U)) :
+    ((pullback g).obj M).nonvanishingLocus (g.pullbackSectionsLE M U V hV s) =
+      V ⊓ g ⁻¹ᵁ M.nonvanishingLocus s := by
+  rw [Scheme.Hom.pullbackSectionsLE_apply, nonvanishingLocus_map,
+    nonvanishingLocus_pullbackSections]
+
+/-- A quasi-compact open `U` is covered by finitely many affine opens `V i ≤ U`, each carrying a
+section `e i` of `M` that vanishes nowhere on `V i`. -/
+theorem exists_finite_affine_cover_le_nonvanishingLocus {U : X.Opens} (hU : IsCompact (U : Set X)) :
+    ∃ (ι : Type u) (_ : Finite ι) (V : ι → X.Opens) (e : ∀ i, Γ(M, V i)),
+      (∀ i, IsAffineOpen (V i)) ∧ (∀ i, V i ≤ U) ∧ (∀ i, V i ≤ M.nonvanishingLocus (e i)) ∧
+        U ≤ ⨆ i, V i := by
+  have H (x : U) : ∃ (A : X.Opens) (e : Γ(M, A)), IsAffineOpen A ∧ (x : X) ∈ A ∧ A ≤ U ∧
+      A ≤ M.nonvanishingLocus e := by
+    obtain ⟨V, t, hxV⟩ := exists_mem_trivialization M x
+    obtain ⟨_, ⟨A, hA, rfl⟩, hxA, hAUV⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
+      (show (x : X) ∈ ((U ⊓ V : X.Opens) : Set X) from ⟨x.2, hxV⟩) (U ⊓ V).isOpen
+    refine ⟨A, M.presheaf.map (homOfLE fun y hy ↦ (hAUV hy).2).op (trivializationGenerator M t),
+      hA, hxA, fun y hy ↦ (hAUV hy).1, ?_⟩
+    rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
+    exact le_inf le_rfl (fun y hy ↦ (hAUV hy).2)
+  choose A e hA hxA hAU hAe using H
+  obtain ⟨t, ht⟩ := hU.elim_finite_subcover (fun x : U ↦ (A x : Set X)) (fun x ↦ (A x).isOpen)
+    fun x hx ↦ Set.mem_iUnion.mpr ⟨⟨x, hx⟩, hxA ⟨x, hx⟩⟩
+  refine ⟨t, inferInstance, fun i ↦ A i, fun i ↦ e i, fun i ↦ hA i, fun i ↦ hAU i, fun i ↦ hAe i,
+    fun x hx ↦ ?_⟩
+  obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (ht hx); exact Opens.mem_iSup.mpr ⟨⟨i, hi⟩, hxi⟩
+
+/-- If `e` vanishes nowhere on `V ≤ U` and `s|_V = f • e`, then `X_s ∩ V` is the basic open set
+of `f`. -/
+theorem basicOpen_eq_inf_nonvanishingLocus {U V : X.Opens} (i : V ⟶ U) (s : Γ(M, U))
+    {e : Γ(M, V)} (he : V ≤ M.nonvanishingLocus e) {f : Γ(X, V)}
+    (hf : f • e = M.presheaf.map i.op s) : X.basicOpen f = V ⊓ M.nonvanishingLocus s := by
+  rw [← inf_eq_left.mpr ((X.basicOpen_le f).trans he), ← nonvanishingLocus_smul, hf,
+    nonvanishingLocus_map]
+
+/-- If `U` is a retrocompact open of `X`, the nonvanishing locus `X_s` of any section `s` of an
+invertible sheaf `M` over `U` is retrocompact in `X`. -/
+theorem isRetrocompact_nonvanishingLocus_of_isRetrocompact {U : X.Opens}
+    (hU : IsRetrocompact (X := X) (U : Set X)) (s : Γ(M, U)) :
+    IsRetrocompact (X := X) (M.nonvanishingLocus s) := by
+  intro W hWc hWo
+  obtain ⟨ι, _, V, e, hVa, hVUW, hVe, hUWV⟩ :=
+    M.exists_finite_affine_cover_le_nonvanishingLocus (U := U ⊓ ⟨W, hWo⟩) (hU hWc hWo)
+  choose f hf using fun i ↦ surjective_smul_of_le_nonvanishingLocus (hVe i)
+    (M.presheaf.map (homOfLE ((hVUW i).trans inf_le_left)).op s)
+  beta_reduce at hf
+  have hD (i : ι) : X.basicOpen (f i) = V i ⊓ M.nonvanishingLocus s :=
+    M.basicOpen_eq_inf_nonvanishingLocus (homOfLE ((hVUW i).trans inf_le_left)) s (hVe i) (hf i)
+  have heq : (M.nonvanishingLocus s : Set X) ∩ W = ⋃ i : ι, (X.basicOpen (f i) : Set X) := by
+    ext x; simp only [Set.mem_inter_iff, SetLike.mem_coe, Set.mem_iUnion, hD, Opens.mem_inf]
+    refine ⟨fun ⟨hxs, hxW⟩ ↦ ?_, fun ⟨i, hxi, hxs⟩ ↦ ⟨hxs, (hVUW i hxi).2⟩⟩
+    obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp (hUWV ⟨M.nonvanishingLocus_le s hxs, hxW⟩)
+    exact ⟨i, hxi, hxs⟩
+  rw [heq]; exact isCompact_iUnion fun i ↦ ((hVa i).basicOpen (f i)).isCompact
+
+/-- The nonvanishing locus `X_s` of a global section `s` of an invertible sheaf `M` is retrocompact
+in `X`. -/
+theorem isRetrocompact_nonvanishingLocus (s : Γ(M, ⊤)) :
+    IsRetrocompact (X := X) (M.nonvanishingLocus s) :=
+  M.isRetrocompact_nonvanishingLocus_of_isRetrocompact
+    (fun _ hWc _ ↦ by simpa only [Opens.coe_top, Set.univ_inter] using hWc) s
 
 end AlgebraicGeometry.Scheme.Modules
