@@ -280,6 +280,12 @@ theorem mem_realCyclotomicUnits_iff {ζ : K} {N : ℕ} {u : (𝓞 (maximalRealSu
         cyclotomicNumbers ζ N :=
   Iff.rfl
 
+@[simp]
+theorem neg_one_mem_realCyclotomicUnits (ζ : K) (N : ℕ) : -1 ∈ realCyclotomicUnits K ζ N :=
+  Subgroup.mem_comap.2 <| (Units.ext (by simp) :
+    Units.map (algebraMap (𝓞 (maximalRealSubfield K)) (𝓞 K)).toMonoidHom (-1) = -1) ▸
+      neg_one_mem_cyclotomicUnits ζ N
+
 /-- **The real-field preimage.** A circular unit of `K` is the image of a real circular unit
 exactly when its value lies in the maximal real subfield. -/
 theorem mem_map_realCyclotomicUnits_iff {ζ : K} {N : ℕ} {u : (𝓞 K)ˣ} :
