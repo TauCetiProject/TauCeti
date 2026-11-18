@@ -19,7 +19,8 @@ equation `Ω` and renames the boundaries. This file makes the splitting
 (`TauCeti.GenEq.splitItem`): the result has the items `h′_0, …, h′_ρ`, where `h′_k h′_{k+1}`
 replaces `h_k` and every other item keeps its place; the boundary `j` of `Ω` becomes `j` for
 `j ≤ k` and `j + 1` otherwise, so that the new boundary is `k + 1`. Bases, constant bases and
-boundary connections move with the boundaries and items.
+boundary connections move with the boundaries and items (`TauCeti.GenEq.mem_constBases_splitItem`,
+`TauCeti.GenEq.mem_connections_splitItem`).
 
 The substitution `h_k ↦ h′_k h′_{k+1}` (`TauCeti.GenEq.splitList` on words with letters,
 `TauCeti.GenEq.splitWord` as a tuple of words in the new items) contracts the two adjacent items
@@ -114,6 +115,21 @@ def splitWord (k : Fin Ω.numItems) : Fin Ω.numItems → GX (FreeGroup A) (Fin 
   Fin.contractNth k.castSucc (· * ·) fun j => inr (FreeGroup.of j)
 
 variable {Ω} {k : Fin Ω.numItems}
+
+/-- The constant bases of `Ω.splitItem k` are those of `Ω` with their items renumbered (`h_k` goes
+to `h′_{k+1}`). -/
+theorem mem_constBases_splitItem {b : Fin (Ω.numItems + 1) × (A × Bool)} :
+    b ∈ (Ω.splitItem k).constBases ↔
+      ∃ b' ∈ Ω.constBases, (k.castSucc.succAbove b'.1, b'.2) = b :=
+  Finset.mem_map
+
+/-- The boundary connections of `Ω.splitItem k` are those of `Ω` with their boundaries
+renumbered. -/
+theorem mem_connections_splitItem
+    {c : Fin (Ω.numItems + 2) × Fin Ω.numBases × Fin (Ω.numItems + 2)} :
+    c ∈ (Ω.splitItem k).connections ↔ ∃ c' ∈ Ω.connections,
+      (k.succ.castSucc.succAbove c'.1, c'.2.1, k.succ.castSucc.succAbove c'.2.2) = c :=
+  Finset.mem_map
 
 /-- The renumbering of the boundaries of `Ω` in `Ω.splitItem k`: `j ↦ j` for `j ≤ k`, and
 `j ↦ j + 1` otherwise. -/
@@ -286,16 +302,17 @@ theorem equations_splitItem (hk' : ¬ Ω.IsConstantItem k) :
     μ, (basicEquation_splitItem (k := k) μ).symm⟩, fun b hb => ?_, fun c hc => ?_⟩)
     (Set.image_subset_iff.2 ((forall_mem_equations _).2 ⟨fun μ => ?_, fun b hb => ?_,
       fun c hc => ?_⟩))
-  · obtain ⟨b, hb', rfl⟩ := Finset.mem_map.1 hb
+  · obtain ⟨b, hb', rfl⟩ := mem_constBases_splitItem.1 hb
     exact ⟨_, Ω.coeffEquation_mem_equations hb', (coeffEquation_splitItem (hne hb')).symm⟩
-  · obtain ⟨c, hc', rfl⟩ := Finset.mem_map.1 hc
+  · obtain ⟨c, hc', rfl⟩ := mem_connections_splitItem.1 hc
     exact ⟨_, Ω.boundaryEquation_mem_equations hc', (boundaryEquation_splitItem (k := k) c).symm⟩
   · rw [Set.mem_preimage, ← basicEquation_splitItem (k := k)]
     exact (Ω.splitItem k).basicEquation_mem_equations μ
   · rw [Set.mem_preimage, ← coeffEquation_splitItem (hne hb)]
-    exact (Ω.splitItem k).coeffEquation_mem_equations (Finset.mem_map_of_mem _ hb)
+    exact (Ω.splitItem k).coeffEquation_mem_equations (mem_constBases_splitItem.2 ⟨b, hb, rfl⟩)
   · rw [Set.mem_preimage, ← boundaryEquation_splitItem (k := k)]
-    exact (Ω.splitItem k).boundaryEquation_mem_equations (Finset.mem_map_of_mem _ hc)
+    exact (Ω.splitItem k).boundaryEquation_mem_equations
+      (mem_connections_splitItem.2 ⟨c, hc, rfl⟩)
 
 /-- Evaluating the image of an item under `h_k ↦ h′_k h′_{k+1}` multiplies the values at `h′_k`
 and `h′_{k+1}`, and reads every other item at its new number. -/
