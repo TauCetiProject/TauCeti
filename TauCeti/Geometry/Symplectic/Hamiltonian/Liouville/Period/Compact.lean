@@ -30,14 +30,14 @@ of them vanishes, so an action coordinate has no critical point
 or minimum on a boundaryless base
 (`IsLagrangianTorusFibration.not_isLocalExtr_of_periodLattice_le_closure`).
 
-A function whose differential vanishes nowhere is differentiable, hence continuous, and a continuous
-function on a nonempty compact manifold attains its maximum. Hence **a regular Lagrangian torus
-fibration over a nonempty compact boundaryless base of positive dimension has no global action
-coordinates**
-(`IsLagrangianTorusFibration.not_forall_periodLattice_le_closure_of_compactSpace`): its period
-lattice is never spanned by exact one-forms, although it is spanned locally by the differentials of
-local action coordinates. The hypothesis that the period one-forms be exact cannot be dropped from
-the criterion for global action-angle coordinates.
+Every function on a nonempty compact boundaryless manifold has a critical point
+(`TauCeti.criticalPoints_nonempty`). Hence **a regular Lagrangian torus fibration over a nonempty
+compact boundaryless base of positive dimension has no global action coordinates**
+(`IsLagrangianTorusFibration.not_forall_periodLattice_le_closure_of_compactSpace`): its
+period lattice is never spanned over `ℤ` by the differentials of at most `dim B` functions,
+although it is spanned locally by the differentials of local action coordinates. The hypothesis
+that the period one-forms be exact cannot be dropped from the criterion for global action-angle
+coordinates.
 
 The basic example is the torus bundle `T*Tⁿ / Λ → Tⁿ` of the closed angle forms `dt_i` of the torus
 `Tⁿ = ∀ i, AddCircle (p i)` (`TauCeti.torusTimeForm`), the model
@@ -45,8 +45,8 @@ The basic example is the torus bundle `T*Tⁿ / Λ → Tⁿ` of the closed angle
 fibration over the compact torus, so it has no global action coordinates
 (`TauCeti.CotangentBundle.LatticeQuotient.not_forall_periodLattice_le_closure_torusTimeForm`). For
 one angle this is the fibration `T² → S¹` of the torus with the symplectic form `dθ ∧ dφ`, built
-from the closed angle form `dθ` of the base circle: its period lattice is spanned by no exact
-one-forms.
+from the closed angle form `dθ` of the base circle: its period lattice is spanned over `ℤ` by the
+differential of no function on the circle.
 
 ## Main results
 
@@ -125,22 +125,16 @@ theorem not_isLocalExtr_of_periodLattice_le_closure [J.Boundaryless] {b : B}
 /-- **No global action coordinates over a compact base.** Let `π : M → B` be a regular Lagrangian
 torus fibration over a nonempty compact boundaryless manifold `B`. Then no functions `a i`, at least
 one and at most `dim B` of them, have differentials whose integer span contains the period lattice
-at every point of `B`. Such differentials vanish nowhere, so each `a i` is differentiable, hence
-continuous, and has a critical point where it attains its maximum. So the period lattice of such a
-fibration is never spanned by exact one-forms. -/
+at every point of `B`. So the period lattice of such a fibration is never spanned over `ℤ` by the
+differentials of at most `dim B` functions. -/
 theorem not_forall_periodLattice_le_closure_of_compactSpace [J.Boundaryless] [CompactSpace B]
     [Nonempty B] [Nonempty ι] (hcard : Fintype.card ι ≤ finrank ℝ F) :
     ¬ ∀ b, h.periodLattice hσc b ≤
       AddSubgroup.closure (range fun i ↦ mvfderiv J (fun y ↦ a y i) b) := fun hall ↦ by
   obtain ⟨i⟩ := ‹Nonempty ι›
-  have hne b := h.mvfderiv_ne_zero_of_periodLattice_le_closure hσc hcard (hall b) i
-  -- A function with a nonzero differential at `b` is differentiable, hence continuous, at `b`.
-  have hcont : Continuous fun y ↦ a y i := continuous_iff_continuousAt.2 fun b ↦ by
-    by_contra hb
-    exact hne b (mvfderiv_eq_zero_iff.2
-      (mfderiv_zero_of_not_mdifferentiableAt fun hd ↦ hb hd.continuousAt))
-  obtain ⟨b, hb⟩ := criticalPoints_nonempty (I := J) hcont
-  exact hne b (mem_criticalPoints.1 hb)
+  obtain ⟨b, hb⟩ := criticalPoints_nonempty (I := J) (f := fun y ↦ a y i)
+  exact h.mvfderiv_ne_zero_of_periodLattice_le_closure hσc hcard (hall b) i
+    (mem_criticalPoints.1 hb)
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration
 

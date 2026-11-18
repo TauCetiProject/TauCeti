@@ -272,10 +272,7 @@ theorem _root_.IsZLattice.linearIndependent_of_le_span {K : Type*} [NormedField 
   have hspan : (⊤ : Submodule K E) ≤ Submodule.span K (range v) := by
     rw [← IsZLattice.span_top (K := K) (L := L), Submodule.span_le]
     exact fun x hx ↦ Submodule.span_le_restrictScalars ℤ K _ (hv hx)
-  refine linearIndependent_of_top_le_span_of_card_eq_finrank hspan (le_antisymm hcard ?_)
-  calc finrank K E = finrank K (Submodule.span K (range v)) := by
-        rw [top_le_iff.1 hspan, finrank_top]
-    _ ≤ Fintype.card ι := finrank_range_le_card v
+  exact linearIndependent_of_top_le_span_of_card_le_finrank hspan hcard
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
