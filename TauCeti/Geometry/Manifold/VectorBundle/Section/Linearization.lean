@@ -162,10 +162,14 @@ theorem hasFDerivAt_comp_chartAt_symm_sectionLinearization {N : Type*} [Topologi
     HasFDerivAt ((fun y ↦ (e ⟨b y, s y⟩).2) ∘ (chartAt EM x).symm)
       ((e.continuousLinearMapAt 𝕜 (b x)).comp (sectionLinearization (F := F) 𝓘(𝕜, EM) b s x))
       (chartAt EM x x) := by
-  have h := (show DifferentiableAt 𝕜 ((fun y ↦ (e ⟨b y, s y⟩).2) ∘ (chartAt EM x).symm)
-      (chartAt EM x x) by
+  -- `MDifferentiableAt.differentiableAt_comp_extChartAt_symm` is stated with `extChartAt`; for
+  -- the model with corners `𝓘(𝕜, EM)` the extended chart and its inverse are the chart and its
+  -- inverse, which these two rewriting lemmas record.
+  have hd : DifferentiableAt 𝕜 ((fun y ↦ (e ⟨b y, s y⟩).2) ∘ (chartAt EM x).symm)
+      (chartAt EM x x) := by
     simpa only [extChartAt_model_symm_eq_chartAt_symm, extChartAt_model_apply_eq_chartAt_apply]
-      using hs.differentiableAt_comp_extChartAt_symm).hasFDerivAt
+      using hs.differentiableAt_comp_extChartAt_symm
+  have h := hd.hasFDerivAt
   rw [fderiv_comp_chartAt_symm, ← continuousLinearMapAt_comp_sectionLinearization hb he hs hzero]
     at h
   exact h
