@@ -148,7 +148,7 @@ theorem bigOStar_iff_mem_closedBall : BigOStar a b e ↔ a ∈ Metric.closedBall
 
 /-- Negation preserves explicit errors: `-a = -b + O*(e)` iff `a = b + O*(e)`. -/
 @[simp]
-theorem bigOStar_neg_iff : BigOStar (-a) (-b) e ↔ BigOStar a b e := by
+theorem bigOStar_neg_neg_iff : BigOStar (-a) (-b) e ↔ BigOStar a b e := by
   rw [bigOStar_iff, bigOStar_iff, neg_sub_neg, norm_sub_rev]
 
 /-- Additivity: from `a₁ = b₁ + O*(e₁)` and `a₂ = b₂ + O*(e₂)` follows
@@ -162,7 +162,7 @@ theorem BigOStar.add (h₁ : BigOStar a₁ b₁ e₁) (h₂ : BigOStar a₂ b₂
 `a₁ - a₂ = b₁ - b₂ + O*(e₁ + e₂)`: errors add under subtraction too. -/
 theorem BigOStar.sub (h₁ : BigOStar a₁ b₁ e₁) (h₂ : BigOStar a₂ b₂ e₂) :
     BigOStar (a₁ - a₂) (b₁ - b₂) (e₁ + e₂) := by
-  simpa only [sub_eq_add_neg] using h₁.add (bigOStar_neg_iff.2 h₂)
+  simpa only [sub_eq_add_neg] using h₁.add (bigOStar_neg_neg_iff.2 h₂)
 
 /-- Additivity for a finite family: if `a i = b i + O*(e i)` for each `i ∈ s`, then
 `∑ i ∈ s, a i = ∑ i ∈ s, b i + O*(∑ i ∈ s, e i)`. -/
