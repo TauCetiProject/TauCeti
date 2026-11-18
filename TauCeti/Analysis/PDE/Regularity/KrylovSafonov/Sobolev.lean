@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.PowerDecay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Sobolev
 import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.LocalMaximumPrinciple
+import TauCeti.Analysis.Sobolev.Wkp.InteriorMorrey
+import TauCeti.Analysis.Sobolev.Wkp.PreciseRepresentative
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 import TauCeti.Topology.Order.OrderClosed
@@ -44,8 +46,9 @@ closed ball `closedBall c R`, then for every `p > 0`, with `B = B(c, R)`,
 `ū x ≤ C (R^(-n/p) ‖ū⁺‖_{Lᵖ(B)} + R ‖f⁻‖_{Lⁿ(B)} / λ)` for `x ∈ B(c, R / 2)`
 
 (`TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`), with `C` depending only on `n`,
-`κ` and `p`. Together with the weak Harnack inequality it gives the Harnack inequality for strong
-solutions.
+`κ` and `p`. Without naming a representative, `u` itself obeys the bound at almost every point of
+`B(c, R / 2)` (`TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`). Together
+with the weak Harnack inequality it gives the Harnack inequality for strong solutions.
 
 ## The argument
 
@@ -66,6 +69,8 @@ up to a multiple of `ε`.
   `|{ū ≥ t} ∩ Q₀| ≤ C t^(-ε) |Q₀|` for strong supersolutions.
 * `TauCeti.PDE.exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`: the local maximum principle for
   strong subsolutions.
+* `TauCeti.PDE.exists_ae_value_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp`: the same, at almost
+  every point, for `u` itself.
 
 ## References
 
@@ -265,6 +270,46 @@ theorem exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
     _ = _ := by
         have hBε : B * (ε / B) = ε := mul_div_cancel₀ _ hB.ne'
         linear_combination hBε - ε / B * hBdef
+
+/-- **The local maximum principle for strong subsolutions, almost everywhere**
+(Gilbarg–Trudinger, Theorem 9.20). Let `p > 0` and `κ` be given. There is a constant `C`, depending
+only on the dimension `n ≥ 1`, on `κ` and on `p`, with the following property. Let the coefficient
+matrix `a` be uniformly elliptic on `B = B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, let `Ω` be an open
+set containing `closedBall c R`, and let `u ∈ W^{2,n}(Ω)` satisfy `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≥ f` almost
+everywhere in `B` for the weak Hessian, with `f⁻ ∈ Lⁿ(B)`. Then for almost every `x ∈ B(c, R / 2)`,
+
+`u x ≤ C (R^(-n/p) ‖u⁺‖_{Lᵖ(B)} + R ‖f⁻‖_{Lⁿ(B)} / λ)`.
+
+The coefficients need not be measurable or symmetric. -/
+theorem exists_ae_value_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
+    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {κ p : ℝ} (hp : 0 < p) :
+    ∃ C : ℝ, 0 < C ∧
+      ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃Ω : Opens (EuclideanSpace ℝ ι)⦄
+        ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄ ⦃f : EuclideanSpace ℝ ι → ℝ⦄
+        (u : Wkp volume Ω (Fintype.card ι) 2), closedBall c R ⊆ Ω →
+        UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
+        (∀ᵐ x ∂volume.restrict (ball c R),
+          f x ≤ ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i) →
+        MemLp (fun x ↦ (f x)⁻) (Fintype.card ι) (volume.restrict (ball c R)) →
+        ∀ᵐ x ∂volume.restrict (ball c (R / 2)), Wkp.value 2 u x ≤
+          C * (R ^ (-(Fintype.card ι : ℝ) / p) * (eLpNorm (fun y ↦ (Wkp.value 2 u y)⁺)
+            (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal +
+          R / lam * (eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι)
+            (volume.restrict (ball c R))).toReal) := by
+  obtain ⟨C, hC, H⟩ := exists_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp (ι := ι) (κ := κ) hp
+  refine ⟨C, hC, fun lam Lam R c Ω a f u hRΩ ha hLam hsub hf ↦ ?_⟩
+  -- Apply the estimate to the precise representative, which is continuous on `Ω`.
+  have hcont := Wkp.continuousOn_preciseRepresentative (by rw [finrank_euclideanSpace]) u
+  have hū := Wkp.ae_eq_preciseRepresentative 2 u
+  have hB := ae_restrict_of_ae_restrict_of_subset (ball_subset_closedBall.trans hRΩ) hū
+  rw [eLpNorm_congr_ae (hB.mono fun y hy ↦ by rw [hy])]
+  have hhalf : ball c (R / 2) ⊆ ball c R := fun y hy ↦ by
+    have := mem_ball.1 hy
+    exact mem_ball.2 (by linarith [dist_nonneg (x := y) (y := c)])
+  filter_upwards [ae_restrict_mem measurableSet_ball, ae_restrict_of_ae_restrict_of_subset hhalf hB]
+    with x hx hxū
+  rw [hxū]
+  exact H u hRΩ ha hLam hcont hū hsub hf x hx
 
 end PDE
 
