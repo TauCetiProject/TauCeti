@@ -20,13 +20,12 @@ import TauCeti.Algebra.Module.LocalizedModule.Submodule
 /-!
 # Full submodule lattices
 
-This file provides generic results about full submodules over fraction fields. It relates bases and
-ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
-between full submodules to rational linear equivalences of their ambient spaces, and proves that
+This file provides generic results about full submodules over commutative algebras. It relates
+bases and ranks of full submodules to their ambient spaces. It also extends integral linear equivalences
+between full submodules to linear equivalences of their ambient modules, and proves that
 surjective linear maps preserve full lattices over fraction fields, as do finite
 products. Injective linear maps pull back full lattices over localizations of Noetherian
-commutative rings. Finally, a free full lattice over an integral domain rationalizes to its ambient
-vector space over the fraction field.
+commutative rings. Finally, scalar extension of a free full lattice recovers its ambient module.
 
 ## Main declarations
 
@@ -51,13 +50,13 @@ vector space over the fraction field.
 * `Submodule.IsLattice.pi`: the product of a finite family of full lattices is a full lattice.
 * `Submodule.IsLattice.prod`: the product of two full lattices is a full lattice.
 * `LinearEquiv.extendOfIsLattice`: extension of an `R`-linear equivalence between
-  full submodules to their ambient `K`-vector spaces.
+  full submodules to their ambient `K`-modules.
 * `Submodule.isBaseChange_subtype`: the inclusion of a free full lattice
-  submodule into its ambient vector space over the fraction field is a base change.
+  submodule into its ambient module is a base change.
 * `LinearMap.det_eq_algebraMap_det_of_isLattice`: an endomorphism of the ambient space which
   restricts to an endomorphism of a free full lattice has the determinant of that restriction.
 * `Submodule.rationalizationEquiv`: the canonical equivalence from the scalar extension
-  of a free full lattice submodule to its ambient vector space.
+  of a free full lattice submodule to its ambient module.
 * `Submodule.IsLattice.isLocalizedModule_subtype`: the inclusion of a submodule spanning the
   ambient space over the fraction field, such as a full lattice, is a localization at the nonzero
   divisors.
@@ -87,7 +86,7 @@ universe u v w
 
 section
 
-variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K]
+variable {R K V : Type*} [CommRing R] [CommRing K] [Algebra R K]
 variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 
 /-- The `R`-span of the ambient `K`-basis obtained from an `R`-basis of a lattice is the lattice
@@ -183,12 +182,12 @@ end
 section
 
 variable {R : Type*} {K : Type*} {V : Type u} {W : Type v}
-variable [CommRing R] [Field K] [Algebra R K]
+variable [CommRing R] [CommRing K] [Algebra R K]
 variable [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V]
 variable [AddCommGroup W] [Module R W] [Module K W] [IsScalarTower R K W]
 
 /-- Extend an `R`-linear equivalence between full submodules uniquely to their ambient
-`K`-vector spaces. -/
+`K`-modules. -/
 noncomputable def _root_.LinearEquiv.extendOfIsLattice {S : Submodule R V} {T : Submodule R W}
     [S.IsFullLattice K] [T.IsFullLattice K] [Module.Free R S] (e : S ≃ₗ[R] T) : V ≃ₗ[K] W :=
   let b := Module.Free.chooseBasis R S
@@ -251,17 +250,13 @@ section Rationalization
 
 variable {R : Type u} {K : Type v} {V' : Type w}
 variable [CommRing R]
-variable [Field K] [Algebra R K] [IsFractionRing R K]
+variable [CommRing K] [Algebra R K]
 variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
-/-- The inclusion of a free full lattice submodule into its ambient vector space over the fraction
-field exhibits that space as base change from `R` to `K`. (`R` is a domain anyway, embedding in
-the field `K`, so no domain hypothesis is needed.) -/
+/-- The inclusion of a free full lattice submodule into its ambient module exhibits that module
+as base change from `R` to `K`. -/
 theorem isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsFullLattice K] :
     IsBaseChange K S.subtype := by
-  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
-  have : Module.IsTorsionFree R K :=
-    Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective R K)
   let b := Module.Free.chooseBasis R S
   let e : K ⊗[R] S ≃ₗ[K] V' :=
     (b.baseChange K).equiv (b.extendOfIsFullLattice K) (Equiv.refl _)
@@ -276,7 +271,7 @@ theorem isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsFullLat
   exact IsBaseChange.of_equiv e fun x ↦ DFunLike.congr_fun hmap x
 
 /-- The canonical equivalence from the scalar extension of a free full lattice submodule to its
-ambient vector space. -/
+ambient module. -/
 noncomputable def rationalizationEquiv (S : Submodule R V') [Module.Free R S] [S.IsFullLattice K] :
     K ⊗[R] S ≃ₗ[K] V' :=
   (isBaseChange_subtype S).equiv
@@ -301,7 +296,6 @@ theorem _root_.LinearMap.det_eq_algebraMap_det_of_isLattice {S : Submodule R V'}
     [Module.Free R S] [S.IsFullLattice K] (f : V' →ₗ[K] V') (g : S →ₗ[R] S)
     (h : ∀ x : S, f x = g x) : LinearMap.det f = algebraMap R K (LinearMap.det g) := by
   -- Rationalization identifies `f` with the base change of `g`.
-  have := IsDomain.of_faithfulSMul R K
   have := IsLattice.finite K S
   have hconj : f = (rationalizationEquiv S).toLinearMap ∘ₗ g.baseChange K ∘ₗ
       (rationalizationEquiv (K := K) S).symm.toLinearMap := by

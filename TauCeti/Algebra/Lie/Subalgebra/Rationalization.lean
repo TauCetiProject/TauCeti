@@ -11,23 +11,24 @@ public import TauCeti.Algebra.Module.Lattice
 /-!
 # Rationalizing integral Lie lattices
 
-Let `M` be a free full Lie lattice over a domain `R` in a Lie algebra `L` over its fraction field
-`K`. The underlying submodule inclusion exhibits `L` as the scalar extension `K ⊗[R] M`. This file
-proves that the canonical rationalization equivalence respects the Lie bracket, giving
+Let `M` be a free full Lie lattice over a commutative ring `R` in a Lie algebra `L` over a
+commutative `R`-algebra `K`. The underlying submodule inclusion exhibits `L` as the scalar
+extension `K ⊗[R] M`. This file proves that the canonical rationalization equivalence respects
+the Lie bracket, giving
 
 ```text
 K ⊗[R] M ≃ₗ⁅K⁆ L.
 ```
 
-The source carries Mathlib's scalar-extended Lie bracket. Thus the result identifies the generic
-fibre as a Lie algebra, rather than only as a vector space. Its pure-tensor and inverse equations
-make the equivalence usable without unfolding either the tensor-product bracket or the lattice
+The source carries Mathlib's scalar-extended Lie bracket. Thus the result identifies the scalar
+extension as a Lie algebra. Its pure-tensor and inverse equations make the equivalence usable
+without unfolding either the tensor-product bracket or the lattice
 rationalization construction.
 
 ## Main declaration
 
 * `LieSubalgebra.rationalizationEquiv`: the canonical Lie equivalence from the scalar
-  extension of a free full integral Lie subalgebra to its ambient rational Lie algebra.
+  extension of a free full Lie subalgebra to its ambient Lie algebra.
 
 ## References
 
@@ -49,7 +50,7 @@ section
 universe u v w
 
 variable {R : Type u} {K : Type v} {L : Type w}
-  [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+  [CommRing R] [CommRing K] [Algebra R K]
   [LieRing L] [LieAlgebra R L] [LieAlgebra K L] [IsScalarTower R K L]
 
 private theorem rationalizationEquiv_map_lie (M : LieSubalgebra R L)

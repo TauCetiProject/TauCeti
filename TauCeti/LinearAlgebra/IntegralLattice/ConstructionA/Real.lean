@@ -124,8 +124,7 @@ instance isLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → Z
     let := Fintype.ofFinite ι
     refine (Submodule.IsLattice.iff_fg_and_finrank_span_eq_finrank ℝ _).mpr
       ⟨(Submodule.IsLattice.fg ℚ (lattice m C)).map _, ?_⟩
-    change _ = Module.finrank ℤ ((lattice m C).map ((realEmbedding m).restrictScalars ℤ))
-    rw [hspan, finrank_top, Module.finrank_fintype_fun_eq_card,
+    rw [hspan, finrank_top, Module.finrank_fintype_fun_eq_card, realLattice,
       ← LinearEquiv.finrank_eq (Submodule.equivMapOfInjective
         ((realEmbedding m).restrictScalars ℤ) (realEmbedding_injective m) (lattice m C)),
       Submodule.IsFullLattice.finrank_eq ℚ, Module.finrank_fintype_fun_eq_card]
