@@ -63,6 +63,9 @@ there only through sections of faithfully flat covers and roots of separable pol
 * `TauCeti.Algebra.IsTotallySplit.baseChange`: total splitting is stable under base change.
 * `Algebra.IsFiniteSplit.of_surjective`: over a field, a quotient of a totally split algebra is
   totally split.
+* `TauCeti.Algebra.exists_faithfullyFlat_etale_algEquiv_pi`: a finite étale algebra of constant
+  rank `Nat.card ι` (in any universe) becomes isomorphic to `ι → T` after a faithfully flat finite
+  étale extension `T` in the universe of the base.
 * `TauCeti.IsFiniteEtaleSplit.nonempty_algHom`: a faithfully flat finite étale `R`-algebra maps to
   every `R`-algebra without nonsplit finite étale covers.
 * `TauCeti.IsFiniteEtaleSplit.pi`, `TauCeti.IsFiniteEtaleSplit.prod`: products of rings without
@@ -311,6 +314,38 @@ theorem _root_.Algebra.IsFiniteSplit.of_surjective {K B C : Type*} [Field K] [Co
       hε).isFiniteSplit
   exact .of_algEquiv ((Ideal.quotientEquivAlgOfEq K hker.symm).trans
     (Ideal.quotientKerAlgEquivOfSurjective hg))
+
+open scoped TensorProduct in
+/-- **Universe-general splitting of a constant-rank finite étale algebra.** Every finite étale
+`R`-algebra `S` (in any universe) of constant stalk rank `Nat.card ι` becomes `T`-isomorphic to
+`ι → T` after base change to a faithfully flat finite étale `R`-algebra `T` in the universe of
+`R`. -/
+theorem Algebra.exists_faithfullyFlat_etale_algEquiv_pi {R : Type u} {S : Type*} [CommRing R]
+    [CommRing S] [Algebra R S] [Algebra.Etale R S] [Module.Finite R S] {ι : Type*} [Finite ι]
+    (h : Module.rankAtStalk (R := R) S = Nat.card ι) :
+    ∃ (T : Type u) (_ : CommRing T) (_ : Algebra R T) (_ : Module.FaithfullyFlat R T)
+      (_ : Module.Finite R T) (_ : Algebra.Etale R T),
+      Nonempty (T ⊗[R] S ≃ₐ[T] (ι → T)) := by
+  cases subsingleton_or_nontrivial R
+  · have : Subsingleton (R ⊗[R] S) := Module.subsingleton R _
+    exact ⟨R, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, ⟨default⟩⟩
+  · cases nonempty_fintype ι
+    have : Small.{u} S := Module.Finite.small R S
+    let eS : Shrink.{u} S ≃ₐ[R] S := Shrink.algEquiv R S
+    have : Algebra.Etale R (Shrink.{u} S) := .of_equiv eS.symm
+    have : Module.Finite R (Shrink.{u} S) := .equiv eS.symm.toLinearEquiv
+    have hS' : Module.rankAtStalk (R := R) (Shrink.{u} S) = Fintype.card ι := by
+      simpa [Nat.card_eq_fintype_card] using
+        (Module.rankAtStalk_eq_of_equiv eS.toLinearEquiv).trans h
+    obtain ⟨T, _, _, _, _, _, _⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale hS'
+    obtain ⟨m, ⟨f⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T (T ⊗[R] Shrink.{u} S)
+    have : Nontrivial T := (FaithfulSMul.algebraMap_injective R T).nontrivial
+    obtain rfl : m = Fintype.card ι := by
+      simpa using f.toLinearEquiv.finrank_eq.symm.trans
+        (TauCeti.Module.finrank_tensorProduct_eq_of_rankAtStalk_eq hS')
+    exact ⟨T, _, _, inferInstance, inferInstance, inferInstance,
+      ⟨((Algebra.TensorProduct.congr (AlgEquiv.refl : T ≃ₐ[T] T) eS.symm).trans f).trans
+        (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Fintype.equivFin ι).symm)⟩⟩
 
 /-- A ring `R` *has no nonsplit finite étale covers* if every finite étale `R`-algebra is totally
 split. This is the conclusion of Scholze's Lemma 15.3 for the perfectoid tower `A_∞`. -/
