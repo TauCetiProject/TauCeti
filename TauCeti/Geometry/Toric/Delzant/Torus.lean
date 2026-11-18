@@ -13,7 +13,9 @@ import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Real.Cardinality
 import Mathlib.LinearAlgebra.Dimension.RankNullity
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.AddCircle
 import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.Logic.Function.Extend
 
 /-!
 # The kernel torus of a facet presentation
@@ -61,6 +63,11 @@ points.
   `[t] ↦ [∑ j, t j • i (u j)]`, a homomorphism of tori when `p ≠ 0`.
 * `TauCeti.Toric.faceSubtorus i u p s`: the image in `V / p i(N)` of the real span of the normals
   of the facets in `s`.
+* `TauCeti.Toric.IsSmoothVertex.vertexTorusHom`: at a smooth vertex `x` with active facets `A`,
+  the homomorphism `(ℝ / pℤ)^ι → (ℝ / pℤ)^A` reading `π` in the lattice basis of the active
+  normals.
+* `TauCeti.Toric.IsSmoothVertex.vertexTorusEquiv`: the residual torus `(ℝ / pℤ)^ι / ker π` as the
+  standard torus `(ℝ / pℤ)^A`, sending `φ` to the class of its extension by zero.
 
 ## Main results
 
@@ -79,6 +86,9 @@ points.
   the kernel of `π`.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
+* `TauCeti.Toric.mem_ker_facetTorusHom_iff_of_basis`,
+  `TauCeti.Toric.IsSmoothVertex.ker_vertexTorusHom`: the kernel of `π` in the coordinates of a
+  lattice basis, and at a smooth vertex.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
   kernel of `π` is closed.
 * `TauCeti.Toric.mem_faceSubtorus_iff_exists_facetTorusHom_eq`: the face subtorus of `s` is the
@@ -175,8 +185,7 @@ theorem coe_ker_facetTorusHom (hu : Function.Surjective (Fintype.linearCombinati
   ext θ
   constructor
   · intro hθ
-    choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-    obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+    obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
     rw [SetLike.mem_coe, AddMonoidHom.mem_ker, facetTorusHom_coe,
       QuotientAddGroup.eq_zero_iff] at hθ
     obtain ⟨n, hn⟩ := hθ
@@ -270,8 +279,7 @@ theorem mem_ker_facetTorusHom_iff_of_basis (hi : IsIntegralLattice i) {κ : Type
     (b : Module.Basis κ ℤ N) {θ : ι → AddCircle p} :
     θ ∈ (facetTorusHom i u p).ker ↔ ∀ k, ∑ j, b.repr (u j) k • θ j = 0 := by
   have := Fintype.ofFinite κ
-  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-  obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
   -- Read `Σ_j t_j i(u_j)` and the lattice points `p i(n)` in the real basis `i ∘ b` of `V`.
   set B := hi.isBaseChange.basis b
   have hrepr (n : N) (k : κ) : B.repr (i n) k = b.repr n k := by
@@ -308,8 +316,7 @@ homomorphism `(ℝ / pℤ)^ι → V / p i(N)` into its composite with the relabe
 of angles. -/
 theorem facetTorusHom_comp_equiv (e : ι' ≃ ι) (θ : ι' → AddCircle p) :
     facetTorusHom i (u ∘ e) p θ = facetTorusHom i u p (θ ∘ e.symm) := by
-  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-  obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
   -- The relabelled angles are the classes of the relabelled representatives `t ∘ e.symm`.
   refine (facetTorusHom_coe i (u ∘ e) p t).trans (Eq.trans ?_ (facetTorusHom_coe i u p
     (t ∘ e.symm)).symm)
@@ -323,8 +330,7 @@ theorem ker_facetTorusHom_comp_left {f : N → N'} {g : V →ₗ[ℝ] V'} (hf : 
     (hg : Function.Injective g) (hfg : ∀ n, g (i n) = i' (f n)) :
     (facetTorusHom i' (fun j ↦ f (u j)) p).ker = (facetTorusHom i u p).ker := by
   ext θ
-  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
-  obtain rfl : (fun j ↦ (t j : AddCircle p)) = θ := funext ht
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq θ
   have hβ : Fintype.linearCombination ℝ (fun j ↦ i' (f (u j))) t =
       g (Fintype.linearCombination ℝ (fun j ↦ i (u j)) t) := by
     simp [Fintype.linearCombination_apply, map_sum, hfg]
@@ -476,6 +482,85 @@ theorem IsSmoothVertex.surjective_linearCombination_real (hx : IsSmoothVertex i 
     (hi : IsIntegralLattice i) :
     Function.Surjective (Fintype.linearCombination ℝ fun j ↦ i (u j)) :=
   Toric.surjective_linearCombination_real hi.span_range_eq_top hx.surjective_linearCombination
+
+namespace IsSmoothVertex
+
+variable (hx : IsSmoothVertex i u c x)
+
+variable (p) in
+/-- The homomorphism `facetTorusHom` read in the coordinates of the lattice basis formed by the
+normals active at a smooth vertex `x`: writing `u j = Σ_(k ∈ A) a_(j k) u_k`, it sends `θ` to
+`(Σ_j a_(j k) θ_j)_(k ∈ A)`. Its kernel is the kernel torus
+(`TauCeti.Toric.IsSmoothVertex.ker_vertexTorusHom`). -/
+def vertexTorusHom : (ι → AddCircle p) →+ (activeSet (facetPairing i u) c x → AddCircle p) where
+  toFun θ k := ∑ j, hx.basis.repr (u j) k • θ j
+  map_zero' := by ext; simp
+  map_add' θ θ' := by ext; simp [smul_add, Finset.sum_add_distrib]
+
+@[simp]
+theorem vertexTorusHom_apply (θ : ι → AddCircle p) (k : activeSet (facetPairing i u) c x) :
+    hx.vertexTorusHom p θ k = ∑ j, hx.basis.repr (u j) k • θ j :=
+  (rfl)
+
+/-- The homomorphism `vertexTorusHom` is continuous. -/
+theorem continuous_vertexTorusHom : Continuous (hx.vertexTorusHom p) :=
+  continuous_pi fun _ ↦ continuous_finsetSum _ fun j _ ↦
+    (continuous_zsmul _).comp (continuous_apply j)
+
+/-- The kernel of `vertexTorusHom` is the kernel torus. -/
+theorem ker_vertexTorusHom (hi : IsIntegralLattice i) :
+    (hx.vertexTorusHom p).ker = (facetTorusHom i u p).ker := by
+  ext θ
+  rw [mem_ker_facetTorusHom_iff_of_basis hi hx.basis, AddMonoidHom.mem_ker, funext_iff]
+  rfl
+
+/-- `vertexTorusHom` is the identity on the angles supported on the active facets: it sends the
+extension by zero of `φ : (ℝ / pℤ)^A` back to `φ`. -/
+@[simp]
+theorem vertexTorusHom_extend (φ : activeSet (facetPairing i u) c x → AddCircle p) :
+    hx.vertexTorusHom p (Function.extend Subtype.val φ 0) = φ := by
+  ext k
+  rw [vertexTorusHom_apply, Finset.sum_eq_single (k : ι)]
+  · rw [Subtype.val_injective.extend_apply, ← hx.basis_apply k, hx.basis.repr_self,
+      Finsupp.single_eq_same, one_smul]
+  · intro j _ hjk
+    by_cases hj : j ∈ activeSet (facetPairing i u) c x
+    · -- Distinct active normals are distinct members of the basis.
+      have hne : (⟨j, hj⟩ : activeSet (facetPairing i u) c x) ≠ k := fun h ↦ hjk (by rw [← h])
+      rw [← hx.basis_apply ⟨j, hj⟩, hx.basis.repr_self,
+        Finsupp.single_eq_of_ne' hne, zero_smul]
+    · rw [Function.extend_subtypeVal_apply_of_notMem hj, Pi.zero_apply, smul_zero]
+  · simp
+
+variable (p) in
+/-- **The residual torus at a smooth vertex.** The homomorphism `vertexTorusHom` identifies the
+residual torus `(ℝ / pℤ)^ι / N_Δ` with the standard torus `(ℝ / pℤ)^A` on the facets active at
+`x`. Its inverse, this equivalence, sends `φ` to the class of the extension of `φ` by zero
+(`TauCeti.Toric.IsSmoothVertex.vertexTorusEquiv_apply`). -/
+def vertexTorusEquiv (hi : IsIntegralLattice i) :
+    (activeSet (facetPairing i u) c x → AddCircle p) ≃+
+      (ι → AddCircle p) ⧸ (facetTorusHom i u p).ker :=
+  ((QuotientAddGroup.quotientAddEquivOfEq (hx.ker_vertexTorusHom hi).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfRightInverse (hx.vertexTorusHom p)
+      (Function.extend Subtype.val · 0) hx.vertexTorusHom_extend)).symm
+
+@[simp]
+theorem vertexTorusEquiv_symm_mk (hi : IsIntegralLattice i) (θ : ι → AddCircle p) :
+    (hx.vertexTorusEquiv p hi).symm θ = hx.vertexTorusHom p θ := by
+  rw [vertexTorusEquiv, AddEquiv.symm_symm, AddEquiv.trans_apply,
+    QuotientAddGroup.quotientAddEquivOfEq_mk]
+  -- The forward map of `quotientKerEquivOfRightInverse` is `kerLift` by definition.
+  exact QuotientAddGroup.kerLift_mk (hx.vertexTorusHom p) θ
+
+@[simp]
+theorem vertexTorusEquiv_apply (hi : IsIntegralLattice i)
+    (φ : activeSet (facetPairing i u) c x → AddCircle p) :
+    hx.vertexTorusEquiv p hi φ =
+      ((Function.extend Subtype.val φ 0 : ι → AddCircle p) :
+        (ι → AddCircle p) ⧸ (facetTorusHom i u p).ker) := by
+  rw [← AddEquiv.eq_symm_apply, vertexTorusEquiv_symm_mk, vertexTorusHom_extend]
+
+end IsSmoothVertex
 
 end SmoothVertex
 

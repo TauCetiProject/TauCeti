@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sigma
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Shrinking open sets into dense open sets of finite products
@@ -37,6 +38,8 @@ product, such as the ordered triples of distinct points of the Riemann sphere.
   injective tuples for finitely many dense open sets at once.
 * `TauCeti.isOpen_setOf_injective`: in a Hausdorff space, the injective finite tuples form an open
   set.
+* `TauCeti.continuous_extend_subtypeVal`: extending functions on a subset along `Subtype.val`,
+  with a fixed fallback, is continuous.
 -/
 
 public section
@@ -54,6 +57,15 @@ theorem isOpen_setOf_forall_abs_lt_one {ι : Type*} [Finite ι] :
   exact isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_Ioo
 
 variable {X : Type*} [TopologicalSpace X]
+
+/-- Extending functions on a subset `s` along `Subtype.val`, with a fixed fallback `e` outside `s`,
+is continuous for the product topologies. -/
+theorem continuous_extend_subtypeVal {ι : Type*} {s : Set ι} (e : ι → X) :
+    Continuous fun g : s → X ↦ extend Subtype.val g e := by
+  refine continuous_pi fun j ↦ ?_
+  by_cases hj : j ∈ s
+  · exact (continuous_apply _).congr fun g ↦ (Subtype.val_injective.extend_apply g e ⟨j, hj⟩).symm
+  · exact continuous_const.congr fun g ↦ (extend_subtypeVal_apply_of_notMem hj g e).symm
 
 /-- In a Hausdorff space, the injective tuples indexed by a finite type form an open subset of the
 product: injectivity asks finitely many pairs of coordinates to differ. -/
