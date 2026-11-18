@@ -135,29 +135,31 @@ theorem bracket_apply_eq_zero_of_apply_eq_zero_left {x : M} {a b : Cₛ^∞⟮I;
   refine Submodule.smul_induction_on (p := fun u ↦ A.bracket u b x = 0)
     (mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero ha) ?_ ?_
   · intro f hf u _
-    rw [A.bracket_swap, ContMDiffSection.coe_neg, Pi.neg_apply, A.bracket_smul_apply,
-      mem_smoothVanishingIdeal_iff.mp hf, hb, map_zero, zero_smul, zero_smul, add_zero, neg_zero]
+    rw [A.bracket_swap]
+    change -(A.bracket b (f • u) x) = 0
+    rw [A.bracket_smul_apply, mem_smoothVanishingIdeal_iff.mp hf, hb, map_zero]
+    simp
   · intro u₁ u₂ h₁ h₂
-    rw [map_add, LinearMap.add_apply, ContMDiffSection.coe_add, Pi.add_apply, h₁, h₂, add_zero]
+    simp [h₁, h₂]
 
 /-- If `a(x)` is isotropic and `b` vanishes at `x`, then `[a, b]` vanishes at `x`. -/
 theorem bracket_apply_eq_zero_of_apply_eq_zero_right {x : M} {a b : Cₛ^∞⟮I; F, V⟯}
     (ha : a x ∈ A.isotropy x) (hb : b x = 0) : A.bracket a b x = 0 := by
-  rw [A.bracket_swap, ContMDiffSection.coe_neg, Pi.neg_apply,
-    A.bracket_apply_eq_zero_of_apply_eq_zero_left hb ha, neg_zero]
+  rw [A.bracket_swap]
+  simp [A.bracket_apply_eq_zero_of_apply_eq_zero_left hb ha]
 
 /-- If `b(x)` is isotropic, then `[a, b](x)` depends only on the value `a(x)`. -/
 theorem bracket_apply_congr_left {x : M} {a a' b : Cₛ^∞⟮I; F, V⟯} (h : a x = a' x)
     (hb : b x ∈ A.isotropy x) : A.bracket a b x = A.bracket a' b x := by
   have h₀ := A.bracket_apply_eq_zero_of_apply_eq_zero_left
-    (a := a - a') (by rw [ContMDiffSection.coe_sub, Pi.sub_apply, h, sub_self]) hb
-  rwa [map_sub, LinearMap.sub_apply, ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h₀
+    (a := a - a') (by simp [h]) hb
+  simpa [sub_eq_zero] using h₀
 
 /-- If `a(x)` is isotropic, then `[a, b](x)` depends only on the value `b(x)`. -/
 theorem bracket_apply_congr_right {x : M} {a b b' : Cₛ^∞⟮I; F, V⟯} (ha : a x ∈ A.isotropy x)
     (h : b x = b' x) : A.bracket a b x = A.bracket a b' x := by
-  rw [A.bracket_swap a b, A.bracket_swap a b', ContMDiffSection.coe_neg, ContMDiffSection.coe_neg,
-    Pi.neg_apply, Pi.neg_apply, A.bracket_apply_congr_left h ha]
+  rw [A.bracket_swap a b, A.bracket_swap a b']
+  simp [A.bracket_apply_congr_left h ha]
 
 /-- The value at `x` of the bracket of two sections with isotropic values at `x` depends only on
 these values: the **bracket of extensions** is independent of the extensions chosen. -/
@@ -168,6 +170,15 @@ theorem bracket_apply_congr {x : M} {a a' b b' : Cₛ^∞⟮I; F, V⟯} (ha : a 
 
 /-! ### The isotropy Lie algebra -/
 
+private def isotropyExtension {x : M} (v : A.isotropy x) : Cₛ^∞⟮I; F, V⟯ :=
+  (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose
+
+omit [FiniteDimensional ℝ F] in
+private theorem isotropyExtension_apply {x : M} (v : A.isotropy x) :
+    isotropyExtension A v x = v := by
+  simpa [isotropyExtension] using
+    (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose_spec
+
 /-- The bracket of the isotropy Lie algebra at `x`: the value at `x` of the bracket of chosen
 smooth sections through the two isotropy vectors. By `TauCeti.LieAlgebroid.bracket_apply_congr`
 any other choice gives the same value (`TauCeti.LieAlgebroid.coe_bracket_isotropy`). -/
@@ -177,88 +188,66 @@ instance instBracketIsotropy (x : M) : Bracket (A.isotropy x) (A.isotropy x) whe
       (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)).choose x,
       A.bracket_apply_mem_isotropy
         (by
-          rw [← ContMDiffSection.evalLinearMap_apply,
-            (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose_spec]
-          exact v.2)
+          change isotropyExtension A v x ∈ A.isotropy x
+          simpa only [isotropyExtension_apply] using v.2)
         (by
-          rw [← ContMDiffSection.evalLinearMap_apply,
-            (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)).choose_spec]
-          exact w.2)⟩
+          change isotropyExtension A w x ∈ A.isotropy x
+          simpa only [isotropyExtension_apply] using w.2)⟩
 
 /-- The bracket of the isotropy Lie algebra at `x` is the value at `x` of the bracket of any two
 smooth sections through the two isotropy vectors. -/
 theorem coe_bracket_isotropy {x : M} {v w : A.isotropy x} {a b : Cₛ^∞⟮I; F, V⟯} (ha : a x = v)
     (hb : b x = w) : ((⁅v, w⁆ : A.isotropy x) : V x) = A.bracket a b x := by
-  have hv := (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)).choose_spec
-  have hw := (ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)).choose_spec
-  rw [ContMDiffSection.evalLinearMap_apply] at hv hw
-  exact A.bracket_apply_congr (hv.trans ha.symm) (hw.trans hb.symm)
-    (by rw [hv]; exact v.2)
-    (by rw [hw]; exact w.2)
+  exact A.bracket_apply_congr (a := isotropyExtension A v) (b := isotropyExtension A w)
+    ((isotropyExtension_apply A v).trans ha.symm)
+    ((isotropyExtension_apply A w).trans hb.symm)
+    (by simpa only [isotropyExtension_apply] using v.2)
+    (by simpa only [isotropyExtension_apply] using w.2)
 
 /-- The **isotropy Lie algebra** of a Lie algebroid at `x`, with the bracket
 `TauCeti.LieAlgebroid.coe_bracket_isotropy` of isotropy vectors. Its Jacobi identity is that of the
 bracket of sections. -/
 instance instLieRingIsotropy (x : M) : LieRing (A.isotropy x) where
   add_lie v₁ v₂ w := by
-    obtain ⟨a₁, ha₁⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v₁ : V x)
-    obtain ⟨a₂, ha₂⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v₂ : V x)
-    obtain ⟨b, hb⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)
-    rw [ContMDiffSection.evalLinearMap_apply] at ha₁ ha₂ hb
+    have ha₁ := isotropyExtension_apply A v₁
+    have ha₂ := isotropyExtension_apply A v₂
+    have hb := isotropyExtension_apply A w
     ext
-    rw [Submodule.coe_add, A.coe_bracket_isotropy ha₁ hb, A.coe_bracket_isotropy ha₂ hb,
-      A.coe_bracket_isotropy (a := a₁ + a₂) (by
-        rw [ContMDiffSection.coe_add, Pi.add_apply, ha₁, ha₂, Submodule.coe_add]) hb,
-      map_add, LinearMap.add_apply, ContMDiffSection.coe_add, Pi.add_apply]
+    simp [A.coe_bracket_isotropy ha₁ hb, A.coe_bracket_isotropy ha₂ hb,
+      A.coe_bracket_isotropy (v := v₁ + v₂)
+        (a := isotropyExtension A v₁ + isotropyExtension A v₂)
+        (by simp [ha₁, ha₂]) hb]
   lie_add v w₁ w₂ := by
-    obtain ⟨a, ha⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
-    obtain ⟨b₁, hb₁⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w₁ : V x)
-    obtain ⟨b₂, hb₂⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w₂ : V x)
-    rw [ContMDiffSection.evalLinearMap_apply] at ha hb₁ hb₂
+    have ha := isotropyExtension_apply A v
+    have hb₁ := isotropyExtension_apply A w₁
+    have hb₂ := isotropyExtension_apply A w₂
     ext
-    rw [Submodule.coe_add, A.coe_bracket_isotropy ha hb₁, A.coe_bracket_isotropy ha hb₂,
-      A.coe_bracket_isotropy (b := b₁ + b₂) ha (by
-        rw [ContMDiffSection.coe_add, Pi.add_apply, hb₁, hb₂, Submodule.coe_add]),
-      map_add, ContMDiffSection.coe_add, Pi.add_apply]
+    simp [A.coe_bracket_isotropy ha hb₁, A.coe_bracket_isotropy ha hb₂,
+      A.coe_bracket_isotropy (w := w₁ + w₂)
+        (b := isotropyExtension A w₁ + isotropyExtension A w₂)
+        ha (by simp [hb₁, hb₂])]
   lie_self v := by
-    obtain ⟨a, ha⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
-    rw [ContMDiffSection.evalLinearMap_apply] at ha
+    have ha := isotropyExtension_apply A v
     ext
-    rw [A.coe_bracket_isotropy ha ha, A.bracket_self, ContMDiffSection.coe_zero, Pi.zero_apply,
-      Submodule.coe_zero]
+    simp [A.coe_bracket_isotropy ha ha, A.bracket_self]
   leibniz_lie u v w := by
-    obtain ⟨a, ha⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (u : V x)
-    obtain ⟨b, hb⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
-    obtain ⟨c, hc⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)
-    rw [ContMDiffSection.evalLinearMap_apply] at ha hb hc
+    have ha := isotropyExtension_apply A u
+    have hb := isotropyExtension_apply A v
+    have hc := isotropyExtension_apply A w
     ext
-    rw [Submodule.coe_add, A.coe_bracket_isotropy ha (A.coe_bracket_isotropy hb hc).symm,
+    simp [A.coe_bracket_isotropy ha (A.coe_bracket_isotropy hb hc).symm,
       A.coe_bracket_isotropy (A.coe_bracket_isotropy ha hb).symm hc,
-      A.coe_bracket_isotropy hb (A.coe_bracket_isotropy ha hc).symm, A.bracket_bracket,
-      ContMDiffSection.coe_add, Pi.add_apply]
+      A.coe_bracket_isotropy hb (A.coe_bracket_isotropy ha hc).symm,
+      A.bracket_bracket (isotropyExtension A u) (isotropyExtension A v) (isotropyExtension A w)]
 
 /-- The isotropy Lie algebra at `x` is a Lie algebra over `ℝ`. -/
 instance instLieAlgebraIsotropy (x : M) : LieAlgebra ℝ (A.isotropy x) where
   lie_smul c v w := by
-    obtain ⟨a, ha⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
-    obtain ⟨b, hb⟩ :=
-      ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (w : V x)
-    rw [ContMDiffSection.evalLinearMap_apply] at ha hb
+    have ha := isotropyExtension_apply A v
+    have hb := isotropyExtension_apply A w
     ext
-    rw [Submodule.coe_smul, A.coe_bracket_isotropy ha hb, A.coe_bracket_isotropy (b := c • b) ha
-      (by rw [ContMDiffSection.coe_smul, Pi.smul_apply, hb, Submodule.coe_smul]), map_smul,
-      ContMDiffSection.coe_smul, Pi.smul_apply]
+    simp [A.coe_bracket_isotropy ha hb,
+      A.coe_bracket_isotropy (w := c • w) (b := c • isotropyExtension A w) ha (by simp [hb])]
 
 end Bracket
 
@@ -273,16 +262,12 @@ subalgebra of the sections. -/
 def isotropySections (x : M) : LieSubalgebra ℝ A.Sections where
   carrier := {s | A.sectionsEquiv s x ∈ A.isotropy x}
   add_mem' {s t} hs ht := by
-    rw [Set.mem_ofPred_eq] at hs ht ⊢
-    rw [map_add, ContMDiffSection.coe_add, Pi.add_apply]
-    exact add_mem hs ht
+    simpa using (A.isotropy x).add_mem hs ht
   zero_mem' := by
-    rw [Set.mem_ofPred_eq, map_zero, ContMDiffSection.coe_zero, Pi.zero_apply]
-    exact zero_mem _
+    simp
   smul_mem' c s hs := by
-    rw [Set.mem_ofPred_eq] at hs ⊢
-    rw [LinearMapClass.map_smul_of_tower, ContMDiffSection.coe_smul, Pi.smul_apply]
-    exact Submodule.smul_mem _ c hs
+    simpa [LinearMapClass.map_smul_of_tower A.sectionsEquiv c] using
+      Submodule.smul_mem (A.isotropy x) c hs
   lie_mem' {s t} hs ht := by
     rw [Set.mem_ofPred_eq] at hs ht ⊢
     rw [sectionsEquiv_lie]
@@ -319,12 +304,9 @@ theorem coe_isotropyEval_apply {x : M} (s : A.isotropySections x) :
 /-- Every isotropy vector is the value of an isotropic section. -/
 theorem isotropyEval_surjective (x : M) : Function.Surjective (A.isotropyEval x) := by
   intro v
-  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v : V x)
-  rw [ContMDiffSection.evalLinearMap_apply] at ha
-  refine ⟨⟨A.sectionsEquiv.symm a, ?_⟩, Subtype.ext ?_⟩
-  · rw [mem_isotropySections_iff, LinearEquiv.apply_symm_apply, ha]
-    exact v.2
-  · rw [coe_isotropyEval_apply, LinearEquiv.apply_symm_apply, ha]
+  refine ⟨⟨A.sectionsEquiv.symm (isotropyExtension A v), ?_⟩, Subtype.ext ?_⟩
+  · simp [mem_isotropySections_iff, isotropyExtension_apply]
+  · simp [isotropyExtension_apply]
 
 /-- An isotropic section evaluates to zero exactly when it vanishes at `x`. -/
 @[simp]
