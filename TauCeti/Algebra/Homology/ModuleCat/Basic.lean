@@ -64,8 +64,9 @@ image of the incoming differential, the term and the image of the outgoing diffe
 short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`). Linear equivalences
 intertwining two differentials up to a unit identify their images and kernels
 (`HomologicalComplex.range_d_eq_map_of_linearEquiv`,
-`HomologicalComplex.ker_d_eq_map_of_linearEquiv`), and restrict to an equivalence of the images
-(`HomologicalComplex.boundaryEquivOfLinearEquiv`).
+`HomologicalComplex.ker_d_eq_map_of_linearEquiv`), restrict to an equivalence of the images
+(`HomologicalComplex.boundaryEquivOfLinearEquiv`), and transfer exactness
+(`HomologicalComplex.exactAt_iff_of_linearEquiv`).
 A chain map restricts to a map between the images of the differentials
 (`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
 (`HomologicalComplex.Hom.boundaryMap_comp`), zero on the image of a zero differential
@@ -734,6 +735,19 @@ theorem ker_d_eq_map_of_linearEquiv {j k j' k' : ι} (eⱼ : C.X j ≃ₗ[R] D.X
   rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearMap.mem_ker,
     LinearMap.mem_ker, h, hu.smul_eq_zero, LinearEquiv.coe_coe, eⱼ.symm_apply_apply,
     eₖ.map_eq_zero_iff]
+
+/-- Linear equivalences `e_i`, `e_j`, `e_k` intertwining, up to units, the differentials of `C`
+into and out of degree `j` with those of `D` into and out of degree `j'` make `D` exact in degree
+`j'` exactly when `C` is exact in degree `j`. -/
+theorem exactAt_iff_of_linearEquiv {i j k i' j' k' : ι} (hi : c.prev j = i) (hk : c.next j = k)
+    (hi' : c.prev j' = i') (hk' : c.next j' = k') (eᵢ : C.X i ≃ₗ[R] D.X i')
+    (eⱼ : C.X j ≃ₗ[R] D.X j') (eₖ : C.X k ≃ₗ[R] D.X k') {u v : R} (hu : IsUnit u)
+    (hv : IsUnit v) (hij : ∀ x, (D.d i' j').hom (eᵢ x) = u • eⱼ ((C.d i j).hom x))
+    (hjk : ∀ x, (D.d j' k').hom (eⱼ x) = v • eₖ ((C.d j k).hom x)) :
+    D.ExactAt j' ↔ C.ExactAt j := by
+  rw [D.exactAt_iff_range_eq_ker hi' hk', C.exactAt_iff_range_eq_ker hi hk,
+    range_d_eq_map_of_linearEquiv eⱼ eᵢ hu hij, ker_d_eq_map_of_linearEquiv eⱼ eₖ hv hjk]
+  exact (Submodule.map_injective_of_injective eⱼ.injective).eq_iff
 
 end HomologicalComplex
 

@@ -23,10 +23,9 @@ both involving the same other degree.
 * `HomologicalComplex.exactAt_iff_range_eq_ker_zmod_two`: exactness in a degree.
 * `HomologicalComplex.acyclic_iff_range_eq_ker_zmod_two`: a two-periodic complex of modules is
   acyclic exactly when the image of each differential is the kernel of the other.
-* `HomologicalComplex.exactAt_iff_of_linearEquiv_zmod_two`,
-  `HomologicalComplex.acyclic_iff_of_linearEquiv_zmod_two`: linear equivalences intertwining the
+* `HomologicalComplex.acyclic_iff_of_linearEquiv_zmod_two`: linear equivalences intertwining the
   differentials of two two-periodic complexes up to a unit, preserving or exchanging the parities,
-  preserve exactness and acyclicity.
+  preserve acyclicity.
 -/
 
 public section
@@ -80,17 +79,6 @@ namespace HomologicalComplex
 variable {R : Type*} [Ring R]
   {C D : HomologicalComplex (ModuleCat R) (ComplexShape.up (ZMod 2))}
 
-/-- Linear equivalences intertwining the differentials of two-periodic complexes `C` and `D` up to
-a unit preserve exactness. -/
-theorem exactAt_iff_of_linearEquiv_zmod_two {j k j' k' : ZMod 2} (hjk : j + 1 = k)
-    (hjk' : j' + 1 = k') (eⱼ : C.X j ≃ₗ[R] D.X j') (eₖ : C.X k ≃ₗ[R] D.X k') {u : R}
-    (hu : IsUnit u) (hj : ∀ x, (D.d j' k').hom (eⱼ x) = u • eₖ ((C.d j k).hom x))
-    (hk : ∀ x, (D.d k' j').hom (eₖ x) = u • eⱼ ((C.d k j).hom x)) :
-    D.ExactAt j' ↔ C.ExactAt j := by
-  rw [D.exactAt_iff_range_eq_ker_zmod_two hjk', C.exactAt_iff_range_eq_ker_zmod_two hjk,
-    range_d_eq_map_of_linearEquiv eⱼ eₖ hu hk, ker_d_eq_map_of_linearEquiv eⱼ eₖ hu hj]
-  exact (Submodule.map_injective_of_injective eⱼ.injective).eq_iff
-
 /-- Linear equivalences `e₀ : Cⱼ ≃ D₀` and `e₁ : Cₖ ≃ D₁`, for `{j, k} = {0, 1}`, intertwining the
 differentials of two-periodic complexes `C` and `D` up to a unit make `D` acyclic exactly when `C`
 is. -/
@@ -100,8 +88,12 @@ theorem acyclic_iff_of_linearEquiv_zmod_two {j k : ZMod 2} (hjk : j + 1 = k)
     (h₁₀ : ∀ x, (D.d 1 0).hom (e₁ x) = u • e₀ ((C.d k j).hom x)) :
     D.Acyclic ↔ C.Acyclic := by
   have hkj : k + 1 = j := by rw [← hjk, add_assoc, CharTwo.add_self_eq_zero, add_zero]
-  have h₀ := exactAt_iff_of_linearEquiv_zmod_two hjk (zero_add 1) e₀ e₁ hu h₀₁ h₁₀
-  have h₁ := exactAt_iff_of_linearEquiv_zmod_two hkj (CharTwo.add_self_eq_zero 1) e₁ e₀ hu h₁₀ h₀₁
+  have h₀ := exactAt_iff_of_linearEquiv ((ComplexShape.up _).prev_eq' hkj)
+    ((ComplexShape.up _).next_eq' hjk) ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
+    ((ComplexShape.up _).next_eq' (zero_add 1)) e₁ e₀ e₁ hu hu h₁₀ h₀₁
+  have h₁ := exactAt_iff_of_linearEquiv ((ComplexShape.up _).prev_eq' hjk)
+    ((ComplexShape.up _).next_eq' hkj) ((ComplexShape.up _).prev_eq' (zero_add 1))
+    ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) e₀ e₁ e₀ hu hu h₀₁ h₁₀
   have hi (i : ZMod 2) : i = j ∨ i = k := by
     rw [← hjk]
     exact (by decide : ∀ i j : ZMod 2, i = j ∨ i = j + 1) i j

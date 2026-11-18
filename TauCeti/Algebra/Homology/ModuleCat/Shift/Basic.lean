@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
@@ -23,7 +22,9 @@ exact in degree `i + 1 + 1` exactly when `C` is exact in degree `i + 1`
 (`HomologicalComplex.acyclic_iff_of_shift`). The identifications of boundaries and cycles are the
 case `u = -1` of the transport along linear equivalences intertwining the differentials up to a
 unit `u` (`HomologicalComplex.range_d_eq_map_of_linearEquiv`,
-`HomologicalComplex.boundaryEquivOfLinearEquiv`, `HomologicalComplex.ker_d_eq_map_of_linearEquiv`).
+`HomologicalComplex.boundaryEquivOfLinearEquiv`, `HomologicalComplex.ker_d_eq_map_of_linearEquiv`),
+and the exactness statement is the corresponding case of
+`HomologicalComplex.exactAt_iff_of_linearEquiv`.
 
 The mapping cone of `K ⟶ 0` is such a shift of `K`; this is how the torsion of a mapping cone is
 computed in `TauCeti.Algebra.Homology.ReidemeisterTorsion.MappingCone`.
@@ -74,13 +75,9 @@ theorem map_ker_d_of_shift (i : ℤ) :
 include he in
 /-- Under a shift `e` with negated differentials, `D` is exact in degree `i + 1 + 1` exactly when
 `C` is exact in degree `i + 1`. -/
-theorem exactAt_iff_of_shift (i : ℤ) : D.ExactAt (i + 1 + 1) ↔ C.ExactAt (i + 1) := by
-  rw [D.exactAt_iff' (i + 1 + 1 + 1) (i + 1 + 1) (i + 1) (by simp) (by simp),
-    C.exactAt_iff' (i + 1 + 1) (i + 1) i (by simp) (by simp),
-    ShortComplex.moduleCat_exact_iff_ker_sub_range, ShortComplex.moduleCat_exact_iff_ker_sub_range]
-  dsimp only [sc', shortComplexFunctor'_obj_f, shortComplexFunctor'_obj_g]
-  rw [← Submodule.map_le_map_iff_of_injective (e (i + 1)).injective, map_ker_d_of_shift e he,
-    map_range_d_of_shift e he]
+theorem exactAt_iff_of_shift (i : ℤ) : D.ExactAt (i + 1 + 1) ↔ C.ExactAt (i + 1) :=
+  (exactAt_iff_of_linearEquiv (by simp) (by simp) (by simp) (by simp) (e (i + 1 + 1)) (e (i + 1))
+    (e i) isUnit_one.neg isUnit_one.neg (by simp [he]) (by simp [he])).symm
 
 include he in
 /-- If the terms of `D` are those of `C` shifted up by one degree, through isomorphisms
