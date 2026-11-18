@@ -365,8 +365,9 @@ theorem integral_mul_eq_of_forall_setIntegral_eq {Ω : Type*} {m mΩ : Measurabl
 set integrals over the events `{X ∈ A}`, then `E[f(X) Y] = E[f(X) g(X)]` for every measurable `f`
 with `f(X) Y` integrable. -/
 theorem integral_comp_mul_eq_of_forall_setIntegral_preimage_eq {Ω α : Type*}
-    {mΩ : MeasurableSpace Ω} [MeasurableSpace α] {μ : Measure Ω} [IsFiniteMeasure μ]
-    {X : Ω → α} (hX : Measurable X) {Y : Ω → ℝ} {g f : α → ℝ} (hY : Integrable Y μ)
+    {mΩ : MeasurableSpace Ω} [MeasurableSpace α] {μ : Measure Ω}
+    {X : Ω → α} (hX : Measurable X) [SigmaFinite (μ.trim hX.comap_le)] {Y : Ω → ℝ} {g f : α → ℝ}
+    (hY : Integrable Y μ)
     (hg : Measurable g) (hgi : Integrable (fun ω ↦ g (X ω)) μ)
     (hreg : ∀ A : Set α, MeasurableSet A → ∫ ω in X ⁻¹' A, Y ω ∂μ = ∫ ω in X ⁻¹' A, g (X ω) ∂μ)
     (hf : Measurable f) (hfY : Integrable (fun ω ↦ f (X ω) * Y ω) μ) :
