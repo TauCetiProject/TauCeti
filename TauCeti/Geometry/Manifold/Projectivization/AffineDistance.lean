@@ -18,9 +18,9 @@ import TauCeti.Analysis.Normed.Group.Basic
 
 Let `X` be a closed subset of projective space `ℙ(𝕜ⁿ⁺¹)`, over `ℝ` or `ℂ`, and `H = {x_i = 0}` a
 coordinate hyperplane. Suppose the image `Z ⊆ 𝕜ⁿ` of `X \ H` in the standard affine chart is a
-manifold of real dimension `m` on which the squared Euclidean distance `ρ = ‖z - a‖²` from a centre
-`a` is a Morse function whose critical points all have index at most `d`. The reciprocal transform
-`F = (1 + ρ)⁻¹`, extended by `0` on `H`, is the continuous function
+finite-dimensional smooth manifold of real dimension `m` on which the squared Euclidean distance
+`ρ = ‖z - a‖²` from a centre `a` is a Morse function whose critical points all have index at most
+`d`. The reciprocal transform `F = (1 + ρ)⁻¹`, extended by `0` on `H`, is the continuous function
 `Projectivization.affineChartInvOneAddDistSq i a` on projective space. Its sublevel
 `X_ε = X ∩ {F ≤ ε}` is a closed neighbourhood of the hyperplane section `X ∩ H` in `X`.
 
@@ -67,8 +67,9 @@ universe u v w
 
 namespace TauCeti
 
-variable {𝕜 : Type u} [RCLike 𝕜] {n : ℕ} {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+variable {𝕜 : Type u} [RCLike 𝕜] {n : ℕ}
+
+section Sublevel
 
 variable {X : Set (ℙ 𝕜 (Fin (n + 1) → 𝕜))} {i : Fin (n + 1)} {Z : Set (Fin n → 𝕜)}
   {a : EuclideanSpace 𝕜 (Fin n)} {ε : ℝ}
@@ -145,12 +146,15 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
 
 /-- **The relative homology of a projective variety modulo a reciprocal distance sublevel.** Let
 `X ⊆ ℙ(𝕜ⁿ⁺¹)` be closed, and suppose the image `Z ⊆ 𝕜ⁿ` of `X \ {x_i = 0}` in the standard affine
-chart is a smooth manifold of dimension `m` on which the squared distance `‖z - a‖²` is a Morse
-function whose critical points all have index at most `d`. Let `F` be
+chart is a finite-dimensional smooth manifold of dimension `m = finrank ℝ E` on which the squared
+distance `‖z - a‖²` is a Morse function whose critical points all have index at most `d`. Let `F` be
 `Projectivization.affineChartInvOneAddDistSq i a` and `ε > 0` a regular value of `F` on `Z`. Then
-the relative singular homology `Hⱼ(X, X ∩ {F ≤ ε}; R)` vanishes for every `j` with `j + d < m` and
-every coefficient object `R` of an abelian category with coproducts. -/
+the relative singular homology `Hⱼ(X, X ∩ {F ≤ ε}; R)` vanishes for every `j` with `j + d < m`
+(which forces `0 < m` and hence `FiniteDimensional ℝ E`) and every coefficient object `R` of an
+abelian category with coproducts. -/
 theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
+    {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} [I.Boundaryless]
     (hX : IsClosed X) (hZ : affineChart i '' (X ∩ affineOpen i) = Z) [ChartedSpace H Z]
     [IsManifold I ∞ Z] (hρ : IsMorse I fun z : Z ↦ ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2) {d : ℕ}
     (hd : ∀ z ∈ criticalPoints I fun z : Z ↦ ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2,
@@ -162,6 +166,7 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
     IsZero ((TopPair.ofInclusion (X := TopCat.of (ℙ 𝕜 (Fin (n + 1) → 𝕜)))
       (inter_subset_left : X ∩ {x | affineChartInvOneAddDistSq i a x ≤ ε} ⊆ X)).singularHomology
         R j) := by
+  have : FiniteDimensional ℝ E := .of_finrank_pos ((Nat.zero_le _).trans_lt hj)
   refine isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair hZ hε R j ?_
   set ρ : Z → ℝ := fun z ↦ ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2
   have hρ₀ (z : Z) : 1 + ρ z ≠ 0 := by positivity
@@ -201,6 +206,8 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
   exact (hρ.inv_one_add hρ₀).isZero_singularHomology_sublevelPair_of_le_manifoldMorseIndex _
     hcompact hreg (isRegularValue_iff.2 fun z hz ↦
       absurd hz ((hg₁ z).trans_lt (by linarith : (1 : ℝ) < ε + 1)).ne) hidx R (by omega)
+
+end Sublevel
 
 /-- **The relative homology of a projective zero locus modulo a reciprocal distance sublevel.** Let
 `X ⊆ ℂℙⁿ` be the zero locus of a finite family of homogeneous polynomials, and suppose that its part
