@@ -22,6 +22,8 @@ least `n ≥ 1` adds `e` to `F(x, y)`, up to terms of degree greater than `n`.
 
 ## Main results
 
+* `FormalGroup.coeff_single_zero`, `FormalGroup.coeff_single_one`: the coefficients of `Xⁿ` and
+  `Yⁿ` in a formal group law are `1` for `n = 1` and `0` otherwise.
 * `FormalGroup.coeff_comm`: the coefficients of a commutative formal group law are symmetric.
 * `FormalGroup.le_order_subst_add_left_sub`, `FormalGroup.le_order_subst_add_right_sub`:
   `F(x + e, y) ≡ F(x, y) + e` and `F(x, y + e) ≡ F(x, y) + e` modulo terms of degree greater than
@@ -35,6 +37,18 @@ open MvPowerSeries Finsupp
 variable {A : Type*} [CommRing A]
 
 namespace FormalGroup
+
+/-- The coefficient of `Xⁿ` in a formal group law `F(X, Y)`: since `F(X, 0) = X`, it is `1` for
+`n = 1` and `0` otherwise. -/
+theorem coeff_single_zero (F : FormalGroup A) (n : ℕ) :
+    coeff (single 0 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
+  rw [← coeff_subst_X_zero, ← Xzero, Xzero_eq_X, PowerSeries.coeff_X]
+
+/-- The coefficient of `Yⁿ` in a formal group law `F(X, Y)`: since `F(0, Y) = Y`, it is `1` for
+`n = 1` and `0` otherwise. -/
+theorem coeff_single_one (F : FormalGroup A) (n : ℕ) :
+    coeff (single 1 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
+  rw [← coeff_subst_zero_X, ← zeroX, zeroX_eq_X, PowerSeries.coeff_X]
 
 /-- The coefficients of a commutative formal group law are symmetric: the coefficient of `XⁱYʲ`
 equals that of `XʲYⁱ`. -/
