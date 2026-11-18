@@ -438,17 +438,6 @@ theorem Solution.prefixLength_succAbove_of_word_eq (U' : (Ω.splitItem k).Soluti
 
 /-! ### Cutting a solution inside an item -/
 
-/-- Concatenating the two halves of the word of `h_k` cut after `d` letters gives back the words. -/
-private theorem contractNth_insertNth_take_drop (W : Fin Ω.numItems → List (A × Bool)) (d : ℕ) :
-    Fin.contractNth k.castSucc (· ++ ·) (Fin.insertNth (α := fun _ => List (A × Bool)) k.castSucc
-      ((W k).take d) (Function.update W k ((W k).drop d))) = W := by
-  funext j
-  rcases eq_or_ne j k with rfl | h
-  · rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.insertNth_apply_same,
-      Fin.insertNth_castSucc_apply_succ, Function.update_self, List.take_append_drop]
-  · rw [Fin.contractNth_apply_of_ne k.castSucc _ _ j (Fin.val_ne_of_ne h).symm,
-      Fin.insertNth_apply_succAbove, Function.update_of_ne h]
-
 /-- When `h_k` carries no constant base, a property of the two sides of every equation of `Ω`,
 substituted with the words of `h′_k` and `h′_{k+1}` concatenated for `h_k`, is the property of the
 two sides of every equation of `Ω.splitItem k`, substituted with the words. -/
@@ -474,6 +463,11 @@ def splitItem (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d) (hd : d < (U.word k).l
     obtain ⟨b, hb, rfl⟩ := Ω.isConstantItem_iff.1 hc
     rw [U.word_of_mem_constBases hb, List.length_singleton] at hd
     lia
+  -- Concatenating the two halves of the word of `h_k` gives back the words of `U`.
+  have hW : Fin.contractNth k.castSucc (· ++ ·) (Fin.insertNth (α := fun _ => List (A × Bool))
+      k.castSucc ((U.word k).take d) (Function.update U.word k ((U.word k).drop d))) = U.word := by
+    rw [Fin.contractNth_castSucc_insertNth_castSucc]
+    simp
   { word := Fin.insertNth (α := fun _ => List (A × Bool)) k.castSucc ((U.word k).take d)
       (Function.update U.word k ((U.word k).drop d))
     isReduced_word x := by
@@ -498,9 +492,9 @@ def splitItem (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d) (hd : d < (U.word k).l
           exact U.word_ne_nil j
     isReduced_subst := forall_mem_equations_splitItem hk' _
       (fun u w => FreeGroup.IsReduced u ∧ FreeGroup.IsReduced w)
-      (by rw [contractNth_insertNth_take_drop]; exact U.isReduced_subst)
+      (by rw [hW]; exact U.isReduced_subst)
     subst_eq := forall_mem_equations_splitItem hk' _ (· = ·)
-      (by rw [contractNth_insertNth_take_drop]; exact U.subst_eq) }
+      (by rw [hW]; exact U.subst_eq) }
 
 variable (U : Ω.Solution) {d : ℕ} (hd₀ : 0 < d) (hd : d < (U.word k).length)
 
@@ -529,7 +523,8 @@ the solution. -/
 theorem contractNth_splitItem_word :
     Fin.contractNth k.castSucc (· ++ ·) (U.splitItem hd₀ hd).word = U.word := by
   dsimp only [Solution.splitItem]
-  exact contractNth_insertNth_take_drop U.word d
+  rw [Fin.contractNth_castSucc_insertNth_castSucc]
+  simp
 
 /-- The new boundary of the cut solution sits `d` letters after the boundary `k`. -/
 theorem prefixLength_splitItem_add_one :
