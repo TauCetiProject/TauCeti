@@ -52,7 +52,10 @@ self-intersections.
 
 The basic example: in a finite-dimensional symplectic vector space with its constant symplectic
 form, a continuous linear map is a Lagrangian map exactly when its range is a Lagrangian subspace
-(`TauCeti.SymplecticForm.isLagrangianMap_continuousLinearMap_iff`).
+(`TauCeti.SymplecticForm.isLagrangianMap_continuousLinearMap_iff`). A linear symplectomorphism
+of symplectic vector spaces pulls their constant forms back to each other, so composing with it
+preserves isotropic and Lagrangian maps
+(`TauCeti.SymplecticForm.IsSymplectomorphism.isLagrangianMap_comp_iff`).
 
 ## Main declarations
 
@@ -67,6 +70,8 @@ form, a continuous linear map is a Lagrangian map exactly when its range is a La
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.two_mul_finrank`: the dimension count.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianImmersion` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangianImmersion_iff`: Lagrangian immersions.
+* `TauCeti.SymplecticForm.IsSymplectomorphism.isLagrangianMap_comp_iff`: composing with a linear
+  symplectomorphism of symplectic vector spaces preserves Lagrangian maps.
 
 ## References
 
@@ -347,6 +352,40 @@ theorem isLagrangianMap_continuousLinearMap_iff (σ₀ : SymplecticForm W) (L : 
   simp only [SmoothTwoForm.IsNondegenerate.IsLagrangianMap,
     isNondegenerate_constSmooth_symplecticFormAt, ContinuousLinearMap.mfderiv_eq]
   exact ⟨fun h ↦ h 0, fun h _ ↦ h⟩
+
+section Symplectomorphism
+
+variable [FiniteDimensional ℝ V] {σ₁ : SymplecticForm V} {σ₂ : SymplecticForm W} {e : V ≃L[ℝ] W}
+  {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {f : N → V}
+
+/-- A linear symplectomorphism pulls the constant symplectic form of its target back to that of its
+source. -/
+theorem IsSymplectomorphism.mpullback_constSmooth (he : IsSymplectomorphism σ₁ σ₂ e) :
+    SmoothForm.mpullback e.toDiffeomorph e.toDiffeomorph.contMDiff σ₂.constSmooth =
+      σ₁.constSmooth := by
+  refine SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_
+  rw [SmoothForm.eval₂_mpullback, ContinuousLinearEquiv.coe_toDiffeomorph,
+    ContinuousLinearEquiv.mfderiv_eq, fromTangentSpace_constSmooth_apply,
+    fromTangentSpace_constSmooth_apply]
+  exact he.apply _ _
+
+/-- Composing with a linear symplectomorphism preserves and reflects isotropic maps. -/
+theorem IsSymplectomorphism.isIsotropicMap_comp_iff (he : IsSymplectomorphism σ₁ σ₂ e) :
+    (isNondegenerate_constSmooth σ₂).IsIsotropicMap J (e ∘ f) ↔
+      (isNondegenerate_constSmooth σ₁).IsIsotropicMap J f :=
+  SmoothTwoForm.IsNondegenerate.isIsotropicMap_diffeomorph_comp_iff e.toDiffeomorph
+    he.mpullback_constSmooth
+
+/-- Composing with a linear symplectomorphism preserves and reflects Lagrangian maps. -/
+theorem IsSymplectomorphism.isLagrangianMap_comp_iff (he : IsSymplectomorphism σ₁ σ₂ e) :
+    (isNondegenerate_constSmooth σ₂).IsLagrangianMap J (e ∘ f) ↔
+      (isNondegenerate_constSmooth σ₁).IsLagrangianMap J f :=
+  SmoothTwoForm.IsNondegenerate.isLagrangianMap_diffeomorph_comp_iff e.toDiffeomorph
+    he.mpullback_constSmooth
+
+end Symplectomorphism
 
 end SymplecticForm
 
