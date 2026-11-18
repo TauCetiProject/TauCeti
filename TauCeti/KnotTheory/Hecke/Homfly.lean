@@ -9,6 +9,8 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Jimbo.Trace
 public import TauCeti.KnotTheory.Hecke.RegularTrace
 public import TauCeti.KnotTheory.Homfly.Reduced
 
+import Mathlib.Tactic.LinearCombination
+
 /-!
 # Comparison of Ocneanu braid invariants with Jimbo and HOMFLY invariants
 
@@ -37,6 +39,11 @@ and HOMFLY braid invariants:
   `TauCeti.MarkovBraid.eval₂_reducedHomfly_eq_heckeTrace`, and
   `TauCeti.MarkovBraid.eval₂_homfly_eq_mul_heckeTrace`: comparison with `reducedHomfly` and
   `homfly`.
+* `TauCeti.heckeBraidInvariant_ocneanuTrace_mk_eq_mul_jimboTrace`: the finite-colour comparison
+  on `Quot MarkovEquiv`.
+* `TauCeti.MarkovBraid.homflySpecialization_reducedHomfly_eq_heckeTrace` and
+  `TauCeti.MarkovBraid.reducedHomfly_eq_of_homflySpecialization_eq_heckeTrace`: determination of
+  `reducedHomfly` by the positive-rank Ocneanu braid traces.
 
 ## References
 
@@ -117,6 +124,49 @@ theorem jimboReducedTrace_eq_heckeTrace {K : Type*} [Field K] {N : ℕ} (β : Ma
   rw [jimboReducedTrace_eq_regularHeckeTrace β hδ, regularHeckeTrace_eq_heckeTrace_of_mul_eq β hz]
 
 end MarkovBraid
+
+section Normalization
+
+variable {R : Type*} [CommRing R] {N : ℕ}
+
+namespace KnotTheory
+
+/-- When `c` inverts the `N`-colour quantum dimension,
+`(∑ a, jimboWeight q a) * (q ^ N)⁻¹ * (c * q ^ N) = 1`. -/
+theorem sum_jimboWeight_mul_inv_pow_mul_eq_one (q : Rˣ) {c : R}
+    (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
+    (∑ a : Fin N, jimboWeight q a) * (↑(q ^ N)⁻¹ : R) * (c * ↑(q ^ N)) = 1 := by
+  have hq : (↑(q ^ N)⁻¹ : R) * ↑(q ^ N) = 1 := Units.inv_mul (q ^ N)
+  linear_combination (∑ a : Fin N, jimboWeight q a) * c * hq + hc
+
+/-- When `c` inverts the `N`-colour quantum dimension,
+`(∑ a, jimboWeight q a) * ((q ^ N)⁻¹)⁻¹ * (c * q ^ N - (q - q⁻¹)) = 1`. -/
+theorem sum_jimboWeight_mul_inv_inv_pow_mul_sub_eq_one (q : Rˣ) {c : R}
+    (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
+    (∑ a : Fin N, jimboWeight q a) * (↑((q ^ N)⁻¹)⁻¹ : R) *
+        (c * ↑(q ^ N) - ((q : R) - ↑q⁻¹)) = 1 := by
+  rw [inv_inv]
+  have hs := jimboWeight_sum (N := N) q
+  have hq : (↑(q ^ N) : R) * ↑((q⁻¹) ^ N) = 1 := by
+    rw [inv_pow]
+    exact Units.mul_inv (q ^ N)
+  linear_combination (↑(q ^ N) : R) ^ 2 * hc - (↑(q ^ N) : R) * hs + hq
+
+end KnotTheory
+
+/-- On `Quot MarkovEquiv`, `heckeBraidInvariant` of the Ocneanu trace at `c * q ^ N` agrees with
+`c * β.jimboTrace q`. -/
+theorem heckeBraidInvariant_ocneanuTrace_mk_eq_mul_jimboTrace (β : MarkovBraid) (q : Rˣ) {c : R}
+    (hc : c * ∑ a : Fin N, jimboWeight q a = 1) :
+    heckeBraidInvariant (isMarkovTrace_ocneanuTrace (q := q) (c * ↑(q ^ N)))
+        (∑ a : Fin N, jimboWeight q a) (q ^ N)⁻¹
+        (sum_jimboWeight_mul_inv_pow_mul_eq_one q hc)
+        (sum_jimboWeight_mul_inv_inv_pow_mul_sub_eq_one q hc)
+        (Quot.mk MarkovEquiv β) =
+      c * β.jimboTrace (N := N) q :=
+  (heckeBraidInvariant_mk _ _ _ _ _ β).trans (β.mul_jimboTrace_eq_heckeTrace hc).symm
+
+end Normalization
 
 end JimboComparison
 
@@ -206,6 +256,32 @@ theorem eval₂_homfly_eq_mul_heckeTrace (β : MarkovBraid) (f : K →+* R)
         β.heckeTrace (ocneanuTrace R q z) (((↑l⁻¹ : R) - (l : R)) * ↑u⁻¹) l := by
   rw [eval₂_homfly_eq_mul_regularHeckeTrace β f q u l hu,
     regularHeckeTrace_eq_heckeTrace_of_mul_eq β hz]
+
+/-- Every positive-rank `homflySpecialization` of `β.reducedHomfly K` equals the normalized Ocneanu
+braid trace in `RatFunc K` at `q = X`, `z = X ^ (N + 1) / [N + 1]_X`, `C = [N + 1]_X`, and
+`l = (X ^ (N + 1))⁻¹`. -/
+theorem homflySpecialization_reducedHomfly_eq_heckeTrace (β : MarkovBraid) (N : ℕ) :
+    let q : (RatFunc K)ˣ := Units.mk0 RatFunc.X RatFunc.X_ne_zero
+    homflySpecialization K (N + 1) (β.reducedHomfly K) =
+      β.heckeTrace
+        (ocneanuTrace (RatFunc K) q (↑(q ^ (N + 1)) / ∑ a : Fin (N + 1), jimboWeight q a))
+        (∑ a : Fin (N + 1), jimboWeight q a) (q ^ (N + 1))⁻¹ := by
+  intro q
+  rw [homflySpecialization_reducedHomfly,
+    ← jimboReducedTrace_eq_heckeTrace β (jimboWeight_sum_X_ne_zero N)]
+
+/-- The positive-rank normalized Ocneanu braid traces uniquely determine `β.reducedHomfly K`. -/
+theorem reducedHomfly_eq_of_homflySpecialization_eq_heckeTrace {β : MarkovBraid}
+    {P : LaurentPolynomial (LaurentPolynomial K)}
+    (h : ∀ N,
+      let q : (RatFunc K)ˣ := Units.mk0 RatFunc.X RatFunc.X_ne_zero
+      homflySpecialization K (N + 1) P =
+        β.heckeTrace
+          (ocneanuTrace (RatFunc K) q (↑(q ^ (N + 1)) / ∑ a : Fin (N + 1), jimboWeight q a))
+          (∑ a : Fin (N + 1), jimboWeight q a) (q ^ (N + 1))⁻¹) :
+    β.reducedHomfly K = P := by
+  refine reducedHomfly_eq_of_homflySpecialization_eq K fun N ↦ ?_
+  rw [h N, ← jimboReducedTrace_eq_heckeTrace β (jimboWeight_sum_X_ne_zero N)]
 
 end MarkovBraid
 
