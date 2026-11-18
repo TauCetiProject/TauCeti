@@ -85,7 +85,7 @@ The `quality-pass` review angle checks it.
   Wait for each prerequisite to land on main before opening its dependent PR;
   then rebase onto current main and include only the new work. Targeting main
   while carrying another unmerged PR's commits or content is still stacking.
-  The trusted [no-stacking policy](scripts/stack-policy.md) comments and closes
+  The trusted [no-stacking policy](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/stack-policy.md) comments and closes
   confirmed stacks without deleting their branches. Ordinary independent PRs
   may touch the same files or share roadmap areas.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
