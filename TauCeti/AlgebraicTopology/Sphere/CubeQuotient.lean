@@ -391,12 +391,12 @@ theorem exists_genLoop_sphere {V : Type*} [NormedAddCommGroup V] [InnerProductSp
   have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
   let e₀ : EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] V :=
     ((stdOrthonormalBasis ℝ V).reindex (finCongr hV)).repr.symm
-  -- Rotate the image of the north pole onto `u₀`: the linear isometries act transitively.
-  obtain ⟨r, hr⟩ := MulAction.exists_smul_eq (V ≃ₗᵢ[ℝ] V)
+  -- Move the image of the north pole onto `u₀`: the unit sphere is homogeneous.
+  obtain ⟨r, hr⟩ := Sphere.exists_homeomorph_apply_eq
     (e₀.unitSphereIsometryEquiv (sphereNorthPole n)) u₀
-  let F := (e₀.trans r).unitSphereIsometryEquiv.toHomeomorph
-  have he : F (sphereNorthPole n) = u₀ := by
-    simpa [F, LinearIsometryEquiv.unitSphereIsometryEquiv_trans] using hr
+  let F := e₀.unitSphereIsometryEquiv.toHomeomorph.trans r
+  -- `F` applies `e₀` and then `r`, so this is `hr` by unfolding `Homeomorph.trans`.
+  have he : F (sphereNorthPole n) = u₀ := hr
   refine ⟨GenLoop.map F he (sphereGenLoop n), fun q hq ↦ ?_, fun y z h ↦ ?_⟩
   · obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := F.symm q) fun h ↦
       hq (by rw [← F.apply_symm_apply q, h, he])
