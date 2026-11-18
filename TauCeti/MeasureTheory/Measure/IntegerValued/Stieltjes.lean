@@ -113,9 +113,8 @@ theorem monotone_nat_count : Monotone fun t : ℝ≥0 => ⌊(μ (Ioc 0 t)).toNNR
 /-- For a locally finite integer-valued measure, the natural-valued count of a bounded
 interval is its mass. -/
 theorem IsIntegerValued.natCast_nat_count_Ioc (hμ : μ.IsIntegerValued) (a b : ℝ≥0) :
-    (⌊(μ (Ioc a b)).toNNReal⌋₊ : ℝ≥0∞) = μ (Ioc a b) := by
-  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast measurableSet_Ioc measure_Ioc_lt_top
-  rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
+    (⌊(μ (Ioc a b)).toNNReal⌋₊ : ℝ≥0∞) = μ (Ioc a b) :=
+  hμ.natCast_floor_toNNReal measurableSet_Ioc measure_Ioc_lt_top.ne
 
 /-- The cumulative count of a locally finite integer-valued measure is right-continuous:
 it is constant on a right neighbourhood of each time. -/
@@ -152,7 +151,6 @@ theorem IsIntegerValued.exists_nat_count_le_add_floor (hμ : μ.IsIntegerValued)
     exact ⟨(hut n).2, le_rfl⟩
   have htop : μ {t} ≠ ∞ :=
     ne_top_of_le_ne_top measure_Ioc_lt_top.ne (measure_mono (singleton_subset_iff.2 ⟨ht, le_rfl⟩))
-  obtain ⟨k, hk⟩ := hμ.exists_eq_natCast (measurableSet_singleton t) htop.lt_top
   -- The masses of `(u n, t]` decrease to the mass of `{t}`, which is below its successor.
   have hmass := tendsto_measure_iInter_atTop (μ := μ) (s := fun n => Ioc (u n) t)
     (fun _ => measurableSet_Ioc.nullMeasurableSet)
@@ -164,16 +162,15 @@ theorem IsIntegerValued.exists_nat_count_le_add_floor (hμ : μ.IsIntegerValued)
   have hsplit : μ (Ioc 0 t) = μ (Ioc 0 (u n)) + μ (Ioc (u n) t) := by
     rw [← measure_union (Ioc_disjoint_Ioc_of_le le_rfl) measurableSet_Ioc,
       Ioc_union_Ioc_eq_Ioc (hut n).1.le (hut n).2.le]
-  have hn' : (⌊(μ (Ioc (u n) t)).toNNReal⌋₊ : ℝ≥0∞) < k + 1 := by
-    rw [hμ.natCast_nat_count_Ioc, ← hk]
+  have hn' : (⌊(μ (Ioc (u n) t)).toNNReal⌋₊ : ℝ≥0∞) < ⌊(μ {t}).toNNReal⌋₊ + 1 := by
+    rw [hμ.natCast_nat_count_Ioc, hμ.natCast_floor_toNNReal (measurableSet_singleton t) htop]
     exact hn
   rw [← hμ.natCast_nat_count_Ioc 0 t, ← hμ.natCast_nat_count_Ioc 0 (u n),
     ← hμ.natCast_nat_count_Ioc (u n) t] at hsplit
-  have h1 : ⌊(μ (Ioc (u n) t)).toNNReal⌋₊ < k + 1 := by exact_mod_cast hn'
+  have h1 : ⌊(μ (Ioc (u n) t)).toNNReal⌋₊ < ⌊(μ {t}).toNNReal⌋₊ + 1 := by exact_mod_cast hn'
   have h2 : ⌊(μ (Ioc 0 t)).toNNReal⌋₊ =
       ⌊(μ (Ioc 0 (u n))).toNNReal⌋₊ + ⌊(μ (Ioc (u n) t)).toNNReal⌋₊ := by
     exact_mod_cast hsplit
-  rw [hk, ENNReal.toNNReal_natCast, Nat.floor_natCast]
   omega
 
 end MeasureTheory.Measure
